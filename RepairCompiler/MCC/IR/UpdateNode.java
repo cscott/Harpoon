@@ -71,7 +71,16 @@ class UpdateNode {
 		if (!u2.isExpr())
 		    continue;
 		Descriptor d=u1.getDescriptor();
-		if (u2.getRightExpr().usesDescriptor(d)) {
+		Expr subexpr=null;
+		Expr intindex=null;
+		
+		if (u2.isField()) {
+		    subexpr=((DotExpr)u2.getLeftExpr()).getExpr();
+		    intindex=((DotExpr)u2.getLeftExpr()).getIndex();
+		}
+		if (u2.getRightExpr().usesDescriptor(d)||
+		    (subexpr!=null&&subexpr.usesDescriptor(d))||
+		    (intindex!=null&&intindex.usesDescriptor(d))) {
 		    /* Add edge for dependency */
 		    GraphNode gn1=(GraphNode) mapping.get(u1);
 		    GraphNode gn2=(GraphNode) mapping.get(u2);
@@ -349,7 +358,6 @@ class UpdateNode {
 		cr.outputline(name+"(this,"+rg.stmodel+","+rg.strepairtable+","+leftvar.getSafeSymbol()+");");
 	    }
 	}
-	
     }
 
     public void generate(CodeWriter cr, boolean removal, boolean modify, String slot0, String slot1, String slot2, RepairGenerator rg) {

@@ -115,20 +115,25 @@ public class GraphNode {
 
     public static void boundedcomputeclosure(Collection nodes, Collection removed,int depth) {
 	Stack tovisit=new Stack();
+	Stack newvisit=new Stack();
 	tovisit.addAll(nodes);
 	for(int i=0;i<depth&&!tovisit.isEmpty();i++) {
-	    GraphNode gn=(GraphNode)tovisit.pop();
-	    for(Iterator it=gn.edges();it.hasNext();) {
-		Edge edge=(Edge)it.next();
-		GraphNode target=edge.getTarget();
-		if (!nodes.contains(target)) {
-		    if ((removed==null)||
-			(!removed.contains(target))) {
-			nodes.add(target);
-			tovisit.push(target);
+	    while(!tovisit.isEmpty()) {
+		GraphNode gn=(GraphNode)tovisit.pop();
+		for(Iterator it=gn.edges();it.hasNext();) {
+		    Edge edge=(Edge)it.next();
+		    GraphNode target=edge.getTarget();
+		    if (!nodes.contains(target)) {
+			if ((removed==null)||
+			    (!removed.contains(target))) {
+			    nodes.add(target);
+			    newvisit.push(target);
+			}
 		    }
 		}
 	    }
+	    tovisit=newvisit;
+	    newvisit=new Stack();
 	}
     }
 

@@ -11,7 +11,7 @@ import MCC.IR.DebugItem;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.9 2004-07-18 19:19:57 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.10 2004-07-27 05:42:30 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -100,7 +100,8 @@ public class CLI {
 
 	if (args.length==0) {
 	    System.out.println("-debugcompiler -- print out debug messages");
-	    System.out.println("-depth depthnum constraintnum -- generate dependency graph from constraintnum with depf of depthnum");
+	    System.out.println("-depth depthnum constraintnum -- generate dependency graph from constraintnum with depth of depthnum");
+	    System.out.println("-depthconj depthnum constraintnum conjunctionnum -- generate dependency graph from constraintnum with depth of depthnum");
 	    System.out.println("-instrument -- generate instrumentation code");
 	    System.out.println("-aggressivesearch");
 	    System.out.println("-prunequantifiernodes");
@@ -116,6 +117,9 @@ public class CLI {
 	    } else if (args[i].equals("-depth")) {
 		Compiler.debuggraphs.add(new DebugItem(Integer.parseInt(args[i+1]),Integer.parseInt(args[i+2])));
 		i+=2;
+	    } else if (args[i].equals("-depthconj")) {
+		Compiler.debuggraphs.add(new DebugItem(Integer.parseInt(args[i+1]),Integer.parseInt(args[i+2]),Integer.parseInt(args[i+3])));
+		i+=3;
 	    } else if (args[i].equals("-debug")) {
                 Compiler.GENERATEDEBUGHOOKS=true;
 	    } else if (args[i].equals("-instrument")) {

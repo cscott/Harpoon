@@ -127,14 +127,19 @@ public class Termination {
     void generatedebuggraphs() {
 	for (int i=0;i<Compiler.debuggraphs.size();i++) {
 	    DebugItem di=(DebugItem) Compiler.debuggraphs.get(i);
-	    Constraint constr=(Constraint)state.vConstraints.get(di.constraintnum);
 	    HashSet superset=new HashSet();
-	    superset.addAll((Set)conjunctionmap.get(constr));
-	    HashSet closureset=new HashSet();
+	    Constraint constr=(Constraint)state.vConstraints.get(di.constraintnum);
 	    
-	    GraphNode.boundedcomputeclosure(superset,closureset,di.depth);
+	    if (di.conjunctionnum==-1) {
+		superset.addAll((Set)conjunctionmap.get(constr));
+	    } else {
+		DNFConstraint dnf=constr.dnfconstraint;
+		superset.add(conjtonodemap.get(dnf.get(di.conjunctionnum)));
+	    }
+	    
+	    GraphNode.boundedcomputeclosure(superset,null,di.depth);
 	    try {
-		GraphNode.DOTVisitor.visit(new FileOutputStream("graph"+di.constraintnum+"-"+di.depth+".dot"),superset);
+		GraphNode.DOTVisitor.visit(new FileOutputStream("graph"+di.constraintnum+"-"+di.depth+(di.conjunctionnum==-1?"":"-"+di.conjunctionnum)+".dot"),superset);
 	    } catch (Exception e) {
 		e.printStackTrace();
 		System.exit(-1);
@@ -201,7 +206,6 @@ public class Termination {
 			conjunctionmap.put(c,new HashSet());
 		    ((Set)conjunctionmap.get(c)).add(gn);
 		    conjtonodemap.put(dconst.get(0),gn);
-
 		}
 	    }
 	}
@@ -245,7 +249,6 @@ public class Termination {
 		    }
 		}
 	    }
-
 	    /* Cycle through the rules to look for possible conflicts */
 	    for(int i=0;i<state.vRules.size();i++) {
 		Rule r=(Rule) state.vRules.get(i);  
@@ -277,7 +280,6 @@ public class Termination {
 
 		for(int i=0;i<conj.size();i++) {
 		    DNFPredicate dp=conj.get(i);
-		    System.out.println("Checking "+gn.getTextLabel()+" --> "+gn2.getTextLabel());
 		    if (AbstractInterferes.interferes(ar,cons)||
 			abstractinterferes.interferes(ar,dp)) {
 			GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
@@ -286,7 +288,6 @@ public class Termination {
 		    }
 		}
 	    }
-
 	    for(Iterator scopeiterator=scopenodes.iterator();scopeiterator.hasNext();) {
 		GraphNode gn2=(GraphNode)scopeiterator.next();
 		TermNode tn2=(TermNode)gn2.getOwner();
@@ -528,6 +529,7 @@ public class Termination {
     void generatedatastructureupdatenodes() {
 	for(Iterator absiterator=abstractrepair.iterator();absiterator.hasNext();) {
 	    GraphNode gn=(GraphNode)absiterator.next();
+	    System.out.println("Analysing: "+gn.getTextLabel());
 	    TermNode tn=(TermNode) gn.getOwner();
 	    AbstractRepair ar=tn.getAbstract();
 	    if (ar.getType()==AbstractRepair.ADDTOSET) {
@@ -774,11 +776,14 @@ public class Termination {
 		/* Construct bindings */
 
 		Hashtable setmapping=new Hashtable();
+		System.out.println("Attempting to construct bindings");
 
 		if (!constructbindings(bindings,r,ar,setmapping,false))
 		    continue;
+		System.out.println("Bindings constructed");
 		//Generate add instruction
 		DNFRule dnfrule=r.getDNFGuardExpr();
+		 endloop:
 		for(int j=0;j<dnfrule.size();j++) {
 		    Inclusion inc=r.getInclusion();
 		    UpdateNode un=new UpdateNode(r);
@@ -786,52 +791,64 @@ public class Termination {
 		    /* Now build update for tuple/set inclusion condition */
 		    if(inc instanceof SetInclusion) {
 			SetInclusion si=(SetInclusion)inc;
-			if (!(si.elementexpr instanceof VarExpr)) {
-			    if (si.elementexpr.isValue(si.getSet().getType())) {
-				Updates up=new Updates(si.elementexpr,0,si.getSet().getType());
+			Expr e=si.elementexpr;
+			
+			while(e instanceof CastExpr) {
+			    CastExpr ce=(CastExpr)e;
+			    if (ce.getType()!=si.getSet().getType())
+				continue endloop;
+			    e=ce.getExpr();
+			}
+
+			if (!(e instanceof VarExpr)) {
+			    if (e.isValue(si.getSet().getType())) {
+				Updates up=new Updates(e,0,si.getSet().getType());
 				un.addUpdate(up);
 			    } else {
 				/* We're an add to set*/
-				System.out.println("Rule: "+r);
-				ArrayAnalysis.AccessPath rap=arrayanalysis.analyzeExpr(r,si.elementexpr);
-				System.out.println("Attempting perform array add");
+				ArrayAnalysis.AccessPath rap=arrayanalysis.analyzeExpr(r,e);
 				SetDescriptor set=sources.setSource(si.getSet())?
 				    sources.getSourceSet(si.getSet()):null;
 				if (set==null)
 				    continue;
-				System.out.println("Non-null source set");
 				ArrayAnalysis.AccessPath ap=arrayanalysis.getSet(set);
 				if (rap==ArrayAnalysis.AccessPath.NONE)
 				    continue;
-				System.out.println("A");
 				if (!rap.equal(ap))
 				    continue;
-				System.out.println("B");
-				if (!constructarrayupdate(un, si.elementexpr, rap, 0))
+				if (!constructarrayupdate(un, e, rap, 0))
 				    continue;
-				System.out.println("C");
 			    }
 			} else {
-			    VarDescriptor vd=((VarExpr)si.elementexpr).getVar();
+			    VarDescriptor vd=((VarExpr)e).getVar();
 			    if (vd.isGlobal()) {
-				Updates up=new Updates(si.elementexpr,0,null);
+				Updates up=new Updates(e,0,null);
 				un.addUpdate(up);
 			    }
 			}
 		    } else if (inc instanceof RelationInclusion) {
 			RelationInclusion ri=(RelationInclusion)inc;
-			if (!(ri.getLeftExpr() instanceof VarExpr)) {
-			    if (ri.getLeftExpr().isValue(ri.getRelation().getDomain().getType())) {
-				Updates up=new Updates(ri.getLeftExpr(),0,ri.getRelation().getDomain().getType());
+
+			Expr e=ri.getLeftExpr();
+			
+			while(e instanceof CastExpr) {
+			    CastExpr ce=(CastExpr)e;
+			    if (ce.getType()!=ri.getRelation().getDomain().getType())
+				continue endloop;
+			    e=ce.getExpr();
+			}
+			if (!(e instanceof VarExpr)) {
+			    if (e.isValue(ri.getRelation().getDomain().getType())) {
+				Updates up=new Updates(e,0,ri.getRelation().getDomain().getType());
 				if (ar.getDomainSet()!=null)
-				    setmapping.put(ri.getLeftExpr(),ar.getDomainSet());
+				    setmapping.put(e,ar.getDomainSet());
 				un.addUpdate(up);
 			    } else {
 				/* We don't handly relation modifies */
 				if (ar.getType()==AbstractRepair.MODIFYRELATION)
 				    continue;
 				/* We're an add to relation*/
-				ArrayAnalysis.AccessPath rap=arrayanalysis.analyzeExpr(r,ri.getLeftExpr());
+				ArrayAnalysis.AccessPath rap=arrayanalysis.analyzeExpr(r,e);
 				SetDescriptor set=sources.relsetSource(ri.getRelation(),true /* Domain*/)?
 				    sources.relgetSourceSet(ri.getRelation(),true):null;
 				if (set==null)
@@ -839,31 +856,40 @@ public class Termination {
 				ArrayAnalysis.AccessPath ap=arrayanalysis.getSet(set);
 				if (rap==ArrayAnalysis.AccessPath.NONE||
 				    !rap.equal(ap)||
-				    !constructarrayupdate(un, ri.getLeftExpr(), rap, 0))
+				    !constructarrayupdate(un, e, rap, 0))
 				    continue;
 				if (ar.getDomainSet()!=null)
-				    setmapping.put(ri.getLeftExpr(),ar.getDomainSet());
+				    setmapping.put(e,ar.getDomainSet());
 
 			    }
 			} else {
-			    VarDescriptor vd=((VarExpr)ri.getLeftExpr()).getVar();
+			    VarDescriptor vd=((VarExpr)e).getVar();
 			    if (vd.isGlobal()) {
-				Updates up=new Updates(ri.getLeftExpr(),0,null);
+				Updates up=new Updates(e,0,null);
 				if (ar.getDomainSet()!=null)
-				    setmapping.put(ri.getLeftExpr(),ar.getDomainSet());
+				    setmapping.put(e,ar.getDomainSet());
 				un.addUpdate(up);
 			    }
      			}
-			if (!(ri.getRightExpr() instanceof VarExpr)) {
-			    if (ri.getRightExpr().isValue(ri.getRelation().getRange().getType())) {
-				Updates up=new Updates(ri.getRightExpr(),1,ri.getRelation().getRange().getType());
+			
+			e=ri.getRightExpr();
+			
+			while(e instanceof CastExpr) {
+			    CastExpr ce=(CastExpr)e;
+			    if (ce.getType()!=ri.getRelation().getRange().getType())
+				continue endloop;
+			    e=ce.getExpr();
+			}
+			if (!(e instanceof VarExpr)) {
+			    if (e.isValue(ri.getRelation().getRange().getType())) {
+				Updates up=new Updates(e,1,ri.getRelation().getRange().getType());
 				un.addUpdate(up);
 			    } else {
 				/* We don't handly relation modifies */
 				if (ar.getType()==AbstractRepair.MODIFYRELATION)
 				    continue;
 				/* We're an add to relation*/
-				ArrayAnalysis.AccessPath rap=arrayanalysis.analyzeExpr(r,ri.getRightExpr());
+				ArrayAnalysis.AccessPath rap=arrayanalysis.analyzeExpr(r,e);
 				SetDescriptor set=sources.relsetSource(ri.getRelation(),false /* Range*/)?
 				    sources.relgetSourceSet(ri.getRelation(),false):null;
 				if (set==null)
@@ -872,21 +898,22 @@ public class Termination {
 				
 				if (rap==ArrayAnalysis.AccessPath.NONE||
 				    !rap.equal(ap)||
-				    !constructarrayupdate(un, ri.getRightExpr(), rap, 1))
+				    !constructarrayupdate(un, e, rap, 1))
 				    continue;
 				if (ar.getRangeSet()!=null)
-				    setmapping.put(ri.getRightExpr(),ar.getRangeSet());
+				    setmapping.put(e,ar.getRangeSet());
 			    }
 			} else {
-			    VarDescriptor vd=((VarExpr)ri.getRightExpr()).getVar();
+			    VarDescriptor vd=((VarExpr)e).getVar();
 			    if (vd.isGlobal()) {
-				Updates up=new Updates(ri.getRightExpr(),1,null);
+				Updates up=new Updates(e,1,null);
 				if (ar.getRangeSet()!=null)
-				    setmapping.put(ri.getRightExpr(),ar.getRangeSet());
+				    setmapping.put(e,ar.getRangeSet());
 				un.addUpdate(up);
 			    }
 			}
 		    }
+		    System.out.println("Built inclusion condition updates.");
 		    //Finally build necessary updates to satisfy conjunction
 		    RuleConjunction ruleconj=dnfrule.get(j);
 
@@ -895,9 +922,13 @@ public class Termination {
 		    TermNode tn=new TermNode(mun);
 		    GraphNode gn2=new GraphNode("UpdateAdd"+addtocount,tn);
 
-		    if (processquantifiers(gn2,un, r,setmapping)&&
+		    if (debugmsg("Start processing quantifiers")&&
+			processquantifiers(gn2,un, r,setmapping)&&
+			debugmsg("Finished processing quantifiers")&&
 			processconjunction(un,ruleconj,setmapping)&&
-			un.checkupdates()) {
+			debugmsg("Finished processing conjunction")&&
+			un.checkupdates()&&
+			debugmsg("Updates checked")) {
 			mun.addUpdate(un);
 			GraphNode.Edge e=new GraphNode.Edge("abstract"+addtocount,gn2);
 			addtocount++;
@@ -907,6 +938,12 @@ public class Termination {
 		}
 	    }
 	}
+
+    }
+
+    boolean debugmsg(String st) {
+	System.out.println(st);
+	return true;
     }
 
     boolean constructarrayupdate(UpdateNode un, Expr lexpr, ArrayAnalysis.AccessPath ap, int slotnumber) {
@@ -959,9 +996,21 @@ public class Termination {
 		}
 		if(inc instanceof SetInclusion) {
 		    SetInclusion si=(SetInclusion)inc;
-		    if ((si.elementexpr instanceof VarExpr)&&
-			(((VarExpr)si.elementexpr).getVar()==vd)) {
+		    Expr tmpe=si.elementexpr;
+		    Expr e=si.elementexpr;
+
+		    while(e instanceof CastExpr) {
+			CastExpr ce=(CastExpr)e;
+			if (ce.getType()!=si.getSet().getType())
+			    return false;
+			e=ce.getExpr();
+		    }
+		    
+		    if ((e instanceof VarExpr)&&
+			(((VarExpr)e).getVar()==vd)) {
 			/* Can solve for v */
+			if (!si.getSet().getType().isSubtypeOf(set.getType()))
+			    return false;
 			Binding binding=new Binding(vd,0);
 			bindings.add(binding);
 		    } else {
@@ -971,18 +1020,43 @@ public class Termination {
 		    RelationInclusion ri=(RelationInclusion)inc;
 		    boolean f1=true;
 		    boolean f2=true;
-		    if ((ri.getLeftExpr() instanceof VarExpr)&&
-			(((VarExpr)ri.getLeftExpr()).getVar()==vd)) {
+
+		    Expr e=ri.getLeftExpr();
+
+		    while(e instanceof CastExpr) {
+			CastExpr ce=(CastExpr)e;
+			if (ce.getType()!=ri.getRelation().getDomain().getType())
+			    return false;
+			e=ce.getExpr();
+		    }
+		    
+		    if ((e instanceof VarExpr)&&
+			(((VarExpr)e).getVar()==vd)) {
 				/* Can solve for v */
 			Binding binding=new Binding(vd,0);
+			if (!ri.getRelation().getDomain().getType().isSubtypeOf(set.getType()))
+			    return false;
 			if (ar.getDomainSet()!=null)
 			    setmapping.put(ri.getLeftExpr(),ar.getDomainSet());
 			bindings.add(binding);
 		    } else f1=false;
-		    if ((ri.getRightExpr() instanceof VarExpr)&&
-			(((VarExpr)ri.getRightExpr()).getVar()==vd)) {
+
+
+		    e=ri.getRightExpr();
+
+		    while(e instanceof CastExpr) {
+			CastExpr ce=(CastExpr)e;
+			if (ce.getType()!=ri.getRelation().getRange().getType())
+			    return false;
+			e=ce.getExpr();
+		    }
+		    
+		    if ((e instanceof VarExpr)&&
+			(((VarExpr)e).getVar()==vd)) {
 				/* Can solve for v */
-			Binding binding=new Binding(vd,0);
+			Binding binding=new Binding(vd,1);
+			if (!ri.getRelation().getRange().getType().isSubtypeOf(set.getType()))
+			    return false;
 			if (ar.getRangeSet()!=null)
 			    setmapping.put(ri.getRightExpr(),ar.getRangeSet());
 			bindings.add(binding);
@@ -1009,12 +1083,26 @@ public class Termination {
 		RelationQuantifier rq=(RelationQuantifier)q;
 		for(int k=0;k<2;k++) {
 		    VarDescriptor vd=(k==0)?rq.x:rq.y;
+		    TypeDescriptor td=(k==0)?rq.getRelation().getDomain().getType():rq.getRelation().getRange().getType();
 		    if(inc instanceof SetInclusion) {
 			SetInclusion si=(SetInclusion)inc;
-			if ((si.elementexpr instanceof VarExpr)&&
-			    (((VarExpr)si.elementexpr).getVar()==vd)) {
+
+			Expr e=si.elementexpr;
+			
+			while(e instanceof CastExpr) {
+			    CastExpr ce=(CastExpr)e;
+			    if (ce.getType()!=td)
+				return false;
+			    e=ce.getExpr();
+			}
+
+			if ((e instanceof VarExpr)&&
+			    (((VarExpr)e).getVar()==vd)) {
 			    /* Can solve for v */
 			    Binding binding=new Binding(vd,0);
+
+			    if (!si.getSet().getType().isSubtypeOf(td))
+				return false;
 			    bindings.add(binding);
 			} else
 			    goodupdate=false;
@@ -1022,18 +1110,42 @@ public class Termination {
 			RelationInclusion ri=(RelationInclusion)inc;
 			boolean f1=true;
 			boolean f2=true;
+
+
+			Expr e=ri.getLeftExpr();
+			
+			while(e instanceof CastExpr) {
+			    CastExpr ce=(CastExpr)e;
+			    if (ce.getType()!=ri.getRelation().getDomain().getType())
+				return false;
+			    e=ce.getExpr();
+			}
 			if ((ri.getLeftExpr() instanceof VarExpr)&&
 			    (((VarExpr)ri.getLeftExpr()).getVar()==vd)) {
 			    /* Can solve for v */
 			    Binding binding=new Binding(vd,0);
+			    if (!ri.getRelation().getDomain().getType().isSubtypeOf(td))
+				return false;
 			    if (ar.getDomainSet()!=null)
 				setmapping.put(ri.getLeftExpr(),ar.getDomainSet());
 			    bindings.add(binding);
 			} else f1=false;
+
+
+			e=ri.getRightExpr();
+			
+			while(e instanceof CastExpr) {
+			    CastExpr ce=(CastExpr)e;
+			    if (ce.getType()!=ri.getRelation().getRange().getType())
+				return false;
+			    e=ce.getExpr();
+			}
 			if ((ri.getRightExpr() instanceof VarExpr)&&
 			    (((VarExpr)ri.getRightExpr()).getVar()==vd)) {
 			    /* Can solve for v */
-			    Binding binding=new Binding(vd,0);
+			    Binding binding=new Binding(vd,1);
+			    if (!ri.getRelation().getRange().getType().isSubtypeOf(td))
+				return false;
 			    if (ar.getRangeSet()!=null)
 				setmapping.put(ri.getRightExpr(),ar.getRangeSet());
 			    bindings.add(binding);
@@ -1065,7 +1177,6 @@ public class Termination {
 	for(Iterator iterator=r.quantifiers();iterator.hasNext();) {
 	    Quantifier q=(Quantifier)iterator.next();
 	    /* Add quantifier */
-	    /* FIXME: Analysis to determine when this update is necessary */
 	    if (q instanceof RelationQuantifier) {
 		RelationQuantifier rq=(RelationQuantifier)q;
 		TupleOfExpr toe=new TupleOfExpr(new VarExpr(rq.x),new VarExpr(rq.y),rq.relation);

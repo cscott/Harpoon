@@ -31,6 +31,15 @@ public class ConcreteInterferes {
 		Descriptor updated_des=update.getDescriptor();
 		assert updated_des!=null;
 
+		/* Test to see if the update only effects new
+		   objects and we're only testing for falsifying
+		   model definition rules. */
+		
+		if ((!satisfy)&&updateonlytonewobject(mun,un,update))
+		    continue;
+
+
+
 		// See if the update interferes with the inclusion
 		// condition for the rule
 		if (r.getInclusion().usesDescriptor(updated_des)) {
@@ -58,7 +67,6 @@ public class ConcreteInterferes {
 				ok=true;
 			} else throw new Error();
 		    }
-
 
 		    if (!ok) {
 			if (satisfy) {
@@ -93,6 +101,40 @@ public class ConcreteInterferes {
 		}	    
 	    }
 	}
+	return false;
+    }
+    
+    static private boolean updateonlytonewobject(MultUpdateNode mun, UpdateNode un, Updates updates) {
+	AbstractRepair ar=mun.getRepair();
+	for(int i=0;i<un.numUpdates();i++) {
+	    Updates u=un.getUpdate(i);
+	    if (u.getType()==Updates.POSITION&&
+		ar.isNewObject(u.getRightPos()==0)) {
+		Expr newleftexpr=u.getLeftExpr();
+		Expr leftexpr=updates.getLeftExpr();
+		boolean foundfield=false;
+		while(true) {
+		    if (leftexpr.equals(null,newleftexpr)) {
+			if (foundfield)
+			    return true;
+			else
+			    break;
+		    } else if (leftexpr instanceof DotExpr) {
+			if (!foundfield) {
+			    foundfield=true;
+			} else {
+			    if (((DotExpr)leftexpr).isPtr())
+				break; //if its not a pointer, we're still in the structure
+			}
+			leftexpr=((DotExpr)leftexpr).getExpr();
+		    } else if (leftexpr instanceof CastExpr) {
+			leftexpr=((CastExpr)leftexpr).getExpr();
+		    } else
+			break;
+		}
+	    }
+	}
+
 	return false;
     }
 

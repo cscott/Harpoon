@@ -28,7 +28,16 @@ class AbstractRepair {
 	    return "Unknown";
 	}
     }
-    
+
+    public boolean isNewObject(boolean isdomain) {
+	if (getType()==ADDTOSET) {
+	    return sources.allocSource((SetDescriptor)descriptor);
+	} else if (getType()==ADDTORELATION) {
+	    RelationDescriptor rd=(RelationDescriptor)descriptor;
+	    return sources.relallocSource(rd,isdomain);
+	} else throw new Error("");
+    }
+
     public SetDescriptor getDomainSet() {
 	if (torepair==null)
 	    return null;
