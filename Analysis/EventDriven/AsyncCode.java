@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.11 2000-01-05 18:13:46 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.12 2000-01-05 20:20:55 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -265,6 +265,13 @@ public class AsyncCode {
 	}
 
 	public void addEdges(Quad q, int resumeexception) {
+	    QuadFactory qf=hcode.getFactory();
+	    TempFactory tf=qf.tempFactory();
+	    FOOTER footer=new FOOTER(qf, null, linkFooters.size());
+	    Iterator fiterator=linkFooters.iterator();
+	    int count=0;
+	    while(fiterator.hasNext())
+		Quad.addEdge((Quad)fiterator.next(), 0, footer, count++);
 	    if (resumeexception!=-1) {
 		//Need to build headers here....[continuation]
 		//Need to load environment object and result codes
@@ -288,8 +295,6 @@ public class AsyncCode {
 		    }
 		}
 		//Need to build header
-		QuadFactory qf=hcode.getFactory();
-		TempFactory tf=qf.tempFactory();
 		Quad first=(Quad) quadmap.get(q.next(resumeexception));
 		Temp oldrtemp=
 		    (resumeexception == 0) ?
@@ -304,6 +309,7 @@ public class AsyncCode {
 		}
 		params[0]=tthis;
 		HEADER header=new HEADER(qf,first);
+		Quad.addEdge(header,0,footer,0);
 		METHOD method=new METHOD(qf,first,params,1);
 		Quad.addEdge(header,1,method,0);
 		Temp tenv=new Temp(tf);
@@ -363,6 +369,8 @@ public class AsyncCode {
 			}
 		    }
 		}
+		//swap in new footer
+		Quad.addEdge(q,0, footer,0);
 		hcode.quadSet((Quad)quadmap.get(q));
 	    }
 	}
@@ -484,12 +492,11 @@ public class AsyncCode {
 		HConstructor constructor=continuation.getConstructor(new HClass[]{ret});
 		Temp newt=new Temp(tf);
 		NEW newq=new NEW(hcode.getFactory(),q,newt, continuation);
-		CALL call;
 		//***** Tailcall eventually
 		    //need to do get next first
 		Temp nretval=ctmap.tempMap(q.throwable());
 		Temp retex=new Temp(tf);
-		call=new CALL(hcode.getFactory(), q, constructor,
+		CALL call=new CALL(hcode.getFactory(), q, constructor,
 			      new Temp[] {newt,nretval}, null,retex,
 			      true,false,new Temp[0]);
 		Quad.addEdge(newq,0,call,0);
@@ -510,6 +517,7 @@ public class AsyncCode {
       	}
 
 	public void visit(CALL q) {
+	    TempFactory tf=hcode.getFactory().tempFactory();
 	    if (blockingcalls.contains(q.method())) {
 		if (!cont_map.containsKey(q)) {
 		    cont_todo.add(q);
@@ -529,44 +537,92 @@ public class AsyncCode {
 		    }
 		}
 		//rewrite blocking call
-		
+		Temp[] newt=new Temp[q.paramsLength()];
+		Temp retex=new Temp(tf);
+		Temp retcont=new Temp(tf);
+		for(int i=0;i<q.paramsLength();i++)
+		    newt[i]=ctmap.tempMap(q.params(i));
+		HMethod calleemethod=(HMethod)old2new.get(q.method());
+		CALL call=new CALL(hcode.getFactory(),q,
+				   calleemethod, newt,
+				   retcont,retex, q.isVirtual(), q.isTailCall(),
+				   new Temp[0]);
+		PHI phi=new PHI(hcode.getFactory(), q, new Temp[0], isCont?4:3);
+		Quad.addEdge(call,1,phi,0);
+		Temp tcont=new Temp(tf);
+		HClass contclass=(HClass)cont_map.get(q);
+		NEW newc=new NEW(hcode.getFactory(), q, tcont, contclass);
+		Quad.addEdge(call,0,newc,0);
+		//constructor call=not virtual
+		CALL call2=new CALL(hcode.getFactory(),q,
+				    contclass.getConstructor(new HClass[0]),
+				    new Temp[] {tcont}, null, retex, 
+				    false, false, new Temp[0]);
+		Quad.addEdge(newc,0,call2,0);
+		Quad.addEdge(newc,1,phi,1);
+		HClass rettype=hc.getMethod().getReturnType();
+		String pref = 
+		    ContBuilder.getPrefix(rettype);
+		HMethod setnextmethod=
+		    calleemethod.getReturnType().getMethod("setNext",
+							  new HClass[] {HClass.forName("harpoon.Analysis.ContBuilder."+pref+"ResultContinuation")});
+		Util.assert(setnextmethod!=null,"no setNext method found");
+		CALL call3=new CALL(hcode.getFactory(), q,
+				    setnextmethod, new Temp[] {retcont, tcont},
+				    null, retex, true, false, new Temp[0]);
+		Quad.addEdge(call2, 0, call3, 0);
+		Quad.addEdge(call3, 1, phi, 2);
+		if (isCont) {
+		    Temp tnext=new Temp(tf);
+		    HClass hclass=hcode.getMethod().getDeclaringClass();
+		    HField hfield=hclass.getField("next");
+		    GET get=new GET(hcode.getFactory(),q,
+				    tnext, hfield, tthis);
+		    Quad.addEdge(call3,0,get,0);
+		    HMethod setnextmethod2=
+			hcode.getMethod().getReturnType().getMethod("setNext",
+							       new HClass[] {HClass.forName("harpoon.Analysis.ContBuilder."+pref+"ResultContinuation")});
 
+		    Util.assert(setnextmethod2!=null,"no setNext method found");
+		    CALL call4=new CALL(hcode.getFactory(), q,
+					setnextmethod2, new Temp[] {tcont, tnext},
+					null, retex, true, false, new Temp[0]);
+		    Quad.addEdge(get,0,call4,0);
+		    Quad.addEdge(call4,1,phi,3);
+		    RETURN returnq=new RETURN(hcode.getFactory(), q, null);
+		    Quad.addEdge(call4,0,returnq,0);
+		    linkFooters.add(returnq);
+		} else {
+		    RETURN returnq=new RETURN(hcode.getFactory(),q,tcont);
+		    Quad.addEdge(call3, 0, returnq,0);
+		    linkFooters.add(returnq);
+		}
+		THROW throwq=new THROW(hcode.getFactory(),q,retex);    
+		Quad.addEdge(phi,0,throwq,0);
+		linkFooters.add(throwq);
+		quadmap.put(q,call);
 		followchildren=false;
 	    } else {
 		followchildren=true;
 		//need to check if swop necessary
+		final HMethod gis=HClass.forName("java.net.Socket").getDeclaredMethod("getInputStream", new HClass[0]);
+		if (gis.compareTo(q.method())==0) {
+		    //need to swop
+		    final HMethod gais = 
+			HClass.forName("java.net.Socket").getDeclaredMethod
+			("getAsyncInputStream", new HClass[0]);   
+		    quadmap.put(q,new CALL(hcode.getFactory(), q, gais,
+				       new Temp[0], ctmap.tempMap(q.retval()),
+				       ctmap.tempMap(q.retex()), q.isVirtual(),
+				       q.isTailCall(), new Temp[0]));
 
-		quadmap.put(q, q.clone(hcode.getFactory(), ctmap));
+		}
+		else
+		    quadmap.put(q, q.clone(hcode.getFactory(), ctmap));
 	    }
 	}
     }
 
-//      // swop out all the calls to Socket.getInputStream and 
-//      // replace with calls to Socket.getAsyncInputStream:
-//      private void swop(Set s, Map quadmap) {
-//  	final HMethod gais = 
-//  	    HClass.forName("java.net.Socket").getDeclaredMethod
-//  	    ("getAsyncInputStream", new HClass[0]);
-//  	for (Iterator i=s.iterator(); i.hasNext(); ) {
-//  	    CALL cts = (CALL)quadmap.get(i.next()); // call to swop
-//  	    CALL replacement = new CALL(this.qf, cts, gais, cts.params(),
-//  					cts.retval(), cts.retex(), 
-//  					cts.isVirtual(), cts.isTailCall(),
-//  					new Temp[0]);
-//  	    // hook up all incoming edges
-//  	    Edge[] pe = cts.prevEdge();
-//  	    for (int j=0; j<pe.length; j++) {
-//  		Quad.addEdge((Quad)pe[j].from(), pe[j].which_succ(), 
-//  			     replacement, pe[j].which_pred());
-//  	    }
-//  	    // hook up outgoing edges
-//  	    Edge[] ne = cts.nextEdge();
-//  	    for (int j=0; j<ne.length; j++) {
-//  		Quad.addEdge(replacement, ne[j].which_succ(),
-//  			     (Quad)ne[j].to(), ne[j].which_pred());
-//  	    }
-//  	}
-//      }
 
     // create asynchronous version of HMethod to replace blocking version
     // does not create HCode that goes w/ it...
