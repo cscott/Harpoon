@@ -7,7 +7,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFile.java,v 1.14 1998-08-03 08:24:56 cananian Exp $
+ * @version $Id: ClassFile.java,v 1.15 1998-08-03 08:27:38 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 
@@ -273,8 +273,9 @@ public class ClassFile {
       indent(pw, in+2, "Constant {"+i+"}:");
       constant_pool[i].print(pw, in+3);
       if (constant_pool[i] instanceof ConstantLong ||
-	  constant_pool[i] instanceof ConstantDouble) // takes two entries
-	i++;
+	  constant_pool[i] instanceof ConstantDouble) { // takes two entries
+	indent(pw, in+2, "Constant {"+ (++i) +"} is invalid.");
+      }
     }
     // this class information
     indent(pw, in+1, "Access Flags: " + access_flags);
