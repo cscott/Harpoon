@@ -2,8 +2,9 @@
 package harpoon.IR.Tree;
 
 import harpoon.Temp.CloningTempMap;
-import harpoon.Util.HashSet;
-import harpoon.Util.Set;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * <code>Stm</code> objects are statements which perform side effects and
@@ -11,11 +12,16 @@ import harpoon.Util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Stm.java,v 1.1.2.6 1999-05-10 02:07:39 duncan Exp $
+ * @version $Id: Stm.java,v 1.1.2.7 1999-07-07 09:47:24 duncan Exp $
  */
 abstract public class Stm extends Tree {
     protected Stm(TreeFactory tf, harpoon.ClassFile.HCodeElement source) {
 	super(tf, source);
+    }
+    
+    protected Stm(TreeFactory tf, harpoon.ClassFile.HCodeElement source,
+		  int next_arity) {
+	super(tf, source, next_arity);
     }
 
     /** Build an <code>Stm</code> of this type from the given list of

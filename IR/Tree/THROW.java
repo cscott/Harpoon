@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  *
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: THROW.java,v 1.1.2.4 1999-06-29 07:34:53 cananian Exp $
+ * @version  $Id: THROW.java,v 1.1.2.5 1999-07-07 09:47:24 duncan Exp $
  */
 public class THROW extends Stm implements Typed {
     /** The exceptional value to return */
@@ -20,7 +20,7 @@ public class THROW extends Stm implements Typed {
      */
     public THROW(TreeFactory tf, HCodeElement source, 
 		 Exp retex) {
-	super(tf, source);
+	super(tf, source, 0);
 	this.retex=retex;
 	Util.assert(retex.type()==POINTER);
     }		

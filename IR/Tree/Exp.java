@@ -2,8 +2,9 @@
 package harpoon.IR.Tree;
 
 import harpoon.Temp.CloningTempMap;
-import harpoon.Util.HashSet;
-import harpoon.Util.Set;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * <code>Exp</code> objects are expressions which stand for the computation
@@ -11,11 +12,11 @@ import harpoon.Util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Exp.java,v 1.1.2.6 1999-06-29 05:43:53 cananian Exp $
+ * @version $Id: Exp.java,v 1.1.2.7 1999-07-07 09:47:24 duncan Exp $
  */
 abstract public class Exp extends Tree implements Typed {
     protected Exp(TreeFactory tf, harpoon.ClassFile.HCodeElement source) {
-	super(tf, source);
+	super(tf, source, 0);
     }
   
     // Only ESEQs can define anything, and they are not permitted in 
@@ -29,7 +30,7 @@ abstract public class Exp extends Tree implements Typed {
     /** Build an <code>Exp</code> of this type from the given list of
      *  subexpressions. */
     abstract public Exp build(ExpList kids);
-    
+
     public abstract Tree rename(TreeFactory tf, CloningTempMap ctm);
 
     // Typed interface:

@@ -4,29 +4,31 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.ArrayIterator;
 import harpoon.Util.CombineIterator;
-import harpoon.Util.HashSet;
-import harpoon.Util.Set;
 import harpoon.Util.Util;
 
 import java.util.AbstractCollection;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
+
 /**
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.9 1999-06-28 18:49:16 duncan Exp $
+ * @version $Id: Tree.java,v 1.1.2.10 1999-07-07 09:47:24 duncan Exp $
  */
 public abstract class Tree 
-    implements harpoon.ClassFile.HCodeElement, 
+    implements HCodeElement, 
 	       harpoon.IR.Properties.UseDef,
 	       harpoon.IR.Properties.HasEdges
 {
@@ -35,9 +37,8 @@ public abstract class Tree
     final int source_line;
     final int id;
     final private int hashCode;
-    
-    /** Creates a <code>Tree</code>. */
-    protected Tree(TreeFactory tf, harpoon.ClassFile.HCodeElement source) {
+
+    protected Tree(TreeFactory tf, HCodeElement source, int next_arity) { 
         Util.assert(tf!=null);
 	this.source_file = (source!=null)?source.getSourceFile():"unknown";
 	this.source_line = (source!=null)?source.getLineNumber(): 0;
@@ -45,6 +46,15 @@ public abstract class Tree
 	this.tf = tf;
 	// cache hashcode for efficiency.
 	this.hashCode = this.id ^ tf.getParent().hashCode();
+	
+	// Only next_arity can be determined from the type of the Tree object.
+	// We must use the EdgeInitializer class to compute prev_arity
+	this.next = new Edge[next_arity];
+    }
+	
+    /** Creates a <code>Tree</code>. */
+    protected Tree(TreeFactory tf, HCodeElement source) {
+	this(tf, source, 1);
     }
 
     /** Returns the Temps defined by this tree.  Can only be used in
@@ -54,8 +64,8 @@ public abstract class Tree
 	Util.assert(((Code)tf.getParent()).isCanonical());
 
 	Set defSet = defSet();
-	Temp[] def = new Temp[defSet.size()];
-	defSet.copyInto(def);
+	Temp[] def = (Temp[])defSet.toArray(new Temp[0]); 
+	//defSet.copyInto(def);
 
 	return def;
     }
@@ -67,8 +77,8 @@ public abstract class Tree
 	Util.assert(((Code)tf.getParent()).isCanonical());
 
 	Set useSet = useSet();
-	Temp[] use = new Temp[useSet.size()];
-	useSet.copyInto(use);
+	Temp[] use = (Temp[])useSet.toArray(new Temp[0]); 
+	//useSet.copyInto(use);
 	
 	return use;
     }

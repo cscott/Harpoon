@@ -9,7 +9,7 @@ import harpoon.Temp.CloningTempMap;
  *
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: RETURN.java,v 1.1.2.4 1999-06-29 05:43:53 cananian Exp $
+ * @version  $Id: RETURN.java,v 1.1.2.5 1999-07-07 09:47:24 duncan Exp $
  */
 public class RETURN extends Stm implements Typed {
     /** The value to return */
@@ -20,7 +20,7 @@ public class RETURN extends Stm implements Typed {
      */
     public RETURN(TreeFactory tf, HCodeElement source, 
 		  Exp retval) {
-	super(tf, source);
+	super(tf, source, 0);
 	this.retval=retval;
     }		
   

@@ -49,7 +49,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.13 1999-06-28 18:55:37 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.14 1999-07-07 09:47:24 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -1194,7 +1194,8 @@ class TranslationVisitor extends LowQuadVisitor {
 	     interfaceLabel, 
 	     new MEM(m_tf, classPtr, Type.POINTER, interfacePtr));
 
-	
+	// Check if we have reached the end of the interface list
+	//
 	s4 = new CJUMP
 	    (m_tf, classPtr, 
 	     new BINOP
@@ -1205,7 +1206,9 @@ class TranslationVisitor extends LowQuadVisitor {
 	     next.label);
 
 	s5 = next;
-
+	
+	// See if we've found the correct label
+	// 
 	s6 = new CJUMP
 	     (m_tf, classPtr, 
 	      new BINOP
@@ -1215,11 +1218,16 @@ class TranslationVisitor extends LowQuadVisitor {
 	      successLabel.label,
 	      loop.label);
 
+	// We've reached the end of the interface list without finding 
+	// a match.  Return 0.
+	// 
 	s7 = failureLabel;
 	
 	s8 = new MOVE(m_tf, classPtr, result, new CONST(m_tf, classPtr, 0));
 	s9 = new JUMP(m_tf, classPtr, endLabel.label);
 
+	// We found the interface label we wanted.  Yay!  Return 1.
+	// 
 	s10 = successLabel;
 	s11 = new MOVE(m_tf, classPtr, result, new CONST(m_tf, classPtr, 1));
 

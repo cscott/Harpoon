@@ -3,11 +3,11 @@ package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
-import harpoon.Util.HashSet;
-import harpoon.Util.Set;
 import harpoon.Util.Util;
 
-import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 
 /**
@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.9 1999-06-29 07:34:53 cananian Exp $
+ * @version $Id: MOVE.java,v 1.1.2.10 1999-07-07 09:47:24 duncan Exp $
  */
 public class MOVE extends Stm implements Typed {
     /** The expression giving the destination for the computed value. */
@@ -41,26 +41,17 @@ public class MOVE extends Stm implements Typed {
     }
   
     protected Set defSet() { 
-	HashSet def = new HashSet();
-	if (dst.kind()==TreeKind.TEMP) { 
-	    def.union(((TEMP)dst).temp);
-	}
+	Set def = new HashSet();
+	if (dst.kind()==TreeKind.TEMP) def.add(((TEMP)dst).temp);
 	return def;
     }
 	
     protected Set useSet() { 
-	HashSet use = new HashSet();
-	Set srcUse = src.useSet();
-	for (Enumeration e = srcUse.elements(); e.hasMoreElements();) {
-	    use.union(e.nextElement());
-	}
-	if (!(dst.kind()==TreeKind.TEMP)) { 
-	    Set dstUse = dst.useSet();
-	    for (Enumeration e = dstUse.elements(); e.hasMoreElements();) {
-		use.union(e.nextElement());
-	    }
-	}
-	return use;
+	Set uses = new HashSet();
+	uses.addAll(src.useSet());
+	if (!(dst.kind()==TreeKind.TEMP)) uses.addAll(dst.useSet());
+
+	return uses;
     }
 
     public ExpList kids() {

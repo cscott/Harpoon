@@ -4,9 +4,10 @@ package harpoon.IR.Tree;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
-import harpoon.Util.HashSet;
-import harpoon.Util.Set;
 import harpoon.Util.Util;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * <code>TEMP</code> objects are expressions which stand for a
@@ -14,7 +15,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.1.2.14 1999-06-29 05:43:53 cananian Exp $
+ * @version $Id: TEMP.java,v 1.1.2.15 1999-07-07 09:47:24 duncan Exp $
  */
 public class TEMP extends Exp {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -32,8 +33,8 @@ public class TEMP extends Exp {
     }
     
     public Set useSet() {
-	HashSet set = new HashSet();
-	set.union(temp);
+	Set set = new HashSet();
+	set.add(temp);
 	return set;
     }
   

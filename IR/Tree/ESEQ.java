@@ -3,9 +3,10 @@ package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
-import harpoon.Util.HashSet;
-import harpoon.Util.Set;
 import harpoon.Util.Util;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * <code>ESEQ</code> objects are expressions which chain a statement and
@@ -15,7 +16,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.8 1999-06-29 05:43:53 cananian Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.9 1999-07-07 09:47:24 duncan Exp $
  */
 public class ESEQ extends Exp {
     /** The statement to evaluate for side-effects. */

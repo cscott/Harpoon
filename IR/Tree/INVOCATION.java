@@ -2,11 +2,11 @@ package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
-import harpoon.Util.HashSet;
-import harpoon.Util.Set;
 import harpoon.Util.Util;
 
-import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
+
 
 /**
  * <code>INVOCATION</code> objects are statements which stand for 
@@ -16,7 +16,7 @@ import java.util.Enumeration;
  * 
  * @author  Duncan Bryce, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.4 1999-06-28 18:51:24 duncan Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.5 1999-07-07 09:47:24 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL
@@ -42,40 +42,19 @@ public abstract class INVOCATION extends Stm {
     }
 
     protected Set defSet() { 
-	HashSet def = new HashSet();
-	if (retval.kind()==TreeKind.TEMP) { 
-	    def.union(((TEMP)retval).temp);
-	}
-	if (retex.kind()==TreeKind.TEMP) { 
-	    def.union(((TEMP)retex).temp);
-	}
+	Set def = new HashSet();
+	if (retval.kind()==TreeKind.TEMP) def.add(((TEMP)retval).temp);
+	if (retex.kind()==TreeKind.TEMP)  def.add(((TEMP)retex).temp);
 	return def;
     }
 
     protected Set useSet() {
-	HashSet use = new HashSet();
-	Set argsUse = ExpList.useSet(args);
-	for (Enumeration e = argsUse.elements(); e.hasMoreElements();) { 
-	    use.union(e.nextElement());
-	}
-	Set funcUse = func.useSet();
-	for (Enumeration e = funcUse.elements(); e.hasMoreElements();) { 
-	    use.union(e.nextElement());
-	}
-
-	if (!(retval.kind()==TreeKind.TEMP)) { 
-	    Set retvalUse = retval.useSet();
-	    for (Enumeration e = retvalUse.elements(); e.hasMoreElements();) {
-		use.union(e.nextElement());
-	    }
-	}
-	if (!(retex.kind()==TreeKind.TEMP)) { 
-	    Set retexUse = retex.useSet();
-	    for (Enumeration e = retexUse.elements(); e.hasMoreElements();) { 
-		use.union(e.nextElement());
-	    }
-	}
-	return use;
+	Set uses = new HashSet();
+	uses.addAll(ExpList.useSet(args));
+	uses.addAll(func.useSet());
+	if (!(retval.kind()==TreeKind.TEMP)) uses.addAll(retval.useSet());
+	if (!(retex.kind()==TreeKind.TEMP))  uses.addAll(retex.useSet());
+	return uses;
     }
     
     abstract public boolean isNative();
@@ -85,5 +64,3 @@ public abstract class INVOCATION extends Stm {
     abstract public Tree rename(TreeFactory tf, CloningTempMap ctm);
 }
  
-
-
