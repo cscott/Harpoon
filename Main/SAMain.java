@@ -74,7 +74,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.105 2000-11-09 01:21:08 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.106 2000-11-09 04:21:44 bdemsky Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -215,17 +215,17 @@ public class SAMain extends harpoon.IR.Registration {
 		ObjectOutputStream ois =
 		    new ObjectOutputStream(new FileOutputStream(IFILE));
 		ois.writeObject(an);
+		ois.writeObject(linker);
 		ois.close();
 		} catch (java.io.IOException e) {
 		    System.out.println(e + " was thrown:");
 		    e.printStackTrace(System.out);
 		}
 		System.exit(1);
-		/*
-		insta=new InstrumentAllocs(hcf, mainM, linker);
-		hcf=insta.codeFactory();
-		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-		*/
+		
+		insta=new InstrumentAllocs(hcf, mainM, linker, an);
+ 		hcf=insta.codeFactory();
+	 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
 	} // don't need the root set anymore.
 
@@ -269,9 +269,10 @@ public class SAMain extends harpoon.IR.Registration {
 	if (LOOPOPTIMIZE) {
 	    // XXX: you might have to add a TypeSwitchRemover here, if
 	    //      LoopOptimize don't handle TYPESWITCHes. --CSA
+	    System.out.println("Loop Optimizations On");
 	    hcf=harpoon.IR.LowQuad.LowQuadSSI.codeFactory(hcf);
 	    hcf=harpoon.Analysis.LowQuad.Loop.LoopOptimize.codeFactory(hcf);
-	    //hcf=harpoon.IR.LowQuad.DerivationChecker.codeFactory(hcf);
+	    hcf=harpoon.IR.LowQuad.DerivationChecker.codeFactory(hcf);
 	}
 	hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
 	// XXX: ToTree doesn't handle TYPESWITCHes right now.
@@ -344,20 +345,6 @@ public class SAMain extends harpoon.IR.Registration {
 		} catch (IOException e) {
 		    System.err.println("Error outputting class "+
 				       hclass.getName());
-		    System.exit(1);
-		}
-	    }
-	    if (INSTRUMENT_ALLOCS) {
-		System.out.println("Serializing Instrumentation to "+IFILE);
-		try {
-		    ObjectOutputStream ois =
-			new ObjectOutputStream(new FileOutputStream(IFILE));
-		    ois.writeObject(insta.parent());
-		    ois.writeObject(insta.toint());
-		    ois.writeObject(insta.toalloc());
-		    ois.close();
-		} catch (Exception e) {
-		    System.out.println(e + " was thrown");
 		    System.exit(1);
 		}
 	    }

@@ -30,38 +30,23 @@ import java.util.Map;
  * <code>InstrumentAllocs</code> adds counters to each allocation site.
  * 
  * @author  root <root@BDEMSKY.MIT.EDU>
- * @version $Id: InstrumentAllocs.java,v 1.1.2.1 2000-11-09 00:50:55 cananian Exp $
+ * @version $Id: InstrumentAllocs.java,v 1.1.2.2 2000-11-09 04:21:19 bdemsky Exp $
  */
 public class InstrumentAllocs extends MethodMutator implements java.io.Serializable {
-    HashMap toint;
-    HashMap toalloc;
     int count;
     HMethod main;
     Linker linker;
     HCodeFactory parenthcf;
-    
+    AllocationNumbering an;
+
     /** Creates a <code>InstrumentAllocs</code>. */
-    public InstrumentAllocs(HCodeFactory parent, HMethod main, Linker linker) {
+    public InstrumentAllocs(HCodeFactory parent, HMethod main, Linker linker,AllocationNumbering an) {
         super(parent);
 	parenthcf=parent;
-	toint=new HashMap();
-	toalloc=new HashMap();
 	count=0;
 	this.main=main;
 	this.linker=linker;
-    }
-
-    /** Maps <code>NEW</code> and <code>ANEW</code>'s to corresponding integer
-     *  identifiers.*/
-
-    public Map toint() {
-	return toint;
-    }
-
-    /** Maps integer indentifiers to corresponding <code>NEW</code> and <code>ANEW</code>'s.*/
-
-    public Map toalloc() {
-	return toalloc;
+	this.an=an;
     }
 
     public HCodeFactory parent() {
@@ -76,13 +61,8 @@ public class InstrumentAllocs extends MethodMutator implements java.io.Serializa
 	    Iterator it=hc.getElementsI();
 	    while(it.hasNext()) {
 		Quad q=(Quad)it.next();
-		if ((q instanceof NEW)||(q instanceof ANEW)) {
+		if ((q instanceof NEW)||(q instanceof ANEW))
 		    newset.add(q);
-		    if (!toint.containsKey(q)) {
-			toint.put(ancestor.get(q),new Integer(count));
-			toalloc.put(new Integer(count++),ancestor.get(q));
-		    }
-		}
 	    }
 	    Iterator setit=newset.iterator();
 	    HMethod method=linker.forName("harpoon.Runtime.CounterSupport").getMethod("count",new HClass[]{HClass.Int});
@@ -93,7 +73,7 @@ public class InstrumentAllocs extends MethodMutator implements java.io.Serializa
 		TempFactory tf=qf.tempFactory();
 		Temp tconst=new Temp(tf);
 		Temp texcept=new Temp(tf);
-		CONST qconst=new CONST(qf,q,tconst,toint.get(ancestor.get(q)),HClass.Int);
+		CONST qconst=new CONST(qf,q,tconst,new Integer(an.allocID((Quad)ancestor.get(q))),HClass.Int);
 		CALL qcall=new CALL(qf, q, method,new Temp[] {tconst}, null, texcept,false,false,new Temp[0][2],new Temp[0]);
 		PHI qphi=new PHI(qf,q,new Temp[0],new Temp[0][2],2);
 		Quad.addEdge(qconst,0,qcall,0);

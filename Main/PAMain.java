@@ -53,6 +53,7 @@ import harpoon.Util.DataStructs.Relation;
 import harpoon.Analysis.PointerAnalysis.MAInfo;
 import harpoon.Analysis.PointerAnalysis.SyncElimination;
 import harpoon.Analysis.PointerAnalysis.InstrumentSyncOps;
+import harpoon.Analysis.PointerAnalysis.AllocationNumbering;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
@@ -82,7 +83,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.79 2000-11-09 01:05:42 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.80 2000-11-09 04:21:44 bdemsky Exp $
  */
 public abstract class PAMain {
 
@@ -150,8 +151,7 @@ public abstract class PAMain {
     // the main method
     private static HMethod hroot = null;
 
-    private static Map toint=null;
-    private static Map toalloc=null;
+    private static AllocationNumbering an=null;
     private static long[] profile=null;
 
     // list to maintain the methods to be analyzed
@@ -528,13 +528,13 @@ public abstract class PAMain {
 		try {
 		    ObjectInputStream ois =
 			new ObjectInputStream(new FileInputStream(arg));
-		    hcf=(HCodeFactory)ois.readObject();
-		    toint=(Map)ois.readObject();
-		    toalloc=(Map)ois.readObject();
+		    an=(AllocationNumbering)ois.readObject();
+		    hcf=an.codeFactory();
 		    linker=(Linker)ois.readObject();
 		    ois.close();
 		} catch (Exception e) {
 		    System.out.println(e + " was thrown");
+		    e.printStackTrace();
 		    System.exit(1);
 		}
                 break;
