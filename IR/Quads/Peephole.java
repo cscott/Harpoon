@@ -20,7 +20,7 @@ import java.util.Set;
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.14 2000-01-17 11:10:19 cananian Exp $
+ * @version $Id: Peephole.java,v 1.1.2.15 2000-10-19 23:53:43 cananian Exp $
  */
 
 final class Peephole  {
@@ -239,6 +239,7 @@ final class Peephole  {
 			replace(qq, newquad);
 			lstE=((Quad)lstE.from()).next(0).nextEdge(0);
 		    }
+		    HandlerSet hs=q.handlers();
 		    todo.push(unlink(q));
 		    // usually we relink the MOVE quad before Qp, but
 		    // we'll relink *after* a sigma if we can -- this
@@ -262,7 +263,6 @@ final class Peephole  {
 			    changed=true;
 			    return;
 			}
-			HandlerSet hs=q.handlers();
 			Edge[] el = Qs.nextEdge();
 			for (int i=0; i<el.length; i++) {
 			    MOVE Qm = (i==0) ? q : (MOVE)q.clone();
@@ -273,13 +273,12 @@ final class Peephole  {
 			    Quad.addEdge(Qm, 0,
 					 (Quad)el[i].to(), el[i].which_pred());
 			    // those nasty HANDLERs
-			    if (i==0) continue; // skip next part.
-			    for (HandlerSet hsp=hs; hsp!=null; hsp=hsp.next)
-				hsp.h.protectedSet.insert(Qm);
+			    Qm.addHandlers(hs);
 			}
 		    } else if (moveit) { // relink before Qend
 			Quad.addEdge((Quad)lstE.from(),lstE.which_succ(), q,0);
 			Quad.addEdge(q,0, (Quad)lstE.to(), lstE.which_pred());
+			q.addHandlers(hs);
 		    } else Util.assert(deleteit);
 		    changed=true;
 		} else {
@@ -293,6 +292,7 @@ final class Peephole  {
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
 	    Quad.addEdge((Quad)in.from(), in.which_succ(),
 			 (Quad)out.to(), out.which_pred());
+	    q.removeHandlers(q.handlers());
 	    return (Quad)out.to();
 	}
 	private static boolean isMember(Temp t, Temp[] Tset) {
