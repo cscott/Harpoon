@@ -29,7 +29,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.30 2000-02-15 19:06:02 cananian Exp $
+ * @version $Id: Tree.java,v 1.1.2.31 2000-02-15 20:13:39 cananian Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 
@@ -128,6 +128,8 @@ public abstract class Tree
      * provide named accessors to the public (ie, setDst(), setLeft() ).
      */
     protected final void setChild(int which, Tree newChild) {
+	Util.assert(newChild!=null, "you can't set a tree child to null");
+	Util.assert(newChild.tf==this.tf, "tree factories must match");
 	if (child[which]!=null) child[which].unlink();
 	child[which] = newChild;
 	newChild.parent = this;
