@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.46 1999-09-07 18:52:51 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.47 1999-09-08 23:56:52 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -276,7 +276,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	while(i != null && 
 	      i != next) {
 	    s += i.toString() + " | ";
-	    if (i.next == null) System.out.println("next is null for " + i);
+	    // if (i.next == null) System.out.println("next is null for " + i);
 	    i = i.next;
 	}
 	if (i != null) {
@@ -285,8 +285,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	    s += "null";
 	}
 
-	System.out.println("Changed \n" + prev +" "+ oldi +" "+ next +
-			   "\n to " + s);
+	//System.out.println("Changed \n" + prev +" "+ oldi +" "+ next +"\n to " + s);
     }
 
     private static String pprint(List l) {
