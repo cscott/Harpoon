@@ -63,7 +63,7 @@ import java.util.Collection;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.44 2001-05-15 05:19:03 pnkfelix Exp $ */
+ * @version $Id: BasicBlock.java,v 1.1.2.45 2001-05-15 19:46:37 pnkfelix Exp $ */
 public class BasicBlock implements java.io.Serializable {
     
     static final boolean DEBUG = false;
@@ -702,6 +702,7 @@ public class BasicBlock implements java.io.Serializable {
 	    Util.assert(curr == block.last);
 	    Util.assert(sz == 0);
 	}
+	public void dumpCFG() { dumpCFG(root); }
 
 	public static void dumpCFG(BasicBlock start) {
 	    Enumeration e = new ReversePostOrderEnumerator(start);
