@@ -1,3 +1,7 @@
+---- Sep-04-98
+Make monitor blocks work.
+Enclose synchronized methods in monitor blocks.
+Runtime exception check on MONITOREXIT.
 ---- Aug-25-98
 Figure out if we really need JMP/NOP/LET quads.
 
