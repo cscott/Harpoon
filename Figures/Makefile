@@ -29,10 +29,10 @@ THex1base.tex: $(EX1FIG)
 	| sed -e 's/STMT[3789]//' $(SEDCMD) -e 's/\([PXYZ]\)_[01234]/\1/g'> $@
 
 THundir.tex: THundir.fig
-	fig2dev -L latex -m 0.6 $< \
-	| sed -e 's/\\\$$ni\\\$$/$$n_i$$/' -e 's/\\\$$no\\\$$/$$n_o$$/' \
-	      -e 's/\\\$$n\\\$$/$$n$$/' -e 's/\\\$$n'"'"'\\\$$/$$n'"'"'$$/' \
-	      -e 's/=>/$$\\Longrightarrow$$/' > $@
+	fig2dev -L latex -m 0.6 $< $@
+
+THcqex.tex: THcqex.fig Makefile
+	fig2dev -L latex -m 0.4 $< $@
 
 evil.tex: evil.fig
 	fig2dev -L latex -m 0.25 $< $@

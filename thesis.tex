@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.25 1999-06-11 19:41:48 cananian Exp $
+% $Id: thesis.tex,v 1.26 1999-06-11 21:13:40 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.25 $ $}
+\date{\today \\ $ $Revision: 1.26 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.25 $ $}{$ $Revision: 1.25 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.26 $ $}{$ $Revision: 1.26 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -397,6 +397,12 @@ equivalency as well as \emph{node} equivalency.  Merge algorithms from
 Figure \ref{fig:CQex} shows cycle-equivalent regions in a sample
 control-flow graph.
 
+\begin{myfigure}
+\input{Figures/THcqex}
+\caption{Control flow graph with SESE regions marked}
+\label{fig:CQex}
+\end{myfigure}
+
 \begin{myfigure}\small
 \input{Figures/THcqdata}
 \caption{Datatypes and operations used in the cycle-equivalency algorithm.}
@@ -515,7 +521,7 @@ going to try it the way the outline has it for now.}
 \subsection{Definition}
 \begin{itemize}
 \item \textbf{\xifunction{s}.}
-\item \textbf{Triggered constants.}
+\item \textbf{Triggered constants and CALLs.}
 \end{itemize}
 
 \subsection{Semantics}\label{sec:semantics}
