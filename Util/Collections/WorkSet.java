@@ -18,7 +18,7 @@ import java.io.Serializable;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WorkSet.java,v 1.5 2002-11-29 20:19:46 salcianu Exp $
+ * @version $Id: WorkSet.java,v 1.6 2003-05-06 17:48:26 cananian Exp $
  */
 public class WorkSet<E> extends java.util.AbstractSet<E> implements Worklist<E>, Serializable
 {
@@ -234,6 +234,7 @@ public class WorkSet<E> extends java.util.AbstractSet<E> implements Worklist<E>,
 	}
 	/** Link in the supplied entry after this one. */
 	void add(EntryList<E> nel) {
+	    // always a predecessor and successor.
 	    nel.next = this.next;
 	    nel.prev = this;
 	    this.next = nel.next.prev = nel;
