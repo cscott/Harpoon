@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.82 2000-06-29 02:22:07 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.83 2000-06-29 22:09:13 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -172,12 +172,10 @@ public class SAMain extends harpoon.IR.Registration {
 	    frame = new harpoon.Backend.MIPS.Frame
 		(mainM, classHierarchy, callGraph);
 	    break;
-	    /*
 	case PRECISEC_BACKEND:
 	    frame = new harpoon.Backend.PreciseC.Frame
 		(mainM, classHierarchy, callGraph);
 	    break;
-	    */
 	default: throw new Error("Unknown Backend: "+BACKEND);
 	}
  
@@ -215,8 +213,12 @@ public class SAMain extends harpoon.IR.Registration {
 	Set methods = classHierarchy.callableMethods();
 	Iterator classes = new TreeSet(classHierarchy.classes()).iterator();
 
+	String filesuffix = (BACKEND==PRECISEC_BACKEND) ? ".c" : ".s";
+	if (ONLY_COMPILE_MAIN) classes=Default.singletonIterator(hcl);
+	if (singleClass!=null) classes=Default.singletonIterator(singleClass);
 
-	if (singleClass!=null || !ONLY_COMPILE_MAIN) {
+	if (true) { // this is only here because i don't want to re-indent
+	            // all the code below this point.
 	    while(classes.hasNext()) {
 		HClass hclass = (HClass) classes.next();
 		if (singleClass!=null && singleClass!=hclass) continue;//skip
@@ -227,12 +229,14 @@ public class SAMain extends harpoon.IR.Registration {
 		    out = new PrintWriter
 			(new BufferedWriter
 			 (new FileWriter
-			  (new File(ASSEM_DIR, filename + ".s"))));
+			  (new File(ASSEM_DIR, filename + filesuffix))));
 		    
 		    HMethod[] hmarray = hclass.getDeclaredMethods();
 		    Set hmset = new TreeSet(Arrays.asList(hmarray));
 		    hmset.retainAll(methods);
 		    Iterator hms = hmset.iterator();
+		    if (ONLY_COMPILE_MAIN)
+			hms = Default.singletonIterator(mainM);
 		    message("\t");
 		    while(!hclass.isInterface() && hms.hasNext()) {
 			HMethod m = (HMethod) hms.next();
@@ -257,11 +261,14 @@ public class SAMain extends harpoon.IR.Registration {
 	    // put a proper makefile in the directory.
 	    File makefile = new File(ASSEM_DIR, "Makefile");
 	    InputStream templateStream;
+	    String resourceName="harpoon/Support/nativecode-makefile.template";
+	    if (BACKEND==PRECISEC_BACKEND)
+		resourceName="harpoon/Support/precisec-makefile.template";
 	    if (makefile.exists())
 		System.err.println("WARNING: not overwriting pre-existing "+
 				   "file "+makefile);
 	    else if ((templateStream=ClassLoader.getSystemResourceAsStream
-		      ("harpoon/Support/nativecode-makefile.template"))==null)
+		      (resourceName))==null)
 		System.err.println("WARNING: can't find Makefile template.");
 	    else try {
 		BufferedReader in = new BufferedReader
@@ -274,28 +281,6 @@ public class SAMain extends harpoon.IR.Registration {
 		in.close(); out.close();
 	    } catch (IOException e) {
 		System.err.println("Error writing "+makefile+".");
-		System.exit(-1);
-	    }
-	} else { // ONLY_COMPILE_MAIN
-	    // hcl is our class
-	    // mainM is our method
-
-	    try {
-		String filename = frame.getRuntime().nameMap.mangle(hcl);
-		out = new PrintWriter
-		    (new BufferedWriter
-		     (new FileWriter
-		      (new File(ASSEM_DIR, filename + ".s"))));
-		message("\t");
-		message(mainM.getName());
-		outputMethod(mainM, hcf, sahcf, out);
-		messageln("");
-
-		out.println();
-		out.close();
-	    } catch (IOException e) {
-		System.err.println("Error outputting class "+
-				   hcl.getName());
 		System.exit(-1);
 	    }
 	}
