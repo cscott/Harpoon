@@ -24,7 +24,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.10 1999-06-16 02:34:59 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.11 1999-08-28 00:30:23 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -107,7 +107,8 @@ public abstract class Code extends HCode {
 		for (int j=0; j<2; j++) {
 		    Temp[] ta = (j==0)?q.use():q.def();
 		    for (int i=0; i<ta.length; i++)
-			Util.assert(ta[i].tempFactory()==qf.tempFactory());
+			Util.assert(ta[i].tempFactory()==qf.tempFactory(),
+				    "Temps don't belong to q: "+q);
 		}
 		// okay.
 		return q;
