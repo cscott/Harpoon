@@ -41,6 +41,8 @@ static void TRANSJNI_Abort(JNIEnv *env) {
 
 # else /* !NO_VALUETYPE */
 
+#define OFFSETBASE(x) (((void*)FIELDBASE(o))-((void*)o))
+
 VALUETYPE T(TRANSJNI_Get)(JNIEnv *env, jobject obj, jfieldID fieldID) {
   struct oobj *o = FNI_UNWRAP(obj);
   struct commitrec *cr = currTrans(env);
@@ -48,12 +50,13 @@ VALUETYPE T(TRANSJNI_Get)(JNIEnv *env, jobject obj, jfieldID fieldID) {
   if (cr) { /* in a transaction! */
     assert (fieldID->trans_isvalid);
     EXACT_ensureReader(o, cr);
-    v = T(EXACT_setReadFlags)(o, fieldID->offset, fieldID->trans_bitoff,
-			      1<<fieldID->trans_bitnum, NULL, cr);
-    return T(EXACT_readT)(o, fieldID->offset, v, cr);
+    v = T(EXACT_setReadFlags)(o, fieldID->offset - OFFSETBASE(o),
+			      fieldID->trans_bitoff, 1<<fieldID->trans_bitnum,
+			      NULL, cr);
+    return T(EXACT_readT)(o, fieldID->offset - OFFSETBASE(o), v, cr);
   } else { /* non-transactional read */
-    return T(EXACT_readNT)(o, fieldID->offset, fieldID->trans_bitoff,
-			   1<<fieldID->trans_bitnum);
+    return T(EXACT_readNT)(o, fieldID->offset - OFFSETBASE(o),
+			   fieldID->trans_bitoff, 1<<fieldID->trans_bitnum);
   }
 }
 
@@ -68,14 +71,16 @@ void T(TRANSJNI_Set)(JNIEnv *env, jobject obj, jfieldID fieldID,
     if (v==NULL) { /* transaction wants to commit suicide */
       TRANSJNI_Abort(env); return; // bail.
     }
-    T(EXACT_setWriteFlags)(o, fieldID->offset, fieldID->trans_bitoff,
-			   1<<fieldID->trans_bitnum);
-    T(EXACT_writeT)(o, fieldID->offset, value, v);
+    T(EXACT_setWriteFlags)(o, fieldID->offset - OFFSETBASE(o),
+			   fieldID->trans_bitoff, 1<<fieldID->trans_bitnum);
+    T(EXACT_writeT)(o, fieldID->offset - OFFSETBASE(o), value, v);
   } else { /* non-transactional write */
-    T(EXACT_writeNT)(o, fieldID->offset, value, fieldID->trans_bitoff,
-		     1 << fieldID->trans_bitnum);
+    T(EXACT_writeNT)(o, fieldID->offset - OFFSETBASE(o), value,
+		     fieldID->trans_bitoff, 1 << fieldID->trans_bitnum);
   }
 }
+
+#undef OFFSETBASE
 
 /* all length, etc, checks done before this is invoked */
 VALUETYPE T(TRANSJNI_Get_Array)(JNIEnv *env, struct aarray *arr, int index) {
