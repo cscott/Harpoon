@@ -25,7 +25,7 @@ import java.util.List;
  * dependency order.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataInitializers.java,v 1.1.2.4 1999-11-04 06:39:41 cananian Exp $
+ * @version $Id: DataInitializers.java,v 1.1.2.5 2000-01-10 05:08:35 cananian Exp $
  */
 public class DataInitializers extends Data {
     final NameMap m_nm;
@@ -45,9 +45,9 @@ public class DataInitializers extends Data {
 	stmlist.add(new LABEL(tf, null, new Label("_FNI_static_inits"),true));
 	for (Iterator it=initMethods.iterator(); it.hasNext(); ) {
 	    HInitializer hm = (HInitializer)it.next();
-	    stmlist.add(_DATA(m_nm.label(hm.getDeclaringClass(), "namestr")));
+	    stmlist.add(_DATUM(m_nm.label(hm.getDeclaringClass(), "namestr")));
 	}
-	stmlist.add(_DATA(new CONST(tf, null))); // null-terminate the list
+	stmlist.add(_DATUM(new CONST(tf, null))); // null-terminate the list
 	return (HDataElement) Stm.toStm(stmlist);
     }
 }

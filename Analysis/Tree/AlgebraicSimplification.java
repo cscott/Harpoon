@@ -30,7 +30,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.4 2000-01-09 00:23:20 duncan Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.5 2000-01-10 05:08:25 cananian Exp $
  */
 public abstract class AlgebraicSimplification { 
     // Define new operator constants that can be masked together. 
@@ -58,7 +58,7 @@ public abstract class AlgebraicSimplification {
     // _CONST represents all constants _except_ 0 and null. 
     // Use _CONST0 and _CONSTNULL respectively.  
     private final static int _CONST      = (1<<4);
-    private final static int _DATA       = (1<<5);
+    private final static int _DATUM      = (1<<5);
     private final static int _ESEQ       = (1<<6);
     private final static int _EXP        = (1<<7);
     private final static int _JUMP       = (1<<8);
@@ -562,7 +562,7 @@ public abstract class AlgebraicSimplification {
 		    c.value            == null ? _CONSTNULL : 
 		    c.value.intValue() == 0    ? _CONST0 : 
 		    _CONST; 
-	    case TreeKind.DATA:       return _DATA;
+	    case TreeKind.DATUM:      return _DATUM;
 	    case TreeKind.ESEQ:       return _ESEQ;
 	    case TreeKind.EXP:        return _EXP;
 	    case TreeKind.JUMP:       return _JUMP;

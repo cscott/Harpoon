@@ -39,7 +39,7 @@ import java.util.List;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.1.2.6 1999-11-04 03:25:04 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.1.2.7 2000-01-10 05:08:35 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
@@ -63,24 +63,24 @@ public class DataReflection2 extends Data {
 	stmlist.add(new ALIGN(tf, null, 4)); // align table to word boundary
 	stmlist.add(new LABEL(tf, null, m_nm.label(hc, "classinfo"), true));
 	// first field: a claz structure pointer.
-	stmlist.add(_DATA(m_nm.label(hc)));
+	stmlist.add(_DATUM(m_nm.label(hc)));
 	// next, a name string pointer.
-	stmlist.add(_DATA(m_nm.label(hc, "namestr")));
+	stmlist.add(_DATUM(m_nm.label(hc, "namestr")));
 	// pointer to the end of the lookup table.
-	stmlist.add(_DATA(m_nm.label(hc, "classinfo_end")));
+	stmlist.add(_DATUM(m_nm.label(hc, "classinfo_end")));
 	// okay, now the sorted name, desc, offset table.
 	for (Iterator it=members.iterator(); it.hasNext(); ) {
 	    HMember hm = (HMember) it.next();
 	    if (hm instanceof HMethod && !ch.callableMethods().contains(hm))
 		continue; // skip uncallable methods.
-	    stmlist.add(_DATA(memberLabel(hm, "namestr")));
-	    stmlist.add(_DATA(memberLabel(hm, "descstr")));
+	    stmlist.add(_DATUM(memberLabel(hm, "namestr")));
+	    stmlist.add(_DATUM(memberLabel(hm, "descstr")));
 	    if (!memberVirtual(hm))
-		stmlist.add(_DATA(memberLabel(hm, null)));
+		stmlist.add(_DATUM(memberLabel(hm, null)));
 	    else if (pointersAreLong)
-		stmlist.add(_DATA(new CONST(tf, null,(long)memberOffset(hm))));
+		stmlist.add(_DATUM(new CONST(tf, null,(long)memberOffset(hm))));
 	    else
-		stmlist.add(_DATA(new CONST(tf, null,(int) memberOffset(hm))));
+		stmlist.add(_DATUM(new CONST(tf, null,(int) memberOffset(hm))));
 	    // count number of argument words for methods
 	    emitNargs(stmlist, hm);
 	}
@@ -161,9 +161,9 @@ public class DataReflection2 extends Data {
 	}
 	// output nargs value.
 	if (pointersAreLong)
-	    stmlist.add(_DATA(new CONST(tf, null, (long) nargs)));
+	    stmlist.add(_DATUM(new CONST(tf, null, (long) nargs)));
 	else
-	    stmlist.add(_DATA(new CONST(tf, null, (int) nargs)));
+	    stmlist.add(_DATUM(new CONST(tf, null, (int) nargs)));
     }
     private List sortedMembers(HClass hc) {
 	List members = new ArrayList(Arrays.asList(hc.getFields()));

@@ -23,7 +23,7 @@ import java.util.List;
  * this java program.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataJavaMain.java,v 1.1.2.4 1999-11-04 21:52:28 cananian Exp $
+ * @version $Id: DataJavaMain.java,v 1.1.2.5 2000-01-10 05:08:35 cananian Exp $
  */
 public class DataJavaMain extends Data {
     final NameMap m_nm;
@@ -41,7 +41,7 @@ public class DataJavaMain extends Data {
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.TEXT));
 	stmlist.add(new ALIGN(tf, null, 4)); // word align.
 	stmlist.add(new LABEL(tf, null, new Label("_FNI_javamain"), true));
-	stmlist.add(_DATA(m_nm.label(main.getDeclaringClass(), "namestr")));
+	stmlist.add(_DATUM(m_nm.label(main.getDeclaringClass(), "namestr")));
 	return (HDataElement) Stm.toStm(stmlist);
     }
 }

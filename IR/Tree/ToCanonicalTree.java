@@ -24,7 +24,7 @@ import java.util.Map;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.19 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.20 2000-01-10 05:08:41 cananian Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
@@ -183,7 +183,7 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	    treeMap.map(s, seq(treeMap.get(s.getLeft()), treeMap.get(s.getRight())));
 	}
 
-	public void visit(DATA s) { 
+	public void visit(DATUM s) { 
 
 	    long time = System.currentTimeMillis(); 
 
@@ -235,7 +235,7 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	    nums[5]++; 
 	}
 
-	private Stm reorderData(DATA s) { 
+	private Stm reorderData(DATUM s) { 
 	    ExpList kids = s.kids();
 	    if (kids.head==null) return s.build(tf, kids);
 	    else {

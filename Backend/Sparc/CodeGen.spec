@@ -16,7 +16,7 @@ import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.CONST;
-import harpoon.IR.Tree.DATA;
+import harpoon.IR.Tree.DATUM;
 import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.EXP;
 import harpoon.IR.Tree.JUMP;
@@ -54,7 +54,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.20 2000-01-09 00:24:11 duncan Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.21 2000-01-10 05:08:39 cananian Exp $
  */
 %%
     private Instr root;
@@ -760,12 +760,12 @@ CONST<l>(0)=r %{
     emit (ROOT, "mov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r0 });
 }%
 
-DATA(CONST<i>(exp)) %{
+DATUM(CONST<i>(exp)) %{
     String lo = "0x" + Integer.toHexString(exp.intValue());
     emitDIRECTIVE (ROOT, "\t.word " + lo + " ! " + exp);
 }%
 
-DATA(CONST<l>(exp)) %{
+DATUM(CONST<l>(exp)) %{
     long val = exp.longValue();
     String lo = "0x" + Integer.toHexString((int) val);
     String hi = "0x" + Integer.toHexString((int) (val >> 32));
@@ -773,7 +773,7 @@ DATA(CONST<l>(exp)) %{
     emitDIRECTIVE (ROOT, "\t.word " + lo + " ! " + exp);
 }%
 
-DATA(CONST<s:8,u:8>(exp)) %{
+DATUM(CONST<s:8,u:8>(exp)) %{
     String chardesc = (exp.intValue() >= 32 && exp.intValue() < 127
                        && exp.intValue() != 96 /* backquotes */
                        && exp.intValue() != 34 /* double quotes */) ?
@@ -781,7 +781,7 @@ DATA(CONST<s:8,u:8>(exp)) %{
     emitDIRECTIVE(ROOT, "\t.byte "+exp+chardesc);
 }%
 
-DATA(CONST<s:16,u:16>(exp)) %{
+DATUM(CONST<s:16,u:16>(exp)) %{
     String chardesc = (exp.intValue() >= 32 && exp.intValue() < 127
                        && exp.intValue() != 96 /* backquotes */
                        && exp.intValue() != 34 /* double quotes */) ?
@@ -789,11 +789,11 @@ DATA(CONST<s:16,u:16>(exp)) %{
     emitDIRECTIVE(ROOT, "\t.short "+exp+chardesc);
 }% 
 
-DATA(CONST<p>(exp)) %{
+DATUM(CONST<p>(exp)) %{
     emitDIRECTIVE(ROOT, "\t.word 0 ! should always be null pointer constant");
 }%
 
-DATA(CONST<l>(exp)) %{
+DATUM(CONST<l>(exp)) %{
     long l = exp.longValue();
     String lo = "0x" + Integer.toHexString((int)l);
     String hi = "0x" + Integer.toHexString((int)(l >> 32));
@@ -801,7 +801,7 @@ DATA(CONST<l>(exp)) %{
     emitDIRECTIVE(ROOT, "\t.word " + lo + " ! lo (" + exp + ")");
 }%
 
-DATA(NAME(l)) %{
+DATUM(NAME(l)) %{
     emitDIRECTIVE(ROOT, "\t.word " + l);
 }%
 

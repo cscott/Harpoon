@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.49 2000-01-09 00:24:42 duncan Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.50 2000-01-10 05:08:44 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -37,7 +37,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
     private static final String TREE_CALL = "harpoon.IR.Tree.CALL";
     private static final String TREE_CJUMP = "harpoon.IR.Tree.CJUMP";
     private static final String TREE_CONST = "harpoon.IR.Tree.CONST";
-    private static final String TREE_DATA = "harpoon.IR.Tree.DATA";
+    private static final String TREE_DATUM = "harpoon.IR.Tree.DATUM";
     private static final String TREE_EXP = "harpoon.IR.Tree.EXP";
     private static final String TREE_JUMP = "harpoon.IR.Tree.JUMP";
     private static final String TREE_LABEL = "harpoon.IR.Tree.LABEL";
@@ -228,15 +228,15 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 
 	public void visit(Spec.StmData s) {
-	    if (rootType==null) rootType=TREE_DATA;
+	    if (rootType==null) rootType=TREE_DATUM;
 	    degree++;
 
 	    append(exp, "// check statement type");
-	    append(exp, "&& " + stmPrefix + " instanceof "+TREE_DATA+"");
+	    append(exp, "&& " + stmPrefix + " instanceof "+TREE_DATUM+"");
 	    
 	    // look at exp
 	    TypeExpRecurse r = new 
-		TypeExpRecurse("(("+TREE_DATA+")"+ stmPrefix + ").getData()",
+		TypeExpRecurse("(("+TREE_DATUM+")"+ stmPrefix + ").getData()",
 			       indentPrefix + "\t");
 	    s.data.accept(r);
 	    degree += r.degree;

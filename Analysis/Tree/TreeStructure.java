@@ -10,7 +10,7 @@ import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.CJUMP; 
 import harpoon.IR.Tree.CONST;
-import harpoon.IR.Tree.DATA; 
+import harpoon.IR.Tree.DATUM; 
 import harpoon.IR.Tree.ESEQ; 
 import harpoon.IR.Tree.Exp; 
 import harpoon.IR.Tree.ExpList; 
@@ -50,7 +50,7 @@ import java.util.Stack;
  * the codeview directly, so should be used with caution.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeStructure.java,v 1.1.2.10 2000-01-09 00:23:20 duncan Exp $
+ * @version $Id: TreeStructure.java,v 1.1.2.11 2000-01-10 05:08:25 cananian Exp $
  */
 public class TreeStructure { 
     private Map structure = new HashMap();

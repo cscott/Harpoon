@@ -13,7 +13,7 @@ import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.ALIGN;
 import harpoon.IR.Tree.CONST;
-import harpoon.IR.Tree.DATA;
+import harpoon.IR.Tree.DATUM;
 import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.SEGMENT;
@@ -30,7 +30,7 @@ import java.util.Set;
  * <code>DataStaticFields</code> lays out the static fields of a class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataStaticFields.java,v 1.1.4.3 1999-10-20 07:05:57 cananian Exp $
+ * @version $Id: DataStaticFields.java,v 1.1.4.4 2000-01-10 05:08:35 cananian Exp $
  */
 public class DataStaticFields extends Data {
     final NameMap m_nm;
@@ -64,7 +64,7 @@ public class DataStaticFields extends Data {
 	    if (!fields[i].isStatic() || fields[i].getType().isPrimitive())
 		continue;
 	    stmlist.add(new LABEL(tf, null, m_nm.label(fields[i]), true));
-	    stmlist.add(_DATA(new CONST(tf, null))); // null pointer.
+	    stmlist.add(_DATUM(new CONST(tf, null))); // null pointer.
 	}
 	// next do static fields with primitive types
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.STATIC_PRIMITIVES));
@@ -74,7 +74,7 @@ public class DataStaticFields extends Data {
 	    // align to field size.
 	    stmlist.add(new ALIGN(tf, null, m_fm.fieldSize(fields[i])));
 	    stmlist.add(new LABEL(tf, null, m_nm.label(fields[i]), true));
-	    stmlist.add(_DATA(fieldInitializer(fields[i])));
+	    stmlist.add(_DATUM(fieldInitializer(fields[i])));
 	}
 	return (HDataElement) Stm.toStm(stmlist);
     }

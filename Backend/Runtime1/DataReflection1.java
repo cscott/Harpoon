@@ -46,7 +46,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection1.java,v 1.1.2.3 1999-11-04 03:25:03 cananian Exp $
+ * @version $Id: DataReflection1.java,v 1.1.2.4 2000-01-10 05:08:35 cananian Exp $
  */
 public class DataReflection1 extends Data {
     final NameMap m_nm;
@@ -107,8 +107,8 @@ public class DataReflection1 extends Data {
 			      new Label("_name2class_start"), true));
 	for (Iterator it=sorted.iterator(); it.hasNext(); ) {
 	    HClass hc = (HClass) it.next();
-	    stmlist.add(_DATA(m_nm.label(hc, "namestr")));
-	    stmlist.add(_DATA(m_nm.label(hc, "classobj")));
+	    stmlist.add(_DATUM(m_nm.label(hc, "namestr")));
+	    stmlist.add(_DATUM(m_nm.label(hc, "classobj")));
 	}
 	stmlist.add(new LABEL(tf, null,
 			      new Label("_name2class_end"), true));
@@ -122,8 +122,8 @@ public class DataReflection1 extends Data {
 			      new Label("_class2info_start"), true));
 	for (Iterator it=sorted.iterator(); it.hasNext(); ) {
 	    HClass hc = (HClass) it.next();
-	    stmlist.add(_DATA(m_nm.label(hc, "classobj")));
-	    stmlist.add(_DATA(m_nm.label(hc, "classinfo")));
+	    stmlist.add(_DATUM(m_nm.label(hc, "classobj")));
+	    stmlist.add(_DATUM(m_nm.label(hc, "classinfo")));
 	}
 	stmlist.add(new LABEL(tf, null,
 			      new Label("_class2info_end"), true));

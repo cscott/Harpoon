@@ -11,7 +11,7 @@ import harpoon.ClassFile.HDataElement;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.ALIGN;
 import harpoon.IR.Tree.CONST;
-import harpoon.IR.Tree.DATA;
+import harpoon.IR.Tree.DATUM;
 import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.SEGMENT;
@@ -26,7 +26,7 @@ import java.util.List;
  * <code>DataInterfaceList</code> lays out the expanded list of interfaces.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataInterfaceList.java,v 1.1.4.2 1999-10-20 07:05:57 cananian Exp $
+ * @version $Id: DataInterfaceList.java,v 1.1.4.3 2000-01-10 05:08:35 cananian Exp $
  */
 public class DataInterfaceList extends Data {
     final TreeBuilder m_tb;
@@ -54,9 +54,9 @@ public class DataInterfaceList extends Data {
 	in.retainAll(ch.classes());
 	// and make a list of stms.
 	for (Iterator it=in.iterator(); it.hasNext(); )
-	    stmlist.add(_DATA(m_nm.label((HClass)it.next())));
+	    stmlist.add(_DATUM(m_nm.label((HClass)it.next())));
 	// ...and null-terminate the list.
-	stmlist.add(_DATA(new CONST(tf, null)));
+	stmlist.add(_DATUM(new CONST(tf, null)));
 	return (HDataElement) Stm.toStm(stmlist);
     }
 

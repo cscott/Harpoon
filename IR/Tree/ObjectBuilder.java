@@ -21,7 +21,7 @@ import java.util.Map;
  * ease the task of statically creating Java objects in the tree form. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.2.5 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.2.6 2000-01-10 05:08:41 cananian Exp $
  *
  */
 public abstract class ObjectBuilder { 
@@ -632,8 +632,8 @@ public abstract class ObjectBuilder {
     //                                                           //
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    private static DATA _D(Exp e) { 
-	return new DATA(e.getFactory(),null,e);
+    private static DATUM _D(Exp e) { 
+	return new DATUM(e.getFactory(),null,e);
     }
 
     private static void addS(int index, Tree elem, 

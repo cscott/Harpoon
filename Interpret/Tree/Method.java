@@ -20,7 +20,7 @@ import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.CONST;
-import harpoon.IR.Tree.DATA;
+import harpoon.IR.Tree.DATUM;
 //import harpoon.IR.Tree.Edge;
 import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.EXP;
@@ -63,7 +63,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.14 2000-01-09 00:25:17 duncan Exp $
+ * @version $Id: Method.java,v 1.1.2.15 2000-01-10 05:08:43 cananian Exp $
  */
 public final class Method extends HCLibrary {
     static PrintWriter out = new java.io.PrintWriter(System.out);
@@ -413,8 +413,8 @@ public final class Method extends HCLibrary {
 	    sf.update(e, e.value==null?(Number)new Integer(0):e.value);
 	}
 
-	public void visit(DATA e) { 
-	    throw new Error("Should not have encountered a DATA node");
+	public void visit(DATUM e) { 
+	    throw new Error("Should not have encountered a DATUM node");
 	}
 	
 	public void visit(EXP e)  { 

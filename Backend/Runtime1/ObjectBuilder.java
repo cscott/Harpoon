@@ -15,7 +15,7 @@ import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TreeFactory;
 import harpoon.IR.Tree.ALIGN;
 import harpoon.IR.Tree.CONST;
-import harpoon.IR.Tree.DATA;
+import harpoon.IR.Tree.DATUM;
 import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.SEGMENT;
@@ -31,7 +31,7 @@ import java.util.List;
  * <code>Runtime1</code> runtime.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.4.3 1999-11-06 21:30:19 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.4.4 2000-01-10 05:08:36 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -66,7 +66,7 @@ public class ObjectBuilder
 	// header
 	stmlist.add(makeHeader(tf, info, exported));
 	// length
-	stmlist.add(_DATA(tf, new CONST(tf, null, info.length())));
+	stmlist.add(_DATUM(tf, new CONST(tf, null, info.length())));
 	// data
 	for (int i=0; i<info.length(); i++)
 	    stmlist.add(makeDatum(tf, info.get(i)));
@@ -81,45 +81,45 @@ public class ObjectBuilder
 	// label:
 	stmlist.add(new LABEL(tf, null, info.label(), exported));
 	// claz pointer
-	stmlist.add(_DATA(tf, nm.label(info.type())));
+	stmlist.add(_DATUM(tf, nm.label(info.type())));
 	// hash code.
-	stmlist.add(_DATA(tf, info.label()));
+	stmlist.add(_DATUM(tf, info.label()));
 	// okay, done with header.
 	return Stm.toStm(stmlist);
     }
     Stm makeDatum(TreeFactory tf, Object datum) {
 	if (datum instanceof Integer)
-	    return _DATA(tf, new CONST(tf, null,
+	    return _DATUM(tf, new CONST(tf, null,
 				   ((Integer)datum).intValue()));
 	else if (datum instanceof Long)
-	    return _DATA(tf, new CONST(tf, null,
+	    return _DATUM(tf, new CONST(tf, null,
 				   ((Long)datum).longValue()));
 	else if (datum instanceof Float)
-	    return _DATA(tf, new CONST(tf, null,
+	    return _DATUM(tf, new CONST(tf, null,
 				   ((Float)datum).floatValue()));
 	else if (datum instanceof Double)
-	    return _DATA(tf, new CONST(tf, null,
+	    return _DATUM(tf, new CONST(tf, null,
 				   ((Double)datum).doubleValue()));
 	else if (datum instanceof Boolean)
-	    return _DATA(tf, new CONST(tf, null, 8, false,
+	    return _DATUM(tf, new CONST(tf, null, 8, false,
 				   ((Boolean)datum).booleanValue()?1:0));
 	else if (datum instanceof Byte)
-	    return _DATA(tf, new CONST(tf, null, 8, true,
+	    return _DATUM(tf, new CONST(tf, null, 8, true,
 				   ((Byte)datum).intValue()));
 	else if (datum instanceof Short)
-	    return _DATA(tf, new CONST(tf, null,16, true,
+	    return _DATUM(tf, new CONST(tf, null,16, true,
 				   ((Short)datum).intValue()));
 	else if (datum instanceof Character)
-	    return _DATA(tf, new CONST(tf, null,16, false,
+	    return _DATUM(tf, new CONST(tf, null,16, false,
 				   ((Character)datum).charValue()));
 	else if (datum instanceof Info)
-	    return _DATA(tf, ((Info)datum).label());
-	else throw new Error("ILLEGAL DATA TYPE");
+	    return _DATUM(tf, ((Info)datum).label());
+	else throw new Error("ILLEGAL DATUM TYPE");
     }
-    DATA _DATA(TreeFactory tf, Exp e) { 
-	return new DATA(tf, null, e); 
+    DATUM _DATUM(TreeFactory tf, Exp e) { 
+	return new DATUM(tf, null, e); 
     }
-    DATA _DATA(TreeFactory tf, Label l) {
-	return new DATA(tf,null,new NAME(tf,null,l));
+    DATUM _DATUM(TreeFactory tf, Label l) {
+	return new DATUM(tf,null,new NAME(tf,null,l));
     }
 }

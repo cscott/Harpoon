@@ -9,7 +9,7 @@ import harpoon.ClassFile.HDataElement;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.CONST;
-import harpoon.IR.Tree.DATA;
+import harpoon.IR.Tree.DATUM;
 import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.Tree;
 import harpoon.IR.Tree.Type;
@@ -23,7 +23,7 @@ import java.util.List;
  * <code>Runtime1</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Data.java,v 1.1.2.5 1999-11-04 03:25:03 cananian Exp $
+ * @version $Id: Data.java,v 1.1.2.6 2000-01-10 05:08:35 cananian Exp $
  */
 public class Data extends harpoon.IR.Tree.Data {
     final HClass hc;
@@ -45,12 +45,12 @@ public class Data extends harpoon.IR.Tree.Data {
      *                                                          *
      *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-    DATA _DATA(Exp e) { 
-	return new DATA(tf, null, e); 
+    DATUM _DATUM(Exp e) { 
+	return new DATUM(tf, null, e); 
     }
 
-    DATA _DATA(Label l) {
-	return new DATA(tf,null,new NAME(tf,null,l));
+    DATUM _DATUM(Label l) {
+	return new DATUM(tf,null,new NAME(tf,null,l));
     }
 
     // UTF-8 handling methods -----------------------------------
@@ -92,10 +92,10 @@ public class Data extends harpoon.IR.Tree.Data {
 	byte[] bytes = toUTF8(str);
 	List stmlist = new ArrayList(bytes.length+1);
 	for (int i=0; i<bytes.length; i++)
-	    stmlist.add(_DATA(new CONST(tf, null, 8, false,
+	    stmlist.add(_DATUM(new CONST(tf, null, 8, false,
 					((int)bytes[i])&0xFF)));
 	// null-terminate the string.
-	stmlist.add(_DATA(new CONST(tf, null, 8, false, 0)));
+	stmlist.add(_DATUM(new CONST(tf, null, 8, false, 0)));
 	return Stm.toStm(stmlist);
     }
 }

@@ -14,7 +14,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.ALIGN;
 import harpoon.IR.Tree.CONST;
-import harpoon.IR.Tree.DATA;
+import harpoon.IR.Tree.DATUM;
 import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.SEGMENT;
@@ -36,7 +36,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.7 1999-11-02 01:24:24 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.8 2000-01-10 05:08:35 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -65,20 +65,20 @@ public class DataClaz extends Data {
 	stmlist.add(new LABEL(tf, null, m_nm.label(hc), true));
 	// class info points at a class object for this class
 	// (which is generated in DataReflection1)
-	stmlist.add(_DATA(m_nm.label(hc, "classobj")));
+	stmlist.add(_DATUM(m_nm.label(hc, "classobj")));
 	// component type pointer.
 	if (hc.isArray())
-	    stmlist.add(_DATA(m_nm.label(hc.getComponentType())));
+	    stmlist.add(_DATUM(m_nm.label(hc.getComponentType())));
 	else
-	    stmlist.add(_DATA(new CONST(tf, null)));
+	    stmlist.add(_DATUM(new CONST(tf, null)));
 	// the interface list is generated elsewhere
-	stmlist.add(_DATA(m_nm.label(hc, "interfaces")));
+	stmlist.add(_DATUM(m_nm.label(hc, "interfaces")));
 	// object size.
 	int size = m_tb.objectSize(hc) + m_tb.OBJECT_HEADER_SIZE;
-	stmlist.add(_DATA(new CONST(tf, null, size)));
+	stmlist.add(_DATUM(new CONST(tf, null, size)));
 	// class depth.
 	int depth = m_tb.cdm.classDepth(hc);
-	stmlist.add(_DATA(new CONST(tf, null, m_tb.POINTER_SIZE * depth)));
+	stmlist.add(_DATUM(new CONST(tf, null, m_tb.POINTER_SIZE * depth)));
 	// class display
 	stmlist.add(display(hc, ch));
 	// now class method table.
@@ -117,9 +117,9 @@ public class DataClaz extends Data {
 	// make statements.
 	List stmlist = new ArrayList(m_tb.cdm.maxDepth()+1);
 	for (Iterator it=clslist.iterator(); it.hasNext(); )
-	    stmlist.add(_DATA(m_nm.label((HClass)it.next())));
+	    stmlist.add(_DATUM(m_nm.label((HClass)it.next())));
 	while (stmlist.size() <= m_tb.cdm.maxDepth())
-	    stmlist.add(_DATA(new CONST(tf, null))); // pad with nulls.
+	    stmlist.add(_DATUM(new CONST(tf, null))); // pad with nulls.
 	Util.assert(stmlist.size() == m_tb.cdm.maxDepth()+1);
 	return Stm.toStm(stmlist);
     }
@@ -152,9 +152,9 @@ public class DataClaz extends Data {
 	    HMethod hm = (HMethod) it.next();
 	    Util.assert(cmm.methodOrder(hm)==order); // should be no gaps.
 	    if (callable.contains(hm))
-		stmlist.add(_DATA(m_nm.label(hm)));
+		stmlist.add(_DATUM(m_nm.label(hm)));
 	    else
-		stmlist.add(_DATA(new CONST(tf, null))); // null pointer
+		stmlist.add(_DATUM(new CONST(tf, null))); // null pointer
 	}
 	return Stm.toStm(stmlist);
     }
@@ -209,18 +209,18 @@ public class DataClaz extends Data {
 	    if (last_order!=-1) {
 		Util.assert(this_order < last_order); // else not ordered
 		for (int i=last_order-1; i > this_order; i--)
-		    stmlist.add(_DATA(new CONST(tf, null))); // null
+		    stmlist.add(_DATUM(new CONST(tf, null))); // null
 	    }
 	    // look up name of class method with this signature
 	    HMethod cm = hc.getMethod(hm.getName(), hm.getDescriptor());
 	    // add entry for this method to table.
-	    stmlist.add(_DATA(m_nm.label(cm)));
+	    stmlist.add(_DATUM(m_nm.label(cm)));
 	    last_order = this_order;
 	}
 	if (last_order!=-1) {
 	    Util.assert(last_order>=0);
 	    for (int i=last_order; i > 0; i--)
-		stmlist.add(_DATA(new CONST(tf, null)));
+		stmlist.add(_DATUM(new CONST(tf, null)));
 	}
 	// done!
 	return Stm.toStm(stmlist);

@@ -12,12 +12,12 @@ import java.util.Set;
 /**
  * <code>ALIGN</code> statements are used to enforce a given alignment on
  * the following data items.  Its effect on code is undefined.  The next
- * <code>DATA</code> element (and any <code>LABEL</code> between the
- * <code>ALIGN</code> and the <code>DATA</code>) will be aligned on the
+ * <code>DATUM</code> element (and any <code>LABEL</code> between the
+ * <code>ALIGN</code> and the <code>DATUM</code>) will be aligned on the
  * specified n-byte boundary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ALIGN.java,v 1.1.4.3 2000-01-09 01:04:40 duncan Exp $
+ * @version $Id: ALIGN.java,v 1.1.4.4 2000-01-10 05:08:41 cananian Exp $
  */
 public class ALIGN extends Stm implements harpoon.ClassFile.HDataElement {
     /** The alignment to enforce, in bytes. Zero or one specify no

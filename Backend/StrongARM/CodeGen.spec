@@ -64,7 +64,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.116 2000-01-09 00:24:21 duncan Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.117 2000-01-10 05:08:39 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1928,14 +1928,14 @@ NATIVECALL(retval, NAME(funcLabel), arglist) %{
     emitCallEpilogue(ROOT, retval, stackOffset);
 }%
 
-DATA(CONST<i,f>(exp)) %{
+DATUM(CONST<i,f>(exp)) %{
     int i = (ROOT.getData().type()==Type.INT) ? exp.intValue()
 		: Float.floatToIntBits(exp.floatValue());
     String lo = "0x"+Integer.toHexString(i);
     emitDIRECTIVE( ROOT, "\t.word "+lo+" @ "+exp);
 }%
 
-DATA(CONST<l,d>(exp)) %{
+DATUM(CONST<l,d>(exp)) %{
     long l = (ROOT.getData().type()==Type.LONG) ? exp.longValue()
 		: Double.doubleToLongBits(exp.doubleValue());
     String lo = "0x"+Integer.toHexString((int)l);
@@ -1949,11 +1949,11 @@ DATA(CONST<l,d>(exp)) %{
 	emitDIRECTIVE( ROOT, "\t.word "+lo+" @ lo("+exp+")");
 }%
 
-DATA(CONST<p>(exp)) %{
+DATUM(CONST<p>(exp)) %{
     emitDIRECTIVE( ROOT, "\t.word 0 @ null pointer constant");
 }%
 
-DATA(CONST<s:8,u:8>(exp)) %{
+DATUM(CONST<s:8,u:8>(exp)) %{
     String chardesc = (exp.intValue()>=32 && exp.intValue()<127 
 		       && exp.intValue()!=96 /* backquotes cause problems */
 		       && exp.intValue()!=34 /* so do double quotes */) ?
@@ -1961,7 +1961,7 @@ DATA(CONST<s:8,u:8>(exp)) %{
     emitDIRECTIVE( ROOT, "\t.byte "+exp+chardesc);
 }%
 
-DATA(CONST<s:16,u:16>(exp)) %{
+DATUM(CONST<s:16,u:16>(exp)) %{
     String chardesc = (exp.intValue()>=32 && exp.intValue()<127
 		       && exp.intValue()!=96 /* backquotes cause problems */
 		       && exp.intValue()!=34 /* so do double quotes */) ?
@@ -1969,7 +1969,7 @@ DATA(CONST<s:16,u:16>(exp)) %{
     emitDIRECTIVE( ROOT, "\t.short "+exp+chardesc);
 }%
 
-DATA(NAME(l)) %{
+DATUM(NAME(l)) %{
     emitDIRECTIVE( ROOT, "\t.word "+l);
 }%
 

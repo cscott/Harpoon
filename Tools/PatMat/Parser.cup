@@ -49,7 +49,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.30 1999-10-23 05:59:36 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.31 2000-01-10 05:08:44 cananian Exp $
  */
 
 action code {:
@@ -93,7 +93,7 @@ terminal START_WITH, END_WITH;
 terminal BINOP, CALL, CJUMP, CONST, EXP, JUMP, LABEL;
 terminal MEM, MOVE, NAME, NATIVECALL, RETURN, SEQ, TEMP, THROW;
 terminal UNOP;
-terminal ALIGN, DATA, METHOD, SEGMENT;
+terminal ALIGN, DATUM, METHOD, SEGMENT;
 // punctuation & brackets
 terminal LPAREN, RPAREN, LBRACK, RBRACK, LBRACE, RBRACE, LANGLE, RANGLE;
 terminal COLON, COMMA, EQUALS;
@@ -211,7 +211,7 @@ stm	::=	ALIGN LPAREN sym_number:n RPAREN
 		{: RESULT = new StmCall(rv, re, fu, al, ha); :}
 	|	CJUMP LPAREN exp:e COMMA ID:t COMMA ID:f RPAREN
 		{: RESULT = new StmCjump(e, t, f); :}
-	|	DATA LPAREN exp:e RPAREN
+	|	DATUM LPAREN exp:e RPAREN
 		{: RESULT = new StmData(e); :}
 	|	EXP LPAREN exp:e RPAREN
 		{: RESULT = new StmExp(e); :}

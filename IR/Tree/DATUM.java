@@ -1,4 +1,4 @@
-// DATA.java, created Fri Jul 23 13:39:22 1999 by duncan
+// DATUM.java, created Fri Jul 23 13:39:22 1999 by duncan
 // Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
@@ -8,7 +8,7 @@ import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
 /**
- * <code>DATA</code> objects are statements which write a value to memory
+ * <code>DATUM</code> objects are statements which write a value to memory
  * at the time when a program is loaded.  The location written is 
  * calculated using this formula:
  *
@@ -16,15 +16,15 @@ import harpoon.Util.Util;
  *         location = base + offset
  * 
  * where 
- *         base   = location of nearest LABEL, l,  which precedes this DATA
- *         offset = the total size of all instructions between l and this DATA
+ *         base   = location of nearest LABEL, l,  which precedes this DATUM
+ *         offset = the total size of all instructions between l and this DATUM
  *                      
  * </PRE>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: DATA.java,v 1.1.2.13 2000-01-09 01:04:41 duncan Exp $
+ * @version $Id: DATUM.java,v 1.1.2.1 2000-01-10 05:08:41 cananian Exp $
  */
-public class DATA extends Stm implements harpoon.ClassFile.HDataElement { 
+public class DATUM extends Stm implements harpoon.ClassFile.HDataElement { 
     /** The expression to write to memory.  Never null. */
     private Exp data;
     /** If false, the memory is not initialized; instead it is reserved
@@ -36,9 +36,9 @@ public class DATA extends Stm implements harpoon.ClassFile.HDataElement {
      *  <code>harpoon.IR.Tree.CONST</code> or 
      *  <code>harpoon.IR.Tree.NAME</code>.  Passing <code>null</code> for
      *  the parameter <code>data</code> reserves a word of memory at the
-     *  location of this <code>DATA</code> without assigning it a value.
+     *  location of this <code>DATUM</code> without assigning it a value.
      */
-    public DATA(TreeFactory tf, HCodeElement source, Exp data) {
+    public DATUM(TreeFactory tf, HCodeElement source, Exp data) {
 	super(tf, source);
 	this.setData(data);
 	this.initialized = true;
@@ -49,10 +49,10 @@ public class DATA extends Stm implements harpoon.ClassFile.HDataElement {
     }
 
     /** Class constructor. 
-     *  Reserves memory at the location of this <code>DATA</code>
+     *  Reserves memory at the location of this <code>DATUM</code>
      *  of the size of the specified type without assigning it a value. 
      */
-    public DATA(TreeFactory tf, HCodeElement source, int type) { 
+    public DATUM(TreeFactory tf, HCodeElement source, int type) { 
 	super(tf, source);
 	Util.assert(Type.isValid(type));
 	if (type==Type.INT)
@@ -70,17 +70,17 @@ public class DATA extends Stm implements harpoon.ClassFile.HDataElement {
     }
 
     /** Class constructor. 
-     *  Reserves memory at the location of this <code>DATA</code>
+     *  Reserves memory at the location of this <code>DATUM</code>
      *  of the specified small without assigning it a value. 
      */
-    public DATA(TreeFactory tf, HCodeElement source,
+    public DATUM(TreeFactory tf, HCodeElement source,
 		int bitwidth, boolean signed) { 
 	super(tf, source);
 	this.setData(new CONST(tf, source, bitwidth, signed, 0));
 	this.initialized = false;
     }
 
-    private DATA(TreeFactory tf, HCodeElement source,
+    private DATUM(TreeFactory tf, HCodeElement source,
 		 Exp data, boolean initialized) {
 	super(tf, source);
 	this.setData(data);
@@ -100,24 +100,24 @@ public class DATA extends Stm implements harpoon.ClassFile.HDataElement {
 	this.data.sibling = null;
     }
 
-    public int kind() { return TreeKind.DATA; } 
+    public int kind() { return TreeKind.DATUM; } 
 
     public Stm build(ExpList kids) { return build(tf, kids); }
 
     public Stm build(TreeFactory tf, ExpList kids) { 
 	Util.assert(kids.head == null || tf == kids.head.tf);
-	return new DATA(tf, this, kids.head, initialized);
+	return new DATUM(tf, this, kids.head, initialized);
     }
 
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); } 
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) { 
-	return new DATA(tf, this, (Exp)data.rename(tf, ctm), initialized);
+	return new DATUM(tf, this, (Exp)data.rename(tf, ctm), initialized);
     }    
 
     public String toString() { 
-	StringBuffer sb = new StringBuffer("DATA<");
+	StringBuffer sb = new StringBuffer("DATUM<");
 	sb.append(data instanceof PreciselyTyped ?
 		  Type.toString((PreciselyTyped)data) :
 		  Type.toString(data.type()));

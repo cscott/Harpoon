@@ -22,7 +22,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.37 1999-10-23 05:59:36 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.38 2000-01-10 05:08:44 cananian Exp $
  */
 public class Spec  {
 
@@ -593,7 +593,7 @@ public class Spec  {
 
     /** Extension of <code>Spec.Stm</code> representing a raw datum in
 	memory.
-	@see harpoon.IR.Tree.DATA
+	@see harpoon.IR.Tree.DATUM
     */
     public static class StmData extends Stm {
 	/** A <code>IR.Tree.CONST</code> or <code>IR.Tree.NAME</code>
@@ -608,7 +608,7 @@ public class Spec  {
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() {
-	    return "DATA("+data+")";
+	    return "DATUM("+data+")";
 	}
     }
 
