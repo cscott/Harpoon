@@ -25,7 +25,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.6 1999-10-15 03:48:22 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.7 1999-10-15 21:03:12 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -179,6 +179,15 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 					   classMethodsUsed,
 					   classMethodsPending);
 		    }
+		    // get and set discover classes (don't instantiate, though)
+		    if (Q instanceof GET || Q instanceof SET) {
+			HField f = (Q instanceof GET)
+			    ? ((GET) Q).field() : ((SET) Q).field();
+			discoverClass(f.getDeclaringClass(), W, done,
+				      classKnownChildren,
+				      classMethodsUsed,
+				      classMethodsPending);
+		    }
 		}
 	    }
 	} // END worklist.
@@ -220,6 +229,15 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    methodPush(ci, W, done, cmu, cmp);
 	// mark superclass.
 	HClass su = c.getSuperclass();
+	if (c.isArray()) { // deal with odd inheritance of array types.
+	    // Integer[][]->Number[][]->Object[][]->Object[]->Object
+	    HClass base = HClassUtil.baseClass(c);
+	    int dims = HClassUtil.dims(c);
+	    if (base.getSuperclass()!=null)
+		su = HClassUtil.arrayClass(base.getSuperclass(), dims);
+	    else
+		su = HClassUtil.arrayClass(base, dims-1);
+	}
 	if (su!=null) { // maybe discover super class?
 	    discoverClass(su, W, done, ckc, cmu, cmp);
 	    Set knownChildren = (Set) ckc.get(su);
