@@ -1,13 +1,17 @@
+---- Sep-10-98
+Undo MONITOR block transform.  Make it a poor statement.
+Change DCMPL/DCMPG/FCMPL/FCMPG bytecode operations to
+conform to the integer standard: _CMPEQ, _CMPGE, _CMPGT.
 ---- Sep-04-98
-Add FOOTER block to allow reverse traversals.
-Fix RET handling -- RET should return to source of JSR.
-Fix the way the 'any exception' try is handled (should rewrite as 'Throwable')
-Check assumption that 'any' == Throwable in exception handler description.
+X Add FOOTER block to allow reverse traversals.
+X Fix RET handling -- RET should return to source of JSR.
+Fix the way the 'any exception' try is handled 
+X Check assumption that 'any' == Throwable in exception handler description.
 Make list of exception handling statements in translate phase so we can
  strip them all out when regenerating java.  obviously try/catch block-related
  statements must stay.
-Make monitor blocks work.
-Enclose synchronized methods in monitor blocks.
+X Make monitor blocks work.
+X Enclose synchronized methods in monitor blocks.
 Runtime exception check on MONITOREXIT.
 ---- Aug-25-98
 Figure out if we really need JMP/NOP/LET quads.
