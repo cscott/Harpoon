@@ -13,10 +13,13 @@ import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.CONST; 
 import harpoon.IR.Tree.DerivationGenerator;
 import harpoon.IR.Tree.ESEQ; 
+import harpoon.IR.Tree.EXP;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.ExpList;
+import harpoon.IR.Tree.MOVE;
 import harpoon.IR.Tree.SEQ; 
 import harpoon.IR.Tree.Stm; 
+import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.Tree; 
 import harpoon.IR.Tree.TreeFactory; 
 import harpoon.IR.Tree.TreeKind; 
@@ -24,6 +27,7 @@ import harpoon.IR.Tree.TreeVisitor;
 import harpoon.IR.Tree.Type; 
 import harpoon.IR.Tree.UNOP; 
 import harpoon.IR.Tree.Uop; 
+import harpoon.Temp.Temp;
 import harpoon.Util.Util; 
 
 import java.util.ArrayList;
@@ -39,10 +43,9 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.16 2000-02-15 20:22:16 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.17 2000-02-16 06:15:04 cananian Exp $
  */
 // XXX missing -K1 --> K2  and ~K1 --> K2 rules.
-// FIXME!  DOESN'T REALLY PROPAGATE TYPE INFORMATION!
 public abstract class AlgebraicSimplification extends Simplification { 
     // hide constructor
     private AlgebraicSimplification() { }
@@ -95,17 +98,12 @@ public abstract class AlgebraicSimplification extends Simplification {
 
 
 		switch (b.type()) { 
+		    case Type.POINTER:
+		    Util.assert(k1.type()==Type.INT && k2.type()==Type.INT);
 		    case Type.INT: 
 		        return new CONST(tf,b,((Integer)k1pk2).intValue());
 		    case Type.LONG: 
 		        return new CONST(tf,b,((Long)k1pk2).longValue());
-		    case Type.POINTER: 
-		        if (tf.getFrame().pointersAreLong()) { 
-			    return new CONST(tf,b,((Long)k1pk2).longValue());
-			}
-		        else {
-		            return new CONST(tf,b,((Integer)k1pk2).intValue());
-		        }
 		    default: 
 		        throw new Error("Invalid type: " + b.type());
 		}
@@ -175,7 +173,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 	// exp % 1 --> 0
 	//
 	Rule makeZero = new Rule("makeZero") {
-	    // NOTE: this rule is dangerous if tree is not canonical.
+	    // NOTE: this rule creates non-canonical tree form.
 	    public boolean match(Exp e) { 
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
@@ -192,11 +190,13 @@ public abstract class AlgebraicSimplification extends Simplification {
 	    }
 	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) { 
 		BINOP b = (BINOP)e; 
+		CONST c;
 		if (b.type()==Type.INT)
-		    return new CONST(tf, e, (int) 0);
-		if (b.type()==Type.LONG)
-		    return new CONST(tf, e, (long) 0);
-		throw new Error("ack");
+		    c = new CONST(tf, e, (int) 0);
+		else if (b.type()==Type.LONG)
+		    c = new CONST(tf, e, (long) 0);
+		else throw new Error("ack");
+		return new ESEQ(tf, b, new EXP(tf, b, b.getLeft()), c);
 	    }
 	};
 
@@ -294,7 +294,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 
 	// exp * const --> (recoded as shifts)
 	Rule mulToShift = new Rule("mulToShift") { 
-	    // NOTE: this rule is dangerous if tree is not canonical.
+	    // NOTE: this rule may create non-canonical form.
 	    public boolean match (Exp e) { 
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
@@ -319,7 +319,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 
 	// exp / const --> (recoded as multiplication)
 	Rule divToMul = new Rule("divToMul") { 
-	    // NOTE: this rule is dangerous if tree is not canonical.
+	    // NOTE: this rule may create non-canonical form.
 	    public boolean match(Exp e) { 
 		if (e.type() != Type.INT ) return false;
 		if (_KIND(e) != _BINOP) { return false; } 
@@ -340,15 +340,18 @@ public abstract class AlgebraicSimplification extends Simplification {
 	// Add rules to the rule set.  
 	// 
 	_DEFAULT_RULES.add(combineConstants); 
-	//_DEFAULT_RULES.add(makeZero); //dangerous.
+	_DEFAULT_RULES.add(makeZero); // non-canonical
 	_DEFAULT_RULES.add(removeZero); 
 	_DEFAULT_RULES.add(commute); 
 	_DEFAULT_RULES.add(associate); 
 	_DEFAULT_RULES.add(createNot);
 	_DEFAULT_RULES.add(doubleNegative); 
 	_DEFAULT_RULES.add(negZero); 
-	_DEFAULT_RULES.add(mulToShift); 
-	_DEFAULT_RULES.add(divToMul); 
+	_DEFAULT_RULES.add(mulToShift); // non-canonical
+	_DEFAULT_RULES.add(divToMul); // non-canonical
+
+	// and re-canonicalize
+	_DEFAULT_RULES.addAll(Canonicalize.RULES);
     }
 		  
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -372,6 +375,7 @@ public abstract class AlgebraicSimplification extends Simplification {
      *
      * @return  an Exp which contains no divisions, yet 
      *          represents the same value as (n/d). 
+     *          not guaranteed to be in canonical form.
      */ 
     public static Exp div2mul(Exp n, CONST d) { 
 	Util.assert(d.type == Type.INT); 
@@ -403,9 +407,12 @@ public abstract class AlgebraicSimplification extends Simplification {
 	    return new BINOP(tf, n, Type.INT, Bop.SHL, n, new CONST(tf, n, l)); 
 	}
 	else { 
+	    // we need to reuse n.
+	    Temp t = new Temp(tf.tempFactory(), "dm");
+	    MOVE move = new MOVE(tf, n, new TEMP(tf, n, Type.INT, t), n);
 	    BINOP q0 = new BINOP
 		(tf, n, Type.INT, Bop.ADD, 
-		 n.build(n.kids()), // Clone n
+		 new TEMP(tf, n, Type.INT, t), // n
 		 new UNOP
 		 (tf, n, Type.INT, Uop._2I, 
 		  new BINOP
@@ -413,7 +420,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 		   new BINOP
 		   (tf, n, Type.LONG, Bop.MUL,
 		    new CONST(tf, n, m_prime), 
-		    n.build(n.kids())),
+		    new TEMP(tf, n, Type.INT, t)), // n
 		   new CONST(tf, n, 32)))); 
 	    BINOP q1 = new BINOP
 		(tf, n, Type.INT, Bop.ADD,  // Really a SUB.  
@@ -424,15 +431,17 @@ public abstract class AlgebraicSimplification extends Simplification {
 		 new UNOP
 		 (tf, n, Type.INT, Uop.NEG, 
 		  new BINOP // XSIGN(n) 
-		  (tf, n, Type.INT, Bop.SHL, n.build(n.kids()), new CONST(tf, n, 31))));
-	    return new BINOP
+		  (tf, n, Type.INT, Bop.SHL,
+		   new TEMP(tf, n, Type.INT, t), // n
+		   new CONST(tf, n, 31))));
+	    return new ESEQ(tf, n, move/* move n into t*/,
+		new BINOP
 		(tf, n, Type.INT, Bop.ADD, 
 		 (new BINOP
 		  (tf, n, Type.INT, Bop.XOR, q1, new CONST(tf, n, d_sign))),
 		 new UNOP
-		 (tf, n, Type.INT, Uop.NEG, new CONST(tf, n, d_sign))); 
+		 (tf, n, Type.INT, Uop.NEG, new CONST(tf, n, d_sign))));
 	}
-	
     }
 
 
@@ -460,26 +469,29 @@ public abstract class AlgebraicSimplification extends Simplification {
 	long multiplier = m.value.longValue(); 
 	Exp  product    = new CONST(tf, n, 0); 
 
-	// FIXME: 
-	// 
-	// 1) if n is a complex expression, this is inefficient.  May
-	//    need to copy it to a TEMP first and return an ESEQ. 
-	// 
+	// copy to temp in case we need to reuse n.
+	Temp t = new Temp(tf.tempFactory(), "dm");
+	MOVE move = new MOVE(tf, n, new TEMP(tf, n, n.type(), t), n);
+	TEMP Tlast = null; // keep the last TEMP generated around.
+	int numuses = 0; // count how many times we've referenced TEMP t
+
 	for (int i=0; i<numbits; i++) { 
 	    int bitI = (int)((multiplier >> i) & 1); 
 	    if (bitI == 0) { 
 		if (ones < 3) { // Not enough ones to warrant a booth recoding
 		    for (int bit = i-ones; bit<i; bit++) { 
+			Tlast = new TEMP(tf, n, n.type(), t); numuses++;
 			product = new BINOP
 			    (tf, n, n.type(), Bop.ADD, 
 			     product, 
 			     new BINOP
 			     (tf, n, n.type(), Bop.SHL,
-			      n.build(n.kids()), 
+			      Tlast,
 			      new CONST(tf, n, bit))); 
 		    }
 		}
 		else { // In this case we will see gains from a booth recoding
+		    Tlast = new TEMP(tf, n, n.type(), t); numuses++;
 		    product = new BINOP
 			(tf, n, n.type(), Bop.ADD, 
 			 product, 
@@ -487,15 +499,16 @@ public abstract class AlgebraicSimplification extends Simplification {
 			 (tf, n, n.type(), Uop.NEG, 
 			  new BINOP
 			  (tf, n, n.type(), Bop.SHL, 
-			   n.build(n.kids()), 
+			   Tlast,
 			   new CONST(tf, n, i-ones)))); 
 
+		    Tlast = new TEMP(tf, n, n.type(), t); numuses++;
 		    product = new BINOP
 			(tf, n, n.type(), Bop.ADD,
 			 product, 
 			 new BINOP
 			 (tf, n, n.type(), Bop.SHL, 
-			  n.build(n.kids()), 
+			  Tlast,
 			  new CONST(tf, n, i))); 
 		}
 		ones = 0; // Reset the count of ones. 
@@ -507,7 +520,14 @@ public abstract class AlgebraicSimplification extends Simplification {
 	    }
 	}
 	
-	return product; 
+	// either chain the MOVE together w/ the product, or replace
+	// the only TEMP with n.
+	if (numuses==0) return new ESEQ(tf, n, new EXP(tf, n, n), product);
+	if (numuses==1) {
+	    Tlast.replace(n); // replace TEMP(t) with n itself.
+	    return product; // no need to separate variable.
+	}
+	return new ESEQ(tf, n, move, product); // move n into t, then compute.
     }
 }
 
