@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.38 1999-06-13 05:30:24 cananian Exp $
+% $Id: thesis.tex,v 1.39 1999-06-13 19:55:54 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.38 $ $}
+\date{\today \\ $ $Revision: 1.39 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.38 $ $}{$ $Revision: 1.38 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.39 $ $}{$ $Revision: 1.39 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -311,24 +311,24 @@ the algorithms involved, as their published descriptions
 
 We begin with a few definitions from \cite{johnson94:pst}.
 \begin{definition}
-Edges $a$ and $b$ are said to be \term{edge cycle-equivalent} in a
+Edges $a$ and $b$ are said to be \newterm{edge cycle-equivalent} in a
 graph iff every cycle containing $a$ contains $b$, and vice-versa.
-Similarly, two nodes are said to be \term{node cycle-equivalent} iff
+Similarly, two nodes are said to be \newterm{node cycle-equivalent} iff
 every cycle containing one of the nodes also contains the other.
 \end{definition}
 \begin{definition}
-A \term{SESE region} in a graph $G$ is an ordered edge pair
+A \newterm{SESE region} in a graph $G$ is an ordered edge pair
 $\tuple{a,b}$ of distinct control flow edges $a$ and $b$ where
 \begin{tightenum}
 \item $a$ dominates $b$,
 \item $b$ postdominates $a$, and
 \item every cycle containing $a$ also contains $b$ and vice-versa.
 \end{tightenum}
-Edges $a$ and $b$ are called the \term{entry} and \term{exit} edges,
+Edges $a$ and $b$ are called the \newterm{entry} and \newterm{exit} edges,
 respectively.
 \end{definition}
 \begin{definition}
-A SESE region $\tuple{a,b}$ is \term{canonical} provided
+A SESE region $\tuple{a,b}$ is \newterm{canonical} provided
 \begin{tightenum}
 \item $b$ dominates $b'$ for any SESE region $\tuple{a,b'}$, and
 \item $a$ postdominates $a'$ for any SESE region $\tuple{a',b}$.
