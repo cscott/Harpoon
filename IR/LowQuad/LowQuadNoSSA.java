@@ -27,7 +27,7 @@ import harpoon.Temp.Temp;
  * always be empty.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.23 2000-02-25 00:53:59 cananian Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.24 2000-03-29 06:46:10 cananian Exp $
  */
 public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
     private Derivation m_derivation;
@@ -43,7 +43,7 @@ public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
       
 	translator   = new ToNoSSA(qf, code, (Derivation) code);
 	quads        = translator.getQuads();
-	m_derivation = translator;
+	m_derivation = translator.getDerivation();
     }
   
     /**

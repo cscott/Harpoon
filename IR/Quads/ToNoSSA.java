@@ -27,15 +27,18 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.30 2000-02-25 00:54:03 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.31 2000-03-29 06:46:01 cananian Exp $
  */
-public class ToNoSSA implements Derivation, TypeMap
+public class ToNoSSA
 {
     private CloningTempMap  m_ctm;
     private Derivation      m_derivation;
     private Quad            m_quads;
     
-    private static class NullDerivation implements Derivation {
+    private static interface SerializableDerivation
+	extends Derivation, java.io.Serializable { /* declare only */ }
+
+    private static class NullDerivation implements SerializableDerivation {
 	public DList derivation(HCodeElement hce, Temp t) { 
 	    Util.assert(hce!=null && t!=null);
 	    throw new TypeNotKnownException(hce, t);
@@ -45,6 +48,28 @@ public class ToNoSSA implements Derivation, TypeMap
 	    throw new TypeNotKnownException(hce, t);
 	} 
     }
+    private static class MapDerivation implements SerializableDerivation {
+	final Map dT;
+	MapDerivation(Map dT) { this.dT = dT; }
+	public DList derivation(HCodeElement hce, Temp t) {
+	    Util.assert(hce!=null && t!=null);
+	    Util.assert(t.tempFactory() ==
+			((Quad)hce).getFactory().tempFactory());
+	    Object type = dT.get(new Tuple(new Object[] { hce, t }));
+	    if (type instanceof HClass) return null;
+	    if (type instanceof DList) return (DList) type;
+	    throw new TypeNotKnownException(hce, t);
+	}
+	public HClass typeMap(HCodeElement hce, Temp t) {
+	    Util.assert(hce!=null && t!=null);
+	    Util.assert(t.tempFactory() ==
+			((Quad)hce).getFactory().tempFactory());
+	    Object type = dT.get(new Tuple(new Object[] { hce, t }));
+	    if (type instanceof HClass) return (HClass)type;
+	    if (type instanceof DList) return null;
+	    throw new TypeNotKnownException(hce, t);
+	}
+    }
 
     public ToNoSSA(QuadFactory newQF, Code code)
     {
@@ -52,7 +77,7 @@ public class ToNoSSA implements Derivation, TypeMap
     }
     public ToNoSSA(QuadFactory newQF, Code code, final TypeMap typeMap)
     {
-	this(newQF, code, typeMap==null ? null : new Derivation() {
+	this(newQF, code, typeMap==null ? null : new SerializableDerivation() {
 	    public HClass typeMap(HCodeElement hce, Temp t) {
 		// proxy given typeMap
 		return typeMap.typeMap(hce, t);
@@ -79,36 +104,13 @@ public class ToNoSSA implements Derivation, TypeMap
 	    (((Quad)code.getRootElement()).getFactory().tempFactory(),
 	     newQF.tempFactory());
 	m_quads = translate(newQF, derivation, dT, code);
-	m_derivation = validDerivation ? (Derivation) new Derivation() {
-	    public DList derivation(HCodeElement hce, Temp t) {
-		Util.assert(hce!=null && t!=null);
-		Util.assert(t.tempFactory() ==
-			    ((Quad)hce).getFactory().tempFactory());
-		Object type = dT.get(new Tuple(new Object[] { hce, t }));
-		if (type instanceof HClass) return null;
-		if (type instanceof DList) return (DList) type;
-		throw new TypeNotKnownException(hce, t);
-	    }
-	    // Note:  because we have just translated from SSA, the 
-	    // HCodeElement parameter is not necessary.  
-	    public HClass typeMap(HCodeElement hce, Temp t) {
-		Util.assert(hce!=null && t!=null);
-		Util.assert(t.tempFactory() ==
-			    ((Quad)hce).getFactory().tempFactory());
-		Object type = dT.get(new Tuple(new Object[] { hce, t }));
-		if (type instanceof HClass) return (HClass)type;
-		if (type instanceof DList) return null;
-		throw new TypeNotKnownException(hce, t);
-	    }
-	} : (Derivation) new NullDerivation();
+	m_derivation = validDerivation
+	    ? (Derivation) new MapDerivation(dT) 
+	    : (Derivation) new NullDerivation();
     }
 
     public Quad getQuads()        { return m_quads; }
-    public HClass typeMap(HCodeElement hce, Temp t) { 
-	return m_derivation.typeMap(hce, t);
-    }
-    public DList derivation(HCodeElement hce, Temp t)
-    { return m_derivation.derivation(hce, t); }
+    public Derivation getDerivation() { return m_derivation; }
 
     /**
      * Translates the code in the supplied codeview from SSA to No-SSA form, 
