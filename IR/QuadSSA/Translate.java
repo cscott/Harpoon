@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.54 1998-09-08 14:38:39 cananian Exp $
+ * @version $Id: Translate.java,v 1.55 1998-09-08 18:10:22 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -158,7 +158,7 @@ class Translate  { // not public.
 
 	/** Makes a new array by popping first 'n' elements off. */
 	private static final Object[] shrink(Object[] src, int n) {
-	    Util.assert(src.length>0);
+	    Util.assert(src.length>=n);
 	    Object[] dst = (Object[]) Array.newInstance(src.getClass()
 							.getComponentType(),
 							src.length-n);
