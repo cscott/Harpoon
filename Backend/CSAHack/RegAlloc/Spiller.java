@@ -10,9 +10,9 @@ package harpoon.Backend.CSAHack.RegAlloc;
 import harpoon.Backend.StrongARM.TwoWordTemp;
 
 import harpoon.Backend.Generic.Frame;
-import harpoon.ClassFile.HCodeEdge;
 import harpoon.Backend.CSAHack.RegAlloc.Code.Access;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Properties.CFGEdge; 
 import harpoon.Backend.CSAHack.Graph.NodeList;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempList;
@@ -98,7 +98,7 @@ class Spiller {
 	  Access a = (Access) spills.get(olduse);
 	  for (Iterator it2=il.predC().iterator(); it2.hasNext(); ) {
 	    Instr loadi = a.makeLoad(il.getFactory(), il, newuse);
-	    loadi.insertAt((HCodeEdge)it2.next());
+	    loadi.insertAt((CFGEdge)it2.next());
 	    instrsToSkip.add(loadi);
 	  }
       }
@@ -109,7 +109,7 @@ class Spiller {
 	  Access a = (Access) spills.get(olddef);
 	  for (Iterator it2=il.succC().iterator(); it2.hasNext(); ) {
 	    Instr storei = a.makeStore(il.getFactory(), il, newdef);
-	    storei.insertAt((HCodeEdge)it2.next());
+	    storei.insertAt((CFGEdge)it2.next());
 	    instrsToSkip.add(storei);
 	  }
       }
