@@ -22,7 +22,7 @@ import java.util.Iterator;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.11 1999-08-24 04:17:32 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.12 1999-08-24 19:20:32 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -805,18 +805,28 @@ public class Jasmin {
 	HashMap stacktemps=new HashMap();
 	WorkSet badquads=new WorkSet();
 	int j=0;
+
+	//Cycle through the formal parameters...Assign them to their
+	//appropriate local variables
 	for(int i=0;i<m.params().length;i++) {
 	    stacktemps.put(m.params(i),new TempInfo(j++));
 	    HClass hclass=tp.typeMap(null,m.params(i));
 	    if ((hclass==HClass.Double)||(hclass==HClass.Long))
 		j++;
 	}
+
+
+	//Make a set containing all of the quads protected
+	//by handler quads...
 	for (int i=1;i<m.nextLength();i++) {
 	    HANDLER h=(HANDLER)m.next(i);
 	    Enumeration e=h.protectedQuads();
 	    while(e.hasMoreElements())
 		badquads.add((Quad)e.nextElement());
 	}
+
+	//Cycled through all temps defined and used once
+	//Consider them for placement on stack
 
 	for (int i=0;i<alltemp.length;i++) {
 	    Temp next=alltemp[i];
@@ -830,9 +840,14 @@ public class Jasmin {
 		}
 	    }
 	}
+
+	//Iterate through the temps we've placed so far
+
 	Iterator iterate=stacktemps.keySet().iterator();
 	while (iterate.hasNext()) {
 	    Temp next=(Temp)iterate.next();
+
+	    //Only worry about the ones on the stack
 	    if (((TempInfo)stacktemps.get(next)).stack) {
 		HCodeElement[] huses=ud.useMap(code,next);
 		HCodeElement[] hdefs=ud.defMap(code,next);
@@ -842,11 +857,17 @@ public class Jasmin {
 		Temp[] defs=def.def();
 		boolean flag=true;
 		boolean broken=false;
+
+		//go through the using quad
 		for (int i=0;i<uses.length;i++) {
+		    //If we have an temp before 'next'
+		    //that isn't on the stack, we can't put it
+		    //under 'next'
+
 		    if (!stacktemps.containsKey(uses[i]))
 			flag=false;
 		    else
-			if (((TempInfo)stacktemps.get(uses[i])).stack)
+			if (!((TempInfo)stacktemps.get(uses[i])).stack)
 			    flag=false;
 		    if ((flag==false)&&(uses[i]==next)) {
 			broken=true;
@@ -854,15 +875,23 @@ public class Jasmin {
 		    }
 		}
 		flag=true;
+
+		//if we need a temp under 'next'
+		//we can't put 'next' on the stack
 		for (int i=0;i<defs.length;i++) {
 		    if (!stacktemps.containsKey(defs[i]))
+			flag=false;
+		    else if (!((TempInfo)stacktemps.get(defs[i])).stack)
 			flag=false;
 		    if ((flag==false)&&(uses[i]==next)) {
 			broken=true;
 			break;
 		    }
 		}
+
 		if (broken) {
+		    // If this stack allocation failed,
+		    // allocate it to a local variable.
 		    // Should be ok to pass null as HCodeElement param
 		    HClass hclass=tp.typeMap(null,next);
 		    stacktemps.put(next,new TempInfo(j++));
@@ -872,6 +901,8 @@ public class Jasmin {
 	    }
 	}
 
+	//loop through the rest of the temps
+	//assign them to local variables...
 	for (int i=0;i<alltemp.length;i++) {
 	    if (!stacktemps.containsKey(alltemp[i])) {
 		// Should be ok to pass null as HCodeElement param
@@ -888,17 +919,39 @@ public class Jasmin {
 	Quad ptr=def;
 	boolean flag=true;
 	WorkSet track=new WorkSet();
+	//make sure that the definition quad
+	//isn't covered by a handler and that it only defines one temp
 	if ((ptr.def().length==1)&&(!badquads.contains(ptr))) {
+	    //while we haven't found the use
 	    while (ptr!=use) {
+		//make sure we aren't at a sigma quad
+		//don't want to stack allocate across them
 		if (ptr.next().length!=1) {
 		    flag=false;break;}
+		
+		//Look at the temp's defined by this quad
 		Temp[] defs=ptr.def();
+		//if any of them are on the stack
+		//add them to our stack tracking list
 		for (int i=0;i<defs.length;i++)
 		    if (stacktemps.containsKey(defs[i]))
 			track.push(defs[i]);
+
+		//go to the next quad
        		ptr=ptr.next(0);
+
+		//make sure that this isn't a phi...
+		//don't want the possibility of the analysis
+		//following a loop...
+		//also make sure that this quad isn't covered by a handler
 		if ((ptr.prev().length!=1)||(badquads.contains(ptr))) {
 		    flag=false;break;}
+		//check the uses of this quad....
+		//if it is our temp, we are done...
+		//if it is another temp, check to see
+		//if it is stack allocated...
+		//if it is in our track list remove it, if it is
+		//not bail on this temp
 		Temp[] uses=ptr.use();
 		for (int i=uses.length-1;i>=0;i--) {
 		    if (uses[i]==t) break;
@@ -910,9 +963,14 @@ public class Jasmin {
 		    }
 		}
 	    }
+	    //if we made it here, and our tracking list is empty
+	    //we add it to our list of possibilities
 	    if ((flag)&&(track.isEmpty())) {
 		stacktemps.put(t, new TempInfo(true));
 	    } 
 	}
     }
 }
+
+
+
