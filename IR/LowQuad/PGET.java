@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.LowQuad;
 
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
@@ -14,7 +15,7 @@ import harpoon.Util.Util;
  * ought to contain a <code>POINTER</code> value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PGET.java,v 1.1.2.3 1999-09-09 21:43:00 cananian Exp $
+ * @version $Id: PGET.java,v 1.1.2.4 1999-09-10 00:25:37 cananian Exp $
  */
 public class PGET extends LowQuad {
     /** <code>Temp</code> in which to store the fetched field or array
@@ -23,6 +24,12 @@ public class PGET extends LowQuad {
     /** <code>Temp</code> holding the <code>POINTER</code> value to
      *  dereference and fetch. */
     protected final Temp ptr;
+    /** The type of the object we are fetching.  This may be
+     *  a sub-integer type, and thus disagree with the type of
+     *  <code>dst</code>.  For non-primitive types, this may be
+     *  simply <code>Object</code>; use a typemap and the <code>dst</code>
+     *  field if you need accurate non-primitive types. */
+    protected final HClass type;
     
     /** Creates a <code>PGET</code> representing a pointer dereference and
      *  fetch.
@@ -32,12 +39,17 @@ public class PGET extends LowQuad {
      * @param ptr
      *        the <code>Temp</code> holding the <code>POINTER</code> value
      *        to dereference.
+     * @param type
+     *        the type of the object we are fetching; possibly a sub-integer
+     *        type.  Not necessarily precise if non-primitive.
      */
-    public PGET(LowQuadFactory qf, HCodeElement source, Temp dst, Temp ptr) {
+    public PGET(LowQuadFactory qf, HCodeElement source,
+		Temp dst, Temp ptr, HClass type) {
 	super(qf, source);
 	this.dst = dst;
 	this.ptr = ptr;
-	Util.assert(dst!=null && ptr!=null);
+	this.type= type;
+	Util.assert(dst!=null && ptr!=null && type!=null);
     }
     // ACCESSOR METHODS:
     /** Returns the <code>Temp</code> in which to store the fetched field or
@@ -46,6 +58,10 @@ public class PGET extends LowQuad {
     /** Returns the <code>Temp</code> holding the <code>POINTER</code> value
      *  to dereference and fetch. */
     public Temp ptr() { return ptr; }
+    /** Returns the type of the field or array element we are fetching.
+     *  Not necessarily precise if non-primitive.  May be a sub-integer
+     *  type. */
+    public HClass type() { return type; }
 
     public int kind() { return LowQuadKind.PGET; }
 
@@ -55,12 +71,14 @@ public class PGET extends LowQuad {
     public harpoon.IR.Quads.Quad rename(harpoon.IR.Quads.QuadFactory qf,
 					TempMap defMap, TempMap useMap) {
 	return new PGET((LowQuadFactory)qf, this,
-			map(defMap, dst), map(useMap, ptr));
+			map(defMap, dst), map(useMap, ptr), type);
     }
 
     void accept(LowQuadVisitor v) { v.visit(this); }
 
     public String toString() {
-	return dst.toString() + " = PGET *" + ptr.toString();
+	String r = dst.toString() + " = PGET *" + ptr.toString();
+	if (type.isPrimitive()) r+=" ("+type.toString()+")";
+	return r;
     }
 }

@@ -26,7 +26,7 @@ import java.util.Map;
  * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.11 1999-09-09 21:43:00 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.12 1999-09-10 00:25:37 cananian Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,
@@ -117,7 +117,8 @@ final class Translate { // not public
 				   map(q.index()));
 	    Quad q2 = new POPER(qf, q, LQop.PADD, extra(q.objectref()),
 				new Temp[] { q0.def()[0], q1.def()[0] });
-	    Quad q3 = new PGET(qf, q, map(q.dst()), q2.def()[0]);
+	    Quad q3 = new PGET(qf, q, map(q.dst()), q2.def()[0],
+			       type(q,q.objectref()).getComponentType());
 	    Quad.addEdges(new Quad[] { q0, q1, q2, q3 });
 	    lqm.put(q, q0, q3);
 	    // update derivation table.
@@ -140,7 +141,8 @@ final class Translate { // not public
 				   map(q.index()));
 	    Quad q2 = new POPER(qf, q, LQop.PADD, extra(q.objectref()),
 				new Temp[] { q0.def()[0], q1.def()[0] });
-	    Quad q3 = new PSET(qf, q, q2.def()[0], map(q.src()));
+	    Quad q3 = new PSET(qf, q, q2.def()[0], map(q.src()),
+			       type(q,q.objectref()).getComponentType());
 	    Quad.addEdges(new Quad[] { q0, q1, q2, q3 });
 	    lqm.put(q, q0, q3);
 	    // update derivation table.
@@ -221,7 +223,8 @@ final class Translate { // not public
 		       new Error("Cant type derived pointer: " + q2.def()[0]));
 	    }
 	    updateTypeInfo(q);
-	    Quad q3 = new PGET(qf, q, map(q.dst()), qN.def()[0]);
+	    Quad q3 = new PGET(qf, q, map(q.dst()), qN.def()[0],
+			       q.field().getType());
 	    Quad.addEdge(qN, 0, q3, 0);
 	    lqm.put(q, q0, q3);
 	}
@@ -261,7 +264,8 @@ final class Translate { // not public
 		       new Error("Cant type derived pointer: " + q0.def()[0]));
 	    }
 	    updateTypeInfo(q);
-	    Quad q3 = new PSET(qf, q, qN.def()[0], map(q.src()));
+	    Quad q3 = new PSET(qf, q, qN.def()[0], map(q.src()),
+			       q.field().getType());
 	    Quad.addEdge(qN, 0, q3, 0);
 	    lqm.put(q, q0, q3);
 	}
