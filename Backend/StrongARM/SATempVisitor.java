@@ -4,7 +4,6 @@
 package harpoon.Backend.StrongARM;
 
 import harpoon.Temp.Temp;
-import harpoon.Temp.TempVisitor;
 
 /**
  * <code>SATempVisitor</code> is an extension of
@@ -12,7 +11,7 @@ import harpoon.Temp.TempVisitor;
  * <code>Temp</code> local to the StrongARM backend.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SATempVisitor.java,v 1.1.2.2 1999-08-04 21:46:11 pnkfelix Exp $
+ * @version $Id: SATempVisitor.java,v 1.1.2.3 1999-08-04 23:54:15 pnkfelix Exp $
  */
 public abstract class SATempVisitor {
     
