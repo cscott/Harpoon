@@ -60,7 +60,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.39 2000-01-15 08:48:20 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.40 2000-01-16 03:49:56 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -832,6 +832,10 @@ public class AsyncCode {
 	    if (gis.equals(old))
 		return linker.forName("java.net.Socket").getDeclaredMethod
 		    ("getAsyncInputStream", new HClass[0]);
+	    HMethod  gos=linker.forName("java.net.Socket").getDeclaredMethod("getOutputStream", new HClass[0]);
+	    if (gos.equals(old))
+		return linker.forName("java.net.Socket").getDeclaredMethod
+		    ("getAsyncOutputStream", new HClass[0]);
 
 	    HClass HCthrd=linker.forName("java.lang.Thread");
 	    if (HCthrd.equals(old.getDeclaringClass())&&
