@@ -151,7 +151,6 @@ public class RealtimeThread extends Thread implements Schedulable {
     // ------------------
 
     public boolean addIfFeasible() {
-	// TODO
 	if (currentScheduler == null) return false;
 	currentScheduler.addToFeasibility(this);
 	if (currentScheduler.isFeasible()) return true;
@@ -165,42 +164,60 @@ public class RealtimeThread extends Thread implements Schedulable {
 	if(currentScheduler != null)
 	    currentScheduler.addToFeasibility(this);
 
-	// TODO -- return type changed from 'void' to 'boolean'
-	return false;
+	return currentScheduler.isFeasible();
     }
     
-    public static RealtimeThread currentRealtimeThread() throws ClassCastException {
+    public static RealtimeThread currentRealtimeThread()
+	throws ClassCastException {
 	return (RealtimeThread)currentThread();
     }
     
     public void deschedulePeriodic() {
-	// TODO
+
     }
 
     public MemoryArea getCurrentMemoryArea() {
 	return mem;
     }
 
-    public static int getInitialMemoryAreaIndex() {
-	// TODO
+    // I don't get why this method should be static
+    public /*static*/ int getInitialMemoryAreaIndex() {
+	MemAreaStack temp = memAreaStack;
+	int index = 0;
+	while (temp != null) {
+	    if (temp.entry == mem) return index;
+	    else {
+		index++;
+		temp = temp.next;
+	    }
+	}
 
-	return 0;
+	return -1;
     }
 
-    public static int getMemoryAreaStackDepth() {
-	// TODO
-
-	return 0;
+    // I don't get why this method should be static
+    public /*static*/ int getMemoryAreaStackDepth() {
+	MemAreaStack temp = memAreaStack;
+	int count = 0;
+	while (temp != null) {
+	    count++;
+	    temp = temp.next;
+	}
+	return count;
     }
 
     public MemoryParameters getMemoryParameters() {
 	return memoryParameters;
     }
     
-    public static MemoryArea getOuterMemoryArea(int index) {
-	// TODO
-
-	return null;
+    // I don't get why this method should be static
+    public /*static*/ MemoryArea getOuterMemoryArea(int index) {
+	MemAreaStack temp = memAreaStack;
+	for (int i = 0; i < index; i++)
+	    if (temp != null) temp = temp.next;
+	    else return null;
+	if (temp != null) return temp.entry;
+	else return null;
     }
 
     public ProcessingGroupParameters getProcessingGroupParameters() {

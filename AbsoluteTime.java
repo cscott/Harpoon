@@ -104,9 +104,10 @@ public class AbsoluteTime extends HighResolutionTime {
     
     // Not in specs, but must be defined, since it was declared in HighResolutionTime
     public RelativeTime relative(Clock clock, HighResolutionTime time) {
-	// TODO
-
-	return null;
+	return new RelativeTime(time.getMilliseconds() -
+				clock.getTime().getMilliseconds(),
+				time.getNanoseconds() -
+				clock.getTime().getNanoseconds());
     }
 
     public void set(Date d)	{

@@ -89,22 +89,22 @@ public class RelativeTime extends HighResolutionTime {
     }
     
     public RelativeTime relative(Clock clock) {
-	// TODO
-
+	set(getMilliseconds() - clock.getTime().getMilliseconds(),
+	    getNanoseconds() - clock.getTime().getNanoseconds());
 	return this;
     }
 
-    public RelativeTime relative(Clock clock, RelativeTime destination) {
-	// TODO
-
-	return destination;
+    public RelativeTime relative(Clock clock, RelativeTime time) {
+	set(time.getMilliseconds() - clock.getTime().getMilliseconds(),
+	    time.getNanoseconds() - clock.getTime().getNanoseconds());
+	return this;
     }
 
     // Not in specs, but must be defined, since it was declared in HighResolutionTime
     public RelativeTime relative(Clock clock, HighResolutionTime time) {
-	// TODO
-
-	return null;
+	set(time.getMilliseconds() - clock.getTime().getMilliseconds(),
+	    time.getNanoseconds() - clock.getTime().getNanoseconds());
+	return this;
     }
     
     public final RelativeTime subtract(RelativeTime time) {

@@ -31,8 +31,8 @@ public class RationalTime extends RelativeTime {
     }
 
     public AbsoluteTime absolute(Clock clock, AbsoluteTime destination) {
-	// TODO
-
+	destination.set(getMilliseconds() + clock.getTime().getMilliseconds(),
+			getNanoseconds() + clock.getTime().getNanoseconds());
 	return destination;
     }
 
