@@ -24,7 +24,7 @@ import harpoon.Temp.Temp;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.8 2000-02-11 06:12:07 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.9 2000-02-12 01:41:32 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -74,7 +74,7 @@ abstract class InterProcPA {
 
 	ParIntGraph pigs[] = new ParIntGraph[nb_callees];
 	for(int i=0;i<nb_callees;i++){
-	    pigs[i] = pa.getExtParIntGraph(hms[i]);
+	    pigs[i] = pa.getExtParIntGraph(hms[i],false);
 	    if(pigs[i] == null){
 		// one of the callee doesn't have a // interaction graph
 		return skip_call(q,pig_before,node_rep);
@@ -96,7 +96,7 @@ abstract class InterProcPA {
 	// compute the first term of the join operation
 	ParIntGraph pig_after = 
 	    mapUp(q,(ParIntGraph)pig_before.clone(),
-		  pa.getExtParIntGraph(hms[0]),
+		  pa.getExtParIntGraph(hms[0],false),
 		  pa.getParamNodes(hms[0]));
 
 	// join to it all the others, except the last one

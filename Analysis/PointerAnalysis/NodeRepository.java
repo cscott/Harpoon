@@ -14,7 +14,7 @@ import harpoon.IR.Quads.Quad;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1.2.6 2000-02-11 06:12:07 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.7 2000-02-12 01:41:32 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -28,6 +28,7 @@ public class NodeRepository {
 	static_nodes = new Hashtable();
 	param_nodes  = new Hashtable();
 	code_nodes   = new Hashtable();
+	node2code    = new Hashtable();
     }
 
     /** Returns the static node associated with the class

@@ -27,7 +27,7 @@ import java.util.Set;
  the loop. 
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Matching.java,v 1.1.2.1 2000-02-07 02:05:57 salcianu Exp $
+ * @version $Id: Matching.java,v 1.1.2.2 2000-02-12 01:41:32 salcianu Exp $
  */
 abstract class Matching {
 
@@ -36,13 +36,14 @@ abstract class Matching {
 	mu[i] relation from node1 to node2.<br>
 	<i>Note</i>: you won't find this rule in the paper; it was added
 	by me to fix the algorithm. */
-    public static final void rule0(PANode node1, ParIntGraph pig[],
+    public static final void rule0(PANode node1, Set new_mappings_for_node,
+		   ParIntGraph pig[],
 		   PAWorkList W[], Relation mu[], Relation new_info[], 
 		   int i, int ib){
 	HashSet new_nodes3 = new HashSet();
 
 	// for all the possible instances of node2 from the inference rule ...
-	Iterator it2 = new_info[i].getValues(node1);
+	Iterator it2 = new_mappings_for_node.iterator();
 	while(it2.hasNext()){
 	    PANode node2 = (PANode) it2.next();
 	    // ... find all the possible instances of node3 ...
@@ -61,8 +62,6 @@ abstract class Matching {
 	    }
 	}
 
-	new_info[i].removeAll(node1);
-	
 	if(!new_nodes3.isEmpty()){
 	    new_info[i].addAll(node1, new_nodes3);
 	    W[i].add(node1);
@@ -77,13 +76,13 @@ abstract class Matching {
 	only with the new mappings of node1. All the new mappings for node2
 	will also be put in new_info[i]. If such new mappings appear, 
 	all the instances of node2 are added to W[i].*/
-    public static final void rule2(PANode node1,ParIntGraph pig[],
+    public static final void rule2(PANode node1, Set new_mappings_for_node1,
+		   ParIntGraph pig[],
 		   PAWorkList W[], Relation mu[], Relation new_info[], 
 		   int i, int ib){
 	// nodes3 stands for all the new instances of n3
 	// from the inference rule
-	HashSet nodes3 = new HashSet(new_info[i].getValuesSet(node1));
-	new_info[i].removeAll(node1);
+	Set nodes3 = new_mappings_for_node1;
 
 	Enumeration flags = pig[i].G.O.allFlagsForNode(node1);
 	while(flags.hasMoreElements()){
@@ -126,13 +125,13 @@ abstract class Matching {
 	only with the new mappings of node1. All the new mappings for node4
 	will also be put in new_info[ib]. If such new mappings appear, 
 	all the instances of node4 are added to W[ib].*/
-    public static final void rule3(PANode node1, ParIntGraph pig[],
+    public static final void rule3(PANode node1, Set new_mappings_for_node1,
+		   ParIntGraph pig[],
 		   PAWorkList W[], Relation mu[], Relation new_info[], 
 		   int i, int ib){
 	// nodes3 stands for all the new instances of n3
 	// from the inference rule
-	HashSet nodes3 = new HashSet(new_info[i].getValuesSet(node1));
-	new_info[i].removeAll(node1);
+	Set nodes3 = new_mappings_for_node1;
 
 	Enumeration flags = pig[i].G.I.allFlagsForNode(node1);
 	while(flags.hasMoreElements()){

@@ -17,7 +17,7 @@ import harpoon.ClassFile.HCodeElement;
  * <code>EscapeFunc</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.6 2000-02-11 06:12:07 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.7 2000-02-12 01:41:32 salcianu Exp $
  */
 public class PAEscapeFunc {
 
@@ -164,7 +164,7 @@ public class PAEscapeFunc {
 	Two equal <code>PAEscapeFunc</code>s are guaranteed to have the same
 	string representation. */
     public String toString(){
-	StringBuffer buffer = new StringBuffer("Escape function:\n");
+	StringBuffer buffer = new StringBuffer(" Escape function:\n");
 
         HashSet set = new HashSet(rel_n.keySet());
         set.addAll(rel_m.keySet());

@@ -55,14 +55,14 @@ import harpoon.IR.Quads.FOOTER;
  * computed results from the caches.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.14 2000-02-11 06:12:07 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.15 2000-02-12 01:41:32 salcianu Exp $
  */
 public class PointerAnalysis {
 
-    public static final boolean DEBUG = true;
-    public static final boolean DEBUG2 = true;
+    public static final boolean DEBUG = false;
+    public static final boolean DEBUG2 = false;
     public static final boolean DETERMINISTIC = true;
-    public static final boolean TIMING = false;
+    public static final boolean TIMING = true;
 
     public static final String ARRAY_CONTENT = "array_elements";
 
@@ -107,7 +107,12 @@ public class PointerAnalysis {
      * the method <code>hm</code> i.e. the graph at the end of the method.
      * Returns <code>null</code> if no such graph is available. */
     public ParIntGraph getIntParIntGraph(HMethod hm){
-	return (ParIntGraph)hash_proc_int.get(hm);
+	ParIntGraph pig = (ParIntGraph)hash_proc_int.get(hm);
+	if(pig == null){
+	    analyze(hm);
+	    pig = (ParIntGraph)hash_proc_int.get(hm);
+	}
+	return pig;
     }
 
     /** Returns the simplified (external) <code>ParIntGraph</code> attached to
@@ -119,7 +124,16 @@ public class PointerAnalysis {
      * parameters will disappear anyway).
      * Returns <code>null</code> if no such graph is available. */
     public ParIntGraph getExtParIntGraph(HMethod hm){
-	return (ParIntGraph)hash_proc_ext.get(hm);
+	return getExtParIntGraph(hm,true);
+    }
+
+    ParIntGraph getExtParIntGraph(HMethod hm, boolean compute_it){
+	ParIntGraph pig = (ParIntGraph)hash_proc_ext.get(hm);
+	if((pig == null) && compute_it){
+	    analyze(hm);
+	    pig = (ParIntGraph)hash_proc_ext.get(hm);
+	}
+	return pig;
     }
 
     /** Returns the parameter nodes of the method <code>hm</code>. This is
@@ -127,6 +141,17 @@ public class PointerAnalysis {
      * to <code>hm</code> */
     public PANode[] getParamNodes(HMethod hm){
 	return nodes.getAllParams(hm);
+    }
+
+    /** Returns the parallel interaction graph for the end of the method 
+	<code>hm</code>. The interactions between <code>hm</code> and the
+	threads it (transitively) starts are analyzed in order to 
+	&quot;recover&quot; some of the escaped nodes.<br>
+	See Section 10 <i>Inter-thread Analysis</i> in the original paper of
+	Martin and John Whaley for more details. */
+    public ParIntGraph threadInteraction(HMethod hm){
+	ParIntGraph pig = (ParIntGraph) getIntParIntGraph(hm);
+	return InterThreadPA.resolve_threads(pig,this);
     }
 
 
@@ -147,19 +172,41 @@ public class PointerAnalysis {
     // parameter. For the moment, it is not doing the inter-thread analysis
     private void analyze(HMethod hm){
 
+	// Navigator for the SCC building phase. The code is complicated
+	// by the fact that we are interested only in yet unexplored methods
+	// (i.e. whose parallel interaction graphs are not yet in the cache).
 	SCComponent.Navigator navigator =
 	    new SCComponent.Navigator(){
 		    public Object[] next(Object node){
-			HMethod[] hms = cg.calls((HMethod)node);
+			HMethod[] hms  = cg.calls((HMethod)node);
+			HMethod[] hms2 = get_new_methods(hms);
+
 			if(DETERMINISTIC)
-			    Arrays.sort(hms, UComp.uc);
-			return hms;
+			    Arrays.sort(hms2, UComp.uc);
+			return hms2;
 		    }
+
 		    public Object[] prev(Object node){
 			HMethod[] hms = ac.directCallers((HMethod)node);
+			HMethod[] hms2 = get_new_methods(hms);
+
 			if(DETERMINISTIC)
-			    Arrays.sort(hms, UComp.uc);
-			return hms;
+			    Arrays.sort(hms2, UComp.uc);
+			return hms2;
+		    }
+
+		    // selects only the (yet) unanalyzed methods
+		    private HMethod[] get_new_methods(HMethod[] hms){
+			int count = 0;
+			for(int i = 0 ; i < hms.length ; i++)
+			    if(!hash_proc_ext.containsKey(hms[i]))
+				count++;
+			HMethod[] new_hms = new HMethod[count];
+			int j = 0;
+			for(int i = 0 ; i < hms.length ; i++)
+			    if(!hash_proc_ext.containsKey(hms[i]))
+				new_hms[j++]=hms[i];
+			return new_hms;
 		    }
 		};
 

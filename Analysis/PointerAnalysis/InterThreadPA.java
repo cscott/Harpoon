@@ -6,7 +6,7 @@ package harpoon.Analysis.PointerAnalysis;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Enumeration;
-
+import java.util.Date;
 
 import harpoon.Util.Util;
 import harpoon.ClassFile.HMethod;
@@ -20,11 +20,20 @@ import harpoon.IR.Quads.NEW;
  * <code>InterThreadPA</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.4 2000-02-11 06:12:07 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.5 2000-02-12 01:41:32 salcianu Exp $
  */
 abstract class InterThreadPA {
     
-    public static void resolve_threads(ParIntGraph pig, PointerAnalysis pa){
+    private static final boolean DEBUG = true;
+    private static final boolean TIMING = true;
+
+    public static ParIntGraph resolve_threads(ParIntGraph pig,
+					      PointerAnalysis pa){
+
+	if(DEBUG)
+	    System.out.println("Inter-thread analysis ... ");
+
+	long begin_time = new Date().getTime();
 
 	HashSet analyzed_threads = new HashSet();
 
@@ -32,16 +41,41 @@ abstract class InterThreadPA {
 	    PANode nt = pick_an_unanalyzed_thread(pig,analyzed_threads);
 	    if(nt==null) break;
 
+	    if(DEBUG)
+		System.out.println(nt + " was chosen");
+
 	    HMethod[] ops = get_run_methods(nt,pig,pa);
 	    analyzed_threads.add(nt);
-	    if((ops == null) || (ops.length==0)) continue;
+	    if((ops == null) || (ops.length==0) ||
+	       !analyzable_run_methods(ops,pa)) continue;	    
 
-	    ParIntGraph old_pig = (ParIntGraph) pig.clone();
-	    ParIntGraph new_pig = interaction_nt(pig,nt,ops,pa);
+	    System.out.println("YUHU");
 
-	    if(!new_pig.equals(old_pig))
+	    ParIntGraph old_pig = pig;
+	    pig = interaction_nt(pig,nt,ops,pa);
+
+	    if(!pig.equals(old_pig))
 		analyzed_threads.clear();
 	}
+	
+	if(DEBUG){
+	    long total_time = new Date().getTime() - begin_time;
+	    System.out.println(total_time + "ms");
+	}
+
+	return pig;
+    }
+
+
+    // See if the run method(s) that could be the body of a thread are 
+    // analyzable with regard to <code>pa</code> (i.e. <code>pa</code>
+    // can satisfy queries about these methods.)
+    private static boolean analyzable_run_methods(HMethod[] ops,
+						  PointerAnalysis pa){
+	for(int i = 0 ; i < ops.length ; i++)
+	    if((ops[i] == null) || (pa.getExtParIntGraph(ops[i]) == null))
+		return false;
+	return true;			    
     }
 
 
@@ -70,13 +104,16 @@ abstract class InterThreadPA {
 	HMethod hm = null;
 
 	for(int i = 0 ; i < hms.length ; i++)
-	    if(hms[i].getName().equals("start") &&
+	    if(hms[i].getName().equals("run") &&
 	       (hms[i].getParameterTypes().length == 0)){
 		hm = hms[i];
 		break;
 	    }
 
 	if(hm == null) return null;
+
+	if(DEBUG)
+	    System.out.println("Run method: " + hm);
 
 	return new HMethod[]{hm};
     }
@@ -92,6 +129,10 @@ abstract class InterThreadPA {
 					HMethod[] ops, PointerAnalysis pa){
 	boolean only_once = (pig.tau.getValue(nt)==1);
 
+	if(DEBUG)
+	    System.out.println("interaction_nt:" + 
+			       nt + (only_once?" only once":" many times"));
+
 	adjust_escape_and_tau(pig,nt);
 
 	if(only_once)
@@ -100,7 +141,7 @@ abstract class InterThreadPA {
 	else{
 	    // a fixed-point algorithm is necessary in this case
 	    while(true){
-		ParIntGraph previous_pig = (ParIntGraph)pig.clone();
+		ParIntGraph previous_pig = pig;
 		pig = interact_once(pig,nt,ops,pa);
 		if(pig.equals(previous_pig)) break;
 	    }
@@ -130,16 +171,12 @@ abstract class InterThreadPA {
 	// compute the first term of the join operation:
 	// the interaction with the first run() method
 	ParIntGraph pig_after = 
-	    interact_once_op((ParIntGraph)pig.clone(),nt,ops[0],pa);
+	    interact_once_op(pig,nt,ops[0],pa);
 	
 	// join to it all the other terms (interactions with all the
-	// run() methods except the first and the last ones).
-	for(int i = 1 ; i < nb_ops - 1; i++)
-	    pig_after.join(
-		interact_once_op((ParIntGraph)pig.clone(),nt,ops[i],pa)); 
-
-	// compute and join the interction with the last possible run() method
-	pig_after.join(interact_once_op(pig,nt,ops[nb_ops-1],pa));
+	// other run() methods).
+	for(int i = 1 ; i < nb_ops ; i++)
+	    pig_after.join(interact_once_op(pig,nt,ops[i],pa)); 
 
 	return pig_after;
     }
@@ -148,19 +185,51 @@ abstract class InterThreadPA {
     // Computes the interaction between the Starter and a SINGLE thread having
     // the node nt as a receiver and op as the run() body function.
     private static ParIntGraph interact_once_op(ParIntGraph pig_starter,
-						PANode nt,
-					HMethod op, PointerAnalysis pa){
+			       PANode nt,HMethod op, PointerAnalysis pa){
 	ParIntGraph pig[] = new ParIntGraph[2];
 	pig[0] = pig_starter;
 	pig[1] = pa.getExtParIntGraph(op);
+
+	if(DEBUG){
+	    System.out.println("interact_once_op:");
+	    System.out.println("  nt node: " + nt);
+	    System.out.println("  run method: " + op);
+	    System.out.println("PIG STARTER: " + pig[0]);
+	    System.out.println("PIG STARTEE: " + pig[1]);
+	}
 	
 	PANode[] params = pa.getParamNodes(op);
 	
 	Relation mu[] = compute_initial_mappings(pig,nt,params);
+
+	if(DEBUG){
+	    System.out.println("INITIAL MAPPINGS:");
+	    System.out.println("starter -> startee:" + mu[0]);
+	    System.out.println("startee -> starter:" + mu[1]);
+	}
+
 	concretize_loads(pig,mu);
 	
+	if(DEBUG){
+	    System.out.println("AFTER CONCRETIZE LOADS:");
+	    System.out.println("starter -> startee:" + mu[0]);
+	    System.out.println("startee -> starter:" + mu[1]);
+	}
+
 	compute_final_mappings(pig,mu,nt);
+
+	if(DEBUG){
+	    System.out.println("FINAL MAPPINGS:");
+	    System.out.println("starter -> startee:" + mu[0]);
+	    System.out.println("startee -> starter:" + mu[1]);
+	}
+
 	ParIntGraph new_pig = build_new_pig(pig,mu);
+
+	if(DEBUG){
+	    System.out.println("NEW GRAPH:");
+	    System.out.println(new_pig);
+	}
 
 	// compute the escape function for the new graph
 	new_pig.G.propagate(new_pig.G.e.escapedNodes());
@@ -226,7 +295,9 @@ abstract class InterThreadPA {
     /** Computes the mappings by matching ouside edges from one graph
 	against inside edges from the other one. */
     private static void concretize_loads(ParIntGraph[] pig, Relation[] mu){
+
 	PAWorkList W[] = { new PAWorkList(), new PAWorkList() };
+
 	Relation new_info[] = { (Relation)(mu[0].clone()),
 				(Relation)(mu[1].clone()) };
 	
@@ -242,9 +313,13 @@ abstract class InterThreadPA {
 
 	    PANode node = (PANode) W[i].remove();
 
-	    Matching.rule0(node,pig,W,mu,new_info,i,ib);
-	    Matching.rule2(node,pig,W,mu,new_info,i,ib);
-	    Matching.rule3(node,pig,W,mu,new_info,i,ib);
+	    // new mappings for node
+	    Set new_mappings = new HashSet(new_info[i].getValuesSet(node));
+	    new_info[i].removeAll(node);
+
+	    Matching.rule0(node,new_mappings,pig,W,mu,new_info,i,ib);
+	    Matching.rule2(node,new_mappings,pig,W,mu,new_info,i,ib);
+	    Matching.rule3(node,new_mappings,pig,W,mu,new_info,i,ib);
 	}
     }
 
@@ -317,7 +392,6 @@ abstract class InterThreadPA {
 	    };
 
 	pig.G.I.forAllEdges(visitor_I);
-
     }
 
     // Remove from a parallel interaction graph the load nodes that doesn't

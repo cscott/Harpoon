@@ -24,12 +24,13 @@ import harpoon.Analysis.BasicBlock;
 
 import harpoon.Analysis.PointerAnalysis.PointerAnalysis;
 import harpoon.Analysis.PointerAnalysis.PANode;
+import harpoon.Analysis.PointerAnalysis.ParIntGraph;
 
 /**
  * <code>PAMain</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.3 2000-02-11 06:12:07 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.4 2000-02-12 01:41:42 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -142,5 +143,9 @@ public abstract class PAMain {
 	System.out.println(pa.getIntParIntGraph(hmethod));
 	System.out.print("EXTERNAL GRAPH AT THE END OF THE METHOD:");
 	System.out.println(pa.getExtParIntGraph(hmethod));
+	ParIntGraph pig_inter_thread = pa.threadInteraction(hmethod);
+	System.out.print("EXTERNAL GRAPH AT THE END OF THE METHOD" +
+			 " + INTER-THREAD ANALYSIS:");
+	System.out.println(pig_inter_thread);
     }
 }

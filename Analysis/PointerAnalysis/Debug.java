@@ -10,7 +10,7 @@ import java.util.Arrays;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.1.2.1 2000-02-11 06:15:39 salcianu Exp $
+ * @version $Id: Debug.java,v 1.1.2.2 2000-02-12 01:41:32 salcianu Exp $
  */
 public abstract class Debug {
 
@@ -37,6 +37,21 @@ public abstract class Debug {
 	    buffer.append(" ");
 	}
 	buffer.append("]");
+
+	return buffer.toString();
+    }
+
+    public static String stringImg(Object[] v){
+
+	if(v==null) return "null";
+
+	StringBuffer buffer = new StringBuffer();
+
+	Arrays.sort(v,UComp.uc);
+	for(int i=0; i<v.length;i++){
+	    buffer.append(v[i]);
+	    buffer.append("\n");
+	}
 
 	return buffer.toString();
     }
