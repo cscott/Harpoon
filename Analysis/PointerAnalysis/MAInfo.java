@@ -39,7 +39,7 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.10 2000-05-15 22:49:34 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.11 2000-05-16 17:50:23 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -412,8 +412,11 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	for(Iterator it = aps.keySet().iterator(); it.hasNext(); ){
 	    Quad newq = (Quad) it.next();
 	    MyAP ap   = (MyAP) aps.get(newq);
+	    HClass hclass = newq.getFactory().getMethod().getDeclaringClass();
+	    
 
-	    System.out.println(newq.getSourceFile() + ":" +
+	    System.out.println(hclass.getPackage() + "." + 
+			       newq.getSourceFile() + ":" +
 			       newq.getLineNumber() + " " +
 			       newq + " -> " + ap); 
 	}

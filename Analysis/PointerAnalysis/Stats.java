@@ -14,8 +14,9 @@ import java.util.Comparator;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
-import harpoon.ClassFile.HCodeFactory
-;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeFactory;
+
 import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
@@ -25,7 +26,7 @@ import harpoon.Util.Graphs.SCComponent;
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Stats.java,v 1.1.2.9 2000-05-16 01:32:33 salcianu Exp $
+ * @version $Id: Stats.java,v 1.1.2.10 2000-05-16 17:50:23 salcianu Exp $
  */
 abstract class Stats {
 
@@ -205,6 +206,7 @@ abstract class Stats {
     private static final int print_bytecode_size(Set methods) {
 	HCodeFactory bcf = harpoon.IR.Bytecode.Code.codeFactory();
 	int total = 0;
+	Set cls = new HashSet();
 	System.out.println("ANALYZED METHODS SIZE (IN BYTECODE INSTRS)");
 	for(Iterator it = methods.iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
@@ -212,9 +214,24 @@ abstract class Stats {
 	    int bsize = hcode.getElementsL().size();
 	    total += bsize;
 	    System.out.println(hm + " " + bsize + " bytecode instrs");
+	    cls.add(hm.getDeclaringClass());
 	}
 	System.out.println("TOTAL: " + total + " bytecode instrs");
 	System.out.println();
+
+	System.out.println("ANALYZED CLASSES:");
+	for(Iterator it = cls.iterator(); it.hasNext(); ) {
+	    HClass hclass = (HClass) it.next();
+	    System.out.println("CLS " + hclass.getPackage() + "." +
+			       hclass.getName());
+	    StringBuffer buff = new StringBuffer(hclass.getPackage());
+	    for(int i = 0; i < buff.length(); i++)
+		if(buff.charAt(i) == '.')
+		    buff.setCharAt(i, '/');
+	    if(buff.length() == 0) buff.append(".");
+
+	    System.out.println("SRC " + buff + "/" + hclass.getSourceFile());
+	}
 	return total;
     }
 
