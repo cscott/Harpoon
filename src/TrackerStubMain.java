@@ -25,6 +25,10 @@ public class TrackerStubMain {
 	    System.exit(-1);
 	}
 
-	(new AlertServer(new CORBA(args), args[0], new AlertDisplay())).run();
+	AlertServer alertServer = new AlertServer(new CORBA(args), args[0], null);
+	Node alertDisp = new AlertDisplay();
+
+	alertServer.linkL(alertDisp);
+	alertServer.run();
     }
 }
