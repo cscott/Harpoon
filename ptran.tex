@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.7 2002-07-24 02:24:57 cananian Exp $
+% $Id: ptran.tex,v 1.8 2002-07-24 03:29:51 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -7,7 +7,7 @@
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.7 $ $}
+\date{\today \\ $ $Revision: 1.8 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -76,28 +76,55 @@ dataflow framework:
 \text{In}(n)&=&\bigcup_{p\in\text{pred}(n)} \text{Out}(p)\\
 \end{eqnarray*}
 
-We let $\text{In}$ and $\text{Out}$ operate on tuples 
-\tuple{\text{Rd},\text{Ns},\text{Ru},\text{Gs}} where $\text{Rd}(v)$ is the set
-of reaching definitions of $v$ at $n$, $\text{Ns}(v)$ is a boolean
-which is true iff $v$ is \textbf{non-}singular at $n$, $\text{Ru}(v)$
-is a set of reaching \textbf{uses} of $v$ at $n$, and $\text{Gs}(v)$
-is $\text{GenSite}(n, v)$, the set of generation sites of $v$ at $n$.
-These relations are represented as sets of pairs \tuple{v, X} where
-$\mathcal{R}(v)=X$ iff $\tuple{v,X} \in R$.  Each set is initialized
-to the empty set, and grows monotonically as the analysis
-progresses.  For clarity, we will separate out the Gen and Kill
-functions for each component in the tuple, so that:
+We will perform the analysis simultaneously on two relations 
+$\text{Rd}$ and $\text{Ru}$, and a set $\text{Ns}$.
+The relations are represented as
+sets of pairs \tuple{v, X} where
+$\mathcal{R}(v)=X$ iff $\tuple{v,X} \in R$.
+The set $\text{Ns}$ can be viewed as a boolean function where
+$\text{Ns}(v)=\text{true}$ iff $v \in \text{Ns}$.
+All four sets are initialized
+to the empty set, and grow monotonically as the analysis
+progresses.
+We let
+$\text{Rd}(v)$ be the set of reaching definitions of $v$ at $n$,
+$\text{Ru}(v)$ be a set of reaching \textbf{uses} of $v$ at $n$,
+ and
+$\text{Ns}$ be the set of \textbf{non-}singular variables at $n$.
+The appropriate Gen and Kill rules are:
 \begin{eqnarray*}
-\text{Gen}(n) &=& \tuple{\text{Gen}_\text{Rd}(n),
-                       \text{Gen}_\text{Ns}(n),
-                       \text{Gen}_\text{Ru}(n),
-                       \text{Gen}_\text{Gs}(n)} \\
-\text{Kill}(n) &=& \tuple{\text{Kill}_\text{Rd}(n),
-                       \text{Kill}_\text{Ns}(n),
-                       \text{Kill}_\text{Ru}(n),
-                       \text{Kill}_\text{Gs}(n)} \\
+\text{Gen}_\text{Rd}(n) &=&
+	\{ \tuple{v, n} | v \in \text{def}(n) \} \\
+\text{Kill}_\text{Rd}(n) &=&
+	\{ \tuple{v, s} | \tuple{v,s} \in \text{In}_\text{Rd}(n) \wedge
+                          v \in \text{def}(n) \} \\
+%
+\text{Gen}_\text{Ru}(n) &=&
+	\{ \tuple{v, n} | v \in \text{use}(n) \} \\
+\text{Kill}_\text{Ru}(n) &=&
+	\{ \tuple{v, s} | \tuple{v,s} \in \text{In}_\text{Ru}(n) \wedge
+                          v \in \text{def}(n) \} \\
+%
+% non-singular reaching defs of n.
+\text{Gen}_\text{Ns}(n) &=&
+	\left\{ \tuple{v, n} | v \in \text{def}(n) \wedge
+\left( \text{Bad}(n) \vee \exists u,n':u\in\text{use}(n) \wedge
+	\tuple{u,n'}\in \text{In}_\text{Ns}(n) \right) \right\}
+\\
+\text{Kill}_\text{Ns}(n) &=&
+	\{ \tuple{v, s} | \tuple{v,s} \in \text{In}_\text{Ns}(n) \wedge
+                          v \in \text{def}(n) \} \\
 \end{eqnarray*}
 
+After the analysis is complete, $v$ is nonsingular at $n$ iff
+\begin{displaymath}
+v\in\text{use}(n) \wedge \left(
+\tuple{v,n} \in \text{In}_\text{Ru}(n) \vee
+\exists n': \tuple{v,n'}\in\text{In}_\text{Ns}(n)
+\right)
+\end{displaymath}
+
+\textbf{Extend to compute GenSite(v,n)?}
 
 \subsection{Interprocedural singular value analysis}
 
