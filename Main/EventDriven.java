@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
+import java.lang.reflect.Modifier;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -33,7 +34,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.4 2000-01-13 23:48:17 cananian Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.5 2000-01-13 23:50:18 bdemsky Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
@@ -42,7 +43,7 @@ public abstract class EventDriven extends harpoon.IR.Registration {
     public static final void main(String args[]) {
 	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
 	HMethod m = null;
-
+	
         if (args.length < 1) {
             System.err.println("Needs class name.");
             return;
@@ -82,15 +83,15 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	System.out.println("Done w/ set up");
 
 	harpoon.Analysis.EventDriven.EventDriven ed = 
-	    new harpoon.Analysis.EventDriven.EventDriven(hcf, hc, ch);
+	    new harpoon.Analysis.EventDriven.EventDriven(hcf, hc, ch, linker);
 	
 	HMethod mconverted=ed.convert();
 
 	System.out.println("Converted");
 	System.out.println("Setting up HCodeFactories");
 	//	HCodeFactory hcf2=hcf;
-		HCodeFactory hcf2=harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
-		hcf2=harpoon.IR.Quads.QuadWithTry.codeFactory(hcf);
+		HCodeFactory hcf2a=harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+		HCodeFactory hcf2=harpoon.IR.Quads.QuadWithTry.codeFactory(hcf2a);
 
 	System.out.println("Preparing to run second stage");
 
@@ -111,8 +112,8 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 		classes.add(cl);
 	    }
 	}
-
-
+	//Garbage collect some more stuff
+	iterate=null; cmx=null; ch1=null;
 
 	HClass interfaceClasses[] = new HClass[classes.size()];
 	iterate=classes.iterator();
@@ -150,12 +151,20 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 		    System.out.println("********");
 		    e.printStackTrace();
 		    hca[j] = hcf.convert(hm[j]);
+		    hca[j].print(out);
+		    hcf2a.convert(hm[j]).print(out);
 		}
 		//remove to help with Memory usage
 		hcf.remove(hm[j]);
 		if (hca[j]!=null) hca[j].print(out);
 	    }
-	    Jasmin jasmin=new Jasmin(hca, hm,interfaceClasses[i]);
+	    int andmask=
+		Modifier.ABSTRACT|Modifier.FINAL|Modifier.INTERFACE|
+		Modifier.NATIVE|
+		Modifier.STATIC|Modifier.SYNCHRONIZED|Modifier.TRANSIENT|
+		Modifier.VOLATILE;
+	    int ormask=Modifier.PUBLIC;
+	    Jasmin jasmin=new Jasmin(hca, hm,interfaceClasses[i],andmask, ormask);
 	    FileOutputStream file=null;
 	    try {
 	    if (interfaceClasses.length!=1)
@@ -166,16 +175,16 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	    PrintStream tempstream=new PrintStream(file);
 	    jasmin.outputClass(tempstream);
 	    try {
-	    file.close();
+		file.close();
 	    } catch (Exception e) {System.out.println(e);}
 	}
     }
-
+    
     private static Collection knownBlockingMethods() {
 	final HClass is = linker.forName("java.io.InputStream");
 	final HClass ss = linker.forName("java.net.ServerSocket");
 	final HClass b = HClass.Byte;
-
+	
 	WorkSet w = new WorkSet();
 	w.add(is.getDeclaredMethod("read", new HClass[0]));
 	w.add(is.getDeclaredMethod("read", new HClass[] 
@@ -187,8 +196,3 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	return w;
     }
 }
-
-
-
-
-
