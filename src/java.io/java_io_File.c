@@ -233,8 +233,6 @@ JNIEXPORT jboolean JNICALL Java_java_io_File_rmdir0
  * Signature: ()[Ljava/lang/String;
  */
 JNIEXPORT jobjectArray JNICALL Java_java_io_File_list0(JNIEnv *env, jobject this) {
-  struct stat buf;
-  int r;
   jobject jstr;
   const char * path;    
   DIR* dir;
@@ -249,13 +247,12 @@ JNIEXPORT jobjectArray JNICALL Java_java_io_File_list0(JNIEnv *env, jobject this
   jclass clscls;
   int count;
   int i;
-  int oom = 0;
   
 
   if (!inited && !initializeFI(env)) return 0; /* exception occurred; bail */
   
   jstr=(*env)->GetObjectField(env, this, pathID);
-  path=(*env)->GetStringUTFChars(env,jstr,0);
+  path=(*env)->GetStringUTFChars(env,jstr,NULL);
 
   
   /* XXX make part of jsyscall interface !? */
@@ -276,7 +273,10 @@ JNIEXPORT jobjectArray JNICALL Java_java_io_File_list0(JNIEnv *env, jobject this
     }
     /** no pointers to garbage-collected memory; safe to use malloc. */
     mentry = malloc(sizeof(struct dentry) + _D_EXACT_NAMLEN(entry));
-    if (!mentry) { oom=1; goto error1; } /* free memory and throw exception */
+    if (!mentry) {  /* free memory and throw exception */
+      (*env)->Throw(env, (*env)->FindClass(env, "java/lang/OutOfMemoryError"));
+      goto error;
+    }
     strcpy(mentry->name, entry->d_name);
     mentry->next = dirlist;
     dirlist = mentry;
@@ -285,32 +285,38 @@ JNIEXPORT jobjectArray JNICALL Java_java_io_File_list0(JNIEnv *env, jobject this
   /* XXX make part of jsyscall interface !? */
   closedir(dir);
   clscls=(*env)->FindClass(env, "java/lang/String");
+  if (!clscls) goto error; /* free memory and return */
 
-  if (!clscls) goto error1; /* free memory and return */
-  r = (*env)->NewObjectArray(env, array, clscls, NULL);
-  if (!r) { oom=1; goto error1; }
+  array = (*env)->NewObjectArray(env, count, clscls, NULL);
+  if (!array) goto error; /* exception already set. */
 
   for (i = 0; i < count; i++) {
     jstring jstr;
     mentry = dirlist;
     dirlist = mentry->next;
-    jstr=(*env)->NewString(env, mentry->name,_D_EXACT_NAMLEN(entry));
+    jstr=(*env)->NewStringUTF(env, mentry->name);
     (*env)->SetObjectArrayElement(env, array, i, jstr);
     free(mentry);
   }
   (*env)->ReleaseStringUTFChars(env,jstr,path);
   return (array);
 
- error1:
-  while (dirlist) {
+ error:
+  {
+    jthrowable ex = (*env)->ExceptionOccurred(env);
+    assert(ex!=NULL);
+
+    while (dirlist) {
       mentry = dirlist;
       dirlist = dirlist->next;
       free(mentry);
+    }
+
+    (*env)->ExceptionClear(env);
+    (*env)->ReleaseStringUTFChars(env,jstr,path);
+    (*env)->Throw(env, ex);
+    return NULL;
   }
- error0:
-  (*env)->ReleaseStringUTFChars(env,jstr,path);
-  if (oom) (*env)->Throw(env, (*env)->FindClass(env, "java/lang/OutOfMemoryError"));
-  return NULL;
 }
 
 /*
@@ -328,8 +334,6 @@ JNIEXPORT jstring JNICALL Java_java_io_File_canonPath(JNIEnv *env, jobject this,
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_java_io_File_isAbsolute(JNIEnv *env, jobject this) {
-  struct stat buf;
-  int r;
   jobject jstr;
   const char * cstr;    
   jboolean jbool;
@@ -338,7 +342,7 @@ JNIEXPORT jboolean JNICALL Java_java_io_File_isAbsolute(JNIEnv *env, jobject thi
   
   jstr=(*env)->GetObjectField(env, this, pathID);
   cstr=(*env)->GetStringUTFChars(env,jstr,0);
-  jbool=(jboolean) (cstr[0]=='/');
+  jbool= (cstr[0]=='/') ? JNI_TRUE : JNI_FALSE;
 
   (*env)->ReleaseStringUTFChars(env,jstr,cstr);
   
