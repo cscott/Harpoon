@@ -39,6 +39,8 @@ import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.MONITORENTER;
+import harpoon.IR.Quads.MONITOREXIT;
 import harpoon.IR.Quads.FOOTER;
 
 
@@ -51,7 +53,7 @@ import harpoon.IR.Quads.FOOTER;
  * computed results from the caches.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.11 2000-02-07 02:11:46 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.12 2000-02-08 05:26:53 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -354,12 +356,12 @@ public class PointerAnalysis {
 	    process_load(q,q.dst(),l2,hf.getName());
 	}
 	
-	/** Load statement; special case - arrays */
+	/** Load statement; special case - arrays. */
 	public void visit(AGET q){
 	    process_load(q,q.dst(),q.objectref(),ARRAY_CONTENT);
 	}
 	
-	/** Does the real processing of a load statement */
+	/** Does the real processing of a load statement. */
 	public void process_load(Quad q, Temp l1, Temp l2, String f){
 	    Set set_aux = bbpig.G.I.pointedNodes(l2);
 	    Set set_S = bbpig.G.I.pointedNodes(set_aux,f);
@@ -386,8 +388,17 @@ public class PointerAnalysis {
 		bbpig.G.I.addEdges(l1,set_S);
 		bbpig.G.O.addEdges(set_E,f,load_node);
 		bbpig.G.propagate(set_E);
-		// TODO: update alpha
-		// TODO: update pi
+
+		// update the action repository
+		Set active_threads = bbpig.tau.activeThreadSet();
+		Iterator it_esc_nodes = set_E.iterator();
+
+		while(it_esc_nodes.hasNext()){
+		    PANode ne = (PANode) it_esc_nodes.next();
+		    bbpig.ar.add_ld(ne, f, load_node,
+				    ActionRepository.THIS_THREAD,
+				    active_threads);
+		}
 	    }
 	}
 
@@ -515,6 +526,31 @@ public class PointerAnalysis {
 	    HClass hclass = hm.getDeclaringClass();
 	    return hclass.getName().equals("java.lang.Thread");
 	}
+
+
+	/** Process an acquire statement. */
+	public void visit(MONITORENTER q){
+	    process_acquire_release(q.lock());
+	}
+
+
+	/** Process a release statement. */
+	public void visit(MONITOREXIT q){
+	    process_acquire_release(q.lock());
+	}
+
+
+	// Does the real processing for acquire/release statements.
+	private void process_acquire_release(Temp l){
+	    Set active_threads = bbpig.tau.activeThreadSet();
+	    Iterator it_nodes = bbpig.G.I.pointedNodes(l).iterator();
+	    while(it_nodes.hasNext()){
+		PANode node = (PANode) it_nodes.next();
+		bbpig.ar.add_sync(node,ActionRepository.THIS_THREAD,
+				  active_threads);
+	    }
+	}
+
 
 	/** End of the currently analyzed method; trim the graph
 	 *  of unnecessary edges, store it in the hash tables etc. */
