@@ -9,8 +9,10 @@ import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.UseDefer;
+import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.MONITORENTER;
 import harpoon.IR.Quads.MONITOREXIT;
+import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.LowQuad.PCALL;
 import harpoon.IR.LowQuad.PSET;
@@ -23,6 +25,8 @@ import harpoon.Util.Environment;
 import harpoon.Util.HashEnvironment;
 import harpoon.Util.Util;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,7 +37,7 @@ import java.util.Set;
  * <code>ToTreeHelpers</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTreeHelpers.java,v 1.1.2.3 2000-02-13 02:34:58 cananian Exp $
+ * @version $Id: ToTreeHelpers.java,v 1.1.2.4 2000-02-13 18:25:41 cananian Exp $
  */
 abstract class ToTreeHelpers {
     //------------ EdgeOracle IMPLEMENTATIONS ------------------
@@ -164,7 +168,8 @@ abstract class ToTreeHelpers {
 	    HashSet singleUse = new HashSet(), multiUse = new HashSet();
 	    for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
 		Quad q = (Quad) it.next();
-		for (Iterator it2 = q.useC().iterator(); it2.hasNext(); ) {
+		// SIGMAs count multiple times... (see uses() method)
+		for (Iterator it2 = uses(q); it2.hasNext(); ) {
 		    Temp t = (Temp) it2.next();
 		    if (multiUse.contains(t)) continue;
 		    if (singleUse.contains(t)) {
@@ -191,16 +196,16 @@ abstract class ToTreeHelpers {
 		    if (reachingDefs.containsKey(use[i]))
 			safe.add(use[i]); // reaching def means its safe.
 	    }
-	    { // stores and syncs clear the defs
-		if (isBarrier(q))
-		    reachingDefs.clear();
+	    if (isBarrier(q)) {
+		// stores and syncs clear the defs
+		reachingDefs.clear();
 	    }
-	    { // add environment entries for all appropriate defs
+	    if (!isUnfoldableDef(q)) {
+		// add environment entries for all appropriate defs
 		Temp[] def = q.def();
 		for (int i=0; i<def.length; i++)
 		    if (singleUse.contains(def[i]))
-			if (!(q instanceof PCALL)) // CALLS CAN NOT BE FOLDED!
-			    reachingDefs.put(def[i], def[i]);
+			reachingDefs.put(def[i], def[i]);
 	    }
 	    { // recurse.
 		Quad[] next = q.next();
@@ -213,11 +218,27 @@ abstract class ToTreeHelpers {
 		}
 	    }
 	}
+	public static boolean isUnfoldableDef(Quad q) {
+	    if (q instanceof PCALL) return true; // CALLS CAN NOT BE FOLDED
+	    if (q instanceof PHI) return true; // multiple definitions
+	    return false;
+	}
 	public static boolean isBarrier(Quad q) {
 	    // ASET,CALL,SET are Quad-only.  We only deal with LowQuads here
 	    if (q instanceof MONITORENTER || q instanceof MONITOREXIT ||
 		q instanceof PCALL || q instanceof PSET) return false;
 	    return true;
+	}
+	public Iterator uses(Quad q) {
+	    if (q instanceof SIGMA) return uses((SIGMA)q);
+	    else return q.useC().iterator();
+	}
+	public Iterator uses(SIGMA q) {
+	    ArrayList al = new ArrayList(q.useC());
+	    // add in multiple copies of quads used by sigma functions
+	    for (int i=1; i<q.nextLength(); i++)
+		al.addAll(Arrays.asList(q.src()));
+	    return al.iterator();
 	}
 	public boolean canFold(HCodeElement hce, Temp t) {
 	    return safe.contains(t);
