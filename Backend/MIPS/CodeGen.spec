@@ -68,7 +68,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.10 2000-07-12 14:31:55 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.11 2000-08-12 03:37:57 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing cc
 // on MIPS IRIX64 lion 6.2 03131016 IP19.  
@@ -101,6 +101,9 @@ import java.util.Iterator;
 
     // whether to generate a.out-style or elf-style segment directives
     private final boolean is_elf;
+    // mipspro assember requires section attributes in .section directive
+    // GNU as requires that they be absent
+    private final boolean mipspro_assem = false;
     // whether to use soft-float or hard-float calling convention.
     private final boolean soft_float = false; // skiffs use hard-float
 
@@ -549,9 +552,12 @@ import java.util.Iterator;
        emit2(root, "jal "+nameMap.c_function_name(func_name),
              // uses & stomps on these registers:
              call_def_full, call_use);
-       Util.assert(i instanceof TwoWordTemp);
-       emit( root, "move `d0h, `s0", i, v0 );
-       emit( root, "move `d0l, `s0", i, v1 );
+       if(i instanceof TwoWordTemp) {
+          emit( root, "move `d0h, `s0", i, v0 );
+          emit( root, "move `d0l, `s0", i, v1 );
+       } else {
+          emit( root, "move `d0, `s0", i, v0 );
+       }
     }
     private void DoDCall(HCodeElement root,
                          Temp i, Temp j, String func_name) {
@@ -617,12 +623,12 @@ import java.util.Iterator;
        for (int i=0; i<call_use.length; ++i) {
           callUses.add(call_use[i]);
        }
-       // If we have any args, we need space for all arg regs
-       if(index > 0)
-          stackOffset = 16;
-       // Leave room for any args that can't be passed in regs.
-       if(index > 4)
-          stackOffset += (index - 4) * 4;
+       // We need space for ra and fp.  Since we don't know the max
+       // number of args for any function called from this function,
+       // we allocate space for all 4 argument registers all the time
+       // These are 
+       stackOffset = 3 * 4;
+       
        index--; // so index points to 'register #' of last argument.
 
        elist=ereverse;
@@ -647,7 +653,7 @@ import java.util.Iterator;
                 declare( SP, HClass.Void );
                 Util.assert(temp instanceof TwoWordTemp);
                 emit(new InstrMEM( instrFactory, ROOT,
-                                   "sw `s0h, -" + stackOffset + "(`s1)",
+                                   "sw `s0h, " + stackOffset + "(`s1)",
                                    new Temp[] { SP },
                                    new Temp[]{ temp, SP })); 
                 // not certain an emitMOVE is legal with the l/h modifiers
@@ -660,13 +666,13 @@ import java.util.Iterator;
                 declare( SP, HClass.Void );
                 Util.assert(temp instanceof TwoWordTemp);
                 emit(new InstrMEM( instrFactory, ROOT,
-                                   "sw `s0h, -" + stackOffset + "(`s1)",
+                                   "sw `s0h, " + stackOffset + "(`s1)",
                                    new Temp[]{ SP },
                                    new Temp[]{ temp, SP })); 
                 stackOffset += 4; index--;
                 declare( SP, HClass.Void );
                 emit(new InstrMEM( instrFactory, ROOT,
-                                   "sw `s0l, -" + stackOffset + "(`s1)",
+                                   "sw `s0l, " + stackOffset + "(`s1)",
                                    new Temp[]{ SP },
                                    new Temp[]{ temp, SP }));
                 break;
@@ -682,12 +688,15 @@ import java.util.Iterator;
                 declare( SP, HClass.Void );
                 emit(new InstrMEM(
                    instrFactory, ROOT,
-                   "sw `s0, -" + stackOffset + "(`s1)",
+                   "sw `s0, " + stackOffset + "(`s1)",
                    new Temp[]{ SP },
                    new Temp[]{ temp, SP }));
              }
           }
        }
+       // Add offset for ra and fp to frame, plus an extra four since
+       // we need to point below the word stored at the current offset
+       stackOffset += 3 * 4;
        Util.assert(index==-1);
        declareCALL();
        if (ROOT.getRetval()!=null) declare( v0, td, ROOT.getRetval() );
@@ -697,12 +706,14 @@ import java.util.Iterator;
     private void emitHandlerStub(INVOCATION ROOT, Temp retex, Label handler) {
        declare( retex, frame.getLinker().forName("java.lang.Throwable"));
        emitMOVE ( ROOT, "move `d0, `s0", retex, v0 );
-       emit( ROOT, "bal "+handler+" # handler stub",
-             call_def_builtin, // clobbers
-             call_use, 
-             new Label[] { handler} );
-       // Can't use emitJUMP bal has side effects
-       // emitJUMP ( ROOT, "bal "+handler+" # handler stub", handler);
+       emitJUMP ( ROOT, "b "+handler+" # handler stub", handler);
+       // I don't think we need this use/def info because all temps
+       // are available at this point since we threw in the current
+       // frame 
+       //emit( ROOT, "b "+handler+" # handler stub",
+       //      call_def_builtin, // clobbers
+       //     call_use, 
+       //     new Label[] { handler} );
     }
 /** Emit a fixup table entry */
     private void emitCallFixup(INVOCATION ROOT, Label retaddr, Label handler) {
@@ -711,9 +722,9 @@ import java.util.Iterator;
       // local labels
       // these may need to be included in the previous instr to preserve
       // ordering semantics, but for now this way they indent properly
-      emitDIRECTIVE( ROOT, !is_elf?".rdata ":".data\n.section .flex.fixup");
+       emitDIRECTIVE( ROOT, !is_elf?".rdata ": (mipspro_assem ? ".data\n.section .flex.fixup,1, 3, 4, 16" : ".data\n.section .flex.fixup"));
       emitDIRECTIVE( ROOT, "\t.word "+retaddr+", "+handler+" # (retaddr, handler)");
-      emitDIRECTIVE( ROOT, !is_elf?".text":".text\n.section .flex.code");
+      emitDIRECTIVE( ROOT, !is_elf?".text": (mipspro_assem ? ".text\n.section .flex.code,1, 7, 4, 16" : ".text\n.section .flex.code"));
     }
     /** Finish up a CALL or NATIVECALL. */
     private void emitCallEpilogue(INVOCATION ROOT, boolean isNative,
@@ -724,7 +735,8 @@ import java.util.Iterator;
                     "Update the spec file to handle large SP offsets");
        if (cs.stackOffset!=0) { // optimize for common case.
           declare ( SP, HClass.Void );
-          emit( ROOT, "add `d0, `s0, " + cs.stackOffset, SP , SP );
+          // This removes the callee's frame on an exeption.
+          //emit( ROOT, "add `d0, `s0, " + cs.stackOffset, SP, SP );
        }
        if (ROOT.getRetval()==null) {
           // this is a void method.  don't bother to emit move.
@@ -758,98 +770,125 @@ import java.util.Iterator;
        }  
     }
 
+    private boolean Needs_Callee_Stack_Space(Temp rX) {
+       Util.assert(regfile.isRegister(rX));
+       if (rX.equals(v0)
+           || rX.equals(v1)
+           || rX.equals(a0)
+           || rX.equals(a1)
+           || rX.equals(a2)
+           || rX.equals(a3)
+           || rX.equals(t0)
+           || rX.equals(t1)
+           || rX.equals(t2)
+           || rX.equals(t3)
+           || rX.equals(t4)
+           || rX.equals(t5)
+           || rX.equals(t6)
+           || rX.equals(t7)
+           || rX.equals(t8)
+           || rX.equals(t9))
+          return false; // caller save registers.
+          if (rX.equals(LR)||rX.equals(FP)||rX.equals(SP))
+             return false; // always saved.
+          return true;
+    }
     // Mandated by CodeGen generic class: perform entry/exit
     public Instr procFixup(HMethod hm, Instr instr,
                            int stackspace, Set usedRegisters) {
        InstrFactory inf = instrFactory; // convenient abbreviation.
        Label methodlabel = nameMap.label(hm);
-       // make list of callee-save registers we gotta save.
-       StringBuffer reglist = new StringBuffer();
 
        Temp[] usedRegArray =
           (Temp[]) usedRegisters.toArray(new Temp[usedRegisters.size()]);
        Collections.sort(Arrays.asList(usedRegArray), regComp);
-       int nregs=0;
+       int nregs = 0;
        for (int i=0; i<usedRegArray.length; i++) {
-          Temp rX = usedRegArray[i];
-          Util.assert(regfile.isRegister(rX));
-          if (rX.equals(v0)
-              || rX.equals(v1)
-              || rX.equals(a0)
-              || rX.equals(a1)
-              || rX.equals(a2)
-              || rX.equals(a3)
-              || rX.equals(t0)
-              || rX.equals(t1)
-              || rX.equals(t2)
-              || rX.equals(t3)
-              || rX.equals(t4)
-              || rX.equals(t5)
-              || rX.equals(t6)
-              || rX.equals(t7)
-              || rX.equals(t8)
-              || rX.equals(t9))
-             continue; // caller save registers.
-          if (rX.equals(LR)||rX.equals(FP)||rX.equals(SP))
-             continue; // always saved.
-          reglist.append(rX.toString());
-          reglist.append(", "); 
-          nregs++;
+          if(Needs_Callee_Stack_Space(usedRegArray[i])) nregs++;
        }
-       // Make room for save area for arg registers & FP
-       if(stackspace > 0) stackspace += 5;
-       // XXX Needed for ra and FP (?)
-       if(stackspace == 0) stackspace = 2;
+
+       ////// Now calculate how large the stack frame will be
+       // Make room for save area for arg registers,  FP & LR
+       // Since we don't know the max number of args for any function
+       // called by this function, allocate space for 4 arg regs all
+       // the time.
+       stackspace += 6;
+       // Add stackspace for saved regs
+       stackspace += nregs;
+       int ra_off = stackspace*4 - 4;
+       int fp_off = ra_off - 4;
        // find method entry/exit stubs
        Instr last=instr;
        for (Instr il = instr; il!=null; il=il.getNext()) {
           if (il instanceof InstrENTRY) { // entry stub.
-             Instr in1 = new InstrDIRECTIVE(inf, il, ".align 2");
-             Instr in2 = new InstrDIRECTIVE(inf, il, ".globl " +
-                                            methodlabel.name);
-             Instr in2a= new InstrDIRECTIVE(inf, il, ".ent " +
-                                            methodlabel.name+",#function");
-             //Instr in2b= new InstrDIRECTIVE(inf, il, ".set .fpoffset, "+
-             // (-4*(4+nregs)));
-             Instr in3 = new InstrLABEL(inf, il, methodlabel.name+":",
-                                        methodlabel);
-             Instr in4 = new Instr(inf, il, "move $30, $sp", null, null);
-             Instr in5 = new Instr(inf, il, "sw $31, 0($sp)", null,
-                                   null);
-             Instr in6 = new Instr(inf, il, "sw $30, 4($sp)", null, null);
-             // XXX missing code here to store reglist on stack
-             // XXX hack to setup frame pointer
-             String assem = "subu $sp, "+(stackspace*4);
-             
-             Instr in7 = new Instr(inf, il, assem, null, null);
-             in7.layout(il, il.getNext());
-             in6.layout(il, in7);
-             in5.layout(il, in6);
-             in4.layout(il, in5);
-             in3.layout(il, in4);
-             //in2b.layout(il,in3);
-             in2a.layout(il,in3);
-             in2.layout(il, in2a);
-             in1.layout(il, in2);
-             if (il==instr) instr=in1; // fixup root if necessary.
-             if (stackspace==0) in7.remove(); // optimize
-             il.remove(); il=in1;
+             Instr[] entry_instr = {
+                new InstrDIRECTIVE(inf, il, ".align 2"),
+                new InstrDIRECTIVE(inf, il, ".globl " + methodlabel.name),
+                new InstrDIRECTIVE(inf, il, ".ent " +
+                                   methodlabel.name+",#function"),
+                new InstrLABEL(inf, il, methodlabel.name+":", methodlabel),
+                new InstrDIRECTIVE(inf, il, ".frame $fp," +
+                                   stackspace * 4 + ", $31"),
+                new Instr(inf, il, "move $30, $sp", null, null),
+                new Instr(inf, il, "subu $sp, "+(stackspace*4), null, null),
+                new Instr(inf, il, "sw $31, " + ra_off +"($sp)", null,null),
+                new Instr(inf, il, "sw $30, " + fp_off +"($sp)", null, null),
+             };
+             ////// Now create instrs to save non-trivial callee saved regs
+             int save_off = fp_off - 4;
+             Instr last_instr = null;
+             Instr[] callee_save_regs = new Instr [nregs];
+             if(nregs > 0) {
+                // make list of instructions saving callee-save registers we
+                // gotta save.
+                int j = 0;
+                for (int i=0; i <usedRegArray.length; i++) {
+                   if(Needs_Callee_Stack_Space(usedRegArray[i])) {
+                      callee_save_regs[j++] = 
+                         new Instr(inf, il, "sw " 
+                                   + usedRegArray[i] + ", " + 
+                                   save_off + "($sp)", null, null);
+                      save_off -= 4;
+                   }
+                }
+             }
+             /// Layout function entry
+             entry_instr[entry_instr.length - 1].layout(il, il.getNext());
+             for(int i = entry_instr.length - 2; i >= 0; --i) {
+                entry_instr[i].layout(il, entry_instr[i+1]);
+             }
+             /// Layout register saves
+             if(nregs > 0) {
+                Util.assert(nregs == callee_save_regs.length);
+                callee_save_regs[callee_save_regs.length - 1].layout(
+                   il, entry_instr[0]);
+                for(int i = callee_save_regs.length - 2; i >= 0; --i) {
+                   callee_save_regs[i].layout(il, callee_save_regs[i+1]);
+                }
+                last_instr = callee_save_regs[0];
+             } else {
+                last_instr = entry_instr[0]; 
+             }
+             // fixup root if necessary
+             if (il==instr) instr = last_instr;
+             // if (stackspace==0) in7.remove(); // optimize
+             il.remove(); il = last_instr;
+
           }
           if (il instanceof InstrEXIT) { // exit stub
-             Instr in1 = new Instr(inf, il, "addu $sp, " + (stackspace*4),
-                                   null, null);
-             Instr in2 = new Instr(inf, il, "lw $30, 4($sp)",
-                                   null, null);
-             Instr in3 = new Instr(inf, il, "lw $31, 0($sp)",
-                                   null, null);
-             Instr in4 = new Instr(inf, il, "j  $31  # return",
-                                   null, null);
-             in1.layout(il.getPrev(), il);
-             in2.layout(in1, il);
-             in3.layout(in2, il);
-             in4.layout(in3, il);
+             Instr[] exit_instr = {
+                new Instr(inf, il, "lw $30, " + fp_off + "($sp)",null, null),
+                new Instr(inf, il, "lw $31, " + ra_off + "($sp)", null, null),
+                new Instr(inf, il, "addu $sp, " + (stackspace*4),null, null),
+                new Instr(inf, il, "j  $31  # return", null, null),
+             };
+             /// Layout function entry
+             exit_instr[0].layout(il.getPrev(), il);
+             for(int i = 1; i < exit_instr.length ; ++i) {
+                exit_instr[i].layout(exit_instr[i-1], il);
+             }
              il.remove(); 
-             il=in3;
+             il = exit_instr[exit_instr.length - 1];
           }
           last=il;
        }
@@ -988,10 +1027,10 @@ BINOP<l>(ADD, j, UNOP<l>(NEG, k)) = i %extra<i>{ extra }
    emit( ROOT, "subu `d0h, `s0h, `s1", i, i, extra);
 }%
 
-BINOP<f>(ADD, j, UNOP<l>(NEG, k)) = i %{
+BINOP<f>(ADD, j, UNOP<d>(NEG, k)) = i %{
    DoFCall(ROOT, i, j, k, "__subsf3");
 }%
-BINOP<d>(ADD, j, UNOP<l>(NEG, k)) = i %{
+BINOP<d>(ADD, j, UNOP<d>(NEG, k)) = i %{
    DoDCall(ROOT, i, j, k, "__subdf3");
 }%
 
@@ -1622,10 +1661,10 @@ METHOD(params) %{
              // loc == 3 could mean on in register, one on stack, but
              // that is not what the C IRIX/MIPS compiler does.
              emit(new InstrMEM( instrFactory, ROOT,
-                                "lw `d0h, "+(4*(loc++)+16)+"(`s0)",
+                                "lw `d0h, "+(4*(loc++))+"(`s0)",
                                 new Temp[] {params[i]}, new Temp[] {FP}));
              emit(new InstrMEM( instrFactory, ROOT,
-                                "lw `d0l, "+(4*(loc++)+16)+"(`s0)",
+                                "lw `d0l, "+(4*(loc++))+"(`s0)",
                                 new Temp[] {params[i]}, new Temp[] {FP}));
           }
        } else { // single word.
@@ -1633,7 +1672,7 @@ METHOD(params) %{
              emitMOVE( ROOT, "move `d0, `s0", params[i], getArgReg(loc++));
           } else { // on stack
              emit(new InstrMEM( instrFactory, ROOT,
-                                "lw `d0, "+(4*(loc++)+16)+"(`s0)",
+                                "lw `d0, "+(4*(loc++))+"(`s0)",
                                 new Temp[] {params[i]}, new Temp[] {FP}));
           }
        }
@@ -1643,12 +1682,20 @@ METHOD(params) %{
 THROW(val, handler) %{
    // ignore handler, as our runtime does clever things instead.
    declare( v0, code.getTreeDerivation(), ROOT.getRetex() );
+   // What about functions that return long long?
    emitMOVE( ROOT, "move `d0, `s0", v0, val );
    declareCALLDefBuiltin();
-   emit( ROOT, "jal "+nameMap.c_function_name("_lookup_handler")+
+   declare(a0, HClass.Void);
+   declare(a1, HClass.Void);
+   declare(a2, HClass.Void);
+   declare(a3, HClass.Void);
+   declare(t4, HClass.Void);
+   // $31 contains the instruction after the return point
+   // of the function that might have excepted
+   emit( ROOT, "j "+nameMap.c_function_name("_lookup_handler")+
          " # hi mom ",
-         call_def_builtin, // clobbers
-		 call_use, true, null); 
+         new Temp[] {a0, a1, a2, a3, t4, LR}, //clobbers
+		 new Temp[] {FP}, true, null);  // v0 and FP are preserved
    // mark exit point.
    emit(new InstrEXIT( instrFactory, ROOT ));
 }%
@@ -1660,8 +1707,10 @@ CALL(retval, retex, func, arglist, handler)
    CallState cs = emitCallPrologue(ROOT, arglist, code.getTreeDerivation());
    Label rlabel = new Label(), elabel = new Label();
    declareCALLDefFull();
+   emit2(ROOT, "la `d0, " + rlabel + " # funky call",
+         new Temp[]{ LR }, null );
    // call uses 'func' as `s0
-   emitCallNoFall( ROOT, cs.prependSPOffset("jal `s0 "),
+   emitCallNoFall( ROOT, cs.prependSPOffset("j `s0 "),
                    call_def_full,
                    (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
                    new Label[] { rlabel, elabel } );
@@ -1683,7 +1732,9 @@ CALL(retval, retex, NAME(funcLabel), arglist, handler)
    CallState cs = emitCallPrologue(ROOT, arglist, code.getTreeDerivation());
    Label rlabel = new Label(), elabel = new Label();
    declareCALLDefFull();
-   emitCallNoFall( ROOT, cs.prependSPOffset("jal "+funcLabel ),
+   emit2(ROOT, "la `d0, " + rlabel + " # funky call",
+         new Temp[]{ LR }, null );
+   emitCallNoFall( ROOT, cs.prependSPOffset("j "+funcLabel ),
                    call_def_full,
                    (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
                    new Label[] { rlabel, elabel } );
@@ -1802,7 +1853,7 @@ ALIGN(n) %{
 }%
 
 SEGMENT(CLASS) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data":".data\n.section .flex.class");
+   emitDIRECTIVE( ROOT, !is_elf?".data": (mipspro_assem ? ".data\n.section .flex.class,1, 3, 4, 16" : ".data\n.section .flex.class"));
 
 }%
 
@@ -1810,56 +1861,54 @@ SEGMENT(CODE) %{
    // gas 2.7 does not support naming the code section...not
    // sure what to do about this yet...
    // emitDIRECTIVE( ROOT, !is_elf?".code 32":".section code");
-// Add ,1, 7, 4, 16 for code section directives for the mips pro assembler
-   emitDIRECTIVE( ROOT, !is_elf?".text ":".text\n.section .flex.code");
+   emitDIRECTIVE( ROOT, !is_elf?".text ": (mipspro_assem ? ".text\n.section .flex.code,1, 7, 4, 16" : ".text\n.section .flex.code"));
 }%
 
-// Add ,1, 3, 4, 16 for data section directives for the mips pro assembler
 SEGMENT(GC) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data ":".data\n.section .flex.gc");
+   emitDIRECTIVE( ROOT, !is_elf?".data ": (mipspro_assem ? ".data\n.section .flex.gc,1, 3, 4, 16" : ".data\n.section .flex.gc"));
 }%
 
 SEGMENT(INIT_DATA) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.init_data");
+   emitDIRECTIVE( ROOT, !is_elf?".data ": (mipspro_assem ? ".section .flex.init_data,1, 3, 4, 16" : ".section .flex.init_data"));
 }%
 
 SEGMENT(STATIC_OBJECTS) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.static_objects");
+   emitDIRECTIVE( ROOT, !is_elf?".data ": (mipspro_assem ? ".section .flex.static_objects,1, 3, 4, 16" : ".section .flex.static_objects"));
 }%
 
 SEGMENT(STATIC_PRIMITIVES) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.static_primitive");
+   emitDIRECTIVE( ROOT, !is_elf?".data ": (mipspro_assem ? ".section .flex.static_primitive,1, 3, 4, 16" : ".section .flex.static_primitive"));
 }%
 
 SEGMENT(STRING_CONSTANTS) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.string_constants");
+   emitDIRECTIVE( ROOT, !is_elf?".data ": (mipspro_assem ? ".section .flex.string_constants,1, 3, 4, 16" : ".section .flex.string_constants" ));
 }%
 
 SEGMENT(STRING_DATA) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.string_data");
+   emitDIRECTIVE( ROOT, !is_elf?".data ": (mipspro_assem ? ".section .flex.string_data,1, 3, 4, 16" : ".section .flex.string_data" ));
 }%
 
 SEGMENT(REFLECTION_OBJECTS) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.reflection_objects");
+   emitDIRECTIVE( ROOT, !is_elf?".data ": (mipspro_assem ? ".section .flex.reflection_objects,1, 3, 4, 16" : ".section .flex.reflection_objects"));
 }%
 
 SEGMENT(REFLECTION_DATA) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.reflection_data");
+   emitDIRECTIVE( ROOT, !is_elf?".data ": (mipspro_assem ? ".section .flex.reflection_data,1, 3, 4, 16" : ".section .flex.reflection_data"));
 }%
 
 SEGMENT(GC_INDEX) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data ":".section .flex.gc_index");
+   emitDIRECTIVE( ROOT, !is_elf?".data ": (mipspro_assem ? ".section .flex.gc_index,1, 3, 4, 16" : ".section .flex.gc_index"));
 }%
 
 SEGMENT(TEXT) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data":".section .flex.funcptrs");
+   emitDIRECTIVE( ROOT, !is_elf?".data": (mipspro_assem ? ".section .flex.funcptrs,1, 3, 4, 16" : ".section .flex.funcptrs"));
 }%
 
 SEGMENT(ZERO_DATA) %{
    // gas 2.7 does not allow BSS subsections...use .comm and .lcomm
    // for the variables to be initialized to zero
    // emitDIRECTIVE( ROOT, ".bss   \t#.section zero");
-   emitDIRECTIVE(ROOT, !is_elf?".bss":".section .flex.zero");
+   emitDIRECTIVE(ROOT, !is_elf?".bss": (mipspro_assem ? ".section .flex.zero,1, 3, 4, 16" : ".section .flex.zero"));
 }%
 // Local Variables:
 // mode:java
