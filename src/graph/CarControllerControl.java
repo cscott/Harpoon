@@ -5,32 +5,114 @@ package imagerec.graph;
 
 import imagerec.util.ImageDataManip;
 
+/**
+ * This class is intended to be in a pipeline that runs asynchronously
+ * with a pipeline containing a {@link CarController} node, which
+ * uses the imagerec.util.Servo class.<br><br>
+ *
+ * It allows for user control of car properties when coupled 
+ * with an input node like {@link CarControlKeyboard}.<br><br>
+ *
+ * The following properties of {@link CarController} may be modified:<br>
+ *     Time Until Command Interrupt: How long a command may run
+ * before being interrupted. If the latency between commands
+ * is less than this amount, then commands will never be
+ * interrupted.<br>
+ * The following static properties of (@link imagerec.util.Servo} may be modified:<br>
+ *     Forward Speed: The power given to a motor when the car
+ * is moving forward.<br>
+ *     Backward Speed: The power given to a motor when hen the car
+   is moving backward. This amount is typicaly much more than
+ * when moving forward.<br>
+ *     Turn Amount: How much the wheels are displaced from center when
+ * turning either left or right.<br>
+ *<br>
+ *
+ * To set a particular value:<br>
+ *   Tag an {@link ImageData} with one of the following {@link Command}
+ * tags and, if necessary, set the appropriate value to the {@link ImageData}'s
+ * <code>time</code> field.<br><br>
+ *
+ * Command.SET_FORWARD_SPEED: Causes the {@link CarController}'s "Forward Speed" property
+ * to be set to the value given in the {@link ImageData}'s <code>time</code>
+ * field.<br>
+ * Command.FORWARD_SPEED_UP: Causes the {@link CarController}'s "Forward Speed" property
+ * to be incremented by DELTA_FORWARD_SPEED.<br>
+ * Command.FORWARD_SPEED_DOWN: Causes the {@link CarController}'s "Forward Speed" property
+ * to be decremented by DELTA_FORWARD_SPEED.<br>
+ * Command.SET_BACKWARD_SPEED: Causes the {@link CarController}'s "Backward Speed" property
+ * to be set to the value given in the {@link ImageData}'s <code>time</code>
+ * field.<br>
+ * Command.BACKWARD_SPEED_UP: Causes the {@link CarController}'s "Backward Speed" property
+ * to be incremented by DELTA_BACKWARD_SPEED.<br>
+ * Command.BACKWARD_SPEED_DOWN: Causes the {@link CarController}'s "Backward Speed" property
+ * to be decremented by DELTA_BACKWARD_SPEED.<br>
+ * Command.SET_TURN_AMOUNT: Causes the {@link CarController}'s "Turn Amount" property
+ * to be set to the value given in the {@link ImageData}'s <code>time</code>
+ * field.<br>
+ * Command.TURN_AMOUNT_UP: Causes the {@link CarController}'s "Turn Amount" property
+ * to be incremented by DELTA_TURN_AMOUNT.<br>
+ * Command.TURN_AMOUNT_DOWN: Causes the {@link CarController}'s "Turn Amount" property
+ * to be decremented by DELTA_TURN_AMOUNT.<br>
+ * Command.SET_TURN_AMOUNT: Causes the {@link CarController}'s
+ * "Time Until Command Interrupt" property
+ * to be set to the value given in the {@link ImageData}'s <code>time</code>
+ * field.<br>
+ * Command.INTERRUPT_TIME_UP: Causes the {@link CarController}'s
+ * "Time Until Command Interrupt" property
+ * to be incremented by DELTA_INTERRUPT_TIME.<br>
+ * Command.INTERRUPT_TIME_DOWN: Causes the {@link CarController}'s
+ * "Time Until Command Interrupt" property
+ * to be decremented by DELTA_INTERRUPT_TIME.<br>
+ * <br>
+ *
+ * If the value specifed in the {@link ImageData}'s <code>time</code>
+ * field is not within the appropriate range specified by this class's
+ * constants, then the highest or lowest possible value
+ * is substituted.
+ 
+ *
+ * This class assumes that the {@link CarController}'s and
+ * {@link imagerec.util.Servo}'s properties are not
+ * set by any other class.
+ *
+ * @see CarController
+ * @see imagerec.util.Servo
+ * @see CarControlKeyboard
+ * @see Command
+ *
+ * @author Reuben Sterling <<a href="mailto:benster@mit.edu">benster@mit.edu</a>>
+ */
 public class CarControllerControl extends Node {
 
+    /**
+     * The {@link CarController} that will be mutated by
+     * this {@link CarControllerControl} node.
+     */
     private CarController myCarController;
 
-    private static final int MAX_INTERRUPT_TIME = 5000;
-    private static final int MIN_INTERRUPT_TIME = 200;
-    private static final int DEFAULT_INTERRUPT_TIME = 500;
-    private static final int DELTA_INTERRUPT_TIME = 100;
+    public static final int MAX_INTERRUPT_TIME = 5000;
+    public static final int MIN_INTERRUPT_TIME = 0;
+    public static final int DEFAULT_INTERRUPT_TIME = 500;
+    public static final int DELTA_INTERRUPT_TIME = 100;
     private int currentInterruptTime;
 
-    private static final int MAX_BACKWARD_SPEED = 50;
-    private static final int MIN_BACKWARD_SPEED = 10;
-    private static final int DEFAULT_BACKWARD_SPEED = 15;
-    private static final int DELTA_BACKWARD_SPEED = 1;
+    public static final int MAX_BACKWARD_SPEED = 127;
+    public static final int MIN_BACKWARD_SPEED = 0;
+    public static final int DEFAULT_BACKWARD_SPEED = 15;
+    public static final int DELTA_BACKWARD_SPEED = 1;
     private int currentBackwardSpeed;
 
-    private static final int MAX_FORWARD_SPEED = 50;
-    private static final int MIN_FORWARD_SPEED = 9;
-    private static final int DEFAULT_FORWARD_SPEED = 14;
-    private static final int DELTA_FORWARD_SPEED = 1;
+    public static final int MAX_FORWARD_SPEED = 127;
+    public static final int MIN_FORWARD_SPEED = 0;
+    public static final int DEFAULT_FORWARD_SPEED = 14;
+    public static final int DELTA_FORWARD_SPEED = 1;
     private int currentForwardSpeed;
 
-    private static final int MAX_TURN_AMOUNT = 127;
-    private static final int MIN_TURN_AMOUNT = 0;
-    private static final int DEFAULT_TURN_AMOUNT = 100;
-    private static final int DELTA_TURN_AMOUNT = 5;;
+    public static final int MAX_TURN_AMOUNT = 127;
+    public static final int MIN_TURN_AMOUNT = 0;
+    public static final int DEFAULT_TURN_AMOUNT = 100;
+    public static final int DELTA_TURN_AMOUNT = 5;;
     private int currentTurnAmount;
     
 
