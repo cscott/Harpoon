@@ -21,7 +21,7 @@ import harpoon.Temp.TempFactory;
  * <code>EventDrivenCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDrivenCode.java,v 1.1.2.2 1999-11-20 06:37:59 bdemsky Exp $
+ * @version $Id: EventDrivenCode.java,v 1.1.2.3 1999-11-20 07:00:23 bdemsky Exp $
  */
 public class EventDrivenCode extends Code {
     
@@ -102,9 +102,11 @@ public class EventDrivenCode extends Code {
 	Quad.addEdge(c1, 0, c2, 0);
 	Quad.addEdge(c2, 1, throwq,0);
 
+
 	System.out.println("Debug 5");
 
 	RETURN r = new RETURN(this.qf, null, t);
+	Quad.addEdge(c2,0,r,0);
 	Quad.addEdge(r, 0, f, 1);
 	Quad.addEdge(throwq,0,f,2);
 	Quad.addEdge(throwq2,0, f,3);
