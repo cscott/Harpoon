@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>FOOTER</code> node as their only successor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FOOTER.java,v 1.1.2.5 1998-12-21 04:41:33 cananian Exp $
+ * @version $Id: FOOTER.java,v 1.1.2.6 1998-12-23 22:16:49 cananian Exp $
  * @see HEADER
  * @see RETURN
  * @see THROW
@@ -31,7 +31,8 @@ public class FOOTER extends Quad {
     /** Attach a new Quad to this <code>FOOTER</code> by replacing it. */
     public void attach(Quad q, int which_succ) {
 	FOOTER f = new FOOTER(qf, this, arity()+1);
-	Quad.replace(this, f);
+	for (int i=0; i<arity(); i++)
+	    Quad.addEdge(this.prev(i), this.prevEdge(i).which_succ(), f, i);
 	addEdge(q, which_succ, f, arity());
     }
     /** Remove an attachment from this <code>FOOTER</code> by replacing
