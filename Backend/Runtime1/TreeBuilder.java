@@ -61,7 +61,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.3.2.5 2002-03-15 23:03:39 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.3.2.6 2002-03-20 23:42:28 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -84,14 +84,14 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     protected final int WORD_SIZE;
     protected final int LONG_WORD_SIZE;
     protected final int POINTER_SIZE;
-    protected final int OBJECT_HEADER_SIZE;
+    protected       int OBJECT_HEADER_SIZE;
     // integer constant offsets:
     // layout of oobj
-    protected final int OBJ_CLAZ_OFF;
-    protected final int OBJ_HASH_OFF;
-    protected final int OBJ_ALENGTH_OFF;
-    protected final int OBJ_AZERO_OFF;
-    protected final int OBJ_FZERO_OFF;
+    protected       int OBJ_CLAZ_OFF;
+    protected       int OBJ_HASH_OFF;
+    protected       int OBJ_ALENGTH_OFF;
+    protected       int OBJ_AZERO_OFF;
+    protected       int OBJ_FZERO_OFF;
     // layout of claz
     protected final int CLAZ_INTERFACES_OFF;
     protected final int CLAZ_CLAZINFO;
