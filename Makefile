@@ -2,6 +2,7 @@ JCC=javac
 JAR=jar
 JAVADOC=javadoc
 SSH=ssh
+FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 RELEASE=*.java README BUILDING Makefile
@@ -9,6 +10,11 @@ RELEASE=*.java README BUILDING Makefile
 # eventually we'd like to use something like Code/bin/find-flex-dir
 # to set this variable.  The below is an interim hack.
 FLEX_DIR=../Code
+
+# figure out what the current CVS branch is, by looking at the Makefile
+CVS_TAG=$(firstword $(shell cvs status Makefile | grep -v "(none)" | \
+		awk '/Sticky Tag/{print $$3}'))
+CVS_REVISION=$(patsubst %,-r %,$(CVS_TAG))
 
 all:    clean doc realtime.jar # realtime.tgz
 
@@ -61,3 +67,18 @@ doc-install: doc
 	"mkdir -p $(INSTALLDIR)/Realtime ; tar -C $(INSTALLDIR)/Realtime -x"
 
 install: jar-install tar-install doc-install
+
+ChangeLog: needs-cvs *.java # dependency is not strictly accurate.
+	-$(RM) $@
+	rcs2log | sed -e 's:/[^,]*/CVSROOT/Realtime/::g' > $@
+
+update: needs-cvs
+	cvs -q update -Pd $(CVS_REVISION)
+	@-if [ -x $(FORTUNE) ]; then echo ""; $(FORTUNE); fi
+
+# the 'cvs' rules only make sense if you've got a copy checked out from CVS
+needs-cvs:
+	@if [ ! -d CVS ]; then \
+	  echo This rule needs CVS access to the source tree. ; \
+	   exit 1; \
+	fi
