@@ -54,7 +54,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.24 2000-02-14 21:02:59 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.25 2000-02-16 04:19:11 andyb Exp $
  */
 %%
     private InstrFactory instrFactory;
@@ -170,7 +170,7 @@ import java.util.Set;
     // AAA - To Do
     public Instr procFixup(HMethod hm, Instr instr, int stackspace,
                            Set usedRegisters) {
-        return null;
+	return instr;
     }
 
     // INNER CLASSES
@@ -339,7 +339,7 @@ BINOP<l>(SHL, e1, e2)=r %{
     emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r9 }, new Temp[] { e1 });
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r10 }, new Temp[] { e2 });
     emit (ROOT, "call __ashldi3\n",
-          new Temp[] { r1 }, new Temp[] { r8, r9, r10 });
+          new Temp[] { r1, r8, r9 }, new Temp[] { r8, r9, r10 });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r8 });
     emit (ROOT, "mov `s0, `d0l\n", new Temp[] { r }, new Temp[] { r9 });
@@ -351,7 +351,7 @@ BINOP<l>(SHR, e1, e2)=r %{
     emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r9 }, new Temp[] { e1 });
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r10 }, new Temp[] { e2 });
     emit (ROOT, "call __ashrdi3\n",
-          new Temp[] { r1 }, new Temp[] { r8, r9, r10 });
+          new Temp[] { r1, r8, r9 }, new Temp[] { r8, r9, r10 });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r8 });
     emit (ROOT, "mov `s0, `d0l\n", new Temp[] { r }, new Temp[] { r9 });
@@ -363,7 +363,7 @@ BINOP<l>(USHR, e1, e2)=r %{
     emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r9 }, new Temp[] { e1 });
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r10 }, new Temp[] { e2 });
     emit (ROOT, "call __lshrdi3\n",
-          new Temp[] { r1 }, new Temp[] { r8, r9, r10 });
+          new Temp[] { r1, r8, r9 }, new Temp[] { r8, r9, r10 });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r8 });
     emit (ROOT, "mov `s0, `d0l\n", new Temp[] { r }, new Temp[] { r9 });
@@ -433,7 +433,7 @@ BINOP<l>(MUL, e1, e2) = r %{
     emit (ROOT, "mov `s0h, `d0\n", new Temp[] { r10 }, new Temp[] { e2 });
     emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r11 }, new Temp[] { e2 });
     emit (ROOT, "call __muldi3\n",
-          new Temp[] { r1 }, new Temp[] { r8, r9, r10, r11 });
+          new Temp[] { r1, r8, r9 }, new Temp[] { r8, r9, r10, r11 });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r8 });
     emit (ROOT, "mov `s0, `d0l\n", new Temp[] { r }, new Temp[] { r9 });
@@ -442,7 +442,7 @@ BINOP<l>(MUL, e1, e2) = r %{
 BINOP<i,p>(MUL, e1, e2) = r %{
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r8 }, new Temp[] { e1 });
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r9 }, new Temp[] { e2 });
-    emit (ROOT, "call .mul\n", new Temp[] { r1 }, new Temp[] { r8, r9 });
+    emit (ROOT, "call .mul\n", new Temp[] { r1, r8 }, new Temp[] { r8, r9 });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r }, new Temp[] { r8 });
 }%
@@ -459,7 +459,7 @@ BINOP<l>(DIV, e1, e2) = r %{
     emit (ROOT, "mov `s0h, `d0\n", new Temp[] { r10 }, new Temp[] { e2 });
     emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r11 }, new Temp[] { e2 });
     emit (ROOT, "call __divdi3\n", 
-          new Temp[] { r1 }, new Temp[] { r8, r9, r10, r11 });
+          new Temp[] { r1, r8, r9 }, new Temp[] { r8, r9, r10, r11 });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r8 });
     emit (ROOT, "mov `s0, `d0l\n", new Temp[] { r }, new Temp[] { r9 });
@@ -468,7 +468,7 @@ BINOP<l>(DIV, e1, e2) = r %{
 BINOP<i,p>(DIV, e1, e2) = r %{
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r8 }, new Temp[] { e1 });
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r9 }, new Temp[] { e2 });
-    emit (ROOT, "call .div\n", new Temp[] { r1 }, new Temp[] { r8, r9 });
+    emit (ROOT, "call .div\n", new Temp[] { r1, r8}, new Temp[] { r8, r9 });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r }, new Temp[] { r8 });
 }%
@@ -485,7 +485,7 @@ BINOP<l>(REM, e1, e2) = r %{
     emit (ROOT, "mov `s0h, `d0\n", new Temp[] { r10 }, new Temp[] { e2 });
     emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r11 }, new Temp[] { e2 });
     emit (ROOT, "call __moddi3\n",
-          new Temp[] { r1 }, new Temp[] { r8, r9, r10, r11 });
+          new Temp[] { r1, r8, r9 }, new Temp[] { r8, r9, r10, r11 });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r8 });
     emit (ROOT, "mov `s0, `d0l\n", new Temp[] { r }, new Temp[] { r9 });
@@ -494,7 +494,7 @@ BINOP<l>(REM, e1, e2) = r %{
 BINOP<i,p>(REM, e1, e2) = r %{
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r8 }, new Temp[] { e1 });
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r9 }, new Temp[] { e2 });
-    emit (ROOT, "call .rem\n", new Temp[] { r1 }, new Temp[] { r8, r9 });
+    emit (ROOT, "call .rem\n", new Temp[] { r1, r8 }, new Temp[] { r8, r9 });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r }, new Temp[] { r8 });
 }%
@@ -504,8 +504,9 @@ BINOP(CMPLT, e1, e2) = r
 %{
     Label templabel = new Label();
     emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, new Temp[] {});
-    emit (ROOT, "cmp `s0, `s1\n" +
-                "bge "+templabel+"\n", new Temp[] {}, new Temp[] { e1, e2 });
+    emitCC (ROOT, "cmp `s0, `s1\n", new Temp[] {}, new Temp[] { e1, e2 });
+    emitCC (ROOT, "bge "+templabel+"\n", 
+		  new Temp[] {}, new Temp[] {}, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov 1, `d0\n", new Temp[] { r } , new Temp[] {});
     emitLABEL(ROOT, templabel + ":", templabel);
@@ -516,8 +517,9 @@ BINOP(CMPLE, e1, e2) = r
 %{
     Label templabel = new Label();
     emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
-    emit (ROOT, "cmp `s0, `s1\n" +
-                "bg "+templabel+"\n", new Temp[] {}, new Temp[] { e1, e2 });
+    emitCC (ROOT, "cmp `s0, `s1\n", new Temp[] {}, new Temp[] { e1, e2 });
+    emitCC (ROOT, "bg "+templabel+"\n", 
+		  new Temp[] {}, new Temp[] {}, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov 1, `d0\n", new Temp[] { r } , new Temp[] {});
     emitLABEL(ROOT, templabel + ":", templabel);
@@ -528,8 +530,9 @@ BINOP(CMPEQ, e1, e2) = r
 %{
     Label templabel = new Label();
     emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, new Temp[] {});
-    emit (ROOT, "cmp `s0, `s1\n" +
-                "bne "+templabel+"\n", new Temp[] {}, new Temp[] { e1, e2 });
+    emitCC (ROOT, "cmp `s0, `s1\n", new Temp[] {}, new Temp[] { e1, e2 });
+    emitCC (ROOT, "bne "+templabel+"\n", 
+		  new Temp[] {}, new Temp[] {}, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov 1, `d0\n", new Temp[] { r } , new Temp[] {});
     emitLABEL(ROOT, templabel + ":", templabel);
@@ -540,8 +543,9 @@ BINOP(CMPGE, e1, e2) = r
 %{
     Label templabel = new Label();
     emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, new Temp[] {});
-    emit (ROOT, "cmp `s0, `s1\n" +
-                "bl "+templabel+"\n", new Temp[] {}, new Temp[] { e1, e2 });
+    emitCC (ROOT, "cmp `s0, `s1\n", new Temp[] {}, new Temp[] { e1, e2 });
+    emitCC (ROOT, "bl "+templabel+"\n", 
+		  new Temp[] {}, new Temp[] {}, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov 1, `d0\n", new Temp[] { r } , new Temp[] {});
     emitLABEL(ROOT, templabel + ":", templabel);
@@ -552,8 +556,9 @@ BINOP(CMPGT, e1, e2) = r
 %{
     Label templabel = new Label();
     emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, new Temp[] {});
-    emit (ROOT, "cmp `s0, `s1\n" +
-                "ble "+templabel+"\n", new Temp[] {}, new Temp[] { e1, e2 });
+    emitCC (ROOT, "cmp `s0, `s1\n", new Temp[] {}, new Temp[] { e1, e2 }); 
+    emitCC (ROOT, "ble "+templabel+"\n", 
+		  new Temp[] {}, new Temp[] {}, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov 1, `d0\n", new Temp[] { r } , new Temp[] {});
     emitLABEL(ROOT, templabel + ":", templabel);
@@ -564,11 +569,11 @@ BINOP(CMPLT, e1, e2) = r
 %{
     Label templabel = new Label();
     emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
-    emit (ROOT, "cmp `s0h, `s1h\n" +
-                "bge "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "cmp `s0h, `s1h\n", null, new Temp[] { e1, e2});
+    emitCC (ROOT, "bge "+templabel+"\n", null, null, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "cmp `s0l, `s1l\n" +
-                "bge "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "cmp `s0l, `s1l\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "bge "+templabel+"\n", null, null, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
     emitLABEL (ROOT, templabel + ":", templabel);
@@ -579,11 +584,11 @@ BINOP(CMPLE, e1, e2) = r
 %{
     Label templabel = new Label();
     emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
-    emit (ROOT, "cmp `s0h, `s1h\n" +
-                "bg "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "cmp `s0h, `s1h\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "bg "+templabel+"\n", null, null, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "cmp `s0l, `s1l\n" +
-                "bg "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "cmp `s0l, `s1l\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "bg "+templabel+"\n", null, null, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
     emitLABEL (ROOT, templabel + ":", templabel);
@@ -594,11 +599,11 @@ BINOP(CMPEQ, e1, e2) = r
 %{
     Label templabel = new Label();
     emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
-    emit (ROOT, "cmp `s0h, `s1h\n" +
-                "bne "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "cmp `s0h, `s1h\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "bne "+templabel+"\n", null, null, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "cmp `s0l, `s1l\n" +
-                "bne "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "cmp `s0l, `s1l\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "bne "+templabel+"\n", null, null, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
     emitLABEL (ROOT, templabel + ":", templabel);
@@ -609,11 +614,11 @@ BINOP(CMPGE, e1, e2) = r
 %{
     Label templabel = new Label();
     emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
-    emit (ROOT, "cmp `s0h, `s1h\n" +
-                "bl "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "cmp `s0h, `s1h\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "bl "+templabel+"\n", null, null, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "cmp `s0l, `s1l\n" +
-                "bl "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "cmp `s0l, `s1l\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "bl "+templabel+"\n", null, null, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
     emitLABEL (ROOT, templabel + ":", templabel);
@@ -624,11 +629,11 @@ BINOP(CMPGT, e1, e2) = r
 %{
     Label templabel = new Label();
     emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
-    emit (ROOT, "cmp `s0h, `s1h\n" +
-                "ble "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "cmp `s0h, `s1h\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "ble "+templabel+"\n", null, null, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "cmp `s0l, `s1l\n" +
-                "ble "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "cmp `s0l, `s1l\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "ble "+templabel+"\n", null, null, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
     emitLABEL (ROOT, templabel + ":", templabel);
@@ -639,9 +644,9 @@ BINOP(CMPLT, e1, e2) = r
 %{
     Label templabel = new Label();
     emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
-    emit (ROOT, "fcmps `s0, `s1\n" +
-                "nop\n" +
-                "fbge "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "fcmps `s0, `s1\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "nop\n", null, null);
+    emitCC (ROOT, "fbge "+templabel+"\n", null, null, new Label[] {templabel});
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
     emitLABEL (ROOT, templabel + ":", templabel);
@@ -652,9 +657,9 @@ BINOP(CMPLE, e1, e2) = r
 %{
     Label templabel = new Label();
     emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
-    emit (ROOT, "fcmps `s0, `s1\n" +
-                "nop\n" +
-                "fbg "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "fcmps `s0, `s1\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "nop\n", null, null);
+    emitCC (ROOT, "fbg "+templabel+"\n", null, null, new Label[] {templabel});
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
     emitLABEL (ROOT, templabel + ":", templabel);
@@ -665,9 +670,9 @@ BINOP(CMPEQ, e1, e2) = r
 %{
     Label templabel = new Label();
     emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
-    emit (ROOT, "fcmps `s0, `s1\n" +
-                "nop\n" +
-                "fbne "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "fcmps `s0, `s1\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "nop\n", null, null);
+    emitCC (ROOT, "fbne "+templabel+"\n", null, null, new Label[] {templabel});
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
     emitLABEL (ROOT, templabel + ":", templabel);
@@ -678,9 +683,9 @@ BINOP(CMPGE, e1, e2) = r
 %{
     Label templabel = new Label();
     emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
-    emit (ROOT, "fcmps `s0, `s1\n" +
-                "nop\n" +
-                "fbl "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "fcmps `s0, `s1\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "nop\n", null, null);
+    emitCC (ROOT, "fbl "+templabel+"\n", null, null, new Label[] { templabel });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
     emitLABEL (ROOT, templabel + ":", templabel);
@@ -691,9 +696,9 @@ BINOP(CMPGT, e1, e2) = r
 %{
     Label templabel = new Label();
     emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
-    emit (ROOT, "fcmps `s0, `s1\n" +
-                "nop\n" +
-                "fble "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "fcmps `s0, `s1\n", null, new Temp[] { e1, e2 });
+    emitCC (ROOT, "nop\n", null, null);
+    emitCC (ROOT, "fble "+templabel+"\n", null, null, new Label[] {templabel});
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
     emitLABEL (ROOT, templabel + ":", templabel);
@@ -729,6 +734,8 @@ CJUMP(e, true_label, false_label) %{
 }%
 
 CONST<l,d>(c)=r %{
+    // 'as' is smart - just use set, and it automagically generates
+    // all of the necessary instructions
     long val = (ROOT.type() == Type.LONG)
                ? c.longValue()
                : Double.doubleToLongBits(c.floatValue());
@@ -739,6 +746,8 @@ CONST<l,d>(c)=r %{
 }%
 
 CONST<i,f>(c)=r %{
+    // 'as' is smart - just use set, and it automagically generates
+    // all of the necessary instructions
     int val = (ROOT.type() == Type.INT)
               ? ROOT.value.intValue()
               : Float.floatToIntBits(ROOT.value.floatValue());
@@ -898,17 +907,17 @@ METHOD(params) %{
                             new Temp[] { params[i] },
                             new Temp[] { SP });
             }
-
-            if (loc < 5) { // second half in register
+	    loc++;
+            if (loc < 6) { // second half in register
                 emit (ROOT, "mov `s0, `d0l\n",
                             new Temp[] { params[i] },
-                            new Temp[] { regfile.getRegister(25+loc) });
+                            new Temp[] { regfile.getRegister(24+loc) });
             } else { // on stack
                 emit (ROOT, "ld [`s0 + "+4*(loc-6)+92+"], `d0l\n",
                             new Temp[] { params[i] },
                             new Temp[] { SP });
             }
-            loc += 2;
+            loc++;
         } else {
             if (loc < 6) { // in register
 		Util.assert(params[i] != null);
