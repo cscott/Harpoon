@@ -12,6 +12,7 @@ import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TreeFactory;
 import harpoon.Backend.Maps.OffsetMap;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.TempFactory;
 
 import java.util.List;
@@ -29,7 +30,7 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.17 1999-07-07 00:25:22 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.18 1999-07-28 18:22:09 duncan Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -58,7 +59,7 @@ public abstract class Frame {
      *  to move method parameters from their passing location into
      *  the Temps that the method expects them to be in. */
     public abstract Stm procPrologue(TreeFactory tf, HCodeElement src, 
-                                     Temp[] paramdsts);
+                                     Temp[] paramdsts, int[] paramtypes);
 
     /** Returns a block of <code>Instr</code>s which adds a "sink" 
      *  instruction to specify registers that are live on procedure exit. */
@@ -172,6 +173,5 @@ public abstract class Frame {
 	*/ 
 	public abstract Iterator getPotentialSpills();
     }
-
 }
 
