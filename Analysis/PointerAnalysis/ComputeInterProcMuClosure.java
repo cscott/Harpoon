@@ -9,8 +9,11 @@ import harpoon.Util.DataStructs.Relation;
 import harpoon.Util.DataStructs.RelationImpl;
 import harpoon.Util.Util;
 
+import harpoon.Analysis.MetaMethods.GenType;
+
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
 
 /**
@@ -19,10 +22,10 @@ import java.util.Iterator;
    comments around that method for more info.
  
    @author  Alexandru Salcianu <salcianu@MIT.EDU>
-   @version $Id: ComputeInterProcMuClosure.java,v 1.3 2003-06-04 18:44:31 salcianu Exp $ */
+   @version $Id: ComputeInterProcMuClosure.java,v 1.4 2003-10-26 17:16:15 salcianu Exp $ */
 public class ComputeInterProcMuClosure {
 
-    private static boolean DEBUG = false;
+    static boolean DEBUG = false;
 
     /** Compute the node mappings for the inter-procedural analysis,
 	according to the method outlined in Alex Salcianu's SM thesis
@@ -36,9 +39,7 @@ public class ComputeInterProcMuClosure {
        @return node mapping relation */
     public static Relation computeInterProcMu
 	(CALL call, ParIntGraph pig_caller, ParIntGraph pig_callee,
-	 PANode[] callee_params) {
-
-	DEBUG = PointerAnalysis.MEGA_DEBUG2;
+	 PANode[] callee_params, PointerAnalysis pa) {
 
 	if(DEBUG) {
 	    System.out.println
@@ -55,10 +56,8 @@ public class ComputeInterProcMuClosure {
 	}
 
 	ComputeInterProcMuClosure cmc = new ComputeInterProcMuClosure
-	    (call, pig_caller, pig_callee, callee_params);
+	    (call, pig_caller, pig_callee, callee_params, pa);
 	cmc.compute_mu();
-
-	DEBUG = false;
 
 	return cmc.mu;
     }
@@ -69,16 +68,17 @@ public class ComputeInterProcMuClosure {
 	// this will never be executed; it's here only because
 	// otherwise the compiler complains that the final vars are
 	// not initialized.
-	this(null, null, null, null);
+	this(null, null, null, null, null);
     }
 
     private ComputeInterProcMuClosure
 	(CALL call, ParIntGraph pig_caller, ParIntGraph pig_callee,
-	 PANode[] callee_params) {
+	 PANode[] callee_params, PointerAnalysis pa) {
 	this.call          = call;
 	this.pig_caller    = pig_caller;
 	this.pig_callee    = pig_callee;
 	this.callee_params = callee_params;
+	this.pa            = pa;
     }
 
     // closure fields
@@ -87,6 +87,7 @@ public class ComputeInterProcMuClosure {
     private final ParIntGraph pig_callee;
     private final PANode[] callee_params;
     private final Relation mu = new RelationImpl();
+    private final PointerAnalysis pa;
 
     // top-level driver for the node mapping generation
     private void compute_mu() {
@@ -117,16 +118,18 @@ public class ComputeInterProcMuClosure {
 	// 2.5: map parameters nodes to the actual arguments
 	map_parameters();
 
-	// 2.6: reflexive mapping of static (i.e., class) nodes from callee
-	pig_callee.forAllNodes(new PANodeVisitor() {
-	    public void visit(PANode node) {
-		if((node.type == PANode.STATIC) ||
-		   // LOST nodes may represent STATIC nodes
-		   (PointerAnalysis.COMPRESS_LOST_NODES &&
-		    (node.type == PANode.LOST)))
-		    mu.add(node, node);
-	    }
-	});
+	if(!PointerAnalysis.TOPLAS_PAPER) {
+	    // 2.6: reflexive mapping of static nodes from callee
+	    pig_callee.forAllNodes(new PANodeVisitor() {
+		public void visit(PANode node) {
+		    if((node.type == PANode.STATIC) ||
+		       // LOST nodes may represent STATIC nodes
+		       (PointerAnalysis.COMPRESS_LOST_NODES &&
+			(node.type == PANode.LOST)))
+			mu.add(node, node);
+		}
+	    });
+	}
     }
 
     // Update the mapping mu to contain the mappings for the parameter nodes
@@ -136,12 +139,16 @@ public class ComputeInterProcMuClosure {
 	// map the object formal parameter nodes to the actual arguments
 	for(int i = 0; i < args.length; i++)
 	    if(!call.paramType(i).isPrimitive()) {
-		mu.addAll(callee_params[object_params_count],
-			  pig_caller.G.I.pointedNodes(args[i]));
+		// null only for some native methods
+		if(callee_params != null)
+		    addMappingAll(mu,
+				  callee_params[object_params_count],
+				  pig_caller.G.I.pointedNodes(args[i]));
 		object_params_count++;
 	    }
 	
-	assert object_params_count == callee_params.length :
+	assert (callee_params == null) ||
+	    (object_params_count == callee_params.length) :
 	    "\tDifferent numbers of object formals (" + 
 	    callee_params.length + ") and object arguments (" +
 	    object_params_count + ") for \n\t" + Util.code2str(call);
@@ -170,8 +177,7 @@ public class ComputeInterProcMuClosure {
 	W = new PAWorkList();
 	// relation containing the new mappings for nodes from the worklist
 	new_mu = (Relation) mu.clone();
-	rev_mu = new RelationImpl();
-	mu.revert(rev_mu);
+	rev_mu = mu.revert(new RelationImpl());
 
 	W.addAll(mu.keys());
 	while(!W.isEmpty()) {
@@ -179,7 +185,7 @@ public class ComputeInterProcMuClosure {
 	    // apply all newly enabled instances of 2.7
 	    match_callee_caller(node);
 	    // apply all newly enabled instances of 2.8
-	    match_callee_callee(node);	    
+	    match_callee_callee(node);
 	}
 
 	W = null;
@@ -192,10 +198,10 @@ public class ComputeInterProcMuClosure {
     private Relation rev_mu;
 
 
-    // add the (potentially new) mapping source -> target; returns
+    // add the (potentially new) mapping source -> target; return
     // true if this is indeed a new mapping
     private boolean add_mapping_aux(PANode source, PANode target) {
-	if(mu.add(source, target)) {
+	if(addMapping(mu, source, target)) {
 	    NEWINFO = true;
 	    if(DEBUG)
 		System.out.println("new mapping: " + source + " -> " + target);
@@ -323,4 +329,97 @@ public class ComputeInterProcMuClosure {
 	}
     }
     private boolean NEWINFO = false;
+
+
+
+    private static boolean USE_TYPE_INFO = true;
+    static {
+	if(USE_TYPE_INFO)
+	    System.out.println("USE TYPE INFO IN INTERPROC MAPPING");
+    }
+    
+    private boolean addMappingAll(Relation mu, PANode node, Set images) {
+	if(!USE_TYPE_INFO)
+	    return mu.addAll(node, images);
+	boolean changed = false;
+	for(Iterator it = images.iterator(); it.hasNext(); ) {
+	    if(addMapping(mu, node, (PANode) it.next()))
+		changed = true;
+	}
+	return changed;
+    }
+
+
+    private boolean addMapping(Relation mu, PANode node, PANode image) {
+	if(!USE_TYPE_INFO)
+	    return mu.add(node, image);
+	if(mu.contains(node, image)) return false;
+	if(compatible(node, image)) 
+	    return mu.add(node, image);
+	else
+	    return false;
+    }
+
+
+    private static class CompatibleQuery {
+	PANode node1;
+	PANode node2;
+	int hash;
+	CompatibleQuery() {} // just to make the compiler happy
+	CompatibleQuery(PANode node1, PANode node2) {
+	    init(node1, node2);
+	}
+	private void init(PANode node1, PANode node2) {
+	    this.node1 = node1;
+	    this.node2 = node2;
+	    this.hash = node1.hashCode() ^ node2.hashCode();
+	}
+	public int hashCode() { return hash; }
+	public boolean equals(Object o) {
+	    if(this.hashCode() != o.hashCode())
+		return false;
+	    CompatibleQuery q = (CompatibleQuery) o;
+	    return
+		this.node1.equals(q.node1) && 
+		this.node2.equals(q.node2);
+	}
+    }
+    private boolean compatible(PANode node1, PANode node2) {
+	compatibleQuery.init(node1, node2);
+	Boolean answer = (Boolean) compatibleCache.get(compatibleQuery);
+	if(answer == null) {
+	    boolean banswer = _compatible(node1, node2);
+	    answer = new Boolean(banswer);
+	    compatibleCache.put(new CompatibleQuery(node1, node2), answer);
+	    if(!banswer)
+		System.out.println("INCOMPAT: " + node1 + " , " + node2);
+	}
+	return answer.booleanValue();
+    }
+    private static Hashtable/*<CompatibleQuery,Boolean>*/ compatibleCache = 
+	new Hashtable();
+    private CompatibleQuery compatibleQuery = new CompatibleQuery();
+
+    private boolean _compatible(PANode node1, PANode node2) {
+	GenType[] gts1 = node1.getPossibleClasses();
+	GenType[] gts2 = node2.getPossibleClasses();
+	if((gts1 == null) || (gts2 == null))
+	    return true;
+	else
+	    return !disjoint(pa.getAllConcreteClasses(gts1),
+			     pa.getAllConcreteClasses(gts2));
+    }
+
+    private static boolean disjoint(Set set1, Set set2) {
+	if(set1.size() > set2.size()) {
+	    Set temp;
+	    temp = set1;
+	    set1 = set2;
+	    set2 = temp;
+	}
+	for(Iterator it = set1.iterator(); it.hasNext(); )
+	    if(set2.contains(it.next()))
+		return false;
+	return true;
+    }
 }
