@@ -70,7 +70,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.79 2000-02-16 22:38:01 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.80 2000-02-18 00:48:52 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -264,7 +264,9 @@ public abstract class RegAlloc  {
 		final Code mycode = globalCode.code;
 		Util.assert(mycode != null);
 
-	        return new Code(mycode, instr, mycode.getName()) {
+	        return new Code(mycode, instr, 
+				mycode.getDerivation(),
+				mycode.getName()) {
 		    public String getName() { return mycode.getName(); }
 		    public String getRegisterName(Instr i, Temp t,
 						  String s) {

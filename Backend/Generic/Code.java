@@ -16,9 +16,11 @@ import java.util.List;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.43 2000-02-18 00:35:40 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.44 2000-02-18 00:50:17 pnkfelix Exp $
  */
 public abstract class Code extends harpoon.IR.Assem.Code {
+
+    private Derivation derivation;
     
     /** Generates a new <code>Generic.Code</code> from 
 	another <code>Generic.Code</code>, <code>code</code>, with
@@ -29,16 +31,23 @@ public abstract class Code extends harpoon.IR.Assem.Code {
 	get around a dependency problem in the constructor for
 	<code>Assem.Code</code>.
     */
-    protected Code(Code code, Instr i, String codeName) {
+    protected Code(Code code, Instr i, Derivation d, String codeName) {
 	super(code.getMethod(), code.getFrame(), codeName);
 	this.instrs = i;
+	this.derivation = d;
     }
 
     protected Code(harpoon.IR.Tree.Code treeCode) {
 	super(treeCode.getMethod(), treeCode.getFrame());
-	this.instrs = (Instr) this.frame.getCodeGen().
-	                       genCode(treeCode, this.inf).get(0);
+	List pair = this.frame.getCodeGen().
+	            genCode(treeCode, this.inf);
+	this.instrs = (Instr) pair.get(0);
+	this.derivation = (Derivation) pair.get(1);
 	Util.assert(instrs != null);
+    }
+
+    public Derivation getDerivation() {
+	return derivation;
     }
 
     public abstract String getName();
