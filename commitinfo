@@ -19,4 +19,5 @@
 # -u    - keep track of diff of all changes (for contrib/log_accum)
 # -c    - check for things like "$Id" near head of file, no "$Log", etc.
 #---------------------------------------------------------------------
-Code|Runtime $CVSROOT/CVSROOT/commit_prep -u -r
+Code	$CVSROOT/CVSROOT/commit_prep -u -r
+Runtime	$CVSROOT/CVSROOT/commit_prep -u -r
