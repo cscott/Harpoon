@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.137 $)dnl
+AC_REVISION($Revision: 1.138 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -170,7 +170,11 @@ if test "$with_classpath" = "yes" ; then
   else
      dnl guess.
      with_classpath=/usr/lib/classpath
-     AC_CHECK_PROGS(JAVAC, jikes-classpath) dnl use jikes-classpath if avail.
+     dnl use jikes-classpath if avail.
+     AC_CHECK_PROGS(JAVAC_CP, jikes-classpath, not-found)
+     if test "$JAVAC_CP" != not-found ; then
+	JAVAC="$JAVAC_CP"
+     fi
   fi
 fi
 case "$with_classpath" in
