@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.5 1998-11-25 06:44:44 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.6 1998-11-25 10:50:16 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -15,11 +15,11 @@ FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 
-CVS_TAG:=$(firstword $(shell cvs status GNUmakefile | \
+CVS_TAG=$(firstword $(shell cvs status GNUmakefile | \
 			awk '/Sticky Tag/{print $$3}'))
-CVS_BRANCH:=$(firstword $(shell cvs status GNUmakefile | \
+CVS_BRANCH=$(firstword $(shell cvs status GNUmakefile | \
 			awk '/Sticky Tag/{print $$5}' | sed -e 's/[^0-9.]//g'))
-CVS_REVISION:=$(patsubst %,-r %,$(CVS_TAG))
+CVS_REVISION=$(patsubst %,-r %,$(CVS_TAG))
 
 BUILD_IGNORE := $(strip $(shell if [ -f .ignore ]; then cat .ignore; fi))
 
