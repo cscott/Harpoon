@@ -36,7 +36,7 @@ import java.util.Set;
  * of several 'mostly-zero field' transformations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstructorClassifier.java,v 1.1.2.4 2001-11-10 17:31:46 cananian Exp $
+ * @version $Id: ConstructorClassifier.java,v 1.1.2.5 2001-11-13 05:31:12 cananian Exp $
  */
 public class ConstructorClassifier {
     private static final boolean DEBUG=false;
@@ -99,7 +99,53 @@ public class ConstructorClassifier {
 	}
 	return false; // nothing good about this.
     }
-
+    /** Returns <code>true</code> iff there is at least one field whose
+     *  value can be predicted when this constructor is called. */
+    public boolean isGood(HMethod constructor) {
+	Util.assert(isConstructor(constructor));
+	Map m = classifyMethod(constructor);
+	for (Iterator it=m.values().iterator(); it.hasNext(); )
+	    if (((Classification)it.next()).isGood()) return true;
+	return false;
+    }
+    /** Returns <code>true</code> iff the given field <code>hf</code>
+     *  is always set to a constant value when the given constructor
+     *  is executed. */
+    public boolean isConstant(HMethod constructor, HField hf) {
+	Classification c = (Classification)
+	    classifyMethod(constructor).get(hf);
+	// if null, that means this is always '0'
+	return (c==null) || c.isConstant;
+    }
+    /** Returns the constant value which field <code>hf</code> is
+     *  set to whenever the given constructor is executed.  Requires
+     *  that <code>isConstant(constructor,hf)</code> be <code>true</code>.
+     */
+    public Object constantValue(HMethod constructor, HField hf) {
+	Util.assert(isConstant(constructor, hf));
+	Classification c = (Classification)
+	    classifyMethod(constructor).get(hf);
+	return (c==null) ? makeZero(hf.getType()) : c.constant;
+    }
+    /** Returns <code>true</code> iff the given field <code>hf</code>
+     *  is always set to the same value as one of the constructor's
+     *  parameters whenever it is executed. */
+    public boolean isParam(HMethod constructor, HField hf) {
+	Classification c = (Classification)
+	    classifyMethod(constructor).get(hf);
+	return (c!=null) && (c.param!=-1);
+    }
+    /** Returns the number of the parameter (starting at 0) which
+     *  holds the value which <code>hf</code> will be set to whenever
+     *  the given constructor is executed.  Requires that
+     *  <code>isParam(constructor, hf</code> be <code>true</code>.
+     */
+    public int paramNumber(HMethod constructor, HField hf) {
+	Classification c = (Classification)
+	    classifyMethod(constructor).get(hf);
+	return c.param;
+    }
+    /** Find fields which are *not* subclass-final. */
     private Set findBadFields(HCodeFactory hcf, ClassHierarchy ch) {
 	Set badFields = new HashSet();
 	// for each callable method...
@@ -146,17 +192,22 @@ public class ConstructorClassifier {
 
     static class Classification {
 	int param; // -1 means 'not a param'
-	Object constant; // null means 'not a constant'
-	Classification() { this.param=-1; this.constant=null; }
-	Classification(int param) { this.param=param; this.constant=null; }
-	Classification(Object constant){this.param=-1; this.constant=constant;}
-	boolean isGood() { return param>=0 || constant!=null; }
+	boolean isConstant; // false means 'not a constant'
+	Object constant; // if constant, then constant value.  'null' is legal.
+	Classification() { this.param=-1; this.isConstant=false; }
+	Classification(int param) { this.param=param; this.isConstant=false; }
+	Classification(Object constant) {
+	    this.param=-1; this.isConstant=true; this.constant=constant;
+	}
+	boolean isGood() { return param>=0 || isConstant; }
 	void merge(Classification c) {
 	    if (this.param != c.param ||
-		(this.constant==null) != (c.constant==null) ||
-		(this.constant!=null && !this.constant.equals(c.constant))) {
+		this.isConstant != c.isConstant ||
+		(this.isConstant &&
+		 (this.constant==null ? this.constant!=c.constant :
+		  !this.constant.equals(c.constant)))) {
 		// goes to top.
-		this.param=-1; this.constant=null;
+		this.param=-1; this.isConstant=false;
 	    }
 	}
 	/** Take this classification and filter it through a mapping
@@ -166,13 +217,14 @@ public class ConstructorClassifier {
 	    int p = this.param; // entry in the mapping to utilize.
 	    // make this a clone of mapping[p]
 	    this.param = mapping[p].param;
+	    this.isConstant = mapping[p].isConstant;
 	    this.constant = mapping[p].constant;
 	    return; // done.
 	}
 	public String toString() {
 	    Util.assert(!(param>0 && constant!=null));
 	    if (param>0) return "PARAM#"+param;
-	    if (constant!=null) return "CONSTANT "+constant;
+	    if (isConstant) return "CONSTANT "+constant;
 	    return "NO INFO";
 	}
     }
@@ -254,8 +306,19 @@ public class ConstructorClassifier {
 	}
 	return Collections.unmodifiableMap(map);
     }
-		
 
+    // make a wrapped 'zero' value of the specified type.
+    private Object makeZero(HClass hc) {
+	if (!hc.isPrimitive()) return null;
+	if (hc==HClass.Boolean || hc==HClass.Byte ||
+	    hc==HClass.Short || hc==HClass.Char ||
+	    hc==HClass.Int) return new Integer(0);
+	if (hc==HClass.Long) return new Long(0);
+	if (hc==HClass.Float) return new Float(0);
+	if (hc==HClass.Double) return new Double(0);
+	Util.assert(false, "unknown type: "+hc);
+	return null;
+    }
     ///////// copied from harpoon.Analysis.Quads.DefiniteInitOracle.
     /** return a conservative approximation to whether this is a constructor
      *  or not.  it's always safe to return true. */
