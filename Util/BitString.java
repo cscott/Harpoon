@@ -118,34 +118,48 @@ public final class BitString implements Cloneable, java.io.Serializable {
   
   /**
    * Logically ANDs this bit set with the specified set of bits.
+   * Returns <code>true</code> if <code>this</code> was modified in
+   * response to the operation. 
    * @param set the bit set to be ANDed with
    */
-  public void and(BitString set) {
+  public boolean and(BitString set) {
     if (this == set) { // should help alias analysis
-      return;
+      return false;
     }
     int n = bits.length;
+    boolean changed = false;
     for (int i = n ; i-- > 0 ; ) {
+      int old = bits[i];
       bits[i] &= set.bits[i];
+      changed |= (old != bits[i]);
     }
+    return changed;
   }
   
   /**
    * Logically ORs this bit set with the specified set of bits.
+   * Returns <code>true</code> if <code>this</code> was modified in
+   * response to the operation. 
    * @param set the bit set to be ORed with
    */
-  public void or(BitString set) {
+  public boolean or(BitString set) {
     if (this == set) { // should help alias analysis
-      return;
+      return false;
     }
     int setLength = set.bits.length;
+    boolean changed = false;
     for (int i = setLength; i-- > 0 ;) {
+      int old = bits[i];
       bits[i] |= set.bits[i];
+      changed |= (old != bits[i]);
     }
+    return changed;
   }
   
   /**
    * Logically ORs this bit set with the specified set of bits.
+   * Returns <code>true</code> if <code>this</code> was modified in
+   * response to the operation. 
    * @param set the bit set to be ORed with
    */
   public boolean or_upTo(BitString set, int bit) {
@@ -167,13 +181,19 @@ public final class BitString implements Cloneable, java.io.Serializable {
 
   /**
    * Logically XORs this bit set with the specified set of bits.
+   * Returns <code>true</code> if <code>this</code> was modified in
+   * response to the operation. 
    * @param set the bit set to be XORed with
    */
-  public void xor(BitString set) {
+  public boolean xor(BitString set) {
     int setLength = set.bits.length;
+    boolean changed = false;
     for (int i = setLength; i-- > 0 ;) {
+      int old = bits[i];
       bits[i] ^= set.bits[i];
+      changed |= (old != bits[i]);
     }
+    return changed;
   }
   
   /**
