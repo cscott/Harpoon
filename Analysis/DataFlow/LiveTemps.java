@@ -25,7 +25,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.16 2000-06-21 20:43:22 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.17 2000-07-21 22:15:39 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
     // may be null; code using this should check
@@ -161,8 +161,9 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	    // traverse the block in reverse order, until hce is
 	    // reached.  Each step updates the liveness information.
 
-	    java.util.ListIterator iter = 
-		bb.statements().listIterator(bb.statements().size());
+	    java.util.List stms = bb.statements();
+	    // System.out.print(" M"+stms.size());
+	    java.util.ListIterator iter = stms.listIterator(stms.size());
 	    
 	    while(iter.hasPrevious()) {
 		HCodeElement current = (HCodeElement) iter.previous();
@@ -176,6 +177,8 @@ public class LiveTemps extends LiveVars.BBVisitor {
 		liveAfter.removeAll(ud.defC(current)); 
 		liveAfter.addAll(ud.useC(current)); 
 	    }
+	} else {
+	    // System.out.print(" _"+bb.statements().size());
 	}
 
 	return (Set) hce2liveAfter.get(hce);
