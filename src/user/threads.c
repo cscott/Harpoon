@@ -78,9 +78,9 @@ void free(void* ptr) {
 #endif
 
 #ifdef GLIBC_COMPAT5
-extern unsigned short int *__ctype_b;
-extern __int32_t *__ctype_tolower;
-extern __int32_t *__ctype_toupper;
+unsigned short int *__ctype_b;
+__int32_t *__ctype_tolower;
+__int32_t *__ctype_toupper;
 
 void glibc_compat5() {
   __ctype_b = *(unsigned short int**)__ctype_b_loc();
