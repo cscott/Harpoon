@@ -209,6 +209,7 @@ void inituser(int *bottom) {
 
 int user_mutex_init(user_mutex_t *x, void * v) {
   x->mutex=SEMAPHORE_CLEAR;
+  x->tl=NULL;
   return 0;
 }
 
