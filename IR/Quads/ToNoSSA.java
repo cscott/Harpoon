@@ -27,7 +27,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.27 2000-01-31 22:16:11 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.28 2000-02-08 23:20:46 cananian Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -340,9 +340,12 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
 	PHI phi = new PHI(q.getFactory(), q, new Temp[0], q.arity());
 
 	int numPhis = q.numPhis(), arity = q.arity();
-	for (int i=0; i<numPhis; i++)
+	for (int i=0; i<numPhis; i++) {
 	    for (int j=0; j<arity; j++)
 		pushBack(q, i, j); // Adds moves & updates derivation table
+	    // remove unneeded derivation table entry for q.dst(i)
+	    m_dT.remove(new Tuple(new Object[] { q, q.dst(i) }));
+	}
 
 	Quad.replace(q, phi);
     }
@@ -359,7 +362,7 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
 	if (m_dT != null) { // skip this if we're not maintaining type info
 	    // update the derivation table to reflect the new def points.
 	    Tuple oldtup = new Tuple(new Object[] { q, m.dst() });
-	    Object type = m_dT.remove(oldtup);
+	    Object type = m_dT.get(oldtup);
 	    Util.assert(type!=null, "No type for "+m.dst()+" in "+q);
 	    Tuple newtup = new Tuple(new Object[] { m, m.dst() });
 	    m_dT.put(newtup, type);
