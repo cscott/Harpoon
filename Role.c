@@ -645,7 +645,7 @@ void insertdomroot(struct role * role, struct rolereferencelist * domroots) {
   }
   
   while(rrl->next!=NULL) {
-    if (comparedomroots(domroots,rrl->next)>=0)
+    if (comparedomroots(domroots,rrl->next)<=0)
       break;
     rrl=rrl->next;
   }
@@ -710,7 +710,7 @@ void insertnonfl(struct role * role, struct rolefieldlist * rfl) {
   }
   while(tmpptr->next!=NULL) {
     int fc=fieldcompare(rfl, tmpptr->next);
-    if (fc>=0)
+    if (fc<=0)
       break;
     tmpptr=tmpptr->next;
   }
@@ -786,7 +786,7 @@ void insertrfl(struct role * role, struct rolefieldlist * rfl) {
   }
   while(tmpptr->next!=NULL) {
     int fc=fieldcompare(rfl,tmpptr->next);
-    if (fc>0)
+    if (fc<0)
       break;
     if (fc==0) {
       if (tmpptr->next->duplicates<DUPTHRESHOLD)
@@ -804,6 +804,7 @@ void insertrfl(struct role * role, struct rolefieldlist * rfl) {
 int fieldcompare(struct rolefieldlist *field1, struct rolefieldlist *field2) {
   if (field1->field==field2->field)
     return 0;
+
   if (field1->field<field2->field)
     return 1;
   return -1;
@@ -832,7 +833,7 @@ void insertral(struct role * role, struct rolearraylist * ral) {
     return;
   }
   rcmp=(ral->class< role->pointedtoal->class);
-  if (rcmp<0) {
+  if (rcmp>0) {
     ral->next=role->pointedtoal;
     role->pointedtoal=ral;
     return;
@@ -844,7 +845,7 @@ void insertral(struct role * role, struct rolearraylist * ral) {
     return;
   }
   while(tmpptr->next!=NULL) {
-    if (ral->class>tmpptr->next->class)
+    if (ral->class<tmpptr->next->class)
       break;
     if (ral->class==tmpptr->next->class) {
       if (tmpptr->next->duplicates<DUPTHRESHOLD)
