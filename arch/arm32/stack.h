@@ -49,3 +49,29 @@ asm("bl " LOOKUP_HANDLER \
     : /* no outputs */ \
     : /* no inputs */ \
     : "r1", "r2", "r3", "lr", "cc", "memory");
+
+/*------------------------------- STACK TRACING ------------------------*/
+/* This is the stuff that HAVE_STACK_TRACE_FUNCTIONS says we've got. */
+
+struct _Frame {
+  void *start_of_function; /* start_of_function + 16 */
+};
+typedef struct _Frame *Frame;
+
+/* frame pointer */
+#define get_my_fp() \
+({ Frame __fp; \
+   asm("mov %0, fp" : "=r" (__fp)); \
+   __fp; })
+
+/* [fp, #-4] = return address */
+#define get_my_retaddr(__fp) \
+  *(&(((Frame)__fp)->start_of_function)-1)
+
+/* [fp, #-8] = parent's stack ptr (points to last value on parent's stack */
+#define get_parent_sp(__fp) \
+  *(&(((Frame)__fp)->start_of_function)-2)
+
+/* [fp, #-12] = parent's frame ptr (points to first value on parent's stack */
+#define get_parent_fp(__fp) \
+  *(&(((Frame)__fp)->start_of_function)-3)
