@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.43 2002-08-01 16:49:07 cananian Exp $
+% $Id: ptran.tex,v 1.44 2002-08-01 17:00:57 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.43 $ $}
+\date{\today \\ $ $Revision: 1.44 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -552,15 +552,29 @@ Given method $m$ with formals $p_0,\ldots,p_k$:
 
 \subsubsection{Store statement}
 
-\begin{displaymath}
+\begin{eqnarray*}&
+\dfrac
+{\text{\tt [l$_1$.f=l$_2$]}\in\mathcal{P} \wedge
+ \tuple{l_1,n_1}\in I \wedge
+ \tuple{l_2,n_2}\in I }
+{\tuple{\tuple{n_1,f},n_2}\in I}
+\\&
 \dfrac
 {s=\text{\tt [l$_1$.f=l$_2$]}\wedge s\in\mathcal{P} \wedge
  \tuple{l_1,n_1}\in I \wedge
- \tuple{l_2,n_2}\in I }
-{\tuple{\tuple{n_1,f},n_2}\in I \wedge
- \tuple{l_1,s}\in\func{c}_\text{from}(\tuple{\tuple{n_1,f},n_2}) \wedge
- \tuple{l_2,s}\in\func{c}_\text{to}(\tuple{\tuple{n_1,f},n_2}) }
-\end{displaymath}
+ \tuple{l_2,n_2}\in I \wedge
+ \func{c}_\text{from}(\tuple{\tuple{n_1,f},n_2})\neq\bot
+}
+{\tuple{l_1,s}\in\func{c}_\text{from}(\tuple{\tuple{n_1,f},n_2}) }
+\\&
+\dfrac
+{s=\text{\tt [l$_1$.f=l$_2$]}\wedge s\in\mathcal{P} \wedge
+ \tuple{l_1,n_1}\in I \wedge
+ \tuple{l_2,n_2}\in I \wedge
+ \func{c}_\text{to}(\tuple{\tuple{n_1,f},n_2})\neq\bot
+}
+{\tuple{l_2,s}\in\func{c}_\text{to}(\tuple{\tuple{n_1,f},n_2}) }
+\end{eqnarray*}
 
 \textbf{More unification here??}
 
