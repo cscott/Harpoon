@@ -1,8 +1,12 @@
 /* trace takes a pointer to an object and traces the pointers w/in it */
 #define START_BIT 2
 
-#ifndef WITH_OLD_TRACER
+#ifndef WITH_GENERATIONAL_GC
 void func_proto(jobject_unwrapped unaligned_ptr)
+#else
+void func_proto(jobject_unwrapped unaligned_ptr, int wbtype)
+#endif
+#ifndef WITH_OLD_TRACER
 {
   jobject_unwrapped obj, *fields;
   struct claz *claz_ptr;
@@ -44,7 +48,11 @@ void func_proto(jobject_unwrapped unaligned_ptr)
 	  for( ; bitmap != 0; i++)
 	    {
 	      if ((bitmap & 1) && (fields[i] != NULL))
+#ifndef WITH_GENERATIONAL_GC
 		handle_ref(&fields[i]);
+#else
+		handle_ref(&fields[i], wbtype);
+#endif
 	      bitmap >>= 1;
 	    }
 	}
@@ -77,8 +85,11 @@ void func_proto(jobject_unwrapped unaligned_ptr)
 		  /* since we shift the bitmap right at each */
 		  /* iteration. */
 		  if ((bitmap & 1) && (fields[j] != NULL))
+#ifndef WITH_GENERATIONAL_GC
 		    handle_ref(&fields[j]);
-		  
+#else
+		    handle_ref(&fields[j], wbtype);
+#endif
 		  /* shift bitmap one right; this should always shift */
 		  /* in a zero since ptroff_t is always unsigned */
 		  bitmap = bitmap >> 1;
@@ -111,12 +122,20 @@ void func_proto(jobject_unwrapped unaligned_ptr)
 		      for(k = 0; k < arr->length; k++)
 			{
 			  if (elements[k] != NULL)
+#ifndef WITH_GENERATIONAL_GC
 			    handle_ref(&elements[k]);
+#else
+			    handle_ref(&elements[k], wbtype);
+#endif
 			}
 		      break;
 		    }
 		  if (fields[i] != NULL)
+#ifndef WITH_GENERATIONAL_GC
 		    handle_ref(&fields[i]);
+#else
+		    handle_ref(&fields[i], wbtype);
+#endif
 		}
 	      bitmap >>= 1;
 	    }
@@ -163,12 +182,20 @@ void func_proto(jobject_unwrapped unaligned_ptr)
 			  for(k = 0; k < arr->length; k++)
 			    {
 			      if (elements[k] != NULL)
+#ifndef WITH_GENERATIONAL_GC
 				handle_ref(&elements[k]);
+#else
+				handle_ref(&elements[k], wbtype);
+#endif
 			    }
 			  break;
 			}
 		      if (fields[j] != NULL)
+#ifndef WITH_GENERATIONAL_GC
 			  handle_ref(&fields[j]);
+#else
+			  handle_ref(&fields[j], wbtype);
+#endif
 		    }
 		  
 		  /* shift bitmap one right; this should always shift */
@@ -180,7 +207,6 @@ void func_proto(jobject_unwrapped unaligned_ptr)
     }
 }
 #else
-void func_proto(jobject_unwrapped unaligned_ptr)
 {
   jobject_unwrapped obj;
   int bits_needed, bitmaps_needed, i;
@@ -270,7 +296,11 @@ void func_proto(jobject_unwrapped unaligned_ptr)
 	      else if (fields[j] != NULL)
 		{
 		  error_gc("    field at %p ", fields[j]);
+#ifndef WITH_GENERATIONAL_GC
 		  handle_ref(&fields[j]);
+#else
+		  handle_ref(&fields[j], wbtype);
+#endif
 		}
 	    }
 
@@ -290,7 +320,11 @@ void func_proto(jobject_unwrapped unaligned_ptr)
 	  if (elements[k] != NULL)
 	    {
 	      error_gc("    array element at %p ", elements[k]);
+#ifndef WITH_GENERATIONAL_GC
 	      handle_ref(&elements[k]);
+#else
+	      handle_ref(&elements[k], wbtype);
+#endif
 	    }
 	}
     }

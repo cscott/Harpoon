@@ -330,7 +330,11 @@ void find_global_refs() {
     assert(jobj->jobject.obj != NULL);
     error_gc("Global reference (%p) ", jobj);
     error_gc("at %p\n", jobj->jobject.obj);
+#ifndef WITH_GENERATIONAL_GC
     add_to_root_set(&(jobj->jobject.obj));
+#else
+    add_to_root_set(&(jobj->jobject.obj), 0);
+#endif
     error_gc("    New address is %p\n", jobj->jobject.obj);
     jobj = jobj->next;
   }
@@ -369,7 +373,11 @@ void handle_local_refs_for_thread(struct FNI_Thread_State *thread_state_ptr) {
     error_gc("Thread local reference (%p) ", jobj);
     error_gc("at %p\n", jobj->obj);
     if (jobj->obj != NULL) {
+#ifndef WITH_GENERATIONAL_GC
       add_to_root_set(&(jobj->obj));
+#else
+      add_to_root_set(&(jobj->obj), 0);
+#endif
       error_gc("    New address is %p\n", jobj->obj); 
     }
     jobj++;
@@ -408,7 +416,11 @@ void find_static_fields() {
     error_gc("Static object (%p) ", obj);
     error_gc("at %p\n", (*obj));
     if ((*obj) != NULL) {
+#ifndef WITH_GENERATIONAL_GC
       add_to_root_set(obj);
+#else
+      add_to_root_set(obj, 0);
+#endif
       error_gc("    New address is %p\n", (*obj));
     }
   }

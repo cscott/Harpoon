@@ -13,6 +13,9 @@
 #include "system_page_size.h"
 #include "write_barrier.h"
 
+#define ARRAY_WB
+//#define PTR_WB
+
 //#define GC_EVERY_TIME
 #define WITH_WRITE_BARRIER_REMOVAL
 #define INITIAL_PAGES_TO_MAP_PER_SPACE 16384
@@ -39,24 +42,28 @@ if (halt_for_GC_flag) halt_for_GC(); })
 #define EXIT_GENERATIONAL_GC() FLEX_MUTEX_UNLOCK(&generational_gc_mutex)
 
 #ifdef JOLDEN_WRITE_BARRIER
-
 // array of intergenerational references
 #define INTERGEN_LENGTH 3700000
-jobject_unwrapped **intergen;
-int intergen_next;
-#else
-
+static jobject_unwrapped **intergen;
+#ifdef ARRAY_WB 
+static int intergen_next = 0;
+#else // ARRAY_WB
+static jobject_unwrapped **intergen_next;
+#endif // ARRAY_WB
+#else // JOLDEN_WRITE_BARRIER
 // linked list of intergenerational references
 struct ref_list {
   jobject_unwrapped *ref;
   struct ref_list *next;
 };
 static struct ref_list *roots = NULL;
-#endif
+#endif // JOLDEN_WRITE_BARRIER
 
 // intergenerational pointers by promotion
 static struct obj_list *objs_curr = NULL;
+static struct obj_list *objs_last = NULL;
 static struct obj_list *objs_next = NULL;
+static struct obj_list *objs_free = NULL;
 
 #ifdef JOLDEN_WRITE_BARRIER
 struct marksweep_heap old_gen;
@@ -72,56 +79,140 @@ static collection_type = MINOR;
 
 /* function declarations */
 
+void find_roots_in_obj_list();
+
+struct obj_list *get_new_list_element();
+
 int major_collection_makes_sense(size_t bytes_since_last_GC);
 
 int minor_collection_makes_sense(size_t bytes_since_last_GC);
 
 void generational_print_heap();
 
+inline void generational_write_barrier(jobject_unwrapped *ref);
+
+void remove_from_list(struct obj_list *to_free);
+
+/* add object reference to list of references to objects that contain roots.
+ */
+void add_to_curr_obj_list(jobject_unwrapped aligned)
+{
+  struct obj_list *obj = get_new_list_element();
+  obj->obj = aligned;
+  obj->next = objs_curr;
+  objs_curr = obj;
+}
+
+
+/* add object reference to list of references to objects that contain roots */
+void add_to_next_obj_list(jobject_unwrapped aligned)
+{
+  struct obj_list *obj = get_new_list_element();
+  obj->obj = aligned;
+  obj->next = objs_next;
+  objs_next = obj;
+}
+
+
 /* effects: adds inter-generational pointers to the root set
    for minor collections.
 */
-#ifdef JOLDEN_WRITE_BARRIER
 void find_generational_refs()
+#ifdef JOLDEN_WRITE_BARRIER
 {
   if (collection_type == MINOR)
     {
-      int intergen_saved = 0;
-      int intergen_curr;
-      struct obj_list *obj = objs_curr;
-
       //FLEX_MUTEX_LOCK(&intergenerational_roots_mutex);
 
-      for(intergen_curr = 0; intergen_curr < intergen_next; intergen_curr++)
-	{
+#ifdef ARRAY_WB
+      {
+	int intergen_saved = 0;
+	int intergen_curr, intergen_end;
+
+	intergen_end = intergen_next;
+
+	// scan intergenerational pointers, compacting list as we go
+	for(intergen_curr = 0; intergen_curr < intergen_end; intergen_curr++) {
 	  jobject_unwrapped *ref = intergen[intergen_curr];
 
-	  //if (IN_FROM_SPACE(*ref, young_gen) || IN_TO_SPACE(*ref, young_gen))
 	  if (IN_MARKSWEEP_HEAP(ref, old_gen) &&
 	      (IN_FROM_SPACE(*ref, young_gen) || IN_TO_SPACE(*ref, young_gen)))
 	    {
-	      add_to_root_set(ref);
-	      intergen[intergen_saved++] = intergen[intergen_curr];
+	      add_to_root_set(ref, 0);
+	      intergen[intergen_saved++] = ref;
 	    }
 	}
-      // array of references compacted
-      intergen_next = intergen_saved;
+	// add to compacted list any new intergenerational references
+	for( ; intergen_curr < intergen_next; intergen_curr++)
+	  intergen[intergen_saved++] = intergen[intergen_curr];
+
+	// array of references compacted
+	intergen_next = intergen_saved;
+
+      }
+#else
+      {
+	jobject_unwrapped **intergen_saved = intergen;
+	jobject_unwrapped **intergen_curr, **intergen_end;
+
+	intergen_end = intergen_next;
+
+	// scan intergenerational pointers, compacting list as we go
+	for(intergen_curr = intergen; intergen_curr < intergen_end;
+	    intergen_curr++)
+	  {
+	    //jobject_unwrapped *ref = intergen_curr;
+	    jobject_unwrapped *ref = *intergen_curr;
+
+	    //if (IN_FROM_SPACE(*ref, young_gen)||IN_TO_SPACE(*ref, young_gen))
+	    if (IN_MARKSWEEP_HEAP(ref, old_gen) &&
+		(IN_FROM_SPACE(*ref, young_gen)||IN_TO_SPACE(*ref, young_gen)))
+	      {
+		add_to_root_set(ref, 0);
+
+		{
+#ifdef PTR_WB
+		  *intergen_saved++ = *intergen_curr;
+#else		  
+		  // manual pointer disambiguation; equivalent to above.
+		  jobject_unwrapped **t = intergen_saved;
+		  jobject_unwrapped *pt = *intergen_curr;
+		  *t = pt;
+		  t++;
+		  intergen_saved = t;
+#endif
+		}
+	      }
+	  }
+	// add to compacted list any new intergenerational references
+	for( ; intergen_curr < intergen_next; intergen_curr++)
+	  {
+#ifdef PTR_WB
+	    *intergen_saved++ = *intergen_curr;
+#else
+	    // manual pointer disambiguation; equivalent to above.
+	    jobject_unwrapped **t = intergen_saved;
+	    jobject_unwrapped *pt = *intergen_curr;
+	    *t = pt;
+	    t++;
+	    intergen_saved = t;
+#endif
+	  }
+
+	// array of references compacted
+	intergen_next = intergen_saved;
+      }
+#endif
       //FLEX_MUTEX_UNLOCK(&intergenerational_roots_mutex);
-      
-      while (obj != NULL)
-	{
-	  trace(obj->obj);
-	  obj = obj->next;
-	}
+
+      find_roots_in_obj_list();
     }
 }
 #else
-void find_generational_refs()
 {
   if (collection_type == MINOR)
     {
       struct ref_list *ref = roots, *prev = NULL;
-      struct obj_list *obj = objs_curr;
 
       FLEX_MUTEX_LOCK(&intergenerational_roots_mutex);
 
@@ -131,7 +222,7 @@ void find_generational_refs()
 	      (IN_FROM_SPACE(*(ref->ref), young_gen) ||
 	       IN_TO_SPACE(*(ref->ref), young_gen)))
 	    {
-	      add_to_root_set(ref->ref);
+	      add_to_root_set(ref->ref, 0);
 	      prev = ref;
 	      ref = ref->next;
 	    }
@@ -155,14 +246,75 @@ void find_generational_refs()
 
       FLEX_MUTEX_UNLOCK(&intergenerational_roots_mutex);
 
-      while (obj != NULL)
-	{
-	  trace(obj->obj);
-	  obj = obj->next;
-	}
+      find_roots_in_obj_list();
     }
 }
 #endif
+
+
+/* traverses objs_curr list and handles objects that contain intergenerational
+   pointers. */
+void find_roots_in_obj_list()
+{
+  struct obj_list *obj = objs_curr;
+  struct obj_list *prev = NULL;
+  
+  while (obj != NULL)
+    {
+      jobject_unwrapped aligned = obj->obj;
+      
+      //#if defined(WITH_DYNAMIC_WB) && !defined(WITH_STATS_GC)
+#ifdef WITH_DYNAMIC_WB
+      if ((DYNAMIC_WB_ON((jobject_unwrapped) PTRMASK(aligned))))
+	{
+	  // do not remove object from list
+	  trace(aligned, 0);
+	  
+	  prev = obj;
+	  obj = obj->next;
+	}
+      else
+#endif   
+	{
+	  // remove object from list, but first,
+	  // use as roots and add to remembered
+	  // set, if necessary
+
+	  if (IN_MARKSWEEP_HEAP(aligned, old_gen)) {
+	    // add to remembered set if necessary
+	    trace(aligned, 1);
+	  }
+	  
+	  // remove from list
+	  if (prev == NULL) {
+	    objs_curr = obj->next;
+	    remove_from_list(obj);
+	    obj = objs_curr;
+	  } else {
+	    prev->next = obj->next;
+	    remove_from_list(obj);
+	    obj = prev->next;
+	  }
+	}
+    }
+  // note end of list so new objects can be added on
+  objs_last = prev;
+}
+
+
+/* returns a free element off the objs_free list, or, if none available,
+   return newly-allocated element. */
+struct obj_list *get_new_list_element()
+{
+  struct obj_list *result;
+  if (objs_free == NULL) {
+    result = (struct obj_list *) malloc(sizeof(struct obj_list));
+  } else {
+    result = objs_free;
+    objs_free = objs_free->next;
+  }
+  return result;
+}
 
 
 /* effects: garbage collects either just the young generation
@@ -180,13 +332,19 @@ void generational_collect()
 
   //generational_print_heap();
 
+  /*
+  printf("YOUNG TO:\t%p to %p\n", young_gen.to_begin, young_gen.to_end);
+  printf("YOUNG FROM:\t%p to %p\n", young_gen.from_begin, young_gen.from_free);
+  printf("OLD     :\t%p to %p\n", old_gen.heap_begin, old_gen.heap_end);
+  */
+
   scan = young_gen.to_begin;
 
   find_root_set();
 
   while(scan < young_gen.to_free)
     {
-      trace((jobject_unwrapped)scan);
+      trace((jobject_unwrapped)scan, 0);
       scan += align(FNI_ObjectSize(scan));
     }
 
@@ -209,8 +367,12 @@ void generational_collect()
   flip_semispaces(&young_gen);
 
   // add the new inter-generational pointers
-  objs_curr = objs_next;
-  objs_next = objs_curr;
+  if (objs_last == NULL) {
+    objs_curr = objs_next;
+  } else {
+    objs_last->next = objs_next;
+  }
+  objs_next = NULL;
 
   // calculate heap occupancy
   young_occupancy = ((float) (young_gen.from_free - 
@@ -288,18 +450,27 @@ void generational_gc_init()
   mapped += 2*bytes_to_map/3;
   init_marksweep_heap(mapped, heap_size, mapped_per_space, &old_gen);
 
+#if defined(WITH_DYNAMIC_WB) && defined(WITH_STATS_GC)
+  init_statistics();
+#endif
+
 #ifdef JOLDEN_WRITE_BARRIER
   // allocate space for intergenerational pointers
   intergen = (jobject_unwrapped **) 
     malloc(INTERGEN_LENGTH*sizeof(jobject_unwrapped *));
-  intergen_next = 0;
-#endif
+#ifndef ARRAY_WB
+  intergen_next = intergen;
+#endif // ARRAY_WB
+#endif // JOLDEN_WRITE_BARRIER
 }
 
 
-/* effects: handles references to objects. objects in from-space are copied
+/* requires: that wbtype be one of 0 (do not add this location to the
+   remembered set), or 1 (add this location to the remembered set if it 
+   contains a pointer to an object in the young generation).
+   effects: handles references to objects. objects in from-space are copied
    to to-space. if the object is already in to-space, the pointer is updated */
-void generational_handle_reference(jobject_unwrapped *ref)
+void generational_handle_reference(jobject_unwrapped *ref, int wbtype)
 {
   jobject_unwrapped obj = PTRMASK(*ref);
 
@@ -331,34 +502,60 @@ void generational_handle_reference(jobject_unwrapped *ref)
 	      // if success, done
 	      if (retval == 0)
 		{
-		  struct obj_list *obj;
-		  obj = (struct obj_list *)malloc(sizeof(struct obj_list));
-		
-		  obj->obj = PTRMASK(*ref);
-		  obj->next = objs_next;
-		  objs_next = obj;
+		  jobject_unwrapped aligned = PTRMASK(*ref);
 
-		  //printf("Adding %p to roots\n", *ref);
-		  trace(PTRMASK(*ref));
+		  //#if defined(WITH_DYNAMIC_WB) && !defined(WITH_STATS_GC)
+#ifdef WITH_DYNAMIC_WB
+		  if (DYNAMIC_WB_ON(aligned))
+		    {
+		      add_to_next_obj_list(aligned);
+		      trace(aligned, 0);
+		    } 
+		  else
+#endif
+		    {
+		      trace(aligned, 1);
+		    }
 		  return;
 		}
 	    }
 	  
 	  // if still here, then move to to-space
 	  relocate_to_to_space(ref, &young_gen);
+
+	  if (wbtype) {
+	    // add this location to the remembered set
+	    generational_write_barrier(ref);
+	  }
 	}
       else
-	// handle moved objects
-	(*ref) = (jobject_unwrapped) obj->claz;
+	{
+	  // handle moved objects
+	  (*ref) = (jobject_unwrapped) obj->claz;
+
+	  if (wbtype && IN_TO_SPACE(*ref, young_gen)) {
+	    // add this location to the remembered set
+	    generational_write_barrier(ref);
+	  }
+	}
+    }
+  else if (IN_TO_SPACE(obj, young_gen))
+    {
+      // reference already updated
+      if (wbtype) {
+	generational_write_barrier(ref);
+      }
     }
   else if (collection_type == MAJOR && IN_MARKSWEEP_HEAP(obj, old_gen))
     {
       struct block *bl = (void *)obj - BLOCK_HEADER_SIZE;
+
+      // if the claz pointer is unmodified,
       // mark or check for mark
       if (NOT_MARKED(bl))
 	{
 	  MARK_AS_REACHABLE(bl);
-	  trace(obj);
+	  trace(obj, 0);
 	}
       else
 	assert(MARKED_AS_REACHABLE(bl));
@@ -587,7 +784,6 @@ void generational_print_heap()
   //scanf("%c", &c);
 }
 
-
 /* effects: if the object resides in the young generation, it is added
    to the list of inflated objects that need to be deflated after the
    object has been garbage collected.
@@ -597,15 +793,27 @@ void generational_register_inflated_obj(jobject_unwrapped obj)
   register_inflated_obj(obj, &young_gen);
 }
 
-#ifdef JOLDEN_WRITE_BARRIER
 inline void generational_write_barrier(jobject_unwrapped *ref)
+#ifdef JOLDEN_WRITE_BARRIER
+#ifdef ARRAY_WB
 {
   // if (IN_MARKSWEEP_HEAP(ref, old_gen))
-    intergen[intergen_next++] = ref;
+  intergen[intergen_next++] = ref;
   //assert(intergen_next < INTERGEN_LENGTH);
 }
+#elif defined(PTR_WB)
+{
+  *intergen_next++ = ref;
+}
 #else
-void generational_write_barrier(jobject_unwrapped *ref)
+{
+  jobject_unwrapped **t = intergen_next;
+  *t = ref;
+  t++;
+  intergen_next = t;
+}
+#endif
+#else // JOLDEN_WRITE_BARRIER
 {
   struct ref_list *root;
 
@@ -621,6 +829,16 @@ void generational_write_barrier(jobject_unwrapped *ref)
 }
 #endif
 
+int in_young_gen(jobject_unwrapped obj)
+{
+  return (IN_FROM_SPACE(obj, young_gen) || IN_TO_SPACE(obj, young_gen));
+}
+
+int in_old_gen(jobject_unwrapped obj)
+{
+  return IN_MARKSWEEP_HEAP(obj, old_gen);
+}
+
 /* returns: 1 if we can afford a major collection, 0 otherwise */
 int major_collection_makes_sense(size_t bytes_since_last_GC)
 {
@@ -635,4 +853,12 @@ int minor_collection_makes_sense(size_t bytes_since_last_GC)
 {
   size_t cost = young_gen.avg_occupancy * young_gen.heap_size;
   return (bytes_since_last_GC > cost);
+}
+
+/* adds given obj_list element to the free list */
+void remove_from_list(struct obj_list *to_free)
+{
+  to_free->obj = NULL;
+  to_free->next = objs_free;
+  objs_free = to_free;
 }

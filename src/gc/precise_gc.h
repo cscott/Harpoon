@@ -92,10 +92,12 @@ void cleanup_after_threaded_GC();
 void debug_verify_object(jobject_unwrapped obj);
 #endif
 
-/* ---- functions for COPYING and MARKSWEEP GC ---- */ 
-
 /* trace takes a pointer to an object and traces the pointers w/in it */
+#ifndef WITH_GENERATIONAL_GC
 void trace(jobject_unwrapped obj);
+#else
+void trace(jobject_unwrapped obj, int wbtype);
+#endif
 
 /* ---- functions for POINTER-REVERSED MARKSWEEP GC ---- */
 ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t next_index);
