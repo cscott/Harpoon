@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.9.2.6 2000-01-13 06:17:44 bdemsky Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.9.2.7 2000-01-13 08:52:32 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -30,6 +30,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
     super(l);
     Util.assert(!template.isArray());
     Util.assert(!template.isPrimitive());
+    Util.assert(l==template.getLinker());
     this.name = name;
     this.superclass = template.getSuperclass();
     this.interfaces = template.getInterfaces();
