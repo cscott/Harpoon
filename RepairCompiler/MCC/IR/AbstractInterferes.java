@@ -98,7 +98,6 @@ class AbstractInterferes {
 		    return false;
 	    }
 	}
-
 	if (ar.getDescriptor()==dp.getPredicate().getDescriptor()&&
 	    (ar.getType()==AbstractRepair.ADDTOSET||ar.getType()==AbstractRepair.ADDTORELATION)&&
 	    (dp.getPredicate() instanceof ExprPredicate)&&
@@ -122,13 +121,12 @@ class AbstractInterferes {
 		(op2==Opcode.GT))
 		return false;
 	}
-
 	if (ar.getDescriptor()==dp.getPredicate().getDescriptor()&&
 	    (ar.getType()==AbstractRepair.MODIFYRELATION)&&
 	    (dp.getPredicate() instanceof ExprPredicate)&&
 	    (dp.getPredicate().inverted()==ar.getPredicate().getPredicate().inverted())&&
 	    (((ExprPredicate)dp.getPredicate()).getType()==ExprPredicate.COMPARISON)) {
-
+	    
 	    boolean neg1=ar.getPredicate().isNegated();
 	    Opcode op1=((ExprPredicate)ar.getPredicate().getPredicate()).getOp();
 	    boolean isInt1=((ExprPredicate)ar.getPredicate().getPredicate()).isRightInt();
@@ -140,7 +138,18 @@ class AbstractInterferes {
 	    Opcode op2=((ExprPredicate)dp.getPredicate()).getOp();
 	    boolean isInt2=((ExprPredicate)dp.getPredicate()).isRightInt();
 	    int size2=isInt2?((ExprPredicate)dp.getPredicate()).rightSize():0;
-	    Expr expr2=((OpExpr)((ExprPredicate)ar.getPredicate().getPredicate()).expr).right;
+	    Expr expr2=((OpExpr)((ExprPredicate)dp.getPredicate()).expr).right;
+
+	    {
+		Expr lexpr1=((RelationExpr)((OpExpr)((ExprPredicate)ar.getPredicate().getPredicate()).expr).getLeftExpr()).getExpr();
+		Expr lexpr2=((RelationExpr)((OpExpr)((ExprPredicate)dp.getPredicate()).expr).getLeftExpr()).getExpr();
+		SetDescriptor sd1=lexpr1.getSet();
+		SetDescriptor sd2=lexpr2.getSet();
+		if (termination.mutuallyexclusive(sd1,sd2))
+		    return false;
+	    }
+
+
 
 	    /* Translate the opcodes */
 	    op1=Opcode.translateOpcode(neg1,op1);
@@ -152,19 +161,16 @@ class AbstractInterferes {
 		((op2==Opcode.GT)||
 		 (op2==Opcode.GE)))
 		return false;
-
 	    if (((op1==Opcode.LT)||
 		(op1==Opcode.LE))&&
 		((op2==Opcode.LT)||
 		 (op2==Opcode.LE)))
 		return false;
-		
 	    if (((op1==Opcode.EQ)||(op1==Opcode.GE)||(op1==Opcode.LE))&&
 		((op2==Opcode.EQ)||(op2==Opcode.GE)||(op2==Opcode.LE))&&
 		expr1.equals(null,expr2)) {
 		return false;
 	    }
-
 	    if (isInt1&&isInt2) {
 		if (((op1==Opcode.EQ)||(op1==Opcode.GE)||(op1==Opcode.LE))&&
 		    ((op2==Opcode.EQ)||(op2==Opcode.GE)||(op2==Opcode.LE))&&
@@ -183,52 +189,42 @@ class AbstractInterferes {
 		    size2a++;
 		if (op2==Opcode.LT)
 		    size2a--;
-
 		if (((op1==Opcode.GE)||(op1==Opcode.GT))&&
 		    ((op2==Opcode.LE)||(op2==Opcode.EQ)||(op2==Opcode.LT))&&
 		    (size1a<=size2a))
 		    return false;
-
 		if (((op1==Opcode.LE)||(op1==Opcode.LT))&&
 		    ((op2==Opcode.GE)||(op2==Opcode.EQ)||(op2==Opcode.GT))&&
 		    (size1a>=size2a))
 		    return false;
-		
 		if ((op1==Opcode.EQ)&&(op2==Opcode.EQ)&&
 		    (size1a==size2a))
 		    return false;
-
 		if ((op1==Opcode.EQ)&&
 		    ((op2==Opcode.LE)||(op2==Opcode.LT))&&
 		    (size1a<=size2a))
 		    return false;
-
 		if ((op1==Opcode.EQ)&&
 		    ((op2==Opcode.GE)||(op2==Opcode.GT))&&
 		    (size1a>=size2a))
 		    return false;
-
 		if (op2==Opcode.NE)  /*FLAGNE this is current behavior for NE repairs */
 		    if (size1a!=size2)
 			return false;
-
 		if ((op1==Opcode.NE)&&
 		    (op2==Opcode.EQ)&&
 		    (size1!=size2))
 		    return false;
-
 		if ((op1==Opcode.NE)&& /* FLAGNE relies on increasing or decreasing by 1 */
 		    ((op2==Opcode.GT)||(op2==Opcode.GE))&&
 		    (size1!=size2a))
 		    return false;
-
 		if ((op1==Opcode.NE)&& /* FLAGNE relies on increasing or decreasing by 1 */
 		    ((op2==Opcode.LT)||(op2==Opcode.LE))&&
 		    (size1!=size2a))
 		    return false;
 	    }
 	}
-
 	/* This handles all the c comparisons in the paper */
 	if (ar.getDescriptor()==dp.getPredicate().getDescriptor()&&
 	    (ar.getType()==AbstractRepair.REMOVEFROMSET||ar.getType()==AbstractRepair.REMOVEFROMRELATION)&&
@@ -277,7 +273,6 @@ class AbstractInterferes {
 		(op2==Opcode.LE)||
 		(op2==Opcode.LT))
 		return false;
-	    
 	}
 	if ((ar.getDescriptor()==dp.getPredicate().getDescriptor())&&
 	    (ar.getType()==AbstractRepair.ADDTOSET||ar.getType()==AbstractRepair.ADDTORELATION)&&
@@ -290,7 +285,6 @@ class AbstractInterferes {
 	    (dp.getPredicate() instanceof InclusionPredicate)&&
 	    (dp.isNegated()==true))
 	    return false; /* Could only satisfy this predicate */
-	  
 	return true;
     }
 

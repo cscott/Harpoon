@@ -44,7 +44,8 @@ public class OpExpr extends Expr {
 
     public Set getfunctions() {
 	Set leftfunctions=left.getfunctions();
-	Set rightfunctions=right.getfunctions();
+	Set rightfunctions=null;
+	if (right!=null) rightfunctions=right.getfunctions();
 	if (leftfunctions!=null&&rightfunctions!=null) {
 	    HashSet functions=new HashSet();
 	    functions.addAll(leftfunctions);

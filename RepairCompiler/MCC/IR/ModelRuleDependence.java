@@ -104,8 +104,17 @@ class ModelRuleDependence {
     private void generateEdge(Rule r1,Rule r2) {
 	Descriptor d=(Descriptor) r1.getInclusion().getTargetDescriptors().iterator().next();
 	int dep=checkBody(d,r2.getDNFGuardExpr());
-	if (dep==NODEPENDENCY)
-	    dep=checkQuantifiers(d,r2);
+	if (dep==NODEPENDENCY) {
+	    SetDescriptor bsd=null;
+	    if (d instanceof SetDescriptor) {
+		SetInclusion si=(SetInclusion)r1.getInclusion();
+		if (si.getExpr() instanceof VarExpr) {
+		    VarDescriptor vd=((VarExpr)si.getExpr()).getVar();
+		    bsd=vd.getSet();
+		}
+	    }
+	    dep=checkQuantifiers(bsd,d,r2);
+	}
 	if (dep==NODEPENDENCY)
 	    return;
 	GraphNode gn1=(GraphNode) ruletonode.get(r1);
@@ -138,10 +147,17 @@ class ModelRuleDependence {
 	    return NODEPENDENCY;
     }
 
-    private int checkQuantifiers(Descriptor d, Quantifiers qs) {
+    private int checkQuantifiers(SetDescriptor bsd, Descriptor d, Quantifiers qs) {
 	for (int i=0;i<qs.numQuantifiers();i++) {
 	    Quantifier q=qs.getQuantifier(i);
-	    if (q.getRequiredDescriptors().contains(d))
+	    if (q instanceof SetQuantifier&&
+		d instanceof SetDescriptor) {
+		SetQuantifier sq=(SetQuantifier)q;
+		SetDescriptor sd=(SetDescriptor)d;
+		if (sq.getSet().isSubset(sd)&&
+		    ((bsd==null)||!bsd.isSubset(sq.getSet())))
+		    return NORMDEPENDENCY;
+	    } else if (q.getRequiredDescriptors().contains(d))
 		return NORMDEPENDENCY;
 	}
 	return NODEPENDENCY;

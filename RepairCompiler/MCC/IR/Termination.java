@@ -256,6 +256,7 @@ public class Termination {
 
 		for(int i=0;i<conj.size();i++) {
 		    DNFPredicate dp=conj.get(i);
+		    System.out.println("Checking "+gn.getTextLabel()+" --> "+gn2.getTextLabel());
 		    if (AbstractInterferes.interferes(ar,cons)||
 			abstractinterferes.interferes(ar,dp)) {
 			GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
@@ -1111,6 +1112,44 @@ public class Termination {
 		    continue;
 	    }
 	    return false;
+	}
+	return true;
+    }
+
+    public boolean mutuallyexclusive(SetDescriptor sd1, SetDescriptor sd2) {
+	if (mutualexclusive(sd1,sd2)||
+	    mutualexclusive(sd2,sd1))
+	    return true;
+	else
+	    return false;
+    }
+
+    private boolean mutualexclusive(SetDescriptor sd1, SetDescriptor sd2) {
+	Vector rules=state.vRules;
+	for(int i=0;i<rules.size();i++) {
+	    Rule r=(Rule)rules.get(i);
+	    if (r.getInclusion().getTargetDescriptors().contains(sd1)) {
+		/* Rule may add items to sd1 */
+		SetInclusion si=(SetInclusion)r.getInclusion();
+		Expr ve=si.getExpr();
+		DNFRule drule=r.getDNFGuardExpr();
+		for(int j=0;j<drule.size();j++) {
+		    RuleConjunction rconj=drule.get(j);
+		    boolean containsexclusion=false;
+		    for (int k=0;k<rconj.size();k++) {
+			DNFExpr dexpr=rconj.get(k);
+			if (dexpr.getNegation()&&
+			    dexpr.getExpr() instanceof ElementOfExpr&&
+			    ((ElementOfExpr)dexpr.getExpr()).element.equals(null,ve)) {
+			    SetDescriptor sd=((ElementOfExpr)dexpr.getExpr()).set;
+			    if (sd.isSubset(sd2))
+				containsexclusion=true;
+			}
+		    }
+		    if (!containsexclusion)
+			return false;
+		}
+	    }
 	}
 	return true;
     }
