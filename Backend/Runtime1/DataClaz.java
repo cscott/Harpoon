@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.27 2001-07-10 22:49:48 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.28 2001-07-25 19:18:51 kkz Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -105,21 +105,20 @@ public class DataClaz extends Data {
 
     /** Make gc bitmap or pointer to bitmap. */
     private Stm gc(Frame f, ClassHierarchy ch) {
-	// use object size (w/o header) to determine how many bits we need (round up)
-	int bitsNeeded = (m_tb.objectSize(hc) + m_tb.POINTER_SIZE - 1)/m_tb.POINTER_SIZE;
+	// use object size (w/ header) to determine how many bits we need (round up)
+	int bitsNeeded = (m_tb.objectSize(hc) + m_tb.OBJECT_HEADER_SIZE + m_tb.POINTER_SIZE - 1)/m_tb.POINTER_SIZE;
 	// for arrays we keep an extra bit for the array elements
 	if (hc.isArray())
 	    bitsNeeded++;
 	if (bitsNeeded > BITS_IN_GC_BITMAP) { // auxiliary table for large objects
 	    return gcaux(f, ch, bitsNeeded);
 	} else { // in-line bitmap for small objects
-	    final List stmlist = new ArrayList();
 	    final List fields = m_tb.cfm.fieldList(hc);
 	    long bitmap = 0;
 	    for (Iterator it=fields.iterator(); it.hasNext(); ) {
 		final HField hf = (HField)it.next();
 		final HClass type = hf.getType();
-		final int fieldOffset = m_tb.cfm.fieldOffset(hf);
+		final int fieldOffset = m_tb.cfm.fieldOffset(hf) + m_tb.OBJECT_HEADER_SIZE;
 		// non-aligned objects should never be pointers
 		if (fieldOffset%m_tb.POINTER_SIZE != 0) {
 		    Util.assert(type.isPrimitive());
@@ -137,6 +136,7 @@ public class DataClaz extends Data {
 	    if (hc.isArray() && !hc.getComponentType().isPrimitive())
 		bitmap |= (1 << (bitsNeeded - 1));
 	    // write out in-line bitmap
+	    final List stmlist = new ArrayList();
 	    if (f.pointersAreLong()) {
 		//System.out.println("Compact: " + Long.toBinaryString(bitmap));
 		stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
@@ -150,7 +150,7 @@ public class DataClaz extends Data {
     }
     // Make auxiliary gc bitmap
     private Stm gcaux(Frame f, ClassHierarchy ch, int bitsNeeded) {
-	final List stmlist = new ArrayList();
+	List stmlist = new ArrayList();
 	// large object, encoded in auxiliary table
 	stmlist.add(_DATUM(m_nm.label(hc, "gc_aux")));
 	// switch to GC segment
@@ -161,9 +161,10 @@ public class DataClaz extends Data {
 	final List fields = m_tb.cfm.fieldList(hc);
 	long bitmap = 0;
 	int numBitmaps = 0; // keep track of number of bitmaps created
+	boolean atomic = true;
 	for (Iterator it = fields.iterator(); it.hasNext(); ) {
 	    HField hf = (HField)it.next();
-	    final int fo = m_tb.cfm.fieldOffset(hf);
+	    final int fo = m_tb.cfm.fieldOffset(hf) + m_tb.OBJECT_HEADER_SIZE;
 	    final int bitPosition = fo/m_tb.POINTER_SIZE;
 	    Util.assert(numBitmaps <= bitPosition/BITS_IN_GC_BITMAP);
 	    final HClass type = hf.getType();
@@ -174,6 +175,7 @@ public class DataClaz extends Data {
 	    }
 	    // write out completed bitmaps
 	    while(numBitmaps < bitPosition/BITS_IN_GC_BITMAP) {
+		if (bitmap != 0) atomic = false;
 		if (f.pointersAreLong()) {
 		    //System.out.println("Aux: " + 
 		    //		       Long.toBinaryString(bitmap));
@@ -197,7 +199,8 @@ public class DataClaz extends Data {
 	    // use last bit of bitmap for array elements
 	    if ((numBitmaps == (bitmapsNeeded - 1)) && hc.isArray() && 
 		!hc.getComponentType().isPrimitive())
-		bitmap |= (1 << ((bitsNeeded - 1)%BITS_IN_GC_BITMAP));		
+		bitmap |= (1 << ((bitsNeeded - 1)%BITS_IN_GC_BITMAP));
+	    if (bitmap != 0) atomic = false;
 	    if (f.pointersAreLong()) {
 		//System.out.println("Aux: " + 
 		//		   Long.toBinaryString(bitmap));
@@ -208,6 +211,16 @@ public class DataClaz extends Data {
 		stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
 	    }
 	    bitmap = 0; numBitmaps++; // clear bitmap
+	}
+	// if there are no pointers in the object, forget all the
+	// bitmaps we generated and put a null in the in-line bitmap
+	if (atomic) {
+	    stmlist = new ArrayList();
+	    if (f.pointersAreLong())
+		stmlist.add(_DATUM(new CONST(tf, null, (long)0)));
+	    else
+		stmlist.add(_DATUM(new CONST(tf, null, (int)0)));
+	    return Stm.toStm(stmlist);
 	}
 	// switch back to CLASS segment
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.CLASS));
