@@ -16,7 +16,7 @@ import java.util.Iterator;
  * <code>LoopInvariance</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopInvariance.java,v 1.1.2.4 1999-07-01 15:50:49 bdemsky Exp $
+ * @version $Id: LoopInvariance.java,v 1.1.2.5 1999-07-13 20:50:22 bdemsky Exp $
  */
 public class LoopInvariance {
     
@@ -83,14 +83,6 @@ public class LoopInvariance {
 	    change=false;
 	}
 
-	public void visit(PSET q) {
-	    removeflag=false;
-	}
-
-	public void visit(RETURN q) {
-	    removeflag=false;
-	}
-
 	public void visit(Quad q) {
 	    visitdefault(q);
 	}
@@ -123,6 +115,18 @@ public class LoopInvariance {
 	    removeflag=false;
 	}
 
+	public void visit(PSET q) {
+	    removeflag=false;
+	}
+
+	public void visit(PGET q) {
+	    removeflag=false;
+	}
+
+	public void visit(RETURN q) {
+	    removeflag=false;
+	}
+
 	public void visit(POPER q) {
 	    switch (q.opcode()) {
 	    case Qop.DDIV:
@@ -136,18 +140,39 @@ public class LoopInvariance {
 	    }
 	}
 
+	public void visit(FOOTER q) {
+	    removeflag=false;
+	}
+
+	public void visit(METHOD q) {
+	    removeflag=false;
+	}
+
+	public void visit(MONITORENTER q) {
+	    removeflag=false;
+	}
+
+	public void visit(MONITOREXIT q) {
+	    removeflag=false;
+	}
+
 	public void visit(PCALL q) {
 	    //Calls aren't loop invariant...
 	    //they might have side effects
 	    removeflag=false;
 	}
-	
+
 	public void visit(SIGMA q) {
 	    removeflag=false;
 	}
 	
+	public void visit(THROW q) {
+	    removeflag=false;
+	}
+
 	public void visit(PHI q) {
 	    removeflag=false;
 	}
     }
 }
+
