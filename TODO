@@ -30,7 +30,7 @@ Peephole optimizations on QuadSSA to normalize:
     all boolean functions should feed a cjmp directly.
  2) lcmp,dcmp mess.  Look for CJMP whose test is def'd in a PHI statement,
     and remove the PHI, duplicating the CJMP.  May need to be a PHI->CJMP
-    sequence.
+    sequence. (make sure cmpgt->cmpeq is properly translated to cmpge, too.)
 ---- Sep-13-98
 Write tool to print 'ConstantClass'es from bytecode files, and delete
  .classes that depend on out-of-date classes. Then some other tool can
@@ -107,8 +107,8 @@ X      (this will magically remove undefined temps as well).
 X   2) Shrink PHI functions that have phantom limbs (from impossible catches).
 ---- Sep-09-98
 X Undo MONITOR block transform.  Make it a poor statement.
-Change DCMPL/DCMPG/FCMPL/FCMPG bytecode operations to
-conform to the integer standard: _CMPEQ, _CMPGE, _CMPGT.
+X Change DCMPL/DCMPG/FCMPL/FCMPG bytecode operations to
+X conform to the integer standard: _CMPEQ, _CMPGE, _CMPGT.
 ---- Sep-04-98
 X Add FOOTER block to allow reverse traversals.
 X Fix RET handling -- RET should return to source of JSR.
