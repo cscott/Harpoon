@@ -7,10 +7,17 @@
 #ifdef WITH_DMALLOC
 #include "dmalloc.h"
 #endif
+#ifdef BDW_CONSERVATIVE_GC
+#include "gc.h"
+#endif
 
 /* eventually many of these? */
 void *FNI_RawAlloc(JNIEnv *env, jsize length) {
+#ifdef BDW_CONSERVATIVE_GC
+  return GC_malloc(length);
+#else /* okay, use system-default... */
   return malloc(length);
+#endif
 }
 
 /* Allocate and zero-out memory for the specified object type.

@@ -8,6 +8,9 @@
 #ifdef WITH_DMALLOC
 #include "dmalloc.h"
 #endif
+#ifdef BDW_CONSERVATIVE_GC
+#include "gc.h"
+#endif
 
 jobject FNI_NewLocalRef(JNIEnv *env, jobject_unwrapped obj) {
   struct FNI_Thread_State *fts = (struct FNI_Thread_State *) env;
@@ -15,7 +18,13 @@ jobject FNI_NewLocalRef(JNIEnv *env, jobject_unwrapped obj) {
 
   if (obj==NULL) return NULL; /* null stays null. */
   /* malloc away... */
-  result = malloc(sizeof(*result));
+  result = 
+#ifdef BDW_CONSERVATIVE_GC
+    GC_malloc_uncollectable
+#else /* okay, use system-default malloc */
+    malloc
+#endif
+    (sizeof(*result));
   result->obj = obj;
   /* link this local ref into chain */
   result->next = fts->localrefs.next;
@@ -46,7 +55,11 @@ void FNI_DeleteLocalRef(JNIEnv *env, jobject localRef) {
   if (prev->next == localRef) {
     /* only free and unlink if we've really found localRef */
     prev->next = localRef->next;
+#ifdef BDW_CONSERVATIVE_GC
+    GC_free(localRef);
+#else /* system-default malloc... */
     free(localRef);
+#endif
   } else assert(0); /* can't find local ref */
 }
 
@@ -55,7 +68,13 @@ jobject FNI_NewGlobalRef(JNIEnv * env, jobject obj) {
   assert(FNI_NO_EXCEPTIONS(env));
   assert(obj!=NULL);
   /* malloc away... */
-  result = malloc(sizeof(*result));
+  result = 
+#ifdef BDW_CONSERVATIVE_GC
+    GC_malloc_uncollectable
+#else /* okay, use system-default malloc */
+    malloc
+#endif
+    (sizeof(*result));
   result->obj = obj->obj;
   /* XXX: should acquire global lock */
   result->next = FNI_globalrefs.next;
@@ -73,7 +92,11 @@ void FNI_DeleteGlobalRef (JNIEnv *env, jobject globalRef) {
     if (prev->next == globalRef) break;
   if (prev->next == globalRef) {
     /* only free and unlink if we've really found localRef */
+#ifdef BDW_CONSERVATIVE_GC
+    GC_free(globalRef);
+#else /* system-default malloc... */
     free(globalRef);
+#endif
     prev->next = prev->next->next;
   } else assert(0); /* can't find global ref */
 }
