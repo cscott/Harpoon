@@ -10,6 +10,7 @@ import java.util.Map;
 
 import java.lang.reflect.Modifier;
 
+import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
@@ -30,31 +31,41 @@ import harpoon.Util.Util;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.6 2003-02-12 19:03:34 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.7 2003-05-06 15:33:55 salcianu Exp $
  */
 public class NodeRepository implements java.io.Serializable {
 
     public final static PANode NULL_NODE  = new PANode(PANode.NULL);
     
-    private Hashtable static_nodes;
-    private Hashtable param_nodes;
-    private Hashtable code_nodes;
-    private Hashtable cf_nodes;
-    private Hashtable except_nodes;
-    private Hashtable node2code;
+    private Hashtable/*<String,PANode>*/    static_nodes;
+    private Hashtable/*<HMethod,PANode[]>*/ param_nodes;
+    private Hashtable/*<Quad,PANode>*/      code_nodes;
+    private Hashtable/*<CFPair,PANode>*/    cf_nodes;
+    private Hashtable/*<Quad,PANode>*/      except_nodes;
+    private Hashtable/*<PANode,Quad>*/      node2code;
 
     /** Creates a <code>NodeRepository</code>. */
-    public NodeRepository() {
+    public NodeRepository(Linker linker) {
 	static_nodes = new Hashtable();
 	param_nodes  = new Hashtable();
 	code_nodes   = new Hashtable();
 	cf_nodes     = new Hashtable();
 	except_nodes = new Hashtable();
 	node2code    = new Hashtable();
+	java_lang_Throwable = linker.forName("java.lang.Throwable");
     }
 
     // debug flag: if it's set on, it shows how each node is created
     private final static boolean SHOW_NODE_CREATION = false;
+
+
+    /** Returns the node that models the constant object
+        <code>value</code>.  Currently, all constant objects are
+        modelled by a single node. */
+    public final PANode getConstNode(Object value) {
+	return CONST_NODE;
+    }
+    private static final PANode CONST_NODE = new PANode(PANode.CONST);
 
     /** Returns the static node associated with the class
      * <code>class_name</code>. The node is automatically created if it
@@ -85,7 +96,8 @@ public class NodeRepository implements java.io.Serializable {
 	for(int i = 0; i < mmethod.nbParams(); i++) {
 	    GenType gt = mmethod.getType(i);
 	    if(!gt.getHClass().isPrimitive()) {
-		assert count < param_number : "Strange number of params for " + mmethod;
+		assert count < param_number : 
+		    "Strange number of params for " + mmethod;
 		gts[count] = gt;
 		count++;
 	    }
@@ -138,6 +150,12 @@ public class NodeRepository implements java.io.Serializable {
 
     // Returns the EXCEPT node associated with a CALL instruction
     private final PANode getExceptNode(HCodeElement hce){
+	if(COALESCE_RESULTS_FROM_NATIVES) {
+	    if(coalesced_native_excp == null)
+		coalesced_native_excp = getNewNode(PANode.EXCEPT);
+	    return coalesced_native_excp;
+	}
+
 	PANode node = (PANode) except_nodes.get(hce);
 	if(node == null) {
 	    HMethod callee = ((CALL) hce).method();
@@ -147,6 +165,12 @@ public class NodeRepository implements java.io.Serializable {
 	}
 	return node;	
     }
+    private PANode coalesced_native_excp = null;
+    private PANode coalesced_native_ret  = null;
+    private final boolean COALESCE_RESULTS_FROM_NATIVES = true;
+    private PANode coalesced_excp = null;
+    private final HClass java_lang_Throwable;
+    private final boolean COALESCE_EXCEPTIONS = true;
 
     // Auxiliary class: the key type for the "cf_nodes" hashtable.
     private static class CFPair implements java.io.Serializable {
@@ -210,6 +234,23 @@ public class NodeRepository implements java.io.Serializable {
 	// EXCEPT nodes separately.
 	if(type == PANode.EXCEPT) return getExceptNode(hce);
 
+	if(type == PANode.RETURN && COALESCE_RESULTS_FROM_NATIVES) {
+	    if(coalesced_native_ret == null)
+		coalesced_native_ret = getNewNode(PANode.RETURN);
+	    return coalesced_native_ret;
+	}
+
+	if((type == PANode.INSIDE) && COALESCE_EXCEPTIONS &&
+	   getAllocatedType(hce).isInstanceOf(java_lang_Throwable)) {
+	    if(coalesced_excp == null)
+		coalesced_excp = 
+		    getNewNode(PANode.INSIDE, 
+			       new GenType[] { 
+				   new GenType
+				   (java_lang_Throwable, GenType.POLY)});
+	    return coalesced_excp;
+	}
+
 	PANode node = (PANode) code_nodes.get(hce);
 	if((node == null) && make) {
 	    node = getNewNode(type, new GenType[]{get_code_node_type(hce)});
@@ -222,7 +263,6 @@ public class NodeRepository implements java.io.Serializable {
 	}
 	return node;
     }
-
 
     private final GenType get_code_node_type(HCodeElement hce) {
 	Quad quad = (Quad) hce;
@@ -247,12 +287,11 @@ public class NodeRepository implements java.io.Serializable {
 		}
 
 		public void visit(GET q) { // LOAD nodes
-		    retval.gt =
-			new GenType(q.field().getType(), GenType.POLY);
+		    retval.gt = new GenType(q.field().getType(), GenType.POLY);
 		}
 
 		public void visit(AGET q) { // LOAD nodes from array ops
-		    retval.gt = null; // we cannot determine the type
+		    retval.gt = new GenType(q.type(), GenType.POLY);
 		}
 
 		public void visit(Quad q) {
@@ -395,11 +434,12 @@ public class NodeRepository implements java.io.Serializable {
 	int nb_insides = 0;
 	int nb_loads   = 0;
 	int nb_returns = 0;
+	int nb_consts  = 1; // no other way of computing it
+	int nb_nulls   = 1; // no other way of computing it
 	
-     	Iterator it = code_nodes.keySet().iterator();
-	while(it.hasNext()){
+     	for(Iterator it = code_nodes.keySet().iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) code_nodes.get(it.next());
-	    switch(node.type){
+	    switch(node.type) {
 	    case PANode.INSIDE:
 		nb_insides++;
 		break;
@@ -413,22 +453,23 @@ public class NodeRepository implements java.io.Serializable {
 	}
 
 	int nb_params = 0;
-	it = param_nodes.keySet().iterator();
-	while(it.hasNext())
+	for(Iterator it = param_nodes.keySet().iterator(); it.hasNext(); )
 	    nb_params += ((PANode[])(param_nodes.get(it.next()))).length;
 
 	int nb_roots = 
 	    nb_insides + nb_returns + nb_excepts +
-	    nb_statics + nb_loads + nb_params;
+	    nb_statics + nb_loads + nb_params + nb_consts + nb_nulls;
 
 	System.out.println("-NODE STATS-------------------------------");
 	System.out.println("INSIDE node(s) : " + nb_insides + " roots, " +
-			   (nb_total-nb_roots) + " specializations");
+			   (nb_total - nb_roots) + " specializations");
 	System.out.println("RETURN node(s) : " + nb_returns);
 	System.out.println("EXCEPT node(s) : " + nb_excepts);
 	System.out.println("STATIC node(s) : " + nb_statics);
 	System.out.println("LOAD   node(s) : " + nb_loads);
 	System.out.println("PARAM  node(s) : " + nb_params);
+	System.out.println("CONST  node(s) : " + nb_consts);
+	System.out.println("NULL   node(s) : " + nb_nulls);
 	System.out.println("-------------------------");
 	System.out.println("TOTAL          : " + nb_total);
     }
