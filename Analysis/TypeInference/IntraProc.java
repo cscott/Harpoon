@@ -18,7 +18,7 @@ import java.util.Enumeration;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.1 1998-12-02 08:08:32 marinov Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.2 1998-12-03 04:26:37 marinov Exp $
  */
 
 public class IntraProc {
@@ -159,17 +159,11 @@ public class IntraProc {
 	    Quad qq = (Quad) e.nextElement();
 	    if (!(qq instanceof CALL)) continue;
 	    CALL q = (CALL) qq;
-	    int offset = (q.objectref==null)?0:1;
-	    SetHClass[] paramTypes = new SetHClass[q.params.length+offset];
-	    if (offset==1) {
-		SetHClass s = (SetHClass)map.get(q.objectref);
-		Util.assert(s!=null);
-		paramTypes[0] = s;
-	    }
+	    SetHClass[] paramTypes = new SetHClass[q.params.length];
 	    for (int i=0; i<q.params.length; i++) {
 		SetHClass s = (SetHClass)map.get(q.params[i]);
 		Util.assert(s!=null);
-		paramTypes[i+offset] = s;
+		paramTypes[i] = s;
 	    }
 	    HMethod[] m;
 	    if (q.isSpecial) m = new HMethod[]{ q.method };
@@ -211,17 +205,11 @@ public class IntraProc {
 	}
 	public void visit(CALL q) {
 	    boolean r = false;
-	    int offset = (q.objectref==null)?0:1;
-	    SetHClass[] paramTypes = new SetHClass[q.params.length+offset];
-	    if (offset==1) {
-		SetHClass s = (SetHClass)map.get(q.objectref);
-		if (s==null) { modified = false; return; }
-		paramTypes[0] = s;
-	    }
+	    SetHClass[] paramTypes = new SetHClass[q.params.length];
 	    for (int i=0; i<q.params.length; i++) {
 		SetHClass s = (SetHClass)map.get(q.params[i]);
 		if (s==null) { modified = false; return; }
-		paramTypes[i+offset] = s;
+		paramTypes[i] = s;
 	    }
 	    HMethod[] m;
 	    if (q.isSpecial) m = new HMethod[]{ q.method };
