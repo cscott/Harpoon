@@ -26,7 +26,7 @@ import java.util.Map;
  * space required by objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PackedClassFieldMap.java,v 1.1.2.1 2001-07-12 02:04:10 cananian Exp $
+ * @version $Id: PackedClassFieldMap.java,v 1.1.2.2 2001-07-17 17:34:12 cananian Exp $
  */
 public abstract class PackedClassFieldMap extends FieldMap {
     /** Creates a <code>PackedClassFieldMap</code>. */
@@ -57,6 +57,14 @@ public abstract class PackedClassFieldMap extends FieldMap {
 		return fieldOffset(hf1) - fieldOffset(hf2);
 	    }
 	});
+	// quick verification of well-formedness
+	// (offsets must be strictly increasing)
+	int last=-1;
+	for (Iterator it=l.iterator(); it.hasNext(); ) {
+	    int off=fieldOffset((HField)it.next());
+	    Util.assert(last<off, "Ill-formed field list");
+	    last = off;
+	}
 	// done!
 	return l;
     }
