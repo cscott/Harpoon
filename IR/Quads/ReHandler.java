@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.33 1999-10-23 05:59:33 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.34 1999-11-02 04:39:36 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -168,6 +168,8 @@ final class ReHandler {
 		}
 	    }
 	}
+
+
 
 	METHOD oldM=(METHOD)qm.getHead(old_method);
 	Temp[] qMp = oldM.params();
@@ -650,6 +652,7 @@ final class ReHandler {
 	HashMap phimap;
 	HashMap oldphimap;
 	Quad last;
+	int laste;
 	boolean flag;
 
 	AnalysingVisitor(HashMapList handlermap, Code code) {
@@ -662,6 +665,7 @@ final class ReHandler {
 	    this.reset=true;
 	    this.phimap=new HashMap();
 	    this.last=null;
+	    this.laste=0;
 	    this.oldphimap=null;
 	}
 
@@ -677,12 +681,14 @@ final class ReHandler {
 	    anyhandler=null;
 	    anyedge=0;
 	    last=null;
+	    laste=0;
 	    reset=true;
 	    oldphimap=null;
 	}
 
 	private void standard(Quad q) {
 	    last=q;
+	    laste=0;
 	    flag=true;
 	}
 
@@ -698,6 +704,7 @@ final class ReHandler {
 	    }
 	    flag=false;
 	    last=q;
+	    laste=0;
 	}
 
 	public void visit(Quad q) {
@@ -708,6 +715,7 @@ final class ReHandler {
 	public void visit(CALL q) {
 	    //Reset last call pointer
 	    last=q;
+	    laste=1;
 	    if (reset) {
 		reset=false;
 		if (q.retex()!=null) {
@@ -728,7 +736,8 @@ final class ReHandler {
 
 	public void visit(PHI q) {
 	    Util.assert(last!=null);
-	    int ent=last.nextEdge(0).which_pred();
+	    //Don't want to follow edge 0 if last was a call
+	    int ent=last.nextEdge(laste).which_pred();
 	    for (int i=0;i<q.numPhis();i++) {
 		phimap.put(q.dst(i),remap(q.src(i,ent)));
 		phimap.remove(q.src(i,ent));

@@ -14,12 +14,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.Stack;
+import java.util.Enumeration;
 import java.util.Set;
 /**
  * <code>Pattern</code> <blink>please document me if I'm public!</blink>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.11 1999-10-13 18:36:38 bdemsky Exp $
+ * @version $Id: Pattern.java,v 1.1.2.12 1999-11-02 04:39:37 bdemsky Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -141,17 +142,61 @@ public class Pattern {
 	}
 	//need to add handlers in now
 	METHOD m=(METHOD)((Quad)code.getRootElement()).next(1);
-	METHOD newm=new METHOD(m.getFactory(), m, m.params(),m.arity()+handlers.size());
+	for(int mc=1;mc<m.arity();mc++)
+	    handlers.add(m.next(mc));
+
+	//remove useless HANDLERS
+
+	WorkSet reachable=new WorkSet();
+	WorkSet todo=new WorkSet();
+	todo.push(m.next(0));
+	boolean  change=true;
+	WorkSet handlerset=new WorkSet();
+	while (change) {
+	    while(!todo.isEmpty()) {
+		Quad quad=(Quad)todo.pop();
+		if (!reachable.contains(quad)) {
+		    reachable.push(quad);
+		    for (int i=0;i<quad.next().length;i++) {
+			todo.push(quad.next(i));
+		    }
+		}
+	    }
+	    change=false;
+	    Iterator iterateh=handlers.iterator();
+	    while (iterateh.hasNext()) {
+		HANDLER h=(HANDLER) iterateh.next();
+		if (!reachable.contains(h)) {
+		    Enumeration enum=h.protectedQuads();
+		    while (enum.hasMoreElements()) {
+			Object ne=enum.nextElement();
+			if (reachable.contains(ne)) {
+			    todo.push(h);
+			    handlerset.push(h);
+			    change=true;
+			    break;
+			}
+		    }
+		}
+	    }
+	}
+
+	iterate=handlers.iterator();
+	while(iterate.hasNext()) {
+	    if(!reachable.contains(iterate.next()))
+		iterate.remove();
+	}
+
+	//build new METHOD quad
+	METHOD newm=new METHOD(m.getFactory(), m, m.params(),1+handlers.size());
 	for (int i=0;i<m.paramsLength();i++) {
 	    typemap.put(new Tuple(new Object[]{newm,m.params(i)}),
 			typemap.get(new Tuple(new Object[]{m,m.params(i)})));
 	}
+
 	Quad.addEdge((Quad)code.getRootElement(),1,newm, 0);
 	for (int i=0;i<handlers.size();i++) {
 	    Quad.addEdge(newm, i+1, (Quad)handlers.get(i), 0);
-	}
-	for (int i=1;i<m.arity();i++) {
-	    Quad.addEdge(newm, i+handlers.size(), (Quad) m.next(i),0);
 	}
 	Quad.addEdge(newm, 0, m.next(0),m.nextEdge(0).which_pred());
 	Set rset=pv.removalSet();
