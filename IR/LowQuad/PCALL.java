@@ -14,19 +14,20 @@ import harpoon.Util.Util;
  * <code>harpoon.IR.Quads.CALL</code>.<p>
  * If an exception is thrown by the called method, the <code>Temp</code>
  * specified by <code>retex</code> will be assigned the non-null 
- * reference to the thrown exception without affecting the
- * <code>Temp</code> specified by the <code>retval</code> field.
+ * reference to the thrown exception, and the <code>Temp</code>
+ * specified by the <code>retval</code> field will be undefined
+ * (that is, it may have any value at all).
  * Execution will proceed along the second outgoing edge,
  * <code>nextEdge(1)</code>.  If no exception is thrown, the 
  * return value will be assigned to the <code>Temp</code> specified
  * by <code>retval</code> (if any), and <code>retex</code> will
- * be unaffected.  Execution will proceed along the first outgoing
+ * be undefined.  Execution will proceed along the first outgoing
  * edge, <code>nextEdge(0)</code>.
  * <p>
  * See also <code>IR.Quads.CALL</code> and <code>IR.Tree.CALL</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PCALL.java,v 1.1.2.10 2000-12-13 18:45:35 cananian Exp $
+ * @version $Id: PCALL.java,v 1.1.2.11 2001-01-11 19:46:13 cananian Exp $
  */
 public class PCALL extends harpoon.IR.Quads.SIGMA {
     /** The method pointer to dereference. */
@@ -46,16 +47,17 @@ public class PCALL extends harpoon.IR.Quads.SIGMA {
 
     /** Creates a <code>PCALL</code> representing a method pointer dereference
      *  and method invocation. Interpretation is similar to that of
-     *  <code>harpoon.IR.Quads.CALL.<p>
+     *  <code>harpoon.IR.Quads.CALL</code>.<p>
      *  If an exception is thrown by the called method, the <code>Temp</code>
      *  specified by <code>retex</code> will be assigned the non-null 
-     *  reference to the thrown exception without affecting the
-     *  <code>Temp</code> specified by the <code>retval</code> field.
+     *  reference to the thrown exception, and the <code>Temp</code>
+     *  specified by the <code>retval</code> field will be undefined
+     *  (that is, it may have any value at all).
      *  Execution will proceed along the second outgoing edge,
      *  <code>nextEdge(1)</code>.  If no exception is thrown, the 
      *  return value will be assigned to the <code>Temp</code> specified
      *  by <code>retval</code> (if any), and <code>retex</code> will
-     *  be unaffected.  Execution will proceed along the first outgoing
+     *  be undefined.  Execution will proceed along the first outgoing
      *  edge, <code>nextEdge(0)</code>.
      * @param ptr
      *        the method pointer to dereference and invoke.

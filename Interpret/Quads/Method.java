@@ -59,7 +59,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.21 2000-11-16 00:12:23 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.22 2001-01-11 19:48:03 cananian Exp $
  */
 public final class Method {
 
@@ -397,8 +397,12 @@ public final class Method {
 	    try {
 		Object retval = toInternal(invoke(ss, hm, params));
 		if (q.retval()!=null) sf.update(q.retval(), retval);
+		if (q.retex()!=null && q.retval()!=q.retex())
+		    sf.undefine(q.retex()); // debugging support: "define both"
 		visit((SIGMA)q, 0); // normal execution along 0 branch
 	    } catch (InterpretedThrowable it) {
+		if (q.retval()!=null && q.retval()!=q.retex())
+		    sf.undefine(q.retval());// debugging support: "define both"
 		if (q.retex()!=null)  sf.update(q.retex(), it.ex);
 		else throw it; // concession to expediency.
 		visit((SIGMA)q, 1); // exeception; proceed along 1 branch

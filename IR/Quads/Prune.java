@@ -20,7 +20,7 @@ import java.util.Set;
  * and gets most of the egregious dead vars.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Prune.java,v 1.1.2.2 2000-12-13 18:46:29 cananian Exp $
+ * @version $Id: Prune.java,v 1.1.2.3 2001-01-11 19:47:47 cananian Exp $
  */
 class Prune {
     private final static boolean DEBUG=false;
@@ -72,26 +72,15 @@ class Prune {
 	private Set knownDeadInto(Quad q) {
 	    if (seen.containsKey(q)) return sf.makeSet((Set) seen.get(q));
 	    if (q.prevLength()>1) seen.put(q, EMPTY_SET);
-	    Set ra[] = new Set[q.nextLength()];
-	    for (int i=0; i<q.nextLength(); i++)
-		ra[i]=knownDeadInto(q.next(i));
-	    Set r = sf.makeSet(FULL_SET);
-	    for (int i=0; i<q.nextLength(); i++)
-		r.retainAll(ra[i]);
+	    Set r = (q.nextLength()<1) ? sf.makeSet(FULL_SET) :
+		knownDeadInto(q.next(0));
+	    for (int i=1; i<q.nextLength(); i++)
+		r.retainAll(knownDeadInto(q.next(i)));
 	    // now we have the knownDeadOutOf set.
 	    if (isUseless(q, r)) useless.add(q);
 	    // construct knownDeadInto set:
 	    // all defs of this instr are known dead into this.
 	    r.addAll(q.defC());
-	    // special case calls.
-	    if (q instanceof CALL && q.nextLength()>1) {
-		// calls leave one of their defs untouched.
-		CALL Q = (CALL) q;
-		if (Q.retval()!=null && !ra[1].contains(Q.retval()))
-		    r.remove(Q.retval());
-		if (Q.retex()!=null && !ra[0].contains(Q.retex()))
-		    r.remove(Q.retex());
-	    }
 	    // all uses of this instr are live into this.
 	    // (note that the simpler r.removeAll(q.useC()) uses time
 	    //  proportional to the size of *r*, which is not what we want)

@@ -21,7 +21,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.29 2000-11-17 00:25:03 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.30 2001-01-11 19:47:48 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -443,13 +443,21 @@ final class UnHandler {
 	    if (q.retex()!=null) nq=head=(Quad)q.clone(qf, ss.ctm);
 	    else {
 		Temp Tex = ss.extra(0);
+		Temp Trv = q.retval()==null ? null : ss.extra(1);
 		head = new CALL(qf, q, q.method(), Quad.map(ss.ctm,q.params()),
-				Quad.map(ss.ctm, q.retval()),
-				Tex, q.isVirtual(), q.isTailCall(),
+				Trv, Tex, q.isVirtual(), q.isTailCall(),
 				new Temp[0]);
 		Quad q4 = _throwException_(qf, q, Tex);
 		Quad.addEdge(head, 1, q4, 0);
 		nq = head;
+		// because of "define both" CALL semantics, we need to rewrite
+		// so that we only redefine retval if non-exceptional edge
+		// is taken.
+		if (q.retval()!=null) {
+		    Quad q5=new MOVE(qf, q, Quad.map(ss.ctm, q.retval()), Trv);
+		    Quad.addEdge(head, 0, q5, 0);
+		    nq = q5;
+		}
 	    }
 	    // if non-static, check that receiver is not null.
 	    if (!q.isStatic() && !ti.get(q.params(0)).isNonNull())
@@ -805,12 +813,14 @@ final class UnHandler {
 	    Temp Tex = ss.hm.Tex, Tex2 = ss.extra(0), Tnull = ss.extra(1);
 	    Quad q0 = new NEW(qf, old, Tex, HCex);
 	    Quad q1 = new CALL(qf, old, HCex.getConstructor(new HClass[0]),
-			       new Temp[] { Tex }, null, Tex, false, false,
+			       new Temp[] { Tex }, null, Tex2, false, false,
 			       new Temp[0]);
+	    Quad q5 = new MOVE(qf, old, Tex, Tex2);
 	    Quad q6 = new PHI(qf, old, new Temp[0], 2);
 	    Quad q7 = _throwException_(qf, old, Tex);
 	    Quad.addEdges(new Quad[] { q0, q1, q6, q7 });
-	    Quad.addEdge(q1, 1, q6, 1);
+	    Quad.addEdge(q1, 1, q5, 0);
+	    Quad.addEdge(q5, 0, q6, 1);
 	    // save the header so we can reuse this exception-generation code.
 	    if (ss.coalesce) l.add(q0);
 	    return q0;

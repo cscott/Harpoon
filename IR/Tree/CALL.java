@@ -20,13 +20,14 @@ import java.util.Set;
  * an exception, the throwable object is placed in the <code>Temp</code>
  * specified by <code>retex</code> and a control tranfer to the
  * <code>Label</code> specified by <code>handler</code> occurs.
- * Note the value in <code>retval</code> is <i>unaffected</i>
- * when an "exceptional" return occurs.
+ * Note the value in <code>retval</code> is undefined (that is, it
+ * may have any value at all) when an "exceptional" return occurs.
  * <p>
  * If there is no exception thrown by the callee, then the return
  * value is placed in the <code>Temp</code> specified by
  * <code>retval</code> and execution continues normally.  The value
- * in <code>retex</code> is unaffected in this case.  Note that
+ * in <code>retex</code> is undefined (may be given any value) in this case.
+ * Note that
  * <code>retval</code> may be null if the called method has void return
  * type.
  * <p>
@@ -35,7 +36,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.38 2000-12-13 18:46:35 cananian Exp $
+ * @version $Id: CALL.java,v 1.1.2.39 2001-01-11 19:47:56 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
