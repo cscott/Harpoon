@@ -20,7 +20,7 @@ import java.util.LinkedList;
  * <code>Transactions</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Transactions.java,v 1.2.2.1 2003-07-16 01:17:01 cananian Exp $
+ * @version $Id: Transactions.java,v 1.2.2.2 2003-07-21 20:58:32 cananian Exp $
  */
 public abstract class Transactions {
     
@@ -45,7 +45,7 @@ public abstract class Transactions {
 	public void real_action() {
 	    if(!DO_TRANSACTIONS) return;
 	    String resource = frame.getRuntime().resourcePath
-		("transact-safe.properties");
+		("transact-root.properties");
 	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
 	    hcf = new harpoon.Analysis.Transactions.ArrayCopyImplementer
 		(hcf, linker);
@@ -60,6 +60,7 @@ public abstract class Transactions {
 	    
 	    syncTransformer = new SyncTransformer
 		(hcf, classHierarchy, linker, mainM, roots, resource);
+	    roots.addAll(syncTransformer.transRoots());
 	    hcf = syncTransformer.codeFactory();
 	    hcf = harpoon.Analysis.Counters.CounterFactory
 		.codeFactory(hcf, linker, mainM);

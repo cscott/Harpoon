@@ -85,7 +85,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.5.2.10 2003-07-16 11:40:32 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.5.2.11 2003-07-21 20:58:34 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -164,8 +164,8 @@ public class SyncTransformer
     private final HField HFlastRTrans;
     /** last *writing* transaction */
     private final HField HFlastWTrans;
-    /** Set of safe methods. */
-    private final Set<HMethod> safeMethods;
+    /** additional method roots after transactions transformation */
+    private final Set<HMethod> transRoots = new HashSet<HMethod>();
     /** Our version of the codefactory. */
     private final HCodeFactory hcf;
 
@@ -173,23 +173,24 @@ public class SyncTransformer
     private final MethodGenerator gen;
     private final Set<HField> transFields = new HashSet<HField>();
 
-    /** Creates a <code>SyncTransformer</code> with no safe methods. */
+    /** Creates a <code>SyncTransformer</code> with no transaction root
+     *  methods. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
 			   HMethod mainM, Set roots) {
 	this(hcf, ch, l, mainM, roots, Collections.EMPTY_SET);
     }
-    /** Creates a <code>SyncTransformer</code> with a safe method set loaded
-     *  from the specified resource name. */
+    /** Creates a <code>SyncTransformer</code> with a transaction root method
+     *  set loaded from the specified resource name. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
 			   HMethod mainM, Set roots,
 			   String resourceName) {
 	this(hcf, ch, l, mainM, roots, parseResource(l, resourceName));
     }
-    /** Creates a <code>SyncTransformer</code> with the specified safe
-     *  method set. */
+    /** Creates a <code>SyncTransformer</code> with the specified transaction
+     *  root method set. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
 			   HMethod mainM, Set roots,
-			   Set<HMethod> safeMethods) {
+			   Set<HMethod> transRoots) {
 	// our input is SSI.  We'll convert it to SSA in the 'clone' method.
         super(hcf, ch, false);
 	// and output is RSSx
@@ -198,7 +199,6 @@ public class SyncTransformer
 	assert super.codeFactory().getCodeName()
 		    .equals(harpoon.IR.Quads.QuadRSSx.codename);
 	this.linker = l;
-	this.safeMethods = safeMethods;
 	this.HCclass = l.forName("java.lang.Class");
 	this.HCfield = l.forName("java.lang.reflect.Field");
 	String pkg = "harpoon.Runtime.Transactions.";
@@ -265,10 +265,6 @@ public class SyncTransformer
 	    public void clear(HMethod m) { superfactory.clear(m); }
 	    public HCode convert(HMethod m) {
 		if (Modifier.isNative(m.getModifiers()) &&
-		    /*
-		    SyncTransformer.this.safeMethods
-		    	.contains(select(m, ORIGINAL)) &&
-		    */
 		    select(select(m, ORIGINAL), WITH_TRANSACTION).equals(m))
 		    // call the original, 'safe' method, with trans in context
 		    return redirectCode(m);
@@ -277,9 +273,18 @@ public class SyncTransformer
 		else return superfactory.convert(m);
 	    }
 	});
+	// lookup WITH_TRANSACTION version of the transaction root methods
+	for (Iterator<HMethod> it=transRoots.iterator(); it.hasNext(); ) {
+	    HMethod hm = it.next();
+	    this.transRoots.add(select(hm, WITH_TRANSACTION));
+	}
     }
     // override parent's codefactory with ours! (which uses theirs)
     public HCodeFactory codeFactory() { return hcf; }
+    /** Export additional method roots after transactions transformation. */
+    public Set<HMethod> transRoots() {
+	return Collections.unmodifiableSet(transRoots);
+    }
 
     protected String mutateDescriptor(HMethod hm, Token which) {
 	if (which==WITH_TRANSACTION)
@@ -515,8 +520,10 @@ public class SyncTransformer
 	    // if in a transaction, call the transaction version &
 	    // deal with possible abort.
 	    if (handlers==null) return;
+	    /* old optimization for calling known-safe methods:
 	    if (safeMethods.contains(q.method()) && !q.isVirtual())
 		return; // it's safe. (this is an optimization)
+	    */
 	    Temp[] nparams = new Temp[q.paramsLength()+1];
 	    int i=0;
 	    if (!q.isStatic())
@@ -1401,7 +1408,8 @@ public class SyncTransformer
 		}
 	    });
 	} catch (java.io.IOException ex) {
-	    System.err.println("ERROR READING SAFE SET, SKIPPING REST.");
+	    System.err.println("ERROR READING TRANSACTIONS ROOT SET, "+
+			       "SKIPPING REST.");
 	    System.err.println(ex.toString());
 	}
 	// done.
