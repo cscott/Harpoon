@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.38 1999-06-24 00:44:35 pnkfelix Exp $
+# $Id: GNUmakefile,v 1.61.2.39 1999-06-24 00:56:07 pnkfelix Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -212,7 +212,6 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 			  harpoon.$(subst /,.,$(dir))) silicon.JavaChip) | \
 		grep -v "^@see warning:"
 	$(RM) -r doc-link
-	chmod -R a+rX doc
 	$(MUNGE) doc | \
 	  sed -e 's/<\([a-z]\+\)@\([a-z.]\+\).edu>/\&lt;\1@\2.edu\&gt;/g' \
 	      -e 's/<dd> "The,/<dd> /g' -e 's/<body>/<body bgcolor=white>/' | \
@@ -226,7 +225,7 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	  cp ChangeLog doc/ChangeLog.txt; \
 	fi
 	date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
-	chmod a+rx doc ; chmod a+r doc/*
+	chmod -R a+rX doc ; chmod a+r doc/*
 
 doc-install: doc/TIMESTAMP mark-executable
 	if [ ! -f doc/annotated ]; then \
