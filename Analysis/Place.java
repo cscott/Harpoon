@@ -23,7 +23,7 @@ import java.util.Set;
  * thesis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.10.2.9 2000-06-30 23:11:19 cananian Exp $
+ * @version $Id: Place.java,v 1.10.2.10 2000-07-01 01:34:54 cananian Exp $
  */
 public class Place {
     private final MultiMap phis;
@@ -45,16 +45,15 @@ public class Place {
 	// for each variable v in G, do:
 	for (Iterator it=vars.iterator(); it.hasNext(); ) {
 	    Temp v = (Temp) it.next();
-	    PlaceOne(sese.topLevel, v, false, live); // place phis
-	    PlaceOne(sese.topLevel, v, true, live); // place sigmas
+	    PlaceOne(sese.topLevel, v, live); // place phis and sigmas
 	}
     }
-    private boolean PlaceOne(SESE.Region r, Temp v, boolean ps, Liveness live)
+    private boolean PlaceOne(SESE.Region r, Temp v, Liveness live)
     {
 	// post-order traversal.
 	boolean flag = false;
 	for (Iterator it=r.children().iterator(); it.hasNext(); )
-	    if (PlaceOne((SESE.Region)it.next(), v, ps, live))
+	    if (PlaceOne((SESE.Region)it.next(), v, live))
 		flag = true;
 	for (Iterator it=r.nodes().iterator(); !flag && it.hasNext(); ) {
 	    UseDef n = (UseDef) it.next();
@@ -69,10 +68,10 @@ public class Place {
 	if (flag) {
 	    for (Iterator it=r.nodes().iterator(); it.hasNext(); ) {
 		HCodeElement n = (HCodeElement) it.next();
-		if (ps==false && ((CFGraphable)n).predC().size() > 1 && 
+		if (((CFGraphable)n).predC().size() > 1 && 
 		    live.getLiveIn(n).contains(v))
 		    phis.add(n, v);
-		if (ps==true && ((CFGraphable)n).succC().size() > 1 &&
+		if (((CFGraphable)n).succC().size() > 1 &&
 		    live.getLiveIn(n).contains(v))
 		    sigmas.add(n, v);
 	    }
