@@ -3,8 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
-import harpoon.Util.Default;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -24,7 +22,7 @@ import java.util.Arrays;
     even though <code>LinkedList</code> is a subtype of <code>List</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ListFactory.java,v 1.3 2002-04-10 03:07:12 cananian Exp $
+ * @version $Id: ListFactory.java,v 1.4 2003-03-10 18:48:10 cananian Exp $
  */
 public abstract class ListFactory<V> extends CollectionFactory<V> {
     
