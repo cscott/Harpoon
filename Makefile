@@ -27,7 +27,7 @@ doc:	$(SOURCES)
 	@echo Generating documentation...
 	@$(RM) -rf doc
 	@mkdir -p doc
-	@javadoc -quiet -private -linksource -d doc/ $(SOURCES) > /dev/null
+	@javadoc -quiet -private -linksource -d doc/ $(filter-out src/Object.java,$(SOURCES)) > /dev/null
 	@date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	@chmod -R a+rX doc
 
@@ -59,7 +59,7 @@ doc-install: doc
 	@echo Installing documentation.
 	tar -c doc | \
 		$(SSH) $(INSTALLMACHINE) \
-	"mkdir -p $(INSTALLDIR)/Realtime ; tar -C $(INSTALLDIR)/Realtime -x"
+	"mkdir -p $(INSTALLDIR)/Realtime && /bin/rm -rf $(INSTALLDIR)/Realtime/doc && tar -C $(INSTALLDIR)/Realtime -x"
 
 install: jar-install tar-install doc-install
 
