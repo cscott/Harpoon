@@ -1,6 +1,8 @@
 import java.io.*; // Import the package names to be 
 import java.net.*; // used by this application. 
 import java.util.*; 
+import javax.realtime.RealtimeThread;
+import javax.realtime.CTMemory;
 
 /** 
 * This is an application which implements our stock 
@@ -141,7 +143,8 @@ public class QuoteServer {
 	StockQuoteHandler newHandler = new 
 	    StockQuoteHandler(clientSocket,stockInfo);
 	
-	Thread newHandlerThread = new Thread(newHandler); 
+	RealtimeThread newHandlerThread = new RealtimeThread(new CTMemory(100000), 
+							     newHandler); 
 	newHandlerThread.start(); 
     }
 
