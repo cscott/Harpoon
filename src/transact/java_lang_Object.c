@@ -432,7 +432,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_makeCommittedVersion
     /** Ensure that a given field is flagged. */
 JNIEXPORT void JNICALL Java_java_lang_Object_writeFieldFlag
     (JNIEnv *env, jobject _this, jobject field) {
-    jfieldID fieldID = FNI_GetFieldInfo(field);
+    jfieldID fieldID = FNI_GetFieldInfo(field)->fieldID;
     Java_java_lang_Object_writeFlag(env, _this, fieldID->offset,
 				    fieldsize(fieldID));
 }

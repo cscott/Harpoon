@@ -34,12 +34,14 @@ struct clustered_heap; /* defined in src/clheap/clheap.h */
 struct _jmethodID {
   char *name;	   /* method name. */
   char *desc;	   /* method descriptor */
+  struct FNI_method2info *reflectinfo; /* reflection information */
   ptroff_t offset; /* an absolute address for static methods, else an offset */
   ptroff_t nargs;  /* number of argument words for the method */
 };
 struct _jfieldID {
   char *name;	   /* field name. */
   char *desc;	   /* field descriptor. */
+  struct FNI_field2info *reflectinfo; /* reflection information */
   ptroff_t offset; /* an absolute address for static fields, else an offset */
   ptroff_t _zero;  /* unused.  should be zero. */
 };
@@ -144,14 +146,18 @@ struct FNI_class2info {
 extern struct FNI_class2info class2info_start[], class2info_end[];
 
 struct FNI_field2info {
-  struct oobj *field_object;
-  struct _jfieldID *fieldID;
+  struct oobj *field_object; /* java.lang.reflect.Field object */
+  struct _jfieldID *fieldID; /* JNI information */
+  struct oobj *declaring_class_object; /* reflection info: declaring class */
+  jint modifiers; /* reflection info: access modifiers of field. */
 };
 extern struct FNI_field2info field2info_start[], field2info_end[];
 
 struct FNI_method2info {
-  struct oobj *method_object;
-  struct _jmethodID *methodID;
+  struct oobj *method_object; /* java.lang.reflect.Method object */
+  struct _jmethodID *methodID; /* JNI information */
+  struct oobj *declaring_class_object; /* reflection info: declaring class */
+  jint modifiers; /* reflection info: access modifiers of method. */
 };
 extern struct FNI_method2info method2info_start[], method2info_end[];
 
@@ -178,9 +184,9 @@ jobject FNI_NewLocalRef(JNIEnv *env, jobject_unwrapped obj);
 /* Look up classinfo from class object. */
 struct FNI_classinfo *FNI_GetClassInfo(jclass clazz);
 /* Look up fieldID from field object. */
-jfieldID FNI_GetFieldInfo(jobject field);
+struct FNI_field2info *FNI_GetFieldInfo(jobject field);
 /* Look up methodID from method object. */
-jmethodID FNI_GetMethodInfo(jobject method);
+struct FNI_method2info *FNI_GetMethodInfo(jobject method);
 
 /* raw allocation routine */
 void *FNI_RawAlloc(JNIEnv *env, jsize length);

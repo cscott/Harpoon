@@ -27,24 +27,24 @@ jclass FNI_FindClass(JNIEnv *env, const char *name) {
 }
 
 /* FNI_GetClassInfo, FNI_GetFieldInfo, and FNI_GetMethodInfo definitions */
-#define FNI_GETINFO(name, Name, type, rettype, fieldname) \
+#define FNI_GETINFO(name, Name, type, rettype, accessor) \
 static int name##2info_compare(const void *key, const void *element) {\
   const struct oobj *name##_object = key;\
   const struct FNI_##name##2info *x2i = element;\
   return name##_object - x2i->name##_object;\
 }\
 struct rettype *FNI_Get##Name##Info(type key) {\
-  const struct FNI_##name##2info * result;\
+  struct FNI_##name##2info * result;\
   assert(key!=NULL);\
   result =\
     bsearch(FNI_UNWRAP(key),\
 	    name##2info_start, name##2info_end - name##2info_start,\
 	    sizeof(*name##2info_start), name##2info_compare);\
-  return (result==NULL) ? NULL : result->fieldname;\
+  return (result==NULL) ? NULL : result accessor ;\
 }
-FNI_GETINFO(class, Class, jclass, FNI_classinfo, info)
-FNI_GETINFO(field, Field, jobject, _jfieldID, fieldID)
-FNI_GETINFO(method,Method,jobject, _jmethodID,methodID)
+FNI_GETINFO(class, Class, jclass, FNI_classinfo, /* info field */ -> info)
+FNI_GETINFO(field, Field, jobject, FNI_field2info, /* no accessor */)
+FNI_GETINFO(method,Method,jobject, FNI_method2info,/* no accessor */)
 
 struct name_and_sig {
   const char *name; const char *sig;
