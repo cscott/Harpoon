@@ -62,7 +62,7 @@ public abstract class Scheduler {
      */
     public static Scheduler getDefaultScheduler() {
 	if (defaultScheduler == null) {
-//	    setDefaultScheduler(RMAScheduler.instance());
+//	    setDefaultScheduler(EDFScheduler.instance());
 	    setDefaultScheduler(NativeScheduler.instance());
 	    return getDefaultScheduler();
 	}
@@ -222,6 +222,12 @@ public abstract class Scheduler {
     /** Sleep the process for the given number of microseconds.
      */
     protected final native void sleep(long microsecs);
+
+    /** The amount of CPU time since the start of the process
+     *  (for estimating work done by threads in the presence of
+     *   system load).
+     */
+    protected final native int clock();
 
     /** This is the list of handlers that can be registered with a new scheduler to
 	intercept events.  When these run out, register multiplexer events and send messages. */
