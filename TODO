@@ -1,5 +1,8 @@
 ---- Nov-30-98
 Add HInitializerSyn superclass of HInitializer.
+---- Nov-26-98
+Fix unlimited-temp-during-phi-stack-merge problem.  (See today's ChangeLog
+ messages).
 ---- Nov-25-98
 Make HClass demand-driven again: special 'caching' HClass that stores
  string reference to class and waits to load it until an accessor method
