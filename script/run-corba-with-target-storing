@@ -1,0 +1,14 @@
+#this script requires one parameter:
+#   the filename prefix for each stored target
+
+cd ..
+xterm -title "Name Service" -e java -jar ns.jar .jacorb &
+sleep 5
+
+xterm -title "ALERT Server" -e java -jar trackerStub.jar "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb &
+sleep 5
+
+xterm -title "ATR" -e java -jar ATR.jar notimer 3 savetargets $1 "LMCO ATR" "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb  &
+sleep 5
+
+xterm -title "Sending to ATR" -e java -jar receiverStub.jar GUI.jar tank.gz 533 "LMCO ATR" -ORBInitRef NameService=file:/`pwd`/.jacorb &
