@@ -1,5 +1,11 @@
 #!/bin/bash
 
+
+# the directory where the scripts are located
+SCR_DIR=`dirname $0`
+
+
+# make sure BENCHS_DIR is initialized
 if test -n "$BENCHS_DIR" -a -d $BENCHS_DIR
 then
     echo "BENCHS_DIR = \"$BENCHS_DIR\" ok!";
@@ -8,10 +14,18 @@ else
     exit 1;
 fi
 
-# the directory where the scripts are located
-SCR_DIR=`dirname $0`
+
+# creating four sub-directories (inter, intra, none and pre-analysis
+for directory in inter intra none pre-analysis; do
+    if test ! -d $directory
+    then
+	mkdir $directory
+	echo "$directory created"
+    fi;
+done
 
 
+# let the fun begin!
 $SCR_DIR/elimOne  barnes       barnes       $BENCHS_DIR/Barnes/Barnes  2
 $SCR_DIR/elimOne  Nets         Nets         $BENCHS_DIR/Chat/Chat      2
 $SCR_DIR/elimOne  GameServer2  GameServer2  $BENCHS_DIR/Game/Game      2

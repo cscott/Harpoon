@@ -15,9 +15,9 @@ stdPath=./Support/NewThread.jar:./Support/sunthunk.jar:./Support/collections.jar
 
 echo "Analyzing $cls to analyze-$name."
 
-PRE_FILE=${CALL_DIR}/pre$name
-BUILD_OUT_DIR=${CALL_DIR}/${name}.Intra
-MAMAPS_FILE=${CALL_DIR}/analyze-${name}.Intra
+PRE_FILE=${CALL_DIR}/pre-analysis/pre$name
+BUILD_OUT_DIR=${CALL_DIR}/intra/${name}.intra
+MAMAPS_FILE=${CALL_DIR}/intra/analyze-${name}.intra
 
 rm -rf ${BUILD_OUT_DIR} 
 mkdir ${BUILD_OUT_DIR}

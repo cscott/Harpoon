@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo -n Compiling everything in $1 ...
+echo -n "Compiling everything in $1 ..."
 
 export  CLASSPATH=$CLASSPATH:`pwd`
 

@@ -10,7 +10,7 @@ name=$2
 dir=$3
 levels=$4
 
-BUILD_OUT_DIR=${CALL_DIR}/${name}.Inter
+BUILD_OUT_DIR=${CALL_DIR}/none/${name}.none
 
 rm -rf ${BUILD_OUT_DIR} 
 mkdir ${BUILD_OUT_DIR}
