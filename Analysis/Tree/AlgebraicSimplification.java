@@ -38,7 +38,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.13 2000-02-14 16:39:02 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.14 2000-02-15 01:01:46 cananian Exp $
  */
 // XXX missing -K1 --> K2  and ~K1 --> K2 rules.
 public abstract class AlgebraicSimplification { 
@@ -166,21 +166,23 @@ public abstract class AlgebraicSimplification {
      * tree form. 
      */ 
     private static class SimplificationVisitor extends TreeVisitor { 
-	/*final*/ private Stack worklist = new Stack(); 
-	/*final*/ private Code  code;
-	/*final*/ private List  rules; 
+	private final List  rules; 
 	private boolean changed = false;
 
 	public SimplificationVisitor(Stm root, List rules) { 
 	    this.rules = rules; 
-	    this.code  = ((Code.TreeFactory)root.getFactory()).getParent(); 
-	    // The tree must be in canonical form. 
-	    Util.assert(code.getName().equals("canonical-tree")); 
-
-	    this.worklist.push(root); 
-	    while (!worklist.isEmpty()) { 
-		((Tree)this.worklist.pop()).accept(this); 
+	    // evaluate each subtree from leaves up to root.
+	    postorder(root);
+	}
+	void postorder(Tree t) {
+	    // post-order traversal: visit all children first.
+	    for (Tree tp = t.getFirstChild(); tp!=null; ) {
+		Tree one = tp;
+		tp=tp.getSibling();// advance *before* we (possibly) unlink tp!
+		postorder(one);
 	    }
+	    // now visit this.
+	    t.accept(this);
 	}
 	public boolean changed() { return changed; }
 
@@ -193,40 +195,30 @@ public abstract class AlgebraicSimplification {
 	    // could reduce expressions to ESEQs.  For now, this feature is
 	    // neither needed, nor supported. 
 	    //
-	    
 	    throw new Error("Not implemented."); 
 	}
 
 	public void visit(Exp e) { 
+	RESTART: do {
 	    for (Iterator i = this.rules.iterator(); i.hasNext();) { 
 		Rule rule = (Rule)i.next();
 		if (rule.match(e)) {
 		    Exp simpleE = rule.apply(e); 
 		    if (debug)
 			System.out.println("Replacing: " + e + " with " +
-					   simpleE + " by rule " + rule); 
-		    this.code.replace(e, simpleE); 
-		    this.worklist.push(simpleE); 
+					   simpleE + " by rule " + rule);
+		    e.replace(simpleE);
+		    e = simpleE;
 		    changed = true;
-		    return; 
+		    // revisit this.
+		    continue RESTART;
 		}
 	    }
-	    
-	    // No matches.  Examine the children of this Exp. 
-	    for (ExpList el = e.kids(); el != null; el = el.tail) { 
-		this.worklist.push(el.head); 
-	    }
+	} while (false); // okay, so this is just a hacked-together 'goto'
 	}
 
 	public void visit(Stm s) { 
-	    for (ExpList el = s.kids(); el != null; el = el.tail) { 
-		this.worklist.push(el.head); 
-	    }
-	}
-
-	public void visit(SEQ s) { 
-	    this.worklist.push(s.getLeft()); 
-	    this.worklist.push(s.getRight()); 
+	    /* do nothing.  At the moment, at least. */
 	}
     }
 
