@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HClassMutator;
 import harpoon.ClassFile.HCode;
@@ -46,7 +47,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.6 2000-10-20 01:37:35 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.7 2000-10-20 18:56:48 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -54,9 +55,9 @@ public class InitializerTransform
     public static final Token CHECKED = new Token("initcheck");
 
     /** Creates a <code>InitializerTransform</code>. */
-    public InitializerTransform(HCodeFactory parent) {
+    public InitializerTransform(HCodeFactory parent, ClassHierarchy ch) {
 	// we only allow quad with try as input.
-	super(QuadWithTry.codeFactory(parent));
+	super(QuadWithTry.codeFactory(parent), ch);
     }
     /** Checks the token types handled by this 
      *  <code>MethodSplitter</code> subclass. */
