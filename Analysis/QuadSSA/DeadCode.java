@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * a method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.1 1998-09-21 20:35:28 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.2 1998-09-21 21:51:00 cananian Exp $
  */
 
 public class DeadCode  {
@@ -40,7 +40,8 @@ public class DeadCode  {
 
     private void markAbsent(Temp t, Worklist W, 
 			    IntTable uses, Hashtable defs) {
-	int n = uses.putInt(t, uses.getInt(t)-1);
+	int n = uses.getInt(t)-1;
+	uses.putInt(t, n);
 	Util.assert(n >= 0);
 	if (n==0)
 	    W.push(defs.get(t));
@@ -72,6 +73,8 @@ public class DeadCode  {
 	    Temp d[] = q.def();
 	    // statements that define no variables are safe.
 	    if (d.length==0) continue;
+	    // don't throw our headers away!!
+	    else if (q instanceof METHODHEADER) continue;
 	    // call statements may have side-effects.
 	    else if (q instanceof CALL) continue;
 	    else if (q instanceof PHI) { // phis are specially compound.
