@@ -1,6 +1,5 @@
 /* Implementation for class java_net_PlainSocketImpl */
 #include <jni.h>
-#include <jni-private.h>
 #include "java_net_PlainSocketImpl.h"
 
 #include <assert.h>
