@@ -41,19 +41,19 @@ Peephole optimizations on QuadSSA to normalize:
 Write tool to print 'ConstantClass'es from bytecode files, and delete
  .classes that depend on out-of-date classes. Then some other tool can
  regenerate the missing classes.
-Hierarchy goes:
- Top
- xClassNull extends Top -- classes; value could be 'null'
- xClass extends xClassNull -- a class; can *not* be null.
- xClassArray extends xClass -- an array class with a constant length (not null)
- BitSize extends xClass -- a value of the specified bit-width.
-                           <lowest set bit, highest set bit>
- Bounds extends BitSize -- a bounded value lowval <= v <= highval
- Constant               -- a particular constant value.
-For fast analysis, can not raise Bounds to another instance of Bounds.
-Bounds must be raised to BitSize if bounds proved invalid.
+X Hierarchy goes:
+X  Top
+X  xClassNull extends Top -- classes; value could be 'null'
+X  xClass extends xClassNull -- a class; can *not* be null.
+X  xClassArray extends xClass -- an array class with constant length (not null)
+X  BitSize extends xClass -- a value of the specified bit-width.
+X                            <lowest set bit, highest set bit>
+O  Bounds extends BitSize -- a bounded value lowval <= v <= highval
+X  Constant               -- a particular constant value.
+X For fast analysis, can not raise Bounds to another instance of Bounds.
+X Bounds must be raised to BitSize if bounds proved invalid.
 ---- Sep-12-98, cont
-Massive SCC-based analysis can keep: array size, canbeNull, class sets, etc.
+X Massive SCC-based analysis can keep: array size, canbeNull, class sets, etc.
 X Move harpoon.ClassFile.Bytecode to harpoon.IR.Bytecode
 O Rename all *.Code classes to QuadCode, BytecodeCode, etc.
 X Make UseDef into map/general class
@@ -84,8 +84,8 @@ X   5) paths Pxz and Pyz do not have any node in common except z (that is,
 X      z is the first point of convergence of these paths).
 X QUESTION: are criteria 1 and 2 correct.  Maybe where 1 *or* 2 is true?
 X QUESTION: how do you make a predicated analysis based on this?
-QUESTION: how does phi-function placement interact with sigma-function 
-          placement?
+X QUESTION: how does phi-function placement interact with sigma-function 
+X          placement?
 write analysis to remove unnecessary control dependencies.  PARALLEL quad?
 
 X Write registration routines for HMethod.
@@ -94,7 +94,7 @@ X  that registers all necessary representations (extend to do-it-yourself).
 X  Standard interface for registration object.  Static method in HCode
 X  to return instance of registration object.
 ---- Sep-11-98
-Optimize INSTANCEOF and COMPONENTOF in SCC.
+X Optimize INSTANCEOF and COMPONENTOF in SCC.
 X Update xClass to hold 'canbeNull' boolean.
 Update OPER(acmpeq) to check canbeNull boolean.
 Write optimization pass based on SCC analysis.
