@@ -26,7 +26,7 @@ import java.util.Map;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.3 2002-04-23 22:34:04 ovy Exp $
+ * @version $Id: QuadSSI.java,v 1.4 2002-04-24 21:37:52 salcianu Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -37,7 +37,7 @@ public class QuadSSI extends Code /* which extends HCode */ {
     */
     public static boolean KEEP_QUAD_MAP_HACK = false;
 
-    private static Map quadMap;
+    private Map quadMap;
 
     public Map getQuadMap() {
         assert KEEP_QUAD_MAP_HACK
