@@ -14,6 +14,8 @@ import harpoon.Temp.TempMap;
 import harpoon.Temp.WritableTempMap;
 import harpoon.Util.Util;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -26,9 +28,10 @@ import java.util.Set;
  * is hairy because of the big "efficiency-vs-immutable quads" fight.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.1 1999-08-28 00:51:25 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.2 1999-08-28 19:15:21 cananian Exp $
  */
 class SSIRename {
+    private static final boolean sort_phisig = false;
     /** Return a copy of the given quad graph properly converted to
      *  SSI form. */
     static Quad rename(final Code c, final QuadFactory nqf) {
@@ -110,6 +113,7 @@ class SSIRename {
 		Quad q = (Quad) it.next();
 		if (q instanceof PHI) {
 		    Temp[] l = place.phiNeeded(q);
+		    if (sort_phisig) Collections.sort(Arrays.asList(l));
 		    Temp[][] r = new Temp[l.length][((PHI)q).arity()];
 		    for (int i = 0; i < r.length; i++)
 			for (int j = 0; j < r[i].length; j++)
@@ -118,6 +122,7 @@ class SSIRename {
 		    rhs.put(q, r);
 		} else if (q instanceof SIGMA) {
 		    Temp[] r = place.sigNeeded(q);
+		    if (sort_phisig) Collections.sort(Arrays.asList(r));
 		    Temp[][] l = new Temp[r.length][((SIGMA)q).arity()];
 		    for (int i = 0; i < l.length; i++)
 			for (int j = 0; j < l[i].length; j++)
