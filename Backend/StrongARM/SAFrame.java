@@ -13,6 +13,7 @@ import harpoon.Backend.Generic.GenericCodeGen;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrDIRECTIVE;
 import harpoon.IR.Assem.InstrLABEL;
@@ -47,7 +48,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.33 1999-08-18 18:56:37 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.34 1999-08-27 23:27:01 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -208,13 +209,14 @@ public class SAFrame extends Frame implements AllocationInfo {
                               null, null);
         dir7 = new Instr(inf, src, "sub fp, ip, #4", null, null);
 
-	Instr.insertInstrBefore(body, dir1);
-	Instr.insertInstrAfter(dir1, dir2);
-	Instr.insertInstrAfter(dir2, dir3);
-	Instr.insertInstrAfter(dir3, dir4);
-	Instr.insertInstrAfter(dir4, dir5);
-	Instr.insertInstrAfter(dir5, dir6);
-	Instr.insertInstrAfter(dir6, dir7);
+	// Instr.insertInstrBefore(body, dir1);
+	Instr.insertInstrAt(dir1, new InstrEdge(body.getPrev(), body));
+	Instr.insertInstrAt(dir2, new InstrEdge(dir1, body));
+	Instr.insertInstrAt(dir3, new InstrEdge(dir2, body));
+	Instr.insertInstrAt(dir4, new InstrEdge(dir3, body));
+	Instr.insertInstrAt(dir5, new InstrEdge(dir4, body));
+	Instr.insertInstrAt(dir6, new InstrEdge(dir5, body));
+	Instr.insertInstrAt(dir7, new InstrEdge(dir6, body));
 
 	return dir1;
     }

@@ -10,6 +10,7 @@ import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Tree.Exp;
@@ -39,7 +40,7 @@ import java.util.Map;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.22 1999-08-09 22:04:46 duncan Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.23 1999-08-27 23:27:01 pnkfelix Exp $
  */
 public class DefaultFrame extends Frame implements AllocationInfo {
 
@@ -168,10 +169,10 @@ public class DefaultFrame extends Frame implements AllocationInfo {
         dir4 = new Instr(inf, src, inf.getMethod().getName() + ":",
                         null, null);
 
-	Instr.insertInstrBefore(body, dir1);
-	Instr.insertInstrAfter(dir1, dir2);
-	Instr.insertInstrAfter(dir2, dir3);
-	Instr.insertInstrAfter(dir3, dir4);
+	Instr.insertInstrAt(dir1, new InstrEdge(body.getPrev(), body));
+	Instr.insertInstrAt(dir2, new InstrEdge(dir1, body));
+	Instr.insertInstrAt(dir3, new InstrEdge(dir2, body));
+	Instr.insertInstrAt(dir4, new InstrEdge(dir3, body));
 	return dir1;
     }
 

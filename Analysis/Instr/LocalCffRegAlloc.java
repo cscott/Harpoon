@@ -11,6 +11,7 @@ import harpoon.Analysis.Instr.TempInstrPair;
 import harpoon.Analysis.Instr.RegAlloc.FskLoad;
 import harpoon.Analysis.Instr.RegAlloc.FskStore;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.Temp.Temp;
 import harpoon.Util.LinearMap;
@@ -33,7 +34,7 @@ import java.util.AbstractSet;
  * <code>LocalCffRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.38 1999-08-25 23:48:16 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.39 1999-08-27 23:26:57 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -198,7 +199,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 			InstrMEM loadInstr = 
 			    new FskLoad(i.getFactory(), i,
 					"FSK-LOAD", regs, ref);
-			Instr.insertInstrBefore(i, loadInstr);
+			Instr.insertInstrAt(loadInstr,
+					    new InstrEdge(i.getPrev(), i));
 
 			Iterator regIter = regs.iterator();
 			while(regIter.hasNext()) {
@@ -265,7 +267,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    InstrMEM spillInstr =
 				new FskStore(i.getFactory(), i, 
 					     "FSK-STORE", value, regs);
-			    Instr.insertInstrBefore(i, spillInstr);
+			    Instr.insertInstrAt(spillInstr,
+						new InstrEdge(i.getPrev(), i));
 			    
 			    // Now remove spilled regs from regfile
 			    Iterator regsIter = regs.iterator();

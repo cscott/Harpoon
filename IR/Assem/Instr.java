@@ -8,7 +8,6 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.HasEdges;
 import harpoon.IR.Properties.UseDef;
 import harpoon.Temp.Label;
-import harpoon.Temp.LabelList;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.ArrayFactory;
@@ -28,7 +27,7 @@ import java.util.AbstractCollection;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.28 1999-08-26 00:04:13 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.29 1999-08-27 23:27:02 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -50,13 +49,31 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     // contains Instrs which this has Edges to
     private Vector succ;
 
+    /** The <code>Instr</code> that is output prior to
+	<code>this</code>.  Should be <code>null</code> iff
+	<code>this</code> is the first instruction in the method. 
+    */
+    Instr prev;
+    /** The <code>Instr</code> that is output prior to
+	<code>this</code>.  Should be <code>null</code> iff
+	<code>this</code> is the first instruction in the method. 
+    */
+    public Instr getPrev() { return prev; }
 
     /** The next <code>Instr</code> to output after
-	<code>this</code>.  <code>this.next</code> can be significant
+	<code>this</code>.  <code>next</code> can be significant
 	for control flow, depending on if
-	<code>this.canFallThrough</code>.  
+	<code>this.canFallThrough</code>.  Should be <code>null</code>
+	iff <code>this</code> is the last instruction in the method.
     */
-    public Instr next;
+    Instr next;
+    /** The next <code>Instr</code> to output after
+	<code>this</code>.  <code>next</code> can be significant
+	for control flow, depending on if
+	<code>this.canFallThrough</code>.  Should be <code>null</code>
+	iff <code>this</code> is the last instruction in the method.
+    */
+    public Instr getNext() { return next; }
 
     /** Sets whether control flow can go to <code>this.next</code>.  
 	Note that if 
@@ -65,17 +82,31 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	and should be treated as such for data flow analysis, etc.
 	@see Instr#next
     */
-    public boolean canFallThrough;
+    public final boolean canFallThrough;
 
     /** List of target labels that <code>this</code> can branch to.
-	<code>this.targets</code> may be null (in which case control
+	<code>getTargets()</code> may be empty (in which case control
 	flow either falls through to the <code>this.next</code> (the
-	case for most <code>Instr</code>s), or returns to some unknown 
-	<code>Instr</code> (the case for 'return' statements)).
+	case if <code>this.canFallThrough</code>), or returns to some
+	unknown <code>Instr</code> (the case for 'return'
+	statements)). 
 	@see Instr#canFallThrough
 	@see Instr#next
+	@see Instr#hasUnmodifiableTargets 
     */
-    public LabelList targets;
+    public List getTargets() {
+	if (targets != null) {
+	    if (this.hasModifiableTargets()) {
+		return targets;
+	    } else {
+		return Collections.unmodifiableList(targets);
+	    }
+	} else {
+	    // (targets == null) ==> empty list
+	    return Collections.EMPTY_LIST;
+	}
+    }
+    private List targets;
 
     /** Defines an array factory which can be used to generate
 	arrays of <code>Instr</code>s. 
@@ -93,20 +124,20 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	<code>src</code>.
 	@param inf <code>InstrFactory</code> for <code>this</code>
 	@param source <code>HCodeElement</code> that was the source
-	              for <code>this</code>
+	for <code>this</code>
 	@param assem Assembly code string for <code>this</code>
 	@param dst Set of <code>Temp</code>s that may be written to in
- 	           the execution of <code>this</code>.
+	the execution of <code>this</code>.
 	@param src Set of <code>Temp</code>s that may be read from in 
-	           the execution of <code>this</code>.
+	the execution of <code>this</code>.
 	@param canFallThrough Decides whether control flow could fall
-	                      to <code>this.next</code>.
+	to <code>this.next</code>.
 	@param targets List of targets that control flow could
-	               potentially branch to.
+	potentially branch to.
     */
     public Instr(InstrFactory inf, HCodeElement source, 
 		 String assem, Temp[] dst, Temp[] src,
-		 boolean canFallThrough, LabelList targets) {
+		 boolean canFallThrough, List targets) {
         Util.assert(inf != null);
         Util.assert(assem != null);
 	// Util.assert(dst!=null && src!=null, "DST and SRC should not = null");
@@ -126,15 +157,15 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	    this.hashCode ^= inf.getMethod().hashCode(); 
 	}
 
-	if(inf.lastEmitted!=null) {
-	    inf.lastEmitted.next = this;
-	}
-	inf.lastEmitted = this;
+	this.canFallThrough = canFallThrough;
+	this.targets = targets;
     }
 
-    /** Creates an <code>Instr</code> consisting of the <code>String</code>
-	<code>assem</code> and the lists of destinations and sources
-	in <code>dst</code> and <code>src</code>. */   
+    /** Creates an <code>Instr</code> consisting of the
+	<code>String</code> <code>assem</code> and the lists of
+	destinations and sources in <code>dst</code> and
+	<code>src</code>. 
+    */    
     public Instr(InstrFactory inf, HCodeElement source, 
 		 String assem, Temp[] dst, Temp[] src) {
 	this(inf, source, assem, dst, src, true, null);
@@ -156,157 +187,208 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 
     // ********* INSTR METHODS ********
 
-    /** Creates an <code>Edge</code> which connects <code>src</code>
-     *  to <code>dest</code> */
-    public static Edge addEdge(Instr src, Instr dest) {
-	Util.assert(src != null);
-	Util.assert(dest != null);
+//      /** Creates an <code>Edge</code> which connects <code>src</code>
+//       *  to <code>dest</code> */
+//      public static Edge addEdge(Instr src, Instr dest) {
+//  	Util.assert(src != null);
+//  	Util.assert(dest != null);
 
-	Edge e = new Edge(src, dest);
+//  	Edge e = new Edge(src, dest);
 
-	src.succ.addElement(e);
-	dest.pred.addElement(e);
+//  	src.succ.addElement(e);
+//  	dest.pred.addElement(e);
 
-	return e;
-    }
+//  	return e;
+//      }
 
-    /** Removes an <code>Edge</code> which previously connected <code>src</code>
-     *  to <code>dest</code> */
-    public static void removeEdge(Instr src, Instr dest) {
-	Util.assert(src != null);
-	Util.assert(dest != null);
+//      /** Removes an <code>Edge</code> which previously connected
+//  	<code>src</code> to <code>dest</code> 
+//      */
+//      public static void removeEdge(Instr src, Instr dest) {
+//  	Util.assert(src != null);
+//  	Util.assert(dest != null);
 
-	/* ADB: dangerous way of doing this, should be done better in
-         * future. XXX */
-	Enumeration enum = src.succ.elements();
-	while (enum.hasMoreElements()) {
-	    HCodeEdge hce = (HCodeEdge)enum.nextElement();	
-            if (hce.to() == dest) {
-		src.succ.removeElement(hce);
-            }
-        }
-	enum = dest.pred.elements();
-        while (enum.hasMoreElements()) {
-	    HCodeEdge hce = (HCodeEdge)enum.nextElement();
-            if (hce.from() == src) {
-		dest.pred.removeElement(hce);
-            }
-        }
-    }
+//  	/* ADB: dangerous way of doing this, should be done better in
+//           * future. XXX */
+//  	Enumeration enum = src.succ.elements();
+//  	while (enum.hasMoreElements()) {
+//  	    HCodeEdge hce = (HCodeEdge)enum.nextElement();	
+//              if (hce.to() == dest) {
+//  		src.succ.removeElement(hce);
+//              }
+//          }
+//  	enum = dest.pred.elements();
+//          while (enum.hasMoreElements()) {
+//  	    HCodeEdge hce = (HCodeEdge)enum.nextElement();
+//              if (hce.from() == src) {
+//  		dest.pred.removeElement(hce);
+//              }
+//          }
+//      }
+
+
+    // ******* THE BELOW METHODS NEED REPLACEMENT AND REVISION *********
 
     /** Replaces <code>oldi</code> in the Instruction Stream with
-	<code>newis/code>.  Don't know if this is the best way of
-	doing this, since it simply makes all the edges of the old
-	instr become the edges of the instruction list.  In any case,
-	both oldi and newi are modified: oldi loses its Edges and newi
-	loses its original Edges but gets oldi's old Edges 
+	<code>newis</code>.  
+	<BR> <B>requires:</B> 
+             <OL>
+	     <LI> <code>oldi</code> is a non-branching instruction 
+	     <LI> <code>newis</code> is a <code>List</code> of
+	     instructions such that the elements of <code>newis</code>
+	     form a basic block. (this constraint may be weakened
+	     later if necessary)  
+	     </OL>
+	<BR> <B>modifies:</B> <code>oldi.prev</code>, <code>oldi.next</code>
+	<BR> <B>effects:</B> Modifies the <code>Instr</code>s
+	     immediately dominating and succeeding <code>oldi</code>
+	     as to substitute <code>newis</code> in the place of
+	     <code>oldi</code>.   
     */
     public static void replaceInstrList(Instr oldi, List newis) {
 	Util.assert(oldi != null && newis != null, "Null Arguments are bad");
-	Instr newi = (Instr) newis.get(0);
-	newi.pred = new Vector();
-	for(int i=0; i<oldi.pred.size(); i++) {
-	    Edge e = (Edge) oldi.pred.get(i);
-	    addEdge( e.from, newi );
-	}
-	for(int i=0; i<newi.pred.size(); i++) {
-	    Edge e = (Edge) newi.pred.get(i);
-	    removeEdge( e.from, oldi );
-	}
+	Util.assert(oldi.canFallThrough &&
+		    oldi.getTargets().isEmpty(), 
+		    "oldi must be a nonbranching instruction.");
+	Util.assert(isLinear(newis), "newis must be a basic block");
+	
+	Instr next = oldi.next;
+	Instr prev = oldi.prev;
+	Instr newiF = (Instr) newis.get(0);
+	Instr newiL = (Instr) newis.get(newis.size() - 1);
 
-	newi = (Instr) newis.get(newis.size() - 1);
-	newi.succ = new Vector();
-	for(int i=0; i<oldi.succ.size(); i++) {
-	    Edge e = (Edge) oldi.succ.get(i);
-	    addEdge( newi, e.to );
-	}
-	for(int i=0; i<newi.succ.size(); i++) {
-	    Edge e = (Edge) newi.succ.get(i);
-	    removeEdge( oldi, e.to );
-	}
+	if(prev!=null)prev.next = newiF;
+	newiF.prev = prev;
+	newiL.next = next;
+	if(next!=null)next.prev = newiL;
+	
     }
 
-    /** Replaces <code>oldi</code> in the Instruction Stream with
-	<code>newi</code>.   Don't know if this is the best way of
-	doing this, since it simply makes all the edges of the old
-	instr become the edges of the new instr.  In any case, both
-	oldi and newi are modified: oldi loses its Edges and newi
-	loses its original Edges but gets oldi's old Edges
-     */
-    public static void replaceInstr(Instr oldi, Instr newi) {
-	Util.assert(oldi != null && newi != null, "Null Arguments are bad");
-	
-	newi.pred = new Vector();
-	for(int i=0; i<oldi.pred.size(); i++) {
-	    Edge e = (Edge) oldi.pred.get(i);
-	    addEdge( e.from, newi );
-	}
-	for(int i=0; i<newi.pred.size(); i++) {
-	    Edge e = (Edge) newi.pred.get(i);
-	    removeEdge( e.from, oldi );
-	}
-	
-	newi.succ = new Vector();
-	for(int i=0; i<oldi.succ.size(); i++) {
-	    Edge e = (Edge) oldi.succ.get(i);
-	    addEdge( newi, e.to );
-	}
-	for(int i=0; i<newi.succ.size(); i++) {
-	    Edge e = (Edge) newi.succ.get(i);
-	    removeEdge( oldi, e.to );
-	}
-    }
-
-    /** Inserts <code>newi</code> as an Instr after <code>pre</code>,
-	such that <code>pre</code>'s successors become
-	<code>newi</code>'s successors, and <code>pre</code>'s only
-	successor is <code>newi</code>. 
-     
-        NOTE: Must review this method SEVERELY...it is easy to
-	maintain it if it is merely inserting into the linear list of
-	instrs, but if it is meant to modify the internal
-	representation of control flow, we need to fix it and any code
-	that uses it to do something else. 
-     */
-    public static void insertInstrAfter(Instr pre, Instr newi) {
-	Util.assert(pre != null);
-        Util.assert(newi != null);
- 
-	newi.next = pre.next;
-	pre.next = newi;
-	
-        HCodeEdge[] oldsucc = pre.succ();
-	for (int i = 0; i < oldsucc.length; i++) {
-	    removeEdge(pre, (Instr)oldsucc[i].to());
-	    addEdge(newi, (Instr)oldsucc[i].to());
-        }
-	pre.succ = new Vector();
-	addEdge(pre, newi);
-    }
-
-    /** Inserts <code>newi</code> as an Instr before
-	<code>post</code>, such that <code>post</code>'s predecessors
-	become <code>newi</code>'s predecessors, and
-	<code>post</code>'s only predecessor is <code>newi</code>.  
-
-        NOTE: Must review this method SEVERELY...it is easy to
-	maintain it if it is merely inserting into the linear list of
-	instrs, but if it is meant to modify the internal
-	representation of control flow, we need to fix it and any code
-	that uses it to do something else. 
+    /** Helper method to ensure that <code>instrs</code> is
+	effectively a basic block. 
     */
-    public static void insertInstrBefore(Instr post, Instr newi) {
-        Util.assert(post != null);
-        Util.assert(newi != null);
+    private static boolean isLinear(List instrs) {
+	boolean linear = true;
+	int index = 0;
+	Instr i = (Instr) instrs.get(index);
+	Instr next = null;
 
-	HCodeEdge[] oldpred = post.pred();
-	for (int i = 0; i < oldpred.length; i++) {
-            removeEdge((Instr)oldpred[i].from(), post);
-	    addEdge((Instr)oldpred[i].from(), newi);
+	while(index < instrs.size() &&
+	      linear) {
+	    if (! (i.canFallThrough &&
+		   i.getTargets().isEmpty()) ) {
+		linear = false;
+	    }
+	    
+	    index++;
+	    if (index < instrs.size()) {
+		next = (Instr) instrs.get(index);
+		if (next != i.next) linear = false;
+		i = next;
+	    } 
 	}
-	post.pred = new Vector();
-	addEdge(newi, post);
+
+	return linear;
     }
+    
+    /** Inserts <code>instr</code> at <code>edge</code>.
+	<BR> <B>requires:</B> <OL>
+	     <LI> <code>edge.from()</code> and <code>edge.to()</code>
+	     are instances of <code>Instr</code> or one is
+	     <code>null</code> and the other is an instance of
+	     <code>Instr</code>. 
+	     <LI> if <code>edge.from()</code> is not
+	     <code>null</code>, then
+	     <code>!edge.from().hasUnmodifiableTargets()</code>.  
+	     <LI> <code>edge.to()</code> is a successor of
+	     <code>edge.from()</code>.
+	     <LI> <code>instr</code> is a non-branching instruction.
+	</OL>
+	<BR> <B>modifies:</B> <code>edge.from()</code>, <code>edge.to()</code>
+	<BR> <B>effects:</B> changes <code>edge.from()</code> and
+	     <code>edge.to()</code> so that after
+	     <code>edge.from()</code> is executed, <code>instr</code>
+	     will be executed and then followed by
+	     <code>edge.to()</code>.
+    */
+
+    public static void insertInstrAt(Instr instr, HCodeEdge edge) {
+	if (edge.from() == null) {
+	    if (edge.to() == null) {
+		Util.assert(false, 
+			    "edge shouldn't have null for both to and from");
+	    } else {
+
+	    }
+	} else {
+	    if (edge.to() == null) {
+		Instr from = (Instr) edge.from();
+		from.next = instr;
+		instr.prev = from;
+	    } else {
+
+	    }
+	}
+	
+    }
+
+
+//      /** Inserts <code>newi</code> as an Instr after <code>pre</code>,
+//  	such that <code>pre</code>'s successors become
+//  	<code>newi</code>'s successors, and <code>pre</code>'s only
+//  	successor is <code>newi</code>. 
+     
+//          NOTE: Must review this method SEVERELY...it is easy to
+//  	maintain it if it is merely inserting into the linear list of
+//  	instrs, but if it is meant to modify the internal
+//  	representation of control flow, we need to fix it and any code
+//  	that uses it to do something else. 
+//       */
+//      public static void insertInstrAfter(Instr pre, Instr newi) {
+//  	Util.assert(pre != null);
+//          Util.assert(newi != null);
+
+//  	newi.next = pre.next;
+//  	pre.next = newi;
+	
+//          HCodeEdge[] oldsucc = pre.succ();
+//  	for (int i = 0; i < oldsucc.length; i++) {
+//  	    //removeEdge(pre, (Instr)oldsucc[i].to());
+//  	    //addEdge(newi, (Instr)oldsucc[i].to());
+//          }
+//  	pre.succ = new Vector();
+//  	//addEdge(pre, newi);
+//      }
+
+//      /** Inserts <code>newi</code> as an Instr before
+//  	<code>post</code>, such that <code>post</code>'s predecessors
+//  	become <code>newi</code>'s predecessors, and
+//  	<code>post</code>'s only predecessor is <code>newi</code>.  
+
+//          NOTE: Must review this method SEVERELY...it is easy to
+//  	maintain it if it is merely inserting into the linear list of
+//  	instrs, but if it is meant to modify the internal
+//  	representation of control flow, we need to fix it and any code
+//  	that uses it to do something else. 
+//      */
+//      public static void insertInstrBefore(Instr post, Instr newi) {
+//          Util.assert(post != null);
+//          Util.assert(newi != null);
+
+//  	// InstrLABELs are the only Instrs with multiple entry
+//  	// points; therefore we simply won't allow them to be used
+//  	// here. 
+//  	Util.assert(!(post instanceof InstrLABEL), 
+//  		    "InstrLABELs are bad insertion points.");
+
+//  	HCodeEdge[] oldpred = post.pred();
+//  	for (int i = 0; i < oldpred.length; i++) {
+//              //removeEdge((Instr)oldpred[i].from(), post);
+//  	    //addEdge((Instr)oldpred[i].from(), newi);
+//  	}
+//  	post.pred = new Vector();
+//  	//addEdge(newi, post);
+//      }
 
     /** Accept a visitor. */
     public void visit(InstrVisitor v) { v.visit(this); }
@@ -353,12 +435,12 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 			s.append("s?");
 		}
 		break;
-		case 'j': {
+		case 'L': {
 		    int n = Character.digit(assem.charAt(++i), 10);
 		    if (n < src.length) 
-			s.append(src[n]);
+			s.append(targets.get(n));
 		    else 
-			s.append("s?");
+			s.append("L?");
 		}
 		break;
 		case '`': 
@@ -426,5 +508,52 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     }
     public Collection succC() {
 	return Collections.unmodifiableCollection(succ);
+    }
+
+    /** Checks whether <code>this.targets</code> is modifiable. 
+	Most instructions with a list of targets allow for dynamic
+	replacement of elements of the targets list.  This way, branch
+	targets can be modified to allow for easy insertion of 
+	arbitrary fixup code on edges between <code>Instr</code>s by
+	adding new branches and labels.  
+
+	<P> For example: <BR>
+	<code> beq L0
+	       ...assembly code...
+	       L0:
+	</code> <BR>
+	can be turned into: <BR>
+	<code> beq L1
+	       ...assembly code...
+	       L1:
+	       ...fixup code...
+	       b L0
+	       L0:
+        </code>
+	For those instructions, this method returns
+	<code>true</code>.  
+
+	<P> However, some instructions (such as computed branches)
+	cannot have their targets list modified in such a manner.
+	These instructions should be initialized with an anonymous
+	inner class that overrides this method and returns
+	<code>false</code>. 
+
+	<P> An important invariant that must be preserved (and is high
+	level enough that Tree form implementors must take note of it)
+	is that 
+	
+	<P> for all n0, n1, n2 elem of Instr such that there exists an
+	edge <nobr> &lt n0, n1 &gt </nobr> and an edge <nobr> &lt n1,
+	n2 &gt </nobr>, 
+	n0 doesn't have modifiable targets implies the edge 
+	<nobr> &lt n0, n1 &gt </nobr> dominates the edge 
+	<nobr> &lt n1, n2 &gt </nobr>.
+	
+	<P> In other words, <code>n1</code> should have no predecessors
+	other than <code>n0</code>.
+     */
+    public boolean hasModifiableTargets() {
+	return false;
     }
 }

@@ -16,15 +16,9 @@ import java.util.Map;
  * generic <code>Assem.Instr</code>s used in code generation.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrFactory.java,v 1.1.2.8 1999-08-26 00:15:02 pnkfelix Exp $
+ * @version $Id: InstrFactory.java,v 1.1.2.9 1999-08-27 23:27:02 pnkfelix Exp $
  */
 public abstract class InstrFactory {
-    /** Tracks the last <code>Instr</code> that was constructed from
-	<code>this</code> so that it can be updated when the next
-	<code>Instr</code> is created.
-    */
-    Instr lastEmitted;
-    
     /** Maintains a
 	<code>Temp.Label</code><code>-></code><code>InstrLABEL</code>
 	<code>Map</code> for <code>Instr</code>s constructed by

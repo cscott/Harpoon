@@ -8,6 +8,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeEdge;
+import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.ArrayFactory;
@@ -32,7 +33,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.18 1999-08-23 23:29:24 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.19 1999-08-27 23:27:01 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -174,6 +175,7 @@ public abstract class Code extends HCode {
 	    switch(c) {
 	    case '`':
 		Temp temp = null;
+		Label label = null;
 		boolean getReg = false;
 		i++; c = assem.charAt(i);
 		switch(c) {
@@ -183,20 +185,33 @@ public abstract class Code extends HCode {
 			temp = instr.def()[n];
 			getReg = true;
 		    } else {
-			Util.assert(false, "index mismatch in "+assem + " " + Arrays.asList(instr.def()));
+			Util.assert(false, "index mismatch in "+assem + 
+				    " " + Arrays.asList(instr.def()));
 			s.append("d?");
 		    }
 		    break;
 		}
-		case 's':
-		case 'j': {
+		case 's': {
 		    i++; int n = Character.digit(assem.charAt(i), 10);
 		    if (n < instr.use().length) {
 			temp = instr.use()[n];
 			getReg = true;
 		    } else {
-			Util.assert(false, "index mismatch in "+assem + " " + Arrays.asList(instr.use()));
-			s.append(c + "?");
+			Util.assert(false, "index mismatch in "+assem + 
+				    " " + Arrays.asList(instr.use()));
+			s.append("s?");
+		    }
+		    break;
+		}
+		case 'L': {
+		    i++; int n = Character.digit(assem.charAt(i), 10);
+		    if (n < instr.getTargets().size()) {
+			label = (Label) instr.getTargets().get(n);
+			s.append(label);
+		    } else {
+			Util.assert(false, "index mismatch in "+assem + 
+				    " " + Arrays.asList(instr.use()));
+			s.append("L?");
 		    }
 		    break;
 		}
@@ -226,7 +241,9 @@ public abstract class Code extends HCode {
 		    s.append(getRegisterName(instr, temp, var.toString()));
 		    s.append(lastChar);
 		}
+
 		break;
+		
 	    default: 
 		s.append(c);
 	    }

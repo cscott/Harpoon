@@ -7,7 +7,9 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
+import harpoon.IR.Assem.InstrJUMP;
 import harpoon.IR.Assem.InstrMOVE;
 import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrDIRECTIVE;
@@ -44,15 +46,14 @@ import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.UNOP;
 import harpoon.IR.Tree.SEQ;
 
-import java.util.Map;
-import java.util.HashMap;
+import java.util.Arrays;
 
 /**
  * <code>CodeGen</code> is a code-generator for the ARM architecture.
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.30 1999-08-23 23:50:34 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.31 1999-08-27 23:27:01 pnkfelix Exp $
  */
 %%
 
@@ -74,8 +75,6 @@ import java.util.HashMap;
 
     private TEMP param0;
 
-    Map blMap;
-    Map liMap;
 
     public CodeGen(SAFrame frame) {
 	last = null;
@@ -84,8 +83,6 @@ import java.util.HashMap;
 	r1 = frame.getAllRegisters()[1];
 	r2 = frame.getAllRegisters()[2];
 	r3 = frame.getAllRegisters()[3];
-	blMap = new HashMap();
-	liMap = new HashMap();
     }
 
     private void emit(Instr i) {
@@ -94,7 +91,7 @@ import java.util.HashMap;
 	if (last == null) {
 	    last = i;
 	} else {
-	    last.insertInstrAfter(last, i);
+	    last.insertInstrAt(i, new InstrEdge(last, last.getNext()));
 	    last = i;
 	}
     }
@@ -121,7 +118,7 @@ import java.util.HashMap;
 	emit(new Instr( instrFactory, root, assem, null, null));
     }
 
-    /** Single dest Single source EmitMOVE helper */
+    /** Single dest Single source emit InstrMOVE helper */
     private void emitMOVE( HCodeElement root, String assem,
 			   Temp dst, Temp src) {
 	emit(new InstrMOVE( instrFactory, root, assem,
@@ -129,11 +126,35 @@ import java.util.HashMap;
 			    new Temp[]{ src }));
     }			         
 
+    /* Branching instruction emit helper. 
+       Instructions emitted using this *can* fall through.
+    */
+    private void emit( HCodeElement root, String assem,
+		       Temp[] dst, Temp[] src, Label[] targets ) {
+        emit(new Instr( instrFactory, root, assem,
+			dst, src, true, Arrays.asList(targets)));
+    }
+    
+    /* Branching instruction emit helper. 
+       Instructions emitted using this *cannot* fall through.
+    */
+    private void emitNoFall( HCodeElement root, String assem,
+		       Temp[] dst, Temp[] src, Label[] targets ) {
+        emit(new Instr( instrFactory, root, assem,
+			dst, src, false, Arrays.asList(targets)));
+    }
 
+    /* InstrJUMP emit helper. */
+    private void emitJUMP( HCodeElement root, String assem, Label l ) {
+	emit( new InstrJUMP( instrFactory, root, assem, l ));
+    }
+
+    /* InstrLABEL emit helper. */
     private void emitLABEL( HCodeElement root, String assem, Label l ) {
 	emit( new InstrLABEL( instrFactory, root, assem, l ));
     }	
 
+    /* InstrDIRECTIVE emit helper. */
     private void emitDIRECTIVE( HCodeElement root, String assem ) {
 	emit( new InstrDIRECTIVE( instrFactory, root, assem ));
     }
@@ -145,6 +166,7 @@ import java.util.HashMap;
     private TwoWordTemp makeTwoWordTemp() {
 	    return new TwoWordTemp(frame.tempFactory());
     }
+
 %%
 %start with %{
        // *** METHOD PROLOGUE *** 
@@ -937,14 +959,11 @@ METHOD(params) %{
 }%
 
 CJUMP(test, iftrue, iffalse) %{
-    Instr i = new Instr(instrFactory, ROOT, 
-			"cmp `s0, #0 \n" +
-			"beq " + iffalse + "\n" +
-			"b " + iftrue,
-			null, new Temp[]{ test });
-    emit(i);
-    blMap.put(i, iffalse);
-    blMap.put(i, iftrue);
+    emit( ROOT, "cmp `s0, #0 \n" +
+		"beq `L0", 
+		null, new Temp[]{ test },
+		new Label[]{ iffalse });
+    emitJUMP( ROOT, "b `L0", iftrue );
 }%
 
 EXP(e) %{
@@ -954,22 +973,22 @@ EXP(e) %{
 }%
 
 JUMP(e) %{
-    Instr i = new InstrMOVE( instrFactory, ROOT,"mov `d0, `s0", 
-			     new Temp[]{ SAFrame.PC }, 
-			     new Temp[]{e});
-    emit(i);
-    LabelList targets = ((JUMP)ROOT).targets;
-    while(targets!=null) {
-	blMap.put(i, targets.head);
-	targets = targets.tail;
-    }
+    emit( new Instr
+	  ( instrFactory, ROOT, 
+	    "mov `d0, `s0",
+	    new Temp[]{ SAFrame.PC },
+	    new Temp[]{ e },
+	    false, LabelList.toList( ((JUMP)ROOT).targets )) {
+		public boolean hasModifiableTargets(){ 
+		       return false; 
+		}
+	    });
 }%
 
 LABEL(id) %{
     LABEL l = (LABEL) ROOT;
     Instr i = new InstrLABEL(instrFactory, l, l.label + ":", l.label);
     emit(i);
-    liMap.put(l.label, i);
 }%
 
 MOVE<p,i,f>(dst, src) %{
