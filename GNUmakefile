@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.76 2002-06-11 20:21:08 cananian Exp $
+# $Id: GNUmakefile,v 1.77 2002-06-27 20:29:58 wbeebee Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -122,7 +122,8 @@ PROPERTIES:=Contrib/getopt/MessagesBundle.properties \
 	    Support/nativecode-makefile.template \
 	    Support/precisec-makefile.template \
 	    Support/mipsda-makefile.template \
-	    $(wildcard Backend/Runtime1/*.properties)
+	    $(wildcard Backend/Runtime1/*.properties) \
+            $(wildcard Analysis/Realtime/*.properties)
 PKGDESC:=$(wildcard overview.html) $(wildcard README) \
 	 $(foreach dir, $(ALLPKGS),\
 	    $(wildcard $(dir)/package.html) $(wildcard $(dir)/README))
@@ -248,6 +249,7 @@ properties:
 	@cp Support/nativecode-makefile.template harpoon/Support
 	@cp Support/precisec-makefile.template harpoon/Support
 	@cp Backend/Runtime1/*.properties harpoon/Backend/Runtime1
+	@cp Analysis/Realtime/*.properties harpoon/Analysis/Realtime
 	@echo done.
 
 first:

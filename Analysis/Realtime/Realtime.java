@@ -3,12 +3,14 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Realtime;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
-import java.util.Vector;
 
 import harpoon.Analysis.Quads.ArrayInitRemover;
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.Tree.Canonicalize;
 
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.Linker;
@@ -18,6 +20,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.IR.Quads.QuadNoSSA;
 
 import harpoon.Util.HClassUtil;
+import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
 
 import harpoon.Backend.Generic.Frame;
@@ -31,7 +34,7 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.7 2002-06-27 16:30:51 wbeebee Exp $
+ * @version $Id: Realtime.java,v 1.8 2002-06-27 20:30:04 wbeebee Exp $
  */
 
 public class Realtime {
@@ -42,7 +45,7 @@ public class Realtime {
 	public static boolean REMOVE_TAGS = true;
 
 	/** Add support for realtime threads */
-	public static boolean REALTIME_THREADS = true;
+	public static boolean REALTIME_THREADS = false;
 
 	/** Determine which analysis method to use. */
 	public static int ANALYSIS_METHOD = 0;
@@ -127,7 +130,13 @@ public class Realtime {
 			System.out.println();
 	    assert false : "Please specify an analysis method.";
 		}
-		System.out.println();
+		System.out.print(", Realtime threads: ");
+		if (opts.indexOf("threads")!=-1) {
+			REALTIME_THREADS = true;
+			System.out.println("yes");
+		} else {
+			System.out.println("no");
+		}
 	}		
 
 	/** Creates a field memoryArea on <code>java.lang.Object</code>.
@@ -166,155 +175,57 @@ public class Realtime {
 	 *  </ul>
 	 */
 
-	public static Collection getRoots(Linker linker) {
-		Collection roots = new Vector();
-		HClass realtimeThread = 
-			linker.forName("javax.realtime.RealtimeThread");
- 		HClass schedulable =
- 			linker.forName("javax.realtime.Schedulable");
-		roots.add(realtimeThread.getConstructor(new HClass[] {
-			linker.forName("java.lang.ThreadGroup"),
-				linker.forName("java.lang.Runnable"),
-				linker.forName("java.lang.String")}));
-		roots.add(realtimeThread
-							.getMethod("getMemoryArea", new HClass[] {}));
-		roots.add(realtimeThread
-							.getMethod("currentRealtimeThread", new HClass[] {}));
+	private static String resourcePath(String fileName) {
+		return "harpoon/Analysis/Realtime/"+fileName+".properties";
+	}
+
+	public static Collection getRoots(final Linker linker) {
+		final List roots = new ArrayList();
 		
-		roots.add(linker.forName("java.lang.Thread")
-							.getMethod("setPriority", 
-												 new HClass[] { HClass.Int }));
-		
-		HClass memoryArea = linker.forName("javax.realtime.MemoryArea");
-		HClass object = linker.forName("java.lang.Object");
-		roots.add(memoryArea
-							.getMethod("checkAccess", new HClass[] { object }));
-		roots.add(linker.forName("javax.realtime.ScopedMemory")
-							.getMethod("checkAccess", new HClass[] { object }));
-		//  	roots.add(memoryArea
-		//  		  .getMethod("bless", new HClass[] { object }));
-		//  	roots.add(memoryArea
-		//  		  .getMethod("bless", 
-		//  			     new HClass[] { 
-		//  				 object, 
-		//  				 HClassUtil.arrayClass(linker, HClass.Int, 1)
-		//  			     }));
-		roots.add(memoryArea
-							.getMethod("getMemoryArea", new HClass[] { object }));
-		roots.add(HClassUtil.arrayClass(linker, HClass.Int, 1));
-		if (COLLECT_RUNTIME_STATS) {
-			HClass stats = linker.forName("javax.realtime.Stats");
-			roots.add(stats.getMethod("addCheck", 
-																new HClass[] { memoryArea,
-																								 memoryArea }));
-			roots.add(stats.getMethod("addNewObject",
-																new HClass[] { memoryArea }));
-			roots.add(stats.getMethod("addNewArrayObject",
-																new HClass[] { memoryArea }));
-		}
-		
-		roots.add(linker.forName("javax.realtime.ImmortalMemory")
-							.getMethod("instance", new HClass[] { }));
-		roots.add(linker.forName("javax.realtime.CTMemory")
-							.getMethod("checkAccess", new HClass[] { object }));
-		roots.add(linker.forName("javax.realtime.HeapMemory")
-							.getMethod("checkAccess", new HClass[] { object }));
-		roots.add(linker.forName("javax.realtime.ImmortalMemory")
-							.getMethod("checkAccess", new HClass[] { object }));
-		roots.add(linker.forName("javax.realtime.ImmortalPhysicalMemory")
-							.getMethod("checkAccess", new HClass[] { object }));
-		roots.add(linker.forName("javax.realtime.ScopedPhysicalMemory")
-							.getMethod("checkAccess", new HClass[] { object }));
-		roots.add(linker.forName("javax.realtime.NullMemoryArea")
-							.getMethod("checkAccess", new HClass[] { object }));
-		
-		roots.add(linker.forName("javax.realtime.VTMemory")
-							.getMethod("checkAccess", new HClass[] { object }));
-		roots.add(linker.forName("javax.realtime.LTMemory")
-							.getMethod("checkAccess", new HClass[] { object }));
-		roots.add(linker.forName("javax.realtime.NoHeapRealtimeThread"));
-		roots.add(linker.forName("java.lang.IllegalAccessException"));
-		roots.add(linker.forName("java.lang.Boolean")
-			  .getConstructor(new HClass[] { HClass.Boolean }));
-		roots.add(linker.forName("java.lang.Boolean")
-			  .getMethod("booleanValue", new HClass[] {}));
-		roots.add(linker.forName("java.lang.Byte")
-			  .getConstructor(new HClass[] { HClass.Byte }));
-		roots.add(linker.forName("java.lang.Byte")
-			  .getMethod("byteValue", new HClass[] {}));
-		roots.add(linker.forName("java.lang.Character")
-			  .getConstructor(new HClass[] { HClass.Char }));
-		roots.add(linker.forName("java.lang.Character")
-			  .getMethod("charValue", new HClass[] {}));
-		roots.add(linker.forName("java.lang.Double")
-			  .getConstructor(new HClass[] { HClass.Double }));
-		roots.add(linker.forName("java.lang.Double")
-			  .getMethod("doubleValue", new HClass[] {}));
-		roots.add(linker.forName("java.lang.Float")
-		  .getConstructor(new HClass[] { HClass.Float }));
-		roots.add(linker.forName("java.lang.Float")
-			  .getMethod("floatValue", new HClass[] {}));
-		roots.add(linker.forName("java.lang.Integer")
-			  .getConstructor(new HClass[] { HClass.Int }));
-		roots.add(linker.forName("java.lang.Integer")
-			  .getMethod("intValue", new HClass[] {}));
-		roots.add(linker.forName("java.lang.Long")
-			  .getConstructor(new HClass[] { HClass.Long }));
-		roots.add(linker.forName("java.lang.Long")
-			  .getMethod("longValue", new HClass[] {}));
-		roots.add(linker.forName("java.lang.Short")
-			  .getConstructor(new HClass[] { HClass.Short }));
-		roots.add(linker.forName("java.lang.Short")
-			  .getMethod("shortValue", new HClass[] {}));
-		roots.add(linker.forName("java.lang.NoSuchMethodException")
-			  .getConstructor(new HClass[] { 
-			      linker.forName("java.lang.String") }));
-		roots.add(linker.forName("javax.realtime.RefCountArea")
-			  .getConstructor(new HClass[] {}));
-		roots.add(linker.forName("javax.realtime.RefCountArea")
-			  .getMethod("refInstance", new HClass[] {}));
-		roots.add(linker.forName("javax.realtime.MemAreaStack"));
-		roots.add(linker.forName("javax.realtime.MemAreaStack")
-			  .getConstructor(new HClass[] { 
-			      memoryArea, memoryArea,
-				  linker.forName("javax.realtime.MemAreaStack")}));
-		
-		if(REALTIME_THREADS) {
-			roots.add(linker.forName("javax.realtime.RealtimeThread")
-								.getMethod("getScheduler",
-													 new HClass[] {}));
-			roots.add(linker.forName("javax.realtime.RealtimeThread")
-								.getMethod("setScheduler",
-													 new HClass[] {
-									linker.forName("javax.realtime.Scheduler") }));
-			roots.add(linker.forName("javax.realtime.RealtimeThread")
-								.getMethod("getSchedulingParameters",
-													 new HClass[] {}));
+		try {
+			// Read in all method roots for RTJ base
+			ParseUtil.readResource(resourcePath("realtime-method"),
+														 new ParseUtil.StringParser() {
+				public void parseString(String s) 
+					throws ParseUtil.BadLineException {
+					roots.add(ParseUtil.parseMethod(linker, s));
+				}
+			});
 			
-			roots.add(linker.forName("javax.realtime.PriorityScheduler")
-								.getConstructor(new HClass[] {}));
-			roots.add(linker.forName("javax.realtime.PriorityScheduler")
-								.getMethod("addToFeasibility",
-													 new HClass[] {schedulable}));
-			roots.add(linker.forName("javax.realtime.PriorityScheduler")
-								.getMethod("removeFromFeasibility", 
-													 new HClass[] {schedulable}));
-			roots.add(linker.forName("javax.realtime.PriorityScheduler")
-								.getMethod("chooseThread", new HClass[] {HClass.Long}));
-			roots.add(linker.forName("javax.realtime.PriorityScheduler")
-								.getMethod("stopAll", new HClass[] {}));
-			roots.add(linker.forName("javax.realtime.PriorityScheduler")
-								.getMethod("noThreads", new HClass[] {}));
-			roots.add(linker.forName("javax.realtime.PriorityScheduler")
-								.getMethod("getScheduler", new HClass[] {}));
-			roots.add(linker.forName("javax.realtime.PriorityScheduler")
-								.getMethod("disableThread", 
-													 new HClass[] {HClass.Long}));
-			roots.add(linker.forName("javax.realtime.PriorityScheduler")
-								.getMethod("enableThread", 
-													 new HClass[] {HClass.Long}));
+			// Read in all class roots for RTJ base
+			ParseUtil.readResource(resourcePath("realtime-class"),
+														 new ParseUtil.StringParser() {
+				public void parseString(String s)
+					throws ParseUtil.BadLineException {
+					roots.add(linker.forDescriptor(s));
+				}
+			});
+			
+			
+			if (COLLECT_RUNTIME_STATS) {
+				// Read in all method roots for calculating object memalloc statistics
+				ParseUtil.readResource(resourcePath("stats-method"),
+															 new ParseUtil.StringParser() {
+					public void parseString(String s) 
+						throws ParseUtil.BadLineException {
+						roots.add(ParseUtil.parseMethod(linker, s));
+					}
+				});
+			}
+			
+			if(REALTIME_THREADS) {
+				// Read in all method roots for RTJ thread support
+				ParseUtil.readResource(resourcePath("thread-method"),
+															 new ParseUtil.StringParser() {
+					public void parseString(String s) 
+						throws ParseUtil.BadLineException {
+						roots.add(ParseUtil.parseMethod(linker, s));
+					}
+				});
+			}
+		} catch (java.io.IOException e) {
+			assert false : "Properties file for RTJ error: "+e;
 		}
-		
 
 		return roots;
 	}    
@@ -416,7 +327,8 @@ public class Realtime {
 
 	public static HCodeFactory addQuantaChecker(HCodeFactory hcf) {
 		if (REALTIME_THREADS) {
-	    return (new QuantaChecker(hcf)).codeFactory();
+		    return Canonicalize.codeFactory((new QuantaChecker(hcf))
+						    .codeFactory());
 		}
 		return hcf;
 	}

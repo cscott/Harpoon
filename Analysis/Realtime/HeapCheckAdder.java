@@ -524,10 +524,7 @@ public class HeapCheckAdder extends Simplification {
 		public String getCodeName() { return parent.getCodeName(); }
 		public void clear(HMethod m) { parent.clear(m); }
 	    };
-//  	final HCodeFactory hcf2 = new PrintFactory(Canonicalize.codeFactory(codeFactory(new PrintFactory(hcf, "BEFORE"), 
-//  								     RULES)), "AFTER");
 	return Canonicalize.codeFactory(codeFactory(hcf, RULES));
-//  	return parent;
     }
 
     /** Declare the type of an expression. 

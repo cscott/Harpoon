@@ -14,6 +14,7 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 
+import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Tree.TreeVisitor;
 import harpoon.IR.Tree.TreeFactory;
 import harpoon.IR.Tree.DerivationGenerator;
@@ -47,14 +48,15 @@ import java.io.PrintWriter;
 
 /**
  * @author  Bryan Fink <wingman@mit.edu>
- * @version $Id: QuantaChecker.java,v 1.5 2002-06-25 19:39:59 dumi Exp $
+ * @version $Id: QuantaChecker.java,v 1.6 2002-06-27 20:30:04 wbeebee Exp $
  */
 public class QuantaChecker extends MethodMutator
 {
     public QuantaChecker(HCodeFactory hcf)
     {
 	super(hcf);
-	assert hcf.getCodeName().equals(TreeCode.codename) : "QuantaChecker only works on Tree form";
+	assert hcf.getCodeName().equals(CanonicalTreeCode.codename) : 
+	    "QuantaChecker only works on CanonicalTree form";
     }
     
     protected HCode mutateHCode(HCodeAndMaps input) {
