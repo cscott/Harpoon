@@ -30,6 +30,7 @@ import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.FOOTER;
 import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.INSTANCEOF;
 import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.METHOD;
@@ -62,7 +63,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.5 2000-02-13 04:39:35 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.6 2000-02-14 05:30:21 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -151,18 +152,14 @@ public class CloningVisitor extends QuadVisitor {
     
     //Adds edges between quads and environment loading code
     public void addEdges(Quad q, int resumeexception, Set dontfollow) {
-	FOOTER footer=new FOOTER(qf, q, linkFooters.size()+1);
-	Iterator fiterator=linkFooters.iterator();
-	int count=1;
-	while(fiterator.hasNext())
-	    Quad.addEdge((Quad)fiterator.next(), 0, footer, count++);
+	HEADER header;
 	if (resumeexception!=-1) {
 	    //Doing addedges for CALL continuation
 	    //Need to build headers here....[continuation]
 	    //Need to load environment object and result codes
 	    
 	    addEdges(q.next(resumeexception),dontfollow);
-	    HEADER header=buildEnvironmentExtracter((CALL)q, resumeexception,footer);
+	    header=buildEnvironmentExtracter((CALL)q, resumeexception);
 	    
 	    fixphis();
 	    ((ContCodeSSI)hcode).quadSet(header);
@@ -172,13 +169,20 @@ public class CloningVisitor extends QuadVisitor {
 	    Quad.addEdge((Quad)quadmap.get(q),1,
 			 (Quad)quadmap.get(q.next(1)),q.nextEdge(1).which_pred());
 	    addEdges(q.next(1),dontfollow);
-	    //add in new footer
-	    Quad.addEdge((Quad) quadmap.get(q),0, footer,0);
+
+
+	    header=(HEADER) quadmap.get(q);
 	    fixphis();
 	   
-	    ((ContCodeSSI)hcode).quadSet((Quad)quadmap.get(q));
+	    ((ContCodeSSI)hcode).quadSet(header);
 	   
 	}
+	FOOTER footer=new FOOTER(qf, q, linkFooters.size()+1);
+	Quad.addEdge(header,0,footer,0);
+	Iterator fiterator=linkFooters.iterator();
+	int count=1;
+	while(fiterator.hasNext())
+	    Quad.addEdge((Quad)fiterator.next(), 0, footer, count++);
     }
 
     public void visit(RETURN q) {
@@ -278,7 +282,7 @@ public class CloningVisitor extends QuadVisitor {
 	}
     }
 
-    private HEADER buildEnvironmentExtracter(CALL q, int resumeexception, Quad footer){
+    private HEADER buildEnvironmentExtracter(CALL q, int resumeexception){
 	TempFactory tf=qf.tempFactory();
 	//-----------------------------------------------------------------
 	//Build HEADER
@@ -302,7 +306,7 @@ public class CloningVisitor extends QuadVisitor {
 	//
 	
 	    
-	Quad.addEdge(header,0,footer,0);
+
 	METHOD method=new METHOD(qf,first,params,1);
 	Quad.addEdge(header,1,method,0);
 	Temp tenv=new Temp(tf);
@@ -381,16 +385,45 @@ public class CloningVisitor extends QuadVisitor {
 	}
 	//-----------------------------------------------------------------
 	// Typecast the argument to resume if necessary
-	//XXXXXXXXXXXXXXX
-	//No TYPECAST allowed!!!
 
 	if (!((CALL)q).method().getReturnType().isPrimitive()) {
-	    TYPECAST tc = 
-		new TYPECAST(qf, first, 
-			     ctmap.tempMap(((CALL)q).retval()),
-			     ((CALL)q).method().getReturnType());
-	    Quad.addEdge(prev, 0, tc, 0);
-	    prev = tc;
+	    Temp tresult=new Temp(tf), tnull=new Temp(tf), tresultn=new Temp(tf);
+	   
+	    CONST cn = new CONST(qf, first, tnull,null, HClass.Void);
+	    OPER op = new OPER(qf, first, Qop.ACMPEQ, tresultn,
+			       new Temp[]{ctmap.tempMap(((CALL)q).retval()), tnull});
+	    CJMP cjmp1=new CJMP(qf,first, tresultn, new Temp[0]);
+	    PHI phi=new PHI(qf, first, new Temp[0],2);
+
+	    INSTANCEOF io = new INSTANCEOF (qf, first,
+					    tresult, 
+					    ctmap.tempMap(((CALL)q).retval()),
+					    ((CALL)q).method().getReturnType());
+	    CJMP cjmp=new CJMP(qf, first, tresult, new Temp[0]);
+			       
+	    //String of quads
+	    Quad.addEdges(new Quad[] {prev, cn, op, cjmp1, io, cjmp});
+	    //Okay cases...
+	    Quad.addEdge(cjmp1,1,phi,0);
+	    Quad.addEdge(cjmp, 1, phi, 1);
+	    prev=phi;
+
+	    //Build Exception Thrower
+	    HClass HCex=linker.forName("java.lang.ClassCastException");
+	    Temp tex=new Temp(tf), tex2=new Temp(tf), tex3=new Temp(tf);
+	    NEW nquad=new NEW(qf, first, tex,
+			      HCex);
+	    Temp t1ex=new Temp(tf),t2=new Temp(tf);
+	    CALL call=new CALL(qf, first, HCex.getConstructor(new HClass[0]),
+			       new Temp[]{tex}, null, tex2, false, false,
+			       new Temp[][] {{t1ex,t2}},new Temp[] {tex});
+	    PHI phi2=new PHI(qf, first, new Temp[] {tex3}, new Temp[][]{{t1ex,tex2}},2);
+	    THROW qthrow=new THROW(qf, first, tex3);
+
+	    Quad.addEdge(cjmp,0,nquad,0);
+	    Quad.addEdges(new Quad[] {nquad,call, phi2,qthrow});
+	    Quad.addEdge(call,1,phi2,1);
+	    linkFooters.add(qthrow);
 	}
 	//-----------------------------------------------------------------
 	//Link in header code to body of method
