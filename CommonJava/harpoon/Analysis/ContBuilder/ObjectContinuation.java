@@ -7,7 +7,7 @@ package harpoon.Analysis.ContBuilder;
  * <code>ObjectContinuation</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ObjectContinuation.java,v 1.1 2000-03-17 18:49:06 bdemsky Exp $
+ * @version $Id: ObjectContinuation.java,v 1.2 2000-03-17 19:41:20 bdemsky Exp $
  */
 public abstract class ObjectContinuation implements Continuation {
     protected ObjectResultContinuation next;
@@ -15,6 +15,7 @@ public abstract class ObjectContinuation implements Continuation {
     public void setNext(ObjectResultContinuation next) {
 	this.next = next;
     }
-    
-    public static Object result;
+
+    public Object result;
+    public double done;    
 }

@@ -7,7 +7,7 @@ package harpoon.Analysis.ContBuilder;
  * <code>FloatContinuation</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: FloatContinuation.java,v 1.1 2000-03-17 18:49:06 bdemsky Exp $
+ * @version $Id: FloatContinuation.java,v 1.2 2000-03-17 19:41:20 bdemsky Exp $
  */
 public abstract class FloatContinuation implements Continuation {
     protected FloatResultContinuation next;
@@ -15,4 +15,7 @@ public abstract class FloatContinuation implements Continuation {
     public void setNext(FloatResultContinuation next) {
 	this.next = next;
     }
+    public float result;
+    public boolean done;
 }
+

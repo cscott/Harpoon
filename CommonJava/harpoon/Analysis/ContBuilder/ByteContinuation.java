@@ -7,7 +7,7 @@ package harpoon.Analysis.ContBuilder;
  * <code>ByteContinuation</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ByteContinuation.java,v 1.1 2000-03-17 18:49:05 bdemsky Exp $
+ * @version $Id: ByteContinuation.java,v 1.2 2000-03-17 19:41:19 bdemsky Exp $
  */
 public abstract class ByteContinuation implements Continuation {
     protected ByteResultContinuation next;
@@ -15,4 +15,6 @@ public abstract class ByteContinuation implements Continuation {
     public void setNext(ByteResultContinuation next) {
 	this.next = next;
     }
+    public byte result;
+    public boolean done;
 }
