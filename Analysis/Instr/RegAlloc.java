@@ -82,7 +82,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.3.2.2 2002-02-27 22:23:56 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.3.2.3 2002-04-07 20:59:45 cananian Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -261,8 +261,8 @@ public abstract class RegAlloc  {
 	}
 
 
-	public Collection defC() {
-	    Collection defs = super.defC();
+	public Collection<Temp> defC() {
+	    Collection<Temp> defs = super.defC();
 	    return defs;
 	}
 
