@@ -9,7 +9,9 @@ SCP=scp -A
 MUNGE=bin/munge
 UNMUNGE=bin/unmunge
 
-ALLPKGS = $(shell find . -type d | grep -v CVS | grep -v "^./harpoon" | grep -v "^./silicon" | grep -v "^./doc" | grep -v "^./NOTES" | sed -e "s|^[.]/*||")
+ALLPKGS = $(shell find . -type d | grep -v CVS | \
+		egrep -v "^[.]/(harpoon|silicon|doc|NOTES|bin)" | \
+		sed -e "s|^[.]/*||")
 ALLSOURCE = $(filter-out .%.java, \
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java)))
 
@@ -56,7 +58,7 @@ doc/TIMESTAMP:	$(ALLSOURCE)
 	cd doc; ln -s packages.html index.html
 	cd doc; ln -s index.html API_users_guide.html
 	date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
-	chmod a+rx doc doc/*
+	chmod a+rx doc ; chmod a+r doc/*
 
 doc-install: doc/TIMESTAMP
 	$(SSH) miris.lcs.mit.edu /bin/rm -rf public_html/Projects/Harpoon/doc
