@@ -11,7 +11,7 @@ import java.lang.reflect.Modifier;
  * <code>HFieldImpl</code> is the basic implementation of <code>HField</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldImpl.java,v 1.1.4.4 2000-10-22 08:18:51 cananian Exp $
+ * @version $Id: HFieldImpl.java,v 1.1.4.5 2000-11-12 03:22:34 cananian Exp $
  * @see HField
  */
 abstract class HFieldImpl
@@ -100,21 +100,30 @@ abstract class HFieldImpl
    * <code>HFields</code> are the same if they were declared by the same
    * class and have the same name and type.
    */
-  public boolean equals(Object object) {
+  public boolean equals(Object obj) { return equals(this, obj); }
+  // factored out for re-use
+  static boolean equals(HField _this_, Object obj) {
     HField field;
-    if (object==null) return false;
-    if (this==object) return true;
-    try { field=(HField)object; } catch (ClassCastException e) {return false; }
-    if (getDeclaringClass().getDescriptor().equals
+    if (obj==null) return false;
+    if (_this_==obj) return true;
+    try { field=(HField)obj; } catch (ClassCastException e) {return false; }
+    if (_this_.getDeclaringClass().getDescriptor().equals
 	(field.getDeclaringClass().getDescriptor()) &&
-	getName().equals(field.getName()) &&
-	getType().getDescriptor().equals(field.getType().getDescriptor()))
+	_this_.getName().equals
+	(field.getName()) &&
+	_this_.getType().getDescriptor().equals
+	(field.getType().getDescriptor()))
       return true;
     return false;
   }
 
-  public int hashCode() {
-    return parent.hashCode()^getName().hashCode()^getDescriptor().hashCode();
+  public int hashCode() { return hashCode(this); }
+  // factored out for re-use
+  static int hashCode(HField hf) {
+    return
+      hf.getDeclaringClass().hashCode() ^
+      hf.getName().hashCode() ^
+      hf.getDescriptor().hashCode();
   }
 
   /**
@@ -134,18 +143,20 @@ abstract class HFieldImpl
    * <code>static</code>, <code>final</code>, <code>transient</code>,
    * <code>volatile</code>.
    */
-  public String toString() {
+  public String toString() { return toString(this); }
+  /** For re-use by other classes implement HField. */
+  static String toString(HField hf) {
     StringBuffer r = new StringBuffer();
-    int m = getModifiers();
+    int m = hf.getModifiers();
     if (m!=0) {
       r.append(Modifier.toString(m));
       r.append(' ');
     }
-    r.append(HClass.getTypeName(type));
+    r.append(HClass.getTypeName(hf.getType()));
     r.append(' ');
-    r.append(HClass.getTypeName(parent));
+    r.append(HClass.getTypeName(hf.getDeclaringClass()));
     r.append('.');
-    r.append(getName());
+    r.append(hf.getName());
     return r.toString();
   }
 

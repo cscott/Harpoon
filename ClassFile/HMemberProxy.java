@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * <code>HMember</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMemberProxy.java,v 1.1.4.6 2000-10-22 08:42:42 cananian Exp $
+ * @version $Id: HMemberProxy.java,v 1.1.4.7 2000-11-12 03:22:34 cananian Exp $
  * @see HFieldProxy
  * @see HMethodProxy
  */
@@ -41,13 +41,9 @@ abstract class HMemberProxy implements HMember {
     public int getModifiers() { return proxy.getModifiers(); }
     public boolean isSynthetic() { return proxy.isSynthetic(); }
     public int hashCode() { return hashcode; }
-    public String toString() { return proxy.toString(); }
-    public boolean equals(Object obj) {
-	if (obj instanceof HMemberProxy)
-	    return proxy.equals(((HMemberProxy)obj).proxy);
-	Util.assert(false);// this is usually a bug.
-	return false;
-    }
+    public abstract String toString();
+    public abstract boolean equals(Object obj);
+
     // Comparable interface
     /** Compares two <code>HMember</code>s lexicographically; first by
      *  declaring class, then by name, and lastly by descriptor. */

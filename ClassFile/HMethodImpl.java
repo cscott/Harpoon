@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodImpl.java,v 1.1.4.5 2000-10-22 08:18:51 cananian Exp $
+ * @version $Id: HMethodImpl.java,v 1.1.4.6 2000-11-12 03:22:34 cananian Exp $
  * @see HMethod
  */
 abstract class HMethodImpl
@@ -158,16 +158,18 @@ abstract class HMethodImpl
    * <code>HMethod</code>s are the same if they were declared by the same
    * class and have the same name and formal parameter types.
    */ // in actual practice, I think HMethods are unique.
-  public boolean equals(Object obj) {
+  public boolean equals(Object obj) { return equals(this, obj); }
+  // factored out for re-use.
+  static boolean equals(HMethod _this_, Object obj) {
     HMethod method;
     if (obj==null) return false;
-    if (this==obj) return true; // common case.
+    if (_this_==obj) return true; // common case.
     try { method = (HMethod) obj; }
     catch (ClassCastException e) { return false; }
-    if (!getDeclaringClass().getDescriptor().equals
+    if (!_this_.getDeclaringClass().getDescriptor().equals
 	(method.getDeclaringClass().getDescriptor())) return false;
-    if (!getName().equals(method.getName())) return false;
-    HClass hc1[] = getParameterTypes();
+    if (!_this_.getName().equals(method.getName())) return false;
+    HClass hc1[] = _this_.getParameterTypes();
     HClass hc2[] = method.getParameterTypes();
     if (hc1.length != hc2.length) return false;
     for (int i=0; i<hc1.length; i++)
@@ -176,8 +178,13 @@ abstract class HMethodImpl
     return true;
   }
 
-  public int hashCode() {
-    return parent.hashCode()^getName().hashCode()^getDescriptor().hashCode();
+  public int hashCode() { return hashCode(this); }
+  // factored out for re-use
+  static int hashCode(HMethod hm) {
+    return
+      hm.getDeclaringClass().hashCode() ^
+      hm.getName().hashCode() ^
+      hm.getDescriptor().hashCode();
   }
 
   /**
@@ -200,27 +207,29 @@ abstract class HMethodImpl
    * <code>abstract</code>, <code>static</code>, <code>final</code>, 
    * <code>synchronized</code>, <code>native</code>.
    */
-  public String toString() {
+  public String toString() { return toString(this); }
+  /** For re-use by other classes implementing HMethod. */
+  static String toString(HMethod hm) {
     StringBuffer r = new StringBuffer();
-    int m = getModifiers();
+    int m = hm.getModifiers();
     if (m!=0) {
       r.append(Modifier.toString(m));
       r.append(' ');
     }
-    r.append(HClass.getTypeName(returnType));
+    r.append(HClass.getTypeName(hm.getReturnType()));
     r.append(' ');
-    r.append(HClass.getTypeName(parent));
+    r.append(HClass.getTypeName(hm.getDeclaringClass()));
     r.append('.');
-    r.append(getName());
+    r.append(hm.getName());
     r.append('(');
-    HPointer hcp[] = parameterTypes;
+    HPointer hcp[] = hm.getParameterTypes();
     for (int i=0; i<hcp.length; i++) {
       r.append(HClass.getTypeName(hcp[i]));
       if (i < hcp.length-1)
 	r.append(',');
     }
     r.append(')');
-    HPointer ecp[] = exceptionTypes;
+    HPointer ecp[] = hm.getExceptionTypes();
     if (ecp.length > 0) {
       r.append(" throws ");
       for (int i=0; i<ecp.length; i++) {
