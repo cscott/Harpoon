@@ -41,18 +41,64 @@ public class BasicBlock {
     }
     
     /** BasicBlock generator.
-	requires: All <code>HCodeEdge</code>s linked to by the set of
-	          <code>Edges</code> in the code body have
-		  <code>Edges</code> objects in their <code>to</code>
-		  and <code>from</code> fields.
-	effects:  Creates a set of BasicBlocks corresponding to the
-	          blocks implicitly contained in <code>head</code> and
-		  the <code>Edges</code> objects that
-		  <code>head</code> points to. 
+	<BR> <B>requires:</B> All <code>HCodeEdge</code>s linked to by
+	     the set of <code>Edges</code> in the code body have
+	     <code>Edges</code> objects in their <code>to</code> and
+	     <code>from</code> fields.  <B>NOTE:</B> this really
+	     should be an implicit invariant of <code>Edges</code>.
+	     Convince Scott to change it or let us change it.
+	<BR> <B>effects:</B>  Creates a set of BasicBlocks
+	     corresponding to the blocks implicitly contained in
+	     <code>head</code> and the <code>Edges</code> objects that
+	     <code>head</code> points to, and returns the
+	     <code>BasicBlock</code> that <code>head</code> is the
+	     first instruction in. 
     */
     public static BasicBlock computeBasicBlocks(Edges head) {
-	/* XXX not done yet */
-	return null;
+	Hashtable h = new Hashtable();
+	Worklist w = new WorkSet();
+
+	BasicBlock first = new BasicBlock(head);
+	h.put(head, first);
+	w.push(first);
+	
+	while(!w.isEmpty()) {
+	    BasicBlock current = (BasicBlock) w.pull();
+	    Edges e = (Edges) current.getFirst();
+	    for (;;) {
+		int n = e.succ().length;
+		if (n == 0) 
+		    break; // end of method
+		else if (n > 1) { // control flow split
+		    for (int i=0; i<n; i++) {
+			Edges e_n = (Edges) e.succ()[i];
+			BasicBlock bb = (BasicBlock) h.get(e_n);
+			if (bb == null) {
+			    h.put(e_n, bb=new BasicBlock(e_n));
+			    w.push(bb);
+			}
+			addEdge(current, bb);
+		    }
+		    break;
+		} else {
+		    Edges en = (Edges) e.succ()[0];
+		    int m = en.pred().length;
+		    if (m > 1) { // control flow join
+			BasicBlock bb = (BasicBlock) h.get(en);
+			if (bb == null) {
+			    h.put(en, bb = new BasicBlock(en));
+			    w.push(bb);
+			}
+			addEdge(current, bb);
+			break;
+		    } else {
+			e = en;
+		    }
+		} 
+	    }
+	    current.setLast(e);
+	}
+	return (BasicBlock) h.get(head);
     }
 
     public Edges getFirst() { return first; }
@@ -66,6 +112,9 @@ public class BasicBlock {
     public Enumeration prev() { return pred_bb.elements(); }
     public Enumeration next() { return succ_bb.elements(); }
     
+    /** Returns an <code>Enumeration</code> of <code>Edges</code>
+	within <code>this</code>.  
+    */
     public Enumeration elements() {
 	return new IteratorEnumerator(listIterator());
     }

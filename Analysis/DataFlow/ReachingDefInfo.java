@@ -7,6 +7,10 @@ import harpoon.ClassFile.HCodeElement;
 import java.util.Enumeration;
 import java.util.Map;
 
+/** <code>ReachingDefInfo</code> is a data structure storing
+    information about the sets associated with a
+    <code>BasicBlock</code> in Reaching Definitions Analysis.
+*/ 
 class ReachingDefInfo {
 
   BitString genSet;
