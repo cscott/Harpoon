@@ -31,9 +31,8 @@ void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, l
     if (!contains(pathtable, dstobj)) {
       struct path * path=(struct path *) calloc(1,sizeof(struct path));
       path->prev_obj=obj;
-      path->fieldname=getfieldc(hs->namer, ((struct heap_object *)gettable(ht, obj))->class,"[]");
+      path->fieldname=getfieldc(hs->namer, ((struct heap_object *)gettable(ht, obj))->class,"[]",NULL);
       /*Array dereferences are uniquely classified by array class*/
-      path->fielddesc=NULL;
       path->paramnum=-1;
       puttable(pathtable, dstobj, path);
       newpath=1;
@@ -46,7 +45,7 @@ void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, l
     addeffect(hs, -1, NULL, obj);
 }
 
-void addpath(struct heap_state *hs, long long obj, struct fieldname * field, struct fielddesc * fielddesc, long long dstobj) {
+void addpath(struct heap_state *hs, long long obj, struct fieldname * field, long long dstobj) {
   struct method *method=hs->methodlist;
   int newpath=0,newpatho=0;
   while(method!=NULL) {
@@ -65,7 +64,6 @@ void addpath(struct heap_state *hs, long long obj, struct fieldname * field, str
       struct path * path=(struct path *) calloc(1,sizeof(struct path));
       path->prev_obj=obj;
       path->fieldname=field;
-      path->fielddesc=fielddesc;
       path->paramnum=-1;
       puttable(pathtable, dstobj, path);
       newpath=1;
@@ -493,17 +491,17 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
     }
     path=gettable(pathtable, uid);
     if (path->prev_obj!=-1) {
-      if ((rel==NULL)||((rel->classname!=path->fieldname->classname)||(rel->fielddesc!=path->fielddesc))) {
+      if ((rel==NULL)||((rel->classname!=path->fieldname->classname)||(rel->fielddesc!=path->fieldname->fielddesc))) {
 	struct regexprlist *ere=(struct regexprlist *) calloc(1, sizeof(struct regexprlist));
 	struct regfieldlist *rfl=(struct regfieldlist *) calloc(1, sizeof(struct regfieldlist));
 	ere->multiplicity=0;
 	ere->classname=path->fieldname->classname;
-	ere->fielddesc=path->fielddesc;
+	ere->fielddesc=path->fieldname->fielddesc;
 	ere->fields=rfl;
 	ere->nextreg=rel;
 	rel=ere;
 	rfl->fieldname=path->fieldname;
-	rfl->fielddesc=path->fielddesc;
+	rfl->fielddesc=path->fieldname->fielddesc;
 	/* Now check for loopies */
 	for(i=2;i<=MAXREPSEQ;i++) {
 	  int countmodulo=index % (i);
@@ -639,12 +637,12 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
 	if (rflptr==NULL) {
 	  struct regfieldlist *newfield=(struct regfieldlist *)calloc(1, sizeof(struct regfieldlist));
 	  newfield->fieldname=path->fieldname;
-	  newfield->fielddesc=path->fielddesc;
+	  newfield->fielddesc=path->fieldname->fielddesc;
 	  newfield->nextfld=rel->fields;
 	  rel->fields=newfield;
 	}
       }
-    } else if(path->paramnum==-1&&path->fieldname==NULL&&path->fielddesc==NULL) {
+    } else if(path->paramnum==-1&&path->fieldname==NULL&&path->fieldname->fielddesc==NULL) {
       struct effectregexpr * ere=(struct effectregexpr *)calloc(1, sizeof(struct effectregexpr));
       ere->flag=1;
       ere->paramnum=-1;

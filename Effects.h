@@ -3,7 +3,7 @@
 
 #include "RoleInference.h"
 
-void addpath(struct heap_state *hs, long long obj, struct fieldname * field, struct fielddesc * fielddesc, long long dstobj);
+void addpath(struct heap_state *hs, long long obj, struct fieldname * field, long long dstobj);
 void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, long long dstobj);
 
 /* Path data structure*/
@@ -29,7 +29,6 @@ struct path {
   int paramnum;
   long long prev_obj;
   struct fieldname * fieldname;
-  struct fielddesc * fielddesc;
 };
 
 struct epointerlist {

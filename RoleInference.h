@@ -134,8 +134,8 @@ struct statechangeinfo {
 };
 
 void doincrementalreachability(struct heap_state *hs, struct hashtable *ht, int enterexit);
-struct objectset * dokills(struct heap_state *hs);
-void donews(struct heap_state *hs, struct objectset * os);
+struct objectset * dokills(struct heap_state *hs, struct hashtable *ht);
+void donews(struct heap_state *hs, struct objectset * os, struct hashtable *ht);
 void removelvlist(struct heap_state *, char * lvname, struct method * method);
 void addtolvlist(struct heap_state *,struct localvars *, struct method *);
 void freemethod(struct heap_state *heap, struct method * m);

@@ -219,7 +219,7 @@ void doanalysis() {
 
 #ifdef EFFECTS
 	if ((uid!=-1)&&(objuid!=-1)) {
-	  addpath(&heap, objuid, getfield(heap.namer,classname, fieldname), getdesc(heap.namer, fielddesc), uid);
+	  addpath(&heap, objuid, getfield(heap.namer,classname, fieldname,fielddesc), uid);
 	}
 #endif
 	
@@ -372,17 +372,18 @@ void doanalysis() {
 	struct heap_object * dst=NULL;
 	char classname[1000];
 	char fieldname[1000];
-	sscanf(line,"FA: %lld %s %s %lld", &suid, classname, fieldname, &duid);
+	char descname[1000];
+	sscanf(line,"FA: %lld %s %s %s %lld", &suid, classname, fieldname, descname, &duid);
 	if (suid!=-1)
 	  src=gettable(ht,suid);
 	if (duid!=-1)
 	  dst=gettable(ht,duid);
 	if (src!=NULL) {
-	  dofieldassignment(&heap, src, getfield(heap.namer, classname, fieldname), dst);
-	  addeffect(&heap, suid, getfield(heap.namer, classname, fieldname), duid);
+	  dofieldassignment(&heap, src, getfield(heap.namer, classname, fieldname, descname), dst);
+	  addeffect(&heap, suid, getfield(heap.namer, classname, fieldname, descname), duid);
 	} else {
-	  doglobalassignment(&heap,getfield(heap.namer,classname,fieldname),dst);
-	  addeffect(&heap, -1, getfield(heap.namer, classname, fieldname),duid);
+	  doglobalassignment(&heap,getfield(heap.namer,classname,fieldname, descname),dst);
+	  addeffect(&heap, -1, getfield(heap.namer, classname, fieldname, descname),duid);
 	}
       }
       break;

@@ -16,6 +16,7 @@ struct methodname {
 
 struct fieldname {
   struct classname * classname;
+  struct fielddesc * fielddesc;
   char * fieldname;
 };
 
@@ -27,11 +28,11 @@ struct namer {
 };
 
 struct namer * allocatenamer();
-struct fieldname * getfieldc(struct namer *n,struct classname *cn, char *fieldname);
+struct fieldname * getfieldc(struct namer *n,struct classname *cn, char *fieldname, char * fielddesc);
 struct classname * getclass(struct namer * n, char * classname);
 struct fielddesc * getdesc(struct namer * n, char * fielddesc);
 struct methodname * getmethod(struct namer *n,char *classname, char *methodname, char *signature);
-struct fieldname * getfield(struct namer *n,char *classname, char *mfieldname);
+struct fieldname * getfield(struct namer *n,char *classname, char *fieldname, char * fielddesc);
 int hashclass(struct classname *class);
 int compareclass(struct classname *cl1, struct classname *cl2);
 int hashdesc(struct fielddesc *fd);

@@ -18,8 +18,8 @@
 void doincrementalreachability(struct heap_state *hs, struct hashtable *ht, int enterexit) {
   struct objectset * changedset;
 
-  changedset=dokills(hs);
-  donews(hs, changedset);
+  changedset=dokills(hs,ht);
+  donews(hs, changedset,ht);
 
   {
     /* Kill dead reference structures*/
@@ -93,7 +93,7 @@ void doincrementalreachability(struct heap_state *hs, struct hashtable *ht, int 
   freeobjectset(changedset);
 }
 
-struct objectset * dokills(struct heap_state *hs) {
+struct objectset * dokills(struct heap_state *hs, struct hashtable *ht) {
   /* Flush out old reachability information */
   /* Remove K set */
   struct killtuplelist * kptr=NULL;
@@ -178,6 +178,7 @@ struct objectset * dokills(struct heap_state *hs) {
     /*cycle through the lists*/
     /*adding only if R(t) intersect S!={}*/
     while(fl!=NULL) {
+      addpath(hs, ho->uid, fl->fieldname, fl->object->uid);
       if (matchlist(fl->object->rl, tuple->rl)||((fl->object->reachable==1)&&(tuple->reachable==1))) {
 	struct killtuplelist *ktpl=(struct killtuplelist *) calloc(1,sizeof(struct killtuplelist));
 	struct referencelist *rtmp=tuple->rl;
@@ -208,6 +209,7 @@ struct objectset * dokills(struct heap_state *hs) {
     /*cycle through the lists*/
     /*adding only if R(t) intersect S!={}*/
     while(al!=NULL) {
+      addarraypath(hs, ht, ho->uid, al->object->uid);
       if (matchlist(al->object->rl, tuple->rl)||((al->object->reachable==1)&&(tuple->reachable==1))) {
 	struct killtuplelist *ktpl=(struct killtuplelist *) calloc(1,sizeof(struct killtuplelist));
 	struct referencelist *rtmp=tuple->rl;
@@ -264,7 +266,7 @@ struct objectset * dokills(struct heap_state *hs) {
 
 
 
-void donews(struct heap_state *hs, struct objectset * os) {
+void donews(struct heap_state *hs, struct objectset * os, struct hashtable *ht) {
   struct ositerator *it=getIterator(os);
   struct objectset *N=hs->N;
   while(hasNext(it)) {
@@ -309,10 +311,12 @@ void donews(struct heap_state *hs, struct objectset * os) {
 
       /* Cycle through all fields/array indexes*/
       while(al!=NULL) {
+	addarraypath(hs, ht, object->uid, al->object->uid);
 	propagaterinfo(N, object, al->object);
 	al=al->next;
       }
       while(fl!=NULL) {
+	addpath(hs, object->uid, fl->fieldname, fl->object->uid);
 	propagaterinfo(N, object, fl->object);
 	fl=fl->next;
       }

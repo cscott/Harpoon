@@ -62,8 +62,9 @@ struct methodname * getmethod(struct namer *n,char *classname, char *methodname,
   }
 }
 
-struct fieldname * getfieldc(struct namer *n,struct classname *cn, char *fieldname) {
-  struct fieldname fn={cn, fieldname};
+struct fieldname * getfieldc(struct namer *n,struct classname *cn, char *fieldname, char * fielddesc) {
+  struct fielddesc *fd=getdesc(n, fielddesc);
+  struct fieldname fn={cn, fd, fieldname};
   if (gencontains(n->fieldtable, &fn))
     return gengettable(n->fieldtable, &fn);
   else {
@@ -75,14 +76,16 @@ struct fieldname * getfieldc(struct namer *n,struct classname *cn, char *fieldna
   }
 }
 
-struct fieldname * getfield(struct namer *n,char *classname, char *fieldname) {
+struct fieldname * getfield(struct namer *n,char *classname, char *fieldname, char * fielddesc) {
   struct classname *cn=getclass(n,classname);
-  struct fieldname fn={cn, fieldname};
+  struct fielddesc *fd=getdesc(n, fielddesc);
+  struct fieldname fn={cn, fd, fieldname};
   if (gencontains(n->fieldtable, &fn))
     return gengettable(n->fieldtable, &fn);
   else {
     struct fieldname *nfn=(struct fieldname *)calloc(1,sizeof(struct fieldname));
     nfn->classname=cn;
+    nfn->fielddesc=fd;
     nfn->fieldname=copystr(fieldname);
     genputtable(n->fieldtable, nfn, nfn);
     return nfn;
@@ -107,7 +110,7 @@ int comparedesc(struct fielddesc *fd1, struct fielddesc *fd2) {
 }
 
 int hashmethod(struct methodname *method) {
-  int hashcode=hashclass(method->classname);
+  int hashcode=hashptr(method->classname);
   hashcode^=hashstring(method->methodname);
   hashcode^=hashstring(method->signature);
   return hashcode;
@@ -123,13 +126,15 @@ int comparemethod(struct methodname *m1, struct methodname *m2) {
 }
 
 int hashfield(struct fieldname *fn) {
-  int hashcode=hashclass(fn->classname);
+  int hashcode=hashptr(fn->classname);
   hashcode^=hashstring(fn->fieldname);
+  hashcode^=hashptr(fn->fielddesc);
   return hashcode;
 }
 
 int comparefield(struct fieldname *fn1, struct fieldname *fn2) {
   if ((fn1->classname==fn2->classname)&&
+      (fn1->fielddesc==fn2->fielddesc)&&
       equivalentstrings(fn1->fieldname, fn2->fieldname))
     return 1;
   else return 0;
