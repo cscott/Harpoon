@@ -18,6 +18,7 @@ import harpoon.Analysis.QuadSSA.TypeInfo;
 import harpoon.Util.Tuple;
 import harpoon.Util.WorkSet;
 import harpoon.Analysis.Maps.TypeMap;
+import harpoon.IR.Quads.ReProtection;
 
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -28,12 +29,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Enumeration;
+import java.util.Stack;
 /**
  * <code>ReHandler</code> make exception handling implicit and adds
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.20 1999-08-27 18:12:46 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.21 1999-08-30 22:09:49 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -188,13 +190,23 @@ final class ReHandler {
     }
 
     public static void clean(QuadWithTry code) {
-	WorkSet todo=new WorkSet();
+	Stack todo=new Stack();
 	CleanVisitor v=new CleanVisitor(todo);
-	todo.add(code.getRootElement());
-	while (!todo.isEmpty()) {
-	    ((Quad)todo.pop()).visit(v);
+	todo.push(code.getRootElement());
+	HashMap count=new HashMap();
+	while (!todo.empty()) {
+	    Quad q=(Quad)todo.pop();
+	    if (count.containsKey(q)) {
+		count.put(q, new Integer(((Integer)count.get(q)).intValue()+1));
+	    } else
+		count.put(q, new Integer(1));
+	    q.visit(v);
 	}
-
+	Iterator t=count.keySet().iterator();
+	while (t.hasNext()) {
+	    Quad q=(Quad)t.next();
+	    System.out.println(q+" : "+count.get(q));
+	}
 	Iterator iterate=v.useless().iterator();
 	while (iterate.hasNext()) {
 	    Quad q=(Quad)iterate.next();
@@ -745,17 +757,6 @@ final class ReHandler {
 		    standard(q);
 		} else weird(q);
 	}
-    }
-
-    static final private class ReProtection extends HashSet
-        implements ProtectedSet {
-        ReProtection() { super(); }
-        public boolean isProtected(Quad q) { return contains(q); }
-        public void remove(Quad q) { super.remove(q); }
-        public void insert(Quad q) { super.add(q); }
-        public java.util.Enumeration elements() {
-            return new harpoon.Util.IteratorEnumerator( iterator() );
-        }
     }
 }
 
@@ -1320,12 +1321,12 @@ class TypeVisitor extends QuadVisitor {
 }
 
 class CleanVisitor extends QuadVisitor {
-    Set todo;
+    Stack todo;
     Map map;
     Set usefulquads;
     Set visited;
 
-    public CleanVisitor(Set todo) {
+    public CleanVisitor(Stack todo) {
 	this.todo=todo;
 	//map of quads->set of {temp, quad} pairs
 	this.map=new HashMap();
@@ -1390,7 +1391,7 @@ class CleanVisitor extends QuadVisitor {
 				usefulquads.add(item.asList().get(1));
 				//force reanalysis
 				visited.remove(item.asList().get(1));
-				todo.add(item.asList().get(1));
+				todo.push(item.asList().get(1));
 			    }
 			}
 		    Temp []defs=q.def();
@@ -1408,10 +1409,10 @@ class CleanVisitor extends QuadVisitor {
 	    }
 	    if (change) {
 		for (int i=0;i<q.next().length;i++)
-		    todo.add(q.next(i));
+		    todo.push(q.next(i));
 		Iterator iterateh=HandlerSet.iterator(q.handlers());
 		while (iterateh.hasNext()) {
-		    todo.add(iterateh.next());
+		    todo.push(iterateh.next());
 		}
 	    }
 	} else {
@@ -1429,7 +1430,8 @@ class CleanVisitor extends QuadVisitor {
 			    if (!usefulquads.contains(item.asList().get(1))) {
 				//it is useful now...
 				usefulquads.add(item.asList().get(1));
-				todo.add(item.asList().get(1));
+				visited.remove(item.asList().get(1));
+				todo.push(item.asList().get(1));
 			    }
 			}
 		    Temp []defs=q.def();
@@ -1444,10 +1446,10 @@ class CleanVisitor extends QuadVisitor {
 		}
 	    }
     	    for (int i=0;i<q.next().length;i++)
-		todo.add(q.next(i));
+		todo.push(q.next(i));
 	    Iterator iterateh=HandlerSet.iterator(q.handlers());
 	    while (iterateh.hasNext()) {
-		todo.add(iterateh.next());
+		todo.push(iterateh.next());
 	    }
 	    visited.add(q);
 	}
@@ -1489,10 +1491,10 @@ class CleanVisitor extends QuadVisitor {
 		//pass on changed info
 		if (change) {
 		    for (int i=0;i<q.next().length;i++)
-			todo.add(q.next(i));
+			todo.push(q.next(i));
 		    Iterator iterate=HandlerSet.iterator(q.handlers());
 		    while (iterate.hasNext()) {
-			todo.add(iterate.next());
+			todo.push(iterate.next());
 		    }
 		}
 	    }
@@ -1530,10 +1532,10 @@ class CleanVisitor extends QuadVisitor {
 	    //pass on changed info
 	    
 	    for (int i=0;i<q.next().length;i++)
-		todo.add(q.next(i));
+		todo.push(q.next(i));
 	    Iterator iterate=HandlerSet.iterator(q.handlers());
 	    while (iterate.hasNext()) {
-		todo.add(iterate.next());
+		todo.push(iterate.next());
 	    }
 	    visited.add(q);
 	}

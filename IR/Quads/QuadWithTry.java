@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.12 1999-08-26 22:15:42 bdemsky Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.13 1999-08-30 22:09:50 bdemsky Exp $
  * @see QuadNoSSA
  * @see QuadSSA
  */
@@ -41,6 +41,7 @@ public class QuadWithTry extends Code /* which extends HCode */ {
 	Peephole.normalize(quads);
 	Peephole.optimize(quads, false);
 	ReHandler.clean(this);
+	//Pattern.patternMatch(this);
     }
 
     private QuadWithTry(HMethod parent, Quad quads) {
