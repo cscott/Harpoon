@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.98 2003-10-08 16:27:40 cananian Exp $
+# $Id: GNUmakefile,v 1.99 2004-01-30 11:12:45 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -57,6 +57,7 @@ JDOCFLAGS += \
 	then echo '$(JDOCGROUPS)' ; fi)
 
 SUPPORT := Support/Lex.jar Support/CUP.jar Support/jasmin.jar \
+	   Support/jutil.jar \
 	   Support/minilib.jar Support/cpvm.jar Support/reflect-thunk.jar \
 	   $(wildcard SupportNP/ref.jar) $(wildcard SupportNP/collections.jar)
 SUPPORTP := $(filter-out SupportNP/%,$(SUPPORT))
@@ -65,7 +66,8 @@ ifeq (0, ${MAKELEVEL})
 SUPPORTC:= $(filter-out \
    $(shell chmod u+x bin/test-collections;\
            if bin/test-collections; then echo SupportNP/collections.jar; fi),\
-   $(SUPPORT))
+   $(filter-out Support/minilib.jar Support/cpvm.jar Support/reflect-thunk.jar,\
+	$(SUPPORT)))
 CLASSPATH:=$(subst $(space),:,$(addprefix $(CURDIR)/,$(SUPPORTC))):$(CLASSPATH)
 CLASSPATH:=.:$(CLASSPATH)
 endif
