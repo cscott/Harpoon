@@ -45,7 +45,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.25 1999-08-04 21:46:11 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.26 1999-08-04 22:08:05 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -258,7 +258,7 @@ public class SAFrame extends Frame implements AllocationInfo {
 	    }
 	    
 	};
-
+	// fix Visitors mess
 	return suggests.iterator();
     }
 
