@@ -34,7 +34,7 @@ import harpoon.Temp.TempFactory;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -53,7 +53,7 @@ import java.util.Set;
  * Also transforms the callers of these methods.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: RCTransformer.java,v 1.1 2002-02-28 17:10:24 kkz Exp $
+ * @version $Id: RCTransformer.java,v 1.2 2002-03-07 00:44:32 cananian Exp $
  */
 public class RCTransformer extends 
     harpoon.Analysis.Transformation.MethodSplitter {
