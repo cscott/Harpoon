@@ -14,7 +14,7 @@ import java.util.Enumeration;
  * information about an <code>HClass</code>. 
  *
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * $id$
+ * @version $Id: HClassInfo.java,v 1.1.2.9 1999-02-01 16:44:30 duncan Exp $
  * @see     harpoon.ClassFile.HClass
  */
 
@@ -63,7 +63,7 @@ public class HClassInfo
 
   /**
    * @return the offset of of <code>hf</code> from the initial field.
-   *         For instance, if hf is the 3rd field in its class, 
+   *         For instance, if <code>hf</code> is the 3rd field in its class, 
    *         <code>getFieldOffset</code> returns 2.
    */
   public int getFieldOffset(HField hf)
@@ -73,7 +73,7 @@ public class HClassInfo
 
   /**
    * @return the offset of of <code>hm</code> from the initial method.
-   *         For instance, if hm is the 3rd method in its class, 
+   *         For instance, if <code>hm</code> is the 3rd method in its class, 
    *         <code>getMethodOffset()</code> returns 2.
    */
   public int getMethodOffset(HMethod hm)
