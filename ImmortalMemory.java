@@ -29,6 +29,9 @@ public class ImmortalMemory extends MemoryArea {
      */ 
     public static ImmortalMemory instance() {
 	if (immortalMemory == null) {
+	    if (RealtimeThread.RTJ_init_in_progress) {
+		return (ImmortalMemory)("Constant ImmortalMemory".memoryArea);
+	    }
 	    (immortalMemory = new ImmortalMemory()).enter(new Runnable() {
 		    public void run() {
 			(immortalMemory = new ImmortalMemory()).memoryArea = 

@@ -97,9 +97,10 @@ public abstract class MemoryArea {
     /** */
 
     public void enter(Runnable logic) {
+	RealtimeThread.checkInit();
 	RealtimeThread current = RealtimeThread.currentRealtimeThread();
 	MemoryArea oldMem = current.getMemoryArea();
-	current.enterFromMemArea(this);
+	current.enter(this);
 	try {
 	    logic.run();
 	} catch (Exception e) {
@@ -143,7 +144,9 @@ public abstract class MemoryArea {
 	    return RealtimeThread.currentRealtimeThread().getMemoryArea();
 //    	    return NullMemoryArea.instance();
 	} 
-	if (mem.constant) { // Constants are allocated out of ImmortalMemory
+	if (mem.constant) { 
+	    // Constants are allocated out of ImmortalMemory
+	    // Also, static objects before RTJ is setup...
 	    return ImmortalMemory.instance();
 	}
 	return mem;
@@ -194,6 +197,7 @@ public abstract class MemoryArea {
     public Object newArray(final Class type, final int number) 
 	throws IllegalAccessException, InstantiationException, OutOfMemoryError
     {
+	RealtimeThread.checkInit();
 	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
 	MemoryArea rtMem = rt.getMemoryArea();
 	Object o; 
@@ -229,6 +233,7 @@ public abstract class MemoryArea {
 			   final int[] dimensions) 
 	throws IllegalAccessException, OutOfMemoryError
     {
+	RealtimeThread.checkInit();
 	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
 	MemoryArea rtMem = rt.getMemoryArea();
 	Object o;
@@ -276,6 +281,7 @@ public abstract class MemoryArea {
 			      final Object[] parameters) 
 	throws IllegalAccessException, InstantiationException,
 	OutOfMemoryError {
+	RealtimeThread.checkInit();
 	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
 	Object o = new Object();
 	/* Something our compiler isn't smart enough to figure out. */

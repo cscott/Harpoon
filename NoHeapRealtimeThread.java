@@ -6,7 +6,8 @@ package javax.realtime;
 /** <code>NoHeapRealtimeThread</code> is a <code>RealtimeThread</code> that
  *  cannot access the heap or write to the heap or manipulate references to
  *  the heap, but does have a higher priority than the 
- *  <code>GarbageCollector</code>.
+ *  <code>GarbageCollector</code>.  Remember, you can't .start a 
+ *  heap-allocated <code>NoHeapRealtimeThread</code>.
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
@@ -79,4 +80,11 @@ public class NoHeapRealtimeThread extends RealtimeThread {
     public String toString() {
 	return "NoHeapRealtimeThread";
     }
+
+    /** A print method that's safe to call from a NoHeapRealtimeThread.
+     */
+    public native static void print(String s);
+    public native static void print(double d);
+    public native static void print(int n);
+    public native static void print(long l);
 }

@@ -20,18 +20,25 @@ class MemAreaStack {
      */
     public MemAreaStack next;
 
+    /** The number of HeapMemorys skipped over.
+     */
+    public int heapMemCount;
+
     /** Create a new, null MemAreaStack.
      */
     public MemAreaStack() {
 	next = null;
 	entry = null;
+	heapMemCount = 0;
     }
 
     /** Push the MemoryArea on the cactus stack. 
      */
-    public MemAreaStack(MemoryArea entry, MemAreaStack next) {
+    public MemAreaStack(MemoryArea entry, MemAreaStack next, 
+			int heapMemCount) {
 	this.entry = entry;
 	this.next = next;
+	this.heapMemCount = heapMemCount;
     }
 
     /** Get the MemAreaStack of the first occurance of the 
@@ -54,7 +61,7 @@ class MemAreaStack {
      */
     public String toString() {
 	if (next != null) {
-	    return entry.toString()+"\n"+next.toString();
+	    return entry.toString()+", "+heapMemCount+"\n"+next.toString();
 	} else {
 	    return "";
 	}

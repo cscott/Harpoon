@@ -74,6 +74,42 @@ public final class Stats {
     /** How many pointers to the heap were dereferenced? */
     public static long heapRefs = 0;
 
+    /** How many checks on READ of a base pointer were there? */
+    public static long READ_CHECKS = 0;
+
+    /** How many base pointers on READ were actually pointing to the heap? */
+    public static long READ_REFS = 0;
+    
+    /** How many checks on WRITE to a location were there? */
+    public static long WRITE_CHECKS = 0;
+    
+    /** How many checks on WRITE to a location previously pointing to the heap?
+     */
+    public static long WRITE_REFS = 0;
+    
+    /** How many checks on NATIVECALL returns were there? */
+    public static long NATIVECALL_CHECKS = 0;
+    
+    /** How many NATIVECALL's returned something that pointed to the heap? */
+    public static long NATIVECALL_REFS = 0;
+
+    /** How many checks on CALL returns were there? */
+    public static long CALL_CHECKS = 0;
+
+    /** How many CALL's returned something that pointed to the heap? */
+    public static long CALL_REFS = 0;
+
+    /** How many checks on METHOD calls were there? */
+    public static long METHOD_CHECKS = 0;
+
+    /** How many parameters passed into METHODs were actually pointing to 
+     *  the heap? 
+     */
+    public static long METHOD_REFS = 0;
+
+    /** Should we still be collecting heap reference statistics? */
+    public static long COLLECT_HEAP_STATS = 1;
+
     /** Has anything been added?  If not, it's possible that the user
      *  did not compile with the _STATS compiler option to add Runtime
      *  statistics to the compiled output. 
@@ -82,7 +118,7 @@ public final class Stats {
     
     /** Add an access check from one MemoryArea to another MemoryArea. 
      */
-    public final static void addCheck(MemoryArea from,
+    public synchronized final static void addCheck(MemoryArea from,
 				      MemoryArea to) {
 	touched = true;
 	if (from.heap) {
@@ -115,7 +151,7 @@ public final class Stats {
 
     /** Add a new object to the statistics for that MemoryArea. 
      */
-    public final static void addNewObject(MemoryArea to) {
+    public synchronized final static void addNewObject(MemoryArea to) {
 	touched = true;
 	if (to.heap) {
 	    NEW_HEAP++;
@@ -129,7 +165,7 @@ public final class Stats {
     
     /** Add a new array object to the statistics for that MemoryArea. 
      */
-    public final static void addNewArrayObject(MemoryArea to) {
+    public synchronized final static void addNewArrayObject(MemoryArea to) {
 	touched = true;
 	if (to.heap) {
 	    NEW_ARRAY_HEAP++;
@@ -151,47 +187,100 @@ public final class Stats {
      *  significant time to collect information about your program.
      */
 
-    public final static void print() {
+    public synchronized final static void print() {
+        COLLECT_HEAP_STATS = 0;
 	if (touched) {
-	    System.err.println("-------------------------------------");
-	    System.err.println("Dynamic statistics for Realtime Java:");
-	    System.err.println("Number of access checks: " + accessChecks);
-	    System.err.println("Number of objects created: " + newObjects);
-	    System.err.println("Number of array objects created: " + 
-			       newArrayObjects);
-	    System.err.println("-------------------------------------");
+	    NoHeapRealtimeThread.print("-------------------------------------\n");
+	    NoHeapRealtimeThread.print("Dynamic statistics for Realtime Java:\n");
+	    NoHeapRealtimeThread.print("Number of access checks: ");
+	    NoHeapRealtimeThread.print(accessChecks);
+	    NoHeapRealtimeThread.print("\nNumber of objects created: ");
+	    NoHeapRealtimeThread.print(newObjects);
+	    NoHeapRealtimeThread.print("\nNumber of array objects created: ");
+	    NoHeapRealtimeThread.print(newArrayObjects);
+	    NoHeapRealtimeThread.print("\n-------------------------------------\n");
 	    
-	    System.err.println("Checks:");
-	    System.err.println("  Heap     -> Heap:    " + HEAP_TO_HEAP);	
-	    System.err.println("  Heap     -> Scope:   " + HEAP_TO_SCOPE);
-	    System.err.println("  Heap     -> Immortal:" + HEAP_TO_IMMORTAL);
-	    System.err.println("  Scope    -> Heap:    " + SCOPE_TO_HEAP);
-	    System.err.println("  Scope    -> Scope:   " + SCOPE_TO_SCOPE);
-	    System.err.println("  Scope    -> Immortal:" + SCOPE_TO_IMMORTAL);
-	    System.err.println("  Immortal -> Heap:    " + IMMORTAL_TO_HEAP);
-	    System.err.println("  Immortal -> Scope:   " + IMMORTAL_TO_SCOPE);
-	    System.err.println("  Immortal -> Immortal:" + IMMORTAL_TO_IMMORTAL);
-	    System.err.println();
-	    System.err.println("New objects: ");
-	    System.err.println("  in heap:    " + NEW_HEAP);
-	    System.err.println("  in scope:   " + NEW_SCOPE);
-	    System.err.println("  in immortal:" + NEW_IMMORTAL);
-	    System.err.println();
-	    System.err.println("New arrays: ");
-	    System.err.println("  in heap:    " + NEW_ARRAY_HEAP);
-	    System.err.println("  in scope:   " + NEW_ARRAY_SCOPE);
-	    System.err.println("  in immortal:" + NEW_ARRAY_IMMORTAL);
+	    NoHeapRealtimeThread.print("Checks:\n  Heap     -> Heap:    ");
+	    NoHeapRealtimeThread.print(HEAP_TO_HEAP);
+	    NoHeapRealtimeThread.print("\n  Heap     -> Scope:   ");
+	    NoHeapRealtimeThread.print(HEAP_TO_SCOPE);
+	    NoHeapRealtimeThread.print("\n  Heap     -> Immortal:");
+	    NoHeapRealtimeThread.print(HEAP_TO_IMMORTAL);
+	    NoHeapRealtimeThread.print("\n  Scope    -> Heap:    ");
+	    NoHeapRealtimeThread.print(SCOPE_TO_HEAP);
+	    NoHeapRealtimeThread.print("\n  Scope    -> Scope:   ");
+	    NoHeapRealtimeThread.print(SCOPE_TO_SCOPE);
+	    NoHeapRealtimeThread.print("\n  Scope    -> Immortal:");
+	    NoHeapRealtimeThread.print(SCOPE_TO_IMMORTAL);
+	    NoHeapRealtimeThread.print("\n  Immortal -> Heap:    ");
+	    NoHeapRealtimeThread.print(IMMORTAL_TO_HEAP);
+	    NoHeapRealtimeThread.print("\n  Immortal -> Scope:   ");
+	    NoHeapRealtimeThread.print(IMMORTAL_TO_SCOPE);
+	    NoHeapRealtimeThread.print("\n  Immortal -> Immortal:");
+	    NoHeapRealtimeThread.print(IMMORTAL_TO_IMMORTAL);
+	    NoHeapRealtimeThread.print("\n\nNew objects: \n  in heap:    ");
+	    NoHeapRealtimeThread.print(NEW_HEAP);
+	    NoHeapRealtimeThread.print("\n  in scope:   ");
+	    NoHeapRealtimeThread.print(NEW_SCOPE);
+	    NoHeapRealtimeThread.print("\n  in immortal:");
+	    NoHeapRealtimeThread.print(NEW_IMMORTAL);
+	    NoHeapRealtimeThread.print("\n\nNew arrays: ");
+	    NoHeapRealtimeThread.print("\n  in heap:    ");
+	    NoHeapRealtimeThread.print(NEW_ARRAY_HEAP);
+	    NoHeapRealtimeThread.print("\n  in scope:   ");
+	    NoHeapRealtimeThread.print(NEW_ARRAY_SCOPE);
+	    NoHeapRealtimeThread.print("\n  in immortal:");
+	    NoHeapRealtimeThread.print(NEW_ARRAY_IMMORTAL);
 	    if ((heapChecks!=0)||(heapRefs!=0)) {
-		System.err.println();
-		System.err.println("Heap checks: " + heapChecks);
-		System.err.println("Heap references: " + heapRefs);
+		NoHeapRealtimeThread.print("\n\nHeap checks: ");
+		NoHeapRealtimeThread.print(heapChecks);
+		NoHeapRealtimeThread.print(" refs: ");
+		NoHeapRealtimeThread.print(heapRefs);
+		NoHeapRealtimeThread.print("\n  Write checks: ");
+		NoHeapRealtimeThread.print(WRITE_CHECKS);
+		NoHeapRealtimeThread.print(" refs: ");
+		NoHeapRealtimeThread.print(WRITE_REFS);
+		NoHeapRealtimeThread.print("\n  Read checks: ");
+		NoHeapRealtimeThread.print(READ_CHECKS);
+		NoHeapRealtimeThread.print(" refs: ");
+		NoHeapRealtimeThread.print(READ_REFS);
+		NoHeapRealtimeThread.print("\n  NATIVECALL checks: ");
+		NoHeapRealtimeThread.print(NATIVECALL_CHECKS);
+		NoHeapRealtimeThread.print(" refs: ");
+		NoHeapRealtimeThread.print(NATIVECALL_REFS);
+		NoHeapRealtimeThread.print("\n  CALL checks: ");
+		NoHeapRealtimeThread.print(CALL_CHECKS);
+		NoHeapRealtimeThread.print(" refs: ");
+		NoHeapRealtimeThread.print(CALL_REFS);
+		NoHeapRealtimeThread.print("\n  METHOD checks: ");
+		NoHeapRealtimeThread.print(METHOD_CHECKS);
+		NoHeapRealtimeThread.print(" refs: ");
+		NoHeapRealtimeThread.print(METHOD_REFS);
 	    }
 
-	    System.err.println("-------------------------------------");
-	    
+	    NoHeapRealtimeThread.print("\n-------------------------------------\n");
+	    if ((HEAP_TO_HEAP+HEAP_TO_SCOPE+HEAP_TO_IMMORTAL+SCOPE_TO_HEAP+
+		 SCOPE_TO_SCOPE+SCOPE_TO_IMMORTAL+IMMORTAL_TO_HEAP+
+		 IMMORTAL_TO_SCOPE+IMMORTAL_TO_IMMORTAL)!=accessChecks) {
+	      NoHeapRealtimeThread.print("Access checks don't add up!\n");
+	    }
+	    if ((NEW_HEAP+NEW_SCOPE+NEW_IMMORTAL)!=newObjects) {
+	      NoHeapRealtimeThread.print("New object's don't add up!\n");
+	    }
+	    if ((NEW_ARRAY_HEAP+NEW_ARRAY_SCOPE+
+		 NEW_ARRAY_IMMORTAL)!=newArrayObjects) {
+	      NoHeapRealtimeThread.print("New array objects don't add up!\n");
+	    }
+	    if ((WRITE_CHECKS+READ_CHECKS+NATIVECALL_CHECKS+CALL_CHECKS+
+		 METHOD_CHECKS)!=heapChecks) {
+	      NoHeapRealtimeThread.print("Heap checks just don't add up!\n");
+	    }
+	    if ((WRITE_REFS+READ_REFS+NATIVECALL_REFS+CALL_REFS+
+		 METHOD_REFS)!=heapRefs) {
+	      NoHeapRealtimeThread.print("Heap refs just don't add up!\n");
+	    }	    
 	} else {
-	    System.err.println();
-	    System.err.println("Did you forget to compile with the -t STATS option?");
+	    NoHeapRealtimeThread.print("\nDid you forget to compile with the -t STATS option?\n\n");
 	}
     }
 }
