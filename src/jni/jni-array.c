@@ -90,7 +90,7 @@ type##Array FNI_New##name##Array(JNIEnv *env, jsize length) {\
 		     sizeof(struct aarray) + sizeof(type)*length);\
   if (result==NULL) return NULL; /* bail on error */\
   ((struct aarray *)FNI_UNWRAP(result))->length = length;\
-  ASSIGN_UID;
+  ASSIGN_UID;\
   return (type##Array) result;\
 }
 /* special object fixup if we're building with role inference support */
