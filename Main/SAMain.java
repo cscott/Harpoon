@@ -63,7 +63,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.31 1999-09-11 18:25:13 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.32 1999-09-13 08:35:42 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -76,7 +76,7 @@ public class SAMain extends harpoon.IR.Registration {
     private static boolean QUIET = false;
     
     private static java.io.PrintWriter out = 
-	new java.io.PrintWriter(System.out, true);;
+	new java.io.PrintWriter(System.out, true);
         
     private static String className;
     private static String classHierarchyFilename;

@@ -9,11 +9,11 @@ package harpoon.Util;
  * since a mark.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Environment.java,v 1.1.2.1 1999-08-29 04:23:07 cananian Exp $
+ * @version $Id: Environment.java,v 1.1.2.2 1999-09-13 08:35:42 cananian Exp $
  */
 public interface Environment extends java.util.Map {
     /** A abstract property for marks into an environment. */
-    public interface Mark { };
+    public interface Mark { }
 
     /** Get a mark that will allow you to restore the current state of
      *  this environment. */

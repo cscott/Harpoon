@@ -19,7 +19,7 @@ import java.util.Set;
  * permitted.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinomialMap.java,v 1.1.2.3 1999-06-20 22:03:43 cananian Exp $
+ * @version $Id: BinomialMap.java,v 1.1.2.4 1999-09-13 08:35:42 cananian Exp $
  */
 public class BinomialMap extends AbstractMap implements Cloneable {
     private static final boolean debug=false;
@@ -380,7 +380,7 @@ public class BinomialMap extends AbstractMap implements Cloneable {
 	    ((n.sibling==null) ||  // either left-most, or
 	     ((n.degree < n.sibling.degree) && // strictly increasing
 	      isHeapOrdered(n.sibling, c)));   // and sibling well-formed.
-    };
+    }
     /** Self-test function. */
     public static void main(String argv[]) {
 	Comparator ic = new Comparator() { // integer comparator.
