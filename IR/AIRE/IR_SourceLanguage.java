@@ -7,12 +7,29 @@ package harpoon.IR.AIRE;
  * which specifies the original source language in which an 
  * AIRE/CE fragment originated.
  */
-public abstract class IR_SourceLanguage {
-    public static int IR_VHDL87_SOURCE = 0;
-    public static int IR_VHDL93_SOURCE = 1;
-    public static int IR_VHDL98_SOURCE = 2;
-    public static int IR_VHDLAMS98_SOURCE = 3;
-    public static int IR_VERILOG95_SOURCE = 4;
-    public static int IR_VERILOG98_SOURCE = 5;
-    public static int IR_JAVA_SOURCE = 6;
+public class IR_SourceLanguage {
+    public final static IR_SourceLanguage IR_VHDL87_SOURCE = _(0);
+    public final static IR_SourceLanguage IR_VHDL93_SOURCE = _(1);
+    public final static IR_SourceLanguage IR_VHDL98_SOURCE = _(2);
+    public final static IR_SourceLanguage IR_VHDLAMS98_SOURCE = _(3);
+    public final static IR_SourceLanguage IR_VERILOG95_SOURCE = _(4);
+    public final static IR_SourceLanguage IR_VERILOG98_SOURCE = _(5);
+    public final static IR_SourceLanguage IR_JAVA_SOURCE = _(6);
+
+    public String toString() {
+	if (this==IR_VHDL87_SOURCE) return "IR_VHDL87_SOURCE";
+	if (this==IR_VHDL93_SOURCE) return "IR_VHDL93_SOURCE";
+	if (this==IR_VHDL98_SOURCE) return "IR_VHDL98_SOURCE";
+	if (this==IR_VHDLAMS98_SOURCE) return "IR_VHDLAMS98_SOURCE";
+	if (this==IR_VERILOG95_SOURCE) return "IR_VERILOG95_SOURCE";
+	if (this==IR_VERILOG98_SOURCE) return "IR_VERILOG98_SOURCE";
+	if (this==IR_JAVA_SOURCE) return "IR_JAVA_SOURCE";
+	throw new Error("Unknown IR_SourceLanguage: "+_source);
+    }
+    
+    // private implementation.
+    private final int _source;
+    private IR_SourceLanguage(int source) { _source = source; }
+    private static IR_SourceLanguage _(int source)
+    { return new IR_SourceLanguage(source); }
 }

@@ -11,8 +11,20 @@ package harpoon.IR.AIRE;
  * type must include the following labels prior to any labels associated
  * with completely new, instantiable IIR extension classes:
  */
-public abstract class IR_SignalKind {
-    public static int IR_NO_SIGNAL_KIND = 0;
-    public static int IR_REGISTER_KIND = 1;
-    public static int IR_BUS_KIND = 2;
+public class IR_SignalKind {
+    public final static IR_SignalKind IR_NO_SIGNAL_KIND = _(0);
+    public final static IR_SignalKind IR_REGISTER_KIND = _(1);
+    public final static IR_SignalKind IR_BUS_KIND = _(2);
+
+    public String toString() {
+	if (this==IR_NO_SIGNAL_KIND) return "IR_NO_SIGNAL_KIND";
+	if (this==IR_REGISTER_KIND) return "IR_REGISTER_KIND";
+	if (this==IR_BUS_KIND) return "IR_BUS_KIND";
+	throw new Error("Unknown signal kind: "+_signal_kind);
+    }
+
+    // Private implementation.
+    private final int _signal_kind;
+    private IR_SignalKind(int signal_kind) { _signal_kind = signal_kind; }
+    private static IR_SignalKind _(int sk) { return new IR_SignalKind(sk); }
 }
