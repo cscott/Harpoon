@@ -27,7 +27,7 @@ import java.util.Arrays;
  * single-entry single-exit region.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrGroup.java,v 1.1.2.5 2001-06-19 16:22:27 pnkfelix Exp $ */
+ * @version $Id: InstrGroup.java,v 1.1.2.6 2001-06-19 16:30:14 pnkfelix Exp $ */
 public class InstrGroup {
     Type type;
     Instr entry, exit;
@@ -107,6 +107,9 @@ public class InstrGroup {
 	}
 
 	public HCodeElement[] getLastElements(HCode hcode) { 
+	    // FSK: is this even necessary?  It was w/o exit mapping,
+	    // but w/ exit mapping, I think that this loop is just an
+	    // identity transform.  Should look into it later.
 	    HCodeElement[] hces = hcode.getLeafElements();
 	    if (hces != null) { // null allowed?  has been so far...
 		for(int i=0; i<hces.length; i++) {
