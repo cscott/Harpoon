@@ -1,7 +1,7 @@
 /* ==== machdep.h ============================================================
  * Copyright (c) 1993 Chris Provenzano, proven@athena.mit.edu
  *
- * $Id: engine-i386-linux-1.0.h,v 1.4 2002-09-06 16:06:06 wbeebee Exp $
+ * $Id: engine-i386-linux-1.0.h,v 1.5 2002-09-13 13:14:17 wbeebee Exp $
  */
 #ifndef MACHDEP
 #define MACHDEP
@@ -100,8 +100,16 @@ __BEGIN_DECLS
 void *  __machdep_stack_alloc       __P((size_t));
 void    __machdep_stack_free        __P((void *));
 
+void machdep_restore_state();
 int 	machdep_save_state      __P((void));
 
+void __machdep_pthread_create(struct machdep_pthread *machdep_pthread,
+			      void *(* start_routine)(), void *start_argument,
+			      long stack_size, long nsec, long flag);
+
+void machdep_restore_float_state();
+void machdep_save_float_state();
 
 __END_DECLS
 #endif /*MACHDEP*/
+
