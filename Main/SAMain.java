@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.152 2001-06-17 02:58:15 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.153 2001-06-18 04:14:29 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -334,6 +334,11 @@ public class SAMain extends harpoon.IR.Registration {
 	    hcf = new harpoon.Analysis.Quads.DispatchTreeTransformation
 		(hcf, classHierarchy).codeFactory();
 	    */
+	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    hcf = new harpoon.Analysis.Quads.MemoryOptimization
+		(hcf, classHierarchy, new CallGraphImpl(classHierarchy, hcf))
+		.codeFactory();
 	}
 
 	if (OPTIMIZE) {
