@@ -18,10 +18,10 @@ import harpoon.Util.Util;
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultNameMap.java,v 1.1.2.3 1999-10-13 18:24:41 cananian Exp $
+ * @version $Id: DefaultNameMap.java,v 1.1.2.4 1999-10-17 17:41:16 cananian Exp $
  */
 public class DefaultNameMap extends NameMap {
-    private static final String member_prefix = "_Java_";
+    private static final String member_prefix = "_Flex_";
     private static final String class_prefix = "_Class_";
     private static final String primitive_prefix = "_Primitive_";
     private static final String string_prefix = "_String_";
