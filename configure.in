@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.74 $)dnl
+AC_REVISION($Revision: 1.75 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -149,7 +149,6 @@ AC_ARG_WITH(thread-model,
 thread_model="$withval", thread_model="none")
 case "$thread_model" in
 user)  AC_MSG_RESULT([user space threads])
-	AM_CONDITIONAL(USER_THREADS, test "$thread_model" = "user")	
 	AC_DEFINE(WITH_USER_THREADS, 1,
 		  [Define if you want to use user thread support])
 	CFLAGS="-DGC_USER_THREADS $CFLAGS"
@@ -199,6 +198,7 @@ none)   AC_MSG_RESULT([no thread support])
 	;;
 *)	AC_MSG_ERROR([unknown threading model: $thread_model]) ;;
 esac
+AM_CONDITIONAL(USER_THREADS, test "$thread_model" = "user")	
 if test $thread_model != none; then
 	AC_DEFINE(WITH_THREADS, 1,
 		  [Define if you want support for threads])
