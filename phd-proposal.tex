@@ -1,0 +1,193 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: phd-proposal.tex,v 1.1 2004-08-17 00:59:11 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[12pt,oneside]{article}
+%\usepackage{pdffonts}
+\usepackage{beton}\usepackage{euler}
+\usepackage{comdef}
+
+\linespread{1.2}
+
+\title{{\large Master's Thesis proposal for}\\
+FLEX: An Optimizing Java Compiler using SSI Form}
+\author{C. Scott Ananian}
+\date{March 1999\\\vspace{5pt}}
+
+\begin{document}
+\bibliographystyle{abbrv}
+\begin{titlepage}
+\setlength{\baselineskip}{0.9\baselineskip}
+\newcommand{\nl}{\\[0.4\baselineskip]}
+\newcommand{\tight}{\\[-0.1\baselineskip]}
+\newcommand{\tighter}{\\[-0.2\baselineskip]}
+\begin{centering}\large
+Massachusetts Institute Of Technology\tight
+Department of Electrical Engineering and Computer Science\nl
+%
+Proposal for Thesis Research in Partial Fulfillment\tight
+of the Requirements for the Degree of\tight
+Master of Engineering\nl
+\end{centering}
+\vspace{0.1cm}
+\begin{tabbing}
+Title: \textbf{FLEX: An Optimizing Java Compiler using SSI Form}\nl
+Submitted By: \= C. Scott Ananian \hspace{3cm}\=\rule{6cm}{0.5pt}\tighter
+              \> Ashdown House, Room 510A     \>(signature)\tighter
+              \> Cambridge, MA 02139\nl
+Date of Submission: March 1999\nl
+Expected Date of Completion: September 1999\nl
+Laboratory where thesis will be done: Laboratory for Computer
+Science%\nl
+\end{tabbing}
+Brief Statement of the Problem:
+
+An investigation into the use of novel intermediate representations is
+proposed in the context of a sophisticated compiler for the Java
+programming language.  The compiler will be constructed and both
+theoretical and practical methods will be used to evaluate the
+effectiveness of the intermediate representation.  Analysis and
+optimization techniques based on the representation will be
+implemented and presented.
+
+~\\Supervision Agreement:
+
+The program outlined in the proposal is adequate for a Master's
+thesis.  The supplies and facilities are available, and I am willing
+to supervise the research and evaluate the thesis report.
+
+\begin{tabbing}
+\hspace{3.5in}\=\kill
+\>\rule{2.5in}{0.5pt}\\
+\>M. Rinard, Prof. of Comp. Sci.\\
+\end{tabbing}
+
+\end{titlepage}
+
+The FLEX compiler project is an ongoing effort to create intelligent
+compiler technology to address embedded system and hardware design
+issues for safe high-level languages, in particular, Java.
+Current compilers have difficulty understanding  enough of the
+high-level structure 
+of a program to do reasonable optimization of threading and memory
+management code, especially when pointers are present. Among the goals
+of the FLEX project are automatic code partitioning for distributed
+systems, memory allocation strategy conversion for embedded systems,
+and the use of Java as a high-level hardware description language.
+
+This thesis concentrates on the code representation used in the
+FLEX compiler; specifically, on Static Single Information (SSI)
+form, which is introduced as a more general replacement for the
+prevalent SSA form.  Despite industry adoption
+\cite{chow97:ssapre,chow96:hssa}, SSA form \cite{cytron91:ssa} is
+widely acknowledged to have weaknesses, particularly for backwards
+dataflow analyses \cite{johnson93:dfg}.  The FLEX project plans to utilize
+\emph{predicated analysis}, which uses control-path information to
+derive constraints on values; SSA form falls short in this application
+as well.  In addition, there are no clearly defined semantics for SSA
+form for use with the techniques of abstract interpretation
+\cite{pingali90:dfg}.
+
+We are proposing SSI form as a remedy for these deficiencies. The
+proposed form is symmetrical for both forward and
+reverse dataflow analysis, and represents information generated both
+at variable definitions and at branches in control flow.  It seems
+possible to create efficient creation and analysis algorithms based on
+cycle equivalence properties of the underlying control-flow graph;
+this work will attempt to construct and describe these algorithms and
+prove their correctness.  Further, we will attempt to enumerate a
+precise semantics for SSI form that will enable its use for abstract
+interpretation and hardware compilation.
+
+SSI form seems to enable simple and efficient code optimization, with obvious
+benefits over SSA form for constructs (such as null-pointer and
+array-bounds checks) common in Java code.  In addition, a novel
+bitwidth analysis will be attempted which is suitable for both hardware
+synthesis and code generation for vector units such as Intel's MMX.
+Loop analyses, reverse dataflow analysis, and constraint systems can be
+reexamined using SSI form; we hope to be able to derive new analyses
+and more efficient versions of existing analyses.  Furthermore, it
+seems that there exists a connection to the dataflow computing work of
+Traub \cite{traub86:ttda}; we will investigate and describe the ways
+our work intersects the field of dataflow computing.
+
+\begin{table}[t]\centering
+\newcommand{\major}[2]{\textbf{#1}\dotfill\textbf{#2}}
+\newcommand{\minor}[2]{~~#1\dotfill #2\hspace*{0.75cm}}
+\begin{tabular}{|l|}\hline
+Task\hfill Hours\\\hline
+\major{Implementation (total)}{130}\\
+ \minor{Compiler infrastructure}{50}\\
+ \minor{SSI construction algorithms}{40}\\
+ \minor{Analysis and optimization algorithms}{40}\\
+\major{Analysis (total)}{100}\\
+ \minor{Properties of form}{30}\\
+ \minor{Properties of construction algorithms}{20}\\
+ \minor{Power and complexity of SSI-based analyses\ldots}{20}\\
+ \minor{Properties of extended \ssiplus\ form}{30}\\
+\major{Data collection (total)}{50}\\
+ \minor{Time complexity of algorithms}{20}\\
+ \minor{Effectiveness of optimization techniques}{20}\\
+ \minor{Interpretation of collected data}{10}\\
+\major{Preparation of report}{80}\\\hline
+%\hfill Total:\hspace{1cm}\textbf{180}\\\hline
+\end{tabular}
+\caption{Time budget for proposed tasks.}\label{tab:time}
+\end{table}
+The thesis procedure will involve analysis, implementation, and data
+collection.  Table~\ref{tab:time} summarizes the amount of time we
+plan to spend on each task.  The next paragraphs will lay out the work
+roughly chronologically.
+
+The first task will be the completion of portions of
+the existing FLEX compiler infrastructure in order to support our
+research.  We have budgeted 50 hours for this over the course of the
+project, but only about 30 hours will be needed before we can begin
+implementing the SSI algorithms.  Prior to implementation---and
+probably during, as bugs are discovered---we will need to formalize the
+definitions of the proposed SSI form and prove properties needed for
+our algorithms.  We will probably iterate the
+analysis/implementation cycle in order to improve our implementation's
+efficiency.  In sum, we have allotted 90 hours to the SSI construction
+algorithms and analysis of the form.
+
+We will then use the constructed SSI representation as the base for
+optimization and analysis techniques.  Again, the time complexity and
+effectiveness properties of the algorithms need to be analyzed
+concurrent with their implementation.  For this we have allocated a
+total of 60 hours.
+
+Somewhat orthogonally, the extended \ssiplus\ form will be
+investigated as a foundation for abstract analysis and hardware
+compilation techniques.  It is not clear that time limitations will
+permit extensive implementation for this extended form; we have
+allocated 30 hours for the analysis.  As time permits we will attempt
+implementation.
+
+In order to support our complexity and effectiveness claims, we plan
+on using the FLEX compiler infrastructure to generate dynamic
+statistics for real-world Java code.  The remainder of the ``general
+infrastructure'' time
+budget will probably be spent improving the compiler back-end to allow
+our benchmarks to generate useful data.  Twenty hours for collecting time
+complexity data and another twenty for optimization effectiveness data
+seem reasonable.  Another ten hours is allotted for visualization and
+interpretation of the data.
+
+Finally, we plan on spending about 80 hours clarifying algorithms,
+generating figures, and writing proofs and text in the preparation of
+the thesis report.
+
+Only computer facilities will be needed for this work; the research
+will be conducted in the Laboratory for Computer Science.
+
+The favorable analysis properties of SSI form are, at this time,
+central to the advanced analysis goals of the FLEX compiler project.
+In addition, SSI form seems to enable new applications outside the
+scope of typical compilers.  It is our goal to present a report
+confirming the usefulness of the SSI form with hard data on
+efficient construction algorithms and effective sparse optimizations
+using the form.  In addition, the graph-theoretic structure and
+properties of the form will be enumerated to spark further applications.
+
+\bibliography{harpoon}
+\end{document}
