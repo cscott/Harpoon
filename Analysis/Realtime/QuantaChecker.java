@@ -31,6 +31,7 @@ import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.Tree;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Exp;
+import harpoon.IR.Tree.ExpList;
 import harpoon.IR.Tree.TreeCode;
 import harpoon.IR.Tree.Typed;
 import harpoon.IR.Tree.Type;
@@ -46,7 +47,7 @@ import java.io.PrintWriter;
 
 /**
  * @author  Bryan Fink <wingman@mit.edu>
- * @version $Id: QuantaChecker.java,v 1.4 2002-04-10 03:01:16 cananian Exp $
+ * @version $Id: QuantaChecker.java,v 1.5 2002-06-25 19:39:59 dumi Exp $
  */
 public class QuantaChecker extends MethodMutator
 {
@@ -63,13 +64,10 @@ public class QuantaChecker extends MethodMutator
 	    return hc;
 	}
 	final Linker linker = hclass.getLinker();
-
+	
 	TreeVisitor visitor = new TreeVisitor() {
 		public void visit(METHOD e)
 		{
-		    //if(QuantaThread.timerFlag)
-		    //
-
 		    TreeFactory tf = e.getFactory();
 		    Stm stuff = addJump(linker, hc, tf, e);
 		    //make placebo label to hold parent of e while we mess with it
@@ -99,61 +97,38 @@ public class QuantaChecker extends MethodMutator
 
     protected Stm addJump(Linker linker, HCode hc, TreeFactory tf, Stm e)
     {
-      HField field = linker.forName("javax.realtime.QuantaThread").getField("timerFlag");  // get flag field
-	
-	MEM mem = new MEM(tf, e, Typed.INT,
-			  new NAME(tf, e, tf.getFrame().getRuntime().getNameMap().label(field))); //get memory at flag field
-
-	Label flagTrue = new Label("quantaFlagTrue"); //true jump
-	Label flagFalse = new Label("quantaFlagFalse"); //false jump
-	CJUMP test = new CJUMP(tf, e, mem, flagTrue, flagFalse); //test
-
-	LABEL trueJumpLabel = new LABEL(tf, e, flagTrue, false); //true jump
-	LABEL falseJumpLabel = new LABEL(tf, e, flagFalse, false); //false jump
 	
 	harpoon.IR.Tree.Code code = (harpoon.IR.Tree.Code) hc; //cast to Code
 	DerivationGenerator dg = (DerivationGenerator) code.getTreeDerivation(); //get DerivationGenerator
 
 	NATIVECALL handleFlag = addCheck(tf, e, dg); //get call to C function
 
-	HMethod javaFlagMethod = null;
-	try { javaFlagMethod = linker.forName("javax.realtime.QuantaThread").getMethod("flagHandler", new HClass[] {}); } // get java flag handler 
-	catch(NoSuchMethodError nsme) {
-	  System.out.println("Unable to get method flagHandler in javax.realtime.QuantaThread ("+nsme+")"); }
-	CALL javaHandleFlag = null;
-	if(javaFlagMethod != null)
-	 {
-	     NAME jmeth = new NAME(tf, e, tf.getFrame().getRuntime().getNameMap().label(javaFlagMethod));
-	     NAME falseJump = new NAME(tf, e, flagFalse);
-	     Temp Tobj = new Temp(tf.tempFactory(), "rt");
-	     javaHandleFlag = new CALL(tf, e, null, 
-				       (TEMP) DECLARE(dg, HClass.Void, Tobj,
-						     new TEMP(tf, e, Type.POINTER, Tobj)),
-				       jmeth, null, falseJump, false);
-	 }
-	
 	List stmlist = new ArrayList(); //create stmt list
-	stmlist.add(test);              //add test
-	stmlist.add(trueJumpLabel);     //add true location
 	stmlist.add(handleFlag);        //add c func call
-	if(javaHandleFlag != null)
-	    stmlist.add(javaHandleFlag);    //add java func call
-	stmlist.add(falseJumpLabel);    //add false location
 	return Stm.toStm(stmlist);      //create final stmt
     }
 
     protected NATIVECALL addCheck(TreeFactory tf, HCodeElement source,
 			   DerivationGenerator dg)
     {
+	CONST zero1 = new CONST(tf, source, 0);
+	CONST zero2 = new CONST(tf, source, 0);
+	CONST one = new CONST(tf, source, 1);
+	List list = new ArrayList();
+	list.add(zero1);
+	list.add(zero2);
+	list.add(one);
+	ExpList args = ExpList.toExpList(list);
+
 	Label func = new Label(tf.getFrame().getRuntime().getNameMap()
-			       .c_function_name("HandleQuantaFlag"));
+			       .c_function_name("CheckQuanta"));
 	return new NATIVECALL
 	    (tf, source,
 	     null,
 	     (NAME)
 	     DECLARE(dg, HClass.Void/*our quanta flag handler*/,
 		     new NAME(tf, source, func)),
-	     null);
+	     args);
     }
     protected static Exp DECLARE(DerivationGenerator dg, HClass hc, Exp exp) {
 	if (dg!=null) dg.putType(exp, hc);
@@ -167,3 +142,4 @@ public class QuantaChecker extends MethodMutator
 
     
 }
+

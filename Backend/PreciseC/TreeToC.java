@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.5 2002-06-06 17:40:19 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.6 2002-06-25 19:40:05 dumi Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -446,7 +446,7 @@ public class TreeToC extends java.io.PrintWriter {
 	}
 	public void visit(CALL e) {
 	    Set liveo = liveObjects(e);
-	    pw.print("\t"); emitPush(liveo); pw.print(";"); nl();
+	    pw.print("\t"); emitPush(liveo); pw.print(";\n"); nl();
 	    suppress_directives++;
 	    String nh = inh.requiresHandler(e) ? "" : "_NH";
 	    boolean callv = (e.getRetval()==null);
@@ -475,14 +475,14 @@ public class TreeToC extends java.io.PrintWriter {
 	    pw.print("), ");
 	    trans(e.getRetex());
 	    pw.print(", "+label(e.getHandler().label));
-	    pw.print(", "); emitPop(liveo); pw.print(");");
+	    pw.print(", "); emitPop(liveo); pw.print(");\n");
 	    suppress_directives--;
 	    nl();
 	}
 	public void visit(CJUMP e) {
 	    pw.print("\tif ("); trans(e.getTest()); pw.print(")");
-	    pw.print(" goto "+label(e.iftrue)+";");
-	    pw.print(" else goto "+label(e.iffalse)+";");
+	    pw.print(" goto "+label(e.iftrue)+";\n");
+	    pw.print(" else goto "+label(e.iffalse)+";\n");
 	    nl();
 	}
 	public void visit(CONST e) {
@@ -544,7 +544,7 @@ public class TreeToC extends java.io.PrintWriter {
 	    throw new Error("Non-canonical tree form.");
 	}
 	public void visit(EXPR e) {
-	    pw.print("\t"); trans(e.getExp()); pw.print(";"); nl();
+	    pw.print("\t"); trans(e.getExp()); pw.print(";\n"); nl();
 	}
 	public void visit(JUMP e) {
 	    pw.print("\tgoto ");
@@ -648,7 +648,7 @@ public class TreeToC extends java.io.PrintWriter {
 	public void visit(MOVE e) {
 	    pw.print("\t");
 	    trans(e.getDst()); pw.print(" = "); trans(e.getSrc());
-	    pw.print(";"); nl();
+	    pw.print(";\n"); nl();
 	}
 	public void visit(NAME e) { visit(e, true); }
 	public void visit(NAME e, boolean take_address) {
@@ -681,7 +681,7 @@ public class TreeToC extends java.io.PrintWriter {
 
 	    Set liveo = liveObjects(e);
 	    if (!nopush) { // "special" functions known not to be gc-points.
-		pw.print("\t"); emitPush(liveo); pw.print(";"); nl();
+		pw.print("\t"); emitPush(liveo); pw.print(";\n"); nl();
 	    }
 	    pw.print("\t");
 	    if (e.getRetval()!=null) {
@@ -710,19 +710,19 @@ public class TreeToC extends java.io.PrintWriter {
 		trans(el.head);
 		if (el.tail!=null) pw.print(", ");
 	    }
-	    pw.print(");"); nl();
+	    pw.print(");\n"); nl();
 	    if (!nopush) { // "special" functions known not to be gc-points.
-		pw.print("\t"); emitPop(liveo); pw.print(";"); nl();
+		pw.print("\t"); emitPop(liveo); pw.print(";\n"); nl();
 	    }
 	}
 	public void visit(RETURN e) {
 	    if (isVoidMethod)
-		pw.print("\tRETURNV();");
+		pw.print("\tRETURNV();\n");
 	    else {
 		suppress_directives++;
 		pw.print("\tRETURN("+ctype(this.method.getReturnType())+",");
 		trans(e.getRetval());
-		pw.print(");");
+		pw.print(");\n");
 		suppress_directives--;
 	    }
 	    nl();
@@ -739,18 +739,18 @@ public class TreeToC extends java.io.PrintWriter {
 	    // declare the temp, if it hasn't already been seen.
 	    if (!temps_seen.contains(e.temp)) {
 		temps_seen.add(e.temp);
-		pwa[MD].println("\tregister "+ctype(e)+" "+e.temp+";");
+		pwa[MD].println("\tregister "+ctype(e)+" "+e.temp+";\n");
 	    }
 	    pw.print(e.temp);
 	}
 	public void visit(THROW e) {
 	    suppress_directives++;
 	    if (isVoidMethod) {
-		pw.print("\tTHROWV("); trans(e.getRetex()); pw.print(");");
+		pw.print("\tTHROWV("); trans(e.getRetex()); pw.print(");\n");
 	    } else {
 		pw.print("\tTHROW("+ctype(this.method.getReturnType())+", ");
 		trans(e.getRetex());
-		pw.print(");");
+		pw.print(");\n");
 	    }
 	    suppress_directives--;
 	    nl();
