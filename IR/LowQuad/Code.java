@@ -20,7 +20,7 @@ import java.util.Hashtable;
  * <code>Code</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.3 1999-02-01 00:40:34 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.4 1999-02-03 06:02:14 duncan Exp $
  */
 public class Code extends harpoon.IR.Quads.Code /* which extends HCode */ 
     implements harpoon.IR.Properties.Derivation
@@ -28,7 +28,7 @@ public class Code extends harpoon.IR.Quads.Code /* which extends HCode */
     /** The name of this code view. */
     public static final String codename = "low-quad";
     /** Hashtable to implement derivation map. */
-    private Hashtable hD = new Hashtable();
+    protected Hashtable hD = new Hashtable();
 
     /** Make the quad factory. */
     protected harpoon.IR.Quads.QuadFactory newQF(final HMethod parent) {
@@ -52,7 +52,7 @@ public class Code extends harpoon.IR.Quads.Code /* which extends HCode */
 	quads = Translate.translate((LowQuadFactory)this.qf, qsa,
 				    tym, fm, hD);
     }
-    private Code(HMethod parent, Quad quads) {
+    protected Code(HMethod parent, Quad quads) {
 	super(parent, quads);
     }
     /** Clone this code representatino.  The clone has its own copy of
