@@ -17,7 +17,7 @@ import java.io.PrintWriter;
  * <code>Main</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.8.2.9 1999-09-07 04:55:14 cananian Exp $
+ * @version $Id: Main.java,v 1.8.2.10 1999-09-08 16:35:36 cananian Exp $
  */
 public abstract class Main extends harpoon.IR.Registration {
 
@@ -30,7 +30,7 @@ public abstract class Main extends harpoon.IR.Registration {
 
 	HCodeFactory hcf = // default code factory.
 	    harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
-	    (harpoon.IR.Quads.QuadSSA.codeFactory()
+	    (harpoon.IR.Quads.QuadSSI.codeFactory()
 	     );
 	int n=0;  // count # of args/flags processed.
 	for (; n < args.length ; n++) {

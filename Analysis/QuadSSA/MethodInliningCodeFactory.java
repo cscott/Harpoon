@@ -7,7 +7,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
-import harpoon.IR.Quads.QuadSSA;
+import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.Quad;
@@ -41,7 +41,7 @@ import harpoon.ClassFile.HCodeElement;
  * facilities for specifying number of recursive inlinings.
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.7 1999-04-20 19:04:07 pnkfelix Exp $ */
+ * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.8 1999-09-08 16:35:19 cananian Exp $ */
 public class MethodInliningCodeFactory implements HCodeFactory {
 
     static PrintWriter pw = new PrintWriter(System.out);
@@ -56,20 +56,20 @@ public class MethodInliningCodeFactory implements HCodeFactory {
     private HashSet currentlyInlining;
 
     /** Creates a <code>MethodInliningCodeFactory</code>, using the
-	default code factory for QuadSSA. 
+	default code factory for QuadSSI. 
     */ 
     public MethodInliningCodeFactory() {
-        parent = new CachingCodeFactory(QuadSSA.codeFactory());
+        parent = new CachingCodeFactory(QuadSSI.codeFactory());
 	inlinedSites = new HashSet();
     }
 
     /** Creates a <code>MethodInliningCodeFactory</code>, using
 	<code>parentFactory</code>. 
         <BR> <B>requires:</B> <code>parentFactory</code> produces
-	                      "quad-ssa" code. 
+	                      "quad-ssi" code. 
     */
     public MethodInliningCodeFactory(HCodeFactory parentFactory) {
-        Util.assert(parentFactory.getCodeName().equals(QuadSSA.codename));
+        Util.assert(parentFactory.getCodeName().equals(QuadSSI.codename));
 	parent = parentFactory;
 	inlinedSites = new HashSet();
     }
@@ -80,7 +80,7 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	<code>this.convert(m).getName()</code> for every 
 	<code>HMethod m</code>. 
      */
-    public String getCodeName() { return QuadSSA.codename; }
+    public String getCodeName() { return QuadSSI.codename; }
 
     /** Removes representation of method <code>m</code> from all caches
 	in this factory and its parents.
@@ -99,12 +99,12 @@ public class MethodInliningCodeFactory implements HCodeFactory {
        method. 
      */
     public HCode convert(HMethod m) {  
-	QuadSSA newCode = (QuadSSA) parent.convert(m);
+	QuadSSI newCode = (QuadSSI) parent.convert(m);
 	if (newCode == null) return null;
 	
 	// The below was added in response to Scott's request that the
 	// HCode be cloned prior to being fuddled with by the Inliner
-	newCode = (QuadSSA) newCode.clone( m );
+	newCode = (QuadSSI) newCode.clone( m );
 
 	Quad[] ql = (Quad[]) newCode.getElements();
 	QuadVisitor qv;

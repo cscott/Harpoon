@@ -60,7 +60,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.19 1999-09-08 00:36:59 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.20 1999-09-08 16:35:36 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -87,7 +87,7 @@ public class SAMain extends harpoon.IR.Registration {
     public static void main(String[] args) {
 	HCodeFactory hcf = // default code factory.
 	    // harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
-	    (harpoon.IR.Quads.QuadSSA.codeFactory()
+	    (harpoon.IR.Quads.QuadSSI.codeFactory()
 	     );
 
 	parseOpts(args);

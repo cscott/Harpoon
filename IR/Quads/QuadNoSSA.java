@@ -15,9 +15,9 @@ import java.util.Hashtable;
  * It does not have <code>HANDLER</code> quads, and is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadNoSSA.java,v 1.1.2.13 1999-08-07 04:35:20 cananian Exp $
+ * @version $Id: QuadNoSSA.java,v 1.1.2.14 1999-09-08 16:35:33 cananian Exp $
  * @see QuadWithTry
- * @see QuadSSA
+ * @see QuadSSI
  */
 public class QuadNoSSA extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -30,7 +30,7 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 	this.quads = UnHandler.unhandler(this.qf, qwt, coalesce);
 	Peephole.optimize(this.quads, true);
     }
-    QuadNoSSA(QuadSSA qsa) {
+    QuadNoSSA(QuadSSI qsa) {
 	super(qsa.getMethod(), null);
 	ToNoSSA translator = new ToNoSSA(this.qf, qsa);
 	this.quads = translator.getQuads();
@@ -52,7 +52,7 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
     public String getName() { return codename; }
 
     /** Return a code factory for <code>QuadNoSSA</code>, given a code
-     *  factory for <code>QuadWithTry</code> or <code>QuadSSA</code>.
+     *  factory for <code>QuadWithTry</code> or <code>QuadSSI</code>.
      *  Given a code factory for <code>Bytecode</code>, chain through
      *  <code>QuadWithTry.codeFactory()</code>.  */
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
@@ -66,12 +66,12 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
 	    };
-	} else if (hcf.getCodeName().equals(QuadSSA.codename)) {
+	} else if (hcf.getCodeName().equals(QuadSSI.codename)) {
 	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
-			new QuadNoSSA((QuadSSA)c);
+			new QuadNoSSA((QuadSSI)c);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }

@@ -21,14 +21,14 @@ import harpoon.Util.Worklist;
  * <code>PrintTypes</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: TypesMain.java,v 1.1.2.5 1999-08-04 05:52:36 cananian Exp $
+ * @version $Id: TypesMain.java,v 1.1.2.6 1999-09-08 16:35:36 cananian Exp $
  */
 public class TypesMain extends harpoon.IR.Registration {
     public static void main(String args[]) {
 	if (args.length >= 2) {
 	    java.io.PrintWriter pw = new java.io.PrintWriter(System.out, true);
 	    HCodeFactory hcf =
-		new CachingCodeFactory(harpoon.IR.Quads.QuadSSA.codeFactory());
+		new CachingCodeFactory(harpoon.IR.Quads.QuadSSI.codeFactory());
 	    HClass hcl = HClass.forName(args[0]);
 	    HMethod hm[] = hcl.getDeclaredMethods();
 	    ClassHierarchy ch = null;

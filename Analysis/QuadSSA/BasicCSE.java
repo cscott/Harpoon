@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * common subexpression elemination, but only within basic blocks.
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: BasicCSE.java,v 1.2.2.4 1999-08-04 05:52:23 cananian Exp $
+ * @version $Id: BasicCSE.java,v 1.2.2.5 1999-09-08 16:35:19 cananian Exp $
  */
 
 public class BasicCSE  {
@@ -62,7 +62,7 @@ public class BasicCSE  {
     }
 
     /** Eliminates common subexpression within basic blocks 
-     *	in quad-ssa <code>HCode</code>. Uses value numbering algorithm. */
+     *	in quad-ssi <code>HCode</code>. Uses value numbering algorithm. */
     public static void optimize (HCode hc) {
 	BasicBlock[] bbs=findBasicBlocks((Quad)hc.getRootElement());
 	// for all basic blocks

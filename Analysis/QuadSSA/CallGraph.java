@@ -16,7 +16,7 @@ import java.util.Vector;
  * <code>CallGraph</code> constructs a simple directed call graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.4.2.6 1999-02-03 23:10:51 pnkfelix Exp $
+ * @version $Id: CallGraph.java,v 1.4.2.7 1999-09-08 16:35:19 cananian Exp $
  */
 
 public class CallGraph  {
@@ -24,11 +24,11 @@ public class CallGraph  {
     final ClassHierarchy ch;
     /** Creates a <code>CallGraph</code> using the specified 
      *  <code>ClassHierarchy</code>. <code>hcf</code> must be a code
-     *  factory that generates quad-ssa or quad-no-ssa form. */
+     *  factory that generates quad-ssi or quad-no-ssa form. */
     public CallGraph(ClassHierarchy ch, HCodeFactory hcf) {
 	// this is maybe a little too draconian
 	Util.assert(hcf.getCodeName()
-		    .equals(harpoon.IR.Quads.QuadSSA.codename) ||
+		    .equals(harpoon.IR.Quads.QuadSSI.codename) ||
 		    hcf.getCodeName()
 		    .equals(harpoon.IR.Quads.QuadNoSSA.codename));
 	this.ch = ch;

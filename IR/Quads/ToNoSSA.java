@@ -25,7 +25,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.17 1999-08-09 20:28:48 duncan Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.18 1999-09-08 16:35:33 cananian Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -60,9 +60,9 @@ public class ToNoSSA implements Derivation, TypeMap
 
     public ToNoSSA(final QuadFactory newQF, Code code,
 		   Derivation derivation, TypeMap typeMap) {
-	Util.assert(code.getName().equals("quad-ssa") ||
-		    code.getName().equals("low-quad-ssa") ||
-		    code.getName().equals("quad-with-try"));
+	Util.assert(code.getName().equals(harpoon.IR.Quads.QuadSSI.codename) ||
+		    code.getName().equals(harpoon.IR.LowQuad.LowQuadSSA.codename) ||
+		    code.getName().equals(harpoon.IR.Quads.QuadWithTry.codename));
     
 	final Map dT = new HashMap();
 

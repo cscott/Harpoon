@@ -9,7 +9,7 @@ import harpoon.ClassFile.HCodeFactory;
  * environment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Options.java,v 1.1.2.2 1999-08-30 23:05:34 cananian Exp $
+ * @version $Id: Options.java,v 1.1.2.3 1999-09-08 16:35:36 cananian Exp $
  */
 public class Options {
     /** Stream for writing statistics. */
@@ -25,7 +25,7 @@ public class Options {
 	if (name=="to-quad")
 	    return harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
 	if (name=="to-quad-ssi")
-	    return harpoon.IR.Quads.QuadSSA.codeFactory(hcf);
+	    return harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
 	if (name=="to-low-quad")
 	    return harpoon.IR.LowQuad.LowQuadNoSSA.codeFactory(hcf);
 	if (name=="to-low-quad-ssa")

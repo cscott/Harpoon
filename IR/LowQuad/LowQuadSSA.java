@@ -13,7 +13,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
 import harpoon.IR.Quads.Quad;
-import harpoon.IR.Quads.QuadSSA;
+import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.ToNoSSA;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -26,7 +26,7 @@ import java.util.Map;
  * representation in SSA form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.20 1999-08-09 21:58:25 duncan Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.21 1999-09-08 16:35:30 cananian Exp $
  */
 public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
     private Derivation  m_derivation;
@@ -36,7 +36,7 @@ public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
     public static final String codename  = "low-quad-ssa";
 
     /** Creates a <code>LowQuadSSA</code> object from a QuadSSA object */
-    LowQuadSSA(final QuadSSA code) {
+    LowQuadSSA(final QuadSSI code) {
 	super(code.getMethod(), null);
 	final Map dT = new HashMap();
 	final Map tT = new HashMap();
@@ -90,22 +90,22 @@ public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
 
     /**
      * Return a code factory for <code>LowQuadSSA</code>, given a 
-     * code factory for <code>QuadSSA</code>.
+     * code factory for <code>QuadSSI</code>.
      * <BR> <B>effects:</B> if <code>hcf</code> is a code factory for
-     *      <code>QuadSSA</code>, then creates and returns a code
+     *      <code>QuadSSI</code>, then creates and returns a code
      *      factory for <code>LowQuadSSA</code>.  Else passes
      *      <code>hcf</code> to
-     *      <code>QuadSSA.codeFactory()</code>, and reattempts to
+     *      <code>QuadSSI.codeFactory()</code>, and reattempts to
      *      create a code factory for <code>LowQuadSSA</code> from the
-     *      code factory returned by <code>QuadSSA</code>.
-     * @see QuadSSA#codeFactory(HCodeFactory)
+     *      code factory returned by <code>QuadSSI</code>.
+     * @see QuadSSI#codeFactory(HCodeFactory)
      */
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
-	if (hcf.getCodeName().equals(QuadSSA.codename)) {
+	if (hcf.getCodeName().equals(QuadSSI.codename)) {
 	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
-		    return (c==null) ? null : new LowQuadSSA((QuadSSA)c);
+		    return (c==null) ? null : new LowQuadSSA((QuadSSI)c);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
@@ -114,7 +114,7 @@ public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
 	else {
 	    //throw new Error("don't know how to make " + codename +
 	    //	" from " + hcf.getCodeName());
-	    return codeFactory(QuadSSA.codeFactory(hcf));
+	    return codeFactory(QuadSSI.codeFactory(hcf));
 	}
     }
   
@@ -123,7 +123,7 @@ public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
      * code factory for <code>harpoon.IR.LowQuad.Code</code>
      */
     public static HCodeFactory codeFactory() {  
-	return codeFactory(QuadSSA.codeFactory());
+	return codeFactory(QuadSSI.codeFactory());
     }
 
     // obsolete

@@ -23,7 +23,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.18 1999-09-04 20:36:26 sportbilly Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.19 1999-09-08 16:35:25 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -127,7 +127,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	// put the root entry on the worklist and mark it executable.
 	HCodeElement root = hc.getRootElement();
 	Util.assert(root instanceof Quad,
-		    "SCC analysis works only on QuadSSA form.");
+		    "SCC analysis works only on QuadSSI form.");
 	Wq.push(root);
 	Eq.union(root);
 

@@ -18,7 +18,7 @@ import java.util.Iterator;
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.2.2.7 1999-08-07 02:14:18 cananian Exp $
+ * @version $Id: Graph.java,v 1.2.2.8 1999-09-08 16:35:37 cananian Exp $
  */
 
 public abstract class Graph  {
@@ -53,7 +53,7 @@ public abstract class Graph  {
 		    label = (j==0)?"false":"true";
 		else
 		    label = Integer.toString(j);
-		// also print which_pred of edge, for QuadSSA.
+		// also print which_pred of edge, for QuadSSI.
 		if (next[j] instanceof harpoon.IR.Quads.Edge &&
 		    ((HasEdges)next[j].to()).pred().length > 1)
 		    label = ((label==null)?"":label) + "[" + 

@@ -6,7 +6,7 @@ package harpoon.ClassFile;
 /**
  * An <code>HCodeFactory</code> makes an <code>HCode</code> from an
  * <code>HMethod</code>. For example, an 
- * <code>HCodeFactory</code> may make an <code>harpoon.IR.Quads.QuadSSA</code>
+ * <code>HCodeFactory</code> may make an <code>harpoon.IR.Quads.QuadSSI</code>
  * from a <code>harpoon.IR.Bytecode.Code</code>, calling
  * <code>HMethod.getCode("bytecode")</code> to get the source representation
  * for the conversion.  The <code>HCodeFactory</code> should call 
@@ -14,7 +14,7 @@ package harpoon.ClassFile;
  * to cache the result.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCodeFactory.java,v 1.4.2.3 1999-02-01 00:40:31 cananian Exp $
+ * @version $Id: HCodeFactory.java,v 1.4.2.4 1999-09-08 16:35:28 cananian Exp $
  */
 
 public interface HCodeFactory  {

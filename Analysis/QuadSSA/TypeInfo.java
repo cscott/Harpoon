@@ -16,10 +16,10 @@ import harpoon.Util.HClassUtil;
 import java.util.Vector;
 import java.util.Hashtable;
 /**
- * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
+ * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.8 1999-08-09 20:26:01 duncan Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.9 1999-09-08 16:35:19 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
@@ -30,7 +30,7 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
     /** Creates a <code>TypeInfo</code> analyzer for the specified
      *  <code>HCode</code>.
      */
-    public TypeInfo(harpoon.IR.Quads.QuadSSA hc, UseDefMap usedef) { 
+    public TypeInfo(harpoon.IR.Quads.QuadSSI hc, UseDefMap usedef) { 
 	this.usedef = usedef; 
 	analyze(hc);
     }
@@ -38,13 +38,13 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
     /** Creates a <code>TypeInfo</code> analyzer for the specified
      *  <code>HCode</code>. 
      */
-    public TypeInfo(harpoon.IR.Quads.QuadSSA hc) { this(hc, new UseDef()); }
+    public TypeInfo(harpoon.IR.Quads.QuadSSI hc) { this(hc, new UseDef()); }
     
     public HClass typeMap(HCodeElement hce, Temp t) { 
 	return (HClass) map.get(t); 
     }
 
-    private void analyze(harpoon.IR.Quads.QuadSSA hc) {
+    private void analyze(harpoon.IR.Quads.QuadSSI hc) {
 	Quad ql[] = (Quad[]) hc.getElements();
 	
 	Worklist worklist = new UniqueFIFO();
@@ -77,10 +77,10 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
     }
 
     class TypeInfoVisitor extends QuadVisitor {
-	harpoon.IR.Quads.QuadSSA hc;
+	harpoon.IR.Quads.QuadSSI hc;
 	boolean modified = false;
 	Hashtable checkcast;
-	TypeInfoVisitor(harpoon.IR.Quads.QuadSSA hc, Hashtable checkcast) 
+	TypeInfoVisitor(harpoon.IR.Quads.QuadSSI hc, Hashtable checkcast) 
 	{ this.hc = hc; this.checkcast = checkcast; }
 
 	public void visit(Quad q) { modified = false; }

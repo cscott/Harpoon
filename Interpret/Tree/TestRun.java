@@ -28,14 +28,14 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TestRun.java,v 1.1.2.9 1999-09-06 18:45:12 duncan Exp $
+ * @version $Id: TestRun.java,v 1.1.2.10 1999-09-08 16:35:35 cananian Exp $
  */
 public abstract class TestRun extends HCLibrary {
     public static void main(String args[]) {
 	java.io.PrintWriter out = new java.io.PrintWriter(System.err, true);
 	
 	HCodeFactory hcf = // default code factory.
-	    harpoon.IR.Quads.QuadSSA.codeFactory();
+	    harpoon.IR.Quads.QuadSSI.codeFactory();
 	HCodeFactory hcfOpt;
 
 	// Cache all conversions we make in the ClassHierarchy

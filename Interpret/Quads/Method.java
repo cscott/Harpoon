@@ -10,7 +10,7 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMember;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
-import harpoon.IR.Quads.QuadSSA;
+import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.IR.Quads.QuadWithTry;
 import harpoon.IR.Quads.QuadVisitor;
@@ -57,7 +57,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.13 1999-08-07 11:20:19 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.14 1999-09-08 16:35:34 cananian Exp $
  */
 public final class Method extends HCLibrary {
 
@@ -169,7 +169,7 @@ public final class Method extends HCLibrary {
 	    Interpreter i;
 	    if (c instanceof QuadWithTry)
 		i = new ImplicitI(ss, sf, params);
-	    else if (c instanceof QuadNoSSA || c instanceof QuadSSA)
+	    else if (c instanceof QuadNoSSA || c instanceof QuadSSI)
 		i = new ExplicitI(ss, sf, params);
 	    else throw new Error("What kinda code is this!?");
 	    

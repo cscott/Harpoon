@@ -22,17 +22,17 @@ import java.util.Vector;
  * in the Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FixupFunc.java,v 1.1.2.5 1999-08-04 04:31:23 cananian Exp $
+ * @version $Id: FixupFunc.java,v 1.1.2.6 1999-09-08 16:35:33 cananian Exp $
  * @see Translate
  */
 
 class FixupFunc  {
-    static void fixup(QuadSSA c) {
+    static void fixup(QuadSSI c) {
 	DomTree  dt = new DomTree(false);// dominator tree
 	place(c);
 	rename(c, dt);
     }
-    private static void place(QuadSSA c) {
+    private static void place(QuadSSI c) {
 	Place P = new Place(c);
 	int phicount=0, sigcount=0, quadcount=0;
 	
@@ -71,7 +71,7 @@ class FixupFunc  {
 	if (harpoon.Main.Options.statWriter!=null)
 	    harpoon.Main.Options.statWriter.println("PHISIG: "+quadcount+" "+phicount+" "+sigcount+" "+(phicount+sigcount));
     }
-    private static void rename(final QuadSSA c, final DomTree dt) {
+    private static void rename(final QuadSSI c, final DomTree dt) {
 	final FFCount Count = new FFCount();
 	final FFStack Stack = new FFStack();
 	

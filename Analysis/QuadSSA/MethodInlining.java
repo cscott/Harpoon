@@ -6,7 +6,7 @@ package harpoon.Analysis.QuadSSA;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Quads.QuadSSA;
+import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.METHOD;
@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  * 
  * @deprecated This will be replaced by MethodInliningCodeFactory.  Do not use.
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: MethodInlining.java,v 1.1.2.5 1999-02-12 21:42:11 pnkfelix Exp $
+ * @version $Id: MethodInlining.java,v 1.1.2.6 1999-09-08 16:35:19 cananian Exp $
  */
 public abstract class MethodInlining {
 
@@ -40,34 +40,34 @@ public abstract class MethodInlining {
     /** Retrieves the code for method called at <code>site</code> and 
 	returns an <code>HCode</code> represented the code to be
 	inserted in place of the call.
-	<BR> requires: code called by <code>site</code> is in Quad-SSA
+	<BR> requires: code called by <code>site</code> is in quad-ssi
 	               form. 
     */
-    public static QuadSSA getInlinedCode(CALL site) { 
+    public static QuadSSI getInlinedCode(CALL site) { 
 	return getInlinedCode(site, false);
     }
 
     /** Retrieves the code for method called at <code>site</code> and 
 	returns an <code>HCode</code> represented the code to be
 	inserted in place of the call.
-	<BR> requires: code called by <code>site</code> is in Quad-SSA
+	<BR> requires: code called by <code>site</code> is in quad-ssi
 	               form. 
 	<BR> modifies: code contained by <code>HCode</code> called by
 	               <code>site</code> 
 	<BR> effects: if <code>modifyCode</code> is false, retrieves
 	              the code for <code>HMethod</code> called at
 		      <code>site</code> and iterates over its
-		      elements, copying them into a new <code>QuadSSA</code> and
+		      elements, copying them into a new <code>QuadSSI</code> and
 		      replacing uses of the <code
     */    
-    private static QuadSSA getInlinedCode(CALL site, boolean modifyCode) {
+    private static QuadSSI getInlinedCode(CALL site, boolean modifyCode) {
 
 	// replace below getCode() call with HCodeFactory.convert() call
-	QuadSSA code = (QuadSSA) site.method().getCode("quad-ssa");
+	QuadSSI code = (QuadSSI) site.method().getCode("quad-ssi");
 	
 	Util.assert( code != null, 
 		     "Code body for " + site.method() +
-		     " was not produced when requested in quadSSA form");
+		     " was not produced when requested in QuadSSI form");
 
 	HCodeElement[] codeElems = code.getElements();
 

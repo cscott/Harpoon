@@ -14,9 +14,9 @@ import harpoon.Util.Util;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.14 1999-09-07 21:28:12 bdemsky Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.15 1999-09-08 16:35:33 cananian Exp $
  * @see QuadNoSSA
- * @see QuadSSA
+ * @see QuadSSI
  */
 public class QuadWithTry extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -35,7 +35,7 @@ public class QuadWithTry extends Code /* which extends HCode */ {
 	// exceptions?
     }
 
-    QuadWithTry(harpoon.IR.Quads.QuadSSA quad) {
+    QuadWithTry(harpoon.IR.Quads.QuadSSI quad) {
         super(quad.getMethod(), null);
 	quads = ReHandler.rehandler(this.qf, quad);
 	Peephole.normalize(quads);
@@ -62,7 +62,7 @@ public class QuadWithTry extends Code /* which extends HCode */ {
 
     /** Return a code factory for <code>QuadWithTry</code>, given a
      *  code factory for <code>Bytecode</code> or <code>QuadNoSSA</code>.
-     *  Given a code factory for <code>QuadSSA</code>, chain through 
+     *  Given a code factory for <code>QuadSSI</code>, chain through 
      *  <code>QuadNoSSA.codeFactory()</code>. */
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
 	if (hcf.getCodeName().equals(harpoon.IR.Bytecode.Code.codename)) {
@@ -75,18 +75,18 @@ public class QuadWithTry extends Code /* which extends HCode */ {
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
 	    };
-	} else if (hcf.getCodeName().equals(harpoon.IR.Quads.QuadSSA.codename)) {
+	} else if (hcf.getCodeName().equals(harpoon.IR.Quads.QuadSSI.codename)) {
 	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
-			new QuadWithTry((harpoon.IR.Quads.QuadSSA)c);
+			new QuadWithTry((harpoon.IR.Quads.QuadSSI)c);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
 	    };
 	} else if (hcf.getCodeName().equals(harpoon.IR.Quads.QuadNoSSA.codename)) {
-	    return codeFactory(harpoon.IR.Quads.QuadSSA.codeFactory(hcf));
+	    return codeFactory(harpoon.IR.Quads.QuadSSI.codeFactory(hcf));
 	} else throw new Error("don't know how to make " + codename +
 			       " from " + hcf.getCodeName());
     }

@@ -16,10 +16,10 @@ import harpoon.Util.HClassUtil;
 import java.util.Vector;
 import java.util.Hashtable;
 /**
- * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
+ * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.2 1999-08-09 22:19:10 duncan Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.3 1999-09-08 16:35:30 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {

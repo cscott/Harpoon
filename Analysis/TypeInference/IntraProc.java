@@ -16,16 +16,16 @@ import harpoon.Util.Worklist;
 import java.util.Hashtable;
 import java.util.Enumeration;
 /**
- * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
+ * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.12 1999-02-03 23:10:57 pnkfelix Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.13 1999-09-08 16:35:27 cananian Exp $
  */
 
 public class IntraProc {
     InterProc environment;
     HMethod method;
-    QuadSSA code;
+    QuadSSI code;
     UseDefMap usedef;
             
     SetHClass[] parameterTypes;
@@ -38,7 +38,7 @@ public class IntraProc {
     public IntraProc(InterProc e, HMethod m, HCodeFactory hcf) { 
 	environment = e;
 	method = m;
-	code = (QuadSSA)hcf.convert(m);
+	code = (QuadSSI)hcf.convert(m);
 	usedef = new UseDef();
 	parameterTypes = new SetHClass[m.getParameterTypes().length+(m.isStatic()?0:1)];
 	for (int i=0; i<parameterTypes.length; i++)

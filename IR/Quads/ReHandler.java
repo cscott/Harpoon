@@ -35,16 +35,16 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.21 1999-08-30 22:09:49 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.22 1999-09-08 16:35:33 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
-     * <code>QuadSSA</code> and returns the first <code>Quad</code> of
+     * <code>QuadSSI</code> and returns the first <code>Quad</code> of
      * a <code>QuadWithTry</code> IR. */
 
-    public static final Quad rehandler(final QuadFactory qf, final QuadSSA code) {
+    public static final Quad rehandler(final QuadFactory qf, final QuadSSI code) {
 	//clone the original
-	QuadSSA ncode=(QuadSSA)code.clone(code.getMethod());
+	QuadSSI ncode=(QuadSSI)code.clone(code.getMethod());
 	//make it SSA
 	(new ToSSA(new SSITOSSAMap(ncode))).optimize(ncode);
 
@@ -358,7 +358,7 @@ final class ReHandler {
      *  if a new implicit <code>TYPECAST</code> appears across it.  If so
      *  an explicit <code>TYPECAST</code> is added.*/
 
-    static void analyzeTypes(final QuadSSA code, TypeMap ti) {
+    static void analyzeTypes(final QuadSSI code, TypeMap ti) {
 	HCodeElement start=code.getRootElement();
 	WorkSet todo=new WorkSet();
 	todo.add(start);
