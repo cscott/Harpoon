@@ -1,4 +1,5 @@
 
+#include <errno.h> /* for EINTR */
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
@@ -119,10 +120,17 @@ jint getFDsSEL(JNIEnv *env, jint blockMode, jintArray result)
     fd_set newReadSet=readStruct.Interest, newWriteSet=writeStruct.Interest;
     int nFD=(readStruct.maxFD>writeStruct.maxFD)?
       readStruct.maxFD:writeStruct.maxFD;
+    int rc;
 
     /** buffer has jints inside it; safe to use malloc instead of GC_malloc */
     buf=(jint*)malloc(sizeof(jint)*(3+readStruct.maxFD+writeStruct.maxFD));
-    select(nFD+1, &newReadSet, &newWriteSet, NULL, blockMode? NULL: &timeout);
+    do {  /* repeat if interruptted */
+      rc = select(nFD+1, &newReadSet, &newWriteSet, NULL,
+		  blockMode? NULL: &timeout);
+    } while (blockMode && rc < 0 && errno == EINTR);
+    /* XXX should really throw exception on rc<0 here.
+     * all descriptor sets are undefined in this case and should not be
+     * tested. */
     for (j=0; j<=readStruct.maxFD; j++)
       if (FD_ISSET(j, &newReadSet))
 	{
