@@ -102,7 +102,7 @@ public class AbsoluteTime extends HighResolutionTime {
 				clock.getTime().getNanoseconds());
     }
     
-    // Not in specs, but must be defined, since it was declared in HighResolutionTime
+    // Not in specs, but must be defined, since it was declared as abstract in HighResolutionTime
     public RelativeTime relative(Clock clock, HighResolutionTime time) {
 	return new RelativeTime(time.getMilliseconds() -
 				clock.getTime().getMilliseconds(),

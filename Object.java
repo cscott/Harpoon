@@ -33,4 +33,25 @@ public class Object {
     public Object clone() {
 	return null;
     }
+
+    // Borrowed from standart java.lang.Object;
+    public final native void wait(long timeout) throws InterruptedException;
+
+    // Borrowed from standart java.lang.Object;
+    public final void wait(long timeout, int nanos) throws InterruptedException {
+        if (timeout < 0) {
+            throw new IllegalArgumentException("timeout value is negative");
+        }
+
+        if (nanos < 0 || nanos > 999999) {
+            throw new IllegalArgumentException(
+				"nanosecond timeout value out of range");
+        }
+
+	if (nanos >= 500000 || (nanos != 0 && timeout == 0)) {
+	    timeout++;
+	}
+
+	wait(timeout);
+    }
 }

@@ -17,7 +17,8 @@ public abstract class HighResolutionTime implements Comparable {
     
     private long millis;
     private int nanos;
-
+    protected Clock defaultClock = Clock.getRealtimeClock();
+    
     public abstract AbsoluteTime absolute(Clock clock);
     public abstract AbsoluteTime absolute(Clock c, AbsoluteTime dest);
     
@@ -73,17 +74,17 @@ public abstract class HighResolutionTime implements Comparable {
     public abstract RelativeTime relative(Clock clock,
 					  HighResolutionTime time);
     
-    public void set(HighResolutionTime t)	{
+    public void set(HighResolutionTime t) {
 	millis = t.getMilliseconds();
 	nanos = t.getNanoseconds();
     }
     
-    public void set(long millisecs)	{
+    public void set(long millisecs) {
 	millis = millisecs;
 	nanos = 0;
     }
     
-    public void set(long millisecs, int nanosecs)	{
+    public void set(long millisecs, int nanosecs) {
 	// Do we have negative nanos? Java cannot take negative moduli properly
 	if (nanosecs < 0) {
 	    nanos = Math.abs(nanosecs);
@@ -102,6 +103,6 @@ public abstract class HighResolutionTime implements Comparable {
 
     public static void waitForObject(Object target, HighResolutionTime time)
 	throws InterruptedException {
-	// TODO
+	target.wait(time.getMilliseconds(), time.getNanoseconds());
     }
 }
