@@ -7,6 +7,7 @@ import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.CallGraph;
 import harpoon.Analysis.Realtime.Realtime;
 import harpoon.Analysis.Realtime.RealtimeRuntime;
+import harpoon.Analysis.MemOpt.PreallocOpt;
 import harpoon.Backend.Generic.GCInfo;
 import harpoon.Backend.Generic.LocationFactory;
 import harpoon.Backend.Analysis.BasicGCInfo;
@@ -43,7 +44,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.5 2002-06-27 16:25:35 wbeebee Exp $
+ * @version $Id: Frame.java,v 1.6 2002-11-29 20:43:36 salcianu Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -64,6 +65,9 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 			   (Realtime.REALTIME_JAVA? 
 			    "RTJ":alloc_strategy));
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
+	    PreallocOpt.PREALLOC_OPT ?
+	    (harpoon.Backend.Runtime1.AllocationStrategy)
+	    new harpoon.Analysis.MemOpt.PreallocAllocationStrategy(this) :
 	    Realtime.REALTIME_JAVA ?
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Analysis.Realtime.RealtimeAllocationStrategy(this) :

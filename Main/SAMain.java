@@ -69,6 +69,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Map;
+import java.util.HashMap;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -96,7 +97,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.20 2002-11-27 19:08:52 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.21 2002-11-29 20:43:54 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -120,11 +121,6 @@ public class SAMain extends harpoon.IR.Registration {
     static String IFILE=null;
     static InstrumentAllocs insta = null;
     static boolean ROLE_INFER= false;
-
-    // use Ovy's static preallocation optimization
-    static boolean OVY_PREALLOC_OPT = false;
-    static PreallocOpt ovy_prealloc_opt = null;
-
     static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
     static String  singleClassStr = null; 
     static HClass  singleClass = null; // for testing single classes
@@ -217,6 +213,7 @@ public class SAMain extends harpoon.IR.Registration {
 	do_it(mainM);
     }
 
+    // hcf is QuadWithTry at the beginning of do_it();
     static void do_it(HMethod mainM) {
 	if (Realtime.REALTIME_JAVA) { 
 	    Realtime.setupObject(linker); 
@@ -267,203 +264,192 @@ public class SAMain extends harpoon.IR.Registration {
 		("check_with_precise_c_not_needed");
 
 	// needed for creating the class hierarchy
-	Set roots;
-	{
-	    roots = getRoots(mainM);
+	Set roots = getRoots(mainM);
 
-	    // okay, we've got the roots, make a rough class hierarchy.
+	// okay, we've got the roots, make a rough class hierarchy.
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	assert classHierarchy != null : "How the hell...";
+	
+	// use the rough class hierarchy to devirtualize as many call sites
+	// as possible.
+	hcf = new harpoon.Analysis.Quads.Nonvirtualize
+	    (hcf, new harpoon.Backend.Maps.CHFinalMap(classHierarchy),
+	     classHierarchy).codeFactory();
+	
+	if (!USE_OLD_CLINIT_STRATEGY) {
+	    // transform the class initializers using the class hierarchy.
+	    String resource = frame.getRuntime().resourcePath
+		("init-safe.properties");
+	    hcf = new harpoon.Analysis.Quads.InitializerTransform
+		(hcf, classHierarchy, linker, resource).codeFactory();
+	    // recompute the hierarchy after transformation.
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    assert classHierarchy != null : "How the hell...";
-	    
-	    // use the rough class hierarchy to devirtualize as many call sites
-	    // as possible.
+	    // config checking
+	    frame.getRuntime().configurationSet.add
+		("check_with_init_check_needed");
+	} else
+	    frame.getRuntime().configurationSet.add
+		("check_with_init_check_not_needed");
 
-	    hcf=new harpoon.Analysis.Quads.Nonvirtualize
-	    	(hcf, new harpoon.Backend.Maps.CHFinalMap(classHierarchy),
-	    	 classHierarchy).codeFactory();
-
-	    if (!USE_OLD_CLINIT_STRATEGY) {
-		// transform the class initializers using the class hierarchy.
-		String resource = frame.getRuntime().resourcePath
-		    ("init-safe.properties");
-		hcf = new harpoon.Analysis.Quads.InitializerTransform
-		    (hcf, classHierarchy, linker, resource).codeFactory();
-		// recompute the hierarchy after transformation.
-		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-		// config checking
-		frame.getRuntime().configurationSet.add
-		    ("check_with_init_check_needed");
-	    } else
-		frame.getRuntime().configurationSet.add
-		    ("check_with_init_check_not_needed");
-
-	    if (EVENTDRIVEN) {
-		hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
-		
-		// costruct the set of all the methods that might be
-		// called by the JVM (the "main" method plus the
-		// methods which are called by the JVM before main)
-		// and next pass it to the MetaCallGraph
-		// constructor. [AS]
-		Set mroots =
-		    extract_method_roots(frame.getRuntime().
-					 runtimeCallableMethods());
-		mroots.add(mainM);
-		mcg = new MetaCallGraphImpl
-		    (new CachingCodeFactory(hcf), linker,
-		     classHierarchy, mroots);
-	    }
-
-	    if (ROLE_INFER) {
-		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
-		hcf = (new harpoon.Analysis.RoleInference.RoleInference
-		       (hcf,linker)).codeFactory();
-	 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    }
+	if (EVENTDRIVEN) {
+	    hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+	    Set mroots =
+		extract_method_roots(frame.getRuntime().
+				     runtimeCallableMethods());
+	    mroots.add(mainM);
+	    mcg = new MetaCallGraphImpl
+		(new CachingCodeFactory(hcf), linker, classHierarchy, mroots);
+	}
 	
-
-	    if (INSTRUMENT_ALLOCS) {
-		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
-		AllocationNumbering an =
-		    new AllocationNumbering(hcf, classHierarchy, true);
-		try {
-		    ObjectOutputStream oos =
-			new ObjectOutputStream(new FileOutputStream(IFILE));
-		    oos.writeObject(an);
-		    oos.writeObject(linker);
-		    oos.writeObject(roots);
-		    oos.writeObject(mainM);
-		    oos.close();
-		} catch (java.io.IOException e) {
-		    System.out.println(e + " was thrown:");
-		    e.printStackTrace(System.out);
-		}
-		hcf = an.codeFactory();
-		insta = 
-		    new InstrumentAllocs(hcf, mainM, linker, an, true, true);
- 		hcf = insta.codeFactory();
-		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	if (ROLE_INFER) {
+	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+	    hcf = (new harpoon.Analysis.RoleInference.RoleInference
+		   (hcf,linker)).codeFactory();
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	}
+	
+	
+	if (INSTRUMENT_ALLOCS) {
+	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+	    AllocationNumbering an =
+		new AllocationNumbering(hcf, classHierarchy, true);
+	    try {
+		ObjectOutputStream oos =
+		    new ObjectOutputStream(new FileOutputStream(IFILE));
+		oos.writeObject(an);
+		oos.writeObject(linker);
+		oos.writeObject(roots);
+		oos.writeObject(mainM);
+		oos.close();
+	    } catch (java.io.IOException e) {
+		System.out.println(e + " was thrown:");
+		e.printStackTrace(System.out);
 	    }
-
-	    if (DO_TRANSACTIONS) {
-		String resource = frame.getRuntime().resourcePath
-		    ("transact-safe.properties");
-		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
-		hcf = new harpoon.Analysis.Transactions.ArrayCopyImplementer
-		    (hcf, linker);
-		hcf = new harpoon.Analysis.Transactions.CloneImplementer
-		    (hcf, linker, classHierarchy.classes());
-		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    hcf = an.codeFactory();
+	    insta = 
+		new InstrumentAllocs(hcf, mainM, linker, an, true, true);
+	    hcf = insta.codeFactory();
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	}
+	
+	if (DO_TRANSACTIONS) {
+	    String resource = frame.getRuntime().resourcePath
+		("transact-safe.properties");
+	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	    hcf = new harpoon.Analysis.Transactions.ArrayCopyImplementer
+		(hcf, linker);
+	    hcf = new harpoon.Analysis.Transactions.CloneImplementer
+		(hcf, linker, classHierarchy.classes());
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    
-		hcf = new harpoon.Analysis.Quads.ArrayInitRemover(hcf)
-		    .codeFactory();
-		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-
-		syncTransformer = new SyncTransformer
-		    (hcf, classHierarchy, linker, mainM, roots, resource);
-		hcf = syncTransformer.codeFactory();
-		hcf = harpoon.Analysis.Counters.CounterFactory
-		    .codeFactory(hcf, linker, mainM);
-		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-		// config checking
-		frame.getRuntime().configurationSet.add
-		    ("check_with_transactions_needed");
-	    }
-
-	    if (Realtime.REALTIME_JAVA) {
-		hcf = Realtime.setupCode(linker, classHierarchy, hcf);
-		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-		hcf = Realtime.addChecks(linker, classHierarchy, hcf, roots);
-	    }
-
-	    if(OVY_PREALLOC_OPT)
-		ovy_prealloc_opt = 
-		    new PreallocOpt(linker, hcf, classHierarchy, mainM, roots);
-
-	    /* counter factory must be set up before field reducer,
-	     * or it will be optimized into nothingness. */
-	    if (Boolean.getBoolean("size.counters") ||
-		Boolean.getBoolean("mzf.counters") ||
-		Boolean.getBoolean("harpoon.sizeopt.bitcounters")) {
- 		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
-		hcf = harpoon.Analysis.Counters.CounterFactory
-		    .codeFactory(hcf, linker, mainM);
-		// recompute the hierarchy after transformation.
-		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    }
-	    /*--- size optimizations ---*/
-	    if (Boolean.getBoolean("mzf.compressor")) {
-		// if we're going to do mzf compression, make sure that
-		// the MZFExternalMap methods are in the root set and
-		// the class hierarchy (otherwise the FieldReducer
-		// will stub them out as uncallable).
-		HClass hcx = linker.forClass
-		    (harpoon.Runtime.MZFExternalMap.class);
-		roots.addAll(Arrays.asList(hcx.getDeclaredMethods()));
-		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    }	    
-	    if (Boolean.getBoolean("bitwidth")) {
- 		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
- 		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-		// read field roots
-		String resource = frame.getRuntime().resourcePath
-		    ("field-root.properties");
- 		System.out.println("STARTING BITWIDTH ANALYSIS");
- 		hcf = new harpoon.Analysis.SizeOpt.FieldReducer
-		    (hcf, frame, classHierarchy, roots, resource)
-		    .codeFactory();
-	    }
-	    if (Boolean.getBoolean("mzf.compressor") &&
-		System.getProperty("mzf.profile","").length()>0) {
- 		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
-		if (!Boolean.getBoolean("bitwidth"))
-		    // SCCOptimize makes the SimpleConstMap used by
-		    // ConstructorClassifier more accurate.  However, if
-		    // we've used the FieldReducer, we're already
-		    // SCCOptimized, so no need to do it again.
-		    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize
-			.codeFactory(hcf);
- 		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-		hcf = new harpoon.Analysis.SizeOpt.MZFCompressor
-		    (frame, hcf, classHierarchy,
-		     System.getProperty("mzf.profile")).codeFactory();
-		// START HACK: main still creates a String[], even after the
-		// Compressor has split String.  So re-add String[] to the
-		// root-set.
-		roots.add(linker.forDescriptor("[Ljava/lang/String;"));
-		// END HACK!
-		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    }
-	    /* -- add counters to all allocations? -- */
-	    if (Boolean.getBoolean("size.counters")) {
-		hcf = new harpoon.Analysis.SizeOpt.SizeCounters(hcf, frame)
-		    .codeFactory();
- 		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-		// pull everything through the size counter factory
-		for (Iterator it=classHierarchy.callableMethods().iterator();
-		     it.hasNext(); )
-		    hcf.convert((HMethod)it.next());
-	    }
-	    /* -- find mostly-zero fields -- */
-	    if (Boolean.getBoolean("mzf.counters")) {
-		hcf = new harpoon.Analysis.SizeOpt.MostlyZeroFinder
-		    (hcf, classHierarchy, frame).codeFactory();
- 		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-		// pull everything through the 'mostly zero finder', to make
-		// sure that all relevant counter fields show up before
+	    hcf = new harpoon.Analysis.Quads.ArrayInitRemover(hcf)
+		.codeFactory();
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    
+	    syncTransformer = new SyncTransformer
+		(hcf, classHierarchy, linker, mainM, roots, resource);
+	    hcf = syncTransformer.codeFactory();
+	    hcf = harpoon.Analysis.Counters.CounterFactory
+		.codeFactory(hcf, linker, mainM);
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    // config checking
+	    frame.getRuntime().configurationSet.add
+		("check_with_transactions_needed");
+	}
+	
+	if (Realtime.REALTIME_JAVA) {
+	    hcf = Realtime.setupCode(linker, classHierarchy, hcf);
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    hcf = Realtime.addChecks(linker, classHierarchy, hcf, roots);
+	}
+	
+	if(PreallocOpt.PREALLOC_OPT)
+	    hcf = PreallocOpt.preallocAnalysis
+		(linker, hcf, classHierarchy, mainM, roots);
+	
+	/* counter factory must be set up before field reducer,
+	 * or it will be optimized into nothingness. */
+	if (Boolean.getBoolean("size.counters") ||
+	    Boolean.getBoolean("mzf.counters") ||
+	    Boolean.getBoolean("harpoon.sizeopt.bitcounters")) {
+	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+	    hcf = harpoon.Analysis.Counters.CounterFactory
+		.codeFactory(hcf, linker, mainM);
+	    // recompute the hierarchy after transformation.
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	}
+	/*--- size optimizations ---*/
+	if (Boolean.getBoolean("mzf.compressor")) {
+	    // if we're going to do mzf compression, make sure that
+	    // the MZFExternalMap methods are in the root set and
+	    // the class hierarchy (otherwise the FieldReducer
+	    // will stub them out as uncallable).
+	    HClass hcx = linker.forClass
+		(harpoon.Runtime.MZFExternalMap.class);
+	    roots.addAll(Arrays.asList(hcx.getDeclaredMethods()));
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	}	    
+	if (Boolean.getBoolean("bitwidth")) {
+	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    // read field roots
+	    String resource = frame.getRuntime().resourcePath
+		("field-root.properties");
+	    System.out.println("STARTING BITWIDTH ANALYSIS");
+	    hcf = new harpoon.Analysis.SizeOpt.FieldReducer
+		(hcf, frame, classHierarchy, roots, resource)
+		.codeFactory();
+	}
+	if (Boolean.getBoolean("mzf.compressor") &&
+	    System.getProperty("mzf.profile","").length()>0) {
+	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	    if (!Boolean.getBoolean("bitwidth"))
+		// SCCOptimize makes the SimpleConstMap used by
+		// ConstructorClassifier more accurate.  However, if
+		// we've used the FieldReducer, we're already
+		// SCCOptimized, so no need to do it again.
+		hcf = harpoon.Analysis.Quads.SCC.SCCOptimize
+		    .codeFactory(hcf);
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    hcf = new harpoon.Analysis.SizeOpt.MZFCompressor
+		(frame, hcf, classHierarchy,
+		 System.getProperty("mzf.profile")).codeFactory();
+	    // START HACK: main still creates a String[], even after the
+	    // Compressor has split String.  So re-add String[] to the
+	    // root-set.
+	    roots.add(linker.forDescriptor("[Ljava/lang/String;"));
+	    // END HACK!
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	}
+	/* -- add counters to all allocations? -- */
+	if (Boolean.getBoolean("size.counters")) {
+	    hcf = new harpoon.Analysis.SizeOpt.SizeCounters(hcf, frame)
+		.codeFactory();
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    // pull everything through the size counter factory
+	    for (Iterator it=classHierarchy.callableMethods().iterator();
+		 it.hasNext(); )
+		hcf.convert((HMethod)it.next());
+	}
+	/* -- find mostly-zero fields -- */
+	if (Boolean.getBoolean("mzf.counters")) {
+	    hcf = new harpoon.Analysis.SizeOpt.MostlyZeroFinder
+		(hcf, classHierarchy, frame).codeFactory();
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    // pull everything through the 'mostly zero finder', to make
+	    // sure that all relevant counter fields show up before
 		// we start emitting code.
-		for (Iterator it=classHierarchy.callableMethods().iterator();
-		     it.hasNext(); )
-		    hcf.convert((HMethod)it.next());
-	    }
-	} // don't need the root set anymore.
-
+	    for (Iterator it=classHierarchy.callableMethods().iterator();
+		 it.hasNext(); )
+		hcf.convert((HMethod)it.next());
+	}
+	
 	if (BACKEND == MIPSDA_BACKEND || BACKEND == MIPSYP_BACKEND) {
 	    hcf = new harpoon.Analysis.Quads.ArrayUnroller(hcf).codeFactory();
 	    /*
@@ -652,6 +638,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    }
 	}
 
+	if(PreallocOpt.PREALLOC_OPT)
+	    hcf = PreallocOpt.addMemoryPreallocation(linker, hcf, frame);
+
 	if(Realtime.REALTIME_JAVA)
 	{
 	    hcf = Realtime.addNoHeapChecks(hcf);
@@ -803,8 +792,11 @@ public class SAMain extends harpoon.IR.Registration {
 	Set roots = new java.util.HashSet
 	    (frame.getRuntime().runtimeCallableMethods());
 	
-	if(OVY_PREALLOC_OPT)
-	    roots.add(linker.forName(PreallocOpt.PREALLOC_MEM_CLASS_NAME));
+	if(PreallocOpt.PREALLOC_OPT)
+	    roots.add
+		(linker.forName(PreallocOpt.PREALLOC_MEM_CLASS_NAME).
+		 getMethod(PreallocOpt.INIT_FIELDS_METHOD_NAME,
+			   new HClass[0]));
 	
 	// and our main method is a root, too...
 	roots.add(mainM);
@@ -1021,7 +1013,7 @@ public class SAMain extends harpoon.IR.Registration {
     protected static void parseOpts(String[] args) {
 	Getopt g = 
 	    new Getopt("SAMain", args, 
-		       "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Td::mw::x::y::");
+		       "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Td::mw::x::y::Y");
 	
 	int c;
 	String arg;
@@ -1203,6 +1195,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 'I':
 		USE_OLD_CLINIT_STRATEGY = true;
 		break;
+	    case 'Y':
+		PreallocOpt.PREALLOC_OPT = true;
+		break;
 	    case '?':
 	    case 'h':
 		System.out.println(usage);
@@ -1303,6 +1298,9 @@ public class SAMain extends harpoon.IR.Registration {
 
 	out.println("-h");
 	out.println("\tPrints out this help message");
+
+	out.println("-Y");
+	out.println("\tPreallocation Optimization using IncompatibilityAnalysis.");
 	
     }
 
