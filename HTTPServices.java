@@ -1,5 +1,3 @@
-
-
 import java.net.*;
 import java.io.*;
 import java.util.*;
@@ -86,3 +84,4 @@ public class HTTPServices{
 	HEAD_handler_int(fileName,out,resp);
     }
 }
+

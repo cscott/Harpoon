@@ -65,6 +65,12 @@ public class JhttpWorker extends Thread{
 			System.out.println(newfile);
 			HTTPServices.GET_handler(newfile, out, resp);
 		    }
+		} else if (fileName.substring(0,4).equals("/rm-")) {
+		    String newfile=rolei.handlepage(fileName, out, resp);
+		    if (newfile!=null) {
+			System.out.println(newfile);
+			HTTPServices.GET_handler(newfile, out, resp);
+		    }
 		} else
 		    HTTPServices.GET_handler(fileName, out, resp);
 		break;

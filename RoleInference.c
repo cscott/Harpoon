@@ -642,6 +642,8 @@ void doarrayassignment(struct heap_state *heap, struct heap_object * src, int in
 	dst->reachable|=FIRSTREF;
 	if (dst->reversefield!=NULL)
 	  dst->reachable|=NOTCONTAINER;
+	else
+	  checksafety(src,dst);
       }
     } else if (heap->options&OPTION_UCONTAINERS) {
       if (contains(heap->containedobjects, dst->uid))
@@ -880,6 +882,8 @@ void dofieldassignment(struct heap_state *heap, struct heap_object * src, struct
 	dst->reachable|=FIRSTREF;
 	if (dst->reversefield!=NULL)
 	  dst->reachable|=NOTCONTAINER;
+	else
+	  checksafety(src,dst);
       }
     } else if (heap->options&OPTION_UCONTAINERS) {
       if (contains(heap->containedobjects, dst->uid))

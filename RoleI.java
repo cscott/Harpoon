@@ -1,3 +1,4 @@
+
 import java.net.*;
 import java.io.*;
 import java.util.*;
@@ -5,54 +6,57 @@ import java.util.*;
 class RoleI {
     HashMap transitiontable;
     HashMap roletable;
+    FastScan classinfo;
+    Set atomic;
+    HashMap policymap;
+    boolean containers;
+
+
+    static final Integer P_NEVER=new Integer(0);
+    static final Integer P_ONCEEVER=new Integer(1);
+    static final Integer P_ONEATATIME=new Integer(2);
+    static final Integer P_ALWAYS=new Integer(3);
+
+    Integer defaultpolicy;
+
+    synchronized private void initializefastscan() {
+	/*	Runtime runtime=Runtime.getRuntime();
+	Process p1=runtime.exec("./FastScan");	
+	p1.waitFor();*/
+	classinfo=new FastScan();
+    }
 
     public RoleI() {
 	//	runanalysis();
+	containers=false;
+	initializefastscan();
 	readtransitions();
 	readroles();
-	test();
+	readatomic();
+	readpolicy();
+	rebuildindex();
+	rebuildgraphs(true);
     }
 
-    String handleresponse(String filename, BufferedWriter out, HTTPResponse resp) {
-	System.out.println(filename);
-	int firstslash=filename.indexOf('/');
-	int dash=filename.indexOf('-',firstslash+1);
-	int question=filename.indexOf('?',dash+1);
-	int comma=filename.indexOf(',',question+1);
-	String file=filename.substring(dash+1, question)+".imap";
-	int x=Integer.parseInt(filename.substring(question+1, comma));
-	int y=Integer.parseInt(filename.substring(comma+1));
-	Imap imap=new Imap(file);
-	if (imap.parseclick(x,y)==null)
-	    return "/"+filename.substring(dash+1,question)+".html";
-	Integer rolenum=Integer.valueOf(imap.parseclick(x,y));
-	Role role=(Role)roletable.get(rolenum);
-	try {
-	    FileOutputStream fos=new FileOutputStream("R"+rolenum+".html");
-	    PrintStream ps=new PrintStream(fos);
-	    ps.println(role);
-	    ps.close();
-	} catch (Exception e) {
-	    e.printStackTrace();
-	    System.exit(-1);
-	}
-	return "/R"+rolenum+".html";
-    }
-
-    
-
-    void test() {
+    void rebuildindex() {
 	Set ks=transitiontable.keySet();
 	Iterator it=ks.iterator();
-	int i=0;
 	try {
 	    FileOutputStream fos=new FileOutputStream("index.html");
-	    PrintStream ps=new PrintStream(fos);
-	    while(it.hasNext()) {
-		String clss=(String)it.next();
-		System.out.println(clss);
-		genpictures(clss, (new Integer(i++)).toString());
-		ps.println("<a href=\""+(i-1)+".html\">"+clss+"</a><p>");
+    	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    if (containers) {
+		ps.println("Using Containers <a href=\"/rm-O0\">Turn off containers/firstpass</a><p>");
+		
+	    } else {
+		ps.println("Not Using Containers <a href=\"/rm-O1\">Turn on containers</a><p>");
+	    }
+	    ps.println("default Container policy:"+policyname(defaultpolicy)+"<p>");
+	    if (!containers) {
+		if (defaultpolicy==P_ONCEEVER)
+		    ps.println("<a href=\"/rm-Y2\">Change policy to oneatatime</a><p>");
+		else
+		    ps.println("<a href=\"/rm-Y1\">Change policy to onceever</a><p>");
 	    }
 	    ps.close();
 	} catch (IOException e) {
@@ -61,13 +65,404 @@ class RoleI {
 	}
     }
 
-    void runanalysis() {
+    private String getpolicy(String methodname) {
+	if (policymap.containsKey(methodname)) {
+	    Integer policy=(Integer) policymap.get(methodname);
+	    return policyname(policy);
+	} else return "default";
+    }
+
+    private String policyname(Integer policy) {
+	if (policy==P_NEVER)
+	    return "never";
+	if (policy==P_ONCEEVER)
+	    return "onceever";
+	if (policy==P_ONEATATIME)
+	    return "oneatatime";
+	if (policy==P_ALWAYS)
+	    return "always";
+	System.out.println("Invalid policy in policyname!!!!!!:"+policy);
+	System.exit(-1);
+	return null; /*keep javac happy*/
+    }
+
+    static Integer parsepolicy(String policy) {
+	if (policy.equals("never"))
+	    return P_NEVER;
+	if (policy.equals("onceever"))
+	    return P_ONCEEVER;
+	if (policy.equals("oneatatime"))
+	    return P_ONEATATIME;
+	if (policy.equals("always"))
+	    return P_ALWAYS;
+	return null;
+    }
+
+    synchronized void writepolicy() {
+	try {
+	    FileOutputStream fos=new FileOutputStream("policy");
+	    PrintStream ps=new PrintStream(fos);		
+	    ps.println("default: "+policyname(defaultpolicy));
+	    Iterator iterator=policymap.keySet().iterator();
+	    while (iterator.hasNext()) {
+		String clss=(String) iterator.next();
+		ps.println(clss+" "+policyname((Integer)policymap.get(clss)));
+	    }
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+    }
+
+    synchronized void readpolicy() {
+	try {
+	    policymap=new HashMap();
+	    FileReader policyfile=new FileReader("policy");
+	    String defaults=nexttoken(policyfile);
+	    defaultpolicy=parsepolicy(nexttoken(policyfile));
+	    if (!defaults.equals("default:")||defaultpolicy==null) {
+		System.out.println("Bad formatted policy file");
+		System.exit(-1);
+	    }
+    	    while(true) {
+		String clss=nexttoken(policyfile);
+		if (clss==null)
+		    break;
+		Integer policy=parsepolicy(nexttoken(policyfile));
+		if (policy==null) {
+		    System.out.println("Bad formatted policy file");
+		    System.exit(-1);
+		}
+		policymap.put(clss, policy);
+	    }
+	    policyfile.close();
+	} catch (FileNotFoundException e) {
+	    System.out.println("Policy file not found");
+	} catch (IOException e) {
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+    }
+
+    synchronized void rerunanalysis() {
+	runanalysis();
+	readtransitions();
+	readroles();
+	rebuildgraphs(true);
+	rebuildindex();
+    }
+    
+    synchronized void writeatomic() {
+	try {
+	    FileOutputStream fos=new FileOutputStream("atomic");
+	    PrintStream ps=new PrintStream(fos);		
+	    Iterator iterator=atomic.iterator();
+	    while (iterator.hasNext()) {
+		ps.println(iterator.next());
+	    }
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+    }
+
+    void readatomic() {
+	try {
+	    atomic=new HashSet();
+	    FileReader atomicfile=new FileReader("atomic");
+	    while(true) {
+		String method=nexttoken(atomicfile);
+		if (method==null)
+		    break;
+		atomic.add(method);
+	    }
+	    atomicfile.close();
+	} catch (FileNotFoundException e) {
+	    System.out.println("Atomic file not found");
+	} catch (IOException e) {
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+    }
+
+
+    synchronized String handlepage(String filename, BufferedWriter out, HTTPResponse resp) {
+	int firstslash=filename.indexOf('/');
+	int dash=filename.indexOf('-',firstslash+1);
+	String file=filename.substring(dash+2);
+	char type=filename.charAt(dash+1);
+	switch(type) {
+	case 'M':
+	    return buildmethodpage(file);
+	case 'N':
+	    {
+		Integer methodnumber=Integer.valueOf(file);
+		String methodname=(String) classinfo.revmethods.get(methodnumber);
+		atomic.remove(methodname);
+		return buildmethodpage(file);
+	    }
+	case 'A':
+	    {
+		Integer methodnumber=Integer.valueOf(file);
+		String methodname=(String) classinfo.revmethods.get(methodnumber);
+		atomic.add(methodname);
+		return buildmethodpage(file);
+	    }
+	case 'P':
+	    {
+		return buildallmethodpage();
+	    }
+	case 'R':
+	    {
+		writeatomic();
+		writepolicy();
+		rerunanalysis();
+		return "/index.html";
+	    }
+	case 'O':
+	    {
+		/* toggle containers*/
+		containers=file.equals("1");
+		rebuildindex();
+		rebuildgraphs(false);
+		return "/index.html";
+	    }
+	case 'C':
+	    {
+		return classpage();
+	    }
+	case 'Y': {
+	    if (file.equals("1"))
+		defaultpolicy=P_ONCEEVER;
+	    if (file.equals("2"))
+		defaultpolicy=P_ONEATATIME;
+	    rebuildindex();
+	    return "/index.html";
+	}
+	case 'Z': {
+	    /* Change policy */
+	    int comma=file.indexOf(',');
+	    if (comma==-1) {
+		Integer classnumber=Integer.valueOf(file);
+		String classname=(String) classinfo.revclasses.get(classnumber);		
+		policymap.remove(classname);
+		genpictures(classname, classnumber.toString(),false);
+		return "/"+classnumber+".html";
+	    } else {
+		Integer classnumber=Integer.valueOf(file.substring(0,comma));
+		String classname=(String)classinfo.revclasses.get(classnumber);
+		String policy=file.substring(comma+1);
+		Integer p=null;
+		if(policy.equals("0"))
+		    p=P_NEVER;
+		else if(policy.equals("1"))
+		    p=P_ONCEEVER;
+		else if(policy.equals("2"))
+		    p=P_ONEATATIME;
+		else if(policy.equals("3"))
+		    p=P_ALWAYS;
+		else {
+		    System.out.println("Error in Z");
+		    System.exit(-1);
+		}
+		policymap.put(classname, p);
+		genpictures(classname, classnumber.toString(),false);
+		return "/"+classnumber+".html";
+	    }
+	}
+	}
+	return null;
+    }
+
+    void menuline(PrintStream ps) {
+	ps.println("<a href=\"rm-R\">Rerun Analysis</a>");
+	ps.println("<a href=\"rm-P\">Method Page</a>");
+	ps.println("<a href=\"rm-C\">Class Page</a>");
+	ps.println("<a href=\"/index.html\">Main Page</a><p>");
+    }
+
+    synchronized String buildallmethodpage() {
+	Iterator methodi=classinfo.methods.keySet().iterator();
+	try {
+	    FileOutputStream fos=new FileOutputStream("allmethods.html");
+	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    while(methodi.hasNext()) {
+		String methodname=(String) methodi.next();
+		String info="";
+		if (atomic.contains(methodname))
+		    info="ATOMIC ";
+		ps.println("<a href=\"rm-M"+
+			   classinfo.methods.get(methodname)+
+			   "\">"+Transition.htmlreadable(methodname)+"</a> "+info+"<p>");
+	    }
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+	return "/allmethods.html";
+    }
+    
+    synchronized String buildmethodpage(String file) {
+	Integer methodnumber=Integer.valueOf(file);
+	String filename="M"+file+".html";
+	try {
+	    FileOutputStream fos=new FileOutputStream(filename);
+	    PrintStream ps=new PrintStream(fos);
+	    String methodname=(String) classinfo.revmethods.get(methodnumber);
+	    menuline(ps);
+	    ps.println("Method: "+methodname+"<p>");
+	    if (atomic.contains(methodname)) {
+		ps.println("ATOMIC<p>");
+		ps.println("<a href=\"rm-N"+file+"\">Make Non-atomic</a><p>");
+	    }
+	    else {
+		ps.println("NOT ATOMIC<p>");
+		ps.println("<a href=\"rm-A"+file+"\">Make Atomic</a><p>");
+	    }
+
+
+	    if (classinfo.callgraph.containsKey(methodname)) {
+		Iterator callers=((Set)classinfo.callgraph.get(methodname)).iterator();
+		ps.println("Callers: <p>");
+		while(callers.hasNext()) {
+		    String caller=(String)callers.next();
+		    ps.println("<a href=\"rm-M"+
+			       classinfo.methods.get(caller)+
+			       "\">"+Transition.htmlreadable(caller)+"</a><p>");
+		}
+	    } else ps.println("No Callers: <p>");
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+	return "/"+filename;
+    }
+    
+
+    synchronized String handleresponse(String filename, BufferedWriter out, HTTPResponse resp) {
+	System.out.println(filename);
+	int firstslash=filename.indexOf('/');
+	int dash=filename.indexOf('-',firstslash+1);
+	int question=filename.indexOf('?',dash+1);
+	int comma=filename.indexOf(',',question+1);
+	String fileprefix=filename.substring(dash+1, question);
+	String file=fileprefix+".imap";
+	int x=Integer.parseInt(filename.substring(question+1, comma));
+	int y=Integer.parseInt(filename.substring(comma+1));
+	Imap imap=new Imap(file);
+	String parseclick=imap.parseclick(x,y);
+	if (parseclick==null)
+	    /* We have nothing */
+	    return "/"+fileprefix+".html";
+	else if (parseclick.indexOf('-')!=-1) {
+	    /* We have an edge */
+	    System.out.println(fileprefix);
+	    String clss=(String) classinfo.revclasses.get(Integer.valueOf(fileprefix));
+	    System.out.println(clss);
+	    Set transitionset=(Set)transitiontable.get(clss);
+	    Iterator it=transitionset.iterator();
+   	    while(it.hasNext()) {
+		Transition trans=(Transition) it.next();
+		if (parseclick.equals(trans.rolefrom+"-"+trans.roleto)) {
+		    try {
+			FileOutputStream fos=new FileOutputStream(parseclick+".html");
+			PrintStream ps=new PrintStream(fos);
+			menuline(ps);
+			for(int i=0;i<trans.names.length;i++) {
+			    String methodname=Transition.classname(trans.names[i])+"."+Transition.methodname(trans.names[i])+Transition.signature(trans.names[i]);
+			    System.out.println(methodname);
+			    System.out.println(classinfo.methods.get(methodname));
+			    String isatomic=atomic.contains(methodname)?"ATOMIC":"NOT ATOMIC";
+			    ps.println("<a href=\"rm-M"+
+				       classinfo.methods.get(methodname)+
+				       "\">"+Transition.htmlreadable(Transition.filtername(trans.names[i]))+"</a>"+isatomic+"<p>\n");
+			}
+			ps.close();
+		    } catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-1);
+		    }
+		    return "/"+parseclick+".html";
+		}
+	    }
+	    System.out.println("Transition "+parseclick+" not found.");
+	    System.exit(-1);
+	} else {
+	    /* We have a node */
+	    Integer rolenum=Integer.valueOf(parseclick);
+	    if (rolenum.intValue()==1) {
+		/* Garbage Role */
+		try {
+		    FileOutputStream fos=new FileOutputStream("R"+rolenum+".html");
+		    PrintStream ps=new PrintStream(fos);
+		    menuline(ps);
+		    ps.println("Garbage<p>");
+		    ps.close();
+		} catch (Exception e) {
+		    e.printStackTrace();
+		    System.exit(-1);
+		}
+		return "/R"+rolenum+".html";
+	    }
+	    Role role=(Role)roletable.get(rolenum);
+	    try {
+		FileOutputStream fos=new FileOutputStream("R"+rolenum+".html");
+		PrintStream ps=new PrintStream(fos);
+		menuline(ps);
+		ps.println(role);
+		ps.close();
+	    } catch (Exception e) {
+		e.printStackTrace();
+		System.exit(-1);
+	    }
+	    return "/R"+rolenum+".html";
+	}
+	return null; /* Make compiler happy*/
+    }
+
+    private void rebuildgraphs(boolean dot) {
+	Set ks=transitiontable.keySet();
+	Iterator it=ks.iterator();
+	while(it.hasNext()) {
+	    String clss=(String)it.next();
+	    System.out.println(clss);
+	    Integer i=(Integer) classinfo.classes.get(clss);
+	    genpictures(clss, i.toString(),dot);
+	}
+    }
+
+    synchronized String classpage() {
+	Set ks=transitiontable.keySet();
+	Iterator it=ks.iterator();
+	try {
+	    FileOutputStream fos=new FileOutputStream("allclasses.html");
+    	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    while(it.hasNext()) {
+		String clss=(String)it.next();
+		Integer i=(Integer) classinfo.classes.get(clss);
+		String info="default";
+		if (policymap.containsKey(clss)) {
+		    info=policyname((Integer)policymap.get(clss));
+		}
+		ps.println("<a href=\""+i+".html\">"+clss+"</a>"+info+"<p>");
+	    }
+	    ps.close();
+	} catch (IOException e) {
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+	return "/allclasses.html";
+    }
+
+    synchronized void runanalysis() {
 	try {
 	    Runtime runtime=Runtime.getRuntime();
-	    Process p1=runtime.exec("FastScan");	
+	    Process p1=containers?runtime.exec("./RoleInference -u -w -n -r -ptemp"):runtime.exec("./RoleInference -cpolicy -w -n -r -ptemp");
 	    p1.waitFor();
-	    Process p2=runtime.exec("RoleInference -cpolicy -w -n -r -ptemp");
-	    p2.waitFor();
 	} catch (Exception e) {
 	    e.printStackTrace();
 	    System.exit(-1);
@@ -75,15 +470,37 @@ class RoleI {
     }
 
     void genpictures(String classname, String filename) {
-	writedotfile(classname, filename);
+	genpictures(classname,filename,true);
+    }
+
+    synchronized void genpictures(String classname, String filename,boolean dot) {
+	if (dot)
+	    writedotfile(classname, filename);
 	try {
-	    Runtime runtime=Runtime.getRuntime();
-	    Process p1=runtime.exec("dot -Tgif "+filename+" -o"+filename+".gif");	
-	    p1.waitFor();
-	    Process p2=runtime.exec("dot -Timap "+filename+" -o"+filename+".imap");	
-	    p2.waitFor();
+	    if (dot) {
+		Runtime runtime=Runtime.getRuntime();
+		Process p1=runtime.exec("dot -Tgif "+filename+" -o"+filename+".gif");	
+		p1.waitFor();
+		Process p2=runtime.exec("dot -Timap "+filename+" -o"+filename+".imap");	
+		p2.waitFor();
+	    }
 	    FileOutputStream fos=new FileOutputStream(filename+".html");
 	    PrintStream ps=new PrintStream(fos);
+	    menuline(ps);
+	    ps.println("Role Transition diagram for "+classname+"<p>");
+	    String info="default";
+	    if (policymap.containsKey(classname)) {
+		info=policyname((Integer)policymap.get(classname));
+	    }
+	    ps.println("Container policy: "+info+"<p>");
+	    if (!containers) {
+		Integer classnum=(Integer)classinfo.classes.get(classname);
+		ps.println("<a href=\"rm-Z"+classnum+"\">default</a>");
+		ps.println("<a href=\"rm-Z"+classnum+",0\">never</a>");
+		ps.println("<a href=\"rm-Z"+classnum+",1\">onceever</a>");
+		ps.println("<a href=\"rm-Z"+classnum+",2\">oneatatime</a>");
+		ps.println("<a href=\"rm-Z"+classnum+",3\">always</a><p>");
+	    }
 	    ps.println("<a href=\"ri-"+filename+"\"><img src=\"/"+filename+".gif\" ismap> </a>");
 	    ps.close();
 	} catch (Exception e) {
@@ -92,7 +509,7 @@ class RoleI {
 	}
     }
 
-    void writedotfile(String classname,String filename) {
+    synchronized void writedotfile(String classname,String filename) {
 	Set transet=(Set) transitiontable.get(classname);
 	FileOutputStream fos=null;
 	try {
@@ -109,7 +526,19 @@ class RoleI {
 
 	while(it.hasNext()) {
 	    Transition tr=(Transition) it.next();
-	    ps.print("R"+tr.rolefrom+" -> R"+tr.roleto+" [URL=\""+tr.rolefrom+"-"+tr.roleto+"\",fontsize=10,label=\"");
+	    String color="black";
+	    for(int i=0;i<tr.names.length;i++) {
+		String methodname=Transition.classname(tr.names[i])+"."+Transition.methodname(tr.names[i])+Transition.signature(tr.names[i]);
+		if (atomic.contains(methodname)) {
+		    color="red";
+		    break;
+		}
+	    }
+
+	    if (tr.roleto!=1)
+		ps.print("R"+tr.rolefrom+" -> R"+tr.roleto+" [URL=\""+tr.rolefrom+"-"+tr.roleto+"\",fontsize=10,fontcolor="+color+",label=\"");
+	    else
+		ps.print("R"+tr.rolefrom+" -> GARB [URL=\""+tr.rolefrom+"-"+tr.roleto+"\",fontsize=10,fontcolor="+color+",label=\"");
 	    observedroles.add(new Integer(tr.rolefrom));
 	    observedroles.add(new Integer(tr.roleto));
 	    for(int i=0;i<tr.names.length;i++) {
@@ -126,14 +555,17 @@ class RoleI {
 	Iterator iterator=observedroles.iterator();
 	while(iterator.hasNext()) {
 	    Integer role=(Integer) iterator.next();
-	    ps.println("R"+role+" [URL=\""+role+"\"];");
+	    if (role.intValue()==1)
+		ps.println("GARB [URL=\""+role+"\"];");
+	    else
+		ps.println("R"+role+" [URL=\""+role+"\"];");
 	}
 
 	ps.println("}");
 	ps.close();
     }
 
-    void readroles() {
+    synchronized void readroles() {
 	roletable=new HashMap();
 	FileReader fr=null;
 	try {
@@ -237,7 +669,7 @@ class RoleI {
 	}
     }
 
-    void readtransitions() {
+    synchronized void readtransitions() {
 	FileReader fr=null;
 	transitiontable=new HashMap();
 
@@ -293,6 +725,8 @@ class RoleI {
 		e.printStackTrace();
 		System.exit(-1);
 	    }
+	    if (c==-1)
+		return null;
 	    if ((c==' ')||(c=='\n')) {
 		if (!looped) {
 		    looped=true;

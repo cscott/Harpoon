@@ -174,7 +174,7 @@ void fastscan() {
 	/* New object*/
 
 	char buf[1000];
-	sscanf(line,"NI: %s",buf);
+	sscanf(line,"UI: %s",buf);
 	getclass(namer,buf);
       }
       break;
@@ -206,20 +206,23 @@ void fastscan() {
 	sscanf(line,"IM: %s %s %s", classname, methodname, signature);
 	methodchain->method=getmethod(namer, classname, methodname, signature);
 	methodchain->caller=methodstack;
-	if (!gencontains(calltable, methodchain->method)) {
+	if (methodstack!=NULL) {
+	  if (!gencontains(calltable, methodchain->method)) {
 	    struct methodchain *mc=(struct methodchain *) calloc(1,sizeof(struct methodchain));
-	    mc->method=methodchain->method;
+	    mc->method=methodstack->method;
 	    genputtable(calltable, methodchain->method, mc);
-	} else {
+	  } else {
 	    struct methodchain *tosearch=(struct methodchain *)gengettable(calltable, methodchain->method);
-	    while(tosearch->method!=methodchain->method) {
-		if (tosearch->caller==NULL) {
-		    struct methodchain *mc=(struct methodchain *) calloc(1,sizeof(struct methodchain));
-		    mc->method=methodchain->method;
-		    tosearch->caller=mc;
-		    break;
-		}
+	    while(tosearch->method!=methodstack->method) {
+	      if (tosearch->caller==NULL) {
+		struct methodchain *mc=(struct methodchain *) calloc(1,sizeof(struct methodchain));
+		mc->method=methodstack->method;
+		tosearch->caller=mc;
+		break;
+	      }
+	      tosearch=tosearch->caller;
 	    }
+	  }
 	}
 	methodstack=methodchain;
       }
