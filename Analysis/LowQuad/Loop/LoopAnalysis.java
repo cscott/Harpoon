@@ -6,10 +6,47 @@ package harpoon.Analysis.LowQuad.Loop;
 import harpoon.Analysis.UseDef;
 import harpoon.Analysis.Loops.LoopFinder;
 import harpoon.Util.WorkSet;
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
-import harpoon.IR.LowQuad.*;
-import harpoon.Analysis.Loops.*;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCode;
+import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ALENGTH;
+import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.ARRAYINIT;
+import harpoon.IR.Quads.ASET;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.COMPONENTOF;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.INSTANCEOF;
+import harpoon.IR.Quads.MONITORENTER;
+import harpoon.IR.Quads.MONITOREXIT;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.Qop;
+import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.THROW;
+import harpoon.IR.Quads.TYPECAST;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.LowQuad.LowQuadVisitor;
+import harpoon.IR.LowQuad.POPER;
+import harpoon.IR.LowQuad.PCALL;
+import harpoon.IR.LowQuad.PGET;
+import harpoon.IR.LowQuad.PSET;
+import harpoon.IR.LowQuad.PARRAY;
+import harpoon.IR.LowQuad.PFIELD;
+import harpoon.IR.LowQuad.PMETHOD;
+import harpoon.IR.LowQuad.PCONST;
+import harpoon.IR.LowQuad.PAOFFSET;
+import harpoon.IR.LowQuad.PFOFFSET;
+import harpoon.IR.LowQuad.PMOFFSET;
+import harpoon.IR.LowQuad.PFCONST;
+import harpoon.IR.LowQuad.PMCONST;
+import harpoon.Analysis.Loops.LoopFinder;
+import harpoon.Analysis.Loops.Loops;
 import harpoon.Temp.Temp;
 import harpoon.Analysis.SSITOSSAMap;
 import harpoon.Temp.TempMap;
@@ -33,7 +70,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.15 1999-09-23 19:52:25 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.16 1999-09-23 21:22:43 bdemsky Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -351,7 +388,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	}
     }
 
-    Object[] forloop(HCode hc, Loops lp) {
+    public Object[] forloop(HCode hc, Loops lp) {
 	analyze(hc);
 	Util.assert(lp.loopEntrances().size()==1,"Loop must have one entrance");	
 	Quad header=(Quad)(lp.loopEntrances()).toArray()[0];;
