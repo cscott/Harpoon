@@ -1,8 +1,9 @@
-# $Id: GNUmakefile,v 1.61.2.55 1999-08-02 15:18:07 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.56 1999-08-03 21:30:08 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
 
+JAVA=java
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes $(JIKES_OPT)
@@ -224,16 +225,16 @@ update: needs-cvs
 	  touch stubbed-out; echo $@ >> stubbed-out; \
 	else \
 	  echo PASS $(PASS): generating $@ from $<; \
-	  java harpoon.Tools.PatMat.Main $< > $@; \
+	  $(JAVA) harpoon.Tools.PatMat.Main $< > $@; \
 	fi
 
 # JLex
 %.java : %.jlex
-	java JLex.Main $< && mv $<.java $@
+	$(JAVA) JLex.Main $< && mv $<.java $@
 # CUP
 %.java : %.cup
 	cd `dirname $@` && \
-	java java_cup.Main -parser `basename $@ .java` -symbols Sym \
+	$(JAVA) java_cup.Main -parser `basename $@ .java` -symbols Sym \
 	< `basename $<`
 
 # don't know how to automagically generate this dependency.
