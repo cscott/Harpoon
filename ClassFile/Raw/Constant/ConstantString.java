@@ -7,11 +7,11 @@ import harpoon.ClassFile.Raw.*;
  * <code>java.lang.String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantString.java,v 1.10 1998-08-02 03:47:35 cananian Exp $
+ * @version $Id: ConstantString.java,v 1.11 1998-08-04 01:51:38 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.3"
  * @see Constant
  */
-public class ConstantString extends Constant {
+public class ConstantString extends ConstantValue {
   /** The value of the <code>string_index</code> item must be a valid
       index into the <code>constant_pool</code> table.  The
       <code>constant_pool</code> entry at that point must be a
@@ -42,6 +42,9 @@ public class ConstantString extends Constant {
   public ConstantUtf8 string_index() 
   { return (ConstantUtf8) parent.constant_pool[string_index]; }
   public String string() { return string_index().val; }
+  /** Returns the value of this constant, wrapped as a 
+   *  <code>java.lang.String</code>. */
+  public Object value() { return new String(string()); }
 
   /** Create a human-readable representation of this constant. */
   public String toString() {

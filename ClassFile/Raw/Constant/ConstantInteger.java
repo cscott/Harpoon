@@ -6,12 +6,12 @@ import harpoon.ClassFile.Raw.*;
  * four-byte integer numeric constants.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantInteger.java,v 1.11 1998-08-02 03:47:35 cananian Exp $
+ * @version $Id: ConstantInteger.java,v 1.12 1998-08-04 01:51:37 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.4"
  * @see Constant
  * @see ConstantFloat
  */
-public class ConstantInteger extends Constant {
+public class ConstantInteger extends ConstantValue {
   /** The value of the <code>int</code> constant. */
   public int val;
 
@@ -35,6 +35,9 @@ public class ConstantInteger extends Constant {
 
   /** Returns the integer value of this constant. */
   public int intValue() { return val; }
+  /** Returns the value of this constant, wrapped as a 
+   *  <code>java.lang.Integer</code>. */
+  public Object value() { return new Integer(val); }
 
   /** Create a human-readable representation of this constant. */
   public String toString() {

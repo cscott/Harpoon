@@ -6,12 +6,12 @@ import harpoon.ClassFile.Raw.*;
  * floating-point numeric constants.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantDouble.java,v 1.11 1998-08-02 03:47:35 cananian Exp $
+ * @version $Id: ConstantDouble.java,v 1.12 1998-08-04 01:51:37 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.5"
  * @see Constant
  * @see ConstantLong
  */
-public class ConstantDouble extends Constant {
+public class ConstantDouble extends ConstantValue {
   /** The value of the <code>double</code> constant. */
   public double val;
 
@@ -35,6 +35,9 @@ public class ConstantDouble extends Constant {
 
   /** Returns the value of this constant. */
   public double doubleValue() { return val; }
+  /** Returns the value of this constant, wrapped as a 
+   *  <code>java.lang.Double</code>. */
+  public Object value() { return new Double(val); }
 
   /** Create a human-readable representation of this constant. */
   public String toString() {
