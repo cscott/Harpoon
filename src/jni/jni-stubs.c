@@ -1,19 +1,25 @@
-#include <stdio.h>
 #include <jni.h>
 #include <jni-private.h>
 
+#include <assert.h>
+#include <stdio.h>
+
 jint FNI_GetVersion(JNIEnv *env) {
+  assert(FNI_NO_EXCEPTIONS(env));
   return 0x00010001; /* JNI version 1.1 */
 }
 
 /* do-nothing stubs */
 jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
+  assert(FNI_NO_EXCEPTIONS(env));
   return 0;
 }
 jint FNI_MonitorExit(JNIEnv *env, jobject obj) {
+  assert(FNI_NO_EXCEPTIONS(env));
   return 0;
 }
 jint FNI_UnregisterNatives(JNIEnv *env, jclass clazz) {
+  assert(FNI_NO_EXCEPTIONS(env));
   return 0;
 }
 

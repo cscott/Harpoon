@@ -17,6 +17,8 @@
 # endif
 #endif
 
+/* --------------------- data structure internals --------------------- */
+
 struct _jmethodID {
   char *name;	   /* method name. */
   char *desc;	   /* method descriptor */
@@ -87,13 +89,31 @@ typedef struct oobj * jobject_unwrapped;
 /* a wrapped object is a struct _jobject *...*/
 struct _jobject {
   struct oobj * obj;
+  struct _jobject * next;
 };
-/* this function will make a wrapper. */
-jobject FNI_NewLocalRef(jobject_unwrapped obj);
-
 /* define handy (un)wrapper macros */
-#define FNI_WRAP(x) (FNI_NewLocalRef(x))
+#define FNI_WRAP(x) (FNI_NewLocalRef(env, x))
 #define FNI_UNWRAP(_x) ({jobject x=_x; (x==NULL)?NULL:x->obj; })
+
+/* ---------------------- thread state ---------------------------------*/
+struct FNI_Thread_State {
+  JNIEnv vtable;
+  jthrowable exception; /* outstanding exception, or NULL if no exception. */
+  struct _jobject localrefs; /* header node in a local refs list. */
+};
+extern struct _jobject FNI_globalrefs; /* header node in global refs list. */
+
+#define FNI_NO_EXCEPTIONS(env) \
+	(((struct FNI_Thread_State *)(env))->exception==NULL)
+
+/* -------------- internal function prototypes. ------------- */
+
+/* make a new JNIEnv *... */
+JNIEnv * FNI_ThreadInit(void);
+/* this function will make a wrapper. */
+jobject FNI_NewLocalRef(JNIEnv *env, jobject_unwrapped obj);
+/* Look up classinfo from class object. */
+struct FNI_classinfo *FNI_GetClassInfo(jclass clazz);
 
 /* --------------- JNI function prototypes. ------------------ */
 
@@ -116,7 +136,7 @@ jint FNI_ThrowNew (JNIEnv *env, jclass clazz, const char *message);
 jthrowable FNI_ExceptionOccurred (JNIEnv *env);
 void FNI_ExceptionDescribe (JNIEnv *env);
 void FNI_ExceptionClear (JNIEnv *env);
-void FNI_FatalError (JNIEnv *env, const char *msg);
+void FNI_FatalError (JNIEnv *env, const char *msg) __attribute__ ((noreturn));
 
 /* global and local references */
 jobject FNI_NewGlobalRef (JNIEnv *env, jobject obj);

@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <jni.h>
 #include <jni-private.h>
@@ -10,11 +11,14 @@ int name2class_compare(const void *key, const void *element) {
   return strcmp(name, n2c->name);
 }
 jclass FNI_FindClass(JNIEnv *env, const char *name) {
-  const struct FNI_name2class * result =
+  const struct FNI_name2class * result;
+  assert(FNI_NO_EXCEPTIONS(env));
+  result =
     bsearch(name, &name2class_start, &name2class_end-&name2class_start,
 	    sizeof(name2class_start), name2class_compare);
   if (result==NULL) {
-    /* XXX: throw NoClassDefFoundError? */
+    FNI_ThrowNew(env, FNI_FindClass(env, "java/lang/NoClassDefFoundError"),
+		 name);
     return NULL;
   }
   return FNI_WRAP(result->class_object);
@@ -58,14 +62,18 @@ union _jmemberID *FNI_GetMemberID(jclass clazz,
 #define GETID(name, rtype, extype) \
 rtype FNI_Get##name##ID(JNIEnv *env, jclass clazz, \
 			const char *name, const char *sig) { \
-  rtype result = (rtype) FNI_GetMemberID(clazz, name, sig); \
+  rtype result; \
+  assert(FNI_NO_EXCEPTIONS(env)); \
+  result = (rtype) FNI_GetMemberID(clazz, name, sig); \
   if (result==NULL) { \
-    /* XXX: throw extype */ \
+    char msg[strlen(name)+strlen(sig)+2]; \
+    strcpy(msg, name); strcat(msg, " "), strcat(msg, sig); \
+    FNI_ThrowNew(env, FNI_FindClass(env, extype), msg); \
     return NULL; \
   } \
   return result; \
 }
-GETID(Method, jmethodID, NoSuchMethodError)
-GETID(StaticMethod, jmethodID, NoSuchMethodError)
-GETID(Field, jfieldID, NoSuchFieldError)
-GETID(StaticField, jfieldID, NoSuchFieldError)
+GETID(Method, jmethodID, "java/lang/NoSuchMethodError")
+GETID(StaticMethod, jmethodID, "java/lang/NoSuchMethodError")
+GETID(Field, jfieldID, "java/lang/NoSuchFieldError")
+GETID(StaticField, jfieldID, "java/lang/NoSuchFieldError")

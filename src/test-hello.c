@@ -1,8 +1,7 @@
 #include <jni.h>
 #include "constants.h"
 
-extern struct JNINativeInterface FLEX_JNI_table;
-JNIEnv Fenv = &FLEX_JNI_table;
+JNIEnv * FNI_ThreadInit(void); /* from jni-private.h */
 
 int main(int argc, char *argv[]) {
   /*
@@ -12,7 +11,7 @@ int main(int argc, char *argv[]) {
   printf("returned.\n");
   */
   
-  JNIEnv *env = &Fenv;
+  JNIEnv *env = FNI_ThreadInit();
   jclass cls = (*env)->FindClass(env, "Hello2");
   jmethodID mid = (*env)->GetStaticMethodID(env, cls, "main",
 					    "([Ljava/lang/String;)V");

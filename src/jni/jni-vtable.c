@@ -2,7 +2,7 @@
 #include <jni.h>
 #include <jni-private.h>
 
-const struct JNINativeInterface FLEX_JNI_table = {
+const struct JNINativeInterface FLEX_JNI_vtable = {
   0,
   
   0,
@@ -19,12 +19,12 @@ const struct JNINativeInterface FLEX_JNI_table = {
   (typeof(&FNI_IsAssignableFrom)) FNI_Unimplemented,
   0,
             
-  (typeof(&FNI_Throw)) FNI_Unimplemented,
-  (typeof(&FNI_ThrowNew)) FNI_Unimplemented,
-  (typeof(&FNI_ExceptionOccurred)) FNI_Unimplemented,
-  (typeof(&FNI_ExceptionDescribe)) FNI_Unimplemented,
-  (typeof(&FNI_ExceptionClear)) FNI_Unimplemented,
-  (typeof(&FNI_FatalError)) FNI_Unimplemented,
+  FNI_Throw,
+  FNI_ThrowNew,
+  FNI_ExceptionOccurred,
+  FNI_ExceptionDescribe,
+  FNI_ExceptionClear,
+  FNI_FatalError,
   0,
   0,
             

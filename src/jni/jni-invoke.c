@@ -87,6 +87,7 @@ void FNI_CallStaticVoidMethod(JNIEnv *env,
 			      jclass clazz, jmethodID methodID, ...)
 {
     va_list varargs;
+    assert(FNI_NO_EXCEPTIONS(env));
     va_start(varargs, methodID);
     (*env)->CallStaticVoidMethodV(env, clazz, methodID, varargs);
     va_end(varargs);
@@ -97,6 +98,7 @@ type FNI_CallStatic##name##Method(JNIEnv *env, \
 { \
     va_list varargs; \
     type result; \
+    assert(FNI_NO_EXCEPTIONS(env)); \
     va_start(varargs, methodID); \
     result=FNI_CallStatic##name##MethodV(env, clazz, methodID, varargs); \
     va_end(varargs); \
@@ -111,6 +113,7 @@ void FNI_CallStaticVoidMethodA(JNIEnv *env,
 			       jvalue * args) {
   ptroff_t argtable[methodID->nargs];
   jthrowable exception = NULL;
+  assert(FNI_NO_EXCEPTIONS(env));
   move_and_unwrapA(methodID, argtable, args);
   FNI_Dispatch_Void(methodID->offset, methodID->nargs, argtable,
 		    &exception);
@@ -121,6 +124,7 @@ void FNI_CallStaticVoidMethodV(JNIEnv *env,
 			       va_list args) {
   ptroff_t argtable[methodID->nargs];
   jthrowable exception = NULL;
+  assert(FNI_NO_EXCEPTIONS(env));
   move_and_unwrapV(methodID, argtable, args);
   FNI_Dispatch_Void(methodID->offset, methodID->nargs, argtable,
 		    &exception);
@@ -132,6 +136,7 @@ jobject FNI_CallStaticObjectMethodA(JNIEnv *env,
   ptroff_t argtable[methodID->nargs];
   jobject_unwrapped result;
   jthrowable exception = NULL;
+  assert(FNI_NO_EXCEPTIONS(env));
   move_and_unwrapA(methodID, argtable, args);
   result = FNI_Dispatch_Object(methodID->offset, methodID->nargs,
 			       argtable, &exception);
@@ -144,6 +149,7 @@ jobject FNI_CallStaticObjectMethodV(JNIEnv *env,
   ptroff_t argtable[methodID->nargs];
   jobject_unwrapped result;
   jthrowable exception = NULL;
+  assert(FNI_NO_EXCEPTIONS(env));
   move_and_unwrapV(methodID, argtable, args);
   result = FNI_Dispatch_Object(methodID->offset, methodID->nargs,
 			       argtable, &exception);
@@ -157,6 +163,7 @@ type FNI_CallStatic##name##MethodA(JNIEnv *env, \
   ptroff_t argtable[methodID->nargs]; \
   type result; \
   jthrowable exception = NULL; \
+  assert(FNI_NO_EXCEPTIONS(env)); \
   move_and_unwrapA(methodID, argtable, args); \
   result = FNI_Dispatch_##name(methodID->offset, methodID->nargs, \
 			       argtable, &exception); \
@@ -169,6 +176,7 @@ type FNI_CallStatic##name##MethodV(JNIEnv *env, \
   ptroff_t argtable[methodID->nargs]; \
   type result; \
   jthrowable exception = NULL; \
+  assert(FNI_NO_EXCEPTIONS(env)); \
   move_and_unwrapV(methodID, argtable, args); \
   result = FNI_Dispatch_##name(methodID->offset, methodID->nargs, \
 			       argtable, &exception); \
