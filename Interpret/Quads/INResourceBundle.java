@@ -3,14 +3,16 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 
 /**
  * <code>INResourceBundle</code> provides implementations for (some
  * of) the native methods in <code>java.util.ResourceBundle</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INResourceBundle.java,v 1.1.2.1 2001-09-28 21:54:41 cananian Exp $
+ * @version $Id: INResourceBundle.java,v 1.1.2.2 2001-10-04 19:04:16 cananian Exp $
  */
 public class INResourceBundle {
     static final void register(StaticState ss) {
