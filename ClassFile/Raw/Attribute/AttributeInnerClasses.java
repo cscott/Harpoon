@@ -11,8 +11,9 @@ import harpoon.ClassFile.Raw.Constant.*;
  * originally declared, untransformed access flags.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeInnerClasses.java,v 1.1 1998-08-02 05:07:39 cananian Exp $
+ * @version $Id: AttributeInnerClasses.java,v 1.2 1998-08-02 05:24:21 cananian Exp $
  * @see "Inner Classes Specification"
+ * @see InnerClass
  * @see Attribute
  * @see ClassFile
  */
