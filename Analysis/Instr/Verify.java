@@ -44,6 +44,12 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 	if (lra.isRegister(use)) 
 	    return ListFactory.singleton(use);
 	
+	if (!regfile.hasAssignment(use)) {
+	    System.out.println(curr+" use:"+use+" has no assignment in "+regfile);
+	    System.out.println("BasicBlock");
+	    System.out.println(block.statements());
+	    System.out.println();
+	}
 	List regs = regfile.getAssignment(use);
 	/*	
 	if (regs == null) { // search for alternate

@@ -78,7 +78,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.115 2000-08-23 06:33:26 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.116 2000-08-26 09:34:47 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -677,7 +677,7 @@ public abstract class RegAlloc  {
 		    if (isRegister(def)) {
 			tempXinstrToCommonLoc.add(dxi, def);
 		    } else {
-			// Util.assert(checked.contains(i),i+" not checked");
+			Util.assert(checked.contains(i),i+" not checked");
 			Util.assert(code.registerAssigned(i,def),
 				    "def:"+def+" not assigned in "+
 				    i.getID()+" : "+i);

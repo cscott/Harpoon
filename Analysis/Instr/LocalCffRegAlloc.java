@@ -69,7 +69,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.115 2000-08-23 06:33:25 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.116 2000-08-26 09:34:47 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -188,6 +188,10 @@ public class LocalCffRegAlloc extends RegAlloc {
     
 
     protected void generateRegAssignment() {
+	// this needs to be first, before we insert new Instrs that
+	// won't be in the block-set proper.
+	fixupUnreachableCode();
+
 	if (TIME) System.out.print("L");
 	liveVariableAnalysis();
 	// if (TIME) System.out.print("A");
@@ -205,6 +209,31 @@ public class LocalCffRegAlloc extends RegAlloc {
 	if (VERIFY) verifyLRA();
 
         // code.printNoAssem(new java.io.PrintWriter(System.out));
+    }
+
+    private void fixupUnreachableCode() {
+	for(Iterator is=code.getElementsI(); is.hasNext();){ 
+ 	    Instr i = (Instr) is.next();
+ 	    if (bbFact.getBlock(i) == null) {
+ 		for(Iterator refs=getRefs(i); refs.hasNext();){
+ 		    Temp r = (Temp) refs.next();
+ 		    // use any old assignment, since this code MUST
+ 		    // be unreachable anyway.
+ 		    Util.assert(!code.registerAssigned(i, r));
+		    code.assignRegister
+ 			(i, r, (List)
+ 			 frame.getRegFileInfo().
+ 			 getRegAssignments(r).iterator().next());
+ 		}
+ 		checked.add(i);
+ 	    }
+ 	}
+    }
+
+    /** includes both pseudo-regs and machine-regs for now. */
+    private static Iterator getRefs(final Instr i) {
+	return new CombineIterator(i.useC().iterator(), 
+				   i.defC().iterator());
     }
 
     private void liveVariableAnalysis() {
@@ -1501,13 +1530,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 		return suggL;
 	    }
 	}
-	
-	/** includes both pseudo-regs and machine-regs for now. */
-	private Iterator getRefs(final Instr i) {
-	    return new CombineIterator(i.useC().iterator(), 
-				       i.defC().iterator());
-	}
-	
 	
 	/** spills `val', adding a store after `loc', but does *NOT*
 	    update the regfile. 
