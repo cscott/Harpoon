@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.29 2000-10-17 03:26:03 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.30 2000-11-10 22:43:58 bdemsky Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -69,12 +69,12 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // integer constant sizes:
     final int WORD_SIZE;
     final int LONG_WORD_SIZE;
-    final int POINTER_SIZE;
+    protected final int POINTER_SIZE;
     final int OBJECT_HEADER_SIZE;
     // integer constant offsets:
     // layout of oobj
     final int OBJ_CLAZ_OFF;
-    final int OBJ_HASH_OFF;
+    protected final int OBJ_HASH_OFF;
     final int OBJ_ALENGTH_OFF;
     final int OBJ_AZERO_OFF;
     final int OBJ_FZERO_OFF;
@@ -100,7 +100,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // set of string references made
     final Set stringSet = new HashSet();
 
-    TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
+    public TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
 		AllocationStrategy as, boolean pointersAreLong) {
 	this.runtime = runtime;
 	this.linker = linker;
@@ -147,16 +147,16 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	CLAZ_METHODS_OFF = CLAZ_DISPLAY_OFF + (1+cdm.maxDepth())*POINTER_SIZE;
     }
     // type declaration helper methods
-    private static Exp DECLARE(DerivationGenerator dg, HClass hc, Exp exp) {
+    protected static Exp DECLARE(DerivationGenerator dg, HClass hc, Exp exp) {
 	if (dg!=null) dg.putType(exp, hc);
 	return exp;
     }
-    private static Exp DECLARE(DerivationGenerator dg, HClass hc, Temp t,
+    protected static Exp DECLARE(DerivationGenerator dg, HClass hc, Temp t,
 			       Exp exp) {
 	if (dg!=null) dg.putTypeAndTemp(exp, hc, t);
 	return exp;
     }
-    private static Exp DECLARE(DerivationGenerator dg, Derivation.DList dl,
+    protected static Exp DECLARE(DerivationGenerator dg, Derivation.DList dl,
 			       Exp exp) {
 	if (dg!=null) dg.putDerivation(exp, dl);
 	return exp;
