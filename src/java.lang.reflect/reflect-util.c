@@ -67,7 +67,7 @@ char *REFLECT_advanceDescriptor(char *sigptr) {
       while (*sigptr=='[') sigptr++;
     case 'L':
       if (*sigptr=='L') while (*sigptr!=';') sigptr++;
-    default:
+    default:;
     }
     assert(*sigptr!='[' && *sigptr!='L');
     sigptr++; /* one step forward */
