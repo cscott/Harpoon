@@ -13,8 +13,10 @@ import harpoon.IR.RawClass.ConstantValue;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <code>ImplMagic</code> provides concrete implementation for
@@ -23,7 +25,7 @@ import java.util.Vector;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.5.2.9 2000-01-13 23:47:47 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5.2.10 2000-01-30 23:27:09 cananian Exp $
  */
 abstract class ImplMagic  { // wrapper for the Real McCoy.
 
@@ -98,17 +100,17 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    String desc = methodinfo.descriptor();
 	    // snip off everything but the parameter list descriptors.
 	    desc = desc.substring(1, desc.lastIndexOf(')'));
-	    Vector v = new Vector();
+	    List v = new ArrayList();
 	    for (int i=0; i<desc.length(); i++) {
 		// make HClass for first param in list.
-		v.addElement(new ClassPointer(parent.getLinker(),
-					      desc.substring(i)));
+		v.add(new ClassPointer(parent.getLinker(),
+				       desc.substring(i)));
 		// skip over the one we just added.
 		while (desc.charAt(i)=='[') i++;
 		if (desc.charAt(i)=='L') i=desc.indexOf(';', i);
 	    }
-	    _this.parameterTypes = new HPointer[v.size()];
-	    v.copyInto(_this.parameterTypes);
+	    _this.parameterTypes = (HPointer[])
+		v.toArray(new HPointer[v.size()]);
 	}
 	// Make sure our parsing/construction is correct.
 	// COMMENTED OUT because it was causing us to load unnecessary classes
@@ -145,15 +147,15 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    if (exceptions == null)
 		_this.exceptionTypes = new HClass[0];
 	    else {
-		Vector v = new Vector();
+		List v = new ArrayList();
 		for (int i=0; i<exceptions.number_of_exceptions(); i++) {
 		    ConstantClass cc = exceptions.exception_index_table(i);
 		    if (cc != null)
-			v.addElement(new ClassPointer(parent.getLinker(),
-						      "L"+cc.name()+";"));
+			v.add(new ClassPointer(parent.getLinker(),
+					       "L"+cc.name()+";"));
 		}
-		_this.exceptionTypes = new HPointer[v.size()];
-		v.copyInto(_this.exceptionTypes);
+		_this.exceptionTypes = (HPointer[])
+		    v.toArray(new HPointer[v.size()]);
 	    }
 	}
 	_this.isSynthetic = (synthetic!=null);
@@ -164,7 +166,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    repository.put(_this, methodinfo);
     }
 
-    static final Hashtable repository = new Hashtable();
+    static final Map repository = new HashMap();
     public static final HCodeFactory codeFactory = new SerializableCodeFactory() {
 	public String getCodeName() 
 	{ return harpoon.IR.Bytecode.Code.codename; }

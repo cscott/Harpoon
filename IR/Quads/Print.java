@@ -10,14 +10,15 @@ import harpoon.Util.Util;
 
 import java.io.PrintWriter;
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The <code>Print</code> class pretty-prints a quad representation,
  * inserting labels to make the control flow clear.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Print.java,v 1.1.2.8 1999-09-19 16:17:34 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.9 2000-01-30 23:27:13 cananian Exp $
  */
 abstract class Print  {
     /** Print <code>Quad</code> code representation <code>c</code> to
@@ -27,7 +28,7 @@ abstract class Print  {
 	Quad[] ql = (Quad[]) c.getElements();
 	METHOD qM = ((HEADER) c.getRootElement()).method();
 	// compile list of back edges
-	Hashtable labels = new Hashtable();
+	Map labels = new HashMap();
 	for (int i=0; i<ql.length; i++) {
 	    // if has more than one edge, then other edges branch to labels.
 	    for (int j=0; j<ql[i].next().length; j++) {

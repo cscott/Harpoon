@@ -3,7 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Temp;
 
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.ReferenceUnique;
 import harpoon.Util.Util;
@@ -14,7 +15,7 @@ import harpoon.Util.Util;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.14.2.15 2000-01-29 12:40:37 cananian Exp $
+ * @version $Id: Temp.java,v 1.14.2.16 2000-01-30 23:27:14 cananian Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
@@ -81,7 +82,8 @@ public class Temp implements Cloneable, Comparable, ReferenceUnique {
   /** Returns a new <code>TempFactory</code> with the given scope. */
   public static TempFactory tempFactory(final String scope) {
     return new TempFactory() {
-      private Hashtable table = new Hashtable();
+      // declare table as HashMap, not Map, for slight efficiency gain.
+      private final HashMap table = new HashMap();
       public String getScope() { return scope; }
       protected synchronized String getUniqueID(String suggestion) {
 	// strip digits from the end of the suggestion.

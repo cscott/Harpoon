@@ -19,7 +19,7 @@ import harpoon.ClassFile.HClass;
  * steps to be deemed worthwhile.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Qop.java,v 1.1.2.11 1999-07-17 09:58:36 cananian Exp $
+ * @version $Id: Qop.java,v 1.1.2.12 2000-01-30 23:27:13 cananian Exp $
  */
 public abstract class Qop  {
     /** Compares references for equality. */
@@ -259,7 +259,7 @@ public abstract class Qop  {
 	if (r==null) throw new RuntimeException("Unknown QOp name: "+op);
 	return r.intValue();
     }
-    private static final java.util.Hashtable h = new java.util.Hashtable();
+    private static final java.util.Map h = new java.util.HashMap();
     static {
         h.put("acmpeq", new Integer(ACMPEQ));
         h.put("d2f", new Integer(D2F));
