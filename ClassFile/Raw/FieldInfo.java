@@ -7,7 +7,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>field_info</code> structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldInfo.java,v 1.11 1998-08-01 22:55:16 cananian Exp $
+ * @version $Id: FieldInfo.java,v 1.12 1998-08-02 03:19:30 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.5"
  * @see ClassFile
  * @see harpoon.ClassFile.HField
@@ -94,4 +94,22 @@ public class FieldInfo {
 
   public String name() { return name_index().val; }
   public String descriptor() { return descriptor_index().val; }
+
+  /** Pretty-print this field_info structure. */
+  public void print(java.io.PrintWriter pw, int indent) {
+    int in=indent;
+    indent(pw, in, "Access Flags: " + access_flags);
+    indent(pw, in, "Name: " + name() + " {"+name_index+"}");
+    indent(pw, in, "Descriptor: " + descriptor() + " {"+descriptor_index+"}");
+    indent(pw, in, "Attributes ["+attributes.length+"]:");
+    for (int i=0; i<attributes.length; i++) {
+      indent(pw, in+1, "#"+i+":");
+      attributes[i].print(pw, in+2);
+    }
+  }
+  private static void indent(java.io.PrintWriter pw, int indent, String s) {
+    for (int i=0; i<indent; i++)
+      pw.print("  ");
+    pw.println(s);
+  }
 }

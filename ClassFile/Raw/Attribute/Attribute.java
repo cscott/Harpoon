@@ -10,7 +10,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * types of attribute information classes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Attribute.java,v 1.8 1998-08-01 22:55:16 cananian Exp $
+ * @version $Id: Attribute.java,v 1.9 1998-08-02 03:19:40 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7"
  * @see ClassFile
  * @see FieldInfo
@@ -74,4 +74,14 @@ public abstract class Attribute {
   /** Create a human-readable representation for the Attribute. */
   public String toString()
   { return "("+attribute_name()+" Attribute["+attribute_length()+"])"; }
+
+  /** Pretty-print this attribute structure. */
+  public void print(java.io.PrintWriter pw, int indent) {
+    indent(pw, indent, toString());
+  }
+  static void indent(java.io.PrintWriter pw, int indent, String s) {
+    for (int i=0; i<indent; i++)
+      pw.print("  ");
+    pw.println(s);
+  }
 }

@@ -7,7 +7,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFile.java,v 1.11 1998-08-01 22:55:16 cananian Exp $
+ * @version $Id: ClassFile.java,v 1.12 1998-08-02 03:19:29 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 
@@ -258,4 +258,56 @@ public class ClassFile {
   public int fields_count() { return fields.length; }
   public int methods_count() { return methods.length; }
   public int attributes_count() { return attributes.length; }
+
+  /** Pretty print this classfile structure. */
+  public void print(java.io.PrintWriter pw) { print(pw,0); }
+  public void print(java.io.PrintWriter pw, int indent) {
+    int in=indent;
+    indent(pw, in+0, "ClassFile {");
+    indent(pw, in+1, "Magic: 0x" + Long.toHexString(MAGIC).toUpperCase());
+    indent(pw, in+1, "Minor Version: " + minor_version);
+    indent(pw, in+1, "Major Version: " + major_version);
+    // constant pool.
+    indent(pw, in+1, "Constant Pool ["+constant_pool.length+"]:");
+    for (int i=1; i<constant_pool.length; i++) {
+      indent(pw, in+2, "Constant {"+i+"}:");
+      constant_pool[i].print(pw, in+3);
+    }
+    // this class information
+    indent(pw, in+1, "Access Flags: " + access_flags);
+    indent(pw, in+1, "This class:  " + this_class().name() + 
+	   " {"+this_class+"}");
+    indent(pw, in+1, "Super class: " + super_class().name() +
+	   " {"+super_class+"}");
+    // interfaces
+    indent(pw, in+1, "Interfaces ["+interfaces.length+"]:");
+    for (int i=0; i<interfaces.length; i++) {
+      indent(pw, in+2, "#"+i+": " + interfaces(i).name() + 
+	     " {"+interfaces[i]+"}");
+    }
+    // fields
+    indent(pw, in+1, "Fields ["+fields.length+"]:");
+    for (int i=0; i<fields.length; i++) {
+      indent(pw, in+2, "#"+i+": ");
+      fields[i].print(pw, in+3);
+    }
+    // methods
+    indent(pw, in+1, "Methods ["+methods.length+"]:");
+    for (int i=0; i<methods.length; i++) {
+      indent(pw, in+2, "#"+i+": ");
+      methods[i].print(pw, in+3);
+    }
+    // attributes
+    indent(pw, in+1, "Attributes ["+attributes.length+"]:");
+    for (int i=0; i<attributes.length; i++) {
+      indent(pw, in+2, "#"+i+": ");
+      attributes[i].print(pw, in+3);
+    }
+    indent(pw, in+0, "}");
+  }
+  private static void indent(java.io.PrintWriter pw, int indent, String s) {
+    for (int i=0; i<indent; i++)
+      pw.print("  ");
+    pw.println(s);
+  }
 }
