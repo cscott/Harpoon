@@ -30,7 +30,8 @@ jlong fni_runtime_freeMemory(JNIEnv *env) {
 #elif defined(WITH_PRECISE_GC)
   return precise_free_memory();
 #else
-  assert(0/*unimplemented*/);
+  printf("WARNING: runtime_freeMemory() unimplemented.  Returning 0.\n");
+  return 0;
 #endif
 }
 
@@ -41,7 +42,8 @@ jlong fni_runtime_totalMemory(JNIEnv *env) {
 #elif defined(WITH_PRECISE_GC)
   return precise_get_heap_size();
 #else
-  assert(0/*unimplemented*/);
+  printf("WARNING: runtime_totalMemory() unimplemented.  Returning 0.\n");
+  return 0;
 #endif
 }
 
@@ -51,6 +53,8 @@ void fni_runtime_gc(JNIEnv *env) {
   GC_gcollect();
 #elif defined(WITH_PRECISE_GC)
   precise_collect();
+#elif defined(WITH_NO_GC)
+  /* ignore */
 #else
   assert(0/*unimplemented*/);
 #endif
@@ -60,6 +64,8 @@ static inline
 void fni_runtime_runFinalization(JNIEnv *env) {
 #ifdef BDW_CONSERVATIVE_GC
   GC_invoke_finalizers();
+#elif defined(WITH_NO_GC)
+  /* ignore */
 #elif defined(WITH_PRECISE_GC)
   /* unimplemented */
   printf("WARNING: Finalization not implemented for precise GC.\n");
