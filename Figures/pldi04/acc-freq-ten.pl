@@ -3,9 +3,9 @@
 # missing: freq.228.*
 
 @benchmarks = ( 201, 202, 205, 209, 213, 222, 228 );
-%fullname = ( 201 => "compress", 202 => "jess", 205 => "raytrace",
-	      209 => "db", 213 => "javac", 222 => "mpegaudio",
-	      227 => "mtrt", 228 => "jess" );
+%fullname = ( 200 => "check", 201 => "compress", 202 => "jess",
+	      205 => "raytrace", 209 => "db", 213 => "javac",
+	      222 => "mpegaudio", 227 => "mtrt", 228 => "jess" );
 %runsize = ( 201 => 10, 202 => 100, 205 => 10, 209 => 10, 213 => 100, 222 => 10 , 228 => 100);
 
 foreach my $run (keys %runsize) {
