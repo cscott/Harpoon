@@ -24,6 +24,7 @@
 #define RTJ_FREE GC_free 
 #endif 
 #else 
+#define RTJ_MALLOC malloc
 #define RTJ_MALLOC_UNCOLLECTABLE malloc
 #define RTJ_FREE free 
 #endif

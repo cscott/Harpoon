@@ -7,6 +7,9 @@
 struct RefInfo* RefInfo_new(int reuse) {
   struct RefInfo* ri = (struct RefInfo*)
     RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct RefInfo));
+#ifdef RTJ_DEBUG
+  printf("%08x = RefInfo_new(%d)\n", ri, reuse);
+#endif
   ri->refCount = 0;
   ri->reuse = reuse;
   return ri;
@@ -16,13 +19,10 @@ struct MemBlock* MemBlock_new(JNIEnv* env,
 			      jobject memoryArea, 
 			      jobject realtimeThread,
 			      struct MemBlock* superBlock) {
-  struct BlockInfo* bi = (struct BlockInfo*)
-    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct BlockInfo));
-  struct MemBlock* mb = (struct MemBlock*)
-    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct MemBlock));
+  struct MemBlock* mb = RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct MemBlock));
+  struct BlockInfo* bi = RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct BlockInfo));
   jclass memoryAreaClass = 
-    (*env)->GetObjectClass(env, 
-			   (mb->block_info = bi)->memoryArea = memoryArea);
+    (*env)->GetObjectClass(env, (mb->block_info = bi)->memoryArea = memoryArea);
   jclass realtimeThreadClass = 
     (*env)->GetObjectClass(env, bi->realtimeThread = realtimeThread);
   jmethodID methodID = (*env)->GetMethodID(env, memoryAreaClass, 
@@ -36,7 +36,6 @@ struct MemBlock* MemBlock_new(JNIEnv* env,
   printf("  methodID: %08x\n", methodID);
   checkException(env);
 #endif
-
   bi->superBlock = superBlock;
   while (superBlock != NULL) {
     MemBlock_INCREF(superBlock);
@@ -45,8 +44,8 @@ struct MemBlock* MemBlock_new(JNIEnv* env,
   }
   getInflatedObject(env, realtimeThread)->temp = mb;
   (*env)->CallVoidMethod(env, memoryArea, methodID, realtimeThread);
-  (*env)->DeleteLocalRef(env, memoryAreaClass);
-  (*env)->DeleteLocalRef(env, realtimeThreadClass);
+/*    (*env)->DeleteLocalRef(env, memoryAreaClass); */
+/*    (*env)->DeleteLocalRef(env, realtimeThreadClass); */
   MemBlock_INCREF(mb);
   return mb;
 }

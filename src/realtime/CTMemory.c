@@ -12,7 +12,7 @@
 JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_initNative
 (JNIEnv* env, jobject memoryArea, jlong size, jboolean reuse) {
   struct MemBlock* mb = (struct MemBlock*)
-    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct MemBlock));
+      RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct MemBlock));
 #ifdef RTJ_DEBUG
   printf("CTMemory.initNative(%d)\n", (size_t)size);
 #endif

@@ -23,8 +23,8 @@ JNIEXPORT void JNICALL Java_javax_realtime_VTMemory_newMemBlock
   struct MemBlock* mb = getInflatedObject(env, realtimeThread)->temp;
   struct BlockInfo* bi = mb->block_info;
 #ifdef RTJ_DEBUG
-  printf("VTMemory.newMemBlock(%08x, %08x, %08x)\n", env, memoryArea, 
-	 realtimeThread);
+  printf("VTMemory.newMemBlock(%08x, %08x, %08x)\n", env, 
+	 memoryArea, realtimeThread);
   checkException(env);
 #endif
   if (IsNoHeapRealtimeThread(env, realtimeThread)) {

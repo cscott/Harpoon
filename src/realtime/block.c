@@ -37,7 +37,7 @@ inline void* Block_alloc(struct Block* block, size_t size) {
 #ifdef RTJ_DEBUG
   printf("Block_alloc(%08x, %d)\n", block, size);
 #endif
-  if ((ptr = (void*)exchange_and_add((void*)(&(block->free)), size))
+  if ((ptr = (void*)exchange_and_add((void*)(&(block->free)), (size+7)&(~7)))
       > block->end) {
     printf("Ran out of space in MemoryArea: %d is not enough space.\n",
 	   (block->end)-(block->begin));
