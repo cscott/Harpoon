@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.160 2001-07-10 22:50:54 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.161 2001-07-11 00:48:52 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -400,7 +400,8 @@ public class SAMain extends harpoon.IR.Registration {
 	frame.setClassHierarchy(classHierarchy);
 	if (USE_OLD_CLINIT_STRATEGY) {
 	    frame.setCallGraph(callGraph);
-	    System.setProperty("harpoon.runtime1.order-initializers","true");
+	    System.getProperties().put
+		("harpoon.runtime1.order-initializers","true");
 	}
 	callGraph=null;// memory management.
  
