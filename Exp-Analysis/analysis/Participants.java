@@ -110,6 +110,18 @@ public class Participants {
 	return t;
     }
 
+
+    public long getLocalizedTime(String population, int program) {
+	long t = 0;
+	Iterator it = participants.iterator();
+	while (it.hasNext()) {
+	    Participant p = (Participant) it.next();
+	    t += p.getLocalizedTime(population, program);
+	}
+	
+	return t;
+    }
+
   
     public int numberParticipants(String population) {
 	int n = 0;
@@ -146,6 +158,19 @@ public class Participants {
 	
 	return n;
     }
+
+
+    public int numberCorrectAndLocalizedRounds(String population, int program) {
+	int n = 0;
+	Iterator it = participants.iterator();
+	while (it.hasNext()) {
+	    Participant p = (Participant) it.next();
+	    n += p.numberCorrectAndLocalizedRounds(population, program);
+	}
+	
+	return n;
+    }
+
 
 
     public Iterator iterator() {

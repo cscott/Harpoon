@@ -127,6 +127,45 @@ public class Participant implements Comparable{
     }
 
 
+    public long getLocalizedTime(String population, int program) {
+	long t = 0;
+	Iterator it = rounds.iterator();
+	while (it.hasNext()) {
+	    Round r = (Round) it.next();
+	    if ((r.getPopulation().equals(population)) && ((r.getProgram() == program)))
+		if ( (r.correct()) && (r.getLocalized()>0) )
+		    t += r.getLocalized();
+	}
+
+	return t; 
+    }
+
+
+    public long getLocalizedTime(int program) {
+	Iterator it = rounds.iterator();
+	while (it.hasNext()) {
+	    Round r = (Round) it.next();
+	    if (r.getProgram() == program)
+		return r.getLocalized();
+	}
+
+	return 0;
+    }
+
+
+    public long getLocalizedTime() {
+	long t = 0;
+	Iterator it = rounds.iterator();
+	while (it.hasNext()) {
+	    Round r = (Round) it.next();
+	    if ( (r.correct()) && (r.getLocalized()>0) )
+		t += r.getLocalized();
+	}
+
+	return t; 
+    }
+
+
     // if only_correct is true, then we ignore the incorrect solutions
     public long getLocalized(int program, boolean only_correct) {
 	long t = 0;
@@ -161,6 +200,19 @@ public class Participant implements Comparable{
 	while (it.hasNext()) {
 	    Round r = (Round) it.next();
 	    if ((r.getPopulation().equals(population)) && ((r.getProgram() == program)) && (r.correct()))
+		n++;
+	}
+
+	return n; 
+    }
+
+
+    public int numberCorrectAndLocalizedRounds(String population, int program) {
+	int n = 0;
+	Iterator it = rounds.iterator();
+	while (it.hasNext()) {
+	    Round r = (Round) it.next();
+	    if ((r.getPopulation().equals(population)) && ((r.getProgram() == program)) && (r.correct()) && (r.getLocalized()>0))
 		n++;
 	}
 

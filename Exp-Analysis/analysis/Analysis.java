@@ -161,6 +161,17 @@ public static String printTime(long time) {
 
 
 
+public static String printTime2(long time) {
+    if ( (time == 12000) || (time == 0) )
+	return "Not solved";
+    if (time < 0)
+	return "Not provided";
+
+    return printTime(time);
+}
+
+
+
 public static void main(String args[]) {
     if (args.length == 0) {
 	System.out.println("Usage: java analysis.Analysis files_to_process");
@@ -218,26 +229,31 @@ public static void main(String args[]) {
     participants.setCorrect();
 
     //participants.printPopulation("tool"); System.out.println("\n");
-    
-    printStatistics();
-    	
+        	
     participants.setExperience();
     participants.sortByExperience();    
 
-    //printParticipants();
 
     //printCorrectnessVsExperience();
     //printTimeVsExperience(4);
 
     participants.setLocalized();
-    printLocalizedVsExperience(3);
+    //printLocalizedVsExperience(3);
+
+    //printStatistics();
+
+    printParticipants();
+
 }
 
 
 public static void printStatistics()
 {
     int noTotal, noCorrect, percentage;
-    long totalTime, avTime;
+    long totalTime, avTime, localizeTime, avLocalizedTime;
+
+    System.out.println("Note:  When computing average times, we ignore incorrect solutions and unreported times\n");
+
     for (int prg=1; prg<=4; prg++) {	   
 	System.out.println("Program "+prg);
 	if (prg<=2)
@@ -257,7 +273,7 @@ public static void printStatistics()
 	System.out.println("   NOTOOL: "+noCorrect+"/"+noTotal+" ("+percentage+"%)");
 	
 
-	System.out.println("\nTotal time/participant:");	
+	System.out.println("\nTotal time to fix/participant:");	
 	noTotal = participants.numberCorrectRounds("tool", prg);
 	totalTime = participants.getTotalTime("tool", prg, true);
 	avTime = totalTime/noTotal;
@@ -266,6 +282,19 @@ public static void printStatistics()
 	noTotal = participants.numberCorrectRounds("notool", prg);
 	totalTime = participants.getTotalTime("notool", prg, true);
 	avTime = totalTime/noTotal;
+	System.out.println("   NOTOOL: "+printTime(avTime));
+
+
+
+	System.out.println("\nTotal time to localize/participant:");
+	noTotal = participants.numberCorrectAndLocalizedRounds("tool", prg);
+	localizeTime = 60*participants.getLocalizedTime("tool", prg);
+	avTime = localizeTime/noTotal;
+	System.out.println("   TOOL:   "+printTime(avTime));
+
+	noTotal = participants.numberCorrectAndLocalizedRounds("notool", prg);
+	localizeTime = 60*participants.getLocalizedTime("notool", prg);
+	avTime = localizeTime/noTotal;
 	System.out.println("   NOTOOL: "+printTime(avTime));
 
 	System.out.println("\n");
@@ -278,10 +307,22 @@ public static void printParticipants() {
     Iterator it = participants.iterator();
     while (it.hasNext()) {
 	Participant p = (Participant) it.next();	
-	System.out.println("User name: "+p.getUserName()+" ("+p.getPopulation()+")");
+	System.out.println("User name: "+p.getUserName());
+	System.out.println("Population: "+p.getPopulation());
 	System.out.println("Experience: "+p.getExperience());
 	System.out.println("Correct solutions: "+p.numberCorrectRounds());
-	System.out.println("Total time: "+printTime(p.getTotalTime(true))+"\n");
+	System.out.println("Total time to fix: "+printTime(p.getTotalTime(true)));
+	System.out.println("Total time to localize: "+printTime(60*p.getLocalizedTime())+"\n");
+	
+	for (int i=1; i<=4; i++)
+	    System.out.println("Time to fix program "+i+": "+printTime2(p.getTotalTime(i, true)));
+	
+	System.out.println();
+
+	for (int i=1; i<=4; i++)
+	    System.out.println("Time to localize bug "+i+": "+printTime2(60*p.getLocalizedTime(i)));
+	
+      	System.out.println("==========================================\n\n");
     }	
 }
 

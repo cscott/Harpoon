@@ -122,13 +122,16 @@ public class Round {
 	return correct;
     }
 
+    public long getLocalized() {
+	return localized;
+    }
+
     // if only_correct is true, then we ignore the incorrect solutions
     public long getLocalized(boolean only_correct) {
 	if ((only_correct) && (!correct()))
 	    return 0;
 	else return localized;
     }
-
     
     public int getNumberOfBuilds() {
 	return builds.size();
