@@ -1,5 +1,5 @@
 // EventDriven.java, created Fri Nov 12 14:03:59 1999 by kkz
-// Copyright (C) 1999 Karen K. Zee <kkzee@alum.mit.edu>
+// Copyright (C) 1999 Karen K. Zee <kkz@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.EventDriven;
 
@@ -29,8 +29,8 @@ import harpoon.Util.WorkSet;
 /**
  * <code>EventDriven</code>
  * 
- * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.12 2000-04-04 02:16:36 bdemsky Exp $
+ * @author Karen K. Zee <kkz@alum.mit.edu>
+ * @version $Id: EventDriven.java,v 1.1.2.13 2001-06-18 20:46:15 cananian Exp $
  */
 public class EventDriven {
     protected final CachingCodeFactory ucf;

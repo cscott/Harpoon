@@ -1,5 +1,5 @@
 // EnvCode.java, created Sat Oct 30 20:25:43 1999 by kkz
-// Copyright (C) 1999 Karen K. Zee <kkzee@alum.mit.edu>
+// Copyright (C) 1999 Karen K. Zee <kkz@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.EnvBuilder;
 
@@ -26,8 +26,8 @@ import harpoon.Util.Util;
 /**
  * <code>EnvCode</code>
  * 
- * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvCode.java,v 1.1.2.7 2000-10-06 21:18:38 cananian Exp $
+ * @author Karen K. Zee <kkz@alum.mit.edu>
+ * @version $Id: EnvCode.java,v 1.1.2.8 2001-06-18 20:46:03 cananian Exp $
  */
 public class EnvCode extends harpoon.IR.Quads.QuadSSI {
 

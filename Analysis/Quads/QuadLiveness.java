@@ -1,5 +1,5 @@
 // QuadLiveness.java, created Wed Oct 27 17:17:49 1999 by kkz
-// Copyright (C) 1999 Karen K. Zee <kkzee@alum.mit.edu>
+// Copyright (C) 1999 Karen K. Zee <kkz@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
@@ -22,8 +22,8 @@ import java.util.Set;
  * <code>HCode</code>. Since it caches results, you should create a new
  * <code>QuadLiveness</code> if you have changed the <code>HCode</code>.
  * 
- * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: QuadLiveness.java,v 1.1.2.10 2001-01-11 19:57:04 cananian Exp $
+ * @author Karen K. Zee <kkz@alum.mit.edu>
+ * @version $Id: QuadLiveness.java,v 1.1.2.11 2001-06-18 20:46:44 cananian Exp $
  */
 public class QuadLiveness extends Liveness {
     final Hashtable livein;

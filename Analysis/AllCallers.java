@@ -1,5 +1,5 @@
 // AllCallers.java, created Tue Oct 19 19:34:57 1999 by kkz
-// Copyright (C) 1999 Karen K. Zee <kkzee@alum.mit.edu>
+// Copyright (C) 1999 Karen K. Zee <kkz@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
@@ -22,8 +22,8 @@ import java.util.Collections;
  * <code>AllCallers</code> calculates the transitive closure of the dual
  * of the call graph for methods that fulfill a certain condition.
  * 
- * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AllCallers.java,v 1.1.2.9 2001-06-17 22:28:33 cananian Exp $
+ * @author Karen K. Zee <kkz@alum.mit.edu>
+ * @version $Id: AllCallers.java,v 1.1.2.10 2001-06-18 20:44:39 cananian Exp $
  */
 
 public class AllCallers {

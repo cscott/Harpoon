@@ -1,5 +1,5 @@
 // ContCodeSSI.java, created Wed Nov  3 21:43:30 1999 by kkz
-// Copyright (C) 1999 Karen K. Zee <kkzee@alum.mit.edu>
+// Copyright (C) 1999 Karen K. Zee <kkz@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.EventDriven;
 
@@ -22,8 +22,8 @@ import java.util.Map;
  * <code>ContCodeSSI</code> builds the code for a <code>Continuation</code>
  * using <code>quad-no-ssa</code> <code>HCode</code>.
  * 
- * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContCodeSSI.java,v 1.1.2.3 2000-10-16 23:51:50 cananian Exp $
+ * @author Karen K. Zee <kkz@alum.mit.edu>
+ * @version $Id: ContCodeSSI.java,v 1.1.2.4 2001-06-18 20:46:15 cananian Exp $
  */
 public class ContCodeSSI extends harpoon.IR.Quads.QuadSSI  {
 

@@ -1,5 +1,5 @@
 // ReachingDefsImpl.java, created Wed Feb  9 16:35:43 2000 by kkz
-// Copyright (C) 2000 Karen K. Zee <kkzee@alum.mit.edu>
+// Copyright (C) 2000 Karen K. Zee <kkz@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
@@ -27,8 +27,8 @@ import java.util.Set;
  * cached, a new <code>ReachingDefsImpl</code> should be
  * created if the code has been modified.
  * 
- * @author  Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.16 2001-06-17 22:28:35 cananian Exp $
+ * @author  Karen K. Zee <kkz@alum.mit.edu>
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.17 2001-06-18 20:44:43 cananian Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
     final private CFGrapher cfger;

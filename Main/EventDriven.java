@@ -1,5 +1,5 @@
 // EventDriven.java, created Tue Oct 19 21:14:57 1999 by kkz
-// Copyright (C) 1999 Karen K. Zee <kkzee@alum.mit.edu>
+// Copyright (C) 1999 Karen K. Zee <kkz@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
@@ -39,8 +39,8 @@ import harpoon.Util.BasicBlocks.CachingBBConverter;
 /**
  * <code>EventDriven</code>
  * 
- * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.17 2000-03-30 22:17:01 cananian Exp $
+ * @author Karen K. Zee <kkz@alum.mit.edu>
+ * @version $Id: EventDriven.java,v 1.1.2.18 2001-06-18 20:48:18 cananian Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {

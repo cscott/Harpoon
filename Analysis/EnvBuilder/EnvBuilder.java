@@ -1,5 +1,5 @@
 // EnvBuilder.java, created Thu Oct 28 22:38:04 1999 by kkz
-// Copyright (C) 1999 Karen K. Zee <kkzee@alum.mit.edu>
+// Copyright (C) 1999 Karen K. Zee <kkz@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.EnvBuilder;
 
@@ -33,8 +33,8 @@ import java.util.Set;
 /**
  * <code>EnvBuilder</code>
  * 
- * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvBuilder.java,v 1.1.2.10 2000-03-25 10:14:10 bdemsky Exp $
+ * @author Karen K. Zee <kkz@alum.mit.edu>
+ * @version $Id: EnvBuilder.java,v 1.1.2.11 2001-06-18 20:46:02 cananian Exp $
  */
 public class EnvBuilder {
     protected final CachingCodeFactory ucf;

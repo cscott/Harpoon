@@ -1,5 +1,5 @@
 // EventDrivenCode.java, created Fri Nov 12 14:40:55 1999 by kkz
-// Copyright (C) 1999 Karen K. Zee <kkzee@alum.mit.edu>
+// Copyright (C) 1999 Karen K. Zee <kkz@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.EventDriven;
 
@@ -23,8 +23,8 @@ import harpoon.Temp.TempFactory;
 /**
  * <code>EventDrivenCode</code>
  *
- * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDrivenCode.java,v 1.1.2.11 2000-10-06 21:18:47 cananian Exp $
+ * @author Karen K. Zee <kkz@alum.mit.edu>
+ * @version $Id: EventDrivenCode.java,v 1.1.2.12 2001-06-18 20:46:15 cananian Exp $
  */
 public class EventDrivenCode extends harpoon.IR.Quads.QuadSSI {
     /** Creates a <code>EventDrivenCode</code>. */

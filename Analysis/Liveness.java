@@ -1,5 +1,5 @@
 // Liveness.java, created Thu Oct 28 00:31:56 1999 by kkz
-// Copyright (C) 1999 Karen K. Zee <kkzee@alum.mit.edu>
+// Copyright (C) 1999 Karen K. Zee <kkz@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
@@ -11,8 +11,8 @@ import java.util.Set;
 /**
  * <code>Liveness</code> defines an abstract class for live variable analysis.
  * 
- * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: Liveness.java,v 1.1.2.3 2000-02-02 08:16:34 cananian Exp $
+ * @author Karen K. Zee <kkz@alum.mit.edu>
+ * @version $Id: Liveness.java,v 1.1.2.4 2001-06-18 20:44:42 cananian Exp $
  */
 public abstract class Liveness {
     /** The <code>HCode</code> for which this object contains analysis

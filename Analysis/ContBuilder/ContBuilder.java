@@ -1,5 +1,5 @@
 // ContBuilder.java, created Wed Nov  3 20:06:51 1999 by kkz
-// Copyright (C) 1999 Karen K. Zee <kkzee@alum.mit.edu>
+// Copyright (C) 1999 Karen K. Zee <kkz@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.ContBuilder;
 
@@ -22,8 +22,8 @@ import harpoon.Util.Util;
  * <code>CachingCodeFactory</code>. The generated <code>Code</code> is in
  * <code>quad-no-ssa</code> form.
  * 
- * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContBuilder.java,v 1.1.2.8 2000-02-08 08:39:20 bdemsky Exp $
+ * @author Karen K. Zee <kkz@alum.mit.edu>
+ * @version $Id: ContBuilder.java,v 1.1.2.9 2001-06-18 20:45:48 cananian Exp $
  */
 public class ContBuilder {
     protected final CachingCodeFactory ucf;

@@ -1,5 +1,5 @@
 // LockRemove.java, created Fri Nov 12 14:03:59 1999 by kkz
-// Copyright (C) 1999 Karen K. Zee <kkzee@alum.mit.edu>
+// Copyright (C) 1999 Karen K. Zee <kkz@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.EventDriven;
 
@@ -25,8 +25,8 @@ import java.util.Set;
 /**
  * <code>LockRemove</code>
  * 
- * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: LockRemove.java,v 1.1.2.1 2000-01-26 21:04:09 bdemsky Exp $
+ * @author Karen K. Zee <kkz@alum.mit.edu>
+ * @version $Id: LockRemove.java,v 1.1.2.2 2001-06-18 20:46:15 cananian Exp $
  */
 public class LockRemove implements HCodeFactory {
     Set hclassSet;

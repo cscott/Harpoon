@@ -1,5 +1,5 @@
 // ToAsync.java, created Thu Nov 11 12:41:56 1999 by kkz
-// Copyright (C) 1999 Karen K. Zee <kkzee@alum.mit.edu>
+// Copyright (C) 1999 Karen K. Zee <kkz@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.EventDriven;
 
@@ -40,8 +40,8 @@ import java.util.Set;
 /**
  * <code>ToAsync</code>
  * 
- * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.31 2001-01-11 19:56:09 cananian Exp $
+ * @author Karen K. Zee <kkz@alum.mit.edu>
+ * @version $Id: ToAsync.java,v 1.1.2.32 2001-06-18 20:46:15 cananian Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;

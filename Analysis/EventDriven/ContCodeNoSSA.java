@@ -1,5 +1,5 @@
 // ContCodeNoSSA.java, created Wed Nov  3 21:43:30 1999 by kkz
-// Copyright (C) 1999 Karen K. Zee <kkzee@alum.mit.edu>
+// Copyright (C) 1999 Karen K. Zee <kkz@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.EventDriven;
 
@@ -22,8 +22,8 @@ import java.util.Map;
  * <code>ContCodeNoSSA</code> builds the code for a <code>Continuation</code>
  * using <code>quad-no-ssa</code> <code>HCode</code>.
  * 
- * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContCodeNoSSA.java,v 1.1.2.4 2000-11-13 21:06:24 cananian Exp $
+ * @author Karen K. Zee <kkz@alum.mit.edu>
+ * @version $Id: ContCodeNoSSA.java,v 1.1.2.5 2001-06-18 20:46:15 cananian Exp $
  */
 public class ContCodeNoSSA extends harpoon.IR.Quads.QuadNoSSA {
 
