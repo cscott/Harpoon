@@ -29,7 +29,7 @@ import java.util.HashMap;
     cause an assertion failure.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.5 2000-02-01 02:57:54 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.6 2000-02-02 00:30:50 pnkfelix Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -78,6 +78,9 @@ public class BitSetFactory extends SetFactory {
 	}
 	this.bitStringSize = i+1;
 	this.indexer = new Indexer() {
+	    public boolean hasIndex(Object o) {
+		return obj2int.containsKey(o);
+	    }
 	    public int getID(Object o) {
 		return ((Integer)obj2int.get(o)).intValue();
 	    }

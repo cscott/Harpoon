@@ -14,18 +14,26 @@ package harpoon.Util;
  * Factory or Object type.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Indexer.java,v 1.1.2.3 2000-02-01 02:57:54 pnkfelix Exp $
+ * @version $Id: Indexer.java,v 1.1.2.4 2000-02-02 00:30:45 pnkfelix Exp $
  */
 public interface Indexer {
     
+    /** Checks if <code>o</code> is indexed by <code>this</code>.
+	<BR> <B>effects:</B> If <code>o</code> is a member of the set
+	     of objects indexed by <code>this</code>, returns
+	     <code>True</code>. 
+	     Else returns <code>False</code>.
+    */
+    boolean hasIndex(Object o);
+
     /** Returns the "small" integer uniquely associated with
 	<code>o</code> in <code>this</code>.
+	<BR> <B>requires:</B> <code>o</code> is a member of the set of
+	     objects indexed by this
 	<BR> <B>effects:</B> 
-	     If <code>o</code> is a member of the objects indexed by
-	     this, returns the integer uniquely associated
-	     with <code>o</code> from a densely-packed, non-negative
+	     returns the integer uniquely associated with
+	     <code>o</code> from a densely-packed, non-negative 
 	     set of integers whose smallest element is close to zero. 
-	     Else, returns -1.
     */
     int getID(Object o); 
     
