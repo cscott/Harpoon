@@ -19,7 +19,7 @@ import harpoon.IR.Quads.CALL;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.18 2000-03-18 23:39:28 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.19 2000-03-19 23:50:04 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -246,7 +246,7 @@ public class ParIntGraph {
 	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
 	    PANode node = (PANode) itn.next();
 	    if(node.type == PANode.INSIDE)
-		map.put(node, node.specialize(q));
+		map.put(node, node.cs_specialize(q));
 	} 
 	
 	return specialize(map);

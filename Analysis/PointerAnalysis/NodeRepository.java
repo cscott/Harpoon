@@ -6,6 +6,7 @@ package harpoon.Analysis.PointerAnalysis;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.Iterator;
+import java.util.Map;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeElement;
@@ -18,7 +19,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1.2.12 2000-03-18 05:24:31 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.13 2000-03-19 23:50:04 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -117,7 +118,7 @@ public class NodeRepository {
     }
 
     public static final PANode getNewNode(int type){
-	if(PointerAnalysis.CONTEXT_SENSITIVE)
+	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
 	    return new PANodeCS(type);
 	else return new PANode(type);
     }
@@ -245,44 +246,66 @@ public class NodeRepository {
      	Iterator it = code_nodes.keySet().iterator();
 	while(it.hasNext()){
 	    PANode node = (PANode) code_nodes.get(it.next());
-	    if(node.type == PANode.INSIDE)
-		show_node(node,1);
+	    if(node.type == PANode.INSIDE){
+		System.out.print(node);
+		HCodeElement hce = node2Code(node);
+		System.out.println(" created at line " + hce.getSourceFile() + 
+				 ":" + hce.getLineNumber());
+		show_node_specs(node, 1);
+	    }
 	}
     }
 
-    private void show_node(PANode node, int ident){
-	for(int i=0;i<ident;i++) System.out.print(" ");
+    // shows the specializations (call site and thread specs) for node.
+    private void show_node_specs(PANode node, int ident){
 
-	System.out.print(node);
+	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
+	    for(Iterator it = node.getAllCSSpecs().iterator(); it.hasNext(); ){
+		Map.Entry entry = (Map.Entry) it.next();
+		CALL       q = (CALL) entry.getKey();
+		PANode snode = (PANode) entry.getValue();
+		
+		for(int i = 0; i < ident ; i++)
+		    System.out.print(" ");
+		System.out.print(snode);
+		
+		System.out.print(" CallS from " + node +
+				 " at line " + q.getSourceFile() +
+				 ":" + q.getLineNumber());	    
+		if(PointerAnalysis.DETAILS2){
+		    HMethod method = q.method();
+		    System.out.print(" (CALL " + 
+				     method.getDeclaringClass().getName()+"."+
+				     method.getName() + ") ");
+		}
+		System.out.println();
+		show_node_specs(snode, ident+1);
+	    }
+	
 
-	if(!node.isSpecialized()){
-	    HCodeElement hce = node2Code(node);
-	    System.out.print(" created at line " + hce.getSourceFile() + 
-			       ":" + hce.getLineNumber());
-	}
-	else{
-	    CALL q = node.getCallSite();
-	    HMethod method = q.method();
-	    System.out.print(" specialized from " + node.getParent() +
-			     " at line " + q.getSourceFile() +
-			     ":" + q.getLineNumber() + " ");
-	    if(PointerAnalysis.DETAILS2)
-		System.out.print("(CALL " + 
-				 method.getDeclaringClass().getName() + "." +
-				 method.getName() + ") ");
-	}
+	if(PointerAnalysis.THREAD_SENSITIVE)
+	    for(Iterator it=node.getAllTSpecs().iterator();it.hasNext();){
+		Map.Entry entry = (Map.Entry) it.next();
+		MetaMethod  run = (MetaMethod) entry.getKey();
+		PANode    snode = (PANode) entry.getValue();
+		
+		for(int i = 0; i < ident ; i++)
+		    System.out.print(" ");
+		System.out.print(snode);
+		System.out.println(" FTS from " + node +
+				   " for " + run);
+		show_node_specs(snode, ident+1);	    
+	    }
 
-	Set specs = node.getAllSpecializations();
-
-	if((specs == null) || specs.isEmpty()){
-	    System.out.println();
-	    return;
-	}
-
-	System.out.println(":");
-	Iterator it = specs.iterator();
-	while(it.hasNext()){
-	    show_node((PANode) it.next(), ident + 1);
+	if(PointerAnalysis.WEAKLY_THREAD_SENSITIVE){
+	    PANode snode = node.ts_specialize();
+	    if(snode != null){
+		for(int i = 0; i < ident ; i++)
+		    System.out.print(" ");
+		System.out.print(snode);
+		System.out.println(" WTS from " + node);
+		show_node_specs(snode, ident+1);	    
+	    }
 	}
     }
 

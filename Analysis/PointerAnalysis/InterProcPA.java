@@ -23,7 +23,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.16 2000-03-18 05:24:30 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.17 2000-03-19 23:50:04 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -81,7 +81,7 @@ abstract class InterProcPA {
 	}
 
 	// specialize the graphs of the callees for the context sensitive PA
-	if(PointerAnalysis.CONTEXT_SENSITIVE)
+	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
 	    for(int i = 0; i < pigs.length; i++){
 		if(DEBUG)
 		    System.out.println("Pig_callee before specialization:" +
