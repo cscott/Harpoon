@@ -83,7 +83,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.82 2000-11-13 20:18:18 bdemsky Exp $
+ * @version $Id: PAMain.java,v 1.1.2.83 2000-11-13 20:24:25 bdemsky Exp $
  */
 public abstract class PAMain {
 
@@ -272,7 +272,6 @@ public abstract class PAMain {
 	    SAMain.USE_OLD_CLINIT_STRATEGY = true;
 	    // Let's use the hacked register allocator for noe
 	    SAMain.linker = linker;
-	    SAMain.HACKED_REG_ALLOC = true;
 	    SAMain.hcf = hcf;
 	    SAMain.className = root_method.declClass; // params[optind];
 	    SAMain.do_it();
@@ -652,14 +651,18 @@ public abstract class PAMain {
 	    case 'b':
 		COMPILE = true;
 		String backendName = g.getOptarg().toLowerCase().intern();
-		if (backendName == "strongarm")
+		if (backendName == "strongarm") {
+		    SAMain.HACKED_REG_ALLOC = true;
 		    SAMain.BACKEND = SAMain.STRONGARM_BACKEND;
+		}
 		if (backendName == "sparc")
 		    SAMain.BACKEND = SAMain.SPARC_BACKEND;
 		if (backendName == "mips")
 		    SAMain.BACKEND = SAMain.MIPS_BACKEND;
-		if (backendName == "precisec")
+		if (backendName == "precisec") {
 		    SAMain.BACKEND = SAMain.PRECISEC_BACKEND;
+		    SAMain.HACKED_REG_ALLOC = false;
+		}
 		break;
 	    }
 
