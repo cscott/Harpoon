@@ -65,7 +65,7 @@ import harpoon.Util.Options.Option;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.21 2003-04-18 16:25:01 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.22 2003-04-18 18:20:23 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -248,8 +248,8 @@ public abstract class PreallocOpt {
 	CachingCodeFactory hcf_ssi = 
 	    new CachingCodeFactory(QuadSSI.codeFactory(hcf_nossa), true);
 
-	MetaCallGraphImpl.COLL_HACK = true;
-	CallGraph cg = buildCallGraph(linker, hcf_nossa, ch, roots);
+	MetaCallGraphImpl.COLL_HACK = false;
+	CallGraph cg = new SmartCallGraph(hcf_nossa, linker, ch, roots);
 
 	// execute Ovy's analysis
 	IncompatibilityAnalysis ia = 
@@ -287,15 +287,6 @@ public abstract class PreallocOpt {
 	    super(hcf, saveCode);
 	}
 	public void clear(HMethod m)    { /* ignore */ }
-    }
-
-
-    // build a (smart) call graph
-    private static CallGraph buildCallGraph
-	(Linker linker, CachingCodeFactory hcf_nossa,
-	 ClassHierarchy ch, Set roots) {
-	MetaCallGraphImpl.COLL_HACK = false;
-        return new SmartCallGraph(hcf_nossa, linker, ch, mroots);
     }
 
 
