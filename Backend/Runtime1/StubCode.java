@@ -49,7 +49,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.3 1999-10-26 16:34:29 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.4 1999-10-26 22:52:27 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;
@@ -238,8 +238,9 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 		    (tf, null, null, // free local references
 		     new NAME(tf, null,
 			      new Label("_FNI_DeleteLocalRefsUpTo")),
+		     new ExpList(new TEMP(tf, null, Type.POINTER, envT),
 		     new ExpList(new TEMP(tf, null, Type.POINTER, refT),
-				 null)));
+				 null))));
     }
 
     private static int class2type(HClass hc) {
