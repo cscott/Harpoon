@@ -29,7 +29,7 @@ import harpoon.Temp.Temp;
  correctly; speed was only a second issue.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: EdgeOrdering.java,v 1.1.2.6 2000-03-02 04:45:30 salcianu Exp $
+ * @version $Id: EdgeOrdering.java,v 1.1.2.7 2000-03-03 06:23:15 salcianu Exp $
  */
 public class EdgeOrdering{
 
@@ -180,6 +180,34 @@ public class EdgeOrdering{
 		}
 	    });
 	return new EdgeOrdering(essence);
+    }
+
+
+    public static void insertProjection(final EdgeOrdering eo_source,
+				 final EdgeOrdering eo_dest,
+				 final Relation mu){
+
+	eo_source.forAllEntries(new RelationEntryVisitor(){
+		public void visit(Object key, Object value){
+		    PAEdge eo = (PAEdge) key;
+		    PAEdge ei = (PAEdge) value;
+
+		    Set eo_set = eo.project(mu);		    
+		    Set ei_set = ei.project(mu);
+
+		    if(ei_set.isEmpty() || eo_set.isEmpty()) return;
+
+		    Iterator it_eo = eo_set.iterator();
+		    while(it_eo.hasNext()){
+			PAEdge new_eo = (PAEdge) it_eo.next();
+			Iterator it_ei = ei_set.iterator();
+			while(it_ei.hasNext()){
+			    PAEdge new_ei = (PAEdge) it_ei.next();
+			    eo_dest.add(new_eo,new_ei);
+			}
+		    }
+		}
+	    });
     }
 
     /** Checks the equality of two <code>NodeOrdering</code> objects. */

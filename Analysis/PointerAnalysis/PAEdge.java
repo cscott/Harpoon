@@ -4,12 +4,14 @@
 package harpoon.Analysis.PointerAnalysis;
 
 import java.util.Set;
+import java.util.HashSet;
+import java.util.Iterator;
 
 /**
  * <code>PAEdge</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdge.java,v 1.1.2.5 2000-03-01 01:11:03 salcianu Exp $
+ * @version $Id: PAEdge.java,v 1.1.2.6 2000-03-03 06:23:15 salcianu Exp $
  */
 public class PAEdge {
 
@@ -22,6 +24,21 @@ public class PAEdge {
         this.n1 = n1;
 	this.f  = f;
 	this.n2 = n2;
+    }
+
+
+    public Set project(Relation mu){
+	Set edges = new HashSet();
+	Iterator it_n1 = mu.getValues(n1);
+	while(it_n1.hasNext()){
+	    PANode new_n1 = (PANode) it_n1.next();
+	    Iterator it_n2 = mu.getValues(n2);
+	    while(it_n2.hasNext()){
+		PANode new_n2 = (PANode) it_n2.next();
+		edges.add(new PAEdge(new_n1, f, new_n2));
+	    }
+	}
+	return edges;
     }
 
     /** Checks the equality of two edges. */ 

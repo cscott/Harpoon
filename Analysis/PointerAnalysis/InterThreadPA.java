@@ -25,7 +25,7 @@ import harpoon.IR.Quads.NEW;
  * too big and some code segmentation is always good! 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.13 2000-03-02 22:55:40 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.14 2000-03-03 06:23:15 salcianu Exp $
  */
 abstract class InterThreadPA {
     
@@ -404,9 +404,9 @@ abstract class InterThreadPA {
 
 	ParIntGraph new_pig = new ParIntGraph();
 
-	new_pig.insertAllButAr(pig[0],mu[0], true);
-	new_pig.insertAllButAr(pig[1],mu[1], false,
-			       Collections.singleton(nparam));
+	new_pig.insertAllButArEo(pig[0],mu[0], true);
+	new_pig.insertAllButArEo(pig[1],mu[1], false,
+				 Collections.singleton(nparam));
 
 	// compute the escape function for the new graph
 	new_pig.G.propagate();

@@ -31,7 +31,7 @@ import java.util.Collections;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.13 2000-03-02 04:43:08 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.14 2000-03-03 06:23:14 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -39,7 +39,8 @@ public class ActionRepository {
 	scope. This is used as the author thread for the actions done
 	by the main thread of the analyzed procedure/scope, not by one of
 	the threads it is starting. */
-    public static final PANode THIS_THREAD = new PANode(PANode.INSIDE);
+    public static final PANode THIS_THREAD = 
+	NodeRepository.getNewNode(PANode.INSIDE);
 
     /** Creates a <code>ActionRepository</code>. */
     public ActionRepository() {
@@ -447,6 +448,49 @@ public class ActionRepository {
     }
 
 
+    public static void insertProjection(final ActionRepository ar_source,
+					final ActionRepository ar_dest,
+					final Relation mu){
+	mu.add(ActionRepository.THIS_THREAD,ActionRepository.THIS_THREAD);
+
+	ActionVisitor act_visitor_starter = new ActionVisitor(){
+		public void visit_ld(PALoad load){
+		    if(!mu.contains(load.n2,load.n2)) return;
+		    ar_dest.add_ld(mu.getValuesSet(load.n1),
+				   load.f,
+				   load.n2,
+				   mu.getValuesSet(load.nt),
+				   Collections.EMPTY_SET);
+		}
+		public void visit_sync(PANode n, PANode nt1){
+		    ar_dest.add_sync(mu.getValuesSet(n),
+				     mu.getValuesSet(nt1),
+				     Collections.EMPTY_SET);
+		}
+	    };
+
+	ar_source.forAllActions(act_visitor_starter);
+
+	ParActionVisitor par_act_visitor_starter = new ParActionVisitor(){
+
+		public void visit_par_ld(PALoad load, PANode nt2){
+		    if(!mu.contains(load.n2,load.n2)) return;
+		    ar_dest.add_ld(mu.getValuesSet(load.n1),
+				   load.f,
+				   load.n2,
+				   mu.getValuesSet(load.nt),
+				   mu.getValuesSet(nt2));
+		}
+
+		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
+		    ar_dest.add_sync(mu.getValuesSet(n),
+				     mu.getValuesSet(nt1),
+				     mu.getValuesSet(nt2));
+		}
+	    };
+
+	ar_source.forAllParActions(par_act_visitor_starter);
+    }
 
     /** Produce a copy of <code>this</code> object. 
 	The new object is totally independent from the old one: you can
@@ -471,7 +515,8 @@ public class ActionRepository {
 
 
     /** Pretty-printer for debug purposes. 
-	<code>ar1.equals(ar2) <==> ar1.toString().equals(ar2.toString()).</code>*/
+	<code>ar1.equals(ar2) <==> 
+	   ar1.toString().equals(ar2.toString()).</code> */
     public final String toString(){
 	StringBuffer buffer = new StringBuffer();
 	final Set strings = new HashSet();
@@ -517,5 +562,8 @@ public class ActionRepository {
 	return buffer.toString();
     }
 }
+
+
+
 
 

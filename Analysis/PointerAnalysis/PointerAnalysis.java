@@ -53,7 +53,7 @@ import harpoon.IR.Quads.FOOTER;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.20 2000-03-02 22:55:40 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.21 2000-03-03 06:23:15 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -62,6 +62,16 @@ public class PointerAnalysis {
     public static final boolean DETERMINISTIC = true;
     public static final boolean TIMING = true;
     public static final boolean STATS = true;
+
+    /** Activates the context sensitivity. When this flag is turned on, 
+	the nodes from the graph of the callee are specialized for each
+	call site (up to <code>MAX_SPEC_DEPTH</code> times). This increases
+	the precision of the analysis but requires more time and memorty. */
+    public static final boolean CONTEXT_SENSITIVE = false;
+
+    /** The specialization limit. This puts a limit to the otherwise
+	exponential growth of the number of nodes in the analysis. */
+    public static final int MAX_SPEC_DEPTH = 0;
 
     public static final String ARRAY_CONTENT = "array_elements";
 
@@ -254,7 +264,7 @@ public class PointerAnalysis {
 
 	if(TIMING)
 	    System.out.println("analyze(" + hm + ") finished in " +
-			       (System.currentTimeMillis() - begin_time) + "ms");
+			  (System.currentTimeMillis() - begin_time) + "ms");
     }
 
     // inter-procedural analysis of a group of mutually recursive methods

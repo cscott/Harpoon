@@ -14,7 +14,7 @@ import harpoon.IR.Quads.Quad;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1.2.9 2000-03-02 22:55:40 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.10 2000-03-03 06:23:15 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -40,7 +40,7 @@ public class NodeRepository {
     public final PANode getStaticNode(String class_name){
 	PANode node = (PANode) static_nodes.get(class_name);
 	if(node==null)
-	    static_nodes.put(class_name,node = new PANode(PANode.STATIC));
+	    static_nodes.put(class_name,node = getNewNode(PANode.STATIC));
 	return node;
     }
 
@@ -52,7 +52,7 @@ public class NodeRepository {
 	if(param_nodes.containsKey(method)) return;
 	PANode nodes[] = new PANode[param_number];
 	for(int i=0;i<param_number;i++){
-	    nodes[i] = new PANode(PANode.PARAM);
+	    nodes[i] = getNewNode(PANode.PARAM);
 	}
 	param_nodes.put(method,nodes);
     }
@@ -84,7 +84,7 @@ public class NodeRepository {
     private final PANode getExceptNode(HCodeElement hce){
 	PANode node = (PANode) except_nodes.get(hce);
 	if(node == null){
-	    except_nodes.put(hce,node = new PANode(PANode.EXCEPT));
+	    except_nodes.put(hce,node = getNewNode(PANode.EXCEPT));
 	    node2code.put(node,hce);
 	}
 	return node;	
@@ -106,10 +106,16 @@ public class NodeRepository {
 
 	PANode node = (PANode) code_nodes.get(hce);
 	if(node == null){
-	    code_nodes.put(hce,node = new PANode(type));
+	    code_nodes.put(hce,node = getNewNode(type));
 	    node2code.put(node,hce);
 	}
 	return node;
+    }
+
+    public static final PANode getNewNode(int type){
+	if(PointerAnalysis.CONTEXT_SENSITIVE)
+	    return new PANodeCS(type);
+	else return new PANode(type);
     }
 
     public final HCodeElement node2Code(PANode n){

@@ -11,12 +11,13 @@ import java.util.Collections;
 
 
 import harpoon.Temp.Temp;
+import harpoon.IR.Quads.CALL;
 
 /**
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.13 2000-03-01 01:11:03 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.14 2000-03-03 06:23:15 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -71,19 +72,20 @@ public class ParIntGraph {
 	through the <code>mu</code> node mapping into <code>this</code> object.
 	This method is designed to be called at the end of the caller/callee
 	or starter/startee interaction. It is *not* manipulating the action
-	repository; this manipulation is too complex and variate to be done
-	here. */ 
-    void insertAllButAr(ParIntGraph pig2, Relation mu,
+	repository nor the edge ordering; those manipulations are too complex
+	and variate to be done here.<br>
+	<code>principal</code> controls whether the return and exception set
+	are inserted. */
+    void insertAllButArEo(ParIntGraph pig2, Relation mu,
 			boolean principal, Set noholes){
 	G.insert(pig2.G,mu,principal,noholes);
 	tau.insert(pig2.tau,mu);
-	// ar.insert(pig2.ar,mu);
     }
 
     /** Convenient function equivalent to 
-	<code>insertAllButAr(pig2,mu,Collections.EMPTY_SET). */
-    void insertAllButAr(ParIntGraph pig2, Relation mu, boolean principal){
-	insertAllButAr(pig2,mu,principal,Collections.EMPTY_SET);
+	<code>insertAllButArEo(pig2,mu,principal,Collections.EMPTY_SET). */
+    void insertAllButArEo(ParIntGraph pig2, Relation mu, boolean principal){
+	insertAllButArEo(pig2,mu,principal,Collections.EMPTY_SET);
     }
 
 
@@ -187,6 +189,41 @@ public class ParIntGraph {
 	// the edgess appearing in the edge ordering relation are also
 	// present into G.O and G.I and so, they have been already visited
     }
+
+
+    /** Returns the set of all the nodes that appear in <code>this</code>
+	parallel interaction graph. */
+    public Set allNodes(){
+	final Set all_nodes = new HashSet();
+	forAllNodes(new PANodeVisitor(){
+		public void visit(PANode node){
+		    all_nodes.add(node);
+		}
+	    });
+	return all_nodes;
+    }
+
+    public ParIntGraph specialize(final CALL q){
+	final Relation mu = new Relation();
+	forAllNodes(new PANodeVisitor(){
+		public void visit(PANode node){
+		    switch(node.type){
+		    case PANode.INSIDE:
+			mu.add(node,node.specialize(q));
+			break;
+		    default:
+			mu.add(node,node);
+		    }
+		}
+	    });
+	ParIntGraph new_pig = new ParIntGraph();
+	new_pig.insertAllButArEo(this,mu,true);
+	ActionRepository.insertProjection(this.ar,new_pig.ar,mu);
+	EdgeOrdering.insertProjection(this.eo,new_pig.eo,mu);
+
+	return new_pig;
+    }
+
 
     /** Removes the nodes from <code>nodes</code> from <code>this</code>
 	graph. */

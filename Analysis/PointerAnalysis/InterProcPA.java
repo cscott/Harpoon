@@ -24,11 +24,11 @@ import harpoon.Temp.Temp;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.11 2000-03-01 01:11:03 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.12 2000-03-03 06:23:15 salcianu Exp $
  */
 abstract class InterProcPA {
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     /** Analyzes the call site <code>q</code> inside 
 	<code>current_method</code>. If analyzing the call is not possible
@@ -171,6 +171,17 @@ abstract class InterProcPA {
 				     ParIntGraph pig_caller,
 				     ParIntGraph pig_callee,
 				     PANode[] callee_params){
+
+	if(PointerAnalysis.CONTEXT_SENSITIVE){
+	    if(DEBUG)
+		System.out.println("Pig_callee before specialization:" +
+				   pig_callee);
+	    pig_callee = pig_callee.specialize(q);
+	    if(DEBUG)
+		System.out.println("Pig_callee after  specialization:" +
+					 pig_callee);
+	}
+
 	if(DEBUG){
 	    System.out.println("Pig_caller:" + pig_caller);
 	    System.out.println("Pig_callee:" + pig_callee);
@@ -202,7 +213,7 @@ abstract class InterProcPA {
 	Set params = new HashSet();
 	for(int i=0;i<callee_params.length;i++)
 	    params.add(callee_params[i]);
-	pig_caller.insertAllButAr(pig_callee,mu,false,params);
+	pig_caller.insertAllButArEo(pig_callee,mu,false,params);
 
 	// bring the actions of the callee into the caller's graph
 	bring_actions(pig_caller.ar, pig_callee.ar,

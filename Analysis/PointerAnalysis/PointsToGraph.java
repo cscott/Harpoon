@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * <code>PointsToGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.13 2000-03-01 02:24:18 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.14 2000-03-03 06:23:15 salcianu Exp $
  */
 public class PointsToGraph {
     
@@ -73,6 +73,13 @@ public class PointsToGraph {
 	excp.removeAll(set);
     }
 
+    /** Inserts the image of <code>G2</code> points-to graph
+	through the <code>mu</code> node mapping into <code>this</code> object.
+	This method is designed to be called - indirectly through 
+	<code>ParIntGraph.insertAllButArEo</code> - at the end of the
+	caller/callee or starter/startee interaction. <br>
+	<code>principal</code> controls whether the return and exception set
+        are inserted. */
     public void insert(PointsToGraph G2, Relation mu,
 		       boolean principal,Set noholes){
 	insert_edges( G2.O , G2.I , mu );

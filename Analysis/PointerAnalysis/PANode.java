@@ -3,12 +3,16 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
+import harpoon.Util.Util;
+import harpoon.IR.Quads.CALL;
+
+
 /**
  * <code>PANode</code> class models a node for the Pointer Analysis
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.6 2000-01-24 03:11:11 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.7 2000-03-03 06:23:15 salcianu Exp $
  */
 public class PANode {
     
@@ -55,6 +59,13 @@ public class PANode {
     /** Checks if the node is an inside one */
     public final boolean inside(){
 	return type==INSIDE;
+    }
+
+    /** Does nothing. This method is implemented only by the context sensitive
+	version, the PANodeCS subclass */
+    public PANode specialize(CALL q){
+	Util.assert(false,"Don't call specialize on a PANode object!");
+	return null;
     }
 
     /** Pretty-print function for debug purposes */
