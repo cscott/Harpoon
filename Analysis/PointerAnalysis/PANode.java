@@ -20,7 +20,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.19 2000-05-14 07:43:23 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.20 2000-05-15 22:49:34 salcianu Exp $
  */
 final public class PANode {
     // activates some safety tests
@@ -58,7 +58,8 @@ final public class PANode {
 	for debug purposes. */
     static int count = 0;
     /** Holds the unique ID */
-    private final int number;
+    /////private 
+    final int number;
 
     // the depth of the call chain associated with this node
     private int call_chain_depth = 0;

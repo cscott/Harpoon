@@ -36,7 +36,7 @@ import harpoon.ClassFile.HCodeElement;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.19 2000-05-10 14:48:05 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.20 2000-05-15 22:49:33 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -63,9 +63,70 @@ public class ActionRepository {
 
     // Relation<PANode,PASync>;   n -> syncs performed on n
     Relation  alpha_sync;
-    // Hashtable<PANode,Relation<PANode,PANode>>
+    // Hashtable<PANode,Relation<PANode,PASync>>
     // nt2 -> n -> syncs on n in // with nt2
     Hashtable pi_sync;
+
+
+    /** Displays the differences between <code>this</code> action repository
+	and <code>ar2</code>. For debug purposes. */
+    private void print_difference(final ActionRepository ar2) {
+	System.out.println("--- LD actions:");
+	for(Iterator it = alpha_ld.iterator(); it.hasNext(); ){
+	    PALoad load = (PALoad) it.next();
+	    if(!ar2.alpha_ld.contains(load))
+		System.out.println(load);
+	}
+
+	System.out.println("--- LD || nt pairs:");
+	pi_ld.forAllEntries(new RelationEntryVisitor(){
+		public void visit(Object key, Object value){
+		    PANode nt   = (PANode) key;
+		    PALoad load = (PALoad) value;
+		    if(!ar2.pi_ld.contains(nt, load))
+			System.out.println(load + " || " + nt);
+		}
+	    });
+
+	System.out.println("--- SYNC actions:");
+	alpha_sync.forAllEntries(new RelationEntryVisitor(){
+		public void visit(Object key, Object value){
+		    PANode n    = (PANode) key;
+		    PASync sync = (PASync) value;
+		    if(!ar2.alpha_sync.contains(key, value))
+			System.out.println(sync);
+		}
+	    });
+
+	System.out.println("--- SYNC || nt pairs:");
+	for(Iterator it = pi_sync.entrySet().iterator(); it.hasNext(); ) {
+	    final Map.Entry entry = (Map.Entry) it.next();
+	    final PANode nt2    = (PANode) entry.getKey();
+	    final Relation rel  = (Relation) entry.getValue();
+	    final Relation rel2 = (Relation) ar2.pi_sync.get(nt2);
+	    rel.forAllEntries(new RelationEntryVisitor() {
+		    public void visit(Object key, Object value) {
+			PANode n    = (PANode) key;
+			PASync sync = (PASync) value;
+			if(!rel2.contains(n ,sync))
+			    System.out.println(sync + " || " + nt2);
+		    }
+		});
+	}
+    }
+
+    
+    /** Shows the evolution from <code>ar2</code> to <code>this</code>:
+	newly added stuff and removed stuff. Debug purposes. */
+    public void show_evolution(final ActionRepository ar2){
+	System.out.println("====== NEWLY ADDED STUFF:");
+	print_difference(ar2);
+	if(ar2 != null){
+	    System.out.println("===== REMOVED STUFF:");
+	    ar2.print_difference(this);
+	}
+    }
+
 
     // A. The most primitive operations on the action repository, they are
     // designed to be used internally; the usage pattern of the user has

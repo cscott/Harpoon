@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Hashtable;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
@@ -40,11 +39,11 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.9 2000-05-15 17:50:17 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.10 2000-05-15 22:49:34 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
-    
-    private static boolean DEBUG = true;
+
+    private static boolean DEBUG = false;
 
     PointerAnalysis pa;
     HCodeFactory    hcf;
@@ -77,7 +76,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 
     // Map<NEW, AllocationProperties>
-    private final Map aps = new Hashtable();
+    private final Map aps = new HashMap();
     
     // conservative allocation property: on the global heap
     // (by default).
@@ -124,7 +123,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     public final void analyze_mm(MetaMethod mm){
 	HMethod hm  = mm.getHMethod();
 
-	System.out.println("MAInfo: Analyzed Meta-Method: " + mm);
+	if(DEBUG)
+	    System.out.println("MAInfo: Analyzed Meta-Method: " + mm);
 
 	HCode hcode = hcf.convert(hm);
 	ParIntGraph pig = 
@@ -411,17 +411,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	System.out.println("ALLOCATION POLICIES:");
 	for(Iterator it = aps.keySet().iterator(); it.hasNext(); ){
 	    Quad newq = (Quad) it.next();
-
-	    if(newq == null){
-		System.out.println("Bau1\n");
-		continue;
-	    }
-
 	    MyAP ap   = (MyAP) aps.get(newq);
-	    if(ap == null){
-		System.out.println("Bau2\n");
-		continue;
-	    }
+
 	    System.out.println(newq.getSourceFile() + ":" +
 			       newq.getLineNumber() + " " +
 			       newq + " -> " + ap); 

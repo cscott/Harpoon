@@ -30,7 +30,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good! 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.23 2000-05-15 17:50:17 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.24 2000-05-15 22:49:34 salcianu Exp $
  */
 public abstract class InterThreadPA {
     
@@ -44,13 +44,13 @@ public abstract class InterThreadPA {
     // graph has changed.
     private static final Set processed_threads = new HashSet();
 
-    /** Do the inter-thread analysis for a method. <code>pig</code> should
+    /** Do the inter-thread analysis for a method. <code>noit_pig</code> should
 	point to the Parallel Interaction Graph at the end of that method and
 	<code>pa</code> should point to the <code>PointerAnalysis</code>
-	object which generated <code>pig</code> (and which called this method).
-	<code>pa</code> will be used to obtain the Parallel Interaction Graphs
-	for the started threads. */
-    public static ParIntGraph resolve_threads(ParIntGraph pig,
+	object which generated <code>noit_pig</code> (and which called this
+	method). <code>pa</code> will be used to obtain the Parallel
+	Interaction Graphs for the started threads. */
+    public static ParIntGraph resolve_threads(ParIntGraph noit_pig,
 					      PointerAnalysis pa){
 	// This is the set of all the analyzed threads. When the graph has
 	// changed, this set is cleared, so that some of the threads are
@@ -62,13 +62,13 @@ public abstract class InterThreadPA {
 
 	processed_threads.clear();
 
-	pig = (ParIntGraph) pig.clone();
+	ParIntGraph pig = (ParIntGraph) noit_pig.clone();
 
 	while(true){
 	    PANode nt = pick_an_unanalyzed_thread(pig,analyzed_threads);
 	    if(nt == null) break;
 
-	    //if(DEBUG)
+	    if(DEBUG)
 		System.out.println(nt + " was chosen");
 
 	    MetaMethod[] ops = get_run_mmethods(nt,pa);
@@ -76,8 +76,7 @@ public abstract class InterThreadPA {
 	    if((ops == null) || (ops.length==0) ||
 	       !analyzable_run_mmethods(ops,pa)) continue;
 
-	    ///////////
-	    ParIntGraph old_pig = (ParIntGraph) pig.clone();
+	    ParIntGraph old_pig = pig;
 	    pig = interaction_nt(pig, nt, ops, pa);
 
 	    if(!pig.equals(old_pig)){
@@ -140,13 +139,13 @@ public abstract class InterThreadPA {
     private static MetaMethod[] get_run_mmethods(PANode nt,
 						 PointerAnalysis pa){
 	// TODO: think about the LOAD && PARAM thread nodes (not only INSIDE) 
-	Quad quad = (Quad)pa.getNodeRepository().node2Code(nt.getRoot());
+	Quad quad = (Quad) pa.getNodeRepository().node2Code(nt.getRoot());
 	Util.assert((quad instanceof NEW), nt + " has a strange instr." + 
 		    " nt type: " + nt.type + " PANode.INSIDE: " +
 		    PANode.INSIDE); 
 
 	NEW q = (NEW) quad; 
-	Util.assert( q!= null, "Creation of " + nt + " not found!");
+	Util.assert( q != null, "Creation of " + nt + " not found!");
 
 	HClass hclass = q.hclass();
 	HMethod[] hms = hclass.getMethods();
@@ -180,14 +179,13 @@ public abstract class InterThreadPA {
     // computes the interaction of the Starter with only one instance of
     // an nt-thread. If tau(nt)==2 (there could be more than one thread,
     // anything between 0 and infinity); a fixed-point algorithm is necessary.
-    // NOTE: doesn't modify the values of its parameters; returns a NEW object.
     private static ParIntGraph interaction_nt(ParIntGraph pig, PANode nt,
 				      MetaMethod[] ops, PointerAnalysis pa){
 
 	ParIntGraph new_pig = null; /* it will point to the resulting pig */
 	boolean only_once = (pig.tau.getValue(nt)==1);
 
-	//if(DEBUG)
+	if(DEBUG)
 	    System.out.println("interaction_nt: " + nt + 
 			       (only_once?" only once":" many times"));
 
@@ -197,12 +195,13 @@ public abstract class InterThreadPA {
 	pig.G.O = construct_new_O(pig, nt);
 
 	if(only_once){ // a single interaction is enough
+	    // make sure this is the only one the thread interaction is
+	    // resolved for the thread "nt" (because it is launched only once).
 	    pig.tau.dec(nt);
 	    new_pig = interact_once(pig, nt, ops, pa);
-	    pig.tau.inc(nt);
 	}
 	else{ // a fixed-point algorithm is necessary in this case
-	    new_pig = pig; // this is before the first iteration
+	    new_pig = pig; // before the 1st iteration
 	    while(true){
 		ParIntGraph previous_pig = new_pig;
 		new_pig = interact_once(previous_pig, nt, ops, pa);
@@ -256,8 +255,7 @@ public abstract class InterThreadPA {
 
 	// compute the first term of the join operation:
 	// the interaction with the first run() method
-	ParIntGraph pig_after = 
-	    interact_once_op(pig, nt, ops[0], pa);
+	ParIntGraph pig_after = interact_once_op(pig, nt, ops[0], pa);
 	
 	// join to it all the other terms (interactions with all the
 	// other run() methods).
@@ -275,7 +273,7 @@ public abstract class InterThreadPA {
 	ParIntGraph pig[] = new ParIntGraph[2];
 	pig[0] = pig_starter;
 
-	//if(DEBUG)
+	if(DEBUG)
 	    System.out.println("interact_once_op; op = " + op.getHMethod());
 
 	// some thread specialization if necessary
@@ -320,6 +318,10 @@ public abstract class InterThreadPA {
 	}
 
 	Set actives = active_threads_outside_startee(pig[0],pa);
+
+	if(DEBUG2)
+	    System.out.println("interact_once_op: actives: " + actives);
+
 	ParIntGraph new_pig = build_new_pig(pig,mu,params[0],nt,actives);
 
 	if(DEBUG2){
@@ -423,23 +425,23 @@ public abstract class InterThreadPA {
 					       final PANode nt){
 	PANodeVisitor visitor_starter = new PANodeVisitor(){
 		public void visit(PANode node){
-		    mu[0].add(node,node);
+		    mu[0].add(node, node);
 		}
 	    };
 
-	pig[0].G.forAllNodes(visitor_starter);
+	pig[0].forAllNodes(visitor_starter);
 
 	PANodeVisitor visitor_startee = new PANodeVisitor(){
 		public void visit(PANode node){
 		    int type = node.type();
 		    if(type == PANode.PARAM)
-			mu[1].add(node,nt);
+			mu[1].add(node, nt);
 		    else
-			mu[1].add(node,node);
+			mu[1].add(node, node);
 		}
 	    };
 
-	pig[1].G.forAllNodes(visitor_startee);
+	pig[1].forAllNodes(visitor_startee);
     }
 
 
@@ -526,7 +528,10 @@ public abstract class InterThreadPA {
 
 	ActionVisitor act_visitor_starter = new ActionVisitor(){
 		public void visit_ld(PALoad load){
-		    if(!mu_starter.contains(load.n2,load.n2)) return;
+		    Util.assert(mu_starter.contains(load.n2,load.n2),
+				load.n2 + "->" + load.n2 +
+				"  should be in mu_starter");
+
 		    new_pig.ar.add_ld(mu_starter.getValuesSet(load.n1),
 				      load.f,
 				      load.n2,
@@ -544,12 +549,14 @@ public abstract class InterThreadPA {
 	ParActionVisitor par_act_visitor_starter = new ParActionVisitor(){
 
 		public void visit_par_ld(PALoad load, PANode nt2){
+		    Util.assert(mu_starter.contains(load.n2,load.n2),
+				load.n2 + "->" + load.n2 +
+				"  should be in mu_starter");
 
 		    Set parallel_threads = mu_starter.getValuesSet(nt2);
 		    if(nt2 == nt)
 			parallel_threads.addAll(startee_active_threads);
 
-		    if(!mu_starter.contains(load.n2,load.n2)) return;
 		    new_pig.ar.add_ld(mu_starter.getValuesSet(load.n1),
 				      load.f,
 				      load.n2,
@@ -579,7 +586,7 @@ public abstract class InterThreadPA {
 					      final Set starter_active_threads,
 					      final PANode nt){
 
-	mu_startee.add(ActionRepository.THIS_THREAD,nt);
+	mu_startee.add(ActionRepository.THIS_THREAD, nt);
 
 	ActionVisitor act_visitor_startee = new ActionVisitor(){
 		public void visit_ld(PALoad load){

@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.30 2000-05-14 23:10:12 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.31 2000-05-15 22:49:34 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -130,8 +130,10 @@ public class ParIntGraph {
 	    return false;
 	}
 	if(!ar.equals(pig2.ar)){
-	    if(DEBUG2)
+	    if(DEBUG2){
 		System.out.println("The ar's are different");
+		ar.show_evolution(pig2.ar);
+	    }
 	    return false;
 	}
 

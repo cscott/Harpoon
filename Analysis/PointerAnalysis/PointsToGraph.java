@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.25 2000-05-14 23:10:12 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.26 2000-05-15 22:49:35 salcianu Exp $
  */
 public class PointsToGraph {
 
@@ -280,16 +280,6 @@ public class PointsToGraph {
     public Set propagate(){
 	return propagate(e.escapedNodes());
     }
-
-    /** Visits each node that appears in <code>this</code> graph.
-	Each node is visited at least once; if the visit function is not 
-	idempotent it is its reponsibility to check and return immediately
-	from nodes that have already been visited. */
-    public void forAllNodes(PANodeVisitor visitor){
-	O.forAllNodes(visitor);
-	I.forAllNodes(visitor);
-    }
-
 
     /** Checks the equality of two <code>PointsToGraph</code>s. */
     public boolean equals(Object o){

@@ -25,7 +25,7 @@ import harpoon.Temp.Temp;
  than the straightforward solution of a <code>HashSet</code> of edges.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdgeSet.java,v 1.1.2.15 2000-04-04 04:29:31 salcianu Exp $
+ * @version $Id: PAEdgeSet.java,v 1.1.2.16 2000-05-15 22:49:34 salcianu Exp $
  */
 public class PAEdgeSet {
 
@@ -258,8 +258,11 @@ public class PAEdgeSet {
 	    forAllPointedNodes((Temp) enum_var_edges.nextElement(),visitor);
 
 	Enumeration enum_nodes = allSourceNodes();
-	while(enum_nodes.hasMoreElements())
-	    forAllPointedNodes((PANode)enum_nodes.nextElement(),visitor);
+	while(enum_nodes.hasMoreElements()) {
+	    PANode node = (PANode) enum_nodes.nextElement();
+	    visitor.visit(node);
+	    forAllPointedNodes(node, visitor);
+	}
     }
 
     /** Visits all the edges starting from the variable <code>v</code>. */
