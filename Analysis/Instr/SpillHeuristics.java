@@ -29,6 +29,11 @@ import java.util.Iterator;
     compilers", Bernstein et. al
 */
 public class SpillHeuristics {
+
+    public static boolean USE_ANANIAN_HEURISTIC = false;
+    public static boolean USE_CHAITIN_HEURISTIC = true;
+    public static boolean USE_PINTER_HEURISTICS = false;
+
     // Node n -> Set of Instr i, s.t. n is alive at i
     private GenericMultiMap nodeToLiveAt = new GenericMultiMap();
     private Map nestedLoopDepth;
@@ -96,27 +101,47 @@ public class SpillHeuristics {
     SpillHeuristic[] spillHeuristics() {
 	SpillHeuristic[] hs = new SpillHeuristic[] { 
 
-	    // ** SCOTT'S SPILL HEURISTIC
+	    USE_ANANIAN_HEURISTIC ?
 	    new SpillHeuristic() { double cost(Node m) {
 		return (1000*(m.web.defs.size()+m.web.uses.size() ) ) / m.degree;  }}
+	    : null
 	    ,
 
-	    // ** CHAITIN'S SPILL HEURISTIC **
+	    USE_CHAITIN_HEURISTIC ?
 	    new SpillHeuristic() { double cost( Node m ) {  
 		return chaitinCost(m) / m.degree; }}
+	    : null
 	    , 
+	    USE_PINTER_HEURISTICS ?
 	    new SpillHeuristic() { double cost( Node m ) {  
 		return chaitinCost(m) / (m.degree * m.degree); }} 
+	    : null
 	    , 
+	    USE_PINTER_HEURISTICS ?
 	    new SpillHeuristic() { double cost( Node m ) { 
 		return chaitinCost(m) / ( area(m) * m.degree ); }} 
+	    : null
 	    , 
+	    USE_PINTER_HEURISTICS ? 
 	    new SpillHeuristic() { double cost( Node m ) { 
-		return chaitinCost(m) / ( area(m) * m.degree * m.degree ); }}, 
-	    
+		return chaitinCost(m) / ( area(m) * m.degree * m.degree ); }}
+	    : null
 	};
 	
-	return hs;
+	int nonnull=0;
+	for(int i=0; i<hs.length; i++) 
+	    if (hs[i] != null) 
+		nonnull++;
+	SpillHeuristic[] shs = new SpillHeuristic[nonnull];
+	int j=0;
+	for(int i=0; i<hs.length; i++) {
+	    if (hs[i] != null) {
+		shs[j] = hs[i];
+		j++;
+	    }
+	}
+	Util.assert(j == nonnull);
+	return shs;
     }
 
     /** Returns the loop nested depth of <code>i</code>. */

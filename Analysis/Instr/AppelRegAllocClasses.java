@@ -8,6 +8,7 @@ import harpoon.IR.Assem.Instr;
 import harpoon.Temp.Temp;
 
 import harpoon.Util.Util;
+import harpoon.Util.BitString;
 import harpoon.Util.Default;
 import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Collections.LinearSet;
@@ -23,7 +24,7 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.11 2001-07-08 20:15:34 pnkfelix Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.12 2001-07-24 09:29:35 pnkfelix Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public static final boolean CHECK_INV = false;
@@ -135,7 +136,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 			}
 		    }
 		});
-	sortedPairs.addAll( adjSet.pairs );
+	sortedPairs.addAll( adjSet.pairs() );
 	sb.append( sortedPairs );
 	
 	return sb.toString();
@@ -471,9 +472,73 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 		}
 	    };
     }
+    /** Factory method to allow easier implementation switching later. */
+    NodePairSet makeNodePairSetOld() { return new NodePairSet__HashBased(); }
+    NodePairSet makeNodePairSet() { 
+	return nextId > 2250 ? new NodePairSet__HashBased() 
+	    : (NodePairSet)   new NodePairSet__BitStrBased(); 
+    }
 
-    final static class NodePairSet {
-	HashSet pairs = new HashSet();
+    static abstract class NodePairSet {
+	public abstract boolean contains(Node a, Node b);
+	public abstract void add(Node a, Node b);	
+	public abstract HashSet pairs(); 
+	public abstract NodePairSet copy();
+    }
+    class NodePairSet__Switching extends NodePairSet {
+	boolean hash;
+	NodePairSet back;
+	private NodePairSet__Switching() {
+	    hash = nextId > 750;
+	    back = hash       ? new NodePairSet__HashBased() 
+		: (NodePairSet) new NodePairSet__BitStrBased(); 
+	}
+	public boolean contains(Node a, Node b) { return back.contains(a,b); }
+	public void add(Node a, Node b) { back.add(a,b); }
+	public HashSet pairs() { return back.pairs(); }
+	public NodePairSet copy() { 
+	    NodePairSet__Switching r = new NodePairSet__Switching();
+	    r.hash = hash;
+	    r.back = back.copy();
+	    return r;
+	}
+    }
+    class NodePairSet__BitStrBased extends NodePairSet {
+	int off; BitString bs;
+	private NodePairSet__BitStrBased() { 
+	    off = nextId; 
+	    int size = off*off; 
+	    bs = new BitString( size ); 
+	}
+	public boolean contains(Node a, Node b) { 
+	    return bs.get(off*a.id+b.id); 
+	}
+	public void add(Node a, Node b) { 
+	    bs.set(off*a.id+b.id); 
+	}
+	public NodePairSet copy() { 
+	    NodePairSet__BitStrBased c = new NodePairSet__BitStrBased();
+	    c.off = off;
+	    c.bs = (BitString) bs.clone();
+	    return c;
+	}
+	public HashSet pairs() {
+	    HashSet prs = new HashSet();
+	    for(int i=0; i<off; i++) {
+		for(int j=0; j<off; j++) {
+		    if (bs.get(off*i+j)) {
+			prs.add(Default.pair
+				( allNodes.get(i),
+				  allNodes.get(j) ));
+		    }
+		}
+	    }
+	    return prs;
+	}
+    }
+    final class NodePairSet__HashBased extends NodePairSet {
+	HashSet pairs = new HashSet(nextId*20);
+	private NodePairSet__HashBased() { }
 	public boolean contains(Node a, Node b) { 
 	    return pairs.contains(Default.pair(a,b));
 	}
@@ -481,10 +546,11 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	    pairs.add(Default.pair(a, b)); 
 	}
 	public NodePairSet copy() {
-	    NodePairSet set = new NodePairSet();
+	    NodePairSet__HashBased set = new NodePairSet__HashBased();
 	    set.pairs = (HashSet) pairs.clone();
 	    return set;
 	}
+	public HashSet pairs() { return (HashSet) pairs.clone(); }
     }
 
     final static class NodeList { 

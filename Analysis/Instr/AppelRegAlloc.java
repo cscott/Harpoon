@@ -52,7 +52,7 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.1.2.14 2001-07-08 20:21:19 pnkfelix Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.1.2.15 2001-07-24 09:29:35 pnkfelix Exp $
  */
 public abstract class AppelRegAlloc extends AppelRegAllocClasses {
     public static final boolean PRINT_DEPTH_TO_SPILL_INFO = true;
@@ -468,17 +468,19 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 	    preAnalysis();
 	    buildTempToWebs();
 	    buildWebToNodes();
+	    adjSet = makeNodePairSet();
 	    
 	    // Appel's real code begins here
 	    buildInterferenceGraph();
 	    
 	    checkInv();
-	    checkpointState();
-	    final boolean USE_CHAITIN_ALONE = false;
 	    try {
 		SpillHeuristic h_min = null;
 		SpillHeuristic[] h = sh.spillHeuristics();
-		if ( ! USE_CHAITIN_ALONE ) {
+		if ( h.length == 1 ) {
+		    appelLoopBody( h[0] );
+		} else {
+		    checkpointState();
 		    for(int i = 0; i < h.length; i++) {
 			// FSK: look into breaking out of this loop if
 			// we color without any spilling at all.
@@ -515,8 +517,6 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 		    h_min.reset();
 		    appelLoopBody( h_min );
 		    
-		} else {
-		    appelLoopBody( h[2] );
 		}
 
 		assignColors();
@@ -1228,7 +1228,6 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 	nextId = 0;	
 	initializeNodeSets();
 	initializeMoveSets();
-	adjSet = new NodePairSet();
 	sh.reset();
     }
 
