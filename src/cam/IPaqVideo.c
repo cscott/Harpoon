@@ -151,21 +151,6 @@ int size = 0;
 int fd = 0;
 unsigned char* buf = NULL;
 
-int setup() {
-    /* Read the camera type */
-    fd = open(VIDEO_DEVICE, O_RDONLY | O_NOCTTY);
-    
-    ioctl(fd, H3600CAM_G_TYPE, &ctype);
-    
-    if (ctype.type == H3600_SMAL) {
-	fprintf(stderr, "SMaL Camera not supported!\n");
-	fflush(stderr);
-	return -1;
-    }
-    
-    return camera_properties(128, 128, 5, 0, 0, 0, 640, 480);
-}
-  
 int camera_properties(int desired_brightness, /* 0-255 */
 		      int desired_contrast, /* 0-255 */
 		      int desired_fps, /* 1-45 */
@@ -213,6 +198,21 @@ int camera_properties(int desired_brightness, /* 0-255 */
     return 0;
 }
 
+int setup() {
+    /* Read the camera type */
+    fd = open(VIDEO_DEVICE, O_RDONLY | O_NOCTTY);
+    
+    ioctl(fd, H3600CAM_G_TYPE, &ctype);
+    
+    if (ctype.type == H3600_SMAL) {
+	fprintf(stderr, "SMaL Camera not supported!\n");
+	fflush(stderr);
+	return -1;
+    }
+    
+    return camera_properties(128, 128, 5, 0, 0, 0, 640, 480);
+}
+  
 int read_frame() {
     return read(fd, buf, size);
 }
@@ -280,7 +280,6 @@ JNIEXPORT void JNICALL Java_ipaq_IPaqVideo_capture___3B
 (JNIEnv *env, jobject ipaq, jbyteArray vals) {
     jbyte *vbuf = (*env)->GetByteArrayElements(env, vals, NULL);
     jsize bf_length = (*env)->GetArrayLength(env, vals);
-    int i;
 
     if (bf_length != size) {
 	jclass excls = (*env)->FindClass(env, "java/lang/Error");
