@@ -9,7 +9,7 @@ import harpoon.ClassFile.HClass;
  * <code>OPER</code> opcodes.
  * <p>
  * Note that (x - y) is uniformly expressed as (x + (-y)), and that
- * (~x) is typically expressed (compiler-dependant) as (x ^ (-1)).
+ * (~x) is typically expressed (compiler-dependent) as (x ^ (-1)).
  * There is also a minimal set of comparison operations; all other
  * comparisons can be synthesized from the ones present.  Note that
  * floating-point (float/double) comparisons have special behaviors
@@ -18,7 +18,7 @@ import harpoon.ClassFile.HClass;
  * steps to be deemed worthwhile.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Qop.java,v 1.1.2.8 1999-02-05 09:07:42 cananian Exp $
+ * @version $Id: Qop.java,v 1.1.2.9 1999-02-05 10:35:56 cananian Exp $
  */
 public abstract class Qop  {
     /** Compares references for equality. */
