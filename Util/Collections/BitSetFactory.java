@@ -28,7 +28,7 @@ import java.util.HashMap;
     cause an assertion failure.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.1 1999-11-02 05:32:31 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.2 1999-11-02 06:07:20 pnkfelix Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -57,7 +57,7 @@ public class BitSetFactory extends SetFactory {
 	     <code>Set</code> with the elements from <code>c</code>.
     */ 
     public Set makeSet(Collection c) {
-	BitStringSet bss = new BitStringSet(c.size(), this);
+	BitStringSet bss = new BitStringSet(objToBitIndex.keySet().size(), this);
 	bss.addAll(c);
 	return bss;
     }
@@ -83,6 +83,7 @@ public class BitSetFactory extends SetFactory {
 			"that was not part of the "+
 			"original universe of values.");
 	    int ind = i.intValue();
+	    Util.assert(ind < bs.size());
 	    boolean alreadySet = this.bs.get(ind);
 	    if (alreadySet) {
 		return false;
