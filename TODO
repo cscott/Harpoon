@@ -1,3 +1,10 @@
+---- Sep-14-98
+Peephole optimizations on QuadSSA to normalize:
+ 1) instanceof -> icmp -> cjmp (or in general, boolean->icmp->cjmp)
+    all boolean functions should feed a cjmp directly.
+ 2) lcmp,dcmp mess.  Look for CJMP whose test is def'd in a PHI statement,
+    and remove the PHI, duplicating the CJMP.  May need to be a PHI->CJMP
+    sequence.
 ---- Sep-13-98
 Write tool to print 'ConstantClass'es from bytecode files, and delete
  .classes that depend on out-of-date classes. Then some other tool can
@@ -31,7 +38,7 @@ Make Optimization class that works given a ConstMap and an ExecMap.
 X [make dummy execmap and constmap classes that return 'not a const' and
 X  'is executable' for everything.]
 ---- Sep-11-98, cont
-Add SWITCH nodes to CJMP, SWITCH:
+/Add SWITCH nodes to CJMP, SWITCH:
  call them lamba-functions.  <t1, t2, ...> = lambda(t0)
  return a tuple, given a temp (and a predicate?)
  reverse of phi functions.  translated the same way.
