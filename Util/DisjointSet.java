@@ -14,7 +14,7 @@ import java.util.Map;
  * function.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DisjointSet.java,v 1.1.2.3 2000-06-01 19:48:55 cananian Exp $
+ * @version $Id: DisjointSet.java,v 1.1.2.4 2000-11-16 05:25:09 cananian Exp $
  */
 public class DisjointSet  {
     private final Map elmap = new HashMap();
@@ -30,8 +30,9 @@ public class DisjointSet  {
      *  both S1 and S2 were previously singletons, the representative
      *  of S1 union S2 is the representative of S2. */
     public void union(Object o1, Object o2) { // this is UNION
-	Node x = (Node) elmap.get(o1), y = (Node) elmap.get(o2);
+	Node x = (Node) elmap.get(o1);
 	if (x==null) x=_make_set(o1);
+	Node y = (Node) elmap.get(o2);
 	if (y==null) y=_make_set(o2);
 	Util.assert(!x.equals(y), "Sets assumed to be disjoint");
 	_union(x, y);
