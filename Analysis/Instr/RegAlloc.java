@@ -75,7 +75,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.96 2000-07-06 20:55:07 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.97 2000-07-06 21:03:41 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -273,25 +273,25 @@ public abstract class RegAlloc  {
         HCode convert(HMethod m);
     }
     
-    /** Produces an <code>HCodeFactory</code> which can be used to
-	extract Derivation information about code it generates.
+    /** Produces an <code>IntermedateCodeFactory</code> which can be
+	used to extract Derivation information about code it
+	generates. 
 	<BR> <B>requires:</B> <code>parentFactory</code> produces code
 	     in a derivative of "instr" form.
 	<BR> <B>effects:</B> Produces an
-	     <code>HCodeFactory</code> which allocates
+	     <code>IntermediateCodeFactory</code> which allocates 
 	     registers in the code produced by
 	     <code>parentFactory</code> using the machine properties  
-	     specified in <code>frame</code>.  The returned
-	     <code>HCodeFactory</code> is guaranteed to return
-	     instances of <code>IntermediateCode</code>.
+	     specified in <code>frame</code>.  
 	     Spilled temporarys are assigned a stack offset but the
 	     actual code does not have the concrete load and store
 	     instructions necessary for the spilling.  In addition,
 	     the architecture specific method prologue and epilogue
 	     instructions have not been inserted either.  The
-	     <code>HCodeFactory</code> returned can be passed to 
-	     <code>concreteSpillFactory()</code> to produce a code
-	     factory suitable for generating runnable assembly code.
+	     <code>IntermediateCodeFactory</code> returned can be
+	     passed to <code>concreteSpillFactory()</code> to produce
+	     a code factory suitable for generating runnable assembly
+	     code. 
     */
     public static IntermediateCodeFactory
 	abstractSpillFactory(final HCodeFactory parent,
