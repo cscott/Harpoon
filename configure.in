@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.33 $)dnl
+AC_REVISION($Revision: 1.34 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -7,17 +7,20 @@ AM_INIT_AUTOMAKE(flexrun, 0.0)
 AM_CONFIG_HEADER(include/config.h)
 AC_PREREQ(2.13) dnl require autoconf version 2.13
 
+AC_SUBST(AS) dnl not exported by default =(
 AC_SUBST(CFLAGS) CFLAGS='-g' 
 AC_SUBST(IFLAGS) IFLAGS='' 
 AC_SUBST(GC_LIB) GC_LIB='' 
+AC_SUBST(BDWFLAGS) BDWFLAGS='' dnl for B-D-W garbage collector build.
 
 dnl Checks for programs.
-AC_PROG_CC
+AC_PROG_CC dnl also sets cross_compiling variable
 AC_PROG_AWK
 AC_PROG_RANLIB
 AM_PROG_LIBTOOL
 AC_PATH_PROG(FORTUNE, fortune, /usr/games/fortune)
 AC_SUBST(FORTUNE)
+AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
 
 dnl Checks for libraries.
 
@@ -117,12 +120,14 @@ heavy)  AC_MSG_RESULT([heavy-weight threads])
 	# implementation we're using.  I don't know how to test this at the
 	# moment ... we'll just assume LinuxThreads.
 	CFLAGS="-DLINUX_THREADS $CFLAGS"
+	BDWFLAGS="-DLINUX_THREADS -D_REENTRANT"
 	;;
 pth)	AC_MSG_RESULT([GNU pth])
 	AC_DEFINE(WITH_PTH_THREADS, 1,
 		  [Define if you want to use GNU pth thread support])
 	AC_SEARCH_LIBS(pth_init, pth, ,
 			AC_MSG_ERROR([couldn't find pth library]))
+	BDWFLAGS="-DGNUPTH_THREADS"
 	;;
 none)   AC_MSG_RESULT([no thread support])
 	AC_DEFINE(WITH_NO_THREADS, 1,
@@ -219,6 +224,7 @@ AC_LINK_FILES(arch/${archdir}, include/asm)
 AC_OUTPUT(Makefile arch/Makefile
 	  arch/arm32/Makefile arch/sparc32/Makefile arch/sparc64/Makefile
 	  arch/ix86/Makefile
+	  Contrib/Makefile Contrib/gc/Makefile
 	  src/Makefile src/jni/Makefile
 	  src/java.io/Makefile src/java.lang/Makefile
 	  src/java.net/Makefile

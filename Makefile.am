@@ -6,7 +6,7 @@ MAINTAINERCLEANFILES = Makefile.in configure aclocal.m4 \
 		       scripts/missing scripts/mkinstalldirs
 CLEANFILES = configure.done
 EXTRA_DIST =
-SUBDIRS = arch src
+SUBDIRS = Contrib arch src
 
 CVS_TAG=$(firstword $(shell cvs status Makefile.am | grep -v "(none)" | \
 		@AWK@ '/Sticky Tag/{print $$3}'))
