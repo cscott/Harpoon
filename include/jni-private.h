@@ -10,7 +10,7 @@
 #include "gc.h"
 #endif
 #ifdef WITH_SEMI_PRECISE_GC
-#include "../Contrib/gc/gc_typed.h"
+#include "gc_typed.h"
 #endif
 #include "flexthread.h"
 #include <time.h>
@@ -27,16 +27,6 @@
 
 #ifdef WITH_CLUSTERED_HEAPS
 struct clustered_heap; /* defined in src/clheap/clheap.h */
-#endif
-
-#ifndef WITH_SEMI_PRECISE_GC
-typedef GC_word * GC_bitmap;
-	/* The least significant bit of the first word is one if	*/
-	/* the first word in the object may be a pointer.		*/
-#endif
-
-#ifndef BDW_CONSERVATIVE_GC
-typedef unsigned long GC_word;
 #endif
 
 
@@ -67,8 +57,15 @@ struct claz {
   struct claz **interfaces; /* NULL terminated list of implemented interfaces*/
   u_int32_t size;		/* object size, including header */
   union {
+    void *_ignore;		/* just to set the size of the union.  */
+#ifdef BDW_CONSERVATIVE_GC
     GC_word bitmap;		/* garbage collection field bitmap, or */
+#endif
+#ifdef WITH_SEMI_PRECISE_GC
     GC_bitmap ptr;	        /* pointer to larger gc bitmap. */
+	/* The least significant bit of the first word is one if	*/
+	/* the first word in the object may be a pointer.		*/
+#endif
   } gc_info;
   u_int32_t scaled_class_depth; /* sizeof(struct claz *) * class_depth */
   struct claz *display[0];	/* sized by FLEX */
