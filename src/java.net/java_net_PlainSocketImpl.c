@@ -223,7 +223,8 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketAccept
  */
 JNIEXPORT jint JNICALL Java_java_net_PlainSocketImpl_socketAvailable
   (JNIEnv *env, jobject _this) {
-  assert(0);
+    // XXX: can we do something intelligent here?
+    return 0;
 }
 
 /*
