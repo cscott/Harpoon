@@ -30,7 +30,7 @@ struct FNI_Thread_State {
   void *stack_top; /* top of stack */
   jboolean is_alive; /* true while the thread is running */
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS //|| WITH_USER_THREADS
-#if WITH_HEAVY_THREAD || WITH_PTH_TREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_TREADS
   pthread_t pthread; /* the pthread corresponding to this thread state. */
 #endif
   pthread_cond_t sleep_cond; /* condition variable for sleep/suspend. */
