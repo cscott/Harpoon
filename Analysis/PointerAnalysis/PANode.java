@@ -13,14 +13,14 @@ import harpoon.Util.Util;
 import harpoon.IR.Quads.CALL;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
-import harpoon.Tools.DataStructs.LightMap;
+import harpoon.Util.DataStructs.LightMap;
 
 /**
  * <code>PANode</code> class models a node for the Pointer Analysis
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.12 2000-03-22 05:43:48 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.13 2000-03-23 21:29:02 salcianu Exp $
  */
 final public class PANode {
     // activates some safety tests

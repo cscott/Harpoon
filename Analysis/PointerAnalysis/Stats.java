@@ -17,13 +17,13 @@ import harpoon.ClassFile.HCode;
 import harpoon.Analysis.BasicBlock;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
-import harpoon.Tools.Graphs.SCComponent;
+import harpoon.Util.Graphs.SCComponent;
 
 /**
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Stats.java,v 1.1.2.5 2000-03-22 05:23:07 salcianu Exp $
+ * @version $Id: Stats.java,v 1.1.2.6 2000-03-23 21:29:02 salcianu Exp $
  */
 abstract class Stats {
 

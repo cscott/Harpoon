@@ -38,11 +38,11 @@ import harpoon.IR.Quads.CONST;
 
 import harpoon.Temp.Temp;
 
-import harpoon.Tools.Graphs.SCComponent;
-import harpoon.Tools.Graphs.SCCTopSortedGraph;
+import harpoon.Util.Graphs.SCComponent;
+import harpoon.Util.Graphs.SCCTopSortedGraph;
+import harpoon.Util.BasicBlocks.CachingBBConverter;
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
 import harpoon.Analysis.PointerAnalysis.Relation;
-import harpoon.Tools.BasicBlocks.CachingBBConverter;
 
 import harpoon.Util.Util;
 
@@ -58,7 +58,7 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.5 2000-03-23 03:54:08 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.6 2000-03-23 21:29:00 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 

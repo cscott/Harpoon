@@ -50,11 +50,11 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
 import harpoon.Analysis.MetaMethods.MetaAllCallers;
 
-import harpoon.Tools.BasicBlocks.BBConverter;
-import harpoon.Tools.BasicBlocks.CachingSCCBBFactory;
-import harpoon.Tools.Graphs.SCComponent;
-import harpoon.Tools.Graphs.SCCTopSortedGraph;
-import harpoon.Tools.UComp;
+import harpoon.Util.BasicBlocks.BBConverter;
+import harpoon.Util.BasicBlocks.CachingSCCBBFactory;
+import harpoon.Util.Graphs.SCComponent;
+import harpoon.Util.Graphs.SCCTopSortedGraph;
+import harpoon.Util.UComp;
 
 import harpoon.Util.Util;
 
@@ -65,7 +65,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.30 2000-03-23 08:16:58 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.31 2000-03-23 21:29:02 salcianu Exp $
  */
 public class PointerAnalysis {
 

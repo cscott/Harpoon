@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import harpoon.Tools.UComp;
+import harpoon.Util.UComp;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.Analysis.MetaMethods.MetaMethod;
@@ -16,7 +16,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.1.2.5 2000-03-22 05:23:07 salcianu Exp $
+ * @version $Id: Debug.java,v 1.1.2.6 2000-03-23 21:29:02 salcianu Exp $
  */
 public abstract class Debug {
 

@@ -41,10 +41,10 @@ import harpoon.Analysis.MetaMethods.FakeMetaCallGraph;
 import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
 import harpoon.Analysis.MetaMethods.MetaAllCallers;
 
-import harpoon.Tools.BasicBlocks.BBConverter;
-import harpoon.Tools.BasicBlocks.CachingBBConverter;
-import harpoon.Tools.Graphs.SCComponent;
-import harpoon.Tools.Graphs.SCCTopSortedGraph;
+import harpoon.Util.BasicBlocks.BBConverter;
+import harpoon.Util.BasicBlocks.CachingBBConverter;
+import harpoon.Util.Graphs.SCComponent;
+import harpoon.Util.Graphs.SCCTopSortedGraph;
 
 import harpoon.Analysis.PointerAnalysis.Debug;
 import harpoon.Analysis.MetaMethods.SmartCallGraph;
@@ -54,7 +54,7 @@ import harpoon.Analysis.MetaMethods.SmartCallGraph;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.18 2000-03-23 08:34:57 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.19 2000-03-23 21:29:04 salcianu Exp $
  */
 public abstract class PAMain {
 
