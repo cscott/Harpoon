@@ -65,6 +65,7 @@ static void wait_on_running_thread() {
 
 #endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS */
 
+static jclass thrCls; /* clazz for java/lang/Thread. */
 static jfieldID priorityID; /* "priority" field in Thread object. */
 static jfieldID daemonID; /* "daemon" field in Thread object. */
 static jmethodID runID; /* Thread.run() method. */
@@ -84,7 +85,7 @@ pth_key_t flex_timedwait_key = PTH_KEY_INIT;
 #endif
 
 void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
-  jclass thrCls, thrGrpCls;
+  jclass thrGrpCls;
   jmethodID thrConsID, thrGrpConsID;
   jfieldID thrNPID;
   jstring mainStr;
@@ -303,13 +304,12 @@ static void * thread_startup_routine(void *closure) {
     threadgroup = (*env)->CallObjectMethod(env, thread, gettgID);
     (*env)->CallVoidMethod(env, threadgroup, uncaughtID, thread, threadexc);
   }
+  /* this thread is dead now.  give it a chance to clean up. */
+  /* (this also removes the thread from the ThreadGroup) */
+  (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
 #ifdef WITH_CLUSTERED_HEAPS
   /* give us a chance to deallocate the thread-clustered heap */
   NTHR_free(thread);
-#endif
-  /* this thread is dead now.  give it a chance to clean up. */
-#if 0 /* FIXME: BROKEN! */
-  (*env)->CallVoidMethod(env, thread, exitID);
 #endif
   /* ta-da, done! */
 }
