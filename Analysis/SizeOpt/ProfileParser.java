@@ -27,7 +27,7 @@ import java.util.Map;
  * by <code>SizeCounters</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ProfileParser.java,v 1.1.2.2 2001-11-10 17:31:46 cananian Exp $
+ * @version $Id: ProfileParser.java,v 1.1.2.3 2001-11-13 22:46:48 cananian Exp $
  */
 class ProfileParser {
     // lines are in the format: 'mzf_savedbytes_<classname>: <number>'
@@ -40,7 +40,7 @@ class ProfileParser {
 	try {
 	    ParseUtil.readResource(resourcePath, new ResourceParser(linker));
 	} catch (IOException ioex) {
-	    throw new RuntimeException(ioex);
+	    throw new RuntimeException(ioex.toString());
 	}
     }
     /** Returns a map from 'mostly values' (Integers) to how many
