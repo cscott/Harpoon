@@ -30,7 +30,7 @@ import java.util.List;
  * class.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Data.java,v 1.1.2.5 1999-08-04 06:31:00 cananian Exp $
+ * @version $Id: Data.java,v 1.1.2.6 1999-08-09 22:12:41 duncan Exp $
  */
 public class Data extends Code implements HData { 
     public static final String codename = "tree-data";
@@ -204,7 +204,7 @@ public class Data extends Code implements HData {
     }
 
     /** Throws an <code>Error</code>. */
-    public HClass typeMap(HCode hc, Temp t) { 
+    public HClass typeMap(HCodeElement hce, Temp t) { 
 	throw new Error("No typemap information for TreeData objects");
     }
 
