@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.SortedMap;
 
 /**
  * <code>Default</code> contains one-off or 'standard, no-frills'
@@ -20,7 +21,7 @@ import java.util.Set;
  * <code>Enumeration</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.1.2.11 2000-07-13 14:42:16 cananian Exp $
+ * @version $Id: Default.java,v 1.1.2.12 2001-09-17 21:49:01 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
@@ -63,7 +64,7 @@ public abstract class Default  {
 	};
     }
     /** An empty map. Missing from <code>java.util.Collections</code>.*/
-    public static final Map EMPTY_MAP = new SerializableMap() {
+    public static final SortedMap EMPTY_MAP = new SerializableSortedMap() {
 	public void clear() { }
 	public boolean containsKey(Object key) { return false; }
 	public boolean containsValue(Object value) { return false; }
@@ -89,6 +90,15 @@ public abstract class Default  {
 	public String toString() { return "{}"; }
 	// this should always be a singleton.
 	private Object readResolve() { return Default.EMPTY_MAP; }
+	// SortedMap interface.
+	public Comparator comparator() { return null; }
+	public Object firstKey() { throw new NoSuchElementException(); }
+	public Object lastKey() { throw new NoSuchElementException(); }
+	public SortedMap headMap(Object toKey) { return Default.EMPTY_MAP; }
+	public SortedMap tailMap(Object fromKey) { return Default.EMPTY_MAP; }
+	public SortedMap subMap(Object fromKey, Object toKey) {
+	    return Default.EMPTY_MAP;
+	}
     };
     /** A pair constructor method.  Pairs implement <code>hashCode()</code>
      *  and <code>equals()</code> "properly" so they can be used as keys
@@ -126,6 +136,6 @@ public abstract class Default  {
     private static interface SerializableComparator
 	extends Comparator, java.io.Serializable { /* only declare */ }
     /** A serializable map. */
-    private static interface SerializableMap
-	extends Map, java.io.Serializable { /* only declare */ }
+    private static interface SerializableSortedMap
+	extends SortedMap, java.io.Serializable { /* only declare */ }
 }
