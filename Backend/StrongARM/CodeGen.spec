@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.127 2000-02-13 00:43:30 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.128 2000-02-13 20:59:07 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -269,6 +269,14 @@ import java.util.Iterator;
 	if (n instanceof Double || n instanceof Float) return false;
 	else return is12BitOffset(n.longValue());
     }
+    private boolean is5BitShift(long val) {
+	return (val>=0) && (val<=31);
+    }
+    private boolean is5BitShift(Number n) {
+	if (n instanceof Double || n instanceof Float) return false;
+	else return is5BitShift(n.longValue());
+    }
+    
     // helper for operand2 immediates
     private boolean isOpd2Imm(Number n) {
 	if (!(n instanceof Integer)) return false;
@@ -663,6 +671,18 @@ BINOP<l>(AND, j, k) = i %{
      * Fun, fun, fun. [CSA]
      */
 
+BINOP(CMPEQ, j, CONST<i,p>(c)) = i
+%pred %( (ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT)
+	 && isOpd2Imm(c) )%
+%{
+    // don't move these into seperate Instrs; there's an implicit
+    // dependency on the condition register so we don't want to risk
+    // reordering them
+    emit( ROOT, "cmp `s0, #"+c+"\n"+
+		"moveq `d0, #1\n"+
+		"movne `d0, #0", i, j );
+}%
+
 BINOP(CMPEQ, j, k) = i
 %pred %( ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT )%
 %{
@@ -954,6 +974,12 @@ BINOP<p,i>(SHL, j, k) = i %{
     emit( ROOT, "mov `d0, `s0, lsl `s1", i, j, k );
 }%
 
+BINOP<p,i>(SHL, j, CONST(c)) = i 
+%pred %( is5BitShift(c) )%
+%{
+    emit( ROOT, "mov `d0, `s0, lsl #"+c, i, j);
+}%
+
 BINOP<l>(SHL, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0l", r0, j );
@@ -968,6 +994,11 @@ BINOP<l>(SHL, j, k) = i %{
 BINOP<p,i>(SHR, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0, lsr `s1", i, j, k );
+}%
+BINOP<p,i>(SHR, j, CONST(c)) = i
+%pred %( is5BitShift(c) )%
+%{
+    emit( ROOT, "mov `d0, `s0, lsr #"+c, i, j );
 }%
 BINOP<l>(SHR, j, k) = i %{
 
@@ -984,6 +1015,11 @@ BINOP<l>(SHR, j, k) = i %{
 BINOP<p,i>(USHR, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0, asr `s1", i, j, k );
+}%
+BINOP<p,i>(USHR, j, CONST(c)) = i
+%pred %( is5BitShift(c) )%
+%{
+    emit( ROOT, "mov `d0, `s0, asr #"+c, i, j );
 }%
 BINOP<l>(USHR, j, k) = i %{
 
@@ -1600,6 +1636,15 @@ METHOD(params) %{
     }
 }%
 
+CJUMP(BINOP(CMPEQ, j, CONST<i,p>(c)), iftrue, iffalse)
+%pred %( isOpd2Imm(c) )%
+%{  // this is a frequent special case.
+    emit( ROOT, "cmp `s0, #"+c+"\n" +
+	         "beq `L0",
+	  null, new Temp[] { j }, new Label[] { iftrue });
+    emitJUMP( ROOT, "b `L0", iffalse );
+}%
+
 CJUMP(test, iftrue, iffalse) %{
     Instr j1 = emit( ROOT, "cmp `s0, #0 \n" +
 			   "beq `L0", 
@@ -1612,6 +1657,10 @@ EXP(e) %{
 			/* this is a statement that's just an
 			   expression; just throw away 
 			   calculated value */
+}%
+
+JUMP(NAME(id)) %{ // direct jump
+    emitJUMP( ROOT, "b `L0", id );
 }%
 
 JUMP(e) %{
