@@ -25,7 +25,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.13 2000-02-02 04:17:06 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.14 2000-02-02 04:21:48 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
     // may be null; code using this should check
@@ -61,6 +61,7 @@ public class LiveTemps extends LiveVars.BBVisitor {
     */	     
     public LiveTemps(BasicBlock.Factory bbFact, Set liveOnProcExit,
 		     UseDefer ud) {
+	super(bbFact);
 	this.ud = ud;
 
 	// duplicating code from LiveVars.java
@@ -95,7 +96,7 @@ public class LiveTemps extends LiveVars.BBVisitor {
 		     UseDefer ud) {
 	// calling "special" ctor so that I can set up
 	// liveOnProcExit before calling anything else.
-	super();
+	super(bbFact);
 
 	this.ud = ud;
 
