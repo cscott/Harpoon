@@ -21,7 +21,7 @@ import java.io.InputStream;
  * GJ signatures.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Javap.java,v 1.9 2003-07-23 20:45:40 cananian Exp $
+ * @version $Id: Javap.java,v 1.10 2003-08-27 21:15:51 cananian Exp $
  */
 public abstract class Javap /*extends harpoon.IR.Registration*/ {
     public static final void main(String args[]) {
@@ -119,6 +119,9 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 		}
 	    }
 	    // is this a varargs method?
+	    // XXX the "Varargs" attribute is just temporary for the
+	    // prototype compilers.  Java 1.5 will introduce a mask bit of
+	    // some kind to indicate varargs.
 	    boolean isVarArgs= (null!=findAttribute(mi.attributes, "Varargs"));
 	    // indent.
 	    System.out.print("    ");
