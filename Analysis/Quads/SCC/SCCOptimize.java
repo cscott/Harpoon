@@ -14,6 +14,7 @@ import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.CONST;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.FOOTER;
@@ -38,7 +39,7 @@ import java.util.Set;
  * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.1.2.10 2001-07-20 03:30:36 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.1.2.11 2001-09-18 20:42:34 cananian Exp $
  */
 public final class SCCOptimize implements ExecMap {
     TypeMap  ti;
@@ -124,7 +125,11 @@ public final class SCCOptimize implements ExecMap {
 		// done.
 	    } // END VISIT quad.
 	    public void visit(CONST q) { /* do nothing. */ }
-	    public void visit(METHOD q) { /* do nothing. */ }
+	    public void visit(METHOD q) {
+		// can't optimize if entire method is not executable.
+		Util.assert(execMap(q) && execMap(q.nextEdge(0)));
+		/* do nothing. */
+	    }
 	    public void visit(FOOTER q) {
 		// remove unexecutable FOOTER edges.
 		FOOTER newF = q;
@@ -191,6 +196,7 @@ public final class SCCOptimize implements ExecMap {
 		if (i==next.length-1 || !execMap(next[i+1])) {
 		    // only one edge is executable.
 		    int liveEdge = i;
+		    Util.assert(!(q instanceof CALL));
 
 		    // Grab the link information from the original CJMP/SWITCH.
 		    Quad header = q.prev(0);
