@@ -1,4 +1,4 @@
-% CVSId: $Id: oqe.tex,v 1.13 2002-05-08 22:07:20 cananian Exp $
+% CVSId: $Id: oqe.tex,v 1.14 2002-05-09 04:23:14 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -155,7 +155,7 @@ the total allocated and live memory of the program.
 %---------------------------------------------------------------------- SLIDE -
 \newrgbcolor{fieldcomp}{0 1 0}
 \newrgbcolor{fieldelim}{0 1 1}
-\newrgbcolor{headeropt}{1 0 0}
+\newrgbcolor{headeropt}{1 0 1}
 
 \overlays{4}{
 \begin{slide}{How to compress objects}
@@ -223,6 +223,7 @@ Three broad techniques:
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
+\newsavebox{\blbox}
 \overlays{6}{
 \begin{slide}{Field Compression}
 Reduce the space taken up by an object's fields.
@@ -250,7 +251,9 @@ class Car \{\\
 \fromSlide{3}{\includegraphics[height=.8in]{Figures/Images/model-t-black.eps}}
 \fromSlide{5}{\includegraphics[height=.8in]{Figures/Images/model-t-redblue.eps}}\\
 \tt\bfseries%
-~\fromSlide{3}{{\black BLACK=0}}%
+% the \sbox below would let us put black text on a white back if we
+% felt like it.
+~\fromSlide{3}{\sbox{\blbox}{BLACK=0}\white\usebox{\blbox}}%
 ~\fromSlide{5}{{\red RED=1}~{\blue BLUE=2}}
 }%
 }
@@ -387,9 +390,9 @@ So let's see how we'd extend the lattice to make the analysis
 stronger.  Here we have a lattice that allows us to classify
 values as positive or negative, even if we don't know what the
 actual value will be. @ Here if we join $1$ and $2$ we get the
-element {\tt (--P)}, which indicates ``any positive number''.
+element {\tt (\_\_P)}, which indicates ``any positive number''.
 If we then join that with a negative number, say, $-1$, @ we'll
-get {\tt (M-P)}, or ``a non-zero number''.  If we later discover
+get {\tt (M\_P)}, or ``a non-zero number''.  If we later discover
 an assignment of zero, @ we finally get the $\top$ element.
 \end{talknotes}
 
@@ -413,7 +416,7 @@ int foo() \{\\
 \begin{center}
 \renewcommand{\figscale}{0.5}%
 \newcommand{\color}[2][rgb]{}%ignore color commands
-\input{Figures/THlat6b}
+\input{Figures/THlat6c}
 \end{center}
 }
 
@@ -423,7 +426,7 @@ int foo() \{\\
     \onlySlide*{4}{\yellow 1}%
     \onlySlide*{5}{1}%
     \onlySlide*{6}{1\yellow\meet 2}%
-    \fromSlide*{7}{1\meet 2\onlySlide{7}{\yellow}=\text{\tt\bfseries (--P)}}%
+    \fromSlide*{7}{1\meet 2\onlySlide{7}{\yellow}=\text{\tt\bfseries (\_\_P)}}%
     $}
 
 \end{center}
@@ -433,7 +436,7 @@ int foo() \{\\
 \begin{talknotes}
 With the new lattice, we start at $\bot$ as before. @ Looking at {\tt
   i=1}, @ we do a join with $1$ @ to get $1$.  But now, when we see
-{\tt i=2}, @ and join with $2$, @ we get {\tt (--P)}, or ``a positive
+{\tt i=2}, @ and join with $2$, @ we get {\tt (\_\_P)}, or ``a positive
   integer.'' @ This time, when we get to the comparison, we can tell
 that {\tt i>0} will always be true.
 \end{talknotes}
@@ -447,9 +450,9 @@ entries with positive integers $m$ and $p$.  Encode zero as $m=p=0$.
 \FromSlide{2}
 \begin{displaymath}
 \begin{array}{c}
-\text{\tt\bfseries (--P)} \Rightarrow \tuple{0,p} \\
-\text{\tt\bfseries (M--)} \Rightarrow \tuple{m,0} \\
-\text{\tt\bfseries (-Z-)} \Rightarrow \tuple{0,0} \\
+\text{\tt\bfseries (\_\_P)} \Rightarrow \tuple{0,p} \\
+\text{\tt\bfseries (M\_\_)} \Rightarrow \tuple{m,0} \\
+\text{\tt\bfseries (\_Z\_)} \Rightarrow \tuple{0,0} \\
 \end{array}
 \end{displaymath}
 
@@ -459,7 +462,7 @@ In lattice context: $
 \begin{array}{ccc}
             &&\Rnode{tup5}{\tuple{0,31}}\\
 \pnode{old3}&&\Rnode{tup4}{\vdots}      \\
-\Rnode{old2}{\text{\tt\bfseries (--P)}}&\Rightarrow&\Rnode{tup3}{\tuple{0,3}}\\
+\Rnode{old2}{\text{\tt\bfseries (\_\_P)}}&\Rightarrow&\Rnode{tup3}{\tuple{0,3}}\\
 \pnode{old1}&&\Rnode{tup2}{\tuple{0,2}} \\
             &&\Rnode{tup1}{\tuple{0,1}} \\
 \end{array}
@@ -479,7 +482,7 @@ $P$ in the previous lattice entries with positive integers $m$ and $p$
 indicating the \emph{bitwidths} of the negative and positive portions
 of the possible values.  @ We now represent these lattice entries as
 tuples \tuple{m,p}, and use the \tuple{0,0} tuple to represent zero ---
-what our previous lattice would have called {\tt (-Z-)}.  @ We can
+what our previous lattice would have called {\tt (\_Z\_)}.  @ We can
 imagine expanding each node in our previous lattice with distinct
 tuples, with the ordering relations shown.
 \end{talknotes}
@@ -541,7 +544,7 @@ int foo() \{\\
 \begin{center}
 \renewcommand{\figscale}{0.5}%
 \newcommand{\color}[2][rgb]{}%ignore color commands
-\input{Figures/THlat6b}
+\input{Figures/THlat6c}
 \end{center}
 }
 
@@ -731,6 +734,7 @@ we can use a single byte in the object structure to represent color.
 \vspace{0.75cm}
 %\includegraphics[scale=1.3]{Figures/alignment.eps}
 \includegraphics[scale=0.35]{Figures/alignment2.eps}
+%\includegraphics[scale=0.35]{Figures/alignment3.eps}
 
 \small Object header omitted.
 \end{center}
@@ -961,7 +965,7 @@ public final class \onlySlide*{1}{String}\fromSlide*{2}{\yellow SmallString} \{\
 Let's go back and see how this works.  We take the {\tt String} class,
 rename it @ {\tt SmallString} and remove the {\tt offset} field.
 But what do we do with the references to the now-deleted field?
-@ We solve this problem by \emph{virutalizing} the field: adding
+@ We solve this problem by \emph{virtualizing} the field: adding
 a {\tt getOffset()} accessor method (which always returns zero)
 and replacing references to {\tt offset} with calls to {\tt
   getOffset()}.
@@ -1144,7 +1148,7 @@ determine the best splitting order in that case.
 
 %---------------------------------------------------------------------- SLIDE -
 \overlays{2}{
-\begin{slide}{Key properties (revisted)}
+\begin{slide}{Key properties (revisited)}
 To use static specialization we need:
 \begin{itemize}
  \item A field with a frequently-occuring value.
@@ -1441,6 +1445,10 @@ are statically unused.
 \end{slide}
 
 \begin{talknotes}
+And now looking at the second word: the claz pointer typically points
+directly to some structure with information about the object type.
+We can save space by imposing a level of indirection and using
+a small \emph{table-index} instead.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1455,6 +1463,11 @@ are statically unused.
 }
 
 \begin{talknotes}
+Our static analysis can tell how many \emph{instantiated} types are in
+the program, and thus bound the index size.  But this can even work in
+a dynamic environment, with a little co-operation from the GC.
+But how much space does this really save?  How many classes are in
+typical applications?
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1466,12 +1479,17 @@ Class statistics for applications in SPECjvm98 benchmark suite:
 \end{slide}
 
 \begin{talknotes}
+Here are the class statistics, etc.
+Note that all but two are below 256 classes, or \emph{1 byte} of claz
+index.  I have never seen an application that required more than
+2 bytes of claz index.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \part{How well does it work?}
 
 \begin{talknotes}
+So how well does all this work?
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1502,6 +1520,7 @@ Class statistics for applications in SPECjvm98 benchmark suite:
 \end{slide}
 
 \begin{talknotes}
+It would be nice if this graph were directly in percent.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1526,29 +1545,29 @@ Class statistics for applications in SPECjvm98 benchmark suite:
 
 %---------------------------------------------------------------------- SLIDE -
 \overlays{9}{
-\begin{slide}{Limitations \\ \small (read, ``future work'')}
+\begin{slide}{How can we make this even better?}
 \fromSlide{2}{
 \begin{itemize}
- \item No array analysis/can't distinguish between different uses of a class.
+ \item Currently no array analysis/can't distinguish between different uses of a class.
  \fromSlide{3}{
  \begin{itemize} \yellow\small
   \item Use pointer analysis to discriminate among objects from a
     certain allocation-site; optimize each alloc site.
  \end{itemize}
  \fromSlide{4}{
- \item No pointer compression.
+ \item We don't compress pointers at all.
  \fromSlide{5}{
  \begin{itemize} \yellow\small
   \item Investigate region-based/enumerated approaches.
  \end{itemize}
  \fromSlide{6}{
- \item Mostly-constant analysis requires profiling.
+ \item The mostly-constant analysis requires profiling.
  \fromSlide{7}{
  \begin{itemize} \yellow\small
   \item Investigate heuristic methods.
  \end{itemize}
  \fromSlide{8}{
- \item Knows nothing about ``field-like'' maps.
+ \item We know nothing about ``field-like'' maps.
  \fromSlide{9}{
  \begin{itemize} \yellow\small
   \item Enable \emph{internalization}.
