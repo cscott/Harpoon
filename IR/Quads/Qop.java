@@ -9,76 +9,166 @@ import harpoon.ClassFile.HClass;
  * <code>OPER</code> opcodes.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Qop.java,v 1.1.2.5 1999-01-03 03:01:42 cananian Exp $
+ * @version $Id: Qop.java,v 1.1.2.6 1999-01-18 00:07:53 cananian Exp $
  */
 public abstract class Qop  {
+    /** Compares references for equality. */
     public final static int ACMPEQ = 0;
+    /** Converts a double to a float. */
     public final static int D2F = 1;
+    /** Converts a double to an int. */
     public final static int D2I = 2;
+    /** Converts a double to a long. */
     public final static int D2L = 3;
+    /** Computes the sum of two double values. */
     public final static int DADD = 4;
+    /** Evaluates to true if double values are equal and neither is NaN, 
+     *  or false otherwise. */
     public final static int DCMPEQ = 5;
+    /** Evaluates to true if first double value is greater than or
+     *  equal to the second double value and neither is NaN, or false
+     *  otherwise. */
     public final static int DCMPGE = 6;
+    /** Evaluates to true if first double value is greater than the
+     *  second double value and neither is NaN, or false otherwise. */
     public final static int DCMPGT = 7;
+    /** Computes the quotient of two double values. */
     public final static int DDIV = 8;
+    /** Computes the product of two double values. */
     public final static int DMUL = 9;
+    /** Computes the negation of a double value. */
     public final static int DNEG = 10;
+    /** Computes the remainder of two double values. */
     public final static int DREM = 11;
+    /** Computes the difference of two double values. */
     public final static int DSUB = 12;
+    /** Converts a float to a double. */
     public final static int F2D = 13;
+    /** Converts a float to an int. */
     public final static int F2I = 14;
+    /** Converts a float to a long. */
     public final static int F2L = 15;
+    /** Computes the sum of two float values. */
     public final static int FADD = 16;
+    /** Evaluates to true if the float values are equal and neither in NaN,
+     *  or false otherwise. */
     public final static int FCMPEQ = 17;
+    /** Evaluates to true if the first float value is greater than or equal
+     *  to the second float value and neither is NaN, or false otherwise. */
     public final static int FCMPGE = 18;
+    /** Evaluates to true if the first float value is greater than the
+     *  second float value and neither is NaN, or false otherwise. */
     public final static int FCMPGT = 19;
+    /** Computes the quotient of two float values. */
     public final static int FDIV = 20;
+    /** Computes the product of two float values. */
     public final static int FMUL = 21;
+    /** Computes the negation of a float value. */
     public final static int FNEG = 22;
+    /** Computes the remainder of two float values. */
     public final static int FREM = 23;
+    /** Computes the difference of two float values. */
     public final static int FSUB = 24;
+    /** Converts an int to a byte.  Result is still int type, but it is
+     *  truncated to 8 bits, then sign-extended. */
     public final static int I2B = 25;
+    /** Converts an int to a character.  Result is still int type, but is
+     *  truncated to 16 bits.  No sign extension. */
     public final static int I2C = 26;
+    /** Converts an int to a double. */
     public final static int I2D = 27;
+    /** Converts an int to a float. */
     public final static int I2F = 28;
+    /** Converts an int to a long. */
     public final static int I2L = 29;
+    /** Converts an int to a short.  Result is still int type, but is
+     *  truncated to 16 bits, then sign extended. */
     public final static int I2S = 30;
+    /** Computes the sum of two int values. */
     public final static int IADD = 31;
+    /** Computes the binary-AND of two int values. */
     public final static int IAND = 32;
+    /** Evaluates to true if the two int values are equal, or false
+     *  otherwise. */
     public final static int ICMPEQ = 33;
+    /** Evalutates to true if the first int value is greater than the
+     *  second int value, or false otherwise. */
     public final static int ICMPGT = 35;
+    /** Computes the int quotient of two int values. */
     public final static int IDIV = 36;
+    /** Computes the product of two int values. */
     public final static int IMUL = 37;
+    /** Computes the negation of an int value. */
     public final static int INEG = 38;
+    /** Computes the binary-OR of two int values. */
     public final static int IOR = 39;
+    /** Computes the remainder of two int values. */
     public final static int IREM = 40;
+    /** Computes the value of the first int value shifted left by the number
+     *  of bits specified in the second int value mod 32. That is, 
+     *  <code>( 1 << 34 ) == 4</code>. */
     public final static int ISHL = 41;
+    /** Computes the value of the first int value shifted right by the number
+     *  of bits specified in the second int value mod 32, with sign extension.
+     *  That is, <code>( -4 >> 33 ) == -2</code>. */
     public final static int ISHR = 42;
+    /** Computes the difference of two int values. */
     public final static int ISUB = 43;
+    /** Computes the value of the first int value shifted right by the number
+     *  of bits specified in the second int value mod 32, without sign
+     *  extension.  That is, <code>( -4 >>> 63) == 1</code>. */
     public final static int IUSHR = 44;
+    /** Computes the binary-XOR of two int values. */
     public final static int IXOR = 45;
+    /** Converts a long to a double. */
     public final static int L2D = 46;
+    /** Converts a long to a float. */
     public final static int L2F = 47;
+    /** Converts a long to an int. */
     public final static int L2I = 48;
+    /** Computes the sum of two long values. */
     public final static int LADD = 49;
+    /** Computes the binary-AND of two long values. */
     public final static int LAND = 50;
+    /** Evaluates to true if the two long values are equal, or 
+     *  false otherwise. */
     public final static int LCMPEQ = 51;
+    /** Evaluates to true if the first long value is greater than the 
+     *  second, or false otherwise. */
     public final static int LCMPGT = 53;
+    /** Computes the quotient of two long values. */
     public final static int LDIV = 54;
+    /** Computes the product of two long values. */
     public final static int LMUL = 55;
+    /** Computes the negation of a long value. */
     public final static int LNEG = 56;
+    /** Computes the binary-OR of two long values. */
     public final static int LOR = 57;
+    /** Computes the remainder of two long values. */
     public final static int LREM = 58;
+    /** Computes the value of the first long value shifted left by the
+     *  number of bits specified in the second long value mod 64. */
     public final static int LSHL = 59;
+    /** Computes the value of the first long value shifted right by the
+     *  number of bits specified in the second long value mod 64, with
+     *  sign extension. */
     public final static int LSHR = 60;
+    /** Computes the difference of two long values. */
     public final static int LSUB = 61;
+    /** Computes the value of the first long value shifted right by the
+     *  number of bits specified in the second long value mod 64, without
+     *  sign extension. */
     public final static int LUSHR = 62;
+    /** Computes the binary-XOR of two long values. */
     public final static int LXOR = 63;
 
+    /** Determines if a given <code>Qop</code> value is valid. */
     public static boolean isValid(int v) {
 	return (0<=v) && (v<=LXOR);
     }
 
+    /** Converts the enumerated <code>Qop</code> value to a descriptive
+     *  string. */
     public static String toString(int v) {
 	switch(v) {
         case ACMPEQ:	return "acmpeq";
@@ -143,15 +233,17 @@ public abstract class Qop  {
         case LSUB:	return "lsub";
         case LUSHR:	return "lushr";
         case LXOR:	return "lxor";
-	default:        throw new RuntimeException("Unknown Op type: "+v);
+	default:        throw new RuntimeException("Unknown QOp type: "+v);
 	}
     }
+    /** Returns the enumerated <code>Qop</code> that corresponds to a given
+     *  descriptive string. */
     public static int forString(String op) {
 	Integer r = (Integer) h.get(op);
-	if (r==null) throw new RuntimeException("Unknown Op name: "+op);
+	if (r==null) throw new RuntimeException("Unknown QOp name: "+op);
 	return r.intValue();
     }
-    static java.util.Hashtable h = new java.util.Hashtable();
+    private static final java.util.Hashtable h = new java.util.Hashtable();
     static {
         h.put("acmpeq", new Integer(ACMPEQ));
         h.put("d2f", new Integer(D2F));
@@ -222,6 +314,7 @@ public abstract class Qop  {
     /** Determines the result type of an <code>OPER</code>. */
     public static HClass resultType(int v) {
 	switch(v) {
+	    // boolean return type (input to CJMPs):
         case ACMPEQ:
         case DCMPEQ:
         case DCMPGE:
@@ -234,6 +327,7 @@ public abstract class Qop  {
         case LCMPEQ:
         case LCMPGT:
 	    return HClass.Boolean;
+	    // float return type:
         case D2F:
         case FADD:
         case FDIV:
@@ -244,6 +338,7 @@ public abstract class Qop  {
         case I2F:
         case L2F:
 	    return HClass.Float;
+	    // int return type:
         case D2I:
         case F2I:
         case I2B:
@@ -263,6 +358,7 @@ public abstract class Qop  {
         case IXOR:
         case L2I:
 	    return HClass.Int;
+	    // long return type:
         case D2L:
         case F2L:
         case I2L:
@@ -279,6 +375,7 @@ public abstract class Qop  {
         case LUSHR:
         case LXOR:
 	    return HClass.Long;
+	    // double return type:
         case DADD:
         case DDIV:
         case DMUL:
@@ -289,7 +386,7 @@ public abstract class Qop  {
         case I2D:
         case L2D:
 	    return HClass.Double;
-	default:        throw new RuntimeException("Unknown Op type: "+v);
+	default:        throw new RuntimeException("Unknown QOp type: "+v);
 	}
     }
     /** Evaluates a constant value for the result of an <code>OPER</code>, 
@@ -361,12 +458,13 @@ public abstract class Qop  {
 	default:        throw new RuntimeException("Unknown Op type: "+opc);
 	}
     }
+    // wrapper functions.
     private static Integer _i(int i)     { return new Integer(i); }
     private static Long    _l(long l)    { return new Long(l);    }
     private static Float   _f(float f)   { return new Float(f);   }
     private static Double  _d(double d)  { return new Double(d);  }
     private static Boolean _b(boolean b) { return new Boolean(b); }
-   
+    // unwrapper functions.
     private static int    _i(Object o) { return ((Integer)o).intValue(); }
     private static long   _l(Object o) { return ((Long)o)   .longValue(); }
     private static float  _f(Object o) { return ((Float)o)  .floatValue(); }
