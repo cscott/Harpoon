@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.17 2000-01-09 01:04:41 duncan Exp $
+ * @version $Id: MOVE.java,v 1.1.2.18 2000-01-09 02:12:05 duncan Exp $
  */
 public class MOVE extends Stm implements Typed {
     /** The expression giving the destination for the computed value. */
@@ -37,9 +37,8 @@ public class MOVE extends Stm implements Typed {
     public MOVE(TreeFactory tf, HCodeElement source,
 		Exp dst, Exp src) {
 	super(tf, source);
-	// Set elements in reverse order to avoid null pointer exception. 
-	this.setSrc(src);
-	this.setDst(dst); 
+	this.dst = dst; this.src = src; 
+	this.setDst(dst); this.setSrc(src); 
 	Util.assert(dst!=null && src!=null, "Dest and Source cannot be null");
 	Util.assert(dst.type()==src.type(), 
 		    "Dest (type:"+Type.toString(dst.type()) + 
