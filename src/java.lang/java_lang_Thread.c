@@ -14,6 +14,9 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h> /* for usleep */
+#ifdef WITH_CLUSTERED_HEAPS
+#include "../clheap/alloc.h" /* for NTHR_free */
+#endif
 
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
 #define EXTRACT_OTHER_ENV(env, thread) \
@@ -285,10 +288,13 @@ static void * thread_startup_routine(void *closure) {
   if ( (threadexc = (*env)->ExceptionOccurred(env)) != NULL) {
     // call thread.getThreadGroup().uncaughtException(thread, exception)
     (*env)->ExceptionClear(env); /* clear the thread's exception */
-    fprintf(stderr, "CHILD THREAD THREW UNCAUGHT EXCEPTION.\n");
     threadgroup = (*env)->CallObjectMethod(env, thread, gettgID);
     (*env)->CallVoidMethod(env, threadgroup, uncaughtID, thread, threadexc);
   }
+#ifdef WITH_CLUSTERED_HEAPS
+  /* give us a chance to deallocate the thread-clustered heap */
+  NTHR_free(thread);
+#endif
   /* this thread is dead now.  give it a chance to clean up. */
 #if 0 /* FIXME: BROKEN! */
   (*env)->CallVoidMethod(env, thread, exitID);
