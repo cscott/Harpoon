@@ -20,7 +20,7 @@ import harpoon.ClassFile.HCodeElement;
  * information necessary to compile for the StrongARM processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.1 1999-02-16 21:14:40 andyb Exp $
+ * @version $Id: Frame.java,v 1.1.2.2 1999-02-16 21:33:10 duncan Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame 
   implements DefaultAllocationInfo {
@@ -48,6 +48,8 @@ public class Frame extends harpoon.Backend.Generic.Frame
 
     /* not yet implemented */
     public Temp RV() { return null; }
+
+    public Temp RX() { return null; }
 
     public Temp FP() { return null; }
 
