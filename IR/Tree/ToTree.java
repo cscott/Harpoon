@@ -68,7 +68,8 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.69 2000-02-13 22:21:37 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ToTree.java,v 1.1.2.70 2000-02-14 00:31:26 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
