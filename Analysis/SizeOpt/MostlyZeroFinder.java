@@ -42,7 +42,7 @@ import java.util.Iterator;
  * which are mostly zero (or mostly 1, 2, etc).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MostlyZeroFinder.java,v 1.6 2002-09-03 15:17:52 cananian Exp $
+ * @version $Id: MostlyZeroFinder.java,v 1.7 2003-07-09 21:12:38 cananian Exp $
  */
 public class MostlyZeroFinder extends MethodMutator<Quad> {
     /** the mostly-zero analysis can actually find mostly-N fields.  this
@@ -58,11 +58,11 @@ public class MostlyZeroFinder extends MethodMutator<Quad> {
      *  code factory, class hierarchy, and frame. */
     public MostlyZeroFinder(HCodeFactory parent, ClassHierarchy ch,
 			    Frame frame) {
-	// force a caching quad-ssa code factory.
+	// force a caching quad-no-ssa code factory.
 	this(new CachingCodeFactory(QuadNoSSA.codeFactory(parent)), ch, frame);
     }
     // the private constructor knows the code factory is cached and produces
-    // quad-ssa form.
+    // quad-no-ssa form.
     private MostlyZeroFinder(CachingCodeFactory parent, ClassHierarchy ch,
 			     Frame frame) {
         super(parent);
