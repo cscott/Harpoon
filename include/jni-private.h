@@ -18,16 +18,26 @@
 #endif
 
 struct _jmethodID {
-  char *name;
-  char *desc;
-  ptroff_t offset;
-  ptroff_t nargs;
+  char *name;	   /* method name. */
+  char *desc;	   /* method descriptor */
+  ptroff_t offset; /* an absolute address for static methods, else an offset */
+  ptroff_t nargs;  /* number of argument words for the method */
+};
+struct _jfieldID {
+  char *name;	   /* field name. */
+  char *desc;	   /* field descriptor. */
+  ptroff_t offset; /* an absolute address for static fields, else an offset */
+  ptroff_t _zero;  /* unused.  should be zero. */
+};
+union _jmemberID {
+  struct _jmethodID m;
+  struct _jfieldID  f;
 };
 
 /* the claz structure is primarily for method dispatch and instanceof tests */
 struct claz {
   /* interface method dispatch table above this point. */
-  void *class_object;	/* pointer to (unwrapped) class object. */
+  struct oobj * class_object; /* pointer to (unwrapped) class object. */
   struct claz *component_claz;	/* component type, or NULL if non-array. */
   struct claz **interfaces; /* NULL terminated list of implemented interfaces*/
   u_int32_t scaled_class_depth; /* sizeof(struct claz *) * class_depth */
@@ -35,43 +45,57 @@ struct claz {
   /* class method dispatch table after display */
 };
 
-/* the _jobject structure tells you what's inside the object layout. */
-struct _jobject {
+/* the oobj structure tells you what's inside the object layout. */
+struct oobj {
   /* hash code above this point */
   struct claz *claz;
   /* fields below this point */
 };
-/* use this version of the _jobject structure if you need to get at the
+/* use this version of the oobj structure if you need to get at the
  * hashcode value, which is stored *above* the pointed-at location.
- * remember to offset your pointer using the JOBJECT_OFFSET macro.
+ * remember to offset your pointer using the OOBJ_OFFSET macro.
  */
-struct _jobject_offset {
+struct oobj_offset {
   u_int32_t hashcode;
-  struct _jobject obj;
+  struct oobj obj;
 };
-#define JOBJECT_OFFSET(unscaled) \
-	((struct _jobject_offset *) (((char *)(unscaled)) - sizeof(u_int32_t)))
+#define OOBJ_OFFSET(unscaled) \
+	((struct oobj_offset *) (((char *)(unscaled)) - sizeof(u_int32_t)))
 
 struct FNI_classinfo {
   struct claz *claz;
   const char *name;
-  struct _jmethodID *methodend;
-  struct _jmethodID methodinfo[0];
+  struct _jmethodID *memberend;
+  struct _jmethodID memberinfo[0];
 };
 
 struct FNI_name2class {
   char *name;
-  void *class_object;
+  struct oobj * class_object;
 };
 extern struct FNI_name2class name2class_start, name2class_end;
 
 struct FNI_class2info {
-  void *class_object;
+  struct oobj * class_object;
   struct FNI_classinfo *info;
 };
 extern struct FNI_class2info class2info_start, class2info_end;
 
-/* --------------- function prototypes. ------------------ */
+/* --------------- wrapping and unwrapping objects. ------------ */
+/* an unwrapped jobject is a struct oobj *...*/
+typedef struct oobj * jobject_unwrapped;
+/* a wrapped object is a struct _jobject *...*/
+struct _jobject {
+  struct oobj * obj;
+};
+/* this function will make a wrapper. */
+jobject FNI_NewLocalRef(jobject_unwrapped obj);
+
+/* define handy (un)wrapper macros */
+#define FNI_WRAP(x) (FNI_NewLocalRef(x))
+#define FNI_UNWRAP(_x) ({jobject x=_x; (x==NULL)?NULL:x->obj; })
+
+/* --------------- JNI function prototypes. ------------------ */
 
 /* our abort stub */
 void FNI_Unimplemented(void);

@@ -3,16 +3,22 @@
 #include "jni.h"
 #include "jni-private.h"
   
+extern void FNI_Dispatch_Void(ptroff_t method_pointer, int narg_words,
+			      void * argptr, jthrowable * exception)
+     __attribute__ ((/*weak,*/ alias ("FNI_Dispatch")));
+extern jobject_unwrapped FNI_Dispatch_Object(ptroff_t method_pointer,
+					     int narg_words, void * argptr,
+					     jthrowable * exception)
+     __attribute__ ((/*weak,*/ alias ("FNI_Dispatch")));
 #define FNI_DISPATCH_PROTO(name, type) \
    extern type FNI_Dispatch_##name(ptroff_t method_pointer, int narg_words, \
 				   void * argptr, jthrowable * exception) \
    __attribute__ ((/*weak,*/ alias ("FNI_Dispatch")));
-FORALLTYPES(FNI_DISPATCH_PROTO);
-extern jthrowable FNI_dispatch_exception;
+FORPRIMITIVETYPES(FNI_DISPATCH_PROTO);
 
 /* OK, wrap & move arguments based on signature. */
-static void move_and_wrapA(jmethodID methodID, ptroff_t *argtable,
-			   jvalue * args) {
+static void move_and_unwrapA(jmethodID methodID, ptroff_t *argtable,
+			     jvalue * args) {
   char *sigptr = methodID->desc+1;
   int i, j;
   for (i=0, j=0; *sigptr != ')'; sigptr++)
@@ -37,15 +43,14 @@ static void move_and_wrapA(jmethodID methodID, ptroff_t *argtable,
       while (*sigptr=='[') sigptr++;
     case 'L':
       if (*sigptr=='L') while (*sigptr!=';') sigptr++;
-      /* XXX: wrap object here. */
-      argtable[i++] = (ptroff_t) args[j++].l;
+      argtable[i++] = (ptroff_t) FNI_UNWRAP(args[j++].l);
       break;
     default: assert(0); /* illegal signature */
     }
   assert(methodID->nargs==i);
 }
-static void move_and_wrapV(jmethodID methodID, ptroff_t *argtable,
-			   va_list args) {
+static void move_and_unwrapV(jmethodID methodID, ptroff_t *argtable,
+			     va_list args) {
   char *sigptr = methodID->desc+1;
   int i, j;
   for (i=0, j=0; *sigptr != ')'; sigptr++)
@@ -69,8 +74,7 @@ static void move_and_wrapV(jmethodID methodID, ptroff_t *argtable,
       while (*sigptr=='[') sigptr++;
     case 'L':
       if (*sigptr=='L') while (*sigptr!=';') sigptr++;
-      /* XXX: wrap object here. */
-      argtable[i++] = (ptroff_t) va_arg(args, jobject);
+      argtable[i++] = (ptroff_t) FNI_UNWRAP(va_arg(args, jobject));
       break;
     default: assert(0); /* illegal signature */
     }
@@ -78,6 +82,7 @@ static void move_and_wrapV(jmethodID methodID, ptroff_t *argtable,
 }
 
 /* Static methods. */
+      /* get the ... case out of the way */
 void FNI_CallStaticVoidMethod(JNIEnv *env,
 			      jclass clazz, jmethodID methodID, ...)
 {
@@ -86,27 +91,7 @@ void FNI_CallStaticVoidMethod(JNIEnv *env,
     (*env)->CallStaticVoidMethodV(env, clazz, methodID, varargs);
     va_end(varargs);
 }
-void FNI_CallStaticVoidMethodA(JNIEnv *env,
-			       jclass clazz, jmethodID methodID,
-			       jvalue * args) {
-  ptroff_t argtable[methodID->nargs];
-  jthrowable exception = NULL;
-  move_and_wrapA(methodID, argtable, args);
-  FNI_Dispatch_Void(methodID->offset, methodID->nargs, argtable,
-		    &exception);
-  assert(exception==NULL); /* can't handle exceptions yet. */
-}
-void FNI_CallStaticVoidMethodV(JNIEnv *env,
-			       jclass clazz, jmethodID methodID,
-			       va_list args) {
-  ptroff_t argtable[methodID->nargs];
-  jthrowable exception = NULL;
-  move_and_wrapV(methodID, argtable, args);
-  FNI_Dispatch_Void(methodID->offset, methodID->nargs, argtable,
-		    &exception);
-  assert(exception==NULL); /* can't handle exceptions yet. */
-}
-#define FNI_CALL_STATIC(name, type) \
+#define FNI_CALL_STATIC_DOTDOTDOT(name,type) \
 type FNI_CallStatic##name##Method(JNIEnv *env, \
 				  jclass clazz, jmethodID methodID, ...) \
 { \
@@ -116,14 +101,63 @@ type FNI_CallStatic##name##Method(JNIEnv *env, \
     result=FNI_CallStatic##name##MethodV(env, clazz, methodID, varargs); \
     va_end(varargs); \
     return result; \
-} \
+}
+FORNONVOIDTYPES(FNI_CALL_STATIC_DOTDOTDOT);
+
+/* ok, hard work. */
+
+void FNI_CallStaticVoidMethodA(JNIEnv *env,
+			       jclass clazz, jmethodID methodID,
+			       jvalue * args) {
+  ptroff_t argtable[methodID->nargs];
+  jthrowable exception = NULL;
+  move_and_unwrapA(methodID, argtable, args);
+  FNI_Dispatch_Void(methodID->offset, methodID->nargs, argtable,
+		    &exception);
+  assert(exception==NULL); /* can't handle exceptions yet. */
+}
+void FNI_CallStaticVoidMethodV(JNIEnv *env,
+			       jclass clazz, jmethodID methodID,
+			       va_list args) {
+  ptroff_t argtable[methodID->nargs];
+  jthrowable exception = NULL;
+  move_and_unwrapV(methodID, argtable, args);
+  FNI_Dispatch_Void(methodID->offset, methodID->nargs, argtable,
+		    &exception);
+  assert(exception==NULL); /* can't handle exceptions yet. */
+}
+jobject FNI_CallStaticObjectMethodA(JNIEnv *env,
+				   jclass clazz, jmethodID methodID,
+				   jvalue * args) {
+  ptroff_t argtable[methodID->nargs];
+  jobject_unwrapped result;
+  jthrowable exception = NULL;
+  move_and_unwrapA(methodID, argtable, args);
+  result = FNI_Dispatch_Object(methodID->offset, methodID->nargs,
+			       argtable, &exception);
+  assert(exception==NULL);
+  return FNI_WRAP(result);
+}
+jobject FNI_CallStaticObjectMethodV(JNIEnv *env,
+				   jclass clazz, jmethodID methodID,
+				   va_list args) {
+  ptroff_t argtable[methodID->nargs];
+  jobject_unwrapped result;
+  jthrowable exception = NULL;
+  move_and_unwrapV(methodID, argtable, args);
+  result = FNI_Dispatch_Object(methodID->offset, methodID->nargs,
+			       argtable, &exception);
+  assert(exception==NULL);
+  return FNI_WRAP(result);
+}
+#define FNI_CALL_STATIC(name, type) \
 type FNI_CallStatic##name##MethodA(JNIEnv *env, \
 				   jclass clazz, jmethodID methodID, \
 				   jvalue * args) { \
   ptroff_t argtable[methodID->nargs]; \
   type result; \
   jthrowable exception = NULL; \
-  move_and_wrapA(methodID, argtable, args); \
+  move_and_unwrapA(methodID, argtable, args); \
   result = FNI_Dispatch_##name(methodID->offset, methodID->nargs, \
 			       argtable, &exception); \
   assert(exception==NULL); \
@@ -135,10 +169,10 @@ type FNI_CallStatic##name##MethodV(JNIEnv *env, \
   ptroff_t argtable[methodID->nargs]; \
   type result; \
   jthrowable exception = NULL; \
-  move_and_wrapV(methodID, argtable, args); \
+  move_and_unwrapV(methodID, argtable, args); \
   result = FNI_Dispatch_##name(methodID->offset, methodID->nargs, \
 			       argtable, &exception); \
   assert(exception==NULL); \
   return result; \
 }
-FORNONVOIDTYPES(FNI_CALL_STATIC)
+FORPRIMITIVETYPES(FNI_CALL_STATIC)

@@ -43,7 +43,7 @@ const struct JNINativeInterface FLEX_JNI_table = {
   (typeof(&FNI_GetObjectClass)) FNI_Unimplemented,
   (typeof(&FNI_IsInstanceOf)) FNI_Unimplemented,
             
-  (typeof(&FNI_GetMethodID)) FNI_Unimplemented,
+  FNI_GetMethodID,
             
   (typeof(&FNI_CallObjectMethod)) FNI_Unimplemented,
   (typeof(&FNI_CallObjectMethodV)) FNI_Unimplemented,
@@ -107,7 +107,7 @@ const struct JNINativeInterface FLEX_JNI_table = {
   (typeof(&FNI_CallNonvirtualVoidMethodV)) FNI_Unimplemented,
   (typeof(&FNI_CallNonvirtualVoidMethodA)) FNI_Unimplemented,
             
-  (typeof(&FNI_GetFieldID)) FNI_Unimplemented,
+  FNI_GetFieldID,
             
   (typeof(&FNI_GetObjectField)) FNI_Unimplemented,
   (typeof(&FNI_GetBooleanField)) FNI_Unimplemented,
@@ -161,7 +161,7 @@ const struct JNINativeInterface FLEX_JNI_table = {
   FNI_CallStaticVoidMethodV,
   FNI_CallStaticVoidMethodA,
             
-  (typeof(&FNI_GetStaticFieldID)) FNI_Unimplemented,
+  FNI_GetStaticFieldID,
             
   (typeof(&FNI_GetStaticObjectField)) FNI_Unimplemented,
   (typeof(&FNI_GetStaticBooleanField)) FNI_Unimplemented,
