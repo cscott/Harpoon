@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * <code>Graph</code> is a command-line graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.12.2.9 1999-09-08 16:35:36 cananian Exp $
+ * @version $Id: Graph.java,v 1.12.2.10 1999-09-08 18:00:42 cananian Exp $
  */
 
 public abstract class Graph extends harpoon.IR.Registration {
@@ -24,17 +24,13 @@ public abstract class Graph extends harpoon.IR.Registration {
     public static final void main(String args[]) {
 	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
 	HCodeFactory hcf = // default code factory.
-	    harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
-	    (harpoon.IR.Quads.QuadSSI.codeFactory()
-	     );
+	    harpoon.IR.Bytecode.Code.codeFactory();
 	int n=0;  // count # of args/flags processed.
 	for (; n < args.length ; n++) {
 	    if (args[n].startsWith("-code")) {
 		if (++n >= args.length)
 		    throw new Error("-code option needs codename");
-		hcf = HMethod.getCodeFactory(args[n]);
-		if (hcf==null)
-		    throw new Error("Invalid codename: "+args[n]);
+		hcf = Options.cfFromString(args[n], hcf);
 	    } else break; // no more command-line options.
 	}
 
