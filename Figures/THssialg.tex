@@ -29,7 +29,7 @@ PlaceOne($r$:~region, $v$:~variable, $ps$:~boolean):~boolean =
 \ENDFOR
                              \EMPTYLINE
 \STATE \COMMENT{add phis/sigmas to merges/splits where $v$ may be live}
-\IF{flag = true}
+\IF{flag = true} \label{line:place_skip}
   \FOREACH{node $n$ in region $r$ not contained in a child region}
     \IF{MaybeLive($n$) = true}
       \IF{$ps$ is \code{false} and the input arity of $n$ exceeds 1}
