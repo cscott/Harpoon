@@ -4,14 +4,16 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.1 1998-08-03 06:42:35 cananian Exp $
+ * @version $Id: Util.java,v 1.2 1998-08-03 07:19:41 cananian Exp $
  */
-public class Util {
+public final class Util {
+  // Disable constructor.  Only static methods here.
+  private Util() { }
   /**
    * Copy an array type to prevent modification.  Does not bother
    * to copy array types of length 0, because they're already immutable.
    */
-  public static Object[] copy(Object[] src) {
+  public static final Object[] copy(Object[] src) {
     if (src.length==0) return src;
     Object[] dst=(Object[])Array.newInstance(src.getClass().getComponentType(),
 					     src.length);
