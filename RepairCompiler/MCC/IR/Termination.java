@@ -31,6 +31,12 @@ public class Termination {
     ExactSize exactsize;
     ArrayAnalysis arrayanalysis;
     Sources sources;
+    static String conjoption="style=bold";
+    static String absrepoption="shape=box,color=blue,style=bold";
+    static String updateoption="shape=box,color=red,style=bold";
+    static String scopeoption="color=brown";
+    static String conseqoption="style=bold,color=green";
+    static String compoption="shape=box,color=purple,style=bold";
 
     public Termination(State state) {
 	this.state=state;
@@ -74,7 +80,8 @@ public class Termination {
         debugmsg("Generating data structure nodes");
 	generatedatastructureupdatenodes();
         debugmsg("Generating compensation nodes");
-	generatecompensationnodes();
+	if (!Compiler.OMITCOMP)
+	    generatecompensationnodes();
         debugmsg("Generating abstract edges");
 	generateabstractedges();
         debugmsg("Generating scope edges");
@@ -170,6 +177,7 @@ public class Termination {
 		GraphNode gn=new GraphNode("Conj"+i+"A"+j,
 					   "Conj ("+i+","+j+") "+dnf.get(j).name()
 					   ,tn);
+		gn.setOption(conjoption);
 		conjunctions.add(gn);
 		if (!conjunctionmap.containsKey(c))
 		    conjunctionmap.put(c,new HashSet());
@@ -190,6 +198,7 @@ public class Termination {
 		    GraphNode gn=new GraphNode("Conj"+i+"AQ"+j,
 					       "Conj ("+i+","+j+") "+dconst.get(0).name()
 					       ,tn);
+		    gn.setOption(conjoption);
 		    conjunctions.add(gn);
 		    if (!conjunctionmap.containsKey(c))
 			conjunctionmap.put(c,new HashSet());
@@ -207,6 +216,7 @@ public class Termination {
 		    GraphNode gn=new GraphNode("Conj"+i+"AQ"+j,
 					       "Conj ("+i+","+j+") "+dconst.get(0).name()
 					       ,tn);
+		    gn.setOption(conjoption);
 		    conjunctions.add(gn);
 		    if (!conjunctionmap.containsKey(c))
 			conjunctionmap.put(c,new HashSet());
@@ -335,9 +345,12 @@ public class Termination {
 	    ScopeNode satisfy=new ScopeNode(r,true);
 	    TermNode tnsatisfy=new TermNode(satisfy);
 	    GraphNode gnsatisfy=new GraphNode("SatisfyRule"+i,tnsatisfy);
+	    gnsatisfy.setOption(scopeoption);
+	    gnsatisfy.setMerge();
 	    ConsequenceNode cnsatisfy=new ConsequenceNode();
 	    TermNode ctnsatisfy=new TermNode(cnsatisfy);
 	    GraphNode cgnsatisfy=new GraphNode("ConseqSatisfyRule"+i,ctnsatisfy);
+	    cgnsatisfy.setOption(conseqoption);
 	    consequence.put(satisfy,cgnsatisfy);
 	    GraphNode.Edge esat=new GraphNode.Edge("consequencesatisfy"+i,cgnsatisfy);
 	    gnsatisfy.addEdge(esat);
@@ -348,9 +361,12 @@ public class Termination {
 	    ScopeNode falsify=new ScopeNode(r,false);
 	    TermNode tnfalsify=new TermNode(falsify);
 	    GraphNode gnfalsify=new GraphNode("FalsifyRule"+i,tnfalsify);
+	    gnfalsify.setOption(scopeoption);
+	    gnfalsify.setMerge();
 	    ConsequenceNode cnfalsify=new ConsequenceNode();
 	    TermNode ctnfalsify=new TermNode(cnfalsify);
 	    GraphNode cgnfalsify=new GraphNode("ConseqFalsifyRule"+i,ctnfalsify);
+	    cgnfalsify.setOption(conseqoption);
 	    consequence.put(falsify,cgnfalsify);
 	    GraphNode.Edge efals=new GraphNode.Edge("consequencefalsify"+i,cgnfalsify);
 	    gnfalsify.addEdge(efals);
@@ -442,7 +458,9 @@ public class Termination {
 		for(int j=0;j<array.length;j++) {
 		    AbstractRepair ar=new AbstractRepair(dp,array[j],d,sources);
 		    TermNode tn2=new TermNode(ar);
-		    GraphNode gn2=new GraphNode(gn.getLabel()+"A"+i+"B"+ar.type(),gn.getTextLabel()+" #"+i+" "+ar.type(),tn2);
+		    //		    GraphNode gn2=new GraphNode(gn.getLabel()+"A"+i+"B"+ar.type(),gn.getTextLabel()+" #"+i+" "+ar.type(),tn2);
+		    GraphNode gn2=new GraphNode(gn.getLabel()+"A"+i+"B"+ar.type(),dp.name()+" "+ar.type(),tn2);
+		    gn2.setOption(absrepoption);
 		    GraphNode.Edge e=new GraphNode.Edge("abstract",gn2);
 		    gn.addEdge(e);
 		    if (!predtoabstractmap.containsKey(dp))
@@ -463,6 +481,7 @@ public class Termination {
 	    AbstractRepair ar=new AbstractRepair(tp, AbstractRepair.ADDTOSET, sd,sources);
 	    TermNode tn=new TermNode(ar);
 	    GraphNode gn=new GraphNode("AbstractAddSetRule"+i,tn);
+	    gn.setOption(absrepoption);
 	    if (!predtoabstractmap.containsKey(tp))
 		predtoabstractmap.put(tp,new HashSet());
 	    ((Set)predtoabstractmap.get(tp)).add(gn);
@@ -474,6 +493,7 @@ public class Termination {
 	    AbstractRepair ar2=new AbstractRepair(tp2, AbstractRepair.REMOVEFROMSET, sd,sources);
 	    TermNode tn2=new TermNode(ar2);
 	    GraphNode gn2=new GraphNode("AbstractRemSetRule"+i,tn2);
+	    gn2.setOption(absrepoption);
 	    if (!predtoabstractmap.containsKey(tp2))
 		predtoabstractmap.put(tp2,new HashSet());
 	    ((Set)predtoabstractmap.get(tp2)).add(gn2);
@@ -494,6 +514,7 @@ public class Termination {
 	    AbstractRepair ar=new AbstractRepair(tp, AbstractRepair.ADDTORELATION, rd,sources);
 	    TermNode tn=new TermNode(ar);
 	    GraphNode gn=new GraphNode("AbstractAddRelRule"+i,tn);
+	    gn.setOption(absrepoption);
 	    if (!predtoabstractmap.containsKey(tp))
 		predtoabstractmap.put(tp,new HashSet());
 	    ((Set)predtoabstractmap.get(tp)).add(gn);
@@ -505,6 +526,7 @@ public class Termination {
 	    AbstractRepair ar2=new AbstractRepair(tp2, AbstractRepair.REMOVEFROMRELATION, rd,sources);
 	    TermNode tn2=new TermNode(ar2);
 	    GraphNode gn2=new GraphNode("AbstractRemRelRule"+i,tn2);
+	    gn2.setOption(absrepoption);
 	    if (!predtoabstractmap.containsKey(tp2))
 		predtoabstractmap.put(tp2,new HashSet());
 	    ((Set)predtoabstractmap.get(tp2)).add(gn2);
@@ -527,6 +549,7 @@ public class Termination {
 		MultUpdateNode mun=new MultUpdateNode(sn);
 		TermNode tn2=new TermNode(mun);
 		GraphNode gn2=new GraphNode("CompRem"+compensationcount,tn2);
+		gn2.setOption(compoption);
 		UpdateNode un=new UpdateNode(r);
 
 		if (j<r.numQuantifiers()) {
@@ -632,6 +655,7 @@ public class Termination {
 	    MultUpdateNode mun=new MultUpdateNode(ar,MultUpdateNode.REMOVE);
 	    TermNode tn=new TermNode(mun);
 	    GraphNode gn2=new GraphNode("UpdateRem"+removefromcount,tn);
+	    gn2.setOption(updateoption);
 
 	    boolean goodflag=true;
 	    for(int i=0;i<possiblerules.size();i++) {
@@ -747,6 +771,7 @@ public class Termination {
 	    MultUpdateNode mun=new MultUpdateNode(ar,MultUpdateNode.MODIFY);
 	    TermNode tn=new TermNode(mun);
 	    GraphNode gn2=new GraphNode("UpdateMod"+modifycount,tn);
+	    gn2.setOption(updateoption);
 
 	    boolean goodflag=true;
 	    for(int i=0;i<possiblerules.size();i++) {
@@ -975,6 +1000,7 @@ public class Termination {
 		    MultUpdateNode mun=new MultUpdateNode(ar,MultUpdateNode.ADD);
 		    TermNode tn=new TermNode(mun);
 		    GraphNode gn2=new GraphNode("UpdateAdd"+addtocount,tn);
+		    gn2.setOption(updateoption);
 
 		    if (debugmsg("Start processing quantifiers")&&
 			processquantifiers(gn2,un, r,setmapping)&&

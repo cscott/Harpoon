@@ -11,7 +11,7 @@ import MCC.IR.DebugItem;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.12 2004-08-16 20:53:53 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.13 2005-02-04 20:14:52 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -107,6 +107,7 @@ public class CLI {
 	    System.out.println("-prunequantifiernodes");
 	    System.out.println("-cplusplus");
 	    System.out.println("-time");
+	    System.out.println("-omitcomp");
 	    System.exit(-1);
 	}
 
@@ -116,6 +117,8 @@ public class CLI {
                 debug = true;
 	    } else if (args[i].equals("-checkonly")) {
                 Compiler.REPAIR=false;
+	    } else if (args[i].equals("-omitcomp")) {
+                Compiler.OMITCOMP=true;
 	    } else if (args[i].equals("-depth")) {
 		Compiler.debuggraphs.add(new DebugItem(Integer.parseInt(args[i+1]),Integer.parseInt(args[i+2])));
 		i+=2;

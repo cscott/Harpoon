@@ -72,6 +72,16 @@ public class GraphNode {
     NodeStatus status = UNVISITED;    
     String dotnodeparams = new String();
     Object owner = null;
+    boolean merge=false;
+    String nodeoption="";
+
+    public void setOption(String option) {
+	this.nodeoption=option;
+    }
+
+    public void setMerge() {
+	merge=true;
+    }
 
     public GraphNode(String label) {
         this.nodelabel = label;
@@ -263,23 +273,49 @@ public class GraphNode {
                 GraphNode gn = (GraphNode) i.next();
                 Iterator edges = gn.edges();
                 String label = gn.getTextLabel(); // + " [" + gn.discoverytime + "," + gn.finishingtime + "];";
-		String option="";
-		if (cycleset.contains(gn))
-		    option=",style=bold";
+		String option=gn.nodeoption;
 		if (special!=null&&special.contains(gn))
 		    option+=",shape=box";
-                output.println("\t" + gn.getLabel() + " [label=\"" + label + "\"" + gn.dotnodeparams + option+"];");
+		if (!gn.merge)
+		    output.println("\t" + gn.getLabel() + " [label=\"" + label + "\"" + gn.dotnodeparams + option+"];");
 
+		if (!gn.merge)
                 while (edges.hasNext()) {
                     Edge edge = (Edge) edges.next();
                     GraphNode node = edge.getTarget();
 		    if (nodes.contains(node)) {
-			String edgelabel = useEdgeLabels ? "label=\"" + edge.getLabel() + "\"" : "label=\"\"";
-			output.println("\t" + gn.getLabel() + " -> " + node.getLabel() + " [" + edgelabel + edge.dotnodeparams + "];");
+			for(Iterator nodeit=nonmerge(node).iterator();nodeit.hasNext();) {
+			    GraphNode node2=(GraphNode)nodeit.next();
+			    String edgelabel = useEdgeLabels ? "label=\"" + edge.getLabel() + "\"" : "label=\"\"";
+			    output.println("\t" + gn.getLabel() + " -> " + node2.getLabel() + " [" + edgelabel + edge.dotnodeparams + "];");
+			}
 		    }
                 }
             }
         }
+
+	Set nonmerge(GraphNode gn) {
+	    HashSet newset=new HashSet();
+	    HashSet toprocess=new HashSet();
+	    toprocess.add(gn);
+	    while(!toprocess.isEmpty()) {
+		GraphNode gn2=(GraphNode)toprocess.iterator().next();
+		toprocess.remove(gn2);
+		if (!gn2.merge)
+		    newset.add(gn2);
+		else {
+		    Iterator edges = gn2.edges();
+		    while (edges.hasNext()) {
+			Edge edge = (Edge) edges.next();
+			GraphNode node = edge.getTarget();
+			if (!newset.contains(node)&&nodes.contains(node))
+			    toprocess.add(node);
+		    }
+		}
+	    }
+	    return newset;
+	}
+
     }
 
     /** This function returns the set of nodes involved in cycles. 

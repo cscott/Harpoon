@@ -6,4 +6,4 @@ gcc $FLAG -c instrument.c
 gcc $FLAG -c libredblack/redblack.c
 gcc $FLAG -c stack.c
 gcc $FLAG -c size.c
-gcc $FLAG -c cache_aux.c
+
