@@ -19,7 +19,7 @@ import java.io.FileNotFoundException;
  * files.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10 1998-11-20 21:44:49 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.1 1998-11-25 03:24:48 cananian Exp $
  */
 public abstract class Loader {
   /** Return an enumeration of zipfiles in the CLASSPATH that may be
@@ -104,7 +104,7 @@ public abstract class Loader {
   static InputStream getResourceAsStream(final ZipFile zf, String name) {
     try {
       ZipEntry ze = zf.getEntry(name);
-      if (ze==null) return null;
+      if (ze==null) throw new IOException(); // close zf and return null.
       final InputStream is = zf.getInputStream(ze);
       return new InputStream() {
 	public int read() throws IOException { return is.read(); }
