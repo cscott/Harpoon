@@ -32,4 +32,5 @@ Code	Code
 Design	Design
 
 # pldi '99 paper.
-pldi99 -d pldi99.sigma Design harpoon.bib pldi.tex acmconf.sty acmconfbig.sty
+pldi99 -d pldi99.sigma Design harpoon.bib acmconf.sty acmconfbig.sty \
+	pldi99-abstract.tex pldi99-intro.tex pldi99-paper.tex
