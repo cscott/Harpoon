@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.23 2000-09-11 21:33:50 cananian Exp $
+ * @version $Id: UNOP.java,v 1.1.2.24 2001-10-18 23:44:23 cananian Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
@@ -29,6 +29,7 @@ public class UNOP extends OPER {
 	Util.assert(tf == operand.tf, "This and Operand must have same tree factory");
 	if (unop==Uop.I2B || unop==Uop.I2C || unop==Uop.I2S)
 	    Util.assert(optype == Type.INT);/* these are special conversions */
+	Util.assert(operand.type()==optype, "operand and optype don't match");
     }
 
     /** Returns the subexpression to be operated upon. */

@@ -43,7 +43,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.25 2001-07-10 00:38:04 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.26 2001-10-18 23:44:17 cananian Exp $
  */
 // XXX missing -K1 --> K2  and ~K1 --> K2 rules.
 public abstract class AlgebraicSimplification extends Simplification { 
@@ -88,7 +88,8 @@ public abstract class AlgebraicSimplification extends Simplification {
 		    // 'null' is only pointer const but we can't be sure
 		    // than null==0 (may have alternate value w/ pointer
 		    // twiddling, etc).
-		    b.type() != Type.POINTER;
+		    b.getLeft().type() != Type.POINTER &&
+		    b.getRight().type() != Type.POINTER;
 		}
 	    }
 	    
@@ -457,14 +458,14 @@ public abstract class AlgebraicSimplification extends Simplification {
 	    MOVE move = new MOVE(tf, n, new TEMP(tf, n, Type.INT, t), n);
 	    // q0 = MULUH(m, EOR(n_sign,n))
 	    Exp q0 = new UNOP
-		(tf, n, Type.INT, Uop._2I,
+		(tf, n, Type.LONG, Uop._2I,
 		 new BINOP
 		 (tf, n, Type.LONG, Bop.USHR,
 		  new BINOP
 		  (tf, n, Type.LONG, Bop.MUL,
 		   new CONST(tf, n, m),
 		   new UNOP
-		   (tf, n, Type.LONG, Uop._2L,
+		   (tf, n, Type.INT, Uop._2L,
 		    new BINOP
 		    (tf, n, Type.INT,  Bop.XOR,
 		     new BINOP // n_sign = n >> N-1
