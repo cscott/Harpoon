@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.16 1999-07-12 18:48:57 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.17 1999-07-13 20:52:17 bdemsky Exp $
  */
 public final class LoopOptimize {
     
@@ -581,13 +581,13 @@ public final class LoopOptimize {
 	while (iterate.hasNext()) {
 	    Temp indvariable=(Temp) iterate.next();
 	    Induction induction=(Induction) allmap.get(indvariable);
-	    Temp[] headuses=header.use();
+	    Temp[] headuses=oheader.use();
 	    boolean skip=false;
 
 	    //Check to see if this induction is just the next iteration of the basic
 	    //induction variable...if so, skip it!
 	    for(int l=0;l<headuses.length;l++)
-		if (ssitossamap.tempMap(headuses[l])==hcnew.tempMap(indvariable)) {
+		if (ssitossamap.tempMap(headuses[l])==indvariable) {
 		    skip=true;
 		    break;
 		}
@@ -1024,9 +1024,9 @@ public final class LoopOptimize {
 		    for (int i=0;i<uses.length;i++) {
 			worktmp.associate(hcnew.tempMap(uses[i]),hcnew.tempMap(loopmap.tempMap(uses[i])));
 		    }
-		    Temp[] def=q.def();
+		    Temp[] def=newq.def();
 		    for (int i=0;i<def.length;i++) {
-			worktmp.associate(hcnew.tempMap(def[i]),hcnew.tempMap(loopmap.tempMap(def[i])));
+			worktmp.associate(def[i],def[i]);
 		    }
 		    Quad newquad=newq.rename(newq.getFactory(), worktmp, worktmp);
 		    //we made a good quad now....
