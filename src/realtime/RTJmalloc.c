@@ -144,6 +144,7 @@ void RTJ_init() {
   jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
   jclass rtClazz = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
   jfieldID RTJinitID;
+  jmethodID methodID;
 #ifdef RTJ_DEBUG
   printf("RTJ_init()\n");
 #endif
@@ -152,11 +153,18 @@ void RTJ_init() {
 			      ((struct FNI_Thread_State *)env)->thread,
 			      Heap_MemBlock_new(env, heapMem));
   checkException();
-  RTJ_init_in_progress = 0;
+  
 
+  
+  checkException();
+  RTJ_init_in_progress = 0;
   RTJinitID = (*env)->GetStaticFieldID(env, rtClazz, "RTJ_init_in_progress", "Z");
   checkException();
   (*env)->SetStaticBooleanField(env, rtClazz, RTJinitID, JNI_FALSE);
+  checkException();
+  methodID = (*env)->GetStaticMethodID(env, rtClazz, 
+				       "doneInit", "()V");
+  (*env)->CallStaticVoidMethod(env, rtClazz, methodID, NULL);
   checkException();
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
 }

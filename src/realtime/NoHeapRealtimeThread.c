@@ -28,6 +28,14 @@ JNIEXPORT void JNICALL Java_javax_realtime_NoHeapRealtimeThread_print__Ljava_lan
   Java_javax_realtime_NoHeapRealtimeThread_print__Ljava_lang_String_2(env, noHeapRealtimeThread, str);
 }
 
+
+/* BAD HACK!!!  Fix the initializer transform! */
+JNIEXPORT void JNICALL Java_javax_realtime_NoHeapRealtimeThread_print_00024_00024initcheck
+(JNIEnv* env, jclass noHeapRealtimeThread, jstring str) {
+  printf("WARNING: The initializer transform is broken... let's hope that you wanted to print a string...\n");
+  Java_javax_realtime_NoHeapRealtimeThread_print__Ljava_lang_String_2(env, noHeapRealtimeThread, str);
+}
+
 /*
  * Class:     javax_realtime_NoHeapRealtimeThread
  * Method:    print

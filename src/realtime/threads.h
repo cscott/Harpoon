@@ -6,7 +6,7 @@
 # include <setjmp.h> //for setjmp and longjmp
 # include "../java.lang/threadlist.h" /* for add_running_thread */
 
-//#define WITH_REALTIME_THREADS_MEASURE_JITTER 1
+#define WITH_REALTIME_THREADS_MEASURE_JITTER 1
 
 jmp_buf main_return_jump; //a jump point for when the main thread exits
 
