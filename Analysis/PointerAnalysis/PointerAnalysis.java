@@ -65,13 +65,13 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.39 2000-03-29 05:03:45 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.40 2000-03-29 06:54:59 salcianu Exp $
  */
 public class PointerAnalysis {
 
     public static final boolean DEBUG = false;
     public static final boolean DEBUG2 = false;
-    public static final boolean DEBUG_SCC = false;
+    public static final boolean DEBUG_SCC = true;
 
     /** Makes the pointer analysis deterministic to make the debug easier.
 	The main source of undeterminism in our code is the intensive use of

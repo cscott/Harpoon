@@ -3,9 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.MetaMethods;
 
-import java.util.Vector;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * <code>SmartCallGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SmartCallGraph.java,v 1.1.2.3 2000-03-22 05:23:05 salcianu Exp $
+ * @version $Id: SmartCallGraph.java,v 1.1.2.4 2000-03-29 06:54:56 salcianu Exp $
  */
 public class SmartCallGraph implements CallGraph {
     
@@ -89,7 +89,7 @@ public class SmartCallGraph implements CallGraph {
 	for(Iterator ithm = split.keySet().iterator(); ithm.hasNext(); ){
 	    HMethod hm = (HMethod) ithm.next();
 	    // vc stores all the callees of hm
-	    Vector vc = new Vector();
+	    Set sc = new HashSet();
 	    // map stores the association cs -> callees (cs is from
 	    // the code of hm)
 	    Map map = new HashMap();
@@ -101,20 +101,20 @@ public class SmartCallGraph implements CallGraph {
 		while(itcs.hasNext()){
 		    CALL cs = (CALL) itcs.next();
 		    // vc_cs stores all the callers at site cs
-		    Vector vc_cs = new Vector();
+		    Set sc_cs = new HashSet();
 		    // get the meta-method whih are called at cs
 		    MetaMethod[] callees = mcg.getCallees(mm,cs);
 		    for(int i = 0; i < callees.length; i++){
 			HMethod hm_callee = callees[i].getHMethod();
-			vc.add(hm_callee);
-			vc_cs.add(hm_callee);
+			sc.add(hm_callee);
+			sc_cs.add(hm_callee);
 		    }
 		    map.put(cs, 
-		       (HMethod[]) vc_cs.toArray(new HMethod[vc_cs.size()]));
+		       (HMethod[]) sc_cs.toArray(new HMethod[sc_cs.size()]));
 		}
 	    }
 
-	    hm2callees.put(hm, (HMethod[])vc.toArray(new HMethod[vc.size()])); 
+	    hm2callees.put(hm, (HMethod[])sc.toArray(new HMethod[sc.size()])); 
 	    hm2cs2callees.put(hm, map);
 	}
     }
