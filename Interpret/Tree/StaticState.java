@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
-import harpoon.Backend.Maps.OffsetMap;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeFactory;
@@ -23,7 +22,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.10 2000-01-13 23:48:13 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.11 2000-01-17 12:53:39 cananian Exp $
  */
 final class StaticState extends HCLibrary {
     

@@ -5,7 +5,6 @@ package harpoon.Interpret.Tree;
 
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
-import harpoon.Backend.Maps.OffsetMap;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -64,7 +63,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.17 2000-01-17 12:32:50 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.18 2000-01-17 12:53:39 cananian Exp $
  */
 public final class Method extends Debug {
     static PrintWriter out = new java.io.PrintWriter(System.out);

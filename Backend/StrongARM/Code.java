@@ -6,7 +6,6 @@ package harpoon.Backend.StrongARM;
 import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Assem.Instr;
 import harpoon.Analysis.Instr.TempInstrPair;
-import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
@@ -27,7 +26,7 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.15 1999-12-20 08:33:17 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.16 2000-01-17 12:53:26 cananian Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -94,18 +93,6 @@ public class Code extends harpoon.Backend.Generic.Code {
 	}
     }
     
-    /* THIS NEEDS RETHINKING
-    public static HCodeFactory codeFactory(final HCodeFactory hcf,
-					   final OffsetMap offmap) {
-	return codeFactory(hcf, new SAFrame(offmap));
-    }
-
-    public static HCodeFactory codeFactory(OffsetMap offmap) {
-	return codeFactory(CanonicalTreeCode.
-			   codeFactory( new SAFrame(offmap) ), offmap);
-    }
-    */
-
     public Collection getRegisters(Instr i, Temp val) {
 	if (val instanceof TwoWordTemp) {
 	    TwoWordTemp t = (TwoWordTemp) val;

@@ -7,7 +7,6 @@ import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Runtime;
 import harpoon.Backend.Maps.NameMap;
-import harpoon.Backend.Maps.OffsetMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
@@ -65,7 +64,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.57 2000-01-13 23:48:07 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.58 2000-01-17 12:53:35 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;

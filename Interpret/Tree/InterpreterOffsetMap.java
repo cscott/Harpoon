@@ -10,7 +10,6 @@ import harpoon.Backend.Maps.ClassDepthMap;
 import harpoon.Backend.Maps.MethodMap;
 import harpoon.Backend.Maps.DefaultNameMap;
 import harpoon.Backend.Maps.NameMap;
-import harpoon.Backend.Maps.OffsetMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
@@ -27,7 +26,7 @@ import java.util.StringTokenizer;
  * A simple OffsetMap, used by the Tree Interpreter
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterpreterOffsetMap.java,v 1.1.2.14 2000-01-13 23:48:13 cananian Exp $
+ * @version $Id: InterpreterOffsetMap.java,v 1.1.2.15 2000-01-17 12:53:39 cananian Exp $
  */
 public class InterpreterOffsetMap extends OffsetMap {
 
