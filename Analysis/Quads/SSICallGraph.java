@@ -22,6 +22,7 @@ import harpoon.Analysis.Quads.TypeInfo;
 import harpoon.IR.Quads.Code;
 
 import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadKind;
 import harpoon.IR.Quads.QuadSSI;
@@ -34,7 +35,7 @@ import harpoon.Analysis.PointerAnalysis.Debug;
  * <code>SSICallGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SSICallGraph.java,v 1.1 2002-04-11 00:03:42 salcianu Exp $
+ * @version $Id: SSICallGraph.java,v 1.2 2002-04-11 00:41:41 cananian Exp $
  */
 public class SSICallGraph implements CallGraph {
 
@@ -70,9 +71,9 @@ public class SSICallGraph implements CallGraph {
 	// sites; this way we construct the auxiliary objects
 	// "ReachingDefs rd" and "ExactTypeMap etm" once for each
 	// method.
-	HCode hcode = Util.quad2code(cs);
+	Code hcode = cs.getFactory().getParent();
 	ReachingDefs rd  = new SSxReachingDefsImpl(hcode);
-	ExactTypeMap etm = new TypeInfo((Code) hcode); 
+	ExactTypeMap etm = new TypeInfo(hcode); 
 
 	CALL[] calls = Util.selectCALLs(hcode);
 	for(int i = 0; i < calls.length; i++)
@@ -86,7 +87,7 @@ public class SSICallGraph implements CallGraph {
     public CALL[] getCallSites(final HMethod hm) {
 	CALL[] retval = (CALL[]) cache_cs.get(hm);
 	if(retval == null) {
-	    retval = Util.selectCALLs(hcf.convert(hm));
+	    retval = Util.selectCALLs((Code)hcf.convert(hm));
 	    cache_cs.put(hm, retval);
 	}
 	return retval;
