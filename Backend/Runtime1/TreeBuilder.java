@@ -55,7 +55,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.18 2000-01-25 03:46:16 kkz Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.19 2000-01-25 04:11:24 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -133,7 +133,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	CLAZ_INTERFZ_OFF = 2 * POINTER_SIZE;
 	CLAZ_SIZE_OFF	 = 3 * POINTER_SIZE;
 	CLAZ_GCENTRY_OFF = 3 * POINTER_SIZE + 1 * WORD_SIZE;
-	CLAZ_DEPTH_OFF   = 3 * POINTER_SIZE + 2 * WORD_SIZE;
+	CLAZ_DEPTH_OFF   = 4 * POINTER_SIZE + 1 * WORD_SIZE;
 	CLAZ_DISPLAY_OFF = 4 * POINTER_SIZE + 2 * WORD_SIZE;
 	CLAZ_METHODS_OFF = CLAZ_DISPLAY_OFF + (1+cdm.maxDepth())*POINTER_SIZE;
     }
