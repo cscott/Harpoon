@@ -35,7 +35,7 @@ public class GraphAnalysis {
 			 &&termination.conjunctions.contains(gn2))||
 			cantremovetrans.contains(gn2))
 			cantremovetrans.add(gn3);
-		    
+
 		    if (termination.abstractrepair.contains(gn3)||
 			termination.conjunctions.contains(gn3)||
 			termination.updatenodes.contains(gn3)) {
@@ -55,7 +55,7 @@ public class GraphAnalysis {
 		if (!goodoption) {
 		    if (termination.scopenodes.contains(gn2))
 			return false;
-		}		    
+		}
 	    }
 	}
 	if (needcyclecheck) {
@@ -116,6 +116,8 @@ public class GraphAnalysis {
 		GraphNode gn=(GraphNode) it.next();
 		if (mustremove.contains(gn)||cantremove.contains(gn))
 		    continue;
+		if (!safetransclosure(gn, mustremove,cantremove, cantremove))
+                    continue;
 
 		boolean allgood=true;
 		for(Iterator edgeit=gn.edges();edgeit.hasNext();) {
@@ -124,7 +126,7 @@ public class GraphAnalysis {
 		    assert tn2.getType()==TermNode.ABSTRACT;
 		    boolean foundupdate=false;
 		    for(Iterator edgeit2=gn2.edges();edgeit2.hasNext();) {
-			GraphNode gn3=((GraphNode.Edge)edgeit2.next()).getTarget();		    
+			GraphNode gn3=((GraphNode.Edge)edgeit2.next()).getTarget();
 			if (!couldremove.contains(gn3)&&!mustremove.contains(gn3)) {
 			    TermNode tn3=(TermNode)gn3.getOwner();
 			    if (tn3.getType()==TermNode.UPDATE)
@@ -153,7 +155,7 @@ public class GraphAnalysis {
 
 
 	    /* Look for constraints which can only be satisfied one way */
-	    
+
 	    Vector constraints=termination.state.vConstraints;
 	    for(int i=0;i<constraints.size();i++) {
 		Constraint c=(Constraint)constraints.get(i);
@@ -226,7 +228,7 @@ public class GraphAnalysis {
 			change=true;
 		}
 	    }
-	    
+
 	    if (Compiler.AGGRESSIVESEARCH) {
 		/* Aggressively remove compensation nodes */
 		for(Iterator scopeit=termination.scopenodes.iterator();scopeit.hasNext();) {
@@ -321,7 +323,7 @@ public class GraphAnalysis {
 		    AbstractRepair ar=tn2.getAbstract();
 		    boolean ismodify=ar.getType()==AbstractRepair.MODIFYRELATION;
 		    int numadd=0;int numremove=0;
-		    
+
 		    for (Iterator edgeit2=gn2.edges();edgeit2.hasNext();) {
 			GraphNode.Edge e2=(GraphNode.Edge)edgeit2.next();
 			GraphNode gn3=e2.getTarget();
@@ -392,11 +394,11 @@ public class GraphAnalysis {
 			GraphNode.Edge e=(GraphNode.Edge)edgeit.next();
 			GraphNode gn2=e.getTarget();
 			TermNode tn2=(TermNode)gn2.getOwner();
-			
+
 			if ((tn2.getType()==TermNode.CONSEQUENCE)&&
 			    !mustremove.contains(gn2))
 			    count++;
-			    
+
 
 			if (tn2.getType()!=TermNode.UPDATE)
 			    continue;
@@ -405,7 +407,7 @@ public class GraphAnalysis {
 			boolean containsgn2=cantremove.contains(gn2);
 			cantremove.add(gn);
 			cantremove.add(gn2);
-			
+
 			Set cycle=GraphNode.findcycles(cantremove);
 			if (cycle.contains(gn2)) {
 			    if (!mustremove.contains(gn2)) {
@@ -421,7 +423,7 @@ public class GraphAnalysis {
 			if (!containsgn2)
 			    cantremove.remove(gn2);
 		    }
-		
+
 		    if (count==1) {
 			for (Iterator edgeit=gn.edges();edgeit.hasNext();) {
 			    GraphNode.Edge e=(GraphNode.Edge)edgeit.next();
@@ -440,7 +442,7 @@ public class GraphAnalysis {
 	    }
 	    couldremove.removeAll(mustremove);
 	    couldremove.removeAll(cantremove);
-	    
+
 	    Vector couldremovevector=new Vector();
 	    couldremovevector.addAll(couldremove);
 	    Vector combination=new Vector();
@@ -460,7 +462,7 @@ public class GraphAnalysis {
 		e.printStackTrace();
 		System.exit(-1);
 	    }
-	    
+
 	    System.out.println("Searching set of "+couldremove.size()+" nodes.");
 	    System.out.println("Eliminated must "+mustremove.size()+" nodes");
 	    System.out.println("Eliminated cant "+cantremove.size()+" nodes");
@@ -479,22 +481,31 @@ public class GraphAnalysis {
 		GraphNode gn=(GraphNode)it.next();
 		System.out.println(gn.getTextLabel());
 	    }
-	    
-	    
+
+	    System.out.println("==================================================");
 	    while(true) {
 		if (illegal(combination,couldremovevector))
 		    break;
 		Set combinationset=buildset(combination,couldremovevector);
+                System.out.println("---------------------------");
+                for(Iterator it=combinationset.iterator();it.hasNext();) {
+                    System.out.println(((GraphNode)it.next()).getTextLabel());
+                }
+                System.out.println("---------------------------");
 		checkmodify(combinationset);
 		combinationset.addAll(mustremove);
 		if (combinationset!=null) {
-		    System.out.println("Checkabstract="+checkAbstract(combinationset));
-		    System.out.println("Checkrepairs="+checkRepairs(combinationset));
-		    System.out.println("Checkall="+checkAll(combinationset));
-		    
-		    if (checkAbstract(combinationset)==0&&
-			checkRepairs(combinationset)==0&&
-			checkAll(combinationset)==0) {
+                    int checkabstract=checkAbstract(combinationset);
+                    int checkrep=checkRepairs(combinationset);
+                    int checkall=checkAll(combinationset);
+
+		    System.out.println("Checkabstract="+checkabstract);
+		    System.out.println("Checkrepairs="+checkrep);
+		    System.out.println("Checkall="+checkall);
+
+		    if (checkabstract==0&&
+			checkrep==0&&
+			checkall==0) {
 			return combinationset;
 		    }
 		}
@@ -522,7 +533,7 @@ public class GraphAnalysis {
 		    if (!removednodes.contains(gn2)&&
 			tn2.getType()==TermNode.UPDATE) {
 			MultUpdateNode mun=tn2.getUpdate();
-			
+
 			if (mun.getType()==MultUpdateNode.ADD)
 			    numadd++;
 			if (mun.getType()==MultUpdateNode.REMOVE)
@@ -709,7 +720,7 @@ public class GraphAnalysis {
 	tset.addAll(termination.consequencenodes);
 	abstractnodes.retainAll(tset);
 	Set cycles=GraphNode.findcycles(abstractnodes);
-	
+
 	for(Iterator it=cycles.iterator();it.hasNext();) {
 	    GraphNode gn=(GraphNode)it.next();
 	    System.out.println("NODE: "+gn.getTextLabel());

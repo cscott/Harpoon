@@ -9,6 +9,11 @@ public class DNFRule {
 	ruleconjunctions.add(new RuleConjunction(new DNFExpr(false,e)));
     }
 
+    public DNFRule(DNFExpr de) {
+	ruleconjunctions=new Vector();
+	ruleconjunctions.add(new RuleConjunction(de));
+    }
+
     public DNFRule(RuleConjunction conj) {
 	ruleconjunctions=new Vector();
 	ruleconjunctions.add(conj);
@@ -17,7 +22,7 @@ public class DNFRule {
     public DNFRule(Vector conj) {
 	ruleconjunctions=conj;
     }
-    
+
     DNFRule() {
 	ruleconjunctions=new Vector();
     }
@@ -62,15 +67,23 @@ public class DNFRule {
 
     public DNFRule not() {
 	DNFRule copy=copy();
+        DNFRule notrule=null;
 	for (int i=0;i<size();i++) {
 	    RuleConjunction conj=copy.get(i);
+            DNFRule newrule=null;
 	    for (int j=0;j<conj.size();j++) {
 		DNFExpr dp=conj.get(j);
 		dp.negatePred();
+                if (newrule==null)
+                   newrule=new DNFRule(dp);
+                else
+                   newrule=newrule.or(new DNFRule(dp));
 	    }
+            if (notrule==null)
+               notrule=newrule;
+            else
+               notrule=notrule.and(newrule);
 	}
-	return copy;
+	return notrule;
    }
 }
-
-

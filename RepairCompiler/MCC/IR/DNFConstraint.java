@@ -9,6 +9,11 @@ public class DNFConstraint {
 	conjunctions.add(new Conjunction(new DNFPredicate(false,p)));
     }
 
+    public DNFConstraint(DNFPredicate dp) {
+	conjunctions=new Vector();
+	conjunctions.add(new Conjunction(dp));
+    }
+
     public DNFConstraint(Conjunction conj) {
 	conjunctions=new Vector();
 	conjunctions.add(conj);
@@ -17,7 +22,7 @@ public class DNFConstraint {
     public DNFConstraint(Vector conj) {
 	conjunctions=conj;
     }
-    
+
     DNFConstraint() {
 	conjunctions=new Vector();
     }
@@ -62,15 +67,23 @@ public class DNFConstraint {
 
     public DNFConstraint not() {
 	DNFConstraint copy=copy();
+        DNFConstraint notconst=null;
 	for (int i=0;i<size();i++) {
 	    Conjunction conj=copy.get(i);
+            DNFConstraint newconst=null;
 	    for (int j=0;j<conj.size();j++) {
 		DNFPredicate dp=conj.get(j);
 		dp.negatePred();
+                if (newconst==null)
+                   newconst=new DNFConstraint(dp);
+                else
+                   newconst=newconst.or(new DNFConstraint(dp));
 	    }
+            if (notconst==null)
+               notconst=newconst;
+            else
+               notconst=notconst.and(newconst);
 	}
-	return copy;
+	return notconst;
    }
 }
-
-

@@ -191,8 +191,10 @@ public class OpExpr extends Expr {
 	if (opcode==Opcode.RND)
 	    return "Round("+left.name()+")";
 	String name=left.name()+opcode.toString();
-	if (right!=null)
+	if (right!=null) {
 	    name+=right.name();
+            name="("+name+")";
+        }
 	return name;
     }
 
@@ -411,8 +413,9 @@ public class OpExpr extends Expr {
     public void prettyPrint(PrettyPrinter pp) {
         pp.output("(");
         if (opcode == Opcode.NOT) {
-	    pp.output("!");
+	    pp.output("!(");
             left.prettyPrint(pp);
+	    pp.output(")");
 	} else if (opcode == Opcode.NOP) {
             left.prettyPrint(pp);
 	} else if (opcode == Opcode.RND) {

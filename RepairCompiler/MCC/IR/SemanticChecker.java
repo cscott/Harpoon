@@ -381,6 +381,7 @@ public class SemanticChecker {
         if (!precheck(pn, "constraints")) {
             return false;
         }
+        //System.out.println(pn.PPrint(2,true));
 
         boolean ok = true;
         ParseNodeVector constraints = pn.getChildren();
@@ -594,7 +595,6 @@ public class SemanticChecker {
         } else if (pn.getChild("not") != null) {
             /* NOT body */
             LogicStatement left = parse_body(pn.getChild("not").getChild("body"));
-
             if (left == null) {
                 return null;
             }

@@ -10,7 +10,7 @@ public class LogicStatement {
 
     public String name() {
 	if (op==NOT)
-	    return "!"+left.name();
+	    return "!("+left.name()+")";
 	String name=left.name();
 	name+=" "+op.toString()+" ";
 	if (right!=null)
