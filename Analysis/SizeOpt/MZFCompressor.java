@@ -14,9 +14,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 /**
  * The <code>MZFCompressor</code> class implements a class transformation
  * aimed at eliminating "mostly-zero" (or "mostly (any constant)")
@@ -26,7 +28,7 @@ import java.util.Map;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.1.2.1 2001-11-10 17:31:46 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.1.2.2 2001-11-12 01:53:23 cananian Exp $
  */
 public class MZFCompressor {
     final HCodeFactory parent;
@@ -37,7 +39,6 @@ public class MZFCompressor {
      *  by the <code>SizeCounters</code> package. */
     public MZFCompressor(Linker linker, HCodeFactory hcf, ClassHierarchy ch,
 			 String resourcePath) {
-	this.parent = hcf;
 	ConstructorClassifier cc = new ConstructorClassifier(hcf, ch);
         ProfileParser pp = new ProfileParser(linker, resourcePath);
 	// okay, process this data.  what we want is a list of fields
@@ -47,6 +48,16 @@ public class MZFCompressor {
 			   sortFields(linker.forName("java.lang.String"),pp,cc)
 			   );
 	//List sorted = sortFields(xx, pp, new ConstructorClassifier());
+
+	// collect all good fields.
+	Set flds = new HashSet();
+	for (Iterator it=ch.instantiatedClasses().iterator(); it.hasNext(); ){
+	    List sorted = sortFields((HClass)it.next(), pp, cc);
+	    for (Iterator it2=sorted.iterator(); it2.hasNext(); )
+		flds.add( (HField) ((List)it2.next()).get(0) );
+	}
+	// make accessors for these fields.
+	this.parent = new Field2Method(hcf, flds).codeFactory();
     }
     public HCodeFactory codeFactory() { return parent; }
 
@@ -72,6 +83,12 @@ public class MZFCompressor {
 	    HField hf = (HField) it.next();
 	    // filter out 'bad' fields.
 	    if (!cc.isGood(hf)) continue;
+	    // some fields have no information?
+	    if (pp.valueInfo(hf).entrySet().size()==0)
+		// we can end up with no information about a field if it is
+		// instantiable but never actually instantiated in the program
+		// (typically because it is instantiated in native code).
+		continue; // skip these fields.
 	    // find the 'mostly value' which will save the most space.
 	    Map.Entry me = (Map.Entry)
 		Collections.max(pp.valueInfo(hf).entrySet(), c);
