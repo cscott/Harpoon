@@ -10,7 +10,16 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.LowQuad.LowQuadNoSSA;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
+import harpoon.Temp.Label;
+import harpoon.Temp.LabelList;
 import harpoon.Temp.Temp;
+import harpoon.Util.HashSet;
+import harpoon.Util.Set;
+import harpoon.Util.Util;
+
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Stack;
 
 public class CanonicalTreeCode extends Code {
     private static final String codename = "canonical-tree";
@@ -26,6 +35,9 @@ public class CanonicalTreeCode extends Code {
 	tree         = translator.getTree();
 	m_derivation = translator;
 	m_typeMap    = translator;
+	
+	// Compute edges for the Trees in this codeview
+	new EdgeInitializer().computeEdges();
     }
 
     private CanonicalTreeCode(HMethod newMethod, Tree tree, Frame frame) {
@@ -83,4 +95,3 @@ public class CanonicalTreeCode extends Code {
 	return m_typeMap.typeMap(this, t);
     }
 }
-

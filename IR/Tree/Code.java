@@ -10,10 +10,14 @@ import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.HashSet;
+import harpoon.Util.Set;
+import harpoon.Util.Util;
+import harpoon.Temp.LabelList;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 
 import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.NoSuchElementException;
 import java.util.Stack;
 import java.util.Vector;
@@ -193,5 +197,195 @@ public abstract class Code extends HCode
     } 
 
     public abstract DList derivation(HCodeElement hce, Temp t);
+
     public abstract HClass typeMap(HCode hc, Temp t);
+
+
+    /** Only for CanoncialTreeCode and later views, a class to initialize
+     *  the edges representing the CFG of this Tree form
+     */
+    class EdgeInitializer extends TreeVisitor { 
+	private static final int COMPUTE_EDGE_SETS = 0;
+	private static final int ALLOC_EDGE_ARRAYS = 1;
+	private static final int ASSIGN_EDGE_DATA  = 2;
+
+	private Hashtable labels       = new Hashtable();
+	private Hashtable successors   = new Hashtable();
+	private Hashtable predecessors = new Hashtable();
+	private Stack     nodes        = new Stack();
+	private Stm       nextNode;
+	private int       state;
+
+	EdgeInitializer() { 
+	    Util.assert(getName().equals("canonical-tree"));
+	    mapLabels(); 
+	}
+	
+	void computeEdges() { 
+	    for (state=0; state<3; state++) { 
+		nextNode = (Stm)getRootElement();
+		while (nextNode!=null) { nextNode.visit(this); }
+	    }
+	}
+
+	public void visit(Tree t) { 
+	    throw new Error("No defaults here.");
+	}
+
+	public void visit(Exp e) { /* Do nothing for Exps */ } 
+
+	public void visit(CJUMP s) { 
+	    switch(state) 
+		{ 
+		case COMPUTE_EDGE_SETS:
+		    Util.assert(labels.containsKey(s.iftrue));
+		    Util.assert(labels.containsKey(s.iffalse));
+		    addEdge(s, (Stm)labels.get(s.iftrue));
+		    addEdge(s, (Stm)labels.get(s.iffalse));
+		    break;
+		case ALLOC_EDGE_ARRAYS:
+		    visit((Stm)s);
+		    return;
+		case ASSIGN_EDGE_DATA:
+		    visit((Stm)s);
+		    return;
+		default:
+		    throw new Error("Bad state");
+		}
+
+	    nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
+	}
+
+	public void visit(JUMP s) { 
+	    switch (state) 
+		{ 
+		case COMPUTE_EDGE_SETS:
+		    for (LabelList l = s.targets; l!=null; l=l.tail) { 
+			Util.assert(labels.containsKey(l.head));
+			addEdge(s, (Stm)labels.get(l.head));
+		    }
+		    break;
+		case ALLOC_EDGE_ARRAYS:
+		    visit((Stm)s);
+		    return;
+		case ASSIGN_EDGE_DATA:
+		    visit((Stm)s);
+		    return;
+		default:
+		    throw new Error("Bad state");
+		}
+
+	    nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
+	}
+	
+	public void visit(SEQ s) { 
+	    // Same for all states
+	    Util.assert(s.left!=null && s.right!=null);
+	    nodes.push(s.right);
+	    nextNode = s.left;
+	}
+
+	public void visit(Stm s) { 
+	  System.out.println("Visiting: " + s);
+	    nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
+	    switch (state) 
+		{ 
+		case COMPUTE_EDGE_SETS:
+		    if (nextNode!=null) addEdge(s, RS(nextNode)); 
+		    break;
+		case ALLOC_EDGE_ARRAYS:
+		    s.prev = predecessors.containsKey(s)?
+			new Edge[((Set)predecessors.get(s)).size()]:
+			    new Edge[0];
+		    s.next = successors.containsKey(s)?
+			new Edge[((Set)successors.get(s)).size()]:
+			    new Edge[0];
+		    break;
+		case ASSIGN_EDGE_DATA:
+		    int i=0;
+		    if (successors.containsKey(s)) { 
+			Set succ = (Set)successors.get(s);
+			s.next = new Edge[succ.size()];
+			for (Enumeration e = succ.elements(); 
+			     e.hasMoreElements();) { 
+			    Stm next     = (Stm)e.nextElement();
+			    Set nextPred = (Set)predecessors.get(next);
+			    Tree.addEdge(s, i++, next, nextPred.size()-1);
+			    nextPred.remove(s);
+			}
+			succ.clear(); 
+			i=0;
+		    }
+		    else { s.next = new Edge[0]; } 
+		    
+		    if (predecessors.containsKey(s)) { 
+			Set pred = (Set)predecessors.get(s);
+			s.prev = new Edge[pred.size()];
+			for (Enumeration e = pred.elements(); 
+			     e.hasMoreElements();) { 
+			    Stm prev     = (Stm)e.nextElement();
+			    Set prevSucc = (Set)successors.get(prev);
+			    Tree.addEdge(prev, prevSucc.size()-1, s, i++);
+			    prevSucc.remove(s);
+			}
+			pred.clear();
+		    }
+		    else { s.prev = new Edge[0]; } 
+		    break;
+		default:
+		    throw new Error("Bad state: " + state);
+		}
+	}
+
+	private void mapLabels() {
+	    for (Enumeration e = getElementsE(); e.hasMoreElements();) {
+		Object next = e.nextElement();
+		if (next instanceof SEQ) { 
+		    SEQ seq = (SEQ)next;
+		    if (seq.left instanceof LABEL) 
+			labels.put(((LABEL)seq.left).label, seq.left);
+		    if (seq.right instanceof LABEL) 
+			labels.put(((LABEL)seq.right).label, seq.right);
+		}
+	    }
+	}
+	
+	private void addEdge(Stm from, Stm to) { 
+	    System.out.println("Adding edge from: " + from + " to " + to);
+	    Set pred, succ;
+	    if (predecessors.containsKey(to))
+		pred = (Set)predecessors.get(to);
+	    else {
+		pred = new HashSet();
+		predecessors.put(to, pred);
+	    }
+	    if (successors.containsKey(from)) 
+		succ = (Set)successors.get(from);
+	    else { 
+		succ = new HashSet();
+		successors.put(from, succ);
+	    }
+	    pred.union(from);
+	    succ.union(to);
+	}	    
+
+	private Stm RS(Stm seq) { 
+	    while (seq instanceof SEQ) seq = ((SEQ)seq).left;
+	    return seq;
+	}
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
