@@ -94,7 +94,7 @@ lctes03-talk.dvi lctes03-talk-notes.tex lctes03-talk-adobe.tex:	\
 # pldi04 paper dependencies
 pldi04.dvi: \
 	Figures/nb-single-obj.eps Figures/nb-multi-obj.eps \
-	Figures/chuang.eps Figures/funarr.eps
+	Figures/chuang.eps Figures/funarr.eps Figures/bloat.eps
 
 # thesis figure dependencies
 export THESIS_FIGURES=\

@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.14 2003-11-10 19:43:54 cananian Exp $
+% $Id: pldi04.tex,v 1.15 2003-11-11 04:56:01 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -35,7 +35,7 @@ Cambridge, MA 02139 \\
 }
 \special{papersize=8.5in,11in}
 
-\date{\today \\ $ $Revision: 1.14 $ $}
+\date{\today \\ $ $Revision: 1.15 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -295,11 +295,14 @@ transactions must be supported if this method is operate on arbitrary
 inputs.
 
 \subsecput{destruct}{Destructive traversal}
-Shows fault-tolerance.
+\note{Shows transaction-as-exception-handling, fault-tolerance, and
+back-tracking.}
+\cite{SchorrWa67}
 
 \subsecput{backtrack}{Backtracking}
 Prolog-esque example?
 
+%\subsecput{optcon}{Optimistic Concurrency} % not in this paper.
 
 \secput{related}{Related work}
 \subsecput{nb-sync}{Non-blocking synchronization}
@@ -682,6 +685,7 @@ m memory operations to l locations does m+l extra reads and l+1 CAS operations.
 \secput{efficient}{Designing Efficient Transactions}
 \subsection{Scales}
 \subsection{Object expansion}
+\epsfigput{bloat}{Application slowdown with increasing object bloat.}
 \subsection{Reads vs. Writes}
 \subsection{Large objects}
 \subsection{Subsumption?}
@@ -698,6 +702,71 @@ m memory operations to l locations does m+l extra reads and l+1 CAS operations.
 % JNI tricks, etc.
 
 \secput{eval}{Evaluation}
+
+\begin{figure*}
+\footnotesize
+\begin{center}
+\begin{tabular}{lr|rr|rr}
+Benchmark                 &  Base       & Locks         & Trans              & Time                     & Overflow       \\
+                          &             & time          & time               & in trans              & overhead       \\
+                          &  (cycles)   & \multicolumn{2}{c|}{(\% of Base)}   & \multicolumn{2}{c}{(\% of Trans time)}                 \\ \hline
+\texttt{200\_check}       &   8,062,716 & 124.0\%       &  101.7\%           & 32.9\%           & 0.00366\%      \\
+\texttt{202\_jess}        &  75,012,964 & 140.9\%       &  107.1\%           & 59.3\%           & 0.00761\%      \\
+\texttt{209\_db}          &  11,784,220 & 142.4\%       &  105.1\%           & 53.9\%           & 0              \\
+\texttt{213\_javac}       &  30,688,574 & 169.9\%       & 1469.5\%           & 99.0\%           & 93.0\%         \\
+\texttt{222\_mpegaudio}&  98,961,244    & 100.3\%       &   99.6\%           & 0.817\%          & 0              \\
+\texttt{228\_jack}        & 261,441,564 & 175.3\%       &  104.4\%           & 32.2\%           & 0.00260\%      \\
+\end{tabular}
+\end{center}
+\caption{SPECjvm98 performance and overheads on a 1-processor UVSIM simulation. The {\em Base }
+ time uses no synchronization.  The {\em Locks time} is the time using
+ locks as a percentage of the base.  The {\em Trans time} is the time using BTM
+ transactions as a perdentage of the base. The
+ {\em time in Trans} is the fraction of the {\em Trans time} actualy
+ spent running a transaction.  The {\em
+ Overflow overhead} column is fraction of the {\em Trans time}
+ spent handling overflows.}
+\label{fig:specperf}
+\end{figure*}
+
+We found that using BTM transactions in the SPECjvm98 benchmarks
+results in very little overhead compared to using locks. We compiled
+the benchmarks to use BTM transactions using our modified Java
+compiler.  The \texttt{201\_compress} and \texttt{205\_raytrace}
+benchmarks were omitted due to unresolved bugs in the base UVSIM
+simulator, and similarly \texttt{libpthread} deficiencies prevented
+the execution of \texttt{227\_mtrt}.
+The remaining benchmarks were run on one processor in UVSIM to compare the
+performance overheads associated with BTM transactions compared to
+locks.  As shown in \figref{specperf}, there is a significant amount
+of overhead associated with locking (more than 75\% over the base case
+in {\texttt{228\_jack})}. %Put that {} around the texttt to prevent the jack from being separated from the )
+For BTM, there are two main sources of
+overhead: The transactions may abort, wasting the cycles spent
+computing, and also executing the branch to the abort handler.  For
+these java programs, the transactions never abort because they are
+single-threaded programs.  The second overhead is the cost of handling
+overflows.
+
+The only application that has a significant transaction overhead is
+\texttt{javac}, which runs 14 times slower under BTM than without any
+mutual exclusion.  Virtually all of the overhead comes from handling
+overflows, which is not surprising since the entire compilation is
+enclosed in one large transaction.  The transaction touches 253,547
+cache lines, and there are only 16K cache lines in the L2 cache,
+meaning that the overflow memory contains at least 237K cache lines.
+So even though only 0.5\% of the xops miss, those few misses incur
+huge search costs, as the finite state machine looks through the
+linear array of overflowed cache lines.  We intend to look into using
+a better data structure, such as a hash table.  Though there is a
+significant performance decrease in this case, BTM still ensures the
+application runs correctly. Namely, the programmer wanted the entire
+compile process to occur as one atomic action so BTM will ensure that
+is the case.  It may be the case that \texttt{javac} really cannot be
+parallelized, in which case locks may be the best choice.  But if the
+programmer wishes to parallelize \texttt{javac}, she may be find it
+easier to break up the large transaction than to break up a locked
+block.
 
 \secput{concl}{Conclusions}
 
