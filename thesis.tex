@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.42 1999-06-14 05:58:25 cananian Exp $
+% $Id: thesis.tex,v 1.43 1999-06-14 07:11:22 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.42 $ $}
+\date{\today \\ $ $Revision: 1.43 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.42 $ $}{$ $Revision: 1.42 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.43 $ $}{$ $Revision: 1.43 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -514,6 +514,26 @@ of figure~\ref{fig:SSIalg}.
 \end{myfigure}
 
 My algorithm is correct.\fixme{Prove this.}
+Rough sketch:
+First theorem: a merge for v must be in the same SESE region as a
+definition of v.
+Proof: merge at first point in common between two defs of v and a use
+of v (Iterate). If both defs outside the region, then must join
+outside, as there is only one entry edge to the SESE region.  If both
+defs inside a nested region, then must join inside, as only one exit
+edge from nested region.  So merge must be in same region as def--but
+one or both defs can be in a nested region of this region.  Hence we
+can skip regions that contain no defs of v. Also collapsing nested
+regions to single nodes does not mess with the path.  Generalize to
+sigmas, too.
+
+Iterating, a merge node which becomes a def requiring another merge is
+in what relation to the new merge?  If other def is also in this
+region, then new merge must be, too, because only one exit node.
+New merge can't be in child region, as only one entrance?
+
+Want to show that algorithm produced exactly minimal form or exactly
+pruned form.  Need to define minimal/pruned forms more closely, first.
 
 \subsubsection{Computing liveness}
 We can compute pruned SSI form if we have access to liveness
@@ -530,7 +550,7 @@ don't need a fast liveness algorithm; we get what we need `for free'.}
 Um, my current (SSA-inspired) algorithm requires dominance
 information, which we've done away with in general.  Need to rewrite
 to use the PST structure instead, which I'm pretty sure I can do.
-I have to prove that the results are correct, though, which may be harder.
+I have to prove that the results are correct, though, which may be harder.%
 \fixme{Do this.}
 
 \subsubsection{Pruning SSI form}\label{sec:unusedcode}
