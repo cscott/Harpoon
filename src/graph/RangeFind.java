@@ -26,7 +26,7 @@ public class RangeFind extends Node {
      *
      *  @param id The image to find the range of and annotate.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	/* Calculate the correct vector from the location in the original image, */
 	/* the size of the target and image, the angle of the camera, etc. */
 

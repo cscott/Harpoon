@@ -22,7 +22,7 @@ public class Grab extends Node {
     /** Called by in-node to '<code>process</code>' <code>id</code> by storing it
      *  in a place that can be later examined using <code>grab</code>.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	this.id = id;
     }
     

@@ -28,7 +28,7 @@ public class Compress extends Node {
      *
      *  @param id The {@link ImageData} to compress.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	super.process(codec.compress(id));
     }
 }

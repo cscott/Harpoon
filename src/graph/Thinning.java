@@ -25,7 +25,7 @@ public class Thinning extends Node {
      *
      *  @param id The image to thin.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	int changed=1;
 	byte[] in = id.gvals;
 	int w = id.width;

@@ -46,7 +46,7 @@ public class Alert extends Client {
      *
      *  @param id The input image that contains data for the tracker.
      */
-    public synchronized void process(final ImageData id) {
+    public void process(final ImageData id) {
 	final CommunicationsAdapter finalCS = cs;
 	(new Thread() {
 	    public void run() {

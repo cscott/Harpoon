@@ -20,7 +20,7 @@ public class RobertsCross extends Node {
     /** Apply line recognition to an {@link ImageData} and pass the
      *  result onto <code>out</code>.  
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	int width = id.width;
 	int height = id.height;
 	byte[] outs = new byte[width*height];

@@ -151,7 +151,7 @@ public class Node implements Serializable, Runnable {
      * 
      *  @param id The {@link ImageData} to send.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	if (this.out1 != null) {
 	    this.out1.process(id);
 	}

@@ -44,7 +44,7 @@ public class Client extends Node {
     }
 
     /** The <code>process</code> call that actually triggers a call to a server. */
-    public synchronized void process(final ImageData id) {
+    public void process(final ImageData id) {
 	final CommunicationsAdapter finalCS = cs;
 	(new Thread() {
 	    public void run() {

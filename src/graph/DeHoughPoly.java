@@ -36,7 +36,7 @@ public class DeHoughPoly extends Node {
      * 
      *  @param id This {@link ImageData} is ignored.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 
 	super.process(id);
     }

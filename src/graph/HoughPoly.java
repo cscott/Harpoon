@@ -37,7 +37,7 @@ public class HoughPoly extends Node {
     /** <code>process</code> an <code>r vs. t</code> graph by
      *  listing the lines (which can form polygons) in it.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	
 
 	super.process(id);

@@ -43,7 +43,7 @@ public class DeHough extends Node {
      *
      *  @param id The {@link ImageData} to invert.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	int newSize = width*height;
 	byte[] in = id.gvals;
 	byte[] out = new byte[newSize];

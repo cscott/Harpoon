@@ -44,7 +44,7 @@ public class Thresholding extends Node {
 
     /** Threshold an image by determining whether edges are "maybe" or "definite".
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	byte[] in = id.gvals;
 	for (int i = 0; i<id.width*id.height; i++) {
 	    in[i] = (((in[i]|256)&255)>=T1)?(byte)127:

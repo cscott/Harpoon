@@ -47,10 +47,10 @@ public class ATR extends Server {
      *  @param id This variable is ignored - use <code>run()</code> to
      *            start the server.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	try {
 	    cm.runATRServer(name, new CommunicationsAdapter() {
-		public synchronized void process(ImageData id) {
+		public void process(ImageData id) {
 		    ATR.this.out.process(id);
 		}
 	    });

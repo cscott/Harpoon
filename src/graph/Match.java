@@ -90,7 +90,7 @@ public class Match extends Node {
      *
      *  @param id The image to process.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	int length = (iddb!=null)?iddb.length:numFiles;
 	ImageData id1 = id;
 	for (int i=0; i<length; i++) {

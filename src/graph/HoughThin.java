@@ -39,7 +39,7 @@ public class HoughThin extends Node {
      *
      *  @param id The {@link ImageData} to thin.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	byte[] in = id.gvals;
 	int size = in.length;
 	int w = id.width;

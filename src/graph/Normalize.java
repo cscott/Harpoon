@@ -7,6 +7,8 @@ package imagerec.graph;
  * Normalize the magnatudes of the colors in an image.
  *
  * Use either histograms/percentiles or max magnatude.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class Normalize extends Node {
     private boolean maxMag;
@@ -35,7 +37,7 @@ public class Normalize extends Node {
      *
      *  @param id The {@link ImageData} to normalize.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 //  	byte[][] in = new byte[][] {id.rvals, id.gvals, id.bvals};
 //  	for (int j=0; j<3; j++) {
 //  	    byte[] transferFunc = new byte[256];

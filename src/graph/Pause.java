@@ -24,7 +24,7 @@ public class Pause extends Node {
      *
      *  @param id The image to process.
      */
-    public synchronized void process(ImageData id) {
+    public void synchronized process(ImageData id) {
 	//Why pause afterwards? Not intuitive.
 	//I changed code so the pause comes
 	//before the image is sent on to other nodes

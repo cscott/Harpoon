@@ -74,7 +74,7 @@ public class HoughThreshold extends Node {
      *
      *  @param id The {@link ImageData} to process.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	int size = id.width*id.height;
 	byte[][] vals = new byte[][] { id.rvals, id.gvals, id.bvals };
 

@@ -23,7 +23,7 @@ public class Pruning extends Node {
     /** <code>process</code> an {@link ImageData} by pruning away any lines that don't form 
      *  closed objects.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	byte[] in = id.gvals;
 	int w = id.width;
 	int h = id.height;

@@ -93,7 +93,7 @@ public class Load extends Node {
     }
 
     /** Load all the image files and send them, one at a time, to the <code>out</code> node. */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	//added by benji, hack for improved memory usage and speed
 	//Unclear whether this helps.  It depends on whether it is running
 	//headless or not.

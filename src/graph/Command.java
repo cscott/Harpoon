@@ -41,7 +41,7 @@ public class Command extends Node {
      *
      *  @param id The {@link ImageData} for the image to be tagged.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	id.command = tag;
 	super.process(id);
     }

@@ -66,7 +66,7 @@ public class Save extends Node {
      *
      *  @param id The image to save. 
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	System.out.println("Saving image "+filePrefix+"."+(inorder?id.id:count));
 	ImageDataManip.writePPM(id, filePrefix+"."+(inorder?id.id:(count++)), P3);
     }

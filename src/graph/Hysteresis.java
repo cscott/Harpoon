@@ -16,7 +16,7 @@ public class Hysteresis extends Node {
     }
 
     /** Process an image, sending the sharpened image to <code>out</code>. */ 
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	byte[] in = id.gvals;
 	int w = id.width;
 	int h = id.height;

@@ -20,7 +20,7 @@ public class AlertDisplay extends Node {
      *
      *  @param id The {@link ImageData} that contains the alert data.
      */   
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	System.out.println("ALERT: ("+id.c1+","+id.c2+","+id.c3+")");
     }
 }

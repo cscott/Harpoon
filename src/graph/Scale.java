@@ -33,7 +33,7 @@ public class Scale extends Node {
      * 
      *  @param id The image to scale.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	super.process(ImageDataManip.scale(id, width, height));
     }
 

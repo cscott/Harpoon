@@ -44,7 +44,7 @@ public class PolyMatch extends Node {
      *
      *  @param id The {@link ImageData} to match.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	
 	super.process(id);
     }

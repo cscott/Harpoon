@@ -91,7 +91,7 @@ public class Canny extends Node {
        @param imageData The {@link ImageData} to be processed. <code>imageData</code>
        will be mutated by this method.
     */
-    public synchronized void process(ImageData imageData) {
+    public void process(ImageData imageData) {
 	//First perform Gaussian Smoothing on this image.
 	//This step relies on the fact that GaussianSmoothing's process()
 	//method mutates the image.

@@ -21,7 +21,7 @@ public class RangeThreshold extends Node {
 	super(out);
     }
 
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	byte[] orig = (byte[])id.gvals.clone();
 	for (int T2 = 0; T2 < 255; T2+=5) {
 	    for (int T1 = T2; T1 < 255; T1+=5) { 

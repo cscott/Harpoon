@@ -28,7 +28,7 @@ public class Decompress extends Node {
      * 
      *  @param id The {@link ImageData} to decompress.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	super.process(codec.decompress(id));
     }
 }

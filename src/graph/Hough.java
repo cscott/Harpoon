@@ -50,7 +50,7 @@ public class Hough extends Node {
 	this.precision = precision;
     }
 
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	long[] accumulator = new long[precision*precision+1];
 	int width = id.width;
 	int height = id.height;

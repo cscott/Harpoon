@@ -52,13 +52,13 @@ public class AlertServer extends Server {
      *  @param id This variable is ignored - use <code>run()</code>
      *            to start the server.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	try {
 	    (new Thread() {
 		public void run() {
 		    try {
 			cm.runAlertServer(name, new CommunicationsAdapter() {
-			    public synchronized void alert(float c1, float c2, float c3) {
+			    public void alert(float c1, float c2, float c3) {
 				AlertServer.this.out.process(ImageDataManip.create(c1, c2, c3));
 			    }
 			});

@@ -31,7 +31,7 @@ public class Copy extends Node {
      *
      *  @param id The image to copy.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	Node n;
 	if ((n=getLeft()) != null) {
 	    n.process(ImageDataManip.clone(id));

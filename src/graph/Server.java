@@ -36,13 +36,13 @@ public class Server extends Node {
      *  @param id This variable is ignored - use <code>run()</code> to
      *            start the server.  
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	try {
 	    (new Thread() {
 		public void run() {
 		    try {
 			cm.runIDServer(name, new CommunicationsAdapter() {
-			    public synchronized void process(ImageData id) {
+			    public void process(ImageData id) {
 				Server.super.process(id);
 			    }
 			});

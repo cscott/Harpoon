@@ -19,7 +19,7 @@ public class Async extends Node {
     }
 
     /** This calls the <code>out</code> node asynchronously. */
-    public synchronized void process(final ImageData id) {
+    public void process(final ImageData id) {
 	(new Thread() {
 	    public void run() {
 		Async.super.process(id);

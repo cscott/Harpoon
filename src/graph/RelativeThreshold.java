@@ -31,7 +31,7 @@ public class RelativeThreshold extends Node {
      *  @param id The image to search for the appropriate threshold and send to the
      *            next node.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	int t1 = 0;
 	int t2 = 0;
 	byte[] in = id.gvals;
