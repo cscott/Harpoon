@@ -7,7 +7,7 @@ import harpoon.ClassFile.*;
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.3 1998-09-13 23:57:34 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.4 1998-09-14 03:08:51 cananian Exp $
  */
 
 public final class HClassUtil  {
@@ -24,7 +24,7 @@ public final class HClassUtil  {
 	return i;
     }
     /** Return the ultimate component type of an array (that is, after
-     *  all array dimensions have been stripped off. 
+     *  all array dimensions have been stripped off). 
      * @return input class <code>hc</code> if <code>hc</code> is not an
      *         array, otherwise a component class <code>c</code> where
      *         <code>c</code> is not an array. */
