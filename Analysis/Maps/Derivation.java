@@ -26,7 +26,7 @@ import java.util.List;
  * and its motivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.5 2000-02-08 23:19:46 cananian Exp $
+ * @version $Id: Derivation.java,v 1.1.2.6 2000-02-15 18:50:23 cananian Exp $
  */
 public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 
@@ -141,21 +141,11 @@ public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 	    return result;
 	}
 
-      /** Like <code>Quad.clone()</code>, does not clone
-       * <code>Temp</code>s when not supplied with a
-       * <code>TempMap</code>. */
+      /** Returns a clean copy of this <code>DList</code>.  Does
+       *  not rename <code>Temp</code>s in any way. */
       public static DList clone(DList dlist) {
 	if (dlist==null) return null;
 	else return new DList(dlist.base, dlist.sign, clone(dlist.next));
-      }
-
-      /** Returns a clone of this <code>DList</code> */
-      public static DList clone(DList dlist, CloningTempMap ctm) {
-	if (dlist==null) return null;
-	else
-	  return new DList(((dlist.base==null)?null:ctm.tempMap(dlist.base)),
-			   dlist.sign, 
-			   clone(dlist.next, ctm));
       }
 
       /** Returns a new <code>DList</code> with the <code>Temp</code>s 
@@ -164,7 +154,7 @@ public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 	{
 	  if (dlist==null) return null;
 	  else return new DList
-		 (((dlist.base==null)?null:tempMap.tempMap(dlist.base)),
+		 ( tempMap==null ? dlist.base : tempMap.tempMap(dlist.base),
 		  dlist.sign,
 		  rename(dlist.next, tempMap));
 	}
