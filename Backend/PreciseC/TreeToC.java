@@ -44,6 +44,7 @@ import harpoon.IR.Tree.Uop;
 import harpoon.Temp.Label;
 import harpoon.Temp.LabelList;
 import harpoon.Temp.Temp;
+import harpoon.Util.ReverseIterator;
 import harpoon.Util.Util;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -60,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.17 2000-07-12 03:23:25 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.18 2000-07-13 14:33:43 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -734,7 +735,8 @@ public class TreeToC extends java.io.PrintWriter {
 	private void emitPop(Set liveo) {
 	    pw.print("IFPRECISE(/*pop */(");
 	    // pop base pointers
-	    for (Iterator it=liveo.iterator(); it.hasNext(); ) {
+	    for (Iterator it=new ReverseIterator(liveo.iterator());
+		 it.hasNext(); ) {
 		Temp t = (Temp) it.next();
 		Derivation.DList dl =
 		    (Derivation.DList) tempv.objectTemps.get(t);
