@@ -6,7 +6,7 @@ import harpoon.Util.Util;
  * <code>InCti</code> is used for control-transfer instructions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InCti.java,v 1.4 1998-08-03 11:05:53 cananian Exp $
+ * @version $Id: InCti.java,v 1.5 1998-08-03 11:12:12 cananian Exp $
  * @see Instr
  */
 public class InCti extends Instr {
@@ -16,7 +16,7 @@ public class InCti extends Instr {
   public InCti(String sourcefile, int linenumber, byte[] code, int pc) {
     super(sourcefile, linenumber);
     this.opcode=code[pc];
-    this.arity = Op.branchTargets(pc, code).length;
+    this.arity = Op.branchTargets(code, pc).length;
     if (!Op.isUnconditionalBranch(code[pc])) this.arity++;
     // FIXME
   }

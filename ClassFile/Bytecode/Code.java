@@ -13,7 +13,7 @@ import java.util.Vector;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.3 1998-08-03 11:05:53 cananian Exp $
+ * @version $Id: Code.java,v 1.4 1998-08-03 11:12:12 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -65,10 +65,10 @@ public class Code extends HCode {
       byte[] code = getCode().code; // bytecode array.
       // First locate merge nodes.
       int[] merge = new int[code.length]; // init to 0.
-      for (int pc=0; pc<code.length; pc+=Op.instrSize(pc, code)) {
+      for (int pc=0; pc<code.length; pc+=Op.instrSize(code, pc)) {
 	// if its a branch, mark the possible targets.
 	if (Op.isBranch(code[pc])) {
-	  int[] targets = Op.branchTargets(pc, code);
+	  int[] targets = Op.branchTargets(code, pc);
 	  for (int i=0; i<targets.length; i++)
 	    merge[targets[i]]++; // mark a jump to this pc.
 	}
@@ -76,13 +76,13 @@ public class Code extends HCode {
 	// next instr, too.  Note that we shouldn't be able to fall off
 	// the end of the method.
 	if (!Op.isUnconditionalBranch(code[pc]))
-	  merge[pc+Op.instrSize(pc,code)]++;
+	  merge[pc+Op.instrSize(code, pc)]++;
       }
       // now all pc's for which merge>1 are merge nodes.
       Instr[] sparse = new Instr[code.length]; // index by pc still. 
       // crank through and add instrs without making links.
       Vector v = new Vector();
-      for (int pc=0; pc<code.length; pc+=Op.instrSize(pc, code)) {
+      for (int pc=0; pc<code.length; pc+=Op.instrSize(code, pc)) {
 	int line = getLine(pc);
 	// make merge node if appropriate.
 	InMerge m = null;
@@ -103,19 +103,19 @@ public class Code extends HCode {
       }
       // okay.  The instructions are made (in pc order, no less...)
       // link 'em.
-      for (int pc=0; pc<code.length; pc+=Op.instrSize(pc, code)) {
+      for (int pc=0; pc<code.length; pc+=Op.instrSize(code, pc)) {
 	Instr curr = sparse[pc];
 	if (curr instanceof InMerge)
 	  curr = ((InMerge)curr).next()[0];
 	if (!Op.isUnconditionalBranch(code[pc])) {
 	  // link to next pc.
-	  Instr next = sparse[pc+Op.instrSize(pc, code)];
+	  Instr next = sparse[pc+Op.instrSize(code, pc)];
 	  curr.addNext(next);
 	  next.addPrev(curr);
 	}
 	if (Op.isBranch(code[pc])) {
 	  // link to branch targets.
-	  int[] targets = Op.branchTargets(pc, code);
+	  int[] targets = Op.branchTargets(code, pc);
 	  for (int i=0; i<targets.length; i++) {
 	    Instr next = sparse[targets[i]];
 	    curr.addNext(next);

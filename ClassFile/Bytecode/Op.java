@@ -13,7 +13,7 @@ package harpoon.ClassFile.Bytecode;
  * </UL>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Op.java,v 1.4 1998-08-03 11:05:53 cananian Exp $
+ * @version $Id: Op.java,v 1.5 1998-08-03 11:12:13 cananian Exp $
  * @see     harpoon.ClassFile.Raw.Attribute.AttributeCode
  * @see     harpoon.ClassFile.Bytecode.Instr
  * @see     harpoon.ClassFile.Bytecode.Code
@@ -596,7 +596,7 @@ public final class Op {
    *             located.
    * @return the length of the opcode and operands.
    */
-  public final static int instrSize(int pc, byte[] code) {
+  public final static int instrSize(byte[] code, int pc) {
     byte opcode = code[pc];
     switch(opcode) {
     case LOOKUPSWITCH:
@@ -674,7 +674,7 @@ public final class Op {
    *             <code>pc</code>. (ie, offsets from the start of the
    *             bytecode array.)
    */
-  public final static int[] branchTargets(int pc, byte[] code) {
+  public final static int[] branchTargets(byte[] code, int pc) {
     if (!isBranch(code[pc])) 
       throw new Error("Asking for target of non-branch.");
     // Funky switch statements.
