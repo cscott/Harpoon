@@ -12,7 +12,7 @@ import harpoon.Temp.Label;
  * is simply a <code>Label</code> object.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ConstPointer.java,v 1.1.2.4 1999-06-28 18:57:35 duncan Exp $
+ * @version $Id: ConstPointer.java,v 1.1.2.5 1999-08-03 22:20:03 duncan Exp $
  */
 class ConstPointer extends Pointer {
     private final StaticState ss;
@@ -62,7 +62,9 @@ class ConstPointer extends Pointer {
      *  <code>ConstPointer</code>.
      */
     public Object getValue() { 
-	return Method.toNonNativeFormat(ss.getValue(this));
+	return (this==NULL_POINTER) ?
+	    Method.toNonNativeFormat(null) :
+	    Method.toNonNativeFormat(ss.getValue(this));
     }
 
     /** Always returns true. */

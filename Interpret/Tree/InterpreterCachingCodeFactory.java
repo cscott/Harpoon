@@ -11,9 +11,14 @@ import harpoon.ClassFile.HMethod;
 
 /**
  */
-public class InterpreterCachingCodeFactory extends CachingCodeFactory { 
-    public InterpreterCachingCodeFactory(HCodeFactory parent) {
-        super(parent);
+public class InterpreterCachingCodeFactory implements HCodeFactory { 
+    private HCodeFactory factory;
+    private HCodeFactory optimizingFactory;
+
+    public InterpreterCachingCodeFactory
+	(HCodeFactory factory, HCodeFactory optimizingFactory) {
+	this.factory           = factory;
+	this.optimizingFactory = new CachingCodeFactory(optimizingFactory);
     }
 
     /** Convert a method to an <code>HCode</code>, caching the result.
@@ -24,10 +29,16 @@ public class InterpreterCachingCodeFactory extends CachingCodeFactory {
 	HCode hc;
 
 	if (m.getName().equals("<clinit>")) 
-	    hc = parent.convert(m);	    
+	    hc = factory.convert(m);	    
 	else 
-	    hc = super.convert(m);
+	    hc = optimizingFactory.convert(m);
 	
 	return hc;
+    }
+
+    public String getCodeName() { return optimizingFactory.getCodeName(); } 
+
+    public void clear(HMethod m) { 
+	this.optimizingFactory.clear(m);
     }
 }

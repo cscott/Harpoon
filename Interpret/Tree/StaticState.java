@@ -19,7 +19,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.4 1999-06-28 19:32:25 duncan Exp $
+ * @version $Id: StaticState.java,v 1.1.2.5 1999-08-03 22:20:03 duncan Exp $
  */
 final class StaticState extends HCLibrary {
     
@@ -39,7 +39,6 @@ final class StaticState extends HCLibrary {
 
     StaticState(HCodeFactory hcf, PrintWriter prof, InterpreterOffsetMap map) {
 	// Only translate trees in canonical form 
-	Util.assert(hcf.getCodeName().equals("canonical-tree"));
 	this.hcf = hcf; this.prof = prof; this.map = map;
 	Support.registerNative(this);
     }
@@ -124,23 +123,25 @@ final class StaticState extends HCLibrary {
     private void loadInterfaces(Label clsLabel, HClass cls) {
 	// Make interface list
 	HClass[] interfaces = cls.getInterfaces();
-	InterfaceList iList = new InterfaceList(interfaces.length);
+	InterfaceList iList = new InterfaceList(interfaces.length+1);
 	for (int i=0; i<interfaces.length; i++) {
 	    iList.addInterface
 		(new ConstPointer(map.label(interfaces[i]), this), i);
-	    //
-	    // Map interface methods
-	    //
-	    // FIX:  should not assume interfaces grow upwards
 	    HMethod[] hm = interfaces[i].getDeclaredMethods();
-	    for (int j=0; i<hm.length; i++) 
-		map(new ClazPointer(clsLabel, this, map.offset(hm[j])-1), 
+	    for (int j=0; j<hm.length; j++) {
+		map(new ClazPointer(clsLabel, this, map.offset(hm[j])), 
 		    hm[j]);
+	    }
 	}
+
+	// NULL-terminate the interface list
+	iList.addInterface(ConstPointer.NULL_POINTER, interfaces.length);
 	
+	//
 	map(new ClazPointer(clsLabel, this, map.interfaceListOffset(cls)),
 	    new InterfaceListPointer(iList, 0));
     }
+
  
     private void loadMethods(Label clsLabel, HClass current) {
 	HClass sc = current.getSuperclass();

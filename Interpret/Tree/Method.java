@@ -34,7 +34,7 @@ import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.THROW;
 import harpoon.IR.Tree.Tree;
-import harpoon.IR.Tree.CanonicalTreeCode;
+import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.TreeVisitor;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.UNOP;
@@ -56,27 +56,29 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.4 1999-07-12 22:57:53 bdemsky Exp $
+ * @version $Id: Method.java,v 1.1.2.5 1999-08-03 22:20:03 duncan Exp $
  */
 public final class Method extends HCLibrary {
     static PrintWriter out = new java.io.PrintWriter(System.out);
     static final Integer TREE_NULL = new Integer(0);
-    
+
     /** invoke a static main method with no static state. */
     public static final void run(PrintWriter prof, 
 				 HCodeFactory hcf,
 				 HClass cls, String[] args) {
-	CanonicalTreeCode tc;  // The code of the method to interpret
-	HMethod method;        // The method to interpret
-	OffsetMap map;         // The offset map used by the tree interpreter
-	StaticState ss;        // The interpreter's static state
+	Code        tc;       // The code of the method to interpret
+	HMethod     method;   // The method to interpret
+	OffsetMap   map;      // The offset map used by the tree interpreter
+	StaticState ss;       // The interpreter's static state
 
 	method=cls.getMethod("main", new HClass[]{ HCstringA });
 	
 	Util.assert(method.isStatic());
-	Util.assert(hcf.getCodeName().equals("canonical-tree"));
+	Util.assert(hcf.getCodeName().equals("canonical-tree") ||
+		    hcf.getCodeName().equals("optimized-tree"),
+		    "Bad factory codename: " + hcf.getCodeName());
 	
-	tc = (CanonicalTreeCode)hcf.convert(method);
+	tc = (Code)hcf.convert(method);
 	map=((Tree)tc.getRootElement()).getFactory().getFrame().getOffsetMap();
 	ss = new StaticState(hcf, prof, (InterpreterOffsetMap)map);
 	try {
@@ -103,7 +105,8 @@ public final class Method extends HCLibrary {
 	    err.println("Caught "+msg);
 	    //StaticState.printStackTrace(err, it.stackTrace);
 	    StaticState.printStackTrace(err, (String[]) it.ex.getClosure());
-	} finally {
+	} 
+	finally {
 	    // try to force finalization of object classes
 	    if (DEBUG) db("Try to force finalization...");
 	    ss=null;
@@ -227,7 +230,7 @@ public final class Method extends HCLibrary {
 		return rval;
 	    }
 	    // non-native, interpret.
-	    CanonicalTreeCode c = (CanonicalTreeCode)ss.hcf.convert(method);
+	    Code c = (Code)ss.hcf.convert(method);
 	    Frame f = ((Tree)c.getRootElement()).getFactory().getFrame();
 
 	    // failed to translate method into tree code
@@ -413,10 +416,16 @@ public final class Method extends HCLibrary {
 	    advance(0);
 	}
 
+	public void visit(NATIVECALL s) { 
+	    throw new Error("Not implemented");
+	}
+
 	/* Let Method.invoke() distinguish between native and
 	 * non-native methods */
-	public void visit(INVOCATION s) { 
+	public void visit(CALL s) { 
 	    if (DEBUG) db("Visiting: " + s);
+
+	    s.func.visit(this);
 	    if (isAllocation(s)) {
 		// Can't resolve ptr type yet
 		UndefinedPointer ptr = 
@@ -502,16 +511,9 @@ public final class Method extends HCLibrary {
 	    e.exp.visit(this);
 	    Pointer ptr;
 
-	    try { 
-	      if (DEBUG) db("Trying to derefence: " + e.exp);
-	      // Can only dereference Pointer types
-	      ptr = (Pointer)sf.get(e.exp);
-	    }
-	    catch (ClassCastException ex) { 
-	      if (DEBUG) db("*** EXC should have been thrown: " + ex + 
-				 ", "  + e.exp);
-	      throw ex;
-	    }
+	    if (DEBUG) db("Trying to derefence: " + e.exp);
+	    // Can only dereference Pointer types
+	    ptr = (Pointer)sf.get(e.exp);
 
 	    sf.update(e, ptr.getValue());
 	}

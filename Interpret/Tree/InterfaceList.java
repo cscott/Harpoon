@@ -5,7 +5,7 @@ package harpoon.Interpret.Tree;
  * a list of interfaces. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterfaceList.java,v 1.1.2.1 1999-03-27 22:05:08 duncan Exp $
+ * @version $Id: InterfaceList.java,v 1.1.2.2 1999-08-03 22:20:03 duncan Exp $
  */
 public class InterfaceList { 
 
@@ -26,6 +26,6 @@ public class InterfaceList {
     public ConstPointer getInterface(int i) { 
 	return interfaces[i]; 
     }
-    
 }
+
 
