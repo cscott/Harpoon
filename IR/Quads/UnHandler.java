@@ -21,7 +21,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.24 2000-01-28 05:38:06 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.25 2000-01-30 09:27:11 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -65,7 +65,7 @@ final class UnHandler {
 	Quad[] ql = start.next();
 	for (int i=0; i<ql.length; i++) {
 	    if (ss.qm.contains(ql[i])) continue; // skip if already done.
-	    Visitor vv = (i==ql.length-1)? v : // don't clone if never reused
+	    Visitor vv = (ql.length==1)? v : // don't clone if never reused
 		new Visitor((TempInfo) v.ti.clone(), ss);
 	    visitAll(vv, ql[i]);
 	}
