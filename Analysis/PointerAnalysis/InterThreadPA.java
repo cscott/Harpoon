@@ -22,7 +22,7 @@ import harpoon.IR.Quads.NEW;
  * <code>InterThreadPA</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.8 2000-02-21 04:47:59 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.9 2000-02-24 22:36:17 salcianu Exp $
  */
 abstract class InterThreadPA {
     
@@ -507,36 +507,6 @@ abstract class InterThreadPA {
 
 	pig_startee.ar.forAllParActions(par_act_visitor_startee);
 
-    }
-
-    // TODO: when the system will be stable enough, this must be removed!
-    private static void translate_edges(final ParIntGraph new_pig,
-					ParIntGraph pig, final Relation mu){
-	// visitor for the outside edges
-	PAEdgeVisitor visitor_O = new PAEdgeVisitor(){
-		public void visit(Temp var, PANode node){}
-		public void visit(PANode node1,String f, PANode node2){
-		    Set mu_node1 = mu.getValuesSet(node1);
-		    new_pig.G.O.addEdges(mu_node1,f,node2);
-		}
-	    };
-
-	pig.G.O.forAllEdges(visitor_O);
-
-	// visitor for the inside edges
-	PAEdgeVisitor visitor_I = new PAEdgeVisitor(){
-		public void visit(Temp var, PANode node){
-		    Set mu_node = mu.getValuesSet(node);
-		    new_pig.G.I.addEdges(var,mu_node);
-		}
-		public void visit(PANode node1,String f, PANode node2){
-		    Set mu_node1 = mu.getValuesSet(node1);
-		    Set mu_node2 = mu.getValuesSet(node2);
-		    new_pig.G.I.addEdges(mu_node1,f,mu_node2);
-		}
-	    };
-
-	pig.G.I.forAllEdges(visitor_I);
     }
 
 }
