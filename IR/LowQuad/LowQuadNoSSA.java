@@ -21,7 +21,7 @@ import java.util.Hashtable;
  * <blink><b>FILL ME IN</b></blink>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.11 1999-08-03 23:53:19 pnkfelix Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.12 1999-08-04 01:43:35 pnkfelix Exp $
  */
 public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
 {
@@ -72,8 +72,15 @@ public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
 
   /**
    * Return a code factory for <code>LowQuadNoSSA</code>, given a 
-   * code factory for either <code>harpoon.IR.LowQuad.Code</code>, or
-   * <code>QuadSSA</code>.
+   * code factory for either <code>LowQuadSSA</code>.
+   * <BR> <B>effects:</B> if <code>hcf</code> is a code factory for
+   *      <code>LowQuadSSA</code>, then creates and returns a code
+   *      factory for <code>LowQuadNoSSA</code>.  Else passes
+   *      <code>hcf</code> to
+   *      <code>LowQuadSSA.codeFactory()</code>, and reattempts to
+   *      create a code factory for <code>LowQuadNoSSA</code> from the
+   *      code factory returned by <code>LowQuadSSA</code>.
+   * @see LowQuadSSA
    */
   public static HCodeFactory codeFactory(final HCodeFactory hcf)
     {

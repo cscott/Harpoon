@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.1.2.8 1999-08-03 23:53:20 pnkfelix Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.1.2.9 1999-08-04 01:43:35 pnkfelix Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
@@ -102,7 +102,15 @@ public class CanonicalTreeCode extends Code {
 
     /**
      * Return a code factory for <code>CanonicalTreeCode</code>, given a 
-     * code factory for <code>TreeCode</code>
+     * code factory for <code>TreeCode</code>.
+     * <BR> <B>effects:</B> if <code>hcf</code> is a code factory for
+     *      <code>TreeCode</code>, then creates and returns a code
+     *      factory for <code>CanonicalTreeCode</code>.  Else passes
+     *      <code>hcf</code> to
+     *      <code>TreeCode.codeFactory()</code>, and reattempts to
+     *      create a code factory for <code>CanonicalTreeCode</code> from the
+     *      code factory returned by <code>TreeCode</code>.
+     * @see TreeCode
      */
     public static HCodeFactory codeFactory(final HCodeFactory hcf, 
 					   final Frame frame) {
