@@ -69,7 +69,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.45 1999-10-26 16:03:24 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.46 1999-10-28 02:43:52 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -121,9 +121,17 @@ public class SAMain extends harpoon.IR.Registration {
 		    " has no main method");
 
 	if (classHierarchy == null) {
-	    HMethod startM = HClass.forName("java.lang.System")
-		.getMethod("initializeSystemClass", "()V");
-	    Collection roots = Arrays.asList(new HMethod[] {startM, mainM});
+	    // XXX: this is non-ideal!  Really, we want to use a non-static
+	    // method in Frame.getRuntime() to initialize the class hierarchy
+	    // roots with.  *BUT* Frame requires a class hierarchy in its
+	    // constructor.  How do we ask the runtime which roots to use
+	    // before the runtime's been created?
+	    // Punting on this question for now, and using a hard-coded
+	    // static method. [CSA 27-Oct-1999]
+	    Set roots =new java.util.HashSet
+		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods());
+	    // and our main method is a root, too...
+	    roots.add(mainM);
 	    classHierarchy = new QuadClassHierarchy(roots, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
