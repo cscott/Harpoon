@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.26 1999-06-11 21:13:40 cananian Exp $
+% $Id: thesis.tex,v 1.27 1999-06-11 23:08:44 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.26 $ $}
+\date{\today \\ $ $Revision: 1.27 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.26 $ $}{$ $Revision: 1.26 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.27 $ $}{$ $Revision: 1.27 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -398,8 +398,19 @@ Figure \ref{fig:CQex} shows cycle-equivalent regions in a sample
 control-flow graph.
 
 \begin{myfigure}
-\input{Figures/THcqex}
-\caption{Control flow graph with SESE regions marked}
+\centering
+\vertcenter{\input{Figures/THcqex}}
+\newcommand{\cyceq}{\equiv}%{\equiv_{CYC}}
+$\begin{array}[c]{cc}
+\tuple{\mbox{START},1}\cyceq\tuple{16,\mbox{END}}\\
+\tuple{1,2}\cyceq\tuple{8,16}\\
+\tuple{2,3}\cyceq\tuple{3,4}\cyceq\tuple{7,8}\\
+\tuple{4,5}\cyceq\tuple{5,7}\\
+\tuple{4,6}\cyceq\tuple{6,7}\\
+\tuple{1,9}\cyceq\tuple{9,10}\cyceq\tuple{14,15}\cyceq\tuple{15,16}\\
+\tuple{10,11}\cyceq\tuple{11,13}\\
+\end{array}$
+\caption{Control flow graph and cycle-equivalent edges}
 \label{fig:CQex}
 \end{myfigure}
 
