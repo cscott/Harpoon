@@ -19,5 +19,4 @@ harpoon.Main.PAMain ${PREANALYSIS_OPT} \
     --details \
 $cls
 
-#   --details \
 exit $?
