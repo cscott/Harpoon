@@ -1,8 +1,11 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: lctes03.tex,v 1.5 2003-02-08 02:37:37 cananian Exp $
+% $Id: lctes03.tex,v 1.6 2003-04-17 19:44:58 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass{acmconf}
-%\documentclass[12pt,notitlepage,twoside]{article}
+% lctes03.tex
+% Data Size Optimizations for Java Programs
+% Author: C. Scott Ananian / Martin Rinard
+% Apr 2003
+\documentclass{sig-alt-full}
 %\usepackage[section,plain]{algorithm}
 %\usepackage{amsthm} % proof environment
 %\usepackage{amstext} % the \text command for math mode (replaces \mbox)
@@ -22,15 +25,6 @@
 \renewcommand{\floatpagefraction}{0.8}
 \renewcommand{\topfraction}{0.25}
 
-\title{Data Size Optimizations for Java Programs}
-
-\author{C.~Scott~Ananian and Martin~Rinard \\
-Laboratory for Computer Science\\
-Massachusetts Institute of Technology\\ 
-Cambridge, MA 02139 \\
-{\tt \{cananian, rinard\}@lcs.mit.edu}
-}
-
 % MISSING IDEAS:
 %  pointer compression? NO
 %  more discussion of multithreading semantics? NO
@@ -46,7 +40,23 @@ Cambridge, MA 02139 \\
 %\renewcommand{\baselinestretch}{0.97}
 \begin{document}
 \bibliographystyle{plain}
-%
+\conferenceinfo{LCTES'03,} {June 11--13, 2003, San Diego, California, USA.}
+\CopyrightYear{2003}
+\crdata{1-58113-647-1/03/0006}  
+\title{Data Size Optimizations for Java Programs}
+\numberofauthors{2}
+\author{
+\alignauthor C.~Scott~Ananian\\
+\affaddr{Laboratory for Computer Science}\\
+\affaddr{Massachusetts Institute of Technology}\\
+\affaddr{Cambridge, MA 02139}\\
+\email{cananian@lcs.mit.edu}
+\alignauthor Martin~Rinard\\
+\affaddr{Laboratory for Computer Science}\\
+\affaddr{Massachusetts Institute of Technology}\\
+\affaddr{Cambridge, MA 02139}\\
+\email{rinard@lcs.mit.edu}
+}
 \maketitle
 \support{This research was supported by DARPA/AFRL Contract F33615-00-C-1692.}
 %
@@ -74,6 +84,8 @@ for the programs in our benchmark suite by as much as 40\%.
 Some of the optimizations reduce the overall execution time;
 others may impose modest performance penalties.
 \end{abstract}
+%\category{}%XXX
+%\keywords{}%XXX
 %
 \section{Introduction}
 %
