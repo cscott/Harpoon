@@ -65,7 +65,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.54 1999-12-05 06:21:32 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.55 2000-01-11 06:36:22 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -378,7 +378,7 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	// set nextPtr to point to arrayBase + q.offset() * size.
 	s0 = new MOVE
 	    (m_tf, q, 
-	     nextPtr,
+	     _TEMP(nextPtr),
 	     new BINOP
 	     (m_tf, q, Type.POINTER, Bop.ADD,
 	      m_rtb.arrayBase
@@ -388,20 +388,20 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	       new Translation.Ex(new CONST(m_tf, q, q.offset()))).unEx(m_tf)
 	      ));
 
-	addDT(nextPtr.temp, nextPtr, dl, null);
+	addDT(nextPtr.temp, ((MOVE)s0).getSrc(), dl, null);
 	updateDT(q.objectref(), q, objTemp.temp, objTemp);
 	addStmt(s0);
     
 	for (int i=0; i<q.value().length; i++) {
 	    Exp c = mapconst(q, q.value()[i], q.type());
-	    MEM m = makeMEM(q, q.type(), nextPtr);
+	    MEM m = makeMEM(q, q.type(), _TEMP(nextPtr));
 	    s0 = new MOVE(m_tf, q, m, c);
 	    s1 = new MOVE
 		(m_tf, q, 
-		 nextPtr, 
+		 _TEMP(nextPtr), 
 		 new BINOP
 		 (m_tf, q, Type.POINTER, Bop.ADD, 
-		  nextPtr, 
+		  _TEMP(nextPtr), 
 		  m_rtb.arrayOffset
 		  (m_tf, q, arrayType,
 		   new Translation.Ex(new CONST(m_tf, q, 1))).unEx(m_tf)
@@ -532,8 +532,10 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
     // Naive implementation
     public void visit(harpoon.IR.Quads.SWITCH q) { 
 	Quad qNext;  CJUMP branch; LABEL lNext;
-	TEMP discriminant = _TEMP(q.index(), q);
 	for (int i=0; i<q.keysLength(); i++) {
+	    TEMP discriminant = _TEMP(q.index(), q);
+	    updateDT(q.index(), q, discriminant.temp, discriminant);
+
 	    qNext  = q.next(i); 
 	    Util.assert(qNext instanceof harpoon.IR.Quads.LABEL);
 
@@ -546,7 +548,6 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 		 lNext.label);
 	    addStmt(Stm.toStm(Arrays.asList(new Stm[] { branch, lNext })));
 	}
-	updateDT(q.index(), q, discriminant.temp, discriminant);
     }
   
     public void visit(harpoon.IR.Quads.THROW q) { 
