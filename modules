@@ -51,6 +51,7 @@ RoleInference RoleInference
 Runtime Runtime
 SupportNP SupportNP
 Tests	Tests
+FOC  FOC
 FLEX    -a Code Runtime
 
 # pldi '99 paper (defunct)
