@@ -5,7 +5,7 @@ package harpoon.Analysis.GraphColoring;
  * <code>ColorableNode</code>
  *  
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableNode.java,v 1.1.2.3 1999-01-19 16:07:59 pnkfelix Exp $
+ * @version $Id: ColorableNode.java,v 1.1.2.4 1999-01-19 17:23:32 pnkfelix Exp $
  */
 
 public class ColorableNode extends Node {
@@ -65,14 +65,14 @@ public class ColorableNode extends Node {
 	<BR> effects: Sets <code>this.hidden</code> to the value
 	              <code>hide</code> 
     */
-    protected void setHidden( boolean hide ) {
+    void setHidden( boolean hide ) {
 	hidden = hide;
     }   
 
     /** Hidden field accessor.
 	<BR> effects: returns <code>this.hidden</code>
     */
-    protected boolean isHidden() {
+    boolean isHidden() {
 	return hidden;
     }   
 
