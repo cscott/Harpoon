@@ -94,8 +94,18 @@ public class Timer extends Node {
     /**
      *  Get the standard deviation of the latency (in seconds) of the frames
      *  that have passed through this point.
-    */
+     */
     public synchronized float getStdDev() {
+	/* PROOF: std. dev. = sqrt(E[(x-E[x])^2])
+	 *                  = sqrt(sum((x-(sum(x)/n))^2)/n)
+	 *                  = sqrt(sum((x^2 - 2*(sum(x)/n)*x + (sum(x)/n)^2))/n)
+	 *                  = sqrt((sum(x^2) - sum(2*(sum(x)/n)*x) + (sum((sum(x)/n)^2)))/n)
+	 *                  = sqrt((sum(x^2) - (2/n)*sum(sum(x)*x) + (sum(sum(x)^2)/(n^2)))/n)
+	 *                  = sqrt((sum(x^2) - (2/n)*sum(x)*sum(x) + n*(sum(x)^2)/(n^2))/n)
+	 *                  = sqrt((sum(x^2) - 2*(sum(x)/n)*sum(x) + n*(sum(x)/n)^2)/n)
+	 *                  = sqrt((squaresTotal - 2*avg*total + frames*avg^2)/frames)
+	 */
+
 	float avg = getLatency()*1000;
 	float avgSquared = (float)Math.pow(avg, 2);
 	float totalDeviation =
