@@ -6,6 +6,7 @@ package harpoon.Main;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
+import java.util.Iterator;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -46,11 +47,12 @@ import harpoon.Analysis.PointerAnalysis.Debug;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.9 2000-03-20 21:29:01 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.10 2000-03-21 05:42:06 salcianu Exp $
  */
 public abstract class PAMain {
 
     private static boolean METAMETHODS = true;
+    private static boolean DEBUG_CH = false;
 
     private static String[] example ={
 	"java harpoon.Main.PAMain harpoon.Test.PA.Test1.complex multiplyAdd",
@@ -118,12 +120,23 @@ public abstract class PAMain {
 	HCodeFactory hcf  = 
 	    new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
 
+	    
 	System.out.print("ClassHierarchy ... ");
 	tstart = System.currentTimeMillis();
 	ClassHierarchy ch = 
 	    new QuadClassHierarchy(linker,Collections.singleton(hroot),hcf);
 	tstop  = System.currentTimeMillis();
 	System.out.println((tstop - tstart) + "ms");
+
+	if(DEBUG_CH){
+	    System.out.println("Root method = " + hroot);	    
+	    System.out.println("Instantiated classes:");
+	    Set inst_cls = ch.instantiatedClasses();
+	    for(Iterator it = inst_cls.iterator(); it.hasNext(); )
+		System.out.println(" " + it.next());
+	    
+	    System.exit(1);
+	}
 
 	BBConverter bbconv = new BBConverter(hcf);
 
@@ -158,14 +171,14 @@ public abstract class PAMain {
 	    System.out.println((tstop - tstart) + "ms");
 	}
 
-	System.out.println("MetaCallGraph:");
-	mcg.print(new java.io.PrintWriter(System.out, true), true);
+	//System.out.println("MetaCallGraph:");
+	//mcg.print(new java.io.PrintWriter(System.out, true), true);
 
-	System.out.println("   ");
+	//System.out.println("   ");
 
-	System.out.println("Split relation:");
-	Debug.show_split(mcg.getSplitRelation());
-	System.exit(1);
+	//System.out.println("Split relation:");
+	//Debug.show_split(mcg.getSplitRelation());
+	//System.exit(1);
 
 	pa = new PointerAnalysis(mcg, mac, bbconv);
 

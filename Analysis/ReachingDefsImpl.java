@@ -12,8 +12,10 @@ import harpoon.Util.Collections.BitSetFactory;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 import harpoon.Util.WorkSet;
+import harpoon.IR.Quads.TYPECAST;
 
 import java.util.Collections;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -26,13 +28,14 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.6 2000-03-02 02:10:15 kkz Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.7 2000-03-21 05:41:51 salcianu Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
     final private CFGrapher cfger;
     final private BasicBlock.Factory bbf;
     final private Map Temp_to_BitSetFactories = new HashMap();
     final Map cache = new HashMap(); // maps BasicBlocks to in Sets 
+    final boolean check_typecast; // demand the special treatment of TYPECAST
     /** Creates a <code>ReachingDefsImpl</code> object for the
 	provided <code>HCode</code> using the provided 
 	<code>CFGrapher</code>. This may take a while since the
@@ -42,6 +45,9 @@ public class ReachingDefsImpl extends ReachingDefs {
 	super(hc);
 	this.cfger = cfger;
 	this.bbf = new BasicBlock.Factory(hc, cfger);
+	// sometimes, TYPECAST need to be treated specially
+	check_typecast = 
+	    hc.getName().equals(harpoon.IR.Quads.QuadNoSSA.codename);
 	report("Entering analyze()");
 	analyze();
 	report("Leaving analyze()");
@@ -70,7 +76,13 @@ public class ReachingDefsImpl extends ReachingDefs {
 	for(Iterator it=b.statements().iterator(); it.hasNext(); ) {
 	    HCodeElement curr = (HCodeElement)it.next();
 	    if (curr == hce) return results;
-	    if (((UseDef)curr).defC().contains(t)) 
+	    Collection defC = null;
+	    // special treatment of TYPECAST
+	    if(check_typecast && (curr instanceof TYPECAST))
+		defC = Collections.singleton(((TYPECAST)curr).objectref());
+	    else
+		defC = ((UseDef)curr).defC();
+	    if (defC.contains(t)) 
 		results = bsf.makeSet(Collections.singleton(curr));
 	}
 	Util.assert(false);
@@ -110,7 +122,12 @@ public class ReachingDefsImpl extends ReachingDefs {
 	Map m = new HashMap();
 	for(Iterator it=hc.getElementsI(); it.hasNext(); ) {
 	    HCodeElement hce = (HCodeElement)it.next();
-	    Temp[] tArray = ((UseDef)hce).def();
+	    Temp[] tArray = null;
+	    // special treatment of TYPECAST
+	    if(check_typecast && (hce instanceof TYPECAST))
+		tArray = new Temp[]{((TYPECAST)hce).objectref()};
+	    else
+		tArray = ((UseDef)hce).def();
 	    for(int i=0; i < tArray.length; i++) {
 		Temp t = tArray[i];
 		Set defPts = (Set)m.get(t);
@@ -153,7 +170,12 @@ public class ReachingDefsImpl extends ReachingDefs {
 	    // iterate through the instructions in the basic block
 	    for(Iterator it=b.statements().iterator(); it.hasNext(); ) {
 		HCodeElement hce = (HCodeElement)it.next();
-		Temp[] tArray = ((UseDef)hce).def();
+		Temp[] tArray = null;
+		// special treatment of TYPECAST
+		if(check_typecast && (hce instanceof TYPECAST))
+		    tArray = new Temp[]{((TYPECAST)hce).objectref()};
+		else
+		    tArray = ((UseDef)hce).def();
 		for(int i=0; i < tArray.length; i++) {
 		    Temp t = tArray[i];
 		    BitSetFactory bsf 

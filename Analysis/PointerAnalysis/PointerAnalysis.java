@@ -65,13 +65,13 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.27 2000-03-20 00:45:23 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.28 2000-03-21 05:42:05 salcianu Exp $
  */
 public class PointerAnalysis {
 
     public static final boolean DEBUG = false;
     public static final boolean DEBUG2 = false;
-    public static final boolean DEBUG_SCC = true;
+    public static final boolean DEBUG_SCC = false;
 
     /** Makes the pointer analysis deterministic to make the debug easier.
 	The main source of undeterminism in our code is the intensive use of
@@ -381,10 +381,21 @@ public class PointerAnalysis {
     // inter-procedural analysis of a group of mutually recursive methods
     private void analyze_inter_proc_scc(SCComponent scc){
 
+	if(TIMING){
+	    System.out.print("SCC" + scc.getId() + 
+			       "\t (" + scc.size() + " meta-method(s)){");
+	    for(Iterator it = scc.nodes(); it.hasNext(); )
+		System.out.print("\n " + it.next());
+	    System.out.print("} ... ");
+	}
+
 	// Initially, the worklist (actually a workstack) contains only one
 	// of the methods from the actual group of mutually recursive
 	// methods. The others will be added later (because they are reachable
 	// in the AllCaller graph from this initial node). 
+
+	long begin_time = 0;
+	if(TIMING) begin_time = System.currentTimeMillis();
 
 	MetaMethod mmethod = null;
 	if(DETERMINISTIC)
@@ -394,6 +405,10 @@ public class PointerAnalysis {
 
 	// if SCC composed of a native or abstract method, return immediately!
 	if(!analyzable(mmethod.getHMethod())){
+	    if(TIMING){
+		long total_time = System.currentTimeMillis() - begin_time;
+		System.out.println(total_time + "ms");
+	    }
 	    if(DEBUG)
 		System.out.println(scc.toString(mcg) + " is unanalyzable");
 	    return;
@@ -405,9 +420,6 @@ public class PointerAnalysis {
 
 	if(DEBUG)
 	    System.out.print(scc.toString(mcg));
-
-	long begin_time = 0;
-	if(TIMING) begin_time = System.currentTimeMillis();
 
 	while(!W_inter_proc.isEmpty()){
 	    // grab a method from the worklist
@@ -450,12 +462,12 @@ public class PointerAnalysis {
 	if(CALL_CONTEXT_SENSITIVE)
 	    cs_specs.clear();
 
-	long total_time = System.currentTimeMillis() - begin_time;
+	long total_time = 0;
+	if(TIMING)
+	    total_time = System.currentTimeMillis() - begin_time;
 
 	if(TIMING)
-	    System.out.println("SCC" + scc.getId() + 
-			       "\t (" + scc.size() + " meta-method(s))\t" + 
-			       total_time + " ms");
+	    System.out.println(total_time + "ms");
     }
 
     // Mapping BB -> ParIntGraph.

@@ -58,11 +58,12 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.2 2000-03-18 05:24:00 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.3 2000-03-21 05:42:04 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
     private static boolean DEBUG = false;
+    private static boolean DEBUG_CH = false;
 
     // in "caution" mode, plenty of tests are done to protect ourselves
     // against errors in other components (ex: ReachingDefs)
@@ -129,7 +130,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
 	if(DEBUG){
 	    Set classes = ch.instantiatedClasses();
-	    System.out.println(classes.size() + " instantiated classes:");
+	    System.out.println(classes.size() + " instantiated class(es):");
 	    for(Iterator it=classes.iterator();it.hasNext();)
 		System.out.println(" " + (HClass)it.next());
 	}
@@ -205,6 +206,16 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	analyze_calls();
 
 	calls.clear();
+
+	// before quiting this meta-method, remove the types we computed
+	// for the ExactTemps. The component graph of ExactTemps (and so,
+	// teh ExactTemps themselves) is specific to an HMethod and so, 
+	// they can be shared by many meta-methods derived from the same
+	// HMethod. Of course, I don't want the next analyzed meta-method
+	// to use the types computed for this one.
+	for(SCComponent scc2 = scc; scc2 != null; scc2 = scc2.prevTopSort())
+	    for(Iterator it = scc2.nodes(); it.hasNext(); )
+		((ExactTemp)it.next()).clearTypeSet();
     }
 
 
@@ -409,6 +420,25 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	    System.out.println("||: " + cs + " calls " + nb_meta_methods +
 			       " meta-method(s)");
 
+	if(DEBUG_CH && (nb_meta_methods == 0)){
+	    System.out.println("ALARM!<\n" + "mm = " + mm_work + 
+			       "\ncs = " + cs + "> 0 callees!");
+	    it_rdef = rdef.reachingDefs(cs,tbase).iterator();
+	    while(it_rdef.hasNext()){
+		Quad qdef = (Quad) it_rdef.next();
+		
+		if(CAUTION && getExactTemp(tbase,qdef).getTypeSet().isEmpty())
+		    Util.assert(false,"No possible type detected for <" + 
+				tbase + "," + qdef + ">");
+		
+		Iterator it_type_base = getExactTemp(tbase,qdef).getTypes();
+		while(it_type_base.hasNext()){
+		    GenType gt = (GenType) it_type_base.next();
+		    System.out.println(gt);
+		}
+	    }    
+	}
+	
 	param_types = null; // enable the GC
     }
 
@@ -467,7 +497,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
     // Treat the case of a monomorphyc type for the receiver of the method hm
     private void treat_mono_base(HMethod hm, CALL cs, GenType gt){
 	HClass c = gt.getHClass();
-	// fix some strange bug
+	// fix some strange bug: HClass.Void keeps appearing here!
 	if(c.isPrimitive()) return;
 	HMethod callee = null;
 	boolean implements_hm = true;
@@ -516,13 +546,18 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	Iterator it = calls.iterator();
 	while(it.hasNext()){
 	    CALL q = (CALL) it.next();
+	    // System.out.println(" CALL SITE " + q);
 	    int nb_params = q.paramsLength();
 	    for(int i = 0; i < nb_params; i++)
 		if(!q.paramType(i).isPrimitive()){
 		    Temp t = q.params(i);
 		    Iterator it2 = rdef.reachingDefs(q,t).iterator();
-		    while(it2.hasNext())
-			initial_set.add(getExactTemp(t,(Quad)it2.next()));
+		    //System.out.println("UUUUUUU: " + t);
+		    while(it2.hasNext()){
+			Quad qdef = (Quad) it2.next();
+			// System.out.println("  " + qdef);
+			initial_set.add(getExactTemp(t,qdef));
+		    }
 		}
 	}
     }
@@ -575,14 +610,19 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
 	/** Returns an iterator over the set of all the possible types
 	    for <code>this</code> <code>ExactTemp</code>. */
-	public Iterator getTypes(){
+	Iterator getTypes(){
 	    return gtypes.iterator();
 	}
 
 	/** Returns the set of all the possible types
 	    for <code>this</code> <code>ExactTemp</code>. */
-	public Set getTypeSet(){
+	Set getTypeSet(){
 	    return gtypes;
+	}
+
+	/** Clears the set of possible types for <code>this</code> ExactTemp.*/
+	void clearTypeSet(){
+	    gtypes.clear();
 	}
 
 	/** Adds the type <code>gt</code> to the set of possible
@@ -621,7 +661,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 		addType((GenType) it.next());
 	}
 
-	public String shortDescription(){
+	String shortDescription(){
 	    return "<" + t.toString() + "\t, " + 
 		q.getSourceFile() + ":" + q.getLineNumber() + "\t" +
 		q.toString() + ">";
@@ -717,6 +757,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 		    Temp t = dd_wrapper.t;
 		    if(!t.equals(q.objectref())) stop_no_def(q);
 		}
+
+		//System.out.println("EEEEEEEEEEEEEEEEE");
 	    }
 	    
 	    public void visit(GET q){
@@ -772,16 +814,16 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 		    Util.assert(false,"Temp " + t + " in " + q +
 				    " has no reaching definition!");
 		dd_wrapper.deps = new ExactTemp[reaching_defs.size()];
-		    int i = 0;
-		    Iterator it_defs = reaching_defs.iterator();
-		    while(it_defs.hasNext()){
-			Quad qdef = (Quad) it_defs.next();
-			dd_wrapper.deps[i] = getExactTemp(tdep,qdef);
-			i++;
-		    }
+		int i = 0;
+		Iterator it_defs = reaching_defs.iterator();
+		while(it_defs.hasNext()){
+		    Quad qdef = (Quad) it_defs.next();
+		    dd_wrapper.deps[i] = getExactTemp(tdep,qdef);
+		    i++;
+		}
 	    }
 	};
-
+    
 
     // Returns all the ExactTemps whose types influence the type of the
     // ExactType et.
@@ -876,6 +918,12 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	    already_visited.add(et);
 
 	    et.next = getDependencies(et);
+
+	    //System.out.println("RRRRRRRRR: " + et + " <- { ");
+	    //for(int i = 0; i < et.next.length; i++)
+	    //System.out.print(et.next[i] + " ");
+	    //System.out.println("}");
+
 	    for(int i = 0; i < et.next.length; i++){
 		ExactTemp et2 = (ExactTemp) et.next[i];
 
@@ -956,7 +1004,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 		ExactTemp et = ti_wrapper.et;
 		if(CAUTION && !t.equals(q.dst()))
 		    stop_no_def(q);
-		et.addType(new GenType(q.field().getType(),GenType.MONO));
+		et.addType(new GenType(q.field().getType(),GenType.POLY));
 	    }
 	    
 	    public void visit(AGET q){
@@ -985,7 +1033,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 			if(hcomp == null)
 			    Util.assert(false,ta + " could have non-array" +
 					" types in " + q);
-			et.addType(new GenType(hcomp,GenType.MONO));
+			et.addType(new GenType(hcomp,GenType.POLY));
 		    }
 		}
 	    }
@@ -1001,7 +1049,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 		if(t.equals(q.retex())){
 		    HClass[] excp = q.method().getExceptionTypes();
 		    for(int i=0; i<excp.length; i++)
-			et.addType(new GenType(excp[i],GenType.MONO));
+			et.addType(new GenType(excp[i],GenType.POLY));
 		    return;
 		}
 		stop_no_def(q);
@@ -1026,9 +1074,12 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	    public void visit(TYPECAST q){
 		Temp       t = ti_wrapper.t;
 		ExactTemp et = ti_wrapper.et;
+		
+		//System.out.println("DDDDDDDDDDDDDDDD");
+
 		if(CAUTION && !t.equals(q.objectref()))
 		    stop_no_def(q);
-		et.addType(new GenType(q.hclass(),GenType.MONO));
+		et.addType(new GenType(q.hclass(), GenType.POLY));
 	    }
 	    
 	    public void visit(METHOD q){
@@ -1052,7 +1103,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 		    if(!t.equals(q.dst())) stop_no_def(q);
 		}
 		ExactTemp et = ti_wrapper.et;
-		et.addType(new GenType(q.type(),GenType.MONO));
+		et.addType(new GenType(q.type(), GenType.MONO));
 	    }
 
 	    public void visit(Quad q){
