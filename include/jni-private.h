@@ -24,10 +24,33 @@ struct _jmethodID {
   ptroff_t nargs;
 };
 
+/* the claz structure is primarily for method dispatch and instanceof tests */
 struct claz {
-  void *class_object;
-  /* other stuff */
+  /* interface method dispatch table above this point. */
+  void *class_object;	/* pointer to (unwrapped) class object. */
+  struct claz *component_claz;	/* component type, or NULL if non-array. */
+  struct claz **interfaces; /* NULL terminated list of implemented interfaces*/
+  u_int32_t scaled_class_depth; /* sizeof(struct claz *) * class_depth */
+  struct claz *display[0];	/* sized by FLEX */
+  /* class method dispatch table after display */
 };
+
+/* the _jobject structure tells you what's inside the object layout. */
+struct _jobject {
+  /* hash code above this point */
+  struct claz *claz;
+  /* fields below this point */
+};
+/* use this version of the _jobject structure if you need to get at the
+ * hashcode value, which is stored *above* the pointed-at location.
+ * remember to offset your pointer using the JOBJECT_OFFSET macro.
+ */
+struct _jobject_offset {
+  u_int32_t hashcode;
+  struct _jobject obj;
+};
+#define JOBJECT_OFFSET(unscaled) \
+	((struct _jobject_offset *) (((char *)(unscaled)) - sizeof(u_int32_t)))
 
 struct FNI_classinfo {
   struct claz *claz;

@@ -21,7 +21,8 @@ typedef   double  jdouble;
 typedef jint jsize;
 
 /* reference types */
-typedef void * jobject;
+struct _jobject; /* opaque structure */
+typedef struct _jobject * jobject;
 typedef jobject jclass;
 typedef jobject jstring;
 typedef jobject jarray;
