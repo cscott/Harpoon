@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.10 2003-11-10 08:18:41 cananian Exp $
+% $Id: pldi04.tex,v 1.11 2003-11-10 08:22:31 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -664,15 +664,19 @@ m memory operations to l locations does m+l extra reads and l+1 CAS operations.
 
 
 \secput{efficient}{Designing Efficient Transactions}
-
-\secput{algo}{Algorithms}
 \subsection{Scales}
 \subsection{Allocation}
 \subsection{Object expansion}
 \subsection{Large objects}
 \subsection{Subsumption}
 
+\secput{algo}{Algorithms}
+
 \secput{opt}{Optimizations}
+\subsection{Hoisting}
+\subsection{Check-combining}
+\subsection{Global field analysis}
+\subsection{Escape analysis}
 
 \secput{integrate}{Integration}
 % JNI tricks, etc.
@@ -687,6 +691,43 @@ m memory operations to l locations does m+l extra reads and l+1 CAS operations.
 
 \appendix
 \secput{extra}{Text with nowhere else to go}
+
+\begin{figure*}
+\footnotesize
+\begin{center}
+\begin{tabular}{l@{}rrrrrrrrr}
+program  & input& total      & \% cache  & xactions    & oversized & xops        & xmiss & overflow & biggest \\ 
+         & size & memory ops & misses &             & xactions  &   \%        &   \%    & \% & xaction\\ \hline
+\texttt{make\_linux}  &  & 315,776,028 & 0.56\%  &  6,964,277  & 3368     & 41.0\%  &  0.017\%  &            &         8144   \\
+\texttt{dbench}      &  & 100,928,220 & 0.43\%  &  1,863,426  &   88     & 49.5\%  &  0.001\%  &            &         7047   \\
+
+ \hline \texttt{201\_compress } &   1 & 229,332,212 &  0.10\% &        524 &   0 &  0.0\% &     0   &      0   &     1,335 \\
+                                &  10 & 264,389,092 &  0.10\% &        662 &   0 &  0.0\% &     0   &      0   &     1,335 \\
+                               & 100 & 2,981,777,890 &  0.10\% &      2,272 &   0 &  0.0\% &     0   &      0   &     1,352 \\
+ \hline \texttt{202\_jess     } &   1 &   1,972,479 &  3.13\% &     82,103 &   0 & 43.3\% &     0   &      0   &     3,586 \\
+                                &  10 &  27,371,450 &  0.73\% &    104,636 &   0 &  3.4\% &     0   &      0   &     4,624 \\
+                                & 100 & 405,153,255 &  2.71\% &  4,892,829 &   0 &  9.1\% &     0   &      0   &     4,826 \\
+ \hline \texttt{205\_raytrace } &   1 &  14,535,905 &  1.83\% &      1,125 &   1 & 49.6\% & 0.648\% & 0.0889\% &   875,925 \\
+                                &  10 &  36,655,846 &  1.33\% &      1,922 &   1 & 19.7\% & 0.257\% & 0.0520\% &   875,925 \\
+                                & 100 & 420,005,763 &  1.65\% &      4,177 &   1 &  1.7\% & 0.022\% & 0.0239\% &   875,925 \\
+ \hline \texttt{209\_db       } &   1 &     393,455 &  2.01\% &     14,191 &   0 & 45.8\% &     0   &      0   &     5,112 \\
+                                &  10 &  15,814,285 &  5.66\% &    874,319 &   2 & 23.3\% & 0.060\% & 0.0001\% &    51,292 \\
+                                & 100 & 848,082,597 & 10.14\% & 45,222,742 & 288 & 23.0\% & 0.350\% & 0.0005\% &   148,374 \\
+ \hline \texttt{213\_javac    } &   1 &   1,605,330 &  1.88\% &        460 &   1 & 89.5\% & 0.517\% & 0.2087\% &   253,547 \\
+                                &  10 &  14,968,130 &  1.65\% &        476 &   1 & 98.8\% & 1.403\% & 0.2101\% & 1,547,922 \\
+                                & 100 & 472,416,129 &  1.78\% &        668 &   4 & 99.9\% & 1.652\% & 0.5988\% & 8,928,356 \\
+ \hline \texttt{222\_mpegaudio} &   1 &  26,551,440 &  0.03\% &      1,049 &   0 &  0.1\% &     0   &      0   &     1,340 \\
+                                &  10 & 282,263,132 &  0.00\% &      1,675 &   0 &  0.0\% &     0   &      0   &     1,339 \\
+                                & 100 & \multicolumn{5}{c}{(\texttt{222\_mpegaudio}/100 simulation not yet complete)} \\
+\end{tabular}
+\end{center}
+\caption{Experimental results for transactifying the Linux kernel and
+Java.  For Java the \textit{input size} can be run in three ``sizes'':
+1\%, 10\%, and 100\% of the full input size.    For the percentages,
+we write ``0'' for numbers that are exactly zero, and a ``zero''
+percentage, such as ``0.0\%,'' for small nonzero values.}
+\label{fig:perfnums}
+\end{figure*}
 
 \section{Analyses and Implementation}
 
