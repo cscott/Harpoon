@@ -1,0 +1,115 @@
+#setifnotgiven COLOR = true
+
+// Set up plotting area using proc areadef
+#proc areadef
+  title: Transactional size distribution for SPECjvm98
+  titledetails: align=C adjust=0,.1
+  rectangle: 1 1 4 4
+  xscaletype: log
+  yscaletype: linear
+//  xrange: 1 15000000
+  xrange: 1 1000
+  yrange: 0 100
+
+// Read and process data file using proc getdata
+#proc getdata
+  command: ./acc-trsize-all.pl
+//  showresults: yes
+  fieldnameheader: yes
+
+// do gray grid..
+#proc xaxis
+  selflocatingstubs: text
+  #include $chunk_logtics
+  grid: color=gray(0.9)
+
+#proc yaxis
+  stubs: inc 10
+  stubformat: %3.0f%%
+  minortics: yes
+  minorticinc: 5
+  grid: color=gray(0.9)
+  label: Percentage of Transactions\nlarger than given size
+  labeldetails: adjust=-.3
+
+#proc xaxis
+  selflocatingstubs: text
+  #include $chunk_logstubs
+  label: Transaction size (# memory operations)
+
+#proc lineplot
+  xfield: 1
+  yfield: 4
+  sort: yes
+  stairstep: yes
+#if @COLOR = true
+  linedetails: color=red
+#else
+  linedetails: style=0
+#endif
+  legendlabel: 201_compress
+  #saveas L
+
+#proc lineplot
+  #clone L
+  yfield: 7
+  legendlabel: 202_jess
+#if @COLOR = true
+  linedetails: color=orange
+#else
+  linedetails: style=1 dashscale=1
+#endif
+
+#proc lineplot
+  #clone L
+  yfield: 10
+  legendlabel: 205_raytrace
+#if @COLOR = true
+  linedetails: color=yellow
+#else
+  linedetails: style=1 dashscale=2
+#endif
+
+#proc lineplot
+  #clone L
+  yfield: 13
+  legendlabel: 209_db
+#if @COLOR = true
+  linedetails: color=green
+#else
+  linedetails: style=3 dashscale=2
+#endif
+
+#proc lineplot
+  #clone L
+  yfield: 16
+  legendlabel: 213_javac
+#if @COLOR = true
+  linedetails: color=blue
+#else
+  linedetails: style=6 dashscale=1
+#endif
+
+#proc lineplot
+  #clone L
+  yfield: 19
+  legendlabel: 222_mpegaudio
+#if @COLOR = true
+  linedetails: color=purple
+#else
+  linedetails: style=6 dashscale=2
+#endif
+
+#proc lineplot
+  #clone L
+  yfield: 22
+  legendlabel: 228_jack
+#if @COLOR = true
+  linedetails: color=black
+#else
+  linedetails: style=8 dashscale=2
+#endif
+
+#proc legend
+  location: max-1 max
+  seglen: 0.3
