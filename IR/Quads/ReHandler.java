@@ -30,7 +30,7 @@ import java.util.Set;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.10 1999-08-13 18:50:53 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.11 1999-08-17 20:49:41 bdemsky Exp $
  */
 final class ReHandler {
     // entry point.
@@ -93,89 +93,12 @@ final class ReHandler {
 		    protlist.insert(qm.getHead(call));
 		    List handlers=handlermap.get(call);
 		    HandInfo nexth=(HandInfo)iterate.next();
-		    if (nexth.defaultexit()) {
-			Map phimap=nexth.map();
-			Temp[] dst=new Temp[phimap.size()];
-			Temp[][] src=new Temp[phimap.size()][2];
-			Iterator ksit=phimap.keySet().iterator();
-			int count=0;
-			while (ksit.hasNext()) {
-			    Temp t=(Temp)ksit.next();
-			    dst[count]=Quad.map(ss.ctm, t);
-			    src[count][0]=Quad.map(ss.ctm, (Temp)phimap.get(t));
-			    src[count][1]=Quad.map(ss.ctm, t);
-			    count++;
-			}
-			Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
-			phiset.add(phi);
-			Quad.addEdge(qm.getFoot(call),0, phi, 0);
-			Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
-				     qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
-			Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
-		    }
-		    if (nexth.anyhandler()) {
-			System.out.println("any");
-			if (!any) {
-			    Quad newhandler = new HANDLER(qf, qm.getHead(call),
-							  Quad.map(ss.ctm, call.retex()),
-							  null, protlist);
-			    ss.al.add(newhandler);
-			    Map phimap=nexth.map();
-			    Temp[] dst=new Temp[phimap.size()];
-			    Temp[][] src=new Temp[phimap.size()][2];
-			    Iterator ksit=phimap.keySet().iterator();
-			    int count=0;
-			    while (ksit.hasNext()) {
-				Temp t=(Temp)ksit.next();
-				dst[count]=Quad.map(ss.ctm, t);
-				src[count][0]=Quad.map(ss.ctm,(Temp)phimap.get(t));
-				src[count][1]=Quad.map(ss.ctm, t);
-				count++;
-			    }
-			    Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
-			    phiset.add(phi);
-			    Quad.addEdge(newhandler,0, phi, 0);
-			    Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
-					 qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
-			    Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
-			}
-		    }
-		    if (nexth.specificex()) {
-			System.out.println("spec");
-
-			boolean needhand=true;
-			if (throwset.contains(nexth.handler())&&any) {
-			    Temp t=((THROW)nexth.handler()).throwable();
-			    if (nexth.map().containsKey(t))
-				t=(Temp)nexth.map().get(t);
-			    if (t==call.retex())
-				needhand=false;
-			}
-			if (needhand) {
-			    Quad newhandler = new HANDLER(qf, qm.getHead(call), 
-							  Quad.map(ss.ctm, call.retex()),
-							  nexth.hclass(), protlist);
-			    ss.al.add(newhandler);
-			    Map phimap=nexth.map();
-			    Temp[] dst=new Temp[phimap.size()];
-			    Temp[][] src=new Temp[phimap.size()][2];
-			    Iterator ksit=phimap.keySet().iterator();
-			    int count=0;
-			    while (ksit.hasNext()) {
-				Temp t=(Temp)ksit.next();
-				dst[count]=Quad.map(ss.ctm, t);
-				src[count][0]=Quad.map(ss.ctm, (Temp)phimap.get(t));
-				src[count][1]=Quad.map(ss.ctm, t);
-				count++;
-			    }
-			    Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
-			    phiset.add(phi);
-			    Quad.addEdge(newhandler,0, phi, 0);
-			    Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
-					 qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
-			    Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
-			}
-		    }
+		    if (nexth.defaultexit())
+			makedefaultexit(qf, ss, qm, call, nexth, phiset);
+		    if (nexth.anyhandler()&&!any)
+			makeanyhandler(qf, ss, qm, call, nexth, protlist, phiset);
+   		    if (nexth.specificex()) 
+			makespechandler(qf, ss, qm, call, throwset, nexth, protlist, phiset, any);
 		}
 	    }
 	}
@@ -217,7 +140,91 @@ final class ReHandler {
 
 	return qH;
     }
+
+    private static void makedefaultexit(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, Set phiset) {
+	Map phimap=nexth.map();
+	Temp[] dst=new Temp[phimap.size()];
+	Temp[][] src=new Temp[phimap.size()][2];
+	Iterator ksit=phimap.keySet().iterator();
+	int count=0;
+	while (ksit.hasNext()) {
+	    Temp t=(Temp)ksit.next();
+	    dst[count]=Quad.map(ss.ctm, t);
+	    src[count][0]=Quad.map(ss.ctm, (Temp)phimap.get(t));
+	    src[count][1]=Quad.map(ss.ctm, t);
+	    count++;
+	}
+	Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
+	phiset.add(phi);
+	Quad.addEdge(qm.getFoot(call),0, phi, 0);
+	Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
+		     qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
+	Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
+    }
+
+
+    private static void makeanyhandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, ReProtection protlist, Set phiset) {
+	Quad newhandler = new HANDLER(qf, qm.getHead(call),
+				      Quad.map(ss.ctm, call.retex()),
+				      null, protlist);
+	ss.al.add(newhandler);
+	Map phimap=nexth.map();
+	Temp[] dst=new Temp[phimap.size()];
+	Temp[][] src=new Temp[phimap.size()][2];
+	Iterator ksit=phimap.keySet().iterator();
+	int count=0;
+	while (ksit.hasNext()) {
+	    Temp t=(Temp)ksit.next();
+	    dst[count]=Quad.map(ss.ctm, t);
+	    src[count][0]=Quad.map(ss.ctm,(Temp)phimap.get(t));
+	    src[count][1]=Quad.map(ss.ctm, t);
+	    count++;
+	}
+	Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
+	phiset.add(phi);
+	Quad.addEdge(newhandler,0, phi, 0);
+	Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
+		     qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
+	Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
+    }
+
+
     
+    private static void makespechandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, Set throwset, HandInfo nexth, ReProtection protlist, Set phiset, boolean any) {
+	boolean needhand=true;
+	if (throwset.contains(nexth.handler())&&any) {
+	    Temp t=((THROW)nexth.handler()).throwable();
+	    if (nexth.map().containsKey(t))
+		t=(Temp)nexth.map().get(t);
+	    if (t==call.retex())
+		needhand=false;
+	}
+	if (needhand) {
+	    Quad newhandler = new HANDLER(qf, qm.getHead(call), 
+					  Quad.map(ss.ctm, call.retex()),
+					  nexth.hclass(), protlist);
+	    ss.al.add(newhandler);
+	    Map phimap=nexth.map();
+	    Temp[] dst=new Temp[phimap.size()];
+	    Temp[][] src=new Temp[phimap.size()][2];
+	    Iterator ksit=phimap.keySet().iterator();
+	    int count=0;
+	    while (ksit.hasNext()) {
+		Temp t=(Temp)ksit.next();
+		dst[count]=Quad.map(ss.ctm, t);
+		src[count][0]=Quad.map(ss.ctm, (Temp)phimap.get(t));
+		src[count][1]=Quad.map(ss.ctm, t);
+		count++;
+	    }
+	    Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
+	    phiset.add(phi);
+	    Quad.addEdge(newhandler,0, phi, 0);
+	    Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
+			 qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
+	    Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
+	}
+    }
+
     private static HashMapList analyze(final Code code, Set callset, Set throwset, Set instanceset) {
 
 	CALLVisitor cv=new CALLVisitor(callset, throwset, instanceset);
