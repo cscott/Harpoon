@@ -150,7 +150,7 @@ JNIEXPORT jint JNICALL Java_java_lang_System_identityHashCode
   (JNIEnv *env, jclass cls, jobject obj) {
     jobject_unwrapped oobj = FNI_UNWRAP(obj);
     ptroff_t hashcode = oobj->hashunion.hashcode;
-    if (hashcode & 1 == 0) hashcode = oobj->hashunion.inflated->hashcode;
+    if ((hashcode & 1) == 0) hashcode = oobj->hashunion.inflated->hashcode;
     return (jint) (hashcode>>2);
 }
 
