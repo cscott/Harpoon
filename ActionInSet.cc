@@ -1,5 +1,5 @@
-#include "ActionInSet.h"
 #include <assert.h>
+#include "ActionInSet.h"
 #include "dmodel.h"
 #include "model.h"
 #include "normalizer.h"

@@ -1,7 +1,7 @@
-#include "stack.h"
 #include <stdio.h>
 #include <stdlib.h>
-
+#include "stack.h"
+//#include "dmalloc.h"
 
 void pushstack(struct StackElement **septr,void * obj) {
   struct StackElement * nse=(struct StackElement *)malloc(sizeof(struct StackElement));

@@ -1,5 +1,9 @@
 // evaluates model definition rules
 
+#include <stdlib.h>
+#include <assert.h>
+#include <stdio.h>
+
 #include "processabstract.h"
 #include "processconcrete.h"
 #include "amodel.h"
@@ -12,9 +16,8 @@
 #include "model.h"
 #include "set.h"
 #include "Relation.h"
-#include <assert.h>
 #include "tmap.h"
-#include <stdio.h>
+
 
 
 // class processabstract
@@ -315,7 +318,7 @@ State::~State() {
   delete(env);
   for(int i=0;i<numrelset;i++)
     delete(relset[i]);
-  delete(relset);
+  delete[](relset);
 }
 
 

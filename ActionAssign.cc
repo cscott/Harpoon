@@ -1,8 +1,8 @@
 // handles prediate of the following forms: VE<E, VE<=E, VE=E, VE>=E, VE>E
 
-
-#include "ActionAssign.h"
+#include <stdlib.h>
 #include <assert.h>
+#include "ActionAssign.h"
 #include "dmodel.h"
 #include "normalizer.h"
 #include "omodel.h"

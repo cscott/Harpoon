@@ -1,7 +1,8 @@
+#include <stdio.h>
 #include "set.h"
 #include "GenericHashtable.h"
 #include "element.h"
-#include <stdio.h>
+
 
 
 // class WorkSet

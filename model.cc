@@ -1,3 +1,8 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <fstream.h>
+#include <iostream.h>
 #include "model.h"
 #include "token.h"
 #include "typeparser.h"
@@ -15,9 +20,6 @@
 #include "processobject.h"
 #include "processconcrete.h"
 #include "normalizer.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 #include "Hashtable.h"
 #include "element.h"
 #include "bitreader.h"
@@ -54,7 +56,8 @@ model::model(char *abstractfile, char *modelfile, char *spacefile, char *structf
   parsemodelfile(modelfile);
   parsespacefile(spacefile);
   parseconcretefile(concretefile);
-  parserangefile(rangefile);
+  //  parserangefile(rangefile);
+  // committing out because of memory problems
 
   br=new bitreader(this,env);
   guidance=new DefGuidance2(this);  // for the file system benchmark
@@ -445,7 +448,7 @@ void model::parserangefile(char *rangefile)
 	printf("\n\n");
 #endif
 	drel->settokenrange(ws);
-	free(relation);
+	delete(relation);
       }
     else 
       break;

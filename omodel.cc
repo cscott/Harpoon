@@ -1,7 +1,7 @@
 // Defines the Internal Constraint Language
 
-#include "omodel.h"
 #include <stdio.h>
+#include "omodel.h"
 #include "common.h"
 #include "model.h"
 #include "Hashtable.h"

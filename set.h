@@ -1,7 +1,6 @@
 #ifndef SET_H
 #define SET_H
 
-#include <stdlib.h>
 #include "classlist.h"
 
 class WorkSet {

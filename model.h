@@ -1,7 +1,5 @@
 #ifndef MODEL_H
 #define MODEL_H
-#include <fstream.h>
-#include <iostream.h>
 #include "classlist.h"
 
 class model {

@@ -1,9 +1,10 @@
 // provides an object wrapper around elementary types
 
-
-#include "element.h"
+#include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include "element.h"
+
 
 Element::Element() {
   typevalue=ELEMENT_OBJECT;
@@ -216,7 +217,7 @@ structure * Element::getstructure() {
 
 Element::~Element() {
   if(typevalue==ELEMENT_TOKEN)
-    delete token;
+    delete[] token;
 }
 
 unsigned int hashelement(ElementWrapper *e) {

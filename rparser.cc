@@ -1,11 +1,12 @@
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "rparser.h"
 #include "list.h"
 #include "common.h"
 #include "token.h"
 #include "set.h"
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include "classlist.h"
 
 
 // class RParser
@@ -33,7 +34,7 @@ char* RParser::parserelation()
   needtoken(0);
   needtoken(TOKEN_COLON); // we need a colon
 
-  char* relation = (char*) malloc(strlen(token.str));
+  char* relation = new char[strlen(token.str)+1];
   strcpy(relation, token.str);
   return relation;
 }

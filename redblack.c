@@ -1,4 +1,4 @@
-static char rcsid[]="$Id: redblack.c,v 1.4 2003-06-18 06:08:18 bdemsky Exp $";
+static char rcsid[]="$Id: redblack.c,v 1.5 2003-06-18 18:39:05 bdemsky Exp $";
 
 /*
    Redblack balanced tree algorithm
@@ -28,6 +28,7 @@ static char rcsid[]="$Id: redblack.c,v 1.4 2003-06-18 06:08:18 bdemsky Exp $";
 #include <stdlib.h>
 #include <unistd.h>
 #include "redblack.h"
+//#include "dmalloc.h"
 
 #define assert(expr)
 #define RB_TRUE 1
@@ -923,7 +924,14 @@ dumptree(struct rbnode *x, int n)
 
 /*
  * $Log: redblack.c,v $
- * Revision 1.4  2003-06-18 06:08:18  bdemsky
+ * Revision 1.5  2003-06-18 18:39:05  bdemsky
+ *
+ *
+ * Changed header files/etc to allow dmalloc to easily be used.
+ * Changed some delete -> delete[] for correctness.
+ * Committed out parserange call.  Cristian has some memory management bugs...
+ *
+ * Revision 1.4  2003/06/18 06:08:18  bdemsky
  *
  *
  * Adding support for:

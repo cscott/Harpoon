@@ -1,10 +1,10 @@
 // converts constraints into disjunctive normal form
 
+#include <stdlib.h>
 #include "normalizer.h"
 #include "omodel.h"
 #include "processobject.h"
 #include "set.h"
-#include <stdlib.h>
 #include "amodel.h"
 #include "common.h"
 
@@ -257,7 +257,7 @@ SentenceArray * computesentences(Statement *st,bool stat) {
       for(int i=0;i<right->length;i++)
 	combine[i+left->length]=right->sentences[i];
       SentenceArray *sa=new SentenceArray(combine, left->length+right->length);
-      delete(left->sentences);delete(right->sentences);
+      delete[](left->sentences);delete[](right->sentences);
       delete(left);delete(right);
       return sa;
     } else {

@@ -1,5 +1,5 @@
-#include "ActionNormal.h"
 #include <assert.h>
+#include "ActionNormal.h"
 #include "dmodel.h"
 #include "normalizer.h"
 #include "omodel.h"

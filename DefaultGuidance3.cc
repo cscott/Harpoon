@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "DefaultGuidance3.h"
 #include "model.h"
 #include "dmodel.h"

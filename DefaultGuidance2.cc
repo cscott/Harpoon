@@ -1,5 +1,6 @@
 // for the File System benchmark
 
+#include <stdlib.h>
 #include "DefaultGuidance2.h"
 #include "model.h"
 #include "dmodel.h"

@@ -13,6 +13,7 @@ extern "C" {
 #include "Hashtable.h"
 #include "model.h"
 #include "element.h"
+#include "classlist.h"
 
 char *dstring="d\0";
 struct filedesc files[MAXFILES];

@@ -1,8 +1,8 @@
 // Interface for writing structures
 
+#include <assert.h>
 #include "bitwriter.h"
 #include "bitreader.h"
-#include <assert.h>
 #include "element.h"
 #include "Hashtable.h"
 #include "tmodel.h"

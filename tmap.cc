@@ -1,8 +1,8 @@
+#include <stdio.h>
 #include "tmap.h"
 extern "C" {
 #include "redblack.h"
 }
-#include <stdio.h>
 #include "tmodel.h"
 #include "model.h"
 #include "processabstract.h"

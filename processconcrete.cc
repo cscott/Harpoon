@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <assert.h>
 #include "processconcrete.h"
 #include "processabstract.h"
 #include "amodel.h"
@@ -12,7 +14,7 @@
 #include "model.h"
 #include "set.h"
 #include "Relation.h"
-#include <assert.h>
+
 
 processconcrete::processconcrete(model *m) {
   globalmodel=m;

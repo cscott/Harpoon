@@ -1,4 +1,5 @@
 #include "list.h"
+//#include "dmalloc.h"
 
 List::List() {
   array=new void*[INITIAL_LIST_SIZE];
@@ -7,7 +8,7 @@ List::List() {
 }
 
 List::~List() {
-  delete(array);
+  delete[](array);
 }
 
 void List::addobject(void *object) {
@@ -18,7 +19,7 @@ void List::addobject(void *object) {
     array=new void*[arraysize];
     for(int i=0;i<length;i++)
       array[i]=oldarray[i];
-    delete(oldarray);
+    delete[](oldarray);
   }
   array[length++]=object;
 }

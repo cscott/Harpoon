@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <values.h>
 #include "GenericHashtable.h"
-
+//#include "dmalloc.h"
 
 int genputtable(struct genhashtable *ht, void * key, void * object) {
   unsigned int bin=genhashfunction(ht,key);
@@ -46,7 +46,7 @@ int genputtable(struct genhashtable *ht, void * key, void * object) {
       }
     }
     ht->bins=newbins;
-    delete(oldbins);
+    delete[](oldbins);
   }
   return 1;
 }
@@ -168,7 +168,7 @@ void genfreehashtable(struct genhashtable * ht) {
       }
     }
   }
-  delete(ht->bins);
+  delete[](ht->bins);
   delete(ht);
 }
 

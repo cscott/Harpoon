@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "Hashtable.h"
 #include "element.h"
 

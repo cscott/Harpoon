@@ -1,7 +1,7 @@
+#include <stdlib.h>
 #include "classlist.h"
 #include "fieldcheck.h"
 #include "common.h"
-#include <stdlib.h>
 #include "set.h"
 #include "dmodel.h"
 #include "omodel.h"

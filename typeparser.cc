@@ -1,5 +1,5 @@
-#include "typeparser.h"
 #include <stdlib.h>
+#include "typeparser.h"
 #include "list.h"
 #include "common.h"
 #include "token.h"

@@ -1,8 +1,9 @@
 // Defines the Model Definition Language (MDL)
 
+#include <stdio.h>
 #include "amodel.h"
 #include "omodel.h"
-#include <stdio.h>
+
 
 // class Field
 

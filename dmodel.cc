@@ -1,8 +1,8 @@
 // defines the sets and the relations used
 
-#include "dmodel.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "dmodel.h"
 #include "set.h"
 #include "Relation.h"
 #include "Hashtable.h"

@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <stdio.h>
 #include "repair.h"
 #include "model.h"
 #include "normalizer.h"
@@ -10,8 +12,6 @@
 #include "ActionEQ1.h"
 #include "ActionAssign.h"
 #include "ActionNormal.h"
-#include <stdlib.h>
-#include <stdio.h>
 #include "Relation.h"
 #include "omodel.h"
 #include "dmodel.h"

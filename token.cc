@@ -1,7 +1,7 @@
-#include "common.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "common.h"
 #include "token.h"
 
 
@@ -27,7 +27,7 @@ Token& Token::operator=(const Token &right) {
   if (&right != this) {
     token_type=right.token_type;
     if (str!=NULL)
-    delete(str);
+    delete[](str);
     str=copystr(right.str);
   }
   return *this;
@@ -36,7 +36,7 @@ Token& Token::operator=(const Token &right) {
 
 Token::~Token() {
   if (str!=NULL)
-    delete(str);
+    delete[](str);
 }
 
 

@@ -1,7 +1,7 @@
 // Interface for reading structures
 
-#include "bitreader.h"
 #include <assert.h>
+#include "bitreader.h"
 #include "element.h"
 #include "Hashtable.h"
 #include "tmodel.h"

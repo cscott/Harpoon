@@ -1,7 +1,7 @@
 // Repairs and destroys size propositions of the form "size(SE)=1"
 
-#include "ActionEQ1.h"
 #include <assert.h>
+#include "ActionEQ1.h"
 #include "dmodel.h"
 #include "normalizer.h"
 #include "omodel.h"

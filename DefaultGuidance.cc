@@ -1,5 +1,6 @@
 // for CIV
 
+#include <stdlib.h>
 #include "DefaultGuidance.h"
 #include "model.h"
 #include "dmodel.h"

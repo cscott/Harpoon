@@ -1,11 +1,12 @@
-#include "tmodel.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include "tmodel.h"
 #include "processabstract.h"
 #include "element.h"
 #include "model.h"
 #include "Hashtable.h"
 #include "common.h"
-#include <stdio.h>
+
 
 void structure::print() {
   printf("\nBEGIN structure:\n");

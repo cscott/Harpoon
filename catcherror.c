@@ -1,5 +1,5 @@
+#include <stdlib.h>
 #include "catcherror.h"
-
 
 struct StackElement * stackptr=NULL;
 

@@ -1,5 +1,5 @@
-#include "Guidance.h"
 #include <stdlib.h>
+#include "Guidance.h"
 
 Source::Source(Element * (*fptr)(structure *,model *)) {
   functionptr=fptr;

@@ -1,6 +1,8 @@
 /* Defines interfaces for the applications and exports function calls that  
    the applications should use instead of the standard ones. */
 
+#include <stdlib.h>
+#include <sys/time.h>
 #include "classlist.h"
 #include "model.h"
 #include "dmodel.h"
@@ -11,7 +13,7 @@ extern "C" {
 #include "element.h"
 #include "Hashtable.h"
 #include "tmap.h"
-#include <sys/time.h>
+
 
 
 model * exportmodel;

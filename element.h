@@ -4,7 +4,6 @@
 #ifndef ELEMENT_H
 #define ELEMENT_H
 #include "common.h"
-#include <stdlib.h>
 #include "classlist.h"
 
 class ElementWrapper;

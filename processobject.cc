@@ -1,5 +1,6 @@
 // evaluates constraints in the ICL
 
+#include <stdlib.h>
 #include "processobject.h"
 #include "processabstract.h"
 #include "omodel.h"

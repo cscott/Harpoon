@@ -1,5 +1,6 @@
-#include "ActionGEQ1.h"
+#include <stdlib.h>
 #include <assert.h>
+#include "ActionGEQ1.h"
 #include "dmodel.h"
 #include "normalizer.h"
 #include "omodel.h"

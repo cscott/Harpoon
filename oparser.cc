@@ -1,11 +1,12 @@
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "oparser.h"
 #include "omodel.h"
 #include "list.h"
 #include "common.h"
 #include "token.h"
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+
 
 Constraint * Parser::parseconstraint() {
   Token token=reader->peakahead();

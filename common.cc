@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include "common.h"
+#include "classlist.h"
 
 char * copystr(const char *buf) {
   int i;

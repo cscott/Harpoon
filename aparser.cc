@@ -1,12 +1,12 @@
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "aparser.h"
 #include "list.h"
 #include "common.h"
 #include "token.h"
 #include "amodel.h"
 #include "omodel.h"
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include "model.h"
 
 AParser::AParser(Reader *r) {
