@@ -5,6 +5,7 @@ package harpoon.Analysis;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HInitializer;
+import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Relinker;
@@ -23,7 +24,7 @@ import java.util.*;
  * The <code>AbstractClassFixupRelinker</code> remedies the situation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractClassFixupRelinker.java,v 1.4 2002-07-11 11:07:00 cananian Exp $
+ * @version $Id: AbstractClassFixupRelinker.java,v 1.5 2002-09-10 18:49:13 cananian Exp $
  */
 public class AbstractClassFixupRelinker extends Relinker {
     
@@ -41,6 +42,19 @@ public class AbstractClassFixupRelinker extends Relinker {
 	    if (sc!=null) forDescriptor(sc.getDescriptor()); // recurse!
 	    // okay, now fix this class up.
 	    fixup(hc);
+	    // fix up classes mentioned in method signatures?
+	    for (Iterator<HMethod> it=new ArrayIterator<HMethod>
+		     (hc.getDeclaredMethods()); it.hasNext(); ) {
+		HMethod hm = it.next();
+		forDescriptor(hm.getReturnType().getDescriptor());
+		for (Iterator<HClass> it2=new ArrayIterator<HClass>
+			 (hm.getParameterTypes()); it2.hasNext(); )
+		    forDescriptor(it2.next().getDescriptor());
+	    }
+	    // and those in field signatures.
+	    for (Iterator<HField> it=new ArrayIterator<HField>
+		     (hc.getDeclaredFields()); it.hasNext(); )
+		forDescriptor(it.next().getType().getDescriptor());
 	}
 	// done!
 	return hc;
