@@ -48,12 +48,13 @@ public abstract class ScopedMemory extends MemoryArea {
 
     // METHODS IN SPECS
 
-    public void enter() {
-	// TODO
+    public void enter() throws ScopedCycleException {
+	// Need to implement single parent rule.
+	super.enter();
     }
 
     public void enter(Runnable logic) throws ScopedCycleException {
-	// TODO
+	super.enter(logic);
     }
 
     /** Return the maximum size of this ScopedMemory. 
