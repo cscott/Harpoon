@@ -1,10 +1,12 @@
 // DeadCode2.java, created Thu Oct  8 03:11:37 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
+
 package harpoon.Analysis.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.IR.Quads.*;
+import harpoon.IR.LowQuad.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Set;
@@ -18,10 +20,10 @@ import java.util.Hashtable;
  * <code>DeadCode</code> removes dead code 
  * (unused definitions/useless jmps/one-argument phi functions/all moves) from
  * a method.  The analysis is optimistic; that is, it assumes that all code is
- * unused and seeks to prove otherwise.
+ * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.11.2.9 1999-02-25 17:31:45 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.11.2.10 1999-07-02 21:24:18 bdemsky Exp $
  */
 
 public abstract class DeadCode  {
@@ -72,7 +74,7 @@ public abstract class DeadCode  {
 
     } // end OPTIMIZE METHOD.
 
-    static class EraserVisitor extends QuadVisitor {
+    static class EraserVisitor extends LowQuadVisitor {
 	Worklist W;
 	Set useful;
 	NameMap nm;
@@ -85,6 +87,37 @@ public abstract class DeadCode  {
 	    Quad.addEdge((Quad)before.from(), before.which_succ(),
 			 (Quad)after.to(), after.which_pred() );
 	}
+
+
+	public void visit(harpoon.IR.Quads.AGET q)    {
+	    visit((Quad)q);
+	}
+
+	public void visit(harpoon.IR.Quads.ASET q)    {
+	    visit((Quad)q);
+	}
+
+	public void visit(harpoon.IR.Quads.CALL q)    {
+	    visit((Quad)q);
+	}
+
+	public void visit(harpoon.IR.Quads.GET q)     {
+	    visit((Quad)q);
+	}
+
+	public void visit(harpoon.IR.Quads.HANDLER q) {
+	    visit((Quad)q);
+	}
+
+	public void visit(harpoon.IR.Quads.OPER q)    {
+	    visit((Quad)q);
+	}
+	
+	public void visit(harpoon.IR.Quads.SET q)     {
+	    visit((Quad)q);
+	}
+	
+
 	public void visit(Quad q) {
 	    // generally, remove it if it's worthless.
 	    if (useful.contains(q)) return; // safe.
@@ -185,7 +218,7 @@ public abstract class DeadCode  {
 	public String toString() { return h.toString(); }
     }
 
-    static class UsefulVisitor extends QuadVisitor {
+    static class UsefulVisitor extends LowQuadVisitor {
 	Worklist W;
 	Set useful;
 	Hashtable defMap;
@@ -229,6 +262,24 @@ public abstract class DeadCode  {
 	    if (usefound)
 		markUseful(q);
 	}
+
+
+	public void visit(harpoon.IR.Quads.AGET q)    {
+	    visit((Quad)q);
+	}
+
+	public void visit(harpoon.IR.Quads.ASET q)    {
+	    visit((Quad)q);
+	}
+
+	public void visit(harpoon.IR.Quads.GET q)     {
+	    visit((Quad)q);
+	}
+
+	public void visit(harpoon.IR.Quads.OPER q)    {
+	    visit((Quad)q);
+	}
+	
 	public void visit(ARRAYINIT q) { // always useful.
 	    markUseful(q);
 	}
@@ -236,6 +287,17 @@ public abstract class DeadCode  {
 	    // CALLs may have side-effects, thus they are always useful (conservative)
 	    markUseful(q);
 	}
+
+	public void visit(PCALL q) {
+	    // CALLs may have side-effects, thus they are always useful (conservative)
+	    markUseful(q);
+	}
+
+	public void visit(PSET q) {
+	    // Pointer writes may be useful
+	    markUseful(q);
+	}
+
 	public void visit(CJMP q) {
 	    // assume all CJMPs are useful (we'll remove useless ones later)
 	    useful.union(q);
