@@ -17,7 +17,7 @@ import java.util.*;
  * atomic transactions.  Works on <code>LowQuadNoSSA</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.6 2000-11-10 02:48:07 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.7 2000-11-10 21:57:25 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -72,7 +72,7 @@ public class SyncTransformer
 	if (! ("harpoon.Runtime.Transactions".equals
 	       (hc.getMethod().getDeclaringClass().getPackage()))) {
 	    Tweaker tw = new Tweaker(qF, (which==WITH_TRANSACTION));
-	    tweak(new DomTree(), hc, qM, tw);
+	    tweak(new DomTree(hc, false), qM, tw);
 	    tw.fixup();
 	}
 	// done!
@@ -80,14 +80,14 @@ public class SyncTransformer
     }
 
     /** MONITORENTER must dominate all associated MONITOREXITs */
-    private void tweak(DomTree dt, HCode hc, Quad q, Tweaker tw) {
-	HCodeElement[] nxt = dt.children(hc, q);
+    private void tweak(DomTree dt, Quad q, Tweaker tw) {
+	HCodeElement[] nxt = dt.children(q);
 	// tweak q here, update currtrans, etc.
 	q.accept(tw);
 	// done, recurse.
 	ListList handlers = tw.handlers; // save this value.
 	for (int i=0; i<nxt.length; i++, tw.handlers=handlers/*restore*/)
-	    tweak(dt, hc, (Quad) nxt[i], tw);
+	    tweak(dt, (Quad) nxt[i], tw);
     }
     static class ListList {
 	public final List head;

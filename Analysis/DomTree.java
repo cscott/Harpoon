@@ -8,81 +8,81 @@ import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.Util.ArrayFactory;
+import harpoon.Util.ArrayIterator;
 import harpoon.Util.Util;
 
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Vector;
 /**
  * <code>DomTree</code> computes the dominator tree of a flowgraph-structured
- * IR.  The <code>HCodeElement</code>s must implement the 
- * <code>harpoon.IR.Properties.CFGraphable</code> interface.
+ * IR.  The <code>HCode</code> must have a valid
+ * <code>CFGrapher</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.8.2.6 2000-10-27 22:13:44 cananian Exp $
+ * @version $Id: DomTree.java,v 1.8.2.7 2000-11-10 21:56:05 cananian Exp $
  */
 
 public class DomTree /*implements Graph*/ {
-    /** Grapher to use. */
-    final CFGrapher grapher;
-    /** Set of analyzed HCodes for caching. */
-    Hashtable analyzed = new Hashtable();
+    /** <code>HCode</code> this <code>DomTree</code> corresponds to. */
+    final HCode hcode; // included only for DomFrontier's use.
+    /** <code>CFGrapher</code> used to construct this <code>DomTree</code>.*/
+    final CFGrapher grapher; // included only for DomFrontier's use.
     /** Mapping of HCodeElements to their immediate dominators. */
     Hashtable idom  = new Hashtable();
     /** Reverse mapping: mapping of an HCodeElement to the elements which
      *  have this element as their immediate dominator. */
-    SetHTable children = new SetHTable(new ArrayFactory() {
-	// XXX: HCodeElement is a generic type. We'd rather use
-	// HCode.elementArrayFactory() but we don't know the HCode to use.
-	public Object[] newArray(int len) { return new HCodeElement[len]; }
-    });
-    /** Is this a dominator or post-dominator tree? */
-    boolean isPost = false;
+    final SetHTable children;
 
-    /** Creates a new, empty <code>DomTree</code> which creates
-     *  dominator trees for <code>HCode</code>s whose elements
-     *  implement <code>CFGraphable</code>. */
-    public DomTree() {
-	this(false);
-    }
-    /** Creates a new, empty <code>DomTree</code>; if <code>isPost</code> is
+    /** Creates a new <code>DomTree</code> with the dominator
+     *  tree for the given <code>HCode</code>; if <code>isPost</code> is
      *  true, creates a postdominator tree instead. Uses the default
      *  <code>CFGrapher</code>, which means the elements of the
      *  <code>HCode</code> must implement <code>CFGraphable</code>. */
-    public DomTree(boolean isPost) {
-	this(CFGrapher.DEFAULT, isPost);
+    public DomTree(HCode hcode, boolean isPost) {
+	this(hcode, CFGrapher.DEFAULT, isPost);
     }
-    /** Creates a new, empty <code>DomTree</code> using the specified
-     *  <code>CFGrapher</code>; if <code>isPost</code> is
-     *  true, creates a postdominator tree instead. */
-    public DomTree(CFGrapher grapher, boolean isPost) {
+    /** Creates a new <code>DomTree</code> with the dominator
+     *  tree for the given <code>HCode</code>; if <code>isPost</code> is
+     *  true, creates a postdominator tree instead. Uses the specified
+     *  <code>CFGrapher</code> to construct the control flow graph of
+     *  the <code>HCode</code>. */
+    public DomTree(HCode hcode, CFGrapher grapher, boolean isPost) {
+	this(hcode, isPost?grapher.edgeReversed():grapher);
+    }
+    /** Common constructor. Not for external use: we want people to be aware
+     *  whether they're requesting a dominator or post-dominator tree. */
+    private DomTree(HCode hcode, CFGrapher grapher) {
+	this.hcode = hcode;
 	this.grapher = grapher;
-	this.isPost = isPost;
+	this.children = new SetHTable(hcode.elementArrayFactory());
+	analyze(hcode, grapher);
+	
     }
 
-    /** Return the immediate dominator of an <code>HCodeElement</code>.
-     * @return the immediate dominator of <code>n</code>, or
-     *         <code>null</code> if <code>n</code> is the root
+    /** Return the roots of the (post-)dominator tree (forest). */
+    public HCodeElement[] roots() {
+	return grapher.getFirstElements(hcode);
+    }
+
+    /** Return the immediate (post)dominator of an <code>HCodeElement</code>.
+     * @return the immediate (post)dominator of <code>n</code>, or
+     *         <code>null</code> if <code>n</code> is the root (a leaf)
      *         of the flow graph.  */
-    public HCodeElement idom(HCode hc, HCodeElement n) {
-	analyze(hc); return (HCodeElement) idom.get(n);
+    public HCodeElement idom(HCodeElement n) {
+	return (HCodeElement) idom.get(n);
     }
     /** Return the children of an <code>HCodeElement</code> in the immediate
-     *  dominator tree. 
+     *  (post)dominator tree. 
      *  @return an array with all the children of <code>n</code> in the
      *          immediate dominator tree, or a zero-length array if 
      *          <code>n</code> is a tree leaf. */
-    public HCodeElement[] children(HCode hc, HCodeElement n) {
-	analyze(hc); return children.getSet(n);
+    public HCodeElement[] children(HCodeElement n) {
+	return children.getSet(n);
     }
     
-    HCode lastHCode = null; // most-recently analyzed HCode.
     /** Analyze an <code>HCode</code>. */
-    void analyze(HCode hc) {
-	if (hc == lastHCode) return; // quick exit for common case.
-	if (analyzed.get(hc) != null) return; // check hashtable.
-	analyzed.put(hc, hc);
-	lastHCode = hc;
-
+    private void analyze(final HCode hc, final CFGrapher grapher) {
 	// Setup lists and tables.
 	final IntHTable dfnum = new IntHTable();
 	final Hashtable semi  = new Hashtable();
@@ -104,17 +104,9 @@ public class DomTree /*implements Graph*/ {
 		    dfnum.putInt(n, N);
 		    if (p!=null) parent.put(n, p);
 		    vertex.addElement(n);
-		    if (!isPost) {
-			// for each successor of n...
-			HCodeEdge[] el = grapher.succ(n);
-			for (int i=0; i<el.length; i++)
-			    DFS(n, el[i].to());
-		    } else {
-			// for each predecessor of n...
-			HCodeEdge[] el = grapher.pred(n);
-			for (int i=0; i<el.length; i++)
-			    DFS(n, el[i].from());
-		    }
+		    // for each successor of n...
+		    for (Iterator it=grapher.succC(n).iterator();it.hasNext();)
+			DFS(n, ((HCodeEdge)it.next()).to());
 		}
 	    }
 	    /** Add edge p->n to spanning forest. */
@@ -139,13 +131,9 @@ public class DomTree /*implements Graph*/ {
 	Utility u = new Utility();
 
 	// Dominators algorithm:
-	if (!isPost)
-	    u.DFS(null, hc.getRootElement());
-	else {
-	    HCodeElement[] leaves = hc.getLeafElements();
-	    for (int i=0; i<leaves.length; i++)
-		u.DFS(null, leaves[i]);
-	}
+	for (Iterator it=new ArrayIterator(grapher.getFirstElements(hc));
+	     it.hasNext(); )
+	    u.DFS(null, (HCodeElement) it.next());
 	    
 	for (int i=vertex.size()-1; i>=0; i--) {
 	    // calculate the semidominator of vertex[i]
@@ -157,9 +145,8 @@ public class DomTree /*implements Graph*/ {
 	    if (p == null) continue; // skip root(s).
 
 	    //   (for each predecessor v of n)
-	    HCodeEdge el[] = (!isPost) ? grapher.pred(n) : grapher.succ(n);
-	    for (int j=0; j<el.length; j++) {
-		HCodeElement v = (!isPost) ? el[j].from() : el[j].to();
+	    for (Iterator it=grapher.predC(n).iterator(); it.hasNext(); ) {
+		HCodeElement v = ((HCodeEdge) it.next()).from();
 		// ignore unreachable nodes.
 		if (!dfnum.containsKey(v)) continue;
 		if (dfnum.getInt(v) <= dfnum.getInt(n))

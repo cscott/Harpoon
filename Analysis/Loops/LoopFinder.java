@@ -20,12 +20,12 @@ import java.util.Iterator;
  * <code>LoopFinder</code> implements Dominator Tree Loop detection.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopFinder.java,v 1.1.2.8 1999-11-30 05:24:47 cananian Exp $
+ * @version $Id: LoopFinder.java,v 1.1.2.9 2000-11-10 21:57:21 cananian Exp $
  */
 
 public class LoopFinder implements Loops {
     
-    DomTree dominator=new DomTree();
+    DomTree dominator;
     HCode hc,lasthc;
     WorkSet setofloops;
     Loop root;
@@ -41,6 +41,7 @@ public class LoopFinder implements Loops {
     
     public LoopFinder(HCode hc) {
 	this.hc=hc;
+	this.dominator=new DomTree(hc, false);
 	analyze();
 	this.ptr=root;    
     }
@@ -50,9 +51,10 @@ public class LoopFinder implements Loops {
      *but it doesn't regenerate the internal tree
      *so any external calls would result in garbage.*/
     
-    private LoopFinder(HCode hc, Loop root, Loop ptr) {
+    private LoopFinder(HCode hc, DomTree dt, Loop root, Loop ptr) {
 	this.lasthc=hc;
 	this.hc=hc;
+	this.dominator=dt;
 	this.root=root;
 	this.ptr=ptr;
     }
@@ -66,7 +68,7 @@ public class LoopFinder implements Loops {
     public Loops getRootloop(HCode hc) {
       this.hc=hc;
       analyze();
-      return new LoopFinder(hc,root,root);
+      return new LoopFinder(hc,dominator,root,root);
     }
     
     /**  This method returns the entry point of the loop.
@@ -161,7 +163,7 @@ public class LoopFinder implements Loops {
 	WorkSet L=new WorkSet();
 	Iterator iterate=ptr.children.iterator();
 	while (iterate.hasNext())
-	    L.push(new LoopFinder(hc,root,(Loop) iterate.next()));
+	    L.push(new LoopFinder(hc,dominator,root,(Loop) iterate.next()));
 	return L;
     }
     
@@ -171,7 +173,7 @@ public class LoopFinder implements Loops {
     public Loops parentLoop() {
 	analyze();
 	if (ptr.parent!=null)
-	    return new LoopFinder(hc,root,ptr.parent);
+	    return new LoopFinder(hc,dominator,root,ptr.parent);
 	else return null;
     }
     
@@ -310,7 +312,7 @@ public class LoopFinder implements Loops {
         root.entries.push(current_node);
 
         //See if those we dominate are backedges
-        HCodeElement[] children=dominator.children(hc, current_node);
+        HCodeElement[] children=dominator.children(current_node);
         for (int i=0;i<children.length;i++)
 	    findloopheaders(children[i]);
     }
@@ -329,7 +331,7 @@ public class LoopFinder implements Loops {
 	    //find the node we jump back too
 	    while ((temp!=(hc.getRootElement()))&&
 		   (((CFGraphable)q).succ()[i]).to()!=temp) {
-		temp=dominator.idom(hc,temp);
+		temp=dominator.idom(temp);
 	    }
 
 	    //If we found the node we jumped back to

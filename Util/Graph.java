@@ -18,7 +18,7 @@ import java.util.Iterator;
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.2.2.11 2000-07-01 00:58:30 cananian Exp $
+ * @version $Id: Graph.java,v 1.2.2.12 2000-11-10 21:57:29 cananian Exp $
  */
 
 public abstract class Graph  {
@@ -74,17 +74,17 @@ public abstract class Graph  {
     /** Print (vcg format) of (Post)DomTree. */
     public static final void printDomTree(boolean isPost, HCode hc, java.io.PrintWriter pw, String title, String[] setup) {
 	commonHeader(hc, pw, title, setup, "DomTree");
-	DomTree dt = new DomTree(isPost);
+	DomTree dt = new DomTree(hc, isPost);
 	DomFrontier df = new DomFrontier(dt);
 	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
 	    HCodeElement hce = (HCodeElement) e.nextElement();
-	    HCodeElement idom = dt.idom(hc, hce);
+	    HCodeElement idom = dt.idom(hce);
 	    // make dominance frontier label.
 	    StringBuffer sb = new StringBuffer("DF[");
 	    sb.append(hce.getID()); sb.append("]={");
-	    for (Enumeration e2 = df.dfE(hc, hce); e2.hasMoreElements(); ){
-		sb.append(((HCodeElement)e2.nextElement()).getID());
-		if (e2.hasMoreElements())
+	    for (Iterator it2=df.dfS(hce).iterator(); it2.hasNext(); ) {
+		sb.append(((HCodeElement)it2.next()).getID());
+		if (it2.hasNext())
 		    sb.append(",");
 	    }
 	    sb.append("}");

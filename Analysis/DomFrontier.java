@@ -6,13 +6,16 @@ package harpoon.Analysis;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Properties.CFGraphable;
-import harpoon.Util.Util;
-import harpoon.Util.ArrayEnumerator;
+import harpoon.IR.Properties.CFGrapher;
+import harpoon.Util.ArrayIterator;
+import harpoon.Util.ArraySet;
 import harpoon.Util.Default;
+import harpoon.Util.Util;
+import harpoon.Util.WorkSet;
 
+import java.util.Collections;
 import java.util.Hashtable;
-import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.HashSet;
 /**
@@ -21,105 +24,85 @@ import java.util.HashSet;
  * the <code>harpoon.IR.Properties.CFGraphable</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.6.2.7 1999-11-30 05:24:41 cananian Exp $
+ * @version $Id: DomFrontier.java,v 1.6.2.8 2000-11-10 21:56:05 cananian Exp $
  */
 
 public class DomFrontier  {
-    DomTree dt; // a dom tree to use, or null
-    boolean isPost;
-
-    /** Creates a <code>DomFrontier</code>, using a pre-existing
-     *  <code>DomTree</code>. <p>
-     *  This version of the constructor keeps the dominator tree 
-     *  structure around after analysis is completed and reuses it. */
+    final HCode hc;
+    /** Creates a <code>DomFrontier</code> using a pre-existing
+     *  <code>DomTree</code>. */
     public DomFrontier(DomTree dt) {
-        this.dt = dt;
-	this.isPost = dt.isPost;
+	this.hc = dt.hcode;
+	analyze(dt);
     }
-    /** Creates a <code>DomFrontier</code>; if <code>isPost</code> is
-     *  <code>false</code> creates the dominance frontier; otherwise
-     *  creates the postdominance frontier. <p>
-     *  This version of the constructor frees the dominator tree after the
-     *  frontier has been created. */
-    public DomFrontier(boolean isPost) {
-	this.dt = null;
-	this.isPost = isPost;
+    /** Creates a <code>DomFrontier</code> for the given
+     *  <code>HCode</code> using the default grapher; if
+     *  <code>isPost</code> is <code>false</code> creates the
+     *  dominance frontier; otherwise creates the postdominance
+     *  frontier. */
+    public DomFrontier(HCode hcode, boolean isPost) {
+	this(hcode, CFGrapher.DEFAULT, isPost);
+    }
+    /** Creates a <code>DomFrontier</code> for the given
+     *  <code>HCode</code> using the given <code>CFGrapher</code>; if
+     *  <code>isPost</code> is <code>false</code> creates the
+     *  dominance frontier; otherwise creates the postdominance
+     *  frontier. */
+    public DomFrontier(HCode hcode, CFGrapher grapher, boolean isPost) {
+	this(new DomTree(hcode, grapher, isPost));
     }
 
     Hashtable DF = new Hashtable();
-    Hashtable analyzed = new Hashtable();
 
     /** Return an array of <code>HCodeElement</code>s in the (post)dominance
      *  frontier of <code>n</code>.
-     *  @param hc the <code>HCode</code> containing <code>n</code>.
      */
-    public HCodeElement[] df(HCode hc, HCodeElement n) {
-	analyze(hc); 
+    public HCodeElement[] df(HCodeElement n) {
 	HCodeElement[] r =  (HCodeElement[]) DF.get(n);
 	if (r==null)
 	    return (HCodeElement[]) hc.elementArrayFactory().newArray(0);
 	else
 	    return (HCodeElement[]) Util.safeCopy(hc.elementArrayFactory(), r);
     }
-    /** Return an Enumeration of <code>HCodeElement</code>s in the 
-     *  (post)dominance frontier of <code>n</code>.
-     *  @param hc the <code>HCode</code> containing <code>n</code>.
+    /** Return an immutable <code>Set</code> of <code>HCodeElement</code>s
+     *  in the (post)dominance frontier of <code>n</code>.
      */
-    public Enumeration dfE(HCode hc, HCodeElement n) {
-	analyze(hc);
+    public Set dfS(HCodeElement n) {
 	HCodeElement[] r =  (HCodeElement[]) DF.get(n);
 	if (r==null)
-	    return Default.nullEnumerator;
+	    return Collections.EMPTY_SET;
 	else
-	    return new ArrayEnumerator(r);
+	    return new ArraySet(r);
     }
 
-    HCode lastHCode = null;
-    void analyze(HCode hc) {
-	if (hc == lastHCode) return ; // just did this one.
-	if (analyzed.get(hc) != null); // hashtable sez we've done it already.
-	analyzed.put(hc, hc);
-	lastHCode = hc;
-
-	// maybe we don't want to keep the dominator tree around.
-	boolean tempDT = (dt==null);
-	if (tempDT) dt = new DomTree(isPost);
-
-	HCodeElement[] roots;
-	if (!isPost) {
-	    roots = (HCodeElement[]) hc.elementArrayFactory().newArray(1);
-	    roots[0] = hc.getRootElement();
-	} else
-	    roots = hc.getLeafElements();
-	
+    void analyze(DomTree dt) {
+	HCodeElement[] roots = dt.roots();
 	for (int i=0; i < roots.length; i++)
-	    computeDF(hc, roots[i]);
-
-	if (tempDT) dt = null; // free the dominator tree.
+	    computeDF(dt, roots[i]);
     }
-    void computeDF(HCode hc, HCodeElement n) {
-	Set S = new HashSet();
+    void computeDF(DomTree dt, HCodeElement n) {
+	CFGrapher grapher = dt.grapher;
+	Set S = new WorkSet();
 	
 	// for every child y in succ[n]
-	HCodeEdge[] yl = (!isPost) ? ((CFGraphable)n).succ() : ((CFGraphable)n).pred();
-	for (int i=0; i < yl.length; i++) {
-	    HCodeElement y = (!isPost) ? yl[i].to() : yl[i].from();
-	    if (!n.equals( dt.idom(hc, y) ))
+	for (Iterator it=grapher.succC(n).iterator(); it.hasNext(); ) {
+	    HCodeElement y = ((HCodeEdge)it.next()).to();
+	    if (!n.equals( dt.idom(y) ))
 		S.add(y);
 	}
 	// for each child c of n in the (post)dominator tree
-	HCodeElement[] c = dt.children(hc, n);
-	for (int i=0; i < c.length; i++) {
-	    computeDF(hc, c[i]);
+	for (Iterator it=new ArrayIterator(dt.children(n)); it.hasNext(); ) {
+	    HCodeElement c = (HCodeElement) it.next();
+	    computeDF(dt, c);
 	    // for each element w of DF[c]
-	    HCodeElement[] w = (HCodeElement[]) DF.get(c[i]);
+	    HCodeElement[] w = (HCodeElement[]) DF.get(c);
 	    for (int j=0; j < w.length; j++)
-		if (!n.equals( dt.idom(hc, w[j]) ))
+		if (!n.equals( dt.idom(w[j]) ))
 		    S.add(w[j]);
 	}
 	// DF[n] <- S
 	HCodeElement dfn[] = 
-	    (HCodeElement[]) hc.elementArrayFactory().newArray(S.size());
+	    (HCodeElement[]) dt.hcode.elementArrayFactory().newArray(S.size());
 	S.toArray(dfn);
 	DF.put(n, dfn);
     }
