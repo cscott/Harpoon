@@ -32,7 +32,7 @@ import java.util.Set;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.17 1999-08-25 21:41:40 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.18 1999-08-26 16:13:52 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -125,22 +125,6 @@ final class ReHandler {
 	    }
 	}
 
-	//Add in TYPECAST
-//  	UseDef ud=new UseDef();
-
-//  	for (Iterator e = cjmpset.iterator(); e.hasNext(); ) {
-//  	    CJMP cjmp = (CJMP) e.next();
-//  	    HCodeElement[] hce=ud.defMap(ncode, cjmp.test());
-//  	    Util.assert(hce.length==1);
-//  	    INSTANCEOF iof=(INSTANCEOF) hce[0];
-//  	    HClass hclass=iof.hclass();
-//  	    CJMP cjmp2=(CJMP)qm.getFoot(cjmp);
-//  	    TYPECAST tc=new TYPECAST(cjmp2.getFactory(), cjmp2, Quad.map(ss.ctm, iof.src()),hclass);
-//  	    Quad.addEdge(tc, 0, cjmp2.next(1), cjmp2.nextEdge(1).which_pred());
-//  	    Quad.addEdge(cjmp2, 1, tc, 0);
-//  	}
-
-
 	//--------------------
 	// fixup try blocks.
 	Temp[] qMp = ((METHOD)qm.getHead(old_method)).params();
@@ -151,13 +135,24 @@ final class ReHandler {
 	Edge e = old_method.nextEdge(0);
 	Quad.addEdge(qM, 0, qm.getHead((Quad)e.to()), e.which_pred());
 	Iterator iterate=ss.al.iterator();
-	int i=1;
-	while (iterate.hasNext())
-	    Quad.addEdge(qM, i++, (Quad)iterate.next(),0);
+	for (int i=1; iterate.hasNext();i++)
+	    Quad.addEdge(qM, i, (Quad)iterate.next(),0);
 
+	WorkSet reachable=new WorkSet();
+	WorkSet todo=new WorkSet();
+	todo.push(qH);
+	while(!todo.isEmpty()) {
+	    Quad quad=(Quad)todo.pop();
+	    if (!reachable.contains(quad)) {
+		reachable.push(quad);
+		for (int i=0;i<quad.next().length;i++) {
+		    todo.push(quad.next(i));
+		}
+	    }
+	}
 	// Modify this new CFG by emptying PHI nodes
 	// Need to make NoSSA for QuadWithTry
-	PHVisitor v = new PHVisitor(qf);
+	PHVisitor v = new PHVisitor(qf, reachable);
 	for (Iterator it = phiset.iterator(); it.hasNext();)
 	    ((Quad)it.next()).visit(v);
 
@@ -730,10 +725,12 @@ final class ReHandler {
 class PHVisitor extends QuadVisitor
 {
     private QuadFactory     m_qf;
+    private Set             reachable;
 
-    public PHVisitor(QuadFactory qf)
+    public PHVisitor(QuadFactory qf, Set reachable)
     {     
 	m_qf          = qf;
+	this.reachable=reachable;
     }
 
     public void visit(Quad q) { }
@@ -748,7 +745,17 @@ class PHVisitor extends QuadVisitor
   
     public void visit(LABEL q)
     {
-	LABEL label = new LABEL(m_qf, q, q.label(), new Temp[0], q.arity());
+	int count=0;
+	boolean[] info=new boolean[q.arity()];
+	for (int i=0;i<q.arity();i++) {
+	    if (reachable.contains(q.prev(i))) {
+		count++;
+		info[i]=true;
+	    } else
+		info[i]=false;
+	}
+	LABEL label = new LABEL(m_qf, q, q.label(), new Temp[0], count);
+	reachable.add(label);
 	int numPhis = q.numPhis(), arity = q.arity();
 
 	for (int i=0; i<numPhis; i++)
@@ -760,16 +767,27 @@ class PHVisitor extends QuadVisitor
 
 	Quad []prev=q.prev();
 	Quad []next=q.next(); Util.assert(next.length==1);
+	int recount=0;
 	for(int i=0;i<prev.length;i++) {
-	    Quad.addEdge(prev[i],q.prevEdge(i).which_succ(),label,i);
+	    if (info[i])
+		Quad.addEdge(prev[i],q.prevEdge(i).which_succ(),label,recount++);
 	}
 	Quad.addEdge(label,0,next[0],q.nextEdge(0).which_pred());
     }
       
     public void visit(PHI q)
     {
-	PHI phi = new PHI(q.getFactory(), q, new Temp[0], q.arity());
-
+	int count=0;
+	boolean[] info=new boolean[q.arity()];
+	for (int i=0;i<q.arity();i++) {
+	    if (reachable.contains(q.prev(i))) {
+		count++;
+		info[i]=true;
+	    } else
+		info[i]=false;
+	}
+	PHI phi = new PHI(q.getFactory(), q, new Temp[0], count);
+	reachable.add(phi);
 	int numPhis = q.numPhis(), arity = q.arity();
 	for (int i=0; i<numPhis; i++)
 	    for (int j=0; j<arity; j++)
@@ -780,8 +798,10 @@ class PHVisitor extends QuadVisitor
 
 	Quad []prev=q.prev();
 	Quad []next=q.next(); Util.assert(next.length==1);
+	int recount=0;
 	for(int i=0;i<prev.length;i++) {
-	    Quad.addEdge(prev[i],q.prevEdge(i).which_succ(),phi,i);
+	    if (info[i])
+		Quad.addEdge(prev[i],q.prevEdge(i).which_succ(),phi,recount++);
 	}
 	Quad.addEdge(phi,0,next[0],q.nextEdge(0).which_pred());
     }
