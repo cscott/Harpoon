@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.Analysis.AllocationInformationMap;
 import harpoon.Analysis.Place;
 import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.Derivation;
@@ -35,7 +36,7 @@ import java.util.Stack;
  * is hairy because of the big "efficiency-vs-immutable quads" fight.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.10 2000-05-13 20:10:45 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.11 2000-05-13 21:19:55 cananian Exp $
  */
 public class SSIRename {
     private static final boolean sort_phisig = false;
@@ -57,32 +58,16 @@ public class SSIRename {
     /** Return a copy of the given quad graph properly converted to
      *  SSI form. */
     public SSIRename(final Code c, final QuadFactory nqf) {
-	final SearchState S = new SearchState(c, nqf);
+	final SearchState S = new SearchState(c, nqf,
+					      c.getAllocationInformation());
 	this.rootQuad = (Quad) S.old2new.get(c.getRootElement());
 	this.tempMap = S.varmap;
 	this.quadMap = S.old2new;
+	this.allocInfo = S.naim;
 	/** XXX: derivation information is discarded here. */
-	/** XXX: allocation site information is discarded here. */
-	this.allocInfo = null;
 	this.derivation = null;
     }
-    /*
-    void updateAllocationInformation(Code oldcode,
-				     Map quadMap, TempMap tempMap) {
-	AllocationInformation oldai = oldcode.getAllocationInformation();
-	if (oldai != null) {
-	    AllocationInformationMap aim = new AllocationInformationMap();
-	    for (Iterator it=oldcode.getElementsI(); it.hasNext(); ) {
-		Quad oldquad = (Quad) it.next();
-		Quad newquad = (Quad) quadMap.get(oldquad);
-		if (oldquad instanceof ANEW || oldquad instanceof NEW)
-		    aim.transfer(newquad, oldquad, tempMap, oldai);
-	    }
-	    setAllocationInformation(aim);
-	}
-    }
-    */
-
+    
     static class VarMap implements TempMap {
 	final TempFactory tf;
 	final Environment vm = new HashEnvironment();
@@ -111,6 +96,12 @@ public class SSIRename {
 	final Place place;
 	/** QuadFactory to use for new Quads. */
 	final QuadFactory nqf;
+	/** AllocationInformation for old Quads */
+	final AllocationInformation oaim;
+	/** AllocationInformationMap for new Quads */
+	final AllocationInformationMap naim;
+	/** Derivation map for new Quads */
+	final Derivation deriv;
 	
 	// algorithm state
 	/** maps old variables to new variables */
@@ -120,11 +111,14 @@ public class SSIRename {
 	/** mark edges as we visit them */
 	final Set marked = new HashSet();
 
-	SearchState(HCode c, QuadFactory nqf) { 
+	SearchState(HCode c, QuadFactory nqf, AllocationInformation oaim) { 
 	    this.place = new Place(c, new QuadLiveness(c));
 	    this.varmap= new VarMap(nqf.tempFactory());
 	    this.nqf   = nqf;
-
+	    this.oaim  = oaim;
+	    this.naim  = (oaim==null) ? null : new AllocationInformationMap();
+	    this.deriv = null; // XXX FIXME FIXME
+	    
 	    setup(c);
 
 	    HCodeElement ROOT = c.getRootElement();
@@ -270,6 +264,8 @@ public class SSIRename {
 		    varmap.inc(d[i]);
 		Quad nq = q.rename(nqf, varmap, wtm);
 		old2new.put(q, nq);
+		if (nq instanceof ANEW || nq instanceof NEW)
+		    if (naim!=null) naim.transfer(nq, q, varmap, oaim);
 		if (q instanceof FOOTER) break;
 	    }
 	    for (Iterator it=((Quad)e.to()).succC().iterator();it.hasNext();) {
