@@ -314,6 +314,7 @@ static void * thread_startup_routine(void *closure) {
   }
   /* this thread is dead now.  give it a chance to clean up. */
   /* (this also removes the thread from the ThreadGroup) */
+  /* (see also Thread.EDexit() -- keep these in sync) */
   (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
 #ifdef WITH_CLUSTERED_HEAPS
   /* give us a chance to deallocate the thread-clustered heap */
@@ -450,3 +451,18 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_newThreadEvent0
   (JNIEnv *env, jobject _this, jobject thread) {
   fprintf(stderr, "WARNING: IBM JDK may not be fully supported.\n");
 }
+
+#ifdef WITH_EVENT_DRIVEN
+/* for use by event-driven code. */
+JNIEXPORT void JNICALL Java_java_lang_Thread_EDexit
+(JNIEnv *env, jobject _this) {
+  /* (see also the end of thread_startup_routine() -- keep these in sync. */
+  /* call Thread.exit() */
+  (*env)->CallNonvirtualVoidMethod(env, _this, thrCls, exitID);
+#ifdef WITH_CLUSTERED_HEAPS
+  /* give us a chance to deallocate the thread-clustered heap */
+  NTHR_free(_this
+);
+#endif
+}
+#endif /* WITH_EVENT_DRIVEN */
