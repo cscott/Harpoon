@@ -24,7 +24,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.33 2000-07-13 06:18:32 jwhaley Exp $
+ * @version $Id: Quad.java,v 1.1.2.34 2000-07-13 11:43:30 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -125,19 +125,6 @@ public abstract class Quad
     /** Return the number of predecessors of this quad. */
     public int prevLength() { return prev.length; }
 
-    /** Returns the successor index of the given quad, or -1 if it is not a successor. */
-    public int next(Quad q) {
-	for (int i=0; i<next.length; i++)
-	    if (next[i].to() == q) return i;
-	return -1;
-    }
-    /** Returns the predecessor index of the given quad, or -1 if it is not a successor. */
-    public int prev(Quad q) {
-	for (int i=0; i<prev.length; i++)
-	    if (prev[i].from() == q) return i;
-	return -1;
-    }
-    
     /** Returns an array containing all the successors of this quad,
      *  in order. */
     public Quad[] next() { 
