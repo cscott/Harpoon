@@ -3,7 +3,7 @@ package harpoon.Analysis.Maps;
 
 import harpoon.Temp.Temp;
 import harpoon.Analysis.TypeInference.SetHClass;
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCode;
 /**
  * <code>SetTypeMap</code> is a mapping from temporaries to their concrete types,
  * i.e. the sets of all exact classes whose instances the temporary may hold
@@ -11,7 +11,7 @@ import harpoon.ClassFile.*;
  * (For details see Ole Agesen's PhD Thesis, pp. 4-8.)
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: SetTypeMap.java,v 1.1.2.1 1998-12-03 08:11:29 marinov Exp $
+ * @version $Id: SetTypeMap.java,v 1.1.2.2 1999-01-22 23:33:37 cananian Exp $
  */
 
 public interface SetTypeMap {
