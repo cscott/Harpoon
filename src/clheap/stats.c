@@ -1,4 +1,5 @@
 /* Statistics stubs */
+#include <stdio.h>
 #include <signal.h>
 #include "misc.h"	/* for MAKE_STATS */
 #include "flexthread.h"	/* for flex_mutex_t */
@@ -40,6 +41,7 @@ void print_statistics(void) {
 	 threads_created,
 	 threads_created ? (long) thr_bytes_alloc/threads_created: 0L,
 	 (long) thr_bytes_overflow);
+  fflush(stdout);
   /* print out statistics on demand */
   signal(SIGALRM, stat_signal_handler);
 #endif
