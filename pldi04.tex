@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.6 2003-11-09 21:23:43 cananian Exp $
+% $Id: pldi04.tex,v 1.7 2003-11-09 21:30:53 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 \usepackage{times}
@@ -366,7 +366,7 @@ class Account \{\\
 \}\\
 \end{tabular}
 }\vspace{.2in}
-\caption{A simple bank account object, adapted from \cite{781169},
+\caption{A simple bank account object, adapted from \cite{FlanaganQa03},
   illustrating the use of the \atomic modifier.}
 \label{fig:atomic}
 \end{figure}
@@ -394,7 +394,7 @@ Our implementation will use the same DCAS primitive used in the Cache
 Kernel and in Synthesis.  This primitive can be emulated using
 architecture extensions to the popular LL/SC operations,
 or in software with OS support using Bershad's technique
-\cite{238767,bershad93:practical}.
+\cite{GreenwaldCh96,bershad93:practical}.
 
 \subsection{Synchronization in the language}
 The Emerald system \cite{28706,jul91:emerald} introduced
@@ -433,7 +433,7 @@ simple example, imagine that an object provided two monitored methods
 Non-monitored code can call {\tt read}, increment the value returned,
 and then call {\tt write}, creating a classic race condition scenario.
 The atomicity of the parts is not sufficient to guarantee atomicity of
-the whole \cite{781169}.
+the whole \cite{FlanaganQa03}.
 
 This suggests that a better model for synchronization in
 object-oriented systems is \emph{atomicity}.  Figure~\ref{fig:atomic}
@@ -448,14 +448,14 @@ This point is called the \emph{linearization point}.  Note that
 atomic methods invoked directly or indirectly from an atomic
 method are subsumed by it: if the outermost method appears atomic,
 then by definition all inner method invocations will also appear atomic.
-Flanagan and Qadeer provide a more formal semantics in \cite{781169}.
+Flanagan and Qadeer provide a more formal semantics in \cite{FlanaganQa03}.
 Atomic methods can be analyzed using sequential reasoning techniques, which
 significantly simplifies reasoning about program correctness.
 
 Atomic methods can be implemented using locks.  A simple if deadlock-prone 
 implementation would simply acquire a single global lock during
 the execution of every atomic method.  Flanagan and Qadeer
-\cite{781169} present a more sophisticated technique which proves that
+\cite{FlanaganQa03} present a more sophisticated technique which proves that
 a given implementation using standard Java monitors correctly
 guarantees method atomicity.
 We will use non-blocking synchronization to implement atomic methods.
@@ -973,7 +973,7 @@ during an invocation of $\funcname{FA-Rotate}(B)$.  But then the
 differential node $d_B$ will be applied after the cache is copied,
 which will safely overwrite the mutation we were concerned about.
 
-Note that with hardware support for small transactions \cite{165164}
+Note that with hardware support for small transactions \cite{HerlihyMo93}
 we could cheaply perform the entire rotation atomically, instead of
 using this six-step approach.
 
