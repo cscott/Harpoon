@@ -1,7 +1,5 @@
 #ifndef MODEL_H
 #define MODEL_H
-#include <fstream.h>
-#include <iostream.h>
 #include "classlist.h"
 
 class model {
@@ -10,7 +8,7 @@ class model {
   DomainRelation * getdomainrelation(); 
   structure *getstructure(char * name);
   void doabstraction();  // processes the model definition rules
-  void docheck();        // processes the internal constraints
+  bool docheck();        // processes the internal constraints
   void doconcrete();     // processes the external constraints
 
   void breakspec();    // inserts faults that break the specs

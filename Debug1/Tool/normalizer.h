@@ -3,6 +3,7 @@
 #ifndef NORMALIZER_H
 #define NORMALIZER_H
 #include "classlist.h"
+#include<stdio.h>
 
 
 class CoercePredicate {
@@ -65,6 +66,7 @@ class NormalForm {
   int getnumsentences();
   CoerceSentence *getsentence(int i);
   NormalForm(Rule *r);
+  void fprint(FILE *f);
  private:
   Constraint *c; /*keep reference for quantifiers */
   CoerceSentence **sentences;  // the number of sentences in this constraint

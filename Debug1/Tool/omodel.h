@@ -21,6 +21,7 @@ class Literal {
   int number();
   char * token();
   void print();
+  void fprint(FILE *f);
 
  private:
   char *str;
@@ -34,6 +35,7 @@ class Setlabel {
   Setlabel(char *s);
   char * getname();
   void print();
+  void fprint(FILE *f);
  private:
   char *str;
 };
@@ -50,6 +52,7 @@ class Set {
   Set(Setlabel *sl);
   Set(Literal **l, int nl);
   ~Set();
+  void fprint(FILE *f);
   void print();
   int gettype();
   char * getname();
@@ -70,6 +73,7 @@ class Label {
  public:
   Label(char *s);
   void print();
+  void fprint(FILE *f);
   char* label() {
     return str;
   }
@@ -86,6 +90,7 @@ class Relation {
  public:
   Relation(char * r);
   void print();  
+  void fprint(FILE *f);  
   char * getname();
 
  private:
@@ -100,6 +105,7 @@ class Quantifier {
  public:
   Quantifier(Label *l, Set *s);
   void print();
+  void fprint(FILE *f);
   Label * getlabel();
   Set * getset();
 
@@ -122,6 +128,9 @@ class Setexpr {
   Setexpr(Setlabel *sl);
   Setexpr(Label *l, bool invert, Relation *r);
   void print();
+  void fprint(FILE *f);
+  void print_size(Hashtable *stateenv, model *m);
+  void print_value(Hashtable *stateenv, model *m);
   Setlabel * getsetlabel();
   Relation * getrelation();
   Label * getlabel();
@@ -143,6 +152,7 @@ class Valueexpr {
  public:
   Valueexpr(Label *l,Relation *r);
   void print();
+  void fprint(FILE *f);
   void print_value(Hashtable *stateenv, model *m);
 
   Label * getlabel();
@@ -174,6 +184,9 @@ class Elementexpr {
   Elementexpr(Label *lab);
   Elementexpr(Elementexpr *l,Relation *r);
   void print();
+  void fprint(FILE *f);
+  void print_value(Hashtable *stateenv, model *m);
+
   int gettype();
   Label * getlabel();
   Elementexpr *getleft();
@@ -206,10 +219,11 @@ class Elementexpr {
 
 class Predicate {
  public:
-  Predicate(Label *l,Setexpr *se);
   Predicate(Valueexpr *ve, int t, Elementexpr *ee);
+  Predicate(Label *l,Setexpr *se);
   Predicate(bool greaterthan, Setexpr *se);
   void print();
+  void fprint(FILE *f);
   void print_sets(Hashtable *stateenv, model *m);
   int gettype();
   Valueexpr * getvalueexpr();
@@ -240,6 +254,7 @@ class Statement {
   Statement(Statement *l);
   Statement(Predicate *p);
   void print();
+  void fprint(FILE *f);
   void print_sets(Hashtable *env, model *m); // prints the sets and the relations involved in the statement
   int gettype();
   Statement *getleft();
@@ -262,6 +277,7 @@ class Constraint {
   Constraint(Quantifier **q, int nq);
   void setstatement(Statement *s);
   void print();
+  void fprint(FILE *f);
   int numquants();
   Quantifier * getquant(int i);
   Statement * getstatement();

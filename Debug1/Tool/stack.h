@@ -1,7 +1,6 @@
 #ifndef STACK_H
 #define STACK_H
 
-
 struct StackElement {
   struct StackElement * next;
   void * contents;

@@ -1,7 +1,6 @@
 #ifndef SET_H
 #define SET_H
 
-#include <stdlib.h>
 #include "classlist.h"
 
 class WorkSet {
@@ -9,6 +8,7 @@ class WorkSet {
   WorkSet();
   WorkSet(unsigned int (*hashf)(void *),int (*equals)(void *,void *));
   WorkSet(bool);
+  ~WorkSet();
   void addobject(void *obj);
   void removeobject(void *obj);
   bool contains(void *obj);
@@ -16,9 +16,9 @@ class WorkSet {
   void *firstelement();
   void * getnextelement(void *src);
   int size();
-  void * getelement(int i);
+  void * getelement(int i);  
   bool isEmpty();
-  ~WorkSet();
+  void print();
 
  private:
   struct genhashtable *ght;

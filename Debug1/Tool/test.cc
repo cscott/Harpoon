@@ -1,6 +1,8 @@
 /* Defines interfaces for the applications and exports function calls that  
    the applications should use instead of the standard ones. */
 
+#include <stdlib.h>
+#include <sys/time.h>
 #include "classlist.h"
 #include "model.h"
 #include "dmodel.h"
@@ -11,33 +13,43 @@ extern "C" {
 #include "element.h"
 #include "Hashtable.h"
 #include "tmap.h"
-#include <sys/time.h>
+
 
 
 model * exportmodel;
 
-void initializeanalysis() {
+void initializeanalysis() 
+{
   exportmodel=new model("testabstract", "testmodel", "testspace", "teststruct", "testconcrete", "testrange");
 }
 
 
-void doanalysis() {
+
+// returns true if a violated constraint was found
+bool doanalysis() 
+{
   struct timeval begin,end;
   unsigned long t;
   gettimeofday(&begin,NULL);
   exportmodel->doabstraction();
   exportmodel->getdomainrelation()->fixstuff();  
-  exportmodel->docheck();
+  bool found = exportmodel->docheck();
   exportmodel->doconcrete();
   gettimeofday(&end,NULL);
   t=(end.tv_sec-begin.tv_sec)*1000000+end.tv_usec-begin.tv_usec;
 
+#ifdef DEBUGMESSAGES
+  exportmodel->getdomainrelation()->print();
   printf("Time used for analysis(us): %ld\n",t);
+#endif
+
+  return found;
 }
 
 
-  // insert errors that break the specs
-void doanalysis2() {
+// insert errors that break the specs
+void doanalysis2() 
+{
   struct timeval begin,end;
   unsigned long t;
   gettimeofday(&begin,NULL);
@@ -61,7 +73,8 @@ void doanalysis2() {
 
 
 // insert errors that do not break the specs
-void doanalysis3() {
+void doanalysis3() 
+{
   struct timeval begin,end;
   unsigned long t;
   gettimeofday(&begin,NULL);
