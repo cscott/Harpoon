@@ -14,6 +14,9 @@ jclass FNI_FindClass(JNIEnv *env, const char *name) {
   const struct FNI_name2class * result;
   assert(FNI_NO_EXCEPTIONS(env));
   assert(strchr(name, '.')==NULL /* all dots should be slashes! */);
+  assert(((void*)name2class_start) +
+	 ((name2class_end-name2class_start)*sizeof(*name2class_start)) ==
+	 name2class_end); /* double check our alignments. */
   result =
     bsearch(name, name2class_start, name2class_end-name2class_start,
 	    sizeof(*name2class_start), name2class_compare);
