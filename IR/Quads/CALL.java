@@ -14,14 +14,14 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 /**
- * <code>CALL</code> objects represent method invocations.<p>
+ * <code>CALL</code> objects represent method invocations. <p>
  * The <code>retval</code> field will be <code>null</code>
  * for <code>void</code> methods.  For non-static methods, the
  * method receiver (object reference on which to invoke the method)
  * is the first parameter in the <code>params</code> array.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.10 1999-02-12 00:29:50 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.11 1999-08-05 02:12:55 cananian Exp $ 
  */
 public class CALL extends Quad {
     /** The method to invoke. */

@@ -10,10 +10,10 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 /**
- * <code>TempChain</code>
+ * <code>TempChain</code> needs to be documented.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TempChain.java,v 1.1.2.1 1999-05-07 18:43:13 cananian Exp $
+ * @version $Id: TempChain.java,v 1.1.2.2 1999-08-05 02:12:55 cananian Exp $
  */
 public class TempChain extends harpoon.Temp.Temp {
     public HCodeElement def;

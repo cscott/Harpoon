@@ -9,14 +9,14 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 /**
- * <code>CJMP</code> represents conditional branches.<p>
+ * <code>CJMP</code> represents conditional branches. <p>
  * <code>next[0]</code> is if-false, which is taken if 
  *                         the operand is equal to zero.
  * <code>next[1]</code> is if-true branch, taken when 
  *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.1.2.8 1999-01-22 23:05:59 cananian Exp $
+ * @version $Id: CJMP.java,v 1.1.2.9 1999-08-05 02:12:55 cananian Exp $
  */
 public class CJMP extends SIGMA {
     protected Temp test;

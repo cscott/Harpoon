@@ -11,7 +11,7 @@ import harpoon.Util.Util;
 /**
  * <code>METHOD</code> nodes encode method-specific information:
  * the mapping of method formals to temporary variables, and
- * links to the exception handlers for the method.<p>
+ * links to the exception handlers for the method. <p>
  * The 0-edge out of the <Code>METHOD</code> quad points to the
  * beginning of the executable code for the method.  Other
  * edges point to <code>HANDLER</code> quads defining execution
@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * (ie, the 1-edge) is the innermost nested try-block.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: METHOD.java,v 1.1.2.6 1999-01-22 23:06:00 cananian Exp $
+ * @version $Id: METHOD.java,v 1.1.2.7 1999-08-05 02:12:55 cananian Exp $
  * @see HEADER
  * @see HANDLER
  */

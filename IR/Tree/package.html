@@ -1,5 +1,5 @@
 <HTML>
-<!-- $Id: package.html,v 1.1.2.1 1999-06-24 19:18:52 cananian Exp $ -->
+<!-- $Id: package.html,v 1.1.2.2 1999-08-05 02:12:56 cananian Exp $ -->
 <BODY>
 An expression-tree oriented low-level IR, intended to facilitate
 machine-specific pattern-matching code-generation.  <code>Tree</code>
@@ -15,7 +15,8 @@ abstracted away by the machine-specific <code>Frame</code>, conforming
 to the interface in <code>harpoon.Backend.Generic.Frame</code>.
 Frames are not entirely machine-specific; all machines with roughly
 the same datatypes (for example, 32-bit words) which use the same
-runtime implementation will be able to share a Frame implementation.
+runtime implementation will be able to share large parts of a Frame
+implementation.
 See <code>harpoon.Backend.Generic.Frame</code> for more details.
 
 @author C. Scott Ananian <cananian@alumni.princeton.edu>

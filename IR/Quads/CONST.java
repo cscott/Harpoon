@@ -10,7 +10,7 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 /**
  * <code>CONST</code> objects represent an assignment of a constant value
- * to a compiler temporary.<p>
+ * to a compiler temporary. <p>
  * The <code>type</code> field of a <code>CONST</code> must be one of:
  * <code>String</code>, <code>int</code>, <code>long</code>,
  * <code>float</code>, <code>double</code> or <code>void</code>.
@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CONST.java,v 1.1.2.8 1999-02-24 00:48:54 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.9 1999-08-05 02:12:55 cananian Exp $
  */
 
 public class CONST extends Quad {

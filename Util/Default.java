@@ -11,10 +11,11 @@ import java.util.NoSuchElementException;
 
 /**
  * <code>Default</code> contains one-off or 'standard, no-frills'
- * implementations.
+ * implementations of simple <code>Iterator</code>s,
+ * <code>Enumeration</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.1.2.3 1999-06-19 18:48:25 cananian Exp $
+ * @version $Id: Default.java,v 1.1.2.4 1999-08-05 02:12:56 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
