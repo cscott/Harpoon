@@ -28,7 +28,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.26 2000-07-02 04:33:28 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.27 2000-07-24 19:10:10 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -106,6 +106,7 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
      *  callable by code in the runtime implementation (and should
      *  therefore be included in every class hierarchy). */
     public static Collection runtimeCallableMethods(Linker linker) {
+	HClass HCobject = linker.forName("java.lang.Object");
 	HClass HCsystem = linker.forName("java.lang.System");
 	HClass HCstring = linker.forName("java.lang.String");
 	HClass HCcharA  = linker.forDescriptor("[C");
@@ -153,8 +154,12 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 		.getConstructor(new HClass[] { HCstring }),
 	    linker.forName("java.lang.InstantiationException") // by Class
 		.getConstructor(new HClass[] { HCstring }), // .newInstance()
+		/* This is a JDK1.2-and-up method:
 	    linker.forName("java.util.Properties")
 		.getMethod("setProperty", new HClass[] { HCstring, HCstring }),
+		** We use the JDK1.1-and-up version instead: */
+	    linker.forName("java.util.Properties")
+		.getMethod("put", new HClass[] { HCobject, HCobject }),
 		// java.lang.Throwable.printStackTrace0 uses println([C)
 		// of whatever object it is passed.  Let's assume that's
 		// java.io.PrintStream (for System.out/System.err)
