@@ -99,5 +99,8 @@ FLAG check_with_claz_shrink_should_be_##x
  FLAG check_with_hashlock_shrink_not_needed;
 #endif
 
-/* at the moment, the runtime only supports sun's jdk. */
-FLAG check_with_sunjdk_needed;
+#ifdef CLASSPATH_VERSION
+  FLAG check_with_classpath_needed;
+#else
+  FLAG check_with_sunjdk_needed;
+#endif
