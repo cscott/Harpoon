@@ -1,12 +1,12 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: exec.tex,v 1.7 1999-05-08 00:18:33 cananian Exp $
+% $Id: exec.tex,v 1.8 1999-05-08 01:38:25 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage,twoside]{article}
 \usepackage{comdef}
 
 \title{Executability in the Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.7 $ $}
+\date{\today \\ $ $Revision: 1.8 $ $}
 
 \begin{document}
 \bibliographystyle{plain}
@@ -92,6 +92,7 @@ decomposition using two different subtypes (\texttt{Integer} and
 
 \begin{figure}[t]
 \centering$\vdash N:\mathbf{Number},I:\mathbf{Integer},F:\mathbf{Float}$\\
+\centering$I \subset N \mbox{ and } F \subset N$\\
 \begin{samplecode}[2]
 if(P)           & \com{\ssiplus\ form:}\\
 \>N=I;\\
@@ -165,7 +166,7 @@ definition.  The top tuple of the constructed \xifunction{} contains
 the names of all variables reaching the guarded \phifunction{} via a
 backedge, and the bottom tuple contains all variables used inside the
 guarded loop that are {\em not} mentioned in the header's
-\phifunction{}.\footnote{I can give you a rigorous algorithm: the top
+\phifunction{}.\footnote{I can give a rigorous algorithm: the top
 tuple is found with a depth-first search of the source
 control-flow graph, and the bottom tuple can be determined by a
 traversal of the same SESE-region tree which generates \ssizero\
