@@ -106,13 +106,13 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_read
  * Method:    readBytes
  * Signature: ([BII)I
  */
-// note that this function is mirrored at 
-// src/java.net/java_net_SocketInputStream.c.  Keep changes in sync.
+// keep in sync with Java_java_io_RandomAccessFile_readBytes
 JNIEXPORT jint JNICALL Java_java_io_FileInputStream_readBytes
 (JNIEnv * env, jobject obj, jbyteArray ba, jint start, jint len) { 
     int              fd, result;
+    int		     bufsize = (len > MAX_BUFFER_SIZE) ? MAX_BUFFER_SIZE : len;
     jobject          fdObj;
-    jbyte            buf[len];
+    jbyte            buf[bufsize];
 
     /* If static data has not been loaded, load it now */
     if (!inited && !initializeFIS(env)) return 0;/* exception occurred; bail */
@@ -123,7 +123,7 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_readBytes
     fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
     
     do {
-	result = read(fd, (void*)buf, len);
+	result = read(fd, (void*)buf, bufsize);
 	/* if we're interrupted by a signal, just retry. */
     } while (result<0 && errno == EINTR);
 

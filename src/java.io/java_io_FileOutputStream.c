@@ -121,40 +121,45 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_write
  * Method:    writeBytes
  * Signature: ([BII)V
  */
-// note that this function is mirrored at 
-// src/java.net/java_net_SocketOutputStream.c.  Keep changes in sync.
+// keep in sync with Java_java_io_RandomAccessFile_writeBytes
 JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes
 (JNIEnv * env, jobject obj, jbyteArray ba, jint start, jint len) { 
     int              fd, result;
     jobject          fdObj;
-    jbyte            buf[len];
+    jbyte            *buf;
+    char             *errmsg = NULL;
     int written = 0;
 
     /* If static data has not been loaded, load it now */
     if (!inited && !initializeFOS(env)) return; /* exception occurred; bail */
 
-    fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
-    fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
-    (*env)->GetByteArrayRegion(env, ba, start, len, buf);
-    if ((*env)->ExceptionOccurred(env)) return; /* bail */
-
     if (len==0) return; /* don't even try to write anything. */
 
+    fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
+    fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
+    buf    = (*env)->GetByteArrayElements(env, ba, NULL);
+    if ((*env)->ExceptionOccurred(env)) return; /* bail */
+
     while (written < len) {
-	result = write(fd, (void*)(buf+written), len-written);
+	result = write(fd, (void*)(buf+start+written), len-written);
 	/* if we're interrupted by a signal, just retry. */
 	if (result < 0 && errno == EINTR) continue;
 
 	if (result==0) {
-	    (*env)->ThrowNew(env, IOExcCls, "No bytes written");
-	    return;
+	    errmsg = "No bytes written";
+	    goto done;
 	}
 	if (result==-1) {
-	    (*env)->ThrowNew(env, IOExcCls, strerror(errno));
-	    return;
+	    errmsg = strerror(errno);
+	    if (!errmsg) errmsg = "Unknown I/O error";
+	    goto done;
 	}
 	written+=result;
     }
+ done:
+    (*env)->ReleaseByteArrayElements(env, ba, buf, JNI_ABORT);
+    if (errmsg) (*env)->ThrowNew(env, IOExcCls, errmsg);
+    return;
 }
 
 #ifdef WITH_TRANSACTIONS
