@@ -24,7 +24,7 @@ import java.util.Set;
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: ReachingHCodeElements.java,v 1.1.2.5 2000-01-31 20:48:56 pnkfelix Exp $ 
+ * @version $Id: ReachingHCodeElements.java,v 1.1.2.6 2000-02-02 04:17:06 pnkfelix Exp $ 
  */
 public class ReachingHCodeElements extends ReachingDefs { 
     private Map hceToBB;
@@ -203,23 +203,6 @@ public class ReachingHCodeElements extends ReachingDefs {
 	}
 	return info; 
     }
-
-
-    /** 
-     * Initializes the mapping of <code>HCodeElement</code>s to 
-     * <code>BasicBlocks</code>.  
-     * 	
-     * 	@param basicblocks  an <code>Iterator</code> of the basic blocks to be
-     * 	                    analyzed. 
-     */
-    protected final void initializeHceToBB(Iterator blocks) { 
-	if (blocks.hasNext()) { 
-	    this.hceToBB = ((BasicBlock)blocks.next()).getHceToBB();
-	} else { 
-	    this.hceToBB = new HashMap();
-	}
-    }
-
 
     /** 
      * Returns the <code>Set</code> of <code>HCodeElements</code>s 

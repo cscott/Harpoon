@@ -29,7 +29,7 @@ import java.util.Set;
  * @author  John Whaley
  * @author  Felix S Klock <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ReachingDefs.java,v 1.1.2.15 1999-12-03 06:47:33 duncan Exp $
+ * @version $Id: ReachingDefs.java,v 1.1.2.16 2000-02-02 04:17:06 pnkfelix Exp $
  */
 public abstract class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
     private static final boolean DEBUG = false; 
@@ -64,7 +64,6 @@ public abstract class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
 	Set               universe = findUniverse((Iterator) blocks.clone());
 	SetFactory        setFact  = new BitSetFactory(universe);
 	
-	this.initializeHceToBB( (Iterator)blocks.clone() ); 
 	this.initializeGenPrsv( (Iterator)blocks.clone(), setFact ); 
 	this.initializeBBtoRDI( blocks, setFact );
     }
@@ -101,7 +100,6 @@ public abstract class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
     public ReachingDefs(Iterator basicblocks, SetFactory setFact) {
 	CloneableIterator blocks = new CloneableIterator(basicblocks); 
 
-	initializeHceToBB( (Iterator)blocks.clone() ); 
 	initializeBBtoRDI( blocks, setFact );
     }
     
@@ -118,16 +116,6 @@ public abstract class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
 	    bbToRdi.put(bb, rdi);
 	}
     }
-
-    /** 
-     * Initializes the mapping of <code>HCodeElement</code>s to 
-     * <code>BasicBlocks</code>.  Implementations interested in this mapping
-     * should override this method. 
-     * 
-     * @param basicblocks an <code>Iterator</code> of the basic blocks to be
-     *                    analyzed. 
-     */
-    protected void initializeHceToBB(Iterator basicblocks) { }
 
     /** 
      * Merge (Confluence) operator.

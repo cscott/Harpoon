@@ -38,7 +38,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.4 2000-02-01 16:42:40 pnkfelix Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.5 2000-02-02 04:17:27 pnkfelix Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     
@@ -82,13 +82,12 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		HCodeElement hce = intermediateCode.getRootElement();
 		// use CFGrapher.DEFAULT for now at Felix's bequest
 		// Instrs should graduate to having their own CFGrapher
-		BasicBlock root = 
-		    (new BasicBlock.Factory(hce, cfger)).getRoot();
-		Iterator it = root.blocksIterator();
+		BasicBlock.Factory bbFact =
+		    new BasicBlock.Factory(hce, cfger);
 		Set liveOnExit = f.getRegFileInfo().liveOnExit();
-		LiveTemps ltAnalysis = new LiveTemps(it, liveOnExit);
-		// get a new iterator for the solver
-		it = root.blocksIterator();
+		LiveTemps ltAnalysis = new LiveTemps(bbFact, liveOnExit);
+		// get an iterator for the solver
+		Iterator it = bbFact.blockSet().iterator();
 		harpoon.Analysis.DataFlow.Solver.worklistSolve(it, ltAnalysis);
 		// ltAnalysis should now contain the liveness results we want
 		return ltAnalysis;

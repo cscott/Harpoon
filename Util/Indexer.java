@@ -14,18 +14,10 @@ package harpoon.Util;
  * Factory or Object type.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Indexer.java,v 1.1.2.5 2000-02-02 00:57:19 pnkfelix Exp $
+ * @version $Id: Indexer.java,v 1.1.2.6 2000-02-02 04:17:31 pnkfelix Exp $
  */
 public abstract class Indexer {
     
-    /** Checks if <code>o</code> is indexed by <code>this</code>.
-	<BR> <B>effects:</B> If <code>o</code> is a member of the set
-	     of objects indexed by <code>this</code>, returns
-	     <code>True</code>. 
-	     Else returns <code>False</code>.
-    */
-    public abstract boolean hasIndex(Object o);
-
     /** Returns the "small" integer uniquely associated with
 	<code>o</code> in <code>this</code>.
 	<BR> <B>requires:</B> <code>o</code> is a member of the set of

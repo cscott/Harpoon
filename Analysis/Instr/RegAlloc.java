@@ -70,7 +70,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.74 2000-02-01 14:03:01 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.75 2000-02-02 04:17:11 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -79,7 +79,7 @@ public abstract class RegAlloc  {
 
     protected Frame frame;
     protected Code code;
-    protected BasicBlock rootBlock;
+    protected BasicBlock.Factory bbFact;
 
     private static String getSrcStr(int num) {
 	String s = "`s0";
@@ -161,20 +161,16 @@ public abstract class RegAlloc  {
 	}
     }
 
-    /** Creates a <code>RegAlloc</code>. 
-	
-	<BR> <B>Design Issue:</B> should there be a RegAlloc object
-	for every method, or just for every machine target?  For now
-	it seems associating a new one with every method will save a
-	lot of headaches.
-
+    /** Creates a <code>RegAlloc</code>.  <code>RegAlloc</code>s are
+	each associated with a unique <code>Code</code> which they are
+	responsible for performing register allocation and assignment
+	for. 
     */
     protected RegAlloc(Code code) {
         this.frame = code.getFrame();
 	this.code = code;
 	Instr first = (Instr) code.getRootElement();
-	rootBlock = (new BasicBlock.Factory(first, 
-					    CFGrapher.DEFAULT)).getRoot();
+	bbFact = new BasicBlock.Factory(first, CFGrapher.DEFAULT);
     }
 
     
@@ -195,15 +191,6 @@ public abstract class RegAlloc  {
 	@see RegAlloc#resolveOutstandingTemps(HCode)
     */
     protected abstract void generateRegAssignment();
-
-    
-    /** Returns the root of the <code>BasicBlock</code> hierarchy for
-	the <code>Code</code> associated with <code>this</code>.
-    */
-    protected BasicBlock getBasicBlocks() {
-	return rootBlock;
-    }
-
 
     /** Creates a register-allocating <code>HCodeFactory</code> for
 	"instr" form.

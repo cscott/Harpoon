@@ -25,11 +25,9 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.12 2000-02-01 02:57:52 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.13 2000-02-02 04:17:06 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
-    private Map hceToBB; 
-
     // may be null; code using this should check
     private Set liveOnProcExit;
 
@@ -61,27 +59,24 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	 @param basicblocks <code>Iterator</code> of <code>BasicBlock</code>s to be analyzed.
 	 @param liveOnProcExit <code>Set</code> of <code>Temp</code>s that are live on exit from the method (for example, r0 for assembly code). 
     */	     
-    public LiveTemps(Iterator basicBlocks, Set liveOnProcExit,
+    public LiveTemps(BasicBlock.Factory bbFact, Set liveOnProcExit,
 		     UseDefer ud) {
 	this.ud = ud;
 
 	// duplicating code from LiveVars.java
-	CloneableIterator blocks = new CloneableIterator(basicBlocks);
-	Set universe = findUniverse((Iterator) blocks.clone());
+	Set universe = findUniverse(bbFact.blockSet());
 	universe.addAll(liveOnProcExit);
 	
 	mySetFactory = new BitSetFactory(universe);
-	
-	initializeHceToBB( (Iterator)blocks.clone() ); 
 
 	// KEY difference: set liveOnProcExit before calling initBBtoLVI
 	this.liveOnProcExit = liveOnProcExit;
 
-	initializeBBtoLVI( blocks, mySetFactory );	
+	initializeBBtoLVI( bbFact.blockSet(), mySetFactory );	
     }
     
-    public LiveTemps(Iterator basicBlocks, Set liveOnProcExit) {
-	this(basicBlocks, liveOnProcExit, UseDefer.DEFAULT);
+    public LiveTemps(BasicBlock.Factory bbFact, Set liveOnProcExit) {
+	this(bbFact, liveOnProcExit, UseDefer.DEFAULT);
     }
 
     /** Constructor for LiveVars that allows the user to pass in their
@@ -94,7 +89,7 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	<BR> Doc TODO: Add all of the above documentation from the
 	     standard ctor.
     */
-    public LiveTemps(Iterator basicBlocks, 
+    public LiveTemps(BasicBlock.Factory bbFact,
 		     Set liveOnProcExit, 
 		     SetFactory tempSetFact,
 		     UseDefer ud) {
@@ -105,13 +100,11 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	this.ud = ud;
 
 	mySetFactory = tempSetFact;
-	CloneableIterator blocks = new CloneableIterator(basicBlocks);
-	initializeHceToBB( (Iterator)blocks.clone() ); 
 
 	// KEY difference: set liveOnProcExit before calling initBBtoLVI
 	this.liveOnProcExit = liveOnProcExit;
 
-	initializeBBtoLVI( blocks, tempSetFact );
+	initializeBBtoLVI( bbFact.blockSet(), tempSetFact );
     }
 
     /** Returns the <code>Set</code> of <code>Temp</code>s that are
@@ -153,11 +146,9 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	     <code>hce</code>. 
     */
     public Set getLiveAfter(HCodeElement hce) {
-	Util.assert(this.hceToBB.containsKey(hce)); 
-
 	// System.out.println("FSK: getLiveAfter called");
 
-	BasicBlock bb = (BasicBlock) this.hceToBB.get(hce); 
+	BasicBlock bb = bbFact.getBlock(hce);
 	
 	if (lastBB != bb) {
 	    hce2liveAfter.clear();
@@ -203,7 +194,8 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	     values, returning the universe after all of the
 	     instructions have been visited.
     */
-    protected Set findUniverse(Iterator blocks) {
+    protected Set findUniverse(Set blockSet) {
+	Iterator blocks = blockSet.iterator();
 	HashSet temps = new HashSet();
 	while(blocks.hasNext()) {
 	    BasicBlock bb = (BasicBlock) blocks.next();
@@ -215,20 +207,6 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	    }
 	}
 	return temps;	
-    }
-
-    /** Initializes the mapping of <code>HCodeElement</code>s to 
-	<code>BasicBlocks</code>.  
-	
-	@param basicblocks  an <code>Iterator</code> of the basic blocks to be
-	                    analyzed. 
-    */
-    protected final void initializeHceToBB(Iterator blocks) { 
-	if (blocks.hasNext()) { 
-	    this.hceToBB = ((BasicBlock)blocks.next()).getHceToBB();
-	} else { 
-	    this.hceToBB = new HashMap();
-	}
     }
 
     /** Initializes the USE/DEF information for 'bb' and stores in in

@@ -48,7 +48,7 @@ import java.util.Iterator;
  * <code>UseDefer</code>s 
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.19 2000-02-01 14:03:01 pnkfelix Exp $ */
+ * @version $Id: LiveVars.java,v 1.1.2.20 2000-02-02 04:17:06 pnkfelix Exp $ */
 public abstract class LiveVars extends Liveness {
     
     private static final boolean DEBUG = false; 
@@ -61,10 +61,10 @@ public abstract class LiveVars extends Liveness {
      */
     public LiveVars(HCode hc, CFGrapher gr, UseDefer ud, Set liveOnExit) {
 	super(hc);
-	BasicBlock b1 = 
-	    (new BasicBlock.Factory(hc.getRootElement(), gr)).getRoot(); 
-	lv = new LiveTemps(b1.blocksIterator(), liveOnExit);
-	Solver.worklistSolve(b1.blocksIterator(), lv);
+	BasicBlock.Factory bbFact = 
+	    new BasicBlock.Factory(hc.getRootElement(), gr);
+	lv = new LiveTemps(bbFact, liveOnExit);
+	Solver.worklistSolve(bbFact.blockSet().iterator(), lv);
     }
 
     public Set getLiveIn(HCodeElement hce) {
@@ -80,6 +80,8 @@ public abstract class LiveVars extends Liveness {
      // maps a BasicBlock 'bb' to the LiveVarInfo associated with 'bb'
     private Map bbToLvi;
 
+    protected BasicBlock.Factory bbFact;
+
      /** Null arg ctor for use by subclasses so that the system won't
 	 break when calling abstract methods that require data that
 	 subclasses haven't initialized yet.
@@ -87,59 +89,47 @@ public abstract class LiveVars extends Liveness {
     protected BBVisitor() {
     }
 
+
      /** Constructs a new <code>LiveVars</code> for <code>basicblocks</code>.
-	 <BR> <B>requires:</B> <OL> 
-	      <LI> <code>basicblocks</code> is a 
-		   <code>Iterator</code> of <code>BasicBlock</code>s,
-	      <LI> All of the instructions in
-		   <code>basicblocks</code> implement
-		   <code>UseDef</code>
-	      <LI> No element of <code>basicblocks</code> links to a 
-		   <code>BasicBlock</code> not contained within 
-		   <code>basicblocks</code> 
-	      <LI> No <code>BasicBlock</code> is repeatedly iterated 
-		   by <code>basicblocks</code>
-		   </OL> 
-	  <BR> <B>modifies:</B> <code>basicblocks</code> 
+	 <BR> <B>requires:</B> All of the statements in
+	      <code>bbFact</code> implement <code>UseDef</code> 
 	  <BR> <B>effects:</B> constructs a new 
 	       <code>BasicBlockVisitor</code> and initializes its 
 	       internal datasets for analysis of the 
-	       <code>BasicBlock</code>s in <code>basicblocks</code>, 
-	       iterating over all of <code>basicblocks</code> in the 
-	       process.  Initializes the mapping between 
-	       <code>HCodeElement</code>s and <code>BasicBlock</code>s. 
-	  @param basicblocks <code>Iterator</code> of
-		 	        <code>BasicBlock</code>s to be analyzed. 
+	       <code>BasicBlock</code>s in <code>bbFact</code>.
+	  @param bbFact <code>BasicBlock.Factory</code> containing 
+	                <code>BasicBlock</code>s to be analyzed. 
      */	     
-    public BBVisitor(Iterator basicblocks) {
-	CloneableIterator blocks = new CloneableIterator(basicblocks);
-	Set universe = findUniverse((Iterator) blocks.clone());
+    public BBVisitor(BasicBlock.Factory bbFact) {
+	Set universe = findUniverse(bbFact.blockSet());
 	SetFactory setFact = new BitSetFactory(universe);
 	
-	initializeHceToBB( (Iterator)blocks.clone() ); 
-	initializeBBtoLVI( blocks, setFact );
+	initializeBBtoLVI( bbFact.blockSet(), setFact );
     }
 
     /** Constructor for <code>LiveVars</code> that allows the user to
 	pass in their own <code>SetFactory</code> for constructing
 	sets of whatever variable types that are used in the analysis.  
-	<BR> <B>requires:</B> All <code>Temp</code>s in
-	     <code>basicblocks</code> are members of the universe for
-	     <code>tempSetFact</code>.
-	     
-	<BR> Doc TODO: Add all of the above documentation from the
-	     standard ctor.
+	<BR> <B>requires:</B> <OL>
+	     <LI> All <code>Temp</code>s in <code>bbFact</code> are
+	          members of the universe for
+		  <code>tempSetFact</code>.
+	     <LI> All of the statements in <code>bbFact</code>
+	          implement <code>UseDef</code>
+	     </OL>
+	 <BR> <B>effects:</B> constructs a new 
+	      <code>BasicBlockVisitor</code> and initializes its 
+	      internal datasets for analysis of the 
+	      <code>BasicBlock</code>s in <code>bbFact</code>.	
     */
-    public BBVisitor(Iterator basicblocks, 
-		    SetFactory tempSetFact) {
-	CloneableIterator blocks = new CloneableIterator(basicblocks); 
-
-	initializeHceToBB( (Iterator)blocks.clone() ); 
-	initializeBBtoLVI( blocks, tempSetFact );
+    public BBVisitor(BasicBlock.Factory bbFact,
+		     SetFactory tempSetFact) {
+	initializeBBtoLVI( bbFact.blockSet(), tempSetFact );
     }
 
-    protected void initializeBBtoLVI(Iterator blocks, SetFactory setFact) {
+    protected void initializeBBtoLVI(Set blockSet, SetFactory setFact) {
 	bbToLvi = new HashMap();
+	Iterator blocks = blockSet.iterator();
 	while(blocks.hasNext()) {
 	    BasicBlock bb = (BasicBlock) blocks.next();
 	    LiveVarInfo lvi = makeUseDef(bb, setFact);
@@ -155,7 +145,7 @@ public abstract class LiveVars extends Liveness {
 	users to define their own universe of values (such as
 	<code>Web</code>s). 
     */
-    protected abstract Set findUniverse(Iterator blocks);
+    protected abstract Set findUniverse(Set blockSet);
 
     /** Merge (Confluence) operator.
 	<BR> LVout(bb) = Union over (j elem Succ(bb)) of ( LVin(j) ) 
@@ -198,15 +188,6 @@ public abstract class LiveVars extends Liveness {
 	info.lvIN.addAll(info.use);
     }
 
-    /** Initializes the mapping of <code>HCodeElement</code>s to 
-	<code>BasicBlocks</code>.  Implementations interested in this mapping
-	should override this method. 
-	
-	@param basicblocks  an <code>Iterator</code> of the basic blocks to be
-	                    analyzed. 
-    */
-    protected void initializeHceToBB(Iterator basicblocks) { }
-    
     /** Initializes the USE/DEF information for bb and stores it in
 	the returned LiveVarInfo.  An example implementation would
 	use <code>Temp</code>s to make up their

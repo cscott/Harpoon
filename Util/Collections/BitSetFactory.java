@@ -29,7 +29,7 @@ import java.util.HashMap;
     cause an assertion failure.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.7 2000-02-02 01:32:15 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.8 2000-02-02 04:17:32 pnkfelix Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -78,9 +78,6 @@ public class BitSetFactory extends SetFactory {
 	}
 	this.bitStringSize = i+1;
 	this.indexer = new Indexer() {
-	    public boolean hasIndex(Object o) {
-		return obj2int.containsKey(o);
-	    }
 	    public int getID(Object o) {
 		return ((Integer)obj2int.get(o)).intValue();
 	    }
@@ -116,7 +113,7 @@ public class BitSetFactory extends SetFactory {
 	}
 
 	public boolean add(Object o) {
-	    Util.assert(indexer.hasIndex(o), 
+	    Util.assert(universe.contains(o),
 			"Attempted to add an object "+
 			"that was not part of the "+
 			"original universe of values.");
@@ -151,7 +148,7 @@ public class BitSetFactory extends SetFactory {
 	}
 	
 	public boolean contains(Object o) {
-	    if (indexer.hasIndex(o)) {
+	    if (universe.contains(o)) {
 		int i = indexer.getID(o);
 		return this.bs.get(i);
 	    } else {
@@ -210,7 +207,7 @@ public class BitSetFactory extends SetFactory {
 	}
 	
 	public boolean remove(Object o) {
-	    if (indexer.hasIndex(o)) {
+	    if (universe.contains(o)) {
 		// o is not member of universe, therefore cannot be in set.
 		return false;
 	    } else {
