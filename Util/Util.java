@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.11 1999-09-11 05:43:21 pnkfelix Exp $
+ * @version $Id: Util.java,v 1.12.2.12 1999-10-15 20:59:13 cananian Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -125,6 +125,7 @@ public abstract class Util {
    *          times. */
   /* OLD WAY
   public static final String repeatString(String s, int n) {
+    Util.assert(n>=0);
     if (n==0) return "";
     if (n==1) return s;
     if ((n & 1) == 1)  // n is odd
@@ -137,6 +138,7 @@ public abstract class Util {
   */
   // another way of doing the same thing.
   public static final String repeatString(String s, int n) {
+    Util.assert(n>=0);
     StringBuffer sb = new StringBuffer();
     for (int bit=fls(n)-1; bit>=0; bit--) {
       sb = sb.append(sb.toString());
