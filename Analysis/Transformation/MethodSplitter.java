@@ -16,6 +16,7 @@ import harpoon.Util.Default;
 import harpoon.Util.Util;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 /**
  * <code>MethodSplitter</code> makes it easier to implement
@@ -33,7 +34,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.8 2000-10-19 23:54:29 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.9 2000-10-20 01:38:12 cananian Exp $
  */
 public abstract class MethodSplitter {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -51,9 +52,12 @@ public abstract class MethodSplitter {
 	    public String getCodeName() { return parent.getCodeName(); }
 	    public void clear(HMethod m) { parent.clear(m); }
 	    public HCode convert(HMethod m) {
-		HCode hc = parent.convert(m);
+		List swpair = (List) split2orig.get(m);
+		Token tok = (swpair==null) ? ORIGINAL : (Token) swpair.get(1);
+		HCode hc = (tok==ORIGINAL) ? parent.convert(m) :
+		    convert( (HMethod)swpair.get(0) );
 		try {
-		    if (hc!=null) hc = mutateHCode(hc.clone(m), ORIGINAL);
+		    if (hc!=null) hc = mutateHCode(hc.clone(m), tok);
 		} catch (CloneNotSupportedException ex) {
 		    Util.assert(false, "cloning HCode failed: "+ex);
 		}
@@ -62,7 +66,7 @@ public abstract class MethodSplitter {
 	}, true/* save cache */);
     }
     
-    /** Maps split methods to the original method they were derived from. */
+    /** Maps split methods to <original method, token> pairs. */
     private final Map split2orig = new HashMap();
     /** Maps <original method, token> pairs to created split methods. */
     private final Map versions = new HashMap();
@@ -72,10 +76,11 @@ public abstract class MethodSplitter {
     public final synchronized HMethod select(HMethod source, Token which) {
 	Util.assert(isValidToken(which), "token is not valid");
 	HMethod orig = split2orig.containsKey(source) ?
-	    (HMethod) split2orig.get(source) : source;
+	    (HMethod) ((List)split2orig.get(source)).get(0) : source;
 	if (which == ORIGINAL) return orig;
 	Util.assert(which.suffix!=null,"Null token suffixes are not allowed!");
-	HMethod splitM = (HMethod) versions.get(Default.pair(source, which));
+	List swpair = Default.pair(source, which);
+	HMethod splitM = (HMethod) versions.get(swpair);
 	if (splitM == null) {
 	    HClassMutator hcm = orig.getDeclaringClass().getMutator();
 	    Util.assert(hcm!=null, "You're using a linker, not a relinker.");
@@ -93,17 +98,9 @@ public abstract class MethodSplitter {
 	    splitM.getMutator().setModifiers(orig.getModifiers());
 	    splitM.getMutator().setSynthetic(orig.isSynthetic());
 	    /* now add this to known versions */
-	    versions.put(Default.pair(source, which), splitM);
-	    split2orig.put(splitM, orig);
-	    /* and create an HCode for this */
-	    HCode hc = hcf.convert(orig);
-	    if (hc!=null) {
-		try {
-		    hcf.put(splitM, mutateHCode(hc.clone(splitM), which));
-		} catch (CloneNotSupportedException ex) {
-		    Util.assert(false, "cloning HCode failed: "+ex);
-		}
-	    }
+	    versions.put(swpair, splitM);
+	    split2orig.put(splitM, swpair);
+	    /* done */
 	}
 	return splitM;
     }
