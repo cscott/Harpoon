@@ -50,8 +50,8 @@ struct claz {
 
 /* the oobj structure tells you what's inside the object layout. */
 struct oobj {
-  /* hash code above this point */
   struct claz *claz;
+  u_int32_t hashcode;
   /* fields below this point */
 };
 /** use this version of the oobj structure if you're looking at an array. */
@@ -60,23 +60,6 @@ struct aarray {
   jsize length; /* first field in an array is the length */
   char element_start[0]; /* place holder for start of elements */
 };
-/* use this version of the oobj structure if you need to get at the
- * hashcode value, which is stored *above* the pointed-at location.
- * remember to offset your pointer using the OOBJ_OFFSET macro.
- */
-struct oobj_offset {
-  u_int32_t hashcode;
-  struct oobj obj;
-};
-/* this structure is really useful only if you're figuring out array sizes */
-struct aarray_offset {
-  u_int32_t hashcode;
-  struct aarray obj;
-};
-#define OOBJ_OFFSET(unscaled) \
-	((struct oobj_offset *) (((char *)(unscaled)) - sizeof(u_int32_t)))
-#define OOBJ_UNOFFSET(offset) \
-	((struct oobj *) (((char *)(offset)) + sizeof(u_int32_t)))
 
 struct FNI_classinfo {
   struct claz *claz;

@@ -149,7 +149,7 @@ JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
 JNIEXPORT jint JNICALL Java_java_lang_System_identityHashCode
   (JNIEnv *env, jclass cls, jobject obj) {
     jobject_unwrapped oobj = FNI_UNWRAP(obj);
-    return OOBJ_OFFSET(oobj)->hashcode;
+    return (jint) oobj->hashcode;
 }
 
 /*

@@ -53,7 +53,7 @@ jarray FNI_NewObjectArray(JNIEnv *env, jsize length,
     FNI_DeleteLocalRef(env, arrayclazz);
   }
   result = FNI_Alloc(env, info,
-		     sizeof(struct aarray_offset) + sizeof(ptroff_t)*length);
+		     sizeof(struct aarray) + sizeof(ptroff_t)*length);
   if (result==NULL) return NULL; /* bail on error */
   ((struct aarray *)FNI_UNWRAP(result))->length = length;
   if (initialElement != NULL) {
@@ -80,7 +80,7 @@ type##Array FNI_New##name##Array(JNIEnv *env, jsize length) {\
   info = FNI_GetClassInfo(arrayclazz);\
   FNI_DeleteLocalRef(env, arrayclazz);\
   result = FNI_Alloc(env, info,\
-		     sizeof(struct aarray_offset) + sizeof(type)*length);\
+		     sizeof(struct aarray) + sizeof(type)*length);\
   if (result==NULL) return NULL; /* bail on error */\
   ((struct aarray *)FNI_UNWRAP(result))->length = length;\
   return (type##Array) result;\

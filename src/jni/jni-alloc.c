@@ -17,7 +17,7 @@ void *FNI_RawAlloc(JNIEnv *env, jsize length) {
  * Returns NULL and throws OutOfMemoryError if it cannot
  * allocate the memory. */
 jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, jsize length) {
-  struct oobj_offset *newobj;
+  struct oobj *newobj;
 
   newobj = FNI_RawAlloc(env, length);
   if (newobj==NULL) {
@@ -26,7 +26,7 @@ jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, jsize length) {
     return NULL;
   }
   memset(newobj, 0, length);
-  newobj->hashcode = (u_int32_t) OOBJ_UNOFFSET(newobj);
-  newobj->obj.claz = info->claz;
-  return FNI_WRAP(OOBJ_UNOFFSET(newobj));
+  newobj->claz = info->claz;
+  newobj->hashcode = (u_int32_t) newobj;
+  return FNI_WRAP(newobj);
 }

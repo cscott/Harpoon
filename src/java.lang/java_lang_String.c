@@ -47,7 +47,7 @@ int initializeJLS(JNIEnv *env) {
   for (p = (char*) &string_constants_start; 
        p < (char*) &string_constants_end;
        p += strsize) {
-    jobject s = FNI_WRAP(OOBJ_UNOFFSET(p));
+    jobject s = FNI_WRAP((struct oobj *)p);
     if ((*env)->ExceptionOccurred(env)) return 0;
     (*env)->CallObjectMethod(env, internTable, putID, s, s);
     if ((*env)->ExceptionOccurred(env)) return 0;
