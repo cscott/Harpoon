@@ -12,7 +12,8 @@ mv  ~/Harpoon/Runtime/arch/arm32/header.s \
 
 echo Concatenating files.
 rm -f all.s
-cat header.s _Primitive_*.s _Class_*.s lookup.s native.s dispatch.s footer.s \
+# I cut native.s
+cat header.s _Primitive_*.s _Class_*.s lookup.s dispatch.s footer.s \
     > all.s
 
 echo Building archive.

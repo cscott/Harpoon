@@ -2,18 +2,19 @@
 #include "constants.h"
 
 JNIEnv * FNI_ThreadInit(void); /* from jni-private.h */
+extern JNIEnv *FNI_JNIEnv; /* temporary hack. */
 
 int main(int argc, char *argv[]) {
-  /*
-  int (*f) (void *) = javamain;
-  printf("%p\n", f);
-  f(0);
-  printf("returned.\n");
-  */
+  JNIEnv *env;
+  jclass cls;
+  jmethodID mid;
   
-  JNIEnv *env = FNI_ThreadInit();
-  jclass cls = (*env)->FindClass(env, "Hello2");
-  jmethodID mid = (*env)->GetStaticMethodID(env, cls, "main",
-					    "([Ljava/lang/String;)V");
+  env = FNI_ThreadInit();
+  FNI_JNIEnv = env;
+  cls = (*env)->FindClass(env, "Hello3");
+  mid = (*env)->GetStaticMethodID(env, cls, "main",
+				  "([Ljava/lang/String;)V");
   (*env)->CallStaticVoidMethod(env, cls, mid, NULL);
+  if ((*env)->ExceptionOccurred(env)!=NULL)
+    (*env)->ExceptionDescribe(env);
 }
