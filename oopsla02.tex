@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.12 2002-03-22 23:25:09 cananian Exp $
+% $Id: oopsla02.tex,v 1.13 2002-03-22 23:49:34 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -29,7 +29,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.12 $ $}{$ $Revision: 1.12 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.13 $ $}{$ $Revision: 1.13 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -552,19 +552,39 @@ is not.}
 \end{figure}
 
 \subsection{Profiling Mostly-Constant Fields}
-instrument the code to increment a per-class counter the first time a
-non-N value is set in the field.  by comparing this counter value to
-the number of times the class is instantiated, we can determine how
-often the field is 'always-N' and thus how much space we'd save by
-doing a mostly-N transformation.
+To aid the static specialization and field externalization
+transformations, we instrument a ``profiling build'' of the code
+to determine which fields are mostly-constant.  Our implementation
+builds one binary per examined constant, that is, one binary to look
+for ``mostly-zero'' fields, a separate binary to look for fields which
+are usually ``one'', a third binary to look for fields commonly
+``two'', and so forth.  We built ten binaries, looking for
+``mostly-$N$'' fields, where $N$ was in the interval $[-5,5]$.
+Only the ``mostly-zero'' build was relevant for pointer fields, where
+we looked for mostly-{\tt null} fields.  We could easily have built
+one combined binary instead of eleven, but for simplicity the following
+discussion will follow our implementation and assume there is only one
+target value $N$ which we are looking for.
 
-problem: default zero value. (not an issue if N==0)
+We add one counter per class which is incremented at allocation sites
+to record the number of times each exact class type is instantiated.
+We also add per-field counters which are incremented the {\tt first}
+time a non-$N$ value is stored into a certain field.  By comparing the
+number of times the class (thus field) is instantiated and the number
+of times its value it set to a non-$N$ value, we can determine the
+amount of memory we could save by applying a ``mostly-$N$''
+transformation (static specialization or field externalization) to the
+field.  Static specialization will split first on the field
+demonstrating the largest potential savings, with the most common $N$
+value seen.  Externalization will only apply if the ratio of
+always-$N$-valued fields to total allocated fields exceeds its
+breakeven point (see section {\bf\Large FIXME} for a discussion).
 
-so we use the definite initialization analysis.  if the field is
-not definitely initialized on a given path through a constructor,
-we must assume the default zero value ``leaks'' and so we treat
-the path as if it were a SET of a non-N value (ie. increment the
-counter).
+When looking for non-zero $N$ values, the default zero value for
+uninitialized fields becomes a problem.  For these cases, we use the
+definite-initialization analysis in the previous section to increment the
+``non-$N$'' counter on any path where the field in question is not
+definitely initialized.
 
 \subsection{Finding Subclass-Final Fields}
 a generalization of java's ``final''.
