@@ -29,7 +29,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.25 2000-01-09 01:18:07 duncan Exp $
+ * @version $Id: CALL.java,v 1.1.2.26 2000-01-09 06:48:45 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
@@ -44,6 +44,8 @@ public class CALL extends INVOCATION {
     /** Whether this invocation should be performed as a tail call. */
     public boolean isTailCall;
 
+    private CONST nullRetval; 
+
     /** Create a <code>CALL</code> object. */
     public CALL(TreeFactory tf, HCodeElement source,
 		TEMP retval, TEMP retex, Exp func, ExpList args,
@@ -57,9 +59,13 @@ public class CALL extends INVOCATION {
 	this.setFunc(this.getFunc()); 
 	this.setArgs(this.getArgs()); 
 	this.isTailCall = isTailCall;
+	if (retval == null) { this.nullRetval = new CONST(tf, null); } 
     }
 
-    public Tree getFirstChild() { return this.getRetval(); } 
+    public Tree getFirstChild() { 
+	TEMP retval = this.getRetval(); 
+	return (retval == null) ? this.retex : retval; 
+    }
     public TEMP getRetex() { return this.retex; } 
     public NAME getHandler() { return this.handler; } 
   
@@ -109,13 +115,35 @@ public class CALL extends INVOCATION {
 
     public int kind() { return TreeKind.CALL; }
 
+    // FIXME:  this is an ugly hack which should be cleaned up. 
+    public ExpList kids() { 
+	ExpList result = new ExpList
+	    (this.retex, 
+	     new ExpList
+	     (this.getFunc(), 
+	      new ExpList
+	      (this.handler,
+	       this.getArgs()))); 
+	      
+	if (this.getRetval() == null) { 
+	    result = new ExpList(nullRetval, result); 
+	} else { 
+	    result = new ExpList(this.getRetval(), result); 
+	}
+	return result; 
+    }
+
     public Stm build(ExpList kids) { return build(tf, kids); }
 
     public Stm build(TreeFactory tf, ExpList kids) {
 	for (ExpList e = kids; e!=null; e=e.tail)
 	    Util.assert(e.head == null || tf == e.head.tf);
+
+	TEMP retval = kids.head.kind() == TreeKind.TEMP ? 
+	    (TEMP)kids.head : null; 
+
 	return new CALL(tf, this, 
-			(TEMP)kids.head,                // retval
+			retval,                         // retval
 			(TEMP)kids.tail.head,           // retex
 			kids.tail.tail.head,            // func
 			kids.tail.tail.tail.tail,       // args

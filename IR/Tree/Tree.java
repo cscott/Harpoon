@@ -28,7 +28,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.22 2000-01-09 02:12:05 duncan Exp $
+ * @version $Id: Tree.java,v 1.1.2.23 2000-01-09 06:48:45 duncan Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 
@@ -168,9 +168,7 @@ public abstract class Tree
 	    list.add(child); 
 	}
 
-	ExpList rv = ExpList.toExpList(list); 
-	//System.out.println("Converted: " +list + " to " + rv); 
-	return rv;
+	return ExpList.toExpList(list); 
     }
 }
 
