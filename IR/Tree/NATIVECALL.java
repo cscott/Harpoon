@@ -20,7 +20,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NATIVECALL.java,v 1.1.2.23 2000-02-15 15:47:40 cananian Exp $
+ * @version $Id: NATIVECALL.java,v 1.1.2.24 2000-02-15 17:19:04 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see INVOCATION
@@ -54,7 +54,8 @@ public class NATIVECALL extends INVOCATION {
 			    (this.getRetval()==null) ? null :
 			    (TEMP)this.getRetval().rename(tf, tm, cb),
 			    (Exp)this.getFunc().rename(tf, tm, cb),
-			    ExpList.rename(this.getArgs(), tf, tm, cb)));
+			    ExpList.rename(this.getArgs(), tf, tm, cb)),
+			   tm);
     }
 
     public String toString() {

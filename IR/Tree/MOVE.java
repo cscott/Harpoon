@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.23 2000-02-15 15:47:40 cananian Exp $
+ * @version $Id: MOVE.java,v 1.1.2.24 2000-02-15 17:19:04 cananian Exp $
  */
 public class MOVE extends Stm implements Typed {
     /** Constructor. 
@@ -100,7 +100,8 @@ public class MOVE extends Stm implements Typed {
     public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
         return cb.callback(this, new MOVE(tf, this,
 					  (Exp)getDst().rename(tf, tm, cb),
-					  (Exp)getSrc().rename(tf, tm, cb)));
+					  (Exp)getSrc().rename(tf, tm, cb)),
+			   tm);
     }
 
     /** @return the type of <code>dst</code> expression. */

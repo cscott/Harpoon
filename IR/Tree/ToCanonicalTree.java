@@ -10,6 +10,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 
@@ -24,7 +25,7 @@ import java.util.HashSet;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.27 2000-02-15 15:49:53 cananian Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.28 2000-02-15 17:19:05 cananian Exp $
  */
 public class ToCanonicalTree {
     private Tree m_tree;
@@ -283,7 +284,7 @@ public class ToCanonicalTree {
     
 	private TEMP _MAP(TEMP t) { 
 	    return (TEMP)t.rename(tf, ctm, new Tree.CloneCallback() {
-		public Tree callback(Tree o, Tree n) { return n; }
+		public Tree callback(Tree o, Tree n, TempMap tm) { return n; }
 	    });
 	}
     }

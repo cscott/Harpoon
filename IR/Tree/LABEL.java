@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: LABEL.java,v 1.1.2.15 2000-02-15 15:47:40 cananian Exp $
+ * @version $Id: LABEL.java,v 1.1.2.16 2000-02-15 17:19:04 cananian Exp $
  */
 public class LABEL extends Stm implements harpoon.ClassFile.HDataElement { 
     /** The symbolic name to define. */
@@ -45,7 +45,7 @@ public class LABEL extends Stm implements harpoon.ClassFile.HDataElement {
     public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
-        return cb.callback(this, new LABEL(tf, this, this.label, exported));
+        return cb.callback(this, new LABEL(tf, this, this.label, exported), tm);
     }
 
     public String toString() {

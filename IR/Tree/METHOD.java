@@ -21,7 +21,7 @@ import java.util.Set;
  * links to the exception handlers for the method. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: METHOD.java,v 1.1.2.12 2000-02-15 15:47:40 cananian Exp $
+ * @version $Id: METHOD.java,v 1.1.2.13 2000-02-15 17:19:04 cananian Exp $
  */
 public class METHOD extends Stm {
     private final int paramsLength;
@@ -77,7 +77,7 @@ public class METHOD extends Stm {
 	TEMP[] newTmps = new TEMP[params.length];
 	for (int i=0; i<params.length; i++) 
 	    newTmps[i] = (TEMP)params[i].rename(tf, tm, cb);
-	return cb.callback(this, new METHOD(tf,this,newTmps));
+	return cb.callback(this, new METHOD(tf,this,newTmps), tm);
     }
 
     /** Accept a visitor. */

@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * </PRE>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: DATUM.java,v 1.1.2.3 2000-02-15 15:47:40 cananian Exp $
+ * @version $Id: DATUM.java,v 1.1.2.4 2000-02-15 17:19:04 cananian Exp $
  */
 public class DATUM extends Stm implements harpoon.ClassFile.HDataElement { 
     /** If false, the memory is not initialized; instead it is reserved
@@ -108,7 +108,7 @@ public class DATUM extends Stm implements harpoon.ClassFile.HDataElement {
     public void accept(TreeVisitor v) { v.visit(this); } 
 
     public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) { 
-	return cb.callback(this, new DATUM(tf, this, (Exp)getData().rename(tf, tm, cb),initialized));
+	return cb.callback(this, new DATUM(tf, this, (Exp)getData().rename(tf, tm, cb),initialized), tm);
     }    
 
     public String toString() { 

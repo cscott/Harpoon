@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.20 2000-02-15 15:47:40 cananian Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.21 2000-02-15 17:19:04 cananian Exp $
  */
 public class ESEQ extends Exp implements PreciselyTyped {
     /** Constructor. */
@@ -70,7 +70,8 @@ public class ESEQ extends Exp implements PreciselyTyped {
     public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
         return cb.callback(this, new ESEQ(tf, this, 
 					  (Stm)getStm().rename(tf, tm, cb), 
-					  (Exp)getExp().rename(tf, tm, cb)));
+					  (Exp)getExp().rename(tf, tm, cb)),
+			   tm);
     }
 
     public int type() { return getExp().type(); }

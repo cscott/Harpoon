@@ -16,7 +16,7 @@ import java.util.Set;
  *  stored in the specified section.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: SEGMENT.java,v 1.1.2.19 2000-02-15 15:47:40 cananian Exp $
+ * @version $Id: SEGMENT.java,v 1.1.2.20 2000-02-15 17:19:04 cananian Exp $
  */
 public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
     /** R/O storage for static class data (display, vmtable, etc) */
@@ -95,7 +95,7 @@ public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
     public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
-        return cb.callback(this, new SEGMENT(tf, this, segtype));
+        return cb.callback(this, new SEGMENT(tf, this, segtype), tm);
     }
 
     public String toString() {

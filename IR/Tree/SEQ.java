@@ -16,7 +16,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.1.2.18 2000-02-15 15:47:40 cananian Exp $
+ * @version $Id: SEQ.java,v 1.1.2.19 2000-02-15 17:19:04 cananian Exp $
  */
 public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
     /** Constructor. */
@@ -57,7 +57,8 @@ public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
     public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
         return cb.callback(this, new SEQ(tf, this, 
 					 (Stm)getLeft().rename(tf, tm, cb),
-					 (Stm)getRight().rename(tf, tm, cb)));
+					 (Stm)getRight().rename(tf, tm, cb)),
+			   tm);
     }
 
     public String toString() {

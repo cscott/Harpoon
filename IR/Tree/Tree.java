@@ -28,7 +28,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.28 2000-02-15 15:47:40 cananian Exp $
+ * @version $Id: Tree.java,v 1.1.2.29 2000-02-15 17:19:05 cananian Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 
@@ -224,12 +224,16 @@ public abstract class Tree
 	 *  be linked in to the cloned parent, so substitutions on the
 	 *  cloned-tree-in-progress can be made by returning something
 	 *  other than <code>newTree</code>.  In normal use, however,
-	 *  <code>newTree</code> should always be returned. */
-	public Tree callback(Tree oldTree, Tree newTree);
+	 *  <code>newTree</code> should always be returned.
+	 *  <p>The supplied <code>TempMap</code> specifies the
+	 *  <code>Temp</code> mapping in effect for the cloning
+	 *  operation.  This allows you to update tree information
+	 *  which is tied to <code>Temp</code>s. */
+	public Tree callback(Tree oldTree, Tree newTree, TempMap tm);
     }
     /** A do-nothing callback.  Comes in handy sometimes. */
     private static final CloneCallback nullCallback = new CloneCallback() {
-	public Tree callback(Tree o, Tree n) { return n; }
+	public Tree callback(Tree o, Tree n, TempMap tm) { return n; }
     };
 
     /** Convenience function for tempmapping. */

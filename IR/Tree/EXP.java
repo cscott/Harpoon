@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: EXP.java,v 1.1.2.18 2000-02-15 15:47:40 cananian Exp $
+ * @version $Id: EXP.java,v 1.1.2.19 2000-02-15 17:19:04 cananian Exp $
  */
 public class EXP extends Stm {
     /** Constructor. */
@@ -45,7 +45,7 @@ public class EXP extends Stm {
     public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
-        return cb.callback(this, new EXP(tf, this, (Exp)getExp().rename(tf, tm, cb)));
+        return cb.callback(this, new EXP(tf, this, (Exp)getExp().rename(tf, tm, cb)), tm);
     }
 
     public String toString() {

@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: JUMP.java,v 1.1.2.14 2000-02-15 15:47:40 cananian Exp $
+ * @version $Id: JUMP.java,v 1.1.2.15 2000-02-15 17:19:04 cananian Exp $
  */
 public class JUMP extends Stm {
     /** A list of possible branch targets. */
@@ -52,7 +52,7 @@ public class JUMP extends Stm {
     public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
-        return cb.callback(this, new JUMP(tf, this, (Exp)getExp().rename(tf, tm, cb), this.targets));
+        return cb.callback(this, new JUMP(tf, this, (Exp)getExp().rename(tf, tm, cb), this.targets), tm);
     }  
 
     public String toString() {

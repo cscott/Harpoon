@@ -17,7 +17,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.1.2.24 2000-02-15 15:47:40 cananian Exp $
+ * @version $Id: TEMP.java,v 1.1.2.25 2000-02-15 17:19:05 cananian Exp $
  */
 public class TEMP extends Exp {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -61,12 +61,15 @@ public class TEMP extends Exp {
 	// Registers are immutable
 	if (getFactory().getFrame().getRegFileInfo().isRegister(this.temp)) {
 	    Util.assert(tf.getFrame().getRegFileInfo().isRegister(temp));
-	    return cb.callback(this, new TEMP(tf, this, this.type, this.temp));
+	    return cb.callback(this,
+			       new TEMP(tf, this, this.type, this.temp),
+			       tm);
 	}
 	else {
 	    Util.assert(getFactory().tempFactory() == this.temp.tempFactory());
-	    return cb.callback(this, new TEMP(tf, this, this.type,
-					      map(tm, this.temp)));
+	    return cb.callback(this,
+			       new TEMP(tf, this,this.type,map(tm, this.temp)),
+			       tm);
 	}
     }
 
