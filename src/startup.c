@@ -239,6 +239,7 @@ int main(int argc, char *argv[]) {
   }
 
 #if defined(WITH_INIT_CHECK) && defined(WITH_THREADS)
+  initDone = 1;
   /* start up any threads that were deferred during static initialization */
   fni_thread_startDeferredThreads(env);
 #endif /* WITH_INIT_CHECK && WITH_THREADS */
@@ -338,8 +339,6 @@ int main(int argc, char *argv[]) {
       CHECK_EXCEPTIONS(env); // catch exception thrown?
       (*env)->DeleteLocalRef(env, threadgroup);
     }
-#else
-    (*env)->ExceptionDescribe(env);
 #endif
   }
 #else /* in the sunjdk, the Thread.exit() method does this for us. */
