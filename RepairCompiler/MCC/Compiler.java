@@ -18,7 +18,7 @@ import MCC.IR.*;
 
 public class Compiler {
     /* Set this flag to false to turn repairs off */
-    public static boolean REPAIR=false;
+    public static boolean REPAIR=true;
     
     public static void main(String[] args) {
         State state = null;

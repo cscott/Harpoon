@@ -11,7 +11,7 @@ import java.util.StringTokenizer;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.1 2003-07-07 16:13:33 droy Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.2 2004-04-15 05:41:46 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -180,6 +180,8 @@ public class CLI {
 	    } else if (args[i].equals("-native")) {
                 context = 0;
                 fNative = true;
+	    } else if (args[i].equals("-checkonly")) {
+                Compiler.REPAIR=false;
             } else if (args[i].equals("-vis")) {
                 context = 4;
                 fVis = true;

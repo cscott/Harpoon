@@ -19,6 +19,7 @@ public class Termination {
     Hashtable abstractadd;
     Hashtable abstractremove;
     Hashtable conjtonodemap;
+    Hashtable predtoabstractmap;
     Set removedset;
 
     State state;
@@ -37,6 +38,7 @@ public class Termination {
 	abstractadd=new Hashtable();
 	abstractremove=new Hashtable();
 	conjtonodemap=new Hashtable();
+	predtoabstractmap=new Hashtable();
 	if (!Compiler.REPAIR)
 	    return;
 
@@ -267,6 +269,9 @@ public class Termination {
 		    GraphNode gn2=new GraphNode(gn.getLabel()+"A"+i+"B"+ar.type(),gn.getTextLabel()+" #"+i+" "+ar.type(),tn2);
 		    GraphNode.Edge e=new GraphNode.Edge("abstract",gn2);
 		    gn.addEdge(e);
+		    if (!predtoabstractmap.containsKey(dp))
+			predtoabstractmap.put(dp,new HashSet());
+		    ((Set)predtoabstractmap.get(dp)).add(gn2);
 		    abstractrepair.add(gn2);
 		}
 	    }
@@ -284,6 +289,9 @@ public class Termination {
 	    AbstractRepair ar=new AbstractRepair(tp, AbstractRepair.ADDTOSET, sd);
 	    TermNode tn=new TermNode(ar);
 	    GraphNode gn=new GraphNode("AbstractAddSetRule"+i,tn);
+	    if (!predtoabstractmap.containsKey(tp))
+		predtoabstractmap.put(tp,new HashSet());
+	    ((Set)predtoabstractmap.get(tp)).add(gn);
 	    abstractrepair.add(gn);
 	    abstractadd.put(sd,gn);
 	    
@@ -291,6 +299,9 @@ public class Termination {
 	    AbstractRepair ar2=new AbstractRepair(tp2, AbstractRepair.REMOVEFROMSET, sd);
 	    TermNode tn2=new TermNode(ar2);
 	    GraphNode gn2=new GraphNode("AbstractRemSetRule"+i,tn2);
+	    if (!predtoabstractmap.containsKey(tp2))
+		predtoabstractmap.put(tp2,new HashSet());
+	    ((Set)predtoabstractmap.get(tp2)).add(gn2);
 	    abstractrepair.add(gn2);
 	    abstractremove.put(sd,gn2);
 	}
@@ -309,6 +320,9 @@ public class Termination {
 	    AbstractRepair ar=new AbstractRepair(tp, AbstractRepair.ADDTORELATION, rd);
 	    TermNode tn=new TermNode(ar);
 	    GraphNode gn=new GraphNode("AbstractAddRelRule"+i,tn);
+	    if (!predtoabstractmap.containsKey(tp))
+		predtoabstractmap.put(tp,new HashSet());
+	    ((Set)predtoabstractmap.get(tp)).add(gn);
 	    abstractrepair.add(gn);
 	    abstractadd.put(rd,gn);
 	    
@@ -316,6 +330,9 @@ public class Termination {
 	    AbstractRepair ar2=new AbstractRepair(tp2, AbstractRepair.REMOVEFROMRELATION, rd);
 	    TermNode tn2=new TermNode(ar2);
 	    GraphNode gn2=new GraphNode("AbstractRemRelRule"+i,tn2);
+	    if (!predtoabstractmap.containsKey(tp2))
+		predtoabstractmap.put(tp2,new HashSet());
+	    ((Set)predtoabstractmap.get(tp2)).add(gn2);
 	    abstractrepair.add(gn2);
 	    abstractremove.put(rd,gn2);
 	}

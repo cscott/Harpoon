@@ -17,8 +17,23 @@ public class GraphAnalysis {
     public Set doAnalysis() {
 	HashSet cantremove=new HashSet();
 	HashSet mustremove=new HashSet();
+	HashSet optionalabstractrepair=new HashSet();
+
+	for (Iterator it=termination.abstractrepair.iterator();it.hasNext();) {
+	    GraphNode gn=(GraphNode)it.next();
+	    TermNode tn=(TermNode)gn.getOwner();
+	    AbstractRepair ar=tn.getAbstract();
+	    DNFPredicate dpred=ar.getPredicate();
+	    Set repairnodes=(Set)termination.predtoabstractmap.get(dpred);
+	    if ((repairnodes.size()>1)&&
+		containsmodify(repairnodes)) {
+		optionalabstractrepair.add(gn);
+	    }
+   	}
+
 	cantremove.addAll(termination.scopenodes);
 	cantremove.addAll(termination.abstractrepair);
+	cantremove.removeAll(optionalabstractrepair);
 
 	while(true) {
 	    boolean change=false;
@@ -28,9 +43,10 @@ public class GraphAnalysis {
 	    GraphNode.computeclosure(nodes,mustremove);
 	    Set cycles=GraphNode.findcycles(nodes);
 	    Set couldremove=new HashSet();
-	    couldremove.addAll(termination.conjunctions);
+    	    couldremove.addAll(termination.conjunctions);
 	    couldremove.addAll(termination.updatenodes);
 	    couldremove.addAll(termination.consequencenodes);
+	    couldremove.addAll(optionalabstractrepair);
 	    couldremove.retainAll(cycles);
 
 
@@ -50,6 +66,10 @@ public class GraphAnalysis {
 			change=true;
 		}
 	    }
+
+	    /* Search through conjunction which must be satisfied, and attempt
+	       to generate appropriate repair actions
+	     */
 	    HashSet newset=new HashSet();
 	    for(Iterator cit=cantremove.iterator();cit.hasNext();) {
 		GraphNode gn=(GraphNode)cit.next();
@@ -60,12 +80,9 @@ public class GraphAnalysis {
 			GraphNode.Edge e=(GraphNode.Edge)edgeit.next();
 			GraphNode gn2=e.getTarget();
 			TermNode tn2=(TermNode)gn2.getOwner();
-			if (tn2.getType()==TermNode.ABSTRACT) {
-			    AbstractRepair ar=tn2.getAbstract();
-			    if (ar.getType()==AbstractRepair.MODIFYRELATION) {
-				nomodify=false;
-				break;
-			    }
+			if (nodes.contains(gn2)&&!mustremove.contains(gn2)&&
+			    tn2.getType()==TermNode.ABSTRACT) {
+
 			    HashSet updateset=new HashSet();
 			    for(Iterator upit=gn2.edges();upit.hasNext();) {
 				GraphNode.Edge e2=(GraphNode.Edge)upit.next();
@@ -75,13 +92,52 @@ public class GraphAnalysis {
 				    updateset.add(gn3);
 			    }
 			    updateset.removeAll(mustremove);
-			    if (updateset.size()==1)
+
+			    AbstractRepair ar=tn2.getAbstract();
+			    DNFPredicate dpred=ar.getPredicate();
+			    Set repairnodes=(Set)termination.predtoabstractmap.get(dpred);
+			    if (repairnodes.size()>1&&
+				containsmodify(repairnodes)) {
+				/* We are modifying a relation */
+				HashSet retainednodes=new HashSet();
+				retainednodes.addAll(repairnodes);
+				retainednodes.retainAll(nodes);
+
+				if (ar.getType()==AbstractRepair.MODIFYRELATION) {
+				    if (updateset.size()==0) {
+					if (retainednodes.size()>1) {
+					    mustremove.add(gn);
+					    change=true;
+					} else return null; /* Out of luck */
+				    }
+				    if (updateset.size()==1&&retainednodes.size()==1)
+					toremove.addAll(updateset); /* Required update */
+				} else {
+				    /* Addition or removal to relation */
+				    assert (ar.getType()==AbstractRepair.ADDTORELATION)||(ar.getType()==AbstractRepair.REMOVEFROMRELATION);
+				    if (updateset.size()==0) {
+					if (containsmodify(retainednodes)) {
+					    /* Both ADD & REMOVE are no good */
+					    for(Iterator it=retainednodes.iterator();it.hasNext();) {
+						GraphNode gnit=(GraphNode)it.next();
+						TermNode tnit=(TermNode)gnit.getOwner();
+						AbstractRepair arit=tnit.getAbstract();
+						if (arit.getType()!=AbstractRepair.MODIFYRELATION) {
+						    mustremove.add(gnit);
+						    change=true;
+						}
+					    }
+					} else
+					    return null; /* Out of luck */
+				    }
+				    if (updateset.size()==1&&retainednodes.size()==2)
+					toremove.addAll(updateset); /* Required update */
+				}
+			    } else if (updateset.size()==1)
 				toremove.addAll(updateset);
 			}
 		    }
-		    if (nomodify) {
-			newset.addAll(toremove);
-		    }
+		    newset.addAll(toremove);
 		}
 	    }
 	    {
@@ -182,6 +238,7 @@ public class GraphAnalysis {
 		if (illegal(combination,couldremovevector))
 		    break;
 		Set combinationset=buildset(combination,couldremovevector);
+		checkmodify(combinationset);
 		combinationset.addAll(mustremove);
 		if (combinationset!=null) {
 		    System.out.println("Checkabstract="+checkAbstract(combinationset));
@@ -198,6 +255,44 @@ public class GraphAnalysis {
 	    }
 	    return null;
 	}
+    }
+
+    private void checkmodify(Set removednodes) {
+	for (Iterator it=removednodes.iterator();it.hasNext();) {
+	    GraphNode gn=(GraphNode)it.next();
+	    TermNode tn=(TermNode)gn.getOwner();
+	    if (tn.getType()==TermNode.ABSTRACT) {
+		AbstractRepair ar=tn.getAbstract();
+		DNFPredicate dpred=ar.getPredicate();
+		Set repairnodes=(Set)termination.predtoabstractmap.get(dpred);
+		/* Has MODIFYRELATION */
+		if (containsmodify(repairnodes)&&
+		    (repairnodes.size()>1)&&
+		    (ar.getType()==AbstractRepair.REMOVEFROMRELATION||
+		     ar.getType()==AbstractRepair.ADDTORELATION)) {
+		    for(Iterator it2=repairnodes.iterator();it2.hasNext();) {
+			GraphNode gn2=(GraphNode)it2.next();
+			TermNode tn2=(TermNode)gn2.getOwner();
+			AbstractRepair ar2=tn2.getAbstract();
+			if (ar2.getType()==AbstractRepair.REMOVEFROMRELATION||
+			    ar2.getType()==AbstractRepair.ADDTORELATION) {
+			    removednodes.add(gn2);
+			}
+		    }
+		}
+	    }
+    	}
+    }
+
+    private static boolean containsmodify(Set repairnodes) {
+	for (Iterator it=repairnodes.iterator();it.hasNext();) {
+	    GraphNode gn=(GraphNode) it.next();
+	    TermNode tn=(TermNode)gn.getOwner();
+	    AbstractRepair ar=tn.getAbstract();
+	    if (ar.getType()==AbstractRepair.MODIFYRELATION)
+		return true;
+	}
+	return false;
     }
 
     private static Set buildset(Vector combination, Vector couldremove) {
@@ -342,6 +437,27 @@ public class GraphAnalysis {
 		GraphNode gn=(GraphNode)it.next();
 		if (!removed.contains(gn)) {
 		    foundrepair=true;
+		    for(Iterator edgeit=gn.edges();edgeit.hasNext();) {
+			GraphNode.Edge edge=(GraphNode.Edge) edgeit.next();
+			GraphNode gn2=edge.getTarget();
+			TermNode tn2=(TermNode) gn2.getOwner();
+			if (tn2.getType()==TermNode.ABSTRACT) {
+			    /* Abstract node */
+			    AbstractRepair ar=tn2.getAbstract();
+			    DNFPredicate dpred=ar.getPredicate();
+			    Set repairnodes=(Set)termination.predtoabstractmap.get(dpred);
+			    if (containsmodify(repairnodes)&&
+				(repairnodes.size()>1)) {
+				HashSet retainednodes=new HashSet();
+				retainednodes.addAll(repairnodes);
+				retainednodes.removeAll(removed);
+				if (!containsmodify(retainednodes)&&
+				    (retainednodes.size()<2))
+				    return ERR_NOREPAIR;
+			    } else if (removed.contains(gn2))
+				return ERR_NOREPAIR;
+			}
+		    }
 		}
    	    }
 	    if (!foundrepair)

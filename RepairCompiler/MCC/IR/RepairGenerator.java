@@ -646,9 +646,9 @@ public class RepairGenerator {
                 ListIterator quantifiers = constraint.quantifiers();
 
                 while (quantifiers.hasNext()) {
-                    Quantifier quantifier = (Quantifier) quantifiers.next();                   
+                    Quantifier quantifier = (Quantifier) quantifiers.next();
                     quantifier.generate_open(cr);
-                }            
+                }
 
                 cr.outputline("int maybe = 0;");
                         
