@@ -132,7 +132,7 @@ void startnext() {
   count++;
   while(1) {
 #ifdef WITH_EVENT_DRIVEN
-    if ((gtl==NULL)||(ioptr!=NULL&count==10)) {
+    if ((gtl==NULL)||((ioptr!=NULL)&&(count==10))) {
       count=0;
       doFDs();
     }
