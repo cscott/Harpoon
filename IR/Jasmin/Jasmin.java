@@ -25,7 +25,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.21 1999-11-04 17:14:15 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.22 1999-11-06 04:48:59 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -117,7 +117,7 @@ public class Jasmin {
 	    while(e.hasMoreElements()) {
 		Quad q=(Quad)e.nextElement();
 		String tmp=visitor.labeler(q);
-		tmp=visitor.labeler(q.next(0));
+		//tmp=visitor.labeler(q.next(0));
 	    }
 	}
 	//Visit all the quads
@@ -216,6 +216,7 @@ public class Jasmin {
 	    load(q,q.index());
 	    out.println("    "+operand);
 	    store(q,q.dst());
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(ALENGTH q) {
@@ -223,6 +224,7 @@ public class Jasmin {
 	    load(q,q.objectref());
 	    out.println("    arraylength");
 	    store(q,q.dst());
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(ANEW q) {
@@ -231,6 +233,7 @@ public class Jasmin {
 		load(q,q.dims(i));
 	    out.println("    multianewarray "+Util.jasminEscape(q.hclass().getName().replace('.','/')) +" "+q.dimsLength());
             store(q,q.dst());
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(ARRAYINIT q) {
@@ -291,6 +294,7 @@ public class Jasmin {
 		    out.println("    fastore");
 		}
 	    }
+	    out.println(iflabel2(q));
 	}
        
 	private void dup(int i, int last) {
@@ -326,6 +330,7 @@ public class Jasmin {
 	    load(q,q.index());
 	    load(q,q.src());
 	    out.println("    "+operand); 
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(COMPONENTOF q) {
@@ -341,6 +346,7 @@ public class Jasmin {
 		out.println("    pop");
 	    out.println("    bipush 1");
 	    store(q,q.dst());
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(METHOD q) {
@@ -351,11 +357,13 @@ public class Jasmin {
 
 	public void visit(PHI q) {
 	    out.println(labeler(q)+":");
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(FOOTER q) {
 	    out.println(labeler(q)+":");
 	    out.println("    return");
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(HANDLER q) {
@@ -368,7 +376,7 @@ public class Jasmin {
 	    while(e.hasMoreElements()) {
 		Quad qd=(Quad)e.nextElement();
 		String start=labeler(qd);
-		String stop=labeler(qd.next(0));
+		String stop=labeler2(qd);
 		String handler=labeler(q);
 		if (q.caughtException()!=null)
 		    out.println(".catch "+Util.jasminEscape(q.caughtException().getName().replace('.','/'))+" from "+start+" to "+stop+" using "+handler);
@@ -382,6 +390,7 @@ public class Jasmin {
 	    load(q,q.src());
 	    out.println("    instanceof "+Util.jasminEscape(q.hclass().getName().replace('.','/')));
 	    store(q,q.dst());
+	    out.println(iflabel2(q));
 	}
 	
 	public void visit(CALL q) {
@@ -440,6 +449,7 @@ public class Jasmin {
 			    store(q,q.retval());
 		    }
 	    }
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(GET q) {
@@ -460,6 +470,7 @@ public class Jasmin {
 			    +" "+Util.jasminEscape(q.field().getDescriptor().replace('.','/')));
 	    }
 	    store(q,q.dst());
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(CJMP q) {
@@ -469,46 +480,54 @@ public class Jasmin {
 		load(q,q.test());
 		out.println("    ifne "+labeler(q.next(1)));
 	    }
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(THROW q) {
 	    out.println(iflabel(q));
 	    load(q,q.throwable());
 	    out.println("    athrow");
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(MONITORENTER q) {
 	    out.println(iflabel(q));
 	    load(q,q.lock());
 	    out.println("    monitorenter");
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(MONITOREXIT q) {
 	    out.println(iflabel(q));
 	    load(q,q.lock());
 	    out.println("    monitorexit");
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(MOVE q) {
 	    out.println(iflabel(q));
 	    load(q,q.src());
 	    store(q,q.dst());
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(NEW q) {
 	    out.println(iflabel(q));
 	    out.println("    new "+Util.jasminEscape(q.hclass().getName().replace('.','/')));
 	    store(q,q.dst());
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(LABEL q) {
 	    out.println(iflabel(q));
 	    out.println(";"+q.toString());
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(NOP q) {
 	    out.println(iflabel(q));
 	    out.println("    nop");
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(CONST q) {
@@ -525,7 +544,7 @@ public class Jasmin {
 	    }
 	    else out.println("    aconst_null");
 	    store(q,q.dst());
-
+	    out.println(iflabel2(q));
 	    //HClass.Void
 	}
 	
@@ -556,6 +575,7 @@ public class Jasmin {
 	    }
 	    else
 		out.println("    return");
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(SET q) {
@@ -577,6 +597,7 @@ public class Jasmin {
 			    +"/"+Util.jasminEscape(q.field().getName().replace('.','/'))
 			    +" "+Util.jasminEscape(q.field().getDescriptor().replace('.','/')));
 	    }
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(SWITCH q) {
@@ -586,6 +607,7 @@ public class Jasmin {
 	    for(int i=0;i<q.keysLength();i++)
 		out.println("    "+q.keys(i)+" : "+labeler(q.next(i)));
 	    out.println("    default : "+labeler(q.next(q.keysLength())));
+	    out.println(iflabel2(q));
 	}
 
 	public void visit(TYPECAST q) {
@@ -597,6 +619,7 @@ public class Jasmin {
 		store(q,q.objectref());
 	    else
 		out.println("    pop");
+	    out.println(iflabel2(q));
 	}
 
 	//This method handles operands
@@ -833,6 +856,7 @@ public class Jasmin {
 	    default:
 		out.println(q.toString()+" unimplemented");
 	    }
+	    out.println(iflabel2(q));
 	}
 
 	private void store(Quad q,Temp t) {
@@ -931,11 +955,28 @@ public class Jasmin {
 		return label;
 	    }
 	}
+	//End of quad label
+	private String labeler2(Quad q) {
+	    if (labelmap.containsKey(q))
+		return (new String ("E"))+(String)labelmap.get(q);
+	    else {
+		String label=label();
+		labelmap.put(q,label);
+		return (new String("E"))+(String)label;
+	    }
+	}
 
 	//Returns string with label in it
 	private String iflabel(Quad q) {
 	    if (labelmap.containsKey(q))
 		return (String)labelmap.get(q)+(new String(":"));
+	    else return new String("");
+	}
+
+	//Returns string with label in it
+	private String iflabel2(Quad q) {
+	    if (labelmap.containsKey(q))
+		return (new String("E"))+(String)labelmap.get(q)+(new String(":"));
 	    else return new String("");
 	}
 
