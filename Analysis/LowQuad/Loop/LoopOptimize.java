@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.15 1999-07-12 16:44:17 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.16 1999-07-12 18:48:57 bdemsky Exp $
  */
 public final class LoopOptimize {
     
@@ -655,10 +655,10 @@ public final class LoopOptimize {
 			Temp operand=integers.loopinvariant();
 			if (!integers.invariantsign()) {
 			    Temp[] sources=new Temp[1];
-			    sources[0]=operand;
+			    sources[0]=hcnew.tempMap(loopmap.tempMap(operand));
 			    Temp newtemp=new Temp(initial.tempFactory(), initial.name());
 			    Quad newquad=new POPER(((LowQuadFactory)header.getFactory()), header, LQop.PNEG, newtemp, sources);
-			    hcnew.addType(newtemp, hcnew.typeMap(hcnew, initial));
+			    hcnew.addType(newtemp, HClass.Int);
 			    addquad.insert(newquad);
 			    operand=newtemp;
 			}
