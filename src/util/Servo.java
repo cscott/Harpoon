@@ -15,13 +15,28 @@ public class Servo {
     private static final ServoThread servo2 = new ServoThread(2);
 
     /** Calibration data. */
-    private static final int FORWARD_SPEED = 22;
-    private static final int BACKWARD_SPEED = 18;
-    private static final int LEFT_AMOUNT = 127;
-    private static final int RIGHT_AMOUNT = 127;
+    //private static final int FORWARD_SPEED = 22;
+    //private static final int BACKWARD_SPEED = 18;
+    private static int FORWARD_SPEED = 13;
+    private static int BACKWARD_SPEED = 15;
+    private static int LEFT_AMOUNT = 127;
+    private static int RIGHT_AMOUNT = 127;
     private static final int SERVO1_CENTER = 128;
     private static final int SERVO2_CENTER = 128;
     
+    public static void setForwardSpeed(int speed) {
+	FORWARD_SPEED = speed;
+    }
+
+    public static void setBackwardSpeed(int speed) {
+	BACKWARD_SPEED = speed;
+    }
+
+    public static void setTurnAmount(int value) {
+	LEFT_AMOUNT = value;
+	RIGHT_AMOUNT = value;
+    }
+
     /**
      * Start moving the vehicle forward, but don't stop.
      */
