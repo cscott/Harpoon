@@ -213,7 +213,7 @@ public class AbsAssem  {
 	for(int i=0; i<uses.size() ; i++) {
 	    sb.append("`s");
 	    sb.append(i);	    
-	    if (i+1 < uses.size()) sb.append(',');
+	    if (i+1 < uses.size()) sb.append(", ");
 	}
 	sb.append(" }");
 	return sb.toString();
@@ -502,6 +502,10 @@ public class AbsAssem  {
 	public Collection getRegisters(Instr i, Temp t) {
 	    return (Collection) ti2regList.get(Default.pair(t,i)); 
 	}
+	public void print(java.io.PrintWriter pw) {
+	    myPrint(pw, true, true);
+	}
+
     }
 
     public static class DoubleTemp extends Temp {
