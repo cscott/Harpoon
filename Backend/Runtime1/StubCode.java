@@ -51,7 +51,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.16 2000-10-20 23:41:31 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.17 2001-07-04 18:25:46 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;
@@ -173,8 +173,7 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	}
 	// if this method is synchronized, lock the object.
 	Temp lockT = (classT != null) ? classT : paramTemps[1];
-	HClass lockC = (classT != null) ? HCcls : paramTypes[0];
-	emitMonitorLockUnlock(stmlist, envT, lockT, lockC, true/*lock*/);
+	emitMonitorLockUnlock(stmlist, envT, lockT, true/*lock*/);
 	// make the native call's parameters, in reverse order
 	ExpList jniParams = null;
 	for (int i=paramTypes.length-1; i>=0; i--)
@@ -237,7 +236,7 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 					   ));
 	    retexp = _TEMP(tf, null, rettype, retT);
 	}
-	emitMonitorLockUnlock(stmlist, envT, lockT, lockC, false/*unlock*/);
+	emitMonitorLockUnlock(stmlist, envT, lockT, false/*unlock*/);
 	emitFreeLocals(stmlist, envT, refT);
 	stmlist.add(new RETURN(tf, null, retexp));
 	// an exception occurred.  unwrap exception value and throw it.
@@ -261,7 +260,7 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 				   (_TEMP(tf, null, HClass.Void, excT),
 				    null)
 				   ));
-	emitMonitorLockUnlock(stmlist, envT, lockT, lockC, false/*unlock*/);
+	emitMonitorLockUnlock(stmlist, envT, lockT, false/*unlock*/);
 	emitFreeLocals(stmlist, envT, refT);
 	stmlist.add(new THROW(tf, null,
 			      _TEMP(tf, null, HCthw, excT),
@@ -270,8 +269,7 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	return Stm.toStm(stmlist);
     }
     private void emitMonitorLockUnlock(List stmlist, Temp envT,
-				       Temp lockT, HClass lockC,
-				       boolean isLock) {
+				       Temp lockT, boolean isLock) {
 	// if this method is not synchronized, skip this.
 	if (!Modifier.isSynchronized(getMethod().getModifiers())) return;
 	// okay, emit native call to FNI_MonitorEnter/Exit().
@@ -284,8 +282,10 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 				     (isLock ?
 				      "FNI_MonitorEnter":"FNI_MonitorExit"))),
 		     new ExpList(_TEMP(tf, null, HClass.Void, envT),
-				 new ExpList(_TEMP(tf, null, lockC, lockT),
-					     null))));
+				 // note type of lockT is HClass.Void because
+				 // it has been wrapped.
+				 new ExpList(_TEMP(tf, null, HClass.Void,
+						   lockT),  null))));
     }
     private void emitFreeLocals(List stmlist, Temp envT, Temp refT) {
     	stmlist.add(new NATIVECALL
