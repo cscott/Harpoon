@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>SACode</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SACode.java,v 1.1.2.19 1999-09-09 00:36:32 cananian Exp $
+ * @version $Id: SACode.java,v 1.1.2.20 1999-09-10 21:42:31 pnkfelix Exp $
  */
 public class SACode extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -129,7 +129,11 @@ public class SACode extends harpoon.Backend.Generic.Code {
 	    
 	    Util.assert(!suffix.startsWith("l") &&
 			!suffix.startsWith("h"), "Shouldn't " +
-			"have 'l' or 'h' suffix with normal Temp " + instr);
+			"have 'l' or 'h' suffix with Temp: " + 
+			val + " Instrs: " + 
+			instr.getPrev() + ", " + 
+			instr + ", " + 
+			instr.getNext());
 
 	    if(reg != null) {
 		s = reg.name() + suffix;

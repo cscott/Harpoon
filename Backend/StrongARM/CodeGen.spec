@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.43 1999-09-10 15:46:26 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.44 1999-09-10 21:42:31 pnkfelix Exp $
  */
 %%
 
@@ -591,16 +591,37 @@ BINOP<l>(XOR, j, k) = i %{
 
 
 CONST<f>(c) = i %{
-    Temp i = makeTemp();		
-    Util.assert(false, "Can't handle CONST of float type yet");
+    // NOTE: this may be the wrong way to handle constants
+    Temp i = makeTemp();
+    float val = ((CONST)ROOT).value.floatValue();		
+    emit(new Instr( instrFactory, ROOT,
+		    "mov `d0, #"+val,
+		    new Temp[]{ i }, null));
+
 }%
 CONST<d>(c) = i %{
-    Temp i = makeTemp();		
-    Util.assert(false, "Can't handle CONST of double type yet");
+    // NOTE: this is probably the wrong way to handle constants
+    Temp i = makeTwoWordTemp();		
+    double val = ((CONST)ROOT).value.doubleValue();		
+    emit(new Instr( instrFactory, ROOT,
+		    "mov `d0l, #"+val,
+		    new Temp[]{ i }, null));
+    emit(new Instr( instrFactory, ROOT,
+		    "mov `d0h, #"+val,
+		    new Temp[]{ i }, null));
+
 }%
 CONST<l>(c) = i %{
-    Temp i = makeTemp();		
-    Util.assert(false, "Can't handle CONST of long type yet");
+    // NOTE: this may be the wrong way to handle constants
+    Temp i = makeTwoWordTemp();		
+    long val = ((CONST)ROOT).value.longValue();		
+    emit(new Instr( instrFactory, ROOT,
+		    "mov `d0l, #"+val,
+		    new Temp[]{ i }, null));
+    emit(new Instr( instrFactory, ROOT,
+		    "mov `d0h, #"+val,
+		    new Temp[]{ i }, null));
+
 }% 
 
 CONST<i>(c) = i %{
@@ -1298,8 +1319,18 @@ NATIVECALL(retval, func, arglist) %{
     }  
 }%
 
-DATA(CONST(exp)) %{
+DATA(CONST<i>(exp)) %{
     emitDIRECTIVE( ROOT, ".data "+exp);
+}%
+
+DATA(CONST<f>(exp)) %{
+    emitDIRECTIVE( ROOT, ".data "+
+		   Float.floatToIntBits(exp.floatValue()) +
+		   " @ floatnum: " + exp);
+}%
+
+DATA(CONST<p>(exp)) %{
+    emitDIRECTIVE( ROOT, ".data 0 @ null constant");
 }%
 
 DATA(NAME(l)) %{

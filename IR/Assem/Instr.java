@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.48 1999-09-09 05:49:25 cananian Exp $
+ * @version $Id: Instr.java,v 1.1.2.49 1999-09-10 21:42:33 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -104,8 +104,9 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     public Instr getNext() { return next; }
 
     /** Sets whether control flow can go to <code>this.next</code>.  
-	Note that if 
-	<code>(!this.canFallThrough) && (this.targets == null)</code>
+	Note that if <code>
+	<pre>(!this.canFallThrough) && (this.targets == null)</pre>
+	</code>
 	then <code>this</code> represents an exit point for the code
 	and should be treated as such for data flow analysis, etc.
 	@see Instr#getNext
