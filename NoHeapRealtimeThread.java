@@ -90,7 +90,23 @@ public class NoHeapRealtimeThread extends RealtimeThread {
     // ------------------
 
     public void start() {
-	// TODO
+	HeapMemory heap = HeapMemory.instance();
+	if (heap.equals(getMemoryArea()))
+	    throw new MemoryAccessError("NoHeapRealtimeThread cannot be allocated in heap.");
+	SchedulingParameters scheduling = getSchedulingParameters();
+	if ((scheduling != null) && (heap.equals(MemoryArea.getMemoryArea(scheduling))))
+	    throw new MemoryAccessError("SchedulingParameters of a NoHeapRealtimeThread cannot be allocated in heap.");
+	ReleaseParameters release = getReleaseParameters();
+	if ((release != null) && (heap.equals(MemoryArea.getMemoryArea(release))))
+	    throw new MemoryAccessError("ReleaseParameters of a NoHeapRealtimeThread cannot be allocated in heap.");
+	MemoryParameters memParams = getMemoryParameters();
+	if ((memParams != null) && (heap.equals(MemoryArea.getMemoryArea(memParams))))
+	    throw new MemoryAccessError("MemoryParameters of a NoHeapRealtimeThread cannot be allocated in heap.");
+	ProcessingGroupParameters group = getProcessingGroupParameters();
+	if ((group != null) && (heap.equals(MemoryArea.getMemoryArea(group))))
+	    throw new MemoryAccessError("ProcessingGroupParameters of a NoHeapRealtimeThread cannot be allocated in heap.");
+
+	super.start();
     }
 
     // -----------------------------

@@ -35,6 +35,11 @@ public class Object {
     }
 
     // Borrowed from standart java.lang.Object;
+    public boolean equals(Object obj) {
+	return (this == obj);
+    }
+
+    // Borrowed from standart java.lang.Object;
     public final native void wait(long timeout) throws InterruptedException;
 
     // Borrowed from standart java.lang.Object;
