@@ -1025,7 +1025,9 @@ sub diff_lines {
 sub update_with_local_mods {
     my ($rcsobj, $pathname, @text) = @_;
     my @diffs;
-    return @text if !open(CVSDIFF, "cvs -flnq diff -n $pathname |");
+    # -l option to cvs used to be in the below command to disable
+    # history logging.  this option has been removed from cvs upstream.
+    return @text if !open(CVSDIFF, "cvs -fnq diff -n $pathname |");
     @diffs = <CVSDIFF>;
     close(CVSDIFF);
     # stolen from parse_cvs_file and tweaked for my nefarious purposes [CSA].
