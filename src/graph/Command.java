@@ -17,6 +17,10 @@ public class Command extends Node {
     /** This is a request to retrieve an image from the {@link Cache}. */
     public static final int GET_IMAGE = 1;
 
+    /** This is also a request to retrieve an image from the {@link Cache}.
+     Look at the code to see the difference.*/
+    public static final int GET_NEXT_IMAGE = 4;
+
     /** This is a request to retrieve an image from the {@link Cache} 
      *  and crop it to the specified dimensions. 
      */
