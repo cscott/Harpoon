@@ -38,6 +38,7 @@ taginfo 	CVSROOT taginfo
 # Version controlled sources:
 Code	Code
 Design	Design
+Docs	Docs
 Runtime Runtime
 FLEX    -a Code Runtime
 
