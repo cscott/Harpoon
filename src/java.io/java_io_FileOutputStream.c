@@ -126,7 +126,6 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes
 (JNIEnv * env, jobject obj, jbyteArray ba, jint start, jint len) { 
     int              fd, result;
     jobject          fdObj;
-    jbyte            *buf;
     char             *errmsg = NULL;
     int written = 0;
 
@@ -137,11 +136,15 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes
 
     fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
     fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
-    buf    = (*env)->GetByteArrayElements(env, ba, NULL);
-    if ((*env)->ExceptionOccurred(env)) return; /* bail */
 
     while (written < len) {
-	result = write(fd, (void*)(buf+start+written), len-written);
+	int chunksize = (len-written) < MAX_BUFFER_SIZE ?
+	    (len-written) : MAX_BUFFER_SIZE;
+	jbyte buf[chunksize]; /* allocate on stack! */
+	(*env)->GetByteArrayRegion(env, ba, start+written,
+				   chunksize, buf);
+	if ((*env)->ExceptionOccurred(env)) return; /* bail */
+	result = write(fd, (void*)buf, chunksize);
 	/* if we're interrupted by a signal, just retry. */
 	if (result < 0 && errno == EINTR) continue;
 
@@ -157,7 +160,6 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes
 	written+=result;
     }
  done:
-    (*env)->ReleaseByteArrayElements(env, ba, buf, JNI_ABORT);
     if (errmsg) (*env)->ThrowNew(env, IOExcCls, errmsg);
     return;
 }
