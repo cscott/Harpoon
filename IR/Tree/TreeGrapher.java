@@ -24,7 +24,7 @@ import java.util.Stack;
  * control-flow graph information with elements of an canonical tree. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeGrapher.java,v 1.1.2.6 2000-01-18 15:23:42 pnkfelix Exp $
+ * @version $Id: TreeGrapher.java,v 1.1.2.7 2000-02-14 13:05:37 cananian Exp $
  */
 class TreeGrapher extends CFGrapher { 
     private Map predecessors = new HashMap(); 
@@ -44,19 +44,22 @@ class TreeGrapher extends CFGrapher {
     /** Returns an array of all the edges to and from the specified
      *  <code>HCodeElement</code>. */
     public HCodeEdge[] edges(HCodeElement hc) { 
-	return (HCodeEdge[])this.edgeC(hc).toArray(new HCodeEdge[0]); 
+	Collection edges = this.edgeC(hc);
+	return (HCodeEdge[])edges.toArray(new HCodeEdge[edges.size()]);
     }
 
     /** Returns an array of all the edges entering the specified
      *  <code>HCodeElement</code>. */
     public HCodeEdge[] pred(HCodeElement hc) { 
-	return (HCodeEdge[])this.predC(hc).toArray(new HCodeEdge[0]); 
+	Collection pred = this.predC(hc);
+	return (HCodeEdge[])pred.toArray(new HCodeEdge[pred.size()]); 
     }
 
     /** Returns an array of all the edges leaving the specified
      *  <code>HCodeElement</code>. */
     public HCodeEdge[] succ(HCodeElement hc) { 
-	return (HCodeEdge[])this.succC(hc).toArray(new HCodeEdge[0]); 
+	Collection succ = this.succC(hc);
+	return (HCodeEdge[])succ.toArray(new HCodeEdge[succ.size()]); 
     }
 
     /** Returns a <code>Collection</code> of all the edges to and from
@@ -188,17 +191,25 @@ class TreeGrapher extends CFGrapher {
 	}
 	
 	private void addEdge(Stm from, Stm to) { 
+	    TreeEdge te = new TreeEdge(from, to);
 	    Set pred, succ;
 	    
 	    pred = (Set)this.predecessors.get(to);
 	    succ = (Set)this.successors.get(from);
-	    pred.add(from);
-	    succ.add(to);
+	    pred.add(te);
+	    succ.add(te);
 	}	    
 
 	private Stm RS(Stm seq) { 
 	    while (seq.kind()==TreeKind.SEQ) seq = ((SEQ)seq).getLeft();  
 	    return seq;
 	}
+    }
+    static class TreeEdge implements HCodeEdge {
+	private final Tree from;
+	private final Tree to;
+	TreeEdge(Tree from, Tree to) { this.from = from; this.to = to; }
+	public HCodeElement from() { return from; }
+	public HCodeElement to() { return to; }
     }
 }
