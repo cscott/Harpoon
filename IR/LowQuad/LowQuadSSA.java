@@ -21,7 +21,7 @@ import java.util.Hashtable;
  * <blink><b>FILL ME IN</b></blink>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.14 1999-08-04 01:43:35 pnkfelix Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.15 1999-08-04 02:01:55 pnkfelix Exp $
  */
 public class LowQuadSSA extends Code
 {
@@ -96,7 +96,7 @@ public class LowQuadSSA extends Code
    *      <code>QuadSSA.codeFactory()</code>, and reattempts to
    *      create a code factory for <code>LowQuadSSA</code> from the
    *      code factory returned by <code>QuadSSA</code>.
-   * @see QuadSSA
+   * @see QuadSSA#codeFactory(HCodeFactory)
    */
   public static HCodeFactory codeFactory(final HCodeFactory hcf)
     {

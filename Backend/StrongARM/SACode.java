@@ -19,7 +19,7 @@ import java.util.Map;
  * <code>SACode</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SACode.java,v 1.1.2.12 1999-08-04 01:16:41 pnkfelix Exp $
+ * @version $Id: SACode.java,v 1.1.2.13 1999-08-04 02:01:54 pnkfelix Exp $
  */
 public class SACode extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -44,8 +44,20 @@ public class SACode extends harpoon.Backend.Generic.Code {
 	throw new CloneNotSupportedException(this.toString());
     }
     
+    /**
+     * Returns a code factory for <code>SACode</code>, given a 
+     * code factory for <code>CanonicalTreeCode</code>.
+     * <BR> <B>effects:</B> if <code>hcf</code> is a code factory for
+     *      <code>CanonicalTreeCode</code>, then creates and returns a code
+     *      factory for <code>SACode</code>.  Else passes
+     *      <code>hcf</code> to
+     *      <code>CanonicalTreeCode.codeFactory()</code>, and reattempts to
+     *      create a code factory for <code>SACode</code> from the
+     *      code factory returned by <code>CanonicalTreeCode</code>.
+     * @see CanonicalTreeCode#codeFactory(HCodeFactory, Frame)
+     */
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
-	if(hcf.getCodeName().equals("canonical-tree")) {
+	if(hcf.getCodeName().equals(CanonicalTreeCode.codename)){
 	    return new HCodeFactory() {
 		public HCode convert(HMethod m) {
 		    harpoon.IR.Tree.Code tc = 
