@@ -1,7 +1,14 @@
 // Unreachable.java, created Wed Feb 24 20:03:06 1999 by cananian
 // Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.IR.Quads;
+package harpoon.Analysis.Quads;
+
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.PHI;
 
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
@@ -15,11 +22,12 @@ import java.util.Set;
 import java.util.Stack;
 /**
  * <code>Unreachable</code> gets rid of unreachable code.
+ * <b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Unreachable.java,v 1.1.2.2 1999-09-09 21:43:03 cananian Exp $
+ * @version $Id: Unreachable.java,v 1.1.2.1 1999-11-04 07:37:03 cananian Exp $
  */
-abstract class Unreachable  {
+public abstract class Unreachable  {
 
     /** Prunes unreachable code from a quad graph in-place. */
     public static final void prune(HEADER header) {

@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.Analysis.Quads.Unreachable;
 import harpoon.ClassFile.HClass;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
@@ -19,7 +20,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.21 1999-10-23 05:59:33 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.22 1999-11-04 07:37:16 cananian Exp $
  */
 final class UnHandler {
     // entry point.
