@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.146 2000-02-28 16:36:24 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.147 2000-02-28 20:34:09 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -675,8 +675,7 @@ import java.util.Iterator;
 	    // defines SP, FP, and PC providing reaching defs for
 	    // InstrEXIT uses.
 	    super(inf, src, "@ --method entry point--",
-		  new Temp[] { SP, FP, PC },
-		  null, false, null);
+		  new Temp[] { SP, FP, PC }, null);
 	}
     }
     private class InstrEXIT extends Instr {
