@@ -249,6 +249,12 @@ int getsize(dwarf_entry *type) {
     }
     return size*getsize(modifier_ptr->target_ptr);
   }
+  case DW_TAG_const_type:
+    {
+      consttype * ctype_ptr=(consttype*)type->entry_ptr;
+      return getsize(ctype_ptr->target_ptr);
+    }
+    break;
   case DW_TAG_base_type: {
     base_type *base=(base_type*)type->entry_ptr;
     return base->byte_size;
@@ -256,10 +262,21 @@ int getsize(dwarf_entry *type) {
   case DW_TAG_pointer_type: {
     return 4;
   }
+  case DW_TAG_union_type: 
   case DW_TAG_structure_type: {
     collection_type *ctype=(collection_type*)type->entry_ptr;
     return ctype->byte_size;
   }
+  case DW_TAG_subroutine_type: {
+    return 4;
+  }
+  case DW_TAG_typedef: 
+    {
+      tdef * tdef_ptr=(tdef*)type->entry_ptr;
+      return getsize(tdef_ptr->target_ptr);
+    }
+    break;
+
   default:
     return 0;
   }
