@@ -1,4 +1,4 @@
-% CVSId: $Id: oqe.tex,v 1.3 2002-04-29 23:07:50 cananian Exp $
+% CVSId: $Id: oqe.tex,v 1.4 2002-05-02 21:23:14 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -24,7 +24,7 @@ oqe
 \usepackage{amsmath}
 \usepackage{comdef}\newcommand{\figscale}{1.0}
 \usepackage{pst-node}
-\hypersetup{pdfpagemode=FullScreen}
+%\hypersetup{pdfpagemode=FullScreen}
 
 \title{Size Optimizations for Java Programs}
 %\author{\href{http://cscott.net}{C.~Scott~Ananian}}
@@ -490,12 +490,49 @@ else\\
 }
 
 %---------------------------------------------------------------------- SLIDE -
+\overlays{4}{
 \begin{slide}{External map implementation}
+\centering
+\begin{minipage}[c]{0.4\textwidth}
+ \centering%
+ \vspace{0.5cm}%
+ \includegraphics[scale=0.5]{Figures/extmap1.eps}%
+ \vspace{0.5cm}%
+\end{minipage}%
+\begin{minipage}[c]{0.6\textwidth}
+ \begin{itemstep}
+  \item ``open addressed'' for low overhead.
+  \item load-factor of 2/3
+  \item two-word key and one-word values means break-even point is 82\%
+    \\ \fromSlide{4}{ \tiny (i.e. field may not differ from the
+ ``mostly-constant'' value in more than 18\% of objects.)}
+ \end{itemstep}
+\end{minipage}
 \end{slide}
+}
 
 %---------------------------------------------------------------------- SLIDE -
+\overlays{4}{
 \begin{slide}{We can do better!}
+\centering
+\begin{minipage}[c]{0.4\textwidth}
+ \centering%
+ \vspace{0.5cm}%
+ \includegraphics[scale=0.5]{Figures/extmap2.eps}%
+ \vspace{0.5cm}%
+\end{minipage}%
+\begin{minipage}[c]{0.6\textwidth}
+ \small
+ \begin{itemstep}
+  \item Use small integers to enumerate fields.
+  \item Offset the object pointer by the field index to get a 1-word key.
+  \item Limits the number of fields which may be externalized, based
+        on the size of the object.
+  \item one-word key and one-word value lowers break-even point to 66\%.
+ \end{itemstep}
+\end{minipage}
 \end{slide}
+}
 
 %---------------------------------------------------------------------- SLIDE -
 \overlays{3}{
@@ -541,31 +578,113 @@ Three broad techniques:
 \end{slide}
 
 %---------------------------------------------------------------------- SLIDE -
+\overlays{2}{
 \begin{slide}{Header optimizations:\\\small Hashcode/Lock compression}
+\begin{itemstep}
+\item Implemented as a special case of field externalization.
+\item Could also use a static pointer analysis.
+\end{itemstep}
 \end{slide}
+}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Header optimizations:\\\small claz compression}
+\begin{itemstep}
+\item replace {\tt claz} pointer with a (smaller) table index.
+\item With co-operation of GC, works in dynamic environments.
+\item Many applications use less than 256 object types.
+\end{itemstep}
+\end{slide}
+}
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Header optimizations:\\\small claz compression}
-\end{slide}
-
-%---------------------------------------------------------------------- SLIDE -
-\begin{slide}{Header optimizations:\\\small claz compression}
+\begin{center}
+\includegraphics[scale=0.5]{oqedraw/classcomp2-bbox.eps}
+\end{center}
 \end{slide}
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Class statistics}
+Class statistics for applications in SPECjvm98 benchmark suite:
+\begin{center}
+\includegraphics[scale=0.5]{Figures/specclaz.eps}
+\end{center}
 \end{slide}
 
 %---------------------------------------------------------------------- SLIDE -
-\begin{slide}{How well does it work?}
+\part{How well does it work?}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Reduction in total live data}
+\begin{center}
+\includegraphics[scale=0.45]{Figures/oopsla-ttllive-color.eps}
+\end{center}
 \end{slide}
 
 %---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Reduction in total allocations}
+\begin{center}
+\includegraphics[scale=0.45]{Figures/oopsla-ttlalloc-color.eps}
+\end{center}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Reduction in object allocations}
+\begin{center}
+\includegraphics[scale=0.45]{Figures/oopsla-objalloc-color.eps}
+\end{center}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Moderate performance impact}
+\begin{center}
+\includegraphics[scale=0.45]{Figures/oopsla-speed-color.eps}
+\end{center}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{9}{
 \begin{slide}{Limitations \\ \small (read, ``future work'')}
+\fromSlide{2}{
+\begin{itemize}
+ \item No array analysis/can't distinguish between different uses of a class.
+ \fromSlide{3}{
+ \begin{itemize} \yellow\small
+  \item Use pointer analysis to discriminate among objects from a
+    certain allocation-site; optimize each alloc site.
+ \end{itemize}
+ \fromSlide{4}{
+ \item No pointer compression.
+ \fromSlide{5}{
+ \begin{itemize} \yellow\small
+  \item Investigate region-based/enumerated approaches.
+ \end{itemize}
+ \fromSlide{6}{
+ \item Mostly-constant analysis requires profiling.
+ \fromSlide{7}{
+ \begin{itemize} \yellow\small
+  \item Investigate heuristic methods.
+ \end{itemize}
+ \fromSlide{8}{
+ \item Knows nothing about ``field-like'' maps.
+ \fromSlide{9}{
+ \begin{itemize} \yellow\small
+  \item Enable \emph{internalization}.
+ \end{itemize}
+ }}}}}}}
+\end{itemize}
+}
 \end{slide}
+}
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Conclusions}
+\begin{itemize}
+ \item We achieved substantial space savings on typical
+ object-oriented applications.
+\end{itemize}
 \end{slide}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -573,6 +692,9 @@ Three broad techniques:
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Opportunities}
+\begin{center}
+\includegraphics[scale=0.45]{Figures/spec-space-2.eps}
+\end{center}
 \end{slide}
 
 %---------------------------------------------------------------------- SLIDE -
