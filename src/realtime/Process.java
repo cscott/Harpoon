@@ -5,6 +5,9 @@ import java.io.IOException;
 public class Process {
     public static void main(String args[]) {
 	BufferedReader buf = new BufferedReader(new InputStreamReader(System.in));
+
+	int width = 10;
+	long resolution = 1000;
 	try {
 	    String st;
 	    long lasttime = 0;
@@ -12,9 +15,14 @@ public class Process {
 	    long li = 0;
 	    while ((st = buf.readLine())!=null) {
 		if (st.indexOf("Scheduler.sleep")!=-1) {
+		    System.out.print("s");
+ 		    for (int i = 0; i < width; i++) {
+ 			System.out.print(" ");
+ 		    }		    
 		    String[] sbuf = st.split("[\\\\(\\\\)\\\\,]");
-		    System.out.println(sbuf[3]);
-		    
+		    long time = Long.parseLong(sbuf[3].trim());
+		    System.out.println(time/resolution);
+ 		    lasttime += time/resolution;
 		} else if (st.indexOf("ChooseThread")!=-1) {
 		    String[] sbuf = st.split("[\\\\(\\\\)\\\\=]");
 		    long threadNum = Long.parseLong(sbuf[0].trim())-1;
@@ -27,12 +35,12 @@ public class Process {
 		    
 		    if (lastid != threadNum) {
 			if ((lasttime!=0)&&(time>lasttime)) {
-			    long t = (time-lasttime)/1000;
+			    long t = (time-lasttime)/resolution;
 			    long i;
 			    for (i = 0; i < lastid; i++) {
 				System.out.print("X");
 			    }
-			    for (; i <= 5; i++) {
+			    for (; i <= width; i++) {
 				System.out.print(" ");
 			    }
 			    System.out.println(t);
