@@ -24,10 +24,10 @@ public class RedBlackTree extends BinaryTree {
     private void checkRep() { if (DEBUG) checkTree(root()); }
     private void checkTree(Node n) {
 	if (n == NIL) 
-	    Util.ASSERT(color(n) == BLACK, "(2) viol.");
+	    assert color(n) == BLACK : "(2) viol.";
 	if (color(n) == RED) { // (3)
-	    Util.ASSERT(color(n.left()) == BLACK, "(3) left viol. on "+n);
-	    Util.ASSERT(color(n.right()) == BLACK, "(3) right viol. on "+n);
+	    assert color(n.left()) == BLACK : "(3) left viol. on "+n;
+	    assert color(n.right()) == BLACK : "(3) right viol. on "+n;
 	}
 	if (n != NIL) { 
 	    checkTree(n.left());
@@ -165,7 +165,7 @@ public class RedBlackTree extends BinaryTree {
 	while(x != root() && color(x) == BLACK) {
 	    if (x == x.parent().left()) {
 		Node w = x.parent().right();
-		Util.ASSERT(w != NIL);
+		assert w != NIL;
 		if (color(w) == RED) {
 		    setColor(w, BLACK);
 		    setColor(x.parent(), RED);

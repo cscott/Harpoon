@@ -19,7 +19,7 @@ import java.util.Set;
  * interface for non-<code>SEQ</code> <code>Stm</code>s of a tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeUseDefer.java,v 1.3 2002-02-26 22:46:11 cananian Exp $
+ * @version $Id: TreeUseDefer.java,v 1.3.2.1 2002-02-27 08:36:48 cananian Exp $
  */
 public class TreeUseDefer extends harpoon.IR.Properties.UseDefer {
     private final Code code;
@@ -35,7 +35,7 @@ public class TreeUseDefer extends harpoon.IR.Properties.UseDefer {
      *  <code>TEMP</code>.  For all other elements, this method returns
      *  a zero-element collection. */
     public Collection defC(HCodeElement hce) {
-	Util.ASSERT((hce instanceof Stm) && ! (hce instanceof SEQ));
+	assert (hce instanceof Stm) && ! (hce instanceof SEQ);
 	Tree tree = (Tree) hce;
 	if (tree instanceof INVOCATION) {
 	    INVOCATION invok = (INVOCATION) tree;
@@ -59,7 +59,7 @@ public class TreeUseDefer extends harpoon.IR.Properties.UseDefer {
     /** Returns a collection of <code>Temp</code>s which are used by the
      *  statement/expression subtree rooted at <code>hce</code>. */
     public Collection useC(HCodeElement hce) {
-	Util.ASSERT((hce instanceof Stm) && ! (hce instanceof SEQ));
+	assert (hce instanceof Stm) && ! (hce instanceof SEQ);
 	Set s = new HashSet();
 	addUses(s, ((Tree)hce).kids());
 	return s;

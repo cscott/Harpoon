@@ -64,7 +64,7 @@ import java.util.Set;
  * <code>MRAFactory</code> generates <code>MRA</code>s.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: MRAFactory.java,v 1.3 2002-02-26 22:41:32 cananian Exp $
+ * @version $Id: MRAFactory.java,v 1.3.2.1 2002-02-27 08:32:19 cananian Exp $
  */
 public class MRAFactory {
     
@@ -121,7 +121,7 @@ public class MRAFactory {
      */
     public void clear(Code c) {
 	Object o = cache.remove(c);
-	Util.ASSERT((o != null), "Failed to remove "+c.getMethod());
+	assert (o != null) : "Failed to remove "+c.getMethod();
     }
 
     /** Checks whether a method is "safe" (i.e. whether all
@@ -220,12 +220,12 @@ public class MRAFactory {
 	    }
 	    if (changed) {
 		// should be monotonic
-		Util.ASSERT(safer.size() <= safe.size());
+		assert safer.size() <= safe.size();
 		safe = Collections.unmodifiableMap(safer);
 		safer = new HashMap(safe);
 	    } else {
 		// reached fix point
-		Util.ASSERT(safer.size() == safe.size());
+		assert safer.size() == safe.size();
 		break;
 	    }
 	}
@@ -310,12 +310,12 @@ public class MRAFactory {
 	    }
 	    if (changed) {
 		// should be monotonic
-		Util.ASSERT(safer.size() < safe.size());
+		assert safer.size() < safe.size();
 		safe = Collections.unmodifiableMap(safer);
 		safer = new HashMap(safe);
 	    } else {
 		// reached fix point
-		Util.ASSERT(safer.size() == safe.size());
+		assert safer.size() == safe.size();
 		break;
 	    }
 	}
@@ -396,7 +396,7 @@ public class MRAFactory {
 		HMethod hm = (HMethod) it.next();
 		if (!safe.contains(hm)) {
 		    Code c = (Code) hcf.convert(hm);
-		    Util.ASSERT(c != null);
+		    assert c != null;
 		    clear(c);
 		}
 	    }
@@ -406,7 +406,7 @@ public class MRAFactory {
 		break;
 	    } else {
 		// continue, size of set must be decreasing
-		Util.ASSERT(safeMethods.size() > safe.size());
+		assert safeMethods.size() > safe.size();
 		safeMethods = safe;
 	    }
 	}
@@ -448,9 +448,9 @@ public class MRAFactory {
 	    if (t != null) return t;
 	    // if not in cache, then calculate
 	    BasicBlock bb = bbf.getBlock(q);
-	    Util.ASSERT(bb != null);
+	    assert bb != null;
 	    Tuple pre = (Tuple) bb2pre.get(bb);
-	    Util.ASSERT(pre != null);
+	    assert pre != null;
 	    Tuple post = new Tuple(new Object[] 
 				   { new HashMap((Map)pre.proj(0)),
 				     new HashSet((Set)pre.proj(1)),
@@ -565,8 +565,8 @@ public class MRAFactory {
 			}
 		    }
 		} else {
-		    Util.ASSERT(((Set)tup.proj(1)).size() > 
-				 ((Set)post.proj(1)).size());
+		    assert ((Set)tup.proj(1)).size() > 
+				 ((Set)post.proj(1)).size();
 		}
 		// not converged, update map with new values,
 		// and add successors to worklist
@@ -614,7 +614,7 @@ public class MRAFactory {
 			// substitute srcs for dsts
 			if (pmra.containsKey(src)) {
 			    MRA.MRAToken tok = (MRA.MRAToken) pmra.remove(src);
-			    Util.ASSERT(tok != null);
+			    assert tok != null;
 			    pmra.put(phi.dst(j), tok);
 			}
 			if (preceiver.remove(src)) {
@@ -697,7 +697,7 @@ public class MRAFactory {
 			    // exchange dst for src in mra
 			    if (mra.containsKey(src)) {
 				MRA.MRAToken tok = (MRA.MRAToken) mra.remove(src);
-				Util.ASSERT(tok != null);
+				assert tok != null;
 				mra.put(sigma.dst(i, arity), tok);
 			    }
 			    if (receiver.remove(src)) {
@@ -752,7 +752,7 @@ public class MRAFactory {
 		mra.put(q.def()[0], (succeeding ? 
 				     MRA.MRAToken.SUCC : MRA.MRAToken.BOTTOM));
 		// there should only be one
-		Util.ASSERT(ud.defC(q).size() == 1);
+		assert ud.defC(q).size() == 1;
 		// clear exceptions after an allocation
 		except.clear();
 		// remove dst from receiver
@@ -770,7 +770,7 @@ public class MRAFactory {
 		CALL call = (CALL) q;
 		if (allocatedTypesKnown(call.method())) {
 		    Set exceptions = (Set) getAllocatedTypes(call.method());
-		    Util.ASSERT(exceptions != null);
+		    assert exceptions != null;
 		    // need to add exceptions
 		    except.addAll(exceptions);
 		    // note our defs
@@ -794,7 +794,7 @@ public class MRAFactory {
 		MOVE move = (MOVE)q;
 		if (mra.containsKey(move.src())) {
 		    MRA.MRAToken token = (MRA.MRAToken) mra.get(move.src());
-		    Util.ASSERT(token != null);
+		    assert token != null;
 		    mra.put(move.dst(), token);
 		} else {
 		    mra.remove(move.dst());
@@ -806,7 +806,7 @@ public class MRAFactory {
 		    receiver.remove(move.dst());
 		}
 	    } else if (kind == QuadKind.METHOD) {
-		Util.ASSERT(mra.isEmpty());
+		assert mra.isEmpty();
 		if (isSafeMethod) {
 		    Temp rcvr = ((METHOD) q).params(0);
 		    mra.put(rcvr, MRA.MRAToken.RCVR);
@@ -824,7 +824,7 @@ public class MRAFactory {
 		mra.remove(q.def()[0]);
 		receiver.remove(q.def()[0]);
 		// should only be one for these Quads
-		Util.ASSERT(ud.defC(q).size() == 1);
+		assert ud.defC(q).size() == 1;
 	    } else if (kind == QuadKind.ARRAYINIT ||
 		       kind == QuadKind.ASET ||
 		       kind == QuadKind.DEBUG ||
@@ -838,7 +838,7 @@ public class MRAFactory {
 		       kind == QuadKind.THROW ||
 		       kind == QuadKind.TYPECAST) {
 		// Quads with no defs have no effect
-		Util.ASSERT(ud.defC(q).size() == 0);
+		assert ud.defC(q).size() == 0;
 	    } else {
 		// LABELs, PHIs, SIGMAs, SWITCHs, TYPESWITCHs and XIs 
 		// are not handled, but there should not be any
@@ -874,7 +874,7 @@ public class MRAFactory {
 		// compute join and put new mapping in m1
 		MRA.MRAToken t1 = (MRA.MRAToken) m1.get(t);
 		MRA.MRAToken t2 = (MRA.MRAToken) m2.get(t);
-		Util.ASSERT(t1 != null && t2 != null);
+		assert t1 != null && t2 != null;
 		m1.put(t, t1.join(t2));
 	    } else {
 		// m2 does not contain a mapping for t

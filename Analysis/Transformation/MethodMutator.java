@@ -19,7 +19,7 @@ import java.util.Map;
  * to effect the change.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodMutator.java,v 1.3 2002-02-26 22:42:37 cananian Exp $
+ * @version $Id: MethodMutator.java,v 1.3.2.1 2002-02-27 08:33:27 cananian Exp $
  */
 public abstract class MethodMutator implements java.io.Serializable {
     /** This is the code factory which contains the representations of the
@@ -66,7 +66,7 @@ public abstract class MethodMutator implements java.io.Serializable {
 		try {
 		    hc = mutateHCode(cloneHCode(hc, m));
 		} catch (CloneNotSupportedException ex) {
-		    Util.ASSERT(false, "cloning HCode failed: "+ex);
+		    assert false : ("cloning HCode failed: "+ex);
 		}
             cache.put(m, hc);
             return hc;

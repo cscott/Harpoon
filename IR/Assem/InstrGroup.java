@@ -27,7 +27,7 @@ import java.util.Arrays;
  * single-entry single-exit region.
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrGroup.java,v 1.3 2002-02-26 22:45:18 cananian Exp $ */
+ * @version $Id: InstrGroup.java,v 1.3.2.1 2002-02-27 08:35:54 cananian Exp $ */
 public class InstrGroup {
     Type type;
     Instr entry, exit;
@@ -77,7 +77,7 @@ public class InstrGroup {
     /** Sets the entry point for a group of instructions.  Should be
 	called once (and only once), before setExit is called.  */
     public void setEntry(Instr entry) { 
-	Util.ASSERT(this.entry == null);
+	assert this.entry == null;
 	this.entry = entry; 
     }
     /** Sets the exit point for this group of instructions.  Should be
@@ -89,7 +89,7 @@ public class InstrGroup {
 	<LI> b postdominates a
 	<LI> a and b are cycle-equivalent</UL>.  */
     public void setExit(Instr exit) { 
-	Util.ASSERT(this.exit == null);
+	assert this.exit == null;
 	this.exit = exit; 
     }
 
@@ -133,7 +133,7 @@ public class InstrGroup {
 		if (i == ig.exit) {
 		    return Collections.singleton(new InstrEdge(ig.entry, ig.exit));
 		} else {
-		    Util.ASSERT(i == ig.entry);
+		    assert i == ig.entry;
 		    return i.predC();
 		}
 	    }
@@ -148,7 +148,7 @@ public class InstrGroup {
 		if (i == ig.entry) {
 		    return Collections.singleton(new InstrEdge(ig.entry, ig.exit));
 		} else {
-		    Util.ASSERT(i == ig.exit);
+		    assert i == ig.exit;
 		    return i.succC();
 		}
 	    }
@@ -181,22 +181,22 @@ public class InstrGroup {
 	    Instr i=(Instr)hce;
 
 	    if (!i2g.containsKey(i)) {
-		Util.ASSERT(!i.partOf(t), "instr:"+i+" grp type:"+t);
+		assert !i.partOf(t) : ("instr:"+i+" grp type:"+t);
 		return i.useC();
 	    } else {
 		InstrGroup ig = ((InstrGroup)i2g.get(i));
 		if(i == ig.entry) {
 		    return i.useC();
 		}
-		Util.ASSERT(i == ig.exit);
+		assert i == ig.exit;
 		// else work backwards, gathering up uses but killing
 		// defined uses...
 		Instr curr = ig.exit;
 		Collection set = new HashSet();
 		do {
-		    Util.ASSERT( curr.getGroups().contains(ig) );
+		    assert curr.getGroups().contains(ig);
 		    set.addAll(curr.useC());
-		    Util.ASSERT(curr.predC().size() == 1);
+		    assert curr.predC().size() == 1;
 		    curr = (Instr) curr.pred()[0].from();
 		    set.removeAll(curr.defC()); // order here is key
 		} while(curr != ig.entry);
@@ -207,7 +207,7 @@ public class InstrGroup {
 	public Collection defC(HCodeElement hce) { 
 	    Instr i = (Instr) hce;
 	    if (!i2g.containsKey(i)) {
-		Util.ASSERT(!i.partOf(t));
+		assert !i.partOf(t);
 		return i.defC();
 	    } else {
 		InstrGroup ig = (InstrGroup)i2g.get(i);
@@ -215,7 +215,7 @@ public class InstrGroup {
 		    return Collections.EMPTY_SET;
 		} 
 		// else gather up all defs and pass them out
-		Util.ASSERT(i == ig.entry);
+		assert i == ig.entry;
 		Instr curr = ig.exit;
 		
 		// start with defs in last instr (shifting them to the
@@ -223,8 +223,8 @@ public class InstrGroup {
 		Collection set = new HashSet( curr.defC() );
 
 		do {
-		    Util.ASSERT( curr.getGroups().contains(ig) );
-		    Util.ASSERT(curr.predC().size() == 1);
+		    assert curr.getGroups().contains(ig);
+		    assert curr.predC().size() == 1;
 		    curr = (Instr) curr.pred()[0].from();
 		    set.addAll(curr.defC());
 		} while(curr != ig.entry);

@@ -61,7 +61,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.3 2002-02-26 22:45:37 cananian Exp $
+ * @version $Id: Jasmin.java,v 1.3.2.1 2002-02-27 08:36:14 cananian Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -151,7 +151,7 @@ public class Jasmin {
 	//Output assembly from the quads
 
 	TypeMap tp=((QuadWithTry)hc).typeMap();
-	Util.ASSERT(tp!=null, "Need TypeMap support");
+	assert tp!=null : "Need TypeMap support";
 	//Build mapping from temps to localvars/stack
 	Object[] tuple=buildmap(hc,tp);
 	//Store the map

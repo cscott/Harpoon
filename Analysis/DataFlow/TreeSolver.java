@@ -22,7 +22,7 @@ import harpoon.Analysis.BasicBlock;
  * <code>BasicBlockSolver</code> class. 
  * 
  * @author Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeSolver.java,v 1.3 2002-02-26 22:39:45 cananian Exp $
+ * @version $Id: TreeSolver.java,v 1.3.2.1 2002-02-27 08:30:38 cananian Exp $
  */
 public abstract class TreeSolver {
 
@@ -87,7 +87,7 @@ public abstract class TreeSolver {
 	int max = 0;
 	for (Iterator i = new EdgesIterator((CFGraphable)root); i.hasNext();) { 
 	    int id = ((HCodeElement)(i.next())).getID();
-	    Util.ASSERT(id >= 0);
+	    assert id >= 0;
 	    if (id > max) max = id;
 	}
 	if (DEBUG) db("max tree ID is "+max);

@@ -27,7 +27,7 @@ import harpoon.Util.Util;
  * <code>InstrMEM</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrMOVE.java,v 1.3 2002-02-26 22:45:18 cananian Exp $ 
+ * @version $Id: InstrMOVE.java,v 1.3.2.1 2002-02-27 08:35:56 cananian Exp $ 
  */
 public class InstrMOVE extends Instr {
     
@@ -35,8 +35,8 @@ public class InstrMOVE extends Instr {
     public InstrMOVE(InstrFactory inf, HCodeElement codeSrc, 
 		     String assem, Temp[] dst, Temp[] tempSrc) {
         super(inf, codeSrc, assem, dst, tempSrc);
-	Util.ASSERT(dst.length == 1, "can only have one dest");
-	Util.ASSERT(tempSrc.length == 1, "can only have one src");
+	assert dst.length == 1 : "can only have one dest";
+	assert tempSrc.length == 1 : "can only have one src";
     }
     
     /** Accept a visitor */

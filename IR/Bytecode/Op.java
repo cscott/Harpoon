@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * </UL>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Op.java,v 1.5 2002-02-26 22:45:32 cananian Exp $
+ * @version $Id: Op.java,v 1.5.2.1 2002-02-27 08:36:02 cananian Exp $
  * @see     harpoon.IR.RawClass.AttributeCode
  * @see     harpoon.IR.Bytecode.Instr
  * @see     harpoon.IR.Bytecode.Code
@@ -607,7 +607,7 @@ public abstract class Op {
       {
       int pad = 3-(pc%4);
       long npairs = make_s4(code, pc+pad+5);
-      Util.ASSERT(npairs>=0);
+      assert npairs>=0;
       return (int) (npairs*8) + pad + 9;
       }
     case TABLESWITCH:
@@ -616,7 +616,7 @@ public abstract class Op {
       long low = make_s4(code, pc+pad+5);
       long high= make_s4(code, pc+pad+9);
       long npairs = high - low + 1;
-      Util.ASSERT(low <= high);
+      assert low <= high;
       return (int) (npairs*4) + pad + 13;
       }
     case WIDE:
@@ -701,7 +701,7 @@ public abstract class Op {
       int pad = 3-(pc%4);
       long deflt  = make_s4(code, pc+pad+1);
       long npairs = make_s4(code, pc+pad+5);
-      Util.ASSERT(npairs >= 0);
+      assert npairs >= 0;
 
       int result[] = new int[(int)npairs+1];
       result[0] = pc + ((int) deflt);
@@ -717,7 +717,7 @@ public abstract class Op {
       long low    = make_s4(code, pc+pad+5);
       long high   = make_s4(code, pc+pad+9);
       long npairs = high - low + 1;
-      Util.ASSERT(low <= high);
+      assert low <= high;
 
       int result[] = new int[(int)npairs+1];
       result[0] = pc + ((int) deflt);

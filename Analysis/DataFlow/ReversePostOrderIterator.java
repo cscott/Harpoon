@@ -7,7 +7,7 @@ package harpoon.Analysis.DataFlow;
  * ReversePostOrderIterator
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: ReversePostOrderIterator.java,v 1.3 2002-02-26 22:39:45 cananian Exp $
+ * @version $Id: ReversePostOrderIterator.java,v 1.3.2.1 2002-02-27 08:30:38 cananian Exp $
  */
 
 import harpoon.Analysis.BasicBlock;
@@ -34,7 +34,7 @@ public class ReversePostOrderIterator implements Iterator {
 	done.add(start); bb_stack.push(start); 
 	iter_stack.push(new EnumerationIterator(start.next()));
 	while (!bb_stack.isEmpty()) {
-	    Util.ASSERT(bb_stack.size() == iter_stack.size());
+	    assert bb_stack.size() == iter_stack.size();
 	    for (Iterator i = (Iterator)iter_stack.pop(); i.hasNext();) {
 		BasicBlock bb2 = (BasicBlock)i.next();
 		if (!done.contains(bb2)) {

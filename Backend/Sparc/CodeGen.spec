@@ -58,7 +58,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.3 2002-02-26 22:44:44 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.3.2.1 2002-02-27 08:35:17 cananian Exp $
  */
 %%
     private InstrFactory instrFactory;
@@ -199,9 +199,9 @@ import java.util.Set;
             Temp temp = tl.head;
 	    if (tb.isTwoWord(temp)) {
 		if (wordsused > 7) { /* two stack */
-		    Util.ASSERT(false, "emitCallPrologue: too many arguments");
+		    assert false : ("emitCallPrologue: too many arguments");
 		} else if (wordsused == 7) { /* one reg, one stack */
-		    Util.ASSERT(false, "emitCallPrologue: too many arguments");
+		    assert false : ("emitCallPrologue: too many arguments");
 		} else { /* two reg */
 		    declare(rego[wordsused - 2], HClass.Void);
 		    declare(rego[wordsused - 1], HClass.Void);
@@ -215,7 +215,7 @@ import java.util.Set;
 		wordsused -= 2;
 	    } else {
 		if (wordsused > 6) { /* on stack */
-		    Util.ASSERT(false, "emitCallPrologue: too many arguments");
+		    assert false : ("emitCallPrologue: too many arguments");
 		} else { /* in reg */
 		    declare(rego[wordsused - 1], HClass.Void);
 		    emit (ROOT, "mov `s0, `d0", 
@@ -235,7 +235,7 @@ import java.util.Set;
 	    wordsused--;
 	}
 
-	Util.ASSERT(wordsused == 0, "emitCallPrologue: all args not in place");
+	assert wordsused == 0 : ("emitCallPrologue: all args not in place");
     }
 
     private void emitCallEpilogue(INVOCATION ROOT, Temp retval, HClass type) {
@@ -436,7 +436,7 @@ import java.util.Set;
 	case Bop.SHR: return "sra";
 	case Bop.USHR:return "srl";
 	}
-	Util.ASSERT(false);
+	assert false;
         return null;
     }
 
@@ -1193,7 +1193,7 @@ METHOD(params) %{
             loc++;
         } else {
             if (loc < 6) { // in register
-		Util.ASSERT(params[i] != null);
+		assert params[i] != null;
                 emit (ROOT, "mov `s0, `d0", 
                             new Temp[] { params[i] }, 
                             new Temp[] { regi[loc] });

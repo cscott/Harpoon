@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.3 2002-02-26 22:41:18 cananian Exp $
+ * @version $Id: NodeRepository.java,v 1.3.2.1 2002-02-27 08:32:06 cananian Exp $
  */
 public class NodeRepository implements java.io.Serializable {
 
@@ -86,8 +86,7 @@ public class NodeRepository implements java.io.Serializable {
 	for(int i = 0; i < mmethod.nbParams(); i++) {
 	    GenType gt = mmethod.getType(i);
 	    if(!gt.getHClass().isPrimitive()) {
-		Util.ASSERT(count < param_number,
-			    "Strange number of params for " + mmethod);
+		assert count < param_number : "Strange number of params for " + mmethod;
 		gts[count] = gt;
 		count++;
 	    }
@@ -259,7 +258,7 @@ public class NodeRepository implements java.io.Serializable {
 
 		public void visit(Quad q) {
 		    // this should not happen
-		    Util.ASSERT(false, "Unknown quad " + q);
+		    assert false : "Unknown quad " + q;
 		}
 	    });
 
@@ -287,7 +286,7 @@ public class NodeRepository implements java.io.Serializable {
 
     /** Gets the type of an inside node. */
     public final HClass getInsideNodeType(PANode node) {
-	Util.ASSERT(node.type == PANode.INSIDE, "Not an inside node!");
+	assert node.type == PANode.INSIDE : "Not an inside node!";
 	PANode root = node.getRoot();
 	System.out.println("getInsideNodeType: " + root);
 	HCodeElement hce = node2Code(root);
@@ -303,7 +302,7 @@ public class NodeRepository implements java.io.Serializable {
 	    return ((NEW) hce).hclass();
 	if(hce instanceof ANEW)
 	    return ((ANEW) hce).hclass();
-	Util.ASSERT(false,"Not a NEW or ANEW: " + hce);
+	assert false : ("Not a NEW or ANEW: " + hce);
 	return null; // should never happen
     }
 

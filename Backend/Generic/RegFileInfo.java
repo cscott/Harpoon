@@ -50,7 +50,7 @@ import java.util.Iterator;
     together before mapping them to Physical Register Temps.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.3 2002-02-26 22:43:45 cananian Exp $ */
+    @version $Id: RegFileInfo.java,v 1.3.2.1 2002-02-27 08:34:29 cananian Exp $ */
 public abstract class RegFileInfo {
 
     /** Defines function from 
@@ -202,7 +202,7 @@ public abstract class RegFileInfo {
 	where all registers in <code>occupied</code> are in use.
     */
     public List assignment(Temp needy, Collection occupied) {
-	Util.ASSERT(false, "abstract and implement in subclasses");
+	assert false : "abstract and implement in subclasses";
 	return null;
     }
     
@@ -238,7 +238,7 @@ public abstract class RegFileInfo {
 	     ones. 
     */
     public Set getRegAssignments(Temp t) { 
-	Util.ASSERT(false, "abstract and implement in subclasses");
+	assert false : "abstract and implement in subclasses";
 	return null;
     }
 
@@ -316,7 +316,7 @@ public abstract class RegFileInfo {
     public Iterator suggestRegAssignment(Temp t, Map regfile,
 					 Collection preassignedTemps) 
 	throws RegFileInfo.SpillException {
-	Util.ASSERT(false); return null;
+	assert false; return null;
     }
 
     /** SpillException tells a register allocator which

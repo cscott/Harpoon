@@ -86,7 +86,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.4 2002-02-26 22:42:16 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.4.2.1 2002-02-27 08:33:08 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -105,7 +105,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     /** Creates a <code>BitWidthAnalysis</code>. */
     public BitWidthAnalysis(Linker linker, HCodeFactory hcf,
 			    ClassHierarchy ch, Set roots, Set fieldRoots) {
-	Util.ASSERT(hcf.getCodeName().equals(QuadSSI.codename));
+	assert hcf.getCodeName().equals(QuadSSI.codename);
 	this.linker = linker;
 	this.hcf = hcf;
 	this.ch = ch;
@@ -443,7 +443,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     }
     /** Raise element t to a in V, adding t to Wv if necessary. */
     void raiseV(MultiMap V, Worklist Wv, Context c, Temp t, LatticeVal a) {
-	Util.ASSERT(a!=null);
+	assert a!=null;
 	LatticeVal old = get( c, t );
 	if (corruptor!=null) a=corruptor.corrupt(a); // support incrementalism
 	// only allow raising value in lattice.
@@ -461,7 +461,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     /** Merge a with type of field hf in Vf, adding reads of hf to Wf if
 	necessary. */
     void mergeV(Worklist Wf, HField hf, LatticeVal a) {
-	Util.ASSERT(a!=null);
+	assert a!=null;
 	LatticeVal old = get( hf );
 	if (corruptor!=null) a=corruptor.corrupt(a); // support incrementalism
 	if (old != null) {
@@ -478,7 +478,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		// oops: we have to limit the size of a.
 		// xxx: should we ever get a *constant* larger than the
 		// field can hold?
-		Util.ASSERT(!(a instanceof xIntConstant));
+		assert !(a instanceof xIntConstant);
 		a = new xBitWidth(aa.type(),
 				  Math.min(aa.plusWidth(), bw.plusWidth()),
 				  Math.min(aa.minusWidth(), bw.minusWidth()));
@@ -730,7 +730,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public void visit(AGET q) {
 	    LatticeVal v = get( q.objectref() );
 	    if (corruptor==null)
-		Util.ASSERT(v==null || v instanceof xClassNonNull);
+		assert v==null || v instanceof xClassNonNull;
 	    if (v instanceof xClass)
 		raiseV(V, Wv, q.dst(), 
 		       new xClass( toInternal( ((xClass)v).type().getComponentType() ) ) );
@@ -738,7 +738,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public void visit(ALENGTH q) {
 	    LatticeVal v = get( q.objectref() );
 	    if (corruptor==null)
-		Util.ASSERT(v==null || v instanceof xClassNonNull);
+		assert v==null || v instanceof xClassNonNull;
 	    if (v instanceof xClassArray)
 		raiseV(V, Wv, q.dst(),
 		       new xIntConstant(HClass.Int, 
@@ -761,15 +761,14 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public void visit(ASET q) {
 	    LatticeVal v = get( q.objectref() );
 	    if (corruptor==null)
-		Util.ASSERT(v==null || v instanceof xClassNonNull);
+		assert v==null || v instanceof xClassNonNull;
 	    /* do nothing. */
 	}
 	public void visit(CALL q) {
 	    if (corruptor==null)
-		Util.ASSERT(q.isVirtual() ?
+		assert (q.isVirtual() ?
 			    get( q.params(0) )==null ||
-			    get( q.params(0) ) instanceof xClassNonNull : true,
-			    q);
+			    get( q.params(0) ) instanceof xClassNonNull : true) : q;
 	    // don't analyze this quad until all params are known.
 	    for (int i=0; i<q.paramsLength(); i++)
 		if (get(q.params(i))==null)
@@ -778,10 +777,10 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    HMethod hm = q.method();
 	    List callable = new ArrayList(4);
 	    if (q.isVirtual()) { // need type info for virtual methods.
-		Util.ASSERT(!hm.isStatic());
+		assert !hm.isStatic();
 		LatticeVal v = get( q.params(0) );
 		HClass ty = ((xClass) v).type();
-		Util.ASSERT(!ty.isPrimitive(), v);
+		assert !ty.isPrimitive() : v;
 		// when hm.getDeclaringClass() is an interface, the
 		// implementations may not share a common superclass which
 		// implements that interface.
@@ -799,8 +798,8 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		// do a virtual dispatch to Thread.run() as well.
 		LatticeVal v = get( q.params(0) );
 		HClass ty = ((xClass) v).type();
-		Util.ASSERT(ty.isInstanceOf
-			    (linker.forName("java.lang.Thread")), v);
+		assert ty.isInstanceOf
+			    (linker.forName("java.lang.Thread")) : v;
 		hm = ty.getMethod("run", "()V");
 		if (!(v instanceof xClassExact))
 		    callable.addAll(ch.overrides(ty,hm,true));
@@ -899,15 +898,13 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	 *  down to the given class (which defines the class method we're
 	 *  going to invoke). */
 	private LatticeVal narrowThis(HClass hc, LatticeVal v) {
-	    Util.ASSERT(v instanceof xClassNonNull,
-			"'this' pointer should always be known non-null.");
+	    assert v instanceof xClassNonNull : "'this' pointer should always be known non-null.";
 	    xClassNonNull vv = (xClassNonNull) v;
-	    Util.ASSERT(!hc.isInterface()); // hc comes from method decl.
+	    assert !hc.isInterface(); // hc comes from method decl.
 	    // vv can be interface, in which case we *do* want to narrow.
 	    // but an interface can never be an instanceof a non-interface.
 	    if (vv.type().isInstanceOf(hc)) return vv;
-	    Util.ASSERT(!(v instanceof xClassExact),
-			"how can 'this' be exact when it needs narrowing?");
+	    assert !(v instanceof xClassExact) : "how can 'this' be exact when it needs narrowing?";
 	    return new xClassNonNull(hc);
 	}
 	public void visit(CJMP q) {
@@ -993,10 +990,9 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public void visit(FOOTER q) { /* do nothing. */ }
 	public void visit(GET q) {
 	    if (corruptor==null)
-		Util.ASSERT(q.objectref()!=null ?
+		assert (q.objectref()!=null ?
 			    get(q.objectref())==null ||
-			    get(q.objectref()) instanceof xClassNonNull : true,
-			    q);
+			    get(q.objectref()) instanceof xClassNonNull : true) : q;
 	    // add to list of reading quads.
 	    fieldMap.add(q.field(), Default.pair(context, q));
 	    // variable gets current lattice val of field.
@@ -1006,7 +1002,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    if (DEBUG) System.out.println("READ OF "+q.field()+" GETS "+get( q.field() ));
 	}
 	public void visit(HEADER q) {
-	    Util.ASSERT(false); /* we should "skip to the METHOD" */
+	    assert false; /* we should "skip to the METHOD" */
 	}
 	public void visit(INSTANCEOF q) {
 	    // no guarantee that src is not null.
@@ -1033,17 +1029,17 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	public void visit(METHOD q) {
 	    /* do very little */
-	    Util.ASSERT(methodMap.get(q.getFactory().getMethod())==q);
+	    assert methodMap.get(q.getFactory().getMethod())==q;
 	    if (DEBUG) System.out.println("METHOD: "+q.getFactory().getMethod());
 	}
 	public void visit(MONITORENTER q) {
 	    LatticeVal v = get( q.lock() );
-	    Util.ASSERT(v==null || v instanceof xClassNonNull);
+	    assert v==null || v instanceof xClassNonNull;
 	    /* do nothing. */
 	}
 	public void visit(MONITOREXIT q) {
 	    LatticeVal v = get( q.lock() );
-	    Util.ASSERT(v==null || v instanceof xClassNonNull);
+	    assert v==null || v instanceof xClassNonNull;
 	    /* do nothing. */
 	}
 	public void visit(MOVE q) {
@@ -1165,10 +1161,9 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	public void visit(SET q) {
 	    if (corruptor==null)
-		Util.ASSERT(q.objectref()!=null ?
+		assert (q.objectref()!=null ?
 			    get(q.objectref())==null ||
-			    get(q.objectref()) instanceof xClassNonNull : true,
-			    q);
+			    get(q.objectref()) instanceof xClassNonNull : true) : q;
 	    /* widen type of field */
 	    LatticeVal v = get( q.src() );
 	    if (v != null)
@@ -1218,7 +1213,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 			    // (don't count zero twice!)
 			    long cases = -1 +
 				(1L<<bw.plusWidth()) + (1L<<bw.minusWidth());
-			    Util.ASSERT(executable<=cases);
+			    assert executable<=cases;
 			    if (executable==cases)
 				continue; // default not executable.
 			}
@@ -1234,8 +1229,8 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	public void visit(THROW q) {
 	    if (corruptor==null)
-		Util.ASSERT(get(q.throwable())==null ||
-			    get(q.throwable()) instanceof xClassNonNull);
+		assert get(q.throwable())==null ||
+			    get(q.throwable()) instanceof xClassNonNull;
 	    throwMap.add
 		( Default.pair(context, q.getFactory().getMethod()), q );
 	    if (get( q.throwable() )==null) return; // wait for definition!
@@ -1702,9 +1697,8 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     static class xClass extends LatticeVal {
 	protected HClass type;
 	public xClass(HClass type) {
-	    Util.ASSERT(type!=HClass.Boolean && type!=HClass.Byte &&
-			type!=HClass.Short && type!=HClass.Char,
-			"Not an internal type ("+type+")");
+	    assert type!=HClass.Boolean && type!=HClass.Byte &&
+			type!=HClass.Short && type!=HClass.Char : "Not an internal type ("+type+")";
 	    this.type = type;
 	}
 	public HClass type() { return type; }
@@ -1727,7 +1721,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	// Class merge function.
 	static HClass mergeTypes(HClass a, HClass b) {
-	    Util.ASSERT(a!=null && b!=null);
+	    assert a!=null && b!=null;
 	    if (a==b) return a; // take care of primitive types.
 	    
 	    // Special case 'Void' Hclass, used for null constants.
@@ -1737,7 +1731,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		return a;
 	    
 	    // by this point better be array ref or object, not primitive type.
-	    Util.ASSERT((!a.isPrimitive()) && (!b.isPrimitive()));
+	    assert (!a.isPrimitive()) && (!b.isPrimitive());
 	    return HClassUtil.commonParent(a,b);
 	}
     }
@@ -1745,7 +1739,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     static class xClassNonNull extends xClass {
 	public xClassNonNull(HClass type) { 
 	    super( type );
-	    Util.ASSERT(type!=HClass.Void);
+	    assert type!=HClass.Void;
 	}
 	public String toString() { 
 	    return "xClassNonNull: { " + type + " }";
@@ -2035,7 +2029,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    super(toInternal(HClass.Boolean),value);
 	    this.q = q;
 	    this.tested = tested;
-	    Util.ASSERT(value==0 || value==1);
+	    assert value==0 || value==1;
 	}
 	public Temp tested() { return tested; }
 	public INSTANCEOF def() { return q; }
@@ -2093,7 +2087,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    super(toInternal(HClass.Boolean),value);
 	    this.q = q;
 	    this.operands = operands;
-	    Util.ASSERT(value==0 || value==1);
+	    assert value==0 || value==1;
 	}
 	public Temp[] operands() { return operands; }
 	public OPER def() { return q; }

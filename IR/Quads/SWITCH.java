@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.3.2.1 2002-02-27 08:36:33 cananian Exp $
  */
 public class SWITCH extends SIGMA {
     /** The discriminant, compared against each value in <code>keys</code>.*/
@@ -43,8 +43,8 @@ public class SWITCH extends SIGMA {
 	this.index = index;
 	this.keys = keys;
 	// VERIFY legality of SWITCH.
-	Util.ASSERT(index!=null && keys!=null);
-	Util.ASSERT(keys.length+1==arity());
+	assert index!=null && keys!=null;
+	assert keys.length+1==arity();
     }
     /** Creates a switch with arity defined by the keys array. */
     public SWITCH(QuadFactory qf, HCodeElement source,

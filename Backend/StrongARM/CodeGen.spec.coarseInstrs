@@ -64,7 +64,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec.coarseInstrs,v 1.3 2002-02-26 22:44:51 cananian Exp $
+ * @version $Id: CodeGen.spec.coarseInstrs,v 1.3.2.1 2002-02-27 08:35:30 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -118,10 +118,8 @@ import java.util.Iterator;
 	    regToNum.put(regfile.reg[i], new Integer(i));
 	regComp = new Comparator() {
 	    public int compare(Object o1, Object o2) {
-		Util.ASSERT(regToNum.keySet().contains(o1),
-			    /* o1+ */" not in regToNum's keys");
-		Util.ASSERT(regToNum.keySet().contains(o2),
-			    /* o2+ */" not in regToNum's keys");
+		assert regToNum.keySet().contains(o1) : /* o1+ */" not in regToNum's keys";
+		assert regToNum.keySet().contains(o2) : /* o2+ */" not in regToNum's keys";
 		return ((Integer)regToNum.get(o1)).intValue() -
 		       ((Integer)regToNum.get(o2)).intValue();
 	    }
@@ -564,7 +562,7 @@ import java.util.Iterator;
 	  }
 	}
       }
-      Util.ASSERT(index==-1);
+      assert index==-1;
       declareCALL();
       if (ROOT.getRetval()!=null) declare( r0, td, ROOT.getRetval() );
       return new CallState(stackOffset, callUses);
@@ -591,8 +589,7 @@ import java.util.Iterator;
 				  Temp retval, HClass type, 
 				  CallState cs) {
       // this will break if stackOffset > 255 (ie >63 args)
-      Util.ASSERT( cs.stackOffset < 256, 
-		   "Update the spec file to handle large SP offsets");
+      assert cs.stackOffset < 256 : "Update the spec file to handle large SP offsets";
       if (cs.stackOffset!=0) { // optimize for common case.
 	  declare ( SP, HClass.Void );
 	  emit( ROOT, "add `d0, `s0, #" + cs.stackOffset, SP , SP );
@@ -637,7 +634,7 @@ import java.util.Iterator;
 	int nregs=0;
 	for (int i=0; i<usedRegArray.length; i++) {
 	    Temp rX = usedRegArray[i];
-	    Util.ASSERT(regfile.isRegister(rX));
+	    assert regfile.isRegister(rX);
 	    if (rX.equals(r0)||rX.equals(r1)||rX.equals(r2)||rX.equals(r3))
 		continue; // caller save registers.
 	    if (rX.equals(LR)||rX.equals(PC)||rX.equals(FP)||rX.equals(SP)||
@@ -1197,7 +1194,7 @@ CONST<f,i>(c) = i %{
 
 CONST<p>(c) = i %{
     // the only CONST of type Pointer we should see is NULL
-    Util.ASSERT(c==null);
+    assert c==null;
     emit(new Instr( instrFactory, ROOT, 
 		    "mov `d0, #0 @ null", new Temp[]{ i }, null));
 }%
@@ -1553,7 +1550,7 @@ NAME(id) = i %{
     
     emit(i2);
     
-    Util.ASSERT(i2.succC().size() == 1, "linear control flow");
+    assert i2.succC().size() == 1 : "linear control flow";
 
     // these may need to be included in the previous instr to preserve
     // ordering semantics, but for now this way they indent properly
@@ -1563,8 +1560,7 @@ NAME(id) = i %{
     // as the start of a new basic block.
     i2 = emitLABEL( ROOT, "2:", target);
     
-    Util.ASSERT(i2.predC().size() == 1, 
-		"> one predecessor " /* + i2.predC() */);
+    assert i2.predC().size() == 1 : "> one predecessor " /* + i2.predC() */;
 
 }%
 
@@ -1924,17 +1920,13 @@ MOVE<p,i,f>(TEMP(dst), src) %{
 }%
 
 MOVE<d,l>(TEMP(dst), src) %{
-    Util.ASSERT( dst instanceof TwoWordTemp, 
-		 "normal Temp" /* +": "+dst */ 
+    assert dst instanceof TwoWordTemp : "normal Temp" /* +": "+dst */ 
 
-		 // + harpoon.IR.Tree.Print.print(ROOT)
-		 );
+		 // + harpoon.IR.Tree.Print.print(ROOT);
 
-    Util.ASSERT(src instanceof TwoWordTemp, 
-		"normal Temp" /* +": "+src */ 
+    assert src instanceof TwoWordTemp : "normal Temp" /* +": "+src */ 
 
-		// + harpoon.IR.Tree.Print.print(ROOT)
-		);
+		// + harpoon.IR.Tree.Print.print(ROOT);
 
     declare( dst, code.getTreeDerivation(),  ROOT.getSrc() );
 

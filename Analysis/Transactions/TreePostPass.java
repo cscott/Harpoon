@@ -27,7 +27,7 @@ import java.util.List;
  * This pass is invoked by <code>SyncTransformer.treeCodeFactory()</code>.
  * 
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreePostPass.java,v 1.3 2002-02-26 22:42:28 cananian Exp $
+ * @version $Id: TreePostPass.java,v 1.3.2.1 2002-02-27 08:33:21 cananian Exp $
  */
 class TreePostPass extends harpoon.Analysis.Tree.Simplification {
     private final List RULES = new ArrayList(); 
@@ -65,7 +65,7 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 		NAME name = (NAME) e;
 		// check label.
 		boolean b = name.label.equals(Lflagvalue);
-		Util.ASSERT(!b, "flag value slipped past us!");
+		assert !b : "flag value slipped past us!";
 		return b;
 	    }
 	    // otherwise a very visible (we hope) runtime error.

@@ -22,7 +22,7 @@ import java.util.Set;
  * function.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DisjointSet.java,v 1.3 2002-02-26 22:47:35 cananian Exp $
+ * @version $Id: DisjointSet.java,v 1.3.2.1 2002-02-27 08:37:54 cananian Exp $
  */
 public class DisjointSet  {
     private final Map elmap = new HashMap();
@@ -42,7 +42,7 @@ public class DisjointSet  {
 	if (x==null) x=_make_set(o1);
 	Node y = (Node) elmap.get(o2);
 	if (y==null) y=_make_set(o2);
-	Util.ASSERT(!x.equals(y), "Sets assumed to be disjoint");
+	assert !x.equals(y) : "Sets assumed to be disjoint";
 	_union(x, y);
     }
     /** Returns the representative of the (unique) set containing
@@ -59,7 +59,7 @@ public class DisjointSet  {
     }
     // these are the routines according to CLR
     private Node _make_set(Object o) {
-	Util.ASSERT(!elmap.containsKey(o));
+	assert !elmap.containsKey(o);
 	Node x = new Node(o);
 	elmap.put(o, x);
 	return x;
@@ -138,18 +138,18 @@ public class DisjointSet  {
     public static void main(String[] args) {
 	DisjointSet ds = new DisjointSet();
 	String a="a", b="b", c="c", d="d", e="e", f="f", g="g", h="h";
-	Util.ASSERT(!ds.contains(a) && !ds.contains(b) && !ds.contains(c));
-	Util.ASSERT(ds.find(a)==a && ds.find(b)==b && ds.find(c)==c);
-	Util.ASSERT(!ds.contains(a) && !ds.contains(b) && !ds.contains(c));
+	assert !ds.contains(a) && !ds.contains(b) && !ds.contains(c);
+	assert ds.find(a)==a && ds.find(b)==b && ds.find(c)==c;
+	assert !ds.contains(a) && !ds.contains(b) && !ds.contains(c);
 	ds.union(e, c); ds.union(b, h); ds.union(h, c);
-	Util.ASSERT(ds.find(e)==ds.find(c) && ds.find(h)==ds.find(e));
-	Util.ASSERT(ds.find(b)==ds.find(c) && ds.find(b)!=ds.find(a));
+	assert ds.find(e)==ds.find(c) && ds.find(h)==ds.find(e);
+	assert ds.find(b)==ds.find(c) && ds.find(b)!=ds.find(a);
 	ds.union(d, f); ds.union(g, d);
-	Util.ASSERT(ds.find(d)==ds.find(f) && ds.find(f)==ds.find(g));
-	Util.ASSERT(ds.find(d)!=ds.find(c) && ds.find(d)!=ds.find(a));
+	assert ds.find(d)==ds.find(f) && ds.find(f)==ds.find(g);
+	assert ds.find(d)!=ds.find(c) && ds.find(d)!=ds.find(a);
 	ds.union(c, f);
-	Util.ASSERT(ds.find(e)==ds.find(f));
-	Util.ASSERT(ds.find(a)==a);
+	assert ds.find(e)==ds.find(f);
+	assert ds.find(a)==a;
 	System.err.println("PASSED.");
     }
 }

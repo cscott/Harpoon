@@ -26,7 +26,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.3 2002-02-26 22:39:45 cananian Exp $
+ * @version $Id: LiveTemps.java,v 1.3.2.1 2002-02-27 08:30:38 cananian Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
     // may be null; code using this should check
@@ -195,7 +195,7 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	// System.out.println("FSK: getLiveAfter called");
 
 	BasicBlock bb = bbFact.getBlock(hce);
-    Util.ASSERT(bb != null, "Code " + hce + " is not in a bb");
+    assert bb != null : "Code " + hce + " is not in a bb";
 
 	    Set liveAfter = 
 		mySetFactory.makeSet(this.getLiveOnExit(bb));

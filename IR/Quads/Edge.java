@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * data with control-flow edges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edge.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
+ * @version $Id: Edge.java,v 1.3.2.1 2002-02-27 08:36:32 cananian Exp $
  */
 
 public class Edge extends CFGEdge implements java.io.Serializable {
@@ -26,12 +26,10 @@ public class Edge extends CFGEdge implements java.io.Serializable {
     
     /** Creates a <code>Edge</code>. */
     Edge(Quad from, int from_index, Quad to, int to_index) {
-	Util.ASSERT(from!=null, "'from' is null");
-	Util.ASSERT(to!=null, "'to' is null");
-	Util.ASSERT(0 <= from_index && from_index < from.next.length,
-		    "'from' index out of range");
-	Util.ASSERT(0 <= to_index   && to_index   <   to.prev.length,
-		    "'to' index out of range");
+	assert from!=null : "'from' is null";
+	assert to!=null : "'to' is null";
+	assert 0 <= from_index && from_index < from.next.length : "'from' index out of range";
+	assert 0 <= to_index   && to_index   <   to.prev.length : "'to' index out of range";
 	this.from = from;
 	this.from_index = from_index;
 	this.to = to;

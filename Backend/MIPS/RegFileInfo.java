@@ -40,7 +40,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Emmett Witchel <witchel@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.3 2002-02-26 22:43:59 cananian Exp $
+ * @version $Id: RegFileInfo.java,v 1.3.2.1 2002-02-27 08:34:42 cananian Exp $
  */
 public class RegFileInfo
 extends harpoon.Backend.Generic.RegFileInfo 
@@ -122,8 +122,8 @@ implements harpoon.Backend.Generic.LocationFactory
 	    
             public String getScope() { return scope; }
             protected synchronized String getUniqueID(String suggestion) {
-               Util.ASSERT(i < names.length, "Don't use the "+
-                           "TempFactory of Register Temps");
+               assert i < names.length : "Don't use the "+
+                           "TempFactory of Register Temps";
                i++;
                return names[i-1];
             }
@@ -375,19 +375,17 @@ implements harpoon.Backend.Generic.LocationFactory
      *              of the register.
      */
    public Location allocateLocation(final int type) {
-      Util.ASSERT(Type.isValid(type), "invalid type");
-      Util.ASSERT(!makeLocationDataCalled,
-                  "allocateLocation() may not be called after "+
-                  "makeLocationData() has been called.");
-      Util.ASSERT(type!=Type.LONG && type!=Type.DOUBLE,
-                  "doubleword locations not implemented by this "+
-                  "LocationFactory");
+      assert Type.isValid(type) : "invalid type";
+      assert !makeLocationDataCalled : "allocateLocation() may not be called after "+
+                  "makeLocationData() has been called.";
+      assert type!=Type.LONG && type!=Type.DOUBLE : "doubleword locations not implemented by this "+
+                  "LocationFactory";
       // all other types of locations need a single register.
 
       // FSK: in theory, we could support arbitrary numbers of 
       // allocations by switching to mem locations.  But I don't
       // want to try to implement that yet.  
-      Util.ASSERT(regtop > 4, "allocated WAY too many locations, something's wrong");
+      assert regtop > 4 : "allocated WAY too many locations, something's wrong";
 
       final Temp allocreg = reg[regtop--];
 

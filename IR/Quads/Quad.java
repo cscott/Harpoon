@@ -28,7 +28,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
+ * @version $Id: Quad.java,v 1.3.2.1 2002-02-27 08:36:33 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -47,7 +47,7 @@ public abstract class Quad
      *  <code>next_arity</code> output edges. */
     protected Quad(QuadFactory qf, HCodeElement source,
 		   int prev_arity, int next_arity) {
-	Util.ASSERT(qf!=null); // QuadFactory must be valid.
+	assert qf!=null; // QuadFactory must be valid.
 	this.source_file = (source!=null)?source.getSourceFile():"unknown";
 	this.source_line = (source!=null)?source.getLineNumber(): 0;
 	this.id = qf.getUniqueID();
@@ -194,19 +194,19 @@ public abstract class Quad
     public static Edge addEdge(Quad from, int from_index,
 			       Quad to, int to_index) {
 	// assert validity
-	Util.ASSERT(from.qf == to.qf, "QuadFactories should always be same");
+	assert from.qf == to.qf : "QuadFactories should always be same";
 	//  [HEADERs connect only to FOOTER and METHOD]
 	if (from instanceof HEADER)
-	    Util.ASSERT((to instanceof FOOTER && from_index==0) || 
-			(to instanceof METHOD && from_index==1) );
+	    assert (to instanceof FOOTER && from_index==0) || 
+			(to instanceof METHOD && from_index==1);
 	//  [METHOD connects to HANDLERs on all but first edge]
 	if (from instanceof METHOD && from_index > 0)
-	    Util.ASSERT(to instanceof HANDLER);
+	    assert to instanceof HANDLER;
 	//  [ONLY HEADER, THROW and RETURN connects to FOOTER]
 	if (to instanceof FOOTER)
-	    Util.ASSERT((from instanceof HEADER && to_index==0) ||
+	    assert (from instanceof HEADER && to_index==0) ||
 			(from instanceof THROW  && to_index >0) ||
-			(from instanceof RETURN && to_index >0) );
+			(from instanceof RETURN && to_index >0);
 	// OK, add the edge.
 	Edge e = new Edge(from, from_index, to, to_index);
 	from.next[from_index] = e;
@@ -224,8 +224,8 @@ public abstract class Quad
     /** Replace one quad with another. The number of in and out edges of
      *  the new and old quads must match exactly. */
     public static void replace(Quad oldQ, Quad newQ) {
-	Util.ASSERT(oldQ.next.length == newQ.next.length);
-	Util.ASSERT(oldQ.prev.length == newQ.prev.length);
+	assert oldQ.next.length == newQ.next.length;
+	assert oldQ.prev.length == newQ.prev.length;
 	for (int i=0; i<oldQ.next.length; i++) {
 	    Edge e = oldQ.next[i];
 	    Quad to = (Quad) e.to();
@@ -246,8 +246,8 @@ public abstract class Quad
      *  quad from any handler sets it may belong to.  Returns the
      *  new edge which replaces this quad. */
     public Edge remove() {
-	Util.ASSERT(this.next.length == 1);
-	Util.ASSERT(this.prev.length == 1);
+	assert this.next.length == 1;
+	assert this.prev.length == 1;
 	this.removeHandlers(this.handlers());
 	Edge in = this.prev[0], out = this.next[0];
 	Edge result = addEdge((Quad)in.from(), in.which_succ(),
@@ -306,7 +306,7 @@ public abstract class Quad
 	for (int j=0; j<2; j++) {
 	    Temp[] ta = (j==0)?qc.use():qc.def();
 	    for (int i=0; i<ta.length; i++)
-		Util.ASSERT(ta[i].tempFactory()==qf.tempFactory(), "TempFactories should be same");
+		assert ta[i].tempFactory()==qf.tempFactory() : "TempFactories should be same";
 	}
 	return qc;
     }
@@ -316,8 +316,7 @@ public abstract class Quad
      *  the given header using <code>QuadFactory</code>. */
     public static Quad clone(QuadFactory qf, Quad header)
     {
-	Util.ASSERT(header instanceof HEADER, 
-		    "Argument to Quad.clone() should be a HEADER.");
+	assert header instanceof HEADER : "Argument to Quad.clone() should be a HEADER.";
 	return copyone(qf, header, new HashMap(),
 		       new CloningTempMap(header.qf.tempFactory(),
 					  qf.tempFactory()));
@@ -330,8 +329,7 @@ public abstract class Quad
      */
     static HCodeAndMaps cloneWithMaps(QuadFactory qf, Quad header)
     {
-	Util.ASSERT(header instanceof HEADER, 
-		    "Argument to Quad.clone() should be a HEADER.");
+	assert header instanceof HEADER : "Argument to Quad.clone() should be a HEADER.";
 	Map qm = new HashMap();
 	CloningTempMap ctm = new CloningTempMap(header.qf.tempFactory(),
 						qf.tempFactory());
@@ -372,12 +370,12 @@ public abstract class Quad
 	old2new.put(q, r);
 	// fixup the edges.
 	for (int i=0; i<q.next.length; i++) {
-	    Util.ASSERT(q.next[i].from == q);
+	    assert q.next[i].from == q;
 	    Quad to = copyone(qf, q.next[i].to, old2new, ctm);
 	    Quad.addEdge(r, q.next[i].from_index, to, q.next[i].to_index);
 	}
 	for (int i=0; i<q.prev.length; i++) {
-	    Util.ASSERT(q.prev[i].to == q);
+	    assert q.prev[i].to == q;
 	    Quad from = copyone(qf, q.prev[i].from, old2new, ctm);
 	    Quad.addEdge(from, q.prev[i].from_index, r, q.prev[i].to_index);
 	}

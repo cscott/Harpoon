@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  * thread-clustered-allocation strategies.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NiftyAllocationStrategy.java,v 1.3 2002-02-26 22:44:31 cananian Exp $
+ * @version $Id: NiftyAllocationStrategy.java,v 1.3.2.1 2002-02-27 08:35:05 cananian Exp $
  */
 public class NiftyAllocationStrategy extends MallocAllocationStrategy {
 
@@ -45,7 +45,7 @@ public class NiftyAllocationStrategy extends MallocAllocationStrategy {
 		"NTHR_malloc_with_heap" : "NGBL_malloc_with_heap";
 	if (ap.allocationHeap()!=null) {
 	    // from the AllocationProperties interface specification...
-	    Util.ASSERT(ap.canBeThreadAllocated() && !ap.makeHeap());
+	    assert ap.canBeThreadAllocated() && !ap.makeHeap();
 	    funcname = "NTHR_malloc_other";
 	    // this is somewhat bogus, since the heap-association object is
 	    // most certainly an *object*, *not* Void -- but it can't hurt

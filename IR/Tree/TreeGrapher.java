@@ -26,7 +26,7 @@ import java.util.Map;
  * control-flow graph information with elements of a canonical tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeGrapher.java,v 1.3 2002-02-26 22:46:11 cananian Exp $
+ * @version $Id: TreeGrapher.java,v 1.3.2.1 2002-02-27 08:36:48 cananian Exp $
  */
 class TreeGrapher extends CFGrapher {
     Tree firstElement = null;
@@ -38,7 +38,7 @@ class TreeGrapher extends CFGrapher {
     */ 
     TreeGrapher(Code code) {
 	// Tree grapher only works on canonical trees. 
-	Util.ASSERT(code.getName().equals("canonical-tree"));
+	assert code.getName().equals("canonical-tree");
 	Edger e = new Edger(code);
 	// done.
     }
@@ -56,7 +56,7 @@ class TreeGrapher extends CFGrapher {
 	private final Map labelmap = new HashMap();
 	/** Look up an IR.Tree.LABEL given a Temp.Label. */
 	private LABEL lookup(Label l) {
-	    Util.ASSERT(labelmap.containsKey(l));
+	    assert labelmap.containsKey(l);
 	    return (LABEL)labelmap.get(l);
 	}
 	/** Add a <from, to> edge to the predMap and succMap */
@@ -102,11 +102,11 @@ class TreeGrapher extends CFGrapher {
 		    linkup(c, false);
 		}
 		public void visit(ESEQ e) {
-		    Util.ASSERT(false, "Not in canonical form!");
+		    assert false : "Not in canonical form!";
 		}
 		public void visit(JUMP j) {
 		    // edges to targets list. no fall-through.
-		    Util.ASSERT(j.targets!=null, "JUMP WITH NO TARGETS!");
+		    assert j.targets!=null : "JUMP WITH NO TARGETS!";
 		    for (LabelList ll=j.targets; ll!=null; ll=ll.tail)
 			addEdge(j, lookup(ll.head));
 		    linkup(j, false);

@@ -19,7 +19,7 @@ import java.util.Set;
  * a <code>HashMap</code> as the backing store.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HashEnvironment.java,v 1.3 2002-02-26 22:47:37 cananian Exp $
+ * @version $Id: HashEnvironment.java,v 1.3.2.1 2002-02-27 08:37:54 cananian Exp $
  */
 public class HashEnvironment extends AbstractMap
     implements Environment {
@@ -65,8 +65,8 @@ public class HashEnvironment extends AbstractMap
     /** Removes the top mapping for this key. */
     void pop(Object key) {
 	LList l = (LList) back.get(key);
-	Util.ASSERT(l!=null);
-	Util.ASSERT(l instanceof Valued || l.next instanceof Valued);
+	assert l!=null;
+	assert l instanceof Valued || l.next instanceof Valued;
 	if (l.next==null) back.remove(key);
 	else back.put(key, l.next);
 	if (l instanceof Valued) size--;
@@ -89,7 +89,7 @@ public class HashEnvironment extends AbstractMap
 	    pop(scope.get(scope.size()-1));
 	    scope.remove(scope.size()-1);
 	}
-	Util.ASSERT(scope.size()==((Mark)m).i, "undoToMark not repeatable!");
+	assert scope.size()==((Mark)m).i : "undoToMark not repeatable!";
     }
 
     // --- EVIL EVIL SET VIEW
@@ -142,31 +142,31 @@ public class HashEnvironment extends AbstractMap
     /** Self-test function. */
     public static void main(String argv[]) {
 	Environment e = new HashEnvironment();
-	Util.ASSERT(e.size()==0 && !e.containsKey("a") && !e.containsKey("b"));
+	assert e.size()==0 && !e.containsKey("a") && !e.containsKey("b");
 	e.put("a","a"); e.put("a","b");
-	Util.ASSERT(e.size()==1 && e.containsKey("a") && e.containsValue("b"));
-	Util.ASSERT(!e.containsValue("a") && !e.containsValue("c"));
+	assert e.size()==1 && e.containsKey("a") && e.containsValue("b");
+	assert !e.containsValue("a") && !e.containsValue("c");
 	Environment.Mark m = e.getMark();
 	e.remove("a"); e.remove("a");
-	Util.ASSERT(e.size()==0 && !e.containsKey("a"));
-	Util.ASSERT(!e.containsKey("b") && !e.containsValue("b"));
-	Util.ASSERT(!e.containsValue("a"));
+	assert e.size()==0 && !e.containsKey("a");
+	assert !e.containsKey("b") && !e.containsValue("b");
+	assert !e.containsValue("a");
 	e.put("b","b"); e.put("b","c");
-	Util.ASSERT(e.size()==1 && e.containsKey("b"));
-	Util.ASSERT(!e.containsKey("a") && e.containsValue("c"));
-	Util.ASSERT(!e.containsValue("b"));
+	assert e.size()==1 && e.containsKey("b");
+	assert !e.containsKey("a") && e.containsValue("c");
+	assert !e.containsValue("b");
 	System.out.println(e);
 	e.undoToMark(m);
-	Util.ASSERT(e.size()==1 && e.containsKey("a") && !e.containsKey("b"));
+	assert e.size()==1 && e.containsKey("a") && !e.containsKey("b");
 	System.out.println(e);
 	e.put("c", "d"); e.put("c", "d");  
-	Util.ASSERT(e.size()==2 && e.containsKey("c") && e.containsValue("d"));
+	assert e.size()==2 && e.containsKey("c") && e.containsValue("d");
 	m = e.getMark();
 	e.clear();
-	Util.ASSERT(e.size()==0 && !e.containsKey("a") && !e.containsKey("b"));
+	assert e.size()==0 && !e.containsKey("a") && !e.containsKey("b");
 	e.undoToMark(m);
-	Util.ASSERT(e.size()==2 && e.containsKey("c") && e.containsValue("d"));
-	Util.ASSERT(e.containsKey("a") && !e.containsKey("b"));
+	assert e.size()==2 && e.containsKey("c") && e.containsValue("d");
+	assert e.containsKey("a") && !e.containsKey("b");
 	System.out.println(e);
     }
 }

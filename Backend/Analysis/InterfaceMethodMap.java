@@ -33,7 +33,7 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * object layout.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.3 2002-02-26 22:43:06 cananian Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.3.2.1 2002-02-27 08:34:01 cananian Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
@@ -106,15 +106,14 @@ public class InterfaceMethodMap extends MethodMap {
     public int methodOrder( HMethod hm ) {
 	// method must be an interface method and thus public,
 	// not static, and not a constructor.
-	Util.ASSERT(hm.isInterfaceMethod() && !hm.isStatic());
-	Util.ASSERT(Modifier.isPublic(hm.getModifiers()));
-	Util.ASSERT(!(hm instanceof HConstructor));
+	assert hm.isInterfaceMethod() && !hm.isStatic();
+	assert Modifier.isPublic(hm.getModifiers());
+	assert !(hm instanceof HConstructor);
 	// also disallow methods inherited from java.lang.Object
-	Util.ASSERT(includeMethod(hm), hm);
+	assert includeMethod(hm) : hm;
 	HmNode node = (HmNode) mtable.get( hm );
-	Util.ASSERT(node != null, 
-		    "InterfaceMethodMap must contain "+
-		    "a mapping for " + hm);
+	assert node != null : "InterfaceMethodMap must contain "+
+		    "a mapping for " + hm;
 	SlotColor c = (SlotColor) node.getColor();
 	return c.index;
     }
@@ -243,7 +242,7 @@ public class InterfaceMethodMap extends MethodMap {
 			     <code>HmNode</code>s.
     */
     private Vector findNodesFor( HClass interfce ) {
-	Util.ASSERT( interfce.isInterface() );
+	assert interfce.isInterface();
 	if (DEBUG) System.out.println("Finding nodes for " + interfce);
 	Vector nodes = new Vector();
 	HMethod[] methods = interfce.getMethods();

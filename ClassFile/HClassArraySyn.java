@@ -15,7 +15,7 @@ import java.util.List;
  * an array type.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassArraySyn.java,v 1.3 2002-02-26 22:45:05 cananian Exp $
+ * @version $Id: HClassArraySyn.java,v 1.3.2.1 2002-02-27 08:35:40 cananian Exp $
  */
 class HClassArraySyn extends HClassArray implements HClassMutator {
     final List declaredMethods = new ArrayList(4);
@@ -40,25 +40,25 @@ class HClassArraySyn extends HClassArray implements HClassMutator {
 
     // Allowed mutations.  -----------------------------------------
     public HMethod addDeclaredMethod(String name, String descriptor) {
-	Util.ASSERT(!name.equals("<init>") && !name.equals("<clinit>"));
+	assert !name.equals("<init>") && !name.equals("<clinit>");
 	return addDeclaredMethod0(new HMethodSyn(this, name, descriptor));
     }
     public HMethod addDeclaredMethod(String name, HClass[] paramTypes,
 				     HClass returnType) {
-	Util.ASSERT(!name.equals("<init>") && !name.equals("<clinit>"));
-	Util.ASSERT(checkLinker(returnType));
+	assert !name.equals("<init>") && !name.equals("<clinit>");
+	assert checkLinker(returnType);
 	for (int i=0; i<paramTypes.length; i++)
-	    Util.ASSERT(checkLinker(paramTypes[i]));
+	    assert checkLinker(paramTypes[i]);
 	return addDeclaredMethod0(new HMethodSyn(this, name, paramTypes,
 						 returnType));
     }
     public HMethod addDeclaredMethod(String name, HMethod template) {
-	Util.ASSERT(!name.equals("<init>") && !name.equals("<clinit>"));
+	assert !name.equals("<init>") && !name.equals("<clinit>");
 	return addDeclaredMethod0(new HMethodSyn(this, name, template));
     }
     /** single implementation. */
     private HMethod addDeclaredMethod0(HMethodSyn hm) {
-	Util.ASSERT(hm.getDeclaringClass()==this);
+	assert hm.getDeclaringClass()==this;
 	if (declaredMethods.contains(hm))
 	    throw new DuplicateMemberException("Method "+hm+" in "+this);
 	declaredMethods.add(hm);

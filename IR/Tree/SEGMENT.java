@@ -16,7 +16,7 @@ import java.util.Set;
  *  stored in the specified section.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: SEGMENT.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
+ * @version $Id: SEGMENT.java,v 1.3.2.1 2002-02-27 08:36:47 cananian Exp $
  */
 public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
     /** R/O storage for static class data (display, vmtable, etc) */
@@ -85,7 +85,7 @@ public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
 	case ZERO_DATA:           return "ZERO_DATA";
 	case GC_INDEX:            return "GC_INDEX";
 	default: 
-	    Util.ASSERT(false, "Unknown segment type "+segtype); 
+	    assert false : "Unknown segment type "+segtype; 
 	    return null;
 	}
     }
@@ -99,7 +99,7 @@ public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
     public SEGMENT(TreeFactory tf, HCodeElement source, int segtype) { 
 	super(tf, source, 0); 
 	this.segtype = segtype;
-	Util.ASSERT(segtype>=0 && segtype<13);
+	assert segtype>=0 && segtype<13;
     }
     
     public int     kind()  { return TreeKind.SEGMENT; }

@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: BINOP.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
+ * @version $Id: BINOP.java,v 1.3.2.1 2002-02-27 08:36:42 cananian Exp $
  * @see Bop
  */
 public class BINOP extends OPER {
@@ -23,11 +23,11 @@ public class BINOP extends OPER {
     public BINOP(TreeFactory tf, HCodeElement source,
 		 int optype, int binop, Exp left, Exp right) {
 	super(tf, source, optype, binop, 2);
-	Util.ASSERT(left != null && right != null);
+	assert left != null && right != null;
 	this.setLeft(left); this.setRight(right); 
-	Util.ASSERT(Bop.isValid(binop));
-	Util.ASSERT(tf==right.tf,"Left and Right must have same tree factory");
-	Util.ASSERT(tf==left.tf,"This and Left must have same tree factory");
+	assert Bop.isValid(binop);
+	assert tf==right.tf : "Left and Right must have same tree factory";
+	assert tf==left.tf : "This and Left must have same tree factory";
 
 	// FSK: debugging hack
 	// this.accept(TreeVerifyingVisitor.norepeats());
@@ -58,8 +58,8 @@ public class BINOP extends OPER {
     public int kind() { return TreeKind.BINOP; }
     
     public Exp build(TreeFactory tf, ExpList kids) {
-	Util.ASSERT(kids!=null && kids.tail!=null && kids.tail.tail==null);
-	Util.ASSERT(tf == kids.head.tf && tf == kids.tail.head.tf);
+	assert kids!=null && kids.tail!=null && kids.tail.tail==null;
+	assert tf == kids.head.tf && tf == kids.tail.head.tf;
 	return new BINOP(tf, this, optype, op, kids.head, kids.tail.head);
     }
     /** Accept a visitor */

@@ -37,7 +37,7 @@ import java.util.Iterator;
  * <code>BasicInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: BasicInductions.java,v 1.3 2002-02-26 22:40:40 cananian Exp $
+ * @version $Id: BasicInductions.java,v 1.3.2.1 2002-02-27 08:31:32 cananian Exp $
  */
 public class BasicInductions {
     HCode hc;
@@ -61,7 +61,7 @@ public class BasicInductions {
 	Iterator iterate=(lp.loopEntrances()).iterator();
 
         /* throw assertion if loop has no entrance (root loop) */
-        Util.ASSERT(!lp.loopEntrances().isEmpty());
+        assert !lp.loopEntrances().isEmpty();
         
 	Quad header=(Quad) iterate.next();
 	if (iterate.hasNext())

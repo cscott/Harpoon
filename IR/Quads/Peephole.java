@@ -18,7 +18,7 @@ import java.util.Set;
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
+ * @version $Id: Peephole.java,v 1.3.2.1 2002-02-27 08:36:33 cananian Exp $
  */
 
 final class Peephole  {
@@ -44,10 +44,10 @@ final class Peephole  {
 
     private static class CheckStack extends UniqueStack {
 	public void push(Object o) {
-	    Util.ASSERT(o!=null);
+	    assert o!=null;
 	    Quad[] ql = ((Quad)o).next();
 	    for (int i=0; i<ql.length; i++)
-		Util.ASSERT(ql[i]!=null);
+		assert ql[i]!=null;
 	    super.push(o);
 	}
     }
@@ -271,7 +271,7 @@ final class Peephole  {
 			Quad.addEdge((Quad)lstE.from(),lstE.which_succ(), q,0);
 			Quad.addEdge(q,0, (Quad)lstE.to(), lstE.which_pred());
 			q.addHandlers(hs);
-		    } else Util.ASSERT(deleteit);
+		    } else assert deleteit;
 		    changed=true;
 		} else {
 		    // do nothing.

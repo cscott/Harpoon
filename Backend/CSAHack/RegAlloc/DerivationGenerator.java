@@ -23,14 +23,14 @@ import java.util.Map;
  * spills.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationGenerator.java,v 1.3 2002-02-26 22:43:31 cananian Exp $
+ * @version $Id: DerivationGenerator.java,v 1.3.2.1 2002-02-27 08:34:18 cananian Exp $
  */
 public class DerivationGenerator implements Derivation {
     private Map dtM = new HashMap();
     
     /** Creates a <code>DerivationGenerator</code>. */
     public DerivationGenerator(Instr instrs, Derivation deriv) {
-	Util.ASSERT(deriv!=null);
+	assert deriv!=null;
 	for (Instr in=instrs; in!=null; in=in.getNext()) {
 	    for (Iterator it=in.defC().iterator(); it.hasNext(); ) {
 		Temp d = (Temp) it.next();
@@ -86,7 +86,7 @@ public class DerivationGenerator implements Derivation {
 	TypeAndDerivation(DList deriv) { this(null, deriv); }
 	/** private constructor */
 	private TypeAndDerivation(HClass type, DList derivation) {
-	    Util.ASSERT(type!=null ^ derivation!=null);
+	    assert type!=null ^ derivation!=null;
 	    this.type = type;
 	    this.derivation = derivation;
 	}

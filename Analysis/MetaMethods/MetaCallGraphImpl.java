@@ -68,7 +68,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.3 2002-02-26 22:40:59 cananian Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.3.2.1 2002-02-27 08:31:50 cananian Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -368,10 +368,10 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	ExactTemp et = getExactTemp(cs.params(pos), cs, ExactTemp.USE);
 
 	if(CAUTION && et.getTypeSet().isEmpty())
-	    Util.ASSERT(false, "\nNo possible type detected for " + et.t +
+	    assert false : "\nNo possible type detected for " + et.t +
 			"\n in method " + cs.getFactory().getMethod() +
 			"\n at instr  " + cs.getSourceFile() + ":" +
-			cs.getLineNumber() + " " + cs);
+			cs.getLineNumber() + " " + cs;
 
 	for(Iterator it_types = et.getTypes(); it_types.hasNext(); ) {
 	    GenType gt = (GenType) it_types.next();
@@ -429,7 +429,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    found_a_run = found_a_run || hr;
 	}
 
-	Util.ASSERT(found_a_run, "No run method was found for " + cs);
+	assert found_a_run : "No run method was found for " + cs;
 
 	return true;
     }
@@ -508,12 +508,12 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	nb_meta_methods = 0;
 
 	if(nb_params == 0)
-	    Util.ASSERT(false, "Non static method with no parameters " + cs);
+	    assert false : "Non static method with no parameters " + cs;
 
 	// the first parameter (the method receiver) must be treated specially
 	ExactTemp etbase = getExactTemp(cs.params(0), cs, ExactTemp.USE);
 	if(CAUTION && etbase.getTypeSet().isEmpty())
-	    Util.ASSERT(false, "No possible type detected for " + etbase);
+	    assert false : "No possible type detected for " + etbase;
 
 	boolean poly = false;
 
@@ -982,12 +982,12 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	
 	// catch the forgotten quads
 	public void visit(Quad q) {
-	    Util.ASSERT(false,"Unsupported Quad " + q);		    
+	    assert false : "Unsupported Quad " + q;		    
 	}
 	
 	// crash the system in the most spectacular way
 	private void stop_no_def(Quad q) {
-	    Util.ASSERT(false, q + " doesn't define " + t);
+	    assert false : q + " doesn't define " + t;
 	}
 	
 	// The Temp "tdep" is used in quad "q" to define "t" and
@@ -997,8 +997,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	private void add_deps(Temp tdep, Quad q) {
 	    Set reaching_defs = rdef.reachingDefs(q, tdep);
 	    if(reaching_defs.isEmpty())
-		Util.ASSERT(false, "Temp " + t + " in " + q +
-			    " has no reaching definition!");
+		assert false : "Temp " + t + " in " + q +
+			    " has no reaching definition!";
 	    deps = new ExactTemp[reaching_defs.size()];
 	    Iterator it_defs = reaching_defs.iterator();
 	    for(int i = 0; i < reaching_defs.size(); i++) {
@@ -1106,7 +1106,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 		ExactTemp et2 = (ExactTemp) et.prev[i];
 
 		if(et2 == null)
-		    Util.ASSERT(false,"Something wrong with " + et);
+		    assert false : "Something wrong with " + et;
 
 		next_rel.add(et2, et);
 		if(!already_visited.contains(et2))
@@ -1152,7 +1152,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
 	int nb_params = m.paramsLength();
 	if(CAUTION && (nb_params != mm.nbParams()))
-	    Util.ASSERT(false, "Wrong number of params in " + m);
+	    assert false : "Wrong number of params in " + m;
 
 	for(int i = 0; i < nb_params ; i++)
 	    getExactTemp(m.params(i), m).addType(mm.getType(i));
@@ -1202,9 +1202,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 		    else {
 			HClass hcomp = c.getComponentType();
 			if(hcomp == null)
-			    Util.ASSERT(false, q.objectref() +
+			    assert false : q.objectref() +
 					" could have non-array" +
-					" types in " + q);
+					" types in " + q;
 			et.addType(new GenType(hcomp, GenType.POLY));
 		    }
 		}
@@ -1285,11 +1285,11 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	}
 	
 	public void visit(Quad q) {
-	    Util.ASSERT(false, "Unsupported Quad " + q);
+	    assert false : "Unsupported Quad " + q;
 	}
 	
 	private void stop_no_def(Quad q) {
-	    Util.ASSERT(false, q + " doesn't define " + t);
+	    assert false : q + " doesn't define " + t;
 	}
 	
     };

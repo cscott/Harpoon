@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * a set of <code>BasicBlock</code>.
  *
  * @author John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: DataFlowBasicBlockVisitor.java,v 1.3 2002-02-26 22:39:45 cananian Exp $
+ * @version $Id: DataFlowBasicBlockVisitor.java,v 1.3.2.1 2002-02-27 08:30:38 cananian Exp $
  */
 
 public abstract class DataFlowBasicBlockVisitor extends harpoon.Analysis.BasicBlockInterfVisitor {
@@ -52,7 +52,7 @@ public abstract class DataFlowBasicBlockVisitor extends harpoon.Analysis.BasicBl
     public abstract void visit(BasicBlock b);
 
     public void visit(BasicBlockInterf b) {
-	Util.ASSERT(false, "Unexpected BasicBlockInterf subclass");
+	assert false : "Unexpected BasicBlockInterf subclass";
     }
 }
 

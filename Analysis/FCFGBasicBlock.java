@@ -59,7 +59,7 @@ import harpoon.Util.Util;
 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: FCFGBasicBlock.java,v 1.3 2002-02-26 22:39:08 cananian Exp $ */
+ * @version $Id: FCFGBasicBlock.java,v 1.3.2.1 2002-02-27 08:30:23 cananian Exp $ */
 public class FCFGBasicBlock implements BasicBlockInterf {
     
     /** Creates a <code>FCFGBasicBlock</code>. This method is called
@@ -285,8 +285,7 @@ public class FCFGBasicBlock implements BasicBlockInterf {
 	    <code>hcode</code> <code>hcode</code> must be in
 	    &quot;quad-with-try&quot; format. */
 	public Factory(HCode hcode) {
-	    Util.ASSERT(hcode.getName().equals("quad-with-try"),
-			"FCFG works only for quad-with-try");
+	    assert hcode.getName().equals("quad-with-try") : "FCFG works only for quad-with-try";
 
 	    this.hcode = hcode;
 

@@ -16,16 +16,16 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
+ * @version $Id: SEQ.java,v 1.3.2.1 2002-02-27 08:36:47 cananian Exp $
  */
 public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
     /** Constructor. */
     public SEQ(TreeFactory tf, HCodeElement source,
 	       Stm left, Stm right) {
 	super(tf, source, 2);
-	Util.ASSERT(left!=null && right!=null);
-	Util.ASSERT(left.tf == right.tf, "Left and Right must have same tree factory");
-	Util.ASSERT(tf == right.tf, "This and Right must have same tree factory");
+	assert left!=null && right!=null;
+	assert left.tf == right.tf : "Left and Right must have same tree factory";
+	assert tf == right.tf : "This and Right must have same tree factory";
 	setLeft(left); setRight(right);
 
 	// FSK: debugging hack

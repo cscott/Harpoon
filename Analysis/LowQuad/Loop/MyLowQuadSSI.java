@@ -24,7 +24,7 @@ import java.util.Iterator;
  * <code>MyLowQuadSSI</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadSSI.java,v 1.3 2002-02-26 22:40:41 cananian Exp $
+ * @version $Id: MyLowQuadSSI.java,v 1.3.2.1 2002-02-27 08:31:36 cananian Exp $
  */
 
 public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI
@@ -101,7 +101,7 @@ public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI
     }
     
     public Derivation.DList derivation(HCodeElement hce, Temp t) {
-	Util.ASSERT(hce!=null && t!=null);
+	assert hce!=null && t!=null;
 	return (Derivation.DList)dT.get(t);
     }
     
@@ -111,7 +111,7 @@ public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI
     }
 
     public HClass typeMap(HCodeElement hce, Temp t) {
-	Util.ASSERT(t!=null);
+	assert t!=null;
 	Object type = tT.get(t);
 	//	if (type==null)
 	//  System.out.println("TYPE UNKNOWN for :"+hce+","+t+"in MyLowQuadSSI");

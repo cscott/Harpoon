@@ -30,7 +30,7 @@ import java.lang.reflect.Modifier;
  * to inline this version and eliminate lots of checks in most cases.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayCopyImplementer.java,v 1.3 2002-02-26 22:42:28 cananian Exp $
+ * @version $Id: ArrayCopyImplementer.java,v 1.3.2.1 2002-02-27 08:33:21 cananian Exp $
  */
 public class ArrayCopyImplementer extends CachingCodeFactory {
     /** Parent code factory. */
@@ -52,7 +52,7 @@ public class ArrayCopyImplementer extends CachingCodeFactory {
 		// copy implementation from harpoon.Runtime.ArrayCopy.
 		return super.convert(HMimpac).clone(HMsysac).hcode();
 	    } catch (CloneNotSupportedException e) {
-		Util.ASSERT(false, e); // shouldn't happen.
+		assert false : e; // shouldn't happen.
 	    }
 	return super.convert(m);
     }

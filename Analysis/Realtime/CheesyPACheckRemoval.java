@@ -51,7 +51,7 @@ import harpoon.Util.Util;
  * <code>CheesyPACheckRemoval</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: CheesyPACheckRemoval.java,v 1.3 2002-02-26 22:41:58 cananian Exp $
+ * @version $Id: CheesyPACheckRemoval.java,v 1.3.2.1 2002-02-27 08:32:47 cananian Exp $
  */
 public class CheesyPACheckRemoval implements CheckRemoval {
 
@@ -83,8 +83,7 @@ public class CheesyPACheckRemoval implements CheckRemoval {
     /** Create the Pointer Analysis object. */
     private void create_pa(Linker linker, ClassHierarchy ch,
 			   HCodeFactory hcf, Set mroots) {
-	Util.ASSERT(hcf.getCodeName().equals(QuadNoSSA.codename),
-		    "Not a QuadNoSSA code factory");
+	assert hcf.getCodeName().equals(QuadNoSSA.codename) : "Not a QuadNoSSA code factory";
 	// we really need a caching code factory; raise an error otherwise
 	CachingCodeFactory ccf = (CachingCodeFactory) hcf;
 	CachingBBConverter bbconv = new CachingBBConverter(ccf);

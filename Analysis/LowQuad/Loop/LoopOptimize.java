@@ -45,7 +45,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.3 2002-02-26 22:40:41 cananian Exp $
+ * @version $Id: LoopOptimize.java,v 1.3.2.1 2002-02-27 08:31:36 cananian Exp $
  */
 public final class LoopOptimize {
 
@@ -252,7 +252,7 @@ public final class LoopOptimize {
 	/**<code>lookat</code> examines a test condition, to see how we should replace it.*/
 	POPER lookat(POPER q) {
 	    Temp[] operands=q.operands();
-	    Util.ASSERT (operands.length==2);
+	    assert operands.length==2;
 	    boolean good=true;
 	    int flag=-1;
 	    POPER newpoper=null;
@@ -438,7 +438,7 @@ public final class LoopOptimize {
 	    } else {
 		//flip the sign
 		//the ratio has to be =-1
-		Util.ASSERT((t.intmultiplier()/induction.intmultiplier())==-1);
+		assert (t.intmultiplier()/induction.intmultiplier())==-1;
 		Temp newtemp=new Temp(initial.tempFactory(),initial.name());
 		Temp[] sources=new Temp[1];
 		sources[0]=initial;
@@ -594,7 +594,7 @@ public final class LoopOptimize {
 	Iterator iterate=complete.iterator();
 
       	int linkin;
-	Util.ASSERT(((CFGraphable)header).pred().length==2);
+	assert ((CFGraphable)header).pred().length==2;
 	//Only worry about headers with two edges
 	if (lp.loopIncElements().contains(header.prev(0)))
 	    linkin=1;
@@ -816,7 +816,7 @@ public final class LoopOptimize {
 		
 		//delete the original definition
 		HCodeElement[] sources=ud.defMap(hc,indvariable);
-		Util.ASSERT(sources.length==1);
+		assert sources.length==1;
 		Quad delquad=(Quad)sources[0];
 
 		//Mark it used....wouldn't want to try to hoist this into existance in the future...
@@ -889,7 +889,7 @@ public final class LoopOptimize {
 	Temp[][] newsrc=new Temp[phin.numPhis()+1][phin.arity()];
 	Temp[] newdst=new Temp[phin.numPhis()+1];
 	int entrance=-1;
-	Util.ASSERT(phin.arity()==2);
+	assert phin.arity()==2;
 
 	for (int i=0;i<phin.arity();i++) 
 	    //want old phi here
@@ -897,7 +897,7 @@ public final class LoopOptimize {
 		entrance=i;
 		break;
 	    }
-	Util.ASSERT(entrance!=-1);
+	assert entrance!=-1;
 
 
 	for (int philoop=0;philoop<phin.numPhis();philoop++) {
@@ -967,7 +967,7 @@ public final class LoopOptimize {
 	int linkin;
 	Quad header=hcnew.quadMap(oheader);
 
-	Util.ASSERT(((CFGraphable)header).pred().length==2);
+	assert ((CFGraphable)header).pred().length==2;
 	//Only worry about headers with two edges
 	if (lp.loopIncElements().contains(header.prev(0)))
 	    linkin=1;
@@ -989,7 +989,7 @@ public final class LoopOptimize {
 		boolean okay=true;
 		for (int i=0;i<uses.length;i++) {
 		    HCodeElement []sources=ud.defMap(hc,ssitossamap.tempMap(uses[i]));
-		    Util.ASSERT(sources.length==1);
+		    assert sources.length==1;
 		    if (invariants.contains(sources[0])) {
 			okay=false;
 			break;

@@ -23,7 +23,7 @@ import java.util.Iterator;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.3 2002-02-26 22:43:45 cananian Exp $ */
+ * @version $Id: CodeGen.java,v 1.3.2.1 2002-02-27 08:34:29 cananian Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
@@ -111,7 +111,7 @@ public abstract class CodeGen {
 			  harpoon.Backend.Generic.Code code, 
 			  int stackspace, 
 			  java.util.Set usedRegisters) {
-	harpoon.Util.Util.ASSERT(false, "abstract me and implement in subclasses");
+	assert false : "abstract me and implement in subclasses";
         }
 
     /** Creates a <code>Instr</code> list from the

@@ -24,7 +24,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * method holes in a Parallel Interaction Graph.
  * 
  * @author  Frederic VIVIEN <vivien@lcs.mit.edu>
- * @version $Id: MethodHole.java,v 1.3 2002-02-26 22:41:18 cananian Exp $ */
+ * @version $Id: MethodHole.java,v 1.3.2.1 2002-02-27 08:32:06 cananian Exp $ */
 public class MethodHole implements java.io.Serializable {
     private static boolean DEBUG  = false;
     private static boolean DEBUG2  = false;
@@ -302,8 +302,8 @@ public class MethodHole implements java.io.Serializable {
     /** Read the value of the field id. 
      */
     public int Id() {
-	Util.ASSERT(mapup==mapUpId,"Bad initialization value (not " +  
-		    mapUpId+ ") for MethodHole " + this);
+	assert mapup==mapUpId : "Bad initialization value (not " +  
+		    mapUpId+ ") for MethodHole " + this;
 	return id;
     };
 

@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * They have the form: <code>&lt;t1, t2, ..., tn&gt; = sigma(t0)</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SIGMA.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
+ * @version $Id: SIGMA.java,v 1.3.2.1 2002-02-27 08:36:33 cananian Exp $
  */
 public abstract class SIGMA extends Quad {
     /** dst[i][j] is the j'th element of the tuple on the left-hand side
@@ -35,12 +35,12 @@ public abstract class SIGMA extends Quad {
         super(qf, source, 1, arity);
 	this.dst = dst;
 	this.src = src;
-	Util.ASSERT(dst!=null && src!=null);
-	Util.ASSERT(arity>0);
-	Util.ASSERT(dst.length==src.length);
+	assert dst!=null && src!=null;
+	assert arity>0;
+	assert dst.length==src.length;
 	for (int i=0; i<dst.length; i++)
-	    Util.ASSERT(dst[i].length==arity);
-	Util.ASSERT(arity==arity());
+	    assert dst[i].length==arity;
+	assert arity==arity();
     }
     /** Creates a <code>SIGMA</code> object with the specified arity.
      *  Each sigma function will return a tuple with <code>arity</code>
@@ -81,13 +81,13 @@ public abstract class SIGMA extends Quad {
     /** Removes a given sigma function from the block.
      *  @deprecated Does not preserve immutability. */
     public void removeSigma(int nSigma) {
-	Util.ASSERT(0<=nSigma && nSigma<numSigmas());
+	assert 0<=nSigma && nSigma<numSigmas();
 	src = (Temp[])   Util.shrink(Temp.arrayFactory,       src, nSigma);
 	dst = (Temp[][]) Util.shrink(Temp.doubleArrayFactory, dst, nSigma);
     }
 
     public void assign(Temp[] d, int which_succ) {
-	Util.ASSERT(d.length == src.length);
+	assert d.length == src.length;
 	for (int i=0; i < d.length; i++)
 	    dst[i][which_succ] = d[i];
     }

@@ -41,8 +41,7 @@ public class Timer {
     /** Start the timer running. */
 
     public void start() {
-	Util.ASSERT(timerStart == -1, 
-		    "Two Timer.start() without Timer.stop()");
+	assert timerStart == -1 : "Two Timer.start() without Timer.stop()";
 	timerStart = System.currentTimeMillis();
     }
 
@@ -50,8 +49,7 @@ public class Timer {
 
     public void stop() {
 	timeElapsed += System.currentTimeMillis() - timerStart;
-	Util.ASSERT(timerStart != -1,
-		    "Two Timer.stop() without Timer.start()");
+	assert timerStart != -1 : "Two Timer.stop() without Timer.start()";
 	timerStart = -1;
     }
 

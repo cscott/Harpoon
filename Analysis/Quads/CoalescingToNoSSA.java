@@ -38,7 +38,7 @@ import java.util.Iterator;
  * statements where possible instead of inserting moves.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CoalescingToNoSSA.java,v 1.3 2002-02-26 22:41:41 cananian Exp $
+ * @version $Id: CoalescingToNoSSA.java,v 1.3.2.1 2002-02-27 08:32:26 cananian Exp $
  */
 public class CoalescingToNoSSA extends MethodMutator {
     
@@ -55,20 +55,20 @@ public class CoalescingToNoSSA extends MethodMutator {
 	}
     }
     protected String mutateCodeName(String codeName) {
-	Util.ASSERT(codeName.equals(QuadSSA.codename) ||
+	assert codeName.equals(QuadSSA.codename) ||
 		    codeName.equals(QuadSSI.codename) ||
-		    codeName.equals(QuadRSSx.codename));
+		    codeName.equals(QuadRSSx.codename);
 	return MyNoSSA.codename;
     }
     protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod) {
-	Util.ASSERT(hc.getName().equals(QuadSSA.codename) ||
+	assert hc.getName().equals(QuadSSA.codename) ||
 		    hc.getName().equals(QuadSSI.codename) ||
-		    hc.getName().equals(QuadRSSx.codename));
+		    hc.getName().equals(QuadRSSx.codename);
 	return MyNoSSA.cloneToNoSSA((harpoon.IR.Quads.Code)hc, newmethod);
     }
     protected HCode mutateHCode(HCodeAndMaps input) {
 	Code hc = (Code) input.hcode();
-	Util.ASSERT(hc.getName().equals(QuadNoSSA.codename));
+	assert hc.getName().equals(QuadNoSSA.codename);
 	QuadVisitor qv = new TransformVisitor(hc);
 	Quad[] qa = (Quad[]) hc.getElements();
 	for (int i=0; i<qa.length; i++)
@@ -132,7 +132,7 @@ public class CoalescingToNoSSA extends MethodMutator {
 			addAt(nq.prevEdge(j), new MOVE(qf, q, d, s));
 		}
 	}
-	public void visit(SIGMA q) { Util.ASSERT(false); }
+	public void visit(SIGMA q) { assert false; }
 	private void dosigma(QuadFactory qf, SIGMA q, SIGMA nq) {
 	    Quad.replace(q, nq);
 	    for (int i=0; i<q.numSigmas(); i++)

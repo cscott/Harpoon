@@ -31,7 +31,7 @@ import java.util.Stack;
  * <code>CacheEquivalence</code> can make larger equivalence sets.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayUnroller.java,v 1.3 2002-02-26 22:41:41 cananian Exp $
+ * @version $Id: ArrayUnroller.java,v 1.3.2.1 2002-02-27 08:32:24 cananian Exp $
  */
 public final class ArrayUnroller
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -76,7 +76,7 @@ public final class ArrayUnroller
 	else if (type==HClass.Int || type==HClass.Float) nwidth=4;
 	else if (type==HClass.Long || type==HClass.Double) nwidth=8;
 	else if (!type.isPrimitive()) nwidth=4;
-	else Util.ASSERT(false);
+	else assert false;
 	return (width==0) ? nwidth : Math.min(width, nwidth);
     }
     /** iterate over loop and all children of loop recursively. */
@@ -134,7 +134,7 @@ public final class ArrayUnroller
 	    }
 	}
 	// we may have unconnected entrances if more than one header.
-	Util.ASSERT(loop.loopEntrances().size()==1);
+	assert loop.loopEntrances().size()==1;
 	// done.
     }
     Map copy(HCodeAndMaps input, Loops l) {
@@ -151,7 +151,7 @@ public final class ArrayUnroller
 	    Quad q = (Quad) it.next();
 	    for (int i=0; i<q.nextLength(); i++) {
 		Edge e = q.nextEdge(i);
-		Util.ASSERT(m.containsKey(e.from()));
+		assert m.containsKey(e.from());
 		if (m.containsKey(e.to()))
 		    Quad.addEdge((Quad)m.get(e.from()), e.which_succ(),
 				 (Quad)m.get(e.to()), e.which_pred());

@@ -42,7 +42,7 @@ import java.util.List;
  * to have any effect.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierConstElim.java,v 1.3 2002-02-26 22:41:32 cananian Exp $
+ * @version $Id: WriteBarrierConstElim.java,v 1.3.2.1 2002-02-27 08:32:19 cananian Exp $
  */
 public abstract class WriteBarrierConstElim extends 
     harpoon.Analysis.Tree.Simplification {
@@ -57,7 +57,7 @@ public abstract class WriteBarrierConstElim extends
 				    final HCodeFactory parent,
 				    final HMethod arrayHM,
 				    final HMethod fieldHM) {
-	Util.ASSERT(parent.getCodeName().equals(CanonicalTreeCode.codename));
+	assert parent.getCodeName().equals(CanonicalTreeCode.codename);
 	return Canonicalize.codeFactory(new HCodeFactory() {
 	    public HCode convert(HMethod m) {
 		HCode hc = parent.convert(m);

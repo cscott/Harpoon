@@ -72,7 +72,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.3 2002-02-26 22:42:47 cananian Exp $ 
+ * @version $Id: TreeFolding.java,v 1.3.2.1 2002-02-27 08:33:37 cananian Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
@@ -109,7 +109,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
     public TreeFolding(harpoon.IR.Tree.Code code) { 
 	Map tempsToDefs = new HashMap();
 
-	Util.ASSERT(code.isCanonical());
+	assert code.isCanonical();
 
 	this.code         = code;
 	this.root         = (Stm)this.code.getRootElement();
@@ -165,13 +165,13 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
      *  <code>TreeFolding</code> class.
      */
     public void visit(BasicBlock bb) {
-	Util.ASSERT(bb!=null);
-	Util.ASSERT(!initialized);
+	assert bb!=null;
+	assert !initialized;
 
 	//if (DEBUG) db("Visiting: " + bb);
 	TreeFoldingInfo info = (TreeFoldingInfo)bb2tfi.get(bb);
 
-	Util.ASSERT(info!=null);
+	assert info!=null;
 	info.outSet[0].clearUpTo(maxTreeID);
 	info.outSet[0].or (info.prsvSet[0]);
 	info.outSet[0].and(info.inSet[0]);
@@ -197,7 +197,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 	TreeFoldingInfo  fInfo, tInfo;
 	boolean          result;
 
-	Util.ASSERT(!initialized);
+	assert !initialized;
 	
 	//if (DEBUG) db("Merging: " + from + ", " + to);
 	
@@ -255,7 +255,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 	    Stm stm = (Stm)i.next();
 	    if (!((stm.kind()==TreeKind.CALL) || 
 		  (stm.kind()==TreeKind.NATIVECALL))) { 
-		Temp[] defs = usedefer.def(stm);  Util.ASSERT(defs.length<=1);
+		Temp[] defs = usedefer.def(stm);  assert defs.length<=1;
 		if (defs.length==1) { 
 		    MAP_TO_SET(defs[0], new Integer(stm.getID()), tempsToDefs);
 		}
@@ -278,7 +278,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 		for (int n=0; n<uses.length; n++) { 
 		    Temp use    = uses[n]; 
 		    Set  defIDs = (Set)tempsToDefs.get(use);
-		    //Util.ASSERT(tempsToDefs.containsKey(use));
+		    //assert tempsToDefs.containsKey(use);
 		    if (tempsToDefs.containsKey(use)) { 
 			for (Iterator k = defIDs.iterator(); k.hasNext();) { 
 			    Integer defID = (Integer)k.next();
@@ -293,9 +293,9 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 		}
 		// Update IN set
 		Temp[] defs = usedefer.def(stm); 
-		Util.ASSERT(defs.length<=1 || 
+		assert defs.length<=1 || 
 			    stm.kind()==TreeKind.CALL ||
-			    stm.kind()==TreeKind.NATIVECALL);
+			    stm.kind()==TreeKind.NATIVECALL;
 		if (defs.length==1) { 
 		    bbIn.and((BitString)tempsToPrsvs.get(defs[0]));
 		    bbIn.set(stm.getID());
@@ -332,8 +332,8 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 			Set U = (Set)DUChains.get(defT);
 			// is there only one USE for this DEF?
 			if (U.size()==1) { 
-			    //Util.ASSERT(U contains use);
-			    Util.ASSERT(IDsToTrees.containsKey(defT.proj(0)));
+			    //assert U contains use;
+			    assert IDsToTrees.containsKey(defT.proj(0));
 			    
 			    // Is memory valid here? 
 			    if (!memIn.get

@@ -94,7 +94,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.3 2002-02-26 22:46:40 cananian Exp $
+ * @version $Id: PAMain.java,v 1.3.2.1 2002-02-27 08:37:10 cananian Exp $
  */
 public abstract class PAMain {
 
@@ -664,19 +664,19 @@ public abstract class PAMain {
 	root_method.declClass = root_class;
 
 	HClass hclass = linker.forName(root_method.declClass);
-	Util.ASSERT(hclass != null, "Class " + root_class + " not found!");
+	assert hclass != null : "Class " + root_class + " not found!";
 
 	HMethod[] hm  = hclass.getDeclaredMethods();
 	// search for the main method
 	hroot = null;
 	for(int i = 0; i < hm.length; i++)
 	    if(hm[i].getName().equals(root_method.name)) {
-		Util.ASSERT(hroot == null, "Ambiguous root method!");
+		assert hroot == null : "Ambiguous root method!";
 		hroot = hm[i];
 	    }
 	
-	Util.ASSERT(hroot != null, "Root method \"" + root_class + "." +
-		    root_method.name + "\" not found!");
+	assert hroot != null : "Root method \"" + root_class + "." +
+		    root_method.name + "\" not found!";
 	System.out.println("Root method: " + root_method.declClass + "." +
 			   root_method.name);
     }
@@ -1009,8 +1009,7 @@ public abstract class PAMain {
 		break;
 	    case 'o':
 		SAMain.ASSEM_DIR = new java.io.File(g.getOptarg());
-		Util.ASSERT(SAMain.ASSEM_DIR.isDirectory(),
-			    SAMain.ASSEM_DIR + " must be a directory");
+		assert SAMain.ASSEM_DIR.isDirectory() : SAMain.ASSEM_DIR + " must be a directory";
 		break;
 	    case 'b':
 		COMPILE = true;
@@ -1987,7 +1986,7 @@ public abstract class PAMain {
 
 	    System.out.println("done");
 	} catch (IOException ex) {
-	    Util.ASSERT(false, "Error reading " + filename + ": " + ex);
+	    assert false : ("Error reading " + filename + ": " + ex);
 	}
     }
 
@@ -2128,8 +2127,7 @@ public abstract class PAMain {
     // does the real job
     private static boolean can_remove_all_checks2() {
 	java_lang_Runnable = linker.forName("java.lang.Runnable");
-	Util.ASSERT(java_lang_Runnable != null,
-		    "java.lang.Runnable not found!");
+	assert java_lang_Runnable != null : "java.lang.Runnable not found!";
 
 	Set runs = get_relevant_runs();
 
@@ -2346,7 +2344,7 @@ public abstract class PAMain {
 		if(result == null)
 		    result = hms[i];
 		else
-		    Util.ASSERT(false, "too many run methods!");
+		    assert false : "too many run methods!";
 	    }
 	return result;
     }
@@ -2377,7 +2375,7 @@ public abstract class PAMain {
 	}
 	if(DEBUG_RT)
 	    Util.print_collection(methods, "good enter methods");
-	Util.ASSERT(methods.size() == 1, "Too many enter methods!");
+	assert methods.size() == 1 : "Too many enter methods!";
 	return (HMethod) methods.iterator().next();
     }
 
@@ -2385,7 +2383,7 @@ public abstract class PAMain {
     private static Set get_methods(String cls_name, String mthd_name) {
 	Set result = new HashSet();
 	HClass hclass = linker.forName(cls_name);
-	Util.ASSERT(hclass != null, cls_name + " was not found!");
+	assert hclass != null : cls_name + " was not found!";
 
 	HMethod[] hms = hclass.getMethods();
 	for(int i = 0; i < hms.length; i++)

@@ -21,7 +21,7 @@ import java.util.Map;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
+ * @version $Id: Print.java,v 1.3.2.1 2002-02-27 08:36:47 cananian Exp $
  */
 public class Print {
     public final static void print(PrintWriter pw, Code c, TempMap tm,
@@ -105,7 +105,7 @@ public class Print {
             this.tm = tm;
 	    this.cb = (cb==null) ? new PrintCallback() : cb;
 
-	    // Util.ASSERT(false, "Printing Trees is *slow*");
+	    // assert false : "Printing Trees is *slow*";
         }
 
         private void indent(int dist) {

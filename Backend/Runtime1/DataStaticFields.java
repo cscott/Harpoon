@@ -30,7 +30,7 @@ import java.util.Set;
  * <code>DataStaticFields</code> lays out the static fields of a class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataStaticFields.java,v 1.3 2002-02-26 22:44:31 cananian Exp $
+ * @version $Id: DataStaticFields.java,v 1.3.2.1 2002-02-27 08:35:05 cananian Exp $
  */
 public class DataStaticFields extends Data {
     final NameMap m_nm;
@@ -80,7 +80,7 @@ public class DataStaticFields extends Data {
     }
     Exp fieldInitializer(HField f) {
 	HClass ty = f.getType();
-	Util.ASSERT(ty.isPrimitive());
+	assert ty.isPrimitive();
 	Object cvo = f.getConstant();
 	if (ty==HClass.Int)
 	    return new CONST(tf, null, (int)

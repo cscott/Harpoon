@@ -18,7 +18,7 @@ import java.lang.reflect.Modifier;
  * <code>PMCONST</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PMOFFSET.java,v 1.3 2002-02-26 22:45:51 cananian Exp $
+ * @version $Id: PMOFFSET.java,v 1.3.2.1 2002-02-27 08:36:27 cananian Exp $
  */
 public class PMOFFSET extends PCONST {
     /** The <code>HMethod</code> to address. */
@@ -35,9 +35,9 @@ public class PMOFFSET extends PCONST {
 		    final Temp dst, final HMethod method) {
 	super(qf, source, dst);
 	this.method = method;
-	Util.ASSERT(method!=null && !method.isStatic() &&
+	assert method!=null && !method.isStatic() &&
 		    !(method instanceof HConstructor) &&
-		    !Modifier.isPrivate(method.getModifiers()));
+		    !Modifier.isPrivate(method.getModifiers());
     }
     // ACCESSOR METHODS:
     /** Returns the method whose offset is computed. */

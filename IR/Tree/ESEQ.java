@@ -22,16 +22,16 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
+ * @version $Id: ESEQ.java,v 1.3.2.1 2002-02-27 08:36:47 cananian Exp $
  */
 public class ESEQ extends Exp implements PreciselyTyped {
     /** Constructor. */
     public ESEQ(TreeFactory tf, HCodeElement source,
 		Stm stm, Exp exp) {
 	super(tf, source, 2);
-	Util.ASSERT(stm!=null && exp!=null);
-	Util.ASSERT(tf == exp.tf);
-	Util.ASSERT(tf == stm.tf); 
+	assert stm!=null && exp!=null;
+	assert tf == exp.tf;
+	assert tf == stm.tf; 
 	setStm(stm); setExp(exp);
     }
 

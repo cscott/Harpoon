@@ -30,7 +30,7 @@ import java.util.HashSet;
  *  called the Representative (or Rep for short).
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EqTempSets.java,v 1.3 2002-02-26 22:40:22 cananian Exp $
+ * @version $Id: EqTempSets.java,v 1.3.2.1 2002-02-27 08:31:21 cananian Exp $
  */
 public abstract class EqTempSets implements harpoon.Temp.TempMap {
     
@@ -104,8 +104,8 @@ public abstract class EqTempSets implements harpoon.Temp.TempMap {
 		   => no modification to this
     */
     public void add(Temp t1, Temp t2) {
-	Util.ASSERT( (!ra.isRegister(t1)) ||
-		     (!ra.isRegister(t2)) , "need non-register");
+	assert (!ra.isRegister(t1)) ||
+		     (!ra.isRegister(t2)) : "need non-register";
 	
 	Temp rep1 = getRep(t1);
 	Temp rep2 = getRep(t2);

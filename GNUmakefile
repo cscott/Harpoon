@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.64 2002-02-25 20:55:56 cananian Exp $
+# $Id: GNUmakefile,v 1.64.2.1 2002-02-27 08:29:59 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -7,7 +7,7 @@ JAVA:=java
 JFLAGS=-d . -g
 JFLAGSVERB=#-verbose -J-Djavac.pipe.output=true
 JIKES:=jikes $(JIKES_OPT)
-JCC=javac -J-mx64m -source 1.3
+JCC=javac -J-mx64m -source 1.4
 JDOC=javadoc
 JAR=jar
 JDOCFLAGS=-J-mx128m -version -author # -package
@@ -140,13 +140,14 @@ java:	$(ALLSOURCE) $(PROPERTIES)
 	  $(MAKE) first; \
 	fi
 #	javac goes nuts unless Tree.java is first. <grumble>
-	@${JCC} ${JFLAGS} ${JFLAGSVERB} IR/Tree/Tree.java $(filter-out IR/Tree/Tree.java, $(ALLSOURCE)) | \
-		egrep -v '^\[[lc]'
+#	@${JCC} ${JFLAGS} ${JFLAGSVERB} IR/Tree/Tree.java $(filter-out IR/Tree/Tree.java, $(ALLSOURCE)) | \
+#		egrep -v '^\[[lc]'
+	@${JCC} ${JFLAGS} $(ALLSOURCE)
 	@if [ -f stubbed-out ]; then \
-	  $(RM) `uniq stubbed-out`; \
-	  $(MAKE) --no-print-directory PASS=2 `uniq stubbed-out` || exit 1; \
-	  echo Rebuilding `uniq stubbed-out`; \
-	  ${JCC} ${JFLAGS} `uniq stubbed-out` || exit 1; \
+	  $(RM) `sort -u stubbed-out`; \
+	  $(MAKE) --no-print-directory PASS=2 `sort -u stubbed-out` || exit 1; \
+	  echo Rebuilding `sort -u stubbed-out`; \
+	  ${JCC} ${JFLAGS} `sort -u stubbed-out` || exit 1; \
 	  $(RM) stubbed-out; \
 	fi 
 	@$(MAKE) --no-print-directory properties
@@ -154,15 +155,18 @@ java:	$(ALLSOURCE) $(PROPERTIES)
 
 jikes:	PASS = 1
 jikes: 	$(MACHINE_GEN)
+	@echo JIKES DOESNT YET SUPPORT JAVA 1.5
+	@echo YOU MUST USE "'make java'"
+	@exit 1
 	@if [ ! -d harpoon ]; then $(MAKE) first; fi
 	@echo -n Compiling... ""
 	@${JIKES} ${JFLAGS} ${ALLSOURCE}
 	@echo done.
 	@if [ -f stubbed-out ]; then \
-	  $(RM) `uniq stubbed-out`; \
-	  $(MAKE) --no-print-directory PASS=2 `uniq stubbed-out` || exit 1; \
-	  echo Rebuilding `uniq stubbed-out`; \
-	  ${JIKES} ${JFLAGS} `uniq stubbed-out` || exit 1; \
+	  $(RM) `sort -u stubbed-out`; \
+	  $(MAKE) --no-print-directory PASS=2 `sort -u stubbed-out` || exit 1; \
+	  echo Rebuilding `sort -u stubbed-out`; \
+	  ${JIKES} ${JFLAGS} `sort -u stubbed-out` || exit 1; \
 	  $(RM) stubbed-out; \
 	fi 
 	@$(MAKE) --no-print-directory properties

@@ -21,7 +21,7 @@ import harpoon.Util.DataStructs.LightMap;
  * relative to an on-demand analysis.
  *
  * @author  Frederic VIVIEN <vivien@lcs.mit.edu>
- * @version $Id: ODInformation.java,v 1.3 2002-02-26 22:41:19 cananian Exp $
+ * @version $Id: ODInformation.java,v 1.3.2.1 2002-02-27 08:32:06 cananian Exp $
  */
 
 public class ODInformation {
@@ -110,8 +110,7 @@ public class ODInformation {
      */
     public void join(ODInformation odi2)
     {
-	Util.ASSERT(precise==odi2.precise,
-		    "We can only join EdgesNCallees of same precision");
+	assert precise==odi2.precise : "We can only join EdgesNCallees of same precision";
 
 	if(precise)
 	    join_precise(odi2);

@@ -41,7 +41,7 @@ import java.util.Iterator;
  * which are mostly zero (or mostly 1, 2, etc).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MostlyZeroFinder.java,v 1.3 2002-02-26 22:42:23 cananian Exp $
+ * @version $Id: MostlyZeroFinder.java,v 1.3.2.1 2002-02-27 08:33:09 cananian Exp $
  */
 public class MostlyZeroFinder extends MethodMutator {
     /** the mostly-zero analysis can actually find mostly-N fields.  this
@@ -97,12 +97,12 @@ public class MostlyZeroFinder extends MethodMutator {
 	}
 	Edge addFieldAllocCounters(Edge e, HClass hc) {
 	    if (hc==null) return e; // recursion termination condition.
-	    Util.ASSERT(!hc.isInterface() && !hc.isArray());
+	    assert !hc.isInterface() && !hc.isArray();
 	    // one counter per declared non-static field.
 	    for (Iterator it=new ArrayIterator(hc.getDeclaredFields());
 		 it.hasNext(); ) {
 		HField hf = (HField) it.next();
-		Util.ASSERT(hc==hf.getDeclaringClass());
+		assert hc==hf.getDeclaringClass();
 		if (hf.isStatic()) continue;
 		if (hf.getName().endsWith(suffix)) continue;//don't count bits
 		if (!isOkay(hf)) continue; // some limits if MOSTLY_WHAT!=0
@@ -196,7 +196,7 @@ public class MostlyZeroFinder extends MethodMutator {
 	if (type==HClass.Double)
 	    return new CONST(qf, src, dst,
 			     new Double(MOSTLY_WHAT), HClass.Double);
-	Util.ASSERT(false, "forgot a primitive type?");
+	assert false : "forgot a primitive type?";
 	return null;
     }
     private static int cmpEqOp(HClass type) {
@@ -206,7 +206,7 @@ public class MostlyZeroFinder extends MethodMutator {
 	if (type==HClass.Long) return Qop.LCMPEQ;
 	if (type==HClass.Float) return Qop.FCMPEQ;
 	if (type==HClass.Double) return Qop.DCMPEQ;
-	Util.ASSERT(false, "forgot a primitive type?");
+	assert false : "forgot a primitive type?";
 	return -1;
     }
     private int sizeOf(HClass type) {
@@ -215,7 +215,7 @@ public class MostlyZeroFinder extends MethodMutator {
 	if (type==HClass.Char || type==HClass.Short)   return 2;
 	if (type==HClass.Int || type==HClass.Float)    return 4;
 	if (type==HClass.Long || type==HClass.Double)  return 8;
-	Util.ASSERT(false, "forgot a primitive type?");
+	assert false : "forgot a primitive type?";
 	return 0;
     }
     // private helper functions.

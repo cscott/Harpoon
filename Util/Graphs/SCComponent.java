@@ -41,7 +41,7 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCComponent.java,v 1.3 2002-02-26 22:47:42 cananian Exp $
+ * @version $Id: SCComponent.java,v 1.3.2.1 2002-02-27 08:38:05 cananian Exp $
  */
 public final class SCComponent implements Comparable, Serializable {
 
@@ -102,8 +102,8 @@ public final class SCComponent implements Comparable, Serializable {
 					     final Navigator navigator){
 	Set set = buildSCC(new Object[]{root}, navigator);
 	if((set == null) || set.isEmpty()) return null;
-	Util.ASSERT(set.size() <= 1, "More than one root SCComponent " +
-		    "in a call with a a single root");
+	assert set.size() <= 1 : "More than one root SCComponent " +
+		    "in a call with a a single root";
 	// return the single element of the set of root SCComponents.
 	return (SCComponent)(set.iterator().next());
     }

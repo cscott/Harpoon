@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>WriteBarrierTreePass</code> to have any effect.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierStats.java,v 1.3 2002-02-26 22:41:32 cananian Exp $
+ * @version $Id: WriteBarrierStats.java,v 1.3.2.1 2002-02-27 08:32:19 cananian Exp $
  */
 public class WriteBarrierStats {
     
@@ -120,7 +120,7 @@ public class WriteBarrierStats {
 	    for(int i = 0; i < elements.length; i++)
 		((Tree)elements[i]).accept(tv);
 	    Object o = m.put(hm, new Integer(tv.count - base)); 
-	    Util.ASSERT(o == null);
+	    assert o == null;
 	    if (out != null && base != tv.count) {
 		out.println(hm.getDeclaringClass().getName()+"."+
 			    hm.getName()+hm.getDescriptor());
@@ -151,7 +151,7 @@ public class WriteBarrierStats {
 		if (n.label.equals(LarraySC) || n.label.equals(LfieldSC)) {
 		    // get last argument
 		    ExpList arg = c.getArgs().tail.tail.tail;
-		    Util.ASSERT(arg.tail == null);
+		    assert arg.tail == null;
 		    if (out != null) {
 			out.println("ID "+count+"\t"+c.getSourceFile()+
 				    "\tline "+c.getLineNumber());

@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * by the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayRef.java,v 1.3 2002-02-26 22:46:22 cananian Exp $
+ * @version $Id: ArrayRef.java,v 1.3.2.1 2002-02-27 08:36:53 cananian Exp $
  */
 final class ArrayRef extends Ref implements java.io.Serializable {
     /** Elements of the array (primitives or Refs) */
@@ -22,7 +22,7 @@ final class ArrayRef extends Ref implements java.io.Serializable {
     ArrayRef(StaticState ss, HClass type, int dims[]) 
 	throws InterpretedThrowable {
 	super(ss, type);
-	Util.ASSERT(dims.length >= 1 && dims[0]>=0);
+	assert dims.length >= 1 && dims[0]>=0;
 	this.elements = new Object[dims[0]];
 	if (dims.length==1)
 	    for (int i=0; i<this.elements.length; i++)
@@ -39,7 +39,7 @@ final class ArrayRef extends Ref implements java.io.Serializable {
     private ArrayRef(StaticState ss, HClass type, Object[] elements) {
         super(ss, type);
         this.elements = elements;
-        Util.ASSERT(elements!=null);
+        assert elements!=null;
     }
     public Object clone() { // arrays can always be cloned.
        return new ArrayRef(ss, type, (Object[]) elements.clone());

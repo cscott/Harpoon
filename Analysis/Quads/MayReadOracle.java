@@ -36,7 +36,7 @@ import java.util.Set;
  * class 'may' be read on the given edge.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MayReadOracle.java,v 1.3 2002-02-26 22:41:41 cananian Exp $
+ * @version $Id: MayReadOracle.java,v 1.3.2.1 2002-02-27 08:32:32 cananian Exp $
  */
 public class MayReadOracle {
     final Map results = new HashMap();
@@ -47,7 +47,7 @@ public class MayReadOracle {
      *  given to this class' constructor. */
     public Set mayReadAt(Edge e) {
 	EdgeProp ep = (EdgeProp) results.get(aliasMap.find(e));
-	Util.ASSERT(ep!=null, e);
+	assert ep!=null : e;
 	return Collections.unmodifiableSet(ep.reads);
     }
     
@@ -121,7 +121,7 @@ public class MayReadOracle {
 	public void visit(HEADER q) {
 	    // no in-set.  empty out-set.  continue with METHOD (edge 1).
 	    Edge out=q.nextEdge(1);
-	    Util.ASSERT(!results.containsKey(aliasMap.find(out)));
+	    assert !results.containsKey(aliasMap.find(out));
 	    EdgeProp nep = new EdgeProp(Collections.EMPTY_SET, (Quad)out.to());
 	    results.put(aliasMap.find(out), nep);
 	    W.add(nep.next);
@@ -132,11 +132,11 @@ public class MayReadOracle {
 	 *  right. */
 	public void visit(Quad q) {
 	    // one input, one output.  add alias from in to out edge.
-	    Util.ASSERT(q.prevLength()==1 && q.nextLength()==1);
+	    assert q.prevLength()==1 && q.nextLength()==1;
 	    Edge in = q.prevEdge(0), out=q.nextEdge(0);
 	    // fetch inset and next.
 	    EdgeProp oep = (EdgeProp) results.remove(aliasMap.find(in));
-	    Util.ASSERT(oep!=null);
+	    assert oep!=null;
 	    // inset becomes outset (no change) but update 'next'.
 	    EdgeProp nep = oep;
 	    nep.next = q.next(0);
@@ -159,7 +159,7 @@ public class MayReadOracle {
 	    boolean changed = false;
 	    Edge in = q.prevEdge(0), out=q.nextEdge(0);
 	    EdgeProp oep = (EdgeProp) results.get(aliasMap.find(in));
-	    Util.ASSERT(oep!=null);
+	    assert oep!=null;
 	    EdgeProp nep = (EdgeProp) results.get(aliasMap.find(out));
 	    if (nep==null) {
 		nep = new EdgeProp(sf.makeSet(oep.reads), q.next(0));
@@ -183,7 +183,7 @@ public class MayReadOracle {
 	public void visit(CALL q) {
 	    Edge in = q.prevEdge(0);
 	    EdgeProp oep = (EdgeProp) results.get(aliasMap.find(in));
-	    Util.ASSERT(oep!=null);
+	    assert oep!=null;
 	    // find methods callable from q.
 	    HMethod[] callable = cg.calls(thisMethod, q);
 	    // any any fields which *may* be read by one of these methods.
@@ -231,7 +231,7 @@ public class MayReadOracle {
 		    Edge in = q.prevEdge(j);
 		    EdgeProp oep = (EdgeProp) results.get(aliasMap.find(in));
 		    if (oep==null) {
-			Util.ASSERT(q.prevLength()>1); // only for PHIs.
+			assert q.prevLength()>1; // only for PHIs.
 			continue; // skip this edge; nothing yet known.
 		    }
 		    if (nep==null) {

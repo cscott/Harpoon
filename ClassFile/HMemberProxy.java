@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * <code>HMember</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMemberProxy.java,v 1.3 2002-02-26 22:45:05 cananian Exp $
+ * @version $Id: HMemberProxy.java,v 1.3.2.1 2002-02-27 08:35:44 cananian Exp $
  * @see HFieldProxy
  * @see HMethodProxy
  */
@@ -26,9 +26,8 @@ abstract class HMemberProxy implements HMember {
 	this.hashcode = hashcode;
     }
     protected void relink(HMember proxy) {
-	Util.ASSERT(!(proxy instanceof HMemberProxy &&
-		      ((HMemberProxy)proxy).relinker==relinker),
-		    "should never proxy to a proxy of this same relinker.");
+	assert !(proxy instanceof HMemberProxy &&
+		      ((HMemberProxy)proxy).relinker==relinker) : "should never proxy to a proxy of this same relinker.";
 	this.proxy = proxy;
 	this.sameLinker = (proxy==null || // keep us safe if the proxy==null
 			   relinker == proxy.getDeclaringClass().getLinker());

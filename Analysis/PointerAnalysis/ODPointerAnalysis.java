@@ -82,7 +82,7 @@ import harpoon.Util.DataStructs.LightMap;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPointerAnalysis.java,v 1.3 2002-02-26 22:41:20 cananian Exp $
+ * @version $Id: ODPointerAnalysis.java,v 1.3.2.1 2002-02-27 08:32:06 cananian Exp $
  */
 public class ODPointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -440,7 +440,7 @@ public class ODPointerAnalysis {
 	else
 	    if(WEAKLY_THREAD_SENSITIVE)
 		new_pig = original_pig.wtSpecialize(mm);
-	    else Util.ASSERT(false,"The thread specialization is off!");
+	    else assert false : "The thread specialization is off!";
 
 	t_specs.put(mm,new_pig);
 
@@ -1109,7 +1109,7 @@ public class ODPointerAnalysis {
 		    }
 		
 		    if(!ODPointerAnalysis.IGNORE_EO)
-			Util.ASSERT(false, "Not implemented");
+			assert false : "Not implemented";
 		    //lbbpig.eo.add(set_E, f, load_node, lbbpig.G.I);
 		    
 		    lbbpig.G.propagate(set_E);
@@ -1773,7 +1773,7 @@ public class ODPointerAnalysis {
 	    if(q_curr.equals(q)) return lbbpig;
 	    q_curr.accept(pa_visitor);
 	}
-	Util.ASSERT(false, q + " was not in " + lbb);
+	assert false : q + " was not in " + lbb;
 	return null; // this should never happen
     }
     
@@ -1782,13 +1782,12 @@ public class ODPointerAnalysis {
 	right before <code>q</code> in the body of meta-method
 	<code>mm</code>. */
     public final ODParIntGraph getPIGAtQuad(MetaMethod mm, Quad q){
-	Util.ASSERT(mcg.getAllMetaMethods().contains(mm),
-		    "Uncalled/unknown meta-method!");
+	assert mcg.getAllMetaMethods().contains(mm) : "Uncalled/unknown meta-method!";
 	LBBConverter lbbconv = scc_lbb_factory.getLBBConverter();
 	LightBasicBlock.Factory lbbf = lbbconv.convert2lbb(mm.getHMethod());
-	Util.ASSERT(lbbf != null, "Fatal error");
+	assert lbbf != null : "Fatal error";
 	LightBasicBlock lbb = lbbf.getBlock(q);
-	Util.ASSERT(lbb != null, "No (Light)BasicBlock found for " + q);
+	assert lbb != null : "No (Light)BasicBlock found for " + q;
 	// as all the ODParIntGraph's for methods are computed, a simple
 	// intra-procedural analysis of mm (with some caller-callee
 	// interactions) is enough.

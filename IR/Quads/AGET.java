@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>AGET</code> represents an element fetch from an array object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AGET.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
+ * @version $Id: AGET.java,v 1.3.2.1 2002-02-27 08:36:32 cananian Exp $
  * @see ANEW
  * @see ASET
  * @see ALENGTH
@@ -48,7 +48,7 @@ public class AGET extends Quad {
 	this.type = type.isPrimitive() ? type :
 	    type.getLinker().forDescriptor("Ljava/lang/Object;");
 	// VERIFY legality of this AGET.
-	Util.ASSERT(dst!=null && objectref!=null && index!=null);
+	assert dst!=null && objectref!=null && index!=null;
     }
     /** Returns the destination <code>Temp</code>. */
     public Temp dst() { return dst; }

@@ -43,7 +43,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.3 2002-02-26 22:44:21 cananian Exp $
+ * @version $Id: Frame.java,v 1.3.2.1 2002-02-27 08:34:53 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -133,7 +133,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	    };
 	}
 	public HData makeLocationData(final harpoon.Backend.Generic.Frame f) {
-	    Util.ASSERT(f==Frame.this);
+	    assert f==Frame.this;
 	    return new harpoon.IR.Tree.Data("location-data", f) {
 		public HClass getHClass() { return null; }
 		final HDataElement root;

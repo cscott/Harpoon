@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultNameMap.java,v 1.3 2002-02-26 22:44:09 cananian Exp $
+ * @version $Id: DefaultNameMap.java,v 1.3.2.1 2002-02-27 08:34:48 cananian Exp $
  */
 public class DefaultNameMap extends NameMap {
     private final boolean prependUnderscore;
@@ -81,8 +81,8 @@ public class DefaultNameMap extends NameMap {
 	     strMap.containsKey(r) && !strMap.get(r).equals(string_constant);
 	     r = base + "x" + i++)
 	    /* do nothing */;
-	Util.ASSERT(!strMap.containsKey(r) ||
-		    strMap.get(r).equals(string_constant));
+	assert !strMap.containsKey(r) ||
+		    strMap.get(r).equals(string_constant);
 	strMap.put(r, string_constant);
 	return r + (suffix==null?"":(suffix_sep+encode(suffix)));
     }

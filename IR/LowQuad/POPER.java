@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * <code>LQop</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: POPER.java,v 1.3 2002-02-26 22:45:51 cananian Exp $
+ * @version $Id: POPER.java,v 1.3.2.1 2002-02-27 08:36:27 cananian Exp $
  */
 public class POPER extends harpoon.IR.Quads.OPER {
     
@@ -23,7 +23,7 @@ public class POPER extends harpoon.IR.Quads.OPER {
 		 int opcode, Temp dst, Temp[] operands) {
         super(qf, source, opcode, dst, operands);
 	if (kind()==LowQuadKind.POPER) // allow subclassing
-	    Util.ASSERT(LQop.isValid(opcode));
+	    assert LQop.isValid(opcode);
     }
     public int kind() { return LowQuadKind.POPER; }
 

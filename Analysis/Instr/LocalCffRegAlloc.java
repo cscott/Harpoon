@@ -70,7 +70,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.3 2002-02-26 22:40:22 cananian Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.3.2.1 2002-02-27 08:31:21 cananian Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -181,8 +181,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 	    private Temp orig(HCodeElement h, Temp t) {
 		HTempMap coalescedTemps = (HTempMap) instrToHTempMap.get(h);
-		Util.ASSERT(coalescedTemps != null, 
-			    ASSERTDB ? "no mapping for "+h : "no mapping");
+		assert coalescedTemps != null : (ASSERTDB ? "no mapping for "+h : "no mapping");
 		return coalescedTemps.tempMap(t);
 	    }
 	    public HClass typeMap(HCodeElement hce, Temp t) {
@@ -192,8 +191,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 	    public Derivation.DList derivation(HCodeElement hce, Temp t) {
 		HTempMap coalescedTemps = (HTempMap)instrToHTempMap.get(hce);
-		Util.ASSERT(coalescedTemps != null, 
-			    ASSERTDB ? "no mapping for "+hce : "no mapping");
+		assert coalescedTemps != null : (ASSERTDB ? "no mapping for "+hce : "no mapping");
 		HCodeElement hce2 = orig(hce); 
 		Temp t2 = orig(hce, t);
 		return Derivation.DList.rename
@@ -259,7 +257,7 @@ public class LocalCffRegAlloc extends RegAlloc {
  		    Temp r = (Temp) refs.next();
  		    // use any old assignment, since this code MUST
  		    // be unreachable anyway.
- 		    Util.ASSERT(!code.registerAssigned(i, r));
+ 		    assert !code.registerAssigned(i, r);
 		    code.assignRegister
  			(i, r, (List)
  			 frame.getRegFileInfo().
@@ -359,12 +357,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 	while(loads.hasNext()) {
 	    Instr load = (Instr) loads.next();
 	    Instr loc = (Instr) loads.next();
-	    Util.ASSERT(loc.getPrev() != null, 
-			ASSERTDB ? "verify control flow prop 1. "+loc:"cfp1");
-	    Util.ASSERT(loc.getPrev().getTargets().isEmpty(), 
-			ASSERTDB ? "verify control flow prop 2. "+loc:"cfp2");
-	    Util.ASSERT(loc.getPrev().canFallThrough, 
-			ASSERTDB ? "verify control flow prop 3. "+loc:"cfp3");
+	    assert loc.getPrev() != null : (ASSERTDB ? "verify control flow prop 1. "+loc:"cfp1");
+	    assert loc.getPrev().getTargets().isEmpty() : (ASSERTDB ? "verify control flow prop 2. "+loc:"cfp2");
+	    assert loc.getPrev().canFallThrough : (ASSERTDB ? "verify control flow prop 3. "+loc:"cfp3");
 	    load.insertAt(new InstrEdge(loc.getPrev(), loc));
 	}
 
@@ -372,15 +367,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 	while(stores.hasNext()) {
 	    Instr store = (Instr) stores.next();
 	    Instr loc = (Instr) stores.next();
-	    Util.ASSERT
-		(loc.getTargets().isEmpty(), 
-		 "overconservative assertion (targets may not be empty)");
-	    Util.ASSERT
-		(loc.canFallThrough,
-		 "overconservative assertion (loc need not fall through)");
+	    assert loc.getTargets().isEmpty() : "overconservative assertion (targets may not be empty)";
+	    assert loc.canFallThrough : "overconservative assertion (loc need not fall through)";
 
-	    Util.ASSERT(loc.getNext() != null, 
-			ASSERTDB ? "verify control flow prop 4. "+loc:"cfp4");
+	    assert loc.getNext() != null : (ASSERTDB ? "verify control flow prop 4. "+loc:"cfp4");
 	    InstrEdge e = new InstrEdge(loc, loc.getNext());
 	    store.insertAt(e);
 	}
@@ -397,8 +387,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    // t4 is undefined.  (This is instead handled by a
 	    // replacement of the Instr with an InstrMOVEproxy)
 	    
-	    Util.ASSERT(!hasRegister(expand(ir.use()[0])));
-	    Util.ASSERT(!hasRegister(expand(ir.def()[0])));
+	    assert !hasRegister(expand(ir.use()[0]));
+	    assert !hasRegister(expand(ir.def()[0]));
 	    
 	    ir.remove();
 	    
@@ -441,11 +431,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 	vUses.removeAll(spillDefs);
 	vDefs.removeAll(spillUses);
 	
-	Util.ASSERT(vUses.isEmpty(),"SpillLoad of undefined Temps");
+	assert vUses.isEmpty() : "SpillLoad of undefined Temps";
 	
 
-	Util.ASSERT(vDefs.isEmpty(), 
-		    "(overconservative) SpillStore of unused Temp");
+	assert vDefs.isEmpty() : "(overconservative) SpillStore of unused Temp";
     }
     
     boolean hasRegs(Instr i, Temp t) {
@@ -482,8 +471,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	while(instrs.hasNext()) {
 	    Instr i = (Instr) instrs.next();
 	    i.accept(verify);
-	    Util.ASSERT(instrToHTempMap.keySet().contains(i),
-			ASSERTDB ? "missing instr:"+i:"missing instr");
+	    assert instrToHTempMap.keySet().contains(i) : (ASSERTDB ? "missing instr:"+i:"missing instr");
 	}
     }
 
@@ -504,7 +492,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		List dl = expand(i.def()[0]);
 		List ul = expand(i.use()[0]);
 
-		Util.ASSERT(dl.size() == ul.size());
+		assert dl.size() == ul.size();
 		Iterator ds = dl.iterator();
 		Iterator us = ul.iterator();
 
@@ -606,8 +594,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    Temp ref = (Temp) refs.next();
 		    Instr last = (Instr) tempToLastRef.get(ref);
 		    if (last != null) {
-			Util.ASSERT((2*c) <= (Integer.MAX_VALUE - 1),
-				    "IntOverflow;change numeric rep in LRA");
+			assert (2*c) <= (Integer.MAX_VALUE - 1) : "IntOverflow;change numeric rep in LRA";
 			nextRef.put(new TempInstrPair(last, ref), 
 				    new Integer(2*c));
 		    }
@@ -683,7 +670,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    List dl = expand(i.def()[0]);
 		    List ul = expand(i.use()[0]);
 		    
-		    Util.ASSERT(dl.size() == ul.size());
+		    assert dl.size() == ul.size();
 		    Iterator ds = dl.iterator();
 		    Iterator us = ul.iterator();
 		    
@@ -869,10 +856,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 				// FSK: update code to do something
 				// smarter (and more general)
-				Util.ASSERT(prev.canFallThrough &&
+				assert prev.canFallThrough &&
 					    prev.getTargets().isEmpty() &&
-					    i.predC().size() == 1,
-					    "i.getPrev is bad choice;");
+					    i.predC().size() == 1 : "i.getPrev is bad choice;";
 
 				spillValue(t, prev, regfile, 5);
 
@@ -892,12 +878,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 		
 		evictables.putAll(putBackLater);
 
-		Util.ASSERT(hasRegs(i, i.useC()),
-			    ASSERTDB ? 
+		assert hasRegs(i, i.useC()) : (ASSERTDB ? 
 			    lazyInfo("uses missing reg assignment",i,null)
 			    : "uses missing reg assignment");
-		Util.ASSERT(hasRegs(i, i.defC()),
-			    ASSERTDB ?
+		assert hasRegs(i, i.defC()) : (ASSERTDB ?
 			    lazyInfo("defs missing reg assignment",i,null)
 			    : "defs missing reg assingment");
 		
@@ -1012,8 +996,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		Collection preassigns = preassignMap.getValues(t);
 		Set preassignTempSet = new HashSet(preassigns.size());
 		
-		Util.ASSERT(preassigns != null,
-			    "preassignMap is missing mappings");
+		assert preassigns != null : "preassignMap is missing mappings";
 		Iterator preassignIter = preassigns.iterator();
 		while(preassignIter.hasNext()) {
 		    final Temp reg = (Temp) preassignIter.next();
@@ -1047,11 +1030,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 		// null => never referenced again; effectively infinite
 		if (X == null) X = INFINITY;
 		    
-		Util.ASSERT(X.intValue() <= (Integer.MAX_VALUE - 1),
-			    "Excessive Weight was stored.");
+		assert X.intValue() <= (Integer.MAX_VALUE - 1) : "Excessive Weight was stored.";
 		
-		Util.ASSERT(regfile.hasAssignment(t),
-			   ASSERTDB ? lazyInfo("no assignment", i, t)
+		assert regfile.hasAssignment(t) : (ASSERTDB ? lazyInfo("no assignment", i, t)
 			    : "no assignment");
 		
 		if (regfile.isDirty(t)) {
@@ -1078,13 +1059,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    assign(u, i, putBackLater);
 		}
 
-		Util.ASSERT(isRegister(u) || regfile.hasAssignment(u));
+		assert isRegister(u) || regfile.hasAssignment(u);
 		
 		int choice = 0;
 
 	    coalesceChoice: {
 		    // FSK: overconservative
-		    // Util.ASSERT(u == d || !regfile.hasAssignment(d));
+		    // assert u == d || !regfile.hasAssignment(d);
 		    if (regfile.hasAssignment(d) && u != d) {
 			// rare (due to SSI-form) but it happens.
 			// System.out.println("not coalescing "+i+" (redefinition pt)");
@@ -1125,10 +1106,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 		if (choice == 0) {
 		    visit((Instr) i);
 		} else {
-		    Util.ASSERT(isRegister(u) ||
+		    assert isRegister(u) ||
 				isRegister(d) ||
-				tempSets.getRep(u) == tempSets.getRep(d),
-				ASSERTDB ?
+				tempSets.getRep(u) == tempSets.getRep(d) : (ASSERTDB ?
 				"Temps "+u+" & "+d+
 				" should have same rep to be coalesced"
 				: "should have same rep to be coalesced"); 
@@ -1154,7 +1134,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			if (isRegister(u)) {
 			    code.assignRegister(proxy, d, list(u));
 			} else {
-			    Util.ASSERT(isRegister(d));
+			    assert isRegister(d);
 			    code.assignRegister(proxy, u, list(d));
 			}
 		    } else {
@@ -1163,7 +1143,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			tempToRemovedInstrs.put(d, i);
 		    }
 
-		    Util.ASSERT(!(isRegister(u) && isRegister(d)));
+		    assert !(isRegister(u) && isRegister(d));
 		    
 		    if (isRegister(u)) {
 			regfile.assign(d, list(u), definition(getBack(i),d));
@@ -1174,7 +1154,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    regfile.assign
 				(u, list(d), definition(getBack(i),u));
 			} else {
-			    Util.ASSERT(regfile.getTemp(d) == u);
+			    assert regfile.getTemp(d) == u;
 			}
 		    } else {
 			Temp t = 
@@ -1186,8 +1166,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    //				       " to "+regList);
 		}
 		
-		Util.ASSERT(hasRegs(i, u),
-			   ASSERTDB ? lazyInfo("missing reg assignment",i,u)
+		assert hasRegs(i, u) : (ASSERTDB ? lazyInfo("missing reg assignment",i,u)
 			    : "missing reg assignment");
 		
 		evictables.putAll(putBackLater);
@@ -1221,7 +1200,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			       " and evictables "+evictables);
 	    
 	    for(int x=0; true; x++) {
-		Util.ASSERT(x < 10, "shouldn't have to iterate >10");
+		assert x < 10 : "shouldn't have to iterate >10";
 
 		try {
 
@@ -1257,7 +1236,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 					(t, regfile.getRegToTemp(), 
 					 preassignedTemps);
 				} catch (SpillException e) {
-				    Util.ASSERT(false, "cant happen here");
+				    assert false : "cant happen here";
 				    sggs = null;
 				}
 
@@ -1330,12 +1309,11 @@ public class LocalCffRegAlloc extends RegAlloc {
 			// System.out.println("Adding "+cand+" at cost "+cost);
 		    }
 
-		    Util.ASSERT(!weightedSpills.isEmpty(), 
-				ASSERTDB ? 
+		    assert !weightedSpills.isEmpty() : (ASSERTDB ? 
 				lazyInfo("\nneed at least one spill"
 					 +"\nEvictables:"+evictables 
 					 ,i,t,regfile)
-				: "need at least one spill" );
+				: "need at least one spill");
 
 		    WeightedSet spill = (WeightedSet) weightedSpills.first();
 		    if (SPILL_INFO) 
@@ -1432,8 +1410,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		while(vals.hasNext()) {
 		    final Temp val = (Temp) vals.next();
 		    
-		    Util.ASSERT(!isRegister(val), 
-				"remapped temp should not be register");
+		    assert !isRegister(val) : "remapped temp should not be register";
 		    
 		    // don't spill dead values.
 		    if (liveOnExit.contains(val)) {
@@ -1586,21 +1563,18 @@ public class LocalCffRegAlloc extends RegAlloc {
 	*/
 	private void spillValue(Temp val, Instr loc, RegFile regfile,
 				Instr src, int thread) {
-	    Util.ASSERT(! preassignedTemps.contains( val ),
-			"cannot spill Preassigned Temps");
-	    Util.ASSERT(!isRegister(val), 
-			ASSERTDB ? val+" should not be reg"
+	    assert ! preassignedTemps.contains( val ) : "cannot spill Preassigned Temps";
+	    assert !isRegister(val) : (ASSERTDB ? val+" should not be reg"
 			: "should not be reg");
 
 	    Collection regs = 
 		regfile.getAssignment(remappedTemps.tempMap(val));
 
-	    Util.ASSERT(regs != null && !regs.isEmpty(), 
-			ASSERTDB ? 
+	    assert regs != null && !regs.isEmpty() : (ASSERTDB ? 
 			lazyInfo("must map to a nonempty set of registers\n"+
 				 "tempSets:"+tempSets,val,regfile)
 			: "must map to a nonempty set of registers");
-	    Util.ASSERT(allRegs(regs));
+	    assert allRegs(regs);
 
 	    InstrMEM spillInstr = SpillStore.makeST(loc, "FSK-ST", val, regs);
 

@@ -49,7 +49,7 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.3 2002-02-26 22:42:23 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.3.2.1 2002-02-27 08:33:09 cananian Exp $
  */
 public class MZFCompressor {
     final HCodeFactory parent;
@@ -190,7 +190,7 @@ public class MZFCompressor {
     void splitOne(Relinker relinker, CachingCodeFactory hcf,
 		  HClass hc, List sortedFields,
 		  Field2Method f2m, Map field2class) {
-	Util.ASSERT(sortedFields.size()>0);
+	assert sortedFields.size()>0;
 	// for each entry in the sorted fields list, make a split.
 	for (Iterator it=sortedFields.iterator(); it.hasNext(); ) {
 	    List pair = (List) it.next();
@@ -208,7 +208,7 @@ public class MZFCompressor {
     HClass moveOne(Relinker relinker, CachingCodeFactory hcf,
 		   HClass oldC, HField hf, long val,
 		   Field2Method f2m, Map field2class) {
-	Util.ASSERT(!field2class.containsKey(hf));
+	assert !field2class.containsKey(hf);
 	// make a copy of our empty Template class.
 	HClass hcT = relinker.forClass(Template.class);
 	HClass newC = relinker.createMutableClass
@@ -298,13 +298,13 @@ public class MZFCompressor {
 	for (int i=0; i<qa.length; i++)
 	    if (qa[i] instanceof GET) {
 		GET q = (GET) qa[i];
-		Util.ASSERT(q.field().equals(hf));
+		assert q.field().equals(hf);
 		// type of CONST depends on type of hf.
 		HClass type=widen(hf.getType());
 		CONST nc;
 		if (!type.isPrimitive()) {
 		    // pointer.  only val==0 makes sense.
-		    Util.ASSERT(val==0);
+		    assert val==0;
 		    nc = new CONST(q.getFactory(), q, q.dst(),
 				   null, HClass.Void);
 		} else
@@ -325,12 +325,12 @@ public class MZFCompressor {
 	return wrap(type, new Long(val));
     }
     static Object wrap(HClass type, Number n) {
-	Util.ASSERT(type.isPrimitive(), type);
+	assert type.isPrimitive() : type;
 	if (type==HClass.Int) return new Integer(n.intValue());
 	if (type==HClass.Long) return new Long(n.longValue());
 	if (type==HClass.Float) return new Float(n.floatValue());
 	if (type==HClass.Double) return new Double(n.doubleValue());
-	Util.ASSERT(false, "unknown type: "+type);
+	assert false : ("unknown type: "+type);
 	return null;
     }
     /** make a setter method that does nothing (but perhaps verifies

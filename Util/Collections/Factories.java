@@ -16,7 +16,7 @@ import java.util.Set;
     operate on or return <code>CollectionFactory</code>s. 
  
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: Factories.java,v 1.3 2002-02-26 22:47:35 cananian Exp $
+    @version $Id: Factories.java,v 1.3.2.1 2002-02-27 08:37:54 cananian Exp $
  */
 public final class Factories {
     
@@ -219,15 +219,15 @@ public final class Factories {
 	noNullCollectionFactory(final CollectionFactory cf) {
 	return new SerialCollectionFactory() {
 	    public java.util.Collection makeCollection(final Collection c) {
-		Util.ASSERT(noNull(c));
+		assert noNull(c);
 		final Collection back = cf.makeCollection(c);
 		return new CollectionWrapper(back) {
 		    public boolean add(Object o) {
-			Util.ASSERT(o != null);
+			assert o != null;
 			return super.add(o);
 		    }
 		    public boolean addAll(Collection c2) {
-			Util.ASSERT(Factories.noNull(c2));
+			assert Factories.noNull(c2);
 			return super.addAll(c2);
 		    }
 		};

@@ -26,7 +26,7 @@ import java.util.Vector;
  This is the most conservative implementation of <code>CallGraph</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl.java,v 1.3 2002-02-26 22:41:41 cananian Exp $
+ * @version $Id: CallGraphImpl.java,v 1.3.2.1 2002-02-27 08:32:26 cananian Exp $
  */
 public class CallGraphImpl implements CallGraph  {
     final HCodeFactory hcf;
@@ -36,12 +36,12 @@ public class CallGraphImpl implements CallGraph  {
      *  factory that generates quad-ssi or quad-no-ssa form. */
     public CallGraphImpl(ClassHierarchy ch, HCodeFactory hcf) {
 	// this is maybe a little too draconian
-	Util.ASSERT(hcf.getCodeName()
+	assert hcf.getCodeName()
 		    .equals(harpoon.IR.Quads.QuadSSI.codename) ||
 		    hcf.getCodeName()
 		    .equals(harpoon.IR.Quads.QuadSSA.codename) ||
 		    hcf.getCodeName()
-		    .equals(harpoon.IR.Quads.QuadNoSSA.codename));
+		    .equals(harpoon.IR.Quads.QuadNoSSA.codename);
 	this.ch = ch;
 	this.hcf = hcf;
     }

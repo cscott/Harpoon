@@ -31,7 +31,7 @@ import java.util.Map;
  * representation in SSI form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSI.java,v 1.3 2002-02-26 22:45:51 cananian Exp $
+ * @version $Id: LowQuadSSI.java,v 1.3.2.1 2002-02-27 08:36:23 cananian Exp $
  */
 public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
     /** The name of this code view. */
@@ -41,7 +41,7 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
      *  object. */
     LowQuadSSI(final harpoon.IR.Quads.Code code) {
 	super(code.getMethod(), null);
-	Util.ASSERT(code.getName().equals(QuadSSI.codename));
+	assert code.getName().equals(QuadSSI.codename);
 	final Map dT = new HashMap();
 	final Map tT = new HashMap();
 	final TypeMap tym = new harpoon.Analysis.Quads.TypeInfo(code);
@@ -55,13 +55,13 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
 	    (LowQuadFactory) qf;    // visible in anonymous Derivation below.
 	setDerivation(new Derivation() {
 	    public DList derivation(HCodeElement hce, Temp t) {
-		Util.ASSERT(hce!=null && t!=null);
+		assert hce!=null && t!=null;
 		if (dT.get(t)==null && tT.get(t)==null)
 		    throw new TypeNotKnownException(hce, t);
 		return (DList)dT.get(t);
 	    }
 	    public HClass typeMap(HCodeElement hce, Temp t) { 
-		Util.ASSERT(lqf.tempFactory()==t.tempFactory());
+		assert lqf.tempFactory()==t.tempFactory();
 		if (dT.get(t)==null && tT.get(t)==null)
 		    throw new TypeNotKnownException(hce, t);
 		return (HClass)tT.get(t);

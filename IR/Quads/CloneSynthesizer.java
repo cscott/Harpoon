@@ -17,7 +17,7 @@ import java.util.Map;
  * array clone methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CloneSynthesizer.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
+ * @version $Id: CloneSynthesizer.java,v 1.3.2.1 2002-02-27 08:36:32 cananian Exp $
  */
 class CloneSynthesizer implements HCodeFactory, java.io.Serializable {
     /** Parent code factory. */
@@ -27,7 +27,7 @@ class CloneSynthesizer implements HCodeFactory, java.io.Serializable {
 
     /** Creates a <code>CloneSynthesizer</code>. */
     public CloneSynthesizer(HCodeFactory parent) { 
-	Util.ASSERT(parent.getCodeName().equals(QuadWithTry.codename));
+	assert parent.getCodeName().equals(QuadWithTry.codename);
 	this.parent = parent;
     }
     public String getCodeName() { return parent.getCodeName(); }

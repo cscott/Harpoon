@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.3 2002-02-26 22:44:31 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.3.2.1 2002-02-27 08:35:04 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -122,12 +122,12 @@ public class DataClaz extends Data {
 		final int fieldOffset = m_tb.cfm.fieldOffset(hf) + m_tb.OBJECT_HEADER_SIZE;
 		// non-aligned objects should never be pointers
 		if (fieldOffset%m_tb.POINTER_SIZE != 0) {
-		    Util.ASSERT(type.isPrimitive());
+		    assert type.isPrimitive();
 		    continue;
 		}
 		if (!type.isPrimitive()) {
 		    final int i = fieldOffset/m_tb.POINTER_SIZE;
-		    Util.ASSERT(i >= 0 && i < BITS_IN_GC_BITMAP);
+		    assert i >= 0 && i < BITS_IN_GC_BITMAP;
 		    bitmap |= (1 << i);
 		}
 	    }
@@ -160,10 +160,10 @@ public class DataClaz extends Data {
 	    if (!type.isPrimitive()) {
 		final int fo = m_tb.cfm.fieldOffset(hf) + m_tb.OBJECT_HEADER_SIZE;
 		// non-primitive fields contain pointers and should be aligned
-		Util.ASSERT(fo%m_tb.POINTER_SIZE == 0);
+		assert fo%m_tb.POINTER_SIZE == 0;
 		// calculate the bit position corresponding to this field
 		final int bp = fo/m_tb.POINTER_SIZE;
-		Util.ASSERT(bp < bitsNeeded);
+		assert bp < bitsNeeded;
 		bitmaps[bp/BITS_IN_GC_BITMAP] |= (1 << (bp%BITS_IN_GC_BITMAP));
 	    }
 	}
@@ -236,15 +236,15 @@ public class DataClaz extends Data {
 	// now reverse list.
 	Collections.reverse(clslist);
 	// okay, root should always be java.lang.Object.
-	Util.ASSERT(hc.isInterface() || hc.isPrimitive() ||
-		    clslist.get(0)==linker.forName("java.lang.Object"));
+	assert hc.isInterface() || hc.isPrimitive() ||
+		    clslist.get(0)==linker.forName("java.lang.Object");
 	// make statements.
 	List stmlist = new ArrayList(m_tb.cdm.maxDepth()+1);
 	for (Iterator it=clslist.iterator(); it.hasNext(); )
 	    stmlist.add(_DATUM(m_nm.label((HClass)it.next())));
 	while (stmlist.size() <= m_tb.cdm.maxDepth())
 	    stmlist.add(_DATUM(new CONST(tf, null))); // pad with nulls.
-	Util.ASSERT(stmlist.size() == m_tb.cdm.maxDepth()+1);
+	assert stmlist.size() == m_tb.cdm.maxDepth()+1;
 	return Stm.toStm(stmlist);
     }
     /** Make class methods table. */
@@ -274,7 +274,7 @@ public class DataClaz extends Data {
 	int order=0;
 	for (Iterator it=methods.iterator(); it.hasNext(); order++) {
 	    HMethod hm = (HMethod) it.next();
-	    Util.ASSERT(cmm.methodOrder(hm)==order); // should be no gaps.
+	    assert cmm.methodOrder(hm)==order; // should be no gaps.
 	    if (callable.contains(hm) &&
 		!Modifier.isAbstract(hm.getModifiers()))
 		stmlist.add(_DATUM(m_nm.label(hm)));
@@ -315,7 +315,7 @@ public class DataClaz extends Data {
 	    if (hm instanceof HInitializer) it.remove();
 	    else if (hm.getDeclaringClass().getName()
 		     .equals("java.lang.Object")) it.remove();
-	    else Util.ASSERT(hm.isInterfaceMethod());
+	    else assert hm.isInterfaceMethod();
 	}
 	// remove duplicates (two methods with same signature)
 	// pre-load sigs with methods of java.lang.Object to make sure
@@ -362,7 +362,7 @@ public class DataClaz extends Data {
 	    HMethod hm = (HMethod) it.previous();
 	    int this_order = imm.methodOrder(hm);
 	    if (last_order!=-1) {
-		Util.ASSERT(this_order < last_order); // else not ordered
+		assert this_order < last_order; // else not ordered
 		for (int i=last_order-1; i > this_order; i--)
 		    stmlist.add(_DATUM(new CONST(tf, null))); // null
 	    }
@@ -373,7 +373,7 @@ public class DataClaz extends Data {
 	    last_order = this_order;
 	}
 	if (last_order!=-1) {
-	    Util.ASSERT(last_order>=0);
+	    assert last_order>=0;
 	    for (int i=last_order; i > 0; i--)
 		stmlist.add(_DATUM(new CONST(tf, null)));
 	}

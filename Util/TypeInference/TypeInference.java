@@ -51,7 +51,7 @@ import harpoon.IR.Quads.CONST;
  extensions for the other quads).
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: TypeInference.java,v 1.3 2002-02-26 22:47:59 cananian Exp $
+ * @version $Id: TypeInference.java,v 1.3.2.1 2002-02-27 08:38:20 cananian Exp $
  */
 public class TypeInference implements java.io.Serializable {
     // switch on the debug messages
@@ -250,7 +250,7 @@ public class TypeInference implements java.io.Serializable {
 		}
 		
 		public void visit(Quad q){
-		    Util.ASSERT(false, "Untreated quad " + q);
+		    assert false : "Untreated quad " + q;
 		}
 
 		public void put_deps(Quad q, Temp t){
@@ -295,8 +295,7 @@ public class TypeInference implements java.io.Serializable {
 	}
 
 	Temp[] params = method.params();
-	Util.ASSERT(aptypes.length == params.length,
-		    " set_parameter_types is broken");
+	assert aptypes.length == params.length : " set_parameter_types is broken";
 
 	for(int i = 0; i < params.length; i++){
 	    ExactTemp et = new ExactTemp(method, params[i]);
@@ -353,7 +352,7 @@ public class TypeInference implements java.io.Serializable {
 		}
 
 		public void visit(Quad q){
-		    Util.ASSERT(false, "untreated quad!");
+		    assert false : "untreated quad!";
 		}
 	    };
 

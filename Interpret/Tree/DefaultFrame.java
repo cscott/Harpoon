@@ -46,7 +46,7 @@ import java.util.Set;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.3 2002-02-26 22:46:30 cananian Exp $
+ *  @version $Id: DefaultFrame.java,v 1.3.2.1 2002-02-27 08:36:59 cananian Exp $
  */
 public class DefaultFrame extends harpoon.Backend.Generic.Frame
     implements AllocationInfo {
@@ -72,8 +72,8 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
 
             public String getScope() { return scope; }
             protected synchronized String getUniqueID(String suggestion) {
-                Util.ASSERT(i < names.length, "Don't use the "+
-			    "TempFactory of Register bound Temps");
+                assert i < names.length : "Don't use the "+
+			    "TempFactory of Register bound Temps";
 		i++;
                 return names[i-1];
             }
@@ -125,7 +125,7 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
 
     public Stm procPrologue(TreeFactory tf, HCodeElement src, 
                             Temp[] paramdsts, int[] paramtypes) {
-        Util.ASSERT(tf != null, "tf is null");
+        assert tf != null : "tf is null";
         Stm prologue = null;
         Stm move = null;
         int i = 0;
@@ -147,7 +147,7 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
     }
 
     public Instr procAssemDirectives(Instr body) {
-	Util.ASSERT(body != null);
+	assert body != null;
 
         HCodeElement src = body;
         InstrFactory inf = ((Instr)src).getFactory();
@@ -180,7 +180,7 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
 
     /** Not implemented. */
     public harpoon.Backend.Generic.CodeGen getCodeGen() { 
-	Util.ASSERT(false, "DefaultFrame.getCodeGen() Not implemented");
+	assert false : "DefaultFrame.getCodeGen() Not implemented";
 	return null;
     }
 
@@ -202,8 +202,8 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
     }
     private final RegFileInfo m_regfileinfo = new RegFileInfo() {
 	public Set liveOnExit() { return java.util.Collections.EMPTY_SET; }
-	public Set callerSave() { Util.ASSERT(false, "die"); return null; }
-	public Set calleeSave() { Util.ASSERT(false, "die"); return null; }
+	public Set callerSave() { assert false : "die"; return null; }
+	public Set calleeSave() { assert false : "die"; return null; }
 	public TempFactory regTempFactory() { return regTempFactory; }
 	public boolean isRegister(Temp t) {
 	    return t.tempFactory() == regTempFactory();

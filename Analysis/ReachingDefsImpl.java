@@ -28,7 +28,7 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.3 2002-02-26 22:39:08 cananian Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.3.2.1 2002-02-27 08:30:23 cananian Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -82,7 +82,7 @@ public class ReachingDefsImpl extends ReachingDefs {
 	Map m = (Map)cache.get(b);
 	// get the BitSetFactory
 	BitSetFactory bsf = (BitSetFactory)Temp_to_BitSetFactories.get(t);
-	Util.ASSERT(m.get(t) != null, t.toString());
+	assert m.get(t) != null : t.toString();
 	// make a copy of the in Set for the Temp
 	Set results = bsf.makeSet((Set)m.get(t));
 	// propagate in Set through the HCodeElements 
@@ -99,7 +99,7 @@ public class ReachingDefsImpl extends ReachingDefs {
 	    if (defC.contains(t)) 
 		results = bsf.makeSet(Collections.singleton(curr));
 	}
-	Util.ASSERT(false);
+	assert false;
 	return null; // should never happen
     }
     // do analysis

@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * by the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayRef.java,v 1.3 2002-02-26 22:46:29 cananian Exp $
+ * @version $Id: ArrayRef.java,v 1.3.2.1 2002-02-27 08:36:57 cananian Exp $
  */
 final class ArrayRef extends Ref {
     /** Elements of the array (primitives or Refs) */
@@ -37,7 +37,7 @@ final class ArrayRef extends Ref {
 	throws InterpretedThrowable {
 	super(ss, type);
 
-	Util.ASSERT(dims.length >= 1 && dims[0]>=0);
+	assert dims.length >= 1 && dims[0]>=0;
 	this.elements = new Object[dims[0]];
 	this.length = length==null?new Integer(dims[0]):length; 
 	this.hashCode = hashCode==null?new Integer(this.hashCode()):hashCode; 
@@ -62,7 +62,7 @@ final class ArrayRef extends Ref {
     private ArrayRef(StaticState ss, HClass type, final Object[] elements) {
         super(ss, type);
         this.elements = elements;
-        Util.ASSERT(elements!=null);
+        assert elements!=null;
     }
 
     public Object clone() { // arrays can always be cloned.
@@ -131,15 +131,15 @@ final class ArrayRef extends Ref {
 	long offset = ptr.getOffset();
 
 	if (ref.ss.map.lengthOffset(ref.type)==offset) {
-	    Util.ASSERT(ref.length!=null);
+	    assert ref.length!=null;
 	    return ref.length;
 	}
 	else if (ref.ss.map.hashCodeOffset(ref.type)==offset) {
-	    Util.ASSERT(ref.hashCode!=null);
+	    assert ref.hashCode!=null;
 	    return ref.hashCode;
 	}
 	else if (ref.ss.map.clazzPtrOffset(ref.type)==offset) {
-	    Util.ASSERT(ref.classPtr!=null);
+	    assert ref.classPtr!=null;
 	    return ref.classPtr;
 	}
 	else return ref.get((int)offset);

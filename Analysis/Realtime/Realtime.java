@@ -31,7 +31,7 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.3 2002-02-26 22:41:58 cananian Exp $
+ * @version $Id: Realtime.java,v 1.3.2.1 2002-02-27 08:32:48 cananian Exp $
  */
 
 public class Realtime {
@@ -133,7 +133,7 @@ public class Realtime {
 	    }
 	    ANALYSIS_METHOD = ALL;
 	} else {
-	    Util.ASSERT(false, "Please specify an analysis method.");
+	    assert false : "Please specify an analysis method.";
 	}
 	System.out.println();
     }
@@ -361,7 +361,7 @@ public class Realtime {
 	}
 	default: {
 
-	    Util.ASSERT(false, "No RTJ analysis method specified.");
+	    assert false : "No RTJ analysis method specified.";
 	}
 	}
 	Stats.analysisEnd();

@@ -40,7 +40,7 @@ import java.util.TreeSet;
  * <code>DataGC</code> outputs the tables needed by the garbage collector.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: DataGC.java,v 1.3 2002-02-26 22:44:31 cananian Exp $
+ * @version $Id: DataGC.java,v 1.3.2.1 2002-02-27 08:35:05 cananian Exp $
  */
 public class DataGC extends Data {
     final GCInfo m_gc;
@@ -56,7 +56,7 @@ public class DataGC extends Data {
     /** Creates a <code>DataGC</code>. */
     public DataGC(Frame f, HClass hc) {
         super("gc-data", hc, f);
-	Util.ASSERT(f.getGCInfo() != null);
+	assert f.getGCInfo() != null;
 	this.m_gc = f.getGCInfo();
 	this.m_nm = f.getRuntime().getNameMap();
 	this.m_tb = (TreeBuilder) f.getRuntime().getTreeBuilder();
@@ -92,7 +92,7 @@ public class DataGC extends Data {
 	// get ordered list of GC points for this method
 	List gcps = m_gc.gcPoints(hm);
 	// make sure the list is non-null
-	Util.ASSERT(gcps != null);
+	assert gcps != null;
 	// first create base table for stack locations
 	Set basetableSet = new HashSet();
 	// take union of live WrappedStackOffsetLocs for all GC points
@@ -250,10 +250,10 @@ public class DataGC extends Data {
 	if (needRegs) {
 	    for(Iterator it=regs.iterator(); it.hasNext(); ) {
 		int regIndex = ((WrappedMachineRegLoc)it.next()).regIndex();
-		Util.ASSERT(regIndex < numRegs);
+		assert regIndex < numRegs;
 		int i = (regIndex+offset) / INT_BITS;
 		int j = (regIndex+offset) % INT_BITS;
-		Util.ASSERT(i < numInts);
+		assert i < numInts;
 		data[i] |= 1 << (INT_BITS - j - 1);
 	    }
 	    offset += numRegs;
@@ -263,7 +263,7 @@ public class DataGC extends Data {
 		int index = ((Integer)basetableMap.get(it.next())).intValue();
 		int i = (index+offset) / INT_BITS;
 		int j = (index+offset) % INT_BITS;
-		Util.ASSERT(i < numInts);
+		assert i < numInts;
 		data[i] |= 1 << (INT_BITS - j - 1);
 	    }
 	}
@@ -351,7 +351,7 @@ public class DataGC extends Data {
 		(BackendDerivation.Register)keys.next();
 	    CommonLoc location = (CommonLoc)cSaved.get(key);
 	    // make sure we have a valid register index
-	    Util.ASSERT(key.regIndex() < numRegs);
+	    assert key.regIndex() < numRegs;
 	    int i = (2 * key.regIndex()) / INT_BITS;
 	    int j = (2 * key.regIndex()) % INT_BITS;
 	    // set the bit for data/no data
@@ -366,7 +366,7 @@ public class DataGC extends Data {
 		locations[key.regIndex()] =
 		    ((MachineRegLoc)location).regIndex(); break;
 	    default:
-		Util.ASSERT(false);
+		assert false;
 	    }
 	}
 	List stmlist = new ArrayList();

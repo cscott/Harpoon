@@ -45,7 +45,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.3 2002-02-26 22:44:31 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.3.2.1 2002-02-27 08:35:05 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -86,8 +86,8 @@ public class ObjectBuilder
     public Stm buildObject(TreeFactory tf, ObjectInfo info,
 			   boolean exported) {
 	FieldMap cfm = ((TreeBuilder) runtime.getTreeBuilder()).cfm;
-	Util.ASSERT(!info.type().isArray());
-	Util.ASSERT(!info.type().isPrimitive());
+	assert !info.type().isArray();
+	assert !info.type().isPrimitive();
 	List stmlist = new ArrayList();
 	// header
 	stmlist.add(makeHeader(tf, info, exported));
@@ -105,7 +105,7 @@ public class ObjectBuilder
     public Stm buildArray(TreeFactory tf, ArrayInfo info,
 			  boolean exported) {
 	FieldMap cfm = ((TreeBuilder) runtime.getTreeBuilder()).cfm;
-	Util.ASSERT(info.type().isArray());
+	assert info.type().isArray();
 	HClass cType = info.type().getComponentType();
 	List stmlist = new ArrayList(info.length()+2);
 	// header
@@ -124,7 +124,7 @@ public class ObjectBuilder
     }
     private Object lookup(ArrayInfo info, HField hf) {
 	Object o = ro.get(hf, info);
-	Util.ASSERT(o != ro.NOT_A_VALUE, "field of array not given a value");
+	assert o != ro.NOT_A_VALUE : "field of array not given a value";
 	return o;
     }
     Stm makeHeader(TreeFactory tf, Info info, boolean exported)

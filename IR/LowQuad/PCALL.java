@@ -27,7 +27,7 @@ import harpoon.Util.Util;
  * See also <code>IR.Quads.CALL</code> and <code>IR.Tree.CALL</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PCALL.java,v 1.3 2002-02-26 22:45:51 cananian Exp $
+ * @version $Id: PCALL.java,v 1.3.2.1 2002-02-27 08:36:25 cananian Exp $
  */
 public class PCALL extends harpoon.IR.Quads.SIGMA {
     /** The method pointer to dereference. */
@@ -109,7 +109,7 @@ public class PCALL extends harpoon.IR.Quads.SIGMA {
 	this.retex = retex;
 	this.isVirtual = isVirtual;
 	this.isTailCall = isTailCall;
-	Util.ASSERT(ptr!=null && params!=null && retex !=null);
+	assert ptr!=null && params!=null && retex !=null;
 	// hm.  can't check much else without knowing the method identity.
     }
     // convenience constructor.

@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  precomputed graph.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaAllCallers.java,v 1.3 2002-02-26 22:40:59 cananian Exp $
+ * @version $Id: MetaAllCallers.java,v 1.3.2.1 2002-02-27 08:31:50 cananian Exp $
  */
 public class MetaAllCallers implements java.io.Serializable {
 
@@ -77,9 +77,8 @@ public class MetaAllCallers implements java.io.Serializable {
 	    MetaMethod[] mms = mcg.getCallees(mm_caller);
 	    for(int i = 0 ; i < mms.length ; i++){
 		MetaMethod mm_callee = mms[i];
-		Util.ASSERT((mm_caller != null) && (mm_callee != null),
-			    "mm_caller = " + mm_caller +
-			    "i = " + i + "/" + mms.length);
+		assert (mm_caller != null) && (mm_callee != null) : "mm_caller = " + mm_caller +
+			    "i = " + i + "/" + mms.length;
 		callers.add(mm_callee, mm_caller);
 	    }
 	}

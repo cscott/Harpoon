@@ -25,7 +25,7 @@ import java.util.StringTokenizer;
  * A simple OffsetMap, used by the Tree Interpreter
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterpreterOffsetMap.java,v 1.3 2002-02-26 22:46:30 cananian Exp $
+ * @version $Id: InterpreterOffsetMap.java,v 1.3.2.1 2002-02-27 08:37:01 cananian Exp $
  */
 public class InterpreterOffsetMap extends OffsetMap {
 
@@ -111,7 +111,7 @@ public class InterpreterOffsetMap extends OffsetMap {
 	    
     /** Returns the label corresponding to the specified static field */
     public Label label(HField hf) { 
-	Util.ASSERT(hf.isStatic());
+	assert hf.isStatic();
 	if (!m_labels.containsKey(hf)) {
 	    m_labels.put(hf, new Label(m_nm.mangle(hf)));
 	}
@@ -153,14 +153,14 @@ public class InterpreterOffsetMap extends OffsetMap {
 
     /** Returns the offset of the class pointer */
     public int clazzPtrOffset(HClass hc)   { 
-	Util.ASSERT(!hc.isPrimitive(), "" + hc);
+	assert !hc.isPrimitive() : "" + hc;
 	return -1;
     }
 
     /** If hc is an array type, returns the offset of its component
      *  type's class pointer */
     public int componentTypeOffset(HClass hc) { 
-	Util.ASSERT(hc.isArray());
+	assert hc.isArray();
 	return -1;
     }
 
@@ -172,54 +172,54 @@ public class InterpreterOffsetMap extends OffsetMap {
     /** Returns the offset of the first array element if hc is an array
      *  type, otherwise generates an assertion failure */
     public int elementsOffset(HClass hc) { 
-	Util.ASSERT(hc.isArray());
+	assert hc.isArray();
 	return 0; 
     }
 
     /** Returns the offset of the first field in an object of the
      *  specified type */
     public int fieldsOffset(HClass hc) { 
-	Util.ASSERT((!hc.isPrimitive()) && (!hc.isArray()));
+	assert (!hc.isPrimitive()) && (!hc.isArray());
 	return 0;
     }
 
     /** Returns the offset of the hashcode of the specified object */
     public int hashCodeOffset(HClass hc) { 
-	Util.ASSERT(!hc.isPrimitive());
+	assert !hc.isPrimitive();
 	return -2; 
     }
 
     /** If hc is a class type, or an interface, returns the offset from
      *  the class pointer of the pointer to implemented interfaces */
     public int interfaceListOffset(HClass hc) { 
-	Util.ASSERT(!hc.isPrimitive() && !hc.isArray());
+	assert !hc.isPrimitive() && !hc.isArray();
 	return -4;
     }
 
     /** If hc is an array type, returns the offset of its length field */
     public int lengthOffset(HClass hc) { 
-	Util.ASSERT(hc.isArray());
+	assert hc.isArray();
 	return -3; 
     }
 
     /** Returns the offset from the class pointer of this class's pointer
      *  in the display */
     public int offset(HClass hc) { 
-	Util.ASSERT(!hc.isPrimitive() && !hc.isInterface());
+	assert !hc.isPrimitive() && !hc.isInterface();
 	return m_cdm.classDepth(hc);
     }
 
     /** Returns the offset from the object reference of the specified 
      *  non-static field */
     public int offset(HField hf) { 
-	Util.ASSERT(!hf.isStatic());
+	assert !hf.isStatic();
 	return m_fm.fieldOrder(hf);
     }
 
     /** Returns the offset from the class pointer of the specified
      *  non-static method */
     public int offset(HMethod hm) { 
-	Util.ASSERT(!hm.isStatic());
+	assert !hm.isStatic();
 	HClass hc = hm.getDeclaringClass(); 
     
 	if (hc.isInterface()) return -m_imm.methodOrder(hm) +

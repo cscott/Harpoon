@@ -16,7 +16,7 @@ import java.io.Serializable;
  * "redefined" after creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassProxy.java,v 1.3 2002-02-26 22:45:05 cananian Exp $
+ * @version $Id: HClassProxy.java,v 1.3.2.1 2002-02-27 08:35:41 cananian Exp $
  */
 class HClassProxy extends HClass implements HClassMutator, Serializable {
   Relinker relinker;
@@ -33,10 +33,9 @@ class HClassProxy extends HClass implements HClassMutator, Serializable {
       relink(proxy);
   }
   void relink(HClass newproxy) {
-    Util.ASSERT(newproxy!=null);
-    Util.ASSERT(!(newproxy instanceof HClassProxy &&
-		  ((HClassProxy)newproxy).relinker==relinker),
-		"should never proxy to a proxy of this same relinker.");
+    assert newproxy!=null;
+    assert !(newproxy instanceof HClassProxy &&
+		  ((HClassProxy)newproxy).relinker==relinker) : "should never proxy to a proxy of this same relinker.";
     // first update all the fields and methods hanging around.
     if (proxy!=null) {
       HField[] hf = proxy.getDeclaredFields();

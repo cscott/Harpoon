@@ -81,7 +81,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.3 2002-02-26 22:40:22 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.3.2.1 2002-02-27 08:31:21 cananian Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -576,7 +576,7 @@ public abstract class RegAlloc  {
 		final Code mycode = globalCode.code;
 		final int numLocals = ((Integer)triple.get(2)).intValue();
 		final Set usedRegs = globalCode.computeUsedRegs(instr);
-		Util.ASSERT(mycode != null);
+		assert mycode != null;
 		
 
 	        return new MyCode(mycode, instr,
@@ -635,7 +635,7 @@ public abstract class RegAlloc  {
 	    private void visitStore(SpillStore m) {
 		StackOffsetTemp def = m.stackOffset;
 		List regs = Arrays.asList(m.use());
-		Util.ASSERT(allRegs(regs));
+		assert allRegs(regs);
 		List instrs = frame.getInstrBuilder().
 		    makeStore(regs, def.offset, m);
 		Instr.replaceInstrList(m, instrs);		
@@ -644,7 +644,7 @@ public abstract class RegAlloc  {
 	    private void visitLoad(SpillLoad m) {
 		StackOffsetTemp use = m.stackOffset;
 		List regs = Arrays.asList(m.def());
-		Util.ASSERT(allRegs(regs));
+		assert allRegs(regs);
 		List instrs = frame.getInstrBuilder().
 		    makeLoad(regs, use.offset, m);
 		Instr.replaceInstrList(m, instrs);
@@ -690,12 +690,10 @@ public abstract class RegAlloc  {
 		    instrs = absCode.getElementsI(); // debug check
 		    while(instrs.hasNext()) {
 			Instr i = (Instr) instrs.next();
-			Util.ASSERT(!(i instanceof SpillLoad), 
-				    "SpillLoad in i-list!");
-			Util.ASSERT(!(i instanceof SpillStore), 
-				    "SpillStore in i-list! "
+			assert !(i instanceof SpillLoad) : "SpillLoad in i-list!";
+			assert !(i instanceof SpillStore) : "SpillStore in i-list! "
 				    /* + i.getPrev() + " " +
-				       i + " " + i.getNext() */);
+				       i + " " + i.getNext() */;
 		    }
 		}
 		
@@ -745,7 +743,7 @@ public abstract class RegAlloc  {
 	// smarter Graph-Coloring stack offset allocator
 	Code in = code;
 	final MultiMap tempXinstrToCommonLoc = new GenericMultiMap();
-	Util.ASSERT(in != null, "Don't try to resolve Temps for null HCodes");
+	assert in != null : "Don't try to resolve Temps for null HCodes";
 
 	class TempFinder extends InstrVisitor {
 	    HashMap tempsToOffsets = new HashMap();
@@ -809,9 +807,8 @@ public abstract class RegAlloc  {
 		    if (isRegister(def)) {
 			tempXinstrToCommonLoc.add(dxi, def);
 		    } else {
-			// Util.ASSERT(checked.contains(i),i+" not checked");
-			Util.ASSERT(code.registerAssigned(i,def),
-				    "def:"+def+" not assigned in "+
+			// assert checked.contains(i) : i+" not checked";
+			assert code.registerAssigned(i,def) : ("def:"+def+" not assigned in "+
 				    i.getID()+" : "+i);
 			Collection regs = code.getRegisters(i, def);
 			tempXinstrToCommonLoc.addAll(dxi, regs);
@@ -1001,7 +998,7 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    while(uses.hasNext()) {
 		Temp t = (Temp) uses.next();
 
-		Util.ASSERT(t != null, "No nulls for Temps");
+		assert t != null : "No nulls for Temps";
 		
 		if ((def.getValues(t)).isEmpty()) {
 		    // if it uses a variable defined in
@@ -1020,7 +1017,7 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    while(defs.hasNext()) {
 		Temp t = (Temp) defs.next();
 
-		Util.ASSERT(t != null, "No nulls for Temps");
+		assert t != null : "No nulls for Temps";
 		
 		if (!(def.getValues(t)).isEmpty()) {
 		    // We have seen a DEF for t in this block

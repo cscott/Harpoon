@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * multiple predecessors.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InMerge.java,v 1.5 2002-02-26 22:45:26 cananian Exp $
+ * @version $Id: InMerge.java,v 1.5.2.1 2002-02-27 08:36:02 cananian Exp $
  * @see Instr
  */
 public class InMerge extends Instr {
@@ -45,7 +45,7 @@ public class InMerge extends Instr {
   public int arity() {
       /* arity may be larger than this.prev.size() because of inputs
        * from try handlers. */
-      //Util.ASSERT(arity==this.prev.size());
+      //assert arity==this.prev.size();
       return arity;
   }
 

@@ -34,7 +34,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.3.2.1 2002-02-27 08:36:33 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -494,7 +494,7 @@ final class ReHandler {
     private static final void visitAll(Visitor v, Quad start) {
 	start.accept(v);
 	final StaticState ss = v.ss;
-	Util.ASSERT(ss.qm.contains(start));
+	assert ss.qm.contains(start);
 	Quad[] ql = start.next();
 	for (int i=0; i<ql.length; i++) {
 	    if (ss.qm.contains(ql[i])) continue; // skip if already done.
@@ -637,7 +637,7 @@ final class ReHandler {
 	    updatemap(q,nq);
 	    ss.qm.put(q, nq, nq);
 	    HCodeElement[] hce=ud.defMap(hc, q.test());
-	    Util.ASSERT(hce.length==1);
+	    assert hce.length==1;
 	    if (instanceset.contains(hce[0]))
 		cjmpset.add(q);
 	}
@@ -768,7 +768,7 @@ final class ReHandler {
 	}
 
 	public void visit(PHI q) {
-	    Util.ASSERT(last!=null);
+	    assert last!=null;
 	    //Don't want to follow edge 0 if last was a call
 	    int ent=last.nextEdge(laste).which_pred();
 	    for (int i=0;i<q.numPhis();i++) {
@@ -863,7 +863,7 @@ static class PHVisitor extends QuadVisitor // this is an inner class
 	removeTuples(q);  // Updates derivation table
 
 	Quad []prev=q.prev();
-	Quad []next=q.next(); Util.ASSERT(next.length==1);
+	Quad []next=q.next(); assert next.length==1;
 	int recount=0;
 	if (count!=1) {
 	    for(int i=0;i<prev.length;i++) {
@@ -905,7 +905,7 @@ static class PHVisitor extends QuadVisitor // this is an inner class
 	removeTuples(q);  // Updates derivation table
 
 	Quad []prev=q.prev();
-	Quad []next=q.next(); Util.ASSERT(next.length==1);
+	Quad []next=q.next(); assert next.length==1;
 	int recount=0;
 	if (count!=1) {
 	    for(int i=0;i<prev.length;i++) {

@@ -24,7 +24,7 @@ import java.util.Map;
  * Sedgewick's book.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinaryHeap.java,v 1.3 2002-02-26 22:47:31 cananian Exp $
+ * @version $Id: BinaryHeap.java,v 1.3.2.1 2002-02-27 08:37:54 cananian Exp $
  * @see Heap
  */
 public final class BinaryHeap extends AbstractHeap {
@@ -169,7 +169,7 @@ public final class BinaryHeap extends AbstractHeap {
     // verify the heap condition.
     private final void checkHeap() {
 	for (int i=2; i<A.size(); i++)
-	    Util.ASSERT(c.compare(A.get(PARENT(i)), A.get(i)) <= 0);
+	    assert c.compare(A.get(PARENT(i)), A.get(i)) <= 0;
     }
 
     /** Our <code>BinaryHeap</code> <code>Map.Entry</code>s look like this: */
@@ -191,7 +191,7 @@ public final class BinaryHeap extends AbstractHeap {
     /** Self-test function. */
     public static void main(String[] args) {
 	Heap h = new BinaryHeap();
-	Util.ASSERT(h.size()==0 && h.isEmpty());
+	assert h.size()==0 && h.isEmpty();
 	// example from CLR, page 146/151
 	h = new BinaryHeap(new AbstractCollection() {
 	    int el[] = { -4, -1, -3, -2, -16, -9, -10, -14, -8, -7 };
@@ -207,45 +207,45 @@ public final class BinaryHeap extends AbstractHeap {
 		};
 	    }
 	}, null/* default comparator */);
-	Util.ASSERT(h.size()==10 && !h.isEmpty());
-	Util.ASSERT(h.minimum().getKey().equals(new Integer(-16)));
+	assert h.size()==10 && !h.isEmpty();
+	assert h.minimum().getKey().equals(new Integer(-16));
 	System.out.println(h);
 	h.insert(new Integer(-15), new Integer(-15));
-	Util.ASSERT(h.size()==11 && !h.isEmpty());
-	Util.ASSERT(h.minimum().getKey().equals(new Integer(-16)));
+	assert h.size()==11 && !h.isEmpty();
+	assert h.minimum().getKey().equals(new Integer(-16));
 	System.out.println(h);
 	// now verify that we'll get all the keys out in properly sorted order
-	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-16)));
-	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-15)));
-	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-14)));
-	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-10)));
-	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-9)));
-	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-8)));
-	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-7)));
-	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-4)));
-	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-3)));
-	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-2)));
-	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-1)));
-	Util.ASSERT(h.isEmpty() && h.size()==0);
+	assert h.extractMinimum().getKey().equals(new Integer(-16));
+	assert h.extractMinimum().getKey().equals(new Integer(-15));
+	assert h.extractMinimum().getKey().equals(new Integer(-14));
+	assert h.extractMinimum().getKey().equals(new Integer(-10));
+	assert h.extractMinimum().getKey().equals(new Integer(-9));
+	assert h.extractMinimum().getKey().equals(new Integer(-8));
+	assert h.extractMinimum().getKey().equals(new Integer(-7));
+	assert h.extractMinimum().getKey().equals(new Integer(-4));
+	assert h.extractMinimum().getKey().equals(new Integer(-3));
+	assert h.extractMinimum().getKey().equals(new Integer(-2));
+	assert h.extractMinimum().getKey().equals(new Integer(-1));
+	assert h.isEmpty() && h.size()==0;
 	// okay, test delete and decreaseKey now.
-	h.clear(); Util.ASSERT(h.isEmpty() && h.size()==0);
+	h.clear(); assert h.isEmpty() && h.size()==0;
 	Map.Entry me[] = {
 	    h.insert("C", "c1"), h.insert("S", "s1"), h.insert("A", "a"),
 	    h.insert("S", "s2"), h.insert("C", "c2"), h.insert("O", "o"),
 	    h.insert("T", "t1"), h.insert("T", "t2"), h.insert("Z", "z"),
 	    h.insert("M", "m"),
 	};
-	Util.ASSERT(h.extractMinimum().getValue().equals("a"));
+	assert h.extractMinimum().getValue().equals("a");
 	System.out.println(h);
 	h.decreaseKey(me[3], "B"); // s2
-	Util.ASSERT(h.extractMinimum().getValue().equals("s2"));
+	assert h.extractMinimum().getValue().equals("s2");
 	h.delete(me[4]); // c2
-	Util.ASSERT(h.extractMinimum().getValue().equals("c1"));
+	assert h.extractMinimum().getValue().equals("c1");
 	System.out.println(h);
 	// finally, test updateKey
 	h.updateKey(me[9], "P"); // m
-	Util.ASSERT(h.extractMinimum().getValue().equals("o"));
-	Util.ASSERT(h.extractMinimum().getValue().equals("m"));
+	assert h.extractMinimum().getValue().equals("o");
+	assert h.extractMinimum().getValue().equals("m");
 	System.out.println(h);
 	// DONE.
 	System.out.println("PASSED.");

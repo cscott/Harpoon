@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.3.2.1 2002-02-27 08:36:47 cananian Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
@@ -55,7 +55,7 @@ public class CanonicalTreeCode extends Code {
 	    Canonicalize.simplify((Stm)tree, dg, Canonicalize.RULES);
 	    treeDerivation = dg;
 	}
-	Util.ASSERT(!harpoon.Analysis.Tree.Canonicalize.containsEseq(tree));
+	assert !harpoon.Analysis.Tree.Canonicalize.containsEseq(tree);
     }
 
     /* Copy constructor, should only be called by the clone() method. */

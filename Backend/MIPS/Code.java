@@ -27,7 +27,7 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for MIPS assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.3 2002-02-26 22:43:55 cananian Exp $
+ * @version $Id: Code.java,v 1.3.2.1 2002-02-27 08:34:37 cananian Exp $
  */
 class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "mips";
@@ -43,7 +43,7 @@ class Code extends harpoon.Backend.Generic.Code {
 
 	// need to cast the return type to a MIPS.RegFileInfo
 	regFileInfo = (RegFileInfo) this.frame.getRegFileInfo();
-	Util.ASSERT(regFileInfo != null, "Need non-null regfileinfo");
+	assert regFileInfo != null : "Need non-null regfileinfo";
 
 	tempInstrToRegisterMap = new HashMap();
     }
@@ -82,17 +82,15 @@ class Code extends harpoon.Backend.Generic.Code {
     }
     
     public List getRegisters(Instr i, Temp val) {
-	Util.ASSERT(i != null, "Code.getRegisters(null, Temp) undefined");
+	assert i != null : "Code.getRegisters(null, Temp) undefined";
 	if (val instanceof TwoWordTemp) {
 	    TwoWordTemp t = (TwoWordTemp) val;
 	    Temp low = get(i, t.getLow());
 	    Temp high = get(i, t.getHigh());
-	    Util.ASSERT(low != null,
-			"low register for "+val+" in "+i+
-			" should not be null");
-	    Util.ASSERT(high != null,
-			"high register for "+val+" in "+i+
-			" should not be null");
+	    assert low != null : "low register for "+val+" in "+i+
+			" should not be null";
+	    assert high != null : "high register for "+val+" in "+i+
+			" should not be null";
 	    return Arrays.asList(new Temp[]{ low, high });
 				 
 	} else {
@@ -101,9 +99,8 @@ class Code extends harpoon.Backend.Generic.Code {
 		t = val;
 	    } else {
 		t = get(i, val);
-		Util.ASSERT(t != null, 
-			    "register for "+val+" in "+i+
-			    " should not be null");
+		assert t != null : "register for "+val+" in "+i+
+			    " should not be null";
 	    }
 	    return Collections.nCopies(1, t);
 	}
@@ -115,8 +112,7 @@ class Code extends harpoon.Backend.Generic.Code {
 	    (Temp) tempInstrToRegisterMap.get
 	    (new TempInstrPair(instr, val)); 
 	if(reg == null) return null;
-	Util.ASSERT( regFileInfo.isRegister(reg), 
-		     "Temp: "+reg+" should be a reg in "+
+	assert regFileInfo.isRegister(reg) : ("Temp: "+reg+" should be a reg in "+
 		     "Instr: "+instr+", Val: "+val);
 	return reg;
     }
@@ -137,18 +133,18 @@ class Code extends harpoon.Backend.Generic.Code {
 		// high
 		reg = get(instr, t.getHigh());
 	    } else if (suffix.trim().equals("")) {
-		Util.ASSERT(false, "BREAK!  empty suffix " +
+		assert false : ("BREAK!  empty suffix " +
 			    "suffix: " + suffix + "\n" +
 			    "instr: " + instr + "\n" + 
 			    "instr str: " + instr.getAssem() + "\n"+
 			    "temp: " + val);
 	    } else {
-		Util.ASSERT(false, "BREAK!  This parsing needs to be "+
+		assert false : "BREAK!  This parsing needs to be "+
 			    "fixed, strongarm has a lot more cases than this."+
 			    "\n suffix: "+ suffix + "\n" +
 			    "Alternatively, the pattern could be trying to "+
 			    "use a TwoWordTemp without the appropriate "+
-			    "double word modifier (l, h) in " + instr);
+			    "double word modifier (l, h) in " + instr;
 	    }
 	    if(reg != null) {
 		s = reg.name() + suffix.substring(1);
@@ -158,13 +154,13 @@ class Code extends harpoon.Backend.Generic.Code {
 	} else { // single word; nothing special
 	    Temp reg = get(instr, val);
 	    
-	    Util.ASSERT(!suffix.startsWith("l") &&
-			!suffix.startsWith("h"), "Shouldn't " +
+	    assert !suffix.startsWith("l") &&
+			!suffix.startsWith("h") : "Shouldn't " +
 			"have 'l' or 'h' suffix with Temp: " + 
 			val + " Instrs: " + 
 			instr.getPrev() + ", " + 
 			instr + ", " + 
-			instr.getNext());
+			instr.getNext();
 
 	    if(reg != null) {
 		s = reg.name() + suffix;
@@ -172,9 +168,8 @@ class Code extends harpoon.Backend.Generic.Code {
 		s = val.name() + suffix;
 	    }
 	}
-	// Util.ASSERT(s.indexOf("r0l") == -1 && s.indexOf("r0h") == -1 &&
-	// s.indexOf("r1l") == -1 && s.indexOf("r1h") == -1, 
-	// "Improper parsing of " + suffix + " in " + instr + " " + val.getClass().getName());
+	// assert s.indexOf("r0l") == -1 && s.indexOf("r0h") == -1 &&
+	// s.indexOf("r1l") == -1 && s.indexOf("r1h") == -1 : // "Improper parsing of " + suffix + " in " + instr + " " + val.getClass().getName();
 
 	return s;
     }
@@ -209,12 +204,11 @@ class Code extends harpoon.Backend.Generic.Code {
 		    System.out.println("bad const extraction");
 		    System.out.println("\'"+constStr+"\'");
 		    System.out.println(" from "+instr+"("+begin+","+end+")");
-		    Util.ASSERT(false);
+		    assert false;
 		}
 	    
-		Util.ASSERT(isValidConst(v) || isValidConst(-v),
-			    "const form err of "+v+" in "+
-			    instr+"("+begin+","+end+")");
+		assert isValidConst(v) || isValidConst(-v) : "const form err of "+v+" in "+
+			    instr+"("+begin+","+end+")";
 	    }
 	} // end if(DEBUG)
 

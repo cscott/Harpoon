@@ -15,7 +15,7 @@ import java.util.Set;
  * <code>PHI</code> objects represent blocks of phi functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
+ * @version $Id: PHI.java,v 1.3.2.1 2002-02-27 08:36:33 cananian Exp $
  */
 public class PHI extends Quad {
     /** dst[i] is the left-hand side of the i'th phi function in this block. */
@@ -37,12 +37,12 @@ public class PHI extends Quad {
 	this.dst = dst;
 	this.src = src;
 	// VERIFY legality of PHI function.
-	Util.ASSERT(dst!=null && src!=null);
-	Util.ASSERT(arity>=0);
-	Util.ASSERT(dst.length==src.length);
+	assert dst!=null && src!=null;
+	assert arity>=0;
+	assert dst.length==src.length;
 	for (int i=0; i<src.length; i++)
-	    Util.ASSERT(src[i].length==arity);
-	Util.ASSERT(arity==arity());
+	    assert src[i].length==arity;
+	assert arity==arity();
     }
     /** Creates a <code>PHI</code> object with the specified arity.
      *  Each phi function will have <code>arity</code> arguments.
@@ -75,7 +75,7 @@ public class PHI extends Quad {
     /** Removes a given phi function from the block.
      * @deprecated does not preserve immutability. */
     public void removePhi(int nPhi) {
-	Util.ASSERT(0<=nPhi && nPhi<numPhis());
+	assert 0<=nPhi && nPhi<numPhis();
 	dst = (Temp[])   Util.shrink(Temp.arrayFactory,       dst, nPhi);
 	src = (Temp[][]) Util.shrink(Temp.doubleArrayFactory, src, nPhi);
     }
@@ -92,7 +92,7 @@ public class PHI extends Quad {
 	    prev[i].to_index--;
 	// double-check this.
 	for (int i=0; i<prev.length; i++)
-	    Util.ASSERT(prev[i].to_index == i);
+	    assert prev[i].to_index == i;
     }
 
     /** Shrink the arity of a PHI by replacing it.

@@ -21,7 +21,7 @@ import java.util.Set;
  * standard <code>ReachingDefsImpl</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSxReachingDefsImpl.java,v 1.3 2002-02-26 22:39:08 cananian Exp $
+ * @version $Id: SSxReachingDefsImpl.java,v 1.3.2.1 2002-02-27 08:30:24 cananian Exp $
  */
 public class SSxReachingDefsImpl extends ReachingDefs {
     private final Map m = new HashMap();
@@ -36,7 +36,7 @@ public class SSxReachingDefsImpl extends ReachingDefs {
 	    HCodeElement hce = (HCodeElement) it.next();
 	    for (Iterator it2 = ud.defC(hce).iterator(); it2.hasNext(); ) {
 		Temp t = (Temp) it2.next();
-		Util.ASSERT(!m.containsKey(t), "not in SSA/SSI form!");
+		assert !m.containsKey(t) : "not in SSA/SSI form!";
 		m.put(t, hce);
 	    }
 	}

@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * <code>PFOFFSET</code> must be used together to access a non-static field.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PFCONST.java,v 1.3 2002-02-26 22:45:51 cananian Exp $
+ * @version $Id: PFCONST.java,v 1.3.2.1 2002-02-27 08:36:27 cananian Exp $
  */
 public class PFCONST extends PCONST {
     /** The <code>HField</code> to address. */
@@ -34,7 +34,7 @@ public class PFCONST extends PCONST {
 		    final Temp dst, final HField field) {
 	super(qf, source, dst);
 	this.field = field;
-	Util.ASSERT(field!=null && field.isStatic());
+	assert field!=null && field.isStatic();
     }
     // ACCESSOR METHODS:
     /** Returns the field whose <code>POINTER</code> constant is computed. */

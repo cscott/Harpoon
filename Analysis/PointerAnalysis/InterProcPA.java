@@ -51,7 +51,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: InterProcPA.java,v 1.3 2002-02-26 22:41:18 cananian Exp $
+ * @version $Id: InterProcPA.java,v 1.3.2.1 2002-02-27 08:32:05 cananian Exp $
  */
 public abstract class InterProcPA implements java.io.Serializable {
 
@@ -1076,7 +1076,7 @@ public abstract class InterProcPA implements java.io.Serializable {
 			      pig.tau.activeThreadSet());
 	    if(!PointerAnalysis.IGNORE_EO) {
 		// TODO: edge ordering relation (if we want to maintain it)
-		Util.ASSERT(false, "edge ordering not implemented here!");
+		assert false : "edge ordering not implemented here!";
 	    }
 	    f_set.add(n_L);
 	}
@@ -1361,7 +1361,7 @@ public abstract class InterProcPA implements java.io.Serializable {
 				      int nb_args) {
 	Set set = new HashSet();
 	HClass hclass = pa.getLinker().forName(cls_name);
-	Util.ASSERT(hclass != null, cls_name + " was not found!");
+	assert hclass != null : cls_name + " was not found!";
 
 	HMethod[] hms = hclass.getMethods();
 	for(int i = 0; i < hms.length; i++)
@@ -1369,9 +1369,9 @@ public abstract class InterProcPA implements java.io.Serializable {
 	       (hms[i].getParameterTypes().length == nb_args))
 		set.add(hms[i]);
 
-	Util.ASSERT(set.size() > 0, mthd_name + "(" + nb_args +
-		    ") not found in " + cls_name);
-	Util.ASSERT(set.size() == 1, "Too many methods");
+	assert set.size() > 0 : mthd_name + "(" + nb_args +
+		    ") not found in " + cls_name;
+	assert set.size() == 1 : "Too many methods";
 
 	return (HMethod) set.iterator().next();
     }
