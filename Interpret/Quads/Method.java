@@ -11,6 +11,8 @@ import harpoon.ClassFile.HMember;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadRSSx;
+import harpoon.IR.Quads.QuadSSA;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.IR.Quads.QuadWithTry;
@@ -59,7 +61,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.22 2001-01-11 19:48:03 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.23 2001-09-26 16:02:31 cananian Exp $
  */
 public final class Method {
 
@@ -187,7 +189,8 @@ public final class Method {
 	    Interpreter i;
 	    if (c instanceof QuadWithTry)
 		i = new ImplicitI(ss, sf, params);
-	    else if (c instanceof QuadNoSSA || c instanceof QuadSSI)
+	    else if (c instanceof QuadNoSSA || c instanceof QuadSSA ||
+		     c instanceof QuadRSSx || c instanceof QuadSSI)
 		i = new ExplicitI(ss, sf, params);
 	    else throw new Error("What kinda code is this!?");
 	    
@@ -508,8 +511,13 @@ public final class Method {
 	}
 	public void visit(PHI q) {
 	    // uses last pred info.
+	    // Careful not to destroy sources until we've read them all!
+	    // (dst and sources may conflict)
+	    Object[] srcval = new Object[q.numPhis()];
 	    for (int i=0; i<q.numPhis(); i++)
-		sf.update(q.dst(i), sf.get(q.src(i, last_pred)));
+		srcval[i] = sf.get(q.src(i, last_pred));
+	    for (int i=0; i<q.numPhis(); i++)
+		sf.update(q.dst(i), srcval[i]);
 	    advance(0);
 	}
 	public void visit(RETURN q) {
