@@ -19,9 +19,16 @@ ALLSOURCE = $(filter-out .%.java, \
 all:	java
 
 java:	$(ALLSOURCE)
+	if [ ! -d harpoon ]; then \
+	  $(MAKE) first; \
+	fi
 	${JCC} ${JFLAGS} ${JFLAGSVERB} $(ALLSOURCE) | \
 		egrep -v '^\[[lc]'
 	touch java
+first:
+	@echo Please wait...
+	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
+	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 Harpoon.jar:	java
 	${JAR} c0f Harpoon.jar harpoon silicon
 jar:	Harpoon.jar
