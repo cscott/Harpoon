@@ -18,6 +18,7 @@ import harpoon.IR.Quads.INSTANCEOF;
 import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Util.ArraySet;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
@@ -42,7 +43,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.19 2000-03-30 22:16:24 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.20 2000-10-11 14:27:24 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -252,6 +253,14 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 				      classKnownChildren,
 				      classMethodsUsed,
 				      classMethodsPending);
+		    }
+		    if (Q instanceof TYPESWITCH) {
+			TYPESWITCH q = (TYPESWITCH) Q;
+			for (int i=0; i<q.keysLength(); i++)
+			    discoverClass(q.keys(i), W, done,
+					  classKnownChildren,
+					  classMethodsUsed,
+					  classMethodsPending);
 		    }
 		}
 	    }
