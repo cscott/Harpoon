@@ -24,7 +24,7 @@ public class CarDemoIPAQMain {
 	    }).start();
 
 	try {
-	    Thread.currentThread().sleep(2000);
+	    Thread.currentThread().sleep(1750);
 	}
 	catch (InterruptedException e) {
 	}
@@ -41,7 +41,7 @@ public class CarDemoIPAQMain {
 	    }).start();
 
 	try {
-	    Thread.currentThread().sleep(2000);
+	    Thread.currentThread().sleep(1750);
 	}
 	catch (InterruptedException e) {
 	}
