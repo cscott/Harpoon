@@ -39,7 +39,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.5 2000-10-04 21:42:12 witchel Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.6 2000-10-11 18:20:40 witchel Exp $
  */
 public class RegFileInfo
 extends harpoon.Backend.Generic.RegFileInfo 
@@ -358,6 +358,16 @@ implements harpoon.Backend.Generic.LocationFactory
 	}
     }
 
+   /** Return true for any registers we want to keep out of register
+    * allocation */ 
+   private boolean excludeReg(int reg) {
+      // These registers are used by the yellow pekoe assembler
+      if(reg == 13) return true;
+      if(reg == 14) return true;
+      if(reg == 15) return true;
+      if(reg == 24) return true;
+      return false;
+   }
 
    public Iterator suggestRegAssignment(Temp t, final Map regFile) 
       throws SpillException {
@@ -370,23 +380,25 @@ implements harpoon.Backend.Generic.LocationFactory
          // simpler to search for adjacent registers )
          // FSK: forcing alignment to solve regalloc problem
          for (int i=2; i<regtop; i+=2) {
-            Temp[] assign = new Temp[] { regGeneral[i+1] ,
-                                         regGeneral[i] };
-            if ((regFile.get(assign[0]) == null) &&
-                (regFile.get(assign[1]) == null)) {
-               suggests.add(Arrays.asList(assign));
-            } else {
-               // don't add precolored registers to potential
-               // spills. 
-               if ( !(regFile.get(assign[0]) 
-                      instanceof RegFileInfo.PreassignTemp) &&
-                    !(regFile.get(assign[1]) 
-                      instanceof RegFileInfo.PreassignTemp)) {
+            if(excludeReg(i) == false && excludeReg(i + 1) == false) {
+               Temp[] assign = new Temp[] { regGeneral[i+1] ,
+                                            regGeneral[i] };
+               if ((regFile.get(assign[0]) == null) &&
+                   (regFile.get(assign[1]) == null)) {
+                  suggests.add(Arrays.asList(assign));
+               } else {
+                  // don't add precolored registers to potential
+                  // spills. 
+                  if ( !(regFile.get(assign[0]) 
+                         instanceof RegFileInfo.PreassignTemp) &&
+                       !(regFile.get(assign[1]) 
+                         instanceof RegFileInfo.PreassignTemp)) {
 
-                  Set s = new LinearSet(2);
-                  s.add(assign[1]);
-                  s.add(assign[0]);
-                  spills.add(s);
+                     Set s = new LinearSet(2);
+                     s.add(assign[1]);
+                     s.add(assign[0]);
+                     spills.add(s);
+                  }
                }
             }
          }
@@ -394,16 +406,18 @@ implements harpoon.Backend.Generic.LocationFactory
       } else {
          // single word, find one register
          for (int i=2; i<=regtop; i++) {
-            if ((regFile.get(regGeneral[i]) == null)) {
-               suggests.add(ListFactory.singleton(regGeneral[i]));
-            } else {
-               Set s = new LinearSet(1);
-               // don't add precolored registers to potential
-               // spills. 
-               if (!( regFile.get(regGeneral[i]) 
-                      instanceof RegFileInfo.PreassignTemp )) {
-                  s.add(regGeneral[i]);
-                  spills.add(s);
+            if(excludeReg(i) == false) {
+               if ((regFile.get(regGeneral[i]) == null)) {
+                  suggests.add(ListFactory.singleton(regGeneral[i]));
+               } else {
+                  Set s = new LinearSet(1);
+                  // don't add precolored registers to potential
+                  // spills. 
+                  if (!( regFile.get(regGeneral[i]) 
+                         instanceof RegFileInfo.PreassignTemp )) {
+                     s.add(regGeneral[i]);
+                     spills.add(s);
+                  }
                }
             }
          }
