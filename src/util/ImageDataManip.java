@@ -385,6 +385,7 @@ public class ImageDataManip {
     /** Clone an {@link ImageData}.
      *
      *  @param id The {@link ImageData} to clone.
+     *  @return The cloned {@link ImageData}.
      */
     public static ImageData clone(ImageData id) {
 	return create(id, (id.rvals!=null)?(byte[])id.rvals.clone():null,
@@ -403,6 +404,7 @@ public class ImageDataManip {
      *  @param bvals The blue <code>byte[]</code> of intensities.
      *  @param width The width of the image in pixels.
      *  @param height The height of the image in pixels.
+     *  @return The created {@link ImageData}.
      */
     public static ImageData create(ImageData id, 
 				   byte[] rvals, byte[] gvals, byte[] bvals,
@@ -426,6 +428,7 @@ public class ImageDataManip {
      *  @param y The y coordinate of the upper left pixel.
      *  @param width The width of the image in pixels.
      *  @param height The height of the image in pixels.
+     *  @return The created {@link ImageData}.
      */
     public static ImageData create(ImageData id, 
 				   byte[] rvals, byte[] gvals, byte[] bvals,
@@ -450,11 +453,27 @@ public class ImageDataManip {
      *  @param c1 The target x coordinate.
      *  @param c2 The target y coordinate.
      *  @param c3 The target z coordinate.
+     *  @return The created {@link ImageData}.
      */
     public static ImageData create(float c1, float c2, float c3) {
-	return new ImageData(null, null, null,
+	return new ImageData(new byte[0], new byte[0], new byte[0],
 			     0, 0, 0, 0, 0, 0, 0, 0,
 			     c1, c2, c3, false, (byte)0, false, 0, 0, 0);
+    }
+
+    /** Factory to create an {@link ImageData} given partial information.
+     *
+     *  @see Servo
+     * 
+     *  @param command The command to send.
+     *  @param time The time for the command to be effective for.
+     *  @return The created {@link ImageData}.
+     */
+    public static ImageData create(int command, long time) {
+	return new ImageData(new byte[0], new byte[0], new byte[0],
+			     0, 0, 0, 0, time, 0, command, 0,
+			     (float)0.0, (float)0.0, (float)0.0, 
+			     false, (byte)0, false, 0, 0, 0);
     }
 
     /**
