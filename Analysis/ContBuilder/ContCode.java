@@ -11,6 +11,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.FOOTER;
 import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.METHOD;
@@ -31,7 +32,7 @@ import java.util.Map;
  * using <code>quad-no-ssa</code> <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContCode.java,v 1.1.2.4 1999-11-20 06:37:34 bdemsky Exp $
+ * @version $Id: ContCode.java,v 1.1.2.5 1999-11-20 06:48:56 bdemsky Exp $
  */
 public class ContCode extends Code {
 
@@ -196,15 +197,17 @@ public class ContCode extends Code {
 	Quad.addEdge(rc, 1, throwq, 0);
 
 	RETURN nr = new RETURN(this.qf, nc, null);
-	PHI phi= new PHI(this.qf, nc, new Temp[0], 2);
-	Quad.addEdge(throwq,0, phi, 0);
-	Quad.addEdge(nr, 0, phi, 1);
+
+
 
 	Quad.addEdge(rc, 0, nr, 0);
-	Quad.addEdge(phi, 0, r.next(0), r.nextEdge(0).which_pred());
-
+	Quad.addEdge(nr, 0, r.next(0), r.nextEdge(0).which_pred());
+	//add throw quad to footer
+	FOOTER footer=(FOOTER) h.next(0);
+	footer.attach(throwq,0);
+      
 	Unreachable.prune(h);
-
+	
 	System.out.println("Leaving ContCode.buildCode()");
 	return h;
     }    
