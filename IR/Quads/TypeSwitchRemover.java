@@ -3,19 +3,28 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Quads.Unreachable;
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.IR.LowQuad.DerivationMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
+import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 /**
  * <code>TypeSwitchRemover</code> converts <code>TYPESWITCH</code> quads
  * into chains of <code>INSTANCEOF</code> and <code>CJMP</code> quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeSwitchRemover.java,v 1.1.2.1 2000-10-10 21:33:49 cananian Exp $
+ * @version $Id: TypeSwitchRemover.java,v 1.1.2.2 2000-10-12 21:38:40 cananian Exp $
  */
 public final class TypeSwitchRemover
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -24,30 +33,38 @@ public final class TypeSwitchRemover
     public TypeSwitchRemover(HCodeFactory parent) { super(parent); }
 
     protected HCode mutateHCode(HCodeAndMaps input) {
-	HCode hc = input.hcode();
+	Code hc = (Code) input.hcode();
+	// get mutable derivation map.
+	// (no changes necessary to allocation information map)
+	DerivationMap dm = (DerivationMap) hc.getDerivation();
+	// dm (if non-null) will be updated as TYPESWITCHes are replaced.
+
 	// we put all elements in array to avoid screwing up the
 	// iterator as we mutate the quad graph in-place.
 	Quad[] allquads = (Quad[]) hc.getElements();
 	for (int i=0; i<allquads.length; i++)
 	    if (allquads[i] instanceof TYPESWITCH)
-		replace((TYPESWITCH) allquads[i]);
+		replace((TYPESWITCH) allquads[i], dm);
 	// now we have to prune off any newly-unreachable TYPESWITCH cases.
 	Unreachable.prune((HEADER)hc.getRootElement());
 	// yay, done!
 	return hc;
     }
 
-    private static void replace(TYPESWITCH ts) {
+    private static void replace(TYPESWITCH ts, DerivationMap dm) {
 	/* construct instanceof chain */
 	Edge e = ts.prevEdge(0);
 	makeTest(constructCT(ts), ts, (Quad) e.from(), e.which_succ(),
-		 ts.src());
+		 ts.src(), dm)
+	    .fixupSigmaDerivations(ts, dm);
     }
     /** Construct INSTANCEOF chain from a proper & pruned ClassTree */
-    private static void makeTest(ClassTree ct, TYPESWITCH ts,
-			  Quad head, int which_succ, Temp[] src) {
+    private static TypeTree makeTest(ClassTree ct, TYPESWITCH ts,
+				     Quad head, int which_succ, Temp[] src,
+				     DerivationMap dm) {
 	QuadFactory qf = ts.getFactory();
 	TempFactory tf = qf.tempFactory();
+	TypeNode ftn = new TypeNode(null), ptn = ftn; // keep track of TypeTree
 	for (Iterator it=ct.children(); it.hasNext(); ) {
 	    // for each child c of ct...
 	    ClassTree c = (ClassTree) it.next();
@@ -63,19 +80,23 @@ public final class TypeSwitchRemover
 	    CJMP q1 = new CJMP(qf, ts, Textra, dst, src);
 	    Quad.addEdge(head, which_succ, q0, 0);
 	    Quad.addEdge(q0, 0, q1, 0);
+	    dm.putType(q0, Textra, HClass.Int/*internal form of boolean*/);
+	    ptn = (TypeNode) (ptn.child[0] = new TypeNode(q1));
 	    // then...
-	    makeTest(c, ts, q1, 1, slice(q1, 1));
+	    ptn.child[1] = makeTest(c, ts, q1, 1, slice(q1, 1), dm);
 	    // else...
 	    head=q1; which_succ=0; src=slice(q1, 0);
 	}
 	// link remaining else... to TYPESWITCH edge ct.edgenum
 	Edge e = ts.nextEdge(ct.edgenum);
 	Quad.addEdge(head, which_succ, (Quad) e.to(), e.which_pred());
+	ptn.child[0] = new TypeLeaf(ct.edgenum);
 	// check that all sigma functions have been handled
 	if (ct.key==null && !ct.children().hasNext())
 	    Util.assert(ts.numSigmas()==0);// um, 1-arity TS should not have
 	                                   // sigma functions
 	// done.
+	return ftn.child[0]; // return root of TypeTree.
     }
     /** Copy a slice of the TYPESWITCH's sigma function to the specified
      *  slice of the dst array. */
@@ -160,6 +181,92 @@ public final class TypeSwitchRemover
 	}
 	public void dump(java.io.OutputStream os) {
 	    dump(new java.io.PrintWriter(os));
+	}
+    }
+
+    // UGH.  Lots of cruft for proper derivations. ------------
+
+    /** The typetree keeps a record of the created CJMP structure
+     *  so that we can go back (and with fixupSigmaDerivations()) add
+     *  the proper derivation information in a post-pass. */
+    private static abstract class TypeTree {
+	/** add proper derivation information to the CJMPs described by this.*/
+	abstract TypeAndDerivation[] fixupSigmaDerivations(TYPESWITCH ts,
+							   DerivationMap dm);
+    }
+    /** A TypeNode represents a CJMP, with sigmas that need derivations. */
+    private static class TypeNode extends TypeTree {
+	final CJMP cjmp;
+	final TypeTree[] child = new TypeTree[2];
+	TypeNode(CJMP cjmp) { this.cjmp = cjmp; }
+	TypeAndDerivation[] fixupSigmaDerivations(TYPESWITCH ts,
+						  DerivationMap dm) {
+	    TypeAndDerivation[] result=new TypeAndDerivation[ts.numSigmas()];
+	    for (int i=0; i<2; i++) {
+		TypeAndDerivation[] tad=child[i].fixupSigmaDerivations(ts,dm);
+		for (int j=0; j<tad.length; j++) {
+		    tad[j].apply(dm, cjmp, cjmp.dst(j, i));
+		    result[j] = (result[j]==null) ? tad[j] :
+			TypeAndDerivation.merge(result[j], tad[j]);
+		}
+	    }
+	    return result;
+	}
+    }
+    /** A TypeLeaf represents an edge which corresponds to an edge of
+     *  the original TYPESWITCH -- i.e. the sigma derivations for this
+     *  edge should be identical to those on the original TYPESWITCH edge. */
+    private static class TypeLeaf extends TypeTree {
+	final int edgenum;
+	TypeLeaf(int edgenum) { this.edgenum = edgenum; }
+	TypeAndDerivation[] fixupSigmaDerivations(TYPESWITCH ts,
+						  DerivationMap dm) {
+	    // fetch types from appropriate slice of TYPESWITCH
+	    TypeAndDerivation[] r = new TypeAndDerivation[ts.numSigmas()];
+	    for (int i=0; i<r.length; i++) {
+		r[i]=new TypeAndDerivation(dm, ts, ts.dst(i, edgenum));
+		dm.remove(ts, ts.dst(i, edgenum)); // clean up.
+	    }
+	    return r;
+	}
+    }
+    /** unified type/derivation information. */
+    private static class TypeAndDerivation {
+	/** non-null for base pointers */
+	public final HClass type;
+	/** non-null for derived pointers */ 
+	public final Derivation.DList derivation;
+	// public constructors
+	TypeAndDerivation(HClass type) { this(type, null); }
+	TypeAndDerivation(Derivation.DList deriv) { this(null, deriv); }
+	// helpful.
+	TypeAndDerivation(Derivation d, HCodeElement hce, Temp t) {
+	    this(d.typeMap(hce, t), d.derivation(hce, t));
+	}
+	/** private constructor */
+	private TypeAndDerivation(HClass type, Derivation.DList derivation) {
+	    Util.assert(type!=null ^ derivation!=null);
+	    this.type = type;
+	    this.derivation = derivation;
+	}
+	/** store this TypeAndDerivation information in the given
+	 *  DerivationMap for the given HCodeElement/Temp pair. */
+	void apply(DerivationMap dm, HCodeElement hce, Temp t) {
+	    if (type!=null) dm.putType(hce, t, type);
+	    else dm.putDerivation(hce, t, derivation);
+	}
+	/** Merge the given TypeAndDerivations. */
+	static TypeAndDerivation merge(TypeAndDerivation a,
+				       TypeAndDerivation b) {
+	    if (a.type!=null && b.type!=null)
+		return new TypeAndDerivation
+		    (HClassUtil.commonParent(a.type, b.type));
+	    // both ought to be derivations.
+	    Util.assert(a.derivation!=null && b.derivation!=null,
+			"can't merge type with derivation");
+	    Util.assert(a.derivation.equals(b.derivation),
+			"can't merge derivations");
+	    return a;
 	}
     }
 }
