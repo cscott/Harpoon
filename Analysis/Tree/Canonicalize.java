@@ -3,7 +3,10 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Tree;
 
+import harpoon.Analysis.Maps.Derivation.DList;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.IR.Tree.DerivationGenerator;
 import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.EXP;
 import harpoon.IR.Tree.Exp;
@@ -21,17 +24,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 /**
- * <code>Canonicalize</code>
+ * <code>Canonicalize</code> is an application of <code>Simplification</code>
+ * to do pattern-driven tree canonicalization.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Canonicalize.java,v 1.1.2.2 2000-02-15 14:55:59 cananian Exp $
+ * @version $Id: Canonicalize.java,v 1.1.2.3 2000-02-15 20:17:08 cananian Exp $
  */
 public abstract class Canonicalize extends Simplification {
     // hide constructor
     private Canonicalize() { }
 
     private final static List _RULES = new ArrayList(); 
-    /** Default alegraic simplification rules. */
+    /** Default canonicalization rules. */
     public final static List RULES = // protect the rules list.
 	Collections.unmodifiableList(_RULES);
 
@@ -53,10 +57,10 @@ public abstract class Canonicalize extends Simplification {
 		ESEQ eseq = (ESEQ) e;
 		return contains(_KIND(eseq.getExp()), _ESEQ);
 	    }
-	    public Exp apply(Exp e) {
-		TreeFactory tf = e.getFactory();
+	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) {
 		ESEQ e1 = (ESEQ) e;
 		ESEQ e2 = (ESEQ) e1.getExp();
+		if (dg!=null) { dg.remove(e1); dg.remove(e2); }
 		return new ESEQ(tf, e,
 				new SEQ(tf, e, e1.getStm(), e2.getStm()),
 				e2.getExp());
@@ -78,12 +82,13 @@ public abstract class Canonicalize extends Simplification {
 		if (el==null) return false;
 		return contains(_KIND(el.head), _ESEQ);
 	    }
-	    public Exp apply(Exp e) {
-		TreeFactory tf = e.getFactory();
+	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) {
 		ExpList el = e.kids();
 		ESEQ eseq = (ESEQ) el.head;
 		el = new ExpList(eseq.getExp(), el.tail);
-		return new ESEQ(tf, e, eseq.getStm(), e.build(el));
+		Exp newE = e.build(el);
+		if (dg != null) dg.update(e, newE);
+		return new ESEQ(tf, e, eseq.getStm(), newE);
 	    }
 	    public boolean match(Stm s) {
 		if (contains(_KIND(s), _SEQ)) return false;
@@ -91,8 +96,7 @@ public abstract class Canonicalize extends Simplification {
 		if (el==null) return false;
 		return contains(_KIND(el.head), _ESEQ);
 	    }
-	    public Stm apply(Stm s) {
-		TreeFactory tf = s.getFactory();
+	    public Stm apply(TreeFactory tf, Stm s, DerivationGenerator dg) {
 		ExpList el = s.kids();
 		ESEQ eseq = (ESEQ) el.head;
 		el = new ExpList(eseq.getExp(), el.tail);
@@ -130,33 +134,50 @@ public abstract class Canonicalize extends Simplification {
 		}
 		return false;
 	    }
-	    public Exp apply(Exp e) {
-		TreeFactory tf = e.getFactory();
-		return e.build(shiftOne(tf, e.kids()));
+	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) {
+		Exp newE = e.build(shiftOne(tf, dg, e.kids()));
+		if (dg != null) dg.update(e, newE);
+		return newE;
 	    }
-	    public Stm apply(Stm s) {
-		TreeFactory tf = s.getFactory();
-		return s.build(shiftOne(tf, s.kids()));
+	    public Stm apply(TreeFactory tf, Stm s, DerivationGenerator dg) {
+		return s.build(shiftOne(tf, dg, s.kids()));
 	    }
-	    ExpList shiftOne(TreeFactory tf, ExpList el) {
+	    ExpList shiftOne(TreeFactory tf, DerivationGenerator dg,
+			     ExpList el) {
 		if (!contains(_KIND(el.tail.head), _ESEQ))
-		  return new ExpList(el.head, shiftOne(tf, el.tail));
+		  return new ExpList(el.head, shiftOne(tf, dg, el.tail));
 		Exp  e1 = el.head;
 		ESEQ e2 = (ESEQ) el.tail.head;
-		if (commute(e2.getStm(), e1)) // simple case.
+		if (dg != null) dg.remove(e2); // ain't gonna live no mo'
+		if (commute(e2.getStm(), e1)) { // simple case.
+		    // [..e1, ESEQ(s, e2), ..] --> [..ESEQ(s, e1), e2,..]
 		    return new ExpList(new ESEQ(tf, e1, e2.getStm(), e1),
 				       new ExpList(e2.getExp(), el.tail.tail));
+		}
 		// otherwise, we have to make a new temp...
+		//  [..e1, ESEQ(s, e2),..] -->
+		//                     [..ESEQ(SEQ(MOVE(t, e1), s), t), e2..]
 		Temp t  = new Temp(tf.tempFactory(), "canon");
+		TEMP T1 = new TEMP(tf, e1, e1.type(), t);
+		TEMP T2 = new TEMP(tf, e1, e1.type(), t);
+		if (dg!=null) { // make types for the new TEMPs/Temp
+		    HClass hc = dg.typeMap(e1);
+		    if (hc!=null) {
+			dg.putTypeAndTemp(T1, hc, t);
+			dg.putTypeAndTemp(T2, hc, t);
+		    } else {
+			dg.putDerivation(T1, dg.derivation(e1));
+			dg.putDerivation(T2, dg.derivation(e1));
+		    }
+		}
 		return new ExpList
 		(new ESEQ
 		 (tf, e1,
 		  new SEQ
 		  (tf, e1,
-		   new MOVE
-		   (tf, e1, new TEMP(tf, e1, e1.type(), t), e1),
+		   new MOVE(tf, e1, T1, e1),
 		   e2.getStm() ),
-		  new TEMP(tf, e1, e1.type(), t) ),
+		  T2 ),
 		 new ExpList(e2.getExp(), el.tail.tail));
 	    }
 	};
