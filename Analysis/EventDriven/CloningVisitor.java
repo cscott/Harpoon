@@ -65,7 +65,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.11 2000-03-20 21:23:24 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.12 2000-03-21 18:04:36 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -291,7 +291,11 @@ public class CloningVisitor extends QuadVisitor {
 		    if (!done.contains(next[0]))
 			todo.push(next[0]);
 		    Quad cn0=(Quad)quadmap.get(next[0]);
-		    Quad.addEdge(cnq.next(0).next(0).next(1),0,cn0,nq.nextEdge(0).which_pred());
+		    if ((!((CALL)nq).method().getReturnType().isPrimitive())&&
+			(!((CALL)nq).method().getReturnType().equals(linker.forName("java.lang.Object")))) 
+			Quad.addEdge(cnq.next(0).next(0).next(1).next(0).next(0).next(0).next(1),0,cn0,nq.nextEdge(0).which_pred());
+		    else
+			Quad.addEdge(cnq.next(0).next(0).next(1),0,cn0,nq.nextEdge(0).which_pred());
 		    //do 1 edge
 		    if (!done.contains(next[1]))
 			todo.push(next[1]);
@@ -845,6 +849,47 @@ public class CloningVisitor extends QuadVisitor {
 		HField resultfield=calleemethod.getReturnType().getField("result");
 		GET get2=new GET(qf,q, ctmap.tempMap(q.retval())  ,resultfield,retcont);
 		Quad.addEdge(cjmp,1,get2,0);
+		if ((!q.method().getReturnType().isPrimitive())&&
+		    (!q.method().getReturnType().equals(linker.forName("java.lang.Object")))) {
+		    //Have to TYPECAST
+		    Temp tresult=new Temp(tf), tnull=new Temp(tf), tresultn=new Temp(tf);
+		    
+		    CONST cn = new CONST(qf, q, tnull,null, HClass.Void);
+		    OPER op = new OPER(qf, q, Qop.ACMPEQ, tresultn,
+				       new Temp[]{ctmap.tempMap(((CALL)q).retval()), tnull});
+		    CJMP cjmp1=new CJMP(qf,q, tresultn, new Temp[0]);
+		    PHI phia=new PHI(qf, q, new Temp[0],2);
+
+		    INSTANCEOF io = new INSTANCEOF (qf, q,
+						    tresult, 
+						    ctmap.tempMap(q.retval()),
+						    ((CALL)q).method().getReturnType());
+		    CJMP cjmpa=new CJMP(qf, q, tresult, new Temp[0]);
+		    
+		    //String of quads
+		    Quad.addEdges(new Quad[] {get2, cn, op, cjmp1, io, cjmpa});
+		    //Okay cases...
+		    Quad.addEdge(cjmp1,1,phia,0);
+		    Quad.addEdge(cjmpa, 1, phia, 1);
+
+		    //Build Exception Thrower
+		    HClass HCex=linker.forName("java.lang.ClassCastException");
+		    Temp tex=new Temp(tf), tex2=new Temp(tf), tex3=new Temp(tf);
+		    NEW nquad=new NEW(qf, q, tex,
+				      HCex);
+		    Temp t1ex=new Temp(tf),t2=new Temp(tf);
+		    CALL calla=new CALL(qf, q, HCex.getConstructor(new HClass[0]),
+				       new Temp[]{tex}, null, tex2, false, false,
+				       new Temp[][] {{t1ex,t2}},new Temp[] {tex});
+		    PHI phi2=new PHI(qf, q, new Temp[] {tex3}, new Temp[][]{{t1ex,tex2}},2);
+		    THROW qthrow=new THROW(qf, q, tex3);
+		    
+		    Quad.addEdge(cjmpa,0,nquad,0);
+		    Quad.addEdges(new Quad[] {nquad,calla, phi2,qthrow});
+		    Quad.addEdge(calla,1,phi2,1);
+		    linkFooters.add(qthrow);
+		} 
+
 	    } else {
 		NOP nop=new NOP(qf,q);
 		Quad.addEdge(cjmp,1,nop,0);
