@@ -1,6 +1,7 @@
 #!/bin/sh
 RUNTIME=~/Harpoon/Runtime
-make -C $RUNTIME/arch/arm32 CPPFLAGS="-P -DDEBUG -I${RUNTIME}/include" header.s footer.s lookup.s native.s dispatch.s stinit.s
+#DEBUG=-DDEBUG
+make -C $RUNTIME/arch/arm32 CPPFLAGS="-P $DEBUG -I${RUNTIME}/include" header.s footer.s lookup.s native.s dispatch.s stinit.s
 mv  ~/Harpoon/Runtime/arch/arm32/header.s \
     ~/Harpoon/Runtime/arch/arm32/footer.s \
     ~/Harpoon/Runtime/arch/arm32/lookup.s \
