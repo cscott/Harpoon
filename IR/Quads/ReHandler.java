@@ -32,7 +32,7 @@ import java.util.Set;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.16 1999-08-25 20:37:43 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.17 1999-08-25 21:41:40 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -365,7 +365,7 @@ final class ReHandler {
     static void visitanalyze(WorkSet todo, TypeVisitor visitor) {
 	while(!todo.isEmpty()) {
 		Quad next=(Quad)todo.pop();
-		System.out.println(next.toString());
+		//System.out.println(next.toString());
 		next.visit(visitor);
 	}
     }
@@ -403,12 +403,12 @@ final class ReHandler {
 	    v.reset();
 	    ptr.visit(v);
 	    while (v.more()&&(!qm.contains(ptr))) {
-		System.out.println("**"+v.more());
-		System.out.println("Visiting:" +ptr.toString());
+		//System.out.println("**"+v.more());
+		//System.out.println("Visiting:" +ptr.toString());
 		qm.add(ptr);
 		ptr = ptr.next(0);
 		ptr.visit(v);
-		System.out.println(v.more());
+		//System.out.println(v.more());
 	    }
 	}
     }
@@ -662,9 +662,9 @@ final class ReHandler {
 
 	public void visit(CONST q) {
 	    if (q.value()==null) {
-		System.out.println("C:1");
+		//System.out.println("C:1");
 		if (ud.useMap(code,q.dst()).length==1) {
-		    System.out.println("C:2");
+		    //System.out.println("C:2");
 		    nullset.add(q.dst());
 		    standard(q);
 		} else weird(q);
@@ -676,7 +676,7 @@ final class ReHandler {
 	    if ((ud.useMap(code,dest).length==1)&&(callquad!=null)) {
 		//make sure it is only used once
 		if (remap(q.src())==callquad.retex()) {
-		    System.out.println("***instanceof");
+		    //System.out.println("***instanceof");
 		    callmap.put(q.dst(),q.hclass());
 		    standard(q);
 		}
