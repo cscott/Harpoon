@@ -17,7 +17,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.14 1998-08-08 12:26:43 cananian Exp $
+ * @version $Id: HMethod.java,v 1.15 1998-08-24 22:47:42 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -218,6 +218,11 @@ public class HMethod implements HMember {
    */
   public boolean isSynthetic() {
     return (synthetic!=null); /*it's synthetic if we found a Synthetic attrib*/
+  }
+
+  /** Determines whether this <code>HMethod</code> is an interface method. */
+  public boolean isInterfaceMethod() {
+    return hclass.isInterface();
   }
 
   /**
