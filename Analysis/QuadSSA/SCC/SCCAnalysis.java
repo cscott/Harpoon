@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.6 1998-09-23 23:14:42 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.7 1998-09-23 23:57:45 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -74,7 +74,25 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	if (v instanceof xConstant) return ((xConstant)v).constValue();
 	throw new Error(t.toString() + " not a constant");
     }
-    
+
+    /** Determine the positive bit width of <code>Temp t</code> in
+     *  <code>HMethod m</code>.
+     */
+    public int plusWidthMap(HCode hc, Temp t) {
+	analyze(hc); LatticeVal v = (LatticeVal) V.get(t);
+	if (v==null) throw new Error("Unknown "+t);
+	xBitWidth bw = extractWidth(v);
+	return bw.plusWidth();
+    }
+    /** Determine the negative bit width of <code>Temp t</code> in
+     *  <code>HMethod m</code>.
+     */
+    public int minusWidthMap(HCode hc, Temp t) {
+	analyze(hc); LatticeVal v = (LatticeVal) V.get(t);
+	if (v==null) throw new Error("Unknown "+t);
+	xBitWidth bw = extractWidth(v);
+	return bw.minusWidth();
+    }
 
     /*---------------------------*/
     // Analysis code.
@@ -632,6 +650,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		// zero plus zero is always zero, but other numbers grow.
 		if (m > 0) m++;
 		if (p > 0) p++;
+		// XXX special case 0+x: x doesn't grow.
 		raiseV(V, Wv, q.dst, new xBitWidth(q.evalType(), m, p) );
 	    }
 	    public void visit_iadd(OPER q) { visit_add(q); }
