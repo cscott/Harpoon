@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.28 2001-07-25 19:18:51 kkz Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.29 2001-07-30 13:20:54 kkz Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -86,7 +86,7 @@ public class DataClaz extends Data {
 	    (hc==HClass.Short||hc==HClass.Char) ? 2 : 1;
 	stmlist.add(_DATUM(new CONST(tf, null, size)));
 	// bitmap for gc or pointer to bitmap
-      	stmlist.add(gc(f, ch));
+      	stmlist.add(gc(f, hc));
 	// class depth.
 	int depth = m_tb.cdm.classDepth(hc);
 	stmlist.add(_DATUM(new CONST(tf, null, m_tb.POINTER_SIZE * depth)));
@@ -104,14 +104,14 @@ public class DataClaz extends Data {
     final int BITS_IN_GC_BITMAP;
 
     /** Make gc bitmap or pointer to bitmap. */
-    private Stm gc(Frame f, ClassHierarchy ch) {
+    private Stm gc(Frame f, HClass hc) {
 	// use object size (w/ header) to determine how many bits we need (round up)
 	int bitsNeeded = (m_tb.objectSize(hc) + m_tb.OBJECT_HEADER_SIZE + m_tb.POINTER_SIZE - 1)/m_tb.POINTER_SIZE;
 	// for arrays we keep an extra bit for the array elements
 	if (hc.isArray())
 	    bitsNeeded++;
 	if (bitsNeeded > BITS_IN_GC_BITMAP) { // auxiliary table for large objects
-	    return gcaux(f, ch, bitsNeeded);
+	    return gcaux(f, hc, bitsNeeded);
 	} else { // in-line bitmap for small objects
 	    final List fields = m_tb.cfm.fieldList(hc);
 	    long bitmap = 0;
@@ -138,94 +138,73 @@ public class DataClaz extends Data {
 	    // write out in-line bitmap
 	    final List stmlist = new ArrayList();
 	    if (f.pointersAreLong()) {
-		//System.out.println("Compact: " + Long.toBinaryString(bitmap));
 		stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
 	    } else {
 		stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
-		//System.out.println("Compact: " + 
-		//		   Integer.toBinaryString((int)bitmap));
 	    }
 	    return Stm.toStm(stmlist);
 	}
     }
     // Make auxiliary gc bitmap
-    private Stm gcaux(Frame f, ClassHierarchy ch, int bitsNeeded) {
-	List stmlist = new ArrayList();
-	// large object, encoded in auxiliary table
-	stmlist.add(_DATUM(m_nm.label(hc, "gc_aux")));
-	// switch to GC segment
-	stmlist.add(new SEGMENT(tf, null, SEGMENT.GC));
-	// align things on word boundary.
-	stmlist.add(new ALIGN(tf, null, 4));
-	stmlist.add(new LABEL(tf, null, m_nm.label(hc, "gc_aux"), true));
-	final List fields = m_tb.cfm.fieldList(hc);
-	long bitmap = 0;
-	int numBitmaps = 0; // keep track of number of bitmaps created
-	boolean atomic = true;
-	for (Iterator it = fields.iterator(); it.hasNext(); ) {
-	    HField hf = (HField)it.next();
-	    final int fo = m_tb.cfm.fieldOffset(hf) + m_tb.OBJECT_HEADER_SIZE;
-	    final int bitPosition = fo/m_tb.POINTER_SIZE;
-	    Util.assert(numBitmaps <= bitPosition/BITS_IN_GC_BITMAP);
-	    final HClass type = hf.getType();
-	    // unaligned fields should never contain pointers
-	    if (fo%m_tb.POINTER_SIZE != 0)  {
-		Util.assert(type.isPrimitive());
-		continue;
-	    }
-	    // write out completed bitmaps
-	    while(numBitmaps < bitPosition/BITS_IN_GC_BITMAP) {
-		if (bitmap != 0) atomic = false;
-		if (f.pointersAreLong()) {
-		    //System.out.println("Aux: " + 
-		    //		       Long.toBinaryString(bitmap));
-		    stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
-		} else {
-		    //System.out.println("Aux: " + 
-		    //		       Integer.toBinaryString((int)bitmap));
-		    stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
-		}
-		bitmap = 0; numBitmaps++; // clear bitmap
-	    }
-	    if (!type.isPrimitive()) {
-		final int bp = bitPosition%BITS_IN_GC_BITMAP;
-		Util.assert(bp >= 0 && bp < BITS_IN_GC_BITMAP);
-		bitmap |= (1 << bp);
-	    }
-	}
-	// write out remaining bitmaps
+    private Stm gcaux(Frame f, HClass hc, int bitsNeeded) {
+	// calculate how many bitmaps we need
 	final int bitmapsNeeded = (bitsNeeded + BITS_IN_GC_BITMAP - 1)/BITS_IN_GC_BITMAP;
-	while(numBitmaps < bitmapsNeeded) {
-	    // use last bit of bitmap for array elements
-	    if ((numBitmaps == (bitmapsNeeded - 1)) && hc.isArray() && 
-		!hc.getComponentType().isPrimitive())
-		bitmap |= (1 << ((bitsNeeded - 1)%BITS_IN_GC_BITMAP));
-	    if (bitmap != 0) atomic = false;
-	    if (f.pointersAreLong()) {
-		//System.out.println("Aux: " + 
-		//		   Long.toBinaryString(bitmap));
-		stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
-	    } else {
-		//System.out.println("Aux: " + 
-		//		   Integer.toBinaryString((int)bitmap));
-		stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
+	// create an array containing the needed bitmaps
+	final long bitmaps[] = new long[bitmapsNeeded];
+	// iterate through the fields
+	final List fields = m_tb.cfm.fieldList(hc);
+	for (Iterator it = fields.iterator(); it.hasNext(); ) {
+	    final HField hf = (HField)it.next();
+	    final HClass type =  hf.getType();
+	    if (!type.isPrimitive()) {
+		final int fo = m_tb.cfm.fieldOffset(hf) + m_tb.OBJECT_HEADER_SIZE;
+		// non-primitive fields contain pointers and should be aligned
+		Util.assert(fo%m_tb.POINTER_SIZE == 0);
+		// calculate the bit position corresponding to this field
+		final int bp = fo/m_tb.POINTER_SIZE;
+		Util.assert(bp < bitsNeeded);
+		bitmaps[bp/BITS_IN_GC_BITMAP] |= (1 << (bp%BITS_IN_GC_BITMAP));
 	    }
-	    bitmap = 0; numBitmaps++; // clear bitmap
 	}
-	// if there are no pointers in the object, forget all the
-	// bitmaps we generated and put a null in the in-line bitmap
+	// handle arrays
+	if (hc.isArray() && !hc.getComponentType().isPrimitive())
+	    bitmaps[bitmapsNeeded-1] |= (1 << ((bitsNeeded - 1)%BITS_IN_GC_BITMAP));
+	// check whether there are any pointers
+	boolean atomic = true;
+	for (int i = 0; i < bitmapsNeeded; i++) {
+	    if (bitmaps[i] != 0) {
+		atomic = false;
+		break;
+	    }
+	}
+	final List stmlist = new ArrayList();
 	if (atomic) {
-	    stmlist = new ArrayList();
+	    // write NULL to the in-line bitmap to indicate no pointers
 	    if (f.pointersAreLong())
 		stmlist.add(_DATUM(new CONST(tf, null, (long)0)));
 	    else
 		stmlist.add(_DATUM(new CONST(tf, null, (int)0)));
-	    return Stm.toStm(stmlist);
+	} else {
+	    // large object, encoded in auxiliary table
+	    stmlist.add(_DATUM(m_nm.label(hc, "gc_aux")));
+	    // switch to GC segment
+	    stmlist.add(new SEGMENT(tf, null, SEGMENT.GC));
+	    // align things on word boundary.
+	    stmlist.add(new ALIGN(tf, null, 4));
+	    stmlist.add(new LABEL(tf, null, m_nm.label(hc, "gc_aux"), true));
+	    // write out the bitmaps
+	    if (f.pointersAreLong()) {
+		for (int i = 0; i < bitmapsNeeded; i++)
+		    stmlist.add(_DATUM(new CONST(tf, null, bitmaps[i])));
+	    } else {
+		for (int i = 0; i < bitmapsNeeded; i++)
+		    stmlist.add(_DATUM(new CONST(tf, null, (int)bitmaps[i])));
+	    }
+	    // switch back to CLASS segment
+	    stmlist.add(new SEGMENT(tf, null, SEGMENT.CLASS));
+	    // align things on word boundary.
+	    stmlist.add(new ALIGN(tf, null, 4));
 	}
-	// switch back to CLASS segment
-	stmlist.add(new SEGMENT(tf, null, SEGMENT.CLASS));
-	// align things on word boundary.
-	stmlist.add(new ALIGN(tf, null, 4));
 	return Stm.toStm(stmlist);
     }
 
