@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.27 1998-10-16 11:15:38 cananian Exp $
+ * @version $Id: HMethod.java,v 1.28 1998-10-16 11:42:57 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -28,12 +28,9 @@ public abstract class HMethod implements HMember {
   HClass[] exceptionTypes;
   boolean isSynthetic;
 
-  /** Subclass must provide implementation. */
-  protected HMethod() { /* no implementation */ }
-  
   /** Make a unique method name from a given suggestion. */
-  protected static String uniqueName(HClass parent, 
-				     String suggestion, String descriptor) 
+  static String uniqueName(HClass parent, 
+			   String suggestion, String descriptor) 
   {
     if (suggestion==null || suggestion.equals("")) suggestion="MAGICm";
     // remove trailing dollar-signs.

@@ -10,13 +10,13 @@ import java.lang.reflect.Modifier;
  * constructor for a class.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructor.java,v 1.7 1998-10-16 06:21:03 cananian Exp $
+ * @version $Id: HConstructor.java,v 1.8 1998-10-16 11:42:57 cananian Exp $
  * @see HMethod
  * @see HMember
  * @see HClass
  */
 public abstract class HConstructor extends HMethod {
-
+  HConstructor() { name="<init>"; returnType=HClass.Void; }
   /**
    * Returns the name of this constructor, as a string.  This is always
    * the string "<code>&lt;init&gt;</code>".

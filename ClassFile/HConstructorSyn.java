@@ -8,55 +8,58 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 /**
- * An <code>HConstructorSyn</code> provides information about, and access to, a 
- * single method on a class or interface.  The reflected method
- * may be a class method or an instance method (including an abstract
- * method).
+ * An <code>HConstructorSyn</code> is a mutable representation of a
+ * single constructor for a class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructorSyn.java,v 1.1 1998-10-16 07:30:52 cananian Exp $
+ * @version $Id: HConstructorSyn.java,v 1.2 1998-10-16 11:42:57 cananian Exp $
  * @see HMember
  * @see HClass
  */
 public class HConstructorSyn extends HMethod {
 
   /** Create a new method based on a template. */
-  public HConstructorSyn(HMethod template) {
+  public HConstructorSyn(HConstructor template) {
     this.parent = template.getDeclaringClass();
-    this.name = template.getName();
-    // XXX ensure uniqueness.
+    //this.name = template.getName(); // superclass inits.
+    // XXX ensure uniqueness (parameter types?)
     this.modifiers = template.getModifiers();
-    this.returnType = template.getReturnType();
+    //this.returnType = template.getReturnType(); // superclass inits.
     this.parameterTypes = template.getParameterTypes();
     this.parameterNames = template.getParameterNames();
     this.exceptionTypes = template.getExceptionTypes();
     this.isSynthetic = template.isSynthetic();
+    ((HClassSyn)parent).addDeclaredMethod(this);
   }
-  /** Create a new empty abstract method, that takes no parameters, returns
-   *  <code>void</code>, and throws no checked exceptions.
-   *  Adding code to the method will make it non-abstract.
+  /** Create a new empty constructor for the specified class
+   *  with the specified descriptor that
+   *  throws no checked exceptions.
+   *  You must putCode to make this constructor valid.
    */
-  public HConstructorSyn(HClass parent, String name) {
+  public HConstructorSyn(HClass parent, String descriptor) {
     this.parent = parent;
-    this.name = name;
-    // XXX ensure uniqueness.
-    this.modifiers = Modifier.ABSTRACT;
-    this.returnType = HClass.Void;
-    this.parameterTypes = new HClass[0];
-    this.parameterNames = new String[0];
+    //this.name = name; // superclass inits.
+    // XXX ensure uniqueness?
+    this.modifiers = 0;
+    //this.returnType = HClass.Void; // superclass inits.
+    { // parse descriptor for parameter types.
+      String desc = descriptor.substring(1, descriptor.lastIndexOf(')'));
+      Vector v = new Vector();
+      for (int i=0; i<desc.length(); i++) {
+	v.addElement(HClass.forDescriptor(desc.substring(i)));
+	while (desc.charAt(i)=='[') i++;
+	if (desc.charAt(i)=='L') i=desc.indexOf(';', i);
+      }
+      this.parameterTypes = new HClass[v.size()];
+      v.copyInto(this.parameterTypes);
+    }
+    this.parameterNames = new String[parameterTypes.length];
     this.exceptionTypes = new HClass[0];
     this.isSynthetic = false;
+    ((HClassSyn)parent).addDeclaredMethod(this);
   }
 
-  /* IMMUTABLE.
-  public void setDeclaringClass(HClass parent) { this.parent = parent; }
-
-  public void setName(String name) { this.name = name; }
-  */
-
   public void setModifiers(int m) { this.modifiers = m; }
-
-  public void setReturnType(HClass returnType) { this.returnType = returnType;}
 
   public void setParameterTypes(HClass[] parameterTypes) {
     this.parameterTypes = parameterTypes;

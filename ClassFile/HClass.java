@@ -28,14 +28,14 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.37 1998-10-16 11:15:38 cananian Exp $
+ * @version $Id: HClass.java,v 1.38 1998-10-16 11:42:57 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public abstract class HClass {
   static Hashtable dsc2cls = new Hashtable();
 
   /** Make a unique class name from a given suggestion. */
-  protected static String uniqueName(String suggestion) {
+  static String uniqueName(String suggestion) {
     if (suggestion==null || suggestion.equals("")) suggestion="MAGICc";
     // remove trailing dollar-signs.
     while (suggestion.charAt(suggestion.length()-1)=='$')
@@ -178,7 +178,7 @@ public abstract class HClass {
     return forName(cls.getName());
   }
 
-  protected void register() { dsc2cls.put(getDescriptor(), this); }
+  void register() { dsc2cls.put(getDescriptor(), this); }
 
   /**
    * If this class represents an array type, returns the <code>HClass</code>
@@ -306,11 +306,11 @@ public abstract class HClass {
     }
     return HField.copy(fields);
   }
-  protected HField[] fields=null;
+  HField[] fields=null;
   /* does the actual work.  Because of permissions issues, it's important
    * to know which class is asking for the fields listing.
    */
-  protected HField[] getFields(HClass frmClass) {
+  HField[] getFields(HClass frmClass) {
     String frmPackage = frmClass.getPackage();
     UniqueVector v = new UniqueVector();
     // add fields from interfaces.
@@ -500,11 +500,11 @@ public abstract class HClass {
     }
     return HMethod.copy(methods);
   }
-  protected HMethod[] methods=null;
+  HMethod[] methods=null;
   /* does the actual work.  Because of permissions issues, it's important
    * to know which class is asking for the methods listing.
    */
-  protected HMethod[] getMethods(HClass frmClass) {
+  HMethod[] getMethods(HClass frmClass) {
     String frmPackage = frmClass.getPackage();
     UniqueVector v = new UniqueVector();
     // can ignore methods from interfaces (they'll be declared methods)
@@ -581,7 +581,7 @@ public abstract class HClass {
     }
     return HConstructor.copy(constructors);
   }
-  protected HConstructor[] constructors = null;
+  HConstructor[] constructors = null;
 
   /**
    * Returns the class initializer method, if there is one; otherwise

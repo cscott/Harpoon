@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.3 1998-10-16 11:15:38 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.4 1998-10-16 11:42:57 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class HClassSyn extends HClassCls {
@@ -46,28 +46,34 @@ public class HClassSyn extends HClassCls {
    * Adds the given <code>HField</code> to the class represented by
    * this <code>HClassSyn</code>.
    */
-  public void addDeclaredField(HFieldSyn f) {
+  public void addDeclaredField(HField f) {
     declaredFields = 
       (HField[]) Util.grow(declaredFields, f, declaredFields.length);
+    fields=null; // invalidate cache.
   }
   public void removeDeclaredField(HField f) throws NoSuchFieldError {
     for (int i=0; i<declaredFields.length; i++) {
       if (declaredFields[i].equals(f)) {
 	declaredFields = (HField[]) Util.shrink(declaredFields, i);
+	fields=null; // invalidate cache.
 	return;
       }
     }
     throw new NoSuchFieldError(f.toString());
   }
 
-  public void addDeclaredMethod(HMethodSyn m) {
+  public void addDeclaredMethod(HMethod m) {
     declaredMethods = 
       (HMethod[]) Util.grow(declaredMethods, m, declaredMethods.length);
+    methods=null; // invalidate cache.
+    constructors=null;
   }
   public void removeDeclaredMethod(HMethod m) throws NoSuchMethodError {
     for (int i=0; i<declaredMethods.length; i++) {
       if (declaredMethods[i].equals(m)) {
 	declaredMethods = (HMethod[]) Util.shrink(declaredMethods, i);
+	methods=null; // invalidate cache.
+	constructors=null;
 	return;
       }
     }
