@@ -1,0 +1,19 @@
+The requirement that something be in the class-root is that someone
+does an 'instanceof' or 'FindClass' operation on the class 
+*in native code*.  If it is in java bytecode, then it is a bug in
+the QuadClassHierarchy that it didn't find the class.  If someone
+does create a new *instance* of the object *in native code* then
+the *constructor* which is invoked belongs in the *method roots*.
+One way or another, the entry should have a comment indicating why
+the class or method is a root --- where it is called, etc.
+- cananian@lm.lcs.mit.edu
+
+Jikes, however, generates 
+Class.forName("[Ljava.lang.ClassLoader;").getComponentType()
+when it encounters ClassLoader.class whereas javac generates
+Class.forName("java.lang.ClassLoader;")
+
+Since Class.forName doesn't create an instance, and getComponentType()
+is called on it, the requirement is that the class be compiled, but not
+necessarily <init>.  Thus, it does belong in class-root.
+- wbeebee@mit.edu
