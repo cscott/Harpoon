@@ -25,6 +25,7 @@ public class RepairGenerator {
     static boolean DEBUG=false;
     Cost cost;
     Sources sources;
+    ModelRuleDependence mrd;
 
     public RepairGenerator(State state, Termination t) {
         this.state = state;
@@ -38,6 +39,7 @@ public class RepairGenerator {
         GraphNode.computeclosure(togenerate,removed);
 	cost=new Cost();
 	sources=new Sources(state);
+	mrd=ModelRuleDependence.doAnalysis(state);
 	Repair.repairgenerator=this;
     }
 
@@ -82,7 +84,7 @@ public class RepairGenerator {
         generate_hashtables();
 	generate_stateobject();
 	generate_call();
-	generate_worklist();
+	generate_start();
         generate_rules();
         generate_checks();
         generate_teardown();
@@ -399,7 +401,7 @@ public class RepairGenerator {
         craux.outputline("}");
     }
 
-    private void generate_worklist() {
+    private void generate_start() {
         CodeWriter crhead = new StandardCodeWriter(outputhead);
         CodeWriter craux = new StandardCodeWriter(outputaux);
 	oldmodel=VarDescriptor.makeNew("oldmodel");
@@ -420,7 +422,6 @@ public class RepairGenerator {
 	craux.outputline("RepairHash * "+repairtable.getSafeSymbol()+"=0;");
 	craux.outputline("while (1)");
 	craux.startblock();
-	craux.outputline("int "+goodflag.getSafeSymbol()+"=1;");
 	craux.outputline(name+ " * "+newmodel.getSafeSymbol()+"=new "+name+"();");
     }
     
@@ -429,156 +430,145 @@ public class RepairGenerator {
 	cr.endblock();
     }
 
+    Set ruleset=null;
     private void generate_rules() {
 	/* first we must sort the rules */
-        Iterator allrules = state.vRules.iterator();
-        Vector emptyrules = new Vector(); // rules with no quantifiers
-        Vector worklistrules = new Vector(); // the rest of the rules
 	RelationDescriptor.prefix = newmodel.getSafeSymbol()+"->";
 	SetDescriptor.prefix = newmodel.getSafeSymbol()+"->";
-
-        while (allrules.hasNext()) {
-            Rule rule = (Rule) allrules.next();
-            ListIterator quantifiers = rule.quantifiers();
-            boolean noquantifiers = true;
-            while (quantifiers.hasNext()) {
-                Quantifier quantifier = (Quantifier) quantifiers.next();
-                if (quantifier instanceof ForQuantifier) {
-                    // ok, because integers exist already!
-                } else {
-                    // real quantifier
-                    noquantifiers = false;
-                    break;
-                }
-            }
-            if (noquantifiers) {
-                emptyrules.add(rule);
-            } else {
-                worklistrules.add(rule);
-            }
-        }
-       
-        Iterator iterator_er = emptyrules.iterator();
-        while (iterator_er.hasNext()) {
-            Rule rule = (Rule) iterator_er.next();
-            {
-                final SymbolTable st = rule.getSymbolTable();                
-                CodeWriter cr = new StandardCodeWriter(outputaux) {
-                        public SymbolTable getSymbolTable() { return st; }
-                    };
-		cr.outputline("// build " +escape(rule.toString()));
-                cr.startblock();
-		cr.outputline("int maybe=0;");
-                ListIterator quantifiers = rule.quantifiers();
-                while (quantifiers.hasNext()) {
-                    Quantifier quantifier = (Quantifier) quantifiers.next();
-                    quantifier.generate_open(cr);
-                }
-
-                /* pretty print! */
-                cr.output("//");
-                rule.getGuardExpr().prettyPrint(cr);
-                cr.outputline("");
-
-                /* now we have to generate the guard test */
-		VarDescriptor guardval = VarDescriptor.makeNew();
-                rule.getGuardExpr().generate(cr, guardval);
-		cr.outputline("if (" + guardval.getSafeSymbol() + ")");
-                cr.startblock();
-
-                /* now we have to generate the inclusion code */
-		currentrule=rule;
-                rule.getInclusion().generate(cr);
-                cr.endblock();
-                while (quantifiers.hasPrevious()) {
-                    Quantifier quantifier = (Quantifier) quantifiers.previous();
-                    cr.endblock();
-                }
-                cr.endblock();
-                cr.outputline("");
-                cr.outputline("");
-            }
-        }
-
-        CodeWriter cr2 = new StandardCodeWriter(outputaux);        
-
-        cr2.outputline("while ("+goodflag.getSafeSymbol()+"&&"+worklist.getSafeSymbol()+"->hasMoreElements())");
-        cr2.startblock();
-	VarDescriptor idvar=VarDescriptor.makeNew("id");
-        cr2.outputline("int "+idvar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->getid();");
-        
-        String elseladder = "if";
-
-        Iterator iterator_rules = worklistrules.iterator();
-        while (iterator_rules.hasNext()) {
-
-            Rule rule = (Rule) iterator_rules.next();
-            int dispatchid = rule.getNum();
-
-            {
-                final SymbolTable st = rule.getSymbolTable();
-                CodeWriter cr = new StandardCodeWriter(outputaux) {
-                        public SymbolTable getSymbolTable() { return st; }
-                    };
-
-                cr.indent();
-                cr.outputline(elseladder + " ("+idvar.getSafeSymbol()+" == " + dispatchid + ")");
-                cr.startblock();
-		cr.outputline("int maybe=0;");
-		VarDescriptor typevar=VarDescriptor.makeNew("type");
-		VarDescriptor leftvar=VarDescriptor.makeNew("left");
-		VarDescriptor rightvar=VarDescriptor.makeNew("right");
-		cr.outputline("int "+typevar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->gettype();");
-		cr.outputline("int "+leftvar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->getlvalue();");
-		cr.outputline("int "+rightvar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->getrvalue();");
-		cr.outputline("// build " +escape(rule.toString()));
-
-
-		for (int j=0;j<rule.numQuantifiers();j++) {
-		    Quantifier quantifier = rule.getQuantifier(j);
-		    quantifier.generate_open(cr, typevar.getSafeSymbol(),j,leftvar.getSafeSymbol(),rightvar.getSafeSymbol());
+	System.out.println("SCC="+(mrd.numSCC()-1));
+	for(int sccindex=0;sccindex<mrd.numSCC();sccindex++) {
+	    ruleset=mrd.getSCC(sccindex);
+	    boolean needworklist=mrd.hasCycle(sccindex);
+	    
+	    if (!needworklist) {
+		Iterator iterator_rs = ruleset.iterator();
+		while (iterator_rs.hasNext()) {
+		    Rule rule = (Rule) iterator_rs.next();
+		    {
+			final SymbolTable st = rule.getSymbolTable();
+			CodeWriter cr = new StandardCodeWriter(outputaux) {
+				public SymbolTable getSymbolTable() { return st; }
+			    };
+			cr.outputline("// build " +escape(rule.toString()));
+			cr.startblock();
+			cr.outputline("int maybe=0;");
+			ListIterator quantifiers = rule.quantifiers();
+			while (quantifiers.hasNext()) {
+			    Quantifier quantifier = (Quantifier) quantifiers.next();
+			    quantifier.generate_open(cr);
+			}
+			
+			/* pretty print! */
+			cr.output("//");
+			rule.getGuardExpr().prettyPrint(cr);
+			cr.outputline("");
+			
+			/* now we have to generate the guard test */
+			VarDescriptor guardval = VarDescriptor.makeNew();
+			rule.getGuardExpr().generate(cr, guardval);
+			cr.outputline("if (" + guardval.getSafeSymbol() + ")");
+			cr.startblock();
+			
+			/* now we have to generate the inclusion code */
+			currentrule=rule;
+			rule.getInclusion().generate(cr);
+			cr.endblock();
+			while (quantifiers.hasPrevious()) {
+			    Quantifier quantifier = (Quantifier) quantifiers.previous();
+			    cr.endblock();
+			}
+			cr.endblock();
+			cr.outputline("");
+			cr.outputline("");
+		    }
+		}
+	    } else {
+		CodeWriter cr2 = new StandardCodeWriter(outputaux);
+		
+		for(Iterator initialworklist=ruleset.iterator();initialworklist.hasNext();) {
+		    /** Construct initial worklist set */
+		    Rule rule=(Rule)initialworklist.next();
+		    cr2.outputline(worklist.getSafeSymbol()+"->add("+rule.getNum()+",-1,0,0);");
 		}
 
-                /* pretty print! */
-                cr.output("//");
+		cr2.outputline("while ("+worklist.getSafeSymbol()+"->hasMoreElements())");
+		cr2.startblock();
+		VarDescriptor idvar=VarDescriptor.makeNew("id");
+		cr2.outputline("int "+idvar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->getid();");
+		
+		String elseladder = "if";
+		
+		Iterator iterator_rules = ruleset.iterator();
+		while (iterator_rules.hasNext()) {
+		    
+		    Rule rule = (Rule) iterator_rules.next();
+		    int dispatchid = rule.getNum();
+		    
+		    {
+			final SymbolTable st = rule.getSymbolTable();
+			CodeWriter cr = new StandardCodeWriter(outputaux) {
+				public SymbolTable getSymbolTable() { return st; }
+			    };
+			
+			cr.indent();
+			cr.outputline(elseladder + " ("+idvar.getSafeSymbol()+" == " + dispatchid + ")");
+			cr.startblock();
+			cr.outputline("int maybe=0;");
+			VarDescriptor typevar=VarDescriptor.makeNew("type");
+			VarDescriptor leftvar=VarDescriptor.makeNew("left");
+			VarDescriptor rightvar=VarDescriptor.makeNew("right");
+			cr.outputline("int "+typevar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->gettype();");
+			cr.outputline("int "+leftvar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->getlvalue();");
+			cr.outputline("int "+rightvar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->getrvalue();");
+			cr.outputline("// build " +escape(rule.toString()));
+			
+			
+			for (int j=0;j<rule.numQuantifiers();j++) {
+			    Quantifier quantifier = rule.getQuantifier(j);
+			    quantifier.generate_open(cr, typevar.getSafeSymbol(),j,leftvar.getSafeSymbol(),rightvar.getSafeSymbol());
+			}
+			
+			/* pretty print! */
+			cr.output("//");
+			
+			rule.getGuardExpr().prettyPrint(cr);
+			cr.outputline("");
 
-                rule.getGuardExpr().prettyPrint(cr);
-                cr.outputline("");
-
-                /* now we have to generate the guard test */
+			/* now we have to generate the guard test */
         
-                VarDescriptor guardval = VarDescriptor.makeNew();
-                rule.getGuardExpr().generate(cr, guardval);
-                
-                cr.outputline("if (" + guardval.getSafeSymbol() + ")");
-                cr.startblock();
+			VarDescriptor guardval = VarDescriptor.makeNew();
+			rule.getGuardExpr().generate(cr, guardval);
+			
+			cr.outputline("if (" + guardval.getSafeSymbol() + ")");
+			cr.startblock();
 
-                /* now we have to generate the inclusion code */
-		currentrule=rule;
-                rule.getInclusion().generate(cr);
-                cr.endblock();
+			/* now we have to generate the inclusion code */
+			currentrule=rule;
+			rule.getInclusion().generate(cr);
+			cr.endblock();
+			
+			for (int j=0;j<rule.numQuantifiers();j++) {
+			    cr.endblock();
+			}
 
-		for (int j=0;j<rule.numQuantifiers();j++) {
-		    cr.endblock();
+			// close startblocks generated by DotExpr memory checks
+			//DotExpr.generate_memory_endblocks(cr);
+
+			cr.endblock(); // end else-if WORKLIST ladder
+			
+			elseladder = "else if";
+		    }
 		}
-
-                // close startblocks generated by DotExpr memory checks
-                //DotExpr.generate_memory_endblocks(cr);
-
-                cr.endblock(); // end else-if WORKLIST ladder
-
-                elseladder = "else if";
-            }
-        }
-
-        cr2.outputline("else");
-        cr2.startblock();
-        cr2.outputline("printf(\"VERY BAD !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\\n\\n\");");
-        cr2.outputline("exit(1);");
-        cr2.endblock();
-        // end block created for worklist
-	cr2.outputline(worklist.getSafeSymbol()+"->pop();");
-        cr2.endblock();
+		cr2.outputline("else");
+		cr2.startblock();
+		cr2.outputline("printf(\"VERY BAD !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\\n\\n\");");
+		cr2.outputline("exit(1);");
+		cr2.endblock();
+		// end block created for worklist
+		cr2.outputline(worklist.getSafeSymbol()+"->pop();");
+		cr2.endblock();
+	    }
+	}
     }
 
     public static String escape(String s) {
@@ -727,7 +717,6 @@ public class RepairGenerator {
 		}
 		cr.outputline("}");
 
-		cr.outputline(goodflag.getSafeSymbol()+"=0;");
 		cr.outputline("if ("+oldmodel.getSafeSymbol()+")");
 		cr.outputline("delete "+oldmodel.getSafeSymbol()+";");
 		cr.outputline(oldmodel.getSafeSymbol()+"="+newmodel.getSafeSymbol()+";");
@@ -745,7 +734,6 @@ public class RepairGenerator {
             }
         }
 	CodeWriter cr = new StandardCodeWriter(outputaux);
-	cr.outputline("if ("+goodflag.getSafeSymbol()+")");
 	cr.startblock();
 	cr.outputline("if ("+repairtable.getSafeSymbol()+")");
 	cr.outputline("delete "+repairtable.getSafeSymbol()+";");
@@ -1184,8 +1172,6 @@ public class RepairGenerator {
 	}
     }
 
-
-
     public static Vector getrulelist(Descriptor d) {
         Vector dispatchrules = new Vector();
         Vector rules = State.currentState.vRules;
@@ -1286,8 +1272,7 @@ public class RepairGenerator {
 		}
 		methodcall+=");";
 		cr.outputline(methodcall);
-		cr.outputline(goodflag.getSafeSymbol()+"=0;");
-		cr.outputline("continue;");
+		cr.outputline("goto rebuild;");
 	    }
 	    cr.endblock();
 	    /* Build standard compensation actions */
@@ -1312,8 +1297,7 @@ public class RepairGenerator {
 		}
 		methodcall+=");";
 		cr.outputline(methodcall);
-		cr.outputline(goodflag.getSafeSymbol()+"=0;");
-		cr.outputline("continue;");
+		cr.outputline("goto rebuild;");
 	    }
 	}
 	cr.endblock();
@@ -1333,12 +1317,21 @@ public class RepairGenerator {
 
         Vector dispatchrules = getrulelist(rd);
         
+	Set toremove=new HashSet();
+	for(int i=0;i<dispatchrules.size();i++) {
+	    Rule r=(Rule)dispatchrules.get(i);
+	    if (!ruleset.contains(r))
+		toremove.add(r);
+	}
+	dispatchrules.removeAll(toremove);
         if (dispatchrules.size() == 0) {
             cr.outputline("// nothing to dispatch");
 	    cr.endblock();
             return;
         }
        
+	cr.outputline("if ("+addeditem+")");
+	cr.startblock();
         for(int i = 0; i < dispatchrules.size(); i++) {
             Rule rule = (Rule) dispatchrules.elementAt(i);
 	    if (rule.getGuardExpr().getRequiredDescriptors().contains(rd)) {
@@ -1354,6 +1347,7 @@ public class RepairGenerator {
 		}
 	    }
         }
+	cr.endblock();
 	cr.endblock();
     }
 
@@ -1399,8 +1393,7 @@ public class RepairGenerator {
 		}
 		methodcall+=");";
 		cr.outputline(methodcall);
-		cr.outputline(goodflag.getSafeSymbol()+"=0;");
-		cr.outputline("continue;");
+		cr.outputline("goto rebuild;");
 	    }
 	    cr.endblock();
 	    /* Build standard compensation actions */
@@ -1427,8 +1420,7 @@ public class RepairGenerator {
 		}
 		methodcall+=");";
 		cr.outputline(methodcall);
-		cr.outputline(goodflag.getSafeSymbol()+"=0;");
-		cr.outputline("continue;");
+		cr.outputline("goto rebuild;");
 	    }
 	}
 	cr.endblock();
@@ -1439,12 +1431,21 @@ public class RepairGenerator {
 	cr.startblock();
         Vector dispatchrules = getrulelist(sd);
 
+	Set toremove=new HashSet();
+	for(int i=0;i<dispatchrules.size();i++) {
+	    Rule r=(Rule)dispatchrules.get(i);
+	    if (!ruleset.contains(r))
+		toremove.add(r);
+	}
+	dispatchrules.removeAll(toremove);
+
         if (dispatchrules.size() == 0) {
             cr.outputline("// nothing to dispatch");
 	    cr.endblock();
             return;
         }
-
+	cr.outputline("if ("+addeditem+")");
+	cr.startblock();
         for(int i = 0; i < dispatchrules.size(); i++) {
             Rule rule = (Rule) dispatchrules.elementAt(i);
 	    if (SetDescriptor.expand(rule.getGuardExpr().getRequiredDescriptors()).contains(sd)) {
@@ -1460,6 +1461,8 @@ public class RepairGenerator {
 		}
 	    }
 	}
+
+	cr.endblock();
 	cr.endblock();
     }
 }
