@@ -3,29 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Generic;
 
-import harpoon.Temp.Temp;
-import harpoon.ClassFile.HCodeElement;
-import harpoon.ClassFile.HMethod;
-import harpoon.ClassFile.HCodeFactory;
-import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.Linker;
-import harpoon.IR.Assem.Instr;
-import harpoon.IR.Assem.InstrMEM;
-import harpoon.IR.Assem.InstrLABEL;
-import harpoon.IR.Assem.InstrFactory;
-import harpoon.IR.Tree.Exp;
-import harpoon.IR.Tree.Stm;
-import harpoon.IR.Tree.TreeFactory;
 import harpoon.Backend.Maps.OffsetMap;
-import harpoon.Temp.CloningTempMap;
-import harpoon.Temp.TempFactory;
-import harpoon.Util.ListFactory;
-
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Iterator;
 
 /**
  * A <code>Frame</code> encapsulates the machine-dependent information
@@ -38,7 +17,7 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.37 2000-01-13 23:47:37 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.38 2000-01-17 11:51:42 cananian Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {

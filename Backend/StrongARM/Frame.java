@@ -5,42 +5,10 @@ package harpoon.Backend.StrongARM;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.CallGraph;
-import harpoon.Backend.Maps.OffsetMap;
-import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
-import harpoon.IR.Assem.Instr;
-import harpoon.IR.Assem.InstrEdge;
-import harpoon.IR.Assem.InstrMEM;
-import harpoon.IR.Assem.InstrDIRECTIVE;
-import harpoon.IR.Assem.InstrLABEL;
-import harpoon.IR.Assem.InstrFactory;
-import harpoon.IR.Tree.Stm;
-import harpoon.IR.Tree.Exp;
-import harpoon.IR.Tree.CALL;
-import harpoon.IR.Tree.CONST;
-import harpoon.IR.Tree.MEM;
-import harpoon.IR.Tree.MOVE;
-import harpoon.IR.Tree.NAME;
-import harpoon.IR.Tree.SEQ;
-import harpoon.IR.Tree.TEMP;
-import harpoon.IR.Tree.Type;
-import harpoon.IR.Tree.TreeFactory;
-import harpoon.Temp.Temp;
-import harpoon.Temp.TempFactory;
-import harpoon.Temp.Label;
 import harpoon.Util.Util;
-import harpoon.Util.LinearSet;
-import harpoon.Util.ListFactory;
-
-import java.util.Set;
-import java.util.HashSet;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * <code>Frame</code> contains the machine-dependant
@@ -48,7 +16,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.15 2000-01-13 23:47:42 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.16 2000-01-17 11:52:02 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;

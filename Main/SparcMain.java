@@ -6,15 +6,13 @@ package harpoon.Main;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
-import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HMethod;
-import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
 import harpoon.IR.Properties.CFGrapher;
-import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Tree.Data;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrFactory;
@@ -22,46 +20,41 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.DataFlow.InstrSolver;
-import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.Instr.RegAlloc;
-import harpoon.Backend.Sparc.Frame;
 import harpoon.Backend.Sparc.Code;
+import harpoon.Backend.Sparc.Frame;
+import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
+import harpoon.Backend.Maps.NameMap;
 import harpoon.Backend.Maps.OffsetMap;
-import harpoon.Backend.Maps.OffsetMap32;
-import harpoon.Util.Default;
 import harpoon.Util.CombineIterator;
-import harpoon.Util.UnmodifiableIterator;
-import harpoon.Util.ReverseIterator;
+import harpoon.Util.Default;
 import harpoon.Util.Util;
 
 import gnu.getopt.Getopt;
 
 import java.lang.reflect.Modifier;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.TreeSet;
-import java.util.Map;
-import java.util.Vector;
-import java.util.Stack;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.NoSuchElementException;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.IOException;
 import java.io.OptionalDataException;
-import java.io.FileOutputStream;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.File;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 
 
@@ -73,7 +66,7 @@ import java.io.PrintWriter;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SparcMain.java,v 1.1.2.5 2000-01-13 23:48:18 cananian Exp $
+ * @version $Id: SparcMain.java,v 1.1.2.6 2000-01-17 11:52:10 cananian Exp $
  */
 public class SparcMain extends harpoon.IR.Registration {
  

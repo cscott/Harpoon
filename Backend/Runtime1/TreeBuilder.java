@@ -7,7 +7,6 @@ import harpoon.Analysis.ClassHierarchy;
 import harpoon.Backend.Maps.ClassDepthMap;
 import harpoon.Backend.Maps.FieldMap;
 import harpoon.Backend.Maps.MethodMap;
-import harpoon.Backend.Maps.OffsetMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HField;
@@ -56,7 +55,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.16 2000-01-11 18:47:16 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.17 2000-01-17 11:51:57 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
