@@ -66,7 +66,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.43 2000-05-11 22:04:06 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.44 2000-05-14 07:43:24 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -388,7 +388,6 @@ public abstract class PAMain {
 	    ma_maps(pa, hroot);
 
 	pa.print_stats();
-
 	// if(HOLE_STATS) hole_stats(pa);
     }
     
@@ -755,6 +754,12 @@ public abstract class PAMain {
 		System.out.println("  " + mm);
 	}
 	System.out.println("}");
+
+
+	System.out.println("Finished the PA!");
+	pa.print_stats();
+	System.out.println("Finished print_stats!");
+
 
 	MAInfo mainfo = new MAInfo(pa, hcf, mms, USE_INTER_THREAD);
 	// show the allocation policies

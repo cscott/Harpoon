@@ -20,7 +20,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.18 2000-04-03 10:49:27 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.19 2000-05-14 07:43:23 salcianu Exp $
  */
 final public class PANode {
     // activates some safety tests
@@ -260,7 +260,7 @@ final public class PANode {
     }
 
     /** Returns the parent of this node, on the thread specialization
-	brach. */
+	branch. */
     public final PANode getTSParent(){
 	return ts_parent;
     }

@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Hashtable;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
@@ -39,7 +40,7 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.7 2000-05-10 14:48:05 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.8 2000-05-14 07:43:23 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
     
@@ -76,7 +77,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 
     // Map<NEW, AllocationProperties>
-    private final Map aps = new HashMap();
+    private final Map aps = new Hashtable();
     
     // conservative allocation property: on the global heap
     // (by default).
@@ -149,6 +150,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	for(Iterator it = nodes.iterator(); it.hasNext(); ){
 	    PANode node = (PANode) it.next();
 	    if(node.type != PANode.INSIDE) continue;
+
+	    // we are interested in objects allocated in the current thread
+	    if(node.isTSpec()) continue;
+	    
 	    int depth = node.getCallChainDepth();
 
 	    if(pig.G.captured(node)){
@@ -212,7 +217,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	PANode nt = (PANode) (active_threads.iterator().next());
 
 	// protect against some patological cases
-	if((nt.type != PANode.INSIDE) || (nt.getCallChainDepth() != 0))
+	if((nt.type != PANode.INSIDE) || 
+	   (nt.getCallChainDepth() != 0) ||
+	   (nt.isTSpec()))
 	    return;
 
 	// pray that no thread is allocated through an ANEW!
@@ -401,7 +408,17 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	System.out.println("ALLOCATION POLICIES:");
 	for(Iterator it = aps.keySet().iterator(); it.hasNext(); ){
 	    Quad newq = (Quad) it.next();
+
+	    if(newq == null){
+		System.out.println("Bau1\n");
+		continue;
+	    }
+
 	    MyAP ap   = (MyAP) aps.get(newq);
+	    if(ap == null){
+		System.out.println("Bau2\n");
+		continue;
+	    }
 	    System.out.println(newq.getSourceFile() + ":" +
 			       newq.getLineNumber() + " " +
 			       newq + " -> " + ap); 
