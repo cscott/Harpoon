@@ -4,7 +4,28 @@
 package harpoon.Util;
 
 /**
- * BitString
+ * <code>BitString</code> implements a vector of bits that grows as needed;
+ * much like <code>java.util.BitSet</code>... except that this implementation
+ * actually works.  Also, <code>BitString</code> has some groovy features
+ * which <code>BitSet</code> doesn't; mostly related to efficient iteration
+ * over <code>true</code> and <code>false</code> components, I think.
+ * <p>
+ * Each component of the <code>BitString</code> has a boolean value.
+ * The bits of a <code>BitString</code> are indexed by non-negative
+ * integers (that means they are zero-based, of course).  Individual
+ * indexed bits can be examined, set, or cleared.  One
+ * <code>BitString</code> may be used to modify the contents of another
+ * <code>BitString</code> through logical AND, logical inclusive OR,
+ * and logical exclusive OR operations.
+ * <p>
+ * By default, all bits in the set initially have the value 
+ * <code>false</code>.
+ * <p>
+ * Every bit set has a current size, which is the number of bits of
+ * space currently in use by the bit set.  Note that the size is related
+ * to the implementation of a bit set, so it may change with implementation.
+ * The length of a bit set related to the logical length of a bit set
+ * and is defined independently of implementation.
  *
  * @author  John Whaley
  */
@@ -65,7 +86,7 @@ public final class BitString implements Cloneable, java.io.Serializable {
 
   /**
    * Sets all bits up to and including the given bit.
-   * @param bit the bit to be set up to
+   * @param bit the bit to be set up to (zero-based)
    */
   public void setUpTo(int bit) {
     int where = subscript(bit);
@@ -78,7 +99,7 @@ public final class BitString implements Cloneable, java.io.Serializable {
 
   /**
    * Sets a bit.
-   * @param bit the bit to be set
+   * @param bit the bit to be set (zero-based)
    */
   public void set(int bit) {
     bits[subscript(bit)] |= (1 << (bit & MASK));
@@ -96,7 +117,7 @@ public final class BitString implements Cloneable, java.io.Serializable {
 
   /**
    * Clears all bits up to and including the given bit.
-   * @param bit the bit to be set up to
+   * @param bit the bit to be set up to (zero-based)
    */
   public void clearUpTo(int bit) {
     int where = subscript(bit);
@@ -109,7 +130,7 @@ public final class BitString implements Cloneable, java.io.Serializable {
 
   /**
    * Clears a bit.
-   * @param bit the bit to be cleared
+   * @param bit the bit to be cleared (zero-based)
    */
   public void clear(int bit) {
     bits[subscript(bit)] &= ~(1 << (bit & MASK));
@@ -117,7 +138,7 @@ public final class BitString implements Cloneable, java.io.Serializable {
 
   /**
    * Gets a bit.
-   * @param bit the bit to be gotten
+   * @param bit the bit to be gotten (zero-based)
    */
   public boolean get(int bit) {
     int n = subscript(bit);
@@ -228,7 +249,8 @@ public final class BitString implements Cloneable, java.io.Serializable {
   }
   
   /**
-   * Gets the hashcode.
+   * Returns a hash code value for this bit string whose value depends
+   * only on which bits have been set within this <code>BitString</code>.
    */
   public int hashCode() {
     int h = 1234 * bits.length;
@@ -239,8 +261,24 @@ public final class BitString implements Cloneable, java.io.Serializable {
   }
   
   /**
-   * Calculates and returns the set's size in bits.
+   * Returns the "logical size" of this <code>BitString</code>: the
+   * index of the highest set bit in the <code>BitString</code> plus
+   * one.  Returns zero if the <code>BitString</code> contains no
+   * set bits.
+   */
+  public int length() {
+    int maxnonzero = bits.length - 1;
+    while (maxnonzero >= 0 && bits[maxnonzero]==0)
+      maxnonzero--;
+    if (maxnonzero < 0) return 0;
+    return Util.fls(bits[maxnonzero]) + (maxnonzero << BITS_PER_UNIT);
+  }
+
+  /**
+   * Returns the number of bits of space actually in use by this
+   * <code>BitString</code> to represent bit values.
    * The maximum element in the set is the size - 1st element.
+   * The minimum element in the set is the zero'th element.
    */
   public int size() {
     return bits.length << BITS_PER_UNIT;
@@ -257,9 +295,11 @@ public final class BitString implements Cloneable, java.io.Serializable {
     if (this==obj) return true; //should help alias analysis
     try { set = (BitString)obj; }
     catch (ClassCastException e) { return false; }
-    int n = bits.length;
-    if (n != set.bits.length) return false;
-    for (int i = n ; i-- > 0 ;) {
+    if (length() != set.length()) return false;
+    int n = bits.length - 1;
+    while (n>=0 && bits[n]==0) n--;
+    // now n has the first non-zero entry
+    for (int i = n ; i >= 0 ; i--) {
       if (bits[i] != set.bits[i]) {
 	return false;
       }
