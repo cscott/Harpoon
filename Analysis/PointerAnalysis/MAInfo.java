@@ -42,7 +42,7 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.19 2000-05-18 21:51:58 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.20 2000-05-18 22:19:12 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -246,8 +246,6 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    analyze_prealloc(mm, hcode, pig, tau);
 
 	set_make_heap(tau.activeThreadSet());
-
-	System.out.println();
     }
 
 
