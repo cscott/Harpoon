@@ -18,13 +18,17 @@ void dotrolemethod(struct genhashtable * htable, struct genhashtable *reverserol
     struct rolechangesum * rcs=(struct rolechangesum *) gennext(it);
     struct role* role;
     char buf[600];
+    struct rolechangeheader *rch=NULL;
     if (rcs==NULL) break;
-    role=(struct role *)gengettable(reverseroletable, rcs->origrole);
-    sprintf(buf,"%s.%s\\n%s", rm->methodname->classname->classname,
-	    rm->methodname->methodname, rm->methodname->signature);
-
-    addtransition(htable, role->class, rcs->origrole,
-		  buf ,rcs->newrole,1);
+    rch=(struct rolechangeheader *)gengettable(rm->rolechanges,rcs);
+    if (rch->inner) {
+      role=(struct role *)gengettable(reverseroletable, rcs->origrole);
+      sprintf(buf,"%s.%s\\n%s", rm->methodname->classname->classname,
+	      rm->methodname->methodname, rm->methodname->signature);
+      
+      addtransition(htable, role->class, rcs->origrole,
+		    buf ,rcs->newrole,1);
+    }
   }
 
 

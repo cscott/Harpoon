@@ -52,7 +52,12 @@ class Role {
 	if (invokedmethods.length!=0)
 	    string+="   Methods invoked on:<p>";
 	for (int i=0;i<invokedmethods.length;i++)
-	    string+=invokedmethods[i];
+	    string+=invokedmethods[i]+"<p>";
+	if (identityrelations.length!=0)
+	    string+="   Identity relations:<p>";
+	for (int i=0;i<identityrelations.length;i++)
+	    string+=identityrelations[i]+"<p>";
+
 	return string;
     }
 }

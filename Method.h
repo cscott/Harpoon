@@ -18,6 +18,7 @@ struct rolemethod {
 
 struct rolechangeheader{
   struct rolechangepath *rcp;
+  int inner;
 };
 
 struct rolechangesum {

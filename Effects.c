@@ -39,10 +39,10 @@ void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, l
     }
     method=method->caller;
   }
-  if(newpath)
+  /*  if(newpath)
     addeffect(hs, -1, NULL, dstobj);
   if(newpatho)
-    addeffect(hs, -1, NULL, obj);
+  addeffect(hs, -1, NULL, obj);*/
 }
 
 void checkpath(struct heap_state *hs, long long obj) {
@@ -91,11 +91,11 @@ void addpath(struct heap_state *hs, long long obj, struct fieldname * field, lon
     
     method=method->caller;
   }
-  if (newpath)
+  /*  if (newpath)
     addeffect(hs, -1, NULL, dstobj);
 
   if (newpatho)
-    addeffect(hs, -1, NULL, obj);
+  addeffect(hs, -1, NULL, obj);*/
 
 }
 

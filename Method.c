@@ -288,7 +288,6 @@ void mergerolechanges(struct heap_state *heap) {
     if (rc==NULL)
       break;
 
-
     while(method!=NULL) {
       struct rolemethod *rm=method->rm;
       struct genhashtable * rolechanges=rm->rolechanges;
@@ -300,14 +299,17 @@ void mergerolechanges(struct heap_state *heap) {
       if (!(heap->options&OPTION_NORCEXPR))
 	ere=buildregexpr(method->pathtable, rc->uid);
 
-
       rcs->origrole=copystr(rc->origrole);
       rcs->newrole=copystr(rc->newrole);
       if (!gencontains(rolechanges, rcs)) {
 	rch=(struct rolechangeheader *)calloc(1,sizeof(struct rolechangeheader));
+	if (inner)
+	  rch->inner=1;
 	genputtable(rolechanges,rcs,rch);
       } else {
 	rch=(struct rolechangeheader *) gengettable(rolechanges,rcs);
+	if (inner)
+	  rch->inner=1;
 	free(rcs->origrole);
 	free(rcs->newrole);
 	free(rcs);

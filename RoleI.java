@@ -430,7 +430,7 @@ class RoleI {
 	    PrintStream ps=new PrintStream(fos);
 	    String methodname=(String) classinfo.revmethods.get(methodnumber);
 	    menuline(ps);
-	    ps.println("Method: "+methodname+"<p>");
+	    ps.println("Method: "+Transition.htmlreadable(methodname)+"<p>");
 	    if (atomic.contains(methodname)) {
 		ps.println("ATOMIC<p>");
 		ps.println("<a href=\"rm-N"+file+"\">Make Non-atomic</a><p>");
@@ -790,7 +790,9 @@ class RoleI {
 		String fmethodname=nexttoken(fr);
 		if (fmethodname.equals("~~"))
 		    break;
-		al.add(fmethodname);
+		String fparamname=nexttoken(fr);
+		String fparamnum=nexttoken(fr);
+		al.add(fmethodname+" "+fparamname+" "+fparamnum);
 	    }
 	    String[] invokedmethods=(String[]) al.toArray(new String[al.size()]); 
 	    roletable.put(java.lang.Integer.valueOf(rolenumber),

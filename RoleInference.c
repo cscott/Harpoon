@@ -203,6 +203,8 @@ void doanalysis(int argc, char **argv) {
 #ifdef EFFECTS
 	if (!(heap.options&OPTION_NOEFFECTS)) {
 	  addarraypath(&heap, ht, srcuid ,tmp->object->uid);
+	  addeffect(&heap,-1,NULL, tmp->object->uid);
+	  addeffect(&heap,-1,NULL, srcuid);
 	  addeffect(&heap, dstuid, NULL, tmp->object->uid);
 	}
 #endif
@@ -310,6 +312,8 @@ void doanalysis(int argc, char **argv) {
 	if (!(heap.options&OPTION_NOEFFECTS)) {
 	  if ((uid!=-1)&&(objuid!=-1)) {
 	    addpath(&heap, objuid, getfield(heap.namer,classname, fieldname,fielddesc), uid);
+	    addeffect(&heap, -1, NULL, objuid);
+	    addeffect(&heap, -1, NULL, uid);
 	  }
 	}
 #endif
@@ -341,6 +345,8 @@ void doanalysis(int argc, char **argv) {
 	if (!(heap.options&OPTION_NOEFFECTS)) {
 	  if ((uid!=-1)&&(objuid!=-1)) {
 	    addarraypath(&heap, ht, objuid, uid);
+	    addeffect(&heap, -1, NULL, objuid);
+	    addeffect(&heap, -1, NULL, uid);
 	  }
 	}
 #endif

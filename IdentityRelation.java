@@ -6,4 +6,8 @@ class IdentityRelation{
 	this.fieldname1=fieldname1;
 	this.fieldname2=fieldname2;
     }
+    public String toString() {
+	return fieldname1+"."+fieldname2;
+    }
+
 }
