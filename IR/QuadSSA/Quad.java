@@ -14,7 +14,7 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.28 1998-11-10 01:09:00 cananian Exp $
+ * @version $Id: Quad.java,v 1.29 1998-11-10 03:34:11 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -140,23 +140,29 @@ public abstract class Quad
     //-----------------------------------------------------
     // support cloning.  The pred/succ quads are not cloned, but the
     // array holding them is.
-    public Object clone() throws CloneNotSupportedException {
-	Quad q = (Quad) super.clone();
-	q.next = (Edge[]) next.clone();
-	q.prev = (Edge[]) prev.clone();
-	return q;
+    public Object clone() {
+	try {
+	    Quad q = (Quad) super.clone();
+	    q.next = (Edge[]) next.clone();
+	    q.prev = (Edge[]) prev.clone();
+	    return q;
+	} catch (CloneNotSupportedException e) {
+	    // The compiler is too stupid to see that this can't ever happen.
+	    Util.assert(false, "This should never ever happen.");
+	    return null;
+	}
     }
 
     //-----------------------------------------------------
     /** Create a new copy of a string of <code>Quad</code>s starting at
      *  the given header. */
-    public static Quad clone(Quad header) throws CloneNotSupportedException
+    public static Quad clone(Quad header)
     {
-	Util.assert(header instanceof HEADER);
+	Util.assert(header instanceof HEADER, 
+		    "Argument to Quad.clone() should be a HEADER.");
 	return copyone(header, new Hashtable());
     }
     private static Quad copyone(Quad q, Hashtable old2new)
-	throws CloneNotSupportedException
     {
 	Quad r = (Quad) old2new.get(q);
 	// if we've already done this one, return previous clone.

@@ -11,7 +11,7 @@ import harpoon.Temp.TempMap;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.13 1998-11-10 01:09:00 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.14 1998-11-10 03:34:11 cananian Exp $
  */
 
 public class SWITCH extends SIGMA {
@@ -60,7 +60,7 @@ public class SWITCH extends SIGMA {
     }
 
     /** Properly clone <code>keys[]</code> array. */
-    public Object clone() throws CloneNotSupportedException {
+    public Object clone() {
 	SWITCH q = (SWITCH) super.clone();
 	q.keys = (int[]) keys.clone();
 	return q;

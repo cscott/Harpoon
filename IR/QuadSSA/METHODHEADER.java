@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * keep track of the temporary variable names used for method parameters.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: METHODHEADER.java,v 1.12 1998-11-10 01:09:00 cananian Exp $
+ * @version $Id: METHODHEADER.java,v 1.13 1998-11-10 03:34:10 cananian Exp $
  */
 
 public class METHODHEADER extends HEADER {
@@ -37,7 +37,7 @@ public class METHODHEADER extends HEADER {
     }
 
     /** Properly clone <code>params[]</code> array. */
-    public Object clone() throws CloneNotSupportedException {
+    public Object clone() {
 	METHODHEADER q = (METHODHEADER) super.clone();
 	q.params = (Temp[]) params.clone();
 	return q;

@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.19 1998-11-10 01:09:00 cananian Exp $
+ * @version $Id: OPER.java,v 1.20 1998-11-10 03:34:10 cananian Exp $
  */
 
 public class OPER extends Quad {
@@ -58,7 +58,7 @@ public class OPER extends Quad {
     }
 
     /** Properly clone <code>operands[]</code> array. */
-    public Object clone() throws CloneNotSupportedException {
+    public Object clone() {
 	OPER q = (OPER) super.clone();
 	q.operands = (Temp[]) operands.clone();
 	return q;

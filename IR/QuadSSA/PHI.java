@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * <code>PHI</code> objects represent blocks of PHI functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.20 1998-11-10 01:09:00 cananian Exp $
+ * @version $Id: PHI.java,v 1.21 1998-11-10 03:34:10 cananian Exp $
  */
 
 public class PHI extends Quad {
@@ -92,7 +92,7 @@ public class PHI extends Quad {
     }
 
     /** Properly clone <code>src[][]</code> and <code>dst[]</code> arrays. */
-    public Object clone() throws CloneNotSupportedException {
+    public Object clone() {
 	PHI q = (PHI) super.clone();
 	q.dst = (Temp[]) dst.clone();
 	q.src = (Temp[][]) src.clone();
