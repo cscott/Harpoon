@@ -3,7 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.Edges;
 import harpoon.Util.ArrayEnumerator;
 import harpoon.Util.CombineEnumerator;
@@ -21,7 +23,7 @@ import java.util.Vector;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.5 1999-01-13 00:55:12 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.6 1999-01-22 23:33:27 cananian Exp $
  */
 
 public class CycleEq  {

@@ -3,7 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.Edges;
 import harpoon.Util.Util;
 import harpoon.Util.Set;
@@ -18,7 +20,7 @@ import java.util.Enumeration;
  * the <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.6.2.2 1998-12-21 02:10:20 cananian Exp $
+ * @version $Id: DomFrontier.java,v 1.6.2.3 1999-01-22 23:33:27 cananian Exp $
  */
 
 public class DomFrontier  {

@@ -3,7 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.Edges;
 import harpoon.Util.ArrayFactory;
 
@@ -15,7 +17,7 @@ import java.util.Vector;
  * <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.8.2.1 1998-12-01 10:22:46 cananian Exp $
+ * @version $Id: DomTree.java,v 1.8.2.2 1999-01-22 23:33:27 cananian Exp $
  */
 
 public class DomTree /*implements Graph*/ {

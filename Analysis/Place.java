@@ -3,7 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.Temp.Temp;
 import harpoon.Util.Worklist;
@@ -17,7 +18,7 @@ import java.util.Enumeration;
  * <code>Place</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.10 1998-10-11 02:36:59 cananian Exp $
+ * @version $Id: Place.java,v 1.10.2.1 1999-01-22 23:33:27 cananian Exp $
  */
 
 public class Place  {

@@ -3,8 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
-import harpoon.ClassFile.*;
 import harpoon.Util.Set;
 import harpoon.Util.NullEnumerator;
 import harpoon.Util.ArrayEnumerator;
@@ -20,7 +21,7 @@ import java.util.Enumeration;
  * another one if you make modifications to the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.10.2.2 1998-12-01 10:22:46 cananian Exp $
+ * @version $Id: UseDef.java,v 1.10.2.3 1999-01-22 23:33:27 cananian Exp $
  */
 
 public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
