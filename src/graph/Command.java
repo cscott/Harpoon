@@ -46,13 +46,13 @@ public class Command extends Node {
 
     /**
      * This command created for use with Switch.java.
-     * @see Switch.java
+     * @see Switch
      */
     public static final int GO_LEFT = 120;
     
     /**
      * This command created for use with Switch.java
-     * @see Switch.java
+     * @see Switch
      */
     public static final int GO_RIGHT = 121;
 

@@ -5,7 +5,7 @@ package imagerec.graph;
 
 /**
  * Allows some sort of run-time decision making in pipelines,
- * by allowing {@link Nodes} to tag {@link ImageData}s with
+ * by allowing {@link Node}s to tag {@link ImageData}s with
  * {@link Command}s and doing a conditional branch.
  *
  * @see Command
