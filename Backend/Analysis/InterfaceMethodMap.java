@@ -32,7 +32,7 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * object layout.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.4.2 2000-01-13 23:47:35 cananian Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.4.3 2000-07-22 01:23:29 pnkfelix Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
@@ -333,6 +333,7 @@ public class InterfaceMethodMap extends MethodMap {
     private class SlotColor extends Color {
 	int index;
 	SlotColor(int i) { index = i; }
+	public String toString() { return "SlotColor"+index; }
     }
 }
 

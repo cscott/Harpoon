@@ -32,7 +32,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.4 2000-07-21 22:30:45 pnkfelix Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.5 2000-07-22 01:23:15 pnkfelix Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -142,7 +142,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 		defC = ud.defC(curr);
 	    
 	    if (defC.contains(t)) {
-		System.out.print(" I");
+		// System.out.print(" I");
 		return Collections.singleton(curr);
 	    }
 	}
