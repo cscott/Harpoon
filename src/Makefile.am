@@ -4,12 +4,12 @@ INCLUDES = @IFLAGS@
 SUBDIRS = jni java.io java.lang java.lang.reflect java.net \
 	java.util java.util.zip \
 	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) $(STATSDIR) $(CAMDIR) $(USERDIR) \
-	$(TRANSACTDIR) $(REALTIMEDIR) $(ROLEINFERDIR)
+	$(TRANSACTDIR) $(REALTIMEDIR) $(ROLEINFERDIR) $(MZFDIR)
 # make sure even the conditionally-compiled subdirectories are included
 # in the distribution.
 DIST_SUBDIRS = jni java.io java.lang java.lang.reflect java.net \
 	java.util java.util.zip \
-        gc clheap nativeio stats cam user transact realtime roles
+        gc clheap nativeio stats cam user transact realtime roles mzf
 EXTRA_DIST = README
 
 # cruft to define the conditional directories. --------------------------
@@ -50,6 +50,11 @@ if TRANSACTIONS
 TRANSACTDIR=transact
 TRANSACTLIB=transact/libtransact.la
 endif
+# for mostly-zero fields support, build mzf libraries.
+if MZF_SUPPORT
+MZFDIR=mzf
+MZFLIB=mzf/libmzf.la
+endif
 # for role support, build role libraries
 if ROLE_INFER
 ROLEINFERDIR=roles
@@ -80,7 +85,7 @@ libflexc1_la_LIBADD = \
 	java.util/libjavautil.la \
 	java.util.zip/libjavautilzip.la \
 	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB) $(STATSLIB) $(CAMLIB) $(USERLIB) \
-	$(TRANSACTLIB) $(REALTIMELIB) $(ROLEINFERLIB)
+	$(TRANSACTLIB) $(REALTIMELIB) $(ROLEINFERLIB) $(MZFLIB)
 libflexc1_la_LDFLAGS = -version-info 0:0:0 # -lbfd -liberty
 # this library depends on -lbfd and -liberty, but these ought to be in $LIBS
 
@@ -90,7 +95,7 @@ LDADD = jni/libjni.la ../Java.a libflexc.la \
 	jni/jni-inflate.lo jni/jni-jnidata.lo \
 	$(foreach lib,@GC_LIB@,../$(lib)) $(PGCLIB) $(STATSLIB) $(USERLIB) \
 	$(CLHEAPLIB) $(NATIVEIOLIB) $(CAMLIB) $(TRANSACTLIB) $(REALTIMELIB) \
-	$(ROLEINFERLIB)
+	$(ROLEINFERLIB) $(MZFLIB)
 bin_PROGRAMS = startup # dump-fixup test-lookup test-gc static
 AOUTLIBRARY = libflexc.la
 endif
