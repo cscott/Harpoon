@@ -1,0 +1,6 @@
+[], true => map in MAP;
+[forall m in MAP], true => m.tiles in GRID;
+[forall t in GRID, for x=0 to map.xsize-1, for y=0 to map.ysize-1], true => t.grid[x+(y*map.xsize)] in TILE;
+[forall t in TILE], true => <t,t.terrain> in TERRAIN;
+[forall t in TILE], !(t.city = NULL) => <t,t.city> in CITYMAP;
+[forall t in TILE], !(t.city = NULL) => t.city in CITY;

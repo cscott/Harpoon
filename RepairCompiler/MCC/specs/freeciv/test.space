@@ -1,0 +1,7 @@
+set MAP(civ_map);
+set GRID(tilegrid);
+set TILE(tile);
+set TERRAINTYPES(int);
+set CITY(city);
+CITYMAP: TILE -> CITY;
+TERRAIN: TILE -> int;

@@ -1,0 +1,5 @@
+[],sizeof(MAP)=1;
+[],sizeof(GRID)=1;
+[forall t in TILE],t.TERRAIN>=0 and t.TERRAIN<=13;
+[forall c in CITY],sizeof(c.~CITYMAP)=1;
+[forall c in CITY],!c.~CITYMAP.TERRAIN=7;

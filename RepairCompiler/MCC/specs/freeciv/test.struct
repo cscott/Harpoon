@@ -1,0 +1,174 @@
+structure tile {
+  int terrain;
+  int special;
+  city *city;
+  unit_list units;
+  int known; /* A bitvector on the server side, an
+			   enum known_type on the client side.
+			   Player_no is index */
+  int sent; /* Indicates if  the client know the tile
+			   as TILE_KNOWN_NODRAW. A bitvector like known.
+			   Not used on the client side. */
+  int assigned; /* these can save a lot of CPU usage -- Syela */
+  city *worked; /* city working tile, or NULL if none */
+  short continent;
+  byte move_cost[8]; /* don't know if this helps! */
+  reserved byte[2]; /* padding */
+}
+
+structure unit_list {
+  int nelements;
+  genlist_link null_link;
+  genlist_link *head_link;
+  genlist_link *tail_link;
+}
+
+structure genlist_link {
+  genlist_link *next;
+  genlist_link *prev;
+  int dataptr;
+}
+
+structure tilegrid {
+  tile grid[map.xsize*map.ysize];
+}
+
+structure ceff_vector {
+  athing vector;
+}
+
+structure worklist {
+  int is_valid;
+  byte name[32];
+  int wlefs[16];
+  int wlids[16];
+}
+
+structure athing {
+  int ptr; /* the data */
+  int size; /* size of one object */
+  int n; /* number most recently requested */
+  int n_alloc; /* total number allocated */
+}
+
+structure civ_map {
+  int xsize;
+  int ysize;
+  int seed;
+  int riches;
+  bit is_earth;
+  reserved byte[3];
+  int huts;
+  int landpercent;
+  int grasssize;
+  int swampsize;
+  int deserts;
+  int mountains;
+  int riverlength;
+  int forestsize;
+  int generator;
+  int tinyisles;
+  int separatepoles;
+  int num_start_positions;
+  int fixed_start_positions;
+  int have_specials;
+  int have_huts;
+  int have_rivers_overlay;
+  int num_continents;
+  tilegrid *tiles;
+  map_position start_positions[63];
+}
+
+structure map_position {
+  int x;
+  int y;
+}
+
+structure city {
+  int id;
+  int owner;
+  int x;
+  int y;
+  byte name[32];
+
+  int size;
+  int ppl_happy[5];
+  int ppl_content[5];
+  int ppl_unhappy[5];
+  int ppl_angry[5];
+  int ppl_elvis;
+  int ppl_scientist;
+  int ppl_taxman;
+  int trade[4];
+  int trade_value[4];
+
+  /* the productions */
+  int food_prod;
+  int food_surplus;
+  int shield_prod;
+  int shield_surplus;
+  int trade_prod;
+  int corruption;
+  int tile_trade;
+  int shield_bonus;
+  int tax_bonus;
+  int science_bonus; /* more CPU savings! */
+
+  /* the totals */
+  int luxury_total;
+  int tax_total;
+  int science_total;
+
+  /* the physics */
+  int food_stock;
+  int shield_stock;
+  int pollution;
+  /* city can't be incited if INCITE_IMPOSSIBLE_COST */
+  int incite_revolt_cost;
+
+  bit is_building_unit; /* boolean unit/improvement */
+  reserved byte[3];
+  int currently_building;
+
+  byte improvements[200];
+  ceff_vector effects;
+
+  worklist worklist;
+
+  int city_map[5*5];
+
+  unit_list units_supported;
+  int steal; /* diplomats steal once; for spies, gets harder */
+  /* turn states */
+  int did_buy;
+  bit did_sell;
+  reserved byte[3];
+  bit is_updated;
+  reserved byte[3];
+  int turn_last_built; /* The last year in which something was built */
+  int turn_changed_target; /* Suffer shield loss at most once per turn */
+  int changed_from_id; /* If changed this turn, what changed from (id) */
+  bit changed_from_is_unit; /* If changed this turn, what changed from (unit?) */
+  reserved byte[3];
+  int disbanded_shields; /* If you disband unit in a city. Count them */
+  int caravan_shields; /* If caravan has helped city to build wonder. */
+  int before_change_shields; /* If changed this turn, shields before penalty */
+  int anarchy; /* anarchy rounds count */
+  int rapture; /* rapture rounds count */
+  bit was_happy;
+  reserved byte[3];
+  bit airlift;
+  reserved byte[3];
+  int original; /* original owner */
+  int city_options; /* bitfield; positions as enum city_options */
+
+  /* server variable. indicates if the city map is synced with the client. */
+  bit synced;
+  reserved byte[3];
+  /* info for dipl/spy investigation -- used only in client */
+  unit_list info_units_supported;
+  unit_list info_units_present;
+
+  /* ai_city ai; at end...don't need to actually have*/
+}
+civ_map *map;
