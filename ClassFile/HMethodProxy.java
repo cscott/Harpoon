@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodProxy.java,v 1.1.2.2 2000-01-11 20:04:58 cananian Exp $
+ * @version $Id: HMethodProxy.java,v 1.1.2.3 2000-01-11 21:53:48 cananian Exp $
  * @see HMethod
  */
 class HMethodProxy implements HMethod, HMethodMutator {
@@ -47,7 +47,11 @@ class HMethodProxy implements HMethod, HMethodMutator {
     public boolean isSynthetic() { return proxy.isSynthetic(); }
     public boolean isInterfaceMethod() { return proxy.isInterfaceMethod(); }
     public boolean isStatic() { return proxy.isStatic(); }
-    public boolean equals(Object obj) { return proxy.equals(obj); }
+    public boolean equals(Object obj) {
+	if (obj instanceof HMethodProxy)
+	    return proxy.equals(((HMethodProxy)obj).proxy);
+	return proxy.equals(obj);
+    }
     public int hashCode() { return proxy.hashCode(); }
     public String toString() { return proxy.toString(); }
     // HMethodMutator interface

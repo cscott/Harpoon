@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * <code>HField</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldProxy.java,v 1.1.2.2 2000-01-11 20:04:58 cananian Exp $
+ * @version $Id: HFieldProxy.java,v 1.1.2.3 2000-01-11 21:53:48 cananian Exp $
  * @see HField
  */
 class HFieldProxy implements HField, HFieldMutator {
@@ -41,7 +41,11 @@ class HFieldProxy implements HField, HFieldMutator {
     public boolean isConstant() { return proxy.isConstant(); }
     public boolean isSynthetic() { return proxy.isSynthetic(); }
     public boolean isStatic() { return proxy.isStatic(); }
-    public boolean equals(Object object) { return proxy.equals(object); }
+    public boolean equals(Object obj) {
+	if (obj instanceof HFieldProxy)
+	    return proxy.equals(((HFieldProxy)obj).proxy);
+	return proxy.equals(obj);
+    }
     public int hashCode() { return proxy.hashCode(); }
     public String toString() { return proxy.toString(); }
     // HFieldMutator interface
