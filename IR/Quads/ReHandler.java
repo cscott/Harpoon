@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.36 1999-11-05 06:17:31 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.37 1999-11-05 07:29:23 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -1206,7 +1206,7 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    //never seen yet...
 	    Set parentcast=(Set)typecast.get(q.prev(0));
 	    WorkSet ourcasts=new WorkSet(parentcast);
-	    if (!otype.isAssignableFrom(ti.typeMap(null,q.objectref()))) {
+	    if (!(ti.typeMap(null,q.objectref)).isArray()) {
 		//Need typecast??
 		Iterator iterate=ourcasts.iterator();
 		boolean foundcast=false;
@@ -1265,7 +1265,7 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    //never seen yet...
 	    Set parentcast=(Set)typecast.get(q.prev(0));
 	    WorkSet ourcasts=new WorkSet(parentcast);
-	    if (!otype.isAssignableFrom(ti.typeMap(null,q.objectref()))) {
+	    if (!(ti.typeMap(null,q.objectref)).isArray()) {
 		//Need typecast??
 		Iterator iterate=ourcasts.iterator();
 		boolean foundcast=false;
@@ -1325,7 +1325,7 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    //never seen yet...
 	    Set parentcast=(Set)typecast.get(q.prev(0));
 	    WorkSet ourcasts=new WorkSet(parentcast);
-	    if (!otype.isAssignableFrom(ti.typeMap(null,q.objectref()))) {
+	    if (!(ti.typeMap(null,q.objectref)).isArray()) {
 		//Need typecast??
 		Iterator iterate=ourcasts.iterator();
 		boolean foundcast=false;
