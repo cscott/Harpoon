@@ -11,13 +11,13 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 /**
- * A <code>HMethod</code> provides information about, and access to, a 
+ * An <code>HMethod</code> provides information about, and access to, a 
  * single method on a class or interface.  The reflected method
  * may be a class method or an instance method (including an abstract
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.12 1998-08-04 01:49:56 cananian Exp $
+ * @version $Id: HMethod.java,v 1.13 1998-08-08 12:10:38 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -25,10 +25,10 @@ public class HMethod implements HMember {
   HClass hclass;
 
   // raw data.
-  harpoon.ClassFile.Raw.MethodInfo methodinfo;
-  AttributeCode code;
-  AttributeExceptions exceptions;
-  AttributeSynthetic synthetic;
+  harpoon.ClassFile.Raw.MethodInfo methodinfo = null;
+  AttributeCode code = null;
+  AttributeExceptions exceptions = null;
+  AttributeSynthetic synthetic = null;
 
   /** Create an <code>HMethod</code> from a raw method_info structure. */
   protected HMethod(HClass parent, 
@@ -36,9 +36,6 @@ public class HMethod implements HMember {
     this.hclass = parent;
     this.methodinfo = methodinfo;
     // Crunch the attribute information.
-    this.code = null;
-    this.exceptions=null;
-    this.synthetic=null;
     for (int i=0; i<methodinfo.attributes.length; i++) {
       if (methodinfo.attributes[i] instanceof AttributeCode)
 	this.code = (AttributeCode) methodinfo.attributes[i];
@@ -50,7 +47,9 @@ public class HMethod implements HMember {
     // Add the default code representation.
     putCode(new harpoon.ClassFile.Bytecode.Code(this, this.methodinfo));
   }
-
+  /** provide means for <code>HArrayMethod</code> to subclass. */
+  HMethod(HClass parent) { this.hclass = parent; }
+  
   /**
    * Returns an object representing the executable code of this method.
    * The only <code>codetype</code> defined by default is "bytecode",
@@ -316,3 +315,8 @@ public class HMethod implements HMember {
     return dst;
   }
 }
+
+// set emacs indentation style.
+// Local Variables:
+// c-basic-offset:2
+// End:

@@ -6,6 +6,7 @@ import harpoon.ClassFile.Raw.Attribute.AttributeCode;
 import harpoon.ClassFile.Raw.Attribute.AttributeLineNumberTable;
 import harpoon.ClassFile.Raw.Attribute.LineNumberTable;
 import harpoon.ClassFile.Raw.Constant.Constant;
+import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
 
 import java.util.Vector;
@@ -14,7 +15,7 @@ import java.util.Vector;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.7 1998-08-08 00:43:22 cananian Exp $
+ * @version $Id: Code.java,v 1.8 1998-08-08 12:10:39 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -120,6 +121,22 @@ public class Code extends HCode {
 	  }
 	}
       }
+      // Make tryBlocks table.
+      harpoon.ClassFile.Raw.Attribute.ExceptionTable et[] =
+	getCode().exception_table;
+      tryBlocks = new ExceptionEntry[et.length];
+      for (int i=0; i<tryBlocks.length; i++) { // for each table entry...
+	// Add all the PC's in the try block to a list.
+	UniqueVector uv = new UniqueVector(et[i].end_pc-et[i].start_pc);
+	for (int pc=et[i].start_pc; pc < et[i].end_pc; pc++)
+	  uv.addElement(sparse[pc]);
+	// Make an HClass for the exception caught...
+	HClass ex = null;
+	if (et[i].catch_type != 0)
+	  ex = HClass.forDescriptor("L"+et[i].catch_type().name()+";");
+	// and make the official exception entry.
+	tryBlocks[i] = new ExceptionEntry(uv, ex, sparse[et[i].handler_pc]);
+      }
       // Okay.  Just convert our vector to an array and we're ready to rumble.
       elements = new Instr[v.size()];
       v.copyInto(elements);
@@ -128,6 +145,34 @@ public class Code extends HCode {
   }
   /** Cached value of <code>getElements</code>. */
   private HCodeElement[] elements = null;
+  /** Cached value of <code>getTryBlocks</code> blocks. */
+  private ExceptionEntry[] tryBlocks = null;
+
+  // special non-HCode-mandated access functions.
+  /** Get the number of local variables used in this method, including
+   *  the parameters passed to the method on invocation.  */
+  public int getMaxLocals() { return getCode().max_locals; }
+  /** Get the maximum number of words on the operand stack at any point
+   *  during execution of this method. */
+  public int getMaxStack() { return getCode().max_stack; }
+  /** Get an array with the try-catch blocks/handlers for this bytecode. */
+  public ExceptionEntry[] getTryBlocks() { getElements(); return tryBlocks; }
+
+  /** Represents exception handlers in this code view. */
+  class ExceptionEntry {
+    UniqueVector tryBlock;
+    HClass caughtException;
+    Instr handler;
+    ExceptionEntry(UniqueVector tryBlock, HClass caughtException,
+		   Instr handler) {
+      this.tryBlock = tryBlock;
+      this.caughtException = caughtException;
+      this.handler = handler;
+    }
+    public boolean inTry(Instr i) { return tryBlock.contains(i); }
+    public HClass  caughtException() { return caughtException; }
+    public Instr   handler() { return handler; }
+  }
 
   // Utility functions.
   /** Return the Code attribute of this method. */
@@ -168,4 +213,7 @@ public class Code extends HCode {
   }
 }
 
-
+// set emacs indentation style.
+// Local Variables:
+// c-basic-offset:2
+// End:
