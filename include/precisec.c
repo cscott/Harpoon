@@ -66,8 +66,9 @@ void FNI_Dispatch_Void(ptroff_t method_pointer, int narg_words,
     JNIEnv *env = FNI_GetJNIEnv(); /* for FNI_WRAP */
     struct FNI_Thread_State *fts = (struct FNI_Thread_State *)env;
     jobject_unwrapped ex;
-    jmp_buf jb; memcpy(jb, fts->handler, sizeof(jb));
-    if ((ex=(jobject_unwrapped)setjmp(fts->handler))!=NULL)
+    jmp_buf jb, *oldhandler;
+    oldhandler=fts->handler; fts->handler=&jb;
+    if ((ex=(jobject_unwrapped)setjmp(jb))!=NULL)
       fts->exception = FNI_WRAP(ex);
     else switch (narg_words) {
 #define CASE(x) \
@@ -78,7 +79,7 @@ case x: \
 #undef CASE
     default: assert(0); break;
     }
-    memcpy(fts->handler, jb, sizeof(jb)); /* restore handler */
+    fts->handler=oldhandler; /* restore handler */
     return;
 }
 #define CASE(ctype,x) \
@@ -92,8 +93,9 @@ rtype FNI_Dispatch_##Type(ptroff_t method_pointer, int narg_words,\
     struct FNI_Thread_State *fts = (struct FNI_Thread_State *)env;\
     jobject_unwrapped ex;\
     ctype _r = 0;\
-    jmp_buf jb; memcpy(jb, fts->handler, sizeof(jb));\
-    if ((ex=(jobject_unwrapped)setjmp(fts->handler))!=NULL)\
+    jmp_buf jb, *oldhandler;\
+    oldhandler=fts->handler; fts->handler=&jb;\
+    if ((ex=(jobject_unwrapped)setjmp(jb))!=NULL)\
       fts->exception = FNI_WRAP(ex);\
     else switch (narg_words) {\
         CASE(ctype, 0) CASE(ctype, 1) CASE(ctype, 2) CASE(ctype, 3)\
@@ -102,7 +104,7 @@ rtype FNI_Dispatch_##Type(ptroff_t method_pointer, int narg_words,\
         CASE(ctype,12) CASE(ctype,13) CASE(ctype,14) CASE(ctype,15)\
     default: assert(0); break;\
     }\
-    memcpy(fts->handler, jb, sizeof(jb)); /* restore handler */\
+    fts->handler=oldhandler; /* restore handler */\
     return (rtype) _r;\
 }
 #endif /* USE_GLOBAL_SETJMP ------------------------------------------- */

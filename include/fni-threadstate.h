@@ -35,7 +35,7 @@ struct FNI_Thread_State {
   pthread_mutex_t sleep_mutex; /* mutex for sleep/suspend. */
 #endif
 #if WITH_PRECISE_C_BACKEND
-  jmp_buf handler;
+  jmp_buf *handler;
 #endif
 };
 /* header node in doubly-linked global refs list. */

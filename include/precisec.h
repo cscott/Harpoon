@@ -119,7 +119,7 @@ void funcname args
 #define RETURNV()		return
 #define THROW(rettype, val)	THROWV(val)
 #define THROWV(val)\
-longjmp(((struct FNI_Thread_State *)FNI_GetJNIEnv())->handler, (int)(val))
+longjmp(*(((struct FNI_Thread_State *)FNI_GetJNIEnv())->handler), (int)(val))
 
 #define FIRST_PROTO_ARG(x)
 #define FUNCPROTO(rettype, argtypes)\
@@ -130,15 +130,15 @@ void (*) argtypes
 #define FIRST_CALL_ARG(x)
 #define SETUP_HANDLER(exv, hlabel, restoreexpr)\
 { struct FNI_Thread_State *fts=(struct FNI_Thread_State *)FNI_GetJNIEnv();\
-  jptr _ex_; jmp_buf _jb_;\
+  jptr _ex_; jmp_buf _jb_, *oldhandler;\
   IFPRECISE(void *_top_=STACKTOP());\
-  memcpy(_jb_, fts->handler, sizeof(_jb_));\
-  if ((_ex_=(jptr)setjmp(fts->handler))!=NULL) {\
-    exv=_ex_; memcpy(fts->handler, _jb_, sizeof(_jb_));\
+  oldhandler=fts->handler; fts->handler=&_jb_;\
+  if ((_ex_=(jptr)setjmp(_jb_))!=NULL) {\
+    exv=_ex_; fts->handler=oldhandler;\
     IFPRECISE(SETSTACKTOP(_top_)); restoreexpr; goto hlabel;\
   }
 #define RESTORE_HANDLER\
-  memcpy(fts->handler, _jb_, sizeof(_jb_));\
+  fts->handler=oldhandler;\
 }
 /* no-handler versions of calls */
 #define CALL_NH(rettype, retval, funcref, args, exv, handler, restoreexpr)\
