@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Set;
 
 import java.util.HashMap;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.AGET;
 import harpoon.IR.Quads.ANEW;
@@ -58,7 +58,7 @@ import harpoon.IR.Quads.NEW;
  * about the number of times the write-barrier is called.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierQuadPass.java,v 1.4 2002-03-27 22:54:59 kkz Exp $
+ * @version $Id: WriteBarrierQuadPass.java,v 1.5 2002-04-02 23:43:29 salcianu Exp $
  */
 public class WriteBarrierQuadPass extends 
     harpoon.Analysis.Transformation.MethodMutator {
