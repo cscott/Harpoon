@@ -89,7 +89,7 @@ void doFDs() {
   struct thread_list *tl=ioptr,*tmp;
   int start=0;
   while((tl!=ioptr)||(start==0)) {
-    int filestat=(syncrdwr>0)?fd[tl->fd]:0;
+    int filestat=(tl->syncrdwr>0)?fd[tl->fd]:0;
     start=1;
     if (((filestat&1)&&(tl->syncrdwr==1))||
       ((filestat&2)&&(tl->syncrdwr==2))) {
