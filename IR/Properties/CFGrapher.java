@@ -10,6 +10,7 @@ import harpoon.Util.CombineIterator;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.AbstractCollection;
 import java.util.Iterator;
 /**
  * <code>CFGrapher</code> provides a means to externally associate
@@ -17,7 +18,7 @@ import java.util.Iterator;
  * representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGrapher.java,v 1.1.2.8 2000-11-10 21:43:06 cananian Exp $
+ * @version $Id: CFGrapher.java,v 1.1.2.9 2001-05-16 00:10:15 pnkfelix Exp $
  * @see harpoon.IR.Properties.CFGraphable
  */
 public abstract class CFGrapher {
@@ -81,7 +82,43 @@ public abstract class CFGrapher {
 	will be returned from <code>to()</code>.
      */
     public abstract Collection succC(HCodeElement hc);
-
+    
+    /** Returns a <code>Collection</code> of all the 
+	<code>HCodeElement</code>s preceeding <code>hc</code>.
+    */
+    public Collection predElemC(HCodeElement hc) {
+	final Collection predEdges = this.predC(hc);
+	return new AbstractCollection() {
+		public int size() { return predEdges.size(); }
+		public Iterator iterator() {
+		    return new 
+			harpoon.Util.FilterIterator
+			(predEdges.iterator(), 
+			 new harpoon.Util.FilterIterator.Filter() { 
+				 public Object map(Object o) { return ((HCodeEdge)o).from(); }
+			     });
+		}
+	    };
+    }
+    
+    /** Returns a <code>Collection</code> of all the 
+	<code>HCodeElement</code> succeeding <code>hc</code>.
+    */
+    public Collection succElemC(HCodeElement hc) {
+	final Collection succEdges = this.succC(hc);
+	return new AbstractCollection() {
+		public int size() { return succEdges.size(); }
+		public Iterator iterator() {
+		    return new 
+			harpoon.Util.FilterIterator
+			(succEdges.iterator(), 
+			 new harpoon.Util.FilterIterator.Filter() {
+				 public Object map(Object o) { return ((HCodeEdge)o).to(); }
+			     });
+		}
+	    };
+    }
+    
     /** Returns an edge-reversed grapher based on this one.
      *  Certain algorithms operate more naturally on this
      *  representation --- for example, the difference between a
