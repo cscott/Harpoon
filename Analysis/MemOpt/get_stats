@@ -2,7 +2,7 @@
 
 
 # all SPECjvm98 applications
-SPEC_APPS="_200_check _201_compress _202_jess _205_raytrace _209_db _222_mpegaudio _228_jack _213_javac"
+SPEC_APPS="JLEX JCUP _200_check _201_compress _202_jess _205_raytrace _209_db _222_mpegaudio _228_jack _213_javac"
 
 #SPEC_APPS="_200_check"
 #SPEC_APPS="_205_raytrace"
@@ -16,6 +16,13 @@ SPEC_APPS="_200_check _201_compress _202_jess _205_raytrace _209_db _222_mpegaud
 JOLDEN_APPS="BH BiSort Em3d Health MST Perimeter Power TreeAdd TSP Voronoi"
 
 
+function format_prop() {
+    a=`echo $1 | cut -d" " -f1`
+    b=`echo $1 | cut -d" " -f4`
+    prop=`echo $1 | cut -d" " -f 6`
+    echo -e $a\\\\tout of $b\\\\t$prop
+}
+
 function sum() {
     numbers=$1
     term="0"
@@ -28,7 +35,12 @@ function sum() {
 function variation() {
     a=$1;
     b=$2;
-    echo "scale=2; (100 * ($a - $b)) / $a" | bc
+
+    if [ "$a" = "0.00" ]; then
+	echo "0.00";
+    else
+	echo "scale=2; (100 * ($a - $b)) / $a" | bc;
+    fi
 }
 
 
@@ -40,13 +52,29 @@ function proportion() {
 }
 
 
+function expand() {
+    name=$1;
+    case $name in
+	JCUP:)   echo "JCUP:\t";;
+	JLEX:)   echo "JLEX:\t";;
+	BH:)     echo "BH:\t";;
+	BiSort:) echo "BiSort:\t";;
+	Em3d:)   echo "Em3d:\t";;
+	Health:) echo "Health:\t";;
+	MST:)    echo "MST:\t";;
+	Power:)  echo "Power:\t";;
+	TSP:)    echo "TSP:\t";;
+	*)       echo $name;;
+    esac
+}
+
 function sum_statistics() {
     prefix=$1
     kind=$2;
 
-    total_numbers=`grep "$prefix PREALLOCATED $kind" results/*/*/*.ia.stat | cut -f4`;
+    total_numbers=`grep "^$prefix PREALLOCATED $kind" results/*/*/*.ia.stat | cut -f4`;
     total_total_numbers=`sum "${total_numbers}"`;
-    prealloc_numbers=`grep "$prefix PREALLOCATED $kind" results/*/*/*.ia.stat | cut -f2`;
+    prealloc_numbers=`grep "^$prefix PREALLOCATED $kind" results/*/*/*.ia.stat | cut -f2`;
     total_prealloc_numbers=`sum "${prealloc_numbers}"`
 
     echo -e TOTAL PREALLOCATED $kind\\t`proportion ${total_prealloc_numbers} ${total_total_numbers}`
@@ -57,7 +85,8 @@ function preallocated_stuff_aux() {
     name=$1
     file=$2
     tag=$3
-    echo -e $name:\\t`grep "^$tag" $file | cut -d":" -f2`
+    prop=`grep "^$tag" $file | cut -d":" -f2`;
+    echo -e `expand "$name:"`\\t`format_prop "${prop}"`
 }
 
 function preallocated_stuff() {
@@ -81,10 +110,10 @@ function preallocated_stuff() {
 
 
 function preallocated_memory_size_aux() {
-    name=$1
-    file=$2
-
-    echo -e $name:\\t`grep "Preallocated memory size" $file | cut -d":" -f2`
+    name=$1;
+    file=$2;
+    prop=`grep "Preallocated memory size" $file | cut -d":" -f2`;
+    echo -e `expand "$name:"`\\t${prop}
 }
 
 function preallocated_memory_size() {
@@ -116,8 +145,8 @@ function preallocated_memory_size() {
 function preallocated_objects_aux() {
     name=$1
     file=$2
-
-    echo -e $name:\\t`grep "OVERALL PREALLOCATED OBJECTS" $file | cut -d":" -f2`
+    proportion=`grep "OVERALL PREALLOCATED OBJECTS" $file | cut -d":" -f2`;
+    echo -e `expand "$name:"`\\t`format_prop "${proportion}"`;
 }
 
 function preallocated_objects() {
@@ -138,14 +167,14 @@ function preallocated_objects() {
 
 
 function analyzed_code_size() {
-    echo -e $1:\\t`grep "methods analyzed" $2 | grep SSI`;
+    echo -e `expand "$1:"`\\t`grep "methods analyzed" $2 | grep SSI`;
 }
 
 
 function analysis_time() {
     app=$1
     file=$2
-    echo -e $app:\\t`grep "SSI conversion time: Timer stopped:" $file | cut -d":" -f 3 | cut -d" " -f 2`\\t`grep "IA total: Timer stopped:" $file | cut -d ":" -f 3 | cut -d" " -f 2 `
+    echo -e `expand "$app:"`\\t`grep "SSI conversion time: Timer stopped:" $file | cut -d":" -f 3 | cut -d" " -f 2`\\t`grep "IA total: Timer stopped:" $file | cut -d ":" -f 3 | cut -d" " -f 2 `
 }
 
 function driver() {
@@ -170,10 +199,9 @@ function speedup_aux() {
     dir=$2;
     normal_time=`grep real $dir/$app.normal.time | cut -d" " -f 2`;
     pre_alloc_time=`grep real $dir/$app.pre_alloc.time | cut -d" " -f 2`;
+    speedup=`variation ${normal_time} ${pre_alloc_time}`;
     
-    speedup=`echo "scale=2; (100 * (${normal_time} - ${pre_alloc_time})) / ${normal_time}" | bc`
-
-    echo -e $app:\\t${normal_time}\\t${pre_alloc_time}\\t`variation ${normal_time} ${pre_alloc_time}`\%
+    echo -e `expand "$app:"`\\t${normal_time}\\t${pre_alloc_time}\\t${speedup}\%
 }
 
 function speedup() {
@@ -195,23 +223,19 @@ function speedup() {
 cd
 cd Harpoon/Code
 
-driver "ANALYZED CODE SIZE" analyzed_code_size;
-driver "SSI CONSTRUCTION | ANALYSIS TIME" analysis_time;
+#driver "ANALYZED CODE SIZE" analyzed_code_size;
+#driver "SSI CONSTRUCTION | ANALYSIS TIME" analysis_time;
 
-preallocated_stuff OVERALL SITES;
-preallocated_stuff OVERALL OBJECTS;
-preallocated_stuff THROWABLES SITES;
-preallocated_stuff NON_THROWABLES SITES;
-preallocated_stuff STRINGBUFFERS SITES;
+#preallocated_stuff OVERALL SITES;
+#preallocated_stuff OVERALL OBJECTS;
+#preallocated_stuff THROWABLES SITES;
+#preallocated_stuff NON_THROWABLES SITES;
+#preallocated_stuff STRINGBUFFERS SITES;
 
-echo
-sum_statistics OVERALL SPACE;
-echo
-echo -----------------------------------------------------------
-echo 
+#preallocated_memory_size;
+#preallocated_objects;
 
-preallocated_memory_size;
-preallocated_objects;
+#preallocated_stuff OVERALL SPACE;
 
 speedup
 

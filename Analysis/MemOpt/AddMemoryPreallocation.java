@@ -51,7 +51,7 @@ import harpoon.Temp.Label;
  * chunks of memory that are used by the unitary sites.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AddMemoryPreallocation.java,v 1.7 2003-02-14 17:17:08 salcianu Exp $ */
+ * @version $Id: AddMemoryPreallocation.java,v 1.8 2003-02-22 04:42:08 salcianu Exp $ */
 class AddMemoryPreallocation implements HCodeFactory {
 
     /** Creates a <code>AddMemoryPreallocation</code> code factory: it
@@ -102,29 +102,37 @@ class AddMemoryPreallocation implements HCodeFactory {
 	DerivationGenerator dg = 
 	    (DerivationGenerator) code.getTreeDerivation();
 
-	// At the beginning of that method, we add code that
-	// 1. allocates one chunk of memory
-	// 2. make the static fields to point inside it (by using a little
-	// pointer arithmetic - this is OK in Tree form).
-	// Doing n additions is faster than n-1 malloc calls.
+	System.out.println("\n\nBefore  modifications:");
+	code.print(new PrintWriter(System.out));
+
+	System.out.println("ROOT = " + code.getRootElement());
+	System.out.println("ROOT.right = " + 
+			   ((SEQ) code.getRootElement()).getRight());
+	System.out.println("ROOT.left = " + 
+			   ((SEQ) code.getRootElement()).getLeft());
+	System.out.println
+	    ("ROOT.right.right = " + 
+	     ((SEQ) ((SEQ) code.getRootElement()).getRight()).getRight());
+	System.out.println
+	    ("ROOT.right.left = " + 
+	     ((SEQ) ((SEQ) code.getRootElement()).getRight()).getLeft());
+
 	SEQ start = (SEQ) ((SEQ) code.getRootElement()).getRight();
 	Temp tmem = new Temp(start.getFactory().tempFactory(), "tmem");
 
-	// As insertCode adds stuff immediately after start, we insert
-	// code in reverse order: first, item 2 from the list above
-	int offset = 0;
 	for(Iterator it = field2size.keySet().iterator(); it.hasNext(); ) {
 	    HField hfield = (HField) it.next();
 	    int size = ((Integer) field2size.get(hfield)).intValue();
-	    insertCode(start,
-		       getFieldAssignment(hfield, tmem, offset, start, dg));
-	    offset += size;
+	    // Generate code that (pre)-allocates space and puts
+	    // "hfield" point to it. As insertCode adds stuff right
+	    // after start, we insert code in reverse order:
+	    // 2. hfield = tmem
+	    insertCode(start, getFieldAssignment(hfield, tmem, start, dg));
+	    // 1. tmem = "malloc-like-fun"(size)
+	    insertCode(start, getAllocCall(tmem, size, start, dg));
 	}
-	// offset is now equal to total length of preallocated memory
-	// Now, code for item 1 from the list above
-	insertCode(start, getAllocCall(tmem, offset, start, dg));
 
-	System.out.println("After  modifications:");
+	System.out.println("\n\nAfter  modifications:");
 	code.print(new PrintWriter(System.out));
 
 	return code;
@@ -138,38 +146,39 @@ class AddMemoryPreallocation implements HCodeFactory {
 			     Tree start, DerivationGenerator dg) {
 	TreeFactory tf = start.getFactory();
 	
+	String malloc_method =
+	    PreallocOpt.HACKED_GC ? "GC_malloc_prealloc" : "GC_malloc";
+
 	return
 	    new NATIVECALL
 	    (tf, start, 
 	     (TEMP)
 	     DECLARE(dg, HClass.Void,
 		     new TEMP(tf, start, Type.POINTER, tmem)),
-	     new NAME(tf, start, new Label("GC_malloc")),
+	     new NAME(tf, start, new Label(malloc_method)),
 	     new ExpList(new CONST(tf, start, length),
 			 null));
     }
-    
-    // generate code that initializes the field hfield with a pointer
-    // that is computed by adding offset to tmem.
-    private Stm getFieldAssignment(HField hfield, Temp tmem, int offset,
+
+    // generate code for "hfield = tmem" or
+    private Stm getFieldAssignment(HField hfield, Temp tmem,
 				   Tree start, DerivationGenerator dg) {
 	// TODO: we should be able to get the DerivationGenerator
 	// (a method-wide thing) from "start".
 	TreeFactory tf = start.getFactory();
 
-	// "field = tmem + offset;"
+	TEMP temp = new TEMP(tf, start, Type.POINTER, tmem);
+	dg.putType(temp, HClass.Void);
+	
 	return
 	    new MOVE
 	    (tf, start,
-	     DECLARE(dg, HClass.Void, 
+	     DECLARE(dg, HClass.Void,
 		     new MEM
 		     (tf, start, Type.POINTER,
-		      new NAME(tf, start, runtime.getNameMap().label(hfield)))),
-	     new BINOP(tf, start, Type.POINTER, Bop.ADD,
-		       (TEMP)
-		       DECLARE(dg, HClass.Void,
-			       new TEMP(tf, start, Type.POINTER, tmem)),
-		       new CONST(tf, start, offset)));
+		      new NAME(tf, start,
+			       runtime.getNameMap().label(hfield)))),
+	     temp);
     }
 
 

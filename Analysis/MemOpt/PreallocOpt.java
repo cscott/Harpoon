@@ -46,11 +46,13 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Runtime;
 import harpoon.Temp.Temp;
 
+import harpoon.Util.Util;
+
 /**
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.13 2003-02-14 17:17:08 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.14 2003-02-22 04:42:08 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -59,6 +61,13 @@ public abstract class PreallocOpt {
 	<code>IncompatibilityAnalysis</code>.  Default is
 	<code>false</code>. */
     public static boolean PREALLOC_OPT = false;
+
+    /** Set this to true only if you use the hacked BDW GC version
+        that has "GC_malloc_prealloc".  */
+    public static boolean HACKED_GC = false;
+    static {
+	System.out.println("HACKED_GC " + HACKED_GC);
+    }
 
     /** Map used by the optimization: assigns to each static field the
 	size of the pre-allocated memory chunk that that field points
@@ -159,12 +168,12 @@ public abstract class PreallocOpt {
 	if(as != null)
 	    IAStatistics.printStatistics(ia, as, hcf_nossa, linker, frame);
 
+	PreallocOpt.prealloc_field2size = new HashMap();
+	addFields(linker, ia, frame, 
+		  PreallocOpt.prealloc_field2size, as);
+
 	// restore flag (the backend crashes without this ...)
 	QuadSSI.KEEP_QUAD_MAP_HACK = OLD_FLAG;
-
-	PreallocOpt.prealloc_field2size = new HashMap();
-	addFields(linker, ia, frame, hcf_nossa,
-		  PreallocOpt.prealloc_field2size);
 
 	return hcf_ssi;
     }
@@ -218,7 +227,7 @@ public abstract class PreallocOpt {
 
     private static void addFields
 	(Linker linker, IncompatibilityAnalysis ia, Frame frame,
-	 HCodeFactory hcf_nossa, Map field2size) {
+	 Map field2size, AllocationStatistics as) {
 
 	HClass pam = linker.forName(PREALLOC_MEM_CLASS_NAME);
 	HClassMutator mutator = pam.getMutator();
@@ -233,8 +242,14 @@ public abstract class PreallocOpt {
 	    Collection cc = (Collection) it.next();
 	    HField f = mutator.addDeclaredField(FIELD_ROOT_NAME + k, pattern);
 	    field2size.put(f, new Integer(sizeForCompatClass(frame, cc)));
-	    for(Iterator it_new = cc.iterator(); it_new.hasNext(); )
-		setAllocationProperties((NEW) it_new.next(), f);
+	    for(Iterator it_new = cc.iterator(); it_new.hasNext(); ) {
+		NEW site = (NEW) it_new.next();
+		
+		QuadSSI codeSSI = (QuadSSI) site.getFactory().getParent();
+		NEW siteNoSSA = (NEW) codeSSI.getQuadMapSSI2NoSSA().get(site);
+
+		setAllocationProperties(site, f, as.allocID(siteNoSSA));
+	    }
 	}
 
 	System.out.println("PreallocOpt: " + k + " static field(s) generated");
@@ -270,7 +285,9 @@ public abstract class PreallocOpt {
 	return sizeForClass(frame.getRuntime(), hclass);
     }
 
-    private static void setAllocationProperties(NEW qn, HField f) {
+    public static Map ap2id = new HashMap();
+
+    private static void setAllocationProperties(NEW qn, HField f, int id) {
 	Code code = qn.getFactory().getParent();
 	AllocationInformationMap aim = 
 	    (AllocationInformationMap) code.getAllocationInformation();
@@ -284,7 +301,11 @@ public abstract class PreallocOpt {
 	if(formerAP == null)
 	    formerAP = DefaultAllocationInformation.SINGLETON.query(qn);
 
-	aim.associate((HCodeElement) qn, new PreallocAP(f, formerAP));
+	AllocationInformation.AllocationProperties ap = 
+	    new PreallocAP(f, formerAP);
+	aim.associate((HCodeElement) qn, ap);
+
+	ap2id.put(ap, new Integer(id));
     }
 
 

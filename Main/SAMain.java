@@ -107,7 +107,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.33 2003-02-11 21:40:02 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.34 2003-02-22 04:42:35 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -254,7 +254,7 @@ public class SAMain extends harpoon.IR.Registration {
 		if(PreallocOpt.PREALLOC_OPT) {
 		    System.out.println("PreallocAllocationStrategy");
 		    return new harpoon.Analysis.MemOpt.
-			PreallocAllocationStrategy(frame);
+			PreallocAllocationStrategy(frame, PreallocOpt.ap2id);
 		}
 
 		if(Realtime.REALTIME_JAVA) {

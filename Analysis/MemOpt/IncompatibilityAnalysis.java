@@ -1114,10 +1114,14 @@ public class IncompatibilityAnalysis {
 
             // allocs for outgoing edges
             Set[] edgeAllocs = new Set[q.nextLength()];
+            // outgoing dest vars
+            Temp[] edgeDst = new Temp[q.nextLength()];
 
             // System.out.println("  Per node: " + Util.code2str(q));            
             if (q.kind() == QuadKind.NEW) {
                 allocs = edgeAllocs[0] = Collections.singleton( ((NEW) q).dst());
+
+                edgeDst[0] = ((NEW) q).dst();
             } else {
                 assert q.kind() == QuadKind.CALL;
                 
@@ -1138,6 +1142,9 @@ public class IncompatibilityAnalysis {
                                      + edgeAllocs[1].size());
                 allocs.addAll(edgeAllocs[0]);
                 allocs.addAll(edgeAllocs[1]);
+
+                edgeDst[0] = ((CALL) q).retval();
+                edgeDst[1] = ((CALL) q).retex();
             }
 
             // add incompatibilities from escapes
@@ -1165,11 +1172,6 @@ public class IncompatibilityAnalysis {
             
             // System.out.println("   # escCanReachQ: " + escCanReachQ);
 
-            // System.out.println("  pointsTo union...");
-            Collection liveInInternal = md.liveness.getValues(q.prevEdge(0));
-            Set liveInObjects = MultiMapUtils.multiMapUnion(pointsTo,
-                                                            liveInInternal);
-
             // System.out.println("   # live-in objects: "  + liveInObjects.size());
                                                             
             // add incompatibilities from liveness
@@ -1181,12 +1183,11 @@ public class IncompatibilityAnalysis {
                 Edge edge = q.nextEdge(i);
 
                 Collection liveInternal = md.liveness.getValues(edge);
-                Set liveObjects = MultiMapUtils.multiMapUnion(pointsTo,
-                                                              liveInternal);
 
-                Set liveOverObjects = MultiMapUtils.intersect(liveInObjects,
-                                                              liveObjects);
-
+                liveInternal.remove(edgeDst[i]);
+                
+                Set liveOverObjects = 
+		    MultiMapUtils.multiMapUnion(pointsTo, liveInternal);
 
                 // all live objects become incompatible with allocs here
                 // again, a good ol' cartesian product

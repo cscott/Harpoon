@@ -14,9 +14,16 @@ import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.TreeFactory;
 import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.MEM;
+import harpoon.IR.Tree.CONST;
+import harpoon.IR.Tree.BINOP;
+import harpoon.IR.Tree.UNOP;
+import harpoon.IR.Tree.Bop;
+import harpoon.IR.Tree.Uop;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Quads.Quad;
 import harpoon.Util.Util;
+
+import java.util.Map;
 
 /** <code>PreallocAllocationStrategy</code> is the allocation strategy
     for the Static Memory Preallocation Optimization (via Ovy's
@@ -36,39 +43,60 @@ import harpoon.Util.Util;
     </ul>
  
     @author  Alexandru Salcianu <salcianu@MIT.EDU>
-    @version $Id: PreallocAllocationStrategy.java,v 1.4 2003-02-12 19:02:58 salcianu Exp $ */
+    @version $Id: PreallocAllocationStrategy.java,v 1.5 2003-02-22 04:42:08 salcianu Exp $ */
 public class PreallocAllocationStrategy extends MallocAllocationStrategy {
     
     /** Creates a <code>PreallocAllocationStrategy</code>. */
-    public PreallocAllocationStrategy(Frame f) { 
+    public PreallocAllocationStrategy(Frame f, Map ap2id) { 
 	super(f, "GC_malloc");
+	this.ap2id = ap2id;
     }
+
+    private final Map ap2id;
 
     public Exp memAlloc(TreeFactory tf, HCodeElement source,
 			DerivationGenerator dg,
 			AllocationProperties ap,
 			Exp length) {
 	HField hfield = ap.getMemoryChunkField();
+
+	Integer ID = (Integer) ap2id.get(ap);
+	int id = (ID == null) ? -1 : ID.intValue();
+
 	// TODO: cut out the second part of the test!
 	// STATUS: we cannot do this yet, due to an incompleteness in
 	// the IncompatibilityAnalysis
-	if((hfield != null) && extraCond((Quad) source, ap.actualClass())) {
-	    /*
-	    System.out.println
-		("I was called for " + 
-		 harpoon.Analysis.PointerAnalysis.Util.code2str(source));
-	    */
-	    return
-		DECLARE
-		(dg, HClass.Void,
-		 new MEM
-		 (tf, source, Type.POINTER,
-		  new NAME
-		  (tf, source,
-		   frame.getRuntime().getNameMap().label(hfield))));
+	if((hfield != null) && extraCond((Quad) source, ap.actualClass())
+	   && rangeCond(id)) {
+
+	    System.out.println("\nPREALLOCATE: " + id + " \"" + hfield + "\" " + Util.getLine(source) + " " + source);
+
+	    Exp pointer_expr =
+		new MEM
+		(tf, source, Type.POINTER,
+		 new NAME
+		 (tf, source,
+		  frame.getRuntime().getNameMap().label(hfield)));
+	    dg.putType(pointer_expr, HClass.Void);
+	    return pointer_expr;
 	}
 	else return super.memAlloc(tf, source, dg, ap, length);
     }
+
+
+    private static boolean rangeCond(int id) {
+	assert id != -1;
+	return true;
+	//return (id >= lowBound) && (id <= highBound);
+    }
+
+    private static int lowBound = 0;
+    private static int highBound = 2000;
+
+    static {
+	System.out.println("RANGE = [ " + lowBound + " , " + highBound + " ]");
+    }
+
 
     public static boolean extraCond(Quad q, HClass hclass) {
 	String className = hclass.getName();

@@ -37,7 +37,7 @@ import java.io.PrintWriter;
  * site from an instrumented program was executed.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationStatistics.java,v 1.5 2003-02-12 19:03:44 salcianu Exp $
+ * @version $Id: AllocationStatistics.java,v 1.6 2003-02-22 04:42:23 salcianu Exp $
  * @see InstrumentAllocs
  */
 public class AllocationStatistics {
@@ -110,7 +110,7 @@ public class AllocationStatistics {
     private Map/*<Integer,AllocData>*/ allocID2data;
 
 
-    /** Return the number of times the allocation <code>alloc</code>
+    /** Returns the number of times the allocation <code>alloc</code>
         was executed.
 
 	@param alloc allocation site
@@ -123,7 +123,7 @@ public class AllocationStatistics {
     }
 
 
-    /** Return the total amount of memory allocated at the allocation
+    /** Returns the total amount of memory allocated at the allocation
         <code>alloc</code>.
 
 	@param alloc allocation site
@@ -133,6 +133,12 @@ public class AllocationStatistics {
 	AllocData ad = 
 	    (AllocData) allocID2data.get(new Integer(ani.allocID(alloc)));
 	return (ad == null) ? 0 : ad.memAmount;
+    }
+
+
+    /** Returns the unique ID for <code>alloc</code>. */
+    public int allocID(Quad alloc) {
+	return ani.allocID(alloc);
     }
 
 
