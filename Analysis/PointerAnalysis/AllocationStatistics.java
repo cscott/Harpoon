@@ -31,7 +31,7 @@ import java.io.PrintWriter;
  * <code>AllocationStatistics</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationStatistics.java,v 1.3 2002-12-02 18:07:57 salcianu Exp $
+ * @version $Id: AllocationStatistics.java,v 1.4 2002-12-02 23:09:41 salcianu Exp $
  */
 public class AllocationStatistics {
     
@@ -111,8 +111,9 @@ public class AllocationStatistics {
 	    for(int i = 0; i < nb_allocs; i++) {
 		int quadID = readInt(br);
 		int counter = readInt(br);
-		getMap4Method(hm).put
-		    (new Integer(quadID), new Integer(counter));
+		if(hm != null)
+		    getMap4Method(hm).put
+			(new Integer(quadID), new Integer(counter));
 	    }
 	}
 
@@ -147,7 +148,19 @@ public class AllocationStatistics {
 	    HClass[] ptypes = new HClass[nb_params];
 	    for(int i = 0; i < nb_params; i++)
 		ptypes[i] = readClass(linker, br);
-	    return hc.getMethod(method_name, ptypes);
+	    try {
+		return hc.getMethod(method_name, ptypes);
+	    } catch (Error e) {
+		System.out.println("TROUBLE: cannot find \"" + method_name +
+				   " in class\"" + hc + 
+				   "\" it has the following methods:"); 
+		HMethod[] hms = hc.getDeclaredMethods();
+		for(int i = 0; i < hms.length; i++)
+		    System.out.println("\t" + hms[i]);
+		System.out.println("is \"?\" : " + method_name.equals("?"));
+		return null;
+		//throw e;
+	    }
 	}
     } // end of AllocationNumberingStub
 

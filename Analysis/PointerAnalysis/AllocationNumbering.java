@@ -33,7 +33,7 @@ import java.io.IOException;
  * (e.g. <code>InstrumentAllocs</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationNumbering.java,v 1.5 2002-12-01 06:28:09 salcianu Exp $ */
+ * @version $Id: AllocationNumbering.java,v 1.6 2002-12-02 23:09:41 salcianu Exp $ */
 public class AllocationNumbering implements java.io.Serializable {
     private final CachingCodeFactory ccf;
     public  final Map alloc2int;
@@ -126,6 +126,12 @@ public class AllocationNumbering implements java.io.Serializable {
 
     private void writeMethodSignature(PrintWriter pw, HMethod hm) {
 	pw.println(hm.getDeclaringClass().getName());
+
+	String methodName = hm.getName();
+	if(methodName.equals("?")) {
+	    pw.println("STRANGE METHOD" + hm);
+	}
+
 	pw.println(hm.getName());
 	HClass[] ptypes = hm.getParameterTypes();
 	pw.println(ptypes.length);
