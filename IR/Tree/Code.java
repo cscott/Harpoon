@@ -141,9 +141,19 @@ public abstract class Code extends HCode
   public Enumeration getElementsE() 
     { 
       return new Enumeration() {
+        Vector v = new Vector();
 	Stack stack = new Stack();
-	{ stack.push(getRootElement()); }
+	{ 
+        visitElement(getRootElement());
+    }
 	public boolean hasMoreElements() { return !stack.isEmpty(); }
+
+    private void visitElement(Object elem) {
+        if (!v.contains(elem)) {
+            stack.push(elem);
+            v.addElement(elem);
+        }
+    }
 	public Object nextElement() {
 	  Tree t;
 	  if (stack.isEmpty()) throw new NoSuchElementException();
@@ -152,18 +162,18 @@ public abstract class Code extends HCode
 	    // Push successors on stack
 	    if (t instanceof SEQ) {
 	      SEQ seq = (SEQ)t;
-	      if (seq.left!=null)  stack.push(seq.left);
-	      if (seq.right!=null) stack.push(seq.right);
+	      if (seq.left!=null)  visitElement(seq.left);
+	      if (seq.right!=null) visitElement(seq.right);
 	    }
 	    else if (t instanceof ESEQ) {
 	      ESEQ eseq = (ESEQ)t;
-	      if (eseq.exp!=null) stack.push(eseq.exp);
-	      if (eseq.stm!=null) stack.push(eseq.stm);
+	      if (eseq.exp!=null) visitElement(eseq.exp);
+	      if (eseq.stm!=null) visitElement(eseq.stm);
 	    }
 	    else {
 	      ExpList explist = t.kids();
 	      while (explist!=null) {
-		if (explist.head!=null) stack.push(explist.head);
+		if (explist.head!=null) visitElement(explist.head);
 		explist = explist.tail;
 	      }
 	    }
@@ -175,12 +185,14 @@ public abstract class Code extends HCode
   
   // implement elementArrayFactory which returns Tree[]s.  
   public ArrayFactory elementArrayFactory() { return Tree.arrayFactory; }
-  
+
+  /*
   public void print(java.io.PrintWriter pw)
     {
       Print printer = new Print(pw);
       printer.prStm((Stm)getRootElement());
     }
+  */
   public abstract DList derivation(HCodeElement hce, Temp t);
   public abstract HClass typeMap(HCode hc, Temp t);
 }
