@@ -25,8 +25,10 @@ struct block_header {
   size_t size_of_block;
   // when a block of memory is in use, the mark bit should be clear
   // except during collection, when it may be set. when a block of
-  // memory is not in use, the mark bit is the link to the next free block.
-  union { int mark; struct block *next; } markunion;
+  // memory is not in use, markunion is the link to the next free block.
+  // during collection, if the block of memory is in use, (markunion - 2)
+  // is the index of the field being examined.
+  union { ptroff_t mark; struct block *next; } markunion;
 };
 /* a block of memory contains a header with information about the block */
 struct block {
@@ -186,19 +188,22 @@ struct block *find_free_block(size_t size) {
 /* effects: marks object as well as any objects pointed to by it */
 void marksweep_handle_reference(jobject_unwrapped *obj)
 {
-  struct block *root;
+  struct block_header *root;
   if (allocated_by_marksweep((void *)(*obj)))
     {
+      // move back to top of block
+      root = (struct block_header *)(*obj) - 1;
       // mark or check for mark
-      root = (void *)(*obj) - sizeof(struct block_header);
-      if (!root->bheader.markunion.mark)
+      if (root->markunion.mark == 0)
 	{
 	  // if not already marked, mark and trace
-	  // if already marked, done
 	  error_gc("being marked.\n", "");
-	  root->bheader.markunion.mark = 1;
+	  root->markunion.mark = 1;
 	  trace(*obj);
 	}
+      else
+	// if already marked, done
+	assert(root->markunion.mark == 1);
     }
 }
 
@@ -254,8 +259,8 @@ void* marksweep_malloc(size_t size_in_bytes) {
   error_gc("Allocated %d bytes ", size_in_bytes);
   error_gc("at %p (for a total of ", result+1);
   error_gc("%d bytes)\n", (total_memory_requested += size_in_bytes));
-  // increment past header
   FLEX_MUTEX_UNLOCK(&marksweep_gc_mutex);
+  // increment past header
   return (result+1);
 }
 
@@ -317,6 +322,347 @@ int marksweep_in_heap(void *ptr)
   result = allocated_by_marksweep(ptr);
   FLEX_MUTEX_UNLOCK(&marksweep_gc_mutex);
   return result;
+}
+
+/* GC bitmaps for objects whose size (minus the object header) is 
+   less than COMPACT_ENCODING_SIZE fits inside the claz object. */
+#define COMPACT_ENCODING_SIZE (SIZEOF_VOID_P*SIZEOF_VOID_P*8)
+
+void print_bitmap(ptroff_t bitmap)
+{
+  int i, j;
+
+  printf("BITMAP ");
+
+  // start from the high bit
+  for (i = SIZEOF_VOID_P*8 - 1; i >= 0; i--)
+    {
+      // print a 1 for every set bit,
+      // a 0 for every cleared bit
+      printf("%d", ((bitmap & (1 << i)) != 0));
+    }
+  printf("\n");
+}
+
+/* pointerreversed_handle_reference marks the given object as
+   well as any objects pointed to by it using pointer-reversal. */
+void pointerreversed_handle_reference(jobject_unwrapped *obj)
+{
+  struct block *root;
+  jobject_unwrapped prev = NULL;
+  jobject_unwrapped curr = *obj;
+  jobject_unwrapped next;
+  int done = 0;
+
+  printf("Entering pointerreversed_handle_reference.\n");
+  fflush(stdout);
+
+  // with pointer-reversal, the mark has 3 possible states. 
+  // when an object has not yet been visited, mark = 0. 
+  // when the object is being handled, (mark - 2) is the 
+  // index to the field (or array element) in the object 
+  // that is currently being examined. when we have 
+  // completed looking at the object, mark = 1.
+  while (!done)
+    {
+      printf("Starting done loop.\n");
+      fflush(stdout);
+
+      // follow pointers down
+      while (curr != NULL)
+	{
+	  struct block *root = (void *)curr - sizeof(struct block_header);
+
+	  if (!allocated_by_marksweep(curr))
+	    {
+	      printf("Not allocated by marksweep.\n");
+	      fflush(stdout);
+	      if (prev == NULL)
+		done = 1;
+	      break;
+	    }
+
+	  printf("Starting curr loop: %p\n", curr);
+	  fflush(stdout);
+
+	  // these objects are untouched
+	  if (root->bheader.markunion.mark == 0)
+	    {
+	      printf("%p is unmarked.\n", curr);
+	      fflush(stdout);
+
+	      // these are references that we have not looked at
+	      if (curr->claz->component_claz != NULL)
+		{
+		  // we have an array
+		  struct aarray *arr = (struct aarray *) curr;
+
+		  // we have never seen this array before
+		  // it may or may not contain pointers
+		  ptroff_t containsPointers = arr->obj.claz->gc_info.bitmap;
+
+		  printf("%p is an array.\n", arr);		  
+		  fflush(stdout);
+
+		  assert(containsPointers == 0 || containsPointers == 1);
+		  if (containsPointers && arr->length > 0)
+		    {
+		      // this array contains pointers
+		      jobject_unwrapped *elements = (jobject_unwrapped *)(arr->element_start);
+		      
+		      printf("%p contains pointers.\n", arr);
+		      fflush(stdout);
+
+		      // start by looking at the first element of the array
+		      root->bheader.markunion.mark = 2;
+		      next = elements[0];
+		      elements[0] = prev;
+		      prev = curr;
+		      printf("Setting prev = %p.\n", prev);
+		      fflush(stdout);
+		      curr = next;
+		    }
+		  else
+		    {
+		      // this array does not contain pointers, mark as done
+		      printf("%p does not contain pointers.\n", arr);
+		      fflush(stdout);
+
+		      root->bheader.markunion.mark = 1;
+		      if (prev == NULL)
+			done = 1;
+		      break;
+		    }
+		}
+	      else
+		{
+		  //  we have a non-array object
+		  size_t obj_size_minus_header;
+		  int num_bitmaps, i, field_index;
+		  ptroff_t *bitmap_ptr;
+		  
+		  printf("%p is an object.\n", curr);
+		  fflush(stdout);
+
+		  // if the object size minus the object header is bigger than 
+		  // COMPACT_ENCODING_SIZE, then the GC bitmap is not inlined.
+		  // here we use some clever integer divide roundup thing.
+		  // we may want to be dumber but more efficient in the future
+		  // by borrowing the low bit to indicate whether the bitmap
+		  // is inline or not.
+		  obj_size_minus_header = curr->claz->size - sizeof(struct oobj);
+		  num_bitmaps = (obj_size_minus_header + COMPACT_ENCODING_SIZE - 1)/COMPACT_ENCODING_SIZE;
+		  assert(num_bitmaps >= 0);
+		  
+		  if (num_bitmaps > 1)
+		    bitmap_ptr = curr->claz->gc_info.ptr;
+		  else
+		    bitmap_ptr = &(curr->claz->gc_info.bitmap);
+		  
+		  field_index = -1;
+		  for (i = 0; i < num_bitmaps; i++)
+		    {
+		      int j;
+		      ptroff_t bitmap = bitmap_ptr[i];
+
+		      print_bitmap(bitmap);
+		      // as we examine each bit in the bitmap, starting
+		      // from bit zero, we shift the bitmap right. since 
+		      // we are interested in the first bit that is set, 
+		      // we can stop when all the remaining bits are
+		      // clear or when the current bit is set.
+		      for (j = i*SIZEOF_VOID_P*8; (bitmap != 0); j++) {
+			if (bitmap & 1)
+			  {
+			    field_index = j;
+			    break;
+			  }
+			bitmap = bitmap >> 1;
+		      }
+		      if (field_index != -1)
+			break;
+		    }
+		  
+		  if (field_index != -1)
+		    {
+		      // we found a field in the object that contains a pointer
+		      jobject_unwrapped *field_ptrs = (jobject_unwrapped *)(curr->field_start);
+
+		      printf("Field %d of this object contains a ptr.\n", field_index);
+		      fflush(stdout);
+
+		      root->bheader.markunion.mark = field_index + 2;
+		      next = field_ptrs[field_index];
+		      field_ptrs[field_index] = prev;
+		      prev = curr;
+		      printf("Setting prev = %p.\n", prev);
+		      fflush(stdout);
+		      curr = next;
+		    }
+		  else
+		    {
+		      // none of the fields in the object contain a pointer, mark as done
+		      printf("None of the fields in this object contains a ptr.\n");
+		      fflush(stdout);
+		      root->bheader.markunion.mark = 1;
+		      if (prev == NULL)
+			done = 1;
+		      break;
+		    }
+		}
+	    }
+	  else
+	    {
+	      // these are references we're done with or that
+	      // we are already looking at somewhere in the chain
+	      printf("%p has mark %d.\n", curr, root->bheader.markunion.mark);
+	      fflush(stdout);
+	      assert(root->bheader.markunion.mark >= 1);
+	      if (prev == NULL)
+		done = 1;
+	      break;
+	    }
+	}
+
+      // retreat! curr should point to the last thing we looked at, and prev to its parent
+      while (prev != NULL)
+	{
+	  // these objects are in the middle of being examined
+	  struct block *root = (void *)prev - sizeof(struct block_header);
+	  printf("Starting prev loop with prev = %p.\n", prev);
+	  fflush(stdout);
+
+	  assert(allocated_by_marksweep(prev));
+	  assert(root->bheader.markunion.mark > 1);
+
+	  if (prev->claz->component_claz != NULL)
+	    {
+	      // prev is an array. we know it has pointers b/c
+	      // we started looking at it.
+	      struct aarray *arr = (struct aarray *) prev;
+	      ptroff_t index = root->bheader.markunion.mark - 1;
+	      jobject_unwrapped *elements = (jobject_unwrapped *)(arr->element_start);  
+
+	      printf("%p is an array.\n", arr);
+	      fflush(stdout);
+
+	      if (index < arr->length)
+		{
+		  root->bheader.markunion.mark = index + 2;
+		  next = elements[index];
+		  elements[index] = elements[index-1];
+		  elements[index-1] = curr;
+		  curr = next;
+		  break;
+		}
+	      else
+		{
+		  // this array does not contain any more pointers, mark as done
+		  printf("None of the rest of the fields in this object contains a ptr.\n");
+		  fflush(stdout);
+		  root->bheader.markunion.mark = 1;
+		  // restore pointers
+		  next = prev;
+		  prev = elements[index-1];
+		      printf("Setting prev = %p.\n", prev);
+		      fflush(stdout);
+		  elements[index-1] = curr;
+		  curr = next;
+		  if (prev == NULL)
+		    done = 1;
+		}
+	    }
+	  else
+	    {
+	      // prev is a non-array object
+	      size_t obj_size_minus_header;
+	      int num_bitmaps, i;
+	      ptroff_t *bitmap_ptr;
+	      ptroff_t field_index;
+	      jobject_unwrapped *field_ptrs;
+
+	      printf("%p is an object\n", prev);
+	      fflush(stdout);
+
+	      // if the object size minus the object header is bigger than 
+	      // COMPACT_ENCODING_SIZE, then the GC bitmap is not inlined.
+	      // here we use some clever integer divide roundup thing.
+	      // we may want to be dumber but more efficient in the future
+	      // by borrowing the low bit to indicate whether the bitmap
+	      // is inline or not.
+	      obj_size_minus_header = prev->claz->size - sizeof(struct oobj);
+	      num_bitmaps = (obj_size_minus_header + COMPACT_ENCODING_SIZE - 1)/COMPACT_ENCODING_SIZE;
+	      assert(num_bitmaps >= 0);
+	      
+	      if (num_bitmaps > 1)
+		bitmap_ptr = prev->claz->gc_info.ptr;
+	      else
+		bitmap_ptr = &(prev->claz->gc_info.bitmap);
+	      
+	      field_index = root->bheader.markunion.mark - 2;
+
+	      for (i = (field_index+1)/(SIZEOF_VOID_P*8); i < num_bitmaps; i++)
+		{
+		  int j;
+		  ptroff_t bitmap = bitmap_ptr[i];
+		  
+		  // as we examine each bit in the bitmap, starting
+		  // from bit zero, we shift the bitmap right. since 
+		  // we are interested in the first bit that is set, 
+		  // we can stop when all the remaining bits are
+		  // clear or when the current bit is set.
+		  bitmap = bitmap >> (field_index + 1 - i*SIZEOF_VOID_P*8);
+		  for (j = field_index+1; (bitmap != 0); j++) {
+		    if (bitmap & 1)
+			  {
+			    field_index = j;
+			    break;
+			  }
+			bitmap = bitmap >> 1;
+		  }
+		  if (field_index != root->bheader.markunion.mark - 2)
+		    break;
+		}
+	      
+	      field_ptrs = (jobject_unwrapped *)(prev->field_start);
+	      
+	      if (field_index != root->bheader.markunion.mark - 2)
+		{
+		  // we found the next field in the object that contains a pointer
+		  printf("Field %d of this object contains a ptr.\n", field_index);
+		  fflush(stdout);
+		  next = field_ptrs[field_index];
+		  field_ptrs[field_index] = field_ptrs[root->bheader.markunion.mark-2];
+		  field_ptrs[root->bheader.markunion.mark-2] = curr;
+		  curr = next;
+		  root->bheader.markunion.mark = field_index + 2;
+		  break;
+		}
+	      else
+		{
+		  // none of the remaining fields in the object contain a pointer, 
+		  // restore pointers and mark as done
+		  printf("None of the remaining fields of this object contain a ptr.\n");
+		  next = prev;
+		  prev = field_ptrs[root->bheader.markunion.mark-2];
+		      printf("Setting prev = %p.\n", prev);
+		      fflush(stdout);
+		  field_ptrs[root->bheader.markunion.mark-2] = curr;
+		  curr = next;
+		  root->bheader.markunion.mark = 1;
+		  if (prev == NULL)
+		    done = 1;
+		}
+	    }
+	}
+      printf("\n");
+
+    }
+
+  printf("Exiting pointerreversed_handle_reference.\n");
+  printf("---------------------------------------------\n\n");
+  fflush(stdout);
+
 }
 
 #endif
