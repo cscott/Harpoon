@@ -20,7 +20,7 @@ public class ArrayCopyInliner extends SmallMethodInliner {
     }
 
     protected int score(HMethod hm, IntMap methodSize, MultiMap callSites) {
-	if ((hm != null)&&hm.getName().equals("arraycopy")) {
+	if ((hm != null)&&hm.getName().startsWith("arraycopy")) {
 	    return -4;
 	} 
 	return methodSize.getInt(hm);
