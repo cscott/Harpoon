@@ -41,6 +41,7 @@ Benchmarks $CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu
 Code	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
 EventDriven $CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
 Realtime	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
+RoleInference	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
 Runtime	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
 SupportNP	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
 Tests	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s

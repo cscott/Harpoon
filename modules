@@ -42,6 +42,7 @@ Design	Design
 Docs	Docs
 EventDriven EventDriven
 Realtime Realtime
+RoleInference RoleInference
 Runtime Runtime
 SupportNP SupportNP
 Tests	Tests
