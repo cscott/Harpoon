@@ -2,11 +2,16 @@
 #include <jni.h>
 #include <jni-private.h>
 #include "java_lang_Class.h"
+#include "../java.lang.reflect/java_lang_reflect_Member.h"
+#include "../java.lang.reflect/java_lang_reflect_Modifier.h"
 #ifdef WITH_TRANSACTIONS
 # include "../transact/transact.h"
 #endif
 
 #include <assert.h>
+
+/* logical XOR */
+#define XOR(a, b) ({int _r_=(a); if (b) _r_=!_r_; _r_; })
 
 static void wrapNthrow(JNIEnv *env, char *exclsname);
 #ifdef WITH_INIT_CHECK
@@ -358,14 +363,68 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_getPrimitiveClass
     return Java_java_lang_Class_forName(env, cls, str);
 }
 
-#if 0
+/* decision helper method */
+enum memberType { FIELDS, METHODS, CONSTRUCTORS };
+static jboolean isAptMember(jclass cls, union _jmemberID *mptr,
+			    jint which, enum memberType type) {
+  /* filter out methods/fields */
+  if (XOR(mptr->m.desc[0]=='(', type!=FIELDS)) return JNI_FALSE;
+  /* filter out non-public if which==0 */
+  if (which == java_lang_reflect_Member_PUBLIC &&
+      !(mptr->m.reflectinfo->modifiers & java_lang_reflect_Modifier_PUBLIC))
+    return JNI_FALSE;
+  /* filter out non-local if which==1 */
+  if (which == java_lang_reflect_Member_DECLARED &&
+      mptr->m.reflectinfo->declaring_class_object != FNI_UNWRAP(cls))
+    return JNI_FALSE;
+  /* filter out <clinit> if type!=FIELDS */
+  if (type!=FIELDS && strcmp(mptr->m.name, "<clinit>")==0)
+    return JNI_FALSE;
+  /* if type==CONSTRUCTORS, filter out all but constructors */
+  if (type==CONSTRUCTORS && strcmp(mptr->m.name, "<init>")!=0)
+    return JNI_FALSE;
+  /* congratulations! you've run the gauntlet! */
+  return JNI_TRUE;
+}
+
+/* helper method */
+static jobjectArray JNICALL Java_java_lang_Class_getMembers
+  (JNIEnv *env, jclass cls, jint which, enum memberType type) {
+  /* membersAreMethods is JNI_TRUE to collect methods, else JNI_FALSE */
+  /* 'which' can be Member.PUBLIC (0) or Member.DECLARED (1) */
+  struct FNI_classinfo *info = FNI_GetClassInfo(cls);
+  union _jmemberID *ptr;
+  jclass memberClass; jobjectArray result;
+  jsize count=0;
+  /* count matching members */
+  for (ptr=info->memberinfo; ptr < info->memberend; ptr++)
+    if (isAptMember(cls, ptr, which, type))
+      count++;
+  /* create properly-sized and -typed array */
+  memberClass = (*env)->FindClass(env,
+				  (type==FIELDS)?"java/lang/reflect/Field":
+				  (type==METHODS)?"java/lang/reflect/Method":
+				  "java/lang/reflect/Constructor");
+  result = (*env)->NewObjectArray(env, count, memberClass, NULL);
+  /* now put matching members in array */
+  count=0;
+  for (ptr=info->memberinfo; ptr < info->memberend; ptr++)
+    if (isAptMember(cls, ptr, which, type))
+      (*env)->SetObjectArrayElement
+	  (env, result, count++, FNI_WRAP(ptr->m.reflectinfo->method_object));
+  /* done */
+  return result;
+}
+
 /*
  * Class:     java_lang_Class
  * Method:    getFields0
  * Signature: (I)[Ljava/lang/reflect/Field;
  */
 JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getFields0
-  (JNIEnv *, jobject, jint);
+  (JNIEnv *env, jclass cls, jint which) {
+  return Java_java_lang_Class_getMembers(env, cls, which, FIELDS);
+}
 
 /*
  * Class:     java_lang_Class
@@ -373,7 +432,9 @@ JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getFields0
  * Signature: (I)[Ljava/lang/reflect/Method;
  */
 JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getMethods0
-  (JNIEnv *, jobject, jint);
+  (JNIEnv *env, jobject cls, jint which) {
+  return Java_java_lang_Class_getMembers(env, cls, which, METHODS);
+}
 
 /*
  * Class:     java_lang_Class
@@ -381,8 +442,11 @@ JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getMethods0
  * Signature: (I)[Ljava/lang/reflect/Constructor;
  */
 JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getConstructors0
-  (JNIEnv *, jobject, jint);
+  (JNIEnv *env, jobject cls, jint which) {
+  return Java_java_lang_Class_getMembers(env, cls, which, CONSTRUCTORS);
+}
 
+#if 0
 /*
  * Class:     java_lang_Class
  * Method:    getField0

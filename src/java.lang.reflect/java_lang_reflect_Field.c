@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <jni.h>
+#include "jni-private.h"
 #include "java_lang_reflect_Field.h"
 
 /*
@@ -8,8 +9,8 @@
  * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getModifiers
-	(JNIEnv *env, jobject thisfield) {
-  assert(0);
+  (JNIEnv *env, jobject _this) {
+    return FNI_GetFieldInfo(_this)->modifiers;
 }
 
 #if 0
