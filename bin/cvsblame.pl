@@ -92,6 +92,50 @@ sub traverse_cvs_tree {
     }
 }
 
+# object encapsulation.
+{
+    # RevEntry object holds cvsblame information for a single line.
+    package RevEntry;
+    sub new {
+        my ($proto, $rcsobj,$revision) = @_;
+        my $class = ref($proto) || $proto;
+        my $self = {
+            RCSOBJ => $rcsobj, REVISION => $revision,
+        };
+        bless ($self, $class);
+        return $self;
+    }
+    sub _get_or_set_ { # convenience
+        my $field = shift; my $self = shift;
+        if (@_) { $self->{$field} = shift; }
+        return $self->{$field};
+    }
+    # field accessors.
+    sub rcsobj   { &_get_or_set_("RCSOBJ", @_); }
+    sub revision { &_get_or_set_("REVISION", @_); }
+    # useful properties.
+    sub author   {
+        my $self = shift;
+        return $self->rcsobj->{REVISION_AUTHOR}->{$self->revision};
+    }
+    sub pathname {
+        my $self = shift;
+        return $self->rcsobj->{PATHNAME};
+    }
+    sub ctime {
+        my $self = shift;
+        return $self->rcsobj->{REVISION_CTIME}->{$self->revision};
+    }
+    sub age {
+        my $self = shift;
+        return $self->rcsobj->{REVISION_AGE}->{$self->revision};
+    }
+    sub timestamp {
+        my $self = shift;
+        return $self->rcsobj->{TIMESTAMP}->{$self->revision};
+    }
+}
+
 # Consume one token from the already opened RCSFILE filehandle.
 # Unescape string tokens, if necessary.
 sub get_token {
@@ -184,6 +228,7 @@ sub parse_rcs_admin {
 
         if ($token eq "head") {
             $rcsobj->{HEAD_REVISION} = &get_token;
+            $rcsobj->{TAG_REVISION}->{HEAD} = $rcsobj->{HEAD_REVISION};
             &match_token(';');         # Eat semicolon
         } elsif ($token eq "branch") {
             $rcsobj->{PRINCIPAL_BRANCH} = &get_token;
@@ -340,6 +385,7 @@ sub parse_rcs_tree {
     return undef;
 }
 
+# sets the $rcs_file_description field in the supplied $rcsobj.
 sub parse_rcs_description {
     my $rcsobj = shift;
     &match_token('desc');
@@ -348,7 +394,8 @@ sub parse_rcs_description {
 
 # Construct associative arrays containing info about individual revisions.
 #
-# The following associative arrays are created, keyed by revision number:
+# Associative arrays are created for the following fields in $rcsobj; all
+# arrays are keyed by revision number.
 #   %revision_log        -- log message
 #   %revision_deltatext  -- Either the complete text of the revision,
 #                           in the case of the head revision, or the
@@ -499,7 +546,9 @@ sub open_cvs_file {
     return open(HANDLE, "< $atticname"); # fall back to attic.
 }
 
-sub make_cvs_rev_map {
+# create a simple revision map given the map for a previous revision.
+# no funky MERGE or RENAME stuff is done.
+sub simple_rev_map {
     # args in:  $want_rev - desired revision
     #           $have_rev - revision I have
     #           @have_map - revision map for the revision I have
@@ -541,7 +590,7 @@ sub make_cvs_rev_map {
 
                         $#temp = -1;
                         while ($count--) {
-                            push(@temp, $revision);
+                            push(@temp, RevEntry->new($rcsobj, $revision));
                         }
                         splice(@have_map, $start_line - 1, 0, @temp);
                     } elsif ($command =~ /^a(\d+)\s(\d+)$/) { # Add command
@@ -573,7 +622,7 @@ sub make_cvs_rev_map {
                         $skip = $count;
                         $#temp = -1;
                         while ($count--) {
-                            push(@temp, $revision);
+                            push(@temp, RevEntry->new($rcsobj, $revision));
                         }
                         splice(@have_map, $start_line + $adjust, 0, @temp);
                         $adjust += $skip;
@@ -588,6 +637,177 @@ sub make_cvs_rev_map {
 
     # return new have_map
     @have_map;
+}
+
+sub cvs_make_rev_map {
+    my ($rcsobj, $rcs_pathname, $revision) = @_;
+    my @revision_map;
+
+    # The primordial revision is not always 1.1!  Go find it.
+    my $primordial = $revision;
+    while (exists($rcsobj->{PREV_REVISION}->{$primordial}) &&
+           $rcsobj->{PREV_REVISION}->{$primordial} ne "") {
+        $primordial = $rcsobj->{PREV_REVISION}->{$primordial};
+    }
+
+    # Figure out how many lines were in the primordial, i.e. version 1.1,
+    # check-in.
+    my $line_count = 0;
+    my @tmp = &extract_revision($rcsobj, $primordial);
+    $line_count = @tmp;
+    # Create initial revision map for primordial version.
+    while ($line_count--) {
+        push(@revision_map, RevEntry->new($rcsobj, $primordial));
+    }
+
+    # now, crawl from primordial map forward, jumping from merge to
+    # merge, creating a "revision map" -- an array where each element
+    # represents a line of text in the given revision but contains only
+    # the revision number in which the line was introduced rather than
+    # the line text itself.
+
+    # build ancestor list all the way from $revision down to $primordial
+    my @ancestors = &ancestor_revisions($rcsobj, $revision);
+
+    my $last_rev = $primordial; my @last_map = @revision_map;
+    # find last RENAME log commend, and fork off.
+    my $n;
+    for ($n=0; $n <= $#ancestors; $n++) { # foreach r in @ancestors...
+        my $r = $ancestors[$n];
+        next if $opt_R; # ignore RENAME tasg
+        next unless ($rcsobj->{REVISION_LOG}->{$r} =~
+                     m/[@]RENAME:\s*([^@]+)\s*[@]/);
+        # ok, this is a renaming.  extract from and to patterns
+        my ($frm_pat, $to_pat) = split(/\s+/, $1);
+        # ignore directive if @RENAME@ tag is not well formed.
+        next unless defined $frm_pat && defined $to_pat;
+        # ignore directive if $rcs_pathname doesn't contain $topat
+        # (typically, this means that this is the file being removed,
+        #  not the file being added)
+        next unless ($rcs_pathname =~ m/$to_pat/);
+        my $frm_pathname = $rcs_pathname;
+        $frm_pathname =~ s/$to_pat/$frm_pat/;
+        # open and parse this CVS file (skip directive on error)
+        next if !open_cvs_file(\*RCSFILE, $frm_pathname);
+        my $frmobj = &parse_rcs_file();
+        $frmobj->{PATHNAME} = $frm_pathname;
+        close(RCSFILE);
+        # find which revision to use: we'll start at the revision
+        # applicable at the time and branch this check-in occured,
+        # then move backwards until we get to a non-dead check-in.
+        #  a) first, find a symbolic name for the branch we're on.
+        $r =~ m/(\d+(?:\.\d+\.\d+)*)\.\d+/;
+        my $branchnum = $1;
+        my $branchsym = $rcsobj->{REVISION_SYMBOLIC_NAME}->{$branchnum};
+        if (!defined $branchsym) { # try a 'magic' branch number.
+            $branchnum =~ s/(\.\d+)$/.0$1/;
+            $branchsym = $rcsobj->{REVISION_SYMBOLIC_NAME}->{$branchnum};
+        }
+        #  b) use the HEAD branch if all else fails.
+        $branchsym = "HEAD" if !defined $branchsym;
+        #  c) map this branch tag to the appropriate revision in $frm
+        my $frmtag = &map_tag_to_revision($frmobj, $branchsym,
+                                          $rcsobj->{TIMESTAMP}->{$r});
+        #  d) now move back until we find a non-dead check-in
+        while ($frmobj->{REVISION_STATE}->{$frmtag} eq "dead") {
+            $frmtag = $frmobj->{PREV_REVISION}->{$frmtag};
+        }
+        next unless defined $frmtag; # give up, if appropriate
+        # recurse to get rev_map of frm file.
+        my @frm_map = &cvs_make_rev_map($frmobj, $frm_pathname, $frmtag);
+        # now get a diff to bring the map up to present
+        my @fr_lines = &extract_revision($frmobj, $frmtag);
+        my @to_lines = &extract_revision($rcsobj, $r);
+        my @diffs = &diff_lines(\@fr_lines, \@to_lines);
+        # apply these diffs to @frm_map to account for mods during move.
+        my $adjust = 0;
+        # for each command...
+        for (my $i = 0; $i <= $#diffs; $i++) {
+            my $command = $diffs[$i];
+            if ($command =~ /^d(\d+)\s(\d+)$/) { # Delete command
+                my ($start_line, $count) = ($1, $2);
+                splice(@frm_map, $start_line + $adjust - 1, $count);
+                $adjust -= $count;
+            } elsif ($command =~ /^a(\d+)\s(\d+)$/) { # Add command
+                my ($start_line, $count) = ($1, $2);
+                $skip = $count; $i+=$count;
+                my @temp; $#temp = -1;
+                while ($count--) {
+                    push(@temp, RevEntry->new($rcsobj, $r));
+                }
+                splice(@frm_map, $start_line + $adjust, 0, @temp);
+                $adjust += $skip;
+            } else {
+                die "Error parsing diff commands";
+            }
+        }
+        die "Inconsistent state" unless $#frm_map == $#to_lines;
+        # ok, done.
+        $last_rev = $r; @last_map = @frm_map;
+        last; # stop looking for RENAMEs.
+    }
+    # deal with MERGEs
+    my %seen;
+    for ($n--; $n >= 0; $n--) { # foreach r in reverse @ancestors...
+        my $r = $ancestors[$n];
+        $seen{$r}=1;
+        if (!$opt_M &&
+            $rcsobj->{REVISION_LOG}->{$r} =~ m/[@]MERGE:\s*([^@]+)\s*[@]/) {
+            my $from_rev = &map_tag_to_revision($rcsobj, $1,
+                                                $rcsobj->{TIMESTAMP}->{$r});
+            # find common point.
+            my $com=$from_rev;
+            while (!$seen{$com} ) {
+                $com = $rcsobj->{PREV_REVISION}->{$com};
+            }
+            # create map for common point.
+            my @com_map = &simple_rev_map($rcsobj, $com,$last_rev,@last_map);
+            # create maps for both sides of merge
+            my @main_map = &simple_rev_map($rcsobj, $r,       $com,@com_map);
+            my @merge_map= &simple_rev_map($rcsobj, $from_rev,$com,@com_map);
+            # incrementally update @merge_map to revision $r.
+            my @main_lines = &extract_revision($rcsobj, $r);
+            my @merge_lines= &extract_revision($rcsobj, $from_rev);
+            my @diffs = &diff_lines(\@merge_lines, \@main_lines);
+            # apply these diffs to @merge_map to make it parallel to 
+            # @main_map (stolen from &update_with_local_mods)
+            my $adjust = 0;
+            # for each command...
+            for (my $i=0; $i <= $#diffs; $i++) {
+                my $command = $diffs[$i];
+                if ($command =~ /^d(\d+)\s(\d+)$/) { # Delete command
+                    my ($start_line, $count) = ($1, $2);
+                    splice(@merge_map, $start_line + $adjust - 1, $count);
+                    $adjust -= $count;
+                } elsif ($command =~ /^a(\d+)\s(\d+)$/) { # Add command
+                    my ($start_line, $count) = ($1, $2);
+                    $skip = $count; $i+=$count;
+                    my @temp; $#temp = -1;
+                    while ($count--) {
+                        push(@temp, RevEntry->new($rcsobj, $r));
+                    }
+                    splice(@merge_map, $start_line + $adjust, 0, @temp);
+                    $adjust += $skip;
+                } else {
+                    die "Error parsing diff commands";
+                }
+            }
+            die "Inconsistent state" unless $#merge_map == $#main_map;
+            # do the merge
+            for (my $i=0; $i<$#main_map; $i++) {
+                $main_map[$i] = $merge_map[$i]
+                    if $main_map[$i]->rcsobj==$rcsobj &&
+                        $main_map[$i]->revision eq $r;
+            }
+            # assign results
+            @last_map = @main_map;
+            $last_rev = $r;
+        }
+    }
+    # bring from last merge up to present
+    @revision_map = &simple_rev_map($rcsobj, $revision,$last_rev,@last_map);
+
+    return @revision_map;
 }
 
 # map a tag to a numerical revision number. The tag can be a symbolic
@@ -634,6 +854,7 @@ sub parse_cvs_file {
         "but the RCS file is inaccessible.\n(Couldn't open '$rcs_pathname')\n"
             if !open_cvs_file (\*RCSFILE, $rcs_pathname);
     my $rcsobj = &parse_rcs_file();
+    $rcsobj->{PATHNAME} = $rcs_pathname;
     close(RCSFILE);
 
     if (!defined($opt_r)) {
@@ -649,122 +870,7 @@ sub parse_cvs_file {
             if ($revision eq '');
     }
 
-    # The primordial revision is not always 1.1!  Go find it.
-    my $primordial = $revision;
-    while (exists($rcsobj->{PREV_REVISION}->{$primordial}) &&
-           $rcsobj->{PREV_REVISION}->{$primordial} ne "") {
-        $primordial = $rcsobj->{PREV_REVISION}->{$primordial};
-    }
-
-    # Don't display file at all, if -m option is specified and no
-    # changes have been made in the specified file.
-    return if ($opt_m && $rcsobj->{TIMESTAMP}->{$revision} < $opt_m_timestamp);
-
-    # Figure out how many lines were in the primordial, i.e. version 1.1,
-    # check-in by moving backward in time from the head revision to the
-    # first revision.
-    my $line_count = 0;
-    my $head_revision = $rcsobj->{HEAD_REVISION};
-    if ($rcsobj->{REVISION_DELTATEXT}->{$head_revision}) {
-         my @tmp = split(/^/, $rcsobj->{REVISION_DELTATEXT}->{$head_revision});
-         $line_count = @tmp;
-    }
-    my $skip = 0;
-    for (my $rev = $rcsobj->{PREV_REVISION}->{$head_revision}; $rev;
-            $rev = $rcsobj->{PREV_REVISION}->{$rev}) {
-        my @diffs = split(/^/, $rcsobj->{REVISION_DELTATEXT}->{$rev});
-        foreach my $command (@diffs) {
-            if ($skip > 0) {
-                # Skip insertion lines from a prior "a" command.
-                $skip--;
-            } elsif ($command =~ /^d(\d+)\s(\d+)/) {
-                # "d" - Delete command
-                my ($start_line, $count) = ($1, $2);
-                $line_count -= $count;
-            } elsif ($command =~ /^a(\d+)\s(\d+)/) {
-                # "a" - Add command
-                my ($start_line, $count) = ($1, $2);
-                $skip = $count;
-                $line_count += $count;
-            } else {
-                die "$progname: error: illegal RCS file $rcs_pathname\n",
-                "  error appears in revision $rev\n";
-            }
-        }
-    }
-
-    # now, crawl from primordial map forward, jumping from merge to
-    # merge, creating a "revision map" -- an array where each element
-    # represents a line of text in the given revision but contains only
-    # the revision number in which the line was introduced rather than
-    # the line text itself.
-
-    # Create initial revision map for primordial version.
-    while ($line_count--) {
-        push(@revision_map, $primordial);
-    }
-
-    # build ancestor map all the way from $revision down to primordial
-    my @ancestors = &ancestor_revisions($rcsobj, $revision);
-    my %seen; my $last_rev = $primordial; my @last_map = @revision_map;
-    foreach my $r (reverse @ancestors) {
-        $seen{$r}=1;
-        if (!$opt_M &&
-            $rcsobj->{REVISION_LOG}->{$r} =~ m/[@]MERGE:\s*([^@]+)\s*[@]/) {
-            my $from_rev = &map_tag_to_revision($rcsobj, $1,
-                                                $rcsobj->{TIMESTAMP}->{$r});
-            # find common point.
-            my $com=$from_rev;
-            while (!$seen{$com} ) {
-                $com = $rcsobj->{PREV_REVISION}->{$com};
-            }
-            # create map for common point.
-            my @com_map = &make_cvs_rev_map($rcsobj, $com,$last_rev,@last_map);
-            # create maps for both sides of merge
-            my @main_map = &make_cvs_rev_map($rcsobj, $r,       $com,@com_map);
-            my @merge_map= &make_cvs_rev_map($rcsobj, $from_rev,$com,@com_map);
-            # incrementally update @merge_map to revision $r.
-            next unless open(CVSDIFF, "cvs -flnq diff -n "
-                             . "-r $from_rev -r $r $pathname |");
-            my @diffs = <CVSDIFF>;
-            close(CVSDIFF);
-            # apply these diffs to @merge_map to make it parallel to 
-            # @main_map (stolen from &update_with_local_mods)
-            my $adjust = 0;  my $i = 0;
-            # skip header info.
-            $i++ until $i > $#diffs || $diffs[$i] =~ /^diff\s/;
-            # for each command...
-            for ($i++; $i <= $#diffs; $i++) {
-                my $command = $diffs[$i];
-                if ($command =~ /^d(\d+)\s(\d+)$/) { # Delete command
-                    my ($start_line, $count) = ($1, $2);
-                    splice(@merge_map, $start_line + $adjust - 1, $count);
-                    $adjust -= $count;
-                } elsif ($command =~ /^a(\d+)\s(\d+)$/) { # Add command
-                    my ($start_line, $count) = ($1, $2);
-                    $skip = $count; $i+=$count;
-                    my @temp; $#temp = -1;
-                    while ($count--) {
-                        push(@temp, $r);
-                    }
-                    splice(@merge_map, $start_line + $adjust, 0, @temp);
-                    $adjust += $skip;
-                } else {
-                    die "Error parsing diff commands";
-                }
-            }
-            die "Inconsistent state" unless $#merge_map == $#main_map;
-            # do the merge
-            for ($i=0; $i<$#main_map; $i++) {
-                $main_map[$i] = $merge_map[$i] if $main_map[$i] eq $r;
-            }
-            # assign results
-            @last_map = @main_map;
-            $last_rev = $r;
-        }
-    }
-    # bring from last merge up to present
-    @revision_map = &make_cvs_rev_map($rcsobj, $revision,$last_rev,@last_map);
+    @revision_map = &cvs_make_rev_map($rcsobj, $rcs_pathname, $revision);
 
     ($rcsobj, $revision);
 }
@@ -860,6 +966,30 @@ sub rcs_pathname_and_revision {
             $checked_out_revision);
 }
 
+# make a temporary file containing the contents of an array.
+# return the name of the file.
+sub temp_file_with_contents {
+    my @lines = @_;
+    my $tmp1 = `mktemp /tmp/cvsblame.XXXXXX`; chomp $tmp1;
+    open(TMP1, "> $tmp1") or die "Couldn't open temporary file $tmp1";
+    foreach my $line (@lines) {
+        print TMP1 $line;
+    }
+    close(TMP1);
+    return $tmp1;
+}
+# get a minimal diff of the contents of two arrays.
+sub diff_lines {
+    my ($ref1, $ref2) = @_;
+    my $tmp1 = &temp_file_with_contents(@{$ref1});
+    my $tmp2 = &temp_file_with_contents(@{$ref2});
+    open(DIFF, "diff -n $tmp1 $tmp2 |") or die "Couldn't start diff";
+    my @results = <DIFF>;
+    close(DIFF);
+    unlink $tmp1, $tmp2 or die "Couldn't remove temporary files.";
+    return @results;
+}
+
 sub update_with_local_mods {
     my ($rcsobj, $pathname, @text) = @_;
     my @diffs;
@@ -881,7 +1011,7 @@ sub update_with_local_mods {
             $skip = $count;
             my @temp1; my @temp2; $#temp1 = -1; $#temp2 = -1;
             while ($count--) {
-                push(@temp1, "LOCAL");
+                push(@temp1, RevEntry->new($rcsobj, "LOCAL"));
                 push(@temp2, $diffs[++$i]);
             }
             splice(@revision_map, $start_line + $adjust, 0, @temp1);
@@ -930,38 +1060,40 @@ sub show_annotated_cvs_file {
 
     # Print each line of the revision, preceded by its annotation.
     $line = 0;
-    foreach $revision (@revision_map) {
+    my $suffix_cnt = 0; my %suffixes; $suffixes{$rcsobj}="";
+    foreach $reventry (@revision_map) {
         $text = $text[$line++];
         $annotation = '';
 
         # Annotate with revision author
-        $annotation .= sprintf("%-8s",
-                               $rcsobj->{REVISION_AUTHOR}->{$revision})
-            if $opt_a;
+        $annotation .= sprintf("%-8s", $reventry->author) if $opt_a;
 
         # Annotate with revision number
-        $annotation .= sprintf(" %-6s", $revision) if $opt_v;
+        my $r = $reventry->revision;
+        $suffixes{$reventry->rcsobj} = chr(ord('a')+$suffix_cnt++)
+            if !exists $suffixes{$reventry->rcsobj};
+        $r .= $suffixes{$reventry->rcsobj};
+        $annotation .= sprintf(" %-6s", $r) if $opt_v;
 
         # Date annotation
-        $annotation .= " ".$rcsobj->{REVISION_CTIME}->{$revision} if $opt_d;
+        $annotation .= " ".$reventry->ctime if $opt_d;
 
         # Age annotation ?
-        $annotation .= sprintf(" (%3s)",
-                               int($rcsobj->{REVISION_AGE}->{$revision}))
-            if $opt_A;
+        $annotation .= sprintf(" (%3s)", int($reventry->age)) if $opt_A;
 
         # URL annotation.
-        my $partialpath = substr($rcs_truename{$rcs_pathname},
+        my $partialpath = substr($rcs_truename{$reventry->pathname},
                                  length($cvsroot));
         $partialpath =~ s/,v$//;
-        my $prev_rev = $rcsobj->{PREV_REVISION}->{$revision};
-        $prev_rev = $revision unless defined $prev_rev;
-        $prev_rev = $revision = $checked_out_rev if $revision eq "LOCAL";
+        my $rev2 = $reventry->revision;
+        my $rev1 = $reventry->rcsobj->{PREV_REVISION}->{$rev2};
+        $rev1 = $rev2 unless defined $rev1;
+        $rev1 = $rev2 = $checked_out_rev if $rev2 eq "LOCAL";
         $annotation .= " $opt_u$partialpath.diff?".
-            "r1=$prev_rev&r2=$revision" if defined $opt_u;
+            "r1=$rev1&r2=$rev2" if defined $opt_u;
 
         # -m (if-modified-since) annotion ?
-        if ($opt_m && ($rcsobj->{TIMESTAMP}->{$revision} < $opt_m_timestamp)) {
+        if ($opt_m && ($reventry->timestamp < $opt_m_timestamp)) {
             $annotation = $blank_annotation;
         }
 
@@ -996,6 +1128,7 @@ sub usage {
 "      -q                 Suppress original text (just print annotation)\n",
 "      -n                 Don't show local modifications\n",
 "      -M                 Don't follow \@MERGE@ tags in logs\n",
+"      -R                 Don't follow \@RENAME@ tags in logs\n",
 "      -u <base url>      Output a URL on each line for markup programs\n",
 "      -h                 Print help (this message)\n\n",
 "   (-a -v assumed, if none of -a, -v, -A, -d supplied)\n"
@@ -1004,8 +1137,8 @@ sub usage {
 
 # suppress -w warnings.
 undef $opt_M; undef $opt_h; undef $opt_l; undef $opt_n;
-undef $opt_q; undef $opt_w;
-&usage if (!&getopts('r:m:Aadhlvwqnu:M'));
+undef $opt_q; undef $opt_w; undef $opt_R;
+&usage if (!&getopts('r:m:Aadhlvwqnu:MR'));
 &usage if ($opt_h);             # help option
 
 $multiple_files_on_command_line = 1 if ($#ARGV != 0);
