@@ -1,0 +1,1 @@
+java -Xbootclasspath:/home/ovy/urop/brian -mx50m SMain 1600 20
