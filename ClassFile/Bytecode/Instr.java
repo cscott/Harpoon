@@ -8,7 +8,7 @@ import java.util.Vector;
  * bytecode instruction classes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.6 1998-08-03 23:08:21 cananian Exp $
+ * @version $Id: Instr.java,v 1.7 1998-08-03 23:14:16 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -22,11 +22,13 @@ public abstract class Instr implements HCodeElement {
   protected Instr(String sourcefile, int linenumber) {
     this.sourcefile = sourcefile;
     this.linenumber = linenumber;
-    synchronized(this) {
+    synchronized(lock) {
       this.id = next_id++;
     }
   }
   static int next_id = 0;
+  static final Object lock = new Object();
+
   /** Get the original source file name that this bytecode instruction 
    *  is derived from. */
   public String getSourceFile() { return sourcefile; }
