@@ -9,9 +9,11 @@
 
 #ifdef MARKSWEEP
 #include "marksweep.h"
-#define add_to_root_set  marksweep_handle_reference
+// #define add_to_root_set  marksweep_handle_reference
+#define add_to_root_set  pointerreversed_handle_reference
 #define internal_gc_init marksweep_gc_init
-#define handle_reference marksweep_handle_reference
+// #define handle_reference marksweep_handle_reference
+#define handle_reference pointerreversed_handle_reference
 #define internal_malloc  marksweep_malloc
 #else
 #include "copying.h"
@@ -35,6 +37,12 @@
 void trace_array(struct aarray *arr);
 
 void trace_object(jobject_unwrapped obj);
+
+#define NO_POINTERS  0
+#define INDEX_OFFSET 1
+ptroff_t next_array_index(struct aarray *arr, ptroff_t last_index, int new);
+
+ptroff_t next_field_index(jobject_unwrapped obj, ptroff_t last_index, int new);
 
 #ifndef WITH_THREADED_GC
 #define halt_for_GC()
