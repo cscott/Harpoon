@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.27 1999-06-11 23:08:44 cananian Exp $
+% $Id: thesis.tex,v 1.28 1999-06-12 01:04:06 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.27 $ $}
+\date{\today \\ $ $Revision: 1.28 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.27 $ $}{$ $Revision: 1.27 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.28 $ $}{$ $Revision: 1.28 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -394,7 +394,7 @@ and representations.%
 \fixme{Um, change to compute \emph{edge}
 equivalency as well as \emph{node} equivalency.  Merge algorithms from
 \cite{johnson93:sese} and \cite{johnson94:pst}.}
-Figure \ref{fig:CQex} shows cycle-equivalent regions in a sample
+Figure \ref{fig:CQex} shows cycle-equivalent regions in a simple
 control-flow graph.
 
 \begin{myfigure}
@@ -410,7 +410,7 @@ $\begin{array}[c]{cc}
 \tuple{1,9}\cyceq\tuple{9,10}\cyceq\tuple{14,15}\cyceq\tuple{15,16}\\
 \tuple{10,11}\cyceq\tuple{11,13}\\
 \end{array}$
-\caption{Control flow graph and cycle-equivalent edges}
+\caption{Control flow graph and cycle-equivalent edges.}
 \label{fig:CQex}
 \end{myfigure}
 
@@ -439,6 +439,13 @@ $\begin{array}[c]{cc}
 \input{Figures/THsesealg}
 \caption{Computing nested SESE regions.}
 \label{fig:SESEalg}
+\end{myfigure}
+
+\begin{myfigure}
+\centering\input{Figures/THseseex}
+\caption{SESE regions for the control-flow graph of figure
+         \ref{fig:CQex} (from \cite{johnson94:pst}).}
+\label{fig:SESEex}
 \end{myfigure}
 
 \subsubsection{Program Structure Tree}
