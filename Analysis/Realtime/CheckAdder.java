@@ -35,7 +35,7 @@ import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
 /**
- * <code>CheckAdder</code> attaches <code>realtime.MemoryArea</code>s to
+ * <code>CheckAdder</code> attaches <code>javax.realtime.MemoryArea</code>s to
  * <code>NEW</code>s and <code>ANEW</code>s.  It also adds checks around 
  * <code>SET</code>s and <code>ASET</code>s only if the 
  * <code>CheckRemoval</code> indicates that the check cannot be removed.
@@ -70,7 +70,7 @@ class CheckAdder extends MethodMutator {
 	    return hc;
 	}
 	HClass hclass = hc.getMethod().getDeclaringClass();
-	if (hclass.getName().startsWith("realtime.")) {
+	if (hclass.getName().startsWith("javax.realtime.")) {
 	    Stats.realtimeEnd();
 	    return hc;
 	}
@@ -132,7 +132,7 @@ class CheckAdder extends MethodMutator {
 	Temp memArea = addGetCurrentMemArea(linker, qf, hm, inst);
 	Quad next = inst.next(0);
 	Quad q0 = new CALL(qf, inst, 
-			   linker.forName("realtime.MemoryArea")
+			   linker.forName("javax.realtime.MemoryArea")
 			   .getMethod("bless", 
 				      new HClass[] { 
 					  linker.forName("java.lang.Object") 
@@ -181,7 +181,7 @@ class CheckAdder extends MethodMutator {
 	    q2[2*i+1].addHandlers(inst.handlers());
 	}
 	Quad q3 = new CALL(qf, inst,
-			   linker.forName("realtime.MemoryArea")
+			   linker.forName("javax.realtime.MemoryArea")
 			   .getMethod("bless", 
 				      new HClass[] { 
 					  linker.forName("java.lang.Object"), 
@@ -214,7 +214,7 @@ class CheckAdder extends MethodMutator {
 	    HMethod hm = qf.getMethod();
 	    Temp objArea = new Temp(tf, "objMemArea");
 	    Quad q0 = null;
-	    HClass memoryArea = linker.forName("realtime.memoryArea");
+	    HClass memoryArea = linker.forName("javax.realtime.memoryArea");
 	    if (object != null) {
 		q0 = new CALL(qf, inst, memoryArea
 			      .getMethod("getMemoryArea", new HClass[] {
@@ -223,7 +223,7 @@ class CheckAdder extends MethodMutator {
 			      false, false, new Temp[0]);
 	    } else {
 		q0 = new CALL(qf, inst,
-			      linker.forName("realtime.HeapMemory")
+			      linker.forName("javax.realtime.HeapMemory")
 			      .getMethod("instance", new HClass[0]),
 			      new Temp[0], objArea, null, 
 			      false, false, new Temp[0]);
@@ -252,7 +252,8 @@ class CheckAdder extends MethodMutator {
 	Stats.addMemAreaLoad();
 	Temp t1 = new Temp(tf, "realtimeThread");
 	Temp currentMemArea = new Temp(tf, "memoryArea");
-	HClass realtimeThread = linker.forName("realtime.RealtimeThread");
+	HClass realtimeThread = 
+	    linker.forName("javax.realtime.RealtimeThread");
 	Quad q0 = new CALL(qf, inst, realtimeThread
 			   .getMethod("currentRealtimeThread", new HClass[0]), 
 			   new Temp[0], t1, null, false, false, new Temp[0]);

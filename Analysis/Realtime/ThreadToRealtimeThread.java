@@ -26,7 +26,7 @@ import harpoon.Util.Util;
 /**
  * <code>ThreadToRealtimeThread</code> is a <code>MethodMutator</code> which
  * replaces <code>java.lang.Thread</code> with 
- * <code>realtime.RealtimeThread</code>.
+ * <code>javax.realtime.RealtimeThread</code>.
  *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
@@ -48,12 +48,12 @@ class ThreadToRealtimeThread extends MethodMutator {
     
     /** Updates the <code>ClassHierarchy</code> so that all classes that
      *  inherited from <code>java.lang.Thread</code> now inherit
-     *  from <code>realtime.RealtimeThread</code>.
+     *  from <code>javax.realtime.RealtimeThread</code>.
      */
 
     static void updateClassHierarchy(Linker linker, ClassHierarchy ch) {
 	HClass thread = linker.forName("java.lang.Thread");
-	HClass realtimeThread = linker.forName("realtime.RealtimeThread");
+	HClass realtimeThread = linker.forName("javax.realtime.RealtimeThread");
 	for (Iterator children = ch.children(thread).iterator(); 
 	     children.hasNext();) {
 	    HClass child = (HClass)children.next();
@@ -64,20 +64,22 @@ class ThreadToRealtimeThread extends MethodMutator {
 	}
     }
     
-    /** Replaces new java.lang.Thread() with new realtime.RealtimeThread(). */
+    /** Replaces new java.lang.Thread() with new 
+     *  javax.realtime.RealtimeThread(). 
+     */
 
     protected HCode mutateHCode(HCodeAndMaps input) {
 	Stats.realtimeBegin();
 	HCode hc = input.hcode();
 	HClass hclass = hc.getMethod().getDeclaringClass();
 	if ((hc == null)||      // Prevent infinite recursion.
-	    (hclass.getName().startsWith("realtime."))) {
+	    (hclass.getName().startsWith("javax.realtime."))) {
 	    Stats.realtimeEnd();
 	    return hc;
 	}    
 	final Linker linker = hclass.getLinker();
 	final HClass realtimeThread = 
-	    linker.forName("realtime.RealtimeThread");
+	    linker.forName("javax.realtime.RealtimeThread");
 	final HClass thread = linker.forName("java.lang.Thread");
 
 	QuadVisitor visitor = new QuadVisitor() {

@@ -47,30 +47,31 @@ public class Realtime {
     
     public static void setupObject(Linker linker) {
 	Stats.realtimeBegin();
-	// Adds realtime.MemoryArea java.lang.Object.memoryArea
+	// Adds javax.realtime.MemoryArea java.lang.Object.memoryArea
 	linker.forName("java.lang.Object").getMutator()
 	    .addDeclaredField("memoryArea", 
-			      linker.forName("realtime.MemoryArea"));
+			      linker.forName("javax.realtime.MemoryArea"));
 	Stats.realtimeEnd();
     }
     
     /** Adds all methods required for RTJ in the rootset, including:
      *  <ul>
-     *  <li><code>realtime.RealtimeThread(java.lang.ThreadGroup, 
-     *                                    java.lang.Runnable,
-     *                                    java.lang.String)</code></li>
-     *  <li><code>realtime.RealtimeThread</code>.getMemoryArea()</li>
-     *  <li><code>realtime.RealtimeThread</code>.currentRealtimeThread()</li>
-     *  <li><code>java.lang.Thread</code>.setPriority(int)</li>
-     *  <li><code>realtime.MemoryArea</code>.checkAccess(java.lang.Object)</li>
-     *  <li><code>realtime.MemoryArea</code>.bless(java.lang.Object)</li>
-     *  <li><code>realtime.MemoryArea</code>.bless(java.lang.Object, int[])
-     *  </li></ul>
+     *  <li>javax.realtime.RealtimeThread(java.lang.ThreadGroup, 
+     *                                          java.lang.Runnable,
+     *                                          java.lang.String)</li>
+     *  <li>javax.realtime.RealtimeThread.getMemoryArea()</li>
+     *  <li>javax.realtime.RealtimeThread.currentRealtimeThread()</li>
+     *  <li>java.lang.Thread.setPriority(int)</li>
+     *  <li>javax.realtime.MemoryArea.checkAccess(java.lang.Object)</li>
+     *  <li>javax.realtime.MemoryArea.bless(java.lang.Object)</li>
+     *  <li>javax.realtime.MemoryArea.bless(java.lang.Object, int[])</li>
+     *  </ul>
      */
 
     public static Collection getRoots(Linker linker) {
 	Collection roots = new Vector();
-	HClass realtimeThread = linker.forName("realtime.RealtimeThread");
+	HClass realtimeThread = 
+	    linker.forName("javax.realtime.RealtimeThread");
 	roots.add(realtimeThread.getConstructor(new HClass[] {
 	    linker.forName("java.lang.ThreadGroup"),
 	    linker.forName("java.lang.Runnable"),
@@ -84,7 +85,7 @@ public class Realtime {
 		  .getMethod("setPriority", 
 			     new HClass[] { HClass.Int }));
 	
-	HClass memoryArea = linker.forName("realtime.MemoryArea");
+	HClass memoryArea = linker.forName("javax.realtime.MemoryArea");
 	HClass object = linker.forName("java.lang.Object");
 	roots.add(memoryArea
 		  .getMethod("checkAccess", new HClass[] { object }));
@@ -102,9 +103,9 @@ public class Realtime {
      *  <ul>
      *  <li> Makes sure that all classes that inherited from 
      *       <code>java.lang.Thread</code> now inherit from 
-     *       <code>realtime.RealtimeThread</code>. </li>
+     *       <code>javax.realtime.RealtimeThread</code>. </li>
      *  <li> Makes every new <code>java.lang.Thread</code> into a new 
-     *       <code>realtime.RealtimeThread</code>. </li>
+     *       <code>javax.realtime.RealtimeThread</code>. </li>
      *  </ul>
      */
 
