@@ -10,7 +10,7 @@ typedef void * jptr;
 #define LUSHR(x,y) (((u_int64_t)(x))>>((y)&0x3f))
 
 /* select which calling convention you'd like to use in the generated code */
-#define USE_PAIR_RETURN
+#define USE_GLOBAL_SETJMP
 
 #ifdef USE_PAIR_RETURN /* ----------------------------------------------- */
 #define FIRST_DECL_ARG(x)
@@ -66,5 +66,45 @@ typedef struct {
   jptr value;
 } jptr_and_ex;
 #endif /* USE_PAIR_RETURN ----------------------------------------- */
+
+#ifdef USE_GLOBAL_SETJMP /* ----------------------------------------------- */
+#include "fni-threadstate.h" /* for struct FNI_Thread_State */
+#include <setjmp.h>
+
+#define FIRST_DECL_ARG(x)
+#define DECLAREFUNC(rettype, funcname, args, segment) \
+rettype funcname args __attribute__ ((section (segment)))
+#define DEFINEFUNC(rettype, funcname, args, segment) \
+rettype funcname args
+#define DECLAREFUNCV(funcname, args, segment) \
+void funcname args __attribute__ ((section (segment)))
+#define DEFINEFUNCV(funcname, args, segment) \
+void funcname args
+#define RETURN(rettype, val)	return (val)
+#define RETURNV()		return
+#define THROW(rettype, val)	THROWV(val)
+#define THROWV(val)\
+longjmp(((struct FNI_Thread_State *)FNI_GetJNIEnv())->handler, (int)(val))
+
+#define FIRST_PROTO_ARG(x)
+#define FUNCPROTO(rettype, argtypes)\
+rettype (*) argtypes
+#define FUNCPROTOV(argtypes)\
+void (*) argtypes
+
+#define FIRST_CALL_ARG(x)
+#define SETUP_HANDLER(exv, hlabel)\
+{ struct FNI_Thread_State *fts=(struct FNI_Thread_State *)FNI_GetJNIEnv();\
+  jptr _ex_;\
+  if ((_ex_=(jptr)setjmp(fts->handler))!=NULL) { exv=_ex_; goto hlabel; }\
+}
+#define CALL(rettype, retval, funcref, args, exv, handler)\
+SETUP_HANDLER(exv, handler)\
+retval = (funcref) args
+#define CALLV(funcref, args, exv, handler)\
+SETUP_HANDLER(exv, handler)\
+(funcref) args
+
+#endif /* USE_GLOBAL_SETJMP ----------------------------------------- */
 
 #endif /* INCLUDED_PRECISEC_H */

@@ -24,7 +24,6 @@
 
 #ifdef USE_PAIR_RETURN /* --------------------------------------------- */
 /* FNI_Dispatch_<foo> definitions for PAIR_RETURN */
-
 void FNI_Dispatch_Void(ptroff_t method_pointer, int narg_words,
 		       void *_argptr, jobject_unwrapped *exception) {
     register jptr *argptr = (jptr *) _argptr;
@@ -57,6 +56,53 @@ rettype FNI_Dispatch_##Type(ptroff_t method_pointer, int narg_words,\
     if (_r.ex) *exception = _r.ex;\
     return (rettype) _r.value;\
 }
+#endif /* USE_PAIR_RETURN ------------------------------------------- */
+
+#ifdef USE_GLOBAL_SETJMP /* --------------------------------------------- */
+/* FNI_Dispatch_<foo> definitions for GLOBAL_SETJMP */
+void FNI_Dispatch_Void(ptroff_t method_pointer, int narg_words,
+		       void *_argptr, jobject_unwrapped *exception) {
+    register jptr *argptr = (jptr *) _argptr;
+    JNIEnv *env = FNI_GetJNIEnv(); /* for FNI_WRAP */
+    struct FNI_Thread_State *fts = (struct FNI_Thread_State *)env;
+    jobject_unwrapped ex;
+    if ((ex=(jobject_unwrapped)setjmp(fts->handler))!=NULL)
+      fts->exception = FNI_WRAP(ex);
+    else switch (narg_words) {
+#define CASE(x) \
+case x: \
+((void(*)(REPEAT##x(JPTR)))method_pointer)(REPEAT##x(ARG)); break;
+	CASE( 0) CASE( 1) CASE( 2) CASE( 3) CASE( 4) CASE( 5) CASE( 6) CASE( 7)
+	CASE( 8) CASE( 9) CASE(10) CASE(11) CASE(12) CASE(13) CASE(14) CASE(15)
+#undef CASE
+    default: assert(0); break;
+    }
+    return;
+}
+#define CASE(ctype,rtype,x) \
+case x: \
+return (rtype) ((ctype(*)(REPEAT##x(JPTR)))method_pointer)(REPEAT##x(ARG));
+#define FNI_DISPATCH(Type, ctype, rtype)\
+rtype FNI_Dispatch_##Type(ptroff_t method_pointer, int narg_words,\
+			    void *_argptr, jobject_unwrapped *exception) {\
+    register jptr *argptr = (jptr *) _argptr;\
+    JNIEnv *env = FNI_GetJNIEnv(); /* for FNI_WRAP */\
+    struct FNI_Thread_State *fts = (struct FNI_Thread_State *)env;\
+    jobject_unwrapped ex;\
+    if ((ex=(jobject_unwrapped)setjmp(fts->handler))!=NULL)\
+      fts->exception = FNI_WRAP(ex);\
+    else switch (narg_words) {\
+	CASE(ctype,rtype, 0) CASE(ctype,rtype, 1) CASE(ctype,rtype, 2)\
+        CASE(ctype,rtype, 3) CASE(ctype,rtype, 4) CASE(ctype,rtype, 5)\
+        CASE(ctype,rtype, 6) CASE(ctype,rtype, 7) CASE(ctype,rtype, 8)\
+        CASE(ctype,rtype, 9) CASE(ctype,rtype,10) CASE(ctype,rtype,11)\
+        CASE(ctype,rtype,12) CASE(ctype,rtype,13) CASE(ctype,rtype,14)\
+        CASE(ctype,rtype,15)\
+    default: assert(0); return (rtype) 0;\
+    }\
+}
+#endif /* USE_GLOBAL_SETJMP ------------------------------------------- */
+
 FNI_DISPATCH(Object,  jptr,    jobject_unwrapped)
 FNI_DISPATCH(Boolean, jint,    jboolean)
 FNI_DISPATCH(Byte,    jint,    jbyte)
@@ -66,7 +112,5 @@ FNI_DISPATCH(Int,     jint,    jint)
 FNI_DISPATCH(Long,    jlong,   jlong)
 FNI_DISPATCH(Float,   jfloat,  jfloat)
 FNI_DISPATCH(Double,  jdouble, jdouble)
-#undef CASE
 #undef FNI_DISPATCH
-
-#endif /* USE_PAIR_RETURN ------------------------------------------- */
+#undef CASE
