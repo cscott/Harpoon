@@ -64,7 +64,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.113 1999-12-20 12:42:38 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.114 1999-12-20 18:22:38 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -92,10 +92,6 @@ import java.util.Iterator;
 
     // whether to generate stabs debugging information in output (-g flag)
     private static final boolean stabsDebugging=true;
-
-    // debugging stuff
-    private HashSet outputLabels = new HashSet();
-    private MultiMap labelsNeeded = new DefaultMultiMap();
 
     public CodeGen(Frame frame) {
 	super(frame);
@@ -140,20 +136,6 @@ import java.util.Iterator;
 	// its correct that last==null the first time this is called
 	i.layout(last, null);
 	last = i;
-
-	if (true) { // DEBUG CODE
-	    if (i instanceof InstrLABEL) { 
-		InstrLABEL il = (InstrLABEL) i;
-		Label l = il.getLabel();
-		outputLabels.add(l);
-	    } else {
-		Iterator targets = i.getTargets().iterator();
-		while(targets.hasNext()) {
-		    labelsNeeded.add(targets.next(), i);
-		}
-	    }
-	}
-
 	return i;
     }
 
@@ -714,30 +696,6 @@ import java.util.Iterator;
        // *** METHOD EPILOGUE *** 
        Util.assert(first != null, "Should always generate some instrs");
 
-       // check that all needed targets have been generated and are
-       // in the produced list.
-       Iterator needed = labelsNeeded.keySet().iterator();
-       while(needed.hasNext()) {
-	   final Label l = (Label) needed.next();
-	   Util.assert(outputLabels.contains(l), 
-		       new Util.LazyString() {
-	       public String eval() {
-		   Instr i = first;
-		   boolean labelFound = false;
-		   while(i.getNext() != null) {
-		       i = i.getNext();
-		       if (i instanceof InstrLABEL &&
-			   l.equals(((InstrLABEL)i).getLabel())) {
-			   labelFound = true;
-		       }
-		   }
-		   return ("label "+l+" , "+
-			   "needed by "+labelsNeeded.getValues(l)+" , "+
-			   "was not output.  labelFound: "+labelFound);
-	       }
-	   });
-       }
-       
        return first;
 }%
     /* this comment will be eaten by the .spec processor (unlike comments above) */
