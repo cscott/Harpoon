@@ -18,6 +18,7 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.StrongARM.SAFrame;
 import harpoon.Backend.StrongARM.SACode;
 import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Util;
 
 import java.util.Stack;
 import java.util.NoSuchElementException;
@@ -29,7 +30,7 @@ import java.util.HashSet;
  * <code>SADataMain</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SADataMain.java,v 1.1.2.1 1999-08-10 18:10:54 pnkfelix Exp $
+ * @version $Id: SADataMain.java,v 1.1.2.2 1999-08-10 18:41:31 pnkfelix Exp $
  */
 public class SADataMain extends harpoon.IR.Registration {
     
@@ -62,6 +63,7 @@ public class SADataMain extends harpoon.IR.Registration {
 	    final String scope = data.getName();
 	    final Instr instr = frame.codegen().gen(data, new InstrFactory() {
 		private final TempFactory tf = Temp.tempFactory(scope);
+		{ Util.assert(tf != null, "TempFactory cannot be null"); }
 		private int id = 0;
 		public TempFactory tempFactory() { return tf; }
 		public HCode getParent() { return data; }

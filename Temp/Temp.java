@@ -5,6 +5,7 @@ package harpoon.Temp;
 
 import java.util.Hashtable;
 import harpoon.Util.ArrayFactory;
+import harpoon.Util.Util;
 
 /** 
  * The <code>Temp</code> class represents a temporary
@@ -12,7 +13,7 @@ import harpoon.Util.ArrayFactory;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.14.2.12 1999-08-04 21:46:12 pnkfelix Exp $
+ * @version $Id: Temp.java,v 1.14.2.13 1999-08-10 18:41:31 pnkfelix Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
@@ -42,6 +43,7 @@ public class Temp implements Cloneable, Comparable {
    *                  <code>prefix</code> may not be null.
    */
   public Temp(final TempFactory tf, final String prefix) {
+    Util.assert(tf != null, "TempFactory cannot be null");
     this.tf = tf;
     this.name = tf.getUniqueID(prefix!=null?prefix:default_name);
     this.hashcode = tf.getScope().hashCode() ^ name.hashCode();

@@ -45,7 +45,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.29 1999-08-07 00:43:53 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.30 1999-08-10 18:41:29 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -116,6 +116,7 @@ public class SAFrame extends Frame implements AllocationInfo {
     public SAFrame() { 
         mas = new DefaultAllocationStrategy(this);
 	codegen = new CodeGen(this);
+	tf = Temp.tempFactory( "S@Frame_scope" );
     }
 
     /* "method" constructor, use for per-method initializations */
