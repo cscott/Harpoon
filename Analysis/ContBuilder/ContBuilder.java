@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * <code>quad-no-ssa</code> form.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContBuilder.java,v 1.1.2.4 1999-11-20 06:37:34 bdemsky Exp $
+ * @version $Id: ContBuilder.java,v 1.1.2.5 2000-01-02 22:30:27 bdemsky Exp $
  */
 public class ContBuilder {
     protected final UpdateCodeFactory ucf;
@@ -51,160 +51,160 @@ public class ContBuilder {
     /** Builds the continuation. Returns the <code>HClass</code>.
      *  @return the continuation <code>HClass</code>
      */
-    public HClass makeCont() {
-	final String methodname = "makeCont()";
-	HClass template = null;
-	try {
-	    template = 
-		HClass.forName("harpoon.Analysis.ContBuilder.ContTemplate");
-	} catch (NoClassDefFoundError e) {
-	    reportException(e, methodname, "Cannot find " + 
-			    "harpoon.Analysis.ContBuilder.ContTemplate");
-	}
+//      public HClass makeCont() {
+//  	final String methodname = "makeCont()";
+//  	HClass template = null;
+//  	try {
+//  	    template = 
+//  		HClass.forName("harpoon.Analysis.ContBuilder.ContTemplate");
+//  	} catch (NoClassDefFoundError e) {
+//  	    reportException(e, methodname, "Cannot find " + 
+//  			    "harpoon.Analysis.ContBuilder.ContTemplate");
+//  	}
 
-	// create environment from template
-	HClassSyn cont = new HClassSyn(template);
-	Util.assert(cont.getConstructors().length == 1, 
-		    "There should be exactly one constructor in " +
-		    "synthesized environment class. Found " + 
-		    cont.getConstructors().length);
+//  	// create environment from template
+//  	HClassSyn cont = new HClassSyn(template);
+//  	Util.assert(cont.getConstructors().length == 1, 
+//  		    "There should be exactly one constructor in " +
+//  		    "synthesized environment class. Found " + 
+//  		    cont.getConstructors().length);
 
-	HClass hcrettype = this.hc.getMethod().getReturnType();
+//  	HClass hcrettype = this.hc.getMethod().getReturnType();
 
-	// if the return type of the HCode we're transforming
-	// is of type <type>, then we want our continuation to
-	// extend <type>Continuation.
-	String s = "harpoon.Analysis.ContBuilder." + 
-	    getPrefix(hcrettype) + "Continuation";
-	//BCD start
-	System.out.println("Setting superclass "+s);
-	//BCD stop
+//  	// if the return type of the HCode we're transforming
+//  	// is of type <type>, then we want our continuation to
+//  	// extend <type>Continuation.
+//  	String s = "harpoon.Analysis.ContBuilder." + 
+//  	    getPrefix(hcrettype) + "Continuation";
+//  	//BCD start
+//  	System.out.println("Setting superclass "+s);
+//  	//BCD stop
 
-	try {
-	    cont.setSuperclass(HClass.forName(s));
-	} catch (NoClassDefFoundError e) {
-	    reportException(e, methodname, "Cannot find " + s);
-	}
+//  	try {
+//  	    cont.setSuperclass(HClass.forName(s));
+//  	} catch (NoClassDefFoundError e) {
+//  	    reportException(e, methodname, "Cannot find " + s);
+//  	}
 
-	Temp retval = this.c.retval();
-	HClass rettype = this.c.method().getReturnType();
+//  	Temp retval = this.c.retval();
+//  	HClass rettype = this.c.method().getReturnType();
 
-	// if the return type of the CALL we're transforming
-	// is of type <type>, then we want our continuation to
-	// implement <type>ResultContinuation.
-	String r = "harpoon.Analysis.ContBuilder." + 
-	    getPrefix(rettype) + "ResultContinuation";
-	HClass cons_arg2 = null;
-	try {
-	    cons_arg2 = HClass.forName(r);
-	    cont.addInterface(cons_arg2);
-	} catch (NoClassDefFoundError e) {
-	    reportException(e, methodname, "Cannot find " + r);
-	}
+//  	// if the return type of the CALL we're transforming
+//  	// is of type <type>, then we want our continuation to
+//  	// implement <type>ResultContinuation.
+//  	String r = "harpoon.Analysis.ContBuilder." + 
+//  	    getPrefix(rettype) + "ResultContinuation";
+//  	HClass cons_arg2 = null;
+//  	try {
+//  	    cons_arg2 = HClass.forName(r);
+//  	    cont.addInterface(cons_arg2);
+//  	} catch (NoClassDefFoundError e) {
+//  	    reportException(e, methodname, "Cannot find " + r);
+//  	}
 
-	HClass environment = null;
-	try {
-	    environment = 
-		HClass.forName("harpoon.Analysis.EnvBuilder.Environment");
-	} catch (NoClassDefFoundError e) {
-	    reportException(e, methodname, "Cannot find harpoon.Analysis." +
-			    "EnvBuilder.Environment");
-	}
+//  	HClass environment = null;
+//  	try {
+//  	    environment = 
+//  		HClass.forName("harpoon.Analysis.EnvBuilder.Environment");
+//  	} catch (NoClassDefFoundError e) {
+//  	    reportException(e, methodname, "Cannot find harpoon.Analysis." +
+//  			    "EnvBuilder.Environment");
+//  	}
 
-	try {
-	    HConstructor hc = 
-		template.getConstructor(new HClass[] {environment});
-	    HConstructor nhc =
-		cont.getConstructor(new HClass[] {environment});
-	    HCode hchc = ((Code)this.ucf.convert(hc)).clone(nhc);
-	    this.ucf.update(nhc, hchc);
-	    this.ucf.convert(nhc).print
-		(new java.io.PrintWriter(System.out, true));
-	} catch (NoSuchMethodError e) {
-	    reportException(e, methodname, "Cannot find constructor for " +
-			    "harpoon.Analysis.ContBuilder.ContTemplate");
-	}
+//  	try {
+//  	    HConstructor hc = 
+//  		template.getConstructor(new HClass[] {environment});
+//  	    HConstructor nhc =
+//  		cont.getConstructor(new HClass[] {environment});
+//  	    HCode hchc = ((Code)this.ucf.convert(hc)).clone(nhc);
+//  	    this.ucf.update(nhc, hchc);
+//  	    this.ucf.convert(nhc).print
+//  		(new java.io.PrintWriter(System.out, true));
+//  	} catch (NoSuchMethodError e) {
+//  	    reportException(e, methodname, "Cannot find constructor for " +
+//  			    "harpoon.Analysis.ContBuilder.ContTemplate");
+//  	}
 
-	HMethod hm = null;
-	HMethodSyn nhm = null;
-	try {
-	    hm = cont.getDeclaredMethod("resume", new HClass[0]);
-	    nhm = new HMethodSyn(cont, hm, true);
-	    cont.removeDeclaredMethod(hm);
-	} catch (NoSuchMethodError e) {
-	    reportException(e, methodname, "Cannot find harpoon." +
-			    "Analysis.ContBuilder.ContTemplate.resume()");
-	}
+//  	HMethod hm = null;
+//  	HMethodSyn nhm = null;
+//  	try {
+//  	    hm = cont.getDeclaredMethod("resume", new HClass[0]);
+//  	    nhm = new HMethodSyn(cont, hm, true);
+//  	    cont.removeDeclaredMethod(hm);
+//  	} catch (NoSuchMethodError e) {
+//  	    reportException(e, methodname, "Cannot find harpoon." +
+//  			    "Analysis.ContBuilder.ContTemplate.resume()");
+//  	}
 
-	boolean hasParameter = false;
-	if (retval != null) {
-	    hasParameter = true;
-	    String[] parameterNames = new String[1];
-	    parameterNames[0] = retval.name();
-	    HClass[] parameterTypes = new HClass[1];
-	    if (rettype.isPrimitive())
-		parameterTypes[0] = rettype;
-	    else {
-		try {
-		    parameterTypes[0] = HClass.forName("java.lang.Object");
-		} catch (NoClassDefFoundError e) {
-		    reportException(e, methodname, 
-				    "Cannot find java.lang.Object");
-		}
-	    }
-	    nhm.setParameterNames(parameterNames);
-	    nhm.setParameterTypes(parameterTypes);
-	}
+//  	boolean hasParameter = false;
+//  	if (retval != null) {
+//  	    hasParameter = true;
+//  	    String[] parameterNames = new String[1];
+//  	    parameterNames[0] = retval.name();
+//  	    HClass[] parameterTypes = new HClass[1];
+//  	    if (rettype.isPrimitive())
+//  		parameterTypes[0] = rettype;
+//  	    else {
+//  		try {
+//  		    parameterTypes[0] = HClass.forName("java.lang.Object");
+//  		} catch (NoClassDefFoundError e) {
+//  		    reportException(e, methodname, 
+//  				    "Cannot find java.lang.Object");
+//  		}
+//  	    }
+//  	    nhm.setParameterNames(parameterNames);
+//  	    nhm.setParameterTypes(parameterTypes);
+//  	}
 
-	HMethod next_resume;
-	if (hcrettype != HClass.Void) {
-	    next_resume = cont.getField("next").getType().getDeclaredMethod
-		("resume", new HClass[] {hcrettype});
-	} else {
-	    next_resume = cont.getField("next").getType().getDeclaredMethod
-		("resume", new HClass[0]);
-	}
+//  	HMethod next_resume;
+//  	if (hcrettype != HClass.Void) {
+//  	    next_resume = cont.getField("next").getType().getDeclaredMethod
+//  		("resume", new HClass[] {hcrettype});
+//  	} else {
+//  	    next_resume = cont.getField("next").getType().getDeclaredMethod
+//  		("resume", new HClass[0]);
+//  	}
 	    
-	// create resume() method and register w/ codeFactory
-	this.ucf.update(nhm, new ContCode(nhm, this.hc, this.c, hasParameter, 
-					  next_resume, this.live, 
-					  cont.getField("e"), 
-					  this.env.getDeclaredFields(), 0));
-	this.ucf.convert(nhm).print
-		(new java.io.PrintWriter(System.out, true));
+//  	// create resume() method and register w/ codeFactory
+//  	this.ucf.update(nhm, new ContCode(nhm, this.hc, this.c, hasParameter, 
+//  					  next_resume, this.live, 
+//  					  cont.getField("e"), 
+//  					  this.env.getDeclaredFields(), 0));
+//  	this.ucf.convert(nhm).print
+//  		(new java.io.PrintWriter(System.out, true));
 	
-	HClass t = null;
-	try {
-	    t = HClass.forName("java.lang.Throwable");
-	} catch (NoClassDefFoundError e) {
-	    reportException(e, methodname, "Cannot find java.lang.Throwable");
-	}
+//  	HClass t = null;
+//  	try {
+//  	    t = HClass.forName("java.lang.Throwable");
+//  	} catch (NoClassDefFoundError e) {
+//  	    reportException(e, methodname, "Cannot find java.lang.Throwable");
+//  	}
 
-	HMethod exc = null;
-	HMethod next_exception = null;
-	try {
-	    exc = cont.getDeclaredMethod("exception", new HClass[] {t});
-	} catch (NoSuchMethodError e) {
-	    reportException(e, methodname, "Cannot find harpoon.Analysis." +
-			    "ContBuilder.ContTemplate.exception()");
-	}
-	try {
-	    next_exception = cont.getField("next").getType().
-		getMethod("exception", new HClass[] {t});
-	} catch (NoSuchMethodError e) {
-	    reportException(e, methodname, "Cannot find exception() method" +
-			    " for next Continuation");
-	}
+//  	HMethod exc = null;
+//  	HMethod next_exception = null;
+//  	try {
+//  	    exc = cont.getDeclaredMethod("exception", new HClass[] {t});
+//  	} catch (NoSuchMethodError e) {
+//  	    reportException(e, methodname, "Cannot find harpoon.Analysis." +
+//  			    "ContBuilder.ContTemplate.exception()");
+//  	}
+//  	try {
+//  	    next_exception = cont.getField("next").getType().
+//  		getMethod("exception", new HClass[] {t});
+//  	} catch (NoSuchMethodError e) {
+//  	    reportException(e, methodname, "Cannot find exception() method" +
+//  			    " for next Continuation");
+//  	}
 	
-	// create exception() method and register w/ codeFactory
-	this.ucf.update(exc, new ContCode(exc, this.hc, this.c, hasParameter, 
-					  next_exception, this.live, 
-					  cont.getField("e"), 
-					  this.env.getDeclaredFields(), 1));
-	this.ucf.convert(exc).print
-	    (new java.io.PrintWriter(System.out, true));
-	return cont;
-    }
+//  	// create exception() method and register w/ codeFactory
+//  	this.ucf.update(exc, new ContCode(exc, this.hc, this.c, hasParameter, 
+//  					  next_exception, this.live, 
+//  					  cont.getField("e"), 
+//  					  this.env.getDeclaredFields(), 1));
+//  	this.ucf.convert(exc).print
+//  	    (new java.io.PrintWriter(System.out, true));
+//  	return cont;
+//      }
 
     // Given a type, returns the prefix for
     // a continuation of that type.
