@@ -4,7 +4,7 @@ Contrast 220
 Gain 2
 FrameRate 15
 InterruptDelay 500
-ForwardSpeed 17
-BackwardSpeed 30
+ForwardSpeed 14
+BackwardSpeed 127
 Turn 30
 
