@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.96 1999-08-30 17:20:23 cananian Exp $
+% $Id: thesis.tex,v 1.97 1999-08-30 17:35:30 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -37,14 +37,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.96 $ $}
+\date{\today \\ $ $Revision: 1.97 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.96 $ $}{$ $Revision: 1.96 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.97 $ $}{$ $Revision: 1.97 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -1187,7 +1187,8 @@ SSI form is
 control-flow graph with input arity larger than one requires a
 \phifunction{} for every variable and every node with out-arity larger
 than one requires a \sigfunction{} for every variable, and then use
-the PST and liveness information to determine safe places to
+the PST, liveness information, and unused code elimination to
+determine safe places to
 \emph{omit} \phisigfunction[or]{s}.  Most SSA construction
 algorithms, by contrast, are \emph{optimistic}; they assume no
 \phisigfunction[or]{s} are needed and attempt to determine where
