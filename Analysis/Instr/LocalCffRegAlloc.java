@@ -26,7 +26,7 @@ import java.util.Iterator;
     it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.2 1999-04-20 20:18:05 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.3 1999-04-20 21:26:45 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -115,34 +115,37 @@ public class LocalCffRegAlloc extends RegAlloc {
 			break defs;
 		    }
 		} 
-		// Evict a value (storing it to memory).
-		// Choose the value based on furthest first
-		// (this is where the CFF comes in)
+		// Evict a value (storing it to memory).  Choose the
+		// value based on furthest first (this is where the
+		// CFF comes in) 
 		
 		int index = findFurthest((Iterator)iter.clone(), values);
-		
+				
+		// TODO: figure out how to insert InstrMEM into the
+		// Instruction List for 'bb'
 
-		// TODO: make a new InstrMEM 
 		// storing registers[index] -> values[index]
-		
+		InstrMEM minstr = 
+		    new InstrMEM(null, null, null, values[index], registers[index]);
 
-		// TODO: generate a new Instr
-		
-		
-		
-		
-		for (int u=0; u<instr.use().length; u++) {
-		    Temp use = instr.use()[u];		
-		    for (int i=0; i<registers.length; i++) {
-			if (values[i] == null) {
-			    values[i] = use;
-			    // TODO: generate a new Instr here with <use> 
-			    // replaced by registers[i]
-			} else {
-			    // Evict a value (storing it to memory).
-			    // Choose the value based on furthest first
-			    // (this is where the CFF comes in)
-			}
+	    }
+	    for (int u=0; u<instr.use().length; u++) {
+		Temp use = instr.use()[u];		
+		for (int i=0; i<registers.length; i++) {
+		    if (values[i] == null) {
+			values[i] = use;
+			instr.src[u] = registers[i];
+		    } else {
+			// Evict a value (storing it to memory).
+			index = findFurthest((Iterator)iter.clone(), values); 
+			
+			// TODO: figure out how to insert InstrMEM into the
+			// Instruction List for 'bb'
+			// storing registers[index] -> values[index]
+			InstrMEM = new InstrMEM (null, null, null, 
+						 values[index],
+						 registers[index]); 
+			
 		    }
 		}
 	    }
@@ -155,8 +158,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 	        <code>Instr</code>s.
 	     2. <code>values</code> f
 	<BR> <B>modifies:</B> <code>iter</code>
-
-
 
 	NOTE: to perform true CFF, we need to know which variables
 	were *DEFINED* in this round, versus just being used.  Thus we
@@ -245,8 +246,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 	return index.intValue();
 	
     }
-
-
 }
 
 
