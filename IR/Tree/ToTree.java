@@ -368,8 +368,12 @@ class TranslationVisitor extends LowQuadVisitor
   }
 
   public void visit(harpoon.IR.Quads.METHOD q) {
-     Stm s0 = m_frame.procPrologue(m_tf, q, q.params(), m_ctm);
-     if (s0 != null) addStmt(s0);
+    Temp params[] = q.params(); 
+    Temp mappedParams[] = new Temp[params.length];
+    for (int i = 0; i < params.length; i++)
+        mappedParams[i] = m_ctm.tempMap(params[i]);
+    Stm s0 = m_frame.procPrologue(m_tf, q, mappedParams);
+    if (s0 != null) addStmt(s0);
   }
 
   public void visit(harpoon.IR.Quads.MONITORENTER q) {

@@ -23,7 +23,6 @@ import harpoon.IR.Tree.Type;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
-import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
 /**
@@ -32,7 +31,7 @@ import harpoon.Util.Util;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.5 1999-02-26 22:45:19 andyb Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.6 1999-02-26 23:22:28 andyb Exp $
  */
 public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 
@@ -90,15 +89,14 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
     }
 
     public Stm procPrologue(TreeFactory tf, HCodeElement src, 
-                            Temp[] paramdsts, CloningTempMap ctm) {
+                            Temp[] paramdsts) {
         Util.assert(tf != null, "tf is null");
         Stm prologue = null;
         Stm move = null;
         int i = 0;
         for (i = 0; i < paramdsts.length && i < 16; i++) {
             move =  new MOVE(tf, src, 
-                        new TEMP(tf, src, Type.INT, 
-                                 ctm.tempMap(paramdsts[i])),
+                        new TEMP(tf, src, Type.INT, paramdsts[i]),
                         new TEMP(tf, src, Type.INT, m_registers[i]));
             if (prologue == null) {
                 prologue = move;

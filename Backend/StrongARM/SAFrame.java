@@ -5,7 +5,6 @@ package harpoon.Backend.StrongARM;
 
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
-import harpoon.Temp.CloningTempMap;
 import harpoon.Backend.Allocation.AllocationStrategy;
 import harpoon.Backend.Allocation.DefaultAllocationStrategy;
 import harpoon.Backend.Allocation.DefaultAllocationInfo;
@@ -24,7 +23,7 @@ import harpoon.Util.Util;
  * information necessary to compile for the StrongARM processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.4 1999-02-26 22:48:02 andyb Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.5 1999-02-26 23:22:27 andyb Exp $
  */
 public class SAFrame extends Frame implements DefaultAllocationInfo {
     private static Temp[] reg = new Temp[16];
@@ -37,7 +36,7 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
     private TempFactory tf;
     private AllocationStrategy mas;
 
-    {
+    static {
         regtf = new TempFactory() {
             private int i = 0;
             private final String scope = "strongarm-registers";
@@ -63,7 +62,7 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
         };
         for (int i = 0; i < 16; i++) {
             reg[i] = new Temp(regtf);
-            regGeneral[i] = reg[i];
+            if (i < 11) regGeneral[i] = reg[i];
         }
         regLiveOnExit[0] = reg[0];  // return value
         regLiveOnExit[1] = reg[11]; // fp
@@ -90,7 +89,9 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
 
     public Temp[] getGeneralRegisters() { return regGeneral; }
 
-    public Stm callGC(TreeFactory tf, HCodeElement src) { return null; }
+    public Stm callGC(TreeFactory tf, HCodeElement src) { 
+        return null;
+    }
 
     public Exp getMemLimit(TreeFactory tf, HCodeElement src) { return null; }
 
@@ -107,7 +108,7 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
     public TempFactory regTempFactory() { return regtf; }
 
     public Stm procPrologue(TreeFactory tf, HCodeElement src, 
-                            Temp[] paramdsts, CloningTempMap ctm) { 
+                            Temp[] paramdsts) { 
         return null; 
     }
 
