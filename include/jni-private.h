@@ -12,6 +12,7 @@
 #ifdef WITH_SEMI_PRECISE_GC
 #include "gc_typed.h"
 #endif
+#include "dynamicwb.h"
 #include "flexthread.h"
 #include <time.h>
 
@@ -242,7 +243,8 @@ void FNI_InflateObject(JNIEnv *env, jobject obj);
 #ifndef WITH_HASHLOCK_SHRINK
 #define FNI_IS_INFLATED(obj) \
 		((FNI_UNWRAP_MASKED(obj)->hashunion.hashcode & 1) == 0)
-#define FNI_INFLATED(obj) (FNI_UNWRAP_MASKED(obj)->hashunion.inflated)
+#define FNI_INFLATED(obj) \
+                (INFLATED_MASK(FNI_UNWRAP_MASKED(obj)->hashunion.inflated))
 #else
 extern struct inflated_oobj *FNI_infl_lookup(struct oobj *oobj);
 #define FNI_INFLATED(obj) FNI_infl_lookup(FNI_UNWRAP_MASKED(obj))
