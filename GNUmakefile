@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.93 2003-07-08 08:59:46 cananian Exp $
+# $Id: GNUmakefile,v 1.94 2003-07-21 21:25:57 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -379,6 +379,10 @@ ChangeLog: needs-cvs $(TARSOURCE) # not strictly accurate anymore.
 	-$(RM) ChangeLog
 # used to include TARSOURCE on rcs2log cmdline
 	rcs2log | sed -e 's:/[^,]*/CVSROOT/Code/::g' > ChangeLog
+
+# check out properties files appropriate for classpath 0.05 (not CVS head)
+cvs-update-classpath-0.05:
+	cvs update -r classpath_0_05 Backend/Runtime1/class-root.properties Backend/Runtime1/method-root.properties Backend/Runtime1/init-safe.properties Backend/Runtime1/transact-safe.properties
 
 cvs-add: needs-cvs
 	-for dir in $(filter-out Test,$(ALLPKGS)); do \
