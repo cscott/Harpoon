@@ -97,7 +97,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.13 2002-11-27 18:34:24 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.14 2002-12-02 17:09:56 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -1604,12 +1604,13 @@ public abstract class PAMain {
 	    mac = new MetaAllCallers(mcg);
 	    System.out.println((time() - tstart) + "ms");
 	}
-	else{
+	else {
 	    // the set of "run()" methods (the bodies of threads)
 	    Set run_mms = null;
 	    CallGraph cg = null;
 
 	    if(SMART_CALL_GRAPH) { // smart call graph!
+		MetaCallGraphImpl.COLL_HACK = true;
 		System.out.print("MetaCallGraph ... ");
 		tstart = time();
 		MetaCallGraph fmcg = 

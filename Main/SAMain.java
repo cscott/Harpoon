@@ -101,7 +101,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.23 2002-12-01 06:31:03 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.24 2002-12-02 17:09:56 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -363,13 +363,13 @@ public class SAMain extends harpoon.IR.Registration {
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	}
 	else if(READ_ALLOC_STATS) {
-	    System.out.print("hcf: " + hcf.getCodeName() + " -> ");
 	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
-	    System.out.println(hcf.getCodeName());
 	    as = new AllocationStatistics(linker,
 					  allocNumberingFileName,
 					  instrumentationResultsFileName);
-	    as.printStatistics(hcf, classHierarchy.callableMethods());
+	    if(!PreallocOpt.PREALLOC_OPT)
+		as.printStatistics(AllocationStatistics.getAllocs
+				   (classHierarchy.callableMethods(), hcf));
 	}
 	
 	if(PreallocOpt.PREALLOC_OPT)

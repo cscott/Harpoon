@@ -46,7 +46,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>MemTestMain</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: MemOptMain.java,v 1.8 2002-12-01 06:31:03 salcianu Exp $
+ * @version $Id: MemOptMain.java,v 1.9 2002-12-02 17:09:56 salcianu Exp $
  */
 public abstract class MemOptMain {
     
@@ -131,7 +131,7 @@ public abstract class MemOptMain {
 
     // build a (smart) call graph for hcf_no_ssa
     private static CallGraph build_call_graph() {
-	MetaCallGraphImpl.COLL_HACK = true;
+	MetaCallGraphImpl.COLL_HACK = false;
 
 	ClassHierarchy ch = 
 	    new QuadClassHierarchy(linker, mroots, hcf_no_ssa);
