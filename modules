@@ -53,6 +53,6 @@ FLEX    -a Code Runtime
 #	pldi99-abstract.tex pldi99-intro.tex pldi99-tech.tex \
 #	pldi99.tex .cvsignore
 #oopsla '02 paper
-oopsla Design oopsla02.tex GNUmakefile comdef.sty acmconf.sty harpoon.bib \
-	&Figures
+oopsla Design oopsla02.tex GNUmakefile comdef.sty acmconf.sty acmconf.cls \
+	harpoon.bib &Figures
 Figures Design/Figures
