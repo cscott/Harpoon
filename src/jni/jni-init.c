@@ -16,3 +16,6 @@ JNIEnv * FNI_ThreadInit (void) {
   env->localrefs.next= NULL;
   return (JNIEnv *) env;
 }
+
+/* eventually this will be in thread-local memory. */
+JNIEnv *FNI_JNIEnv = NULL;
