@@ -48,8 +48,8 @@ Tracking Rate: Min:$TRACRATEMIN Max: $TRACRATEMAX Std Dev: $TRACRATESTDDEV Avg:$
 
 
 echo "set multiplot
-set yrange [0:400]
-set xrange [0:400]
+set yrange [0:300]
+set xrange [0:300]
 set nokey
 set multiplot
 set title \"Latency Stats\"
@@ -63,15 +63,15 @@ pause -1
 " > gnuplot-commands-latency
 
 echo "set multiplot
-set yrange [0:400]
-set xrange [0:400]
+set yrange [0:300]
+set xrange [0:300]
 set nokey
 set title \"Rate Stats\"
-set label \"processing = red, receiving = green, tracking = blue, total = purple\" at graph 0.1, 0.9
-plot \"../processing-rate-stats.txt\" lt 1 # processing is red
-plot \"../receiving-rate-stats.txt\" lt 2   # receiving is green
+#set label \"processing = red, receiving = green, tracking = blue, total = purple\" at graph 0.1, 0.9
+#plot \"../processing-rate-stats.txt\" lt 1 # processing is red
+#plot \"../receiving-rate-stats.txt\" lt 2   # receiving is green
 plot \"../tracking-rate-stats.txt\" lt 3   # tracking is blue
-plot \"../total-rate-stats.txt\" lt 4      # total is purple
+#plot \"../total-rate-stats.txt\" lt 4      # total is purple
 set nomultiplot
 pause -1
 " > gnuplot-commands-rate
