@@ -1,4 +1,4 @@
-# $Revision: 1.32 $
+# $Revision: 1.33 $
 JFLAGS=-g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JCC=javac -d .
@@ -40,16 +40,16 @@ jar-install: only-me jar
 	chmod a+r Harpoon.jar
 	$(SCP) Harpoon.jar miris.lcs.mit.edu:public_html/Projects/Harpoon
 
-cvs-add:
+cvs-add: needs-cvs
 	-for dir in $(filter-out Test,$(ALLPKGS)); do \
 		(cd $$dir; cvs add *.java 2>/dev/null); \
 	done
-cvs-commit: cvs-add
+cvs-commit: needs-cvs cvs-add
 	cvs -q diff -u | tee cvs-tmp # view changes we are committing.
 	cvs -q commit
 	$(RM) cvs-tmp
 commit: cvs-commit # convenient abbreviation
-update: # it's so easy to forget...
+update: needs-cvs # it's so easy to forget...
 	cvs update 
 	@echo ""
 	@-$(FORTUNE)
@@ -118,5 +118,11 @@ backup: only-me # DOESN'T WORK ON NON-LOCAL MACHINES
 # the 'install' rules only make sense if you're me.
 only-me:
 	if [ ! `whoami` = "cananian" ]; then exit 1; fi
+# the 'cvs' rules only make sense if you've got a copy checked out from CVS
+needs-cvs:
+	@if [ ! -d CVS ]; then \
+	  echo This rule needs CVS access to the source tree. ; \
+	   exit 1; \
+	fi
 
 install: doc-install tar-install jar-install
