@@ -63,7 +63,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.7 2001-07-10 22:49:59 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.8 2001-10-12 16:51:23 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
     protected TreeBuilder(Runtime runtime, Linker linker,
@@ -88,13 +88,13 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 		     DECLARE(dg,objectType,Tobj,
 		     new TEMP(tf,source,Type.POINTER,Tobj)), old),
 		   new MOVE(tf,source,
-		     new MEM(tf,source,Type.POINTER,
+		     new MEM(tf,source,Type.INT,
 		       new BINOP(tf, source,Type.POINTER,Bop.ADD,
 		         DECLARE(dg,objectType,Tobj,
 			 new TEMP(tf,source,Type.POINTER,Tobj)),
 		           new CONST(tf, source, OBJ_HASH_OFF))),
-		   new BINOP(tf, source, Type.POINTER, Bop.ADD,
-		     new MEM(tf,source,Type.POINTER,
+		   new BINOP(tf, source, Type.INT, Bop.ADD,
+		     new MEM(tf,source,Type.INT,
 	               new BINOP(tf, source,Type.POINTER,Bop.ADD,
 			 DECLARE(dg,objectType,Tobj,
 	                 new TEMP(tf,source,Type.POINTER,Tobj)),
