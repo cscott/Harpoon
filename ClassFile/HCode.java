@@ -15,7 +15,7 @@ import java.util.Iterator;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.16 2002-09-01 07:47:05 cananian Exp $
+ * @version $Id: HCode.java,v 1.17 2002-09-03 16:11:32 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code
@@ -40,9 +40,6 @@ public abstract class HCode<HCE extends HCodeElement> {
    * Return an ordered list of the component objects making up this
    * code view.  If there is a 'root' to the code view, it should
    * occupy index 0 of the <code>HCodeElement</code> array.<p>
-   * Either <code>getElementsI()</code> or <code>getElementsE()</code>
-   * must have been implemented for the default implementation to work
-   * properly.
    * @deprecated use getElementsL() instead.
    * @see harpoon.IR.Bytecode.Instr
    */
@@ -61,7 +58,7 @@ public abstract class HCode<HCE extends HCodeElement> {
    * static view, see <code>SnapshotIterator</code>; if you need
    * a dynamic view, don't cache the returned <code>List</code>.
    * <p>
-   * Either <code>getElementsI()</code> or <code>getElementsE()</code>
+   * The <code>getElementsI()</code> method
    * must have been implemented for the default implementation to work
    * properly.
    */
@@ -72,27 +69,18 @@ public abstract class HCode<HCE extends HCodeElement> {
       l.add(i.next());
     return java.util.Collections.unmodifiableList(l);
   }
-  /**
-   * Return an Enumeration of the component objects making up this
-   * code view.  If there is a 'root' to the code view, it should
-   * be the first element enumerated.<p>
-   * Implementations must implement at least one of
-   * <code>getElementsE()</code>, or <code>getElementsI()</code>.
-   * @deprecated use getElementsI() instead.
-   * @see harpoon.IR.Bytecode.Instr
-   */
-  public Enumeration<HCE> getElementsE() {
-    return new harpoon.Util.IteratorEnumerator<HCE>(getElementsI());
-  }
+
   /**
    * Return an Iterator over the component objects making up this
    * code view.  If there is a 'root' to the code view, it should
    * be the first element enumerated.<p>
-   * Implementations must implement at least one of
-   * <code>getElementsE()</code>, or <code>getElementsI()</code>.
+   * Subclasses must override the default implementation of
+   * at least one of
+   * <code>getElementsL()</code> or <code>getElementsI()</code>
+   * in order to work properly.
    */
   public Iterator<HCE> getElementsI() {
-    return new harpoon.Util.EnumerationIterator<HCE>(getElementsE());
+    return getElementsL().iterator();
   }
 
   /**

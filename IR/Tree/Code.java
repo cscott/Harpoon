@@ -40,7 +40,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.7 2002-09-01 07:47:33 cananian Exp $
+ * @version $Id: Code.java,v 1.8 2002-09-03 16:12:29 cananian Exp $
  */
 public abstract class Code extends HCode<Tree> {
     /** The Tree Objects composing this code view. */
@@ -181,6 +181,7 @@ public abstract class Code extends HCode<Tree> {
      * Returns an ordered list of the <code>Tree</code> Objects
      * making up this code view.  The root of the tree
      * is in element 0 of the array.
+     * @deprecated
      */
     public Tree[] getElements() {
 	return super.getElements();

@@ -34,7 +34,7 @@ import java.util.ArrayList;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.8 2002-09-01 07:47:20 cananian Exp $
+ * @version $Id: Code.java,v 1.9 2002-09-03 16:12:17 cananian Exp $
  */
 public abstract class Code extends HCode<Quad>
     implements java.io.Serializable {
@@ -147,6 +147,7 @@ public abstract class Code extends HCode<Quad>
      * Returns an ordered list of the <code>Quad</code>s
      * making up this code view.  The root of the graph
      * is in element 0 of the array.
+     * @deprecated
      */
     public Quad[] getElements() { return super.getElements(); }
 
