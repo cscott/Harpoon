@@ -9,22 +9,39 @@ package harpoon.ClassFile;
  * @see HClass#getMutator
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassMutator.java,v 1.1.2.3 2000-01-11 02:06:36 cananian Exp $
+ * @version $Id: HClassMutator.java,v 1.1.2.4 2000-01-11 04:52:45 cananian Exp $
  */
 public interface HClassMutator {
-    public abstract HField addDeclaredField(String name, HClass type);
-    public HField addDeclaredField(String name, String descriptor);
-    public HField addDeclaredField(HField template, boolean shouldRename);
-    public void removeDeclaredField(HField f) throws NoSuchFieldError;
+    public HField addDeclaredField(String name, HClass type)
+	throws DuplicateMemberException;
+    public HField addDeclaredField(String name, String descriptor)
+	throws DuplicateMemberException;
+    public HField addDeclaredField(String name, HField template)
+	throws DuplicateMemberException;
+    public void removeDeclaredField(HField f)
+	throws NoSuchMemberException;
 
-    public HMethod addDeclaredMethod(String name, String descriptor);
+    public HInitializer addClassInitializer()
+	throws DuplicateMemberException;
+    public void removeClassInitializer(HInitializer m)
+	throws NoSuchMemberException;
+
+    public HConstructor addConstructor(String descriptor)
+	throws DuplicateMemberException;
+    public HConstructor addConstructor(HClass[] paramTypes)
+	throws DuplicateMemberException;
+    public void removeConstructor(HConstructor c)
+	throws NoSuchMemberException;
+
+    public HMethod addDeclaredMethod(String name, String descriptor)
+	throws DuplicateMemberException;
     public HMethod addDeclaredMethod(String name, HClass[] paramTypes,
-				  HClass returnType);
-    public HMethod addDeclaredMethod(HMethod template, boolean shouldRename);
-    public void removeDeclaredMethod(HField f) throws NoSuchFieldError;
-
-    public HInitializer addClassInitializer();
-    public void removeClassInitializer(HInitializer m);
+				     HClass returnType)
+	throws DuplicateMemberException;
+    public HMethod addDeclaredMethod(String name, HMethod template)
+	throws DuplicateMemberException;
+    public void removeDeclaredMethod(HMethod m)
+	throws NoSuchMemberException;
 
     public void addInterface(HClass in);
     public void removeInterface(HClass in);
