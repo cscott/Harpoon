@@ -54,7 +54,7 @@ import java.util.AbstractSet;
     for the algorithm it uses to allocate and assign registers.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.54 1999-12-04 23:54:26 pnkfelix Exp $
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.55 1999-12-06 14:45:34 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -146,7 +146,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 		// Iterator uses = instr.useC().iterator();
 		
 		while(refs.hasNext()) {
-		    int workOnRef = 1;
 		    Temp ref = (Temp) refs.next();
 
 		    regfile.putAll(archivedEntries);
@@ -154,18 +153,19 @@ public class LocalCffRegAlloc extends RegAlloc {
 			(ref, (Iterator) instrs.clone(),
 			 liveOnExit.contains(ref));
 		    archivedEntries = putAllArchive(precolor, regfile);
-
-		    while(workOnRef != 0) {
+		    
+		    int workOnRef = 0;
+		    while(true) {
+			workOnRef++;
 			Util.assert(workOnRef <= 5,
 				    "should not need to work on"+
 				    "Ref: "+ref+" in Instr:"+instr+
 				    " more than 5 times");
 			try {
 			    doAlloc(ref);
-			    workOnRef = 0;
+			    break;
 			} catch (SpillException s) {
 			    chooseSpill(s.getPotentialSpills());
-			    workOnRef++;
 			}
 		    }
 		}
@@ -196,34 +196,65 @@ public class LocalCffRegAlloc extends RegAlloc {
 	}
 
 
-	void doAlloc(Temp ref) throws SpillException {
+	void doAlloc(final Temp ref) throws SpillException {
 	    // hard coded ref to register --> skip
 	    if (isTempRegister(ref)) return;
 	    
 	    // ref already has register assigned to it --> skip
 	    if (code.registerAssigned(instr, ref)) {
 		Util.assert( !regfile.inverseMap().getValues(ref).isEmpty(),
-			     "If a ref: "+ref+" is assigned a register, it "+
-			     "should have a mapping in the regfile"+
-			     "\nLiveOnExit: "+ liveOnExit +
-			     "\nREGFILE: "+ regfile + 
-			     "\nINSTR: " +instr+" / "+
-			     code.toAssemRegsNotNeeded(instr)+
-			     "\nBLOCK: \n" + b.dumpElems());
+			     new Util.LazyString() { 
+		    // made Lazy 'cause dumpElems is SLOW
+		    public String eval() {
+			return "If a ref: "+ref+" is assigned a register, it "+
+			    "should have a mapping in the regfile"+
+			    "\nLiveOnExit: "+ liveOnExit +
+			    "\nREGFILE: "+ regfile + 
+			    "\nINSTR: " +instr+" / "+code.toAssemRegsNotNeeded(instr)+
+			    "\nBLOCK: \n" + b.dumpElems()+
+			    "";}});
 		return;
 	    }
 	    
 	    // (Step 2)
-	    
+
+
+	    /* notes: (FSK)
+	       The RIGHT way to do this is not to keep scanning over
+	       and over the instruction stream doing the assignment
+	       and then taking it back when a spill occurs.
+	       Instead, should be tracking the current state of the
+	       register file during traversal.  If a Temp in this instr
+	       currently has a register assignment, then do
+	       code.assignReg().  Else find an assignment as below.
+	       This avoids several repeated traversals.
+
+	       However the current design of the Register File
+	       doesn't allow this to extract a Register Assignment for
+	       a given Temp; it *can* give the Set of Registers that
+	       are allocated for the Temp, but it loses the ordering
+	       information needed to actually perform an assignment.
+
+	       So, I need to redesign the register file abstraction to
+	       do this.  (Perhaps get rid of TwoWayMap and just
+	       explicitly use two maps?)
+
+	       Also, when I do redesign the regfile, I need to make
+	       sure to track clean/dirty info as I go, so I can know
+	       if I need to spill or not.
+	     */
 	    Collection prevAssignment = 
 		regfile.inverseMap().getValues(ref);
-	    
 	    if (!prevAssignment.isEmpty()) {
 		// FSK: this is inelegant.  I shouldn't have to
 		// manually remove these mappings.  Look into an
-		// alternate solution.
+		// alternate solution.  -->  If I implement as in the
+		// notes above, then I won't need to do this, at least
+		// not here 
 		removeMapping(ref, regfile);
 	    }
+
+
 	    
 	    CloneableIterator suggs = 
 		new CloneableIterator
@@ -291,6 +322,15 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    
 	    // TODO: add code here to decide which
 	    // FurthestRef to spill (FF -> CFF)
+		// Unfortunately, TreeSet does NOT create a collection
+		// of elements with the same cost, it just doesn't add
+		// the object if one with the same cost already
+		// exists.  (since TreeSet requires that the
+		// Comparables stored be "consistent with equals",
+		// this is not an error)
+		// Need to come up with some sort of
+		// OrderedMultiSet/OrderedBag abstraction, so that I
+		// can do the FF -> CFF changes.
 	    Set spill = (Set) weightedSpills.last();
 	    
 	    //System.out.println("Spilling " + printSet(spill)+
@@ -535,6 +575,9 @@ public class LocalCffRegAlloc extends RegAlloc {
     */
     private Map getPrecolorMappings(Temp ref, Iterator instrs, 
 				    boolean refLiveAtEnd) {
+	// FSK: Look into redesigning this to be faster and/or produce
+	// more precise results.
+
 	Map mappings = new HashMap();
 	Map potentials = new HashMap();
 	boolean killedRef = false;

@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.15 1999-12-03 23:52:12 pnkfelix Exp $
+ * @version $Id: Util.java,v 1.12.2.16 1999-12-06 14:45:37 pnkfelix Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -165,13 +165,30 @@ public abstract class Util {
     if (!val)
       throw new RuntimeException("Assertion Failure.") { };
   }
-  /** Assertion facility, which explanatory string.
+  /** Assertion facility, with explanatory string.
    *  Throws a <code>RuntimeException</code> including the specified
    *  message string if the boolean parameter is <code>false</code>. */
   public static final void assert(boolean val, String msg) {
     if (!val)
       throw new RuntimeException("Assertion Failure: "+msg) { };
   }
+  /** Assertion facility, with lazy-evaluated explanatory string.
+   *  Throws a <code>RuntimeException</code> including the specified
+   *  message string if the boolean parameter is <code>false</code>. 
+   *  Used for code where evaluating the <code>msg</code> string
+   *  takes too long or can't be done if <code>val</code> is true.
+   */
+  public static final void assert(boolean val, LazyString msg) {
+    if (!val)
+      throw new RuntimeException("Assertion Failure: "+msg.eval()) { };
+  }
+  
+  // Note: when we move to GJ, change this to a 'Lazy<T>' class with a 
+  // 'eval' method that returns a 'T'.  (Or perhaps Promise<T> or Thunk<T>?)
+  public static abstract class LazyString {
+    public abstract String eval();
+  }
+  
   /** Repeat a given string a certain number of times.
    *  @return a string consisting of <code>s</code> repeated <code>n</code>
    *          times. */

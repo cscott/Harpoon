@@ -33,7 +33,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.35 1999-11-30 05:25:06 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.36 1999-12-06 14:45:35 pnkfelix Exp $
  */
 public abstract class Code extends HCode 
     implements Derivation, TypeMap {
@@ -288,7 +288,7 @@ public abstract class Code extends HCode
 	public void visit(Tree t) { throw new Error("No defaults here."); }
 	public void visit(Exp e)  { /* Do nothing for Exps */ } 
 
-	public void visit(CALL s) { 
+	public void visit(final CALL s) { 
 	    switch (state) { 
 	    case COMPUTE_EDGE_SETS:
 		nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
@@ -299,9 +299,13 @@ public abstract class Code extends HCode
 		Util.assert(nextNode!=null, 
 			    "nextNode shouldn't be null");
 		Util.assert(RS(nextNode)!=(Stm)labels.get(s.handler.label),
-			    "both normal and exceptional return should"+
-			    " not target same location for "+
-			    Print.print(s));
+			    new Util.LazyString() {
+				public String eval() {
+				    return "both normal and exceptional return should"+
+				    " not target same location for "+
+				    Print.print(s);
+				}
+			    });
 
 		addEdge(s, RS(nextNode)); 
 		addEdge(s, (Stm)labels.get(s.handler.label));
