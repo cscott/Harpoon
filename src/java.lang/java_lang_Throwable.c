@@ -2,7 +2,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "bfd.h"
 #include <jni-private.h> /* for FNI_Thread_State */
 #include "java_lang_Throwable.h"
 #include <config.h> /* for HAVE_STACK_TRACE_FUNCTIONS */
@@ -32,7 +31,8 @@ void jprintln(JNIEnv *env, jobject sobj, char *format, ...) {
 }
 
 
-#ifndef HAVE_STACK_TRACE_FUNCTIONS
+#if ! (defined(HAVE_STACK_TRACE_FUNCTIONS) && \
+       defined(HAVE_LIBBFD) && defined(HAVE_LIBIBERTY))
 /* The given object 'sobj' must have a void println(char[]) method */
 JNIEXPORT void JNICALL Java_java_lang_Throwable_printStackTrace0
   (JNIEnv *env, jobject thisobj, jobject sobj) {
@@ -45,6 +45,7 @@ JNIEXPORT jthrowable JNICALL Java_java_lang_Throwable_fillInStackTrace
 }
 #else /* HAVE_STACK_TRACE_FUNCTIONS */
 #include "asm/stack.h" /* snarf in the stack trace functions. */
+#include <bfd.h>
 
 struct _StackTrace {
   void *retaddr;
