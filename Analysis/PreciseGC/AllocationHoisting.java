@@ -26,7 +26,7 @@ import java.util.Set;
  * <code>AllocationHoisting</code>
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: AllocationHoisting.java,v 1.1.2.1 2001-10-21 21:39:47 kkz Exp $
+ * @version $Id: AllocationHoisting.java,v 1.1.2.2 2001-10-22 15:14:53 kkz Exp $
  */
 public class AllocationHoisting extends 
     harpoon.Analysis.Transformation.MethodSplitter {
@@ -57,6 +57,7 @@ public class AllocationHoisting extends
      *  from the transformation.
      */
     private boolean optimizable(Code c) {
+	/*
 	// only worry about safe initializers
 	if (!mraf.isSafeInitializer(c.getMethod())) return false;
 	// run a bunch of analyses
@@ -92,8 +93,7 @@ public class AllocationHoisting extends
 		    ((Map)mra.mra_before((Quad)defs.next()).proj(0));
 	    }
 	    return true;
-	    /*
-	      boolean optimizable = true;
+	    boolean optimizable = true;
 	    for (Iterator defs = sdefs.iterator(); defs.hasNext(); ) {
 		Quad d = (Quad) defs.next();
 		if (d.kind() != QuadKind.ANEW && 
@@ -103,8 +103,8 @@ public class AllocationHoisting extends
 		    }
 		}
 		return optimizable;
-	    */
 	}
+	*/
 	return false;
     }
 
