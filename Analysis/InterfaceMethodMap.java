@@ -24,7 +24,7 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * <code>InterfaceMethodMap</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.2.3 1999-01-21 22:49:07 pnkfelix Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.2.4 1999-01-22 17:01:01 pnkfelix Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
@@ -167,8 +167,7 @@ public class InterfaceMethodMap extends MethodMap {
 	
     private static HClass objHClass = HClass.forName("java.lang.Object");
 
-    /** Helper method for graph assembly routines: checks suitability
-	of an HMethod.
+    /** Checks suitability of an HMethod for inclusion in a graph.
 	<BR> effects: if <code>m</code> is a method of
 	              <code>java.lang.Object</code> then returns
 		      false.  Else returns true.
@@ -177,10 +176,11 @@ public class InterfaceMethodMap extends MethodMap {
 	return m.getDeclaringClass() != objHClass;
     }
 
-    /** Helper method for assembleGraph: generates a HmNode for
-	methods in<code>interfce</code>. 
+    /** Generates a HmNode for methods in<code>interfce</code>. 
 	<BR> requires: <code>interfce</code> is an HClass representing
-	               an interface.
+	               an interface, and there are no circular
+		       interface extensions 
+		       (ie "A extends B" and "B extends A")
 	<BR> effects: Iterates over the accessible methods of
 	              <code>interfce</code>, accumulating them in a
 		      <code>Vector</code> of <code>HmNode</code>s that
@@ -201,18 +201,18 @@ public class InterfaceMethodMap extends MethodMap {
 	    }
 	}
 	
-	// this sequence of code apparently is unnecessary according
-	// to the documentation for getMethods()...don't know how I
-	// missed that before
+	// this sequence of code is unnecessary; HClass.getMethods()
+	// now performs according to spec.
 	/*
- 	HClass[] superinterfaces = interfce.getInterfaces();
-	for (int i=0; i<superinterfaces.length; i++) {
-	    Vector v = findNodesFor( superinterfaces[i] );
-	    for (int j=0; j<v.size(); j++) {
-		nodes.addElement(v.elementAt(j));
- 	    }
-	}
+	  HClass[] superinterfaces = interfce.getInterfaces(); 
+	  for (int i=0; i<superinterfaces.length; i++) { 
+	    Vector v = findNodesFor( superinterfaces[i] ); 
+	    for (int j=0; j<v.size(); j++) { 
+		nodes.addElement(v.elementAt(j)); 
+		} 
+	    }
 	*/
+	
 	return nodes;
     }
         
