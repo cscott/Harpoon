@@ -69,7 +69,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.22 2000-10-11 20:28:27 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.23 2000-10-13 21:08:36 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -307,7 +307,7 @@ import java.util.Iterator;
 // allocated to the same registers
     private Instr emitRegAllocDef( HCodeElement root, Temp t) {
        Util.assert(t != null, t);
-       return emit2( root, "# Reg alloc def", new Temp[]{t}, null);
+       return emit2( root, "# Reg alloc def " + t, new Temp[]{t}, null);
     }
 
     /* Branching instruction emit helper. 
@@ -535,8 +535,9 @@ import java.util.Iterator;
        emit2(root, "jal "+nameMap.c_function_name(func_name),
              call_def_full, call_use);
        Util.assert(i instanceof TwoWordTemp);
-       emit( root, "move `d0h, `s0", i, v0 );
-       emit( root, "move `d0l, `s0", i, v1 );
+       emitRegAllocDef(root, i);
+       emit( root, "move `d0h, `s0\n"
+             + "move `d0l, `s1", i, v0, v1 ); 
     }
     /** Source for long long arithmetic routines is in Flex_MIPS.S */
     private void DoLLShiftCall(HCodeElement root,
@@ -556,8 +557,9 @@ import java.util.Iterator;
              // uses & stomps on these registers:
              call_def_full, call_use);
        Util.assert(i instanceof TwoWordTemp);
-       emit( root, "move `d0h, `s0", i, v0 );
-       emit( root, "move `d0l, `s0", i, v1 );
+       emitRegAllocDef(root, i);
+       emit( root, "move `d0h, `s0\n"
+             + "move `d0l, `s1", i, v0, v1 ); 
     }
     /** For now all float and double operations are in software.  Each
      routine has an assembly jacket function which now calls a C
@@ -604,8 +606,9 @@ import java.util.Iterator;
              // uses & stomps on these registers:
              call_def_full, call_use);
        if(i instanceof TwoWordTemp) {
-          emit( root, "move `d0h, `s0", i, v0 );
-          emit( root, "move `d0l, `s0", i, v1 );
+          emitRegAllocDef(root, i);
+          emit( root, "move `d0h, `s0\n"
+                + "move `d0l, `s1", i, v0, v1 ); 
        } else {
           emitMOVE( root, "move `d0, `s0", i, v0 );
        }
@@ -627,8 +630,9 @@ import java.util.Iterator;
              // uses & stomps on these registers:
              call_def_full, call_use);
        if(i instanceof TwoWordTemp) {
-          emit( root, "move `d0h, `s0", i, v0 );
-          emit( root, "move `d0l, `s0", i, v1 );
+          emitRegAllocDef(root, i);
+          emit( root, "move `d0h, `s0\n"
+                + "move `d0l, `s1", i, v0, v1 ); 
        } else {
           emitMOVE( root, "move `d0, `s0", i, v0 );
        }
@@ -761,14 +765,16 @@ import java.util.Iterator;
           // emit( ROOT, "move `d0l, `s0", retval, v1 );
           // sdc1 is mips2
           emit( ROOT, "sdc1 $f0, 0($sp)", null, SP);
-          emit(ROOT, "lw `d0l, 4($sp)", retval, SP);
-          emit(ROOT, "lw `d0h, 0($sp)", retval, SP);
+          emitRegAllocDef(ROOT, retval);
+          emit(ROOT, "lw `d0l, 4($sp)\n"
+               + "lw `d0h, 0($sp)", retval, SP);
        } else if (ROOT.getRetval().isDoubleWord()) {
           // not certain an emitMOVE is legal with the l/h modifiers
           declare(retval, type);
           Util.assert(retval instanceof TwoWordTemp);
-          emit( ROOT, "move `d0h, `s0", retval, v0 );
-          emit( ROOT, "move `d0l, `s0", retval, v1 );
+          emitRegAllocDef(ROOT, retval);
+          emit( ROOT, "move `d0h, `s0\n"
+                + "move `d0l, `s1", retval, v0, v1 ); 
        } else {
           declare(retval, type);
           emitMOVE( ROOT, "move `d0, `s0", retval, v0 );
@@ -800,8 +806,9 @@ import java.util.Iterator;
        Collections.sort(usedRegArrList, regComp);
        
        stack.regAllocUsedRegs(usedRegArrList);
-       // XXX This should be stackstpace - usedRegArrList.size(), but
-       // I am getting spill requests for saved registers
+       // This can include space for callee saved registers if such
+       // temps need to be spilled and restored.  Using local reg
+       // alloc, this happens depressingly often 
        stack.regAllocLocalWords(stackspace);
        int nregs = stack.calleeSaveTotal();
 
@@ -1006,10 +1013,12 @@ BINOP<l>(ADD, j, k) = i %extra<i>{ extra }
 %{
    Util.assert(i instanceof TwoWordTemp);
    emitLineDebugInfo(ROOT);
-   emit( ROOT, "addu `d0l, `s0l, `s1l", i, j, k);
-   emit( ROOT, "sltu `d0, `s0l, `s1l", extra, i, k);
-   emit( ROOT, "addu `d0h, `s0, `s1h", i, extra, j);
-   emit( ROOT, "addu `d0h, `s0h, `s1h", i, i, k);
+   emitRegAllocDef(ROOT, i);
+   emit2( ROOT, "addu `d0l, `s0l, `s1l\n"
+          + "sltu `d1, `s2l, `s1l\n"
+          + "addu `d0h, `s3, `s0h\n"
+          + "addu `d0h, `s2h, `s1h",
+          new Temp[] {i, extra}, new Temp[] {j, k, i, extra} );
 }%
 
 BINOP<f>(ADD, j, k) = i %{
@@ -1040,10 +1049,12 @@ BINOP<p,i>(ADD, j, UNOP<p,i>(NEG, CONST<i>(c))) = i
 BINOP<l>(ADD, j, UNOP<l>(NEG, k)) = i %extra<i>{ extra }
 %{
    emitLineDebugInfo(ROOT);
-   emit( ROOT, "sltu `d0, `s0l, `s1l", extra, j, k);
-   emit( ROOT, "subu `d0l, `s0l, `s1l", i, j, k);
-   emit( ROOT, "subu `d0h, `s0h, `s1h", i, j, k);
-   emit( ROOT, "subu `d0h, `s0h, `s1", i, i, extra);
+   emitRegAllocDef(ROOT, i);
+   emit2( ROOT, "sltu `d1, `s0l, `s1l\n"
+          + "subu `d0l, `s0l, `s1l\n"
+          + "subu `d0h, `s0h, `s1h\n"
+          + "subu `d0h, `s2h, `s3",
+         new Temp[]{i,extra}, new Temp[] {j, k, i, extra} );
 }%
 
 BINOP<f>(ADD, j, UNOP<f>(NEG, k)) = i %{
@@ -1144,10 +1155,12 @@ UNOP<d>(NEG, arg) = i
 UNOP<l>(NEG, arg) = i %extra<i>{ extra }
 %{
    emitLineDebugInfo(ROOT);
-   emit( ROOT, "subu `d0l, $0, `s0l", i, arg);
-   emit( ROOT, "subu `d0h, $0, `s0h", i, arg);
-   emit( ROOT, "sltu `d0, $0, `s0l", extra, arg );
-   emit( ROOT, "subu `d0h, `s0h, `s1", i, i, extra);
+   emitRegAllocDef(ROOT, i);
+   emit2( ROOT, "subu `d0l, $0, `s0l\n"
+          + "subu `d0h, $0, `s0h\n"
+          + "sltu `d1, $0, `s0l\n"
+          + "subu `d0h, `s1h, `s2",
+          new Temp[] {i,extra}, new Temp[] {arg, i, extra} );
 }% 
 
 /***********************************************************/
@@ -1156,34 +1169,36 @@ UNOP<l>(NEG, arg) = i %extra<i>{ extra }
 BINOP<p,i>(AND, j, k) = i
 %{
    emitLineDebugInfo(ROOT);
-    emit( ROOT, "and `d0, `s0, `s1", i, j, k );
+   emit( ROOT, "and `d0, `s0, `s1", i, j, k );
 }%
 BINOP<p,i>(AND, j, CONST<p,i>(c)) = i
 %{
    emitLineDebugInfo(ROOT);
-    emit( ROOT, "and `d0, `s0, "+c, i, j );
+   emit( ROOT, "and `d0, `s0, "+c, i, j );
 }%
 BINOP<l>(AND, j, k) = i %{
    emitLineDebugInfo(ROOT);
-    emit( ROOT, "and `d0l, `s0l, `s1l", i, j, k );
-    emit( ROOT, "and `d0h, `s0h, `s1h", i, j, k );
+   emitRegAllocDef(ROOT, i);
+   emit( ROOT, "and `d0l, `s0l, `s1l\n"
+         + "and `d0h, `s0h, `s1h", i, j, k);
 }%
 
 BINOP<p,i>(OR, j, k) = i
 %{
    emitLineDebugInfo(ROOT);
-    emit( ROOT, "or `d0, `s0, `s1", i, j, k );
+   emit( ROOT, "or `d0, `s0, `s1", i, j, k );
 }%
 BINOP<p,i>(OR, j, CONST<p,i>(c)) = i
 %{
    emitLineDebugInfo(ROOT);
-    emit( ROOT, "or `d0, `s0, "+c, i, j );
+   emit( ROOT, "or `d0, `s0, "+c, i, j );
 }%
 
 BINOP<l>(OR, j, k) = i %{
    emitLineDebugInfo(ROOT);
-    emit( ROOT, "or `d0l, `s0l, `s1l", i, j, k );
-    emit( ROOT, "or `d0h, `s0h, `s1h", i, j, k );
+   emitRegAllocDef(ROOT, i);
+   emit( ROOT, "or `d0l, `s0l, `s1l\n"
+         + "or `d0h, `s0h, `s1h", i, j, k );
 }%
 
 BINOP<p,i>(XOR, j, k) = i
@@ -1198,21 +1213,23 @@ BINOP<p,i>(XOR, j, CONST<p,i>(c)) = i
 }%
 BINOP<l>(XOR, j, k) = i %{
    emitLineDebugInfo(ROOT);
-    emit( ROOT, "xor `d0l, `s0l, `s1l", i, j, k );
-    emit( ROOT, "xor `d0h, `s0h, `s1h", i, j, k );
+   emitRegAllocDef(ROOT, i);
+   emit( ROOT, "xor `d0l, `s0l, `s1l\n"
+         + "xor `d0h, `s0h, `s1h", i, j, k );
 }%
 
 UNOP<i,p>(NOT, arg) = i
 %{
    emitLineDebugInfo(ROOT);
-    emit( ROOT, "not `d0, `s0", i, arg );
+   emit( ROOT, "not `d0, `s0", i, arg );
 }% 
 
 UNOP<l>(NOT, arg) = i 
 %{
    emitLineDebugInfo(ROOT);
-    emit( ROOT, "not `d0l, `s0l", i, arg );
-    emit( ROOT, "not `d0h, `s0h", i, arg );
+   emitRegAllocDef(ROOT, i);
+   emit( ROOT, "not `d0l, `s0l\n"
+         + "not `d0h, `s0h", i, arg );
 }% 
 
 /***********************************************************/
@@ -1355,8 +1372,9 @@ CONST<l,d>(c) = i
    : Double.doubleToLongBits(ROOT.value.doubleValue());
 
    emitLineDebugInfo(ROOT);
-   emit( ROOT, "li `d0h, " + (int)(val>>>32) + " # hi long const", i);
-   emit( ROOT, "li `d0l, " + (int)val + " # lo long const", i);
+   emitRegAllocDef(ROOT, i);
+   emit( ROOT, "li `d0h, " + (int)(val>>>32) + " # hi long const\n"
+         + "li `d0l, " + (int)val + " # lo long const", i);
 }% 
 
 CONST<i,f>(c) = i 
@@ -1402,12 +1420,11 @@ MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))) = i
 }%
 MEM<l,d>(e) = i %{
    emitLineDebugInfo(ROOT);
-    emit(new InstrMEM(instrFactory, ROOT,
-                      "lw `d0l, 4(`s0)",
-                      new Temp[]{ i }, new Temp[]{ e }));
-    emit(new InstrMEM(instrFactory, ROOT,
-                      "lw `d0h, 0(`s0)",
-                      new Temp[]{ i }, new Temp[]{ e }));
+   emitRegAllocDef(ROOT, i);
+   emit(new InstrMEM(instrFactory, ROOT,
+                     "lw `d0l, 4(`s0)\n"
+                     + "lw `d0h, 0(`s0)",
+                     new Temp[]{ i }, new Temp[]{ e }));
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(dst), src)
@@ -1520,8 +1537,9 @@ MOVE<d,l>(TEMP(dst), src) %{
 
     declare( dst, code.getTreeDerivation(),  ROOT.getSrc() );
     // not certain an emitMOVE is legal with the l/h modifiers
-    emit( ROOT, "move `d0l, `s0l", dst, src );
-    emit( ROOT, "move `d0h, `s0h", dst, src );
+    emitRegAllocDef( ROOT, dst );
+    emit( ROOT, "move `d0l, `s0l\n"
+          + "move `d0h, `s0h", dst, src );
 }%
 
 
@@ -1585,8 +1603,9 @@ UNOP(_2D, arg) = i %pred %( ROOT.operandType() == Type.INT )%
 UNOP(_2L, arg) = i %pred %( ROOT.operandType() == Type.INT )%
 %{
    emitLineDebugInfo(ROOT);
-    emit( ROOT, "move `d0l, `s0", i, arg );
-    emit( ROOT, "sra `d0h, `s0, 31", i, arg );
+   emitRegAllocDef(ROOT, i);
+   emit( ROOT, "move `d0l, `s0\n"
+         + "sra `d0h, `s0, 31", i, arg );
 }%
 /* Trivial pointer to integer */
 UNOP<p>(_2I, arg) = i %pred %( ROOT.operandType() == Type.POINTER )%
@@ -1729,10 +1748,12 @@ METHOD(params) %{
        switch(param_stack.argWhere(ROOT, i-1)) {
        case StackInfo.REGISTER:
           if (ROOT.getParams(i).isDoubleWord()) {
-             emit( ROOT, "move `d0h, `s0", params[i],
-                       param_stack.argReg(ROOT, i-1));
-             emit( ROOT, "move `d0l, `s0", params[i],
-                   param_stack.argSecondReg(ROOT, i-1));
+             emitRegAllocDef( ROOT, params[i] );
+             emit2( ROOT, "move `d0h, `s0\n"
+                          + "move `d0l, `s1",
+                    new Temp[] {params[i]},
+                    new Temp[] { param_stack.argReg(ROOT, i-1),
+                                 param_stack.argSecondReg(ROOT, i-1) } );
           } else {
              emitMOVE( ROOT, "move `d0, `s0", params[i],
                        param_stack.argReg(ROOT, i-1));
@@ -1745,11 +1766,8 @@ METHOD(params) %{
                                 "lw `d0h, " 
                                 + param_stack.argOffset(ROOT, i-1)
                                 + "(`s0)        # arg "
-                                + (i-1) + "h",
-                                new Temp[]{ params[i] },
-                                new Temp[]{ FP })); 
-             emit(new InstrMEM( instrFactory, ROOT,
-                                "lw `d0l, " 
+                                + (i-1) + "h"
+                                + "lw `d0l, " 
                                 + param_stack.argSecondOffset(ROOT, i-1)
                                 + "(`s0)        # arg "
                                 + (i-1) + "l",
