@@ -43,7 +43,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.4 2002-04-10 03:03:11 cananian Exp $
+ * @version $Id: Frame.java,v 1.5 2002-06-27 16:25:35 wbeebee Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -61,10 +61,10 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	super();
 	linker = main.getDeclaringClass().getLinker();
 	System.out.println("AllocationStrategy: "+
-			   ((Realtime.REAL_SCOPES&&Realtime.REALTIME_JAVA)? 
+			   (Realtime.REALTIME_JAVA? 
 			    "RTJ":alloc_strategy));
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
-	    (Realtime.REAL_SCOPES&&Realtime.REALTIME_JAVA) ?
+	    Realtime.REALTIME_JAVA ?
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Analysis.Realtime.RealtimeAllocationStrategy(this) :
 	    alloc_strategy.equalsIgnoreCase("nifty") ?

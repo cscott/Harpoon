@@ -31,16 +31,13 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.5 2002-06-25 19:39:59 dumi Exp $
+ * @version $Id: Realtime.java,v 1.6 2002-06-27 16:25:30 wbeebee Exp $
  */
 
 public class Realtime {
 	/** Is Realtime JAVA support turned on? */
 	public static boolean REALTIME_JAVA = false;
     
-	/** Are we going to actually allocate objects in the appropriate scopes? */
-	public static boolean REAL_SCOPES = true;
-
 	/** Remove tagging when you remove all checks? */
 	public static boolean REMOVE_TAGS = true;
 
@@ -82,30 +79,24 @@ public class Realtime {
 	 */
 	public static void configure(String options) {
 		String opts = options.toLowerCase();
-		System.out.print("RTJ: on, Real Scopes: ");
+		System.out.print("RTJ: on, ");
 		REALTIME_JAVA = true;
-		if (opts.indexOf("fake_scopes")!=-1) {
-	    System.out.print("no");
-	    REAL_SCOPES = false;
+		if (opts.indexOf("noheap_checks")!=-1) {
+			NOHEAP_CHECKS = true;
+			System.out.print("checks");
+		} else if (opts.indexOf("noheap")!=-1) {
+			NOHEAP_MASK = true;
+			System.out.print("no checks");
 		} else {
-	    System.out.print("yes, NoHeap: ");
-	    if (opts.indexOf("noheap_checks")!=-1) {
-				NOHEAP_CHECKS = true;
-				System.out.print("checks");
-	    } else if (opts.indexOf("noheap")!=-1) {
-				NOHEAP_MASK = true;
-				System.out.print("no checks");
-	    } else {
-				System.out.print("no support");
-	    }
-	    System.out.print(", DEBUG_REF: ");
-	    if (opts.indexOf("debug_ref")!=-1) {
-				DEBUG_REF = true;
-				System.out.print("yes");
-	    } else {
-				System.out.print("no");
-	    }
+			System.out.print("no support");
 		}
+		System.out.print(", DEBUG_REF: ");
+		if (opts.indexOf("debug_ref")!=-1) {
+			DEBUG_REF = true;
+			System.out.print("yes");
+		} else {
+			System.out.print("no");
+		}		
 		System.out.print(", Collect Statistics: ");
 		if (opts.indexOf("stats")!=-1) {
 	    System.out.print("yes");
@@ -133,8 +124,10 @@ public class Realtime {
 	    }
 	    ANALYSIS_METHOD = ALL;
 		} else {
+			System.out.println();
 	    assert false : "Please specify an analysis method.";
 		}
+		System.out.println();
 	}		
 
 	/** Creates a field memoryArea on <code>java.lang.Object</code>.
@@ -220,24 +213,6 @@ public class Realtime {
 																new HClass[] { memoryArea }));
 		}
 		
-		if (REAL_SCOPES) {
-			roots.add(linker.forName("javax.realtime.CTMemory")
-								.getMethod("newMemBlock", new HClass[] { realtimeThread }));
-			roots.add(linker.forName("javax.realtime.HeapMemory")
-								.getMethod("newMemBlock", new HClass[] { realtimeThread }));
-			roots.add(linker.forName("javax.realtime.ImmortalMemory")
-								.getMethod("newMemBlock", new HClass[] { realtimeThread }));
-			roots.add(linker.forName("javax.realtime.ImmortalPhysicalMemory")
-								.getMethod("newMemBlock", new HClass[] { realtimeThread }));
-			roots.add(linker.forName("javax.realtime.LTMemory")
-								.getMethod("newMemBlock", new HClass[] { realtimeThread }));
-			roots.add(linker.forName("javax.realtime.NullMemoryArea")
-								.getMethod("newMemBlock", new HClass[] { realtimeThread }));
-			roots.add(linker.forName("javax.realtime.ScopedPhysicalMemory")
-								.getMethod("newMemBlock", new HClass[] { realtimeThread }));
-			roots.add(linker.forName("javax.realtime.VTMemory")
-								.getMethod("newMemBlock", new HClass[] { realtimeThread }));
-		}
 		roots.add(linker.forName("javax.realtime.ImmortalMemory")
 							.getMethod("instance", new HClass[] { }));
 		roots.add(linker.forName("javax.realtime.CTMemory")
@@ -259,6 +234,50 @@ public class Realtime {
 							.getMethod("checkAccess", new HClass[] { object }));
 		roots.add(linker.forName("javax.realtime.NoHeapRealtimeThread"));
 		roots.add(linker.forName("java.lang.IllegalAccessException"));
+		roots.add(linker.forName("java.lang.Boolean")
+			  .getConstructor(new HClass[] { HClass.Boolean }));
+		roots.add(linker.forName("java.lang.Boolean")
+			  .getMethod("booleanValue", new HClass[] {}));
+		roots.add(linker.forName("java.lang.Byte")
+			  .getConstructor(new HClass[] { HClass.Byte }));
+		roots.add(linker.forName("java.lang.Byte")
+			  .getMethod("byteValue", new HClass[] {}));
+		roots.add(linker.forName("java.lang.Character")
+			  .getConstructor(new HClass[] { HClass.Char }));
+		roots.add(linker.forName("java.lang.Character")
+			  .getMethod("charValue", new HClass[] {}));
+		roots.add(linker.forName("java.lang.Double")
+			  .getConstructor(new HClass[] { HClass.Double }));
+		roots.add(linker.forName("java.lang.Double")
+			  .getMethod("doubleValue", new HClass[] {}));
+		roots.add(linker.forName("java.lang.Float")
+		  .getConstructor(new HClass[] { HClass.Float }));
+		roots.add(linker.forName("java.lang.Float")
+			  .getMethod("floatValue", new HClass[] {}));
+		roots.add(linker.forName("java.lang.Integer")
+			  .getConstructor(new HClass[] { HClass.Int }));
+		roots.add(linker.forName("java.lang.Integer")
+			  .getMethod("intValue", new HClass[] {}));
+		roots.add(linker.forName("java.lang.Long")
+			  .getConstructor(new HClass[] { HClass.Long }));
+		roots.add(linker.forName("java.lang.Long")
+			  .getMethod("longValue", new HClass[] {}));
+		roots.add(linker.forName("java.lang.Short")
+			  .getConstructor(new HClass[] { HClass.Short }));
+		roots.add(linker.forName("java.lang.Short")
+			  .getMethod("shortValue", new HClass[] {}));
+		roots.add(linker.forName("java.lang.NoSuchMethodException")
+			  .getConstructor(new HClass[] { 
+			      linker.forName("java.lang.String") }));
+		roots.add(linker.forName("javax.realtime.RefCountArea")
+			  .getConstructor(new HClass[] {}));
+		roots.add(linker.forName("javax.realtime.RefCountArea")
+			  .getMethod("refInstance", new HClass[] {}));
+		roots.add(linker.forName("javax.realtime.MemAreaStack"));
+		roots.add(linker.forName("javax.realtime.MemAreaStack")
+			  .getConstructor(new HClass[] { 
+			      memoryArea, memoryArea,
+				  linker.forName("javax.realtime.MemAreaStack")}));
 		
 		if(REALTIME_THREADS) {
 			roots.add(linker.forName("javax.realtime.RealtimeThread")
@@ -295,6 +314,8 @@ public class Realtime {
 								.getMethod("enableThread", 
 													 new HClass[] {HClass.Long}));
 		}
+		
+
 		return roots;
 	}    
 
