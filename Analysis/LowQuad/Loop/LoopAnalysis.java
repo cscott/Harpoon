@@ -32,7 +32,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.10 1999-07-13 20:49:38 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.11 1999-09-20 22:03:00 bdemsky Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -42,7 +42,8 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
     HashMap aimap, bimap, invmap;
     LoopFinder rtloop;
 
-    /** Creates a <code>Loop</code>. */
+    /** Creates a <code>LoopAnalysis</code>.  Takes in a TempMap
+     that for SSI forms needs to map SSI->SSA.*/
     public LoopAnalysis(TempMap tm) {
 	this.tm=tm;
     }
