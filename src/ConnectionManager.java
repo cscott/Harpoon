@@ -56,8 +56,8 @@ public class ConnectionManager {
     long messageID;
     byte[] data;
 
-    private RealtimeThread serverThread;
-    private RealtimeThread clientThread;
+    private RealtimeThread serverThread = null;
+    private RealtimeThread clientThread = null;
 
     /** Construct a new <code>ConnectionManager</code> and set up the environment
      *  of the transport mechanism.
@@ -82,7 +82,10 @@ public class ConnectionManager {
 	    System.exit(-1);
 	}
 	}
-	
+    }
+
+    /** Start the server/client threads. */
+    public void start() {
 	if (implementation == SOCKETS) {
 	    serverThread = new RealtimeThread() {
 		    public synchronized void run() {
@@ -186,10 +189,6 @@ public class ConnectionManager {
 		    }
 		};
 	}
-    }
-
-    /** Start the server/client threads. */
-    public void start() {
 	serverThread.start();
 	clientThread.start();
     }
@@ -201,9 +200,11 @@ public class ConnectionManager {
      *  @return thread id of thread which handles network calls.
      */
     public long bind(String name, Scheduler scheduler) {
-	this.scheduler = scheduler;
-	this.schedulerName = name;
-	serverThread.notify();
+	synchronized(serverThread) {
+	    this.scheduler = scheduler;
+	    this.schedulerName = name;
+	    serverThread.notify();
+	}
 	return serverThread.getUID();
     }
 
@@ -248,10 +249,15 @@ public class ConnectionManager {
      */
     public long generateDistributedEvent(Object destination,
 					 long messageID, byte[] data) {
-	this.destination = destination;
-	this.messageID = messageID;
-	this.data = data;
-	clientThread.notify();
+	synchronized(clientThread) {
+	    this.destination = destination;
+	    this.messageID = messageID;
+	    this.data = data;
+	    NoHeapRealtimeThread.print("About to notify #");
+	    clientThread.notify();
+	    NoHeapRealtimeThread.print(clientThread.getUID());
+	    NoHeapRealtimeThread.print("\n");
+	}
 	return clientThread.getUID();
     }
 }

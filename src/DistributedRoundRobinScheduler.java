@@ -12,11 +12,13 @@ public class DistributedRoundRobinScheduler extends Scheduler {
     static DistributedRoundRobinScheduler instance = null;
 
     public static final int MAX_THREADS = 1000;
-    private long[] threadList = new long[MAX_THREADS];
-    private int currentIndex = 0;
-    private int maxIndex = 1;
-    private final String name = "18.111.1.28:30001";
-    private final String remoteName = "18.111.1.28:30002";
+    public static final int OFFSET = 2;
+
+    private boolean[] enabled = new boolean[MAX_THREADS];
+    private int currentThreadID;
+    private int numThreads = 10;
+    private final String name = "30002";
+    private final String remoteName = "18.111.1.28:30001";
     
     private Object remoteObj = null;
     private long serverID = 0;
@@ -82,9 +84,7 @@ public class DistributedRoundRobinScheduler extends Scheduler {
     private long times = 0;
 
     protected long chooseThread(long currentTime) {
-	setQuanta(1000); // Switch again after a specified number of microseconds.
-	
-	if (!RealtimeThread.RTJ_init_in_progress) {
+	if (connectionManagerStarted) {
 	    if (serverID == 0) {
 		serverID = bind(name);
 	    }
@@ -93,18 +93,30 @@ public class DistributedRoundRobinScheduler extends Scheduler {
 		remoteObj = resolve(remoteName);
 	    }
 
-	    if ((++times)%100 == 0) {
-		generateDistributedEvent(remoteObj, currentTime, new byte[0]);
-	    }
+	    generateDistributedEvent(remoteObj, currentTime, new byte[0]);
 	}
 	
-	for (int newIndex = (currentIndex+1)%maxIndex; newIndex != currentIndex; 
-	     newIndex=(newIndex+1)%maxIndex) {
-	    if (threadList[newIndex]!=0) {
-		return threadList[currentIndex = newIndex];
+	setQuanta(10000); // Switch again after a specified number of microseconds.
+	
+	for (int newIndex = (currentThreadID+1)%(numThreads+1); newIndex != currentThreadID; 
+	     newIndex=(newIndex+1)%(numThreads+1)) {
+	    NoHeapRealtimeThread.print("Considering #");
+	    NoHeapRealtimeThread.print(newIndex);
+	    NoHeapRealtimeThread.print("/");
+	    NoHeapRealtimeThread.print(numThreads);
+	    NoHeapRealtimeThread.print("\n");
+	    if (enabled[newIndex]) {
+		return (currentThreadID=newIndex)-OFFSET;
 	    }
 	}
-	return threadList[currentIndex];
+	if (!enabled[currentThreadID]) {
+	    NoHeapRealtimeThread.print("Deadlock!\n");
+	    System.exit(-1);
+	    return 0;
+	}
+	NoHeapRealtimeThread.print(currentThreadID);
+	NoHeapRealtimeThread.print("!\n");
+	return currentThreadID-OFFSET;
     }
 
     protected void handleDistributedEvent(String name, long messageID, byte[] data) {
@@ -124,27 +136,30 @@ public class DistributedRoundRobinScheduler extends Scheduler {
     }
 
     protected void addThread(long threadID) {
-	for (int i=0; i<maxIndex; i++) {
-	    if (threadList[i]==0) {
-		threadList[i] = threadID;
-		return;
-	    }
-	}
-	if ((++maxIndex)>MAX_THREADS) {
-	    throw new Error("Too many threads!");
+	int tid = (int)(threadID+OFFSET);
+	numThreads = (int)(tid>numThreads?tid:numThreads);
+
+	if (enabled[tid]) {
+	    NoHeapRealtimeThread.print("Already added thread #");
+	    NoHeapRealtimeThread.print(threadID);
+	    NoHeapRealtimeThread.print("!\n");
+	    System.exit(-1);
 	} else {
-	    threadList[maxIndex-1] = threadID;
+	    enabled[tid]=true;
 	}
     }
 
     protected void removeThread(long threadID) {
-	for (int i=0; i<maxIndex; i++) {
-	    if (threadList[i]==threadID) {
-		threadList[i] = 0;
-		return;
-	    }
+	int tid = (int)(threadID+OFFSET);
+
+	if (enabled[tid]) {
+	    enabled[tid]=false;
+	} else {
+	    NoHeapRealtimeThread.print("No such thread #");
+	    NoHeapRealtimeThread.print(threadID);
+	    NoHeapRealtimeThread.print("!\n");
+	    System.exit(-1);
 	}
-	throw new Error("No such thread!");
     }
 
     protected void disableThread(long threadID) {
@@ -166,14 +181,14 @@ public class DistributedRoundRobinScheduler extends Scheduler {
     public void printNoAlloc() {
 	boolean first = true;
 	NoHeapRealtimeThread.print("[");
-	for (int i=0; i<maxIndex; i++) {
-	    if (threadList[i]!=0) {
+	for (int i=0; i<=numThreads; i++) {
+	    if (enabled[i]) {
 		if (first) {
 		    first = false;
 		} else {
 		    NoHeapRealtimeThread.print(" ");
 		}
-		NoHeapRealtimeThread.print(threadList[i]);
+		NoHeapRealtimeThread.print(i-OFFSET);
 	    }
 	}
 	NoHeapRealtimeThread.print("]");
