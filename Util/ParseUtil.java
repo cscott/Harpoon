@@ -4,6 +4,7 @@
 package harpoon.Util;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.NoSuchClassException;
@@ -19,7 +20,7 @@ import java.io.PrintStream;
  * data types.  Input is from named resource files.
  * 
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ParseUtil.java,v 1.1.2.3 2001-06-17 22:35:59 cananian Exp $
+ * @version $Id: ParseUtil.java,v 1.1.2.4 2001-09-17 21:49:54 cananian Exp $
  */
 public abstract class ParseUtil {
     /** Reads from the given resource, ignoring '#' comments and blank lines,
@@ -71,6 +72,23 @@ public abstract class ParseUtil {
 	    return l.forName(className);
 	} catch (NoSuchClassException ex) {
 	    throw new BadLineException("No such class: "+className);
+	}
+    }
+    /** Parse a string as a field name. */
+    public static HField parseField(Linker l, String fieldName)
+	throws BadLineException {
+	fieldName = firstWord(fieldName);
+	int dot = fieldName.lastIndexOf('.');
+	if (dot < 0)
+	    throw new BadLineException("No dot separating class and field: "+
+				       fieldName);
+	String field = fieldName.substring(dot+1);
+	String classN = fieldName.substring(0, dot);
+	HClass hc = parseClass(l, classN);
+	try {
+	    return hc.getDeclaredField(field);
+	} catch (NoSuchFieldError ex) {
+	    throw new BadLineException("No such field: "+fieldName);
 	}
     }
     /** Parse a string as a method name + descriptor string. */
