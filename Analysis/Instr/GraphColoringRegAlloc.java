@@ -53,7 +53,7 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.20 2000-08-09 20:39:47 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.21 2000-08-14 20:25:15 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -205,7 +205,12 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		if (TIME) System.out.println("Making Webs");
 
 		makeWebs(rdefs); 
-		
+
+		// ASSERTION CHECKING LOOPS
+		for(int k=0; k<webRecords.size(); k++) {
+		    Util.assert
+			(((WebRecord)webRecords.get(k)).sreg() == k);
+		}
 		for(Iterator is=code.getElementsI(); is.hasNext();){
 		    Instr i = (Instr) is.next();
 		    for(Iterator ts=i.defC().iterator(); ts.hasNext();) {
@@ -232,7 +237,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
 					"no web for i:"+i+", t:"+t);
 			}
 		    }
-		}
+		} 
+		// END ASSERTION CHECKING LOOPS
+		
 		// System.out.println("webs: "+webRecords);
 
 		if (TIME) System.out.println("Building Matrix");
@@ -253,7 +260,23 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	    adjMtx = null;
 
-	    
+	    // STAT GATHERING LOOPS
+	    Iterator wri;
+	    StatGather regStat = new StatGather();
+	    for(wri=regWebRecords.iterator(); wri.hasNext();) {
+		RegWebRecord rwr = (RegWebRecord) wri.next();
+		int deg = rwr.adjnds.size();
+		regStat.add(deg);
+	    }
+	    StatGather tmpStat = new StatGather();
+	    for(wri=tempWebRecords.iterator(); wri.hasNext();) {
+		TempWebRecord twr = (TempWebRecord) wri.next();
+		int deg = twr.adjnds.size();
+		tmpStat.add(deg);
+	    }
+	    // System.out.print("\nReg"+regStat );
+	    // System.out.println("\nTmp"+tmpStat );
+	    // END STAT GATHERING LOOPS
 
 	    // System.out.println(Arrays.asList(adjLsts));
 
@@ -421,7 +444,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
     
     /**
        nwebs is set after this method returns.
-       assignWebRecords, tempWebRecords, and webRecords are set
+       regWebRecords, tempWebRecords, and webRecords are set
        after this method returns.
      */
     private void makeWebs(ReachingDefs rdefs) {
@@ -559,6 +582,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		ixtToWeb.put(ixt, wr);
 	    }
 	}
+
+	// ASSERTION EQUALITY CHECK (with feedback info)
 	if(!ixtToWeb.keySet().equals(ixtToWebPreCombine.keySet())) {
 	    HashSet postMinusPre = new HashSet(ixtToWeb.keySet());
 	    HashSet preMinusPost = new HashSet(ixtToWebPreCombine.keySet());
@@ -594,6 +619,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
     // indicating the definition type and doing the necessary
     // replacement... temp remapping should look cleaner...
     private boolean coalesceRegs(AdjMtx adjMtx) { 
+	
+
 	return false;
 	/*
 	int i, j, k, l, p, q;
@@ -726,6 +753,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    spilled.add(node.wr);
 	    
 	    TempWebRecord wr = (TempWebRecord) node.wr;
+
+	    System.out.print("\nSpilling "+wr);
+
+
 	    Temp t = wr.temp();
 	    for(Iterator ds=wr.defs.iterator(); ds.hasNext(); ) {
 		Instr i = (Instr) ds.next();
@@ -748,6 +779,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    }
 	}
 
+	// Replace this with something that will choose a node
+	// independently of the suggested ones, since those are all
+	// already spilled...
 	Util.assert(spilled.size() > oldSpilledSize);
 
 	System.out.println("*** SPILLED ("+spilled.size()+")"+
@@ -1001,6 +1035,17 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	}
     }
 
+    class StatGather {
+	int sum=0; int sumSq=0; int cnt=0;
+	void add(int elem) { cnt++; sum+=elem; sumSq+=elem*elem; } 
+	int size() { return cnt; }
+	int mean() { return sum / cnt; }
+	int variance() { int m=mean(); return sumSq/cnt - m*m; } 
+	public String toString() { 
+	    return "Stat<size:"+size()+" mean:"+mean()+" var:"+variance()+">"; 
+	}
+    }
+
     abstract class WebRecord {
 	int nints, disp;
 	double spcost;
@@ -1116,25 +1161,60 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	public String toString() {
 	    List a = (List) rfi.getRegAssignments(sym).iterator().next();
-	    if (true) 
-		return "w:< sym:"+sym+
+	    if (false) 
+		return "<web sym:"+sym+
 		    ", defs:"+readable(defs)+
 		    ", uses:"+readable(uses)+
 		    ((a.size()==1)?", single-word":", multi-word")+
 		    " >";
 	    else 
-		return "w:"+sym;
+		return "w:"+sym+" degree:"+adjnds.size();
 	}
     }
 
     class AdjMtx {
+	// a Lower Triangular Matrix backed by a HashSet of IntPairs
+	HashSet pairSet;
+	AdjMtx(List symReg) {
+	    pairSet = new HashSet(symReg.size());
+	}
+	public boolean get(int x, int y) {
+	    return pairSet.contains(new IntPair(x, y));
+	}
+	public void set(int x, int y, boolean b) {
+	    IntPair p = new IntPair(x, y);
+	    if (b) {
+		pairSet.add(p);
+	    } else {
+		pairSet.remove(p);
+	    }
+	}
+	class IntPair { 
+	    final int m,n;
+	    IntPair(int x, int y) { 
+		if (x > y) {
+		    m=x; n=y;
+		} else {
+		    m=y; n=x;
+		}
+	    }
+	    public int hashCode() { return m ^ n; }
+	    public boolean equals(Object o) { 
+		IntPair p = (IntPair) o;
+		return m == p.m && n == p.n;
+	    }
+	}
+	
+    }
+    
+    class AdjMtxOld {
 	// a Lower Triangular Matrix backed by a BitString.  Note that
 	// for Lower Triangular Matrix, order of coordinate args is
 	// insignificant (from p.o.v. of user). 
 
 	final harpoon.Util.BitString bits;
 	final int side;
-	AdjMtx(List symReg) {
+	AdjMtxOld(List symReg) {
 	    side = symReg.size();
 	    bits = new harpoon.Util.BitString(side * side / 2);
 	}

@@ -39,7 +39,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.24 2000-08-02 01:15:29 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.25 2000-08-14 20:25:04 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -135,14 +135,15 @@ public class RegFileInfo
 	for(int i=0; i<4; i++) {
 	    callerSaveRegs.add(reg[i]);
 	}
-	callerSaveRegs.add(reg[12]);
-	callerSaveRegs.add(reg[14]);
+	callerSaveRegs.add(IP);
+	callerSaveRegs.add(LR);
 	
-	// callee saves r4-r11,sp
-	for(int i=4; i<12; i++) {
+	// callee saves r4-r10,fp,sp
+	for(int i=4; i<11; i++) {
 	    calleeSaveRegs.add(reg[i]);
 	}
-	calleeSaveRegs.add(reg[13]);
+	calleeSaveRegs.add(FP);
+	calleeSaveRegs.add(SP);
 
 	oneWordAssigns = new HashSet();
 	for (int i=0; i<regGeneral.length; i++) {
