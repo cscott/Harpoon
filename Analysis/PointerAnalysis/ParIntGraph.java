@@ -30,7 +30,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.5 2002-04-10 03:00:42 cananian Exp $
+ * @version $Id: ParIntGraph.java,v 1.6 2003-05-06 15:27:28 salcianu Exp $
  */
 public class ParIntGraph implements java.io.Serializable {
 
@@ -41,10 +41,10 @@ public class ParIntGraph implements java.io.Serializable {
     public static boolean DEBUG_AS = false;
 
     /** Display the gains due to AGGRESSIVE_SHRINKING. */
-    public static boolean MEASURE_AS = false;
+    public static boolean MEASURE_AS = true;
 
     /** Activates the aggressive shrinking. Buggy for the moment ... */
-    public static boolean AGGRESSIVE_SHRINKING = true;
+    public static boolean AGGRESSIVE_SHRINKING = false;
 
     /** Default (empty) graph. It doesn't contain any information.  */
     public static final ParIntGraph EMPTY_GRAPH = new ParIntGraph();
@@ -199,6 +199,34 @@ public class ParIntGraph implements java.io.Serializable {
 			       _ar, _eo );
     }
 
+
+    private String nodeStats() {
+	Set/*<PANode>*/ nodes = allNodes();
+	int nb_param  = 0;
+	int nb_inside = 0;
+	int nb_load   = 0;
+	int nb_static = 0;
+	int nb_return = 0;
+	int nb_except = 0;
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    switch(node.type()) {
+	    case PANode.PARAM:  nb_param++; break;
+	    case PANode.INSIDE: nb_inside++; break;
+	    case PANode.LOAD:   nb_load++; break;
+	    case PANode.STATIC: nb_static++; break;
+	    case PANode.RETURN: nb_return++; break;
+	    case PANode.EXCEPT: nb_except++; break;
+	    default: // do nothing
+	    }
+	}
+	return
+	    nodes.size() + 
+	    "\t(P:" + nb_param  + ",I:" + nb_inside + 
+	    ",L:" + nb_load   + ",S:" + nb_static + 
+	    ",R:" + nb_return + ",E:" + nb_except + ")";
+    }
+
     
     /** Produces a <code>ParIntGraph</code> containing only the
 	nodes that could be reached from the outside.
@@ -210,8 +238,10 @@ public class ParIntGraph implements java.io.Serializable {
 
 	if(AGGRESSIVE_SHRINKING){
 	    pig2.shrinking();
-	    pig2 = retain_essential(params, is_main);
+	    pig2 = pig2.retain_essential(params, is_main);
 	}
+
+	System.out.println(pig2.nodeStats());
 
 	return pig2;
     }
@@ -324,7 +354,12 @@ public class ParIntGraph implements java.io.Serializable {
 	final Set useful_nodes = new HashSet();
 	final LinkedList Q = new LinkedList();
 	
+	//System.out.println("shrink0: nodes = " + nodes);
+
 	init_queue(Q, useful_nodes, nodes);
+
+	//System.out.println("shrink1: useful_nodes = " + useful_nodes);
+
 	final Relation pred_rel = G.O.getPrecedenceRelation();
 
 	while(!Q.isEmpty()) {
@@ -338,13 +373,19 @@ public class ParIntGraph implements java.io.Serializable {
 	    }
 	}
 
-	if(MEASURE_AS)
-	    System.out.println("as: " + nodes.size() + " -> " +
-			       useful_nodes.size() + " delta=" +
-			       (nodes.size() - useful_nodes.size()));
+	//System.out.println("shrink2: useful_nodes = " + useful_nodes);
+
+	if(MEASURE_AS) {
+	    System.out.println
+		("\nas: " + nodes.size() + " -> " +
+		 useful_nodes.size() + " delta=" +
+		 (nodes.size() - useful_nodes.size()));
+	}
 	
 	// unuseful_nodes = nodes - useful_nodes
 	nodes.removeAll(useful_nodes);
+
+	//System.out.println("shrink3: nodes to remove = " + nodes);
 
 	remove(nodes);
     }
@@ -371,19 +412,20 @@ public class ParIntGraph implements java.io.Serializable {
 
 
     private boolean relevant_node(PANode node) {
-	switch(node.type()){
+	switch(node.type()) {
 	case PANode.INSIDE:
-	    return true;
 	case PANode.PARAM:
-	    return true;
 	case PANode.STATIC:
+	case PANode.CONST:
+	case PANode.NULL:
 	    return true;
 	case PANode.LOAD:
-	    if(!G.e.escapesOnlyInCaller(node) ||
-	       (PointerAnalysis.RECORD_ACTIONS && ar.isSyncOn(node)) ||
-	       G.r.contains(node) || G.excp.contains(node))
-		return true;
-	default:
+	    // see if we do something interesting with the LOAD node
+	    return
+		!G.e.escapesOnlyInCaller(node) ||
+		(PointerAnalysis.RECORD_ACTIONS && ar.isSyncOn(node)) ||
+		G.r.contains(node) || G.excp.contains(node);
+	default: // should never happen
 	    if(G.willEscape(node))
 		return true;
 	}
