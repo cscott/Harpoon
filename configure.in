@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.144 $)dnl
+AC_REVISION($Revision: 1.145 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -189,7 +189,7 @@ no|yes)  ;;
      AC_CHECK_LIB(javalang, Java_java_lang_Math_sin)
      AC_CHECK_LIB(javanet, Java_java_net_PlainSocketImpl_accept)
      dnl guess.
-     CFLAGS="$CFLAGS -DCLASSPATH_VERSION=0.04"
+     CFLAGS="$CFLAGS -DCLASSPATH_VERSION=0.05"
      with_classpath=yes dnl normalize.
      with_sunjdk=no
      ;;
