@@ -161,7 +161,7 @@
         }
 #       define GC_TEST_AND_SET_DEFINED
         inline static void GC_clear(volatile unsigned int *addr) {
-	  __asm__ __volatile__("eieio" ::: "memory");
+	  __asm__ __volatile__("eieio" : : : "memory");
           *(addr) = 0;
         }
 #       define GC_CLEAR_DEFINED
@@ -221,9 +221,13 @@
 #  ifdef MIPS
 #    if __mips < 3 || !(defined (_ABIN32) || defined(_ABI64)) \
 	|| !defined(_COMPILER_VERSION) || _COMPILER_VERSION < 700
-#        define GC_test_and_set(addr, v) test_and_set(addr,v)
+#	 ifdef __GNUC__
+#          define GC_test_and_set(addr) _test_and_set(addr,1)
+#	 else
+#          define GC_test_and_set(addr) test_and_set(addr,1)
+#	 endif
 #    else
-#	 define GC_test_and_set(addr, v) __test_and_set(addr,v)
+#	 define GC_test_and_set(addr) __test_and_set(addr,1)
 #	 define GC_clear(addr) __lock_release(addr);
 #	 define GC_CLEAR_DEFINED
 #    endif

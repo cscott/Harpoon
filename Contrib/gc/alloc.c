@@ -158,7 +158,7 @@ static word min_words_allocd()
 			       + (GC_large_free_bytes >> 2)
 				   /* use a bit more of large empty heap */
 			       + total_root_size);
-    if (GC_incremental) {
+    if (TRUE_INCREMENTAL) {
         return scan_size / (2 * GC_free_space_divisor);
     } else {
         return scan_size / GC_free_space_divisor;
@@ -1007,25 +1007,32 @@ ptr_t GC_allocobj(sz, kind)
 word sz;
 int kind;
 {
-    register ptr_t * flh = &(GC_obj_kinds[kind].ok_freelist[sz]);
+    ptr_t * flh = &(GC_obj_kinds[kind].ok_freelist[sz]);
+    GC_bool tried_minor = FALSE;
     
     if (sz == 0) return(0);
 
     while (*flh == 0) {
       ENTER_GC();
       /* Do our share of marking work */
-        if(GC_incremental && !GC_dont_gc) GC_collect_a_little_inner(1);
+        if(TRUE_INCREMENTAL && !GC_dont_gc) GC_collect_a_little_inner(1);
       /* Sweep blocks for objects of this size */
-          GC_continue_reclaim(sz, kind);
+        GC_continue_reclaim(sz, kind);
       EXIT_GC();
       if (*flh == 0) {
         GC_new_hblk(sz, kind);
       }
       if (*flh == 0) {
         ENTER_GC();
-        if (!GC_collect_or_expand((word)1,FALSE)) {
+	if (GC_incremental && GC_time_limit == GC_TIME_UNLIMITED
+	    && ! tried_minor ) {
+	    GC_collect_a_little_inner(1);
+	    tried_minor = TRUE;
+	} else {
+          if (!GC_collect_or_expand((word)1,FALSE)) {
 	    EXIT_GC();
 	    return(0);
+	  }
 	}
 	EXIT_GC();
       }

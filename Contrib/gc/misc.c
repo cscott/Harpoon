@@ -70,7 +70,7 @@
 #   endif
 # endif
 
-#ifdef ECOS
+#if defined(NOSYS) || defined(ECOS)
 #undef STACKBASE
 #endif
 
@@ -439,6 +439,11 @@ void GC_init()
     DCL_LOCK_STATE;
     
     DISABLE_SIGNALS();
+
+#ifdef GC_WIN32_THREADS
+    if (!GC_is_initialized) InitializeCriticalSection(&GC_allocate_ml);
+#endif /* MSWIN32 */
+
     LOCK();
     GC_init_inner();
     UNLOCK();
@@ -769,7 +774,8 @@ int GC_tmp;  /* Should really be local ... */
 # endif
 #endif
 
-#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(OS2) && !defined(MACOS)
+#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(OS2) \
+    && !defined(MACOS)  && !defined(ECOS) && !defined(NOSYS)
 int GC_write(fd, buf, len)
 int fd;
 GC_CONST char *buf;
@@ -792,10 +798,18 @@ size_t len;
 }
 #endif /* UN*X */
 
-#if defined(ECOS)
+#ifdef ECOS
 int GC_write(fd, buf, len)
 {
   _Jv_diag_write (buf, len);
+  return len;
+}
+#endif
+
+#ifdef NOSYS
+int GC_write(fd, buf, len)
+{
+  /* No writing.  */
   return len;
 }
 #endif

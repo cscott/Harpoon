@@ -39,6 +39,13 @@
 # endif
 
 /* Determine the machine type: */
+# if defined(__XSCALE__)
+#    define ARM32
+#    if !defined(LINUX)
+#      define NOSYS
+#      define mach_type_known
+#    endif
+# endif
 # if defined(sun) && defined(mc68000)
 #    define M68K
 #    define SUNOS4
@@ -97,6 +104,13 @@
 #    endif /* !LINUX */
 #    if defined(__NetBSD__) && defined(__MIPSEL__)
 #      undef ULTRIX
+#    endif
+#    define mach_type_known
+# endif
+# if defined(DGUX) && (defined(i386) || defined(__i386__))
+#    define I386
+#    ifndef _USING_DGUX
+#    define _USING_DGUX
 #    endif
 #    define mach_type_known
 # endif
@@ -224,7 +238,7 @@
 #   define MACOS
 #   define mach_type_known
 # endif
-# if defined(__MWERKS__) && defined(__powerc)
+# if defined(__MWERKS__) && defined(__powerc) && !defined(__MACH__)
 #   define POWERPC
 #   define MACOS
 #   define mach_type_known
@@ -279,7 +293,7 @@
 #   define CX_UX
 #   define mach_type_known
 # endif
-# if defined(DGUX)
+# if defined(DGUX) && defined(m88k)
 #   define M88K
     /* DGUX defined */
 #   define mach_type_known
@@ -905,6 +919,28 @@
 #       define DYNAMIC_LOADING
 #	define ELF_CLASS ELFCLASS32
 #   endif
+#   ifdef DGUX
+#	define OS_TYPE "DGUX"
+	extern int _etext, _end;
+	extern char * GC_SysVGetDataStart();
+#	define DATASTART GC_SysVGetDataStart(0x1000, &_etext)
+#	define DATAEND (&_end)
+#	define STACK_GROWS_DOWN
+#	define HEURISTIC2
+#	include <unistd.h>
+#	define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
+#	define DYNAMIC_LOADING
+#	ifndef USE_MMAP
+#	  define USE_MMAP
+#	endif /* USE_MMAP */
+#	define MAP_FAILED (void *) -1
+#	ifdef USE_MMAP
+#	  define HEAP_START (ptr_t)0x40000000
+#	else /* USE_MMAP */
+#	  define HEAP_START DATAEND
+#	endif /* USE_MMAP */
+#   endif /* DGUX */
+
 #   ifdef LINUX
 #	ifndef __GNUC__
 	  /* The Intel compiler doesn't like inline assembly */
@@ -1216,10 +1252,19 @@
 
 # ifdef RS6000
 #   define MACH_TYPE "RS6000"
-#   define ALIGNMENT 4
-#   define DATASTART ((ptr_t)0x20000000)
+#   ifdef __64BIT__
+#     define ALIGNMENT 8
+#     define CPP_WORDSZ 64
+#   else
+#     define ALIGNMENT 4
+#     define CPP_WORDSZ 32
+#   endif
+    extern int _data, _end;
+#   define DATASTART ((ptr_t)((ulong)&_data))
+#   define DATAEND ((ptr_t)((ulong)&_end))
     extern int errno;
 #   define STACKBOTTOM ((ptr_t)((ulong)&errno))
+#   define USE_GENERIC_PUSH_REGS
 #   define DYNAMIC_LOADING
 	/* For really old versions of AIX, this may have to be removed. */
 # endif
@@ -1282,7 +1327,8 @@
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
 #     define DYNAMIC_LOADING
-#     define LINUX_DATA_START
+#     define SEARCH_FOR_DATA_START
+#     define DATASTART GC_data_start
       extern int _end;
 #     define DATAEND (&_end)
 #   endif /* LINUX */
@@ -1539,6 +1585,15 @@
 #     define OS_TYPE "MSWINCE"
 #     define DATAEND /* not needed */
 #   endif
+#   ifdef NOSYS
+      /* __data_start is usually defined in the target linker script.  */
+      extern int __data_start;
+#     define DATASTART (ptr_t)(&__data_start)
+#     define USE_GENERIC_PUSH_REGS
+      /* __stack_base__ is set in newlib/libc/sys/arm/crt0.S  */
+      extern void *__stack_base__;
+#     define STACKBOTTOM ((ptr_t) (__stack_base__))
+#   endif
 #endif
 
 # ifdef SH
@@ -1634,7 +1689,7 @@
 # endif
 
 # if defined(SVR4) || defined(LINUX) || defined(IRIX) || defined(HPUX) \
-    || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
+    || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) || defined(DGUX) \
     || defined(BSD) || defined(AIX) || defined(MACOSX) || defined(OSF1)
 #   define UNIX_LIKE   /* Basic Unix-like system calls work.	*/
 # endif
@@ -1801,5 +1856,77 @@
 # if defined(MAKE_BACK_GRAPH) && !defined(DBG_HDRS_ALL)
 #   define DBG_HDRS_ALL
 # endif
+
+#ifdef GC_PRIVATE_H
+	/* This relies on some type definitions from gc_priv.h, from where it's	*/
+	/* normally included.							*/
+/* How to get heap memory from the OS:				*/
+/* Note that sbrk()-like allocation is preferred, since it 	*/
+/* usually makes it possible to merge consecutively allocated	*/
+/* chunks.  It also avoids unintented recursion with		*/
+/* -DREDIRECT_MALLOC.						*/
+/* GET_MEM() returns a HLKSIZE aligned chunk.			*/
+/* 0 is taken to mean failure. 					*/
+/* In the case os USE_MMAP, the argument must also be a 	*/
+/* physical page size.						*/
+/* GET_MEM is currently not assumed to retrieve 0 filled space, */
+/* though we should perhaps take advantage of the case in which */
+/* does.							*/
+struct hblk;	/* See gc_priv.h.	*/
+# ifdef PCR
+    char * real_malloc();
+#   define GET_MEM(bytes) HBLKPTR(real_malloc((size_t)bytes + GC_page_size) \
+				  + GC_page_size-1)
+# else
+#   ifdef OS2
+      void * os2_alloc(size_t bytes);
+#     define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc((size_t)bytes \
+				    + GC_page_size) \
+                                    + GC_page_size-1)
+#   else
+#     if defined(NEXT) || defined(MACOSX) || defined(DOS4GW) || \
+	 (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) || \
+	 (defined(SUNOS5) && !defined(USE_MMAP))
+#       define GET_MEM(bytes) HBLKPTR((size_t) \
+				      calloc(1, (size_t)bytes + GC_page_size) \
+                                      + GC_page_size-1)
+#     else
+#	ifdef MSWIN32
+          extern ptr_t GC_win32_get_mem();
+#         define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
+#	else
+#	  ifdef MACOS
+#	    if defined(USE_TEMPORARY_MEMORY)
+		extern Ptr GC_MacTemporaryNewPtr(size_t size,
+						 Boolean clearMemory);
+#               define GET_MEM(bytes) HBLKPTR( \
+		    GC_MacTemporaryNewPtr(bytes + GC_page_size, true) \
+		    + GC_page_size-1)
+#	    else
+#         	    define GET_MEM(bytes) HBLKPTR( \
+			NewPtrClear(bytes + GC_page_size) + GC_page_size-1)
+#	    endif
+#	  else
+#	    ifdef MSWINCE
+	      extern ptr_t GC_wince_get_mem();
+#	      define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
+#	    else
+#	      if defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
+	        extern void *GC_amiga_get_mem(size_t size);
+		define GET_MEM(bytes) HBLKPTR((size_t) \
+                  GC_amiga_get_mem((size_t)bytes + GC_page_size) \
+		  + GC_page_size-1)
+#	      else
+                extern ptr_t GC_unix_get_mem();
+#               define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
+#	      endif
+#	    endif
+#	  endif
+#	endif
+#     endif
+#   endif
+# endif
+
+#endif /* GC_PRIVATE_H */
 
 # endif /* GCCONFIG_H */

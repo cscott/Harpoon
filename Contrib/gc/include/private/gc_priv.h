@@ -37,6 +37,12 @@
 #   define BSD_TIME
 #endif
 
+#ifdef DGUX
+#   include <sys/types.h>
+#   include <sys/time.h>
+#   include <sys/resource.h>
+#endif /* DGUX */
+
 #ifdef BSD_TIME
 #   include <sys/types.h>
 #   include <sys/time.h>
@@ -52,10 +58,6 @@
 #   include "../gc_mark.h"
 # endif
 
-# ifndef GCCONFIG_H
-#   include "gcconfig.h"
-# endif
-
 typedef GC_word word;
 typedef GC_signed_word signed_word;
 
@@ -68,6 +70,10 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 			/* Preferably identical to caddr_t, if it 	*/
 			/* exists.					*/
 			
+# ifndef GCCONFIG_H
+#   include "gcconfig.h"
+# endif
+
 # ifndef HEADERS_H
 #   include "gc_hdrs.h"
 # endif
@@ -212,6 +218,11 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 #  define ALIGN_DOUBLE
    /* We use one byte for every 2 words, which doesn't allow for	*/
    /* odd numbered words to have mark bits.				*/
+#endif
+
+#if defined(GC_GCJ_SUPPORT) && ALIGNMENT < 8 && !defined(ALIGN_DOUBLE)
+   /* GCJ's Hashtable synchronization code requires 64-bit alignment.  */
+#  define ALIGN_DOUBLE
 #endif
 
 /* ALIGN_DOUBLE requires MERGE_SIZES at present. */
@@ -367,68 +378,6 @@ void GC_print_callers GC_PROTO((struct callinfo info[NFRAMES]));
 #   define BZERO(x,n) bzero((char *)(x),(int)(n))
 # endif
 
-/* HBLKSIZE aligned allocation.  0 is taken to mean failure 	*/
-/* space is assumed to be cleared.				*/
-/* In the case os USE_MMAP, the argument must also be a 	*/
-/* physical page size.						*/
-/* GET_MEM is currently not assumed to retrieve 0 filled space, */
-/* though we should perhaps take advantage of the case in which */
-/* does.							*/
-struct hblk;	/* See below.	*/
-# ifdef PCR
-    char * real_malloc();
-#   define GET_MEM(bytes) HBLKPTR(real_malloc((size_t)bytes + GC_page_size) \
-				  + GC_page_size-1)
-# else
-#   ifdef OS2
-      void * os2_alloc(size_t bytes);
-#     define GET_MEM(bytes) HBLKPTR((ptr_t)os2_alloc((size_t)bytes \
-				    + GC_page_size) \
-                                    + GC_page_size-1)
-#   else
-#     if defined(NEXT) || defined(MACOSX) || defined(DOS4GW) || \
-	 (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) || \
-	 (defined(SUNOS5) && !defined(USE_MMAP))
-#       define GET_MEM(bytes) HBLKPTR((size_t) \
-				      calloc(1, (size_t)bytes + GC_page_size) \
-                                      + GC_page_size-1)
-#     else
-#	ifdef MSWIN32
-          extern ptr_t GC_win32_get_mem();
-#         define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
-#	else
-#	  ifdef MACOS
-#	    if defined(USE_TEMPORARY_MEMORY)
-		extern Ptr GC_MacTemporaryNewPtr(size_t size,
-						 Boolean clearMemory);
-#               define GET_MEM(bytes) HBLKPTR( \
-		    GC_MacTemporaryNewPtr(bytes + GC_page_size, true) \
-		    + GC_page_size-1)
-#	    else
-#         	    define GET_MEM(bytes) HBLKPTR( \
-			NewPtrClear(bytes + GC_page_size) + GC_page_size-1)
-#	    endif
-#	  else
-#	    ifdef MSWINCE
-	      extern ptr_t GC_wince_get_mem();
-#	      define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
-#	    else
-#	      if defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
-	        extern void *GC_amiga_get_mem(size_t size);
-		define GET_MEM(bytes) HBLKPTR((size_t) \
-                  GC_amiga_get_mem((size_t)bytes + GC_page_size) \
-		  + GC_page_size-1)
-#	      else
-                extern ptr_t GC_unix_get_mem();
-#               define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
-#	      endif
-#	    endif
-#	  endif
-#	endif
-#     endif
-#   endif
-# endif
-
 /* Delay any interrupts or signals that may abort this thread.  Data	*/
 /* structures are in a consistent state outside this pair of calls.	*/
 /* ANSI C allows both to be empty (though the standard isn't very	*/
@@ -493,7 +442,7 @@ struct hblk;	/* See below.	*/
 #   ifdef SMALL_CONFIG
 #	define ABORT(msg) abort();
 #   else
-	GC_API void GC_abort();
+	GC_API void GC_abort GC_PROTO((GC_CONST char * msg));
 #       define ABORT(msg) GC_abort(msg);
 #   endif
 # endif
@@ -1208,17 +1157,19 @@ extern struct hblk * GC_hblkfreelist[];
 				/* header structure associated with	*/
 				/* block.				*/
 
-extern GC_bool GC_is_initialized;	/* GC_init() has been run.	*/
-
 extern GC_bool GC_objects_are_marked;	/* There are marked objects in  */
 					/* the heap.			*/
 
 #ifndef SMALL_CONFIG
   extern GC_bool GC_incremental;
 			/* Using incremental/generational collection. */
+# define TRUE_INCREMENTAL \
+	(GC_incremental && GC_time_limit != GC_TIME_UNLIMITED)
+	/* True incremental, not just generational, mode */
 #else
 # define GC_incremental FALSE
 			/* Hopefully allow optimizer to remove some code. */
+# define TRUE_INCREMENTAL FALSE
 #endif
 
 extern GC_bool GC_dirty_maintained;
@@ -1620,7 +1571,8 @@ GC_bool GC_collect_or_expand GC_PROTO(( \
   				/* blocks available.  Should be called	*/
   				/* until the blocks are available or	*/
   				/* until it fails by returning FALSE.	*/
-GC_API void GC_init GC_PROTO((void)); /* Initialize collector.		*/
+
+extern GC_bool GC_is_initialized;	/* GC_init() has been run.	*/
 
 #if defined(MSWIN32) || defined(MSWINCE)
   void GC_deinit GC_PROTO((void));
@@ -1909,7 +1861,7 @@ void GC_err_puts GC_PROTO((GC_CONST char *s));
   /* in Linux glibc, but it's not exported.)  Thus we continue to use	*/
   /* the same hard-coded signals we've always used.			*/
 #  if !defined(SIG_SUSPEND)
-#   if defined(GC_LINUX_THREADS)
+#   if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
 #    if defined(SPARC) && !defined(SIGPWR)
        /* SPARC/Linux doesn't properly define SIGPWR in <signal.h>.
         * It is aliased to SIGLOST in asm/signal.h, though.		*/

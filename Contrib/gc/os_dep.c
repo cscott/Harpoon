@@ -333,7 +333,8 @@ void GC_enable_signals(void)
 
 #  if !defined(PCR) && !defined(AMIGA) && !defined(MSWIN32) \
       && !defined(MSWINCE) \
-      && !defined(MACOS) && !defined(DJGPP) && !defined(DOS4GW)
+      && !defined(MACOS) && !defined(DJGPP) && !defined(DOS4GW) \
+      && !defined(NOSYS) && !defined(ECOS)
 
 #   if defined(sigmask) && !defined(UTS4) && !defined(HURD)
 	/* Use the traditional BSD interface */
@@ -516,7 +517,7 @@ ptr_t GC_get_stack_base()
 #   undef GC_AMIGA_SB
 # endif /* AMIGA */
 
-# if defined(NEED_FIND_LIMIT) || (defined(UNIX_LIKE) && !defined(ECOS))
+# if defined(NEED_FIND_LIMIT) || defined(UNIX_LIKE)
 
 #   ifdef __STDC__
 	typedef void (*handler)(int);
@@ -649,6 +650,13 @@ ptr_t GC_get_stack_base()
     }
 # endif
 
+#if defined(ECOS) || defined(NOSYS)
+  ptr_t GC_get_stack_base()
+  {
+    return STACKBOTTOM;
+  }
+#endif
+
 #ifdef LINUX_STACKBOTTOM
 
 #include <sys/types.h>
@@ -701,7 +709,16 @@ ptr_t GC_get_stack_base()
 
     /* First try the easy way.  This should work for glibc 2.2	*/
       if (0 != &__libc_stack_end) {
-	return __libc_stack_end;
+#       ifdef IA64
+	  /* Some versions of glibc set the address 16 bytes too	*/
+	  /* low while the initialization code is running.		*/
+	  if (((word)__libc_stack_end & 0xfff) + 0x10 < 0x1000) {
+	    return __libc_stack_end + 0x10;
+	  } /* Otherwise it's not safe to add 16 bytes and we fall	*/
+	    /* back to using /proc.					*/
+#	else 
+	  return __libc_stack_end;
+#	endif
       }
     f = open("/proc/self/stat", O_RDONLY);
     if (f < 0 || STAT_READ(f, stat_buf, STAT_BUF_SIZE) < 2 * STAT_SKIP) {
@@ -751,7 +768,7 @@ ptr_t GC_get_stack_base()
 #endif /* FREEBSD_STACKBOTTOM */
 
 #if !defined(BEOS) && !defined(AMIGA) && !defined(MSWIN32) \
-    && !defined(MSWINCE) && !defined(OS2) && !defined(ECOS)
+    && !defined(MSWINCE) && !defined(OS2)
 
 ptr_t GC_get_stack_base()
 {
@@ -1220,6 +1237,13 @@ word bytes;
     if (bytes & (GC_page_size -1)) ABORT("Bad GET_MEM arg");
     result = mmap(last_addr, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
 		  GC_MMAP_FLAGS, fd, 0/* offset */);
+#   if defined(LINUX) && defined(I386)
+      if (result == MAP_FAILED) {
+	/* Retry with a bit of encouragement to use low addresses as well. */
+	result = mmap(0x1000, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
+		  GC_MMAP_FLAGS, fd, 0/* offset */);
+      }
+#   endif
     if (result == MAP_FAILED) return(0);
     last_addr = (ptr_t)result + bytes + GC_page_size - 1;
     last_addr = (ptr_t)((word)last_addr & ~(GC_page_size - 1));
@@ -1314,7 +1338,15 @@ word bytes;
         result = (ptr_t) GlobalAlloc(0, bytes + HBLKSIZE);
         result = (ptr_t)(((word)result + HBLKSIZE) & ~(HBLKSIZE-1));
     } else {
-        result = (ptr_t) VirtualAlloc(NULL, bytes,
+	/* VirtualProtect only works on regions returned by a	*/
+	/* single VirtualAlloc call.  Thus we allocate one 	*/
+	/* extra page, which will prevent merging of blocks	*/
+	/* in separate regions, and eliminate any temptation	*/
+	/* to call VirtualProtect on a range spanning regions.	*/
+	/* This wastes a small amount of memory, and risks	*/
+	/* increased fragmentation.  But better alternatives	*/
+	/* would require effort.				*/
+        result = (ptr_t) VirtualAlloc(NULL, bytes + 1,
     				      MEM_COMMIT | MEM_RESERVE,
     				      PAGE_EXECUTE_READWRITE);
     }
@@ -1370,6 +1402,10 @@ word bytes;
 	/* Reserve more pages */
 	word res_bytes = (bytes + GC_sysinfo.dwAllocationGranularity-1)
 			 & ~(GC_sysinfo.dwAllocationGranularity-1);
+	/* If we ever support MPROTECT_VDB here, we will probably need to	*/
+	/* ensure that res_bytes is strictly > bytes, so that VirtualProtect	*/
+	/* never spans regions.  It seems to be OK for a VirtualFree argument	*/
+	/* to span regions, so we should be OK for now.				*/
 	result = (ptr_t) VirtualAlloc(NULL, res_bytes,
     				      MEM_RESERVE | MEM_TOP_DOWN,
     				      PAGE_EXECUTE_READWRITE);
@@ -1768,14 +1804,18 @@ GC_bool is_ptrfree;
 /*
  * This implementation maintains dirty bits itself by catching write
  * faults and keeping track of them.  We assume nobody else catches
- * SIGBUS or SIGSEGV.  We assume no write faults occur in system calls
- * except as a result of a read system call.  This means clients must
- * either ensure that system calls do not touch the heap, or must
- * provide their own wrappers analogous to the one for read.
+ * SIGBUS or SIGSEGV.  We assume no write faults occur in system calls.
+ * This means that clients must ensure that system calls don't write
+ * to the write-protected heap.  Probably the best way to do this is to
+ * ensure that system calls write at most to POINTERFREE objects in the
+ * heap, and do even that only if we are on a platform on which those
+ * are not protected.  Another alternative is to wrap system calls
+ * (see example for read below), but the current implementation holds
+ * a lock across blocking calls, making it problematic for multithreaded
+ * applications. 
  * We assume the page size is a multiple of HBLKSIZE.
- * This implementation is currently SunOS 4.X and IRIX 5.X specific, though we
- * tried to use portable code where easily possible.  It is known
- * not to work under a number of other systems.
+ * We prefer them to be the same.  We avoid protecting POINTERFREE
+ * objects only if they are the same.
  */
 
 # if !defined(MSWIN32) && !defined(MSWINCE)
@@ -2330,7 +2370,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 
 /*
  * We hold the allocation lock.  We expect block h to be written
- * shortly.  Ensure that all pages cvontaining any part of the n hblks
+ * shortly.  Ensure that all pages containing any part of the n hblks
  * starting at h are no longer protected.  If is_ptrfree is false,
  * also ensure that they will subsequently appear to be dirty.
  */
@@ -2429,7 +2469,7 @@ void GC_dirty_init()
 #     else
       	sigaction(SIGSEGV, &act, &oldact);
 #     endif
-#     if defined(_sigargs) || defined(HURD)
+#     if defined(_sigargs) || defined(HURD) || !defined(SA_SIGINFO)
 	/* This is Irix 5.x, not 6.x.  Irix 5.x does not have	*/
 	/* sa_sigaction.					*/
 	GC_old_segv_handler = oldact.sa_handler;
@@ -2620,15 +2660,23 @@ word len;
     	      ((ptr_t)end_block - (ptr_t)start_block) + HBLKSIZE);
 }
 
-#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(THREADS) \
-    && !defined(GC_USE_LD_WRAP)
-/* Replacement for UNIX system call.					 */
-/* Other calls that write to the heap should be handled similarly.	 */
-/* Note that this doesn't work well for blocking reads:  It will hold	 */
-/* tha allocation lock for the entur duration of the call. Multithreaded */
-/* clients should really ensure that it won't block, either by setting 	 */
-/* the descriptor nonblocking, or by calling select or poll first, to	 */
-/* make sure that input is available.					 */
+#if 0
+
+/* We no longer wrap read by default, since that was causing too many	*/
+/* problems.  It is preferred that the client instead avoids writing	*/
+/* to the write-protected heap with a system call.			*/
+/* This still serves as sample code if you do want to wrap system calls.*/
+
+#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(GC_USE_LD_WRAP)
+/* Replacement for UNIX system call.					  */
+/* Other calls that write to the heap should be handled similarly.	  */
+/* Note that this doesn't work well for blocking reads:  It will hold	  */
+/* the allocation lock for the entire duration of the call. Multithreaded */
+/* clients should really ensure that it won't block, either by setting 	  */
+/* the descriptor nonblocking, or by calling select or poll first, to	  */
+/* make sure that input is available.					  */
+/* Another, preferred alternative is to ensure that system calls never 	  */
+/* write to the protected heap (see above).				  */
 # if defined(__STDC__) && !defined(SUNOS4)
 #   include <unistd.h>
 #   include <sys/uio.h>
@@ -2697,6 +2745,8 @@ word len;
     /* We should probably also do this for __read, or whatever stdio	*/
     /* actually calls.							*/
 #endif
+
+#endif /* 0 */
 
 /*ARGSUSED*/
 GC_bool GC_page_was_ever_dirty(h)
