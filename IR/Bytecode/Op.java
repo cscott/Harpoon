@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
+import harpoon.Util.Util;
 /**
  * The <code>Op</code> class contains constants and tables that we are
  * likely to find useful when grokking a java bytecode stream.
@@ -18,7 +19,7 @@ package harpoon.IR.Bytecode;
  * </UL>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Op.java,v 1.3.2.1 1999-01-19 03:44:33 cananian Exp $
+ * @version $Id: Op.java,v 1.3.2.2 1999-06-20 23:03:14 cananian Exp $
  * @see     harpoon.IR.RawClass.AttributeCode
  * @see     harpoon.IR.Bytecode.Instr
  * @see     harpoon.IR.Bytecode.Code
@@ -605,15 +606,17 @@ public abstract class Op {
     case LOOKUPSWITCH:
       {
       int pad = 3-(pc%4);
-      long npairs = make_u4(code, pc+pad+5);
+      long npairs = make_s4(code, pc+pad+5);
+      Util.assert(npairs>=0);
       return (int) (npairs*8) + pad + 9;
       }
     case TABLESWITCH:
       {
       int pad = 3-(pc%4);
-      long low = make_u4(code, pc+pad+5);
-      long high= make_u4(code, pc+pad+9);
+      long low = make_s4(code, pc+pad+5);
+      long high= make_s4(code, pc+pad+9);
       long npairs = high - low + 1;
+      Util.assert(low <= high);
       return (int) (npairs*4) + pad + 13;
       }
     case WIDE:
@@ -696,35 +699,37 @@ public abstract class Op {
     // Funky switch statements.
     if (code[pc]==LOOKUPSWITCH) {
       int pad = 3-(pc%4);
-      long deflt  = make_u4(code, pc+pad+1);
-      long npairs = make_u4(code, pc+pad+5);
+      long deflt  = make_s4(code, pc+pad+1);
+      long npairs = make_s4(code, pc+pad+5);
+      Util.assert(npairs >= 0);
 
       int result[] = new int[(int)npairs+1];
       result[0] = pc + ((int) deflt);
       for (int i=0; i<npairs; i++) {
-	long offset = make_u4(code, pc+pad+9+4+(8*i));
+	long offset = make_s4(code, pc+pad+9+4+(8*i));
 	result[i+1] = pc + ((int) offset);
       }
       return result;
     }
     if (code[pc]==TABLESWITCH) {
       int pad = 3-(pc%4);
-      long deflt  = make_u4(code, pc+pad+1);
-      long low    = make_u4(code, pc+pad+5);
-      long high   = make_u4(code, pc+pad+9);
+      long deflt  = make_s4(code, pc+pad+1);
+      long low    = make_s4(code, pc+pad+5);
+      long high   = make_s4(code, pc+pad+9);
       long npairs = high - low + 1;
+      Util.assert(low <= high);
 
       int result[] = new int[(int)npairs+1];
       result[0] = pc + ((int) deflt);
       for (int i=0; i<npairs; i++) {
-	long offset = make_u4(code, pc+pad+13+(4*i));
+	long offset = make_s4(code, pc+pad+13+(4*i));
 	result[i+1] = pc + ((int) offset);
       }
       return result;
     }
     // Wide goto and jsr.
     if (code[pc]==GOTO_W || code[pc]==JSR_W) {
-      long offset = make_u4(code, pc+1);
+      long offset = make_s4(code, pc+1);
       int result[] = new int[1];
       result[0] = pc + ((int)offset);
       return result;
@@ -746,13 +751,18 @@ public abstract class Op {
 
   // Helper functions.
   private static final long make_u4(byte[] b, int off) {
-    return make_u4(b[off], b[off+1], b[off+2], b[off+3]);
+    return make4(false, b[off], b[off+1], b[off+2], b[off+3]);
   }
-  private static final long make_u4(byte b1, byte b2, byte b3, byte b4) {
-    long l1 = ((long) b1) & 0xFF;
+  private static final long make_s4(byte[] b, int off) {
+    return make4(true, b[off], b[off+1], b[off+2], b[off+3]);
+  }
+  private static final long make4(boolean signed, 
+				  byte b1, byte b2, byte b3, byte b4) {
+    long l1 = ((long) b1); // keep sign bits on msb.
     long l2 = ((long) b2) & 0xFF;
     long l3 = ((long) b3) & 0xFF;
     long l4 = ((long) b4) & 0xFF;
+    if (!signed) l1 &= 0xFF;
     return (l1<<24)|(l2<<16)|(l3<<8)|l4;
   }
   /** Make an unsigned byte into an integer. */
