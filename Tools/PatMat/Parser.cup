@@ -43,7 +43,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.7 1999-02-23 07:15:42 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.8 1999-06-25 08:50:52 cananian Exp $
  */
 
 action code {:
@@ -80,7 +80,7 @@ terminal Float FLOAT;
 // %keys
 terminal KEY_EXTRA, KEY_WEIGHT, KEY_PRED;
 // tree nodes
-terminal BINOP, CALL, CJUMP, CONST, ESEQ, EXP, JUMP, LABEL;
+terminal BINOP, CALL, CJUMP, CONST, EXP, JUMP, LABEL;
 terminal MEM, MOVE, NAME, NATIVECALL, RETURN, SEQ, TEMP, THROW;
 terminal UNOP;
 // punctuation & brackets
@@ -169,8 +169,6 @@ exp	::=	ID:id
 		{: RESULT = new ExpBinop(t, b, l, r); :}
 	|	CONST opt_types:t LPAREN sym_number:n RPAREN
 		{: RESULT = new ExpConst(t, n); :}
-	|	ESEQ LPAREN stm:s COMMA exp:e RPAREN
-		{: RESULT = new ExpEseq(s, e); :}
 	|	MEM opt_types:t LPAREN exp:e RPAREN
 		{: RESULT = new ExpMem(t, e); :}
 	|	NAME LPAREN ID:id RPAREN
