@@ -24,6 +24,7 @@ class SizeObject {
 	    hashcode^=set.hashCode();
 	return hashcode;
     }
+
     public boolean equals(java.lang.Object o) {
 	if (!(o instanceof SizeObject))
 	    return false;
