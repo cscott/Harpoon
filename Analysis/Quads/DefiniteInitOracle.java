@@ -31,9 +31,11 @@ import harpoon.Util.Collections.MultiMap;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -48,9 +50,10 @@ import java.util.Set;
  * field in the class in question).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefiniteInitOracle.java,v 1.1.2.2 2001-11-06 17:56:12 cananian Exp $
+ * @version $Id: DefiniteInitOracle.java,v 1.1.2.3 2001-11-06 21:52:47 cananian Exp $
  */
 public class DefiniteInitOracle {
+    final HCodeFactory hcf;
     final ClassHierarchy ch;
     final Set notDefinitelyInitialized = new HashSet();
 
@@ -68,11 +71,22 @@ public class DefiniteInitOracle {
      * the given code factory and hierarchy approximation.  For best
      * results, the code factory should produce SSI or SSA form. */
     public DefiniteInitOracle(HCodeFactory hcf, ClassHierarchy ch) {
+	this.hcf = hcf;
 	this.ch = ch;
 	// for each constructor:
 	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
 	    if (!isConstructor(hm)) continue;
+	    Set di = getNotDefInit(hm);
+	    notDefinitelyInitialized.addAll(di);
+	}
+	ndiCache.clear(); // free memory.
+	// done!
+    }
+    final Map ndiCache = new HashMap();
+    Set getNotDefInit(HMethod hm) {
+	if (!ndiCache.containsKey(hm)) {
+	    Set notDefinitelyInitialized = new HashSet();
 	    HCode hc = hcf.convert(hm);
 	    Util.assert(hc!=null, hm);
 	    // first, a quick pass to mark all variables which *must*
@@ -103,8 +117,11 @@ public class DefiniteInitOracle {
 	    // for safety: disable any fields which are read!
 	    // XXX: use more precise analysis here.
 	    notDefinitelyInitialized.addAll(findReadFields(hc));
+	    // okay, cache this!
+	    ndiCache.put
+		(hm, Collections.unmodifiableSet(notDefinitelyInitialized));
 	}
-	// done!
+	return (Set) ndiCache.get(hm);
     }
     /** return a conservative approximation to whether this is a constructor
      *  or not.  it's always safe to return true. */
@@ -121,13 +138,23 @@ public class DefiniteInitOracle {
 	//if (hm.getName().endsWidth("<init>")) return true;//not safe yet.
 	return false;
     }
+    /** Is this a 'this' constructor?  Safe to return false if unsure. */
+    boolean isThisConstructor(HMethod hm, HCodeElement me) {
+	return isConstructor(hm) && // assumes this method is precise.
+	    hm.getDeclaringClass().equals
+	    (((Quad)me).getFactory().getMethod().getDeclaringClass());
+    }
+    /** Is this a super constructor?  Safe to return false if unsure. */
+    boolean isSuperConstructor(HMethod hm, HCodeElement me) {
+	return isConstructor(hm) && // assumes this method is precise.
+	    hm.getDeclaringClass().equals
+	    (((Quad)me).getFactory().getMethod().getDeclaringClass()
+	     .getSuperclass());
+    }
 
     Set findThisVars(HCode hc) {
 	final Set thisvars = new HashSet();
 	final Set notthisvars = new HashSet();
-	METHOD method = (METHOD) ((HEADER) hc.getRootElement()).next(1);
-	// put canonical 'this' on list and next quad on worklist.
-	thisvars.add(method.params(0));
 	// create visitor.
 	// lattice: don't know, this, not-this.  -->move-->
 	// presence in 'not-this' overrides presence in 'this'.
@@ -137,6 +164,12 @@ public class DefiniteInitOracle {
 		public void visit(Quad q) {
 		    /* look for overwrites, which are always not 'this' */
 		    notthisvars.addAll(q.defC());
+		}
+		public void visit(METHOD q) {
+		    // param 0 is 'this'; all others are 'not-this'
+		    thisvars.add(q.params(0));
+		    for (int i=1; i<q.paramsLength(); i++)
+			notthisvars.add(q.params(i));
 		}
 		public void visit(MOVE q) {
 		    relevant.add(q);
@@ -177,13 +210,13 @@ public class DefiniteInitOracle {
 	for (Iterator it=hc.getElementsI(); it.hasNext(); )
 	    ((Quad)it.next()).accept(v);
 	// iterate through relevant elements until the sets stop changing size.
-	int oldsize, size = thisvars.size() + notthisvars.size();
-	do {
+	int oldsize = 0, size = thisvars.size() + notthisvars.size();
+	while (size > oldsize) {
 	    for (Iterator it=relevant.iterator(); it.hasNext(); )
 		((Quad)it.next()).accept(v);
 	    oldsize = size;
 	    size = thisvars.size() + notthisvars.size();
-	} while (size > oldsize);
+	}
 	// done!
 	thisvars.removeAll(notthisvars);
 	return Collections.unmodifiableSet(thisvars);
@@ -200,16 +233,30 @@ public class DefiniteInitOracle {
     }
     private void findNextExitPoint(DomTree dt, HCodeElement hce, Set s) {
 	// is this an exit point?
-	if (hce instanceof CALL ||
-	    hce instanceof RETURN || hce instanceof THROW)
+	if (hce instanceof RETURN) {
 	    // yes!  add it to 's'
 	    s.add(hce);
-	else {
-	    // no!  keep going down the tree.
-	    HCodeElement children[] = dt.children(hce);
-	    for (int i=0; i<children.length; i++)
-		findNextExitPoint(dt, children[i], s);
+	    return; // done.
+	} else if (hce instanceof CALL) {
+	    // maybe.  is this a call to a superclass constructor?
+	    // (not just any superclass method, since we could set
+	    //  some superclass field to 'this' and then access ourselves)
+	    // 'this' constructors aren't exit points, either.
+	    HMethod callee = ((CALL)hce).method();
+	    if ((!isSuperConstructor(callee, hce)) &&
+		(!isThisConstructor(callee, hce))) {
+		// an exit point.
+		s.add(hce);
+		return;
+	    }
 	}
+	// note: throws are not exit points.  also, we'd like to make
+	// exception constructors not exit points as well.
+
+	// no exit point found.  keep going down the tree.
+	HCodeElement children[] = dt.children(hce);
+	for (int i=0; i<children.length; i++)
+	    findNextExitPoint(dt, children[i], s);
     }
     Set findDefInit(HCodeElement exit,
 		    DomTree dt, Set thisvars, MultiMap cache) {
@@ -233,6 +280,22 @@ public class DefiniteInitOracle {
 			thisvars.contains(q.objectref())) {
 			// baby! add this to the definitely-initialized set!
 			cache.add(hce, q.field());
+		    }
+		} else if (idom instanceof CALL) {
+		    CALL q = (CALL) idom;
+		    // could this be a 'this' constructor?
+		    if (isThisConstructor(q.method(), q)) {
+			// add all the definitely-initialized vars.
+			Set ndi = getNotDefInit(q.method());
+			HClass hc = q.method().getDeclaringClass(); // 'this'
+			Iterator it=Arrays.asList
+			    (hc.getDeclaredFields()).iterator();
+			while (it.hasNext()) {
+			    HField hf = (HField) it.next();
+			    if (hf.isStatic()) continue;
+			    if (ndi.contains(hf)) continue; // not def init'd
+			    cache.add(hce, hf); // def init'd!
+			}
 		    }
 		}
 	    }
