@@ -7,7 +7,7 @@ package harpoon.IR.Tree;
  * <code>Type</code> enumerates the possible Tree expression types.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Type.java,v 1.1.2.2 1999-02-05 11:48:56 cananian Exp $
+ * @version $Id: Type.java,v 1.1.2.3 1999-08-11 20:03:49 duncan Exp $
  */
 public abstract class Type {
     // enumerated constants.
@@ -21,6 +21,10 @@ public abstract class Type {
     public final static int DOUBLE = 3;
     /** Pointer type.  Bitwidth is machine-dependent. */
     public final static int POINTER = 4;
+    /** Type which cannot be expressed by one of the standard types.  
+     *  Such types must be defined in terms of a bit-width, and an optional
+     *  sign-extension. */
+    public final static int SMALL = 5;
 
     // Query functions.
     public final static boolean isDoubleWord(TreeFactory tf, int type) {
