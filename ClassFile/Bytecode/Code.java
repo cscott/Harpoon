@@ -13,7 +13,7 @@ import java.util.Vector;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.2 1998-08-03 10:35:39 cananian Exp $
+ * @version $Id: Code.java,v 1.3 1998-08-03 11:05:53 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -73,7 +73,8 @@ public class Code extends HCode {
 	    merge[targets[i]]++; // mark a jump to this pc.
 	}
 	// unless its an unconditional branch, we can fall through to the
-	// next instr, too.
+	// next instr, too.  Note that we shouldn't be able to fall off
+	// the end of the method.
 	if (!Op.isUnconditionalBranch(code[pc]))
 	  merge[pc+Op.instrSize(pc,code)]++;
       }

@@ -6,7 +6,7 @@ import harpoon.Util.Util;
  * <code>InCti</code> is used for control-transfer instructions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InCti.java,v 1.3 1998-08-03 10:35:39 cananian Exp $
+ * @version $Id: InCti.java,v 1.4 1998-08-03 11:05:53 cananian Exp $
  * @see Instr
  */
 public class InCti extends Instr {
@@ -33,5 +33,12 @@ public class InCti extends Instr {
     if (this.next.size()>=arity) 
       throw new Error("Exceeding arity of CTI.");
     super.addNext(next);
+  }
+
+  /** Return human-readable instruction string. */
+  public String toString() {
+    StringBuffer sb = new StringBuffer(Op.toString(opcode));
+    // XXX FIXME
+    return sb.toString();
   }
 }

@@ -13,7 +13,7 @@ package harpoon.ClassFile.Bytecode;
  * </UL>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Op.java,v 1.3 1998-08-03 08:32:07 cananian Exp $
+ * @version $Id: Op.java,v 1.4 1998-08-03 11:05:53 cananian Exp $
  * @see     harpoon.ClassFile.Raw.Attribute.AttributeCode
  * @see     harpoon.ClassFile.Bytecode.Instr
  * @see     harpoon.ClassFile.Bytecode.Code
@@ -625,11 +625,9 @@ public final class Op {
   private static boolean isBranch[] = new boolean[256];
   static {
     for (int i=0; i<isBranch.length; i++) isBranch[i]=false;
-    for (int i=ub2i(IFEQ); i<=ub2i(RET); i++) isBranch[i]=true;
+    for (int i=ub2i(IFEQ); i<=ub2i(RETURN); i++) isBranch[i]=true;
     for (int i=ub2i(IFNULL); i<=ub2i(JSR_W); i++) isBranch[i]=true;
-    for (int i=ub2i(IRETURN); i<=ub2i(RETURN); i++) isBranch[i]=true;
-    isBranch[ub2i(TABLESWITCH)] = true;
-    isBranch[ub2i(LOOKUPSWITCH)]= true;
+    isBranch[ub2i(ATHROW)]=true;
   }
 
   /**
@@ -659,6 +657,7 @@ public final class Op {
     case DRETURN:
     case ARETURN:
     case RETURN:
+    case ATHROW:
       return true;
     default:
       return false;
@@ -714,11 +713,11 @@ public final class Op {
       result[0] = pc + ((int)offset);
       return result;
     }
-    // ret/return (no targets)
+    // ret/return/throw (no targets)
     if (code[pc]==RET     || code[pc]==RETURN  ||
 	code[pc]==IRETURN || code[pc]==LRETURN ||
 	code[pc]==FRETURN || code[pc]==DRETURN ||
-	code[pc]==ARETURN)
+	code[pc]==ARETURN || code[pc]==ATHROW  )
       return new int[0];
     // all other cases:
     {
