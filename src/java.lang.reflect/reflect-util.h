@@ -14,6 +14,9 @@
 	what(jdouble,  Double,  Double,    'D', d)
 /* what(typename, shortname, longname, descchar, fieldname) */
 
+/* Return the (first character of the) descriptor corresponding to the
+ * given jclass */
+char REFLECT_getDescriptor(JNIEnv *env, jclass clazz);
 /* Return the class object corresponding to the first component of the
  * given descriptor. */
 jclass REFLECT_parseDescriptor(JNIEnv *env, const char *desc);

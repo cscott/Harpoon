@@ -2,8 +2,30 @@
 #include <assert.h>
 #include <string.h>
 #include <jni.h>
+#include "jni-private.h"
 #include "../java.lang/java_lang_Class.h"
 #include "reflect-util.h"
+
+/* Return the (first character of the) descriptor corresponding to the
+ * given jclass */
+char REFLECT_getDescriptor(JNIEnv *env, jclass clazz) {
+  struct FNI_classinfo *info;
+  if (Java_java_lang_Class_isArray(env, clazz)) return '[';
+  if (!Java_java_lang_Class_isPrimitive(env, clazz)) return 'L';
+  info = FNI_GetClassInfo(clazz);
+  switch (info->name[0]) {
+  case 'b':
+    if (strcmp(info->name, "boolean")==0) return 'Z';
+    if (strcmp(info->name, "byte")==0) return 'B';
+  case 'c': if (strcmp(info->name, "char")==0) return 'C';
+  case 'd': if (strcmp(info->name, "double")==0) return 'D';
+  case 'f': if (strcmp(info->name, "float")==0) return 'F';
+  case 'i': if (strcmp(info->name, "int")==0) return 'I';
+  case 'l': if (strcmp(info->name, "long")==0) return 'J';
+  case 's': if (strcmp(info->name, "short")==0) return 'S';
+  default: assert(0); /* not a valid primitive type name */
+  }
+}
 
 /* Return the class object corresponding to the first component of the
  * given descriptor. */
