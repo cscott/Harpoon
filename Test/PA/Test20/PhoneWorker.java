@@ -15,7 +15,7 @@ import java.net.Socket;
  * <code>PhoneWorker</code> process requests to the phone server.
  *
  * @author P.Govereau govereau@mit.edu
- * @version $Id: PhoneWorker.java,v 1.1 2000-04-02 22:37:43 govereau Exp $
+ * @version $Id: PhoneWorker.java,v 1.2 2000-04-02 23:01:25 govereau Exp $
  */
 public class PhoneWorker extends Thread {
 	private Str2StrMap theMap;
@@ -37,7 +37,7 @@ public class PhoneWorker extends Thread {
 
 			String request = in.readLine();
 			PhoneProtocol req = new PhoneProtocol(request);
-			System.out.println("recieved request: " + req.name + " -- " + req.number);			
+				//System.out.println("recieved request: " + req.name + " -- " + req.number);			
 			if (request != null) {
 				if (req.type == PhoneProtocol.PUT) {
 					theMap.put(req.name, req.number);
@@ -63,7 +63,9 @@ public class PhoneWorker extends Thread {
 				out.close();
 				in.close();
 				client.close();
-			} catch (IOException ex) { }
+			} catch (IOException ex) {
+				System.err.println(ex);
+			}
 		}
 	}
 }
