@@ -22,12 +22,12 @@ import harpoon.IR.Quads.NEW;
  * <code>InterThreadPA</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.10 2000-03-01 01:11:03 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.11 2000-03-02 04:45:30 salcianu Exp $
  */
 abstract class InterThreadPA {
     
-    private static final boolean DEBUG = false;
-    private static final boolean DEBUG2 = false;
+    private static final boolean DEBUG = true;
+    private static final boolean DEBUG2 = true;
     private static final boolean TIMING = true;
 
     public static ParIntGraph resolve_threads(ParIntGraph pig,
@@ -336,7 +336,11 @@ abstract class InterThreadPA {
 	    if(!W[0].isEmpty()) { i=0; ib=1; }
 	    else 
 		if(!W[1].isEmpty()) { i=1; ib=0; }
-		else break;
+		else{
+		    Matching.rule0(mu,W);
+		    if(W[0].isEmpty() && W[1].isEmpty()) break;
+		    else continue;
+		}
 
 	    PANode node = (PANode) W[i].remove();
 
@@ -344,9 +348,11 @@ abstract class InterThreadPA {
 	    Set new_mappings = new HashSet(new_info[i].getValuesSet(node));
 	    new_info[i].removeAll(node);
 
-	    Matching.rule0(node,new_mappings,pig,W,mu,new_info,i,ib);
+	    // Matching.rule0(node,new_mappings,pig,W,mu,new_info,i,ib);
 	    Matching.rule2(node,new_mappings,pig,W,mu,new_info,i,ib);
+	    Matching.rule22(node,new_mappings,pig,W,mu,new_info,i,ib);
 	    Matching.rule3(node,new_mappings,pig,W,mu,new_info,i,ib);
+	    Matching.rule32(node,new_mappings,pig,W,mu,new_info,i,ib);
 	}
     }
 

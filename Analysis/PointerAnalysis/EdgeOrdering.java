@@ -29,7 +29,7 @@ import harpoon.Temp.Temp;
  correctly; speed was only a second issue.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: EdgeOrdering.java,v 1.1.2.5 2000-03-01 01:11:03 salcianu Exp $
+ * @version $Id: EdgeOrdering.java,v 1.1.2.6 2000-03-02 04:45:30 salcianu Exp $
  */
 public class EdgeOrdering{
 
@@ -52,6 +52,15 @@ public class EdgeOrdering{
     public boolean add(PAEdge eo, PAEdge ei){
 	if(!eo.f.equals(ei.f)) return false;
 	return after.add(eo,ei);
+    }
+
+    /** Returns an iterator over the set of the inside edges that could
+	be already created when the inside edge <code>eo</code> is read.
+	This method will be used in the intre-thread analysis when trying to
+	match an outside edge against those inside edges from the same scope
+	that could be created when the load is done. */
+    public Iterator getBeforeEdges(PAEdge eo){
+	return after.getValues(eo);
     }
 
     /** Checks whether the inside edge <code>ei</code> could have been
