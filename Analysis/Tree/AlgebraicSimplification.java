@@ -43,7 +43,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.22 2001-01-23 04:38:46 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.23 2001-01-23 22:06:47 cananian Exp $
  */
 // XXX missing -K1 --> K2  and ~K1 --> K2 rules.
 public abstract class AlgebraicSimplification extends Simplification { 
@@ -427,12 +427,8 @@ public abstract class AlgebraicSimplification extends Simplification {
     }
     // input is positive now.
     private static Exp div2mul_positive(Exp n, int dAbs) { 
+	final int N=32;
 	Util.assert(dAbs >= 0);
-	// Initialize parameters for the transformation
-	int  l       = Math.max((int)Math.ceil(Math.log(dAbs)/Math.log(2)),1); 
-	long m       = 1 + ((1L << (32 + l - 1)) / dAbs); 
-	int  m_prime = (int)(m - 0x100000000L);
-	int  sh_post = l - 1; 
 
 	// Get a TreeFactory to use in creating new tree objects
 	TreeFactory tf = n.getFactory(); 
@@ -443,42 +439,86 @@ public abstract class AlgebraicSimplification extends Simplification {
 	else if (dAbs == 1) { // Dividing by 1
 	    return n; 
 	}
-	else if (dAbs == (1 << l)) {  // Dividing by a power of 2 
-	    return new BINOP(tf, n, Type.INT, Bop.SHL, n, new CONST(tf, n, l)); 
+	MultiplierTuple tuple = CHOOSE_MULTIPLIER(dAbs, N-1);
+	long m = tuple.m_high; 
+	int sh_post = tuple.sh_post;
+	int l = tuple.l;
+	
+	if (dAbs == (1 << l)) {  // Dividing by a power of 2 
+	    return new BINOP(tf, n, Type.INT, Bop.SHR, n, new CONST(tf, n, l));
 	}
 	else { 
+	    Util.assert(m < (1L<<N));
 	    // we need to reuse n.
 	    Temp t = new Temp(tf.tempFactory(), "dm");
 	    MOVE move = new MOVE(tf, n, new TEMP(tf, n, Type.INT, t), n);
-	    BINOP q0 = new BINOP
-		(tf, n, Type.INT, Bop.ADD, 
-		 new TEMP(tf, n, Type.INT, t), // n
-		 new UNOP
-		 (tf, n, Type.INT, Uop._2I, 
-		  new BINOP
-		  (tf, n, Type.LONG, Bop.USHR, 
-		   new BINOP
-		   (tf, n, Type.LONG, Bop.MUL,
-		    new CONST(tf, n, m_prime), 
-		    new TEMP(tf, n, Type.INT, t)), // n
-		   new CONST(tf, n, 32)))); 
-	    BINOP q1 = new BINOP
-		(tf, n, Type.INT, Bop.ADD,  // Really a SUB.  
+	    // q0 = MULUH(m, EOR(n_sign,n))
+	    Exp q0 = new UNOP
+		(tf, n, Type.INT, Uop._2I,
 		 new BINOP
-		 (tf, n, Type.INT, Bop.SHR, 
-		  q0, 
-		  new CONST(tf, n, sh_post)), 
-		 new UNOP
-		 (tf, n, Type.INT, Uop.NEG, 
-		  new BINOP // XSIGN(n) 
-		  (tf, n, Type.INT, Bop.SHL,
-		   new TEMP(tf, n, Type.INT, t), // n
-		   new CONST(tf, n, 31))));
+		 (tf, n, Type.LONG, Bop.USHR,
+		  new BINOP
+		  (tf, n, Type.LONG, Bop.MUL,
+		   new CONST(tf, n, m),
+		   new UNOP
+		   (tf, n, Type.LONG, Uop._2L,
+		    new BINOP
+		    (tf, n, Type.INT,  Bop.XOR,
+		     new BINOP // n_sign = n >> N-1
+		     (tf, n, Type.INT, Bop.SHR,
+		      new TEMP(tf, n, Type.INT, t),
+		      new CONST(tf, n, N-1)),
+		     new TEMP(tf, n, Type.INT, t)))),
+		  new CONST(tf, n, N)));
+	    // q1 = EOR(n_sign, SRL(q0, sh_post))
+	    Exp q1 = new BINOP
+		(tf, n, Type.INT, Bop.XOR,
+		 new BINOP // n_sign = n >> N-1
+		 (tf, n, Type.INT, Bop.SHR,
+		  new TEMP(tf, n, Type.INT, t),
+		  new CONST(tf, n, N-1)),
+		 new BINOP // SRL(q0, sh_post)
+		 (tf, n, Type.INT, Bop.USHR,
+		  q0, new CONST(tf, n, sh_post)
+		  ));
+	    // done.
 	    return new ESEQ(tf, n, move/* move n into t*/, q1);
 	}
     }
-
-
+    private static class MultiplierTuple {
+	final long m_high; // range is 0 to 2^32
+	final int sh_post, l;
+	MultiplierTuple(long m_high, int sh_post, int l) {
+	    this.m_high=m_high; this.sh_post=sh_post; this.l=l;
+	}
+    }
+    private static MultiplierTuple CHOOSE_MULTIPLIER(int d, int prec) {
+	final int N=32; // size of int.
+	Util.assert(1<=d);
+	Util.assert(1<=prec && prec<=N);
+	// Finds m, sh_post, l such that:
+	//     2^(l-1) < d <= 2^l
+	//     0 <= sh_post <= l.  If sh_post>0, then N+sh_post <= l+prec
+	//     2^(N+sh_post) < m*d <= 2^(N+sh_post)*(1-2^(-prec))
+	// Corollary: If d<=2^prec, then
+	//     m < 2^(N+sh_post)*(1+2^(1-l))/d <= 2^(N+sh_post-l+1).
+	//   Hence m fits in max(prec, N-l)+1 bits (unsigned)
+	int l = Util.log2c(d), sh_post = l;
+	// m_low = floor((2^(N+l))/d)
+	// we compute it as m_low = 2^N + (m_low-2^N) to avoid overflow
+	// in the numerator.
+	long m_low = (1L<<N) + ((((1L<<l)-d)/d)<<N);
+	// m_high = floor((2^(N+l)+2^(N+l+prec))/d)
+	// as above, m_high = 2^N + (m_high-2^N) to avoid overflow.
+	long m_high= (1L<<N) + 
+	    (((1L<<(l+prec))+(1L<<l)-(((long)d)<<prec))<<(N-prec)); 
+	Util.assert(m_low < m_high);
+	while ((m_low/2) < (m_high/2) && sh_post > 0) {
+	    m_low/=2; m_high/=2; sh_post--;
+	} /* reduce to lowest terms */
+	return new MultiplierTuple(m_high, sh_post, l); // 3 outputs
+    }
+    
     /**
      * Converts an arbitrary multiplication by a positive constant into a 
      * series of shifts, additions, and multiplies. Based on the m4 macros
@@ -564,8 +604,3 @@ public abstract class AlgebraicSimplification extends Simplification {
 	return new ESEQ(tf, n, move, product); // move n into t, then compute.
     }
 }
-
-
-
-
-
