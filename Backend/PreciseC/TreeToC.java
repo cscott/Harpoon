@@ -52,7 +52,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.9 2000-06-29 23:38:10 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.10 2000-06-30 01:31:08 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -157,7 +157,12 @@ public class TreeToC extends java.io.PrintWriter {
 
 	/** these are the symbols referenced (and declarations for them) */
 	Map sym2decl = new HashMap();
-	/** these are the *local* labels which are defined in this file. */
+	{ /* gcc complains if we don't declare certain symbols "properly". */
+	    sym2decl.put(new Label("memset"),
+			 "extern void *memset(void *,int,size_t);");
+	}
+	/** these are the *local* labels which are defined *inside functions*
+	 *  in this file. */
 	Set local_labels = new HashSet();
 
 	void emitSymbols(PrintWriter pw) {
@@ -298,7 +303,18 @@ public class TreeToC extends java.io.PrintWriter {
 	    pw.println();
 	}
 	public void visit(CONST e) {
-	    pw.print(e.value==null?"NULL":e.value.toString());
+	    if (e.value==null) { pw.print("NULL"); return; }
+	    String val = e.value.toString();
+	    if (e.type()==Type.INT && e.value().intValue()==Integer.MIN_VALUE)
+		val="0x"+Integer.toHexString(e.value().intValue());
+	    if (e.type()==Type.LONG && e.value().longValue()==Long.MIN_VALUE)
+		val="0x"+Long.toHexString(e.value().longValue());
+	    // XXX: assumption that jfloat==float and jlong==long long
+	    // this assumption may be erroneous! =( but no way to
+	    // 'portably' define constants.
+	    if (e.type()==Type.FLOAT) val+="F";
+	    if (e.type()==Type.LONG) val+="LL";
+	    pw.print(val);
 	}
 	public void visit(DATUM e) {
 	    struct_size += sizeof(e.getData());
@@ -339,13 +355,17 @@ public class TreeToC extends java.io.PrintWriter {
 	    pw.println("; /* targets: "+LabelList.toList(e.targets)+" */");
 	}
 	public void visit(LABEL e) {
-	    if (!e.exported) local_labels.add(e.label);
-	    if (current_mode==CODE) pw.println(label(e.label)+":");
+	    if (current_mode==CODE) {
+		pw.println(label(e.label)+":");
+		local_labels.add(e.label);
+	    }
 	    else startData(e.label, e.exported);
 	}
 	private int struct_size;
 	public void startData(Label l, boolean exported) {
 	    switchto(DATA);
+	    sym2decl.put(l, (exported?"extern ":"static ") +
+			 "struct "+label(l)+" "+label(l)+";");
 	    struct_size = 0;
 	    if (!exported) pwa[DD].print("static ");
 	    pwa[DD].println("struct "+label(l)+" {");
