@@ -8,15 +8,17 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.Set;
 import harpoon.Util.HashSet;
 import harpoon.Util.Util;
+import harpoon.Util.WorkSet;
 
 import java.util.Stack;
+import java.util.Enumeration;
 /**
  * <code>Peephole</code> performs peephole optimizations (mostly
  * <code>MOVE</code> collation) on <code>QuadWithTry</code> and
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.7 1999-08-04 05:52:29 cananian Exp $
+ * @version $Id: Peephole.java,v 1.1.2.8 1999-08-26 21:15:37 bdemsky Exp $
  */
 
 final class Peephole  {
@@ -25,7 +27,16 @@ final class Peephole  {
 	sv.optimize(head); // usually things are screwy after trans.
     }
     final static void optimize(Quad head, boolean allowFarMoves) {
-	PeepholeVisitor pv = new PeepholeVisitor(allowFarMoves);
+	WorkSet protectedquads=new WorkSet();
+	if (!allowFarMoves) {
+	    METHOD m=(METHOD)head.next(1);
+	    for (int i=1;i<m.next().length;i++) {
+		Enumeration enum=((HANDLER) m.next(i)).protectedQuads();
+		while (enum.hasMoreElements())
+		    protectedquads.add(enum.nextElement());
+	    }
+	}
+	PeepholeVisitor pv = new PeepholeVisitor(allowFarMoves, protectedquads);
 	while (pv.optimize(head))
 	    /*repeat*/;
     }
@@ -85,7 +96,10 @@ final class Peephole  {
     }
     private final static class PeepholeVisitor extends SuperVisitor {
 	final boolean allowFarMoves;
-	PeepholeVisitor(boolean afm) { this.allowFarMoves=afm; }
+	final WorkSet pquads;
+	PeepholeVisitor(boolean afm, WorkSet pquads) { 
+	    this.allowFarMoves=afm; 
+	    this.pquads=pquads;}
 	public void visit(Quad q) {
 	    Quad[] ql=q.next();
 	    for (int i=0; i<ql.length; i++)
@@ -110,12 +124,20 @@ final class Peephole  {
 		//  (we can move it ahead until someone redefines our src/def)
 		Quad Qp; boolean pastNonMove=false;
 		boolean moveit=false, deleteit=false;
-		for (Qp=Qnext; allowFarMoves; Qp=Qp.next(0)) {
+		for (Qp=Qnext; allowFarMoves || !pquads.contains(Qnext) ; Qp=Qp.next(0)) {
+		    if (!allowFarMoves)
+			if (pquads.contains(Qp)) {
+			    if (pastNonMove) moveit=true;
+			    break;
+			}
+			    
+
 		    if (Qp instanceof PHI || Qp instanceof SIGMA) {
 			// sorry, only optimize within basic blocks.
 			if (pastNonMove) moveit=true;
 			break;
 		    }
+
 		    if (Qp instanceof FOOTER) {
 			// move isn't useful after return!
 			deleteit=true;
@@ -135,7 +157,7 @@ final class Peephole  {
 		    }
 		    if (!(Qp instanceof MOVE)) pastNonMove=true; 
 		}
-		if (allowFarMoves &&
+		if ((allowFarMoves||!pquads.contains(Qnext)) &&
 		    (Qp instanceof SIGMA || moveit || deleteit)) {
 		    TempMap tm = new OneToOneMap(q.dst(), q.src());
 		    Edge lstE;
