@@ -11,7 +11,7 @@ package harpoon.IR.Tree;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.1 1999-01-14 05:55:00 cananian Exp $
+ * @version $Id: MOVE.java,v 1.1.2.2 1999-01-15 01:17:36 cananian Exp $
  */
 public class MOVE extends Stm {
     /** The expression giving the destination for the computed value. */
@@ -23,15 +23,12 @@ public class MOVE extends Stm {
     public ExpList kids() {
         if (dst instanceof MEM)
 	   return new ExpList(((MEM)dst).exp, new ExpList(src,null));
-        else if (dst instanceof LMEM)
-	   return new ExpList(((LMEM)dst).exp, new ExpList(src,null));
 	else return new ExpList(src,null);
     }
     public Stm build(ExpList kids) {
         if (dst instanceof MEM)
-	    return new MOVE(new MEM(kids.head), kids.tail.head);
-        else if (dst instanceof LMEM)
-	    return new MOVE(new LMEM(kids.head), kids.tail.head);
+	    return new MOVE(dst.build(new ExpList(kids.head, null)),
+			    kids.tail.head);
 	else return new MOVE(dst, kids.head);
     }
 }

@@ -10,12 +10,14 @@ package harpoon.IR.Tree;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MEMA.java,v 1.1.2.1 1999-01-15 00:19:34 cananian Exp $
+ * @version $Id: MEMA.java,v 1.1.2.2 1999-01-15 01:17:36 cananian Exp $
  */
 public class MEMA extends MEM {
+    private final boolean is64bitarch; // FIXME: make frame-dependent.
     /** Constructor. */
-    private boolean is64bitarch; // FIXME: make frame-dependent.
-    public MEMA(Exp exp, boolean is64bitarch) { super(exp); }
+    public MEMA(Exp exp, boolean is64bitarch) {
+	super(exp); this.is64bitarch = is64bitarch;
+    }
     public Exp build(ExpList kids) {
 	return new MEMA(kids.head, is64bitarch);
     }
