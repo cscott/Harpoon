@@ -6,22 +6,15 @@ package harpoon.Main;
 import harpoon.Analysis.AbstractClassFixupRelinker;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
-import harpoon.ClassFile.HCode;
-import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
-import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.NoSuchClassException;
 import harpoon.ClassFile.Relinker;
-import harpoon.IR.Properties.CFGrapher;
-import harpoon.IR.Tree.Data;
 import harpoon.IR.Quads.QuadWithTry;
 import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.IR.Quads.QuadSSI;
-import harpoon.Temp.Temp;
-import harpoon.Temp.TempFactory;
 import harpoon.Backend.Backend;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Analysis.ClassHierarchy;
@@ -30,7 +23,6 @@ import harpoon.Analysis.Quads.CallGraphImpl;
 import harpoon.Analysis.Quads.CallGraphImpl2;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 
-import harpoon.Backend.Maps.NameMap;
 import harpoon.Util.CombineIterator;
 import harpoon.Util.Default;
 import harpoon.Util.ParseUtil;
@@ -45,18 +37,20 @@ import harpoon.Instrumentation.AllocationStatistics.AllocationInstrCompStage;
 import harpoon.Analysis.Realtime.Realtime;
 import harpoon.Analysis.MemOpt.PreallocOpt;
 
+import harpoon.Util.Options.Option;
+
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.List;
 import java.util.LinkedList;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.Map;
 import java.util.HashMap;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -65,15 +59,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintStream;
 
-import harpoon.Util.Options.Option;
-
 /**
  * <code>SAMain</code> is a program to compile java classes to some
  * approximation of StrongARM assembly.  It is for development testing
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.48 2003-04-17 00:36:30 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.49 2003-04-17 15:24:27 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -490,6 +482,8 @@ public class SAMain extends harpoon.IR.Registration {
 
     private static void printHelp(PrintStream ps) {
 	ps.println("Usage:\n\tjava SAMain <options>*");
+	if(allOptions.size() > 0)
+	    ps.println("Options:");
 	for(Iterator/*<Option>*/ it = allOptions.iterator(); it.hasNext(); ) {
 	    Option option = (Option) it.next();
  	    option.printHelp(ps);
@@ -507,8 +501,6 @@ public class SAMain extends harpoon.IR.Registration {
     protected static void messageln(String msg) {
 	if(!QUIET) System.out.println(msg);
     }
-
-
 
     private static class BuildQuadForm extends RegularCompilerStageEZ {
 	public BuildQuadForm() { super("build-quad-form"); }

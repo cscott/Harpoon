@@ -66,47 +66,38 @@ import java.io.PrintWriter;
  * <code>CodeGenerator</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CodeGenerator.java,v 1.4 2003-04-17 00:29:18 salcianu Exp $
+ * @version $Id: CodeGenerator.java,v 1.5 2003-04-17 15:24:27 salcianu Exp $
  */
 public class CodeGenerator extends CompilerStage {
     
     public CodeGenerator() { super("code-generator"); }
 
+    private static final boolean DEBUG = false;
+
     public List/*<Option>*/ getOptions() {
 	List/*<Option>*/ opts = new LinkedList/*<Option>*/();
 
-	opts.add(new Option("D", "Outputs DATA information for <class>") {
-	    public void action() { OUTPUT_INFO = PRINT_DATA = true; }
+	if(DEBUG)
+	    add_debug_options(opts);
+
+	opts.add(new Option("L", "Outputs Local Register Allocated Instr IR") {
+	    public void action() { REG_ALLOC = LOCAL_REG_ALLOC = true; }
 	});
-	opts.add(new Option("O", "Outputs Original Tree IR for <class>") {
-	    public void action() { OUTPUT_INFO = PRINT_ORIG = true; }
-	});
-	opts.add(new Option
-		 ("P", "Outputs Pre-Register Allocated Instr IR for <class>") {
-	    public void action() { OUTPUT_INFO = PRE_REG_ALLOC = true; }
-	});
-	opts.add(new Option("B", "Outputs Abstract Register Allocated Instr IR for <class>") {
-	    public void action() { OUTPUT_INFO = ABSTRACT_REG_ALLOC = true; }
-	});
+
 	opts.add(new Option("H", "Hacked register allocator") {
 	    public void action() { HACKED_REG_ALLOC = true; }
 	});
-	opts.add(new Option("R", "", "<regAllocFilename>", "Outputs Global Register Allocated Instr IR for <class>") {
+
+	opts.add(new Option
+		 ("R", "", "<regAllocOptionsFilename>",
+		  "Read Global Register Allocator options from file") {
 	    public void action() {
 		if(getOptionalArg(0) != null)
 		    regAllocOptionsFilename = getOptionalArg(0);
 		REG_ALLOC = true;
 	    }
 	});
-	opts.add(new Option("L", "Outputs Local Register Allocated Instr IR for <class>") {
-	    public void action() { REG_ALLOC = LOCAL_REG_ALLOC = true; }
-	});
-	opts.add(new Option("A", "Same as -OPR") {
-	    public void action() {
-		OUTPUT_INFO = PRE_REG_ALLOC = true;
-		PRINT_ORIG = REG_ALLOC = true;
-	    }
-	});
+
 	opts.add(new Option("o", "<outputDir>",
 			    "Output directory for compilation result") {
 	    public void action() { 
@@ -116,6 +107,7 @@ public class CodeGenerator extends CompilerStage {
 
 	    }
 	});
+
 	opts.add(new Option("1", "", "<classname>", "Compiles only a single method or class.  Without a classname, only compiles <class>.main()") {
 	    public void action() {
 		String optclassname = getOptionalArg(0);
@@ -127,6 +119,37 @@ public class CodeGenerator extends CompilerStage {
 	});
 
 	return opts;
+    }
+
+
+    // These options seem too debug-specific.  Not included by default [AS]
+    private void add_debug_options(List/*<Option>*/ opts) {
+	opts.add(new Option("D", "Outputs DATA information") {
+	    public void action() { OUTPUT_INFO = PRINT_DATA = true; }
+	});
+	
+	opts.add(new Option("O", "Outputs Original Tree IR") {
+	    public void action() { OUTPUT_INFO = PRINT_ORIG = true; }
+	});
+	
+	opts.add(new Option
+		 ("P", "Outputs Pre-Register Allocated Instr IR") {
+	    public void action() { OUTPUT_INFO = PRE_REG_ALLOC = true; }
+	});
+	
+	opts.add(new Option
+		 ("B", "Outputs Abstract Register Allocated Instr IR") {
+	    public void action() {
+		OUTPUT_INFO = ABSTRACT_REG_ALLOC = true;
+	    }
+	});
+	
+	opts.add(new Option("A", "Same as -OPR") {
+	    public void action() {
+		OUTPUT_INFO = PRE_REG_ALLOC = true;
+		PRINT_ORIG = REG_ALLOC = true;
+	    }
+	});
     }
 
 
