@@ -16,7 +16,7 @@ libjavalang_la_SOURCES = \
 	java_lang_VMSecurityManager.h \
 	java_lang_VMSystem.c java_lang_VMSystem.h
 
-EXTRA_DIST = \
+JAVASRC = \
 Class.java \
 Runtime.java \
 Thread.java \
@@ -25,3 +25,9 @@ VMClassLoader.java \
 VMObject.java \
 VMSecurityManager.java \
 VMSystem.java
+JARFILE=../cpvm.jar
+
+EXTRA_DIST=$(JAVASRC)
+
+# include .h file dependencies; don't try to build JARFILE.
+include $(top_srcdir)/JavaRules.make

@@ -27,7 +27,8 @@ NATIVELIB=\
 else
 NATIVEDIR=classpath
 NATIVELIB=\
-	classpath/java.lang/libjavalang.la
+	classpath/java.lang/libjavalang.la \
+	classpath/gnu.vm.stack/libgnuvmstack.la
 endif
 
 # for precise gc, add gc to SUBDIRS

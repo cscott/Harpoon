@@ -13,6 +13,7 @@ libjavalangreflect_la_SOURCES = \
 	java_lang_reflect_Method.c java_lang_reflect_Method.h \
 	java_lang_reflect_Modifier.h \
 	reflect-util.c reflect-util.h
+# XXX: Array, Modifier, and Member are missing java sources.
 
 JAVASRC = \
 AccessibleObject.java \
@@ -23,4 +24,4 @@ JARFILE=reflect-thunk.jar
 EXTRA_DIST=$(JAVASRC)
 
 # include rules to make $(JARFILE) from $(JAVASRC)
-include $(top_srcdir)/JavaRules.make
+include $(top_srcdir)/JarRules.make

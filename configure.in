@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.128 $)dnl
+AC_REVISION($Revision: 1.129 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -31,11 +31,12 @@ AM_MAINTAINER_MODE
 AC_PATH_PROG(FORTUNE, fortune, /usr/games/fortune)
 AC_SUBST(FORTUNE)
 AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
-# find a java compiler
+# find a java compiler and tools
 AC_CHECK_PROGS(JAVAC, jikes javac, not-found)
 AC_CHECK_PROGS(JAR, fastjar jar, not-found)
+AC_CHECK_PROGS(JAVAH, javah, not-found)
 AM_CONDITIONAL(BUILD_JAVA_SOURCE,
-	       test "$JAVAC" != not-found -a "$JAR" != not-found)
+    test "$JAVAC" != not-found -a "$JAR" != not-found -a "$JAVAH" != not-found)
 
 dnl Checks for libraries.
 AC_CHECK_LIB(m, atan2) # link in math library.

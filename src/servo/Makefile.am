@@ -20,4 +20,4 @@ JARFILE=servo.jar
 EXTRA_DIST += $(JAVASRC)
 
 # include rules to make $(JARFILE) from $(JAVASRC)
-include $(top_srcdir)/JavaRules.make
+include $(top_srcdir)/JarRules.make
