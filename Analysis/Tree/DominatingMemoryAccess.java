@@ -71,7 +71,7 @@ import java.util.Collection;
  used since it needs to invalidate them on a function return.
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.1.2.6 2001-06-08 00:49:33 witchel Exp $
+ * @version $Id: DominatingMemoryAccess.java,v 1.1.2.7 2001-06-11 23:27:32 cananian Exp $
  */
 public class DominatingMemoryAccess {
 
@@ -827,7 +827,7 @@ public class DominatingMemoryAccess {
                subs.add(mem);
                Util.assert(useDefMap.containsKey(mem) == false);
                useDefMap.put(mem, dom);
-            } else if(eqClasses.ops_using_this_tag(mem) > 1) {
+            } else if(eqClasses.num_using_this_tag(mem) > 1) {
                defUseMap.put(mem, new ArrayList(2));
             }
          }

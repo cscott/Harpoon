@@ -20,6 +20,7 @@ import harpoon.Temp.Temp;
 import harpoon.Util.Environment;
 import harpoon.Util.HashEnvironment;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -29,7 +30,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.1 2001-06-06 22:18:54 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.2 2001-06-11 23:27:32 cananian Exp $
  */
 public class CacheEquivalence {
     
@@ -110,7 +111,7 @@ public class CacheEquivalence {
 
     /** Returns the number of memory operations which share the same
      *  tag as this memory operation.  1 indicates no sharing possible. */
-    public int ops_using_this_tag(MEM mem) {
+    public int num_using_this_tag(MEM mem) {
 	return ((CacheEquivSet) cache_equiv.get(mem)).others.size() + 1;
     }
     /** Returns 'true' if this operation requires a tag check.  If
@@ -123,5 +124,11 @@ public class CacheEquivalence {
      *  necessary tag information for this MEM operation. */
     public MEM whose_tag_check(MEM mem) {
 	return ((CacheEquivSet) cache_equiv.get(mem)).first;
+    }
+    /** Returns all the MEM operations which use the tag defined
+     *  by whose_tag_check(mem) */
+    public Set ops_using_this_tag(MEM mem) {
+	return Collections.unmodifiableSet
+	    (((CacheEquivSet) cache_equiv.get(mem)).others);
     }
 }
