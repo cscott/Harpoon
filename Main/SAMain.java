@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.83 2000-06-29 22:09:13 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.84 2000-06-29 23:50:54 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -230,6 +230,8 @@ public class SAMain extends harpoon.IR.Registration {
 			(new BufferedWriter
 			 (new FileWriter
 			  (new File(ASSEM_DIR, filename + filesuffix))));
+		    if (BACKEND==PRECISEC_BACKEND)
+			out = new harpoon.Backend.PreciseC.TreeToC(out);
 		    
 		    HMethod[] hmarray = hclass.getDeclaredMethods();
 		    Set hmset = new TreeSet(Arrays.asList(hmarray));
@@ -247,7 +249,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    }
 		    messageln("");
 		    
-		    out.println();
+		    //out.println();
 		    messageln("Writing data for " + hclass.getName());
 		    outputClassData(hclass, out);
 		    
@@ -393,9 +395,15 @@ public class SAMain extends harpoon.IR.Registration {
 	    out.flush();
 	}
 
+	if (BACKEND==PRECISEC_BACKEND) {
+	    HCode hc = hcf.convert(hmethod);
+	    if (hc!=null)
+		((harpoon.Backend.PreciseC.TreeToC)out).translate(hc);
+	}
+
 	// free memory associated with this method's IR:
 	hcf.clear(hmethod);
-	sahcf.clear(hmethod);
+	if (sahcf!=null) sahcf.clear(hmethod);
     }
     
     public static void outputClassData(HClass hclass, PrintWriter out) 
@@ -416,6 +424,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    info("\t--- end TREE FORM (for DATA)---");
 	}		
 	
+	if (BACKEND==PRECISEC_BACKEND)
+	    ((harpoon.Backend.PreciseC.TreeToC)out).translate(data);
+
 	if (!PRE_REG_ALLOC && !LIVENESS_TEST && !REG_ALLOC && !HACKED_REG_ALLOC) continue;
 
 	if (data.getRootElement()==null) continue; // nothing to do here.
