@@ -62,7 +62,7 @@ public abstract class Scheduler {
      */
     public static Scheduler getDefaultScheduler() {
 	if (defaultScheduler == null) {
-	    setDefaultScheduler(DebugScheduler.instance());
+	    setDefaultScheduler(NativeScheduler.instance());
 	    return getDefaultScheduler();
 	}
 	return defaultScheduler;
