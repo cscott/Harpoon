@@ -7,41 +7,77 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.FileInputStream;
 import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Vector;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
 
 import java.io.IOException;
 import java.io.FileNotFoundException;
 
+import harpoon.Util.Util;
 /** 
  * Quick and dirty class file loader.
  * Looks through CLASSPATH to find the class.  Understands .jar and .zip
  * files.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.1 1998-11-25 03:24:48 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.2 1998-12-02 00:52:18 cananian Exp $
  */
 public abstract class Loader {
-  /** Return an enumeration of zipfiles in the CLASSPATH that may be
-   *  candidates for preloading. */
-  public static Enumeration preloadable() {
-    final Enumeration e = classpaths();
-    return new Enumeration() {
-      String path = null;
-      private void adv() { 
-	while (path==null && e.hasMoreElements()) {
-	  String p = (String) e.nextElement();
-	  if (p.toLowerCase().endsWith(".zip") ||
-	      p.toLowerCase().endsWith(".jar")) 
-	    path = p;
-	}
-      }
-      public boolean hasMoreElements() { adv(); return (path!=null); }
-      public Object  nextElement() { 
-	adv(); String r=path; path=null; return r;
-      }
-    };
+  static abstract class ClasspathElement {
+    /** Open a stream to read the given resource, or return null if
+     *  resource cannot be found. */
+    abstract InputStream getResourceAsStream(String resourcename);
   }
+  /** A .zip or .jar file in the CLASSPATH. */
+  static class ZipFileElement extends ClasspathElement {
+    ZipFile zf;
+    ZipFileElement(ZipFile zf) { this.zf = zf; }
+    InputStream getResourceAsStream(String name) {
+      try { // look for name in zipfile, return null if something goes wrong.
+	ZipEntry ze = zf.getEntry(name);
+	return (ze==null)?null:zf.getInputStream(ze);
+      } catch (IOException e) { return null; }
+    }
+    /** Close the zipfile when this object is garbage-collected. */
+    protected void finalize() throws Throwable {
+	try { zf.close(); } catch (IOException e) { }
+	super.finalize();
+    }
+  }
+  /** A regular path string in the CLASSPATH. */
+  static class PathElement extends ClasspathElement {
+    String path;
+    PathElement(String path) { this.path = path; }
+    InputStream getResourceAsStream(String name) {
+      try { // try to open the file, starting from path.
+	File f = new File(path, name);
+	return new FileInputStream(name);
+      } catch (FileNotFoundException e) {
+	return null; // if anything goes wrong, return null.
+      }
+    }
+  }
+
+  /** Static vector of ClasspathElements corresponding to CLASSPATH entries. */
+  static final Vector classpathVector = new Vector();
+  static { // initialize classpathVector.
+    Hashtable duplicates = new Hashtable(); // don't add duplicates.
+    for (Enumeration e = classpaths(); e.hasMoreElements(); ) {
+      String path = (String) e.nextElement();
+      if (duplicates.containsKey(path)) continue; // skip duplicate.
+      else duplicates.put(path, path);
+      if (path.toLowerCase().endsWith(".zip") ||
+	  path.toLowerCase().endsWith(".jar"))
+	try {
+	  classpathVector.addElement(new ZipFileElement(new ZipFile(path)));
+	} catch (IOException ex) { /* skip this zip file, then. */ }
+      else
+	classpathVector.addElement(new PathElement(path));
+    }
+  }
+
   /** Enumerate the components of the system CLASSPATH. */
   public static Enumeration classpaths() {
     String classpath = System.getProperty("java.class.path");
@@ -66,8 +102,8 @@ public abstract class Loader {
     };
   }
 
-
   public static String classToResource(String classname) {
+    Util.assert(classname.indexOf('/')==-1); // should have '.' separators.
     String filesep   = System.getProperty("file.separator");
     // Swap all '.' for '/' & append ".class"
     return classname.replace('.', filesep.charAt(0)) + ".class";
@@ -77,60 +113,16 @@ public abstract class Loader {
    * @param name The filename of the resource to locate.
    */
   public static InputStream getResourceAsStream(String name) {
-    for (Enumeration e = classpaths(); e.hasMoreElements(); ) {
-      String path = (String) e.nextElement();
-      
-      InputStream is = getResourceAsStream(path, name);
+    for (Enumeration e = classpathVector.elements(); e.hasMoreElements(); ) {
+      ClasspathElement cpe = (ClasspathElement) e.nextElement();
+      InputStream is = cpe.getResourceAsStream(name);
       if (is!=null) return is; // return stream if found.
     }
     // Couldn't find resource.
     return null;
   }
-
-  /** Attempt to open resource given section of CLASSPATH and resource name. */
-  static InputStream getResourceAsStream(String path, String name) {
-    // special case .zip and .jar files.
-    if (path.toLowerCase().endsWith(".zip") ||
-	path.toLowerCase().endsWith(".jar")) {
-      try {
-	return getResourceAsStream(new ZipFile(path), name);
-      } catch (IOException e) {
-	return null;
-      }
-    } else return getResourceAsStream(new File(path, name));
-  }
-
-  /** Open a resource in a zipfile. */
-  static InputStream getResourceAsStream(final ZipFile zf, String name) {
-    try {
-      ZipEntry ze = zf.getEntry(name);
-      if (ze==null) throw new IOException(); // close zf and return null.
-      final InputStream is = zf.getInputStream(ze);
-      return new InputStream() {
-	public int read() throws IOException { return is.read(); }
-	public int read(byte b[]) throws IOException { return is.read(b); }
-	public int read(byte b[], int off, int len) throws IOException
-	{ return is.read(b, off, len); }
-	public long skip(long n) throws IOException { return is.skip(n); }
-	public int available() throws IOException { return is.available(); }
-	public void close() throws IOException 
-	{ is.close(); /* THIS IS THE IMPORTANT PART: */ zf.close(); }
-	public void mark(int readlimit) { is.mark(readlimit); }
-	public void reset() throws IOException { is.reset(); }
-	public boolean markSupported() { return is.markSupported(); }
-      };
-    } catch (IOException e) {
-      try { zf.close(); } catch (IOException ee) { }
-      return null;
-    }
-  }
-  
-  /** Open a resource in a file. */
-  static InputStream getResourceAsStream(File name) {
-    try {
-      return new FileInputStream(name);
-    } catch (FileNotFoundException e) {
-      return null;
-    }
-  }
 }
+// set emacs indentation style.
+// Local Variables:
+// c-basic-offset:2
+// End:

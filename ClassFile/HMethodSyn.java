@@ -15,7 +15,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.6 1998-10-21 21:50:24 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.6.2.1 1998-12-02 00:52:18 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -43,6 +43,9 @@ public class HMethodSyn extends HMethod {
     this.exceptionTypes = template.getExceptionTypes();
     this.isSynthetic = template.isSynthetic();
     parent.addDeclaredMethod(this);
+
+    // generate bytecode representation, in case it is demand-driven
+    template.getCode("bytecode");
 
     // clone all code representations.
     for (Enumeration e = template.codetable.keys(); e.hasMoreElements(); ) {
