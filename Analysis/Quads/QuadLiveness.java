@@ -10,6 +10,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.CALL;
 import harpoon.Util.WorkSet;
+import harpoon.Temp.Temp;
 
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -21,7 +22,7 @@ import java.util.Set;
  * <code>QuadLiveness</code> if you have changed the <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: QuadLiveness.java,v 1.1.2.2 1999-11-12 05:18:41 kkz Exp $
+ * @version $Id: QuadLiveness.java,v 1.1.2.3 1999-12-15 22:30:13 bdemsky Exp $
  */
 public class QuadLiveness extends Liveness {
     final Hashtable livein;
@@ -47,7 +48,15 @@ public class QuadLiveness extends Liveness {
     public Set getLiveIn(HCodeElement hce) {
 	return (Set)this.livein.get((Quad)hce);
     }
+    /** Same as getLiveIn, but returns array of <code>Temp</code>s.**/
 
+    public Temp[] getLiveInArray(HCodeElement hce) {
+	Object[] array=((Set)this.livein.get((Quad) hce)).toArray();
+	Temp[] retval=new Temp[array.length];
+	for (int i=0;i<array.length;i++)
+	    retval[i]=(Temp)array[i];
+	return retval;
+    }
     /** Returns the <code>Set</code> of <code>Temp</code>s 
      *  that are live-out at the <code>HCodeElement</code>. 
      *  Requires that the <code>HCodeElement</code> be in 
@@ -56,6 +65,15 @@ public class QuadLiveness extends Liveness {
      */
     public Set getLiveOut(HCodeElement hce) {
 	return (Set)this.liveout.get((Quad)hce);
+    }
+
+    /** Same as getLiveOut, but returns array of <code>Temp</code>s.**/
+    public Temp[] getLiveOutArray(HCodeElement hce) {
+	Object[] array=((Set)this.liveout.get((Quad) hce)).toArray();
+	Temp[] retval=new Temp[array.length];
+	for (int i=0;i<array.length;i++)
+	    retval[i]=(Temp)array[i];
+	return retval;
     }
 
     private Hashtable[] analyze() {
