@@ -17,8 +17,9 @@
 #include <pthread.h>    /* for mutex ops */
 #endif
 
+#include "javaio.h" /* for getfd/setfd */
+
 static jfieldID fdObjID = 0; /* The field ID of fd in class FileInputStream */
-static jfieldID fdID    = 0; /* The field ID of fd in class FileDescriptor */
 static jclass IOExcCls  = 0; /* The java/io/IOException class object */
 static int inited = 0; /* whether the above variables have been initialized */
 #ifdef WITH_HEAVY_THREADS
@@ -26,7 +27,7 @@ static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 static int initializeFIS(JNIEnv *env) {
-    jclass FISCls, FDCls;
+    jclass FISCls;
 
 #ifdef WITH_HEAVY_THREADS
     pthread_mutex_lock(&init_mutex);
@@ -37,10 +38,6 @@ static int initializeFIS(JNIEnv *env) {
     FISCls  = (*env)->FindClass(env, "java/io/FileInputStream");
     if ((*env)->ExceptionOccurred(env)) goto done;
     fdObjID = (*env)->GetFieldID(env, FISCls, "fd","Ljava/io/FileDescriptor;");
-    if ((*env)->ExceptionOccurred(env)) goto done;
-    FDCls   = (*env)->FindClass(env, "java/io/FileDescriptor");
-    if ((*env)->ExceptionOccurred(env)) goto done;
-    fdID    = (*env)->GetFieldID(env, FDCls, "fd", "I");
     if ((*env)->ExceptionOccurred(env)) goto done;
     IOExcCls = (*env)->FindClass(env, "java/io/IOException");
     if ((*env)->ExceptionOccurred(env)) goto done;
@@ -73,7 +70,7 @@ JNIEXPORT void JNICALL Java_java_io_FileInputStream_open
     fd    = open(cstr, O_RDONLY|O_BINARY);
     (*env)->ReleaseStringUTFChars(env, jstr, cstr);
     fdObj = (*env)->GetObjectField(env, obj, fdObjID);
-    (*env)->SetIntField(env, fdObj, fdID, fd);
+    Java_java_io_FileDescriptor_setfd(env, fdObj, fd);
 
     /* Check for error condition */
     if (fd==-1)
@@ -96,7 +93,7 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_read
     if (!inited && !initializeFIS(env)) return 0;/* exception occurred; bail */
 
     fdObj    = (*env)->GetObjectField(env, obj, fdObjID);
-    fd       = (*env)->GetIntField(env, fdObj, fdID);
+    fd       = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
     result = read(fd, (void*)buf, 1);
 
@@ -128,7 +125,7 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_readBytes
     if (len==0) return 0; /* don't even try to read anything. */
 
     fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
-    fd     = (*env)->GetIntField(env, fdObj, fdID);
+    fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
     
     result = read(fd, (void*)buf, len);
 
@@ -157,9 +154,9 @@ JNIEXPORT void JNICALL Java_java_io_FileInputStream_close
     if (!inited && !initializeFIS(env)) return; /* exception occurred; bail */
 
     fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
-    fd     = (*env)->GetIntField(env, fdObj, fdID);
+    fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
     result = close(fd);
-    (*env)->SetIntField(env, fdObj, fdID, -1);
+    Java_java_io_FileDescriptor_setfd(env, fdObj, -1);
 
     if (result==-1)
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
@@ -181,7 +178,7 @@ JNIEXPORT jlong JNICALL Java_java_io_FileInputStream_skip
     if (!inited && !initializeFIS(env)) return 0;/* exception occurred; bail */
 
     fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
-    fd     = (*env)->GetIntField(env, fdObj, fdID);
+    fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
     /* Get original offset, then reposition. */
     if ((orig = lseek(fd,0,SEEK_CUR)) == -1 ||
@@ -209,7 +206,7 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_available
     if (!inited && !initializeFIS(env)) return 0;/* exception occurred; bail */
 
     fdObj = (*env)->GetObjectField(env, obj, fdObjID);
-    fd    = (*env)->GetIntField(env, fdObj, fdID);
+    fd    = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
     if ((orig = lseek(fd, 0, SEEK_CUR)) == -1) {
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));

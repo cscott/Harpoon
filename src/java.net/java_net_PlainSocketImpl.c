@@ -14,11 +14,12 @@
 #include <pthread.h>    /* for mutex ops */
 #endif
 
+#include "../java.io/javaio.h" /* for getfd/setfd */
+
 static jfieldID SI_fdObjID = 0; /* The field ID of SocketImpl.fd */
 static jfieldID SI_addrID  = 0; /* The field ID of SocketImpl.address */
 static jfieldID SI_portID  = 0; /* The field ID of SocketImpl.port */
 static jfieldID SI_localportID = 0; /* The field ID of SocketImpl.localport */
-static jfieldID FD_fdID    = 0; /* The field ID of FileDescriptor.fd */
 static jfieldID IA_addrID  = 0; /* The field ID of InetAddress.address */
 static jfieldID IA_familyID= 0; /* The field ID of InetAddress.family */
 static jclass IOExcCls  = 0; /* The java/io/IOException class object */
@@ -30,7 +31,7 @@ static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 static int initializePSI(JNIEnv *env) {
-    jclass PSICls, FDCls, IACls;
+    jclass PSICls, IACls;
 
 #ifdef WITH_HEAVY_THREADS
     pthread_mutex_lock(&init_mutex);
@@ -55,10 +56,6 @@ static int initializePSI(JNIEnv *env) {
     IA_addrID  = (*env)->GetFieldID(env, IACls, "address", "I");
     if ((*env)->ExceptionOccurred(env)) goto done;
     IA_familyID= (*env)->GetFieldID(env, IACls, "family", "I");
-    if ((*env)->ExceptionOccurred(env)) goto done;
-    FDCls   = (*env)->FindClass(env, "java/io/FileDescriptor");
-    if ((*env)->ExceptionOccurred(env)) goto done;
-    FD_fdID    = (*env)->GetFieldID(env, FDCls, "fd", "I");
     if ((*env)->ExceptionOccurred(env)) goto done;
     IOExcCls = (*env)->FindClass(env, "java/io/IOException");
     if ((*env)->ExceptionOccurred(env)) goto done;
@@ -99,7 +96,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketCreate
 
     fd = socket(AF_INET, isStream ? SOCK_STREAM : SOCK_DGRAM, 0);
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
-    (*env)->SetIntField(env, fdObj, FD_fdID, fd);
+    Java_java_io_FileDescriptor_setfd(env, fdObj, fd);
 
     /* Check for error condition */
     if (fd==-1)
@@ -126,7 +123,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketConnect
     sa.sin_port        = htons(port);
 
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
-    fd = (*env)->GetIntField(env, fdObj, FD_fdID);
+    fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
     rc = connect(fd, &sa, sizeof(sa));
 
@@ -157,7 +154,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketBind
     sa.sin_port        = htons(lport);
 
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
-    fd = (*env)->GetIntField(env, fdObj, FD_fdID);
+    fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
     rc = bind(fd, &sa, sizeof(sa));
 
@@ -180,7 +177,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketListen
 
     assert(inited);
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
-    fd = (*env)->GetIntField(env, fdObj, FD_fdID);
+    fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
     rc = listen(fd, backlog);
 
@@ -203,7 +200,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketAccept
 
     assert(inited);
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
-    fd = (*env)->GetIntField(env, fdObj, FD_fdID);
+    fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
     rc = accept(fd, &sa, &sa_size);
     /* Check for error condition */
@@ -214,7 +211,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketAccept
 
     /* fill in SocketImpl */
     fdObj = (*env)->GetObjectField(env, s, SI_fdObjID);
-    (*env)->SetIntField(env, fdObj, FD_fdID, rc);
+    Java_java_io_FileDescriptor_setfd(env, fdObj, rc);
     address = (*env)->GetObjectField(env, s, SI_addrID);
     (*env)->SetIntField(env, address, IA_familyID, sa.sin_family);
     (*env)->SetIntField(env, address, IA_addrID, ntohl(sa.sin_addr.s_addr));
@@ -249,7 +246,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketClose
 
     if (!inited && !initializePSI(env)) return; /* exception occurred; bail */
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
-    fd = (*env)->GetIntField(env, fdObj, FD_fdID);
+    fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
     rc = close(fd);
     if (rc<0)
@@ -286,7 +283,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketSetOption
     jobject fdObj; jclass cls;
     assert(inited);
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
-    fd = (*env)->GetIntField(env, fdObj, FD_fdID);
+    fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
     cls = (*env)->GetObjectClass(env, value);
     if (opt == jTCP_NODELAY) {
 	if (setsockopt(fd, SOL_TCP, TCP_NODELAY, &optval, sizeof(optval))==0)
@@ -337,7 +334,7 @@ JNIEXPORT jint JNICALL Java_java_net_PlainSocketImpl_socketGetOption
     jobject fdObj;
     assert(inited);
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
-    fd = (*env)->GetIntField(env, fdObj, FD_fdID);
+    fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
     if (opt == jTCP_NODELAY) {
 	optlen = sizeof(optval);
 	if (getsockopt(fd, SOL_TCP, TCP_NODELAY, &optval, &optlen) == 0)

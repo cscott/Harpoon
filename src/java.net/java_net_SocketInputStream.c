@@ -11,8 +11,9 @@
 #include <pthread.h>    /* for mutex ops */
 #endif
 
+#include "../java.io/javaio.h" /* for getfd/setfd */
+
 static jfieldID fdObjID = 0; /* The field ID of SocketInputStream.fd */
-static jfieldID fdID    = 0; /* The field ID of FileDescriptor.fd */
 static jclass IOExcCls  = 0; /* The java/io/IOException class object. */
 static int inited = 0; /* whether the above variables have been initialized */
 #ifdef WITH_HEAVY_THREADS
@@ -20,7 +21,7 @@ static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 static int initializeSIS(JNIEnv *env) {
-    jclass SISCls, FDCls;
+    jclass SISCls;
 
 #ifdef WITH_HEAVY_THREADS
     pthread_mutex_lock(&init_mutex);
@@ -31,10 +32,6 @@ static int initializeSIS(JNIEnv *env) {
     SISCls  = (*env)->FindClass(env, "java/net/SocketOutputStream");
     if ((*env)->ExceptionOccurred(env)) goto done;
     fdObjID = (*env)->GetFieldID(env, SISCls, "fd","Ljava/io/FileDescriptor;");
-    if ((*env)->ExceptionOccurred(env)) goto done;
-    FDCls   = (*env)->FindClass(env, "java/io/FileDescriptor");
-    if ((*env)->ExceptionOccurred(env)) goto done;
-    fdID    = (*env)->GetFieldID(env, FDCls, "fd", "I");
     if ((*env)->ExceptionOccurred(env)) goto done;
     IOExcCls = (*env)->FindClass(env, "java/io/IOException");
     if ((*env)->ExceptionOccurred(env)) goto done;
@@ -67,7 +64,7 @@ JNIEXPORT jint JNICALL Java_java_net_SocketInputStream_socketRead
     if (len==0) return 0; /* don't even try to read anything. */
 
     fdObj  = (*env)->GetObjectField(env, _this, fdObjID);
-    fd     = (*env)->GetIntField(env, fdObj, fdID);
+    fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
     
     result = read(fd, (void*)buf, len);
 

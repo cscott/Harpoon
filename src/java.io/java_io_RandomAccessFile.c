@@ -13,8 +13,9 @@
 #include <pthread.h>
 #endif
 
+#include "javaio.h" /* for getfd/setfd */
+
 static jfieldID fdObjID = 0; /* The field ID of fd in class RandomAccessFile */
-static jfieldID fdID    = 0; /* The field ID of fd in class FileDescriptor */
 static jclass IOExcCls  = 0; /* The java/io/IOException class object */
 static int inited = 0; /* whether the above variables have been initialized */
 #ifdef WITH_HEAVY_THREADS
@@ -22,7 +23,7 @@ static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 int initializeRAF(JNIEnv *env) {
-    jclass RAFCls, FDCls;
+    jclass RAFCls;
 
 #ifdef WITH_HEAVY_THREADS
     pthread_mutex_lock(&init_mutex);
@@ -33,10 +34,6 @@ int initializeRAF(JNIEnv *env) {
     RAFCls  = (*env)->FindClass(env, "java/io/RandomAccessFile");
     if ((*env)->ExceptionOccurred(env)) return 0;
     fdObjID = (*env)->GetFieldID(env, RAFCls, "fd","Ljava/io/FileDescriptor;");
-    if ((*env)->ExceptionOccurred(env)) return 0;
-    FDCls   = (*env)->FindClass(env, "java/io/FileDescriptor");
-    if ((*env)->ExceptionOccurred(env)) return 0;
-    fdID    = (*env)->GetFieldID(env, FDCls, "fd", "I");
     if ((*env)->ExceptionOccurred(env)) return 0;
     IOExcCls = (*env)->FindClass(env, "java/io/IOException");
     if ((*env)->ExceptionOccurred(env)) return 0;
@@ -69,7 +66,7 @@ JNIEXPORT void JNICALL Java_java_io_RandomAccessFile_open
 	      (writeable==JNI_TRUE?O_RDWR:O_RDONLY), 0666);
     (*env)->ReleaseStringUTFChars(env, name, cstr);
     fdObj = (*env)->GetObjectField(env, objRAF, fdObjID);
-    (*env)->SetIntField(env, fdObj, fdID, fd);
+    Java_java_io_FileDescriptor_setfd(env, fdObj, fd);
 
     /* Check for error condition. */
     if (fd==-1)
@@ -90,7 +87,7 @@ JNIEXPORT jint JNICALL Java_java_io_RandomAccessFile_read
     assert(inited);
 
     fdObj    = (*env)->GetObjectField(env, objRAF, fdObjID);
-    fd       = (*env)->GetIntField(env, fdObj, fdID);
+    fd       = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
     result = read(fd, (void*)buf, 1);
 
@@ -119,7 +116,7 @@ JNIEXPORT jint JNICALL Java_java_io_RandomAccessFile_readBytes
     if (len==0) return 0; /* don't even try to read anything. */
 
     fdObj  = (*env)->GetObjectField(env, objRAF, fdObjID);
-    fd     = (*env)->GetIntField(env, fdObj, fdID);
+    fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
     
     result = read(fd, (void*)buf, len);
 
@@ -148,7 +145,7 @@ JNIEXPORT void JNICALL Java_java_io_RandomAccessFile_write
     assert(inited);
 
     fdObj    = (*env)->GetObjectField(env, objRAF, fdObjID);
-    fd       = (*env)->GetIntField(env, fdObj, fdID);
+    fd       = Java_java_io_FileDescriptor_getfd(env, fdObj);
     buf[0]   = (unsigned char)i;
 
     result = write(fd, (void*)buf, 1);
@@ -173,7 +170,7 @@ JNIEXPORT void JNICALL Java_java_io_RandomAccessFile_writeBytes
     assert(inited);
 
     fdObj  = (*env)->GetObjectField(env, objRAF, fdObjID);
-    fd     = (*env)->GetIntField(env, fdObj, fdID);
+    fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
     (*env)->GetByteArrayRegion(env, ba, start, len, buf); 
     if ((*env)->ExceptionOccurred(env)) return; /* bail */
 
@@ -207,7 +204,7 @@ JNIEXPORT jlong JNICALL Java_java_io_RandomAccessFile_getFilePointer
     assert(inited);
 
     fdObj  = (*env)->GetObjectField(env, objRAF, fdObjID);
-    fd     = (*env)->GetIntField(env, fdObj, fdID);
+    fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
     result = lseek(fd, 0, SEEK_CUR);
 
     if (result==(off_t)-1)
@@ -230,7 +227,7 @@ JNIEXPORT void JNICALL Java_java_io_RandomAccessFile_seek
     assert(inited);
 
     fdObj  = (*env)->GetObjectField(env, objRAF, fdObjID);
-    fd     = (*env)->GetIntField(env, fdObj, fdID);
+    fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
     result = lseek(fd, pos, SEEK_SET);
 
     if (result==(off_t)-1)
@@ -253,7 +250,7 @@ JNIEXPORT jlong JNICALL Java_java_io_RandomAccessFile_length
     assert(inited);
 
     fdObj  = (*env)->GetObjectField(env, objRAF, fdObjID);
-    fd     = (*env)->GetIntField(env, fdObj, fdID);
+    fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
     curpos = lseek(fd, 0, SEEK_CUR);
     result = lseek(fd, 0, SEEK_END);
     if (curpos!=(off_t)-1)
@@ -278,9 +275,9 @@ JNIEXPORT void JNICALL Java_java_io_RandomAccessFile_close
     assert(inited);
 
     fdObj  = (*env)->GetObjectField(env, objRAF, fdObjID);
-    fd     = (*env)->GetIntField(env, fdObj, fdID);
+    fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
     result = close(fd);
-    (*env)->SetIntField(env, fdObj, fdID, -1);
+    Java_java_io_FileDescriptor_setfd(env, fdObj, -1);
 
     if (result==-1)
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
