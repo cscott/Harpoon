@@ -31,7 +31,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.86 1998-10-12 04:11:01 cananian Exp $
+ * @version $Id: Translate.java,v 1.87 1998-10-14 02:02:00 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -1565,10 +1565,10 @@ class Translate  { // not public.
 		    // make renaming move statements.
 		    Quad Q = q2; int W = 1;
 		    for (int j=0; j < phiState.stackSize; j++) {
-			if (phiState.stack(i) == null ||
-			    phiState.stack(i) == ns.stack(i)) continue;
+			if (phiState.stack(j) == null ||
+			    phiState.stack(j) == ns.stack(j)) continue;
 			Quad q3 = new MOVE(ts.in,
-					   phiState.stack(i), ns.stack(i));
+					   phiState.stack(j), ns.stack(j));
 			Quad.addEdge(Q, W, q3, 0);
 			Q = q3; W = 0;
 		    }
