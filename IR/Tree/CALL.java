@@ -11,8 +11,10 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.9 1999-02-24 01:18:53 andyb Exp $
- * @see harpoon.IR.Quads.CALL, INVOCATION, NATIVECALL
+ * @version $Id: CALL.java,v 1.1.2.10 1999-06-23 22:53:26 pnkfelix Exp $
+ * @see harpoon.IR.Quads.CALL
+ * @see CALL
+ * @see NATIVECALL
  */
 public class CALL extends INVOCATION {
     public CALL(TreeFactory tf, HCodeElement source,

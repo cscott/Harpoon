@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.36 1999-06-18 18:27:25 pnkfelix Exp $
+# $Id: GNUmakefile,v 1.61.2.37 1999-06-23 22:53:17 pnkfelix Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -18,10 +18,17 @@ UNMUNGE=bin/unmunge
 FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
-
+#JDKDOCLINK = http://java.sun.com/products/jdk/1.2/docs/api
+JDKDOCLINK = http://palmpilot.lcs.mit.edu/~pnkfelix/jdk-javadoc/java.sun.com/products/jdk/1.2/docs/api
 ifndef CURDIR   # make this file work with make version less than 3.77
 	CURDIR := $(shell pwd)
 endif
+
+# Add "-link" to jdk's javadoc if we are using a javadoc that supports it
+JDOCFLAGS += \
+	$(shell if javadoc -help 2>&1 | grep -q -- -link; \
+	then echo -link $(JDKDOCLINK) ; fi)
+
 SUPPORT := Support/Lex.jar Support/CUP.jar Support/collections.jar
 # filter out collections.jar if we don't need it.
 SUPPORTC:= $(filter-out \
@@ -195,14 +202,16 @@ doc:	doc/TIMESTAMP
 doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	make doc-clean
 	mkdir doc
-	cd doc; ln -s .. harpoon ; ln -s .. silicon ; ln -s ../Contrib gnu
-	cd doc; ${JDOC} ${JDOCFLAGS} -d . \
+	$(RM) -rf doc-link
+	mkdir doc-link
+	cd doc-link; ln -s .. harpoon ; ln -s .. silicon ; ln -s ../Contrib gnu
+	cd doc-link; ${JDOC} ${JDOCFLAGS} -d ../doc \
 		$(subst harpoon.Contrib,gnu, \
 		$(foreach dir, $(filter-out Test, \
 			  $(filter-out JavaChip,$(NONEMPTYPKGS))), \
 			  harpoon.$(subst /,.,$(dir))) silicon.JavaChip) | \
 		grep -v "^@see warning:"
-	$(RM) doc/harpoon doc/silicon
+	$(RM) -r doc-link
 	$(MUNGE) doc | \
 	  sed -e 's/<\([a-z]\+\)@\([a-z.]\+\).edu>/\&lt;\1@\2.edu\&gt;/g' \
 	      -e 's/<dd> "The,/<dd> /g' -e 's/<body>/<body bgcolor=white>/' | \

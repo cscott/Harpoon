@@ -15,7 +15,7 @@ import java.util.Enumeration;
 /**
  * 
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
- * @version 
+ * @version $
  */
 
 public class WGNode {

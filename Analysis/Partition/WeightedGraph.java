@@ -15,7 +15,7 @@ import java.util.Hashtable;
 /**
  * 
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
- * @version 
+ * @version $
  */
 
 public class WeightedGraph {

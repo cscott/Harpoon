@@ -21,7 +21,7 @@ import java.io.FileReader;
 /**
  * 
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
- * @version 
+ * @version $
  */
 
 public class Main  {

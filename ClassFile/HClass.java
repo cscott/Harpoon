@@ -30,7 +30,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.12 1999-06-22 19:49:10 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.13 1999-06-23 22:53:25 pnkfelix Exp $
  * @see harpoon.IR.RawClass.ClassFile
  */
 public abstract class HClass extends HPointer {
@@ -254,7 +254,7 @@ public abstract class HClass extends HPointer {
    * Returns an array of length 0 if the class or interface declares
    * no fields, or if this <code>HClass</code> object represents a
    * primitive type.
-   * @see "The Java Language Specification,, sections 8.2 and 8.3"
+   * @see <B></B>"The Java Language Specification, sections 8.2 and 8.3"
    * @see HField
    */
   public abstract HField[] getDeclaredFields();

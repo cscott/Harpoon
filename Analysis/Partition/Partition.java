@@ -15,7 +15,7 @@ import java.util.Vector;
 /**
  * 
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
- * @version 
+ * @version $
  */
 
 public class Partition {

@@ -9,6 +9,13 @@ package harpoon.Util;
 public final class BitString implements Cloneable, java.io.Serializable {
   private final static int BITS_PER_UNIT = 5;
   private final static int MASK = (1<<BITS_PER_UNIT)-1;
+
+  /**
+     @serial insert something here that "describes the meaning of the field and its
+             acceptable values" see <A
+	     HREF="http://java.sun.com/products/jdk/1.2/docs/guide/serialization/spec/serial-arch.doc6.html">
+	     Documenting Serializable Fields and Data for a Class</A>.
+  */
   private int bits[];
 
   /**

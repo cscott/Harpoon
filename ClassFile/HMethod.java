@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.30.2.6 1999-06-18 01:48:04 cananian Exp $
+ * @version $Id: HMethod.java,v 1.30.2.7 1999-06-23 22:53:26 pnkfelix Exp $
  * @see HMember
  * @see HClass
  */
@@ -81,7 +81,7 @@ public abstract class HMethod implements HMember {
    *         if no factory for the <code>codetype</code> can be found.
    *         <code>null</code> is typically also returned for native methods.
    * @deprecated Obsolete.  Use <code>HCodeFactory</code>s instead.
-   * @see putCode
+   * @see HMethod#putCode
    */
   public HCode getCode(String codetype) {
     // Check the cache.
@@ -105,7 +105,7 @@ public abstract class HMethod implements HMember {
    * @param codeobj  an object representing the code, or <code>null</code>
    *                 to delete a previously existing representation.
    * @deprecated Obsolete.  Use <code>HCodeFactory</code>s instead.
-   * @see getCode
+   * @see HMethod#getCode
    * @see HCode#getName
    */
   public void putCode(HCode codeobj) {

@@ -11,8 +11,10 @@ import harpoon.Util.Util;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NATIVECALL.java,v 1.1.2.3 1999-02-24 01:18:54 andyb Exp $
- * @see harpoon.IR.Quads.CALL, INVOCATION, NATIVECALL
+ * @version $Id: NATIVECALL.java,v 1.1.2.4 1999-06-23 22:53:26 pnkfelix Exp $
+ * @see harpoon.IR.Quads.CALL
+ * @see CALL
+ * @see NATIVECALL
  */
 public class NATIVECALL extends INVOCATION {
     /** Constructor. */

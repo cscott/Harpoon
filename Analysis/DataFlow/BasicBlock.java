@@ -1,5 +1,20 @@
 package harpoon.Analysis.DataFlow;
 
+import harpoon.Util.Util;
+import harpoon.Util.IteratorEnumerator;
+import harpoon.Util.WorkSet;
+import harpoon.Util.Worklist;
+import harpoon.IR.Properties.HasEdges;
+import java.util.Map;
+import java.util.Hashtable;
+import java.util.Enumeration;
+import java.util.ListIterator;
+import java.util.NoSuchElementException;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collections;
+
 /**
    BasicBlock collects a serial list of operations.  It is designed to
    abstract away specific operation and allow the compiler to focus on
@@ -22,22 +37,6 @@ package harpoon.Analysis.DataFlow;
  * @author  Felix Klock (pnkfelix@mit.edu) 
  * @version $id$
 */
-
-import harpoon.Util.Util;
-import harpoon.Util.IteratorEnumerator;
-import harpoon.Util.WorkSet;
-import harpoon.Util.Worklist;
-import harpoon.IR.Properties.HasEdges;
-import java.util.Map;
-import java.util.Hashtable;
-import java.util.Enumeration;
-import java.util.ListIterator;
-import java.util.NoSuchElementException;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
-
 public class BasicBlock {
     
     static final boolean DEBUG = false;

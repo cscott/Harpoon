@@ -16,8 +16,10 @@ import java.util.Enumeration;
  * 
  * @author  Duncan Bryce, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.2 1999-04-05 21:50:44 duncan Exp $
- * @see harpoon.IR.Quads.CALL, CALL, NATIVECALL
+ * @version $Id: INVOCATION.java,v 1.1.2.3 1999-06-23 22:53:26 pnkfelix Exp $
+ * @see harpoon.IR.Quads.CALL
+ * @see CALL
+ * @see NATIVECALL
  */
 public abstract class INVOCATION extends Stm {
     /** A subexpression which evaluates to the function reference to invoke.*/
