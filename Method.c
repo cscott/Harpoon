@@ -116,9 +116,41 @@ void entermethod(struct heap_state * heap, struct hashtable * ht) {
   /* Finished with role instantiated method.*/
 
   /* Assign roles to all objects that might have changed*/
-  while(!setisempty(heap->changedset)) {
-    struct heap_object *ho=removeobject(heap->changedset,NULL);
-    free(findrolestring(heap, dommap, ho,0));
+  {
+    struct ositerator *it=getIterator(heap->changedset);
+    while(hasNext(it)) {
+      struct heap_object *ho=nextobject(it);
+      free(findrolestring(heap, dommap, ho,1));
+    }
+    freeIterator(it);
+
+    while(!setisempty(heap->changedset)) {
+      struct heap_object *ho=removeobject(heap->changedset, NULL);
+      struct fieldlist *fl=ho->fl;
+      struct fieldlist *rfl=ho->reversefield;
+      struct arraylist *al=ho->al;
+      struct arraylist *ral=ho->reversearray;
+
+      while(fl!=NULL) {
+	addrolerelation(heap, fl->src, fl->fieldname, fl->object);
+	fl=fl->next;
+      }
+
+      while(rfl!=NULL) {
+	addrolerelation(heap, rfl->src, rfl->fieldname, rfl->object);
+	rfl=rfl->dstnext;
+      }
+
+      while(al!=NULL) {
+	addrolerelation(heap, al->src, getfieldc(heap->namer,al->src->class,"[]", NULL),al->object);
+	al=al->next;
+      }
+
+      while(ral!=NULL) {
+	addrolerelation(heap, ral->src, getfieldc(heap->namer,ral->src->class,"[]", NULL),ral->object);
+	ral=ral->dstnext;
+      }
+    }
   }
 
   /* increment call counter */
