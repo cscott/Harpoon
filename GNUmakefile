@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.45 1999-06-25 08:51:21 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.46 1999-06-29 06:37:26 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -48,15 +48,19 @@ CVS_REVISION=$(patsubst %,-r %,$(CVS_TAG))
 
 BUILD_IGNORE := $(strip $(shell if [ -f .ignore ]; then cat .ignore; fi))
 
-MACHINE_SRC := Tools/PatMat/Lexer.jlex Tools/PatMat/Parser.cup
-MACHINE_GEN := Tools/PatMat/Lexer.java Tools/PatMat/Parser.java \
-	     Tools/PatMat/Sym.java
-
 ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
 		$(patsubst %,egrep -v % |,$(BUILD_IGNORE)) \
 		egrep -v "^[.]/(harpoon|silicon|gnu|doc|NOTES|bin|jdb)" | \
 		egrep -v "^[.]/java_cup" | \
 		sed -e "s|^[.]/*||")
+
+MACHINE_SRC := Tools/PatMat/Lexer.jlex Tools/PatMat/Parser.cup
+MACHINE_GEN := Tools/PatMat/Lexer.java Tools/PatMat/Parser.java \
+	     Tools/PatMat/Sym.java
+
+CGSPECS:=$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.spec))
+MACHINE_SRC+=$(CGSPECS)
+
 ALLSOURCE :=  $(MACHINE_GEN) $(filter-out $(MACHINE_GEN), \
 		$(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java))))
