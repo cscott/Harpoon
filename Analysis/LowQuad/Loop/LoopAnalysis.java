@@ -17,24 +17,29 @@ import harpoon.IR.Properties.HasEdges;
 import harpoon.Analysis.LowQuad.Loop.AllInductions;
 import harpoon.Analysis.LowQuad.Loop.BasicInductions;
 import harpoon.Analysis.LowQuad.Loop.LoopInvariance;
-
+import harpoon.Analysis.Maps.AllInductionsMap;
+import harpoon.Analysis.Maps.BasicInductionsMap;
+import harpoon.Analysis.Maps.InvariantsMap;
 
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.Iterator;
+
 /**
- * <code>LoopAnalysis</code> implements 
+ * <code>LoopAnalysis</code> implements <code>AllInductionsMap</code>,
+ * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.4 1999-06-29 19:05:15 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.5 1999-06-29 20:47:48 bdemsky Exp $
  */
 
-public class LoopAnalysis {
+public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
 
-    HCode hc;
-    LoopFinder loopf;
+    HCode lasthc;
     TempMap tm;
+    HashMap aimap, bimap, invmap;
+    LoopFinder rtloop;
 
     /** Creates a <code>Loop</code>. */
     public LoopAnalysis(TempMap tm) {
@@ -47,9 +52,26 @@ public class LoopAnalysis {
     /*---------------------------*/
     // public information accessor methods.
 
-    public void test(HCode hc) {
+    public Loops rootloop(HCode hc) {
 	analyze(hc);
+	return rtloop;
     }
+
+    public Set allInductionsMap(HCode hc, Loops lp) {
+	analyze(hc);
+	return (Set) aimap.get(lp);
+    }
+
+    public Set basicInductionsMap(HCode hc, Loops lp) {
+	analyze(hc);
+	return (Set) bimap.get(lp);
+    }
+
+    public Set invariantsMap(HCode hc, Loops lp) {
+	analyze(hc);
+	return (Set) invmap.get(lp);
+    }
+
 
     /*---------------------------*/
     // Analysis code.
@@ -58,33 +80,48 @@ public class LoopAnalysis {
 
     /** Main analysis method. */
     void analyze(HCode hc) {
-	this.hc=hc;
-	loopf=new LoopFinder(hc);
-	printtree(loopf,"");
+	if (lasthc!=hc) {
+	    invmap=new HashMap();
+	    aimap=new HashMap();
+	    bimap=new HashMap();
+	    lasthc=hc;
+	    rtloop=new LoopFinder(hc);
+	    analyzetree(hc,rtloop,"");
+	}
     } // end analysis.
     
-    void printtree(Loops lp, String st) {
+    void analyzetree(HCode hc, Loops lp, String st) {
 	WorkSet kids=(WorkSet)lp.nestedLoops();
 	Iterator iterate=kids.iterator();
+
 	while (iterate.hasNext()) {
-	    printtree((Loops)iterate.next(),st+" ");
+	    analyzetree(hc, (Loops)iterate.next(),st+" ");
 	}
+
+
 	//Find loop invariants
 	WorkSet elements=(WorkSet)lp.loopIncelements();
 	LoopInvariance invar=new LoopInvariance(tm,hc);
-
 	WorkSet invariants=invar.invariants(elements);
 
 	//Find basic induction variables
+
 	BasicInductions binductor=new BasicInductions(tm,hc);
 	HashMap basicinduction=binductor.doInduction(lp,invariants);
 
+
+	//Find all induction variables
 	AllInductions ainductor=new AllInductions(tm,hc);
-	HashMap allInductions=ainductor.doAllInductions(lp, invariants, basicinduction);
+	HashMap allInductions=ainductor.doAllInductions(lp, invariants, basicinductions);
+
+	//Add to our maps
+	aimap.put(lp, allInductions);
+	bimap.put(lp, basicinductions);
+	invmap.put(lp,invar);
 
 
+	//Show the user everything
 	iterate=invariants.iterator();
-
 	System.out.println(st+"Invariants:");
 	while (iterate.hasNext()) {
 	    System.out.println(st+((Quad)iterate.next()).toString());
@@ -94,13 +131,13 @@ public class LoopAnalysis {
 	while (iterate.hasNext()) {
 	    System.out.println(st+((Quad)iterate.next()).toString());
 	}
-	iterate=(basicinduction.keySet()).iterator();
+	iterate=(basicinductions.keySet()).iterator();
 
 	System.out.println(st+"Basic induction variables:");
 	while (iterate.hasNext()) {
 	    Temp tmp=(Temp) iterate.next();
 	    System.out.println(st+tmp.toString());
-	    System.out.println(st+((Induction)basicinduction.get(tmp)).toString());
+	    System.out.println(st+((Induction)basicinductions.get(tmp)).toString());
 	}
 	iterate=(allInductions.keySet()).iterator();
 
