@@ -35,7 +35,7 @@ THex1base.tex: $(EX1FIG)
 	fig2dev -L latex -m 1.0 $< \
 	| sed -e '/begin{picture}/,/end{picture}/s/SetFigFont/MySetFigFont/g' \
 	      -e '/setlength{.unitlength}/r head.tex' > $@
-	echo '\renewcommand*{\figscale}{1.00}%' >> $@
+	echo '\renewcommand{\figscale}{1.00}%' >> $@
 	if grep -q '^\\gdef\\SetFigFont#1#2#3{%$$' $@; then \
 	  sed -e '/MySetFigFont/,/MyFixFigFont/s/\\SetFigFont/\\MyFixFigFont/' < $@ > $@.tmp; \
 	  mv -f $@.tmp $@; \
