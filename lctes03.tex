@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: lctes03.tex,v 1.20 2003-04-25 22:35:11 cananian Exp $
+% $Id: lctes03.tex,v 1.21 2003-04-25 23:36:00 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % lctes03.tex
 % Data Size Optimizations for Java Programs
@@ -708,10 +708,10 @@ analysis are also used when profiling mostly-constant fields, as described
 in the next section.
 %
 \subsection{Profiling Mostly-Constant Fields}
-\begin{table}[t]
+\begin{table*}[t]
 \centering\small
 \begin{tabular}{llrc}
-              &          &\bf field & \\
+%              &          &\bf field & \\
 \bf Benchmark &\bf field &\bf alloc'n &\bf \% zero \\ \hline
 compress   & Hashtable\$Entry.next & 7k & 49.7\% \\
            & String.offset & 3k & 90.9\% \\
@@ -732,10 +732,13 @@ jack       & String.offset & 7,269k & 100.0\% \\
            & Hashtable\$Enumerator.type & 5,164k & 100.0\% \\
 \end{tabular}
 \caption{Representative ``mostly-zero'' fields found in SPEC
-           benchmarks.  Allocation numbers represent the number of
-           dynamically allocated bytes directly due to the specified field.}
+           benchmarks.
+%  Allocation numbers represent the number of
+%           dynamically allocated bytes directly due to the specified
+%           field.
+}
 \label{tab:mostly-zero}
-\end{table}
+\end{table*}
 To inform the static specialization and field externalization
 transformations, we instrument a profiling build of the code
 to determine which fields are {\it mostly-constant}.  Our implementation
