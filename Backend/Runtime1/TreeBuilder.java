@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.33 2000-11-14 22:21:03 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.34 2001-01-21 01:26:54 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -133,7 +133,10 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	OBJ_CLAZ_OFF    = 0 * POINTER_SIZE;
 	OBJ_HASH_OFF    = OBJ_CLAZ_OFF + 1 * POINTER_SIZE;
 	OBJ_FZERO_OFF   = OBJ_HASH_OFF + 1 * POINTER_SIZE;
-	OBJ_ALENGTH_OFF = OBJ_FZERO_OFF;
+	OBJ_ALENGTH_OFF = OBJ_FZERO_OFF +
+	    // add (non-header) size of java.lang.Object, since arrays
+	    // inherit from it (allows us to add fields to Object)
+	    objectSize(linker.forName("java.lang.Object"));
 	OBJ_AZERO_OFF   = OBJ_ALENGTH_OFF + 1 * WORD_SIZE;
 	// layout of claz
 	CLAZ_INTERFACES_OFF = -1 * POINTER_SIZE;
@@ -279,8 +282,8 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		   new TEMP(tf, source, Type.INT, Tlen),
 		   // ...element size...
 		   new CONST(tf, source, elementSize)),
-		  // and add WORD_SIZE for length field.
-		  new CONST(tf, source, WORD_SIZE))))),
+		  // and add WORD_SIZE (and more) for length field (and others)
+		  new CONST(tf, source, OBJ_AZERO_OFF - OBJ_FZERO_OFF))))),
 	      new MOVE // now set length field of newly-created array.
 	      (tf, source,
 	       new MEM
