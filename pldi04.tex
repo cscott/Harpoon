@@ -1,34 +1,36 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.2 2003-11-09 20:21:11 cananian Exp $
+% $Id: pldi04.tex,v 1.3 2003-11-09 20:31:31 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass{acmconf}
-%\usepackage[section,plain]{algorithm}
-%\usepackage{amsthm} % proof environment
-%\usepackage{amstext} % the \text command for math mode (replaces \mbox)
+\documentclass[preprint]{acmconf}
+\usepackage{times}
+\usepackage{epsfig}
+\usepackage{supertech}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{hhline}
+\usepackage{dcolumn}
 \usepackage{varioref} % \vref command
-\usepackage{graphicx} % for eps figures
-\usepackage{color}
-\usepackage{comdef}
 \usepackage{support}
-\newcommand{\figscale}{1.0}
+
+% work around fig2dev wanting to add colors to .figures.
+\providecommand{\color}[2][rgb]{}
 
 %setup varioref package
 \renewcommand{\reftextbefore}{on the preceding page}\vrefwarning
-
-\newcommand{\mycomment}[1]{}
-\newcommand{\meet}{\ensuremath{\sqcap}}
 
 \renewcommand{\floatpagefraction}{0.8}
 \renewcommand{\topfraction}{0.25}
 
 \title{Efficient Software Transactions for Object-Oriented Languages}
 
-\author{C.~Scott~Ananian and Martin~Rinard \\
+\gdef\and{\hspace*{4em}}%Tight title with one line for authors
+\author{C.~Scott~Ananian \and Martin~Rinard \\
 Computer Science and Artificial Intelligence Laboratory\\
 Massachusetts Institute of Technology\\ 
 Cambridge, MA 02139 \\
-{\tt \{cananian, rinard\}@csail.mit.edu}
+\texttt{\{cananian,rinard\}@csail.mit.edu}
 }
+\special{papersize=8.5in,11in}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -56,7 +58,6 @@ Cambridge, MA 02139 \\
 
 %\renewcommand{\baselinestretch}{0.97}
 \begin{document}
-\bibliographystyle{plain}
 %
 \maketitle
 \support{This research was supported by DARPA/AFRL Contract F33615-00-C-1692.}
@@ -83,6 +84,7 @@ Cambridge, MA 02139 \\
 \section{Conclusions}
 
 \renewcommand{\baselinestretch}{1}
+\bibliographystyle{plain}
 \bibliography{xaction}
 
 %\appendix
