@@ -1,4 +1,4 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.2 2003-05-20 21:05:42 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.3 2003-05-22 00:19:53 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -160,8 +160,8 @@ the total allocated and live memory of the program.
 \newrgbcolor{fieldelim}{0 1 1}
 \newrgbcolor{headeropt}{1 0 1}
 
-\overlays{4}{
-\begin{slide}{How to compress objects}
+\overlays{4}{%
+\begin{slide}{How to compress objects} %
 
 Three broad techniques:
 %
@@ -201,10 +201,11 @@ of these in order, starting with\ldots
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
+\overlays{1}{% work around spacing bug in \overlays
 \begin{slide}{How to compress objects} % just the first one
 
 Three broad techniques:
-
+%
 \parbox[b]{2.5in}{%
 \begin{itemize}%
 \fieldcomp\renewcommand{\green}{\fieldcomp}% new bullet color
@@ -220,6 +221,7 @@ Three broad techniques:
 \hspace*{0.106in}\hspace*{0.261in}\includegraphics[scale=0.4]{Figures/Kontour/how-fieldcomp-bbox.eps}%
 }%
 \end{slide}
+}
 
 \begin{talknotes}
 \ldots field compression.
@@ -1457,10 +1459,10 @@ a small \emph{table-index} instead.
 %---------------------------------------------------------------------- SLIDE -
 \overlays{3}{
 \begin{slide}{Header optimizations:\\\small claz compression}
-\begin{itemstep}
-\item replace {\tt claz} pointer with a (smaller) table index.
-\item With co-operation of GC, works in dynamic environments.
-\item Many applications use less than 256 object types.
+\begin{itemstep}%
+\item replace {\tt claz} pointer with a (smaller) table index.%
+\item With co-operation of GC, works in dynamic environments.%
+\item Many applications use less than 256 object types.%
 \end{itemstep}
 \end{slide}
 }
