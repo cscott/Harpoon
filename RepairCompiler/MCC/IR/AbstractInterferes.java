@@ -1,4 +1,5 @@
 package MCC.IR;
+import java.util.*;
 
 class AbstractInterferes {
     static public boolean interferes(AbstractRepair ar, Rule r, boolean satisfy) {
@@ -189,6 +190,54 @@ class AbstractInterferes {
 	    return false; /* Could only satisfy this predicate */
 	  
 	return true;
+    }
+
+    static public boolean interferes(ScopeNode sn, DNFPredicate dp) {
+	if (!sn.getSatisfy()&&(sn.getDescriptor() instanceof SetDescriptor)) {
+	    Rule r=sn.getRule();
+	    Set target=r.getInclusion().getTargetDescriptors();
+	    boolean match=false;
+	    for(int i=0;i<r.numQuantifiers();i++) {
+		Quantifier q=r.getQuantifier(i);
+		if (q instanceof SetQuantifier) {
+		    SetQuantifier sq=(SetQuantifier) q;
+		    if (target.contains(sq.getSet())) {
+			match=true;
+			break;
+		    }
+		}
+	    }
+	    if (match&&
+		sn.getDescriptor()==dp.getPredicate().getDescriptor()&&
+		(dp.getPredicate() instanceof ExprPredicate)&&
+		(((ExprPredicate)dp.getPredicate()).getType()==ExprPredicate.SIZE)) {
+		boolean neg=dp.isNegated();
+		Opcode op=((ExprPredicate)dp.getPredicate()).getOp();
+		int size=((ExprPredicate)dp.getPredicate()).leftsize();
+		if (neg) {
+		    /* remove negation through opcode translation */
+		    if (op==Opcode.GT)
+			op=Opcode.LE;
+		    else if (op==Opcode.GE)
+			op=Opcode.LT;
+		    else if (op==Opcode.EQ)
+			op=Opcode.NE;
+		    else if (op==Opcode.NE)
+			op=Opcode.EQ;
+		    else if (op==Opcode.LT)
+			op=Opcode.GE;
+		    else if (op==Opcode.LE)
+			op=Opcode.GT;
+		}
+		if ((op==Opcode.GE)&&
+		    ((size==0)||(size==1)))
+		    return false;
+		if ((op==Opcode.GT)&&
+		    (size==0))
+		    return false;
+	    }
+	}
+	return interferes(sn.getDescriptor(), sn.getSatisfy(),dp);
     }
 
     static public boolean interferes(Descriptor des, boolean satisfy, DNFPredicate dp) {

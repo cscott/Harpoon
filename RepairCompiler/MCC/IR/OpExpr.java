@@ -8,6 +8,12 @@ public class OpExpr extends Expr {
     Expr right;
     Opcode opcode;
 
+    public void findmatch(Descriptor d, Set  s) {
+	left.findmatch(d,s);
+	if (right!=null)
+	    right.findmatch(d,s);
+    }
+
     public static boolean isInt(Expr e) {
 	if ((e instanceof IntegerLiteralExpr)||
 	    ((e instanceof OpExpr)&&(((OpExpr)e).getLeftExpr() instanceof IntegerLiteralExpr)))
@@ -168,38 +174,54 @@ public class OpExpr extends Expr {
 	if (left instanceof RelationExpr)
 	    return new int[] {AbstractRepair.MODIFYRELATION};
 	if (left instanceof SizeofExpr) {
+	    Opcode op=opcode;
+	    if (negated) {
+		/* remove negation through opcode translation */
+		if (op==Opcode.GT)
+		    op=Opcode.LE;
+		else if (op==Opcode.GE)
+		    op=Opcode.LT;
+		else if (op==Opcode.EQ)
+		    op=Opcode.NE;
+		else if (op==Opcode.NE)
+		    op=Opcode.EQ;
+		else if (op==Opcode.LT)
+		    op=Opcode.GE;
+		else if (op==Opcode.LE)
+		    op=Opcode.GT;
+	    }
+
+
+
 	    boolean isRelation=((SizeofExpr)left).setexpr instanceof ImageSetExpr;
 	    if (isRelation) {
-		if (opcode==Opcode.EQ)
+		if (op==Opcode.EQ) {
 		    if (((IntegerLiteralExpr)right).getValue()==0)
 			return new int[] {AbstractRepair.REMOVEFROMRELATION};
 		    else
 			return new int[] {AbstractRepair.ADDTORELATION,
-					      AbstractRepair.REMOVEFROMRELATION};
-		if (((opcode==Opcode.GE)&&!negated)||
-		    ((opcode==Opcode.LE)&&negated)) {
-		    if (((IntegerLiteralExpr)right).getValue()==0)
-			return new int[0];
-		    else
-			return new int[]{AbstractRepair.ADDTORELATION}; }
-		else
+					  AbstractRepair.REMOVEFROMRELATION};
+		} else if (op==Opcode.GE||op==Opcode.GT) {
+		    return new int[]{AbstractRepair.ADDTORELATION}; 
+		} else if (op==Opcode.LE||op==Opcode.LT) {
 		    return new int[]{AbstractRepair.REMOVEFROMRELATION};
+		} else if (op==Opcode.NE) {
+		    return new int[]{AbstractRepair.ADDTORELATION};
+		} else throw new Error();
 	    } else {
-		if (opcode==Opcode.EQ)
+		if (op==Opcode.EQ) {
 		    if (((IntegerLiteralExpr)right).getValue()==0)
 			return new int[] {AbstractRepair.REMOVEFROMSET};			
 		    else
 			return new int[] {AbstractRepair.ADDTOSET,
 					      AbstractRepair.REMOVEFROMSET};
-		
-		if (((opcode==Opcode.GE)&&!negated)||
-		    ((opcode==Opcode.LE)&&negated)) {
-		    if (((IntegerLiteralExpr)right).getValue()==0)
-			return new int[0];
-		    else
-			return new int[] {AbstractRepair.ADDTOSET}; }
-		else
+		} else if (op==Opcode.GE||op==Opcode.GT) {
+		    return new int[] {AbstractRepair.ADDTOSET}; 
+		} else if (op==Opcode.LE||op==Opcode.LT) {
 		    return new int[] {AbstractRepair.REMOVEFROMSET};
+		} else if (op==Opcode.NE) {
+		    return new int[] {AbstractRepair.ADDTOSET};
+		} else throw new Error();
 	    }
 	}
 	throw new Error("BAD");

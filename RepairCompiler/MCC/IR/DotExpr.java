@@ -12,6 +12,14 @@ public class DotExpr extends Expr {
     static boolean DOTYPECHECKS=false;
     static boolean DONULL=false;
 
+    public void findmatch(Descriptor d, Set s) {
+	if (d==fd)
+	    s.add(this);
+	left.findmatch(d,s);
+	if (index!=null)
+	    index.findmatch(d,s);
+    }
+
     public Set freeVars() {
 	Set lset=left.freeVars();
 	Set iset=null;

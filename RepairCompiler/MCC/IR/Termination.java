@@ -49,11 +49,13 @@ public class Termination {
 
 	HashSet superset=new HashSet();
 	superset.addAll(conjunctions);
+	HashSet closureset=new HashSet();
+	//	closureset.addAll(updatenodes);
 	//superset.addAll(abstractrepair);
 	//superset.addAll(updatenodes);
 	//superset.addAll(scopenodes);
 	//superset.addAll(consequencenodes);
-	GraphNode.computeclosure(superset,null);
+	GraphNode.computeclosure(superset,closureset);
 	try {
 	    GraphNode.DOTVisitor.visit(new FileOutputStream("graph.dot"),superset);
 	} catch (Exception e) {
@@ -69,11 +71,27 @@ public class Termination {
 	}
 	GraphAnalysis ga=new GraphAnalysis(this);
 	removedset=ga.doAnalysis();
+	if (removedset==null) {
+	    System.out.println("Can't generate terminating repair algorithm!");
+	    System.exit(-1);
+	}
 	System.out.println("Removing:");
 	for(Iterator it=removedset.iterator();it.hasNext();) {
 	    GraphNode gn=(GraphNode)it.next();
 	    System.out.println(gn.getTextLabel());
 	}
+
+	superset=new HashSet();
+	superset.addAll(conjunctions);
+	superset.removeAll(removedset);
+	GraphNode.computeclosure(superset,removedset);
+	try {
+	    GraphNode.DOTVisitor.visit(new FileOutputStream("graphfinal.dot"),superset);
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+
     }
     
     void generateconjunctionnodes() {
@@ -91,6 +109,40 @@ public class Termination {
 		    conjunctionmap.put(c,new HashSet());
 		((Set)conjunctionmap.get(c)).add(gn);
 		conjtonodemap.put(dnf.get(j),gn);
+	    }
+	    for(int j=0;j<c.numQuantifiers();j++) {
+		Quantifier q=c.getQuantifier(j);
+		if (q instanceof SetQuantifier) {
+		    SetQuantifier sq=(SetQuantifier)q;
+		    VarExpr ve=new VarExpr(sq.getVar());
+		    InclusionPredicate ip=new InclusionPredicate(ve,new SetExpr(sq.getSet()));
+		    DNFConstraint dconst=new DNFConstraint(ip);
+		    dconst=dconst.not();
+		    TermNode tn=new TermNode(c,dconst.get(0));
+		    GraphNode gn=new GraphNode("Conj"+i+"AQ"+j,
+					       "Conj ("+i+","+j+") "+dconst.get(0).name()
+					       ,tn);
+		    conjunctions.add(gn);
+		    if (!conjunctionmap.containsKey(c))
+			conjunctionmap.put(c,new HashSet());
+		    ((Set)conjunctionmap.get(c)).add(gn);
+		    conjtonodemap.put(dconst.get(0),gn);
+		} else if (q instanceof RelationQuantifier) {
+		    RelationQuantifier rq=(RelationQuantifier)q;
+		    VarExpr ve=new VarExpr(rq.y);
+		    InclusionPredicate ip=new InclusionPredicate(ve,new ImageSetExpr(rq.x,rq.getRelation()));
+		    DNFConstraint dconst=new DNFConstraint(ip);
+		    dconst=dconst.not();
+		    TermNode tn=new TermNode(c,dconst.get(0));
+		    GraphNode gn=new GraphNode("Conj"+i+"AQ"+j,
+					       "Conj ("+i+","+j+") "+dconst.get(0).name()
+					       ,tn);
+		    conjunctions.add(gn);
+		    if (!conjunctionmap.containsKey(c))
+			conjunctionmap.put(c,new HashSet());
+		    ((Set)conjunctionmap.get(c)).add(gn);
+		    conjtonodemap.put(dconst.get(0),gn);
+		}
 	    }
 	}
     }
@@ -166,7 +218,7 @@ public class Termination {
 		Constraint constr=tn2.getConstraint();
 		for(int i=0;i<conj.size();i++) {
 		    DNFPredicate dp=conj.get(i);
-		    if (AbstractInterferes.interferes(sn.getDescriptor(),sn.getSatisfy(),dp)||
+		    if (AbstractInterferes.interferes(sn,dp)||
 			AbstractInterferes.interferes(sn.getDescriptor(),sn.getSatisfy(),constr)) {
 			GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
 			GraphNode gnconseq=(GraphNode)consequence.get(sn);

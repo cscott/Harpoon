@@ -1,4 +1,4 @@
-static char rcsid[]="$Id: redblack.c,v 1.1 2004-03-07 22:02:43 bdemsky Exp $";
+static char rcsid[]="$Id: redblack.c,v 1.2 2004-03-10 06:15:03 bdemsky Exp $";
 
 /*
    Redblack balanced tree algorithm
@@ -380,7 +380,7 @@ static struct rbnode * rb_lookup(const void *low, const void *high, struct rbtre
   
   /* walk x down the tree */
   while(x!=RBNULL) {
-    if (low<x->high &&
+    if (low<x->high&&
 	x->key<high)
       return x;
     if (x->left!=RBNULL && x->left->max>low)
@@ -923,7 +923,20 @@ dumptree(struct rbnode *x, int n)
 
 /*
  * $Log: redblack.c,v $
- * Revision 1.1  2004-03-07 22:02:43  bdemsky
+ * Revision 1.2  2004-03-10 06:15:03  bdemsky
+ *
+ *
+ * Added:
+ * Concrete Interference rule that falsify a rule that quantifies over a set can't
+ * remove the last element of the set.
+ *
+ * Concrete Interference rule that updates that definitely falsify a rule can't modify
+ * the inclusion condition causing a possible addition.
+ *
+ * Intelligence in the GraphAnalysis package that computes must & cant remove sets.
+ * Search through only unique combinations.
+ *
+ * Revision 1.1  2004/03/07 22:02:43  bdemsky
  *
  *
  * Still buggy, but getting closer...

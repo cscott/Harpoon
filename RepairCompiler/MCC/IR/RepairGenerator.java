@@ -171,7 +171,7 @@ public class RepairGenerator {
 		    craux.outputline(methodcall);
 		    craux.startblock();
 		    craux.outputline("int maybe=0;");
-		    final SymbolTable st2 = un.getRule().getSymbolTable();                
+		    final SymbolTable st2 = un.getRule().getSymbolTable();
 		    CodeWriter cr2 = new StandardCodeWriter(outputaux) {
                         public SymbolTable getSymbolTable() { return st2; }
                     };
@@ -942,7 +942,10 @@ public class RepairGenerator {
 	    generateremove=true;
 	} else if (opcode==Opcode.EQ) {
 	    cr.outputline(change.getSafeSymbol()+"="+String.valueOf(size)+"-"+sizevar.getSafeSymbol()+";");
-	    generateadd=true;
+	    if (size==0)
+		generateadd=false;
+	    else 
+		generateadd=true;
 	    generateremove=true;
 	} else if (opcode==Opcode.NE) {
 	    cr.outputline(change.getSafeSymbol()+"="+String.valueOf(size+1)+"-"+sizevar.getSafeSymbol()+";");
@@ -988,7 +991,7 @@ public class RepairGenerator {
 		Rule r=(Rule)state.vRules.get(i);
 		if (r.getInclusion().getTargetDescriptors().contains(d)) {
 		    for(int j=0;j<munremove.numUpdates();j++) {
-			UpdateNode un=munremove.getUpdate(i);
+			UpdateNode un=munremove.getUpdate(j);
 			if (un.getRule()==r) {
 				/* Update for rule rule r */
 			    String name=(String)updatenames.get(un);
@@ -1009,7 +1012,7 @@ public class RepairGenerator {
 	    cr.startblock();
 	    VarDescriptor newobject=VarDescriptor.makeNew("newobject");
 	    if (d instanceof RelationDescriptor) {
-		VarDescriptor otherside=((ImageSetExpr)((SizeofExpr)ep.expr).setexpr).vd;
+		VarDescriptor otherside=((ImageSetExpr)((SizeofExpr)((OpExpr)ep.expr).left).setexpr).vd;
 		RelationDescriptor rd=(RelationDescriptor)d;
 		if (sources.relsetSource(rd,!ep.inverted())) {
 		    /* Set Source */

@@ -2,6 +2,163 @@ package MCC.IR;
 import java.util.*;
 
 class ConcreteInterferes {
+
+    static public boolean interferesinclusion(UpdateNode un, Updates update, Rule r) {
+	Descriptor updated_des=update.getDescriptor();
+	Inclusion inclusion=r.getInclusion();
+	if (inclusion instanceof RelationInclusion) {
+	    RelationInclusion ri=(RelationInclusion)inclusion;
+	    if (ri.getLeftExpr().usesDescriptor(updated_des)&&interferesinclusion(un,update,r,ri.getLeftExpr()))
+		return true;
+	    if (ri.getRightExpr().usesDescriptor(updated_des)&&interferesinclusion(un,update,r,ri.getRightExpr()))
+		return true;
+	} else if (inclusion instanceof SetInclusion) {
+	    SetInclusion si=(SetInclusion)inclusion;
+	    if (si.getExpr().usesDescriptor(updated_des)&&interferesinclusion(un,update,r,si.getExpr()))
+		return true;
+	} else throw new Error();
+	return false;
+    }
+
+    static public boolean interferesinclusion(UpdateNode un, Updates update, Rule r, Expr inclusionexpr) {
+	Descriptor updated_des=update.getDescriptor();
+	if (updated_des instanceof FieldDescriptor) {
+	    /* Build variable correspondance */
+	    HashSet set=new HashSet();
+	    inclusionexpr.findmatch(updated_des,set);
+	    
+	    for(Iterator matchit=set.iterator();matchit.hasNext();) {
+		DotExpr dotexpr=(DotExpr)matchit.next();
+		DotExpr updateexpr=(DotExpr)update.getLeftExpr();
+		while(true) {
+		    if (dotexpr.getField()!=updateexpr.getField())
+			return true;
+		    Expr de=dotexpr.getExpr();
+		    Expr ue=updateexpr.getExpr();
+		    if ((de instanceof DotExpr)&&(ue instanceof DotExpr)) {
+			dotexpr=(DotExpr)de;
+			updateexpr=(DotExpr)ue;
+		    } else if ((de instanceof VarExpr)&&(ue instanceof VarExpr)) {
+			VarDescriptor dvd=((VarExpr)de).getVar();
+			VarDescriptor uvd=((VarExpr)ue).getVar();
+			if (interferesinclusion(un,r,dvd,uvd))
+			    return true;
+			else
+			    break;
+		    } else
+			return true;
+		}
+	    }
+	} else if (updated_des instanceof VarDescriptor) {
+	    /* We have a VarDescriptor - no correspondance necessary */
+	    VarDescriptor vd=(VarDescriptor)updated_des;
+	    if (interferesinclusion(un,r,vd,vd))
+		return true;
+	} else throw new Error();
+	return false;
+    }
+
+    static public boolean interferesinclusion(UpdateNode un, Rule r, VarDescriptor dvd, VarDescriptor uvd) {
+	DNFRule negrule=r.getDNFNegGuardExpr();
+	HashMap remap=new HashMap();
+	remap.put(dvd,uvd);
+
+	for(int i=0;i<negrule.size();i++) {
+	    RuleConjunction rconj=negrule.get(i);
+	    boolean good=true;
+	    for(int j=0;j<rconj.size();j++) {
+		DNFExpr dexpr=rconj.get(j);
+		if (dexpr.getExpr() instanceof OpExpr) {
+		    OpExpr expr=(OpExpr)dexpr.getExpr();
+		    Expr lexpr=expr.getLeftExpr();
+		    Expr rexpr=expr.getRightExpr();
+
+		    boolean varok=true;
+		    Set vars=rexpr.freeVars();
+		    if (vars!=null) 
+			for(Iterator it=vars.iterator();it.hasNext();) {
+			    VarDescriptor vd=(VarDescriptor) it.next();
+			    if (!vd.isGlobal()) {
+				/* VarDescriptor isn't a global */
+				if (dvd!=vd) {
+				    varok=false;
+				    break;
+				}
+			    }
+			}
+		    
+		    if (!varok)
+			continue;
+
+
+
+		    Opcode op=expr.getOpcode();
+
+		    if (dexpr.getNegation()) {
+			/* remove negation through opcode translation */
+			if (op==Opcode.GT)
+			    op=Opcode.LE;
+			else if (op==Opcode.GE)
+			    op=Opcode.LT;
+			else if (op==Opcode.EQ)
+			    op=Opcode.NE;
+			else if (op==Opcode.NE)
+			    op=Opcode.EQ;
+			else if (op==Opcode.LT)
+			    op=Opcode.GE;
+			else if (op==Opcode.LE)
+			    op=Opcode.GT;
+		    }
+		    boolean match=false;
+		    for(int k=0;k<un.numUpdates();k++) {
+			Updates update=un.getUpdate(k);
+			if(update.isExpr()) {
+			    Set uvars=update.getRightExpr().freeVars();
+			    boolean freevarok=true;
+			    if (uvars!=null)
+			    for(Iterator it=uvars.iterator();it.hasNext();) {
+				VarDescriptor vd=(VarDescriptor) it.next();
+				if (!vd.isGlobal()) {
+				    /* VarDescriptor isn't a global */
+				    if (uvd!=vd) {
+					freevarok=false;
+					break;
+				    }
+				}
+			    }
+			    if (!freevarok)
+				continue;
+
+			    Opcode op2=update.getOpcode();
+			    if ((op2==op)||
+				((op2==Opcode.GT)&&(op==Opcode.GE))||
+				((op2==Opcode.LT)&&(op==Opcode.LE))||
+				((op2==Opcode.EQ)&&((op==Opcode.GE)||(op==Opcode.LE)))) {
+				/* Operations match*/
+				if (lexpr.equals(remap,update.getLeftExpr())&&
+				    rexpr.equals(remap,update.getRightExpr())) {
+				    match=true;
+				    break;
+				}				    
+			    }
+			} 
+		    }
+		    if (!match) {
+			good=false;
+			break;
+		    }
+		} else {
+		    /* TODO: Check to see if there is an abstract repair */
+		    good=false;
+		    break; /* try next conjunction */
+		}
+	    }
+	    if (good)
+		return false;
+	}
+	return true;
+    }
+
     static public boolean interferes(MultUpdateNode mun, Rule r, boolean satisfy) {
 	if (!initialinterferes(mun,r,satisfy)) /* Can't falsify a rule adding something to a set on an initial addition*/
 	    return false;
@@ -35,8 +192,13 @@ class ConcreteInterferes {
 			continue;
 
 
-		    if (r.getInclusion().usesDescriptor(updated_des))
-			return true; /* Interferes with inclusion condition */
+		    if (r.getInclusion().usesDescriptor(updated_des)) {
+			if (satisfy) {
+			    if (interferesinclusion(un, update, r))
+			    return true;
+			} else
+			    return true; /* Interferes with inclusion condition */
+		    }
 		    
 		    for(int k=0;k<drule.size();k++) {
 			RuleConjunction rconj=drule.get(k);
@@ -113,16 +275,17 @@ class ConcreteInterferes {
 	    Expr lexpr1=update.getLeftExpr();
 	    Expr rexpr1=update.getRightExpr();
 	    boolean good=true;
-	    for(Iterator it=vars.iterator();it.hasNext();) {
-		VarDescriptor vd=(VarDescriptor) it.next();
-		if (un.getBinding(vd)!=null) {
-		    /* VarDescriptor isn't a global */
-		    if (update.getVar()!=vd) {
-			good=false;
-			break;
+	    if (vars!=null)
+		for(Iterator it=vars.iterator();it.hasNext();) {
+		    VarDescriptor vd=(VarDescriptor) it.next();
+		    if (!vd.isGlobal()) {
+			/* VarDescriptor isn't a global */
+			if (update.getVar()!=vd) {
+			    good=false;
+			    break;
+			}
 		    }
 		}
-	    }
 	    if (good&&(dexpr.getExpr() instanceof OpExpr)) {
 		OpExpr expr=(OpExpr)dexpr.getExpr();
 		Expr lexpr2=expr.getLeftExpr();
@@ -154,16 +317,17 @@ class ConcreteInterferes {
 		    leftdescriptor=((VarExpr)e).getVar();
 		} else throw new Error("Bad Expr");
 		
-		for(Iterator it=vars.iterator();it.hasNext();) {
-		    VarDescriptor vd=(VarDescriptor) it.next();
-		    if (un.getBinding(vd)!=null) {
-			/* VarDescriptor isn't a global */
-			if (leftdescriptor!=vd) {
-			    good=false;
-			    break;
+		if (vars!=null)
+		    for(Iterator it=vars.iterator();it.hasNext();) {
+			VarDescriptor vd=(VarDescriptor) it.next();
+			if (!vd.isGlobal()) {
+			    /* VarDescriptor isn't a global */
+			    if (leftdescriptor!=vd) {
+				good=false;
+				break;
+			    }
 			}
 		    }
-		}
 		if (good) {
 		    HashMap remap=new HashMap();
 		    remap.put(update.getVar(),leftdescriptor);

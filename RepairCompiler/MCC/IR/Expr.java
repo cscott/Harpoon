@@ -62,4 +62,7 @@ public abstract class Expr {
     public Set freeVars() {
 	return null;
     }
+
+    public void findmatch(Descriptor d, Set s) {
+    }
 }
