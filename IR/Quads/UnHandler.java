@@ -5,6 +5,7 @@ package harpoon.IR.Quads;
 
 import harpoon.Analysis.Quads.Unreachable;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.Linker;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -20,7 +21,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.22 1999-11-04 07:37:16 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.22.2.1 2000-01-11 09:51:14 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -320,8 +321,24 @@ final class UnHandler {
 	// various bits of static state.
 	final StaticState ss;
 
-	Visitor(TempInfo ti, StaticState ss)
-	{ this.qf = ss.qf; this.ti = ti; this.ss = ss; }
+	Visitor(TempInfo ti, StaticState ss) {
+	    this.qf = ss.qf; this.ti = ti; this.ss = ss;
+	    //////////////// exceptions.
+	    // (try to cache these up here, since they are frequently used)
+	    Linker linker=qf.getLinker();
+	    this.HCarraystoreE = 
+		linker.forName("java.lang.ArrayStoreException");
+	    this.HCnullpointerE =
+		linker.forName("java.lang.NullPointerException");
+	    this.HCarrayindexE =
+		linker.forName("java.lang.ArrayIndexOutOfBoundsException");
+	    this.HCnegativearrayE =
+		linker.forName("java.lang.NegativeArraySizeException");
+	    this.HCarithmeticE =
+		linker.forName("java.lang.ArithmeticException");
+	    this.HCclasscastE =
+		linker.forName("java.lang.ClassCastException");
+	}
 
 	/** By default, just clone and set all destinations to top. */
 	public void visit(Quad q) {
@@ -644,18 +661,12 @@ final class UnHandler {
 	}
 
 	//////////////// exceptions.
-	private static final HClass HCarraystoreE = 
-	    HClass.forName("java.lang.ArrayStoreException");
-	private static final HClass HCnullpointerE =
-	    HClass.forName("java.lang.NullPointerException");
-	private static final HClass HCarrayindexE =
-	    HClass.forName("java.lang.ArrayIndexOutOfBoundsException");
-	private static final HClass HCnegativearrayE =
-	    HClass.forName("java.lang.NegativeArraySizeException");
-	private static final HClass HCarithmeticE =
-	    HClass.forName("java.lang.ArithmeticException");
-	private static final HClass HCclasscastE =
-	    HClass.forName("java.lang.ClassCastException");
+	private final HClass HCarraystoreE;
+	private final HClass HCnullpointerE;
+	private final HClass HCarrayindexE;
+	private final HClass HCnegativearrayE;
+	private final HClass HCarithmeticE;
+	private final HClass HCclasscastE;
 
 	//////////////// runtime checks.
 	Quad intZeroCheck(Quad old, Quad head, Temp Tz) {

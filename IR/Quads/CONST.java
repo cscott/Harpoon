@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CONST.java,v 1.1.2.10 1999-09-09 21:43:02 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.10.6.1 2000-01-11 09:51:13 cananian Exp $
  */
 
 public class CONST extends Quad {
@@ -62,7 +62,7 @@ public class CONST extends Quad {
 	Util.assert(type.equals(HClass.Int)   || type.equals(HClass.Long)   ||
 		    type.equals(HClass.Float) || type.equals(HClass.Double) ||
 		    type.equals(HClass.Void)  || 
-		    type.equals(HClass.forClass(String.class)) );
+		    type.getName().equals("java.lang.String") );
 	if (type.equals(HClass.Void))
 	    Util.assert(value==null);
 	else
@@ -102,7 +102,7 @@ public class CONST extends Quad {
     public String toString() {
 	StringBuffer sb = new StringBuffer(dst.toString());
 	sb.append(" = CONST ");
-	if (type.equals(HClass.forClass(String.class)))
+	if (type.getName().equals("java.lang.String"))
 	    sb.append("(String)\""+Util.escape(value.toString())+"\"");
 	else if (type.equals(HClass.Void) && value == null)
 	    sb.append("null");

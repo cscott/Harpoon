@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.24 1999-10-23 05:59:33 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.24.2.1 2000-01-11 09:51:13 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -582,9 +582,9 @@ final class Translate { // not public.
 		// lock is Class.forName(this.class)
 		lock = new Temp(s.tf(), "lock");
 		Temp Tex = s.extra(0);
-		HClass strC = HClass.forClass(String.class);
-		HClass exC = HClass.forClass(NoClassDefFoundError.class);
-		HMethod cfnM = HClass.forClass(Class.class)
+		HClass strC = qf.getLinker().forClass(String.class);
+		HClass exC = qf.getLinker().forClass(NoClassDefFoundError.class);
+		HMethod cfnM = qf.getLinker().forClass(Class.class)
 				    .getMethod("forName", 
 					       new HClass[] { strC } );
 		// any exception in this block is immediately thrown
@@ -758,7 +758,7 @@ final class Translate { // not public.
 	case Op.ANEWARRAY:
 	    {
 		OpClass opd = (OpClass) in.getOperand(0);
-		HClass hc = HClass.forDescriptor("[" + 
+		HClass hc = qf.getLinker().forDescriptor("[" + 
 						 opd.value().getDescriptor());
 		ns = s.pop().push();
 		q = new ANEW(qf, in, ns.stack(0), hc,
@@ -1442,21 +1442,21 @@ final class Translate { // not public.
 		HClass arraytype;
 		switch(type) {
 		case T_BOOLEAN:
-		    arraytype = HClass.forDescriptor("[Z"); break;
+		    arraytype = qf.getLinker().forDescriptor("[Z"); break;
 		case T_CHAR:
-		    arraytype = HClass.forDescriptor("[C"); break;
+		    arraytype = qf.getLinker().forDescriptor("[C"); break;
 		case T_FLOAT:
-		    arraytype = HClass.forDescriptor("[F"); break;
+		    arraytype = qf.getLinker().forDescriptor("[F"); break;
 		case T_DOUBLE:
-		    arraytype = HClass.forDescriptor("[D"); break;
+		    arraytype = qf.getLinker().forDescriptor("[D"); break;
 		case T_BYTE:
-		    arraytype = HClass.forDescriptor("[B"); break;
+		    arraytype = qf.getLinker().forDescriptor("[B"); break;
 		case T_SHORT:
-		    arraytype = HClass.forDescriptor("[S"); break;
+		    arraytype = qf.getLinker().forDescriptor("[S"); break;
 		case T_INT:
-		    arraytype = HClass.forDescriptor("[I"); break;
+		    arraytype = qf.getLinker().forDescriptor("[I"); break;
 		case T_LONG:
-		    arraytype = HClass.forDescriptor("[J"); break;
+		    arraytype = qf.getLinker().forDescriptor("[J"); break;
 		default:
 		    throw new Error("Illegal NEWARRAY component type: "+type);
 		}
