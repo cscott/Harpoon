@@ -14,25 +14,62 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.3 1998-10-19 04:00:33 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.4 1998-10-21 16:50:50 nkushman Exp $
  * @see HMember
  * @see HClass
  */
 public class HMethodSyn extends HMethod {
 
-  /** Create a new method based on a template. */
-  public HMethodSyn(HMethod template) {
-    this.parent = template.getDeclaringClass();
-    this.name = uniqueName(parent, template.getName(),
-			   template.getDescriptor());
+  //the common constructor 
+  private void init (HMethod template){
     this.modifiers = template.getModifiers();
     this.returnType = template.getReturnType();
     this.parameterTypes = template.getParameterTypes();
     this.parameterNames = template.getParameterNames();
     this.exceptionTypes = template.getExceptionTypes();
     this.isSynthetic = template.isSynthetic();
-    ((HClassSyn)parent).addDeclaredMethod(this);
+    ((HClassSyn)this.parent).addDeclaredMethod(this);
   }
+
+  /** Create a new method based on a template. */
+  public HMethodSyn(HMethod template) {
+    this.parent = template.getDeclaringClass();
+    this.name = uniqueName(parent, template.getName(),
+			   template.getDescriptor());
+    init (template);
+  }
+
+  //should be called only by HClassSyn constructor
+  HMethodSyn(HMethod template, HClassSyn parent) {
+    this.parent = parent;
+    this.name = template.getName();
+    HCode newCode = template.getCode ("quad-ssa");
+    if (newCode != null){
+      this.putCode (newCode);
+    }
+  }
+
+  /** Create a new empty abstract method in the specified class
+   *  with the specified parameter and return types
+   *  that throws no checked exceptions.
+   *  Adding code to the method will make it non-abstract.
+   */
+
+  public HMethodSyn(HClass parent, String name, HClass[] paramTypes, HClass returnType) {
+    this(parent, name, makeDescriptor (paramTypes, returnType));
+  }
+  
+  private String makeDescriptor (HClass[] paramTypes, HClass returnType){
+    StringBuffer sb = new StringBuffer();
+    sb.append ('(');
+    for (int i = 0; i < paramTypes.length; i++){
+      sb.append (paramTypes[i].getDescriptor());
+    }
+    sb.append (')');
+    sb.append (returnType.getDescriptor());
+    return  sb.toString();
+  }
+
   /** Create a new empty abstract method in the specified class
    *  with the specified descriptor
    *  that throws no checked exceptions.
