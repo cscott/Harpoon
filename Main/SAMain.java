@@ -93,7 +93,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.17 2002-09-26 13:16:55 cananian Exp $
+ * @version $Id: SAMain.java,v 1.18 2002-10-09 15:46:10 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -211,11 +211,7 @@ public class SAMain extends harpoon.IR.Registration {
     }
 
     static void do_it(HMethod mainM) {
-	// alex had a weird hack; let's pretend it never existed.
-	boolean alexhack=false;
-	if (alexhack) System.out.println("alexhack");
-
-	if (Realtime.REALTIME_JAVA && !alexhack) { 
+	if (Realtime.REALTIME_JAVA) { 
 	    Realtime.setupObject(linker); 
 	}
 
@@ -272,7 +268,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    // and our main method is a root, too...
 	    roots.add(mainM);
 	    // other realtime and event-driven-specific roots.
-	    if (EVENTDRIVEN && !alexhack) {
+	    if (EVENTDRIVEN) {
 		roots.add(linker.forName
 			  ("harpoon.Analysis.ContBuilder.Scheduler")
 			  .getMethod("loop",new HClass[0]));
@@ -315,7 +311,7 @@ public class SAMain extends harpoon.IR.Registration {
 		frame.getRuntime().configurationSet.add
 		    ("check_with_init_check_not_needed");
 
-	    if (EVENTDRIVEN && !alexhack) {
+	    if (EVENTDRIVEN) {
 		hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
 		
 		// costruct the set of all the methods that might be
@@ -332,7 +328,7 @@ public class SAMain extends harpoon.IR.Registration {
 		     classHierarchy, mroots);
 	    }
 
-	    if (ROLE_INFER && !alexhack) {
+	    if (ROLE_INFER) {
 		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
 		hcf = (new harpoon.Analysis.RoleInference.RoleInference
 		       (hcf,linker)).codeFactory();
@@ -340,7 +336,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    }
 	
 
-	    if (INSTRUMENT_ALLOCS && !alexhack) {
+	    if (INSTRUMENT_ALLOCS) {
 		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
 		AllocationNumbering an =
 		    new AllocationNumbering(hcf, classHierarchy, true);
@@ -364,7 +360,7 @@ public class SAMain extends harpoon.IR.Registration {
 	 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
 
-	    if (DO_TRANSACTIONS && !alexhack) {
+	    if (DO_TRANSACTIONS) {
 		String resource = frame.getRuntime().resourcePath
 		    ("transact-safe.properties");
 		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
@@ -391,7 +387,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    ("check_with_transactions_needed");
 	    }
 
-	    if (Realtime.REALTIME_JAVA && !alexhack) {
+	    if (Realtime.REALTIME_JAVA) {
 		hcf = Realtime.setupCode(linker, classHierarchy, hcf);
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 		hcf = Realtime.addChecks(linker, classHierarchy, hcf, roots);
@@ -520,7 +516,7 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 
 	HMethod mconverted=null;
-	if (EVENTDRIVEN && !alexhack) {
+	if (EVENTDRIVEN) {
 	    if (!OPTIMIZE) {
 		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf); 
 	    }
@@ -663,7 +659,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    }
 	}
 
-	if(Realtime.REALTIME_JAVA && !alexhack)
+	if(Realtime.REALTIME_JAVA)
 	{
 	    hcf = Realtime.addNoHeapChecks(hcf);
 	    hcf = Realtime.addQuantaChecker(hcf);
