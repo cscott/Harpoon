@@ -72,7 +72,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.1.2.12 2000-01-16 01:25:32 duncan Exp $ 
+ * @version $Id: TreeFolding.java,v 1.1.2.13 2000-01-31 22:08:06 pnkfelix Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
@@ -269,7 +269,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 	    BasicBlock      bb      = (BasicBlock)i.next();
 	    TreeFoldingInfo bbInfo  = (TreeFoldingInfo)bb2tfi.get(bb);
 	    BitString       bbIn    = (BitString)((bbInfo.inSet[0]).clone());
-	    for (Iterator j = bb.listIterator(); j.hasNext();) {
+	    for (Iterator j = bb.statements().listIterator(); j.hasNext();) {
 		Stm      stm   = (Stm)j.next();
 		Integer  useID = new Integer(stm.getID());
 		Temp[]   uses  = stm.use();
@@ -316,7 +316,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 	    dataIn = (BitString)tfi.inSet[0].clone();
 	    memIn = (BitString)tfi.inSet[1].clone();
 	    
-	    for (Iterator bbi = bb.listIterator(); bbi.hasNext();) { 
+	    for (Iterator bbi = bb.statements().listIterator(); bbi.hasNext();) { 
 		Stm stm = (Stm)bbi.next();
 		Temp[] uses = stm.use();
 		for (int j=0; j<uses.length; j++) { 
@@ -443,7 +443,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 	    prsvSet[0].setAll();
 	    prsvSet[1].setAll();
 	    genSet[1].setAll();
-	    for (Iterator i = bb.listIterator(); i.hasNext();) { 
+	    for (Iterator i = bb.statements().listIterator(); i.hasNext();) { 
 		Stm stm = (Stm)i.next();
 		if (mayWriteMem(stm)) { 
 		    prsvSet[1].setAll();
