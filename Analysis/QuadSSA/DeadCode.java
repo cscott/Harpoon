@@ -16,45 +16,22 @@ import java.util.Hashtable;
  * a method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.5 1998-09-25 19:18:02 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.6 1998-09-25 19:28:59 cananian Exp $
  */
 
 public class DeadCode  {
     /** Hide the constructor. */
     private DeadCode() { }
 
-    static void removePhis(HCode hc) {
-	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
-	    Quad q = (Quad) e.nextElement();
-	    if (q instanceof PHI && q.prev().length==1) {
-		PHI Q = (PHI) q;
-		Edge predE = q.prevEdge(0);
-		Quad header = (Quad)predE.from();
-		int  which_succ =   predE.which_succ();
-		// make MOVE chain.
-		for (int i=0; i < Q.dst.length; i++) {
-		    Quad qq = new MOVE(Q.getSourceElement(),
-				       Q.dst[i], Q.src[i][0]);
-		    Quad.addEdge(header, which_succ, qq, 0);
-		    header = qq; which_succ = 0;
-		}
-		// now link PHI out of the graph.
-		Edge succE = Q.nextEdge(0);
-		Quad.addEdge(header, which_succ, 
-			     (Quad) succE.to(), succE.which_pred());
-	    }
-	}
-    }
-
     public static void optimize(HCode hc) {
 	Hashtable defs = new Hashtable();
 	IntTable uses = new IntTable();
 	Worklist W = new Set();
 
-	// get rid of arity-1 phi functions.
-	removePhis(hc);
+	// make visitor
+	Visitor v = new Visitor(W, uses, defs);
 
-	// collect uses/defs
+	// collect uses/defs; construct initial worklist.
 	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
 	    Quad q = (Quad) e.nextElement();
 	    // locate defs
@@ -68,15 +45,15 @@ public class DeadCode  {
 	    Temp[] u = q.use();
 	    for (int i=0; i<u.length; i++)
 		uses.putInt(u[i], uses.getInt(u[i])+1);
+	    
+	    // all phis and cjmps are put on worklist, too.
+	    if (q instanceof PHI || q instanceof CJMP)
+		W.push(q);
 	}
-	// make visitor
-	Visitor v = new Visitor(W, uses, defs);
 
 	// now examine each defining statement to see whether it is used.
 	while (!W.isEmpty()) {
 	    Quad q = (Quad) W.pull();
-	    // statements that define no variables are safe.
-	    if (q.def().length==0) continue;
 	    q.visit(v);
 	} // end WHILE WORKLIST NOT EMPTY
     } // end OPTIMIZE METHOD
@@ -95,6 +72,8 @@ public class DeadCode  {
 	public void visit(CALL q) 
 	{ /* call statements may have side-effects. */ }
 	public void visit(PHI q) { // phis are specially compound.
+	    // arity-one phi functions are stomped on.
+	    if (q.prev().length==1) { removePhi(q); return; }
 	    // check each function in a PHI
 	    for (int i=0; i < q.dst.length; i++) {
 		if (uses.getInt(q.dst[i]) > 0) continue;
@@ -128,6 +107,9 @@ public class DeadCode  {
 	}
 	public void visit(Quad q) { // ordinary statements, ripe for plucking.
 	    Temp d[] = q.def();
+	    // statements that define no variables are safe.
+	    if (d.length==0) return;
+
 	    int i; for (i=0; i<d.length; i++)
 		if (uses.getInt(d[i])>0)
 		    break;
@@ -142,6 +124,25 @@ public class DeadCode  {
 	    Temp u[] = q.use();
 	    for (i=0; i<u.length; i++)
 		markAbsent(u[i]);
+	}
+
+	void removePhi(PHI q) {
+	    Util.assert(q.prev().length==1);
+	    Edge predE = q.prevEdge(0);
+	    Quad header = (Quad)predE.from();
+	    int  which_succ =   predE.which_succ();
+	    // make MOVE chain.
+	    for (int i=0; i < q.dst.length; i++) {
+		Quad qq = new MOVE(q.getSourceElement(),
+				   q.dst[i], q.src[i][0]);
+		Quad.addEdge(header, which_succ, qq, 0);
+		header = qq; which_succ = 0;
+		defs.put(q.dst[i], qq);
+	    }
+	    // now link PHI out of the graph.
+	    Edge succE = q.nextEdge(0);
+	    Quad.addEdge(header, which_succ, 
+			 (Quad) succE.to(), succE.which_pred());
 	}
 
 	void markAbsent(Temp t) {
