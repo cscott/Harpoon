@@ -10,52 +10,52 @@ package harpoon.Runtime;
  * hashmap.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFExternalMap.java,v 1.2 2002-02-25 21:06:26 cananian Exp $
+ * @version $Id: MZFExternalMap.java,v 1.2.2.1 2002-03-20 22:25:11 cananian Exp $
  */
 public abstract class MZFExternalMap {
 
     public static synchronized native
-	int intGET(Object obj, Object fieldkey,
+	int intGET(Object fieldkey, Object obj,
 		   int default_value);
     public static synchronized native
-	void intSET(Object obj, Object fieldkey,
+	void intSET(Object fieldkey, Object obj,
 		    int newvalue, int default_value);
     public static synchronized native
-	long longGET(Object obj, Object fieldkey,
+	long longGET(Object fieldkey, Object obj,
 		     long default_value);
     public static synchronized native
-	void longSET(Object obj, Object fieldkey,
+	void longSET(Object fieldkey, Object obj,
 		     long newvalue, long default_value);
     public static synchronized native
-	Object ptrGET(Object obj, Object fieldkey,
+	Object ptrGET(Object fieldkey, Object obj,
 		      Object default_value);
     public static synchronized native
-	void ptrSET(Object obj, Object fieldkey,
+	void ptrSET(Object fieldkey, Object obj,
 		    Object newvalue, Object default_value);
     // convenience.
     public static synchronized final
-	float floatGET(Object obj, Object fieldkey,
+	float floatGET(Object fieldkey, Object obj,
 		       float default_value) {
 	return Float.intBitsToFloat
-	    (intGET(obj, fieldkey, Float.floatToIntBits(default_value)));
+	    (intGET(fieldkey, obj, Float.floatToIntBits(default_value)));
     }
     public static synchronized final
-	void floatSET(Object obj, Object fieldkey,
+	void floatSET(Object fieldkey, Object obj,
 		      float newvalue, float default_value) {
-	intSET(obj, fieldkey,
+	intSET(fieldkey, obj,
 	       Float.floatToIntBits(newvalue),
 	       Float.floatToIntBits(default_value));
     }
     public static synchronized final
-	double doubleGET(Object obj, Object fieldkey,
+	double doubleGET(Object fieldkey, Object obj,
 			 double default_value) {
 	return Double.longBitsToDouble
-	    (longGET(obj, fieldkey, Double.doubleToLongBits(default_value)));
+	    (longGET(fieldkey, obj, Double.doubleToLongBits(default_value)));
     }
     public static synchronized final
-	void doubleSET(Object obj, Object fieldkey,
+	void doubleSET(Object fieldkey, Object obj,
 		       double newvalue, double default_value) {
-	longSET(obj, fieldkey,
+	longSET(fieldkey, obj,
 		Double.doubleToLongBits(newvalue),
 		Double.doubleToLongBits(default_value));
     }
