@@ -1,6 +1,6 @@
-package harpoon.ClassFile.Raw;
+package harpoon.ClassFile.Raw.Attribute;
 
-import harpoon.ClassFile.Raw.Attribute.*;
+import harpoon.ClassFile.Raw.*;
 import harpoon.ClassFile.Raw.Constant.*;
 /** 
  * Each <code>ExceptionTable</code> object describes one exception
@@ -8,7 +8,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>AttributeCode</code>. 
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ExceptionTable.java,v 1.5 1998-07-31 07:05:54 cananian Exp $
+ * @version $Id: ExceptionTable.java,v 1.6 1998-07-31 07:08:03 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.4"
  * @see AttributeCode
  */
