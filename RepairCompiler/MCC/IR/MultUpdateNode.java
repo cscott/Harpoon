@@ -16,6 +16,10 @@ class MultUpdateNode {
 	this.op=op;
     }
 
+    public int getType() {
+	return op;
+    }
+
     public String toString() {
 	String st="";
 	for(int i=0;i<updates.size();i++)
