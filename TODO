@@ -1,3 +1,6 @@
+---- Oct-04-98
+Target AIRE for backend.
+Write 'UndoRecursion' analysis/optimization pass.
 ---- Sep-25-98
 Undo peephole optimization and replace with a rule in SCCAnalysis that
  makes icmpeq on a one-bit (boolean) value into a MOVE instruction.
