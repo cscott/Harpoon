@@ -1,0 +1,45 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: pldi02.tex,v 1.1 2001-11-15 01:12:40 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[preprint]{acmconf}
+% don't forget to turn off 'preprint' before submission!
+%\usepackage[section,plain]{algorithm}
+%\usepackage{amsthm} % proof environment
+%\usepackage{amstext} % the \text command for math mode (replaces \mbox)
+\usepackage{varioref} % \vref command
+%\usepackage{graphicx} % for SCC bargraph
+\usepackage{comdef}
+\newcommand{\figscale}{1.0}
+
+%setup varioref package
+\renewcommand{\reftextbefore}{on the preceding page}\vrefwarning
+
+\newcommand{\mycomment}[1]{}
+
+\title{\bf Size Optimizations for Java Programs}
+
+\author{C. Scott Ananian \\
+	Laboratory for Computer Science\\
+	Massachusetts Institute of Technology\\ 
+	Cambridge, MA 02139 \\ 
+	{\tt cananian@lcs.mit.edu} }
+
+\begin{document}
+% in preprint mode, tag pages with a revision identifier.
+\pagestyle{myheadings}\markboth{$ $Revision: 1.1 $ $}{$ $Revision: 1.1 $ $}
+\bibliographystyle{plain}
+
+\maketitle
+
+%\input{pldi02-abstract}
+%\input{pldi02-intro}
+%\input{pldi02-tech}
+%\input{pldi02-results}
+%\input{pldi02-conclusion}
+\nocite{*}
+
+\bibliography{harpoon}
+
+%\appendix
+%\input{pldi02-appendix}
+\end{document}

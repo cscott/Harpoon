@@ -3,7 +3,7 @@ INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 export TEXINPUTS=/home/cananian/src/tex4ht//:
 
-ALLDOCS=design bibnote readnote quads proposal thesis exec pldi99
+ALLDOCS=design bibnote readnote quads proposal thesis exec pldi99 pldi02
 
 all: $(ALLDOCS:=.ps)
 preview: thesis-xdvi
@@ -11,17 +11,22 @@ preview: thesis-xdvi
 # comdef dependencies
 exec.dvi thesis.dvi proposal.dvi: comdef.sty
 pldi99.dvi pldi99-outline.dvi: comdef.sty
+pldi02.dvi: comdef.sty
 
 # bibtex dependencies
 exec.dvi quads.dvi design.dvi thesis.dvi: harpoon.bib
 pldi99.dvi pldi99-outline.dvi: harpoon.bib
+pldi02.dvi: harpoon.bib
 bibnote.dvi: harpoon_.bib
 readnote.dvi: unread_.bib
 
-# lots of dependencies for the pldi paper
+# lots of dependencies for the pldi99 paper
 pldi99.dvi: pldi99-intro.tex pldi99-abstract.tex pldi99-tech.tex
 pldi99.dvi: pldi99-example.tex pldi99-results.tex
 pldi99.dvi: Figures/THussi.tex Figures/THv0.tex Figures/THscccomp.eps
+
+# more dependencies for the pldi02 paper.
+#pldi02.dvi: pldi02-abstract.tex
 
 
 # thesis figure dependencies
