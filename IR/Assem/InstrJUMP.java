@@ -22,7 +22,7 @@ import java.util.Arrays;
     without the JUMP in place.
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrJUMP.java,v 1.1.2.4 1999-11-05 01:10:30 cananian Exp $ */
+    @version $Id: InstrJUMP.java,v 1.1.2.5 2000-10-19 22:39:07 pnkfelix Exp $ */
 public class InstrJUMP extends Instr {
     
     /** Creates a <code>InstrJUMP</code>. */
@@ -37,4 +37,6 @@ public class InstrJUMP extends Instr {
 			     (Label)getTargets().get(0));
     }
     public void accept(InstrVisitor v) { v.visit(this); }
+
+    public boolean isJump() { return true; }
 }

@@ -42,7 +42,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.80 2000-07-25 03:08:28 pnkfelix Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.81 2000-10-19 22:39:06 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
@@ -914,4 +914,19 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	    r[i] = map(tm, taa[i]);
 	return r;
     }
+
+    /** Returns true if this is a Move.
+	<BR> <B>effects:</B> Returns true if the only effect of
+	executing this instruction is to copy a set of source
+	<code>Temp</code>s to a set of destination <code>Temp</code>s. 
+    */
+    public boolean isMove() { return false; }
+
+    /** Returns true if this is an unconditional Jump.
+	<BR> <B>effects:</B> Returns true if the only effect of
+	executing this instruction is to shift control-flow to one
+	target <code>Label</code> with no side-effects.
+    */
+    public boolean isJump() { return false; }
+    
 }

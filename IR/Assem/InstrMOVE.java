@@ -27,7 +27,7 @@ import harpoon.Util.Util;
  * <code>InstrMEM</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrMOVE.java,v 1.1.2.4 2000-01-09 09:12:25 pnkfelix Exp $ 
+ * @version $Id: InstrMOVE.java,v 1.1.2.5 2000-10-19 22:39:07 pnkfelix Exp $ 
  */
 public class InstrMOVE extends Instr {
     
@@ -46,4 +46,6 @@ public class InstrMOVE extends Instr {
 	return new InstrMOVE(inf, this, getAssem(),
 			     map(defMap,def()), map(useMap,use()));
     }
+
+    public boolean isMove() { return true; }
 }
