@@ -7,11 +7,12 @@ package harpoon.IR.Quads;
  * <code>HandInfo</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: HandInfo.java,v 1.1.2.1 1999-08-10 21:58:21 bdemsky Exp $
+ * @version $Id: HandInfo.java,v 1.1.2.2 1999-08-11 20:31:50 bdemsky Exp $
  */
 
 import harpoon.ClassFile.HClass;
 import harpoon.IR.Quads.Quad;
+import java.util.Map;
 
 class HandInfo {
     //Need to denote
@@ -23,24 +24,30 @@ class HandInfo {
     private Quad handler;
     private HClass hclass;
     private int edge;
+    private Map hm;
 
-    HandInfo(boolean anyhandler, Quad handler, int edge) {
+    HandInfo(boolean anyhandler, Quad handler, int edge, Map hm) {
 	this.anyhandler=anyhandler;
 	this.handler=handler;
 	this.hclass=null;
 	this.edge=edge;
+	this.hm=hm;
     }
-    HandInfo(HClass hclass, Quad handler, int edge) {
+    HandInfo(HClass hclass, Quad handler, int edge, Map hm) {
 	this.hclass=hclass;
 	this.handler=handler;
 	this.anyhandler=false;
 	this.edge=edge;
+	this.hm=hm;
     }
     Quad handler() {
 	return handler;
     }
     int handleredge() {
 	return edge;
+    }
+    Map map() {
+	return hm;
     }
     boolean specificex() {
 	return (hclass!=null);

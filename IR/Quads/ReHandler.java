@@ -28,7 +28,7 @@ import java.util.Set;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.5 1999-08-11 20:19:58 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.6 1999-08-11 20:31:50 bdemsky Exp $
  */
 final class ReHandler {
     // entry point.
@@ -573,12 +573,13 @@ class PHVisitor extends QuadVisitor
 
     private void pushBack(PHI q, int dstIndex, int srcIndex)
     {
-	Edge from = q.prevEdge(srcIndex);
-	MOVE m    = new MOVE(m_qf, q, q.dst(dstIndex), 
-			     q.src(dstIndex, srcIndex));
-	Quad.addEdge(q.prev(srcIndex), from.which_succ(), m, 0);
-	Quad.addEdge(m, 0, q, from.which_pred());
-
+	if (q.dst(dstIndex)!=q.src(dstIndex, srcIndex)) {
+	    Edge from = q.prevEdge(srcIndex);
+	    MOVE m    = new MOVE(m_qf, q, q.dst(dstIndex), 
+				 q.src(dstIndex, srcIndex));
+	    Quad.addEdge(q.prev(srcIndex), from.which_succ(), m, 0);
+	    Quad.addEdge(m, 0, q, from.which_pred());
+	}
 	// Type information does not change, *but* we need to update
 	// the derivation table
     }
