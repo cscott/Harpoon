@@ -9,21 +9,22 @@ package javax.realtime;
  */
 
 public class RealtimeSecurity {
+    /** Security policy object for real-time specific issues. Primarily
+     *  used to control access to physical memory.
+     */
 
     private static boolean accessPhysical = true;
     private static boolean setFactory = false;
     private static boolean setScheduler = false;
+    private static boolean setFilter = true;
 
-    /** Constructor.
-     */
+    /** Constructor. */
     public RealtimeSecurity() {
 
     }
 
-    /** Check whether the application is allowed to access physical memory. 
-     */
-    public void checkAccessPhysical() 
-	throws SecurityException
+    /** Check whether the application is allowed to access physical memory. */
+    public void checkAccessPhysical() throws SecurityException
     {
 	if (!accessPhysical) {
 	    throw new SecurityException("Not allowed to access physical memory.");
@@ -36,26 +37,32 @@ public class RealtimeSecurity {
     public void checkAccessPhysicalRange(long base, long size) 
 	throws SecurityException
     {
-	throw new SecurityException("Not allowed to access "+base+":"+size+".");
+	throw new SecurityException("Not allowed to access " +
+				    base + ":" + size+ ".");
     }
 
-    /** Check whether the application is allowed to set factory objects.
-     */
-    public void checkSetFactory()
-	throws SecurityException
-    {
-	if (!setFactory) {
-	    throw new SecurityException("Not allowed to set factory objects.");
+    public void checkSetFilter() throws SecurityException {
+	if (!setFilter) {
+	    throw new SecurityException("Not allowed to set filter objects.");
 	}
     }
     
-    /** Check whether the application is allowed to set the scheduler. 
-     */
+    /** Check whether the application is allowed to set the scheduler. */
     public void checkSetScheduler()
 	throws SecurityException
     {
 	if (!setScheduler) {
 	    throw new SecurityException("Not allowed to set the scheduler.");
+	}
+    }
+
+    // NOT IN SPECS
+    /** Check whether the application is allowed to set factory objects. */
+    public void checkSetFactory()
+	throws SecurityException
+    {
+	if (!setFactory) {
+	    throw new SecurityException("Not allowed to set factory objects.");
 	}
     }
 }

@@ -5,34 +5,38 @@
 package javax.realtime;
 
 public abstract class Clock {
-
-	private RelativeTime resolution;
-	private static RealtimeClock rtc = null;
-
-	public Clock() {
-		this (1, 0);
-	}
-
-	public Clock(long millis, int nanos) {
-		resolution = new RelativeTime(1, 0);
-	}
-
-	public static Clock getRealtimeClock() {
-		// Only allow one RealtimeClock, because all RealtimeClocks are
-		// equivalent (i.e. they all advance in sync with the real world).
-		if (rtc == null)
-			rtc = new RealtimeClock();
-		return rtc;
-	}
-
-	public abstract RelativeTime getResolution();
-	public abstract void setResolution(RelativeTime res);
-
-	public AbsoluteTime getTime() {
-		AbsoluteTime time = new AbsoluteTime();
-		getTime(time);
- 		return time;
-	}
-
-	public abstract void getTime(AbsoluteTime time);
+    /** A clock */    
+    
+    private RelativeTime resolution;
+    private static RealtimeClock rtc = null;
+    
+    public Clock() {
+	// TODO
+    }
+    
+    public Clock(long millis, int nanos) {
+	// TODO
+	
+	// Why would it be like this?
+	//	resolution = new RelativeTime(1, 0);
+    }
+    
+    public static Clock getRealtimeClock() {
+	// Only allow one RealtimeClock, because all RealtimeClocks are
+	// equivalent (i.e. they all advance in sync with the real world).
+	if (rtc == null)
+	    rtc = new RealtimeClock();
+	return rtc;
+    }
+    
+    public abstract RelativeTime getResolution();
+    
+    public AbsoluteTime getTime() {
+	AbsoluteTime time = new AbsoluteTime();
+	getTime(time);
+	return time;
+    }
+    
+    public abstract void getTime(AbsoluteTime time);
+    public abstract void setResolution(RelativeTime res);
 }

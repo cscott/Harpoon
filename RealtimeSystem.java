@@ -13,16 +13,24 @@ package javax.realtime;
  */
 
 public class RealtimeSystem {
-
+    /** <code>RealtimeSystem</code> provides a means for tuning the
+     *  behavior of the implementation by specifying parameters such
+     *  as the maximum number of locks tht can be in use concurrently,
+     *  and the monitor control policy. In addition,
+     *  <code>RealtimeSystem</code> provides a mechanism for obtaining
+     *  access to the security manager, garbage collector and scheduler,
+     *  to make queries from them or to set parameters.
+     */
+    
     public static final byte BIG_ENDIAN = 0;
     public static final byte LITTLE_ENDIAN = 1;    
     public static final byte BYTE_ORDER = 2;
 
     private static GarbageCollector garbageCollector = null;
     private static RealtimeSecurity securityManager = null;
-    private int maxConcurrentLocks;
-    private int concurrentLocksUsed;
-    private boolean maxHard;
+    private static int maxConcurrentLocks;
+    private static int concurrentLocksUsed;
+    private static boolean maxHard;
 
     public RealtimeSystem() {
 	maxConcurrentLocks = 0;
@@ -49,7 +57,7 @@ public class RealtimeSystem {
      *  This value can be used for tuning the concurrent locks parameter,
      *  which is used as a hint by systems that use a monitor cache.
      */
-    public int getConcurrentLocksUsed() {
+    public static int getConcurrentLocksUsed() {
 	return concurrentLocksUsed;
     }
 
@@ -58,7 +66,7 @@ public class RealtimeSystem {
      *  setMaximumConcurrentLocks() methods.
      */
 
-    public int getMaximumConcurrentLocks() {
+    public static int getMaximumConcurrentLocks() {
 	return maxConcurrentLocks;
     }
 
@@ -75,7 +83,7 @@ public class RealtimeSystem {
      *  a monitor cache as to how much space to dedicate to the cache.
      */
 
-    public void setMaximumConcurrentLocks(int number) {
+    public static void setMaximumConcurrentLocks(int number) {
 	if (number > 0) {
 	    maxConcurrentLocks = number;
 	}
@@ -86,7 +94,7 @@ public class RealtimeSystem {
      *  monitor cache on systems that provide one if hard is true.
      */
 
-    public void setMaximumConcurrentLocks(int number, boolean hard) {
+    public static void setMaximumConcurrentLocks(int number, boolean hard) {
 	if (number > 0) {
 	    maxConcurrentLocks = number;
 	    maxHard = hard;
