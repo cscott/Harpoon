@@ -24,9 +24,9 @@ import java.util.Set;
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: ReachingHCodeElements.java,v 1.1.2.6 2000-02-02 04:17:06 pnkfelix Exp $ 
+ * @version $Id: ReachingHCodeElements.java,v 1.1.2.7 2000-02-03 21:11:55 pnkfelix Exp $ 
  */
-public class ReachingHCodeElements extends ReachingDefs { 
+public class ReachingHCodeElements extends ReachingDefs.BBVisitor { 
     private Map hceToBB;
     private Map tempsToPrsvs;
     private Set universe; 

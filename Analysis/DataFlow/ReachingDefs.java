@@ -29,12 +29,18 @@ import java.util.Set;
  * @author  John Whaley
  * @author  Felix S Klock <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ReachingDefs.java,v 1.1.2.16 2000-02-02 04:17:06 pnkfelix Exp $
+ * @version $Id: ReachingDefs.java,v 1.1.2.17 2000-02-03 21:11:55 pnkfelix Exp $
  */
-public abstract class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
-    private static final boolean DEBUG = false; 
-    private Map bbToRdi; 
+public abstract class ReachingDefs { 
     
+    private static final boolean DEBUG = false; 
+
+    
+
+abstract static class BBVisitor extends ForwardDataFlowBasicBlockVisitor {    
+
+    private Map bbToRdi; 
+
     /** 
      * Constructs a new <code>ReachingDefs</code> for <code>basicblocks</code>.
      * 
@@ -59,7 +65,7 @@ public abstract class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
      * @param basicBlocks <code>Iterator</code> of <code>BasicBlock</code>s 
      *                    to be analyzed.
      */	     
-    public ReachingDefs(Iterator basicblocks) {
+    public BBVisitor(Iterator basicblocks) {
 	CloneableIterator blocks   = new CloneableIterator(basicblocks);
 	Set               universe = findUniverse((Iterator) blocks.clone());
 	SetFactory        setFact  = new BitSetFactory(universe);
@@ -97,7 +103,7 @@ public abstract class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
      * @param setFact     the <code>SetFactory</code> to be used in 
      *                    the construction of sets of definitions. 
      */	     
-    public ReachingDefs(Iterator basicblocks, SetFactory setFact) {
+    public BBVisitor(Iterator basicblocks, SetFactory setFact) {
 	CloneableIterator blocks = new CloneableIterator(basicblocks); 
 
 	initializeBBtoRDI( blocks, setFact );
@@ -279,6 +285,7 @@ public abstract class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
 	    
 	    return s.toString();
 	}
+    }
     }
 }
 
