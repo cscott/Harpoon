@@ -1,4 +1,8 @@
 #!/bin/sh
+# configure runtime for cross-compilation.
+# usage:
+#   ./configure-cross-compiler [host-name] [configure options]
+# the 'host-name' parameter will be something like 'arm-unknown-linuxelf'
 
 set -e 
 
@@ -18,7 +22,7 @@ shift
 action=#install
 
 build=`$cgloc/config.guess` 
-host=arm-unknown-linuxelf
+host="$target"
 
 # Both configure and make need to be told where to find the various pieces. 
 # Define several variables of the things we need to pass to configure and make. 
@@ -30,6 +34,7 @@ CXX_FOR_BUILD=gcc
 # These are for building programs and libraries that run on $host. 
 CC=$host-gcc 
 AR=$host-ar 
+AS=$host-as
 NM=$host-nm
 RANLIB=$host-ranlib 
 
@@ -44,50 +49,6 @@ NM_FOR_TARGET=$host-nm
 AR_FOR_TARGET=$host-ar 
 RANLIB_FOR_TARGET=$host-ranlib 
 
-# Ready.  Configure and build. 
-if [ ! -f $h2t/configure.done ] ; then 
-    [ -d $h2t ] || mkdir $h2t 
-    (cd $h2t ; CC="$CC" AR="$AR" RANLIB="$RANLIB" NM="$NM" $src/configure --build=${build} --host=${host} --target=${target} --prefix=$instdir --with-gnu-ld --with-gnu-as $* ) || exit $?
-    touch $h2t/configure.done 
-fi 
-
-if [ xx = disable ] ; then 
-
-cd $h2t 
-make -w $makeopt all \
-        CC_FOR_BUILD="$CC_FOR_BUILD" \
-        CXX_FOR_BUILD="$CXX_FOR_BUILD" \
-        CC="$CC" \
-        AR="$AR" \
-        RANLIB="$RANLIB" \
-        GCC_FOR_TARGET="$CC_FOR_TARGET" \
-        CC_FOR_TARGET="$CC_FOR_TARGET" \
-        CXX_FOR_TARGET="$CC_FOR_TARGET" \
-        AS_FOR_TARGET=$AS_FOR_TARGET \
-        LD_FOR_TARGET=$LD_FOR_TARGET \
-        AR_FOR_TARGET=$AR_FOR_TARGET \
-        NM_FOR_TARGET=$NM_FOR_TARGET \
-        RANLIB_FOR_TARGET=$RANLIB_FOR_TARGET
-
-# All done, install if asked to. 
-if [ x"$action" = xinstall ] ; then 
-    make -w $makeopt install \
-        prefix=$buildroot$instdir
-        CC_FOR_BUILD="$CC_FOR_BUILD" \
-        CXX_FOR_BUILD="$CXX_FOR_BUILD" \
-        CC="$CC" \
-        AR="$AR" \
-        RANLIB="$RANLIB" \
-        GCC_FOR_TARGET="$CC_FOR_TARGET" \
-        CC_FOR_TARGET="$CC_FOR_TARGET" \
-        CXX_FOR_TARGET="$CC_FOR_TARGET" \
-        AS_FOR_TARGET=$AS_FOR_TARGET \
-        LD_FOR_TARGET=$LD_FOR_TARGET \
-        AR_FOR_TARGET=$AR_FOR_TARGET \
-        NM_FOR_TARGET=$NM_FOR_TARGET \
-        RANLIB_FOR_TARGET=$RANLIB_FOR_TARGET
-fi 
-fi
+CC="$CC" AR="$AR" AS="$AS" RANLIB="$RANLIB" NM="$NM" $src/configure --build=${build} --host=${host} --target=${target} --prefix=$instdir --with-gnu-ld --with-gnu-as $*
 
 exit $?
-
