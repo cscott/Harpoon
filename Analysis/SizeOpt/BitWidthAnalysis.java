@@ -78,7 +78,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.6 2001-07-20 01:26:10 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.7 2001-07-20 03:26:23 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -149,9 +149,11 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     /** Mapping from <code>HMethod</code>s to <code>CALL</code> quads
      *  which may invoke them. */
     final MultiMap callMap = new GenericMultiMap(new AggregateSetFactory());
-    /** Mapping from <code>HMethod</code>s to all retval temps. */
+    /** Mapping from <code>HMethod</code>s to all executable
+     *  <code>RETURN</code>s. */
     final MultiMap returnMap = new GenericMultiMap(new AggregateSetFactory());
-    /** Mapping from <code>HMethod</code>s to all retex temps. */
+    /** Mapping from <code>HMethod</code>s to all executable
+     *  <code>THROW</code>s. */
     final MultiMap throwMap = new GenericMultiMap(new AggregateSetFactory());
 
     /*---------------------------*/
@@ -347,7 +349,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		Quad q = (Quad) Wq.pull();
 		// Rule 2: for any executable block with
 		// only one successor C, set edge leading to C executable.
-		if (q.next().length==1) {
+		if (q.nextLength()==1) {
 		    raiseE(Ee, Eq, Wq, q.nextEdge(0));
 		}
 		// check conditions 3-8 for q.
@@ -696,16 +698,18 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		// raiseV on retval/retex.
 		for (Iterator it2=returnMap.getValues(hmm).iterator();
 		     it2.hasNext(); ) {
-		    Temp t = (Temp) it2.next();
-		    LatticeVal v = get( t );
-		    if (v==null) continue;
-		    mergeV(V, Wv, q.retval(), v);
+		    RETURN r = (RETURN) it2.next();
+		    if (r.retval()!=null) {
+			LatticeVal v = get( r.retval() );
+			if (v==null) continue;
+			mergeV(V, Wv, q.retval(), v);
+		    }
 		    raiseE(Ee, Eq, Wq, q.nextEdge(0) );
 		}
 		for (Iterator it2=throwMap.getValues(hmm).iterator();
 		     it2.hasNext(); ) {
-		    Temp t = (Temp) it2.next();
-		    LatticeVal v = get( t );
+		    THROW t = (THROW) it2.next();
+		    LatticeVal v = get( t.throwable() );
 		    if (v==null) continue;
 		    mergeV(V, Wv, q.retex(), v);
 		    raiseE(Ee, Eq, Wq, q.nextEdge(1) );
@@ -836,12 +840,12 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 			    get(q.objectref())==null ||
 			    get(q.objectref()) instanceof xClassNonNull : true,
 			    q);
+	    // add to list of reading quads.
+	    fieldMap.add(q.field(), q);
 	    // variable gets current lattice val of field.
 	    LatticeVal v = get( q.field() );
 	    if (v==null) return; // wait for field initialization.
 	    raiseV(V, Wv, q.dst(), v);
-	    // add to list of reading quads.
-	    fieldMap.add(q.field(), q);
 	    if (DEBUG) System.out.println("READ OF "+q.field()+" GETS "+get( q.field() ));
 	}
 	public void visit(HEADER q) {
@@ -978,8 +982,9 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    } // for each phi function.
 	}
 	public void visit(RETURN q) {
-	    if (get( q.retval() )==null) return; // wait for definition!
-	    returnMap.add( q.getFactory().getMethod(), q.retval() );
+	    returnMap.add( q.getFactory().getMethod(), q );
+	    if (q.retval() != null && get( q.retval() )==null)
+		return; // wait for definition!
 	    // for all CALLs which may invoke this method...
 	    for (Iterator it=callMap.getValues(q.getFactory().getMethod())
 		     .iterator(); it.hasNext(); ) {
@@ -1051,8 +1056,8 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    if (corruptor==null)
 		Util.assert(get(q.throwable())==null ||
 			    get(q.throwable()) instanceof xClassNonNull);
+	    throwMap.add( q.getFactory().getMethod(), q );
 	    if (get( q.throwable() )==null) return; // wait for definition!
-	    throwMap.add( q.getFactory().getMethod(), q.throwable() );
 	    // for all CALLs which may invoke this method...
 	    for (Iterator it=callMap.getValues(q.getFactory().getMethod())
 		     .iterator(); it.hasNext(); ) {
