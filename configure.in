@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.78 $)dnl
+AC_REVISION($Revision: 1.79 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -145,7 +145,7 @@ esac
 dnl process option to select threading model.
 AC_MSG_CHECKING([threading model])
 AC_ARG_WITH(thread-model,
-[  --with-thread-model={[none],pth,heavy,user}       select threading model to use],
+[  --with-thread-model={[none],pth,heavy,user} select threading model to use],
 thread_model="$withval", thread_model="none")
 case "$thread_model" in
 user)  AC_MSG_RESULT([user space threads])

@@ -10,7 +10,7 @@
 struct thread_list {
   struct thread_list *prev;
   struct machdep_pthread mthread;
-  struct JNIEnv * jnienv;
+  const struct JNINativeInterface **jnienv; /* see jni-types.h for typedef */
   struct thread_list *next;
   struct thread_list *lnext;
   int syncrdwr;
@@ -52,10 +52,30 @@ int user_cond_timedwait(user_cond_t *cond,
 void SchedulerAddRead(int fd);
 void SchedulerAddWrite(int fd);
 void doFDs();
+
+/* ------- pthreads compatibility ------------- */
+#ifdef USER_THREADS_COMPATIBILITY
+
+#define pthread_self()		gtl
+#define pthread_t               struct thread_list *
+
+#define PTHREAD_MUTEX_INITIALIZER  USER_MUTEX_INITIALIZER
+#define pthread_mutex_t		user_mutex_t
+#define pthread_mutex_init(x,a)	user_mutex_init((x), NULL)
+#define pthread_mutex_lock	user_mutex_lock
+#define pthread_mutex_unlock	user_mutex_unlock
+#define pthread_mutex_destroy	user_mutex_destroy
+#define pthread_mutex_trylock   user_mutex_trylock
+
+#define PTHREAD_COND_INITIALIZER	USER_COND_INIT
+#define pthread_cond_t			user_cond_t
+#define pthread_cond_init		user_cond_init
+#define pthread_cond_broadcast	        user_cond_broadcast
+#define pthread_cond_signal		user_cond_signal
+#define pthread_cond_wait		user_cond_wait
+#define pthread_cond_destroy		user_cond_destroy
+#define pthread_cond_timedwait          user_cond_timedwait
+
+#endif /* USER_THREADS_COMPATIBILITY */
+
 #endif /*U_THREADS*/
-
-
-
-
-
-

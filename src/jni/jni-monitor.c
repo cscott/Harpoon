@@ -29,7 +29,7 @@ void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall) {
 }
 #endif /* !WITH_THREADS */
 
-#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
 
 jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
   pthread_t self = pthread_self();
@@ -114,91 +114,4 @@ void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall) {
   (*env)->ThrowNew(env, ex, "notify() called but we don't have the lock");
   return;
 }
-#endif
-
-
-#ifdef WITH_USER_THREADS
-jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
-  struct thread_list * self = pthread_self();
-  struct inflated_oobj *li; int st;
-  assert(FNI_NO_EXCEPTIONS(env));
-  INCREMENT_STATS(monitor_enter, 1);
-  /* check object field, inflate lock if necessary. */
-  if (!FNI_IS_INFLATED(obj)) FNI_InflateObject(env, obj);
-  li = FNI_UNWRAP(obj)->hashunion.inflated;
-  if (li->tid == self) { /* i already have the lock */
-    li->nesting_depth++;
-  } else { /* someone else (or no one) has this lock */
-#ifdef WITH_STATISTICS
-    if ((st = pthread_mutex_trylock(&(li->mutex)))!=EBUSY) goto gotlock;
-    INCREMENT_STATS(monitor_contention, 1);
-#endif /* WITH_STATISTICS */
-    st = pthread_mutex_lock(&(li->mutex));
-  gotlock:
-    assert(st==0 /* no mutex errors */);
-    li->tid = self;
-    li->nesting_depth=1;
-  }
-  return 0;
-}
-jint FNI_MonitorExit(JNIEnv *env, jobject obj) {
-  struct inflated_oobj *li; int st;
-  assert(FNI_NO_EXCEPTIONS(env));
-  assert(FNI_IS_INFLATED(obj));
-  li = FNI_UNWRAP(obj)->hashunion.inflated;
-  assert(li->tid == pthread_self());
-  if (--li->nesting_depth == 0) {
-    /* okay, unlock this puppy. */
-    li->tid = 0;
-    st = pthread_mutex_unlock(&(li->mutex));
-    assert(st==0 /* no mutex errors */);
-  }
-  return 0;
-}
-void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime){
-  struct inflated_oobj *li; jclass ex; int st;
-  assert(FNI_NO_EXCEPTIONS(env));
-  if (!FNI_IS_INFLATED(obj)) goto error; // we don't have the lock.
-  li = FNI_UNWRAP(obj)->hashunion.inflated;
-  if (li->tid != pthread_self()) goto error; // we don't have the lock.
-  else { /* open brace so we can push new stuff on the stack */
-    struct thread_list * tid = li->tid;
-    jint nesting_depth = li->nesting_depth;
-    li->tid = 0;/*let other folk grab the lock, just as soon as we give it up*/
-    if (abstime==NULL)
-      st = pthread_cond_wait(&(li->cond), &(li->mutex));
-    else
-      st = pthread_cond_timedwait(&(li->cond), &(li->mutex), abstime);
-    assert(st==0 || st==ETIMEDOUT || st==EINTR /*no cond variable errors*/);
-    li->tid = tid;
-    li->nesting_depth = nesting_depth;
-    return;
-  }
-
- error:
-  ex = (*env)->FindClass(env, "java/lang/IllegalMonitorStateException");
-  if ((*env)->ExceptionOccurred(env)) return;
-  (*env)->ThrowNew(env, ex, "wait() called but we don't have the lock");
-  return;
-}
-void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall) {
-  struct inflated_oobj *li; jclass ex; int st;
-  assert(FNI_NO_EXCEPTIONS(env));
-  if (!FNI_IS_INFLATED(obj)) goto error; // we don't have the lock.
-  li = FNI_UNWRAP(obj)->hashunion.inflated;
-  if (li->tid != pthread_self()) goto error; // we don't have the lock.
-
-  if (wakeall)
-    st = pthread_cond_broadcast(&(li->cond));
-  else
-    st = pthread_cond_signal(&(li->cond));
-  assert(st == 0/* no condition variable errors */);
-  return;
-
- error:
-  ex = (*env)->FindClass(env, "java/lang/IllegalMonitorStateException");
-  if ((*env)->ExceptionOccurred(env)) return;
-  (*env)->ThrowNew(env, ex, "notify() called but we don't have the lock");
-  return;
-}
-#endif
+#endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS */

@@ -9,7 +9,7 @@
 #include "config.h"
 #ifdef WITH_USER_THREADS
 #ifndef lint
-static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.3 2001-01-17 18:48:34 bdemsky Exp $";
+static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.4 2001-01-18 22:16:34 cananian Exp $";
 #endif
 
 #include "config.h"
@@ -20,7 +20,7 @@ static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.3 2001-01-17 18:48
 #include <sys/param.h> /* for OPEN_MAX */
 #include <sys/socket.h>
 #if defined __GLIBC__
-#include <linux/net.h>
+//#include <linux/net.h>//CSA: caused my build to break on lesser-magoo.
 #endif
 #include "engine-i386-linux-1.0.h"
 #include "threads.h"

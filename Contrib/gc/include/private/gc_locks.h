@@ -87,6 +87,7 @@
 #   if defined(I386)|| defined(POWERPC) || defined(ALPHA) || defined(IA64) \
     || defined(M68K) || defined(SPARC)
 #ifdef USER_THREADS
+#    define USER_THREADS_COMPATIBILITY
 #    include <threads.h>
 #else
 #    include <pthread.h>

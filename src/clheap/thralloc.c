@@ -36,6 +36,7 @@ extern struct oobj *_Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread;
 # define FETCH_THIS_THREAD() FNI_WRAP(FETCH_THIS_THREAD_UNWRAPPED())
 
 #elif defined(WITH_USER_THREADS) && defined(WITH_EVENT_DRIVEN)
+/* User threads look remarkable like heavy-weight threads. =) */
 # define FETCH_THIS_THREAD() \
 	(((struct FNI_Thread_State *)FNI_GetJNIEnv())->thread)
 # define FETCH_THIS_THREAD_UNWRAPPED() FNI_UNWRAP(FETCH_THIS_THREAD())

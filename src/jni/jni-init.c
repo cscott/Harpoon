@@ -108,4 +108,4 @@ JNIEnv *FNI_CreateJNIEnv(void) {
 JNIEnv *FNI_GetJNIEnv(void) {
   return gtl->jnienv;
 }
-#endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS */
+#endif /* WITH_USER_THREADS */
