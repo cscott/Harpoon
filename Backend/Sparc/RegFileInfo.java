@@ -34,15 +34,18 @@ import java.util.Set;
  * which are used for tracking global data.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.5 1999-11-23 09:39:05 andyb Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.6 1999-12-01 05:19:24 andyb Exp $
  */
 public class RegFileInfo 
   extends harpoon.Backend.Generic.RegFileInfo 
   implements harpoon.Backend.Generic.LocationFactory
 {
     private final TempFactory regtf;
-    private final Temp[] reg;
+    private final Temp[] integerRegs;
     private final Temp[] generalRegs;
+    private final Temp[] floatingRegs;
+    private final Temp[] generalIntRegs;
+    private final Temp[] allRegs;
     private final Set callerSaveRegs;
     private final Set calleeSaveRegs;
     private final Set liveOnExitRegs;
@@ -61,6 +64,7 @@ public class RegFileInfo
 	 *   %i0 - %i7: registers for incoming subroutine arguments.
 	 *		%i6 is frame pointer and %i7 is subroutine return
 	 *		address.
+         *   %f0 - %f31: floating point registewrs.
 	 */
 	regtf = new TempFactory() {
 	    private int i = 0;
@@ -69,7 +73,11 @@ public class RegFileInfo
 		"%g4", "%g5", "%g6", "%g7", "%o0", "%o1", "%o2", "%o3",
 		"%o4", "%o5", "%sp", "%o7", "%l0", "%l1", "%l2", "%l3",
 		"%l4", "%l5", "%l6", "%l7", "%i0", "%i1", "%i2", "%i3",
-		"%i4", "%i5", "%fp", "%i7" };
+		"%i4", "%i5", "%fp", "%i7", "%f0", "%f1", "%f2", "%f3",
+                "%f4", "%f5", "%f6", "%f7", "%f8", "%f9", "%f10", "%f11",
+                "%f12", "%f13", "%f14", "%f15", "%f16", "%f17", "%f18", "%f19",
+                "%f20", "%f21", "%f22", "%f23", "%f24", "%f25", "%f26", "%f27",
+                "%f28", "%f29", "%f30", "%f31"};
 
 	    public String getScope() { return scope; }
 	    public synchronized String getUniqueID(String suggestion) {
@@ -80,36 +88,45 @@ public class RegFileInfo
 	    }
 	};
 
-	reg = new Temp[32]; 
-	generalRegs = new Temp[27];
+	integerRegs = new Temp[32]; 
+	generalIntRegs = new Temp[27];
+        floatingRegs = new Temp[32];
+        generalRegs = new Temp[59];
+        allRegs = new Temp[64];
 
 	int j = 0;
 	for (int i = 0; i < 32; i++) {
-	    reg[i] = new Temp(regtf);
+	    integerRegs[i] = new Temp(regtf);
 	    if ((i != 0) && (i != 14) && (i != 15) && (i != 30) && (i != 31)) {
-		generalRegs[j] = reg[i];
+		generalIntRegs[j] = integerRegs[i];
+                generalRegs[j] = integerRegs[i];
 		j++;
 	    }
 	}
+        for (int i = 0; i < 32; i++) {
+            floatingRegs[i] = new Temp(regtf);
+            generalRegs[i+27] = floatingRegs[i];
+            allRegs[i+32] = floatingRegs[i];
+        }
 
-	SP = reg[14];
-	FP = reg[30];
+	SP = allRegs[14];
+	FP = allRegs[30];
  
 	// live on exit: %fp, %sp, %i0: return value, %i7: return address
 	//		 %g0: zero, always live
 	liveOnExitRegs = new LinearSet(5);  
 	liveOnExitRegs.add(FP);
 	liveOnExitRegs.add(SP);
-	liveOnExitRegs.add(reg[0]);
-	liveOnExitRegs.add(reg[24]);
-	liveOnExitRegs.add(reg[31]);
+	liveOnExitRegs.add(allRegs[0]);
+	liveOnExitRegs.add(allRegs[24]);
+	liveOnExitRegs.add(allRegs[31]);
  
 	// caller saved: clobbered by callee
 	// %g0-%g7, %o0-%o5, %o7 
 	callerSaveRegs = new LinearSet(15);
 	for (int i = 0; i < 16; i++)
-	    if (i != 14)  /* i = 14 -> reg[14] -> %sp */
-		callerSaveRegs.add(reg[i]);
+	    if (i != 14)  /* i = 14 -> allRegs[14] -> %sp */
+		callerSaveRegs.add(allRegs[i]);
 
 	// callee needs to save these itself
 	// none - all callee saving is done by the magic save
@@ -143,11 +160,20 @@ public class RegFileInfo
 
 	final ArrayList suggests = new ArrayList();
 	final ArrayList spills = new ArrayList();
+        Temp[] possibleRegs;        
+
+        if (tb.isFloatingPoint(t)) {
+            possibleRegs = floatingRegs;
+        } else {
+	    possibleRegs = generalIntRegs;
+        }
 
 	if (tb.isTwoWord(t)) {
-	    for (int i = 0; i < generalRegs.length - 1; i++) {
-		Temp[] assign = new Temp[] { generalRegs[i],
-					     generalRegs[i+1] };
+            /* sparc32 doubles must be aligned on adjacent registers,
+               either 0/1, 2/3, 4/5, etc... */
+	    for (int i = 0; i < possibleRegs.length - 1; i+=2) {
+		Temp[] assign = new Temp[] { possibleRegs[i],
+					     possibleRegs[i+1] };
 		if ((regFile.get(assign[0]) == null) &&
 		    (regFile.get(assign[1]) == null)) {
 		    suggests.add(Arrays.asList(assign));
@@ -159,12 +185,12 @@ public class RegFileInfo
 		}
 	    }
 	} else {
-	    for (int i = 0; i < generalRegs.length; i++) {
-		if ((regFile.get(generalRegs[i]) == null)) {
-		    suggests.add(ListFactory.singleton(generalRegs[i]));
+	    for (int i = 0; i < possibleRegs.length; i++) {
+		if ((regFile.get(possibleRegs[i]) == null)) {
+		    suggests.add(ListFactory.singleton(possibleRegs[i]));
 		} else {
 		    Set s = new LinearSet(1);
-		    s.add(generalRegs[i]);
+		    s.add(possibleRegs[i]);
 		    spills.add(s);
 		}
 	    }
@@ -180,10 +206,10 @@ public class RegFileInfo
     }
 
     public Temp[] getAllRegisters() {
-	return (Temp[]) Util.safeCopy(Temp.arrayFactory, reg);
+	return (Temp[]) Util.safeCopy(Temp.arrayFactory, allRegs);
     }
 
-    public Temp getRegister(int index) { return reg[index]; }
+    public Temp getRegister(int index) { return allRegs[index]; }
 
     public Temp[] getGeneralRegisters() {
 	return (Temp[]) Util.safeCopy(Temp.arrayFactory, generalRegs);
@@ -205,7 +231,7 @@ public class RegFileInfo
 	// Currently just uses the %g registers - nothing fancy yet.
 	Util.assert(regtop > 0, "Sorry, can't do any more global locations");
     
-	final Temp allocreg = reg[regtop--];
+	final Temp allocreg = allRegs[regtop--];
 
 	calleeSaveRegs.remove(allocreg);
 	callerSaveRegs.remove(allocreg);
