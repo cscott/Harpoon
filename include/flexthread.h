@@ -5,6 +5,8 @@
 
 #ifdef WITH_HEAVY_THREADS
 #include <pthread.h>
+#include <sched.h>	/* for sched_yield */
+#define pthread_yield_np	sched_yield
 
 #ifndef HAVE_PTHREAD_RWLOCK_T
 /* work-around for missing read/write lock. */
@@ -22,30 +24,75 @@
 #ifdef WITH_PTH_THREADS
 #define PTH_SYSCALL_SOFT 1
 #include <pth.h>
+#include <errno.h>
+
+#define PTHERR(x) ((x)?0:errno)
 
 #define pthread_t			pth_t
+#define pthread_self			pth_self
+#define pthread_equal(x,y)		((x) == (y))
+#define pthread_yield_np()		({ pth_yield(NULL); 0; })
+
+#define pthread_create(thread,attr,start,arg)				\
+    ({ pth_attr_t *_na = (attr);					\
+       *(thread)=pth_spawn(_na?*_na:PTH_ATTR_DEFAULT,start, arg);	\
+       *(thread) ? 0 : EAGAIN; })
+#define pthread_attr_t			pth_attr_t
+#define pthread_attr_init(attr)	\
+    ({ *(attr)=pth_attr_new(); *(attr) ? 0 : errno; })
+#define pthread_attr_destroy(attr) \
+    ({ pth_attr_destroy(*(attr)); *(attr)=NULL; 0; })
+#define PTHREAD_CREATE_DETACHED 0
+#define PTHREAD_CREATE_JOINABLE 1
+#define pthead_attr_setdetachstate(attr, state) \
+    PTHERR(pth_attr_set(*(attr), PTH_ATTR_JOINABLE, state))
 
 #define PTHREAD_MUTEX_INITIALIZER	PTH_MUTEX_INIT
 #define pthread_mutex_t			pth_mutex_t
-#define pthread_mutex_init(m, a)	pth_mutex_init((m))
-#define pthread_mutex_lock(m)		pth_mutex_acquire((m), FALSE, NULL)
-#define pthread_mutex_trylock(m)	pth_mutex_acquire((m), TRUE, NULL)
-#define pthread_mutex_unlock(m)		pth_mutex_release((m))
-#define pthread_mutex_destroy(m)	/* do nothing */
+#define pthread_mutex_init(m, a)	PTHERR(pth_mutex_init((m)))
+#define pthread_mutex_lock(m)	    PTHERR(pth_mutex_acquire((m), FALSE, NULL))
+#define pthread_mutex_trylock(m)    PTHERR(pth_mutex_acquire((m), TRUE, NULL))
+#define pthread_mutex_unlock(m)		PTHERR(pth_mutex_release((m)))
+#define pthread_mutex_destroy(m)	(/* do nothing */0)
 
 #define PTHREAD_RWLOCK_INITIALIZER	PTH_RWLOCK_INIT
 #define pthread_rwlock_t		pth_rwlock_t
-#define pthread_rwlock_init(l, a)	pth_rwlock_init((l))
-#define pthread_rwlock_rdlock(l)	pth_rwlock_acquire((l), PTH_RWLOCK_RD,\
-							   FALSE, NULL)
-#define pthread_rwlock_tryrdlock(l)	pth_rwlock_acquire((l), PTH_RWLOCK_RD,\
-							   TRUE, NULL)
-#define pthread_rwlock_wrlock(l)	pth_rwlock_acquire((l), PTH_RWLOCK_RW,\
-							   FALSE, NULL)
-#define pthread_rwlock_trywrlock(l)	pth_rwlock_acquire((l), PTH_RWLOCK_RW,\
-							   TRUE, NULL)
-#define pthread_rwlock_unlock(l)	pth_rwlock_release((l))
-#define pthread_rwlock_destroy(l)	/* do nothing */
+#define pthread_rwlock_init(l, a)	PTHERR(pth_rwlock_init((l)))
+#define pthread_rwlock_rdlock(l)	PTHERR(pth_rwlock_acquire((l), \
+					       PTH_RWLOCK_RD, FALSE, NULL))
+#define pthread_rwlock_tryrdlock(l)	PTHERR(pth_rwlock_acquire((l), \
+					       PTH_RWLOCK_RD, TRUE, NULL))
+#define pthread_rwlock_wrlock(l)	PTHERR(pth_rwlock_acquire((l), \
+                                               PTH_RWLOCK_RW, FALSE, NULL))
+#define pthread_rwlock_trywrlock(l)	PTHERR(pth_rwlock_acquire((l), \
+					       PTH_RWLOCK_RW, TRUE, NULL))
+#define pthread_rwlock_unlock(l)	PTHERR(pth_rwlock_release((l)))
+#define pthread_rwlock_destroy(l)	(/* do nothing */0)
+
+#define PTHREAD_COND_INITIALIZER	PTH_COND_INIT
+#define pthread_cond_t			pth_cond_t
+#define pthread_cond_init(c, a)		PTHERR(pth_cond_init((c)))
+#define pthread_cond_broadcast(c)	PTHERR(pth_cond_notify((c), TRUE))
+#define pthread_cond_signal(c)		PTHERR(pth_cond_notify((c), FALSE))
+#define pthread_cond_wait(c, m)		PTHERR(pth_cond_await((c), (m), NULL))
+#define pthread_cond_destroy(c)		(/* do nothing */0)
+#define pthread_cond_timedwait(c, m, abstime)			\
+({ const struct timespec *_abstime = (abstime);			\
+   pth_event_t _ev = pth_event(PTH_EVENT_TIME|PTH_MODE_STATIC,	\
+			       &flex_timedwait_key,		\
+			       pth_time(_abstime->tv_sec,	\
+					_abstime->tv_nsec/1000));\
+   (!pth_cond_await((c), (m), _ev)) ? errno :			\
+   pth_event_occurred(_ev) ? ETIMEDOUT : 0; })
+extern pth_key_t flex_timedwait_key; /* defined in java_lang_Thread.c */
+
+/* thread-specific key creation */
+#define pthread_key_t			pth_key_t
+#define pthread_key_create(k,d)		PTHERR(pth_key_create((k),(d)))
+#define pthread_key_delete(k)		PTHERR(pth_key_delete((k)))
+#define pthread_setspecific(k,v)	PTHERR(pth_key_setdata((k),(v)))
+#define pthread_getspecific(k)		pth_key_getdata((k))
+
 #endif /* WITH_PTH_THREADS */
 
 

@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <jni-private.h>
+#include "flexthread.h"
 
 /* these functions are defined in src/java.lang/java_lang_Thread.c but only
  * used here. */
@@ -21,6 +22,11 @@ int main(int argc, char *argv[]) {
   char **namep;
   int i;
   
+  /* random package initialization */
+#ifdef WITH_PTH_THREADS
+  pth_init();
+#endif
+
   /* set up JNIEnv structures. */
   FNI_InitJNIEnv();
   env = FNI_CreateJNIEnv();

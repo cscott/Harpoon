@@ -4,6 +4,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "flexthread.h" /* soft syscall mapping for select, etc, in GNU pth */
 
 typedef struct {
     int maxFD;             // The highest FD in the fd_set

@@ -6,16 +6,16 @@
 #include "config.h"
 #include <errno.h>
 #include "flexthread.h"
-#ifdef WITH_HEAVY_THREADS
+#ifdef WITH_THREADS
 #include <sys/time.h>
 #endif
-#include <sched.h> /* for sched_yield */
+#include <sched.h> /* for sched_get_priority_min/max */
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h> /* for usleep */
 
-#ifdef WITH_HEAVY_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
 #define EXTRACT_OTHER_ENV(env, thread) \
   ( (struct FNI_Thread_State *) FNI_GetJNIData(env, thread) )
 #define EXTRACT_PTHREAD_T(env, thread) \
@@ -60,7 +60,7 @@ static void wait_on_running_thread() {
   pthread_mutex_unlock(&running_threads_mutex);
 }
 
-#endif /* WITH_HEAVY_THREADS */
+#endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS */
 
 static jfieldID priorityID; /* "priority" field in Thread object. */
 static jfieldID daemonID; /* "daemon" field in Thread object. */
@@ -73,6 +73,11 @@ static jmethodID uncaughtID; /* ThreadGroup.uncaughtException() method. */
 static jint MIN_PRIORITY, NORM_PRIORITY, MAX_PRIORITY;
 #ifdef WITH_HEAVY_THREADS
 static int sched_min_priority, sched_norm_priority, sched_max_priority;
+#endif
+
+/* this is used to implement pthread_cond_timedwait for pth in flexthread.h */
+#ifdef WITH_PTH_THREADS
+pth_key_t flex_timedwait_key = PTH_KEY_INIT;
 #endif
 
 void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
@@ -123,7 +128,7 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
 #endif
   /* make Thread object-to-JNIEnv mapping. */
   FNI_SetJNIData(env, mainThr, env, NULL);
-#ifdef WITH_HEAVY_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   ((struct FNI_Thread_State *)env)->pthread = pthread_self();
 #endif
   /* as the thread constructor method uses 'current thread' as a template
@@ -160,7 +165,7 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   (*env)->DeleteLocalRef(env, thrGrpCls);
   (*env)->DeleteLocalRef(env, mainThrGrp);
   (*env)->DeleteLocalRef(env, thrCls);
-#ifdef WITH_HEAVY_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   /* make pthread_key_t before the fat lady sings */
   pthread_key_create(&running_threads_key, remove_running_thread);
 #endif /* WITH_HEAVY_THREADS */
@@ -169,7 +174,7 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
 
 /* wait for all non-main non-daemon threads to terminate */
 void FNI_java_lang_Thread_finishMain(JNIEnv *env) {
-#ifdef WITH_HEAVY_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   wait_on_running_thread();
 #endif
 }
@@ -206,12 +211,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_Thread_currentThread
  */
 JNIEXPORT void JNICALL Java_java_lang_Thread_yield
   (JNIEnv *env, jclass cls) {
-  /* two ways of implementing this... not sure which is better. */
-#if 1
-  sched_yield();
-#else
-  usleep(0);
-#endif
+  pthread_yield_np();
 }
 
 /*
@@ -222,7 +222,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_yield
 /* causes the *currently-executing* thread to sleep */
 JNIEXPORT void JNICALL Java_java_lang_Thread_sleep
   (JNIEnv *env, jclass cls, jlong millis) {
-#if 0 && defined(WITH_HEAVY_THREADS)
+#if WITH_PTH_THREADS
   // FIXME: not sure this is the best way to handle thread interruptions
   struct FNI_Thread_State *fts = (struct FNI_Thread_State *) env;
   struct timeval tp; struct timespec ts;
@@ -253,7 +253,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_sleep
 #endif
 }
 
-#ifdef WITH_HEAVY_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
 struct closure_struct {
   jobject thread;
   pthread_cond_t parampass_cond;
@@ -311,9 +311,11 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   assert(!((*env)->ExceptionOccurred(env)));
   /* then set up the pthread_attr's */
   pthread_attr_init(&nattr);
+#ifndef WITH_PTH_THREADS
   pthread_attr_getschedparam(&nattr, &param);
   param.sched_priority = java_priority_to_sched_priority(pri);
   pthread_attr_setschedparam(&nattr, &param);
+#endif
   pthread_attr_setdetachstate(&nattr, PTHREAD_CREATE_DETACHED);
   /* now startup the new pthread */
   pthread_mutex_lock(&(cls.parampass_mutex));
@@ -328,7 +330,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   pthread_attr_destroy(&nattr);
   /* done! */
 }
-#endif /* WITH_HEAVY_THREADS */
+#endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS */
 
 #if 0
 /*
