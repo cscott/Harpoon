@@ -67,6 +67,7 @@ public class RealtimeThread extends Thread implements Schedulable {
     /** Create a real-time thread. All parameter values are null. */
     public RealtimeThread() {
 	this((MemoryArea)null);
+	setup();
     }
 
     /** Create a real-time thread with the given <code>SchedulingParameters</code>. */
@@ -146,12 +147,6 @@ public class RealtimeThread extends Thread implements Schedulable {
 	setup();
     }
 
-// 	public RealtimeThread(ThreadGroup group, Runnable target) {
-// 		super(group, target);
-// 		mem = null;
-// 		setup();
-// 	}
-    
     public RealtimeThread(ThreadGroup group, Runnable target,
 			  String name, MemoryArea memory) {
 	super(group, target, name);
@@ -166,6 +161,9 @@ public class RealtimeThread extends Thread implements Schedulable {
 	noHeap = false;
 	heapMemCount = 0;
 	topStack = null;
+	if (!RTJ_init_in_progress) {
+	    currentScheduler = Scheduler.getDefaultScheduler();
+	}
     }
 
     /** Add to the feasibility of the already set scheduler if the resulting
