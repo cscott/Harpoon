@@ -79,7 +79,10 @@ while [ x$dep = x ]; do
   esac;
 done
 
-echo Downloading dependencies...
+if [ x$dep = xY ]; do
+  echo Downloading dependencies...
+fi;
+
 if [ -f /etc/redhat-release ]; then 
    export WEB_ROOT=http://flex-cvs.csail.mit.edu/ImageRec/RPMS; 
    mkdir RPMS;
