@@ -20,6 +20,7 @@ foreach my $run (keys %runsize) {
     close FH;
 }
 $allsizes{12} = 1; # min x
+$allsizes{1 + (sort {$b <=> $a} keys %allsizes)[0]} = 1; # max x
 @allops = ( "r", "w", "R", "W" );
 # now accumulate in reverse size order
 # (so we get "number of accesses to objects larger than X")

@@ -7,7 +7,9 @@
   rectangle: 1 1 4 4
   xscaletype: log
   yscaletype: linear
-  xrange: 1 20000000
+  xrange: 1 200000000
+//  xrange: 1 20000000
+//  xrange: 1 1000000
 //  xrange: 1 1000
   yrange: 0 100
 
@@ -92,6 +94,8 @@
 70000000
 80000000
 90000000
+100000000
+200000000
 
   grid: color=gray(0.9)
 
@@ -115,6 +119,7 @@
 1000000 1M
 10000000 10M
 100000000 100M
+1000000000 1G
 
   label: Transaction size (# memory operations)
 
@@ -192,5 +197,5 @@
 #endif
 
 #proc legend
-  location: max-1 max-.2
+  location: max-1.3 max-.2
   seglen: 0.3
