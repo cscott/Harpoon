@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.91 2001-02-23 06:34:31 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.92 2001-06-12 05:34:55 witchel Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -104,6 +104,7 @@ JARPKGS := $(subst harpoon/Contrib,gnu, \
 PROPERTIES:=Contrib/getopt/MessagesBundle.properties \
 	    Support/nativecode-makefile.template \
 	    Support/precisec-makefile.template \
+	    Support/mipsda-makefile.template \
 	    $(wildcard Backend/Runtime1/*.properties)
 PKGDESC:=$(wildcard overview.html) $(wildcard README) \
 	 $(foreach dir, $(ALLPKGS),\
