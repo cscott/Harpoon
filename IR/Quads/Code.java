@@ -30,7 +30,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.3.2.2 2002-03-04 20:34:17 cananian Exp $
+ * @version $Id: Code.java,v 1.3.2.3 2002-03-10 08:03:13 cananian Exp $
  */
 public abstract class Code extends HCode<Quad>
     implements java.io.Serializable {
@@ -74,9 +74,9 @@ public abstract class Code extends HCode<Quad>
     protected HCodeAndMaps cloneHelper(Code _this, Code qc) {
 	HCodeAndMaps hcam = Quad.cloneWithMaps(qc.qf, _this.quads);
 	// fill in the missing info in the hcam.
-	hcam = new HCodeAndMaps((HCode)qc, // XXX BUG IN JAVAC
+	hcam = new HCodeAndMaps(qc,
 				hcam.elementMap(), hcam.tempMap(),
-				(HCode)_this, // XXX BUG IN JAVAC
+				_this,
 				hcam.ancestorElementMap(),
 				hcam.ancestorTempMap());
 	// finish setting up qc.
@@ -89,7 +89,7 @@ public abstract class Code extends HCode<Quad>
     }
     private static AllocationInformation cloneAllocationInformation
 	(HCodeAndMaps hcam) {
-	Code ocode = (Code) ((HCode) hcam.ancestorHCode()); // XXX BUG IN JAVAC
+	Code ocode = (Code) hcam.ancestorHCode();
 	AllocationInformation oaim = ocode.getAllocationInformation();
 	AllocationInformationMap naim = new AllocationInformationMap();
 	for (Iterator it=ocode.getElementsI(); it.hasNext(); ) {
