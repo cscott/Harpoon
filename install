@@ -266,8 +266,8 @@ while [ x$IMAGEREC = xnone ]; do
                 esac;
               done;
               if [ x$install_me = xy ]; then
-                mkdir ../ImageRec;
-                cd ../ImageRec;
+                mkdir $FLEX_ROOT/ImageRec;
+                cd $FLEX_ROOT/ImageRec;
                 wget -q -O ImageRec.tgz http://flex-cvs.csail.mit.edu/ImageRec/ImageRec-$imagerec_version.tgz;
                 tar zxpf ImageRec.tgz;
                 rm -f ImageRec.tgz;
