@@ -3,8 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Tools.PatMat;
 
-import java.io.Writer;
-import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * <code>CodeGeneratorGenerator</code> generates a java program to
@@ -18,7 +17,7 @@ import java.io.IOException;
  * Generator.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.2 1999-06-25 04:25:14 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.3 1999-06-25 11:17:30 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     /** The machine specification that the CodeGenerators outputted by
@@ -42,7 +41,7 @@ public abstract class CodeGeneratorGenerator {
              <code>CodeGeneratorGenerator</code> and associates the
 	     machine specification <code>s</code> with the newly
 	     constructed <code>CodeGeneratorGenerator</code>.
-	@see <A HREF="http://palmpilot.lcs.mit.edu/~pnkfelix/instr-selection-tool.html">Standard Specification Template</A>
+	@see <A HREF="doc-files/instr-selection-tool.html">Standard Specification Template</A>
 	@param s <code>Spec</code> defining the machine specification
 	         that the CodeGenerator output by <code>this</code>
 		 will target.
@@ -59,35 +58,59 @@ public abstract class CodeGeneratorGenerator {
 	<BR> <B>effects:</B> 
 	     Generates Java source for the machine specification
 	     associated with <code>this</code>.  
-	     Then writes the Java source code out to <code>out</code>.
+	     Then writes the Java source code out to <code>out</code>,
+	     and flushes <code>out</code> after it finishes outputting
+	     the source code.
 	@param out Target output device for the Java source code.
-	@exception IOException If there is an error writing to <code>out</code>
     */
-    public void outputJavaFile(Writer out) throws IOException {
-	out.write(spec.global_stms);
-
-	out.write("public class " + className + " { ");
-
-	out.write(spec.class_stms);
+    public void outputJavaFile(PrintWriter out) {
+	out.println(spec.global_stms);
+	out.println("public class " + className + " { ");
+	out.println(spec.class_stms);
+	
+	out.println("\t/** Generates assembly code from a <code>TreeCode</code>.");
+	out.println("\t    <BR> <B>modifies:</B> <code>this</code>");
+	out.println("\t    <BR> <B>effects:</B>");
+	out.println("\t         Scans <code>tree</code> to find a tiling of ");
+	out.println("\t         Instruction Patterns, calling auxillary methods");
+	out.println("\t         and data structures as defined in the .Spec file");
+	out.println("\t    @param tree Set of abstract <code>Tree</code> instructions ");
+	out.println("\t                that form the body of the procedure being compiled.");
+	out.println("\t*/");
+	out.println("\tpublic final void codegen(TreeCode tree) {"); // method start
 
 	outputSelectionMethod(out);
 
-	out.write("}");
-	
+	out.println("\t}"); // end method
+	out.println("}"); // end class
 	out.flush();
-	
     }
 
     /** Writes the Instruction Selection Method to <code>out</code>.
 	<BR> <B>modifies:</B> <code>out</code>
 	<BR> <B>effects:</B>
 	     Generates Java source for the instruction selection
-	     method, including method signature.  Outputs generated
-	     source to <code>out</code>.
-	@param out Target output device for the Java source code.
-	@exception IOException If there is an error writing to <code>out</code>
-    */
-    public abstract void outputSelectionMethod(Writer out) throws IOException; 
+	     method, not including method signature or surrounding
+	     braces.  
+	     
+	     <BR>Generated method has one parameter available to be
+	     referenced: <code>tree</code>, a <code>TreeCode</code>
+	     that represents the input set of <code>Tree</code>
+	     <code>HCodeElement</code>s.
+
+	     <BR>Generated method finds a tiling for
+	     <code>tree</code>, using the information in
+	     <code>this.spec</code> as a <code>Spec.Rule</code> tile
+	     source, and then runs <code>Spec.Rule.action_str</code>
+	     for each matching tile.
+
+	     <BR>Outputs generated source to <code>out</code>.
+
+	     <BR>Awards bonus points to subclasses that implement this
+	     method to output documentation for the generated method
+	     body. 
+	@param out Target output device for the Java source code.  */
+    public abstract void outputSelectionMethod(PrintWriter out);
 }
 
 

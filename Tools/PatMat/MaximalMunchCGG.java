@@ -3,8 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Tools.PatMat;
 
-import java.io.Writer;
-import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * <code>MaximalMunchCGG</code> finds an optimal tiling of
@@ -16,13 +15,15 @@ import java.io.IOException;
  * 9.1 for a description of Maximal Munch.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.1 1999-06-25 04:10:56 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.2 1999-06-25 11:17:30 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
     
     /** Creates a <code>MaximalMunchCGG</code>. 
 	<BR> <B>requires:</B> <OL>
 	     <LI> <code>s</code> follows the standard template for
 	          defining a machine specification.  
+	     <LI> <code>className</code> is a legal Java identifier
+	          string for a class.
 	     <LI> For each node-type in the <code>Tree</code> IR,
 	          there exists a single-node tile pattern. 
 	     <LI> if <code>s</code> contains Java statements that rely
@@ -34,7 +35,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
              <code>MaximalMunchCGG</code> and associates the
 	     machine specification <code>s</code> with the newly
 	     constructed <code>MaximalMunchCGG</code>.
-	@see <A HREF="http://palmpilot.lcs.mit.edu/~pnkfelix/instr-selection-tool.html">Standard Specification Template</A>
+	@see <A HREF="doc-files/instr-selection-tool.html">Standard Specification Template</A>
     */
     public MaximalMunchCGG(Spec s, String className) {
         super(s, className);
@@ -45,13 +46,15 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	<BR> <B>modifies:</B> <code>out</code>
 	<BR> <B>effects:</B>
 	     Generates Java source for a MaximalMunch instruction
-	     selection method, including method signature.  Outputs
-	     generated source to <code>out</code>.
+	     selection method, not including method signature or
+	     surrounding braces.  Outputs generated source to
+	     <code>out</code>. 
 	@param out Target output device for the Java source code.
-	@exception IOException If there is an error writing to <code>out</code>
     */
-    public void outputSelectionMethod(Writer out) throws IOException {
+    public void outputSelectionMethod(PrintWriter out) { 
 	// insert cool stuff here 
+	
+
     }
     
 }

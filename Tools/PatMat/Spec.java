@@ -7,26 +7,33 @@ import java.util.BitSet;
 import java.util.List;
 
 /**
- * <code>Spec</code> represents the parsed specification.
+ * <code>Spec</code> represents the parsed specification.  
+ *
+ * <BR> <B>NOTE:</B> Current documentation was written late at night
+ * and therefore may be misleading; I'm worried that it isn't META
+ * enough.  Must go over it and make sure that its clear that I'm
+ * talking about the specification for a set of instruction patterns,
+ * and <B>NOT</B> the actual code being analyzed and optimized by the
+ * compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Spec.java,v 1.1.2.4 1999-06-25 04:10:56 pnkfelix Exp $
+ * @version $Id: Spec.java,v 1.1.2.5 1999-06-25 11:17:30 pnkfelix Exp $
  */
 public class Spec  {
 
     /** Java code statements that are going to be placed outside class
 	body (package declaration, import statements).
     */
-    public  String global_stms;
+    public /*final*/ String global_stms;
 
     /** Java code statements that are going to be placed inside class
 	body (helper methods, fields, inner classes).
     */
-    public String class_stms;
+    public /*final*/ String class_stms;
 
     /** List of Instruction Patterns for this machine specification.
      */
-    public RuleList rules;
+    public /*final*/ RuleList rules;
     
     /** Creates a <code>Spec</code>. */
     public Spec(String global_stms, String class_stms, RuleList rules) {
@@ -45,8 +52,9 @@ public class Spec  {
 	code statements.
      */
     public static abstract class Rule {
+
 	/** List of the extra details associated with
-	    <code>this</code> (speed-cost, size-cost, etc.).
+	    <code>this</code> (speed-cost, size-cost, predicates, etc.).
 	*/
 	public final DetailList details;
 
@@ -65,7 +73,7 @@ public class Spec  {
 		 perform if <code>this</code> fires.
 	    @param details List of extra details associated with
 	                   <code>this</code> (speed-cost, size-cost,
-			   etc.).
+			   predicates, etc.).
 	    @param action_str Series of Java code statements that
 	                      represent the action to perform if
 			      <code>this</code> fires.
@@ -83,9 +91,8 @@ public class Spec  {
 
     /** Extension of <code>Spec.Rule</code> that also contains a
 	<code>Spec.Exp</code> to match <code>Tree</code> expressions
-	and a tag to identify the result that <code>this</code>
-	?produces?.  (NOTE: Not sure if that's what result_id
-	is...check with Scott).
+	and the identifier for the result that <code>this</code>
+	produces.  
 	
 	<code>Spec.RuleExp</code>s match (sub)expressions in the code,
 	which is why it is necessary to associate a
@@ -95,9 +102,12 @@ public class Spec  {
 
     */
     public static class RuleExp extends Rule {
+
 	/** Expression <code>this</code> matches. */
 	public final Exp exp;
-	/** Result type that <code>this</code> matches. */
+
+	/** Identifier for return value of expression that
+	    <code>this</code> matches. */ 
 	public final String result_id;
 	
 	/** Constructs a new <code>Spec.RuleExp</code>.
@@ -115,7 +125,7 @@ public class Spec  {
 	                     <code>this</code> produces.
 	    @param details List of extra details associated with
 	                   <code>this</code> (speed-cost, size-cost,
-			   etc.). 
+			   predicates, etc.). 
 	    @param action_str Series of Java code statements that
 	                      represent the action to perform if
 			      <code>this</code> fires.
@@ -134,6 +144,7 @@ public class Spec  {
 	<code>Spec.Stm</code> to match <code>Tree</code> statements. 
     */
     public static class RuleStm extends Rule {
+
 	/** Statement associated with <code>this</code>. */
 	public final Stm stm;
 
@@ -150,7 +161,7 @@ public class Spec  {
     	               <code>this</code>. 
 	    @param details List of extra details associated with
 	                   <code>this</code> (speed-cost, size-cost,
-			   etc.). 
+			   predicates, etc.). 
 	    @param action_str Series of Java code statements that
 	                      represent the action to perform if
 			      <code>this</code> fires.
@@ -166,6 +177,7 @@ public class Spec  {
 
     /** Abstract immutable representation of an Expression in an
 	Instruction Pattern. 
+	@see harpoon.IR.Tree.Exp
     */
     public static abstract class Exp { }
     
@@ -176,22 +188,48 @@ public class Spec  {
     public static class ExpId extends Exp {
 	/** Identifier that <code>this</code> represents. */
 	public final String id;
+
+	/** Constructs a <code>Spec.ExpId</code> around
+	    <code>id</code>. 
+	    @param id The Identifier that <code>this</code>
+	              represents. 
+	*/
 	public ExpId(String id) { this.id = id; }
 	public String toString() { return id; }
     }
 
     /** Extension of <code>Spec.Exp</code> that represents a Binary
-	Operation in the code. 
+	Operation in the code.  An implicit restriction on our binary
+	operations is that both operands must have equivalent domains
+	(there is only one <code>Spec.TypeSet</code> for a given
+	<code>Spec.ExpBinop</code>.
+	@see harpoon.IR.Tree.BINOP
     */
     public static class ExpBinop extends Exp {
+	
 	/** Types of values that <code>this</code> operates on. */
 	public final TypeSet types;
-	/** Opcode for <code>this</code>. */
+	
+	/** Opcode for <code>this</code>.
+	    @see IR.Tree.Bop
+	*/
 	public final Leaf opcode;
+	
 	/** Expression on the left side of <code>this</code>. */
 	public final Exp left;
 
+	/** Expression on the right side of <code>this</code>. */
 	public final Exp right;
+
+	/** Constructs a <code>Spec.ExpBinop</code> that operates on
+	    expressions of <code>types</code>.
+	    @param types Types that <code>left</code> and
+	                 <code>right</code> may be. 
+	    @param opcode The binary operation that is being performed
+	                  on <code>left</code> and <code>right</code>.
+	    @param left The left operand.
+	    @param right The right operand.
+	*/
 	public ExpBinop(TypeSet types, Leaf opcode, Exp left, Exp right) {
 	    this.types = types; this.opcode = opcode;
 	    this.left = left;   this.right = right;
@@ -201,43 +239,106 @@ public class Spec  {
 		+left+","+right+")";
 	}
     }
+
+    /** Extension of <code>Spec.Exp</code> that represents a Constant
+	value in the code.
+	@see harpoon.IR.Tree.CONST
+    */
     public static class ExpConst extends Exp {
+
+	/** The set of types that <code>value</code> may take. */
 	public final TypeSet types;
+
+	/** The constant value associated with <code>this</code>. */
 	public final Leaf value;
+
+	/** Constructs a <code>Spec.ExpConst</code>. 
+	    @param types Types that <code>value</code> may be.
+	    @param value The constant value.
+	 */
 	public ExpConst(TypeSet types, Leaf value) {
 	    this.types = types; this.value = value;
 	}
 	public String toString() { return "CONST"+types+"("+value+")"; }
     }
-    public static class ExpEseq extends Exp {
-	public final Stm stm;
-	public final Exp exp;
-	public ExpEseq(Stm stm, Exp exp) { this.stm = stm; this.exp = exp; }
-	public String toString() { return "ESEQ("+stm+","+exp+")"; }
-    }
+
+    /** Extension of <code>Spec.Exp</code> that represents a Memory
+	Access in the code (could be either Load or Store;
+	Context-Sensitive).
+	@see harpoon.IR.Tree.MEM
+    */
     public static class ExpMem extends Exp {
+
+	/** The set of types that the values at <code>addr</code> may be. */ 
 	public final TypeSet types;
+
+	/** The expression that computes the address of memory
+	    represented by <code>this</code>.
+	*/
 	public final Exp addr;
+
+	/** Constructs a <code>Spec.ExpMem</code>.
+	    @param types Types that the value at <code>addr</code> may be.
+	    @param addr Address of memory for <code>this</code>.
+	*/
 	public ExpMem(TypeSet types, Exp addr) {
 	    this.types = types; this.addr = addr;
 	}
 	public String toString() { return "MEM"+types+"("+addr+")"; }
     }
+
+    /** Extension of <code>Spec.Exp</code> that represents a symbolic
+	constant.  Usually used to represent an Assembly Language
+	Label in the data segment. 
+	@see harpoon.IR.Tree.NAME
+    */
     public static class ExpName extends Exp {
+
+	/** Name for <code>this</code>. */
 	public final String name;
+
+	/** Constructs a new <code>Spec.ExpName</code> representing
+	    <code>name</code>. */
 	public ExpName(String name) { this.name = name; }
 	public String toString() { return "NAME("+name+")"; }
     }
+
+    /** Extension of <code>Spec.Exp</code> that represents a Temporary
+	value in the code.
+	@see IR.Tree.TEMP
+    */
     public static class ExpTemp extends Exp {
+
+	/** The set of types that <code>this</code> may take. */
 	public final TypeSet types;
+
+	/** Identifier for <code>this</code>. */
 	public final String name;
+
+	/** Constructs a <code>Spec.ExpTemp</code>.
+	    @param types Types that <code>this</code> may be.
+	    @param name Identifier for <code>this</code>.
+	*/
 	public ExpTemp(TypeSet types, String name) {
 	    this.types = types; this.name = name;
 	}
 	public String toString() { return "TEMP"+types+"("+name+")"; }
     }
+
+    /** Extension of <code>Spec.Exp</code> that represents a Unary
+	operation. 
+	@see IR.Tree.UNOP
+    */
     public static class ExpUnop extends Exp {
+
+	/** Set of Types that <code>this</code> operates on. (The
+	    types returned are part of the <code>opcode</code>).
+	*/
 	public final TypeSet types;
+
+	/** Opcode for <code>this</code>.
+	    @see IR.Tree.Uop
+	*/
 	public final Leaf opcode;
 	public final Exp exp;
 	public ExpUnop(TypeSet types, Leaf opcode, Exp exp) {
@@ -248,10 +349,31 @@ public class Spec  {
 	}
     }
 
+    /** Abstract immutable representation of a Statement in an
+	Instruction Pattern.
+	@see harpoon.IR.Tree.Stm
+    */
     public static abstract class Stm { }
+
+    /** Extension of <code>Spec.Stm</code> that represents a call to a
+	procedure. 
+	@see harpoon.IR.Tree.CALL
+    */
     public static class StmCall extends Stm {
-	public final Exp retval, retex, func;
+	/** Return value destination expression. */
+	public final Exp retval;
+	/** Exception value destination expression. */
+	public final Exp retex;
+	/** Function location expression. */
+	public final Exp func;
+	/** Arguments being passed to procedure. */
 	public final String arglist;
+	/** Constructs a new <code>Spec.StmCall</code>.
+	    @param retval Return value destination expression.
+	    @param retex Exception value destination expression. 
+	    @param func Function location expression.
+	    @param arglist Arguments.
+	*/
 	public StmCall(Exp retval, Exp retex, Exp func, String arglist) {
 	    this.retval = retval; this.retex = retex; this.func = func;
 	    this.arglist = arglist;
@@ -260,9 +382,24 @@ public class Spec  {
 	    return "CALL("+retval+","+retex+","+func+","+arglist+")";
 	}
     }
+
+    /** Extension of <code>Spec.Stm</code> representing a condition
+	branch. 
+	@see harpoon.IR.Tree.CJUMP
+    */
     public static class StmCjump extends Stm {
+	/** Boolean expression that decides which direction we're
+	    jumping. */
 	public final Exp test;
-	public final String t_label, f_label;
+	/** Label to branch to on a True value. */
+	public final String t_label;
+	/** Label to branch to on a False value. */
+	public final String f_label;
+	/** Constructs a new <code>Spec.StmCjump</code>.
+	    @param test Text expression.
+	    @param t_label True Label.
+	    @param f_label False Label.
+	*/
 	public StmCjump(Exp test, String t_label, String f_label) {
 	    this.test = test; this.t_label = t_label; this.f_label = f_label;
 	}
@@ -270,29 +407,84 @@ public class Spec  {
 	    return "CJUMP("+test+","+t_label+","+f_label+")";
 	}
     }
+
+    /** Extension of <code>Spec.Stm</code> representing an expression
+	which is evaluated for its side effects (i.e. we throw away
+	the return value).
+	@see harpoon.IR.Tree.EXP
+    */
     public static class StmExp extends Stm {
+	/** Expression for <code>this</code>. */
 	public final Exp exp;
+	/** Constructs a new <code>Spec.StmExp</code>.
+	    @param exp Expression to be evaluated.
+	*/
 	public StmExp(Exp exp) { this.exp = exp; }
 	public String toString() { return "EXP("+exp+")"; }
     }
+    
+    /** Extension of <code>Spec.Stm</code> representing an
+	unconditional branch.
+	@see harpoon.IR.Tree.JUMP
+    */
     public static class StmJump extends Stm {
+	/** Expression which yields the target of this jump. */
 	public final Exp exp;
+	/** Constructs a new <code>Spec.StmJump</code>.
+	    @param exp Jump target.
+	*/
 	public StmJump(Exp exp) { this.exp = exp; }
 	public String toString() { return "JUMP("+exp+")"; }
     }
+    /** Extension of <code>Spec.Stm</code> representing a label which
+	is the target of a branch or call.
+	@see harpoon.IR.Tree.LABEL
+    */
     public static class StmLabel extends Stm {
+	/** Label. */
 	public final String name;
+	/** Constructs a new <code>Spec.StmLabel</code>.
+	    @param name Label.
+	*/
 	public StmLabel(String name) { this.name = name; }
 	public String toString() { return "LABEL("+name+")"; }
     }
+    /** Extension of <code>Spec.Stm</code> representing an expression
+	which moves a value from one place to another.
+	@see harpoon.IR.Tree.MOVE
+    */
     public static class StmMove extends Stm {
-	public final Exp dst, src;
+	/** Expression yielding the destination of this move. */
+	public final Exp dst;
+	/** Expression yielding the source data of this move. */
+	public final Exp src;
+	/** Constructs a new <code>Spec.StmMove</code>.
+	    @param dst Destination expression.
+	    @param src Source expression.
+	*/
 	public StmMove(Exp dst, Exp src) { this.dst = dst; this.src = src; }
 	public String toString() { return "MOVE("+dst+","+src+")"; }
     }
+    /** Extension of <code>Spec.Stm</code> representing an expression
+	which is evaluated for its side effects (i.e. we throw away
+	the return value).
+	@see harpoon.IR.Tree.NATIVECALL
+    */
     public static class StmNativeCall extends Stm {
-	public final Exp retval, retex, func;
+	/** Return value destination expression. */
+	public final Exp retval;
+	/** Exception destination expression. */
+	public final Exp retex;
+	/** Function location expression. */
+	public final Exp func;
+	/** Arguments being passed to procedure. */
 	public final String arglist;
+	/** Constructs a new <code>Spec.StmNativeCall</code>.
+	    @param retval Return value destination expression.
+	    @param retex Exception value destination expression.
+	    @param func Function location expression.
+	    @param arglist Arguments.
+	*/
 	public StmNativeCall(Exp retval, Exp retex, Exp func, String arglist) {
 	    this.retval = retval; this.retex = retex; this.func = func;
 	    this.arglist = arglist;
@@ -301,38 +493,85 @@ public class Spec  {
 	    return "NATIVECALL("+retval+","+retex+","+func+","+arglist+")";
 	}
     }
+    /** Extension of <code>Spec.Stm</code> representing an expression
+	which is evaluated for its side effects (i.e. we throw away
+	the return value).
+	@see harpoon.IR.Tree.RETURN
+    */
     public static class StmReturn extends Stm {
+	/** The set of Types that <code>retval</code> may be. */
 	public final TypeSet types;
+	/** Return value expression. */
 	public final Exp retval;
+	/** Constructs a new <code>Spec.StmReturn</code>.
+	    @param types Types that <code>retval</code> may be.
+	    @param retval Return value. 
+	*/
 	public StmReturn(TypeSet types, Exp retval) {
 	    this.types = types; this.retval = retval;
 	}
 	public String toString() { return "RETURN"+types+"("+retval+")"; }
     }
+    /** Extension of <code>Spec.Stm</code> representing a sequence of
+	statements to be executed in order.
+	@see harpoon.IR.Tree.SEQ
+    */
     public static class StmSeq extends Stm {
-	public final Stm s1, s2;
+	/** First statement to execute. */
+	public final Stm s1;
+	/** Second statement to execute. */
+	public final Stm s2;
+	/** Constructs a new <code>Spec.StmSeq</code>. 
+	    @param s1 First statement
+	    @param s2 Second statement
+	*/
 	public StmSeq(Stm s1, Stm s2) { this.s1 = s1; this.s2 = s2; }
 	public String toString() { return "SEQ("+s1+","+s2+")"; }
     }
+
+    /** Extension of <code>Spec.Stm</code> representing a operation to
+	throw an exception.
+	@see harpoon.IR.Tree.THROW
+    */
     public static class StmThrow extends Stm {
+	/** The exceptional value. */
 	public final Exp exp;
+	/** Constructs a new <code>Spec.StmThrow</code>.
+	    @param exp The exceptional value expression.
+	*/
 	public StmThrow(Exp exp) { this.exp = exp; }
 	public String toString() { return "THROW("+exp+")"; }
     }
 
+    /** Abstract representation of leaves in the instruction pattern. */
     public static abstract class Leaf {
 	public String toBop() { return this.toString(); }
 	public String toUop() { return this.toString(); }
     }
+    /** Extension of <code>Spec.Leaf</code> which represents an
+	Identifier. */
     public static class LeafId extends Leaf {
+	/** Identifier string. */
 	public final String id;
+	/** Constructs a new <code>Spec.LeafId</code>.
+	    @param id Identifier string.
+	*/
 	public LeafId(String id) {
 	    this.id = id;
 	}
 	public String toString() { return id; }
     }
+    /** Extension of <code>Spec.Leaf</code> which represents a
+	number. Note that these numbers sometimes do not represent
+	numerical constants in the code, but rather are naming opcodes
+	for <code>Uop</code> and <code>Bop</code>.
+    */
     public static class LeafNumber extends Leaf {
+	/** Number. */
 	public final int number;
+	/** Constructs a new <code>Spec.LeafNumber</code>.
+	    @param number Number.
+	*/
 	public LeafNumber(int number) {
 	    this.number = number;
 	}
@@ -341,7 +580,13 @@ public class Spec  {
 	public String toUop() { return harpoon.IR.Tree.Uop.toString(number); }
     }
 
+    /** A detail is an abstract representation for a piece of data
+	about the Instruction Pattern or <code>Rule</code>.  Details
+	include predicates, speed-costs, size-costs...
+    */
     public static abstract class Detail { }
+
+    /** TODO: Not sure what this does. */
     public static class DetailExtra extends Detail {
 	public final IdList extras;
 	public DetailExtra(IdList extras) {
@@ -351,32 +596,75 @@ public class Spec  {
 	    return "%extra{"+((extras==null)?"":extras.toString())+"}";
 	}
     }
+    /** Extension of <code>Spec.Detail</code> that stores a
+	<code>predicate_string</code> which is a piece of Java code
+	that decides if a particular <code>Spec.Rule</code> can be
+	applied. 
+    */
     public static class DetailPredicate extends Detail {
 	public final String predicate_string;
+	/** Constructs a new <code>Spec.DetailPredicate</code>. 
+	    <BR> <B>requires:</B> <code> predicate_string is a valid
+	         Java expression that will evaluate to a boolean
+		 value.  
+	    @param predicate_string Predicate to check for
+	           applicability of <code>Spec.Rule</code>
+	*/
 	public DetailPredicate(String predicate_string) {
 	    this.predicate_string = predicate_string;
 	}
 	public String toString() { return "%pred %("+predicate_string+")%"; }
     }
+
+    /** Extension of <code>Spec.Detail</code> that stores a 
+	(name,weight) pair.  This weight can be used by the
+	Instruction Generator to choose one pattern over another if
+	it is attempting to optimize for the property 
+	(speed, size, etc) given in <code>name</code>.
+    */
     public static class DetailWeight extends Detail {
+	/** Describes what metric <code>value</code> is measuring. */
 	public final String name;
+	/** The weight associated with <code>name</code>. */
 	public final float value;
+	/** Constructs a new <code>Spec.DetailWeight</code>.
+	    @param name Metric that <code>value</code> is measuring.
+	    @param value Weight associated with <code>name</code>.
+	*/
 	public DetailWeight(String name, float value) {
 	    this.name = name; this.value = value;
 	}
 	public String toString() { return "%weight<"+name+","+value+">"; }
     }
 
+    /** A representation for storing Types that values can be. 
+	@see harpoon.IR.Tree.Type
+     */
     public static class TypeSet {
 	final BitSet bs = new BitSet();
+	/** Constructs a new <code>Spec.TypeSet</code>. */
 	public TypeSet() { }
+	
+	/** Checks if <code>this</code> contains <code>type</code>.
+	    <BR> <B>effects:</B> Returns true if <code>type</code> has
+	         been turned on by a call to <code>set(type)</code> or
+		 <code>setAll()</code>.  Else returns false.
+	*/
 	public boolean contains(int type) {
 	    return bs.get(type);
 	}
+	
+	/** Records that <code>this</code> contains
+	    <code>type</code>.  
+	*/
 	public void set(int type) {
 	    bs.set(type);
 	}
-	public void setAll() {
+	
+	/** Records that <code>this</code> contains all five Types,
+	    { INT, LONG, FLOAT, DOUBLE, POINTER }
+	*/
+	public void setAll() { 
 	    set(harpoon.IR.Tree.Type.INT);
 	    set(harpoon.IR.Tree.Type.LONG);
 	    set(harpoon.IR.Tree.Type.FLOAT);
@@ -395,6 +683,10 @@ public class Spec  {
 	    return sb.toString();
 	}
     }
+
+    /** Linked list representation for representing the series of
+	<code>Spec.Rule</code>s in this <code>Spec</code>.  
+    */
     public static class RuleList {
 	public final Rule head;
 	public final RuleList tail;
@@ -406,6 +698,10 @@ public class Spec  {
 	    else return head.toString() + "\n" + tail.toString();
 	}
     }
+
+    /** Linked list representation for representing the series of
+	<code>Spec.Detail</code>s in this <code>Spec</code>.  
+    */
     public static class DetailList {
 	public final Detail head;
 	public final DetailList tail;
@@ -417,6 +713,10 @@ public class Spec  {
 	    else return head.toString() + " " + tail.toString();
 	}
     }
+
+    /** Linked list representation for representing a series of
+	Identifier <code>String</code>s in this <code>Spec</code>. 
+    */
     public static class IdList {
 	public final String head;
 	public final IdList tail;

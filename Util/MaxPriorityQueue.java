@@ -15,14 +15,25 @@ import java.util.Collection;
  * added <code>Object</code> with a priority.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: MaxPriorityQueue.java,v 1.1.2.1 1999-06-03 01:49:32 pnkfelix Exp $
+ * @version $Id: MaxPriorityQueue.java,v 1.1.2.2 1999-06-25 11:17:31 pnkfelix Exp $
  */
 public interface MaxPriorityQueue extends Collection {
-    
+
+    /** Inserts <code>item</code> into this, assigning it priority
+	<code>priority</code>. 
+	@param item <code>Object</code> being inserted
+	@param priority Priority of <code>item</code>
+    */
     void insert(Object item, int priority);
 
+    /** Returns the <code>Object</code> in <code>this</code> with the
+	highest priority.
+    */
     Object peekMax();
     
+    /** Returns and removes the <code>Object</code> in
+	<code>this</code> with the highest priority.
+    */
     Object deleteMax();
     
 }

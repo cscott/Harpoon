@@ -12,7 +12,6 @@ import harpoon.Tools.PatMat.Spec.Exp;
 import harpoon.Tools.PatMat.Spec.ExpId;
 import harpoon.Tools.PatMat.Spec.ExpBinop;
 import harpoon.Tools.PatMat.Spec.ExpConst;
-import harpoon.Tools.PatMat.Spec.ExpEseq;
 import harpoon.Tools.PatMat.Spec.ExpMem;
 import harpoon.Tools.PatMat.Spec.ExpName;
 import harpoon.Tools.PatMat.Spec.ExpTemp;
@@ -43,7 +42,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.8 1999-06-25 08:50:52 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.9 1999-06-25 11:17:30 pnkfelix Exp $
  */
 
 action code {:

@@ -49,7 +49,7 @@ import java.util.*;
  * selection of <code>Instr</code>s from an input <code>Tree</code>.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.18 1999-06-18 19:46:15 pnkfelix Exp $
+ * @version $Id: CodeGen.java,v 1.1.2.19 1999-06-25 11:17:29 pnkfelix Exp $
  */
 final class CodeGen {
 
@@ -60,9 +60,8 @@ final class CodeGen {
      *
      *  @param  tree    The Tree codeview to generate code from.
      *  @param  code    The StrongARM codeview to generate code for.
-     *  @return         A <code>List</code> of <code>Instr</code>s
-                        representing the newly generated StrongARM
-			instructions.   
+     *  @return  A <code>Instr</code> representing the head of a list
+                 of newly generated StrongARM instructions.    
      */
     public static final Instr codegen(TreeCode tree, SACode code) {
                                       

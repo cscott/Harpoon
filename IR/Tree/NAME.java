@@ -8,11 +8,12 @@ import harpoon.Util.Util;
 
 /**
  * <code>NAME</code> objects are expressions which stand for symbolic
- * constants.  They usually correspond to some assembly language label.
+ * constants.  They usually correspond to some assembly language label
+ * in the data segment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NAME.java,v 1.1.2.5 1999-02-24 01:18:54 andyb Exp $
+ * @version $Id: NAME.java,v 1.1.2.6 1999-06-25 11:17:30 pnkfelix Exp $
  */
 public class NAME extends Exp {
     /** The label which this NAME refers to. */
