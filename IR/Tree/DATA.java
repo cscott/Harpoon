@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * </PRE>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: DATA.java,v 1.1.2.1 1999-07-23 17:39:22 duncan Exp $
+ * @version $Id: DATA.java,v 1.1.2.2 1999-07-30 20:20:15 pnkfelix Exp $
  */
 public class DATA extends Stm { 
     /** The expression to write to memory */
@@ -34,6 +34,7 @@ public class DATA extends Stm {
 	super(tf, source);
 	this.data = data; 
 	Util.assert(data.kind()==TreeKind.CONST || data.kind()==TreeKind.NAME);
+	Util.assert(tf == data.tf, "Dest and Src must have same tree factory");
     }
 
     public ExpList kids() { return new ExpList(data, null); } 

@@ -14,7 +14,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.1.2.8 1999-07-07 09:47:24 duncan Exp $
+ * @version $Id: SEQ.java,v 1.1.2.9 1999-07-30 20:20:15 pnkfelix Exp $
  */
 public class SEQ extends Stm {
     /** The statement to evaluate first. */
@@ -27,6 +27,8 @@ public class SEQ extends Stm {
 	super(tf, source, 0); // No edges in or out of SEQ
 	this.left=left; this.right=right;
 	Util.assert(left!=null && right!=null);
+	Util.assert(left.tf == right.tf, "Left and Right must have same tree factory");
+	Util.assert(tf == right.tf, "This and Right must have same tree factory");
     }
 
     protected Set defSet() { 

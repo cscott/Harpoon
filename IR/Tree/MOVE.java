@@ -20,7 +20,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.11 1999-07-28 20:45:15 pnkfelix Exp $
+ * @version $Id: MOVE.java,v 1.1.2.12 1999-07-30 20:20:15 pnkfelix Exp $
  */
 public class MOVE extends Stm implements Typed {
     /** The expression giving the destination for the computed value. */
@@ -41,6 +41,8 @@ public class MOVE extends Stm implements Typed {
 		    "Dest (type:"+Type.toString(dst.type()) + 
 		    ") and Source (type:" + Type.toString(src.type()) + 
 		    ") must have same type");
+	Util.assert(dst.tf == src.tf, "Dest and Src must have same tree factory");
+	Util.assert(tf == src.tf, "This and Src must have same tree factory");
     }
   
     protected Set defSet() { 

@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MEM.java,v 1.1.2.10 1999-06-29 05:43:53 cananian Exp $
+ * @version $Id: MEM.java,v 1.1.2.11 1999-07-30 20:20:15 pnkfelix Exp $
  */
 public class MEM extends Exp {
     /** A subexpression evaluating to a memory reference. */
@@ -27,6 +27,7 @@ public class MEM extends Exp {
 	super(tf, source);
 	this.type=type; this.exp=exp;
 	Util.assert(Type.isValid(type) && exp!=null);
+	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
     }
     public ExpList kids() {return new ExpList(exp,null);}
 

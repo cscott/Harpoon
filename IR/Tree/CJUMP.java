@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CJUMP.java,v 1.1.2.9 1999-07-07 09:47:24 duncan Exp $
+ * @version $Id: CJUMP.java,v 1.1.2.10 1999-07-30 20:20:15 pnkfelix Exp $
  */
 public class CJUMP extends Stm {
     /** An expression that evaluates into a boolean result. */
@@ -27,6 +27,7 @@ public class CJUMP extends Stm {
 	super(tf, source, 2);
 	this.test = test; this.iftrue = iftrue; this.iffalse = iffalse;
 	Util.assert(test!=null && iftrue!=null && iffalse!=null);
+	Util.assert(tf == test.tf, "This and Test must have same tree factory");
     }
     
     public ExpList kids() {return new ExpList(test, null); }

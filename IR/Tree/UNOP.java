@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.13 1999-07-12 22:12:22 bdemsky Exp $
+ * @version $Id: UNOP.java,v 1.1.2.14 1999-07-30 20:20:15 pnkfelix Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
@@ -25,6 +25,7 @@ public class UNOP extends OPER {
 	super(tf, source, optype, unop);
 	this.operand = operand;
 	Util.assert(Uop.isValid(unop));
+	Util.assert(tf == operand.tf, "This and Operand must have same tree factory");
     }
 
     /** Returns an <code>int</code> identifying the TYPE that this

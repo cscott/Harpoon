@@ -16,7 +16,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.5 1999-07-07 09:47:24 duncan Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.6 1999-07-30 20:20:15 pnkfelix Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL
@@ -39,6 +39,9 @@ public abstract class INVOCATION extends Stm {
 	super(tf, source);
 	this.retval=retval; this.retex=retex; this.func=func; this.args=args;
 	Util.assert(retval!=null && retex!=null && func!=null);
+	Util.assert(retval.tf == retex.tf, "Retval and Retex must have same tree factory");
+	Util.assert(func.tf == retex.tf, "Func and Retex must have same tree factory");
+	Util.assert(tf == retval.tf, "This and Retval must have same tree factory");
     }
 
     protected Set defSet() { 

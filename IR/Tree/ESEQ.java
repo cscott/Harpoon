@@ -16,7 +16,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.9 1999-07-07 09:47:24 duncan Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.10 1999-07-30 20:20:15 pnkfelix Exp $
  */
 public class ESEQ extends Exp {
     /** The statement to evaluate for side-effects. */
@@ -29,6 +29,7 @@ public class ESEQ extends Exp {
 	super(tf, source);
 	this.stm=stm; this.exp=exp;
 	Util.assert(stm!=null && exp!=null);
+	Util.assert(tf == exp.tf, "Dest and Src must have same tree factory");
     }
 
     protected Set defSet() { 

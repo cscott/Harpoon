@@ -2,6 +2,7 @@ package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
+import harpoon.Util.Util;
 
 /**
  * <code>RETURN</code> objects are used to represent a return from 
@@ -9,7 +10,7 @@ import harpoon.Temp.CloningTempMap;
  *
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: RETURN.java,v 1.1.2.5 1999-07-07 09:47:24 duncan Exp $
+ * @version  $Id: RETURN.java,v 1.1.2.6 1999-07-30 20:20:15 pnkfelix Exp $
  */
 public class RETURN extends Stm implements Typed {
     /** The value to return */
@@ -22,6 +23,7 @@ public class RETURN extends Stm implements Typed {
 		  Exp retval) {
 	super(tf, source, 0);
 	this.retval=retval;
+	Util.assert(tf == retval.tf, "This and Retval must have same tree factory");
     }		
   
     public ExpList kids() { return new ExpList(retval, null); }

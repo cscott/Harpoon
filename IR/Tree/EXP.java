@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: EXP.java,v 1.1.2.7 1999-06-28 18:49:16 duncan Exp $
+ * @version $Id: EXP.java,v 1.1.2.8 1999-07-30 20:20:15 pnkfelix Exp $
  */
 public class EXP extends Stm {
     /** The expression to evaluate. */
@@ -24,6 +24,7 @@ public class EXP extends Stm {
 	super(tf, source);
 	this.exp=exp;
 	Util.assert(exp!=null);
+	Util.assert(tf == exp.tf, "Dest and Src must have same tree factory");
     }
 
     public ExpList kids() {return new ExpList(exp,null);}

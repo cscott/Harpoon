@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  *
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: THROW.java,v 1.1.2.5 1999-07-07 09:47:24 duncan Exp $
+ * @version  $Id: THROW.java,v 1.1.2.6 1999-07-30 20:20:15 pnkfelix Exp $
  */
 public class THROW extends Stm implements Typed {
     /** The exceptional value to return */
@@ -23,6 +23,7 @@ public class THROW extends Stm implements Typed {
 	super(tf, source, 0);
 	this.retex=retex;
 	Util.assert(retex.type()==POINTER);
+	Util.assert(tf == retex.tf, "This and Retex must have same tree factory");
     }		
   
     public ExpList kids() { return new ExpList(retex, null); }
