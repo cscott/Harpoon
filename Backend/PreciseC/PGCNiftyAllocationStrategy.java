@@ -11,11 +11,11 @@ import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.TreeFactory;
 /**
  * <code>PGCNiftyAllocationStrategy</code> uses <code>alloca()</code>
- * instead of <code>NSTK_alloc</code>.  Other than this, it is identical
- * to <code>NiftyAllocationStrategy</code>.
+ * instead of <code>NSTK_alloc</code> to do stack allocation.  Other
+ * than this, it is identical to <code>NiftyAllocationStrategy</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PGCNiftyAllocationStrategy.java,v 1.1.2.1 2000-07-12 03:55:23 cananian Exp $
+ * @version $Id: PGCNiftyAllocationStrategy.java,v 1.1.2.2 2000-07-12 14:35:37 cananian Exp $
  */
 public class PGCNiftyAllocationStrategy
     extends harpoon.Backend.Runtime1.NiftyAllocationStrategy {
