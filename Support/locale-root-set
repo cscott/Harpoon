@@ -4,3 +4,4 @@ java.text.resources.LocaleElements_en.<init>()V
 #java.text.resources.LocaleElements_en_US.<init>()V # not present in JDK1.1
 java.text.resources.DateFormatZoneData.<init>()V
 java.text.resources.DateFormatZoneData_en.<init>()V
+#java.text.resources.DateFormatZoneData_en_US.<init>()V # not present in JDK1.1
