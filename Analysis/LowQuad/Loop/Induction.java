@@ -13,7 +13,7 @@ import java.util.ArrayList;
  * <code>Induction</code>
  * 
  * @author  root <root@kikashi.lcs.mit.edu>
- * @version $Id: Induction.java,v 1.1.2.3 1999-06-29 17:24:24 bdemsky Exp $
+ * @version $Id: Induction.java,v 1.1.2.4 1999-07-01 15:50:48 bdemsky Exp $
  * This class allows us to store information on Basic/Derived Induction variables.
  */
 
@@ -37,6 +37,7 @@ public class Induction {
 	this.objectsize=null;
 	this.intmultiplier=intmultiplier;
 	this.offset=0;
+	this.copied=false;
     }
     
     /* Creates basic integer induction variable.*/
@@ -47,6 +48,7 @@ public class Induction {
 	this.intmultiplier=intmultiplier;
 	this.objectsize=null;
 	this.pointeroffset=new ArrayList();
+	this.copied=false;
     }
     
     /* Creates derived generalized induction variable.*/
@@ -57,6 +59,7 @@ public class Induction {
 	this.intmultiplier=intmultiplier;
 	this.objectsize=objectsize;
 	this.pointeroffset=new ArrayList(pointeroffset);
+	this.copied=false;
     }
 
     /** Copy Constructor*/
@@ -67,6 +70,8 @@ public class Induction {
 	this.intmultiplier=x.intmultiplier;
 	this.objectsize=x.objectsize;
 	this.pointeroffset=new ArrayList(x.pointeroffset);
+	this.copied=false;
+	x.copied=true;
     }
 
     /** toString method returns string describing contents of the class.*/
@@ -99,5 +104,20 @@ public class Induction {
     public HClass objectsize;
     /** The <code>ArrayList</code> saves pointer <code>Temp</code>s that are added in.*/
     public ArrayList pointeroffset;
-
+    public boolean copied;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

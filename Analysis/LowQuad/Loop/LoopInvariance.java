@@ -16,7 +16,7 @@ import java.util.Iterator;
  * <code>LoopInvariance</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopInvariance.java,v 1.1.2.3 1999-06-30 19:21:38 bdemsky Exp $
+ * @version $Id: LoopInvariance.java,v 1.1.2.4 1999-07-01 15:50:49 bdemsky Exp $
  */
 public class LoopInvariance {
     
@@ -81,6 +81,14 @@ public class LoopInvariance {
 
 	public void reset() {
 	    change=false;
+	}
+
+	public void visit(PSET q) {
+	    removeflag=false;
+	}
+
+	public void visit(RETURN q) {
+	    removeflag=false;
 	}
 
 	public void visit(Quad q) {
