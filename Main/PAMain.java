@@ -47,7 +47,7 @@ import harpoon.Analysis.PointerAnalysis.Debug;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.10 2000-03-21 05:42:06 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.11 2000-03-21 20:28:54 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -119,7 +119,6 @@ public abstract class PAMain {
 
 	HCodeFactory hcf  = 
 	    new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
-
 	    
 	System.out.print("ClassHierarchy ... ");
 	tstart = System.currentTimeMillis();

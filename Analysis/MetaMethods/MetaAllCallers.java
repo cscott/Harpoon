@@ -5,8 +5,10 @@ package harpoon.Analysis.MetaMethods;
 
 import java.util.Iterator;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
+import harpoon.Analysis.PointerAnalysis.PAWorkList;
 
 import harpoon.Analysis.PointerAnalysis.Relation;
 
@@ -18,7 +20,7 @@ import harpoon.Analysis.PointerAnalysis.Relation;
  precomputed graph.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaAllCallers.java,v 1.1.2.1 2000-03-18 01:55:14 salcianu Exp $
+ * @version $Id: MetaAllCallers.java,v 1.1.2.2 2000-03-21 20:28:50 salcianu Exp $
  */
 public class MetaAllCallers {
 
@@ -41,6 +43,22 @@ public class MetaAllCallers {
 	if(retval == null)
 	    retval = empty_array;
 	return retval;
+    }
+
+    /** Returns the meta-methods that transitively call the meta-method
+	<code>mm_callee</code>. Simply the transitive closure of 
+	<code>getCallers</code>. */
+    public MetaMethod[] getTransCallers(MetaMethod mm_callee){
+	Set callers  = new HashSet();
+	PAWorkList W = new PAWorkList();
+	W.add(mm_callee);
+	while(!W.isEmpty()){
+	    MetaMethod mm_work = (MetaMethod) W.remove();
+	    MetaMethod[] dc = getCallers(mm_work);
+	    for(int i = 0; i < dc.length; i++)
+		if(callers.add(dc[i])) W.add(dc[i]);
+	}
+	return (MetaMethod[]) callers.toArray(new MetaMethod[callers.size()]);
     }
 
     // fills the relation callers, by simply inverting the information
