@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.84 1999-08-22 18:24:14 cananian Exp $
+% $Id: thesis.tex,v 1.85 1999-08-22 18:59:40 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.84 $ $}
+\date{\today \\ $ $Revision: 1.85 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.84 $ $}{$ $Revision: 1.84 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.85 $ $}{$ $Revision: 1.85 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -465,6 +465,16 @@ our example program.
 \end{myfigure}
 
 \subsection{Fast construction of SSI form}
+The most common construction algorithm for SSA form
+\cite{cytron91:ssa} uses dominance frontiers and suffers from a
+possible quadratic blow-up in the size of the dominance frontier for
+certain common programming constructs.  Various improved algorithms
+use such things as DJ graphs \cite{sreedhar95:lintime} and the
+dependence flow graph \cite{johnson93:dfg} to achieve $O(EV)$ time
+complexity for \phifunction placement.  We build on this work to
+achieve $O(EV)$ construction of SSI form, and present a new algorithm
+for variable renaming in SSI form after \phisigfunction{s} are placed.
+
 Our construction algorithm begins with a program structure tree of
 single-entry single-exit (SESE) regions, constructed as described by
 Johnson, Pearson, and Pingali \cite{johnson94:pst}.  We will review
@@ -840,8 +850,9 @@ Use the techniques of \cite{kennedy98:strength} to do loop-invariant
 code motion, strength reduction, and partial-redundancy-elimination
 using SSI form?}
 
-\subsection{Sparse Predicated Typed Constant (SPTC) Propagation}
-Sparse Predicated Typed Constant Propagation is a powerful analysis tool which
+\subsection{Sparse Predicated Typed Constant Propagation}
+Sparse Predicated Typed Constant (SPTC) Propagation is a powerful
+analysis tool which
 derives its efficiency from SSI form.  It is built on Wegman and
 Zadeck's Sparse Conditional Constant (SCC) algorithm
 \cite{wegman91:scc} and removes unnecessary array-bounds and
