@@ -5,14 +5,6 @@
 package javax.realtime;
 import java.lang.reflect.Method;
 
-import org.omg.CORBA.ORB;
-import org.omg.PortableServer.POA;
-import org.omg.PortableServer.POAHelper;
-import org.omg.PortableServer.Servant;
-import org.omg.CosNaming.NamingContextExt;
-import org.omg.CosNaming.NamingContextExtHelper;
-import org.omg.CosNaming.NameComponent;
-
 /** An instance of <code>Scheduler</code> manages the execution of 
  *  schedulable objects and may implement a feasibility algorithm. The
  *  feasibility algorithm may determine if the known set of schedulable
@@ -28,16 +20,8 @@ import org.omg.CosNaming.NameComponent;
 public abstract class Scheduler {
     protected static Scheduler defaultScheduler = null;
     private static VTMemory vt = null;
-    private static final boolean DISTRIBUTED = false;
-
-    public static final int JACORB = 0;
-    public static final int ZEN = 1;
-    
-    public static int implementation = JACORB;
-
-    private String[] args = new String[] { "-ORBInitRef", 
-					   "NameService="+
-					   "file://home/wbeebee/Harpoon/ImageRec/.jacorb" };
+    private static final boolean DISTRIBUTED = true; 
+    private Object connectionManager = null;
 
     /** Create an instance of <code>Scheduler</code>. */
     protected Scheduler() {
@@ -47,19 +31,7 @@ public abstract class Scheduler {
 	}
 
 	if (DISTRIBUTED) {
-	    switch (implementation) {
-	    case JACORB: { 
-		System.setProperty("org.omg.CORBA.ORBClass", "org.jacorb.orb.ORB");
-		System.setProperty("org.omg.CORBA.ORBSingletonClass", "org.jacorb.orb.ORBSingleton");
-		break;
-	    }
-	    case ZEN: {
-		System.setProperty("org.omg.CORBA.ORBClass", "edu.uci.ece.zen.orb.ORB");
-		System.setProperty("org.omg.CORBA.ORBSingletonClass", "edu.uci.ece.zen.orb.ORBSingleton");
-		break;
-	    }
-	    default: { throw new Error("Invalid implementation chosen!"); }
-	    }
+	    connectionManager = new ConnectionManager();
 	}
     }
 
@@ -96,7 +68,8 @@ public abstract class Scheduler {
      */
     public static Scheduler getDefaultScheduler() {
 	if (defaultScheduler == null) {
-            setDefaultScheduler(RMAScheduler.instance());
+//	    setDefaultScheduler(PreAllocRoundRobinScheduler.instance());
+	    setDefaultScheduler(DistributedRoundRobinScheduler.instance());
 //  	    setDefaultScheduler(NativeScheduler.instance());
 	    return getDefaultScheduler();
 	}
@@ -263,8 +236,6 @@ public abstract class Scheduler {
      */
     protected final native int clock();
 
-    private String schedulerName;
-
     /** Bind the current scheduler to <code>name</code> in 
      *  the CORBA name service.
      *
@@ -273,31 +244,7 @@ public abstract class Scheduler {
      */
     protected final long bind(final String name) {
 	if (DISTRIBUTED) {
-	    RealtimeThread rt = new RealtimeThread() {
-		    public void run() {
-			try {
-			    ORB orb = ORB.init(Scheduler.this.args, null);
-			    POA poa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
-			    poa.the_POAManager().activate();
-			    NamingContextExt namingContext = 
-				NamingContextExtHelper.narrow(orb.resolve_initial_references("NameService"));
-			    namingContext.rebind(namingContext.to_name(schedulerName = name),
-						 poa.servant_to_reference(new SchedulerCommPOA() {
-							 public void handleDistributedEvent(String name, 
-											    long messageID, byte[] data) {
-							     Scheduler.this.handleDistributedEvent(name, messageID, data);
-							 }				
-						     }));
-			    orb.run();
-			} catch (Exception e) {
-			    NoHeapRealtimeThread.print(e.toString());
-			    System.exit(-1);
-			}
-		    }
-		};
-	    long id = rt.getUID();
-	    rt.start();
-	    return id;
+	    return ((ConnectionManager)connectionManager).bind(name, this);
 	}
 	return 0;
     }
@@ -310,14 +257,7 @@ public abstract class Scheduler {
      */
     protected final Object resolve(String name) {
 	if (DISTRIBUTED) {
-	    try {
-		ORB orb = ORB.init(args, null);
-		NamingContextExt nc = NamingContextExtHelper.narrow(orb.resolve_initial_references("NameService"));
-		return SchedulerCommHelper.narrow(nc.resolve(new NameComponent[] {new NameComponent(name, "")}));
-	    } catch (Exception e) {
-		NoHeapRealtimeThread.print(e.toString());
-		System.exit(-1);
-	    }
+	    return ((ConnectionManager)connectionManager).resolve(name);
 	}
 	return null;
     }
@@ -342,14 +282,7 @@ public abstract class Scheduler {
     protected final long generateDistributedEvent(final Object destination, 
 						  final long messageID, final byte[] data) {
 	if (DISTRIBUTED) {
-	    RealtimeThread rt = new RealtimeThread() {
-		    public void run() {
-			((SchedulerComm)destination).handleDistributedEvent(schedulerName, messageID, data);
-		    }
-		};
-	    long id = rt.getUID();
-	    rt.start();
-	    return id;
+	    return ((ConnectionManager)connectionManager).generateDistributedEvent(destination, messageID, data);
 	}
 	return 0;
     }
