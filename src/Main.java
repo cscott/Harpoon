@@ -20,6 +20,29 @@ public class Main {
      *  @param args Should include parameters for the servers and clients, if necessary.
      */
     public static void main(String args[]) {
+	boolean headless = true;
+	if (true) {
+	    Node alert = (args.length>2)?(new Alert(args)):null;
+	    Node n2;
+	    if (headless) {
+		n2 = new Timer(true, false, new RobertsCross(new Thresholding(new Label(null, 
+					       new RangeFind(new Timer(false, true, alert))))));
+	    } else {
+		Node n7 = new Command(Command.GET_IMAGE, null);
+		Node n6 = new Circle(new Display("identified"), n7);
+		Node n5 = new Node(new RangeFind(alert), n6);
+		Node n4 = new RobertsCross(new Thresholding(new Label(null, n5)));
+		Node n3 = new Cache(2, new Copy(n4), new Command(Command.RETRIEVED_IMAGE, n6));
+		n2 = new Node(new Display("original"), n3);
+		n7.setLeft(n3);
+	    }
+	    Node n1 = (args.length>2)?(Node)(new ATR(args, n2)):
+		(Node)(new Load("movie/tank.jar", "tank.gz", 533, n2));
+	    while (true) {
+	       n1.run();
+	    }
+	}
+
 	if (false) {
 	    Node n27 = new Display("possible");
 	    Node n26 = new Circle(n27, null);
@@ -32,14 +55,14 @@ public class Main {
 	    Node n19 = new Node(n20, n21);
 	    Node n18 = new RangeFind(n19);
 	    Node n17 = new Circle(n18, n22);
-	    Node n16 = new Match(n17);
-	    Node n15 = new Copy(n26, n16);
+//  	    Node n16 = new Match(n17);
+	    Node n15 = new Copy(n26, n17);
 	    Node n14 = new Display("labelled");
 	    Node n13 = new Label(n14, n15);
-	    Node n12 = new Pruning(new Node(new Display("Pruning"), n13));
-	    Node n11 = new Thinning(new Node(new Display("Thinning"), n12));
-	    Node n10 = new Hysteresis(new Node(new Display("Hysteresis"), n11));
-	    Node n9 = new Thresholding(new Node(new Display("Thresholding"), n10));
+//  	    Node n12 = new Pruning(new Node(new Display("Pruning"), n13));
+//  	    Node n11 = new Thinning(new Node(new Display("Thinning"), n12));
+//  	    Node n10 = new Hysteresis(new Node(new Display("Hysteresis"), n13));
+	    Node n9 = new Thresholding(new Node(new Display("Thresholding"), n13));
 	    Node n8 = new RobertsCross(new Node(new Display("Robert's Cross"), n9));
 	    Node n7 = new Cache(5, n23);
 	    Node n6 = new Cache(5, new Copy(n8), n25);
@@ -54,14 +77,14 @@ public class Main {
 	    if (args.length>2) {
 		(new ATR(args, n2)).run();
 	    } else {
-		Node n1 = new Load("movie/movie.jar", "mov3.gz", 139, n2);
+		Node n1 = new Load("movie/tank.jar", "tank.gz", 600, n2);
 		while (true) {
 		    n1.run();
 		}
 	    }
 	}
 
-	if (true) {
+	if (false) {
 	    Node n4 = new RangeFind(new Alert(args));
 	    Node n3 = new Thinning(new Pruning(new Label(null, n4 /* new Match(n4) */)));
 	    Node n2 = new RobertsCross(new Thresholding(new Hysteresis(n3)));

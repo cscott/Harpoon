@@ -13,11 +13,14 @@ import imagerec.util.ImageDataManip;
  */
 
 public class Match extends Node {
+    private Display inputDisp = new Display("input");
+    private Display matchDisp = new Display("matcher");
 
     private ImageData[] iddb;
     private String filePrefix;
     private int numFiles;
     private int threshold;
+    private int[] order;
 
     /** Construct a {@link Match} node that uses the default matching algorithm
      *  and parameters.
@@ -42,6 +45,23 @@ public class Match extends Node {
 	ImageData db = ImageDataManip.readPPM(fileName);
 	for (int i=0; i<iddb.length; i++) {
 	    iddb[i] = ImageDataManip.crop(db, (i%7)*100, (i/7)*100, 100, 100);
+	}
+	
+	int width = 50;
+	int height = 50;
+
+	/* Precompute search ordering. */
+	order = new int[(width+1)*(height+1)*4]; 
+	int maxDist = width*width+height*height;
+	int i=0;
+	for (int dist=0; dist<=maxDist; dist++) {
+	    for (int y=-height; y<=height; y++) {
+		for (int x=-width; x<=width; x++) {
+		    if ((x*x+y*y)==dist) {
+			order[i++] = y*width+x;
+		    }
+		}
+	    }
 	}
     }
 
@@ -87,49 +107,34 @@ public class Match extends Node {
     }
 
     private boolean match(ImageData id1, ImageData id2) {
-	/* This sucks!!!! n^4! */
-//  	int width = id2.width;
-//  	int height = id2.height;
-//  	int match = 0;
-//  	int size = height*width;
-//  	for (int pos=0; pos<size; pos++) {
-//  	    if (id1.gvals[pos]==127) {
-//  		int dist=Integer.MAX_VALUE;
-//  		for (int pos2=0; pos2<size; pos2++) {
-//  		    if (id2.gvals[pos2]==127) {
-//  			int newDist=(pos%width)-(pos2%width);
-//  			int newDist2=(pos/width)-(pos/width);
-//  			if ((newDist=newDist*newDist+newDist2*newDist2)<dist) {
-//  			    dist = newDist;
-//  			}
-//  		    }
-//  		}
-//  		match+=dist;
-//  	    }
-//  	}
-//  	System.out.println("Distance: "+match);
-//  	return match<threshold;
-	return true;
+	inputDisp.process(id1);
+	matchDisp.process(id2);
+	int size = id2.width*id2.height;
+	long match = 0;
+	long numPixels = 0;
+	for (int pos=0; pos<size; pos++) {
+	    if (id1.gvals[pos]>0) {
+		int count = 0;
+		numPixels++;
+		for (int i=0; (i<size)&&(count<9); i++) {
+		    int newIdx = order[i]+pos;
+		    if ((newIdx<0)||(newIdx>size)) {
+			count++;
+		    } else {
+			count=0;
+			if (id2.gvals[newIdx]>0) {
+			    match += i;
+			}
+		    }
+		}
+
+	    }
+
+	}
+
+  	System.out.println("Distance: "+match+" Pixels: "+numPixels+" thresh: "+
+			   (((double)match)/((double)numPixels))+" threshold: "+
+			   threshold);
+  	return numPixels*threshold>match;
     }
-
-    /** A faster version of the above. */
-    private boolean matchFast(ImageData id1, ImageData id2) {
-//  	if ((id1.width!=id2.width)||(id1.height!=id2.height)) {
-//  	    throw new Error("Incorrect width/height of input image.");
-//  	}
-
-//  	int match = 0;
-//  	int width = id1.width;
-//  	int height = id1.height;
-	
-//  	for (int pos=0; pos<size; pos++) {
-//  	    if (id1.gvals[pos]==127) {
-
-//  	    }
-
-//  	}
-
-	return true;
-    }
-
 }

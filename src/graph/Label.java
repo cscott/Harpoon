@@ -17,7 +17,7 @@ import imagerec.util.ImageDataManip;
  */
 
 public class Label extends Node {
-    private int minwidth, maxwidth, minheight, maxheight;
+    private int minwidth, maxwidth, minheight, maxheight, minsum, maxsum;
 
     /** Construct a new {@link Label} node which will trace the outlines
      *  of objects and retain all objects with a bounding box that fits
@@ -40,7 +40,7 @@ public class Label extends Node {
      *                   If <code>null</code>, no individual objects are sent.
      */
     public Label(Node outImage, Node outImages) {
-	this(outImage, outImages, 8, 100, 8, 100);
+	this(outImage, outImages, 40, 75, 30, 75, 30, 150);
     }
 
     /** Construct a new {@link Label} node which will trace the outlines
@@ -55,14 +55,19 @@ public class Label extends Node {
      *  @param maxwidth The maximum width of the bounding box for a target object.
      *  @param minheight The minimum height of the bounding box for a target object.
      *  @param maxheight The maximum height of the bounding box for a target object.
+     *  @param minsum The minimum sum of width and height.
+     *  @param maxsum The maximum sum of width and height.
      */
     public Label(Node outImage, Node outImages, int minwidth, 
-		 int maxwidth, int minheight, int maxheight) {
+		 int maxwidth, int minheight, int maxheight,
+		 int minsum, int maxsum) {
 	super(outImage, outImages);
 	this.minwidth = minwidth;
 	this.maxwidth = maxwidth;
 	this.minheight = minheight;
 	this.maxheight = maxheight;
+	this.minsum = minsum;
+	this.maxsum = maxsum;
     }
 
     private int x1, x2, y1, y2;
@@ -80,16 +85,21 @@ public class Label extends Node {
 		x1 = x2 = pos%id.width;
 		y1 = y2 = pos/id.width;
 		label(id, num, pos);
-		if (((x2-x1)<minwidth)||((x2-x1)>maxwidth)||
-		    ((y2-y1)<minheight)||((y2-y1)>maxheight)) {
+		int width = x2-x1;
+		int height = y2-y1;
+		
+		if ((width<minwidth)||(width>maxwidth)||
+		    (height<minheight)||(height>maxheight)||
+		    ((width+height)<minsum)||((width+height)>maxsum)) {
 // 		    System.out.println("Out of bounds!");
-		    for (int i=0; i<id.gvals.length; i++) {
-			if (id.bvals[i]==num) {
+//  		    for (int i=0; i<id.gvals.length; i++) {
+//  			if (id.bvals[i]==num) {
 			    /* Erase the object, since it's out of bounds. */
-			    id.bvals[i]=id.bvals[i]=id.gvals[i]=0; 
-			}
-		    }
+//  			    id.bvals[i]=id.bvals[i]=id.gvals[i]=0; 
+//  			}
+//  		    }
 		} else {
+		    System.out.println("width: "+(x2-x1)+", height: "+(y2-y1));
 		    if ((--num)==0) {
 			throw new Error("Too many objects!");
 		    }

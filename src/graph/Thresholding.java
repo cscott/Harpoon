@@ -26,7 +26,7 @@ public class Thresholding extends Node {
      *  @param out the node to send thresholded images to.
      */
     public Thresholding(Node out) {
-	this(90, 120, out); /* Completely arbitrary defaults! */
+	this(100, 100, out); /* Completely arbitrary defaults! */
     }
 
     /** Create a new {@link Thresholding} node which will determine whether
