@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@@ai.mit.edu> 
 // Version: 
 // Created: <Tue Oct  6 12:41:25 1998> 
-// Time-stamp: <1998-11-27 20:39:10 mfoltz> 
+// Time-stamp: <1998-11-28 16:35:11 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.QuadSSA;
@@ -132,6 +132,8 @@ public class Profile {
     // before each CALL quad, and log some static info. 
     public void visit(CALL q) {
 
+      System.err.print("@");
+
       // log static info
       _static_monitor.logMAYCALL(_class,_method,q.method.getDeclaringClass(),q.method);
 
@@ -167,6 +169,10 @@ public class Profile {
     public void visit(NEW q) {
 
       Temp[] parameters = new Temp[5];
+      Quad search_quad;
+      CALL call_quad;
+
+      System.err.print("#");
 
       Temp t1 = new Temp();
       CONST c1 = new CONST(q.getSourceElement(), t1,
@@ -186,12 +192,45 @@ public class Profile {
 
       Quad.addEdge(c1,0,profiling_call,0);
 
-      // splice new quad into CFG
-      splice(q, c1, profiling_call);
+      try {
+
+	// look for init
+      
+	search_quad = q.next(0);
+	while (!(search_quad instanceof CALL)) {
+	  if (search_quad instanceof SIGMA || 
+	      search_quad instanceof PHI ||
+	      search_quad instanceof FOOTER) {
+	    System.err.println("sigma/phi bogosity on quads:");
+	    System.err.println(q.toString());
+	    System.err.println(search_quad.toString());
+	  }
+	  Util.assert(!(search_quad instanceof SIGMA) && 
+		      !(search_quad instanceof PHI) &&
+		      !(search_quad instanceof FOOTER));
+	  System.err.print(".");
+	  search_quad = search_quad.next(0);
+	}
+	call_quad = (CALL) search_quad;
+	if (!call_quad.method.getName().equals("<init>")) {
+	  System.err.println("<init> bogosity on quads: ");
+	  System.err.println(q.toString());
+	  System.err.println(call_quad.toString());
+	}
+	Util.assert(call_quad.method.getName().equals("<init>"));
+	
+	// splice new quad into CFG
+	splice(call_quad, c1, profiling_call);
+      } catch (Throwable e) {
+	System.err.println("caught exception here in NEW");
+	e.printStackTrace();
+      }
 
     }
 
     public void visit(METHODHEADER q) {
+
+      System.err.print("!");
 
       CONST _null_CONST = new CONST(q.getSourceElement(), _null_temp,
 				    null, HClass.Void);
