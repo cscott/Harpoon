@@ -31,7 +31,7 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.1.2.30 2001-07-16 13:05:00 wbeebee Exp $
+ * @version $Id: Realtime.java,v 1.1.2.31 2001-07-18 15:51:58 wbeebee Exp $
  */
 
 public class Realtime {
@@ -88,13 +88,14 @@ public class Realtime {
 	    System.out.print("yes, NOHEAP_CHECKS: ");
 	    if (opts.indexOf("noheap_checks")!=-1) {
 		NOHEAP_CHECKS = true;
-		System.out.print("yes, DEBUG_REF: ");
-		if (opts.indexOf("debug_ref")!=-1) {
-		    DEBUG_REF = true;
-		    System.out.print("yes");
-		} else {
-		    System.out.print("no");
-		}
+		System.out.print("yes");
+	    } else {
+		System.out.print("no");
+	    }
+	    System.out.print(", DEBUG_REF: ");
+	    if (opts.indexOf("debug_ref")!=-1) {
+		DEBUG_REF = true;
+		System.out.print("yes");
 	    } else {
 		System.out.print("no");
 	    }
