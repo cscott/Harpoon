@@ -12,7 +12,7 @@ import java.util.Hashtable;
  * inserting labels to make the control flow clear.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Print.java,v 1.1.2.2 1998-12-19 20:13:30 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.3 1998-12-20 07:13:04 cananian Exp $
  */
 abstract class Print  {
     /** Print <code>Quad</code> code representation <code>c</code> to
@@ -79,6 +79,24 @@ abstract class Print  {
 		sb.append("]");
 		indent(pw, ql[i], l, sb.toString());
 		indent(pw, Q);
+	    } else if (ql[i] instanceof CALL) {
+		// add a line break before 'exceptions'
+		int j = s.indexOf(" exceptions");
+		if (j<0) indent(pw, ql[i], l, s);
+		else {
+		    indent(pw, ql[i], l, s.substring(0, j));
+		    indent(pw, null, null, " " + s.substring(j));
+		}
+	    } else if (ql[i] instanceof METHOD) {
+		indent(pw, ql[i], l, s);
+		StringBuffer sb = new StringBuffer();
+		int n = ql[i].next().length;
+		for (int j=1; j < n; j++) {
+		    sb.append(labels.get(ql[i].next(j)));
+		    if (j < n-1) sb.append(", ");
+		}
+		if (n>1)
+		    indent(pw, null, null, "  handlers at ["+sb+"]");
 	    } else indent(pw, ql[i], l, s);
 
 	    // DEFAULT branch for HEADER is 1-edge. For all others, 0-edge.
@@ -125,7 +143,7 @@ abstract class Print  {
     ////////////////////////////////////////////////////////////
     /** Pretty-print a string at the proper indentation. */
     static void indent(PrintWriter pw, HCodeElement src, String s) {
-	indent(pw, src, "", s);
+	indent(pw, src, null, s);
     }
     /** Pretty-print a string and an optional label at the proper 
      *  indentation.*/
