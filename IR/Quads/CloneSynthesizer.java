@@ -17,7 +17,7 @@ import java.util.Map;
  * array clone methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CloneSynthesizer.java,v 1.1.2.1 2000-10-20 23:30:56 cananian Exp $
+ * @version $Id: CloneSynthesizer.java,v 1.1.2.2 2000-10-22 03:58:08 cananian Exp $
  */
 class CloneSynthesizer implements HCodeFactory, java.io.Serializable {
     /** Parent code factory. */
@@ -36,13 +36,16 @@ class CloneSynthesizer implements HCodeFactory, java.io.Serializable {
 	// check cache first
 	if (cache.containsKey(m)) return (HCode) cache.get(m);
 	// now see if we need to synthesize a code for this method.
-	if (m.getDeclaringClass().isArray() &&
+	HClass hc = m.getDeclaringClass();
+	HClass oa = hc.getLinker().forDescriptor("[Ljava/lang/Object;");
+	if (hc.isArray() &&
+	    !hc.getComponentType().isPrimitive() && // not primitive array
+	    !hc.equals(oa) && // not java.lang.Object[].clone
 	    m.getName().equals("clone") &&
 	    m.getDescriptor().equals("()Ljava/lang/Object;")) {
-	    // Create a Code which turns right around and calls Object.clone().
+	    // Create a Code which turns around and calls Object[].clone().
 	    QuadWithTry qwt = new QuadWithTry(m, null) { };
-	    HMethod hm = m.getDeclaringClass().getSuperclass()
-		.getMethod("clone", new HClass[0]);
+	    HMethod hm = oa.getMethod("clone", new HClass[0]);
 	    Temp thisT = new Temp(qwt.qf.tempFactory());
 	    Quad q0 = new HEADER(qwt.qf, null);
 	    Quad q1 = new METHOD(qwt.qf, null, new Temp[] { thisT }, 1);
