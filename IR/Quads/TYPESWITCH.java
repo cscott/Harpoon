@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TYPESWITCH.java,v 1.1.2.1 2000-10-07 01:43:30 cananian Exp $
+ * @version $Id: TYPESWITCH.java,v 1.1.2.2 2000-10-07 01:59:03 cananian Exp $
  */
 public class TYPESWITCH extends SIGMA {
     /** The discriminant, compared against each value in <code>keys</code>.*/
@@ -33,7 +33,10 @@ public class TYPESWITCH extends SIGMA {
      *  We differ from the modula-3 
      * <a href="http://research.compaq.com/SRC/m3defn/html/typecase.html">
      * TYPECASE</a> statement by disallowing <code>null</code> as a valid
-     * key value.
+     * key value.  The discriminant is also not permitted to be
+     * <code>null</code> (except in quad-with-try form, in which case
+     * a <code>null</code> discriminant causes the default branch to
+     * be taken).
      * @param index
      *        the discriminant.
      * @param keys
