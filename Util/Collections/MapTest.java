@@ -23,7 +23,7 @@ import java.util.Vector;
  * for correctness.  Large portions borrowed from Mauve.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MapTest.java,v 1.1.2.1 2001-11-04 00:37:54 cananian Exp $
+ * @version $Id: MapTest.java,v 1.1.2.2 2001-11-04 02:39:45 cananian Exp $
  */
 class MapTest {
     private final static boolean DEBUG=false;
@@ -42,6 +42,10 @@ class MapTest {
 	doit(GenericInvertibleMap.class);
 	doit(GenericInvertibleMultiMap.class);
 	doit(GenericMultiMap.class);
+	// MapFactories.
+	doit(new AggregateMapFactory(), "AggregateMapFactory");
+	doit(Factories.synchronizedMapFactory(Factories.hashMapFactory),
+	     "synchronized HashMap");
     }
 
     static void doit(Class c) {
@@ -69,12 +73,7 @@ class MapTest {
 			}
 		    }
 		};
-	    System.err.println("TESTING "+c);
-	    MapTest mt = new MapTest(f);
-	    mt.test();
-	    if (mt.failed) {
-		System.err.println("FAILURES testing "+c);
-	    }
+	    doit(f, c.toString());
 	} catch (RuntimeException re) {
 	    System.err.println("SKIPPING: "+re);
 	    throw re;
@@ -83,6 +82,20 @@ class MapTest {
 	    throw e;
 	} catch (Throwable t) {
 	    System.err.println("SKIPPING: "+t);
+	}
+    }
+    static void doit(final MapFactory mf, String str) {
+	doit(new Factory() {
+		Map build() { return mf.makeMap(); }
+		Map build(Map m) { return mf.makeMap(m); }
+	    }, str);
+    }
+    static void doit(Factory f, String str) {
+	System.err.println("TESTING "+str);
+	MapTest mt = new MapTest(f);
+	mt.test();
+	if (mt.failed) {
+	    System.err.println("FAILURES testing "+str);
 	}
     }
 
