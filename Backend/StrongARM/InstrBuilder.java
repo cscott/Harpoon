@@ -19,7 +19,7 @@ import java.util.Arrays;
     StrongARM architecture.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.2 1999-12-01 17:12:40 pnkfelix Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.3 1999-12-02 22:26:31 pnkfelix Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
@@ -58,7 +58,7 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 	// 	       "offset " + offset + " is too large");
 
 	if (offset < OFFSET_LIMIT) { // common case
-	    String[] strs = getLoadAssemStrs(r, offset);
+	    String[] strs = getLdrAssemStrs(r, offset);
 	    Util.assert(strs.length == 1 ||
 			strs.length == 2 );
 
@@ -84,31 +84,17 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 		return Arrays.asList(new InstrMEM[] { load });
 	    }
 	} else {
+	    // System.out.println("Offset exceeded!");
+
 	    // need to wrap load with instructions to shift SP down
 	    // and up again, and need to make it *ONE* Instr so that
 	    // they do not get seperated.  Also, note that this is
 	    // safe since StrongARM does not seem to have normal
 	    // interrupts 
-	    
-	    String assem = "";
-	    int numSPdec = 0;
-	    while (offset >= OFFSET_LIMIT) {
-		numSPdec++;
-		assem += "sub `s0, `s0, #"+(OFFSET_LIMIT*4) +"\n";
-		offset -= OFFSET_LIMIT;
-	    }
 
-	    Iterator strs = new ArrayIterator(getLoadAssemStrs(r, offset));
-	    while(strs.hasNext()) {
-		assem += (String)strs.next() +"\n";
-	    }
-	    
-	    while(numSPdec > 0) {
-		numSPdec--;
-		assem += "add `s0, `s0, #"+(OFFSET_LIMIT*4);
-		if (numSPdec > 0) assem += "\n";
-	    }
-	    
+	    String assem = 
+		getWrappedAssem(getLdrAssemStrs(r, offset), offset); 
+
 	    return Arrays.asList
 		(new InstrMEM[] 
 		 { new InstrMEM(template.getFactory(), template,
@@ -128,29 +114,95 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 	}
     }
 
-    public List makeStore(Temp r, int offset, Instr template) {
-	Util.assert(offset < OFFSET_LIMIT, "offset " + offset + " is too large");
-	if (r instanceof TwoWordTemp ) {
-	    InstrMEM store1 = 
-		new InstrMEM(template.getFactory(), template,
-			     "str `s0l, [`s1, #" +(-4*offset) + "] ",
-			     new Temp[]{ },
-			     new Temp[]{ r , SP() });
-	    InstrMEM store2 = 
-		new InstrMEM(template.getFactory(), template,
-			     "str `s0h, [`s1, #" +(-4*(offset+1)) + "] ",
-			     new Temp[]{ },
-			     new Temp[]{ r , SP() });
-	    store2.layout(store1, null);
-	    return Arrays.asList(new InstrMEM[]{ store1, store2 });
+    private String[] getLdrAssemStrs(Temp r, int offset) {
+	if (r instanceof TwoWordTemp) {
+	    return new String[] {
+		"ldr `d0l, [`s0, #" +(-4*offset) + "] " ,
+		    "ldr `d0h, [`s0, #" +(-4*(offset+1)) + "] " };
 	} else {
-	    InstrMEM store = 
-		new InstrMEM(template.getFactory(), template,
-			     "str `s0, [`s1, #" +(-4*offset) + "] ",
-			     new Temp[]{ },
-			     new Temp[]{ r , SP() });
-	    return Arrays.asList(new InstrMEM[] { store });
+	    return new String[] { "ldr `d0, [`s0, #" +(-4*offset) + "] " };
 	}
+    }
+
+    private String[] getStrAssemStrs(Temp r, int offset) {
+	if (r instanceof TwoWordTemp) {
+	    return new String[] {
+		"str `s0l, [`s1, #" +(-4*offset) + "] " ,
+		    "str `s0h, [`s1, #" +(-4*(offset+1)) + "] " };
+	} else {
+	    return new String[] { "str `s0, [`s1, #" +(-4*offset) + "] " };
+	}
+    }
+
+    public List makeStore(Temp r, int offset, Instr template) {
+	// Util.assert(offset < OFFSET_LIMIT, 
+	//             "offset " + offset + " is too large");
+
+	if (offset < OFFSET_LIMIT) { // common case
+	    String[] strs = getStrAssemStrs(r, offset);
+	    Util.assert(strs.length == 1 || 
+			strs.length == 2);
+	    
+	    if (strs.length == 2) {
+		InstrMEM store1 = 
+		    new InstrMEM(template.getFactory(), template,
+				 strs[0],
+				 new Temp[]{ },
+				 new Temp[]{ r , SP() });
+		InstrMEM store2 = 
+		    new InstrMEM(template.getFactory(), template,
+				 strs[1],
+				 new Temp[]{ },
+				 new Temp[]{ r , SP() });
+		store2.layout(store1, null);
+		return Arrays.asList(new InstrMEM[]{ store1, store2 });
+	    } else {
+		InstrMEM store = 
+		    new InstrMEM(template.getFactory(), template,
+				 strs[0],
+				 new Temp[]{ },
+				 new Temp[]{ r , SP() });
+		return Arrays.asList(new InstrMEM[] { store });
+	    }
+	} else {
+	    // System.out.println("Offset exceeded!");
+
+	    // need to wrap store with instructions to shift SP down
+	    // and up again, and need to make it *ONE* Instr
+	    
+	    String assem = 
+		getWrappedAssem(getStrAssemStrs(r, offset), offset);
+
+	    return Arrays.asList
+		(new InstrMEM[]
+		 { new InstrMEM(template.getFactory(), template,
+				assem,
+				new Temp[] {},
+				new Temp[] { r, SP() }) });
+	}
+    }
+
+    private String getWrappedAssem(String[] strs, int offset) {
+	String assem = "";
+	int numSPdec = 0;
+	while (offset >= OFFSET_LIMIT) {
+	    numSPdec++;
+	    assem += "sub `s0, `s0, #"+(OFFSET_LIMIT*4) +"\n";
+	    offset -= OFFSET_LIMIT;
+	}
+	
+	Iterator strIter = new ArrayIterator(strs);
+	while(strIter.hasNext()) { 
+	    assem += (String)strIter.next() +"\n"; 
+	}
+	
+	while(numSPdec > 0) {
+	    numSPdec--;
+	    assem += "add `s0, `s0, #"+(OFFSET_LIMIT*4);
+	    if (numSPdec > 0) assem += "\n";
+	}
+	
+	return assem;
     }
 
     public InstrLABEL makeLabel(Instr template) {
