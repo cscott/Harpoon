@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.23 2000-10-05 18:53:20 cananian Exp $
+% $Id: transact.tex,v 1.24 2003-11-09 20:19:59 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,7 +8,7 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.23 $ $}
+\date{\today \\ $ $Revision: 1.24 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
@@ -226,7 +226,7 @@ $\text{Read}(\code{struct oobj *} o, \code{int } n)$ =
 \ENDLOOP*
 \STATE $x \gets v \ptr \code{field}[n]$
 \IF{$u=0 \wedge x \neq \code{FLAG\_VALUE}$}
-  \STATE \COMMENT{XXX: race here}
+%  \STATE \COMMENT{XXX: race here}
   \STATE $o \ptr \code{field}[n] \gets x$ \COMMENT{store must be atomic}
   \STATE $\code{dec\_use}(o)$
          \COMMENT{will deflate when all fields are copied back}
@@ -249,7 +249,7 @@ $\text{Write}(\code{struct oobj *} o, \code{int } n,
   \STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
   \WHILE{$\text{AbortTransaction}(v\ptr\code{transid}) \neq \code{COMMITTED}$}
     \STATE \COMMENT{prune list for the sake of writes w/o intervening reads}
-    \STATE \COMMENT{XXX: potential race here --- v could be already removed}
+%    \STATE \COMMENT{XXX: potential race here --- v could be already removed}
     \STATE $v \gets v\ptr\code{anext}$
     \STATE $o \ptr \code{hashunion.inflated} \ptr \code{first\_version}
             \gets v$
@@ -264,7 +264,7 @@ $\text{Write}(\code{struct oobj *} o, \code{int } n,
     \STATE $r \gets r\ptr\code{next}$
   \ENDWHILE
 \ELSIF{$x = \code{FLAG\_VALUE}$}
-  \STATE \COMMENT{XXX: define CreateNewVersion (watch those races)}
+%  \STATE \COMMENT{XXX: define CreateNewVersion (watch those races)}
 % when we define CreateNewVersion, we'll need: o\ptr\code{claz}\ptr\code{size}
   \STATE $v \gets \text{CreateNewVersion}(o, \code{null}, o)$
 \ELSE
@@ -320,12 +320,12 @@ $\text{ReadTrans}(\code{struct commitrec *}c,
 \STATE \COMMENT{$v$ has correct version} \label{line:rtL1}
 
 \IF{$o\ptr\code{field}[n] \neq \code{FLAG\_VALUE}$}
-  \STATE \COMMENT{XXX: race here, most likely}
+%  \STATE \COMMENT{XXX: race here, most likely}
   \STATE copy current value somewhere (how far over?)
   \STATE $\code{inc\_use}(o)$
   \STATE $o\ptr\code{field}[n] \gets \code{FLAG\_VALUE}$
-  \STATE \COMMENT{XXX: even if this transaction is aborted now, we
-                  still register a dependency on this field.}
+%  \STATE \COMMENT{XXX: even if this transaction is aborted now, we
+%                  still register a dependency on this field.}
 \ENDIF
 \RETURN $v\ptr\code{field}[n]$
 \end{myalgorithmic}
@@ -429,7 +429,7 @@ $\text{StateP}''(\code{struct vinfo *} v)$ =
 \begin{myalgorithmic}
 \MATCHING{$\text{StateP}'(\code{\&}(v\ptr\code{transid}))$}
   \CASE{\tuple{\code{ABORTED}, l}}
-    \STATE \COMMENT{XXX: potential race here --- v could be already removed}
+%    \STATE \COMMENT{XXX: potential race here --- v could be already removed}
     \STATE \COMMENT{the following store ought to be atomic}
     \STATE $o \ptr \code{hashunion.inflated} \ptr \code{first\_version}
             \gets v\ptr\code{anext}$
@@ -445,7 +445,7 @@ $\text{StateP}''(\code{struct vinfo *} v)$ =
     \IF[transid was pruned; snip out parents]{$l$}
       \WHILE{$v\ptr\code{transid} = v\ptr\code{anext}\ptr\code{transid}$}
         \STATE $v\ptr\code{anext} \gets v\ptr\code{anext}\ptr\code{anext}$
-               \COMMENT{XXX: race here.}
+%               \COMMENT{XXX: race here.}
       \ENDWHILE
     \ENDIF
     \RETURN \code{WAITING}
