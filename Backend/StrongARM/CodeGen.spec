@@ -44,7 +44,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.8 1999-07-27 22:49:25 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.9 1999-07-28 02:52:57 pnkfelix Exp $
  */
 %%
 
@@ -942,44 +942,153 @@ CALL(retval, retex, func, arglist) %{
 	TEMP tempExp = (TEMP) list.head;
 	if (tempExp.isDoubleWord()) {
 	   // arg takes up two words
-	   if (index < 3) { // put in registers
-	      emit(new Instr( inf, ROOT,
-			      "mov `d0, `s0l",
-			      new Temp[]{ frame.getAllRegisters()[index] },
-			      new Temp[]{ tempExp.temp }));
+	   switch(index) {
+	   case 0: case 1: case 2: // put in registers 
+	      emit( ROOT, "mov `d0, `s0l",
+		    frame.getAllRegisters()[index] ,
+		    tempExp.temp );
 	      index++;			     
-	      emit(new Instr( inf, ROOT,
-			      "mov `d0, `s0h",
-			      new Temp[]{ frame.getAllRegisters()[index] },
-			      new Temp[]{ tempExp.temp }));
-	   } else if (index == 3) { // spread between regs and stack
+	      emit( ROOT, "mov `d0, `s0h",
+		    frame.getAllRegisters()[index],
+		    tempExp.temp );
+	      break;			     
+	   case 3: // spread between regs and stack
 	     emit(new Instr( inf, ROOT,
 			      "mov `d0, `s0l",
 			      new Temp[]{ frame.getAllRegisters()[index] },
 			      new Temp[]{ tempExp.temp }));
 	     index++;
+	     stackOffset += 4;
+	     emit(new InstrMEM( 
+		      inf, ROOT,
+		      "str `s0h, [`s1, #-4"]!",
+		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
+		      new Temp[]{ tempExp.temp, SAFrame.SP })); 
+	     break;
+	   default: // start putting args in memory
 	     emit(new InstrMEM( inf, ROOT,
-			     "stmfd `s0!, `s1h", // WRONG
-			     null, 
+				"str `s0l, [`s1, #-4]!", 
+				null, 
 			     new Temp[]{ SAFrame.SP, tempExp.temp }));
-	   } else {
-	     emit(new InstrMEM( inf, ROOT,
-			     "stmfd `s0!, `s1h", // WRONG
-			     null, 
-			     new Temp[]{ SAFrame.SP, tempExp.temp }));
+	     index++;
+	     stackOffset += 4;
+	     emit(new InstrMEM( 
+		      inf, ROOT,
+		      "str `s0h, [`s1, #-4]!",
+		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
+		      new Temp[]{ tempExp.temp, SAFrame.SP })); 
+	     stackOffset += 4;
+	     break;
 	   }
 	} else {
-	  // WRONG
+	  // arg is one word
+	  switch(index) {
+	  if (index < 4) {
+	     emit( ROOT, "mov `d0, `s0", 
+		   frame.getAllRegisters()[index], tempExp.temp);
+	  } else {
+	     emit(new InstrMEM(
+		      inf, ROOT,
+		      "str `s0, [`s1, #-4]!",
+		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
+		      new Temp[]{ tempExp.temp, SAFrame.SP }));
+	     stackOffset += 4;
+	  }
 	}	     
 
 	list = list.tail;    	
     }
 
-    emit(new Instr(
+    emit( ROOT, "bl " + func );
+
+    // this will break if stackOffset > 255 (ie >63 args)
+    emit( ROOT, "add `d0, `s0, #" + stackOffset ");
+    if (retval.isDoubleWord()) {
+        emit( ROOT, "mov `d0l, `s0", retval, r0 );
+        emit( ROOT, "mov `d0h, `s0", retval, r1 );
+    } else {
+        emit( ROOT, "mov `d0, `s0", retval, r0 );
+    }  
 }%
 
 NATIVECALL(retval, retex, func, arglist) %{
-	     // TODO: FILL IN!!!
+    ExpList list = arglist;
+    
+    // I assume that the elements of 'arglist' are all Temps after
+    // canonicalization.
 
+    int stackOffset = 0;
+
+    for (int index=0; list != null; index++) { 
+	TEMP tempExp = (TEMP) list.head;
+	if (tempExp.isDoubleWord()) {
+	   // arg takes up two words
+	   switch(index) {
+	   case 0: case 1: case 2: // put in registers 
+	      emit( ROOT, "mov `d0, `s0l",
+		    frame.getAllRegisters()[index] ,
+		    tempExp.temp );
+	      index++;			     
+	      emit( ROOT, "mov `d0, `s0h",
+		    frame.getAllRegisters()[index],
+		    tempExp.temp );
+	      break;			     
+	   case 3: // spread between regs and stack
+	     emit(new Instr( inf, ROOT,
+			      "mov `d0, `s0l",
+			      new Temp[]{ frame.getAllRegisters()[index] },
+			      new Temp[]{ tempExp.temp }));
+	     index++;
+	     stackOffset += 4;
+	     emit(new InstrMEM( 
+		      inf, ROOT,
+		      "str `s0h, [`s1, #-4"]!",
+		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
+		      new Temp[]{ tempExp.temp, SAFrame.SP })); 
+	     break;
+	   default: // start putting args in memory
+	     emit(new InstrMEM( inf, ROOT,
+				"str `s0l, [`s1, #-4]!", 
+				null, 
+			     new Temp[]{ SAFrame.SP, tempExp.temp }));
+	     index++;
+	     stackOffset += 4;
+	     emit(new InstrMEM( 
+		      inf, ROOT,
+		      "str `s0h, [`s1, #-4]!",
+		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
+		      new Temp[]{ tempExp.temp, SAFrame.SP })); 
+	     stackOffset += 4;
+	     break;
+	   }
+	} else {
+	  // arg is one word
+	  switch(index) {
+	  if (index < 4) {
+	     emit( ROOT, "mov `d0, `s0", 
+		   frame.getAllRegisters()[index], tempExp.temp);
+	  } else {
+	     emit(new InstrMEM(
+		      inf, ROOT,
+		      "str `s0, [`s1, #-4]!",
+		      new Temp[]{ SAFrame.SP }, // SP *implicitly* modified
+		      new Temp[]{ tempExp.temp, SAFrame.SP }));
+	     stackOffset += 4;
+	  }
+	}	     
+
+	list = list.tail;    	
+    }
+
+    emit( ROOT, "bl " + func );
+
+    // this will break if stackOffset > 255 (ie >63 args)
+    emit( ROOT, "add `d0, `s0, #" + stackOffset ");
+    if (retval.isDoubleWord()) {
+        emit( ROOT, "mov `d0l, `s0", retval, r0 );
+        emit( ROOT, "mov `d0h, `s0", retval, r1 );
+    } else {
+        emit( ROOT, "mov `d0, `s0", retval, r0 );
+    }  
 }%
 
