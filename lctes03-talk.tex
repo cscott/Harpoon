@@ -1,4 +1,4 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.15 2003-06-02 16:00:07 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.16 2003-06-02 17:44:08 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TO DO:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -40,7 +40,6 @@ oqe
 \usepackage{pst-node}
 \usepackage{verbatim}
 %\hypersetup{pdfpagemode=FullScreen}
-\newcommand{\func}[1]{\ensuremath{\text{\sffamily #1}}}
 
 \slideCaption{Ananian/LCTES'03}
 \title{Size Optimizations for Java Programs}
@@ -59,6 +58,7 @@ LCTES'03, June 2003
 \ifDVItoPS\renewcommand{\white}{\black}\fi
 \newcommand{\betweenSlide}[3]{\fromSlide{#1}{\untilSlide{#2}{#3}}}
 \newenvironment{mysamplecode}{\small\bfseries\begin{samplecode}}{\end{samplecode}}
+\newcommand{\func}[1]{\ensuremath{\text{\sffamily\bfseries #1}}}
 % Meet symbol
 \newcommand{\meet}{\ensuremath{\sqcap}}
 % lattice inequalities
@@ -312,10 +312,6 @@ reduce the space used by the fields.  We'll talk about this later.
 So how do we actually obtain the information we need to do field
 compression?
 
-We'll look first at a simple constant propagation analysis, and then
-see how, by a series of extensions, we can obtain a
-powerful bitwidth analysis.
-
 ~%
 \end{talknotes}
 
@@ -335,6 +331,19 @@ powerful bitwidth analysis.
 \end{slide}
 
 \begin{talknotes}
+Let's first establish some domains we need for the bitwidth analysis.
+Our abstract lattice domain $\mathcal{L}$ will include integer constants,
+represented by the domain $\mathcal{C}$ as well a domain $\mathcal{T}$
+of tuples of non-negative integers.  The $\mathcal{T}$ domain
+represents bitwidth constraints, split into negative and positive
+parts.  The first member of the tuple, $m$, will represent the
+bitwidth of any possible negative values, and the second member, $p$
+will represent the bitwidth of positive values.
+
+Our lattice of abstract values for the bitwidth analysis will range
+over the raised sum of $\mathcal{C}$ and $\mathcal{T}$.
+
+~%
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -370,6 +379,17 @@ c\latleq\tuple{m,p}&\text{ iff }&\func{bw}(c)\latleq\tuple{{\onlySlide*{5}{\yell
 }
 
 \begin{talknotes}
+Now we will define the ordering relationship on $\mathcal{L}$.  The
+$\bot$ value will represent ``no information'' and is less than all
+members of $\mathcal{C}$ and $\mathcal{T}$ in the lattice.  Members of
+$\mathcal{T}$ are compared component-wise; a bitwidth is lesser only
+if both its components are lesser.  Finally, a constant $c$ is lesser
+only if the function $\func{bw}$ of $c$ is less-than-or-equal,
+@ where $\func{bw}(c)$ computes the number of bits needed to
+represent the signed constant $c$.  @ For values in twos complement
+notation, @ the $p$ component of the result represents the location of
+the first one in the number, and the @ $m$ component constrains the
+location of the first zero.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -407,15 +427,16 @@ c\latleq\tuple{m,p}&\text{ iff }&\func{bw}(c)\latleq\tuple{{\onlySlide*{5}{\yell
 }
 
 \begin{talknotes}
-Here are some of the combination rules we use to
-perform abstract evaluation of unary and binary operations using
+Here are some of the abstract evaluation rules we use for
+unary and binary operations over
 our bitwidth value domain.
 
 @ The first entry simply says that negation
 exchanges the positive and negative bitwidths.
-Note that we're tracking the bitwidth of the
-\textit{absolute value} of the number, so the rule for negation is
-simply interchanging the positive and negative portions of the tuple.
+The symmetric definition for our negative and positive
+bitwidths which you saw in the previous slide, where we 
+tracking the bitwidth of the \textit{absolute value} of the number,
+we chosen so that we don't lose information in this rule.
 
 @ The second entry gives
 the rules for addition: we have to add one to the width to allow for
@@ -425,7 +446,15 @@ carry out.
 operating in the log-domain.  
 
 @ The underlying numeric representation
-shows through in our rules for logical-AND; let's look at this more closely.
+shows through in our rules for logical-AND; this first rule is a
+special-case for ANDing two positive values.  The result will always
+be positive, and leading zeros in the smaller number will always force
+leading zeros in the result.
+
+@ If either value can be negative, the result must be more
+pessimistic, because every negative range includes the ``all-ones''
+value $-1$.  We don't have time to justify this rule in detail, but it
+is in the paper and you can check it at your leisure.
 
 ~%force rejust.
 \end{talknotes}
@@ -440,7 +469,7 @@ shows through in our rules for logical-AND; let's look at this more closely.
 \end{itemize}
 \item The intraprocedural analysis discovers:
 \begin{itemize}
-\item a set $e:2^\mathcal{E}$ of executable edges
+\item a set $\func{e}:2^\mathcal{E}$ of executable edges
 \item a map $\func{val}:\mathcal{V}\to\mathcal{L}$ giving abstract
   values valid for all possible executions
 \end{itemize}
@@ -448,49 +477,73 @@ shows through in our rules for logical-AND; let's look at this more closely.
 \end{slide}
 
 \begin{talknotes}
+The result of our intraprocedural bitwidth analysis gives a set $e$ of
+executable edges, and a mapping from all variables to a lattice
+element constraining their values in all possible program executions.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
+\overlays{2}{
 \begin{slide}{SSI form}
 Allows us to discover facts about \texttt{i} at points \textit{A} and
 \textit{B}:
 \begin{mysamplecode}
-if (i<50) \{\\
-\>\it// A\\
-\} else \{\\
-\>\it// B\\
+i\onlySlide{2}{{\yellow$_0$}}= \ldots;\\
+\ldots\\
+i\onlySlide{2}{{\yellow$_1$}}= \ldots;\\
+while (0<i\onlySlide{2}{{\yellow$_1$}} \&\& i\onlySlide{2}{{\yellow$_1$}}<50) \{\\
+\>\ldots=i\onlySlide{2}{{\yellow$_2$}}; \it// A\\
 \}\\
+\ldots=i\onlySlide{2}{{\yellow$_3$}}; \it// B\\
 \end{mysamplecode}
+\FromSlide{2}
+\vspace{.75cm}
+\begin{center}\yellow
+$\func{val}(\text{\tt i}_2)\latleq\tuple{0,6}$
+\end{center}
 \end{slide}
+}
 
 \begin{talknotes}
+The SSI form is a variant of SSA form which @ allows us to distinguish
+the values produced in the two different assignments to {\tt i} at the
+start of this example, as well as distinguish the possible values of
+{\tt i} at point {\it A} ($\tuple{0,6}$) and at point {\it B}.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Interprocedural analysis}
-We use a field-based interprocedural analysis.
+We use a {\yellow field-based} interprocedural analysis.
 \begin{itemize}
 \item Given domains:
 \begin{itemize}
 \item $\mathcal{E}$, CFG edges
 \item $\mathcal{V}$, (SSI form) variables
-\item $\mathcal{F}$, fields in the program
+\item $\mathcal{F}$, declared fields in the program
 \end{itemize}
 \item The interprocedural analysis discovers:
 \begin{itemize}
-\item a set $e:2^\mathcal{E}$ of executable edges
+\item a set $\func{e}:2^\mathcal{E}$ of executable edges
 \item a map $\func{val}:(\mathcal{V}+\mathcal{F})\to\mathcal{L}$
  giving abstract values valid for all possible executions
 \item a set $\func{Read}:2^\mathcal{F}$ of readable fields
 \end{itemize}
 \end{itemize}
 \end{slide}
-
+% XXX add domain M, declared methods, and change type of val to
+% (F+(VxM*))->L ?
 \begin{talknotes}
+We extend our intraprocedural analysis interprocedurally using a
+field-based scheme.  The domain $\mathcal{F}$ represents the declared
+fields of the program, and our value map $\func{val}$ now maps not
+only variables but also fields to lattice values.  We also collect a
+set $\func{Read}$ of fields read by executable statements in the
+program to allow us to eliminate unread fields.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{All cars are black}
+\vspace{1cm}
 \begin{samplecode}
 void paint(int color) \{\\
 \>if (this.model == FORD)\\
