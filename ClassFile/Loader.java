@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.3 1998-12-02 01:06:35 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.4 1998-12-30 04:32:52 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
@@ -76,14 +76,15 @@ public abstract class Loader {
       else
 	classpathVector.addElement(new PathElement(path));
     }
+    classpathVector.trimToSize(); // save memory.
   }
 
   /** Enumerate the components of the system CLASSPATH. 
    *  Each element is a <code>String</code> naming one segment of the
    *  CLASSPATH. */
-  public static Enumeration classpaths() {
+  public static final Enumeration classpaths() {
     String classpath = System.getProperty("java.class.path");
-    final String pathsep   = System.getProperty("path.separator");
+    final String pathsep = System.getProperty("path.separator");
 
     // For convenience, make sure classpath begins with and ends with pathsep.
     if (!classpath.startsWith(pathsep)) classpath = pathsep + classpath;
