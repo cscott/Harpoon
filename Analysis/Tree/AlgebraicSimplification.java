@@ -38,8 +38,9 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.12 2000-02-14 13:08:12 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.13 2000-02-14 16:39:02 cananian Exp $
  */
+// XXX missing -K1 --> K2  and ~K1 --> K2 rules.
 public abstract class AlgebraicSimplification { 
     private static final boolean debug = false;
     // hide constructor
@@ -67,8 +68,8 @@ public abstract class AlgebraicSimplification {
     private final static int _BINOP      = (1<<1);
     private final static int _CALL       = (1<<2);
     private final static int _CJUMP      = (1<<3);
-    // _CONST represents all constants _except_ 0 and null. 
-    // Use _CONST0 and _CONSTNULL respectively.  
+    // _CONST represents all constants including 0 and null. 
+    // _CONST0 _CONST1 _CONSTm1 and _CONSTNULL represent specific constants.
     private final static int _CONST      = (1<<4);
     private final static int _DATUM      = (1<<5);
     private final static int _ESEQ       = (1<<6);
@@ -88,8 +89,10 @@ public abstract class AlgebraicSimplification {
     private final static int _UNOP       = (1<<20);
 
     // Define more specialized types used to match rules. 
-    private final static int _CONST0     = (1<<21); 
-    private final static int _CONSTNULL  = (1<<22); 
+    private final static int _CONSTNULL  = (1<<21); 
+    private final static int _CONSTm1    = (1<<22); 
+    private final static int _CONST0     = (1<<23); 
+    private final static int _CONST1     = (1<<24); 
 
     private final static List _DEFAULT_RULES = new ArrayList(); 
     /** Default alegraic simplification rules. */
@@ -247,11 +250,11 @@ public abstract class AlgebraicSimplification {
 		else { 
 		    BINOP b = (BINOP)e; 
 		    return 
-		        ((_OP(b.op) & (_ADD|_MUL|_SHL|_SHR|_USHR|_AND|_OR|_XOR)) != 0) &&
-		        ((_KIND(b.getLeft()) & (_CONST|_CONST0)) != 0) &&
-		    
-		        ((_KIND(b.getRight()) & (_CONST|_CONST0)) != 0) &&
-		        (!b.isFloatingPoint());
+		    contains(_OP(b.op),
+			     _ADD|_MUL|_SHL|_SHR|_USHR|_AND|_OR|_XOR) &&
+		    contains(_KIND(b.getLeft()), _CONST) &&
+		    contains(_KIND(b.getRight()), _CONST) &&
+		    !b.isFloatingPoint();
 		}
 	    }
 	    
@@ -297,10 +300,10 @@ public abstract class AlgebraicSimplification {
 		else { 
 		    BINOP b = (BINOP)e; 
 		    return 
-		        ((_OP(b.op) & (_ADD|_MUL|_AND|_OR|_XOR|_CMPEQ)) != 0) &&
-		        ((_KIND(b.getLeft()) & (_CONST|_CONST0)) != 0) &&
-		        ((_KIND(b.getRight()) & (_CONST|_CONST0|_CONSTNULL)) == 0) &&
-		        (!b.isFloatingPoint());
+		    contains(_OP(b.op), _ADD|_MUL|_AND|_OR|_XOR|_CMPEQ) && 
+		    contains(_KIND(b.getLeft()), _CONST) &&
+		    !contains(_KIND(b.getRight()), _CONST) &&
+		    !b.isFloatingPoint();
 		}
 	    }
 	    public Exp apply(Exp e) { 
@@ -326,11 +329,11 @@ public abstract class AlgebraicSimplification {
 		BINOP b2 = (BINOP) b1.getLeft();
 		if (b1.op != b2.op) return false;
 		return
-		((_OP(b1.op) & (_ADD|_MUL|_AND|_OR|_XOR)) != 0) &&
-		((_KIND( b1.getRight() ) & ( _CONST|_CONST0 )) != 0) &&
-		((_KIND( b2.getRight() ) & ( _CONST|_CONST0 )) != 0) &&
+		contains(_OP(b1.op), _ADD|_MUL|_AND|_OR|_XOR) &&
+		contains(_KIND(b1.getRight()), _CONST) &&
+		contains(_KIND(b2.getRight()), _CONST) &&
 		(b1.operandType() == b2.operandType()) &&
-		(!b1.isFloatingPoint());
+		!b1.isFloatingPoint();
 	    }
 	    public Exp apply(Exp e) { 
 		BINOP b1 = (BINOP) e;
@@ -345,10 +348,47 @@ public abstract class AlgebraicSimplification {
 	};
 
 
+	// exp & 0 --> 0
+	// exp * 0 --> 0
+	// exp % 1 --> 0
+	//
+	Rule makeZero = new Rule() {
+	    // NOTE: this rule is dangerous if tree is not canonical.
+	    public String toString() { return "makeZero"; }
+	    public boolean match(Exp e) { 
+		if (_KIND(e) != _BINOP) { return false; } 
+		else { 
+		    BINOP b = (BINOP)e; 
+		    if (b.type()!=Type.INT && b.type()!=Type.LONG)
+		        return false;
+		    // first the weird rem case
+		    if (b.op == Bop.REM &&
+			contains(_KIND(b.getRight()), _CONST1)) return true;
+		    // now 'operation with zero' cases
+		    return contains(_OP(b.op), _AND|_MUL) &&
+		           contains(_KIND(b.getRight()), _CONST0);
+		}
+	    }
+	    public Exp apply(Exp e) { 
+		BINOP b = (BINOP)e; 
+		TreeFactory tf = b.getFactory(); 
+		if (b.type()==Type.INT)
+		    return new CONST(tf, e, (int) 0);
+		if (b.type()==Type.LONG)
+		    return new CONST(tf, e, (long) 0);
+		throw new Error("ack");
+	    }
+	};
+
+
 	// exp + 0   --> exp, 
+	// exp | 0   --> exp,
+	// exp ^ 0   --> exp,
 	// exp << 0  --> exp, 
 	// exp >> 0  --> exp,
 	// exp >>> 0 --> exp
+	// exp * 1   --> exp
+	// exp / 1   --> exp
 	// 
 	Rule removeZero = new Rule() { 
 	    public String toString() { return "removeZero"; }
@@ -356,10 +396,14 @@ public abstract class AlgebraicSimplification {
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
 		    BINOP b = (BINOP)e; 
+		    if (b.isFloatingPoint()) return false;
+		    // first handle mul/div cases.
+		    if (contains(_OP(b.op), _MUL|_DIV) &&
+			contains(_KIND(b.getRight()), _CONST1)) return true;
+		    // now the 'operation-with-zero' cases.
 		    return 
-		        ((_OP(b.op) & (_ADD|_SHL|_SHR|_USHR)) != 0) &&
-		        ((_KIND(b.getLeft()) & (_BINOP|_MEM|_NAME|_TEMP|_UNOP))!=0) &&
-		        ((_KIND(b.getRight()) & _CONST0) != 0);
+		    contains(_OP(b.op), _ADD|_OR|_XOR|_SHL|_SHR|_USHR) &&
+		    contains(_KIND(b.getRight()), _CONST0);
 		}
 	    }
 	    public Exp apply(Exp e) { 
@@ -369,7 +413,28 @@ public abstract class AlgebraicSimplification {
 	};
 	
 	
+	// x ^ -1 --> ~ x
+	//
+	Rule createNot = new Rule() {
+	    // note that since Qop doesn't have NOT, we have to recreate it.
+	    public String toString() { return "createNot"; }
+	    public boolean match(Exp e) { 
+		if (_KIND(e) != _BINOP) return false;
+		BINOP b = (BINOP) e;
+		if (b.op != Bop.XOR ) return false;
+		return contains(_KIND(b.getRight()), _CONSTm1);
+	    } 
+	    public Exp apply(Exp e) {  
+		BINOP b = (BINOP) e;
+		Util.assert(b.op == Bop.XOR);
+		TreeFactory tf = b.getFactory(); 
+		return new UNOP(tf, e, b.optype, Uop.NOT, b.getLeft());
+	    } 
+	};
+
+
 	// -(-i) --> i 
+	// ~(~i) --> i
 	// 
 	Rule doubleNegative = new Rule() { 
 	    public String toString() { return "doubleNegative"; }
@@ -380,14 +445,15 @@ public abstract class AlgebraicSimplification {
 		    if (_KIND(u1.getOperand()) != _UNOP) { return false; } 
 		    else { 
 			UNOP u2 = (UNOP)u1.getOperand(); 
-			return u1.op == Uop.NEG && u2.op == Uop.NEG; 
+			return (u1.op == Uop.NEG && u2.op == Uop.NEG) ||
+			       (u1.op == Uop.NOT && u2.op == Uop.NOT); 
 		    }
 		}
 	    } 
 	    public Exp apply(Exp e) {  
 		UNOP u1 = (UNOP)e;  
 		UNOP u2 = (UNOP)u1.getOperand();  
-		Util.assert(u1.op == Uop.NEG && u2.op == Uop.NEG);  
+		Util.assert(u1.op == u2.op);  
 		return u2.getOperand();  
 	    } 
 	}; 
@@ -400,29 +466,32 @@ public abstract class AlgebraicSimplification {
 		if (_KIND(e) != _UNOP) { return false; } 
 		else { 
 		    UNOP u = (UNOP)e; 
-		    return _KIND(u.getOperand()) == _CONST0; 
+		    if (u.isFloatingPoint()) return false;
+		    return contains(_KIND(u.getOperand()), _CONST0);
 		}
 	    }
 	    public Exp apply(Exp e) { 
 		UNOP u = (UNOP)e; 
-		Util.assert(_KIND(u.getOperand()) == _CONST0); 
+		Util.assert(contains(_KIND(u.getOperand()), _CONST0));
 		return u.getOperand(); 
 	    } 
 	}; 
 
+	// exp * const --> (recoded as shifts)
 	Rule mulToShift = new Rule() { 
+	    // NOTE: this rule is dangerous if tree is not canonical.
 	    public String toString() { return "mulToShift"; }
 	    public boolean match (Exp e) { 
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
 		    BINOP b = (BINOP)e; 
-		    if (_KIND(b.getRight()) != _CONST) { return false; } 
+		    if (b.op != Bop.MUL) return false;
+		    if (!contains(_KIND(b.getRight()), _CONST)) return false;
+		    if (contains(_KIND(b.getLeft()), _CONST)) return false;
 		    else { 
 			CONST c = (CONST)b.getRight(); 
 			return 
 			    c.value.longValue() > 0                     &&
-		            (_KIND(b.getLeft()) & (_BINOP|_UNOP|_TEMP)) != 0 &&
-		            b.op == Bop.MUL                             &&
 		            !b.isFloatingPoint(); 
 		    }
 		}
@@ -434,14 +503,18 @@ public abstract class AlgebraicSimplification {
 	}; 
 
 
+	// exp / const --> (recoded as multiplication)
 	Rule divToMul = new Rule() { 
+	    // NOTE: this rule is dangerous if tree is not canonical.
 	    public String toString() { return "divToMul"; }
 	    public boolean match(Exp e) { 
 		if (e.type() != Type.INT ) return false;
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
 		    BINOP b = (BINOP)e; 
-		    return b.op == Bop.DIV && _KIND(b.getRight()) == _CONST;
+		    return b.op == Bop.DIV &&
+                           contains(_KIND(b.getRight()), _CONST) &&
+			   !contains(_KIND(b.getLeft()), _CONST);
 		}
 	    }
 	    public Exp apply(Exp e) { 
@@ -454,9 +527,11 @@ public abstract class AlgebraicSimplification {
 	// Add rules to the rule set.  
 	// 
 	_DEFAULT_RULES.add(combineConstants); 
+	//_DEFAULT_RULES.add(makeZero); //dangerous.
 	_DEFAULT_RULES.add(removeZero); 
 	_DEFAULT_RULES.add(commute); 
 	_DEFAULT_RULES.add(associate); 
+	_DEFAULT_RULES.add(createNot);
 	_DEFAULT_RULES.add(doubleNegative); 
 	_DEFAULT_RULES.add(negZero); 
 	_DEFAULT_RULES.add(mulToShift); 
@@ -643,6 +718,9 @@ public abstract class AlgebraicSimplification {
 	return product; 
     }
 
+    private static boolean contains(int val, int mask) {
+	return (val & mask) != 0;
+    }
     private static int _KIND(Tree t) { 
 	switch (t.kind()) { 
 	    case TreeKind.ALIGN:      return _ALIGN; 
@@ -651,10 +729,12 @@ public abstract class AlgebraicSimplification {
 	    case TreeKind.CJUMP:      return _CJUMP;
 	    case TreeKind.CONST:      
 		CONST c = (CONST)t; 
-		return
-		    c.value            == null ? _CONSTNULL : 
-		    c.value.intValue() == 0    ? _CONST0 : 
-		    _CONST; 
+		return _CONST |
+		    (c.value            == null ? _CONSTNULL : 
+		     c.value.intValue() == 0    ? _CONST0 : 
+		     c.value.intValue() == 1    ? _CONST1 :
+		     c.value.intValue() ==-1    ? _CONSTm1:
+		     0);
 	    case TreeKind.DATUM:      return _DATUM;
 	    case TreeKind.ESEQ:       return _ESEQ;
 	    case TreeKind.EXP:        return _EXP;
