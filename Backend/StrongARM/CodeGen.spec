@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.99 1999-11-05 21:06:42 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.100 1999-11-06 02:38:48 cananian Exp $
  */
 %%
 
@@ -1408,7 +1408,7 @@ UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
 
     emit( ROOT, "mov `d0l, `s0", i, arg );
-    emit( ROOT, "mov `d0h, `s0l asr #31", i, i );
+    emit( ROOT, "mov `d0h, `s0l, asr #31", i, i );
 }%
 UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 	
@@ -1437,8 +1437,9 @@ UNOP(NEG, arg) = i
 }% 
 UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 
-    emit( ROOT, "rsbs `d0l, `s0l\n" + // uses condition codes, so keep together
-    	        "rsc  `d0h, `s0h", i, arg );
+    // uses condition codes, so keep together
+    emit( ROOT, "rsbs `d0l, `s0l, #0\n" +
+    	        "rsc  `d0h, `s0h, #0", i, arg );
     // make sure d0l isn't assigned same reg as `s0h
     emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
 }% 
@@ -1745,7 +1746,8 @@ DATA(CONST<p>(exp)) %{
 
 DATA(CONST<s:8,u:8>(exp)) %{
     String chardesc = (exp.intValue()>=32 && exp.intValue()<127 
-		       && exp.intValue()!=96 /* backquotes cause problems */) ?
+		       && exp.intValue()!=96 /* backquotes cause problems */
+		       && exp.intValue()!=34 /* so do double quotes */) ?
 	("\t@ char "+((char)exp.intValue())) : "";
     emitDIRECTIVE( ROOT, "\t.byte "+exp+chardesc);
 }%
