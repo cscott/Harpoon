@@ -58,7 +58,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.83 2000-06-21 20:43:28 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.84 2000-06-22 01:11:30 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -1366,7 +1366,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 
     class InstrMOVEproxy extends InstrMOVE {
 	public InstrMOVEproxy(Instr src, Temp def, Temp use) {
-	    super(src.getFactory(), src, " @proxy "+def+" <- "+use,
+	    super(src.getFactory(), src, 
+		  "", //" @proxy "+def+" <- "+use,
+		  
 		  new Temp[]{ def }, new Temp[]{ use });
 	}
     }
