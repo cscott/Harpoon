@@ -46,7 +46,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.3.2.4 2002-03-16 01:45:21 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.3.2.5 2002-03-20 23:41:43 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -92,11 +92,12 @@ public class ObjectBuilder
 	List<Stm> stmlist = new ArrayList<Stm>();
 	// header
 	stmlist.add(makeHeader(tf, info, exported));
+	int startOffset = headerFinalOffset(info);
 	// fields, in field order
 	List<HField> l = cfm.fieldList(info.type());
-	int endOffset = (l.size()==0) ? 0 :
+	int endOffset = (l.size()==0) ? startOffset :
 	   cfm.fieldOffset(l.get(l.size()-1))+cfm.fieldSize(l.get(l.size()-1));
-	Stm s = makeFields(tf, info, l, 0, endOffset);
+	Stm s = makeFields(tf, info, l, startOffset, endOffset);
 	if (s!=null) stmlist.add(s);
 	// done -- ta da!
 	return Stm.toStm(stmlist);
@@ -109,15 +110,15 @@ public class ObjectBuilder
 	List<Stm> stmlist = new ArrayList<Stm>(info.length()+2);
 	// header
 	stmlist.add(makeHeader(tf, info, exported));
-	// fields of java.lang.Object, in proper field order
-	List<HField> l = cfm.fieldList(HCobject);
-	// XXX we should specify offset of length field more precisely.
-	int endOffset = (l.size()==0) ? 0 :
+	int startOffset = headerFinalOffset(info);
+	// fields of the object, including the length field. in order.
+	List<HField> l = cfm.fieldList(info.type());
+	assert l.size() > 0; // always at least the length field!
+	int endOffset =
 	   cfm.fieldOffset(l.get(l.size()-1))+cfm.fieldSize(l.get(l.size()-1));
-	Stm s = makeFields(tf, info, l, 0, endOffset);
-	if (s!=null) stmlist.add(s);
-	// length
-	stmlist.add(_DATUM(tf, new CONST(tf, null, info.length())));
+	Stm s = makeFields(tf, info, l, startOffset, endOffset);
+	assert s!=null; // always the length!
+	stmlist.add(s);
 	// data
 	for (int i=0; i<info.length(); i++)
 	    stmlist.add(makeDatum(tf, info.get(i)));
@@ -127,7 +128,12 @@ public class ObjectBuilder
     private Object lookup(Info info, HField hf) {
 	Object o = ro.get(hf, info);
 	if (o != ro.NOT_A_VALUE) return o;
-	assert info instanceof ObjectInfo : "field of array not given a value";
+	if (info instanceof ArrayInfo && hf.getName().equals("length"))
+	    // XXX should wrap more precisely based on hf.getType().
+	    // (arrays may have small length fields in future)
+	    return new Integer(((ArrayInfo)info).length());
+	assert info instanceof ObjectInfo :
+	    "field of array not given a value: "+hf+" / "+info;
 	return ((ObjectInfo)info).get(hf);
     }
     protected Stm makeHeader(TreeFactory tf, Info info, boolean exported)
@@ -151,6 +157,7 @@ public class ObjectBuilder
 	// okay, done with header.
 	return Stm.toStm(stmlist);
     }
+    protected int headerFinalOffset(Info info) { return 0; }
     protected Stm makeFields(TreeFactory tf, Info info, List<HField> fields,
 			     int startOffset, int endOffset) {
 	assert endOffset >= startOffset;
