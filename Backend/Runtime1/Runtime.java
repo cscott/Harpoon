@@ -4,7 +4,7 @@
 package harpoon.Backend.Runtime1;
 
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Analysis.CallGraph;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Maps.ClassDepthMap;
 import harpoon.Backend.Maps.NameMap;
@@ -28,7 +28,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.27 2000-07-24 19:10:10 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.28 2000-08-24 23:44:42 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
