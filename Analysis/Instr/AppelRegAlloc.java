@@ -54,7 +54,7 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.1.2.5 2001-06-18 16:03:54 pnkfelix Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.1.2.6 2001-06-18 17:55:22 pnkfelix Exp $
  */
 public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     // FSK: super class really SHOULD be RegAlloc, but am doing this
@@ -62,6 +62,8 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 
     public static final boolean CHECK_INV = false;
 
+
+    private static final int NUM_CLEANINGS_TO_TRY = 2;
 
     static RegAlloc.Factory FACTORY = new RegAlloc.Factory() {
 	    public RegAlloc makeRegAlloc(Code c) {
@@ -1360,7 +1362,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	// to be safe.  Then I'll incrementally add the changes (first
 	// fixing use-cleaning, then turning def-cleaning back on)
 	
-	if ( false && rewriteCalledNumTimes < 2 ){
+	if ( false && rewriteCalledNumTimes < NUM_CLEANINGS_TO_TRY ){
 	    // clean out redundant targets
 	    int cleanedNum = 0;
 	    LinearSet blocks = new LinearSet();
@@ -1416,7 +1418,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	}
 
 	// FSK: cleaning made things worse?
-	if ( rewriteCalledNumTimes < 2 ){
+	if ( rewriteCalledNumTimes < NUM_CLEANINGS_TO_TRY ){
 	    // clean out redundant targets
 	    int cleanedNum = 0;
 	    LinearSet blocks = new LinearSet();
