@@ -10,7 +10,11 @@ Operations on nodes:
 Operations on variables:
 \begin{tightdesc}
 \item[VarUseful(v:variable):~boolean]
-:	Whether the value of this variable is ever used
+:	Whether there is some \textbf{n} for which 
+        \textbf{Uses(n)} contains \textbf{v} and
+        \textbf{NodeUseful(n)} is \texttt{true}
+%:	$\exists n\in\domain{Nodes}\;.\;v\in\mbox{Uses}(n)\wedge\mbox{NodeUseful}(n)$
+%:	Whether the value of this variable is ever used
 \item[Definitions(v:variable):~set of nodes]
-:	Nodes which contain a definition for this variable
+:	Nodes which contain a definition for \textbf{v}
 \end{tightdesc}
