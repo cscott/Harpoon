@@ -55,7 +55,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.7 1999-10-23 00:30:05 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.8 1999-11-01 03:55:51 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -228,11 +228,15 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		objAlloc // allocate array data
 		(tf, source, arrayType,
 		 new BINOP // compute array data size:
-		 (tf, source, Type.INT, Bop.MUL,
-		  // array length, times...
-		  new TEMP(tf, source, Type.INT, Tlen),
-		  // element size.
-		  new CONST(tf, source, elementSize))))),
+		 (tf, source, Type.INT, Bop.ADD,
+		  new BINOP // multiply...
+		  (tf, source, Type.INT, Bop.MUL,
+		   // ...array length by ...
+		   new TEMP(tf, source, Type.INT, Tlen),
+		   // ...element size...
+		   new CONST(tf, source, elementSize)),
+		  // and add WORD_SIZE for length field.
+		  new CONST(tf, source, WORD_SIZE))))),
 	      new MOVE // now set length field of newly-created array.
 	      (tf, source,
 	       new MEM
