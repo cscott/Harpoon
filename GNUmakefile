@@ -1,4 +1,4 @@
-# $Revision: 1.39 $
+# $Revision: 1.40 $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -34,7 +34,7 @@ java:	$(ALLSOURCE)
 	touch java
 
 jikes: 	
-	if [ ! -d harpoon ]; then $(MAKE) first; fi
+	@if [ ! -d harpoon ]; then $(MAKE) first; fi
 	@${JIKES} ${JFLAGS} ${ALLSOURCE}
 
 first:
