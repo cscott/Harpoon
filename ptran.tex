@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.30 2002-07-25 17:56:21 cananian Exp $
+% $Id: ptran.tex,v 1.31 2002-07-25 17:59:58 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.30 $ $}
+\date{\today \\ $ $Revision: 1.31 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -403,13 +403,13 @@ Now we say that given \tuple{O,I,e,s,r},
 an edge $\tuple{\tuple{n_1,f},n_2} \in I$ is a:
 \begin{itemize}
 \item \newterm{Definite companion} if:
-\begin{multline*}
- n_1\in I \wedge n_2\in I \wedge
- \text{condsing}(c(\tuple{\tuple{n_1,f},n_2}))=\emptyset \wedge {}\\
- \neg\text{escaped}(n_1) \wedge
- \neg\exists n'\in N: \tuple{\tuple{n',f},n_2}\in O
-\end{multline*}
+\begin{displaymath}
+ n_1\in N_I \wedge n_2\in N_I \wedge
+ \text{condsing}(c(\tuple{\tuple{n_1,f},n_2}))=\emptyset \wedge
+ \neg\text{escaped}(n_1)
+\end{displaymath}
 % XXX some redundancy here?
+% note no outside edges to inside nodes.
 \item \newterm{Non-companion} if:
 \begin{displaymath}
  \text{condsing}(c(\tuple{\tuple{n_1,f},n_2})) = \bot
