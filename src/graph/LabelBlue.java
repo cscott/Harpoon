@@ -1,4 +1,4 @@
-// LableBlue.java, created by benster
+// LabelBlue.java, created by benster
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package imagerec.graph;
 
@@ -54,24 +54,6 @@ public class LabelBlue extends Node {
     */
     protected static final int defaultFinalChannel = BLUE;
 
-    /**
-       The high threshold of 'blueness' that a pixel must satisfy in order to be
-       considered 'blue' when the labeling algorithm is not yet tracking.
-    */
-    protected int threshold1;
-    /**
-       The low threshold of 'blueness' that a pixel must satisfy in order to be
-       considered 'blue' when the labeling algorithm is already tracking.
-    */
-    protected int threshold2;
-    /**
-       The default high threshold for 'blueness'.
-    */
-    protected static final int defaultThreshold1 = 20;
-    /**
-       The default low threshold for 'blueness'.
-    */
-    protected static final int defaultThreshold2 = 10;
 
     /**
        Determines what calibration mode the object is in.
@@ -117,7 +99,7 @@ public class LabelBlue extends Node {
     */
     public LabelBlue(Node fullImage, Node out) {
 	super(out);
-	init(defaultFinalChannel, defaultThreshold1, defaultThreshold2, fullImage);
+	init(defaultFinalChannel, fullImage);
     }
 
     /**
@@ -129,7 +111,7 @@ public class LabelBlue extends Node {
     */
     public LabelBlue(int colorChannel, Node fullImage, Node out) {
 	super(out);
-	init(colorChannel, defaultThreshold1, defaultThreshold2, fullImage);
+	init(colorChannel, fullImage);
     }
 
 
@@ -147,57 +129,11 @@ public class LabelBlue extends Node {
     /**
        This method should be called by all constructors to intialize object fields.
     */
-    protected void init(int colorChannel, int threshold1, int threshold2, Node fullImage) {
+    protected void init(int colorChannel, Node fullImage) {
 	this.finalChannel = colorChannel;
-	this.threshold1 = threshold1;
-	this.threshold2 = threshold2;
 	this.fullImage = fullImage;
     }
 
-    /**
-       Global variable used to keep track of how large the currently tracked patch of blue is.
-    */
-    private int xMin, xMax, yMin, yMax;
-    /**
-       This number is decremented for each distinct patch of blue that is labeled,
-       and each patch of blue is labeled with its distinct number.
-    */
-    private int labelNumber;
-    
-    /**
-       The {@link ImageData} being currently processed.
-    */
-    private ImageData imageData;
-    /**
-       The width of the image currently being processed.
-    */
-    private int width;
-    /**
-       The height of the image currently being processed.
-    */
-    private int height;
-    /**
-       The length of the color channel arrays of the image currently being processed.
-    */
-    private int length;
-    /**
-       The width+height of the image currently being processed.
-    */
-    private int wPlusH;
-
-    /**
-       Stores the label data. Each element corrosponds to a pixel in the image.
-       Elements may have one of several values:
-       0 - Not yet seen, 'blueness' of corrosponding pixel not yet calculated.
-       1 - Seen, 'blueness' satisfied lower threshold, but algorithm wasn't looking for low threshold at that point.
-       2 - Seen, 'blueness' did not satisfy lower threshold.
-       3+, Seen and identified as part of an object.
-    */
-    private byte[] labels;
-    /**
-       Global arrays referencing the current {@link ImageData}'s color channels.
-     */
-    private byte[] rvals, gvals, bvals;
 
     /**
        Calculates the level of 'blueness' based on the given values of red, green and blue.
@@ -207,6 +143,9 @@ public class LabelBlue extends Node {
        @return Returns the measure of 'blueness'.
     */
     protected int calcDiff(int r, int g, int b) {
+	//Manually inlining this function does not change execution time
+	//I'm not sure why it doesn't, because calibration routine executes this
+	//function for every pixel.
 	//return (int)(1.*b-r-g);
 	return b-r-g;
     }
@@ -218,9 +157,9 @@ public class LabelBlue extends Node {
     protected void calibrate(ImageData imageData) {
 	//first find maximum blue diff and average blue diff
 	//	System.out.println("Calibrating LabelBlue node");
-	rvals = imageData.rvals;
-	gvals = imageData.gvals;
-	bvals = imageData.bvals;
+	byte[] rvals = imageData.rvals;
+	byte[] gvals = imageData.gvals;
+	byte[] bvals = imageData.bvals;
 
 	int sumDiff = 0;
 	int maxDiff = -1000;
@@ -230,22 +169,7 @@ public class LabelBlue extends Node {
 	int numberOfSamples = length/10;
 	int point;
 	int rval, bval, gval, diff;
-	//one method of random sampling, doesn't guarentee samples from the whole image
-	/*
-	for (int count = 0; count < numberOfSamples; count++) {
-	    point = (int)(Math.random()*length);
-	    rval = (rvals[point]|256)&255;
-	    gval = (gvals[point]|256)&255;
-	    bval = (bvals[point]|256)&255;
-	    diff = calcDiff(rval, gval, bval);
-	    sumDiff += diff;
-	    if (diff > maxDiff)
-		maxDiff = diff;
-	    if (diff < minDiff)
-		minDiff = diff;
-	}
-	int avgDiff = sumDiff/numberOfSamples;
-	*/
+
 	//this sampling method steps through the image at regular intervals and
 	//takes a jittered random sample centered around each step
 	int sampleStep = 1;
@@ -253,7 +177,7 @@ public class LabelBlue extends Node {
 	int jitter;
 	for (int count = halfStep; count < length - halfStep; count += sampleStep) {
 	    //jitter = (int)(Math.random()*sampleStep - halfStep);
-	    jitter = 0;
+	    jitter = 0; //currently no jitter
 	    point = count+jitter;
 	    rval = (rvals[point]|256)&255;
 	    gval = (gvals[point]|256)&255;
@@ -266,9 +190,11 @@ public class LabelBlue extends Node {
 	    if (diff < minDiff)
 		minDiff = diff;
 	}
+	//need a much better way of defining thresholds
+	//need to know standard deviation, maybe
 	int avgDiff = sumDiff/(length/sampleStep);
-	threshold1 = (5*maxDiff + avgDiff)/6;
-	threshold2 = (2*maxDiff + avgDiff)/3;
+	imageData.blueThreshold1 = (5*maxDiff + avgDiff)/6;
+	imageData.blueThreshold2 = (2*maxDiff + avgDiff)/3;
 	/*
 	System.out.println("maxDiff: "+ maxDiff);
 	System.out.println("minDiff: "+minDiff);
@@ -300,49 +226,64 @@ public class LabelBlue extends Node {
 	else {
 	    calibrate(imageData);
 	}
+
+	int labelNumber = 255;
+	int width = imageData.width;
+	int height = imageData.height;
+	int length = imageData.bvals.length;
+	//maxMins[0] is xMin
+	//maxMins[1] is xMax
+	//maxMins[2] is yMin
+	//maxMins[3] is yMax
+	int[] maxMins = new int[4];
+
+	/**
+	   Stores the label data. Each element corrosponds to a pixel in the image.
+	   Elements may have one of several values:
+	   0 - Not yet seen, 'blueness' of corrosponding pixel not yet calculated.
+	   1 - Seen, 'blueness' satisfied lower threshold, but algorithm wasn't looking for low threshold at that point.
+	   2 - Seen, 'blueness' did not satisfy lower threshold.
+	   3+, Seen and identified as part of an object.
+	*/
+	byte[] labels = new byte[length];
 	
-	//System.out.println("Labeling blue");
-
-	labelNumber = 255;
-	this.imageData = imageData;
-	width = imageData.width;
-	height = imageData.height;
-	wPlusH = width+height;
-	length = imageData.bvals.length;
-
-	//this if-else tries to use memory more efficiently if possible
-	if (labels == null || labels.length != length)
-	    labels = new byte[length];
-	else
-	    Arrays.fill(labels, 0, length, (byte)0);
-	//for(int count = 0; count < length; count++)
-	//labels[count] = (byte)0;
-
-	rvals = imageData.rvals;
-	gvals = imageData.gvals;
-	bvals = imageData.bvals;
-
 	int lCount = 0;
 	boolean done = false;
-	int dw = 2;
-	int mainXMin=width+1, mainXMax=-1, mainYMin=height+1, mainYMax=-1;
+	int dw = 1;
+	int mainXMin=width+1;
+	int mainXMax=-1;
+	int mainYMin=height+1;
+	int mainYMax=-1;
 	int hCount;
 	int wCount;
+
+	///*
 	for (hCount = 0; hCount < height; hCount++) {
 	    for (wCount = 0; wCount < width; wCount+=dw, lCount+=dw) {
-		xMin = xMax = wCount;
-		yMin = yMax = hCount;
-		//this function modifies imageData, xMin, xMax, yMin, yMax
-		label(wCount, hCount, lCount, false, 0);
-		int curW = xMax - xMin;
-		int curH = yMax - yMin;
+		//xMin = xMax = wCount;
+		maxMins[0] = wCount;
+		maxMins[1] = wCount;
+		maxMins[2] = hCount;
+		maxMins[3] = hCount;
+
+		//this function modifies labels and maxMins
+		label(wCount, hCount, lCount, false, 0, imageData, labelNumber, labels, maxMins);
+		
+
+		int curW = maxMins[1] - maxMins[0];
+		int curH = maxMins[3] - maxMins[2];
 		//if object is a good size
 		if ((curW >= minWidth) && (curW <= maxWidth) && (curH >= minHeight) && (curH <= maxHeight)) {
 		    labelNumber--;
-		    if (xMin < mainXMin) mainXMin = xMin;
-		    if (xMax > mainXMax) mainXMax = xMax;
-		    if (yMin < mainYMin) mainYMin = yMin;
-		    if (yMax > mainYMax) mainYMax = yMax;
+		    //if (xMin < mainXMin) mainXMin = xMin;
+		    //if (xMax > mainXMax) mainXMax = xMax;
+		    //if (yMin < mainYMin) mainYMin = yMin;
+		    //if (yMax > mainYMax) mainYMax = yMax;
+		    if (maxMins[0] < mainXMin) mainXMin = maxMins[0];
+		    if (maxMins[1] > mainXMax) mainXMax = maxMins[1];
+		    if (maxMins[2] < mainYMin) mainYMin = maxMins[2];
+		    if (maxMins[3] > mainYMax) mainYMax = maxMins[3];
+		    
 		    //System.out.println("Found object: w = "+curW+"  h = "+curH);
 		    if (labelNumber == 2) {
 			done = true;
@@ -357,6 +298,31 @@ public class LabelBlue extends Node {
 	    if (wCount > width)
 		lCount -= wCount-width;
 	}
+	//*/
+
+	/*
+	for (hCount = 0; hCount < height; hCount++) {
+	    for (wCount = 0; wCount < width; wCount+=dw, lCount+=dw) {
+		//new way, no hysteresis, just one threshold
+		int bval = (imageData.bvals[lCount]|256)&255;
+		int gval = (imageData.gvals[lCount]|256)&255;
+		int rval = (imageData.rvals[lCount]|256)&255;
+		int diff = calcDiff(rval, gval, bval);
+		if (diff > imageData.blueThreshold2) {
+		    labels[lCount] = (byte)labelNumber;
+		    if (wCount < mainXMin) mainXMin = wCount;
+		    if (wCount > mainXMax) mainXMax = wCount;
+		    if (hCount < mainYMin) mainYMin = hCount;
+		    if (hCount > mainYMax) mainYMax = hCount;
+		    labelNumber = 254;
+		}
+		
+	    }
+	    if (wCount > width)
+		lCount -= wCount-width;
+	}
+	*/
+
 
 	//if no objects are found
 	if (labelNumber == 255) {
@@ -375,25 +341,21 @@ public class LabelBlue extends Node {
 	    imageData.rvals = labels;
 	    channel1 = imageData.bvals;
 	    channel2 = imageData.gvals;
-	    //imageData.bvals = new byte[length];
-	    //imageData.gvals = new byte[length];
 	}
 	else if (finalChannel == GREEN) {
 	    imageData.gvals = labels;
 	    channel1 = imageData.bvals;
 	    channel2 = imageData.rvals;
-	    //imageData.bvals = new byte[length];
-	    //imageData.rvals = new byte[length];
 	}
 	else {
 	    imageData.bvals = labels;
 	    channel1 = imageData.gvals;
 	    channel2 = imageData.rvals;
-	    //imageData.gvals = new byte[length];
-	    //imageData.rvals = new byte[length];
 	}
 
 
+	channel1 = new byte[length];
+	channel2 = new byte[length];
 	Arrays.fill(channel1, 0, length, (byte)0);
 	Arrays.fill(channel2, 0, length, (byte)0);
 	/*
@@ -412,7 +374,20 @@ public class LabelBlue extends Node {
 	croppedImage.x += imageData.x;
 	croppedImage.y += imageData.y;
 	super.process(croppedImage);
+
     }
+
+
+
+    protected void label2(int curX, int curY, int curL, ImageData imageData, int labelNumber, byte[] labels, int[] maxMins) {
+	int[] xStack = new int[100];
+	int[] yStack = new int[100];
+	int stackPtr = 0;
+	
+	
+    }
+
+
 
     /**
        This method is called by <code>process()</code> to track and label blue pixels in the image.
@@ -427,10 +402,11 @@ public class LabelBlue extends Node {
        @param depth The recursive depth we have reached. This is necessary because we need to limit the recursive
        depth of the algorithm due to {@link StackOverflowError}s.
     */
-    protected void label(int curX, int curY, int curL, boolean tracking, int depth) {	
+    protected void label(int curX, int curY, int curL, boolean tracking, int depth,
+			 ImageData imageData, int labelNumber, byte[] labels, int[] maxMins) {	
 	//invariant: curY*width+curX == curL
-	///*
-	if (curY*width+curX != curL) {
+	/*
+	if (curY*width.getInt(imageData.id)+curX != curL) {
 	    System.out.println("INVARIANT FAILED!!!");
 	    System.out.println("curY: "+curY);
 	    System.out.println("width: "+width);
@@ -439,7 +415,16 @@ public class LabelBlue extends Node {
 	    System.out.println("depth: "+depth);
 	    System.exit(0);
 	}
-	//*/
+	*/
+
+	int width = imageData.width;
+	int height = imageData.height;
+	int wPlusH = width+height;
+	int length = imageData.bvals.length;
+	byte[] rvals = imageData.rvals;
+	byte[] gvals = imageData.gvals;
+	byte[] bvals = imageData.bvals;
+
 	//no need for a recursive search with depth more than the width plus the height of the image
 	//this limit is necessary because of stack overflow exceptions
 	if (depth > wPlusH)
@@ -468,7 +453,7 @@ public class LabelBlue extends Node {
 	    int diff = calcDiff(rval, gval, bval);
 	    //int diff = bval-rval-gval;
 	    //if below lower threshold, then mark as seen
-	    if (diff < threshold2)
+	    if (diff < imageData.blueThreshold2)
 		labels[curL] = (byte)2;
 	    else {
 		//now we know pixel is above lower threshold
@@ -476,7 +461,7 @@ public class LabelBlue extends Node {
 		if (tracking)
 		    good = true;
 		//if not tracking and pixel is above high threshold, then good
-		else if (diff >= threshold1)
+		else if (diff >= imageData.blueThreshold1)
 		    good = true;
 		//pixel must be between low and high thresholds, but we are not tracking,so mark for later use
 		else
@@ -486,39 +471,43 @@ public class LabelBlue extends Node {
 	//if diff is above appropriate threshold, mark as blue and continue
 	if (good) {
 	    //System.out.println("bval-rval-gval  = "+diff+" depth: "+depth);
-	    if (curX < xMin) xMin = curX;
-	    if (curX > xMax) xMax = curX;
-	    if (curY < yMin) yMin = curY;
-	    if (curY > yMax) yMax = curY;
+	    //if (curX < xMin) xMin = curX;
+	    //if (curX > xMax) xMax = curX;
+	    //if (curY < yMin) yMin = curY;
+	    //if (curY > yMax) yMax = curY;
+	    if (curX < maxMins[0]) maxMins[0] = curX;
+	    if (curX > maxMins[1]) maxMins[1] = curX;
+	    if (curY < maxMins[2]) maxMins[2] = curY;
+	    if (curY > maxMins[3]) maxMins[3] = curY;
 	    labels[curL] = (byte)labelNumber; //assign this pixel the current label
-	    ///*
-	    label(curX-1, curY-1, curL-1-width, true, depth+1);
-	    label(curX, curY-1, curL-width, true, depth+1);
-	    label(curX+1, curY-1, curL+1-width, true, depth+1);
-	    label(curX-1, curY, curL-1, true, depth+1);
-	    label(curX+1, curY, curL+1, true, depth+1);
-	    label(curX-1, curY+1, curL-1+width, true, depth+1);
-	    label(curX, curY+1, curL+width, true, depth+1);
-	    label(curX+1, curY+1, curL+1+width, true, depth+1);
-	    //*/
-	    ///*
-	    label(curX-2, curY-2, curL-2-width*2, true, depth+2);
-	    label(curX-1, curY-2, curL-1-width*2, true, depth+2);
-	    label(curX+0, curY-2, curL+0-width*2, true, depth+2);
-	    label(curX+1, curY-2, curL+1-width*2, true, depth+2);
-	    label(curX+2, curY-2, curL+2-width*2, true, depth+2);
-	    label(curX-2, curY-1, curL-2-width*1, true, depth+2);
-	    label(curX+2, curY-1, curL+2-width*1, true, depth+2);
-	    label(curX-2, curY+0, curL-2+width*0, true, depth+2);
-	    label(curX+2, curY+0, curL+2+width*0, true, depth+2);
-	    label(curX-2, curY+1, curL-2+width*1, true, depth+2);
-	    label(curX+2, curY+1, curL+2+width*1, true, depth+2);
-	    label(curX-2, curY+2, curL-2+width*2, true, depth+2);
-	    label(curX-1, curY+2, curL-1+width*2, true, depth+2);
-	    label(curX+0, curY+2, curL+0+width*2, true, depth+2);
-	    label(curX+1, curY+2, curL+1+width*2, true, depth+2);
-	    label(curX+2, curY+2, curL+2+width*2, true, depth+2);
-	    //*/
+
+	    label(curX-1, curY-1, curL-1-width, true, depth+1,  imageData, labelNumber, labels, maxMins);
+	    label(curX, curY-1, curL-width, true, depth+1,  imageData, labelNumber, labels, maxMins);
+	    label(curX+1, curY-1, curL+1-width, true, depth+1,  imageData, labelNumber, labels, maxMins);
+	    label(curX-1, curY, curL-1, true, depth+1,  imageData, labelNumber, labels, maxMins);
+	    label(curX+1, curY, curL+1, true, depth+1,  imageData, labelNumber, labels, maxMins);
+	    label(curX-1, curY+1, curL-1+width, true, depth+1,  imageData, labelNumber, labels, maxMins);
+	    label(curX, curY+1, curL+width, true, depth+1,  imageData, labelNumber, labels, maxMins);
+	    label(curX+1, curY+1, curL+1+width, true, depth+1,  imageData, labelNumber, labels, maxMins);
+
+
+	    label(curX-2, curY-2, curL-2-width*2, true, depth+2, imageData, labelNumber, labels, maxMins);
+	    label(curX-1, curY-2, curL-1-width*2, true, depth+2, imageData, labelNumber, labels, maxMins);
+	    label(curX+0, curY-2, curL+0-width*2, true, depth+2, imageData, labelNumber, labels, maxMins);
+	    label(curX+1, curY-2, curL+1-width*2, true, depth+2, imageData, labelNumber, labels, maxMins);
+	    label(curX+2, curY-2, curL+2-width*2, true, depth+2, imageData, labelNumber, labels, maxMins);
+	    label(curX-2, curY-1, curL-2-width*1, true, depth+2, imageData, labelNumber, labels, maxMins);
+	    label(curX+2, curY-1, curL+2-width*1, true, depth+2, imageData, labelNumber, labels, maxMins);
+	    label(curX-2, curY+0, curL-2+width*0, true, depth+2, imageData, labelNumber, labels, maxMins);
+	    label(curX+2, curY+0, curL+2+width*0, true, depth+2, imageData, labelNumber, labels, maxMins);
+	    label(curX-2, curY+1, curL-2+width*1, true, depth+2, imageData, labelNumber, labels, maxMins);
+	    label(curX+2, curY+1, curL+2+width*1, true, depth+2, imageData, labelNumber, labels, maxMins);
+	    label(curX-2, curY+2, curL-2+width*2, true, depth+2, imageData, labelNumber, labels, maxMins);
+	    label(curX-1, curY+2, curL-1+width*2, true, depth+2, imageData, labelNumber, labels, maxMins);
+	    label(curX+0, curY+2, curL+0+width*2, true, depth+2, imageData, labelNumber, labels, maxMins);
+	    label(curX+1, curY+2, curL+1+width*2, true, depth+2, imageData, labelNumber, labels, maxMins);
+	    label(curX+2, curY+2, curL+2+width*2, true, depth+2, imageData, labelNumber, labels, maxMins);
+
 	}
     }
 }
