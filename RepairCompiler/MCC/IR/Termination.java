@@ -1062,7 +1062,7 @@ public class Termination {
 		    if ((e instanceof VarExpr)&&
 			(((VarExpr)e).getVar()==vd)) {
 			/* Can solve for v */
-			if (!si.getSet().getType().isSubtypeOf(set.getType()))
+			if (set==null||!si.getSet().getType().isSubtypeOf(set.getType()))
 			    return false;
 			Binding binding=new Binding(vd,0);
 			bindings.add(binding);
