@@ -9,6 +9,7 @@ import harpoon.Analysis.Maps.ExactTypeMap;
 import harpoon.Analysis.Maps.ExecMap;
 import harpoon.Analysis.Quads.SCC.SCCOptimize;
 import harpoon.Analysis.Transformation.MethodMutator;
+import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HClassMutator;
@@ -51,7 +52,7 @@ import java.util.Set;
  * unused and constant fields from objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldReducer.java,v 1.1.2.3 2001-09-18 22:10:53 cananian Exp $
+ * @version $Id: FieldReducer.java,v 1.1.2.4 2001-10-31 03:38:25 cananian Exp $
  */
 public class FieldReducer extends MethodMutator {
     private static final boolean DEBUG = false;
@@ -59,18 +60,19 @@ public class FieldReducer extends MethodMutator {
     final Linker linker;
     
     /** Creates a <code>FieldReducer</code>. */
-    public FieldReducer(HCodeFactory parent, Linker linker, ClassHierarchy ch,
+    public FieldReducer(HCodeFactory parent, Frame frame, ClassHierarchy ch,
 			Set roots, String fieldRootResourceName) {
         this(new CachingCodeFactory(QuadSSI.codeFactory(parent)),
-	     linker, ch, roots, fieldRootResourceName);
+	     frame, ch, roots, fieldRootResourceName);
     }
-    private FieldReducer(CachingCodeFactory parent, Linker linker,
+    private FieldReducer(CachingCodeFactory parent, Frame frame,
 			 ClassHierarchy ch, Set roots, String frrn) {
 	super(parent);
-        this.bwa = new BitWidthAnalysis(linker, parent, ch, roots, frrn);
-	this.linker = linker;
+        this.bwa = new BitWidthAnalysis(frame.getLinker(), parent,
+					ch, roots, frrn);
+	this.linker = frame.getLinker();
 	// pull all our classes through the mutator.
-	HCodeFactory hcf = codeFactory();
+	this.hcf = super.codeFactory();
 	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); )
 	    hcf.convert((HMethod)it.next());
 	// now munge class fields (after we've rewritten all field references)
@@ -112,8 +114,20 @@ public class FieldReducer extends MethodMutator {
 	    hf.getMutator().setType(nhc);
 	    if (DEBUG && hc!=nhc) System.err.println(" TO "+hf);
 	}
+	// wrap a size counter around everything (maybe).
+	if (Boolean.getBoolean("harpoon.sizeopt.bitcounters")) {
+	    this.hcf = new CachingCodeFactory
+		(new SizeCounters(this.hcf, frame, bwa).codeFactory());
+	    // pull everything through.
+	    for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); )
+		hcf.convert((HMethod)it.next());
+	}
 	// done!
     }
+    // allow us to override the hcf.
+    private HCodeFactory hcf;
+    public HCodeFactory codeFactory() { return hcf; }
+
     protected HCode mutateHCode(HCodeAndMaps input) {
 	HCode hc = input.hcode();
 	final Wrapper w = new Wrapper(input);
@@ -124,6 +138,7 @@ public class FieldReducer extends MethodMutator {
 	boolean isCallable =
 	    w.execMap((METHOD)((Quad)hc.getRootElement()).next(1));
 	if (!isCallable) return eviscerate(hc);
+	hc.getElements();
 	new SCCOptimize(w, w, w).optimize(hc);
 
 	Quad[] quads = (Quad[]) hc.getElements();

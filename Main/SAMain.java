@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.172 2001-10-29 17:00:07 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.173 2001-10-31 03:38:30 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -404,7 +404,8 @@ public class SAMain extends harpoon.IR.Registration {
 	    /* counter factory must be set up before field reducer,
 	     * or it will be optimized into nothingness. */
 	    if (Boolean.getBoolean("size.counters") ||
-		Boolean.getBoolean("mzf.counters")) {
+		Boolean.getBoolean("mzf.counters") ||
+		Boolean.getBoolean("harpoon.sizeopt.bitcounters")) {
  		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
 		hcf = harpoon.Analysis.Counters.CounterFactory
 		    .codeFactory(hcf, linker, mainM);
@@ -421,7 +422,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    ("field-root.properties");
  		System.out.println("STARTING BITWIDTH ANALYSIS");
  		hcf = new harpoon.Analysis.SizeOpt.FieldReducer
-		    (hcf, linker, classHierarchy, roots, resource)
+		    (hcf, frame, classHierarchy, roots, resource)
 		    .codeFactory();
 	    }
 	    /* -- add counters to all allocations? -- */
