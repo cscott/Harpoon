@@ -1,5 +1,14 @@
---- /root/java/jasmin/src/jasmin/Scanner.java	Mon Mar  3 04:57:38 1997
-+++ Scanner.java	Wed Nov  3 22:43:10 1999
+--- /root/src/jasmin/Scanner.java	Mon Mar  3 04:57:38 1997
++++ Scanner.java	Sun Nov  7 15:24:08 1999
+@@ -86,7 +86,7 @@
+         line_num = 1;
+         char_num = 0;
+         line = new StringBuffer();
+-        chars = new char[512];
++        chars = new char[2048];
+         is_first_sep = true;
+         advance();
+     }
 @@ -101,6 +101,67 @@
          return ((d1-'0')&7) * 64 + ((d2-'0')&7) * 8 + ((d3-'0')&7);
      }
@@ -68,25 +77,28 @@
      //
      // recognize and return the next complete token
      //
-@@ -143,6 +204,8 @@
+@@ -143,7 +204,9 @@
  
                      // record that we have found first item
                      is_first_sep = false;
-+		    if (next_char=='\\')
+-
++		    if (next_char=='\\') {
 +			next_char=handleEscape(next_char);
- 
++		    }
                      chars[0] = (char)next_char;
                      pos++;
-@@ -151,6 +214,8 @@
+                     for (;;) {
+@@ -151,6 +214,9 @@
                          if (separator(next_char)) {
                              break;
                          }
-+			if (next_char=='\\')
++			if (next_char=='\\') {
 +			    next_char=handleEscape(next_char);
++			}
                          chars[pos] = (char)next_char;
                          pos++;
                      }
-@@ -196,7 +261,11 @@
+@@ -196,7 +262,11 @@
                              case 't': next_char = '\t'; break;
                              case 'f': next_char = '\f'; break;
                              case 'b': next_char = '\b'; break;
@@ -99,29 +111,42 @@
                              case '"': next_char = '"'; break;
                              case '\'': next_char = '\''; break;
  
-@@ -238,12 +307,16 @@
-                 char_num = -1;
+@@ -239,11 +309,18 @@
                  line.setLength(0);
                  return new token(sym.EOF);
-+		
-+
  
++
++
              default:
                  {
                      // read up until a separatorcharacter
  
                      int pos = 0;
-+		    if (next_char=='\\')
++		    boolean flagnoescape=true;
++		    if (next_char=='\\') {
++			flagnoescape=false;
 +			next_char=handleEscape(next_char);
++		    }
                      chars[0] = (char)next_char;
                      is_first_sep = false;
  
-@@ -253,6 +326,8 @@
+@@ -253,6 +330,10 @@
                          if (separator(next_char)) {
                              break;
                          }
-+			if (next_char=='\\')
++			if (next_char=='\\') {
++			    flagnoescape=false;
 +			    next_char=handleEscape(next_char);
++			}
                          chars[pos] = (char)next_char;
                          pos++;
                      }
+@@ -261,7 +342,7 @@
+                     String str = new String(chars, 0, pos);
+ 
+                     token tok;
+-                    if ((tok = ReservedWords.get(str)) != null) {
++                    if (flagnoescape&&((tok = ReservedWords.get(str)) != null)) {
+                         // Jasmin keyword or directive
+                         return tok;
+                     } else if (InsnInfo.contains(str)) {
