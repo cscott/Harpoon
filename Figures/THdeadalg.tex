@@ -1,0 +1,34 @@
+% fast algorithm for dead code elimination (unused code elimination)
+\begin{verbatim}
+Procedure FindUseful (G: CFG) {
+  let W be an empty work list;
+  for each variable v, do
+    VarUseful(v) := false;
+  for each node n in G, in any order, do {
+    NodeUseful(n) := false;
+    if n is a CALL, RETURN, or other special node, then
+      add n to W;
+  }
+
+  while W is not empty, do {
+    let n be any element from W;
+    remove n from W;
+    MarkNodeUseful(n, W);
+  }
+}
+Procedure MarkNodeUseful(n: node, W: WorkList) {
+  NodeUseful(n) := true;
+  /* everything used by a useful node is useful */
+  for each v in Uses(n), do
+    if not VarUseful(v), then
+      MarkVarUseful(v, W);
+}
+Procedure MarkVarUseful(v: variable, W: WorkList) {
+  VarUseful(v) := true;
+  /* The definition of a useful variable is useful */
+  for each n in Definitions(v), then
+    /* size(Definitions(v)) <= 1 in SSI form */
+    if not NodeUseful(n), then
+      add n to W;
+}
+\end{verbatim}

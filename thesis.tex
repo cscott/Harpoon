@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.34 1999-06-13 00:34:08 cananian Exp $
+% $Id: thesis.tex,v 1.35 1999-06-13 04:43:41 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.34 $ $}
+\date{\today \\ $ $Revision: 1.35 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.34 $ $}{$ $Revision: 1.34 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.35 $ $}{$ $Revision: 1.35 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -500,8 +500,50 @@ $O(E+N^2)$ algorithm.  I hope to do better using the properties of the
 PST.  I want an $O(EV)$ algorithm, which means solving the
 one-variable case in $O(E)$.  Argh.
 
+\subsubsection{Pruning SSI form}
+The SSI algorithm can be run using inexact liveness information
+(including the function $\mbox{\bf Live}(v)=\mbox{\tt false}$) if
+unused code elimination%
+\footnote{We follow \cite{wegman91:scc} in distinguishing
+\emph{unreachable code elimination}, which removes code that can never
+be executed, from \emph{unused code elimination}, which deletes
+sections of code whose results are never used.  Both are often called
+``dead code elimination'' in the literature.}  is performed to remove
+the extra $\phi$- and \sigfunction{s}.  Figures \ref{fig:deaddata} and
+\ref{fig:deadalg} presents an algorithm to identify unused code in
+$O(NV)$ time, after which a simple $O(N)$ pass suffices to remove it.
+The complexity analysis is simple: nodes and variables are visited at
+most once, raising their value in the analysis lattive from
+\emph{unused} to \emph{used}.  Nodes marked \emph{used} are never
+visted.  So \texttt{MarkNodeUseful} is invoked at most $N$ times, and
+\texttt{MarkVarUseful} is invoked at most $V$ times.  Each call to
+\texttt{MarkNodeUseful} examines each variable used by the node; a
+node may use at most every variable, taking $O(NV)$ time.  Each call
+to \texttt{MarkVarUseful} examines at most one node (the single
+definition node for the variable, if it exists) and in constant time
+pushes at most one node on to the worklist for a total of $O(V)$ time.
+So the total run time of \texttt{FindUseful} is $O(NV+V)=O(NV)$, and
+in fact it is usually much less.\footnote{If the number of instruction
+operands and $\phi$- and \sigfunction{} arities is limited by a
+constant, we get a time bound of $O(N)$.}  The total runtime for SSI
+placement and subsequent pruning, including the time to construct the
+PST, remains $O(EV)$.
+
+\begin{myfigure}\small
+\input{Figures/THdeaddata}
+\caption{Datatypes and operations used in unused code elimination.}
+\label{fig:deaddata}
+\end{myfigure}
+
+\begin{myfigure}\small\linespread{0.75}
+\input{Figures/THdeadalg}
+\caption{Identifying unused code using SSI form.}
+\label{fig:deadalg}
+\end{myfigure}
+
 \subsubsection{Discussion}
-Note that our algorithm for constructing SSI form is
+Note that our algorithm for placing $\phi$- and \sigfunction{s} in
+SSI form is
 \emph{optimistic}; that is, we at first assume every node in the
 control-flow graph with input arity larger than one requires a
 \phifunction{} for every variable and every node with out-arity larger
