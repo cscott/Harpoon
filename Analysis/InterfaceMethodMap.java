@@ -23,7 +23,7 @@ import harpoon.Analysis.GraphColoring.SparseNode;
  * <code>InterfaceMethodMap</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.2.1 1999-01-19 23:47:43 pnkfelix Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.2.2 1999-01-21 06:31:39 cananian Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
@@ -37,7 +37,6 @@ public class InterfaceMethodMap extends MethodMap {
 	<BR> requires: <code>hclasses</code> is an
 	               <code>Enumeration</code> of <code>HClass</code>
 		       objects.   
-	@see HClass
 	<BR> modifies: <code>hclasses</code>
 	<BR> effects: Iterates through <code>hclasses</code>,
 	              accumulating all of the interface-methods and
@@ -51,6 +50,7 @@ public class InterfaceMethodMap extends MethodMap {
 		      interferences from classes not in
 		      <code>hclasses</code> are not required to be
 		      accounted for.  
+	@see HClass
      */
     public InterfaceMethodMap( Enumeration hclasses ) {
 	mtable = new Hashtable();
