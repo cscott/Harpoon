@@ -38,7 +38,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.15 2000-02-07 23:47:05 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.16 2000-02-25 03:39:55 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -94,8 +94,20 @@ public class RegFileInfo
                 return names[i-1];
             }
         };
+
+	class RegTemp extends Temp implements MachineRegLoc {
+	    int offset;
+	    RegTemp(TempFactory tf, int offset) {
+		super(tf);
+		this.offset = offset;
+	    }
+	    public int kind() { return MachineRegLoc.KIND; }
+	    public int regIndex() { return offset; }
+	    
+	}
+
         for (int i = 0; i < 16; i++) {
-            reg[i] = new Temp(regtf);
+            reg[i] = new RegTemp(regtf, i);
             if (i < 11) regGeneral[i] = reg[i];
         }
 	

@@ -15,6 +15,9 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Code;
 import harpoon.Backend.Generic.RegFileInfo;
 import harpoon.Backend.Generic.RegFileInfo.SpillException;
+import harpoon.Backend.Generic.RegFileInfo.TempLocator;
+import harpoon.Backend.Generic.RegFileInfo.MachineRegLoc;
+import harpoon.Backend.Generic.RegFileInfo.StackOffsetLoc;
 import harpoon.Backend.Generic.InstrBuilder;
 import harpoon.Analysis.UseMap;
 import harpoon.Analysis.BasicBlock;
@@ -71,7 +74,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.82 2000-02-18 22:53:26 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.83 2000-02-25 03:39:52 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -412,6 +415,7 @@ public abstract class RegAlloc  {
 	// This implementation is REALLY braindead.  Fix to do a
 	// smarter Graph-Coloring stack offset allocator
 	Code in = code;
+	final MultiMap tempXinstrToCommonLoc = new GenericMultiMap();
 	Util.assert(in != null, "Don't try to resolve Temps for null HCodes");
 
 	class TempFinder extends InstrVisitor {
@@ -455,18 +459,28 @@ public abstract class RegAlloc  {
 
 			int off = ((Integer)tempsToOffsets.get(def)).intValue();
 			// replace 'def' with StackOffsetTemp
-			Temp stkOff = new StackOffsetTemp(def, off); 
+			StackOffsetTemp stkOff = 
+			    new StackOffsetTemp(def, off); 
 
 			SpillStore newi = 
 			    new SpillStore(m, m.getAssem(), 
 					   stkOff, m.useC());
+			List dxi = Default.pair(def, newi);
 			Instr.replace(m, newi);
+			tempXinstrToCommonLoc.add(dxi, stkOff);
 		    }
 		}
 	    } 
 
 	    public void visit(Instr i) {
-		// do nothing
+		// lookup CommonLocs for defs in 'i'
+		Iterator defs = i.defC().iterator();
+		while(defs.hasNext()) {
+		    Temp def = (Temp) defs.next();
+		    Collection regs = code.getRegisters(i, def);
+		    List dxi = Default.pair(def, i);
+		    tempXinstrToCommonLoc.addAll(dxi, regs);
+		}
 	    }
 
 	    public void visit(InstrMEM m) {
@@ -495,7 +509,17 @@ public abstract class RegAlloc  {
 	    procFixup(in.getMethod(), instr, locals, 
 		      computeUsedRegs(instr));
 
-	return Default.pair(instr, null);
+	// FSK: fix above code to maintain info for
+	// RegFileInfo.TempLocator 
+	
+	TempLocator tl = new TempLocator() {
+	    public Set locate(Temp t, Instr i) {
+		return (Set)
+		tempXinstrToCommonLoc.getValues(Default.pair(t,i));
+	    }
+	};
+	
+	return Default.pair(instr, tl);
     }
     
     private Set computeUsedRegs(Instr instrs) {
