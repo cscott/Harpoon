@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.8 1998-12-01 11:17:44 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.9 1998-12-01 11:54:52 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -157,7 +157,8 @@ wc:
 	@wc -l $(ALLSOURCE) | sort -n | tail -6 | head -5
 
 clean:
-	-${RM} -r harpoon silicon gnu Harpoon.jar* harpoon.tgz* VERSIONS
+	-${RM} -r harpoon silicon gnu Harpoon.jar* harpoon.tgz* \
+		VERSIONS ChangeLog
 	-${RM} java `find . -name "*.class"`
 
 polish: clean
