@@ -3,7 +3,7 @@ RaiseE($e$:edge) =
 \STATE\COMMENT{When called, $e \notin E_e$}
 \STATE $E_e \gets E_e \cup \{ e \}$
 \LET $n$ be the destination of edge $e$
-\IF{$n \not\in E_n$}
+\IF{$n \notin E_n$}
 \STATE $E_n \gets E_n \cup \{ n \}$
 \STATE $W_n \gets W_n \cup \{ n \}$
 \ENDIF
