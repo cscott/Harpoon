@@ -26,6 +26,8 @@ public class VarExpr extends Expr {
     }
 
     public SetDescriptor getSet() {
+	if (vd==null)
+	    return null;
 	return vd.getSet();
     }
 

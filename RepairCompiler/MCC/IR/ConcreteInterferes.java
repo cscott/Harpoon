@@ -26,7 +26,7 @@ public class ConcreteInterferes {
 		//Abstract updates don't have concrete interference1
 		if (update.isAbstract()) 
 		    continue;
-		
+
 		DNFRule drule=satisfy?r.getDNFNegGuardExpr():r.getDNFGuardExpr();
 		Descriptor updated_des=update.getDescriptor();
 		assert updated_des!=null;
@@ -37,7 +37,6 @@ public class ConcreteInterferes {
 		
 		if ((!satisfy)&&updateonlytonewobject(mun,un,update))
 		    continue;
-
 
 
 		// See if the update interferes with the inclusion
@@ -68,6 +67,22 @@ public class ConcreteInterferes {
 			} else throw new Error();
 		    }
 
+		    if ((un.getRule()==r)&&
+			((mun.op==MultUpdateNode.ADD)&&!satisfy)&&
+			modifiesremoves(mun,un,r)) {
+			Inclusion inclusion=r.getInclusion();
+			if (inclusion instanceof RelationInclusion) {
+			    RelationInclusion ri=(RelationInclusion)inclusion;
+			    if ((!testdisjoint(update,r,ri.getLeftExpr()))&&
+				(!testdisjoint(update,r,ri.getRightExpr())))
+				ok=true;	 /* Update is specific to
+						    given binding of the rule,
+						    and adds are only performed
+						    if the removal is desired or
+						    the tuple doesn't exist.*/
+			}
+		    }
+
 		    if (!ok) {
 			if (satisfy) {
 			    /** Check to see if the update definitely falsifies r, thus
@@ -95,6 +110,18 @@ public class ConcreteInterferes {
                                              intended one, so we're
                                              okay */
 			}
+			if ((un.getRule()==r)&&
+			    ((mun.op==MultUpdateNode.ADD)&&!satisfy)&&
+			    modifiesremoves(mun,un,r)) {
+			    if (!testdisjoint(update,r,dexpr.getExpr()))
+				continue; /* Update is specific to
+                                             given binding of the
+                                             rule, and adds are only
+                                             performed if the removal
+                                             is desired or the tuple
+                                             doesn't exist.*/
+			}
+
 			if (interferes(update,dexpr))
 			    return true;
 		    }
@@ -102,6 +129,26 @@ public class ConcreteInterferes {
 	    }
 	}
 	return false;
+    }
+
+
+    static private boolean modifiesremoves(MultUpdateNode mun,UpdateNode un, Rule r) {
+	AbstractRepair ar=mun.getRepair();
+	boolean inverted=ar.getPredicate().getPredicate().inverted();
+
+	if (ar.getType()!=AbstractRepair.MODIFYRELATION)
+	    return false;
+	RelationInclusion ri=(RelationInclusion)r.getInclusion();
+	Expr e=inverted?ri.getRightExpr():ri.getLeftExpr();
+	while(e instanceof CastExpr) {
+	    e=((CastExpr)e).getExpr();
+	}
+	if (!(e instanceof VarExpr))
+	    return false;
+	VarExpr ve=(VarExpr)e;
+	if (ve.isValue())
+	    return false;
+	return true;
     }
     
     static private boolean updateonlytonewobject(MultUpdateNode mun, UpdateNode un, Updates updates) {

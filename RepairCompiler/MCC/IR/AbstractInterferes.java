@@ -59,6 +59,46 @@ class AbstractInterferes {
 	return false;
     }
 
+    public boolean checkrelationconstraint(AbstractRepair ar, Constraint c) {
+	if (c.numQuantifiers()==1&&
+	    (c.getQuantifier(0) instanceof RelationQuantifier)) {
+	    RelationQuantifier rq=(RelationQuantifier)c.getQuantifier(0);
+	    if (rq.getRelation()==ar.getDescriptor()) {
+		Hashtable ht=new Hashtable();
+		if (ar.getDomainSet()!=null)
+		    ht.put(rq.x,ar.getDomainSet());
+		if (ar.getRangeSet()!=null)
+		    ht.put(rq.y,ar.getRangeSet());
+		DNFConstraint dconst=c.dnfconstraint;
+	    conjloop:
+		for(int i=0;i<dconst.size();i++) {
+		    Conjunction conj=dconst.get(i);
+		predloop:
+		    for(int j=0;j<conj.size();j++) {
+			DNFPredicate dpred=conj.get(j);
+			Predicate p=dpred.getPredicate();
+			if ((p instanceof InclusionPredicate)&&(!dpred.isNegated())) {
+			    InclusionPredicate ip=(InclusionPredicate)p;
+			    if (ip.expr instanceof VarExpr&&
+				ip.setexpr.getDescriptor() instanceof SetDescriptor) {
+				VarDescriptor vd=((VarExpr)ip.expr).getVar();
+				if (ht.containsKey(vd)) {
+				    SetDescriptor td=(SetDescriptor)ip.setexpr.getDescriptor();
+				    SetDescriptor s=(SetDescriptor)ht.get(vd);
+				    if (td.isSubset(s))
+					continue predloop;
+				}
+			    }
+			}
+			continue conjloop;
+		    }
+		    return true;
+		}
+	    }
+	}
+	return false;
+    }
+
     /** Does performing the AbstractRepair ar falsify the predicate dp */
 
     public boolean interfereswithpredicate(AbstractRepair ar, DNFPredicate dp) {

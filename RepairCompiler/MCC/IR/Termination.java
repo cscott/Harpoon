@@ -277,6 +277,11 @@ public class Termination {
 		TermNode tn2=(TermNode)gn2.getOwner();
 		Conjunction conj=tn2.getConjunction();
 		Constraint cons=tn2.getConstraint();
+		/* See if this is a relation wellformedness constraint
+                   that is trivially satisfied. */
+		System.out.println(gn.getTextLabel()+"---"+gn2.getTextLabel());
+		if (abstractinterferes.checkrelationconstraint(ar, cons))
+		    continue;
 
 		for(int i=0;i<conj.size();i++) {
 		    DNFPredicate dp=conj.get(i);
