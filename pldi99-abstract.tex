@@ -1,42 +1,8 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi99-abstract.tex,v 1.2 1998-10-06 05:25:44 cananian Exp $
+% $Id: pldi99-abstract.tex,v 1.3 1998-10-07 00:54:13 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
 
-Debugging parallel programs is complicated by the
-potential for data races between parallel threads.
-A data race occurs when two parallel threads
-access the same memory location and one of the
-accesses is a write. Data races are especially
-problematic because they introduce the possibility 
-of nondeterministic behavior, which complicates
-the debugging process by making it difficult
-to reproduce and eliminate bugs.
-
-We have developed a static analysis algorithm that is 
-capable of determining if a parallel program is
-free of data races. This algorithm is designed 
-for a general and complex 
-class of programs: divide and conquer
-programs with recursively generated concurrency
-patterns in which the parallel threads access
-disjoint sections of arrays using pointer variables.
-
-Our race detector uses several advanced program
-analyses. It uses a novel pointer analysis algorithm
-for multithreaded programs to disambiguate accesses
-via pointers; it uses a novel symbolic analysis 
-algorithm for pointer into arrays
-to extract the array sections accessed
-by recursive parallel procedures. These
-analyses are useful for more than just static
-race detection. In particular, they can be used
-to statically detect array bounds violations and
-to automatically parallelize sequential implementations
-of divide and conquer algorithms. 
-
-We have implemented our race detector and used it
-to analyze a range of divide and conquer algorithms
-written in the Cilk parallel programming language.
+Ack! An abstract!
 
 \end{abstract}
