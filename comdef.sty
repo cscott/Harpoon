@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.28 2000-09-26 23:19:41 cananian Exp $
+% $Id: comdef.sty,v 1.29 2000-09-28 22:17:15 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -143,6 +143,21 @@ l|l|l|l|l\or l|l|l|l|l|l\fi}%
  \newcommand{\BREAK}{\STATE \textbf{break}\xspace}%
  \newcommand{\CONTINUE}{\STATE \textbf{continue}\xspace}%
  \newcommand{\RETURN}{\STATE \textbf{return}\xspace}%
+ % make case matching... environment
+ \newcommand{\algorithmiccase}{\textbf{case}}
+ \newcommand{\algorithmicmatching}{\textbf{matching}}
+ \newcommand{\algorithmicdefault}{\textbf{default}}
+ \newcommand{\algorithmicendmatching}{\textbf{end case}}
+ \newenvironment{ALC@case}{\begin{ALC@g}}{\end{ALC@g}}
+ \newenvironment{ALC@matching}{\begin{ALC@g}}{\end{ALC@g}}
+ \newcommand{\MATCHING}[2][default]{\ALC@it\algorithmiccase\ ##2 
+                                \algorithmicmatching\
+                                \ALC@com{##1}\begin{ALC@matching}}
+ \newcommand{\CASE}[2][default]{\STATE ##2 $\Rightarrow$
+                                \ALC@com{##1}\begin{ALC@case}}
+ \newcommand{\CASEDEFAULT}[1][default]{\CASE[##1]{\algorithmicdefault}}
+ \newcommand{\ENDCASE}{\end{ALC@case}}%\ALC@it\algorithmicendcase}
+ \newcommand{\ENDMATCHING}{\end{ALC@matching}\ALC@it\algorithmicendmatching}
  % make starred forms of ending commands.
  \renewcommand{\ENDLOOP}{\end{ALC@loop}\@ifstar{\ALC@it\algorithmicendloop}{\ifthenelse{\boolean{ALC@noend}}{}{\ALC@it\algorithmicendloop}}}
  % Internal magic to allow references to specific algorithm lines
