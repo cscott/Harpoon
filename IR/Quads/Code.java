@@ -4,6 +4,7 @@
 package harpoon.IR.Quads;
 
 import harpoon.Analysis.Maps.AllocationInformation;
+import harpoon.Analysis.Maps.Derivation;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
@@ -25,7 +26,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.15 2000-04-04 01:16:20 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.16 2000-05-17 03:54:07 cananian Exp $
  */
 public abstract class Code extends HCode implements java.io.Serializable {
     /** The method that this code view represents. */
@@ -81,6 +82,11 @@ public abstract class Code extends HCode implements java.io.Serializable {
     public void setAllocationInformation(AllocationInformation ai) {
 	this.ai = ai;
     }
+    /**
+     * Return a <code>Derivation</code> for this codeview.
+     * @return <code>null</code>, always.
+     */
+    public Derivation getDerivation() { return null; }
 
     /** Returns the root of the control flow graph. */
     public HCodeElement getRootElement() { return quads; }
