@@ -45,9 +45,10 @@ void doanalysis()
 }
 
 
-/* returns true if and only if  a bug was found */
-int doanalysisfordebugging()  
+/* exits if a bug was found */
+void doanalysisfordebugging(char* msg)
 { 
+  printf("%s\n", msg);
   exportmodel->doabstraction(); 
   exportmodel->getdomainrelation()->fixstuff();
   bool found = exportmodel->docheck(); 
@@ -55,8 +56,12 @@ int doanalysisfordebugging()
 #ifdef DEBUGMANYMESSAGES
   exportmodel->getdomainrelation()->print();
 #endif
-exportmodel->getdomainrelation()->fixstuff();
-  return found;
+
+  if (found)
+    exit(1);
+
+  resetanalysis();
+  printf("\n");
 }
 
 
