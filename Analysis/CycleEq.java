@@ -23,13 +23,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 /**
  * <code>CycleEq</code> computes cycle equivalence classes for nodes in
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.10 1999-03-02 08:29:20 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.11 1999-03-03 01:15:45 cananian Exp $
  */
 
 public class CycleEq  {
@@ -190,8 +191,42 @@ public class CycleEq  {
 
 	// DFS ORDERING.
 	protected void dfs_number() {
-	    dfs_number(start, new HashSet(), null);
+	    Set visited = new HashSet();
+	    Stack s = new Stack(); // closure stack.
+	    s.push(new DFSClosure(start, null/*no parent*/, null));
+
+	    while (!s.isEmpty()) {
+		DFSClosure c = (DFSClosure) s.peek();
+		Node n = c.n; Node parent = c.p; Iterator e = c.i;
+		if (e==null) { // start of visit to node n.
+		    Util.assert(!visited.contains(n));
+		    visited.add(n); // kilroy was here.
+		    n.dfs_num = dfs_order.size();
+		    dfs_order.add(n);
+		    c.i = e = n._adj_();
+		}
+		// hacked-apart iteration over n._adj_(),
+		// rewritten to allow 'recursion' using the closure stack.
+		if (!e.hasNext()) { s.pop(); continue; } // done with iterator
+		Node m = (Node) e.next();
+		if (!visited.contains(m)) { // a tree edge (child)
+		    n.childtree = new NodeList(m, n.childtree);
+		    // recurse: dfs_number(m, visited, n);
+		    s.push(new DFSClosure(m, n, null));
+		} else if (m==parent) { // a tree edge (parent)
+		    n.parenttree = new NodeList(m, n.parenttree);
+		} else { // a backedge
+		    n.backedges = new NodeList(m, n.backedges);
+		}
+	    }
 	}
+	private class DFSClosure { // helper class.
+	    final Node n, p; Iterator i;
+	    DFSClosure(Node n, Node p, Iterator i)
+	    { this.n = n; this.p = p; this.i = i; }
+	}
+	/* OLD VERSION OF dfs_number() -- using real recursion.
+	   // kept around because it's *must* easier to understand.
 	private void dfs_number(Node n, Set visited, Node parent) {
 	    Util.assert(!visited.contains(n));
 	    visited.add(n); // kilroy was here.
@@ -209,6 +244,7 @@ public class CycleEq  {
 		}
 	    }
 	}
+	*/
 	private final List dfs_order = new ArrayList();
     }
 
@@ -255,7 +291,7 @@ public class CycleEq  {
 	// ugly hack to keep track of list cell corresponding to a back
 	// edge.  The algorithm guys made me do this, honest.  I had no
 	// choice.
-	public final Map be2lc = new HashMap();
+	public final Map be2lc = new HashMap(7);
     }
     static class NodeList {
 	public final Node n;
@@ -393,8 +429,8 @@ public class CycleEq  {
 	    return (n!=null)?n:newNode(hce);
 	}
 	final Map code2node = new HashMap();
-	final Set start_code = new HashSet();
-	final Set end_code = new HashSet();
+	final Set start_code = new HashSet(7);
+	final Set end_code = new HashSet(7);
 	ElementGraph(HCode hc) {
 	    start_code.add(hc.getRootElement());
 	    HCodeElement[] leaves = hc.getLeafElements();
@@ -519,8 +555,8 @@ public class CycleEq  {
 	    return (n!=null)?n:newNode(hce);
 	}
 	final Map code2node = new HashMap();
-	final Set start_code = new HashSet();
-	final Set end_code = new HashSet();
+	final Set start_code = new HashSet(7);
+	final Set end_code = new HashSet(7);
 	EdgeGraph(HCode hc) {
 	    HCodeElement root = hc.getRootElement();
 	    HCodeEdge[] root_succ = ((Edges)root).succ();
