@@ -23,10 +23,12 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.7 2001-06-21 04:53:46 pnkfelix Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.8 2001-06-22 16:31:16 pnkfelix Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public static final boolean CHECK_INV = false;
+    
+    private static final boolean PAIRSET_IN_SNAPSHOT = false;
 
     public AppelRegAllocClasses(harpoon.Backend.Generic.Code code) { 
 	super(code); 
@@ -262,8 +264,14 @@ abstract class AppelRegAllocClasses extends RegAlloc {
     }
 
     NodePairSet lastAdjSet;
-    private void saveNodePairSet() { lastAdjSet = adjSet.copy(); }
-    private void restoreNodePairSet() { adjSet = lastAdjSet.copy(); }
+    private void saveNodePairSet() { 
+	if (PAIRSET_IN_SNAPSHOT) 
+	    lastAdjSet = adjSet.copy(); 
+    }
+    private void restoreNodePairSet() { 
+	if (PAIRSET_IN_SNAPSHOT)
+	    adjSet = lastAdjSet.copy(); 
+    }
 
     abstract static class NodeIter {
 	public abstract boolean hasNext();
