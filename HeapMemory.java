@@ -21,8 +21,7 @@ public final class HeapMemory extends MemoryArea {
 	heap = true;
     }
 
-    /** Initialize the native component of the HeapMemory. */
-    protected native void initNative(long sizeInBytes);
+    // METHODS IN SPECS
 
     /** Return the instance of the one and only HeapMemory. */
     public static HeapMemory instance() {
@@ -32,6 +31,27 @@ public final class HeapMemory extends MemoryArea {
 	return theHeap;
     }
     
+    /** Overrides memoryConsumed() from <code>MemoryArea</code> */
+    public long memoryConsumed() {
+	// TODO
+
+	return 0;
+    }
+
+    /** Overrides memoryRemaining() from <code>MemoryArea</code> */
+    public long memoryRemaining() {
+	// TODO
+
+	return 0;
+    }
+
+
+    // METHODS NOT IN SPECS
+
+
+    /** Initialize the native component of the HeapMemory. */
+    protected native void initNative(long sizeInBytes);
+
     /** Print a helpful string describing this HeapMemory. */
     public String toString() {
 	return "HeapMemory: " + super.toString();

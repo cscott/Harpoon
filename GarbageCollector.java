@@ -17,5 +17,10 @@ public abstract class GarbageCollector {
      *  maximum time a <code>RealtimeThread</code> may have to wait for
      *  the collector to reach a preemption-safe point.
      */
-//      public abstract RelativeTime getPreemptionLatency();
+    //      public abstract RelativeTime getPreemptionLatency();
+
+
+    public GarbageCollector() {}
+
+    public abstract RelativeTime getPreemptionLatency();
 }

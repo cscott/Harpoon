@@ -8,7 +8,8 @@ package javax.realtime;
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
-public class UnsupportedPhysicalMemoryException extends Exception {
+public class UnsupportedPhysicalMemoryException extends Exception
+    implements java.io.Serializable {
     
     /** Constructor, no description. */
 

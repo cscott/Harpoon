@@ -9,7 +9,8 @@ package javax.realtime;
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
-public class MemoryAccessError extends Error {
+public class MemoryAccessError extends Error
+    implements java.io.Serializable {
 
     /** Constructor, no description. */
 

@@ -8,7 +8,8 @@ package javax.realtime;
  *  negative or outside the memory area.
  */
 
-public class OffsetOutOfBoundsException extends Exception {
+public class OffsetOutOfBoundsException extends Exception
+    implements java.io.Serializable {
 
     /** Constructor, no description. */
     public OffsetOutOfBoundsException() {

@@ -46,6 +46,11 @@ public abstract class MemoryArea {
 
     protected int id;
 
+    /** The run() method of this object is called whenever enter() is called
+     */
+
+    protected Runnable logic;
+
     /** This is used to create the unique ID.
      */
 
@@ -59,32 +64,13 @@ public abstract class MemoryArea {
 
     MemoryArea shadow;
   
-    protected native void enterMemBlock(RealtimeThread rt, MemAreaStack mas);
-    protected native void exitMemBlock(RealtimeThread rt, MemAreaStack mas);
-    protected native Object newArray(RealtimeThread rt, 
-				     Class type, 
-				     int number);
-    protected native Object newArray(RealtimeThread rt, 
-				     Class type, int[] dimensions);
-    protected native Object newInstance(RealtimeThread rt, 
-			      Constructor constructor, 
-			      Object[] parameters)
-	throws InvocationTargetException;
-    protected native void throwIllegalAssignmentError(Object obj, 
-						      MemoryArea ma)
-	throws IllegalAssignmentError;
+    // CONSTUCTORS IN SPECS
 
     protected MemoryArea(long sizeInBytes) {
 	size = sizeInBytes;
 	preSetup();
-	initNative(sizeInBytes);
+	// initNative(sizeInBytes);
 	postSetup();
-    }
-
-    protected MemoryArea(long minimum, long maximum) {
-	size = maximum;
-	preSetup();
-	/* Sub-class will do postSetup */
     }
 
     protected void preSetup() {
@@ -102,19 +88,34 @@ public abstract class MemoryArea {
 
     /** */
 
-    protected native MemoryArea shadow();
+    // Do we really need this abstract method?
+    // protected abstract void initNative(long sizeInBytes);
+
+    protected MemoryArea(long sizeInBytes, Runnable logic) {
+	this(sizeInBytes);
+	this.logic = logic;
+    }
+
+    protected MemoryArea(SizeEstimator size) {
+	// TODO
+    }
+
+    protected MemoryArea(SizeEstimator size,
+			 Runnable logic) {
+	this(size);
+	this.logic = logic;
+    }
+
+    
+    // METHODS IN SPECS
+
+    public void enter() throws ScopedCycleException {
+	enter(this.logic);
+    }
 
     /** */
-  
-    protected native void registerFinal();
-  
-    /** */
 
-    protected abstract void initNative(long sizeInBytes);
-
-    /** */
-
-    public void enter(Runnable logic) {
+    public void enter(Runnable logic) throws ScopedCycleException {
 	RealtimeThread.checkInit();
 	RealtimeThread current = RealtimeThread.currentRealtimeThread();
 	MemoryArea oldMem = current.memoryArea();
@@ -149,8 +150,12 @@ public abstract class MemoryArea {
 	current.exitMem();
     }
 
+    public void executeInArea(Runnable logic)
+	throws InaccessibleAreaException {
+	// TODO
+    }
+
     /** */
-    
     public static MemoryArea getMemoryArea(Object object) {
 	if (object == null) {
 	    return ImmortalMemory.instance();
@@ -184,25 +189,18 @@ public abstract class MemoryArea {
 	return size()-memoryConsumed();
     }
     
-    /** Return the size of this MemoryArea.
-     */
-
-    public long size() {
-	return size;
-    }
-    
-    /** */
-
-    public void bless(java.lang.Object obj) { 
-	obj.memoryArea = shadow;
-    }
-    
     /** Create a new array, allocated out of this MemoryArea. 
      */
 
+    protected native Object newArray(RealtimeThread rt, 
+				     Class type, 
+				     int number);
+    protected native Object newArray(RealtimeThread rt, 
+				     Class type, int[] dimensions);
+
     public Object newArray(final Class type, final int number) 
-	throws IllegalAccessException, InstantiationException, OutOfMemoryError
-    {
+	throws IllegalAccessException, InstantiationException,
+    OutOfMemoryError {
 	RealtimeThread.checkInit();
 	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
 	if (number<0) {
@@ -215,6 +213,87 @@ public abstract class MemoryArea {
 	return o;
     }
 
+    /** Create a new object, allocated out of this MemoryArea.
+     */
+    
+    protected native Object newInstance(RealtimeThread rt, 
+			      Constructor constructor, 
+			      Object[] parameters)
+	throws InvocationTargetException;
+    
+    public Object newInstance(Class type)
+	throws IllegalAccessException, InstantiationException,
+	       OutOfMemoryError {
+	return newInstance(type, new Class[0], new Object[0]);
+    }
+    
+    public Object newInstance(final Class type,
+			      final Class[] parameterTypes,
+			      final Object[] parameters) 
+	throws IllegalAccessException, InstantiationException,
+	OutOfMemoryError {
+	RealtimeThread.checkInit();
+	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
+	Object o = new Object();
+	o.memoryArea = shadow;
+	rt.memoryArea().checkAccess(o);
+	try {
+	    Constructor c = type.getConstructor(parameterTypes);
+	    o = newInstance(rt, c, parameters);
+	} catch (NoSuchMethodException e) {
+	    throw new InstantiationException(e.getMessage());
+	} catch (InvocationTargetException e) {
+	    throw new InstantiationException(e.getMessage());
+	}
+	o.memoryArea = shadow;
+	return o;
+    }
+    
+    public Object newInstance(Constructor c, Object[] args)
+	throws IllegalAccessException, InstantiationException,
+	       OutOfMemoryError {
+	// TODO
+
+	return null;
+    }
+
+    /** Return the size of this MemoryArea.
+     */
+
+    public long size() {
+	return size;
+    }
+    
+
+    // METHODS NOT IN SPECS
+
+
+    protected MemoryArea(long minimum, long maximum) {
+	size = maximum;
+	preSetup();
+	/* Sub-class will do postSetup */
+    }
+
+    protected native void enterMemBlock(RealtimeThread rt, MemAreaStack mas);
+    protected native void exitMemBlock(RealtimeThread rt, MemAreaStack mas);
+    protected native void throwIllegalAssignmentError(Object obj, 
+						      MemoryArea ma)
+	throws IllegalAssignmentError;
+
+    /** */
+
+    protected native MemoryArea shadow();
+
+    /** */
+  
+    protected native void registerFinal();
+  
+    /** */
+
+    public void bless(java.lang.Object obj) { 
+	obj.memoryArea = shadow;
+    }
+    
     /** Create a new array, allocated out of this MemoryArea. 
      */
     
@@ -238,37 +317,6 @@ public abstract class MemoryArea {
 
     /** Create a new object, allocated out of this MemoryArea.
      */
-    
-    public Object newInstance(Class type)
-	throws IllegalAccessException, InstantiationException,
-	OutOfMemoryError {
-	return newInstance(type, new Class[0], new Object[0]);
-    }
-    
-    /** Create a new object, allocated out of this MemoryArea.
-     */
-    
-    public Object newInstance(final Class type,
-			      final Class[] parameterTypes,
-			      final Object[] parameters) 
-	throws IllegalAccessException, InstantiationException,
-	OutOfMemoryError {
-	RealtimeThread.checkInit();
-	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
-	Object o = new Object();
-	o.memoryArea = shadow;
-	rt.memoryArea().checkAccess(o);
-	try {
-	    Constructor c = type.getConstructor(parameterTypes);
-	    o = newInstance(rt, c, parameters);
-	} catch (NoSuchMethodException e) {
-	    throw new InstantiationException(e.getMessage());
-	} catch (InvocationTargetException e) {
-	    throw new InstantiationException(e.getMessage());
-	}
-	o.memoryArea = shadow;
-	return o;
-    }
     
     /** Check to see if this object can be accessed from this MemoryArea
      */

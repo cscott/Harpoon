@@ -1,20 +1,19 @@
-// ImmortalPhysicalMemoryFactory.java, created by wbeebee
-// Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
-// Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/** <code>ImmortalPhysicalMemory</code>
- *
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
- */
+public class VTPhysicalMemory extends ScopedMemory {
 
-public class ImmortalPhysicalMemory extends MemoryArea {
+    /** An instance of <code>VTPhysicalMemory</code> allows objects to
+     *  be allocated from a range of physical memory with particular
+     *  attributes, determined by their memory type. This memory area
+     *  has the same restrictive set of assignment rules as
+     *  <code>ScopedMemory</code> memory areas, and the same performance
+     *  restrictions as <code>VTMemory</code>.
+     */
+
     private long base, size;
     private Runnable logic;
 
-    /** */
-
-    public ImmortalPhysicalMemory(Object type, long size)
+    public VTPhysicalMemory(Object type, long size)
 	throws SecurityException, SizeOutOfBoundsException,
 	       UnsupportedPhysicalMemoryException,
 	       MemoryTypeConflictException {
@@ -24,7 +23,7 @@ public class ImmortalPhysicalMemory extends MemoryArea {
 	super(size);
     }
 
-    public ImmortalPhysicalMemory(Object type, long base, long size)
+    public VTPhysicalMemory(Object type, long base, long size)
 	throws SecurityException, SizeOutOfBoundsException,
 	       OffsetOutOfBoundsException,
 	       UnsupportedPhysicalMemoryException,
@@ -33,8 +32,8 @@ public class ImmortalPhysicalMemory extends MemoryArea {
 	this.base = base;
     }
 
-    public ImmortalPhysicalMemory(Object type, long base, long size,
-				  Runnable logic)
+    public VTPhysicalMemory(Object type, long base, long size,
+			    Runnable logic)
 	throws SecurityException, SizeOutOfBoundsException,
 	       OffsetOutOfBoundsException,
 	       UnsupportedPhysicalMemoryException,
@@ -43,7 +42,7 @@ public class ImmortalPhysicalMemory extends MemoryArea {
 	this.logic = logic;
     }
 
-    public ImmortalPhysicalMemory(Object type, long size, Runnable logic)
+    public VTPhysicalMemory(Object type, long size, Runnable logic)
 	throws SecurityException, SizeOutOfBoundsException,
 	       UnsupportedPhysicalMemoryException,
 	       MemoryTypeConflictException {
@@ -51,8 +50,7 @@ public class ImmortalPhysicalMemory extends MemoryArea {
 	this.logic = logic;
     }
 
-    public ImmortalPhysicalMemory(Object type, long base,
-				  SizeEstimator size)
+    public VTPhysicalMemory(Object type, long base, SizeEstimator size)
 	throws SecurityException, SizeOutOfBoundsException,
 	       OffsetOutOfBoundsException,
 	       UnsupportedPhysicalMemoryException,
@@ -61,8 +59,8 @@ public class ImmortalPhysicalMemory extends MemoryArea {
 	this.base = base;
     }
 
-    public ImmortalPhysicalMemory(Object type, long base,
-				  SizeEstimator size, Runnable logic)
+    public VTPhysicalMemory(Object type, long base, SizeEstimator size,
+			    Runnable logic)
 	throws SecurityException, SizeOutOfBoundsException,
 	       OffsetOutOfBoundsException,
 	       UnsupportedPhysicalMemoryException,
@@ -71,7 +69,7 @@ public class ImmortalPhysicalMemory extends MemoryArea {
 	this.logic = logic;
     }
 
-    public ImmortalPhysicalMemory(Object type, SizeEstimator size)
+    public VTPhysicalMemory(Object type, SizeEstimator size)
 	throws SecurityException, SizeOutOfBoundsException,
 	       UnsupportedPhysicalMemoryException,
 	       MemoryTypeConflictException {
@@ -80,9 +78,9 @@ public class ImmortalPhysicalMemory extends MemoryArea {
 	// This line inserted only to make everything compile!
 	super(size);
     }
-    
-    public ImmortalPhysicalMemory(Object type, SizeEstimator size,
-				  Runnable logic)
+
+    public VTPhysicalMemory(Object type, SizeEstimator size,
+			    Runnable logic)
 	throws SecurityException, SizeOutOfBoundsException,
 	       UnsupportedPhysicalMemoryException,
 	       MemoryTypeConflictException {
@@ -91,15 +89,12 @@ public class ImmortalPhysicalMemory extends MemoryArea {
     }
 
 
-    // CONSTRUCTORS/METHODS NOT IN SPECS
+    // METHODS IN SPECS
 
-    public ImmortalPhysicalMemory(long base, long size) {
-	super(size);
-	this.base = base;
-	this.size = size;
+    public String toString() {
+	// TODO
+
+	return "";
     }
-
-    /** */
-
-    protected native void initNative(long sizeInBytes);
 }
+

@@ -14,4 +14,11 @@ public class MarkSweepGarbageCollector extends GarbageCollector {
 //      public RelativeTime getPreemptionLatency() {
 //  	return new RelativeTime();
 //      }
+
+    public RelativeTime getPreemptionLatency() {
+	// TODO
+	// Must be defined, because declared as abstract in GarbageCollection.java
+
+	return new RelativeTime();
+    }
 }

@@ -11,7 +11,8 @@ package javax.realtime;
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
-public class ThrowBoundaryError extends java.lang.Error {
+public class ThrowBoundaryError extends Error
+    implements java.io.Serializable {
 
     /** A constructor for <code>ThrowBoundaryError</code>. 
      */

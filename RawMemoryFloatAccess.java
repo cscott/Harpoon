@@ -9,6 +9,34 @@ package javax.realtime;
 
 public class RawMemoryFloatAccess extends RawMemoryAccess {
     
+    private long base, size;
+    private Runnable logic;
+
+    // CONSTRUCTORS IN SPECS
+
+    public RawMemoryFloatAccess(Object type, long size)
+	throws SecurityException, OffsetOutOfBoundsException,
+	       SizeOutOfBoundsException,
+	       UnsupportedPhysicalMemoryException,
+	       MemoryTypeConflictException {
+	// TODO
+
+	// This line inserted only to make everything compile!
+	super(type, size);
+    }
+
+    public RawMemoryFloatAccess(Object type, long base, long size)
+	throws SecurityException, OffsetOutOfBoundsException,
+	       SizeOutOfBoundsException,
+	       UnsupportedPhysicalMemoryException,
+	       MemoryTypeConflictException {
+	this(type, size);
+	this.base = base;
+    }
+
+
+    // CONSTRUCTORS NOT IN SPECS
+
     protected RawMemoryFloatAccess(long base, long size) {
 	super(base, size);
     }
@@ -50,56 +78,78 @@ public class RawMemoryFloatAccess extends RawMemoryAccess {
 	return new RawMemoryFloatAccess(base, size);
     }
 
-    /** Get the double at the given offset. 
-     */
-    public native double getDouble(long offset)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
 
-    /** Get number double values starting at the given offset in this,
-     *  and assigns them into the double array starting at position low.
+    // METHODS IN SPECS
+
+    /** Get the double at the given offset. */
+    public double getDouble(long offset)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	// TODO
+
+	return 0;
+    }
+
+    /** Get <code>number</code> double values starting at the given 
+     *  <code>offset</code> in this, and assigns them into the
+     *  <code>double</code> array starting at position <code>low</code>.
      */
-    public native void getDoubles(long offset, double[] doubles,
-				  int low, int number)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    public void getDoubles(long offset, double[] doubles,
+			   int low, int number)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	for (int i = 0; i < number; i++)
+	    doubles[low + i] = getDouble(offset + i);
+    }
     
-    /** Get the float at the given offset.
+    /** Get the float at the given offset. */
+    public float getFloat(long offset)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	// TODO
+
+	return 0;
+    }
+
+    /** Get <code>number</code> float values sstarting at the give
+     *  <code>offset</code> in this, and assign them into the byte
+     *  array starting at position <code>low</code>.
      */
-    public native float getFloat(long offset)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    public void getFloats(long offset, float[] floats,
+			  int low, int number)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	for (int i = 0; i < number; i++)
+	    floats[low + i] = getFloat(offset + i);
+    }
 
-    /** Get number float values starting at the given offset in this and
-     *  assign them into the float array starting at position low.
+    /** Set the double at the given offset. */
+    public void setDouble(long offset, double value)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	// TODO
+    }
+
+    /** Set <code>number</code> double values starting at the given
+     *  offset in this from the double array starting at position
+     *  <code>low</code>.
      */
-    
-    public native void getFloats(long offset, float[] floats,
-				 int low, int number)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    public void setDoubles(long offset, double[] doubles,
+			   int low, int number) 
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	for (int i = 0; i < number; i++)
+	    setDouble(offset + i, doubles[low + i]);
+    }
 
-    /** Set the double at the given offset.
+    /** Set the float at the given offset. */
+    public void setFloat(long offset, float value)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	// TODO
+    }
+
+    /** Set <code>number</code> float values starting at the given
+     *  offset in this from the float array starting at position
+     *  <code>low</code>.
      */
-
-    public native void setDouble(long offset, double value)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
-
-    /** Set number double values starting at the given offset in this,
-     *  from the double array starting at position low.
-     */
-
-    public native void setDoubles(long offset, double[] doubles,
-				  int low, int number) 
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
-
-    /** Set the float at the given offset.
-     */
-
-    public native void setFloat(long offset, float value)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
-
-    /** Set number float values starting at the given offset in this
-     *  from the float array starting at position low.
-     */
-
-    public native void setFloats(long offset, float[] floats,  
-				 int low, int number)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;    
+    public void setFloats(long offset, float[] floats,  
+			  int low, int number)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	for (int i = 0; i < number; i++)
+	    setFloat(offset + i, floats[low + i]);
+    }
 }

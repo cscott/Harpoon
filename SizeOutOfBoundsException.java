@@ -9,7 +9,8 @@ package javax.realtime;
  *  memory area. 
  */
 
-public class SizeOutOfBoundsException extends Exception {
+public class SizeOutOfBoundsException extends Exception
+    implements java.io.Serializable {
     
     /** Constructor, no description. */
     public SizeOutOfBoundsException() {

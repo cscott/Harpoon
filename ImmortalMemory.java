@@ -17,10 +17,8 @@ public class ImmortalMemory extends MemoryArea {
 	super(1000000000); // Totally bogus
     }
 
-    /** */
+    // METHODS IN SPECS
 
-    protected native void initNative(long sizeInBytes);
-    
     /** Returns the only ImmortalMemory instance (which was itself allocated
      *  out of ImmortalMemory) 
      */ 
@@ -32,6 +30,14 @@ public class ImmortalMemory extends MemoryArea {
 	return immortalMemory;
     }
 
+
+    // METHODS NOT IN SPECS
+
+
+    /** */
+
+    protected native void initNative(long sizeInBytes);
+    
     /** */
 
     public String toString() {

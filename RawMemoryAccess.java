@@ -9,6 +9,30 @@ package javax.realtime;
 
 public class RawMemoryAccess {
 
+    private long base, size;
+    private Runnable logic;
+
+    // CONSTRUCTORS IN SPECS
+    public RawMemoryAccess(Object type, long size)
+	throws SecurityException, OffsetOutOfBoundsException,
+	       SizeOutOfBoundsException,
+	       UnsupportedPhysicalMemoryException,
+	       MemoryTypeConflictException {
+	// TODO
+    }
+
+    public RawMemoryAccess(Object type, long base, long size)
+	throws SecurityException, OffsetOutOfBoundsException,
+	       SizeOutOfBoundsException,
+	       UnsupportedPhysicalMemoryException,
+	       MemoryTypeConflictException {
+	this(type, size);
+	this.base = base;
+    }
+
+
+    // CONSTRUCTORS(?) NOT IN SPECS
+
     protected RawMemoryAccess(long base, long size) {
 	
     }
@@ -28,133 +52,187 @@ public class RawMemoryAccess {
 					 long size) {
 	return new RawMemoryAccess(base, size);
     }
+
+
+    // METHODS IN SPECS
+
     
-    /** Get the byte at the given offset. 
-     */
-    public native byte getByte(long offset)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    /** Get the byte at the given offset. */
+    public byte getByte(long offset)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	// TODO
 
-    /** Get n bytes starting at the given offset in this, and assigns them
-     *  into the byte array starting at the position low.
-     */
-    public native void getBytes(long offset, byte[] bytes, int low, int n)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+	return 0;
+    }
 
-    /** Get the int at the given offset.
+    /** Get <code>nunber</code> bytes starting at the given offset and
+     *  assign them to the byte array starting at the position
+     * <code>low</code>.
      */
-    public native int getInt(long offset)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    public void getBytes(long offset, byte[] bytes, int low, int number)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	for (int i = 0; i < number; i++)
+	    bytes[low + i] = getByte(offset + i);
+    }
 
-    /** Get n ints starting at the given offset in this, to the int array
-     *  starting at position low.
+    /** Get the <code>int</code> at the given offset. */
+    public int getInt(long offset)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	// TODO
+
+	return 0;
+    }
+
+    /** Get <code>number</code>  ints starting at the given offset and
+     *  assign them to the int array passed at position <code>low</code>.
      */
-    public native void getInts(long offset, int[] ints, int low, int n)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    public void getInts(long offset, int[] ints, int low, int number)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	for (int i = 0; i < number; i++)
+	    ints[low + i] = getByte(offset + i);
+    }
 
-    /** Get the long value at the given offset.
+    /** Get the <code>long</code> at the given offset. */
+    public long getLong(long offset)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	// TODO
+
+	return 0;
+    }
+
+    /** Get <code>number</code> longs starting at the given offset and
+     *  assign them to the long array passed starting at position
+     *  <code>low</code>.
      */
-    public native void getLong(long offset)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    public void getLongs(long offset, long[] longs, int low, int number)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	for (int i = 0; i < number; i++)
+	    longs[low + i] = getLong(offset + i);
+    }
 
-    /** Get n longs starting at the given offset in this, to the long array
-     *  starting at position low.
-     */
-    public native void getLongs(long offset, long[] longs, int low, int n)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
-
-    /** getMappedAddress gives the virtual memory location at which the
-     *  memory region is mapped. 
+    /** Returns the virtual memory location at which the memory region
+     *  is mapped.
      */
     public long getMappedAddress() {
+	// TODO
+
 	return 0;
     }
 
-    /** Get the short at the given offset. 
-     */
-    public native short getShort(long offset)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    /** Get the <code>short</code> at the given offset. */
+    public short getShort(long offset)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	// TODO
 
-    /** Get n shorts starting at the given offset in this, from the short
-     *  array starting at position low.
-     */
-    public native void getShorts(long offset, short[] shorts, int low, int n)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+	return 0;
+    }
 
-    /** map maps the physical address range into virtual memory.
+    /** Get <code>number</code> shorts starting at the give offset and
+     *  assign them to the short array passed starting at position
+     *  <code>low</code>.
      */
+    public void getShorts(long offset, short[] shorts, int low, int number)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	for (int i = 0; i < number; i++)
+	    shorts[low + i] = getShort(offset + i);
+    }
+
+    /** Maps the physical memory range into virtual memory. */
     public long map() {
+	// TODO
+	
 	return 0;
     }
 
-    /** map maps the physical address range into virtual memory at the 
+    /** Maps the physical memory range into virtual memory at the
      *  specified location.
      */
     public long map(long base) {
+	// TODO
+
 	return 0;
     }
     
-    /** map maps the physical address range into virtual memory at the
-     *  specified location.
-     */
+    /** Maps the physical memory range into virtual memory. */
     public long map(long base, long size) {
+	// TODO
+
 	return 0;
     }
 
-    /** Set the byte at the given offset.
-     */
-    public native void setByte(long offset, byte v)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    /** Set the byte at the given offset. */
+    public void setByte(long offset, byte value)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	// TODO
+    }
 
-    /** Set n bytes starting at the given offset in this, from the 
-     *  byte array starting at position low.
+    /** Set <code>number</code> bytes starting at the give offset from
+     *  the byte array passed starting at position <code>low</code>.
      */
-    public native void setBytes(long offset, byte[] bytes, int low, int n)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    public void setBytes(long offset, byte[] bytes, int low, int number)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	for (int i = 0; i < number; i++)
+	    setByte(offset + i, bytes[low + i]);
+    }
 
-    /** Set the int value at the given offset.
-     */
-    public native void setInt(long offset, int v)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    /** Set the <code>int</code> at the given offset. */
+    public void setInt(long offset, int value)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	// TODO
+    }
 
-    /** Set n ints starting at the given offset in this, from the
-     *  int array starting at position low. 
+    /** Set <code>number</code> ints starting at the given offset from
+     *  the int array passed starting at position <code>low</code>.
      */
-    public native void setInts(long offset, int[] ints, int low, int n)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    public void setInts(long offset, int[] ints, int low, int number)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	for (int i = 0; i < number; i++)
+	    setInt(offset + i, ints[low + i]);
+    }
 
-    /** Set the long value at the given offset starting at position
-     *  low.
-     */
-    public native void setLong(long offset, long v)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    /** Set the <code>long</code> at the given offset. */
+    public void setLong(long offset, long value)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	// TODO
+    }
 
-    /** Set n longs starting at the given offset in this, from the 
-     *  long array starting at position low.
+    /** Set <code>number</code> longs starting at the given offset from
+     *  the long array passed starting at position <code>low</code>.
      */
-    public native void setLongs(long offset, long[] longs, int low, int n)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    public void setLongs(long offset, long[] longs, int low, int number)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	for (int i = 0; i < number; i++)
+	    setLong(offset + i, longs[low + i]);
+    }
 
-    /** Set the short at the given offset.
-     */
-    public native void setShort(long offset, short v)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    /** Set the <code>short</code> at the given offset. */
+    public void setShort(long offset, short value)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	// TODO
+    }
 
-    /** Set n shorts starting at the given offset in this, from
-     *  the short array starting at position low.
+    /** Set <code>number</code> shorts starting at the given offset from
+     *  the short array passed starting at position <code>low</code>.
      */
-    public native void setShorts(long offset, short[] shorts, int low, int n)
-	throws SizeOutOfBoundsException, OffsetOutOfBoundsException;
+    public void setShorts(long offset, short[] shorts, int low, int number)
+	throws OffsetOutOfBoundsException, SizeOutOfBoundsException {
+	for (int i = 0; i < number; i++)
+	    setLong(offset + i, shorts[low + i]);
+    }
+
+    /** Unmap the physical memory range from virtual memory. */
+    public void unmap() {
+	// TODO
+    }
+
+
+    // METHODS NOT IN SPECS
+
 
     /** Construct a RawMemoryAccess area at offset bytes from the 
      *  base of this area.
      */
     public RawMemoryAccess subregion(long offset, long size) {
 	return new RawMemoryAccess(offset, size);
-    }
-
-    /** unmap() unmaps the physical address range from virtual memory.
-     */
-    public void unmap() {
-
     }
 };

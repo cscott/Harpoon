@@ -36,7 +36,7 @@ public class PriorityScheduler extends Scheduler {
     long runningThread = 0;
     RelativeTime runningTime = null;
     
-    static PriorityScheduler thisScheduler;
+    static PriorityScheduler thisScheduler = null;
     
     // Do not call this constructor; instead, call
     // PriorityScheduler.getScheduler().
@@ -59,12 +59,19 @@ public class PriorityScheduler extends Scheduler {
     
     // Creates and returns a scheduler of this type
     // NOT IN SPECS -----------------------
+
+    // This method is not thread-safe!
     public static PriorityScheduler getScheduler() {
-	ImmortalMemory.instance().enter(new Runnable() {
-		public void run() {
-		    PriorityScheduler.thisScheduler = new PriorityScheduler();
-		}
-	    });
+	if (thisScheduler == null) 
+	    try {
+		ImmortalMemory.instance().enter(new Runnable() {
+			public void run() {
+			    PriorityScheduler.thisScheduler = new PriorityScheduler();
+			}
+		    });
+	    } catch (ScopedCycleException e) {
+		System.out.println("ScopeCycleException should never occur " + e);
+	    }
 	
 	return thisScheduler;
     }
@@ -79,12 +86,16 @@ public class PriorityScheduler extends Scheduler {
 	thread[nThreads].beginPeriod = null;
 	nThreads++;
 	
-	ImmortalMemory.instance().enter(new Runnable() {
-		public void run() {
-		    // Give the runtime system a chance to update its data structures
-		    addThreadInC(schedulable, nextThreadID);
-		}
-	    });
+	try {
+	    ImmortalMemory.instance().enter(new Runnable() {
+		    public void run() {
+			// Give the runtime system a chance to update its data structures
+			addThreadInC(schedulable, nextThreadID);
+		    }
+		});
+	} catch (ScopedCycleException e) {
+	    System.out.println("ScopedCycleException should never occur : " + e);
+	}
 
 	// SPECS CHANGED -- return 'boolean' instead of 'void'
 	return false;

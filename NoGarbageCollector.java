@@ -15,4 +15,10 @@ public class NoGarbageCollector extends GarbageCollector {
 //  	return new RelativeTime();
 //      }
 
+    public RelativeTime getPreemptionLatency() {
+	// TODO
+	// Must be defined, because declared as abstract in GarbageCollection.java
+
+	return new RelativeTime();
+    }
 }

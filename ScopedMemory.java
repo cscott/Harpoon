@@ -11,6 +11,11 @@ package javax.realtime;
 public abstract class ScopedMemory extends MemoryArea {
     protected Object portal;
 
+    /** <code>logic.run()</code> is executed when <code>enter()</code>
+     *  is called.
+     */
+    protected Runnable logic;
+
     /** Create a new ScopedMemory of a certain maximum size. 
      */
     public ScopedMemory(long size) {
@@ -18,11 +23,39 @@ public abstract class ScopedMemory extends MemoryArea {
 	portal = null;
 	scoped = true;
     }
+
+    public ScopedMemory(long size, Runnable r) {
+	this(size);
+	logic = r;
+    }
     
+    public ScopedMemory(SizeEstimator size) {
+	// TODO
+
+	// This line inserted only to make everything compile!
+	super(size);
+    }
+
+    public ScopedMemory(SizeEstimator size, Runnable r) {
+	this(size);
+	logic = r;
+    }
+
+    // THIS CONSTRUCTOR IS NOT IN SPECS
     public ScopedMemory(long minimum, long maximum) {
 	super(minimum, maximum);
 	portal = null;
 	scoped = true;
+    }
+
+    // METHODS IN SPECS
+
+    public void enter() {
+	// TODO
+    }
+
+    public void enter(Runnable logic) throws ScopedCycleException {
+	// TODO
     }
 
     /** Return the maximum size of this ScopedMemory. 
@@ -37,11 +70,56 @@ public abstract class ScopedMemory extends MemoryArea {
 	return portal;
     }
     
+    public int getReferenceCount() {
+	// TODO
+
+	return 0;
+    }
+
+    public void join() throws InterruptedException {
+	// TODO
+    }
+
+    public void join(HighResolutionTime time)
+	throws InterruptedException {
+	// TODO
+    }
+
+    public void joinAndEnter() throws InterruptedException,
+				      ScopedCycleException {
+	joinAndEnter(this.logic);
+    }
+
+    public void joinAndEnter(HighResolutionTime time)
+	throws InterruptedException, ScopedCycleException {
+	joinAndEnter(this.logic, time);
+    }
+
+    public void joinAndEnter(Runnable logic) throws InterruptedException,
+						    ScopedCycleException {
+	// TODO
+    }
+
+    public void joinAndEnter(Runnable logic, HighResolutionTime time)
+	throws InterruptedException, ScopedCycleException {
+	// TODO
+    }
+
     /** Set the portal object for this ScopedMemory.
      */
     public void setPortal(Object object) {
 	portal = object;
     }
+
+    public String toString() {
+	// TODO
+
+	return "";
+    }
+
+
+    // METHODS NOT IN SPECS
+
     
     /** Get the MemoryArea which contains this ScopedMemory for
      *  the current RealtimeThread.
