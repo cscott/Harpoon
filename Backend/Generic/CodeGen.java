@@ -16,7 +16,7 @@ import harpoon.Analysis.Maps.Derivation;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.12 2000-02-18 00:35:42 pnkfelix Exp $ */
+ * @version $Id: CodeGen.java,v 1.1.2.13 2000-02-18 01:17:54 pnkfelix Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
@@ -37,6 +37,9 @@ public abstract class CodeGen {
         instruction stream.
     */	
     protected abstract Instr emit(Instr i);
+
+    protected abstract void declare(Temp t, HClass clz);
+    protected abstract void declare(Temp t, Derivation.DList dl);
 
     /** Fixes up the procedure entry and exit code for a list of instrs, once
      *  it is known how many registers and how much stack space is used.

@@ -24,7 +24,7 @@ import java.util.HashMap;
  * their own extensions of <code>CodeGen</code>.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: MaxMunchCG.java,v 1.1.2.4 2000-02-18 00:35:42 pnkfelix Exp $ */
+ * @version $Id: MaxMunchCG.java,v 1.1.2.5 2000-02-18 01:17:55 pnkfelix Exp $ */
 public abstract class MaxMunchCG extends CodeGen {
     
     /** Creates a <code>MaxMunchCG</code>. */
@@ -54,7 +54,7 @@ public abstract class MaxMunchCG extends CodeGen {
 	while(defs.hasNext()) {
 	    Temp t = (Temp) defs.next();
 	    TypeAndDerivation td = 
-		(TypeAndDerivation) TYPE_STATE.tempToType.get(t);
+		(TypeAndDerivation) tempToType.get(t);
 	    Util.assert(td != null, 
 			"Uh oh forgot to declare "+t+" before "+i);
 	    ti2td.put(Default.pair(t, i), td);
@@ -84,23 +84,19 @@ public abstract class MaxMunchCG extends CodeGen {
     // tXi -> TypeAndDerivation
     private Map ti2td = new HashMap();
 
-    // stores type information for Temps
-    protected TypeState TYPE_STATE = new TypeState();
-    
-    static public class TypeState {
-	Map tempToType = new HashMap();
+    private Map tempToType = new HashMap();
 	
-	public void declare(Temp t, HClass clz) {
-	    // System.out.println(t + " " + clz);
-	    tempToType.put(t, new TypeAndDerivation(clz));
-	}
-
-	public void declare(Temp t, Derivation.DList dl) {
-	    // System.out.println(t + " " + dl);
-	    tempToType.put(t, new TypeAndDerivation(dl));
-	}
+    public void declare(Temp t, HClass clz) {
+	// System.out.println(t + " " + clz);
+	tempToType.put(t, new TypeAndDerivation(clz));
     }
-
+    
+    public void declare(Temp t, Derivation.DList dl) {
+	// System.out.println(t + " " + dl);
+	tempToType.put(t, new TypeAndDerivation(dl));
+    }
+    
+    
     // union type for Derivation.DList and HClass
     static class TypeAndDerivation {
 	Derivation.DList dlist;

@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.55 2000-02-15 23:35:32 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.56 2000-02-18 01:19:47 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -814,9 +814,9 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 					    "harpoon.ClassFile.HClass hclz"+
 					   " = code.getTreeDerivation().typeMap(ROOT);\n"+
 					   "if (hclz != null) { "+
-					   "\n\t TYPE_STATE.declare("+r.result_id+", hclz);"+
+					   "\n\t declare("+r.result_id+", hclz);"+
 					   "} else { "+
-					   "\n\t TYPE_STATE.declare("+r.result_id+", "+
+					   "\n\t declare("+r.result_id+", "+
 					   "\n\t                    "+
 					   "code.getTreeDerivation().derivation(ROOT));\n"+
 					   "}") +

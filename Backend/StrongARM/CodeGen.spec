@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.134 2000-02-18 00:37:17 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.135 2000-02-18 01:18:37 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -453,6 +453,7 @@ import java.util.Iterator;
     }
     /** Make a handler stub. */
     private void emitHandlerStub(INVOCATION ROOT, Temp retex, Label handler) {
+	declare( retex, frame.getLinker().forName("java.lang.Throwable"));
 	emitMOVE ( ROOT, "mov `d0, `s0", retex, r0 );
 	emitJUMP ( ROOT, "b "+handler, handler);
     }
