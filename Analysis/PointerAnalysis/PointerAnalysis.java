@@ -70,7 +70,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.47 2000-04-03 02:29:06 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.48 2000-04-03 06:15:27 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -528,7 +528,6 @@ public class PointerAnalysis {
 	LBBConverter lbbconv = scc_lbb_factory.getLBBConverter();
 	LightBasicBlock.Factory lbbf = lbbconv.convert2lbb(mm.getHMethod());
 	HCode hcode = lbbf.getHCode();
-
 	good_agets = cai.getInterestingAGETs(mm.getHMethod(), hcode);
 
 	current_intra_mmethod = mm;
@@ -672,9 +671,19 @@ public class PointerAnalysis {
 	
 	/** Load statement; special case - arrays. */
 	public void visit(AGET q){
+	    System.out.println("AGET: " + q);
+	    System.out.println("good_agets: " + good_agets);
+
 	    // AGET from an array of primitive objects (int, float, ...)
-	    if(!good_agets.contains(q))
+	    if(!good_agets.contains(q)){
+		if(DEBUG)
+		    System.out.println("NOT-PA RELEVANT AGET: " + 
+				       q.getSourceFile() + ":" + 
+				       q.getLineNumber() + " " + q);
+		// not interesting for the pointer analysis
 		lbbpig.G.I.removeEdges(q.dst());
+		return;
+	    }
 	    // All the elements of an array are collapsed in a single
 	    // node, referenced through a conventional named field
 	    process_load(q, q.dst(), q.objectref(), ARRAY_CONTENT);

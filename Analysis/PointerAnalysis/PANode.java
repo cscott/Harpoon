@@ -20,7 +20,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.16 2000-04-02 03:27:55 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.17 2000-04-03 06:15:26 salcianu Exp $
  */
 final public class PANode {
     // activates some safety tests
@@ -69,6 +69,14 @@ final public class PANode {
     // the CALL site that specialized cs_parent into this node
     private CALL call_site = null;
 
+    // when trying to specialize this node for more than
+    // PointerAnalysis.MAX_SPEC_DEPTH-1 times, this node is returned
+    // (it is created the first time); basically, since we cannot make
+    // the difference between a node of depth MAX_SPEC_DEPTH and a node
+    // with some bigger call depth, all we need to know is that we have a node
+    // for which we canot infer where it was created.
+    private PANode bottom = null;
+
     // full thread sensitivity: the mapping MetaMethod -> specialized node
     private final LightMap ts_specs;
     // the weak thread specialization of this node (if any)
@@ -85,9 +93,10 @@ final public class PANode {
         this.type = type;
 	number = count++;
 
-	if((number % 100) == 0)
-	    System.out.println("PANODE " + this);
-
+	if(PointerAnalysis.DEBUG)
+	    if((number % 100) == 0)
+		System.out.println("PANODE " + this);
+	
 	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
 	    cs_specs = new LightMap();
 	else cs_specs = null;
@@ -122,6 +131,19 @@ final public class PANode {
 	if(CAUTION)
 	    Util.assert(PointerAnalysis.CALL_CONTEXT_SENSITIVE,
 			"Turn on CALL_CONTEXT_SENSITIVE!");
+
+	// a node with a maximal call_chain_depth doesn't have precise
+	// info about the call path which produced it; so it's not worth
+	// specializing one for each call site: one is enough
+	if(call_chain_depth == PointerAnalysis.MAX_SPEC_DEPTH - 1){
+	    if(bottom == null){
+		bottom = new PANode(this.type);
+		bottom.call_chain_depth = this.call_chain_depth + 1;
+		bottom.call_site = call_site;
+		bottom.cs_parent = this;
+	    }
+	    return bottom;
+	}
 	    
 	if(call_chain_depth >= PointerAnalysis.MAX_SPEC_DEPTH) return this;
 
@@ -286,10 +308,19 @@ final public class PANode {
     public final String details(){
 	StringBuffer buffer = new StringBuffer();
 	buffer.append(this);
+	// print the ancestor on the thread specialization branch
 	if(isTSpec()){
 	    buffer.append(" <-TS- "); 
 	    buffer.append(getTSParent().details());
 	}
+	// nodes that are at the limit of the maximal call chain depth
+	// are signaled by attaching a B to them: they don't carry any
+	// exact information about the call path so they are "bottom"
+	if(call_chain_depth == PointerAnalysis.MAX_SPEC_DEPTH){
+	    buffer.append("B");
+	    return buffer.toString();
+	}
+	// print the ancestors on the call specialization brach
 	if(isCSSpec()){
 	    buffer.append(" <-CS- ");
 	    buffer.append(getCSParent().details());

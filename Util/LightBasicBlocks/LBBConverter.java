@@ -11,7 +11,7 @@ import harpoon.Util.BasicBlocks.BBConverter;
  into <code>LightBasicBlock</code>s.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LBBConverter.java,v 1.1.2.1 2000-03-24 01:05:05 salcianu Exp $
+ * @version $Id: LBBConverter.java,v 1.1.2.2 2000-04-03 06:15:48 salcianu Exp $
  */
 public class LBBConverter {
     
@@ -25,6 +25,9 @@ public class LBBConverter {
     /** Returns a <code>LighBasicBlock.Factory</code> for the body of
 	a method. */
     public LightBasicBlock.Factory convert2lbb(HMethod hm){
+
+	System.out.println("LBB CONVERTER CALLED FOR " + hm);
+
 	return new LightBasicBlock.Factory(bbconv.convert2bb(hm));
     }
     

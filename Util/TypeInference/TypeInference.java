@@ -36,42 +36,67 @@ import harpoon.IR.Quads.TYPECAST;
 import harpoon.IR.Quads.CONST;
 
 /**
- * <code>TypeInference</code>
+ * <code>TypeInference</code> is a very simple type inference module.
+ It was written to satisfy some immediate needs in the Pointer Analysis
+ (mainly determining is a temp could point to an array of non-primitive
+ objects (ie not <code>int[]</code>). However, it is very general and can be
+ used to compute the types of some arbitrary set of <code>ExactTemp</code>s
+ (not necessarily all the <code>Temp</code>s from teh body of a method).<br>
+ Works for <code>quad-no-ssa</code> only (anyway, it is trivial to write the
+ extensions for the other quads).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: TypeInference.java,v 1.1.2.1 2000-04-03 02:29:15 salcianu Exp $
+ * @version $Id: TypeInference.java,v 1.1.2.2 2000-04-03 06:15:51 salcianu Exp $
  */
 public class TypeInference {
+    // switch on the debug messages
+    public static boolean DEBUG = true;
 
     /** Creates a <code>TypeInference</code>. This object is
-	supposed to provide type information about the exact temps
-	from the set <code>ivars</code>. All this exact temps are
-	supposed to be defined in <code>hcode</code>*/
-    public TypeInference(HMethod hm, HCode hcode, Set ivars) {
-        analyze(hm, hcode, ivars);
+	supposed to provide type information about the <code>ExactTemp</code>s
+	from the set <code>ietemps</code>. All these exact temps are
+	supposed to be defined in <code>hcode</code>. */
+    public TypeInference(HMethod hm, HCode hcode, Set ietemps) {
+        analyze(hm, hcode, ietemps);
     }
 
-    Relation types = new Relation();
+    // the private repositoy of the type information: it is filled in
+    // by analyze and read by the query methods.
+    private Relation types = new Relation();
 
+    ///////////////// QUERY METHODS /////////////////////////////
+
+    /** Returns the possible types for the temp <code>et.t</code> in the
+	quad <code>et.q</code>. This method should be called only for
+	<code>ExactTemp</code> that were in the <code>ietemps</code> set
+	passed to the constructor of <code>this</code> object. */
     public Set getType(ExactTemp et){
 	return types.getValuesSet(et);
     }
 
-    ///////////////// QUERY METHODS /////////////////////////////
+    /** Checks whether the temp <code>et.t</code> in instruction
+	<code>et.q</code> points to an array of non-primitive type
+	components (ie non an <code>int[]</code>. This is useful in the
+	PointerAnalysis stuff to see if an <code>AGET</code> deserves
+	to be introduced (and possibly a new <code>LOAD</code> node). */
     public boolean isArrayOfNonPrimitives(ExactTemp et){
 	Set set = getType(et);
 
 	for(Iterator it = getType(et).iterator(); it.hasNext(); ){
 	    HClass hclass = (HClass) it.next();
-	    HClass compt  = hclass.getComponentType();
-	    if(compt == null) continue;
-	    if(!compt.isPrimitive())
+	    HClass comp  = hclass.getComponentType();
+	    if(comp == null) continue;
+	    if(DEBUG)
+		System.out.println("Type of component of " + et + ":" +
+				   comp);
+	    if(!comp.isPrimitive())
 		return true;
 	}
 
 	return false;
     }
 
+    /** Convenient version of the other method with the same name. */
     public boolean isArrayofNonPrimitives(HCodeElement hce, Temp t){
 	return isArrayofNonPrimitives(hce, t);
     }
@@ -79,41 +104,75 @@ public class TypeInference {
     
     ReachingDefs rdef = null;
 
-    final PAWorkList W = new PAWorkList(); 
+    // W is the worklist used for type inference. At any moment, it contains
+    // ExactTemps whose possible types may have changed.
+    PAWorkList W = null; 
+    // The dependency relation: et1 -> et2 if the type of et1 influences
+    // the type of et2. Generic type: Relation<ExactTemp, ExactTemp>
     Relation dependencies = null;
 
-    private void analyze(HMethod hm, HCode hcode, Set ivars){
+    private void analyze(HMethod hm, HCode hcode, Set ietemps){
+	W    = new PAWorkList(); 
 	rdef = new ReachingDefsImpl(hcode);
 	dependencies  = new Relation(); 
 
-	fill_in_dep_and_W(ivars);
+	fill_in_dep_and_W(ietemps);
 	
+	if(DEBUG){
+	    System.out.println("DEPENDENCIES:");
+	    System.out.println(dependencies);
+	}
+
 	HEADER header = (HEADER) hcode.getRootElement();
 	METHOD method = (METHOD) header.next(1);
 	set_parameter_types(hm, method);
+	
+	if(DEBUG){
+	    System.out.println("PARAMETER TYPES:");
+	    System.out.println(types);
+	}
 
 	compute_types();
 
-	compute_interesting_types(ivars);
+	if(DEBUG){
+	    System.out.println("COMPUTED TYPES:");
+	    System.out.println(types);
+	}
+
+	compute_interesting_types(ietemps);
+
+	if(DEBUG){
+	    System.out.println("THE FINAL TYPES OF THE INTERESTING TEMPS:");
+	    System.out.println(types);
+	}
 
 	// enable the GC
+	W    = null;
 	rdef = null;
 	dependencies = null;
     }
 
 
-    private class Wrapper{
-	ExactTemp et;
-    };
-    private final Wrapper wrapper = new Wrapper();
+    private void fill_in_dep_and_W(Set ietemps){
 
-    private void fill_in_dep_and_W(Set ivars){
+	// Inner classes cannot access non-final local variables
+	// we work around this through this wrapper hack: the wrapper
+	// is final, but we can modify its fields!
+	class Wrapper{
+	    ExactTemp et;
+	};
+	final Wrapper wrapper = new Wrapper();
 
-	final Relation dep = dependencies;
-	final Set seen = new HashSet();
+	// Used in the dependencies detection: contains the ExactTemps
+	// already seen, which have been put in the worrklist (and maybe
+	// even processed).
+	final Set seen      = new HashSet();
+	// W2 is the worklist for finding the dependencies between
+	// ExactTemps. AT any moment, it contains ExactTemps whose
+	// dependencies have not been explored yet.
 	final PAWorkList W2 = new PAWorkList();
 
-	for(Iterator it = ivars.iterator(); it.hasNext(); ){
+	for(Iterator it = ietemps.iterator(); it.hasNext(); ){
 	    ExactTemp et = (ExactTemp) it.next();
 
 	    Iterator it_rdef = rdef.reachingDefs(et.q, et.t).iterator();
@@ -125,6 +184,7 @@ public class TypeInference {
 	    }
 	}
 
+	// quad visitor for detecting the dependencies between ExactTemp types
 	final QuadVisitor dep_detector = new QuadVisitor(){
 		public void visit(MOVE q){
 		    put_deps(q, q.src());
@@ -160,7 +220,8 @@ public class TypeInference {
 		}
 		
 		public void visit(METHOD q){
-		    // do nothing; these are treated somewhere else
+		    // do nothing; the parameters (defined in METHOD)
+		    // are treated in set_parameter_types
 		}
 		
 		public void visit(CONST q){
@@ -177,7 +238,7 @@ public class TypeInference {
 			itq.hasNext();){
 			Quad qdef = (Quad) itq.next();
 			ExactTemp et_def = new ExactTemp(qdef,t);
-			dep.add(et_def, wrapper.et);
+			dependencies.add(et_def, wrapper.et);
 			if(seen.add(et_def))
 			    W2.add(et_def);
 		    }
@@ -185,8 +246,11 @@ public class TypeInference {
 		
 	    };
 
+	// Worklist algorithm for detecting the depenmdencies between
+	// ExactTemp types.
 	while(!W2.isEmpty()){
 	    ExactTemp et = (ExactTemp) W2.remove();
+	    // Invariant: et.t is defined by et.q
 	    wrapper.et = et;
 	    et.q.accept(dep_detector);
 	}
@@ -195,16 +259,19 @@ public class TypeInference {
 
     // set the types for the arguments of the method
     private void set_parameter_types(HMethod hm, METHOD method){
+	// all parameter types
 	HClass[] aptypes = null;
-	HClass[] paramtypes = hm.getParameterTypes();
+	// declared parameter types (no "this" parameter here)
+	HClass[] dptypes = hm.getParameterTypes();
 
 	if(Modifier.isStatic(hm.getModifiers()))
-	    aptypes = paramtypes;
+	    aptypes = dptypes;
 	else{
-	    aptypes = new HClass[hm.getParameterTypes().length + 1];
+	    // non-static methods have a hidden parameter: "this"
+	    aptypes = new HClass[dptypes.length + 1];
 	    aptypes[0] = hm.getDeclaringClass();
-	    for(int i = 0; i < paramtypes.length; i++)
-		aptypes[i+1] = paramtypes[i];
+	    for(int i = 0; i < dptypes.length; i++)
+		aptypes[i+1] = dptypes[i];
 	}
 
 	Temp[] params = method.params();
@@ -218,16 +285,23 @@ public class TypeInference {
 	}
     }
 
-
-
-    private class Wrapper2{
-	ExactTemp et1;
-	ExactTemp et2;
-    };
-    private final Wrapper2 wrapper2 = new Wrapper2();
-
+    // do worklist algorithm to propagate our type information. By this
+    // time, W should contain all teh ExactTemps whose types are trivial to
+    // determine: the parameters, destination of NEW, ANEW, TYPECAST, GET etc.
     private void compute_types(){
+	// Inner classes cannot access non-final local variables
+	// we work around this through this wrapper hack: the wrapper
+	// is final, but we can modify its fields!
+	class Wrapper2{
+	    ExactTemp et1;
+	    ExactTemp et2;
+	};
+	final Wrapper2 wrapper2 = new Wrapper2();
 
+	// quad visitor for propagating the type information:
+	// MOVE and AGET are the only ones that remained, for all the
+	// other interesting quads it is trivial to determine the types
+	// of their destination Temps.
 	QuadVisitor type_calculator = new QuadVisitor(){
 
 		public void visit(MOVE q){
@@ -265,19 +339,20 @@ public class TypeInference {
 
 	while(!W.isEmpty()){
 	    ExactTemp et1 = (ExactTemp) W.remove();
-	    wrapper2.et1 = et1;
+	    wrapper2.et1  = et1;
 	    for(Iterator it = dependencies.getValues(et1); it.hasNext(); ){
 		ExactTemp et2 = (ExactTemp) it.next();
+		wrapper2.et2   = et2;
 		et2.q.accept(type_calculator);
 	    }
 	}
     }
 
-    // Computes the types of the exact temps from the set ivars.
-    private void compute_interesting_types(Set ivars){
+    // Computes the types of the exact temps from the set ietemps.
+    private void compute_interesting_types(Set ietemps){
 	Relation types2 = new Relation();
 
-	for(Iterator it = ivars.iterator(); it.hasNext(); ){
+	for(Iterator it = ietemps.iterator(); it.hasNext(); ){
 	    ExactTemp et = (ExactTemp) it.next();
 
 	    for(Iterator it_rdef = rdef.reachingDefs(et.q, et.t).iterator();
@@ -291,4 +366,3 @@ public class TypeInference {
     }
 
 }
-

@@ -8,13 +8,20 @@ import harpoon.Temp.Temp;
 
 
 /**
- * <code>ExactTemp</code>
+ * <code>ExactTemp</code> is simply a pair of a <code>Quad</code>
+ and a <code>Temp</code>. This is usually used to represent the
+ temp t defined in instruction q to make the distinction between this
+ definition of t and some other one (this is particularly useful if
+ the code is not in the SSA form).<br>
+ However, since an <code>ExactTemp</code> is just a pair <q,t>, it can
+ be used to simply denote the temp t used (not defined) in the instruction
+ q (as for example in the constructor of <code>TypeInference</code>).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ExactTemp.java,v 1.1.2.1 2000-04-03 02:29:15 salcianu Exp $
+ * @version $Id: ExactTemp.java,v 1.1.2.2 2000-04-03 06:15:51 salcianu Exp $
  */
 public class ExactTemp {
-    
+
     Quad q;
     Temp t;
 
@@ -32,6 +39,7 @@ public class ExactTemp {
 	return q.equals(et2.q) && t.equals(et2.t);
     }
 
+    // caching hack 
     private int hash = -1;
     public int hashCode(){
 	if(hash == -1)
@@ -41,7 +49,8 @@ public class ExactTemp {
 
     /** Pretty printer for debug. */
     public String toString(){
-	return "< " + q + " , " + t + " >"; 
+	return "< " + q.getSourceFile() + ":" + q.getLineNumber() +
+	    " " + q + " , " + t + " >"; 
     }
 
 }
