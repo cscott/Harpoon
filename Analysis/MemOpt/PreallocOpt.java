@@ -46,7 +46,7 @@ import harpoon.Temp.Temp;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.9 2002-12-05 00:04:16 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.10 2003-01-07 15:05:02 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -123,7 +123,7 @@ public abstract class PreallocOpt {
     public static HCodeFactory preallocAnalysis
 	(Linker linker, HCodeFactory hcf,
 	 ClassHierarchy ch, HMethod mainM, Set roots,
-	 AllocationStatistics as) {
+	 AllocationStatistics as, Frame frame) {
 
 	System.out.println("preallocAnalysis: " + hcf.getCodeName());
 
@@ -139,18 +139,16 @@ public abstract class PreallocOpt {
 
 	// execute Ovy's analysis
 	IncompatibilityAnalysis ia = 
-	    new IncompatibilityAnalysis(mainM, hcf_ssi, cg);
+	    new IncompatibilityAnalysis(mainM, hcf_ssi, cg, linker);
 
 	if(as != null) {
 	    IAStatistics.printStatistics
-		(ia, as,
-		 cg.callableMethods(),
-		 hcf_nossa,
+		(ia, as, hcf_nossa,
 		 /*
 		 AllocationStatistics.getAllocs(cg.callableMethods(),
 						hcf_nossa),
 		 */
-		 linker);
+		 linker, frame);
 	}
 
 	// restore flag (the backend crashes without this ...)

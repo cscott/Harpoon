@@ -28,7 +28,10 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.SerializableCodeFactory;
 
+import harpoon.Backend.Generic.Frame;
+
 import harpoon.Util.Util;
+import harpoon.Util.Timer;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
@@ -52,7 +55,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>IAStatistics</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: IAStatistics.java,v 1.3 2002-12-05 00:04:16 salcianu Exp $
+ * @version $Id: IAStatistics.java,v 1.4 2003-01-07 15:05:02 salcianu Exp $
  */
 public abstract class IAStatistics {
     
@@ -121,14 +124,6 @@ public abstract class IAStatistics {
     private static final int HEAP     = 0;
     private static final int PREALLOC = 1;
 
-    private static TypeStat get_type_stat(HClass hclass) {
-	TypeStat result = (TypeStat) hclass2stat.get(hclass);
-	if(result == null)
-	    hclass2stat.put(hclass, result = new TypeStat(hclass));
-	return result;
-    }
-    private static Map hclass2stat = new HashMap();
-
 
     /** Prints static and dynamic statisticis about the memory
 	preallocation optimization through incompatibility analysis.
@@ -140,40 +135,43 @@ public abstract class IAStatistics {
        dynamic data: how many times each allocation site was
        executed
 
-       @param allocs collection of all the allocation sites from the
-       program; they must be produced by the caching QuadNoSSA factory
-       that was used to obtain the QuadSSI factory for
-       <code>ia</code>  */
+       @param hcf_nossa factory used to produce the SSI factory used
+       by the <code>IncompatibilityAnalysis</code> <code>ia</code>.
+
+       @param linker Linker to get the classes
+
+       @param frame Frame used by the back-end.  Useful for computing
+       the size of the objects at runtime.
+    */
     public static void printStatistics(IncompatibilityAnalysis ia,
 				       AllocationStatistics as,
-				       Set methods,
 				       HCodeFactory hcf_nossa,
-				       Linker linker) {
+				       Linker linker,
+				       Frame frame) {
 
-	Collection allocs = AllocationStatistics.getAllocs(methods, hcf_nossa);
-	Collection initial_allocs = 
-	    AllocationStatistics.getAllocs(methods, QuadWithTry.codeFactory());
-	
-	long delta_sites = allocs.size() - initial_allocs.size();
+	if(frame != null)
+	    ia.printStatistics(frame, linker);
 
-	System.out.println
-	    (proportion(delta_sites, initial_allocs.size(), 5, 2) +  
-	     " allocations introduced by QuadWithTry -> QuadNoSSA");
+	Set analyzedMethods = new HashSet(ia.allMethods());
 
-	HClass hThrowable = linker.forName("java.lang.Throwable");
+	// stats on the time required by the NoSSA -> SSI conversion
+	ssiConversionStatistics(analyzedMethods, hcf_nossa);
+	// stats on NEWs introduced for exception explicit handling
+	withTry2NoSSAConversionStatistics(analyzedMethods, hcf_nossa);
 
-	buildStatistics(ia, as, allocs);
+	Collection allocs = 
+	    AllocationStatistics.getAllocs(analyzedMethods, hcf_nossa);
 
+	// stats on most executed allocation sites
 	as.printStatistics(allocs, new MyVisitor(ia));
 
+	TypeStat[] tss = buildStatistics(ia, as, allocs);
+
+	HClass hThrowable = linker.forName("java.lang.Throwable");
 	TypeStat total = new TypeStat(null);
 	TypeStat total_arrays = new TypeStat(null);
 	TypeStat total_throwables = new TypeStat(null);
-
-	Collection tss_coll = hclass2stat.values();
-	TypeStat[] tss = 
-	    (TypeStat[]) tss_coll.toArray(new TypeStat[tss_coll.size()]);
-	Arrays.sort(tss);		    
+	TypeStat total_program = new TypeStat(null);
 
 	System.out.println("SITES\t\t|OBJECTS\t||");
 	System.out.println("PREALLOC HEAP\t|PREALLOC HEAP\t||CLASS");
@@ -198,16 +196,34 @@ public abstract class IAStatistics {
 	printTotal("NON-ARRAYS",     TypeStat.diff(total, total_arrays));
 	printTotal("THROWABLES",     total_throwables);
 	printTotal("NON_THROWABLES", TypeStat.diff(total, total_throwables));
+	
+	System.exit(1);
+    }
+
+
+    // prints statistics on how many allocation sites were introduced
+    // by the QuadWithTry -> QuadNoSSA conversion (quite MANY!)
+    private static void withTry2NoSSAConversionStatistics
+	(Set methods, HCodeFactory hcf_nossa) {
+	Collection allocs = AllocationStatistics.getAllocs(methods, hcf_nossa);
+	Collection initial_allocs = 
+	    AllocationStatistics.getAllocs(methods, QuadWithTry.codeFactory());
+	
+	long delta_sites = allocs.size() - initial_allocs.size();
+	
+	System.out.println
+	    (proportion(delta_sites, initial_allocs.size(), 5, 2) +  
+	     " allocations introduced by QuadWithTry -> QuadNoSSA");
     }
 
 
     private static void printTotal(String label, TypeStat total) {
 	System.out.println
-	    (label + " PREALLOCATED SITES:   " +
+	    (label + " PREALLOCATED SITES:\t" +
 	     proportion(total.count[SITE][PREALLOC],
 			total.count[SITE][HEAP], 5, 2));
 	System.out.println
-	    (label + " PREALLOCATED OBJECTS: " +
+	    (label + " PREALLOCATED OBJECTS:\t" +
 	     proportion(total.count[OBJECT][PREALLOC],
 			total.count[OBJECT][HEAP], 5, 2));
     }
@@ -224,34 +240,43 @@ public abstract class IAStatistics {
 	}
     }
 
-    private static String proportion
+    static String proportion
 	(long a, long b, int digits, int decimals) {
 	long total = a + b;
 	double frac = (a * 100.0) / (total + 0.0);
 	return 
-	    a + " \tout of " + total + " \t = " +
+	    a + "\tout of\t" + total + "\t = " +
 	    Debug.doubleRep(frac, digits, decimals) + "%";
     }
 
-    private static void buildStatistics(IncompatibilityAnalysis ia,
-					AllocationStatistics as,
-					Collection allocs) {
-	//Set notInCache = new HashSet();
+    private static TypeStat get_type_stat(Map hclass2stat, HClass hclass) {
+	TypeStat result = (TypeStat) hclass2stat.get(hclass);
+	if(result == null)
+	    hclass2stat.put(hclass, result = new TypeStat(hclass));
+	return result;
+    }
 
+    private static TypeStat[] buildStatistics
+	(IncompatibilityAnalysis ia, AllocationStatistics as,
+	 Collection allocs) {
+	Map hclass2stat = new HashMap();
+	
 	for(Iterator it = allocs.iterator(); it.hasNext(); ) {
 	    Quad q = (Quad) it.next();
-	    HMethod hm = q.getFactory().getMethod();
 
 	    /*
-	    if(!ia.allMethods().contains(hm)) {
-		notInCache.add(hm);
+	    HMethod hm = q.getFactory().getMethod();
+
+	    // methods called only by the startup code are not analyzed;
+	    // (they are not transitively called from the entry method)
+	    // hence, we ignore all the allocation sites from there
+	    if(!ia.allMethods().contains(hm))
 		continue;
-	    }
 	    */
 
-	    TypeStat ts = get_type_stat(allocatedClass(q));
-	    // unanalyzed allocation sites are not preallocated
-	    if(!ia.allMethods().contains(hm) || selfIncompatible(q, ia)) {
+	    TypeStat ts = get_type_stat(hclass2stat, allocatedClass(q));
+	    if(selfIncompatible(q, ia) ||
+	       !PreallocAllocationStrategy.extraCond(q, allocatedClass(q))) {
 		ts.count[OBJECT][HEAP] += as.getCount(q);
 		ts.count[SITE][HEAP]++;
 	    }
@@ -261,10 +286,12 @@ public abstract class IAStatistics {
 	    }
 	}
 
-	/*
-	Util.print_collection
-	    (notInCache, "Warning: some methods were not in the SSI cache");
-	*/
+	Collection tss_coll = hclass2stat.values();
+	TypeStat[] tss = 
+	    (TypeStat[]) tss_coll.toArray(new TypeStat[tss_coll.size()]);
+	Arrays.sort(tss);		    
+
+	return tss;
     }
 
     private static HClass allocatedClass(Quad q) {
@@ -282,6 +309,22 @@ public abstract class IAStatistics {
 	assert q instanceof NEW;
 	Quad qssi = ia.getSSIQuad(q);
 	assert qssi != null : "null qssi";
-	return ia.isSelfIncompatible(qssi);
+	return 
+	    ia.isSelfIncompatible(qssi);
+    }
+
+
+    // prints statistics regarding the noSSA -> SSI conversion time
+    // for the set of analyzed methods (not all methods; we want to
+    // compare it with the analysis time)
+    private static void ssiConversionStatistics(Collection methods,
+						HCodeFactory hcf_nossa) {
+	Timer timer = new Timer();
+	timer.start();
+	HCodeFactory hcf_ssi = QuadSSI.codeFactory(hcf_nossa);
+	for(Iterator it = methods.iterator(); it.hasNext(); )
+	    hcf_ssi.convert((HMethod) it.next());
+	timer.stop();
+	System.out.println("SSI conversion time: " + timer);
     }
 }

@@ -138,7 +138,7 @@ public class IADriver {
         }
 
 	IncompatibilityAnalysis analysis =
-	    new IncompatibilityAnalysis(entry, hcf_ssi, cg);
+	    new IncompatibilityAnalysis(entry, hcf_ssi, cg, linker);
         
     }
     

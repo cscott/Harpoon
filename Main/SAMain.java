@@ -101,7 +101,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.28 2002-12-03 04:04:31 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.29 2003-01-07 15:05:35 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -383,7 +383,7 @@ public class SAMain extends harpoon.IR.Registration {
 	
 	if(PreallocOpt.PREALLOC_OPT)
 	    hcf = PreallocOpt.preallocAnalysis
-		(linker, hcf, classHierarchy, mainM, roots, as);
+		(linker, hcf, classHierarchy, mainM, roots, as, frame);
 	
 	if (DO_TRANSACTIONS) {
 	    String resource = frame.getRuntime().resourcePath

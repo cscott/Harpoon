@@ -46,7 +46,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>MemTestMain</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: MemOptMain.java,v 1.9 2002-12-02 17:09:56 salcianu Exp $
+ * @version $Id: MemOptMain.java,v 1.10 2003-01-07 15:05:35 salcianu Exp $
  */
 public abstract class MemOptMain {
     
@@ -125,7 +125,7 @@ public abstract class MemOptMain {
         hcf_ssi =
 	    new CachingCodeFactory(QuadSSI.codeFactory(sccf), true);
 	
-	return new IncompatibilityAnalysis(mainM, hcf_ssi, cg);
+	return new IncompatibilityAnalysis(mainM, hcf_ssi, cg, linker);
     }
 
 

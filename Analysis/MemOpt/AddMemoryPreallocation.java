@@ -48,7 +48,7 @@ import harpoon.Temp.Label;
  * chunks of memory that are used by the unitary sites.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AddMemoryPreallocation.java,v 1.3 2002-12-03 04:04:13 salcianu Exp $ */
+ * @version $Id: AddMemoryPreallocation.java,v 1.4 2003-01-07 15:05:02 salcianu Exp $ */
 class AddMemoryPreallocation implements HCodeFactory {
 
     /** Creates a <code>AddMemoryPreallocation</code> code factory: it
@@ -101,7 +101,7 @@ class AddMemoryPreallocation implements HCodeFactory {
 	for(Iterator it = field2classes.keySet().iterator(); it.hasNext(); ) {
 	    HField hfield = (HField) it.next();
 	    Collection classes = (Collection) field2classes.get(hfield);
-	    generate_code(start, hfield, sizeForClasses(classes), dg);
+	    generate_code(start, hfield, sizeForClasses(runtime, classes), dg);
 	}
 
 	System.out.println("After  modifications:");
@@ -167,21 +167,25 @@ class AddMemoryPreallocation implements HCodeFactory {
 
     // compute the size of the memory chunk that can hold an object of
     // any of the classes from the collection passed as an argument
-    private int sizeForClasses(Collection classes) {
+    static int sizeForClasses(Runtime runtime, Collection classes) {
 	int max = -1;
 	for(Iterator it = classes.iterator(); it.hasNext(); ) {
-	    int size = sizeForClass((HClass) it.next());
+	    int size = sizeForClass(runtime, (HClass) it.next());
 	    if(size > max) max = size;
 	}
 	return max;
     }
 
     // compute the total size occupied by an object of class hclass
-    private int sizeForClass(HClass hclass) {
+    static int sizeForClass(Runtime runtime, HClass hclass) {
 	Runtime.TreeBuilder tree_builder = runtime.getTreeBuilder();
-	return 
+	int size =
 	    tree_builder.objectSize(hclass) +
 	    tree_builder.headerSize(hclass);
+	// we allocate only multiples of 4 bytes
+	while((size % 4) != 0)
+	    size++;
+	return size;
     }
 
     // debug only  // TODO: remove

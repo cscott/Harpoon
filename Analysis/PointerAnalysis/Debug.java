@@ -26,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.2 2002-02-25 20:58:39 cananian Exp $
+ * @version $Id: Debug.java,v 1.3 2003-01-07 15:05:25 salcianu Exp $
  */
 public abstract class Debug implements java.io.Serializable {
 
@@ -192,6 +192,14 @@ public abstract class Debug implements java.io.Serializable {
 	return
 	    hm.getName().equals(mthd) &&
 	    hm.getDeclaringClass().getName().equals(cls);
+    }
+
+    /** Returns the string representation of the proportion a/b.  The
+	proportion is printed as a percentage, with 2 decimals.  Eg,
+	1/2 is presented as 50.00%. */
+    public static String proportion2str(long a, long b) {
+	double frac = (((double) 100) * ((double) a)) / ((double) b);
+	return doubleRep(frac, 5, 2) + "%";
     }
 
 }

@@ -6,6 +6,10 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.Linker;
+
+import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Generic.Runtime;
 
 // no I'm not gonna enumerate those :)
 import harpoon.IR.Quads.*;
@@ -43,15 +47,8 @@ public class IncompatibilityAnalysis {
 
     
     /**
-     * If true, the analysis will show some statistics when it
-     * finishes.
-     * */
-    public static final boolean SHOW_STATISTICS = true;
-
-    
-    /**
-     * If true, and <code>SHOW_STATISTICS</code> is also true, the
-     * analysis will show A LOT OF statistics when it finishes.
+     * If true, and <code>SHOW_STATISTICS</code> is also true,
+     * printStatistics will show A LOT OF statistics when it finishes.
      * */
     public static final boolean VERBOSE_STATISTICS = true;
     
@@ -60,8 +57,12 @@ public class IncompatibilityAnalysis {
      * */
     public static final boolean SHOW_TIMINGS = true;
 
-    // add this many fields as estimated overhead. only used in statistics
-    //   for now
+    /** If true, compute the sizes of the classes in bytes, otherwise,
+	compute them in fields (an approximation).  Default is
+	true. */
+    public static boolean SIZE_IN_BYTES = true;
+
+    // add this many fields as estimated overhead.
     private static final int ADD_FIELDS = 2;
 
 
@@ -105,8 +106,8 @@ public class IncompatibilityAnalysis {
      * <code>callGraphNeedsSSA</code> set to true.
      */
     public IncompatibilityAnalysis(HMethod entry, HCodeFactory codeFactory,
-				   CallGraph callGraph) {
-        this(entry, codeFactory, callGraph, true);
+				   CallGraph callGraph, Linker linker) {
+        this(entry, codeFactory, callGraph, linker, true);
     }
 
     /**
@@ -124,7 +125,7 @@ public class IncompatibilityAnalysis {
      * 
      */
     public IncompatibilityAnalysis(HMethod entry, HCodeFactory codeFactory,
-				   CallGraph callGraph,
+				   CallGraph callGraph, Linker linker,
                                    boolean callGraphNeedsSSA) {
         // init
         this.entry = entry;
@@ -191,15 +192,9 @@ public class IncompatibilityAnalysis {
         if (SHOW_TIMINGS) {
             timer.stop();
             System.out.println("IA classes: " + timer);
-        }
+	}
 
-        if (SHOW_STATISTICS) printStatistics();
-
-        // Cleanup: destroy unneeded data
-        mdCache = null;
-        callees = null;
-
-        if (SHOW_TIMINGS) {           
+        if (SHOW_TIMINGS) {
             big_timer.stop();
             System.out.println("IA total: "+ big_timer);
         }
@@ -1299,7 +1294,7 @@ public class IncompatibilityAnalysis {
     // *** Lots and lots of debugging code
 
     // This prints the statistics. Comment in/out what you want
-    private void printStatistics() {
+    public void printStatistics(Frame frame, Linker linker) {
 
 	if(VERBOSE_STATISTICS) {
 	    // show off some end-results
@@ -1369,7 +1364,7 @@ public class IncompatibilityAnalysis {
 
 	    
 	System.out.println("Statistics: ");
-        System.out.println("   "+allMethods.size() + " methods analyzed;" +
+        System.out.println("   " + allMethods.size() + " methods analyzed;" +
                            sizeStatistics(allMethods, codeFactory) + " SSI; " +
                            sizeStatistics(allMethods, harpoon.IR.Bytecode.Code.codeFactory()) + " bytecodes");
         System.out.println("   " + globalAllocMap.keySet().size() + " allocations");
@@ -1379,43 +1374,50 @@ public class IncompatibilityAnalysis {
         System.out.println("   " + selfIncompatible.size() + " self-incompatible vars ("+(selfIncompatible.size()*100/globalAllocMap.keySet().size())+"%)");
 
 
-        Set statics = new HashSet();
-        int usize = 0;
-        int psize = 0;
+	// compute the pre-allocated memory size
+        long psize = 0L; // size of preallocated memory (with packing)
+        long usize = 0L; // size of preallocated memory (no packing)
 
         Collection allocClasses = getCompatibleClasses();
 
-        // this is dumb but i'll remove it anyways
         for (Iterator it = allocClasses.iterator(); it.hasNext(); ) {
             Collection thisClass = (Collection) it.next();
-            
-            statics.addAll(thisClass);
-
-            psize += maxClassFields(thisClass);
+	    long max = 0L;
+	    for(Iterator itc = thisClass.iterator(); itc.hasNext(); ) {
+		HClass allocatedClass = ((NEW) itc.next()).hclass();
+		int size = SIZE_IN_BYTES ?
+		    AddMemoryPreallocation.sizeForClass
+		    (frame.getRuntime(), allocatedClass) :
+		    fieldsForClass(allocatedClass);
+		usize += size;
+		max = Math.max(max, size);
+	    }
+	    psize += max; 
         }
 
-        for (Iterator it = statics.iterator(); it.hasNext();) {
-            usize +=  ((harpoon.IR.Quads.NEW) it.next()).hclass().getFields(/*true*/).length + ADD_FIELDS;
-        }
-        
-        System.out.println("Sizes before packing: " + statics.size() + " slots;  " + usize + " fields");
-        System.out.println("Sizes after packing: " + allocClasses.size() + " slots;  " + psize + " fields");
+	System.out.println
+	    ("Preallocated memory size " + 
+	     (SIZE_IN_BYTES ? "(bytes): " : "(fields): ") +
+	     usize + " (normal) / " +
+	     psize + " (sharing);\treduction = " +
+	     Debug.doubleRep
+	     ( (100 * ((double) usize - psize)) / ((double) usize), 5, 2) +
+	     "%");
 
-//         System.out.print("Exceptions: "); 
-//         printSubTypeStatistics(exception);
-
-//         System.out.print("StringBuffers: ");
-//         printSubTypeStatistics(stringbuffer);
-
-//         System.out.println("Iterators: ");
-//         printSubTypeStatistics(iterator);
+	printSubTypeStatistics("Exceptions",
+			       linker.forName("java.lang.Throwable"));
+	printSubTypeStatistics("StringBuffers",
+			       linker.forName("java.lang.StringBuffer"));
+	printSubTypeStatistics("Iterators",
+			       linker.forName("java.util.Iterator"));
     }
 
-    private void printSubTypeStatistics(HClass hclass) {
+    private void printSubTypeStatistics(String label, HClass hclass) {
         int total = countTempIsA(globalAllocMap.keySet(), hclass);
-        int stat = countTempIsA(selfCompatible, hclass);
+        int stat  = countTempIsA(selfCompatible, hclass);
 
-        System.out.println(stat + " of " + total + ", " +stat*100/Math.max(total, 1)+"%");
+        System.out.println(label + "\t" + stat + "\tof " + total + 
+			   "\t" + (stat*100/Math.max(total, 1)) + "%");
     }
 
     private  int countTempIsA(Collection temps, HClass hclass) {
@@ -1430,21 +1432,11 @@ public class IncompatibilityAnalysis {
         return count;
     }
 
-    private static int maxClassFields(Collection cls) {
-        int max = 0;
-        int sum = 0;
-        
-        for (Iterator it = cls.iterator(); it.hasNext(); ) {
-            int fields =((harpoon.IR.Quads.NEW) it.next()).hclass().getFields(/*true*/).length + ADD_FIELDS;
-            sum += fields;
-            max = Math.max(max, fields);
-        }
-        // System.out.println("classmax: " + max);
-        // System.out.println("classSize: " + cls.size());
-        // System.out.println("classAvgFields: " + ((double) sum)/cls.size());
-        // System.out.println();
-        return max;
+
+    private static int fieldsForClass(HClass hclass) {
+	return hclass.getFields().length + ADD_FIELDS;
     }
+
 
     private void printmap(Map map) {
 	for (Iterator it = map.entrySet().iterator(); it.hasNext(); ) {
