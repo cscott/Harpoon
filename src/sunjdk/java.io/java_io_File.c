@@ -9,6 +9,7 @@
 #include <fcntl.h> /* for O_RDWR, O_RDONLY */
 #include <unistd.h>
 #include <stdlib.h> /* for malloc */
+#include <string.h> /* for strcmp, strlen, strcpy */
 #include "flexthread.h" /* for mutex ops */
 #ifdef WITH_DMALLOC
 #include "dmalloc.h"
