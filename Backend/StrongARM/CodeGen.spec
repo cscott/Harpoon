@@ -17,6 +17,7 @@ import harpoon.IR.Tree.Uop;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.Typed;
+import harpoon.IR.Tree.PreciselyTyped;
 import harpoon.IR.Tree.ExpList;
 import harpoon.Backend.Generic.DefaultFrame;
 import harpoon.Backend.Generic.Code;
@@ -51,7 +52,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.27 1999-08-18 20:59:46 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.28 1999-08-18 21:30:52 pnkfelix Exp $
  */
 %%
 
@@ -1190,7 +1191,7 @@ NATIVECALL(retval, func, arglist) %{
     emit(new Instr( instrFactory, ROOT, "bl `s0", null, new Temp[]{ func }));
 
     // this will break if stackOffset > 255 (ie >63 args)
-    emit( ROOT, "add `d0, `s0, #" + stackOffset );
+    emit( ROOT, "add `d0, `s0, #" + stackOffset, SAFrame.SP, SAFrame.SP );
     if (((INVOCATION) ROOT).retval.isDoubleWord()) {
         // not certain an emitMOVE is legal with the l/h modifiers
         emitMOVE( ROOT, "mov `d0l, `s0", retval, r0 );
@@ -1204,8 +1205,8 @@ DATA(CONST(exp)) %{
     emitDIRECTIVE( ROOT, ".data "+exp);
 }%
 
-DATA(NAME(exp)) %{
-    emitDIRECTIVE( ROOT, ".word "+exp);
+DATA(NAME(l)) %{
+    emitDIRECTIVE( ROOT, ".word "+l);
 }%
  
 SEGMENT(CLASS) %{

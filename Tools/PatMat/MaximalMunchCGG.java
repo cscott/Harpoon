@@ -5,6 +5,7 @@ package harpoon.Tools.PatMat;
 
 import harpoon.Util.Util;
 import harpoon.IR.Tree.Type;
+import harpoon.IR.Tree.PreciseType;
 import harpoon.IR.Tree.SEGMENT;
 
 import java.io.PrintWriter;
@@ -25,7 +26,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.31 1999-08-18 20:59:47 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.32 1999-08-18 21:30:53 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -288,12 +289,13 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "&& " + stmPrefix + " instanceof "+TREE_MOVE+" ");
 	    append(exp, "// check operand types");
 	    append(exp, "// check operand types");
-	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer;
+	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer, allowSmall;
 	    allowDouble = s.types.contains(Type.DOUBLE);
 	    allowFloat = s.types.contains(Type.FLOAT);
 	    allowInt = s.types.contains(Type.INT);
 	    allowLong = s.types.contains(Type.LONG);
 	    allowPointer = s.types.contains(Type.POINTER);
+	    allowSmall = s.types.contains(PreciseType.SMALL);
 
 	    String checkPrefix = "\t(("+TREE_MOVE+")" + stmPrefix + ").type() ==";
 	    append(exp, "&& ( ");
@@ -302,6 +304,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    if(allowInt) append(exp, checkPrefix + " Type.INT ||");
 	    if(allowLong) append(exp, checkPrefix + " Type.LONG ||");
 	    if(allowPointer) append(exp, checkPrefix + " Type.POINTER ||");
+	    if(allowSmall) append(exp, checkPrefix + " PreciseType.SMALL ||");
 	    append(exp, "\tfalse )"); 
 	    append(exp, "// end check operand types");
 	    
@@ -367,12 +370,13 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "&& " + stmPrefix + " instanceof "+TREE_RETURN+"");
 
 	    append(exp, "// check operand types");
-	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer;
+	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer, allowSmall;
 	    allowDouble = s.types.contains(Type.DOUBLE);
 	    allowFloat = s.types.contains(Type.FLOAT);
 	    allowInt = s.types.contains(Type.INT);
 	    allowLong = s.types.contains(Type.LONG);
 	    allowPointer = s.types.contains(Type.POINTER);
+	    allowSmall = s.types.contains(PreciseType.SMALL);
 
 	    String checkPrefix = "\t(("+TREE_RETURN+")" + stmPrefix + ").retval.type() ==";
 	    append(exp, "&& ( ");
@@ -381,6 +385,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    if(allowInt) append(exp, checkPrefix + " Type.INT ||");
 	    if(allowLong) append(exp, checkPrefix + " Type.LONG ||");
 	    if(allowPointer) append(exp, checkPrefix + " Type.POINTER ||");
+	    if(allowSmall) append(exp, checkPrefix + " PreciseType.SMALL ||");
 	    append(exp, "\tfalse )"); 
 	    append(exp, "// end check operand types");
 	    
@@ -488,12 +493,13 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    });
 
 	    append(exp, "// check operand types");
-	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer;
+	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer, allowSmall;
 	    allowDouble = e.types.contains(Type.DOUBLE);
 	    allowFloat = e.types.contains(Type.FLOAT);
 	    allowInt = e.types.contains(Type.INT);
 	    allowLong = e.types.contains(Type.LONG);
 	    allowPointer = e.types.contains(Type.POINTER);
+	    allowSmall = e.types.contains(PreciseType.SMALL);
 
 	    String checkPrefix = "\t" + expPrefix + ".type() ==";
 	    append(exp, "&& ( ");
@@ -502,6 +508,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    if(allowInt) append(exp, checkPrefix + " Type.INT ||");
 	    if(allowLong) append(exp, checkPrefix + " Type.LONG ||");
 	    if(allowPointer) append(exp, checkPrefix + " Type.POINTER ||");
+	    if(allowSmall) append(exp, checkPrefix + " PreciseType.SMALL ||");
 	    append(exp, "\tfalse )");
 	    append(exp, "// end check operand types");
 
@@ -531,12 +538,13 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "&& " + expPrefix + " instanceof " + TREE_CONST + " ");
 
 	    append(exp, "// check operand types");
-	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer;
+	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer, allowSmall;
 	    allowDouble = e.types.contains(Type.DOUBLE);
 	    allowFloat = e.types.contains(Type.FLOAT);
 	    allowInt = e.types.contains(Type.INT);
 	    allowLong = e.types.contains(Type.LONG);
 	    allowPointer = e.types.contains(Type.POINTER);
+	    allowSmall = e.types.contains(PreciseType.SMALL);
 
 	    final String checkPrefix = "\t" + expPrefix + ".type() ==";
 	    append(exp, "&& ( ");
@@ -545,6 +553,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    if(allowInt) append(exp, checkPrefix + " Type.INT ||");
 	    if(allowLong) append(exp, checkPrefix + " Type.LONG ||");
 	    if(allowPointer) append(exp, checkPrefix + " Type.POINTER ||");
+	    if(allowSmall) append(exp, checkPrefix + " PreciseType.SMALL ||");
 	    append(exp, "\tfalse )");
 	    append(exp, "// end check operand types");
 
@@ -583,12 +592,13 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "&& " + expPrefix + " instanceof " + TREE_MEM + " ");
 
 	    append(exp, "// check operand types");
-	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer;
+	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer, allowSmall;
 	    allowDouble = e.types.contains(Type.DOUBLE);
 	    allowFloat = e.types.contains(Type.FLOAT);
 	    allowInt = e.types.contains(Type.INT);
 	    allowLong = e.types.contains(Type.LONG);
 	    allowPointer = e.types.contains(Type.POINTER);
+	    allowSmall = e.types.contains(PreciseType.SMALL);
 
 	    String checkPrefix = "\t" + expPrefix + ".type() ==";
 	    append(exp, "&& ( ");
@@ -597,6 +607,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    if(allowInt) append(exp, checkPrefix + " Type.INT ||");
 	    if(allowLong) append(exp, checkPrefix + " Type.LONG ||");
 	    if(allowPointer) append(exp, checkPrefix + " Type.POINTER ||");
+	    if(allowSmall) append(exp, checkPrefix + " PreciseType.SMALL ||");
 	    append(exp, "\tfalse )");
 	    append(exp, "// end check operand types");
 
@@ -632,12 +643,13 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "&& " + expPrefix + " instanceof " + TREE_TEMP +" ");
 	    
 	    append(exp, "// check operand type");
-	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer;
+	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer, allowSmall;
 	    allowDouble = e.types.contains(Type.DOUBLE);
 	    allowFloat = e.types.contains(Type.FLOAT);
 	    allowInt = e.types.contains(Type.INT);
 	    allowLong = e.types.contains(Type.LONG);
 	    allowPointer = e.types.contains(Type.POINTER);
+	    allowSmall = e.types.contains(PreciseType.SMALL);
 
 	    String checkPrefix = "\t" + expPrefix + ".type() ==";
 	    append(exp, "&& ( ");
@@ -646,6 +658,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    if(allowInt) append(exp, checkPrefix + " Type.INT ||");
 	    if(allowLong) append(exp, checkPrefix + " Type.LONG ||");
 	    if(allowPointer) append(exp, checkPrefix + " Type.POINTER ||");
+	    if(allowSmall) append(exp, checkPrefix + " PreciseType.SMALL ||");
 	    append(exp, "\tfalse )");
 	    append(exp, "// end check operand types");
 
@@ -673,12 +686,13 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    });
 
 	    append(exp, "// check operand types");
-	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer;
+	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer, allowSmall;
 	    allowDouble = e.types.contains(Type.DOUBLE);
 	    allowFloat = e.types.contains(Type.FLOAT);
 	    allowInt = e.types.contains(Type.INT);
 	    allowLong = e.types.contains(Type.LONG);
 	    allowPointer = e.types.contains(Type.POINTER);
+	    allowSmall = e.types.contains(PreciseType.SMALL);
 
 	    String checkPrefix = "\t"+expPrefix + ".type() ==";
 	    append(exp, "&& ( ");
@@ -687,6 +701,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    if(allowInt) append(exp, checkPrefix + " Type.INT ||");
 	    if(allowLong) append(exp, checkPrefix + " Type.LONG ||");
 	    if(allowPointer) append(exp, checkPrefix + " Type.POINTER ||");
+	    if(allowSmall) append(exp, checkPrefix + " PreciseType.SMALL ||");
 	    append(exp, "\tfalse )"); 
 	    append(exp, "// end check operand types");
 

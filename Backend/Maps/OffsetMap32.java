@@ -68,7 +68,7 @@ import java.util.StringTokenizer;
  * 
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.21 1999-08-18 19:49:03 duncan Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.22 1999-08-18 21:30:52 pnkfelix Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
@@ -244,7 +244,11 @@ public class OffsetMap32 extends OffsetMap
 	    int numNonStatic = 0;
 	    for (int i=0; i<hfields.length; i++) {
 		if (!hfields[i].isStatic()) { 
-		    orderedFields[fm.fieldOrder(hfields[i])] = hfields[i];
+		    int index = fm.fieldOrder(hfields[i]);
+		    Util.assert(index < orderedFields.length,
+				"'fieldOrder()' should not return an index "+
+				"that exceeds the bounds of 'orderedFields'");
+		    orderedFields[index] = hfields[i];
 		    numNonStatic++;
 		}
 	    }
