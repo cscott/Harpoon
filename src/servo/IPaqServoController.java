@@ -17,12 +17,12 @@ public class IPaqServoController {
     /** Construct a new IPaqServoController to control the car. */
     public IPaqServoController() {}
 
-    /** <code>move</code> simulates setting the ESC unit and servos of the car. 
+    /** <code>moveLocal</code> simulates setting the ESC unit and servos of the car. 
      *
      * @param servo The servo to set (1-8).
      * @param position The position to set it to (1-255).
      */
-    public void move(int servo, int position) {
+    public void moveLocal(int servo, int position) {
 	if ((servo>8)||(servo<1)) {
 	    throw new RuntimeException("Servo is out of range.");
 	}
