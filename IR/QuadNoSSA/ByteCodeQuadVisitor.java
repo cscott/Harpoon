@@ -33,10 +33,6 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   
   ByteCodeQuadVisitor(NMethod myMethod, TypeMap myMap, HCode myQuadform, 
 		      Hashtable myLabelTable, Hashtable myPhiTable, Hashtable myIndexTable){
-    //inserted just so that it will be able to find the class
-    MultiarrayInsn nate = new MultiarrayInsn (myMethod.myMethod.getDeclaringClass(), 3);
-
-    LookupswitchInsn greg =  new LookupswitchInsn (null, null, null);
 
     method = myMethod;
     map = myMap;
@@ -52,43 +48,53 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   //auxilary function used to load a temp from a local variable onto the stack
   void addLoad (NMethod method, TypeMap map, HCode quadform, Temp obj, 
 		Hashtable indexTable) {
-    putIndex (obj, indexTable);
     HClass tempClass = map.typeMap(quadform, obj);
     if (tempClass == null){
 	System.out.println ("Well here's your problem dumbass:addLoad");
 	System.out.println ("********************************");
 	System.out.println ("Temp type is null: " + obj.name() + ":" + obj.toString());
 	System.out.println ("********************************");
+	method.addInsn(new NLabel ("; Here's the damn problem for: " + obj.toString()+ " : lv#: " + indexTable.get (obj)));
 	return;
     }
     harpoon.Util.Util.assert (tempClass != null);
 
     if (tempClass.isPrimitive()){
       if (tempClass == HClass.Boolean){
-	method.addInsn(new NInsn ("iload", obj));
+	addiload (method, obj, indexTable);
+	//method.addInsn(new NInsn ("iload", obj));
       } else if (tempClass == HClass.Byte){
-	method.addInsn(new NInsn ("iload", obj));
+	addiload (method, obj, indexTable);
+	//method.addInsn(new NInsn ("iload", obj));
       } else if (tempClass == HClass.Char){
-	method.addInsn(new NInsn ("iload", obj));
+	addiload (method, obj, indexTable);
+	//method.addInsn(new NInsn ("iload", obj));
       } else if (tempClass == HClass.Double){
-	method.addInsn(new NInsn ("dload", obj));
+	adddload (method, obj, indexTable);
+	//method.addInsn(new NInsn ("dload", obj));
       } else if (tempClass == HClass.Float){
-	method.addInsn(new NInsn ("fload", obj));
+	addfload (method, obj, indexTable);
+	//method.addInsn(new NInsn ("fload", obj));
       } else if (tempClass == HClass.Int){
-	method.addInsn(new NInsn ("iload", obj));
+	addiload (method, obj, indexTable);
+	//method.addInsn(new NInsn ("iload", obj));
       } else if (tempClass == HClass.Long){
-	method.addInsn(new NInsn ("lload", obj));
+	addlload (method, obj, indexTable);
+	//method.addInsn(new NInsn ("lload", obj));
       } else if (tempClass == HClass.Short){
-	method.addInsn(new NInsn ("iload", obj));
+	addiload (method, obj, indexTable);
+	//method.addInsn(new NInsn ("iload", obj));
       } else if (tempClass == HClass.Void){
-	  method.addInsn(new NInsn ("aconst_null"));
+	method.addInsn(new NInsn ("aconst_null"));
 	//this should never happen
 	//System.out.println ("Trying to load from a void Temp");
       }
     } else if (tempClass.isArray()){
-      method.addInsn(new NInsn ("aload", obj));
+      addaload (method, obj, indexTable);
+      //method.addInsn(new NInsn ("aload", obj));
     } else {
-      method.addInsn(new NInsn ("aload", obj));
+      addaload (method, obj, indexTable);
+      //method.addInsn(new NInsn ("aload", obj));
     }
   }
 
@@ -101,11 +107,11 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 
 
   void addlload (NMethod method, Temp obj, Hashtable indexTable)  {
-    method.addInsn(new NInsn ("lload", putIndex (obj, indexTable)));
+    method.addInsn(new NInsn ("lload", putIndex (obj, indexTable, true)));
   }
 
   void adddload (NMethod method, Temp obj, Hashtable indexTable)  {
-    method.addInsn(new NInsn ("dload", putIndex (obj, indexTable)));
+    method.addInsn(new NInsn ("dload", putIndex (obj, indexTable, true)));
   }
 
   void addaload (NMethod method, Temp obj, Hashtable indexTable)  {
@@ -121,13 +127,17 @@ class ByteCodeQuadVisitor extends QuadVisitor{
     method.addInsn(new NInsn ("istore", putIndex (obj, indexTable)));
   }
 
+  void addastore (NMethod method, Temp obj, Hashtable indexTable)  {
+    method.addInsn(new NInsn ("astore", putIndex (obj, indexTable)));
+  }
 
   void addlstore (NMethod method, Temp obj, Hashtable indexTable)  {
-    method.addInsn(new NInsn ("lstore", putIndex (obj, indexTable)));
+    System.out.println ("Actually calling Lstore!!!");
+    method.addInsn(new NInsn ("lstore", putIndex (obj, indexTable, true)));
   }
 
   void adddstore (NMethod method, Temp obj, Hashtable indexTable)  {
-    method.addInsn(new NInsn ("dstore", putIndex (obj, indexTable)));
+    method.addInsn(new NInsn ("dstore", putIndex (obj, indexTable, true)));
   }
 
   void addfstore (NMethod method, Temp obj, Hashtable indexTable)  {
@@ -137,58 +147,81 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   //auxilarry function for loading from local variables
   final void addStore (NMethod method, TypeMap map, HCode quadform, Temp obj,
 		       Hashtable indexTable) {
-    putIndex (obj, indexTable);
+    //System.out.println ("Calling addStore!!");
     HClass tempClass = map.typeMap(quadform, obj);
     if (tempClass == null){
 	System.out.println ("Well here's your problem dumbass:addstore");
 	System.out.println ("********************************");
 	System.out.println ("Temp type is null: " + obj.name() + ":" + obj.toString());
 	System.out.println ("********************************");
+	method.addInsn(new NLabel ("; Here's the damn problem for: " + obj.toString() + " : lv#: " + indexTable.get (obj)));
 	return;
     }
     if (tempClass.isPrimitive()){
       if (tempClass == HClass.Boolean){
-	method.addInsn(new NInsn ("istore", obj));
+	addistore (method, obj, indexTable);
+	//method.addInsn(new NInsn ("istore", obj));
       } else if (tempClass == HClass.Byte){
-	method.addInsn(new NInsn ("istore", obj));
+	addistore (method, obj, indexTable);
+	//method.addInsn(new NInsn ("istore", obj));
       } else if (tempClass == HClass.Char){
-	method.addInsn(new NInsn ("istore", obj));
+	addistore (method, obj, indexTable);
+       	//method.addInsn(new NInsn ("istore", obj));
       } else if (tempClass == HClass.Double){
-	method.addInsn(new NInsn ("dstore", obj));
+	adddstore (method, obj, indexTable);
+	//method.addInsn(new NInsn ("dstore", obj));
       } else if (tempClass == HClass.Float){
-	method.addInsn(new NInsn ("fstore", obj));
+	addfstore (method, obj, indexTable);
+	//method.addInsn(new NInsn ("fstore", obj));
       } else if (tempClass == HClass.Int){
-	method.addInsn(new NInsn ("istore", obj));
+	addistore (method, obj, indexTable);
+	//method.addInsn(new NInsn ("istore", obj));
       } else if (tempClass == HClass.Long){
-	method.addInsn(new NInsn ("lstore", obj));
+	System.out.println ("Calling the addlstore in addstore!");
+	addlstore (method, obj, indexTable);
+	//method.addInsn(new NInsn ("lstore", obj));
       } else if (tempClass == HClass.Short){
-	method.addInsn(new NInsn ("istore", obj));
+	addistore (method, obj, indexTable);
+	//method.addInsn(new NInsn ("istore", obj));
       } else if (tempClass == HClass.Void){
-	  method.addInsn(new NInsn ("astore", obj));
+	addastore (method, obj, indexTable);
+	//method.addInsn(new NInsn ("astore", obj));
 	//this should never happen
 	//System.out.println ("Trying to store into a void reference");
       }
     } else if (tempClass.isArray()){
-      method.addInsn(new NInsn ("astore", obj));
+	addastore (method, obj, indexTable);
+	//method.addInsn(new NInsn ("astore", obj));
     } else {
-      method.addInsn(new NInsn ("astore", obj));
+      addastore (method, obj, indexTable);
+      //method.addInsn(new NInsn ("astore", obj));
       //System.out.println ("Not recognizing the type of the store");
     }
   }
   
   //auxillary function used to get the index of a temp in the local variable table.  It
   //creates a new slot in the LVTable if one does not already exist for it.
-  final Temp putIndex (Temp obj, Hashtable table){
+  final Temp putIndex (Temp obj, Hashtable table, boolean wide){
     Object lvIndex = table.get (obj);
     if (lvIndex == null){
       lvIndex = new Integer (indexCount);
       table.put (obj, lvIndex);
       //System.out.println ("Assigning " + lvIndex + " to a Temp");
-      indexCount++;
+      if (wide){
+	System.out.println ("Adding 2 to the index");
+	indexCount = indexCount+2;
+      } else{
+	indexCount++;
+      }
     }
     //just return the obj to make the program semantics cleaner;
     return obj;
   }
+
+  final Temp putIndex (Temp obj, Hashtable table){
+    return putIndex (obj, table, false);
+  }
+
   
   //auxillyary function used to add the code for a quad of type OPER.
   //it loads both of the operands, preforms the operation, and then stores the answer.
@@ -315,38 +348,51 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       method.addInsn(new NInsn ("iload", putIndex(q.index, indexTable)));
       HClass tempClass = map.typeMap(quadform, q.objectref);
     if (tempClass == null){
-	System.out.println ("Well here's your problem dumbass:aget");
+      System.out.println ("Well here's your problem dumbass:aget");
+      System.out.println ("********************************");
+      System.out.println ("Temp type is null: " + q.objectref.name());
+      System.out.println ("********************************");
+      method.addInsn(new NLabel ("; Here's the damn problem for: " + q.objectref.toString()  + " : lv#: " + indexTable.get (q.objectref)));
+      return;
+    }
+
+    if (!tempClass.isArray()){
+	System.out.println ("Well here's your problem dumbass:aset");
 	System.out.println ("********************************");
 	System.out.println ("Temp type is null: " + q.objectref.name());
 	System.out.println ("********************************");
+	method.addInsn(new NLabel ("; Here's the damn problem for: " + q.objectref.toString()   + " : lv#: " + indexTable.get (q.objectref)));
 	return;
     }
-      if (tempClass.isPrimitive()){
-	if (tempClass == HClass.Boolean){
-	  method.addInsn(new NInsn ("i2b"));
-	  method.addInsn(new NInsn ("baload"));
-	} else if (tempClass == HClass.Byte){
-	  method.addInsn(new NInsn ("i2b"));
-	  method.addInsn(new NInsn ("baload"));
-	} else if (tempClass == HClass.Char){
-	  method.addInsn(new NInsn ("i2c"));
-	  method.addInsn(new NInsn ("caload"));
-	} else if (tempClass == HClass.Double){
-	  method.addInsn(new NInsn ("daload"));
-	} else if (tempClass == HClass.Float){
-	  method.addInsn(new NInsn ("faload"));
-	} else if (tempClass == HClass.Int){
-	  method.addInsn(new NInsn ("iaload"));
-	} else if (tempClass == HClass.Long){
-	  method.addInsn(new NInsn ("laload"));
-	} else if (tempClass == HClass.Short){
-	  method.addInsn(new NInsn ("i2s"));
-	  method.addInsn(new NInsn ("saload"));
-	}
-      } else {
-	method.addInsn(new NInsn ("aaload"));
+
+    HClass elementClass = tempClass.getComponentType();
+
+    if (elementClass.isPrimitive()){
+      if (tempClass == HClass.Boolean){
+	method.addInsn(new NInsn ("i2b"));
+	method.addInsn(new NInsn ("baload"));
+      } else if (tempClass == HClass.Byte){
+	method.addInsn(new NInsn ("i2b"));
+	method.addInsn(new NInsn ("baload"));
+      } else if (tempClass == HClass.Char){
+	method.addInsn(new NInsn ("i2c"));
+	method.addInsn(new NInsn ("caload"));
+      } else if (tempClass == HClass.Double){
+	method.addInsn(new NInsn ("daload"));
+      } else if (tempClass == HClass.Float){
+	method.addInsn(new NInsn ("faload"));
+      } else if (tempClass == HClass.Int){
+	method.addInsn(new NInsn ("iaload"));
+      } else if (tempClass == HClass.Long){
+	method.addInsn(new NInsn ("laload"));
+      } else if (tempClass == HClass.Short){
+	method.addInsn(new NInsn ("i2s"));
+	method.addInsn(new NInsn ("saload"));
       }
-      addStore (method, map, quadform, q.dst, indexTable);
+    } else {
+      method.addInsn(new NInsn ("aaload"));
+    }
+    addStore (method, map, quadform, q.dst, indexTable);
     } catch (Exception e){
       e.printStackTrace();
     }
@@ -426,32 +472,45 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 	System.out.println ("********************************");
 	System.out.println ("Temp type is null: " + q.objectref.name());
 	System.out.println ("********************************");
+	method.addInsn(new NLabel ("; Here's the damn problem for: " + q.objectref.toString()  + " : lv#: " + indexTable.get (q.objectref)));
 	return;
     }
-      if (tempClass.isPrimitive()){
-	if (tempClass == HClass.Boolean){
-	  method.addInsn(new NInsn ("i2b"));
-	  method.addInsn(new NInsn ("bastore"));
-	} else if (tempClass == HClass.Byte){
-	  method.addInsn(new NInsn ("i2b"));
-	  method.addInsn(new NInsn ("bastore"));
-	} else if (tempClass == HClass.Char){
-	  method.addInsn(new NInsn ("i2c"));
-	  method.addInsn(new NInsn ("castore"));
-	} else if (tempClass == HClass.Double){
-	  method.addInsn(new NInsn ("dastore"));
-	} else if (tempClass == HClass.Float){
-	  method.addInsn(new NInsn ("fastore"));
-	} else if (tempClass == HClass.Int){
-	  method.addInsn(new NInsn ("iastore"));
-	} else if (tempClass == HClass.Long){
-	  method.addInsn(new NInsn ("lastore"));
-	} else if (tempClass == HClass.Short){
-	  method.addInsn(new NInsn ("i2s"));
-	  method.addInsn(new NInsn ("sastore"));
-	}
-      } else {
-	method.addInsn(new NInsn ("aastore"));
+
+    if (!tempClass.isArray()){
+	System.out.println ("Well here's your problem dumbass:aset");
+	System.out.println ("********************************");
+	System.out.println ("Temp type is null: " + q.objectref.name());
+	System.out.println ("********************************");
+	method.addInsn(new NLabel ("; Here's the damn problem for: " + q.objectref.toString()   + " : lv#: " + indexTable.get (q.objectref)));
+	return;
+    }
+
+    HClass elementClass = tempClass.getComponentType();
+
+    if (elementClass.isPrimitive()){
+      if (tempClass == HClass.Boolean){
+	method.addInsn(new NInsn ("i2b"));
+	method.addInsn(new NInsn ("bastore"));
+      } else if (tempClass == HClass.Byte){
+	method.addInsn(new NInsn ("i2b"));
+	method.addInsn(new NInsn ("bastore"));
+      } else if (tempClass == HClass.Char){
+	method.addInsn(new NInsn ("i2c"));
+	method.addInsn(new NInsn ("castore"));
+      } else if (tempClass == HClass.Double){
+	method.addInsn(new NInsn ("dastore"));
+      } else if (tempClass == HClass.Float){
+	method.addInsn(new NInsn ("fastore"));
+      } else if (tempClass == HClass.Int){
+	method.addInsn(new NInsn ("iastore"));
+      } else if (tempClass == HClass.Long){
+	method.addInsn(new NInsn ("lastore"));
+      } else if (tempClass == HClass.Short){
+	method.addInsn(new NInsn ("i2s"));
+	method.addInsn(new NInsn ("sastore"));
+      }
+    } else {
+      method.addInsn(new NInsn ("aastore"));
       }
     } catch (Exception e){
       e.printStackTrace();
@@ -493,6 +552,7 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 	System.out.println ("********************************");
 	System.out.println ("Temp type is null: " + q.retval.name());
 	System.out.println ("********************************");
+	method.addInsn(new NLabel ("; Here's the damn problem for: " + q.retval.toString()  + " : lv#: " + indexTable.get (q.retval)));
 	return;
     }
 	if (tempClass.isPrimitive()){
@@ -657,7 +717,14 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 	if (q.type == HClass.Int){
 	  method.addInsn(new NInsn ("ldc", new NLabel (q.value.toString())));
 	} else if (q.type == HClass.Long){
-	  method.addInsn(new NInsn ("ldc_w", new NLabel (q.value.toString())));
+	  String value = q.value.toString();
+	  if (value.equals("0")){
+	    method.addInsn(new NInsn ("lconst_0"));
+	  } else if (value.equals ("1")){
+	    method.addInsn(new NInsn ("lconst_1"));
+	  } else {
+	    method.addInsn(new NInsn ("ldc_w", new NLabel (q.value.toString())));
+	  }
 	} else if (q.type == HClass.Float){
 	  method.addInsn(new NInsn ("ldc", new NLabel (q.value.toString())));
 	} else if (q.type == HClass.Double){
@@ -846,8 +913,14 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       System.out.println ("Visiting MOVE");
     }
     try {
-      addLoad (method, map, quadform, q.src, indexTable);
-      addStore (method, map, quadform, q.dst, indexTable);
+      HClass srcClass = map.typeMap(quadform, q.src);
+      HClass dstClass = map.typeMap(quadform, q.dst);
+      if ((srcClass == null) || (dstClass == null)){
+	method.addInsn (new NLabel ("; I'm punting this move instruction because of nullness"));
+      } else {
+	addLoad (method, map, quadform, q.src, indexTable);
+	addStore (method, map, quadform, q.dst, indexTable);
+      }
     } catch (Exception e){
       e.printStackTrace();
     }
@@ -1013,6 +1086,8 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 	  System.out.println ("********************************");
 	  System.out.println ("Temp type is null: " + q.retval.name());
 	  System.out.println ("********************************");
+	  
+	  method.addInsn(new NLabel ("; Here's the damn problem for: " + q.retval.toString() + " : lv#: " + indexTable.get (q.retval)));
 	  return;
 	}
 	if (tempClass.isPrimitive()){
