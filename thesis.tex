@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.87 1999-08-27 19:27:08 cananian Exp $
+% $Id: thesis.tex,v 1.88 1999-08-27 21:33:25 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.87 $ $}
+\date{\today \\ $ $Revision: 1.88 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.87 $ $}{$ $Revision: 1.87 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.88 $ $}{$ $Revision: 1.88 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -736,7 +736,7 @@ composition is also $O(E)$.
 As with the presentation of SSA form in \cite{cytron91:ssa}, we split
 construction of SSI form into two parts: placing \phisigfunction{s}
 and renaming variables.  The placement algorithm runs in $O(N V_0)$
-time, and is presented in figure~\vref{fig:SSIalg}.  No new node
+time, and is presented in figure~\vref{alg:SSIplace}.  No new node
 properties or datatypes are required; however, it is parameterized on
 a function called \code{MaybeLive}.  The purpose of this function is
 to generate pruned or minimal SSI form by suppressing unnecessary
@@ -751,14 +751,14 @@ post-processing.  In fact the same time bounds ($O(N V_0)$) would be
 obtained.  There is a large practical difference in actual runtime,
 however, which motivates our choice of approach.}  The remainder of
 this section will be devoted to a correctness proof of the algorithm
-of figure~\ref{fig:SSIalg}.
+of figure~\ref{alg:SSIplace}.
 
 \begin{myalgorithm}\small
 \input{Figures/THssialg}
-\caption{Placing \phisigfunction{s}.}\label{fig:SSIalg}
+\caption{Placing \phisigfunction{s}.}\label{alg:SSIplace}
 \end{myalgorithm}
 
-\begin{lemma}
+\begin{lemma}\label{sese_child}
 No \phifunction{s} (\sigfunction{s}) for a variable $v$ are needed in
 an SESE region not containing a definition (use) of $v$.
 \end{lemma}
@@ -793,48 +793,76 @@ The above lemma justifies our algorithm's skipping over any SESE
 region not containing a definition or use of $v$ when placing
 \phisigfunction{s} for $v$.
 
-\begin{lemma}
-A \phifunction for a variable $v$ is needed at a node $N$ in an SESE $s$
-iff there exists a definition, \phisigfunction[or]{} for $v$ at some
-node $D$ in $s$ where:
+\begin{lemma}\label{ssi_dom}
+If a definition (use) or a \phisigfunction[or]{} for a variable $v$ is
+present at some node $D$ (\/$U$), then a \phifunction (\sigfunction) for
+$v$ is needed at every node $N$:
 \begin{enumerate}
-\item $N$ is not also contained in a smaller SESE than $s$, although
-$D$ may be,
-\item $N$ is reachable from $D$, and
-\item $D$ does not dominate $N$.
+\item of input (output) arity greater than 1,
+\item reachable from $D$ (from which $U$ is reachable),
+\item whose smallest enclosing SESE contains $D$ (\/$U$), and
+\item which is not dominated by $D$ (not post-dominated by $U$).
 \end{enumerate}
 \end{lemma}
-
-\textbf{More stuff here.}
-
-\begin{theorem}
-The algorithm in figure~\ref{fig:SSIalg} is conservatively correct.
-\end{theorem}
 \begin{proof}
-Direct from the preceding lemmas.
+We will first prove that a node $N$ failing any one of the conditions does
+not need a \phisigfunction[or].
+\begin{itemize}
+\item Conditions \ref{crit_phiplace} and \ref{crit_sigplace} of the
+SSI form definition require node $N$ to be the first convergence
+(divergence) of some paths $X \pathplus N$ and $Y \pathplus N$ ($N
+\pathplus X$ and $N \pathplus Y$).  If the input arity is less than 2
+or there is no path from a definition of $v$, than it fails the
+$\phi$-placement criterion \ref{crit_phiplace}.  If the output arity
+is less than 2 or there is no path to a use of $v$, then it fails the
+$\sigma$-placement criterion \ref{crit_sigplace}.
+\item If there exists a SESE containing $N$ that does not contain any
+definition, \phisigfunction[or]{} $D$ for $v$, then $N$ does not require a
+\phisigfunction[or]{} for $v$.
+\item Let us suppose every $D_i$ containing a definition,
+\phisigfunction[or]{} for $v$ dominates $N$.  If $N$ requires a
+\phifunction for $v$,  there exist paths $D_1 \pathplus N$ and
+$D_2 \pathplus N$ containing no nodes in common but $N$.  We use these
+paths to construct simple paths $\code{START}\pathplus D_1 \pathplus N$ and
+$\code{START}\pathplus D_2 \pathplus N$.  By the definition of a
+dominator, every path from \code{START} to $N$ must contain every
+$D_i$.  But $D_1 \pathplus N$ cannot contain $D_2$, and if
+$\code{START} \pathplus D_1$ contains $D_2$, we can make a path
+$\code{START} \pathplus D_2 \pathplus N$ which does not contain $D_1$
+by using the $D_1$-free path $D_2 \pathplus N$.  The assumption leads
+to a contradiction; thus, there must exist some $D_i$ which does not
+dominate $N$ if $N$ is required to have a \phifunction for $v$.  The
+symmetric argument holds for post-dominance and \sigfunction{s}.
+\end{itemize}
+This proves that the conditions are necessary.  It is obvious from an
+examination of conditions \ref{crit_phiplace} and \ref{crit_sigplace}
+of the SSI form definition and lemma \ref{sese_child} that they are
+sufficient.
 \end{proof}
 
-My algorithm is correct.\fixme{Prove this.}
-Rough sketch:
-First theorem: a merge for v must be in the same SESE region as a
-definition of v.
-Proof: merge at first point in common between two defs of v and a use
-of v (Iterate). If both defs outside the region, then must join
-outside, as there is only one entry edge to the SESE region.  If both
-defs inside a nested region, then must join inside, as only one exit
-edge from nested region.  So merge must be in same region as def--but
-one or both defs can be in a nested region of this region.  Hence we
-can skip regions that contain no defs of v. Also collapsing nested
-regions to single nodes does not mess with the path.  Generalize to
-sigmas, too.
+In practice, the conditions of lemma \ref{ssi_dom} are too expensive
+to implement directly.  Instead, we use a conservative approximation
+to SSI form, which allows us to place more \phisigfunction{s} than
+minimal SSI requires, while satisfying the conditions of the SSI form
+definition.  Our algorithm also allows us to do pre-pruning of the SSI
+form during placement.  The result is not pruned SSI, but contains a
+superset of the \phisigfunction{s} that pruned form requires.
 
-Iterating, a merge node which becomes a def requiring another merge is
-in what relation to the new merge?  If other def is also in this
-region, then new merge must be, too, because only one exit node.
-New merge can't be in child region, as only one entrance?
+\begin{theorem}
+The algorithm in figure~\ref{alg:SSIplace} is conservatively correct.
+\end{theorem}
+\begin{proof}
+Lemma \ref{sese_child} states that the child region exclusion of
+algorithm~\ref{alg:SSIplace} does not cause required \phisigfunction[or]{s} to
+be omitted.  Lemma \ref{nothereyet} permits \code{MaybeLive} to
+return a conservative approximation of variable liveness without
+causing \phisigfunction[or]{s} required in pruned form to be omitted.
+\end{proof}
 
-Want to show that algorithm produced exactly minimal form or exactly
-pruned form.  Need to define minimal/pruned forms more closely, first.
+\fixme{It would be nice to be able to show a means of using the
+algorithm and the conditions in \ref{ssi_dom} to produce exactly
+minimal form or exactly pruned form.  It doesn't hurt our time bounds
+to do fixup later, though.}
 
 \subsubsection{Computing liveness}
 We can compute pruned SSI form if we have access to liveness
