@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: ecoop04.tex,v 1.7 2003-12-08 11:17:51 cananian Exp $
+% $Id: ecoop04.tex,v 1.8 2003-12-08 11:45:28 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[runningheads]{csallncs}
 %\usepackage{times}
@@ -37,7 +37,7 @@ Cambridge, MA 02139 \\
 }
 \special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.7 $ $}
+%\date{\today \\ $ $Revision: 1.8 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -726,6 +726,26 @@ See \secref{properties}.
 
 \secput{algo}{Software Transaction Mechanism}
 We now present an algorithm which has these desired properties.
+Our algorithms will be completely non-blocking, which allows good
+scaling and proper fault-tolerant behavior: one faulty or slow
+processor cannot hold up the remaining good processors.
+
+We will implement the synchronization required by our algorithm using
+load-linked/store-conditional instructions.  We require a particular
+variant of these instructions which allows the location of the
+load-linked to be different from the target of the store-conditional:
+this variant is supported on the PowerPC processor family, although it
+has been deprecated in the newest chips.  This disjoint location
+capability is essential to allow us to keep a finger on one location
+while modifying another: a poor man's ``Double Compare And Swap''
+instruction.
+
+We will describe our algorithms in the Promela modeling language
+\cite{Holzmann03},
+which we used to allow mechanical model checking of the race-safety
+and correctness of the design.  Portions of the model have been
+abbreviated for this presentation;  the full Promela model is
+available from a URL given at the end of the paper.
 
 %\subsecput{interface}{Interface}
 \subsecput{datastruct}{Object Structures}
@@ -767,10 +787,11 @@ transaction identifier object.  Transaction commit and abort are simply
 compare-and-swap operations which atomically set the transaction object's {\tt
   status} field appropriately if and only if it was previously in the
 WAITING state.
+The simplicity of commit and abort are appealing: our algorithm
+requires no complicated processing, delay, roll-back or validate
+procedure to commit or abort a transaction.
 
-We will present the other operations one-by-one, giving models in
-Promela describing the algorithms involves.  The full Promela model is
-available from the URL given at the end of the paper.
+We will present the other operations one-by-one.
 
 \subsubsection{Read}
 
@@ -1169,7 +1190,8 @@ inline writeT(ver, f, nval) {
 \secput{verification}{Verification}
 The Promela model of this software transaction system was model
 checked with Spin version 4.1.0 and verified to operate correctly and
-without races.
+without races.  The verification was done on an SGI 64-processor MIPS
+machine with 16G of memory.
 
 \punt{
 \secput{eval}{Evaluation}
@@ -1558,8 +1580,9 @@ free.
 
 \section*{Acknowledgments}
 Charles E. Leiserson suggested the ``network flow'' example in
-\secref{flow}.  Sean Lie adapted the hardware simulator which
-provided the timings in \figref{hw-timings}.
+\secref{flow}.
+\punt{Sean Lie adapted the hardware simulator which
+provided the timings in \figref{hw-timings}.}
 
 \section*{Spin model for Software Transactions}
 The complete Spin 4.1.0 model for the FLEX software transaction system is
