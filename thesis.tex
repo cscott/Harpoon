@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.95 1999-08-30 16:57:38 cananian Exp $
+% $Id: thesis.tex,v 1.96 1999-08-30 17:20:23 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -37,14 +37,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.95 $ $}
+\date{\today \\ $ $Revision: 1.96 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.95 $ $}{$ $Revision: 1.95 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.96 $ $}{$ $Revision: 1.96 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -780,7 +780,7 @@ traversal of $G$, performing the constant-time operations {\tt append}
 and {\tt LinkRegion}.  All steps are $O(E)$ and their sequential
 composition is also $O(E)$.
 
-\subsubsection{Placing \phisigfunction{s}}
+\subsubsection{Placing \phisigfunction{s}}\label{sec:SSIplace}
 \begin{myalgorithm}\small
 \input{Figures/THssialg}
 \caption{Placing \phisigfunction{s}.}\label{alg:SSIplace}
@@ -923,12 +923,10 @@ where $v$ is not dead, but may return \code{true} at nodes where $v$
 is dead without harming the correctness of the \phisigfunction{}
 placement.
 \end{proof}
-
-\fixme{It would be nice to be able to show a means of using the
-algorithm and the conditions in \ref{lem:ssi_dom} to produce exactly
-minimal form or exactly pruned form.  It doesn't hurt our time bounds
-to do fixup later, though.  I can draw a nice picture of a CFG where
-this algorithm places more \phisigfunction{s} than strictly required.}
+%\fixme{It would be nice to be able to show a means of using the
+%algorithm and the conditions in \ref{lem:ssi_dom} to produce exactly
+%minimal form or exactly pruned form.  It doesn't hurt our time bounds
+%to do fixup later, though.}
 
 \subsubsection{Computing liveness}
 Incorporating liveness information into the creation of pruned SSI
@@ -993,7 +991,7 @@ form conditions \ref{crit_phiplace}, \ref{crit_sigplace}, and
 variables consistent with conditions \ref{crit_phiname} and
 \ref{crit_signame} to prove that these algorithms combined suffice to
 convert a program into SSI form.  The SSI form is not necessarily
-minimal, as we showed in section~\ref{sec:notminimal}; the next
+minimal, as we showed in section~\ref{sec:SSIplace}; the next
 section will show how to post-process to create minimal or pruned SSI
 form.
 
@@ -1142,33 +1140,33 @@ are renamed correctly to satisfy conditions~\ref{crit_phiname} and
 \subsubsection{Pruning SSI form}\label{sec:unusedcode}
 The SSI algorithm can be run using any conservative approximation to
 the liveness information
-(including the function $\text{\bf Live}(v)=\text{\tt true}$) if
+(including the function $\code{MaybeLive}(v, n)=\code{true}$) if
 unused code elimination%
 \footnote{We follow \cite{wegman91:scc} in distinguishing
 \emph{unreachable code elimination}, which removes code that can never
 be executed, from \emph{unused code elimination}, which deletes
 sections of code whose results are never used.  Both are often called
-``dead code elimination'' in the literature.}  is performed to remove
-the extra \phisigfunction{s} added.  Figures \ref{fig:deaddata} and
+``dead code elimination'' in the literature.} is performed to remove
+extra \phisigfunction{s} added and create pruned SSI.
+Figures \ref{fig:deaddata} and
 \ref{alg:deadalg} present an algorithm to identify unused code in
 $O(N V_{SSI})$ time, after which a simple $O(N)$ pass suffices to remove it.
 The complexity analysis is simple: nodes and variables are visited at
 most once, raising their value in the analysis lattive from
 \emph{unused} to \emph{used}.  Nodes marked \emph{used} are never
 visted.  So \code{MarkNodeUseful} is invoked at most $N$ times, and
-\code{MarkVarUseful} is invoked at most $V_{SSI}$ times.  Each call to
-\code{MarkNodeUseful} examines each variable used by the node; a
-node may use at most every variable, taking $O(N V_{SSI})$ time.  Each call
+\code{MarkVarUseful} is invoked at most $V_{SSI}$ times.  The calls to
+\code{MarkNodeUseful} may examine at most every variable use in the
+program in lines~\ref{line:deadnode1}-\ref{line:deadnode2}, taking
+$O(U_{SSI})$ time at worst. Each call
 to \code{MarkVarUseful} examines at most one node (the single
 definition node for the variable, if it exists) and in constant time
 pushes at most one node on to the worklist for a total of $O(V_{SSI})$ time.
 So the total run time of \code{FindUseful} is
-$O(N V_{SSI}+V_{SSI})=O(N V_{SSI})$, and
-in fact it is typically much less.\footnote{If the number of instruction
-operands and \phisigfunction{} arities are limited by a
-constant, we get a time bound of $O(N)$.}  The total runtime for SSI
-placement and subsequent pruning, including the time to construct the
-PST, is $O(EV_0 + NV_{SSI})$.
+$O(U_{SSI}+V_{SSI})=O(U_{SSI})$.
+%\footnote{If the number of instruction
+%operands and \phisigfunction{} arities are limited by a
+%constant, we get a time bound of $O(N)$.}
 
 \begin{myfigure}\small
 \input{Figures/THdeaddata}
@@ -1203,8 +1201,8 @@ nodes tagged in the previous pass.  Starting with the circled node, the
 \phisigfunction{s} spread one node left on each pass. On the other hand,
 an pessimistic algorithm assumes the correct answer at the start, fails
 to show that any \phisigfunction[or]{s} can be removed, and
-terminates in one pass.\fixme{Are we \emph{sure} similar worst cases
-don't exist for the pessimistic algorithm?}
+terminates in one pass.%\fixme{Are we \emph{sure} similar worst cases
+%don't exist for the pessimistic algorithm?}
 
 \begin{myfigure}[t]
 \centering\renewcommand*{\figscale}{0.25}\input{Figures/evil}
@@ -1218,6 +1216,9 @@ don't exist for the pessimistic algorithm?}
 \caption{Statistical analysis to determine typical values for $V_{SSI}$.}
 \label{fig:phisigdata}
 \end{myfigure}
+The total runtime for SSI
+placement and subsequent pruning, including the time to construct the
+PST, is $O(E + N V_0 + U_{SSI})$.
 See figure \vref{fig:phisigdata}.%
 \fixme{Import discussion from appendix here.}
 

@@ -24,9 +24,9 @@ MarkNodeUseful($n$:~node, $W$:~WorkList) =
 \begin{myalgorithmic}
 \STATE $\text{NodeUseful}(n) \gets \code{true}$
 \STATE\COMMENT{everything used by a useful node is useful}
-\FOREACH{variable $v$ in $\text{Uses}(n)$}
+\FOREACH{variable $v$ in $\text{Uses}(n)$}\label{line:deadnode1}
  \IF{not $\text{VarUseful(v)}$}
-  \STATE $\text{MarkVarUseful}(v, W)$
+  \STATE $\text{MarkVarUseful}(v, W)$\label{line:deadnode2}
  \ENDIF
 \ENDFOR
 \end{myalgorithmic}
