@@ -1,3 +1,6 @@
+// InGen.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
@@ -19,7 +22,7 @@ import harpoon.Util.Util;
  * opcode in the raw bytecode array.
  *
  * @author  C. Scott Ananian
- * @version $Id: InGen.java,v 1.1 1998-09-14 02:49:20 cananian Exp $
+ * @version $Id: InGen.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
  */
 public class InGen extends Instr {
   byte opcode;

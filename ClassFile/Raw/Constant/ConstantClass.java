@@ -1,3 +1,6 @@
+// ConstantClass.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw.Constant;
 
 import harpoon.ClassFile.Raw.*;
@@ -6,7 +9,7 @@ import harpoon.ClassFile.Raw.*;
  * represent a class or an interface.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantClass.java,v 1.10 1998-08-02 03:47:34 cananian Exp $
+ * @version $Id: ConstantClass.java,v 1.11 1998-10-11 03:01:14 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.1"
  * @see Constant
  */

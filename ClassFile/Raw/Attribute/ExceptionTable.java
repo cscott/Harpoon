@@ -1,3 +1,6 @@
+// ExceptionTable.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw.Attribute;
 
 import harpoon.ClassFile.Raw.*;
@@ -8,7 +11,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>AttributeCode</code>. 
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ExceptionTable.java,v 1.10 1998-09-04 19:26:16 cananian Exp $
+ * @version $Id: ExceptionTable.java,v 1.11 1998-10-11 03:01:13 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.4"
  * @see AttributeCode
  */

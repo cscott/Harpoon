@@ -1,3 +1,6 @@
+// AttributeLocalVariableTable.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw.Attribute;
 
 import harpoon.ClassFile.Raw.*;
@@ -17,7 +20,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * not included unless debugging flags are given to the compiler.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeLocalVariableTable.java,v 1.12 1998-08-02 09:25:31 cananian Exp $
+ * @version $Id: AttributeLocalVariableTable.java,v 1.13 1998-10-11 03:01:13 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.7"
  * @see AttributeCode
  * @see Attribute

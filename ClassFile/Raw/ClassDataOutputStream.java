@@ -1,10 +1,13 @@
+// ClassDataOutputStream.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw;
 
 /**
  * A specialized output stream writer for java bytecode files.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassDataOutputStream.java,v 1.6 1998-08-01 22:55:16 cananian Exp $
+ * @version $Id: ClassDataOutputStream.java,v 1.7 1998-10-11 03:01:12 cananian Exp $
  * @see ClassDataInputStream
  */
 public class ClassDataOutputStream extends java.io.DataOutputStream {

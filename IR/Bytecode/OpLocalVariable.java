@@ -1,3 +1,6 @@
+// OpLocalVariable.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
@@ -7,7 +10,7 @@ import harpoon.ClassFile.*;
  * instruction which indicates a local variable index.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpLocalVariable.java,v 1.1 1998-09-14 02:49:23 cananian Exp $
+ * @version $Id: OpLocalVariable.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
  */
 public class OpLocalVariable extends Operand {
   int index;

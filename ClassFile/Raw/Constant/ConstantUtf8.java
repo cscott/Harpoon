@@ -1,3 +1,6 @@
+// ConstantUtf8.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw.Constant;
 
 import harpoon.ClassFile.Raw.*;
@@ -10,7 +13,7 @@ import harpoon.Util.Util;
  * up to 16 bits can be represented.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantUtf8.java,v 1.11 1998-08-07 09:53:04 cananian Exp $
+ * @version $Id: ConstantUtf8.java,v 1.12 1998-10-11 03:01:15 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.7"
  * @see Constant
  */

@@ -1,3 +1,6 @@
+// HField.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
 import java.lang.reflect.Modifier;
@@ -11,7 +14,7 @@ import harpoon.ClassFile.Raw.Constant.ConstantValue;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.10 1998-09-10 20:47:58 cananian Exp $
+ * @version $Id: HField.java,v 1.11 1998-10-11 03:01:01 cananian Exp $
  * @see HMember
  * @see HClass
  */

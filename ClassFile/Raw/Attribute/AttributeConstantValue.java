@@ -1,3 +1,6 @@
+// AttributeConstantValue.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw.Attribute;
 
 import harpoon.ClassFile.Raw.*;
@@ -21,7 +24,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * the attribute is silently ignored.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeConstantValue.java,v 1.10 1998-08-02 07:36:52 cananian Exp $
+ * @version $Id: AttributeConstantValue.java,v 1.11 1998-10-11 03:01:13 cananian Exp $
  * @see Attribute
  * @see FieldInfo
  * @see ClassFile

@@ -1,3 +1,6 @@
+// ClassFile.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw;
 
 import harpoon.ClassFile.Raw.Attribute.*;
@@ -7,7 +10,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFile.java,v 1.15 1998-08-03 08:27:38 cananian Exp $
+ * @version $Id: ClassFile.java,v 1.16 1998-10-11 03:01:12 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 

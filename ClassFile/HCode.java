@@ -1,3 +1,6 @@
+// HCode.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
 import java.util.Enumeration;
@@ -8,7 +11,7 @@ import java.util.Enumeration;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.9 1998-09-21 02:31:17 cananian Exp $
+ * @version $Id: HCode.java,v 1.10 1998-10-11 03:01:01 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code

@@ -1,4 +1,6 @@
-// OPER.java, created Wed Aug  5 06:47:58 1998
+// OPER.java, created Wed Aug  5 06:47:58 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import java.lang.reflect.Method;
@@ -21,7 +23,7 @@ import harpoon.Util.Util;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.17 1998-09-19 19:02:39 cananian Exp $
+ * @version $Id: OPER.java,v 1.18 1998-10-11 03:01:17 cananian Exp $
  */
 
 public class OPER extends Quad {

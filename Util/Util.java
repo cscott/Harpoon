@@ -1,10 +1,13 @@
+// Util.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
 import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.9 1998-10-10 09:43:14 cananian Exp $
+ * @version $Id: Util.java,v 1.10 1998-10-11 03:01:19 cananian Exp $
  */
 public abstract class Util {
   // Only static methods.

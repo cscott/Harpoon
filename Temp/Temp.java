@@ -1,3 +1,6 @@
+// Temp.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Temp;
 
 import java.util.Hashtable;
@@ -8,7 +11,7 @@ import java.util.Hashtable;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.12 1998-09-16 17:25:47 cananian Exp $
+ * @version $Id: Temp.java,v 1.13 1998-10-11 03:01:18 cananian Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList

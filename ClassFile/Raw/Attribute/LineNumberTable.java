@@ -1,3 +1,6 @@
+// LineNumberTable.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw.Attribute;
 
 import harpoon.ClassFile.Raw.*;
@@ -9,7 +12,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * array. 
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LineNumberTable.java,v 1.1 1998-08-02 07:59:46 cananian Exp $
+ * @version $Id: LineNumberTable.java,v 1.2 1998-10-11 03:01:13 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.6"
  * @see AttributeLineNumberTable
  */ 

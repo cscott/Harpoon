@@ -1,3 +1,6 @@
+// TempList.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Temp;
 
 /** A singly-linked list of temporary variables. */

@@ -1,4 +1,6 @@
-// CALL.java, created Wed Aug  5 06:48:50 1998
+// CALL.java, created Wed Aug  5 06:48:50 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import java.lang.reflect.Modifier;
@@ -22,7 +24,7 @@ import harpoon.Util.Util;
  * reference is <code>null</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.23 1998-10-10 03:27:24 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.24 1998-10-11 03:01:17 cananian Exp $ 
  */
 
 public class CALL extends Quad {

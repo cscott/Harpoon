@@ -1,3 +1,6 @@
+// AttributeUnknown.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw.Attribute;
 
 import harpoon.ClassFile.Raw.*;
@@ -6,7 +9,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * An attribute of unknown format.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeUnknown.java,v 1.5 1998-08-01 22:55:16 cananian Exp $
+ * @version $Id: AttributeUnknown.java,v 1.6 1998-10-11 03:01:13 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7"
  * @see Attribute
  */

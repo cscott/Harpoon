@@ -1,3 +1,6 @@
+// UniqueFIFO.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
 import java.util.Hashtable;
@@ -7,7 +10,7 @@ import java.util.EmptyStackException;
  * list of <b>unique</b> objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueFIFO.java,v 1.3 1998-09-13 23:57:35 cananian Exp $
+ * @version $Id: UniqueFIFO.java,v 1.4 1998-10-11 03:01:18 cananian Exp $
  */
 
 public class UniqueFIFO extends FIFO implements Worklist {

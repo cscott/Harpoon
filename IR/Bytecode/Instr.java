@@ -1,3 +1,6 @@
+// Instr.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
@@ -13,7 +16,7 @@ import java.util.Vector;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.2 1998-09-15 01:25:17 cananian Exp $
+ * @version $Id: Instr.java,v 1.3 1998-10-11 03:01:16 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge

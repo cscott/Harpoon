@@ -1,3 +1,6 @@
+// AttributeSynthetic.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw.Attribute;
 
 import harpoon.ClassFile.Raw.*;
@@ -12,7 +15,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * avoid displaying these methods and fields unnecessarily.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeSynthetic.java,v 1.1 1998-08-02 05:24:21 cananian Exp $
+ * @version $Id: AttributeSynthetic.java,v 1.2 1998-10-11 03:01:13 cananian Exp $
  * @see "Inner Classes Specification"
  * @see AttributeInnerClasses
  * @see Attribute

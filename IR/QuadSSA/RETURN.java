@@ -1,4 +1,6 @@
-// RETURN.java, created Wed Aug  5 06:46:49 1998
+// RETURN.java, created Wed Aug  5 06:46:49 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -9,7 +11,7 @@ import harpoon.Temp.TempMap;
  * optional return value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RETURN.java,v 1.13 1998-09-16 06:32:50 cananian Exp $
+ * @version $Id: RETURN.java,v 1.14 1998-10-11 03:01:17 cananian Exp $
  */
 
 public class RETURN extends Quad {

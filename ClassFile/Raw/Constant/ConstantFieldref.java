@@ -1,3 +1,6 @@
+// ConstantFieldref.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw.Constant;
 
 import harpoon.ClassFile.Raw.*;
@@ -5,7 +8,7 @@ import harpoon.ClassFile.Raw.*;
  * The <code>CONSTANT_Fieldref</code> structure represents a field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantFieldref.java,v 1.11 1998-08-02 03:57:35 cananian Exp $
+ * @version $Id: ConstantFieldref.java,v 1.12 1998-10-11 03:01:14 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.2"
  * @see Constant
  * @see ConstantMethodref

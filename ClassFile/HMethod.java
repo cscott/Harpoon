@@ -1,3 +1,6 @@
+// HMethod.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
 import harpoon.ClassFile.Raw.Attribute.Attribute;
@@ -17,7 +20,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.22 1998-10-07 01:25:02 cananian Exp $
+ * @version $Id: HMethod.java,v 1.23 1998-10-11 03:01:01 cananian Exp $
  * @see HMember
  * @see HClass
  */

@@ -1,3 +1,6 @@
+// Loader.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
 import java.io.File;
@@ -14,7 +17,7 @@ import java.io.FileNotFoundException;
  *  files.
  *
  *  @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- *  @version $Id: Loader.java,v 1.4 1998-08-01 22:55:13 cananian Exp $
+ *  @version $Id: Loader.java,v 1.5 1998-10-11 03:01:01 cananian Exp $
  */
 class Loader {
   public static String classToResource(String classname) {

@@ -1,3 +1,6 @@
+// HClass.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
 import java.lang.reflect.Modifier;
@@ -27,7 +30,7 @@ import harpoon.Util.Util;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.29 1998-09-16 00:42:48 cananian Exp $
+ * @version $Id: HClass.java,v 1.30 1998-10-11 03:01:01 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {

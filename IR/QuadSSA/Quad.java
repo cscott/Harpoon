@@ -1,3 +1,6 @@
+// Quad.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -9,7 +12,7 @@ import harpoon.Temp.TempMap;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.22 1998-09-21 04:45:34 cananian Exp $
+ * @version $Id: Quad.java,v 1.23 1998-10-11 03:01:17 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 

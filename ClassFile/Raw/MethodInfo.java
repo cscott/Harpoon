@@ -1,3 +1,6 @@
+// MethodInfo.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw;
 
 import harpoon.ClassFile.Raw.Attribute.*;
@@ -8,7 +11,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodInfo.java,v 1.12 1998-08-02 07:36:19 cananian Exp $
+ * @version $Id: MethodInfo.java,v 1.13 1998-10-11 03:01:12 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.6"
  * @see ClassFile
  * @see harpoon.ClassFile.HMethod

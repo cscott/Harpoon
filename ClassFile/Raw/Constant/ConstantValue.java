@@ -1,3 +1,6 @@
+// ConstantValue.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw.Constant;
 
 import harpoon.ClassFile.Raw.ClassFile;
@@ -12,7 +15,7 @@ import harpoon.ClassFile.Raw.ClassFile;
  * not have an obvious object wrapper.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantValue.java,v 1.1 1998-08-04 01:51:38 cananian Exp $
+ * @version $Id: ConstantValue.java,v 1.2 1998-10-11 03:01:15 cananian Exp $
  * @see ConstantDouble
  * @see ConstantFloat
  * @see ConstantInteger

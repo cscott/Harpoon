@@ -1,3 +1,6 @@
+// FIFO.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
 import java.util.Enumeration;
@@ -7,7 +10,7 @@ import java.util.EmptyStackException;
  * list of objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FIFO.java,v 1.3 1998-09-16 00:45:06 cananian Exp $
+ * @version $Id: FIFO.java,v 1.4 1998-10-11 03:01:18 cananian Exp $
  */
 
 public class FIFO {

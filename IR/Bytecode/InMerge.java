@@ -1,3 +1,6 @@
+// InMerge.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
 import harpoon.Util.Util;
@@ -8,7 +11,7 @@ import harpoon.Util.Util;
  * multiple predecessors.
  *
  * @author  C. Scott Ananian
- * @version $Id: InMerge.java,v 1.1 1998-09-14 02:49:21 cananian Exp $
+ * @version $Id: InMerge.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
  * @see Instr
  */
 public class InMerge extends Instr {

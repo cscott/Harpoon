@@ -1,3 +1,6 @@
+// UniqueVector.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
 import java.util.Vector;
@@ -7,7 +10,7 @@ import java.util.Enumeration;
 /**
  * A unique vector refuses to addElement duplicates.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueVector.java,v 1.5 1998-09-03 18:44:16 cananian Exp $
+ * @version $Id: UniqueVector.java,v 1.6 1998-10-11 03:01:19 cananian Exp $
  * @see java.util.Vector
  * @see java.util.Hashtable
  */

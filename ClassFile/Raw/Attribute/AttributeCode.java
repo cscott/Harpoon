@@ -1,3 +1,6 @@
+// AttributeCode.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw.Attribute;
 
 import harpoon.ClassFile.Raw.*;
@@ -12,7 +15,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * attribute in each <code>method_info</code> structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeCode.java,v 1.12 1998-08-04 01:56:01 cananian Exp $
+ * @version $Id: AttributeCode.java,v 1.13 1998-10-11 03:01:13 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.4"
  * @see AttributeLineNumberTable
  * @see AttributeLocalVariableTable

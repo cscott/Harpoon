@@ -1,3 +1,6 @@
+// AttributeExceptions.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw.Attribute;
 
 import harpoon.ClassFile.Raw.*;
@@ -11,7 +14,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>method_info</code> structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeExceptions.java,v 1.9 1998-08-02 07:59:46 cananian Exp $
+ * @version $Id: AttributeExceptions.java,v 1.10 1998-10-11 03:01:13 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.5"
  * @see Attribute
  * @see MethodInfo

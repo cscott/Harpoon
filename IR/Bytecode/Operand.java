@@ -1,3 +1,6 @@
+// Operand.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
@@ -7,7 +10,7 @@ import harpoon.ClassFile.*;
  * instruction.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Operand.java,v 1.1 1998-09-14 02:49:23 cananian Exp $
+ * @version $Id: Operand.java,v 1.2 1998-10-11 03:01:17 cananian Exp $
  * @see Instr
  * @see InGen
  * @see OpConstant

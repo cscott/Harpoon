@@ -1,3 +1,6 @@
+// Constant.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw.Constant;
 
 import harpoon.ClassFile.Raw.*;
@@ -8,7 +11,7 @@ import harpoon.ClassFile.Raw.*;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Constant.java,v 1.11 1998-08-02 07:36:59 cananian Exp $
+ * @version $Id: Constant.java,v 1.12 1998-10-11 03:01:14 cananian Exp $
  * @see ConstantUtf8
  * @see ConstantInteger
  * @see ConstantFloat

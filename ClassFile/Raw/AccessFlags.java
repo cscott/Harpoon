@@ -1,3 +1,6 @@
+// AccessFlags.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw;
 
 /** 
@@ -5,7 +8,7 @@ package harpoon.ClassFile.Raw;
  * permissions and properties of a field or method.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AccessFlags.java,v 1.9 1998-08-01 22:55:15 cananian Exp $
+ * @version $Id: AccessFlags.java,v 1.10 1998-10-11 03:01:11 cananian Exp $
  * @see "The Java Virtual Machine Specification"
  * @see ClassFile
  * @see FieldInfo

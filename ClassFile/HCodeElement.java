@@ -1,3 +1,6 @@
+// HCodeElement.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
 /**
@@ -10,7 +13,7 @@ package harpoon.ClassFile;
  * a unique numeric identifier.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCodeElement.java,v 1.6 1998-09-14 02:49:15 cananian Exp $
+ * @version $Id: HCodeElement.java,v 1.7 1998-10-11 03:01:01 cananian Exp $
  * @see HCode
  * @see harpoon.IR.Bytecode.Instr
  */

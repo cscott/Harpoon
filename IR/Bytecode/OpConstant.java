@@ -1,3 +1,6 @@
+// OpConstant.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
@@ -14,7 +17,7 @@ import harpoon.Util.Util;
  * and <code>CONSTANT_String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.1 1998-09-14 02:49:22 cananian Exp $
+ * @version $Id: OpConstant.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
  * @see Operand
  * @see Instr
  * @see harpoon.ClassFile.Raw.Constant.ConstantDouble

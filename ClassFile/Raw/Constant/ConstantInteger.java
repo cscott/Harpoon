@@ -1,3 +1,6 @@
+// ConstantInteger.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile.Raw.Constant;
 
 import harpoon.ClassFile.Raw.*;
@@ -6,7 +9,7 @@ import harpoon.ClassFile.Raw.*;
  * four-byte integer numeric constants.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantInteger.java,v 1.12 1998-08-04 01:51:37 cananian Exp $
+ * @version $Id: ConstantInteger.java,v 1.13 1998-10-11 03:01:14 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.4"
  * @see Constant
  * @see ConstantFloat
