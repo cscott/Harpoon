@@ -43,7 +43,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.21 2000-12-06 00:11:06 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.22 2001-01-23 04:38:46 cananian Exp $
  */
 // XXX missing -K1 --> K2  and ~K1 --> K2 rules.
 public abstract class AlgebraicSimplification extends Simplification { 
@@ -367,7 +367,8 @@ public abstract class AlgebraicSimplification extends Simplification {
 	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) { 
 		BINOP b = (BINOP)e; 
 		Util.assert(b.op == Bop.DIV); 
-		return div2mul(b.getLeft(), (CONST)b.getRight()); 
+		return div2mul(b.getLeft(),
+			       ((CONST)b.getRight()).value.intValue()); 
 	    }
 	};  
 
@@ -383,7 +384,10 @@ public abstract class AlgebraicSimplification extends Simplification {
 	_DEFAULT_RULES.add(doubleNegative); 
 	_DEFAULT_RULES.add(negZero); 
 	_DEFAULT_RULES.add(mulToShift); // non-canonical
-	_DEFAULT_RULES.add(divToMul); // non-canonical
+	// CSA: divToMul turned off because broken (cf "x / 100")
+	//_DEFAULT_RULES.add(divToMul); // non-canonical
+	// (also, mulToShift should be run on output of divToMul for
+	//  best results)
 
 	// and re-canonicalize
 	_DEFAULT_RULES.addAll(Canonicalize.RULES);
@@ -412,28 +416,29 @@ public abstract class AlgebraicSimplification extends Simplification {
      *          represents the same value as (n/d). 
      *          not guaranteed to be in canonical form.
      */ 
-    public static Exp div2mul(Exp n, CONST d) { 
-	Util.assert(d.type == Type.INT); 
-
+    public static Exp div2mul(Exp n, int dVal) {
+	TreeFactory tf = n.getFactory(); 
+	// if d<0, n/d == -(n/|d|)
+	// note that we do NOT negate *n*, as that fails for n=-2^(N-1)
+	if (dVal < 0)
+	    return new UNOP(tf, n, Type.INT, Uop.NEG,
+			    div2mul_positive(n, -dVal));
+	else return div2mul_positive(n, dVal);
+    }
+    // input is positive now.
+    private static Exp div2mul_positive(Exp n, int dAbs) { 
+	Util.assert(dAbs >= 0);
 	// Initialize parameters for the transformation
-	int  dVal    = d.value.intValue(); 
-	int  dAbs    = Math.abs(dVal); 
 	int  l       = Math.max((int)Math.ceil(Math.log(dAbs)/Math.log(2)),1); 
 	long m       = 1 + ((1L << (32 + l - 1)) / dAbs); 
 	int  m_prime = (int)(m - 0x100000000L);
-	int  d_sign  = (dVal < 0) ? -1 : 0; 
 	int  sh_post = l - 1; 
 
 	// Get a TreeFactory to use in creating new tree objects
 	TreeFactory tf = n.getFactory(); 
 
-	// If d is negative, flip the sign of n
-	if (dVal < 0) { 
-	    n = new UNOP(tf, n, Type.INT, Uop.NEG, n); 
-	}
-
-	if (dVal == 0) { // Don't process div-by-0
-	    return new BINOP(tf,n,Type.INT,Bop.DIV,n,new CONST(tf, n, dVal));
+	if (dAbs == 0) { // Don't process div-by-0
+	    return new BINOP(tf,n,Type.INT,Bop.DIV,n,new CONST(tf, n, dAbs));
 	}
 	else if (dAbs == 1) { // Dividing by 1
 	    return n; 
@@ -469,13 +474,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 		  (tf, n, Type.INT, Bop.SHL,
 		   new TEMP(tf, n, Type.INT, t), // n
 		   new CONST(tf, n, 31))));
-	    return new ESEQ(tf, n, move/* move n into t*/,
-		new BINOP
-		(tf, n, Type.INT, Bop.ADD, 
-		 (new BINOP
-		  (tf, n, Type.INT, Bop.XOR, q1, new CONST(tf, n, d_sign))),
-		 new UNOP
-		 (tf, n, Type.INT, Uop.NEG, new CONST(tf, n, d_sign))));
+	    return new ESEQ(tf, n, move/* move n into t*/, q1);
 	}
     }
 
