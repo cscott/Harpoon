@@ -5,8 +5,11 @@ The main documentation for this program is available through JavaDoc.
 Please type 'make doc' to generate the documentation.
 Then, point your browser to the doc/ directory.
 
+See CREDITS for acknowledgements of those who participated in the 
+development and helped make this program possible.
+
 See COPYING for the GPL v.2 license that covers all code in this package.
 
-See BUILDING for instructions on building the distribution.
+See BUILDING for instructions on building and running the distribution.
 
-This is an initial release of the Tank recognition program.
+This is release v. 1.1 of the Tank recognition program.
