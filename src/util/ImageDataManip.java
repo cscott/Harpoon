@@ -552,6 +552,21 @@ public class ImageDataManip {
 			     false, (byte)0, false, 0, 0, 0, 0, -1, 0, 0);
     }
 
+    /** Factory to create an {@link ImageData} given partial information.
+     *
+     *  @see Servo
+     * 
+     *  @param command The command to send.
+     *  @param time The time for the command to be effective for.
+     *  @return The created {@link ImageData}.
+     */
+    public static ImageData create(int command, long time) {
+	return new ImageData(new byte[0], new byte[0], new byte[0],
+			     0, 0, 0, 0, time, 0, command, 0,
+			     (float)0.0, (float)0.0, (float)0.0, 
+			     false, (byte)0, false, 0, 0, 0);
+    }
+
     /**
      *  Hack by Benji to try to speed up pipeline by reusing memory.
      *  If useSameArrays is called with TRUE
