@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.44 1998-09-04 07:17:20 cananian Exp $
+ * @version $Id: Translate.java,v 1.45 1998-09-04 07:35:07 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -509,22 +509,15 @@ class Translate  { // not public.
 	    // if (objref==null) throw new NullPointerException()
 	    ns = s.pop().push(new Temp());
 
-	    HClass HCex = HClass.forClass(NullPointerException.class);
 	    Temp Tobj  = s.stack[0];
-	    Temp Tex   = new Temp();
 
-	    Quad q0 = new OPER(in, "acmpeq", new Temp(),
-			       new Temp[] { Tobj, Tnull } );
-	    Quad q1 = new CJMP(in, q0.def()[0]);
-	    Quad q2 = transNewException(HCex, Tex, Tnull, in, q1, 1);
-	    r = transThrow(new TransState(s.push(Tex), in, q2, 0),
-			   handlers, Tnull, false);
-	    Quad q3 = new ALENGTH(in, ns.stack[0], Tobj);
-	    // link quads.
-	    Quad.addEdge(q0, 0, q1, 0);
-	    Quad.addEdge(q1, 0, q3, 0);
+	    // actual operation:
+	    Quad q0 = new ALENGTH(in, ns.stack[0], Tobj);
+	    // null check.
+	    r = transNullCheck(Tobj, Tnull, q0, handlers, ts);
 	    // setup next state
-	    q = q0;  last = q3;
+	    q = ts.header.next()[ts.which_succ];
+	    last = q0;
 	    break;
 	    }
 	case Op.ASTORE:
@@ -803,7 +796,14 @@ class Translate  { // not public.
 		ns = s.pop().push(null).push(new Temp());
 	    else // 32-bit value.
 		ns = s.pop().push(new Temp());
-	    q = new GET(in, ns.stack[0], opd.value(), s.stack[0]);
+
+	    // actual operation:
+	    Quad q0 = new GET(in, ns.stack[0], opd.value(), s.stack[0]);
+	    // null check.
+	    r = transNullCheck(s.stack[0], Tnull, q0, handlers, ts);
+	    // setup next state.
+	    q = ts.header.next()[ts.which_succ]; 
+	    last = q0;
 	    break;
 	    }
 	case Op.GETSTATIC:
@@ -1306,6 +1306,27 @@ class Translate  { // not public.
 	Quad.addEdge(q3, 0, q4, 0);
 	Quad.addEdge(q3, 1, q4, 1);
 	return q4;
+    }
+    static final TransState[] transNullCheck(Temp Tobj, Temp Tnull,
+					     Quad q, MergeMap handlers,
+					     TransState ts) {
+	HClass HCex = HClass.forClass(NullPointerException.class);
+	Temp Tex = new Temp();
+
+	Quad q0 = new OPER(ts.in, "acmpeq", new Temp(),
+			   new Temp[] { Tobj, Tnull } );
+	Quad q1 = new CJMP(ts.in, q0.def()[0]);
+	Quad q2 = transNewException(HCex, Tex, Tnull, ts.in, q1, 1);
+	TransState[] r = transThrow(new TransState(ts.initialState.push(Tex), 
+						   ts.in, q2, 0),
+				    handlers, Tnull, false);
+	// actual operation is q.
+	// link quads.
+	Quad.addEdge(ts.header, ts.which_succ, q0, 0);
+	Quad.addEdge(q0, 0, q1, 0);
+	Quad.addEdge(q1, 0, q, 0);
+
+	return r;
     }
     static final TransState[] transBoundsCheck(Temp Tobj, Temp Tindex,
 					       Temp Tnull, Temp Tzero,
