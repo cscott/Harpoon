@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * <code>Graph</code> is a command-line graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.12.2.3 1999-02-01 00:40:39 cananian Exp $
+ * @version $Id: Graph.java,v 1.12.2.4 1999-02-04 07:18:25 duncan Exp $
  */
 
 public abstract class Graph extends harpoon.IR.Registration {
@@ -38,8 +38,10 @@ public abstract class Graph extends harpoon.IR.Registration {
 	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory();
 	if (args.length > 3 && args[3].equals("quad-with-try"))
 	    hcf = harpoon.IR.Quads.QuadWithTry.codeFactory();
-	if (args.length > 3 && args[3].equals("low-quad"))
-	    hcf = harpoon.IR.LowQuad.Code.codeFactory();
+	if (args.length > 3 && args[3].equals("low-quad-ssa"))
+	    hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory();
+	if (args.length > 3 && args[3].equals("low-quad-no-ssa"))
+	    hcf = harpoon.IR.LowQuad.LowQuadNoSSA.codeFactory();
 
 	HCode hc = hcf.convert(m);
 
