@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <jni-private.h>
+#include "java.lang/java_lang_Thread.h"
 #include "flexthread.h"
 
 /* these functions are defined in src/java.lang/java_lang_Thread.c but only
