@@ -4,6 +4,7 @@
 package harpoon.IR.Properties;
 
 import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
 
 import java.util.Collection;
 /**
@@ -12,11 +13,12 @@ import java.util.Collection;
  * control-flow graphs.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGraphable.java,v 1.3 2002-04-10 03:05:06 cananian Exp $
+ * @version $Id: CFGraphable.java,v 1.4 2003-05-09 00:22:48 cananian Exp $
  * @see harpoon.IR.Properties.CFGrapher
  * @see harpoon.IR.Properties.CFGrapher#DEFAULT
  */
-public interface CFGraphable<E extends CFGEdge>
+public interface CFGraphable<CFG extends CFGraphable<CFG,E>,
+			     E extends CFGEdge<CFG,E>>
     extends harpoon.ClassFile.HCodeElement {       
     /** Returns an array of all the edges to and from this 
      *  <code>CFGraphable</code>. */

@@ -17,10 +17,10 @@ import harpoon.Util.Util;
  * data with control-flow edges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edge.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
+ * @version $Id: Edge.java,v 1.5 2003-05-09 00:23:01 cananian Exp $
  */
 
-public class Edge extends CFGEdge<Quad> implements java.io.Serializable {
+public class Edge extends CFGEdge<Quad,Edge> implements java.io.Serializable {
     Quad from, to;
     int from_index, to_index;
     

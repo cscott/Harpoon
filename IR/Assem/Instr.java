@@ -43,8 +43,9 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.6 2002-08-31 00:24:32 cananian Exp $ */
-public class Instr implements HCodeElement, UseDefable, CFGraphable {
+ * @version $Id: Instr.java,v 1.7 2003-05-09 00:23:03 cananian Exp $ */
+public class Instr implements HCodeElement, UseDefable,
+			      CFGraphable<Instr,InstrEdge> {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
     private static boolean PRINT_INSERTS = false || PRINT_UPDATES_TO_IR;
@@ -77,8 +78,8 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	groupList = seq;
     }
     /** Returns the Set of InstrGroups that this is an element of. */
-    public Set getGroups() {
-	HashSet set = new HashSet();
+    public Set<InstrGroup> getGroups() {
+	Set<InstrGroup> set = new HashSet<InstrGroup>();
 	InstrGroup curr = groupList;
 	while(curr != null) {
 	    set.add(curr);
