@@ -13,19 +13,20 @@ import harpoon.Temp.Temp;
  * <code>ConstMap</code> is known.
  * 
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstMapProxy.java,v 1.2 2002-02-25 20:58:10 cananian Exp $
+ * @version $Id: ConstMapProxy.java,v 1.3 2002-09-02 19:23:26 cananian Exp $
  */
-public class ConstMapProxy extends MapProxy implements ConstMap {
-    private ConstMap cm;
+public class ConstMapProxy<HCE extends HCodeElement>
+    extends MapProxy<HCE> implements ConstMap<HCE> {
+    private ConstMap<HCE> cm;
     /** Creates a <code>ConstMapProxy</code>. */
-    public ConstMapProxy(HCodeAndMaps hcam, ConstMap cm) {
+    public ConstMapProxy(HCodeAndMaps<HCE> hcam, ConstMap<HCE> cm) {
         super(hcam);
 	this.cm = cm;
     }
-    public boolean isConst(HCodeElement hce, Temp t) {
+    public boolean isConst(HCE hce, Temp t) {
 	return cm.isConst(n2o(hce), n2o(t));
     }
-    public Object constMap(HCodeElement hce, Temp t) {
+    public Object constMap(HCE hce, Temp t) {
 	return cm.constMap(n2o(hce), n2o(t));
     }
 }

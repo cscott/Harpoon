@@ -14,17 +14,18 @@ import harpoon.Temp.Temp;
  * <code>TypeMap</code> is known.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeMapProxy.java,v 1.2 2002-02-25 20:58:10 cananian Exp $
+ * @version $Id: TypeMapProxy.java,v 1.3 2002-09-02 19:23:27 cananian Exp $
  */
-public class TypeMapProxy extends MapProxy implements TypeMap {
-    private TypeMap tm;
+public class TypeMapProxy<HCE extends HCodeElement>
+    extends MapProxy<HCE> implements TypeMap<HCE> {
+    private TypeMap<HCE> tm;
 
     /** Creates a <code>TypeMapProxy</code>. */
-    public TypeMapProxy(HCodeAndMaps hcam, TypeMap tm) {
+    public TypeMapProxy(HCodeAndMaps<HCE> hcam, TypeMap<HCE> tm) {
 	super(hcam);
 	this.tm = tm;
     }
-    public HClass typeMap(HCodeElement hce, Temp t) {
+    public HClass typeMap(HCE hce, Temp t) {
 	return tm.typeMap(n2o(hce), n2o(t));
     }
 }

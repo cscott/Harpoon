@@ -11,10 +11,10 @@ import harpoon.ClassFile.HCodeEdge;
  * their executable status.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ExecMap.java,v 1.3 2002-02-25 20:58:10 cananian Exp $
+ * @version $Id: ExecMap.java,v 1.4 2002-09-02 19:23:26 cananian Exp $
  */
 
-public interface ExecMap  {
+public interface ExecMap<HCE extends HCodeElement>  {
     /** 
      * Returns the executable status of an <code>HCodeElement</code>.
      * @param node The <code>HCodeElement</code> to examine.
@@ -22,7 +22,7 @@ public interface ExecMap  {
      *         <code>HCodeElement</code>; or <code>false</code> if
      *         it can be proved that this <code>HCodeElement</code>
      *         will never be executed. */
-    public boolean execMap(HCodeElement node);
+    public boolean execMap(HCE node);
     /** 
      * Returns the executable status of an <code>HCodeEdge</code>.
      * @param edge An edge between two <code>HCodeElement</code>s in
@@ -31,5 +31,5 @@ public interface ExecMap  {
      *         edge during execution, or <code>false</code> if it
      *         can be proved that this edge will never be followed.
      */
-    public boolean execMap(HCodeEdge edge);
+    public boolean execMap(HCodeEdge<HCE> edge);
 }

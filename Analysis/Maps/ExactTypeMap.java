@@ -20,9 +20,9 @@ import java.util.AbstractList;
  * to all calls to <code>isExactType()</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ExactTypeMap.java,v 1.2 2002-02-25 20:58:10 cananian Exp $
+ * @version $Id: ExactTypeMap.java,v 1.3 2002-09-02 19:23:26 cananian Exp $
  */
-public interface ExactTypeMap extends TypeMap {
+public interface ExactTypeMap<HCE extends HCodeElement> extends TypeMap<HCE> {
     /** Returns <code>true</code> if temporary <code>t</code> defined at
      *  definition point <code>hce</code> contains an object of the
      *  type returned by <code>typeMap(hce, t)</code> <strong>and not
@@ -43,7 +43,7 @@ public interface ExactTypeMap extends TypeMap {
      * @exception TypeNotKnownException if the <code>ExactTypeMap</code> does
      *            not have any information about <code>t</code> as defined
      *            at <code>hc</code>. */
-    public boolean isExactType(HCodeElement hce, Temp t)
+    public boolean isExactType(HCE hce, Temp t)
 	throws TypeMap.TypeNotKnownException;
 
     /** Implementors of <code>ExactTypeMap</code> will probably find this

@@ -12,10 +12,10 @@ import harpoon.Temp.Temp;
  * <code>HCodeElements</code> that define them.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDefMap.java,v 1.5 2002-04-10 03:00:04 cananian Exp $
+ * @version $Id: UseDefMap.java,v 1.6 2002-09-02 19:23:27 cananian Exp $
  */
 
-public interface UseDefMap  {
+public interface UseDefMap<HCE extends HCodeElement>  {
     /**
      * Return an array of <code>HCodeElement</code>s that use 
      * <code>Temp t</code>.
@@ -24,7 +24,7 @@ public interface UseDefMap  {
      * @return an array of <code>HCodeElement</code>s where
      *         <code>HCodeElement.use()</code> includes <code>t</code>.
      */
-    HCodeElement[] useMap(HCode hc, Temp t);
+    HCE[] useMap(HCode<HCE> hc, Temp t);
     /**
      * Return an array of <code>HCodeElement</code>s that define 
      * <code>Temp t</code>.
@@ -33,5 +33,5 @@ public interface UseDefMap  {
      * @return an array of <code>HCodeElement</code>s where
      *         <code>HCodeElement.def()</code> includes <code>t</code>.
      */
-    HCodeElement[] defMap(HCode hc, Temp t);
+    HCE[] defMap(HCode<HCE> hc, Temp t);
 }

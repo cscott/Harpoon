@@ -11,9 +11,9 @@ import harpoon.ClassFile.HCodeElement;
  * A <code>TypeMap</code> is a mapping from temporaries to their types.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeMap.java,v 1.4 2002-02-25 20:58:10 cananian Exp $
+ * @version $Id: TypeMap.java,v 1.5 2002-09-02 19:23:26 cananian Exp $
  */
-public interface TypeMap  { 
+public interface TypeMap<HCE extends HCodeElement>  { 
     /** 
      * Return the type of a given temporary <code>t</code>, as defined
      * at the definition point <code>hce</code>.  Iff the type of the
@@ -39,7 +39,7 @@ public interface TypeMap  {
      * @exception TypeNotKnownException if the <code>TypeMap</code> does
      *            not have any information about <code>t</code> as defined
      *            at <code>hc</code>.  */
-    public HClass typeMap(HCodeElement hce, Temp t)
+    public HClass typeMap(HCE hce, Temp t)
 	throws TypeNotKnownException;
 
     /** <code>TypeNotKnownException</code> is thrown to indicate that

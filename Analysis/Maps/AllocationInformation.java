@@ -11,9 +11,9 @@ import harpoon.Temp.Temp;
  * to information about the allocation done at that site.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformation.java,v 1.3 2002-06-25 18:09:39 kkz Exp $
+ * @version $Id: AllocationInformation.java,v 1.4 2002-09-02 19:23:26 cananian Exp $
  */
-public interface AllocationInformation  {
+public interface AllocationInformation<HCE extends HCodeElement>  {
     
     /** <code>AllocationProperties</code> contains tests for the various
      *  possibly properties of an allocation site.  "Atomic" allocations
@@ -75,5 +75,5 @@ public interface AllocationInformation  {
     }
 
     /** Query the properties of the allocation at the specified site. */
-    public AllocationProperties query(HCodeElement allocationSite);
+    public AllocationProperties query(HCE allocationSite);
 }

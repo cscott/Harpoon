@@ -14,21 +14,22 @@ import harpoon.IR.Quads.Edge;
  * <code>ExecMap</code> is known.
  * 
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ExecMapProxy.java,v 1.2 2002-02-25 20:58:10 cananian Exp $
+ * @version $Id: ExecMapProxy.java,v 1.3 2002-09-02 19:23:26 cananian Exp $
  */
-public class ExecMapProxy extends MapProxy implements ExecMap {
-    private ExecMap em;
+public class ExecMapProxy<HCE extends HCodeElement>
+    extends MapProxy<HCE> implements ExecMap<HCE> {
+    private ExecMap<HCE> em;
     /** Creates an <code>ExecMapProxy</code>. */
-    public ExecMapProxy(HCodeAndMaps hcam, ExecMap em) {
+    public ExecMapProxy(HCodeAndMaps<HCE> hcam, ExecMap<HCE> em) {
         super(hcam);
 	this.em = em;
     }
-    public boolean execMap(HCodeElement node) {
+    public boolean execMap(HCE node) {
 	return em.execMap(n2o(node));
     }
-    public boolean execMap(HCodeEdge edge) {
+    public boolean execMap(HCodeEdge<HCE> edge) {
 	if (edge instanceof Edge)
-	    return em.execMap(n2o((Edge)edge));
+	    return em.execMap((HCodeEdge)n2o((Edge)edge));
 	throw new Error("No consistent way to map edges between IRs.");
     }
 }

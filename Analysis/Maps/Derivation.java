@@ -26,9 +26,10 @@ import java.util.List;
  * and its motivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.4 2002-04-10 03:00:04 cananian Exp $
+ * @version $Id: Derivation.java,v 1.5 2002-09-02 19:23:26 cananian Exp $
  */
-public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
+public interface Derivation<HCE extends HCodeElement>
+    extends harpoon.Analysis.Maps.TypeMap<HCE> {
 
     /** Map compiler temporaries to their derivations.
      * @param t The temporary to query.
@@ -41,7 +42,7 @@ public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
      *            has no information about <code>t</code> as defined
      *            at <code>hce</code>.
      */
-    public DList derivation(HCodeElement hce, Temp t)
+    public DList derivation(HCE hce, Temp t)
 	throws TypeMap.TypeNotKnownException;
 
     /** Structure of the derivation information.<p>
@@ -122,21 +123,20 @@ public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 	 *  and opposite signs cancel out. */
 	public DList canonicalize() {
 	    if (canonical) return this;
-	    List l = new ArrayList();
+	    List<DList> l = new ArrayList<DList>();
 	    for (DList dl=this; dl!=null; dl=dl.next)
 		l.add(dl);
-	    Collections.sort(l, new Comparator() {
+	    Collections.sort(l, new Comparator<DList> () {
 		// reverse order by dl.temp natural ordering.
-		public int compare(Object o1, Object o2) {
-		    DList dl1 = (DList) o1, dl2 = (DList) o2;
+		public int compare(DList dl1, DList dl2) {
 		    int order = dl1.base.compareTo(dl2.base);
 		    if (order==0) order = (dl1.sign?1:-1) - (dl2.sign?1:-1);
 		    return -order; // reverse
 		}
 	    });
 	    DList result = null;
-	    for (Iterator it=l.iterator(); it.hasNext(); it.next()) {
-		DList dl = (DList) it.next();
+	    for (Iterator<DList> it=l.iterator(); it.hasNext(); it.next()) {
+		DList dl = it.next();
 		if (result!=null &&
 		    result.base == dl.base &&
 		    result.sign != dl.sign)

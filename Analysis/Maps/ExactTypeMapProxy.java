@@ -13,16 +13,17 @@ import harpoon.Temp.Temp;
  * <code>ExactTypeMap</code> is known.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ExactTypeMapProxy.java,v 1.2 2002-02-25 20:58:10 cananian Exp $
+ * @version $Id: ExactTypeMapProxy.java,v 1.3 2002-09-02 19:23:26 cananian Exp $
  */
-public class ExactTypeMapProxy extends TypeMapProxy implements ExactTypeMap {
-    private ExactTypeMap etm;
+public class ExactTypeMapProxy<HCE extends HCodeElement>
+    extends TypeMapProxy<HCE> implements ExactTypeMap<HCE> {
+    private ExactTypeMap<HCE> etm;
     /** Creates a <code>ExactTypeMapProxy</code>. */
-    public ExactTypeMapProxy(HCodeAndMaps hcam, ExactTypeMap etm) {
+    public ExactTypeMapProxy(HCodeAndMaps<HCE> hcam, ExactTypeMap<HCE> etm) {
         super(hcam, etm);
 	this.etm = etm;
     }
-    public boolean isExactType(HCodeElement hce, Temp t) {
+    public boolean isExactType(HCE hce, Temp t) {
 	return etm.isExactType(n2o(hce), n2o(t));
     }
 }
