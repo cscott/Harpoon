@@ -54,15 +54,18 @@ import java.util.Iterator;
  * the counters' actual name on output will be "foo_bar" and "foo_baz".
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CounterFactory.java,v 1.1.2.5 2001-07-10 21:10:22 cananian Exp $
+ * @version $Id: CounterFactory.java,v 1.1.2.6 2001-07-11 20:14:08 cananian Exp $
  */
 public final class CounterFactory {
     /** default status for all counters. */
     private static boolean ENABLED = false;
     // don't allow object creation: all methods here are static.
     private CounterFactory() { }
-    /** allow enabling/disabling of all counters via properties */
-    private static boolean isEnabled(String counter_name) {
+    /** Returns the enabled/disabled status of the given
+     *  <code>counter_name</code>.  This can be used so that
+     *  counter-support code may be added only when the counter
+     *  it supports is actually enabled. */
+    public static boolean isEnabled(String counter_name) {
 	if (Boolean.getBoolean("harpoon.counters.enabled.all"))
 	    return true;
 	if (Boolean.getBoolean("harpoon.counters.disabled.all"))
