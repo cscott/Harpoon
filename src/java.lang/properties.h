@@ -10,6 +10,10 @@
 # include <sys/utsname.h>
 #endif
 
+/* for stringifying preprocessor #defines */
+#define stringify(x) stringify2(x)
+#define stringify2(x) #x
+
 /* prototype */
 static void _putProperty(JNIEnv *env, jobject propobj, jmethodID methodID,
 			 const char *ckey, const char *cvalue);
@@ -18,16 +22,30 @@ static inline
 void fni_properties_init(JNIEnv *env, jobject propobj,
 			 jboolean use_setProperty) {
     char *properties[] = {
-      "java.version", "1.1.7",
+      "java.version", "1.1.7", /* this should really be the FLEX version */
       "java.vendor", "FLEX compiler group",
       "java.vendor.url", "http://flexc.lcs.mit.edu/",
 #ifdef JAVA_HOME
       "java.home", JAVA_HOME,
 #endif
-      "java.class.version", "45.3",
+      "java.vm.specification.name", "Java(tm) Virtual Machine Specification",
+      "java.vm.specification.vendor", "Sun Microsystems Inc.",
+      "java.vm.specification.version", "1.1",
+      "java.vm.name", "flexrun",
+      "java.vm.vendor", "FLEX compiler group",
+      "java.vm.version", stringify(VERSION),
+      "java.specification.name", "Java Platform API Specification",
+      "java.specification.vendor", "Sun Microsystems Inc.",
+      "java.specification.version", "1.4", /* optimistically */
+      "java.class.version", "48.0",
+      "java.library.path", ".", /* XXX: get from environment? */
+      "java.io.tmpdir", "/tmp",
       "file.separator", "/",
       "path.separator", ":",
       "line.separator", "\n",
+#ifdef CLASSPATH_VERSION
+      "java.library.version", stringify(CLASSPATH_VERSION),
+#endif
       NULL, NULL
     };
     jclass propcls = (*env)->FindClass(env, "java/util/Properties");
@@ -106,7 +124,7 @@ void fni_properties_init(JNIEnv *env, jobject propobj,
     }
 #endif /* HAVE_LOCALTIME */
     /* done */
-    return propobj;
+    return;
 }
 
 static void _putProperty(JNIEnv *env, jobject propobj, jmethodID methodID,
