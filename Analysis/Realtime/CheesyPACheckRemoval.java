@@ -51,7 +51,7 @@ import harpoon.Util.Util;
  * <code>CheesyPACheckRemoval</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: CheesyPACheckRemoval.java,v 1.4 2002-04-10 03:01:16 cananian Exp $
+ * @version $Id: CheesyPACheckRemoval.java,v 1.5 2002-05-02 22:13:59 salcianu Exp $
  */
 public class CheesyPACheckRemoval implements CheckRemoval {
 
@@ -97,7 +97,8 @@ public class CheesyPACheckRemoval implements CheckRemoval {
 	System.out.print("CallGraph ... ");
 	long tstart = time();
 	if(SMART_CALL_GRAPH){ // smart call graph!
-	    MetaCallGraph fmcg = new MetaCallGraphImpl(ccf, ch, mroots);
+	    MetaCallGraph fmcg = 
+		new MetaCallGraphImpl(ccf, linker, ch, mroots);
 	    run_mms = fmcg.getRunMetaMethods();
 	    cg = new SmartCallGraph(fmcg);
 	}
