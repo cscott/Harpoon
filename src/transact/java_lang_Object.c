@@ -322,6 +322,20 @@ static inline void eraseFlag(struct oobj *o, struct oobj *v, jint offset,
 }
 #endif /* RACES */
 
+static inline void eraseAllFlags(JNIEnv *env, jobject _this, struct vinfo *v) {
+  struct oobj *oobj = FNI_UNWRAP(_this);
+  struct FNI_classinfo *info=FNI_GetClassInfo
+    ((*env)->GetObjectClass(env, _this));
+  union _jmemberID *mID;
+  for (mID=info->memberinfo; mID < info->memberend; mID++) {
+    jfieldID fID = &(mID->f);
+    if (fID->desc[0]=='(') continue; /* method, not a field. */
+    if (fID->offset > info->claz->size) continue; /* static field? */
+    /* copy field from v back into root object */
+    eraseFlag(oobj, &(v->obj), fID->offset, fieldsize(fID));
+  }
+}
+
 /*
  * Class:     java_lang_Object
  * Method:    getReadCommittedVersion
@@ -330,12 +344,11 @@ static inline void eraseFlag(struct oobj *o, struct oobj *v, jint offset,
     /** Get the most recently committed version to read from. */
 JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadCommittedVersion
     (JNIEnv *env, jobject _this) {
-    struct oobj *oobj = FNI_UNWRAP(_this);
     struct inflated_oobj *infl;
     struct vinfo *v;
     int u = 0;
     assert(FNI_IS_INFLATED(_this));
-    infl = oobj->hashunion.inflated;
+    infl = FNI_UNWRAP(_this)->hashunion.inflated;
     v = infl->first_version;
     while (1) {
 	assert(v!=NULL);
@@ -347,19 +360,10 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadCommittedVersion
     }
     done:
 #if RACES
+    v->anext = v->wnext = NULL; /* atomic stores, hopefully */
     /* unflag some fields if u==0. Must be a better way to do this. */
-    if (u==0) {
-      struct FNI_classinfo *info=FNI_GetClassInfo
-	((*env)->GetObjectClass(env, _this));
-      union _jmemberID *mID;
-      for (mID=info->memberinfo; mID < info->memberend; mID++) {
-	jfieldID fID = &(mID->f);
-	if (fID->desc[0]=='(') continue; /* method, not a field. */
-	if (fID->offset > info->claz->size) continue; /* static field? */
-	/* copy field from v back into root object */
-	eraseFlag(oobj, &(v->obj), fID->offset, fieldsize(fID));
-      }
-    }
+    if (u==0)
+      eraseAllFlags(env, _this, v);
 #endif
     return FNI_WRAP(&(v->obj));
 }
@@ -391,6 +395,9 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getWriteCommittedVersion
     /* abort all readers of this committed transaction */
     for (r=&(v->readers); r!=NULL; r=r->next)
 	AbortCR(r->transid);
+#if RACES
+    eraseAllFlags(env, _this, v);
+#endif /* RACES */
     /* done.  return v. */
     return FNI_WRAP(&(v->obj));
 }
