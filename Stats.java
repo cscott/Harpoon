@@ -231,56 +231,59 @@ public final class Stats {
 	    NoHeapRealtimeThread.print(NEW_ARRAY_SCOPE);
 	    NoHeapRealtimeThread.print("\n  in immortal:");
 	    NoHeapRealtimeThread.print(NEW_ARRAY_IMMORTAL);
-	    if ((heapChecks!=0)||(heapRefs!=0)) {
-		NoHeapRealtimeThread.print("\n\nHeap checks: ");
-		NoHeapRealtimeThread.print(heapChecks);
-		NoHeapRealtimeThread.print(" refs: ");
-		NoHeapRealtimeThread.print(heapRefs);
-		NoHeapRealtimeThread.print("\n  Write checks: ");
-		NoHeapRealtimeThread.print(WRITE_CHECKS);
-		NoHeapRealtimeThread.print(" refs: ");
-		NoHeapRealtimeThread.print(WRITE_REFS);
-		NoHeapRealtimeThread.print("\n  Read checks: ");
-		NoHeapRealtimeThread.print(READ_CHECKS);
-		NoHeapRealtimeThread.print(" refs: ");
-		NoHeapRealtimeThread.print(READ_REFS);
-		NoHeapRealtimeThread.print("\n  NATIVECALL checks: ");
-		NoHeapRealtimeThread.print(NATIVECALL_CHECKS);
-		NoHeapRealtimeThread.print(" refs: ");
-		NoHeapRealtimeThread.print(NATIVECALL_REFS);
-		NoHeapRealtimeThread.print("\n  CALL checks: ");
-		NoHeapRealtimeThread.print(CALL_CHECKS);
-		NoHeapRealtimeThread.print(" refs: ");
-		NoHeapRealtimeThread.print(CALL_REFS);
-		NoHeapRealtimeThread.print("\n  METHOD checks: ");
-		NoHeapRealtimeThread.print(METHOD_CHECKS);
-		NoHeapRealtimeThread.print(" refs: ");
-		NoHeapRealtimeThread.print(METHOD_REFS);
-	    }
-
+	}
+	if ((heapChecks!=0)||(heapRefs!=0)) {
+	    touched = true;
+	    NoHeapRealtimeThread.print("-------------------------------------\n");
+	    NoHeapRealtimeThread.print("\n\nHeap checks: ");
+	    NoHeapRealtimeThread.print(heapChecks);
+	    NoHeapRealtimeThread.print(" refs: ");
+	    NoHeapRealtimeThread.print(heapRefs);
+	    NoHeapRealtimeThread.print("\n  Write checks: ");
+	    NoHeapRealtimeThread.print(WRITE_CHECKS);
+	    NoHeapRealtimeThread.print(" refs: ");
+	    NoHeapRealtimeThread.print(WRITE_REFS);
+	    NoHeapRealtimeThread.print("\n  Read checks: ");
+	    NoHeapRealtimeThread.print(READ_CHECKS);
+	    NoHeapRealtimeThread.print(" refs: ");
+	    NoHeapRealtimeThread.print(READ_REFS);
+	    NoHeapRealtimeThread.print("\n  NATIVECALL checks: ");
+	    NoHeapRealtimeThread.print(NATIVECALL_CHECKS);
+	    NoHeapRealtimeThread.print(" refs: ");
+	    NoHeapRealtimeThread.print(NATIVECALL_REFS);
+	    NoHeapRealtimeThread.print("\n  CALL checks: ");
+	    NoHeapRealtimeThread.print(CALL_CHECKS);
+	    NoHeapRealtimeThread.print(" refs: ");
+	    NoHeapRealtimeThread.print(CALL_REFS);
+	    NoHeapRealtimeThread.print("\n  METHOD checks: ");
+	    NoHeapRealtimeThread.print(METHOD_CHECKS);
+	    NoHeapRealtimeThread.print(" refs: ");
+	    NoHeapRealtimeThread.print(METHOD_REFS);
+	}
+	if (touched) {
 	    NoHeapRealtimeThread.print("\n-------------------------------------\n");
 	    if ((HEAP_TO_HEAP+HEAP_TO_SCOPE+HEAP_TO_IMMORTAL+SCOPE_TO_HEAP+
 		 SCOPE_TO_SCOPE+SCOPE_TO_IMMORTAL+IMMORTAL_TO_HEAP+
 		 IMMORTAL_TO_SCOPE+IMMORTAL_TO_IMMORTAL)!=accessChecks) {
-	      NoHeapRealtimeThread.print("Access checks don't add up!\n");
+		NoHeapRealtimeThread.print("Access checks don't add up!\n");
 	    }
 	    if ((NEW_HEAP+NEW_SCOPE+NEW_IMMORTAL)!=newObjects) {
-	      NoHeapRealtimeThread.print("New object's don't add up!\n");
+		NoHeapRealtimeThread.print("New object's don't add up!\n");
 	    }
 	    if ((NEW_ARRAY_HEAP+NEW_ARRAY_SCOPE+
 		 NEW_ARRAY_IMMORTAL)!=newArrayObjects) {
-	      NoHeapRealtimeThread.print("New array objects don't add up!\n");
+		NoHeapRealtimeThread.print("New array objects don't add up!\n");
 	    }
 	    if ((WRITE_CHECKS+READ_CHECKS+NATIVECALL_CHECKS+CALL_CHECKS+
 		 METHOD_CHECKS)!=heapChecks) {
-	      NoHeapRealtimeThread.print("Heap checks just don't add up!\n");
+		NoHeapRealtimeThread.print("Heap checks just don't add up!\n");
 	    }
 	    if ((WRITE_REFS+READ_REFS+NATIVECALL_REFS+CALL_REFS+
 		 METHOD_REFS)!=heapRefs) {
-	      NoHeapRealtimeThread.print("Heap refs just don't add up!\n");
+		NoHeapRealtimeThread.print("Heap refs just don't add up!\n");
 	    }	    
 	} else {
-	    NoHeapRealtimeThread.print("\nDid you forget to compile with the -t STATS option?\n\n");
+	    NoHeapRealtimeThread.print("Did you forget to compile with the STATS option?\n");
 	}
     }
 }
