@@ -58,7 +58,7 @@ import java.util.Date;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.41 2001-01-05 21:29:29 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.42 2001-05-22 17:45:08 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
 
@@ -1064,12 +1064,28 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	return g;
     }
 
+    private Set defRegSet( Instr i ){
+	LinearSet regs = new LinearSet();
+	for(Iterator dts=i.defC().iterator(); dts.hasNext();){
+	    Temp d = (Temp) dts.next();
+	    if (code.registerAssigned(i,d))
+		regs.addAll( code.getRegisters(i,d) );
+	}
+	return regs;
+    }
+
     private void modifyCode(Graph g) { 
 	for(Iterator wrs = tempWebRecords.iterator(); wrs.hasNext();){
 	    TempWebRecord wr = (TempWebRecord) wrs.next();
 	    Iterator instrs;
 	    for(instrs = wr.defs.iterator(); instrs.hasNext();) {
 		Instr i = (Instr) instrs.next();
+
+		// assert def-sets are disjoint for a given instruction
+		Set regs = defRegSet(i);
+		regs.retainAll( g.regs(wr) );
+		Util.assert( regs.isEmpty(), "def-sets should be disjoint!");
+
 		code.assignRegister(i, wr.sym, g.regs(wr));
 	    }
 	    for(instrs = wr.uses.iterator(); instrs.hasNext();) {
@@ -1225,6 +1241,14 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		    continue;
 
 		Instr n = i.getNext();
+
+		// FSK: checking if <n> is a dummy and
+		// shifting the spill down if so...
+		while( n.isDummy()) {
+		    i = n;
+		    n = i.getNext();
+		}
+		
 		Util.assert(i.canFallThrough &&
 			    i.getTargets().isEmpty(),
 			    "can't insert spill at <"+i+" , "+n+">");
@@ -1745,6 +1769,13 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    boolean r = false;
 	    for(Iterator ins=this.defs().iterator();ins.hasNext();){
 		Instr d = (Instr) ins.next();
+		
+		// "a,b := f()" ==> a and b interfere, even though
+		// there may not be any defs of either that "reach"
+		// this statement (a statement need not reach itself)
+		if (wr.defs().contains( d ))
+		    return true;
+
 		Set l= liveTemps.getLiveAfter(d);
 		if(l.contains(wr.temp())) {
 		    if (wr instanceof RegWebRecord) {

@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.32 2001-04-28 16:12:58 rhlee Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.33 2001-05-22 17:45:36 pnkfelix Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -313,8 +313,9 @@ import java.util.Iterator;
 // believing that the destination long and a source long can be
 // allocated to the same registers 
     private Instr emitRegAllocDef( HCodeElement root, Temp t) {
-       Util.assert(t != null, t);
-       return emitDUMMY( root, "# Reg alloc def " + t, new Temp[]{t}, null);
+       return null;
+       // Util.assert(t != null, t);
+       // return emitDUMMY( root, "# Reg alloc def " + t, new Temp[]{t}, null);
     }
     private Instr emitRegAllocUse( HCodeElement root, Temp t) {
        Util.assert(t != null, t);
