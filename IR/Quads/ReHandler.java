@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.34 1999-11-02 04:39:36 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.35 1999-11-03 17:19:29 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -192,7 +192,7 @@ final class ReHandler {
 
 	// Modify this new CFG by emptying PHI nodes
 	// Need to make NoSSA for QuadWithTry
-	// Also empties out phi nodes that can't be reached.
+	// Also empties out phi edges that can't be reached.
 	PHVisitor v = new PHVisitor(qf, reachable, typemap);
 	for (Iterator it = phiset.iterator(); it.hasNext();) {
 	    Quad q=(Quad)it.next();
@@ -902,7 +902,6 @@ static class PHVisitor extends QuadVisitor // this is an inner class
 	    Quad.addEdge(q0, q.nextEdge(i).which_pred(),
 			 q.next(i), q.nextEdge(i).which_succ());
 	}
-      
     }
 
     private void removeTuples(Quad q)
@@ -1316,8 +1315,25 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 		    if (((Temp)ctuple.get(0))==t) {
 			HClass tclass=(HClass)ctuple.get(1);
 			HClass tc=hclass;
-			while(!tc.isAssignableFrom(tclass))
+			while((tc!=null)&&(!tc.isAssignableFrom(tclass))) {
+			    System.out.println("=======");
+			    System.out.println(tclass);
+			    System.out.println(q);
+			    System.out.println(hclass);
+			    System.out.println(tc);
+			    System.out.println(tc.getSuperclass());
 			    tc=tc.getSuperclass();
+			}
+			//Its safe to assume object for interfaces...
+			//because the interface has to be for some sort of
+			//real object
+			try {
+			    if (tc==null)
+				tc=HClass.forClass(Class.forName("java.lang.Object"));
+			} catch (ClassNotFoundException e) {
+			    //Should never happen...java.lang.Object not found?
+			    System.out.println(e);
+			}
 			if (best==null)
 			    best=tc;
 			else if (best.isAssignableFrom(tc))

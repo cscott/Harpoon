@@ -20,7 +20,7 @@ import java.util.Set;
  * <code>Pattern</code> <blink>please document me if I'm public!</blink>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.12 1999-11-02 04:39:37 bdemsky Exp $
+ * @version $Id: Pattern.java,v 1.1.2.13 1999-11-03 17:19:30 bdemsky Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -145,6 +145,52 @@ public class Pattern {
 	for(int mc=1;mc<m.arity();mc++)
 	    handlers.add(m.next(mc));
 
+	Set reachable=handlerRemover(handlers,m);
+
+	//build new METHOD quad
+	METHOD newm=new METHOD(m.getFactory(), m, m.params(),1+handlers.size());
+	//add in this node to reachable set
+	reachable.add(newm);
+
+	for (int i=0;i<m.paramsLength();i++) {
+	    typemap.put(new Tuple(new Object[]{newm,m.params(i)}),
+			typemap.get(new Tuple(new Object[]{m,m.params(i)})));
+	}
+
+	Quad.addEdge((Quad)code.getRootElement(),1,newm, 0);
+	for (int i=0;i<handlers.size();i++) {
+	    Quad.addEdge(newm, i+1, (Quad)handlers.get(i), 0);
+	}
+
+	Quad.addEdge(newm, 0, m.next(0),m.nextEdge(0).which_pred());
+	Set rset=pv.removalSet();
+	iterate=rset.iterator();
+
+	//Get rid of phi's from ASET's...
+	while (iterate.hasNext()) {
+	    Object[] obj=(Object[])iterate.next();
+	    PHI phi=(PHI) obj[0];
+	    int edge=((Integer) obj[1]).intValue();
+	    Quad.addEdge(phi.prev(edge), phi.prevEdge(edge).which_succ(),
+			 phi.next(0), phi.nextEdge(0).which_pred());
+	    //update reachable set
+	    reachable.remove(phi);
+	}
+
+
+	// Modify this new CFG by emptying PHI nodes
+	// Cleaning up from removal of handlers...
+	// Need to make NoSSA for QuadWithTry
+	// Also empties out phi edges that can't be reached.
+	ReHandler.PHVisitor v = new ReHandler.PHVisitor(code.qf, reachable, typemap);
+	for (Iterator it = reachable.iterator(); it.hasNext();) {
+	    Quad q=(Quad)it.next();
+	    q.accept(v);
+	}
+    }
+
+
+    private static Set handlerRemover(ArrayList handlers, METHOD m) {
 	//remove useless HANDLERS
 
 	WorkSet reachable=new WorkSet();
@@ -181,35 +227,13 @@ public class Pattern {
 	    }
 	}
 
-	iterate=handlers.iterator();
+	Iterator iterate=handlers.iterator();
 	while(iterate.hasNext()) {
 	    if(!reachable.contains(iterate.next()))
 		iterate.remove();
 	}
-
-	//build new METHOD quad
-	METHOD newm=new METHOD(m.getFactory(), m, m.params(),1+handlers.size());
-	for (int i=0;i<m.paramsLength();i++) {
-	    typemap.put(new Tuple(new Object[]{newm,m.params(i)}),
-			typemap.get(new Tuple(new Object[]{m,m.params(i)})));
-	}
-
-	Quad.addEdge((Quad)code.getRootElement(),1,newm, 0);
-	for (int i=0;i<handlers.size();i++) {
-	    Quad.addEdge(newm, i+1, (Quad)handlers.get(i), 0);
-	}
-	Quad.addEdge(newm, 0, m.next(0),m.nextEdge(0).which_pred());
-	Set rset=pv.removalSet();
-	iterate=rset.iterator();
-	while (iterate.hasNext()) {
-	    Object[] obj=(Object[])iterate.next();
-	    PHI phi=(PHI) obj[0];
-	    int edge=((Integer) obj[1]).intValue();
-	    Quad.addEdge(phi.prev(edge), phi.prevEdge(edge).which_succ(),
-			 phi.next(0), phi.nextEdge(0).which_pred());
-	}
+	return reachable;
     }
-
 
 static class PatternVisitor extends QuadVisitor { // this is an inner class
     private Map map;
@@ -294,7 +318,6 @@ static class PatternVisitor extends QuadVisitor { // this is an inner class
 	}
     }
 
-    //broken
     public void visit(INSTANCEOF q) {
 	Object[] nq=Pattern.nullCheck(q.prev(0), q.src(), code, ud);
 	if (nq!=null) {
