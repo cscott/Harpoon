@@ -17,7 +17,7 @@ import java.util.Set;
  * <code>Reachable</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Reachable.java,v 1.1 2003-11-11 21:17:28 cananian Exp $
+ * @version $Id: Reachable.java,v 1.2 2003-11-14 08:16:37 cananian Exp $
  */
 public final class Reachable<HCE extends HCodeElement> {
     public final Set<HCE> reachable;
@@ -40,12 +40,6 @@ public final class Reachable<HCE extends HCodeElement> {
 		HCE succ = it.next();
 		if (!reachable.contains(succ))
 		    work.add(succ);
-	    }
-	    // assert that predecessors are already reachable.
-	    for(Iterator<HCE> it = grapher.predElemC(hce).iterator();
-		it.hasNext(); ) {
-		HCE pred = it.next();
-		assert reachable.contains(pred) : pred + " | "+reachable;
 	    }
 	}
 	// done!
