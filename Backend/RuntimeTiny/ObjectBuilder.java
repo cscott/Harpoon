@@ -31,7 +31,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.2.2 2002-03-16 07:45:00 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.2.3 2002-03-21 00:18:25 cananian Exp $
  */
 public class ObjectBuilder extends harpoon.Backend.Runtime1.ObjectBuilder {
     Runtime runtime;
@@ -53,22 +53,28 @@ public class ObjectBuilder extends harpoon.Backend.Runtime1.ObjectBuilder {
 	// label:
 	stmlist.add(new LABEL(tf, null, info.label(), exported));
 	// claz *index* XXX this is the unique part for RuntimeTiny.
+	FieldMap cfm = ((TreeBuilder) runtime.getTreeBuilder())
+	    .getClassFieldMap();
+	int clazEnd;
 	if (runtime.clazShrink) {
-	    FieldMap cfm = ((TreeBuilder) runtime.getTreeBuilder())
-		.getClassFieldMap();
 	    int num = runtime.cn.clazNumber(info.type());
 	    int bitwidth = runtime.clazBytes*8;
-	    if (bitwidth>16) bitwidth=32; // XXX no 24-bit types
 	    stmlist.add(new DATUM(tf, null, new CONST
 				  (tf, null, bitwidth, false, num)));
-	    Stm s = makeFields(tf, info, cfm.fieldList(info.type()),
-			       -8+(bitwidth/8), -4);
-	    if (s!=null) stmlist.add(s);
+	    clazEnd = (runtime.hashlockShrink ? -4 : -8) + (bitwidth/8);
 	} else {
 	    // boring, same as superclass
 	    stmlist.add(new DATUM(tf, null, new NAME(tf, null,
 				  runtime.getNameMap().label(info.type()))));
+	    clazEnd = (runtime.hashlockShrink) ? 0 : -4;
 	}
+	// sometimes omit the hashlock XXX this is unique for RuntimeTiny, too
+	if (!runtime.hashlockShrink) {
+	int hashStart = clazEnd;
+	while (0 != (hashStart%4)) hashStart++;
+	Stm s = makeFields(tf, info, cfm.fieldList(info.type()),
+			   clazEnd, hashStart);
+	if (s!=null) stmlist.add(s);
 	// hash code.
 	// this is of pointer size, and must have the low bit set.  we *could*
 	// emit a symbolic reference to info.label()+1 or some such, but
@@ -78,7 +84,13 @@ public class ObjectBuilder extends harpoon.Backend.Runtime1.ObjectBuilder {
 	stmlist.add(pointersAreLong ?
 		    new DATUM(tf, null, new CONST(tf, null, 1|rnd.nextLong())):
 		    new DATUM(tf, null, new CONST(tf, null, 1|rnd.nextInt())));
+	}
 	// okay, done with header.
 	return Stm.toStm(stmlist);
+    }
+    protected int headerFinalOffset(Info info) {
+	if (!runtime.hashlockShrink) return 0;
+	if (!runtime.clazShrink) return 0;
+	return -4+runtime.clazBytes;
     }
 }

@@ -26,7 +26,7 @@ import java.util.Map;
  * space required by objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TinyPackedClassFieldMap.java,v 1.1.2.2 2002-03-20 23:36:42 cananian Exp $
+ * @version $Id: TinyPackedClassFieldMap.java,v 1.1.2.3 2002-03-21 00:18:25 cananian Exp $
  */
 public abstract class TinyPackedClassFieldMap extends FieldMap {
     final Runtime runtime;
@@ -189,6 +189,9 @@ public abstract class TinyPackedClassFieldMap extends FieldMap {
 	if (hc==null)
 	    if (runtime.clazBytes==4)
 		return new Interval[] { new Interval(0, Integer.MAX_VALUE) };
+	    else if (runtime.hashlockShrink)
+		return new Interval[] { new Interval(-4+runtime.clazBytes,
+						     Integer.MAX_VALUE) };
 	    else
 		return new Interval[] { new Interval(-8+runtime.clazBytes, -4),
 					new Interval(0, Integer.MAX_VALUE) };

@@ -40,7 +40,7 @@ import java.util.Set;
  * fields in object layouts.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.4 2002-03-16 07:45:00 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.5 2002-03-21 00:18:25 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Runtime1.Runtime {
     // options.
@@ -49,11 +49,22 @@ public class Runtime extends harpoon.Backend.Runtime1.Runtime {
      * used. */
     protected static final boolean clazShrink =
 	!Boolean.getBoolean("harpoon.runtime.tiny.no-claz-shrink");
+    protected static final boolean hashlockShrink =
+	!Boolean.getBoolean("harpoon.runtime.tiny.no-hashlock-shrink");
     protected static final boolean byteAlign =
 	System.getProperty("harpoon.runtime.tiny.field-align","byte")
 	.equalsIgnoreCase("byte");
     protected final static boolean fixAlign =
 	Boolean.getBoolean("harpoon.runtime.tiny.fix-align");
+    static {
+	// report the runtime settings, just to double-check w/ the user.
+	System.out.print("TINY RUNTIME: ");
+	if (clazShrink) System.out.print("CLAZ_SHR ");
+	if (hashlockShrink) System.out.println("HASH_SHR ");
+	if (byteAlign) System.out.println("BYTE_ALGN ");
+	if (fixAlign) System.out.println("FIX_ALGN ");
+	System.out.println();
+    }
 
     // local fields
     protected ClazNumbering cn;
@@ -101,6 +112,12 @@ public class Runtime extends harpoon.Backend.Runtime1.Runtime {
 	if (clazShrink)
 	    configurationSet.add
 		("check_with_claz_shrink_should_be_"+clazBytes);
+	else
+	    configurationSet.add
+		("check_with_claz_shrink_not_needed");
+	configurationSet.add
+	    (hashlockShrink ? "check_with_hashlock_shrink_needed" :
+	     "check_with_hashlock_shrink_not_needed");
 	// end configset
 	List<HData> r = new ArrayList<HData>(super.classData(hc));
 	r.add(new DataClazTable(frame,hc,ch,cn));

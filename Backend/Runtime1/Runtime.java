@@ -35,7 +35,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.3.2.5 2002-03-11 21:17:48 cananian Exp $
+ * @version $Id: Runtime.java,v 1.3.2.6 2002-03-21 00:18:19 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
@@ -96,8 +96,9 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	if (align!=0)
 	    configurationSet.add("check_with_masked_pointers_needed");
 	// more config-checking -- using this tree builder means no
-	// claz compression support.
+	// claz compression support and no hashlock compression support.
 	configurationSet.add("check_with_claz_shrink_not_needed");
+	configurationSet.add("check_with_hashlock_shrink_not_needed");
 	return new harpoon.Backend.Runtime1.TreeBuilder
 	    (this, frame.getLinker(), as, frame.pointersAreLong(), align);
     }

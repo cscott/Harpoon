@@ -62,7 +62,7 @@ import java.util.Set;
  * (but slower) object layout.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.6 2002-03-16 13:23:24 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.7 2002-03-21 00:18:25 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder { 
     final Runtime runtime;
@@ -72,25 +72,36 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 			  AllocationStrategy as, boolean pointersAreLong) {
 	super(runtime, linker, as, pointersAreLong, 0/* hard-code ptr algn of zero*/);
 	this.runtime = runtime;
-	// XXX should really readjust offsets to account for claz being INT
-	// not pointer.
+	if (runtime.clazShrink) {
+	    // adjust offsets, as claz is INT not POINTER now.
+	    OBJECT_HEADER_SIZE-= (POINTER_SIZE - WORD_SIZE);
+	    OBJ_HASH_OFF -= (POINTER_SIZE - WORD_SIZE);
+	    OBJ_FZERO_OFF-= (POINTER_SIZE - WORD_SIZE);
+	    OBJ_ALENGTH_OFF-=(POINTER_SIZE - WORD_SIZE);
+	    OBJ_AZERO_OFF-= (POINTER_SIZE - WORD_SIZE);
+	}
+	if (runtime.hashlockShrink) {
+	    // adjust offsets, as HASH field is no more.
+	    OBJECT_HEADER_SIZE-= POINTER_SIZE;
+	    OBJ_HASH_OFF -=  POINTER_SIZE;
+	    OBJ_FZERO_OFF-=  POINTER_SIZE;
+	    OBJ_ALENGTH_OFF-=POINTER_SIZE;
+	    OBJ_AZERO_OFF-=  POINTER_SIZE;
+	}
     }
     // byte-align all fields.
     protected FieldMap initClassFieldMap() {
 	final FieldMap sfm = super.initClassFieldMap();
 	final Runtime runtime = (Runtime) super.runtime;
 	if (!runtime.byteAlign) return sfm;
-	return new TinyPackedClassFieldMap(runtime/*-4+runtime.clazBytes*/) {
-		public int fieldOffset(HField hf) {
-		    // hack to allow allocating fields in the empty
-		    // space left by the small claz index.
-		    int off = super.fieldOffset(hf);
-		    //if (off<0) off-=4;
-		    return off;
-		}
+	return new TinyPackedClassFieldMap(runtime) {
 		public int fieldSize(HField hf) { return sfm.fieldSize(hf); }
 		// conservative gc requires pointers to be aligned.
 		public int fieldAlignment(HField hf) {
+		    // XXX HACK REMOVE ME
+		    if (hf.getDeclaringClass().isArray() &&
+			hf.getName().equals("length"))
+			return sfm.fieldAlignment(hf); // force array length to std loc
 		    if (hf.getType().isPrimitive()) return 1;
 		    return sfm.fieldAlignment(hf);
 		}
@@ -148,6 +159,9 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 		new TEMP(tf, source, Type.POINTER, Tobj)))),
 	      new SEQ
 	      (tf, source,
+	       runtime.hashlockShrink ? (Stm)
+	       // insert a NOP here if we're shrinking the hashlock.
+	       new EXPR(tf, source, new CONST(tf, source, 0)) : (Stm)
 	       new MOVE // assign the new object a hashcode.
 	       (tf, source,
 		DECLARE(dg, HClass.Void/*hashcode, not an object*/,
@@ -163,6 +177,7 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 		 DECLARE(dg, maskedDL,
 		 new TEMP(tf, source, Type.POINTER, Tmasked)),
 		 new CONST(tf, source, 1))),
+
 	       new MOVE // assign the new object a class *index*.
 	       (tf, source,
 		 new MEM
