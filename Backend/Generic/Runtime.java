@@ -7,12 +7,14 @@ import harpoon.Analysis.ClassHierarchy;
 import harpoon.Backend.Maps.NameMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Translation.Exp;
 import harpoon.IR.Tree.TreeFactory;
 import harpoon.Temp.Label;
+import harpoon.Util.Util;
 
 import java.util.List;
 /**
@@ -26,7 +28,7 @@ import java.util.List;
  * runtime system.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.5 1999-10-12 20:04:47 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.6 1999-10-25 22:18:03 cananian Exp $
  */
 public abstract class Runtime {
     /** A <code>NameMap</code> valid for this
@@ -55,6 +57,27 @@ public abstract class Runtime {
     /** Returns a list of <code>HData</code>s which are needed for the
      *  given class. */
     public abstract List classData(HClass hc);
+
+    /** This code factory hook allows the runtime to return
+     *  runtime-specific stubs for native methods --- or any other
+     *  method which the runtime wishes to reimplement.  The
+     *  default implementation just passes the given code factory
+     *  through without modification.<p>
+     *  The code factory returned by this method should return
+     *  a <code>null</code> for methods which the output routine
+     *  should skip.  For example, if stubs are not needed for
+     *  native methods, then the code factory should return
+     *  <code>null</code> when <code>convert()</code> is called
+     *  on a native method (just as the standard code factories do).
+     *  <p>
+     *  The code factory given should produce tree form.  The returned
+     *  code factory should also produce tree form; the tree form need
+     *  not be canonicalized or optimized.
+     */
+    public HCodeFactory nativeTreeCodeFactory(HCodeFactory hcf) {
+	Util.assert(hcf!=null && hcf.getCodeName().endsWith("tree"));
+	return hcf;
+    }
 
     /** The <code>TreeBuilder</code> constructs bits of code in the
      *  <code>IR.Tree</code> form to handle various runtime-dependent

@@ -9,7 +9,12 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Maps.ClassDepthMap;
 import harpoon.Backend.Maps.NameMap;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.Util.Util;
+
+import java.lang.reflect.Modifier;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -20,7 +25,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.10 1999-10-17 01:17:40 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.11 1999-10-25 22:18:08 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -50,6 +55,21 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	ClassHierarchy ch = (ClassHierarchy) ((Object[])closure)[2];
 	return new harpoon.Backend.Runtime1.TreeBuilder(this, ch, as,
 							f.pointersAreLong());
+    }
+
+    public HCodeFactory nativeTreeCodeFactory(final HCodeFactory hcf) {
+	Util.assert(hcf.getCodeName().endsWith("tree"));
+	return new HCodeFactory() {
+	    public String getCodeName() { return hcf.getCodeName(); }
+	    public void clear(HMethod m) { hcf.clear(m); }
+	    public HCode convert(HMethod m) {
+		HCode c = hcf.convert(m);
+		// substitute stub for native methods.
+		if (c==null && Modifier.isNative(m.getModifiers()))
+		    c = new StubCode(m, frame);
+		return c;
+	    }
+	};
     }
 
     public List classData(HClass hc) {
