@@ -39,6 +39,34 @@ public class Display extends Node {
     */
     private boolean displayBlue;
 
+    //Keep the value of RED, GREEN, AND BLUE as they are. There are dependencies on them in the process() method.
+    /**
+       Indicates the red color channel or the color red, depending on context.
+     */
+    public static final int RED = 0;
+    /**
+       Indicates the green color channel or the color green, depending on context.
+     */
+    public static final int GREEN = 1;
+    /**
+       Indicates the blue color channel or the color blue, depending on context
+     */
+    public static final int BLUE = 2;
+
+
+    /**
+       Indicates what color the pixel data in the red channel should be displayed in.
+     */
+    private int displayRedAs = RED;
+     /**
+       Indicates what color the pixel data in the green channel should be displayed in.
+     */
+    private int displayGreenAs = GREEN;
+    /**
+       Indicates what color the pixel data in the blue channel should be displayed in.
+     */
+    private int displayBlueAs = BLUE;
+
     /**
        The width of all new windows.
     */
@@ -157,8 +185,34 @@ public class Display extends Node {
 	this.displayBlue = displayBlue;
     }
 
+    /**
+       Allows the user to specify what color the pixel data in the given channel is displayed as. If an invalid color channel
+       is specified, then no change occurs. If an invalid color is given, then the results are undefined.<br><br>
+
+       This option is independent of whether the data of a particular channel is to be displayed. For instance,
+       if you specified in the constructor that the red color channel is not to be displayed, but you have specified
+       that the blue channel is to be displayed in the color red, the blue channel's data will still be visible.
+
+       @param colorChannel The color channel whose display color is to be changed.
+       Use either Display.RED, Display.GREEN, or Display.BLUE.
+       @param displayAs The color in which to display the information in the given color channel.
+       Use either Display.RED, Display.GREEN, or Display.BLUE.
+     */
+    public void displayColorAs(int colorChannel, int displayAs) {
+	if (colorChannel == RED) {
+	    displayRedAs = displayAs;
+	}
+	else if (colorChannel == GREEN) {
+	    displayGreenAs = displayAs;
+	}
+	else if (colorChannel == BLUE) {
+	    displayBlueAs = displayAs;
+	}
+    }
+
     /** Display the image represented by <code>id</code>, usually called by the in-node. */
-    public synchronized void process(ImageData id) {
+    //public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	//System.out.println("DISPLAY: displaying "+title);
 	if (frame.isVisible()) {
 	    BufferedImage newImage;
@@ -174,15 +228,15 @@ public class Display extends Node {
 	    int temp = 0;
 	    if (displayRed) {
 		for (int i=0; i<id.rvals.length; i++) vals[i]=(id.rvals[i]|256)&255;
-		raster.setSamples(0,0,id.width,id.height,0,vals);
+		raster.setSamples(0,0,id.width,id.height,displayRedAs,vals);
 	    }
 	    if (displayGreen) {
 		for (int i=0; i<id.gvals.length; i++) vals[i]=(id.gvals[i]|256)&255;       
-		raster.setSamples(0,0,id.width,id.height,1,vals);
+		raster.setSamples(0,0,id.width,id.height,displayGreenAs,vals);
 	    }
 	    if (displayBlue) {
 		for (int i=0; i<id.bvals.length; i++) vals[i]=(id.bvals[i]|256)&255;
-		raster.setSamples(0,0,id.width,id.height,2,vals);
+		raster.setSamples(0,0,id.width,id.height,displayBlueAs,vals);
 	    }
 	    image = newImage;
 	    canvas.repaint();
