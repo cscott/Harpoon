@@ -93,7 +93,10 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_read
     fdObj    = (*env)->GetObjectField(env, obj, fdObjID);
     fd       = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
-    result = read(fd, (void*)buf, 1);
+    do {
+	result = read(fd, (void*)buf, 1);
+	/* if we're interrupted by a signal, just retry. */
+    } while (result<0 && errno == EINTR);
 
     if (result==-1) {
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
@@ -125,7 +128,10 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_readBytes
     fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
     fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
     
-    result = read(fd, (void*)buf, len);
+    do {
+	result = read(fd, (void*)buf, len);
+	/* if we're interrupted by a signal, just retry. */
+    } while (result<0 && errno == EINTR);
 
     if (result==-1) {
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));

@@ -111,7 +111,11 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_write
     fd       = Java_java_io_FileDescriptor_getfd(env, fdObj);
     buf[0]   = (unsigned char)i;
 
-    result = write(fd, (void*)buf, 1);
+    do {
+	result = write(fd, (void*)buf, 1);
+	/* if we're interrupted by a signal, just retry. */
+    } while (result < 0 && errno == EINTR);
+
     if (result==0)
 	(*env)->ThrowNew(env, IOExcCls, "No bytes written");
     if (result==-1)
@@ -144,6 +148,9 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes
 
     while (written < len) {
 	result = write(fd, (void*)(buf+written), len-written);
+	/* if we're interrupted by a signal, just retry. */
+	if (result < 0 && errno == EINTR) continue;
+
 	if (result==0) {
 	    (*env)->ThrowNew(env, IOExcCls, "No bytes written");
 	    return;
