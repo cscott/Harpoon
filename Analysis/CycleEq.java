@@ -21,13 +21,15 @@ import java.util.Vector;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.3 1999-01-11 21:19:56 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.4 1999-01-12 08:47:18 cananian Exp $
  */
 
 public class CycleEq  {
     Hashtable equiv = new Hashtable();
-    public CycleEq(HCode hc) {
-	Graph g = new ElementGraph(hc);
+    public CycleEq(HCode hc, boolean edgegraph) {
+	Graph g = (edgegraph) ?
+	    (Graph) new EdgeGraph(hc) :
+	    (Graph) new ElementGraph(hc);
 	compute_cyeq(g);
 	for (Enumeration e = g.primes(); e.hasMoreElements(); ) {
 	    Node n = (Node) e.nextElement();
@@ -248,10 +250,95 @@ public class CycleEq  {
 	    };
 	}
     }
+    // Brackets.
+    static class Bracket {
+	Node descendant;
+	Node ancestor;
+	public Bracket(Node descendant, Node ancestor) {
+	    Util.assert(descendant.dfs_num >= ancestor.dfs_num);
+	    this.descendant = descendant;
+	    this.ancestor = ancestor;
+	}
+	public int hashCode() {
+	    return descendant.hashCode() ^ ancestor.hashCode();
+	}
+	public boolean equals(Object o) {
+	    if (!(o instanceof Bracket)) return false;
+	    Bracket b = (Bracket) o;
+	    return (b.descendant.equals(descendant) &&
+		    b.ancestor.equals(ancestor));
+	}
+	public String toString() { return "<"+descendant+","+ancestor+">"; }
+    }
+    // linked lists of brackets.
+    static class BracketList {
+	static class ListCell {
+	    ListCell prev;
+	    Bracket b;
+	    ListCell next;
+	    ListCell(ListCell prev, Bracket b, ListCell next) {
+		this.prev = prev; this.b = b; this.next = next;
+	    }
+	}
+	ListCell first = null;
+	ListCell last =  null;
+	int size = 0;
 
+	public BracketList() { }
+	public int size() { return size; }
+	public void push(Bracket e) {
+	    first = new ListCell(null, e, first);
+	    if (first.next!=null)
+		first.next.prev = first;
+	    else
+		last = first;
+	    e.descendant.be2lc.put(e.ancestor, first);
+	    size++;
+	}
+	public Bracket top() { return first.b; }
+	public void delete(Node desc, Node ancs) {
+	    ListCell lc = (ListCell) desc.be2lc.get(ancs);
+	    delete(lc);
+	}
+	private void delete(ListCell lc) {
+	    if (first==lc) first=lc.next;
+	    else lc.prev.next = lc.next;
+	    if (last==lc) last = lc.prev;
+	    else lc.next.prev = lc.prev;
+	    size--;
+	}
+	public void append(BracketList bl) {
+	    if (bl.first!=null) {
+		if (first==null) {
+		    first=bl.first;
+		} else { // this and that both length > 0.
+		    last.next = bl.first;
+		    bl.first.prev=last;
+		}
+		last = bl.last;
+	    }
+	    size += bl.size;
+	    // invalidate the source bracket-list.
+	    bl.first=bl.last=null; bl.size=-1;
+	}
+	public String toString() {
+	    StringBuffer sb=new StringBuffer();
+	    sb.append(size);
+	    sb.append(": { ");
+	    for (ListCell lc=first; lc!=null; lc=lc.next) {
+		sb.append(lc.b);
+		if (lc.next!=null)
+		    sb.append(", ");
+	    }
+	    sb.append(" }");
+	    return sb.toString();
+	}
+    }
     
-    // representation of node-split graph, with dedicated END->START edge.
-    static final class ElementGraph extends Graph{
+    // Representations of node-split graphs, with dedicated END->START edge.
+
+    /** graph based on source ELEMENTS */
+    static final class ElementGraph extends Graph {
 	Node _init_start() { return new EStartNode(); }
 	Node _init_end() { return new EEndNode(); }
 
@@ -373,88 +460,136 @@ public class CycleEq  {
 	    public String toString() { return super.toString()+"_o"; }
 	}
     } // end ElementGraph
-    // ----------------
-    // Brackets.
-    static class Bracket {
-	Node descendant;
-	Node ancestor;
-	public Bracket(Node descendant, Node ancestor) {
-	    Util.assert(descendant.dfs_num >= ancestor.dfs_num);
-	    this.descendant = descendant;
-	    this.ancestor = ancestor;
-	}
-	public int hashCode() {
-	    return descendant.hashCode() ^ ancestor.hashCode();
-	}
-	public boolean equals(Object o) {
-	    if (!(o instanceof Bracket)) return false;
-	    Bracket b = (Bracket) o;
-	    return (b.descendant.equals(descendant) &&
-		    b.ancestor.equals(ancestor));
-	}
-	public String toString() { return "<"+descendant+","+ancestor+">"; }
-    }
-    static class BracketList {
-	static class ListCell {
-	    ListCell prev;
-	    Bracket b;
-	    ListCell next;
-	    ListCell(ListCell prev, Bracket b, ListCell next) {
-		this.prev = prev; this.b = b; this.next = next;
-	    }
-	}
-	ListCell first = null;
-	ListCell last =  null;
-	int size = 0;
 
-	public BracketList() { }
-	public int size() { return size; }
-	public void push(Bracket e) {
-	    first = new ListCell(null, e, first);
-	    if (first.next!=null)
-		first.next.prev = first;
-	    else
-		last = first;
-	    e.descendant.be2lc.put(e.ancestor, first);
-	    size++;
+    /** graph based on source EDGES */
+    static final class EdgeGraph extends Graph {
+	Node _init_start() { return new EStartNode(); }
+	Node _init_end() { return new EEndNode(); }
+
+	ENode newNode(HCodeEdge hce) {
+	    ENode n = new ENodePrime(hce);
+	    code2node.put(hce, n);
+	    return n;
 	}
-	public Bracket top() { return first.b; }
-	public void delete(Node desc, Node ancs) {
-	    ListCell lc = (ListCell) desc.be2lc.get(ancs);
-	    delete(lc);
+	HCodeEdge node2code(ENode n) {
+	    return n.source;
 	}
-	private void delete(ListCell lc) {
-	    if (first==lc) first=lc.next;
-	    else lc.prev.next = lc.next;
-	    if (last==lc) last = lc.prev;
-	    else lc.next.prev = lc.prev;
-	    size--;
+	ENode code2node(HCodeEdge hce) {
+	    ENode n = (ENode) code2node.get(hce);
+	    return (n!=null)?n:newNode(hce);
 	}
-	public void append(BracketList bl) {
-	    if (bl.first!=null) {
-		if (first==null) {
-		    first=bl.first;
-		} else { // this and that both length > 0.
-		    last.next = bl.first;
-		    bl.first.prev=last;
-		}
-		last = bl.last;
+	final Hashtable code2node = new Hashtable();
+	final Set start_code = new Set();
+	final Set end_code = new Set();
+	EdgeGraph(HCode hc) {
+	    HCodeElement root = hc.getRootElement();
+	    HCodeEdge[] root_succ = ((Edges)root).succ();
+	    for (int i=0; i<root_succ.length; i++)
+		start_code.union(root_succ[i]);
+	    HCodeElement[] leaves = hc.getLeafElements();
+	    for (int i=0; i<leaves.length; i++) {
+		HCodeEdge[] leaf_succ = ((Edges)leaves[i]).pred();
+		for (int j=0; j<leaf_succ.length; j++)
+		    end_code.union(leaf_succ[j]);
 	    }
-	    size += bl.size;
-	    // invalidate the source bracket-list.
-	    bl.first=bl.last=null; bl.size=-1;
+	    dfs_number(); // initialize dfs_number.
 	}
-	public String toString() {
-	    StringBuffer sb=new StringBuffer();
-	    sb.append(size);
-	    sb.append(": { ");
-	    for (ListCell lc=first; lc!=null; lc=lc.next) {
-		sb.append(lc.b);
-		if (lc.next!=null)
-		    sb.append(", ");
+
+	// NODE TYPES
+	abstract class ENode extends Node { // abstract node type.
+	    final HCodeEdge source;
+
+	    ENode(HCodeEdge source) {
+		this.source = source;
 	    }
-	    sb.append(" }");
-	    return sb.toString();
+	    public Object source() { return source; }
+	    public boolean isPrime() { return false; }
+	    abstract Enumeration _adj_();
 	}
-    }
+	class EStartNode extends ENode {
+	    EStartNode() { super(null); }
+	    Enumeration _adj_() {
+		FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
+		    public Object map(Object o) {
+			return ((ENodePrime)code2node((HCodeEdge)o)).ni;
+		    }
+		};
+		return new CombineEnumerator(new Enumeration[] {
+		    new SingletonEnumerator(end),
+		    new FilterEnumerator(start_code.elements(), f) });
+	    }
+
+	    public String toString() { return "#"+dfs_num+": start_node"; }
+	}
+	class EEndNode extends ENode {
+	    EEndNode() { super(null); }
+	    Enumeration _adj_() {
+		FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
+		    public Object map(Object o) {
+			return ((ENodePrime)code2node((HCodeEdge)o)).no;
+		    }
+		};
+		return new CombineEnumerator(new Enumeration[] {
+		    new FilterEnumerator(end_code.elements(), f),
+		    new SingletonEnumerator(start) });
+	    }
+	    public String toString() { return "#"+dfs_num+": end_node"; }
+	}
+	class ENodePrime extends ENode { // represents a'
+	    ENodeIn  ni;
+	    ENodeOut no;
+	    Enumeration _adj_() { 
+		return new ArrayEnumerator(new Node[] { ni, no });
+	    }
+	    ENodePrime(HCodeEdge source) {
+		super(source);
+		this.ni = new ENodeIn(source);
+		this.no = new ENodeOut(source);
+	    }
+	    public boolean isPrime() { return true; }
+	    public String toString() { return super.toString()+"'"; }
+	}
+	class ENodeIn extends ENode { // represents a_i
+	    Enumeration _adj_() {
+		Edges from_node = (Edges)source.from();
+		Enumeration e = new ArrayEnumerator(from_node.pred());
+		FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
+		    public Object map(Object o) {
+			HCodeEdge hce = (HCodeEdge) o;
+			return ((ENodePrime)code2node(hce)).no;
+		    }
+		};
+		e = new CombineEnumerator(new Enumeration[] {
+		    new FilterEnumerator(e, f), // then x_o where x in pred(a)
+		    new SingletonEnumerator(code2node(source)) }); // a' first.
+		if (!start_code.contains(source)) return e;
+		else // link to start node, too.
+		    return new CombineEnumerator(new Enumeration[] {
+			new SingletonEnumerator(start), e });
+	    }
+	    ENodeIn(HCodeEdge source) { super(source); }
+	    public String toString() { return super.toString()+"_i"; }
+	}
+	class ENodeOut extends ENode { // represents a_o
+	    Enumeration _adj_() {
+		Edges to_node = (Edges)source.to();
+		Enumeration e = new ArrayEnumerator(to_node.succ());
+		FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
+		    public Object map(Object o) {
+			HCodeEdge hce = (HCodeEdge) o;
+			return ((ENodePrime)code2node(hce)).ni;
+		    }
+		};
+		e = new CombineEnumerator(new Enumeration[] {
+		    new FilterEnumerator(e, f), //then x_i where x in succ(a)
+		    new SingletonEnumerator(code2node(source)) }); // a' first.
+		if (!end_code.contains(source)) return e;
+		else // link to end node, if necessary.
+		    return new CombineEnumerator(new Enumeration[] {
+			new SingletonEnumerator(end), e });
+	    }
+	    ENodeOut(HCodeEdge source) { super(source); }
+	    public String toString() { return super.toString()+"_o"; }
+	}
+    } // end EdgeGraph
 }
