@@ -6,6 +6,10 @@
 # include "gc.h"
 #endif
 
+#ifdef WITH_PRECISE_GC
+#include "jni-gc.h"
+#endif
+
 #include <assert.h>
 #include <unistd.h>
 #include <stdlib.h> /* for exit */
