@@ -1,0 +1,632 @@
+1db 1 iterations 
+1Reading database input/db2 ... OK
+1Building database ...Done.
+1a - add record
+1b - show beginning record
+1d - delete record
+1e - show end record
+1f - find record
+1m - modify record
+1n - next entry
+1p - previous record
+1q - quit
+1w - write database
+1s - sort
+1. - current record number
+1x - Total records
+1num - goto record number 'num'
+1---- Record number 1 ----
+1Full name
+1   Last: Alexander
+1  First: Fox
+1     MI: L
+1Address
+1    Addr: 8509 West Briarwood Ln
+1    City: Sanford
+1   State: Ohio
+1     ZIP: 01634
+1 Phone #: (229) 941-2114
+1
+1---- Record number 2 ----
+1Full name
+1   Last: Zappa
+1  First: Dana
+1     MI: Y
+1Address
+1    Addr: P.O. Box 8698
+1    City: Alpine
+1   State: Oregon
+1     ZIP: 23061
+1 Phone #: (689) 341-3654
+1
+1---- Record number 3 ----
+1Full name
+1   Last: Wyatt
+1  First: Mark
+1     MI: O
+1Address
+1    Addr: 1293 East Stagecoach Rd
+1    City: Albers
+1   State: Minnesota
+1     ZIP: 37278
+1 Phone #: (698) 135-8981
+1
+1---- Record number 4 ----
+1Full name
+1   Last: Gardner
+1  First: Christopher
+1     MI: K
+1Address
+1    Addr: P.O. Box 4694
+1    City: Bloomington
+1   State: Missouri
+1     ZIP: 23338
+1 Phone #: (251) 426-0431
+1
+1---- Record number 5000 ----
+1Full name
+1   Last: Hanner
+1  First: Bentley
+1     MI: K
+1Address
+1    Addr: P.O. Box 4633
+1    City: Big Springs
+1   State: Minnesota
+1     ZIP: 16772
+1 Phone #: (156) 314-8981
+1
+1---- Record number 4999 ----
+1Full name
+1   Last: Hill
+1  First: Sharon
+1     MI: X
+1Address
+1    Addr: 4405 North Travis Blvd
+1    City: Bloomington
+1   State: North Carolina
+1     ZIP: 54516
+1 Phone #: (818) 236-9912
+1
+1---- Record number 4998 ----
+1Full name
+1   Last: Maynord
+1  First: Raymond
+1     MI: P
+1Address
+1    Addr: 6014 Spring Lane
+1    City: Kasota
+1   State: Idaho
+1     ZIP: 37573
+1 Phone #: (195) 728-7758
+1
+1---- Record number 4997 ----
+1Full name
+1   Last: Wolfe
+1  First: Ed
+1     MI: M
+1Address
+1    Addr: 9459 North Blacksmith Circle
+1    City: Bandera
+1   State: Alabama
+1     ZIP: 38989
+1 Phone #: (637) 485-7441
+1
+1---- Record number 1 ----
+1Full name
+1   Last: Adair
+1  First: Robert
+1     MI: P
+1Address
+1    Addr: 810 East Pine 
+1    City: Wakefield
+1   State: Tennessee
+1     ZIP: 22647
+1 Phone #: (540) 413-6919
+1
+1---- Record number 2 ----
+1Full name
+1   Last: Adair
+1  First: Todd
+1     MI: R
+1Address
+1    Addr: P.O. Box 2603
+1    City: Oakland
+1   State: South Carolina
+1     ZIP: 28602
+1 Phone #: (755) 709-1115
+1
+1---- Record number 3 ----
+1Full name
+1   Last: Adair
+1  First: Olivia
+1     MI: I
+1Address
+1    Addr: 5371 Bass 
+1    City: Racine
+1   State: California
+1     ZIP: 21243
+1 Phone #: (872) 173-7900
+1
+1---- Record number 4 ----
+1Full name
+1   Last: Adair
+1  First: Steve
+1     MI: O
+1Address
+1    Addr: 130 Southcross 
+1    City: New Castle
+1   State: North Dakota
+1     ZIP: 05612
+1 Phone #: (356) 213-4533
+1
+1---- Record number 5000 ----
+1Full name
+1   Last: Zombola
+1  First: David
+1     MI: N
+1Address
+1    Addr: 9828 Maple 
+1    City: Mitchell
+1   State: North Carolina
+1     ZIP: 02778
+1 Phone #: (331) 189-4261
+1
+1---- Record number 4999 ----
+1Full name
+1   Last: Zombola
+1  First: Bonnie
+1     MI: M
+1Address
+1    Addr: 9412 West East Ridge Cove
+1    City: Alamo
+1   State: Washington
+1     ZIP: 28575
+1 Phone #: (517) 353-5831
+1
+1---- Record number 4998 ----
+1Full name
+1   Last: Zombola
+1  First: Scott
+1     MI: H
+1Address
+1    Addr: P.O. Box 5130
+1    City: Durham
+1   State: Ohio
+1     ZIP: 50028
+1 Phone #: (625) 868-6078
+1
+1---- Record number 4997 ----
+1Full name
+1   Last: Zombola
+1  First: Samantha
+1     MI: F
+1Address
+1    Addr: P.O. Box 3835
+1    City: Benton
+1   State: Missouri
+1     ZIP: 27182
+1 Phone #: (360) 573-2474
+1
+1---- Record number 1 ----
+1Full name
+1   Last: Henderson
+1  First: Aaron
+1     MI: L
+1Address
+1    Addr: 4860 South Ridgewood Dr
+1    City: Kasota
+1   State: Indiana
+1     ZIP: 43121-2099
+1 Phone #: (844) 936-5162
+1
+1---- Record number 2 ----
+1Full name
+1   Last: Pearson
+1  First: Aaron
+1     MI: C
+1Address
+1    Addr: P.O. Box 4831
+1    City: Eureka
+1   State: South Dakota
+1     ZIP: 03104-9140
+1 Phone #: (329) 173-3936
+1
+1---- Record number 3 ----
+1Full name
+1   Last: McLeod
+1  First: Aaron
+1     MI: E
+1Address
+1    Addr: P.O. Box 7366
+1    City: Mitchell
+1   State: Idaho
+1     ZIP: 19657
+1 Phone #: (635) 120-9344
+1
+1---- Record number 4 ----
+1Full name
+1   Last: Zastrow
+1  First: Aaron
+1     MI: U
+1Address
+1    Addr: 5654 East Ash Cir
+1    City: Galveston
+1   State: Montana
+1     ZIP: 02137-5174
+1 Phone #: (543) 958-8997
+1
+1---- Record number 5000 ----
+1Full name
+1   Last: Thurman
+1  First: Zelma
+1     MI: Y
+1Address
+1    Addr: 9938 South Cat Hollow Cir
+1    City: Lawrenceburg
+1   State: Tennessee
+1     ZIP: 49890
+1 Phone #: (365) 478-0308
+1
+1---- Record number 4999 ----
+1Full name
+1   Last: Lange
+1  First: Zelma
+1     MI: G
+1Address
+1    Addr: 9679 East Primrose Street
+1    City: Bloomington
+1   State: Pennsylvania
+1     ZIP: 08940
+1 Phone #: (270) 675-5749
+1
+1---- Record number 4998 ----
+1Full name
+1   Last: Farmer
+1  First: Zelma
+1     MI: O
+1Address
+1    Addr: 8264 East Pecan 
+1    City: Bethany
+1   State: Nebraska
+1     ZIP: 32463
+1 Phone #: (434) 660-3585
+1
+1---- Record number 4997 ----
+1Full name
+1   Last: Lindsay
+1  First: Zelma
+1     MI: F
+1Address
+1    Addr: 8894 Hilltop Road
+1    City: Albany
+1   State: Montana
+1     ZIP: 47929
+1 Phone #: (883) 364-2026
+1
+1---- Record number 1 ----
+1Full name
+1   Last: Henderson
+1  First: Aaron
+1     MI: L
+1Address
+1    Addr: 4860 South Ridgewood Dr
+1    City: Kasota
+1   State: Indiana
+1     ZIP: 43121-2099
+1 Phone #: (844) 936-5162
+1
+1---- Record number 2 ----
+1Full name
+1   Last: Pearson
+1  First: Aaron
+1     MI: C
+1Address
+1    Addr: P.O. Box 4831
+1    City: Eureka
+1   State: South Dakota
+1     ZIP: 03104-9140
+1 Phone #: (329) 173-3936
+1
+1---- Record number 3 ----
+1Full name
+1   Last: McLeod
+1  First: Aaron
+1     MI: E
+1Address
+1    Addr: P.O. Box 7366
+1    City: Mitchell
+1   State: Idaho
+1     ZIP: 19657
+1 Phone #: (635) 120-9344
+1
+1---- Record number 4 ----
+1Full name
+1   Last: Zastrow
+1  First: Aaron
+1     MI: U
+1Address
+1    Addr: 5654 East Ash Cir
+1    City: Galveston
+1   State: Montana
+1     ZIP: 02137-5174
+1 Phone #: (543) 958-8997
+1
+1---- Record number 3 ----
+1Full name
+1   Last: Wyatt
+1  First: Mark
+1     MI: O
+1Address
+1    Addr: 1293 East Stagecoach Rd
+1    City: Albers
+1   State: Minnesota
+1     ZIP: 37278
+1 Phone #: (698) 135-8981
+1
+1---- Record number 4 ----
+1Full name
+1   Last: Gardner
+1  First: Christopher
+1     MI: K
+1Address
+1    Addr: P.O. Box 4694
+1    City: Bloomington
+1   State: Missouri
+1     ZIP: 23338
+1 Phone #: (251) 426-0431
+1
+1---- Record number 5 ----
+1Full name
+1   Last: Fisher
+1  First: Samantha
+1     MI: Z
+1Address
+1    Addr: 7199 West Maple Circle
+1    City: Hillsboro
+1   State: Nevada
+1     ZIP: 04147-4991
+1 Phone #: (510) 907-8238
+1
+1---- Record number 4999 ----
+1Full name
+1   Last: Hanner
+1  First: Bentley
+1     MI: K
+1Address
+1    Addr: P.O. Box 4633
+1    City: Big Springs
+1   State: Minnesota
+1     ZIP: 16772
+1 Phone #: (156) 314-8981
+1
+1---- Record number 4998 ----
+1Full name
+1   Last: Hill
+1  First: Sharon
+1     MI: X
+1Address
+1    Addr: 4405 North Travis Blvd
+1    City: Bloomington
+1   State: North Carolina
+1     ZIP: 54516
+1 Phone #: (818) 236-9912
+1
+1---- Record number 4997 ----
+1Full name
+1   Last: Maynord
+1  First: Raymond
+1     MI: P
+1Address
+1    Addr: 6014 Spring Lane
+1    City: Kasota
+1   State: Idaho
+1     ZIP: 37573
+1 Phone #: (195) 728-7758
+1
+1---- Record number 4996 ----
+1Full name
+1   Last: Wolfe
+1  First: Ed
+1     MI: M
+1Address
+1    Addr: 9459 North Blacksmith Circle
+1    City: Bandera
+1   State: Alabama
+1     ZIP: 38989
+1 Phone #: (637) 485-7441
+1
+1---- Record number 4995 ----
+1Full name
+1   Last: Lambert
+1  First: Karen
+1     MI: J
+1Address
+1    Addr: P.O. Box 1998
+1    City: Somerset
+1   State: Wisconsin
+1     ZIP: 58766
+1 Phone #: (344) 407-8960
+1
+1---- Record number 4994 ----
+1Full name
+1   Last: Dominguez
+1  First: Gary
+1     MI: M
+1Address
+1    Addr: 7482 East Goodyear 
+1    City: Baldwin
+1   State: Michigan
+1     ZIP: 23146
+1 Phone #: (345) 569-2553
+1
+1---- Record number 4993 ----
+1Full name
+1   Last: Williams
+1  First: Beck
+1     MI: S
+1Address
+1    Addr: 4425 North Airport 
+1    City: Manassas
+1   State: Pennsylvania
+1     ZIP: 26737
+1 Phone #: (780) 755-1857
+1
+1---- Record number 4994 ----
+1Full name
+1   Last: Lambert
+1  First: Karen
+1     MI: J
+1Address
+1    Addr: P.O. Box 1998
+1    City: Somerset
+1   State: Wisconsin
+1     ZIP: 58766
+1 Phone #: (344) 407-8960
+1
+1---- Record number 4995 ----
+1Full name
+1   Last: Wolfe
+1  First: Ed
+1     MI: M
+1Address
+1    Addr: 9459 North Blacksmith Circle
+1    City: Bandera
+1   State: Alabama
+1     ZIP: 38989
+1 Phone #: (637) 485-7441
+1
+1---- Record number 4998 ----
+1Full name
+1   Last: Hanner
+1  First: Bentley
+1     MI: K
+1Address
+1    Addr: P.O. Box 4633
+1    City: Big Springs
+1   State: Minnesota
+1     ZIP: 16772
+1 Phone #: (156) 314-8981
+1
+1---- Record number 4997 ----
+1Full name
+1   Last: Hill
+1  First: Sharon
+1     MI: X
+1Address
+1    Addr: 4405 North Travis Blvd
+1    City: Bloomington
+1   State: North Carolina
+1     ZIP: 54516
+1 Phone #: (818) 236-9912
+1
+1a - add record
+1b - show beginning record
+1d - delete record
+1e - show end record
+1f - find record
+1m - modify record
+1n - next entry
+1p - previous record
+1q - quit
+1w - write database
+1s - sort
+1. - current record number
+1x - Total records
+1num - goto record number 'num'
+1---- Record number 5000 ----
+1Full name
+1   Last: Zzeik
+1  First: Aaarik
+1     MI: M
+1Address
+1    Addr: 123 Harcourt Plaza
+1    City: Austin
+1   State: Texas
+1     ZIP: 78758
+1 Phone #: (512) 837-6822
+1
+1---- Record number 4999 ----
+1Full name
+1   Last: Zombola
+1  First: Ashley
+1     MI: U
+1Address
+1    Addr: 5245 South Mearns Meadow 
+1    City: Racine
+1   State: Texas
+1     ZIP: 38127
+1 Phone #: (892) 872-3208
+1
+1---- Record number 1 ----
+1Full name
+1   Last: Aaalam
+1  First: Zane
+1     MI: N
+1Address
+1    Addr: 456 Weston Creek Circle
+1    City: Grapevine
+1   State: Arizona
+1     ZIP: 59938
+1 Phone #: (432) 495-2937
+1
+1---- Record number 2 ----
+1Full name
+1   Last: Adair
+1  First: Todd
+1     MI: R
+1Address
+1    Addr: P.O. Box 2603
+1    City: Oakland
+1   State: South Carolina
+1     ZIP: 28602
+1 Phone #: (755) 709-1115
+1
+1---- Record number 5000 ----
+1Full name
+1   Last: Erickson
+1  First: Zelma
+1     MI: O
+1Address
+1    Addr: 8521 West Turtleback 
+1    City: Cameron
+1   State: New Mexico
+1     ZIP: 41056
+1 Phone #: (529) 764-4846
+1
+1---- Record number 4999 ----
+1Full name
+1   Last: Hanner
+1  First: Zelma
+1     MI: K
+1Address
+1    Addr: 4605 South Forest Dr
+1    City: Indian Creek
+1   State: Idaho
+1     ZIP: 39521-1709
+1 Phone #: (807) 898-4727
+1
+1---- Record number 1 ----
+1Full name
+1   Last: Zzeik
+1  First: Aaarik
+1     MI: M
+1Address
+1    Addr: 123 Harcourt Plaza
+1    City: Austin
+1   State: Texas
+1     ZIP: 78758
+1 Phone #: (512) 837-6822
+1
+1---- Record number 2 ----
+1Full name
+1   Last: Thomas
+1  First: Aaron
+1     MI: Z
+1Address
+1    Addr: 1144 Briarwood Street
+1    City: Wellington
+1   State: Delaware
+1     ZIP: 19844-7165
+1 Phone #: (888) 567-6489
+1
+1Save database (y or n)? File output byte count = 0 checksum = 0

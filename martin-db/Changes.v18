@@ -1,0 +1,43 @@
+
+------- Database.java -------
+1a2,5
+>  * Tested Kaivalya  heap highwatermark = 13795320 Mar 24 15:26:52 CST 1998
+>  * Reduced the need for heap size to accomodate i64bit Arch.  rrh 3/24/98
+>  * Data files size reduced and workload increased. rrh 3/24/98
+>  *                                03/11/98 rrh - null (free) objects
+24c28
+<  * SPEC development version %W% %G%
+---
+>  * SPEC development version @(#)Database.java	2.00 03/24/98
+99a104,105
+> 	 fis = null;      // 03/11/98 rrh
+> 	 tok = null;      // 03/11/98 rrh
+142a149
+> 	  sif = null;           // 03/11/98 rrh
+191a199
+>       buffer = null;     // 03/11/98 rrh
+284a293,294
+>       buffer = null;     // 03/11/98 rrh
+>       fos = null;        // 03/11/98 rrh
+303a314
+>       e = null;        // 03/11/98 rrh
+397a409,410
+>       i = null;     // 03/11/98 rrh
+>       f = null;     // 03/11/98 rrh
+406,407c419,420
+<       String s;
+<       Hashtable ht;
+---
+>       //String s;         // 03/11/98 rrh
+>       //Hashtable ht;     // 03/11/98 rrh
+448a462,463
+>       f = null;            // 03/11/98 rrh
+> 
+496a512,513
+>       f = null;     // 03/11/98 rrh
+> 
+548a566,567
+>       f = null;       // 03/11/98 rrh
+> 
+690d708
+< 
