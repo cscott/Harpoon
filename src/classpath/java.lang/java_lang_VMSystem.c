@@ -137,6 +137,7 @@ Java_java_lang_VMSystem_currentTimeMillis (JNIEnv * env, jclass thisClass)
 JNIEXPORT jboolean JNICALL 
 Java_java_lang_VMSystem_isWordsBigEndian (JNIEnv *env, jclass clazz)
 {
+#if 0
   /* Are we little or big endian?  From Harbison&Steele.  */
   union
   {
@@ -146,5 +147,12 @@ Java_java_lang_VMSystem_isWordsBigEndian (JNIEnv *env, jclass clazz)
 
   u.l = 1;
   return (u.c[sizeof (long) - 1] == 1);
+#else /* use autoconf test instead. */
+#  if WORDS_BIGENDIAN
+  return JNI_TRUE;
+#  else
+  return JNI_FALSE;
+#  endif /* WORDS_BIGENDIAN */
+#endif
 }
 
