@@ -1,6 +1,9 @@
 #ifndef REALTIME_THREAD_H_INCLUDED
 #define REALTIME_THREAD_H_INCLUDED
 
+# include <setjmp.h> //for setjmp and longjmp
+jmp_buf main_return_jump; //a jump point for when the main thread exits
+
 void StartSwitching(); //turn thread switching on
 
 int StopSwitching();  //turn thread switching off
@@ -41,3 +44,6 @@ void print_queue(struct thread_queue_struct* q, char* message);
 void enqueue(struct thread_queue_struct** h, struct thread_queue_struct** t,
 	     struct thread_queue_struct* elem);
 #endif
+
+void start_realtime_threads(JNIEnv *env, jobject mainthread, jobject args, jclass thrCls);
+

@@ -309,4 +309,4 @@ JNIEXPORT jthrowable JNICALL Java_java_lang_Throwable_fillInStackTrace_00024_000
   /* SKETCH!  Leave unimplemented. */
     return thisobj;
 }
-#endif WITH_TRANSACTIONS
+#endif /* WITH_TRANSACTIONS */

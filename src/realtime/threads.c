@@ -570,3 +570,49 @@ void EnableThreadList(struct thread_queue_struct* queue)
   RestoreSwitching(switching_state);
   print_queue(thread_queue, "END enableThreadList queue");
 }
+
+#ifdef WITH_REALTIME_THREADS
+void start_realtime_threads(JNIEnv *env, jobject mainthread, jobject args,
+			    jclass thrCls) {
+  /*methods to get the scheduler, and to add a thread to it*/
+  jobject scheduler; //scheduler object
+  jmethodID addThreadMethod, getSchedMethod;
+  int nest=0;
+
+  setupScheduler(); //get the thread scheduler ready
+  
+  /* set up the main Java function as a thread, so we can switch back to it */
+  FNI_java_lang_Thread_mainThreadSetup(env, mainthread, args);
+  
+  //get the scheduler
+  getSchedMethod = (*env)->GetStaticMethodID(env, thrCls,
+					     "getScheduler",
+					     "()Ljavax/realtime/Scheduler;");
+  assert(!((*env)->ExceptionOccurred(env)));
+
+  scheduler = (*env)->CallStaticObjectMethod(env, thrCls, getSchedMethod);
+  assert(!((*env)->ExceptionOccurred(env)));
+  
+  //add the main Java thread to it
+  addThreadMethod = (*env)->GetMethodID(env, 
+					FNI_GetObjectClass(env, scheduler),
+					"addToFeasibility",
+					"(Ljavax/realtime/Schedulable;)V");
+  assert(!((*env)->ExceptionOccurred(env)));
+  //  printf("mthread->start_argument is %p\n",
+  //	 mainthread->mthread->start_argument);
+  (*env)->CallVoidMethod(env, scheduler, addThreadMethod, mainthread);
+  assert(!((*env)->ExceptionOccurred(env)));
+  
+  //  printf("About to start switching\n");
+  StartSwitching(); //startup thread switching
+  
+  setjmp(main_return_jump); //set a jump point here so we can return when done
+  // by cata: A dirty hack so we don't run CheckQuanta the second time through
+  if (++nest == 1)
+    CheckQuanta(1, 1, 1); //check the threads to start the program
+  /* And we're back - the main Java thread has exited */
+  StopSwitching(); //stop Thread switching
+  cleanupThreadQueue(env); //get rid of the threadQueue
+}
+#endif /* WITH_REALTIME_THREADS */

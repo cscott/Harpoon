@@ -9,7 +9,7 @@
 #include "config.h"
 #ifdef WITH_USER_THREADS
 #ifndef lint
-static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.6 2002-06-25 20:18:15 dumi Exp $";
+static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.7 2002-07-15 18:27:03 wbeebee Exp $";
 #endif
 
 #include "config.h"
@@ -157,7 +157,7 @@ void __machdep_pthread_create(struct machdep_pthread *machdep_pthread,
     machdep_pthread->machdep_state->__jmpbuf[JB_SP] =
       (int)machdep_pthread->machdep_stack + stack_size;
     machdep_pthread->hiptr=
-      (int)machdep_pthread->machdep_stack + stack_size;
+      (char *)machdep_pthread->machdep_stack + stack_size;
 #else
     machdep_pthread->machdep_state->__pc = (char *)machdep_pthread_start;
     machdep_pthread->machdep_state->__bp = (char *)0;/* So the backtrace

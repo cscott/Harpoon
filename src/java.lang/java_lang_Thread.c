@@ -494,7 +494,7 @@ static void realtime_destroy_thread(JNIEnv *env, jobject thread, void *cls) {
 /* setup the 'main' function as a thread */
 void FNI_java_lang_Thread_mainThreadSetup
 (JNIEnv *env, jobject mainThr, jobject args) {
-    jobject* ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
+  jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
   jint pri; //the thread's priority
   void * stackptr; //pointer to the stack
 
