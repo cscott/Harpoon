@@ -1,7 +1,7 @@
 package harpoon.Temp;
 
 /**
- * A Label represents an address in assembly language.
+ * A <code>Label</code> represents a (symbolic) address in assembly language.
  */
 
 public class Label  {
