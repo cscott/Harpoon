@@ -47,7 +47,7 @@ import java.util.Collection;
  * what memory access instructions need to do tag checks, and which don't
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.1.2.3 2001-06-04 21:46:48 witchel Exp $
+ * @version $Id: DominatingMemoryAccess.java,v 1.1.2.4 2001-06-05 07:48:24 witchel Exp $
  */
 public class DominatingMemoryAccess {
 
@@ -474,6 +474,7 @@ public class DominatingMemoryAccess {
                daNum defda = new daNum(i, true);
                daNum useda = new daNum(i, false);
                Integer danum = new Integer(i);
+               usedDANum.add(danum);
                // If all the danums are taken, just don't assign this
                // one a da reg.  No spilling.
                if(takenDA.contains(danum) == false) {
@@ -490,6 +491,9 @@ public class DominatingMemoryAccess {
             }
          }
       }
+      public HashSet usedDANum() {
+         return usedDANum;
+      }
       DARegAlloc(MoveCFGrapher mcfgr, Live _live, 
                  HashMap _defUseMap, HashMap _useDefMap) {
          nodes = mcfgr.nodes();
@@ -497,6 +501,7 @@ public class DominatingMemoryAccess {
          defUseMap = _defUseMap;
          useDefMap = _useDefMap;
          ref2dareg = new HashMap(nodes.size()/4);
+         usedDANum = new HashSet();
          // Register allocation algorithm is inspired by Appel "Modern
          // compiler implementation in Java" Chapter 11 -- Register
          // Allocation.  We modify it because we have a clear metric
@@ -520,6 +525,7 @@ public class DominatingMemoryAccess {
       private HashMap defUseMap;
       private HashMap useDefMap;
       private HashMap ref2dareg;
+      private HashSet usedDANum;
       private static final boolean trace = false;
    }
 
@@ -610,7 +616,7 @@ public class DominatingMemoryAccess {
          if(currtemps.containsKey(t)) {
             EqClass cl = (EqClass)currtemps.get(t);
             if(trace) {
-               System.out.println(cl + "\tgets hce " + hce + "\thcecode=" 
+               System.err.println(cl + "\tgets hce " + hce + "\thcecode=" 
                                   + hce.hashCode());
             }
             classes.put(hce, cl);
@@ -639,7 +645,7 @@ public class DominatingMemoryAccess {
          }
          EqClass newcl = new EqClass(++class_num, sz);
          if(trace) {
-            System.out.println(newcl + " gets hce " + hce + " hcecode=" 
+            System.err.println(newcl + " gets hce " + hce + " hcecode=" 
                                + hce.hashCode());
          }
          classes.put(hce, newcl);
@@ -711,7 +717,7 @@ public class DominatingMemoryAccess {
                   Number c = ((CONST)binop.getRight()).value;
                   Temp   t = ((harpoon.IR.Tree.TEMP)binop.getLeft()).temp;
                   if(trace) {
-                     System.out.println("ADDING TO A PTR -- " + m 
+                     System.err.println("ADDING TO A PTR -- " + m 
                                         + " hc=" + m.hashCode());
                   }
                   eqClasses.clearTemp(((harpoon.IR.Tree.TEMP)m.getDst()).temp);
@@ -760,7 +766,7 @@ public class DominatingMemoryAccess {
             // This is it, this use is dominated
             if(eqc.useNoTagCheck(0)) {
                if(trace) {
-                  System.out.println("hce " + hce.hashCode() + "not tag checked");
+                  System.err.println("hce " + hce.hashCode() + "not tag checked");
                }
                HCodeElement dom = (HCodeElement)active.get(eqc);
                Util.assert(defUseMap.containsKey(dom) == true);
@@ -787,7 +793,7 @@ public class DominatingMemoryAccess {
       case TreeKind.MOVE:
          MOVE m = (MOVE)hce;
          if(trace) {
-            System.out.println("hce " + hce + " code " + hce.hashCode() + " (" + children.length + ") active " + active);
+            System.err.println("hce " + hce + " code " + hce.hashCode() + " (" + children.length + ") active " + active);
          }
          tryDominate(m.getSrc(), eqClasses, active, defUseMap, useDefMap);
          tryDominate(m.getDst(), eqClasses, active, defUseMap, useDefMap);
@@ -868,6 +874,46 @@ public class DominatingMemoryAccess {
          );
    }
 
+   private void report_stats (harpoon.IR.Tree.Code code,
+                         final Live live, 
+                         final HashMap defUseMap,
+                         final HashMap useDefMap,
+                         final DARegAlloc alloc) {
+      HashMap ref2dareg = alloc.getRef2Dareg();
+      HashSet useda = alloc.usedDANum();
+      int tot_defs = defUseMap.keySet().size();
+      int tot_uses = 0;
+      for(Iterator it = defUseMap.values().iterator(); it.hasNext();) {
+         ArrayList uses = (ArrayList)it.next();
+         tot_uses += uses.size();
+      }
+      float avg = tot_defs != 0 ? (float)tot_uses/tot_defs : 0;
+      System.err.print(" DEF-USE " + tot_defs + "-" + tot_uses);
+      if(avg != 0.0 && avg != 1.0) {
+         System.err.print(" (" + avg + ")");
+      }
+      int alloc_def = 0;
+      int alloc_use = 0;
+      for(Iterator it = ref2dareg.values().iterator(); it.hasNext(); ) {
+         daNum danum = (daNum)it.next();
+         if(danum.isDef()) alloc_def++; else alloc_use++;
+      }
+      avg = alloc_def != 0 ? (float)alloc_use/alloc_def : 0;
+      System.err.print(" REGDEF-USE " + alloc_def + "-" + alloc_use);
+      if(avg != 0.0 && avg != 1.0) {
+         System.err.print(" (" + avg + ")");
+      }
+      if(useda.size() > 1) {
+         System.err.print(" ALLOC:");
+         for(Iterator it = useda.iterator(); it.hasNext(); ) {
+            Integer danum = (Integer)it.next();
+            System.err.print(" " + danum);
+         }
+      }
+      System.err.println("");
+
+   }
+
    static public boolean isDef(Object _danum) {
       daNum danum = (daNum) _danum;
       return danum.isDef();
@@ -906,12 +952,15 @@ public class DominatingMemoryAccess {
                }
                MoveCFGrapher mcfgr = new MoveCFGrapher(code);
                Live live = new Live(mcfgr, code, defUseMap, useDefMap);
-               DARegAlloc alloc = new DARegAlloc(mcfgr, live,
-                                                 defUseMap, useDefMap);
+               alloc = new DARegAlloc(mcfgr, live, defUseMap, useDefMap);
                HashMap ref2dareg = alloc.getRef2Dareg();
                ((harpoon.Backend.MIPS.Frame)frame).setNoTagCheckHashMap(ref2dareg);
+               ((harpoon.Backend.MIPS.Frame)frame).setUsedDANum(alloc.usedDANum());
                if(trace)
                   printDA(code, live, defUseMap, useDefMap, ref2dareg);
+               if(static_stats)
+                  report_stats(code, live, defUseMap, useDefMap, alloc);
+
                return hc;
             }
             public String getCodeName() { return parent.getCodeName(); }
@@ -926,5 +975,7 @@ public class DominatingMemoryAccess {
    }
    private HCodeFactory parent;
    private Frame frame;
+   private DARegAlloc alloc;
    private boolean trace = false;
+   private boolean static_stats = false;
 }
