@@ -8,10 +8,11 @@ import harpoon.Util.*;
 
 import java.util.Hashtable;
 /**
- * <code>SCC</code> implements Sparse Conditional Constant Propagation.
+ * <code>SCC</code> implements a Sparse Conditional Constant Propagation
+ * analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCC.java,v 1.1 1998-09-11 07:00:14 cananian Exp $
+ * @version $Id: SCC.java,v 1.2 1998-09-11 07:22:24 cananian Exp $
  */
 
 public class SCC  {
@@ -56,42 +57,61 @@ public class SCC  {
     }
     
 
-    /** Creates a <code>SCC</code>. */
-    public SCC() {
-        
-    }
+    /** Creates an <code>SCC</code> analyzer. */
+    public SCC(UseDef usedef) { this.usedef = usedef; }
+    /** Creates an <code>SCC</code> analyzer. */
+    public SCC() { this(new UseDef()); }
+    UseDef usedef;
 
-    public boolean isExec(HMethod method, Quad q) {
-	analyze(method); return E.contains(q);
+    //----------------------------------------------
+    // public information accessor methods.
+
+    /** Determine whether <code>Quad q</code> in <code>HMethod m</code>
+     *  is executable. */
+    public boolean isExec(HMethod m, Quad q) {
+	analyze(m); return E.contains(q);
     }
-    public HClass typeMap(HMethod method, Temp t) {
-	analyze(method);
+    /** Determine the static type of <code>Temp t</code> in 
+     *  <code>HMethod m</code>. */
+    public HClass typeMap(HMethod m, Temp t) {
+	analyze(m);
 	Alphabet v = V.get(t);
 	if (v instanceof Value) return ((Value)v).type;
 	if (v instanceof xClass) return ((xClass)v).type;
 	return null;
     }
-    public boolean isConst(HMethod method, Temp t) {
-	analyze(method); return (V.get(t) instanceof Value);
+    /** Determine whether <code>Temp t</code> in <code>HMethod m</code>
+     *  has a constant value. */
+    public boolean isConst(HMethod m, Temp t) {
+	analyze(m); return (V.get(t) instanceof Value);
     }
-    public Object constMap(HMethod method, Temp t) {
-	analyze(method);
+    /** Determine the constant value of <code>Temp t</code> in 
+     *  <code>HMethod m</code>. 
+     *  @exception Error if <code>Temp t</code> is not a constant.
+     */
+    public Object constMap(HMethod m, Temp t) {
+	analyze(m);
 	Alphabet v = V.get(t);
 	if (v instanceof Value) return ((Value)v).value;
 	throw new Error(t.toString() + " not a constant");
     }
     
+    //--------------------------------------
+    // Class state.
+    /** Set of all executable quads. */
     QuadSet  E = new QuadSet();
+    /** Mapping from Temps to Alphabet lattices */
     AlphaMap V = new AlphaMap();
+    /** Mapping from HMethods to Return/Throw types. */
     Hashtable analyzed = new Hashtable();
 
+    //-------------------------------------
+    // Analysis code.
+    /** Main analysis method.  */
     void analyze(HMethod method) {
 	// don't do things more than once.
 	if (analyzed.containsKey(method)) return;
 	analyzed.put(method, method);
-
-	// need list of uses.
-	UseDef usedef = new UseDef();
 
 	// initialize worklists.
 	UniqueFIFO Wv = new UniqueFIFO();
@@ -146,7 +166,7 @@ public class SCC  {
 		    if (((CALL)q).retval!=null)
 			raiseV(V, Wv, ((CALL)q).retval,
 			       new xClass( ((CALL)q).method.getReturnType()) );
-		    raiseV(V, Wv, ((CALL)q).retex, // XXX
+		    raiseV(V, Wv, ((CALL)q).retex, // XXX can do better.
 			   new xClass( HClass.forClass(Throwable.class) ) );
 		} else if (q instanceof COMPONENTOF) {
 		    raiseV(V, Wv, q.def()[0],
@@ -271,11 +291,15 @@ public class SCC  {
 	} // END while worklists not empty.
     } // END analyze method.
 
+    //------------------------------------------------------
+    // Utility functions to raise an element in E or V:
 
+    /** Raise element q in E, adding q to Wb if necessary. */
     void raiseE(QuadSet E, UniqueFIFO Wb, Quad q) {
 	if (E.contains(q)) return;
 	E.set(q); Wb.push(q);
     }
+    /** Raise element t to a in V, adding t to Wv if necessary. */
     void raiseV(AlphaMap V, UniqueFIFO Wv, Temp t, Alphabet a) {
 	Alphabet old = V.get(t);
 	// only allow raising value.  null->value->xClass->Top
@@ -292,16 +316,24 @@ public class SCC  {
 	Wv.push(t);
     }
 
+    //---------------------------------------------------------
+    // Functions to merge two xClass values in a Phi.
+
     HClass merge(AlphaMap V, Temp[] src) {
 	return null; // XXX FIXME
     }
 
+    //---------------------------------------------------------
+    // Auxilliary mapping classes.
+    
+    /** Maintains a set of Quads (each element unique). */
     class QuadSet {
 	Hashtable h = new Hashtable();
 	void set(Quad q) { h.put(q, q); }
 	void remove(Quad q) { h.remove(q); }
 	boolean contains(Quad q) { return h.containsKey(q); }
     }
+    /** Maintains a mapping from Temp to Alphabet. */
     class AlphaMap {
 	Hashtable h = new Hashtable();
 	void put(Temp t, Alphabet a) { h.put(t, a); }
