@@ -201,6 +201,38 @@ JNIEXPORT jint JNICALL Java_java_io_NativeIO_startListenerJNI
   return s;
 }
 
+JNIEXPORT jint JNICALL Java_java_io_NativeIO_socketAccept
+  (JNIEnv *env, jint fd, jobject/*SocketImpl*/ s) {
+    struct sockaddr_in sa;
+    jobject fdObj, address;
+    int rc, sa_size = sizeof(sa);
+
+    assert(inited);
+
+    do {
+      rc = accept(fd, (struct sockaddr *) &sa, &sa_size);
+    } while (rc<0 && errno==EINTR); /* repeat if interrupted */
+
+    /* Check for error condition */
+    if (rc<0) {
+      if (errno==EAGAIN)
+	return TRYAGAIN;
+      (*env)->ThrowNew(env, IOExcCls, strerror(errno));
+      return 0;
+    }
+
+    /* fill in SocketImpl */
+    fdObj = (*env)->GetObjectField(env, s, SI_fdObjID);
+    Java_java_io_FileDescriptor_setfd(env, fdObj, rc);
+    address = (*env)->GetObjectField(env, s, SI_addrID);
+    (*env)->SetIntField(env, address, IA_familyID, sa.sin_family);
+    (*env)->SetIntField(env, address, IA_addrID, ntohl(sa.sin_addr.s_addr));
+    (*env)->SetIntField(env, s, SI_portID, ntohs(sa.sin_port));
+    return 0;
+    /* done */
+}
+
+
 JNIEXPORT jint JNICALL Java_java_io_NativeIO_acceptJNI
   (JNIEnv *env, jobject obj, jint handle, jbyteArray IP)
 {

@@ -83,6 +83,9 @@ JNIEXPORT jboolean JNICALL Java_java_io_NativeIO_canAcceptJNI
 JNIEXPORT jint JNICALL Java_java_io_NativeIO_getCharJNI
   (JNIEnv *, jclass, jint);
 
+JNIEXPORT jint JNICALL Java_java_io_NativeIO_socketAccept
+  (JNIEnv *env, jint fd, jobject/*SocketImpl*/ s);
+
 /*
  * Class:     java_io_NativeIO
  * Method:    getFDs
