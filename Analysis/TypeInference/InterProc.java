@@ -13,7 +13,7 @@ import harpoon.Analysis.QuadSSA.ClassHierarchy;
  * <code>InterProc</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: InterProc.java,v 1.1.2.4 1998-12-05 20:52:08 marinov Exp $
+ * @version $Id: InterProc.java,v 1.1.2.5 1998-12-07 02:52:03 marinov Exp $
  */
 
 public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
@@ -53,7 +53,7 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
 	return ((IntraProc)proc.get(m)).calls(cs);
     }
 
-    Worklist wl;
+    AuxUniqueFIFO wl;
     public void analyze() {
 	if (analyzed) return; else analyzed = true;	
 	/* main method, the one from which the analysis starts. */
@@ -63,7 +63,7 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
 	if (ch==null) ch = new ClassHierarchy(m);
 	cc = new ClassCone(ch);
 	/* worklist of methods that are to be processed. */
-	wl = new UniqueFIFO();
+	wl = new AuxUniqueFIFO();
 	/* put class initializers for reachable classes on the worklist. */
 	SetHClass[] ep = new SetHClass[0];
 	for (Enumeration e = classInitializers(ch); e.hasMoreElements(); ) {
@@ -89,7 +89,7 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
     ClassCone cc;
     SetHClass cone(HClass c) { return cc.cone(c); }
     
-    void reanalyze(IntraProc i) { wl.push(i); }
+    void reanalyze(IntraProc i) { wl.push(i, i.depth); }
 
     IntraProc getIntra(IntraProc c, HMethod m, SetHClass[] p) {
 	IntraProc i = (IntraProc)proc.get(m);
@@ -97,9 +97,12 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
 	    i = new IntraProc(this, m); 
 	    proc.put(m, i);
 	    i.addParameters(p);
+	    if (c!=null) i.addCallee(c);
 	    reanalyze(i);
-	} else if (i.addParameters(p)) reanalyze(i);
-	if (c!=null) i.addCallee(c);
+	} else if (i.addParameters(p)) {
+	    if (c!=null) i.addCallee(c);
+	    reanalyze(i);
+	}
 	return i;
     }
 

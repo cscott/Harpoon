@@ -18,7 +18,7 @@ import java.util.Enumeration;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.6 1998-12-06 17:26:20 marinov Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.7 1998-12-07 02:52:03 marinov Exp $
  */
 
 public class IntraProc {
@@ -30,7 +30,9 @@ public class IntraProc {
     SetHClass[] parameterTypes;
     SetHClass returnType;
     SetHClass exceptionType;
+    public static boolean exceptionAnalysis = false; // UGLY?! otherwise, running out of memory now
     Set callees;
+    int depth = 0;
 
     public IntraProc(InterProc e, HMethod m) { 
 	environment = e;
@@ -48,7 +50,11 @@ public class IntraProc {
     SetHClass getReturnType() { return returnType.copy(); }
     SetHClass getExceptionType() { return exceptionType.copy(); }
 
-    void addCallee(IntraProc i) { callees.union(i); }
+    void addCallee(IntraProc i) { 
+	callees.union(i); 
+	int d = i.depth+1; 
+	if (d>depth) depth = d;
+    }
     boolean addParameters(SetHClass[] p) {
 	boolean changed = false;
 	for (int i=0; i<p.length; i++)
@@ -92,14 +98,15 @@ public class IntraProc {
 		environment.mergeType(HClass.forName("java.lang.System").getDeclaredField("err"), parameterTypes[0]);
 	}
 	returnType = environment.cone(method.getReturnType());
-	exceptionType = environment.cone(HClass.forClass(Throwable.class));
+	if (exceptionAnalysis) // UGLY?! otherwise, running out of memory now
+	    exceptionType = environment.cone(HClass.forClass(Throwable.class));
     } 
 
     boolean outputChanged;
     void analyze() {
 	//DEBUG
 	System.out.println(System.currentTimeMillis());
-	System.out.println("   analyzing " + method.getDeclaringClass() + " " + method.getName());
+	System.out.println("   analyzing " + depth + " " + method.getDeclaringClass() + " " + method.getName());
 	//if (method.getName().equals("t")) {
 	//System.out.print("   analyzing " + method.getDeclaringClass() + " " + method.getName());
 	//HClass[] II = method.getParameterTypes();
@@ -168,7 +175,7 @@ public class IntraProc {
 	//DEBUG
  
 	/* added to try to save some memory */
-	if (noCache) map = null;	
+	if (noCache) { map = null; if (method.getName().equals("igen")) System.gc(); }
 	/* "regular" calculation */
 	if (outputChanged)
 	    for (Enumeration e=callees.elements(); e.hasMoreElements(); )
@@ -298,7 +305,7 @@ public class IntraProc {
 	public void visit(MOVE q) {
 	    SetHClass t = (SetHClass)map.get(q.src);
 	    if (t==null) { modified = false; return; }
-	    modified = merge(q.dst, t);
+	    modified = move(q.dst, t);
 	}
 	public void visit(NEW q) {
 	    modified = merge(q.dst, q.hclass);
@@ -325,7 +332,7 @@ public class IntraProc {
 		SetHClass t = (SetHClass)map.get(q.src[i]);
 		if (t==null) continue;
 		for (int j=0; j<q.dst[i].length; j++)
-		    if (merge(q.dst[i][j], t))
+		    if (move(q.dst[i][j], t))
 			r = true;
 	    }
 	    modified = r;
@@ -346,9 +353,23 @@ public class IntraProc {
 	public void visit(THROW q) {
 	    SetHClass s = (SetHClass)map.get(q.throwable);
 	    if (s!=null)
-		outputChanged = exceptionType.union(s) || outputChanged;
+		if (exceptionAnalysis) // UGLY?! otherwise, running out of memory now
+		    outputChanged = exceptionType.union(s) || outputChanged;
 	    modified = false;
 	}
+    }
+
+    boolean move(Temp t, SetHClass newType) {
+	SetHClass oldType = (SetHClass)map.get(t);
+	if (oldType==null) { 
+	    map.put(t, newType); 
+	    return true;
+	}
+	// if the merged value is different from the old value, update...
+	if (oldType.union(newType)) {
+	    map.put(t, oldType);
+	    return true;
+	} else return false;
     }
 
     boolean merge(Temp t, SetHClass newType) {
@@ -365,5 +386,14 @@ public class IntraProc {
     }
     
     boolean merge(Temp t, HClass c) { return merge(t, new SetHClass(c)); }
+
+    public String toString() {
+	StringBuffer s = new StringBuffer();
+	s.append(method.getDeclaringClass() + " " + method.getName() + " ");
+	for (int i=0; i<parameterTypes.length; i++)
+	    s.append(parameterTypes[i] + " ");
+	s.append(returnType);
+	return s.toString();
+    }
 
 }
