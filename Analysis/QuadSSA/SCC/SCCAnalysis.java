@@ -23,15 +23,21 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.13 1999-08-05 15:04:01 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.14 1999-08-09 20:26:24 duncan Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     UseDefMap udm;
 
+    /** Default constructor disallowed:  shouldn't create this class without
+     *  supplying an <code>HCode</code>.
+     */
+    protected SCCAnalysis() { }
+
     /** Creates a <code>SCC</code>. */
-    public SCCAnalysis(UseDefMap usedef) {
+    public SCCAnalysis(HCode hc, UseDefMap usedef) {
 	this.udm = usedef;
+	analyze(hc);
     }
 
     /*-----------------------------*/
@@ -50,18 +56,21 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
      *  <code>HMethod</code> <code>m</code>
      *  is executable. */
     public boolean execMap(HCode hc, HCodeElement quad) {
-	analyze(hc); return Eq.contains(quad);
+	// ignore hc
+	return Eq.contains(quad);
     }
     /** Determine whether <code>Edge</code> <code>e</code> in 
      *  <code>HMethod</code> <code>m</code>
      *  is executable. */
     public boolean execMap(HCode hc, HCodeEdge edge) {
-	analyze(hc); return Ee.contains(edge);
+	// ignore hc
+	return Ee.contains(edge);
     }
     /** Determine the static type of <code>Temp</code> <code>t</code> in 
      *  <code>HMethod</code> <code>m</code>. */
-    public HClass typeMap(HCode hc, Temp t) {
-	analyze(hc);  LatticeVal v = (LatticeVal) V.get(t);
+    public HClass typeMap(HCodeElement hce, Temp t) {
+	// ignore hce
+	LatticeVal v = (LatticeVal) V.get(t);
 	if (v instanceof xClass) return ((xClass)v).type();
 	return null;
     }
@@ -69,14 +78,16 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
      *  <code>HMethod</code> <code>m</code>
      *  has a constant value. */
     public boolean isConst(HCode hc, Temp t) {
-	analyze(hc); return (V.get(t) instanceof xConstant);
+	// ignore hc
+	return (V.get(t) instanceof xConstant);
     }
     /** Determine the constant value of <code>Temp</code> <code>t</code> in 
      *  <code>HMethod</code> <code>m</code>. 
      *  @exception Error if <code>Temp</code> <code>t</code> is not a constant.
      */
     public Object constMap(HCode hc, Temp t) {
-	analyze(hc);  LatticeVal v = (LatticeVal) V.get(t);
+	// ignore hc
+	LatticeVal v = (LatticeVal) V.get(t);
 	if (v instanceof xConstant) return ((xConstant)v).constValue();
 	throw new Error(t.toString() + " not a constant");
     }
@@ -85,7 +96,8 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
      *  in <code>HMethod</code> <code>m</code>.
      */
     public int plusWidthMap(HCode hc, Temp t) {
-	analyze(hc); LatticeVal v = (LatticeVal) V.get(t);
+	// ignore hc
+	LatticeVal v = (LatticeVal) V.get(t);
 	if (v==null) throw new Error("Unknown "+t);
 	xBitWidth bw = extractWidth(v);
 	return bw.plusWidth();
@@ -94,7 +106,8 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
      *  in <code>HMethod</code> <code>m</code>.
      */
     public int minusWidthMap(HCode hc, Temp t) {
-	analyze(hc); LatticeVal v = (LatticeVal) V.get(t);
+	// ignore hc	
+	LatticeVal v = (LatticeVal) V.get(t);
 	if (v==null) throw new Error("Unknown "+t);
 	xBitWidth bw = extractWidth(v);
 	return bw.minusWidth();
@@ -103,17 +116,8 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     /*---------------------------*/
     // Analysis code.
 
-    /** Set of analyzed methods. */
-    Set analyzed = new HashSet();
-    HCode lastHCode = null;
     /** Main analysis method. */
     void analyze(HCode hc) {
-	// caching.
-	if (lastHCode==hc) return; // quick exit.
-	if (analyzed.contains(hc)) return;
-	analyzed.union(hc);
-	lastHCode = hc;
-
 	// Initialize worklists.
 	Worklist Wv = new HashSet(); // variable worklist.
 	Worklist Wq = new HashSet(); // block worklist.

@@ -20,7 +20,7 @@ import harpoon.Util.Util;
  * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.5.2.9 1999-05-19 06:45:12 andyb Exp $
+ * @version $Id: SCCOptimize.java,v 1.5.2.10 1999-08-09 20:26:24 duncan Exp $
  */
 public final class SCCOptimize {
     TypeMap  ti;
@@ -42,7 +42,7 @@ public final class SCCOptimize {
 		HCode hc = parent.convert(m);
 		if (hc!=null) {
 		    harpoon.Analysis.UseDef ud = new harpoon.Analysis.UseDef();
-		    (new SCCOptimize(new SCCAnalysis(ud))).optimize(hc);
+		    (new SCCOptimize(new SCCAnalysis(hc, ud))).optimize(hc);
 		}
 		return hc;
 	    }
@@ -95,7 +95,7 @@ public final class SCCOptimize {
 		for (i=0; i<d.length; i++) {
 		    Quad qq = newCONST(q.getFactory(), q, d[i],
 				       cm.constMap(hc, d[i]),
-				       ti.typeMap(hc, d[i]) );
+				       ti.typeMap(q, d[i]) );
 		    Quad.addEdge(header, which_succ, qq, 0);
 		    Ee.union(header.nextEdge(which_succ));
 		    header = qq; which_succ = 0;
@@ -161,7 +161,7 @@ public final class SCCOptimize {
 			// insert CONST.
 			Quad qq = newCONST(q.getFactory(), q, q.dst(i), 
 					   cm.constMap(hc, q.dst(i)),
-					   ti.typeMap(hc, q.dst(i)) );
+					   ti.typeMap(q, q.dst(i)) );
 			Edge edge = q.nextEdge(0);
 			Quad.addEdge(qq, 0,(Quad)edge.to(), edge.which_pred());
 			Quad.addEdge(q, 0, qq, 0);
