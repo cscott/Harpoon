@@ -55,8 +55,15 @@ inline void* Block_alloc(struct Block* block, size_t size) {
 #ifdef RTJ_DEBUG
   printf("Block_alloc(%08x, %d)\n", block, size);
 #endif
-  return ((ptr = (void*)exchange_and_add((void*)(&(block->free)), size)) 
-	  > block->end)?NULL:ptr;
+  if ((ptr = (void*)exchange_and_add((void*)(&(block->free)), size))
+      > block->end) {
+    printf("Ran out of space in MemoryArea: %d is not enough space.\n",
+	   (block->end)-(block->begin));
+    printf("Try increasing your MemoryArea size.\n");
+    return NULL;
+  } else {
+    return ptr;
+  }
   /* Returns NULL in case the allocation failed - all subsequent
      allocations will fail as well..., and block->free will be
      trashed. */
