@@ -13,9 +13,15 @@ ActionNormal::ActionNormal(model *m) {
   domrelation=m->getdomainrelation();
 }
 
-void ActionNormal::repair(Hashtable *env,CoercePredicate *p) {
+void ActionNormal::repairpredicate(Hashtable *env,CoercePredicate *p) {
   /* Don't actually repair stuff */
 }
+
+
+void ActionNormal::breakpredicate(Hashtable *env, CoercePredicate *p)
+{
+}
+
 
 bool ActionNormal::conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, CoercePredicate *p2) {
   if(!p1->isrule()&&
@@ -128,6 +134,6 @@ bool ActionNormal::conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, 
 }
 
 
-bool ActionNormal::canrepair(CoercePredicate *cp) {
+bool ActionNormal::canrepairpredicate(CoercePredicate *cp) {
   return false; /* Doesn't repair stuff */
 }

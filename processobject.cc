@@ -10,7 +10,8 @@
 #include "set.h"
 #include "Relation.h"
 #include "repair.h"
-
+#include "normalizer.h"
+#include "Action.h"
 
 processobject::processobject(model *m) {
   globalmodel=m;
@@ -159,9 +160,31 @@ int processobject::processstatement(Statement *s, Hashtable *env) {
 }
 
 
+// returns true if and only if the given constraint is satisfied 
+bool processobject::issatisfied(Constraint *c) 
+{
+  State *st=new State(c,globalmodel->gethashtable());
+  bool satisfied = true;
+  if (st->initializestate(globalmodel))
+    while (true)
+      {      
+	if (c->getstatement()!=NULL)
+	  if (processstatement(c->getstatement(),st->env)!=PTRUE) 
+	    satisfied = false;
+	if (!st->increment(globalmodel))
+	    break;
+      }
+
+  delete(st);
+  return satisfied;
+}
+
+
 
 /* processed the given constraint and if it's not satisfied, 
-   displays a message and tries to repair the constraint */
+   displays a message and tries to repair the constraint 
+   The function returns true only if the constraint was initially
+   satisfied. */
 bool processobject::processconstraint(Constraint *c) {
   State *st=new State(c,globalmodel->gethashtable());
   bool clean=true;
@@ -184,17 +207,56 @@ bool processobject::processconstraint(Constraint *c) {
 
 
 
-// breaks the given constraint by invalidating each of its sentences
-void processobject::breakconstraint(Constraint *c) {
-  State *st = new State(c, globalmodel->gethashtable());
-  
+/* breaks the given constraint by invalidating each of its satisfied sentences */
+void processobject::breakconstraint(Constraint *c)
+{  
+  // first, get get the constraint in normal form
+  NormalForm *nf = globalmodel->getnormalform(c);
+
+  // for each CoerceSentence in nf, find if it's satisfied. If so, break it.
+  for (int i=0; i<nf->getnumsentences(); i++)
+    {
+      CoerceSentence *s = nf->getsentence(i);
+      
+      // find if s is satisfied
+      bool satisfied = true;
+      State *st = new State(c, globalmodel->gethashtable());
+      if (st->initializestate(globalmodel))
+	while(true) 
+	  {
+	    if (!s->issatisfied(this, st->env))
+	      satisfied=false;
+
+	    if (!st->increment(globalmodel))
+	      break;
+	  }  
+      delete(st);
+      
+
+      // if s is satisfied, then break it
+
+      // first, select an arbitrary binding, for ex. the first one
+      st = new State(c, globalmodel->gethashtable());
+      st->initializestate(globalmodel);
+      
+      for (int j=0; j<s->getnumpredicates(); j++)
+	{
+	  CoercePredicate *cp = s->getpredicate(j);
+	  // break this predicate with probability prob_breakpredicate
+	  if (random()<model::prob_breakpredicate*RAND_MAX)
+	    {
+	      Action *action = repair->findbreakaction(cp);
+	      action->breakpredicate(st->env, cp);
+	    }
+	}
+
+      delete(st);
+    }
 }
 
 
 processobject::~processobject() {
 }
-
-
 
 
 

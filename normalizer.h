@@ -35,11 +35,12 @@ class CoercePredicate {
 class CoerceSentence {
  public:
   CoerceSentence(CoercePredicate **pred, int numpredicates);
-  CoercePredicate *getpredicate(int i);
   int getnumpredicates();
-  ~CoerceSentence();
+  CoercePredicate *getpredicate(int i);
+  bool issatisfied(processobject *po, Hashtable *env);
   int cost(processobject *po, Hashtable *env);
-
+  ~CoerceSentence();
+  
  private:
   CoercePredicate **predicates;
   int numpreds;

@@ -12,7 +12,7 @@ ActionNotInSet::ActionNotInSet(DomainRelation *drel, model *m) {
   globalmodel=m;
 }
 
-void ActionNotInSet::repair(Hashtable *env,CoercePredicate *p) {
+void ActionNotInSet::repairpredicate(Hashtable *env,CoercePredicate *p) {
   Element *ele=(Element*) env->get(p->getpredicate()->getlabel()->label());
   switch(p->getpredicate()->getsetexpr()->gettype()) {
   case SETEXPR_LABEL:
@@ -31,8 +31,15 @@ void ActionNotInSet::repair(Hashtable *env,CoercePredicate *p) {
   }
 }
 
+
+
+void ActionNotInSet::breakpredicate(Hashtable *env, CoercePredicate *p)
+{
+}
+
+
 bool ActionNotInSet::conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, CoercePredicate *p2) {
-  assert(canrepair(p1));
+  assert(canrepairpredicate(p1));
   if(comparepredicates(c1,p1,c2,p2))
     return false; /*same predicates don't conflict*/
   Setexpr *pse=p1->getpredicate()->getsetexpr();
@@ -81,7 +88,7 @@ bool ActionNotInSet::conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2
   }
 }
 
-bool ActionNotInSet::canrepair(CoercePredicate *cp) {
+bool ActionNotInSet::canrepairpredicate(CoercePredicate *cp) {
   if (cp->getcoercebool()==true)
     return false;
   Predicate *p=cp->getpredicate();

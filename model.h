@@ -30,6 +30,10 @@ class model {
   bool subtypeof(structure *sub,structure *super);
   typemap * gettypemap();
   void reset();
+
+  static const double prob_breakconstraint = 0.2;  // the probability with which each constraint is broken when inserting errors
+  static const double prob_breakpredicate = 1; // the probability with which each predicate from the selected sentences is broken
+
  private:
   void parsespacefile(char *spacefile);
   void parsestructfile(char *structfile);

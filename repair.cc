@@ -118,20 +118,28 @@ void Repair::repairconstraint(Constraint *c, processobject *po, Hashtable *env) 
     if (status!=cp->getcoercebool()) {
       /*Need to coerce*/
       Action *act=findrepairaction(cp);
-      act->repair(env,cp);
+      act->repairpredicate(env,cp);
       /* Data structure fixed - well eventually*/
     }
   }
 }
 
 
-// returns the action that can repair the given constraint
+// returns the action that can repair the given predicate
 Action * Repair::findrepairaction(CoercePredicate *cp) {
   for(int i=0;i<numactions;i++) {
-    if (repairactions[i]->canrepair(cp))
+    if (repairactions[i]->canrepairpredicate(cp))
       return repairactions[i];
   }
   return NULL;
+}
+
+
+
+// returns the action that can break the given predicate
+Action * Repair::findbreakaction(CoercePredicate *cp) 
+{
+  return findrepairaction(cp);
 }
 
 

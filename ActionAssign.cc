@@ -46,7 +46,7 @@ char * ActionAssign::gettype(Constraint *c,Elementexpr *ee) {
   }
 }
 
-void ActionAssign::repair(Hashtable *env,CoercePredicate *cp) {
+void ActionAssign::repairpredicate(Hashtable *env,CoercePredicate *cp) {
   Predicate *p=cp->getpredicate();
   Element *ele=evaluateexpr(p->geteleexpr(),env,globalmodel); //ele=E
   Element *index=(Element *) env->get(p->getvalueexpr()->getlabel()->label()); // index=V
@@ -98,8 +98,16 @@ void ActionAssign::repair(Hashtable *env,CoercePredicate *cp) {
   }
 }
 
+
+
+void ActionAssign::breakpredicate(Hashtable *env, CoercePredicate *p)
+{
+}
+
+
+
 bool ActionAssign::conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, CoercePredicate *p2) {
-  assert(canrepair(p1));
+  assert(canrepairpredicate(p1));
   if(comparepredicates(c1,p1,c2,p2))
     return false; /*same predicates don't conflict*/
   /* we have v.r?a */
@@ -145,7 +153,7 @@ bool ActionAssign::conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, 
 			  p1->getpredicate()->getvalueexpr()->getrelation()->getname(),c2,p2);
 }
 
-bool ActionAssign::canrepair(CoercePredicate *cp) {
+bool ActionAssign::canrepairpredicate(CoercePredicate *cp) {
   if (cp->getcoercebool()==false)
     return false;
   Predicate *p=cp->getpredicate();

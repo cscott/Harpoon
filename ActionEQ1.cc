@@ -16,7 +16,7 @@ ActionEQ1::ActionEQ1(DomainRelation *drel, model *m) {
   globalmodel=m;
 }
 
-void ActionEQ1::repair(Hashtable *env,CoercePredicate *p) {
+void ActionEQ1::repairpredicate(Hashtable *env,CoercePredicate *p) {
   switch(p->getpredicate()->getsetexpr()->gettype()) {  
   // size(S)=1
   case SETEXPR_LABEL: { 
@@ -30,7 +30,7 @@ void ActionEQ1::repair(Hashtable *env,CoercePredicate *p) {
 	domrelation->delfromsetmovetoset(e,domrelation->getset(setname), globalmodel);
       }
     } else
-      this->ActionGEQ1::repair(env,p);
+      this->ActionGEQ1::repairpredicate(env,p);
   }
   break;
 
@@ -49,7 +49,7 @@ void ActionEQ1::repair(Hashtable *env,CoercePredicate *p) {
 	wr->remove(key,objtoremove);
       }
     } else
-      this->ActionGEQ1::repair(env,p);
+      this->ActionGEQ1::repairpredicate(env,p);
   }
   break;
 
@@ -68,7 +68,7 @@ void ActionEQ1::repair(Hashtable *env,CoercePredicate *p) {
 	wr->remove(objtoremove,key);
       }
     } else 
-      this->ActionGEQ1::repair(env,p);
+      this->ActionGEQ1::repairpredicate(env,p);
   }
   break;
   }
@@ -76,8 +76,16 @@ void ActionEQ1::repair(Hashtable *env,CoercePredicate *p) {
 
 
 
+
+void ActionEQ1::breakpredicate(Hashtable *env, CoercePredicate *p)
+{
+}
+
+
+
+
 bool ActionEQ1::conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, CoercePredicate *p2) {
-  assert(canrepair(p1));
+  assert(canrepairpredicate(p1));
   Setexpr *pse=p1->getpredicate()->getsetexpr();
   if(comparepredicates(c1,p1,c2,p2))
     return false; /*same predicates don't conflict*/
@@ -258,7 +266,7 @@ bool ActionEQ1::conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, Coe
 
 
 
-bool ActionEQ1::canrepair(CoercePredicate *cp) {
+bool ActionEQ1::canrepairpredicate(CoercePredicate *cp) {
   if (cp->getcoercebool()==false)
     return false;
   Predicate *p=cp->getpredicate();

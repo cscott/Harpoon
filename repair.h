@@ -6,6 +6,7 @@ class Repair {
   Repair(model *m);
   void repairconstraint(Constraint *c, processobject *po, Hashtable *env);
   Action * findrepairaction(CoercePredicate *cp);
+  Action * findbreakaction(CoercePredicate *cp);
   bool analyzetermination();
 
 

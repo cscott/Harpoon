@@ -86,6 +86,31 @@ CoerceSentence::CoerceSentence(CoercePredicate **pred, int numpred) {
 }
 
 
+int CoerceSentence::getnumpredicates() {
+  return numpreds;
+}
+
+
+CoercePredicate * CoerceSentence::getpredicate(int i) {
+  return predicates[i];
+}
+
+
+
+// returns true iff the sentence is satisfied
+bool CoerceSentence::issatisfied(processobject *po, Hashtable *env)
+{
+  for (int i=0; i<getnumpredicates(); i++)
+    {
+      CoercePredicate *cp = getpredicate(i);
+      Predicate *p = cp->getpredicate();
+      if (!po->processpredicate(cp->getpredicate(),env))
+	return false;
+    }
+  return true;
+}
+
+
 // returns how much we pay if we satisfy this sentence 
 int CoerceSentence::cost(processobject *po, Hashtable *env) {
   int cost=0;
@@ -98,14 +123,6 @@ int CoerceSentence::cost(processobject *po, Hashtable *env) {
       cost+=costfunction(cp);
   }
   return cost;
-}
-
-CoercePredicate * CoerceSentence::getpredicate(int i) {
-  return predicates[i];
-}
-
-int CoerceSentence::getnumpredicates() {
-  return numpreds;
 }
 
 

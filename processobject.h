@@ -13,8 +13,9 @@ class processobject {
  public:
   processobject(model *m);
   int processpredicate(Predicate *p, Hashtable *env);
+  bool issatisfied(Constraint *c); // returns true iff c is satisfied
   bool processconstraint(Constraint *c); // evaluates c and if it's not satisfied, calls the repair alg.
-  void breakconstraint(Constraint *c);   // breaks the given constraint by invalidating each of its sentences
+  void breakconstraint(Constraint *c);   // breaks the given constraint by invalidating each of its satisfied sentences
   void setclean();
   ~processobject();
   

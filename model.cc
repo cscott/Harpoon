@@ -151,10 +151,19 @@ void model::doconcrete() {
 
 
 // inserts faults that break the specifications
-void model::breakspec() {
+void model::breakspec() 
+{
   processobject *po = new processobject(this);
+
+  // takes each satisfied constraint and breaks it with probability prob_breakconstraint
   for (int i=0; i<=numconstraint; i++)
-    po->breakconstraint(constraintarray[i]);
+    {
+      Constraint *c = getconstraint(i);
+      if (po->issatisfied(c))
+	if (random()<prob_breakconstraint*RAND_MAX)
+	  po->breakconstraint(c);
+    }
+
   delete(po);
 }
 
@@ -190,11 +199,11 @@ void model::parsespacefile(char *spacefile) {
   Reader *r=new Reader(ifs);
   Dparser *p=new Dparser(r);
   domainrelation=p->parsesetrelation(); 
-#define DEBUGMESSAGES  
+  //#define DEBUGMESSAGES  
 #ifdef DEBUGMESSAGES  
   domainrelation->print();
 #endif
-#undef DEBUGMESSAGES  
+  //#undef DEBUGMESSAGES  
   ifs->close();
   delete(ifs);
 }

@@ -5,9 +5,10 @@
 class ActionInSet:public Action {
  public:
   ActionInSet(DomainRelation *drel,model *);
-  void repair(Hashtable *env, CoercePredicate *p);
+  void repairpredicate(Hashtable *env, CoercePredicate *p);
+  void breakpredicate(Hashtable *env, CoercePredicate *p);
   bool conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, CoercePredicate *p2);
-  bool canrepair(CoercePredicate *p);
+  bool canrepairpredicate(CoercePredicate *p);
  private:
   bool testforinvconflictwithinvsetsize(Constraint *c1,CoercePredicate *cp1, Constraint *c2,CoercePredicate *cp2);
   bool testforinvconflictwithsetsize(Constraint *c1,CoercePredicate *cp1, Constraint *c2,CoercePredicate *cp2);
