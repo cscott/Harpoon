@@ -1,4 +1,4 @@
-package harpoon.Backend.Analysis.DisplayInfo;
+package harpoon.Backend.Maps;
 
 import harpoon.ClassFile.HField;
 
@@ -14,7 +14,7 @@ public interface InlineMap
   /**
    * @return true if the <code>HField</code> should be inlined
    */
-  public boolean shouldInline(HField);
+  public boolean shouldInline(HField hf);
 }
 
 

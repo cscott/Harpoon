@@ -1,7 +1,8 @@
-package harpoon.Backend.Analysis.DisplayInfo;
+package harpoon.Backend.Maps;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HClass;
 
 /**
  * An <code>OffsetMap</code> maps an <code>HField</code> or an 
