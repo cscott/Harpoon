@@ -26,8 +26,12 @@ public class ExprPredicate extends Predicate {
 	return ((OpExpr)expr).opcode;
     }
 
-    public int leftsize() {
-	return ((IntegerLiteralExpr)((OpExpr)expr).right).getValue();
+    public int rightSize() {
+	return OpExpr.getInt(((OpExpr)expr).right);
+    }
+
+    public boolean isRightInt() {
+	return OpExpr.isInt(((OpExpr)expr).right);
     }
 
     public ExprPredicate(Expr expr) {

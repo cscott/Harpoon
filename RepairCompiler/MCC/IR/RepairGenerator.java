@@ -870,7 +870,7 @@ public class RepairGenerator {
 	    /* Equal */
 	} else if (opcode==Opcode.EQ) {
 	    /* Equal */
-	} else if (opcode==Opcode.NE) {
+	} else if (opcode==Opcode.NE) { /* search for FLAGNE if this is changed*/
 	    cr.outputline(newvalue.getSafeSymbol()+"++;");
 	} else {
 	    throw new Error("Unrecognized Opcode");
@@ -898,7 +898,7 @@ public class RepairGenerator {
 		Rule r=(Rule)state.vRules.get(i);
 		if (r.getInclusion().getTargetDescriptors().contains(rd)) {
 		    for(int j=0;j<munmodify.numUpdates();j++) {
-			UpdateNode un=munmodify.getUpdate(i);
+			UpdateNode un=munmodify.getUpdate(j);
 			if (un.getRule()==r) {
 			    /* Update for rule r */
 			    String name=(String)updatenames.get(un);
@@ -967,7 +967,7 @@ public class RepairGenerator {
 	    munremove=getmultupdatenode(conj,dpred,AbstractRepair.REMOVEFROMSET);
 	    munadd=getmultupdatenode(conj,dpred,AbstractRepair.ADDTOSET);
 	}
-	int size=ep.leftsize();
+	int size=ep.rightSize();
 	VarDescriptor sizevar=VarDescriptor.makeNew("size");
 	((OpExpr)expr).left.generate(cr, sizevar);
 	VarDescriptor change=VarDescriptor.makeNew("change");

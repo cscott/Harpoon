@@ -159,6 +159,9 @@ class ConcreteInterferes {
 	return true;
     }
 
+    /** Returns true if the data structure updates performed by mun may increase (or decrease if satisfy=false)
+     * the scope of the model definition rule r. */
+
     static public boolean interferes(MultUpdateNode mun, Rule r, boolean satisfy) {
 	if (!initialinterferes(mun,r,satisfy)) /* Can't falsify a rule adding something to a set on an initial addition*/
 	    return false;
@@ -178,19 +181,22 @@ class ConcreteInterferes {
 		    /* Update is local to this rule, and the effect is intentional */
 		    /* If we're adding something, a side effect could be to falsify some other binding
 		       If we're removing something, there is no similar side effect */
+
+		    /* ISSUE: Rules need to be updated if we allow concrete expression of the form x.f.g */
 		    if ((un.getRule()==r)&&
-			(((mun.op==MultUpdateNode.ADD)&&satisfy)||(mun.op==MultUpdateNode.REMOVE))&&
+			(((mun.op==MultUpdateNode.ADD)&&satisfy)||((mun.op==MultUpdateNode.REMOVE)&&!satisfy)||(mun.op==MultUpdateNode.MODIFY))&&
 			(r.numQuantifiers()==1)&&
 			(r.getQuantifier(0) instanceof SetQuantifier)&&
 			update.isField()&&
 			(((DotExpr)update.getLeftExpr()).getExpr() instanceof VarExpr)&&
 			((SetQuantifier)r.getQuantifier(0)).getVar()==((VarExpr)((DotExpr)update.getLeftExpr()).getExpr()).getVar())
 			continue;
+
     		    if ((un.getRule()==r)&&
-			(((mun.op==MultUpdateNode.ADD)&&satisfy)||(mun.op==MultUpdateNode.REMOVE))&&
+			(((mun.op==MultUpdateNode.ADD)&&satisfy)||((mun.op==MultUpdateNode.REMOVE)&&!satisfy)||(mun.op==MultUpdateNode.MODIFY))&&
 			(r.numQuantifiers()==0))
 			continue;
-
+		    
 
 		    if (r.getInclusion().usesDescriptor(updated_des)) {
 			if (satisfy) {
@@ -236,26 +242,26 @@ class ConcreteInterferes {
 	ExprPredicate ep=(ExprPredicate)p;
 	if (ep.getType()!=ExprPredicate.SIZE)
 	    return true;
-	if ((ep.getOp()==Opcode.EQ)&&(ep.leftsize()==1)&&!negated)
+	if ((ep.getOp()==Opcode.EQ)&&(ep.rightSize()==1)&&!negated)
 	    return false;
-	if ((ep.getOp()==Opcode.NE)&&(ep.leftsize()==1)&&negated)
-	    return false;
-
-	if ((ep.getOp()==Opcode.NE)&&(ep.leftsize()==0)&&!negated)
-	    return false;
-	if ((ep.getOp()==Opcode.EQ)&&(ep.leftsize()==0)&&negated)
+	if ((ep.getOp()==Opcode.NE)&&(ep.rightSize()==1)&&negated)
 	    return false;
 
-
-
-	if ((ep.getOp()==Opcode.GT)&&(ep.leftsize()==0)&&!negated)
+	if ((ep.getOp()==Opcode.NE)&&(ep.rightSize()==0)&&!negated)
 	    return false;
-	if ((ep.getOp()==Opcode.LE)&&(ep.leftsize()==0)&&negated)
+	if ((ep.getOp()==Opcode.EQ)&&(ep.rightSize()==0)&&negated)
 	    return false;
 
-	if ((ep.getOp()==Opcode.GE)&&(ep.leftsize()==1)&&!negated)
+
+
+	if ((ep.getOp()==Opcode.GT)&&(ep.rightSize()==0)&&!negated)
 	    return false;
-	if ((ep.getOp()==Opcode.LT)&&(ep.leftsize()==1)&&negated)
+	if ((ep.getOp()==Opcode.LE)&&(ep.rightSize()==0)&&negated)
+	    return false;
+
+	if ((ep.getOp()==Opcode.GE)&&(ep.rightSize()==1)&&!negated)
+	    return false;
+	if ((ep.getOp()==Opcode.LT)&&(ep.rightSize()==1)&&negated)
 	    return false;
 	
 	return true;
