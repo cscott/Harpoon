@@ -15,7 +15,7 @@ JNIEXPORT jboolean JNICALL Java_java_util_concurrent_atomic_AtomicInteger_compar
   jclass claz = (*env)->GetObjectClass(env, this);
   jfieldID id = (*env)->GetFieldID(env, claz, "myValue", "I");  
   jint *valPtr = ((jint *)(id->offset + (ptroff_t)FNI_UNWRAP_MASKED(this)));
-  return compare_and_swap (valPtr, expect, update);
+  return compare_and_swap (((long int*)valPtr), expect, update);
 }
 
 /*
@@ -43,7 +43,7 @@ JNIEXPORT jint JNICALL Java_java_util_concurrent_atomic_AtomicInteger_getAndSet
   jint *valPtr = ((jint *)(id->offset + (ptroff_t)FNI_UNWRAP_MASKED(this)));
   jint tmp;
 
-  while(!compare_and_swap(valPtr, tmp=*valPtr, newValue));
+  while(!compare_and_swap((long int*)valPtr, tmp=*valPtr, newValue));
   
   return tmp;
 }
