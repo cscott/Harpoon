@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.16 2000-09-29 18:04:26 cananian Exp $
+% $Id: transact.tex,v 1.17 2000-09-29 18:26:14 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,7 +8,7 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.16 $ $}
+\date{\today \\ $ $Revision: 1.17 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
@@ -235,7 +235,7 @@ $\text{Write}(\code{struct oobj *} o, \code{int } n,
 \ELSIF{$x = \code{FLAG\_VALUE}$}
   \STATE \COMMENT{XXX: define CreateNewVersion (watch those races)}
 % when we define CreateNewVersion, we'll need: o\ptr\code{claz}\ptr\code{size}
-  \STATE $v \gets \text{CreateNewVersion}(o, o)$
+  \STATE $v \gets \text{CreateNewVersion}(o, \code{null}, o)$
 \ELSE
   \STATE $v \gets o$
 \ENDIF
@@ -249,8 +249,13 @@ $\text{Write}(\code{struct oobj *} o, \code{int } n,
 $\text{ReadTrans}(\code{struct commitrec *}c, 
                   \code{struct oobj *} o, \code{int } n)$~=
 \begin{myalgorithmic}
-\STATE $v \gets \text{appropriate version, creating it if necessary}$
-  \COMMENT{doesn't abort non-appropriate versions}
+\STATE $v \gets \text{FindVersion}(o, c, \code{false})$
+\IF{$o\ptr\code{field}[n] \neq \code{FLAG\_VALUE}$}
+  \STATE \COMMENT{XXX: race here, most likely}
+  \STATE copy current value somewhere (how far over?)
+  \STATE $\code{inc\_use}(o)$
+  \STATE $o\ptr\code{field}[n] \gets \code{FLAG\_VALUE}$
+\ENDIF
 \RETURN $v\ptr\code{field}[n]$
 \end{myalgorithmic}
 \caption{Algorithm for transactional read of a field.}
@@ -262,11 +267,11 @@ $\text{WriteTrans}(\code{struct commitrec *}c,
                    \code{struct oobj *} o, \code{int } n,
                    \code{<ty> } x)$~=
 \begin{myalgorithmic}
-\STATE $v \gets \text{appropriate version, creating it if necessary}$
-  \COMMENT{aborts all non-appropriate versions found}
+\STATE $v \gets \text{FindVersion}(o, c, \code{true})$
 \IF{$o\ptr\code{field}[n] \neq \code{FLAG\_VALUE}$}
   \STATE watch for races here
   \STATE copy current value somewhere (how far over?)
+  \STATE $\code{inc\_use}(o)$
   \STATE $o\ptr\code{field}[n] \gets \code{FLAG\_VALUE}$
 \ENDIF
 \STATE $v\ptr\code{field}[n] \gets x$
@@ -322,7 +327,11 @@ $\text{StateP}'(\code{struct commitrec **} c_p)$ =
 $\text{FindVersion}(\code{struct oobj *}o, \code{struct commitrec *}c_w,
                     \code{boolean }wr)$~=
 \begin{myalgorithmic}
+\STATE $\code{InflateObject}(o)$
 \STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
+\IF{$v = \code{null}$}
+  \RETURN $\text{CreateNewVersion}(o, c_w, o)$
+\ENDIF
 \STATE \label{line:L1}
        $c_c \gets v\ptr\code{transid}$
 \IF{$c_c \neq c_w$}
@@ -334,7 +343,7 @@ $\text{FindVersion}(\code{struct oobj *}o, \code{struct commitrec *}c_w,
   \ENDIF
   \IF[committed all the way down]{$c_c = \code{null}$}
     \STATE $v\ptr\code{next} \gets \code{null}$ \COMMENT{prune}
-    \STATE $v \gets \text{CreateNewVersion}(o, v)$
+    \STATE $v \gets \text{CreateNewVersion}(o, c_w, v)$
   \ELSIF{$c_c\ptr\code{state} = \code{ABORTED}$}
     \STATE \COMMENT{XXX: potential race here? WAITING could become COMMITTED}
     \STATE \COMMENT{XXX: potential race here --- v could be already removed}
@@ -354,9 +363,11 @@ $\text{FindVersion}(\code{struct oobj *}o, \code{struct commitrec *}c_w,
         \ENDIF
       \ENDIF
     \ENDWHILE
-    \STATE $v \gets \text{CreateNewVersion}(o, v)$
+    \STATE $v \gets \text{CreateNewVersion}(o, c_w, v)$
   \ENDIF
 \ENDIF
+\STATE \COMMENT{XXX: because of multiple readers, there could be
+readers left to the right of this writer at this point.}
 \RETURN $v$
 \end{myalgorithmic}
 \caption{Algorithm for matching \code{vinfo}'s with \code{commitrec}'s.}
