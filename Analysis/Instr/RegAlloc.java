@@ -78,7 +78,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.109 2000-07-25 23:37:24 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.110 2000-07-28 21:49:14 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -349,7 +349,10 @@ public abstract class RegAlloc  {
 	abstractSpillFactory(final HCodeFactory parent,
 			     final Frame frame) {
 	return abstractSpillFactory(parent, frame,
-				    LocalCffRegAlloc.FACTORY); 
+				    // GraphColoringRegAlloc.FACTORY); 
+				    LocalCffRegAlloc.FACTORY);
+	         
+
     }
 	
     public static IntermediateCodeFactory

@@ -4,6 +4,7 @@
 package harpoon.Analysis.Instr;
 
 import harpoon.Analysis.Maps.Derivation;
+import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.ReachingDefs;
 import harpoon.Analysis.ReachingDefsAltImpl;
 import harpoon.Analysis.GraphColoring.AbstractGraph;
@@ -47,7 +48,7 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.9 2000-07-28 03:07:24 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.10 2000-07-28 21:49:14 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -70,6 +71,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
     final RegFileInfo rfi;
     ReachingDefs rdefs;
+    LiveTemps liveTemps;
 
     MultiMap regToDefs;
     MultiMap regToUses;
@@ -94,6 +96,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	rfi = frame.getRegFileInfo();
 	buildRegAssigns();
 	rdefs = new ReachingDefsAltImpl(code);
+	liveTemps = LiveTemps.make(code, rfi.liveOnExit());
 	preassignMap = buildPreassignMap(code, rfi.liveOnExit());
     }
 
@@ -103,6 +106,28 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
     protected MultiMap buildPreassignMap(Code code, Set liveOnExit) {
 	return null;
+    }
+
+    /** Returns a new Collection cr, where
+	for all e element of edges 
+	   there exists a unique c element of cr such that 
+	   c = [nodeToNum(e.get(0)), nodeToNum(e.get(1))]
+    */
+    private Collection readableEdges(final Collection edges, 
+				     final Map nodeToNum) {
+	return new AbstractCollection() {
+	    public int size() { return edges.size(); }
+	    public Iterator iterator() { 
+		return new FilterIterator 
+		    (edges.iterator(),
+		     new FilterIterator.Filter() {
+			public Object map(Object o) {
+			    List l=(List)o;
+			    return Default.pair(nodeToNum.get(l.get(0)),
+						nodeToNum.get(l.get(1)));
+			}});
+	    }
+	};
     }
 
     protected void generateRegAssignment() {
@@ -141,44 +166,38 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		nodeToNum.put(n, new Integer(i));
 		System.out.println(i+"\t"+n);
 	    }
-
-	    Collection readEdges = new AbstractCollection() {
-		public int size() { return graph.edges().size(); }
-		public Iterator iterator() { 
-		    return new FilterIterator
-		    (graph.edges().iterator(),
-		     new FilterIterator.Filter() {
-			 public Object map(Object o) {
-			     List l=(List)o;
-			     return Default.pair(nodeToNum.get(l.get(0)),
-						 nodeToNum.get(l.get(1)));
-			 }
-		     });
-		}
-	    };
+	    Collection readEdges = readableEdges(graph.edges(), nodeToNum);;
 	    System.out.println("edges of graph "+readEdges);
 
 	    try {
 		List colors = new ArrayList(regToColor.values());
-		System.out.println("colors:"+colors);
+		// System.out.println("colors:"+colors);
 		colorer.color(graph, colors);
 		
+		MultiMap c2n = new GenericMultiMap();
 		for(Iterator nds=graph.nodeSet().iterator();nds.hasNext();){
 		    Object nd = nds.next();
-		    System.out.println(graph.getColor(nd)+" node:"+nd);
+		    c2n.add(graph.getColor(nd), nd);
 		}
+		for(Iterator cs=c2n.keySet().iterator();cs.hasNext();){
+		    Object col=cs.next();
+		    System.out.println(col + " nodes: "+c2n.getValues(col));
+		}
+
+		modifyCode();
 		
 		success = true;
 	    } catch (UnableToColorGraph e) {
 		success = false;
 
 		System.out.println("Unable to color graph");
+		System.out.println();
+		System.out.println("edges of graph "+
+				   readableEdges(graph.edges(),nodeToNum));
 		System.exit(-1);
-	    }
-	    if (success) {
-		modifyCode();
-	    } else {
+
 		genSpillCode();
+
 	    }
 	} while (!success);
     }
@@ -200,7 +219,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		if (rfi.isRegister(t)) {
 		    if (i.defC().contains(t)) regToDefs.add(t, i);
 		    if (i.useC().contains(t)) regToUses.add(t, i);
-		    regToColor(t); 
+		    // regToColor(t); 
 		} else {
 		    Set suggRegs = rfi.getRegAssignments(t);
 		    assigns.addAll(suggRegs);
@@ -470,13 +489,15 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    Iterator instrs;
 	    for(instrs = wr.defs.iterator(); instrs.hasNext();) {
 		Instr i = (Instr) instrs.next();
-		code.assignRegister
-		    (i, wr.sym, (List) colorToAssign.get(wr.regColor()));
+		List regs =  (List) colorToAssign.get(wr.regColor());
+		Util.assert(regs != null);
+		code.assignRegister(i, wr.sym, regs);
 	    }
 	    for(instrs = wr.uses.iterator(); instrs.hasNext();) {
 		Instr i = (Instr) instrs.next();
-		code.assignRegister
-		    (i, wr.sym, (List) colorToAssign.get(wr.regColor()));
+		List regs =  (List) colorToAssign.get(wr.regColor());
+		Util.assert(regs != null);
+		code.assignRegister(i, wr.sym, regs);
 	    }
 	}
     } 
@@ -627,6 +648,18 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	private boolean conflictsWith1D(WebRecord wr) {
 	    for(Iterator tmps=wr.temps().iterator();tmps.hasNext();){
 		Temp t = (Temp) tmps.next();
+		for(Iterator ins=this.defs().iterator();ins.hasNext();){
+		    Instr d = (Instr) ins.next();
+		    Set l = liveTemps.getLiveAfter(d);
+		    if (l.contains(t)) 
+			return true;
+		}
+	    }
+	    return false;
+	}
+	private boolean oldConflictsWith1D(WebRecord wr) {
+	    for(Iterator tmps=wr.temps().iterator();tmps.hasNext();){
+		Temp t = (Temp) tmps.next();
 		for(Iterator ins=this.uses().iterator();ins.hasNext();){
 		    Instr u = (Instr) ins.next();
 		    if (isRegister(t) &&
@@ -639,6 +672,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		    reaches = new HashSet(reaches); // make mutable
 		    reaches.retainAll(wr.defs());
 		    if (!reaches.isEmpty()) {
+			System.out.println(this+" conflicts with\n"+wr+
+					   "\ndue to "+reaches+
+					   "\n reaching "+u);
+			System.out.println();
 			return true;
 		    }
 		}
@@ -666,6 +703,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    this.regs = regs;
 	    if (regs.size() == 1) {
 		regColor( (RegColor)regToColor.get(regs.get(0)) );
+	    } else {
+		System.out.println("!!! Created record for "+regs);
 	    }
 	}
 	public List temps() { return regs; }

@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * <code>SimpleGraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.14 2000-07-28 03:06:46 pnkfelix Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.15 2000-07-28 21:49:08 pnkfelix Exp $
  */
 
 public class SimpleGraphColorer extends GraphColorer {
@@ -72,9 +72,10 @@ public class SimpleGraphColorer extends GraphColorer {
 
 	    if (graph.getColor(n) != null) {
 		// precolored, skip
-		System.out.println("skipping "+n+
-				   "b/c its precolored to "+
-				   graph.getColor(n));
+		if (false) 
+		    System.out.println("skipping "+n+
+				       "b/c its precolored to "+
+				       graph.getColor(n));
 		continue;
 	    }
 
