@@ -15,7 +15,7 @@ import java.util.Iterator;
     about the target machine's register file. 
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.7 1999-11-15 07:49:04 pnkfelix Exp $
+    @version $Id: RegFileInfo.java,v 1.1.2.8 1999-11-15 09:39:00 pnkfelix Exp $
  */
 public abstract class RegFileInfo {
     
@@ -107,6 +107,14 @@ public abstract class RegFileInfo {
 	Iterator that produces all such assignments, such an Iterator
 	would cause an time/space explosion when applied to a decently
 	sized register file.  
+	<BR> Also, realize that it is not enough to ensure that any
+	one of the set { of possible Iterators that may be returned }
+	traverses a reasonably small subset of the assignment space;
+	you must ensure that the UNION of all possible traversals is
+	of a reasonable size.  This is because the interference graph
+	that is constructed will not be built from just one Suggestion
+	Iterator, but rather from an Suggestion Iterator 
+	<B>for each</B> variable that is given a register assignment.
 
 	@param t <code>Temp</code> that needs to be assigned to a set
    	         of Registers. 

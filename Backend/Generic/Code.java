@@ -33,7 +33,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.26 1999-11-15 09:25:14 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.27 1999-11-15 09:39:00 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -270,6 +270,9 @@ public abstract class Code extends HCode {
 
     /** Returns an assembly code identifier for the register that
 	<code>val</code> will be stored into.
+
+	<P> FSK: The same design flaws that plague Code#assignRegister
+	will probably also plague this method.  Sigh.
      */
     protected abstract String getRegisterName(Instr i, Temp val, String suffix);
 
