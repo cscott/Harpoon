@@ -3,7 +3,10 @@
 #include "omodel.h"
 #include <stdio.h>
 #include "common.h"
-
+#include "model.h"
+#include "Hashtable.h"
+#include "dmodel.h"
+#include "element.h"
 
 
 // class Literal
@@ -263,6 +266,21 @@ void Valueexpr::print() {
   relation->print();
 }
 
+void Valueexpr::print_value(model *m) {
+  label->print();
+  printf(".");
+  relation->print();
+  printf(" = ");  
+
+  DomainRelation *dr = m->getdomainrelation();
+  Hashtable *env = m->gethashtable();
+  DRelation *rel = dr->getrelation(relation->getname());
+  
+  Element *elem = (Element *) env->get(label->label());
+
+  elem->print();
+}
+
 
 
 
@@ -453,6 +471,50 @@ void Predicate::print() {
 }
 
 
+void Predicate::print_sets(model *m) {
+  switch(type) {
+  case PREDICATE_LT:
+    valueexpr->print();
+    printf("<");
+    elementexpr->print();
+    break;
+  case PREDICATE_LTE:
+    valueexpr->print();
+    printf("<=");
+    elementexpr->print();
+    break;
+  case PREDICATE_EQUALS:
+    valueexpr->print();
+    printf("=");
+    elementexpr->print();
+    break;
+  case PREDICATE_GTE:
+    valueexpr->print();
+    printf(">=");
+    elementexpr->print();
+    break;
+  case PREDICATE_GT:
+    valueexpr->print();
+    printf(">");
+    elementexpr->print();
+    break;
+  case PREDICATE_SET:
+    label->print();
+    printf(" in ");
+    setexpr->print();
+    break;
+  case PREDICATE_EQ1:
+  case PREDICATE_GTE1:
+    printf("sizeof(");
+    setexpr->print();
+    if (type==PREDICATE_EQ1)
+      printf(")=1");
+    if (type==PREDICATE_GTE1)
+      printf(")>=1");
+    break;
+  }
+}
+
 
 
 
@@ -496,6 +558,24 @@ void Statement::print() {
     break;
   }
 }
+
+
+void Statement::print_sets(model *m) {
+  switch(type) {
+  case STATEMENT_OR:
+  case STATEMENT_AND:
+    left->print_sets(m);    
+    right->print_sets(m);
+    break;
+  case STATEMENT_NOT:
+    left->print_sets(m);
+    break;
+  case STATEMENT_PRED:
+    pred->print_sets(m);
+    break;
+  }
+}
+
 
 int Statement::gettype() {
   return type;

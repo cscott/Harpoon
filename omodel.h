@@ -85,7 +85,7 @@ class Label {
 class Relation {
  public:
   Relation(char * r);
-  void print();
+  void print();  
   char * getname();
 
  private:
@@ -143,6 +143,8 @@ class Valueexpr {
  public:
   Valueexpr(Label *l,Relation *r);
   void print();
+  void print_value(model *m);
+
   Label * getlabel();
   Relation * getrelation();
   
@@ -208,6 +210,7 @@ class Predicate {
   Predicate(Valueexpr *ve, int t, Elementexpr *ee);
   Predicate(bool greaterthan, Setexpr *se);
   void print();
+  void print_sets(model *m);
   int gettype();
   Valueexpr * getvalueexpr();
   Elementexpr * geteleexpr();
@@ -237,6 +240,7 @@ class Statement {
   Statement(Statement *l);
   Statement(Predicate *p);
   void print();
+  void print_sets(model *m); // prints the sets and the relations involved in the statement
   int gettype();
   Statement *getleft();
   Statement *getright();
