@@ -13,8 +13,6 @@
 # define MALLOC malloc
 #endif
 
-#define TRANSPKG "harpoon/Runtime/Transactions/"
-
 /* we redefine this up here to minimize pointer casts down there.
  * for some reason gcc complains that (long int) and (ptroff_t) are
  * incompatible (even if sizes are equal) and that (struct commitrec **)
@@ -366,7 +364,7 @@ JNIEXPORT void JNICALL Java_java_lang_Object_writeArrayElementFlag
 }
 
 #define WRITEFLAG(type, size, FLAG) \
-void Java_java_lang_Object_writeFlag##size \
+inline void Java_java_lang_Object_writeFlag##size \
     (JNIEnv *env, jobject _this, jint offset) { \
     struct oobj *oobj = FNI_UNWRAP(_this); \
     struct inflated_oobj *infl=oobj->hashunion.inflated; \
@@ -403,4 +401,23 @@ JNIEXPORT void JNICALL Java_java_lang_Object_writeFlag
   case 8: Java_java_lang_Object_writeFlag8(env, _this, offset); break;
   default: assert(0);
   }
+}
+
+/* -------------- utility adapter functions -------------- */
+jstring FNI_StrTrans2Str(JNIEnv *env, jobject commitrec, jstring string) {
+  /* extract char array from string. */
+  jclass strcls = (*env)->FindClass(env, "java/lang/String");
+  jmethodID mid = (*env)->GetMethodID(env, strcls, "toCharArray$$withtrans",
+				      "(L" TRANSPKG "CommitRecord;)[C");
+  jcharArray ca = (jcharArray) (*env)->CallObjectMethod(env, string, mid,
+							commitrec);
+  /* now de-transactionify the char array */
+  jsize i, length = (*env)->GetArrayLength(env, ca);
+  for (i=0; i<length; i++)
+    Java_java_lang_Object_writeFlag2(env, ca, sizeof(struct aarray)+(2*i));
+  ca = (jcharArray)
+    Java_java_lang_Object_getReadableVersion(env, ca, commitrec);
+  /* and create a new string */
+  mid = (*env)->GetMethodID(env, strcls, "<init>", "([C)V");
+  return (jstring) (*env)->NewObject(env, strcls, mid, ca);
 }

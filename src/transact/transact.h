@@ -6,6 +6,9 @@
 #include "jni-private.h"
 #include "asm/atomicity.h" /* for compare_and_swap */
 
+/* package name for CommitRecord & etc */
+#define TRANSPKG "harpoon/Runtime/Transactions/"
+/* flag value to denote 'not here' */
 #define FLAG_VALUE (0xCACACACACACACACALL)
 
 /* Commit record information. Commit records are full-fledged objects. */
@@ -61,5 +64,11 @@ static inline jint AbortCR(struct commitrec *cr) {
 	compare_and_swap(&(cr->state), WAITING, ABORTED); /* atomic */
     } while (1);
 }
+
+/* ---------------------- utility adapter functions ----------------- */
+/* Returns a pointer to a new "nontransactional" string with the same
+ * contents as the given "transactional" string. */
+extern jstring FNI_StrTrans2Str(JNIEnv *env, jobject commitrec, jstring str);
+
 
 #endif /* INCLUDED_TRANSACT_H */
