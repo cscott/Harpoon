@@ -5,16 +5,16 @@
 /* Ugly workarounds for some broken versions of glibc. -WSB */
 
 #ifndef GLIBC_COMPAT5
-#define GLIBC_COMPAT5
+#define GLIBC_COMPAT5 1
 #endif
 
 #ifndef GLIBC_COMPAT4
-#define GLIBC_COMPAT4
+#define GLIBC_COMPAT4 1
 #endif
 
-/* #ifndef GLIBC_COMPAT3  */
-/* #define GLIBC_COMPAT3 1   */
-/* #endif  */
+#ifndef GLIBC_COMPAT3 
+#define GLIBC_COMPAT3 1   
+#endif 
 
 #ifndef GLIBC_COMPAT2 
 #define GLIBC_COMPAT2 1 
