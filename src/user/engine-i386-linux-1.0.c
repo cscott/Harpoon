@@ -9,7 +9,7 @@
 #include "config.h"
 #ifdef WITH_USER_THREADS
 #ifndef lint
-static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.1 2000-12-01 07:17:47 bdemsky Exp $";
+static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.2 2001-01-16 00:04:32 bdemsky Exp $";
 #endif
 
 #include "config.h"
@@ -24,6 +24,7 @@ static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.1 2000-12-01 07:17
 #endif
 #include "engine-i386-linux-1.0.h"
 #include "threads.h"
+#include "memstats.h"
 
 /* ==========================================================================
  * machdep_save_state()
@@ -87,6 +88,7 @@ void machdep_pthread_start(void)
  */
 void __machdep_stack_free(void * stack)
 {  
+  DECREMENT_MALLOC(STACKSIZE);
   free(stack);
 }
 
@@ -96,7 +98,7 @@ void __machdep_stack_free(void * stack)
 void * __machdep_stack_alloc(size_t size)
 {
     void * stack;
-
+    INCREMENT_MALLOC(STACKSIZE);
     return(malloc(size));
 }
 

@@ -2,7 +2,7 @@
 #ifdef WITH_USER_THREADS
 #include "threads.h"
 #include <errno.h>
-
+#include "memstats.h"
 
 struct thread_list *gtl,*ioptr;
 void *oldstack;
@@ -164,7 +164,7 @@ void exitthread() {
     oldstack=tl->mthread.machdep_stack;
 
     free(tl);
-
+    DECREMENT_MALLOC(sizeof thread_list);
 
     machdep_restore_float_state();
     machdep_restore_state();
@@ -178,6 +178,7 @@ void exitthread() {
     oldstack=gtl->mthread.machdep_stack;
 
     free(gtl);
+    DECREMENT_MALLOC(sizeof thread_list);
     gtl=NULL;
     startnext();
   }
@@ -185,6 +186,7 @@ void exitthread() {
 
 void inituser(int *bottom) {
   void * stack;
+  INCREMENT_MALLOC(sizeof(struct thread_list));
   struct thread_list * tl=malloc(sizeof(struct thread_list));
   /*build stack and stash it*/
   __machdep_pthread_create(&(tl->mthread), NULL, NULL,STACKSIZE, 0,0);

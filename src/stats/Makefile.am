@@ -5,4 +5,5 @@ LIBS =
 
 noinst_LTLIBRARIES = libstats.la
 
-libstats_la_SOURCES = stats.c
+libstats_la_SOURCES = stats.c memstats.c
+

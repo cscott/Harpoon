@@ -3,6 +3,10 @@
 #include <signal.h>
 #include "config.h"
 #include "fni-stats.h"
+#include "memstats.h"
+#include "flexthread.h"
+#include "gc.h"
+
 
 #ifndef WITH_STATISTICS /* consistency checking... */
 #error The src/stats module should only be compiled #ifdef WITH_STATISTICS
@@ -86,6 +90,11 @@ void print_statistics(void) {
 	 FS(threads_created) ? FS(thr_bytes_alloc)/FS(threads_created) : 0LL,
 	 FS(thr_bytes_overflow));
 #endif /* WITH_CLUSTERED_HEAPS */
+#ifdef WITH_MEMORYSTATISTICS
+  printf("Malloc Memory usage: %ld\n", memorystat);
+  printf("Peak Total Memory usage: %ld\n", peakusage);
+  printf("Heap Memory usage: %ld\n", GC_get_heap_size());
+#endif
   fflush(stdout);
   
 

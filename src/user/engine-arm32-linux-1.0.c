@@ -9,7 +9,7 @@
 #include "config.h"
 #ifdef WITH_USER_THREADS
 #ifndef lint
-static const char rcsid[] = "$Id: engine-arm32-linux-1.0.c,v 1.1 2000-12-04 19:18:02 bdemsky Exp $";
+static const char rcsid[] = "$Id: engine-arm32-linux-1.0.c,v 1.2 2001-01-16 00:04:32 bdemsky Exp $";
 #endif
 
 #include "config.h"
@@ -24,6 +24,7 @@ static const char rcsid[] = "$Id: engine-arm32-linux-1.0.c,v 1.1 2000-12-04 19:1
 #endif
 #include "engine-arm32-linux-1.0.h"
 #include "threads.h"
+#include "memstats.h"
 
 #define REG_LR  __JMP_BUF_SP+1
 #define REG_SP  __JMP_BUF_SP
@@ -88,6 +89,7 @@ void machdep_pthread_start(void)
  */
 void __machdep_stack_free(void * stack)
 {  
+  DECREMENT_MALLOC(STACKSIZE);
   free(stack);
 }
 
@@ -97,7 +99,7 @@ void __machdep_stack_free(void * stack)
 void * __machdep_stack_alloc(size_t size)
 {
     void * stack;
-
+    INCREMENT_MALLOC(STACKSIZE);
     return(malloc(size));
 }
 

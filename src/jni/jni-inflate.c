@@ -8,6 +8,7 @@
 #endif
 #include "flexthread.h"
 #include <stdlib.h>
+#include "memstats.h"
 
 /* lock for inflating locks */
 FLEX_MUTEX_DECLARE_STATIC(global_inflate_mutex);
@@ -29,6 +30,9 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
 	malloc
 #endif
 	(sizeof(*infl));
+#if (!defined(WITH_TRANSACTIONS)) || (!defined(BDW_CONSERVATIVE_GC))
+    INCREMENT_MALLOC(sizeof(*infl));
+#endif
     /* initialize infl */
     memset(infl, 0, sizeof(*infl));
     infl->hashcode = obj->hashunion.hashcode;
@@ -101,6 +105,9 @@ static void deflate_object(GC_PTR obj, GC_PTR client_data) {
     free
 #endif
 	(infl);
+#if (!defined(WITH_TRANSACTIONS)) || (!defined(BDW_CONSERVATIVE_GC))
+    DECREMENT_MALLOC(sizeof(*infl));
+#endif
 }
 #endif
 

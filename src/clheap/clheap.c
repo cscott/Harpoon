@@ -10,6 +10,7 @@
 #include "misc.h"	/* for ALIGN, RECYCLE_HEAPS */
 #include <stdlib.h>	/* for malloc, size_t */
 #include "stats.h"	/* for thread_heaps_created */
+#include "memstats.h"
 
 #ifdef RECYCLE_HEAPS
 static clheap_t heap_free_list = NULL;
@@ -43,6 +44,13 @@ clheap_t clheap_create() {
   if (clh!=NULL) goto finish_init;
 #endif
   INCREMENT_STATS(thread_heaps_created, 1);
+
+  INCREMENT_MALLOC(sizeof(*clh));
+
+#if !defined(BDW_CONSERVATIVE_GC)
+  INCREMENT_MALLOC(HEAPSIZE);
+#endif
+
   clh = (clheap_t) malloc(sizeof(*clh));
   clh->heap_start =
 #ifdef WITH_PRECISE_GC
@@ -104,5 +112,11 @@ void clheap_detach(clheap_t clh) {
   flex_mutex_destroy(&(clh->heap_lock));
 #endif
   free(clh);
+
+  DECREMENT_MALLOC(sizeof(*clh));
+#if !defined(BDW_CONSERVATIVE_GC)
+  DECREMENT_MALLOC(HEAPSIZE);
+#endif
+
 #endif
 }
