@@ -91,7 +91,6 @@ NEWPRIMITIVEARRAY(Long, jlong, "[J");
 NEWPRIMITIVEARRAY(Float, jfloat, "[F");
 NEWPRIMITIVEARRAY(Double, jdouble, "[D");
 
-#if 0
 /* Returns an element of an Object array. 
  * THROWS: 
  *  ArrayIndexOutOfBoundsException: if index does not specify a valid index
@@ -99,6 +98,18 @@ NEWPRIMITIVEARRAY(Double, jdouble, "[D");
  */
 jobject FNI_GetObjectArrayElement(JNIEnv *env, 
 				  jobjectArray array, jsize index) {
+  struct aarray *a = (struct aarray *) FNI_UNWRAP(array);
+  jobject_unwrapped result;
+  /* check array bounds */
+  if (index > a->length || index < 0) {
+    jclass oob=FNI_FindClass(env,"java/lang/ArrayIndexOutOfBoundsException");
+    if (oob!=NULL) FNI_ThrowNew(env, oob, "JNI: GetObjectArrayElement");
+    return NULL;
+  }
+  /* do get */
+  result = *( (jobject_unwrapped *)
+	      ( ((char *) &(a->element_start)) + (index*sizeof(result)) ) );
+  return FNI_WRAP(result);
 }
 
 /* Sets an element of an Object array. 
@@ -110,8 +121,36 @@ jobject FNI_GetObjectArrayElement(JNIEnv *env,
  */
 void FNI_SetObjectArrayElement(JNIEnv *env, jobjectArray array, 
 			       jsize index, jobject value) {
+  struct aarray *a = (struct aarray *) FNI_UNWRAP(array);
+  jclass objCls, arrCls, comCls;
+  struct FNI_classinfo *info;
+  jobject_unwrapped result;
+  /* check array bounds */
+  if (index > a->length || index < 0) {
+    jclass oob=FNI_FindClass(env,"java/lang/ArrayIndexOutOfBoundsException");
+    if (oob!=NULL) FNI_ThrowNew(env, oob, "JNI: GetObjectArrayElement");
+    return;
+  }
+  /* check type */
+  objCls = FNI_GetObjectClass(env, value);
+  arrCls = FNI_GetObjectClass(env, array);
+  info = FNI_GetClassInfo(arrCls);
+  assert(info && info->name[0]=='[' && info->claz->component_claz);
+  comCls = FNI_WRAP(info->claz->component_claz->class_object);
+  if (FNI_IsAssignableFrom(env, objCls, comCls)==JNI_FALSE) {
+    jclass ase = FNI_FindClass(env,"java/lang/ArrayStoreException");
+    if (ase!=NULL) FNI_ThrowNew(env, ase, "JNI: SetObjectArrayElement");
+    return;
+  }
+  /* clean up a bit */
+  FNI_DeleteLocalRef(env, objCls);
+  FNI_DeleteLocalRef(env, arrCls);
+  FNI_DeleteLocalRef(env, comCls);
+  /* do set */
+  *( (jobject_unwrapped *)
+     ( ((char *) &(a->element_start)) + (index*sizeof(result)) ) ) =
+    FNI_UNWRAP(value);
 }
-#endif
 
 /* A family of functions that returns the body of the primitive array.
  * The result is valid until the corresponding
@@ -186,7 +225,7 @@ FORPRIMITIVETYPES(RELEASEPRIMITIVEARRAYELEMENTS);
 void FNI_Get##name##ArrayRegion(JNIEnv *env, type##Array array,\
 				jsize start, jsize len, type *buf) {\
   struct aarray *a = (struct aarray *) FNI_UNWRAP(array);\
-  if (start+len > a->length) {\
+  if (start+len > a->length || start < 0 || len < 0) {\
     jclass oob=FNI_FindClass(env,"java/lang/ArrayIndexOutOfBoundsException");\
     if (oob!=NULL) FNI_ThrowNew(env, oob, "JNI: Get" #name "ArrayRegion");\
     return;\
@@ -206,7 +245,7 @@ FORPRIMITIVETYPES(GETPRIMITIVEARRAYREGION);
 void FNI_Set##name##ArrayRegion(JNIEnv *env, type##Array array,\
 				jsize start, jsize len, const type *buf) {\
   struct aarray *a = (struct aarray *) FNI_UNWRAP(array);\
-  if (start+len > a->length) {\
+  if (start+len > a->length || start < 0 || len < 0) {\
     jclass oob=FNI_FindClass(env,"java/lang/ArrayIndexOutOfBoundsException");\
     if (oob!=NULL) FNI_ThrowNew(env, oob, "JNI: Get" #name "ArrayRegion");\
     return;\

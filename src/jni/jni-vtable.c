@@ -16,7 +16,7 @@ const struct JNINativeInterface FLEX_JNI_vtable = {
   0,
   0,
   FNI_GetSuperclass,
-  (typeof(&FNI_IsAssignableFrom)) FNI_Unimplemented,
+  FNI_IsAssignableFrom,
   0,
             
   FNI_Throw,
@@ -196,8 +196,8 @@ const struct JNINativeInterface FLEX_JNI_vtable = {
   FNI_GetArrayLength,
              
   FNI_NewObjectArray,
-  (typeof(&FNI_GetObjectArrayElement)) FNI_Unimplemented,
-  (typeof(&FNI_SetObjectArrayElement)) FNI_Unimplemented,
+  FNI_GetObjectArrayElement,
+  FNI_SetObjectArrayElement,
             
   FNI_NewBooleanArray,
   FNI_NewByteArray,

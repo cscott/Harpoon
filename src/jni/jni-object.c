@@ -119,3 +119,28 @@ jclass FNI_GetSuperclass (JNIEnv *env, jclass clazz) {
   if (depth < 1) return NULL;
   return FNI_WRAP(clsclz->display[depth-1]->class_object);
 }
+/* Determines whether an object of clazz1 can be safely cast to clazz2.
+ *
+ * Returns JNI_TRUE if any of the following are true: 
+ *
+ *   The first and second class arguments refer to the same Java class. 
+ *   The first class is a subclass of the second class. 
+ *   The first class has the second class as one of its interfaces. 
+ */
+jboolean FNI_IsAssignableFrom(JNIEnv *env, jclass clazz1, jclass clazz2) {
+  struct claz *claz1 = FNI_GetClassInfo((jclass)clazz1)->claz;
+  struct claz *claz2 = FNI_GetClassInfo((jclass)clazz2)->claz;
+  struct claz **ilist;
+  int depth;
+  assert(Java_java_lang_Class_isInterface(env, clazz1)==JNI_FALSE);
+  /* first and second class arguments refer to the same java class? */
+  if (claz1==claz2) return JNI_TRUE;
+  /* the first class is a subclass of the second class? */
+  depth = claz2->scaled_class_depth / sizeof(struct claz *);
+  if (claz1->display[depth] == claz2) return JNI_TRUE;
+  /* the first class has the second class as one of its interfaces? */
+  for (ilist=claz1->interfaces; *ilist!=NULL; ilist++)
+    if (*ilist == claz2) return JNI_TRUE;
+  /* okay, no tests were true.  must not be assignable */
+  return JNI_FALSE;
+}
