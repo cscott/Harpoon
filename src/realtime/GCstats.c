@@ -4,11 +4,11 @@ static struct timespec total_GC_time;
 static struct timespec max_GC_time;
 
 #define MALLOC_STATS_VARARG(name, args, arg_call) \
-void* name##_stats##args { \
+void* name##_stats args { \
   struct timespec begin, end, elapsed; \
   void* result; \
   clock_gettime(CLOCK, &begin); \
-  result = (void*)name##arg_call; \
+  result = (void*)name arg_call; \
   clock_gettime(CLOCK, &end); \
   elapsed.tv_sec = (end.tv_sec-begin.tv_sec)+((end.tv_nsec<begin.tv_nsec)?(-1):0); \
   elapsed.tv_nsec = (end.tv_nsec-begin.tv_nsec)+((end.tv_nsec<begin.tv_nsec)?1000000000:0); \
@@ -53,19 +53,19 @@ void print_GC_stats() {
 #endif
 }
 
-MALLOC_STATS(malloc);
-MALLOC_STATS_VARARG(calloc, (size_t nmemb, size_t size), (nmemb, size));
-FREE_STATS(free);
+MALLOC_STATS(malloc)
+MALLOC_STATS_VARARG(calloc, (size_t nmemb, size_t size), (nmemb, size))
+FREE_STATS(free)
 
 #ifdef BDW_CONSERVATIVE_GC
-MALLOC_STATS(GC_malloc);
-MALLOC_STATS(GC_malloc_atomic);
-MALLOC_STATS(GC_malloc_uncollectable);
-FREE_STATS(GC_free);
+MALLOC_STATS(GC_malloc)
+MALLOC_STATS(GC_malloc_atomic)
+MALLOC_STATS(GC_malloc_uncollectable)
+FREE_STATS(GC_free)
 #endif
 
 #ifdef WITH_PRECISE_GC
-MALLOC_STATS(precise_malloc);
+MALLOC_STATS(precise_malloc)
 #endif
 
 #undef MALLOC_STATS_VARARG

@@ -1,7 +1,6 @@
 #ifndef __GCstats_H__
 #define __GCstats_H__
 
-#define __need_timespec
 #include <time.h>
 #include <unistd.h>
 #include "config.h"

@@ -2,6 +2,7 @@
    Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
    Licensed under the terms of the GNU GPL; see COPYING for details. */
 
+#include <stdlib.h> /* For a default prototype of malloc */
 #include "config.h"
 
 /* Tag natively-allocated objects with MemoryAreas */
