@@ -15,6 +15,8 @@ static int inited = 0;
 static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
+static int initializeFD(JNIEnv *env);
+
 /** NOTE!  This bit does fd-offsetting like JDK 1.1.  The idea here is
  *  to make uninitialized objects invalid... an uninitialized FD will
  *  have the fd field set to 0, which when you subtract one is -1 == invalid.
