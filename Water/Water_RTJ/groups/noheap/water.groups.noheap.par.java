@@ -1164,7 +1164,7 @@ class ensemble {
       water.run(new Runnable() { 
 	  public void run() { 
 	    int i;
-	    for(i = 0; i < num; i++) {
+	    for(i = 0; i <= num; i++) {
 	      en.potengInnerLoop(i);
 	    }
 	  }
@@ -1180,20 +1180,20 @@ class ensemble {
 	  Thread t[] = null;
 	  if (water.noheap) {
 	    t = new potengThreadNoHeap[numThreads+1];
-	    for (int i = 0; i <= num; i+=(int)(num/numThreads)) { 
+	    for (int i = 0; i <= num; i+=(int)((num+1)/numThreads)) { 
 	      t[j] = 
-		new potengThreadNoHeap(en, first+i, 
-				       ((i+(int)(num/numThreads))<=num)?
-				       (first+i+(int)(num/numThreads)):(first+num+1),
+		new potengThreadNoHeap(en, i, 
+				       ((i+(int)((num+1)/numThreads))<=(num+1))?
+				       (i+(int)((num+1)/numThreads)):(num+1),
 				       0);
 	      t[j++].start();
 	    }
 	  } else {
 	    t = new potengThread[numThreads+1];
-	    for (int i = 0; i <= num; i+=(int)(num/numThreads)) { 
-	      t[j] = new potengThread(en, first+i, 
-				      ((i+(int)(num/numThreads))<=num)?
-				      (first+i+(int)(num/numThreads)):(first+num+1),
+	    for (int i = 0; i <= num; i+=(int)((num+1)/numThreads)) { 
+	      t[j] = new potengThread(en, i, 
+				      ((i+(int)((num+1)/numThreads))<=(num+1))?
+				      (i+(int)((num+1)/numThreads)):(num+1),
 				      0);
 	      t[j++].start();
 	    }
@@ -1737,18 +1737,18 @@ class ensemble {
 	    t = new interfThreadNoHeap[numThreads+1];
 	    for (int i = 0; i < numMol; i+=(int)(numMol/numThreads)) {
 	      t[j] = 
-		new interfThreadNoHeap(en, first+i,
+		new interfThreadNoHeap(en, i,
 				       ((i+(int)(numMol/numThreads))<numMol)?
-				       (first+i+(int)(numMol/numThreads)):(first+numMol),
+				       (i+(int)(numMol/numThreads)):numMol,
 				       0);
 	      t[j++].start();
 	    }
 	  } else {
 	    t = new interfThread[numThreads+1];
 	    for (int i = 0; i < numMol; i+=(int)(numMol/numThreads)) {
-	      t[j] = new interfThread(en, first+i,
+	      t[j] = new interfThread(en, i,
 				      ((i+(int)(numMol/numThreads))<numMol)?
-				      (first+i+(int)(numMol/numThreads)):(first+numMol),
+				      i+(int)(numMol/numThreads):numMol,
 				      0);
 	      t[j++].start();
 	    }
