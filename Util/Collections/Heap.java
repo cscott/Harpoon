@@ -4,6 +4,7 @@
 package harpoon.Util.Collections;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Map;
 /**
  * <code>Heap</code>s support create, insert, minimum, extract-min,
@@ -88,7 +89,7 @@ import java.util.Map;
  * <code>Heap</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Heap.java,v 1.1.2.1 2000-02-12 14:57:15 cananian Exp $
+ * @version $Id: Heap.java,v 1.1.2.2 2000-02-12 18:11:13 cananian Exp $
  */
 public interface Heap {
     /** Inserts a node with the specified key and value into the
@@ -145,4 +146,8 @@ public interface Heap {
     public boolean equals(Object o);
     /** Returns a string representation of this <code>Heap</code>. */
     public String toString();
+
+    /** Returns the comparator associated with this <code>Heap</code>,
+     *  or <code>null</code> if it uses its elements' natural ordering. */
+    public Comparator comparator();
 }

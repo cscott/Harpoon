@@ -4,6 +4,7 @@
 package harpoon.Util.Collections;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
 /**
@@ -12,12 +13,16 @@ import java.util.Map;
  * to implement this interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractHeap.java,v 1.1.2.1 2000-02-12 14:57:15 cananian Exp $
+ * @version $Id: AbstractHeap.java,v 1.1.2.2 2000-02-12 18:11:13 cananian Exp $
  */
 public abstract class AbstractHeap implements Heap {
-    /** Sole constructor, for invocation by subclass constructors
-     *  (typically implicitly). */
-    protected AbstractHeap() { }
+    /** A comparator for <code>Map.Entry</code>s, based on the
+     *  key comparator given to the constructor. */
+    private final EntryComparator entryComparator;
+    /** Sole constructor, for invocation by subclass constructors. */
+    protected AbstractHeap(Comparator c) {
+	this.entryComparator = new EntryComparator(c);
+    }
 
     // abstract methods:
     public abstract Map.Entry insert(Object key, Object value);
@@ -48,4 +53,30 @@ public abstract class AbstractHeap implements Heap {
 	return false;
     }
     public String toString() { return entries().toString(); }
+    /** Returns the comparator used to compare keys in this <code>Heap</code>,
+     *  or <code>null</code> if the keys' natural ordering is used. */
+    public Comparator comparator() { return entryComparator.cc; }
+    /** Returns a comparator which can be used to compare
+     *  <code>Map.Entry</code>s. Will never return <code>null</code>. */
+    protected Comparator entryComparator() { return entryComparator; }
+
+    /** Compares <code>Map.Entry</code>s by key. */
+    private static class EntryComparator implements Comparator {
+	final Comparator cc;
+	EntryComparator(Comparator cc) { this.cc = cc; }
+	public int compare(Object o1, Object o2) {
+	    Map.Entry e1 = (Map.Entry) o1, e2 = (Map.Entry) o2;
+	    Object k1 = e1.getKey(), k2 = e2.getKey();
+	    return (cc==null) ?
+		((Comparable)k1).compareTo(k2) :
+		cc.compare(k1, k2);
+	}
+	public boolean equals(Object obj) {
+	    if (obj instanceof EntryComparator) {
+		EntryComparator ec = (EntryComparator) obj;
+		return (cc==null) ? (ec.cc==null) : cc.equals(ec.cc);
+	    }
+	    return false;
+	}
+    }
 }
