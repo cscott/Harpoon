@@ -1,4 +1,4 @@
-// Instrumentate.java, created Tue Nov  7 14:12:49 2000 by root
+// CounterSupport.java, created Tue Nov  7 14:12:49 2000 by root
 // Copyright (C) 2000 bdemsky <bdemsky@LM.LCS.MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Runtime;
@@ -6,12 +6,13 @@ import java.io.ObjectOutputStream;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 /**
- * <code>Instrumentate</code>
+ * <code>CounterSupport</code> provides support for simple instrumentation.
+ * using counters identified by integers.
  * 
  * @author  bdemsky <bdemsky@lm.lcs.mit.edu>
- * @version $Id: Instrumentate.java,v 1.1.2.3 2000-11-08 20:07:02 bdemsky Exp $
+ * @version $Id: CounterSupport.java,v 1.1.2.1 2000-11-09 00:51:04 cananian Exp $
  */
-public class Instrumentate {
+public class CounterSupport {
     static int size;
     static long[] array;
     static Object lock=new Object();
