@@ -17,6 +17,7 @@ import javax.swing.event.ChangeEvent;
 import java.awt.Container;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Frame;
 
 import java.io.FileReader;
 import java.io.FileNotFoundException;
@@ -25,6 +26,8 @@ import java.io.File;
 import java.io.FileInputStream;
 
 import java.util.StringTokenizer;
+
+import java.awt.Toolkit;
 
 //import imagerec.corba.CORBA;
 import imagerec.corba.Sockets;
@@ -120,7 +123,7 @@ public class CarDemoGroundMain {
 	    else if (pipelineNumber == 2) {
 		HumanRecognition human = new HumanRecognition();
 		LatencySlider slider = new LatencySlider(human, 500);
-
+		Dimension sliderSize = slider.getSize();
 
 		Node pipe;
 		Server embedToGrServer = new Server(new Sockets(), args[2], null);
@@ -138,26 +141,52 @@ public class CarDemoGroundMain {
 		
 		System.out.println("*** Running camera Client on port #"+args[4]+"***");
 		Node cameraClient = new Client(new Sockets(), args[4]);
-		Node cameraControlKeyboard = new CameraControlKeyboard(cameraClient);
+		CameraControlKeyboard cameraControlKeyboard =
+		    new CameraControlKeyboard(cameraClient);
 		Thread t2 = new Thread(cameraControlKeyboard);
 		t2.start();
+		Frame cameraFrame = cameraControlKeyboard.getFrame();
+		Dimension cameraSize = cameraFrame.getSize();
+		Dimension resolution = Toolkit.getDefaultToolkit().getScreenSize();
+		int h=resolution.height;
+		int w=resolution.width;
+		cameraFrame.setLocation(w-(int)cameraSize.getWidth(),
+					h-(int)slider.getHeight()-
+					(int)cameraSize.getHeight());
 		
 
       		System.out.println("*** Running label Client on port #"+args[5]+"***");
 		Node labelClient = new Client(new Sockets(), args[5]);
-		Node labelControlKeyboard = new LabelControlKeyboard(labelClient);
+		LabelControlKeyboard labelControlKeyboard =
+		    new LabelControlKeyboard(labelClient);
 		Thread t3 = new Thread(labelControlKeyboard);
 		t3.start();
+
+		Frame labelFrame = labelControlKeyboard.getFrame();
+		Dimension labelSize = labelFrame.getSize();
+		labelFrame.setLocation(w-(int)cameraSize.getWidth()-
+				       (int)labelSize.getHeight(),
+				       h-(int)sliderSize.getHeight()-
+				       (int)labelSize.getHeight());
+		
 		
 		System.out.println("*** Running car Client on port #"+args[6]+"***");
 		Node carClient = new Client(new Sockets(), args[6]);
-		Node carControlKeyboard = new CarControlKeyboard(carClient);
+		CarControlKeyboard carControlKeyboard =
+		    new CarControlKeyboard(carClient);
 		Thread t4 = new Thread(carControlKeyboard);
 		t4.start();
 
-		System.out.println("Waiting for 5 seconds");
+		Frame carFrame = carControlKeyboard.getFrame();
+		Dimension carSize = carFrame.getSize();
+		carFrame.setLocation(w-(int)carSize.getWidth(),
+				     h-(int)sliderSize.getHeight()-
+				     (int)cameraSize.getHeight()-
+				     (int)carSize.getHeight());
+
+		System.out.println("Waiting for 1 seconds");
 		try {
-		    Thread.currentThread().sleep(5000);
+		    Thread.currentThread().sleep(1000);
 		}
 		catch (InterruptedException e) {
 		}
@@ -278,12 +307,19 @@ public class CarDemoGroundMain {
 	    
 	    c.add(slider, BorderLayout.CENTER);
 	    this.pack();
+	    Dimension d = this.getSize();
+	    Dimension resolution = Toolkit.getDefaultToolkit().getScreenSize();
+	    int h=resolution.height;
+	    int w=resolution.width;
+
+	    this.setLocation(w-(int)d.getWidth(), h-(int)d.getHeight());
 	    this.setVisible(true);
+
 	}
 
 	public void stateChanged(ChangeEvent e) {
 	    JSlider source = (JSlider)e.getSource();
-	    int value = source.getValue() - 250;
+	    int value = source.getValue();
 	    v.setLatency(value);
 	}
     }
