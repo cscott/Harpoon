@@ -39,6 +39,7 @@ int main(int argc, char *argv[]) {
   FNI_InitJNIEnv();
   env = FNI_CreateJNIEnv();
   ((struct FNI_Thread_State *)(env))->stack_top = FNI_STACK_TOP();
+  ((struct FNI_Thread_State *)(env))->is_alive = JNI_TRUE;
   /* setup main thread info. */
   FNI_java_lang_Thread_setupMain(env);
   thrCls  = (*env)->FindClass(env, "java/lang/Thread");
@@ -140,6 +141,12 @@ int main(int argc, char *argv[]) {
     CHECK_EXCEPTIONS(env);
   }
   (*env)->DeleteLocalRef(env, thrCls);
+  /* main thread is dead now. */
+  ((struct FNI_Thread_State *)(env))->is_alive = JNI_FALSE;
+  /* Notify others that it's dead (before we deallocate the thread object!). */
+  FNI_MonitorEnter(env, mainthread);
+  FNI_MonitorNotify(env, mainthread, JNI_TRUE);
+  FNI_MonitorExit(env, mainthread);
   // wait for all threads to finish up.
   FNI_java_lang_Thread_finishMain(env);
 
