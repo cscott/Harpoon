@@ -19,7 +19,7 @@ import java.util.Vector;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.2 1998-12-17 21:38:36 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.3 1998-12-18 04:49:59 cananian Exp $
  */
 abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -96,4 +96,9 @@ abstract class Code extends HCode {
     }
     // implement elementArrayFactory which returns Quad[]s.
     public ArrayFactory elementArrayFactory() { return Quad.arrayFactory; }
+
+    // print this Code.
+    public void print(java.io.PrintWriter pw) {
+	Print.print(pw, this);
+    }
 }
