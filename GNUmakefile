@@ -8,7 +8,7 @@ export TEXINPUTS=/home/cananian/src/tex4ht//:
 ALLDOCS=design bibnote readnote quads proposal thesis exec pldi99 pldi02 \
 	pldi03 oopsla02 oqe lctes03
 
-all: lctes03.ps #oqe.pdf oqe-notes.ps
+all: lctes03.ps lctes03-talk.pdf lctes03-talk-notes.ps
 
 ## funky stuff for martin.
 put:
@@ -64,7 +64,8 @@ oopsla02.dvi:	Figures/THlat1b.tex Figures/THlat6b.tex Figures/spec-space.eps\
 	Figures/oopsla-lat.tex
 
 # oqe presentation dependencies.
-oqe.dvi oqe-notes.tex oqe-adobe.tex:		\
+oqe.dvi oqe-notes.tex oqe-adobe.tex \
+lctes03-talk.dvi lctes03-talk-notes.tex lctes03-talk-adobe.tex:	\
 	 PPRoqe.sty				\
 	 Figures/Kontour/structure-bbox.eps	\
 	 Figures/Kontour/strategy-bbox.eps	\
