@@ -27,10 +27,12 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.Qop;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPECAST;
 import harpoon.IR.Quads.OPER;
 import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.QuadKind;
 import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.IR.LowQuad.POPER;
 import harpoon.IR.LowQuad.PCALL;
@@ -45,6 +47,7 @@ import harpoon.IR.LowQuad.PFOFFSET;
 import harpoon.IR.LowQuad.PMOFFSET;
 import harpoon.IR.LowQuad.PFCONST;
 import harpoon.IR.LowQuad.PMCONST;
+import harpoon.IR.LowQuad.LowQuadKind;
 import harpoon.Analysis.Loops.LoopFinder;
 import harpoon.Analysis.Loops.Loops;
 import harpoon.Temp.Temp;
@@ -70,7 +73,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.17 1999-09-24 04:37:05 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.18 1999-09-24 06:31:42 bdemsky Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -421,13 +424,13 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    case Qop.ICMPGT:
 		int cond=0;
 		if ((bindex==0)&&(cjmpedge==1))
-		    cond=ForLoopInfo.GT;
-		if ((bindex==1)&&(cjmpedge==1))
-		    cond=ForLoopInfo.LT;
-		if ((bindex==0)&&(cjmpedge==0))
 		    cond=ForLoopInfo.LTE;
-		if ((bindex==1)&&(cjmpedge==0))
+		if ((bindex==1)&&(cjmpedge==1))
 		    cond=ForLoopInfo.GTE;
+		if ((bindex==0)&&(cjmpedge==0))
+		    cond=ForLoopInfo.GT;
+		if ((bindex==1)&&(cjmpedge==0))
+		    cond=ForLoopInfo.LT;
 		retval=new ForLoopInfo(cond,ivar,increment,
 				       initialTemp(hc, ivar, lp),
 				       test.operands(1-bindex),test,cjmp);
@@ -440,7 +443,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    return null;
     }
 
-    class ForLoopInfo {
+    public class ForLoopInfo {
 	private int testtype;
 	private Temp induction;
 	private Temp increment;
@@ -623,8 +626,70 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 			PHI header=(PHI)(lp.loopEntrances()).toArray()[0];
 			OPER addquad=(OPER)addQuad(hc, header,binvar, lp.loopIncelements());			
 			Temp nextinc=addquad.dst();
-			HCodeElement[] niuses=ud.useMap(hc, nextinc);
-			if ((niuses.length==1)&&(niuses[0]==header))
+			boolean otheruse=false;
+			WorkSet tocheck=new WorkSet();
+			WorkSet done=new WorkSet();
+			tocheck.add(nextinc);
+			boolean good=true;
+			while(good&&(!tocheck.isEmpty())) {
+			    Temp tuse=(Temp)tocheck.pop();
+			    done.add(tuse);
+			    HCodeElement[] niuses=ud.useMap(hc, tuse);
+			    for (int i=0;i<niuses.length;i++) 
+				if (niuses[i]!=header) {
+				    int kind=((Quad)niuses[i]).kind();
+				    if ((kind==QuadKind.CJMP)||
+					(kind==QuadKind.SWITCH)) {
+					SIGMA sigma=(SIGMA)niuses[i];
+					for(int j=0;j<sigma.numSigmas();j++)
+					    if(sigma.src(j)==tuse) {
+						for(int k=0;k<sigma.arity();k++)
+						    if (!done.contains(sigma.dst(j,k)))
+							tocheck.add(sigma.dst(j,k));
+					    }
+				    } else if(kind==QuadKind.CALL) {
+					CALL csigma=(CALL)niuses[i];
+					for(int l=0;l<csigma.paramsLength();l++)
+					    if (csigma.params(i)==tuse) {
+						good=false;
+						break;
+					    }
+					if (good)
+					    for(int j=0;j<csigma.numSigmas();j++)
+						if(csigma.src(j)==tuse) {
+						    for(int k=0;k<csigma.arity();k++)
+							if (!done.contains(csigma.dst(j,k)))
+							    tocheck.add(csigma.dst(j,k));
+						}
+				    } else if(kind==LowQuadKind.PCALL) {
+					PCALL psigma=(PCALL)niuses[i];
+					for(int l=0;l<psigma.paramsLength();l++)
+					    if (psigma.params(i)==tuse) {
+						good=false;
+						break;
+					    }
+					if (good)
+					    for(int j=0;j<psigma.numSigmas();j++)
+						if(psigma.src(j)==tuse) {
+						    for(int k=0;k<psigma.arity();k++)
+							if (!done.contains(psigma.dst(j,k)))
+							    tocheck.add(psigma.dst(j,k));
+						}
+				    } else if(kind==QuadKind.PHI) {
+					PHI phi=(PHI)niuses[i];
+					for (int j=0;j<phi.numPhis();j++)
+					    for (int k=0;k<phi.numPhis();k++) {
+						if (tuse==phi.src(j,k)) {
+						    if (!done.contains(phi.dst(j)))
+						    tocheck.add(phi.dst(j));
+						}
+					    }
+				    } else
+					good=false;
+				    
+				}
+			}
+			if (good)
 			    //condition #5 satisfied
 			    if (checktracks()) {
 				inductionvar=binvar;
