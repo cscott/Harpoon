@@ -6,7 +6,7 @@ package harpoon.Analysis.SizeOpt;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Maps.ConstMap;
 import harpoon.Analysis.Quads.MustParamOracle;
-import harpoon.Analysis.Quads.SCC.SCCAnalysis;
+import harpoon.Analysis.Quads.SimpleConstMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
@@ -37,7 +37,7 @@ import java.util.Set;
  * of several 'mostly-zero field' transformations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstructorClassifier.java,v 1.1.2.7 2001-11-14 19:11:49 cananian Exp $
+ * @version $Id: ConstructorClassifier.java,v 1.1.2.8 2001-11-14 23:03:12 cananian Exp $
  */
 public class ConstructorClassifier {
     private static final boolean DEBUG=false;
@@ -261,15 +261,13 @@ public class ConstructorClassifier {
 	HMethod hm = hc.getMethod();
 	Util.assert(isConstructor(hm));
 	HClass thisClass = hm.getDeclaringClass();
-	// first, do a SCCAnalysis.
-	SCCAnalysis scc = new SCCAnalysis(hc);
+	// first, get a SimpleConstMap
+	ConstMap cm = new SimpleConstMap(hc);
 	// also create a MustParamOracle
 	MustParamOracle mpo = new MustParamOracle(hc);
 	// look at every SET and CALL.
 	for (Iterator it=hc.getElementsI(); it.hasNext(); ) {
 	    Quad q = (Quad) it.next();
-	    // ignore non-executable quads.
-	    if (!scc.execMap(q)) continue;
 	    if (q instanceof SET) {
 		SET qq = (SET) q;
 		// field set.
@@ -277,7 +275,7 @@ public class ConstructorClassifier {
 		    Classification oc = (Classification) map.get(qq.field());
 		    // okay, is the value we're setting a constant? or param?
 		    Classification nc =
-			makeClassification(scc, mpo, qq, qq.src());
+			makeClassification(cm, mpo, qq, qq.src());
 		    // XXX: CAN MERGE const with param if the const is
 		    // the 'right' value (the one we're optimizing for)
 		    if (oc!=null) //null means we haven't seen this field yet.
@@ -294,7 +292,7 @@ public class ConstructorClassifier {
 		    // construct parameter mapping.
 		    Classification pc[]= new Classification[qq.paramsLength()];
 		    for (int i=0; i<pc.length; i++)
-			pc[i] = makeClassification(scc, mpo, qq, qq.params(i));
+			pc[i] = makeClassification(cm, mpo, qq, qq.params(i));
 		    // filter method's classifications through the mapping and
 		    // merge with our previous classifications.
 		    for (Iterator it2=m.entrySet().iterator(); it2.hasNext();){

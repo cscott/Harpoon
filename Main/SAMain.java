@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.179 2001-11-14 01:36:12 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.180 2001-11-14 23:03:04 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -427,6 +427,13 @@ public class SAMain extends harpoon.IR.Registration {
 	    if (Boolean.getBoolean("mzf.compressor") &&
 		System.getProperty("mzf.profile","").length()>0) {
  		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+		if (!Boolean.getBoolean("bitwidth"))
+		    // SCCOptimize makes the SimpleConstMap used by
+		    // ConstructorClassifier more accurate.  However, if
+		    // we've used the FieldReducer, we're already
+		    // SCCOptimized, so no need to do it again.
+		    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize
+			.codeFactory(hcf);
 		hcf = new harpoon.Analysis.SizeOpt.MZFCompressor
 		    (frame, hcf, classHierarchy,
 		     System.getProperty("mzf.profile")).codeFactory();
