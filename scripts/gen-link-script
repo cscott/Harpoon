@@ -9,7 +9,7 @@ tmpsed=$TMPDIR/gen-link-script-sed
 
 # output default link script.  has lots of other garbage, too =(
 echo "int main() { return 0; }" > $tmpinfile
-${CC} -Wl,--verbose -o $tmpoutfile $tmpinfile 2>$tmpscript || exit $?
+${CC} -Wl,--verbose -o $tmpoutfile $tmpinfile 2>$tmpscript 1>&2 || exit $?
 rm -f $tmpinfile $tmpoutfile
 
 # filter out other garbage from output of CC.
