@@ -5,7 +5,14 @@
 *.toc
 *.lof
 *.loa
+*.lot
 *.aux
 *.dvi
+*.glo
+*.gls
+*.idx
+*.ilg
+*.ind
+*.lis
 harpoon_.bib
 unread_.bib
