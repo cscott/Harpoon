@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.123 $)dnl
+AC_REVISION($Revision: 1.124 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -34,9 +34,6 @@ AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
 
 dnl Checks for libraries.
 AC_CHECK_LIB(m, atan2) # link in math library.
-   dnl don't sweat it if the next two libraries aren't found.
-AC_CHECK_LIB(iberty, hex_init)
-AC_CHECK_LIB(bfd, bfd_init)
 
 dnl Checks for header files.
 AC_HEADER_STDC
@@ -758,6 +755,10 @@ if test -f arch/${archdir}/stack.h ; then
   AC_DEFINE(HAVE_STACK_TRACE_FUNCTIONS, 1,
     [Define iff your target has stack tracing code in arch/<foo>/stack.h])
   AC_MSG_RESULT([yes])
+   dnl don't sweat it if the next two libraries aren't found.
+   dnl (but if they're not, then you're not really going to get stack-tracing)
+  AC_CHECK_LIB(iberty, hex_init)
+  AC_CHECK_LIB(bfd, bfd_init)
 else
   AC_MSG_RESULT([no])
 fi
