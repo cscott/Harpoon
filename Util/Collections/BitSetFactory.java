@@ -31,7 +31,7 @@ import java.util.HashMap;
     cause an assertion failure.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.12 2000-07-01 00:56:39 cananian Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.13 2000-07-10 12:50:43 pnkfelix Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -108,6 +108,15 @@ public class BitSetFactory extends SetFactory {
     public Set makeSet(Collection c) {
 	BitStringSet bss = new BitStringSet(bitStringSize, this);
 	bss.addAll(c);
+	return bss;
+    }
+    
+    /** Generates a new mutable <code>Set</code>, using the elements
+	of the universe for <code>this</code> as its initial contents.
+    */
+    public Set makeFullSet() {
+	BitStringSet bss = new BitStringSet(bitStringSize, this);
+	bss.bs.setAll();
 	return bss;
     }
 
