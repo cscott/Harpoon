@@ -112,7 +112,7 @@
     ("\"// \" (file-name-nondirectory buffer-file-name)"
      "\", created \" (current-time-string)" "\" by \" (user-login-name) 'n"
      "(funcall jde-gen-boilerplate-function)"
-     "\"// Copyright (C) 2000 \" (user-full-name) \" <\" user-mail-address \">\" 'n" 
+     "\"// Copyright (C) 2003 \" (user-full-name) \" <\" user-mail-address \">\" 'n" 
      "\"// Licensed under the terms of the GNU GPL; see COPYING for details.\" 'n" 
      "\"package harpoon\" (harpoon-package-name \"/Code\") \";\" 'n 'n" 
      "\"/**\" 'n" 
