@@ -16,7 +16,7 @@ import java.util.Enumeration;
  * the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.1 1998-09-10 19:39:41 cananian Exp $
+ * @version $Id: UseDef.java,v 1.2 1998-09-10 19:48:41 cananian Exp $
  */
 
 public class UseDef  {
@@ -38,9 +38,9 @@ public class UseDef  {
 	// make sure we don't analyze a method multiple times.
 	HMethod method = code.getMethod();
 	if (analyzed.containsKey(method)) return;
-	analyzed.put(method, method);
 
 	Quad[] ql = (Quad[]) code.getElements();
+	UniqueVector defined = new UniqueVector();
 
 	for (int i=0; i<ql.length; i++) {
 	    Temp[] u = ql[i].use();
@@ -51,6 +51,7 @@ public class UseDef  {
 		// only one quad per temp definition (SSA form).
 		Util.assert(defMap.get(d[j])==null);
 		defMap.put(d[j], ql[i]);
+		defined.addElement(d[j]);
 	    }
 	    // store use mapping.
 	    for (int j=0; j<u.length; j++) {
@@ -71,6 +72,13 @@ public class UseDef  {
 	    h.put(u, uses);
 	}
 	useMap = h;
+
+	// fold defined UniqueVector into an array.
+	Temp[] alldef = new Temp[defined.size()];
+	defined.copyInto(alldef);
+
+	// mark this one as analyzed.
+	analyzed.put(method, alldef);
     }
 
     /** Return the Quad where a given Temp is defined */
@@ -82,5 +90,10 @@ public class UseDef  {
     public Quad[] useSites(HMethod m, Temp t) {
 	analyze(m);
 	return (Quad[]) useMap.get(t);
+    }
+    /** Return an array of all Temps defined in a given method. */
+    public Temp[] allDefs(HMethod m) {
+	analyze(m);
+	return (Temp[]) analyzed.get(m);
     }
 }
