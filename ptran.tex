@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.45 2002-08-01 17:21:34 cananian Exp $
+% $Id: ptran.tex,v 1.46 2002-08-01 17:31:06 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.45 $ $}
+\date{\today \\ $ $Revision: 1.46 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -506,7 +506,13 @@ kills them.
 At the start of the analysis, we set $I=\emptyset$, $O=\emptyset$,
 $\func{e}(n)=\emptyset$ for all $n\in N$, 
 $\func{c}_\text{from}(i)=\func{c}_\text{to}(i)=\emptyset$ for all $i\in I$,
-and $r=\emptyset$.
+and $r=\emptyset$.%
+\footnote{
+Each inference rule is written in the standard form
+\[\dfrac{c_1,\ldots,c_k}{c'_1,\ldots,c'_j}\]
+which imposes the constraint that if all of $c_1,\ldots,c_k$ are true,
+then all of $c'_1,\ldots,c'_j$ must be true.
+}
 
 \subsubsection{Static fields}
 
@@ -524,7 +530,7 @@ Given method $m$ with formals $p_0,\ldots,p_k$:
 
 \begin{displaymath}
 \dfrac
-{\text{\tt [l=v]}\in\mathcal{P} \wedge \tuple{v,n}\in I}
+{\text{\tt [l=v]}\in\mathcal{P}, \tuple{v,n}\in I}
 {\tuple{l,n}\in I}
 \end{displaymath}
 
@@ -537,40 +543,40 @@ Given method $m$ with formals $p_0,\ldots,p_k$:
 \begin{eqnarray*}
 &
 \dfrac
-{\text{\tt [l$_1$=l$_2$.f]}\in\mathcal{P} \wedge
- \tuple{l_2,n}\in I \wedge
+{\text{\tt [l$_1$=l$_2$.f]}\in\mathcal{P},
+ \tuple{l_2,n}\in I,
  \tuple{\tuple{n,f},n'}\in I}
 {\tuple{l_1,n'}\in I}
 \\&
 \dfrac
-{\text{\tt [l$_1$=l$_2$.f]}\in\mathcal{P} \wedge
- \tuple{l_2,n}\in I \wedge
- \func{escaped}(n) \wedge
+{\text{\tt [l$_1$=l$_2$.f]}\in\mathcal{P},
+ \tuple{l_2,n}\in I,
+ \func{escaped}(n),
  n' \text{ is load node for statement} }
-{\tuple{l_1,n'}\in I \wedge \tuple{\tuple{n,f},n'}\in O}
+{\tuple{l_1,n'}\in I, \tuple{\tuple{n,f},n'}\in O}
 \end{eqnarray*}
 
 \subsubsection{Store statement}
 
 \begin{eqnarray*}&
 \dfrac
-{\text{\tt [l$_1$.f=l$_2$]}\in\mathcal{P} \wedge
- \tuple{l_1,n_1}\in I \wedge
+{\text{\tt [l$_1$.f=l$_2$]}\in\mathcal{P},
+ \tuple{l_1,n_1}\in I,
  \tuple{l_2,n_2}\in I }
 {\tuple{\tuple{n_1,f},n_2}\in I}
 \\&
 \dfrac
-{s=\text{\tt [l$_1$.f=l$_2$]}\wedge s\in\mathcal{P} \wedge
- \tuple{l_1,n_1}\in I \wedge
- \tuple{l_2,n_2}\in I \wedge
+{s=\text{\tt [l$_1$.f=l$_2$]}, s\in\mathcal{P},
+ \tuple{l_1,n_1}\in I,
+ \tuple{l_2,n_2}\in I,
  \func{c}_\text{from}(\tuple{\tuple{n_1,f},n_2})\neq\bot
 }
 {\tuple{l_1,s}\in\func{c}_\text{from}(\tuple{\tuple{n_1,f},n_2}) }
 \\&
 \dfrac
-{s=\text{\tt [l$_1$.f=l$_2$]}\wedge s\in\mathcal{P} \wedge
- \tuple{l_1,n_1}\in I \wedge
- \tuple{l_2,n_2}\in I \wedge
+{s=\text{\tt [l$_1$.f=l$_2$]}, s\in\mathcal{P},
+ \tuple{l_1,n_1}\in I,
+ \tuple{l_2,n_2}\in I,
  \func{c}_\text{to}(\tuple{\tuple{n_1,f},n_2})\neq\bot
 }
 {\tuple{l_2,s}\in\func{c}_\text{to}(\tuple{\tuple{n_1,f},n_2}) }
@@ -582,7 +588,7 @@ Given method $m$ with formals $p_0,\ldots,p_k$:
 
 \begin{displaymath}
 \dfrac
-{\text{\tt [l=cl.f]}\in\mathcal{P} \wedge
+{\text{\tt [l=cl.f]}\in\mathcal{P},
  \tuple{\tuple{\bigvar{cl},f},n}\in (O\cup I) }
 {\tuple{l,n}\in I}
 \end{displaymath}
@@ -591,7 +597,7 @@ Given method $m$ with formals $p_0,\ldots,p_k$:
 
 \begin{displaymath}
 \dfrac
-{\text{\tt [cl.f=l]}\in\mathcal{P} \wedge
+{\text{\tt [cl.f=l]}\in\mathcal{P},
  \tuple{l,n}\in I}
 {\tuple{\tuple{\bigvar{cl},f},n}\in I}
 \end{displaymath}
@@ -600,7 +606,7 @@ Given method $m$ with formals $p_0,\ldots,p_k$:
 
 \begin{displaymath}
 \dfrac
-{\text{\tt [l=new cl]}\in\mathcal{P} \wedge
+{\text{\tt [l=new cl]}\in\mathcal{P},
  n \text{ is inside node for statement} }
 {\tuple{l,n}\in I}
 \end{displaymath}
@@ -610,7 +616,7 @@ Given method $m$ with formals $p_0,\ldots,p_k$:
 
 \begin{displaymath}
 \dfrac
-{\text{\tt [return l]}\in\mathcal{P} \wedge
+{\text{\tt [return l]}\in\mathcal{P},
  \tuple{l,n}\in I}
 {n\in r}
 \end{displaymath}
@@ -622,14 +628,14 @@ Given method $m$ with formals $p_0,\ldots,p_k$:
 The inference rules for a skipped call-site are simple:
 \begin{displaymath}
 \dfrac
-{\text{\tt [l=l$_0$.op(l$_1$,\ldots,l$_k$)]}\in\mathcal{P} \wedge
+{\text{\tt [l=l$_0$.op(l$_1$,\ldots,l$_k$)]}\in\mathcal{P},
  n_R \text{ is new outside node for statement} }
 {\tuple{l,n_R}\in I}
 \end{displaymath}
 \begin{displaymath}
 \dfrac
-{s=\text{\tt [l=l$_0$.op(l$_1$,\ldots,l$_k$)]}\wedge s\in\mathcal{P} \wedge
- 0\leq i\leq k \wedge
+{s=\text{\tt [l=l$_0$.op(l$_1$,\ldots,l$_k$)]}, s\in\mathcal{P},
+ 0\leq i\leq k,
  \tuple{l_i,n}\in I}
 {s \in \func{e}(n) }
 \end{displaymath}
