@@ -3,7 +3,9 @@ package imagerec;
 public class Timer extends Node {
     private boolean start;
     private boolean announce;
-    
+    private long total = 0;
+    private long frames = 0;
+
     public Timer(boolean start, boolean announce, Node out) {
 	super(out);
 	this.start = start;
@@ -12,10 +14,11 @@ public class Timer extends Node {
 
     public synchronized void process(ImageData id) {
 	long time = System.currentTimeMillis();
+	frames++;
 	if (start) {
 	    id.time = time;
 	} else {
-	    id.time = time-id.time;
+	    total += id.time = time-id.time;
 	    if (announce) {
 		System.out.println(id.time);
 	    }
@@ -23,5 +26,11 @@ public class Timer extends Node {
 	super.process(id);
     }
 
+    public getTotal() {
+	return total;
+    }
 
+    public getFrames() {
+	return frames;
+    }
 }
