@@ -10,21 +10,79 @@ import java.util.Enumeration;
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.1 1998-10-16 01:12:31 marinov Exp $
+ * @version $Id: Graph.java,v 1.2 1998-10-17 02:57:16 marinov Exp $
  */
 
-public class Graph  {
+public abstract class Graph  {
     
-    /** Creates a <code>Graph</code>. */
-    private Graph() { }
-    
-    /** Print (vcg format) graph representing code view. Use default style. */
-    public static final void printGraph(HCode hc, java.io.PrintWriter pw, String title) {
-	printGraph(hc,pw,title,null,null);
+    /** Print (vcg format) control from graph representing code view. Use default style. */
+    public static final void printCFG(HCode hc, java.io.PrintWriter pw, String title) {
+	printCFG(hc,pw,title,null);
     }
 
-    /** Print (vcg format) graph representing code view. */
-    public static final void printGraph(HCode hc, java.io.PrintWriter pw, String title, String[] setup, String type) {
+    /** Print (vcg format) DomTree of code view. Use default style. */
+    public static final void printDomTree(HCode hc, java.io.PrintWriter pw, String title) {
+	printDomTree(false,hc,pw,title,null);
+    }
+
+    /** Print (vcg format) (Post)DomTree of code view. Use default style. */
+    public static final void printDomTree(boolean isPost, HCode hc, java.io.PrintWriter pw, String title) {
+	printDomTree(isPost,hc,pw,title,null);
+    }
+
+    /** Print (vcg format) control flow graph representing code view. */
+    public static final void printCFG(HCode hc, java.io.PrintWriter pw, String title, String[] setup) {
+	commonHeader(hc, pw, title, setup, "CFG");
+	// control flow graph. The HCodeElements better implement Edges
+	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
+	    HCodeElement hce = (HCodeElement) e.nextElement();
+	    HCodeEdge[] next = ((Edges)hce).succ();
+	    for (int j=0; j<next.length; j++) {
+		String label;
+		if (next.length==1)
+		    label = null;
+		else if (next.length==2)
+		    label = (j==0)?"false":"true";
+		else
+		    label = Integer.toString(j);
+		pw.println(edgeString(next[j].from(), next[j].to(), 
+				      label));
+	    }
+	}
+	commonFooter(pw);
+    }
+
+    /** Print (vcg format) of DomTree. */
+    public static final void printDomTree(HCode hc, java.io.PrintWriter pw, String title, String[] setup) {
+	printDomTree(false,hc,pw,title,setup);
+    }
+
+    /** Print (vcg format) of (Post)DomTree. */
+    public static final void printDomTree(boolean isPost, HCode hc, java.io.PrintWriter pw, String title, String[] setup) {
+	commonHeader(hc, pw, title, setup, "DomTree");
+	DomTree dt = new DomTree(isPost);
+	DomFrontier df = new DomFrontier(dt);
+	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
+	    HCodeElement hce = (HCodeElement) e.nextElement();
+	    HCodeElement idom = dt.idom(hc, hce);
+	    // make dominance frontier label.
+	    StringBuffer sb = new StringBuffer("DF[");
+	    sb.append(hce.getID()); sb.append("]={");
+	    for (Enumeration e2 = df.dfE(hc, hce); e2.hasMoreElements(); ){
+		sb.append(((HCodeElement)e2.nextElement()).getID());
+		if (e2.hasMoreElements())
+		    sb.append(",");
+	    }
+	    sb.append("}");
+	    if (idom!=null)
+		pw.println(edgeString(idom, hce,
+				      sb.toString()));
+	}
+	commonFooter(pw);
+    }
+
+    /** Print common header of (vcg format) graphs for CFG and (Post)DomTree. */
+    private static void commonHeader(HCode hc, java.io.PrintWriter pw, String title, String[] setup, String type) {
 	pw.println("graph: {");
 	pw.println("title: \""+title+"/"+hc.getName()+"\"");
 	if (setup==null) {
@@ -39,8 +97,7 @@ public class Graph  {
 	}
 	for (int i=0; i<setup.length; i++)
 	    pw.println(setup[i]);
-	int t = (type==null) ? 0 : ((type.equals("dom")) ? 1 : -1);
-	pw.println((t!=0) ? "layoutalgorithm: tree" : "priority_phase: yes");
+	pw.println((type!="CFG") ? "layoutalgorithm: tree" : "priority_phase: yes");
 	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
 	    HCodeElement hce = (HCodeElement) e.nextElement();
 	    String label = "#" + hce.getID() + ": " + escape(hce.toString());
@@ -50,42 +107,10 @@ public class Graph  {
 	    pw.print("shape: box ");
 	    pw.println("}");
 	}
-	if (t != 0) {
-	    DomTree dt = new DomTree(t==-1);
-	    DomFrontier df = new DomFrontier(dt);
-	    for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
-		HCodeElement hce = (HCodeElement) e.nextElement();
-		HCodeElement idom = dt.idom(hc, hce);
-		// make dominance frontier label.
-		StringBuffer sb = new StringBuffer("DF[");
-		sb.append(hce.getID()); sb.append("]={");
-		for (Enumeration e2 = df.dfE(hc, hce); e2.hasMoreElements(); ){
-		    sb.append(((HCodeElement)e2.nextElement()).getID());
-		    if (e2.hasMoreElements())
-			sb.append(",");
-		}
-		sb.append("}");
-		if (idom!=null)
-		    pw.println(edgeString(idom, hce,
-					   sb.toString()));
-	    }
-	} else {// control flow graph. The HCodeElements better implement Edges
-	    for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
-		HCodeElement hce = (HCodeElement) e.nextElement();
-		HCodeEdge[] next = ((Edges)hce).succ();
-		for (int j=0; j<next.length; j++) {
-		    String label;
-		    if (next.length==1)
-			label = null;
-		    else if (next.length==2)
-			label = (j==0)?"false":"true";
-		    else
-			label = Integer.toString(j);
-		    pw.println(edgeString(next[j].from(), next[j].to(), 
-					   label));
-		}
-	    }
-	}
+
+    }
+
+    private static void commonFooter (java.io.PrintWriter pw) {
 	pw.println("}");
     }
 
