@@ -65,7 +65,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.16 2000-03-24 06:15:35 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.17 2000-03-24 07:07:12 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -128,6 +128,7 @@ public class CloningVisitor extends QuadVisitor {
     public void reset(HMethod nhm, TempFactory otf, boolean isCont, CALL origCall) {
 	followchildren=true;
 	hcode=new ContCodeSSI(nhm);
+	cclasses.add(nhm.getDeclaringClass());
 	qf=((ContCodeSSI)hcode).getFactory();
 	stillokay=methodstatus;
 	ctmap=new CloningTempMap(otf,qf.tempFactory());
@@ -161,6 +162,8 @@ public class CloningVisitor extends QuadVisitor {
 	HClass nhclass=(new EnvBuilder(ucf, hc, 
 				       q, getEnvTemps(q),linker,
 				       typemap,recycle)).makeEnv();
+	//force outputting of this class
+	cclasses.add(nhclass);
 	env_map.put(q, nhclass);
 	return nhclass;
     }
@@ -255,8 +258,6 @@ public class CloningVisitor extends QuadVisitor {
 		//Build Class for the continuation
 		HClass hclass=AsyncCode.createContinuation(hc.getMethod(),  q,
 						 ucf, linker,getEnv(q)); 
-		//Force output in case we have a dangling reference
-		cclasses.add(hclass);
 		//Add mapping of call->class
 		cont_map.put(q,hclass);
 		//Schedule blocking method for transformation
@@ -769,7 +770,6 @@ public class CloningVisitor extends QuadVisitor {
 			old2new.put(hm, bm.swop(hm));
 		    } else {
 			if (hm.getName().compareTo("<init>")!=0) {
-			    cclasses.add(hm.getDeclaringClass());
 			    HCode toConvert=ucf.convert(hm);
 			    if (toConvert!=null)
 				async_todo.add(toConvert);
