@@ -27,7 +27,7 @@ import java.lang.reflect.Modifier;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.29.2.4 2000-01-11 11:34:49 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.29.2.5 2000-01-11 15:30:36 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -477,7 +477,7 @@ public abstract class HClass extends HPointer
 	mstr.append(Modifier.toString(m));
 	mstr.append(' ');
       }
-      if (hm[i].getName().equals("<clinit>")) {
+      if (hm[i] instanceof HInitializer) {
 	mstr.append("static {};");
 	pw.println(mstr.toString());
 	continue;
