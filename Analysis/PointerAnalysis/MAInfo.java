@@ -39,7 +39,7 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.4 2000-04-04 07:38:03 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.5 2000-04-05 01:01:10 bdemsky Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
     
@@ -303,8 +303,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		    "A METHOD quad should have exactly one successor!");
 	Edge nextedge = method.nextEdge(0);
 	Quad nextquad = method.next(1);
-	Quad.addEdge(method, nextedge.which_pred(), newq, 0);
-	Quad.addEdge(newq, 0, nextquad, nextedge.which_succ());
+	Quad.addEdge(method, nextedge.which_succ(), newq, 0);
+	Quad.addEdge(newq, 0, nextquad, nextedge.which_pred());
     }
 
 
