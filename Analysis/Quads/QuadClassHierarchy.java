@@ -47,7 +47,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.5 2002-06-18 19:23:55 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -221,8 +221,15 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 		    public void visit(CONST q) {
 			if (q.type().isPrimitive()) return;
 			discoverInstantiatedClass(S, q.type());
-			// string constants use intern()
-			discoverMethod(S, HMstrIntern, false/*non-virtual*/);
+			if (q.type().getName().equals("java.lang.String"))
+			    // string constants use intern()
+			    discoverMethod(S,HMstrIntern,false/*non-virtual*/);
+			if (q.type().getName().equals("java.lang.Class"))
+			    discoverClass(S, (HClass) q.value());
+			if (q.type().getName().equals("java.lang.reflect.Field"))
+			    discoverClass(S, ((HField) q.value()).getDeclaringClass());
+			if (q.type().getName().equals("java.lang.reflect.Method"))
+			    discoverClass(S, ((HMethod) q.value()).getDeclaringClass());
 		    }
 		    // CALLs:
 		    public void visit(CALL q) {
