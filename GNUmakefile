@@ -7,8 +7,9 @@ JDOCIMAGES=/usr/local/jdk1.1.6/docs/api/images
 SSH=ssh
 SCP=scp -A
 
-ALLPKGS = $(shell find . -type d | grep -v CVS | grep -v "^./harpoon" | grep -v "^./doc" | sed -e "s|^[.]/*||")
-ALLSOURCE = $(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java))
+ALLPKGS = $(shell find . -type d | grep -v CVS | grep -v "^./harpoon" | grep -v "^./doc" | grep -v "^./NOTES" | sed -e "s|^[.]/*||")
+ALLSOURCE = $(filter-out .%.java, \
+		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java)))
 
 all:	java
 
@@ -38,7 +39,8 @@ doc/TIMESTAMP:	$(ALLSOURCE)
 	cd doc; ln -s .. harpoon
 	cd doc; ${JDOC} ${JDOCFLAGS} -d . \
 		$(foreach dir, $(filter-out Test,$(ALLPKGS)), \
-			  harpoon.$(subst /,.,$(dir)))
+			  harpoon.$(subst /,.,$(dir))) | \
+		grep -v "^@see warning:"
 	$(RM) doc/harpoon
 	munge doc | \
 	  sed -e 's/<cananian@/\&lt;cananian@/g' \
