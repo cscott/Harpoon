@@ -1,0 +1,26 @@
+#!/bin/bash
+
+#echo "TODO: Write a more elegant version of me!"
+
+#export CLASSPATH=$HOME/Harpoon/Code/SupportNP/classes.zip:$CLASSPATH
+
+# Building the RealTime Java benchmarks
+#OLD_CLASSPATH=$CLASSPATH
+
+#export CLASSPATH=/home/salcianu/Harpoon/Code/Support/realtime.jar:$CLASSPATH
+
+#./buildone FibPaper
+
+./buildone Water/Water_RTJ
+
+./buildone Barnes/Barnes_RTJ
+
+./buildone HTTP/HTTP_RTJ
+
+./buildone Quote/Quote_RTJ
+
+./buildone ToyArray
+
+./buildone ToyTree
+
+
