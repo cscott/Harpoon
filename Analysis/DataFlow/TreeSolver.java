@@ -16,14 +16,21 @@ import harpoon.Util.Util;
 import harpoon.Util.IteratorEnumerator;
 import harpoon.Analysis.EdgesIterator;
 
-/* <b>FILL ME IN</b>.
+/** 
+ * A blatant rip-off of Whaley's <code>QuadSolver</code> class, used to 
+ * solve data flow equations (baby).  As Felix pointed out, there is
+ * probably not much of a need for separate quad and tree solver classes.
+ * Ultimately they should probably be combined into a 
+ * <code>BasicBlockSolver</code> class. 
+ * 
  * @author Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeSolver.java,v 1.1.2.4 1999-08-04 06:30:45 cananian Exp $
+ * @version $Id: TreeSolver.java,v 1.1.2.5 1999-08-05 05:12:40 duncan Exp $
  */
 public abstract class TreeSolver {
 
     public static boolean DEBUG = false;
     public static void db(String s) { System.out.println(s); }
+
 
     public static void forward_rpo_solver(BasicBlock root, 
 					  DataFlowBasicBlockVisitor v) {
@@ -41,7 +48,7 @@ public abstract class TreeSolver {
 		for (Enumeration e=q.next(); e.hasMoreElements(); ) {
 		    BasicBlock qn = (BasicBlock)e.nextElement();
 		    if (DEBUG) db("doing edge "+q+" -> "+qn);
-		    if (v.merge(q, qn)) changed = true;
+		    changed = v.merge(q, qn); 
 		}
 	    }
 
