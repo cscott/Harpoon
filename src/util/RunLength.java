@@ -45,15 +45,25 @@ public class RunLength implements CODEC {
     int rlength = red.length;
     byte[] blue = id.bvals;
     int blength = blue.length;
-    ArrayList gIntPair = new ArrayList();
-    ArrayList rIntPair = new ArrayList();
-    ArrayList bIntPair = new ArrayList();
+
+    int baselength = 76800;
+    int multiple = 1;
+    byte[] gPair = new byte[baselength];
+    byte[] tempGP;
+    byte[] rPair = new byte[baselength];
+    byte[] tempRP;
+    byte[] bPair = new byte[baselength];
+    byte[] tempBP;
     int num = 0;
-    
-    
+
+    int gPairCount = 0;
+    int rPairCount = 0;
+    int bPairCount = 0;
+
+     
     // GREEN
     // first step is to convert into an int arrray
-    System.out.println("Original number of gvals: " + glength);
+    //System.out.println("Original number of gvals: " + glength);
     int gcount = 1;
     int gcurr = 0;
     int gprev = ((green[0]|256)&255);
@@ -62,36 +72,67 @@ public class RunLength implements CODEC {
       if (gcurr == gprev) {
         // increment rcount is the current value is the same as the previous
          if (gcount > 250) {
-          gIntPair.add(new Integer(gprev));
-          gIntPair.add(new Integer(gcount));
+
+           if (gPairCount > multiple*baselength-1){ //if we exceed the current array
+             multiple++;
+             tempGP = gPair;
+             gPair = new byte[multiple*baselength];
+             for (int k=0 ; k<gPairCount ; k++){
+               gPair[k] = tempGP[k]; } //copying the contents of the previous file
+           }
+           gPair[gPairCount] = (byte)gprev;
+           gPairCount++;
+           gPair[gPairCount]=  (byte)gcount;
+           gPairCount++;         
+                          
           gcount = 1;
         } else {
           gcount++ ; }
       }
       else {
-        gIntPair.add(new Integer(gprev));
-        gIntPair.add(new Integer(gcount));
+        if (gPairCount > multiple*baselength-1){ //if we exceed the current array
+          multiple++;
+          tempGP = gPair;
+          gPair = new byte[multiple*baselength];
+          for (int k=0 ; k<gPairCount ; k++){
+            gPair[k] = tempGP[k]; } //copying the contents of the previous file
+        }
+        gPair[gPairCount] = (byte)gprev;
+        gPairCount++;
+        gPair[gPairCount]=  (byte)gcount;
+        gPairCount++;         
+        
         gprev = gcurr;
         gcount = 1;
       }
     }
     if (gcount>0) {
-      gIntPair.add(new Integer(gprev));
-      gIntPair.add(new Integer(gcount));
+       if (gPairCount > multiple*baselength-1){ //if we exceed the current array
+          multiple++;
+          tempGP = gPair;
+          gPair = new byte[multiple*baselength];
+          for (int k=0 ; k<gPairCount ; k++){
+            gPair[k] = tempGP[k]; } //copying the contents of the previous file
+        }
+        gPair[gPairCount] = (byte)gprev;
+        gPairCount++;
+        gPair[gPairCount]=  (byte)gcount;
+        gPairCount++;         
     }
-    // ARRAYLIST -> byte[]
-    byte[] newgreen = new byte[gIntPair.size()];
-    for (int j=0 ; j < gIntPair.size() ; j++){
-      num = ((Integer)gIntPair.get(j)).intValue();
-      newgreen[j] = (byte)num;
-      
-    }
-    id.gvals=  newgreen;
-    // end of green value run-length encoding
+    
+    // sizing down the byte[]
+    tempGP = gPair;
+    gPair = new byte[gPairCount];
+    for (int k=0 ; k<gPairCount ; k++){
+      gPair[k] = tempGP[k]; } //copying the co
+    
+    id.gvals=  gPair;
+    // end of green value run-    length encoding
+    multiple=1;
 
-   
     // RED
     // first step is to convert into an int arrray
+    //System.out.println("Original number of gvals: " + glength);
     int rcount = 1;
     int rcurr = 0;
     int rprev = ((red[0]|256)&255);
@@ -100,75 +141,132 @@ public class RunLength implements CODEC {
       if (rcurr == rprev) {
         // increment rcount is the current value is the same as the previous
          if (rcount > 250) {
-          rIntPair.add(new Integer(rprev));
-          rIntPair.add(new Integer(rcount));
+
+           if (rPairCount > multiple*baselength-1){ //if we exceed the current array
+             multiple++;
+             tempRP = rPair;
+             rPair = new byte[multiple*baselength];
+             for (int k=0 ; k<rPairCount ; k++){
+               rPair[k] = tempRP[k]; } //copying the contents of the previous file
+           }
+           rPair[rPairCount] = (byte)rprev;
+           rPairCount++;
+           rPair[rPairCount]=  (byte)rcount;
+           rPairCount++;         
+                          
           rcount = 1;
         } else {
           rcount++ ; }
       }
-
       else {
-        rIntPair.add(new Integer(rprev));
-        rIntPair.add(new Integer(rcount));
+        if (rPairCount > multiple*baselength-1){ //if we exceed the current array
+          multiple++;
+          tempRP = rPair;
+          rPair = new byte[multiple*baselength];
+          for (int k=0 ; k<rPairCount ; k++){
+            rPair[k] = tempRP[k]; } //copying the contents of the previous file
+        }
+        rPair[rPairCount] = (byte)rprev;
+        rPairCount++;
+        rPair[rPairCount]=  (byte)rcount;
+        rPairCount++;         
+        
         rprev = rcurr;
         rcount = 1;
       }
     }
     if (rcount>0) {
-      rIntPair.add(new Integer(rprev));
-      rIntPair.add(new Integer(rcount));
+       if (rPairCount > multiple*baselength-1){ //if we exceed the current array
+          multiple++;
+          tempRP = rPair;
+          rPair = new byte[multiple*baselength];
+          for (int k=0 ; k<rPairCount ; k++){
+            rPair[k] = tempRP[k]; } //copying the contents of the previous file
+        }
+        rPair[rPairCount] = (byte)rprev;
+        rPairCount++;
+        rPair[rPairCount]=  (byte)rcount;
+        rPairCount++;         
     }
-    // ARRAYLIST -> byte[]
-    byte[] newred = new byte[rIntPair.size()];
-    for (int j=0 ; j < rIntPair.size() ; j++){
-      num = ((Integer)rIntPair.get(j)).intValue();
-      newred[j] = (byte)num;
-      
-    }
-    id.rvals=  newred;
+    
+    // sizing down the byte[]
+    tempRP = rPair;
+    rPair = new byte[rPairCount];
+    for (int k=0 ; k<rPairCount ; k++){
+      rPair[k] = tempRP[k]; } //copying the co
+    
+    id.rvals = rPair;
     // end of green value run-length encoding
-
-
-    //BLUE
+    multiple=1;
+    
+    // BLUE
     // first step is to convert into an int arrray
+    //System.out.println("Original number of gvals: " + glength);
     int bcount = 1;
     int bcurr = 0;
     int bprev = ((blue[0]|256)&255);
     for (int i=1; i < blength ; i++) {
       bcurr = ((blue[i]|256)&255);
       if (bcurr == bprev) {
-        // increment bcount is the current value is the same as the previous
+        // increment rcount is the current value is the same as the previous
          if (bcount > 250) {
-          bIntPair.add(new Integer(bprev));
-          bIntPair.add(new Integer(bcount));
+
+           if (bPairCount > multiple*baselength-1){ //if we exceed the current array
+             multiple++;
+             tempBP = bPair;
+             bPair = new byte[multiple*baselength];
+             for (int k=0 ; k<bPairCount ; k++){
+               bPair[k] = tempBP[k]; } //copying the contents of the previous file
+           }
+           bPair[bPairCount] = (byte)bprev;
+           bPairCount++;
+           bPair[bPairCount]=  (byte)bcount;
+           bPairCount++;         
+                          
           bcount = 1;
         } else {
           bcount++ ; }
       }
-
       else {
-        bIntPair.add(new Integer(bprev));
-        bIntPair.add(new Integer(bcount));
+        if (bPairCount > multiple*baselength-1){ //if we exceed the current array
+          multiple++;
+          tempBP = bPair;
+          bPair = new byte[multiple*baselength];
+          for (int k=0 ; k<bPairCount ; k++){
+            bPair[k] = tempBP[k]; } //copying the contents of the previous file
+        }
+        bPair[bPairCount] = (byte)bprev;
+        bPairCount++;
+        bPair[bPairCount]=  (byte)bcount;
+        bPairCount++;         
+        
         bprev = bcurr;
         bcount = 1;
       }
     }
     if (bcount>0) {
-      bIntPair.add(new Integer(bprev));
-      bIntPair.add(new Integer(bcount));
+       if (bPairCount > multiple*baselength-1){ //if we exceed the current array
+          multiple++;
+          tempBP = bPair;
+          bPair = new byte[multiple*baselength];
+          for (int k=0 ; k<bPairCount ; k++){
+            bPair[k] = tempBP[k]; } //copying the contents of the previous file
+        }
+        bPair[bPairCount] = (byte)bprev;
+        bPairCount++;
+        bPair[bPairCount]=  (byte)bcount;
+        bPairCount++;         
     }
     
-    // ARRAYLIST -> byte[]
-    byte[] newblue = new byte[bIntPair.size()];
-    for (int j=0 ; j < bIntPair.size() ; j++){
-      num = ((Integer)bIntPair.get(j)).intValue();
-      newblue[j] = (byte)num;
-      
-    }
-    id.bvals=  newblue;
+    // sizing down the byte[]
+    tempBP = bPair;
+    bPair = new byte[bPairCount];
+    for (int k=0 ; k<bPairCount ; k++){
+      bPair[k] = tempBP[k]; } //copying the co
+    
+    id.bvals=  bPair;
     // end of green value run-length encoding
     
-
     return id;
   }
 
@@ -182,7 +280,7 @@ public class RunLength implements CODEC {
     id = image;
     byte[] green = id.gvals;
     int glength = (green.length)/2;
-    System.out.println("size of new gvals/2: " + glength);
+    //System.out.println("size of new gvals/2: " + glength);
     byte[] red = id.rvals;
     int rlength = (red.length)/2;
     byte[] blue = id.bvals;
@@ -194,7 +292,7 @@ public class RunLength implements CODEC {
       gtotal += ((green[2*i + 1]|256)&255);
     }
     byte[] newgreen = new byte[gtotal];
-    System.out.println("Decompressed array size " + newgreen.length);
+    //System.out.println("Decompressed array size " + newgreen.length);
 
     int rtotal = 0;
     for(int i=0 ; i<rlength ; i++) {
