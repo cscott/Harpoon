@@ -1,0 +1,2 @@
+include Support/jacorb-root-set-classpath
+include Support/awt-root-set

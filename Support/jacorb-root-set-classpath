@@ -1,3 +1,5 @@
+include Support/locale-root-set-classpath
+
 # classes dynamically loaded by JacORB
 # (client:)
 org.jacorb.orb.ORBSingleton.<init>()V
@@ -11,6 +13,8 @@ HTTPClient.TransferEncodingModule.<init>()V
 HTTPClient.ContentMD5Module.<init>()V
 HTTPClient.ContentEncodingModule.<init>()V
 org.jacorb.orb.standardInterceptors.IORInterceptorInitializer.<init>()V
-#gnu.java.net.protocol.file.Handler.<init>()V
+gnu.java.net.protocol.file.Handler.<init>()V
 # from ns root set:
 org.omg.PortableServer.ServantActivatorOperations
+
+gnu.java.security.provider.Gnu.<init>()V
