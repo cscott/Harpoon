@@ -34,7 +34,7 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.8 2002-06-27 20:30:04 wbeebee Exp $
+ * @version $Id: Realtime.java,v 1.9 2002-07-05 22:26:38 wbeebee Exp $
  */
 
 public class Realtime {
@@ -47,6 +47,9 @@ public class Realtime {
 	/** Add support for realtime threads */
 	public static boolean REALTIME_THREADS = false;
 
+	/** Add support for RTJPerf */
+	public static boolean RTJ_PERF = false;
+    
 	/** Determine which analysis method to use. */
 	public static int ANALYSIS_METHOD = 0;
 	/** Very conservative analysis method - keep all checks */
@@ -133,9 +136,16 @@ public class Realtime {
 		System.out.print(", Realtime threads: ");
 		if (opts.indexOf("threads")!=-1) {
 			REALTIME_THREADS = true;
+			System.out.print("yes");
+		} else {
+			System.out.print("no");
+		}
+		System.out.print(", RTJ Perf: ");
+		if (opts.indexOf("rtj_perf")!=-1) {
+		        RTJ_PERF = true;
 			System.out.println("yes");
 		} else {
-			System.out.println("no");
+		        System.out.println("no");
 		}
 	}		
 
@@ -213,7 +223,7 @@ public class Realtime {
 				});
 			}
 			
-			if(REALTIME_THREADS) {
+			if (REALTIME_THREADS) {
 				// Read in all method roots for RTJ thread support
 				ParseUtil.readResource(resourcePath("thread-method"),
 															 new ParseUtil.StringParser() {
@@ -223,6 +233,18 @@ public class Realtime {
 					}
 				});
 			}
+
+			if (RTJ_PERF) {
+				// Read in all method roots for RTJPerf support
+				ParseUtil.readResource(resourcePath("rtjperf-method"),
+															 new ParseUtil.StringParser() {
+					public void parseString(String s)
+						throws ParseUtil.BadLineException {
+						roots.add(ParseUtil.parseMethod(linker, s));
+					}
+				});
+			}
+
 		} catch (java.io.IOException e) {
 			assert false : "Properties file for RTJ error: "+e;
 		}
