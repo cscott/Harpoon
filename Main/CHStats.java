@@ -1,0 +1,60 @@
+// CHStats.java, created by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
+package harpoon.Main;
+
+import harpoon.ClassFile.CachingCodeFactory;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
+import harpoon.Util.UniqueVector;
+
+import java.util.Enumeration;
+/**
+ * <code>CHStats</code> computes interesting statistics of the
+ * compiler class hierarchy for inclusion in papers and theses.
+ * 
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: CHStats.java,v 1.1.2.1 1999-08-02 15:15:22 cananian Exp $
+ */
+
+public abstract class CHStats extends harpoon.IR.Registration {
+
+    public static final void main(String args[]) {
+	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
+	HMethod m = null;
+
+	if (args.length < 2) {
+	    System.err.println("Needs class and method name.");
+	    return;
+	}
+
+	{
+	    HClass cls = HClass.forName(args[0]);
+	    HMethod hm[] = cls.getDeclaredMethods();
+	    for (int i=0; i<hm.length; i++)
+		if (hm[i].getName().equals(args[1])) {
+		    m = hm[i];
+		    break;
+		}
+	}
+
+	HCodeFactory hcf =
+	    new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
+	harpoon.Analysis.QuadSSA.ClassHierarchy ch = 
+	    new harpoon.Analysis.QuadSSA.ClassHierarchy(m, hcf);
+	System.out.println("For call graph rooted at "+m.getName()+":");
+	int totalclasses=0, depthsum=0, maxdepth=-1; HClass maxc=null;
+	for (Enumeration e=ch.classes(); e.hasMoreElements(); totalclasses++) {
+	    HClass c = (HClass) e.nextElement();
+	    int depth=0;
+	    for (HClass cp=c.getSuperclass(); cp!=null; cp=cp.getSuperclass())
+		depth++;
+	    if (depth > maxdepth) { maxdepth = depth; maxc=c; }
+	    depthsum+=depth;
+	}
+	System.out.println("  Total classes: "+totalclasses);
+	System.out.println("  Maximum depth: "+maxdepth+" ("+maxc+")");
+	System.out.println("  Average depth: "+((float)depthsum/totalclasses));
+    }
+}
