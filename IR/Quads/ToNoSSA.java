@@ -22,7 +22,7 @@ import java.util.Vector;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.10 1999-02-18 19:37:31 duncan Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.11 1999-02-21 22:04:02 duncan Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -346,7 +346,10 @@ class QuadMap
     }
 
   boolean contains(Quad old)  { return h.containsKey(old); }  
-  Quad get(Quad old)          { return (Quad)h.get(old); }
+
+  Quad get(Quad old) { 
+    return (Quad)h.get(old);
+  }
 
   void put(Quad qOld, Quad qNew)
     {
@@ -354,60 +357,52 @@ class QuadMap
       updateDTInfo(qOld, qNew);
     }
   
+  // usemap not used -- remove redundant parameter
+  //
   void rename(QuadFactory qf, TempMap defmap, TempMap usemap)
     {
-      renameQuads(qf, defmap, usemap);
-      renameDT(qf, defmap, usemap);
+      for (Enumeration e = ((Hashtable)h.clone()).keys(); 
+	   e.hasMoreElements();) {
+	Quad head, key, value, newValue; Tuple tuple;
+
+	key      = (Quad)e.nextElement();
+	value    = (Quad)h.get(key);	
+	newValue = (Quad)value.rename(qf, defmap, usemap);
+	h.put(key, newValue);
+	for (int i=0; i<2; i++) {
+	  Temp[] tmps = (i==0)?value.def():value.use();
+	  for (int j=0; j<tmps.length; j++) {
+	    tuple = new Tuple(new Object[] { value, tmps[j] });
+	    if (m_dT.containsKey(tuple)) {
+	      DList dl = DList.rename((DList)m_dT.get(tuple), defmap);
+	      Temp tmp = (i==0)?newValue.def()[j]:newValue.use()[j];
+	      m_dT.put(new Tuple(new Object[] { newValue, tmp }), dl);
+	    }
+	    if (m_dT.containsKey(tmps[j])) {
+	      m_dT.put(defmap.tempMap(tmps[j]), m_dT.get(tmps[j]));
+	    }
+	  }
+	}
+      }
     }
       
   /* UTILITY METHODS FOLLOW */
 
   private Temp map(Temp t) 
     { return (t==null)?null:m_ctm.tempMap(t); }  
-
-  private void renameDT(QuadFactory qf, TempMap defmap, TempMap usemap)
-    {
-      DList dl; Enumeration tupleElems; Quad q; Temp tmp; Tuple tuple;
       
-      for (Enumeration e = m_dT.keys(); e.hasMoreElements();) {
-	Object next = e.nextElement();
-	if (next instanceof Tuple) {
-	  tuple       = (Tuple)next;
-	  dl          = DList.rename((DList)m_dT.get(tuple), defmap);
-	  tupleElems  = tuple.elements();
-	  q           = ((Quad)tupleElems.nextElement()).rename(qf, defmap, 
-								usemap);
-	  tmp         = defmap.tempMap((Temp)tupleElems.nextElement());
-	  m_dT.put(new Tuple(new Object[] { q, tmp }), dl);
-	}
-	else if (next instanceof Temp) {
-	  tmp = defmap.tempMap((Temp)next);
-	  m_dT.put(tmp, m_dT.get(next));
-	}
-      }
-    }
-      
-  private void renameQuads(QuadFactory qf, TempMap defmap, TempMap usemap)
-    {
-      for (Enumeration e = h.keys(); e.hasMoreElements();) {
-	Quad head, key, value;
-	key    = (Quad)e.nextElement();
-	value  = (Quad)h.get(key);	  
-	value  = value.rename(qf, defmap, usemap);
-	h.put(key, value);
-      }
-    }
-  
   private void updateDTInfo(Quad qOld, Quad qNew)
     {
-      DList dl; HClass hc; Temp[] tmps;
+      Util.assert(qOld!=null && qNew != null);
+
+      DList dl; HClass hc; Temp[] tmps; Temp newTmp;
 
       for (int j=0; j<2; j++) {
 	tmps = (j==0)?qOld.def():qOld.use();
 	for (int i=0; i<tmps.length; i++) {
 	  dl = DList.clone(m_derivation.derivation(qOld, tmps[i]), m_ctm);
 	  if (dl!=null) { // If tmps[i] is a derived ptr, update deriv info.
-	    m_dT.put(new Tuple(new Object[] {qNew,map(tmps[i])}),dl);
+	    m_dT.put(new Tuple(new Object[] { qNew, map(tmps[i]) }),dl);
 	    m_dT.put(map(tmps[i]), 
 		     new Error("*** Can't type a derived pointer: " + 
 			       map(tmps[i])));
