@@ -7,7 +7,8 @@ LIBS =
 noinst_LTLIBRARIES = libjavaio.la
 
 libjavaio_la_SOURCES = \
-	java_io_ObjectInputStream.h java_io_ObjectInputStream.c
+	java_io_ObjectInputStream.h java_io_ObjectInputStream.c \
+	java_io_VMObjectStreamClass.h java_io_VMObjectStreamClass.c
 
 JAVASRC=
 
