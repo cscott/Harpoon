@@ -1,3 +1,6 @@
+// handles prediate of the following forms: VE<E, VE<=E, VE=E, VE>=E, VE>E
+
+
 #ifndef ActionAssign_H
 #define ActionAssign_H
 #include "classlist.h"

@@ -1,3 +1,6 @@
+// handles prediate of the following forms: VE<E, VE<=E, VE=E, VE>=E, VE>E
+
+
 #include "ActionAssign.h"
 #include <assert.h>
 #include "dmodel.h"
@@ -46,11 +49,13 @@ char * ActionAssign::gettype(Constraint *c,Elementexpr *ee) {
   }
 }
 
-void ActionAssign::repairpredicate(Hashtable *env,CoercePredicate *cp) {
+
+// repairs the given predicate
+void ActionAssign::repairpredicate(Hashtable *env, CoercePredicate *cp) {
   Predicate *p=cp->getpredicate();
   Element *ele=evaluateexpr(p->geteleexpr(),env,globalmodel); //ele=E
   Element *index=(Element *) env->get(p->getvalueexpr()->getlabel()->label()); // index=V
-  char *rel=p->getvalueexpr()->getrelation()->getname();
+  char *rel=p->getvalueexpr()->getrelation()->getname(); // rel=R
   WorkRelation *relation=domrelation->getrelation(rel)->getrelation();
   Element *old=(Element *)relation->getobj(index); // old=V.R
   if (old!=NULL)
@@ -100,8 +105,139 @@ void ActionAssign::repairpredicate(Hashtable *env,CoercePredicate *cp) {
 
 
 
-void ActionAssign::breakpredicate(Hashtable *env, CoercePredicate *p)
+void ActionAssign::breakpredicate(Hashtable *env, CoercePredicate *cp)
 {
+#ifdef DEBUGMESSAGES
+  printf("ActionAssign::breakpredicate CALLED\n");
+  cp->getpredicate()->print(); printf("\n");
+#endif
+
+  Predicate *p = cp->getpredicate();
+  Element *ele = evaluateexpr(p->geteleexpr(),env,globalmodel); //ele=E
+  Element *index = (Element *) env->get(p->getvalueexpr()->getlabel()->label()); // index=V
+
+
+#ifdef DEBUGMESSAGES
+  printf("index=%s\n", p->getvalueexpr()->getlabel()->label());
+  if (index == NULL)    
+    printf("Index Naspa\n");
+  else printf("Index Cool\n");
+#endif
+  
+  char *rel = p->getvalueexpr()->getrelation()->getname(); // rel=R
+  WorkRelation *relation = domrelation->getrelation(rel)->getrelation();
+
+#ifdef DEBUGMESSAGES
+  if (relation == NULL)    
+    printf("relation Naspa\n");
+  else printf("relation Cool\n");
+  fflush(NULL);
+#endif
+
+  Element *old_ve = (Element *)relation->getobj(index); // old_ve=V.R
+
+  if (old_ve!=NULL)
+    relation->remove(index,old_ve);
+  DRelation *drel = domrelation->getrelation(rel);
+  
+  if(!equivalentstrings(drel->getdomain(),"int")) 
+    {
+      DomainSet *domain = domrelation->getset(drel->getdomain());
+      if (!domain->getset()->contains(index))
+	domrelation->addtoset(index,domain,globalmodel);
+    }
+
+#ifdef DEBUGMESSAGES
+  printf("p->gettype() = %d\n", p->gettype());
+  fflush(NULL);
+#endif
+
+
+  switch (p->gettype()) {
+  // VE<E
+  case PREDICATE_LT: 
+    {
+      // set VE=E which breaks VE<E
+      Element *newele=new Element(ele->intvalue());
+      delete(ele);
+      relation->put(index,newele);
+      break;
+    }
+
+  // VE<=E
+  case PREDICATE_LTE: 
+    {
+      // set VE=E+1, which breaks VE<=E
+      Element *newele=new Element(ele->intvalue()+1);
+      delete(ele);
+      relation->put(index,newele);
+      break;
+    }
+
+  // VE=E
+  case PREDICATE_EQUALS: 
+    {      
+      DRelation *drel=domrelation->getrelation(rel);      
+
+      // if the V.R is an integer, set VE=E+1, which breaks VE=E
+      if (equivalentstrings(drel->getrange(),"int")) 
+	{
+	  Element *newele=new Element(ele->intvalue()+1);
+	  delete(ele);
+	  relation->put(index,newele);
+	}
+      else 
+	{
+	  relation->put(index, ele);
+
+	  /* WRONG
+	  printf("range name = %s\n", drel->getrange()); fflush(NULL);
+
+	  WorkSet *range = domrelation->getset(drel->getrange())->getset();
+	  
+	  if (range==NULL)
+	    printf("naspa\n");
+	  else printf("cool\n");
+	  fflush(NULL);
+
+	  printf("range->size = %d\n", range->size());
+	  fflush(NULL);
+	 	  
+	  Element *newele;
+	  for (int i=0; i<range->size(); i++)
+	    {
+	      newele = (Element*) range->getelement(i);
+	      if (newele != ele)
+		break;
+	    }
+	  
+	  delete(ele);	  
+	  relation->put(index, newele);
+	  */
+	}
+      break;
+    }
+
+  // VE>=E
+  case PREDICATE_GTE: 
+    {
+      // set VE=E-1, which breaks VE>=E
+      Element *newele=new Element(ele->intvalue()-1);
+      delete(ele);
+      relation->put(index,newele);
+      break;
+    }
+
+  // VE>E
+  case PREDICATE_GT: 
+    {
+      // set VE=E, which breaks VE>E
+      Element *newele=new Element(ele->intvalue());
+      delete(ele);
+      relation->put(index,newele);
+      break;
+    }
+  }
 }
 
 

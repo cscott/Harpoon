@@ -20,6 +20,7 @@ void ActionNormal::repairpredicate(Hashtable *env,CoercePredicate *p) {
 
 void ActionNormal::breakpredicate(Hashtable *env, CoercePredicate *p)
 {
+  /* Don't actually break stuff */
 }
 
 

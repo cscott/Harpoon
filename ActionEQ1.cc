@@ -53,7 +53,7 @@ void ActionEQ1::repairpredicate(Hashtable *env,CoercePredicate *p) {
   }
   break;
 
-  // size(R.V)>=1
+  // size(R.V)=1
   case SETEXPR_INVREL: {
     DRelation *dr=domrelation->getrelation(p->getpredicate()->getsetexpr()->getrelation()->getname());
     WorkRelation *wr=dr->getrelation();
@@ -79,6 +79,12 @@ void ActionEQ1::repairpredicate(Hashtable *env,CoercePredicate *p) {
 
 void ActionEQ1::breakpredicate(Hashtable *env, CoercePredicate *p)
 {
+#ifdef DEBUGMESSAGES
+  printf("ActionEQ1::breakpredicate CALLED\n");
+  p->getpredicate()->print(); printf("\n");
+#endif
+
+  this->ActionGEQ1::breakpredicate(env, p);
 }
 
 

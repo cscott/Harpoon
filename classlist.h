@@ -1,6 +1,9 @@
 #ifndef classlist_h
 #define classlist_h
+
 //#define DEBUGMESSAGES
+//#define DEBUGMANYMESSAGES
+
 class TypeEle;
 class Rule;
 class AQuantifier;

@@ -1,5 +1,6 @@
 #ifndef Action_H
 #define Action_H
+
 #include "classlist.h"
 class Action {
  public:

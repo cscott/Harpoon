@@ -51,7 +51,7 @@ model::model(char * abstractfile, char * modelfile, char *spacefile,char *struct
   parseconcretefile(concretefile);
 
   br=new bitreader(this,env);
-  guidance=new DefGuidance2(this); //DefGuidance2
+  guidance=new DefGuidance2(this);  // for the file system benchmark
   repair=new Repair(this);
   if (!repair->analyzetermination()) {
     printf("Constraint set might not terminate and can't be repaired!\n");
@@ -156,7 +156,7 @@ void model::breakspec()
   processobject *po = new processobject(this);
 
   // takes each satisfied constraint and breaks it with probability prob_breakconstraint
-  for (int i=0; i<=numconstraint; i++)
+  for (int i=0; i<numconstraint; i++)
     {
       Constraint *c = getconstraint(i);
       if (po->issatisfied(c))
@@ -199,11 +199,11 @@ void model::parsespacefile(char *spacefile) {
   Reader *r=new Reader(ifs);
   Dparser *p=new Dparser(r);
   domainrelation=p->parsesetrelation(); 
-  //#define DEBUGMESSAGES  
-#ifdef DEBUGMESSAGES  
+
+#ifdef DEBUGMANYMESSAGES  
   domainrelation->print();
 #endif
-  //#undef DEBUGMESSAGES  
+
   ifs->close();
   delete(ifs);
 }
@@ -224,7 +224,7 @@ void model::parsestructfile(char *structfile) {
     if (st!=NULL) {
       list->addobject(st);
 
-#ifdef DEBUGMESSAGES
+#ifdef DEBUGMANYMESSAGES
       st->print();
 #endif
 
@@ -257,7 +257,7 @@ void model::parseabstractfile(char *abstractfile) {
       list->addobject(ru);
       if(ru->isstatic())
 	countstatic++;
-#ifdef DEBUGMESSAGES
+#ifdef DEBUGMANYMESSAGES
       ru->print();
 #endif
     }
@@ -294,7 +294,7 @@ void model::parseconcretefile(char *abstractfile) {
     Rule *ru=p->parserule();
     if (ru!=NULL) {
       list->addobject(ru);
-#ifdef DEBUGMESSAGES
+#ifdef DEBUGMANYMESSAGES
       ru->print();
 #endif
     }
@@ -325,7 +325,7 @@ void model::parsemodelfile(char *modelfile) {
     Constraint *c=p->parseconstraint();
     if (c!=NULL) {
       list->addobject(c);
-#ifdef DEBUGMESSAGES
+#ifdef DEBUGMANYMESSAGES
       c->print();
 #endif
     } else

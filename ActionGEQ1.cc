@@ -10,6 +10,7 @@
 #include "Hashtable.h"
 #include "Guidance.h"
 
+
 ActionGEQ1::ActionGEQ1(DomainRelation *drel, model *m) {
   domrelation=drel;
   globalmodel=m;
@@ -68,6 +69,9 @@ void ActionGEQ1::repairpredicate(Hashtable *env,CoercePredicate *p) {
     }
   }
   break;
+
+
+
   case SETEXPR_REL: {
     /* Set should be too small if we are doing a repair
        We need to add 1 element */
@@ -192,8 +196,89 @@ void ActionGEQ1::repairpredicate(Hashtable *env,CoercePredicate *p) {
 
 void ActionGEQ1::breakpredicate(Hashtable *env, CoercePredicate *p)
 {
-}
+#ifdef DEBUGMESSAGES
+  printf("ActionGEQ1::breakpredicate CALLED\n");
+  p->getpredicate()->print(); printf("\n");
+#endif
+ 
+  switch(p->getpredicate()->getsetexpr()->gettype()) {  
+  // size(S)>=1
+  case SETEXPR_LABEL: 
+    { 
+#ifdef DEBUGMESSAGES      
+      printf("LABEL\n");
+#endif
 
+      char *setname=p->getpredicate()->getsetexpr()->getsetlabel()->getname();
+      DomainSet *ds=domrelation->getset(setname); //S
+
+      // simply delete all elements that S currently contains
+      Guidance *g=globalmodel->getguidance();
+      WorkSet *ws=ds->getset();
+      while(ws->size()>0) 
+	{
+	  Element *e=(Element *)ws->firstelement();
+	  domrelation->delfromsetmovetoset(e,domrelation->getset(setname), globalmodel);
+	}
+    }
+    break;
+      
+
+    // size(V.R)>=1
+    case SETEXPR_REL: 
+      {
+#ifdef DEBUGMESSAGES
+	printf("REL\n");
+#endif
+
+	DRelation *dr=domrelation->getrelation(p->getpredicate()->getsetexpr()->getrelation()->getname());
+	WorkRelation *wr=dr->getrelation(); //R
+	Element *key=(Element *)env->get(p->getpredicate()->getsetexpr()->getlabel()->label()); //V
+	WorkSet *ws=wr->getset(key); //V.R
+	
+	// simply delete all elements that V.R currently contains
+	int size=ws->size();
+	for(int i=0; i<size; i++) 	  
+	  {
+	    void *objtoremove=ws->firstelement();
+	    wr->remove(key, objtoremove);
+	  }
+      }
+      break;
+    
+    // size(R.V)=1
+    case SETEXPR_INVREL:
+      {
+#ifdef DEBUGMESSAGES
+	printf("INVREL\n");
+#endif
+
+	DRelation *dr=domrelation->getrelation(p->getpredicate()->getsetexpr()->getrelation()->getname());
+	//dr->print(); printf("\n");
+	WorkRelation *wr=dr->getrelation(); //R	
+	Element *key=(Element *)env->get(p->getpredicate()->getsetexpr()->getlabel()->label()); //V
+	WorkSet *ws=wr->invgetset(key); //R.V
+
+#ifdef DEBUGMESSAGES
+	printf("ws size = %d\n", ws->size());
+#endif
+
+	// simply delete all elements that R.V currently contains
+	int size=ws->size();
+	for(int i=0; i<size; i++) 	  
+	  {
+	    void *objtoremove = ws->firstelement();
+	    wr->remove(objtoremove, key);
+	  }
+
+#ifdef DEBUGMESSAGES
+	printf("INVREL finished\n");
+#endif
+      }
+      break;
+  } 
+}
+  
 
 
 bool ActionGEQ1::conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, CoercePredicate *p2) {

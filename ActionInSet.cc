@@ -7,6 +7,7 @@
 #include "Relation.h"
 #include "set.h"
 #include "Hashtable.h"
+#include "ActionNotInSet.h"
 
 ActionInSet::ActionInSet(DomainRelation *drel,model *m) {
   domrelation=drel;
@@ -49,6 +50,13 @@ void ActionInSet::repairpredicate(Hashtable *env,CoercePredicate *p) {
 
 void ActionInSet::breakpredicate(Hashtable *env,CoercePredicate *p) 
 {
+#ifdef DEBUGMESSAGES
+  printf("ActionInSet::breakpredicate CALLED\n");
+  p->getpredicate()->print(); printf("\n");
+#endif
+
+  ActionNotInSet *a = new ActionNotInSet(domrelation, globalmodel);
+  a->repairpredicate(env, p);
 }
 
 

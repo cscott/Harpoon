@@ -2,6 +2,7 @@
 #include "element.h"
 #include "GenericHashtable.h"
 #include "set.h"
+#include "stdio.h"
 
 
 // class Tuple
@@ -86,7 +87,7 @@ void WorkRelation::put(void *key, void*object) {
 }
   
 void WorkRelation::remove(void *key, void *object) {
-  {    /*Set up forward reference*/
+  { /*Set up forward reference*/
     WorkSet *w=(WorkSet *)gengettable(forward,key);
     w->removeobject(object);
     if (w->isEmpty()) {
@@ -94,7 +95,9 @@ void WorkRelation::remove(void *key, void *object) {
       delete(w);
     }
   }
-  {/*Set up backwards reference*/
+
+
+  { /*Set up backwards reference*/
     WorkSet *w=(WorkSet *)gengettable(inverse,object);
     w->removeobject(key);
     if (w->isEmpty()) {

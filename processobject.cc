@@ -210,12 +210,24 @@ bool processobject::processconstraint(Constraint *c) {
 /* breaks the given constraint by invalidating each of its satisfied sentences */
 void processobject::breakconstraint(Constraint *c)
 {  
+#ifdef DEBUGMESSAGES
+  printf("Constraint to be broken: ");
+  c->print();
+  printf("\n");
+  fflush(NULL);
+#endif
+
   // first, get get the constraint in normal form
   NormalForm *nf = globalmodel->getnormalform(c);
 
   // for each CoerceSentence in nf, find if it's satisfied. If so, break it.
   for (int i=0; i<nf->getnumsentences(); i++)
     {
+#ifdef DEBUGMESSAGES
+      printf("In processobject::breakconstraint, i=%d \n", i);
+      fflush(NULL);
+#endif
+
       CoerceSentence *s = nf->getsentence(i);
       
       // find if s is satisfied
@@ -235,22 +247,41 @@ void processobject::breakconstraint(Constraint *c)
 
       // if s is satisfied, then break it
 
-      // first, select an arbitrary binding, for ex. the first one
-      st = new State(c, globalmodel->gethashtable());
-      st->initializestate(globalmodel);
-      
-      for (int j=0; j<s->getnumpredicates(); j++)
+      if (satisfied)
 	{
-	  CoercePredicate *cp = s->getpredicate(j);
-	  // break this predicate with probability prob_breakpredicate
-	  if (random()<model::prob_breakpredicate*RAND_MAX)
+	  // first, select an arbitrary binding, for ex. the first one
+	  st = new State(c, globalmodel->gethashtable());
+	  
+	  if (st->initializestate(globalmodel))
 	    {
-	      Action *action = repair->findbreakaction(cp);
-	      action->breakpredicate(st->env, cp);
+#ifdef DEBUGMESSAGES
+	      printf("numpredicates = %d\n", s->getnumpredicates());
+#endif
+	      
+	      for (int j=0; j<s->getnumpredicates(); j++)
+		{
+		  CoercePredicate *cp = s->getpredicate(j);
+		  // break this predicate with probability prob_breakpredicate
+		  if (random()<model::prob_breakpredicate*RAND_MAX)
+		    {
+#ifdef DEBUGMESSAGES
+		      printf("po::breakconstraint:  We break predicate %d\n",j);
+		      fflush(NULL);
+#endif
+		      
+		      Action *action = repair->findbreakaction(cp);
+		      action->breakpredicate(st->env, cp);
+		      
+#ifdef DEBUGMESSAGES
+		      printf("After action->breakpredicate was called\n");
+		      fflush(NULL);
+#endif
+		    }
+		}
 	    }
+	  
+	  delete(st);
 	}
-
-      delete(st);
     }
 }
 

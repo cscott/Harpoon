@@ -135,7 +135,7 @@ void processabstract::satisfystatementb(Statementb *sb, Hashtable *env) {
       break;
     if (!globalmodel->getdomainrelation()->getset(sb->getsetlabel()->getname())->getset()->contains(ele)) {
       dirtyflag=true;
-#ifdef DEBUGMESSAGES
+#ifdef DEBUGMANYMESSAGES
       printf("element: ");
       ele->print();
       printf(" into %s\n",sb->getsetlabel()->getname());
@@ -171,7 +171,7 @@ void processabstract::satisfystatementb(Statementb *sb, Hashtable *env) {
       }*/
     if (!globalmodel->getdomainrelation()->getrelation(sb->getsetlabel()->getname())->getrelation()->contains(left,right)) {
       dirtyflag=true;
-#ifdef DEBUGMESSAGES
+#ifdef DEBUGMANYMESSAGES
       printf("element: <");
       left->print();
       printf(",");
