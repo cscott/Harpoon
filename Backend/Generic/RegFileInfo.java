@@ -48,7 +48,7 @@ import java.util.Iterator;
     together before mapping them to Physical Register Temps.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.34 2000-08-15 01:51:29 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.35 2000-08-25 06:57:42 pnkfelix Exp $ */
 public abstract class RegFileInfo {
 
     /** Defines function from 
@@ -195,9 +195,11 @@ public abstract class RegFileInfo {
 	     Register <code>Temp</code>s.  The elements of each
 	     <code>List</code> are ordered according to proper
 	     placement of the Register-bitlength words of the value in
-	     <code>t</code>, low-order words first.   The Set returned
-	     may be a <code>SortedSet</code>, in which case the
-	     earlier assignments are favored over later ones.
+	     <code>t</code>, low-order words first.   Every list
+	     returned will have the same length.
+	     The Set returned may be a <code>SortedSet</code>, in
+	     which case the earlier assignments are favored over later
+	     ones. 
     */
     public Set getRegAssignments(Temp t) { 
 	harpoon.Util.Util.assert(false, 

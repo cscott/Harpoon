@@ -26,7 +26,7 @@ import harpoon.Util.Collections.LinearSet;
  * second stage, but this is parameterizable.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: OptimisticGraphColorer.java,v 1.1.2.8 2000-08-23 06:33:21 pnkfelix Exp $
+ * @version $Id: OptimisticGraphColorer.java,v 1.1.2.9 2000-08-25 06:57:30 pnkfelix Exp $
  */
 public class OptimisticGraphColorer extends GraphColorer {
 
@@ -46,9 +46,11 @@ public class OptimisticGraphColorer extends GraphColorer {
 	public abstract Object chooseNodeForRemoval(ColorableGraph g);
 
 	/** Returns a element of <code>g.nodeSet()</code>, in the
-	    intent that it be removed from <code>g</code>.
+	    intent that it be hidden in <code>g</code>.
 	    <BR> <B>requires:</B> g.nodeSet() is not empty.
-	    <BR> <B>effects:</B> returns some element of g.nodeSet().
+	    <BR> <B>effects:</B> 
+	         returns some uncolored element of g.nodeSet(), or
+		 null if all the elements of g.nodeSet() are colored.
 	*/
 	public abstract Object chooseNodeForHiding(ColorableGraph g);
 
@@ -59,10 +61,13 @@ public class OptimisticGraphColorer extends GraphColorer {
     public static class SimpleSelector extends NodeSelector {
 	protected SimpleSelector() { }
 	public Object chooseNodeForRemoval(ColorableGraph g) {
-	    return chooseNode(g);
+	    Object o = chooseNode(g);
+	    Util.assert(o != null);
+	    return o;
 	}
 	public Object chooseNodeForHiding(ColorableGraph g) {
-	    return chooseNode(g);
+	    Object o = chooseNode(g);
+	    return o;
 	}
 	private Object chooseNode(ColorableGraph g) {
 	    Object spillChoice = null; 
@@ -76,7 +81,6 @@ public class OptimisticGraphColorer extends GraphColorer {
 		    maxDegree = g.getDegree(n);
 		}
 	    }
-	    Util.assert(spillChoice != null);
 	    return spillChoice;
 	}
     }	
@@ -157,6 +161,8 @@ public class OptimisticGraphColorer extends GraphColorer {
 	    HashSet nColors = new HashSet(nborsC.size());
 	    for(Iterator nbors = nborsC.iterator(); nbors.hasNext();){
 		Object nb = nbors.next();
+		if (spills.contains(nb)) continue;
+		
 		Color col = graph.getColor(nb);
 		
 		// nb can have no color, if it was a failed optimistic
@@ -178,7 +184,7 @@ public class OptimisticGraphColorer extends GraphColorer {
 		    } catch (ColorableGraph.IllegalColor ic) {
 			// col was not legal for n
 			// try another color...  
-			MONITOR(col + " not legal for " + n + 
+			if (false) MONITOR(col + " not legal for " + n + 
 				"b/c of conflict between "+
 				ic.color + " and " + ic.node+"\n");
 			continue nextColor;
@@ -188,8 +194,12 @@ public class OptimisticGraphColorer extends GraphColorer {
 	    
 	    // if we ever reach this point, we failed to color n
 	    MONITOR("failed to color "+n+"\n");
+	    // MONITOR("nbors(n): "+graph.neighborsOf(n));
 	    Object choice = this.selector.chooseNodeForRemoval(graph);
-	    spills.add(choice); allSpills.add(choice);
+	    if (choice != null) {
+		spills.add(choice); 
+		allSpills.add(choice);
+	    }
 	    unableToColor = true;
 	}
 	

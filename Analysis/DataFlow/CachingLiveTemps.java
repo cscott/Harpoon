@@ -28,9 +28,19 @@ import java.util.Iterator;
  * statements in the basic blocks.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: CachingLiveTemps.java,v 1.1.2.2 2000-08-23 06:33:01 pnkfelix Exp $
+ * @version $Id: CachingLiveTemps.java,v 1.1.2.3 2000-08-25 06:57:27 pnkfelix Exp $
  */
 public class CachingLiveTemps extends LiveTemps {
+
+    public static LiveTemps make(HCode code, Set liveOnExit) {
+	BasicBlock.Factory bbf = new BasicBlock.Factory(code);
+	LiveTemps lt = new CachingLiveTemps(bbf, liveOnExit);
+	Solver.worklistSolve
+	    // (bbFact.preorderBlocksIter(),
+	    (new harpoon.Util.ReverseIterator(bbf.postorderBlocksIter()),
+	     lt);
+	return lt;
+    }
     
     /** Creates a <code>CachingLiveTemps</code>. */
     public CachingLiveTemps(BasicBlock.Factory bbf, Set liveOnExit) {
@@ -54,7 +64,7 @@ public class CachingLiveTemps extends LiveTemps {
     private int hits = 0, misses = 0, setup = 0;
 
 
-    private static final int CACHE_SIZE = 100;
+    private static final int CACHE_SIZE = 20;
     private int nextPt = 0;
     private BasicBlock[] lastBBs = new BasicBlock[CACHE_SIZE];
     // a cache of results for the getLiveAfter(HCodeElement) method

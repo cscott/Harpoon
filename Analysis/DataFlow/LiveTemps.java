@@ -26,7 +26,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.19 2000-07-30 01:44:12 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.20 2000-08-25 06:57:27 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
     // may be null; code using this should check
@@ -45,7 +45,7 @@ public class LiveTemps extends LiveVars.BBVisitor {
      */
     public static LiveTemps make(HCode code, Set liveOnExit) {
 	BasicBlock.Factory bbf = new BasicBlock.Factory(code);
-	LiveTemps lt = new CachingLiveTemps(bbf, liveOnExit);
+	LiveTemps lt = new LiveTemps(bbf, liveOnExit);
 	Solver.worklistSolve
 	    // (bbFact.preorderBlocksIter(),
 	    (new harpoon.Util.ReverseIterator(bbf.postorderBlocksIter()),
