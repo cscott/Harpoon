@@ -3,16 +3,18 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.LowQuad.Transactions;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HField;
 import harpoon.Temp.Temp;
 
-import java.util.*;
+import java.util.Set;
 /**
  * A <code>CheckOracle</code> helps the SyncTransformer place
  * field and object version lookups and checks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CheckOracle.java,v 1.1.2.1 2000-11-14 19:37:33 cananian Exp $
+ * @version $Id: CheckOracle.java,v 1.1.2.2 2000-11-15 19:50:20 cananian Exp $
  */
 abstract class CheckOracle {
     

@@ -5,20 +5,59 @@ package harpoon.Analysis.LowQuad.Transactions;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.DomTree;
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HClassMutator;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HFieldMutator;
+import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HMethodMutator;
+import harpoon.ClassFile.Linker;
+import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ASET;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.Code;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.INSTANCEOF;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.MONITORENTER;
+import harpoon.IR.Quads.MONITOREXIT;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Qop;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadFactory;
+import harpoon.IR.Quads.QuadRSSx;
+import harpoon.IR.Quads.QuadSSA;
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.THROW;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 /**
  * <code>SyncTransformer</code> transforms synchronized code to
  * atomic transactions.  Works on <code>LowQuadNoSSA</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.11 2000-11-15 19:47:12 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.12 2000-11-15 19:50:20 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
