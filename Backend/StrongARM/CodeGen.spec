@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.102 1999-11-06 20:00:55 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.103 1999-11-07 00:49:51 cananian Exp $
  */
 %%
 
@@ -510,9 +510,13 @@ import java.util.Iterator;
 	    super(inf, src, "--method entry point--");
 	}
     }
-    private static class InstrEXIT extends Instr {
+    private class InstrEXIT extends Instr {
 	public InstrEXIT(InstrFactory inf, HCodeElement src) {
-	    super(inf, src, "--method exit point--", null, null, false, null);
+	    // uses SP and PC making them live in whole
+	    // procedure (so register allocator doesn't stomp
+	    // on them!)
+	    super(inf, src, "--method exit point--", null, 
+		  new Temp[] { SP, PC }, false, null);
 	}
     }
 %%
