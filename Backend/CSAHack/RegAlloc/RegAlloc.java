@@ -12,19 +12,35 @@ package harpoon.Backend.CSAHack.RegAlloc;
 
 import harpoon.Backend.Generic.Frame;
 
+import harpoon.Analysis.Maps.Derivation;
+
 import harpoon.Backend.CSAHack.Graph.Node;
 import harpoon.Backend.CSAHack.Graph.NodeList;
 
+import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
+
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrMOVE;
+import harpoon.IR.Properties.CFGrapher;
+import harpoon.IR.Properties.UseDefer;
 
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempList;
 import harpoon.Temp.TempMap;
 
 import harpoon.Backend.CSAHack.FlowGraph.AssemFlowGraph;
+import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.Environment;
+import harpoon.Util.HashEnvironment;
 import harpoon.Util.Util;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 /**
  * Register allocation module.
  * @version	1.00, 25 Nov 1996
@@ -56,10 +72,13 @@ public class RegAlloc implements TempMap {
    */
   public RegAlloc(final Frame f, Code c, Instr root) {
     AssemFlowGraph flow;
+    UseDefer ud = UseDefer.DEFAULT;
 
     frame = f;
     code = c;
     instrs = root;
+
+    if (c.getDerivation()!=null) ud = new DerivedUseDefer(c, ud);
 
     // thunk the register array to a register list...
     TempList registers=null;
@@ -70,7 +89,7 @@ public class RegAlloc implements TempMap {
     // repeat these steps until no more variables need to be spilled:
     do {
       // create a flow graph
-      flow = new AssemFlowGraph(this.instrs, true);
+      flow = new AssemFlowGraph(this.instrs, ud, true);
       // create an interference graph after analyzing the flow for liveness.
       Liveness live = new Liveness(flow);
       // possibly dump these graphs for debugging.
@@ -134,5 +153,64 @@ public class RegAlloc implements TempMap {
    */
   public Temp tempMap(Temp temp) {
     return color.tempMap(temp);
+  }
+
+  private static class DerivedUseDefer extends UseDefer {
+    UseDefer ud;
+    MultiMap extras = new GenericMultiMap();
+    DerivedUseDefer(Code c, UseDefer ud) {
+      this.ud = ud;
+      if (c.getDerivation()==null) return; // no deriv info.
+
+      // do a depth-first search of the CFG to determine (one of the)
+      // reaching definitions for each use.
+      CFGrapher cfg = CFGrapher.DEFAULT;
+      dfs(cfg.getFirstElement(c), cfg, c.getDerivation(),
+	  new HashEnvironment(), new HashSet());
+    }
+    /** dfs of cfg to determine (a) reaching def for each use.
+     *  current reaching defs are in 'env'. */
+    private void dfs(HCodeElement hce, CFGrapher cfg, Derivation deriv,
+		     Environment env, Set seen) {
+	seen.add(hce); // keep track of touched hces.
+	// process *this*
+	//   for all uses, use current reaching def to determine 'extras'
+	for (Iterator it=ud.useC(hce).iterator(); it.hasNext(); ) {
+	    Temp u = (Temp) it.next();
+	    HCodeElement def = (HCodeElement) env.get(u);
+	    if (def==null) {
+		System.err.println("WARNING: no reaching def found for " + u +
+				   " in " + hce);
+		continue;
+	    }
+	    for (Derivation.DList dl = deriv.derivation(def, u);
+		 dl!=null; dl=dl.next)
+		extras.add(hce, dl.base);
+	}
+	//   for all defs, update reaching def environment.
+	for (Iterator it=ud.defC(hce).iterator(); it.hasNext(); ) {
+	    Temp d = (Temp) it.next();
+	    env.put(d, hce);
+	}
+	// recurse
+	Environment.Mark mark = env.getMark();
+	for (Iterator it=cfg.succC(hce).iterator(); it.hasNext(); ) {
+	    HCodeElement succ = ((HCodeEdge) it.next()).to();
+	    if (seen.contains(succ)) continue;
+	    dfs(succ, cfg, deriv, env, seen);
+	    env.undoToMark(mark);
+	}
+    }
+
+    public Collection defC(HCodeElement hce) { return ud.defC(hce); }
+    // add base pointers for derived temps to use set.
+    public Collection useC(HCodeElement hce) {
+      Collection c = ud.useC(hce);
+      if (extras.containsKey(hce)) {
+	  c = new ArrayList(c);
+	  c.addAll(extras.getValues(hce));
+      }
+      return c;
+    }
   }
 }
