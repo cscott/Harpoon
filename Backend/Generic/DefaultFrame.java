@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.7 1999-03-08 09:01:55 andyb Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.8 1999-03-12 20:46:38 duncan Exp $
  */
 public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 
@@ -39,15 +39,21 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
     private OffsetMap           m_offsetMap;
     private Temp[]              m_registers;
     private TempFactory         m_tempFactory;
-
+  
     public DefaultFrame() {
         m_allocator   = new DefaultAllocationStrategy(this);
-	    m_nextPtr     = 0x0fff0000;  // completely arbitrary
-        m_offsetMap   = new OffsetMap32(null);
+	m_nextPtr     = 0x0fff0000;  // completely arbitrary
+        m_offsetMap   = new OffsetMap32(null); 
     }
 
+    public DefaultFrame(OffsetMap map, AllocationStrategy st) {
+	m_allocator = st;
+	m_nextPtr   = 0;
+	m_offsetMap = map;
+    }
+	
     public Frame newFrame(String scope) {
-        DefaultFrame fr = new DefaultFrame();
+        DefaultFrame fr = new DefaultFrame(m_offsetMap, m_allocator);
         fr.m_registers = new Temp[16];
         fr.m_tempFactory = Temp.tempFactory(scope);
         for (int i = 0; i < 16; i++)
@@ -145,8 +151,8 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
     }
   
     public MEM getNextPtr(TreeFactory tf, HCodeElement src) { 
-        return new MEM(tf, src, Type.INT,
-		       new CONST(tf, src, m_nextPtr));
+	 return new MEM(tf, src, Type.INT,
+			new CONST(tf, src, m_nextPtr)); 
     }
     
     public Stm exitOutOfMemory(TreeFactory tf, HCodeElement src) {
@@ -158,5 +164,9 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 		        new NAME(tf, src, new Label("RUNTIME_OOM")),
 			null); 
     }
-
 }
+
+
+
+
+
