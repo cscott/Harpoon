@@ -18,6 +18,7 @@ import java.security.AccessController;
 import java.security.AccessControlContext;
 
 import harpoon.Analysis.ContBuilder.VoidContinuation;
+import harpoon.Analysis.ContBuilder.VoidContinuationOpt;
 import harpoon.Analysis.ContBuilder.VoidDoneContinuation;
 import harpoon.Analysis.ContBuilder.VoidResultContinuation;
 import harpoon.Analysis.ContBuilder.Scheduler;
