@@ -39,6 +39,7 @@ import java.util.Iterator;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.TreeSet;
 import java.util.Map;
 import java.util.Vector;
 import java.util.Stack;
@@ -62,7 +63,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.27 1999-09-09 05:49:26 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.28 1999-09-09 13:27:11 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -147,7 +148,7 @@ public class SAMain extends harpoon.IR.Registration {
 			       hclass.getName() + ".s")));
 		
 		HMethod[] hmarray = hclass.getDeclaredMethods();
-		HashSet hmset = new HashSet(Arrays.asList(hmarray));
+		Set hmset = new TreeSet(Arrays.asList(hmarray));
 		hmset.retainAll(methods);
 		Iterator hms = hmset.iterator();
 		message("\t");
