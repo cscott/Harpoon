@@ -51,7 +51,7 @@ import harpoon.Temp.Label;
  * chunks of memory that are used by the unitary sites.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AddMemoryPreallocation.java,v 1.8 2003-02-22 04:42:08 salcianu Exp $ */
+ * @version $Id: AddMemoryPreallocation.java,v 1.9 2003-02-22 17:27:32 salcianu Exp $ */
 class AddMemoryPreallocation implements HCodeFactory {
 
     /** Creates a <code>AddMemoryPreallocation</code> code factory: it
@@ -104,18 +104,6 @@ class AddMemoryPreallocation implements HCodeFactory {
 
 	System.out.println("\n\nBefore  modifications:");
 	code.print(new PrintWriter(System.out));
-
-	System.out.println("ROOT = " + code.getRootElement());
-	System.out.println("ROOT.right = " + 
-			   ((SEQ) code.getRootElement()).getRight());
-	System.out.println("ROOT.left = " + 
-			   ((SEQ) code.getRootElement()).getLeft());
-	System.out.println
-	    ("ROOT.right.right = " + 
-	     ((SEQ) ((SEQ) code.getRootElement()).getRight()).getRight());
-	System.out.println
-	    ("ROOT.right.left = " + 
-	     ((SEQ) ((SEQ) code.getRootElement()).getRight()).getLeft());
 
 	SEQ start = (SEQ) ((SEQ) code.getRootElement()).getRight();
 	Temp tmem = new Temp(start.getFactory().tempFactory(), "tmem");
