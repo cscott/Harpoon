@@ -3,12 +3,13 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.ClassFile.HClass;
 /**
  * <code>Qop</code> is an enumerated type for the various kinds of
  * <code>OPER</code> opcodes.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Qop.java,v 1.1.2.4 1998-12-27 21:26:55 cananian Exp $
+ * @version $Id: Qop.java,v 1.1.2.5 1999-01-03 03:01:42 cananian Exp $
  */
 public abstract class Qop  {
     public final static int ACMPEQ = 0;
@@ -215,4 +216,159 @@ public abstract class Qop  {
         h.put("lushr", new Integer(LUSHR));
         h.put("lxor", new Integer(LXOR));
     }
+    ///////////////////////////////////
+    // Evaluation functions.
+
+    /** Determines the result type of an <code>OPER</code>. */
+    public static HClass resultType(int v) {
+	switch(v) {
+        case ACMPEQ:
+        case DCMPEQ:
+        case DCMPGE:
+        case DCMPGT:
+        case FCMPEQ:
+        case FCMPGE:
+        case FCMPGT:
+        case ICMPEQ:
+        case ICMPGT:
+        case LCMPEQ:
+        case LCMPGT:
+	    return HClass.Boolean;
+        case D2F:
+        case FADD:
+        case FDIV:
+        case FMUL:
+        case FNEG:
+        case FREM:
+        case FSUB:
+        case I2F:
+        case L2F:
+	    return HClass.Float;
+        case D2I:
+        case F2I:
+        case I2B:
+        case I2C:
+        case I2S:
+        case IADD:
+        case IAND:
+        case IDIV:
+        case IMUL:
+        case INEG:
+        case IOR:
+        case IREM:
+        case ISHL:
+        case ISHR:
+        case ISUB:
+        case IUSHR:
+        case IXOR:
+        case L2I:
+	    return HClass.Int;
+        case D2L:
+        case F2L:
+        case I2L:
+        case LADD:
+        case LAND:
+        case LDIV:
+        case LMUL:
+        case LNEG:
+        case LOR:
+        case LREM:
+        case LSHL:
+        case LSHR:
+        case LSUB:
+        case LUSHR:
+        case LXOR:
+	    return HClass.Long;
+        case DADD:
+        case DDIV:
+        case DMUL:
+        case DNEG:
+        case DREM:
+        case DSUB:
+        case F2D:
+        case I2D:
+        case L2D:
+	    return HClass.Double;
+	default:        throw new RuntimeException("Unknown Op type: "+v);
+	}
+    }
+    /** Evaluates a constant value for the result of an <code>OPER</code>, 
+     *  given constant values for the operands. */
+    public static Object evaluate(int opc, Object[] opd) {
+	switch(opc) {
+	case ACMPEQ:	return _b( Eval.acmpeq	(opd[0], opd[1]));
+	case D2F:	return _f( Eval.d2f	(_d(opd[0])));
+	case D2I:	return _i( Eval.d2i	(_d(opd[0])));
+	case D2L:	return _l( Eval.d2l	(_d(opd[0])));
+	case DADD:	return _d( Eval.dadd	(_d(opd[0]), _d(opd[1])));
+	case DCMPEQ:	return _b( Eval.dcmpeq	(_d(opd[0]), _d(opd[1])));
+	case DCMPGE:	return _b( Eval.dcmpge	(_d(opd[0]), _d(opd[1])));
+	case DCMPGT:	return _b( Eval.dcmpgt	(_d(opd[0]), _d(opd[1])));
+	case DDIV:	return _d( Eval.ddiv	(_d(opd[0]), _d(opd[1])));
+	case DMUL:	return _d( Eval.dmul	(_d(opd[0]), _d(opd[1])));
+	case DNEG:	return _d( Eval.dneg	(_d(opd[0])));
+	case DREM:	return _d( Eval.drem	(_d(opd[0]), _d(opd[1])));
+	case DSUB:	return _d( Eval.dsub	(_d(opd[0]), _d(opd[1])));
+	case F2D:	return _d( Eval.f2d	(_f(opd[0])));
+	case F2I:	return _i( Eval.f2i	(_f(opd[0])));
+	case F2L:	return _l( Eval.f2l	(_f(opd[0])));
+	case FADD:	return _f( Eval.fadd	(_f(opd[0]), _f(opd[1])));
+	case FCMPEQ:	return _b( Eval.fcmpeq	(_f(opd[0]), _f(opd[1])));
+	case FCMPGE:	return _b( Eval.fcmpge	(_f(opd[0]), _f(opd[1])));
+	case FCMPGT:	return _b( Eval.fcmpgt	(_f(opd[0]), _f(opd[1])));
+	case FDIV:	return _f( Eval.fdiv	(_f(opd[0]), _f(opd[1])));
+	case FMUL:	return _f( Eval.fmul	(_f(opd[0]), _f(opd[1])));
+	case FNEG:	return _f( Eval.fneg	(_f(opd[0])));
+	case FREM:	return _f( Eval.frem	(_f(opd[0]), _f(opd[1])));
+	case FSUB:	return _f( Eval.fsub	(_f(opd[0]), _f(opd[1])));
+	case I2B:	return _i( Eval.i2b	(_i(opd[0])));
+	case I2C:	return _i( Eval.i2c	(_i(opd[0])));
+	case I2D:	return _d( Eval.i2d	(_i(opd[0])));
+	case I2F:	return _f( Eval.i2f	(_i(opd[0])));
+	case I2L:	return _l( Eval.i2l	(_i(opd[0])));
+	case I2S:	return _i( Eval.i2s	(_i(opd[0])));
+	case IADD:	return _i( Eval.iadd	(_i(opd[0]), _i(opd[1])));
+	case IAND:	return _i( Eval.iand	(_i(opd[0]), _i(opd[1])));
+	case ICMPEQ:	return _b( Eval.icmpeq	(_i(opd[0]), _i(opd[1])));
+	case ICMPGT:	return _b( Eval.icmpgt	(_i(opd[0]), _i(opd[1])));
+	case IDIV:	return _i( Eval.idiv	(_i(opd[0]), _i(opd[1])));
+	case IMUL:	return _i( Eval.imul	(_i(opd[0]), _i(opd[1])));
+	case INEG:	return _i( Eval.ineg	(_i(opd[0])));
+	case IOR:	return _i( Eval.ior	(_i(opd[0]), _i(opd[1])));
+	case IREM:	return _i( Eval.irem	(_i(opd[0]), _i(opd[1])));
+	case ISHL:	return _i( Eval.ishl	(_i(opd[0]), _i(opd[1])));
+	case ISHR:	return _i( Eval.ishr	(_i(opd[0]), _i(opd[1])));
+	case ISUB:	return _i( Eval.isub	(_i(opd[0]), _i(opd[1])));
+	case IUSHR:	return _i( Eval.iushr	(_i(opd[0]), _i(opd[1])));
+	case IXOR:	return _i( Eval.ixor	(_i(opd[0]), _i(opd[1])));
+	case L2D:	return _d( Eval.l2d	(_l(opd[0])));
+	case L2F:	return _f( Eval.l2f	(_l(opd[0])));
+	case L2I:	return _i( Eval.l2i	(_l(opd[0])));
+	case LADD:	return _l( Eval.ladd	(_l(opd[0]), _l(opd[1])));
+	case LAND:	return _l( Eval.land	(_l(opd[0]), _l(opd[1])));
+	case LCMPEQ:	return _b( Eval.lcmpeq	(_l(opd[0]), _l(opd[1])));
+	case LCMPGT:	return _b( Eval.lcmpgt	(_l(opd[0]), _l(opd[1])));
+	case LDIV:	return _l( Eval.ldiv	(_l(opd[0]), _l(opd[1])));
+	case LMUL:	return _l( Eval.lmul	(_l(opd[0]), _l(opd[1])));
+	case LNEG:	return _l( Eval.lneg	(_l(opd[0])));
+	case LOR:	return _l( Eval.lor	(_l(opd[0]), _l(opd[1])));
+	case LREM:	return _l( Eval.lrem	(_l(opd[0]), _l(opd[1])));
+	case LSHL:	return _l( Eval.lshl	(_l(opd[0]), _i(opd[1])));
+	case LSHR:	return _l( Eval.lshr	(_l(opd[0]), _i(opd[1])));
+	case LSUB:	return _l( Eval.lsub	(_l(opd[0]), _l(opd[1])));
+	case LUSHR:	return _l( Eval.lushr	(_l(opd[0]), _i(opd[1])));
+	case LXOR:	return _l( Eval.lxor	(_l(opd[0]), _l(opd[1])));
+	default:        throw new RuntimeException("Unknown Op type: "+opc);
+	}
+    }
+    private static Integer _i(int i)     { return new Integer(i); }
+    private static Long    _l(long l)    { return new Long(l);    }
+    private static Float   _f(float f)   { return new Float(f);   }
+    private static Double  _d(double d)  { return new Double(d);  }
+    private static Boolean _b(boolean b) { return new Boolean(b); }
+   
+    private static int    _i(Object o) { return ((Integer)o).intValue(); }
+    private static long   _l(Object o) { return ((Long)o)   .longValue(); }
+    private static float  _f(Object o) { return ((Float)o)  .floatValue(); }
+    private static double _d(Object o) { return ((Double)o) .doubleValue(); }
 }

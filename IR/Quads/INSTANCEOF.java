@@ -13,16 +13,12 @@ import harpoon.Util.Util;
  * <code>INSTANCEOF</code> assigns a boolean value to a temporary after
  * evaluating whether a certain temporary is an instance of a given
  * class type.<p>
- *
- * <strong>It is a semantic error for the <code>src</code> Temp to be able to
- * have the value <code>null</code> at run-time.</strong> A separate
- * null-pointer test should always precede the <code>INSTANCEOF</code>
- * quad if src may be null at run-time.  Standard java
- * <code>instanceof</code> returns <code>true</code> given a
- * <code>null</code> source object.
+ * The <code>src</code> <code>Temp</code> may have the value
+ * <code>null</code>, in which case <code>INSTANCEOF</code> evaluates to
+ * <code>false</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSTANCEOF.java,v 1.1.2.5 1998-12-24 03:23:09 cananian Exp $ 
+ * @version $Id: INSTANCEOF.java,v 1.1.2.6 1999-01-03 03:01:42 cananian Exp $ 
  */
 public class INSTANCEOF extends Quad {
     /** The <code>Temp</code> in which to store the result of the test. */
@@ -32,7 +28,7 @@ public class INSTANCEOF extends Quad {
     /** The class in which <code>src</code> is tested for membership. */
     final protected HClass hclass;
 
-    /** Creates a <code>INSTANCEOF</code> representing a typecheck test.
+    /** Creates a <code>INSTANCEOF</code> representing a type check.
      * @param dst
      *        the <code>Temp</code> in which to store the result of the test.
      * @param src

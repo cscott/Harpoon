@@ -38,7 +38,7 @@ import java.util.Vector;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.5 1998-12-28 23:38:54 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.6 1999-01-03 03:01:42 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -716,38 +716,11 @@ final class Translate { // not public.
 	    break;
 	    }
 	case Op.CHECKCAST:
-	    // translate as:
-	    //  if (obj!=null && !(obj instanceof class))
-	    //     throw new ClassCastException();
 	    {
 	    OpClass opd = (OpClass) in.getOperand(0);
 	    Temp Tobj = s.stack(0);
-
-	    HClass HCex = HClass.forClass(ClassCastException.class);
-
-	    // make quads
-	    Quad q0 = new CONST(qf, in, s.extra(0), null, HClass.Void);
-	    Quad q1 = new OPER(qf, in, Qop.ACMPEQ, s.extra(0), // equal is true
-			       new Temp[] { Tobj, s.extra(0)/*null*/ } ); 
-	    Quad q2 = new CJMP(qf, in, q1.def()[0], new Temp[0]);
-	    Quad q3 = new INSTANCEOF(qf, in, s.extra(0), Tobj, opd.value());
-	    Quad q4 = new CJMP(qf, in, q3.def()[0], new Temp[0]);
-	    Quad q5 = new NEW(qf, in, s.extra(0), HCex);
-	    Quad q6 = new CALL(qf, in, HCex.getConstructor(new HClass[0]),
-			       new Temp[] { q5.def()[0] }, null /*retval*/,
-			       null /*ex*/, false /*virtual*/);
-	    Quad q7 = new THROW(qf, in, q5.def()[0]);
-	    Quad q8 = new PHI(qf, in, new Temp[0], 2);
-	    // link quads.
-	    Quad.addEdges(new Quad[] { q0, q1, q2, q3, q4, q5, q6, q7 });
-	    Quad.addEdge(q2, 1, q8, 0);
-	    Quad.addEdge(q4, 1, q8, 1);
-	    s.footer().attach(q7, 0);
-
-	    // and setup the next state.
+	    q = new TYPECAST(qf, in, Tobj, opd.value());
 	    ns = s;
-	    q = q0;
-	    last = q8;
 	    break;
 	    }
 	case Op.D2F:
@@ -1215,7 +1188,7 @@ final class Translate { // not public.
 	    break;
 	    }
 	case Op.INSTANCEOF:
-	    {
+	    { // no protection for <code>null</code>.
 	    OpClass opd = (OpClass) in.getOperand(0);
 	    ns = s.pop().push();
 	    Quad q0 = new INSTANCEOF(qf, in,

@@ -8,7 +8,7 @@ import harpoon.ClassFile.*;
  * <code>Eval</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Eval.java,v 1.1.2.1 1998-12-01 12:36:42 cananian Exp $
+ * @version $Id: Eval.java,v 1.1.2.2 1999-01-03 03:01:42 cananian Exp $
  */
 
 class Eval  {
@@ -181,7 +181,8 @@ class Eval  {
     static boolean icmpeq(int a, int b) {
 	return (a == b);
     }
-    /** Compare two integers for greater-than-or-equal-to. */
+    /** Compare two integers for greater-than-or-equal-to
+     * @deprecated */
     static boolean icmpge(int a, int b) {
 	return (a >= b);
     }
@@ -253,7 +254,8 @@ class Eval  {
     static boolean lcmpeq(long a, long b) {
 	return (a == b);
     }
-    /** Compare two longs for greater-than-or-equal-to. */
+    /** Compare two longs for greater-than-or-equal-to.
+     * @deprecated */
     static boolean lcmpge(long a, long b) {
 	return (a >= b);
     }

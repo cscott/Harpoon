@@ -22,7 +22,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.7 1998-12-27 21:26:53 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.8 1999-01-03 03:01:41 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -419,9 +419,9 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		// special case when q.objectref is null
 		if (hcO == HClass.Void) // always true.
 		    raiseV(V, Wv, q.dst(), new xIntConstant(HClass.Boolean,1));
-		else if (hcA.isSuperclassOf(hcO)) // always true
+		else if (hcO.isInstanceOf(hcA)) // always true
 		    raiseV(V, Wv, q.dst(), new xIntConstant(HClass.Boolean,1));
-		else if (hcO.isSuperclassOf(hcA)) // unknownable.
+		else if (hcA.isInstanceOf(hcO)) // unknowable.
 		    raiseV(V, Wv, q.dst(), new xBitWidth(HClass.Boolean,1,0));
 		else // always false.
 		    raiseV(V, Wv, q.dst(), new xIntConstant(HClass.Boolean,0));
@@ -462,17 +462,17 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		raiseV(V, Wv, q.dst(), new xIntConstant(HClass.Boolean,1) );
 	    else if (v instanceof xClassNonNull) { // analyzable
 		HClass hcO = ((xClassNonNull)v).type();
-		if (q.hclass().isSuperclassOf(hcO)) // always true
+		if (hcO.isInstanceOf(q.hclass())) // always true
 		    raiseV(V,Wv, q.dst(), new xIntConstant(HClass.Boolean,1) );
-		else if (hcO.isSuperclassOf(q.hclass())) // unknowable.
+		else if (q.hclass().isInstanceOf(hcO)) // unknowable.
 		    raiseV(V,Wv, q.dst(), new xBitWidth(HClass.Boolean,1,0) );
 		else // always false.
 		    raiseV(V,Wv, q.dst(), new xIntConstant(HClass.Boolean,0) );
 	    }
 	    else if (v instanceof xClass) { // could be null.
 		HClass hcO = ((xClass)v).type();
-		if (q.hclass().isSuperclassOf(hcO) || 
-		    hcO.isSuperclassOf(q.hclass()) ) // unknowable.
+		if (q.hclass().isInstanceOf(hcO) || 
+		    hcO.isInstanceOf(q.hclass()) ) // unknowable.
 		    raiseV(V,Wv, q.dst(), new xBitWidth(HClass.Boolean,1,0) );
 		else // always false (even if src==null)
 		    raiseV(V,Wv, q.dst(), new xIntConstant(HClass.Boolean,0) );

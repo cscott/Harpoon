@@ -8,35 +8,43 @@ import harpoon.ClassFile.*;
  * <code>HClass</code> objects for common classes into class scope.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCLibrary.java,v 1.1.2.1 1998-12-30 04:39:39 cananian Exp $
+ * @version $Id: HCLibrary.java,v 1.1.2.2 1999-01-03 03:01:43 cananian Exp $
  */
 class HCLibrary  {
     static final HClass 
 	HCcharA = HClass.forDescriptor("[C"),
-	HCstring = HClass.forName("java.lang.String"),
-	HCstringA = HClass.forDescriptor("[Ljava/lang/String;"),
 	HCclass = HClass.forName("java.lang.Class"),
 	HCclassA = HClass.forDescriptor("[Ljava/lang/Class;"),
-	HCobject  = HClass.forName("java.lang.Object"),
+        HCcloneable = HClass.forName("java.lang.Cloneable"),
+	HCdouble = HClass.forName("java.lang.Double"),
+	HCfloat = HClass.forName("java.lang.Float"),
+	HCobject = HClass.forName("java.lang.Object"),
+	HCruntime = HClass.forName("java.lang.Runtime"),
+	HCsmanager = HClass.forName("java.lang.SecurityManager"),
+	HCstring = HClass.forName("java.lang.String"),
+	HCstringA = HClass.forDescriptor("[Ljava/lang/String;"),
 	HCsystem = HClass.forName("java.lang.System"),
-	HCthrowable=HClass.forName("java.lang.Throwable"),
+	HCthrowable = HClass.forName("java.lang.Throwable"),
 	HCfiledesc = HClass.forName("java.io.FileDescriptor"),
+	HCfistream = HClass.forName("java.io.FileInputStream"),
 	HCfostream = HClass.forName("java.io.FileOutputStream"),
 	HCrafile = HClass.forName("java.io.RandomAccessFile"),
 	HCproperties = HClass.forName("java.util.Properties"),
 	HCarraystoreE = HClass.forName("java.lang.ArrayStoreException"),
 	HCarrayindexE = HClass.forName("java.lang.ArrayIndexOutOfBounds"+
 				       "Exception"),
-	HCclassnotfoundE=HClass.forName("java.lang.ClassNotFoundException"),
-	HCillegalaccessE=HClass.forName("java.lang.IllegalAccessException"),
-	HCinstantiationE=HClass.forName("java.lang.InstantiationException"),
+	HCclassnotfoundE = HClass.forName("java.lang.ClassNotFoundException"),
+	HCillegalaccessE = HClass.forName("java.lang.IllegalAccessException"),
+	HCinstantiationE = HClass.forName("java.lang.InstantiationException"),
 	HCnullpointerE = HClass.forName("java.lang.NullPointerException"),
 	HCnegativearrayE = HClass.forName("java.lang.NegativeArraySize"+
 					  "Exception"),
 	HCarithmeticE = HClass.forName("java.lang.ArithmeticException"),
+	HCclasscastE = HClass.forName("java.lang.ClassCastException"),
+        HCclonenotsupportedE = HClass.forName("java.lang.CloneNotSupported"+
+					      "Exception"),
 	HCioE = HClass.forName("java.io.IOException"),
 	HCsecurityE = HClass.forName("java.lang.SecurityException"),
-	HCnosuchmethodErr=HClass.forName("java.lang.NoSuchMethodError"),
+	HCnosuchmethodErr = HClass.forName("java.lang.NoSuchMethodError"),
 	HCunsatisfiedlinkErr=HClass.forName("java.lang.UnsatisfiedLinkError");
-    
 }

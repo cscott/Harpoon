@@ -12,7 +12,7 @@ import harpoon.Temp.TempFactory;
  * <code>HCode</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadFactory.java,v 1.1.2.4 1998-12-28 23:52:40 cananian Exp $
+ * @version $Id: QuadFactory.java,v 1.1.2.5 1999-01-03 03:01:42 cananian Exp $
  */
 public abstract class QuadFactory  {
     /** Returns the <code>TempFactory</code> to use for <code>Temp</code>
@@ -35,6 +35,7 @@ public abstract class QuadFactory  {
 
     //---------------------------------------------------------------------
     // CONSTRUCTORS FOR QUADS:
+    /*
     public AGET newAGET(HCodeElement source,
 			Temp dst, Temp objectref, Temp index) {
 	return new AGET(this, source, dst, objectref, index);
@@ -156,4 +157,9 @@ public abstract class QuadFactory  {
     public THROW newTHROW(HCodeElement source, Temp throwable) {
 	return new THROW(this, source, throwable);
     }
+    public TYPECAST newTYPECAST(HCodeElement source,
+				Temp objectref, HClass hclass) {
+	return new TYPECAST(this, source, objectref, hclass);
+    }
+    */
 }

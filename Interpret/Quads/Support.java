@@ -7,33 +7,28 @@ import harpoon.ClassFile.*;
  * <code>Support</code> provides some native method implementations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Support.java,v 1.1.2.2 1998-12-30 04:39:40 cananian Exp $
+ * @version $Id: Support.java,v 1.1.2.3 1999-01-03 03:01:44 cananian Exp $
  */
 final class Support extends HCLibrary {
     static final void registerNative(StaticState ss) {
-	INSystem.register(ss);
-	INString.register(ss);
+	// java.lang.*
 	INClass.register(ss);
+	INFloatDouble.register(ss);
+	INObject.register(ss);
+	INRuntime.register(ss);
+	INString.register(ss);
+	INSystem.register(ss);
+	// java.io.*
+	INFileInputStream.register(ss);
 	INFileOutputStream.register(ss);
 	INRandomAccessFile.register(ss);
+	// miscellaneous.
 	ss.register(initSystemFD());
 	ss.register(fillInStackTrace());
-	ss.register(_getClass_());
     }
 
     //--------------------------------------------------------
 
-    // Object.getClass() method.
-    private static final NativeMethod _getClass_() {
-	final HMethod hm = HCobject.getMethod("getClass", new HClass[0]);
-	return new NativeMethod() {
-	    HMethod getMethod() { return hm; }
-	    Object invoke(StaticState ss, Object[] params) {
-		ObjectRef obj = (ObjectRef) params[0];
-		return INClass.forClass(ss, obj.type);
-	    }
-	};
-    }
     // fill in stack trace for exceptions.
     private static final NativeMethod fillInStackTrace() {
 	final HMethod hm =

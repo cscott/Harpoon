@@ -8,9 +8,9 @@ import harpoon.Util.Util;
  * <code>ObjectRef</code> is an object reference in the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectRef.java,v 1.1.2.2 1998-12-30 04:39:40 cananian Exp $
+ * @version $Id: ObjectRef.java,v 1.1.2.3 1999-01-03 03:01:44 cananian Exp $
  */
-class ObjectRef  {
+class ObjectRef implements Cloneable {
     /** The type of the object. */
     final HClass type;
     /** Fields in this instance of the object. */
@@ -21,6 +21,8 @@ class ObjectRef  {
     //boolean lock;
     /** Native method closure. */
     Object closure;
+    /** Profiling information. */
+    final long creation_time;
 
     /** create a new objectref with default field values.
      * @exception InterpretedThrowable
@@ -30,6 +32,7 @@ class ObjectRef  {
 	/*this.lock = false;*/ this.closure = null;
 	// load class into StaticState, if needed.
 	if (!ss.isLoaded(type)) ss.load(type);
+	this.creation_time = ss.getInstructionCount();
 	// then initialize our fields, too
 	for (HClass sc=type; sc!=null; sc=sc.getSuperclass()) {
 	    HField[] fl = sc.getDeclaredFields();
@@ -39,6 +42,15 @@ class ObjectRef  {
 	}
 	// yay, done.
     }
+    /** private constructor for use by the clone() method. */
+    private ObjectRef(StaticState ss, HClass type, FieldValueList fields) {
+	this.ss = ss; this.type = type; this.fields = fields;
+	/*this.lock = false;*/ this.closure = null;
+	this.creation_time = ss.getInstructionCount();
+        Util.assert(ss.isLoaded(type));
+        // no field initialization necessary.
+    }
+       
     Object get(HField f) {
 	return FieldValueList.get(this.fields, f);
     }
@@ -51,6 +63,11 @@ class ObjectRef  {
     Object getClosure() { return closure; }
     void putClosure(Object cl) { closure = cl; }
 
+    public Object clone() {
+       Util.assert(closure==null, "can't clone objects with closure info.");
+       return new ObjectRef(ss, type, FieldValueList.clone(fields));
+    }
+   
     protected void finalize() throws Throwable {
 	// finalize the referenced object by evaluating its finalize method.
 	try {
@@ -61,6 +78,8 @@ class ObjectRef  {
 	} catch (NoSuchMethodError e) {
 	    // no finalize method.
 	}
+	// profile
+	ss.profile(this.type, this.creation_time, ss.getInstructionCount());
 	// finalize the actual object.
 	super.finalize();
     }

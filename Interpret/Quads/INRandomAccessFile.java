@@ -10,7 +10,7 @@ import java.io.IOException;
  * methods in <code>java.io.RandomAccessFile</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INRandomAccessFile.java,v 1.1.2.1 1998-12-30 04:39:39 cananian Exp $
+ * @version $Id: INRandomAccessFile.java,v 1.1.2.2 1999-01-03 03:01:43 cananian Exp $
  */
 final class INRandomAccessFile extends HCLibrary {
     static final void register(StaticState ss) {
@@ -192,7 +192,6 @@ final class INRandomAccessFile extends HCLibrary {
 		throws InterpretedThrowable {
 		ObjectRef obj = (ObjectRef) params[0];
 		RandomAccessFile raf = (RandomAccessFile) obj.getClosure();
-		if (raf==null) ss.printStackTrace();
 		try {
 		    return new Long(raf.length());
 		} catch (IOException e) {

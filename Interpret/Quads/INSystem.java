@@ -10,7 +10,7 @@ import java.util.Properties;
  * <code>java.lang.System</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSystem.java,v 1.1.2.1 1998-12-30 04:39:40 cananian Exp $
+ * @version $Id: INSystem.java,v 1.1.2.2 1999-01-03 03:01:44 cananian Exp $
  */
 final class INSystem extends HCLibrary {
     static final void register(StaticState ss) {
@@ -95,7 +95,7 @@ final class INSystem extends HCLibrary {
 		for (int i=0; i<length; i++) {
 		    Object o = src.get(i+src_position);
 		    if (o instanceof ObjectRef &&
-			!dstCT.isSuperclassOf(((ObjectRef)o).type))
+			!((ObjectRef)o).type.isInstanceOf(dstCT))
 			throw ase(ss);
 		    else dst.update(i+dst_position, o);
 		}

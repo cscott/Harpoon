@@ -6,7 +6,7 @@ package harpoon.IR.Quads;
  * <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadKind.java,v 1.1.2.2 1998-12-17 21:38:37 cananian Exp $
+ * @version $Id: QuadKind.java,v 1.1.2.3 1999-01-03 03:01:42 cananian Exp $
  */
 public abstract class QuadKind  {
     private static int n = min();
@@ -40,6 +40,7 @@ public abstract class QuadKind  {
     public final static int SIGMA = n++;
     public final static int SWITCH = n++;
     public final static int THROW = n++;
+    public final static int TYPECAST = n++;
 
     public static int min() { return 0; }
     public static int max() { return n; }

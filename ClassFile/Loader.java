@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.4 1998-12-30 04:32:52 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.5 1999-01-03 03:01:41 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
@@ -42,8 +42,7 @@ public abstract class Loader {
     }
     /** Close the zipfile when this object is garbage-collected. */
     protected void finalize() throws Throwable {
-	try { zf.close(); } catch (IOException e) { }
-	super.finalize();
+        try { zf.close(); } finally { super.finalize(); }
     }
   }
   /** A regular path string in the CLASSPATH. */
@@ -53,7 +52,7 @@ public abstract class Loader {
     InputStream getResourceAsStream(String name) {
       try { // try to open the file, starting from path.
 	File f = new File(path, name);
-	return new FileInputStream(name);
+	return new FileInputStream(f);
       } catch (FileNotFoundException e) {
 	return null; // if anything goes wrong, return null.
       }

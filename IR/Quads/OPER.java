@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.1.2.7 1998-12-27 21:26:55 cananian Exp $
+ * @version $Id: OPER.java,v 1.1.2.8 1999-01-03 03:01:42 cananian Exp $
  */
 public class OPER extends Quad {
     /** The <code>Temp</code> in which to store the result of the operation. */
@@ -107,30 +107,12 @@ public class OPER extends Quad {
 
     /** Determines the result type of an <code>OPER</code>. */
     public HClass evalType() {
-	Method m = (Method) operMethods.get(Qop.toString(opcode));
-	Util.assert(m!=null);
-	return HClass.forClass(m.getReturnType());
+	return Qop.resultType(opcode);
     }
+
     /** Evaluates a constant value for the result of an <code>OPER</code>, 
      *  given constant values for the operands. */
-    public Object evalValue(Object[] opValues) {
-	Method m = (Method) operMethods.get(Qop.toString(opcode));
-	Util.assert(m!=null);
-	try {
-	    return m.invoke(null, opValues);
-	} catch (InvocationTargetException e) {
-	    throw new Error("OPER evaluation threw "+e.getTargetException());
-	} catch (IllegalAccessException e) {
-	    Util.assert(false); return null;
-	}
+    public Object evalValue(Object[] opvalues) { 
+	return Qop.evaluate(opcode, opvalues);
     }
-
-    // private stuff.
-    static private Hashtable operMethods = new Hashtable();
-    static {
-	Method[] m = Eval.class.getDeclaredMethods();
-	for (int i=0; i<m.length; i++)
-	    operMethods.put(m[i].getName(), m[i]);
-    }
-
 }

@@ -14,7 +14,7 @@ import java.util.Enumeration;
  * A <code>HANDLER</code> quad marks an entry to an exception handler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HANDLER.java,v 1.1.2.5 1998-12-28 23:38:54 cananian Exp $
+ * @version $Id: HANDLER.java,v 1.1.2.6 1999-01-03 03:01:42 cananian Exp $
  * @see METHOD
  */
 public class HANDLER extends Quad {
@@ -45,6 +45,9 @@ public class HANDLER extends Quad {
 	this.caughtException = caughtException;
 	this.protectedSet = protectedSet;
 	Util.assert(exceptionTemp!=null && protectedSet!=null);
+	Util.assert(caughtException==null ||
+		    HClass.forName("java.lang.Throwable")
+		    .isSuperclassOf(caughtException));
     }
     /** Returns the <code>Temp</code> which will hold the exception on
      *  the invocation of this <code>HANDLER</code>. */

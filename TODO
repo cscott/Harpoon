@@ -1,5 +1,16 @@
+---- Dec-31-98
+Make TempMap in QuadNoSSA/QuadSSA consistent with QuadFactory.tempFactory();
+Reclaim INSTANCEOF optimization opportunities by adding NULL check ahead of it.
+X Implement method & memory profiling:
+X   M classname method descriptor start_count end_count
+X   N classname start_life end_life
+X Separate 'profile stream' pointer in static state. Hook into invoke() and
+X  ObjectRef.finalize() to output prof info.  Add System.gc()
+---- Dec-30-98
+X Fix INSTANCEOF implementation in harpoon.Interpret.Quads.Method.
+X Add CHECKCAST quad?
 ---- Dec-20-98
-MOVE collation for quad-with-try, within basic blocks.
+X MOVE collation for quad-with-try, within basic blocks.
 ---- Dec-19-98
 X Fix ARRAYINIT constructor to behave properly with try blocks.
 X Implement translation of JSR/RET.
@@ -19,8 +30,8 @@ X  receiver, only with all temps renamed according to TempMap.
 Check that harpoon.ClassFile package is not == comparing two HPointers.
 ---- Dec-01-98
 Bring back the equals() method of HClass.  Needed for caching.
-Write script to read javadoc and automagically insert links to
- classes mentioned inside <code></code> blocks.
+X Write script to read javadoc and automagically insert links to
+X   classes mentioned inside <code></code> blocks.
 X Make LABEL superclass of PHI.
 X Add kind() method to Quad; new class QuadKind enumerates.
 ---- Nov-30-98

@@ -12,11 +12,11 @@ import harpoon.Util.Util;
  * <code>COMPONENTOF</code> objects implement the test needed to determine
  * if an <code>ASET</code> needs to throw an exception.  Specifically,
  * <code>COMPONENTOF</code> evaluates to boolean <code>true</code> if
- * a certain temporary is a instance of the component type of a certain
- * array, or boolean <code>false</code> otherwise.
+ * a certain temporary is <code>null</code> or an instance of the component
+ * type of a certain array, or boolean <code>false</code> otherwise.<p>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: COMPONENTOF.java,v 1.1.2.5 1998-12-24 03:23:09 cananian Exp $
+ * @version $Id: COMPONENTOF.java,v 1.1.2.6 1999-01-03 03:01:42 cananian Exp $
  * @see ASET
  * @see "The Java Virtual Machine Specification"
  */

@@ -13,16 +13,17 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code given a static state.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.2 1998-12-30 04:39:40 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.3 1999-01-03 03:01:44 cananian Exp $
  */
 public final class Method extends HCLibrary {
 
     /** invoke a static main method with no static state. */
-    public static final void run(HCodeFactory hcf, HClass cls, String[] args) {
+    public static final void run(PrintWriter prof, HCodeFactory hcf,
+				 HClass cls, String[] args) {
 	HMethod method=cls.getMethod("main", new HClass[]{ HCstringA });
 	Util.assert(method.isStatic());
 
-	StaticState ss = new StaticState(hcf);
+	StaticState ss = new StaticState(hcf, prof);
 	try {
 	    HMethod HMinit = HCsystem.getMethod("initializeSystemClass","()V");
 	    // set up static state.
@@ -44,7 +45,13 @@ public final class Method extends HCLibrary {
 	    } catch (InterpretedThrowable it0) { /* do nothing */ }
 	    PrintWriter err = new PrintWriter(System.err, true);
 	    err.println("Caught "+msg);
-	    StaticState.printStackTrace(err, it.stackTrace);
+	    //StaticState.printStackTrace(err, it.stackTrace);
+	    StaticState.printStackTrace(err, (String[]) it.ex.getClosure());
+	} finally {
+	    // try to force finalization of object classes
+	    ss=null;
+	    System.gc();
+	    System.runFinalization();
 	}
     }
 
@@ -56,62 +63,72 @@ public final class Method extends HCLibrary {
 	if (!ss.isLoaded(method.getDeclaringClass()))
 	    ss.load(method.getDeclaringClass());
 
-	NativeMethod nm = ss.findNative(method);
-	if (nm!=null) {
-	    ss.incrementInstructionCount();
-	    ss.pushStack(new NativeStackFrame(method));
-	    try {
+	long start_count = ss.getInstructionCount();
+	try { // pop stack, end profiling, etc.
+	    // easy to verify that every path through try executes
+	    // pushStack *exactly once*.
+
+	    NativeMethod nm = ss.findNative(method);
+	    if (nm!=null) {
+		ss.pushStack(new NativeStackFrame(method));
+		//ss.incrementInstructionCount(); //native methods take 0 time
 		return nm.invoke(ss, params);
-	    } finally {
-		// pop stack even if exception is thrown.
-		ss.popStack();
 	    }
-	}
-	if (Modifier.isNative(method.getModifiers())) {
-	    ObjectRef obj =
-		ss.makeThrowable(HCunsatisfiedlinkErr,
-				 "No definition for "+method);
-	    throw new InterpretedThrowable(obj, ss);
-	}
+	    // non-native, interpret.
+	    HCode c = ss.hcf.convert(method);
+	    if (c==null) {
+		ss.pushStack(new NativeStackFrame(method)); // gonna pop it
+		ObjectRef obj = ss.makeThrowable(HCunsatisfiedlinkErr,
+						 "No definition for "+method);
+		throw new InterpretedThrowable(obj, ss);
+	    }
+	    QuadStackFrame sf = new QuadStackFrame((Quad)c.getRootElement());
+	    ss.pushStack(sf);
 
-	HCode c = ss.hcf.convert(method);
-	QuadStackFrame sf = new QuadStackFrame((Quad)c.getRootElement());
-
-	Interpreter i;
-	if (c instanceof QuadWithTry)
-	    i = new ImplicitI(ss, sf, params);
-	else if (c instanceof QuadNoSSA || c instanceof QuadSSA)
-	    i = new ExplicitI(ss, sf, params);
-	else throw new Error("What kinda code is this!?");
-
-	ss.pushStack(sf);
+	    Interpreter i;
+	    if (c instanceof QuadWithTry)
+		i = new ImplicitI(ss, sf, params);
+	    else if (c instanceof QuadNoSSA || c instanceof QuadSSA)
+		i = new ExplicitI(ss, sf, params);
+	    else throw new Error("What kinda code is this!?");
+	    
 	exec_loop:
-	while (!i.done)
-	    try {
-		sf.pc.visit(i);
-	    } catch (InterpretedThrowable it) {
-		// check HANDLERs
-		for (Enumeration e=HandlerSet.elements(sf.pc.handlers());
-		     e.hasMoreElements(); ) {
-		    HANDLER h = (HANDLER) e.nextElement();
-		    if (h.isCaught(it.ex.type)) {
-			i.advance(h, it.ex);
-			continue exec_loop;
+	    while (!i.done)
+		try {
+		    sf.pc.visit(i);
+		} catch (InterpretedThrowable it) {
+		    // check HANDLERs
+		    for (Enumeration e=HandlerSet.elements(sf.pc.handlers());
+			 e.hasMoreElements(); ) {
+			HANDLER h = (HANDLER) e.nextElement();
+			if (h.isCaught(it.ex.type)) {
+			    i.advance(h, it.ex);
+			    continue exec_loop;
+			}
 		    }
+		    // no handler caught it; rethrow.
+		    System.err.println("RETHROWING "+it.ex.type+" at "+
+				       sf.pc.getSourceFile() + ":" +
+				       sf.pc.getLineNumber());
+		    throw it;
 		}
-		// no handler caught it; rethrow.
-		System.err.println("RETHROWING "+it.ex.type);
-		ss.popStack(); // keep stack up to date.
-		throw it;
+	
+	    // Return or throw.
+	    if (i.Texc!=null) {
+		System.err.println("THROWING " +
+				   ((ObjectRef)sf.get(i.Texc)).type +
+				   " at " + sf.pc.getSourceFile() + ":" +
+				   sf.pc.getLineNumber());
+		throw new InterpretedThrowable((ObjectRef)sf.get(i.Texc), ss);
 	    }
-	String[] st = (i.Texc!=null)?ss.stackTrace():null;
-	ss.popStack();
-
-	// Return or throw.
-	if (i.Texc!=null)
-	    throw new InterpretedThrowable((ObjectRef)sf.get(i.Texc), st);
-	if (method.getReturnType()==HClass.Void) return null;
-	return Interpreter.toExternal(sf.get(i.Tret),method.getReturnType());
+	    if (method.getReturnType()==HClass.Void) return null;
+	    return Interpreter.toExternal(sf.get(i.Tret),
+					  method.getReturnType());
+	} finally { // pop stack & profile *always.*
+	    ss.popStack();
+	    long end_count = ss.getInstructionCount();
+	    ss.profile(method, start_count, end_count);
+	}
     }
     private static int numParams(HMethod m) {
 	return m.getParameterTypes().length + (m.isStatic()?0:1);
@@ -134,7 +151,9 @@ public final class Method extends HCLibrary {
 	    sf.pc = (Quad) e.to();
 	    last_pred = e.which_pred();
 	    sf.update(h.exceptionTemp(), ex);
-	    System.err.println("HANDLING EXCEPTION: "+ex.type);
+	    System.err.println("HANDLING "+ex.type+" at "+
+			       sf.pc.getSourceFile() + ":" +
+			       sf.pc.getLineNumber());
 	    ss.incrementInstructionCount();
 	}
 	// advance to a successor
@@ -248,7 +267,7 @@ public final class Method extends HCLibrary {
 	    else { // not a primitive array.  perform the test for real.
 		ObjectRef obj = (ObjectRef) sf.get(q.objectref());
 		if (obj==null ||
-		    arr.type.getComponentType().isSuperclassOf(obj.type))
+		    obj.type.isInstanceOf(arr.type.getComponentType()))
 		    sf.update(q.dst(), new Boolean(true));
 		else
 		    sf.update(q.dst(), new Boolean(false));
@@ -285,7 +304,7 @@ public final class Method extends HCLibrary {
 	}
 	public void visit(INSTANCEOF q) {
 	    ObjectRef obj = (ObjectRef) sf.get(q.src());
-	    if (obj==null || q.hclass().isSuperclassOf(obj.type)) // true.
+	    if (obj==null || obj.type.isInstanceOf(q.hclass())) // true.
 		sf.update(q.dst(), new Boolean(true));
 	    else
 		sf.update(q.dst(), new Boolean(false));
@@ -370,6 +389,9 @@ public final class Method extends HCLibrary {
 	    // don't advance: we want to preserve the stack state
 	    // for line number info.
 	}
+	public void visit(TYPECAST q) { // typecast is nop in explicit form.
+	    advance(0);
+	}
     }
     // Interpreter with *implicit* exception handling.
     static private class ImplicitI extends ExplicitI {
@@ -377,13 +399,23 @@ public final class Method extends HCLibrary {
 	    super(ss, sf, params);
 	}
 	
+	void typeCheck(Temp src, HClass cls) throws InterpretedThrowable {
+	    ObjectRef of = (ObjectRef) sf.get(src);
+	    if (of==null || of.type.isInstanceOf(cls))
+		return; // no problems.
+	    ObjectRef obj = ss.makeThrowable(HCclasscastE, of.type.toString());
+	    throw new InterpretedThrowable(obj, ss);
+	}
 	void componentCheck(Temp array, Temp src) throws InterpretedThrowable {
 	    ArrayRef af = (ArrayRef) sf.get(array);
 	    HClass afCT = af.type.getComponentType();
 	    if (afCT.isPrimitive()) return; // statically typed.
 	    ObjectRef of = (ObjectRef) sf.get(src);
-	    if (afCT.isSuperclassOf(of.type)) return; // yay, no problemos.
-	    ObjectRef obj = ss.makeThrowable(HCarraystoreE);
+	    if (of == null || of.type.isInstanceOf(afCT))
+		return; // yay, no problemos.
+	    ObjectRef obj = ss.makeThrowable(HCarraystoreE,
+					     of.type.toString() + " -> " +
+					     af.type.toString());
 	    throw new InterpretedThrowable(obj, ss);
 	}
 	void boundsCheck(Temp array, Temp index) throws InterpretedThrowable {
@@ -392,7 +424,8 @@ public final class Method extends HCLibrary {
 	void boundsCheck(Temp array, int index) throws InterpretedThrowable {
 	    ArrayRef af = (ArrayRef) sf.get(array);
 	    if (0 <= index && index < af.length()) return; // a-ok
-	    ObjectRef obj = ss.makeThrowable(HCarrayindexE);
+	    ObjectRef obj = ss.makeThrowable(HCarrayindexE, 
+					     Integer.toString(index));
 	    throw new InterpretedThrowable(obj, ss);
 	}
 	void nullCheck(Temp t) throws InterpretedThrowable {
@@ -403,7 +436,8 @@ public final class Method extends HCLibrary {
 	void minusCheck(Temp t) throws InterpretedThrowable {
 	    int i = ((Integer)sf.get(t)).intValue();
 	    if (i >= 0) return; // a-ok.
-	    ObjectRef obj = ss.makeThrowable(HCnegativearrayE);
+	    ObjectRef obj = ss.makeThrowable(HCnegativearrayE,
+					     Integer.toString(i));
 	    throw new InterpretedThrowable(obj, ss);
 	}
 	void zeroCheck(Temp t) throws InterpretedThrowable {
@@ -475,6 +509,10 @@ public final class Method extends HCLibrary {
 	}
 	public void visit(THROW q) {
 	    nullCheck(q.throwable());
+	    super.visit(q);
+	}
+	public void visit(TYPECAST q) {
+	    typeCheck(q.objectref(), q.hclass());
 	    super.visit(q);
 	}
     }

@@ -13,7 +13,7 @@ import java.util.Vector;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.1 1998-12-27 21:26:56 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.2 1999-01-03 03:01:43 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -221,7 +221,7 @@ final class UnHandler {
 	    // FINALLY link to handlers
 	    for (Enumeration e=Hhandler.keys(); e.hasMoreElements(); ) {
 		HANDLER h = (HANDLER) e.nextElement();
-		Vector v = get(Hhandler, h); // FIXME v can be size 0.
+		Vector v = get(Hhandler, h); // note that v can be size 0.
 		Edge ed; Quad tail;
 		if (v.size()==0) {
 		    // MAKE impossible CJMP
@@ -536,6 +536,34 @@ final class UnHandler {
 	    ss.qm.put(q, head, nq);
 	    ti.put(q.throwable(), alsoNonNull(Tthr));
 	}
+	public void visit(TYPECAST q) {
+	    // translate as:
+	    //  if (obj!=null && !(obj instanceof class))
+	    //     throw new ClassCastException();
+	    Quad nq = (Quad) q.clone(qf), head;
+	    Type Tobj = ti.get(q.objectref());
+	    Temp Tr = ss.extra(0);
+	    Quad q1 = new INSTANCEOF(qf, q, Tr, q.objectref(), q.hclass());
+	    Quad q2 = new CJMP(qf, q, Tr, new Temp[0]);
+	    Quad q3 = _throwException_(qf, q, HCclasscastE);
+	    Quad.addEdges(new Quad[] { q1, q2, q3 });
+	    Quad.addEdge(q2, 1, nq, 0);
+	    head = q1;
+	    if (!Tobj.isNonNull()) { // specially handle null.
+		Quad q4 = new CONST(qf, q, Tr, null, HClass.Void);
+		Quad q5 = new OPER(qf, q, Qop.ACMPEQ, Tr,
+				   new Temp[] { q.objectref(), Tr });
+		Quad q6 = new CJMP(qf, q, Tr, new Temp[0]);
+		Quad q7 = new PHI(qf, q, new Temp[0], 2); // a-ok merge
+		Quad.addEdges(new Quad[] { q4, q5, q6, head });
+		Quad.addEdge(q6, 1, q7, 0); // if null, branch to a-ok
+		Quad.addEdge(q2, 1, q7, 1); // if instanceof class, goto a-ok
+		Quad.addEdge(q7, 0, nq, 0); // (link PHI to a-ok)
+		head = q4;
+	    }
+	    ss.qm.put(q, head, nq);
+	    // no change to type info, since we don't keep track of class
+	}
 
 	/// Add 'nonnull' attribute
 	Type alsoNonNull(Type in) {
@@ -553,6 +581,8 @@ final class UnHandler {
 	    HClass.forName("java.lang.NegativeArraySizeException");
 	private static final HClass HCarithmeticE =
 	    HClass.forName("java.lang.ArithmeticException");
+	private static final HClass HCclasscastE =
+	    HClass.forName("java.lang.ClassCastException");
 
 	//////////////// runtime checks.
 	Quad intZeroCheck(Quad old, Quad head, Temp Tz) {

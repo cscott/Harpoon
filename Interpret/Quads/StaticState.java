@@ -12,13 +12,15 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.2 1998-12-30 04:39:40 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.3 1999-01-03 03:01:44 cananian Exp $
  */
 final class StaticState extends HCLibrary {
     /** which code representation to use. */
     /*final*/ HCodeFactory hcf;
-    StaticState(HCodeFactory hcf) {
-	this.hcf = hcf;
+    StaticState(HCodeFactory hcf) { this(hcf, null); }
+    //prof is null for no profiling.
+    StaticState(HCodeFactory hcf, PrintWriter prof) {
+	this.hcf = hcf; this.prof = prof;
 	Support.registerNative(this);
     }
     // ----------------------------
@@ -37,6 +39,8 @@ final class StaticState extends HCLibrary {
     boolean isLoaded(HClass cls) { return classInfo.get(cls)!=null; }
     void load(HClass cls) throws InterpretedThrowable {
 	Util.assert(!isLoaded(cls));
+	HClass sc = cls.getSuperclass();
+	if (sc!=null && !isLoaded(sc)) load(sc); // load superclasses first.
 	System.err.println("LOADING "+cls);
 	classInfo.put(cls, new ClassHeader());
 	HField[] fl = cls.getDeclaredFields();
@@ -164,7 +168,21 @@ final class StaticState extends HCLibrary {
     }
     // --------------------------------------------------------
     // PROFILING SUPPORT.
+    public /*final*/ PrintWriter prof;
     private long count; // instruction count.
     final synchronized void incrementInstructionCount() { count++; }
     final synchronized long getInstructionCount() { return count; }
+    // profile time spent in a method.
+    final synchronized void profile(HMethod method, long start, long end) {
+	if (prof==null) return;
+	else prof.println("M "+
+			  method.getDeclaringClass().getName()+" "+
+			  method.getName()+" "+method.getDescriptor()+" "+
+			  start+" "+end);
+    }
+    // profile lifetime of an object instance
+    final synchronized void profile(HClass cls, long start, long end) {
+	if (prof==null) return;
+	else prof.println("N "+cls.getDescriptor()+" "+start+" "+end);
+    }
 }

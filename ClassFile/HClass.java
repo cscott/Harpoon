@@ -29,7 +29,7 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.4 1998-12-11 06:54:50 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.5 1999-01-03 03:01:41 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public abstract class HClass extends HPointer {
@@ -740,52 +740,58 @@ public abstract class HClass extends HPointer {
     */
   }
 
-  /** 
-   * This method is the dynamic equivalent of the Java language
-   * <code>instanceof</code> operator.  The method returns 
-   * <code>true</code> if the specified <code>Object</code> argument
-   * is non-null and can be cast to the reference type represented by
-   * this <code>HClass</code> object without raising a
-   * <code>ClassCastException</code>.  It returns <code>false</code> 
-   * otherwise. <p>
-   * Specifically, if this <code>HClass</code> object represents a declared
-   * class, return <code>true</code> is the specified <code>Object</code>
-   * argument is an instance of the represented class (or any of its
-   * subclasses); <code>false</code> otherwise.  If this <code>HClass</code>
-   * object represents an array class, returns <code>true</code> if the
-   * specified <code>Object</code> argument can be converted to an object
-   * of the array type by an identity conversion or by a widening reference
-   * conversion, <code>false</code> otherwise.  If this <code>HClass</code>
-   * object represents an interface, returns <code>true</code> if the
-   * class or any superclass of the specified <code>Object</code> argument
-   * implements this interface, <code>false</code> otherwise.  If this
-   * <code>HClass</code> object represents a primitive type, returns
-   * <code>false</code>.
-   * @param obj The object to check.
-   */
-  public boolean isInstance(Object obj) {
-    if (obj==null) return false;
-    if (isPrimitive()) return false;
-    // CHEATING!! XXX
-    try {
-      return Class.forName(this.getName()).isInstance(obj);
-    } catch (ClassNotFoundException e) {
-      throw new NoClassDefFoundError(e.toString());
-    }
-    // HClass objcls = forClass(obj.getClass());
-    // if (isInterface()) // XXX FIXME
-  }
-
   /**
    * Determines if this <code>HClass</code> is a superclass of a given
-   * <code>HClass hc</code>.
+   * <code>HClass</code> <code>hc</code>. 
+   * [Does not look at interface information.]
    * @return <code>true</code> if <code>this</code> is a superclass of
    *         <code>hc</code>, <code>false</code> otherwise.
    */
   public boolean isSuperclassOf(HClass hc) {
+    Util.assert(!this.isInterface());
     for ( ; hc!=null; hc = hc.getSuperclass())
       if (this == hc) return true;
     return false;
+  }
+
+  /**
+   * Determines if this <code>HClass</code> is a superinterface of a given
+   * <code>HClass</code> <code>hc</code>. 
+   * [does not look at superclass information]
+   * @return <code>true</code> if <code>this</code> is a superinterface of
+   *         <code>hc</code>, <code>false</code> otherwise.
+   */
+  public boolean isSuperinterfaceOf(HClass hc) {
+    Util.assert(this.isInterface());
+    UniqueVector uv = new UniqueVector(); uv.addElement(hc);
+    for (int i=0; i<uv.size(); i++)
+      if (uv.elementAt(i) == this) return true;
+      else {
+	HClass in[] = ((HClass)uv.elementAt(i)).getInterfaces();
+	for (int j=0; j<in.length; j++)
+	  uv.addElement(in[j]);
+      }
+    // ran out of possibilities.
+    return false;
+  }
+
+  /**
+   * Determines if this <code>HClass</code> is an instance of the given
+   * <code>HClass</code> <code>hc</code>.
+   */
+  public boolean isInstanceOf(HClass hc) {
+    if (this.isArray()) {
+      if (!hc.isArray()) return (hc==HClass.forName("java.lang.Object"));
+      HClass SC = this.getComponentType();
+      HClass TC = hc.getComponentType();
+      return ((SC.isPrimitive() && TC.isPrimitive() && SC==TC) ||
+	      (!SC.isPrimitive()&&!TC.isPrimitive() && SC.isInstanceOf(TC)));
+    } else { // not array.
+      if (hc.isInterface())
+	return hc.isSuperinterfaceOf(this);
+      else // hc is class.
+	return hc.isSuperclassOf(this);
+    }
   }
 
   /** 
@@ -984,12 +990,16 @@ class HClassArray extends HClass {
   }
   public HMethod[] getDeclaredMethods() { return new HMethod[0]; }
   public int getModifiers() {throw new Error("No modifiers for an array.");}
-  public HClass getSuperclass() { return forName("java.lang.Object"); }
+  public HClass getSuperclass() { return HCobject; }
   public HClass[] getInterfaces() {
-    return new HClass[] { forName("java.lang.Cloneable") };
+    return new HClass[] { HCcloneable };
   }
   public boolean isArray() { return true; }
   public String toString() { return "class "+getName(); }
+
+  // cache class constants.
+  private static final HClass HCobject   =forName("java.lang.Object");
+  private static final HClass HCcloneable=forName("java.lang.Cloneable");
 }
 
 // set emacs indentation style.

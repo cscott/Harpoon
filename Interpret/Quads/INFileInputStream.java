@@ -1,28 +1,29 @@
-// INFileOutputStream.java, created Tue Dec 29 01:36:13 1998 by cananian
+// INFileInputStream.java, created Wed Dec 30 02:01:00 1998 by cananian
 package harpoon.Interpret.Quads;
 
 import harpoon.ClassFile.*;
 
-import java.io.FileOutputStream;
-import java.io.OutputStream;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.IOException;
 /**
- * <code>INFileOutputStream</code> provides implementations of the native
- * methods in <code>java.io.FileOutputStream</code>.
+ * <code>INFileInputStream</code> provides implementations of the native
+ * methods in <code>java.io.FileInputStream</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFileOutputStream.java,v 1.1.2.2 1999-01-03 03:01:43 cananian Exp $
+ * @version $Id: INFileInputStream.java,v 1.1.2.1 1999-01-03 03:01:43 cananian Exp $
  */
-final class INFileOutputStream extends HCLibrary {
+final class INFileInputStream extends HCLibrary {
     static final void register(StaticState ss) {
 	ss.register(fdConstructor());
 	ss.register(open());
-	ss.register(openAppend());
 	ss.register(close());
-	ss.register(write());
-	ss.register(writeBytes());
+	ss.register(read());
+	ss.register(readBytes());
+	ss.register(skip());
+	ss.register(available());
     }
-    // associate shadow OutputStream with every object.
+    // associate shadow InputStream with every object.
 
     private static final ObjectRef security(StaticState ss) 
 	throws InterpretedThrowable {
@@ -32,7 +33,7 @@ final class INFileOutputStream extends HCLibrary {
 
     // disallow constructor from FileDescriptor
     private static final NativeMethod fdConstructor() {
-	final HMethod hm=HCfostream.getConstructor(new HClass[] {HCfiledesc});
+	final HMethod hm=HCfistream.getConstructor(new HClass[] {HCfiledesc});
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) 
@@ -47,34 +48,29 @@ final class INFileOutputStream extends HCLibrary {
 		}
 		ObjectRef security = security(ss);
 		if (security != null) {
-		    HMethod HMcw =
-			HCsmanager.getMethod("checkWrite",
+		    HMethod HMcr =
+			HCsmanager.getMethod("checkRead",
 					     new HClass[] { HCfiledesc });
-		    Method.invoke(ss, HMcw, new Object[] { fd_obj });
+		    Method.invoke(ss, HMcr, new Object[] { fd_obj });
 		}
 		// get file descriptor int.
 		HField hf = HCfiledesc.getField("fd");
 		int fd = ((Integer)fd_obj.get(hf)).intValue();
-		switch (fd) {
-		case 2: // System.out
-		    obj.putClosure(System.out); break;
-		case 3: // System.err
-		    obj.putClosure(System.err); break;
-		default: // throw error
-		    {
+		if (fd==1) { // System.in
+		    obj.putClosure(System.in);
+		    HField hf0 = HCfistream.getField("fd");
+		    obj.update(hf0, fd_obj);
+		    return null;
+		} else {
 		    ObjectRef ex_obj =
 			ss.makeThrowable(HCioE, "unsupported.");
 		    throw new InterpretedThrowable(ex_obj, ss);
-		    }
 		}
-		HField hf0 = HCfostream.getField("fd");
-		obj.update(hf0, fd_obj);
-		return null;
 	    }
 	};
     }
     private static final NativeMethod open() {
-	final HMethod hm=HCfostream.getMethod("open", new HClass[]{HCstring});
+	final HMethod hm=HCfistream.getMethod("open", new HClass[]{HCstring});
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) 
@@ -83,36 +79,9 @@ final class INFileOutputStream extends HCLibrary {
 		String filename = ss.ref2str((ObjectRef) params[1]);
 		System.err.println("OPENING "+filename);
 		try {
-		    obj.putClosure(new FileOutputStream(filename));
+		    obj.putClosure(new FileInputStream(filename));
 		    // mark file descriptor to indicate it is 'valid'.
-		    HField hf0 = HCfostream.getField("fd");
-		    HField hf1 = HCfiledesc.getField("fd");
-		    ((ObjectRef)obj.get(hf0)).update(hf1, new Integer(4));
-		    return null;
-		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
-		    throw new InterpretedThrowable(obj, ss);
-		} catch (SecurityException e) {
-		    obj = ss.makeThrowable(HCsecurityE, e.getMessage());
-		    throw new InterpretedThrowable(obj, ss);
-		}
-	    }
-	};
-    }
-    private static final NativeMethod openAppend() {
-	final HMethod hm =
-	    HCfostream.getMethod("openAppend", new HClass[] { HCstring } );
-	return new NativeMethod() {
-	    HMethod getMethod() { return hm; }
-	    Object invoke(StaticState ss, Object[] params) 
-		throws InterpretedThrowable {
-		ObjectRef obj = (ObjectRef) params[0];
-		String filename = ss.ref2str((ObjectRef) params[1]);
-		System.err.println("OPENING "+filename);
-		try {
-		    obj.putClosure(new FileOutputStream(filename, true));
-		    // mark file descriptor to indicate it is 'valid'.
-		    HField hf0 = HCfostream.getField("fd");
+		    HField hf0 = HCfistream.getField("fd");
 		    HField hf1 = HCfiledesc.getField("fd");
 		    ((ObjectRef)obj.get(hf0)).update(hf1, new Integer(4));
 		    return null;
@@ -127,16 +96,16 @@ final class INFileOutputStream extends HCLibrary {
 	};
     }
     private static final NativeMethod close() {
-	final HMethod hm = HCfostream.getMethod("close", new HClass[0]);
+	final HMethod hm = HCfistream.getMethod("close", new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
 		throws InterpretedThrowable {
 		ObjectRef obj = (ObjectRef) params[0];
-		OutputStream os = (OutputStream) obj.getClosure();
-		HField hf = HCfostream.getField("fd");
+		InputStream is = (InputStream) obj.getClosure();
+		HField hf = HCfistream.getField("fd");
 		try {
-		    os.close();
+		    is.close();
 		    obj.putClosure(null);
 		    obj.update(hf, null);
 		    return null;
@@ -147,19 +116,17 @@ final class INFileOutputStream extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod write() {
+    private static final NativeMethod read() {
 	final HMethod hm =
-	    HCfostream.getMethod("write", new HClass[] { HClass.Int });
+	    HCfistream.getMethod("read", "()I");
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
 		throws InterpretedThrowable {
 		ObjectRef obj = (ObjectRef) params[0];
-		Integer b = (Integer) params[1];
-		OutputStream os = (OutputStream) obj.getClosure();
+		InputStream is = (InputStream) obj.getClosure();
 		try {
-		    os.write(b.intValue());
-		    return null;
+		    return new Integer(is.read());
 		} catch (IOException e) {
 		    obj = ss.makeThrowable(HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
@@ -167,9 +134,9 @@ final class INFileOutputStream extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod writeBytes() {
+    private static final NativeMethod readBytes() {
 	final HMethod hm =
-	    HCfostream.getMethod("writeBytes", "([BII)V");
+	    HCfistream.getMethod("readBytes", "([BII)I");
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
@@ -178,15 +145,51 @@ final class INFileOutputStream extends HCLibrary {
 		ArrayRef ba = (ArrayRef) params[1];
 		int off = ((Integer) params[2]).intValue();
 		int len = ((Integer) params[3]).intValue();
-		// repackage byte array.
-		byte[] b = new byte[len];
-		for (int i=0; i<b.length; i++)
-		    b[i] = ((Byte) ba.get(off+i)).byteValue();
-
-		OutputStream os = (OutputStream) obj.getClosure();
+		InputStream is = (InputStream) obj.getClosure();
 		try {
-		    os.write(b, 0, len);
-		    return null;
+		    byte[] b = new byte[len];
+		    len = is.read(b, 0, len);
+		    // copy into byte array.
+		    for (int i=0; i<len; i++)
+			ba.update(off+i, new Byte(b[i]));
+		    return new Integer(len);
+		} catch (IOException e) {
+		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    throw new InterpretedThrowable(obj, ss);
+		}
+	    }
+	};
+    }
+    private static final NativeMethod skip() {
+	final HMethod hm =
+	    HCfistream.getMethod("skip", "(J)J" );
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    Object invoke(StaticState ss, Object[] params)
+		throws InterpretedThrowable {
+		ObjectRef obj = (ObjectRef) params[0];
+		Long n = (Long) params[1];
+		InputStream is = (InputStream) obj.getClosure();
+		try {
+		    return new Long(is.skip(n.longValue()));
+		} catch (IOException e) {
+		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    throw new InterpretedThrowable(obj, ss);
+		}
+	    }
+	};
+    }
+    private static final NativeMethod available() {
+	final HMethod hm =
+	    HCfistream.getMethod("available", "()I" );
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    Object invoke(StaticState ss, Object[] params)
+		throws InterpretedThrowable {
+		ObjectRef obj = (ObjectRef) params[0];
+		InputStream is = (InputStream) obj.getClosure();
+		try {
+		    return new Integer(is.available());
 		} catch (IOException e) {
 		    obj = ss.makeThrowable(HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
