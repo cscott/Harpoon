@@ -37,9 +37,9 @@ import java.util.Set;
  * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.1.2.8 2000-11-16 00:12:08 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.1.2.9 2000-11-16 04:53:13 cananian Exp $
  */
-public final class SCCOptimize {
+public final class SCCOptimize implements ExecMap {
     TypeMap  ti;
     ConstMap cm;
     ExecMap  em;
@@ -69,11 +69,11 @@ public final class SCCOptimize {
     }
 
     Set Ee = new HashSet();
-    boolean execMap(HCodeEdge e) {
+    public boolean execMap(HCodeEdge e) {
 	if (Ee.contains(e)) return true;
 	else return em.execMap(e);
     }
-    boolean execMap(HCodeElement node) {
+    public boolean execMap(HCodeElement node) {
 	HCodeEdge[] pred = ((harpoon.IR.Properties.CFGraphable)node).pred();
 	for (int i=0; i<pred.length; i++)
 	    if (execMap(pred[i]))
