@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.14 1999-06-09 21:14:09 cananian Exp $
+% $Id: thesis.tex,v 1.15 1999-06-10 02:12:31 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage,twoside]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.14 $ $}
+\date{\today \\ $ $Revision: 1.15 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.14 $ $}{$ $Revision: 1.14 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.15 $ $}{$ $Revision: 1.15 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -37,9 +37,9 @@ regard to current implementation practices.%
 
 This paper introduces yet another intermediate
 representation to the literature:  Static Single Information (SSI) form.
-This IR is the core of the FLEX compiler project, which is
+This IR is the core of the FLEX compiler project, which is primarily
 investigating intelligent compilation techniques for distributed
-systems among other things.  This thesis, in presenting the IR,
+systems.  This thesis, in presenting the IR,
 attempts to keep both the mathematician and the programmer in mind.  
 SSI form has both a rigorous mathematical semantics and a factored
 form which aids efficient implementation of advanced analyses.
@@ -66,14 +66,17 @@ integration of practical implementation and mathematical elegance.
 \section{Intermediate Representations}
 The first paper directly addressing an IR as a separate feature of a
 compiler was Foo and Bar in \cite{foobar}.\footnote{FIXME}
-The Static Single Assignment (SSA) form introduced by Shapiro and
-Saint in \cite{shapiro70:ssa} is the foundation of most of the
-work we will discuss.  Alpern, Rosen, Wegman and Zadeck reintroduced
-SSA form as a tool for efficient optimization in a pair of POPL
+The Static Single Assignment (SSA) form was introduced by 
+Alpern, Rosen, Wegman and Zadeck
+as a tool for efficient optimization in a pair of POPL
 papers \cite{alpern88:ssa,rosen88:gvn}, and three years later Cytron
 and Ferrante joined Rosen, Wegman, and Zadeck in explaining how to
 compute SSA form efficiently in what has since become the 
-``canonical'' SSA paper \cite{cytron89:ssa}.
+``canonical'' SSA paper \cite{cytron89:ssa}.  Johnson and Pingali
+\cite{johnson93:dfg} trace the development of SSA form back to Shapiro
+and Saint in \cite{shapiro70:ssa}, while Havlak \cite{havlak94:isa}
+views \phifunction{s} as descendants of the ``birthpoints'' introduced
+in \cite{reif81:sym}.
 
 Despite industry adoption of SSA form in production compilers
 \cite{chow96:hssa,chow97:ssapre}, academic research into alternative
@@ -86,28 +89,91 @@ DJ graphs \cite{sreedhar96:dj}, and Depedence Flow Graphs
 
 In comparison to these representations, the dominant characteristics of
 our Static Single Information form may be summarized as follows:
-% EXPAND THESE BULLETS.  MORE INFORMATION.
 \begin{itemize}
-\item It is complete.  There exists an executable semantics
-for the IR that does not require the use of information external to
-the IR.
-\item It is simple.  The number of added constructs is kept to a
-minimum.  Many SSA-form variants spawn multitudes of new
-constructs; for example, Gated SSA form \cite{ballance90:pdw,tu95:gssa}
-has four different \phifunction{} variants.\footnote{$\phi$-functions,
-$\mu$-functions, $\gamma$-functions, and $\eta$-functions.}
-\item It is compact and efficient.  Construction should be fast, and
-space should be reasonable.\footnote{Replace with actual numbers.}
-\item All explicit control dependencies are eliminated.  Many IRs
+\item It names information units.
+\item It is complete.
+\item It is simple.
+\item It is efficient.
+\item It has no explicit control dependencies.
+\item It allows both forward and reverse dataflow analyses.
+\end{itemize}
+SSI form is used as an IR for the FLEX compiler for the Java
+programming language, which informs some of these design decisions.
+The FLEX compiler does deep analysis and will support
+hardware/software co-design.  SSI addresses these needs.  We will
+address each design point in turn.
+
+\textbf{It names information units.}  SSA form (which we will describe
+further in \ref{sec:ssa}) assigns unique names to unique \emph{static
+values} of a variable.  However, it ignores the value information
+which may be added to a variable at program branch points.  SSI form
+renames at branch points which allows us to associate unique names
+with unique \emph{information} about static values.  For example, a
+program may test the value of an integer against zero before using it
+as a divisor.  After the branch on the tested predicate, it is
+possible to make statements about values (regarding equality or
+inequality to zero) which were impossible to make previously.  SSI
+form allows us to take advantage of this additional information.
+
+\textbf{It is complete.}  By this we mean that there exists an
+executable semantics for the IR that does not require the use of
+information external to the IR.  The original SSA form---and most
+derivatives---require use of the original program control flow graph
+during analysis, translation, or direct execution.  In fact,
+\phifunction{s} are intimately tied with the precise input edge
+structure of the control flow graph, and switch nodes (where control
+flow splits) are undecipherable without referring to the control flow
+graph.
+
+In practice, this seems not a great disadvantage---it merely forces up to
+maintain a mapping of SSA statements to nodes (equivalently, basic
+blocks) of the original control flow graph.  But maintaining this
+correspondence complicates editing the IR.  Also, it complicates the
+interpretation of the program as a set of simultaneous equations,
+which SSI form will allow us to do.  Finally, explicit control flow
+may limit the available parallelism of the program.
+
+\ssiplus, as it will be presented in section \ref{sec:ssiplus},
+overcomes these difficulties and presents a \emph{complete}
+representation of program meaning as a set of simultaneous equations,
+without resort to graph information.
+
+\textbf{It is simple.}  A bestiary of new $\phi$-like functions have
+been introduced in recent\footnote{Not really.} papers, including
+$\mu$-, $\gamma$-, and $\eta$-functions in \cite{ballance90:pdw,tu95:gssa},
+$\psi$- and $\pi$-functions in \cite{lee99:parssa},
+interprocedural \phifunction{s} in \cite{liao99:issa},
+$\mu$- and $\chi$-functions in \cite{chow96:hssa},
+$\mu$- and $\eta$-functions in \cite{gerlek95:inductssa},\footnote{Compare to
+\cite{ballance90:pdw,tu95:gssa}.}, among others.\footnote{Maybe.
+Actually I've named all the ones I know about.  Except for TGSSA,
+maybe, which might have used $\mu$- and $\nu$-functions (mentioned in
+\cite{weise94:vdg}).}
+Some of these are orthogonal to our work---the techniques of
+\cite{lee99:parssa} can be used to extend SSI form to explicitly
+parallel source languages, and those of \cite{chow96:hssa} to
+languages with local variable aliasing (absent in Java).  Our goal is
+to achieve minimal conceptual complexity in SSI form; that is, to
+introduce the minimum set of $\phi$-like functions necessary to
+represent the ``interesting'' properties of the compiled program.
+
+\textbf{It is efficient.}  Construction of SSI form should be fast,
+and space requirements should be reasonable.  The original SSA
+algorithms required 
+%Construction should be fast, and
+%space should be reasonable.\footnote{Replace with actual numbers.}
+
+\textbf{All explicit control dependencies are eliminated.}  Many IRs
 require explicit control flow edges that serialize computation more
 than is strictly necessary.\footnote{Explain better.}
-\item Efficient for both forward and backward dataflow analyses.
-\end{itemize}
+
+\textbf{It is efficient for both forward and backward dataflow analyses.}
+Foo.  Bar.  Foobar.
 
 \textbf{Transition goes here: we are going to describe SSA form for
 background on SSI form.}
 
-\subsection{Static Single Assignment Form}
+\subsection{Static Single Assignment Form}\label{sec:ssa}
 Static Single Assignment (SSA) form, introduced by Cytron in
 \cite{cytron89:ssa}\ldots
 
@@ -235,7 +301,7 @@ our example program.
 \subsection{Uses and applications}
 \textbf{Discuss predicated analysis, anticipatibility, PRE, etc.}
 
-\section{An executable representation}
+\section{An executable representation}\label{sec:ssiplus}
 The Static Single Information (SSI) form, as presented in the first
 half of this thesis,
 requires control-flow graph information in order to be executable. We
@@ -253,7 +319,7 @@ been assigned; that is, the second loop will be
 control dependence in order to provide greater parallelism---in this
 case, to allow the assignments to \texttt{A[]} and \texttt{B[]} to
 take place in parallel, if possible.\footnote{Note that Arvind's
-dataflow compiler looked for exactly the opposite type of
+dataflow compiler \cite{traub86:ttda} looked for exactly the opposite type of
 parallelism.  By concentrating on intra-loop dependencies, as he did, you get
 fine-grain parallelism suitable for VLIW-type machine with many
 functional units.  We try to remove dependencies \emph{between} loops,
@@ -562,6 +628,7 @@ that's how.}
 \section{Conclusions}
 \textbf{Scott is done.}
 
+\newpage
 \bibliography{harpoon}
 \appendix
 \end{document}
