@@ -10,7 +10,7 @@ import java.io.PrintStream;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.1 1999-01-14 05:55:00 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.2 1999-01-14 06:04:58 cananian Exp $
  */
 public class Print {
 
@@ -75,7 +75,7 @@ public class Print {
     void prExp(BINOP e, int d) {
 	indent(d); say("BINOP("); 
 	say("FIXME");/*
-	switch(e.binop) {
+	switch(e.op) {
 	case BINOP.PLUS: say("PLUS"); break;
 	case BINOP.MINUS: say("MINUS"); break;
 	case BINOP.MUL: say("MUL"); break;
@@ -94,6 +94,28 @@ public class Print {
 	prExp(e.left,d+1); sayln(","); prExp(e.right,d+1); say(")");
     }
 
+    void prExp(UNOP e, int d) {
+	indent(d); say("UNOP("); 
+	say("FIXME");/*
+	switch(e.op) {
+	case BINOP.PLUS: say("PLUS"); break;
+	case BINOP.MINUS: say("MINUS"); break;
+	case BINOP.MUL: say("MUL"); break;
+	case BINOP.DIV: say("DIV"); break;
+	case BINOP.AND: say("AND"); break;
+	case BINOP.OR: say("OR"); break;
+	case BINOP.LSHIFT: say("LSHIFT"); break;
+	case BINOP.RSHIFT: say("RSHIFT"); break;
+	case BINOP.ARSHIFT: say("ARSHIFT"); break;
+	case BINOP.XOR: say("XOR"); break;
+	default:
+	    throw new Error("Print.prExp.BINOP");
+	}
+	*/
+	sayln(",");
+	prExp(e.operand,d+1); say(")");
+    }
+
     void prExp(MEM e, int d) {
 	indent(d);
 	sayln("MEM("); prExp(e.exp,d+1); say(")");
@@ -106,6 +128,12 @@ public class Print {
 
     void prExp(TEMP e, int d) {
 	indent(d); say("TEMP ");
+	Temp t = (tmap==null)?e.temp:tmap.tempMap(e.temp);
+	say(t.toString());
+    }
+
+    void prExp(LTEMP e, int d) {
+	indent(d); say("LTEMP ");
 	Temp t = (tmap==null)?e.temp:tmap.tempMap(e.temp);
 	say(t.toString());
     }
@@ -147,9 +175,11 @@ public class Print {
 
     void prExp(Exp e, int d) {
         if (e instanceof BINOP) prExp((BINOP)e, d);
+        else if (e instanceof UNOP) prExp((UNOP)e, d);
 	else if (e instanceof MEM) prExp((MEM)e, d);
 	else if (e instanceof LMEM) prExp((LMEM)e, d);
 	else if (e instanceof TEMP) prExp((TEMP)e, d);
+	else if (e instanceof LTEMP) prExp((LTEMP)e, d);
 	else if (e instanceof ESEQ) prExp((ESEQ)e, d);
 	else if (e instanceof NAME) prExp((NAME)e, d);
 	else if (e instanceof ICONST) prExp((ICONST)e, d);
