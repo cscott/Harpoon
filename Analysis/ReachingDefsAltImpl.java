@@ -1,0 +1,297 @@
+// ReachingDefsAltImpl.java, created Fri Jul 14 14:12:18 2000 by pnkfelix
+// Copyright (C) 2000 Felix S. Klock II <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
+package harpoon.Analysis;
+
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.Properties.CFGrapher;
+import harpoon.Temp.Temp;
+import harpoon.Util.Collections.BitSetFactory;
+import harpoon.Util.Util;
+import harpoon.Util.Default;
+import harpoon.Util.Worklist;
+import harpoon.Util.WorkSet;
+import harpoon.IR.Properties.UseDefer;
+import harpoon.IR.Quads.TYPECAST;
+
+import java.util.Collections;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.List;
+import java.util.Set;
+
+/**
+ * <code>ReachingDefsAltImpl</code>
+ * 
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.1 2000-07-14 19:26:32 pnkfelix Exp $
+ */
+public class ReachingDefsAltImpl extends ReachingDefs {
+    public final static boolean TIME = false;
+    final private CFGrapher cfger;
+    final protected BasicBlock.Factory bbf;
+
+    // produces Set<Pair<Temp:t, HCodeElement:h>> where `h' is 
+    // a definition point for `t' 
+    final protected BitSetFactory bsf;
+    
+    // maps Temp:t -> Set:d where `bsf'-produced `d' contains all (t,x) 
+    // (FSK: not used yet; just an idea for optimization later)
+    protected Map tempToAllDefs;
+
+    final protected Map cache = new HashMap(); // maps BasicBlocks to in Sets 
+    final protected boolean check_typecast; // demand the special treatment of TYPECAST
+    final protected UseDefer ud;
+
+    /** Creates a <code>ReachingDefsImpl</code> object for the
+	provided <code>HCode</code> using <code>CFGrapher.DEFAULT</code> and 
+	<code>UseDefer.DEFAULT</code>.  
+	This may take a while since the analysis is done at this time.
+    */
+    public ReachingDefsAltImpl(HCode hc) {
+	this(hc, CFGrapher.DEFAULT);
+    }
+
+    /** Creates a <code>ReachingDefsImpl</code> object for the
+	provided <code>HCode</code> for an IR implementing
+	<code>UseDef</code> using the provided <code>CFGrapher</code>.
+	This may take a while since the analysis is done at this time. 
+    */
+    public ReachingDefsAltImpl(HCode hc, CFGrapher cfger) {
+	this(hc, cfger, UseDefer.DEFAULT);
+    }
+    /** Creates a <code>ReachingDefsImpl</code> object for the
+	provided <code>HCode</code> using the provided 
+	<code>CFGrapher</code> and <code>UseDefer</code>. This may
+	take a while since the analysis is done at this time.
+    */
+    public ReachingDefsAltImpl(HCode hc, CFGrapher cfger, UseDefer ud) {
+	super(hc);
+	this.cfger = cfger;
+	this.bbf = new BasicBlock.Factory(hc, cfger);
+	this.ud = ud;
+	// sometimes, TYPECAST need to be treated specially
+	check_typecast = 
+	    hc.getName().equals(harpoon.IR.Quads.QuadNoSSA.codename);
+	report("Entering analyze()");
+	final Map Temp_To_DefPts = getDefPts();
+	
+	final Set universe = createPairs(Temp_To_DefPts);
+	bsf = new BitSetFactory(universe);
+	analyze(Temp_To_DefPts);
+	report("Leaving analyze()");
+    }
+
+    /** Returns the Set of <code>HCodeElement</code>s providing definitions
+     *  of <code>Temp</code> <code>t</code> which reach 
+     *  <code>HCodeElement</code> <code>hce</code>. */
+    public Set reachingDefs(HCodeElement hce, Temp t) {
+	report("Processing HCodeElement: "+hce+" Temp: "+t);
+	// find out which BasicBlock this HCodeElement is from
+	BasicBlock b = bbf.getBlock(hce);
+	Util.assert(b != null, "no block for "+hce);
+	report("In BasicBlock: "+b.toString());
+	// get the map for the BasicBlock
+	Record r = (Record)cache.get(b);
+
+	// find HCodeElements associated with `t' in the IN Set
+	Iterator pairs = r.IN.iterator();
+	Set results = new HashSet();
+	while(pairs.hasNext()) {
+	    List l = (List) pairs.next();
+	    if (l.get(0).equals(t))
+		results.add(l.get(1));
+	}
+	// propagate in Set through the HCodeElements 
+	// of the BasicBlock in correct order
+	report("Propagating...");
+	for(Iterator it=b.statements().iterator(); it.hasNext(); ) {
+	    HCodeElement curr = (HCodeElement)it.next();
+	    if (curr == hce) return results;
+	    Collection defC = null;
+	    // special treatment of TYPECAST
+	    if(check_typecast && (curr instanceof TYPECAST))
+		defC = Collections.singleton(((TYPECAST)curr).objectref());
+	    else
+		defC = ud.defC(curr);
+	    if (defC.contains(t)) 
+		results = bsf.makeSet(Collections.singleton(curr));
+	}
+	Util.assert(false);
+	return null; // should never happen
+    }
+
+    // do analysis
+    private void analyze(Map Temp_To_DefPts) {
+	// build Gen and Kill sets
+	report("Entering buildGenKillSets()");
+	buildGenKillSets(Temp_To_DefPts);
+	report("Leaving buildGenKillSets()");
+
+	// solve for fixed point
+	report("Entering solve()");
+	solve();
+	report("Leaving solve()");
+	// store only essential information
+	Iterator records = cache.values().iterator();
+	while(records.hasNext()) {
+	    Record r = (Record) records.next();
+	    r.OUT = null; r.KILL = null; r.GEN = null;
+	}
+    }
+
+    // create a mapping of Temps to a Set of possible definition points
+    private Map getDefPts() {
+	Map m = new HashMap();
+	for(Iterator it=hc.getElementsI(); it.hasNext(); ) {
+	    HCodeElement hce = (HCodeElement)it.next();
+	    StringBuffer strbuf = new StringBuffer();
+	    Temp[] tArray = null;
+	    report("Getting defs in: "+hce+" (defC:"+new java.util.ArrayList
+		   (ud.defC(hce))+")");
+	    // special treatment of TYPECAST
+	    if(check_typecast && (hce instanceof TYPECAST)) {
+		strbuf.append("TYPECAST: ");
+		tArray = new Temp[]{((TYPECAST)hce).objectref()};
+	    } else {
+		tArray = ud.def(hce);
+		if (tArray.length > 0)
+		    strbuf.append("DEFINES: ");
+	    }
+	    for(int i=0; i < tArray.length; i++) {
+		Temp t = tArray[i];
+		strbuf.append(t+" ");
+		Set defPts = (Set)m.get(t);
+		if (defPts == null) {
+		    // have not yet encountered this Temp
+		    defPts = new HashSet();
+		    // add to map
+		    m.put(t, defPts);
+		}
+		// add this definition point
+		defPts.add(hce);
+	    }
+	    if (DEBUG) {
+		Collection col = ud.useC(hce);
+		if (!col.isEmpty()) strbuf.append("\nUSES: ");
+		for(Iterator it2 = col.iterator(); it2.hasNext(); )
+		    strbuf.append(it2.next().toString() + " ");
+		if (strbuf.length() > 0)
+		    report(strbuf.toString());
+	    }
+	}
+	if (DEBUG) {
+	    StringBuffer strbuf2 = 
+		new StringBuffer("Have entry for Temp(s): ");
+	    for(Iterator keys = m.keySet().iterator(); keys.hasNext(); )
+		strbuf2.append(keys.next()+" ");
+	    report(strbuf2.toString());
+	}
+	return m;
+    }
+    // create a universe of (Temp, DefPt) pairs
+    // using a mapping of Temps to Sets of definitions points
+    private Set createPairs(Map input) {
+	Set universe = new HashSet();
+	for(Iterator ts=input.keySet().iterator(); ts.hasNext(); ) {
+	    Temp t = (Temp)ts.next();
+	    for (Iterator hs=((Set)input.get(t)).iterator(); hs.hasNext();){
+		universe.add(Default.pair(t, hs.next()));
+	    }
+	}
+	return universe;
+    }
+    // makes the singleton set { (t,h) }
+    private Set makeSet(Temp t, HCodeElement h) {
+	return bsf.makeSet(Collections.singleton(Default.pair(t, h)));
+    }
+    final class Record {
+	Set IN, OUT, GEN, KILL;
+	Record() {
+	    IN = bsf.makeSet();
+	    OUT = bsf.makeSet();
+	    GEN = bsf.makeSet();
+	    KILL = bsf.makeSet();
+	}
+    }
+    // builds a BasicBlock -> Record mapping in `cache'
+    private void buildGenKillSets(Map DefPts) {
+	// calculate Gen and Kill sets for each basic block 
+	for(Iterator blocks=bbf.blockSet().iterator(); blocks.hasNext(); ) {
+	    BasicBlock b = (BasicBlock)blocks.next();
+	    Record bitSets = new Record();
+	    cache.put(b, bitSets);
+
+	    // iterate through the instructions in the basic block
+	    for(Iterator it=b.statements().iterator(); it.hasNext(); ) {
+		HCodeElement hce = (HCodeElement)it.next();
+		Temp[] tArray = null;
+		// special treatment of TYPECAST
+		if(check_typecast && (hce instanceof TYPECAST))
+		    tArray = new Temp[]{((TYPECAST)hce).objectref()};
+		else
+		    tArray = ud.def(hce);
+		for(int i=0; i < tArray.length; i++) {
+		    Temp t = tArray[i];
+		    bitSets.GEN.addAll(makeSet(t, hce));
+		    Set kill = new HashSet((Set)DefPts.get(t));
+		    kill.remove(hce);
+		    bitSets.KILL.addAll(bsf.makeSet(kill));
+		}
+	    }
+	}
+    }
+    // uses Worklist algorithm to solve for reaching definitions
+    // given a BasicBlock -> Record map
+    private void solve() {
+	int revisits = 0;
+	Set blockSet = bbf.blockSet();
+	WorkSet worklist;
+	if (true) {
+	    worklist = new WorkSet(blockSet.size());
+	    Iterator iter = bbf.postorderBlocksIter();
+	    while(iter.hasNext()) {
+		worklist.push(iter.next());
+	    }
+	} else {
+	    worklist = new WorkSet(blockSet);
+	}
+
+	while(!worklist.isEmpty()) {
+	    BasicBlock b = (BasicBlock)worklist.pull();
+	    revisits++;
+	    // get all the bitSets for this BasicBlock
+	    Record bitSet = (Record)cache.get(b);
+	    Set oldIN, oldOUT;
+	    oldIN = bsf.makeSet(bitSet.IN); // clone old in Set
+	    bitSet.IN.clear();
+	    for(Iterator preds=b.prevSet().iterator(); preds.hasNext(); ) {
+		BasicBlock pred = (BasicBlock)preds.next();
+		Record pBitSet = (Record) cache.get(pred);
+		bitSet.IN.addAll(pBitSet.OUT); // union
+	    }
+	    oldOUT = bitSet.OUT; // keep old out Set
+	    bitSet.OUT = bsf.makeSet(bitSet.IN);
+	    bitSet.OUT.removeAll(bitSet.KILL);
+	    bitSet.OUT.addAll(bitSet.GEN);
+	    if (oldIN.equals(bitSet.IN) && oldOUT.equals(bitSet.OUT))
+		continue;
+	    for(Iterator succs=b.nextSet().iterator();succs.hasNext();){
+		Object block = (BasicBlock)succs.next();
+		worklist.push(block);
+	    }
+	}
+	if (TIME) System.out.print("(r:"+revisits+"/"+blockSet.size()+")");
+
+    }
+    // debugging utility
+    private final boolean DEBUG = false;
+    private void report(String str) {
+	if (DEBUG) System.out.println(str);
+    }
+
+}
