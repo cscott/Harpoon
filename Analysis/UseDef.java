@@ -3,23 +3,23 @@ package harpoon.Analysis;
 
 import harpoon.Temp.Temp;
 import harpoon.ClassFile.*;
-import harpoon.IR.QuadSSA.Quad;
 import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
 
 import java.util.Hashtable;
 import java.util.Enumeration;
 /**
- * <code>UseDef</code> objects map temps to the quads which use or define
- * them.  UseDefs cache results, so you should throw away your current
- * UseDef object and make another one if you make modifications to
- * the IR.
+ * <code>UseDef</code> objects map <code>Temp</code>s to the 
+ * <code>HCodeElement</code>s which use or define
+ * them.  The <code>UseDef</code> caches its results, so you should 
+ * throw away your current <code>UseDef</code> object and make 
+ * another one if you make modifications to the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.4 1998-09-13 23:57:12 cananian Exp $
+ * @version $Id: UseDef.java,v 1.5 1998-09-14 05:21:45 cananian Exp $
  */
 
-public class UseDef  {
+public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
     /** Creates a new, empty <code>UseDef</code>. */
     public UseDef() { }
 
@@ -27,74 +27,94 @@ public class UseDef  {
     Hashtable useMap = new Hashtable();
     Hashtable defMap = new Hashtable();
 
-    void analyze(HMethod method) {
-	// make sure we don't analyze a method multiple times.
-	if (analyzed.containsKey(method)) return;
-
-	analyze((harpoon.IR.QuadSSA.Code) method.getCode("quad-ssa"));
+    static class allTempList {
+	Temp[] used;
+	Temp[] defined;
+	allTempList(Temp[] used, Temp[] defined) {
+	    this.used = used; this.defined = defined;
+	}
     }
-    void analyze(harpoon.IR.QuadSSA.Code code) {
-	// make sure we don't analyze a method multiple times.
-	HMethod method = code.getMethod();
-	if (analyzed.containsKey(method)) return;
+	
+    void associate(HCodeElement hce, Temp[] tl,
+		   Hashtable map, UniqueVector allTemps) {
+	for (int i=0; i<tl.length; i++) {
+	    UniqueVector v = (UniqueVector) map.get(tl[i]);
+	    if (v==null) v = new UniqueVector();
+	    v.addElement(hce);
+	    map.put(tl[i], v);
+	    allTemps.addElement(tl[i]);
+	}
+    }
 
-	Quad[] ql = (Quad[]) code.getElements();
+    Temp[] vector2temps(UniqueVector v) {
+	Temp[] tl = new Temp[v.size()];
+	v.copyInto(tl);
+	return tl;
+    }
+    HCodeElement[] vector2hces(UniqueVector v) {
+	HCodeElement[] hcel = new HCodeElement[v.size()];
+	v.copyInto(hcel);
+	return hcel;
+    }
+
+    void analyze(HCode code) {
+	// make sure we don't analyze an HCode multiple times.
+	if (analyzed.containsKey(code)) return;
+
+	HCodeElement[] el = code.getElements();
+	harpoon.IR.Properties.UseDef[] udl =
+	    (harpoon.IR.Properties.UseDef[]) el;
+
+	Hashtable workUse = new Hashtable();
+	Hashtable workDef = new Hashtable();
 	UniqueVector defined = new UniqueVector();
+	UniqueVector used = new UniqueVector();
 
-	for (int i=0; i<ql.length; i++) {
-	    Temp[] u = ql[i].use();
-	    Temp[] d = ql[i].def();
-
-	    // store def mapping.
-	    for (int j=0; j<d.length; j++) {
-		// only one quad per temp definition (SSA form).
-		Util.assert(defMap.get(d[j])==null);
-		defMap.put(d[j], ql[i]);
-		defined.addElement(d[j]);
-	    }
-	    // store use mapping.
-	    for (int j=0; j<u.length; j++) {
-		// multiple quads per temp use.
-		UniqueVector v = (UniqueVector) useMap.get(u[j]);
-		if (v==null) { v = new UniqueVector(); useMap.put(u[j], v); }
-		v.addElement(ql[i]);
-	    }
+	// Scan through and associate uses and defs with their HCodeElements
+	for (int i=0; i<el.length; i++) {
+	    associate(el[i], udl[i].use(), workUse, used);
+	    associate(el[i], udl[i].def(), workDef, defined);
 	}
-	// replace UniqueVectors with Quad arrays (to save space)
-	Hashtable h = new Hashtable();
-	for (Enumeration e = useMap.keys(); e.hasMoreElements(); ) {
+	// replace UniqueVectors with HCodeElement arrays to save space.
+	for (Enumeration e = workUse.keys(); e.hasMoreElements(); ) {
 	    Temp u = (Temp) e.nextElement();
-	    UniqueVector v = (UniqueVector) useMap.get(u);
-	    Util.assert(v!=null);
-	    Quad uses[] = new Quad[v.size()];
-	    v.copyInto(uses);
-	    h.put(u, uses);
+	    useMap.put(u, vector2hces((UniqueVector)workUse.get(u)));
 	}
-	useMap = h;
-
-	// fold defined UniqueVector into an array.
-	Temp[] alldef = new Temp[defined.size()];
-	defined.copyInto(alldef);
-
-	// mark this one as analyzed.
-	analyzed.put(method, alldef);
+	for (Enumeration e = workDef.keys(); e.hasMoreElements(); ) {
+	    Temp d = (Temp) e.nextElement();
+	    defMap.put(d, vector2hces((UniqueVector)workDef.get(d)));
+	}
+	// store set of all temps & mark as analyzed.
+	analyzed.put(code, new allTempList(vector2temps(used),
+					   vector2temps(defined)));
     }
 
-    /** Return the Quad where a given Temp is defined */
-    public Quad defSite(HMethod m, Temp t) {
-	analyze(m);
-	return (Quad) defMap.get(t);
+    /** Return the HCodeElements which define a given Temp. */
+    public HCodeElement[] defMap(HCode hc, Temp t) {
+	analyze(hc);
+	HCodeElement[] r = (HCodeElement[]) defMap.get(t);
+	return (r == null) ? 
+	    new HCodeElement[0] : 
+	    (HCodeElement[]) Util.copy(r);
     }
-    /** Return an array of Quads where a given Temp is used. */
-    public Quad[] useSites(HMethod m, Temp t) {
-	analyze(m);
-	Quad[] r = (Quad[]) useMap.get(t);
-	if (r==null) return new Quad[0];
-	else return (Quad[]) Util.copy(r);
+    /** Return the HCodeElements which use a given Temp. */
+    public HCodeElement[] useMap(HCode hc, Temp t) {
+	analyze(hc);
+	HCodeElement[] r = (HCodeElement[]) useMap.get(t);
+	return (r == null) ? 
+	    new HCodeElement[0] : 
+	    (HCodeElement[]) Util.copy(r);
     }
-    /** Return an array of all Temps defined in a given method. */
-    public Temp[] allDefs(HMethod m) {
-	analyze(m);
-	return (Temp[]) Util.copy((Temp[])analyzed.get(m));
+    /** Return an array of all Temps defined in a given HCode. */
+    public Temp[] allDefs(HCode hc) {
+	analyze(hc);
+	allTempList atl = (allTempList) analyzed.get(hc);
+	return (Temp[]) Util.copy(atl.defined);
+    }
+    /** Return an array of all Temps used in a given HCode. */
+    public Temp[] allUses(HCode hc) {
+	analyze(hc);
+	allTempList atl = (allTempList) analyzed.get(hc);
+	return (Temp[]) Util.copy(atl.used);
     }
 }

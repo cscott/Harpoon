@@ -1,6 +1,7 @@
 // TypeInfo.java, created Thu Sep 10 14:58:21 1998 by cananian
 package harpoon.Analysis;
 
+import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.ClassFile.*;
 import harpoon.IR.QuadSSA.*;
 import harpoon.Temp.*;
@@ -15,17 +16,17 @@ import java.util.Hashtable;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.6 1998-09-13 23:57:12 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.7 1998-09-14 05:21:45 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
-    UseDef usedef;
+    UseDefMap usedef;
     
     Hashtable map = new Hashtable();
     Hashtable analyzed = new Hashtable();
 
     /** Creates a <code>TypeInfo</code> analyzer. */
-    public TypeInfo(UseDef usedef) { this.usedef = usedef; }
+    public TypeInfo(UseDefMap usedef) { this.usedef = usedef; }
     /** Creates a <code>TypeInfo</code> analyzer. */
     public TypeInfo() { this(new UseDef()); }
     
@@ -53,9 +54,9 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	    if (tiv.modified) {
 		Temp[] d = q.def();
 		for (int i=0; i<d.length; i++) {
-		    Quad[] u = usedef.useSites(hc.getMethod(), d[i]);
+		    HCodeElement[] u = usedef.useMap(hc, d[i]);
 		    for (int j=0; j<u.length; j++) {
-			worklist.push(u[j]); // only pushes unique elements.
+			worklist.push((Quad)u[j]); // only pushes unique quads.
 		    }
 		}
 	    }

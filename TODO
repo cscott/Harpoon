@@ -17,7 +17,7 @@ Bounds must be raised to BitSize if bounds proved invalid.
 Massive SCC-based analysis can keep: array size, canbeNull, class sets, etc.
 X Move harpoon.ClassFile.Bytecode to harpoon.IR.Bytecode
 O Rename all *.Code classes to QuadCode, BytecodeCode, etc.
-Make UseDef into map/general class
+X Make UseDef into map/general class
 X Remove SymTable package.
 ---- Sep-12-98
 X Add 'assert' statements to HClass.forName and HClass.forDescriptor to protect

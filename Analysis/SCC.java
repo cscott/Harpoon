@@ -1,9 +1,11 @@
 // SCC.java, created Fri Sep 11 00:57:39 1998 by cananian
 package harpoon.Analysis;
 
+import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.Analysis.Maps.ConstMap;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.QuadSSA.*;
@@ -19,7 +21,7 @@ import java.util.Hashtable;
  * analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCC.java,v 1.5 1998-09-13 23:57:12 cananian Exp $
+ * @version $Id: SCC.java,v 1.6 1998-09-14 05:21:45 cananian Exp $
  */
 
 public class SCC implements TypeMap, ConstMap {
@@ -65,10 +67,10 @@ public class SCC implements TypeMap, ConstMap {
     
 
     /** Creates an <code>SCC</code> analyzer. */
-    public SCC(UseDef usedef) { this.usedef = usedef; }
+    public SCC(UseDefMap usedef) { this.usedef = usedef; }
     /** Creates an <code>SCC</code> analyzer. */
     public SCC() { this(new UseDef()); }
-    UseDef usedef;
+    UseDefMap usedef;
 
     //----------------------------------------------
     // public information accessor methods.
@@ -149,7 +151,9 @@ public class SCC implements TypeMap, ConstMap {
 		ql = new Quad[] { q }; // examine this statement.
 	    } else if (!Wv.isEmpty()) { // else grab temp from Wv
 		Temp t = (Temp) Wv.pull();
-		ql = usedef.useSites(method, t); // list of uses of t
+		HCodeElement[] ul = usedef.useMap(hc, t); // list of uses of t 
+		ql = new Quad[ul.length];
+		System.arraycopy(ul, 0, ql, 0, ql.length);
 	    } else ql = new Quad[0]; // should never execute.
 	    // consider conditions 3-8 for all statements in ql.
 	    for (int i=0; i<ql.length; i++) {
