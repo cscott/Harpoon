@@ -35,9 +35,6 @@ class RefList {
     Elt elt = null;
     
     public RefList() {
-	if (Math.sqrt(4)==0) {
-	    new Elt(null, null);
-	}
     }
 
     public void add(Object o) {

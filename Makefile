@@ -13,7 +13,7 @@ clean:
 doc:
 	@echo Generating documentation...
 	@mkdir doc
-	@javadoc -quiet -private -linksource -d doc/ *.java
+	@javadoc -quiet -private -linksource -d doc/ *.java > /dev/null
 
 realtime.jar: 
 	@echo Generating realtime.jar file...
