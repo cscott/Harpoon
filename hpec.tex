@@ -1,8 +1,8 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: hpec.tex,v 1.2 2004-05-31 01:11:30 cananian Exp $
+% $Id: hpec.tex,v 1.3 2004-05-31 01:38:30 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[twoside,twocolumn,notitlepage,letterpaper]{article}
-%\usepackage{times}
+\usepackage{times}
 \usepackage{supertech}
 \usepackage{support}
 
@@ -26,67 +26,65 @@ Cambridge, MA 02139 \\
 \maketitle
 \support{This research was supported by DARPA/AFRL Contract F33615-00-C-1692.}
 
-The transaction model is a natural means to express atomicity, 
+The transaction model is a natural means to express atomicity,
 fault-tolerance, synchronization, and exception handling in reliable
-programs.  
-A transaction can be thought of as a sequence of loads and stores
-performed as part of a program which either
-\defn{commits} or \defn{aborts}.  If a transaction
-commits, then all of the loads and stores appear to have run
-atomically with respect to other transactions.  That is, the
-transaction's operations appear not to have been interleaved with
-those of other transactions.  If a transaction aborts, then none of
-its stores take effect and the transaction must be restarted,
+programs.  A transaction can be thought of as a sequence of loads and
+stores performed as part of a program which either \defn{commits} or
+\defn{aborts}.  If a transaction commits, then all of the loads and
+stores appear to have run atomically with respect to other
+transactions.  That is, the transaction's operations appear not to
+have been interleaved with those of other transactions or
+non-transactional code.  If a transaction aborts, then none of its
+stores take effect and the transaction can be safely restarted,
 typically using a backoff algorithm to preclude live-lock.%
 \footnote{This is a lightweight in-memory version of the traditional
   ACID database transaction.}
 
 Although transactions can be implemented using mutual exclusion
-(locks), we present algorithms utilizing non-blocking synchronization to
-exploit optimistic concurrency among transactions and provide fault-tolerance.
-A process which fails while holding a lock within a
-critical region can prevent all other non-failing processes from
-ever making progress.
-It is in general not possible to restore the
-locked data structures to a consistent state after such a failure.
+(locks), we present algorithms utilizing non-blocking synchronization
+to exploit optimistic concurrency among transactions and provide
+fault-tolerance.  A process which fails while holding a lock within a
+critical region can prevent all other non-failing processes from ever
+making progress.  It is in general not possible to restore the locked
+data structures to a consistent state after such a failure.
 Non-blocking synchronization offers a graceful solution to this
-problem, as non-progress or failure of any one thread will not
-affect the progress or consistency of other threads or the system.
+problem, as non-progress or failure of any one thread will not affect
+the progress or consistency of other threads or the system.
 
-Implementing transactions using
-non-blocking synchronization offers performance benefits as well.
-Even in a failure-free system, page faults, cache misses, context
-switches, I/O, and other unpredictable events may result in delays to the
-entire system when mutual exclusion is used to guarantee the atomicity
-of operation sequences; non-blocking
-synchronization allows undelayed processes or processors to continue
-to make progress.
-Similarly, in real-time systems, the use of non-blocking
-synchronization can prevent \emph{priority inversion} in the system
-\cite{Jones97}.
+Implementing transactions using non-blocking synchronization offers
+performance benefits as well.  Even in a failure-free system, page
+faults, cache misses, context switches, I/O, and other unpredictable
+events may result in delays to the entire system when mutual exclusion
+is used to guarantee the atomicity of operation sequences;
+non-blocking synchronization allows undelayed processes or processors
+to continue to make progress.  Similarly, in real-time systems, the
+use of non-blocking synchronization can prevent \emph{priority
+  inversion} in the system by allowing high priority threads to abort
+lower priority threads at any point.
+%\cite{Jones97}
 
-Specifying synchronization via transaction-backed ``atomic'' blocks
-is also less error-prone than manual maintenance of a locking
-discipline.  Deadlocks may be introduced when locks are not acquired
-and released in a highly disciplined manner, and races are common when
-multiple objects are involved, each with its own lock.  A non-blocking
-transaction implementation prevents inadvertent deadlocks, and
-``atomic'' declarations based on the transaction mechanism can extend
-across method invocations to protect all objects involved in an
-operation without allowing races between the different objects.  An
-optimistic non-blocking implementation may provide performance
-improvements over locking strategies as well.
+Specifying synchronization via compiler-supported transaction-backed
+``atomic'' blocks is also less error-prone than manual maintenance of
+a locking discipline.  Deadlocks may be introduced when locks are not
+acquired and released in a highly disciplined manner, and races are
+common when multiple shared objects are involved in an operation, each
+with its own lock.  A non-blocking transaction implementation prevents
+inadvertent deadlocks, and ``atomic'' declarations based on the
+transaction mechanism can extend across method invocations to protect
+all objects involved in an operation without allowing races between
+the different objects.  An optimistic non-blocking implementation may
+provide performance improvements over locking strategies as well.
+We provide several examples of these issues.
 
 Language-level transactions can also be viewed as a general
 exception-handling and backtracking mechanism.  Instead of forcing the
 programmer to manually track changes made to program state in order to
 implement proper fault recovery, we can handle the exception using
-transaction rollback to automatically restore the previous program
-state, even if it was in the middle of mutating shared objects.
-An efficient and graceful transaction mechanism
-integrated into the programming language encourages a robust
-programming style where recovery and retry after an unexpected
-condition is made simple.
+transaction rollback to automatically restore a safe program state,
+even if the fault occurred in the middle of mutating shared objects.
+An efficient and graceful transaction mechanism integrated into the
+programming language encourages a robust programming style where
+recovery and retry after an unexpected condition is made simple.
 
 We show how to integrate non-blocking transactions into an
 object-oriented language, ``transactifying'' existing code to fix
@@ -95,17 +93,28 @@ backtracking, exception-handling, and concurrency control in new
 programs.
 
 We describe an efficient pure-software transaction mechanism we have
-implemented for programs written in Java.  We have also designed and
-simulated hardware primitives supporting unbounded transactions which
-allow ``small'' transactions to complete with near-zero overhead and
-minimal architecture impact.  Finally, we describe our hybrid
-hardware-software scheme combining the architecturally-supported speed
-of small transactions with the flexibility the software provides for
-large or long-lived transactions.
+implemented for programs written in Java.  We also discuss our design
+and simulation (with Asanovi\'c, Kuszmaul, Leiserson, and Lie) of
+hardware primitives which allow most transactions to complete with
+near-zero overhead.  Unlike previous hardware approaches, our scheme
+is scalable supports transactions of unlimited size, although
+performance is best for transactions which fit in local cache.  The
+hardware scheme has minimal architecture impact.  Finally, we describe
+our hybrid hardware-software scheme combining
+architecturally-supported speed for small transactions with the
+flexibility the software implementation provides for large or
+long-lived transactions.
 
-\bibliographystyle{plain}
-\bibliography{xaction}
+Integrating transactions into the programming language and
+implementing them with the high-efficiency techniques described
+enables the creation of software with higher reliability.
+Synchronization is more robust and its specification is less
+error-prone, and faults and exceptions in general can be safely handled
+with low overhead using the transaction mechanism.
+
+%\bibliographystyle{plain}
+%\bibliography{xaction}
 \end{document}
 % LocalWords:  csail mit edu AFRL LaMarca Alemany Felten Luchango Shavit JVM
 % LocalWords:  Touitou Okasaki Qadeer Promela backoff transactified SPECjvm
-% LocalWords:  atomicity
+% LocalWords:  atomicity transactifying transactional
