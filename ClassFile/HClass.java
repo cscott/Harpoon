@@ -25,7 +25,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.17 1998-08-03 00:49:33 cananian Exp $
+ * @version $Id: HClass.java,v 1.18 1998-08-03 08:17:51 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -851,12 +851,16 @@ public class HClass {
     // declared methods.
     HMethod hm[] = getDeclaredMethods();
     for (int i=0; i<hm.length; i++) {
-      if (hm[i].getName().equals("<clinit>")) continue;
       StringBuffer mstr = new StringBuffer("    ");
       m = hm[i].getModifiers();
       if (m!=0) {
 	mstr.append(Modifier.toString(m));
 	mstr.append(' ');
+      }
+      if (hm[i].getName().equals("<clinit>")) {
+	mstr.append("static {};");
+	pw.println(mstr.toString());
+	continue;
       }
       if (hm[i] instanceof HConstructor) {
 	mstr.append(getSimpleTypeName(this));
