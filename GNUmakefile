@@ -39,8 +39,8 @@ doc/TIMESTAMP:	$(ALLSOURCE)
 	munge doc | \
 	  sed -e 's/<cananian@/\&lt;cananian@/g' \
 	      -e 's/princeton.edu>/princeton.edu\&gt;/g' \
-	      -e 's/<dd> "The,/<dd> /g' | \
-	unmunge
+	      -e 's/<dd> "The,/<dd> /g' > doc-tmp
+	unmunge doc-tmp; $(RM) doc-tmp
 	cd doc; ln -s $(JDOCIMAGES) images
 	cd doc; ln -s packages.html index.html
 	cd doc; ln -s index.html API_users_guide.html
