@@ -73,7 +73,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.12 2001-01-27 00:00:03 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.13 2001-01-31 21:57:14 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -194,7 +194,7 @@ public class SyncTransformer
 	    ("makeCommittedVersion", new HClass[0], HCobj);
 	HMmkVersion.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
 	this.HMwriteFlag = objM.addDeclaredMethod
-	    ("writeFieldFlag", new HClass[] { HCfield, HCclass },
+	    ("writeFieldFlag", new HClass[] { HCfield },
 	    HClass.Void);
 	HMwriteFlag.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
 	this.HMwriteFlagA = objM.addDeclaredMethod
@@ -473,6 +473,8 @@ public class SyncTransformer
 	    fixupmap.put(q5, handlers.head);
 	}
 	public void visit(MONITOREXIT q) {
+	    Util.assert(handlers!=null, "MONITOREXIT not dominated by "+
+			"MONITORENTER in "+q.getFactory().getParent());
 	    addChecks(q);
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
 	    // call c.commitTransaction(), linking to abort code if fails.
@@ -708,12 +710,11 @@ public class SyncTransformer
 		in = addAt(in, q4);
 		// handle case that field is not already correct.
 		Quad q5 = new CONST(qf, q, t0, raf.field, HCfield);
-		Quad q6 = new CONST(qf, q, t1, raf.field.getType(), HCclass);
 		Quad q7 = new CALL(qf, q, HMwriteFlag,
-				   new Temp[] { raf.objref, t0, t1 },
+				   new Temp[] { raf.objref, t0 },
 				   null, retex, false, false, new Temp[0]);
 		Quad q8 = new THROW(qf, q, retex);
-		Quad.addEdges(new Quad[] { q3, q5, q6, q7 });
+		Quad.addEdges(new Quad[] { q3, q5, q7 });
 		Quad.addEdge(q7, 0, q4, 1);
 		Quad.addEdge(q7, 1, q8, 0);
 		footer = footer.attach(q8, 0);
