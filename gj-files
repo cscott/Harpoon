@@ -119,6 +119,7 @@ Analysis/Quads/TypeInfo.java
 Analysis/Quads/TypeSwitchRemover.java
 Analysis/Quads/Unreachable.java
 Analysis/Quads/Virtualize.java
+Analysis/Reachable.java
 Analysis/ReachingDefs.java
 Analysis/ReachingDefsAltImpl.java
 Analysis/ReachingDefsCachingImpl.java
