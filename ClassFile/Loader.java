@@ -25,7 +25,7 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.8 1999-08-04 06:30:56 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.9 1999-08-18 20:22:17 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
@@ -86,8 +86,14 @@ public abstract class Loader {
    *  Each element is a <code>String</code> naming one segment of the
    *  CLASSPATH. */
   public static final Iterator classpaths() {
-    String classpath = System.getProperty("java.class.path");
     final String pathsep = System.getProperty("path.separator");
+    String classpath = null;
+
+    // allow overriding classpath.
+    /*if (classpath==null) classpath = System.getenv("HCLASSPATH");*/
+    if (classpath==null) classpath = System.getProperty("harpoon.class.path");
+    if (classpath==null) classpath = System.getProperty("java.class.path");
+    Util.assert(classpath!=null);
 
     // For convenience, make sure classpath begins with and ends with pathsep.
     if (!classpath.startsWith(pathsep)) classpath = pathsep + classpath;
