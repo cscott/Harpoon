@@ -17,8 +17,12 @@ public class VarExpr extends Expr {
 	return hs;
     }
 
+    public SetDescriptor getSet() {
+	return vd.getSet();
+    }
+
     public VarExpr(String varname) {
-        this.varname = varname; 
+        this.varname = varname;
     }
 
     public VarExpr(VarDescriptor vd) {
@@ -74,13 +78,11 @@ public class VarExpr extends Expr {
     }
 
     public void generate(CodeWriter writer, VarDescriptor dest) {        
-
         // #TBD#: bit of a hack, really should have been type checked properly 
-
-        vd = (VarDescriptor) writer.getSymbolTable().get(varname);        
+        vd = (VarDescriptor) writer.getSymbolTable().get(varname);
         assert vd != null;
         assert vd.getType() != null;
-        this.td = vd.getType();
+	this.td = vd.getType();
 
 
         writer.outputline(vd.getType().getGenerateType().getSafeSymbol() + " " + dest.getSafeSymbol() + 

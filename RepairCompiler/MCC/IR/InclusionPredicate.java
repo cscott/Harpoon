@@ -7,6 +7,15 @@ public class InclusionPredicate extends Predicate {
     Expr expr;
     SetExpr setexpr;
 
+    public TypeDescriptor typecheck(SemanticAnalyzer sa) {
+	TypeDescriptor t=expr.typecheck(sa);
+	TypeDescriptor ts=setexpr.typecheck(sa);
+	if (t!=ts)
+	    return null;
+	
+	return ReservedTypeDescriptor.INT;
+    }
+
     public boolean inverted() {
 	return setexpr.inverted();
     }

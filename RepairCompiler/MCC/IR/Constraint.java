@@ -96,6 +96,5 @@ public class Constraint implements Quantifiers {
         set.addAll(getRequiredDescriptorsFromLogicStatement());
         return set;
     }
-   
 }
 

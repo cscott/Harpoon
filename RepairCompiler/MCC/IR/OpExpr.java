@@ -8,6 +8,26 @@ public class OpExpr extends Expr {
     Expr right;
     Opcode opcode;
 
+    public boolean isSafe() {
+	if (right==null)
+	    return left.isSafe();
+	return left.isSafe()&&right.isSafe();
+    }
+
+    public Set getfunctions() {
+	Set leftfunctions=left.getfunctions();
+	Set rightfunctions=right.getfunctions();
+	if (leftfunctions!=null&&rightfunctions!=null) {
+	    HashSet functions=new HashSet();
+	    functions.addAll(leftfunctions);
+	    functions.addAll(rightfunctions);
+	    return functions;
+	}
+	if (leftfunctions!=null)
+	    return leftfunctions;
+	return rightfunctions;
+    }
+
     public void findmatch(Descriptor d, Set  s) {
 	left.findmatch(d,s);
 	if (right!=null)

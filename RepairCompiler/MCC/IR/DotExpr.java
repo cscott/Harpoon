@@ -12,6 +12,17 @@ public class DotExpr extends Expr {
     static boolean DOTYPECHECKS=false;
     static boolean DONULL=false;
 
+    public boolean isSafe() {
+	if (!left.isSafe())
+	    return false;
+	FieldDescriptor tmpfd=fd;
+	if (tmpfd instanceof ArrayDescriptor)
+	    return false; // Arrays could be out of bounds
+	if (tmpfd.getPtr()) // Pointers cound be invalid
+	    return false;
+	return true;
+    }
+
     public void findmatch(Descriptor d, Set s) {
 	if (d==fd)
 	    s.add(this);

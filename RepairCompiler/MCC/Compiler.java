@@ -46,111 +46,71 @@ public class Compiler {
 	    System.exit(-1);
 	}
         
-	if (cli.target == CLI.ASSEMBLY || cli.target == CLI.DEFAULT) {
-	    if (state.debug) {
-		System.out.println("Compiling " + cli.infile + ".");
-	    }
-
-	    success = scan(state) || error(state, "Scanning failed, not attempting to parse.");
-	    success = parse(state) || error(state, "Parsing failed, not attempting semantic analysis.");
-	    success = semantics(state) || error(state, "Semantic analysis failed, not attempting variable initialization.");
-
-
-	    Termination termination=null;
-	    /* Check partition constraints */
-	    (new ImplicitSchema(state)).update();
-	    termination=new Termination(state);
-
-            state.printall();
-            (new DependencyBuilder(state)).calculate();
-            
-            try {
-                Vector nodes = new Vector(state.constraintnodes.values());
-                nodes.addAll(state.rulenodes.values());
-
-                FileOutputStream dotfile;
-                dotfile = new FileOutputStream(cli.infile + ".dependencies.edgelabels.dot");
-                GraphNode.useEdgeLabels = true;
-                GraphNode.DOTVisitor.visit(dotfile, nodes);
-                dotfile.close();
-
-                dotfile = new FileOutputStream(cli.infile + ".dependencies.dot");
-                GraphNode.useEdgeLabels = false;
-                GraphNode.DOTVisitor.visit(dotfile, nodes);                
-                dotfile.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.exit(-1);
-            }
-            
-            try {
-                FileOutputStream gcode = new FileOutputStream(cli.infile + ".cc");
-
-
-                // do model optimizations
-                //(new Optimizer(state)).optimize();
-
-
-
-		FileOutputStream gcode2 = new FileOutputStream(cli.infile + "_aux.cc");
-		FileOutputStream gcode3 = new FileOutputStream(cli.infile + "_aux.h");
-		RepairGenerator wg = new RepairGenerator(state,termination);
-		wg.generate(gcode,gcode2,gcode3, cli.infile + "_aux.h");
-		gcode2.close();
-		gcode3.close();
-		/*		} else {
-		    WorklistGenerator ng = new WorklistGenerator(state);
+	if (state.debug) {
+	    System.out.println("Compiling " + cli.infile + ".");
+	}
+	
+	success = scan(state) || error(state, "Scanning failed, not attempting to parse.");
+	success = parse(state) || error(state, "Parsing failed, not attempting semantic analysis.");
+	success = semantics(state) || error(state, "Semantic analysis failed, not attempting variable initialization.");
+	
+	
+	Termination termination=null;
+	/* Check partition constraints */
+	(new ImplicitSchema(state)).update();
+	termination=new Termination(state);
+	
+	state.printall();
+	(new DependencyBuilder(state)).calculate();
+	
+	try {
+	    Vector nodes = new Vector(state.constraintnodes.values());
+	    nodes.addAll(state.rulenodes.values());
+	    
+	    FileOutputStream dotfile;
+	    dotfile = new FileOutputStream(cli.infile + ".dependencies.edgelabels.dot");
+	    GraphNode.useEdgeLabels = true;
+	    GraphNode.DOTVisitor.visit(dotfile, nodes);
+	    dotfile.close();
+	    
+	    dotfile = new FileOutputStream(cli.infile + ".dependencies.dot");
+	    GraphNode.useEdgeLabels = false;
+	    GraphNode.DOTVisitor.visit(dotfile, nodes);                
+	    dotfile.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+	
+	try {
+	    FileOutputStream gcode = new FileOutputStream(cli.infile + ".cc");
+	    
+	    
+	    // do model optimizations
+	    //(new Optimizer(state)).optimize();
+	    
+	    FileOutputStream gcode2 = new FileOutputStream(cli.infile + "_aux.cc");
+	    FileOutputStream gcode3 = new FileOutputStream(cli.infile + "_aux.h");
+	    RepairGenerator wg = new RepairGenerator(state,termination);
+	    wg.generate(gcode,gcode2,gcode3, cli.infile + "_aux.h");
+	    gcode2.close();
+	    gcode3.close();
+	    /*		} else {
+			WorklistGenerator ng = new WorklistGenerator(state);
 		    SetInclusion.worklist=true;
 		    RelationInclusion.worklist=true;
 		    ng.generate(gcode);
 		    }*/
-                gcode.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.exit(-1);
-            }
-            
-	    if (state.debug) {
-		System.out.println("Compilation of " + state.infile + " successful.");
-		System.out.println("#SUCCESS#");
-	    }
-	} else if (cli.target == CLI.INTER) {
-	    if (state.debug) {
-		System.out.println("Semantic analysis for " + cli.infile + ".");
-	    }
-
-	    success = scan(state) || error(state, "Scanning failed, not attempting to parse.");
-	    success = parse(state) || error(state, "Parsing failed, not attempting semantic analysis.");
-	    success = semantics(state) || error(state, "Semantic analysis failed.");
-
-	    if (state.debug) {
-		System.out.println("Semantic analysis of " + state.infile + " successful.");
-		System.out.println("#SUCCESS#");
-	    }
-	} else if (cli.target == CLI.PARSE) {
-	    if (state.debug) {
-		System.out.println("Parsing " + cli.infile + ".");
-	    }
-
-	    success = scan(state) || error(state, "Scanning failed, not attempting to parse.");
-	    success = parse(state) || error(state, "Parsing failed.");
-
-	    if (state.debug) {
-		System.out.println("Parsing of " + state.infile + " successful.");
-		System.out.println("#SUCCESS#");
-	    }
-        } else if (cli.target == CLI.SCAN) {
-	    if (state.debug) {
-		System.out.println("Scanning " + cli.infile + ".");
-	    }
-
-	    success = scan(state) || error(state, "Scanning failed.");
-
-	    if (state.debug) {
-		System.out.println("Scanning of " + state.infile + " successful.");
-		System.out.println("#SUCCESS#");
-	    }
-        }
+	    gcode.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+	
+	if (state.debug) {
+	    System.out.println("Compilation of " + state.infile + " successful.");
+	    System.out.println("#SUCCESS#");
+	}
     }
 
     private static void printArgInfo(CLI cli) {
@@ -158,31 +118,6 @@ public class Compiler {
             System.out.println("Printing debugging information...");
             System.out.println("Input filename: " + cli.infile);
             System.out.println("Output filename: " + cli.outfile);
-            System.out.print("Target: ");
-
-            switch(cli.target) {
-            case CLI.ASSEMBLY:
-                System.out.println("ASSEMBLY");
-                break;
-            case CLI.DEFAULT:
-                System.out.println("DEFAULT");
-                break;
-            case CLI.INTER:
-                System.out.println("INTER");
-                break;
-            case CLI.LOWIR:
-                System.out.println("LOWIR");
-                break;
-            case CLI.PARSE:
-                System.out.println("PARSE");
-                break;
-            case CLI.SCAN:
-                System.out.println("SCAN");
-                break;
-            default:
-                System.out.println("not recognized");
-                break;
-            }
 
             for (int i = 0; i < cli.opts.length; i++) {
                 if (cli.opts[i]) {

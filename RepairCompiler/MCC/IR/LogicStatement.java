@@ -29,6 +29,19 @@ public class LogicStatement {
         return set;
     }
     
+    public TypeDescriptor typecheck(SemanticAnalyzer sa) {
+	TypeDescriptor lt=left.typecheck(sa);
+	if (lt!=ReservedTypeDescriptor.INT)
+	    return null;
+	TypeDescriptor rt;
+	if (op!=NOT) {
+	    rt=right.typecheck(sa);
+	    if (rt!=ReservedTypeDescriptor.INT)
+		return null;
+	}
+	return ReservedTypeDescriptor.INT;
+    }
+
     public DNFConstraint constructDNF() {
 	if (op==AND) {
 	    DNFConstraint leftd=left.constructDNF();

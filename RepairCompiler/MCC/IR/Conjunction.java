@@ -9,7 +9,7 @@ public class Conjunction {
 	predicates.add(pred);
     }
     Conjunction(Vector preds){
-	predicates=preds       ;
+	predicates=preds;
     }
     String name() {
 	String name="";

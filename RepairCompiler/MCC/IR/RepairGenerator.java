@@ -637,9 +637,9 @@ public class RepairGenerator {
 	    
             {
 		final SymbolTable st = constraint.getSymbolTable();
-		CodeWriter cr = new StandardCodeWriter(outputaux) {
-                        public SymbolTable getSymbolTable() { return st; }
-                    };
+		CodeWriter cr = new StandardCodeWriter(outputaux);
+		cr.pushSymbolTable(constraint.getSymbolTable());
+
 		cr.outputline("// checking " + escape(constraint.toString()));
                 cr.startblock();
 
@@ -938,25 +938,8 @@ public class RepairGenerator {
 	ExprPredicate ep=(ExprPredicate)dpred.getPredicate();
 	OpExpr expr=(OpExpr)ep.expr;
 	Opcode opcode=expr.getOpcode();
-	{
-	    boolean negated=dpred.isNegated();
-	    if (negated)
-		if (opcode==Opcode.GT) {
-		    opcode=Opcode.LE;
-		} else if (opcode==Opcode.GE) {
-		    opcode=Opcode.LT;
-		} else if (opcode==Opcode.LT) {
-		    opcode=Opcode.GE;
-		} else if (opcode==Opcode.LE) {
-		    opcode=Opcode.GT;
-		} else if (opcode==Opcode.EQ) {
-		    opcode=Opcode.NE;
-		} else if (opcode==Opcode.NE) {
-		    opcode=Opcode.EQ;
-		} else {
-		    throw new Error("Unrecognized Opcode");
-		}	
-	}
+	opcode=Opcode.translateOpcode(dpred.isNegated(),opcode);
+
 	MultUpdateNode munremove;
 
 	MultUpdateNode munadd;
@@ -1004,6 +987,12 @@ public class RepairGenerator {
 	} else {
 	    throw new Error("Unrecognized Opcode");
 	}
+
+// In some cases the analysis has determined that generating removes
+// is unnecessary
+	if (generateremove&&munremove==null) 
+	    generateremove=false;
+
 	Descriptor d=ep.getDescriptor();
 	if (generateremove) {
 	    cr.outputline("for(;"+change.getSafeSymbol()+"<0;"+change.getSafeSymbol()+"++)");

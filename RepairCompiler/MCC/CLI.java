@@ -11,47 +11,9 @@ import java.util.StringTokenizer;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.2 2004-04-15 05:41:46 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.3 2004-04-21 21:15:48 bdemsky Exp $</tt>
  */
 public class CLI {
-    /**
-     * Target value indicating that the compiler should produce its
-     * default output.
-     */
-    public static final int DEFAULT = 0;
-
-    /**
-     * Target value indicating that the compiler should scan the input
-     * and stop.
-     */
-    public static final int SCAN = 1;
-
-    /**
-     * Target value indicating that the compiler should scan and parse
-     * its input, and stop.
-     */
-    public static final int PARSE = 2;
-
-    /**
-     * Target value indicating that the compiler should produce a
-     * high-level intermediate representation from its input, and stop.
-     * This is not one of the segment targets for Fall 2000, but you
-     * may wish to use it for your own purposes.
-     */
-    public static final int INTER = 3;
-
-    /**
-     * Target value indicating that the compiler should produce a
-     * low-level intermediate representation from its input, and stop.
-     */
-    public static final int LOWIR = 4;
-
-    /**
-     * Target value indicating that the compiler should produce
-     * assembly from its input.
-     */
-    public static final int ASSEMBLY = 5;
-
     /**
      * Array indicating which optimizations should be performed.  If
      * a particular element is true, it indicates that the optimization
@@ -85,40 +47,10 @@ public class CLI {
     public String infile;
 
     /**
-     * The target stage.  This should be one of the integer constants
-     * defined elsewhere in this package.
-     */
-    public int target;
-
-    /**
      * The debug flag.  This is true if <tt>-debug</tt> was passed on
      * the command line, requesting debugging output.
      */
     public boolean debug;
-
-    /**
-     * Native MIPS architecture is specified by "-native".  The default
-     * is SPIM.
-     */
-    public boolean fNative;
-
-    /**
-     * Runs IRVis on final node tree.
-     */
-    public boolean fVis;
-    public String visClass;
-    public String visMethod;
-
-    /**
-     * Dumps the before and after Node structure to two files that can be diffed.
-     */
-    public boolean fDiff;
-    public String diffFile;
-
-    /**
-     * Maximum optimization iterations.
-     */
-    public int numIterations = 5;
 
     /**
      * Verbose output
@@ -134,16 +66,9 @@ public class CLI {
     public CLI() {
         outfile = null;
         infile = null;
-        target = DEFAULT;
         extras = new Vector();
         extraopts = new Vector();
-        fNative = false;
-        fVis = false;
         verbose = 0;
-        visClass = "";
-        visMethod = "";
-        fDiff = false;
-        diffFile = "";
     }
 
     /**
@@ -177,19 +102,8 @@ public class CLI {
             if (args[i].equals("-debug")) {
                 context = 0;
                 debug = true;
-	    } else if (args[i].equals("-native")) {
-                context = 0;
-                fNative = true;
 	    } else if (args[i].equals("-checkonly")) {
                 Compiler.REPAIR=false;
-            } else if (args[i].equals("-vis")) {
-                context = 4;
-                fVis = true;
-            } else if (args[i].equals("-diff")) {
-                context = 5;
-                fDiff = true;
-            } else if (args[i].equals("-i")) {
-                context = 6;
             } else if (args[i].equals("-verbose") || args[i].equals("-v")) {
                 context = 0;
                 verbose++;
@@ -197,8 +111,6 @@ public class CLI {
                 context = 1;
             else if (args[i].equals("-o"))
                 context = 2;
-            else if (args[i].equals("-target"))
-                context = 3;
             else if (context == 1) {
                 boolean hit = false;
                 for (int j = 0; j < optnames.length; j++) {
@@ -214,40 +126,8 @@ public class CLI {
 		}
                 if (!hit)
                     extraopts.addElement(args[i]);
-	    }
-            else if (context == 2) {
+	    } else if (context == 2) {
                 outfile = args[i];
-                context = 0;
-	    }
-            else if (context == 3) {
-                // Process case insensitive.
-                String argSansCase = args[i].toLowerCase();
-                // accept "scan" and "scanner" due to handout mistake
-                if (argSansCase.equals("scan") || 
-                    argSansCase.equals("scanner"))
-                    target = SCAN;
-                else if (argSansCase.equals("parse"))
-                    target = PARSE;
-                else if (argSansCase.equals("inter"))
-                    target = INTER;
-                else if (argSansCase.equals("lowir"))
-                    target = LOWIR;
-                else if (argSansCase.equals("assembly") ||
-                         argSansCase.equals("codegen"))
-                    target = ASSEMBLY;
-                else
-                    target = DEFAULT; // Anything else is just default
-                context = 0;
-	    } else if (context == 4) { // -vis
-                StringTokenizer st = new StringTokenizer(args[i], ".");
-                visClass = st.nextToken();
-                visMethod = st.nextToken();
-                context = 0;
-	    } else if (context == 5) { // -diff
-                diffFile = args[i]; // argument following is filename
-                context = 0;
-	    } else if (context == 6) { // -i <iterations>
-                numIterations = Integer.parseInt(args[i]);
                 context = 0;
             } else {
 		boolean hit = false;
@@ -274,41 +154,6 @@ public class CLI {
                 extras.removeElementAt(i);
 	    }
             i++;
-	}
-
-        // create outfile name
-        switch (target) {
-        case SCAN:
-            ext = ".scan";
-            break;
-        case PARSE:
-            ext = ".parse";
-            break;
-        case INTER:
-            ext = ".ir";
-            break;
-        case LOWIR:
-            ext = ".lowir";
-            break;
-        case ASSEMBLY:
-            ext = ".s";
-            break;
-        case DEFAULT:
-        default:
-            ext = ".out";
-            break;
-        }
-
-        if (outfile == null && infile != null) {
-            int dot = infile.lastIndexOf('.');
-            int slash = infile.lastIndexOf('/');
-            // Last dot comes after last slash means that the file
-            // has an extention.  Note that the base case where dot
-            // or slash are -1 also work.
-            if (dot <= slash)
-                outfile = infile + ext;
-            else
-                outfile = infile.substring(0, dot) + ext;
 	}
     }
 }

@@ -10,6 +10,11 @@ public class ExprPredicate extends Predicate {
     public static final int SIZE=1;
     public static final int COMPARISON=2;
 
+    public TypeDescriptor typecheck(SemanticAnalyzer sa) {
+	TypeDescriptor t=expr.typecheck(sa);
+	return t;
+    }
+
     public String name() {
 	return expr.name();
     }
@@ -27,6 +32,7 @@ public class ExprPredicate extends Predicate {
     }
 
     public int rightSize() {
+	assert isRightInt();
 	return OpExpr.getInt(((OpExpr)expr).right);
     }
 

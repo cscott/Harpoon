@@ -22,7 +22,9 @@ public class Sources {
 	TypeDescriptor td=sd.getType();
 	Expr e=td.getSizeExpr();
 	VarDescriptor size=VarDescriptor.makeNew("size");
+	cr.pushSymbolTable(state.stGlobals);
 	e.generate(cr, size);
+	cr.popSymbolTable();
 	cr.outputline(td.getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"=("+td.getGenerateType().getSafeSymbol()+") malloc("+size.getSafeSymbol()+");");
     }
 
@@ -44,7 +46,9 @@ public class Sources {
 	TypeDescriptor td=sd.getType();
 	Expr e=td.getSizeExpr();
 	VarDescriptor size=VarDescriptor.makeNew("size");
+	cr.pushSymbolTable(state.stGlobals);
 	e.generate(cr, size);
+	cr.popSymbolTable();
 	cr.outputline(td.getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"=("+td.getGenerateType().getSafeSymbol()+") malloc("+size.getSafeSymbol()+");");
     }
 

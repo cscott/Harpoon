@@ -69,4 +69,16 @@ public abstract class Expr {
 
     public void findmatch(Descriptor d, Set s) {
     }
+
+    public Set getfunctions() {
+	return null;
+    }
+
+    public SetDescriptor getSet() {
+	throw new Error("No Set for this Expr");
+    }
+
+    public boolean isSafe() {
+	return true;
+    }
 }

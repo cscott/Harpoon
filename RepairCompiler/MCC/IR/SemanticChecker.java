@@ -379,7 +379,7 @@ public class SemanticChecker {
 
         boolean ok = true;
         ParseNodeVector constraints = pn.getChildren();
-        
+
         for (int i = 0; i < constraints.size(); i++) {
             ParseNode constraint = constraints.elementAt(i);
             assert constraint.getLabel().equals("constraint");
@@ -389,6 +389,27 @@ public class SemanticChecker {
         }
 
         /* do any post checks... (type constraints, etc?) */
+
+        Iterator consiterator = state.vConstraints.iterator();
+
+        while (consiterator.hasNext()) {
+            Constraint cons = (Constraint) consiterator.next();
+
+            final SymbolTable consst = cons.getSymbolTable();
+            SemanticAnalyzer sa = new SemanticAnalyzer() {
+                    public IRErrorReporter getErrorReporter() { return er; }
+                    public SymbolTable getSymbolTable() { return consst; }
+                };
+
+            TypeDescriptor constype = cons.getLogicStatement().typecheck(sa);
+
+            if (constype == null) {
+                ok = false;
+            } else if (constype != ReservedTypeDescriptor.INT) {
+                er.report(null, "Type of guard must be 'int' not '" + constype.getSymbol() + "'");
+                ok = false;
+            }
+	}
 
 	return ok;
     }
@@ -424,7 +445,7 @@ public class SemanticChecker {
                 }
             }
         }
-                                                      
+
         /* get body */
         LogicStatement logicexpr = parse_body(pn.getChild("body"));
 
@@ -442,7 +463,7 @@ public class SemanticChecker {
         assert sts.empty();
 
         /* add to vConstraints */
-        vConstraints.addElement(constraint);           
+        vConstraints.addElement(constraint);
 
         return ok;
     }
@@ -468,6 +489,7 @@ public class SemanticChecker {
             SetDescriptor set = parse_set(pn.getChild("set"));
             assert set != null;
             sq.setSet(set);
+	    vd.setSet(set);
 
             vd.setType(set.getType());
 
@@ -498,7 +520,9 @@ public class SemanticChecker {
             
             rq.setRelation(rd);
             vd1.setType(rd.getDomain().getType());
+	    vd1.setSet(rd.getDomain());
             vd2.setType(rd.getRange().getType());
+	    vd2.setSet(rd.getRange());
             return rq;
         } else if (pn.getChild("for") != null) { /* for j = x to y */
             ForQuantifier fq = new ForQuantifier();
@@ -510,6 +534,7 @@ public class SemanticChecker {
                 return null;
             }
 
+	    vd.setSet(lookupSet("int", false));
             vd.setType(ReservedTypeDescriptor.INT);
             fq.setVar(vd);
 
@@ -984,11 +1009,9 @@ public class SemanticChecker {
                         }
                     }
                 }
-                
-            } else {
+	    } else {
                 throw new IRException("shouldn't be any other typedescriptor classes");
             }
-
         }
 
         // #TBD#: need to make sure that no cycles exist in any of the declarations or subtypes
@@ -1436,7 +1459,14 @@ public class SemanticChecker {
         /* do semantic check and if valid, add it to symbol table
            and add it to the quantifier as well */
         if (sts.peek().contains(varname)) {
-            return new VarDescriptor(varname);
+	    VarDescriptor vdold=(VarDescriptor)sts.peek().get(varname);
+	    return vdold;
+	    /*	   Dan was creating a new VarDescriptor...This seems
+		   like the wrong thing to do.  We'll just lookup the
+		   other one.
+		   --------------------------------------------------
+		   VarDescriptor vd=new VarDescriptor(varname);
+		   vd.setSet(vdold.getSet()); return vd;*/
         } else {
             /* Semantic Error: undefined variable */
             er.report(pn, "Undefined variable '" + varname + "'");

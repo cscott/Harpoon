@@ -8,6 +8,23 @@ public class RelationExpr extends Expr {
     RelationDescriptor relation;
     boolean inverse;
 
+    public Set getfunctions() {
+	HashSet functions=new HashSet();
+	Set exprfunctions=expr.getfunctions();
+	if (exprfunctions!=null)
+	    functions.addAll(exprfunctions);
+	functions.add(new ConstraintDependence.Function(relation,expr.getSet(),inverse));
+	
+	return functions;
+    }
+
+    public SetDescriptor getSet() {
+	if (inverse)
+	    return relation.domain;
+	else
+	    return relation.range;
+    }
+
     public RelationExpr(Expr expr, RelationDescriptor relation, boolean inverse) {
         this.expr = expr;
         this.relation = relation;

@@ -7,6 +7,16 @@ public class VarDescriptor extends Descriptor {
 
     TypeDescriptor td = null;
 
+    SetDescriptor sd=null;
+
+    public SetDescriptor getSet() {
+	return sd;
+    }
+
+    public void setSet(SetDescriptor sd) {
+	this.sd=sd;
+    }
+
     public VarDescriptor(String name) {
         super(name);
     }

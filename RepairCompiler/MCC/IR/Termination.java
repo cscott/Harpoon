@@ -26,7 +26,8 @@ public class Termination {
     ComputeMaxSize maxsize;
     State state;
     AbstractInterferes abstractinterferes;
-
+    ConstraintDependence constraintdependence;
+    ExactSize exactsize;
 
     public Termination(State state) {
 	this.state=state;
@@ -47,14 +48,14 @@ public class Termination {
 	if (!Compiler.REPAIR)
 	    return;
 
-	
+
 	for(int i=0;i<state.vRules.size();i++)
 	    System.out.println(state.vRules.get(i));
 	for(int i=0;i<state.vConstraints.size();i++)
 	    System.out.println(state.vConstraints.get(i));
 
-
 	maxsize=new ComputeMaxSize(state);
+	exactsize=new ExactSize(state);
 
 	abstractinterferes=new AbstractInterferes(this);
 	generateconjunctionnodes();
@@ -66,15 +67,12 @@ public class Termination {
 	generateabstractedges();
 	generatescopeedges();
 	generateupdateedges();
+	constraintdependence=new ConstraintDependence(state,this);
 
 	HashSet superset=new HashSet();
 	superset.addAll(conjunctions);
 	HashSet closureset=new HashSet();
-	//	closureset.addAll(updatenodes);
-	//superset.addAll(abstractrepair);
-	//superset.addAll(updatenodes);
-	//superset.addAll(scopenodes);
-	//superset.addAll(consequencenodes);
+
 	GraphNode.computeclosure(superset,closureset);
 	try {
 	    GraphNode.DOTVisitor.visit(new FileOutputStream("graph.dot"),superset);
@@ -134,6 +132,8 @@ public class Termination {
 		    conjunctionmap.put(c,new HashSet());
 		((Set)conjunctionmap.get(c)).add(gn);
 		conjtonodemap.put(dnf.get(j),gn);
+
+
 	    }
 	    // Construct quantifier "conjunction" nodes
 	    for(int j=0;j<c.numQuantifiers();j++) {
@@ -153,6 +153,7 @@ public class Termination {
 			conjunctionmap.put(c,new HashSet());
 		    ((Set)conjunctionmap.get(c)).add(gn);
 		    conjtonodemap.put(dconst.get(0),gn);
+
 		} else if (q instanceof RelationQuantifier) {
 		    RelationQuantifier rq=(RelationQuantifier)q;
 		    VarExpr ve=new VarExpr(rq.y);
@@ -168,6 +169,7 @@ public class Termination {
 			conjunctionmap.put(c,new HashSet());
 		    ((Set)conjunctionmap.get(c)).add(gn);
 		    conjtonodemap.put(dconst.get(0),gn);
+
 		}
 	    }
 	}
@@ -701,10 +703,11 @@ public class Termination {
 			goodupdate=true;
 		    } else {
 			/* Create new element to bind to */
-			Binding binding=new Binding(vd,set,createorsearch(set));
+			// search if the set 'set' has a size
+			Binding binding=new Binding(vd,set,exactsize.getsize(set)!=-1);
 			bindings.add(binding);
 			goodupdate=true;
-			//FIXME
+
 		    }
 	    } else if (q instanceof RelationQuantifier) {
 		RelationQuantifier rq=(RelationQuantifier)q;
@@ -754,22 +757,16 @@ public class Termination {
 	return goodupdate;
     }
 
-    /** Returns true if we search for an element from sd
-     *  false if we create an element for sd */
-    private boolean createorsearch(SetDescriptor sd) {
-	return false;
-    }
-
     static int addtocount=0;
     void generateaddtosetrelation(GraphNode gn, AbstractRepair ar) {
 	for(int i=0;i<state.vRules.size();i++) {
 	    Rule r=(Rule) state.vRules.get(i);
 	    /* See if this is a good rule*/
 	    if ((r.getInclusion() instanceof SetInclusion&&
-		ar.getDescriptor()==((SetInclusion)r.getInclusion()).getSet())||
+		 ar.getDescriptor()==((SetInclusion)r.getInclusion()).getSet())||
 		(r.getInclusion() instanceof RelationInclusion&&
 		 ar.getDescriptor()==((RelationInclusion)r.getInclusion()).getRelation())) {
-
+		
 		/* First solve for quantifiers */
 		Vector bindings=new Vector();
 		/* Construct bindings */
@@ -841,7 +838,8 @@ public class Termination {
 			GraphNode.Edge e=new GraphNode.Edge("abstract"+addtocount,gn2);
 			addtocount++;
 			gn.addEdge(e);
-			updatenodes.add(gn2);}
+			updatenodes.add(gn2);
+		    }
 		}
 	    }
 	}
@@ -872,6 +870,9 @@ public class Termination {
 		
 	    } else if (q instanceof SetQuantifier) {
 		SetQuantifier sq=(SetQuantifier)q;
+		if (un.getBinding(sq.var).getType()==Binding.SEARCH)
+		    continue; /* Don't need to ensure addition for search */
+
 		ElementOfExpr eoe=new ElementOfExpr(new VarExpr(sq.var),sq.set);
 		eoe.td=ReservedTypeDescriptor.INT;
 		Updates u=new Updates(eoe,false);
