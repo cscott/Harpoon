@@ -63,7 +63,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.62 2000-05-14 20:30:17 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.63 2000-05-18 17:38:23 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -174,14 +174,14 @@ public class AsyncCode {
 
 	void addCode(HMethod hm, HCode hc) {
 	    if (clonevisit.needsRepair()) {
-		//hc.print(new java.io.PrintWriter(System.out, true));
+		hc.print(new java.io.PrintWriter(System.out, true));
 		ucf.put(hm,hc);
 	    } else {
 		//hc.print(new java.io.PrintWriter(System.out, true));
 		ContCodeNoSSA hco=new ContCodeNoSSA((QuadSSI)hc);
 		//hco.print(new java.io.PrintWriter(System.out, true));
 		HCode hcn=new ContCodeSSI(hco);
-		//hcn.print(new java.io.PrintWriter(System.out, true));
+		hcn.print(new java.io.PrintWriter(System.out, true));
 		ucf.put(hm,hcn);
 
 	    }

@@ -71,7 +71,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.29 2000-05-17 17:29:09 cananian Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.30 2000-05-18 17:38:24 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -953,9 +953,9 @@ public class CloningVisitor extends QuadVisitor {
 	Temp srco[]=getEnvTemps(q);
 	Temp src[]=map(ctmap,srco);
 	Temp srcarray[]=q.src();
-	Vector vsrc=new Vector(Arrays.asList(srcarray));
+	Vector vsrc=new Vector(Arrays.asList(srco));
 	if (optimistic) {
-	    Vector vsrc2=new Vector(Arrays.asList(srco));
+	    Vector vsrc2=new Vector(Arrays.asList(srcarray));
 	    vsrc2.removeAll(vsrc);
 	    vsrc.addAll(vsrc2);
 	}
