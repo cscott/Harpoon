@@ -20,7 +20,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NATIVECALL.java,v 1.1.2.18 2000-01-09 01:04:41 duncan Exp $
+ * @version $Id: NATIVECALL.java,v 1.1.2.19 2000-01-09 08:15:15 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see INVOCATION
@@ -32,6 +32,9 @@ public class NATIVECALL extends INVOCATION {
     public NATIVECALL(TreeFactory tf, HCodeElement source,
 		      TEMP retval, Exp func, ExpList args) {
 	super(tf, source, retval, func, args);
+	this.setRetval(this.getRetval());	
+	this.setFunc(this.getFunc()); 
+	this.setArgs(this.getArgs()); 
 	if (retval == null) { this.nullRetval = new CONST(tf, null); } 
     }
 
@@ -80,15 +83,18 @@ public class NATIVECALL extends INVOCATION {
   
     public void setRetval(TEMP retval) { 
 	super.setRetval(retval); 
-	retval.parent  = this;
-	retval.sibling = this.getFunc(); 
+	if (retval != null) { 
+	    retval.parent  = this;
+	    retval.sibling = this.getFunc(); 
+	}
     }
 
     public void setFunc(Exp func) { 
 	super.setFunc(func); 
 	func.parent  = this;
 	func.sibling = this.getArgs().head; 
-	this.getRetval().sibling = func; 
+	TEMP retval = this.getRetval();
+	if (retval != null) { retval.sibling = func; }
     }
 
     public void setArgs(ExpList args) { 
