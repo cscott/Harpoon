@@ -3,16 +3,24 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
-import harpoon.Analysis.*;
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
+import harpoon.Analysis.ClassHierarchy;
+import harpoon.ClassFile.CachingCodeFactory;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
+import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.Quad;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 /**
  * <code>AllocationNumbering</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationNumbering.java,v 1.1.2.2 2000-11-09 05:11:24 bdemsky Exp $
+ * @version $Id: AllocationNumbering.java,v 1.1.2.3 2000-11-10 19:05:02 cananian Exp $
  */
 public class AllocationNumbering implements java.io.Serializable {
     private final CachingCodeFactory hcf;
