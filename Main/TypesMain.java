@@ -26,7 +26,7 @@ import java.util.Set;
  * <code>PrintTypes</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: TypesMain.java,v 1.1.2.10 2000-01-17 11:10:23 cananian Exp $
+ * @version $Id: TypesMain.java,v 1.1.2.11 2000-03-21 22:20:42 salcianu Exp $
  */
 public class TypesMain extends harpoon.IR.Registration {
     public static void main(String args[]) {
@@ -50,7 +50,7 @@ public class TypesMain extends harpoon.IR.Registration {
 		    if (i==1) {
 			System.out.println("CHA-like started: " + System.currentTimeMillis());
 			ch = new QuadClassHierarchy(linker, Collections.singleton(hm[j]), hcf);
-			cg = new harpoon.Analysis.Quads.CallGraph(ch, hcf);
+			cg = new harpoon.Analysis.Quads.CallGraphImpl(ch, hcf);
 			System.out.println("CHA-like finished: " + System.currentTimeMillis());
 			if (multiPass) {
 			    System.out.println("another CHA-like started: " + System.currentTimeMillis());

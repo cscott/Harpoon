@@ -21,6 +21,7 @@ import harpoon.ClassFile.Loader;
 
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Analysis.Quads.CallGraphImpl;
 import harpoon.Analysis.AllCallers;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.BasicBlock;
@@ -41,13 +42,14 @@ import harpoon.Tools.Graphs.SCComponent;
 import harpoon.Tools.Graphs.SCCTopSortedGraph;
 
 import harpoon.Analysis.PointerAnalysis.Debug;
+import harpoon.Analysis.MetaMethods.SmartCallGraph;
 
 /**
  * <code>PAMain</code> is a simple Pointer Analysis top-level class.
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.11 2000-03-21 20:28:54 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.12 2000-03-21 22:20:42 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -158,7 +160,7 @@ public abstract class PAMain {
 	else{ // fake meta-methods
 	    System.out.print("FakeMetaCallGraph ... ");
 	    tstart = System.currentTimeMillis();
-	    CallGraph  cg = new CallGraph(ch, hcf);
+	    CallGraph  cg = new CallGraphImpl(ch, hcf);
 	    mcg = new FakeMetaCallGraph(cg, ch.callableMethods());
 	    tstop  = System.currentTimeMillis();
 	    System.out.println((tstop - tstart) + "ms");

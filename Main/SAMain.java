@@ -26,6 +26,7 @@ import harpoon.Backend.StrongARM.Frame;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Analysis.Quads.CallGraphImpl;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Backend.Maps.NameMap;
 import harpoon.Util.CombineIterator;
@@ -65,7 +66,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.69 2000-03-01 05:24:40 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.70 2000-03-21 22:20:42 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -142,7 +143,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
-	callGraph = new CallGraph(classHierarchy, hcf);
+	callGraph = new CallGraphImpl(classHierarchy, hcf);
 	frame = new Frame(mainM, classHierarchy, callGraph);
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
 	hcf = frame.getRuntime().nativeTreeCodeFactory(hcf);

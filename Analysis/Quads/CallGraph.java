@@ -1,117 +1,33 @@
-// CallGraph.java, created Sun Oct 11 12:56:36 1998 by cananian
-// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// CallGraph.java, created Tue Mar 21 16:13:06 2000 by salcianu
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
-import harpoon.Analysis.ClassHierarchy;
-import harpoon.ClassFile.HClass;
-import harpoon.ClassFile.HCode;
-import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
-import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.CALL;
-import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.Vector;
 
 /**
- * <code>CallGraph</code> constructs a simple directed call graph.
+ * <code>CallGraph</code> is a general interface that should be
+ implemented by a call graph.
  * 
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.1.2.4 2000-03-18 05:25:12 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
+ * @version $Id: CallGraph.java,v 1.1.2.5 2000-03-21 22:21:41 salcianu Exp $
  */
-public class CallGraph  {
-    final HCodeFactory hcf;
-    final ClassHierarchy ch;
-    /** Creates a <code>CallGraph</code> using the specified 
-     *  <code>ClassHierarchy</code>. <code>hcf</code> must be a code
-     *  factory that generates quad-ssi or quad-no-ssa form. */
-    public CallGraph(ClassHierarchy ch, HCodeFactory hcf) {
-	// this is maybe a little too draconian
-	Util.assert(hcf.getCodeName()
-		    .equals(harpoon.IR.Quads.QuadSSI.codename) ||
-		    hcf.getCodeName()
-		    .equals(harpoon.IR.Quads.QuadNoSSA.codename));
-	this.ch = ch;
-	this.hcf = hcf;
-    }
+public interface CallGraph {
     
-    /** Return a list of all possible methods called by this method. */
-    public HMethod[] calls(final HMethod m) {
-	HMethod[] retval = (HMethod[]) cache.get(m);
-	if (retval==null) {
-	    final Set s = new HashSet();
-	    final HCode hc = hcf.convert(m);
-	    if (hc==null) { cache.put(m,new HMethod[0]); return calls(m); }
-	    for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
-		Quad q = (Quad) it.next();
-		if (!(q instanceof CALL)) continue;
-		HMethod cm = ((CALL)q).method();
-		if (s.contains(cm)) continue; // duplicate.
-		s.addAll(Arrays.asList(calls(m, (CALL)q)));
-	    }
-	    // finally, copy result vector to retval array.
-	    retval = (HMethod[]) s.toArray(new HMethod[s.size()]);
-	    // and cache result.
-	    cache.put(m, retval);
-	}
-	return retval;
-    }
-    final private Map cache = new HashMap();
+    /** Returns an array containing all possible methods called by
+	method <code>m</code>. If <code>hm</code> doesn't call any 
+	method, return an array of length <code>0</code>. */
+    public HMethod[] calls(final HMethod hm);
+
+    /** Returns an array containing  all possible methods called by 
+	method <code>m</code> at the call site <code>cs</code>.
+	If there is no known callee for the call site <code>cs>/code>, or if 
+	<code>cs</code> doesn't belong to the code of <code>hm</code>,
+	return an array pof length <code>0</code>. */
+    public HMethod[] calls(final HMethod hm, final CALL cs);
 
     /** Returns a list of all the <code>CALL</code>s quads in the code 
 	of <code>hm</code>. */
-    public CALL[] getCallSites(final HMethod hm){
-	CALL[] retval = (CALL[]) cache_cs.get(hm);
-	if(retval != null)
-	    return retval;
-	final Vector v = new Vector();
-
-	final HCode hc = hcf.convert(hm);
-	if (hc==null)
-	    retval = new CALL[0];
-	else{
-	    for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
-		Quad q = (Quad) it.next();
-		if (q instanceof CALL) v.add(q);
-	    }	    
-	    retval = (CALL[]) v.toArray(new CALL[v.size()]);
-	}
-	return retval;
-    }
-    final private Map cache_cs = new HashMap();
-
-    /** Return a list of all possible methods called by this method at
-     *  a particular call site. */
-    public HMethod[] calls(final HMethod m, final CALL cs) {
-	HMethod cm = cs.method();
-	// for 'special' invocations, we know the method exactly.
-	if ((!cs.isVirtual()) || cs.isStatic()) return new HMethod[]{ cm };
-	final Set s = new HashSet();
-	// all methods of children of this class are reachable.
-	WorkSet W = new WorkSet();
-	W.add(cm.getDeclaringClass());
-	while (!W.isEmpty()) {
-	    HClass c = (HClass) W.pop();
-	    // if this class can be instatiated, then its
-	    // implementation of the method should be added to the set.
-	    if (ch.instantiatedClasses().contains(c))
-		try {
-		    s.add(c.getMethod(cm.getName(),
-				      cm.getDescriptor()));
-		} catch (NoSuchMethodError nsme) { }
-	    // recurse through all children of this method's class.
-	    for (Iterator it=ch.children(c).iterator(); it.hasNext(); )
-		W.add(it.next());
-	}
-	// finally, copy result vector to retval array.
-	return (HMethod[]) s.toArray(new HMethod[s.size()]);
-    }
+    public CALL[] getCallSites(final HMethod hm);
 }

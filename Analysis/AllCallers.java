@@ -4,6 +4,7 @@
 package harpoon.Analysis;
 
 import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Analysis.Quads.CallGraphImpl;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -22,7 +23,7 @@ import java.util.Collections;
  * of the call graph for methods that fulfill a certain condition.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AllCallers.java,v 1.1.2.7 2000-02-11 06:12:01 salcianu Exp $
+ * @version $Id: AllCallers.java,v 1.1.2.8 2000-03-21 22:20:28 salcianu Exp $
  */
 
 public class AllCallers {
@@ -38,7 +39,7 @@ public class AllCallers {
     public AllCallers(ClassHierarchy ch, HCodeFactory hcf) {
 	this.hcf = hcf;
 	this.ch = ch;
-	CallGraph cg = new CallGraph(this.ch, this.hcf);
+	CallGraph cg = new CallGraphImpl(this.ch, this.hcf);
 	this.g = buildGraph(cg);
     }
 

@@ -20,7 +20,7 @@ import java.util.Vector;
  * <code>CallGraph</code> is a command-line call-graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.2.2.6 2000-01-13 23:48:17 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.2.2.7 2000-03-21 22:20:42 salcianu Exp $
  */
 
 public abstract class CallGraph extends harpoon.IR.Registration {
@@ -51,7 +51,7 @@ public abstract class CallGraph extends harpoon.IR.Registration {
 	    new harpoon.Analysis.Quads.QuadClassHierarchy
 	    (linker, Collections.singleton(m), hcf);
 	harpoon.Analysis.Quads.CallGraph cg =
-	    new harpoon.Analysis.Quads.CallGraph(ch, hcf);
+	    new harpoon.Analysis.Quads.CallGraphImpl(ch, hcf);
 
 	out.println("graph: {");
 	out.println("title: \"Call graph rooted at "+m.getName()+"\"");
