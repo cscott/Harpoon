@@ -15,9 +15,6 @@ import harpoon.Util.WorkSet;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.TYPECAST;
 
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.GenericMultiMap;
-
 import java.util.Collections;
 import java.util.Collection;
 import java.util.HashMap;
@@ -32,7 +29,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.10 2000-10-20 03:33:33 witchel Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.11 2000-11-10 19:54:12 cananian Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
     final private CFGrapher cfger;

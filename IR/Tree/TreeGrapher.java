@@ -24,14 +24,12 @@ import java.util.Map;
  * control-flow graph information with elements of a canonical tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeGrapher.java,v 1.1.2.10 2000-07-16 23:53:51 cananian Exp $
+ * @version $Id: TreeGrapher.java,v 1.1.2.11 2000-11-10 19:55:08 cananian Exp $
  */
 class TreeGrapher extends CFGrapher {
     Tree firstElement = null;
-    final MultiMap predMap = new GenericMultiMap(Factories.arrayListFactory,
-						 Factories.hashMapFactory);
-    final MultiMap succMap = new GenericMultiMap(Factories.arrayListFactory,
-						 Factories.hashMapFactory);
+    final MultiMap predMap = new GenericMultiMap(Factories.arrayListFactory);
+    final MultiMap succMap = new GenericMultiMap(Factories.arrayListFactory);
    /** Class constructor.  Don't call this directly -- use
     *  the getGrapher() method in <code>harpoon.IR.Tree.Code</code> instead.
     */ 

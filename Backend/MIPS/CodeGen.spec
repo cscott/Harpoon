@@ -49,9 +49,6 @@ import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.UNOP;
 import harpoon.IR.Tree.SEQ;
 
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.GenericMultiMap;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -69,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.27 2000-10-31 01:54:32 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.28 2000-11-10 19:54:49 cananian Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.

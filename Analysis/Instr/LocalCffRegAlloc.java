@@ -69,7 +69,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.116 2000-08-26 09:34:47 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.117 2000-11-10 19:54:41 cananian Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -613,8 +613,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    BitSetFactory regSetFact = 
 		new BitSetFactory((new HashSet(regs)));
 	    
-	    MultiMap tempToRegs = new 
-		GenericMultiMap(regSetFact,Factories.hashMapFactory);
+	    MultiMap tempToRegs = new GenericMultiMap(regSetFact);
 	    
 	    HashSet liveTempSet = new HashSet(liveOnExit);
 	    liveTempSet.removeAll(allRegC);

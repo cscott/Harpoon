@@ -83,7 +83,7 @@ import java.util.Map;
 	 </OL> 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.16 2000-06-28 23:36:06 pnkfelix Exp $
+    @version $Id: MultiMap.java,v 1.1.2.17 2000-11-10 19:55:11 cananian Exp $
  */
 public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 
@@ -106,9 +106,8 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 	    return new GenericMultiMap(map);
 	}
 
-	public MultiMap makeMultiMap(CollectionFactory cf, 
-				     MapFactory mf) {
-	    return new GenericMultiMap(cf, mf);
+	public MultiMap makeMultiMap(MapFactory mf, CollectionFactory cf) {
+	    return new GenericMultiMap(mf, cf);
 	}
     } 
 

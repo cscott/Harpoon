@@ -78,7 +78,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.121 2000-10-24 04:58:51 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.122 2000-11-10 19:54:46 cananian Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -860,10 +860,8 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	
 	MultiMap in = new GenericMultiMap(); // Map[Temp, [Web] ]
 	MultiMap out = new GenericMultiMap(); // Map[Temp, [Web] ]
-	MultiMap use = new GenericMultiMap(new MySetFactory(), // Map[Temp, [Instr] ]
-					harpoon.Util.Collections.Factories.hashMapFactory);
-	MultiMap def = new GenericMultiMap(new MySetFactory(), // Map[Temp, [Instr] ]
-					harpoon.Util.Collections.Factories.hashMapFactory);
+	MultiMap use = new GenericMultiMap(new MySetFactory()); // Map[Temp, [Instr] ]
+	MultiMap def = new GenericMultiMap(new MySetFactory()); // Map[Temp, [Instr] ]
 	
 	class MySetFactory extends harpoon.Util.Collections.SetFactory {
 	    public Set makeSet(java.util.Collection c) {

@@ -48,9 +48,6 @@ import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.UNOP;
 import harpoon.IR.Tree.SEQ;
 
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.GenericMultiMap;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -67,7 +64,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.166 2000-10-21 00:04:37 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.167 2000-11-10 19:54:55 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in

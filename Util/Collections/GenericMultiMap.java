@@ -44,7 +44,7 @@ import java.util.HashSet;
  *	 are passed on to 'mm'.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.1.2.7 2000-07-13 14:29:57 cananian Exp $ */
+ * @version $Id: GenericMultiMap.java,v 1.1.2.8 2000-11-10 19:55:11 cananian Exp $ */
 public class GenericMultiMap implements MultiMap {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
@@ -56,21 +56,28 @@ public class GenericMultiMap implements MultiMap {
     // used by identity constructor
     private MapFactory mf;
     
-    /** Creates a <code>MultiMap</code> using <code>HashSet</code>s
-	for its value collections and a <code>HashMap</code> for the map.
+    /** Creates a <code>MultiMap</code> using a <code>HashMap</code> for
+	the map and <code>HashSet</code>s for the value collections.
 	To gain more control over the specific sets/map used in
 	internal representation of <code>this</code>, use the more
-	specific {@link GenericMultiMap#GenericMultiMap(CollectionFactory,MapFactory) constructor }
+	specific {@link GenericMultiMap#GenericMultiMap(MapFactory,CollectionFactory) constructor }
 	that takes <code>CollectionFactory</code>s.
     */
     public GenericMultiMap() {
-	this(Factories.hashSetFactory, Factories.hashMapFactory);
+	this(Factories.hashMapFactory, Factories.hashSetFactory);
     }
 
-    /** Creates a <code>MultiMap</code> from a
-	<code>CollectionFactory</code>.
+    /** Creates a <code>MultiMap</code> using a <code>HashMap</code> for
+     *  the map and the specified <code>CollectionFactory</code> to
+     *  create the value collections. */
+    public GenericMultiMap(CollectionFactory cf) {
+	this(Factories.hashMapFactory, cf);
+    }
+    /** Creates a <code>MultiMap</code> using the specified
+     *  <code>MapFactory</code> to create the map and the specified
+     *  <code>CollectionFactory</code> to create the value collections.
     */
-    public GenericMultiMap(CollectionFactory cf, MapFactory mf) {
+    public GenericMultiMap(MapFactory mf, CollectionFactory cf) {
 	this.internMap = mf.makeMap();
 	this.cf = cf;
 	this.mf = mf;
