@@ -63,7 +63,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.35 2000-01-14 22:33:34 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.36 2000-01-14 22:35:06 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -677,7 +677,7 @@ public class AsyncCode {
 			Set classes=ch.children(hcl);
 			Iterator childit=classes.iterator();
 			HMethod parent=hm;
-			while (childit.hasNext()) {
+			while (childit.hasNext()|(hm!=null)) {
 			    try {
 				if (hm==null) {
 				    HClass child=(HClass)childit.next();
@@ -840,7 +840,7 @@ public class AsyncCode {
 			Set classes=ch.children(hcl);
 			Iterator childit=classes.iterator();
 			HMethod parent=hmrun;
-			while (childit.hasNext()) {
+			while (childit.hasNext()|(hmrun!=null)) {
 			    try {
 				if (hmrun==null) {
 				    HClass child=(HClass)childit.next();
