@@ -16,7 +16,7 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.4.11 2001-11-19 19:27:25 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.4.12 2002-01-16 20:16:50 bdemsky Exp $
  */
 public class Relinker extends Linker implements java.io.Serializable {
     protected final Linker linker;
@@ -212,10 +212,14 @@ public class Relinker extends Linker implements java.io.Serializable {
     }
     HClass unwrap(HClass hc) {
 	if (hc==null || hc.isPrimitive()) return hc;
-	/*
+	/* If we "promote" the original class to an HClassSyn (to modify it)
+	 * we must still 'unwrap' it to the unmodified version from the
+	 * original linker, or reference-equality tests against it will fail.
+	 * Example: searching for method foo(Object o) of class A after we've
+	 * added a new field to Object.  Class A's method descriptor will
+	 * still reference the "old" Object class. */
 	if (((HClassProxy)hc).sameLinker)
 	    return linker.forDescriptor(hc.getDescriptor());
-	*/
 	return ((HClassProxy)hc).proxy;
     }
     HField wrap(HField hf) {
