@@ -14,7 +14,7 @@ import java.io.IOException;
 /* Main entry point for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.1.2.9 1999-09-11 17:53:53 cananian Exp $
+ * @version $Id: Main.java,v 1.1.2.10 2000-02-13 02:41:13 pnkfelix Exp $
  */
 public class Main {
     private static boolean DEBUG_parser = false;
@@ -59,7 +59,7 @@ public class Main {
 	    super(s, "TestCggClassDontUse");
 	}
 
-	public void outputSelectionMethod(PrintWriter out) {
+	public void outputSelectionMethod(PrintWriter out, boolean isData) {
 	    out.println();
 	    out.println(spec);
 	    out.println();

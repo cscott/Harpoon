@@ -22,7 +22,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.39 2000-02-10 18:16:44 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.40 2000-02-13 02:41:13 pnkfelix Exp $
  */
 public class Spec  {
 
@@ -143,6 +143,7 @@ public class Spec  {
 	    if (details==null) return s;
 	    else return details.toString()+s;
 	}
+
     }
 
     /** Extension of <code>Spec.Rule</code> that also contains a
@@ -494,6 +495,17 @@ public class Spec  {
 	    @see <U>Design Patterns</U> pgs. 331-344
 	*/
 	public abstract void accept(StmVisitor v);
+
+
+	/** Checks if this <code>Stm</code> object is valid for Data
+	    patterns. 
+	    Most patterns are for code generation, not data tables.
+	    Specific subclasses of <code>Stm</code> that wish to be
+	    matched when generating data tables should override this
+	    method to return true.
+	*/
+	public boolean canBeRootOfData() { return false; }
+
     }
 
     /** Extension of <code>Spec.Stm</code> representing an alignment
@@ -515,6 +527,7 @@ public class Spec  {
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() { return "ALIGN("+alignment+")"; }
+	public boolean canBeRootOfData() { return true; }
     }
 
     /** Extension of <code>Spec.Stm</code> that represents a call to a
@@ -610,6 +623,7 @@ public class Spec  {
 	public String toString() {
 	    return "DATUM("+data+")";
 	}
+	public boolean canBeRootOfData() { return true; }
     }
 
     /** Extension of <code>Spec.Stm</code> representing an expression
@@ -657,6 +671,7 @@ public class Spec  {
 	public StmLabel(String name) { this.name = name; }
 	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() { return "LABEL("+name+")"; }
+	public boolean canBeRootOfData() { return true; }
     }
     /** Extension of <code>Spec.Stm</code> representing a method header.
      *  @see harpoon.IR.Tree.METHOD
@@ -764,6 +779,7 @@ public class Spec  {
 	public StmSegment(Leaf segtype) { this.segtype = segtype; }
 	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() { return "SEGMENT("+segtype+")"; }
+	public boolean canBeRootOfData() { return true; }
     }
 
     /** Extension of <code>Spec.Stm</code> representing a sequence of

@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.50 2000-01-10 05:08:44 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.51 2000-02-13 02:41:13 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -727,8 +727,10 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	     surrounding braces.  Outputs generated source to
 	     <code>out</code>. 
 	@param out Target output device for the Java source code.
+	@param isData indicates if we're pattern matching code or data tables
     */
-    public void outputSelectionMethod(final PrintWriter out) { 
+    public void outputSelectionMethod(final PrintWriter out, 
+				      final boolean isData) { 
 	// traverse 'this.spec' to acquire spec information
 	final List expMatchActionPairs = new LinkedList(); // list of RuleTuple
 	final List stmMatchActionPairs = new LinkedList();
@@ -742,6 +744,10 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		Util.assert(false, "SpecRuleVisitor should never visit Rule");
 	    }
 	    public void visit(Spec.RuleStm r) { 
+		if (isData && !r.stm.canBeRootOfData()) {
+		    return;
+		}
+
 		TypeStmRecurse recurse = 
 		    new TypeStmRecurse(stmArg, indent + "\t");
 		r.stm.accept(recurse);
@@ -790,7 +796,24 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 					   matchStm, 
 					   "Temp " + r.result_id + " = " +
 					   "frame.getTempBuilder()."+
-					   "makeTemp( ROOT , inf.tempFactory());" +
+					   "makeTemp( ROOT , inf.tempFactory());\n" +
+
+					   // declare and assign %extra Temps 
+
+					   
+					   // insert a type declare
+					   // for r.result.id 
+					   (isData?"":
+					    "harpoon.ClassFile.HClass hclz"+
+					   " = code.getTreeDerivation().typeMap(ROOT);"+
+					   "if (hclz != null) { "+
+					   "\n\t TYPE_STATE.declare("+r.result_id+", hclz);"+
+					   "} else { "+
+					   "\n\t TYPE_STATE.declare("+r.result_id+", "+
+					   "\n\t                    "+
+					   "code.getTreeDerivation().derivation(ROOT));"+
+					   "}") +
+					   
 					   r.action_str + 
 					   indent + "return " + r.result_id + ";\n" +
 					   indent + "}", r.result_id,

@@ -4,9 +4,11 @@
 package harpoon.Backend.Generic;
 
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HClass;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Tree.Print;
-
+import harpoon.Temp.Temp;
+import harpoon.Analysis.Maps.Derivation;
 
 /**
  * <code>Generic.CodeGen</code> is a general class for specific Backends to
@@ -14,7 +16,7 @@ import harpoon.IR.Tree.Print;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.9 2000-02-13 00:43:19 pnkfelix Exp $ */
+ * @version $Id: CodeGen.java,v 1.1.2.10 2000-02-13 02:41:09 pnkfelix Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
@@ -29,6 +31,18 @@ public abstract class CodeGen {
     // last = null OR last instr passed to emit(Instr)
     protected Instr last; 
     
+    // stores type information for Temps
+    protected TypeState TYPE_STATE = new TypeState();
+    
+    static public class TypeState {
+	public void declare(Temp t, HClass clz) {
+
+	}
+
+	public void declare(Temp t, Derivation.DList dl) {
+
+	}
+    }
     
     /** Creates a <code>Generic.CodeGen</code>. */
     public CodeGen(Frame frame) {
@@ -73,7 +87,7 @@ public abstract class CodeGen {
 	     <code>Instr</code>s to execute <code>tree</code>.
 	@return The head of a list of <code>Instr</code>s
     */
-    public abstract Instr gen(harpoon.IR.Tree.Code tree,
+    public abstract Instr genCode(harpoon.IR.Tree.Code tree,
 			      final harpoon.IR.Assem.InstrFactory inf); 
 
     /** Creates a <code>Instr</code> list from the
@@ -83,7 +97,7 @@ public abstract class CodeGen {
 	     <code>tree</code>.
 	@return The head of a list of <code>Instr</code>s
     */
-    public abstract Instr gen(harpoon.IR.Tree.Data tree,
+    public abstract Instr genData(harpoon.IR.Tree.Data tree,
 			      final harpoon.IR.Assem.InstrFactory inf); 
     
     public void debug(String s) {

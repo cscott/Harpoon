@@ -65,7 +65,7 @@ import java.io.PrintWriter;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SparcMain.java,v 1.1.2.11 2000-02-02 04:17:30 pnkfelix Exp $
+ * @version $Id: SparcMain.java,v 1.1.2.12 2000-02-13 02:41:12 pnkfelix Exp $
  */
 public class SparcMain extends harpoon.IR.Registration {
  
@@ -351,7 +351,7 @@ public class SparcMain extends harpoon.IR.Registration {
 	if (data.getRootElement()==null) continue; // nothing to do here.
 
 	final Instr instr = 
-	    frame.getCodeGen().gen((harpoon.IR.Tree.Data)data, new InstrFactory() {
+	    frame.getCodeGen().genData((harpoon.IR.Tree.Data)data, new InstrFactory() {
 		private int id = 0;
 		public TempFactory tempFactory() { return null; }
 		public HCode getParent() { return null/*data*/; }// FIXME!

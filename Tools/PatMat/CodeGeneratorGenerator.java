@@ -17,7 +17,7 @@ import java.io.PrintWriter;
  * 
  * @see harpoon.Backend.Generic.CodeGen
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.19 2000-02-13 01:32:17 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.20 2000-02-13 02:41:13 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
@@ -102,13 +102,13 @@ public abstract class CodeGeneratorGenerator {
 	out.println("\t    @param tree Set of abstract <code>Tree</code> instructions ");
 	out.println("\t                that form the body of the procedure being compiled.");
 	out.println("\t*/");
-	out.println("\tpublic final "+ASSEM_Instr+" gen(" + 
+	out.println("\tpublic final "+ASSEM_Instr+" genCode(final " + 
 		    TREE_Code +" code, final " + ASSEM_InstrFactory +
 		    " inf) {"); // method start
 
 	out.println(spec.method_prologue_stms);
 
-	outputSelectionMethod(out);
+	outputSelectionMethod(out, false);
 
 	out.println(spec.method_epilogue_stms);
 
@@ -123,13 +123,13 @@ public abstract class CodeGeneratorGenerator {
 	out.println("\t    @param tree Set of abstract <code>Tree</code> instructions ");
 	out.println("\t                that form the body of the data structure being compiled.");
 	out.println("\t*/");
-	out.println("\tpublic final "+ASSEM_Instr+" gen(" + 
+	out.println("\tpublic final "+ASSEM_Instr+" genData(" + 
  		    TREE_Data +" code, final " + ASSEM_InstrFactory + 
 		    " inf) {"); // method start
 
 	out.println(spec.method_prologue_stms);
 
-	outputSelectionMethod(out);
+	outputSelectionMethod(out, true);
 
 	out.println(spec.method_epilogue_stms);
 
@@ -186,8 +186,10 @@ public abstract class CodeGeneratorGenerator {
 	     <BR>Awards bonus points to subclasses that implement this
 	     method to output documentation for the generated method
 	     body. 
-	@param out Target output device for the Java source code.  */
-    public abstract void outputSelectionMethod(PrintWriter out);
+	@param out Target output device for the Java source code.  
+	@param isData indicates if we're pattern matching code or data tables
+    */
+    public abstract void outputSelectionMethod(PrintWriter out, boolean isData);
 }
 
 
