@@ -30,7 +30,7 @@ import java.util.Map;
  * <code>InstrumentateAllocs</code>
  * 
  * @author  root <root@BDEMSKY.MIT.EDU>
- * @version $Id: InstrumentateAllocs.java,v 1.1.2.1 2000-11-08 02:25:38 bdemsky Exp $
+ * @version $Id: InstrumentateAllocs.java,v 1.1.2.2 2000-11-08 04:31:35 bdemsky Exp $
  */
 public class InstrumentateAllocs extends MethodMutator implements java.io.Serializable {
     HashMap toint;
@@ -52,7 +52,7 @@ public class InstrumentateAllocs extends MethodMutator implements java.io.Serial
     protected HCode mutateHCode(HCodeAndMaps input) {
 	HCode hc=input.hcode();
 	Map ancestor=input.ancestorElementMap();
-	if (hc.getMethod().getDeclaringClass().getName()!="harpoon.Runtime.Instrumentate") {
+	if (!hc.getMethod().getDeclaringClass().getName().equals("harpoon.Runtime.Instrumentate")) {
 	    WorkSet newset=new WorkSet();
 	    Iterator it=hc.getElementsI();
 	    while(it.hasNext()) {
