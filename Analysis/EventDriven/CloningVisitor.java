@@ -71,7 +71,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.26 2000-04-06 18:51:33 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.27 2000-04-06 20:41:18 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -858,7 +858,7 @@ public class CloningVisitor extends QuadVisitor {
 	QuadFactory qf=wrappercode.getFactory();
 	TempFactory tf=qf.tempFactory();
 	HClass[] methodTypes=hm.getParameterTypes();
-	Temp[] params=new Temp[methodTypes.length];
+	Temp[] params=new Temp[methodTypes.length+(hm.isStatic()?0:1)];
 	boolean isVirtual=hm.isStatic()?false:((hm.getName().equals("<init>")||
 						hm.getName().equals("<clinit>"))?false:true);
 	boolean isVoid=hm.getReturnType()==HClass.Void;
