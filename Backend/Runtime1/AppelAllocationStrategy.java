@@ -30,7 +30,7 @@ import java.util.List;
  * A simple-minded version of Appel's fast-allocation strategy
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: DefaultAllocationStrategy.java,v 1.1.2.3 1999-10-13 16:52:21 cananian Exp $
+ * @version  $Id: AppelAllocationStrategy.java,v 1.1.2.1 1999-10-13 16:54:58 cananian Exp $
  */
 public class DefaultAllocationStrategy extends AllocationStrategy {
     final LocationFactory.Location memLimit;
