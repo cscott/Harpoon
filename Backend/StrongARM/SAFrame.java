@@ -43,7 +43,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.21 1999-07-30 20:19:26 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.22 1999-07-30 20:26:38 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -127,9 +127,13 @@ public class SAFrame extends Frame implements AllocationInfo {
 
     public Temp FP() { return reg[11]; }
 
-    public Temp[] getAllRegisters() { return reg; }
+    public Temp[] getAllRegisters() { 
+	return (Temp[]) Util.safeCopy(Temp.arrayFactory, reg); 
+    }
 
-    public Temp[] getGeneralRegisters() { return regGeneral; }
+    public Temp[] getGeneralRegisters() { 
+	return (Temp[]) Util.safeCopy(Temp.arrayFactory, regGeneral); 
+    }
 
     /* Generic version of the next six methods copied from 
      * DefaultFrame for now */

@@ -36,7 +36,7 @@ import java.util.Map;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.18 1999-07-30 18:45:13 pnkfelix Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.19 1999-07-30 20:26:35 pnkfelix Exp $
  */
 public class DefaultFrame extends Frame implements AllocationInfo {
 
@@ -92,11 +92,11 @@ public class DefaultFrame extends Frame implements AllocationInfo {
     }
 
     public Temp[] getAllRegisters() {
-        return m_registers;
+        return (Temp[]) Util.safeCopy(Temp.arrayFactory, m_registers);
     }
 
     public Temp[] getGeneralRegisters() {
-        return m_registers;
+        return (Temp[]) Util.safeCopy(Temp.arrayFactory, m_registers);
     }
 
     public TempFactory tempFactory() { 
