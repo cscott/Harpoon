@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.42 1999-09-02 15:40:42 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.43 1999-09-02 15:53:13 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -512,7 +512,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 		break;
 		case 'L': {
 		    int n = Character.digit(assem.charAt(++i), 10);
-		    if (n < src.length) 
+		    if (n < targets.size()) 
 			s.append(targets.get(n));
 		    else 
 			s.append("L?");
