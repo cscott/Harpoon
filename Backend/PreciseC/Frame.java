@@ -41,7 +41,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.5 2000-08-24 23:35:40 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.6 2000-11-11 18:16:38 bdemsky Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -62,7 +62,10 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
 	    alloc_strategy.equalsIgnoreCase("nifty") ?
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new PGCNiftyAllocationStrategy(this) :
+	    new PGCNiftyAllocationStrategy(this,false) :
+	    alloc_strategy.equalsIgnoreCase("niftystats") ?
+	    (harpoon.Backend.Runtime1.AllocationStrategy)
+	    new PGCNiftyAllocationStrategy(this,true) :
 	    alloc_strategy.equalsIgnoreCase("bdw") ?
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Backend.Runtime1.BDWAllocationStrategy(this) :
@@ -77,7 +80,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy(this,
 								  "malloc");
-	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg,
+	runtime = new harpoon.Backend.Runtime2.Runtime(this, as, main, ch, cg,
 						       !is_elf);
 
     }
