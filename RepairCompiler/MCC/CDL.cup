@@ -629,6 +629,12 @@ literal ::=
 	debugMessage(PRODSTRING);
 	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("decimal").addChild(dec).getRoot();
 	:}
+
+	| SUB DECIMAL:dec
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("decimal").addChild("-"+dec).getRoot();
+	:}
 	 
 	| STRING:str
 	{:
