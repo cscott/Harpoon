@@ -109,13 +109,14 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.38 2003-03-28 20:20:19 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.39 2003-03-28 21:23:30 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
     static boolean EVENTDRIVEN = false;
     static boolean recycle = false;
     static boolean optimistic = false;
+    static MetaCallGraph mcg = null; // MetaCallGraph used by EVENTDRIVEN
 
     static boolean PRINT_ORIG = false;
     static boolean PRINT_DATA = false;
@@ -198,9 +199,8 @@ public class SAMain extends harpoon.IR.Registration {
 
     public static void main(String[] args) {
 	hcf = // default code factory.
-	    new harpoon.ClassFile.CachingCodeFactory(
-	    harpoon.IR.Quads.QuadWithTry.codeFactory()
-	    );
+	    new harpoon.ClassFile.CachingCodeFactory
+	    (harpoon.IR.Quads.QuadWithTry.codeFactory());
 
 	// the new mover will try to put NEWs closer to their constructors.
 	// in the words of a PLDI paper, this reduces "drag time".
@@ -210,29 +210,78 @@ public class SAMain extends harpoon.IR.Registration {
 	PRECISEGC = System.getProperty("harpoon.alloc.strategy", 
 				       "malloc").equalsIgnoreCase("precise");
 	parseOpts(args);
-	assert className!= null : "must pass a class to be compiled";
+	if(className == null) {
+	    System.err.println("must pass a class to be compiled");
+	    printHelp();
+	    System.exit(1);
+	}
+	checkOptionConsistency();
 
+	HMethod mainM = getMainMethod();
+
+	// create the target Frame way up here!
+	frame = constructFrame(mainM);
+
+	do_it(mainM);
+    }
+
+
+    // returns the main method of the program to compile
+    private static HMethod getMainMethod() {
 	// find main method
 	HClass hcl = linker.forName(className);
 	HMethod mainM;
 	try {
 	    mainM = hcl.getDeclaredMethod("main","([Ljava/lang/String;)V");
 	} catch (NoSuchMethodError e) {
-	    throw new Error("Class "+className+" has no main method");
+	    throw new Error("Class " + className + " has no main method");
 	}
 	assert mainM != null;
 	assert Modifier.isStatic(mainM.getModifiers()) : "main is not static";
 	assert Modifier.isPublic(mainM.getModifiers()) : "main is not public";
-
-	// create the target Frame way up here!
-	// the frame specifies the combination of target architecture,
-	// runtime, and allocation strategy we want to use.
-	frame = Backend.getFrame(BACKEND, mainM,
-				 getAllocationStrategyFactory());
-
-	do_it(mainM);
+	
+	return mainM;
     }
 
+
+    // constructs and returns the target Frame
+    // the frame specifies the combination of target architecture,
+    // runtime, and allocation strategy we want to use.
+    // ADD YOUR FRAME SETTING CODE HERE
+    private static Frame constructFrame(HMethod mainM) {
+	Frame frame = Backend.getFrame(BACKEND, mainM,
+				       getAllocationStrategyFactory());
+	
+	// check the configuration of the runtime.
+	// (in particular, the --with-precise-c option)
+	if (BACKEND == Backend.PRECISEC)
+	    frame.getRuntime().configurationSet.add
+		("check_with_precise_c_needed");
+	else
+	    frame.getRuntime().configurationSet.add
+		("check_with_precise_c_not_needed");
+	
+	return frame;
+    }
+
+
+    // ADD YOUR OPTION CONSISTENCY TESTS HERE
+    private static void checkOptionConsistency() {
+	// Check for compatibility of precise gc options.
+	if (PRECISEGC)
+	    assert (BACKEND == Backend.PRECISEC) : 
+	    "Precise gc is only implemented for the precise C backend.";
+	if (MULTITHREADED) {
+	    assert PRECISEGC || Realtime.REALTIME_JAVA :
+		"Multi-threaded option is valid only for precise gc.";
+	    assert wbOptLevel == 0 : "Write barrier removal not supported "+
+		"for multi-threaded programs.";
+	}
+	if (WRITEBARRIERS || DYNAMICWBS)
+	    assert PRECISEGC : 
+	    "Write barrier options are valid only for precise gc.";
+    }
+    
 
     private static AllocationStrategyFactory getAllocationStrategyFactory() {
 
@@ -308,37 +357,11 @@ public class SAMain extends harpoon.IR.Registration {
 	if (Realtime.REALTIME_JAVA) { 
 	    Realtime.setupObject(linker); 
 	}
-
-	// Check for compatibility of precise gc options.
-	if (PRECISEGC)
-	    assert (BACKEND == Backend.PRECISEC) : 
-	        "Precise gc is only implemented for the precise C backend.";
-	if (MULTITHREADED) {
-	    assert PRECISEGC || Realtime.REALTIME_JAVA :
-		"Multi-threaded option is valid only for precise gc.";
-	    assert wbOptLevel == 0 : "Write barrier removal not supported "+
-		"for multi-threaded programs.";
-	}
-	if (WRITEBARRIERS || DYNAMICWBS)
-	    assert PRECISEGC : 
-	        "Write barrier options are valid only for precise gc.";
-
-	MetaCallGraph mcg=null;
 	
 	if (SAMain.startset!=null)
 	    hcf = harpoon.IR.Quads.ThreadInliner.codeFactory
 		(hcf,SAMain.startset, SAMain.joinset);
 	
-
-	// check the configuration of the runtime.
-	// (in particular, the --with-precise-c option)
-	if (BACKEND == Backend.PRECISEC)
-	    frame.getRuntime().configurationSet.add
-		("check_with_precise_c_needed");
-	else
-	    frame.getRuntime().configurationSet.add
-		("check_with_precise_c_not_needed");
-
 	// needed for creating the class hierarchy
 	Set roots = getRoots(mainM);
 
