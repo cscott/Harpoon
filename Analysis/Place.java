@@ -12,7 +12,7 @@ import java.util.Hashtable;
  * <code>Place</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.5 1998-09-16 01:00:06 cananian Exp $
+ * @version $Id: Place.java,v 1.6 1998-09-16 03:52:45 cananian Exp $
  */
 
 public class Place  {
@@ -64,14 +64,13 @@ public class Place  {
 
     void placePhi(HCode hc) {
 	// for each defined variable a
-	Temp[] al = (!isPost) ? usedef.allDefs(hc) : usedef.allUses(hc);
+	Temp[] al = usedef.allDefs(hc);
 	for (int i=0; i < al.length; i++) {
 	    Temp a = al[i];
 
 	    Worklist W = new Set();
 	    // W <- defsites[a]
-	    HCodeElement el[] = 
-		(!isPost) ? usedef.defMap(hc, a) : usedef.useMap(hc, a);
+	    HCodeElement el[] = usedef.defMap(hc, a);
 	    for (int j=0; j < el.length; j++)
 		W.push(el[j]);
 
@@ -86,7 +85,7 @@ public class Place  {
 			// if a not in Aorig[Y] then W = W union { Y }
 			harpoon.IR.Properties.UseDef ud = 
 			    (harpoon.IR.Properties.UseDef) Y;
-			Temp[] Aorig = (!isPost) ? ud.def() : ud.use() ;
+			Temp[] Aorig = ud.def();
 			int k; for (k=0; k < Aorig.length; k++)
 			    if (Aorig[k] == a) break;
 			if (k == Aorig.length) // a not in Aorig[Y]
