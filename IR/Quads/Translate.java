@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.28 2000-11-14 18:34:41 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.29 2000-11-14 22:21:12 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -575,25 +575,11 @@ final class Translate { // not public.
 	    } else { // static synchronized, what a kludge.
 		// lock is Class.forName(this.class)
 		lock = new Temp(s.tf(), "lock");
-		Temp Tex = s.extra(0);
-		HClass strC = qf.getLinker().forClass(String.class);
-		// XXX: exC is not currently used.
-		//HClass exC = qf.getLinker().forClass(NoClassDefFoundError.class);
-		HMethod cfnM = qf.getLinker().forClass(Class.class)
-				    .getMethod("forName", 
-					       new HClass[] { strC } );
-		// any exception in this block is immediately thrown
-		// (no specified handler)
-		Quad qq0 = new CONST(qf, q, s.extra(1), 
-				     method.getDeclaringClass().getName(),
-				     strC);
-		Quad qq1 = new CALL(qf, q, cfnM, qq0.def() /*params*/,
-				    lock, null, true /* virtual */,
-				    false /* tail call */,
-				    new Temp[0]);
+		Quad qq1 = new CONST(qf, q, lock, method.getDeclaringClass(),
+				     qf.getLinker().forClass(Class.class));
 		Quad qq2 = new MONITORENTER(qf, q, lock);
 		// okay, link 'em up.
-		Quad.addEdges(new Quad[] {  qM, qq0, qq1, qq2 });
+		Quad.addEdges(new Quad[] {  qM, qq1, qq2 });
 		q = qq2;
 	    }
 	}

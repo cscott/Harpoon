@@ -12,11 +12,15 @@ import harpoon.Util.Util;
  * <code>CONST</code> objects represent an assignment of a constant value
  * to a compiler temporary. <p>
  * The <code>type</code> field of a <code>CONST</code> must be one of:
+ * <code>Class</code>, <code>Field</code>, <code>Method</code>,
  * <code>String</code>, <code>int</code>, <code>long</code>,
  * <code>float</code>, <code>double</code> or <code>void</code>.
  * A <code>void</code> type corresponds to a <code>null</code> literal
  * constant, and in this case the <code>value</code> field will be
- * <code>null</code>.  In all other cases, <code>value</code> will contain
+ * <code>null</code>.  For class, field, and method constants, the
+ * <code>value</code> field will contain an instance of <code>HClass</code>,
+ * <code>HField</code>, or <code>HMethod</code>, respectively.
+ * In all other cases, <code>value</code> will contain
  * an object of the specified type; values of primitive types will use
  * the standard wrapper class.  An example may clarify:
  * <UL>
@@ -24,13 +28,17 @@ import harpoon.Util.Util;
  *     <CODE>new CONST(qf, hce, dst, new Integer(0), HClass.Int);</code>
  *  <LI>The string constant "hello, world" is represented by <BR>
  *     <CODE>new CONST(qf, hce, dst, "hello, world",
- *           HClass.forName("java.lang.String") );</code>
+ *           linker.forName("java.lang.String") );</code>
+ *  <LI>The class constant that would be returned by
+ *       <code>Class.forName("java.lang.Object")</code> is represented by <BR>
+ *     <CODE>new CONST(qf, hce, dst, linker.forName("java.lang.Object"),
+ *           linker.forName("java.lang.Class") );</code>
  *  <LI>The null literal is represented by <BR>
  *     <CODE>new CONST(qf, hce, dst, null, HClass.Void);</code>
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CONST.java,v 1.1.2.11 2000-01-13 23:48:00 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.12 2000-11-14 22:21:12 cananian Exp $
  */
 
 public class CONST extends Quad {
@@ -62,7 +70,10 @@ public class CONST extends Quad {
 	Util.assert(type.equals(HClass.Int)   || type.equals(HClass.Long)   ||
 		    type.equals(HClass.Float) || type.equals(HClass.Double) ||
 		    type.equals(HClass.Void)  || 
-		    type.getName().equals("java.lang.String") );
+		    type.getName().equals("java.lang.Class") ||
+		    type.getName().equals("java.lang.reflect.Field") ||
+		    type.getName().equals("java.lang.reflect.Method") ||
+		    type.getName().equals("java.lang.String"));
 	if (type.equals(HClass.Void))
 	    Util.assert(value==null);
 	else

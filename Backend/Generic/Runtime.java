@@ -30,7 +30,7 @@ import java.util.List;
  * runtime system.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.10 2000-11-12 18:45:18 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.11 2000-11-14 22:20:56 cananian Exp $
  */
 public abstract class Runtime {
     /** A <code>NameMap</code> valid for this
@@ -144,6 +144,36 @@ public abstract class Runtime {
 				      DerivationGenerator dg,
 				      AllocationProperties ap,
 				      HClass classType, boolean initialize);
+
+	/** Return a <code>Translation.Exp</code> which represents a
+	 *  reference to a <code>Class</code> constant.  The runtime
+	 *  may implement this by a call to
+	 *  <code>Class.forName(classname)</code> or other lookup
+	 *  function, or may return a <code>NAME</code> if the class
+	 *  objects are statically allocated. */
+	public abstract Exp classConst(TreeFactory tf, HCodeElement source,
+				       DerivationGenerator dg,
+				       HClass classData);
+	/** Return a <code>Translation.Exp</code> which represents a
+	 *  reference to a <code>java.lang.reflect.Field</code>
+	 *  constant.  The runtime may implement this by a call to
+	 *  <code>Class.forName(classname).getDeclaredField(fieldname)</code>
+	 *  or other lookup functions, or may return a
+	 *  <code>NAME</code> if the <code>Field</code> objects are statically
+	 *  allocated. */
+	public abstract Exp fieldConst(TreeFactory tf, HCodeElement source,
+				       DerivationGenerator dg,
+				       HField fieldData);
+	/** Return a <code>Translation.Exp</code> which represents a
+	 *  reference to a <code>java.lang.reflect.Method</code>
+	 *  constant.  The runtime may implement this by a call to
+	 *  <code>Class.forName(classname).getDeclaredMethod(name,...)</code>
+	 *  or other lookup functions, or may return a
+	 *  <code>NAME</code> if the <code>Method</code> objects are statically
+	 *  allocated. */
+	public abstract Exp methodConst(TreeFactory tf, HCodeElement source,
+					DerivationGenerator dg,
+					HMethod methodData);
 
 	/** Return a <code>Translation.Exp</code> which represents
 	 *  a reference to a string constant.  Note that invoking

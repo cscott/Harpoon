@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.32 2000-11-12 18:45:42 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.33 2000-11-14 22:21:03 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -616,6 +616,28 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		 new TEMP(tf, source, Type.POINTER, t)));
 	}
 	return new Translation.Ex(object);
+    }
+
+    public Translation.Exp classConst(TreeFactory tf, HCodeElement source,
+			  DerivationGenerator dg, HClass classData) {
+	Exp clsref = new NAME(tf, source,
+			      runtime.nameMap.label(classData, "classobj"));
+	DECLARE(dg, linker.forName("java.lang.Class"), clsref);
+	return new Translation.Ex(clsref);
+    }
+    public Translation.Exp fieldConst(TreeFactory tf, HCodeElement source,
+			  DerivationGenerator dg, HField fieldData) {
+	Exp fldref = new NAME(tf, source,
+			      runtime.nameMap.label(fieldData, "obj"));
+	DECLARE(dg, linker.forName("java.lang.reflect.Field"), fldref);
+	return new Translation.Ex(fldref);
+    }
+    public Translation.Exp methodConst(TreeFactory tf, HCodeElement source,
+			   DerivationGenerator dg, HMethod methodData) {
+	Exp mthref = new NAME(tf, source,
+			      runtime.nameMap.label(methodData, "obj"));
+	DECLARE(dg, linker.forName("java.lang.reflect.Method"), mthref);
+	return new Translation.Ex(mthref);
     }
 
     public Translation.Exp stringConst(TreeFactory tf, HCodeElement source,

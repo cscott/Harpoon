@@ -78,7 +78,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.88 2000-10-11 01:53:34 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.89 2000-11-14 22:21:21 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -1270,6 +1270,12 @@ static class TranslationVisitor extends LowQuadVisitor {
 	    constant = new CONST(m_tf, src, ((Double)value).doubleValue());
 	else if (type.getName().equals("java.lang.String"))
 	    return m_rtb.stringConst(m_tf, src, treeDeriv, (String)value);
+	else if (type.getName().equals("java.lang.Class"))
+	    return m_rtb.classConst(m_tf, src, treeDeriv, (HClass)value);
+	else if (type.getName().equals("java.lang.reflect.Field"))
+	    return m_rtb.fieldConst(m_tf, src, treeDeriv, (HField)value);
+	else if (type.getName().equals("java.lang.reflect.Method"))
+	    return m_rtb.methodConst(m_tf, src, treeDeriv, (HMethod)value);
 	else 
 	    throw new Error("Bad type for CONST: " + type); 
 	return new Translation.Ex(constant);
