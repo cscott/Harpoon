@@ -27,7 +27,16 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     memset(infl, 0, sizeof(*infl));
     infl->hashcode = obj->hashunion.hashcode;
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
+# ifdef ERROR_CHECKING_LOCKS
+    /* error checking locks are slower, but catch more bugs (maybe) */
+    { pthread_mutexattr_t attr; pthread_mutexattr_init(&attr);
+      pthread_mutexattr_setkind_np(&attr, PTHREAD_MUTEX_ERRORCHECK_NP);
+      pthread_mutex_init(&(infl->mutex), &attr);
+      pthread_mutexattr_destroy(&attr);
+    }
+# else /* !ERROR_CHECKING_LOCKS */
     pthread_mutex_init(&(infl->mutex), NULL);
+# endif /* ERROR_CHECKING_LOCKS || !ERROR_CHECKING_LOCKS */
     pthread_cond_init(&(infl->cond), NULL);
     pthread_rwlock_init(&(infl->jni_data_lock), NULL);
 #endif
