@@ -13,7 +13,7 @@ import java.util.Set;
  *
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Loops.java,v 1.1.2.6 2001-06-15 08:25:52 cananian Exp $
+ * @version $Id: Loops.java,v 1.1.2.7 2001-06-15 14:26:18 cananian Exp $
  */
 
 public interface Loops {
@@ -21,24 +21,33 @@ public interface Loops {
     /** Returns entrances to the Loop.
      *  This is a <code>Set</code> of <code>HCodeElement</code>s.*/
     public Set loopEntrances();
+
+    /** Returns nodes that have edges exiting the loop.
+     *  This is a <code>Set</code> of <code>HCodeElement</code>s.*/
+    public Set loopExits();
     
-    /** Returns backedges in the Loop.
+    /** Returns entrances to the Loop.
      *  This is a <code>Set</code> of <code>HCodeEdge</code>s.*/
-    public Set loopBackedges();
+    public Set loopEntranceEdges();
 
     /** Returns nodes that have edges exiting the loop.
      *  This is a <code>Set</code> of <code>HCodeEdge</code>s.*/
-    public Set loopExits();
+    public Set loopExitEdges();
     
+    /** Returns backedges in the Loop.
+     *  This is a <code>Set</code> of <code>HCodeEdge</code>s.*/
+    public Set loopBackEdges();
+
     /** Returns elements of this loops and all nested loop.
      *  This is a <code>Set</code> of <code>HCodeElement</code>s.*/
-    public Set loopIncelements();
+    public Set loopIncElements();
     
     /** Returns elements of this loop not in any nested loop.
      *  This is a <code>Set</code> of <code>HCodeElement</code>s.*/
-    public Set loopExcelements();
+    public Set loopExcElements();
     
-    /** Returns a <code>Set</code> containing <code>Loops</code> that are nested.*/
+    /** Returns a <code>Set</code> containing <code>Loops</code> that are
+     *  nested.*/
     public Set nestedLoops();
     
     /** Returns the loop immediately nesting this loop.

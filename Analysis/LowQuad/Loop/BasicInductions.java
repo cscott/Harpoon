@@ -36,7 +36,7 @@ import java.util.Iterator;
  * <code>BasicInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: BasicInductions.java,v 1.1.2.10 2001-01-11 19:57:01 cananian Exp $
+ * @version $Id: BasicInductions.java,v 1.1.2.11 2001-06-15 14:26:25 cananian Exp $
  */
 public class BasicInductions {
     HCode hc;
@@ -64,8 +64,8 @@ public class BasicInductions {
 	
 	/*Set up Sets and the UseDef map*/
 	
-	WorkSet excelements=(WorkSet) lp.loopExcelements();
-	WorkSet incelements=(WorkSet) lp.loopIncelements();
+	WorkSet excelements=(WorkSet) lp.loopExcElements();
+	WorkSet incelements=(WorkSet) lp.loopIncElements();
 	UseDef ud= new UseDef();
 	WorkSet adds=new WorkSet();
 	WorkSet addp=new WorkSet();

@@ -73,7 +73,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.21 2000-10-11 01:51:20 cananian Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.22 2001-06-15 14:26:25 cananian Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -123,7 +123,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
      * induction variable in and returns a <code>Temp</code> with its initial value. */
     
     Temp initialTemp(HCode hc, Temp t, Loops lp) {
-	Set loopelements=lp.loopIncelements();
+	Set loopelements=lp.loopIncElements();
 	Util.assert(lp.loopEntrances().size()==1,"Loop must have one entrance");
 	PHI q=(PHI)(lp.loopEntrances()).toArray()[0];
 
@@ -149,7 +149,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
      *  incremented by.*/
 
     Temp findIncrement(HCode hc, Temp t, Loops lp) {
-	Set loopelements=lp.loopIncelements();
+	Set loopelements=lp.loopIncElements();
 	Util.assert(lp.loopEntrances().size()==1,"Loop must have one entrance");
 	PHI oheader=(PHI)(lp.loopEntrances()).toArray()[0];
 	Quad q=addQuad(hc, oheader, t,loopelements);
@@ -220,7 +220,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	}
 
 	//Find loop invariants
-	WorkSet elements=(WorkSet)lp.loopIncelements();
+	WorkSet elements=(WorkSet)lp.loopIncElements();
 	LoopInvariance invar=new LoopInvariance(tm,hc);
 	WorkSet invariants=invar.invariants(elements);
 
@@ -276,7 +276,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	//Make sure we have done analysis
 	analyze(hc);
 	//Create the set of loop elements
-	Set elements=lp.loopIncelements();
+	Set elements=lp.loopIncElements();
 	WorkSet tests=new WorkSet();
 	//Iterate through this set
 	Iterator iterate=elements.iterator();
@@ -650,7 +650,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 			//Still need to verify track set [#3, #4]
 			//Still need to check uses of increment [#5]
 			PHI header=(PHI)(lp.loopEntrances()).toArray()[0];
-			OPER addquad=(OPER)addQuad(hc, header,binvar, lp.loopIncelements());			
+			OPER addquad=(OPER)addQuad(hc, header,binvar, lp.loopIncElements());			
 			Temp nextinc=addquad.dst();
 			boolean otheruse=false;
 			WorkSet tocheck=new WorkSet();
@@ -734,7 +734,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	boolean checktracks() {
 	    Iterator trackiterate=track.iterator();
 	    boolean go=true;
-	    Set loopset=lp.loopIncelements();
+	    Set loopset=lp.loopIncElements();
 	    while (trackiterate.hasNext()&&go) {
 		Temp temptocheck=(Temp)trackiterate.next();
 		HCodeElement[] uses=ud.useMap(hc, temptocheck);
@@ -751,7 +751,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	int analyzecjmp(CJMP q) {
 	    int exit=-1;
 	    for (int i=0;i<q.nextLength();i++)
-		if (!lp.loopIncelements().contains(q.next(i))) {
+		if (!lp.loopIncElements().contains(q.next(i))) {
 		    //we've found the way out...
 		    //we only add things in if
 		    //they were not generated in front of us...

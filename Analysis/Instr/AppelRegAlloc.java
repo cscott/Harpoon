@@ -54,7 +54,7 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.1.2.2 2001-06-06 22:18:23 cananian Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.1.2.3 2001-06-15 14:25:43 cananian Exp $
  */
 public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     // FSK: super class really SHOULD be RegAlloc, but am doing this
@@ -622,7 +622,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 		Loops curr = (Loops) levelIter.next();
 		level.addAll( curr.nestedLoops() );
 		
-		Iterator instrs=curr.loopExcelements().iterator(); 
+		Iterator instrs=curr.loopExcElements().iterator(); 
 		while( instrs.hasNext() ){
 		    Instr i = (Instr) instrs.next();
 		    Util.assert( ! nestedLoopDepth.keySet().contains( i ));

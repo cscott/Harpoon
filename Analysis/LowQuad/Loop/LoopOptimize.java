@@ -45,7 +45,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.31 2000-04-14 18:10:36 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.32 2001-06-15 14:26:25 cananian Exp $
  */
 public final class LoopOptimize {
 
@@ -590,7 +590,7 @@ public final class LoopOptimize {
       	int linkin;
 	Util.assert(((CFGraphable)header).pred().length==2);
 	//Only worry about headers with two edges
-	if (lp.loopIncelements().contains(header.prev(0)))
+	if (lp.loopIncElements().contains(header.prev(0)))
 	    linkin=1;
 	else
 	    linkin=0;
@@ -880,7 +880,7 @@ public final class LoopOptimize {
 
 	for (int i=0;i<phin.arity();i++) 
 	    //want old phi here
-	    if (!lp.loopIncelements().contains(phi.prev(i))) {
+	    if (!lp.loopIncElements().contains(phi.prev(i))) {
 		entrance=i;
 		break;
 	    }
@@ -915,7 +915,7 @@ public final class LoopOptimize {
     void makeADD(Induction induction, Temp addresult, Temp indvariable, Temp increment, HCode hc, MyLowQuadSSI hcnew, Loops lp, Quad oheader) {
 	//Build addresult=POPER(add(indvariable, increment))
 	Temp basic=induction.variable();
-	Quad addposition=hcnew.quadMap(loopanal.addQuad(hc,(PHI) oheader,basic,lp.loopIncelements()));
+	Quad addposition=hcnew.quadMap(loopanal.addQuad(hc,(PHI) oheader,basic,lp.loopIncElements()));
 
 	Quad newquad=null;
 	Temp[] sources=new Temp[2];
@@ -956,7 +956,7 @@ public final class LoopOptimize {
 
 	Util.assert(((CFGraphable)header).pred().length==2);
 	//Only worry about headers with two edges
-	if (lp.loopIncelements().contains(header.prev(0)))
+	if (lp.loopIncElements().contains(header.prev(0)))
 	    linkin=1;
 	else
 	    linkin=0;

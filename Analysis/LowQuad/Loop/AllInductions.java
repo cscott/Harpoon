@@ -32,7 +32,7 @@ import java.util.Iterator;
  * <code>AllInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: AllInductions.java,v 1.1.2.13 2001-01-11 19:57:01 cananian Exp $
+ * @version $Id: AllInductions.java,v 1.1.2.14 2001-06-15 14:26:25 cananian Exp $
  */
 public class AllInductions {
     TempMap tm;
@@ -51,7 +51,7 @@ public class AllInductions {
     public HashMap doAllInductions(Loops lp, WorkSet invariants, HashMap basicinductions) {
 	HashMap allInductions=new HashMap(basicinductions);
 	CompleteVisitor visitor=new CompleteVisitor(allInductions,invariants);
-	WorkSet elements=new WorkSet(lp.loopIncelements());
+	WorkSet elements=new WorkSet(lp.loopIncElements());
        	// Want to look for patterns like:
 	/*  k=j*b, k=j+-b, k=b+-j     */
 	// Use the representation:

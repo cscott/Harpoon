@@ -16,7 +16,7 @@ import java.util.Set;
  * <code>LoopMap</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopMap.java,v 1.1.2.3 2000-01-14 12:32:50 cananian Exp $
+ * @version $Id: LoopMap.java,v 1.1.2.4 2001-06-15 14:26:25 cananian Exp $
  */
 public class LoopMap implements TempMap {
     
@@ -27,7 +27,7 @@ public class LoopMap implements TempMap {
         this.lp=lp;
 	this.hc=hc;
 	this.ud=new UseDef();
-	this.elements=lp.loopIncelements();
+	this.elements=lp.loopIncElements();
 	this.ssitossa=ssitossa;
     }
 

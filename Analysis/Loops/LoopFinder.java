@@ -20,7 +20,7 @@ import java.util.Iterator;
  * <code>LoopFinder</code> implements Dominator Tree Loop detection.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopFinder.java,v 1.1.2.11 2001-06-15 08:25:52 cananian Exp $
+ * @version $Id: LoopFinder.java,v 1.1.2.12 2001-06-15 14:26:16 cananian Exp $
  */
 
 public class LoopFinder implements Loops {
@@ -91,10 +91,46 @@ public class LoopFinder implements Loops {
      *   It returns a <code>Set</code> of <code>HCodeElement</code>s.*/
     
     public Set loopEntrances() {
-      analyze();
       WorkSet entries=new WorkSet();
-      entries.push(ptr.header);
+      for (Iterator it=loopEntranceEdges().iterator(); it.hasNext(); ) {
+	HCodeEdge hce = (HCodeEdge) it.next();
+	entries.push(hce.to());
+      }
       return entries;
+    }
+    public Set loopEntranceEdges() {
+      analyze();
+      WorkSet A=new WorkSet();
+      HCodeEdge[] edges = grapher.pred(ptr.header);
+      for (int i=0; i<edges.length; i++)
+	if (!ptr.entries.contains(edges[i].from()))
+	  A.push(edges[i]);
+      return A;
+    }
+    /** Returns a <code>Set</code> of all <code>HCodeElement</code>s
+     *  in the loop which have an edge exiting the loop. */
+    public Set loopExits() {
+      WorkSet entries=new WorkSet();
+      for (Iterator it=loopExitEdges().iterator(); it.hasNext(); ) {
+	HCodeEdge hce = (HCodeEdge) it.next();
+	entries.push(hce.from());
+      }
+      return entries;
+    }
+    /**  Returns a <code>Set</code> of all <code>HCodeEdge</code>s
+     *   exiting the loop. */
+    public Set loopExitEdges() {
+	analyze();
+	WorkSet A=new WorkSet();
+	Iterator iterate=ptr.entries.iterator();
+	while (iterate.hasNext()) {
+	    HCodeElement hce=(HCodeElement)iterate.next();
+	    HCodeEdge[] edges = grapher.succ(hce);
+	    for (int i=0; i<edges.length; i++)
+		if (!ptr.entries.contains(edges[i].to()))
+		    A.push(edges[i]);
+	}
+	return A;
     }
     
     /**  This method finds all of the backedges of the loop.
@@ -102,40 +138,16 @@ public class LoopFinder implements Loops {
      *   can be greater than one. This method returns a <code>Set</code> of
      *   <code>HCodeEdge</code>s.*/
 
-    public Set loopBackedges() {
+    public Set loopBackEdges() {
 	analyze();
 	WorkSet A=new WorkSet();
 	Iterator iterate=ptr.entries.iterator();
 	while (iterate.hasNext()) {
 	    HCodeElement hce=(HCodeElement)iterate.next();
 	    HCodeEdge[] edges = grapher.succ(hce);
-	    for (int i=0; i<edges.length; i++) {
-		if (edges[i].to()==ptr.header) {
+	    for (int i=0; i<edges.length; i++)
+		if (edges[i].to()==ptr.header)
 		    A.push(edges[i]);
-		    break;
-		}
-	    }
-	}
-	return A;
-    }
-    
-    /**  This method returns all of the exits from a loop.
-     *   It returns them in the form of a <code>Set</code> of
-     *   <code>HCodeEdge</code>s.*/
-    
-    public Set loopExits() {
-	analyze();
-	WorkSet A=new WorkSet();
-	Iterator iterate=ptr.entries.iterator();
-	while (iterate.hasNext()) {
-	    HCodeElement hce=(HCodeElement)iterate.next();
-	    HCodeEdge[] edges = grapher.succ(hce);
-	    for (int i=0; i<edges.length; i++) {
-		if (!ptr.entries.contains(edges[i].to())) {
-		    A.push(edges[i]);
-		    break;
-		}
-	    }
 	}
 	return A;
     }
@@ -143,7 +155,7 @@ public class LoopFinder implements Loops {
     /**Returns a <code>Set</code> with all of the <code>HCodeElement</code>s of the loop and
      *loops included entirely within this loop. */
     
-    public Set loopIncelements() {
+    public Set loopIncElements() {
 	analyze();
 	WorkSet A=new WorkSet(ptr.entries);
 	return A;
@@ -152,7 +164,7 @@ public class LoopFinder implements Loops {
     /** Returns all of the <code>HCodeElement</code>s of this loop that aren't in a nested
      *  loop. This returns a <code>Set</code> of <code>HCodeElement</code>s.*/
     
-    public Set loopExcelements() {
+    public Set loopExcElements() {
 	analyze();
 	WorkSet A=new WorkSet(ptr.entries);
 	WorkSet todo=new WorkSet();
