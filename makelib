@@ -1,17 +1,31 @@
  #!/bin/bash
-rm libchecker.a
+
+# Run this script to create libchecker.a, necessary for the debugging tool
+# Date: July 26
+
+if [ -f libchecker.a]
+then rm libchecker.a
+fi
 
 mv file.cc file.bak
 mv danfile.cc danfile.bak
 
+
 g++ -Wno-deprecated -g -O0 -c *.cc
 gcc -Wno-deprecated -g -O0 -c *.c
 
-rm danfile.o
-rm file.o
+
+if [ -f danfile.o ]
+then rm danfile.o
+fi
+
+if [ -f file.o ]
+then rm file.o
+fi
 
 ar -r libchecker.a *.o
 ranlib libchecker.a
+
 
 mv file.bak file.cc
 mv danfile.bak danfile.cc
