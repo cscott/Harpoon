@@ -40,20 +40,19 @@ import java.util.List;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.3 2003-07-04 03:41:54 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.4 2003-10-21 00:41:08 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
     final NameMap m_nm;
-    boolean pointersAreLong;
+    final boolean pointersAreLong;
     
     /** Creates a <code>DataReflection2</code>. */
-    public DataReflection2(Frame f, HClass hc, ClassHierarchy ch,
-			   boolean pointersAreLong) {
+    public DataReflection2(Frame f, HClass hc, ClassHierarchy ch) {
         super("reflection-data-2", hc, f);
 	this.m_nm = f.getRuntime().getNameMap();
 	this.m_tb = (TreeBuilder) f.getRuntime().getTreeBuilder();
-	this.pointersAreLong = pointersAreLong;
+	this.pointersAreLong = f.pointersAreLong();
 	this.root = build(hc, ch);
     }
     private HDataElement build(HClass hc, ClassHierarchy ch) {
@@ -69,6 +68,9 @@ public class DataReflection2 extends Data {
 	stmlist.add(_DATUM(m_nm.label(hc, "namestr")));
 	// the java access modifiers for this class
 	stmlist.add(_DATUM(new CONST(tf, null, hc.getModifiers())));
+	// padding for 64-bit platforms.
+	if (pointersAreLong)
+	    stmlist.add(_DATUM(new CONST(tf, null, 0)));
 	// pointer to the end of the lookup table.
 	stmlist.add(_DATUM(m_nm.label(hc, "classinfo_end")));
 	// okay, now the sorted name, desc, offset table.

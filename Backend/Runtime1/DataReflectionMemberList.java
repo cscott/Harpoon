@@ -52,17 +52,19 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflectionMemberList.java,v 1.3 2003-07-04 03:41:54 cananian Exp $
+ * @version $Id: DataReflectionMemberList.java,v 1.4 2003-10-21 00:41:08 cananian Exp $
  */
 public class DataReflectionMemberList extends Data {
     final NameMap m_nm;
     final ObjectBuilder m_ob;
+    final boolean pointersAreLong;
     
     /** Creates a <code>DataReflectionMemberList</code>. */
     public DataReflectionMemberList(Frame f, HClass hc, ClassHierarchy ch) {
         super("reflection-data-method-list", hc, f);
 	this.m_nm = f.getRuntime().getNameMap();
 	this.m_ob = ((Runtime) f.getRuntime()).ob;
+	this.pointersAreLong = f.pointersAreLong();
 	// only build one of these (so we can make sure the
 	// table is properly sorted); wait until hc is
 	// java.lang.Object
@@ -116,6 +118,9 @@ public class DataReflectionMemberList extends Data {
 	    stmlist.add(_DATUM(memberLabel(hm, "info")));
 	    stmlist.add(_DATUM(m_nm.label(hm.getDeclaringClass(),"classobj")));
 	    stmlist.add(_DATUM(new CONST(tf, null, hm.getModifiers())));
+	    // padding for 64-bit platforms.
+	    if (pointersAreLong)
+		stmlist.add(_DATUM(new CONST(tf, null, 0)));
 	}
 	stmlist.add(new LABEL(tf, null,
 			      new Label(m_nm.c_function_name

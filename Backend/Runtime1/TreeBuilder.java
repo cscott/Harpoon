@@ -61,7 +61,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.7 2003-07-15 03:33:51 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.8 2003-10-21 00:41:08 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -98,9 +98,9 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     protected final int CLAZ_COMPONENT_OFF;
     protected final int CLAZ_INTERFZ_OFF;
     protected final int CLAZ_SIZE_OFF;
+    protected final int CLAZ_DEPTH_OFF;
     protected final int CLAZ_GCENTRY_OFF;
     protected final int CLAZ_EXTRAINFO_OFF;
-    protected final int CLAZ_DEPTH_OFF;
     protected final int CLAZ_DISPLAY_OFF;
     protected       int CLAZ_METHODS_OFF;
     
@@ -148,18 +148,21 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	    // add (non-header) size of java.lang.Object, since arrays
 	    // inherit from it (allows us to add fields to Object)
 	    objectSize(linker.forName("java.lang.Object"));
-	OBJ_AZERO_OFF   = OBJ_ALENGTH_OFF + 1 * WORD_SIZE;
+	// ALENGTH is just a word-sized field, but we allocate POINTER_SIZE
+	// to it in order to ensure that array elements are pointer-aligned
+	// on 64-bit platforms.
+	OBJ_AZERO_OFF   = OBJ_ALENGTH_OFF + 1 * POINTER_SIZE;
 	// layout of claz
 	CLAZ_INTERFACES_OFF = -1 * POINTER_SIZE;
 	CLAZ_CLAZINFO    = 0 * POINTER_SIZE;
 	CLAZ_COMPONENT_OFF=1 * POINTER_SIZE;
 	CLAZ_INTERFZ_OFF = 2 * POINTER_SIZE;
 	CLAZ_SIZE_OFF	 = 3 * POINTER_SIZE;
-	CLAZ_GCENTRY_OFF = 3 * POINTER_SIZE + 1 * WORD_SIZE;
-	CLAZ_EXTRAINFO_OFF=4 * POINTER_SIZE + 1 * WORD_SIZE; 
-	CLAZ_DEPTH_OFF   = CLAZ_EXTRAINFO_OFF +
+	CLAZ_DEPTH_OFF   = 3 * POINTER_SIZE + 1 * WORD_SIZE;
+	CLAZ_GCENTRY_OFF = 3 * POINTER_SIZE + 2 * WORD_SIZE;
+	CLAZ_EXTRAINFO_OFF=4 * POINTER_SIZE + 2 * WORD_SIZE; 
+	CLAZ_DISPLAY_OFF = CLAZ_EXTRAINFO_OFF +
 	    runtime.getExtraClazInfo().fields_size();
-	CLAZ_DISPLAY_OFF = CLAZ_DEPTH_OFF + 1 * WORD_SIZE;
     }
     // hook to let our subclasses use a different classfieldmap
     protected FieldMap initClassFieldMap() {

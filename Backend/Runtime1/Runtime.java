@@ -35,7 +35,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.10 2003-10-03 16:59:24 cananian Exp $
+ * @version $Id: Runtime.java,v 1.11 2003-10-21 00:41:08 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime
     implements java.io.Serializable {
@@ -209,7 +209,7 @@ public class Runtime extends harpoon.Backend.Generic.Runtime
 	    new DataInitializers(frame, hc, staticInitializers),
 	    new DataJavaMain(frame, hc, main),
 	    new DataReflection1(frame, hc, ch),
-	    new DataReflection2(frame, hc, ch, frame.pointersAreLong()),
+	    new DataReflection2(frame, hc, ch),
 	    new DataReflectionMemberList(frame, hc, ch),
 	}));
 	if (frame.getGCInfo() != null)

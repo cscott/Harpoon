@@ -40,7 +40,7 @@ import java.util.Set;
  * fields in object layouts.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.2 2002-04-10 03:03:43 cananian Exp $
+ * @version $Id: Runtime.java,v 1.3 2003-10-21 00:41:11 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Runtime1.Runtime {
     // options.
@@ -133,7 +133,7 @@ public class Runtime extends harpoon.Backend.Runtime1.Runtime {
 			// first the superclass' fields.
 			eci.fields_size() +
 			// now ours.
-			4 /*getTreeBuilder().WORD_SIZE*/;
+			(frame.pointersAreLong() ? 8 : 4);
 		}
 		public Stm emit(TreeFactory tf, Frame f, HClass hc,
 				ClassHierarchy ch) {
@@ -144,6 +144,9 @@ public class Runtime extends harpoon.Backend.Runtime1.Runtime {
 		    // now ours.
 		    int num = cn.clazNumber(hc);// good thing this is complete!
 		    stmlist.add(new DATUM(tf, null, new CONST(tf, null, num)));
+		    // padding for 64-bit platforms.
+		    if (f.pointersAreLong())
+			stmlist.add(new DATUM(tf,null,new CONST(tf, null, 0)));
 		    // ta-da!
 		    return Stm.toStm(stmlist);
 		}

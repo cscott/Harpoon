@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.4 2002-04-10 03:03:20 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.5 2003-10-21 00:41:08 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -87,6 +87,10 @@ public class DataClaz extends Data {
 	    (hc==HClass.Int||hc==HClass.Float) ? m_tb.WORD_SIZE :
 	    (hc==HClass.Short||hc==HClass.Char) ? 2 : 1;
 	stmlist.add(_DATUM(new CONST(tf, null, size)));
+	// class depth.
+	int depth = m_tb.cdm.classDepth(hc);
+	if (HClassUtil.baseClass(hc).isInterface()) depth=0;// mark interface[]
+	stmlist.add(_DATUM(new CONST(tf, null, m_tb.POINTER_SIZE * depth)));
 	// bitmap for gc or pointer to bitmap
       	stmlist.add(gc(f, hc));
 	// extra claz info (defined by runtime's subclass, if any)
@@ -94,10 +98,6 @@ public class DataClaz extends Data {
 	    Stm s = eci.emit(tf, f, hc, ch);
 	    if (s!=null) stmlist.add(s);
 	}
-	// class depth.
-	int depth = m_tb.cdm.classDepth(hc);
-	if (HClassUtil.baseClass(hc).isInterface()) depth=0;// mark interface[]
-	stmlist.add(_DATUM(new CONST(tf, null, m_tb.POINTER_SIZE * depth)));
 	// class display
 	stmlist.add(display(hc, ch));
 	// now class method table.
