@@ -7,7 +7,7 @@
 //#define PTR_WB
 #define WITH_GENERATION_CHECK
 
-//#ifdef JOLDEN_WRITE_BARRIER
+#ifdef JOLDEN_WRITE_BARRIER
 
 FLEX_MUTEX_DECLARE_STATIC(intergen_mutex);
 
