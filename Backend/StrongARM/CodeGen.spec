@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.130 2000-02-14 04:01:48 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.131 2000-02-14 16:49:34 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -269,6 +269,7 @@ import java.util.Iterator;
 	if (n instanceof Double || n instanceof Float) return false;
 	else return is12BitOffset(n.longValue());
     }
+    // helper for operand2 shifts
     private boolean is5BitShift(long val) {
 	return (val>=0) && (val<=31);
     }
@@ -276,14 +277,49 @@ import java.util.Iterator;
 	if (n instanceof Double || n instanceof Float) return false;
 	else return is5BitShift(n.longValue());
     }
-    
+    private boolean isShiftOp(int op) {
+	switch (op) {
+	case Bop.SHL: case Bop.SHR: case Bop.USHR: return true;
+	default: return false;
+	}
+    }
+    private String shiftOp2Str(int op) {
+	switch (op) {
+	case Bop.SHL: return "lsl";
+	case Bop.SHR: return "asr";
+	case Bop.USHR: return "lsr";
+	default: throw new Error("Illegal shift operation");
+	}
+    }
+    // helper for comparison operations
+    private boolean isCmpOp(int op) {
+	switch (op) {
+	case Bop.CMPEQ:
+	case Bop.CMPGT: case Bop.CMPGE:
+	case Bop.CMPLT: case Bop.CMPLE: return true;
+	default: return false;
+	}
+    }
+    private String cmpOp2Str(int op) {
+	switch (op) {
+	case Bop.CMPEQ: return "eq";
+	case Bop.CMPGT: return "gt";
+	case Bop.CMPGE: return "ge";
+	case Bop.CMPLE: return "le";
+	case Bop.CMPLT: return "lt";
+	default: throw new Error("Illegal compare operation");
+	}
+    }
     // helper for operand2 immediates
     private boolean isOpd2Imm(Number n) {
 	if (!(n instanceof Integer)) return false;
 	else return isOpd2Imm(n.intValue());
     }
     private boolean isOpd2Imm(int val) {
-	return (steps(val)<=1) || (steps(-val)<=1);
+	return (steps(val)<=1);
+    }
+    private int negate(Number n) {
+	return -((Integer)n).intValue();
     }
     // helper for outputting constants
     private String loadConst32(String reg, int val, String humanReadable) {
@@ -607,21 +643,19 @@ import java.util.Iterator;
     /* this comment will be eaten by the .spec processor (unlike comments above) */
 	
 /* EXPRESSIONS */ 
-BINOP<p,i>(ADD, j, k) = i %{		
-
+BINOP<p,i>(ADD, j, k) = i
+%{
     emit( ROOT, "add `d0, `s0, `s1", i, j, k);
 }%
-BINOP<p,i>(ADD, j, CONST<i,p>(c)) = i %pred %( isOpd2Imm(c) )% %{
-
+BINOP<p,i>(ADD, j, CONST<p,i>(c)) = i
+%pred %( isOpd2Imm(c) )%
+%{
     emit( ROOT, "add `d0, `s0, #"+c, i, j);
 }%
-BINOP<p,i>(ADD, CONST<i,p>(c), j) = i %pred %( isOpd2Imm(c) )% %{
-
-    emit( ROOT, "add `d0, `s0, #"+c, i, j);
-}%
-BINOP<p,i>(ADD, j, BINOP<p,i>(SHL, k, CONST<i,p>(c))) = i
-%pred %( is5BitShift(c) )% %{
-    emit( ROOT, "add `d0, `s0, `s1, lsl #"+c, i, j, k);
+BINOP<p,i>(ADD, j, BINOP<p,i>(shiftop, k, CONST<p,i>(c))) = i
+%pred %( isShiftOp(shiftop) && is5BitShift(c) )%
+%{
+    emit( ROOT, "add `d0, `s0, `s1, "+shiftOp2Str(shiftop)+" #"+c, i, j, k);
 }%
 
 BINOP<l>(ADD, j, k) = i %{
@@ -656,9 +690,76 @@ BINOP<d>(ADD, j, k) = i %{
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 
-BINOP<p,i>(AND, j, k) = i %{
+    /*-------- SUBTRACT (which, in tree form, is (x + (-y) ) -------- */
+BINOP<p,i>(ADD, j, UNOP<p,i>(NEG, k)) = i
+%{
+    emit( ROOT, "sub `d0, `s0, `s1", i, j, k);
+}%
+BINOP<p,i>(ADD, j, CONST<i>(c)) = i
+%pred %( isOpd2Imm(negate(c)) )%
+%{
+    emit( ROOT, "sub `d0, `s0, #"+negate(c), i, j);
+}%
+BINOP<p,i>(ADD, j, UNOP<p,i>(NEG, BINOP<p,i>(shiftop, k, CONST<p,i>(c)))) = i
+%pred %( isShiftOp(shiftop) && is5BitShift(c) )%
+%{
+    emit( ROOT, "sub `d0, `s0, `s1, "+shiftOp2Str(shiftop)+" #"+c, i, j, k);
+}%
+    // bless its CISCy heart, StrongARM lets us reverse-subtract...
+BINOP<p,i>(ADD, UNOP<p,i>(NEG, j), CONST<p,i>(c)) = i
+%pred %( isOpd2Imm(c) )%
+%{
+    emit( ROOT, "rsb `d0, `s0, #"+c, i, j);
+}%
+BINOP<p,i>(ADD, UNOP<p,i>(NEG, j), BINOP<p,i>(shiftop, k, CONST<p,i>(c))) = i
+%pred %( isShiftOp(shiftop) && is5BitShift(c) )%
+%{
+    emit( ROOT, "rsb `d0, `s0, `s1, "+shiftOp2Str(shiftop)+" #"+c, i, j, k);
+}%
+    // okay, back to regular subtractions.
+BINOP<l>(ADD, j, UNOP<l>(NEG, k)) = i %{
 
+    emit( ROOT, "subs `d0l, `s0l, `s1l\n"+
+		"sbc  `d0h, `s0h, `s1h", i, j, k );
+    // make sure d0l isn't assigned same reg as `s0h or `s1h
+    emit2( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+}%
+BINOP<f>(ADD, j, UNOP<l>(NEG, k)) = i %{
+    /* call auxillary fp routines */
+
+    emitMOVE( ROOT, "mov `d0, `s0", r1, k );
+    emitMOVE( ROOT, "mov `d0, `s0", r0, j );
+    emit2( ROOT, "bl ___subsf3",
+	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
+    emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
+}%
+BINOP<d>(ADD, j, UNOP<l>(NEG, k)) = i %{
+    /* call auxillary fp routines */
+
+        // not certain an emitMOVE is legal with the l/h modifiers
+    emit( ROOT, "mov `d0, `s0l", r2, k );
+    emit( ROOT, "mov `d0, `s0h", r3, k );
+    emit( ROOT, "mov `d0, `s0l", r0, j );
+    emit( ROOT, "mov `d0, `s0h", r1, j );
+    emit2(ROOT, "bl ___subdf3", // uses & stomps on these registers
+	 new Temp[]{r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
+    emit( ROOT, "mov `d0l, `s0", i, r0 );
+    emit( ROOT, "mov `d0h, `s0", i, r1 );
+}%
+
+BINOP<p,i>(AND, j, k) = i
+%{
     emit( ROOT, "and `d0, `s0, `s1", i, j, k );
+}%
+BINOP<p,i>(AND, j, CONST<p,i>(c)) = i
+%pred %( isOpd2Imm(c) )%
+%{
+    emit( ROOT, "and `d0, `s0, #"+c, i, j );
+}%
+BINOP<p,i>(AND, j, BINOP<p,i>(shiftop, k, CONST<p,i>(c))) = i
+%pred %( isShiftOp(shiftop) && is5BitShift(c) )%
+%{
+    emit( ROOT, "and `d0, `s0, `s1, "+shiftOp2Str(shiftop)+" #"+c, i, j, k );
 }%
 
 BINOP<l>(AND, j, k) = i %{
@@ -962,9 +1063,19 @@ BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 		"movne `d0, #1", i, r0 );
 }%
 
-BINOP<p,i>(OR, j, k) = i %{
-
+BINOP<p,i>(OR, j, k) = i
+%{
     emit( ROOT, "orr `d0, `s0, `s1", i, j, k );
+}%
+BINOP<p,i>(OR, j, CONST<p,i>(c)) = i
+%pred %( isOpd2Imm(c) )%
+%{
+    emit( ROOT, "orr `d0, `s0, #"+c, i, j );
+}%
+BINOP<p,i>(OR, j, BINOP<p,i>(shiftop, k, CONST<p,i>(c))) = i
+%pred %( isShiftOp(shiftop) && is5BitShift(c) )%
+%{
+    emit( ROOT, "orr `d0, `s0, `s1, "+shiftOp2Str(shiftop)+" #"+c, i, j, k );
 }%
 
 BINOP<l>(OR, j, k) = i %{
@@ -973,15 +1084,20 @@ BINOP<l>(OR, j, k) = i %{
     emit( ROOT, "orr `d0h, `s0h, `s1h", i, j, k );
 }%
 
-BINOP<p,i>(SHL, j, k) = i %{
-
-    emit( ROOT, "mov `d0, `s0, lsl `s1", i, j, k );
+BINOP<p,i>(shiftop, j, k) = i
+%pred %( isShiftOp(shiftop) )%
+%{
+    // FIXME: this pattern is incorrect if k>31.
+    // java lang spec says shift should occur according to
+    // 'least significant five bits' of k; StrongARM uses
+    // least significant *byte*... w/ result 0 if k>31.
+    emit( ROOT, "mov `d0, `s0, "+shiftOp2Str(shiftop)+" `s1", i, j, k );
 }%
 
-BINOP<p,i>(SHL, j, CONST(c)) = i 
-%pred %( is5BitShift(c) )%
+BINOP<p,i>(shiftop, j, CONST(c)) = i 
+%pred %( isShiftOp(shiftop) && is5BitShift(c) )%
 %{
-    emit( ROOT, "mov `d0, `s0, lsl #"+c, i, j);
+    emit( ROOT, "mov `d0, `s0, "+shiftOp2Str(shiftop)+" #"+c, i, j);
 }%
 
 BINOP<l>(SHL, j, k) = i %{
@@ -995,15 +1111,6 @@ BINOP<l>(SHL, j, k) = i %{
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 
-BINOP<p,i>(SHR, j, k) = i %{
-
-    emit( ROOT, "mov `d0, `s0, lsr `s1", i, j, k );
-}%
-BINOP<p,i>(SHR, j, CONST(c)) = i
-%pred %( is5BitShift(c) )%
-%{
-    emit( ROOT, "mov `d0, `s0, lsr #"+c, i, j );
-}%
 BINOP<l>(SHR, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0l", r0, j );
@@ -1015,16 +1122,6 @@ BINOP<l>(SHR, j, k) = i %{
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 
-
-BINOP<p,i>(USHR, j, k) = i %{
-
-    emit( ROOT, "mov `d0, `s0, asr `s1", i, j, k );
-}%
-BINOP<p,i>(USHR, j, CONST(c)) = i
-%pred %( is5BitShift(c) )%
-%{
-    emit( ROOT, "mov `d0, `s0, asr #"+c, i, j );
-}%
 BINOP<l>(USHR, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0l", r0, j );
@@ -1037,10 +1134,21 @@ BINOP<l>(USHR, j, k) = i %{
 }%
 
 
-BINOP<p,i>(XOR, j, k) = i %{
-
+BINOP<p,i>(XOR, j, k) = i
+%{
     emit( ROOT, "eor `d0, `s0, `s1", i, j, k );
 }%
+BINOP<p,i>(XOR, j, CONST<p,i>(c)) = i
+%pred %( isOpd2Imm(c) )%
+%{
+    emit( ROOT, "eor `d0, `s0, #"+c, i, j );
+}%
+BINOP<p,i>(XOR, j, BINOP<p,i>(shiftop, k, CONST<p,i>(c))) = i
+%pred %( isShiftOp(shiftop) && is5BitShift(c) )%
+%{
+    emit( ROOT, "eor `d0, `s0, `s1, "+shiftOp2Str(shiftop)+" #"+c, i, j, k );
+}%
+
 BINOP<l>(XOR, j, k) = i %{
 
     emit( ROOT, "eor `d0l, `s0l, `s1l", i, j, k );
@@ -1076,7 +1184,7 @@ CONST<f,i>(c) = i %{
 
 CONST<p>(c) = i %{
     // the only CONST of type Pointer we should see is NULL
-
+    Util.assert(c==null);
     emit(new Instr( instrFactory, ROOT, 
 		    "mov `d0, #0 @ null", new Temp[]{ i }, null));
 }%
@@ -1129,15 +1237,6 @@ BINOP<p,i>(MUL, j, k) = i %{
 		    null, new Temp[] { j }));
 }%
     // strong arm has funky multiply & accumulate instruction.
-BINOP<p,i>(ADD, BINOP<p,i>(MUL, j, k), l) = i %{
-
-    emit(new Instr( instrFactory, ROOT, "mla `d0, `s0, `s1, `s2",
-		    new Temp[] { i }, new Temp[] { j, k, l } ));
-    // `d0 and `s0 can't be same register on ARM, so we insert a
-    // dummy use of `s0 following the mul to keep it live.
-    emit(new Instr( instrFactory, ROOT, "@ dummy",
-		    null, new Temp[] { j }));
-}%
 BINOP<p,i>(ADD, l, BINOP<p,i>(MUL, j, k)) = i %{
 
     emit(new Instr( instrFactory, ROOT, "mla `d0, `s0, `s1, `s2",
@@ -1225,7 +1324,7 @@ BINOP<d>(DIV, j, k) = i %{
 }%
 
 BINOP<p,i>(REM, j, k) = i %{
-
+    // XXX is this correct?  mod-vs-rem
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
     emit2(    ROOT, "bl ___modsi3",
@@ -1234,7 +1333,7 @@ BINOP<p,i>(REM, j, k) = i %{
 }%
 
 BINOP<l>(REM, j, k) = i %{
-
+    // XXX is this correct?  mod-vs-rem
     emit( ROOT, "mov `d0, `s0l", r2, k );
     emit( ROOT, "mov `d0, `s0h", r3, k );
     emit( ROOT, "mov `d0, `s0l", r0, j );
@@ -1245,7 +1344,7 @@ BINOP<l>(REM, j, k) = i %{
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 
-// fix me: addressing mode for MEM is actually much richer than this.
+// addressing modes for MEM are pretty rich.
 // we can do offsets and scaling in same oper.
 
 /* ACK! Our assembler doesn't support this, even though our processor does. =(
@@ -1295,18 +1394,38 @@ MEM<u:8,p,i,f>(BINOP<p>(ADD, j, k)) = i %{ // addressing mode 2
 	             "ldr"+suffix+" `d0, [`s0, `s1]",
 		     new Temp[]{ i }, new Temp[]{ j, k }));
 }%
-MEM<u:8,p,i,f>(BINOP(ADD, j, CONST<i,p>(c))) = i
-%pred %( is12BitOffset(c) )%
+MEM<u:8,p,i,f>(BINOP<p>(ADD, j, BINOP(shiftop, k, CONST<p,i>(c)))) = i
+%pred %( isShiftOp(shiftop) && is5BitShift(c) )%
 %{
+    String suffix="";
+    if (ROOT.isSmall() && ROOT.signed()) suffix+="s";
+    if (ROOT.isSmall() && ROOT.bitwidth()==8) suffix+="b";
+    emit(new InstrMEM(instrFactory, ROOT,
+	             "ldr"+suffix+" `d0, [`s0, `s1, " +
+		                          shiftOp2Str(shiftop)+" #"+c+"]",
+		     new Temp[]{ i }, new Temp[]{ j, k }));
+}%
+MEM<u:8,p,i,f>(BINOP<p>(ADD, j, UNOP(NEG, k))) = i %{ // addressing mode 2
 
     String suffix="";
     if (ROOT.isSmall() && ROOT.signed()) suffix+="s";
     if (ROOT.isSmall() && ROOT.bitwidth()==8) suffix+="b";
     emit(new InstrMEM(instrFactory, ROOT,
-	             "ldr"+suffix+" `d0, [`s0, #"+c+"]",
-		     new Temp[]{ i }, new Temp[]{ j }));
+	             "ldr"+suffix+" `d0, [`s0, -`s1]",
+		     new Temp[]{ i }, new Temp[]{ j, k }));
 }%
-MEM<u:8,p,i,f>(BINOP(ADD, CONST<i,p>(c), j)) = i
+MEM<u:8,p,i,f>(BINOP<p>(ADD, j, UNOP(NEG, BINOP(shiftop, k, CONST<p,i>(c)))))=i
+%pred %( isShiftOp(shiftop) && is5BitShift(c) )%
+%{
+    String suffix="";
+    if (ROOT.isSmall() && ROOT.signed()) suffix+="s";
+    if (ROOT.isSmall() && ROOT.bitwidth()==8) suffix+="b";
+    emit(new InstrMEM(instrFactory, ROOT,
+	             "ldr"+suffix+" `d0, [`s0, -`s1, " +
+		                          shiftOp2Str(shiftop)+" #"+c+"]",
+		     new Temp[]{ i }, new Temp[]{ j, k }));
+}%
+MEM<u:8,p,i,f>(BINOP(ADD, j, CONST<i,p>(c))) = i
 %pred %( is12BitOffset(c) )%
 %{
 
@@ -1591,9 +1710,17 @@ UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )%
     emit( ROOT, "mov `d0h, `s0", i, r1 );	 
 }%
 
-UNOP(NOT, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
-
+UNOP(NOT, arg) = i
+%pred %( ROOT.operandType()==Type.INT )%
+%{
     emit( ROOT, "mvn `d0, `s0", i, arg );
+}% 
+    // the UNOP(NOT, CONST(k)) case was left out; it should never show up in
+    // optimized code.
+UNOP(NOT, BINOP<p,i>(shiftop, j, CONST<p,i>(c))) = i
+%pred %( ROOT.operandType()==Type.INT && isShiftOp(shiftop)&& is5BitShift(c) )%
+%{
+    emit( ROOT, "mvn `d0, `s0, "+shiftOp2Str(shiftop)+" #"+c, i, j );
 }% 
 UNOP(NOT, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 
@@ -1648,97 +1775,30 @@ CJUMP(test, iftrue, iffalse) %{
     Instr j2 = emitJUMP( ROOT, "b `L0", iftrue );
 }%
 
-CJUMP(BINOP(CMPEQ, j, k), iftrue, iffalse)
-%pred %( ((BINOP) ROOT.getTest()).operandType()==Type.POINTER ||
-	 ((BINOP) ROOT.getTest()).operandType()==Type.INT )%
+CJUMP(BINOP(cmpop, j, k), iftrue, iffalse)
+%pred %( isCmpOp(cmpop) &&
+	 ( ((BINOP) ROOT.getTest()).operandType()==Type.POINTER ||
+	   ((BINOP) ROOT.getTest()).operandType()==Type.INT ) )%
 %{
     emit( ROOT, "cmp `s0, `s1\n" +
-	        "beq `L0",
+	        "b"+cmpOp2Str(cmpop)+" `L0",
 	  null, new Temp[] { j , k }, new Label[] { iftrue });
     emitJUMP( ROOT, "b `L0", iffalse );
 }%
 
-CJUMP(BINOP(CMPGT, j, k), iftrue, iffalse)
-%pred %( ((BINOP) ROOT.getTest()).operandType()==Type.POINTER ||
-	 ((BINOP) ROOT.getTest()).operandType()==Type.INT )%
-%{
-    emit( ROOT, "cmp `s0, `s1\n" +
-	        "bgt `L0",
-	  null, new Temp[] { j , k }, new Label[] { iftrue });
-    emitJUMP( ROOT, "b `L0", iffalse );
-}%
-
-CJUMP(BINOP(CMPGE, j, k), iftrue, iffalse)
-%pred %( ((BINOP) ROOT.getTest()).operandType()==Type.POINTER ||
-	 ((BINOP) ROOT.getTest()).operandType()==Type.INT )%
-%{
-    emit( ROOT, "cmp `s0, `s1\n" +
-	        "bge `L0",
-	  null, new Temp[] { j , k }, new Label[] { iftrue });
-    emitJUMP( ROOT, "b `L0", iffalse );
-}%
-
-CJUMP(BINOP(CMPLE, j, k), iftrue, iffalse)
-%pred %( ((BINOP) ROOT.getTest()).operandType()==Type.POINTER ||
-	 ((BINOP) ROOT.getTest()).operandType()==Type.INT )%
-%{
-    emit( ROOT, "cmp `s0, `s1\n" +
-	        "ble `L0",
-	  null, new Temp[] { j , k }, new Label[] { iftrue });
-    emitJUMP( ROOT, "b `L0", iffalse );
-}%
-
-CJUMP(BINOP(CMPLT, j, k), iftrue, iffalse)
-%pred %( ((BINOP) ROOT.getTest()).operandType()==Type.POINTER ||
-	 ((BINOP) ROOT.getTest()).operandType()==Type.INT )%
-%{
-    emit( ROOT, "cmp `s0, `s1\n" +
-	        "blt `L0",
-	  null, new Temp[] { j , k }, new Label[] { iftrue });
-    emitJUMP( ROOT, "b `L0", iffalse );
-}%
-
-CJUMP(BINOP(CMPEQ, j, CONST<i,p>(c)), iftrue, iffalse)
-%pred %( c==null || isOpd2Imm(c) )%
+CJUMP(BINOP(cmpop, j, CONST<i,p>(c)), iftrue, iffalse)
+%pred %( isCmpOp(cmpop) && (c==null || isOpd2Imm(c)) )%
 %{  // this is a frequent special case.
     emit( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString())+"\n" +
-	        "beq `L0",
+	        "b"+cmpOp2Str(cmpop)+" `L0",
 	  null, new Temp[] { j }, new Label[] { iftrue });
     emitJUMP( ROOT, "b `L0", iffalse );
 }%
-
-CJUMP(BINOP(CMPGT, j, CONST<i,p>(c)), iftrue, iffalse)
-%pred %( c==null || isOpd2Imm(c) )%
-%{
-    emit( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString())+"\n" +
-	        "bgt `L0",
-	  null, new Temp[] { j }, new Label[] { iftrue });
-    emitJUMP( ROOT, "b `L0", iffalse );
-}%
-
-CJUMP(BINOP(CMPGE, j, CONST<i,p>(c)), iftrue, iffalse)
-%pred %( c==null || isOpd2Imm(c) )%
-%{
-    emit( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString())+"\n" +
-	        "bge `L0",
-	  null, new Temp[] { j }, new Label[] { iftrue });
-    emitJUMP( ROOT, "b `L0", iffalse );
-}%
-
-CJUMP(BINOP(CMPLE, j, CONST<i,p>(c)), iftrue, iffalse)
-%pred %( c==null || isOpd2Imm(c) )%
-%{
-    emit( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString())+"\n" +
-	        "ble `L0",
-	  null, new Temp[] { j }, new Label[] { iftrue });
-    emitJUMP( ROOT, "b `L0", iffalse );
-}%
-
-CJUMP(BINOP(CMPLT, j, CONST<i,p>(c)), iftrue, iffalse)
-%pred %( c==null || isOpd2Imm(c) )%
-%{
-    emit( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString())+"\n" +
-	        "blt `L0",
+CJUMP(BINOP(cmpop, j, CONST<i>(c)), iftrue, iffalse)
+%pred %( isCmpOp(cmpop) && isOpd2Imm(negate(c)) )%
+%{  // this is a frequent special case.
+    emit( ROOT, "cmn `s0, #"+negate(c)+"\n" +
+	        "b"+cmpOp2Str(cmpop)+" `L0",
 	  null, new Temp[] { j }, new Label[] { iftrue });
     emitJUMP( ROOT, "b `L0", iffalse );
 }%
@@ -1820,7 +1880,8 @@ MOVE(MEM<s:8,u:8,p,i,f>(d), src) %{ // addressing mode 2
 		      "str"+suffix+" `s0, [`s1]",
 		      null, new Temp[]{ src, d }));   
 }%
-MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, d1, d2)), src) %{ // addressing mode 2
+    // register plus (scaled) register (addressing mode 2)
+MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, d1, d2)), src) %{
     String suffix="";
     if (((MEM)ROOT.getDst()).isSmall() && ((MEM)ROOT.getDst()).bitwidth()==8)
 	 suffix+="b";
@@ -1828,17 +1889,44 @@ MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, d1, d2)), src) %{ // addressing mode 2
 		      "str"+suffix+" `s0, [`s1, `s2]",
 		      null, new Temp[]{ src, d1, d2 }));   
 }%
-MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, d, CONST<i,p>(c))), src)
-%pred %( is12BitOffset(c) )%
+MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, d1, BINOP(shiftop, d2, CONST<p,i>(c)))),
+     src)
+%pred %( isShiftOp(shiftop) && is5BitShift(c) )%
 %{
     String suffix="";
     if (((MEM)ROOT.getDst()).isSmall() && ((MEM)ROOT.getDst()).bitwidth()==8)
 	 suffix+="b";
     emit(new InstrMEM(instrFactory, ROOT,
-		      "str"+suffix+" `s0, [`s1, #"+c+"]",
-		      null, new Temp[]{ src, d }));   
+		      "str"+suffix+" `s0, [`s1, `s2, " +
+		                           shiftOp2Str(shiftop)+" #"+c+"]",
+		      null, new Temp[]{ src, d1, d2 }));   
 }%
-MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, CONST<i,p>(c), d)), src)
+    // register minus (scaled) register (addressing mode 2)
+MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, d1, UNOP(NEG, d2))), src)
+%{
+    String suffix="";
+    if (((MEM)ROOT.getDst()).isSmall() && ((MEM)ROOT.getDst()).bitwidth()==8)
+	 suffix+="b";
+    emit(new InstrMEM(instrFactory, ROOT,
+		      "str"+suffix+" `s0, [`s1, -`s2]",
+		      null, new Temp[]{ src, d1, d2 }));   
+}%
+MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, d1,
+				 UNOP(NEG,
+				      BINOP(shiftop, d2, CONST<p,i>(c))))),
+     src)
+%pred %( isShiftOp(shiftop) && is5BitShift(c) )%
+%{
+    String suffix="";
+    if (((MEM)ROOT.getDst()).isSmall() && ((MEM)ROOT.getDst()).bitwidth()==8)
+	 suffix+="b";
+    emit(new InstrMEM(instrFactory, ROOT,
+		      "str"+suffix+" `s0, [`s1, -`s2, " +
+		                           shiftOp2Str(shiftop)+" #"+c+"]",
+		      null, new Temp[]{ src, d1, d2 }));   
+}%
+    // register plus/minus a constant (addressing mode 2)
+MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, d, CONST<i,p>(c))), src)
 %pred %( is12BitOffset(c) )%
 %{
     String suffix="";
