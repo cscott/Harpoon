@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.5 2002-03-22 05:07:51 cananian Exp $
+% $Id: oopsla02.tex,v 1.6 2002-03-22 13:56:35 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -27,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.5 $ $}{$ $Revision: 1.5 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.6 $ $}{$ $Revision: 1.6 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -327,6 +327,19 @@ public SmallString substring(int start) \{\\
 %  uses MustParamOracle, ConstMap
 
 \subsection{Class Hierarchy Analysis and Call-Graph Construction}
+We start with a static class hierarchy analysis to collect the set of
+instantiated classes and callable methods.  This allows us to generate
+a conservative call graph for the program, using the known receiver
+type at the call-site and its instantiated subclasses in the
+hierarchy.  Based on the class hierarchy, we can also tag all leaf
+classes as {\tt final}, regardless of whether the source code contained
+this modifier.  Methods which are not overridden, based on
+the hierarchy, are also marked {\tt final}, and calls with a single
+receiver method are devirtualized.  We also remove uncallable methods
+and assign non-conflicting slots to interface methods using a
+graph-coloring algorithm.  The results of some class casts and {\tt
+  instanceof} operations can also be determined statically using
+these results.
 
 \subsection{Definite Initialization Analysis}
 \subsection{Bitwidth Analysis}
