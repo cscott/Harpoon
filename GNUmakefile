@@ -1,4 +1,4 @@
-# $Revision: 1.49 $
+# $Revision: 1.50 $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -21,14 +21,14 @@ ALLPKGS = $(shell find . -type d | grep -v CVS | \
 ALLSOURCE = $(filter-out .%.java, \
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java)))
 TARSOURCE = $(filter-out JavaChip%, \
-	        $(filter-out Test%,$(ALLSOURCE))) GNUmakefile
+	        $(filter-out Test%,$(ALLSOURCE))) GNUmakefile COPYING
 JARPKGS = $(filter-out JavaChip%, \
 		$(filter-out Test%,$(ALLPKGS)))
 
 all:	java
 
 list:
-	@echo $(filter-out GNUmakefile,$(TARSOURCE))
+	@echo $(filter-out GNUmakefile,$(filter-out COPYING,$(TARSOURCE)))
 
 java:	$(ALLSOURCE)
 	if [ ! -d harpoon ]; then \
@@ -47,7 +47,7 @@ first:
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 Harpoon.jar Harpoon.jar.TIMESTAMP: java
-	${JAR} cf Harpoon.jar \
+	${JAR} cf Harpoon.jar COPYING \
 		$(foreach pkg,$(JARPKGS),harpoon/$(pkg)/*.class)
 	date '+%-d-%b-%Y at %r %Z.' > Harpoon.jar.TIMESTAMP
 
