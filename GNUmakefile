@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.71 2002-05-01 19:20:54 kkz Exp $
+# $Id: GNUmakefile,v 1.72 2002-05-02 22:17:41 salcianu Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -464,3 +464,9 @@ needs-cvs:
 	fi
 
 install: jar-install tar-install doc-install
+
+# [AS + Ovy] - recompile only one class:
+# Usage: harpoon/[somepath]/[someclass.class]
+# Warning: don't use it if you change some API. 
+harpoon/%.class: %.java
+	${JCC} ${JFLAGS} $*.java
