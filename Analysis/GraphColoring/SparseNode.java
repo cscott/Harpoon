@@ -9,7 +9,7 @@ import java.util.Enumeration;
  * use with the SparseGraph object.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseNode.java,v 1.1.2.5 1999-01-21 23:16:18 pnkfelix Exp $ 
+ * @version $Id: SparseNode.java,v 1.1.2.6 1999-02-01 17:24:11 pnkfelix Exp $ 
  */
 
 public abstract class SparseNode extends ColorableNode {
@@ -29,17 +29,15 @@ public abstract class SparseNode extends ColorableNode {
 	unifiedNodes = new UniqueVector();
     }
 
-    /** Adds an edge from <code>this</code> to <code>to</code>    
-     	<BR> modifies: <code>this.toNodes</code>,                      
-	               <code>this.unifiedNodes</code>
-        <BR> effects: If <code>this</code> is not allowed to be
-	              modified, throws ObjectNotModifiableException. 
-		      Else adds <code>to</code> to the
-		      <code>toNodes</code> list and the
-		      <code>unifiedNodes</code> list.  
+    /** Adds an edge from <code>this</code> to <code>to</code>
+	<BR> <B>requires:</B> <code>this</code> is allowed to be
+	                      modified. 
+	<BR> <B>modifies:</B> this
+        <BR> <B>effects:</B> Adds an edge from <code>this</code> to
+	                     <code>to</code>  
      */
-    void addEdgeTo( SparseNode to ) 
-	throws IllegalEdgeException, ObjectNotModifiableException { 
+    void addEdgeTo( SparseNode to ) {
+     	// modifies: this.toNodes, this.unifiedNodes
 	if (toNodes.contains( to )) {
 	    throw new IllegalEdgeException
 		("SparseNode does not allow duplicate edges");
@@ -55,16 +53,12 @@ public abstract class SparseNode extends ColorableNode {
     }
 
     /** Adds an edge from <code>from</code> to <code>this</code>.
-        <BR> modifies: <code>this.fromNodes</code>,
-                       <code>this.unifiedNodes</code>.
-        <BR> effects: If <code>this</code> is not allowed to be
-	              modified, throws ObjectNotModifiableException. 
-		      Else adds <code>from</code> to the
-		      <code>fromNodes</code> list and the
-		      <code>unifiedNodes</code> list.
+	<BR> <B>requires:</B> <code>this</code> is allowed to be modified.
+	<BR> <B>modifies:</B> <code>this</code>
+        <BR> <B>effects:</B> Adds an edge from <code>from</code> to <code>this</code>
      */ 
-    void addEdgeFrom( SparseNode from ) 
-	throws IllegalEdgeException, ObjectNotModifiableException {
+    void addEdgeFrom( SparseNode from ) {
+        // modifies: this.fromNodes, this.unifiedNodes
 	if (fromNodes.contains( from )) {
 	    throw new IllegalEdgeException
 		("SparseNode does not allow duplicate edges");
@@ -80,21 +74,16 @@ public abstract class SparseNode extends ColorableNode {
     }
 
     /** Removes an edge from <code>from</code> to <code>this</code>.
-	<BR> modifies: <code>this.fromNodes</code>,
-	               <code>this.unifiedNodes</code>.
-	<BR> effects: If <code>this</code> is not allowed to be
-	              modified, throws ObjectNotModifiableException. 
-		      Else If <code>from</code> has an edge from it to
-	              <code>this</code>, and <code>this</code> is
-		      modifiable, removes <code>from</code>
-		      from the <code>fromNodes</code> list, and if
-		      there is no edge from <code>this</code> to
-		      <code>from</code>, removes <code>from</code>
-		      from the <code>unifiedNodes</code> list.
-		      Else throws EdgeNotPresentException.
+	<BR> <B>requires:</B> <code>this</code> is allowed to be
+	                      modified and an edge exists from
+			      <code>from</code> to <code>this</code>
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> Removes the edge from <code>from</code>
+	                     to <code>this</code> 
     */
     void removeEdgeFrom( SparseNode from ) 
 	throws EdgeNotPresentException, ObjectNotModifiableException {
+	// modifies: this.fromNodes, this.unifiedNodes
 	if (this.isModifiable()) {
 	    if (! fromNodes.removeElement( from )) {
 		throw new EdgeNotPresentException
@@ -111,19 +100,17 @@ public abstract class SparseNode extends ColorableNode {
     }
 
     /** Removes an edge from <code>this</code> to <code>to</code>.
-	<BR> modifies: <code>this.toNodes</code>,
-	               <code>this.unifiedNodes</code>.
-	<BR> effects: If <code>this</code> is not allowed to be
-	              modified, throws ObjectNotModifiableException. 
-	              Else If <code>this</code> has an edge from it to 
-	              <code>to</code>, removes <code>to</code>
-		      from the <code>toNodes</code> list, and if
-		      there is no edge from <code>to</code> to
-		      <code>this</code>, removes <code>to</code>
-		      from the <code>unifiedNodes</code> list. 
-		      Else throws EdgeNotPresentException.    */
+	<BR> <B>requires:</B> <code>this</code> is allowed to be
+	                      modified, and an edge exists from
+			      <code>this</code> to <code>to</code>
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> Removes the edge from <code>this</code>
+	                     to <code>to</code>. 
+    */
     void removeEdgeTo( SparseNode to ) 
 	throws EdgeNotPresentException, ObjectNotModifiableException {
+	// modifies: this.toNodes, this.unifiedNodes
+
 	if (this.isModifiable()) {
 	    if (! toNodes.removeElement( to )) {
 		throw new EdgeNotPresentException
@@ -139,38 +126,50 @@ public abstract class SparseNode extends ColorableNode {
 	}
     }
     
-    /** returns the degree of <code>this</code>.
-	Note that if <code>this</code> is hidden, then the degree
-	returned is not guaranteed to be correct.
-      	<BR> effects: If <code>node</code> is present in
-      	              <code>this</code>, then returns the number of
-      		      other <code>ColorableNode</code>s that
-      		      <code>node</code> is connected to. 
-      		      Else throws NodeNotPresentInGraphException.
-     */
+    /** Returns the degree of <code>this</code>.
+      	<BR> <B>effects:</B> Returns the number of other
+	                     <code>SparseNode</code>s that
+			     <code>node</code> is connected to.  
+    */
     int getDegree() {
 	return unifiedNodes.size();
     }    
     
     /** Returns a to-node enumerator.
- 	<BR> effects: Returns an <code>Enumeration</code> of nodes that
-	<code>this</code> has edges to.
+ 	<BR> <B>effects:</B> Returns an <code>Enumeration</code> of
+	                     nodes that <code>this</code> has edges
+			     to.
+	<BR> <B>requires:</B> <code>this</code> and the
+	                      <code>Node</code>s connected to it are
+			      not modified while the
+			      <code>Enumeration</code> returned is still in use.
     */
     Enumeration getToNodes() {
 	return toNodes.elements();
     }
 
     /** Returns a from-node enumerator.
- 	<BR> effects: Returns an <code>Enumeration</code> of nodes that
-	<code>this</code> has edges from.
+ 	<BR> <B>effects:</B> Returns an <code>Enumeration</code> of
+	                     nodes that <code>this</code> has edges
+			     from.
+	<BR> <B>requires:</B> <code>this</code> and the
+	                      <code>Node</code>s connected to it are
+			      not modified while the
+			      <code>Enumeration</code> returned is still in use.
     */
     Enumeration getFromNodes() {
 	return fromNodes.elements();
     }
 
     /** Returns a neighboring-node enumerator.
- 	<BR> effects: Returns an <code>Enumeration</code> of nodes that
-	<code>this</code> has edges to or from.
+ 	<BR> <B>effects:</B> Returns an <code>Enumeration</code> of
+	                     nodes that <code>this</code> has edges to
+			     or from. 
+	<BR> <B>requires:</B> <code>this</code> and the
+	                      <code>Node</code>s connected to it are
+			      not modified while the
+			      <code>Enumeration</code> returned is
+			      still in use. 
     */
     Enumeration getNeighboringNodes() {
 	return unifiedNodes.elements();

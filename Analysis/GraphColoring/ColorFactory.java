@@ -8,7 +8,7 @@ import java.util.Vector;
  * <code>ColorFactory</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorFactory.java,v 1.1.2.3 1999-01-19 16:07:59 pnkfelix Exp $
+ * @version $Id: ColorFactory.java,v 1.1.2.4 1999-02-01 17:24:10 pnkfelix Exp $
  */
 
 public abstract class ColorFactory  {
@@ -23,17 +23,18 @@ public abstract class ColorFactory  {
     }
     
     /** Color generator.
-	<BR> modifies: <code>this.colors</code>,
-	               <code>this.removedColors</code> 
-	<BR> effects: If <code>this.removedColors</code> is empty,
-	              constructs a new <code>Color</code>, adds it to
-		      the internal list of generated colors, and
-		      returns it.  
-		      Else returns the most recently removed
-		      <code>Color</code> and removes it from
-		      <code>this.removedColors</code> 
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> If no <code>Color</code>s have been
+	                     removed from <code>this</code>,
+			     constructs a new <code>Color</code> and
+			     returns it.  Else returns the most
+			     recently removed <code>Color</code> and
+			     flags the <code>Color</code> returned as
+			     no longer being removed from
+			     <code>this<code>.
     */
     public Color makeColor() {
+	// modifies: this.colors, this.removedColors
 	Color c;
 	if (removedColors.empty()) {
 	    c = newColor();	
@@ -45,28 +46,41 @@ public abstract class ColorFactory  {
     }
 
     /** Factory downsizer.
-	<BR> modifies: <code>this.colors</code>, 
-	               <code>this.removedColors</code>
-	<BR> effects: If <code>this.colors</code> is not empty, 
-	              Removes the last produced <code>Color</code>
-	              from the internal colors list.  The factory is 
-		      required to reproduce the colors removed on
-		      subsequent calls to <code>newColor</code>.
-		      Else does nothing.
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> If <code>Color</code>s exist in
+	                     <code>this</code> for distribution,
+			     removes the last produced
+			     <code>Color</code> from the internal
+			     colors list.  Else does nothing.
     */
     public void removeColor() {
+	// modifies: this.colors, this.removedColors
 	if (! colors.empty() ) {
 	    removedColors.push( colors.pop() );
 	}
     }
 
     /** Color generator that subclasses must implement.
-	<BR> effects: Constructs a new <code>Color</code> and returns
+	<BR> <B>effects:</B> Constructs a new <code>Color</code> and returns
 	              it.  
     */
     protected abstract Color newColor();
 
-    public Vector getColors() {
+    /** Inventory accessor.
+	<BR> <B>effects:</B> Returns a <code>Vector</code> of all of
+	                     the <code>Color</code>s currently
+			     distibutable from <code>this</code>.
+	<BR> <B>requires:</B> <code>makeColor</code> and
+	                      <code>removeColor</code> are not called
+			      as long as the <code>Vector</code>
+			      returned is in use.
+    */
+    public Vector getColors() { 
 	return colors;
     }
 }
+
+
+
+
+

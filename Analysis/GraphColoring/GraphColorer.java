@@ -7,7 +7,7 @@ import java.util.Vector;
  * <code>GraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColorer.java,v 1.1.2.3 1999-01-19 16:07:59 pnkfelix Exp $
+ * @version $Id: GraphColorer.java,v 1.1.2.4 1999-02-01 17:24:11 pnkfelix Exp $
  */
 
 public abstract class GraphColorer  {
@@ -27,17 +27,22 @@ public abstract class GraphColorer  {
         this.factory = factory;
     }
     
-    /** Finds a coloring for <code>graph</code> producing
-	<code>Color</code>s as needed from <code>factory</code>
-	<BR> modifies: <code>graph</code>, <code>this.factory</code>
-	<BR> effects: If <code>this.factory</code> is null, throws a
-	              NoFactorySetException.  
-		      Else performs a search for the mininum number of 
-	              colors needed to color <code>graph</code>, and
-		      colors <code>graph</code> accordingly.
+    /** Finds a coloring for <code>graph</code>.
+	<BR> <B>requires:</B> <code>this</code> was passed a
+	                      <code>ColorFactory</code> at
+			      construction. 
+	<BR> <B>modifies:</B> <code>graph</code>, <code>this</code>
+	<BR> <B>effects:</B> Performs a search for a near-minimum
+	                     number of colors needed to color
+			     <code>graph</code>, producing
+			     <code>Color</code>s as needed from the
+			     <code>ColorFactory</code> associated with
+			     <code>this</code>.  Once an appopriate
+			     set is found, colors <code>graph</code>
+			     accordingly.
     */
-    public void findColoring( ColorableGraph graph ) 
-	throws NoFactorySetException {
+    public void findColoring( ColorableGraph graph ) {
+	// modifies: this.factory
 	if (factory == null) {
 	    throw new NoFactorySetException
 		("Cannot perform unbounded color searching with " + 
@@ -74,15 +79,18 @@ public abstract class GraphColorer  {
 
     /** Attempts to color <code>graph</code> using only
 	<code>numCols</code> colors.
-	<BR> modifies: <code>graph</code>, <code>this.factory</code>
-	<BR> effects: First expands <code>this.factory</code> to make
-	              it have the number of colors indicated by
-		      <code>numCols</code>.  Then attempts to color
-		      <code>graph</code> with that number of colors,
-		      returning true if successful and false
-		      otherwise. 
+	<BR> <B>modifies:</B> <code>graph</code>, <code>this</code>
+	<BR> <B>effects:</B> First expands or reduces the inventory of
+	                     the <code>ColorFactory</code> associated
+			     with <code>this</code> to make it have
+			     the number of colors indicated by
+			     <code>numCols</code>.  Then attempts to
+			     color <code>graph</code> with that number
+			     of colors, returning true if successful
+			     and false otherwise.
     */
     private boolean ableToColor( ColorableGraph graph, int numCols ) {
+	// modifies: this.factory
 	boolean colored = false;
 	while (numCols != factory.getColors().size()) {
 	    if (numCols < factory.getColors().size()) {
@@ -99,7 +107,18 @@ public abstract class GraphColorer  {
 	return colored;
     }
 				  
-
+    /** Attempts to color <code>graph</code>.
+	<BR> <B>requires:</B> <code>colors</code> is a
+	                      <code>Vector</code> of
+			      <code>Color</code>s  
+	<BR> <B>modifies:</B> <code>graph</code>
+	<BR> <B>effects:</B> Attempts to color <code>graph</code>
+	                     using the set of <code>Color</code>s
+			     given in <code>colors</code>.  If a
+			     coloring cannot be found for
+			     <code>graph<code>, throws
+			     <code>UncolorableGraphException</code>. 
+     */
     public abstract void color(ColorableGraph graph,
 			       Vector colors ) 
 	throws UncolorableGraphException;

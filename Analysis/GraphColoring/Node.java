@@ -6,7 +6,7 @@ package harpoon.Analysis.GraphColoring;
  * with the Graph object.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Node.java,v 1.1.2.3 1999-01-22 18:19:04 pnkfelix Exp $ */
+ * @version $Id: Node.java,v 1.1.2.4 1999-02-01 17:24:11 pnkfelix Exp $ */
 
 public abstract class Node  {
 
@@ -16,8 +16,9 @@ public abstract class Node  {
     }
     
     /** Modifiability check.
-	effects: if <code>this</code> is allowed to be modified,
-	returns true.  Else returns false. 
+	<BR> <B>effects:</B> If <code>this</code> is allowed to be
+	                     modified, returns true.  Else returns
+			     false.
     */
     public boolean isModifiable() {
 	return true;

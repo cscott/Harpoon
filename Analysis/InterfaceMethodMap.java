@@ -24,7 +24,7 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * <code>InterfaceMethodMap</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.2.4 1999-01-22 17:01:01 pnkfelix Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.2.5 1999-02-01 17:24:01 pnkfelix Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
@@ -37,11 +37,11 @@ public class InterfaceMethodMap extends MethodMap {
 	    
     /** Creates a <code>InterfaceMethodMap</code> for interfaces in
 	<code>hclasses</code>. 
-	<BR> requires: <code>hclasses</code> is an
-	               <code>Enumeration</code> of <code>HClass</code>
-		       objects.   
-	<BR> modifies: <code>hclasses</code>
-	<BR> effects: Iterates through <code>hclasses</code>,
+	<BR> <B>requires:</B> <code>hclasses</code> is an
+	                      <code>Enumeration</code> of
+			      <code>HClass</code> objects.
+	<BR> <B>modifies:</B> <code>hclasses</code>
+	<BR> <B>effects:</B> Iterates through <code>hclasses</code>,
 	              accumulating all of the interface-methods and
 		      returns a method->int mapping, where the integer
 		      returned represents the placement of the method.
@@ -67,10 +67,10 @@ public class InterfaceMethodMap extends MethodMap {
     }
     
     /** Returns an ordering of the given method. 
-	requires: <code>this</code> contains an ordering for
-	          <code>hm</code> 
-	effects: returns the zero-indexed integer corresponding to
-	         <code>hm</code>'s placement in the ordering. 
+	<B>requires:</B> <code>this</code> contains an ordering for
+	                 <code>hm</code> 
+	<B>effects:</B> returns the zero-indexed integer corresponding to
+	                <code>hm</code>'s placement in the ordering. 
      */
     public int methodOrder( HMethod hm ) {
 	HmNode node = (HmNode) mtable.get( hm );
@@ -82,16 +82,16 @@ public class InterfaceMethodMap extends MethodMap {
     // -- HELPER METHODS FOR CONSTUCTOR FOLLOW --
 
     /** Assembles a graph for use by the graph colorer.
-	<BR> requires: <code>hclasses</code> is an enumeration of 
+	<BR> <B>requires:</B> <code>hclasses</code> is an enumeration of 
 	               <code>HClass</code> objects
-	<BR> modifies: <code>hclasses</code>
-	<BR> effects: Iterates through <code>hclasses</code>, building
-	              up a graph with nodes corresponding to the
-		      methods of the interfaces in
-		      <code>hclasses</code> and the edges
-		      corresponding to interferences between the
-		      methods (due to being implemented by the same
-		      classes). 
+	<BR> <B>modifies:</B> <code>hclasses</code>
+	<BR> <B>effects:</B> Iterates through <code>hclasses</code>,
+	                     building up a graph with nodes
+			     corresponding to the methods of the
+			     interfaces in <code>hclasses</code> and
+			     the edges corresponding to interferences
+			     between the methods (due to being
+			     implemented by the same classes). 
     */
     private SparseGraph assembleGraph( Enumeration hclasses ) {
 	UniqueVector classes = new UniqueVector();
@@ -168,25 +168,27 @@ public class InterfaceMethodMap extends MethodMap {
     private static HClass objHClass = HClass.forName("java.lang.Object");
 
     /** Checks suitability of an HMethod for inclusion in a graph.
-	<BR> effects: if <code>m</code> is a method of
-	              <code>java.lang.Object</code> then returns
-		      false.  Else returns true.
+	<BR> <B>effects:</B> if <code>m</code> is a method of
+	                     <code>java.lang.Object</code> then
+			     returns false.  Else returns true. 
     */
     private static boolean includeMethod(HMethod m) {
 	return m.getDeclaringClass() != objHClass;
     }
 
     /** Generates a HmNode for methods in<code>interfce</code>. 
-	<BR> requires: <code>interfce</code> is an HClass representing
-	               an interface, and there are no circular
-		       interface extensions 
-		       (ie "A extends B" and "B extends A")
-	<BR> effects: Iterates over the accessible methods of
-	              <code>interfce</code>, accumulating them in a
-		      <code>Vector</code> of <code>HmNode</code>s that
-		      it returns at the end.  Methods of
-		      superinterfaces are included, but the methods of
-		      Object are not. 
+	<BR> <B>requires:</B> <code>interfce</code> is an HClass
+	                      representing an interface, and there are
+			      no circular interface extensions 
+			      (ie "A extends B" and "B extends A")
+	<BR> <B>effects:</B> Iterates over the accessible methods of
+	                     <code>interfce</code>, accumulating them
+			     in a <code>Vector</code> of
+			     <code>HmNode</code>s.  Methods of
+			     superinterfaces are included, but the
+			     methods of Object are not.  Returns the
+			     newly built <code>Vector</code> of
+			     <code>HmNode</code>s.
     */
     private Vector findNodesFor( HClass interfce ) {
 	Util.assert( interfce.isInterface() );
@@ -274,7 +276,7 @@ public class InterfaceMethodMap extends MethodMap {
 	}
     }
 
-    
+    /** Simple implementation of a ColorFactory for interface slots. */
     private class SlotColorFactory extends ColorFactory {
 	int counter;
 
@@ -288,11 +290,10 @@ public class InterfaceMethodMap extends MethodMap {
 	}
     }
 
+    /** Simple implementation of a Color for interface slots. */
     private class SlotColor extends Color {
 	int index;
 	SlotColor(int i) { index = i; }
     }
-
-    
 }
 

@@ -22,18 +22,19 @@ import java.util.Vector;
  * it. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: UseMap.java,v 1.1.2.1 1999-01-30 23:29:05 pnkfelix Exp $
+ * @version $Id: UseMap.java,v 1.1.2.2 1999-02-01 17:24:02 pnkfelix Exp $
  */
 public class UseMap extends TempToHceArrayMap {
     
     private Temp[] allUses;
      
     /** Creates a <code>UseMap</code> for <code>hc</code>. 
-	<BR> requires: <code>hc</code>'s internal representation
-	        implements <code>harpoon.IR.Properties.UseDef</code>.
-	<BR> effects: creates a <code>UseMap</code> for
-	        <code>hc</code>, performing the necessary analysis
-		during construction.
+	<BR> <B>requires:</B> <code>hc</code>'s internal
+	                      representation implements
+			      <code>harpoon.IR.Properties.UseDef</code>. 
+	<BR> <B>effects:</B> creates a <code>UseMap</code> for
+	                     <code>hc</code>, performing the necessary
+			     analysis during construction.
     */
     public UseMap( HCode hc ) {
         super(hc);
@@ -42,10 +43,12 @@ public class UseMap extends TempToHceArrayMap {
     
     /* Helper method for analysis of <code>this.hcode</code> during
        construction.  
-       <BR> requires: <code>hc</code>'s internal representation
-                implements <code>harpoon.IR.Properties.UseDef</code>.
-       <BR> effects: performs Variable->Use analysis on
-                <code>this.hcode</code> 
+       <BR> <B>requires:</B> <code>hc</code>'s internal representation
+                             implements
+			     <code>harpoon.IR.Properties.UseDef</code>.  
+       <BR> <B>effects:</B> performs Variable->Use analysis on
+                            the <code>HCode</code> associated with
+			    <code>this</code>.   
     */
     private void analyze() {
 	HCodeElement[] hces = hcode.getElements();
@@ -76,9 +79,9 @@ public class UseMap extends TempToHceArrayMap {
         
     /** Return the <code>HCodeElement</code>s which use a given
 	<code>Temp</code> in the <code>HCode</code> associated with
-	this.
-	<BR> effects: Returns an <code>HCodeElement</code> array of
-	              all uses of <code>t</code>.
+	<code>this</code>.
+	<BR> <B>effects:</B> Returns an <code>HCodeElement</code>
+	                     array of all uses of <code>t</code>. 
     */
     public HCodeElement[] useMap(Temp t) {
 	HCodeElement[] r = extractTempMapping(t);
@@ -88,14 +91,10 @@ public class UseMap extends TempToHceArrayMap {
     }
     
     /** Returns an array of all <code>Temp</code> used in the
-	<code>HCode</code> associated with this.  
+	<code>HCode</code> associated with <code>this</code>.  
     */
     public Temp[] allUses() {
 	return (Temp[]) Util.safeCopy(Temp.arrayFactory, allUses);
     }
-
-
-
-
 
 }

@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * arrays of <code>HCodeElement</code>s
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: TempToHceArrayMap.java,v 1.1.2.1 1999-01-30 23:29:05 pnkfelix Exp $
+ * @version $Id: TempToHceArrayMap.java,v 1.1.2.2 1999-02-01 17:24:02 pnkfelix Exp $
  */
 abstract class TempToHceArrayMap {
     
@@ -24,25 +24,37 @@ abstract class TempToHceArrayMap {
 
     private Hashtable map;
 
+    /** Constructs a TempToHceArrayMap with <code>hc</code> for its
+	<code>HCode</code>. 
+     */
     TempToHceArrayMap(HCode hc) {
 	this.hcode = hc;
 	map = new Hashtable();
     }
 
     /** Stores a mapping from <code>t</code> to <code>hces</code>.
-	<BR> modifies: <code>this.map</code>
-	<BR> effects: adds a mapping from <code>t</code> to 
-	              <code>hces</code> in <code>this.map</code>,
-		      overwriting any previous mapping for
-		      <code>t</code> that may exist in
-		      <code>this.map</code>.
+	<BR> <B>effects:</B> adds a mapping from <code>t</code> to  
+	                     <code>hces</code>, overwriting any
+			     previous mapping for <code>t</code> that
+			     may exist in <code>this</code>. 
     */
     protected void storeTempMapping(Temp t, HCodeElement[] hces) {
+	// modifies: this.map
 	map.put(t, hces);
     }
 
     /** Converts a <code>Set</code> of <code>HCodeElement</code>s into
 	an <code>HCodeElement</code> array.
+	<BR> <B>requires:</B> <code>s</code> is a <code>Set</code> of
+	                      <code>HCodeElement</code> objects of the
+			      same type as the <code>HCode</code>
+			      associated with <code>this</code>.
+	<BR> <B>effects:</B> generates a new array (typed with the
+	                     HCode associated with <code>this</code>)
+			     sized to hold all of the elements of
+			     <code>s</code>, copies the elements of
+			     <code>s</code> into it, and returns the
+			     newly generated array.
     */
     protected HCodeElement[] setToHces(Set s) {
 	HCodeElement[] hcel = 
@@ -53,24 +65,30 @@ abstract class TempToHceArrayMap {
     } 
 
     /** Stores a mapping from <code>t</code> to <code>hces</code>.
-	<BR> modifies: <code>this.map</code>
-	<BR> effects: adds a mapping from <code>t</code> to an
-	              <code>HCodeElement</code> array represented the
-		      elements of <code>hces</code> in
-		      <code>this.map</code>, overwriting any previous
-		      mapping for <code>t</code> that may exist in
-		      <code>this.map</code>. 
+	<BR> <B>requires:</B> <code>hces</code> is a <code>Set</code>
+	                      of <code>HCodeElement</code> objects of
+			      the same type as the <code>HCode</code> 
+			      associated with <code>this</code>.
+	<BR> <B>effects:</B> adds a mapping from <code>t</code> to an
+	                     <code>HCodeElement</code> array
+			     representing the elements of
+			     <code>hces</code> in <code>this</code>,
+			     overwriting any previous mapping for
+			     <code>t</code> that may exist in
+			     <code>this</code>.  
     */
     protected void storeTempMapping(Temp t, Set hces) {
+	// modifies: this.map
+
 	map.put(t, setToHces(hces));
     }
 
     /** Extracts the <code>HCodeElement</code> array mapping for
 	<code>t</code>.
-	<BR> effects: if there is no mapping for <code>t</code>, returns
-	              null.   Else returns the
-		      <code>HCodeElement</code> array associated with
-		      <code>t</code>.
+	<BR> <B>effects:</B> if there is no mapping for
+	                     <code>t</code>, returns null.   Else
+			     returns the <code>HCodeElement</code>
+			     array associated with <code>t</code>.
     */
     protected HCodeElement[] extractTempMapping(Temp t) {
         return(HCodeElement[]) map.get(t);
@@ -78,12 +96,13 @@ abstract class TempToHceArrayMap {
 
     /** Creates a mapping from the elements of <code>temps</code> to
 	<code>hce</code> in <code>tmpToHceSet</code>.
-	<BR> requires: <code>tmpToHceSet</code> is a <code>Hashtable</code>
-	               with <code>Temp</code>s as keys and
-		       <code>Set</code>s of <code>HCodeElement</code>s
-		       as values.
-        <BR> modifies: <code>tmpToHceSet</code>
-	<BR> effects: For each element of <code>temps</code>,
+	<BR> <B>requires:</B> <code>tmpToHceSet</code> is a
+	                      <code>Hashtable</code> accepting
+			      <code>Temp</code>s as keys and
+			      <code>Set</code>s of
+			      <code>HCodeElement</code>s as values.
+        <BR> <B>modifies:</B> <code>tmpToHceSet</code>
+	<BR> <B>effects:</B> For each element of <code>temps</code>:
 	<BR>         1. Retrieves the <code>Set</code> associated with
 		        that <code>Temp</code>, or creates one if
 			there is not one already present in
@@ -104,3 +123,4 @@ abstract class TempToHceArrayMap {
     }
 
 }
+

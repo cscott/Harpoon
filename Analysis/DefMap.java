@@ -24,18 +24,19 @@ import java.util.Vector;
  * with it. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: DefMap.java,v 1.1.2.1 1999-01-30 23:29:04 pnkfelix Exp $
+ * @version $Id: DefMap.java,v 1.1.2.2 1999-02-01 17:24:01 pnkfelix Exp $
  */
 public class DefMap extends TempToHceArrayMap {
 
     private Temp[] allDefs;
 
     /** Creates a <code>DefMap</code> for <code>hc</code>. 
-	<BR> requires: <code>hc</code>'s internal representation
-	        implements <code>harpoon.IR.Properties.UseDef</code>.
-	<BR> effects: creates a <code>DefMap</code> for
-	        <code>hc</code>, performing the necessary analysis
-		during construction.
+	<BR> <B>requires:</B> <code>hc</code>'s internal
+	                      representation implements
+			      <code>harpoon.IR.Properties.UseDef</code>. 
+	<BR> <B>effects:</B> creates a <code>DefMap</code> for
+	                     <code>hc</code>, performing the necessary
+			     analysis during construction.
     */
     public DefMap( HCode hc ) {
 	super(hc);
@@ -44,10 +45,12 @@ public class DefMap extends TempToHceArrayMap {
     
     /* Helper method for analysis of <code>this.hcode</code> during
        construction.  
-       <BR> requires: <code>hc</code>'s internal representation
-                implements <code>harpoon.IR.Properties.UseDef</code>.
-       <BR> effects: performs Variable->Def analysis on
-                <code>this.hcode</code> 
+       <BR> <B>requires:</B> <code>hc</code>'s internal representation
+                             implements
+			     <code>harpoon.IR.Properties.UseDef</code>.  
+       <BR> <B>effects:</B> performs Variable->Def analysis on
+                            the <code>HCode</code> associated with
+			    <code>this</code>.
     */
     private void analyze() {
 	HCodeElement[] hces = hcode.getElements();
@@ -72,15 +75,16 @@ public class DefMap extends TempToHceArrayMap {
  	    storeTempMapping(def, (Set) tmpDef.get(def));
 	    defs.addElement(def);
 	}
-	allDefs = new Temp[defs.size()];
+	allDefs = Temp.arrayFactory.newArray(defs.size()); 
 	defs.copyInto( allDefs );
     }
     
     /** Return the <code>HCodeElement</code>s which define a given
 	<code>Temp</code> in the <code>HCode</code> associated with
-	this.
-	<BR> effects: Returns an <code>HCodeElement</code> array of
-	              all definitions of <code>t</code>.
+	<code>this</code>.
+	<BR> <B>effects:</B> Returns an <code>HCodeElement</code>
+	                     array of all definitions of
+			     <code>t</code>. 
     */
     public HCodeElement[] defMap(Temp t) {
 	HCodeElement[] r = extractTempMapping(t);
@@ -90,7 +94,7 @@ public class DefMap extends TempToHceArrayMap {
     }
     
     /** Returns an array of all <code>Temp</code> defined in the
-	<code>HCode</code> associated with this.  
+	<code>HCode</code> associated with <code>this</code>.  
     */
     public Temp[] allDefs() {
 	return (Temp[]) Util.safeCopy(Temp.arrayFactory, allDefs);

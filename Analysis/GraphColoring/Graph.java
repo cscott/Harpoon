@@ -10,7 +10,7 @@ import java.util.Enumeration;
  * for implementing a graph object.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Graph.java,v 1.1.2.3 1999-01-19 16:07:59 pnkfelix Exp $
+ * @version $Id: Graph.java,v 1.1.2.4 1999-02-01 17:24:11 pnkfelix Exp $
  */
 
 public abstract class Graph  {
@@ -23,17 +23,17 @@ public abstract class Graph  {
     }
     
     /** Adds <code>node</code> to <code>this</code>
-	<BR> modifies: <code>this.nodes</code>
-	<BR> effects: If <code>node</code> is of the wrong type for the
-	              graph implementation being used, throws
-		      WrongNodeTypeException.
-		      Else If <code>node</code> isn't already present
-		      in this, then adds <code>node</code> to
-		      <code>this.nodes</code>. 
-		      Else does nothing.
+	<BR> <B>requires:</B> <code>this</code> is modifiable, 
+	                     <code>node</code> is of the correct type
+	                     for the graph type implemented by
+			     <code>this</code>.
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B>  Adds <code>node</code> to
+	                      <code>this</code>.  
     */
     public void addNode( Node node ) 
 	throws WrongNodeTypeException, ObjectNotModifiableException { 
+	// modifies: this.nodes
 	if (this.isModifiable()) {
 	    checkNode( node );
 	    nodes.addElement( node );
@@ -45,26 +45,32 @@ public abstract class Graph  {
     }
 
     /** Node type-checking method for subclasses to implement.
-	<BR> effects: If <code>node</code> is of the wrong type for
-	              the graph implementation being used, throws 
-		      WrongNodeTypeException.
-		      Else does nothing.
+	<BR> <B>effects:</B> If <code>node</code> is of the wrong type
+	                     for the graph implementation being used,
+			     throws
+			     <code>WrongNodeTypeException</code>. 
+			     Else does nothing. 
     */
-    protected abstract void checkNode( Node node ) 
-	throws WrongNodeTypeException;
+    protected abstract void checkNode( Node node );
 
     /** Generates an edge from <code>from</code> to <code>to</code>.
 	Subclasses should implement this method to match their
-	internal representation of a graph. 
+	internal representation of a graph.
+	<BR> <B>requires:</B> <code>from</code> and <code>to</code>
+	                      are present in <code>this</code> and are
+			      valid targets for a new edge.
+	<BR> <B>modifies:</B> <code>this</code>, <code>from</code>,
+	                      <code>to</code>.
     */
-    protected abstract void makeEdge( Node from, Node to ) 
-	throws NodeNotPresentInGraphException, IllegalEdgeException;
-    
-    /** Adds an edges from <code>from</code> to <code>to</code>.
+    protected abstract void makeEdge( Node from, Node to );    
+
+    /** Adds an edge from <code>from</code> to <code>to</code>.
+	<BR> <B>requires:</B> <code>from</code> and <code>to</code>
+	                      are present in <code>this</code> and are
+			      valid targets for a new edge.
+	<BR> <B>modifies:</B> <code>this</code>.
      */
-    public void addEdge( Node from, Node to ) throws
-	NodeNotPresentInGraphException, IllegalEdgeException,
-	ObjectNotModifiableException {
+    public void addEdge( Node from, Node to ) {
 	if (this.isModifiable()) {
 	    makeEdge( from, to );
 	} else {
@@ -76,50 +82,64 @@ public abstract class Graph  {
     }
     
     /** Returns the degree of <code>node</code>.
-	<BR> effects: If <code>node</code> is present in
-	              <code>this</code>, then returns the number of
-		      other <code>ColorableNode</code>s that
-		      <code>node</code> is connected to.  
-		      Else throws NodeNotPresentInGraphException.
+	<BR> <B>requires:</B>: <code>node</code> is present in
+	                       <code>this</code>
+	<BR> <B>effects:</B> Returns the number of other
+	                     <code>ColorableNode</code>s that
+			     <code>node</code> is connected to. 
     */
     public abstract int getDegree( Node node ) 
 	throws NodeNotPresentInGraphException; 
 	
     /** Constructs an enumeration for all the nodes.
-	<BR> effects: Returns an <code>Enumeration</code> of the nodes
-	              that have been successfully added to
-		      <code>this</code>.  
+	<BR> <B>effects:</B> Returns an <code>Enumeration</code> of
+	                     the <code>Node</code>s that have been
+			     successfully added to <code>this</code>.  
+        <BR> <B>requires:</B> <code>this</code> is not modified while
+	                      the <code>Enumeration</code> returned is
+			      still in use.
     */
     public Enumeration getNodes() {
 	return nodes.elements();
     }
 
     /** Constructs an enumeration for the children of a specific node.
-	<BR> effects: Returns an <code>Enumeration</code> of the nodes
-	              that have an edge from <code>node</code> to them.
+	<BR> <B>effects:</B> Returns an <code>Enumeration</code> of
+	                     <code>Node</code>s that have an edge from
+			     <code>node</code> to them. 
+        <BR> <B>requires:</B> <code>this</code> is not modified while
+	                      the <code>Enumeration</code> returned is
+			      still in use.
      */
     public abstract Enumeration getChildrenOf( Node node ) 
 	throws NodeNotPresentInGraphException;
 
     /** Constructs an enumeration for the parents of a specific node.
-	<BR> effects: Returns an <code>Enumeration</code> of the nodes
-	              that have an edge from them to <code>node</code>.
+	<BR> <B>effects:</B> Returns an <code>Enumeration</code> of
+	                     <code>Node</code>s that have an edge from
+			     them to <code>node</code>. 
+        <BR> <B>requires:</B> <code>this</code> is not modified while
+	                      the <code>Enumeration</code> returned is
+			      still in use.
      */
     public abstract Enumeration getParentsOf( Node node ) 
 	throws NodeNotPresentInGraphException;
 
     /** Constructs an enumeration for the parents of a specific node.
-	<BR> effects: Returns an <code>Enumeration</code> of the nodes
-	              that have an edge between <code>node</code> and
-		      them. 
+	<BR> <B>effects:</B> Returns an <code>Enumeration</code> of
+	                     <code>Node</code>s that have an edge
+			     between <code>node</code> and them. 
+        <BR> <B>requires:</B> <code>this</code> is not modified while
+	                      the <code>Enumeration</code> returned is
+			      still in use.
      */
     public abstract Enumeration getNeighborsOf( Node node ) 
 	throws NodeNotPresentInGraphException;
 
     /** Nodes accessor method for subclass use.
-	<BR> effects: Returns an <code>UniqueVector</code> of the
-	              nodes that have been successfully added to
-		      <code>this</code>.
+	<BR> <B>effects:</B> Returns the <code>UniqueVector</code> of the
+	                     <code>Node</code>s that have been
+			     successfully added to <code>this</code>.
     */
     protected UniqueVector getNodeVector() {
 	return nodes;
@@ -128,8 +148,8 @@ public abstract class Graph  {
     /** Modifiability check.
 	Subclasses should override this method to incorporate
 	consistency checks
-	effects: if <code>this</code> is allowed to be modified,
-	returns true.  Else returns false. 
+	<BR> <B>effects:</B> If <code>this</code> is allowed to be modified,
+	                     returns true.  Else returns false. 
     */
     public boolean isModifiable() {
 	return true;
