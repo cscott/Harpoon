@@ -6,7 +6,7 @@ package harpoon.Analysis;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Properties.Edges;
+import harpoon.IR.Properties.HasEdges;
 import harpoon.Util.CombineIterator;
 import harpoon.Util.FilterIterator;
 import harpoon.Util.Util;
@@ -30,7 +30,7 @@ import java.util.Stack;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.12 1999-04-03 18:00:56 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.13 1999-05-19 06:45:07 andyb Exp $
  */
 
 public class CycleEq  {
@@ -499,7 +499,7 @@ public class CycleEq  {
 	}
 	class ENodeIn extends ENode { // represents a_i
 	    Iterator _adj_() {
-		Iterator e = Arrays.asList(((Edges)source).pred()).iterator();
+		Iterator e = Arrays.asList(((HasEdges)source).pred()).iterator();
 		FilterIterator.Filter f = new FilterIterator.Filter() {
 		    public Object map(Object o) {
 			HCodeEdge hce = (HCodeEdge) o;
@@ -520,7 +520,7 @@ public class CycleEq  {
 	}
 	class ENodeOut extends ENode { // represents a_o
 	    Iterator _adj_() {
-		Iterator e = Arrays.asList(((Edges)source).succ()).iterator();
+		Iterator e = Arrays.asList(((HasEdges)source).succ()).iterator();
 		FilterIterator.Filter f = new FilterIterator.Filter() {
 		    public Object map(Object o) {
 			HCodeEdge hce = (HCodeEdge) o;
@@ -563,12 +563,12 @@ public class CycleEq  {
 	final Set end_code = new HashSet(7);
 	EdgeGraph(HCode hc) {
 	    HCodeElement root = hc.getRootElement();
-	    HCodeEdge[] root_succ = ((Edges)root).succ();
+	    HCodeEdge[] root_succ = ((HasEdges)root).succ();
 	    for (int i=0; i<root_succ.length; i++)
 		start_code.add(root_succ[i]);
 	    HCodeElement[] leaves = hc.getLeafElements();
 	    for (int i=0; i<leaves.length; i++) {
-		HCodeEdge[] leaf_succ = ((Edges)leaves[i]).pred();
+		HCodeEdge[] leaf_succ = ((HasEdges)leaves[i]).pred();
 		for (int j=0; j<leaf_succ.length; j++)
 		    end_code.add(leaf_succ[j]);
 	    }
@@ -631,7 +631,7 @@ public class CycleEq  {
 	}
 	class ENodeIn extends ENode { // represents a_i
 	    Iterator _adj_() {
-		Edges from_node = (Edges)source.from();
+		HasEdges from_node = (HasEdges)source.from();
 		Iterator e = Arrays.asList(from_node.pred()).iterator();
 		FilterIterator.Filter f = new FilterIterator.Filter() {
 		    public Object map(Object o) {
@@ -653,7 +653,7 @@ public class CycleEq  {
 	}
 	class ENodeOut extends ENode { // represents a_o
 	    Iterator _adj_() {
-		Edges to_node = (Edges)source.to();
+		HasEdges to_node = (HasEdges)source.to();
 		Iterator e = Arrays.asList(to_node.succ()).iterator();
 		FilterIterator.Filter f = new FilterIterator.Filter() {
 		    public Object map(Object o) {

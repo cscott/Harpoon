@@ -20,7 +20,7 @@ import harpoon.Util.Util;
  * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.5.2.8 1999-02-25 21:07:24 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.5.2.9 1999-05-19 06:45:12 andyb Exp $
  */
 public final class SCCOptimize {
     TypeMap  ti;
@@ -57,7 +57,7 @@ public final class SCCOptimize {
 	else return em.execMap(hc, e);
     }
     boolean execMap(HCode hc, HCodeElement node) {
-	HCodeEdge[] pred = ((harpoon.IR.Properties.Edges)node).pred();
+	HCodeEdge[] pred = ((harpoon.IR.Properties.HasEdges)node).pred();
 	for (int i=0; i<pred.length; i++)
 	    if (execMap(hc, pred[i]))
 		return true;

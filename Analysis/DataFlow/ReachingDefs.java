@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.HashMap;
 import harpoon.Analysis.EdgesIterator;
 import harpoon.Util.*;
-import harpoon.IR.Properties.Edges;
+import harpoon.IR.Properties.HasEdges;
 import harpoon.IR.Properties.UseDef;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
@@ -28,12 +28,12 @@ import harpoon.Temp.Temp;
 /** <code>ReachingDefs</code> is a
     <code>ForwardDataFlowBasicBlockVisitor</code> for performing
     Reaching Definitions Analysis on any IR that implements
-    <code>HCodeElement</code>, <code>Edges</code>, and
+    <code>HCodeElement</code>, <code>HasEdges</code>, and
     <code>UseDef</code>.  
 
     @author  John Whaley
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: ReachingDefs.java,v 1.1.2.6 1999-04-20 18:59:53 pnkfelix Exp $
+    @version $Id: ReachingDefs.java,v 1.1.2.7 1999-05-19 06:45:10 andyb Exp $
 
 */
 public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
@@ -49,7 +49,7 @@ public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
 	<BR> <B>requires:</B> <code>q</code> implements
 	<code>HCodeElement</code> and <code>UseDef</code>.
     */
-    public ReachingDefs(Edges q) {
+    public ReachingDefs(HasEdges q) {
 	bbToSets = new Hashtable();
 	this.maxHceID = QuadSolver.getMaxID((HCodeElement) q);
 	initTempsToPrsvs(q);
@@ -60,13 +60,13 @@ public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
 	temp.  
 
 	<BR> <B>requires:</B> <code>root</code> and all
-	                      <code>Edges</code> linked to by
+	                      <code>HasEdges</code> linked to by
 			      <code>root</code> implement 
 	                      <code>HCodeElement</code> and
 			      <code>UseDef</code>. 
         <BR> <B>effects:</B> <B>TODO:</B> fill in effects clause. 
     */
-    void initTempsToPrsvs(Edges root) {
+    void initTempsToPrsvs(HasEdges root) {
 	tempsToPrsvs = new HashMap();
 	Enumeration q_en = new IteratorEnumerator(new EdgesIterator(root));
 	while (q_en.hasMoreElements()) {

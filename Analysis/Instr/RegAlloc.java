@@ -6,7 +6,7 @@ package harpoon.Analysis.Instr;
 import harpoon.Temp.Temp;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Properties.UseDef;
-import harpoon.IR.Properties.Edges;
+import harpoon.IR.Properties.HasEdges;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Code;
 import harpoon.Analysis.UseMap;
@@ -34,7 +34,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.3 1999-04-20 19:02:13 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.4 1999-05-19 06:45:11 andyb Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -52,7 +52,7 @@ public abstract class RegAlloc  {
     protected RegAlloc(Frame frame, Code code) {
         this.frame = frame;
 	this.code = code;
-	Edges first = (Edges) code.getRootElement();
+	HasEdges first = (HasEdges) code.getRootElement();
 	rootBlock = BasicBlock.computeBasicBlocks(first);
     }
     

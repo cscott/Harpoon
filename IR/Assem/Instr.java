@@ -3,24 +3,23 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Assem;
 
-import harpoon.Util.ArrayFactory;
-import harpoon.IR.Properties.UseDef;
-import harpoon.ClassFile.HCodeElement;
-import harpoon.Temp.Label;
-import harpoon.Temp.TempMap;
-import harpoon.Temp.Temp;
-import harpoon.IR.Properties.Edges;
 import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.Properties.HasEdges;
+import harpoon.IR.Properties.UseDef;
+import harpoon.Temp.Label;
+import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
+import harpoon.Util.ArrayFactory;
 
 /**
- * <code>Instr</code> is an supperclass representation for
- * all of the assembly-level instruction representations used in
- * the Backend.* packages.
+ * <code>Instr</code> is the primary datatype for representing
+ * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.10 1999-05-17 20:08:00 andyb Exp $
+ * @version $Id: Instr.java,v 1.1.2.11 1999-05-19 06:45:14 andyb Exp $
  */
-public class Instr implements HCodeElement, UseDef, Edges {
+public class Instr implements HCodeElement, UseDef, HasEdges {
     public String assem;
     public Temp[] dst;
     public Temp[] src;
@@ -32,7 +31,7 @@ public class Instr implements HCodeElement, UseDef, Edges {
     public int id;
 
     // FSK: below variables are needed for proper implementation of the 
-    // Edges interface
+    // HasEdges interface
     public HCodeEdge[] edges;
     public HCodeEdge[] pred;
     public HCodeEdge[] succ;
@@ -112,7 +111,7 @@ public class Instr implements HCodeElement, UseDef, Edges {
 
     public int getID() { return id; }
 
-    // FSK: following methods are necessary for Edges interface 
+    /* Implementations of HasEdges interface */
 
     // XXX while these are correct methods, they are relying on an
     // incorrect underlying construction method for Instrs; update

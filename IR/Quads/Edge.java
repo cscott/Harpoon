@@ -11,11 +11,11 @@ import harpoon.Util.Util;
  * <code>Edge</code> objects connect <code>Quad</code> nodes in the
  * control-flow graph.  The <code>hashCode</code> and <code>equals</code>
  * methods of <code>Edge</code> have been implemented so that 
- * <code>Edges</code> can be used as hash table keys to associate analysis
+ * <code>Edge</code>s can be used as hash table keys to associate analysis
  * data with control-flow edges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edge.java,v 1.1.2.4 1999-02-25 21:12:28 cananian Exp $
+ * @version $Id: Edge.java,v 1.1.2.5 1999-05-19 06:45:17 andyb Exp $
  */
 
 public class Edge implements HCodeEdge {

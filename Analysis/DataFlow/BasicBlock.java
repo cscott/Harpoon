@@ -9,7 +9,7 @@ package harpoon.Analysis.DataFlow;
 
 import harpoon.Util.*;
 import harpoon.ClassFile.*;
-import harpoon.IR.Properties.Edges;
+import harpoon.IR.Properties.HasEdges;
 import java.util.Map;
 import java.util.Hashtable;
 import java.util.Enumeration;
@@ -23,8 +23,8 @@ public class BasicBlock {
 
     static int BBnum = 0;
     
-    Edges first;
-    Edges last;
+    HasEdges first;
+    HasEdges last;
     Set pred_bb;
     Set succ_bb;
     int num;
@@ -35,26 +35,26 @@ public class BasicBlock {
 	                      the basic block and <code>l</code> is
 			      the last element of the BasicBlock.
     */
-    public BasicBlock (Edges f, Edges l) {
+    public BasicBlock (HasEdges f, HasEdges l) {
 	first = f; last = l; pred_bb = new HashSet(); succ_bb = new HashSet();
 	num = BBnum++;
     }
     
     /** BasicBlock generator.
 	<BR> <B>requires:</B> All <code>HCodeEdge</code>s linked to by
-	     the set of <code>Edges</code> in the code body have
-	     <code>Edges</code> objects in their <code>to</code> and
+	     the set of <code>HasEdges</code> in the code body have
+	     <code>HasEdges</code> objects in their <code>to</code> and
 	     <code>from</code> fields.  <B>NOTE:</B> this really
-	     should be an implicit invariant of <code>Edges</code>.
+	     should be an implicit invariant of <code>HasEdges</code>.
 	     Convince Scott to change it or let us change it.
 	<BR> <B>effects:</B>  Creates a set of BasicBlocks
 	     corresponding to the blocks implicitly contained in
-	     <code>head</code> and the <code>Edges</code> objects that
+	     <code>head</code> and the <code>HasEdges</code> objects that
 	     <code>head</code> points to, and returns the
 	     <code>BasicBlock</code> that <code>head</code> is the
 	     first instruction in. 
     */
-    public static BasicBlock computeBasicBlocks(Edges head) {
+    public static BasicBlock computeBasicBlocks(HasEdges head) {
 	Hashtable h = new Hashtable();
 	Worklist w = new WorkSet();
 
@@ -64,14 +64,14 @@ public class BasicBlock {
 	
 	while(!w.isEmpty()) {
 	    BasicBlock current = (BasicBlock) w.pull();
-	    Edges e = (Edges) current.getFirst();
+	    HasEdges e = (HasEdges) current.getFirst();
 	    for (;;) {
 		int n = e.succ().length;
 		if (n == 0) 
 		    break; // end of method
 		else if (n > 1) { // control flow split
 		    for (int i=0; i<n; i++) {
-			Edges e_n = (Edges) e.succ()[i];
+			HasEdges e_n = (HasEdges) e.succ()[i];
 			BasicBlock bb = (BasicBlock) h.get(e_n);
 			if (bb == null) {
 			    h.put(e_n, bb=new BasicBlock(e_n));
@@ -81,7 +81,7 @@ public class BasicBlock {
 		    }
 		    break;
 		} else {
-		    Edges en = (Edges) e.succ()[0];
+		    HasEdges en = (HasEdges) e.succ()[0];
 		    int m = en.pred().length;
 		    if (m > 1) { // control flow join
 			BasicBlock bb = (BasicBlock) h.get(en);
@@ -101,8 +101,8 @@ public class BasicBlock {
 	return (BasicBlock) h.get(head);
     }
 
-    public Edges getFirst() { return first; }
-    public Edges getLast() { return last; }
+    public HasEdges getFirst() { return first; }
+    public HasEdges getLast() { return last; }
     
     public void addPredecessor(BasicBlock bb) { pred_bb.union(bb); }
     public void addSuccessor(BasicBlock bb) { succ_bb.union(bb); }
@@ -112,7 +112,7 @@ public class BasicBlock {
     public Enumeration prev() { return pred_bb.elements(); }
     public Enumeration next() { return succ_bb.elements(); }
     
-    /** Returns an <code>Enumeration</code> of <code>Edges</code>
+    /** Returns an <code>Enumeration</code> of <code>HasEdges</code>
 	within <code>this</code>.  
     */
     public Enumeration elements() {
@@ -120,10 +120,10 @@ public class BasicBlock {
     }
     
     /** Returns an immutable <code>ListIterator</code> for the
-	<code>Edges</code> within <code>this</code>. */  
+	<code>HasEdges</code> within <code>this</code>. */  
     public ListIterator listIterator() {
 	return new ListIterator() {
-	    Edges current = first;
+	    HasEdges current = first;
 	    int index = 0;
 	    public boolean hasNext() { return current != last; }
 	    public boolean hasPrevious() { return current != first; } // correct? 
@@ -133,9 +133,9 @@ public class BasicBlock {
 		if (current == null) throw new NoSuchElementException();
 		Util.assert((current == first) || (current.pred().length == 1));
 		Util.assert(current.succ().length == 1);
-		Edges r = current;
+		HasEdges r = current;
 		if (r == last) current = null;
-		else current = (Edges) current.succ()[0].to();
+		else current = (HasEdges) current.succ()[0].to();
 		index++;
 		return r;
 	    }		
@@ -143,9 +143,9 @@ public class BasicBlock {
 		if (current == null) throw new NoSuchElementException();
 		Util.assert((current == last) || (current.succ().length == 1));
 		Util.assert(current.pred().length == 1);
-		Edges r = current;
+		HasEdges r = current;
 		if (r == first) current = null;
-		else current = (Edges) current.pred()[0].from();
+		else current = (HasEdges) current.pred()[0].from();
 		index--;
 		return r;
 	    }
@@ -159,11 +159,11 @@ public class BasicBlock {
     /** Accept a visitor. */
     public void visit(BasicBlockVisitor v) { v.visit(this); }
     
-    protected BasicBlock (Edges f) {
+    protected BasicBlock (HasEdges f) {
 	first = f; last = null; pred_bb = new HashSet(); succ_bb = new HashSet();
 	num = BBnum++;
     }
-    protected void setLast (Edges l) {
+    protected void setLast (HasEdges l) {
 	last = l;
 	if (DEBUG) db(this+": from "+first+" to "+last);
     }
@@ -183,8 +183,8 @@ public class BasicBlock {
 	while (e.hasMoreElements()) {
 	    BasicBlock bb = (BasicBlock)e.nextElement();
 	    System.out.println("Basic block "+bb);
-	    System.out.println("Edges in : "+bb.pred_bb);
-	    System.out.println("Edges out: "+bb.succ_bb);
+	    System.out.println("HasEdges in : "+bb.pred_bb);
+	    System.out.println("HasEdges out: "+bb.succ_bb);
 	    System.out.println();
 	}
     }

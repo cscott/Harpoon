@@ -19,7 +19,7 @@ import java.util.List;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.3.2.5 1999-02-23 04:32:44 cananian Exp $
+ * @version $Id: Instr.java,v 1.3.2.6 1999-05-19 06:45:15 andyb Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -27,7 +27,7 @@ import java.util.List;
  * @see Code
  */
 public abstract class Instr 
-  implements HCodeElement, harpoon.IR.Properties.Edges, Comparable {
+  implements HCodeElement, harpoon.IR.Properties.HasEdges, Comparable {
   /*final*/ String sourcefile;
   /*final*/ int linenumber;
   /*final*/ int id;
@@ -101,7 +101,7 @@ public abstract class Instr
   /** Internal successor list. */
   final List next = new ArrayList(2);
 
-  // Edges interface:
+  // HasEdges interface:
   public HCodeEdge newEdge(final Instr from, final Instr to) {
     return new HCodeEdge() {
       public HCodeElement from() { return from; }

@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
-import harpoon.IR.Properties.Edges;
+import harpoon.IR.Properties.HasEdges;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -11,10 +11,10 @@ import java.util.HashSet;
 
 /**
  * <code>EdgesIterator</code> is a generic iterator for a set of
- * <code>Edges</code> objects. 
+ * <code>HasEdges</code> objects. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: EdgesIterator.java,v 1.1.2.1 1999-04-05 21:06:48 pnkfelix Exp $
+ * @version $Id: EdgesIterator.java,v 1.1.2.2 1999-05-19 06:45:08 andyb Exp $
  */
 public class EdgesIterator implements Iterator {
     
@@ -25,7 +25,7 @@ public class EdgesIterator implements Iterator {
 	reachable by recursively traversing the successors of
 	<code>e</code>.  Predecessors are not included in the set.  
     */
-    public EdgesIterator(Edges e) {
+    public EdgesIterator(HasEdges e) {
         worklist = new HashSet();
 	done = new HashSet();
 	worklist.add(e);
@@ -33,21 +33,21 @@ public class EdgesIterator implements Iterator {
     }
     
     /** Checks if the set is empty.
-	<BR> <B>effects:</B> returns true if more <code>Edges</code>
+	<BR> <B>effects:</B> returns true if more <code>HasEdges</code>
 	remain in the set.  Else returns false.
     */
     public boolean hasNext() { return worklist.size()!=0; } 
     
-    /** Returns an <code>Edges</code> if one remains.
+    /** Returns an <code>HasEdges</code> if one remains.
 	<BR> <B>requires:</B> <code>this.hasNext()</code> == true.
-	<BR> <B>effects:</B> returns an <code>Edges</code> from the
+	<BR> <B>effects:</B> returns an <code>HasEdges</code> from the
 	set contained in <code>this</code> and removes it from the
 	set.
     */ 
     public Object next() {
-	Edges e = (Edges) worklist.iterator().next(); worklist.remove(e);
+	HasEdges e = (HasEdges) worklist.iterator().next(); worklist.remove(e);
 	for (int i=0, n=e.succ().length; i<n; ++i) {
-	    Edges ne = (Edges) e.succ()[i].to();
+	    HasEdges ne = (HasEdges) e.succ()[i].to();
 	    if (!done.contains(ne)) {
 		done.add(ne);
 		worklist.add(ne);

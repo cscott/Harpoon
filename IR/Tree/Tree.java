@@ -16,12 +16,12 @@ import harpoon.Util.Util;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.6 1999-05-10 02:07:40 duncan Exp $
+ * @version $Id: Tree.java,v 1.1.2.7 1999-05-19 06:45:19 andyb Exp $
  */
 public abstract class Tree 
     implements harpoon.ClassFile.HCodeElement, 
 	       harpoon.IR.Properties.UseDef,
-	       harpoon.IR.Properties.Edges
+	       harpoon.IR.Properties.HasEdges
 {
     final TreeFactory tf;
     final String source_file;

@@ -27,7 +27,7 @@ import java.util.Stack;
  * from a cycle-equivalency set.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SESE.java,v 1.1.2.5 1999-04-03 18:03:29 cananian Exp $
+ * @version $Id: SESE.java,v 1.1.2.6 1999-05-19 06:45:08 andyb Exp $
  */
 public class SESE  {
     /** Root of <code>Region</code> tree. */
@@ -86,7 +86,7 @@ public class SESE  {
 	    // continue DFS traversal.
 	    Object[] succ=null;
 	    if (o instanceof HCodeElement) // Node.  Push edges.
-		succ = ((harpoon.IR.Properties.Edges)o).succ();
+		succ = ((harpoon.IR.Properties.HasEdges)o).succ();
 	    if (o instanceof HCodeEdge) // Edge.  Push node.
 		succ = new HCodeElement[] { ((HCodeEdge)o).to() };
 	    for (int i=succ.length-1; i>=0; i--)
