@@ -20,13 +20,11 @@ import java.util.Hashtable;
  * <code>Code</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.4 1999-02-03 06:02:14 duncan Exp $
+ * @version $Id: Code.java,v 1.1.2.5 1999-02-04 07:20:51 duncan Exp $
  */
-public class Code extends harpoon.IR.Quads.Code /* which extends HCode */ 
+public abstract class Code extends harpoon.IR.Quads.Code 
     implements harpoon.IR.Properties.Derivation
 {
-    /** The name of this code view. */
-    public static final String codename = "low-quad";
     /** Hashtable to implement derivation map. */
     protected Hashtable hD = new Hashtable();
 
@@ -42,56 +40,12 @@ public class Code extends harpoon.IR.Quads.Code /* which extends HCode */
 	    public synchronized int getUniqueID() { return id++; }
 	};
     }
-    /** Creates a <code>harpoon.IR.LowQuad.Code</code> object from a
-     *  <code>QuadSSA</code> object. */
-    Code(QuadSSA qsa)
-    {
-	super(qsa.getMethod(), null);
-	TypeMap tym = new harpoon.Analysis.QuadSSA.TypeInfo();
-	FinalMap fm = new harpoon.Backend.Maps.DefaultFinalMap();
-	quads = Translate.translate((LowQuadFactory)this.qf, qsa,
-				    tym, fm, hD);
-    }
+
     protected Code(HMethod parent, Quad quads) {
 	super(parent, quads);
     }
-    /** Clone this code representatino.  The clone has its own copy of
-     *  the quad graph. */
-    public HCode clone(HMethod newMethod) {
-	Code lq = new Code(newMethod, null);
-	lq.quads = Quad.clone(lq.qf, quads);
-	return lq;
-    }
-    /** Return the name of this code view.
-     * @return the string <code>"low-quad"</code>.
-     */
-    public String getName() { return codename; }
 
     /** Implement derivation interface. */
     public DList derivation(Temp t) { return (DList) hD.get(t); }
 
-    /** Return a code factory for LowQuad, given a code factory for Quad. */
-    public static HCodeFactory codeFactory(final HCodeFactory hcf) {
-	if (hcf.getCodeName().equals(QuadSSA.codename)) {
-	    return new HCodeFactory() {
-		public HCode convert(HMethod m) {
-		    HCode c = hcf.convert(m);
-		    return (c==null) ? null :
-			new Code((QuadSSA)c);
-		}
-		public void clear(HMethod m) { hcf.clear(m); }
-		public String getCodeName() { return codename; }
-	    };
-	} else throw new Error("don't know how to make " + codename +
-			       " from " + hcf.getCodeName());
-    }
-    /** Return a code factory for LowQuad, using the default code factory
-     *  for QuadSSA. */
-    public static HCodeFactory codeFactory() {
-	return codeFactory(QuadSSA.codeFactory());
-    }
-    // obsolete.
-    public static void register() {
-	HMethod.register(codeFactory());
-    }
 }
