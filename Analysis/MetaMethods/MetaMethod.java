@@ -41,7 +41,7 @@ import harpoon.Util.Util;
  concerned call-sites to point to it.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaMethod.java,v 1.1.2.1 2000-03-18 01:55:14 salcianu Exp $
+ * @version $Id: MetaMethod.java,v 1.1.2.2 2000-03-20 21:28:59 salcianu Exp $
  */
 public class MetaMethod {
     // Turns on some severe correctness tests.
@@ -157,5 +157,6 @@ public class MetaMethod {
 	buffer.append(" >");
 	return buffer.toString();
     }
+
 
 }

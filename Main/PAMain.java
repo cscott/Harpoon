@@ -9,6 +9,7 @@ import java.util.Set;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
@@ -38,12 +39,14 @@ import harpoon.Tools.BasicBlocks.CachingBBConverter;
 import harpoon.Tools.Graphs.SCComponent;
 import harpoon.Tools.Graphs.SCCTopSortedGraph;
 
+import harpoon.Analysis.PointerAnalysis.Debug;
+
 /**
  * <code>PAMain</code> is a simple Pointer Analysis top-level class.
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.8 2000-03-18 05:25:57 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.9 2000-03-20 21:29:01 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -154,6 +157,15 @@ public abstract class PAMain {
 	    tstop  = System.currentTimeMillis();
 	    System.out.println((tstop - tstart) + "ms");
 	}
+
+	System.out.println("MetaCallGraph:");
+	mcg.print(new java.io.PrintWriter(System.out, true), true);
+
+	System.out.println("   ");
+
+	System.out.println("Split relation:");
+	Debug.show_split(mcg.getSplitRelation());
+	System.exit(1);
 
 	pa = new PointerAnalysis(mcg, mac, bbconv);
 

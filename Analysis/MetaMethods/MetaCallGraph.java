@@ -5,7 +5,10 @@ package harpoon.Analysis.MetaMethods;
 
 import java.util.Set;
 
+import java.io.PrintWriter;
+
 import harpoon.IR.Quads.CALL;
+import harpoon.Analysis.PointerAnalysis.Relation;
 
 /**
  * <code>MetaCallGraph</code> is for meta methods what <code>callGraph</code>
@@ -13,7 +16,7 @@ import harpoon.IR.Quads.CALL;
  methods are called by a given meta method [at a specific call site].
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraph.java,v 1.1.2.1 2000-03-18 01:55:14 salcianu Exp $
+ * @version $Id: MetaCallGraph.java,v 1.1.2.2 2000-03-20 21:28:59 salcianu Exp $
  */
 
 public interface MetaCallGraph {
@@ -33,4 +36,11 @@ public interface MetaCallGraph {
 	execution of the program. */
     public Set getAllMetaMethods();
 
+    /** Computes the <i>split</i> relation. This is a <code>Relation</code>
+	that associates to each <code>HMethod</code> the set of
+	<code>MetaMethod</code>s specialized from it. */
+    public Relation getSplitRelation();
+
+    /** Nice pretty-printer for debug purposes. */
+    public void print(PrintWriter pw, boolean detailed_view);
 }

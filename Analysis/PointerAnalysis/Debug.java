@@ -5,14 +5,18 @@ package harpoon.Analysis.PointerAnalysis;
 
 import java.util.Set;
 import java.util.Arrays;
+import java.util.Iterator;
 
 import harpoon.Tools.UComp;
+
+import harpoon.ClassFile.HMethod;
+import harpoon.Analysis.MetaMethods.MetaMethod;
 
 /**
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.1.2.3 2000-03-18 05:24:30 salcianu Exp $
+ * @version $Id: Debug.java,v 1.1.2.4 2000-03-20 21:29:00 salcianu Exp $
  */
 public abstract class Debug {
 
@@ -56,6 +60,20 @@ public abstract class Debug {
 	}
 
 	return buffer.toString();
+    }
+
+    /** Displays a <i>split</i> relation (see the MetaCallGraph stuff). */
+    public static void show_split(Relation split){
+	for(Iterator it = split.keySet().iterator(); it.hasNext(); ){
+	    HMethod hm = (HMethod) it.next();
+	    System.out.print(hm);
+	    System.out.println("  (" + split.getValuesSet(hm).size() +
+			       " specialization(s))");
+	    for(Iterator itmm = split.getValues(hm); itmm.hasNext(); ){
+		System.out.print("  ");
+		System.out.println((MetaMethod)itmm.next());
+	    }
+	}
     }
 
 }
