@@ -49,7 +49,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.5 1999-11-02 01:21:32 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.6 1999-11-13 08:33:29 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;
@@ -224,7 +224,16 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	emitFreeLocals(stmlist, envT, refT);
 	stmlist.add(new RETURN(tf, null, retexp));
 	// an exception occurred.  unwrap exception value and throw it.
+	// (don't forget to clear the exception before we invoke any more
+	//  jni functions!)
 	stmlist.add(new LABEL(tf, null, yes_exceptions, false));
+	stmlist.add(new NATIVECALL(tf, null, null,
+				   new NAME(tf, null,
+					    new Label("_FNI_ExceptionClear")),
+				   new ExpList
+				   (new TEMP(tf, null, Type.POINTER, envT),
+				    null)
+				   ));
 	stmlist.add(new NATIVECALL(tf, null,
 				   new TEMP(tf, null, Type.POINTER, excT),
 				   new NAME(tf, null,
