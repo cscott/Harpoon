@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
     CHECK_EXCEPTIONS(env);
     (*env)->CallStaticVoidMethod(env, cls, mid);
     CHECK_EXCEPTIONS(env);
+    (*env)->DeleteLocalRef(env, cls);
   }
 
   /* Execute java.lang.System.initializeSystemClass */
@@ -32,6 +33,7 @@ int main(int argc, char *argv[]) {
   CHECK_EXCEPTIONS(env);
   (*env)->CallStaticVoidMethod(env, cls, mid);
   CHECK_EXCEPTIONS(env);
+  (*env)->DeleteLocalRef(env, cls);
 
   /* Wrap argv strings */
 
@@ -42,4 +44,5 @@ int main(int argc, char *argv[]) {
   CHECK_EXCEPTIONS(env);
   (*env)->CallStaticVoidMethod(env, cls, mid, NULL);
   CHECK_EXCEPTIONS(env);
+  (*env)->DeleteLocalRef(env, cls);
 }
