@@ -69,7 +69,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.46 1999-10-28 02:43:52 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.47 1999-11-02 05:52:02 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -83,6 +83,7 @@ public class SAMain extends harpoon.IR.Registration {
     private static boolean QUIET = false;
 
     private static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
+    private static HClass  singleClass = null; // for testing single classes
     
     private static java.io.PrintWriter out = 
 	new java.io.PrintWriter(System.out, true);
@@ -164,9 +165,10 @@ public class SAMain extends harpoon.IR.Registration {
 	Set methods = classHierarchy.callableMethods();
 	Iterator classes = new TreeSet(classHierarchy.classes()).iterator();
 
-	if (!ONLY_COMPILE_MAIN) {
+	if (singleClass!=null || !ONLY_COMPILE_MAIN) {
 	    while(classes.hasNext()) {
 		HClass hclass = (HClass) classes.next();
+		if (singleClass!=null && singleClass!=hclass) continue;//skip
 		messageln("Compiling: " + hclass.getName());
 		
 		try {
@@ -382,7 +384,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     private static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "m:c:o:DOPHRLAhq1");
+	Getopt g = new Getopt("SAMain", args, "m:c:o:DOPHRLAhq1::");
 	
 	int c;
 	String arg;
@@ -442,6 +444,9 @@ public class SAMain extends harpoon.IR.Registration {
 		break;
 	    case '1':  
 		ONLY_COMPILE_MAIN = true;
+		String optclassname = g.getOptarg();
+		if (optclassname!=null)
+		    singleClass = HClass.forName(optclassname);
 		break;
 	    case '?':
 	    case 'h':
@@ -499,8 +504,8 @@ public class SAMain extends harpoon.IR.Registration {
 	out.println("-q");
 	out.println("\tTurns on quiet mode (status messages are not output)");
 
-	out.println("-1"); 
-	out.println("\tTurns off compilation of dependencies (only main() is compiled, no other methods)");
+	out.println("-1 <optional class name>"); 
+	out.println("\tCompiles only a single method or class.  Without a classname, only compiles main()");
 
 	out.println("-h");
 	out.println("\tPrints out this help message");
