@@ -12,20 +12,23 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.ArrayIterator;
 import harpoon.Util.CombineIterator;
+import harpoon.Util.EnumerationIterator;
 import harpoon.Util.Util;
 
 import java.util.AbstractCollection;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 /**
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.39 2000-10-06 23:02:39 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.40 2000-10-17 19:32:53 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -350,6 +353,23 @@ public abstract class Quad
 	    Util.assert(q.prev[i].to == q);
 	    Quad from = copyone(qf, q.prev[i].from, old2new, ctm);
 	    Quad.addEdge(from, q.prev[i].from_index, r, q.prev[i].to_index);
+	}
+	// for HANDLER quads, fixup the protectedSet.
+	if (q instanceof HANDLER) {
+	    HANDLER.ProtectedSet ps = ((HANDLER)q).protectedSet;
+	    // map all protected quads.
+	    List oldqs = new ArrayList(), newqs = new ArrayList();
+	    for (Iterator it = new EnumerationIterator(ps.elements());
+		 it.hasNext(); ) {
+		Quad qq = (Quad) it.next();
+		oldqs.add(qq);
+		newqs.add(copyone(qf, qq, old2new, ctm));
+	    }
+	    // update the set
+	    for (Iterator it=oldqs.iterator(); it.hasNext(); )
+		ps.remove((Quad)it.next());
+	    for (Iterator it=newqs.iterator(); it.hasNext(); )
+		ps.insert((Quad)it.next());
 	}
 	return r;
     }
