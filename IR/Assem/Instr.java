@@ -43,7 +43,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.3.2.1 2002-02-27 08:35:52 cananian Exp $ */
+ * @version $Id: Instr.java,v 1.3.2.2 2002-04-07 20:51:36 cananian Exp $ */
 public class Instr implements HCodeElement, UseDefable, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
@@ -186,7 +186,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
     */
     public final boolean canFallThrough;
 
-    private List targets;
+    private List<Label> targets;
     /** List of target labels that <code>this</code> can branch to.
 	<code>getTargets()</code> may be empty (in which case control
 	flow either falls through to the <code>this.next</code> (the
@@ -198,7 +198,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	@see Instr#hasModifiableTargets 
 	@return A <code>List</code> of <code>Label</code>s.
     */
-    public List getTargets() {
+    public List<Label> getTargets() {
 	if (targets != null) {
 	    if (this.hasModifiableTargets()) {
 		return targets;
@@ -216,15 +216,15 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	<code>this</code>. 
     */
     public InstrLABEL getInstrFor(Label l) {
-	return (InstrLABEL) inf.labelToInstrLABELmap.get(l);
+	return inf.labelToInstrLABELmap.get(l);
     }
 
     /** Defines an array factory which can be used to generate
 	arrays of <code>Instr</code>s. 
     */
-    public static final ArrayFactory arrayFactory =
-        new ArrayFactory() {
-            public Object[] newArray(int len) { return new Instr[len]; }
+    public static final ArrayFactory<Instr> arrayFactory =
+        new ArrayFactory<Instr>() {
+            public Instr[] newArray(int len) { return new Instr[len]; }
         };
 
     // *************** CONSTRUCTORS *****************
@@ -250,7 +250,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
     */
     public Instr(InstrFactory inf, HCodeElement source, 
 		 String assem, Temp[] dst, Temp[] src,
-		 boolean canFallThrough, List targets) {
+		 boolean canFallThrough, List<Label> targets) {
 	assert !assem.trim().equals("FSK-LD `d0, `s0 `d0, `s0");
 
         assert inf != null;
@@ -400,6 +400,9 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 		assert !iter.hasNext() : "last should have nothing left in iter "+iter.next();
 		break;
 	    }
+	    /* XXX CSA: this code is broken: succC().iterator().next() will
+	     * return an InstrEdge, not an Instr; not quite sure what this
+	     * code was supposed to do/how to fix it. ***
 	    Instr n = (Instr) i.succC().iterator().next();
 	    if (i.next != n ||
 		size > 1) {
@@ -407,6 +410,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 		//assert false : "Instr " + i + " is nonlinear";
 		break;
 	    }
+	    */assert false : "this code is broken";
 	}
 
 	return linear;
@@ -553,8 +557,8 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	this.prev = null;
 	/* remove mappings in inf.labelToBranchingInstrsSetMap */
 	if (this.targets!=null) {
-	    for (Iterator it=this.targets.iterator(); it.hasNext(); ) {
-		Label l = (Label) it.next();
+	    for (Iterator<Label> it=this.targets.iterator(); it.hasNext(); ) {
+		Label l = it.next();
 		((Set)inf.labelToBranches.get(l)).remove(this);
 	    }
 	}
@@ -605,9 +609,9 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 
 	/* add this to inf.labelToBranchingInstrSetMap */
  	if (this.targets != null) {
-	    Iterator titer = this.targets.iterator();
+	    Iterator<Label> titer = this.targets.iterator();
 	    while(titer.hasNext()) {
-		Label l = (Label) titer.next();
+		Label l = titer.next();
 		((Set)inf.labelToBranches.
 		 get(l)).add(this);
 	    }
@@ -765,17 +769,17 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 
     /** Returns the <code>Temp</code>s used by this <code>Instr</code>. */
     public final Temp[] use() { 
-	Collection u = useC();
-	return (Temp[]) u.toArray(new Temp[u.size()]);
+	Collection<Temp> u = useC();
+	return u.toArray(new Temp[u.size()]);
     }
 
     /** Returns the <code>Temp</code>s defined by this <code>Instr</code>. */
     public final Temp[] def() { 
-	Collection d = defC();
-	return (Temp[]) d.toArray(new Temp[d.size()]);
+	Collection<Temp> d = defC();
+	return d.toArray(new Temp[d.size()]);
     }
-    public Collection useC() { return Collections.unmodifiableList(Arrays.asList(src)); }
-    public Collection defC() { return Collections.unmodifiableList(Arrays.asList(dst)); }
+    public Collection<Temp> useC() { return Collections.unmodifiableList(Arrays.asList(src)); }
+    public Collection<Temp> defC() { return Collections.unmodifiableList(Arrays.asList(dst)); }
 
     // ******************* HCodeElement interface
 
@@ -793,9 +797,9 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	and <code>getPrev()</code> for information on instruction
 	layout. 
     */
-    public CFGEdge[] edges() { 
-	Collection c = edgeC();
-	return (CFGEdge[]) c.toArray(new InstrEdge[c.size()]);
+    public InstrEdge[] edges() { 
+	Collection<InstrEdge> c = edgeC();
+	return c.toArray(new InstrEdge[c.size()]);
     }
     /** Returns the <I>control flow</I> edges of <code>this</code>.
 	Note that this returns edges according to <I>control flow</I>, not in
@@ -803,12 +807,13 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	and <code>getPrev()</code> for information on instruction
 	layout. 
     */
-    public Collection edgeC() {
-	return new AbstractCollection() {
+    public Collection<InstrEdge> edgeC() {
+	return new AbstractCollection<InstrEdge>() {
 	    public int size() { return predC().size()+succC().size(); }
-	    public Iterator iterator() {
-		return new CombineIterator(new Iterator[] { predC().iterator(),
-							    succC().iterator() });
+	    public Iterator<InstrEdge> iterator() {
+		return new CombineIterator<InstrEdge>
+		    (new Iterator<InstrEdge>[] { predC().iterator(),
+						     succC().iterator() });
 	    }
 	};
     }
@@ -821,10 +826,10 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	
 	Uses <code>predC()</code> to get the necessary information.
     */
-    public CFGEdge[] pred() {
-	Collection c = predC();
-	CFGEdge[] edges = new CFGEdge[c.size()];
-	return (CFGEdge[]) c.toArray(edges);
+    public InstrEdge[] pred() {
+	Collection<InstrEdge> c = predC();
+	InstrEdge[] edges = new InstrEdge[c.size()];
+	return c.toArray(edges);
     }
     /** Returns the <I>control flow</I> predecessors of <code>this</code>.
 	Note that this returns edges according to <I>control flow</I>, not in
@@ -832,10 +837,10 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	and <code>getPrev()</code> for information on instruction
 	layout. 
     */
-    public Collection predC() {
+    public Collection<InstrEdge> predC() {
 	assert !this.hasMultiplePredecessors() : "should not call Instr.predC() if instr"+
 		    "has multiple predecessors...override method";
-	return new AbstractCollection(){
+	return new AbstractCollection<InstrEdge>(){
 	    public int size() {
 		if ((prev != null) && prev.canFallThrough) {
 		    return 1;
@@ -843,7 +848,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 		    return 0;
 		}
 	    }
-	    public Iterator iterator() {
+	    public Iterator<InstrEdge> iterator() {
 		if ((prev != null) && prev.canFallThrough) {
 		    return Default.singletonIterator
 			(new InstrEdge(prev, Instr.this));
@@ -860,10 +865,10 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	and <code>getPrev()</code> for information on instruction
 	layout. 
     */
-    public CFGEdge[] succ() { 
-	Collection c = succC();
-	CFGEdge[] edges = new CFGEdge[c.size()];
-	return (CFGEdge[]) c.toArray(edges);
+    public InstrEdge[] succ() { 
+	Collection<InstrEdge> c = succC();
+	InstrEdge[] edges = new InstrEdge[c.size()];
+	return c.toArray(edges);
     }
     /** Returns the <I>control flow</I> successors of <code>this</code>.
 	Note that this returns edges according to <I>control flow</I>, not in
@@ -871,8 +876,8 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	and <code>getPrev()</code> for information on instruction
 	layout. 
     */
-    public Collection succC() {
-	return new AbstractCollection() {
+    public Collection<InstrEdge> succC() {
+	return new AbstractCollection<InstrEdge>() {
 	    public int size() {
 		int total=0;
 		if (canFallThrough && (next != null)) {
@@ -883,9 +888,9 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 		}
 		return total;
 	    }
-	    public Iterator iterator() {
-		return new CombineIterator
-		    (new Iterator[] {
+	    public Iterator<InstrEdge> iterator() {
+		return new CombineIterator<InstrEdge>
+		    (new Iterator<InstrEdge>[] {
 
 			// first iterator: fall to next?
 			(((next!=null)&&canFallThrough)?
@@ -895,15 +900,15 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 
 			// second iterator: branch to targets?
                         ((targets!=null)?
-			 new UnmodifiableIterator(){
-			    Iterator titer = targets.iterator();
+			 new UnmodifiableIterator<InstrEdge>(){
+			    Iterator<Label> titer = targets.iterator();
 			    public boolean hasNext() {
 				return titer.hasNext();
 			    }
-			    public Object next() {
+			    public InstrEdge next() {
 				return new InstrEdge
 				    (Instr.this, 
-				     (Instr) inf.labelToInstrLABELmap.get
+				     inf.labelToInstrLABELmap.get
 				     (titer.next())); 
 			    }
 			}:Default.nullIterator)

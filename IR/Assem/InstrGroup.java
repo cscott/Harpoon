@@ -4,20 +4,24 @@
 package harpoon.IR.Assem;
 
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGEdge;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Properties.UseDefable;
+import harpoon.Temp.Temp;
+import harpoon.Util.Default;
 import harpoon.Util.Util;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Arrays;
+import java.util.LinkedList; // XXX BUG IN JAVAC
+import java.util.Map;
 /**
  * <code>InstrGroup</code> collects a group of assembly instructions
  * together so that they can be viewed as a single atomic element of
@@ -27,7 +31,7 @@ import java.util.Arrays;
  * single-entry single-exit region.
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrGroup.java,v 1.3.2.1 2002-02-27 08:35:54 cananian Exp $ */
+ * @version $Id: InstrGroup.java,v 1.3.2.2 2002-04-07 20:51:36 cananian Exp $ */
 public class InstrGroup {
     Type type;
     Instr entry, exit;
@@ -99,57 +103,65 @@ public class InstrGroup {
 	abstract away the control flow and layout dictated by the
 	Instrs internally, returning the entry points of each group
 	when needed.  */
-    static class GroupGrapher extends CFGrapher {
-	private Map i2g;
+    static class GroupGrapher extends CFGrapher<Instr> {
+	private Map<Instr,InstrGroup> i2g;
 
-	GroupGrapher(Map instrToGroup) { // local to Assem package
+	GroupGrapher(Map<Instr,InstrGroup> instrToGroup) { // local to Assem package
 	    i2g = instrToGroup;
 	}
 
-	public HCodeElement[] getLastElements(HCode hcode) { 
+	public Instr[] getLastElements(HCode<Instr> hcode) { 
 	    // FSK: is this even necessary?  It was w/o exit mapping,
 	    // but w/ exit mapping, I think that this loop is just an
 	    // identity transform.  Should look into it later.
-	    HCodeElement[] hces = hcode.getLeafElements();
+	    Instr[] hces = hcode.getLeafElements();
 	    if (hces != null) { // null allowed?  has been so far...
 		for(int i=0; i<hces.length; i++) {
-		    InstrGroup ig = (InstrGroup) i2g.get(hces[i]);
+		    InstrGroup ig = i2g.get(hces[i]);
 		    if (ig != null)
 			hces[i] = ig.exit;
 		}
 	    }
 	    return hces;
 	}
-	public HCodeElement getFirstElement(HCode hcode) { 
+	public Instr getFirstElement(HCode<Instr> hcode) { 
 	    return hcode.getRootElement();
 	}
 
-	public Collection predC(HCodeElement hc) { 
-	    Instr i = (Instr) hc;
+	public Collection<HCodeEdge<Instr>> predC(Instr i) { 
 	    if (!i2g.containsKey(i)){
-		return i.predC();
+		return Default.unmodifiableCollection(i.predC(),
+						      new LinkedList<HCodeEdge<Instr>>() // XXX BUG IN JAVAC this param should not be necessary.
+						      );
 	    } else {
-		InstrGroup ig = ((InstrGroup)i2g.get(i));
+		InstrGroup ig = i2g.get(i);
 		if (i == ig.exit) {
-		    return Collections.singleton(new InstrEdge(ig.entry, ig.exit));
+		    return Collections.singleton
+			((HCodeEdge<Instr>)new InstrEdge(ig.entry, ig.exit));
 		} else {
 		    assert i == ig.entry;
-		    return i.predC();
+		    return Default.unmodifiableCollection(i.predC(),
+						      new LinkedList<HCodeEdge<Instr>>() // XXX BUG IN JAVAC this param should not be necessary.
+						      );
 		}
 	    }
 	}
 
-	public Collection succC(HCodeElement hc) { 
-	    Instr i = (Instr) hc;
+	public Collection<HCodeEdge<Instr>> succC(Instr i) { 
 	    if (!i2g.containsKey(i)) {
-		return i.succC();
+		return Default.unmodifiableCollection(i.succC(),
+						      new LinkedList<HCodeEdge<Instr>>() // XXX BUG IN JAVAC this param should not be necessary.
+						      );
 	    } else {
-		InstrGroup ig = ((InstrGroup)i2g.get(i));
+		InstrGroup ig = i2g.get(i);
 		if (i == ig.entry) {
-		    return Collections.singleton(new InstrEdge(ig.entry, ig.exit));
+		    return Collections.singleton
+			((HCodeEdge<Instr>)new InstrEdge(ig.entry, ig.exit));
 		} else {
 		    assert i == ig.exit;
-		    return i.succC();
+		    return Default.unmodifiableCollection(i.succC(),
+							  new LinkedList<HCodeEdge<Instr>>() // XXX BUG IN JAVAC this param should not be necessary.
+							  );
 		}
 	    }
 	}
@@ -168,23 +180,21 @@ public class InstrGroup {
 	assignments will be distinct, even when they sometimes did not
 	need to be.
     */
-    static class GroupUseDefer extends UseDefer {
-	private Map i2g;
+    static class GroupUseDefer extends UseDefer<Instr> {
+	private Map<Instr,InstrGroup> i2g;
 	private Type t;
-	GroupUseDefer(Map instrToGroup, Type t) { // local to Assem package
+	GroupUseDefer(Map<Instr,InstrGroup> instrToGroup, Type t) { // local to Assem package
 	    i2g = instrToGroup;
 	    this.t = t;
 	}
 
 	// **NOTE** defC and useC are ASYMMETRIC.  
-	public Collection useC(HCodeElement hce) { 
-	    Instr i=(Instr)hce;
-
+	public Collection<Temp> useC(Instr i) { 
 	    if (!i2g.containsKey(i)) {
 		assert !i.partOf(t) : ("instr:"+i+" grp type:"+t);
 		return i.useC();
 	    } else {
-		InstrGroup ig = ((InstrGroup)i2g.get(i));
+		InstrGroup ig = i2g.get(i);
 		if(i == ig.entry) {
 		    return i.useC();
 		}
@@ -192,7 +202,7 @@ public class InstrGroup {
 		// else work backwards, gathering up uses but killing
 		// defined uses...
 		Instr curr = ig.exit;
-		Collection set = new HashSet();
+		Collection<Temp> set = new HashSet<Temp>();
 		do {
 		    assert curr.getGroups().contains(ig);
 		    set.addAll(curr.useC());
@@ -204,13 +214,12 @@ public class InstrGroup {
 		return set;
 	    }
 	}
-	public Collection defC(HCodeElement hce) { 
-	    Instr i = (Instr) hce;
+	public Collection<Temp> defC(Instr i) { 
 	    if (!i2g.containsKey(i)) {
 		assert !i.partOf(t);
 		return i.defC();
 	    } else {
-		InstrGroup ig = (InstrGroup)i2g.get(i);
+		InstrGroup ig = i2g.get(i);
 		if (i == ig.exit) {
 		    return Collections.EMPTY_SET;
 		} 
@@ -220,7 +229,7 @@ public class InstrGroup {
 		
 		// start with defs in last instr (shifting them to the
 		// start of the group)
-		Collection set = new HashSet( curr.defC() );
+		Collection<Temp> set = new HashSet<Temp>( curr.defC() );
 
 		do {
 		    assert curr.getGroups().contains(ig);

@@ -78,7 +78,7 @@ import harpoon.Util.Collections.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDMain.java,v 1.3.2.1 2002-02-27 08:37:10 cananian Exp $
+ * @version $Id: EDMain.java,v 1.3.2.2 2002-04-07 20:51:42 cananian Exp $
  */
 public class EDMain extends harpoon.IR.Registration {
  
@@ -570,7 +570,7 @@ public class EDMain extends harpoon.IR.Registration {
 	    frame.getCodeGen().genData((harpoon.IR.Tree.Data)data, new InstrFactory() {
 		private int id = 0;
 		public TempFactory tempFactory() { return null; }
-		public HCode getParent() { return null/*data*/; }// FIXME!
+		public harpoon.IR.Assem.Code getParent() { return null/*data*/; }// FIXME!
 		public harpoon.Backend.Generic.Frame getFrame() { return frame; }
 		public synchronized int getUniqueID() { return id++; }
 		public HMethod getMethod() { return null; }
