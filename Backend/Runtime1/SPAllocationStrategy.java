@@ -31,13 +31,12 @@ import harpoon.Util.Util;
  * precise information about pointer locations.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: SPAllocationStrategy.java,v 1.1.2.2 2000-06-08 20:07:24 kkz Exp $
+ * @version $Id: SPAllocationStrategy.java,v 1.1.2.3 2000-06-30 01:33:57 cananian Exp $
  */
-public class SPAllocationStrategy extends AllocationStrategy {
-    final Frame frame;
+public class SPAllocationStrategy extends MallocAllocationStrategy {
     /** Creates a <code>SPAllocationStrategy</code>. */
     public SPAllocationStrategy(Frame f) {
-        this.frame = f;
+	super(f, "__dont_use__");
     }
     public Exp memAlloc(TreeFactory tf, HCodeElement source,
 			DerivationGenerator dg,
@@ -58,40 +57,10 @@ public class SPAllocationStrategy extends AllocationStrategy {
 			    isPrimitive());
 	    func = "SP_malloc_atomic";
 	}
-	return buildAllocCall(tf, source, dg, ap, func, length, null); 
-    }
-    protected Exp buildAllocCall(TreeFactory tf, HCodeElement source,
-				 DerivationGenerator dg,
-				 AllocationProperties ap,
-				 String funcname, Exp length, ExpList addlArgs)
-    {
 	Runtime rt = frame.getRuntime();
-	Label func = new Label(frame.getRuntime().nameMap
-			       .c_function_name(funcname));
-	Temp Tret = new Temp(tf.tempFactory(), "ma");
-	NAME clazPtr = new NAME(tf, source, rt.nameMap.label
-				(ap.actualClass(), "classinfo"));
-	return new ESEQ
-	    (tf, source, 
-	     new NATIVECALL
-	     (tf, source,
-	      (TEMP)
-	      DECLARE(dg, HClass.Void/*not an obj yet, just memory*/, Tret,
-		      new TEMP(tf, source, Type.POINTER, Tret)),
-	      (NAME)
-	      DECLARE(dg, HClass.Void/*some random c function*/,
-		      new NAME(tf, source, func)),
-	      new ExpList(length, new ExpList(clazPtr, addlArgs))),
-	     DECLARE(dg, HClass.Void/*not an obj yet, just memory*/, Tret,
-		     new TEMP(tf, source, Type.POINTER, Tret)));
-    }
-    private static Exp DECLARE(DerivationGenerator dg, HClass hc, Exp exp) {
-	if (dg!=null) dg.putType(exp, hc);
-	return exp;
-    }
-    private static Exp DECLARE(DerivationGenerator dg, HClass hc, Temp t,
-			       Exp exp) {
-	if (dg!=null) dg.putTypeAndTemp(exp, hc, t);
-	return exp;
+	return buildAllocCall(tf, source, dg, ap, func, length,
+			      new ExpList(new NAME(tf, source, rt.nameMap.label
+						   (ap.actualClass(),
+						    "classinfo")), null));
     }
 }
