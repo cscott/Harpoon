@@ -43,7 +43,7 @@ import java.util.Hashtable;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.4 1999-11-05 06:15:25 bdemsky Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.5 1999-11-05 07:18:25 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
@@ -63,6 +63,13 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 
     /** Creates a <code>TypeInfo</code> analyzer for the specified
      *  <code>HCode</code>.
+     *  If <code>vBehavior</code> is true, the TypeInfo pass's IQ drops
+     *  to the same level as a typical bytecode verifier; i.e. it gathers
+     *  no information from instanceof's and such.  Because of the IQ
+     *  drop, the verifier sometimes can't determine that the operand
+     *  of an AGET is really an array; with <code>vBehaviour</code> true
+     *  the <code>TypeInfo</code> handles this case gracefully, rather than
+     *  failing an assertion.
      */
     public TypeInfo(harpoon.IR.Quads.QuadSSI hc, UseDefMap usedef, boolean vBehavior) { 
 	this.usedef = usedef; 
