@@ -285,7 +285,10 @@ JNIEXPORT jobjectArray JNICALL Java_java_lang_reflect_Method_getParameterTypes
  */
 JNIEXPORT jobjectArray JNICALL Java_java_lang_reflect_Method_getExceptionTypes
   (JNIEnv *env, jobject _this) {
-  assert(0);
+    printf("WARNING: Java_java_lang_reflect_Method_getExceptionTypes unimplemented\n");
+    return (*env)->NewObjectArray(env, (jsize)0, 
+				  (*env)->FindClass(env, "java/lang/Exception"), NULL);
+//  assert(0);
 }
 
 #endif /* !WITHOUT_HACKED_REFLECTION */
