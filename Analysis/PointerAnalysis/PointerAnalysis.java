@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.52 2000-05-14 04:49:17 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.53 2000-05-14 23:10:12 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -89,7 +89,7 @@ public class PointerAnalysis {
     /** Turns on the priniting of some timing info. */
     public static boolean TIMING = true;
     public static final boolean STATS = true;
-    public static boolean SHOW_NODES = false;
+    public static boolean SHOW_NODES = true;
     public static final boolean DETAILS2 = true;
 
 

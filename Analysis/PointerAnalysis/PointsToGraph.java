@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.24 2000-04-04 07:05:14 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.25 2000-05-14 23:10:12 salcianu Exp $
  */
 public class PointsToGraph {
 
@@ -298,20 +298,15 @@ public class PointsToGraph {
 	if(!O.equals(G2.O)){
 	    if(ParIntGraph.DEBUG2){
 		System.out.println("different O's");
-		//PAEdgeSet.show_evolution(G2.O, O);
+		PAEdgeSet.show_evolution(G2.O, O);
 	    }
 	    return false;
 	}
 	if(!I.equals(G2.I)){
 	    if(ParIntGraph.DEBUG2){
 		System.out.println("different I's");
-		//PAEdgeSet.show_evolution(G2.I, I);
+		PAEdgeSet.show_evolution(G2.I, I);
 	    }
-	    return false;
-	}
-	if(!e.equals(G2.e)){
-	    if(ParIntGraph.DEBUG2)
-		System.out.println("different e's");
 	    return false;
 	}
 	if(!r.equals(G2.r)){
@@ -322,6 +317,14 @@ public class PointsToGraph {
 	if(!excp.equals(G2.excp)){
 	    if(ParIntGraph.DEBUG2)
 		System.out.println("different excp's");
+	    return false;
+	}
+	if(!e.equals(G2.e)){
+	    if(ParIntGraph.DEBUG2){
+		System.out.println("different e's");
+		System.out.println("this.e : " + e);
+		System.out.println("G2.e   : " + G2.e);
+	    }
 	    return false;
 	}
 	return true;

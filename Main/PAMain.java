@@ -66,7 +66,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.44 2000-05-14 07:43:24 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.45 2000-05-14 23:10:13 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -85,6 +85,8 @@ public abstract class PAMain {
     private static boolean SHOW_CG = false;
     // show the split relation HMethod -> MetaMethods
     private static boolean SHOW_SPLIT = false;
+    // show some details/statistics about the analysis
+    private static boolean SHOW_DETAILS = false;
     // show some memory allocation statistics
     private static boolean MA_STATS = false;
     // show some statistics about the method hole of the analyzed program
@@ -125,7 +127,7 @@ public abstract class PAMain {
 	"-l file        load a precomputed MetaCallGraph from a file",
 	"--showcg       shows the (meta) call graph",
 	"--showsplit    shows the split relation",
-	"--shownodes    shows details about the nodes",
+	"--details      shows details/statistics: analyzed methods, nodes etc",
 	"--ccs=depth    activate call context sensitivity with a maximum",
 	"              call chain depth of depth",
 	"--ts           activates full thread sensitivity",
@@ -387,8 +389,8 @@ public abstract class PAMain {
 	if(MA_MAPS)
 	    ma_maps(pa, hroot);
 
-	pa.print_stats();
-	// if(HOLE_STATS) hole_stats(pa);
+	if(SHOW_DETAILS)
+	    pa.print_stats();
     }
     
     private static void display_method(Method method){
@@ -456,21 +458,21 @@ public abstract class PAMain {
     private static int get_options(String[] argv){
 	int c, c2;
 	String arg;
-	LongOpt[] longopts = new LongOpt[14];
-	longopts[0]  = new LongOpt("meta", LongOpt.NO_ARGUMENT, null, 'm');
-	longopts[1]  = new LongOpt("smartcg", LongOpt.NO_ARGUMENT, null, 's');
-	longopts[2]  = new LongOpt("showch", LongOpt.NO_ARGUMENT, null, 'c');
-	longopts[3]  = new LongOpt("ccs", LongOpt.REQUIRED_ARGUMENT, null, 5);
-	longopts[4]  = new LongOpt("ts", LongOpt.NO_ARGUMENT, null, 6);
-	longopts[5]  = new LongOpt("wts", LongOpt.NO_ARGUMENT, null, 7);
-	longopts[6]  = new LongOpt("ls", LongOpt.NO_ARGUMENT, null, 8);
-	longopts[7]  = new LongOpt("showcg", LongOpt.NO_ARGUMENT, null, 9);
-	longopts[8]  = new LongOpt("showsplit", LongOpt.NO_ARGUMENT, null, 10);
-	longopts[9]  = new LongOpt("shownodes", LongOpt.NO_ARGUMENT, null, 11);
-	longopts[10] = new LongOpt("mastats", LongOpt.NO_ARGUMENT, null, 12);
-	longopts[11] = new LongOpt("holestats", LongOpt.NO_ARGUMENT, null, 13);
-	longopts[12] = new LongOpt("mamaps",LongOpt.REQUIRED_ARGUMENT,null,14);
-	longopts[13] = new LongOpt("noit", LongOpt.NO_ARGUMENT, null, 15);
+	LongOpt[] longopts = new LongOpt[]{
+	    new LongOpt("meta",      LongOpt.NO_ARGUMENT,       null, 'm'),
+	    new LongOpt("smartcg",   LongOpt.NO_ARGUMENT,       null, 's'),
+	    new LongOpt("showch",    LongOpt.NO_ARGUMENT,       null, 'c'),
+	    new LongOpt("ccs",       LongOpt.REQUIRED_ARGUMENT, null, 5),
+	    new LongOpt("ts",        LongOpt.NO_ARGUMENT,       null, 6),
+	    new LongOpt("wts",       LongOpt.NO_ARGUMENT,       null, 7),
+	    new LongOpt("ls",        LongOpt.NO_ARGUMENT,       null, 8),
+	    new LongOpt("showcg",    LongOpt.NO_ARGUMENT,       null, 9),
+	    new LongOpt("showsplit", LongOpt.NO_ARGUMENT,       null, 10),
+	    new LongOpt("details",   LongOpt.NO_ARGUMENT,       null, 11),
+	    new LongOpt("mastats",   LongOpt.NO_ARGUMENT,       null, 12),
+	    new LongOpt("holestats", LongOpt.NO_ARGUMENT,       null, 13),
+	    new LongOpt("mamaps",    LongOpt.REQUIRED_ARGUMENT, null, 14),
+	    new LongOpt("noit",      LongOpt.NO_ARGUMENT,       null, 15)};
 
 	Getopt g = new Getopt("PAMain", argv, "l:mscoa:i", longopts);
 
@@ -522,7 +524,7 @@ public abstract class PAMain {
 		SHOW_SPLIT = true;
 		break;
 	    case 11:
-		PointerAnalysis.SHOW_NODES = true;
+		SHOW_DETAILS = true;
 		break;
 	    case 12:
 		MA_STATS = true;
@@ -576,8 +578,8 @@ public abstract class PAMain {
 	if(SHOW_CG)
 	    System.out.print(" SHOW_CG");
 
-	if(PointerAnalysis.SHOW_NODES)
-	    System.out.print(" SHOW_NODES");
+	if(SHOW_DETAILS)
+	    System.out.print(" SHOW_DETAILS");
 
 	if(MA_STATS)
 	    System.out.print(" MA_STATS");
@@ -754,12 +756,6 @@ public abstract class PAMain {
 		System.out.println("  " + mm);
 	}
 	System.out.println("}");
-
-
-	System.out.println("Finished the PA!");
-	pa.print_stats();
-	System.out.println("Finished print_stats!");
-
 
 	MAInfo mainfo = new MAInfo(pa, hcf, mms, USE_INTER_THREAD);
 	// show the allocation policies

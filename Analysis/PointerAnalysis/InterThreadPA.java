@@ -30,11 +30,11 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good! 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.21 2000-04-16 18:43:48 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.22 2000-05-14 23:10:12 salcianu Exp $
  */
 public abstract class InterThreadPA {
     
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG  = false;
     public static final boolean DEBUG2 = false;
     public static boolean TIMING = true;
 
@@ -44,6 +44,12 @@ public abstract class InterThreadPA {
     // graph has changed.
     private static final Set processed_threads = new HashSet();
 
+    /** Do the inter-thread analysis for a method. <code>pig</code> should
+	point to the Parallel Interaction Graph at the end of that method and
+	<code>pa</code> should point to the <code>PointerAnalysis</code>
+	object which generated <code>pig</code> (and which called this method).
+	<code>pa</code> will be used to obtain the Parallel Interaction Graphs
+	for the started threads. */
     public static ParIntGraph resolve_threads(ParIntGraph pig,
 					      PointerAnalysis pa){
 	// This is the set of all the analyzed threads. When the graph has
@@ -62,24 +68,37 @@ public abstract class InterThreadPA {
 	    PANode nt = pick_an_unanalyzed_thread(pig,analyzed_threads);
 	    if(nt == null) break;
 
-	    // if(DEBUG)
+	    if(DEBUG)
 		System.out.println(nt + " was chosen");
 
 	    MetaMethod[] ops = get_run_mmethods(nt,pa);
 	    analyzed_threads.add(nt);
 	    if((ops == null) || (ops.length==0) ||
-	       !analyzable_run_mmethods(ops,pa)) continue;	    
+	       !analyzable_run_mmethods(ops,pa)) continue;
 
 	    ParIntGraph old_pig = pig;
 	    pig = interaction_nt(pig, nt, ops, pa);
 
-	    if(!pig.equals(old_pig))
+	    if(!pig.equals(old_pig)){
+		if(DEBUG)
+		    System.out.println("The graph has changed");
 		analyzed_threads.clear();
+	    }
 
 	    analyzed_threads.add(nt);
 	    processed_threads.add(nt);
 	}
-	
+
+	// the threads that have been analyzed are no longer holes
+	for(Iterator it = processed_threads.iterator(); it.hasNext();){
+	    PANode nt = (PANode) it.next();
+	    if(DEBUG)
+		System.out.println("Removed thread hole: " + nt);
+	    pig.G.e.removeNodeHoleFromAll(nt);
+	}
+	// clean up some of the inutile LOAD nodes
+	pig.removeEmptyLoads();
+
 	if(TIMING){
 	    long total_time = System.currentTimeMillis() - begin_time;
 	    System.out.println("Inter-thread analysis done in " + 
@@ -140,9 +159,6 @@ public abstract class InterThreadPA {
 
 	if(hm == null) return null;
 
-	if(DEBUG)
-	    System.out.println("Run method: " + hm);
-
 	MetaMethod mm_run = 
 	    new MetaMethod(hm,new GenType[]{new GenType(hclass,GenType.MONO)});
 
@@ -162,44 +178,45 @@ public abstract class InterThreadPA {
     // nt. If tau(nt)==1 (at most one such thread could exist), this method
     // computes the interaction of the Starter with only one instance of
     // an nt-thread. If tau(nt)==2 (there could be more than one thread,
-    // anything between 0 and infinity); a fixed-point algorithm is necessary
-    // in this case.
+    // anything between 0 and infinity); a fixed-point algorithm is necessary.
+    // NOTE: doesn't modify the values of its parameters; returns a NEW object.
     private static ParIntGraph interaction_nt(ParIntGraph pig, PANode nt,
 				      MetaMethod[] ops, PointerAnalysis pa){
+
+	ParIntGraph new_pig = null; /* it will point to the resulting pig */
 	boolean only_once = (pig.tau.getValue(nt)==1);
 
 	if(DEBUG)
-	    System.out.println("interaction_nt:" + 
-			       nt + (only_once?" only once":" many times"));
+	    System.out.println("interaction_nt: " + nt + 
+			       (only_once?" only once":" many times"));
 
 	// save the old outside edge set
 	PAEdgeSet old_O = pig.G.O;
-	// consider only the outside edges that have been read in //
-	// with an "nt" thread.
-	pig.G.O = construct_new_O(pig,nt);
+	// consider only the outside edges read in // with an "nt" thread.
+	pig.G.O = construct_new_O(pig, nt);
 
-	adjust_escape_and_tau(pig,nt);
-
-	if(only_once)
-	    // a single interaction takes place
-	    pig = interact_once(pig, nt, ops, pa);
-	else{
-	    // a fixed-point algorithm is necessary in this case
+	if(only_once){ // a single interaction is enough
+	    pig.tau.dec(nt);
+	    new_pig = interact_once(pig, nt, ops, pa);
+	    pig.tau.inc(nt);
+	}
+	else{ // a fixed-point algorithm is necessary in this case
+	    new_pig = pig; // this is before the first iteration
 	    while(true){
-		ParIntGraph previous_pig = pig;
-		pig = interact_once(pig, nt, ops, pa);
-		if(pig.equals(previous_pig)) break;
+		ParIntGraph previous_pig = new_pig;
+		new_pig = interact_once(previous_pig, nt, ops, pa);
+		if(new_pig.equals(previous_pig)) break;
 	    }
 	}
 
-	// add the old, unconsidered outside edges
-	pig.G.O.union(old_O);
+	// add the old, unconsidered outside edges to the new graph  ...
+	new_pig.G.O.union(old_O);
+	// [propagate the escape info on the newly added edges]
+	new_pig.G.propagate();
+	// and restore the graph received as argument
+	pig.G.O = old_O;
 
-	// TODO: is this correct? (here)
-	pig.G.propagate();
-	pig.removeEmptyLoads();
-
-	return pig;
+	return new_pig;
     }
 
 
@@ -257,6 +274,9 @@ public abstract class InterThreadPA {
 	ParIntGraph pig[] = new ParIntGraph[2];
 	pig[0] = pig_starter;
 
+	if(DEBUG)
+	    System.out.println("interact_once_op; op = " + op.getHMethod());
+
 	// some thread specialization if necessary
 	if(PointerAnalysis.THREAD_SENSITIVE ||
 	   PointerAnalysis.WEAKLY_THREAD_SENSITIVE)
@@ -309,13 +329,6 @@ public abstract class InterThreadPA {
 	return new_pig;
     }
 
-    // In Starter: e(n) = e(n) - {nt}, for all n and tau(nt)--
-    private static void adjust_escape_and_tau(ParIntGraph pig, PANode nt){
-	pig.G.e.removeNodeHoleFromAll(nt);
-	//pig.tau.setToZero(nt);
-	pig.tau.dec(nt);
-    }
-
     /** Set the initial mappings: class nodes, parameter->thread node.
 	Parameters:<br><ul>
 	<li>pig[0] - the parallel interaction graph of the Starter;
@@ -324,8 +337,7 @@ public abstract class InterThreadPA {
 	Returns:<br><ul>
 	<li>mu[0] - the mapping of the nodes from the Starter <br>;
 	<li>mu[1] - the mapping of the nodes from the Startee <br>.
-	</ul>
-    */    
+	</ul> */
     private static Relation[] compute_initial_mappings(ParIntGraph[] pig,
 						       PANode nt,
 						       PANode[] params){
