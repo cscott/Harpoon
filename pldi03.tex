@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi03.tex,v 1.4 2002-11-15 21:17:07 cananian Exp $
+% $Id: pldi03.tex,v 1.5 2002-11-15 22:37:47 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 %\usepackage[section,plain]{algorithm}
@@ -870,29 +870,28 @@ These versions enabled us to calculate the amount by which each
 technique reduced the size of the live heap data.
 
 \begin{figure*}
-\begin{center}
-\parbox[b]{6cm}{\centering%
-\includegraphics[width=5.8cm,clip=true]{Figures/sas-ttllive.eps}\\
-(a) Reduction in the maximum live heap achieved with our transformations.
-\\~}%
-\parbox[b]{6cm}{\centering%
-\includegraphics[width=5.8cm,clip=true]{Figures/sas-ttlalloc.eps}\\
+\begin{center}%
+\parbox[b]{8cm}{\centering%
+\includegraphics[width=7.8cm,clip=true]{Figures/sas-ttllive.eps}\\
+(a) Reduction in the maximum live heap achieved with our transformations.}%
+~~\parbox[b]{8cm}{\centering%
+\includegraphics[width=7.8cm,clip=true]{Figures/sas-ttlalloc.eps}\\
 (b) Cumulative reduction in dynamic allocation achieved with
     our transformations.
 }%
 \\[.3cm]
-\parbox[b]{6cm}{\centering%
-\includegraphics[width=5.8cm,clip=true]{Figures/sas-objalloc.eps}\\
+\parbox[b]{8cm}{\centering%
+\includegraphics[width=7.8cm,clip=true]{Figures/sas-objalloc.eps}\\
 (c) Reduction in non-array dynamic allocation achieved with
     our transformations.
 \\~}%
-\parbox[b]{6cm}{\centering%
-\includegraphics[width=5.8cm,clip=true]{Figures/sas-objarrptr.eps}\\
+~~\parbox[b]{8cm}{\centering%
+\includegraphics[width=7.8cm,clip=true]{Figures/sas-objarrptr.eps}\\
 (d) Pre-transformation allocation breakdown between arrays and objects,
 with allocations attributable to fields of pointer type split out.}%
 \\[.3cm]
-\parbox[b]{6cm}{\centering%
-\includegraphics[width=5.8cm,clip=true]{Figures/oopsla-speed.eps}\\
+\parbox[b]{8cm}{\centering%
+\includegraphics[width=7.8cm,clip=true]{Figures/oopsla-speed.eps}\\
 (e) Runtime performance of space optimizations.}%
 \end{center}
 \caption{Experimental results of space optimization transformations.}
