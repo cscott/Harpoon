@@ -4,7 +4,11 @@
 #include "flexthread.h"
 
 extern long memorystat;
+
+#if WITH_THREADS
 extern flex_mutex_t memstat_mutex;
+#endif
+
 extern long peakusage;
 void update_stats();
 

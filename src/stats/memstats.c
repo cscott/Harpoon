@@ -7,7 +7,9 @@
 
 #ifdef WITH_MEMORYSTATISTICS
 long memorystat;
+#if WITH_THREADS
 flex_mutex_t memstat_mutex=FLEX_MUTEX_INITIALIZER;
+#endif
 long peakusage;
 long lastpeak;
 long startclock;
