@@ -12,12 +12,12 @@ import harpoon.Util.ArrayFactory;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.14.2.4 1998-12-17 21:38:38 cananian Exp $
+ * @version $Id: Temp.java,v 1.14.2.5 1998-12-27 21:09:00 cananian Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
  */
-public class Temp {
+public class Temp implements Cloneable {
   /*final*/ TempFactory tf;
   /*final*/ String name;
   /*final*/ int hashcode;
@@ -55,6 +55,13 @@ public class Temp {
   public String name() { return name; }
   /** Returns a string representation of this temporary. */
   public String toString() { return name; }
+
+  /** Clones a <code>Temp</code> into a different <code>TempFactory</code>. */
+  public Temp clone(TempFactory tf) {
+    return new Temp(tf, this.name);
+  }
+  /** Clones a <code>Temp</code> using the same <code>TempFactory</code>. */
+  public Object clone() { return clone(this.tf); }
 
   /** Returns a hashcode for this temporary.
    *  The hashcode is formed from the scope name and the temporary name.
@@ -94,13 +101,6 @@ public class Temp {
     new ArrayFactory() {
       public Object[] newArray(int len) { return new Temp[len][]; }
     };
-
-  /** <code>Temp</code>s cannot be cloned. 
-   * @exception CloneNotSupportedException always.
-   */
-  public Object clone() throws CloneNotSupportedException {
-    throw new CloneNotSupportedException("Temps cannot be cloned.");
-  }
 }
 // set emacs indentation style.
 // Local Variables:
