@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.51 2002-09-23 01:50:59 cananian Exp $
+% $Id: ptran.tex,v 1.52 2003-05-08 17:33:33 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,11 +8,17 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.51 $ $}
+\date{\today \\ $ $Revision: 1.52 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
 \newcommand{\func}[1]{\ensuremath{\text{\sffamily #1}}}
+
+% points-to graphs are large and unwieldy tuples.
+\newcommand{\ptgraphA}
+           {\tuple{O,I,\func{c}_\text{from},\func{c}_\text{to},r}}
+\newcommand{\ptgraphB}
+           {\tuple{O,I,\func{e},\func{c}_\text{from},\func{c}_\text{to},r}}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -167,6 +173,9 @@ use $s$ as:
 
 We can then approximate pairwise-singularity by saying $v_1$ at $s_1$
 is pairwise-singular with $v_2$ at $s_2$ if
+every path $s_1\to s_2$ or $s_2\to s_1$ must pass through all
+generation sites which $v_1$ at $s_1$ and $v_2$ at $s_2$ have in
+common.  Formally:
 \begin{displaymath}
 \neg\exists d \in \func{GenSite}(\tuple{v_1,s_1}) \cap \func{GenSite}(\tuple{v_2,s_2})
      : \func{Path}_{\mathcal{G}-d}(s_1, s_2) \vee
@@ -182,7 +191,7 @@ execution of the program.
 % note that a statement ... = a + b *could* however have a=b and still
 % be singular.  does this need to be fixed?
 
-\begin{myfigure}[p]
+\begin{myfigure}%[p]
 \begin{samplecode}[2]%
 while (\ldots) \{         &while (\ldots) \{         \\
 \>v = new T(\ldots)       &\>v1 = new T(\ldots)      \\
@@ -216,7 +225,7 @@ $\func{Ru}$, $\func{Nd}$, and $\func{Gs}$.
 The relations are represented as
 sets of pairs \tuple{v, X} where
 $\mathcal{R}(v)=X$ iff $\tuple{v,X} \in R$.
-Both sets are initialized
+Both relations are initialized
 to the empty set for all $n$, and grow monotonically as the analysis
 progresses.
 We let
@@ -446,7 +455,7 @@ formal parameters.
 \section{Compositional Pointer Analysis}
 
 \subsection{Overview}
-Our compositional pointer analysis is loosely based on the Whaley/Rinard
+Our compositional pointer analysis is loosely based on the Vivien/Whaley/Rinard
 escape and points-to framework.  We maintain additional
 information sufficient to mark possible ``companion'' edges, and
 extend the composition rules to maintain this information.
@@ -458,6 +467,15 @@ polymorphically.
 We also allow points-to solutions via Steensgaard-style unification as well as
 the Anderson-style set constraints in the previous Whaley/Rinard
 work.\footnote{Not yet.}
+
+We have broken our analysis into three phases.  In the first phase, we
+construct method summaries which describe the effect of each method
+individually on the points-to graph, and indicate which other methods
+it may call.  Phase two composes these summaries to create a points-to
+graph valid for the entire program.  In the third phase, the overall
+points-to graph is used to construct points-to information for
+points inside methods and for variables pruned out of the method
+summaries.
 
 \begin{myfigure}
 \begin{tabular}{ll|ll}
@@ -477,10 +495,10 @@ $s\in S$ & statements                &$N_G\subseteq N_O$ & global nodes\\
 \end{myfigure}
 
 % abbreviate the points-to-graph tuple.
-\newcommand{\ptgraph}
-           {\tuple{O,I,\func{e},\func{c}_\text{from},\func{c}_\text{to},r}}
+\subsection{Building Method Summaries}
                              
-A points-to graph $\mathcal{G}_\bigvar{pt}$ is a quintuple of the form \ptgraph, where
+A points-to graph $\mathcal{G}_\bigvar{pt}$ is a 4-tuple of the form \ptgraphA,
+where:
 \begin{itemize}
 \item $O \subseteq (N\times F)\times(N_L \cup N_G)$ is a set of
 outside edges.  Outside edges represent references which may be
@@ -489,8 +507,8 @@ created outside the current analysis scope.%
 \item $I \subseteq (V\cup(N\times F))\times N$ is a set of inside
 edges.  Inside edges represent references created inside the current
 analysis scope.
-\item $\func{e}:N\to 2^S$ is an escape function that records the set of
-unanalyzed method invocation sites that a node escapes down into.
+%\item $\func{e}:N\to 2^S$ is an escape function that records the set of
+%unanalyzed method invocation sites that a node escapes down into.
 \item $\func{c}_\text{from}:I\to 2^{(V\times S)_\bot}$ collects static values
 used on the left-hand side of store statements associated with
 inside edges.  This allows us to detect possible from-companion edges.
@@ -506,42 +524,50 @@ that may be returned by the currently analyzed method.
 \end{itemize}
 \textbf{XXX: note that nothing can point \emph{to} a variable node.}
 
+At this stage we assume that we are constructing a map
+$\bigvar{PT}:M\to\ptgraphA$ from methods to the points-to graphs that
+represent them.  We also assume we have a map $\bigvar{XX}:M\to 2^S$
+from methods to all call-sites in the method.  (This isn't needed
+until phase 2.  Phase 2 will also want a map from call-sites to
+the possible methods reachable from that call-site, which will
+use the current points-to graph for filtering.)
+
 We define:
 \begin{eqnarray*}
-\func{unanalyzed}_\text{direct}(\ptgraph, n) &=&
+\func{unanalyzed}_\text{direct}(\ptgraphA, n) &=&
 \func{e}(n)\neq\emptyset
 \\
-\func{escaped}_\text{direct}(\ptgraph, n) &=&
+\func{escaped}_\text{direct}(\ptgraphA, n) &=&
  n\in N_P \cup N_R \cup N_T \cup \bigvar{CL}
  \vee
  \func{unanalyzed}(n)
 %\\
-%\func{escaped}_\text{v}(\ptgraph,v) &=&
+%\func{escaped}_\text{v}(\ptgraphA,v) &=&
 % \exists n\in N : \tuple{v,n}\in I
 % \wedge
-% \func{escaped}_\text{n}(\ptgraph,n)
+% \func{escaped}_\text{n}(\ptgraphA,n)
 \end{eqnarray*}
 and then recursively:
 \begin{multline*}
 \func{escaped}%_\text{n}
-              (\ptgraph,n) =
- \func{escaped}_\text{direct}(\ptgraph,n) \vee {}
+              (\ptgraphA,n) =
+ \func{escaped}_\text{direct}(\ptgraphA,n) \vee {}
 \\
  \exists n'\in N,f\in F : \left(\tuple{\tuple{n,f},n'}\in O\cup I
  \wedge
 {} \right. \\ \left.
  \func{escaped}%_\text{n}
-               (\ptgraph,n')\right)
+               (\ptgraphA,n')\right)
 \end{multline*}
 %\begin{multline*}
 %\func{unanalyzed}
-%              (\ptgraph,n) =
-% \func{unanalyzed}_\text{direct}(\ptgraph,n) \vee {}
+%              (\ptgraphA,n) =
+% \func{unanalyzed}_\text{direct}(\ptgraphA,n) \vee {}
 %\\
 % \exists n'\in N,f\in F : \left(\tuple{\tuple{n,f},n'}\in O\cup I
 % \wedge
 % \func{unanalyzed}
-%               (\ptgraph,n')\right)
+%               (\ptgraphA,n')\right)
 %\end{multline*}
 
 % INVARIANT: a node n never *un*escapes during the (intraproc?) analysis.
@@ -555,7 +581,7 @@ P&\text{such that }\bigvar{SV}\text{ are mutually-singular conditional
 \bot & \text{if no such }P\text{ exists.}
 \end{cases}
 \end{eqnarray*}
-Now we say that given \ptgraph,
+Now we say that given \ptgraphA,
 an edge $e_i=\tuple{\tuple{n_1,f},n_2} \in I$ is a:
 \begin{itemize}
 \item \newterm{Definite companion} if:
