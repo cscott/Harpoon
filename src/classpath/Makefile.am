@@ -3,7 +3,7 @@
 # build .jar file before recursing into subdirs, as the rules to
 # build the .h files from the .java source requires that the .jar
 # already be built.
-SUBDIRS = . gnu.vm.stack java.lang
+SUBDIRS = . gnu.vm.stack java.io java.lang java.lang.reflect 
 
 JAVASRC=$(wildcard */*.java)
 JARFILE=cpvm.jar
