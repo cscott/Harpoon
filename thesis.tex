@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.54 1999-07-10 04:08:46 cananian Exp $
+% $Id: thesis.tex,v 1.55 1999-07-10 08:03:02 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage]{article}
 % fonts
@@ -12,6 +12,7 @@
 \usepackage{varioref}\vrefwarning % \vref command
 % common definitions
 \usepackage{comdef}
+\newcommand*{\figscale}{1.0}
 
 % number figures according to section
 \let\oldsection\section
@@ -24,14 +25,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.54 $ $}
+\date{\today \\ $ $Revision: 1.55 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.54 $ $}{$ $Revision: 1.54 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.55 $ $}{$ $Revision: 1.55 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -441,7 +442,7 @@ properly attribute the cycle-equivalency properties of $n'$ to $n$
 later.
 \begin{myfigure}
 \begin{center}
-\input{Figures/THundir}
+\renewcommand*{\figscale}{0.5}\input{Figures/THundir}
 \end{center}
 \caption{Transformation from directed to undirected graph
 	 (from \cite{johnson93:sese}).}
@@ -534,8 +535,8 @@ the right for the example of figure~\vref{fig:CQex}.%
 \label{fig:SESEalg}\end{myfigure}
 
 \begin{myfigure}\centering
-\vertcenter{\input{Figures/THseseex}}\hspace{1cm}
-\vertcenter{\input{Figures/THpst}}
+\vertcenter{\renewcommand*{\figscale}{0.5}\input{Figures/THseseex}}\hspace{1cm}
+\vertcenter{\renewcommand*{\figscale}{0.7}\input{Figures/THpst}}
 \caption{SESE regions and PST for the CFG of
          figure~\ref{fig:CQex} (from \cite{johnson94:pst}).}
 \label{fig:SESEex}\end{myfigure}
@@ -719,7 +720,7 @@ terminates in one pass.\fixme{Are we \emph{sure} similar worst cases
 don't exist for the optimistic algorithm?}
 
 \begin{myfigure}[t]
-\centering\input{Figures/evil}
+\centering\renewcommand*{\figscale}{0.25}\input{Figures/evil}
 \caption{A worst-case CFG for ``pessimistic'' algorithms.}
 \label{fig:evil}
 \end{myfigure}
@@ -731,6 +732,12 @@ don't exist for the optimistic algorithm?}
 Use the techniques of \cite{kennedy98:strength} to do loop-invariant
 code motion, strength reduction, and partial-redundancy-elimination
 using SSI form?}
+
+\begin{myfigure}[t]
+\centering\renewcommand*{\figscale}{0.6}\input{Figures/THlattice}
+\caption{Lattice for constant/type/bitwidth analysis.}
+\label{fig:lattice}
+\end{myfigure}
 
 \section{An executable representation}\label{sec:ssiplus}
 The Static Single Information (SSI) form, as presented in the first

@@ -1,3 +1,4 @@
+# definitions for example 1
 EX1FIG=THex1.fig
 EX1SCALE=-m 0.7
 SEDCMD=	-e 's/STMT1/$$P_0 \\leftarrow (X_0 \\neq 2)$$/' \
@@ -12,6 +13,7 @@ SEDCMD=	-e 's/STMT1/$$P_0 \\leftarrow (X_0 \\neq 2)$$/' \
 	-e 's/STMTA/$$Y_4 \\leftarrow Y_3+1$$/' \
 	-e 's,STMTB,/* no further uses of $$X$$ or $$Z$$ */,'
 
+# rules for example 1
 THex1ssi.tex: $(EX1FIG)
 	fig2dev -L latex $(EX1SCALE) $(EX1FIG) \
 	| sed $(SEDCMD) > $@
@@ -28,23 +30,19 @@ THex1base.tex: $(EX1FIG)
 	fig2dev -L latex $(EX1SCALE) $(EX1FIG) \
 	| sed -e 's/STMT[3789]//' $(SEDCMD) -e 's/\([PXYZ]\)_[01234]/\1/g'> $@
 
-THundir.tex: THundir.fig
-	fig2dev -L latex -m 0.5 $< $@
+# default fig->tex rule -- insert a snippet from head.tex
+%.tex: %.fig
+	fig2dev -L latex -m 1.0 $< $@.tmp
+	(head -1 $@.tmp ; cat head.tex ; sed -e '1d' -e 's/SetFigFont/MySetFigFont/g' $@.tmp) > $@
+	$(RM) -f $@.tmp
 
-THseseex.tex: THcqex.fig
-	fig2dev -L latex -m 0.5 $< $@
-# sed out dashed arc-boxes and left-justified special text from the figure.
+# sed out dashed arc-boxes and left-justified special text from the
+# cycle-equivalency figure.
 THcqex.tex: THcqex.fig
 	awk "/^[[:blank:]]/{if (foo==1) next;} /^2 4 1/||/^4 0 0 100 0 0 12 0.0000 2/{foo=1;next} {print; foo=0;}" < $< | \
 	fig2dev -L latex -m 0.5 > $@
 
-THpst.tex: THpst.fig
-	fig2dev -L latex -m 0.7 $< $@
-
-evil.tex: evil.fig
-	fig2dev -L latex -m 0.25 $< $@
-
 clean:
 	$(RM) THex1*.tex *.fig.bak evil.tex \
-		THcqex.tex THseseex.tex THundir.tex THpst.tex \
+		THcqex.tex THseseex.tex THundir.tex THpst.tex THlattice.tex\
 		*~

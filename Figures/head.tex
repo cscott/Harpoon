@@ -1,0 +1,13 @@
+\providecommand{\figscale}{1.0}% default full-size
+\setlength{\unitlength}{\figscale\unitlength}% scale the unit length
+% define figfontsizel and figfontskipl if undefined
+\begingroup\makeatletter%
+\ifx\figfontsizel\undefined\newlength{\figfontsizel}\fi%
+\ifx\figfontskipl\undefined\newlength{\figfontskipl}\fi%
+\endgroup%
+% redefine SetFigFont to scale the font size appropriately.
+\providecommand{\MySetFigFont}[2]{%
+\setlength{\figfontsizel}{#1pt}\setlength{\figfontsizel}{\figscale\figfontsizel}%
+\setlength{\figfontskipl}{#2pt}\setlength{\figfontskipl}{\figscale\figfontskipl}%
+\SetFigFont{\figfontsizel}{\figfontskipl}%
+}%
