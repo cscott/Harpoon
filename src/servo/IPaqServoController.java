@@ -38,11 +38,9 @@ public class IPaqServoController {
 	    clientSocket = new Socket(host, SERVER_PORT);
 	    out = clientSocket.getOutputStream();
 	} catch (UnknownHostException e) {
-	    System.out.println("Unknown host: "+e);
-	    System.exit(-1);
+	    throw new RuntimeException("Unknown host: "+e);
 	} catch (IOException e) {
-	    System.out.println("Difficulty connecting to "+host+": "+e);
-	    System.exit(-1);
+	    throw new RuntimeException("Difficulty connecting to "+host+": "+e);
 	}
     }
 
@@ -56,8 +54,7 @@ public class IPaqServoController {
 	    out.write(10);
 	    out.flush();
         } catch (IOException e) {
-	    System.out.println("Can't write output! "+e);
-	    System.exit(-1);
+	    throw new RuntimeException("Can't write output! "+e);
 	}
     }
     
@@ -109,12 +106,14 @@ public class IPaqServoController {
 		char c = (char)serverIS.read();
 		if (((c>='A')&&(c<='Z'))||((c>='0')&&(c<='9'))||(c==10)||(c==13)||(c=='-')) {
    	            sendSerial((byte)c);
-// 		    System.out.print(c);
-// 		    System.out.flush();
 		}
 	    }
 	} catch (IOException exc) {
 	    System.err.println("Failed I/O: "+exc);
+	    System.exit(-1);
+	} catch (RuntimeException e) {
+	    System.err.println(e.toString());
+	    System.exit(-1);
 	}
     }
 
