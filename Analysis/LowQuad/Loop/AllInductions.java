@@ -21,13 +21,13 @@ import java.util.Iterator;
  * <code>AllInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: AllInductions.java,v 1.1.2.2 1999-06-29 17:24:24 bdemsky Exp $
+ * @version $Id: AllInductions.java,v 1.1.2.3 1999-06-29 17:46:44 bdemsky Exp $
  */
 public class AllInductions {
     TempMap tm;
     HCode hc;
 
-    /** Creates a <code>AllInductions</code>. */
+    /** Creates a <code>AllInductions</code> object. */
     public AllInductions(TempMap tm, HCode hc) {
         this.tm=tm;
 	this.hc=hc;
@@ -37,7 +37,7 @@ public class AllInductions {
      *  to <code>Induction</code> objects containing information
      *  on their derivation.*/
 
-    HashMap doAllInductions(Loops lp, WorkSet invariants, HashMap basicinductions) {
+    public HashMap doAllInductions(Loops lp, WorkSet invariants, HashMap basicinductions) {
 	HashMap allInductions=new HashMap(basicinductions);
 	CompleteVisitor visitor=new CompleteVisitor(allInductions,invariants);
 	WorkSet elements=new WorkSet(lp.loopIncelements());
