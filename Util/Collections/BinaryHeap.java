@@ -3,11 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
-import harpoon.Util.Default;
-import harpoon.Util.Collections.PairMapEntry;
-import harpoon.Util.Collections.UnmodifiableIterator;
-import harpoon.Util.Util;
-
 import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,7 +20,7 @@ import java.util.Map;
  * Sedgewick's book.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinaryHeap.java,v 1.5 2002-08-30 22:39:56 cananian Exp $
+ * @version $Id: BinaryHeap.java,v 1.6 2003-06-16 20:13:46 cananian Exp $
  * @see Heap
  */
 public final class BinaryHeap<K,V> extends AbstractHeap<K,V> {
