@@ -5,9 +5,33 @@ package harpoon.Analysis.Quads;
 
 import harpoon.Analysis.UseDef;
 import harpoon.Analysis.Maps.UseDefMap;
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
-import harpoon.Temp.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HMethod;
+import harpoon.IR.Quads.Qop;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ALENGTH;
+import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.ASET;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.COMPONENTOF;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.INSTANCEOF;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.SIGMA;
+import harpoon.IR.Quads.SWITCH;
+import harpoon.IR.Quads.THROW;
+import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 import harpoon.Util.UniqueFIFO;
 import harpoon.Util.Worklist;
@@ -19,7 +43,7 @@ import java.util.Hashtable;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.2 1999-09-09 21:42:55 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.2.2.1 1999-09-17 06:57:27 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
@@ -104,6 +128,16 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	    // XXX specify class of exception better.
 	    boolean r2 = merge(q,q.retex(),HClass.forClass(Throwable.class));
 	    modified = r1 || r2;
+
+	    // deal with SIGMA functions in CALL
+	    for (int i=0; i<q.numSigmas(); i++) {
+		if (q.src(i)==null) continue;
+		HClass ty = typeMap(q, q.src(i));
+		if (ty==null) continue;
+		for (int j=0; j<q.arity(); j++)
+		    if (merge(q, q.dst(i,j), ty))
+			modified = true;
+	    }
 	}
 	public void visit(COMPONENTOF q) {
 	    modified = merge(q, q.dst(), toInternal(HClass.Boolean));

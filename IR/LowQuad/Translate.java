@@ -26,7 +26,7 @@ import java.util.Map;
  * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.12 1999-09-10 00:25:37 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.12.2.1 1999-09-17 06:57:34 cananian Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,
@@ -190,8 +190,16 @@ final class Translate { // not public
 		}
 	    }
 	    updateTypeInfo(q);
+	    // for some reason SIGMA doesn't have a whole-array accessor.
+	    Temp[]   nsrc = new Temp[q.numSigmas()];
+	    Temp[][] ndst = new Temp[q.numSigmas()][];
+	    for (int i=0; i<nsrc.length; i++) { // copy copy copy
+		nsrc[i] = q.src(i); ndst[i] = q.dst(i);
+	    }
+	    // CALL->PCALL.
 	    Quad q3 = new PCALL(qf, q, qN.def()[0], map(q.params()),
-				map(q.retval()), map(q.retex()));
+				map(q.retval()), map(q.retex()),
+				map(ndst), map(nsrc));
 	    Quad.addEdge(qN, 0, q3, 0);
 	    lqm.put(q, q0, q3);
 	}

@@ -4,9 +4,41 @@
 
 package harpoon.Analysis.Quads;
 
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
-import harpoon.IR.LowQuad.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ALENGTH;
+import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.ARRAYINIT;
+import harpoon.IR.Quads.ASET;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.COMPONENTOF;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.HANDLER;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.INSTANCEOF;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.MONITORENTER;
+import harpoon.IR.Quads.MONITOREXIT;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.NOP;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.SIGMA;
+import harpoon.IR.Quads.SWITCH;
+import harpoon.IR.Quads.THROW;
+import harpoon.IR.LowQuad.LowQuadVisitor;
+import harpoon.IR.LowQuad.PCALL;
+import harpoon.IR.LowQuad.PSET;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Default;
@@ -29,7 +61,7 @@ import java.util.TreeMap;
  * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.1.2.2.2.1 1999-09-16 19:20:32 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.1.2.2.2.2 1999-09-17 06:57:27 cananian Exp $
  */
 
 public abstract class DeadCode  {
@@ -42,7 +74,7 @@ public abstract class DeadCode  {
 	// keep track of defs.
 	Map defMap = new HashMap();
 	// we'll have a coupla visitors
-	QuadVisitor v;
+	LowQuadVisitor v;
 	
 	// make a worklist (which everything's on, at the beginning)
 	Worklist W = new WorkSet();
@@ -302,20 +334,26 @@ public abstract class DeadCode  {
 	    markUseful(q);
 	}
 
-	public void visit(PCALL q) {
-	    // CALLs may have side-effects, thus they are always useful (conservative)
-	    markUseful(q);
-	}
-
 	public void visit(PSET q) {
 	    // Pointer writes may be useful
 	    markUseful(q);
 	}
 
+	public void visit(PCALL q) {
+	    // all PCALLs are useful (may have side-effects)
+	    useful.add(q);
+	    // any variables used are useful.
+	    for (int i=0; i<q.paramsLength(); i++)
+		markUseful(q.params(i));
+	    markUseful(q.retex());
+	    if (q.retval()!=null) markUseful(q.retval());
+	    // process sigmas normally
+	    visit((SIGMA)q);
+	}
 	public void visit(CALL q) {
 	    // all CALLs are useful (may have side-effects)
 	    useful.add(q);
-	    // are variables used are useful.
+	    // any variables used are useful.
 	    for (int i=0; i<q.paramsLength(); i++)
 		markUseful(q.params(i));
 	    markUseful(q.retex());

@@ -7,6 +7,8 @@ import harpoon.Analysis.Maps.TypeMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.LowQuad.PCALL;
+import harpoon.IR.LowQuad.LowQuadFactory;
 import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
@@ -25,7 +27,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.19.2.2 1999-09-17 05:31:21 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.19.2.3 1999-09-17 06:57:34 cananian Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -199,6 +201,28 @@ static class SIGMAVisitor extends LowQuadVisitor // this is an inner class
 	q0         = new CALL(m_qf, q, q.method(), nparams,
 			      (q.retval()!=null)?map(q.retval()):null,
 			      map(q.retex()), q.isVirtual(), new Temp[0]);
+	numSigmas  = q.numSigmas();
+	arity      = q.arity();
+
+	for (int i=0; i<numSigmas; i++)
+	    for (int j=0; j<arity; j++)
+		renameSigma(q, j, i);
+
+	m_qm.put(q, q0);
+    }
+
+    public void visit(PCALL q) // handle low-quads, too.
+    {
+	SIGMA  q0;
+	int    arity, numSigmas;
+	Temp[] nparams;
+      
+	nparams    = new Temp[q.paramsLength()];
+	for (int i=0; i<nparams.length; i++)
+	    nparams[i] = map(q.params(i));
+	q0         = new PCALL((LowQuadFactory)m_qf, q, map(q.ptr()), nparams,
+			      (q.retval()!=null)?map(q.retval()):null,
+			      map(q.retex()), new Temp[0]);
 	numSigmas  = q.numSigmas();
 	arity      = q.arity();
 
