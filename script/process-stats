@@ -1,5 +1,80 @@
-grep ^"Receiving Frame: " < ../raw-stats.txt | awk '{print $3}' > ../receiving-stats.txt
-grep ^"Processing: " < ../raw-stats.txt | awk '{print $2}' > ../processing-stats.txt
-grep ^"Tracker: " < ../raw-tracker-stats.txt | awk '{print $2}' > ../tracking-stats.txt
+grep ^"Receiving Frame:Rate:num: " < ../raw-stats.txt | awk '{print $3}' > ../receiving-rate-stats.txt
+grep ^"Receiving Frame:Latency:num: " < ../raw-stats.txt | awk '{print $3}' > ../receiving-latency-stats.txt
+grep ^"Processing:Rate:num: " < ../raw-stats.txt | awk '{print $2}' > ../processing-rate-stats.txt
+grep ^"Processing:Latency:num: " < ../raw-stats.txt | awk '{print $2}' > ../processing-latency-stats.txt
+grep ^"Tracking:Rate:num: " < ../raw-tracker-stats.txt | awk '{print $2}' > ../tracking-rate-stats.txt
+grep ^"Tracking:Latency:num: " < ../raw-tracker-stats.txt | awk '{print $2}' > ../tracking-latency-stats.txt
 ./sumlist.py
-exec gnuplot gnuplot-commands
+
+RECRATEMIN=`grep ^"Receiving Frame:Rate:Min: " < ../raw-stats.txt | awk '{print $3}'`
+RECRATEMAX=`grep ^"Receiving Frame:Rate:Max: " < ../raw-stats.txt | awk '{print $3}'`
+RECRATESTDDEV=`grep ^"Receiving Frame:Rate:StdDev: " < ../raw-stats.txt | awk '{print $3}'`
+RECRATEAVG=`grep ^"Receiving Frame:Rate:Avg: " < ../raw-stats.txt | awk '{print $3}'`
+
+RECLATMIN=`grep ^"Receiving Frame:Latency:Min: " < ../raw-stats.txt | awk '{print $3}'`
+RECLATMAX=`grep ^"Receiving Frame:Latency:Max: " < ../raw-stats.txt | awk '{print $3}'`
+RECLATSTDDEV=`grep ^"Receiving Frame:Latency:StdDev: " < ../raw-stats.txt | awk '{print $3}'`
+RECLATAVG=`grep ^"Receiving Frame:Latency:Avg: " < ../raw-stats.txt | awk '{print $3}'`
+
+PROCRATEMIN=`grep ^"Processing:Rate:Min: " < ../raw-stats.txt | awk '{print $2}'`
+PROCRATEMAX=`grep ^"Processing:Rate:Max: " < ../raw-stats.txt | awk '{print $2}'`
+PROCRATESTDDEV=`grep ^"Processing:Rate:StdDev: " < ../raw-stats.txt | awk '{print $2}'`
+PROCRATEAVG=`grep ^"Processing:Rate:Avg: " < ../raw-stats.txt | awk '{print $2}'`
+
+PROCLATMIN=`grep ^"Processing:Latency:Min: " < ../raw-stats.txt | awk '{print $2}'`
+PROCLATMAX=`grep ^"Processing:Latency:Max: " < ../raw-stats.txt | awk '{print $2}'`
+PROCLATSTDDEV=`grep ^"Processing:Latency:StdDev: " < ../raw-stats.txt | awk '{print $2}'`
+PROCLATAVG=`grep ^"Processing:Latency:Avg: " < ../raw-stats.txt | awk '{print $2}'`
+
+TRACRATEMIN=`grep ^"Tracking:Rate:Min: " < ../raw-tracker-stats.txt | awk '{print $2}'`
+TRACRATEMAX=`grep ^"Tracking:Rate:Max: " < ../raw-tracker-stats.txt | awk '{print $2}'`
+TRACRATESTDDEV=`grep ^"Tracking:Rate:StdDev: " < ../raw-tracker-stats.txt | awk '{print $2}'`
+TRACRATEAVG=`grep ^"Tracking:Rate:Avg: " < ../raw-tracker-stats.txt | awk '{print $2}'`
+
+TRACLATMIN=`grep ^"Tracking:Latency:Min: " < ../raw-tracker-stats.txt | awk '{print $2}'`
+TRACLATMAX=`grep ^"Tracking:Latency:Max: " < ../raw-tracker-stats.txt | awk '{print $2}'`
+TRACLATSTDDEV=`grep ^"Tracking:Latency:StdDev: " < ../raw-tracker-stats.txt | awk '{print $2}'`
+TRACLATAVG=`grep ^"Tracking:Latency:Avg: " < ../raw-tracker-stats.txt | awk '{print $2}'`
+
+echo "Receiving Latency: Min:$RECLATMIN Max: $RECLATMAX Std Dev: $RECLATSTDDEV Avg:$RECLATAVG
+Receiving Rate: Min:$RECRATEMIN Max: $RECRATEMAX Std Dev: $RECRATESTDDEV Avg:$RECRATEAVG
+Processing Latency: Min:$PROCLATMIN Max: $PROCLATMAX Std Dev: $PROCLATSTDDEV Avg:$PROCLATAVG
+Processing Rate: Min:$PROCRATEMIN Max: $PROCRATEMAX Std Dev: $PROCRATESTDDEV Avg:$PROCRATEAVG
+Tracking Latency: Min:$TRACLATMIN Max: $TRACLATMAX Std Dev: $TRACLATSTDDEV Avg:$TRACLATAVG
+Tracking Rate: Min:$TRACRATEMIN Max: $TRACRATEMAX Std Dev: $TRACRATESTDDEV Avg:$TRACRATEAVG
+" > summary.txt
+#Total Rate: Min:$TRACRATEMIN Max: $TRACRATEMAX Std Dev: $TRACRATESTDDEV Avg:$TRACRATEAVG
+#Total Latency: Min:$TRACRATEMIN Max: $TRACRATEMAX Std Dev: $TRACRATESTDDEV Avg:$TRACRATEAVG
+
+
+echo "set multiplot
+set yrange [0:400]
+set xrange [0:400]
+set nokey
+set multiplot
+set title \"Latency Stats\"
+set label \"processing = red, receiving = green, tracking = blue, total = purple\" at graph 0.1, 0.9
+plot \"../processing-latency-stats.txt\" lt 1 # processing is red
+plot \"../receiving-latency-stats.txt\" lt 2   # receiving is green
+plot \"../tracking-latency-stats.txt\" lt 3   # tracking is blue
+plot \"../total-latency-stats.txt\" lt 4      # total is purple
+set nomultiplot
+pause -1
+" > gnuplot-commands-latency
+
+echo "set multiplot
+set yrange [0:400]
+set xrange [0:400]
+set nokey
+set title \"Rate Stats\"
+set label \"processing = red, receiving = green, tracking = blue, total = purple\" at graph 0.1, 0.9
+plot \"../processing-rate-stats.txt\" lt 1 # processing is red
+plot \"../receiving-rate-stats.txt\" lt 2   # receiving is green
+plot \"../tracking-rate-stats.txt\" lt 3   # tracking is blue
+plot \"../total-rate-stats.txt\" lt 4      # total is purple
+set nomultiplot
+pause -1
+" > gnuplot-commands-rate
+
+gnuplot gnuplot-commands-latency
+exec gnuplot gnuplot-commands-rate
