@@ -7,6 +7,7 @@
 #include "Hashtable.h"
 #include "GenericHashtable.h"
 #include "Names.h"
+#include <stdio.h>
 
 #define EFFECTS
 
@@ -23,10 +24,16 @@ struct heap_object {
   struct rolechange *rc; /* track role changes outside of methods*/
   int * methodscalled; /* array of methods called on heap object*/
 
-
-  short reachable;/* low order bit=reachable*/
-  /* next bit=root*/
+  int reachable;/* low order bit=reachable*/
+  /* 2nd bit=root*/
+  /* if OPTION_FCONTAINERS set
+   * 3rd& 4th bit: 3rd bit 0 until first heap object reference, then 1
+   *               4th bit 0 if suitable as container, 1 if not suitable
+   *               We include heap objects that have state 3rd=1, 4th=0 for output*/
 };
+
+#define FIRSTREF 0x04
+#define NOTCONTAINER 0x08
 
 #define stringsize 1000
 #define compilernamesize 100
@@ -74,9 +81,10 @@ struct globallist {
 struct fieldlist {
   struct fieldname * fieldname;
   struct heap_object *src;
-  struct fieldlist * dstnext;
+  struct fieldlist * dstnext; /*Next fieldlist entry for reverse list*/
   struct heap_object *object;
-  struct fieldlist * next;
+  struct fieldlist * next; /* Next fieldlist entry for forward list*/
+  char propagaterole;
 };
 
 struct arraylist {
@@ -85,6 +93,7 @@ struct arraylist {
   struct arraylist *dstnext;
   struct heap_object *object;
   struct arraylist * next;
+  char propagaterole;
 };
 
 struct localvars {
@@ -122,7 +131,15 @@ struct heap_state {
   struct genhashtable *statechangemethodtable;
   struct hashtable *statechangereversetable;
   int statechangesize;
+  int options;
+
+  FILE *container;
+  struct hashtable *containedobjects;
 };
+
+#define OPTION_FCONTAINERS 0x1
+#define OPTION_UCONTAINERS 0x2
+#define OPTION_NORCEXPR 0x4
 
 struct identity_relation {
   struct fieldname * fieldname1;
@@ -141,7 +158,7 @@ void removelvlist(struct heap_state *, char * lvname, struct method * method);
 void addtolvlist(struct heap_state *,struct localvars *, struct method *);
 void freemethod(struct heap_state *heap, struct method * m);
 void getfile();
-void doanalysis();
+void doanalysis(int argc, char **argv);
 char *getline();
 char * copystr(const char *);
 void showmethodstack(struct heap_state * heap);
@@ -175,4 +192,5 @@ int atomicmethod(struct heap_state *hs, struct method *m);
 void atomiceval(struct heap_state *heap);
 void loadstatechange(struct heap_state *heap);
 int convertnumberingobjects(char *sig, int isStatic, int orignumber);
+void parseoptions(int argc, char **argv, struct heap_state *heap);
 #endif

@@ -11,6 +11,7 @@
 #include "Method.h"
 #include "Effects.h"
 #include "dot.h"
+#include "Container.h"
 #ifdef MDEBUG
 #include <dmalloc.h>
 #endif
@@ -21,10 +22,10 @@ static int programfd;
 long long pointerage=0;
 
 
-int main() {
+int main(int argc, char **argv) {
   getfile();
   initloopstructures();
-  doanalysis();
+  doanalysis(argc, argv);
   return 0;
 }
 
@@ -34,11 +35,48 @@ void getfile() {
     perror("roleinfer.mem open failure\n");
 }
 
-void doanalysis() {
+void parseoptions(int argc, char **argv, struct heap_state *heap) {
+  int param;
+  int exitstate=0;
+  for(param=1;param<argc;param++) {
+    if(argv[param][0]=='-')
+      switch(argv[param][1]) {
+      case 'h':
+	printf("-h help\n");
+	printf("-c output containers\n");
+	printf("-u use containers\n");
+	printf("-r no rolechange regular expressions calculated\n");
+	exitstate=1;
+	break;
+      case 'r':
+	heap->options|=OPTION_NORCEXPR;
+	break;
+      case 'c':
+	heap->options|=OPTION_FCONTAINERS;
+	opencontainerfile(heap);
+	break;
+      case 'u':
+	heap->options|=OPTION_UCONTAINERS;
+	openreadcontainer(heap);
+	break;
+      default:
+	exitstate=1;
+	printf("Option %s not implemented.\n", argv[param]);
+      } else {
+	exitstate=1;
+    	printf("Option %s not implemented.\n", argv[param]);
+      }
+  }
+  if (exitstate)
+    exit(0);
+}
+
+void doanalysis(int argc, char **argv) {
   struct heap_state heap;
   struct hashtable * ht=allocatehashtable();
   int currentparam=0;
-  
+  parseoptions(argc, argv,&heap);
+
   heap.K=createobjectpair();
   heap.N=createobjectset();
   
@@ -444,6 +482,12 @@ void doanalysis() {
     }
     genfreeiterator(it);
   }
+
+  /* Clean up heap state related stuff*/
+  if (heap.options&OPTION_FCONTAINERS) {
+    examineheap(&heap, ht);
+    closecontainerfile(&heap);
+  } 
 }
 
 
@@ -488,6 +532,15 @@ void doarrayassignment(struct heap_state *heap, struct heap_object * src, int in
   addobject(heap->changedset, src);
 
   if (dst!=NULL) {
+    /* is dst contained object ?*/
+    if (heap->options&OPTION_FCONTAINERS) {
+      if (dst->reachable&FIRSTREF)
+	dst->reachable|=NOTCONTAINER;
+      dst->reachable|=FIRSTREF;
+    } else if (heap->options&OPTION_UCONTAINERS) {
+      if (contains(heap->containedobjects, dst->uid))
+	al->propagaterole=1;
+    }
     addobject(heap->changedset, dst);
     doaddfield(heap, src);
     al->dstnext=dst->reversearray;
@@ -689,12 +742,25 @@ void dodelglbfield(struct heap_state *hs, struct globallist *src, struct heap_ob
 void dofieldassignment(struct heap_state *hs, struct heap_object * src, struct fieldname * field, struct heap_object * dst) {
   struct fieldlist *fldptr=src->fl;
   struct fieldlist *newfld=(struct fieldlist *)calloc(1,sizeof(struct fieldlist));
+
+
+
   newfld->fieldname=field;
   newfld->object=dst;
   newfld->src=src;
   addobject(hs->changedset, src);
 
   if (dst!=NULL) {
+    /* is dst contained object ?*/
+    if (hs->options&OPTION_FCONTAINERS) {
+      if (dst->reachable&FIRSTREF)
+	dst->reachable|=NOTCONTAINER;
+      dst->reachable|=FIRSTREF;
+    } else if (hs->options&OPTION_UCONTAINERS) {
+      if (contains(hs->containedobjects, dst->uid))
+	newfld->propagaterole=1;
+    }
+
     addobject(hs->changedset, dst);
     doaddfield(hs, src);
     newfld->dstnext=dst->reversefield;

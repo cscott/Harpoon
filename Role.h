@@ -37,13 +37,14 @@ struct rolechange {
 
 struct rolefieldlist {
   struct fieldname * field;
+  int role;
   int duplicates;
   struct rolefieldlist * next;
 };
 
 void printrole(struct role * r, char * rolename);
 void freerole(struct role * r);
-struct role * calculaterole(struct heap_state *heap, struct genhashtable * dommapping,struct heap_object *ho);
+struct role * calculaterole(struct heap_state *heap, struct genhashtable * dommapping,struct heap_object *ho, int enterexit);
 struct identity_relation * find_identities(struct heap_object *ho);
 void free_identities(struct identity_relation *irptr);
 void print_identities(struct identity_relation *irptr);
@@ -65,6 +66,7 @@ int equivalentstrings(char *str1, char *str2);
 void setheapstate(struct heap_state *hs);
 int rchashcode(struct rolechange *rc);
 int equivalentrc(struct rolechange *rc1, struct rolechange *rc2);
-void rolechange(struct heap_state *hs, struct heap_object *ho, char *newrole,int enterexit);
+void rolechange(struct heap_state *hs, struct genhashtable * dommapping, struct heap_object *ho, char *newrole,int enterexit);
 void printrolechange(struct heap_state * hs, struct rolechange *rc);
+int parserolestring(char * input);
 #endif

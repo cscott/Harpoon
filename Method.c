@@ -278,7 +278,7 @@ void mergerolechanges(struct heap_state *heap) {
       /* rch points to appropriate rolechangeheader */
       /* ere points to our regular expression */
       rcp=rch->rcp;
-
+      if (!(heap->options&OPTION_NORCEXPR)) {
       while(rcp!=NULL) {
 	struct effectregexpr *ere2=rcp->expr;
 	struct effectregexpr *erem=mergeeffectregexpr(ere,ere2);
@@ -307,6 +307,7 @@ void mergerolechanges(struct heap_state *heap) {
 	rcp2->next=rch->rcp;
 	rcp2->inner=inner;
 	rch->rcp=rcp2;
+      }
       }
       method=method->caller;
       inner=0;

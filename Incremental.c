@@ -11,6 +11,7 @@
 #include "Method.h"
 #include "Effects.h"
 #include "dot.h"
+#include "Container.h"
 #ifdef MDEBUG
 #include <dmalloc.h>
 #endif
@@ -47,8 +48,14 @@ void doincrementalreachability(struct heap_state *hs, struct hashtable *ht, int 
       struct fieldlist *fl;
       struct arraylist *al;
       /* Record role change to garbage role */
-      rolechange(hs,possiblegarbage,"GARB",2+enterexit);
+      rolechange(hs,NULL, possiblegarbage,"GARB",2+enterexit);
       removeobject(hs->changedset, possiblegarbage);
+
+      if ((hs->options&OPTION_FCONTAINERS)&&
+	  (possiblegarbage->reachable&FIRSTREF)&&
+	  !(possiblegarbage->reachable&NOTCONTAINER))
+	recordcontainer(hs, possiblegarbage);
+	
       /* Have to remove references to ourself first*/
       fl=possiblegarbage->reversefield;
       al=possiblegarbage->reversearray;

@@ -127,3 +127,35 @@ void freedatahashtable(struct hashtable * ht, void (*freefunction)(void *)) {
   free(ht->bins);
   free(ht);
 }
+
+struct iterator * getiterator(struct hashtable *ht) {
+  struct iterator *gi=(struct iterator *) calloc(1,sizeof(struct iterator));
+  gi->ptr=ht->bins[0];
+  gi->binnumber=1;
+  gi->ht=ht;
+  return gi;
+}
+
+long long next(struct iterator *it) {
+  int i=it->binnumber;
+  if (it->ptr!=NULL) {
+    struct pointerlist * tmp=it->ptr;
+    it->ptr=tmp->next;
+    return tmp->uid;
+  }
+  for(;i<it->ht->currentsize;i++) {
+    if (it->ht->bins[i]!=NULL) {
+      it->ptr=it->ht->bins[i]->next;
+      it->binnumber=i+1;
+      return it->ht->bins[i]->uid;
+    }
+  }
+  return 0;
+}
+
+void freeiterator(struct iterator *it) {
+  free(it);
+}
+
+
+

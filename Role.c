@@ -10,7 +10,7 @@
 
 #define DUPTHRESHOLD 2
 
-static long int rolenumber=0;
+static long int rolenumber=1;
 struct heap_state *hshash;
 
 
@@ -59,7 +59,10 @@ void printrole(struct role *r, char * rolename) {
   {
     struct rolefieldlist *fl=r->nonnullfields;
     while(fl!=NULL) {
-      printf("  Field %s is non-null.\n",fl->field->fieldname);
+      if (fl->role==0)
+	printf("  Field %s is non-null.\n",fl->field->fieldname);
+      else
+	printf("  Field %s points to role R%d\n",fl->field->fieldname,fl->role);
       fl=fl->next;
     }
   }
@@ -115,7 +118,7 @@ int equivalentstrings(char *str1, char *str2) {
   else return 0;
 }
 
-void rolechange(struct heap_state *hs, struct heap_object *ho, char *newrole, int enterexit) {
+void rolechange(struct heap_state *hs, struct genhashtable * dommapping, struct heap_object *ho, char *newrole, int enterexit) {
   struct rolechange *rc=ho->rc;
   if (rc==NULL) {
     if (enterexit<2) {
@@ -132,6 +135,8 @@ void rolechange(struct heap_state *hs, struct heap_object *ho, char *newrole, in
     }
     return;
   }
+  /* Have Real Role Change...*/
+
   rc->newrole=copystr(newrole);
   rc->uid=ho->uid;
   if (enterexit&1) {
@@ -158,6 +163,22 @@ void rolechange(struct heap_state *hs, struct heap_object *ho, char *newrole, in
     rc=(struct rolechange *) calloc(1,sizeof(struct rolechange));
     rc->origrole=copystr(newrole);
     ho->rc=rc;
+  }
+
+  {
+    /* Need to backwards propagation of rolechange */
+    struct fieldlist * rfl=ho->reversefield;
+    while(rfl!=NULL) {
+      if (rfl->propagaterole) {
+	/* Need to propagate role change upwards*/
+	if (dommapping!=NULL)
+	  findrolestring(hs, dommapping, rfl->object ,enterexit);
+	/* Gross hack, but works...*/
+	/* If dommapping==NULL, then we are garbage and hence anything that points to us is also*/
+	/* The garbage collector will catch it then*/
+      }
+      rfl=rfl->dstnext;
+    }
   }
   return;
 }
@@ -260,6 +281,9 @@ int equivalentroles(struct role *role1, struct role *role2) {
 	return 0;
       if (rfl1->field!=rfl2->field)
 	return 0;
+      if (rfl1->role!=rfl2->role)
+	return 0;
+
       rfl1=rfl1->next;
       rfl2=rfl2->next;
     }
@@ -302,6 +326,7 @@ void assignhashcode(struct role * role) {
 
   while(rfl2!=NULL) {
     hashcode^=hashptr(rfl2->field);
+    hashcode^=rfl2->role;
     rfl2=rfl2->next;
   }
 
@@ -391,15 +416,19 @@ int currentrolenumber() {
   return rolenumber;
 }
 
-
+int parserolestring(char * input) {
+  int value=0;
+  sscanf(input,"R%d",&value);
+  return value;
+}
 
 char * findrolestring(struct heap_state * heap, struct genhashtable * dommapping,struct heap_object *ho, int enterexit) {
-  struct role * r=calculaterole(heap,dommapping, ho);
+  struct role * r=calculaterole(heap,dommapping, ho, enterexit);
   if (gencontains(heap->roletable,r)) {
     /* Already seen role */
     char *str=copystr((char *)gengettable(heap->roletable,r));
     freerole(r);
-    rolechange(heap,ho, str,enterexit);
+    rolechange(heap,dommapping,ho, str,enterexit);
     return str;
   } else {
     /* Synthesize string */
@@ -421,12 +450,12 @@ char * findrolestring(struct heap_state * heap, struct genhashtable * dommapping
       genputtable(heap->roletable, r, rolename);
       genputtable(heap->reverseroletable, rolename, r);
     }
-    rolechange(heap,ho, &buf[index],enterexit);
+    rolechange(heap,dommapping,ho, &buf[index],enterexit);
     return copystr(&buf[index]);
   }
 }
 
-struct role * calculaterole(struct heap_state *heap, struct genhashtable * dommapping,struct heap_object *ho) {
+struct role * calculaterole(struct heap_state *heap, struct genhashtable * dommapping,struct heap_object *ho, int enterexit) {
   struct role * objrole=(struct role *)calloc(1, sizeof(struct role));
   struct referencelist *dominators=calculatedominators(dommapping, ho);
 
@@ -487,6 +516,11 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
     while(fl!=NULL) {
       struct rolefieldlist *rfl=(struct rolefieldlist *) calloc(1,sizeof(struct rolefieldlist));
       rfl->field=fl->fieldname;
+      if (fl->propagaterole) {
+	char *tmp=findrolestring(heap, dommapping, fl->object, enterexit);
+	rfl->role=parserolestring(tmp);
+	free(tmp);
+      }
       insertnonfl(objrole,rfl);
       fl=fl->next;
     }

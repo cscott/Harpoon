@@ -11,7 +11,7 @@
 #include <dmalloc.h>
 #endif
 
-#define MAXREPSEQ 5
+#define MAXREPSEQ 4
 
 void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, long long dstobj) {
   struct method *method=hs->methodlist;
@@ -228,10 +228,12 @@ void updateroleeffects(struct heap_state *heap) {
 
 }
 
+
+
 struct effectlist * mergemultipleeffectlist(struct effectlist *el1, struct effectlist *el2) {
   struct epointerlist * listofeffectlist=NULL;
   struct effectlist *mergedeffects=NULL;
-  while(el1!=NULL || el2!=NULL) {
+  while(el1!=NULL||el2!=NULL) {
     if (el1!=NULL) {
       struct epointerlist *ptr=(struct epointerlist *)calloc(1,sizeof(struct epointerlist));
       ptr->next=listofeffectlist;
