@@ -208,6 +208,9 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_invoke
 #ifdef WITH_INIT_CHECK /* 'with init check' implementation. */
 JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_invoke_00024_00024initcheck
   (JNIEnv *env, jobject methodobj, jobject receiverobj, jobjectArray args) {
+  // XXX additionally, with_init_check version should lookup the
+  //     $$initcheck version of the method, and invoke *that*.
+  // otherwise we get a hole in the InitializerTransform. [CSA 15-Jul-2003]
   return
     Flex_java_lang_reflect_Method_invoke(env, methodobj, receiverobj, args,
 					 JNI_TRUE /* WITH INIT CHECK */);

@@ -64,6 +64,9 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_newInstance
 #ifdef WITH_INIT_CHECK
 JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_newInstance_00024_00024initcheck
   (JNIEnv *env, jobject constructorobj, jobjectArray args) {
+  // XXX additionally, with_init_check version should lookup the
+  //     $$initcheck version of the constructor, and invoke *that*.
+  // otherwise we get a hole in the InitializerTransform. [CSA 15-Jul-2003]
   return _newInstance(env, constructorobj, args, JNI_TRUE);
 }
 #endif /* WITH_INIT_CHECK */
