@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>THROW</code> represents a <Code>throw</code> statement.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: THROW.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
+ * @version $Id: THROW.java,v 1.4 2002-04-10 03:05:18 cananian Exp $
  */
 public class THROW extends Quad {
     /* The exception object to throw. */
@@ -28,7 +28,7 @@ public class THROW extends Quad {
     public THROW(QuadFactory qf, HCodeElement source, Temp throwable) {
         super(qf, source, 1, 1 /* one successor, the footer node. */);
 	this.throwable = throwable;
-	Util.ASSERT(throwable!=null);
+	assert throwable!=null;
     }
     /** Returns the <code>Temp</code> containing the exception object to
      *  throw. */

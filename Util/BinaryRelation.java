@@ -12,9 +12,9 @@ package harpoon.Util;
  * Examples of <code>BinaryRelation</code>s include 
  * "less than" ( &lt; ) and "equals" ( == ).
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BinaryRelation.java,v 1.2 2002-02-25 21:08:45 cananian Exp $
+ * @version $Id: BinaryRelation.java,v 1.3 2002-04-10 03:07:03 cananian Exp $
  */
-public interface BinaryRelation {
+public interface BinaryRelation<A,B> {
     
     /** Checks if this relation holds for a given pair.
 	<BR> <B>requires:</B> (<code>a</code>, <code>b</code>) falls
@@ -23,6 +23,6 @@ public interface BinaryRelation {
 	     relation holds for (<code>a</code> , <code>b</code>).
 	     Else returns <code>False</code>.  
     */
-    public boolean contains(Object a, Object b);
+    public boolean contains(A a, B b);
     
 }

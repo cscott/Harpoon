@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * argument, in addition to its usual semantics.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TYPESWITCH.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
+ * @version $Id: TYPESWITCH.java,v 1.4 2002-04-10 03:05:18 cananian Exp $
  */
 public class TYPESWITCH extends SIGMA {
     /** The discriminant, of <code>Object</code> type, whose class is
@@ -66,12 +66,12 @@ public class TYPESWITCH extends SIGMA {
 	this.keys = keys;
 	this.hasDefault = hasDefault;
 	// VERIFY legality of TYPESWITCH.
-	Util.ASSERT(index!=null && keys!=null);
-	Util.ASSERT(keys.length+(hasDefault?1:0)==arity());
+	assert index!=null && keys!=null;
+	assert keys.length+(hasDefault?1:0)==arity();
 	for (int i=0; i<keys.length; i++)
-	    Util.ASSERT(keys[i]!=null);
+	    assert keys[i]!=null;
 	// can't have no keys *and* no default.
-	Util.ASSERT(arity()>0);
+	assert arity()>0;
     }
     /** Creates a typeswitch with arity defined by the keys array. */
     public TYPESWITCH(QuadFactory qf, HCodeElement source,

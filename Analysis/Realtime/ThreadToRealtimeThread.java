@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * <code>javax.realtime.RealtimeThread</code>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: ThreadToRealtimeThread.java,v 1.3 2002-02-26 22:41:58 cananian Exp $
+ * @version $Id: ThreadToRealtimeThread.java,v 1.4 2002-04-10 03:01:16 cananian Exp $
  */
 
 class ThreadToRealtimeThread extends ClassReplacer {
@@ -84,7 +84,7 @@ class ThreadToRealtimeThread extends ClassReplacer {
 	     children.hasNext();) {
 	    HClass child = (HClass)children.next();
 	    if (child != realtimeThread) {
-		Util.ASSERT(child != null);
+		assert child != null;
 		child.getMutator().setSuperclass(realtimeThread);
 	    }
 	}

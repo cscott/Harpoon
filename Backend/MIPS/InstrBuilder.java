@@ -21,7 +21,7 @@ import java.util.Arrays;
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
     @author  Emmett Witchel <witchel@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.3 2002-02-26 22:43:59 cananian Exp $
+    @version $Id: InstrBuilder.java,v 1.4 2002-04-10 03:02:51 cananian Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
@@ -30,7 +30,7 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
    /* helper macro. */
    private final Temp SP() { 
-      Util.ASSERT(rfInfo.SP != null);
+      assert rfInfo.SP != null;
       return rfInfo.SP;
    }
     
@@ -52,7 +52,7 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
       StackInfo stack = ((CodeGen)frame.getCodeGen()).getStackInfo();
       offset = stack.localSaveOffset(offset);
       String[] strs = getLdrAssemStrs(r, offset);
-      Util.ASSERT(strs.length == 1 || strs.length == 2 );
+      assert strs.length == 1 || strs.length == 2;
 
       if (strs.length == 2) {
          InstrMEM load1 = 
@@ -103,8 +103,8 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
       StackInfo stack = ((CodeGen)frame.getCodeGen()).getStackInfo();
       offset = stack.localSaveOffset(offset);       
       String[] strs = getStrAssemStrs(r, offset);
-      Util.ASSERT(strs.length == 1 || 
-                  strs.length == 2);
+      assert strs.length == 1 || 
+                  strs.length == 2;
 	    
       if (strs.length == 2) {
          System.out.println("In makeStore, twoWord case");
@@ -120,8 +120,8 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
                          new Temp[]{ },
                          new Temp[]{ r , SP() });
          store2.layout(store1, null);
-         Util.ASSERT(store1.getNext() == store2, "store1.next == store2");
-         Util.ASSERT(store2.getPrev() == store1, "store2.prev == store1");
+         assert store1.getNext() == store2 : "store1.next == store2";
+         assert store2.getPrev() == store1 : "store2.prev == store1";
          return Arrays.asList(new InstrMEM[]{ store1, store2 });
       } else {
 

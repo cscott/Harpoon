@@ -32,7 +32,7 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.13 2002-02-26 22:45:06 cananian Exp $
+ * @version $Id: Loader.java,v 1.14 2002-04-10 03:04:15 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
@@ -135,7 +135,7 @@ public abstract class Loader {
     /*if (classpath==null) classpath = System.getenv("HCLASSPATH");*/
     if (classpath==null) classpath = System.getProperty("harpoon.class.path");
     if (classpath==null) classpath = System.getProperty("java.class.path");
-    Util.ASSERT(classpath!=null);
+    assert classpath!=null;
 
     // For convenience, make sure classpath begins with and ends with pathsep.
     if (!classpath.startsWith(pathsep)) classpath = pathsep + classpath;
@@ -160,7 +160,7 @@ public abstract class Loader {
    * @param classname The class name to translate.
    */
   public static String classToResource(String classname) {
-    Util.ASSERT(classname.indexOf('/')==-1); // should have '.' separators.
+    assert classname.indexOf('/')==-1; // should have '.' separators.
     String filesep   = System.getProperty("file.separator");
     // Swap all '.' for '/' & append ".class"
     return classname.replace('.', filesep.charAt(0)) + ".class";
@@ -217,7 +217,7 @@ public abstract class Loader {
   private static class SystemLinker extends Linker implements Serializable {
     protected final HClass forDescriptor0(String descriptor) 
       throws NoSuchClassException {
-      Util.ASSERT(descriptor.startsWith("L") && descriptor.endsWith(";"));
+      assert descriptor.startsWith("L") && descriptor.endsWith(";");
       // classname in descriptor is '/' delimited.
       String className = descriptor.substring(1, descriptor.indexOf(';'));
       className = className.replace('/','.'); // make proper class name.

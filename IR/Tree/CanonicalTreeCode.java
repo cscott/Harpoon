@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.4 2002-04-10 03:05:42 cananian Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
@@ -39,7 +39,7 @@ public class CanonicalTreeCode extends Code {
     /** Create a new <code>CanonicalTreeCode</code> from a
      *  <code>TreeCode</code> object, and a <code>Frame</code>.
      */
-    CanonicalTreeCode(TreeCode code, Frame frame) {
+    CanonicalTreeCode(Code code, Frame frame) {
 	super(code.getMethod(), null, frame);
 
 	if (useOldCanonicalize) {
@@ -55,7 +55,7 @@ public class CanonicalTreeCode extends Code {
 	    Canonicalize.simplify((Stm)tree, dg, Canonicalize.RULES);
 	    treeDerivation = dg;
 	}
-	Util.ASSERT(!harpoon.Analysis.Tree.Canonicalize.containsEseq(tree));
+	assert !harpoon.Analysis.Tree.Canonicalize.containsEseq(tree);
     }
 
     /* Copy constructor, should only be called by the clone() method. */
@@ -109,7 +109,7 @@ public class CanonicalTreeCode extends Code {
 		public HCode convert(HMethod m) { 
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
-			new CanonicalTreeCode((TreeCode)c, frame);
+			new CanonicalTreeCode((Code)c, frame);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }

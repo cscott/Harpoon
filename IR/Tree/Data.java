@@ -17,12 +17,12 @@ import java.util.List;
  * for <code>IR.Tree</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Data.java,v 1.2 2002-02-25 21:05:30 cananian Exp $
+ * @version $Id: Data.java,v 1.3 2002-04-10 03:05:44 cananian Exp $
  */
 public abstract class Data extends harpoon.ClassFile.HData {
-    protected /*final*/ String desc;
-    protected /*final*/ Frame frame;
-    protected /*final*/ TreeFactory tf;
+    protected final String desc;
+    protected final Frame frame;
+    protected final TreeFactory tf;
 
     /** Create a proper TreeFactory. */
     protected class TreeFactory extends harpoon.IR.Tree.TreeFactory {

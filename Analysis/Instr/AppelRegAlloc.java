@@ -52,7 +52,7 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.3 2002-02-26 22:40:21 cananian Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.4 2002-04-10 02:59:46 cananian Exp $
  */
 public abstract class AppelRegAlloc extends AppelRegAllocClasses {
     public static final boolean PRINT_DEPTH_TO_SPILL_INFO = true;
@@ -238,9 +238,9 @@ checkPrecolored();
 	    if( ! isRegister(temp) ) {
 		makeInitial( temp );
 	    } else {
-    Util.ASSERT( nodesFor( (Web) tempToWebs.get( temp ) ).size() == 1);
-    Util.ASSERT( ((Node)nodesFor
-		  ( (Web) tempToWebs.get( temp ) ).get(0)).isPrecolored() );
+    assert nodesFor( (Web) tempToWebs.get( temp ) ).size() == 1;
+    assert ((Node)nodesFor
+		  ( (Web) tempToWebs.get( temp ) ).get(0)).isPrecolored();
 	    }
 checkPrecolored();
 	}
@@ -270,13 +270,14 @@ checkPrecolored();
 	if (!CHECK_INV) return;
 
 	for(NodeIter ni=precolored.iter(); ni.hasNext();){
-	    Util.ASSERT(ni.next().isPrecolored());
+	    Node n = ni.next();
+	    assert n.isPrecolored();
 	}
 	for(Iterator nodes=allNodes(); nodes.hasNext(); ){
 	    Node n = (Node) nodes.next();
 	    if (n.web == null) continue;
-	    Util.ASSERT(n.isPrecolored() || !rfi().isRegister( n.web.temp ) , n );
-	    Util.ASSERT(!n.isPrecolored() || rfi().isRegister( n.web.temp ) , n );
+	    assert n.isPrecolored() || !rfi().isRegister( n.web.temp ) : n;
+	    assert !n.isPrecolored() || rfi().isRegister( n.web.temp ) : n;
 	}
     }
 
@@ -310,7 +311,7 @@ checkPrecolored();
 	for(int i=0; i<sets.length; i++) {
 	    HashSet s = sets[i];
 	    for(int j=i+1; j<sets.length; j++) {
-		Util.ASSERT( ! intersects( sets[j], s ));
+		assert ! intersects( sets[j], s );
 	    }
 	}
     }
@@ -334,17 +335,14 @@ checkPrecolored();
 	
 	for( NodeIter ni=simplify_worklist.iter(); ni.hasNext(); ) {
 	    Node u = ni.next();
-	    Util.ASSERT(u.degree < K, 
-			"simplify worklist inv. violated "+
-			"( should be u.degree < K )" );
+	    assert u.degree < K : "simplify worklist inv. violated "+
+			"( should be u.degree < K )";
 	    for( Iterator mi = u.moves.iterator(); mi.hasNext(); ) {
 		Move m = (Move) mi.next();
-		Util.ASSERT( !m.isActive(), 
-			     "simplify worklist inv. violated"+
-			     "( should be !m.isActive() )");
-		Util.ASSERT( !m.isWorklist(), 
-			     "simplify worklist inv. violated"+
-			     "( should be !m.isWorklist() )");
+		assert !m.isActive() : "simplify worklist inv. violated"+
+			     "( should be !m.isActive() )";
+		assert !m.isWorklist() : "simplify worklist inv. violated"+
+			     "( should be !m.isWorklist() )";
 	    }
 	}
     }
@@ -356,7 +354,7 @@ checkPrecolored();
 	
 	for( NodeIter ni=freeze_worklist.iter(); ni.hasNext(); ) {
 	    Node u = ni.next();
-	    Util.ASSERT(u.degree < K, "freeze worklist inv. violated" );
+	    assert u.degree < K : "freeze worklist inv. violated";
 	    
 	    for( Iterator mi = u.moves.iterator(); mi.hasNext(); ) {
 		Move m = (Move) mi.next();
@@ -365,7 +363,7 @@ checkPrecolored();
 		    return;
 	    }
 
-	    Util.ASSERT( false, "freeze worklist inv. violated, "+
+	    assert false : ("freeze worklist inv. violated, "+
 			 " node:"+u+
 			 " moves:"+u.moves);
 	}
@@ -375,7 +373,7 @@ checkPrecolored();
 	// u isIn spillWorklist ==> degree(u) >= K
 	for( NodeIter ni=spill_worklist.iter(); ni.hasNext(); ) {
 	    Node u = ni.next();
-	    Util.ASSERT( u . degree >= K , "spill worklist inv. violated");
+	    assert u . degree >= K : "spill worklist inv. violated";
 	}
     }
     
@@ -422,8 +420,8 @@ checkPrecolored();
 	for(Iterator instrs=code.getElementsI(); instrs.hasNext(); ){
 	    Instr i = (Instr) instrs.next();
 	    if (i.isMove()) {
-		Util.ASSERT( i.defC().size() == 1);
-		Util.ASSERT( i.useC().size() == 1); 
+		assert i.defC().size() == 1;
+		assert i.useC().size() == 1; 
 		Temp dst = (Temp) i.defC().iterator().next(); 
 		Temp src = (Temp) i.useC().iterator().next(); 
 		if (dst == src) {
@@ -491,9 +489,9 @@ checkPrecolored();
 // Tracking down MIPS failure
 for(Iterator regs=rfi().getAllRegistersC().iterator();regs.hasNext();){
     Temp reg = (Temp) regs.next();
-    Util.ASSERT( nodesFor( (Web) tempToWebs.get( reg ) ).size() == 1);
-    Util.ASSERT( ((Node)nodesFor
-		  ( (Web) tempToWebs.get( reg ) ).get(0)).isPrecolored() );
+    assert nodesFor( (Web) tempToWebs.get( reg ) ).size() == 1;
+    assert ((Node)nodesFor
+		  ( (Web) tempToWebs.get( reg ) ).get(0)).isPrecolored();
 }
 checkPrecolored();
 	    
@@ -522,7 +520,7 @@ checkPrecolored();
 			checkInv();
 			
 			if (h[i].maxExpSpills == 0)
-			    Util.ASSERT( spilled_nodes.isEmpty() );
+			    assert spilled_nodes.isEmpty();
 			
 			if ( spilled_nodes.isEmpty() ) {
 			    h_min = h[i];
@@ -572,7 +570,7 @@ checkPrecolored();
 		    for(NodeIter ni = spill_worklist.iter(); ni.hasNext();){
 			s += ni.next().web+ (ni.hasNext() ? ", " : " ]");
 		    }
-		    Util.ASSERT(false, s);
+		    assert false : s;
 		}
 		bbFact = computeBasicBlocks();
 	    }
@@ -682,7 +680,7 @@ checkPrecolored();
     }
     protected Instr pred(Instr i) {
 	Instr i_r = (Instr) grapher.predElemC(i).iterator().next();
-	Util.ASSERT(i != i_r);
+	assert i != i_r;
 	return i_r;
     }
 
@@ -746,18 +744,16 @@ checkPrecolored();
 	if (CHECK_INV) 
         for( Iterator moves = worklist_moves.iter(); moves.hasNext(); ){
 	    Move m = (Move) moves.next();
-	    Util.ASSERT( m.isWorklist(), "m should be in worklist_moves" );
+	    assert m.isWorklist() : "m should be in worklist_moves";
 	    for(Iterator dI=m.dsts().iterator(); dI.hasNext(); ) {
 		Node n = (Node) dI.next();
 		if (CHECK_INV)
-		Util.ASSERT( moveRelated( n ), 
-			     "m.dst should be moveRelated, not "+n.s_rep.name );
+		assert moveRelated( n ) : "m.dst should be moveRelated, not "+n.s_rep.name;
 	    }
 	    for(Iterator uI=m.srcs().iterator(); uI.hasNext(); ) {
 		Node n = (Node) uI.next();
 		if (CHECK_INV)
-		Util.ASSERT( moveRelated( n ), 
-			     "m.src should be moveRelated, not "+n.s_rep.name);
+		assert moveRelated( n ) : "m.src should be moveRelated, not "+n.s_rep.name;
 	    }
 	}
     }
@@ -1018,7 +1014,7 @@ checkPrecolored();
 	for(NodeIter nI = spill_worklist.iter(); nI.hasNext(); ) {
 	    Node n = nI.next();
 	    
-	    Util.ASSERT( ! isRegister(n.web.temp) );
+	    assert ! isRegister(n.web.temp);
 	   
 	    // if (!n.web.isSpillable()) 
 	    if ( ! spillable(n.web) ) 
@@ -1109,8 +1105,7 @@ checkPrecolored();
 	    Instr exit = d.getExit(InstrGroup.NO_SPILL);
 	    
 	    BasicBlock bb = bbFact.getBlock(exit);
-	    Util.ASSERT(bbFact.getBlock(exit) != null, 
-			"no BB found for exit");
+	    assert bbFact.getBlock(exit) != null : "no BB found for exit";
 
 	    if (CLEAN_BB_LOCAL_DEFS && try_to_clean) {
 		Set liveOut = liveTemps.getLiveAfter(bb.getLast());
@@ -1162,8 +1157,8 @@ checkPrecolored();
 	for(Iterator ds=groupDefs.iterator(); ds.hasNext();) {
 	    Instr d = (Instr) ds.next();
 	    Instr n = d.getNext();
-	    Util.ASSERT( d.canFallThrough &&
-			 d.getTargets().isEmpty() );
+	    assert d.canFallThrough &&
+			 d.getTargets().isEmpty();
 
 	    depthToNumSpills[sh.depth(d)]++;
 
@@ -1178,7 +1173,7 @@ checkPrecolored();
 	for(Iterator us=w.uses.iterator(); us.hasNext();) {
 	    Instr u = (Instr) us.next();		    
 	    Instr instrToAdd = u.getEntry(InstrGroup.NO_SPILL);
-	    Util.ASSERT( ! instrToAdd.isDummy() );
+	    assert ! instrToAdd.isDummy();
 	    groupUses.add( instrToAdd );
 	}
 
@@ -1222,9 +1217,9 @@ checkPrecolored();
 	for(Iterator us=groupUses.iterator(); us.hasNext();) {
 	    Instr u = (Instr) us.next();
 	    Instr p = u.getPrev();
-	    Util.ASSERT( p.canFallThrough &&
+	    assert p.canFallThrough &&
 			 p.getTargets().isEmpty() &&
-			 u.predC().size() == 1 );
+			 u.predC().size() == 1;
 
 	    depthToNumSpills[sh.depth(u)]++;
 
@@ -1237,7 +1232,7 @@ checkPrecolored();
 
     int precolor;
     protected Node makePrecolored(Temp reg) { 
-	Util.ASSERT( rfi().isRegister(reg) );
+	assert rfi().isRegister(reg);
 	Web w = new Web(reg, Collections.EMPTY_SET, Collections.EMPTY_SET);
 	tempToWebs.put(reg,w);
 	Node n = new Node(precolored, w); 
@@ -1329,16 +1324,15 @@ checkPrecolored();
 	    
 	    if (defs.isEmpty()) {
 		code.printPreallocatedCode();
-		Util.ASSERT(false, "should exist defs of "+t+" that reach "+i);
+		assert false : "should exist defs of "+t+" that reach "+i;
 	    }
 
 	    i = (Instr) defs.iterator().next();
 	}
 
 	// should never be asserted now...
-	Util.ASSERT(defCT(i).contains(t) || useCT(i).contains(t),
-		    "Method not guaranteed behave properly "+
-		    "on Instrs that don't refer to 't'");
+	assert defCT(i).contains(t) || useCT(i).contains(t) : "Method not guaranteed behave properly "+
+		    "on Instrs that don't refer to 't'";
 
 	Collection webs = tempToWebs.getValues(t);
 	for(Iterator wi=webs.iterator(); wi.hasNext(); ) {
@@ -1348,7 +1342,7 @@ checkPrecolored();
 		return w;
 	    } 
 	}
-	Util.ASSERT(false, "Couldn't find the web for "+t+" , "+i);
+	assert false : "Couldn't find the web for "+t+" , "+i;
 	return null;
     }
     private Web addWeb( Temp t, Set defs, Set uses ) {

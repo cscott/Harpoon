@@ -21,27 +21,30 @@ import java.util.Set;
  * standard <code>ReachingDefsImpl</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSxReachingDefsImpl.java,v 1.3 2002-02-26 22:39:08 cananian Exp $
+ * @version $Id: SSxReachingDefsImpl.java,v 1.4 2002-04-10 02:58:48 cananian Exp $
  */
-public class SSxReachingDefsImpl extends ReachingDefs {
-    private final Map m = new HashMap();
+public class SSxReachingDefsImpl<HCE extends HCodeElement>
+    extends ReachingDefs<HCE> {
+    private final Map<Temp,HCE> m = new HashMap<Temp,HCE>();
     /** Create an <code>SSxReachingDefs</code> using the default
      *  <code>UseDefer</code>. */
-    public SSxReachingDefsImpl(HCode hc) { this(hc, UseDefer.DEFAULT); }
+    public SSxReachingDefsImpl(HCode<HCE> hc) {
+	this(hc, UseDefer.DEFAULT);
+    }
     /** Create an <code>SSxReachingDefs</code> for <code>hc</code>
      *  using the specified <code>UseDefer</code>. */
-    public SSxReachingDefsImpl(HCode hc, UseDefer ud) {
+    public SSxReachingDefsImpl(HCode<HCE> hc, UseDefer<HCE> ud) {
 	super(hc);
-	for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
-	    HCodeElement hce = (HCodeElement) it.next();
-	    for (Iterator it2 = ud.defC(hce).iterator(); it2.hasNext(); ) {
-		Temp t = (Temp) it2.next();
-		Util.ASSERT(!m.containsKey(t), "not in SSA/SSI form!");
+	for (Iterator<HCE> it = hc.getElementsI(); it.hasNext(); ) {
+	    HCE hce = (HCE) it.next();
+	    for (Iterator<Temp> it2=ud.defC(hce).iterator(); it2.hasNext(); ) {
+		Temp t = it2.next();
+		assert !m.containsKey(t) : "not in SSA/SSI form!";
 		m.put(t, hce);
 	    }
 	}
     }
-    public Set reachingDefs(HCodeElement hce, Temp t) {
+    public Set<HCE> reachingDefs(HCE hce, Temp t) {
 	if (!m.containsKey(t)) return Collections.EMPTY_SET;
 	return Collections.singleton(m.get(t));
     }

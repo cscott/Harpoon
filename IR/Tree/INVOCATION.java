@@ -20,7 +20,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
+ * @version $Id: INVOCATION.java,v 1.4 2002-04-10 03:05:45 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL
@@ -41,14 +41,13 @@ public abstract class INVOCATION extends Stm {
     protected INVOCATION(TreeFactory tf, HCodeElement source,
 			 TEMP retval, Exp func, ExpList args, int addlArgs) {
 	super(tf, source, 1+ExpList.size(args)+(retval==null?0:1)+addlArgs); 
-	Util.ASSERT(func!=null);
+	assert func!=null;
 	this.isVoid = (retval==null);
 	this.kidsStart = (isVoid?0:1)+addlArgs;
 	this.argsLength = ExpList.size(args);
 	setRetval(retval); setFunc(func); setArgs(args);
-	Util.ASSERT(tf==func.tf, "This and Func must have same tree factory");
-	Util.ASSERT(retval==null || tf == retval.tf,
-		    "This and Retval must have same tree factory");
+	assert tf==func.tf : "This and Func must have same tree factory";
+	assert retval==null || tf == retval.tf : "This and Retval must have same tree factory";
     }
 
     /** Returns the expression indicating the destination of the return value.
@@ -75,9 +74,9 @@ public abstract class INVOCATION extends Stm {
      */
     public void setRetval(TEMP retval) {
 	if (isVoid) {
-	    Util.ASSERT(retval==null, "Can't make a void function non-void");
+	    assert retval==null : "Can't make a void function non-void";
 	} else {
-	    Util.ASSERT(retval!=null, "Can't make a non-void function void");
+	    assert retval!=null : "Can't make a non-void function void";
 	    setChild(kidsStart-1, retval);
 	}
     }
@@ -85,8 +84,7 @@ public abstract class INVOCATION extends Stm {
     public void setFunc(Exp func) { setChild(kidsStart, func); }
     /** Sets the function argument list. */
     public void setArgs(ExpList args) {
-	Util.ASSERT(argsLength==ExpList.size(args),
-		    "Can't change the number of arguments to the function");
+	assert argsLength==ExpList.size(args) : "Can't change the number of arguments to the function";
 	int i=kidsStart+1;
 	for (ExpList ep = args; ep!=null; ep=ep.tail)
 	    setChild(i++, ep.head);

@@ -70,7 +70,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
  * <code>CloningVisitor</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: CloningVisitor.java,v 1.3 2002-02-26 22:40:06 cananian Exp $
+ * @version $Id: CloningVisitor.java,v 1.4 2002-04-10 02:59:30 cananian Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -460,7 +460,7 @@ public class CloningVisitor extends QuadVisitor {
 			}
 		    if (index==-1)
 			hc.print(new java.io.PrintWriter(System.out, true));
-		    Util.ASSERT(index!=-1, "Couldn't find "+ts+ " of "+q+" in "+liveenv);
+		    assert index!=-1 : "Couldn't find "+ts+ " of "+q+" in "+liveenv;
 		    ng=new GET(qf, first, ctmap.tempMap(t),
 			       envfields[index], tenv);
 		} else {
@@ -1128,7 +1128,7 @@ public class CloningVisitor extends QuadVisitor {
 		new HClass[] {linker.forName("harpoon.Analysis.ContBuilder."+pref+"ResultContinuation")};
 	    HMethod setnextmethod=
 		calleemethod.getReturnType().getMethod("setNext",nextarray);
-	    Util.ASSERT(setnextmethod!=null,"no setNext method found");
+	    assert setnextmethod!=null : "no setNext method found";
 	    CALL callrec2=new CALL(qf, q,
 				   setnextmethod, new Temp[] {retcont, tthis},
 				   null, tretex, true, false, 
@@ -1205,7 +1205,7 @@ public class CloningVisitor extends QuadVisitor {
 		new HClass[] {linker.forName("harpoon.Analysis.ContBuilder."+pref+"ResultContinuation")};
 	    HMethod setnextmethod=
 		calleemethod.getReturnType().getMethod("setNext",nextarray);
-	    Util.ASSERT(setnextmethod!=null,"no setNext method found");
+	    assert setnextmethod!=null : "no setNext method found";
 	    Temp nnt1=new Temp(tf),nnt2=new Temp(tf);
 	    CALL call3=new CALL(qf, q,
 				setnextmethod, new Temp[] {retcont, tcont},
@@ -1233,7 +1233,7 @@ public class CloningVisitor extends QuadVisitor {
 		HMethod setnextmethod2=
 		    contclass.getMethod("setNext",
 					new HClass[] {linker.forName("harpoon.Analysis.ContBuilder."+pref2+"ResultContinuation")});
-		Util.ASSERT(setnextmethod2!=null,"no setNext method found");
+		assert setnextmethod2!=null : "no setNext method found";
 		CALL call4=new CALL(qf, q,
 				    setnextmethod2, new Temp[] {tcont, tnext},
 				    null, retex[4+offset], true, false, new Temp[0]);

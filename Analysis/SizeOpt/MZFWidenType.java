@@ -24,6 +24,7 @@ import harpoon.Util.Util;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 /**
@@ -34,7 +35,7 @@ import java.util.Set;
  * field and method signatures.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFWidenType.java,v 1.3 2002-02-26 22:42:23 cananian Exp $
+ * @version $Id: MZFWidenType.java,v 1.4 2002-04-10 03:01:37 cananian Exp $
  */
 class MZFWidenType extends MethodMutator {
     /** the linker to use */
@@ -54,7 +55,9 @@ class MZFWidenType extends MethodMutator {
 	this.listmap = listmap;
 	this.field2class = field2class;
 	// widen parameter and return types of all callable methods.
-	for (Iterator it=callableMethods.iterator(); it.hasNext(); ) {
+	// (also, of all interfaces which these callable methods implement,
+	//  and all superclass methods which these callable methods override)
+	for (Iterator it=allMethods(allClasses).iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
 	    hm.getMutator().setReturnType(widen(hm.getReturnType()));
 	    HClass[] paramTypes = hm.getParameterTypes();
@@ -70,6 +73,14 @@ class MZFWidenType extends MethodMutator {
 		if (widen(hfa[i].getType())!=hfa[i].getType())
 		    hfa[i].getMutator().setType(widen(hfa[i].getType()));
 	}
+    }
+    private Set allMethods(Set allClasses) {
+	Set result = new HashSet();
+	for (Iterator it=allClasses.iterator(); it.hasNext(); ) {
+	    HClass hc = (HClass) it.next();
+	    result.addAll(Arrays.asList(hc.getMethods()));
+	}
+	return result;
     }
     protected HCode mutateHCode(HCodeAndMaps input) {
 	HCode hc = input.hcode();
@@ -112,7 +123,7 @@ class MZFWidenType extends MethodMutator {
 	List lastpair = (List) sortedFields.get(sortedFields.size()-1);
 	HField lastF = (HField) lastpair.get(0);
 	HClass broadest = (HClass) field2class.get(lastF);
-	Util.ASSERT(broadest!=null);
+	assert broadest!=null;
 	return broadest;
     }
 }

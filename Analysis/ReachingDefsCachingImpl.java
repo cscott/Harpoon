@@ -32,30 +32,31 @@ import java.util.HashMap;
  * over all the statements in the BasicBlock again.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsCachingImpl.java,v 1.2 2002-02-25 20:56:10 cananian Exp $
+ * @version $Id: ReachingDefsCachingImpl.java,v 1.3 2002-04-10 02:58:48 cananian Exp $
  */
-public class ReachingDefsCachingImpl extends ReachingDefsAltImpl {
+public class ReachingDefsCachingImpl<HCE extends HCodeElement>
+    extends ReachingDefsAltImpl<HCE> {
 
     /** Tracks the last basic block a query was done on. */
-    BasicBlock lastBlock = null;
+    BasicBlock<HCE> lastBlock = null;
 
     /** Maps Temp:t -> HCodeElement:h -> Set:s where s is the result
 	of calling reachingDefs(h, t).
     */
-    Map myCache;
+    Map<Temp,Map<HCE,Set<HCE>>> myCache;
 
     /** Creates a <code>ReachingDefsCachingImpl</code>. */
-    public ReachingDefsCachingImpl(HCode hc) {
+    public ReachingDefsCachingImpl(HCode<HCE> hc) {
 	super(hc);
     }
 
     /** Creates a <code>ReachingDefsCachingImpl</code>. */
-    public ReachingDefsCachingImpl(HCode hc, CFGrapher c) {
+    public ReachingDefsCachingImpl(HCode<HCE> hc, CFGrapher<HCE> c) {
 	super(hc, c);
     }
 
     /** Creates a <code>ReachingDefsCachingImpl</code>. */
-    public ReachingDefsCachingImpl(HCode hc, CFGrapher c, UseDefer ud) {
+    public ReachingDefsCachingImpl(HCode<HCE> hc, CFGrapher<HCE> c, UseDefer<HCE> ud) {
 	super(hc, c, ud);
     }
     
@@ -63,28 +64,28 @@ public class ReachingDefsCachingImpl extends ReachingDefsAltImpl {
      *  of <code>Temp</code> <code>t</code> which reach 
      *  <code>HCodeElement</code> <code>hce</code>. 
      */
-    public Set reachingDefs(HCodeElement hce, Temp t) {
+    public Set<HCE> reachingDefs(HCE hce, Temp t) {
 	// find out which BasicBlock this HCodeElement is from
-	BasicBlock b = bbf.getBlock(hce);
+	BasicBlock<HCE> b = bbf.getBlock(hce);
 	if (b == lastBlock) {
 	    // System.out.print(" _"+b.statements().size());
 	    if (myCache.keySet().contains(t)) 
-		return (Set) ((Map)myCache.get(t)).get(hce);
+		return myCache.get(t).get(hce);
 	} else {
 	    // System.out.print(" M"+b.statements().size());
-	    myCache = new HashMap();
+	    myCache = new HashMap<Temp,Map<HCE,Set<HCE>>>();
 	    lastBlock = b;
 	}
 
-	HashMap hceToResults = new HashMap();
+	Map<HCE,Set<HCE>> hceToResults = new HashMap<HCE,Set<HCE>>();
 	myCache.put(t, hceToResults);
 
 	// get the map for the BasicBlock
-	Record r = (Record)cache.get(b);
+	Record r = cache.get(b);
 
 	// find HCodeElements associated with `t' in the IN Set
 	Set results = bsf.makeSet(r.IN);
-	results.retainAll( (Set) tempToAllDefs.get(t) );
+	results.retainAll( tempToAllDefs.get(t) );
 
 	Iterator pairs = results.iterator();
 	results = new HashSet();
@@ -95,11 +96,11 @@ public class ReachingDefsCachingImpl extends ReachingDefsAltImpl {
 	// propagate in Set through the HCodeElements 
 	// of the BasicBlock in correct order
 	// report("Propagating...");
-	for(Iterator it=b.statements().iterator(); it.hasNext(); ) {
-	    HCodeElement curr = (HCodeElement)it.next();
+	for(Iterator<HCE> it=b.statements().iterator(); it.hasNext(); ) {
+	    HCE curr = it.next();
 	    hceToResults.put(curr, results);
 
-	    Collection defC = null;
+	    Collection<Temp> defC = null;
 	    // special treatment of TYPECAST
 	    if(check_typecast && (curr instanceof TYPECAST))
 		defC = Collections.singleton(((TYPECAST)curr).objectref());
@@ -110,6 +111,6 @@ public class ReachingDefsCachingImpl extends ReachingDefsAltImpl {
 		results = Collections.singleton(curr);
 	}
 
-	return (Set) hceToResults.get(hce);
+	return hceToResults.get(hce);
     }
 }

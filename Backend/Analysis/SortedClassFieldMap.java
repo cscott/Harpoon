@@ -19,35 +19,36 @@ import java.util.Map;
  * minimize "holes" between fields.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SortedClassFieldMap.java,v 1.2 2002-02-25 21:00:47 cananian Exp $
+ * @version $Id: SortedClassFieldMap.java,v 1.3 2002-04-10 03:02:22 cananian Exp $
  */
 public abstract class SortedClassFieldMap extends ClassFieldMap {
     
     /** Creates a <code>SortedClassFieldMap</code>. */
     public SortedClassFieldMap() { }
 
-    private final Map cache = new HashMap();
+    private final Map<HClass,HField[]> cache = new HashMap<HClass,HField[]>();
     protected HField[] declaredFields(HClass hc) {
 	if (!cache.containsKey(hc)) {
 	    // determine the alignment of the last field of the superclass.
 	    int alignment=0;
 	    HClass sc = hc.getSuperclass();
 	    if (sc!=null) {
-		List l = fieldList(sc);
+		List<HField> l = fieldList(sc);
 		if (l.size()>0) {
-		    HField lastfield = (HField) l.get(l.size()-1);
+		    HField lastfield = l.get(l.size()-1);
 		    alignment = fieldOffset(lastfield)+fieldSize(lastfield);
 		}
 	    }
 	    // make list of non-static fields.
-	    List l = new ArrayList(Arrays.asList(hc.getDeclaredFields()));
-	    for (Iterator it=l.iterator(); it.hasNext(); )
-		if (((HField)it.next()).isStatic())
+	    List<HField> l =
+		new ArrayList<HField>(Arrays.asList(hc.getDeclaredFields()));
+	    for (Iterator<HField> it=l.iterator(); it.hasNext(); )
+		if (it.next().isStatic())
 		    it.remove();
 	    // sort declared fields by max(alignment,size)
-	    Collections.sort(l, new Comparator() {
-		public int compare(Object o1, Object o2) {
-		    HField hf1=(HField)o1, hf2=(HField)o2;
+	    // (smallest first)
+	    Collections.sort(l, new Comparator<HField>() {
+		public int compare(HField hf1, HField hf2) {
 		    return Math.max(fieldSize(hf1),fieldAlignment(hf1))
 			- Math.max(fieldSize(hf2),fieldAlignment(hf2));
 		}
@@ -55,7 +56,7 @@ public abstract class SortedClassFieldMap extends ClassFieldMap {
 	    // if parent is unaligned, start at small end; else start at big
 	    // end.
 	    if (l.size()>0) {
-		HField big = (HField) l.get(l.size()-1);
+		HField big = l.get(l.size()-1);
 		if ((alignment % Math.max(fieldSize(big),fieldAlignment(big)))
 		    ==0)
 		    Collections.reverse(l);
@@ -63,6 +64,6 @@ public abstract class SortedClassFieldMap extends ClassFieldMap {
 	    // done.
 	    cache.put(hc, l.toArray(new HField[l.size()]));
 	}
-	return (HField[]) cache.get(hc);
+	return cache.get(hc);
     }
 }

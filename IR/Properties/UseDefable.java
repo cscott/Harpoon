@@ -11,7 +11,7 @@ import java.util.Collection;
  * representations that keep use/def information.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDefable.java,v 1.2 2002-02-25 21:04:45 cananian Exp $
+ * @version $Id: UseDefable.java,v 1.3 2002-04-10 03:05:09 cananian Exp $
  */
 
 public interface UseDefable extends harpoon.ClassFile.HCodeElement {
@@ -26,10 +26,10 @@ public interface UseDefable extends harpoon.ClassFile.HCodeElement {
     /** Returns a <code>Collection</code> of all the
 	<code>Temp</code>s read in this <code>HCodeElement</code>.  
     */
-    public Collection useC();
+    public Collection<Temp> useC();
 
     /** Returns a <code>Collection</code> of all the
 	<code>Temp</code>s defined in this <code>HCodeElement</code>.   
     */
-    public Collection defC();
+    public Collection<Temp> defC();
 }

@@ -24,7 +24,7 @@ import java.util.List;
  * be used in conjunction with <code>WriteBarrierStats</code>.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierData.java,v 1.3 2002-02-26 22:41:32 cananian Exp $
+ * @version $Id: WriteBarrierData.java,v 1.4 2002-04-10 03:00:53 cananian Exp $
  */
 public class WriteBarrierData extends harpoon.Backend.Runtime1.Data {
 
@@ -32,7 +32,7 @@ public class WriteBarrierData extends harpoon.Backend.Runtime1.Data {
     WriteBarrierData(HClass hc, Frame f, int datum) {
 	super("write-barrier", hc, f);
 	// only emit this once
-	Util.ASSERT(hc == f.getLinker().forName("java.lang.Object"));
+	assert hc == f.getLinker().forName("java.lang.Object");
 	this.root = build(datum);
     }
 

@@ -105,28 +105,28 @@ import java.util.Map;
  * them; there's nothing you can do about that.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Heap.java,v 1.2 2002-02-25 21:09:04 cananian Exp $
+ * @version $Id: Heap.java,v 1.3 2002-04-10 03:07:11 cananian Exp $
  * @see BinaryHeap
  * @see BinomialHeap
  * @see FibonacciHeap
  */
-public interface Heap {
+public interface Heap<K,V> {
     /** Inserts a node with the specified key and value into the
      *  <code>Heap</code>.  Returns the generated <code>Map.Entry</code>
      *  which may be stored and eventually passed back to
      *  <code>decreaseKey()</code> or <code>delete</code> to remove
      *  this node. */
-    public Map.Entry insert(Object key, Object value);
+    public Map.Entry<K,V> insert(K key, V value);
     /** Returns a mapping entry with minimal key.
      * @exception java.util.NoSuchElementException
      *            if the heap has no entries.
      */
-    public Map.Entry minimum();
+    public Map.Entry<K,V> minimum();
     /** Remove and return a map entry with minimal key.
      * @exception java.util.NoSuchElementException
      *            if the heap has no entries.
      */
-    public Map.Entry extractMinimum();
+    public Map.Entry<K,V> extractMinimum();
     /** Merges all of the mappings from the specified <code>Heap</code> 
      *  into this <code>Heap</code>.  Note that duplicates <b>are</b>
      *  permitted.  After calling <code>union()</code>, the <code>Heap</code>
@@ -136,15 +136,15 @@ public interface Heap {
      *  as <code>this</code>. (That is, they must both be binomial heaps, or
      *  both fibonacci heaps, etc.)
      */
-    public void union(Heap h);
+    public <K2 extends K, V2 extends V> void union(Heap<K2,V2> h);
     /** Replace the key in the specified map entry with the specified
      *  <b>smaller</b> key.  */
-    public void decreaseKey(Map.Entry me, Object newkey);
+    public void decreaseKey(Map.Entry<K,V> me, K newkey);
     /** Replace the key in the specified map entry with the specified key,
      *  which may be either larger or smaller than its current key. */
-    public void updateKey(Map.Entry me, Object newkey);
+    public void updateKey(Map.Entry<K,V> me, K newkey);
     /** Remove the specified map entry from the mapping. */
-    public void delete(Map.Entry me);
+    public void delete(Map.Entry<K,V> me);
     /** Returns <code>true</code> if this <code>Heap</code> has no more
      *  entries. */
     public boolean isEmpty();
@@ -154,7 +154,7 @@ public interface Heap {
     public int size();
     /** Returns a collection view of all the <code>Map.Entry</code>s
      *  in this <code>Heap</code>. */
-    public Collection entries();
+    public Collection<Map.Entry<K,V>> entries();
     /** Returns the hash code for this heap.  The hash code for this
      *  heap will be one greater than the hash code for the
      *  <code>Collection</code> returned by <code>entries()</code>. */
@@ -171,5 +171,5 @@ public interface Heap {
 
     /** Returns the comparator associated with this <code>Heap</code>,
      *  or <code>null</code> if it uses its elements' natural ordering. */
-    public Comparator comparator();
+    public Comparator<K> comparator();
 }

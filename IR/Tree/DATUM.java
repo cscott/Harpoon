@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * </PRE>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: DATUM.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
+ * @version $Id: DATUM.java,v 1.4 2002-04-10 03:05:44 cananian Exp $
  */
 public class DATUM extends Stm implements harpoon.ClassFile.HDataElement { 
     /** If false, the memory is not initialized; instead it is reserved
@@ -38,13 +38,12 @@ public class DATUM extends Stm implements harpoon.ClassFile.HDataElement {
      */
     public DATUM(TreeFactory tf, HCodeElement source, Exp data) {
 	super(tf, source, 1);
-	Util.ASSERT(data!=null);
+	assert data!=null;
 	this.setData(data);
 	this.initialized = true;
-	Util.ASSERT(data.kind()==TreeKind.CONST || 
-		    data.kind()==TreeKind.NAME);
-	Util.ASSERT(tf==data.tf,
-		    "Dest and Src must have same tree factory");
+	assert data.kind()==TreeKind.CONST || 
+		    data.kind()==TreeKind.NAME;
+	assert tf==data.tf : "Dest and Src must have same tree factory";
     }
 
     /** Class constructor. 
@@ -53,7 +52,7 @@ public class DATUM extends Stm implements harpoon.ClassFile.HDataElement {
      */
     public DATUM(TreeFactory tf, HCodeElement source, int type) { 
 	super(tf, source, 1);
-	Util.ASSERT(Type.isValid(type));
+	assert Type.isValid(type);
 	if (type==Type.INT)
 	    this.setData(new CONST(tf, source, (int)0));
 	else if (type==Type.LONG)
@@ -84,10 +83,9 @@ public class DATUM extends Stm implements harpoon.ClassFile.HDataElement {
 	super(tf, source, 1);
 	this.setData(data);
 	this.initialized = initialized;
-	Util.ASSERT(data.kind()==TreeKind.CONST || 
-		    data.kind()==TreeKind.NAME);
-	Util.ASSERT(tf==data.tf,
-		    "Dest and Src must have same tree factory");
+	assert data.kind()==TreeKind.CONST || 
+		    data.kind()==TreeKind.NAME;
+	assert tf==data.tf : "Dest and Src must have same tree factory";
     }
 
     /** Returns the expression to write to memory.  Never null. */
@@ -99,8 +97,8 @@ public class DATUM extends Stm implements harpoon.ClassFile.HDataElement {
     public int kind() { return TreeKind.DATUM; } 
 
     public Stm build(TreeFactory tf, ExpList kids) { 
-	Util.ASSERT(kids!=null && kids.tail==null);
-	Util.ASSERT(kids.head == null || tf == kids.head.tf);
+	assert kids!=null && kids.tail==null;
+	assert kids.head == null || tf == kids.head.tf;
 	return new DATUM(tf, this, kids.head, initialized);
     }
 

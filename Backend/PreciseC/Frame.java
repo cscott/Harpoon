@@ -43,7 +43,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.3 2002-02-26 22:44:21 cananian Exp $
+ * @version $Id: Frame.java,v 1.4 2002-04-10 03:03:11 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -82,15 +82,43 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	    alloc_strategy.equalsIgnoreCase("precise") ?
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy
 	    (this, "precise_malloc") :
+	    alloc_strategy.equalsIgnoreCase("heapstats") ?
+	    (harpoon.Backend.Runtime1.AllocationStrategy)
+	    new harpoon.Backend.Runtime1.HeapStatsAllocationStrategy(this) :
 	    // default, "malloc" strategy.
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new harpoon.Backend.Runtime1.MallocAllocationStrategy(this,
-								  "malloc");
-	runtime = Realtime.REALTIME_JAVA ?
+	    new harpoon.Backend.Runtime1.MallocAllocationStrategy
+	    (this,
+	     System.getProperty("harpoon.alloc.func", "malloc"));
+
+	harpoon.Backend.Generic.Runtime m_runtime =
+	    Realtime.REALTIME_JAVA ?
 	    new RealtimeRuntime(this, as, main, !is_elf) :
-	    (System.getProperty("harpoon.runtime", "1").equals("2") ?
-	     new harpoon.Backend.Runtime2.Runtime(this, as, main, !is_elf) :
-	     new harpoon.Backend.Runtime1.Runtime(this, as, main, !is_elf));
+	    new harpoon.Backend.Runtime1.Runtime(this, as, main, !is_elf);
+	if (!System.getProperty("harpoon.runtime","1").equals("1")) try {
+	    Class c;
+	    try {
+		// try abbreviated name first
+		c = Class.forName
+		("harpoon.Backend.Runtime"+
+		 System.getProperty("harpoon.runtime","1")+
+		 ".Runtime");
+	    } catch (ClassNotFoundException e) {
+		// try full name
+		c = Class.forName(System.getProperty("harpoon.runtime"));
+	    }
+	    java.lang.reflect.Constructor cc = c.getConstructor(new Class[] {
+		Class.forName("harpoon.Backend.Generic.Frame"),
+		Class.forName("harpoon.Backend.Runtime1.AllocationStrategy"),
+		Class.forName("harpoon.ClassFile.HMethod"),
+		Boolean.TYPE });
+	    m_runtime = (harpoon.Backend.Generic.Runtime)
+		cc.newInstance(new Object[] { this, as, main,
+					      new Boolean(!is_elf) });
+	} catch (Throwable t) {
+	    throw new RuntimeException("Can't use specified runtime: "+t);
+	}
+	runtime = m_runtime;
     }
     public Linker getLinker() { return linker; }
     public boolean pointersAreLong() { return pointersAreLong; }
@@ -133,7 +161,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	    };
 	}
 	public HData makeLocationData(final harpoon.Backend.Generic.Frame f) {
-	    Util.ASSERT(f==Frame.this);
+	    assert f==Frame.this;
 	    return new harpoon.IR.Tree.Data("location-data", f) {
 		public HClass getHClass() { return null; }
 		final HDataElement root;

@@ -24,7 +24,7 @@ import java.util.List;
  * <code>Runtime1</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Data.java,v 1.2 2002-02-25 21:02:19 cananian Exp $
+ * @version $Id: Data.java,v 1.3 2002-04-10 03:03:20 cananian Exp $
  */
 public class Data extends harpoon.IR.Tree.Data {
     final Linker linker;
@@ -49,11 +49,11 @@ public class Data extends harpoon.IR.Tree.Data {
      *                                                          *
      *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-    DATUM _DATUM(Exp e) { 
+    protected DATUM _DATUM(Exp e) { 
 	return new DATUM(tf, null, e); 
     }
 
-    DATUM _DATUM(Label l) {
+    protected DATUM _DATUM(Label l) {
 	return new DATUM(tf,null,new NAME(tf,null,l));
     }
 

@@ -19,7 +19,7 @@ import java.util.HashMap;
  * two words of storage or use floating point registers.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: TempBuilder.java,v 1.3 2002-02-26 22:44:45 cananian Exp $
+ * @version $Id: TempBuilder.java,v 1.4 2002-04-10 03:03:51 cananian Exp $
  */
 public class TempBuilder extends harpoon.Backend.Generic.TempBuilder {
     private Set twoWordTemps; 
@@ -59,7 +59,7 @@ public class TempBuilder extends harpoon.Backend.Generic.TempBuilder {
     }
 
     Temp getHigh(Temp temp) {
-	Util.ASSERT(isTwoWord(temp));
+	assert isTwoWord(temp);
 	return (Temp) lowToHighMap.get(temp);
     }
 

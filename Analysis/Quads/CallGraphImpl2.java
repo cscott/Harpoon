@@ -37,7 +37,7 @@ import java.util.Vector;
  * <code>CallGraphImpl2</code> only works on SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl2.java,v 1.3 2002-02-26 22:41:41 cananian Exp $
+ * @version $Id: CallGraphImpl2.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
  */
 public class CallGraphImpl2 implements harpoon.Analysis.CallGraph  {
     final HCodeFactory hcf;
@@ -47,8 +47,8 @@ public class CallGraphImpl2 implements harpoon.Analysis.CallGraph  {
      *  factory that generates quad-ssi form. */
     public CallGraphImpl2(ClassHierarchy ch, HCodeFactory hcf) {
 	// this is maybe a little too draconian
-	Util.ASSERT(hcf.getCodeName()
-		    .equals(harpoon.IR.Quads.QuadSSI.codename));
+	assert hcf.getCodeName()
+		    .equals(harpoon.IR.Quads.QuadSSI.codename);
 	this.ch = ch;
 	this.hcf = hcf;
     }
@@ -81,7 +81,7 @@ public class CallGraphImpl2 implements harpoon.Analysis.CallGraph  {
 	of <code>hm</code> (in representation <code>hc</code>). */
     private List getCallSites(final HMethod hm, final HCode hc){
 	if (hc==null) return Collections.EMPTY_LIST;
-	Util.ASSERT(hc.getMethod().equals(hm));
+	assert hc.getMethod().equals(hm);
 	if (cache_cs.containsKey(hc)) return (List) cache_cs.get(hc);
 
 	final Vector v = new Vector();

@@ -25,11 +25,13 @@ import java.util.Set;
  * <code>HashMap</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AggregateMapFactory.java,v 1.2 2002-02-25 21:09:03 cananian Exp $
+ * @version $Id: AggregateMapFactory.java,v 1.3 2002-04-10 03:07:10 cananian Exp $
  */
-public class AggregateMapFactory extends MapFactory
+public class AggregateMapFactory<K,V> extends MapFactory<K,V>
     implements java.io.Serializable {
-    private final Map m = new HashMap();
+    private static final class ID { }
+    private final Map<Map.Entry<ID,K>,DoublyLinkedList> m =
+	new HashMap<Map.Entry<ID,K>,DoublyLinkedList>();
 
     /** Creates an <code>AggregateMapFactory</code>. */
     public AggregateMapFactory() { /* nothing to do here */ }
@@ -38,18 +40,18 @@ public class AggregateMapFactory extends MapFactory
      *  subset of the backing set of this
      *  <code>AggregateMapFactory</code>.
      */
-    public Map makeMap(final Map mm) {
+    public <K2 extends K,V2 extends V> Map<K,V> makeMap(final Map<K2,V2> mm) {
 	return new AggregateMap(mm);
     }
-    class AggregateMap extends AbstractMap {
-	final Object IDENTITY = new Object();
+    class AggregateMap extends AbstractMap<K,V> {
+	final ID IDENTITY = new ID();
 	/* backing store for efficient iteration */
-	DoublyLinkedList entries=null;
+	DoublyLinkedList<K,V> entries=null;
 	int size=0;
 
-	AggregateMap(Map mm) { putAll(mm); }
+	<K2 extends K,V2 extends V> AggregateMap(Map<K2,V2> mm) { putAll(mm); }
 
-	private void unlink(DoublyLinkedList entry) {
+	private void unlink(DoublyLinkedList<K,V> entry) {
 	    if (entries==entry) { // first element.
 		entries = entry.next; // reset first element.
 	    } else {
@@ -59,7 +61,7 @@ public class AggregateMapFactory extends MapFactory
 	    }
 	    size--;
 	}
-	private void link(DoublyLinkedList entry) {
+	private void link(DoublyLinkedList<K,V> entry) {
 	    entry.next = entries;
 	    if (entries!=null) // maybe nothing on list.
 		entries.prev = entry;
@@ -67,32 +69,31 @@ public class AggregateMapFactory extends MapFactory
 	    size++;
 	}
 
-	public Object put(Object key, Object value) {
-	    DoublyLinkedList entry = new DoublyLinkedList(key, value);
-	    DoublyLinkedList old = (DoublyLinkedList)
-		m.put(Default.pair(IDENTITY, key), entry);
+	public V put(K key, V value) {
+	    DoublyLinkedList<K,V> entry=new DoublyLinkedList<K,V>(key, value);
+	    DoublyLinkedList<K,V> old=m.put(Default.entry(IDENTITY,key),entry);
 	    if (old!=null) unlink(old);
 	    link(entry);
 	    return (old==null) ? null : old.getValue();
 	}
 	public boolean containsKey(Object key) {
-	    return m.containsKey(Default.pair(IDENTITY, key));
+	    return m.containsKey(Default.entry(IDENTITY, key));
 	}
 	public boolean containsValue(Object value) {
-	    for (DoublyLinkedList dll=entries; dll!=null; dll=dll.next)
+	    for (DoublyLinkedList<K,V> dll=entries; dll!=null; dll=dll.next)
 		if (value==null ?
 		    (value==dll.getValue()) :
 		    value.equals(dll.getValue()))
 		    return true;
 	    return false;
 	}
-	public Set entrySet() {
-	    return new AbstractMapSet() {
-		    public Iterator iterator() {
-			return new Iterator() {
-				DoublyLinkedList dll=entries, last=null;
+	public Set<Map.Entry<K,V>> entrySet() {
+	    return new AbstractMapSet<K,V>() {
+		    public Iterator<Map.Entry<K,V>> iterator() {
+			return new Iterator<Map.Entry<K,V>>() {
+				DoublyLinkedList<K,V> dll=entries, last=null;
 				public boolean hasNext() { return dll!=null; }
-				public Object next() {
+				public Map.Entry<K,V> next() {
 				    if (dll==null)
 					throw new NoSuchElementException();
 				    last = dll;
@@ -103,7 +104,7 @@ public class AggregateMapFactory extends MapFactory
 				    if (last==null)
 					throw new
 					    UnsupportedOperationException();
-				    m.remove(Default.pair(IDENTITY,
+				    m.remove(Default.entry(IDENTITY,
 							  last.getKey()));
 				    unlink(last);
 				    last=null;
@@ -111,11 +112,8 @@ public class AggregateMapFactory extends MapFactory
 			    };
 		    }
 		    public int size() { return size; }
-		    public boolean add(Object o) {
-			if (contains(o)) return false; // already here.
-			if (!(o instanceof Map.Entry))
-			    throw new UnsupportedOperationException();
-			Map.Entry me = (Map.Entry) o;
+		    public boolean add(Map.Entry<K,V> me) {
+			if (contains(me)) return false; // already here.
 			if (AggregateMap.this.containsKey(me.getKey()))
 			    // this is not a multimap!
 			    throw new UnsupportedOperationException();
@@ -125,7 +123,7 @@ public class AggregateMapFactory extends MapFactory
 		    public boolean contains(Object o) {
 			if (!(o instanceof Map.Entry)) return false;
 			Map.Entry me = (Map.Entry) o;
-			List pair = Default.pair(IDENTITY, me.getKey());
+			Map.Entry pair = Default.entry(IDENTITY, me.getKey());
 			if (!m.containsKey(pair)) return false;
 			return me.equals(m.get(pair));
 		    }
@@ -135,17 +133,15 @@ public class AggregateMapFactory extends MapFactory
 			AggregateMap.this.remove(me.getKey());
 			return true;
 		    }
-		    public Map asMap() { return AggregateMap.this; }
+		    public Map<K,V> asMap() { return AggregateMap.this; }
 		};
 	}
-	public Object get(Object key) {
-	    DoublyLinkedList entry = (DoublyLinkedList)
-		m.get(Default.pair(IDENTITY, key));
+	public V get(Object key) {
+	    DoublyLinkedList<K,V> entry = m.get(Default.entry(IDENTITY, key));
 	    return (entry==null)?null:entry.getValue();
 	}
-	public Object remove(Object key) {
-	    DoublyLinkedList entry = (DoublyLinkedList)
-		m.remove(Default.pair(IDENTITY, key));
+	public V remove(Object key) {
+	    DoublyLinkedList<K,V> entry = m.remove(Default.entry(IDENTITY, key));
 	    if (entry!=null) unlink(entry);
 	    return (entry==null)?null:entry.getValue();
 	}
@@ -156,12 +152,12 @@ public class AggregateMapFactory extends MapFactory
 	}
     }
 
-    static class DoublyLinkedList extends PairMapEntry {
-	DoublyLinkedList next, prev;
-	DoublyLinkedList(Object key, Object value) {
+    static class DoublyLinkedList<K,V> extends PairMapEntry<K,V> {
+	DoublyLinkedList<K,V> next, prev;
+	DoublyLinkedList(K key, V value) {
 	    super(key, value);
 	}
     }
-    static abstract class AbstractMapSet extends AbstractSet implements MapSet
-    {}
+    static abstract class AbstractMapSet<K,V>
+	extends AbstractSet<Map.Entry<K,V>> implements MapSet<K,V> { }
 }

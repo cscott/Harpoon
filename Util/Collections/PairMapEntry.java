@@ -18,34 +18,35 @@ package harpoon.Util.Collections;
  * <code>null</code>s in their internal structures.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: PairMapEntry.java,v 1.2 2002-02-25 21:09:13 cananian Exp $
+ * @version $Id: PairMapEntry.java,v 1.3 2002-04-10 03:07:13 cananian Exp $
  */
-public class PairMapEntry extends AbstractMapEntry {
-    private Object key, value;
+public class PairMapEntry<K,V> extends AbstractMapEntry<K,V> {
+    private K key;
+    private V value;
 
     /** Creates a <code>PairMapEntry</code>. */
-    public PairMapEntry(Object key, Object value) {
+    public PairMapEntry(K key, V value) {
         this.key = key;
 	this.value = value;
     }
 
-    public Object getKey() {
+    public K getKey() {
 	return key;
     }
     
-    public Object getValue() {
+    public V getValue() {
 	return value;
     }
 
     /** For use in subclass implementations *only*. */
-    protected Object setKey(Object newKey) {
-	Object old = key;
+    protected K setKey(K newKey) {
+	K old = key;
 	key = newKey;
 	return old;
     }
 
-    public Object setValue(Object newValue) {
-	Object old = value;
+    public V setValue(V newValue) {
+	V old = value;
 	value = newValue;
 	return old;
     }

@@ -43,7 +43,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.3 2002-02-26 22:45:18 cananian Exp $ */
+ * @version $Id: Instr.java,v 1.4 2002-04-10 03:04:24 cananian Exp $ */
 public class Instr implements HCodeElement, UseDefable, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
@@ -69,10 +69,8 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	    associated with any group.
     */
     public void setGroup(InstrGroup seq) {
-	Util.ASSERT(groupList == null || groupList == seq,
-		    " current group: "+groupList+
-		    " setGroup( "+seq+" )"
-		    );
+	assert groupList == null || groupList == seq : " current group: "+groupList+
+		    " setGroup( "+seq+" )";
 	// this actually isn't as conservative as we could be, since
 	// <seq> can be null.
 
@@ -188,7 +186,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
     */
     public final boolean canFallThrough;
 
-    private List targets;
+    private List<Label> targets;
     /** List of target labels that <code>this</code> can branch to.
 	<code>getTargets()</code> may be empty (in which case control
 	flow either falls through to the <code>this.next</code> (the
@@ -200,7 +198,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	@see Instr#hasModifiableTargets 
 	@return A <code>List</code> of <code>Label</code>s.
     */
-    public List getTargets() {
+    public List<Label> getTargets() {
 	if (targets != null) {
 	    if (this.hasModifiableTargets()) {
 		return targets;
@@ -218,15 +216,15 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	<code>this</code>. 
     */
     public InstrLABEL getInstrFor(Label l) {
-	return (InstrLABEL) inf.labelToInstrLABELmap.get(l);
+	return inf.labelToInstrLABELmap.get(l);
     }
 
     /** Defines an array factory which can be used to generate
 	arrays of <code>Instr</code>s. 
     */
-    public static final ArrayFactory arrayFactory =
-        new ArrayFactory() {
-            public Object[] newArray(int len) { return new Instr[len]; }
+    public static final ArrayFactory<Instr> arrayFactory =
+        new ArrayFactory<Instr>() {
+            public Instr[] newArray(int len) { return new Instr[len]; }
         };
 
     // *************** CONSTRUCTORS *****************
@@ -252,12 +250,12 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
     */
     public Instr(InstrFactory inf, HCodeElement source, 
 		 String assem, Temp[] dst, Temp[] src,
-		 boolean canFallThrough, List targets) {
-	Util.ASSERT(!assem.trim().equals("FSK-LD `d0, `s0 `d0, `s0"));
+		 boolean canFallThrough, List<Label> targets) {
+	assert !assem.trim().equals("FSK-LD `d0, `s0 `d0, `s0");
 
-        Util.ASSERT(inf != null);
-        Util.ASSERT(assem != null);
-	// Util.ASSERT(dst!=null && src!=null, "DST and SRC should not = null");
+        assert inf != null;
+        assert assem != null;
+	// assert dst!=null && src!=null : "DST and SRC should not = null";
 	if (src == null) src = new Temp[0];
 	if (dst == null) dst = new Temp[0];
 	
@@ -286,8 +284,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 
     private void checkForNull(Temp[] ts) {
 	for(int i=0; i<ts.length; i++) {
-	    Util.ASSERT(ts[i] != null, 
-			"Temp index "+i+" is null in "+ this);
+	    assert ts[i] != null : "Temp index "+i+" is null in "+ this;
 	}
     }
 
@@ -343,14 +340,13 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
     */
     public static void replaceInstrList(final Instr oldi, final List newis) {
 	// System.out.println("("+oldi.prev+") "+oldi+" ("+oldi.next+")" + " -> " + newis); 
-	Util.ASSERT(oldi != null && newis != null, "Null Arguments are bad");
-	Util.ASSERT(oldi.canFallThrough &&
-		    oldi.getTargets().isEmpty(), 
-		    "oldi must be a nonbranching instruction.");
+	assert oldi != null && newis != null : "Null Arguments are bad";
+	assert oldi.canFallThrough &&
+		    oldi.getTargets().isEmpty() : "oldi must be a nonbranching instruction.";
 
 	// There's something wrong, either with my code or with the
 	// jikes compiler, but it does CRAZY shit if i leave this in...
-	//Util.ASSERT(isLinear(newis), "newis must be a basic block: "+pprint(newis));
+	//assert isLinear(newis) : "newis must be a basic block: "+pprint(newis);
 	
 	Instr last = oldi.prev;
 	Iterator iter = newis.iterator();
@@ -393,30 +389,28 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	while(iter.hasNext()) {
 	    Instr iterInstr = (Instr) iter.next();
 	    
-	    Util.ASSERT(iterInstr == i, "list "+instrs+" is nonlinear");
+	    assert iterInstr == i : "list "+instrs+" is nonlinear";
 
 	    int size = i.succC().size();
-	    Util.ASSERT(size >= 0, "size should always be >= 0");
+	    assert size >= 0 : "size should always be >= 0";
 	    if (size == 0) {
 		// reached the end (I hope)
-		Util.ASSERT(i.next == null, "last should have next == null");
-		Util.ASSERT(i.targets == null, "last should have targets == null");
-		Util.ASSERT(!iter.hasNext(), 
-			    new Object() {
-		    public String toString() {
-			return ("last should have nothing left in iter "+
-				iter.next());
-		    }
-		});
+		assert i.next == null : "last should have next == null";
+		assert i.targets == null : "last should have targets == null";
+		assert !iter.hasNext() : "last should have nothing left in iter "+iter.next();
 		break;
 	    }
+	    /* XXX CSA: this code is broken: succC().iterator().next() will
+	     * return an InstrEdge, not an Instr; not quite sure what this
+	     * code was supposed to do/how to fix it. ***
 	    Instr n = (Instr) i.succC().iterator().next();
 	    if (i.next != n ||
 		size > 1) {
 		linear = false;
-		//Util.ASSERT(false,"Instr " + i + " is nonlinear");
+		//assert false : "Instr " + i + " is nonlinear";
 		break;
 	    }
+	    */assert false : "this code is broken";
 	}
 
 	return linear;
@@ -424,7 +418,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
     
     /** Not implemented yet. */
     public static void insertInstrsAt(CFGEdge edge, List instrs) {
-	Util.ASSERT(false);
+	assert false;
     }
 
     /** Inserts <code>this</code> at <code>edge</code>.  The purpose 
@@ -467,32 +461,26 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
         @see Instr#remove
     */
     public void insertAt(CFGEdge edge) {
-	Util.ASSERT(this.next == null &&
-		    this.prev == null, 
-		    "next and prev fields should be null");
-	Util.ASSERT(this.getTargets().isEmpty() &&
-		    this.canFallThrough,
-		    "this should be nonbranching");
-	Util.ASSERT(edge.to() != null ||
-		    edge.from() != null, 
-		    "edge shouldn't have null for both to and from");
+	assert this.next == null &&
+		    this.prev == null : "next and prev fields should be null";
+	assert this.getTargets().isEmpty() &&
+		    this.canFallThrough : "this should be nonbranching";
+	assert edge.to() != null ||
+		    edge.from() != null : "edge shouldn't have null for both to and from";
 
 	Instr from = null, to = null;
 	if (edge.from() != null) {
 	    from = (Instr) edge.from();
-	    Util.ASSERT(from.targets==null || 
-			from.hasModifiableTargets(), 
-			"from: "+from+", if it branches, should have mutable target list");
-	    Util.ASSERT( edge.to() == null || 
-			 from.edgeC().contains(edge),
-			 "edge: "+edge+" should be in <from>.edges(): " + 
-			 Util.print(from.edgeC()));
+	    assert from.targets==null || 
+			from.hasModifiableTargets() : ("from: "+from+", if it branches, should have mutable target list");
+	    assert edge.to() == null || 
+			 from.edgeC().contains(edge) : "edge: "+edge+" should be in <from>.edges(): " + 
+			 Util.print(from.edgeC());
 	}
 	if (edge.to() != null) {
 	    to = (Instr) edge.to();
-	    Util.ASSERT( edge.from() == null || 
-			 to.edgeC().contains(edge),
-			 "edge should be in <to>.edges()");
+	    assert edge.from() == null || 
+			 to.edgeC().contains(edge) : "edge should be in <to>.edges()";
 	}
 	
 	// TODO: add code that will check if edge.from().next !=
@@ -504,16 +492,16 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	//          newBranch -> edge.to()
 	if (from != null &&
 	    from.next != edge.to()) {
-	    Util.ASSERT(this.inf != null, "InstrFactory should never be null");
+	    assert this.inf != null : "InstrFactory should never be null";
 	    Instr last = this.inf.getTail();
-	    Util.ASSERT(last != null, "cachedTail should not be null");
-	    Util.ASSERT(last.next == null, "last Instr: "+last+" should really be LAST, "+
+	    assert last != null : "cachedTail should not be null";
+	    assert last.next == null : ("last Instr: "+last+" should really be LAST, "+
 			"but it has next: " + last.next);
 	    
 	    // Oh shit.  How should we design a way to insert
 	    // arbitrary code with a method in the *ARCHITECTURE
 	    // INDEPENDANT* Instr class? 
-	    Util.ASSERT(false);
+	    assert false;
 	} else { // edge.from() falls through to edge.to() 
 	    layout(from, to);
 	}
@@ -541,18 +529,17 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	@see Instr#layout
     */    
     public void remove() {
-	Util.ASSERT( ! this.hasMultiplePredecessors());
+	assert ! this.hasMultiplePredecessors();
 
-	Util.ASSERT(((harpoon.Backend.Generic.Code)
-		     inf.getParent()).getRootElement() != this,
-		    "Do not remove root element.");
+	assert ((harpoon.Backend.Generic.Code)
+		     inf.getParent()).getRootElement() != this : "Do not remove root element.";
 
 	if (PRINT_REMOVES) System.out.println("removing Instr:"+this);
 
 	for(Iterator groups=getGroups().iterator(); groups.hasNext();){
 	    InstrGroup group = (InstrGroup) groups.next();
-	    Util.ASSERT( group.entry != this, "Can't handle group component removes yet (entry)");
-	    Util.ASSERT( group.exit != this,  "Can't handle group component removes yet (exit)");
+	    assert group.entry != this : "Can't handle group component removes yet (entry)";
+	    assert group.exit != this : "Can't handle group component removes yet (exit)";
 	}
 
 
@@ -570,8 +557,8 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	this.prev = null;
 	/* remove mappings in inf.labelToBranchingInstrsSetMap */
 	if (this.targets!=null) {
-	    for (Iterator it=this.targets.iterator(); it.hasNext(); ) {
-		Label l = (Label) it.next();
+	    for (Iterator<Label> it=this.targets.iterator(); it.hasNext(); ) {
+		Label l = it.next();
 		((Set)inf.labelToBranches.get(l)).remove(this);
 	    }
 	}
@@ -603,18 +590,16 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	     Instruction stream.
     */
     public void layout(Instr from, Instr to) { 
-	Util.ASSERT(this.next == null &&
-		    this.prev == null, 
-		    "next and prev fields should be null");
+	assert this.next == null &&
+		    this.prev == null : "next and prev fields should be null";
 	
 	if (PRINT_INSERTS) System.out.println("inserting Instr:"+this);
 
 	if (to != null &&
 	    from != null) {
-	    Util.ASSERT(to.prev == from &&
-			from.next == to,
-			"to should follow from in the instruction layout "+
-			"if they already exist");
+	    assert to.prev == from &&
+			from.next == to : "to should follow from in the instruction layout "+
+			"if they already exist";
 	}
 	
 	if (from!=null) from.next = this;
@@ -624,9 +609,9 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 
 	/* add this to inf.labelToBranchingInstrSetMap */
  	if (this.targets != null) {
-	    Iterator titer = this.targets.iterator();
+	    Iterator<Label> titer = this.targets.iterator();
 	    while(titer.hasNext()) {
-		Label l = (Label) titer.next();
+		Label l = titer.next();
 		((Set)inf.labelToBranches.
 		 get(l)).add(this);
 	    }
@@ -655,8 +640,8 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
     /* Replaces <code>inOld</code> with <code>inNew</code> in the
      * instruction layout. */
     public static void replace(Instr inOld, Instr inNew) {
-	Util.ASSERT(inNew.next==null && inNew.prev==null, "newI has a spot");
-	Util.ASSERT(inOld.next!=null || inOld.prev!=null, "oldI has no loc");
+	assert inNew.next==null && inNew.prev==null : "newI has a spot";
+	assert inOld.next!=null || inOld.prev!=null : "oldI has no loc";
 
 	if (PRINT_REPLACES) System.out.println("replacing Instr:"+inOld+" with Instr:"+inNew);
 
@@ -784,17 +769,17 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 
     /** Returns the <code>Temp</code>s used by this <code>Instr</code>. */
     public final Temp[] use() { 
-	Collection u = useC();
-	return (Temp[]) u.toArray(new Temp[u.size()]);
+	Collection<Temp> u = useC();
+	return u.toArray(new Temp[u.size()]);
     }
 
     /** Returns the <code>Temp</code>s defined by this <code>Instr</code>. */
     public final Temp[] def() { 
-	Collection d = defC();
-	return (Temp[]) d.toArray(new Temp[d.size()]);
+	Collection<Temp> d = defC();
+	return d.toArray(new Temp[d.size()]);
     }
-    public Collection useC() { return Collections.unmodifiableList(Arrays.asList(src)); }
-    public Collection defC() { return Collections.unmodifiableList(Arrays.asList(dst)); }
+    public Collection<Temp> useC() { return Collections.unmodifiableList(Arrays.asList(src)); }
+    public Collection<Temp> defC() { return Collections.unmodifiableList(Arrays.asList(dst)); }
 
     // ******************* HCodeElement interface
 
@@ -812,9 +797,9 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	and <code>getPrev()</code> for information on instruction
 	layout. 
     */
-    public CFGEdge[] edges() { 
-	Collection c = edgeC();
-	return (CFGEdge[]) c.toArray(new InstrEdge[c.size()]);
+    public InstrEdge[] edges() { 
+	Collection<InstrEdge> c = edgeC();
+	return c.toArray(new InstrEdge[c.size()]);
     }
     /** Returns the <I>control flow</I> edges of <code>this</code>.
 	Note that this returns edges according to <I>control flow</I>, not in
@@ -822,12 +807,13 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	and <code>getPrev()</code> for information on instruction
 	layout. 
     */
-    public Collection edgeC() {
-	return new AbstractCollection() {
+    public Collection<InstrEdge> edgeC() {
+	return new AbstractCollection<InstrEdge>() {
 	    public int size() { return predC().size()+succC().size(); }
-	    public Iterator iterator() {
-		return new CombineIterator(new Iterator[] { predC().iterator(),
-							    succC().iterator() });
+	    public Iterator<InstrEdge> iterator() {
+		return new CombineIterator<InstrEdge>
+		    (new Iterator<InstrEdge>[] { predC().iterator(),
+						     succC().iterator() });
 	    }
 	};
     }
@@ -840,10 +826,10 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	
 	Uses <code>predC()</code> to get the necessary information.
     */
-    public CFGEdge[] pred() {
-	Collection c = predC();
-	CFGEdge[] edges = new CFGEdge[c.size()];
-	return (CFGEdge[]) c.toArray(edges);
+    public InstrEdge[] pred() {
+	Collection<InstrEdge> c = predC();
+	InstrEdge[] edges = new InstrEdge[c.size()];
+	return c.toArray(edges);
     }
     /** Returns the <I>control flow</I> predecessors of <code>this</code>.
 	Note that this returns edges according to <I>control flow</I>, not in
@@ -851,11 +837,10 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	and <code>getPrev()</code> for information on instruction
 	layout. 
     */
-    public Collection predC() {
-	Util.ASSERT(!this.hasMultiplePredecessors(),
-		    "should not call Instr.predC() if instr"+
-		    "has multiple predecessors...override method");
-	return new AbstractCollection(){
+    public Collection<InstrEdge> predC() {
+	assert !this.hasMultiplePredecessors() : "should not call Instr.predC() if instr"+
+		    "has multiple predecessors...override method";
+	return new AbstractCollection<InstrEdge>(){
 	    public int size() {
 		if ((prev != null) && prev.canFallThrough) {
 		    return 1;
@@ -863,7 +848,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 		    return 0;
 		}
 	    }
-	    public Iterator iterator() {
+	    public Iterator<InstrEdge> iterator() {
 		if ((prev != null) && prev.canFallThrough) {
 		    return Default.singletonIterator
 			(new InstrEdge(prev, Instr.this));
@@ -880,10 +865,10 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	and <code>getPrev()</code> for information on instruction
 	layout. 
     */
-    public CFGEdge[] succ() { 
-	Collection c = succC();
-	CFGEdge[] edges = new CFGEdge[c.size()];
-	return (CFGEdge[]) c.toArray(edges);
+    public InstrEdge[] succ() { 
+	Collection<InstrEdge> c = succC();
+	InstrEdge[] edges = new InstrEdge[c.size()];
+	return c.toArray(edges);
     }
     /** Returns the <I>control flow</I> successors of <code>this</code>.
 	Note that this returns edges according to <I>control flow</I>, not in
@@ -891,8 +876,8 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	and <code>getPrev()</code> for information on instruction
 	layout. 
     */
-    public Collection succC() {
-	return new AbstractCollection() {
+    public Collection<InstrEdge> succC() {
+	return new AbstractCollection<InstrEdge>() {
 	    public int size() {
 		int total=0;
 		if (canFallThrough && (next != null)) {
@@ -903,9 +888,9 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 		}
 		return total;
 	    }
-	    public Iterator iterator() {
-		return new CombineIterator
-		    (new Iterator[] {
+	    public Iterator<InstrEdge> iterator() {
+		return new CombineIterator<InstrEdge>
+		    (new Iterator<InstrEdge>[] {
 
 			// first iterator: fall to next?
 			(((next!=null)&&canFallThrough)?
@@ -915,15 +900,15 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 
 			// second iterator: branch to targets?
                         ((targets!=null)?
-			 new UnmodifiableIterator(){
-			    Iterator titer = targets.iterator();
+			 new UnmodifiableIterator<InstrEdge>(){
+			    Iterator<Label> titer = targets.iterator();
 			    public boolean hasNext() {
 				return titer.hasNext();
 			    }
-			    public Object next() {
+			    public InstrEdge next() {
 				return new InstrEdge
 				    (Instr.this, 
-				     (Instr) inf.labelToInstrLABELmap.get
+				     inf.labelToInstrLABELmap.get
 				     (titer.next())); 
 			    }
 			}:Default.nullIterator)

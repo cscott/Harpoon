@@ -31,7 +31,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.2 2002-02-25 21:02:29 cananian Exp $
+ * @version $Id: Runtime.java,v 1.3 2002-04-10 03:03:34 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Runtime1.Runtime {
     public Runtime(Frame frame, AllocationStrategy as,
@@ -44,9 +44,10 @@ public class Runtime extends harpoon.Backend.Runtime1.Runtime {
 		   boolean prependUnderscore, RootOracle rootOracle) {
 	super(frame,as,main,prependUnderscore,rootOracle);
     }
-    protected TreeBuilder initTreeBuilder() {
+    protected harpoon.Backend.Runtime2.TreeBuilder initTreeBuilder() {
 	int align = Integer.parseInt
 	    (System.getProperty("harpoon.runtime1.pointer.alignment","0"));
+	configurationSet.add("check_with_claz_shrink_not_needed");
 	return new harpoon.Backend.Runtime2.TreeBuilder
 	    (this, frame.getLinker(), as, frame.pointersAreLong(), align);
     }

@@ -28,7 +28,7 @@ import harpoon.Util.DataStructs.LightMap;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODParIntGraph.java,v 1.3 2002-02-26 22:41:20 cananian Exp $
+ * @version $Id: ODParIntGraph.java,v 1.4 2002-04-10 03:00:42 cananian Exp $
  */
 public class ODParIntGraph {
 
@@ -346,7 +346,7 @@ public class ODParIntGraph {
 
     private boolean important = false;
     private final boolean interesting(PANode node){
-	Util.ASSERT(node.type == PANode.LOAD, "not a LOAD node");
+	assert node.type == PANode.LOAD : "not a LOAD node";
 
 	if(directlyInteresting(node)) return true;
 	

@@ -31,17 +31,17 @@ import java.util.HashSet;
  *	 are passed on to 'mm'.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.3 2002-02-26 22:47:36 cananian Exp $ */
-public class GenericMultiMap implements MultiMap {
+ * @version $Id: GenericMultiMap.java,v 1.4 2002-04-10 03:07:11 cananian Exp $ */
+public class GenericMultiMap<K,V> implements MultiMap<K,V> {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
-    private Map internMap;
+    private Map<K,Collection<V>> internMap;
 
     // constructs Collections as needed 
-    private CollectionFactory cf;
+    private CollectionFactory<V> cf;
     
     // used by identity constructor
-    private MapFactory mf;
+    private MapFactory<K,Collection<V>> mf;
 
     /** Creates a <code>MultiMap</code> using a <code>HashMap</code> for
 	the map and <code>HashSet</code>s for the value collections.
@@ -51,25 +51,26 @@ public class GenericMultiMap implements MultiMap {
 	that takes <code>CollectionFactory</code>s.
     */
     public GenericMultiMap() {
-	this(Factories.hashMapFactory, Factories.hashSetFactory);
+	this(Factories.hashMapFactory(), Factories.hashSetFactory());
     }
 
     /** Creates a <code>MultiMap</code> using a <code>HashMap</code> for
      *  the map and the specified <code>CollectionFactory</code> to
      *  create the value collections. */
-    public GenericMultiMap(CollectionFactory cf) {
-	this(Factories.hashMapFactory, cf);
+    public GenericMultiMap(CollectionFactory<V> cf) {
+	this(Factories.hashMapFactory(), cf);
     }
+
     /** Creates a <code>MultiMap</code> using the specified
      *  <code>MapFactory</code> to create the map and the specified
      *  <code>CollectionFactory</code> to create the value collections.
     */
-    public GenericMultiMap(MapFactory mf, CollectionFactory cf) {
+    public GenericMultiMap(MapFactory<K,Collection<V>> mf, CollectionFactory<V> cf) {
 	this.internMap = mf.makeMap();
 	this.cf = cf;
 	this.mf = mf;
     }
-
+    
     /** Creates a <code>GenericMultiMap</code> from another
 	<code>GenericMultiMap</code>.
 	
@@ -78,7 +79,7 @@ public class GenericMultiMap implements MultiMap {
 	'this' and 'mm'.
 
     */
-    GenericMultiMap(GenericMultiMap mm) { 
+    GenericMultiMap(GenericMultiMap<K,V> mm) { 
 	this.mf = mm.mf;
 	this.cf = mm.cf;
 	this.internMap = this.mf.makeMap(mm.internMap);
@@ -87,13 +88,9 @@ public class GenericMultiMap implements MultiMap {
     /** Makes a new <code>MultiMap</code> initialized with all of the
 	<code>Map.Entry</code>s in <code>m</code>.
     */
-    public GenericMultiMap(Map m) {
+    <K2 extends K, V2 extends V> GenericMultiMap(Map<K2,V2> m) { 
 	this();
-	Iterator entries = m.entrySet().iterator();
-	while(entries.hasNext()) {
-	    Map.Entry entry= (Map.Entry) entries.next();
-	    this.put(entry.getKey(), entry.getValue());
-	}
+	putAll(m);
     }
 
     // note: we'd like to maintain a separate 'size' field, but
@@ -102,26 +99,26 @@ public class GenericMultiMap implements MultiMap {
     // isEmpty() are slower than they might otherwise be.
     public int size() {
 	int count=0;
-	for (Iterator it=internMap.values().iterator(); it.hasNext(); )
-	    count += ((Collection)it.next()).size();
+	for (Iterator<Collection<V>> it=internMap.values().iterator(); it.hasNext(); )
+	    count += it.next().size();
 	return count;
     }
 
     public boolean isEmpty() {
 	// we could return 'size()==0' but that's slow.
-	for (Iterator it=internMap.values().iterator(); it.hasNext(); )
-	    if (((Collection)it.next()).size()>0)
+	for (Iterator<Collection<V>> it=internMap.values().iterator(); it.hasNext(); )
+	    if (it.next().size()>0)
 		return false;
 	return true;
     }
     
     public boolean containsKey(Object key) {
-	Collection s = (Collection) internMap.get(key);
+	Collection<V> s = internMap.get(key);
 	return (s != null && s.size() != 0);
     }
     
     public boolean containsValue(Object value) {
-	for (Iterator it=internMap.keySet().iterator(); it.hasNext(); )
+	for (Iterator<K> it=internMap.keySet().iterator(); it.hasNext(); )
 	    if (getValues(it.next()).contains(value))
 		return true;
 	return false;
@@ -139,8 +136,8 @@ public class GenericMultiMap implements MultiMap {
 	modify <code>this</code>, then <code>get</code> will operate
 	just as it would in any other <code>Map</code>.
     */
-    public Object get(Object key) {
-	Collection s = (Collection) internMap.get(key);
+    public V get(Object key) {
+	Collection<V> s = internMap.get(key);
 	if (s == null || s.size() == 0) {
 	    return null;
 	} else {
@@ -154,10 +151,9 @@ public class GenericMultiMap implements MultiMap {
 	that was previous associated with the specified key, or
 	<code>null</code> if no values were associated previously. 
     */
-    public Object put(Object key,
-		      Object value) {
-	Collection c = getValues(key);
-	Object prev = c.size()==0 ? null : c.iterator().next();
+    public V put(K key, V value) {
+	Collection<V> c = getValues(key);
+	V prev = c.size()==0 ? null : c.iterator().next();
 	c.clear();
 	c.add(value);
 	return prev;
@@ -167,8 +163,8 @@ public class GenericMultiMap implements MultiMap {
 	Returns some previous value associated with specified key, or
 	<code>null</code> if there was no mapping for key.  
      */
-    public Object remove(Object key) {
-	Collection c = (Collection) internMap.get(key);
+    public V remove(Object key) {
+	Collection<V> c = internMap.get(key);
 	internMap.remove(key);
 	return (c==null || c.size()==0) ? null : c.iterator().next();
     }
@@ -180,7 +176,7 @@ public class GenericMultiMap implements MultiMap {
 	this operation, else returns false.
     */
     public boolean remove(Object key, Object value) {
-	Collection c = (Collection) internMap.get(key);
+	Collection<V> c = internMap.get(key);
 	boolean result = (c!=null) ? c.remove(value) : false;
 	if (c!=null && c.size()==0) internMap.remove(key);
 	return result;
@@ -196,10 +192,10 @@ public class GenericMultiMap implements MultiMap {
 	mapped to in <code>mm</code>.  To add all of the mappings from
 	another <code>MultiMap</code>, use
 	<code>addAll(MultiMap)</code>.  */
-    public void putAll(Map t) {
-	Iterator entries = t.entrySet().iterator();
+    public <K2 extends K, V2 extends V> void putAll(Map<K2,V2> t) {
+	Iterator<Map.Entry<K2,V2>> entries = t.entrySet().iterator();
 	while(entries.hasNext()) {
-	    Map.Entry e = (Map.Entry) entries.next();
+	    Map.Entry<K2,V2> e = entries.next();
 	    this.put( e.getKey(), e.getValue() );
 	}
     }
@@ -220,7 +216,7 @@ public class GenericMultiMap implements MultiMap {
     }
 
     public int hashCode() {
-	Iterator entries = entrySet().iterator();
+	Iterator<Map.Entry<K,V>> entries = entrySet().iterator();
 	int sum = 0;
 	while(entries.hasNext()) {
 	    sum += entries.next().hashCode();
@@ -236,7 +232,7 @@ public class GenericMultiMap implements MultiMap {
 	@return <code>true</code> if this mapping changed as a result of
 	        the call
     */
-    public boolean add(Object key, Object value) {
+    public boolean add(K key, V value) {
 	boolean changed = getValues(key).add(value);
 	return changed;
     }
@@ -249,14 +245,14 @@ public class GenericMultiMap implements MultiMap {
 	@return <code>true</code> if this mapping changed as a result
 	        of the call
     */
-    public boolean addAll(Object key, Collection values) {
+    public <V2 extends V> boolean addAll(K key, Collection<V2> values) {
 	return getValues(key).addAll(values);
     }
     /** Add all mappings in the given multimap to this multimap. */
-    public boolean addAll(MultiMap mm) {
+    public <K2 extends K, V2 extends V> boolean addAll(MultiMap<K2,V2> mm) {
 	boolean changed = false;
-	for (Iterator it=mm.keySet().iterator(); it.hasNext(); ) {
-	    Object key = it.next();
+	for (Iterator<K2> it=mm.keySet().iterator(); it.hasNext(); ) {
+	    K2 key = it.next();
 	    if (addAll(key, mm.getValues(key)))
 		changed = true;
 	}
@@ -271,7 +267,7 @@ public class GenericMultiMap implements MultiMap {
 	@return <code>true</code> if this mapping changed as a result
 	        of the call
     */
-    public boolean retainAll(Object key, Collection values) {
+    public <T> boolean retainAll(K key, Collection<T> values) {
 	return getValues(key).retainAll(values);
     }
 
@@ -283,7 +279,7 @@ public class GenericMultiMap implements MultiMap {
 	@return <code>true</code> if this mapping changed as a result
 	        of the call
     */
-    public boolean removeAll(Object key, Collection values) {
+    public <T> boolean removeAll(K key, Collection<T> values) {
 	return getValues(key).removeAll(values);
     }
 
@@ -295,8 +291,8 @@ public class GenericMultiMap implements MultiMap {
 	<code>Collection</code> and returns it.
 	(<code>MultiMap</code> specific operation). 
     */
-    public Collection getValues(final Object key) {
-	Collection c = (Collection) internMap.get(key);
+    public Collection<V> getValues(final K key) {
+	Collection<V> c = internMap.get(key);
 	if (c == null) {
 	    c = cf.makeCollection();
 	    internMap.put(key, c);
@@ -309,7 +305,7 @@ public class GenericMultiMap implements MultiMap {
 	(<code>MultiMap</code> specific operation). 
     */
     public boolean contains(Object a, Object b) {
-	Collection c = (Collection)internMap.get(a);
+	Collection<V> c = internMap.get(a);
 	if (c != null)
 	    return c.contains(b);
 	else
@@ -319,10 +315,10 @@ public class GenericMultiMap implements MultiMap {
     public String toString() {
 	StringBuffer sb = new StringBuffer();
 	sb.append("[");
-	Iterator keys = keySet().iterator();
+	Iterator<K> keys = keySet().iterator();
 	while(keys.hasNext()) {
-	    Object k = keys.next();
-	    Collection values = getValues(k);
+	    K k = keys.next();
+	    Collection<V> values = getValues(k);
 	    if (values.size()==0) continue;
 	    sb.append("< "+k+" -> "+values+" > ");
 	}
@@ -331,18 +327,18 @@ public class GenericMultiMap implements MultiMap {
     }
 
     /** Returns a set view of the keys in this map. */
-    public Set keySet() {
+    public Set<K> keySet() {
 	return keySet;
     }
-    private final Set keySet = new KeySet();
+    private final Set<K> keySet = new KeySet();
     
     /** Returns a collection view of the values contained in this
 	map.  
     */
-    public Collection values() { 
+    public Collection<V> values() { 
 	return valuesCollection;
     }
-    private final Collection valuesCollection = new ValuesCollection();
+    private final Collection<V> valuesCollection = new ValuesCollection();
 
     /** Returns a set view of the mappings contained in this map.
 	This view is fully modifiable; the elements are
@@ -350,23 +346,23 @@ public class GenericMultiMap implements MultiMap {
 	<code>MultiMapSet</code>, from which you can get back the
 	original <code>MultiMap</code>.
     */
-    public Set entrySet() {
+    public MultiMapSet<K,V> entrySet() {
 	return entrySet;
     }
-    private final MultiMapSet entrySet = new EntrySet();
+    private final MultiMapSet<K,V> entrySet = new EntrySet();
     
     // here are the class declarations that make the key set, entry set and
     // values collection work.
-    class KeySet extends AbstractSet {
+    class KeySet extends AbstractSet<K> {
 	public int size() { return internMap.keySet().size(); }
-	public Iterator iterator() {
-	    return new Iterator() {
-		    Iterator it = internMap.keySet().iterator();
-		    Object lastKey;
+	public Iterator<K> iterator() {
+	    return new Iterator<K>() {
+		    Iterator<K> it = internMap.keySet().iterator();
+		    K lastKey;
 		    public boolean hasNext() { return it.hasNext(); }
-		    public Object next() { return (lastKey=it.next()); }
+		    public K next() { return (lastKey=it.next()); }
 		    public void remove() {
-			Collection c = (Collection) internMap.get(lastKey);
+			Collection<V> c = internMap.get(lastKey);
 			it.remove();
 		    }
 		};
@@ -385,11 +381,34 @@ public class GenericMultiMap implements MultiMap {
 	    GenericMultiMap.this.clear();
 	}
     }
-    class EntrySet extends CollectionView implements Set, MultiMapSet {
-	EntrySet() { super(ENTRY); }
+    class ValuesCollection extends AbstractCollection<V> {
+	public int size() { return entrySet.size(); }
+	public Iterator<V> iterator() {
+	    return new Iterator<V>() {
+		final Iterator<Map.Entry<K,V>> it = entrySet.iterator();
+		public boolean hasNext() { return it.hasNext(); }
+		public V next() { return it.next().getValue(); }
+		public void remove() { it.remove(); }
+	    };
+	}
+	public boolean add(V o) {
+	    throw new UnsupportedOperationException();
+	}
+	public boolean remove(Object o) {
+	    throw new UnsupportedOperationException();
+	}
+	// other methods for efficiency.
+	public boolean contains(Object o) {
+	    return GenericMultiMap.this.containsValue(o);
+	}
+	public void clear() { entrySet.clear(); }
+    }
+    // common code
+    class EntrySet extends AbstractCollection<Map.Entry<K,V>>
+	implements MultiMapSet<K,V> {
 	// these are methods in MultiMapSet
-	public Map asMap() { return asMultiMap(); }
-	public MultiMap asMultiMap() { return GenericMultiMap.this; }
+	public GenericMultiMap<K,V> asMap() { return asMultiMap(); }
+	public GenericMultiMap<K,V> asMultiMap() { return GenericMultiMap.this; }
 	// these methods aren't in the collections interface
 	// (from classpath impl of AbstractSet)
 	public boolean equals(Object o) {
@@ -397,7 +416,7 @@ public class GenericMultiMap implements MultiMap {
 		return true;
 	    else if (o instanceof Set && ((Set) o).size() ==
 		     EntrySet.this.size())
-		return EntrySet.this.containsAll((Collection) o);
+		return EntrySet.this.containsAll((Collection/*<Map.Entry<K,V>>*/) o);
 	    else
 		return false;
 	}
@@ -413,37 +432,23 @@ public class GenericMultiMap implements MultiMap {
 		}
 	    return hash;
 	}
-    }
-    class ValuesCollection extends CollectionView {
-	ValuesCollection() { super(VALUES); }
-    }
-    // common code
-    class CollectionView extends AbstractCollection {
-	static final int ENTRY = 0; // set, really.
-	static final int VALUES = 1;
-	final int type;
-	protected CollectionView(int type) {
-	    this.type = type;
-	    if (type==ENTRY)
-		Util.ASSERT(this instanceof Set);
-	}
+	// get down to business: Implement AbstractCollection
 	public int size() { return GenericMultiMap.this.size(); }
-	public Iterator iterator() {
-	    return new Iterator() {
-		    Iterator mapit = internMap.entrySet().iterator();
-		    Iterator setit = Default.nullIterator;
-		    Iterator lastit;
-		    Object key;
+	public Iterator<Map.Entry<K,V>> iterator() {
+	    return new Iterator<Map.Entry<K,V>>() {
+		    Iterator<Map.Entry<K,Collection<V>>> mapit = internMap.entrySet().iterator();
+		    Iterator<V> setit = Default.nullIterator;
+		    Iterator<V> lastit;
+		    K key;
 		    { advance(); }
 		    public boolean hasNext() { return setit.hasNext(); }
-		    public Object next() {
-			Object o = setit.next();
-			Object k = key;
+		    public Map.Entry<K,V> next() {
+			V o = setit.next();
+			K k = key;
 			advance();
-			if (type==ENTRY)
-			    return new PairMapEntry(k, o) {
-				    public Object setValue(Object newValue) {
-					Object oldValue = getValue();
+			return new PairMapEntry<K,V>(k, o) {
+				    public V setValue(V newValue) {
+					V oldValue = getValue();
 					GenericMultiMap.this.remove(getKey(),
 								    oldValue);
 					GenericMultiMap.this.add(getKey(),
@@ -452,14 +457,13 @@ public class GenericMultiMap implements MultiMap {
 					return oldValue;
 				    }
 				};
-			else return o;
 		    }
 		    void advance() {
 			lastit = setit;
 			while (!setit.hasNext() && mapit.hasNext()) {
-			    Map.Entry me = (Map.Entry) mapit.next();
+			    Map.Entry<K,Collection<V>> me = mapit.next();
 			    key = me.getKey();
-			    Collection c = (Collection) me.getValue();
+			    Collection<V> c = me.getValue();
 			    setit = c.iterator();
 			}
 		    }
@@ -468,27 +472,16 @@ public class GenericMultiMap implements MultiMap {
 		    }
 		};
 	}
-	public boolean add(Object o) {
-	    if (type==VALUES) throw new UnsupportedOperationException();
-	    // o should be a Map.Entry.
-	    if (!(o instanceof Map.Entry))
-		throw new UnsupportedOperationException();
-	    Map.Entry me = (Map.Entry) o;
+	public boolean add(Map.Entry<K,V> me) {
 	    return GenericMultiMap.this.add(me.getKey(), me.getValue());
 	}
 	public boolean remove(Object o) {
-	    if (type==VALUES) throw new UnsupportedOperationException();
-	    // o should be a Map.Entry.
-	    if (!(o instanceof Map.Entry))
-		throw new UnsupportedOperationException();
+	    if (!(o instanceof Map.Entry)) return false;
 	    Map.Entry me = (Map.Entry) o;
 	    return GenericMultiMap.this.remove(me.getKey(), me.getValue());
 	}
 	// other methods for efficiency.
 	public boolean contains(Object o) {
-	    if (type==VALUES)
-		return GenericMultiMap.this.containsValue(o);
-	    // o should be a Map.Entry.
 	    if (!(o instanceof Map.Entry)) return false;
 	    Map.Entry me = (Map.Entry) o;
 	    return GenericMultiMap.this.contains(me.getKey(), me.getValue());

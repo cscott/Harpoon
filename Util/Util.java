@@ -15,13 +15,12 @@ import java.lang.reflect.Array;
 import harpoon.ClassFile.HCode;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.HEADER;
-import harpoon.IR.Quads.FOOTER;
 
 
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.15 2002-04-02 23:59:17 salcianu Exp $
+ * @version $Id: Util.java,v 1.16 2002-04-10 03:07:05 cananian Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -51,10 +50,10 @@ public abstract class Util {
    * After code has been debugged, this method can skip the copy for
    * efficiency.
    */
-  public static final Object[] safeCopy(ArrayFactory factory, Object[] src) {
+  public static final <T> T[] safeCopy(ArrayFactory<T> factory, T[] src) {
     if (!debug) return src;
     if (src.length==0) return src;
-    Object[] dst = factory.newArray(src.length);
+    T[] dst = factory.newArray(src.length);
     System.arraycopy(src,0,dst,0,src.length);
     return dst;
   }
@@ -64,27 +63,27 @@ public abstract class Util {
    * @deprecated The <code>clone()</code> method on arrays works 
    * much better, and should be used instead of this method.
    */
-  public static final Object[] copy(ArrayFactory factory, Object[] src) {
-    Object[] dst = factory.newArray(src.length);
+  public static final <T> T[] copy(ArrayFactory<T> factory, T[] src) {
+    T[] dst = factory.newArray(src.length);
     System.arraycopy(src,0,dst,0,src.length);
     return dst;
   }
   /** Remove element 'n' from array 'src'. */
-  public static final Object[] shrink(ArrayFactory factory, 
-				      Object[] src, int n) {
-    Util.ASSERT(src.length>0);
-    Util.ASSERT(n<src.length);
-    Object[] dst = factory.newArray(src.length-1);
+  public static final <T> T[] shrink(ArrayFactory<T> factory, 
+				      T[] src, int n) {
+    assert src.length>0;
+    assert n<src.length;
+    T[] dst = factory.newArray(src.length-1);
     System.arraycopy(src,   0, dst, 0, n);
     System.arraycopy(src, n+1, dst, n, src.length-(n+1));
     return dst;
   }
   /** Insert element <code>o</code> before <code>src[n]</code>. <p>
    *  After return, <code>src[n]==o</code>.  */
-  public static final Object[] grow(ArrayFactory factory,
-				    Object[] src, Object o, int n) {
-    Util.ASSERT(n>=0);
-    Object[] dst = factory.newArray(src.length+1);
+  public static final <T> T[] grow(ArrayFactory<T> factory,
+				    T[] src, T o, int n) {
+    assert n>=0;
+    T[] dst = factory.newArray(src.length+1);
     System.arraycopy(src, 0, dst, 0, n);
     System.arraycopy(src, n, dst, n+1, src.length-n);
     dst[n] = o;
@@ -172,36 +171,13 @@ public abstract class Util {
     // all others are 'unsafe'
     return false;
   }
- 
-  /** Assertion facility.  Throws a <code>RuntimeException</code> if
-   *  the boolean parameter is <code>false</code>. */
-  public static final void ASSERT(boolean val) {
-    if (!val)
-      throw new RuntimeException("Assertion Failure.") { };
-  }
-  /** Assertion facility, with a <code>Object</code> as an explanation
-   *  string. 
-   *  Throws a <code>RuntimeException</code> including the output of
-   *  <code>msg.toString()</code> if the boolean parameter is
-   *  <code>false</code>.  
-   *  <p>Note that this can be used as a <i>Lazy Evaluation</i> hack;
-   *  since it only evaluates <code>msg.toString()</code> if 
-   *  <code>val</code> is <code>false</code>), it can be used for code
-   *  where evaluating the <code>msg</code> string takes too long to
-   *  do everytime the assertion is checked or the explanation string
-   *  can't be generated if <code>val</code> is true.
-   */
-  public static final void ASSERT(boolean val, Object msg) {
-    if (!val)
-      throw new RuntimeException("Assertion Failure: "+msg.toString()) { };
-  }
   
   /** Repeat a given string a certain number of times.
    *  @return a string consisting of <code>s</code> repeated <code>n</code>
    *          times. */
   /* OLD WAY
   public static final String repeatString(String s, int n) {
-    Util.ASSERT(n>=0);
+    assert n>=0;
     if (n==0) return "";
     if (n==1) return s;
     if ((n & 1) == 1)  // n is odd
@@ -214,7 +190,7 @@ public abstract class Util {
   */
   // another way of doing the same thing.
   public static final String repeatString(String s, int n) {
-    Util.ASSERT(n>=0);
+    assert n>=0;
     StringBuffer sb = new StringBuffer();
     for (int bit=fls(n)-1; bit>=0; bit--) {
       sb = sb.append(sb.toString());
@@ -237,7 +213,7 @@ public abstract class Util {
     8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
     8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8 /* 256 */
   };
-  static { ASSERT(bytemsb.length==0x100); }
+  static { assert bytemsb.length==0x100; }
   /** Lowest bit set in a byte. */
   static final byte bytelsb[] = {
     0, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 5, 1, 2, 1, 3, 1, 2, 1,
@@ -251,7 +227,7 @@ public abstract class Util {
     7, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 5, 1, 2, 1, 3, 1, 2, 1,
     4, 1, 2, 1, 3, 1, 2, 1, 6, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
     5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1  };
-  static { ASSERT(bytelsb.length==0x100); }
+  static { assert bytelsb.length==0x100; }
   /** Number of zeros in a byte. */
   static final byte bytezeros[] = {
     8, 7, 7, 6, 7, 6, 6, 5, 7, 6, 6, 5, 6, 5, 5, 4, 7, 6, 6, 5, 6, 5, 5, 4,
@@ -266,7 +242,7 @@ public abstract class Util {
     4, 3, 3, 2, 3, 2, 2, 1, 5, 4, 4, 3, 4, 3, 3, 2, 4, 3, 3, 2, 3, 2, 2, 1,
     4, 3, 3, 2, 3, 2, 2, 1, 3, 2, 2, 1, 2, 1, 1, 0
   };
-  static { ASSERT(bytezeros.length==0x100); }
+  static { assert bytezeros.length==0x100; }
   
   /** Find first set (least significant bit).
    *  @return the first bit set in the argument.  
@@ -343,7 +319,7 @@ public abstract class Util {
   // Use the 'binary Euclidean algorithm' to compute gcd.
   /** Returns the greatest common divisor of a pair of numbers. */
   public static final long gcd(long u, long v) { // long version.
-    Util.ASSERT(u>0 && v>0);
+    assert u>0 && v>0;
     int u2s = ffs(u)-1, v2s = ffs(v)-1;
     u>>=u2s; v>>=v2s; // cast out twos.
     // binary gcd algorithm; u and v must be odd at this point.
@@ -359,7 +335,7 @@ public abstract class Util {
   }
   /** Returns the greatest common divisor of a pair of numbers. */
   public static final int gcd(int u, int v) { // integer version.
-    Util.ASSERT(u>0 && v>0);
+    assert u>0 && v>0;
     int u2s = ffs(u)-1, v2s = ffs(v)-1;
     u>>=u2s; v>>=v2s; // cast out twos.
     // binary gcd algorithm; u and v must be odd at this point.
@@ -447,22 +423,10 @@ public abstract class Util {
   }
 
   /** Computes the difference of two sets: <code>a-b</code>. */
-  public static final Set set_diff(final Set a, final Set b) {
-    Set diff = new HashSet(a);
+  public static final <A,B> Set<A> set_diff(final Set<A> a, final Set<B> b) {
+    Set<A> diff = new HashSet<A>(a);
     diff.removeAll(b);
     return diff;
-  }
-
-  /** Returns the unique <code>METHOD</code> quad from <code>hcode</code>. */
-  public static final METHOD getMETHOD(HCode hcode) {
-    HEADER header = (HEADER) hcode.getRootElement();
-    return (METHOD) header.next(1); // 0 is the FOOTER node
-  }
-
-  /** Returns the unique <code>FOOTER</code> quad from <code>hcode</code>. */
-  public static final FOOTER getFOOTER(HCode hcode) {
-    HEADER header = (HEADER) hcode.getRootElement();
-    return (FOOTER) header.next(0);
   }
 
   /** Returns a string that is identical to <code>str</code>, except

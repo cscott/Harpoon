@@ -21,7 +21,7 @@ import java.util.HashSet;
  * violation of the invariant.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: TreeVerifyingVisitor.java,v 1.3 2002-02-26 22:46:11 cananian Exp $
+ * @version $Id: TreeVerifyingVisitor.java,v 1.4 2002-04-10 03:05:46 cananian Exp $
  */
 public abstract class TreeVerifyingVisitor extends TreeVisitor {
     
@@ -54,7 +54,7 @@ public abstract class TreeVerifyingVisitor extends TreeVisitor {
 	    Iterator iter = ExpList.iterator(e.kids());
 	    while (iter.hasNext() && (saw == null)) {
 		Tree o =(Tree) iter.next();
-		Util.ASSERT(o != null);
+		assert o != null;
 		if (haveSeen.contains(o)) {
 		    saw = o;
 		    break;
@@ -62,8 +62,7 @@ public abstract class TreeVerifyingVisitor extends TreeVisitor {
 		o.accept(this);
 	    }
 
-	    Util.ASSERT(saw == null,
-			"should not have seen: "+saw+" in " + e);
+	    assert saw == null : ("should not have seen: "+saw+" in " + e);
 	}
 
 	public void visit(SEQ s) {
@@ -78,8 +77,7 @@ public abstract class TreeVerifyingVisitor extends TreeVisitor {
 	    s.getRight().accept(this);
 
 	    if (isFirstCall)
-		Util.ASSERT(saw == null,
-			    "should not have seen: "+saw+ " in "+s);
+		assert saw == null : ("should not have seen: "+saw+ " in "+s);
 	}
 	public void visit(ESEQ s) {
 	    if(!DEBUG) return;
@@ -93,8 +91,7 @@ public abstract class TreeVerifyingVisitor extends TreeVisitor {
 	    s.getStm().accept(this);
 
 	    if (isFirstCall)
-		Util.ASSERT(saw == null,
-			    "should not have seen: "+saw+ " in "+s);
+		assert saw == null : ("should not have seen: "+saw+ " in "+s);
 	}
     }
 }

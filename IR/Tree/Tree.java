@@ -29,7 +29,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.3 2002-02-26 22:46:11 cananian Exp $
+ * @version $Id: Tree.java,v 1.4 2002-04-10 03:05:46 cananian Exp $
  */
 public abstract class Tree 
     implements HCodeElement
@@ -45,7 +45,7 @@ public abstract class Tree
     protected final Tree[] child;
 
     protected Tree(TreeFactory tf, HCodeElement source, int arity) { 
-        Util.ASSERT(tf!=null);
+        assert tf!=null;
 	this.source_file = (source!=null)?source.getSourceFile():"unknown";
 	this.source_line = (source!=null)?source.getLineNumber(): 0;
 	this.id = tf.getUniqueID();
@@ -79,8 +79,8 @@ public abstract class Tree
      * siblings to the right of this node. 
      */ 
     public final Tree getSibling() {
-	Util.ASSERT(parent!=null); // don't call getSibling() on the root!
-	Util.ASSERT(this==parent.child[which_child_of_parent]);
+	assert parent!=null; // don't call getSibling() on the root!
+	assert this==parent.child[which_child_of_parent];
 	int c = which_child_of_parent + 1;
 	return parent.child.length > c ? parent.child[c] : null;
     } 
@@ -100,8 +100,8 @@ public abstract class Tree
      * provide named accessors to the public (ie, setDst(), setLeft() ).
      */
     protected final void setChild(int which, Tree newChild) {
-	Util.ASSERT(newChild!=null, "you can't set a tree child to null");
-	Util.ASSERT(newChild.tf==this.tf, "tree factories must match");
+	assert newChild!=null : "you can't set a tree child to null";
+	assert newChild.tf==this.tf : "tree factories must match";
 	if (child[which]!=null) child[which].unlink();
 	child[which] = newChild;
 	newChild.parent = this;
@@ -133,9 +133,9 @@ public abstract class Tree
     public abstract void accept(TreeVisitor v);
 
     /** Array factory: returns <code>Tree[]</code>. */
-    public static final ArrayFactory arrayFactory =
-	new ArrayFactory() {
-	    public Object[] newArray(int len) { return new Tree[len]; }
+    public static final ArrayFactory<Tree> arrayFactory =
+	new ArrayFactory<Tree>() {
+	    public Tree[] newArray(int len) { return new Tree[len]; }
 	};
   
     
@@ -173,7 +173,7 @@ public abstract class Tree
      *  nodes rooted here are copied, all the way down to the leaves.
      *  The cloned subtree will have the same tree factory as
      *  <code>this</code>. */
-    public final Object clone() { return rename(null); }
+    public final Tree clone() { return rename(null); }
     /** Rename while cloning a subtree.  This node and all child nodes
      *  are cloned; the 'temp' information of all <code>TEMP</code> nodes
      *  are renamed according to the supplied <code>TempMap</code>.

@@ -48,7 +48,7 @@ import harpoon.ClassFile.HCodeElement;
  * facilities for specifying number of recursive inlinings.
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MethodInliningCodeFactory.java,v 1.3 2002-02-26 22:41:41 cananian Exp $ */
+ * @version $Id: MethodInliningCodeFactory.java,v 1.4 2002-04-10 03:00:59 cananian Exp $ */
 public class MethodInliningCodeFactory implements HCodeFactory {
 
     HCodeFactory parent;
@@ -67,7 +67,7 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	                      "quad-ssi" code. 
     */
     public MethodInliningCodeFactory(HCodeFactory parentFactory) {
-        Util.ASSERT(parentFactory.getCodeName().equals(QuadSSA.codename));
+        assert parentFactory.getCodeName().equals(QuadSSA.codename);
 	parent = parentFactory;
 	inlinedSites = new HashSet();
     }
@@ -273,7 +273,7 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	    // situation this would occur...perhaps put in an
 	    // assertion to ensure that it doesn't?
 	    replace = new NOP(site.getFactory(), null);
-	    Util.ASSERT(false);
+	    assert false;
 	  }
 	  // make the successor(replace) be the 1-successor of the
 	  // calling site (the succesor for the "exception thrown" case).

@@ -49,7 +49,7 @@ import java.util.Set;
  * propagation on canonical tree form.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: ConstantPropagation.java,v 1.3 2002-02-26 22:42:47 cananian Exp $
+ * @version $Id: ConstantPropagation.java,v 1.4 2002-04-10 03:02:06 cananian Exp $
  */
 public class ConstantPropagation extends 
     harpoon.Analysis.Transformation.MethodMutator {
@@ -57,7 +57,7 @@ public class ConstantPropagation extends
     /** Creates a <code>ConstantPropagation</code>. */
     public ConstantPropagation(HCodeFactory parent) { 
 	super(parent);
-	Util.ASSERT(parent.getCodeName().equals(CanonicalTreeCode.codename));
+	assert parent.getCodeName().equals(CanonicalTreeCode.codename);
     }
 
     protected HCode mutateHCode(HCodeAndMaps input) {
@@ -85,7 +85,7 @@ public class ConstantPropagation extends
 	}
 
 	// should never get here
-	public void visit (Tree t) { Util.ASSERT(false); }
+	public void visit (Tree t) { assert false; }
 
 	// ALIGNs are okay
 	public void visit(ALIGN a) { }
@@ -94,7 +94,7 @@ public class ConstantPropagation extends
 	public void visit(BINOP b) {
 	    // go up until we find a Stm so we can use a UseDefer
 	    Tree parent = parentStm(b);
-	    Util.ASSERT(parent != null);
+	    assert parent != null;
 	    Exp left = b.getLeft();
 	    if (left.kind() == TreeKind.TEMP) {
 		Exp val = constant((TEMP)left, (Stm)parent, rd);
@@ -188,7 +188,7 @@ public class ConstantPropagation extends
 	public void visit(MEM m) {
 	    // go up until we find a Stm so we can use a UseDefer
 	    Tree parent = parentStm(m);
-	    Util.ASSERT(parent != null);
+	    assert parent != null;
 	    Exp exp = m.getExp();
 	    if (exp.kind() == TreeKind.TEMP) {
 		Exp val = constant((TEMP)exp, (Stm)parent, rd);
@@ -254,7 +254,7 @@ public class ConstantPropagation extends
 	public void visit(UNOP u) {
 	    // go up until we find a Stm so we can use a UseDefer
 	    Tree parent = parentStm(u);
-	    Util.ASSERT(parent != null);
+	    assert parent != null;
 	    Exp operand = u.getOperand();
 	    if (operand.kind() == TreeKind.TEMP) {
 		Exp val = constant((TEMP)operand, (Stm)parent, rd);
@@ -321,7 +321,7 @@ public class ConstantPropagation extends
 			!((NAME) src).label.equals(n.label))
 			return null;
 		    // all NAMEs have type Type.POINTER
-		    Util.ASSERT(src.type() == n.type());
+		    assert src.type() == n.type();
 		}
 		// done!
 		return (Exp)n.clone();

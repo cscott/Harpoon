@@ -17,21 +17,19 @@ import harpoon.Util.Util;
  * data with control-flow edges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edge.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
+ * @version $Id: Edge.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
  */
 
-public class Edge extends CFGEdge implements java.io.Serializable {
+public class Edge extends CFGEdge<Quad> implements java.io.Serializable {
     Quad from, to;
     int from_index, to_index;
     
     /** Creates a <code>Edge</code>. */
     Edge(Quad from, int from_index, Quad to, int to_index) {
-	Util.ASSERT(from!=null, "'from' is null");
-	Util.ASSERT(to!=null, "'to' is null");
-	Util.ASSERT(0 <= from_index && from_index < from.next.length,
-		    "'from' index out of range");
-	Util.ASSERT(0 <= to_index   && to_index   <   to.prev.length,
-		    "'to' index out of range");
+	assert from!=null : "'from' is null";
+	assert to!=null : "'to' is null";
+	assert 0 <= from_index && from_index < from.next.length : "'from' index out of range";
+	assert 0 <= to_index   && to_index   <   to.prev.length : "'to' index out of range";
 	this.from = from;
 	this.from_index = from_index;
 	this.to = to;
@@ -39,9 +37,9 @@ public class Edge extends CFGEdge implements java.io.Serializable {
     }
 
     /** Returns the source vertex of this Edge. */
-    public CFGraphable fromCFG() { return from; }
+    public Quad fromCFG() { return from; }
     /** Returns the destination vertex of this Edge. */
-    public CFGraphable toCFG() { return to; }
+    public Quad toCFG() { return to; }
     /** Returns the predecessor index of this Edge in <code>to</code>.
      *  <code>this.to().prevEdge(this.which_pred()) == this</code>. */
     public int which_pred() { return to_index; }
@@ -50,9 +48,9 @@ public class Edge extends CFGEdge implements java.io.Serializable {
     public int which_succ() { return from_index; }
 
     /** Array factory: returns new <code>Edge[]</code>. */
-    public static final ArrayFactory arrayFactory =
-	new ArrayFactory() {
-	    public Object[] newArray(int len) { return new Edge[len]; }
+    public static final ArrayFactory<Edge> arrayFactory =
+	new ArrayFactory<Edge>() {
+	    public Edge[] newArray(int len) { return new Edge[len]; }
 	};
     
     /** Compares two Edges for equality. */

@@ -32,7 +32,7 @@ import java.util.List;
  * into chains of <code>INSTANCEOF</code> and <code>CJMP</code> quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeSwitchRemover.java,v 1.3 2002-02-26 22:41:42 cananian Exp $
+ * @version $Id: TypeSwitchRemover.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
  */
 public final class TypeSwitchRemover
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -104,7 +104,7 @@ public final class TypeSwitchRemover
 	ptn.child[0] = new TypeLeaf(ct.edgenum);
 	// check that all sigma functions have been handled
 	if (ct.key==null && !ct.children().hasNext())
-	    Util.ASSERT(ts.numSigmas()==0);// um, 1-arity TS should not have
+	    assert ts.numSigmas()==0;// um, 1-arity TS should not have
 	                                   // sigma functions
 	// done.
 	return ftn.child[0]; // return root of TypeTree.
@@ -164,8 +164,8 @@ public final class TypeSwitchRemover
     }
     /** Recursively descend ClassTree to find where to place this node */
     private static void addNode(ClassTree root, ClassTree node) {
-	Util.ASSERT(root.key==null || node.key.isInstanceOf(root.key));
-	Util.ASSERT(!node.children().hasNext());
+	assert root.key==null || node.key.isInstanceOf(root.key);
+	assert !node.children().hasNext();
 	if (node.edgenum > root.edgenum) return;
 	// traverse child list. either node is a subclass of a child,
 	// or one-or-more children are subclasses of node, or neither.
@@ -205,7 +205,7 @@ public final class TypeSwitchRemover
 	}
 	Iterator children() { return children.iterator(); }
 	void addChild(ClassTree nchild) {
-	    Util.ASSERT(this.edgenum > nchild.edgenum);
+	    assert this.edgenum > nchild.edgenum;
 	    children.add(nchild);
 	}	    
 	// pretty-printing.
@@ -286,7 +286,7 @@ public final class TypeSwitchRemover
 	}
 	/** private constructor */
 	private TypeAndDerivation(HClass type, Derivation.DList derivation) {
-	    Util.ASSERT(type!=null ^ derivation!=null);
+	    assert type!=null ^ derivation!=null;
 	    this.type = type;
 	    this.derivation = derivation;
 	}
@@ -303,10 +303,8 @@ public final class TypeSwitchRemover
 		return new TypeAndDerivation
 		    (HClassUtil.commonParent(a.type, b.type));
 	    // both ought to be derivations.
-	    Util.ASSERT(a.derivation!=null && b.derivation!=null,
-			"can't merge type with derivation");
-	    Util.ASSERT(a.derivation.equals(b.derivation),
-			"can't merge derivations");
+	    assert a.derivation!=null && b.derivation!=null : "can't merge type with derivation";
+	    assert a.derivation.equals(b.derivation) : "can't merge derivations";
 	    return a;
 	}
     }

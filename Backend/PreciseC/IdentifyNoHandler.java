@@ -27,7 +27,7 @@ import java.util.Set;
  * <code>IdentifyNoHandler</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IdentifyNoHandler.java,v 1.3 2002-02-26 22:44:26 cananian Exp $
+ * @version $Id: IdentifyNoHandler.java,v 1.4 2002-04-10 03:03:11 cananian Exp $
  */
 public class IdentifyNoHandler {
     private Set nohandlercalls = new HashSet();
@@ -42,7 +42,7 @@ public class IdentifyNoHandler {
 	return !nohandlercalls.contains(call);
     }
     private static void dfs(Stm stm, CFGrapher gr, Set seen, TreeVisitor v) {
-	Util.ASSERT(!seen.contains(stm));
+	assert !seen.contains(stm);
 	seen.add(stm);
 	for (Iterator it=gr.succC(stm).iterator(); it.hasNext(); ) {
 	    Stm succ = (Stm) ((HCodeEdge)it.next()).to();
@@ -61,7 +61,7 @@ public class IdentifyNoHandler {
 	final MultiMap directlyThrows = new GenericMultiMap();
 	Visitor(CFGrapher gr) { this.gr = gr; }
 	public void visit(Tree t) {
-	    Util.ASSERT(false, "should only visit stms");
+	    assert false : "should only visit stms";
 	}
 	public void visit(Stm t) { // only propagate if t is a no-op.
 	    if (Stm.isNop(t)) propagate(t);
@@ -103,7 +103,7 @@ public class IdentifyNoHandler {
 	// in set == out set.
 	private void propagate(Tree t) {
 	    Collection c = gr.succC(t);
-	    Util.ASSERT(c.size()==1);
+	    assert c.size()==1;
 	    Stm next = (Stm) ((HCodeEdge)c.iterator().next()).to();
 	    // note that thrown set is already defined because we're
 	    // doing this is dfs post-order.

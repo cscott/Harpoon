@@ -30,9 +30,10 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
+ * @version $Id: Code.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
  */
-public abstract class Code extends HCode implements java.io.Serializable {
+public abstract class Code extends HCode<Quad>
+    implements java.io.Serializable {
     /** The method that this code view represents. */
     protected final HMethod parent;
     /** The quadruples composing this code view. */
@@ -73,8 +74,10 @@ public abstract class Code extends HCode implements java.io.Serializable {
     protected HCodeAndMaps cloneHelper(Code _this, Code qc) {
 	HCodeAndMaps hcam = Quad.cloneWithMaps(qc.qf, _this.quads);
 	// fill in the missing info in the hcam.
-	hcam = new HCodeAndMaps(qc, hcam.elementMap(), hcam.tempMap(),
-				_this, hcam.ancestorElementMap(),
+	hcam = new HCodeAndMaps(qc,
+				hcam.elementMap(), hcam.tempMap(),
+				_this,
+				hcam.ancestorElementMap(),
 				hcam.ancestorTempMap());
 	// finish setting up qc.
 	qc.quads = (HEADER) hcam.elementMap().get(_this.quads);
@@ -126,9 +129,9 @@ public abstract class Code extends HCode implements java.io.Serializable {
     public Derivation getDerivation() { return null; }
 
     /** Returns the root of the control flow graph. */
-    public HCodeElement getRootElement() { return quads; }
+    public HEADER getRootElement() { return (HEADER) quads; }
     /** Returns the leaves of the control flow graph. */
-    public HCodeElement[] getLeafElements() {
+    public Quad[] getLeafElements() {
 	HEADER h = (HEADER) getRootElement();
 	return new Quad[] { h.footer() };
     }
@@ -138,23 +141,23 @@ public abstract class Code extends HCode implements java.io.Serializable {
      * making up this code view.  The root of the graph
      * is in element 0 of the array.
      */
-    public HCodeElement[] getElements() { return super.getElements(); }
+    public Quad[] getElements() { return super.getElements(); }
 
     /** Returns an iterator over the <code>Quad</code>s making up
      *  this code view.  The root of the graph is the first element
      *  in the iteration. */
-    public Iterator getElementsI() {
-	return new UnmodifiableIterator() {
-	    Set visited = new HashSet();
-	    Stack s = new Stack();
+    public Iterator<Quad> getElementsI() {
+	return new UnmodifiableIterator<Quad>() {
+	    Set<Quad> visited = new HashSet<Quad>();
+	    Stack<Quad> s = new Stack<Quad>();
 	    { // initialize stack/set.
 		s.push(getLeafElements()[0]); visited.add(s.peek());
 		s.push(getRootElement());     visited.add(s.peek());
 	    } 
 	    public boolean hasNext() { return !s.isEmpty(); }
-	    public Object next() {
+	    public Quad next() {
 		if (s.empty()) throw new NoSuchElementException();
-		Quad q = (Quad) s.pop();
+		Quad q = s.pop();
 		boolean forwards = false;
 		// prettiness hack! try to order elements in original source
 		// order. =)
@@ -165,7 +168,7 @@ public abstract class Code extends HCode implements java.io.Serializable {
 		for (int i= forwards ? 0 : (q.nextLength()-1);
 		     forwards ? (i<q.nextLength()) : (i>=0);
 		     i = forwards ? (i+1) : (i-1)) {
-		    Util.ASSERT(q.nextEdge(i)!=null, q);
+		    assert q.nextEdge(i)!=null : q;
 		    if (!visited.contains(q.next(i))) {
 			s.push(q.next(i));
 			visited.add(q.next(i));
@@ -173,17 +176,19 @@ public abstract class Code extends HCode implements java.io.Serializable {
 		}
 		// let's validate q quickly here.
 		for (int i=q.prevLength()-1; i>=0; i--)
-		    Util.ASSERT(q.prevEdge(i)!=null, q);
+		    assert q.prevEdge(i)!=null : q;
 		// okay.
 		return q;
 	    }
 	};
     }
     // implement elementArrayFactory which returns Quad[]s.
-    public ArrayFactory elementArrayFactory() { return Quad.arrayFactory; }
+    public ArrayFactory<Quad> elementArrayFactory() {
+	return Quad.arrayFactory;
+    }
 
     // print this Code.
-    public void print(java.io.PrintWriter pw, PrintCallback callback) {
+    public void print(java.io.PrintWriter pw, PrintCallback<Quad> callback) {
 	Print.print(pw, this, callback);
     }
 }

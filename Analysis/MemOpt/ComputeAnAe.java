@@ -30,6 +30,7 @@ import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 import harpoon.Util.Collections.WorkSet;
 
+import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadKind;
 import harpoon.IR.Quads.THROW;
@@ -43,7 +44,7 @@ import harpoon.IR.Quads.FOOTER;
  * <code>ComputeAnAe</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ComputeAnAe.java,v 1.2 2002-04-03 17:02:03 salcianu Exp $
+ * @version $Id: ComputeAnAe.java,v 1.3 2002-04-10 03:00:14 cananian Exp $
  */
 public class ComputeAnAe {
     
@@ -114,7 +115,7 @@ public class ComputeAnAe {
 	LinkedList wlist = new LinkedList();
 
 	HCode hcode = hcf.convert(hm);
-	FOOTER footer = Util.getFOOTER(hcode);
+	FOOTER footer = ((Code)hcode).getRootElement().footer();
 	// examine FOOTER's predecessors and select the RETURN or
 	// the THROW instructions as roots (function of type)
 	int prev_nb = footer.prevLength();

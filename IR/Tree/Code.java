@@ -39,9 +39,9 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
+ * @version $Id: Code.java,v 1.4 2002-04-10 03:05:44 cananian Exp $
  */
-public abstract class Code extends HCode {
+public abstract class Code extends HCode<Tree> {
     /** The Tree Objects composing this code view. */
     protected Tree tree;
 
@@ -129,13 +129,13 @@ public abstract class Code extends HCode {
      *  to <code>getGrapher()</code>, the grapher is invalid, this method
      *  should be re-invoked to acquire a new grapher.  
      */ 
-    public CFGrapher getGrapher() { return new TreeGrapher(this); }
+    public CFGrapher<Tree> getGrapher() { return new TreeGrapher(this); }
     /** Returns a means to externally associate use/def information with
      *  this tree code. MOVE(TEMP(t), ...) and CALL/NATIVECALLs are treated
      *  as defs; all instances of TEMP in any of the subtrees returned
      *  by the <code>kids()</code> method are considered uses. Not
      *  valid for non-canonical forms. */
-    public UseDefer getUseDefer() { return new TreeUseDefer(this); }
+    public UseDefer<Tree> getUseDefer() { return new TreeUseDefer(this); }
 
     /** Return the name of this code view. */
     public abstract String getName();
@@ -149,17 +149,17 @@ public abstract class Code extends HCode {
     public abstract TreeDerivation getTreeDerivation();
 
     /** Returns the root of the Tree */
-    public HCodeElement getRootElement() { 
+    public Tree getRootElement() { 
 	// Ensures that the root is a SEQ, and the first instruction is 
 	// a SEGMENT.
 	Tree first = (SEQ)this.tree;
 	while(first.kind()==TreeKind.SEQ) first = ((SEQ)first).getLeft(); 
-	Util.ASSERT(first.kind()==TreeKind.SEGMENT); 
+	assert first.kind()==TreeKind.SEGMENT; 
 	return this.tree; 
     }
 
     /** Returns the leaves of the Tree */
-    public HCodeElement[] getLeafElements() {
+    public Tree[] getLeafElements() {
 	// what exactly does 'leaf elements' *mean* in this context?
 	return new Tree[0];
     }
@@ -169,7 +169,7 @@ public abstract class Code extends HCode {
      * making up this code view.  The root of the tree
      * is in element 0 of the array.
      */
-    public HCodeElement[] getElements() {
+    public Tree[] getElements() {
 	return super.getElements();
     }
 
@@ -179,16 +179,16 @@ public abstract class Code extends HCode {
      * of the Iterator.  Returns the elements of the tree in depth-first
      * pre-order.
      */
-    public Iterator getElementsI() { 
-	return new UnmodifiableIterator() {
-	    Stack stack = new Stack(), aux = new Stack(); 
+    public Iterator<Tree> getElementsI() { 
+	return new UnmodifiableIterator<Tree>() {
+	    Stack<Tree> stack = new Stack<Tree>(), aux = new Stack<Tree>(); 
 	    {   // initialize stack/set
 		stack.push(getRootElement());
 	    }
 	    public boolean hasNext() { return !stack.isEmpty(); }
-	    public Object next() {
+	    public Tree next() {
 		if (stack.isEmpty()) throw new NoSuchElementException();
-		Tree t = (Tree) stack.pop();
+		Tree t = stack.pop();
 		// Push successors on stack before returning
 		// (reverse the order twice to get things right)
 		for (Tree tp = t.getFirstChild(); tp!=null; tp=tp.getSibling())
@@ -201,9 +201,11 @@ public abstract class Code extends HCode {
     }
   
     // implement elementArrayFactory which returns Tree[]s.  
-    public ArrayFactory elementArrayFactory() { return Tree.arrayFactory; }
+    public ArrayFactory<Tree> elementArrayFactory() {
+	return Tree.arrayFactory;
+    }
 
-    public void print(java.io.PrintWriter pw, PrintCallback callback) {
+    public void print(java.io.PrintWriter pw, PrintCallback<Tree> callback) {
 	Print.print(pw, this, callback);
     } 
 
@@ -227,9 +229,9 @@ public abstract class Code extends HCode {
      *   Removes <code>stm</code> from this tree.
      */
     public void remove(Stm stm) { 
-	Util.ASSERT(stm.kind() != TreeKind.SEQ); 
-	Util.ASSERT(stm.getFactory() == this.tf); 
-	Util.ASSERT(this.tf.getParent() == this); 
+	assert stm.kind() != TreeKind.SEQ; 
+	assert stm.getFactory() == this.tf; 
+	assert this.tf.getParent() == this; 
 	
 	// All predecessors in canonical tree form must be SEQs
 	SEQ pred = (SEQ)stm.getParent();
@@ -241,7 +243,7 @@ public abstract class Code extends HCode {
 
 	if (pred.getParent() == null) { 
 	    // Pred has no parents, it must be the root of the tree. 
-	    Util.ASSERT(pred == this.tree); 
+	    assert pred == this.tree; 
 	    this.tree         = newPred; 
 	    this.tree.unlink();
 	}

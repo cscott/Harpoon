@@ -29,7 +29,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.43 2002-02-26 22:45:04 cananian Exp $
+ * @version $Id: HClass.java,v 1.44 2002-04-10 03:04:12 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -538,7 +538,7 @@ public abstract class HClass extends HPointer
    *            if the specified <code>HClass</code> parameter is null.
    */
   public final boolean isAssignableFrom(HClass cls) {
-    Util.ASSERT(_linker == cls._linker || isPrimitive() || cls.isPrimitive());
+    assert _linker == cls._linker || isPrimitive() || cls.isPrimitive();
     if (cls==null) throw new NullPointerException();
     // test identity conversion.
     if (cls==this) return true;
@@ -580,8 +580,8 @@ public abstract class HClass extends HPointer
    *         <code>hc</code>, <code>false</code> otherwise.
    */
   public final boolean isSuperclassOf(HClass hc) {
-    Util.ASSERT(_linker == hc._linker || isPrimitive() || hc.isPrimitive());
-    Util.ASSERT(!this.isInterface());
+    assert _linker == hc._linker || isPrimitive() || hc.isPrimitive();
+    assert !this.isInterface();
     for ( ; hc!=null; hc = hc.getSuperclass())
       if (this == hc) return true;
     return false;
@@ -595,8 +595,8 @@ public abstract class HClass extends HPointer
    *         <code>hc</code>, <code>false</code> otherwise.
    */
   public final boolean isSuperinterfaceOf(HClass hc) {
-    Util.ASSERT(_linker == hc._linker || isPrimitive() || hc.isPrimitive());
-    Util.ASSERT(this.isInterface());
+    assert _linker == hc._linker || isPrimitive() || hc.isPrimitive();
+    assert this.isInterface();
     UniqueVector uv = new UniqueVector();//unique in case of circularity 
     for ( ; hc!=null; hc = hc.getSuperclass())
       uv.addElement(hc);
@@ -617,7 +617,7 @@ public abstract class HClass extends HPointer
    * <code>HClass</code> <code>hc</code>.
    */
   public final boolean isInstanceOf(HClass hc) {
-    Util.ASSERT(_linker == hc._linker || isPrimitive() || hc.isPrimitive());
+    assert _linker == hc._linker || isPrimitive() || hc.isPrimitive();
     if (this.isArray()) {
       if (!hc.isArray()) 
 	// see http://java.sun.com/docs/books/jls/clarify.html
@@ -781,7 +781,7 @@ public abstract class HClass extends HPointer
   public static final HClass Void=new HClassPrimitive("void", "V");
 
   /** Array factory: returns new <code>HClass[]</code>. */
-  public static final ArrayFactory arrayFactory = Factories.hclassArrayFactory;
+  public static final ArrayFactory<HClass> arrayFactory = Factories.hclassArrayFactory;
 
   /** HPointer interface. */
   final HClass actual() { return this; /* no dereferencing necessary. */ }

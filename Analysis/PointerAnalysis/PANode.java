@@ -21,7 +21,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PANode.java,v 1.3 2002-02-26 22:41:21 cananian Exp $
+ * @version $Id: PANode.java,v 1.4 2002-04-10 03:00:42 cananian Exp $
  */
 final public class PANode implements java.io.Serializable {
     // activates some safety tests
@@ -108,7 +108,7 @@ final public class PANode implements java.io.Serializable {
 
     // Make sure nobody calls the void constructor.
     public PANode() {
-	Util.ASSERT(false, "You should never call this void constructor!");
+	assert false : "You should never call this void constructor!";
     }
 
 
@@ -205,11 +205,10 @@ final public class PANode implements java.io.Serializable {
 	<code>PointerAnalysis.CALL_CONTEXT_SENSITIVE</code> is on. */
     public final PANode csSpecialize(final CALL call_site){
 
-	Util.ASSERT(call_site != null, "call_site == null");
+	assert call_site != null : "call_site == null";
 
 	if(CAUTION)
-	    Util.ASSERT(PointerAnalysis.CALL_CONTEXT_SENSITIVE,
-			"Turn on CALL_CONTEXT_SENSITIVE!");
+	    assert PointerAnalysis.CALL_CONTEXT_SENSITIVE : "Turn on CALL_CONTEXT_SENSITIVE!";
 
 	// a node with a maximal call_chain_depth doesn't have precise
 	// info about the call path which produced it; so it's not worth
@@ -281,9 +280,8 @@ final public class PANode implements java.io.Serializable {
 	<code>PointerAnalysis.THREAD_SENSITIVE</code> is on. */
     public final PANode tSpecialize(final MetaMethod run){
 	if(CAUTION){
-	    Util.ASSERT(!isTSpec(), "Repeated thread specialization!");
-	    Util.ASSERT(PointerAnalysis.THREAD_SENSITIVE,
-			"Turn on THREAD_SENSITIVE!");
+	    assert !isTSpec() : "Repeated thread specialization!";
+	    assert PointerAnalysis.THREAD_SENSITIVE : "Turn on THREAD_SENSITIVE!";
 	}
 	PANode spec = (PANode) ts_specs.get(run);
 	if(spec == null){
@@ -314,9 +312,8 @@ final public class PANode implements java.io.Serializable {
 	<code>PointerAnalysis.WEAKLY_THREAD_SENSITIVE</code> is on. */
     public final PANode wtSpecialize(){
 	if(CAUTION){
-	    Util.ASSERT(!isTSpec(), "Repeated thread specialization!");
-	    Util.ASSERT(PointerAnalysis.WEAKLY_THREAD_SENSITIVE,
-			"Turn on WEAKLY_THREAD_SENSITIVE!");
+	    assert !isTSpec() : "Repeated thread specialization!";
+	    assert PointerAnalysis.WEAKLY_THREAD_SENSITIVE : "Turn on WEAKLY_THREAD_SENSITIVE!";
 	}
 	if(wtspec == null){
 	    wtspec = new PANode(this.type);
@@ -374,7 +371,7 @@ final public class PANode implements java.io.Serializable {
 	while(!node.isPrimitive()){
 	    if(node.isCSSpec()) node = node.getCSParent();
 	    else if(node.isTSpec()) node = node.getTSParent();
-	    else Util.ASSERT(false,"Specialized node but not CS or TS");
+	    else assert false : "Specialized node but not CS or TS";
 	}
 	return node;
     }

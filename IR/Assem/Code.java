@@ -33,9 +33,9 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.3 2002-02-26 22:45:17 cananian Exp $
+ * @version $Id: Code.java,v 1.4 2002-04-10 03:04:22 cananian Exp $
  */
-public abstract class Code extends HCode {
+public abstract class Code extends HCode<Instr> {
     private static boolean DEBUG = true;
 
     /** The method that this code view represents. */
@@ -67,7 +67,7 @@ public abstract class Code extends HCode {
             private final TempFactory tf = Temp.tempFactory(scope);
             private int id = 0;
             public TempFactory tempFactory() { return tf; }
-            public HCode getParent() { return Code.this; }
+            public Code getParent() { return Code.this; }
             public Frame getFrame() { return frame; }
             public synchronized int getUniqueID() { return id++; }
         };
@@ -90,8 +90,8 @@ public abstract class Code extends HCode {
     }
 
     public HMethod getMethod() { return parent; }
-    public HCodeElement getRootElement() { return instrs; }
-    public HCodeElement[] getLeafElements() { return null; }
+    public Instr getRootElement() { return instrs; }
+    public Instr[] getLeafElements() { return null; }
 
     /** Returns an <code>Iterator</code> over the instructions in this
 	codeview.  
@@ -99,11 +99,11 @@ public abstract class Code extends HCode {
      *  @return         An iterator over the <code>Instr</code>s
      *                  making up this code view.  The root Instr is
      *                  the first element in the iteration. */
-    public Iterator getElementsI() { 
-	return new UnmodifiableIterator() {
-	    Instr instr = (Instr) getRootElement();
+    public Iterator<Instr> getElementsI() { 
+	return new UnmodifiableIterator<Instr>() {
+	    Instr instr = getRootElement();
 	    public boolean hasNext() { return (instr != null); }
-	    public Object next() {
+	    public Instr next() {
 		if (instr == null) throw new NoSuchElementException();
 		Instr r = instr;
 		instr = r.getNext();
@@ -117,7 +117,7 @@ public abstract class Code extends HCode {
      *
      *  @return         An ArrayFactory which produces Instrs.
      */
-    public ArrayFactory elementArrayFactory() { 
+    public ArrayFactory<Instr> elementArrayFactory() { 
 	return Instr.arrayFactory; 
     }
 
@@ -147,13 +147,13 @@ public abstract class Code extends HCode {
 	each Instr into its architecture specific assembly format and
 	omits Instr ID number information.
     */
-    public void print(java.io.PrintWriter pw, PrintCallback callback) {
+    public void print(java.io.PrintWriter pw, PrintCallback<Instr> callback) {
 	myPrint(pw, true, false, callback);
     }
     
     /** Simple wrapper around myPrint passing a nop PrintCallback. */
     public final void myPrint(java.io.PrintWriter apw, boolean assem) {
-	myPrint(apw, assem, new PrintCallback());
+	myPrint(apw, assem, new PrintCallback<Instr>());
     }
 
     /** Displays the assembly instructions of this codeview. Attempts
@@ -173,16 +173,16 @@ public abstract class Code extends HCode {
     protected final void myPrint(java.io.PrintWriter apw, 
 				 boolean assem,
 				 final boolean annotateID,
-				 final PrintCallback callback) {
-	myPrint(apw, assem, new PrintCallback() {
-		public void printBefore(java.io.PrintWriter pw, HCodeElement hce ){
+				 final PrintCallback<Instr> callback) {
+	myPrint(apw, assem, new PrintCallback<Instr>() {
+		public void printBefore(java.io.PrintWriter pw, Instr hce ){
 		    callback.printBefore(pw,hce);
 		    if (annotateID) {
-			pw.print( ((Instr)hce).getID() );
+			pw.print( hce.getID() );
 			pw.print( '\t' );
 		    }
 		}
-		public void printAfter(java.io.PrintWriter pw, HCodeElement hce ){
+		public void printAfter(java.io.PrintWriter pw, Instr hce ){
 		    callback.printAfter(pw, hce);
 		}
 	    });
@@ -200,7 +200,7 @@ public abstract class Code extends HCode {
      */
     protected final void myPrint(java.io.PrintWriter pw, 
 				 boolean assem,
-				 PrintCallback callback) {
+				 PrintCallback<Instr> callback) {
 	final HashSet outputLabels = new HashSet();
 	final MultiMap labelsNeeded = new GenericMultiMap();
 
@@ -226,9 +226,9 @@ public abstract class Code extends HCode {
 			if (s!=null) str.append("\n");
 		    }
 		} catch (IOException e ) {
-		    Util.ASSERT(false, "IOException " + e.toString() + 
+		    assert false : "IOException " + e.toString() + 
 				" should not be thrown during assembly"+
-				" code processing.");
+				" code processing.";
 		}
             }
 
@@ -265,8 +265,8 @@ public abstract class Code extends HCode {
 			temp = instr.def()[n];
 			getReg = true;
 		    } else {
-			Util.ASSERT(false, "index mismatch in "+assem + 
-				    " " + Arrays.asList(instr.def()));
+			assert false : "index mismatch in "+assem + 
+				    " " + Arrays.asList(instr.def());
 			s.append("d?");
 		    }
 		    break;
@@ -277,8 +277,8 @@ public abstract class Code extends HCode {
 			temp = instr.use()[n];
 			getReg = true;
 		    } else {
-			Util.ASSERT(false, "index mismatch in "+assem + 
-				    " " + Arrays.asList(instr.use()));
+			assert false : "index mismatch in "+assem + 
+				    " " + Arrays.asList(instr.use());
 			s.append("s?");
 		    }
 		    break;
@@ -289,8 +289,8 @@ public abstract class Code extends HCode {
 			label = (Label) instr.getTargets().get(n);
 			s.append(label);
 		    } else {
-			Util.ASSERT(false, "index mismatch in "+assem + 
-				    " " + Arrays.asList(instr.use()));
+			assert false : "index mismatch in "+assem + 
+				    " " + Arrays.asList(instr.use());
 			s.append("L?");
 		    }
 		    break;
@@ -299,7 +299,7 @@ public abstract class Code extends HCode {
 		    s.append("`");
 		    break;
 		default:
-		    Util.ASSERT(false, "error parsing "+assem);
+		    assert false : "error parsing "+assem;
 		}
 		
 		if (getReg) {
@@ -316,10 +316,9 @@ public abstract class Code extends HCode {
 			}
 		    }
 		    /*
-		    Util.ASSERT( ( ! mustGetRegs ) ||
+		    assert ( ! mustGetRegs ) ||
 				 frame.getRegFileInfo().isRegister(temp) ||
-				 registerAssigned(instr, temp),
-				 "final assembly output for "+
+				 registerAssigned(instr, temp) : ("final assembly output for "+
 				 "Instr: "+instr+" must have "+
 				 "reg assigned to Temp: "+temp);
 		    */
@@ -376,7 +375,7 @@ public abstract class Code extends HCode {
 	    }
 	    return sb.toString();
 	} catch (IOException e) {
-	    Util.ASSERT(false);
+	    assert false;
 	    return "died";
 	}
     }

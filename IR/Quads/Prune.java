@@ -20,7 +20,7 @@ import java.util.Set;
  * and gets most of the egregious dead vars.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Prune.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
+ * @version $Id: Prune.java,v 1.4 2002-04-10 03:05:15 cananian Exp $
  */
 class Prune {
     private final static boolean DEBUG=false;
@@ -37,7 +37,7 @@ class Prune {
 	for (Iterator it=s.useless.iterator(); it.hasNext(); ) {
 	    Quad q = (Quad) it.next();
 	    if (DEBUG) System.err.println("PRUNING: #"+q.getID()+" "+q);
-	    Util.ASSERT(q.nextLength()==1 && q.prevLength()==1);
+	    assert q.nextLength()==1 && q.prevLength()==1;
 	    Edge fromE = q.prevEdge(0), toE = q.nextEdge(0);
 	    Quad.addEdge((Quad)fromE.from(), fromE.which_succ(),
 			 (Quad)toE.to(), toE.which_pred());

@@ -9,54 +9,56 @@ import java.util.List;
  * <code>ListWrapper</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ListWrapper.java,v 1.2 2002-02-25 21:09:05 cananian Exp $
+ * @version $Id: ListWrapper.java,v 1.3 2002-04-10 03:07:12 cananian Exp $
  */
-public class ListWrapper extends CollectionWrapper
-    implements List {
+public class ListWrapper<E> extends CollectionWrapper<E>
+    implements List<E> {
+    final List<E> b;
     
     /** Creates a <code>ListWrapper</code>. */
-    public ListWrapper(List l) {
+    public ListWrapper(List<E> l) {
         super(l);
+	this.b = l;
     }
     
-    public List subList(int i, int j) {
-	return ((List)b).subList(i, j);
+    public List<E> subList(int i, int j) {
+	return b.subList(i, j);
     }
 
-    public Object get(int i) {
-	return ((List)b).get(i);
+    public E get(int i) {
+	return b.get(i);
     }
 
-    public Object set(int i, Object o) {
-	return ((List)b).set(i, o);
+    public E set(int i, E o) {
+	return b.set(i, o);
     }
 
-    public Object remove(int i) {
-	return ((List)b).remove(i);
+    public E remove(int i) {
+	return b.remove(i);
     }
 
-    public java.util.ListIterator listIterator(int i) {
-	return ((List)b).listIterator(i);
+    public java.util.ListIterator<E> listIterator(int i) {
+	return b.listIterator(i);
     }
     
-    public java.util.ListIterator listIterator() {
-	return ((List)b).listIterator();
+    public java.util.ListIterator<E> listIterator() {
+	return b.listIterator();
     }
 
     public int lastIndexOf(Object o) {
-	return ((List)b).lastIndexOf(o);
+	return b.lastIndexOf(o);
     }
 
     public int indexOf(Object o) {
-	return ((List)b).indexOf(o);
+	return b.indexOf(o);
     }
 
-    public boolean addAll(int i, java.util.Collection c) {
-	return ((List)b).addAll(i, c);
+    public <T extends E> boolean addAll(int i, java.util.Collection<T> c) {
+	return b.addAll(i, c);
     }
 
-    public void add(int i, Object o) {
-	((List)b).add(i, o);
+    public void add(int i, E o) {
+	b.add(i, o);
     }
 
 }

@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldSyn.java,v 1.5 2002-02-26 22:45:05 cananian Exp $
+ * @version $Id: HFieldSyn.java,v 1.6 2002-04-10 03:04:15 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -29,7 +29,7 @@ class HFieldSyn extends HFieldImpl implements HFieldMutator {
     this.constValue = template.getConstant();
     this.isSynthetic = template.isSynthetic();
     // ensure linker information is consistent.
-    Util.ASSERT(checkLinker((HClass)type));
+    assert checkLinker((HClass)type);
   }
   /** Create a new field with the specified name, class and descriptor. */
   public HFieldSyn(HClassSyn parent, String name, String descriptor) {
@@ -44,7 +44,7 @@ class HFieldSyn extends HFieldImpl implements HFieldMutator {
     this.constValue = null;
     this.isSynthetic = false;
     // ensure linker information is consistent.
-    if (type instanceof HClass) Util.ASSERT(checkLinker((HClass)type));
+    if (type instanceof HClass) assert checkLinker((HClass)type);
   }
 
   public HFieldMutator getMutator() { return this; }
@@ -59,7 +59,7 @@ class HFieldSyn extends HFieldImpl implements HFieldMutator {
   public void setType(HClass type) {
     if (this.type != type) parent.hasBeenModified = true;
     this.type = type;
-    Util.ASSERT(checkLinker(type));
+    assert checkLinker(type);
   }
   public void setConstant(Object co) {
     if ((co!=null) ? (!co.equals(this.constValue)) : (this.constValue!=null))

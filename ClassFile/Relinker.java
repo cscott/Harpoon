@@ -16,7 +16,7 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.3 2002-02-26 22:45:06 cananian Exp $
+ * @version $Id: Relinker.java,v 1.4 2002-04-10 03:04:15 cananian Exp $
  */
 public class Relinker extends Linker implements java.io.Serializable {
     protected final Linker linker;
@@ -50,7 +50,7 @@ public class Relinker extends Linker implements java.io.Serializable {
      *  to the existing class are changed to point to the new mutable
      *  class returned by this method. */
     public HClass createMutableClass(String name, HClass template) {
-	Util.ASSERT(template.getLinker()==this);
+	assert template.getLinker()==this;
 	HClass newClass = new HClassSyn(this, name, template);
 	HClass proxyClass = new HClassProxy(this, newClass);
 	newClass.hasBeenModified=true;
@@ -81,8 +81,8 @@ public class Relinker extends Linker implements java.io.Serializable {
      */
     public void relink(HClass oldClass, HClass newClass) {
 	// XXX this can cause some .equals() weirdness!
-	Util.ASSERT(oldClass.getLinker()==this);
-	Util.ASSERT(newClass.getLinker()==this);
+	assert oldClass.getLinker()==this;
+	assert newClass.getLinker()==this;
 	// we're going to leave the old mapping in, so that classes
 	// loaded in the future still get the new class.  uncomment
 	// out the next line if we decide to delete the old descriptor
@@ -112,13 +112,13 @@ public class Relinker extends Linker implements java.io.Serializable {
     public void move(HMember hm, HClass newDestination)
 	throws DuplicateMemberException {
 	HClass oldDeclarer = hm.getDeclaringClass();
-	Util.ASSERT(oldDeclarer.getLinker()==this);
-	Util.ASSERT(newDestination.getLinker()==this);
-	Util.ASSERT(hm instanceof HMemberProxy);
+	assert oldDeclarer.getLinker()==this;
+	assert newDestination.getLinker()==this;
+	assert hm instanceof HMemberProxy;
 	// make sure both old and new classes are mutable.
 	HClassMutator check;
-	check = oldDeclarer.getMutator();	Util.ASSERT(check!=null);
-	check = newDestination.getMutator();	Util.ASSERT(check!=null);
+	check = oldDeclarer.getMutator();	assert check!=null;
+	check = newDestination.getMutator();	assert check!=null;
 	// access mutator of proxied class directly.
 	HClassMutator oldmut = ((HClassProxy)oldDeclarer).proxyMutator;
 	HClassMutator newmut = ((HClassProxy)newDestination).proxyMutator;
@@ -132,7 +132,7 @@ public class Relinker extends Linker implements java.io.Serializable {
 	    (hm instanceof HMethod) ? (HMember)
 	    newmut.addDeclaredMethod(hm.getName(), (HMethod)hm) :
 	    null/*should never happen!*/;
-	Util.ASSERT(newm!=null, "not a field, method, or constructor");
+	assert newm!=null : "not a field, method, or constructor";
 	// store away original (old) field.
 	HMember oldm = (hm instanceof HField) ? 
 	    (HMember) ((HFieldProxy)hm).proxy :
@@ -147,8 +147,8 @@ public class Relinker extends Linker implements java.io.Serializable {
 	    ((HInitializerProxy)hm).relink((HInitializer)newm);
 	else if (hm instanceof HMethod)
 	    ((HMethodProxy)hm).relink((HMethod)newm);
-	else Util.ASSERT(false, "not a field, method, or constructor");
-	Util.ASSERT(hashcheck==hm.hashCode());// hashcode shouldn't change.
+	else assert false : "not a field, method, or constructor";
+	assert hashcheck==hm.hashCode();// hashcode shouldn't change.
 	// now remove (non-proxied) old field.
 	if (hm instanceof HField)
 	    oldmut.removeDeclaredField((HField)oldm);
@@ -162,7 +162,7 @@ public class Relinker extends Linker implements java.io.Serializable {
 	memberMap.remove(oldm);
 	memberMap.put(newm, hm);
 	// done!
-	Util.ASSERT(hm.getDeclaringClass()==newDestination);
+	assert hm.getDeclaringClass()==newDestination;
     }
 
     // stub to help in reloading proxies.
@@ -224,28 +224,26 @@ public class Relinker extends Linker implements java.io.Serializable {
     }
     HField wrap(HField hf) {
 	if (hf==null) return null;
-	Util.ASSERT(!(hf instanceof HFieldProxy &&
-		      ((HFieldProxy)hf).relinker==this),
-		    "should never try to proxy a proxy of this same relinker");
+	assert !(hf instanceof HFieldProxy &&
+		      ((HFieldProxy)hf).relinker==this) : "should never try to proxy a proxy of this same relinker";
 	HField result = (HField) memberMap.get(hf);
 	if (result==null) {
 	    result = new HFieldProxy(this, hf);
-	    Util.ASSERT(result.getDeclaringClass().getLinker()==this);
+	    assert result.getDeclaringClass().getLinker()==this;
 	    memberMap.put(hf, result);
 	}
 	return result;
     }
     HMethod wrap(HMethod hm) {
 	if (hm==null) return null;
-	Util.ASSERT(!(hm instanceof HMethodProxy &&
-		      ((HMethodProxy)hm).relinker==this),
-		    "should never try to proxy a proxy of this same relinker");
+	assert !(hm instanceof HMethodProxy &&
+		      ((HMethodProxy)hm).relinker==this) : "should never try to proxy a proxy of this same relinker";
 	if (hm instanceof HInitializer) return wrap((HInitializer)hm);
 	if (hm instanceof HConstructor) return wrap((HConstructor)hm);
 	HMethod result = (HMethodProxy) memberMap.get(hm);
 	if (result==null) {
 	    result = new HMethodProxy(this, hm);
-	    Util.ASSERT(result.getDeclaringClass().getLinker()==this);
+	    assert result.getDeclaringClass().getLinker()==this;
 	    memberMap.put(hm, result);
 	}
 	return result;
@@ -254,7 +252,7 @@ public class Relinker extends Linker implements java.io.Serializable {
 	if (hc==null) return null;
 	HConstructor result = (HConstructorProxy) memberMap.get(hc);
 	if (result==null) {
-	    Util.ASSERT(!hc.getDeclaringClass().isArray());
+	    assert !hc.getDeclaringClass().isArray();
 	    result = new HConstructorProxy(this, hc);
 	    memberMap.put(hc, result);
 	}
@@ -264,7 +262,7 @@ public class Relinker extends Linker implements java.io.Serializable {
 	if (hi==null) return null;
 	HInitializer result = (HInitializerProxy) memberMap.get(hi);
 	if (result==null) {
-	    Util.ASSERT(!hi.getDeclaringClass().isArray());
+	    assert !hi.getDeclaringClass().isArray();
 	    result = new HInitializerProxy(this, hi);
 	    memberMap.put(hi, result);
 	}

@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Util.Grapher;
 
@@ -12,10 +13,10 @@ import java.util.List;
  * interference graphs.
  * 
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InterferenceGraph.java,v 1.2 2002-02-25 20:56:10 cananian Exp $
+ * @version $Id: InterferenceGraph.java,v 1.3 2002-04-10 02:58:48 cananian Exp $
  */
-public interface InterferenceGraph extends Grapher/*<Temp>*/ {
+public interface InterferenceGraph extends Grapher<Temp> {
     /* in addition to Grapher interface */
-    public List/*<HCodeElement>*/ moves();
+    public List<HCodeElement> moves();
     public int spillCost(Temp t);
 }

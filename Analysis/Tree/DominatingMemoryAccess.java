@@ -74,7 +74,7 @@ import java.util.ArrayList;
  used since it needs to invalidate them on a function return.
  * 
  * @author  Emmett Witchel <witchel@mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.3 2002-02-26 22:42:47 cananian Exp $
+ * @version $Id: DominatingMemoryAccess.java,v 1.4 2002-04-10 03:02:06 cananian Exp $
  */
 public class DominatingMemoryAccess {
 
@@ -90,12 +90,11 @@ public class DominatingMemoryAccess {
             doOne(root, t);
          }
          if(m.kind() == TreeKind.MEM) {
-            Util.ASSERT(stmToMem.containsKey(root) == false,
-                        "******* Stm*" 
+            assert stmToMem.containsKey(root) == false : "******* Stm*" 
                         + harpoon.IR.Tree.Print.print(root) 
                         + "\n******* tree* " 
-                        + harpoon.IR.Tree.Print.print(m));
-            Util.ASSERT(memToStm.containsKey(m) == false);
+                        + harpoon.IR.Tree.Print.print(m);
+            assert memToStm.containsKey(m) == false;
             stmToMem.put(root, m);
             memToStm.put(m, root);
          }
@@ -114,7 +113,7 @@ public class DominatingMemoryAccess {
          // Build the stm <-> MEM maps
          for(Iterator it = cfgr.getElements(code).iterator(); it.hasNext(); ) {
             Stm stm = (Stm) it.next();
-            Util.ASSERT(stm != null);
+            assert stm != null;
             doOne(stm, (Tree)stm);
          }
       }
@@ -183,8 +182,8 @@ public class DominatingMemoryAccess {
             MEM m = (MEM)stmToMem.get(hce);
             if(useDefMap.containsKey(m)) {
                HCodeElement dom = (HCodeElement)useDefMap.get(m);
-               Util.ASSERT(defUseMap.containsKey(dom));
-               Util.ASSERT(memToStm.containsKey(dom));
+               assert defUseMap.containsKey(dom);
+               assert memToStm.containsKey(dom);
                return dom;
             }
          }
@@ -203,14 +202,14 @@ public class DominatingMemoryAccess {
          if(in.containsKey(hce) == true) {
             return ((Set)in.get(hce));
          }
-         //Util.ASSERT(false);
+         //assert false;
          return null;
       }
       public Set out(HCodeElement hce) {
          if(out.containsKey(hce) == true) {
             return ((Set)out.get(hce));
          }
-         //Util.ASSERT(false);
+         //assert false;
          return null;
       }
 
@@ -277,7 +276,7 @@ public class DominatingMemoryAccess {
       private void addInter(Map inter, Set in) {
          for(Iterator it = in.iterator(); it.hasNext();) {
             HCodeElement me = (HCodeElement) it.next();
-            Util.ASSERT(defUseMap.containsKey(me));
+            assert defUseMap.containsKey(me);
             Set interset = (Set)inter.get(me);
             if(interset == null) {
                interset = new HashSet();
@@ -321,7 +320,7 @@ public class DominatingMemoryAccess {
           set from being colored, but it seems like a good heuristic.
        */
       private int score(HCodeElement hce, Set interset) {
-         Util.ASSERT(defUseMap.containsKey(hce));
+         assert defUseMap.containsKey(hce);
          int provides = ((Set)defUseMap.get(hce)).size();
          int prevents = 0;
          for(Iterator it = interset.iterator(); it.hasNext();) {
@@ -410,7 +409,7 @@ public class DominatingMemoryAccess {
                // If all the danums are taken, just don't assign this
                // one a da reg.  No spilling.
                if(takenDA.contains(danum) == false) {
-                  Util.ASSERT(ref2dareg.containsKey(hce) == false);
+                  assert ref2dareg.containsKey(hce) == false;
                   int i = danum.intValue();
                   // There can't be a single use and def of a DA regstier
                   daNum defda = new daNum(i, true);
@@ -420,7 +419,7 @@ public class DominatingMemoryAccess {
                   for(Iterator it = ((Set)defUseMap.get(hce)).iterator(); 
                       it.hasNext();) {
                      HCodeElement use = (HCodeElement) it.next();
-                     Util.ASSERT(ref2dareg.containsKey(use) == false);
+                     assert ref2dareg.containsKey(use) == false;
                      ref2dareg.put(use, useda);
                   }
                   break;
@@ -632,7 +631,7 @@ public class DominatingMemoryAccess {
 
    /** Standard interface to run this analysis */
    public HCodeFactory codeFactory() {
-      Util.ASSERT(parent.getCodeName().equals(CanonicalTreeCode.codename));
+      assert parent.getCodeName().equals(CanonicalTreeCode.codename);
       return new HCodeFactory() {
             public HCode convert(HMethod m) {
                hc = parent.convert(m);

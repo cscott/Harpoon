@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
+ * @version $Id: Translate.java,v 1.4 2002-04-10 03:05:21 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -105,7 +105,7 @@ final class Translate { // not public.
 		        new MapComparator(null,null);
 		    public int compare(Object o1, Object o2) {
 			List l1 = (List) o1, l2 = (List) o2;
-			Util.ASSERT(l1.size()==l2.size() && l1.size()==2);
+			assert l1.size()==l2.size() && l1.size()==2;
 			ExceptionEntry e1 = (ExceptionEntry) l1.get(0);
 			ExceptionEntry e2 = (ExceptionEntry) l2.get(0);
 			// null is larger than anything else.
@@ -179,8 +179,8 @@ final class Translate { // not public.
 	/** Constructor. Indices are always in increasing order. */
 	JSRStack(int index, Instr target, JSRStack next) {
 	    this.index=index; this.target=target; this.next=next;
-	    Util.ASSERT(next==null || index > next.index);
-	    Util.ASSERT(target!=null);
+	    assert next==null || index > next.index;
+	    assert target!=null;
 	}
 	/** Find index. */
 	static Instr getTarget(JSRStack js, int index) {
@@ -483,7 +483,7 @@ final class Translate { // not public.
 	Map calls() { return calls; }
 	/** create a new state when we enter a subroutine. */
 	State enterJSR(InCti jsr, Instr target) {
-	    Util.ASSERT(!calls.containsKey(target)); // no recursiveness.
+	    assert !calls.containsKey(target); // no recursiveness.
 	    Map ncalls = new HashMap(calls);
 	    ncalls.put(target, jsr);
 	    return new State(ss, stackSize, ls, js, jlv,
@@ -603,7 +603,7 @@ final class Translate { // not public.
 
 	// if method is synchronized, make inclusive HANDLER w/ MONITOREXIT
 	if (isSynchronized) {
-	    Util.ASSERT(lock!=null);
+	    assert lock!=null;
 	    // make HANDLER for all throw exits
 	    Quad Qm = new MONITOREXIT(qf, exithand, lock);
 	    Quad Qt = new THROW(qf, Qm, exithand.exceptionTemp());
@@ -619,7 +619,7 @@ final class Translate { // not public.
 		if (!(s.footer().prev(i) instanceof RETURN)) continue;
 		// put a MONITOREXIT before the return.
 		Quad Qexit = s.footer().prev(i);
-		Util.ASSERT(Qexit.prev.length==1); // only one predecessor.
+		assert Qexit.prev.length==1; // only one predecessor.
 		Qm = new MONITOREXIT(qf, Qexit, lock);
 		Edge e = Qexit.prevEdge(0);
 		Quad.addEdge((Quad)e.from(), e.which_succ(), Qm, 0);
@@ -672,7 +672,7 @@ final class Translate { // not public.
     static final TransState[] transInGen(TransState ts) {
 	QuadFactory qf = ts.initialState.qf();
 	InGen in = (InGen) ts.in;
-	Instr inNext = in.next(0); // Util.ASSERT(in.next().length==1);
+	Instr inNext = in.next(0); // assert in.next().length==1;
 	byte opcode = in.getOpcode();
 	State s = ts.initialState;
 	TransState[] r = null;
@@ -818,13 +818,13 @@ final class Translate { // not public.
 	case Op.D2I:
 	case Op.L2F:
 	case Op.L2I:
-	    ns = s.pop(2).push(); Util.ASSERT(s.isLong(0));
+	    ns = s.pop(2).push(); assert s.isLong(0);
 	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
 			 ns.stack(0), new Temp[] { s.stack(0) });
 	    break;
 	case Op.D2L:
 	case Op.L2D:
-	    ns = s.pop(2).pushLong(); Util.ASSERT(s.isLong(0) && ns.isLong(0));
+	    ns = s.pop(2).pushLong(); assert s.isLong(0) && ns.isLong(0);
 	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
 			 ns.stack(0), new Temp[] { s.stack(0) });
 	    break;
@@ -840,7 +840,7 @@ final class Translate { // not public.
 	case Op.LDIV:
 	case Op.LREM:
 	    ns = s.pop(4).pushLong();
-	    Util.ASSERT(ns.isLong(0) && s.isLong(0) && s.isLong(2));
+	    assert ns.isLong(0) && s.isLong(0) && s.isLong(2);
 	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
 			 ns.stack(0), new Temp[] { s.stack(2), s.stack(0) });
 	    break;
@@ -848,7 +848,7 @@ final class Translate { // not public.
 	case Op.LSUB:
 	    {
 	    ns = s.pop(4).pushLong();
-	    Util.ASSERT(ns.isLong(0) && s.isLong(0) && s.isLong(2));
+	    assert ns.isLong(0) && s.isLong(0) && s.isLong(2);
 	    Quad q0 = new OPER(qf, in, (opcode==Op.DSUB)?Qop.DNEG:Qop.LNEG,
 			       s.stack(0), new Temp[] { s.stack(0) });
 	    Quad q1 = new OPER(qf, in, (opcode==Op.DSUB)?Qop.DADD:Qop.LADD,
@@ -898,7 +898,7 @@ final class Translate { // not public.
 	    default: // use full expansion of dcmp
 	    {
 	    boolean isDCMPG = (opcode==Op.DCMPG);
-	    ns = s.pop(4).push(); Util.ASSERT(s.isLong(0) && s.isLong(2));
+	    ns = s.pop(4).push(); assert s.isLong(0) && s.isLong(2);
 	    Quad q0 = new OPER(qf, in, Qop.DCMPGT, s.extra(0),
 			       isDCMPG ?
 			       new Temp[] { s.stack(0), s.stack(2) } :
@@ -956,7 +956,7 @@ final class Translate { // not public.
 	    }
 	case Op.DNEG:
 	case Op.LNEG:
-	    ns = s.pop(2).pushLong(); Util.ASSERT(s.isLong(0));
+	    ns = s.pop(2).pushLong(); assert s.isLong(0);
 	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
 			 ns.stack(0), new Temp[] {s.stack(0)});
 	    break;
@@ -973,18 +973,18 @@ final class Translate { // not public.
 	    {
 	    OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
 	    // values can't be return addresses, so clear tag in stack.
-	    ns = s.pop(2).clearLV(opd.getIndex()); Util.ASSERT(s.isLong(0));
+	    ns = s.pop(2).clearLV(opd.getIndex()); assert s.isLong(0);
 	    q = new MOVE(qf, in, ns.lv(opd.getIndex()), s.stack(0));
 	    break;
 	    }
 	case Op.DUP:
 	    // value could be a return address so track it.
-	    ns = s.push().trackS2S(s, 0, 0); Util.ASSERT(!s.isLong(0));
+	    ns = s.push().trackS2S(s, 0, 0); assert !s.isLong(0);
 	    q = new MOVE(qf, in, ns.stack(0), s.stack(0));
 	    break;
 	case Op.DUP_X1:
 	    {
-	    ns = s.pop(2).push(3); Util.ASSERT(!s.isLong(0) && !s.isLong(1));
+	    ns = s.pop(2).push(3); assert !s.isLong(0) && !s.isLong(1);
 	    Quad q0 = new MOVE(qf, in, ns.stack(0), s.stack(0));
 	    Quad q1 = new MOVE(qf, in, ns.stack(1), s.stack(1));
 	    Quad q2 = new MOVE(qf, in, ns.stack(2), ns.stack(0));
@@ -997,7 +997,7 @@ final class Translate { // not public.
 	    }
 	case Op.DUP_X2: // operates differently if stack contains a long value
 	    {
-	    Util.ASSERT(!s.isLong(0));
+	    assert !s.isLong(0);
 	    // don't forget to track possible return addresses.
 	    if (s.isLong(1)) {
 		ns = s.pop(3).push().pushLong().push();
@@ -1032,7 +1032,7 @@ final class Translate { // not public.
 	    }
 	    break;
 	case Op.DUP2_X1: // again, different if top value is long.
-	    Util.ASSERT(!s.isLong(2));
+	    assert !s.isLong(2);
 	    if (s.isLong(0)) { // only !long in center could be ret addr.
 		ns = s.pop(3).pushLong().push().pushLong().trackS2S(s, 2, 2);
 		Quad q0 = new MOVE(qf, in, ns.stack(0), s.stack(0));
@@ -1087,9 +1087,9 @@ final class Translate { // not public.
 		Quad.addEdges(new Quad[] { q2, q3, q4 });
 	    q = q0;
 	    last = s.isLong(0)?q4:q5;
-	    Util.ASSERT(s.isLong(0)==ns.isLong(0));
-	    Util.ASSERT(s.isLong(0)==ns.isLong(4));
-	    Util.ASSERT(s.isLong(2)==ns.isLong(2));
+	    assert s.isLong(0)==ns.isLong(0);
+	    assert s.isLong(0)==ns.isLong(4);
+	    assert s.isLong(2)==ns.isLong(2);
 	    break;
 	    }
 	case Op.F2D:
@@ -1377,7 +1377,7 @@ final class Translate { // not public.
 	    }
 	    default: // use full expansion of lcmp
 	    { // optimization doesn't work well on this, unfortunately.
-	    ns = s.pop(4).push(); Util.ASSERT(s.isLong(0) && s.isLong(2));
+	    ns = s.pop(4).push(); assert s.isLong(0) && s.isLong(2);
 	    Quad q0 = new OPER(qf, in, Qop.LCMPEQ, s.extra(0),
 			       new Temp[] { s.stack(2), s.stack(0) });
 	    Quad q1 = new CJMP(qf, in, q0.def()[0], new Temp[0]);
@@ -1415,7 +1415,7 @@ final class Translate { // not public.
 	case Op.LSHL:
 	case Op.LSHR:
 	case Op.LUSHR:
-	    ns = s.pop(3).pushLong(); Util.ASSERT(s.isLong(1));
+	    ns = s.pop(3).pushLong(); assert s.isLong(1);
 	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
 			 ns.stack(0), new Temp[] { s.stack(1), s.stack(0) });
 	    break;
@@ -1510,12 +1510,12 @@ final class Translate { // not public.
 	    OpField opd = (OpField) in.getOperand(0);
 	    Temp Tobj;
 	    if (isLongDouble(opd.value().getType())) { // 64-bit value.
-		Util.ASSERT(s.isLong(0) && !s.isLong(2));
+		assert s.isLong(0) && !s.isLong(2);
 		ns = s.pop(3);
 		Tobj = s.stack(2);
 	    }
 	    else {
-		Util.ASSERT(!s.isLong(0) && !s.isLong(1));
+		assert !s.isLong(0) && !s.isLong(1);
 		ns = s.pop(2);
 		Tobj = s.stack(1);
 	    }
@@ -1534,7 +1534,7 @@ final class Translate { // not public.
 	    }
 	case Op.SWAP:
 	    {
-	    Util.ASSERT(!s.isLong(0) && !s.isLong(1));
+	    assert !s.isLong(0) && !s.isLong(1);
 	    ns = s.pop(2).push(2).trackS2S(s, 0, 1).trackS2S(s, 1, 0);
 	    Quad q0 = new MOVE(qf, in, s.extra(0), s.stack(0));
 	    Quad q1 = new MOVE(qf, in, ns.stack(0), s.stack(1));
@@ -1798,7 +1798,7 @@ final class Translate { // not public.
 	    // go back to the caller, purging now-dead ret-addr.
 	    OpLocalVariable opd = ((InRet)in).getOperand();
 	    Instr target = s.getJSRtargetLV(opd.getIndex());
-	    Util.ASSERT(target!=null, "Unable to determine RET subroutine.");
+	    assert target!=null : "Unable to determine RET subroutine.";
 	    Instr jsr = (Instr) s.calls().get(target);
 	    Instr nxt = jsr.next(0);
 	    State ns = s.purgeDead(nxt);

@@ -63,7 +63,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.3 2002-02-26 22:46:30 cananian Exp $
+ * @version $Id: Method.java,v 1.4 2002-04-10 03:06:00 cananian Exp $
  */
 public final class Method extends Debug {
     static PrintWriter out = new java.io.PrintWriter(System.out);
@@ -81,10 +81,9 @@ public final class Method extends Debug {
 	Linker linker = cls.getLinker();
 	method=cls.getMethod("main", new HClass[] { linker.forDescriptor("[Ljava/lang/String;") });
 	
-	Util.ASSERT(method.isStatic());
-	Util.ASSERT(hcf.getCodeName().equals("canonical-tree") ||
-		    hcf.getCodeName().equals("optimized-tree"),
-		    "Bad factory codename: " + hcf.getCodeName());
+	assert method.isStatic();
+	assert hcf.getCodeName().equals("canonical-tree") ||
+		    hcf.getCodeName().equals("optimized-tree") : "Bad factory codename: " + hcf.getCodeName();
 	
 	tc = (Code)hcf.convert(method);
 	map=((DefaultFrame)((Tree)tc.getRootElement()).getFactory().getFrame()).getOffsetMap();
@@ -137,7 +136,7 @@ public final class Method extends Debug {
 	catch (ClassCastException e) { 
 	    // obj is not a pointer type.  In that case, we _must_ have
 	    // specified its type through the "type" parameter.
-	    Util.ASSERT(type!=null);
+	    assert type!=null;
 	    if (type == HClass.Byte)
 		retval = new Byte((byte)((Integer)obj).intValue());
 	    else if (type == HClass.Short)
@@ -147,7 +146,7 @@ public final class Method extends Debug {
 	    else if (type == HClass.Boolean)
 		retval = new Boolean(((Integer)obj).intValue()!=0);
  	    else if (!type.isPrimitive())  {
-		Util.ASSERT(((Integer)obj).intValue()==0);
+		assert ((Integer)obj).intValue()==0;
 		retval = null;
 	    }
 	    else 
@@ -182,7 +181,7 @@ public final class Method extends Debug {
      *  non-native format. 
      */
     static final Object toNonNativeFormat(Object obj) { 
-	Util.ASSERT(!(obj instanceof UndefinedRef));
+	assert !(obj instanceof UndefinedRef);
 
 	Object result;
 
@@ -212,7 +211,7 @@ public final class Method extends Debug {
     /** invoke the specified method.  void methods return null. */
     static final Object invoke(StaticState ss, HMethod method, Object[] params)
 	throws InterpretedThrowable {
-        Util.ASSERT(params.length == numParams(method));
+        assert params.length == numParams(method);
 
 	if (DEBUG) db("Invoking method: " + method);
 
@@ -362,7 +361,7 @@ public final class Method extends Debug {
 		else if (e.op==Bop.CMPGT) { 
 		    if (left instanceof Pointer) { 
 			Pointer leftPtr = (Pointer)left, rightPtr = (Pointer)right;
-			Util.ASSERT(leftPtr.getBase()==rightPtr.getBase());
+			assert leftPtr.getBase()==rightPtr.getBase();
 			sf.update(e, 
 				  (leftPtr.getOffset()>rightPtr.getOffset())?
 				  new Integer(1):
@@ -377,7 +376,7 @@ public final class Method extends Debug {
 
 		    if (left instanceof Pointer) {
 			// Both of them cannot be base pointers
-			Util.ASSERT(!(right instanceof Pointer));
+			assert !(right instanceof Pointer);
 			ptr = (Pointer)left;
 			offset = right;
 		    }
@@ -426,7 +425,7 @@ public final class Method extends Debug {
 	}
 
 	public void visit(NATIVECALL s) { 
-	    Util.ASSERT(isAllocation(s));  // Only native call we know about
+	    assert isAllocation(s);  // Only native call we know about
 
 	    // Can't resolve ptr type yet
 	    UndefinedPointer ptr=new UndefinedPointer(new UndefinedRef(ss), 0);
@@ -440,9 +439,9 @@ public final class Method extends Debug {
 	    if (DEBUG) db("Visiting: " + s);
 
 	    // FIXME: may want to allow other expressions than TEMPs
-	    Util.ASSERT(s.getRetval().kind()==TreeKind.TEMP);
-	    Util.ASSERT(s.getRetex().kind()==TreeKind.TEMP);
-	    Util.ASSERT(s.getHandler().kind()==TreeKind.NAME);
+	    assert s.getRetval().kind()==TreeKind.TEMP;
+	    assert s.getRetex().kind()==TreeKind.TEMP;
+	    assert s.getHandler().kind()==TreeKind.NAME;
 
 	    s.getFunc().accept(this);
 
@@ -490,7 +489,7 @@ public final class Method extends Debug {
 
 	public void visit(JUMP e) { 
 	    if (DEBUG) db("Visiting: " + e);
-	    Util.ASSERT(e.getExp() instanceof NAME);
+	    assert e.getExp() instanceof NAME;
 	    advance(0);
 	}
 	  

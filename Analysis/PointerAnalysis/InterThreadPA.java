@@ -41,7 +41,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  * <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: InterThreadPA.java,v 1.3 2002-02-26 22:41:18 cananian Exp $
+ * @version $Id: InterThreadPA.java,v 1.4 2002-04-10 03:00:41 cananian Exp $
  */
 public abstract class InterThreadPA implements java.io.Serializable {
 
@@ -108,7 +108,7 @@ public abstract class InterThreadPA implements java.io.Serializable {
 		pig.G.e.removeNodeHoleFromAll(nt);
 		pig.removeEmptyLoads();
 		pig.tau.setToZero(nt);
-		Util.ASSERT(pig.tau.getValue(nt) == 0, "Error");
+		assert pig.tau.getValue(nt) == 0 : "Error";
 	    }
 	}
 	analyzed_threads.clear();
@@ -126,7 +126,7 @@ public abstract class InterThreadPA implements java.io.Serializable {
 	    System.out.println("new_tau_nt = " + new_tau_nt);
 	    pig.G.e.removeNodeHoleFromAll(nt);
 	    pig.tau.setToZero(nt);
-	    Util.ASSERT(pig.tau.getValue(nt) == 0, "Error");
+	    assert pig.tau.getValue(nt) == 0 : "Error";
 	    pig.removeEmptyLoads();
 	    System.out.println("RESULTING PIG (after cleaning)" + pig);
 	}
@@ -212,12 +212,12 @@ public abstract class InterThreadPA implements java.io.Serializable {
 						 PANode nt) {
 	// TODO: think about the LOAD && PARAM thread nodes (not only INSIDE) 
 	Quad quad = (Quad) pa.getNodeRepository().node2Code(nt.getRoot());
-	Util.ASSERT((quad instanceof NEW), nt + " has a strange instr." + 
+	assert (quad instanceof NEW) : (nt + " has a strange instr." + 
 		    " nt type: " + nt.type + " PANode.INSIDE: " +
 		    PANode.INSIDE); 
 
 	NEW q = (NEW) quad; 
-	Util.ASSERT( q != null, "Creation of " + nt + " not found!");
+	assert q != null : "Creation of " + nt + " not found!";
 
 	HClass hclass = q.hclass();
 	HMethod[] hms = hclass.getMethods();
@@ -324,7 +324,7 @@ public abstract class InterThreadPA implements java.io.Serializable {
 					     ParIntGraph pig, PANode nt,
 					     MetaMethod[] ops) {
 	int nb_ops = ops.length;
-	Util.ASSERT(nb_ops > 0, "No run method for the thread" + nt);
+	assert nb_ops > 0 : "No run method for the thread" + nt;
 
 	// compute the first term of the join operation:
 	// the interaction with the first run() method
@@ -445,7 +445,7 @@ public abstract class InterThreadPA implements java.io.Serializable {
 						       PANode nt,
 						       PANode[] params){
 	// Paranoic debug! Trust no one!
-	Util.ASSERT(params.length == 1, "Thread function with too many args");
+	assert params.length == 1 : "Thread function with too many args";
 
 	Relation mu0 = new LightRelation();
 	map_static_nodes(pig[0],mu0);
@@ -818,9 +818,8 @@ public abstract class InterThreadPA implements java.io.Serializable {
 
 	ActionVisitor act_visitor_starter = new ActionVisitor(){
 		public void visit_ld(PALoad load){
-		    Util.ASSERT(mu_starter.contains(load.n2,load.n2),
-				load.n2 + "->" + load.n2 +
-				"  should be in mu_starter");
+		    assert mu_starter.contains(load.n2,load.n2) : load.n2 + "->" + load.n2 +
+				"  should be in mu_starter";
 
 		    new_pig.ar.add_ld(mu_starter.getValues(load.n1),
 				      load.f,
@@ -839,9 +838,8 @@ public abstract class InterThreadPA implements java.io.Serializable {
 	ParActionVisitor par_act_visitor_starter = new ParActionVisitor() {
 
 		public void visit_par_ld(PALoad load, PANode nt2){
-		    Util.ASSERT(mu_starter.contains(load.n2,load.n2),
-				load.n2 + "->" + load.n2 +
-				"  should be in mu_starter");
+		    assert mu_starter.contains(load.n2,load.n2) : load.n2 + "->" + load.n2 +
+				"  should be in mu_starter";
 
 		    Set parallel_threads =
 			new HashSet(mu_starter.getValues(nt2));

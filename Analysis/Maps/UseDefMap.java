@@ -7,13 +7,12 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 
-import java.util.Enumeration;
 /**
  * A <code>UseDefMap</code> is a mapping from temporaries to the
  * <code>HCodeElements</code> that define them.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDefMap.java,v 1.4 2002-02-25 20:58:10 cananian Exp $
+ * @version $Id: UseDefMap.java,v 1.5 2002-04-10 03:00:04 cananian Exp $
  */
 
 public interface UseDefMap  {
@@ -27,15 +26,6 @@ public interface UseDefMap  {
      */
     HCodeElement[] useMap(HCode hc, Temp t);
     /**
-     * Return an Enumeration of <code>HCodeElement</code>s that use 
-     * <code>Temp t</code>.
-     * @param hc The <code>HCode</code> containing <code>t</code>.
-     * @param t  The temporary to examine.
-     * @return an Enumeration of <code>HCodeElement</code>s where
-     *         <code>HCodeElement.use()</code> includes <code>t</code>.
-     */
-    Enumeration useMapE(HCode hc, Temp t);
-    /**
      * Return an array of <code>HCodeElement</code>s that define 
      * <code>Temp t</code>.
      * @param hc The <code>HCode</code> containing <code>t</code>.
@@ -44,13 +34,4 @@ public interface UseDefMap  {
      *         <code>HCodeElement.def()</code> includes <code>t</code>.
      */
     HCodeElement[] defMap(HCode hc, Temp t);
-    /**
-     * Return an Enumeration of <code>HCodeElement</code>s that define 
-     * <code>Temp t</code>.
-     * @param hc The <code>HCode</code> containing <code>t</code>.
-     * @param t  The temporary to examine.
-     * @return an Enumeration of <code>HCodeElement</code>s where
-     *         <code>HCodeElement.def()</code> includes <code>t</code>.
-     */
-    Enumeration defMapE(HCode hc, Temp t);
 }

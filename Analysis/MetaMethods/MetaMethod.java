@@ -41,7 +41,7 @@ import harpoon.Util.Util;
  concerned call-sites to point to it.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaMethod.java,v 1.3 2002-02-26 22:41:01 cananian Exp $
+ * @version $Id: MetaMethod.java,v 1.4 2002-04-10 03:00:22 cananian Exp $
  */
 public class MetaMethod implements java.io.Serializable {
     // Turns on some severe correctness tests.
@@ -58,7 +58,7 @@ public class MetaMethod implements java.io.Serializable {
 	    HClass[] param_types = hm.getParameterTypes();
 	    int nb_params = param_types.length + (hm.isStatic()?0:1);
 	    if(nb_params != types.length)
-		Util.ASSERT(false,"Wrong number of arguments");
+		assert false : "Wrong number of arguments";
 	}
 	this.types = new GenType[types.length];
 	for(int i = 0 ; i < types.length ; i++)

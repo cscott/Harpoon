@@ -52,8 +52,8 @@ public class BypassLatchSchedule {
          && instr.def().length <= 1 /* excludes jal _lookup_handler */
          && assem.length() > 0
          ) {
-         Util.ASSERT(tmp_use.length <= 2, " tmp_use.len=" + tmp_use.length 
-                     + " tmp_use=" + tmp_use + " isntr=" + instr);
+         assert tmp_use.length <= 2 : " tmp_use.len=" + tmp_use.length 
+                     + " tmp_use=" + tmp_use + " isntr=" + instr;
          List reg_use0 = null;
          List reg_use1 = null;
          List reg_def  = tmp_def.length == 0 ? null

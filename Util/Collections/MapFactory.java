@@ -8,11 +8,18 @@ import java.util.Map;
 /** <code>MapFactory</code> is a <code>Map</code> generator.
     Subclasses should implement constructions of specific types of
     <code>Map</code>s.
- 
+     <p>
+    Note also that the current limitations on parametric types in
+    Java mean that we can't easily type this class as
+    <code>MapFactory&lt;M extends Map&lt;K,V&gt;,K,V&gt;</code>,
+    as <code>MapFactory&lt;HashMap&lt;K,V&gt;,K,V&gt;</code> is not
+    a subtype of <code>MapFactory&lt;Map&lt;K,V&gt;,K,V&gt;</code>,
+    even though <code>HashMap</code> is a subtype of <code>Map</code>.
+
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MapFactory.java,v 1.2 2002-02-25 21:09:05 cananian Exp $
+    @version $Id: MapFactory.java,v 1.3 2002-04-10 03:07:12 cananian Exp $
  */
-public abstract class MapFactory {
+public abstract class MapFactory<K,V> {
     
     /** Creates a <code>MapFactory</code>. */
     public MapFactory() {
@@ -20,14 +27,14 @@ public abstract class MapFactory {
     }
 
     /** Generates a new, mutable, empty <code>Map</code>. */
-    public final Map makeMap() {
+    public Map<K,V> makeMap() {
 	return this.makeMap(harpoon.Util.Default.EMPTY_MAP);
     }
 
     /** Generates a new <code>Map</code>, using the entries of
 	<code>map</code> as a template for its initial mappings. 
     */
-    public abstract Map makeMap(Map map);
+    public abstract <K2 extends K, V2 extends V> Map<K,V> makeMap(Map<K2,V2> map);
 
     
 }

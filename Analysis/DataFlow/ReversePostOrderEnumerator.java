@@ -7,7 +7,7 @@ package harpoon.Analysis.DataFlow;
  * ReversePostOrderEnumerator
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: ReversePostOrderEnumerator.java,v 1.3 2002-02-26 22:39:45 cananian Exp $
+ * @version $Id: ReversePostOrderEnumerator.java,v 1.4 2002-04-10 02:59:11 cananian Exp $
  */
 
 import java.util.Enumeration;
@@ -15,9 +15,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
 import harpoon.Analysis.BasicBlock;
-import harpoon.Util.ArrayEnumerator;
-import harpoon.Util.Util;
 import harpoon.IR.Quads.Quad;
+import harpoon.Util.ArrayIterator;
+import harpoon.Util.IteratorEnumerator;
+import harpoon.Util.Util;
 
 public class ReversePostOrderEnumerator implements Enumeration {
 
@@ -33,7 +34,7 @@ public class ReversePostOrderEnumerator implements Enumeration {
     Set done = new HashSet();
     done.add(start); bb_stack.push(start); enum_stack.push(start.next());
     while (!bb_stack.isEmpty()) {
-      Util.ASSERT(bb_stack.size() == enum_stack.size());
+      assert bb_stack.size() == enum_stack.size();
       for (Enumeration e = (Enumeration)enum_stack.pop();
 	   e.hasMoreElements(); ) {
 	BasicBlock bb2 = (BasicBlock) e.nextElement();
@@ -59,7 +60,7 @@ public class ReversePostOrderEnumerator implements Enumeration {
     done.add(start); bb_stack.push(start);
     enum_stack.push(new ArrayEnumerator(start.next()));
     while (!bb_stack.isEmpty()) {
-      Util.ASSERT(bb_stack.size() == enum_stack.size());
+      assert bb_stack.size() == enum_stack.size();
       for (Enumeration e = (Enumeration)enum_stack.pop();
 	   e.hasMoreElements(); ) {
 	Quad bb2 = (Quad) e.nextElement();
@@ -95,4 +96,8 @@ public class ReversePostOrderEnumerator implements Enumeration {
   }
   private ReversePostOrderEnumerator() {}
 
+
+  private class ArrayEnumerator extends IteratorEnumerator {
+    ArrayEnumerator(Object[] oa) { super(new ArrayIterator(oa)); }
+  }
 }

@@ -53,7 +53,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.3 2002-02-26 22:40:06 cananian Exp $
+ * @version $Id: AsyncCode.java,v 1.4 2002-04-10 02:59:30 cananian Exp $
  */
 public class AsyncCode {
 
@@ -340,7 +340,7 @@ public class AsyncCode {
 	HClass originalClass = original.getDeclaringClass();
 	System.out.println("Getting mutator for :"+originalClass);
 	HClassMutator originalMutator=originalClass.getMutator();
-	Util.ASSERT(originalMutator!=null);
+	assert originalMutator!=null;
   
 	// use the return type of the original HMethod to get the String 
 	// prefix for the type of Continuation we want as the new return type
@@ -414,8 +414,8 @@ public class AsyncCode {
 	String cname=UniqueName.uniqueClassName("harpoon.Analysis.ContBuilder.ContTemplate"
 						,linker);
 	HClass continuationClass = linker.createMutableClass(cname,template);
-	Util.ASSERT(template.getLinker()==linker &&
-		    continuationClass.getLinker()==linker);
+	assert template.getLinker()==linker &&
+		    continuationClass.getLinker()==linker;
 	HClassMutator contMutator=continuationClass.getMutator();
 
 	//Environment field
@@ -473,9 +473,8 @@ public class AsyncCode {
 
 	    //new HClassSyn(template);
 	final int numConstructors = continuationClass.getConstructors().length;
-	Util.ASSERT(numConstructors == 1,
-		    "Found " + numConstructors + " constructors in " +
-		    "ContTemplate. Expected one");
+	assert numConstructors == 1 : "Found " + numConstructors + " constructors in " +
+		    "ContTemplate. Expected one";
 
 
 	contMutator.setSuperclass(superclass);

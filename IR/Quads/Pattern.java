@@ -22,7 +22,7 @@ import java.util.Set;
  * <code>Pattern</code> <blink>please document me if I'm public!</blink>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
+ * @version $Id: Pattern.java,v 1.4 2002-04-10 03:05:15 cananian Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -717,7 +717,7 @@ static class HighBoundVisitor extends QuadVisitor { // this is an inner class
 	//Punt this!
 	status=-1;
 	//	if ((status==2)&&(q.type()==HClass.Int)) {
-	//    Util.ASSERT(compares.length==2);
+	//    assert compares.length==2;
 	//    if ((q.value()==null)&&
 	//	(compares[0]==q.dst())&&(compares[1]==tested))
 	//	status=3;
@@ -730,7 +730,7 @@ static class HighBoundVisitor extends QuadVisitor { // this is an inner class
     public void visit(ALENGTH q) {
 	if ((status==2)&&
 	    (array==q.objectref())) {
-	    Util.ASSERT(compares.length==2);
+	    assert compares.length==2;
 	    if ((compares[0]==q.dst())&&(compares[1]==tested))
 		status=3;
 	    else
@@ -817,7 +817,7 @@ static class MinusVisitor extends QuadVisitor { // this is an inner class
     public void visit(CONST q) {
 	if ((status==2)&&
 	    (q.type()==HClass.Int)) {
-	    Util.ASSERT(compares.length==2);
+	    assert compares.length==2;
 	    if ((((Integer)q.value()).intValue()==0)&&
 		(compares[0]==q.dst())&&(compares[1]==tested))
 		status=3;
@@ -897,7 +897,7 @@ static class NullVisitor extends QuadVisitor { // this is an inner class
     public void visit(CONST q) {
 	if ((status==2)&&
 	    (q.type()==HClass.Void)) {
-	    Util.ASSERT(compares.length==2);
+	    assert compares.length==2;
 	    if ((q.value()==null)&&
 		(((compares[0]==q.dst())&&(compares[1]==tested))||
 		 ((compares[1]==q.dst())&&(compares[0]==tested))))
@@ -1055,7 +1055,7 @@ static class ZeroVisitor extends QuadVisitor { // this is an inner class
 	if ((status==2)&&
 	    (((q.type()==HClass.Int)&&(isint))
 	     ||((!isint)&&(q.type()==HClass.Long)))) {
-	    Util.ASSERT(compares.length==2);
+	    assert compares.length==2;
 	    if (isint)
 		if ((((Integer)q.value()).intValue()==0)&&
 		    (((compares[0]==q.dst())&&(compares[1]==tested))||

@@ -13,16 +13,16 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: EXPR.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
+ * @version $Id: EXPR.java,v 1.4 2002-04-10 03:05:45 cananian Exp $
  */
 public class EXPR extends Stm {
     /** Constructor. */
     public EXPR(TreeFactory tf, HCodeElement source, 
 	       Exp exp) {
 	super(tf, source, 1);
-	Util.ASSERT(exp!=null);
+	assert exp!=null;
 	this.setExp(exp);
-	Util.ASSERT(tf == exp.tf, "Dest and Src must have same tree factory");
+	assert tf == exp.tf : "Dest and Src must have same tree factory";
 	
 	// FSK: debugging hack
 	// this.accept(TreeVerifyingVisitor.norepeats());
@@ -37,8 +37,8 @@ public class EXPR extends Stm {
     public int kind() { return TreeKind.EXPR; }
 
     public Stm build(TreeFactory tf, ExpList kids) {
-	Util.ASSERT(kids!=null && kids.tail==null);
-	Util.ASSERT(tf == kids.head.tf);
+	assert kids!=null && kids.tail==null;
+	assert tf == kids.head.tf;
 	return new EXPR(tf, this, kids.head);
     }
     /** Accept a visitor */

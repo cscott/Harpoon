@@ -75,8 +75,16 @@ public class IntervalTree extends RedBlackTree {
     protected Node setParent(Node c, Node p) { 
 	Node n = super.setParent(c,p); fixMax(p); return n;
     }
+    // bug fix from: Kim Roland Rasmussen <kim.rasmussen@medgen.ku.dk>
+    // thanks!
     private void fixMax(Node p) {
-	if (p != NIL) setMax(p, Math.max( max(p.left()), max(p.right())));
+        if (p==NIL)
+            return;
+
+        if (p.left() == NIL || p.right() == NIL)
+            setMax(p, interval(p).high);
+        else
+            setMax(p, Math.max( max(p.left()), max(p.right()) ));
     }
     private void setMax(Node n, int m) { ((IntervalNode) n).max = m; }
     

@@ -20,7 +20,7 @@ import java.util.Set;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.2 2002-02-25 21:04:13 cananian Exp $
+ * @version $Id: InstrLABEL.java,v 1.3 2002-04-10 03:04:29 cananian Exp $
  */
 public class InstrLABEL extends Instr {
     private Label label;
@@ -67,22 +67,22 @@ public class InstrLABEL extends Instr {
 	return true;
     }
 
-    public Collection predC() {
-	return new AbstractCollection() {
+    public Collection<InstrEdge> predC() {
+	return new AbstractCollection<InstrEdge>() {
 	    public int size() {
 		int total=0;
 		if (prev!=null && prev.canFallThrough) {
 		    total++;
 		}
 
-		Set s = (Set) getFactory().labelToBranches.get(label);
+		Set s = getFactory().labelToBranches.get(label);
 		total += s.size();
 
 		return total;
 	    }
-	    public Iterator iterator() {
-		return new CombineIterator
-		    (new Iterator[] {
+	    public Iterator<InstrEdge> iterator() {
+		return new CombineIterator<InstrEdge>
+		    (new Iterator<InstrEdge>[] {
 			
 			// first iterator: prev falls to this?
 			((prev!=null && prev.canFallThrough)?
@@ -91,12 +91,12 @@ public class InstrLABEL extends Instr {
 			 Default.nullIterator),
 
 			// second iterator: branches to this?
-			new UnmodifiableIterator() {
-			    Iterator instrs = 
-				((Set) (getFactory().labelToBranches.get
-					(label))).iterator();
+			new UnmodifiableIterator<InstrEdge>() {
+			    Iterator<Instr> instrs = 
+				getFactory().labelToBranches.get
+					(label).iterator();
 			    public boolean hasNext() { return instrs.hasNext(); }
-			    public Object next() { 
+			    public InstrEdge next() { 
 				return new InstrEdge
 				    ((Instr)instrs.next(), InstrLABEL.this); 
 			    }

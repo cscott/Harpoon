@@ -19,9 +19,9 @@ import java.util.Set;
  * interface for non-<code>SEQ</code> <code>Stm</code>s of a tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeUseDefer.java,v 1.3 2002-02-26 22:46:11 cananian Exp $
+ * @version $Id: TreeUseDefer.java,v 1.4 2002-04-10 03:05:46 cananian Exp $
  */
-public class TreeUseDefer extends harpoon.IR.Properties.UseDefer {
+public class TreeUseDefer extends harpoon.IR.Properties.UseDefer<Tree> {
     private final Code code;
     
     /** Creates a <code>UseDefer</code>. */
@@ -34,12 +34,11 @@ public class TreeUseDefer extends harpoon.IR.Properties.UseDefer {
      *  and <code>MOVE</code> when the destination expression is a
      *  <code>TEMP</code>.  For all other elements, this method returns
      *  a zero-element collection. */
-    public Collection defC(HCodeElement hce) {
-	Util.ASSERT((hce instanceof Stm) && ! (hce instanceof SEQ));
-	Tree tree = (Tree) hce;
+    public Collection<Temp> defC(Tree tree) {
+	assert (tree instanceof Stm) && ! (tree instanceof SEQ);
 	if (tree instanceof INVOCATION) {
 	    INVOCATION invok = (INVOCATION) tree;
-	    Collection c = new ArrayList(2);
+	    Collection<Temp> c = new ArrayList<Temp>(2);
 	    if (invok.getRetval()!=null) c.add(invok.getRetval().temp);
 	    if (invok instanceof CALL) c.add(((CALL)invok).getRetex().temp);
 	    return c;
@@ -58,17 +57,17 @@ public class TreeUseDefer extends harpoon.IR.Properties.UseDefer {
     }
     /** Returns a collection of <code>Temp</code>s which are used by the
      *  statement/expression subtree rooted at <code>hce</code>. */
-    public Collection useC(HCodeElement hce) {
-	Util.ASSERT((hce instanceof Stm) && ! (hce instanceof SEQ));
-	Set s = new HashSet();
-	addUses(s, ((Tree)hce).kids());
+    public Collection<Temp> useC(Tree hce) {
+	assert (hce instanceof Stm) && ! (hce instanceof SEQ);
+	Set<Temp> s = new HashSet<Temp>();
+	addUses(s, hce.kids());
 	return s;
     }
-    private static void addUses(Set uses, ExpList el) {
+    private static void addUses(Set<Temp> uses, ExpList el) {
 	for (ExpList elp = el; elp!=null; elp=elp.tail)
 	    addUses(uses, elp.head);
     }
-    private static void addUses(Set uses, Exp e) {
+    private static void addUses(Set<Temp> uses, Exp e) {
 	if (e instanceof TEMP)
 	    uses.add(((TEMP)e).temp);
 	addUses(uses, e.kids());

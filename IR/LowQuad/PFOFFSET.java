@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * is used to access a static field.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PFOFFSET.java,v 1.3 2002-02-26 22:45:51 cananian Exp $
+ * @version $Id: PFOFFSET.java,v 1.4 2002-04-10 03:04:57 cananian Exp $
  */
 public class PFOFFSET extends PCONST {
     /** The <code>HField</code> to address. */
@@ -32,7 +32,7 @@ public class PFOFFSET extends PCONST {
 		    final Temp dst, final HField field) {
 	super(qf, source, dst);
 	this.field = field;
-	Util.ASSERT(field!=null && !field.isStatic());
+	assert field!=null && !field.isStatic();
     }
     // ACCESSOR METHODS:
     /** Returns the field whose offset is computed. */

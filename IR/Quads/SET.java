@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * The <code>objectref</code> is null if the field is static.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SET.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
+ * @version $Id: SET.java,v 1.4 2002-04-10 03:05:15 cananian Exp $
  */
 public class SET extends Quad {
     /** The field description. */
@@ -45,11 +45,11 @@ public class SET extends Quad {
 	this.objectref = objectref;
 	this.src = src;
 	// VERIFY legality of SET
-	Util.ASSERT(field!=null && src!=null);
+	assert field!=null && src!=null;
 	if (isStatic())
-	    Util.ASSERT(objectref==null);
+	    assert objectref==null;
 	else
-	    Util.ASSERT(objectref!=null);
+	    assert objectref!=null;
     }
     /** Returns the description of the field to set. */
     public HField field() { return field; }

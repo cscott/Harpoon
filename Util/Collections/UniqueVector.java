@@ -20,27 +20,27 @@ import java.util.Set;
  * <p>Conforms to the JDK 1.2 Collections API.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueVector.java,v 1.2 2002-02-25 21:09:15 cananian Exp $
+ * @version $Id: UniqueVector.java,v 1.3 2002-04-10 03:07:14 cananian Exp $
  * @see java.util.Vector
  * @see java.util.Hashtable
  */
-public class UniqueVector extends AbstractList
-  implements Set, Cloneable {
-  List  vect;
-  Map   uniq;
+public class UniqueVector<E> extends AbstractList<E>
+  implements Set<E>, Cloneable {
+  List<E>  vect;
+  Map<E,Integer>   uniq;
 
   /** Constructs an empty UniqueVector. */
   public UniqueVector() 
-  { vect = new ArrayList(); uniq = new HashMap(); }
+  { vect = new ArrayList<E>(); uniq = new HashMap<E,Integer>(); }
   /** Constructs an empty UniqueVector with the specified initial capacity. */
   public UniqueVector(int initialCapacity) 
-  { vect = new ArrayList(initialCapacity); uniq=new HashMap(initialCapacity); }
+  { vect = new ArrayList<E>(initialCapacity); uniq=new HashMap<E,Integer>(initialCapacity); }
   /** Constructs a vector containing the elements of the specified 
    *  <code>Collection</code>, in the order they are returned by the
    *  collection's iterator.  Duplicate elements are skipped. */
-  public UniqueVector(Collection c) {
+  public <T extends E> UniqueVector(Collection<T> c) {
     this(c.size());
-    for (Iterator it=c.iterator(); it.hasNext(); )
+    for (Iterator<T> it=c.iterator(); it.hasNext(); )
       add(it.next());
   }
 
@@ -51,7 +51,7 @@ public class UniqueVector extends AbstractList
    * is increased if necessary.
    * @param obj the component to be added.
    */
-  public synchronized void addElement(Object obj) {
+  public synchronized void addElement(E obj) {
     add(obj);
   }
   /**
@@ -60,7 +60,7 @@ public class UniqueVector extends AbstractList
    * vector is removed prior to insertion.
    * @param obj the element to be inserted.
    */
-  public void add(int index, Object element) {
+  public void add(int index, E element) {
     if (element==null) throw new NullPointerException();
     removeElement(element);
     vect.add(index, element);
@@ -74,7 +74,7 @@ public class UniqueVector extends AbstractList
    * is increased if necessary.
    * @param obj the component to be added.
    */
-  public boolean add(Object obj) {
+  public boolean add(E obj) {
     if (obj==null) throw new NullPointerException();
     if (contains(obj)) return false;
     vect.add(obj);
@@ -93,8 +93,8 @@ public class UniqueVector extends AbstractList
    * @exception CloneNotSupportedException
    *            if the UniqueVector cannot be cloned.
    */
-  public synchronized Object clone() throws CloneNotSupportedException {
-    return new UniqueVector(this);
+  public synchronized UniqueVector<E> clone() throws CloneNotSupportedException {
+    return new UniqueVector<E>(this);
   }
   /**
    * Tests if the specified object is a component in this vector.
@@ -115,7 +115,7 @@ public class UniqueVector extends AbstractList
     vect.toArray(anArray);
   }
   public Object[] toArray() { return vect.toArray(); }
-  public Object[] toArray(Object[] a) { return vect.toArray(a); }
+  public <T> T[] toArray(T[] a) { return vect.toArray(a); }
 
   /**
    * Returns the component at the specified index.
@@ -124,19 +124,19 @@ public class UniqueVector extends AbstractList
    * @exception ArrayIndexOutOfBoundsException
    *            if an invalid index was given.
    */
-  public synchronized Object elementAt(int index) {
+  public synchronized E elementAt(int index) {
     return get(index);
   }
   /** Returns the element at the specified posision in this vector. */
-  public Object get(int index) {
+  public E get(int index) {
     return vect.get(index);
   }
   /**
    * Returns an enumeration of the components of this vector.
    * @return an enumeration of the components of this vector.
    */
-  public synchronized Enumeration elements() {
-    return new IteratorEnumerator(vect.iterator());
+  public synchronized Enumeration<E> elements() {
+    return new IteratorEnumerator<E>(vect.iterator());
   }
      
   /**
@@ -146,7 +146,7 @@ public class UniqueVector extends AbstractList
    * @param minCapacity the desired minimum capacity.
    */
   public synchronized void ensureCapacity(int minCapacity) {
-    ((ArrayList)vect).ensureCapacity(minCapacity);
+    ((ArrayList<E>)vect).ensureCapacity(minCapacity);
   }
   /**
    * Returns the first component of this vector.
@@ -154,7 +154,7 @@ public class UniqueVector extends AbstractList
    * @exception java.util.NoSuchElementException
    *            if this vector has no components.
    */
-  public synchronized Object firstElement() { 
+  public synchronized E firstElement() { 
     return vect.get(0);
   }
   /** 
@@ -166,7 +166,7 @@ public class UniqueVector extends AbstractList
    */
   public synchronized int indexOf(Object elem) {
     if (!contains(elem)) return -1;
-    return ((Integer) uniq.get(elem)).intValue();
+    return uniq.get(elem).intValue();
   }
   /**
    * Returns the first occurrence of the given argument, beginning the search
@@ -198,7 +198,7 @@ public class UniqueVector extends AbstractList
    * @exception ArrayIndexOutOfBoundsException
    *            if the index was invalid.
    */
-  public synchronized void insertElementAt(Object obj, int index) {
+  public synchronized void insertElementAt(E obj, int index) {
     add(index, obj);
   }
   /**
@@ -214,7 +214,7 @@ public class UniqueVector extends AbstractList
    * @exception java.util.NoSuchElementException
    *            if this vector is empty.
    */
-  public synchronized Object lastElement() { 
+  public synchronized E lastElement() { 
     return vect.get(vect.size()-1); 
   }
   /**
@@ -280,10 +280,10 @@ public class UniqueVector extends AbstractList
     }
   }
   /** Removes the element at the specified position in this vector. */
-  public Object remove(int index) {
+  public E remove(int index) {
     if (index<0 || index >= vect.size()) 
       throw new IndexOutOfBoundsException();
-    Object obj = vect.get(index);
+    E obj = vect.get(index);
     vect.remove(index);
     uniq.remove(obj);
     // fixup indices.
@@ -304,14 +304,14 @@ public class UniqueVector extends AbstractList
    * @param index the specified index.
    * @exception ArrayIndexOutOfBoundsException if the index was invalid.
    */
-  public synchronized void setElementAt(Object obj, int index) {
+  public synchronized void setElementAt(E obj, int index) {
     set(index, obj);
   }
   /** Replaces the element at the specified position in this vector with the
    *  specified element.
    */
-  public Object set(int index, Object obj) {
-    Object old = vect.get(index);
+  public E set(int index, E obj) {
+    E old = vect.get(index);
     if (old.equals(obj)) return obj;
     remove(obj);
     uniq.put(obj, uniq.remove(old));
@@ -333,5 +333,5 @@ public class UniqueVector extends AbstractList
    * An application can use this operation to minimize the storage of a
    * vector.
    */
-  public synchronized void trimToSize() { ((ArrayList) vect).trimToSize(); }
+  public synchronized void trimToSize() { ((ArrayList<E>) vect).trimToSize(); }
 }

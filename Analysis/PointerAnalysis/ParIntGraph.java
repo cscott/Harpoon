@@ -30,7 +30,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.4 2002-04-02 23:41:51 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.5 2002-04-10 03:00:42 cananian Exp $
  */
 public class ParIntGraph implements java.io.Serializable {
 
@@ -128,7 +128,7 @@ public class ParIntGraph implements java.io.Serializable {
         Map g2b = new HashMap();
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
-	    Util.ASSERT(node.isGenuine(), node + " is not genuine!");
+	    assert node.isGenuine() : node + " is not genuine!";
 	    PANode bar_node = node.getBarVersion();
 	    g2b.put(node, bar_node);
 	}

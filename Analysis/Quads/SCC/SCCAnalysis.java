@@ -49,6 +49,7 @@ import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.ArrayIterator;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
@@ -58,6 +59,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 /**
@@ -66,7 +68,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.3 2002-02-26 22:41:48 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.4 2002-04-10 03:01:10 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -76,7 +78,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 
     /** Creates a <code>SCC</code>. */
     public SCCAnalysis(HCode hc, UseDefMap usedef) {
-	Util.ASSERT(hc.getName().equals(QuadSSI.codename));
+	assert hc.getName().equals(QuadSSI.codename);
 	this.linker = hc.getMethod().getDeclaringClass().getLinker();
 	this.udm = usedef;
 	analyze(hc);
@@ -192,8 +194,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 
 	// put the root entry on the worklist and mark it executable.
 	HCodeElement root = hc.getRootElement();
-	Util.ASSERT(root instanceof Quad,
-		    "SCC analysis works only on QuadSSI form.");
+	assert root instanceof Quad : "SCC analysis works only on QuadSSI form.";
 	Wq.push(root);
 	Eq.add(root);
 
@@ -214,9 +215,10 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    if (!Wv.isEmpty()) { // grab temp from Wv is possible.
 		Temp t = (Temp) Wv.pull();
 		// for every use of t...
-		for (Enumeration e=udm.useMapE(hc, t); e.hasMoreElements(); )
+		for (Iterator it=new ArrayIterator(udm.useMap(hc, t));
+		     it.hasNext(); )
 		    // check conditions 3-8
-		    ((Quad) e.nextElement()).accept(visitor);
+		    ((Quad) it.next()).accept(visitor);
 	    }
 	} // end while loop.
     } // end analysis.
@@ -423,7 +425,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public void visit(AGET q) {
 	    LatticeVal v = get( q.objectref() );
 	    if (corruptor==null)
-		Util.ASSERT(v==null || v instanceof xClassNonNull);
+		assert v==null || v instanceof xClassNonNull;
 	    if (v instanceof xClass)
 		raiseV(V, Wv, q.dst(), 
 		       new xClass( toInternal( ((xClass)v).type().getComponentType() ) ) );
@@ -431,7 +433,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public void visit(ALENGTH q) {
 	    LatticeVal v = get( q.objectref() );
 	    if (corruptor==null)
-		Util.ASSERT(v==null || v instanceof xClassNonNull);
+		assert v==null || v instanceof xClassNonNull;
 	    if (v instanceof xClassArray)
 		raiseV(V, Wv, q.dst(),
 		       new xIntConstant(HClass.Int, 
@@ -454,15 +456,14 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public void visit(ASET q) {
 	    LatticeVal v = get( q.objectref() );
 	    if (corruptor==null)
-		Util.ASSERT(v==null || v instanceof xClassNonNull);
+		assert v==null || v instanceof xClassNonNull;
 	    /* do nothing. */
 	}
 	public void visit(CALL q) {
 	    if (corruptor==null)
-		Util.ASSERT(q.isVirtual() ?
+		assert (q.isVirtual() ?
 			    get( q.params(0) )==null ||
-			    get( q.params(0) ) instanceof xClassNonNull : true,
-			    q);
+			    get( q.params(0) ) instanceof xClassNonNull : true) : q;
 	    if (q.retval() != null) {
 		// in the bytecode world, everything's an int.
 		HClass ty = q.method().getReturnType();
@@ -579,10 +580,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public void visit(FOOTER q) { /* do nothing. */ }
 	public void visit(GET q) {
 	    if (corruptor==null)
-		Util.ASSERT(q.objectref()!=null ?
+		assert (q.objectref()!=null ?
 			    get(q.objectref())==null ||
-			    get(q.objectref()) instanceof xClassNonNull : true,
-			    q);
+			    get(q.objectref()) instanceof xClassNonNull : true) : q;
 	    HClass type = toInternal(q.field().getType());
 	    if (q.field().isConstant()) {
 		Object val = q.field().getConstant();
@@ -639,12 +639,12 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	public void visit(MONITORENTER q) {
 	    LatticeVal v = get( q.lock() );
-	    Util.ASSERT(v==null || v instanceof xClassNonNull);
+	    assert v==null || v instanceof xClassNonNull;
 	    /* do nothing. */
 	}
 	public void visit(MONITOREXIT q) {
 	    LatticeVal v = get( q.lock() );
-	    Util.ASSERT(v==null || v instanceof xClassNonNull);
+	    assert v==null || v instanceof xClassNonNull;
 	    /* do nothing. */
 	}
 	public void visit(MOVE q) {
@@ -742,10 +742,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public void visit(RETURN q) { /* do nothing. */ }
 	public void visit(SET q) {
 	    if (corruptor==null)
-		Util.ASSERT(q.objectref()!=null ?
+		assert (q.objectref()!=null ?
 			    get(q.objectref())==null ||
-			    get(q.objectref()) instanceof xClassNonNull : true,
-			    q);
+			    get(q.objectref()) instanceof xClassNonNull : true) : q;
 	     /* do nothing. */
 	}
 	public void visit(SWITCH q) {
@@ -791,7 +790,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 			    // (don't count zero twice!)
 			    long cases = -1 +
 				(1L<<bw.plusWidth()) + (1L<<bw.minusWidth());
-			    Util.ASSERT(executable<=cases);
+			    assert executable<=cases;
 			    if (executable==cases)
 				continue; // default not executable.
 			}
@@ -807,8 +806,8 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	public void visit(THROW q) {
 	    if (corruptor==null)
-		Util.ASSERT(get(q.throwable())==null ||
-			    get(q.throwable()) instanceof xClassNonNull);
+		assert get(q.throwable())==null ||
+			    get(q.throwable()) instanceof xClassNonNull;
 	    /* do nothing. */
 	}
 	public void visit(TYPESWITCH q) {
@@ -1254,9 +1253,8 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     static class xClass extends LatticeVal {
 	protected HClass type;
 	public xClass(HClass type) {
-	    Util.ASSERT(type!=HClass.Boolean && type!=HClass.Byte &&
-			type!=HClass.Short && type!=HClass.Char,
-			"Not an internal type ("+type+")");
+	    assert type!=HClass.Boolean && type!=HClass.Byte &&
+			type!=HClass.Short && type!=HClass.Char : "Not an internal type ("+type+")";
 	    this.type = type;
 	}
 	public HClass type() { return type; }
@@ -1279,7 +1277,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	// Class merge function.
 	static HClass mergeTypes(HClass a, HClass b) {
-	    Util.ASSERT(a!=null && b!=null);
+	    assert a!=null && b!=null;
 	    if (a==b) return a; // take care of primitive types.
 	    
 	    // Special case 'Void' Hclass, used for null constants.
@@ -1289,7 +1287,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		return a;
 	    
 	    // by this point better be array ref or object, not primitive type.
-	    Util.ASSERT((!a.isPrimitive()) && (!b.isPrimitive()));
+	    assert (!a.isPrimitive()) && (!b.isPrimitive());
 	    return HClassUtil.commonParent(a,b);
 	}
     }
@@ -1297,7 +1295,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     static class xClassNonNull extends xClass {
 	public xClassNonNull(HClass type) { 
 	    super( type );
-	    Util.ASSERT(type!=HClass.Void);
+	    assert type!=HClass.Void;
 	}
 	public String toString() { 
 	    return "xClassNonNull: { " + type + " }";
@@ -1587,7 +1585,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    super(toInternal(HClass.Boolean),value);
 	    this.q = q;
 	    this.tested = tested;
-	    Util.ASSERT(value==0 || value==1);
+	    assert value==0 || value==1;
 	}
 	public Temp tested() { return tested; }
 	public INSTANCEOF def() { return q; }
@@ -1645,7 +1643,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    super(toInternal(HClass.Boolean),value);
 	    this.q = q;
 	    this.operands = operands;
-	    Util.ASSERT(value==0 || value==1);
+	    assert value==0 || value==1;
 	}
 	public Temp[] operands() { return operands; }
 	public OPER def() { return q; }

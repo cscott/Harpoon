@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  rooted in a specific <code>HClass</code>)
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: GenType.java,v 1.3 2002-02-26 22:40:59 cananian Exp $
+ * @version $Id: GenType.java,v 1.4 2002-04-10 03:00:21 cananian Exp $
  */
 public class GenType implements java.io.Serializable {
 
@@ -37,8 +37,7 @@ public class GenType implements java.io.Serializable {
     /** Creates a <code>GenType</code>. <code>kind</code> should be <code>MONO</code>
      or <code>POLY</code>. */
     public GenType(HClass hclass, int kind) {
-	Util.ASSERT((kind == MONO) || (kind == POLY) ,
-		    "kind should be GenType.MONO or GenType.POLY");
+	assert (kind == MONO) || (kind == POLY) : "kind should be GenType.MONO or GenType.POLY";
         this.hclass = hclass;
 	this.kind   = kind;
     }

@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>ObjectRef</code> is an object reference in the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectRef.java,v 1.3 2002-02-26 22:46:30 cananian Exp $
+ * @version $Id: ObjectRef.java,v 1.4 2002-04-10 03:06:00 cananian Exp $
  */
 class ObjectRef extends Ref {
 
@@ -64,7 +64,7 @@ class ObjectRef extends Ref {
 
     /** Clones this <code>ObjectRef</code> */
     public Object clone() {
-	Util.ASSERT(closure==null, "can't clone objects with closure info.");
+	assert closure==null : "can't clone objects with closure info.";
 	return new ObjectRef(ss, type, FieldValueList.clone(fields));
     }
    
@@ -112,12 +112,12 @@ class ObjectRef extends Ref {
 
 	// case 1: points to hashcode.  return field as normal. 
 	if (ref.ss.map.hashCodeOffset(ref.type)==offset) {
-	    Util.ASSERT(ref.hashCode!=null);
+	    assert ref.hashCode!=null;
 	    return ref.hashCode;
 	}
 	// case 2: points to classptr.  Return ClazPointer<label, 0>
 	else if (ref.ss.map.clazzPtrOffset(ref.type)==offset) {
-	    Util.ASSERT(ref.classPtr != null);
+	    assert ref.classPtr != null;
 	    return ref.classPtr;
 	}
 	// case 3: points to finalization info.  Can this happen?

@@ -16,6 +16,7 @@ import java.util.ListIterator;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 
+import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.HANDLER;
@@ -59,7 +60,8 @@ import harpoon.Util.Util;
 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: FCFGBasicBlock.java,v 1.4 2002-03-10 02:32:38 cananian Exp $ */
+ * @version $Id: FCFGBasicBlock.java,v 1.5 2002-04-10 02:58:48 cananian Exp $
+ */
 public class FCFGBasicBlock implements BasicBlockInterf {
     
     /** Creates a <code>FCFGBasicBlock</code>. This method is called
@@ -273,7 +275,7 @@ public class FCFGBasicBlock implements BasicBlockInterf {
 	views of an <code>HCode</code>.  */
     public static class Factory implements BasicBlockFactoryInterf {
 
-	protected HCode hcode;
+	protected Code hcode;
 	protected Set blocks;
 	protected Set leaves;
 	protected FCFGBasicBlock root;
@@ -285,16 +287,15 @@ public class FCFGBasicBlock implements BasicBlockInterf {
 	    <code>hcode</code> <code>hcode</code> must be in
 	    &quot;quad-with-try&quot; format. */
 	public Factory(HCode hcode) {
-	    Util.ASSERT(hcode.getName().equals("quad-with-try"),
-			"FCFG works only for quad-with-try");
+	    assert hcode.getName().equals("quad-with-try") : "FCFG works only for quad-with-try";
 
-	    this.hcode = hcode;
+	    this.hcode = (Code) hcode;
 
 	    quadToBB = new HashMap();
 	    leaves = new HashSet();
 	    blocks = new HashSet();
 
-	    METHOD method = Util.getMETHOD(hcode);
+	    METHOD method = this.hcode.getRootElement().method();
 	    Set[] controlled = get_controlled(method);
 
 	    Worklist w = new WorkSet();
@@ -369,7 +370,7 @@ public class FCFGBasicBlock implements BasicBlockInterf {
 	    }
 
 	    // find the relevant handlers
-	    METHOD method = Util.getMETHOD(hcode);
+	    METHOD method = hcode.getRootElement().method();
 	    Quad handlers[] = method.next();
 	    int nb_handlers = handlers.length - 1;
 	    for(int i = 0; i < nb_handlers; i++) {

@@ -36,7 +36,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
+ * @version $Id: CALL.java,v 1.4 2002-04-10 03:05:38 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
@@ -55,8 +55,8 @@ public class CALL extends INVOCATION {
 		TEMP retval, TEMP retex, Exp func, ExpList args,
 		NAME handler, boolean isTailCall) {
 	super(tf, source, retval, func, args, 2); 
-	Util.ASSERT(retex != null && handler != null);
-	Util.ASSERT(retex.tf == tf);
+	assert retex != null && handler != null;
+	assert retex.tf == tf;
 	this.setRetex(retex); this.setHandler(handler);
 	this.isTailCall = isTailCall;
 	
@@ -74,7 +74,7 @@ public class CALL extends INVOCATION {
     /** Sets the destination temp for any exception which the callee
      *  might throw.  Must be non-null. */
     public void setRetex(TEMP retex) {
-	Util.ASSERT(retex!=null);
+	assert retex!=null;
 	setChild(0, retex);
     }
     /** Sets the destination to which we should return
@@ -87,8 +87,8 @@ public class CALL extends INVOCATION {
 
     public Stm build(TreeFactory tf, ExpList kids) {
 	for (ExpList e = kids; e!=null; e=e.tail)
-	    Util.ASSERT(e.head == null || tf == e.head.tf);
-	Util.ASSERT(tf==this.tf, "cloning retval/retex/handler not yet impl.");
+	    assert e.head == null || tf == e.head.tf;
+	assert tf==this.tf : "cloning retval/retex/handler not yet impl.";
 
 	return new CALL(tf, this, getRetval(), getRetex(),
 			kids.head,            // func

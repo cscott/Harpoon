@@ -14,9 +14,9 @@ package harpoon.Util;
  * Factory or Object type.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Indexer.java,v 1.2 2002-02-25 21:08:45 cananian Exp $
+ * @version $Id: Indexer.java,v 1.3 2002-04-10 03:07:05 cananian Exp $
  */
-public abstract class Indexer {
+public abstract class Indexer<T> {
     
     /** Returns the "small" integer uniquely associated with
 	<code>o</code> in <code>this</code>.
@@ -27,7 +27,7 @@ public abstract class Indexer {
 	     <code>o</code> from a densely-packed, non-negative 
 	     set of integers whose smallest element is close to zero. 
     */
-    public abstract int getID(Object o); 
+    public abstract int getID(T o); 
 
     /** Provides a reverse mapping for the index returned by
      *  <code>getID</code>.  The constraint is that
@@ -36,7 +36,7 @@ public abstract class Indexer {
      * @exception UnsupportedOperationException if this functionality
      *  is not supported by <code>this</code>.
      */
-    public Object getByID(int id) {
+    public T getByID(int id) {
 	throw new UnsupportedOperationException("getByID() not supported");
     }
     /** Tells user whether this particular <code>Indexer</code> implements

@@ -96,7 +96,7 @@ import harpoon.Util.DataStructs.LightMap;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPAMain.java,v 1.3 2002-02-26 22:46:40 cananian Exp $
+ * @version $Id: ODPAMain.java,v 1.4 2002-04-10 03:06:09 cananian Exp $
  */
 public abstract class ODPAMain {
 
@@ -664,7 +664,7 @@ public abstract class ODPAMain {
 		ODPointerAnalysis.NODES_DRIVEN = true;
                 break;
 	    case 'Q':
-		Util.ASSERT(ODPointerAnalysis.NODES_DRIVEN);
+		assert ODPointerAnalysis.NODES_DRIVEN;
 		System.out.println("loading production Profile");
 		arg=g.getOptarg();
 		try {
@@ -875,8 +875,7 @@ public abstract class ODPAMain {
 		break;
 	    case 'o':
 		SAMain.ASSEM_DIR = new java.io.File(g.getOptarg());
-		harpoon.Util.Util.ASSERT(SAMain.ASSEM_DIR.isDirectory(),
-			    "" + SAMain.ASSEM_DIR + " must be a directory");
+		assert SAMain.ASSEM_DIR.isDirectory() : "" + SAMain.ASSEM_DIR + " must be a directory";
 		break;
 	    case 'b':
 		COMPILE = true;
@@ -1493,15 +1492,12 @@ public abstract class ODPAMain {
 		total += profile[i];
 	    }
 	}
-	Util.ASSERT(stored==n_nonnull,
-	       "Error: n_nonnull = " + n_nonnull + 
+	assert stored==n_nonnull : ("Error: n_nonnull = " + n_nonnull + 
 	       "=\\=" + stored + " = stored.");
 	
 	int n_nodes = 0;
-	Util.ASSERT(percentage>=0, 
-	       "Error: percentage should be nonnegative");
-	Util.ASSERT(percentage<=100, 
-	       "Error: percentage should be less than 100");
+	assert percentage>=0 : ("Error: percentage should be nonnegative");
+	assert percentage<=100 : ("Error: percentage should be less than 100");
 
 	if (percentage==100)
 	    n_nodes = n_nonnull;
@@ -1631,7 +1627,7 @@ public abstract class ODPAMain {
 	    if  (status.onLocalHeap){
 		status.synchro =  sync_count;
 		if (status.nInlines!=0){
-		    Util.ASSERT(false);
+		    assert false;
 		    if (status.nCallers==0){
 			System.err.println("BUG in NodesStatus !!!");
 			System.out.println("BUG in NodesStatus !!!" + node);
@@ -1665,7 +1661,7 @@ public abstract class ODPAMain {
 	    }
 	    if ((!status.onStack)&&(!status.onLocalHeap)){
 		if (status.nInlines!=0){
-		    Util.ASSERT(false);
+		    assert false;
 		    if (status.nCallers==0){
 			System.err.println("BUG in NodesStatus !!!");
 			System.out.println("BUG in NodesStatus !!!" + node);
@@ -1790,8 +1786,8 @@ public abstract class ODPAMain {
 	    // Selection of the nodes we are trying to stack allocate
 	    // by inlining the current call site.
 	    PANode node = (PANode) pa.Quad2Node.get(quadAlloc);
-	    Util.ASSERT(node!=null, "\n**Node null for quad " + 
-			quadAlloc + " in mm " + mm_callee + "\n");
+	    assert node!=null : "\n**Node null for quad " + 
+			quadAlloc + " in mm " + mm_callee + "\n";
 	    Set allTheNodes = new HashSet();
 	    allTheNodes.add(node);
 
@@ -1799,8 +1795,8 @@ public abstract class ODPAMain {
 	    for(Iterator on_it=otherNodes.iterator(); on_it.hasNext(); ){
 		Quad  on_q = (Quad) on_it.next();
 		PANode on = (PANode) pa.Quad2Node.get(on_q);
-		Util.ASSERT(on!=null, "\n**Node null for quad " + 
-			    on_q + " in mm " + mm_callee + "\n");
+		assert on!=null : "\n**Node null for quad " + 
+			    on_q + " in mm " + mm_callee + "\n";
 		allTheNodes.add(on);
 	    }
 
@@ -1862,13 +1858,13 @@ public abstract class ODPAMain {
 			int k = ((Integer) k_it.next()).intValue();
 			PANode tmp_n = (PANode) 
 			    pa.Quad2Node.get(id2QuadAlloc[call_profile_alloc[k]]);
-			Util.ASSERT(tmp_n!=null);
+			assert tmp_n!=null;
 			if (tmp_n==n){
 			    found = true;
 			    status.index = k;
 			}
 		    }
-		    Util.ASSERT(found);
+		    assert found;
 		}
 		//This field is the allocation quad
 		status.quad = id2QuadAlloc[call_profile_alloc[status.index]];
@@ -1901,7 +1897,7 @@ public abstract class ODPAMain {
 			    alloc_count = prod_call_profile_count[k];
 			}
 		    }
-		    Util.ASSERT(idfound);
+		    assert idfound;
 
 		    if(new_nodestatus)
 			nodestatus.global = 
@@ -1946,7 +1942,7 @@ public abstract class ODPAMain {
 		stored++;
 	    }
 	}
-	Util.ASSERT(stored+unknowns==n_sites,stored + " values stored, instead of " + n_sites);
+	assert stored+unknowns==n_sites : stored + " values stored, instead of " + n_sites;
     }
 
 
@@ -2407,10 +2403,8 @@ public abstract class ODPAMain {
 	int n_nodes_alloc = 0;
 	if (ODMAInfo.MEM_OPTIMIZATION){
 	    System.err.println("\nStack allocation");
-	    Util.ASSERT(alloc_profile!=null,
-			"find_interesting_nodes called with null profile");
-	    Util.ASSERT(an!=null,
-			"find_interesting_nodes called with null an");
+	    assert alloc_profile!=null : "find_interesting_nodes called with null profile";
+	    assert an!=null : "find_interesting_nodes called with null an";
 
 	    int  [] top_quads_alloc = new int  [alloc_profile.length];
 	    long [] top_count_alloc = new long [alloc_profile.length];

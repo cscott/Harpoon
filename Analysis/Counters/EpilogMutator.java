@@ -32,7 +32,7 @@ import harpoon.Util.Util;
  * <code>CounterFactory</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: EpilogMutator.java,v 1.3 2002-02-26 22:39:37 cananian Exp $
+ * @version $Id: EpilogMutator.java,v 1.4 2002-04-10 02:59:01 cananian Exp $
  */
 class EpilogMutator extends harpoon.Analysis.Transformation.MethodMutator {
     private final HMethod HMmain, HMreport, HMexit;
@@ -45,13 +45,13 @@ class EpilogMutator extends harpoon.Analysis.Transformation.MethodMutator {
 	    .getDeclaredMethod("exit","(I)V");
 	this.HMreport = l.forName("harpoon.Runtime.Counters")
 	    .getDeclaredMethod("report","()V");
-	Util.ASSERT(HMmain.isStatic());
-	Util.ASSERT(!HMexit.isStatic());
-	Util.ASSERT(HMreport.isStatic());
-	Util.ASSERT(parent.getCodeName().equals(QuadNoSSA.codename) ||
+	assert HMmain.isStatic();
+	assert !HMexit.isStatic();
+	assert HMreport.isStatic();
+	assert parent.getCodeName().equals(QuadNoSSA.codename) ||
 		    parent.getCodeName().equals(QuadRSSx.codename) ||
 		    parent.getCodeName().equals(QuadSSA.codename) ||
-		    parent.getCodeName().equals(QuadSSI.codename));
+		    parent.getCodeName().equals(QuadSSI.codename);
     }
     public HCode mutateHCode(HCodeAndMaps input) {
 	final boolean isMain = input.hcode().getMethod().equals(HMmain);
@@ -67,7 +67,7 @@ class EpilogMutator extends harpoon.Analysis.Transformation.MethodMutator {
 		if (q.method().equals(HMexit)) addReportBefore(q);
 	    }
 	    private void addReportBefore(Quad q) {
-		Util.ASSERT(q.prevLength()==1);
+		assert q.prevLength()==1;
 		QuadFactory qf = q.getFactory();
 		Temp t = new Temp(qf.tempFactory(), "ignore");
 		Quad q0 = new CALL(qf, q, HMreport, new Temp[0],

@@ -9,20 +9,20 @@ import harpoon.Util.Util;
  * the HClass itself.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassPointer.java,v 1.3 2002-02-26 22:44:59 cananian Exp $
+ * @version $Id: ClassPointer.java,v 1.4 2002-04-10 03:04:12 cananian Exp $
  */
 class ClassPointer extends HPointer implements java.io.Serializable {
     final Linker linker;
     final String descriptor;
     ClassPointer(Linker linker, String descriptor) {
-	Util.ASSERT(descriptor.indexOf('.')==-1); // slashes, not dots.
+	assert descriptor.indexOf('.')==-1 ; // slashes, not dots.
 	// trim descriptor.
 	int i;
 	for (i=0; i<descriptor.length(); i++) {
 	    char c = descriptor.charAt(i);
 	    if (c=='[') continue;
 	    if (c=='L') i = descriptor.indexOf(';', i);
-	    Util.ASSERT(c!='(' && c!=')' && c!='/' && c!=';', descriptor);
+	    assert c!='(' && c!=')' && c!='/' && c!=';' : descriptor;
 	    break;
 	}
 	descriptor = descriptor.substring(0,i+1);
@@ -51,7 +51,7 @@ class ClassPointer extends HPointer implements java.io.Serializable {
 	else if (first=='D') return "double";
 	else if (first=='C') return "char";
 	else if (first=='V') return "void";
-	else Util.ASSERT(false, "Illegal descriptor.");
+	else assert false : "Illegal descriptor.";
 	return null; // javac is stupid.
     }
 }

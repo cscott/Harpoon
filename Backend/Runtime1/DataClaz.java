@@ -39,23 +39,25 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.3 2002-02-26 22:44:31 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.4 2002-04-10 03:03:20 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
     final NameMap m_nm;
     
     /** Creates a <code>ClassData</code>. */
-    public DataClaz(Frame f, HClass hc, ClassHierarchy ch) {
+    public DataClaz(Frame f, HClass hc, ClassHierarchy ch,
+		    Runtime.ExtraClazInfo eci) {
         super("class-data", hc, f);
 	this.m_nm = f.getRuntime().getNameMap();
 	this.m_tb = (TreeBuilder) f.getRuntime().getTreeBuilder();
 	this.BITS_IN_GC_BITMAP = 8 * m_tb.POINTER_SIZE;
-	this.root = build(f, hc, ch);
+	this.root = build(f, hc, ch, eci);
     }
 
-    private HDataElement build(Frame f, HClass hc, ClassHierarchy ch) {
-	List stmlist = new ArrayList();
+    private HDataElement build(Frame f, HClass hc, ClassHierarchy ch,
+			       Runtime.ExtraClazInfo eci) {
+	List<Stm> stmlist = new ArrayList<Stm>();
 	// write the appropriate segment header
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.CLASS));
 	// align things on word boundary.
@@ -87,6 +89,11 @@ public class DataClaz extends Data {
 	stmlist.add(_DATUM(new CONST(tf, null, size)));
 	// bitmap for gc or pointer to bitmap
       	stmlist.add(gc(f, hc));
+	// extra claz info (defined by runtime's subclass, if any)
+	if (eci!=null) {
+	    Stm s = eci.emit(tf, f, hc, ch);
+	    if (s!=null) stmlist.add(s);
+	}
 	// class depth.
 	int depth = m_tb.cdm.classDepth(hc);
 	if (HClassUtil.baseClass(hc).isInterface()) depth=0;// mark interface[]
@@ -114,20 +121,20 @@ public class DataClaz extends Data {
 	if (bitsNeeded > BITS_IN_GC_BITMAP) { // auxiliary table for large objects
 	    return gcaux(f, hc, bitsNeeded);
 	} else { // in-line bitmap for small objects
-	    final List fields = m_tb.cfm.fieldList(hc);
+	    final List<HField> fields = m_tb.cfm.fieldList(hc);
 	    long bitmap = 0;
-	    for (Iterator it=fields.iterator(); it.hasNext(); ) {
-		final HField hf = (HField)it.next();
+	    for (Iterator<HField> it=fields.iterator(); it.hasNext(); ) {
+		final HField hf = it.next();
 		final HClass type = hf.getType();
 		final int fieldOffset = m_tb.cfm.fieldOffset(hf) + m_tb.OBJECT_HEADER_SIZE;
 		// non-aligned objects should never be pointers
 		if (fieldOffset%m_tb.POINTER_SIZE != 0) {
-		    Util.ASSERT(type.isPrimitive());
+		    assert type.isPrimitive();
 		    continue;
 		}
 		if (!type.isPrimitive()) {
 		    final int i = fieldOffset/m_tb.POINTER_SIZE;
-		    Util.ASSERT(i >= 0 && i < BITS_IN_GC_BITMAP);
+		    assert i >= 0 && i < BITS_IN_GC_BITMAP;
 		    bitmap |= (1 << i);
 		}
 	    }
@@ -137,7 +144,7 @@ public class DataClaz extends Data {
 	    if (hc.isArray() && !hc.getComponentType().isPrimitive())
 		bitmap |= (1 << (bitsNeeded - 1));
 	    // write out in-line bitmap
-	    final List stmlist = new ArrayList();
+	    final List<Stm> stmlist = new ArrayList<Stm>();
 	    if (f.pointersAreLong()) {
 		stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
 	    } else {
@@ -153,17 +160,17 @@ public class DataClaz extends Data {
 	// create an array containing the needed bitmaps
 	final long bitmaps[] = new long[bitmapsNeeded];
 	// iterate through the fields
-	final List fields = m_tb.cfm.fieldList(hc);
-	for (Iterator it = fields.iterator(); it.hasNext(); ) {
-	    final HField hf = (HField)it.next();
+	final List<HField> fields = m_tb.cfm.fieldList(hc);
+	for (Iterator<HField> it = fields.iterator(); it.hasNext(); ) {
+	    final HField hf = it.next();
 	    final HClass type =  hf.getType();
 	    if (!type.isPrimitive()) {
 		final int fo = m_tb.cfm.fieldOffset(hf) + m_tb.OBJECT_HEADER_SIZE;
 		// non-primitive fields contain pointers and should be aligned
-		Util.ASSERT(fo%m_tb.POINTER_SIZE == 0);
+		assert fo%m_tb.POINTER_SIZE == 0;
 		// calculate the bit position corresponding to this field
 		final int bp = fo/m_tb.POINTER_SIZE;
-		Util.ASSERT(bp < bitsNeeded);
+		assert bp < bitsNeeded;
 		bitmaps[bp/BITS_IN_GC_BITMAP] |= (1 << (bp%BITS_IN_GC_BITMAP));
 	    }
 	}
@@ -178,7 +185,7 @@ public class DataClaz extends Data {
 		break;
 	    }
 	}
-	final List stmlist = new ArrayList();
+	final List<Stm> stmlist = new ArrayList<Stm>();
 	if (atomic) {
 	    // write NULL to the in-line bitmap to indicate no pointers
 	    if (f.pointersAreLong())
@@ -211,7 +218,7 @@ public class DataClaz extends Data {
 
     /** Make class display table. */
     private Stm display(HClass hc, ClassHierarchy ch) {
-	List clslist = new ArrayList();
+	List<HClass> clslist = new ArrayList<HClass>();
 	// we're going to build the list top-down and then reverse it.
 	if (hc.isArray()) { // arrays are special.
 	    HClass base = HClassUtil.baseClass(hc);
@@ -236,45 +243,48 @@ public class DataClaz extends Data {
 	// now reverse list.
 	Collections.reverse(clslist);
 	// okay, root should always be java.lang.Object.
-	Util.ASSERT(hc.isInterface() || hc.isPrimitive() ||
-		    clslist.get(0)==linker.forName("java.lang.Object"));
+	assert hc.isInterface() || hc.isPrimitive() ||
+		    clslist.get(0)==linker.forName("java.lang.Object");
 	// make statements.
-	List stmlist = new ArrayList(m_tb.cdm.maxDepth()+1);
-	for (Iterator it=clslist.iterator(); it.hasNext(); )
-	    stmlist.add(_DATUM(m_nm.label((HClass)it.next())));
+	List<Stm> stmlist = new ArrayList<Stm>(m_tb.cdm.maxDepth()+1);
+	for (Iterator<HClass> it=clslist.iterator(); it.hasNext(); )
+	    stmlist.add(_DATUM(m_nm.label(it.next())));
 	while (stmlist.size() <= m_tb.cdm.maxDepth())
 	    stmlist.add(_DATUM(new CONST(tf, null))); // pad with nulls.
-	Util.ASSERT(stmlist.size() == m_tb.cdm.maxDepth()+1);
+	assert stmlist.size() == m_tb.cdm.maxDepth()+1;
 	return Stm.toStm(stmlist);
     }
     /** Make class methods table. */
     private Stm classMethods(HClass hc, ClassHierarchy ch) {
 	// collect all the methods.
-	List methods = new ArrayList(Arrays.asList(hc.getMethods()));
+	List<HMethod> methods =
+	    new ArrayList<HMethod>(Arrays.asList(hc.getMethods()));
 	// weed out non-virtual methods.
-	for (Iterator it=methods.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Iterator<HMethod> it=methods.iterator(); it.hasNext(); ) {
+	    HMethod hm = it.next();
+	    assert !hm.isInterfaceMethod() :
+		"getMethods() on "+hc+" returned an *interface* method: "+hm+
+		" / method list: "+methods;
 	    if (hm.isStatic() || hm instanceof HConstructor ||
 		Modifier.isPrivate(hm.getModifiers()))
 		it.remove();
 	}
 	// sort the methods using class method map.
 	final MethodMap cmm = m_tb.cmm;
-	Collections.sort(methods, new Comparator() {
-	    public int compare(Object o1, Object o2) {
-		HMethod hm1 = (HMethod) o1, hm2 = (HMethod) o2;
+	Collections.sort(methods, new Comparator<HMethod>() {
+	    public int compare(HMethod hm1, HMethod hm2) {
 		int i1 = cmm.methodOrder(hm1);
 		int i2 = cmm.methodOrder(hm2);
 		return i1 - i2;
 	    }
 	});
 	// make stms.
-	List stmlist = new ArrayList(methods.size());
-	Set callable = ch.callableMethods();
+	List<Stm> stmlist = new ArrayList<Stm>(methods.size());
+	Set<HMethod> callable = ch.callableMethods();
 	int order=0;
-	for (Iterator it=methods.iterator(); it.hasNext(); order++) {
-	    HMethod hm = (HMethod) it.next();
-	    Util.ASSERT(cmm.methodOrder(hm)==order); // should be no gaps.
+	for (Iterator<HMethod> it=methods.iterator(); it.hasNext(); order++) {
+	    HMethod hm = it.next();
+	    assert cmm.methodOrder(hm)==order; // should be no gaps.
 	    if (callable.contains(hm) &&
 		!Modifier.isAbstract(hm.getModifiers()))
 		stmlist.add(_DATUM(m_nm.label(hm)));
@@ -296,48 +306,48 @@ public class DataClaz extends Data {
     /** Make interface methods table. */
     private Stm interfaceMethods(HClass hc, ClassHierarchy ch) {
 	// collect all interfaces implemented by this class
-	Set interfaces = new HashSet();
+	Set<HClass> interfaces = new HashSet<HClass>();
 	for (HClass hcp=hc; hcp!=null; hcp=hcp.getSuperclass())
 	    interfaces.addAll(Arrays.asList(hcp.getInterfaces()));
 	if (!relinkerHack) // XXX EVIL: see above.
 	    interfaces.retainAll(ch.classes());
 	// all methods included in these interfaces.
-	Set methods = new HashSet();
-	for (Iterator it=interfaces.iterator(); it.hasNext(); )
-	    methods.addAll(Arrays.asList(((HClass)it.next()).getMethods()));
+	Set<HMethod> methods = new HashSet<HMethod>();
+	for (Iterator<HClass> it=interfaces.iterator(); it.hasNext(); )
+	    methods.addAll(Arrays.asList(it.next().getMethods()));
 	if (!relinkerHack) // XXX EVIL: see above.
 	    methods.retainAll(ch.callableMethods());
 	// double-check that these are all interface methods
 	// (also discard class initializers from the list)
 	// (also discard inherited methods of java.lang.Object)
-	for (Iterator it=methods.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Iterator<HMethod> it=methods.iterator(); it.hasNext(); ) {
+	    HMethod hm = it.next();
 	    if (hm instanceof HInitializer) it.remove();
 	    else if (hm.getDeclaringClass().getName()
 		     .equals("java.lang.Object")) it.remove();
-	    else Util.ASSERT(hm.isInterfaceMethod());
+	    else assert hm.isInterfaceMethod();
 	}
 	// remove duplicates (two methods with same signature)
 	// pre-load sigs with methods of java.lang.Object to make sure
 	// inherited methods of Object don't make it into the methods
 	// set.
-	Set sigs = new HashSet();
-	for (Iterator it=Arrays.asList
+	Set<String> sigs = new HashSet<String>();
+	for (Iterator<HMethod> it=Arrays.asList
 		 (linker.forName("java.lang.Object").getMethods()).iterator();
 	     it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	    HMethod hm = it.next();
 	    String sig = hm.getName() + hm.getDescriptor();
 	    sigs.add(sig);
 	}	    
-	for (Iterator it=methods.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Iterator<HMethod> it=methods.iterator(); it.hasNext(); ) {
+	    HMethod hm = it.next();
 	    String sig = hm.getName() + hm.getDescriptor();
 	    if (sigs.contains(sig)) it.remove();
 	    else sigs.add(sig);
 	}
 	// remove methods which are not actually callable in this class.
-	for (Iterator it=methods.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Iterator<HMethod> it=methods.iterator(); it.hasNext(); ) {
+	    HMethod hm = it.next();
 	    HMethod cm = hc.getMethod(hm.getName(), hm.getDescriptor());
 	    if (!ch.callableMethods().contains(cm) ||
 		Modifier.isAbstract(cm.getModifiers()))
@@ -345,24 +355,23 @@ public class DataClaz extends Data {
 	}
 	// okay, now sort by InterfaceMethodMap ordering.
 	final MethodMap imm = m_tb.imm;
-	List ordered = new ArrayList(methods);
-	Collections.sort(ordered, new Comparator() {
-	    public int compare(Object o1, Object o2) {
-		HMethod hm1 = (HMethod) o1, hm2 = (HMethod) o2;
+	List<HMethod> ordered = new ArrayList<HMethod>(methods);
+	Collections.sort(ordered, new Comparator<HMethod>() {
+	    public int compare(HMethod hm1, HMethod hm2) {
 		int i1 = imm.methodOrder(hm1);
 		int i2 = imm.methodOrder(hm2);
 		return i1 - i2;
 	    }
 	});
 	// okay, output in reverse order:
-	List stmlist = new ArrayList(ordered.size());
+	List<Stm> stmlist = new ArrayList<Stm>(ordered.size());
 	int last_order = -1;
-	for (ListIterator it=ordered.listIterator(ordered.size());
+	for (ListIterator<HMethod> it=ordered.listIterator(ordered.size());
 	     it.hasPrevious(); ) {
-	    HMethod hm = (HMethod) it.previous();
+	    HMethod hm = it.previous();
 	    int this_order = imm.methodOrder(hm);
 	    if (last_order!=-1) {
-		Util.ASSERT(this_order < last_order); // else not ordered
+		assert this_order < last_order; // else not ordered
 		for (int i=last_order-1; i > this_order; i--)
 		    stmlist.add(_DATUM(new CONST(tf, null))); // null
 	    }
@@ -373,7 +382,7 @@ public class DataClaz extends Data {
 	    last_order = this_order;
 	}
 	if (last_order!=-1) {
-	    Util.ASSERT(last_order>=0);
+	    assert last_order>=0;
 	    for (int i=last_order; i > 0; i--)
 		stmlist.add(_DATUM(new CONST(tf, null)));
 	}

@@ -22,10 +22,10 @@ import java.util.Set;
  * function.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DisjointSet.java,v 1.3 2002-02-26 22:47:35 cananian Exp $
+ * @version $Id: DisjointSet.java,v 1.4 2002-04-10 03:07:11 cananian Exp $
  */
-public class DisjointSet  {
-    private final Map elmap = new HashMap();
+public class DisjointSet<E>  {
+    private final Map<E,Node<E>> elmap = new HashMap<E,Node<E>>();
 
     /** Creates a <code>DisjointSet</code>. */
     public DisjointSet() { }
@@ -37,18 +37,18 @@ public class DisjointSet  {
      *  resulting set is the representative of either S1 or S2; if
      *  both S1 and S2 were previously singletons, the representative
      *  of S1 union S2 is the representative of S2. */
-    public void union(Object o1, Object o2) { // this is UNION
-	Node x = (Node) elmap.get(o1);
+    public void union(E o1, E o2) { // this is UNION
+	Node<E> x = elmap.get(o1);
 	if (x==null) x=_make_set(o1);
-	Node y = (Node) elmap.get(o2);
+	Node<E> y = elmap.get(o2);
 	if (y==null) y=_make_set(o2);
-	Util.ASSERT(!x.equals(y), "Sets assumed to be disjoint");
+	assert !x.equals(y) : "Sets assumed to be disjoint";
 	_union(x, y);
     }
     /** Returns the representative of the (unique) set containing
      *  <code>o</code>. */
-    public Object find(Object o) { // this is FIND-SET
-	Node x = (Node) elmap.get(o);
+    public E find(E o) { // this is FIND-SET
+	Node<E> x = elmap.get(o);
 	if (x==null) return o;
 	return _find_set(x).element;
     }
@@ -58,21 +58,21 @@ public class DisjointSet  {
 	return elmap.containsKey(o);
     }
     // these are the routines according to CLR
-    private Node _make_set(Object o) {
-	Util.ASSERT(!elmap.containsKey(o));
-	Node x = new Node(o);
+    private Node<E> _make_set(E o) {
+	assert !elmap.containsKey(o);
+	Node<E> x = new Node<E>(o);
 	elmap.put(o, x);
 	return x;
     }
-    private Node _find_set(Node x) {
+    private Node<E> _find_set(Node<E> x) {
 	if (x.parent != x)
 	    x.parent = _find_set(x.parent);
 	return x.parent;
     }
-    private void _union(Node x, Node y) {
+    private void _union(Node<E> x, Node<E> y) {
 	_link(_find_set(x), _find_set(y));
     }
-    private void _link(Node x, Node y) {
+    private void _link(Node<E> x, Node<E> y) {
 	if (x.rank > y.rank)
 	    y.parent = x;
 	else {
@@ -84,26 +84,26 @@ public class DisjointSet  {
     /** Returns an unmodifiable <code>Map</code> view of the disjoint
      *  set, where every element is mapped to its canonical representative.
      */
-    public Map asMap() {
-	return new AbstractMap() {
+    public Map<E,E> asMap() {
+	return new AbstractMap<E,E>() {
 	    public boolean containsKey(Object key) {
 		return elmap.containsKey(key);
 	    }
 	    // XXX: returns identity mapping for objects not in set.
-	    public Object get(Object key) { return find(key); }
-	    public Set entrySet() {
-		final Set objects = elmap.keySet();
-		return new AbstractSet() {
+	    public E get(Object key) { return find((E)key); }
+	    public Set<Map.Entry<E,E>> entrySet() {
+		final Set<E> objects = elmap.keySet();
+		return new AbstractSet<Map.Entry<E,E>>() {
 		    public int size() { return objects.size(); }
-		    public Iterator iterator() {
-			final Iterator objit = objects.iterator();
-			return new UnmodifiableIterator() {
+		    public Iterator<Map.Entry<E,E>> iterator() {
+			final Iterator<E> objit = objects.iterator();
+			return new UnmodifiableIterator<Map.Entry<E,E>>() {
 			    public boolean hasNext(){ return objit.hasNext(); }
-			    public Object next() {
-				final Object key = objit.next();
-				return new AbstractMapEntry() {
-				    public Object getKey() { return key; }
-				    public Object getValue() {
+			    public Map.Entry<E,E> next() {
+				final E key = objit.next();
+				return new AbstractMapEntry<E,E>() {
+				    public E getKey() { return key; }
+				    public E getValue() {
 					// note deferred for efficiency.
 					return find(key);
 				    }
@@ -117,39 +117,39 @@ public class DisjointSet  {
     }
     /** Returns a human-readable representation of the DisjointSet. */
     public String toString() {
-	MultiMap mm = new GenericMultiMap();
-	for (Iterator it=elmap.values().iterator(); it.hasNext(); ) {
-	    Node n = (Node) it.next();
-	    Node r = _find_set(n);
+	MultiMap<E,E> mm = new GenericMultiMap<E,E>();
+	for (Iterator<Node<E>> it=elmap.values().iterator(); it.hasNext(); ) {
+	    Node<E> n = it.next();
+	    Node<E> r = _find_set(n);
 	    if (n!=r) mm.add(r.element, n.element);
 	}
 	return mm.toString();
     }
     // node representation.
-    private static class Node {
-	Node parent;
-	final Object element;
+    private static class Node<E> {
+	Node<E> parent;
+	final E element;
 	int rank;
-	Node(Object element) {
+	Node(E element) {
 	    this.parent = this; this.element = element; this.rank = 0;
 	}
     }
     /** Self-test method. */
     public static void main(String[] args) {
-	DisjointSet ds = new DisjointSet();
+	DisjointSet<String> ds = new DisjointSet<String>();
 	String a="a", b="b", c="c", d="d", e="e", f="f", g="g", h="h";
-	Util.ASSERT(!ds.contains(a) && !ds.contains(b) && !ds.contains(c));
-	Util.ASSERT(ds.find(a)==a && ds.find(b)==b && ds.find(c)==c);
-	Util.ASSERT(!ds.contains(a) && !ds.contains(b) && !ds.contains(c));
+	assert !ds.contains(a) && !ds.contains(b) && !ds.contains(c);
+	assert ds.find(a)==a && ds.find(b)==b && ds.find(c)==c;
+	assert !ds.contains(a) && !ds.contains(b) && !ds.contains(c);
 	ds.union(e, c); ds.union(b, h); ds.union(h, c);
-	Util.ASSERT(ds.find(e)==ds.find(c) && ds.find(h)==ds.find(e));
-	Util.ASSERT(ds.find(b)==ds.find(c) && ds.find(b)!=ds.find(a));
+	assert ds.find(e)==ds.find(c) && ds.find(h)==ds.find(e);
+	assert ds.find(b)==ds.find(c) && ds.find(b)!=ds.find(a);
 	ds.union(d, f); ds.union(g, d);
-	Util.ASSERT(ds.find(d)==ds.find(f) && ds.find(f)==ds.find(g));
-	Util.ASSERT(ds.find(d)!=ds.find(c) && ds.find(d)!=ds.find(a));
+	assert ds.find(d)==ds.find(f) && ds.find(f)==ds.find(g);
+	assert ds.find(d)!=ds.find(c) && ds.find(d)!=ds.find(a);
 	ds.union(c, f);
-	Util.ASSERT(ds.find(e)==ds.find(f));
-	Util.ASSERT(ds.find(a)==a);
+	assert ds.find(e)==ds.find(f);
+	assert ds.find(a)==a;
 	System.err.println("PASSED.");
     }
 }

@@ -18,13 +18,13 @@ import java.util.List;
  * fieldSize() is taken into account.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldMap.java,v 1.2 2002-02-25 21:01:57 cananian Exp $ */
+ * @version $Id: FieldMap.java,v 1.3 2002-04-10 03:03:02 cananian Exp $ */
 public abstract class FieldMap  {
     /** Return an offset to the given field. */
     public abstract int fieldOffset(HField hf);
     /** Return an unmodifiable List over all appropriate fields in the given
      *  class, in order from smallest to largest offset. */
-    public abstract List fieldList(HClass hc);
+    public abstract List<HField> fieldList(HClass hc);
     /** Return the allocated size of a given field. */
     public abstract int fieldSize(HField hf);
     /* Override this method if you need the fields aligned in any special

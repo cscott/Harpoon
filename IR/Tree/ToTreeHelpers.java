@@ -38,7 +38,7 @@ import java.util.Set;
  * <code>ToTreeHelpers</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTreeHelpers.java,v 1.3 2002-02-26 22:46:11 cananian Exp $
+ * @version $Id: ToTreeHelpers.java,v 1.4 2002-04-10 03:05:46 cananian Exp $
  */
 abstract class ToTreeHelpers {
     //------------ EdgeOracle IMPLEMENTATIONS ------------------
@@ -111,7 +111,7 @@ abstract class ToTreeHelpers {
 	MinMaxEdgeOracle(HCode hc, CFGrapher cfg) {
 	    this.cfg = cfg;
 	    // get the 'single-source', which is the unique FOOTER node.
-	    Util.ASSERT(hc.getLeafElements().length==1);
+	    assert hc.getLeafElements().length==1;
 	    HCodeElement s = hc.getLeafElements()[0];
 	    // we're going to need a mapping from HCodeElements to Map.Entry's
 	    Map m = new HashMap();
@@ -146,13 +146,13 @@ abstract class ToTreeHelpers {
 	    return ((Integer)d.get(v)).intValue();
 	}
 	private void set_d(HCodeElement v, int k, Heap Q, Map m) {
-	    Util.ASSERT(d(v) > k);
-	    Util.ASSERT(((Map.Entry)m.get(v)).getKey()
-			.equals(new Integer(d(v))));
+	    assert d(v) > k;
+	    assert ((Map.Entry)m.get(v)).getKey()
+			.equals(new Integer(d(v)));
 	    d.put(v, new Integer(k));
 	    Q.decreaseKey((Map.Entry)m.get(v), new Integer(k));
-	    Util.ASSERT(((Map.Entry)m.get(v)).getKey()
-			.equals(new Integer(d(v))));
+	    assert ((Map.Entry)m.get(v)).getKey()
+			.equals(new Integer(d(v)));
 	}
 	/** defaultEdge corresponds to the edge with largest shortest path */
 	public int defaultEdge(HCodeElement hce) {
@@ -205,7 +205,7 @@ abstract class ToTreeHelpers {
 	    //System.err.print("[FOLDING: "+safe+"]");
 	}
 	void dfs(Quad q, Set seen, Environment reachingDefs, Set singleUse) {
-	    Util.ASSERT(!seen.contains(q));
+	    assert !seen.contains(q);
 	    seen.add(q);
 	    { // if def reached this use, add to safe set.
 		Temp[] use = q.use();

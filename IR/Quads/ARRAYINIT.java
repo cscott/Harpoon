@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>ARRAYINIT</code> represents an array initialization operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ARRAYINIT.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
+ * @version $Id: ARRAYINIT.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
  */
 public class ARRAYINIT extends Quad {
     /** The array reference to initialize. */
@@ -47,9 +47,9 @@ public class ARRAYINIT extends Quad {
 	this.offset = offset;
 	this.value = value;
 	// VERIFY legality of ARRAYINIT.
-	Util.ASSERT(objectref!=null && type!=null && value!=null);
-	Util.ASSERT(type.isPrimitive() && type!=HClass.Void);
-	/*Util.ASSERT(offset>=0); // legal, it just throws an exception. */
+	assert objectref!=null && type!=null && value!=null;
+	assert type.isPrimitive() && type!=HClass.Void;
+	/*assert offset>=0; // legal, it just throws an exception. */
     }
     /** Returns the <code>Temp</code> referencing the array to be
      *  initialized. */

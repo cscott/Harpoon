@@ -44,7 +44,7 @@ import java.util.Set;
  * speed up dispatch.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DispatchTreeTransformation.java,v 1.3 2002-02-26 22:41:41 cananian Exp $
+ * @version $Id: DispatchTreeTransformation.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
  */
 public class DispatchTreeTransformation
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -61,8 +61,8 @@ public class DispatchTreeTransformation
     protected HCode mutateHCode(HCodeAndMaps input) {
 	HCode ahc = input.ancestorHCode();
 	HCode hc = input.hcode();
-	Util.ASSERT(ahc.getName().equals(harpoon.IR.Quads.QuadSSI.codename));
-	Util.ASSERT(hc.getName().equals(harpoon.IR.Quads.QuadRSSx.codename));
+	assert ahc.getName().equals(harpoon.IR.Quads.QuadSSI.codename);
+	assert hc.getName().equals(harpoon.IR.Quads.QuadRSSx.codename);
 	// do a type analysis of the method.
 	SCCAnalysis scc = new SCCAnalysis(ahc);
 	ExactTypeMap etm = new ExactTypeMapProxy(input, scc);
@@ -80,7 +80,7 @@ public class DispatchTreeTransformation
     }
     protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod) {
 	// make SSI into RSSx.
-	Util.ASSERT(hc.getName().equals(QuadSSI.codename));
+	assert hc.getName().equals(QuadSSI.codename);
 	return MyRSSx.cloneToRSSx((harpoon.IR.Quads.Code)hc, newmethod);
     }
     private static class MyRSSx extends QuadRSSx {
@@ -92,7 +92,7 @@ public class DispatchTreeTransformation
 	}
     }
     protected String mutateCodeName(String codeName) {
-	Util.ASSERT(codeName.equals(QuadSSI.codename));
+	assert codeName.equals(QuadSSI.codename);
 	return MyRSSx.codename;
     }
     private boolean examineCALL(CALL call, ExactTypeMap etm) {
@@ -177,7 +177,7 @@ public class DispatchTreeTransformation
 				  call.dst(), call.src());
 	    spcalls.add(ncall);
 	}
-	Util.ASSERT(spcalls.size()>0);
+	assert spcalls.size()>0;
 	// make PHI node for regular and exceptional returns.
 	PHI rephi = new PHI(qf, call, new Temp[0], spcalls.size());
 	PHI exphi = new PHI(qf, call, new Temp[0], spcalls.size());

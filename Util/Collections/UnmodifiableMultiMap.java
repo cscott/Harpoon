@@ -13,49 +13,52 @@ import java.util.AbstractMap;
     methds of the <code>MultiMap</code> interface.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: UnmodifiableMultiMap.java,v 1.2 2002-02-25 21:09:15 cananian Exp $
+    @version $Id: UnmodifiableMultiMap.java,v 1.3 2002-04-10 03:07:14 cananian Exp $
 */
-public abstract class UnmodifiableMultiMap 
-    extends AbstractMap implements MultiMap {
+public abstract class UnmodifiableMultiMap<K,V> 
+    extends AbstractMap<K,V> implements MultiMap<K,V> {
 
     /** Constructs and returns an unmodifiable <code>MultiMap</code>
 	backed by <code>mmap</code>.
     */
-    public static MultiMap proxy(final MultiMap mmap) {
-	return new UnmodifiableMultiMap() {
-		public Object get(Object key) { 
+    public static <K,V> MultiMap<K,V> proxy(final MultiMap<K,V> mmap) {
+	return new UnmodifiableMultiMap<K,V>() {
+		public V get(Object key) { 
 		    return mmap.get(key); 
 		}
-		public Collection getValues(Object key) { 
+		public Collection<V> getValues(K key) { 
 		    return mmap.getValues(key);
 		}
 		public boolean contains(Object a, Object b) { 
 		    return mmap.contains(a, b);
 		}
-		public Set entrySet() { return mmap.entrySet(); }
+		public MultiMapSet<K,V> entrySet() { return mmap.entrySet(); }
 	    };
     }
+    /** Returns a <code>Set</code> view that allows you to recapture
+     *  the <code>MultiMap</code> view. */
+    public abstract MultiMapSet<K,V> entrySet();
 
     /** Throws UnsupportedOperationException. */
-    public Object put(Object key, Object value) { die(); return null; }
+    public V put(K key, V value) { die(); return null; }
     /** Throws UnsupportedOperationException. */
-    public Object remove(Object key) { die(); return null; }
+    public V remove(Object key) { die(); return null; }
     /** Throws UnsupportedOperationException. */
     public boolean remove(Object key, Object value) { return die(); }
     /** Throws UnsupportedOperationException. */
-    public void putAll(Map t) { die(); }
+    public <K2 extends K, V2 extends V> void putAll(Map<K2,V2> t) { die(); }
     /** Throws UnsupportedOperationException. */
     public void clear() { die(); }
     /** Throws UnsupportedOperationException. */
-    public boolean add(Object key, Object value) { return die(); }
+    public boolean add(K key, V value) { return die(); }
     /** Throws UnsupportedOperationException. */
-    public boolean addAll(Object key, Collection values) { return die(); }
+    public <V2 extends V> boolean addAll(K key, Collection<V2> values) { return die(); }
     /** Throws UnsupportedOperationException. */
-    public boolean addAll(MultiMap mm) { return die(); }
+    public <K2 extends K, V2 extends V> boolean addAll(MultiMap<K2,V2> mm) { return die(); }
     /** Throws UnsupportedOperationException. */
-    public boolean retainAll(Object key, Collection values) { return die(); }
+    public <T> boolean retainAll(K key, Collection<T> values) { return die(); }
     /** Throws UnsupportedOperationException. */
-    public boolean removeAll(Object key, Collection values) { return die(); }
+    public <T> boolean removeAll(K key, Collection<T> values) { return die(); }
     private boolean die() {
 	if (true) throw new UnsupportedOperationException();
 	return false;

@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
-
+import java.util.Collection;
 /**
  * A <code>MultiMapSet</code> is a <code>java.util.Set</code> of
  * <code>Map.Entry</code>s which can also be accessed as a
@@ -11,8 +11,9 @@ package harpoon.Util.Collections;
  * of the <code>MultiMap</code> to get back the <code>MultiMapSet</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MultiMapSet.java,v 1.2 2002-02-25 21:09:12 cananian Exp $
+ * @version $Id: MultiMapSet.java,v 1.3 2002-04-10 03:07:13 cananian Exp $
  */
-public interface MultiMapSet extends MapSet {
-    public MultiMap asMultiMap();
+public interface MultiMapSet<K,V> extends MapSet<K,V> {
+    public MultiMap<K,V> asMap();
+    public MultiMap<K,V> asMultiMap();
 }

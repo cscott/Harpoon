@@ -73,7 +73,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.4 2002-04-02 23:41:51 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.5 2002-04-10 03:00:42 cananian Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -327,7 +327,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	else
 	    if(WEAKLY_THREAD_SENSITIVE)
 		new_pig = original_pig.wtSpecialize(mm);
-	    else Util.ASSERT(false,"The thread specialization is off!");
+	    else assert false : "The thread specialization is off!";
 
 	t_specs.put(mm,new_pig);
 
@@ -853,7 +853,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	    if(set_E.isEmpty()){ // easy case; don't need to create a load node
 		lbbpig.G.I.addEdges(l1, set_S);
 		if(!IGNORE_EO)
-		    Util.ASSERT(false, "Unimplemented yet!");
+		    assert false : "Unimplemented yet!";
 		return;
 	    }
 
@@ -1333,13 +1333,12 @@ public class PointerAnalysis implements java.io.Serializable {
     
 
     public final ParIntGraph getPigForQuad(MetaMethod mm, Quad q, int moment) {
-	Util.ASSERT(mcg.getAllMetaMethods().contains(mm),
-		    "Uncalled/unknown meta-method!");
+	assert mcg.getAllMetaMethods().contains(mm) : "Uncalled/unknown meta-method!";
 	LBBConverter lbbconv = scc_lbb_factory.getLBBConverter();
 	LightBasicBlock.Factory lbbf = lbbconv.convert2lbb(mm.getHMethod());
-	Util.ASSERT(lbbf != null, "Fatal error");
+	assert lbbf != null : "Fatal error";
 	LightBasicBlock lbb = lbbf.getBlock(q);
-	Util.ASSERT(lbb != null, "No (Light)BasicBlock found for " + q);
+	assert lbb != null : "No (Light)BasicBlock found for " + q;
 	// as all the ParIntGraph's for methods are computed, a simple
 	// intra-procedural analysis of mm (with some caller-callee
 	// interactions) is enough.
@@ -1382,7 +1381,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	    if((moment == AFTER_QUAD) && q_curr.equals(q))
 		return lbbpig;
 	}
-	Util.ASSERT(false, q + " was not in " + lbb);
+	assert false : q + " was not in " + lbb;
 	return null; // this should never happen
     }
 

@@ -39,7 +39,7 @@ import java.util.Set;
  * MZF-compressed version of a class at run-time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFChooser.java,v 1.3 2002-02-26 22:42:23 cananian Exp $
+ * @version $Id: MZFChooser.java,v 1.4 2002-04-10 03:01:37 cananian Exp $
  */
 class MZFChooser extends MethodMutator {
     /** an oracle to determine the properties of constructors. */
@@ -64,7 +64,7 @@ class MZFChooser extends MethodMutator {
     }
     protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod) {
 	// make SSA into RSSx.
-	Util.ASSERT(hc.getName().equals(QuadSSA.codename));
+	assert hc.getName().equals(QuadSSA.codename);
 	return MyRSSx.cloneToRSSx((harpoon.IR.Quads.Code)hc, newmethod);
     }
     private static class MyRSSx extends QuadRSSx {
@@ -84,14 +84,13 @@ class MZFChooser extends MethodMutator {
 	// for each constructor:
 	for (Iterator it=qfinder.constructors.iterator(); it.hasNext(); ) {
 	    CALL qC = (CALL) it.next();
-	    Util.ASSERT(!qC.isVirtual());
+	    assert !qC.isVirtual();
 	    // match it to a 'NEW'.
 	    NEW qN = (NEW) qfinder.temp2new.get(qC.params(0));
 	    if (qN==null) continue; // typically call to super-constructor.
 	    // if we know anything about this constructor...
 	    if (!cc.isGood(qC.method())) continue;
-	    Util.ASSERT(qN.hclass().equals(qC.method().getDeclaringClass()),
-			qN+" / "+qC);
+	    assert qN.hclass().equals(qC.method().getDeclaringClass()) : qN+" / "+qC;
 	    // fetch field list for this class.
 	    List sortedFields = (List) listmap.get(qN.hclass());
 	    if (sortedFields==null) continue; // nothing known about this class
@@ -109,7 +108,7 @@ class MZFChooser extends MethodMutator {
 	Set constructors = new HashSet();
 	public void visit(Quad q) { /* not interesting */ }
 	public void visit(NEW q) {
-	    Util.ASSERT(!temp2new.containsKey(q.dst()), "SSx form");
+	    assert !temp2new.containsKey(q.dst()) : "SSx form";
 	    temp2new.put(q.dst(), q);
 	}
 	public void visit(CALL q) {
@@ -190,7 +189,7 @@ class MZFChooser extends MethodMutator {
 	    Quad q0 = ty.isPrimitive() ?
 		new CONST(qf, qC, tZ, makeValue(ty, num), ty) :
 		new CONST(qf, qC, tZ, null, HClass.Void);
-	    Util.ASSERT(ty.isPrimitive()?true:num.intValue()==0);
+	    assert ty.isPrimitive()?true:num.intValue()==0;
 	    Quad q1 = new OPER(qf, qC, makeEqOp(ty), tC,
 			       new Temp[] { tZ, qC.params(which) });
 	    Quad q2 = new CJMP(qf, qC, tC, new Temp[0]);
@@ -198,7 +197,7 @@ class MZFChooser extends MethodMutator {
 			       qC.params(), qC.retval(), qC.retex(),
 			       qC.isVirtual(), qC.isTailCall(),
 			       qC.dst(), qC.src());
-	    Util.ASSERT(qC.retval()==null); // constructor should be void
+	    assert qC.retval()==null; // constructor should be void
 	    Quad q4 = new NEW(qf, qC, qC.params(0), /* boring */
 			      qC.method().getDeclaringClass());
 	    Quad q5 = new PHI(qf, qC, new Temp[0], 2); //retval phi
@@ -250,7 +249,7 @@ class MZFChooser extends MethodMutator {
 	if (type==HClass.Long) return Qop.LCMPEQ;
 	if (type==HClass.Float) return Qop.FCMPEQ;
 	if (type==HClass.Double) return Qop.DCMPEQ;
-	Util.ASSERT(false, "unknown type: "+type);
+	assert false : ("unknown type: "+type);
 	return -1;
     }
 }

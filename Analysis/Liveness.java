@@ -5,6 +5,7 @@ package harpoon.Analysis;
 
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Temp.Temp;
 
 import java.util.Set;
 
@@ -12,27 +13,27 @@ import java.util.Set;
  * <code>Liveness</code> defines an abstract class for live variable analysis.
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: Liveness.java,v 1.2 2002-02-25 20:56:10 cananian Exp $
+ * @version $Id: Liveness.java,v 1.3 2002-04-10 02:58:48 cananian Exp $
  */
-public abstract class Liveness {
+public abstract class Liveness<HCE extends HCodeElement> {
     /** The <code>HCode</code> for which this object contains analysis
      *  results. */
-    protected final HCode hc;
+    protected final HCode<HCE> hc;
 
     /** Creates a <code>Liveness</code> object from
      *  provided <code>HCode</code>.
      */
-    public Liveness(HCode hc) {
+    public Liveness(HCode<HCE> hc) {
 	this.hc = hc;
     }
     
     /** Returns the <code>Set</code> of <code>Temp</code>s 
      *  that are live-in at the <code>HCodeElement</code>. 
      */
-    public abstract Set getLiveIn(HCodeElement hce);
+    public abstract Set<Temp> getLiveIn(HCE hce);
 
     /** Returns the <code>Set</code> of <code>Temp</code>s 
      *  that are live-out at the <code>HCodeElement</code>. 
      */
-    public abstract Set getLiveOut(HCodeElement hce);
+    public abstract Set<Temp> getLiveOut(HCE hce);
 }

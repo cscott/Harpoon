@@ -39,16 +39,16 @@ import java.util.Set;
  * the transformation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MemHoisting.java,v 1.3 2002-02-26 22:42:47 cananian Exp $
+ * @version $Id: MemHoisting.java,v 1.4 2002-04-10 03:02:06 cananian Exp $
  */
 public abstract class MemHoisting extends Simplification {
     // hide constructor
-    public MemHoisting() { }
+    private MemHoisting() { }
     /** Code factory for applying MemHoisting to a
      *  canonical tree.  Clones the tree before doing
      *  transformation in-place. */
     public static HCodeFactory codeFactory(final HCodeFactory parent) {
-	Util.ASSERT(parent.getCodeName().equals(CanonicalTreeCode.codename));
+	assert parent.getCodeName().equals(CanonicalTreeCode.codename);
 	return Canonicalize.codeFactory(new HCodeFactory() {
 	    public HCode convert(HMethod m) {
 		HCode hc = parent.convert(m);
@@ -71,32 +71,33 @@ public abstract class MemHoisting extends Simplification {
 	});
     }
 
-    private static int count(Tree tr, Map m, int memcnt) {
+    private static int count(Tree tr, Map<Tree,Integer> m, int memcnt) {
 	memcnt += (tr.kind()==TreeKind.MEM) ? 1 : 0;
 	m.put(tr, new Integer(memcnt));
 	for (Tree tp=tr.getFirstChild(); tp!=null; tp=tp.getSibling())
 	    memcnt=count(tp, m, memcnt);
 	return memcnt;
     }
-    private static void recurse(Stm stm, CFGrapher cfgr, Set done, Map m) {
+    private static void recurse(Stm stm, CFGrapher<Tree> cfgr,
+				Set<Stm> done, Map<Tree,Integer> m) {
 	// do this one.
 	done.add(stm);
 	count(stm, m, 0);
 	// do successors.
-	for (Iterator it=cfgr.succElemC(stm).iterator(); it.hasNext(); ) {
+	for (Iterator<Tree> it=cfgr.succElemC(stm).iterator(); it.hasNext();) {
 	    Stm next = (Stm) it.next();
 	    if (!done.contains(next))
 		recurse(next, cfgr, done, m);
 	}
     }
 
-    public static List HCE_RULES(final harpoon.IR.Tree.Code code) {
-	final CFGrapher cfgr = code.getGrapher();
+    public static List<Rule> HCE_RULES(final harpoon.IR.Tree.Code code) {
+	final CFGrapher<Tree> cfgr = code.getGrapher();
 	// collect the number of MEMs in every subtree.
-	final Map memmap = new HashMap();
+	final Map<Tree,Integer> memmap = new HashMap<Tree,Integer>();
 
-	Set done = new HashSet();
-	HCodeElement[] roots = cfgr.getFirstElements(code);
+	Set<Stm> done = new HashSet();
+	Tree[] roots = cfgr.getFirstElements(code);
 	for (int i=0; i<roots.length; i++)
 	    recurse((Stm)roots[i], cfgr, done, memmap);
 	roots=null; done=null; // free memory.
@@ -108,16 +109,16 @@ public abstract class MemHoisting extends Simplification {
 		public boolean match(Exp e) {
 		    if (e.kind() != TreeKind.MEM) return false;
 		    // leave the first mem in a stm alone.
-		    if (((Integer)memmap.get(e)).intValue() < 2) return false;
+		    if (memmap.get(e).intValue() < 2) return false;
 		    // assert that we're not messing with MOVE(t, MEM(x))
 		    // or MOVE(MEM(x), ...) trees [but MOVE(MEM(x), MEM(y))
 		    // is okay to touch, if we're hoisting the MEM(y) ]
 		    if (e.getParent()!=null &&
 			e.getParent().kind() == TreeKind.MOVE) {
 			MOVE m = (MOVE) e.getParent();
-			Util.ASSERT(m.getSrc().kind()==TreeKind.MEM &&
+			assert m.getSrc().kind()==TreeKind.MEM &&
 				    m.getDst().kind()==TreeKind.MEM &&
-				    e == m.getSrc());
+				    e == m.getSrc();
 		    }
 		    return true;
 		}

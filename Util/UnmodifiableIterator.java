@@ -12,9 +12,9 @@ import java.util.Iterator;
  * <code>java.util.Collections</code> and etc.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnmodifiableIterator.java,v 1.2 2002-02-25 21:08:56 cananian Exp $
+ * @version $Id: UnmodifiableIterator.java,v 1.3 2002-04-10 03:07:05 cananian Exp $
  */
-public abstract class UnmodifiableIterator implements Iterator {
+public abstract class UnmodifiableIterator<E> implements Iterator<E> {
     /** Returns <code>true</code> if the iteration has more elements.
      * @return <code>true</code> if the iterator has more elements.
      */
@@ -22,7 +22,7 @@ public abstract class UnmodifiableIterator implements Iterator {
     /** Returns the next element in the iteration.
      * @exception java.util.NoSuchElementException iteration has no more elements.
      */
-    public abstract Object next();
+    public abstract E next();
     /** Always throws an <code>UnsupportedOperationException</code>.
      * @exception UnsupportedOperationException always.
      */

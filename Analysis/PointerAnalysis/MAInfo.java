@@ -74,7 +74,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.3 2002-02-26 22:41:18 cananian Exp $
+ * @version $Id: MAInfo.java,v 1.4 2002-04-10 03:00:41 cananian Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -250,8 +250,7 @@ public class MAInfo implements AllocationInformation, Serializable {
     public MAInfo(PointerAnalysis pa, HCodeFactory hcf,
 		  Linker linker, Set mms,
 		  final MAInfoOptions opt) {
-	Util.ASSERT(hcf instanceof CachingCodeFactory,
-		    "hcf should be a CachingCodeFactory!");
+	assert hcf instanceof CachingCodeFactory : "hcf should be a CachingCodeFactory!";
         this.pa  = pa;
 	this.mcg = pa.getMetaCallGraph();
 	this.mac = pa.getMetaAllCallers();
@@ -441,7 +440,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    return ((NEW) hce).hclass();
 	if(hce instanceof ANEW)
 	    return ((ANEW) hce).hclass();
-	Util.ASSERT(false,"Not a NEW or ANEW: " + hce);
+	assert false : ("Not a NEW or ANEW: " + hce);
 	return null; // should never happen
     }
 
@@ -528,7 +527,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
 	    Quad q  = (Quad) node_rep.node2Code(node);
-	    Util.ASSERT(q != null, "No quad for " + node);
+	    assert q != null : "No quad for " + node;
 	    MyAP ap = getAPObj(q);
 	    
 	    if(pig.G.captured(node) && stack_alloc_extra_cond(node, q)) {
@@ -547,7 +546,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
 	    Quad q  = (Quad) node_rep.node2Code(node);
-	    Util.ASSERT(q != null, "No quad for " + node);
+	    assert q != null : "No quad for " + node;
 	    MyAP ap = getAPObj(q);
 	    
 	    if(!ap.sa) {
@@ -787,7 +786,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	MetaMethod mm = new MetaMethod(hm, true);
 	ParIntGraph pig = pa.getIntParIntGraph(mm);
 
-	Util.ASSERT(pig != null, "pig is null for hm = " + hm + " " + mm);
+	assert pig != null : "pig is null for hm = " + hm + " " + mm;
 	
 	if(pig.G.captured(node)){
 	    if(DEBUG)
@@ -869,7 +868,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	// the graph of the callee but it's absent from the caller's graph
 	// (which means it's not really escaping)
 	// if(node == null) return true;
-	Util.ASSERT(node != null);
+	assert node != null;
 
 	if(level > MAInfo.MAX_LEVEL_NO_CONCURRENT_SYNCS)
 	    return false;
@@ -1240,8 +1239,7 @@ public class MAInfo implements AllocationInformation, Serializable {
     }
 
     private void insert_newq(METHOD method, NEW newq){
-	Util.ASSERT(method.nextLength() == 1,
-		    "A METHOD quad should have exactly one successor!");
+	assert method.nextLength() == 1 : "A METHOD quad should have exactly one successor!";
 	Edge nextedge = method.nextEdge(0);
 	Quad nextquad = method.next(0);
 	Quad.addEdge(method, nextedge.which_succ(), newq, 0);
@@ -1314,9 +1312,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	for(Iterator it = B.iterator(); it.hasNext(); ) {
 	    PANode node = ((PANode) it.next()).getRoot();
 	    Quad q = (Quad) node_rep.node2Code(node);
-	    Util.ASSERT((q != null) && 
-			((q instanceof NEW) || (q instanceof ANEW)),
-			" Bad quad attached to " + node + " " + q);
+	    assert (q != null) && 
+			((q instanceof NEW) || (q instanceof ANEW)) : " Bad quad attached to " + node + " " + q;
 	    if(!(opt.stack_allocate_not_in_loops() && in_a_loop(q)))
 		news.add(q);
 	    else
@@ -1497,10 +1494,9 @@ public class MAInfo implements AllocationInformation, Serializable {
 	for(int i = 0; i < news.length; i++) {
 	    Quad q  = (Quad) old2new.get(news[i]);
 
-	    Util.ASSERT(q != null, 
-			"Warning: no new Quad for " + 
+	    assert q != null : "Warning: no new Quad for " + 
 			Debug.code2str(news[i]) + " in [ " +
-			quad2method(news[i]) + " ]");
+			quad2method(news[i]) + " ]";
 
 	    System.out.println("STKALLOC " + Debug.code2str(q));
 
@@ -1517,10 +1513,9 @@ public class MAInfo implements AllocationInformation, Serializable {
 	for(int i = 0; i < news.length; i++) {
 	    Quad q  = (Quad) old2new.get(news[i]);
 
-	    Util.ASSERT(q != null, 
-			"Warning: no new Quad for " + 
+	    assert q != null : "Warning: no new Quad for " + 
 			Debug.code2str(news[i]) + " in [ " +
-			quad2method(news[i]) + " ]");
+			quad2method(news[i]) + " ]";
 
 	    System.out.println("THRALLOC " + Debug.code2str(q));
 
@@ -1538,7 +1533,7 @@ public class MAInfo implements AllocationInformation, Serializable {
     private HCodeElement get_inl_hce(final CALL cs) {
 	HCodeElement result = new HCodeElement() {
 		    public int getID() {
-			Util.ASSERT(false, "Unimplemented");
+			assert false : "Unimplemented";
 			// this should never happen
 			return 0;
 		    }
@@ -1562,8 +1557,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	move_pred_edges(cs, replace_cs);
 
-	Util.ASSERT(cs.paramsLength() == qm.paramsLength(),
-		    " different nb. of parameters between CALL and METHOD");
+	assert cs.paramsLength() == qm.paramsLength() : " different nb. of parameters between CALL and METHOD";
 	
 	Quad previous = replace_cs;
 
@@ -1723,8 +1717,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	Quad[] next1 = q1.next();
 	Quad[] next2 = q2.next();
 
-	Util.ASSERT(next1.length == next2.length,
-		    " Possible error in HCode.clone()");
+	assert next1.length == next2.length : " Possible error in HCode.clone()";
 
 	for(int i = 0; i < next1.length; i++)
 	    fill_the_map(next1[i], next2[i], map, seen);
@@ -1806,7 +1799,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	MetaMethod mm_caller = new MetaMethod(extract_caller(cs), true);
 	MetaMethod[] mm_callees = mcg.getCallees(mm_caller, cs);
 	if(mm_callees.length == 0) return null;
-	Util.ASSERT(mm_callees.length == 1, "More than one callee for " + cs);
+	assert mm_callees.length == 1 : "More than one callee for " + cs;
 	return mm_callees[0].getHMethod();
     }
 
@@ -1864,7 +1857,7 @@ public class MAInfo implements AllocationInformation, Serializable {
     private boolean good_cs2(CALL cs) {
 	int rang_caller = get_rang(extract_caller(cs));
 	int rang_callee = get_rang(extract_callee(cs));
-	Util.ASSERT(rang_caller >= rang_callee, "Bad method rangs " + cs);
+	assert rang_caller >= rang_callee : "Bad method rangs " + cs;
 	return rang_caller > rang_callee;
     }
 
@@ -1983,7 +1976,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = ((PANode) it.next()).getRoot();
 	    Quad quad = (Quad) node_rep.node2Code(node);
-	    Util.ASSERT(quad != null, "No quad for " + node);
+	    assert quad != null : "No quad for " + node;
 	    result.add(quad);
 	}
 	return result;
@@ -2188,10 +2181,9 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    for(Iterator it = set.iterator(); it.hasNext(); ) {
 		Quad old_quad = (Quad) it.next();
 		Quad new_quad = (Quad) old2new.get(old_quad);
-		Util.ASSERT(new_quad != null, 
-			    "Warning: no new Quad for " + 
+		assert new_quad != null : "Warning: no new Quad for " + 
 			    Debug.code2str(old_quad) + " in [ " +
-			    quad2method(old_quad) + " ]");
+			    quad2method(old_quad) + " ]";
 		result.add(new_quad);
 	    }
 	    return result;
@@ -2199,13 +2191,13 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 
 	CALL getLastCall() {
-	    Util.ASSERT(!isDone(), "You shouldn't call this!");
+	    assert !isDone() : "You shouldn't call this!";
 	    return (CALL) calls.getLast();
 	}
 
 
 	HMethod getLastCallee() {
-	    Util.ASSERT(!isDone(), "You shouldn't call this!");
+	    assert !isDone() : "You shouldn't call this!";
 	    return (HMethod) callees.getLast();
 	}
 

@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * The source of the assignment must be another temporary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MOVE.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
+ * @version $Id: MOVE.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
  */
 public class MOVE extends Quad {
     /** The destination <code>Temp</code>. */
@@ -30,7 +30,7 @@ public class MOVE extends Quad {
 	       Temp dst, Temp src) {
 	super(qf, source);
 	this.dst = dst; this.src = src;
-	Util.ASSERT(dst!=null && src!=null);
+	assert dst!=null && src!=null;
     }
     // ACCESSOR METHODS:
     /** Returns the destination <code>Temp</code>. */

@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * <code>HClassSyn</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.8 2002-02-26 22:45:05 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.9 2002-04-10 03:04:12 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -27,9 +27,9 @@ class HClassSyn extends HClassCls implements HClassMutator {
    */
   HClassSyn(Linker l, String name, HClass template) {
     super(l);
-    Util.ASSERT(!template.isArray());
-    Util.ASSERT(!template.isPrimitive());
-    Util.ASSERT(l==template.getLinker());
+    assert !template.isArray();
+    assert !template.isPrimitive();
+    assert l==template.getLinker();
     this.name = name;
     this.superclass = template.getSuperclass();
     this.interfaces = template.getInterfaces();
@@ -40,7 +40,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
     HField fields[] = template.getDeclaredFields();
     for (int i=0; i < fields.length; i++)
       addDeclaredField(fields[i].getName(), fields[i]);
-    Util.ASSERT(fields.length == declaredFields.length);
+    assert fields.length == declaredFields.length;
 
     this.declaredMethods= new HMethodSyn[0];
     HMethod methods[] = template.getDeclaredMethods();
@@ -51,12 +51,12 @@ class HClassSyn extends HClassCls implements HClassMutator {
 	addConstructor((HConstructor)methods[i]);
       else
 	addDeclaredMethod(methods[i].getName(), methods[i]);
-    Util.ASSERT(methods.length == declaredMethods.length);
+    assert methods.length == declaredMethods.length;
 
     // ensure linker information is consistent.
-    Util.ASSERT(this.superclass==null || checkLinker((HClass)this.superclass));
+    assert this.superclass==null || checkLinker((HClass)this.superclass);
     for (int i=0; i<this.interfaces.length; i++)
-      Util.ASSERT(checkLinker((HClass)this.interfaces[i]));
+      assert checkLinker((HClass)this.interfaces[i]);
 
     hasBeenModified = true; // by default, mark this as 'modified'
   }
@@ -88,7 +88,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
   }
   // deal with array housekeeping.
   private HField addDeclaredField0(HField f) {
-    Util.ASSERT(f.getDeclaringClass()==this);
+    assert f.getDeclaringClass()==this;
     for (int i=0; i<declaredFields.length; i++)
       if (declaredFields[i].equals(f))
 	throw new DuplicateMemberException("Field "+f+" in "+this);
@@ -125,7 +125,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
   }
   public HConstructor addConstructor(HClass[] paramTypes) {
     for (int i=0; i<paramTypes.length; i++)
-      Util.ASSERT(checkLinker(paramTypes[i]));
+      assert checkLinker(paramTypes[i]);
     return (HConstructor)
       addDeclaredMethod0(new HConstructorSyn(this, paramTypes));
   }
@@ -137,24 +137,24 @@ class HClassSyn extends HClassCls implements HClassMutator {
     removeDeclaredMethod(c);
   }
   public HMethod addDeclaredMethod(String name, String descriptor) {
-    Util.ASSERT(!name.equals("<init>") && !name.equals("<clinit>"));
+    assert !name.equals("<init>") && !name.equals("<clinit>");
     return addDeclaredMethod0(new HMethodSyn(this, name, descriptor));
   }
   public HMethod addDeclaredMethod(String name, HClass[] paramTypes,
 				   HClass returnType) {
-    Util.ASSERT(!name.equals("<init>") && !name.equals("<clinit>"));
-    Util.ASSERT(checkLinker(returnType));
+    assert !name.equals("<init>") && !name.equals("<clinit>");
+    assert checkLinker(returnType);
     for (int i=0; i<paramTypes.length; i++)
-      Util.ASSERT(checkLinker(paramTypes[i]));
+      assert checkLinker(paramTypes[i]);
     return addDeclaredMethod0(new HMethodSyn(this,name,paramTypes,returnType));
   }
   public HMethod addDeclaredMethod(String name, HMethod template) {
-    Util.ASSERT(!name.equals("<init>") && !name.equals("<clinit>"));
+    assert !name.equals("<init>") && !name.equals("<clinit>");
     return addDeclaredMethod0(new HMethodSyn(this, name, template));
   }
 
   private HMethod addDeclaredMethod0(HMethod m) {
-    Util.ASSERT(m.getDeclaringClass()==this);
+    assert m.getDeclaringClass()==this;
     for (int i=0; i<declaredMethods.length; i++)
       if (declaredMethods[i].equals(m))
 	throw new DuplicateMemberException("Method "+m+" in "+this);
@@ -186,7 +186,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
     // are we changing an interface to a class?
     if ( Modifier.isInterface(modifiers) && !Modifier.isInterface(m)) {
       // make sure there are no superclasses or superinterfaces.
-      Util.ASSERT(superclass==null); // should be true for interfaces.
+      assert superclass==null; // should be true for interfaces.
       if (interfaces.length!=0)
 	throw new Error("Can't change a subinterface to a class. "+
 			"Remove the inheritance first. ("+this+")");
@@ -227,8 +227,8 @@ class HClassSyn extends HClassCls implements HClassMutator {
 		      "top-level object?  I'm not sure I should allow this."+
 		      "  Please mail me at cananian@alumni.princeton.edu and "+
 		      "tell me why you think it's a good idea.");
-    Util.ASSERT(!sc.isPrimitive());
-    Util.ASSERT(checkLinker(sc));
+    assert !sc.isPrimitive();
+    assert checkLinker(sc);
     // XXX more sanity checks?
     if (superclass != sc) hasBeenModified=true; // flag the modification
     superclass = sc;
@@ -239,17 +239,17 @@ class HClassSyn extends HClassCls implements HClassMutator {
 
   public void addInterface(HClass in) {
     if (!in.isInterface()) throw new Error("Not an interface.");
-    Util.ASSERT(checkLinker(in));
-    interfaces = (HClass[]) Util.grow(HClass.arrayFactory,
-				      interfaces, in, interfaces.length);
+    assert checkLinker(in);
+    interfaces = Util.grow(HClass.arrayFactory,
+			   (HClass[]) interfaces, in, interfaces.length);
     hasBeenModified = true;
   }
   public void removeInterface(HClass in) throws NoSuchClassException {
-    Util.ASSERT(checkLinker(in));
+    assert checkLinker(in);
     for (int i=0; i<interfaces.length; i++) {
       if (interfaces[i].equals(in)) {
-	interfaces = (HClass[]) Util.shrink(HClass.arrayFactory,
-					    interfaces, i);
+	interfaces = Util.shrink(HClass.arrayFactory,
+				 (HClass[]) interfaces, i);
 	hasBeenModified = true;
 	return;
       }

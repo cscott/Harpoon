@@ -61,7 +61,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.3 2002-02-26 22:44:31 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.4 2002-04-10 03:03:20 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -77,21 +77,21 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     private static final boolean singleWordAlign =
 	Boolean.getBoolean("harpoon.runtime1.single-word-align");
 
-    // allocation strategy to use.
-    final AllocationStrategy as;
+    /** allocation strategy to use. */
+    protected final AllocationStrategy as;
 
     // integer constant sizes:
     protected final int WORD_SIZE;
     protected final int LONG_WORD_SIZE;
     protected final int POINTER_SIZE;
-    protected final int OBJECT_HEADER_SIZE;
+    protected       int OBJECT_HEADER_SIZE;
     // integer constant offsets:
     // layout of oobj
-    protected final int OBJ_CLAZ_OFF;
-    protected final int OBJ_HASH_OFF;
-    protected final int OBJ_ALENGTH_OFF;
-    protected final int OBJ_AZERO_OFF;
-    protected final int OBJ_FZERO_OFF;
+    protected       int OBJ_CLAZ_OFF;
+    protected       int OBJ_HASH_OFF;
+    protected       int OBJ_ALENGTH_OFF;
+    protected       int OBJ_AZERO_OFF;
+    protected       int OBJ_FZERO_OFF;
     // layout of claz
     protected final int CLAZ_INTERFACES_OFF;
     protected final int CLAZ_CLAZINFO;
@@ -99,6 +99,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     protected final int CLAZ_INTERFZ_OFF;
     protected final int CLAZ_SIZE_OFF;
     protected final int CLAZ_GCENTRY_OFF;
+    protected final int CLAZ_EXTRAINFO_OFF;
     protected final int CLAZ_DEPTH_OFF;
     protected final int CLAZ_DISPLAY_OFF;
     protected       int CLAZ_METHODS_OFF;
@@ -112,7 +113,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     protected final FieldMap  cfm;
 
     // set of string references made
-    final Set stringSet = new HashSet();
+    final Set<String> stringSet = new HashSet<String>();
 
     // if non-zero, then all pointer values are masked before
     // dereference.  this allows us to stuff additional information
@@ -130,20 +131,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	this.linker = linker;
 	this.as  = as;
 	this.cmm = new harpoon.Backend.Analysis.ClassMethodMap();
-	this.cfm = new harpoon.Backend.Analysis.PackedClassFieldMap() {
-	    public int fieldSize(HField hf) {
-		HClass type = hf.getType();
-		return (!type.isPrimitive()) ? POINTER_SIZE :
-		    (type==HClass.Double||type==HClass.Long) ? LONG_WORD_SIZE :
-		    (type==HClass.Int||type==HClass.Float) ? WORD_SIZE :
-		    (type==HClass.Short||type==HClass.Char) ? 2 : 1;
-	    }
-	    // on some archs we only need to align to WORD_SIZE
-	    public int fieldAlignment(HField hf) {
-		int align = super.fieldAlignment(hf);
-		return singleWordAlign ? Math.min(WORD_SIZE, align) : align;
-	    }
-	};
+	this.cfm = initClassFieldMap();
 	// ----------    INITIALIZE SIZES AND OFFSETS    -----------
 	WORD_SIZE = 4; // at least 32 bits.
 	LONG_WORD_SIZE = 8; // at least 64 bits.
@@ -168,8 +156,27 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	CLAZ_INTERFZ_OFF = 2 * POINTER_SIZE;
 	CLAZ_SIZE_OFF	 = 3 * POINTER_SIZE;
 	CLAZ_GCENTRY_OFF = 3 * POINTER_SIZE + 1 * WORD_SIZE;
-	CLAZ_DEPTH_OFF   = 4 * POINTER_SIZE + 1 * WORD_SIZE;
-	CLAZ_DISPLAY_OFF = 4 * POINTER_SIZE + 2 * WORD_SIZE;
+	CLAZ_EXTRAINFO_OFF=4 * POINTER_SIZE + 1 * WORD_SIZE; 
+	CLAZ_DEPTH_OFF   = CLAZ_EXTRAINFO_OFF +
+	    runtime.getExtraClazInfo().fields_size();
+	CLAZ_DISPLAY_OFF = CLAZ_DEPTH_OFF + 1 * WORD_SIZE;
+    }
+    // hook to let our subclasses use a different classfieldmap
+    protected FieldMap initClassFieldMap() {
+	return new harpoon.Backend.Analysis.PackedClassFieldMap() {
+	    public int fieldSize(HField hf) {
+		HClass type = hf.getType();
+		return (!type.isPrimitive()) ? POINTER_SIZE :
+		    (type==HClass.Double||type==HClass.Long) ? LONG_WORD_SIZE :
+		    (type==HClass.Int||type==HClass.Float) ? WORD_SIZE :
+		    (type==HClass.Short||type==HClass.Char) ? 2 : 1;
+	    }
+	    // on some archs we only need to align to WORD_SIZE
+	    public int fieldAlignment(HField hf) {
+		int align = super.fieldAlignment(hf);
+		return singleWordAlign ? Math.min(WORD_SIZE, align) : align;
+	    }
+       };
     }
     // this method must be called to complete initialization before
     // the tree builder is used.
@@ -302,7 +309,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 				    AllocationProperties ap,
 				    HClass arrayType, Translation.Exp length,
 				    boolean initialize) {
-	Util.ASSERT(arrayType.isArray());
+	assert arrayType.isArray();
 	// temporary storage for created array.
 	Temp Tarr = new Temp(tf.tempFactory(), "rt");
 	// temporary storage for supplied length
@@ -781,8 +788,8 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 				     DerivationGenerator dg,
 				     AllocationProperties ap,
 				     HClass classType, boolean initialize) {
-	Util.ASSERT(!classType.isArray());
-	Util.ASSERT(!classType.isPrimitive());
+	assert !classType.isArray();
+	assert !classType.isPrimitive();
 	int length = objectSize(classType);
 	Exp object = objAlloc(tf, source, dg, ap, classType,
 			      new CONST(tf, source, length));
@@ -880,7 +887,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 				       DerivationGenerator dg,
 				       HClass arrayType, Translation.Exp index)
     {
-	Util.ASSERT(arrayType.isArray());
+	assert arrayType.isArray();
 	HClass compType = arrayType.getComponentType();
 	int elementsize = POINTER_SIZE;
 	if (compType.isPrimitive())
@@ -910,11 +917,13 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     public Translation.Exp fieldOffset(TreeFactory tf, HCodeElement source,
 					DerivationGenerator dg,
 				       HField field) {
-	Util.ASSERT(!field.isStatic());
+	assert !field.isStatic();
 	return new Translation.Ex
 	    (new CONST(tf, source, cfm.fieldOffset(field)));
     }
-    private Exp _claz_(TreeFactory tf, HCodeElement source,
+    /** Returns a pointer to the claz structure associated with the
+     *  given objectref. */
+    protected Exp _claz_(TreeFactory tf, HCodeElement source,
 		       DerivationGenerator dg,
 		       Translation.Exp objectref) {
 	return DECLARE(dg, HClass.Void/*claz pointer*/,
@@ -947,7 +956,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     public Translation.Exp methodOffset(TreeFactory tf, HCodeElement source,
 					DerivationGenerator dg,
 					HMethod method) {
-	Util.ASSERT(!method.isStatic());
+	assert !method.isStatic();
 	method = remap(method);//handle interface methods inherited from Object
 	if (method.isInterfaceMethod()) {
 	    // use interface method map.

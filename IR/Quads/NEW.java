@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * <code>Quads.CALL</code>) to complete the instantiation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NEW.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
+ * @version $Id: NEW.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
  */
 public class NEW extends Quad {
     /** The <code>Temp</code> in which to store the new object. */
@@ -39,11 +39,11 @@ public class NEW extends Quad {
 	this.dst = dst;
 	this.hclass = hclass;
 	// VERIFY legality of NEW
-	Util.ASSERT(dst!=null && hclass!=null);
+	assert dst!=null && hclass!=null;
 	// from JVM spec:
-	Util.ASSERT(!hclass.isArray() && !hclass.isInterface());
-	Util.ASSERT(!hclass.isPrimitive());
-	Util.ASSERT(!Modifier.isAbstract(hclass.getModifiers()));
+	assert !hclass.isArray() && !hclass.isInterface();
+	assert !hclass.isPrimitive();
+	assert !Modifier.isAbstract(hclass.getModifiers());
     }
     /** Returns the <code>Temp</code> in which to store the new object. */
     public Temp dst() { return dst; }

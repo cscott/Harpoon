@@ -73,7 +73,7 @@ import java.util.StringTokenizer;
  * 
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.3 2002-02-26 22:46:30 cananian Exp $
+ * @version  $Id: OffsetMap32.java,v 1.4 2002-04-10 03:06:01 cananian Exp $
  */
 class OffsetMap32 extends OffsetMap
 {
@@ -89,7 +89,7 @@ class OffsetMap32 extends OffsetMap
 
     /** Class constructor */
     public OffsetMap32(ClassHierarchy ch) {
-	Util.ASSERT(ch!=null, "Class hierarchy must be non-null");
+	assert ch!=null : "Class hierarchy must be non-null";
 	
 	this.hci = new HClassInfo();
 
@@ -123,7 +123,7 @@ class OffsetMap32 extends OffsetMap
 
     /** Returns the offset of the class pointer */
     public int clazzPtrOffset(HClass hc)   { 
-	Util.ASSERT(!hc.isPrimitive());
+	assert !hc.isPrimitive();
 	return -1 * WORDSIZE;
     }
 
@@ -141,42 +141,42 @@ class OffsetMap32 extends OffsetMap
     /** Returns the offset of the first array element if hc is an array
      *  type, otherwise generates an assertion failure */
     public int elementsOffset(HClass hc) { 
-	Util.ASSERT(hc.isArray());
+	assert hc.isArray();
 	return 1 * WORDSIZE; 
     }
 
     /** Returns the offset of the first field in an object of the
      *  specified type */
     public int fieldsOffset(HClass hc) { 
-	Util.ASSERT((!hc.isPrimitive()) && 
+	assert (!hc.isPrimitive()) && 
 		    (!hc.isArray()) && 
-		    (!hc.isInterface()));
+		    (!hc.isInterface());
 	return 0;
     }
 
     /** Returns the offset of the hashcode of the specified object */
     public int hashCodeOffset(HClass hc) { 
-	Util.ASSERT(!hc.isPrimitive());
+	assert !hc.isPrimitive();
 	return -2 * WORDSIZE; 
     }
 
     /** If hc is a class type, or an interface, returns the offset from
      *  the class pointer of the pointer to implemented interfaces */
     public int interfaceListOffset(HClass hc) { 
-	Util.ASSERT(!hc.isPrimitive());
+	assert !hc.isPrimitive();
 	return -2 * WORDSIZE;
     }
 
     /** If hc is an array type, returns the offset of its length field */
     public int lengthOffset(HClass hc) { 
-	Util.ASSERT(hc.isArray() || hc.isInterface());
+	assert hc.isArray() || hc.isInterface();
 	return 0;
     }
 
     /** Returns the offset from the class pointer of this class's pointer
      *  in the display */
     public int offset(HClass hc) { 
-	Util.ASSERT(!hc.isPrimitive() && !hc.isInterface());
+	assert !hc.isPrimitive() && !hc.isInterface();
 	return cdm.classDepth(hc) * WORDSIZE;
     }
 
@@ -187,7 +187,7 @@ class OffsetMap32 extends OffsetMap
     /** Returns the offset from the object reference of the specified 
      *  non-static field */
     public int offset(HField hf) {
-	Util.ASSERT(!hf.isStatic());
+	assert !hf.isStatic();
 
 	final HClass   hc;
 	Iterator       allFields;
@@ -257,7 +257,7 @@ class OffsetMap32 extends OffsetMap
     /** Returns the offset from the class pointer of the specified
      *  non-static method */
     public int offset(HMethod hm) { 
-	Util.ASSERT(hm != null && !hm.isStatic());
+	assert hm != null && !hm.isStatic();
 	HClass hc = hm.getDeclaringClass(); 
 	if (hc.isInterface()) 
 	    return -WORDSIZE * (imm.methodOrder(hm)*WORDSIZE) - (2*WORDSIZE);
@@ -267,7 +267,7 @@ class OffsetMap32 extends OffsetMap
 
     /** Returns the size of the specified class */
     public int size(HClass hc) { 
-	Util.ASSERT(!hc.isInterface());
+	assert !hc.isInterface();
 
 	if (hc.isPrimitive()) { 
 	    return hc==HClass.Long || hc==HClass.Double ? 8 : 4; 
@@ -276,7 +276,7 @@ class OffsetMap32 extends OffsetMap
 	    // The size of an array instance is determined by the number of
 	    // elements it has, and therefore cannot be determined by this
 	    // method. 
-	    Util.ASSERT(false, "Size of array does not depend on its class!");
+	    assert false : "Size of array does not depend on its class!";
 	    return -1;
 	} 
 	else { 

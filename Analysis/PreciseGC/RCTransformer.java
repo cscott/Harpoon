@@ -55,7 +55,7 @@ import java.util.Set;
  * Also transforms the callers of these methods.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: RCTransformer.java,v 1.3 2002-03-27 22:54:59 kkz Exp $
+ * @version $Id: RCTransformer.java,v 1.4 2002-04-10 03:00:53 cananian Exp $
  */
 public class RCTransformer extends 
     harpoon.Analysis.Transformation.MethodSplitter {
@@ -120,11 +120,11 @@ public class RCTransformer extends
 	Quad q = (Quad) c.getRootElement();
 	CFGEdge[] succs = q.succ();
 	// first Quad should be the HEADER
-	Util.ASSERT(q.kind() == QuadKind.HEADER && succs.length == 2);
+	assert q.kind() == QuadKind.HEADER && succs.length == 2;
 	q = (Quad) succs[1].to();
 	succs = q.succ();
 	// second Quad should be the METHOD
-	Util.ASSERT(q.kind() == QuadKind.METHOD && succs.length == 1);
+	assert q.kind() == QuadKind.METHOD && succs.length == 1;
 	METHOD omethod = (METHOD)q;
 	// get a handle on the METHOD parameters
 	Temp[] oparams = omethod.params();
@@ -134,14 +134,14 @@ public class RCTransformer extends
 	q = (Quad) succs[0].to();
 	succs = q.succ();
 	// third Quad should be the CALL to the superclass constructor
-	Util.ASSERT(q.kind() == QuadKind.CALL);
+	assert q.kind() == QuadKind.CALL;
 	CALL call = (CALL)q;
-	Util.ASSERT(call.retval() == null && call.params(0).equals(retval));
+	assert call.retval() == null && call.params(0).equals(retval);
 	// create a NEW
 	NEW nnew = new NEW(call.getFactory(), call, retval, 
 			   c.getMethod().getDeclaringClass());
 	// put NEW before CALL (and after METHOD)
-	Util.ASSERT(call.prevLength() == 1);
+	assert call.prevLength() == 1;
 	Quad.addEdge(call.prev(0), call.prevEdge(0).which_succ(), nnew, 0);
 	Quad.addEdge(nnew, 0, call, 0);
 	// fix-up RETURN(s)
@@ -238,7 +238,7 @@ public class RCTransformer extends
 	nhm.getMutator().addModifiers(Modifier.STATIC);
 	Temp[] nparams = new Temp[ocall.paramsLength()-1];
 	System.arraycopy(ocall.params(), 1, nparams, 0, nparams.length);
-	Util.ASSERT(ocall.retval() == null);
+	assert ocall.retval() == null;
 	CALL ncall = new CALL(ocall.getFactory(), ocall, nhm, nparams,
 			      ocall.params(0), ocall.retex(), 
 			      ocall.isVirtual(), ocall.isTailCall(),
@@ -332,7 +332,7 @@ public class RCTransformer extends
 	    for(int i = 0; i < q.numSigmas(); i++) {
 		if (q.src(i).equals(retval)) {
 		    for(int j = i+1; j < q.numSigmas(); j++) {
-			Util.ASSERT(!q.src(j).equals(retval));
+			assert !q.src(j).equals(retval);
 		    }
 		    // handle normal return
 		    if (i < q.numSigmas() && 
@@ -357,7 +357,7 @@ public class RCTransformer extends
 
 	public void visit(Quad q) {
 	    if (q.nextLength() != 0) {
-		Util.ASSERT(q.nextLength() == 1, q);
+		assert q.nextLength() == 1 : q;
 		if (q.defC().contains(retval))
 		    retval = null;
 		nParam = q.nextEdge(0).which_pred();
@@ -369,15 +369,15 @@ public class RCTransformer extends
 	    for(int i = 0; i < q.numPhis(); i++) {
 		if (q.src(i, nParam).equals(retval)) {
 		    for(int j = i+1; j < q.numPhis(); j++) {
-			Util.ASSERT(!q.src(j, nParam).equals(retval));
+			assert !q.src(j, nParam).equals(retval);
 		    }
 		    if (done.containsKey(q)) {
 			// already handled once, check correctness
-			Util.ASSERT(q.dst(i).equals(done.get(q)));
+			assert q.dst(i).equals(done.get(q));
 		    } else {
 			retval = q.dst(i);
 			done.put(q, retval);
-			Util.ASSERT(q.nextLength() == 1);
+			assert q.nextLength() == 1;
 			nParam = q.nextEdge(0).which_pred();
 			q.next(0).accept(this);
 		    }
@@ -386,7 +386,7 @@ public class RCTransformer extends
 	    }
 	    // in some cases, we may have to add a phi function to the PHI
 	    if (done.containsKey(q) && !retval.equals(done.get(q))) {
-		Util.ASSERT(retval != null);
+		assert retval != null;
 		Tuple tup = (Tuple) done.get(q);
 		Temp[] retvals = (Temp[]) tup.proj(0);
 		int count = ((Integer) tup.proj(1)).intValue();
@@ -405,7 +405,7 @@ public class RCTransformer extends
 		    PHI phi = new PHI(q.getFactory(), q, dst, src, q.arity());
 		    Quad.replace(q, phi);
 		    retval = dst[dst.length-1];
-		    Util.ASSERT(phi.nextLength() == 1);
+		    assert phi.nextLength() == 1;
 		    nParam = phi.nextEdge(0).which_pred();
 		    phi.next(0).accept(this);
 		} else {
@@ -415,14 +415,14 @@ public class RCTransformer extends
 		}
 	    } else {
 		Temp[] retvals = new Temp[q.arity()];
-		Util.ASSERT(retval != null);
+		assert retval != null;
 		retvals[nParam] = retval;
 		done.put(q, new Tuple(new Object[] {retvals, new Integer(1)}));
 	    }
 	}
 
 	public void visit(RETURN q) {
-	    Util.ASSERT(retval != null);
+	    assert retval != null;
 	    RETURN nreturn = new RETURN(q.getFactory(), q, retval);
 	    Quad.replace(q, nreturn);
 	    // RETURNs only have one successor, the FOOTER node,
@@ -433,7 +433,7 @@ public class RCTransformer extends
 	    for(int i = 0; i < q.numSigmas(); i++) {
 		if (q.src(i).equals(retval)) {
 		    for(int j = i+1; j < q.numSigmas(); j++) {
-			Util.ASSERT(!q.src(j).equals(retval));
+			assert !q.src(j).equals(retval);
 		    }
 		    for(int k = 0; k < q.arity(); k++) {
 			retval = q.dst(i, k);
@@ -443,7 +443,7 @@ public class RCTransformer extends
 		    return;
 		}
 	    }
-	    Util.ASSERT(false);
+	    assert false;
 	}
     }
 
@@ -474,13 +474,13 @@ public class RCTransformer extends
 	}
 
 	public void visit(PHI q) {
-	    Util.ASSERT(false, "Cannot be transformed.");
+	    assert false : "Cannot be transformed.";
 	}
 
 	public void visit(Quad q) {
 	    if (q.useC().contains(thisObj))
 		end = q;
-	    Util.ASSERT(q.nextLength() == 1, "Unexpected Quad.");
+	    assert q.nextLength() == 1 : "Unexpected Quad.";
 	    q.next(0).accept(this);
 	}
     }
@@ -538,11 +538,11 @@ public class RCTransformer extends
 
 	// done when we hit a control flow split
 	public void visit(SIGMA q) {
-	    Util.ASSERT(false, "Invalid sequence.");
+	    assert false : "Invalid sequence.";
 	}
 
 	public void visit(PHI q) {
-	    Util.ASSERT(false, "Invalid sequence.");
+	    assert false : "Invalid sequence.";
 	}
 
 	public void visit(Quad q) {
@@ -563,7 +563,7 @@ public class RCTransformer extends
 		t = (m == null) ? t : m;
 		gen.add(t);
 	    }
-	    Util.ASSERT(q.nextLength() == 1, "Unexpected Quad.");
+	    assert q.nextLength() == 1 : "Unexpected Quad.";
 	    if (!q.equals(end))
 		q.next(0).accept(this);
 	}
@@ -603,7 +603,7 @@ public class RCTransformer extends
 		}
 	    }
 	    // start with the next Quad
-	    Util.ASSERT(start.nextLength() == 1);
+	    assert start.nextLength() == 1;
 	    nParam = start.nextEdge(0).which_pred();
 	    start.next(0).accept(this);
 	}
@@ -636,7 +636,7 @@ public class RCTransformer extends
 			}
 		    }
 		} else {
-		    Util.ASSERT(i == 1);
+		    assert i == 1;
 		    for(int j = 0; j < q.numSigmas(); j++) {
 			if (q.src(j).equals(q.retex())) {
 			    gen.add(q.dst(j, 1));
@@ -670,7 +670,7 @@ public class RCTransformer extends
 	}
 
 	public void visit(PCALL q) {
-	    Util.ASSERT(false, "Unimplemented.");
+	    assert false : "Unimplemented.";
 	}
 
 	public void visit(PHI q) {
@@ -694,7 +694,7 @@ public class RCTransformer extends
 			}
 		    }
 		}
-		Util.ASSERT(q.nextLength() == 1);
+		assert q.nextLength() == 1;
 		nParam = q.nextEdge(0).which_pred();
 		q.next(0).accept(this);
 	    }
@@ -716,7 +716,7 @@ public class RCTransformer extends
 		gen.add(it.next());
 	    }
 	    if (q.nextLength() == 0) return;
-	    Util.ASSERT(q.nextLength() == 1);
+	    assert q.nextLength() == 1;
 	    nParam = q.nextEdge(0).which_pred();
 	    q.next(0).accept(this);
 	}
@@ -751,11 +751,11 @@ public class RCTransformer extends
 	}
 
 	public void visit(SWITCH q) {
-	    Util.ASSERT(false, "Unimplemented.");
+	    assert false : "Unimplemented.";
 	}
 
 	public void visit(TYPESWITCH q) {
-	    Util.ASSERT(false, "Unimplemented.");
+	    assert false : "Unimplemented.";
 	}
     }
 
@@ -787,7 +787,7 @@ public class RCTransformer extends
 		}
 	    }
 	    // start with the next Quad
-	    Util.ASSERT(start.nextLength() == 1);
+	    assert start.nextLength() == 1;
 	    nParam = start.nextEdge(0).which_pred();
 	    //start.next(0).accept(this);
 	    call.next(0).accept(this);
@@ -808,7 +808,7 @@ public class RCTransformer extends
 					 nparams.length);
 		    }
 		    nparams[i] = (Temp) tMap.get(oparams[i]);
-		    Util.ASSERT(nparams[i] != null);
+		    assert nparams[i] != null;
 		}
 	    }
 	    Temp[] osrc = q.src();
@@ -821,7 +821,7 @@ public class RCTransformer extends
 			System.arraycopy(osrc, 0, nsrc, 0, nsrc.length);
 		    }
 		    nsrc[i] = (Temp) tMap.get(osrc[i]);
-		    Util.ASSERT(nsrc[i] != null);
+		    assert nsrc[i] != null;
 		}
 	    }
 	    // replace call if necessary
@@ -844,7 +844,7 @@ public class RCTransformer extends
 	    // remap test if needed
 	    if (tMap.containsKey(q.test())) {
 		test = (Temp) tMap.get(q.test());
-		Util.ASSERT(test != null);
+		assert test != null;
 	    }
 	    Temp[] osrc = q.src();
 	    Temp[] nsrc = null;
@@ -856,7 +856,7 @@ public class RCTransformer extends
 			System.arraycopy(osrc, 0, nsrc, 0, nsrc.length);
 		    }
 		    nsrc[i] = (Temp) tMap.get(osrc[i]);
-		    Util.ASSERT(nsrc[i] != null);
+		    assert nsrc[i] != null;
 		}
 	    }
 	    if (test != null || nsrc != null) {
@@ -887,7 +887,7 @@ public class RCTransformer extends
 			System.arraycopy(ot, 0, nt, 0, nt.length);
 		    }
 		    nt[i] = (Temp) tMap.get(ot[i]);
-		    Util.ASSERT(nt[i] != null);
+		    assert nt[i] != null;
 		}
 	    }
 	    // replace OPER if necessary
@@ -899,13 +899,13 @@ public class RCTransformer extends
 	    }
 	    // update map if necessary
 	    tMap.remove(q.dst());
-	    Util.ASSERT(q.nextLength() == 1);
+	    assert q.nextLength() == 1;
 	    nParam = q.nextEdge(0).which_pred();
 	    q.next(0).accept(this);
 	}
 
 	public void visit(PCALL q) {
-	    Util.ASSERT(false, "Unimplemented.");
+	    assert false : "Unimplemented.";
 	}
 
 	public void visit(PHI q) {
@@ -922,7 +922,7 @@ public class RCTransformer extends
 					     nsrc[j].length);
 			}
 		    nsrc[i][nParam] = (Temp) tMap.get(q.src(i, nParam));
-		    Util.ASSERT(nsrc[i][nParam] != null);
+		    assert nsrc[i][nParam] != null;
 		    }
 		}
 	    }
@@ -952,7 +952,7 @@ public class RCTransformer extends
 			    tMap.put(from, null);
 		    }
 		}
-		Util.ASSERT(q.nextLength() == 1);
+		assert q.nextLength() == 1;
 		nParam = q.nextEdge(0).which_pred();
 		q.next(0).accept(this);
 	    } else {
@@ -966,7 +966,7 @@ public class RCTransformer extends
 	public void visit(Quad q) {
 	    //System.out.println(insertPt + " :: " + q);
 	    // we don't handle uses here
-	    Util.ASSERT(q.useC().isEmpty());
+	    assert q.useC().isEmpty();
 	    for(Iterator it = tMap.keySet().iterator(); it.hasNext(); ) {
 		Temp from = (Temp) it.next();
 		Temp to = (Temp) tMap.get(from);
@@ -975,7 +975,7 @@ public class RCTransformer extends
 		if (q.defC().contains(to))
 		    tMap.put(from, null);
 	    }
-	    Util.ASSERT(q.nextLength() == 1);
+	    assert q.nextLength() == 1;
 	    nParam = q.nextEdge(0).which_pred();
 	    q.next(0).accept(this);
 	}
@@ -984,12 +984,12 @@ public class RCTransformer extends
 	    //System.out.println(insertPt + " :: " + q);
 	    if (tMap.containsKey(q.retval())) {
 		Temp t = (Temp) tMap.get(q.retval());
-		Util.ASSERT(t != null);
+		assert t != null;
 		RETURN nreturn = new RETURN(q.getFactory(), q, t);
 		Quad.replace(q, nreturn);
 		q = nreturn;
 	    }
-	    Util.ASSERT(q.nextLength() == 1);
+	    assert q.nextLength() == 1;
 	    nParam = q.nextEdge(0).which_pred();
 	    q.next(0).accept(this);
 	}
@@ -1000,13 +1000,13 @@ public class RCTransformer extends
 	    Temp objectref = null;
 	    if (tMap.containsKey(q.objectref())) {
 		objectref = (Temp) tMap.get(q.objectref());
-		Util.ASSERT(objectref != null);;
+		assert objectref != null;;
 	    }
 	    // replace src if necessary
 	    Temp src = null;
 	    if (tMap.containsKey(q.src())) {
 		src = (Temp) tMap.get(q.src());
-		Util.ASSERT(src != null);
+		assert src != null;
 	    }
 	    // replace SET if necessary
 	    if (objectref != null || src != null) {
@@ -1017,7 +1017,7 @@ public class RCTransformer extends
 		Quad.replace(q, set);
 		q = set;
 	    }
-	    Util.ASSERT(q.nextLength() == 1);
+	    assert q.nextLength() == 1;
 	    nParam = q.nextEdge(0).which_pred();
 	    q.next(0).accept(this);
 	}
@@ -1025,7 +1025,7 @@ public class RCTransformer extends
 	public void visit(SIGMA q) {
 	    //System.out.println(insertPt + " :: " + q);
 	    Quad savedIP = insertPt;
-	    Util.ASSERT(savedIP == null || savedIP.equals(q));
+	    assert savedIP == null || savedIP.equals(q);
 	    Quad[] savedIPs = new Quad[q.arity()];
 	    Map savedTMap = tMap;
 	    PHI savedPhi = lastPhi; 
@@ -1079,25 +1079,25 @@ public class RCTransformer extends
 	}
 
 	public void visit(SWITCH q) {
-	    Util.ASSERT(false, "Unimplemented.");
+	    assert false : "Unimplemented.";
 	}
 
 	public void visit(THROW q) {
 	    //System.out.println(insertPt + " :: " + q);
 	    if (tMap.containsKey(q.throwable())) {
 		Temp t = (Temp) tMap.get(q.throwable());
-		Util.ASSERT(t != null);
+		assert t != null;
 		THROW nthrow = new THROW(q.getFactory(), q, t);
 		Quad.replace(q, nthrow);
 		q = nthrow;
 	    }
-	    Util.ASSERT(q.nextLength() == 1);
+	    assert q.nextLength() == 1;
 	    nParam = q.nextEdge(0).which_pred();
 	    q.next(0).accept(this);
 	}
 
 	public void visit(TYPESWITCH q) {
-	    Util.ASSERT(false, "Unimplemented.");
+	    assert false : "Unimplemented.";
 	}
     }
 
@@ -1137,7 +1137,7 @@ public class RCTransformer extends
 			// look elsewhere
 			continue;
 		    Temp rcvr = (Temp) rcvrMap.get(sigma);
-		    Util.ASSERT(rcvr != null, sigma);
+		    assert rcvr != null : sigma;
 		    TempFactory tf = begin.getFactory().tempFactory();
 		    Temp rcvr0 = new Temp(tf);
 		    NEW nnew = new NEW(begin.getFactory(), begin, rcvr0,
@@ -1190,7 +1190,7 @@ public class RCTransformer extends
 		    Quad.addEdge(nnew, 0, ncall, 0);
 		    Quad.addEdge(sigma, i, nnew, 0);
 		    if (phi == null) {
-			Util.ASSERT(retex != null);
+			assert retex != null;
 			Temp[][] srcs = new Temp[1][];
 			srcs[0] = new Temp[] { retex };
 			phi = new PHI(ocall.getFactory(), ocall, 
@@ -1248,7 +1248,7 @@ public class RCTransformer extends
 			    // look elsewhere
 			    continue;
 			Temp rcvr = (Temp) rcvrMap.get(sigma);
-			Util.ASSERT(rcvr != null, sigma);
+			assert rcvr != null : sigma;
 			Temp src = (Temp) srcMap.get(sigma);
 			//System.out.println("Printing srcMap");
 			SET set = new SET(q.getFactory(), q, q.field(), rcvr,
@@ -1274,7 +1274,7 @@ public class RCTransformer extends
 		next.accept(this);
 	    } else {
 		// irrelevant SET, just continue
-		Util.ASSERT(!q.useC().contains(thisObj));
+		assert !q.useC().contains(thisObj);
 		q.next(0).accept(this);
 	    }
 	}
@@ -1289,15 +1289,15 @@ public class RCTransformer extends
 	public void visit(Quad q) {
 	    //	    System.out.println("VISITING: " + q);
 	    // should not be referring to the receiver
-	    Util.ASSERT(!q.useC().contains(thisObj));
-	    Util.ASSERT(q.nextLength() == 1 && q.prevLength() == 1, q);
+	    assert !q.useC().contains(thisObj);
+	    assert q.nextLength() == 1 && q.prevLength() == 1 : q;
 	    q.next(0).accept(this);
 	}
 
 	public void visit(SIGMA q) {
 	    //	    System.out.println("VISITING: " + q);
 	    // only mapped sigmas should get here
-	    Util.ASSERT(quad2quadA.containsKey(q));
+	    assert quad2quadA.containsKey(q);
 	    Quad[] quadA = (Quad[]) quad2quadA.get(q);
 	    int nSigma = q.numSigmas();
 	    // find sigma function for thisObj
@@ -1323,7 +1323,7 @@ public class RCTransformer extends
 		    while(!toDo.isEmpty()) {
 			SIGMA curr = (SIGMA) toDo.pull();
 			Quad[] value = (Quad[]) savedQuad2QuadA.remove(curr);
-			Util.ASSERT(value != null, curr);
+			assert value != null : curr;
 			quad2quadA.put(curr, value);
 			for(int j = 0; j < value.length; j++) {
 			    if (value[j] != null && 
@@ -1370,7 +1370,7 @@ public class RCTransformer extends
 					  ocall.isTailCall(), dst, src);
 		    nq = ncall;
 		} else {
-		    Util.ASSERT(q.kind() == QuadKind.CJMP);
+		    assert q.kind() == QuadKind.CJMP;
 		    CJMP ocjmp = (CJMP)q;
 		    CJMP ncjmp = new CJMP(ocjmp.getFactory(), ocjmp, 
 					  ocjmp.test(), dst, src);
@@ -1385,7 +1385,7 @@ public class RCTransformer extends
 		    it.hasNext(); ) {
 		    Quad key = (Quad) it.next();
 		    Quad[] value = (Quad[]) quad2quadA.get(key);
-		    Util.ASSERT(value != null, key);
+		    assert value != null : key;
 		    for(int j = 0; j < value.length; j++) {
 			if (q.equals(value[j]))
 			    value[j] = nq;
@@ -1421,7 +1421,7 @@ public class RCTransformer extends
 	    Temp savedTarget = target;
 	    // any SIGMA we visit should be mapped
 	    Quad[] quadA = (Quad[]) quad2quadA.get(q);
-	    Util.ASSERT(quadA != null, q);
+	    assert quadA != null : q;
 	    for(int i = 0; i < q.arity(); i++) {
 		boolean found = false;
 		target = savedTarget;
@@ -1431,7 +1431,7 @@ public class RCTransformer extends
 			target = q.dst(j, i);
 			// check for repeats
 			for(int k = j+1; k < q.numSigmas(); k++)
-			    Util.ASSERT(!q.src(k).equals(target));
+			    assert !q.src(k).equals(target);
 			found = true;
 			break;
 		    }
@@ -1469,7 +1469,7 @@ public class RCTransformer extends
 					      ocall.isTailCall(), dsts, src);
 			nq = ncall;
 		    } else {
-			Util.ASSERT(q.kind() == QuadKind.CJMP);
+			assert q.kind() == QuadKind.CJMP;
 			CJMP ocjmp = (CJMP)q;
 			CJMP ncjmp = new CJMP(ocjmp.getFactory(), ocjmp,
 					      ocjmp.test(), dsts, src);
@@ -1509,7 +1509,7 @@ public class RCTransformer extends
 	}
 
 	public void visit(Quad q) {
-	    Util.ASSERT(q.nextLength() == 1 && q.prevLength() == 1);
+	    assert q.nextLength() == 1 && q.prevLength() == 1;
 	    q.next(0).accept(this);
 	}
     }

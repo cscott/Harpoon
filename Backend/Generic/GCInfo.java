@@ -30,7 +30,7 @@ import java.util.Set;
  * the instruction stream.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: GCInfo.java,v 1.3 2002-02-26 22:43:45 cananian Exp $
+ * @version $Id: GCInfo.java,v 1.4 2002-04-10 03:02:44 cananian Exp $
  */
 public abstract class GCInfo {
     /** Creates an <code>IntermediateCodeFactory</code> that
@@ -133,7 +133,7 @@ public abstract class GCInfo {
 			regDerivations.put(wmrl, derivation); 
 			break;
 		    default:
-			Util.ASSERT(false);		    
+			assert false;		    
 		    }
 		}
 	    }
@@ -154,7 +154,7 @@ public abstract class GCInfo {
 		    liveMachineRegLocs.add(wmrl); 
 		    break;
 		default:
-		    Util.ASSERT(false);
+		    assert false;
 		}
 	    }
 	}

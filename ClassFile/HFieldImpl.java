@@ -11,11 +11,11 @@ import java.lang.reflect.Modifier;
  * <code>HFieldImpl</code> is the basic implementation of <code>HField</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldImpl.java,v 1.2 2002-02-25 21:03:03 cananian Exp $
+ * @version $Id: HFieldImpl.java,v 1.3 2002-04-10 03:04:15 cananian Exp $
  * @see HField
  */
 abstract class HFieldImpl
-  implements HField, java.io.Serializable, java.lang.Comparable {
+  implements HField, java.io.Serializable, java.lang.Comparable<HMember> {
   HClass parent;
   HPointer type;
   String name;
@@ -176,7 +176,7 @@ abstract class HFieldImpl
   // Comparable interface
   /** Compares two <code>HField</code>s lexicographically; first by
    *  declaring class, then by name. */
-  public int compareTo(Object o) {
+  public int compareTo(HMember o) {
     return memberComparator.compare(this, o);
   }
 }

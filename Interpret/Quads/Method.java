@@ -61,7 +61,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.3 2002-02-26 22:46:24 cananian Exp $
+ * @version $Id: Method.java,v 1.4 2002-04-10 03:05:50 cananian Exp $
  */
 public final class Method {
 
@@ -100,8 +100,7 @@ public final class Method {
 	    ss.hcf = hcf;
 	    ss.TRACE = trace;
 	    ois.close();
-	    Util.ASSERT(cls.getLinker()==ss.linker,
-			"Saved static state uses incompatible linker");
+	    assert cls.getLinker()==ss.linker : "Saved static state uses incompatible linker";
 	} catch (ClassNotFoundException e) {
 	    throw new java.io.IOException(e.toString());
 	} try {
@@ -135,7 +134,7 @@ public final class Method {
     private static final void run(StaticState ss, HClass cls, String[] args)
 	throws InterpretedThrowable {
 	HMethod method=cls.getMethod("main", new HClass[]{ ss.HCstringA });
-	Util.ASSERT(method.isStatic());
+	assert method.isStatic();
 	// encapsulate params properly.
 	ArrayRef params=new ArrayRef(ss,ss.HCstringA,new int[]{args.length});
 	for (int i=0; i<args.length; i++)
@@ -164,7 +163,7 @@ public final class Method {
     /** invoke the specified method.  void methods return null. */
     static final Object invoke(StaticState ss, HMethod method, Object[] params)
 	throws InterpretedThrowable {
-	Util.ASSERT(params.length == numParams(method));
+	assert params.length == numParams(method);
 
 	if (!ss.isLoaded(method.getDeclaringClass()))
 	    ss.load(method.getDeclaringClass());
@@ -223,7 +222,7 @@ public final class Method {
 	
 	    // Return or throw.
 	    if (i.Texc!=null) {
-		Util.ASSERT(sf.get(i.Texc)!=null, "Undefined throwable");
+		assert sf.get(i.Texc)!=null : "Undefined throwable";
 		if (ss.TRACE)
 		System.err.println("THROWING " +
 				   ((ObjectRef)sf.get(i.Texc)).type +
@@ -428,9 +427,9 @@ public final class Method {
 	}
 	public void visit(COMPONENTOF q) {
 	    ArrayRef arr = (ArrayRef) sf.get(q.arrayref());
-	    Util.ASSERT(!arr.type.getComponentType().isPrimitive());
+	    assert !arr.type.getComponentType().isPrimitive();
 	    Ref obj = (Ref) sf.get(q.objectref());
-	    Util.ASSERT(obj!=null);
+	    assert obj!=null;
 	    if (obj.type.isInstanceOf(arr.type.getComponentType()))
 		sf.update(q.dst(), new Integer(1));
 	    else
@@ -445,8 +444,7 @@ public final class Method {
 		ObjectRef obj=INClass.forClass(ss, (HClass)q.value());
 		sf.update(q.dst(), obj);
 	    } else if (!q.type().isPrimitive()) {
-		Util.ASSERT(false,
-			    "CONST type not (yet) supported: "+q.type());
+		assert false : "CONST type not (yet) supported: "+q.type();
 	    } else
 		sf.update(q.dst(), toInternal(q.value()));
 	    advance(0);
@@ -476,7 +474,7 @@ public final class Method {
 	}
 	public void visit(INSTANCEOF q) {
 	    Ref obj = (Ref) sf.get(q.src());
-	    Util.ASSERT(obj!=null);// (null instanceof ...) not allowed
+	    assert obj!=null;// (null instanceof ...) not allowed
 	    if (obj.type.isInstanceOf(q.hclass())) // true.
 		sf.update(q.dst(), new Integer(1));
 	    else
@@ -575,12 +573,11 @@ public final class Method {
 	}
 	public void visit(TYPESWITCH q) {
 	    Ref ind = (Ref) sf.get(q.index());
-	    Util.ASSERT(ind!=null); // null index not allowed.
+	    assert ind!=null; // null index not allowed.
 	    int match;
 	    for (match=0; match<q.keysLength(); match++)
 		if (ind.type.isInstanceOf(q.keys(match))) break;
-	    Util.ASSERT(match < q.arity(),
-			"no-default TYPESWITCH has no match");
+	    assert match < q.arity() : "no-default TYPESWITCH has no match";
 	    visit((SIGMA)q, match);
 	}
     }
@@ -730,7 +727,7 @@ public final class Method {
 	    // object may be null in implicit case
 	    Ref obj = (Ref) sf.get(q.index());
 	    if (obj==null) {
-		Util.ASSERT(q.hasDefault());
+		assert q.hasDefault();
 		advance(q.keysLength()); // take default branch
 	    } else super.visit(q);
 	}

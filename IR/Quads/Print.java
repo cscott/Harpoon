@@ -19,19 +19,19 @@ import java.util.Map;
  * inserting labels to make the control flow clear.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Print.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
+ * @version $Id: Print.java,v 1.4 2002-04-10 03:05:15 cananian Exp $
  */
 abstract class Print  {
     /** Print <code>Quad</code> code representation <code>c</code> to
      *  <code>PrintWriter</code> <code>pw</code> using the specified
      *  <code>PrintCallback</code>. */
-    final static void print(PrintWriter pw, Code c, PrintCallback callback) {
-	if (callback==null) callback = new PrintCallback(); // nop callback
+    final static void print(PrintWriter pw, Code c, PrintCallback<Quad> callback) {
+	if (callback==null) callback = new PrintCallback<Quad>(); // nop callback
 	// get elements.
-	Quad[] ql = (Quad[]) c.getElements();
+	Quad[] ql = c.getElements();
 	METHOD qM = ((HEADER) c.getRootElement()).method();
 	// compile list of back edges
-	Map labels = new HashMap();
+	Map<Quad,Label> labels = new HashMap<Quad,Label>();
 	for (int i=0; i<ql.length; i++) {
 	    // if has more than one edge, then other edges branch to labels.
 	    for (int j=0; j<ql[i].next().length; j++) {
@@ -47,7 +47,7 @@ abstract class Print  {
 	// number labels.
 	for (int i=0, j=0; i<ql.length; i++)
 	    if (labels.containsKey(ql[i]))
-		((Label)labels.get(ql[i])).renumber(j++);
+		labels.get(ql[i]).renumber(j++);
 
 	// okay, print these pookies.
 	pw.println("Codeview \""+c.getName()+"\" for "+c.getMethod()+":");
@@ -119,7 +119,7 @@ abstract class Print  {
 		SIGMA Q = (SIGMA) ql[i];
 		// reformat stuff after 'exceptions'
 		int j = s.indexOf(" exceptions ");
-		Util.ASSERT(j>=0,"(P)CALL.toString() changed, oops.");
+		assert j>=0 : "(P)CALL.toString() changed, oops.";
 		indent(pw, Q, l, s.substring(0, j));
 		Temp retex = (Q instanceof CALL)
 		    ? ((CALL)Q).retex() : ((PCALL)Q).retex();

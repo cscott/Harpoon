@@ -28,7 +28,7 @@ import java.util.Map;
  * <code>SimpleConstMap</code> detects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SimpleConstMap.java,v 1.3 2002-02-26 22:41:42 cananian Exp $
+ * @version $Id: SimpleConstMap.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
  */
 public class SimpleConstMap implements ConstMap {
     final SSIToSSAMap ssi2ssa;
@@ -47,8 +47,8 @@ public class SimpleConstMap implements ConstMap {
     /** Creates a <code>SimpleConstMap</code> which provides information
      *  about <code>HCode</code> <code>hc</code>. */
     public SimpleConstMap(HCode hc) {
-	Util.ASSERT(hc.getName().equals(QuadSSI.codename) ||
-		    hc.getName().equals(QuadSSA.codename));
+	assert hc.getName().equals(QuadSSI.codename) ||
+		    hc.getName().equals(QuadSSA.codename);
 	this.ssi2ssa = hc.getName().equals(QuadSSI.codename) ?
 	    new SSIToSSAMap(hc) : null;
 	QuadVisitor qv = new QuadVisitor() {

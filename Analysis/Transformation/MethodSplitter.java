@@ -40,7 +40,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.3 2002-02-26 22:42:41 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.4 2002-04-10 03:01:54 cananian Exp $
  */
 public abstract class MethodSplitter implements java.io.Serializable {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -91,7 +91,7 @@ public abstract class MethodSplitter implements java.io.Serializable {
 		try {
 		    if (hc!=null) hc = mutateHCode(cloneHCode(hc, m), tok);
 		} catch (CloneNotSupportedException ex) {
-		    Util.ASSERT(false, "cloning HCode failed: "+ex);
+		    assert false : ("cloning HCode failed: "+ex);
 		}
 		return hc;
 	    }
@@ -124,16 +124,16 @@ public abstract class MethodSplitter implements java.io.Serializable {
     /** Go from a (possibly already split) method to the version of the
      *  method named by the token <code>which</code>. */
     public final synchronized HMethod select(HMethod source, Token which) {
-	Util.ASSERT(isValidToken(which), "token is not valid");
+	assert isValidToken(which) : "token is not valid";
 	HMethod orig = split2orig.containsKey(source) ?
 	    (HMethod) ((List)split2orig.get(source)).get(0) : source;
 	if (which == ORIGINAL) return orig;
-	Util.ASSERT(which.suffix!=null,"Null token suffixes are not allowed!");
+	assert which.suffix!=null : "Null token suffixes are not allowed!";
 	List swpair = Default.pair(orig, which);
 	HMethod splitM = (HMethod) versions.get(swpair);
 	if (splitM == null) {
 	    HClassMutator hcm = orig.getDeclaringClass().getMutator();
-	    Util.ASSERT(hcm!=null, "You're using a linker, not a relinker: "+orig+" "+orig.getDeclaringClass().getLinker());
+	    assert hcm!=null : "You're using a linker, not a relinker: "+orig+" "+orig.getDeclaringClass().getLinker();
 	    String mname = orig.getName()+"$$"+which.suffix;
 	    String mdesc = mutateDescriptor(orig, which);
 	    try {
@@ -141,9 +141,9 @@ public abstract class MethodSplitter implements java.io.Serializable {
 	    } catch (DuplicateMemberException dme) {
 		// we can't rename the method, because then inheritance
 		// would not work correctly.
-		Util.ASSERT(false, "Can't create method "+mname+mdesc+" in "+
+		assert false : "Can't create method "+mname+mdesc+" in "+
 			    orig.getDeclaringClass()+" because it already "+
-			    "exists");
+			    "exists";
 	    }
 	    splitM.getMutator().setModifiers(orig.getModifiers());
 	    splitM.getMutator().setSynthetic(orig.isSynthetic());

@@ -85,7 +85,7 @@ public class SpillHeuristics {
 		Iterator instrs=curr.loopExcElements().iterator(); 
 		while( instrs.hasNext() ){
 		    Instr i = (Instr) instrs.next();
-		    Util.ASSERT( ! depthMap.keySet().contains( i ));
+		    assert ! depthMap.keySet().contains( i );
 		    depthMap.put( i , currDepth );
 		}
 	    }
@@ -140,7 +140,7 @@ public class SpillHeuristics {
 		j++;
 	    }
 	}
-	Util.ASSERT(j == nonnull);
+	assert j == nonnull;
 	return shs;
     }
 

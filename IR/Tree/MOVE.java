@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
+ * @version $Id: MOVE.java,v 1.4 2002-04-10 03:05:45 cananian Exp $
  */
 public class MOVE extends Stm implements Typed {
     /** Constructor. 
@@ -33,14 +33,13 @@ public class MOVE extends Stm implements Typed {
     public MOVE(TreeFactory tf, HCodeElement source,
 		Exp dst, Exp src) {
 	super(tf, source, 2);
-	Util.ASSERT(dst != src, "dst and src cannot be same");
-	Util.ASSERT(dst!=null && src!=null, "Dest and Source cannot be null");
-	Util.ASSERT(dst.type()==src.type(), 
-		    "Dest (type:"+Type.toString(dst.type()) + 
+	assert dst != src : "dst and src cannot be same";
+	assert dst!=null && src!=null : "Dest and Source cannot be null";
+	assert dst.type()==src.type() : "Dest (type:"+Type.toString(dst.type()) + 
 		    ") and Source (type:" + Type.toString(src.type()) + 
-		    ") must have same type");
-	Util.ASSERT(dst.tf == src.tf, "Dest and Src must have same tree factory");
-	Util.ASSERT(tf == src.tf, "This and Src must have same tree factory");
+		    ") must have same type";
+	assert dst.tf == src.tf : "Dest and Src must have same tree factory";
+	assert tf == src.tf : "This and Src must have same tree factory";
 	this.setDst(dst); this.setSrc(src); 
 
 	// FSK: debugging hack
@@ -56,7 +55,7 @@ public class MOVE extends Stm implements Typed {
     /** Sets the expression giving the destination for the
      *  computed value. */
     public void setDst(Exp dst) {
-	Util.ASSERT(dst.kind()==TreeKind.MEM || dst.kind()==TreeKind.TEMP);
+	assert dst.kind()==TreeKind.MEM || dst.kind()==TreeKind.TEMP;
 	setChild(0, dst);
     }
     /** Sets the expression for the computed value. */
@@ -71,9 +70,9 @@ public class MOVE extends Stm implements Typed {
 	else return commontail;
     }
     public Stm build(TreeFactory tf, ExpList kids) {
-	Util.ASSERT(kids!=null);
-	Util.ASSERT(tf == kids.head.tf);
-	Util.ASSERT(tf == this.tf, "cloning src not yet implemented");
+	assert kids!=null;
+	assert tf == kids.head.tf;
+	assert tf == this.tf : "cloning src not yet implemented";
 	if (getDst().kind()==TreeKind.MEM)
 	    return new MOVE(tf, this, 
 			    getDst().build(tf, new ExpList(kids.head, null)),

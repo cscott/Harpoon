@@ -15,7 +15,7 @@ import java.util.HashSet;
  * <code>Web</code> is a helper class used in Register Allocation.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Web.java,v 1.3 2002-02-26 22:40:22 cananian Exp $
+ * @version $Id: Web.java,v 1.4 2002-04-10 02:59:47 cananian Exp $
  */
 class Web extends harpoon.Analysis.GraphColoring.SparseNode {
     Temp var;
@@ -33,7 +33,7 @@ class Web extends harpoon.Analysis.GraphColoring.SparseNode {
     int id;
 
     Web(Temp var) {
-	Util.ASSERT(var != null);
+	assert var != null;
 	this.var = var;
 	refs = new HashSet();
 	id = counter;

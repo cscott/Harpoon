@@ -45,7 +45,7 @@ import java.util.Stack;
  * XXX: DERIVATION INFORMATION FOR PHI/SIGMAS IS CURRENTLY LOST. [CSA]
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.4 2002-04-10 03:05:15 cananian Exp $
  */
 public class SSIRename {
     private static final boolean DEBUG = false;
@@ -163,8 +163,7 @@ public class SSIRename {
 		}
 		// check for unreachable code.
 		for (int i = 0; i < q.prevLength(); i++)
-		    Util.ASSERT(old2new.get(q.prev(i))!=null,
-				!DEBUG ? "unreachable predecessor" :
+		    assert old2new.get(q.prev(i))!=null : (!DEBUG ? "unreachable predecessor" :
 				i+"th predecessor of "+q+" is unreachable");
 	    }
 	}
@@ -204,11 +203,11 @@ public class SSIRename {
 	    public void associate(Temp o, Temp n) { backing.put(o,n); }
 	};
 	void search(Edge e) {
-	    Util.ASSERT(e.from() instanceof PHI ||
+	    assert e.from() instanceof PHI ||
 			e.from() instanceof SIGMA ||
-			e.from() instanceof HEADER);
+			e.from() instanceof HEADER;
 	    // handle dfs bookkeeping.
-	    Util.ASSERT(!marked.contains(e));
+	    assert !marked.contains(e);
 	    marked.add(e);
 	    // setup 'from' state.
 	    Quad from = (Quad) e.from();

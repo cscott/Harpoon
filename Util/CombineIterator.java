@@ -12,31 +12,31 @@ import java.util.NoSuchElementException;
  * <code>Iterator</code>s into one.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CombineIterator.java,v 1.2 2002-02-25 21:08:45 cananian Exp $
+ * @version $Id: CombineIterator.java,v 1.3 2002-04-10 03:07:04 cananian Exp $
  */
 
-public class CombineIterator implements Iterator {
-    final Iterator[] ita;
+public class CombineIterator<E> implements Iterator<E> {
+    final Iterator<E>[] ita;
     int i=0;
     /** Creates a <code>CombineIterator</code> from an array of Iterators. */
-    public CombineIterator(Iterator[] ita) {
+    public CombineIterator(Iterator<E>[] ita) {
         this.ita = ita;
     }
     /** Creates a <code>CombineIterator</code> from a pair of
 	Iterators. 
     */
-    public CombineIterator(Iterator i1, Iterator i2) {
-	this(new Iterator[]{ i1, i2 });
+    public CombineIterator(Iterator<E> i1, Iterator<E> i2) {
+	this(new Iterator<E>[]{ i1, i2 });
     }
 
     /** Creates a <code>CombineIterator</code> from an
      *  Iterator over Iterators. */
-    public CombineIterator(Iterator it) {
-	List l = new ArrayList();
+    public CombineIterator(Iterator<Iterator<E>> it) {
+	List<Iterator<E>> l = new ArrayList<Iterator<E>>();
 	while (it.hasNext()) { l.add(it.next()); }
-	this.ita = (Iterator[]) l.toArray(new Iterator[l.size()]);
+	this.ita = l.toArray(new Iterator<E>[l.size()]);
     }
-    public Object next() {
+    public E next() {
 	while (i < ita.length && !ita[i].hasNext() )
 	    i++;
 	if (i < ita.length && ita[i].hasNext())

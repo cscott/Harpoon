@@ -33,7 +33,7 @@ import java.util.Stack;
  * <b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Unreachable.java,v 1.3 2002-02-26 22:41:42 cananian Exp $
+ * @version $Id: Unreachable.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
  */
 public abstract class Unreachable  {
 
@@ -48,7 +48,7 @@ public abstract class Unreachable  {
 		dm = (DerivationMap) c.getDerivation();
 	    else {
 		//c.setDerivation(null); // clear derivation information.
-		Util.ASSERT(false); // can't invalidate, can't update, abort!
+		assert false; // can't invalidate, can't update, abort!
 	    }
 	}
 	prune((HEADER)hc.getRootElement(), dm);

@@ -37,7 +37,7 @@ import java.util.Set;
  * of several 'mostly-zero field' transformations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstructorClassifier.java,v 1.3 2002-02-26 22:42:22 cananian Exp $
+ * @version $Id: ConstructorClassifier.java,v 1.4 2002-04-10 03:01:36 cananian Exp $
  */
 public class ConstructorClassifier {
     private static final boolean STATISTICS=true;
@@ -114,7 +114,7 @@ public class ConstructorClassifier {
     /** Returns <code>true</code> iff there is at least one field whose
      *  value can be predicted when this constructor is called. */
     public boolean isGood(HMethod constructor) {
-	Util.ASSERT(isConstructor(constructor));
+	assert isConstructor(constructor);
 	Map m = classifyMethod(constructor);
 	for (Iterator it=m.values().iterator(); it.hasNext(); )
 	    if (((Classification)it.next()).isGood()) return true;
@@ -134,7 +134,7 @@ public class ConstructorClassifier {
      *  that <code>isConstant(constructor,hf)</code> be <code>true</code>.
      */
     public Object constantValue(HMethod constructor, HField hf) {
-	Util.ASSERT(isConstant(constructor, hf));
+	assert isConstant(constructor, hf);
 	Classification c = (Classification)
 	    classifyMethod(constructor).get(hf);
 	return (c==null) ? makeZero(hf.getType()) : c.constant;
@@ -187,6 +187,9 @@ public class ConstructorClassifier {
 		    // fields, unless the method is a constructor)
 		    if (qq.field().getDeclaringClass()
 			.isInstanceOf(thisClass) &&
+			// XXX i think the presence of the 'isConstructor'
+			// clause here is a bug. constructor writes
+			// should be taken care of by clause above.
 			(isConstructor(hm) ||
 			 !thisClass.equals(qq.field().getDeclaringClass())))
 			continue; // subclass writes are permitted.
@@ -239,7 +242,7 @@ public class ConstructorClassifier {
 	    return new Classification();
 	}
 	public String toString() {
-	    Util.ASSERT(!(param>0 && constant!=null));
+	    assert !(param>0 && constant!=null);
 	    if (param>0) return "PARAM#"+param;
 	    if (isConstant) return "CONSTANT "+constant;
 	    return "NO INFO";
@@ -256,10 +259,10 @@ public class ConstructorClassifier {
 
     /** caching infrastructure around 'doOne' */
     Map classifyMethod(HMethod hm) {
-	Util.ASSERT(isConstructor(hm));
+	assert isConstructor(hm);
 	if (!cache.containsKey(hm)) {
 	    HCode hc = hcf.convert(hm);
-	    Util.ASSERT(hc!=null);
+	    assert hc!=null;
 	    cache.put(hm, doOne(hc));
 	}
 	return (Map) cache.get(hm);
@@ -270,7 +273,7 @@ public class ConstructorClassifier {
     private Map doOne(HCode hc) {
 	Map map = mf.makeMap();
 	HMethod hm = hc.getMethod();
-	Util.ASSERT(isConstructor(hm));
+	assert isConstructor(hm);
 	HClass thisClass = hm.getDeclaringClass();
 	// first, get a SimpleConstMap
 	ConstMap cm = new SimpleConstMap(hc);
@@ -347,7 +350,7 @@ public class ConstructorClassifier {
 	if (hc==HClass.Long) return new Long(0);
 	if (hc==HClass.Float) return new Float(0);
 	if (hc==HClass.Double) return new Double(0);
-	Util.ASSERT(false, "unknown type: "+hc);
+	assert false : ("unknown type: "+hc);
 	return null;
     }
     ///////// copied from harpoon.Analysis.Quads.DefiniteInitOracle.

@@ -11,7 +11,7 @@ import harpoon.Util.ArrayFactory;
  * to demand-load class files, instead of doing them all at once).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HPointer.java,v 1.2 2002-02-25 21:03:04 cananian Exp $
+ * @version $Id: HPointer.java,v 1.3 2002-04-10 03:04:15 cananian Exp $
  */
 abstract class HPointer  {
     /** Returns a genuine HClass from the (possible) pointer. */
@@ -25,8 +25,8 @@ abstract class HPointer  {
      */
     public int hashCode() { return getDescriptor().hashCode(); }
 
-    public static final ArrayFactory arrayFactory = 
-	new ArrayFactory() {
-	    public Object[] newArray(int len) { return new HPointer[len]; }
+    public static final ArrayFactory<HPointer> arrayFactory = 
+	new ArrayFactory<HPointer>() {
+	    public HPointer[] newArray(int len) { return new HPointer[len]; }
 	};
 }

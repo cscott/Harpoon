@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * instruction.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TYPECAST.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
+ * @version $Id: TYPECAST.java,v 1.4 2002-04-10 03:05:18 cananian Exp $
  */
 public class TYPECAST extends NOP {
     /** The <code>Temp</code> to type cast. */
@@ -36,7 +36,7 @@ public class TYPECAST extends NOP {
 	this.objectref = objectref;
 	this.hclass = hclass;
 	// VERIFY LEGALITY
-	Util.ASSERT(objectref!=null && hclass!=null);
+	assert objectref!=null && hclass!=null;
     }
     // ACCESSOR METHODS:
     /** Return the <code>Temp</code> type cast by this <code>TYPECAST</code>.*/

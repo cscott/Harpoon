@@ -34,7 +34,7 @@ import java.util.Set;
  * <code>EnvBuilder</code>
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: EnvBuilder.java,v 1.3 2002-02-26 22:39:53 cananian Exp $
+ * @version $Id: EnvBuilder.java,v 1.4 2002-04-10 02:59:19 cananian Exp $
  */
 public class EnvBuilder {
     protected final CachingCodeFactory ucf;
@@ -80,9 +80,8 @@ public class EnvBuilder {
 	HClassMutator envmutator=env.getMutator();
 	
 	HConstructor[] c = env.getConstructors();
-	Util.ASSERT(c.length == 1, 
-		    "There should be exactly one constructor in " +
-		    "synthesized environment class. Found " + c.length);
+	assert c.length == 1 : "There should be exactly one constructor in " +
+		    "synthesized environment class. Found " + c.length;
 
 	HConstructor nc = c[0];
 	HMethodMutator ncmutator=nc.getMutator();

@@ -8,12 +8,12 @@ package harpoon.ClassFile;
  * in a graph structure.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCodeEdge.java,v 1.2 1998-10-11 02:37:08 cananian Exp $
+ * @version $Id: HCodeEdge.java,v 1.3 2002-04-10 03:04:15 cananian Exp $
  * @see HCodeElement
  */
-public interface HCodeEdge  {
+public interface HCodeEdge<HCE extends HCodeElement>  {
     /** Returns the source of this <code>HCodeEdge</code>. */
-    public HCodeElement from();
+    public HCE from();
     /** Returns the destination of the <code>HCodeEdge</code>. */
-    public HCodeElement to();
+    public HCE to();
 }

@@ -44,7 +44,7 @@ import java.util.Set;
  * really *are* mostly-zero, then the net will be a space savings.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFExternalize.java,v 1.3 2002-02-26 22:42:23 cananian Exp $
+ * @version $Id: MZFExternalize.java,v 1.4 2002-04-10 03:01:37 cananian Exp $
  */
 class MZFExternalize {
     public static final double THRESHOLD =
@@ -135,12 +135,12 @@ class MZFExternalize {
 	// xxx cheat: get old getter and replace GET with our cruft.
 	// would be better to make this from scratch.
 	HCode hc = hcf.convert(getter);
-	Util.ASSERT(hc.getName().equals(QuadRSSx.codename), hc);
+	assert hc.getName().equals(QuadRSSx.codename) : hc;
 	Quad[] qa = (Quad[]) hc.getElements();
 	for (int i=0; i<qa.length; i++) {
 	    if (qa[i] instanceof GET) {
 		GET q = (GET) qa[i];
-		Util.ASSERT(q.field().equals(hf));
+		assert q.field().equals(hf);
 		// mu-ha-ha-ha-ha-ha!
 		QuadFactory qf = q.getFactory();
 		Temp defT = new Temp(qf.tempFactory(), "default");
@@ -150,7 +150,7 @@ class MZFExternalize {
 		String KEY = hf.getDeclaringClass().getName()+"."+hf.getName();
 		Quad q0 = new CONST
 		    (qf, q, keyT, KEY, linker.forName("java.lang.String"));
-		Util.ASSERT(ty.isPrimitive()?true:mostly.intValue()==0);
+		assert ty.isPrimitive()?true:mostly.intValue()==0;
 		Quad q1 = ty.isPrimitive() ?
 		    new CONST(qf, q, defT, makeValue(ty, mostly), ty) :
 		    new CONST(qf, q, defT, null, HClass.Void);
@@ -172,7 +172,7 @@ class MZFExternalize {
 		// insert type check for non-primitive types.
 		if (!ty.isPrimitive()) {
 		    // INSTANCEOF can't be given null, so do a null-check 1st.
-		    // if (q!=null && !(q instanceof xxx)) assert(0);
+		    // if (q!=null && !(q instanceof xxx)) assert 0;
 		    Temp nullT = new Temp(qf.tempFactory(), "null");
 		    Temp tstT = new Temp(qf.tempFactory(), "test");
 		    Quad q4 = new CONST(qf, q, nullT, null, HClass.Void);
@@ -201,12 +201,12 @@ class MZFExternalize {
 	// xxx cheat: get old setter and replace SET with our cruft.
 	// would be better to make this from scratch.
 	HCode hc = hcf.convert(setter);
-	Util.ASSERT(hc.getName().equals(QuadRSSx.codename), hc);
+	assert hc.getName().equals(QuadRSSx.codename) : hc;
 	Quad[] qa = (Quad[]) hc.getElements();
 	for (int i=0; i<qa.length; i++) {
 	    if (qa[i] instanceof SET) {
 		SET q = (SET) qa[i];
-		Util.ASSERT(q.field().equals(hf));
+		assert q.field().equals(hf);
 		// mu-ha-ha-ha-ha-ha!
 		QuadFactory qf = q.getFactory();
 		Temp defT = new Temp(qf.tempFactory(), "default");
@@ -216,7 +216,7 @@ class MZFExternalize {
 		String KEY = hf.getDeclaringClass().getName()+"."+hf.getName();
 		Quad q0 = new CONST
 		    (qf, q, keyT, KEY, linker.forName("java.lang.String"));
-		Util.ASSERT(ty.isPrimitive()?true:mostly.intValue()==0);
+		assert ty.isPrimitive()?true:mostly.intValue()==0;
 		Quad q1 = ty.isPrimitive() ?
 		    new CONST(qf, q, defT, makeValue(ty, mostly), ty) :
 		    new CONST(qf, q, defT, null, HClass.Void);
@@ -263,7 +263,7 @@ class MZFExternalize {
 	if (type==HClass.Long) return longGET;
 	if (type==HClass.Float) return floatGET;
 	if (type==HClass.Double) return doubleGET;
-	Util.ASSERT(false, "unknown type: "+type);
+	assert false : ("unknown type: "+type);
 	return null;
     }
     private HMethod hashSET(HClass type) {
@@ -272,7 +272,7 @@ class MZFExternalize {
 	if (type==HClass.Long) return longSET;
 	if (type==HClass.Float) return floatSET;
 	if (type==HClass.Double) return doubleSET;
-	Util.ASSERT(false, "unknown type: "+type);
+	assert false : ("unknown type: "+type);
 	return null;
     }
 }

@@ -9,13 +9,13 @@ import harpoon.Util.ArrayFactory;
  * about a single member (a field or a method) or a constructor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMember.java,v 1.6 2002-02-25 21:03:03 cananian Exp $
+ * @version $Id: HMember.java,v 1.7 2002-04-10 03:04:15 cananian Exp $
  * @see HClass
  * @see HField
  * @see HMethod
  * @see HConstructor
  */
-public interface HMember extends java.lang.Comparable {
+public interface HMember extends java.lang.Comparable<HMember> {
   /** 
    * Returns the <code>HClass</code> object representing the class or
    * interface that declares the member or constructor represented by this
@@ -57,17 +57,16 @@ public interface HMember extends java.lang.Comparable {
 
   /** Compares two <code>HMember</code>s lexicographically; first by
    *  declaring class, then by name, and lastly by descriptor. */
-  public abstract int compareTo(Object o);
+  public abstract int compareTo(HMember o);
   // implementation of a member comparator, for consistency among 
   // implementations.
-  static final java.util.Comparator memberComparator = new MemberComparator();
+  static final java.util.Comparator<HMember> memberComparator = new MemberComparator();
   /** Implementation of <code>java.util.Comparator</code> for objects
    *  implementing <code>HMember</code>, for consistency among
    *  implementations.  Compares two <code>HMember</code>s lexicographically,
    *  first by declaring class, then by name, and lastly by descriptor. */
-  static class MemberComparator implements java.util.Comparator {
-    public int compare(Object o1, Object o2) {
-	HMember hm1 = (HMember) o1, hm2 = (HMember) o2;
+  static class MemberComparator implements java.util.Comparator<HMember> {
+    public int compare(HMember hm1, HMember hm2) {
 	int c = hm1.getDeclaringClass().compareTo(hm2.getDeclaringClass());
 	if (c!=0) return c;
 	c = hm1.getName().compareTo(hm2.getName());
@@ -78,6 +77,6 @@ public interface HMember extends java.lang.Comparable {
   }
 
   /** Array factory: returns new <code>HMember[]</code>. */
-  public static final ArrayFactory arrayFactory =
+  public static final ArrayFactory<HMember> arrayFactory =
     Factories.hmemberArrayFactory;
 }

@@ -23,7 +23,7 @@ import java.util.Iterator;
  * <code>ThreadInliner</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ThreadInliner.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
+ * @version $Id: ThreadInliner.java,v 1.4 2002-04-10 03:05:19 cananian Exp $
  */
 public class ThreadInliner {
     /** Creates a <code>ThreadInliner</code>. */
@@ -47,7 +47,7 @@ public class ThreadInliner {
 	HCodeAndMaps hcam = null;
 	try /* I hate having to explicitly check this exception */
 	    { hcam = hc.clone(hc.getMethod()); }
-	catch (CloneNotSupportedException ex) { Util.ASSERT(false, ex); }
+	catch (CloneNotSupportedException ex) { assert false : ex; }
 	QuadNoSSA qns = (QuadNoSSA) hcam.hcode();
 	Map quadMap = hcam.elementMap();
 	TempMap tempMap = hcam.tempMap();

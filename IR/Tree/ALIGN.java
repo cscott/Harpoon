@@ -17,7 +17,7 @@ import java.util.Set;
  * specified n-byte boundary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ALIGN.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
+ * @version $Id: ALIGN.java,v 1.4 2002-04-10 03:05:36 cananian Exp $
  */
 public class ALIGN extends Stm implements harpoon.ClassFile.HDataElement {
     /** The alignment to enforce, in bytes. Zero or one specify no
@@ -28,7 +28,7 @@ public class ALIGN extends Stm implements harpoon.ClassFile.HDataElement {
     public ALIGN(TreeFactory tf, HCodeElement source, int alignment) {
 	super(tf, source, 0);
 	this.alignment = alignment;
-	Util.ASSERT(alignment >=0);
+	assert alignment >=0;
 	
 	// FSK: debugging hack
 	// this.accept(TreeVerifyingVisitor.norepeats());
@@ -37,7 +37,7 @@ public class ALIGN extends Stm implements harpoon.ClassFile.HDataElement {
     public int     kind() { return TreeKind.ALIGN; }
 
     public Stm build(TreeFactory tf, ExpList kids) {
-	Util.ASSERT(kids==null);
+	assert kids==null;
 	return new ALIGN(tf, this, alignment);
     }
 

@@ -20,7 +20,7 @@ import java.util.Map;
  * from a different <code>AllocationInformation</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformationMap.java,v 1.3 2002-02-26 22:39:08 cananian Exp $
+ * @version $Id: AllocationInformationMap.java,v 1.4 2002-04-10 02:58:48 cananian Exp $
  */
 public class AllocationInformationMap
     implements AllocationInformation, java.io.Serializable {
@@ -66,8 +66,8 @@ public class AllocationInformationMap
 					boolean noSynchronization,
 					Temp allocationHeap,
 					HClass actualClass) {
-	    Util.ASSERT(!(allocationHeap!=null && !canBeThreadAllocated));
-	    Util.ASSERT(!(allocationHeap!=null && makeHeap));
+	    assert !(allocationHeap!=null && !canBeThreadAllocated);
+	    assert !(allocationHeap!=null && makeHeap);
 	    this.hasInteriorPointers  = hasInteriorPointers;
 	    this.canBeStackAllocated  = canBeStackAllocated;
 	    this.canBeThreadAllocated = canBeThreadAllocated;

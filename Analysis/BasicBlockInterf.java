@@ -19,26 +19,26 @@ import harpoon.ClassFile.HCodeElement;
  * <code>BasicBlockInterf</code> respect different sets of constraints.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: BasicBlockInterf.java,v 1.2 2002-02-25 20:56:09 cananian Exp $ */
-public interface BasicBlockInterf {
+ * @version $Id: BasicBlockInterf.java,v 1.3 2002-04-10 02:58:48 cananian Exp $ */
+public interface BasicBlockInterf<HCE extends HCodeElement,BB extends BasicBlockInterf> {
     
     /** Returns the first statement of the basic block. */
-    public HCodeElement getFirst();
+    public HCE getFirst();
 
     /** Returns the last statement of the basic block. */
-    public HCodeElement getLast();
+    public HCE getLast();
 
     /** Returns <i>all</i> the predecessors of the basic block,
         according to the normal <i>and</i> the exceptional control flow. */
-    public Set prevSet();
+    public Set<BB> prevSet();
 
     /** Returns <i>all</i> the successors of the basic block,
         according to the normal <i>and</i> the exceptional control flow. */
-    public Set nextSet();
+    public Set<BB> nextSet();
 
     /** Returns the list of the statements composing the basic
 	block. */
-    public List statements();
+    public List<HCE> statements();
 
     /** Calls the appropriate <code>visit</code> method from
 	<code>visitor</code>. The concept of

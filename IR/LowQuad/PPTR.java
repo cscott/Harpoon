@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * allow arithmetic only on <code>POINTER</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PPTR.java,v 1.3 2002-02-26 22:45:51 cananian Exp $
+ * @version $Id: PPTR.java,v 1.4 2002-04-10 03:04:57 cananian Exp $
  */
 public abstract class PPTR extends LowQuad {
     /** The <code>Temp</code> in which to store the computed
@@ -30,7 +30,7 @@ public abstract class PPTR extends LowQuad {
 	super(qf, source);
 	this.dst = dst;
 	this.objectref = objectref;
-	Util.ASSERT(dst != null && objectref != null);
+	assert dst != null && objectref != null;
     }
     // ACCESSOR METHODS:
     /** Returns the <code>Temp</code> in which to store the computed

@@ -34,14 +34,14 @@ import java.util.Stack;
  * control regions in linear time" might also provide a useful reference.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SESE.java,v 1.3 2002-02-26 22:39:08 cananian Exp $
+ * @version $Id: SESE.java,v 1.4 2002-04-10 02:58:48 cananian Exp $
  */
 public class SESE  {
     /** Root of <code>Region</code> tree. */
     public final Region topLevel=new Region();
     /** Mapping from Nodes/Edges to smallest enclosing canonical SESE
      *  <code>Region</code>. */
-    public /*final*/ Map smallestSESE;
+    public final Map smallestSESE;
 
     /** Creates a <code>SESE</code> using a <code>CycleEq</code>. */
     public SESE(HCode hc) {
@@ -71,7 +71,7 @@ public class SESE  {
 	Stack regionS=new Stack();    regionS.push(topLevel);
 
 	while (!nodeS.isEmpty()) {
-	    Util.ASSERT(nodeS.size()==regionS.size());
+	    assert nodeS.size()==regionS.size();
 	    Object o = nodeS.pop(); // either an HCodeElement or an HCodeEdge
 	    Region cR= (Region) regionS.pop(); // currentRegion.
 	    // deal with region entry/exit.
@@ -102,7 +102,7 @@ public class SESE  {
 		    visited.add(succ[i]);
 		}
 	} // END while.
-	Util.ASSERT(nodeS.isEmpty() && regionS.isEmpty());
+	assert nodeS.isEmpty() && regionS.isEmpty();
 	// make smallestSESE map unmodifiable.
 	smallestSESE = Collections.unmodifiableMap(workSmallSESE);
 	// make region lists unmodifiable
@@ -159,11 +159,11 @@ public class SESE  {
 
 	Region() { // create top-level region.
 	    this.entry = this.exit = null;
-	    Util.ASSERT(isTopLevel());
+	    assert isTopLevel();
 	}
 	Region(Object entry, Object exit) {
 	    this.entry = entry; this.exit = exit;
-	    Util.ASSERT(!isTopLevel());
+	    assert !isTopLevel();
 	}
 
 	/** Parent region of this one (<code>null</code> for top-level

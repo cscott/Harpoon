@@ -28,7 +28,7 @@ import java.util.Stack;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.6 2002-02-26 22:39:08 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.7 2002-04-10 02:58:48 cananian Exp $
  */
 
 public class CycleEq  {
@@ -109,19 +109,19 @@ public class CycleEq  {
 	}
 	/** Map HCodeElement to Node, creating new RealNode if necessary. */
 	Node node(HCodeElement hce) {
-	    Util.ASSERT(hce!=null);
+	    assert hce!=null;
 	    Node n = (Node) hce2node.get(hce);
 	    return (n!=null)?n:new RealNode(hce);
 	}
 	/** Map HCodeEdge to Edge, creating new RealEdge if necessary. */
 	Edge edge(HCodeEdge hce) {
-	    Util.ASSERT(hce!=null);
+	    assert hce!=null;
 	    Edge e = (Edge) hce2edge.get(hce);
 	    return (e!=null)?e:new RealEdge(hce);
 	}
 	/** Construct depth-first spanning tree. */
 	void dfs(Node n, Set mark) {
-	    Util.ASSERT(!mark.contains(n));
+	    assert !mark.contains(n);
 	    n.dfsnum = mark.size();
 	    mark.add(n);
 	    all_nodes.add(n);
@@ -232,8 +232,8 @@ public class CycleEq  {
 	    final HCodeElement hce;
 	    //
 	    RealNode(HCodeElement hce) {
-		Util.ASSERT(hce!=null);
-		Util.ASSERT(!hce2node.containsKey(hce));
+		assert hce!=null;
+		assert !hce2node.containsKey(hce);
 		this.hce = hce; hce2node.put(hce, this);
 	    }
 	    Iterator adj() {
@@ -286,8 +286,8 @@ public class CycleEq  {
 	class RealEdge extends Edge {
 	    final HCodeEdge hce;
 	    RealEdge(HCodeEdge hce) {
-		Util.ASSERT(hce!=null);
-		Util.ASSERT(!hce2edge.containsKey(hce));
+		assert hce!=null;
+		assert !hce2edge.containsKey(hce);
 		this.hce = hce; hce2edge.put(hce, this);
 	    }
 	    public Node otherEnd(Node n) {
@@ -301,7 +301,7 @@ public class CycleEq  {
 	class FakeEdge extends Edge {
 	    final Node from, to;
 	    FakeEdge(Node from, Node to) {
-		Util.ASSERT(from!=null && to !=null);
+		assert from!=null && to !=null;
 		this.from = from; this.to = to;
 	    }
 	    public Node otherEnd(Node n) {

@@ -22,34 +22,34 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.5 2002-03-10 05:52:54 cananian Exp $
+ * @version $Id: Spec.java,v 1.6 2002-04-10 03:06:53 cananian Exp $
  */
 public class Spec  {
 
     /** Java code statements that are going to be placed outside class
 	body (package declaration, import statements).
     */
-    public /*final*/ String global_stms;
+    public final String global_stms;
 
     /** Java code statements that are going to be placed inside class
 	body (helper methods, fields, inner classes).
     */
-    public /*final*/ String class_stms;
+    public final String class_stms;
 
     /** Java code statements to be inserted in the prologue of the
      *  code generator method body.
      */
-    public /*final*/ String method_prologue_stms;
+    public final String method_prologue_stms;
 
     /** Java code statements to be inserted in the epilogue of the
      *  code generator method body.
      */
-    public /*final*/ String method_epilogue_stms;
+    public final String method_epilogue_stms;
 
     /** List of Instruction Patterns for this machine specification.
 	<code>null</code> is a legal value.
      */
-    public /*final*/ RuleList rules;
+    public final RuleList rules;
     
     /** Creates a <code>Spec</code>. */
     public Spec(String global_stms, String class_stms,
@@ -292,7 +292,7 @@ public class Spec  {
 	public ExpId(String id) { this.id = id; }
 	public void accept(ExpVisitor v) { v.visit(this); }
 	public Exp build(ExpList kids) {
-	    Util.ASSERT(kids==null);
+	    assert kids==null;
 	    return new ExpId(this.id);
 	}
 	public ExpList kids() { return null; }
@@ -334,12 +334,11 @@ public class Spec  {
 	public ExpBinop(TypeSet types, Leaf opcode, Exp left, Exp right) {
 	    this.types = types; this.opcode = opcode;
 	    this.left = left;   this.right = right;
-	    Util.ASSERT(!types.containsSmall(),
-			"BINOP cannot be precisely typed: "+this);
+	    assert !types.containsSmall() : ("BINOP cannot be precisely typed: "+this);
 	}
 	public void accept(ExpVisitor v) { v.visit(this); }
 	public Exp build(ExpList kids) {
-	    Util.ASSERT(kids!=null && kids.tail!=null && kids.tail.tail==null);
+	    assert kids!=null && kids.tail!=null && kids.tail.tail==null;
 	    return new ExpBinop((TypeSet)this.types.clone(),
 				opcode/*immutable*/,
 				kids.head, kids.tail.head);
@@ -374,7 +373,7 @@ public class Spec  {
 	}
 	public void accept(ExpVisitor v) { v.visit(this); }
 	public Exp build(ExpList kids) {
-	    Util.ASSERT(kids==null);
+	    assert kids==null;
 	    return new ExpConst((TypeSet)types.clone(),value/*immutable*/);
 	}
 	public ExpList kids() { return null; }
@@ -405,7 +404,7 @@ public class Spec  {
 	}
 	public void accept(ExpVisitor v) { v.visit(this); }
 	public Exp build(ExpList kids) {
-	    Util.ASSERT(kids!=null && kids.tail==null);
+	    assert kids!=null && kids.tail==null;
 	    return new ExpMem((TypeSet)types.clone(), kids.head);
 	}
 	public ExpList kids() { return new ExpList(addr, null); }
@@ -429,7 +428,7 @@ public class Spec  {
 	public ExpName(String name) { this.name = name; }
 	public void accept(ExpVisitor v) { v.visit(this); }
 	public Exp build(ExpList kids) {
-	    Util.ASSERT(kids==null);
+	    assert kids==null;
 	    return new ExpName(name);
 	}
 	public ExpList kids() { return null; }
@@ -456,12 +455,11 @@ public class Spec  {
 	*/
 	public ExpTemp(TypeSet types, String name) {
 	    this.types = types; this.name = name;
-	    Util.ASSERT(!types.containsSmall(),
-			"TEMP cannot be precisely typed: "+this);
+	    assert !types.containsSmall() : ("TEMP cannot be precisely typed: "+this);
 	}
 	public void accept(ExpVisitor v) { v.visit(this); }
 	public Exp build(ExpList kids) {
-	    Util.ASSERT(kids==null);
+	    assert kids==null;
 	    return new ExpTemp((TypeSet)types.clone(), name);
 	}
 	public ExpList kids() { return null; }
@@ -486,12 +484,11 @@ public class Spec  {
 	public final Exp exp;
 	public ExpUnop(TypeSet types, Leaf opcode, Exp exp) {
 	    this.types = types; this.opcode = opcode; this.exp = exp;
-	    Util.ASSERT(!types.containsSmall(),
-			"UNOP cannot be precisely typed: "+this);
+	    assert !types.containsSmall() : ("UNOP cannot be precisely typed: "+this);
 	}
 	public void accept(ExpVisitor v) { v.visit(this); }
 	public Exp build(ExpList kids) {
-	    Util.ASSERT(kids!=null && kids.tail==null);
+	    assert kids!=null && kids.tail==null;
 	    return new ExpUnop((TypeSet)types.clone(), opcode/*immutable*/,
 			       kids.head);
 	}
@@ -571,15 +568,14 @@ public class Spec  {
 	 *  @param segtype Segment type.
 	 */
 	public StmAlign(Leaf alignment) {
-	    Util.ASSERT(alignment instanceof LeafId ||
+	    assert alignment instanceof LeafId ||
 			(alignment instanceof LeafNumber &&
-			 ((LeafNumber)alignment).number instanceof Integer),
-			"Only integer alignments make sense for ALIGN");
+			 ((LeafNumber)alignment).number instanceof Integer) : "Only integer alignments make sense for ALIGN";
 	    this.alignment = alignment;
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
 	public Stm build(ExpList kids) {
-	    Util.ASSERT(kids==null);
+	    assert kids==null;
 	    return new StmAlign(alignment/*immutable*/);
 	}
 	public ExpList kids() { return null; }
@@ -626,7 +622,7 @@ public class Spec  {
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
 	public Stm build(ExpList kids) {
-	    Util.ASSERT(kids!=null && kids.tail==null);
+	    assert kids!=null && kids.tail==null;
 	    return new StmCall(retval, retex, kids.head, arglist, handler);
 	}
 	public ExpList kids() { return new ExpList(func, null); }
@@ -662,7 +658,7 @@ public class Spec  {
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
 	public Stm build(ExpList kids) {
-	    Util.ASSERT(kids!=null && kids.tail==null);
+	    assert kids!=null && kids.tail==null;
 	    return new StmCjump(kids.head, t_label, f_label);
 	}
 	public ExpList kids() { return new ExpList(test, null); }
@@ -688,7 +684,7 @@ public class Spec  {
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
 	public Stm build(ExpList kids) {
-	    Util.ASSERT(kids!=null && kids.tail==null);
+	    assert kids!=null && kids.tail==null;
 	    return new StmData(kids.head);
 	}
 	public ExpList kids() { return new ExpList(data, null); }
@@ -712,7 +708,7 @@ public class Spec  {
 	public StmExp(Exp exp) { this.exp = exp; }
 	public void accept(StmVisitor v) { v.visit(this); }
 	public Stm build(ExpList kids) {
-	    Util.ASSERT(kids!=null && kids.tail==null);
+	    assert kids!=null && kids.tail==null;
 	    return new StmExp(kids.head);
 	}
 	public ExpList kids() { return new ExpList(exp, null); }
@@ -732,7 +728,7 @@ public class Spec  {
 	public StmJump(Exp exp) { this.exp = exp; }
 	public void accept(StmVisitor v) { v.visit(this); }
 	public Stm build(ExpList kids) {
-	    Util.ASSERT(kids!=null && kids.tail==null);
+	    assert kids!=null && kids.tail==null;
 	    return new StmJump(kids.head);
 	}
 	public ExpList kids() { return new ExpList(exp, null); }
@@ -753,7 +749,7 @@ public class Spec  {
 	public StmLabel(String name) { this.name = name; }
 	public void accept(StmVisitor v) { v.visit(this); }
 	public Stm build(ExpList kids) {
-	    Util.ASSERT(kids==null);
+	    assert kids==null;
 	    return new StmLabel(name);
 	}
 	public ExpList kids() { return null; }
@@ -773,7 +769,7 @@ public class Spec  {
 	public StmMethod(String params) { this.params = params; }
 	public void accept(StmVisitor v) { v.visit(this); }
 	public Stm build(ExpList kids) {
-	    Util.ASSERT(kids==null);
+	    assert kids==null;
 	    return new StmMethod(params);
 	}
 	public ExpList kids() { return null; }
@@ -797,12 +793,11 @@ public class Spec  {
 	*/
 	public StmMove(TypeSet types, Exp dst, Exp src) {
 	    this.types = types; this.dst = dst; this.src = src;
-	    Util.ASSERT(!types.containsSmall(),
-			"MOVE cannot be precisely typed: "+this);
+	    assert !types.containsSmall() : ("MOVE cannot be precisely typed: "+this);
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
 	public Stm build(ExpList kids) {
-	    Util.ASSERT(kids!=null && kids.tail!=null && kids.tail.tail==null);
+	    assert kids!=null && kids.tail!=null && kids.tail.tail==null;
 	    return new StmMove((TypeSet)types.clone(),
 			       kids.head, kids.tail.head);
 	}
@@ -840,7 +835,7 @@ public class Spec  {
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
 	public Stm build(ExpList kids) {
-	    Util.ASSERT(kids!=null && kids.tail==null);
+	    assert kids!=null && kids.tail==null;
 	    return new StmNativeCall(retval, kids.head, arglist);
 	}
 	public ExpList kids() { return new ExpList(func, null); }
@@ -864,12 +859,11 @@ public class Spec  {
 	*/
 	public StmReturn(TypeSet types, Exp retval) {
 	    this.types = types; this.retval = retval;
-	    Util.ASSERT(!types.containsSmall(),
-			"RETURN cannot be precisely typed: "+this);
+	    assert !types.containsSmall() : ("RETURN cannot be precisely typed: "+this);
 	}
 	public void accept(StmVisitor v) { v.visit(this); }
 	public Stm build(ExpList kids) {
-	    Util.ASSERT(kids!=null && kids.tail==null);
+	    assert kids!=null && kids.tail==null;
 	    return new StmReturn((TypeSet)types.clone(), kids.head);
 	}
 	public ExpList kids() { return new ExpList(retval, null); }
@@ -889,7 +883,7 @@ public class Spec  {
 	public StmSegment(Leaf segtype) { this.segtype = segtype; }
 	public void accept(StmVisitor v) { v.visit(this); }
 	public Stm build(ExpList kids) {
-	    Util.ASSERT(kids==null);
+	    assert kids==null;
 	    return new StmSegment(segtype/*immutable*/);
 	}
 	public ExpList kids() { return null; }
@@ -940,7 +934,7 @@ public class Spec  {
 	public StmThrow(Exp exp) { this.retex = exp; this.handler=null;}
 	public void accept(StmVisitor v) { v.visit(this); }
 	public Stm build(ExpList kids) {
-	    Util.ASSERT(kids!=null && kids.tail!=null && kids.tail.tail==null);
+	    assert kids!=null && kids.tail!=null && kids.tail.tail==null;
 	    return new StmThrow(kids.head, kids.tail.head);
 	}
 	public ExpList kids() {
@@ -1265,8 +1259,7 @@ public class Spec  {
 	    @param numBits The bit length of the type. 
 	*/
 	public void setSignedPrecise(int numBits) {
-	    Util.ASSERT((numBits <= 32) && (numBits >= 1), 
-			"invalid bit length:"+numBits);
+	    assert (numBits <= 32) && (numBits >= 1) : ("invalid bit length:"+numBits);
 	    signedPrecises.set(numBits-1);
 	}
 
@@ -1276,8 +1269,7 @@ public class Spec  {
 	    @param numBits The bit length of the type. 
 	*/
 	public void setUnsignedPrecise(int numBits) {
-	    Util.ASSERT((numBits <= 32) && (numBits >= 1), 
-			"invalid bit length:"+numBits);
+	    assert (numBits <= 32) && (numBits >= 1) : ("invalid bit length:"+numBits);
 	    unsignedPrecises.set(numBits-1);
 	}
 	

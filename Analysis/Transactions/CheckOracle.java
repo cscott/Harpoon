@@ -14,33 +14,33 @@ import java.util.Set;
  * field and object version lookups and checks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CheckOracle.java,v 1.2 2002-02-25 21:00:09 cananian Exp $
+ * @version $Id: CheckOracle.java,v 1.3 2002-04-10 03:01:43 cananian Exp $
  */
 abstract class CheckOracle {
     
     /** Returns <code>Set</code> of <code>Temp</code>s for which read-only
      *  versions should be looked up just before <code>hce</code> is
      *  executed. */
-    public abstract Set createReadVersions(HCodeElement hce);
+    public abstract Set<Temp> createReadVersions(HCodeElement hce);
     /** Returns <code>Set</code> of <code>Temp</code>s for which writable
      *  versions should be created just before <code>hce</code> is executed. */
-    public abstract Set createWriteVersions(HCodeElement hce);
+    public abstract Set<Temp> createWriteVersions(HCodeElement hce);
     /** Returns a <code>Set</code> of <code>RefAndField</code> tuples
      *  which should be read-checked before <code>hce</code> is
      *  executed. */
-    public abstract Set checkFieldReads(HCodeElement hce);
+    public abstract Set<RefAndField> checkFieldReads(HCodeElement hce);
     /** Returns a <code>Set</code> of <code>RefAndField</code> tuples
      *  which should be write-checked before <code>hce</code> is
      *  executed. */
-    public abstract Set checkFieldWrites(HCodeElement hce);
+    public abstract Set<RefAndField> checkFieldWrites(HCodeElement hce);
     /** Returns a <code>Set</code> of <code>RefAndIndexAndType</code>
      *  typles which indicate indexed array elements which should be
      *  read-checked before <code>hce</code> is executed.  */
-    public abstract Set checkArrayElementReads(HCodeElement hce);
+    public abstract Set<RefAndIndexAndType> checkArrayElementReads(HCodeElement hce);
     /** Returns a <code>Set</code> of <code>RefAndIndexAndType</code>
      *  typles which indicate indexed array elements which should be
      *  write-checked before <code>hce</code> is executed.  */
-    public abstract Set checkArrayElementWrites(HCodeElement hce);
+    public abstract Set<RefAndIndexAndType> checkArrayElementWrites(HCodeElement hce);
 
     class RefAndField {
 	public final Temp objref;

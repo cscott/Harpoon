@@ -27,7 +27,7 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.3 2002-02-26 22:44:51 cananian Exp $
+ * @version $Id: Code.java,v 1.4 2002-04-10 03:04:01 cananian Exp $
  */
 class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -43,7 +43,7 @@ class Code extends harpoon.Backend.Generic.Code {
 
 	// need to cast the return type to a StrongARM.RegFileInfo
 	regFileInfo = (RegFileInfo) this.frame.getRegFileInfo();
-	Util.ASSERT(regFileInfo != null, "Need non-null regfileinfo");
+	assert regFileInfo != null : "Need non-null regfileinfo";
 
 	tempInstrToRegisterMap = new HashMap();
     }
@@ -82,17 +82,15 @@ class Code extends harpoon.Backend.Generic.Code {
     }
     
     public List getRegisters(Instr i, Temp val) {
-	Util.ASSERT(i != null, "Code.getRegisters(null, Temp) undefined");
+	assert i != null : "Code.getRegisters(null, Temp) undefined";
 	if (val instanceof TwoWordTemp) {
 	    TwoWordTemp t = (TwoWordTemp) val;
 	    Temp low = get(i, t.getLow());
 	    Temp high = get(i, t.getHigh());
-	    Util.ASSERT(low != null,
-			(true)?"low reg is null"
+	    assert low != null : ((true)?"low reg is null"
 			: "low register for "+val+" in "+i+ 
 			  " should not be null");
-	    Util.ASSERT(high != null,
-			(true)?"high reg is null"
+	    assert high != null : ((true)?"high reg is null"
 			: "high register for "+val+" in "+i+
 			  " should not be null");
 	    return Arrays.asList(new Temp[]{ low, high });
@@ -103,9 +101,8 @@ class Code extends harpoon.Backend.Generic.Code {
 		t = val;
 	    } else {
 		t = get(i, val);
-		Util.ASSERT(t != null, 
-			    "register for "+val+" in "+i+
-			    " should not be null");
+		assert t != null : "register for "+val+" in "+i+
+			    " should not be null";
 	    }
 	    return Collections.nCopies(1, t);
 	}
@@ -117,8 +114,7 @@ class Code extends harpoon.Backend.Generic.Code {
 	    (Temp) tempInstrToRegisterMap.get
 	    (new TempInstrPair(instr, val)); 
 	if(reg == null) return null;
-	Util.ASSERT( regFileInfo.isRegister(reg), 
-		     (true)?"should be a reg"
+	assert regFileInfo.isRegister(reg) : ((true)?"should be a reg"
 		     : "Temp: "+reg+" should be a reg in "+
 		       "Instr: "+instr+", Val: "+val);
 	return reg;
@@ -141,18 +137,18 @@ class Code extends harpoon.Backend.Generic.Code {
 		reg = get(instr, t.getHigh());
 	    } else if (suffix.trim().equals("")) {
 		if (true) return "TW"+val;
-		Util.ASSERT(false, "BREAK!  empty suffix " +
+		assert false : ("BREAK!  empty suffix " +
 			    "suffix: " + suffix + "\n" +
 			    "instr: " + instr + "\n" + 
 			    "instr str: " + instr.getAssem() + "\n"+
 			    "temp: " + val);
 	    } else {
-		Util.ASSERT(false, "BREAK!  This parsing needs to be "+
+		assert false : "BREAK!  This parsing needs to be "+
 			    "fixed, strongarm has a lot more cases than this."+
 			    "\n suffix: "+ suffix + "\n" +
 			    "Alternatively, the pattern could be trying to "+
 			    "use a TwoWordTemp without the appropriate "+
-			    "double word modifier (l, h) in " + instr);
+			    "double word modifier (l, h) in " + instr;
 	    }
 	    if(reg != null) {
 		s = reg.name() + suffix.substring(1);
@@ -162,15 +158,14 @@ class Code extends harpoon.Backend.Generic.Code {
 	} else { // single word; nothing special
 	    Temp reg = get(instr, val);
 	    
-	    Util.ASSERT(!suffix.startsWith("l") &&
-			!suffix.startsWith("h"), 
-			(true) ? "suffix not allowed " 
+	    assert !suffix.startsWith("l") &&
+			!suffix.startsWith("h") : (true) ? "suffix not allowed " 
 			: "Shouldn't " +
 			  "have 'l' or 'h' suffix with Temp: " + 
 			  val + " Instrs: " + 
 			  instr.getPrev() + ", " + 
 			  instr + ", " + 
-			  instr.getNext());
+			  instr.getNext();
 
 	    if(reg != null) {
 		s = reg.name() + suffix;
@@ -178,9 +173,8 @@ class Code extends harpoon.Backend.Generic.Code {
 		s = val.name() + suffix;
 	    }
 	}
-	// Util.ASSERT(s.indexOf("r0l") == -1 && s.indexOf("r0h") == -1 &&
-	// s.indexOf("r1l") == -1 && s.indexOf("r1h") == -1, 
-	// "Improper parsing of " + suffix + " in " + instr + " " + val.getClass().getName());
+	// assert s.indexOf("r0l") == -1 && s.indexOf("r0h") == -1 &&
+	// s.indexOf("r1l") == -1 && s.indexOf("r1h") == -1 : // "Improper parsing of " + suffix + " in " + instr + " " + val.getClass().getName();
 
 	return s;
     }
@@ -215,13 +209,12 @@ class Code extends harpoon.Backend.Generic.Code {
 		    System.out.println("bad const extraction");
 		    System.out.println("\'"+constStr+"\'");
 		    System.out.println(" from "+instr+"("+begin+","+end+")");
-		    Util.ASSERT(false);
+		    assert false;
 		}
 	    
-		Util.ASSERT(isValidConst(v) || isValidConst(-v),
-			    true?"const form err"
+		assert isValidConst(v) || isValidConst(-v) : true?"const form err"
 			    : "const form err of "+v+" in "+
-			      instr+"("+begin+","+end+")");
+			      instr+"("+begin+","+end+")";
 	    }
 	} // end if(DEBUG)
 
@@ -258,20 +251,21 @@ class Code extends harpoon.Backend.Generic.Code {
 			       final List regs) {
 	Iterator iter = regs.iterator();
 	while(iter.hasNext()) {
-	    Util.ASSERT( regFileInfo.isRegister((Temp)iter.next()),
-			true ? "every elem should be reg " 
-			 : "every element of "+regs+" should be register");
+	    Temp t = (Temp)iter.next();
+	    assert regFileInfo.isRegister(t)
+		: "every element of "+regs+" should be register, but "+t+
+		"is not.";
 	}
 
 	if (pseudoReg instanceof TwoWordTemp) {
 	    TwoWordTemp t = (TwoWordTemp) pseudoReg;
-	    Util.ASSERT(regs.size() == 2, "wrong reg assignment");
+	    assert regs.size() == 2 : "wrong reg assignment";
 	    tempInstrToRegisterMap.put
 		(new TempInstrPair(instr, t.getLow()), regs.get(0));
 	    tempInstrToRegisterMap.put
 		(new TempInstrPair(instr, t.getHigh()), regs.get(1));
 	} else {
-	    Util.ASSERT(regs.size() == 1, "wrong reg assignment");
+	    assert regs.size() == 1 : "wrong reg assignment";
 	    tempInstrToRegisterMap.put
 		(new TempInstrPair(instr, pseudoReg), regs.get(0));
 	}
@@ -282,8 +276,7 @@ class Code extends harpoon.Backend.Generic.Code {
 	     (instr.getAssem().indexOf("mla ") != -1))) {
 	    Object rm = get(instr, instr.use()[0]);
 	    Object rd = get(instr, instr.def()[0]);
-	    Util.ASSERT(rm == null || !rm.equals(rd), 
-			"rd:"+rd+" and rm:"+rm+" must be different in mul");
+	    assert rm == null || !rm.equals(rd) : ("rd:"+rd+" and rm:"+rm+" must be different in mul");
 	}			
     }
 

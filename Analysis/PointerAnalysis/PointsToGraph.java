@@ -26,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.3 2002-02-26 22:41:22 cananian Exp $
+ * @version $Id: PointsToGraph.java,v 1.4 2002-04-10 03:00:42 cananian Exp $
  */
 public class PointsToGraph implements Cloneable, java.io.Serializable{
 
@@ -230,7 +230,7 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 	// visitor for the outside edges
 	PAEdgeVisitor visitor_O = new PAEdgeVisitor(){
 		public void visit(Temp var, PANode node){
-		    Util.ASSERT(false," var2node edge in O: " + 
+		    assert false : (" var2node edge in O: " + 
 				       var + "->" + node);
 		}
 		public void visit(PANode node1,String f, PANode node2){
@@ -268,7 +268,7 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 	// visitor for the outside edges
 	PAEdgeVisitor visitor_O = new PAEdgeVisitor(){
 		public void visit(Temp var, PANode node){
-		    Util.ASSERT(false," var2node edge in O: " + 
+		    assert false : (" var2node edge in O: " + 
 				var + "->" + node);
 		}
 		public void visit(PANode node1,String f, PANode node2){
@@ -314,7 +314,7 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 	// visitor for the outside edges
 	PAEdgeVisitor visitor_O = new PAEdgeVisitor(){
 	    public void visit(Temp var, PANode node){
-		Util.ASSERT(false," var2node edge in O: " + 
+		assert false : (" var2node edge in O: " + 
 			    var + "->" + node);
 	    }
 	    public void visit(PANode node1,String f, PANode node2){

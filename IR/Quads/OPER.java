@@ -25,7 +25,7 @@ import harpoon.Util.Util;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
+ * @version $Id: OPER.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
  */
 public class OPER extends Quad {
     /** The <code>Temp</code> in which to store the result of the operation. */
@@ -42,11 +42,11 @@ public class OPER extends Quad {
 	this.dst = dst;
 	this.operands = operands;
 	// VERIFY legality of OPER.
-	Util.ASSERT(dst!=null && operands!=null);
+	assert dst!=null && operands!=null;
 	if (kind()==QuadKind.OPER) // allow subclassing.
-	    Util.ASSERT(Qop.isValid(opcode));
+	    assert Qop.isValid(opcode);
 	for (int i=0; i<operands.length; i++)
-	    Util.ASSERT(operands[i]!=null);
+	    assert operands[i]!=null;
     }
     // ACCESSOR METHODS:
     /** Returns the <code>Temp</code> in which to store the result of the

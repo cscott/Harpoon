@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.3 2002-02-26 22:47:12 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.4 2002-04-10 03:06:53 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -154,8 +154,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 	
 	public void visit(Spec.Stm s) {
-	    Util.ASSERT(false, "StmRecurse should never visit Stm: " + s + 
-			" Class:" + s.getClass());
+	    assert false : "StmRecurse should never visit Stm: " + s + 
+			" Class:" + s.getClass();
 	}
 
 	public void visit(Spec.StmMethod s) {
@@ -271,7 +271,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    
 	    s.alignment.accept(new Spec.LeafVisitor() {
 		public void visit(Spec.Leaf l) {
-		    Util.ASSERT(false, "Should never visit generic Leaf in StmAlign");
+		    assert false : "Should never visit generic Leaf in StmAlign";
 		}
 		public void visit(Spec.LeafNumber l) {
 		    append(exp, "&& ((" + TREE_ALIGN + ")"+stmPrefix+
@@ -293,7 +293,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    
 	    s.segtype.accept(new Spec.LeafVisitor() {
 		public void visit(Spec.Leaf l) {
-		    Util.ASSERT(false, "Should never visit generic Leaf in StmSegment");
+		    assert false : "Should never visit generic Leaf in StmSegment";
 		}
 		public void visit(Spec.LeafSegType l) {
 		    append(exp, "&& ((" + TREE_SEGMENT + ")"+stmPrefix+
@@ -521,8 +521,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 	
 	public void visit(Spec.Exp e) {
-	    Util.ASSERT(false, "ExpRecurse should never visit Exp: "+e + 
-			" Class: " + e.getClass());
+	    assert false : "ExpRecurse should never visit Exp: "+e + 
+			" Class: " + e.getClass();
 	}
 	public void visit(final Spec.ExpBinop e) { 
 	    if (rootType==null) rootType=TREE_BINOP;
@@ -535,7 +535,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    // understanding the code!
 	    e.opcode.accept(new Spec.LeafVisitor() {
 		public void visit(Spec.Leaf l) {
-		    Util.ASSERT(false, "Should never visit generic Leaf in ExpBinop");
+		    assert false : "Should never visit generic Leaf in ExpBinop";
 		}
 		public void visit(Spec.LeafOp l) {
 		    append(exp, "// check opcode");
@@ -579,7 +579,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 	    e.value.accept(new Spec.LeafVisitor() {
 		public void visit(Spec.Leaf l) {
-		    Util.ASSERT(false, "Should never visit generic Leaf in ExpConst");
+		    assert false : "Should never visit generic Leaf in ExpConst";
 		}
 		public void visit(Spec.LeafId l) {
 		    append(initStms, "Number " + l.id + " = ((" + TREE_CONST + ") " + 
@@ -662,7 +662,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 	    e.opcode.accept(new Spec.LeafVisitor() {
 		public void visit(Spec.Leaf l) {
-		    Util.ASSERT(false, "Should never visit generic Leaf in ExpUnop");
+		    assert false : "Should never visit generic Leaf in ExpUnop";
 		}
 		public void visit(Spec.LeafOp l) {
 		    append(exp, "// check opcode");
@@ -810,7 +810,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 	Spec.RuleVisitor srv = new Spec.RuleVisitor() {
 	    public void visit(Spec.Rule r) {
-		Util.ASSERT(false, "SpecRuleVisitor should never visit Rule");
+		assert false : "SpecRuleVisitor should never visit Rule";
 	    }
 	    public void visit(Spec.RuleStm r) { 
 		if (isData && !r.stm.canBeRootOfData()) {
@@ -949,10 +949,10 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    out.println("\t\t\t}");
 	}
 	
-	out.println("\t\tharpoon.Util.Util.ASSERT(false, \"Uh oh...\\n"+
+	out.println("\t\tassert false : \"Uh oh...\\n"+
 		    "maximal munch didn't match anything...SPEC file\\n"+
 		    "is not complete enough for this program\\n"+
-		    "Died on \"+prettyPrint("+expArg+")+\" in \" + prettyPrint(globalStmArg));"); 
+		    "Died on \"+prettyPrint("+expArg+")+\" in \" + prettyPrint(globalStmArg);"); 
 	out.println("\t\treturn null; // doesn't matter, we're dead if we didn't match...");
 	out.println("\t\t } // end munchExp");
 	
@@ -977,16 +977,16 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    out.println("\t\t\t}");
 	}
 
-	out.println("\t\tharpoon.Util.Util.ASSERT(_matched_, \"Uh oh...\\n"+
+	out.println("\t\tassert _matched_ : \"Uh oh...\\n"+
 		    "maximal munch didn't match anything...SPEC file\\n"+
 		    "is not complete enough for this program\\n"+
-		    "Died on \"+prettyPrint("+stmArg+")+\" in \" + prettyPrint(globalStmArg));"); 
+		    "Died on \"+prettyPrint("+stmArg+")+\" in \" + prettyPrint(globalStmArg);"); 
 	out.println("\t\t} // end munchStm");
 	
 	out.println("\t\tpublic void visit("+TREE_Tree+" treee){");
-	out.println("\t\t\tharpoon.Util.Util.ASSERT(false, "+
+	out.println("\t\t\tassert false : "+
 		    "\"Should never visit generic " + TREE_Tree + 
-		    "in CggVisitor\");");
+		    "in CggVisitor\";");
 	out.println("\t\t} // end visit("+TREE_Tree+")");
 
 	out.println("\t\tpublic void visit("+TREE_Stm+" treee){");

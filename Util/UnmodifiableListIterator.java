@@ -13,9 +13,9 @@ import java.util.ListIterator;
  * <code>java.util.Collections</code> and such.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnmodifiableListIterator.java,v 1.2 2002-02-25 21:08:56 cananian Exp $
+ * @version $Id: UnmodifiableListIterator.java,v 1.3 2002-04-10 03:07:05 cananian Exp $
  */
-public abstract class UnmodifiableListIterator implements ListIterator {
+public abstract class UnmodifiableListIterator<E> implements ListIterator<E> {
     /** Returns <code>true</code> if the list iterator has more elements
      *  in the forward direction. */
     public abstract boolean hasNext();
@@ -27,7 +27,7 @@ public abstract class UnmodifiableListIterator implements ListIterator {
      *   repeatedly.)
      * @exception java.util.NoSuchElementException if the iteration has no next element.
      */
-    public abstract Object next();
+    public abstract E next();
     /** Returns <code>true</code> if the list iterator has more elements
      *  in the reverse direction. */
     public abstract boolean hasPrevious();
@@ -39,7 +39,7 @@ public abstract class UnmodifiableListIterator implements ListIterator {
      * @exception java.util.NoSuchElementException if the iteration has no previous
      *            element.
      */
-    public abstract Object previous();
+    public abstract E previous();
     /** Returns the index of the element that would be returned by a
      *  subsequent call to <code>next()</code>. (Returns list size if the
      *  list iterator is at the end of the list.)
@@ -59,13 +59,13 @@ public abstract class UnmodifiableListIterator implements ListIterator {
     /** Always throws an <code>UnsupportedOperationException</code>.
      * @exception UnsupportedOperationException always.
      */
-    public final void set(Object o) {
+    public final void set(E o) {
 	throw new UnsupportedOperationException("Unmodifiable ListIterator");
     }
     /** Always throws an <code>UnsupportedOperationException</code>.
      * @exception UnsupportedOperationException always.
      */
-    public final void add(Object o) {
+    public final void add(E o) {
 	throw new UnsupportedOperationException("Unmodifiable ListIterator");
     }
 }

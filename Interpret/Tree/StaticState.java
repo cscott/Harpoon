@@ -22,7 +22,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.3 2002-02-26 22:46:30 cananian Exp $
+ * @version $Id: StaticState.java,v 1.4 2002-04-10 03:06:02 cananian Exp $
  */
 final class StaticState extends HCLibrary {
     
@@ -35,7 +35,7 @@ final class StaticState extends HCLibrary {
     /** which code representation to use. */
     HCodeFactory hcf;
     /** used to map fields & methods to labels */
-    /*final*/ InterpreterOffsetMap map; 
+    final InterpreterOffsetMap map; 
     
     // Class constructor 
     StaticState(Linker linker, HCodeFactory hcf, InterpreterOffsetMap map) { 
@@ -68,7 +68,7 @@ final class StaticState extends HCLibrary {
     boolean isLoaded(HClass cls) { return classInfo.get(cls)!=null; }
 
     void load(HClass cls) throws InterpretedThrowable {
-	Util.ASSERT(!isLoaded(cls));
+	assert !isLoaded(cls);
 	HClass sc = cls.getSuperclass();
 	if (sc!=null && !isLoaded(sc)) load(sc); // load superclasses first.
 	System.err.println("LOADING "+cls);
@@ -96,7 +96,7 @@ final class StaticState extends HCLibrary {
 	// execute <clinit>() 
 	HMethod hm = cls.getClassInitializer();
 	if (hm!=null) Method.invoke(this, hm, new Object[0]);
-	Util.ASSERT(isLoaded(cls));
+	assert isLoaded(cls);
     }
 
     private void loadDisplay(Label clsLabel, HClass current, int size) { 
@@ -234,14 +234,14 @@ final class StaticState extends HCLibrary {
 	else { // the class has not been loaded.  
 	    HClass hc = (HClass)map.decodeLabel(label); 
 	    load(hc); 
-	    Util.ASSERT(classInfo.containsKey(label), label.toString());
+	    assert classInfo.containsKey(label) : label.toString();
 	    return (HClass)classInfo.get(label);
 	}
     }
 
     /** Returns the data pointed to by ptr */
     Object getValue(ClazPointer ptr) { 
-	Util.ASSERT(classInfo.containsKey(ptr), ptr.toString());
+	assert classInfo.containsKey(ptr) : ptr.toString();
 	return classInfo.get(ptr); 
     }
     
@@ -257,7 +257,7 @@ final class StaticState extends HCLibrary {
 			      map.decodeLabel((Label)ptr.getBase()));
 	    }
 	    
-	    Util.ASSERT(classInfo.containsKey(ptr.getBase()));
+	    assert classInfo.containsKey(ptr.getBase());
 	    if (classInfo.get(ptr.getBase()) instanceof HField) {
 		return get((HField)classInfo.get(ptr.getBase())); 
 	    }
@@ -281,7 +281,7 @@ final class StaticState extends HCLibrary {
     // Returns the value of the static field "sf"
     // Throws an error if "sf" is not static
     Object get(HField sf) {
-	Util.ASSERT(sf.isStatic());
+	assert sf.isStatic();
 	HClass cls = sf.getDeclaringClass();
 	if (!isLoaded(cls)) load(cls);
 	return FieldValueList.get(get(cls), sf);
@@ -289,14 +289,14 @@ final class StaticState extends HCLibrary {
 
     // Returns the FieldValueList associated with "cls"
     private FieldValueList get(HClass cls) {
-	Util.ASSERT(isLoaded(cls));
+	assert isLoaded(cls);
 	return ((ClassHeader)classInfo.get(cls)).fvl;
     }
 
     // Updates the value of the static field "sf" to be "value".
     // Throws an error if "sf" is not static
     void update(HField sf, Object value) {
-	Util.ASSERT(sf.isStatic());
+	assert sf.isStatic();
 	HClass cls = sf.getDeclaringClass();
 	if (!isLoaded(cls)) load(cls);
 	put(cls, FieldValueList.update(get(cls), sf, value));
@@ -441,7 +441,7 @@ final class StaticState extends HCLibrary {
      *                                                          *
      ***********************************************************/
 
-    public /*final*/ PrintWriter prof;
+    public final PrintWriter prof;
     private long count; // instruction count.
     final synchronized void incrementInstructionCount() { 
         count++; 

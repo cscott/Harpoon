@@ -42,7 +42,7 @@ import java.util.Set;
  * <code>AllocationHoisting</code>
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: AllocationHoisting.java,v 1.4 2002-02-28 00:55:30 kkz Exp $
+ * @version $Id: AllocationHoisting.java,v 1.5 2002-04-10 03:00:52 cananian Exp $
  */
 public class AllocationHoisting extends 
     harpoon.Analysis.Transformation.MethodSplitter {
@@ -101,7 +101,7 @@ public class AllocationHoisting extends
 	if (which == HOISTED) {
 	    hoistAlloc(c);
 	} else {
-	    Util.ASSERT(which == ORIGINAL);
+	    assert which == ORIGINAL;
 	    Tuple tup = (Tuple) iMap.get(c.getMethod());
 	    if (tup != null) {
 		// remap 
@@ -119,16 +119,16 @@ public class AllocationHoisting extends
      */
     private Tuple remap(Tuple tup, Map m) {
 	Quad q0 = (Quad) m.get((Quad)tup.proj(0));
-	Util.ASSERT(q0 != null);
+	assert q0 != null;
 	if (q0.kind() == QuadKind.NEW) {
 	    return new Tuple(new Object[] { q0 });
 	} else {
-	    Util.ASSERT(q0.kind() == QuadKind.ANEW);
+	    assert q0.kind() == QuadKind.ANEW;
 	    CONST[] orig = (CONST[]) tup.proj(1);
 	    CONST[] cloned = new CONST[orig.length];
 	    for(int i = 0; i < cloned.length; i++) {
 		cloned[i] = (CONST) m.get(orig[i]);
-		Util.ASSERT(cloned[i] != null);
+		assert cloned[i] != null;
 	    }
 	    return new Tuple(new Object[] { q0, cloned });
 	}
@@ -150,7 +150,7 @@ public class AllocationHoisting extends
     /** Removes the hoisted allocation from the initializer. */
     private Code hoistAlloc(Code c) {
 	Tuple tup = (Tuple) iMap2.get(c.getMethod());
-	Util.ASSERT(tup != null);
+	assert tup != null;
 	Quad q0 = (Quad) tup.proj(0);
 	Temp dst;
 	if (q0.kind() == QuadKind.NEW) {
@@ -200,7 +200,7 @@ public class AllocationHoisting extends
 			    addNEW((Quad)defs[0], dst, 
 				   ((NEW)template).hclass()); 
 			} else {
-			    Util.ASSERT(template.kind() == QuadKind.ANEW);
+			    assert template.kind() == QuadKind.ANEW;
 			    addANEW((Quad)defs[0], dst, 
 				    ((ANEW)template).hclass(),
 				    (CONST[])tup.proj(1));
@@ -216,7 +216,7 @@ public class AllocationHoisting extends
     /** Add NEW before given <code>Quad</code>, assigning to <code>t</code>. */
     private static void addNEW(Quad q, Temp t, HClass hc) {
 	Quad q0 = new NEW(q.getFactory(), q, t, hc);
-	Util.ASSERT(q.prevLength() == 1);
+	assert q.prevLength() == 1;
 	Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), q0, 0);
 	Quad.addEdge(q0, 0, q, 0);
     }
@@ -236,7 +236,7 @@ public class AllocationHoisting extends
 	    dimQs[i] = new CONST(qf, q, dimTs[i], orig.value(), orig.type());
 	}
 	Quad q0 = new ANEW(q.getFactory(), q, t, hc, dimTs);
-	Util.ASSERT(q.prevLength() == 1);
+	assert q.prevLength() == 1;
 	Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), dimQs[0], 0);
 	// connect up the CONSTs
 	for(int i = 0; i < dimQs.length-1; i++)
@@ -313,7 +313,7 @@ public class AllocationHoisting extends
 		    ((Set)t.proj(1)).isEmpty() /*no exceptions*/ &&
 		    ((Set)t.proj(3)).contains(dst) /*writes to receiver*/) {
 		    // single allocation site
-		    Util.ASSERT((Quad)t.proj(2) != null);  
+		    assert (Quad)t.proj(2) != null;  
 		    Quad alloc = (Quad) t.proj(2);
 		    if (alloc.kind() == QuadKind.NEW) {
 			iMap.put(hm, new Tuple(new Object[] { alloc }));
@@ -321,7 +321,7 @@ public class AllocationHoisting extends
 			// done with this initializer
 			break;
 		    } else {
-			Util.ASSERT(alloc.kind() == QuadKind.ANEW);
+			assert alloc.kind() == QuadKind.ANEW;
 			boolean valid = true;
 			Temp[] dims = ((ANEW)alloc).dims();
 			CONST[] consts = new CONST[dims.length];
@@ -391,7 +391,7 @@ public class AllocationHoisting extends
 		    for (int i = 0; i < dims.length; i++) {
 			Iterator ddefs = (new ReachingDefsImpl(c)).
 			    reachingDefs(alloc, dims[i]).iterator();
-			Util.ASSERT(ddefs.hasNext());
+			assert ddefs.hasNext();
 			Quad dd = (Quad) ddefs.next();
 			if (ddefs.hasNext()) return false;
 			if (dd.kind() != QuadKind.CONST)

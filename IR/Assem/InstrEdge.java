@@ -11,9 +11,9 @@ import harpoon.IR.Properties.CFGraphable;
  * two <code>Instr</code>s. 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrEdge.java,v 1.2 2002-02-25 21:04:11 cananian Exp $
+ * @version $Id: InstrEdge.java,v 1.3 2002-04-10 03:04:27 cananian Exp $
  */
-public class InstrEdge extends CFGEdge {
+public class InstrEdge extends CFGEdge<Instr> {
     
     public final Instr from;
     public final Instr to;
@@ -26,8 +26,8 @@ public class InstrEdge extends CFGEdge {
 	this.to = to;
     }
     
-    public CFGraphable toCFG() { return to; }
-    public CFGraphable fromCFG() { return from; }
+    public Instr toCFG() { return to; }
+    public Instr fromCFG() { return from; }
 
     public boolean equals(Object o) {
 	try {

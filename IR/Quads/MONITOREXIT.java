@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * See the JVM spec for details.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MONITOREXIT.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
+ * @version $Id: MONITOREXIT.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
  */
 public class MONITOREXIT extends Quad {
     /** The object containing the monitor to be released. */
@@ -33,7 +33,7 @@ public class MONITOREXIT extends Quad {
     public MONITOREXIT(QuadFactory qf, HCodeElement source, Temp lock) {
         super(qf, source);
 	this.lock = lock;
-	Util.ASSERT(lock!=null);
+	assert lock!=null;
     }
     // ACCESSOR METHODS:
     /** Returns the <code>Temp</code> specifying the object to be released. */

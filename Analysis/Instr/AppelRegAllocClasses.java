@@ -24,7 +24,7 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.4 2002-03-10 02:32:44 cananian Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.5 2002-04-10 02:59:46 cananian Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public static final boolean CHECK_INV = false;
@@ -52,10 +52,9 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	saveNodePairSet();
 	saveNodeSets();
 	if (CHECK_INV)
-	    Util.ASSERT( lastStateString.equals(stateString()), "\n\n"
+	    assert lastStateString.equals(stateString()) : "\n\n"
 			 +"last : "+lastStateString+"\n"
-			 +"curr : "+stateString()+"\n"
-			 );
+			 +"curr : "+stateString()+"\n";
 	
 	// System.out.println(stateString());
     }
@@ -68,10 +67,9 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	restoreNodeSets();
 	resetMoveSets();
 	if (CHECK_INV)
-	    Util.ASSERT( lastStateString.equals(stateString()), "\n\n"
+	    assert lastStateString.equals(stateString()) : "\n\n"
 			 +"last : "+lastStateString+"\n"
-			 +"curr : "+stateString()+"\n"
-			 );
+			 +"curr : "+stateString()+"\n";
 	// System.out.println(stateString());
     }
 
@@ -342,17 +340,17 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	Node head; // dummy element
 
 	void checkRep() { if (true) return;
-	    Util.ASSERT(size >= 0);
-	    Util.ASSERT(head != null);
+	    assert size >= 0;
+	    assert head != null;
 	    Node curr = head;
 	    int sz = -1;
 	    do { 
-		Util.ASSERT( curr.s_prev.s_next == curr );
-		Util.ASSERT( curr.s_next.s_prev == curr );
+		assert curr.s_prev.s_next == curr;
+		assert curr.s_next.s_prev == curr;
 		sz++;
 		curr = curr.s_next;
 	    } while (curr != head);
-	    Util.ASSERT(sz == size);
+	    assert sz == size;
 	}
 
 
@@ -369,7 +367,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 		    Node curr = head;
 		    public boolean hasNext() { return curr.s_next != head; }
 		    public Node next() { checkRep();
-		    Util.ASSERT(hasNext());
+		    assert hasNext();
 		    Node ret = curr.s_next; curr = ret; 
 		    checkRep();
 		    return ret; 
@@ -390,13 +388,12 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 
 	void remove(Node n) {
 	    checkRep();
-	    Util.ASSERT(this != precolored, "can't remove regs from precolored");
-	    Util.ASSERT(n.s_rep == this, 
-			this.name + 
+	    assert this != precolored : "can't remove regs from precolored";
+	    assert n.s_rep == this : this.name + 
 			" tried to remove a node that is in "+
-			n.s_rep.name);
+			n.s_rep.name;
 
-	    Util.ASSERT(! n.locked, "node "+n+" should not be locked" );
+	    assert ! n.locked : "node "+n+" should not be locked";
 
 	    n.s_prev.s_next = n.s_next;
 	    n.s_next.s_prev = n.s_prev;
@@ -413,12 +410,12 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	    // set, not the end.
 	    
 	    checkRep();
-	    Util.ASSERT(n.s_prev == n);
-	    Util.ASSERT(n.s_next == n);	    
-	    Util.ASSERT(n.s_rep == null);
-	    Util.ASSERT(n.s_rep != precolored, "can't add regs from precolored");
+	    assert n.s_prev == n;
+	    assert n.s_next == n;	    
+	    assert n.s_rep == null;
+	    assert n.s_rep != precolored : "can't add regs from precolored";
 
-	    Util.ASSERT(! n.locked, "node "+n+" should not be locked" );
+	    assert ! n.locked : "node "+n+" should not be locked";
 
 	    head.s_next.s_prev = n;
 	    n.s_next = head.s_next;
@@ -611,9 +608,9 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	    size += l.size;
 	}
 	void checkRep() {
-	    Util.ASSERT(last.next == null);
+	    assert last.next == null;
 	    for(Cons curr = first; curr != last; curr = curr.next ) 
-		Util.ASSERT(curr != null);
+		assert curr != null;
 	}
 	NodeIter iter() {
 	    return new NodeIter() {
@@ -689,7 +686,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	    id = nextId; nextId++; s_prev = s_next = this; web = w;
 
 	    addNode(this); 
-	    Util.ASSERT(getNode(this.id) == this, this);
+	    assert getNode(this.id) == this : this;
 	}
 
 	public Node(NodeSet which, Web w) { 
@@ -702,7 +699,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	// machine registers, preassigned a color
 	public boolean isPrecolored()      { 
 	    boolean r = s_rep == precolored;        
-	    if (r) Util.ASSERT(color.length == 1 && color[0] != -1);
+	    if (r) assert color.length == 1 && color[0] != -1;
 	    return r;
 	}
 
@@ -729,7 +726,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	// nodes successfully colored
 	public boolean isColored() { 
 	    boolean r = s_rep == colored_nodes;     
-	    if (r) for(int i=0; i<color.length; i++) Util.ASSERT(color[i] != -1); 
+	    if (r) for(int i=0; i<color.length; i++) assert color[i] != -1; 
 	    return r;
 	}
 
@@ -844,14 +841,13 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	    int checkSize = -1;
 	    do {
 		checkSize++;
-		Util.ASSERT( curr.s_next.s_prev == curr );
-		Util.ASSERT( curr.s_next.s_prev == curr );
-		Util.ASSERT( curr.s_rep == this );
+		assert curr.s_next.s_prev == curr;
+		assert curr.s_next.s_prev == curr;
+		assert curr.s_rep == this;
 		curr = curr.s_next;
 	    } while(curr != head);
 	    if (CHECK_INV)
-	    Util.ASSERT( size == checkSize, 
-			 "size should be "+checkSize+" not "+size );
+	    assert size == checkSize : "size should be "+checkSize+" not "+size;
 	}
 	Iterator iter() {
 	    return new harpoon.Util.UnmodifiableIterator() {
@@ -866,11 +862,11 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	}
 	boolean isEmpty() { return size == 0; }
 	Move pop() { 
-	    Util.ASSERT(!isEmpty(), "should not be empty");
+	    assert !isEmpty() : "should not be empty";
 	    Move n = head.s_next; 
 	    if (CHECK_INV)
-	    Util.ASSERT(n!=head, "should not return head, "+
-			"size:"+size+" set:"+asSet()); 
+	    assert n!=head : "should not return head, "+
+			"size:"+size+" set:"+asSet(); 
 	    remove(n); 
 	    return n; 
 	}
@@ -878,10 +874,9 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	void remove(Move n) {
 	    checkRep();
 	    if (CHECK_INV)
-	    Util.ASSERT(n.s_rep == this, 
-			"called "+this+".remove(..) "+
-			"on move:"+n+" in "+n.s_rep );
-	    Util.ASSERT(size != 0);
+	    assert n.s_rep == this : ("called "+this+".remove(..) "+
+			"on move:"+n+" in "+n.s_rep);
+	    assert size != 0;
 	    n.s_prev.s_next = n.s_next;
 	    n.s_next.s_prev = n.s_prev;
 	    n.s_rep = null; n.s_prev = null; n.s_next = null;

@@ -27,7 +27,7 @@ import java.util.Set;
  * <code>Code</code> is a code-view for SPARC assembly.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.3 2002-02-26 22:44:40 cananian Exp $
+ * @version $Id: Code.java,v 1.4 2002-04-10 03:03:51 cananian Exp $
  */
 class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "sparc";
@@ -76,13 +76,13 @@ class Code extends harpoon.Backend.Generic.Code {
 	    } else if (suffix.startsWith("h")) {
 		reg = get(i, tb.getHigh(val));
 	    } else if (suffix.trim().equals("")) {
-		Util.ASSERT(false, "BREAK!  empty suffix \n " +
+		assert false : ("BREAK!  empty suffix \n " +
 			    "suffix: " + suffix + "\n" +
 			    "instr: " + i + "\n" + 
 			    "instr str: " + i.getAssem() + "\n"+
 			    "temp: " + val);
 	    } else {
-		Util.ASSERT(false, "BREAK! Unknown suffix \n" +
+		assert false : ("BREAK! Unknown suffix \n" +
                             "suffix: " + suffix + "\n" +
                             "instr: " + i + "\n" + 
                             "instr str: " + i.getAssem() + "\n"+
@@ -106,17 +106,17 @@ class Code extends harpoon.Backend.Generic.Code {
     }
 
     public List getRegisters(Instr i, Temp val) {
-	Util.ASSERT (i != null, "Instr was null in Code.getRegisters");
+	assert i != null : "Instr was null in Code.getRegisters";
 	TempBuilder tb = (TempBuilder) frame.getTempBuilder();
 	if (tb.isTwoWord(val)) {
 	    Temp low = get(i, tb.getLow(val));
 	    Temp high = get(i, tb.getHigh(val));
-	    Util.ASSERT(low != null, "low reg for "+val+" in "+i+" was null");
-	    Util.ASSERT(high != null, "high reg for "+val+" in "+i+" was null");
+	    assert low != null : "low reg for "+val+" in "+i+" was null";
+	    assert high != null : "high reg for "+val+" in "+i+" was null";
 	    return Arrays.asList(new Temp[] { low, high });
 	} else {
 	    Temp t = get(i, val);
-	    Util.ASSERT(t != null, "register for "+val+" in "+i+" was null");
+	    assert t != null : "register for "+val+" in "+i+" was null";
 	    return Collections.nCopies(1, t);
 	}
     }

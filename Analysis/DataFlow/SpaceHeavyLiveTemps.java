@@ -37,7 +37,7 @@ import java.util.Iterator;
  * can be treated as if the scaling factor were equal to 1.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SpaceHeavyLiveTemps.java,v 1.3 2002-02-26 22:39:45 cananian Exp $
+ * @version $Id: SpaceHeavyLiveTemps.java,v 1.4 2002-04-10 02:59:11 cananian Exp $
  */
 public class SpaceHeavyLiveTemps extends LiveTemps {
     CFGrapher grapher;
@@ -101,7 +101,7 @@ public class SpaceHeavyLiveTemps extends LiveTemps {
 		break;
 	    } else {
 		Collection succC = grapher.succC(cfg);
-		Util.ASSERT(succC.size() == 1, cfg);
+		assert succC.size() == 1 : cfg;
 		cfg = ((CFGEdge) succC.iterator().next()).toCFG();
 	    }
 	}
@@ -109,7 +109,7 @@ public class SpaceHeavyLiveTemps extends LiveTemps {
 	Set liveAfter = (Set) hce2liveAfter.get(cfg);
 	while(!cfg.equals(hce)) {
 	    Collection predC = grapher.predC(cfg);
-	    Util.ASSERT(predC.size() == 1, cfg);
+	    assert predC.size() == 1 : cfg;
 	    liveAfter = mySetFactory.makeSet(liveAfter);
 	    liveAfter.removeAll(ud.defC(cfg));
 	    liveAfter.addAll(ud.useC(cfg));

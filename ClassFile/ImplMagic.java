@@ -25,7 +25,7 @@ import java.util.Map;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.7 2002-02-26 22:45:06 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.8 2002-04-10 03:04:15 cananian Exp $
  */
 abstract class ImplMagic  { // wrapper for the Real McCoy.
 
@@ -116,7 +116,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	}
 	// Make sure our parsing/construction is correct.
 	// COMMENTED OUT because it was causing us to load unnecessary classes
-	//Util.ASSERT(_this.getDescriptor().equals(methodinfo.descriptor()));
+	//assert _this.getDescriptor().equals(methodinfo.descriptor());
 	
 	AttributeCode code = null;
 	AttributeExceptions exceptions = null;

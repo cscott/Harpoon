@@ -16,13 +16,13 @@ import java.util.NoSuchElementException;
  * both <code>Translate</code> and <code>Print</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HandlerSet.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
+ * @version $Id: HandlerSet.java,v 1.4 2002-04-10 03:05:14 cananian Exp $
  */
 final public class HandlerSet {
     final HANDLER h;
     final HandlerSet next;
     HandlerSet(HANDLER h, HandlerSet next) {
-	Util.ASSERT(h!=null /*&& !contains(next, h)*/);
+	assert h!=null /*&& !contains(next, h)*/;
 	this.h = h; this.next = next;
     }
     /** Determines if this <code>HandlerSet</code> contains a given

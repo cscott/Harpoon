@@ -14,58 +14,56 @@ import java.util.Iterator;
  * small.  It is backed by a <code>LinearSet</code>.
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LinearMap.java,v 1.2 2002-02-25 21:09:04 cananian Exp $
+ * @version $Id: LinearMap.java,v 1.3 2002-04-10 03:07:12 cananian Exp $
  */
-public class LinearMap extends AbstractMap {
-    private LinearSet set;
+public class LinearMap<K,V> extends AbstractMap<K,V> {
+    private LinearSet<Map.Entry<K,V>> set;
 
     /** Creates a <code>LinearMap</code>. */
     public LinearMap() {
-        set = new LinearSet();
+        set = new LinearSet<Map.Entry<K,V>>();
     }
 
     public LinearMap(Map map) {
-	set = new LinearSet();
+	set = new LinearSet<Map.Entry<K,V>>();
 	putAll(map);
     }
 
     /** Creates a <code>LinearMap</code> with specified capacity. */
     public LinearMap(int capacity) {
-        set = new LinearSet(capacity);
+        set = new LinearSet<Map.Entry<K,V>>(capacity);
     }
 
-    public Set entrySet() {
+    public Set<Map.Entry<K,V>> entrySet() {
 	return set;
     }
 
-    public Object put(Object key, Object value) {
-	Iterator entries = set.iterator();
-	Object oldValue = null;
+    public V put(K key, V value) {
+	Iterator<Map.Entry<K,V>> entries = set.iterator();
+	V oldValue = null;
 	while(entries.hasNext()) {
-	    PairMapEntry entry = (PairMapEntry) entries.next();
+	    Map.Entry<K,V> entry = entries.next();
 	    if (keysMatch(key, entry.getKey())) {
 		oldValue = entry.getValue();
 		entry.setValue(value);
-		break;
+		return oldValue;
 	    }
 	}
-	if (oldValue == null) {
-	    set.add(new PairMapEntry(key, value));
-	}
+	set.add(new PairMapEntry(key, value));
 	return oldValue;
     }
 
-    private boolean keysMatch(Object k1, Object k2) {
+    private boolean keysMatch(Object k1, K k2) {
 	return ((k1 == null && k2 == null) ||
 		(k1 != null && k2 != null && 
 		 k1.equals(k2)));
     }
 
-    public Object remove(Object key) {
-	Iterator entries = set.iterator();
-	Object oldValue = null;
+    public V remove(Object key) {
+	Iterator<Map.Entry<K,V>> entries = set.iterator();
+	V oldValue = null;
 	while(entries.hasNext()) {
-	    PairMapEntry entry = (PairMapEntry) entries.next();
+	    Map.Entry<K,V> entry = entries.next();
 	    if (keysMatch(key, entry.getKey())) {
 		oldValue = entry.getValue();
 		set.remove(entry);

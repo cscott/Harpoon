@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PCONST.java,v 1.3 2002-02-26 22:45:51 cananian Exp $
+ * @version $Id: PCONST.java,v 1.4 2002-04-10 03:04:57 cananian Exp $
  */
 public abstract class PCONST extends LowQuad {
     /** The <code>Temp</code> in which to store the offset or constant. */
@@ -23,7 +23,7 @@ public abstract class PCONST extends LowQuad {
     public PCONST(LowQuadFactory qf, HCodeElement source, final Temp dst) {
 	super(qf, source);
 	this.dst = dst;
-	Util.ASSERT(dst != null);
+	assert dst != null;
     }
     // ACCESSOR METHODS:
     /** Returns the <code>Temp</code> in which to store the offset or

@@ -35,7 +35,7 @@ import harpoon.IR.Quads.CALL;
     soon.
  
  @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- @version $Id: TestMemOpt.java,v 1.2 2002-04-03 17:02:03 salcianu Exp $ */
+ @version $Id: TestMemOpt.java,v 1.3 2002-04-10 03:00:14 cananian Exp $ */
 public abstract class TestMemOpt {
     
     private static Linker linker = new Relinker(Loader.systemLinker);
@@ -105,19 +105,19 @@ public abstract class TestMemOpt {
 
 	// find the root method
 	HClass hclass = linker.forName(root_class);
-	Util.ASSERT(hclass != null, "Class " + root_class + " not found!");
+	assert hclass != null : "Class " + root_class + " not found!";
 
 	HMethod[] hm  = hclass.getDeclaredMethods();
 	// search for the main method
 	HMethod hroot = null;
 	for(int i = 0; i < hm.length; i++)
 	    if(hm[i].getName().equals("main")) {
-		Util.ASSERT(hroot == null, "Ambiguous root method!");
+		assert hroot == null : "Ambiguous root method!";
 		hroot = hm[i];
 	    }
 	
-	Util.ASSERT(hroot != null, "Root method \"" + root_class + ".main"
-		    + "\" not found!");
+	assert hroot != null : "Root method \"" + root_class + ".main"
+		    + "\" not found!";
 
 	roots.add(hroot);
 	roots.addAll

@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.67 2002-03-10 05:12:27 cananian Exp $
+# $Id: GNUmakefile,v 1.68 2002-04-10 02:58:18 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -9,7 +9,8 @@ JAVA:=java
 JFLAGS=-d . -g
 JFLAGSVERB=#-verbose -J-Djavac.pipe.output=true
 JIKES:=jikes $(JIKES_OPT)
-JCC:=javac -J-mx64m
+JCC5:=$(JSR14DISTR)/scripts/javac -source 1.4 -gj #-warnunchecked
+JCC:=javac -J-mx64m -source 1.4
 JDOC:=javadoc
 JAR=jar
 JDOCFLAGS:=-J-mx128m -version -author \
@@ -38,10 +39,6 @@ CVSWEBLINK = http://flexc.lcs.mit.edu/Harpoon/cvsweb.cgi
 ifndef CURDIR
 	CURDIR := $(shell pwd)
 endif
-# add '-source' option to JCC if it supports it
-JCC += \
-	$(shell if $(JCC) -help 2>&1 | grep -- "-source " > /dev/null ; \
-	then echo -source 1.3 ; fi)
 # Add "-link" to jdk's javadoc if we are using a javadoc that supports it
 JDOCFLAGS += \
 	$(shell if $(JDOC) -help 2>&1 | grep -- "-link " > /dev/null ; \
@@ -153,19 +150,36 @@ list-nonempty-packages:
 list-packages-with-java-src:
 	@echo $(filter-out Test,$(PKGSWITHJAVASRC))
 
+# hack to let people build stuff w/o gj compiler until it stabilizes.
+Support/gjlib.jar: $(shell grep -v ^\# gj-files ) gj-files
+	$(RM) -rf gjlib
+	mkdir gjlib
+	@${JCC5} -d gjlib -g $(shell grep -v "^#" gj-files)
+	${JAR} cf $@ -C gjlib .
+	$(RM) -rf gjlib
+
 java:	PASS = 1
-java:	$(ALLSOURCE) $(PROPERTIES)
+java:	$(ALLSOURCE) $(PROPERTIES) gj-files
 	if [ ! -d harpoon ]; then \
 	  $(MAKE) first; \
 	fi
-#	javac goes nuts unless Tree.java is first. <grumble>
-	@${JCC} ${JFLAGS} ${JFLAGSVERB} IR/Tree/Tree.java $(filter-out IR/Tree/Tree.java, $(ALLSOURCE)) | \
-		egrep -v '^\[[lc]'
+# some folk might not have the GJ compiler; use the pre-built gjlib for them.
+	@if [ -x $(firstword ${JCC5}) ]; then \
+	  echo Building with $(firstword ${JCC5}). ;\
+	  ${JCC5} ${JFLAGS} $(shell grep -v "^#" gj-files) ; \
+	else \
+	  echo "**** Using pre-built GJ classes (in Support/gjlib.jar) ****" ;\
+	  echo "See http://www.flex-compiler.lcs.mit.edu/Harpoon/jsr14.txt"  ;\
+	  echo " for information on how to install/use the GJ compiler." ; \
+	  ${JAR} xf Support/gjlib.jar harpoon ; \
+	fi
+	@echo Compiling...
+	@${JCC} ${JFLAGS} $(filter-out $(shell grep -v "^#" gj-files), $(ALLSOURCE))
 	@if [ -f stubbed-out ]; then \
-	  $(RM) `uniq stubbed-out`; \
-	  $(MAKE) --no-print-directory PASS=2 `uniq stubbed-out` || exit 1; \
-	  echo Rebuilding `uniq stubbed-out`; \
-	  ${JCC} ${JFLAGS} `uniq stubbed-out` || exit 1; \
+	  $(RM) `sort -u stubbed-out`; \
+	  $(MAKE) --no-print-directory PASS=2 `sort -u stubbed-out` || exit 1; \
+	  echo Rebuilding `sort -u stubbed-out`; \
+	  ${JCC} ${JFLAGS} `sort -u stubbed-out` || exit 1; \
 	  $(RM) stubbed-out; \
 	fi 
 	@$(MAKE) --no-print-directory properties
@@ -173,15 +187,19 @@ java:	$(ALLSOURCE) $(PROPERTIES)
 
 jikes:	PASS = 1
 jikes: 	$(MACHINE_GEN)
+	@echo JIKES DOESNT YET SUPPORT JAVA 1.5
+	@echo YOU MUST USE "'make java'"
+	@exit 1
 	@if [ ! -d harpoon ]; then $(MAKE) first; fi
+	@${JCC5} ${JFLAGS} $(shell grep -v "^#" gj-files)
 	@echo -n Compiling... ""
-	@${JIKES} ${JFLAGS} ${ALLSOURCE}
+	@${JIKES} ${JFLAGS} $(filter-out $(shell grep -v "^#" gj-files), $(ALLSOURCE))
 	@echo done.
 	@if [ -f stubbed-out ]; then \
-	  $(RM) `uniq stubbed-out`; \
-	  $(MAKE) --no-print-directory PASS=2 `uniq stubbed-out` || exit 1; \
-	  echo Rebuilding `uniq stubbed-out`; \
-	  ${JIKES} ${JFLAGS} `uniq stubbed-out` || exit 1; \
+	  $(RM) `sort -u stubbed-out`; \
+	  $(MAKE) --no-print-directory PASS=2 `sort -u stubbed-out` || exit 1; \
+	  echo Rebuilding `sort -u stubbed-out`; \
+	  ${JIKES} ${JFLAGS} `sort -u stubbed-out` || exit 1; \
 	  $(RM) stubbed-out; \
 	fi 
 	@$(MAKE) --no-print-directory properties
@@ -255,7 +273,8 @@ VERSIONS: $(TARSOURCE) # collect all the RCS version ID tags.
 
 ChangeLog: needs-cvs $(TARSOURCE) # not strictly accurate anymore.
 	-$(RM) ChangeLog
-	rcs2log > ChangeLog # used to include TARSOURCE on cmdline
+# used to include TARSOURCE on rcs2log cmdline
+	rcs2log | sed -e 's:/[^,]*/CVSROOT/Code/::g' > ChangeLog
 
 cvs-add: needs-cvs
 	-for dir in $(filter-out Test,$(ALLPKGS)); do \

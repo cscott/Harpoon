@@ -5,7 +5,6 @@ package harpoon.Analysis.Instr;
 
 import harpoon.Temp.Temp;
 import harpoon.IR.Assem.Instr;
-import harpoon.Util.Collections.LinearMap;
 import harpoon.Util.Util;
 
 import java.util.List;
@@ -22,7 +21,7 @@ import java.util.Iterator;
  * most processor architectures for storing working sets of data.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFile.java,v 1.3 2002-02-26 22:40:22 cananian Exp $
+ * @version $Id: RegFile.java,v 1.4 2002-04-10 02:59:47 cananian Exp $
  */
 class RegFile {
 
@@ -56,8 +55,7 @@ class RegFile {
 	     from <code>this</code>.
      */
     public void writeTo(Temp preg) {
-	Util.ASSERT(hasAssignment(preg),
-		    /* "temp: "+preg+ */
+	assert hasAssignment(preg) : (/* "temp: "+preg+ */
 		    " should have an assignment "
 		    /* +"in "+this */);
 
@@ -66,8 +64,7 @@ class RegFile {
 	// FSK: this assertion is too strict, but it might only be
 	// because of a hack in the spec-file.  Find out whether we
 	// can make multiple writes illegal
-	// Util.ASSERT(!dirtyTemps.contains(preg), 
-	//             "should only write to "+preg+" once");
+	// assert !dirtyTemps.contains(preg) : //             "should only write to "+preg+" once";
 	dirtyTemps.add(preg);
     }
 
@@ -90,10 +87,9 @@ class RegFile {
 	     <code>this</code>, returns True.  Else returns False.
     */
     public boolean isDirty(Temp preg) {
-	Util.ASSERT(hasAssignment(preg),
-		    /* "temp: "+preg+ */
+	assert hasAssignment(preg) : (/* "temp: "+preg+ */
 		    " should have an assignment "
-		    /* +"in "+this */ );
+		    /* +"in "+this */);
 	return dirtyTemps.contains(preg);
     }
 
@@ -167,8 +163,7 @@ class RegFile {
 	    Temp reg = (Temp) regIter.next();
 
 	    
-	    Util.ASSERT(!regToTmp.containsKey(reg), 
-			"non-empty reg: " /* +reg */);  
+	    assert !regToTmp.containsKey(reg) : ("non-empty reg: " /* +reg */);  
 
 	    regToTmp.put(reg, pseudoReg);
 	    // regToTmp.add(reg, pseudoReg); // use if mult. assoc. 
@@ -176,14 +171,13 @@ class RegFile {
 	RegListAndInstr rli = new RegListAndInstr(regs, src);
 
 	if (tmpToRegLst.containsKey(pseudoReg)) {
-	    Util.ASSERT(((RegListAndInstr)tmpToRegLst.get
-			 (pseudoReg)).l.equals(regs),
-			(true)?"dont assign pregs > once":
+	    assert ((RegListAndInstr)tmpToRegLst.get
+			 (pseudoReg)).l.equals(regs) : ((true)?"dont assign pregs > once":
 			"dont assign preg:"+pseudoReg+" more than once \n"+
 			"curr: "+tmpToRegLst.get(pseudoReg)+"\n"+
 			"next: "+rli);
 	}
-	Util.ASSERT(!regs.isEmpty(), "regs should not be empty");
+	assert !regs.isEmpty() : "regs should not be empty";
 	tmpToRegLst.put(pseudoReg, rli);
 
 	if (PRINT_USAGE) System.out.println(this+".assign: "+regs+" <- "+pseudoReg);
@@ -231,7 +225,7 @@ class RegFile {
     public Instr getSource(final Temp pseudoReg) {
 	RegListAndInstr rli = (RegListAndInstr) 
 	    tmpToRegLst.get(pseudoReg);
-	Util.ASSERT(rli != null, /* "Temp:"+pseudoReg+ */" has no assignment");
+	assert rli != null : (/* "Temp:"+pseudoReg+ */" has no assignment");
 	return rli.i;
     }
     
