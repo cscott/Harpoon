@@ -32,7 +32,7 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     /* initialize infl */
     memset(infl, 0, sizeof(*infl));
     infl->hashcode = obj->hashunion.hashcode;
-#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
 # ifdef ERROR_CHECKING_LOCKS
     /* error checking locks are slower, but catch more bugs (maybe) */
     { pthread_mutexattr_t attr; pthread_mutexattr_init(&attr);
@@ -89,7 +89,7 @@ static void deflate_object(GC_PTR obj, GC_PTR client_data) {
     infl->heap = NULL; infl->heap_release = NULL;
 #endif
     /* okay deallocate mutexes, etc. */
-#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
     pthread_mutex_destroy(&(infl->mutex));
     pthread_cond_destroy(&(infl->cond));
 #endif

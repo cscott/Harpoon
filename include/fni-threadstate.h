@@ -29,7 +29,7 @@ struct FNI_Thread_State {
   jobject thread; /* thread object corresponding to this thread state. */
   void *stack_top; /* top of stack */
   jboolean is_alive; /* true while the thread is running */
-#if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS //|| WITH_USER_THREADS
 #if WITH_HEAVY_THREAD || WITH_PTH_TREADS
   pthread_t pthread; /* the pthread corresponding to this thread state. */
 #endif
@@ -49,3 +49,7 @@ extern struct _jobject_globalref FNI_globalrefs;
 /* -------------- end thread state structure. ------------- */
 
 #endif /* INCLUDED_FNI_THREADSTATE */
+
+
+
+
