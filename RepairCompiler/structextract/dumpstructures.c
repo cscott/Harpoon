@@ -22,10 +22,11 @@
 #include "typedata.h"
 #include "elf/dwarf2.h"
 
-
 #define GETTYPE 1
 #define POSTNAME 2
 #define GETJUSTTYPE 3
+
+int FOLLOW_PTRS=0;
 
 int process_elf_binary_data(char* filename);
 
@@ -226,7 +227,7 @@ void initializeTypeArray()
 	    dwarf_entry *typeptr=in_ptr->target_ptr;
 	    collection_type* sub_ptr = (collection_type*)(typeptr->entry_ptr);
 	    if (j==0)
-	      printf("subclasses ");
+	      printf("subclass of ");
 	    else
 	      printf(", ");
 	    printf("%s ",sub_ptr->name);
@@ -253,13 +254,15 @@ void initializeTypeArray()
 	      dwarf_entry *type=member_ptr->type_ptr;
 	      char *typestr=printname(type,GETTYPE);
 	      char *poststr=printname(type,POSTNAME);
+	      char *newname=NULL;
 	      if (member_ptr->data_member_location>offset) {
 		printf("   reserved byte[%ld];\n",member_ptr->data_member_location-offset);
 		offset=member_ptr->data_member_location;
 	      }
 	      offset+=getsize(type);
-	      
-	      printf("   %s %s%s;\n",typestr,name,poststr);
+	      newname=escapestr(name);
+	      printf("   %s %s%s;\n",typestr,newname,poststr);
+	      free(newname);
 	    }
 	  }
 	  if (offset<collection_ptr->byte_size)
@@ -298,6 +301,7 @@ int printtype(collection_type *collection_ptr,struct genhashtable *ght)
     } else {
       member * member_ptr=(member *)entry->entry_ptr;
       char *name=member_ptr->name;
+      char *newname=NULL;
       dwarf_entry *type=member_ptr->type_ptr;
       char *typestr=printname(type,GETTYPE);
       char *poststr=printname(type,POSTNAME);
@@ -307,13 +311,13 @@ int printtype(collection_type *collection_ptr,struct genhashtable *ght)
       }
       offset+=getsize(type);
       
-      printf("   %s %s%s;\n",typestr,name,poststr);
+      newname=escapestr(name);
+      printf("   %s %s%s;\n",typestr,newname,poststr);
+      free(newname);
     }
   }
   return offset;
 }
-
-
 
 int getsize(dwarf_entry *type) {
   if (type==NULL)
@@ -444,6 +448,9 @@ char * printname(dwarf_entry * type,int op) {
 	return newptr;
       }
     } else if (op==GETJUSTTYPE) {
+      if (!FOLLOW_PTRS)
+	return NULL;
+
       if (modifier_ptr->target_ptr==NULL)
 	return NULL;
       {

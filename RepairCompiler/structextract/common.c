@@ -17,6 +17,22 @@ char * copystr(const char *buf) {
     }
 }
 
+char * escapestr(const char *buf) {
+  int i,j;
+  if (buf==NULL)
+    return NULL;
+  for(i=0;;i++)
+    if (buf[i]==0) {
+      char *ptr=(char*)malloc(i+1);
+      for(j=0;j<=i;j++) {
+	ptr[j]=buf[j];
+	if (ptr[j]=='.')
+	  ptr[j]='_';
+      }
+      return ptr;
+    }
+}
+
 
 unsigned int hashstring(char *strptr) {
   unsigned int hashcode=0;

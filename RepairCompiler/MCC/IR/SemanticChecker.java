@@ -921,13 +921,17 @@ public class SemanticChecker {
                         if (newtype == null) {
                             // type never defined
                             // #TBD#: replace new ParseNode with original parsenode
-                            er.report(null, "Undefined type '" + fieldtype.getSymbol() + "'");
-                            ok = false;
+			    
+			    if (!field.getPtr()) { 
+				/* Pointer types don't have to be defined */
+				er.report(null, "Undefined type '" + fieldtype.getSymbol() + "'");
+				ok = false;
+			    }
                         } else {
                             assert newtype != null;
                             field.setType(newtype);
                         }
-                    }                        
+                    }
                 }
 
                 Iterator labels = type.getLabels();

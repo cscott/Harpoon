@@ -372,6 +372,8 @@ public class DotExpr extends Expr {
 		intindex=index;
 	    }
 	    this.fd=fd;
+	    if (fieldtype instanceof MissingTypeDescriptor)
+		throw new Error(fieldtype.getSymbol()+" type undefined!");
 	}
 
         if ((lefttype == null) || (index != null && indextype == null)) {

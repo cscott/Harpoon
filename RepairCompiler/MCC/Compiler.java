@@ -196,8 +196,8 @@ public class Compiler {
             System.err.println("Unable to open file: " + state.infile + ".struct");
             System.exit(-1);
 	} catch (Exception e) {
-	    //	    System.out.println(e);
-	    //	    e.printStackTrace();
+	    System.out.println(e);
+	    e.printStackTrace();
 	    return false;
 	}
 
@@ -214,8 +214,8 @@ public class Compiler {
             System.err.println("Unable to open file: " + state.infile + ".model");
             System.exit(-1);
 	} catch (Exception e) {
-	    //	    System.out.println(e);
-	    //	    e.printStackTrace();
+	    System.out.println(e);
+	    e.printStackTrace();
 	    return false;
 	}
 
@@ -250,8 +250,8 @@ public class Compiler {
             System.err.println("Unable to open file: " + state.infile + ".constraints");
             System.exit(-1);
 	} catch (Exception e) {
-	    //	    System.out.println(e);
-	    //	    e.printStackTrace();
+	    System.out.println(e);
+	    e.printStackTrace();
 	    return false;
 	}
 
