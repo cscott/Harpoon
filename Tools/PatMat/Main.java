@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Tools.PatMat;
 
+import harpoon.Util.Util;
+
 import java.io.Reader;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -12,7 +14,7 @@ import java.io.IOException;
 /* Main entry point for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.1.2.5 1999-06-28 09:16:54 pnkfelix Exp $
+ * @version $Id: Main.java,v 1.1.2.6 1999-06-30 04:52:42 pnkfelix Exp $
  */
 public class Main {
     private static boolean DEBUG_parser = false;
@@ -26,6 +28,8 @@ public class Main {
 	Lexer l = new Lexer(r, e);
 	Parser p = new Parser(l, e);
 	Spec s = (Spec) p.parse().value;
+	Util.assert(!e.anyErrors, "Error in parsing " + args[0]);
+
 	if (DEBUG_parser) {
 	    System.out.println(s);
 	} else if (DEBUG_production) {
@@ -34,7 +38,7 @@ public class Main {
 	    t.outputJavaFile(pw);
 	} else if (DEBUG_maxMunch) {
 	    PrintWriter pw = new PrintWriter(System.out);
-	    MaximalMunchCGG t = new MaximalMunchCGG(s, "TestMaxMunchClass");
+	    MaximalMunchCGG t = new MaximalMunchCGG(s, "CodeGen");
 	    t.outputJavaFile(pw); 
 	}
     }

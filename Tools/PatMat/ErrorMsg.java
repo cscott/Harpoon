@@ -19,6 +19,7 @@ class ErrorMsg {
     anyErrors = true;
   }
   public String errorMsg(int pos, String msg) {
+    //if (1!=0)throw new RuntimeException("got stack trace?");
     int n = lineNum;
     LineList p = linePos;
     String sayPos = "0.0";

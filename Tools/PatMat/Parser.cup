@@ -43,12 +43,12 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.11 1999-06-29 07:39:27 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.12 1999-06-30 04:52:42 pnkfelix Exp $
  */
 
 action code {:
 	void error(String message, int pos) {
-		parser.errorMsg.error(pos, message);
+ 		parser.errorMsg.error(pos, "Parsing: "+message);
 	}
 :};
 
@@ -62,7 +62,7 @@ parser code {:
 
 	public void report_error(String message, 
 			         java_cup.runtime.Symbol info) {
-		errorMsg.error(info.left, message);
+		errorMsg.error(info.left, "Parsing: "+message);
 	}
 
 	public Parser(Lexer l, ErrorMsg err) {

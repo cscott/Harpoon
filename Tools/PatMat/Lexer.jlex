@@ -6,7 +6,7 @@ package harpoon.Tools.PatMat;
 /** Input file lexer for instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Lexer.jlex,v 1.1.2.7 1999-06-28 06:47:27 cananian Exp $
+ * @version $Id: Lexer.jlex,v 1.1.2.8 1999-06-30 04:52:42 pnkfelix Exp $
  */
 %%
 
@@ -19,7 +19,7 @@ package harpoon.Tools.PatMat;
 
 %{
 private void newline() { errorMsg.newline(yychar); }
-private void err(int pos, String s) { errorMsg.error(pos, s); }
+private void err(int pos, String s) { errorMsg.error(pos, "Lexing: "+s); }
 private void err(String s) { err(yychar, s); }
 
 private java_cup.runtime.Symbol tok(int kind) {

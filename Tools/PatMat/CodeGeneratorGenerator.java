@@ -16,8 +16,10 @@ import java.io.PrintWriter;
  * <code>TreeCode</code>.  In short, a CGG generates a Code Generator.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.5 1999-06-29 06:10:45 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.6 1999-06-30 04:52:42 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
+
+    private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
 
     /** The machine specification that the CodeGenerators outputted by
 	<code>this</code> will target.  
@@ -60,17 +62,17 @@ public abstract class CodeGeneratorGenerator {
 	     Then writes the Java source code out to <code>out</code>,
 	     and flushes <code>out</code> after it finishes outputting
 	     the source code.
-	     All of the output file is parameterized by
+	     <BR>All of the output file is parameterized by
 	     <code>this.spec</code>, with the exception of  
 	     <OL> 
 	     <LI>class name 
 	         (defined by <code>this.className</code>)
 	     <LI>class signature 
 	         ( hardcoded as 
-		 <code>public class <i>this.className</i></code> )
+		 <code>public class <u>this.className</u></code> )
 	     <LI>codegen method signature 
 	         ( hardcoded as 
-		 <code>public final void codegen(TreeCode tree)</code>
+		 <code>public final void codegen(harpoon.IR.Tree.TreeCode tree)</code>
 		 )
 	     </OL>
 	@param out Target output device for the Java source code.
@@ -80,7 +82,7 @@ public abstract class CodeGeneratorGenerator {
 	out.println("public class " + className + " { ");
 	out.println(spec.class_stms);
 	
-	out.println("\t/** Generates assembly code from a <code>TreeCode</code>.");
+	out.println("\t/** Generates assembly code from a <code>" + TREE_TreeCode + "</code>.");
 	out.println("\t    <BR> <B>modifies:</B> <code>this</code>");
 	out.println("\t    <BR> <B>effects:</B>");
 	out.println("\t         Scans <code>tree</code> to find a tiling of ");
@@ -89,7 +91,7 @@ public abstract class CodeGeneratorGenerator {
 	out.println("\t    @param tree Set of abstract <code>Tree</code> instructions ");
 	out.println("\t                that form the body of the procedure being compiled.");
 	out.println("\t*/");
-	out.println("\tpublic final void codegen(TreeCode tree) {"); // method start
+	out.println("\tpublic final void codegen(" + TREE_TreeCode +" tree) {"); // method start
 
 	outputSelectionMethod(out);
 
@@ -109,6 +111,16 @@ public abstract class CodeGeneratorGenerator {
 	     referenced: <code>tree</code>, a <code>TreeCode</code>
 	     that represents the input set of <code>Tree</code>
 	     <code>HCodeElement</code>s.
+
+	     <BR>Generated method must, for each pattern in
+	     <code>this.spec</code>, define variables for the action
+	     statements in the pattern to refer to.  These variables
+	     are:<OL>
+	     <LI>The <code>Spec.ExpId</code>objects defined in the pattern
+	     <LI>The <code>HCodeElement</code> <code>ROOT</code>.  
+	         ( This should be defined as the <code>IR.Tree.Tree</code> 
+		   element being analyzed.) 
+	     </OL>
 
 	     <BR>Generated method finds a tiling for
 	     <code>tree</code>, using the information in

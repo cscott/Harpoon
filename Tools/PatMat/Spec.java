@@ -13,12 +13,12 @@ import java.util.List;
  * and therefore may be misleading; I'm worried that it isn't META
  * enough.  Must go over it and make sure that its clear that I'm
  * talking about the specification for a set of instruction patterns,
- * and <B>NOT</B> the actual code being analyzed and optimized by the
+ * and <B>NOT</B> the actual IR for the code being analyzed and optimized by the
  * compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.11 1999-06-29 07:39:27 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.12 1999-06-30 04:52:42 pnkfelix Exp $
  */
 public class Spec  {
 
@@ -205,9 +205,9 @@ public class Spec  {
     /** Visitor class for traversing a set of <code>Spec.Exp</code>s
 	and performing some action depending on the type of
 	<code>Spec.Exp</code> visited.  Subclasses should implement a
-	<code>visit</code> method for generic <code>Exp</code>s and
+	<code>visit</code> method for generic <code>Spec.Exp</code>s and
 	also override the <code>visit</code> method for subclasses of
-	<code>Exp</code> that the subclass cares about.
+	<code>Spec.Exp</code> that the subclass cares about.
 	@see <U>Design Patterns</U> pgs. 331-344
     */
     public static abstract class ExpVisitor {
@@ -355,7 +355,9 @@ public class Spec  {
     */
     public static class ExpName extends Exp {
 
-	/** Name for <code>this</code>. */
+	/** Name for <code>this</code>. 
+	    @see IR.Tree.Label
+	 */
 	public final String name;
 
 	/** Constructs a new <code>Spec.ExpName</code> representing
@@ -373,7 +375,9 @@ public class Spec  {
 	/** The set of types that <code>this</code> may take. */
 	public final TypeSet types;
 
-	/** Identifier for <code>this</code>. */
+	/** Identifier for <code>this</code>. 
+	    @see harpoon.Temp.Temp
+	 */
 	public final String name;
 
 	/** Constructs a <code>Spec.ExpTemp</code>.
@@ -415,9 +419,9 @@ public class Spec  {
     /** Visitor class for traversing a set of <code>Spec.Stm</code>s
 	and performing some action depending on the type of
 	<code>Spec.Stm</code> visited.  Subclasses should implement a
-	<code>visit</code> method for generic <code>Stm</code>s and
+	<code>visit</code> method for generic <code>Spec.Stm</code>s and
 	also override the <code>visit</code> method for subclasses of
-	<code>Stm</code> that the subclass cares about.
+	<code>Spec.Stm</code> that the subclass cares about.
 	@see <U>Design Patterns</U> pgs. 331-344
     */
     public static abstract class StmVisitor {
@@ -456,15 +460,15 @@ public class Spec  {
     */
     public static class StmCall extends Stm {
 	/** Return value destination expression. 
-	    @see IR.Tree.EXP
+	    @see IR.Tree.Exp
 	 */
 	public final Exp retval;
 	/** Exception value destination expression. 
-	    @see IR.Tree.EXP
+	    @see IR.Tree.Exp
 	 */
 	public final Exp retex;
 	/** Function location expression. 
-	    @see IR.Tree.EXP
+	    @see IR.Tree.Exp
 	 */
 	public final Exp func;
 	/** Arguments being passed to procedure. 
@@ -495,9 +499,13 @@ public class Spec  {
 	/** Boolean expression that decides which direction we're
 	    jumping. */
 	public final Exp test;
-	/** Label to branch to on a True value. */
+	/** Label to branch to on a True value. 
+	    @see harpoon.Temp.Label
+	 */
 	public final String t_label;
-	/** Label to branch to on a False value. */
+	/** Label to branch to on a False value. 
+	    @see harpoon.Temp.Label
+	 */
 	public final String f_label;
 	/** Constructs a new <code>Spec.StmCjump</code>.
 	    @param test Text expression.
@@ -548,7 +556,9 @@ public class Spec  {
 	@see IR.Tree.LABEL
     */
     public static class StmLabel extends Stm {
-	/** Label. */
+	/** Label. 
+	    @see harpoon.Temp.Label
+	 */
 	public final String name;
 	/** Constructs a new <code>Spec.StmLabel</code>.
 	    @param name Label.
@@ -585,13 +595,21 @@ public class Spec  {
 	@see IR.Tree.NATIVECALL
     */
     public static class StmNativeCall extends Stm {
-	/** Return value destination expression. */
+	/** Return value destination expression. 
+	    @see IR.Tree.Exp
+	 */
 	public final Exp retval;
-	/** Exception destination expression. */
+	/** Exception destination expression. 
+	    @see IR.Tree.Exp
+	 */
 	public final Exp retex;
-	/** Function location expression. */
+	/** Function location expression. 
+	    @see IR.Tree.Exp
+	 */
 	public final Exp func;
-	/** Arguments being passed to procedure. */
+	/** Arguments being passed to procedure. 
+	    @see IR.Tree.ExpList
+	*/
 	public final String arglist;
 	/** Constructs a new <code>Spec.StmNativeCall</code>.
 	    @param retval Return value destination expression.
@@ -661,10 +679,35 @@ public class Spec  {
 	public String toString() { return "THROW("+exp+")"; }
     }
 
+    /** Visitor class for traversing a set of <code>Spec.Leaf</code> objects 
+	and performing some action depending on the type of
+	<code>Spec.Leaf</code> visited.  Subclasses should implement a
+	<code>visit</code> method for generic <code>Spec.Leaf</code>s (ed. note: Leaves?) and
+	also override the <code>visit</code> method for subclasses of
+	<code>Spec.Leaf</code> that the subclass cares about.
+	@see <U>Design Patterns</U> pgs. 331-344
+    */
+    public static abstract class LeafVisitor {
+	public abstract void visit(Leaf l);
+	public void visit(LeafId l) { visit((Leaf)l); }
+	public void visit(LeafOp l) { visit((Leaf)l); }
+	public void visit(LeafNumber l) { visit((Leaf)l); }
+    }
+
     /** Abstract representation of leaves in the instruction pattern. */
     public static abstract class Leaf {
 	public String toBop() { return this.toString(); }
 	public String toUop() { return this.toString(); }
+
+	/** Applies <code>v</code>'s <code>visit</code> method to
+	    <code>this</code>.
+	    This is effectively a gludge to emulate <B>multiple
+	    dispatch</B>.  Must be reimplemented by all subclasses of
+	    <code>Spec.Leaf</code>.
+	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
+	    @see <U>Design Patterns</U> pgs. 331-344
+	*/
+	public void accept(Spec.LeafVisitor v) { v.visit(this); }
     }
     /** Extension of <code>Spec.Leaf</code> which represents an
 	Identifier. */
@@ -677,6 +720,15 @@ public class Spec  {
 	public LeafId(String id) {
 	    this.id = id;
 	}
+	/** Applies <code>v</code>'s <code>visit</code> method to
+	    <code>this</code>.
+	    This is effectively a gludge to emulate <B>multiple
+	    dispatch</B>.  Must be reimplemented by all subclasses of
+	    <code>Spec.Leaf</code>.
+	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
+	    @see <U>Design Patterns</U> pgs. 331-344
+	*/
+	public void accept(Spec.LeafVisitor v) { v.visit(this); }
 	public String toString() { return id; }
     }
     /** Extension of <code>Spec.Leaf</code> representing an opcode
@@ -693,6 +745,15 @@ public class Spec  {
 	public String toString() { return Integer.toString(op); }
 	public String toBop() { return harpoon.IR.Tree.Bop.toString(op); }
 	public String toUop() { return harpoon.IR.Tree.Uop.toString(op); }
+	/** Applies <code>v</code>'s <code>visit</code> method to
+	    <code>this</code>.
+	    This is effectively a gludge to emulate <B>multiple
+	    dispatch</B>.  Must be reimplemented by all subclasses of
+	    <code>Spec.Leaf</code>.
+	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
+	    @see <U>Design Patterns</U> pgs. 331-344
+	*/
+	public void accept(Spec.LeafVisitor v) { v.visit(this); }
     }
     /** Extension of <code>Spec.Leaf</code> which represents a
 	explicit number in the specification.
@@ -707,6 +768,15 @@ public class Spec  {
 	    this.number = number;
 	}
 	public String toString() { return number.toString(); }
+	/** Applies <code>v</code>'s <code>visit</code> method to
+	    <code>this</code>.
+	    This is effectively a gludge to emulate <B>multiple
+	    dispatch</B>.  Must be reimplemented by all subclasses of
+	    <code>Spec.Leaf</code>.
+	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
+	    @see <U>Design Patterns</U> pgs. 331-344
+	*/
+	public void accept(Spec.LeafVisitor v) { v.visit(this); }
     }
 
 
