@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.61 1999-10-14 06:38:44 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.62 1999-10-14 07:05:59 cananian Exp $
  */
 %%
 
@@ -1334,8 +1334,8 @@ CALL(retval, NAME(retex), func, arglist) %{
 	   default: // start putting args in memory
 	     emit(new InstrMEM( instrFactory, ROOT,
 				"str `s0l, [`s1, #-4]!", 
-				null, 
-			     new Temp[]{ RegFileInfo.SP, temp }));
+			     new Temp[]{ RegFileInfo.SP }, //sp implicitly mod 
+			     new Temp[]{ temp, RegFileInfo.SP }));
 	     index++;
 	     stackOffset += 4;
 	     emit(new InstrMEM( instrFactory, ROOT,
