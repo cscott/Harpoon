@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.65 2002-03-10 02:31:39 cananian Exp $
+# $Id: GNUmakefile,v 1.66 2002-03-10 03:30:37 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -14,12 +14,12 @@ JDOC:=javadoc
 JAR=jar
 JDOCFLAGS:=-J-mx128m -version -author # -package
 JDOCGROUPS:=\
-  -group "Basic Class/Method/Field handling" "harpoon.ClassFile.*" \
-  -group "Intermediate Representations" "harpoon.IR.*:harpoon.Temp.*" \
-  -group "Interpreters for IRs" "harpoon.Interpret.*" \
-  -group "Analyses and Transformations" "harpoon.Analysis.*:harpoon.Runtime.*" \
-  -group "Backends (including code selection and runtime support)" "harpoon.Backend.*" \
-  -group "Tools and Utilities" "harpoon.Tools.*:harpoon.Util.*" \
+  -group "Basic Class/Method/Field handling" "harpoon.ClassFile*" \
+  -group "Intermediate Representations" "harpoon.IR*:harpoon.Temp*" \
+  -group "Interpreters for IRs" "harpoon.Interpret*" \
+  -group "Analyses and Transformations" "harpoon.Analysis*:harpoon.Runtime*" \
+  -group "Backends (including code selection and runtime support)" "harpoon.Backend*" \
+  -group "Tools and Utilities" "harpoon.Tools*:harpoon.Util*" \
   -group "Contributed packages" "gnu.*"
 JDOCIMAGES=/usr/local/jdk/docs/api/images
 SSH=ssh
@@ -48,7 +48,7 @@ JDOCFLAGS += \
 # Add "-group" options to JDOCFLAGS if we're using a javadoc that supports it
 JDOCFLAGS += \
 	$(shell if $(JDOC) -help 2>&1 | grep -- "-group " > /dev/null ; \
-	then echo $(JDOCGROUPS) ; fi)
+	then echo '$(JDOCGROUPS)' ; fi)
 
 SUPPORT := Support/Lex.jar Support/CUP.jar Support/jasmin.jar \
 	   $(wildcard SupportNP/ref.jar) $(wildcard SupportNP/collections.jar)
@@ -376,7 +376,7 @@ doc:	doc/TIMESTAMP
 
 doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 # check for .*.java and #*.java files that will give javadoc headaches
-	@export badfiles="$(strip $(foreach dir,\
+	@badfiles="$(strip $(foreach dir,\
 			$(filter-out Test JavaChip,$(PKGSWITHJAVASRC)),\
 			$(wildcard $(dir)/[.\#]*.java)))"; \
 	if [ ! "$$badfiles" = "" ]; then \
@@ -408,7 +408,7 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 doc-install: doc/TIMESTAMP mark-executable
 	# only include ChangeLog if we've got CVS access
 	if [ -d CVS ]; then \
-          make ChangeLog; \
+          $(MAKE) ChangeLog; \
 	  cp ChangeLog doc/ChangeLog.txt; \
 	  chmod a+r doc/ChangeLog.txt; \
 	fi
