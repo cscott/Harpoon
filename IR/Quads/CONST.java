@@ -21,16 +21,16 @@ import harpoon.Util.Util;
  * the standard wrapper class.  An example may clarify:
  * <UL>
  *  <LI>The integer constant 0 is represented by <BR>
- *     <CODE>new CONST(hce, dst, new Integer(0), HClass.Int);</code>
+ *     <CODE>new CONST(qf, hce, dst, new Integer(0), HClass.Int);</code>
  *  <LI>The string constant "hello, world" is represented by <BR>
- *     <CODE>new CONST(hce, dst, "hello, world",
+ *     <CODE>new CONST(qf, hce, dst, "hello, world",
  *           HClass.forName("java.lang.String") );</code>
  *  <LI>The null literal is represented by <BR>
- *     <CODE>new CONST(hce, dst, null, HClass.Void);</code>
+ *     <CODE>new CONST(qf, hce, dst, null, HClass.Void);</code>
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CONST.java,v 1.1.2.7 1999-01-22 23:05:59 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.8 1999-02-24 00:48:54 cananian Exp $
  */
 
 public class CONST extends Quad {
