@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: sas02.tex,v 1.7 2002-05-11 09:00:49 cananian Exp $
+% $Id: sas02.tex,v 1.8 2002-05-11 09:35:02 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[oribibl]{llncs}
 %\usepackage[section,plain]{algorithm}
@@ -29,7 +29,7 @@ Cambridge, MA 02139 \\
 \email{\{cananian, rinard\}@lcs.mit.edu}
 }
 
-\renewcommand{\baselinestretch}{0.93}
+\renewcommand{\baselinestretch}{0.96}
 \begin{document}
 \bibliographystyle{plain}
 %
@@ -662,48 +662,31 @@ Our static specialization transformation can only be applied to what
 we call {\it subclass-final} fields.  Subclass-finality is a less strict
 but similar constraint to Java's {\tt final} modifier.  We do a
 single-pass analysis to determine subclass-finality, using the results
-from the bitwidth analysis to improve our precision.  In particular we
-wish to note that we do {\it not} rely on the programmer's manual
-specification of appropriate field modifiers, but obtain this
-information from the way the field is used in the program.
+from the bitwidth analysis to improve our precision.%
+\footnote{By using analysis rather than relying on programmer
+  specification, the author need not restrict \emph{all} users of
+  their code in order to obtain maximum efficiency for \emph{some}
+  constrained uses of it.}
 
-The first step past Java's {\tt final} semantics is to what we
-will call {\it this-final} fields.  Fields which are this-final can
-be assigned-to multiple times (or not at all), but all writes must
-occur within constructors of the field's declaring class.
-Fields marked {\tt final} in Java, by
-contrast, must be written-to {\it exactly once} in each constructor of
-the declaring class.
-As with traditional {\tt final} fields, the receiver (``{\tt this}''
-parameter) of the
-constructor in which a {\it this-final} field is written must contain
-the field;  you cannot write a {\tt final} or {\it this-final}
-field in another instance of the class from your instance's
-constructor.
+A \emph{subclass-final} field {\tt f} of a class {\tt A} can be
+written to from any method of a \emph{subclass} of {\tt A}, as well as
+in any constructor of {\tt A}.  In each write, the receiver's type
+must be a subtype of {\tt A}, except inside {\tt A}'s constructors,
+where the receiver may also be the method's {\tt this} parameter.
+Multiple writes to {\tt f} are permitted, unlike the Java-{\tt final}
+fields.
 
-The restrictions on {\it this-final} fields are still more strict than
-static specialization requires.  We will broaden our requirements
-further, and define
-{\it subclass-final} fields which can be written in {\it any method of
-  a subclass}, in addition to within the constructor of its declaring
-class.  As before, writes must be to fields of {\tt this} within a
-constructor of the field's declaring class, but you
-can write to the field zero or more times.
-
-Subclass-finality now matches the requirements of the static
+Subclass-finality matches the requirements of the static
 specialization transformation.  Since we always insert a ``big''
 version of the original split class as parent to any subclasses,
-subclasses can write to the split field without restriction.
+subclasses can write to the field in objects of the ``big'' type
+without restriction.
 We need only restrict writes which occur in the class proper.
 
 Our analysis constructs the set of subclass-final fields by finding
 its dual, the set of {\it non}-subclass-final fields.  We scan every
-method and pull out all writes to fields which belong to
-a {\it superclass} of the method's declaring class---writes to fields
-in the method's declaring class are not removed, only fields in
-superclasses.  If the method is a constructor, we additionally remove
-all writes to fields of the {\tt this} parameter.  All remaining
-fields are added to the set of non-subclass-final fields.
+method and collect all fields with illegal writes; all
+fields found are added to the set of non-subclass-final fields.
 
 \subsection{Constructor Classification}
 % includes MustParamOracle and ConstMap
@@ -732,11 +715,6 @@ then we can statically specialize on the field at this constructor
 site.  Further, we rule out specialization on any otherwise-suitable
 fields for which there is not at least one callable constructor
 amenable to static specialization.
-
-We note briefly here that, although we use profiling to select desirable
-fields for static specialization, it is entirely possible that an
-``opportunity''-based heuristic using only information from the constructor
-classification step could yield good results.
 %
 \section{Implementation Issues}
 %
