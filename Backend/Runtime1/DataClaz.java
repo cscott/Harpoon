@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.19 2000-06-08 20:07:24 kkz Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.20 2000-06-29 16:39:06 kkz Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -77,7 +77,13 @@ public class DataClaz extends Data {
 	// the interface list is generated elsewhere
 	stmlist.add(_DATUM(m_nm.label(hc, "interfaces")));
 	// object size.
-	int size = m_tb.objectSize(hc) + m_tb.OBJECT_HEADER_SIZE;
+	if (hc.isPrimitive()) System.out.println("***");
+	int size = 
+	    (!hc.isPrimitive()) ? 
+	    (m_tb.objectSize(hc) + m_tb.OBJECT_HEADER_SIZE) :
+	    (hc==HClass.Double||hc==HClass.Long) ? m_tb.LONG_WORD_SIZE :
+	    (hc==HClass.Int||hc==HClass.Float) ? m_tb.WORD_SIZE :
+	    (hc==HClass.Short||hc==HClass.Char) ? 2 : 1;
 	stmlist.add(_DATUM(new CONST(tf, null, size)));
 	// bitmap for gc or pointer to bitmap
       	stmlist.add(gc(f, ch));
