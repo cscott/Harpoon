@@ -116,5 +116,6 @@ public class Load extends Node {
 	    }
 	    /* Continue even if a file isn't found or there are exceptions... */
 	}
+	System.out.println("All images loaded and processed.");
     }
 }
