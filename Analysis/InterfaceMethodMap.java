@@ -19,14 +19,17 @@ import harpoon.Analysis.GraphColoring.ColorFactory;
 import harpoon.Analysis.GraphColoring.SimpleGraphColorer;
 import harpoon.Analysis.GraphColoring.SparseGraph;
 import harpoon.Analysis.GraphColoring.SparseNode;
+import harpoon.Analysis.GraphColoring.IllegalEdgeException;
 /**
  * <code>InterfaceMethodMap</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.2.2 1999-01-21 06:31:39 cananian Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.2.3 1999-01-21 22:49:07 pnkfelix Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
+
+    private static boolean DEBUG = false;
 
     // maps HMethod to HmNode
     private Hashtable mtable;
@@ -100,13 +103,24 @@ public class InterfaceMethodMap extends MethodMap {
 	    HClass hc = (HClass) hclasses.nextElement();
 	    if (hc.isInterface()) { // INTERFACE
 		// make nodes for each method and add them to graph
+		if (DEBUG) System.out.println("Adding methods of interface " + 
+					      hc + " to graph");
+		
 		interfaces.addElement( hc );
 		HMethod[] methods = hc.getMethods();
 		for (int i=0; i<methods.length; i++) {
-		    graph.addNode( factory.getNode( methods[i] ));
+		    if (includeMethod( methods[i] )) {
+			HmNode mnode = factory.getNode( methods[i] );
+			if (DEBUG) System.out.println
+				       ("Adding method/node " + 
+					methods[i] + " / " + mnode);
+			graph.addNode( mnode );
+		    }
 		}
 	    } else {                // CLASS
 		// add hclasses to classes for later edge searching
+		if (DEBUG) System.out.println
+			       ("Storing " + hc + " for later searching");
 		classes.addElement( hc );
 	    }
 	}
@@ -129,12 +143,20 @@ public class InterfaceMethodMap extends MethodMap {
 		}
 		hc = hc.getSuperclass();
 	    }
-
+	    
 	    for (int j=0; j<cNodes.size(); j++) {
 		HmNode nodeA = (HmNode) cNodes.elementAt(j);
 		for (int k=j+1; k<cNodes.size(); k++) {
 		    HmNode nodeB = (HmNode) cNodes.elementAt(k);
-		    graph.makeEdge( nodeA, nodeB );
+		    try {
+			if (DEBUG) System.out.println
+				       ("Making an edge between " + nodeA + 
+					" and " + nodeB + " in graph.");
+			graph.makeEdge( nodeA, nodeB );
+		    } catch (IllegalEdgeException e) {
+			// ignore (algorithm is dumb and doesn't know
+			// better. 
+		    }
 		}
 	    }
 	}
@@ -142,32 +164,55 @@ public class InterfaceMethodMap extends MethodMap {
 	return graph;
     }
 
-    /** Helper method for assembleGraph; finds all of the methods for
-	the interface hierachy ending at <code>interfce</code>.
-	requires: <code>interfce</code> is an HClass representing an
-	          interface.
-	effects: Iterates through the tree rooted at
-	         <code>interfce</code>, going through each of
-		 <code>interfce</code>'s superinterfaces and
-		 accumulating the methods it finds into a
-		 <code>Vector</code> of <code>HmNode</code>s that it
-		 returns at the end.   
+	
+    private static HClass objHClass = HClass.forName("java.lang.Object");
+
+    /** Helper method for graph assembly routines: checks suitability
+	of an HMethod.
+	<BR> effects: if <code>m</code> is a method of
+	              <code>java.lang.Object</code> then returns
+		      false.  Else returns true.
+    */
+    private static boolean includeMethod(HMethod m) {
+	return m.getDeclaringClass() != objHClass;
+    }
+
+    /** Helper method for assembleGraph: generates a HmNode for
+	methods in<code>interfce</code>. 
+	<BR> requires: <code>interfce</code> is an HClass representing
+	               an interface.
+	<BR> effects: Iterates over the accessible methods of
+	              <code>interfce</code>, accumulating them in a
+		      <code>Vector</code> of <code>HmNode</code>s that
+		      it returns at the end.  Methods of
+		      superinterfaces are included, but the methods of
+		      Object are not. 
     */
     private Vector findNodesFor( HClass interfce ) {
 	Util.assert( interfce.isInterface() );
+	if (DEBUG) System.out.println("Finding nodes for " + interfce);
 	Vector nodes = new Vector();
 	HMethod[] methods = interfce.getMethods();
 	for (int i=0; i<methods.length; i++) {
-	    nodes.addElement( factory.getNode( methods[ i ] ) ); 
+	    if (includeMethod( methods[i] )) {
+		if (DEBUG) System.out.println
+			       ("Adding method " + methods[ i ]);
+		nodes.addElement( factory.getNode( methods[ i ] ) ); 
+	    }
 	}
 	
-	HClass[] superinterfaces = interfce.getInterfaces();
+	// this sequence of code apparently is unnecessary according
+	// to the documentation for getMethods()...don't know how I
+	// missed that before
+	/*
+ 	HClass[] superinterfaces = interfce.getInterfaces();
 	for (int i=0; i<superinterfaces.length; i++) {
 	    Vector v = findNodesFor( superinterfaces[i] );
 	    for (int j=0; j<v.size(); j++) {
 		nodes.addElement(v.elementAt(j));
-	    }
+ 	    }
 	}
+	*/
 	return nodes;
     }
         
@@ -214,6 +259,19 @@ public class InterfaceMethodMap extends MethodMap {
 	}
 	
 	public int hashCode() { return hash; }
+
+	public boolean equals(Object o) {
+	    if (o instanceof HmNode) {
+		HmNode n = (HmNode) o;
+		return n.hash == this.hash;
+	    } else {
+		return false;
+	    }
+	}
+
+	public String toString() {
+	    return "HMethod Node [ " + name + " " + hash +" ]";
+	}
     }
 
     
