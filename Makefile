@@ -19,12 +19,12 @@ GJSOURCES=$(GJSOURCES1) omg/org/CosPropertyService/*.java ATRManip/*.java quo/*.
 RTJSOURCES=$(wildcard src/rtj/*.java)
 STUBSOURCES=$(wildcard src/rtj/stubs/*.java)
 SOURCES=$(JSOURCES) $(ISOURCES) $(RTJSOURCES) $(STUBSOURCES)
-IMAGES=$(wildcard dbase/plane/*gz* dbase/plane/*.jar) $(wildcard movie/*gz* movie/*.jar)
+IMAGES=$(wildcard dbase/plane/*gz* dbase/plane/*.jar dbase/tank/*.jar) $(wildcard movie/*gz* movie/*.jar)
 DSOURCES=$(wildcard paper/README paper/p* src/*.html src/graph/*.html)
 DSOURCES += $(wildcard src/util/*.html src/corba/*.html src/rtj/*.html)
 DSOURCES += $(wildcard src/rtj/stubs/*.html)
 MANIFEST=src/MANIFEST.MF
-RELEASE=$(SOURCES) README BUILDING COPYING Makefile $(IMAGES) $(DSOURCES) $(MANIFEST)
+RELEASE=$(SOURCES) README BUILDING COPYING Makefile $(IMAGES) $(DSOURCES) $(BISOURCES) $(MANIFEST)
 JDIRS=imagerec FrameManip omg ATRManip quo rss
 
 # figure out what the current CVS branch is, by looking at the Makefile
