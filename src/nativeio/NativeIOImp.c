@@ -397,7 +397,7 @@ JNIEXPORT jint JNICALL Java_java_io_NativeIO_getFDs
 }
 
 JNIEXPORT jint JNICALL Java_java_io_NativeIO_getFDsSmart
-  (JNIEnv *env, jobject obj, jint blockMode, jintArray array)
+  (JNIEnv *env, jobject obj, jboolean blockMode, jintArray array)
 {
   //  return (schedulerModel==MOD_SELECT) ?
     return getFDsSEL(env,blockMode,array);
