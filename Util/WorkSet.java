@@ -12,9 +12,9 @@ import java.util.Iterator;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WorkSet.java,v 1.1.2.3 1999-02-25 02:09:20 cananian Exp $
+ * @version $Id: WorkSet.java,v 1.1.2.4 1999-04-20 19:07:01 pnkfelix Exp $
  */
-public class WorkSet extends java.util.AbstractSet {
+public class WorkSet extends java.util.AbstractSet implements Worklist{
     private /*final*/ HashMap hm;
     private EntryList el = EntryList.init(); // header and footer nodes.
     private final boolean debug=false; // turn on consistency checks.
@@ -47,6 +47,21 @@ public class WorkSet extends java.util.AbstractSet {
 	if (isEmpty()) throw new java.util.NoSuchElementException();
 	return el.next.o;
     }
+
+    /** Removes some item from this and return it (Worklist adaptor
+	method). 
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> If there exists an <code>Object</code>,
+	                     <code>item</code>, that is an element of
+			     <code>this</code>, removes
+			     <code>item</code> from <code>this</code>
+			     and returns <code>item</code>. Else does
+			     nothing.
+    */
+    public Object pull() {
+	return this.pop();
+    }
+
     /** Return and remove the last element added to the WorkSet. */
     public Object pop() {
 	if (isEmpty()) throw new java.util.NoSuchElementException();
@@ -54,6 +69,18 @@ public class WorkSet extends java.util.AbstractSet {
 	hm.remove(o);
 	el.next.remove();
 	return o;
+    }
+
+    /** Pushes item onto this if it is not already there (Worklist
+	adapter method). 
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> If <code>item</code> is not already an
+	                     element of <code>this</code>, adds
+			     <code>item</code> to <code>this</code>.
+			     Else does nothing. 
+    */
+    public void push(Object item) {
+	this.add(item);
     }
 
     public boolean add(Object o) {
@@ -69,9 +96,20 @@ public class WorkSet extends java.util.AbstractSet {
     public void clear() {
 	hm.clear(); el = EntryList.init();
     }
+
+    /** Determines if this contains an item.
+	<BR> <B>effects:</B> If <code>o</code> is an element of 
+	                     <code>this</code>, returns true.
+			     Else returns false.
+    */
     public boolean contains(Object o) {
 	return hm.containsKey(o);
     }
+
+    /** Determines if there are any more items left in this. 
+	<BR> <B>effects:</B> If <code>this</code> has any elements,
+	                     returns true.  Else returns false.
+    */
     public boolean isEmpty() {
 	return (el.next.next == null);
     }
