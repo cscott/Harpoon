@@ -3,16 +3,14 @@
 
 #include "RoleInference.h"
 
-void addpath(struct heap_state *hs, long long obj, char * class, char * field, char * fielddesc, long long dstobj);
+void addpath(struct heap_state *hs, long long obj, struct fieldname * field, struct fielddesc * fielddesc, long long dstobj);
 void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, long long dstobj);
 
 struct path {
   int paramnum;
   long long prev_obj;
-  char * classname;
-  char * fieldname;
-  char * fielddesc;
-  char * globalname;
+  struct fieldname * fieldname;
+  struct fielddesc * fielddesc;
 };
 
 struct epointerlist {
@@ -22,7 +20,7 @@ struct epointerlist {
 
 struct effectlist {
   struct effectregexpr *src;
-  char *fieldname;
+  struct fieldname *fieldname;
   struct effectregexpr *dst;
   struct effectlist * next;
 };
@@ -30,15 +28,14 @@ struct effectlist {
 struct effectregexpr {
   char flag; /* 0=Normal, 1=NEW, 2=Native reached object*/
   int paramnum;
-  char *classname;
-  char *globalname;
+  struct fieldname * globalname;
   struct regexprlist *expr;
 };
 
 struct regexprlist {
   char multiplicity; /* 0=1, 1=many */
-  char *classname; /* Either the fields or the subtree of regexpr's must */
-  char *fielddesc; /* be defined in classname and end in a pointer of type fielddesc*/
+  struct classname * classname; /* Either the fields or the subtree of regexpr's must */
+  struct fielddesc *fielddesc; /* be defined in classname and end in a pointer of type fielddesc*/
   struct regfieldlist * fields;
   struct listofregexprlist * subtree;
   struct regexprlist * nextreg;
@@ -50,9 +47,8 @@ struct listofregexprlist {
 };
 
 struct regfieldlist {
-  char *classname;
-  char *fielddesc;
-  char *fieldname;
+  struct fielddesc * fielddesc;
+  struct fieldname * fieldname;
   struct regfieldlist * nextfld;
 };
 
@@ -62,7 +58,7 @@ void freeeffectlist(struct effectlist *el);
 void freeeffectregexpr(struct effectregexpr *ere);
 void freeeffects(struct path *);
 void initializepaths(struct heap_state *hs);
-void addeffect(struct heap_state *heap, long long suid, char * fieldname, long long duid);
+void addeffect(struct heap_state *heap, long long suid, struct fieldname * fieldname, long long duid);
 void initloopstructures();
 void freeregexprlist(struct regexprlist *tofree);
 struct effectregexpr * mergeeffectregexpr(struct effectregexpr * ere1, struct effectregexpr * ere2);

@@ -18,8 +18,8 @@ void dotrolemethod(struct genhashtable * htable, struct genhashtable *reverserol
     if (rm->paramroles[i]!=NULL)
       while(rs!=NULL) {
 	char buf[600],buf1[100];
-	int place=convertnumberingobjects(rm->signature, rm->isStatic, i);
-	int total=convertnumberingobjects(rm->signature, rm->isStatic, -1);
+	int place=convertnumberingobjects(rm->methodname->signature, rm->isStatic, i);
+	int total=convertnumberingobjects(rm->methodname->signature, rm->isStatic, -1);
 	int ii=0,j=0;
 	struct role* role=(struct role *)gengettable(reverseroletable, rm->paramroles[i]);
 	for(ii=0;ii<place;ii++) 
@@ -28,7 +28,7 @@ void dotrolemethod(struct genhashtable * htable, struct genhashtable *reverserol
 	for(;ii<(total-1);ii++)
 	  buf1[j++]=',';
 	buf1[j++]=0;
-	sprintf(buf, " %s.%s\\n%s(%s)", rm->classname, rm->methodname, rm->signature,buf1);
+	sprintf(buf, " %s.%s\\n%s(%s)", rm->methodname->classname->classname, rm->methodname->methodname, rm->methodname->signature,buf1);
 	
 	addtransition(htable, role->class, rm->paramroles[i],
 		      buf ,rs->paramroles[i],0);
@@ -53,11 +53,14 @@ void dotrolechange(struct genhashtable *htable, struct heap_state *hs,
   if (dcm->status==0) {
     depth=1;
     bdepth=1;
-    sprintf(buf,"%s.%s\\n%s", dcm->classname, dcm->methodname, dcm->signature);
+    sprintf(buf,"%s.%s\\n%s", dcm->methodname->classname->classname, dcm->methodname->methodname, dcm->methodname->signature);
   } else {
     depth=-1;
     bdepth=-1;
-    sprintf(buf,"%s.%s\\n%s", dcm->classnameto, dcm->methodnameto, dcm->signatureto);
+    if (dcm->methodnameto==NULL)
+      sprintf(buf,"None");
+    else
+    sprintf(buf,"%s.%s\\n%s", dcm->methodnameto->classname->classname, dcm->methodnameto->methodname, dcm->methodnameto->signature);
   }
   
 
@@ -67,22 +70,27 @@ void dotrolechange(struct genhashtable *htable, struct heap_state *hs,
 	depth++;
       else {
 	depth--;
-	if (depth<bdepth)
-	  sprintf(buf,"%s.%s\\n%s", dcm->classnameto, dcm->methodnameto, dcm->signatureto);
+	if (depth<bdepth) {
+	  if (dcm->methodnameto==NULL)
+	    sprintf(buf,"None");
+	  else
+	    sprintf(buf,"%s.%s\\n%s", dcm->methodnameto->classname->classname, dcm->methodnameto->methodname, dcm->methodnameto->signature);
+	  bdepth=depth;
+	}
       }
   }
   addtransition(htable, role->class, role1, buf, role2, 1);
 }
 
 
-void addtransition(struct genhashtable *htable, char *class, char *role1, char * transitionname, char *role2, int type) {
+void addtransition(struct genhashtable *htable, struct classname *class, char *role1, char * transitionname, char *role2, int type) {
   struct dotclass *dot=NULL;
   struct dottransition *trans=NULL,*oldtrans=NULL;
   if (gencontains(htable, class))
     dot=(struct dotclass *)gengettable(htable, class);
   else {
     dot=(struct dotclass *) calloc(1, sizeof(struct dotclass));
-    genputtable(htable, copystr(class), dot);
+    genputtable(htable, class, dot);
   }
   trans=dot->transitions;
   if(trans==NULL) {
@@ -171,9 +179,9 @@ void addtransition(struct genhashtable *htable, char *class, char *role1, char *
   }
 }
 
-void printdot(char *class, struct dotclass *dotclass) {
+void printdot(struct classname *class, struct dotclass *dotclass) {
   struct dottransition *dot=dotclass->transitions;
-  printf("digraph \"%s\" {\n",class);
+  printf("digraph \"%s\" {\n",class->classname);
   printf("ratio=auto\n");
   while(dot!=NULL) {
     if (dot->type==0) {

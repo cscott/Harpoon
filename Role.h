@@ -5,7 +5,7 @@
 
 struct role {
   int hashcode;
-  char * class;
+  struct classname * class;
   struct rolereferencelist * dominatingroots;
   struct rolefieldlist * pointedtofl;
   struct rolearraylist * pointedtoal;
@@ -15,11 +15,8 @@ struct role {
 };
 
 struct rolereferencelist {
-  char * classname;
-  char * globalname;
-
-  char * methodname;
-  char * signature;
+  struct fieldname * globalname;
+  struct methodname * methodname;
   char * lvname;
   char * sourcename;
   int linenumber;
@@ -27,7 +24,7 @@ struct rolereferencelist {
 };
 
 struct rolearraylist {
-  char *class;
+  struct classname * class;
   int duplicates;
   struct rolearraylist * next;
 };
@@ -40,8 +37,7 @@ struct rolechange {
 };
 
 struct rolefieldlist {
-  char * class;
-  char * field;
+  struct fieldname * field;
   int duplicates;
   struct rolefieldlist * next;
 };

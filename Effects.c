@@ -31,11 +31,11 @@ void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, l
     if (!contains(pathtable, dstobj)) {
       struct path * path=(struct path *) calloc(1,sizeof(struct path));
       path->prev_obj=obj;
-      path->classname=copystr(((struct heap_object *)gettable(ht, obj))->class);
+      path->fieldname=getfieldc(hs->namer, ((struct heap_object *)gettable(ht, obj))->class,"[]");
       /*Array dereferences are uniquely classified by array class*/
       path->fielddesc=NULL;
       
-      path->fieldname=copystr("[ARRAY]");
+
       path->paramnum=-1;
       puttable(pathtable, dstobj, path);
       newpath=1;
@@ -51,7 +51,7 @@ void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, l
 
 }
 
-void addpath(struct heap_state *hs, long long obj, char * class, char * field, char * fielddesc, long long dstobj) {
+void addpath(struct heap_state *hs, long long obj, struct fieldname * field, struct fielddesc * fielddesc, long long dstobj) {
   struct method *method=hs->methodlist;
   int newpath=0,newpatho=0;
   while(method!=NULL) {
@@ -69,9 +69,8 @@ void addpath(struct heap_state *hs, long long obj, char * class, char * field, c
     if (!contains(pathtable, dstobj)) {
       struct path * path=(struct path *) calloc(1,sizeof(struct path));
       path->prev_obj=obj;
-      path->classname=copystr(class);
-      path->fieldname=copystr(field);
-      path->fielddesc=copystr(fielddesc);
+      path->fieldname=field;
+      path->fielddesc=fielddesc;
       path->paramnum=-1;
       puttable(pathtable, dstobj, path);
       newpath=1;
@@ -104,10 +103,6 @@ void addnewobjpath(struct heap_state *hs, long long obj) {
 }
 
 void freeeffects(struct path * pth) {
-  free(pth->fieldname);
-  free(pth->fielddesc);
-  free(pth->globalname);
-  free(pth->classname);
   free(pth);
 }
 
@@ -120,8 +115,7 @@ void initializepaths(struct heap_state *hs) {
       struct path * initpth=(struct path *)calloc(1, sizeof(struct path));
       initpth->prev_obj=-1;
       initpth->paramnum=-1;
-      initpth->classname=copystr(gl->classname);
-      initpth->globalname=copystr(gl->fieldname);
+      initpth->fieldname=gl->fieldname;
       puttable(hs->methodlist->pathtable, uid,initpth);
     }
     gl=gl->next;
@@ -129,8 +123,8 @@ void initializepaths(struct heap_state *hs) {
 }
 
 
-
-void addeffect(struct heap_state *heap, long long suid, char * fieldname, long long duid) {
+/* if fieldname=NULL, then array dereference*/
+void addeffect(struct heap_state *heap, long long suid, struct fieldname  * fieldname, long long duid) {
   struct method * method=heap->methodlist;
   while(method!=NULL) {
     struct hashtable *pathtable=method->pathtable;
@@ -142,7 +136,7 @@ void addeffect(struct heap_state *heap, long long suid, char * fieldname, long l
     {
       struct effectregexpr* dstexpr=buildregexpr(pathtable, duid);
       struct effectlist * efflist=(struct effectlist *) calloc(1,sizeof(struct effectlist));
-      efflist->fieldname=copystr(fieldname);
+      efflist->fieldname=fieldname;
       efflist->src=srcexpr;
       efflist->dst=dstexpr;
       /*            printf("Effect List Entry:\n");
@@ -182,7 +176,7 @@ void addeffect(struct heap_state *heap, long long suid, char * fieldname, long l
 
 struct effectlist * mergeeffectlist(struct effectlist * el1, struct effectlist *el2) {
   struct effectregexpr * mergedsrc=NULL, * mergeddst=NULL;
-  if (!equivalentstrings(el1->fieldname, el2->fieldname)) return NULL;
+  if (el1->fieldname!=el2->fieldname) return NULL;
   if (el1->src!=NULL&&el2->src!=NULL) {
     mergedsrc=mergeeffectregexpr(el1->src, el2->src);
     if (mergedsrc==NULL) return NULL;
@@ -203,7 +197,7 @@ struct effectlist * mergeeffectlist(struct effectlist * el1, struct effectlist *
     struct effectlist * retel=(struct effectlist *)calloc(1, sizeof(struct effectlist));
     retel->src=mergedsrc;
     retel->dst=mergeddst;
-    retel->fieldname=copystr(el1->fieldname);
+    retel->fieldname=el1->fieldname;
     return retel;
   }
 }
@@ -274,7 +268,7 @@ struct effectlist * mergemultipleeffectlist(struct effectlist *el1, struct effec
 }
 
 struct effectregexpr * mergeeffectregexpr(struct effectregexpr * ere1, struct effectregexpr * ere2) {
-  if ((ere1->paramnum==ere2->paramnum)&&equivalentstrings(ere1->classname, ere2->classname)&&equivalentstrings(ere1->globalname, ere2->globalname)&&(ere1->flag==ere2->flag)) {
+  if ((ere1->paramnum==ere2->paramnum)&&(ere1->globalname==ere2->globalname)&&(ere1->flag==ere2->flag)) {
     /* Okay...now all the remains is to check compatibility of the regular expression list */
     struct regexprlist * rel1=ere1->expr;
     struct regexprlist * rel2=ere2->expr;
@@ -290,8 +284,7 @@ struct effectregexpr * mergeeffectregexpr(struct effectregexpr * ere1, struct ef
       struct effectregexpr * ere=(struct effectregexpr *)calloc(1,sizeof(struct effectregexpr));
       ere->paramnum=ere1->paramnum;
       ere->flag=ere1->flag;
-      ere->classname=copystr(ere1->classname);
-      ere->globalname=copystr(ere1->globalname);
+      ere->globalname=ere1->globalname;
       ere->expr=merged;
       return ere;
     }
@@ -309,19 +302,18 @@ struct regexprlist * mergeregexprlist(struct regexprlist * rel1, struct regexprl
     oldcopy=copy;
 
     copy->multiplicity=rel1->multiplicity|rel2->multiplicity;
-    if (equivalentstrings(rel1->classname, rel2->classname)&&
-	  equivalentstrings(rel1->fielddesc, rel2->fielddesc)) {
-      copy->classname=copystr(rel1->classname);
-      copy->fielddesc=copystr(rel1->fielddesc);
+    if ((rel1->classname==rel2->classname)&&
+	  (rel1->fielddesc==rel2->fielddesc)) {
+      copy->classname=rel1->classname;
+      copy->fielddesc=rel1->fielddesc;
       /*Merge fields*/
       {
 	/* Copy the first list*/
 	struct regfieldlist *copyfieldptr=rel1->fields;
 	while(copyfieldptr!=NULL) {
 	  struct regfieldlist *copyfld=(struct regfieldlist *) calloc(1, sizeof(struct regfieldlist));
-	  copyfld->classname=copystr(copyfieldptr->classname);
-	  copyfld->fieldname=copystr(copyfieldptr->fieldname);
-	  copyfld->fielddesc=copystr(copyfieldptr->fielddesc);
+	  copyfld->fieldname=copyfieldptr->fieldname;
+	  copyfld->fielddesc=copyfieldptr->fielddesc;
 	  copyfld->nextfld=copy->fields;
 	  copy->fields=copyfld;
 	  copyfieldptr=copyfieldptr->nextfld;
@@ -332,15 +324,14 @@ struct regexprlist * mergeregexprlist(struct regexprlist * rel1, struct regexprl
 	while(copyfieldptr!=NULL) {
 	  struct regfieldlist *searchptr=rel1->fields;
 	  while(searchptr!=NULL) {
-	    if (equivalentstrings(searchptr->classname, copyfieldptr->classname)&&equivalentstrings(searchptr->fieldname, copyfieldptr->fieldname)&&equivalentstrings(searchptr->fielddesc, copyfieldptr->fielddesc))
+	    if ((searchptr->fieldname==copyfieldptr->fieldname)&&(searchptr->fielddesc==copyfieldptr->fielddesc))
 	      break;
 	    searchptr=searchptr->nextfld;
 	  }
 	  if(searchptr==NULL) {
 	    struct regfieldlist *copyfld=(struct regfieldlist *) calloc(1, sizeof(struct regfieldlist));
-	    copyfld->classname=copystr(copyfieldptr->classname);
-	    copyfld->fieldname=copystr(copyfieldptr->fieldname);
-	    copyfld->fielddesc=copystr(copyfieldptr->fielddesc);
+	    copyfld->fieldname=copyfieldptr->fieldname;
+	    copyfld->fielddesc=copyfieldptr->fielddesc;
 	    copyfld->nextfld=copy->fields;
 	    copy->fields=copyfld;
 	  }
@@ -436,7 +427,6 @@ void freeeffectlist(struct effectlist *el) {
   while (el!=NULL) {
     struct effectlist *eltmp=el->next;
     freeeffectregexpr(el->src);
-    free(el->fieldname);
     freeeffectregexpr(el->dst);
     free(el);
     el=eltmp;
@@ -447,8 +437,6 @@ void freeeffectregexpr(struct effectregexpr *ere) {
   if (ere!=NULL) {
     struct regexprlist *tofree=ere->expr;
     freeregexprlist(tofree);
-    free(ere->classname);
-    free(ere->globalname);
     free(ere);
   }
 }
@@ -460,9 +448,6 @@ void freeregexprlist(struct regexprlist *tofree) {
     struct listofregexprlist *lrel=tofree->subtree;
     while(rfl!=NULL) {
       struct regfieldlist *tmpfldptr=rfl->nextfld;
-      free(rfl->fieldname);
-      free(rfl->classname);
-      free(rfl->fielddesc);
       free(rfl);
       rfl=tmpfldptr;
     }
@@ -470,8 +455,6 @@ void freeregexprlist(struct regexprlist *tofree) {
       freeregexprlist(lrel->expr);
       lrel=lrel->nextlist;
     }
-    free(tofree->classname);
-    free(tofree->fielddesc);
     free(tofree);
     tofree=tmpptr;
   }
@@ -487,8 +470,8 @@ void initloopstructures() {
 }
 
 int compareregexprlist(struct regexprlist *rel1, struct regexprlist * rel2) {
-  if ((equivalentstrings(rel1->classname, rel2->classname))&&
-      (equivalentstrings(rel1->fielddesc, rel2->fielddesc))&&
+  if ((rel1->classname==rel2->classname)&&
+      (rel1->fielddesc==rel2->fielddesc)&&
       (rel1->multiplicity==rel2->multiplicity))
     return 1;
   else return 0;
@@ -515,18 +498,17 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
     }
     path=gettable(pathtable, uid);
     if (path->prev_obj!=-1) {
-      if ((rel==NULL)||(!equivalentstrings(rel->classname, path->classname)||!equivalentstrings(rel->fielddesc, path->fielddesc))) {
+      if ((rel==NULL)||((rel->classname!=path->fieldname->classname)||(rel->fielddesc!=path->fielddesc))) {
 	struct regexprlist *ere=(struct regexprlist *) calloc(1, sizeof(struct regexprlist));
 	struct regfieldlist *rfl=(struct regfieldlist *) calloc(1, sizeof(struct regfieldlist));
 	ere->multiplicity=0;
-	ere->classname=copystr(path->classname);
-	ere->fielddesc=copystr(path->fielddesc);
+	ere->classname=path->fieldname->classname;
+	ere->fielddesc=path->fielddesc;
 	ere->fields=rfl;
 	ere->nextreg=rel;
 	rel=ere;
-	rfl->fieldname=copystr(path->fieldname);
-	rfl->classname=copystr(path->classname);
-	rfl->fielddesc=copystr(path->fielddesc);
+	rfl->fieldname=path->fieldname;
+	rfl->fielddesc=path->fielddesc;
 	/* Now check for loopies */
 	for(i=2;i<=MAXREPSEQ;i++) {
 	  int countmodulo=index % (i);
@@ -621,11 +603,8 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
 
 		  relloop->multiplicity=1;
 
-		  relloop->classname=copystr(ere->classname);
-		  relloop->fielddesc=copystr(ringbuffers[ringindex][(countmodulo+1)%i]->fielddesc);
-
-
-		  
+		  relloop->classname=ere->classname;
+		  relloop->fielddesc=ringbuffers[ringindex][(countmodulo+1)%i]->fielddesc;
 
 		  rel=relloop;
 		}
@@ -658,20 +637,19 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
 	struct regfieldlist *rflptr=rel->fields;
 	rel->multiplicity=1;
 	while(rflptr!=NULL) {
-	  if (strcmp(rflptr->fieldname, path->fieldname)==0)
+	  if (rflptr->fieldname== path->fieldname)
 	    break;
 	  rflptr=rflptr->nextfld;
 	}
 	if (rflptr==NULL) {
 	  struct regfieldlist *newfield=(struct regfieldlist *)calloc(1, sizeof(struct regfieldlist));
-	  newfield->fieldname=copystr(path->fieldname);
-	  newfield->fielddesc=copystr(path->fielddesc);
+	  newfield->fieldname=path->fieldname;
+	  newfield->fielddesc=path->fielddesc;
 	  newfield->nextfld=rel->fields;
-	  newfield->classname=copystr(path->classname);
 	  rel->fields=newfield;
 	}
       }
-    } else if(path->paramnum==-1&&path->classname==NULL&&path->fieldname==NULL&&path->fielddesc==NULL&&path->globalname==NULL) {
+    } else if(path->paramnum==-1&&path->fieldname==NULL&&path->fielddesc==NULL) {
       struct effectregexpr * ere=(struct effectregexpr *)calloc(1, sizeof(struct effectregexpr));
       ere->flag=1;
       ere->paramnum=-1;
@@ -688,8 +666,7 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
       /* At top level...*/
       struct effectregexpr *src=(struct effectregexpr *) calloc(1, sizeof(struct effectregexpr));
       src->paramnum=path->paramnum;
-      src->classname=copystr(path->classname);
-      src->globalname=copystr(path->globalname);
+      src->globalname=path->fieldname;
       src->expr=rel;
       return src;
     }
@@ -701,11 +678,14 @@ void printeffectlist(struct effectlist *el) {
   while (el!=NULL) {
     if (el->src!=NULL) {
       printeffectregexpr(el->src);
-      printf(".%s=", el->fieldname);
+      if(el->fieldname!=NULL)
+	printf(".%s=", el->fieldname->fieldname);
+      else
+	printf(".[]=");
     } else if(el->fieldname==NULL)
       printf("Read: ");
     else
-      printf("%s=",el->fieldname);
+      printf("%s=",el->fieldname->fieldname);
     if (el->dst!=NULL)
       printeffectregexpr(el->dst);
     else printf("NULL");
@@ -716,7 +696,7 @@ void printeffectlist(struct effectlist *el) {
 
 void printeffectregexpr(struct effectregexpr *ere) {
   if (ere->paramnum==-1&&ere->flag==0)
-    printf("[%s.%s]", ere->classname, ere->globalname);
+    printf("[%s.%s]", ere->globalname->classname->classname, ere->globalname->fieldname);
   else if (ere->flag==1)
     printf("NEW");
   else if (ere->flag==2)
@@ -735,7 +715,7 @@ void printregexprlist(struct regexprlist *rel) {
       if (flptr->nextfld!=NULL)
 	printf("(");
       while(flptr!=NULL) {
-	printf("[%s.%s]",flptr->classname,flptr->fieldname);
+	printf("[%s.%s]",flptr->fieldname->classname->classname,flptr->fieldname->fieldname);
 	if (flptr->nextfld!=NULL)
 	  printf("|");
 	flptr=flptr->nextfld;

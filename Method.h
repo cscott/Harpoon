@@ -4,9 +4,7 @@
 
 struct rolemethod {
   int hashcode;
-  char *classname;
-  char *methodname;
-  char *signature;
+  struct methodname * methodname;
   char **paramroles;
   int numobjectargs;
   short isStatic;
@@ -39,3 +37,4 @@ void freerolereturnstate(int numobjectargs, struct rolereturnstate * rrs);
 
 void printrolemethod(struct rolemethod *method);
 #endif
+

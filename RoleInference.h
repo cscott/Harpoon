@@ -5,11 +5,12 @@
 #include "ObjectPair.h"
 #include "Hashtable.h"
 #include "GenericHashtable.h"
+#include "Names.h"
 
 #define EFFECTS
 
 struct heap_object {
-  char *class;
+  struct classname *class;
   long long uid;
   struct fieldlist *fl;
   struct arraylist *al;
@@ -32,9 +33,7 @@ struct heap_object {
 
 
 struct method {
-  char classname[stringsize];
-  char methodname[stringsize];
-  char signature[stringsize];
+  struct methodname * methodname;
   struct method *caller;
   struct localvars *lv;
   struct heap_object ** params;
@@ -61,8 +60,7 @@ struct referencelist {
 };
 
 struct globallist {
-  char *classname;
-  char *fieldname;
+  struct fieldname * fieldname;
   struct heap_object *object;
   struct globallist * next;
   long long age;
@@ -70,7 +68,7 @@ struct globallist {
 };
 
 struct fieldlist {
-  char *fieldname;
+  struct fieldname * fieldname;
   struct heap_object *src;
   struct fieldlist * dstnext;
   struct heap_object *object;
@@ -99,6 +97,7 @@ struct localvars {
 
 struct heap_state {
   /* Pointer to top of method stack */
+  struct namer * namer;
   struct method *methodlist;
   struct globallist *gl;
   struct referencelist *newreferences;
@@ -123,18 +122,14 @@ struct heap_state {
 };
 
 struct identity_relation {
-  char * fieldname1;
-  char * fieldname2;
+  struct fieldname * fieldname1;
+  struct fieldname * fieldname2;
   struct identity_relation * next;
 };
 
 struct dynamiccallmethod {
-  char *classname;
-  char *methodname;
-  char *signature;
-  char *classnameto;
-  char *methodnameto;
-  char *signatureto;
+  struct methodname * methodname;
+  struct methodname * methodnameto;
 
   char status; /* 0=entry, 1=exit */
 };
@@ -155,9 +150,9 @@ char *getline();
 char * copystr(const char *);
 void showmethodstack(struct heap_state * heap);
 void printmethod(struct method m);
-void dofieldassignment(struct heap_state *hs, struct heap_object * src, char * field, struct heap_object * dst);
+void dofieldassignment(struct heap_state *hs, struct heap_object * src, struct fieldname * field, struct heap_object * dst);
 void doarrayassignment(struct heap_state *hs, struct heap_object * src, int lindex, struct heap_object *dst);
-void doglobalassignment(struct heap_state *hs, char * class, char * field, struct heap_object * dst);
+void doglobalassignment(struct heap_state *hs, struct fieldname * field, struct heap_object * dst);
 void doaddfield(struct heap_state *hs, struct heap_object *ho);
 void dodelfield(struct heap_state *hs, struct heap_object *src,struct heap_object *dst);
 void freelv(struct heap_state *hs,struct localvars * lv);
@@ -178,7 +173,7 @@ void removeforwardfieldreference(struct fieldlist * al);
 void freemethodlist(struct heap_state *hs);
 void calculatenumobjects(struct method * m);
 void doreturnmethodinference(struct heap_state *heap, long long uid, struct hashtable *ht);
-void recordentry(struct heap_state *heap, char *classname, char*methodname, char*signature);
+void recordentry(struct heap_state *heap, struct methodname *methodname);
 void recordexit(struct heap_state *heap);
 int atomic(struct heap_state *heap);
 void loadatomics(struct heap_state *heap);

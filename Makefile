@@ -1,11 +1,14 @@
 CC = gcc -O9 -Wall -pg -g
 
 
-RoleInference: RoleInference.o Hashtable.o ObjectSet.o ObjectPair.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o
-	$(CC) -o RoleInference RoleInference.o Hashtable.o ObjectSet.o ObjectPair.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o
+RoleInference: RoleInference.o Hashtable.o ObjectSet.o ObjectPair.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o Incremental.o Dynamiccall.o Names.o
+	$(CC) -o RoleInference RoleInference.o Hashtable.o ObjectSet.o ObjectPair.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o Incremental.o Dynamiccall.o Names.o
 
 Hashtable.o: Hashtable.c Hashtable.h
 	$(CC) -c Hashtable.c
+
+Dynamiccall.o: Dynamiccall.c
+	$(CC) -c Dynamiccall.c
 
 GenericHashtable.o: GenericHashtable.c GenericHashtable.h
 	$(CC) -c GenericHashtable.c
@@ -28,16 +31,18 @@ dot.o: dot.c dot.h
 Method.o: Method.c Method.h
 	$(CC) -c Method.c
 
+Names.o: Names.c Names.h
+	$(CC) -c Names.c
+
 Effects.o: Effects.c Effects.h
 	$(CC) -c Effects.c
+
+Incremental.o: Incremental.c
+	$(CC) -c Incremental.c
 
 CalculateDominators.o: CalculateDominators.c CalculateDominators.h
 	$(CC) -c CalculateDominators.c
 
 clean:
-	rm RoleInference.o Hashtable.o RoleInference ObjectPair.o ObjectSet.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o
-
-
-
-
+	rm RoleInference.o Hashtable.o RoleInference ObjectPair.o ObjectSet.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o Incremental.o Dynamiccall.o Names.o
 

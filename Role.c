@@ -17,13 +17,13 @@ struct heap_state *hshash;
 void printrole(struct role *r, char * rolename) {
   struct rolereferencelist *dominators=r->dominatingroots;
   printf("Role %s {\n",rolename);
-  printf(" Class: %s\n", r->class);
+  printf(" Class: %s\n", r->class->classname);
   printf(" Dominated by:\n");
   while(dominators!=NULL) {
     if (dominators->methodname!=NULL) {
-      printf("  By local variable: (%s) %s in %s.%s%s:%d\n",dominators->lvname, dominators->sourcename, dominators->classname, dominators->methodname, dominators->signature,dominators->linenumber);
+      printf("  By local variable: (%s) %s in %s.%s%s:%d\n",dominators->lvname, dominators->sourcename, dominators->methodname->classname->classname, dominators->methodname->methodname, dominators->methodname->signature,dominators->linenumber);
     } else {
-      printf("  By global variable: %s.%s\n",dominators->classname, dominators->globalname);
+      printf("  By global variable: %s.%s\n",dominators->globalname->classname->classname, dominators->globalname->fieldname);
     }
     dominators=dominators->next;
   }
@@ -34,16 +34,16 @@ void printrole(struct role *r, char * rolename) {
     struct rolearraylist *al=r->pointedtoal;
     while(fl!=NULL) {
       if (fl->duplicates<DUPTHRESHOLD)
-	printf("  Field %s from class %s %d times.\n",fl->field, fl->class, fl->duplicates+1);
+	printf("  Field %s from class %s %d times.\n",fl->field->fieldname, fl->field->classname->classname, fl->duplicates+1);
       else 
-	printf("  Field %s from class %s multiple times.\n",fl->field, fl->class);
+	printf("  Field %s from class %s multiple times.\n",fl->field->fieldname, fl->field->classname->classname);
       fl=fl->next;
     }
     while(al!=NULL) {
       if (al->duplicates<DUPTHRESHOLD)
-	printf("  Array of type class %s %d times.\n", al->class, al->duplicates+1);
+	printf("  Array of type class %s %d times.\n", al->class->classname, al->duplicates+1);
       else
-	printf("  Array of type class %s multiple times.\n", al->class);
+	printf("  Array of type class %s multiple times.\n", al->class->classname);
       al=al->next;
     }
   }
@@ -59,7 +59,7 @@ void printrole(struct role *r, char * rolename) {
   {
     struct rolefieldlist *fl=r->nonnullfields;
     while(fl!=NULL) {
-      printf("  Field %s is non-null.\n",fl->field);
+      printf("  Field %s is non-null.\n",fl->field->fieldname);
       fl=fl->next;
     }
   }
@@ -94,12 +94,8 @@ int rchashcode(struct rolechange *rc) {
   hashcode^=hashstring(rc->newrole);
   for(index=start-1;index<end;index++) {
     struct dynamiccallmethod *dcm=(struct dynamiccallmethod *)gettable(ht, index);
-    hashcode^=hashstring(dcm->classname);
-    hashcode^=hashstring(dcm->methodname);
-    hashcode^=hashstring(dcm->signature);
-    hashcode^=hashstring(dcm->classnameto);
-    hashcode^=hashstring(dcm->methodnameto);
-    hashcode^=hashstring(dcm->signatureto);
+    hashcode^=hashptr(dcm->methodname);
+    hashcode^=hashptr(dcm->methodnameto);
     hashcode^=dcm->status;
   }
   return hashcode;
@@ -117,12 +113,8 @@ int equivalentrc(struct rolechange *rc1, struct rolechange *rc2) {
   for(index=start-1;index<end;index++) {
     struct dynamiccallmethod *dcm1=(struct dynamiccallmethod *)gettable(ht, index);
     struct dynamiccallmethod *dcm2=(struct dynamiccallmethod *)gettable(ht, index);
-    if (!equivalentstrings(dcm1->classname,dcm2->classname)||
-	!equivalentstrings(dcm1->methodname,dcm2->methodname)||
-	!equivalentstrings(dcm1->signature,dcm2->signature)||
-	!equivalentstrings(dcm1->classnameto,dcm2->classnameto)||
-	!equivalentstrings(dcm1->methodnameto,dcm2->methodnameto)||
-	!equivalentstrings(dcm1->signatureto,dcm2->signatureto)||
+    if ((dcm1->methodname!=dcm2->methodname)||
+	(dcm1->methodnameto!=dcm2->methodnameto)||
 	dcm1->status!=dcm2->status)
       return 0;
   }
@@ -138,9 +130,9 @@ void printrolechange(struct heap_state * hs, struct rolechange *rc) {
       printf("EXIT: ");
     else
       printf("ENTER: ");
-    printf("%s.%s%s\n",dcm->classname,dcm->methodname,dcm->signature);
-    if (dcm->classnameto!=NULL)
-      printf("  returning to:%s.%s%s\n",dcm->classnameto,dcm->methodnameto, dcm->signatureto);
+    printf("%s.%s%s\n",dcm->methodname->classname->classname,dcm->methodname->methodname,dcm->methodname->signature);
+    if (dcm->methodnameto!=NULL)
+      printf("  returning to:%s.%s%s\n",dcm->methodnameto->classname->classname,dcm->methodnameto->methodname, dcm->methodnameto->signature);
     if ((index-rc->origmethod)>10) {
       printf("TRUNCATED\n");
       break;
@@ -202,7 +194,7 @@ void rolechange(struct heap_state *hs, struct heap_object *ho, char *newrole) {
 int equivalentroles(struct role *role1, struct role *role2) {
   if (role1->hashcode!=role2->hashcode)
     return 0;
-  if (strcmp(role1->class,role2->class)!=0)
+  if (role1->class!=role2->class)
     return 0;
 
   if(role1->methodscalled!=NULL&&role2->methodscalled!=NULL) {
@@ -220,13 +212,9 @@ int equivalentroles(struct role *role1, struct role *role2) {
     while(dr1!=NULL) {
       if (dr2==NULL)
 	return 0;
-      if (!equivalentstrings(dr1->classname, dr2->classname))
+      if (dr1->globalname!=dr2->globalname)
 	return 0;
-      if (!equivalentstrings(dr1->globalname, dr2->globalname))
-	return 0;
-      if (!equivalentstrings(dr1->methodname, dr2->methodname))
-	return 0;
-      if (!equivalentstrings(dr1->signature, dr2->signature))
+      if (dr1->methodname!=dr2->methodname)
 	return 0;
       if (!equivalentstrings(dr1->lvname, dr2->lvname))
 	return 0;
@@ -245,9 +233,9 @@ int equivalentroles(struct role *role1, struct role *role2) {
     while(rfl1!=NULL) {
       if (rfl2==NULL)
 	return 0;
-      if (!equivalentstrings(rfl1->class, rfl2->class))
+      if (rfl1->field!=rfl2->field)
 	return 0;
-      if (!equivalentstrings(rfl1->field, rfl2->field))
+      if (rfl1->duplicates!=rfl2->duplicates)
 	return 0;
       rfl1=rfl1->next;
       rfl2=rfl2->next;
@@ -263,9 +251,10 @@ int equivalentroles(struct role *role1, struct role *role2) {
     while(ral1!=NULL) {
       if (ral2==NULL)
 	return 0;
-      if (!equivalentstrings(ral1->class, ral2->class))
+      if (ral1->class!=ral2->class)
 	return 0;
-
+      if (ral1->duplicates!=ral2->duplicates)
+	return 0;
       ral1=ral1->next;
       ral2=ral2->next;
     }
@@ -280,9 +269,9 @@ int equivalentroles(struct role *role1, struct role *role2) {
     while(ri1!=NULL) {
       if (ri2==NULL)
 	return 0;
-      if (!equivalentstrings(ri1->fieldname1,ri2->fieldname1))
+      if (ri1->fieldname1!=ri2->fieldname1)
 	return 0;
-      if (!equivalentstrings(ri1->fieldname2,ri2->fieldname2))
+      if (ri1->fieldname2!=ri2->fieldname2)
 	return 0;
       ri1=ri1->next;
       ri2=ri2->next;
@@ -298,9 +287,7 @@ int equivalentroles(struct role *role1, struct role *role2) {
     while(rfl1!=NULL) {
       if (rfl2==NULL)
 	return 0;
-      if (!equivalentstrings(rfl1->class, rfl2->class))
-	return 0;
-      if (!equivalentstrings(rfl1->field, rfl2->field))
+      if (rfl1->field!=rfl2->field)
 	return 0;
       rfl1=rfl1->next;
       rfl2=rfl2->next;
@@ -313,7 +300,7 @@ int equivalentroles(struct role *role1, struct role *role2) {
 }
 
 void assignhashcode(struct role * role) {
-  int hashcode=hashstring(role->class);
+  int hashcode=hashptr(role->class);
 
   struct rolereferencelist * dr=role->dominatingroots;
   struct rolefieldlist * rfl=role->pointedtofl;
@@ -329,35 +316,32 @@ void assignhashcode(struct role * role) {
   }
 
   while(dr!=NULL) {
-    hashcode^=hashstring(dr->classname);
-    hashcode^=hashstring(dr->globalname);
-    hashcode^=hashstring(dr->methodname);
-    hashcode^=hashstring(dr->signature);
+    hashcode^=hashptr(dr->globalname);
+    hashcode^=hashptr(dr->methodname);
+
     hashcode^=hashstring(dr->lvname);
     hashcode^=hashstring(dr->sourcename);
     dr=dr->next;
   }
 
   while(rfl!=NULL) {
-    hashcode^=hashstring(rfl->class);
-    hashcode^=hashstring(rfl->field);
+    hashcode^=hashptr(rfl->field);
     rfl=rfl->next;
   }
 
   while(rfl2!=NULL) {
-    hashcode^=hashstring(rfl2->class);
-    hashcode^=hashstring(rfl2->field);
+    hashcode^=hashptr(rfl2->field);
     rfl2=rfl2->next;
   }
 
   while(ral!=NULL) {
-    hashcode^=hashstring(ral->class);
+    hashcode^=hashptr(ral->class);
     ral=ral->next;
   }
   
   while(ri!=NULL) {
-    hashcode^=hashstring(ri->fieldname1);
-    hashcode^=hashstring(ri->fieldname2);
+    hashcode^=hashptr(ri->fieldname1);
+    hashcode^=hashptr(ri->fieldname2);
     ri=ri->next;
   }
 
@@ -401,16 +385,11 @@ void freerole(struct role * role) {
   struct rolearraylist * ral=role->pointedtoal;
   struct identity_relation *ri=role->identities;
   struct rolefieldlist * rfl2=role->nonnullfields;
-  free(role->class);
   free(role->methodscalled);
   free(role);
 
   while(dr!=NULL) {
     struct rolereferencelist *tmp=dr->next;
-    free(dr->classname);
-    free(dr->globalname);
-    free(dr->methodname);
-    free(dr->signature);
     free(dr->lvname);
     free(dr->sourcename);
     free(dr);
@@ -419,23 +398,18 @@ void freerole(struct role * role) {
 
   while(rfl!=NULL) {
     struct rolefieldlist *tmp=rfl->next;
-    free(rfl->class);
-    free(rfl->field);
     free(rfl);
     rfl=tmp;
   }
 
   while(rfl2!=NULL) {
     struct rolefieldlist *tmp=rfl2->next;
-    free(rfl2->class);
-    free(rfl2->field);
     free(rfl2);
     rfl2=tmp;
   }
 
   while(ral!=NULL) {
     struct rolearraylist *tmp=ral->next;
-    free(ral->class);
     free(ral);
     ral=tmp;
   }
@@ -485,7 +459,7 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
   struct role * objrole=(struct role *)calloc(1, sizeof(struct role));
   struct referencelist *dominators=calculatedominators(dommapping, ho);
 
-  objrole->class=copystr(ho->class);
+  objrole->class=ho->class;
 
   if(ho->methodscalled!=NULL) {
     int i=0;
@@ -502,15 +476,12 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
     struct rolereferencelist *domroots=(struct rolereferencelist *) calloc(1,sizeof(struct rolereferencelist));
     
     if (dominators->lv!=NULL) {
-      domroots->classname=copystr(dominators->lv->m->classname);
-      domroots->methodname=copystr(dominators->lv->m->methodname);
-      domroots->signature=copystr(dominators->lv->m->signature);
+      domroots->methodname=dominators->lv->m->methodname;
       domroots->lvname=copystr(dominators->lv->name);
       domroots->sourcename=copystr(dominators->lv->sourcename);
       domroots->linenumber=dominators->lv->linenumber;
     } else {
-      domroots->classname=copystr(dominators->gl->classname);
-      domroots->globalname=copystr(dominators->gl->fieldname);
+      domroots->globalname=dominators->gl->fieldname;
     }
     free(dominators);
     dominators=tmp;
@@ -522,14 +493,13 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
     struct arraylist *al=ho->reversearray;
     while(fl!=NULL) {
       struct rolefieldlist *rfl=(struct rolefieldlist *) calloc(1,sizeof(struct rolefieldlist));
-      rfl->class=copystr(fl->src->class);
-      rfl->field=copystr(fl->fieldname);
+      rfl->field=fl->fieldname;
       insertrfl(objrole,rfl);
       fl=fl->dstnext;
     }
     while(al!=NULL) {
       struct rolearraylist *ral=(struct rolearraylist *) calloc(1,sizeof(struct rolearraylist));
-      ral->class=copystr(al->src->class);
+      ral->class=al->src->class;
       insertral(objrole,ral);
       al=al->dstnext;
     }
@@ -545,8 +515,7 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
     struct fieldlist *fl=ho->fl;
     while(fl!=NULL) {
       struct rolefieldlist *rfl=(struct rolefieldlist *) calloc(1,sizeof(struct rolefieldlist));
-      rfl->class=copystr(fl->src->class);
-      rfl->field=copystr(fl->fieldname);
+      rfl->field=fl->fieldname;
       insertnonfl(objrole,rfl);
       fl=fl->next;
     }
@@ -557,17 +526,22 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
 
 int comparedomroots(struct rolereferencelist *r1, struct rolereferencelist *r2) {
   int t;
-  if ((t=strcmp(r1->classname,r2->classname))!=0)
-    return t;
-  else if (r1->globalname!=NULL) {
+  if (r1->globalname!=NULL) {
     if (r2->globalname!=NULL) {
-      return strcmp(r1->classname, r2->classname);
+      if (r1->globalname==r2->globalname)
+	return 0;
+      if (r1->globalname>r2->globalname)
+	return 1;
+      else
+	return -1;
     } else return -1;
   } else if (r2->globalname!=NULL) return 1;
-  else if ((t=strcmp(r1->methodname,r2->methodname))!=0)
-    return t;
-  else if ((t=strcmp(r1->signature,r2->signature))!=0)
-    return t;
+  else if (r1->methodname!=r2->methodname) {
+    if (r1->methodname>r2->methodname)
+      return 1;
+    else
+      return -1;
+  }
   else if ((t=strcmp(r1->lvname,r2->lvname))!=0)
     return t;
   else if ((t=strcmp(r1->sourcename,r2->sourcename))!=0)
@@ -626,10 +600,17 @@ void sortidentities(struct role *role) {
 }
 
 int compareidentity(struct identity_relation *ir1, struct identity_relation *ir2) {
-  int tmp;
-  if ((tmp=strcmp(ir1->fieldname1, ir2->fieldname1))!=0)
-    return tmp;
-  return strcmp(ir1->fieldname2, ir2->fieldname2);
+  if (ir1->fieldname1!=ir2->fieldname1) {
+    if (ir1->fieldname1<ir2->fieldname1)
+      return 1;
+    else
+      return -1;
+  }
+  if (ir1->fieldname2==ir2->fieldname2)
+    return 0;
+  if (ir1->fieldname2<ir2->fieldname2)
+    return 1;
+  return -1;
 }
 
 void insertnonfl(struct role * role, struct rolefieldlist * rfl) {
@@ -693,11 +674,11 @@ void insertrfl(struct role * role, struct rolefieldlist * rfl) {
 }
 
 int fieldcompare(struct rolefieldlist *field1, struct rolefieldlist *field2) {
-  int tmp;
-  if ((tmp=strcmp(field1->class,field2->class))!=0)
-    return tmp;
-  else
-    return strcmp(field1->field, field2->field);
+  if (field1->field==field2->field)
+    return 0;
+  if (field1->field<field2->field)
+    return 1;
+  return -1;
 }
 
 void insertral(struct role * role, struct rolearraylist * ral) {
@@ -708,7 +689,7 @@ void insertral(struct role * role, struct rolearraylist * ral) {
     role->pointedtoal=ral;
     return;
   }
-  rcmp=(strcmp(ral->class, role->pointedtoal->class)<0);
+  rcmp=(ral->class< role->pointedtoal->class);
   if (rcmp<0) {
     ral->next=role->pointedtoal;
     role->pointedtoal=ral;
@@ -721,10 +702,9 @@ void insertral(struct role * role, struct rolearraylist * ral) {
     return;
   }
   while(tmpptr->next!=NULL) {
-    int rcmp=strcmp(ral->class,tmpptr->next->class);
-    if (rcmp>0)
+    if (ral->class>tmpptr->next->class)
       break;
-    if (rcmp==0) {
+    if (ral->class==tmpptr->next->class) {
       if (tmpptr->next->duplicates<DUPTHRESHOLD)
 	tmpptr->next->duplicates++;
       free(ral);
@@ -746,8 +726,8 @@ struct identity_relation * find_identities(struct heap_object *ho) {
     while(fl2!=NULL) {
       if (fl2->object==ho) {
 	struct identity_relation *newidentity=(struct identity_relation *) calloc(1,sizeof(struct identity_relation));
-	newidentity->fieldname1=copystr(fl1->fieldname);
-	newidentity->fieldname2=copystr(fl2->fieldname);	
+	newidentity->fieldname1=fl1->fieldname;
+	newidentity->fieldname2=fl2->fieldname;	
 	newidentity->next=irptr;
 	irptr=newidentity;
       }
@@ -761,8 +741,6 @@ struct identity_relation * find_identities(struct heap_object *ho) {
 void free_identities(struct identity_relation *irptr) {
   while(irptr!=NULL) {
     struct identity_relation * tmpptr=irptr->next;
-    free(irptr->fieldname1);
-    free(irptr->fieldname2);
     free(irptr);
     irptr=tmpptr;
   }
@@ -770,7 +748,7 @@ void free_identities(struct identity_relation *irptr) {
 
 void print_identities(struct identity_relation *irptr) {
   while(irptr!=NULL) {
-    printf("  Relation: %s.%s\n",irptr->fieldname1,irptr->fieldname2);
+    printf("  Relation: %s.%s\n",irptr->fieldname1->fieldname,irptr->fieldname2->fieldname);
     irptr=irptr->next;
   }
 }

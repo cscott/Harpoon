@@ -28,9 +28,6 @@ struct rolemethod * methodaddtable(struct heap_state * heap , struct rolemethod 
 void methodfree(struct rolemethod *method) {
   struct rolereturnstate * rrs=method->returnstates;
   int i;
-  free(method->classname);
-  free(method->methodname);
-  free(method->signature);
   for(i=0;i<method->numobjectargs;i++) {
     free(method->paramroles[i]);
   }
@@ -77,9 +74,7 @@ void addrolereturn(struct rolemethod * method, struct rolereturnstate *rrs) {
 
 void methodassignhashcode(struct rolemethod * method) {
   int i;
-  int hashcode=hashstring(method->classname);
-  hashcode^=hashstring(method->methodname);
-  hashcode^=hashstring(method->signature);
+  int hashcode=hashptr(method->methodname);
   for(i=0;i<method->numobjectargs;i++)
     hashcode^=hashstring(method->paramroles[i]);
   method->hashcode=hashcode;
@@ -90,11 +85,7 @@ int comparerolemethods(struct rolemethod * m1, struct rolemethod *m2) {
 
   if (m1->hashcode!=m2->hashcode)
     return 0;
-  if (!equivalentstrings(m1->classname, m2->classname))
-    return 0;
-  if (!equivalentstrings(m1->methodname, m2->methodname))
-    return 0;
-  if (!equivalentstrings(m1->signature, m2->signature))
+  if (m1->methodname!=m2->methodname)
     return 0;
   if (m1->numobjectargs!=m2->numobjectargs) {
     printf("ERROR:  numobjectargs mimatch\n");
@@ -115,7 +106,7 @@ void printrolemethod(struct rolemethod *method) {
   int i;
   struct rolereturnstate *rrs=method->returnstates;
   printf("Method {\n");
-  printf(" %s.%s%s\n",method->classname,method->methodname,method->signature);
+  printf(" %s.%s%s\n",method->methodname->classname->classname,method->methodname->methodname,method->methodname->signature);
   printf("  isStatic=%d\n  ",method->isStatic);
   for(i=0;i<method->numobjectargs;i++)
     printf("%s ",method->paramroles[i]);

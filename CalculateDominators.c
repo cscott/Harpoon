@@ -9,7 +9,7 @@
 #endif
 
 #define NOBORINGDOM 1
-//#define NOLVDOM 1
+#define NOLVDOM 1
 
 struct referencelist * calculatedominators(struct genhashtable * dommapping,struct heap_object *ho) {
   struct referencelist *rl=ho->rl;
