@@ -9,9 +9,9 @@ import harpoon.ClassFile.HField;
  * <code>FieldValueList</code> holds field values.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldValueList.java,v 1.1.2.4 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: FieldValueList.java,v 1.1.2.5 1999-08-07 11:20:19 cananian Exp $
  */
-final class FieldValueList {
+final class FieldValueList implements java.io.Serializable {
     /** which field this value is for. */
     final HField which;
     /** the value of the field. */

@@ -57,46 +57,83 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.12 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.13 1999-08-07 11:20:19 cananian Exp $
  */
 public final class Method extends HCLibrary {
+
+    /** Write a start-up static state to disk. */
+    public static final void makeStartup(HCodeFactory hcf,
+					 java.io.OutputStream os)
+	throws java.io.IOException {
+	StaticState ss = new StaticState(hcf);
+	try {
+	    HMethod HMinit = HCsystem.getMethod("initializeSystemClass","()V");
+	    // set up static state.
+	    ss.load(HCsystem);
+	    invoke(ss, HMinit, new Object[0]);
+	    System.err.println("Writing.");
+	    java.io.ObjectOutputStream oos=new java.io.ObjectOutputStream(os);
+	    oos.writeObject(ss);
+	    oos.close();
+	} catch (InterpretedThrowable it) { prettyPrint(ss, it); }
+    }
+
+    /** invoke a static main method, using a static state loaded from disk. */
+    public static final void run(PrintWriter prof, HCodeFactory hcf,
+				 HClass cls, String[] args,
+				 java.io.InputStream is)
+	throws java.io.IOException {
+	StaticState ss;
+	try {
+	    System.err.println("Reading.");
+	    java.io.ObjectInputStream ois = new java.io.ObjectInputStream(is);
+	    ss = (StaticState) ois.readObject();
+	    ss.prof = prof;
+	    ss.hcf = hcf;
+	    ois.close();
+	} catch (ClassNotFoundException e) {
+	    throw new java.io.IOException(e.toString());
+	} try {
+	    run(ss, cls, args);
+	} catch (InterpretedThrowable it) { prettyPrint(ss, it); }
+    }
 
     /** invoke a static main method with no static state. */
     public static final void run(PrintWriter prof, HCodeFactory hcf,
 				 HClass cls, String[] args) {
-	HMethod method=cls.getMethod("main", new HClass[]{ HCstringA });
-	Util.assert(method.isStatic());
-
 	StaticState ss = new StaticState(hcf, prof);
 	try {
 	    HMethod HMinit = HCsystem.getMethod("initializeSystemClass","()V");
 	    // set up static state.
 	    ss.load(HCsystem);
 	    invoke(ss, HMinit, new Object[0]);
-	    // encapsulate params properly.
-	    ArrayRef params=new ArrayRef(ss,HCstringA,new int[]{args.length});
-	    for (int i=0; i<args.length; i++)
-		params.update(i, ss.makeString(args[i]));
-	    // run main() method.
-	    ss.load(cls);
-	    invoke(ss, method, new Object[] { params } );
-	} catch (InterpretedThrowable it) {
-	    String msg = it.ex.type.getName();
-	    try {
-		HMethod hm = it.ex.type.getMethod("toString",new HClass[0]);
-		ObjectRef obj =(ObjectRef)invoke(ss, hm, new Object[]{it.ex});
-		msg = ss.ref2str(obj);
-	    } catch (InterpretedThrowable it0) { /* do nothing */ }
-	    PrintWriter err = new PrintWriter(System.err, true);
-	    err.println("Caught "+msg);
-	    //StaticState.printStackTrace(err, it.stackTrace);
-	    StaticState.printStackTrace(err, (String[]) it.ex.getClosure());
-	} finally {
-	    // try to force finalization of object classes
-	    ss=null;
-	    System.gc();
-	    System.runFinalization();
-	}
+	    run(ss, cls, args);
+	} catch (InterpretedThrowable it) { prettyPrint(ss, it); }
+    }
+
+    private static final void run(StaticState ss, HClass cls, String[] args)
+	throws InterpretedThrowable {
+	HMethod method=cls.getMethod("main", new HClass[]{ HCstringA });
+	Util.assert(method.isStatic());
+	// encapsulate params properly.
+	ArrayRef params=new ArrayRef(ss,HCstringA,new int[]{args.length});
+	for (int i=0; i<args.length; i++)
+	    params.update(i, ss.makeString(args[i]));
+	// run main() method.
+	ss.load(cls);
+	invoke(ss, method, new Object[] { params } );
+    }
+    private static void prettyPrint(StaticState ss, InterpretedThrowable it) {
+	String msg = it.ex.type.getName();
+	try {
+	    HMethod hm = it.ex.type.getMethod("toString",new HClass[0]);
+	    ObjectRef obj =(ObjectRef)invoke(ss, hm, new Object[]{it.ex});
+	    msg = ss.ref2str(obj);
+	} catch (InterpretedThrowable it0) { /* do nothing */ }
+	PrintWriter err = new PrintWriter(System.err, true);
+	err.println("Caught "+msg);
+	//StaticState.printStackTrace(err, it.stackTrace);
+	StaticState.printStackTrace(err, (String[]) it.ex.getClosure());
     }
 
     /** invoke the specified method.  void methods return null. */

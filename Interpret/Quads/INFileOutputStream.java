@@ -15,7 +15,7 @@ import java.io.IOException;
  * methods in <code>java.io.FileOutputStream</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFileOutputStream.java,v 1.1.2.5 1999-08-07 06:59:53 cananian Exp $
+ * @version $Id: INFileOutputStream.java,v 1.1.2.6 1999-08-07 11:20:19 cananian Exp $
  */
 final class INFileOutputStream extends HCLibrary {
     static final void register(StaticState ss) {
@@ -29,6 +29,25 @@ final class INFileOutputStream extends HCLibrary {
 	try { ss.register(initIDs()); } catch (NoSuchMethodError e) { }
     }
     // associate shadow OutputStream with every object.
+    // Make a serializable wrapper for it.
+    static class OutputStreamWrapper implements java.io.Serializable {
+	transient OutputStream os;
+	OutputStreamWrapper(OutputStream os) { this.os = os; }
+	private void writeObject(java.io.ObjectOutputStream out)
+	    throws java.io.IOException {
+	    if (os==System.out) out.writeByte(1);
+	    else if (os==System.err) out.writeByte(2);
+	    else throw new java.io.NotSerializableException();
+	}
+	private void readObject(java.io.ObjectInputStream in)
+	    throws java.io.IOException {
+	    switch(in.readByte()) {
+	    case 1: os = System.out; break;
+	    case 2: os = System.err; break;
+	    default: throw new java.io.InvalidObjectException("Unknown output stream.");
+	    }
+	}
+    }
 
     private static final ObjectRef security(StaticState ss) 
 	throws InterpretedThrowable {
@@ -61,10 +80,10 @@ final class INFileOutputStream extends HCLibrary {
 		// compare given file descriptor.
 		if (fd_obj == ss.get(HCfiledesc.getField("out"))) {
 		    // System.out
-		    obj.putClosure(System.out);
+		    obj.putClosure(new OutputStreamWrapper(System.out));
 		} else if (fd_obj == ss.get(HCfiledesc.getField("err"))) {
 		    // System.err
-		    obj.putClosure(System.err);
+		    obj.putClosure(new OutputStreamWrapper(System.err));
 		} else { // throw error
 		    ObjectRef ex_obj =
 			ss.makeThrowable(HCioE, "unsupported.");
@@ -86,7 +105,7 @@ final class INFileOutputStream extends HCLibrary {
 		String filename = ss.ref2str((ObjectRef) params[1]);
 		System.err.println("OPENING "+filename);
 		try {
-		    obj.putClosure(new FileOutputStream(filename));
+		    obj.putClosure(new OutputStreamWrapper(new FileOutputStream(filename)));
 		    // mark file descriptor to indicate it is 'valid'.
 		    HField hf0 = HCfostream.getField("fd");
 		    HField hf1 = HCfiledesc.getField("fd");
@@ -113,7 +132,7 @@ final class INFileOutputStream extends HCLibrary {
 		String filename = ss.ref2str((ObjectRef) params[1]);
 		System.err.println("OPENING "+filename);
 		try {
-		    obj.putClosure(new FileOutputStream(filename, true));
+		    obj.putClosure(new OutputStreamWrapper(new FileOutputStream(filename, true)));
 		    // mark file descriptor to indicate it is 'valid'.
 		    HField hf0 = HCfostream.getField("fd");
 		    HField hf1 = HCfiledesc.getField("fd");
@@ -136,7 +155,7 @@ final class INFileOutputStream extends HCLibrary {
 	    Object invoke(StaticState ss, Object[] params)
 		throws InterpretedThrowable {
 		ObjectRef obj = (ObjectRef) params[0];
-		OutputStream os = (OutputStream) obj.getClosure();
+		OutputStream os = ((OutputStreamWrapper) obj.getClosure()).os;
 		HField hf = HCfostream.getField("fd");
 		try {
 		    os.close();
@@ -159,7 +178,7 @@ final class INFileOutputStream extends HCLibrary {
 		throws InterpretedThrowable {
 		ObjectRef obj = (ObjectRef) params[0];
 		Integer b = (Integer) params[1];
-		OutputStream os = (OutputStream) obj.getClosure();
+		OutputStream os = ((OutputStreamWrapper) obj.getClosure()).os;
 		try {
 		    os.write(b.intValue());
 		    return null;
@@ -186,7 +205,7 @@ final class INFileOutputStream extends HCLibrary {
 		for (int i=0; i<b.length; i++)
 		    b[i] = ((Byte) ba.get(off+i)).byteValue();
 
-		OutputStream os = (OutputStream) obj.getClosure();
+		OutputStream os = ((OutputStreamWrapper) obj.getClosure()).os;
 		try {
 		    os.write(b, 0, len);
 		    return null;

@@ -18,9 +18,9 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.8 1999-08-04 05:52:31 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.9 1999-08-07 11:20:20 cananian Exp $
  */
-final class StaticState extends HCLibrary {
+final class StaticState extends HCLibrary implements java.io.Serializable {
     /** which code representation to use. */
     /*final*/ HCodeFactory hcf;
     StaticState(HCodeFactory hcf) { this(hcf, null); }
@@ -29,10 +29,18 @@ final class StaticState extends HCLibrary {
 	this.hcf = hcf; this.prof = prof;
 	Support.registerNative(this);
     }
+    private void readObject(java.io.ObjectInputStream in)
+	throws java.io.IOException, ClassNotFoundException {
+	this.nativeRegistry = new HashMap();
+	this.nativeClosure = new HashMap();
+	this.internTable = new HashMap();
+	Support.registerNative(this);
+	in.defaultReadObject();
+    }
     // ----------------------------
     /** mapping of classes to their static fields. */
     final private Map classInfo = new HashMap();// no unloading.
-    private static class ClassHeader {
+    private static class ClassHeader implements java.io.Serializable {
 	FieldValueList fvl=null;
     }
     private FieldValueList get(HClass cls) {
@@ -103,7 +111,7 @@ final class StaticState extends HCLibrary {
     }
     // -------------------------
     // intern() table for strings.
-    final private Map internTable = new HashMap();
+    private transient Map internTable = new HashMap();
     final ObjectRef intern(ObjectRef src) {
 	return makeStringIntern(ref2str(src));
     }
@@ -121,9 +129,11 @@ final class StaticState extends HCLibrary {
 	    ca[i] = ((Character)value.get(i+offset)).charValue();
 	return new String(ca);
     }
-    final ObjectRef makeString(String s)
+    final ObjectRef makeString(String s) {
+	return makeString(s, new ObjectRef(this, HCstring));
+    }
+    private final ObjectRef makeString(String s, ObjectRef obj)
 	throws InterpretedThrowable {
-	ObjectRef obj = new ObjectRef(this, HCstring);
 	ArrayRef ca=new ArrayRef(this, HCcharA, new int[]{s.length()});
 	for (int i=0; i<s.length(); i++)
 	    ca.update(i, new Character(s.charAt(i)));
@@ -131,11 +141,17 @@ final class StaticState extends HCLibrary {
 	Method.invoke(this, hm, new Object[] { obj, ca } );
 	return obj;
     }
-    final ObjectRef makeStringIntern(String s) 
+    final ObjectRef makeStringIntern(final String s) 
 	throws InterpretedThrowable {
 	ObjectRef obj = (ObjectRef) internTable.get(s);
 	if (obj!=null) return obj;
-	obj = makeString(s);
+	// special subclass of ObjectRef that will intern itself on input.
+	obj = makeString(s, new ObjectRef(this, HCstring) {
+	    public Object readResolve() {
+		if (!internTable.containsKey(s)) internTable.put(s, this);
+		return internTable.get(s);
+	    }
+	});
 	internTable.put(s, obj);
 	return obj;
     }
@@ -155,8 +171,8 @@ final class StaticState extends HCLibrary {
     }
     // --------------------------------------------------------
     // NATIVE METHOD SUPPORT:
-    private final Map nativeRegistry = new HashMap();
-    private final Map nativeClosure = new HashMap();
+    private transient Map nativeRegistry = new HashMap();
+    private Map nativeClosure = new HashMap();
     final void register(NativeMethod nm) {
 	nativeRegistry.put(nm.getMethod(), nm);
     }
@@ -173,7 +189,7 @@ final class StaticState extends HCLibrary {
     }
     // --------------------------------------------------------
     // PROFILING SUPPORT.
-    public /*final*/ PrintWriter prof;
+    public transient PrintWriter prof;
     private long count; // instruction count.
     final synchronized void incrementInstructionCount() { count++; }
     final synchronized long getInstructionCount() { return count; }

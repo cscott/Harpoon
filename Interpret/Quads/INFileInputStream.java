@@ -15,7 +15,7 @@ import java.io.IOException;
  * methods in <code>java.io.FileInputStream</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFileInputStream.java,v 1.1.2.4 1999-08-07 06:59:53 cananian Exp $
+ * @version $Id: INFileInputStream.java,v 1.1.2.5 1999-08-07 11:20:19 cananian Exp $
  */
 final class INFileInputStream extends HCLibrary {
     static final void register(StaticState ss) {
@@ -30,6 +30,23 @@ final class INFileInputStream extends HCLibrary {
 	try { ss.register(initIDs()); } catch (NoSuchMethodError e) { }
     }
     // associate shadow InputStream with every object.
+    // Make a serializable wrapper for it.
+    static class InputStreamWrapper implements java.io.Serializable {
+	transient InputStream is;
+	InputStreamWrapper(InputStream is) { this.is = is; }
+	private void writeObject(java.io.ObjectOutputStream out)
+	    throws java.io.IOException {
+	    if (is==System.in) out.writeByte(0);
+	    else throw new java.io.NotSerializableException();
+	}
+	private void readObject(java.io.ObjectInputStream in)
+	    throws java.io.IOException {
+	    switch(in.readByte()) {
+	    case 0: is = System.in; break;
+	    default: throw new java.io.InvalidObjectException("Unknown input stream.");
+	    }
+	}
+    }
 
     private static final ObjectRef security(StaticState ss) 
 	throws InterpretedThrowable {
@@ -62,7 +79,7 @@ final class INFileInputStream extends HCLibrary {
 		// compare supplied file descriptor to FileDescriptor.in
 		HField hf = HCfiledesc.getField("in");
 		if (fd_obj == ss.get(hf)) { // System.in
-		    obj.putClosure(System.in);
+		    obj.putClosure(new InputStreamWrapper(System.in));
 		    HField hf0 = HCfistream.getField("fd");
 		    obj.update(hf0, fd_obj);
 		    return null;
@@ -84,7 +101,7 @@ final class INFileInputStream extends HCLibrary {
 		String filename = ss.ref2str((ObjectRef) params[1]);
 		System.err.println("OPENING "+filename);
 		try {
-		    obj.putClosure(new FileInputStream(filename));
+		    obj.putClosure(new InputStreamWrapper(new FileInputStream(filename)));
 		    // mark file descriptor to indicate it is 'valid'.
 		    HField hf0 = HCfistream.getField("fd");
 		    HField hf1 = HCfiledesc.getField("fd");
@@ -107,7 +124,7 @@ final class INFileInputStream extends HCLibrary {
 	    Object invoke(StaticState ss, Object[] params)
 		throws InterpretedThrowable {
 		ObjectRef obj = (ObjectRef) params[0];
-		InputStream is = (InputStream) obj.getClosure();
+		InputStream is = ((InputStreamWrapper) obj.getClosure()).is;
 		HField hf = HCfistream.getField("fd");
 		try {
 		    is.close();
@@ -129,7 +146,7 @@ final class INFileInputStream extends HCLibrary {
 	    Object invoke(StaticState ss, Object[] params)
 		throws InterpretedThrowable {
 		ObjectRef obj = (ObjectRef) params[0];
-		InputStream is = (InputStream) obj.getClosure();
+		InputStream is = ((InputStreamWrapper) obj.getClosure()).is;
 		try {
 		    return new Integer(is.read());
 		} catch (IOException e) {
@@ -150,7 +167,7 @@ final class INFileInputStream extends HCLibrary {
 		ArrayRef ba = (ArrayRef) params[1];
 		int off = ((Integer) params[2]).intValue();
 		int len = ((Integer) params[3]).intValue();
-		InputStream is = (InputStream) obj.getClosure();
+		InputStream is = ((InputStreamWrapper) obj.getClosure()).is;
 		try {
 		    byte[] b = new byte[len];
 		    len = is.read(b, 0, len);
@@ -174,7 +191,7 @@ final class INFileInputStream extends HCLibrary {
 		throws InterpretedThrowable {
 		ObjectRef obj = (ObjectRef) params[0];
 		Long n = (Long) params[1];
-		InputStream is = (InputStream) obj.getClosure();
+		InputStream is = ((InputStreamWrapper) obj.getClosure()).is;
 		try {
 		    return new Long(is.skip(n.longValue()));
 		} catch (IOException e) {
@@ -192,7 +209,7 @@ final class INFileInputStream extends HCLibrary {
 	    Object invoke(StaticState ss, Object[] params)
 		throws InterpretedThrowable {
 		ObjectRef obj = (ObjectRef) params[0];
-		InputStream is = (InputStream) obj.getClosure();
+		InputStream is = ((InputStreamWrapper) obj.getClosure()).is;
 		try {
 		    return new Integer(is.available());
 		} catch (IOException e) {

@@ -12,13 +12,13 @@ import harpoon.Util.Util;
  * <code>ObjectRef</code> is an object reference in the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectRef.java,v 1.1.2.8 1999-08-04 05:52:31 cananian Exp $
+ * @version $Id: ObjectRef.java,v 1.1.2.9 1999-08-07 11:20:20 cananian Exp $
  */
-class ObjectRef extends Ref {
+class ObjectRef extends Ref implements java.io.Serializable {
     /** Fields in this instance of the object. */
     FieldValueList fields;
     /** Native method closure. */
-    Object closure;
+    Object closure; // must be serializable!
 
     /** create a new objectref with default field values.
      * @exception InterpretedThrowable

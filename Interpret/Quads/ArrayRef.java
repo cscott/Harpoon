@@ -13,9 +13,9 @@ import harpoon.Util.Util;
  * by the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayRef.java,v 1.1.2.6 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: ArrayRef.java,v 1.1.2.7 1999-08-07 11:20:19 cananian Exp $
  */
-final class ArrayRef extends Ref {
+final class ArrayRef extends Ref implements java.io.Serializable {
     /** Elements of the array (primitives or Refs) */
     final Object[] elements;
 
