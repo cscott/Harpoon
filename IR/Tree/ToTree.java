@@ -50,6 +50,7 @@ import harpoon.IR.Quads.QuadKind;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Label;
+import harpoon.Temp.LabelList;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
@@ -67,14 +68,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.Stack;
+import java.util.TreeMap;
 
 /**
  * The ToTree class is used to translate low-quad code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.83 2000-06-23 23:05:56 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.84 2000-07-02 04:15:37 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -173,7 +176,8 @@ class ToTree {
 	    //  think:  0 1[2]3 4  (if 2 is the default)
 	    //         [2]0 1 3 4
 	    Edge edge = q.nextEdge((i==0)?def:(i<=def)?i-1:i);
-	    if (n > 1) { // label sigma outputs, and emit proper fixup code
+	    if (q instanceof harpoon.IR.Quads.SIGMA) {
+		// label sigma outputs, and emit proper fixup code
 		tv.emitLabel(tv.label(edge), /*for line # info:*/q);
 		tv.emitSigmaFixup((harpoon.IR.Quads.SIGMA)q,
 				  edge.which_succ());
@@ -539,27 +543,153 @@ static class TranslationVisitor extends LowQuadVisitor {
     }
 
     // Naive implementation
-    public void visit(harpoon.IR.Quads.SWITCH q) { 
+    public void visit(final harpoon.IR.Quads.SWITCH q) { 
 	// move (possibly folded) discriminant into Temp, since we'll be
 	// evaluating it multiple times.
-	Temp index = m_ctm.tempMap(q.index());
+	final Temp index = m_ctm.tempMap(q.index());
 	addStmt(new MOVE(m_tf, q,
 			 _TEMP(q, HClass.Int, index),
 			 _TEMP(q.index(), q)));
-	// okay, now translate SWITCH
-	CJUMP branch;
+	// sort keys by inserting into TreeMap (n ln n time)
+	final SortedMap cases = new TreeMap();
 	for (int i=0; i<q.keysLength(); i++) {
-	    Label lNext = (i+1 < q.keysLength()) ? new Label() :
-		label(q.nextEdge(q.keysLength())); // handle default case
-	    branch = new CJUMP
-		(m_tf, q, new BINOP(m_tf, q, Type.INT, Bop.CMPEQ, 
-				    _TEMP(q, HClass.Int, index), 
-				    new CONST(m_tf, q, q.keys(i))),
-		 label(q.nextEdge(i)),
-		 lNext);
-	    addStmt(branch);
-	    if (i+1 < q.keysLength())
-		addStmt(new LABEL(m_tf, q, lNext, false));
+	    Object chk=cases.put(new Integer(q.keys(i)), label(q.nextEdge(i)));
+	    Util.assert(chk==null, "duplicate key in switch statement!");
+	}
+	final Label deflabel = label(q.nextEdge(q.keysLength()));
+	// bail out of zero-key case.
+	if (cases.size()==0) {
+	    addStmt(new JUMP(m_tf, q, deflabel));
+	    return;
+	}
+	// select translation depending on size and sparsity of the keys array.
+	// (note that we now know that keysLength() is greater than 0)
+	int min_key = ((Integer)cases.firstKey()).intValue();
+	int max_key = ((Integer)cases.lastKey()).intValue();
+	double sparsity = ((double)max_key - min_key) / q.keysLength();
+
+	// SWITCH TRANSLATIONS:
+
+	// for small numbers of keys, it's most efficient to test each.
+	if ( (q.keysLength() > 5/* this is a magic number*/) &&
+	     (sparsity < 3/* oh, look! another magic number! */)) {
+	    // DIRECT JUMP TABLE
+	    // first check if < min or > max (this means default!)
+	    Label l1 = new Label(), l2 = new Label(), l3 = new Label();
+	    addStmt(new CJUMP
+		    (m_tf, q, new BINOP(m_tf, q, Type.INT, Bop.CMPLT,
+					_TEMP(q, HClass.Int, index),
+					new CONST(m_tf, q, min_key)),
+		     deflabel, l1));
+	    addStmt(new LABEL(m_tf, q, l1, false));
+	    addStmt(new CJUMP
+		    (m_tf, q, new BINOP(m_tf, q, Type.INT, Bop.CMPGT,
+					_TEMP(q, HClass.Int, index),
+					new CONST(m_tf, q, max_key)),
+		     deflabel, l2));
+	    addStmt(new LABEL(m_tf, q, l2, false));
+	    // construct LabelList of possible targets
+	    LabelList targets = new LabelList(deflabel, null);
+	    for (Iterator it=cases.values().iterator(); it.hasNext(); )
+		targets = new LabelList((Label)it.next(), targets);
+	    // okay, do the jump!
+	    boolean pointersAreLong = Type.isDoubleWord(m_tf, Type.POINTER);
+	    addStmt(new JUMP
+		    (m_tf, q,
+		     makeMEM
+		     (q, HClass.Void,
+		      new BINOP(m_tf, q, Type.POINTER, Bop.ADD,
+				new NAME(m_tf, q, l3),
+				new BINOP
+				(m_tf, q, Type.INT, Bop.SHL,
+				 new BINOP(m_tf, q, Type.INT, Bop.ADD,
+					   _TEMP(q, HClass.Int, index),
+					   new CONST(m_tf, q, -min_key)),
+				 new CONST(m_tf, q, pointersAreLong?3:2)))),
+		     targets));
+	    // and lastly, emit the jump table.
+	    addStmt(new LABEL(m_tf, q, l3, false));
+	    int expected=min_key;
+	    for (Iterator it=cases.entrySet().iterator(); it.hasNext(); ) {
+		Map.Entry thiscase = (Map.Entry) it.next();
+		int thiskey = ((Integer)thiscase.getKey()).intValue();
+		Label thislabel = (Label)thiscase.getValue();
+		while (expected++ < thiskey)
+		    addStmt(new DATUM(m_tf, q, new NAME(m_tf, q, deflabel)));
+		addStmt(new DATUM(m_tf, q, new NAME(m_tf, q, thislabel)));
+	    }
+	    // done
+	} else {
+	    // BINARY-SEARCH THROUGH JUMP TABLE
+	    // this is used for sparse or small switch statements.
+	    class SwitchState { // class to help out our recursion.
+		private final Map.Entry[] keya = (Map.Entry[])
+		    cases.entrySet().toArray(new Map.Entry[cases.size()]);
+		int key(int i) {return ((Integer)keya[i].getKey()).intValue();}
+		Label label(int i) { return (Label)keya[i].getValue(); }
+
+		private void emit(int low, int high) {
+		    if (high-low < 2/*what did we say about magic numbers?*/) {
+			// emit simple equality checks for "small" ranges.
+			for (int i=low; i<=high; i++) {
+			    Label lNext = (i!=high) ? new Label() : deflabel;
+			    addStmt(new CJUMP
+				    (m_tf, q,
+				     new BINOP
+				     (m_tf, q, Type.INT, Bop.CMPEQ,
+				      _TEMP(q, HClass.Int, index),
+				      new CONST(m_tf, q, key(i))),
+				     label(i), lNext));
+			    if (i!=high)
+				addStmt(new LABEL(m_tf, q, lNext, false));
+			}
+		    } else {
+			// divide and conquer for "larger" ranges.
+			int mid = (high+low)/2;
+			// emit equality test against keys(mid)
+			Label lNext = new Label();
+			addStmt(new CJUMP
+				(m_tf, q,
+				 new BINOP
+				 (m_tf, q, Type.INT, Bop.CMPEQ,
+				  _TEMP(q, HClass.Int, index),
+				  new CONST(m_tf, q, key(mid))),
+				 label(mid), lNext));
+			addStmt(new LABEL(m_tf, q, lNext, false));
+			// apply pigeonhole principle:
+			boolean gtP = pigeonhole(mid+1, high);
+			Label gtL = gtP ? label(high) : new Label();
+			boolean ltP = pigeonhole(low, mid-1);
+			Label ltL = ltP ? label(low) : new Label();
+			// test lower than key
+			addStmt(new CJUMP
+				(m_tf, q,
+				 new BINOP
+				 (m_tf, q, Type.INT, Bop.CMPLT,
+				  _TEMP(q, HClass.Int, index),
+				  new CONST(m_tf, q, key(mid))),
+				 /*< and > labels*/ltL, gtL));
+			// greater-than case
+			if (!gtP) { //(sometimes we can skip this)
+			    addStmt(new LABEL(m_tf, q, gtL, false));
+			    emit(mid+1, high); // i love recursion.
+			}
+			// less-than case
+			if (!ltP) { //(sometimes we can skip this)
+			    addStmt(new LABEL(m_tf, q, ltL, false));
+			    emit(low, mid-1); // really, i do!
+			}
+			// done!
+		    }
+		}
+		boolean pigeonhole(int low, int high) {
+		    // sometimes we can skip a test due to pigeonholing.
+		    return (low==high) && (low>0) && (high < keya.length-1) &&
+			/*pigeonhole:*/((key(high+1) - key(low-1)) == 2);
+		}
+	    }
+	    // use helper to recurse, emitting the test-and-branch chains.
+	    new SwitchState().emit(0, cases.size()-1);
 	}
     }
   
