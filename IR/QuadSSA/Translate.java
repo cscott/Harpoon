@@ -31,7 +31,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.84 1998-10-11 05:55:16 cananian Exp $
+ * @version $Id: Translate.java,v 1.85 1998-10-12 01:49:21 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -283,27 +283,78 @@ class Translate  { // not public.
 	Quad.addEdge(quads, 0, q1, 0);
 	Quad.addEdge(q1, 0, q2, 0);
 
+	/* From section 8.4.3.5 of the Java Language Specification: */
+	/* A synchronized method acquires a lock (17.1) before it
+	 * executes. For a class (static) method, the lock associated
+	 * with the Class object (20.3) for the method's class is
+	 * used. For an instance method, the lock associated with
+	 * 'this' (the object for which the method was invoked) is
+	 * used. These are the same locks that can be used by the
+	 * synchronized statement (14.17). */
+	/* In particular, static synchronized methods are equivalent to:
+	 *   synchronized (Class.forName("CLASSNAME")) { ...method body... }
+	 * wrapped in a catch of ClassNotFoundException. */
+	Temp lock = null;
+
 	// if method is synchronized, place MONITORENTER at top.
 	Quad q = q2;
 	if (isSynchronized) {
-	    Util.assert(!isStatic);
-	    q = new MONITORENTER(firstInstr, s.lv[0] /* this */ );
-	    Quad.addEdge(q2, 0, q, 0);
+	    if (!isStatic) { // virtual synchronized is easy.
+		lock = s.lv[0]; // 'this'
+		q = new MONITORENTER(firstInstr, lock);
+		Quad.addEdge(q2, 0, q, 0);
+	    } else { // static synchronized, what a kludge.
+		lock = new Temp(); // lock is Class.forName(this.class)
+		HClass strC = HClass.forClass(String.class);
+		HClass exC = HClass.forClass(NoClassDefFoundError.class);
+		Quad qq0 = new CONST(quads, s.extra(0), 
+				     bytecode.getMethod().getDeclaringClass()
+				     .getName(), strC);
+		Quad qq1 = new CALL(quads, 
+				    HClass.forClass(Class.class)
+				    .getMethod("forName", 
+					       new HClass[] { strC } ),
+				    null, qq0.def(), lock, SS.Tex, false);
+		Quad qq2 = new OPER(quads, "acmpeq", s.extra(0),
+				    new Temp[] { SS.Tex, SS.Tnull });
+		Quad qq3 = new CJMP(quads, qq2.def()[0], new Temp[0]);
+		Quad qq4 = new OPER(quads, "acmpeq", s.extra(0),
+				    new Temp[] { lock, SS.Tnull });
+		Quad qq5 = new CJMP(quads, qq4.def()[0], new Temp[0]);
+		Quad qq6 = new MONITORENTER(quads, lock);
+		// handle exceptions of various kinds.
+		Quad qq7 = new PHI(quads, new Temp[0], 2);
+		Quad qq8 = transNewException(SS, exC, SS.Tex,
+					     new TransState(s, firstInstr,
+							    qq7, 0));
+		Quad qq9 = new THROW(quads, SS.Tex);
+		// okay, link 'em up.
+		Quad.addEdges(new Quad[] {  q2, qq0, qq1, qq2, qq3 } );
+		Quad.addEdge(qq3, 0, qq7, 0);
+		Quad.addEdge(qq3, 1, qq4, 0);
+		Quad.addEdges(new Quad[] { qq4, qq5, qq6} );
+		Quad.addEdge(qq5, 1, qq7, 1);
+		Quad.addEdge(qq8, 0, qq9, 0);
+		SS.footer.attach(qq9, 0);
+		q = qq6;
+	    }
 	}
-	// FIXME: move all RETURN/THROW inside MONITOR body to
-	// outside (for synchronized methods only).
 
 	// translate using state.
 	trans(SS, new TransState(s, firstInstr, q, 0));
 
 	// if method is synchronized, place MONITOREXIT at bottom(s).
 	if (isSynchronized) {
+	    Util.assert(lock!=null);
 	    // for all predecessors of FOOTER
 	    for (int i=0; i < footer.prev.length; i++) {
+		// static synchronized methods have a single exception
+		// exit *before* the monitor is entered.
+		if (isStatic&&i==0) continue;
 		// put a MONITOREXIT before the return/throw/whatever.
 		Quad Qexit = footer.prev(i);
 		Util.assert(Qexit.prev.length==1); // only one predecessor.
-		Quad Qm = new MONITOREXIT(Qexit.source, s.lv[0] /* this */);
+		Quad Qm = new MONITOREXIT(Qexit.source, lock);
 		Edge e = Qexit.prevEdge(0);
 		Quad.addEdge((Quad)e.from(), e.which_succ(), Qm, 0);
 		Quad.addEdge(Qm, 0, (Quad)e.to(), e.which_pred());
@@ -593,10 +644,8 @@ class Translate  { // not public.
 			       handlers, false);
 		Quad q6 = new PHI(in, new Temp[0], 2);
 		// link quads.
-		Quad.addEdge(q1, 0, q2, 0);
-		Quad.addEdge(q2, 0, q3, 0);
+		Quad.addEdges(new Quad[] { q1, q2, q3, q4 });
 		Quad.addEdge(q2, 1, q6, 0);
-		Quad.addEdge(q3, 0, q4, 0);
 		Quad.addEdge(q4, 1, q6, 1);
 		// and setup the next state.
 		ns = s;
@@ -795,8 +844,7 @@ class Translate  { // not public.
 			       ns.stack(0),
 			       new Temp[] {s.stack(1), s.stack(0)});
 	    // link quads.
-	    Quad.addEdge(q0, 0, q1, 0);
-	    Quad.addEdge(q1, 0, q3, 0);
+	    Quad.addEdges(new Quad[] { q0, q1, q3 } );
 	    // setup next state.
 	    q = q0; last = q3;
 	    break;
@@ -823,9 +871,7 @@ class Translate  { // not public.
 			       ns.stack(0), 
 			       new Temp[] {s.stack(2), s.stack(0)});
 	    // link quads.
-	    Quad.addEdge(q0, 0, q1, 0);
-	    Quad.addEdge(q1, 0, q2, 0);
-	    Quad.addEdge(q2, 0, q4, 0);
+	    Quad.addEdges(new Quad[] { q0, q1, q2, q4 } );
 	    // setup next state.
 	    q = q0; last = q4;
 	    break;
@@ -1000,8 +1046,7 @@ class Translate  { // not public.
 	    Quad q2 = new CJMP(in, q1.def()[0], new Temp[0]);
 	    r = transThrow(SS, new TransState(s.push(Tex), in, q2, 0),
 			   handlers, false);
-	    Quad.addEdge(q,  0, q1, 0);
-	    Quad.addEdge(q1, 0, q2, 0);
+	    Quad.addEdges(new Quad[] { q, q1, q2 });
 	    last = q2; which_succ = 1;
 	    // null dereference check (JVM disallows on uninit objects)
 	    if (!isStatic && !(opd.value() instanceof HConstructor)) {
@@ -1038,13 +1083,9 @@ class Translate  { // not public.
 	    Quad q6 = new CONST(in, ns.stack(0), new Integer(1), HClass.Int);
 	    Quad q7 = new PHI(in, new Temp[0], 3);
 	    // link.
-	    Quad.addEdge(q0, 0, q1, 0);
-	    Quad.addEdge(q1, 0, q2, 0);
+	    Quad.addEdges(new Quad[] { q0, q1, q2, q3, q4, q7});
 	    Quad.addEdge(q1, 1, q5, 0);
-	    Quad.addEdge(q2, 0, q3, 0);
-	    Quad.addEdge(q3, 0, q4, 0);
 	    Quad.addEdge(q3, 1, q6, 0);
-	    Quad.addEdge(q4, 0, q7, 0);
 	    Quad.addEdge(q5, 0, q7, 1);
 	    Quad.addEdge(q6, 0, q7, 2);
 	    // setup next state.
@@ -1547,6 +1588,7 @@ class Translate  { // not public.
 	rTS.copyInto(r);
 	return r;
     }
+    // takes a state to append to and returns the final quad.
     static final Quad transNewException(StaticState SS, HClass exClass,
 					Temp Tex, TransState ts) {
 	State s = ts.initialState;
@@ -1566,12 +1608,8 @@ class Translate  { // not public.
 	Quad q5 = new PHI(in, new Temp[0], 2);
 
 	Quad.addEdge(header, which_succ, q0, 0);
-	Quad.addEdge(q0, 0, q1, 0);
-	Quad.addEdge(q1, 0, q2, 0);
-	Quad.addEdge(q2, 0, q3, 0);
-	Quad.addEdge(q3, 0, q4, 0);
-	Quad.addEdge(q3, 1, q5, 0);
-	Quad.addEdge(q4, 0, q5, 1);
+	Quad.addEdges(new Quad[] { q0, q1, q2, q3, q4, q5 } );
+	Quad.addEdge(q3, 1, q5, 1);
 	return q5;
     }
     static final TransState[] transNullCheck(StaticState SS, Temp Tobj,
@@ -1592,8 +1630,7 @@ class Translate  { // not public.
 	// actual operation is q.
 	// link quads.
 	Quad.addEdge(ts.header, ts.which_succ, q0, 0);
-	Quad.addEdge(q0, 0, q1, 0);
-	Quad.addEdge(q1, 0, q, 0);
+	Quad.addEdges(new Quad[] { q0, q1, q } );
 
 	return r;
     }
@@ -1634,14 +1671,10 @@ class Translate  { // not public.
 		       handlers, false);
 	// link.
 	Quad.addEdge(ts.header, ts.which_succ, q0, 0);
-	Quad.addEdge(q0, 0, q1, 0);
-	Quad.addEdge(q1, 0, q3, 0);
+	Quad.addEdges(new Quad[] { q0, q1, q3, q4, q8 } );
 	Quad.addEdge(q2, 0, q10,0);
-	Quad.addEdge(q3, 0, q4, 0);
-	Quad.addEdge(q4, 0, q8,0);
 	Quad.addEdge(q4, 1, q5, 0);
-	Quad.addEdge(q5, 0, q6, 0);
-	Quad.addEdge(q6, 0, q7, 0);
+	Quad.addEdges(new Quad[] { q5, q6, q7 } );
 	Quad.addEdge(q7, 0, q8, 1);
 	Quad.addEdge(q7, 1, q,  0); /* actual operation, after bounds check */
 	Quad.addEdge(q9, 0, q10,1);
