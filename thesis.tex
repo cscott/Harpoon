@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.45 1999-06-15 04:40:33 cananian Exp $
+% $Id: thesis.tex,v 1.46 1999-06-21 05:04:30 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.45 $ $}
+\date{\today \\ $ $Revision: 1.46 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.45 $ $}{$ $Revision: 1.45 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.46 $ $}{$ $Revision: 1.46 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -64,8 +64,8 @@ our hope is that it will allow the FLEX compiler to achieve a similar
 integration of practical implementation and mathematical elegance.
 
 \section{Intermediate Representations}
-The first paper directly addressing an IR as a separate feature of a
-compiler was Foo and Bar in \cite{foobar}.\fixme{Find real references.}
+%The first paper directly addressing an IR as a separate feature of a
+%compiler was Foo and Bar in \cite{foobar}.\fixme{Find real references.}
 The Static Single Assignment (SSA) form was introduced by 
 Alpern, Rosen, Wegman and Zadeck
 as a tool for efficient optimization in a pair of POPL
@@ -79,7 +79,7 @@ views \phifunction{s} as descendants of the ``birthpoints'' introduced
 in \cite{reif81:sym}.
 
 Despite industry adoption of SSA form in production compilers
-\cite{chow96:hssa,chow97:ssapre}, academic research into alternative
+\cite{chow97:ssapre,chow96:hssa}, academic research into alternative
 representations continues.
 Recent proposals have included Value Dependence Graphs
 \cite{weise94:vdg}, Program Dependence Webs \cite{ballance90:pdw},
@@ -139,7 +139,7 @@ representation of program meaning as a set of simultaneous equations,
 without resort to graph information.
 
 \textbf{It is simple.}  A bestiary of new $\phi$-like functions have
-been introduced in recent\fixme{Not really.  Some as early as 1990.} papers, including
+been introduced in the past decade, including
 $\mu$-, $\gamma$-, and $\eta$-functions in \cite{ballance90:pdw,tu95:gssa},
 $\psi$- and $\pi$-functions in \cite{lee99:parssa},
 interprocedural \phifunction{s} in \cite{liao99:issa},
@@ -159,15 +159,38 @@ represent the ``interesting'' properties of the compiled program.
 
 \textbf{It is efficient.}  Construction of SSI form should be fast,
 and space requirements should be reasonable.  The original SSA
-algorithms required $O(n^3)$ time\ldots
-\fixme{Finish this.  The original time bound for SSA is given in
-       \cite{dhamdhere92:large}.}
+algorithms required $O(E+V_{SSA}|{DF}|+NV_{SSA})$ time.  This bound
+was dominated by the time and space required to construct the
+dominance frontier, as $|{DF}|$, the size of the dominance frontier,
+could be $O(N^2)$ for common cases.  Taking the dominant term, we will
+abbreviate the time complexity of the Cytron's SSA-construction
+algorithm as $O(N^2 V)$.
+
+Our algorithms do not require the construction of a dominance
+frontier---building on recent work on efficient SSA construction in
+this regard---and run in so-called ``linear'' time: $O(EV)$.  A more
+detailed analysis will be given later, but suffice for now to say that
+close attention has been paid to the run-time of our construction and
+analysis algorithms.\footnote{Dhamdhere \cite{dhamdhere92:large} quite
+correctly states that Cytron's original algorithm has a worst-case
+time bound of $O(N^3)$.  This is also true for our algorithms.
+However, these worst-case time bounds are not tight; we will present
+experimental evidence that run times on real programs are $O(N)$.}
+       
 %Construction should be fast, and
 %space should be reasonable.\footnote{Replace with actual numbers.}
 
-\textbf{All explicit control dependencies are eliminated.}  Many IRs
-require explicit control flow edges that serialize computation more
-than is strictly necessary.\fixme{Explain better.}
+\textbf{All explicit control dependencies are eliminated.}
+Some researchers (including \cite{appel:modern} and
+\cite{pingali97:apt}) view control-dependence as a fundamental
+property of the CFG, and \cite{pdw,appel:modern} suggest that accurate
+knowledge of control-dependence relations is key to automatic
+parallelization.   Many intermediate representations \cite{here} are
+augmented with control-dependence edges to ensure proper execution.
+
+Unfortunately, explicit control-flow edges tend to serialize
+computation more than strictly necessary.\fixme{cite arvind's
+compiler, and others.  Free your mind: delete control-dependence!}
 
 \textbf{It is efficient for both forward and backward dataflow analyses.}
 \fixme{Explain this: we can do backwards analyses.}
@@ -968,10 +991,12 @@ that's how.}
 \newpage
 \appendix
 \section{Common errors of IR research papers}
+For some reason, the field of compiler IRs seems to attract more than
+its share of village idiots.
 \begin{enumerate}
 \item Quote: ``The number of $\phi$-nodes needed remains linear''
 \cite{sreedhar95:lintime}.  Often \cite{cytron91:ssa} is cited in
-support of this.  What Cytron \emph{acutally} said was ``For the
+support of this.  What Cytron \emph{actually} said was ``For the
 programs we tested, the plot in Figure 21 shows that the number of
 \phifunction{s} is also linear in the size of the original program.''
 In other words, this is not a theoretical or hard bound, this is an
