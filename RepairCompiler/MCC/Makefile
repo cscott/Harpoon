@@ -14,6 +14,8 @@ TDLParser.java TDLParser.class \
 CDLParser.java CDLParser.class \
 SDLParser.java SDLParser.class
 
+CLASSPATH = /usr/java/j2sdk1.4.2_03/jre/lib/charsets.jar:/usr/java/j2sdk1.4.2_03/jre/lib/jce.jar:/usr/java/j2sdk1.4.2_03/jre/lib/jsse.jar:/usr/java/j2sdk1.4.2_03/jre/lib/plugin.jar:/usr/java/j2sdk1.4.2_03/jre/lib/rt.jar:/usr/java/j2sdk1.4.2_03/jre/lib/sunrsasign.jar
+
 COMPILER_CLASS = Compiler.class
 CLI_CLASS = CLI.class
 OTHER_CLASS = State.class LineCount.class Symbol.class
@@ -93,10 +95,10 @@ parser: $(PARSERS) $(SCANNER).java
 
 %Parser.java: %.cup
 	java -classpath ../ java_cup.Main -nosummary -symbols $(SYMBOLS) -parser $*Parser < $*.cup
-	javac $(SYMBOLS).java
+	jikes -nowarn -bootclasspath $(CLASSPATH) $(SYMBOLS).java
 
 %.class: %.java
-	javac -classpath ../ -source 1.4 $<
+	jikes -nowarn -bootclasspath $(CLASSPATH) -classpath ../ -source 1.4 $<
 #	jikes -classpath $(CLASSPATH):../ $<
 
 %.lex.java: %.lex

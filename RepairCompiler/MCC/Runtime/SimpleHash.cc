@@ -328,11 +328,12 @@ SimpleHashException::SimpleHashException() {}
 // ************************************************************
 
 
-RepairHashNode::RepairHashNode(int setrelation, int rule, int lvalue, int rvalue, int data){
+RepairHashNode::RepairHashNode(int setrelation, int rule, int lvalue, int rvalue, int data, int data2){
     this->setrelation = setrelation;
     this->lvalue=lvalue;
     this->rvalue=rvalue;
     this->data = data;
+    this->data2 = data2;
     this->next = 0;
     this->lnext=0;
     this->rule=rule;
@@ -373,6 +374,10 @@ int RepairHash::addset(int setv, int rule, int value, int data) {
 }
 
 int RepairHash::addrelation(int relation, int rule, int lvalue, int rvalue, int data) {
+  return addrelation(relation,rule,lvalue,rvalue,data, 0);
+}
+
+int RepairHash::addrelation(int relation, int rule, int lvalue, int rvalue, int data, int data2) {
     unsigned int hashkey = ((unsigned int)(relation ^ rule ^ lvalue ^ rvalue)) % size;
     
     RepairHashNode **ptr = &bucket[hashkey];
@@ -384,13 +389,14 @@ int RepairHash::addrelation(int relation, int rule, int lvalue, int rvalue, int 
 	    (*ptr)->rule==rule &&
 	    (*ptr)->lvalue==lvalue &&
 	    (*ptr)->rvalue==rvalue &&
-	    (*ptr)->data == data) {
+	    (*ptr)->data == data &&
+	    (*ptr)->data2 == data2) {
             return 0;
         }
         ptr = &((*ptr)->next);
     }
     
-    *ptr = new RepairHashNode(relation,rule,lvalue,rvalue, data);
+    *ptr = new RepairHashNode(relation,rule,lvalue,rvalue, data,data2);
     (*ptr)->lnext=nodelist;
     nodelist=*ptr;
     numelements++;
@@ -424,6 +430,24 @@ int RepairHash::getset(int setv, int rule, int value) {
   return getrelation(setv||SETFLAG, rule, value,0);
 }
 
+int RepairHash::getrelation2(int relation, int rule, int lvalue,int rvalue) {
+    unsigned int hashkey = ((unsigned int)(relation ^ rule ^ lvalue ^ rvalue)) % size;
+    
+    RepairHashNode **ptr = &bucket[hashkey];
+
+    /* check that this key/object pair isn't already here */
+    // TBD can be optimized for set v. relation */
+    while (*ptr) {
+        if ((*ptr)->setrelation == relation && 
+	    (*ptr)->rule==rule &&
+	    (*ptr)->lvalue==lvalue &&
+	    (*ptr)->rvalue==rvalue) {
+	  return (*ptr)->data2;
+        }
+        ptr = &((*ptr)->next);
+    }
+    return 0;
+}
 int RepairHash::getrelation(int relation, int rule, int lvalue,int rvalue) {
     unsigned int hashkey = ((unsigned int)(relation ^ rule ^ lvalue ^ rvalue)) % size;
     

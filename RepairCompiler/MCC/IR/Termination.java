@@ -2,6 +2,7 @@ package MCC.IR;
 import java.util.*;
 import java.io.*;
 import MCC.State;
+import MCC.Compiler;
 
 public class Termination {
     HashSet conjunctions;
@@ -36,6 +37,8 @@ public class Termination {
 	abstractadd=new Hashtable();
 	abstractremove=new Hashtable();
 	conjtonodemap=new Hashtable();
+	if (!Compiler.REPAIR)
+	    return;
 
 	generateconjunctionnodes();
 	generatescopenodes();
@@ -428,7 +431,7 @@ public class Termination {
 	if (possiblerules.size()==0)
 	    return;
 	int[] count=new int[possiblerules.size()];
-	while(remains(count,possiblerules)) {
+	while(remains(count,possiblerules,true)) {
 	    MultUpdateNode mun=new MultUpdateNode(ar,MultUpdateNode.REMOVE);
 	    TermNode tn=new TermNode(mun);
 	    GraphNode gn2=new GraphNode("UpdateRem"+removefromcount,tn);
@@ -490,33 +493,109 @@ public class Termination {
 		gn.addEdge(e);
 		updatenodes.add(gn2);
 	    }
-	    increment(count,possiblerules);
+	    increment(count,possiblerules,true);
 	}
     }
 
-    static void increment(int count[], Vector rules) {
+    static void increment(int count[], Vector rules,boolean isremove) {
 	count[0]++;
 	for(int i=0;i<(rules.size()-1);i++) {
-	    if (count[i]>=(((Rule)rules.get(i)).numQuantifiers()+(((Rule)rules.get(i)).getDNFNegGuardExpr().size()))) {
+	    int num=isremove?(((Rule)rules.get(i)).numQuantifiers()+(((Rule)rules.get(i)).getDNFNegGuardExpr().size())):((Rule)rules.get(i)).getDNFGuardExpr().size();
+	    if (count[i]>=num) {
 		count[i+1]++;
 		count[i]=0;
 	    } else break;
 	}
     }
 
-    static boolean remains(int count[], Vector rules) {
+    static boolean remains(int count[], Vector rules, boolean isremove) {
 	for(int i=0;i<rules.size();i++) {
-	    if (count[i]>=(((Rule)rules.get(i)).numQuantifiers()+(((Rule)rules.get(i)).getDNFNegGuardExpr().size()))) {
+	    int num=isremove?(((Rule)rules.get(i)).numQuantifiers()+(((Rule)rules.get(i)).getDNFNegGuardExpr().size())):((Rule)rules.get(i)).getDNFGuardExpr().size();
+	    if (count[i]>=num) {
 		return false;
 	    }
 	}
 	return true;
     }
+
     /** This method generates data structure updates to implement the
      * 	abstract atomic modification specified by ar. */
-
+    int modifycount=0;
     void generatemodifyrelation(GraphNode gn, AbstractRepair ar) {
-	
+	RelationDescriptor rd=(RelationDescriptor)ar.getDescriptor();
+	ExprPredicate exprPredicate=(ExprPredicate)ar.getPredicate().getPredicate();
+	boolean inverted=exprPredicate.inverted();
+	int leftindex=0;
+	int rightindex=1;
+	if (inverted)
+	    leftindex=2;
+	else 
+	    rightindex=2;
+
+
+	Vector possiblerules=new Vector();
+	for(int i=0;i<state.vRules.size();i++) {
+	    Rule r=(Rule) state.vRules.get(i);
+	    if ((r.getInclusion() instanceof RelationInclusion)&&
+		(rd==((RelationInclusion)r.getInclusion()).getRelation()))
+		possiblerules.add(r);
+	}
+	if (possiblerules.size()==0)
+	    return;
+	int[] count=new int[possiblerules.size()];
+	while(remains(count,possiblerules,false)) {
+	    MultUpdateNode mun=new MultUpdateNode(ar,MultUpdateNode.MODIFY);
+	    TermNode tn=new TermNode(mun);
+	    GraphNode gn2=new GraphNode("UpdateMod"+removefromcount,tn);
+
+	    boolean goodflag=true;
+	    for(int i=0;i<possiblerules.size();i++) {
+		Rule r=(Rule)possiblerules.get(i);
+		UpdateNode un=new UpdateNode(r);
+		/* No Need to construct bindings on modify */
+		
+		int c=count[i];
+		if (!processconjunction(un,r.getDNFGuardExpr().get(c))) {
+		    goodflag=false;break;
+		}
+		RelationInclusion ri=(RelationInclusion)r.getInclusion();
+		if (!(ri.getLeftExpr() instanceof VarExpr)) {
+		    Updates up=new Updates(ri.getLeftExpr(),leftindex);
+		    un.addUpdate(up);
+		} else {
+		    VarDescriptor vd=((VarExpr)ri.getLeftExpr()).getVar();
+		    if (vd.isGlobal()) {
+			Updates up=new Updates(ri.getLeftExpr(),leftindex);
+			un.addUpdate(up);
+		    } else if (inverted)
+			goodflag=false;
+		}
+		if (!(ri.getRightExpr() instanceof VarExpr)) {
+		    Updates up=new Updates(ri.getRightExpr(),rightindex);
+		    un.addUpdate(up);
+		} else {
+		    VarDescriptor vd=((VarExpr)ri.getRightExpr()).getVar();
+		    if (vd.isGlobal()) {
+			Updates up=new Updates(ri.getRightExpr(),rightindex);
+			un.addUpdate(up);
+		    } else if (!inverted) 
+			goodflag=false;
+		}
+				
+		if (!un.checkupdates()) {
+		    goodflag=false;
+		    break;
+		}
+		mun.addUpdate(un);
+	    }
+	    if (goodflag) {
+		GraphNode.Edge e=new GraphNode.Edge("abstract"+modifycount,gn2);
+		modifycount++;
+		gn.addEdge(e);
+		updatenodes.add(gn2);
+	    }
+	    increment(count,possiblerules,false);
+	}
     }
 
 
@@ -768,7 +847,7 @@ public class Termination {
 		}
 	    } else {
 		System.out.println(e.getClass().getName());
-		throw new Error("Error #213");
+		throw new Error("Unrecognized Expr");
 	    }
 	}
 	return okay;

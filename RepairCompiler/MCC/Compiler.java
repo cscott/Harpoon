@@ -17,6 +17,7 @@ import MCC.IR.*;
  */
 
 public class Compiler {
+    /* Set this flag to false to turn repairs off */
     public static boolean REPAIR=true;
     
     public static void main(String[] args) {
@@ -56,11 +57,10 @@ public class Compiler {
 
 
 	    Termination termination=null;
-	    if (REPAIR) {
-		/* Check partition constraints */
-		(new ImplicitSchema(state)).update();
-		termination=new Termination(state);
-	    }
+	    /* Check partition constraints */
+	    (new ImplicitSchema(state)).update();
+	    termination=new Termination(state);
+
             state.printall();
             (new DependencyBuilder(state)).calculate();
             
@@ -91,19 +91,19 @@ public class Compiler {
                 //(new Optimizer(state)).optimize();
 
 
-		if(REPAIR) {
-		    FileOutputStream gcode2 = new FileOutputStream(cli.infile + "_aux.cc");
-		    FileOutputStream gcode3 = new FileOutputStream(cli.infile + "_aux.h");
-		    RepairGenerator wg = new RepairGenerator(state,termination);
-		    wg.generate(gcode,gcode2,gcode3, cli.infile + "_aux.h");
-		    gcode2.close();
-		    gcode3.close();
-		} else {
+
+		FileOutputStream gcode2 = new FileOutputStream(cli.infile + "_aux.cc");
+		FileOutputStream gcode3 = new FileOutputStream(cli.infile + "_aux.h");
+		RepairGenerator wg = new RepairGenerator(state,termination);
+		wg.generate(gcode,gcode2,gcode3, cli.infile + "_aux.h");
+		gcode2.close();
+		gcode3.close();
+		/*		} else {
 		    WorklistGenerator ng = new WorklistGenerator(state);
 		    SetInclusion.worklist=true;
 		    RelationInclusion.worklist=true;
 		    ng.generate(gcode);
-		}
+		    }*/
                 gcode.close();
             } catch (Exception e) {
                 e.printStackTrace();

@@ -170,11 +170,12 @@ class RepairHashNode {
     RepairHashNode *next;
     RepairHashNode *lnext;
     int data;
+    int data2;
     int setrelation;  
     int lvalue;  
     int rvalue;  
     int rule;
-    RepairHashNode(int setrelation, int rule, int lvalue, int rvalue, int data);
+    RepairHashNode(int setrelation, int rule, int lvalue, int rvalue, int data, int data2);
 };
 
 class RepairHash {
@@ -191,10 +192,12 @@ public:
     ~RepairHash();
     int addset(int setv, int rule, int value, int data);
     int addrelation(int relation, int rule, int lvalue, int rvalue, int data);
+    int addrelation(int relation, int rule, int lvalue, int rvalue, int data, int data2);
     bool containsset(int setv, int rule, int value);
     bool containsrelation(int relation, int rule, int lvalue, int rvalue);
     int getset(int setv, int rule, int value);
     int getrelation(int relation, int rule, int lvalue, int rvalue);
+    int getrelation2(int relation, int rule, int lvalue, int rvalue);
 };
 
 #endif

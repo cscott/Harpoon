@@ -219,7 +219,7 @@ class UpdateNode {
 	return mun;
     }
 
-    public void generate_abstract(CodeWriter cr, boolean removal, String slot0, String slot1, Updates u, RepairGenerator rg) {
+    public void generate_abstract(CodeWriter cr, Updates u, RepairGenerator rg) {
 	State state=rg.state;
 	Expr abstractexpr=u.getLeftExpr();
 	boolean negated=u.negate;
@@ -316,14 +316,14 @@ class UpdateNode {
 	
     }
 
-    public void generate(CodeWriter cr, boolean removal, String slot0, String slot1, RepairGenerator rg) {
-	if (!removal)
+    public void generate(CodeWriter cr, boolean removal, boolean modify, String slot0, String slot1, String slot2, RepairGenerator rg) {
+	if (!removal&&!modify)
 	    generate_bindings(cr, slot0,slot1);
 	for(int i=0;i<updates.size();i++) {
 	    Updates u=(Updates)updates.get(i);
 	    VarDescriptor right=VarDescriptor.makeNew("right");
 	    if (u.getType()==Updates.ABSTRACT) {
-		generate_abstract(cr, removal, slot0, slot1, u, rg);
+		generate_abstract(cr, u, rg);
 		return;
 	    }
 
@@ -336,6 +336,8 @@ class UpdateNode {
 		    cr.outputline("int "+right.getSafeSymbol()+"="+slot0+";");
 		else if (u.getRightPos()==1)
 		    cr.outputline("int "+right.getSafeSymbol()+"="+slot1+";");
+		else if (u.getRightPos()==2)
+		    cr.outputline("int "+right.getSafeSymbol()+"="+slot2+";");
 		else throw new Error("Error w/ Position");
 		break;
 	    default:
