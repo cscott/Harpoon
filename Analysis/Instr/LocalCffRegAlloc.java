@@ -69,7 +69,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.108 2000-07-19 11:18:00 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.109 2000-07-19 11:23:16 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -129,8 +129,6 @@ public class LocalCffRegAlloc extends RegAlloc {
     // maps Temp:t -> Instr:i where `i' is removed and defined `t'
     private Map tempToRemovedInstrs = new HashMap();
 
-    private static final boolean doRD = false;
-
     /** Creates a <code>LocalCffRegAlloc</code>. */
     public LocalCffRegAlloc(Code code) {
         super(code);
@@ -140,11 +138,11 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	if (TIME) System.out.print("D");
 	// reachingDefs = new ReachingDefsCachingImpl(code);
-	reachingDefs = doRD?new ReachingDefsAltImpl(code):null;
+	reachingDefs = new ReachingDefsAltImpl(code);
     }
 
     private Instr definition(Instr i, Temp t) {
-	if (!doRD || i.defC().contains(t)) 
+	if (i.defC().contains(t)) 
 	    return i;
 	else {
 	    Set defset = reachingDefs.reachingDefs(i, t);
