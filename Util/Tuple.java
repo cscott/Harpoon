@@ -14,9 +14,9 @@ import java.util.List;
  * the elements array are <code>Comparable</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tuple.java,v 1.2.2.8 2000-02-08 22:38:17 cananian Exp $
+ * @version $Id: Tuple.java,v 1.2.2.9 2000-03-29 06:48:56 cananian Exp $
  */
-public class Tuple implements Comparable {
+public class Tuple implements Comparable, java.io.Serializable {
     final Comparator objcmp;
     final Object elements[];
     /** Creates a <code>Tuple</code>. */
