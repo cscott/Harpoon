@@ -58,12 +58,13 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.8 2000-03-27 21:12:32 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.9 2000-03-28 23:51:33 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
     private static boolean DEBUG = false;
     private static boolean DEBUG_CH = false;
+    private static boolean COUNTER = true;
 
     // in "caution" mode, plenty of tests are done to protect ourselves
     // against errors in other components (ex: ReachingDefs)
@@ -75,16 +76,28 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
     /** Creates a <code>MetaCallGraphImpl</code>. It must receive, in its
 	last parameter, the <code>main</code> method of the program. */
     public MetaCallGraphImpl(CachingBBConverter bbconv, ClassHierarchy ch,
-			     HMethod main) {
+			     Set hmroots) {
         this.bbconv = bbconv;
 	this.ch     = ch;
-	analyze(main);
+
+	// analyze all the roots
+	for(Iterator it = hmroots.iterator(); it.hasNext(); )
+	    analyze((HMethod) it.next());
+
 	// convert the big format (Set oriented) into the compact one (arrays)
 	compact();
-	callees1 = null;
-	callees2 = null;
-	ch       = null;
-	bbconv   = null;
+	// activate the GC
+	callees1    = null;
+	callees2    = null;
+	ch          = null;
+	bbconv      = null;
+	analyzed_mm = null;
+	WMM         = null;
+	mm_work     = null;
+	rdef        = null;
+	ets2et      = null;
+	mh2md       = null;
+	param_types = null;
 	System.gc();
     }
 
@@ -124,11 +137,14 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
     // between the caller and its calees at a specific call site
     private Map      callees2 = new HashMap();    
     
-    // Build up the meta call graph, starting from the "main" method,
-    // which is supposed to be called with the exact argument types from
-    // its declaration (i.e. no polymorphism)
+    // Build up the meta call graph, starting from a "root" method.
+    // The classic example of a root method is "main", but there could
+    // be others called by the JVM before main.
     private void analyze(HMethod main_method){
-	analyze(new MetaMethod(main_method,false));
+	// we are extremely conservative: a root method could be called
+	// with any subtypes for its arguments, so we treat it as a 
+	// polymorphic one.
+	analyze(new MetaMethod(main_method,true));
 
 	if(DEBUG){
 	    Set classes = ch.instantiatedClasses();
@@ -142,25 +158,33 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
     private Set analyzed_mm = null;
     private MetaMethod mm_work = null;
 
+    private int mm_count = 0;
+
     private void analyze(MetaMethod root_mm){
+
+	if(COUNTER)
+	    System.out.println(root_mm);
+
 	analyzed_mm = new HashSet();
 	WMM = new PAWorkList();
 	WMM.add(root_mm);
 	while(!WMM.isEmpty()){
 	    mm_work = (MetaMethod) WMM.remove();
+
+	    if(COUNTER){
+		mm_count++;
+		if(mm_count % 100 == 0)
+		    System.out.println(mm_count + " analyzed meta-methods");
+	    }
+
 	    analyzed_mm.add(mm_work);
 	    analyze_meta_method();
 	}
 	all_meta_methods.addAll(analyzed_mm);
-	analyzed_mm = null;
-	WMM         = null;
-	mm_work     = null;
-	rdef        = null;
-	ets2et      = null;
-	mh2md       = null;
-	param_types = null;
 	initial_set.clear();
-	System.gc();
+
+	if(COUNTER)
+	    System.out.println(mm_count + " analyzed meta-method(s)");
     }
 
     private final Set calls = new HashSet();
@@ -1031,11 +1055,15 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 		    Iterator it_eta_types = eta.getTypes();
 		    while(it_eta_types.hasNext()){
 			HClass c = ((GenType) it_eta_types.next()).getHClass();
-			HClass hcomp = c.getComponentType();
-			if(hcomp == null)
-			    Util.assert(false,ta + " could have non-array" +
-					" types in " + q);
-			et.addType(new GenType(hcomp,GenType.POLY));
+			if(c.equals(HClass.Void))
+			    et.addType(new GenType(HClass.Void, GenType.MONO));
+			else{
+			    HClass hcomp = c.getComponentType();
+			    if(hcomp == null)
+				Util.assert(false,ta + " could have non-array"+
+					    " types in " + q);
+			    et.addType(new GenType(hcomp,GenType.POLY));
+			}
 		    }
 		}
 	    }

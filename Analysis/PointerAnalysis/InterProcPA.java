@@ -23,7 +23,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.17 2000-03-19 23:50:04 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.18 2000-03-28 23:51:50 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -43,10 +43,14 @@ abstract class InterProcPA {
 	<li><code>pa</code> is the <code>PointerAnalysis</code> object that
 	calls this method. <code>pa</code> is used to extract the external
 	parallel interaction graphs of the callees.
-	</ul> */
-    public static ParIntGraph analyze_call(MetaMethod current_mmethod, CALL q,
-					   ParIntGraph pig_before,
-					   PointerAnalysis pa){
+	</ul>
+	Return result:<b>
+	Two graphs are returned: one for the normal return from the procedure,
+	the other one for a return due to an exception. */
+    public static ParIntGraphPair analyze_call(MetaMethod current_mmethod,
+					       CALL q,
+					       ParIntGraph pig_before,
+					       PointerAnalysis pa){
 	MetaCallGraph mcg = pa.getMetaCallGraph();
 	NodeRepository node_rep = pa.getNodeRepository(); 
 	MetaMethod[] mms = mcg.getCallees(current_mmethod,q);
@@ -105,52 +109,66 @@ abstract class InterProcPA {
 	// clone() (cloning a ParIntGraph is very expensive)
 
 	// compute the first term of the join operation
-	ParIntGraph pig_after = mapUp(q, (ParIntGraph)pig_before.clone(),
-				      pigs[0], pa.getParamNodes(mms[0]));
+	ParIntGraphPair pp_after = mapUp(q, (ParIntGraph)pig_before.clone(),
+					 pigs[0], pa.getParamNodes(mms[0]));
 
 	// join to it all the others, except the last one
 	for(int i = 1; i < nb_callees - 1; i++)
-	    pig_after.join(mapUp(q, (ParIntGraph)pig_before.clone(),
-				 pigs[i], pa.getParamNodes(mms[i])));
+	    pp_after.join(mapUp(q, (ParIntGraph)pig_before.clone(),
+				pigs[i], pa.getParamNodes(mms[i])));
 
 	// finally, join with the graph modeling the interaction with
 	// the last callee
-	pig_after.join(mapUp(q, pig_before, pigs[nb_callees-1],
-			     pa.getParamNodes(mms[nb_callees-1])));
+	pp_after.join(mapUp(q, pig_before, pigs[nb_callees-1],
+			    pa.getParamNodes(mms[nb_callees-1])));
 
-	return pig_after;
+	return pp_after;
     }
 
 
-    /** Updates the ParIntGraph when the CALL is skipped */
-    private static ParIntGraph skip_call(CALL q, ParIntGraph pig_caller,
-					 NodeRepository node_rep){
-	// The names of the variables closely match those used in the
-	// formal description of the algorithm (section 9.2)
-	Temp l_R = q.retval();
-	PANode n_R = (l_R!=null)?node_rep.getCodeNode(q,PANode.RETURN):null;
-	Temp l_E = q.retex();
-	PANode n_E = (l_E!=null)?node_rep.getCodeNode(q,PANode.EXCEPT):null;
-
-	// remove the old edges, add the new ones
-	if(l_R != null) pig_caller.G.I.removeEdges(l_R);
-	if(l_E != null) pig_caller.G.I.removeEdges(l_E);
-	if(l_R != null) pig_caller.G.I.addEdge(l_R,n_R);
-	if(l_E != null) pig_caller.G.I.addEdge(l_E,n_E);
-
+    /** Updates the ParIntGraph when the CALL is skipped. Two graphs are
+	returned: one for the normal return from the procedure, the other
+	one for a return due to an exception. */
+    private static ParIntGraphPair skip_call(CALL q, ParIntGraph pig_caller,
+					     NodeRepository node_rep){
 	// Construct the set S_M of the objects escaped through this unanalyzed
 	// method invocation site.
 	Set S_M = new HashSet();
 	Temp[] params = q.params();
-	for(int i=0;i<params.length;i++)
+	for(int i = 0; i < params.length; i++)
 	    S_M.addAll(pig_caller.G.I.pointedNodes(params[i]));
-	Iterator it = S_M.iterator();
 	// Update the escape information
-	while(it.hasNext())
+	for(Iterator it = S_M.iterator(); it.hasNext(); )
 	    pig_caller.G.e.addMethodHole((PANode)it.next(),q);
 	// propagate the new escape information
 	pig_caller.G.propagate(S_M);
-	return pig_caller;
+
+	// clone the graph: we will have two distinct versions of it:
+	// one on the 0-edge, the other on the 1-edge, corresponding
+	// to the normal execution (return) respectively execution with
+	// exceptions (throw).
+	ParIntGraph pig_caller1 = (ParIntGraph) (pig_caller.clone());
+
+	// The names of the variables closely match those used in the
+	// formal description of the algorithm (section 9.2)
+
+	// Set the edges for the result node in graph 0.
+	Temp l_R = q.retval();
+	if(l_R != null){
+	    pig_caller.G.I.removeEdges(l_R);
+	    PANode n_R = node_rep.getCodeNode(q, PANode.RETURN);
+	    pig_caller.G.I.addEdge(l_R, n_R);
+	}
+
+	// Set the edges for the exception node in graph 1.
+	Temp l_E = q.retex();
+	if(l_E != null){
+	    pig_caller1.G.I.removeEdges(l_E);
+	    PANode n_E = node_rep.getCodeNode(q, PANode.EXCEPT);
+	    pig_caller1.G.I.addEdge(l_E, n_E);
+	}
+
+	return new ParIntGraphPair(pig_caller, pig_caller1);
     }
 
 
@@ -173,10 +191,10 @@ abstract class InterProcPA {
      *temporaries.
      *</ul>
      */
-    private static ParIntGraph mapUp(CALL q, 
-				     ParIntGraph pig_caller,
-				     ParIntGraph pig_callee,
-				     PANode[] callee_params){
+    private static ParIntGraphPair mapUp(CALL q, 
+					 ParIntGraph pig_caller,
+					 ParIntGraph pig_callee,
+					 PANode[] callee_params){
 
 	if(DEBUG){
 	    System.out.println("Pig_caller:" + pig_caller);
@@ -235,16 +253,23 @@ abstract class InterProcPA {
 	    System.out.println(pig_caller);
 	}
 
-	// set the edges for the result and for the exception variables
-	set_edges_res_ex(q.retval(),mu,pig_caller,pig_callee.G.r);
-	set_edges_res_ex(q.retex() ,mu,pig_caller,pig_callee.G.excp);
+	// make a copy of the parallel interaction graph
+	ParIntGraph pig_caller1 = (ParIntGraph) (pig_caller.clone());
+	// set the edges for the exception on the out-edge 1
+	set_edges_res_ex(q.retex() , mu, pig_caller1, pig_callee.G.excp);
+	// set the edges for the result on the out-edge 0
+	set_edges_res_ex(q.retval(), mu, pig_caller,  pig_callee.G.r);
 
 	if(DEBUG){
-	    System.out.println("Final graph:");
+	    System.out.println("Final graphs:{");
+	    System.out.println(" The graph on edge 0:");
 	    System.out.println(pig_caller);
+	    System.out.println(" The graph on edge 1:");
+	    System.out.println(pig_caller1);
+	    System.out.println("}");
 	}
 
-	return pig_caller;
+	return new ParIntGraphPair(pig_caller, pig_caller1);
     }
     
     /** Sets the initial mapping: each formal parameter is mapped

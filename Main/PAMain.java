@@ -8,6 +8,8 @@ import java.util.Date;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.LinkedList;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -60,7 +62,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.25 2000-03-27 21:12:49 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.26 2000-03-28 23:51:53 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -70,8 +72,6 @@ public abstract class PAMain {
     private static boolean SMART_CALL_GRAPH = false;
     // debug the class hierarchy
     private static boolean SHOW_CH = false;
-    // stop after printing the class hierarchy debug info 
-    private static boolean SHOW_CH_ONLY = false;
 
     // show the call graph
     private static boolean SHOW_CG = false;
@@ -81,6 +81,11 @@ public abstract class PAMain {
     private static boolean MA_STATS = false;
     // show some statistics about the method hole of the analyzed program
     private static boolean HOLE_STATS = false;
+
+    // make the program to analyse some method;
+    private static boolean DO_ANALYSIS = false;
+    // turns on the interactive analysis
+    private static boolean DO_INTERACTIVE_ANALYSIS = false;
 
     private static String[] examples = {
 	"java harpoon.Main.PAMain harpoon.Test.PA.Test1.complex multiplyAdd",
@@ -96,7 +101,6 @@ public abstract class PAMain {
 	"-s, --smart    uses the SmartCallGrapph",
 	"-d, --dumb     uses the simplest CallGraph (default)",
 	"-c, --showch   shows debug info about ClassHierrachy",
-	"-o, --onlych   shows debug info about ClassHierarchy and stop",
 	"--showcg       shows the (meta) call graph",
 	"--showsplit    shows the split relation",
 	"--shownodes    shows details about the nodes",
@@ -106,10 +110,19 @@ public abstract class PAMain {
 	"--wts          activates weak thread sensitivity",
 	"--ls           activates loop sensitivity",
 	"--mastats      shows some statistics about memory allocation",
-	"--holestats    shows statistics about holes"
+	"--holestats    shows statistics about holes",
+	"-a method      analyzes he given method. If the method is in the",
+	"              same class as the main method, the name of the class",
+	"              can be ommited",
+	"-i             interactive analysis of methods: the program"
     };
 
-    static PointerAnalysis pa = null;
+    private static PointerAnalysis pa = null;
+    // the main method
+    private static HMethod hroot = null;
+
+    // list to maintain the methods to be analyzed
+    private static List mm_to_analyze = new LinkedList();
     
     private static class Method{
 	String name  = null;
@@ -168,7 +181,7 @@ public abstract class PAMain {
 	HMethod[] hm  = hclass.getDeclaredMethods();
 
 	// search for the main method
-	HMethod hroot = null;
+	hroot = null;
 	for(int i = 0;i<hm.length;i++)
 	    if(hm[i].getName().equals(root_method.name))
 		hroot = hm[i];
@@ -180,14 +193,14 @@ public abstract class PAMain {
 	HCodeFactory hcf  = 
 	    new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
 
-	Set root_methods = new HashSet();
-	root_methods.add(hroot);
-	root_methods.addAll(
+	Set roots = new HashSet();
+	roots.add(hroot);
+	roots.addAll(
 	    harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 
 	if(SHOW_CH){
 	    System.out.println("Set of roots: {");
-	    for(Iterator it = root_methods.iterator(); it.hasNext(); ){
+	    for(Iterator it = roots.iterator(); it.hasNext(); ){
 		Object o = it.next();
 		if(o instanceof HMethod)
 		    System.out.println(" m: " + o);
@@ -200,7 +213,7 @@ public abstract class PAMain {
 	System.out.print("ClassHierarchy ... ");
 	tstart = System.currentTimeMillis();
 	ClassHierarchy ch = 
-	    new QuadClassHierarchy(linker,Collections.singleton(hroot),hcf);
+	    new QuadClassHierarchy(linker,roots,hcf);
 	tstop  = System.currentTimeMillis();
 	System.out.println((tstop - tstart) + "ms");
 
@@ -211,8 +224,11 @@ public abstract class PAMain {
 	    for(Iterator it = inst_cls.iterator(); it.hasNext(); )
 		System.out.println(" " + it.next());
 	    System.out.println("}");
-	    if(SHOW_CH_ONLY) System.exit(1);
 	}
+
+
+	Set mroots = extract_method_roots(roots);
+	mroots.add(hroot);
 
 	CachingBBConverter bbconv = new CachingBBConverter(hcf);
 	LBBConverter lbbconv = new CachingLBBConverter(bbconv);
@@ -220,7 +236,7 @@ public abstract class PAMain {
 	if(METAMETHODS){ // real meta-methods
 	    System.out.print("MetaCallGraph ... ");
 	    tstart = System.currentTimeMillis();
-	    mcg = new MetaCallGraphImpl(bbconv, ch, hroot);
+	    mcg = new MetaCallGraphImpl(bbconv, ch, mroots);
 	    tstop  = System.currentTimeMillis();
 	    System.out.println((tstop - tstart) + "ms");
 
@@ -235,7 +251,7 @@ public abstract class PAMain {
 	    if(SMART_CALL_GRAPH){ // smart call graph!
 		System.out.print("MetaCallGraph ... ");
 		tstart = System.currentTimeMillis();
-		MetaCallGraph fmcg = new MetaCallGraphImpl(bbconv, ch, hroot);
+		MetaCallGraph fmcg = new MetaCallGraphImpl(bbconv, ch, mroots);
 		tstop  = System.currentTimeMillis();
 		System.out.println((tstop - tstart) + "ms");
 
@@ -281,36 +297,36 @@ public abstract class PAMain {
 	pa = new PointerAnalysis(mcg, mac, lbbconv);
 
 	if(MA_STATS) ma_statistics(pa,hroot);
-	else{
-	    if(optind < params.length){
-		for(; optind < params.length; optind++ ){
-		    Method analyzed_method = getMethodName(params[optind]);
-		    if(analyzed_method.declClass == null)
-			analyzed_method.declClass = root_method.declClass;
-		    display_method(analyzed_method);
-		}
-	    }
-	    else{
-		BufferedReader d = 
-		    new BufferedReader(new InputStreamReader(System.in));
-		while(true){
-		    System.out.print("Method name:");
-		    String method_name = null;
-		    try{
-			method_name = d.readLine();
-		    }catch(IOException e){}
-		    if(method_name == null){
-			System.out.println();
-			break;
-		    }
-		    Method analyzed_method = getMethodName(method_name);
-		    if(analyzed_method.declClass == null)
-			analyzed_method.declClass = root_method.declClass;
-		    display_method(analyzed_method);
-		}
+
+	if(DO_ANALYSIS){
+	    for(Iterator it = mm_to_analyze.iterator(); it.hasNext(); ){
+		Method analyzed_method = (Method) it.next();
+		if(analyzed_method.declClass == null)
+		    analyzed_method.declClass = root_method.declClass;
+		display_method(analyzed_method);
 	    }
 	}
 
+	if(DO_INTERACTIVE_ANALYSIS){
+	    BufferedReader d = 
+		new BufferedReader(new InputStreamReader(System.in));
+	    while(true){
+		System.out.print("Method name:");
+		String method_name = null;
+		try{
+		    method_name = d.readLine();
+		}catch(IOException e){}
+		if(method_name == null){
+		    System.out.println();
+			break;
+		}
+		Method analyzed_method = getMethodName(method_name);
+		if(analyzed_method.declClass == null)
+		    analyzed_method.declClass = root_method.declClass;
+		display_method(analyzed_method);
+	    }
+	}
+    
 	pa.print_stats();
 
 	if(HOLE_STATS) hole_stats(pa);
@@ -382,23 +398,22 @@ public abstract class PAMain {
     private static int get_options(String[] argv){
 	int c, c2;
 	String arg;
-	LongOpt[] longopts = new LongOpt[13];
+	LongOpt[] longopts = new LongOpt[12];
 	longopts[0]  = new LongOpt("meta", LongOpt.NO_ARGUMENT, null, 'm');
 	longopts[1]  = new LongOpt("smartcg", LongOpt.NO_ARGUMENT, null, 's');
 	longopts[2]  = new LongOpt("showch", LongOpt.NO_ARGUMENT, null, 'c');
-	longopts[3]  = new LongOpt("onlych", LongOpt.NO_ARGUMENT, null, 'o');
-	longopts[4]  = new LongOpt("ccs", LongOpt.REQUIRED_ARGUMENT, null, 5);
-	longopts[5]  = new LongOpt("ts", LongOpt.NO_ARGUMENT, null, 6);
-	longopts[6]  = new LongOpt("wts", LongOpt.NO_ARGUMENT, null, 7);
-	longopts[7]  = new LongOpt("ls", LongOpt.NO_ARGUMENT, null, 8);
-	longopts[8]  = new LongOpt("showcg", LongOpt.NO_ARGUMENT, null, 9);
-	longopts[9]  = new LongOpt("showsplit", LongOpt.NO_ARGUMENT, null, 10);
-	longopts[10] = new LongOpt("shownodes", LongOpt.NO_ARGUMENT, null, 11);
-	longopts[11] = new LongOpt("mastats", LongOpt.NO_ARGUMENT, null, 12);
-	longopts[12] = new LongOpt("holestats", LongOpt.NO_ARGUMENT, null, 13);
+	longopts[3]  = new LongOpt("ccs", LongOpt.REQUIRED_ARGUMENT, null, 5);
+	longopts[4]  = new LongOpt("ts", LongOpt.NO_ARGUMENT, null, 6);
+	longopts[5]  = new LongOpt("wts", LongOpt.NO_ARGUMENT, null, 7);
+	longopts[6]  = new LongOpt("ls", LongOpt.NO_ARGUMENT, null, 8);
+	longopts[7]  = new LongOpt("showcg", LongOpt.NO_ARGUMENT, null, 9);
+	longopts[8]  = new LongOpt("showsplit", LongOpt.NO_ARGUMENT, null, 10);
+	longopts[9]  = new LongOpt("shownodes", LongOpt.NO_ARGUMENT, null, 11);
+	longopts[10] = new LongOpt("mastats", LongOpt.NO_ARGUMENT, null, 12);
+	longopts[11] = new LongOpt("holestats", LongOpt.NO_ARGUMENT, null, 13);
+	
 
-
-	Getopt g = new Getopt("PAMain", argv, "msco", longopts);
+	Getopt g = new Getopt("PAMain", argv, "mscoa:i", longopts);
 
 	while((c = g.getopt()) != -1)
 	    switch(c){
@@ -413,9 +428,12 @@ public abstract class PAMain {
 	    case 'c':
 		SHOW_CH = true;
 		break;
-	    case 'o':
-		SHOW_CH = true;
-		SHOW_CH_ONLY = true;
+	    case 'a':
+		DO_ANALYSIS = true;
+		mm_to_analyze.add(getMethodName(g.getOptarg()));
+		break;
+	    case 'i':
+		DO_INTERACTIVE_ANALYSIS = true;
 		break;
 	    case 5:
 		arg = g.getOptarg();
@@ -479,11 +497,8 @@ public abstract class PAMain {
 	if(PointerAnalysis.LOOP_SENSITIVE)
 	    System.out.println(" LOOP_SENSITIVE");
 
-	if(SHOW_CH_ONLY) 
-	    System.out.print(" SHOW_CH_ONLY");
-	else 
-	    if(SHOW_CH)
-		System.out.print(" SHOW_CH");
+	if(SHOW_CH)
+	    System.out.print(" SHOW_CH");
 
 	if(PointerAnalysis.SHOW_NODES)
 	    System.out.print(" SHOW_NODES");
@@ -497,26 +512,33 @@ public abstract class PAMain {
 	System.out.println();
     }
 
-
+    // print statictics about the memory allocation policies
     private static void ma_statistics(PointerAnalysis pa, HMethod hroot){
 	int nb_captured = 0;
-	MetaMethod root_mm = new MetaMethod(hroot,false);
 
-	System.out.println("ROOT META-METHOD: " + root_mm);
+	MetaMethod mroot = new MetaMethod(hroot, true);
+	System.out.println("ROOT META-METHOD: " + mroot);
 
 	// this should analyze everything
-	pa.getIntParIntGraph(root_mm);
-	pa.getExtParIntGraph(root_mm);
-	pa.threadInteraction(root_mm);
+	pa.getIntParIntGraph(mroot);
+	pa.getExtParIntGraph(mroot);
+	pa.threadInteraction(mroot);  
 
 	MetaCallGraph mcg = pa.getMetaCallGraph();
+	// analyze just the method tree rooted in the main method, i.e.
+	// just the user program, not the other methods called by the
+	// JVM before "main".
+	Set set = mcg.getTransCallees(mroot);
+	set.add(mroot);
 
-	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext();){
+	for(Iterator it = set.iterator(); it.hasNext();){
 	    MetaMethod mm = (MetaMethod) it.next();
 	    if(!pa.analyzable(mm.getHMethod())) continue;
 	    pa.getIntParIntGraph(mm);
 	    pa.getExtParIntGraph(mm);
-	    pa.threadInteraction(mm);  
+	    ParIntGraph pig = pa.threadInteraction(mm);  
+	    System.out.println("META-METHOD: " + mm);
+	    System.out.println(pig);
 	}
 
 	System.out.println("MEMORY ALLOCATION STATISTICS ======");
@@ -524,7 +546,7 @@ public abstract class PAMain {
 
 	System.out.println("CAPTURED NODES:");
 
-	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext();){
+	for(Iterator it = set.iterator(); it.hasNext();){
 	    MetaMethod mm = (MetaMethod) it.next();
 	    if(!pa.analyzable(mm.getHMethod())) continue;
 	    ParIntGraph pig = pa.threadInteraction(mm);
@@ -553,7 +575,7 @@ public abstract class PAMain {
 
 	int nb_pcaptured = 0;
 
-	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext();){
+	for(Iterator it = set.iterator(); it.hasNext();){
 	    MetaMethod mm = (MetaMethod) it.next();
 	    if(!pa.analyzable(mm.getHMethod())) continue;
 	    ParIntGraph pig = pa.threadInteraction(mm);
@@ -587,8 +609,16 @@ public abstract class PAMain {
     private static void hole_stats(PointerAnalysis pa){
 	MetaCallGraph mcg = pa.getMetaCallGraph();
 	harpoon.Analysis.PointerAnalysis.InterThreadPA.TIMING = false;
+	MetaMethod mroot = new MetaMethod(hroot, true);
 
-	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext();){
+	Set set = mcg.getTransCallees(mroot);
+	set.add(mroot);
+
+	pa.getIntParIntGraph(mroot);
+	pa.getExtParIntGraph(mroot);
+	pa.threadInteraction(mroot);  
+
+	for(Iterator it = set.iterator(); it.hasNext();){
 	    MetaMethod mm = (MetaMethod) it.next();
 	    if(!pa.analyzable(mm.getHMethod())) continue;
 	    pa.getIntParIntGraph(mm);
@@ -618,6 +648,18 @@ public abstract class PAMain {
 	for(Iterator it = holes.iterator(); it.hasNext(); )
 	    System.out.println("  " + (HMethod) it.next());
 	System.out.println("==========================================");
+    }
+
+    // extract the method roots from the set of all the roots
+    // (methods and classes)
+    private static Set extract_method_roots(Set roots){
+	Set mroots = new HashSet();
+	for(Iterator it = roots.iterator(); it.hasNext(); ){
+	    Object obj = it.next();
+	    if(obj instanceof HMethod)
+		mroots.add(obj);
+	}
+	return mroots;
     }
 
 }

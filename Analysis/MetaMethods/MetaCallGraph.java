@@ -16,7 +16,7 @@ import harpoon.Analysis.PointerAnalysis.Relation;
  methods are called by a given meta method [at a specific call site].
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraph.java,v 1.1.2.2 2000-03-20 21:28:59 salcianu Exp $
+ * @version $Id: MetaCallGraph.java,v 1.1.2.3 2000-03-28 23:51:33 salcianu Exp $
  */
 
 public interface MetaCallGraph {
@@ -35,6 +35,11 @@ public interface MetaCallGraph {
     /** Returns the set of all the meta methods that might be called during the
 	execution of the program. */
     public Set getAllMetaMethods();
+
+    /** Returns the set of all the meta methods that might be called, directly
+	or indirectly, by the meta method <code>mm</code>. It's just the
+	transitive closure of the <code>getCallees</code> method. */
+    public Set getTransCallees(MetaMethod mm);
 
     /** Computes the <i>split</i> relation. This is a <code>Relation</code>
 	that associates to each <code>HMethod</code> the set of

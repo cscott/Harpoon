@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.HashSet;
 import java.lang.reflect.Modifier;
 
 import java.io.FileWriter;
@@ -39,7 +40,7 @@ import harpoon.Util.BasicBlocks.CachingBBConverter;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.15 2000-03-24 06:15:44 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.16 2000-03-28 23:51:53 salcianu Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
@@ -82,7 +83,16 @@ public abstract class EventDriven extends harpoon.IR.Registration {
         ClassHierarchy chx = new QuadClassHierarchy(linker, cc, hco);
 
 	CachingBBConverter bbconv=new CachingBBConverter(hco);
-	MetaCallGraph mcg=new MetaCallGraphImpl(bbconv, chx, m);
+
+	// costruct the set of all the methods that might be called by 
+	// the JVM (the "main" method plus the methods which are called by
+	// the JVM before main) and next pass it to the MetaCallGraph
+	// constructor. [AS]
+	Set mroots = extract_method_roots(
+	    harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+	mroots.add(m);
+
+	MetaCallGraph mcg = new MetaCallGraphImpl(bbconv, chx, mroots);
 	//MetaAllCallers mac=new MetaAllCallers(mcg);
 
 
@@ -278,4 +288,18 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	w.add(ss.getDeclaredMethod("accept", new HClass[0]));
 	return w;
     }
+
+
+    // extract the method roots from the set of all the roots
+    // (methods and classes)
+    private static Set extract_method_roots(Collection roots){
+	Set mroots = new HashSet();
+	for(Iterator it = roots.iterator(); it.hasNext(); ){
+	    Object obj = it.next();
+	    if(obj instanceof HMethod)
+		mroots.add(obj);
+	}
+	return mroots;
+    }
+
 }

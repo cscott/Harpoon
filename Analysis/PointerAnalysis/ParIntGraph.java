@@ -20,7 +20,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.21 2000-03-25 05:17:25 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.22 2000-03-28 23:51:50 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -363,6 +363,15 @@ public class ParIntGraph {
 	return buffer.toString();
     }
 
+
+    /** Checks whether two <code>ParIntGraph</code>s are equal or not. In
+	addition to the <code>equals</code> method, this handles the 
+	comparisom of <code>null</code> objects. */
+    public static boolean identical(ParIntGraph pig1, ParIntGraph pig2){
+	if((pig1 == null) || (pig2 == null))
+	    return (pig1 == pig2);
+	return pig1.equals(pig2);
+    }
 }
 
 

@@ -34,7 +34,7 @@ import harpoon.Util.UComp;
  (one method call per iteration!).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightBasicBlock.java,v 1.1.2.2 2000-03-24 22:33:02 salcianu Exp $
+ * @version $Id: LightBasicBlock.java,v 1.1.2.3 2000-03-28 23:51:54 salcianu Exp $
  */
 public class LightBasicBlock {
 
@@ -77,6 +77,21 @@ public class LightBasicBlock {
     /** Returns the inctructions in <code>this</code> basic block. */
     public final HCodeElement[] getElements(){
 	return elements;
+    }
+
+    /** Returns the first instruction from <code>this</code> basic block. */
+    public final HCodeElement getFirstElement(){
+	if(elements.length > 0)
+	    return elements[0];
+	return null;
+    }
+
+    /** Returns the last instruction from <code>this</code> basic block. */
+    public final HCodeElement getLastElement(){
+	int len = elements.length;
+	if(len > 0)
+	    return elements[len - 1];
+	return null;
     }
 
     /** String representation. */

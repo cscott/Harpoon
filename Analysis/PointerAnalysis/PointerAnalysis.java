@@ -65,7 +65,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.36 2000-03-27 16:32:21 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.37 2000-03-28 23:51:50 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -486,9 +486,6 @@ public class PointerAnalysis {
 	    System.out.println(total_time + "ms");
     }
 
-    // Mapping LightBasicBlock -> ParIntGraph.
-    //Map lbb2pig = new HashMap();
-
     MetaMethod current_intra_mmethod = null;
     ParIntGraph initial_pig = null;
 
@@ -544,10 +541,11 @@ public class PointerAnalysis {
 
 	    //ParIntGraph old_info = (ParIntGraph) lbb2pig.get(lbb_work);
 	    // annotation
-	    ParIntGraph old_info = (ParIntGraph) lbb_work.user_info;
-	    ParIntGraph new_info = analyze_basic_block(lbb_work);
+	    ParIntGraphPair old_info = (ParIntGraphPair) lbb_work.user_info;
+	    analyze_basic_block(lbb_work);
+	    ParIntGraphPair new_info = (ParIntGraphPair) lbb_work.user_info;
 
-	    if(must_check && !new_info.equals(old_info)){
+	    if(must_check && !ParIntGraphPair.identical(old_info, new_info)){
 		// yes! The succesors of the analyzed basic block
 		// are potentially "interesting", so they should be added
 		// to the intra-procedural worklist
@@ -570,6 +568,10 @@ public class PointerAnalysis {
      *  local variable of that function but it must be also accessible
      *  to the <code>PAVisitor</code> class */
     private ParIntGraph lbbpig = null;
+
+    // The pair of ParIntGraphs computed by the inter-procedural analysis
+    // will be put here. 
+    private ParIntGraphPair call_pp = null;
 
     /** QuadVisitor for the <code>analyze_basic_block</code> */
     private class PAVisitor extends QuadVisitor{
@@ -757,11 +759,11 @@ public class PointerAnalysis {
 		return;
 	    }
 
-	    InterProcPA.analyze_call(current_intra_mmethod,
-				     q,     // the CALL site
-				     lbbpig, // the graph before the call
-				     PointerAnalysis.this);
-
+	    call_pp = 
+		InterProcPA.analyze_call(current_intra_mmethod,
+					 q,     // the CALL site
+					 lbbpig, // the graph before the call
+					 PointerAnalysis.this);
 	}
 
 	// We are sure that the call site q corresponds to a thread start
@@ -852,7 +854,7 @@ public class PointerAnalysis {
      *  the beginning of the basic block, it is next updated by all the 
      *  instructions appearing in the basic block (in the order they appear
      *  in the original program). */
-    private ParIntGraph analyze_basic_block(LightBasicBlock lbb){
+    private void analyze_basic_block(LightBasicBlock lbb){
 	if(DEBUG2){
 	    System.out.println("BEGIN: Analyze_basic_block " + lbb);
 	    System.out.print("Prev BBs: ");
@@ -886,8 +888,14 @@ public class PointerAnalysis {
 	    q.accept(pa_visitor);
 	}
 
-	//lbb2pig.put(lbb, lbbpig);
-	lbb.user_info = lbbpig; // annotation
+	// if it was a pair, store the pair computed by the inter proc module,
+	// otherwise, only the first element of the pair is essential.
+	if(call_pp != null){
+	    lbb.user_info = call_pp;
+	    call_pp = null;
+	}
+	else
+	    lbb.user_info = new ParIntGraphPair(lbbpig, null);
 
 	if(DEBUG2){
 	    System.out.println("After:");
@@ -899,17 +907,29 @@ public class PointerAnalysis {
 		System.out.print((LightBasicBlock) next_lbbs[i] + " ");
 	    System.out.println("\n");
 	}
-	    
-	return lbbpig;
     }
     
     /** Returns the Parallel Interaction Graph at the point bb*
      *  The returned <code>ParIntGraph</code> must not be modified 
      *  by the caller. This function is used by 
      *  <code>get_initial_bb_pig</code>. */
-    private ParIntGraph get_after_bb_pig(LightBasicBlock lbb){
+    private ParIntGraph get_after_bb_pig(LightBasicBlock lbb,
+					 LightBasicBlock lbb_son){
+
+	ParIntGraphPair pp = (ParIntGraphPair) lbb.user_info;
+	if(pp==null)
+	    return ParIntGraph.EMPTY_GRAPH;
+
+	int k = 0;
+	HCodeElement last_lbb = lbb.getLastElement();
+	if((last_lbb != null) && (last_lbb instanceof CALL)){
+	    CALL call = (CALL) last_lbb;
+	    HCodeElement first_lbb_son = lbb_son.getFirstElement();
+	    if(!call.next(0).equals(first_lbb_son)) k = 1;
+	}
+
 	//ParIntGraph pig = (ParIntGraph) lbb2pig.get(lbb);
-	ParIntGraph pig = (ParIntGraph) lbb.user_info; // annotation
+	ParIntGraph pig = pp.pig[k];
 	return (pig==null)?ParIntGraph.EMPTY_GRAPH:pig;
     }
 
@@ -933,10 +953,10 @@ public class PointerAnalysis {
 	    // do the union of the <code>ParIntGraph</code>s attached to
 	    // all the predecessors of this basic block
 	    ParIntGraph pig = 
-		(ParIntGraph) (get_after_bb_pig(prev[0])).clone();
+		(ParIntGraph) (get_after_bb_pig(prev[0], lbb)).clone();
 
 	    for(int i = 1; i < len; i++)
-		pig.join(get_after_bb_pig(prev[i]));
+		pig.join(get_after_bb_pig(prev[i], lbb));
 
 	    return pig;
 	}
@@ -1067,7 +1087,7 @@ public class PointerAnalysis {
 	return retval;
     }
 
-    // activate the GC
+    // activates the GC
     private final void clear_lbb2pig(LightBasicBlock.Factory lbbf){
 	LightBasicBlock[] lbbs = lbbf.getAllBBs();
 	for(int i = 0; i < lbbs.length; i++)

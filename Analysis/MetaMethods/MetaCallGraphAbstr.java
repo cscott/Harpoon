@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 
 import java.io.PrintWriter;
 
@@ -21,7 +22,7 @@ import harpoon.ClassFile.HCodeElement;
  <code>MetaCallGraph</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphAbstr.java,v 1.1.2.3 2000-03-27 21:12:32 salcianu Exp $
+ * @version $Id: MetaCallGraphAbstr.java,v 1.1.2.4 2000-03-28 23:51:33 salcianu Exp $
  */
 public abstract class MetaCallGraphAbstr implements MetaCallGraph {
 
@@ -51,6 +52,23 @@ public abstract class MetaCallGraphAbstr implements MetaCallGraph {
 	    retval = empty_array;
 	return retval;
     }
+ 
+    /** Returns the set of all the meta methods that might be called, directly
+	or indirectly, by the meta method <code>mm</code>. */
+    public Set getTransCallees(MetaMethod mm){
+	Set set = new HashSet();
+	LinkedList W = new LinkedList();
+	W.add(mm);
+	while(!W.isEmpty()){
+	    MetaMethod mm_work = (MetaMethod) W.removeFirst();
+	    MetaMethod[] callees = getCallees(mm_work);
+	    for(int i = 0; i < callees.length; i++)
+		if(set.add(callees[i]))
+		    W.addLast(callees[i]);
+	}
+	return set;
+    }
+   
 
     /** Returns the set of all the call sites in the code of the meta-method
 	<code>mm</code>. */
