@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.72 1999-08-21 04:25:43 cananian Exp $
+% $Id: thesis.tex,v 1.73 1999-08-21 05:54:01 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -30,17 +30,18 @@
 % double-space
 \linespread{1.2} %one-and-a-half spacing is 1.3
 
-\title{Static Single Information Form\\
-\small Or, chiseled on stone this'll last 4000 years}
+\title{Static Single Information Form
+%\\ \small Or, chiseled on stone this'll last 4000 years
+}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.72 $ $}
+\date{\today \\ $ $Revision: 1.73 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.72 $ $}{$ $Revision: 1.72 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.73 $ $}{$ $Revision: 1.73 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -174,10 +175,10 @@ interprocedural \phifunction{s} in \cite{liao99:issa},
 $\mu$- and $\chi$-functions in \cite{chow96:hssa},
 $\mu$- and $\eta$-functions in \cite{gerlek95:inductssa},\footnote{Compare to
 \cite{ballance90:pdw,tu95:gssa}.} and $\Lambda$-functions in \cite{lo98:ssu},
-among others.\footnote{Maybe.
-Actually I've named all the ones I know about.  Except for TGSSA,
-an early form of which apparently used $\mu$- and $\nu$-functions (mentioned in
-\cite{weise94:vdg}).}
+among others.%\footnote{Maybe.
+%Actually I've named all the ones I know about.  Except for TGSSA,
+%an early form of which apparently used $\mu$- and $\nu$-functions (mentioned
+%in \cite{weise94:vdg}).}
 Some of these are orthogonal to our work---the techniques of
 \cite{lee99:parssa} can be used to extend SSI form to explicitly
 parallel source languages, and those of \cite{chow96:hssa} to
@@ -534,7 +535,8 @@ The algorithm and data structures required are presented in figures
 shows the SESE regions on the left and program structure tree on
 the right for the example of figure~\vref{fig:CQex}.%
 \footnote{In addition, the regions ${c,d,e}$ and ${f,g}$ are
-\emph{sequentially composed} \cite{johnson94:pst}.  Does this matter?}
+\emph{sequentially composed} \cite{johnson94:pst}. 
+However, our SSI construction algorithm doesn't use this property.}
 
 \begin{myfigure}\small\input{Figures/THsesedata}
 \caption{Datatypes and operations used in construction of the PST.}
@@ -761,7 +763,7 @@ Zadeck's Sparse Conditional Constant (SCC) algorithm
 null-pointer checks, computes variable types, and performs
 floating-point- and string-constant-propagation in addition to the
 integer constant propagation of standard SCC.\footnote{It also washes
-the dishes and does the laundry.  It does not do windows$^{\text{TM}}$.}
+the dishes and does the laundry.}
 
 We will describe this algorithm incrementally, beginning with the
 standard SCC constant-propagation algorithm for review.
@@ -777,7 +779,7 @@ form, which we will describe in section \ref{sec:sccssi}. Section
 \caption{Three-level value lattice and two-level executability lattice for SCC.}
 \label{fig:scclat1}
 \end{myfigure}
-\begin{table}\centering
+\begin{mytable}\centering
 $\begin{array}{|l|cccc|} \hline
 \meet & \bot & c & d (\not= c) & \top \\ \hline
 \bot  & \bot & c & d  & \top \\
@@ -793,7 +795,7 @@ c     &   c  &c\oplus d& \top \\
 \end{array}$
 \caption{Meet and binary operation rules on the SCC value lattice.}
 \label{tab:sccmeet1}
-\end{table}
+\end{mytable}
 \begin{myalgorithm}\small
 \input{Figures/THsccalg1}
 \caption{SCC algorithm for SSA form.}\label{alg:scc}
@@ -951,7 +953,7 @@ identical to that of the previous algorithm.
 \caption{Java typing rules for binary operations.}
 \label{fig:scc_typed_binop}
 \end{myfigure}
-\begin{table}%[t]
+\begin{mytable}%[t]
 \begin{tabular}{|l|l|c|c|c|}\hline
 Hierarchy & Source language & Classes & Avg. depth & Max. depth \\ \hline
 FLEX infrastructure & Java  &   550   &    1.9     &     5      \\
@@ -963,7 +965,7 @@ Objectworks 4.1$^\dag$&Smalltalk & 774 &   4.4     &    10      \\ \hline
  \cite{muthukrishnan96:ch}.}
 \caption{Class hierarchy statistics for several large O-O projects.}
 \label{tab:chstats}
-\end{table}
+\end{mytable}
 \begin{myalgorithm}\small
 \input{Figures/THscctyped}
 \caption{\code{Visit} procedure for typed SCC/SSI.}
@@ -1112,6 +1114,7 @@ requires control-flow graph information in order to be executable. We
 would like to have a demand-driven operational semantics for SSI form
 that does not require control-flow information; thus freeing us to
 more flexibly reorder execution.
+\fixme{Mention the work of Traub, like the introduction said we would.}
 
 In particular, we would like a representation that eliminates
 unnecessary control dependencies such as exist in the program of

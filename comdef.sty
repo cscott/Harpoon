@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.18 1999-08-18 16:05:26 cananian Exp $
+% $Id: comdef.sty,v 1.19 1999-08-21 05:54:00 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -15,6 +15,10 @@
 % A breaking non-space for URLs
 \newcommand{\bp}{\hspace{0pt}}
 
+% put horizontal rules at bottom of table environment.
+\newenvironment{mytable}[1][tbp]
+	{\begin{table}[#1]\linespread{1}}% no line at top.
+	{\vspace{8pt}\hrule\end{table}}
 % put horizontal rules at top and bottom of figure environment
 \newenvironment{myfigure}[1][tbp]
 	{\begin{figure}[#1]\linespread{1}\hrule\vspace{8pt}}
