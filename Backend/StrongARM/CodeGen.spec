@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.149 2000-03-09 03:57:31 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.150 2000-03-22 05:14:49 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1918,7 +1918,8 @@ THROW(val, handler) %{
     emitMOVE( ROOT, "mov `d0, `s0", r0, val );
     declareCALL();
     declare( r0, code.getTreeDerivation(), ROOT.getRetex() );
-    emit( ROOT, "bl _lookup @ (only r0 & fp are preserved during lookup)",
+    emit( ROOT, "bl "+nameMap.c_function_name("_lookup_handler")+
+	        " @ (only r0 & fp are preserved during lookup)",
 	         new Temp[] { r1, r2, r3, LR }, // clobbers
 		 new Temp[] { FP }, true, null); 
     // mark exit point.
