@@ -14,6 +14,8 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.LowQuad.LowQuadNoSSA;
 import harpoon.IR.LowQuad.LowQuadSSA;
+import harpoon.IR.Properties.CFGrapher;
+import harpoon.IR.Properties.UseDefer;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -28,7 +30,7 @@ import harpoon.Util.Util;
  * The tree form is based around Andrew Appel's tree form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: TreeCode.java,v 1.1.2.29 2000-02-15 19:02:05 cananian Exp $
+ * @version $Id: TreeCode.java,v 1.1.2.30 2000-02-16 23:04:32 cananian Exp $
  * 
  */
 public class TreeCode extends Code {
@@ -90,6 +92,12 @@ public class TreeCode extends Code {
 
     /** @return false */
     public boolean isCanonical() { return false; } 
+    /** <code>CFGrapher</code> not valid for non-canonical trees. 
+     * @return null */
+    public CFGrapher getGrapher() { return null; }
+    /** <code>UseDefer</code> not valid for non-canonical trees. 
+     * @return null */
+    public UseDefer getUseDefer() { return null; }
 
     /** 
      * This operation is not supported in non-canonical tree forms.
