@@ -531,6 +531,8 @@ int openfile(struct block *ptr, char *filename) {
   }
   itb->entries[inode].filesize=0;
   itb->entries[inode].referencecount=1;
+  for (int i=0;i<12;i++)
+    itb->entries[inode].Blockptr[i]=0;
 
   addtode(ptr, inode, filename);
   files[fd].inode=inode;
