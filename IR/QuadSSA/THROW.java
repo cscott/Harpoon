@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * <code>THROW</code> represents a <Code>throw<code> statement.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: THROW.java,v 1.6 1998-09-08 14:38:39 cananian Exp $
+ * @version $Id: THROW.java,v 1.7 1998-09-09 23:02:49 cananian Exp $
  */
 
 public class THROW extends Quad {
@@ -16,7 +16,7 @@ public class THROW extends Quad {
 
     /** Creates a <code>THROW</code>. */
     public THROW(HCodeElement source, Temp throwable) {
-        super(source, 1, 0 /* does not return */);
+        super(source, 1, 1 /* one successor, the footer node. */);
 	this.throwable = throwable;
     }
 

@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.58 1998-09-09 22:29:08 cananian Exp $
+ * @version $Id: Translate.java,v 1.59 1998-09-09 23:02:49 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -46,10 +46,12 @@ class Translate  { // not public.
 	int monitorDepth;
 	/** All try blocks for this method. */
 	ExceptionEntry allTries[];
+	/** The footer for this block. */
+	FOOTER footer;
 
 	static class BlockContext {
-	/** Exit block for nested monitors */
-	    Quad exitBlock;
+	/** previous footer block for nested monitors (exitMonitor uses) */
+	    FOOTER oldFooter;
 	/** Temp to store exit destination instr index in. */
 	    Temp exitTemp;
 	/** Continuation TransStates at exit of monitor block. */
@@ -59,11 +61,11 @@ class Translate  { // not public.
 	    static final int MONITOR = 0;
 	    static final int JSR = 1;
 	/** Constructor */
-	    BlockContext(Quad eb, Temp et, Vector c, int ty) {
-		exitBlock = eb; exitTemp = et; continuation = c; type = ty;
+	    BlockContext(FOOTER of, Temp et, Vector c, int ty) {
+		oldFooter = of; exitTemp = et; continuation = c; type = ty;
 	    }
-	    BlockContext(int ty) {
-		this(null, new Temp(), new Vector(), ty);
+	    BlockContext(FOOTER of, int ty) {
+		this(of, new Temp(), new Vector(), ty);
 	    }
 	}
 	/** A stack of try/monitor context information. */
@@ -71,30 +73,32 @@ class Translate  { // not public.
 
 	/** Constructor. */
 	private State(Temp stack[], Temp lv[], int monitorDepth, 
-		      BlockContext nest[], ExceptionEntry allTries[]) {
+		      BlockContext nest[], ExceptionEntry allTries[],
+		      FOOTER footer) {
 	    this.stack = stack; this.lv = lv;
 	    this.monitorDepth = monitorDepth;
 	    this.nest = nest;
 	    this.allTries = allTries;
+	    this.footer = footer;
 	}
 	/** Make new state by popping top of stack */
 	State pop() { return pop(1); }
 	/** Make new state by popping multiple entries off top of stack */
 	State pop(int n) {
 	    Temp stk[] = (Temp[]) shrink(this.stack, n);
-	    return new State(stk, lv, monitorDepth, nest, allTries);
+	    return new State(stk, lv, monitorDepth, nest, allTries, footer);
 	}
 	/** Make new state by pushing temp onto top of stack */
 	State push(Temp t) {
 	    Temp stk[] = (Temp[]) grow(this.stack);
 	    stk[0] = t;
-	    return new State(stk, lv, monitorDepth, nest, allTries);
+	    return new State(stk, lv, monitorDepth, nest, allTries, footer);
 	}
 	/** Make new state by changing the temp corresponding to an lv. */
 	State assignLV(int lv_index, Temp t) {
 	    Temp nlv[] = (Temp[]) lv.clone();
 	    nlv[lv_index] = t;
-	    return new State(stack, nlv, monitorDepth, nest, allTries);
+	    return new State(stack, nlv, monitorDepth, nest, allTries, footer);
 	}
 	/** Make new state by renaming all the Stack and Local Variable slots.
 	 */
@@ -111,48 +115,55 @@ class Translate  { // not public.
 		    nlv[i] = null;
 		else
 		    nlv[i] = new Temp(this.lv[i]);
-	    return new State(stk, nlv, monitorDepth, nest, allTries);
+	    return new State(stk, nlv, monitorDepth, nest, allTries, footer);
 	}
 	/** Make new state by clearing all by the top entry of the stack. */
 	State enterCatch() {
 	    Temp stk[] = new Temp[] { this.stack[0] };
-	    return new State(stk, lv, monitorDepth, nest, allTries);
+	    return new State(stk, lv, monitorDepth, nest, allTries, footer);
 	}
 	/** Make new state by entering a monitor block. */
-	State enterMonitor() {
+	State enterMonitor(FOOTER newFooter) {
 	    BlockContext ns[] = (BlockContext[]) grow(this.nest);
-	    ns[0] = new BlockContext(BlockContext.MONITOR);
-	    return new State(stack, lv, monitorDepth+1, ns, allTries);
+	    ns[0] = new BlockContext(this.footer, BlockContext.MONITOR);
+	    return new State(stack, lv, monitorDepth+1, ns, allTries, 
+			     newFooter);
 	}
 	/** Make new state by exiting a monitor block. */
 	State exitMonitor() {
 	    Util.assert(monitorDepth>0);
 	    BlockContext ns[] = (BlockContext[]) shrink(this.nest);
-	    return new State(stack, lv, monitorDepth-1, ns, allTries);
+	    return new State(stack, lv, monitorDepth-1, ns, allTries, 
+			     this.nest[0].oldFooter);
 	}
 	/** Make new state by entering a JSR/RET block. The "return address"
 	 *  <code>t</code> gets pushed on top of the stack. */
 	State enterJSR(Temp t) {
 	    BlockContext ns[] = (BlockContext[]) grow(this.nest);
-	    ns[0] = new BlockContext(BlockContext.JSR);
-	    return new State(stack, lv, monitorDepth, ns, allTries).push(t);
+	    ns[0] = new BlockContext(this.footer, BlockContext.JSR);
+	    return new State(stack, lv, monitorDepth, ns, allTries, footer).
+		push(t);
 	}
 	/** Make new state, as when exiting a JSR/RET block. */
 	State exitJSR() {
 	    BlockContext ns[] = (BlockContext[]) shrink(this.nest);
-	    return new State(stack, lv, monitorDepth, ns, allTries);
+	    return new State(stack, lv, monitorDepth, ns, allTries, 
+			     this.nest[0].oldFooter);
 	}
 
 	/** Initialize state with temps corresponding to parameters. */
-	State(Temp[] locals, ExceptionEntry[] allTries) {
-	    this(new Temp[0], locals, 0, new BlockContext[0], allTries);
+	State(Temp[] locals, ExceptionEntry[] allTries, FOOTER footer) {
+	    this(new Temp[0], locals, 0, new BlockContext[0], 
+		 allTries, footer);
 	}
 	/** Creates a new State object identical to this one. */
 	public Object clone() {
 	    return new State((Temp[]) stack.clone(), 
 			     (Temp[]) lv.clone(), 
 			     monitorDepth,
-			     (BlockContext[]) nest.clone(), allTries);
+			     (BlockContext[]) nest.clone(), 
+			     allTries,
+			     footer);
 	}
 
 	// Utility functions... ///////////////////////////////
@@ -239,9 +250,11 @@ class Translate  { // not public.
 		locals[i] = new Temp("lv$"+i);
 	}
 
-	State s = new State(locals, bytecode.getTryBlocks());
+	Instr firstInstr = (Instr) bytecode.getElements()[0];
+	State s = new State(locals, bytecode.getTryBlocks(),
+			    new FOOTER(firstInstr));
 
-	Quad quads = new METHODHEADER(bytecode.getElements()[0], params);
+	Quad quads = new METHODHEADER(firstInstr, s.footer, params);
 
 	Temp Tnull = new Temp("$null");
 	Temp Tzero = new Temp("$zero");
@@ -251,7 +264,7 @@ class Translate  { // not public.
 	Quad.addEdge(q1, 0, q2, 0);
 
 	// translate using state.
-	trans(new TransState(s, (Instr) bytecode.getElements()[0], q2, 0),
+	trans(new TransState(s, firstInstr, q2, 0),
 	      Tzero, Tnull);
 
 	// return result.
@@ -279,9 +292,10 @@ class Translate  { // not public.
 		Quad q; State ns;
 		if (isMonitor) { // MONITOR
 		    // Make header nodes for block.
-		    Quad monitorBlock = new HEADER(ts.in);
+		    HEADER monitorBlock = new HEADER(ts.in,
+						     new FOOTER(ts.in));
 		    // Recursively generate monitor quads.
-		    ns = s.enterMonitor().pop();
+		    ns = s.enterMonitor(monitorBlock.footer).pop();
 		    trans(new TransState(ns, ts.in.next()[0], monitorBlock, 0),
 			  Tzero, Tnull);
 		    // Make and link MONITOR
@@ -301,13 +315,15 @@ class Translate  { // not public.
 			  Tzero, Tnull);
 		}
 
-		// make PHI at exit of MONITOR/JSR
-		ns.nest[0].exitBlock = 
+		// make PHI & FOOTER at exit of MONITOR/JSR
+		PHI exitBlock =
 		    new PHI(ts.in, new Temp[] { ns.nest[0].exitTemp },
 		            ns.nest[0].continuation.size());
-		// Link new MONITOR/JSR quad, if necessary.
-		if (q==null)
-		    q = ns.nest[0].exitBlock;
+
+		if (isMonitor)
+		    ns.footer.attach(exitBlock, 0);
+		else // JSR/RET
+		    q = exitBlock;
 		
 		// make post-block quads.
 		int i;
@@ -319,8 +335,8 @@ class Translate  { // not public.
 					new Integer(i), HClass.Int);
 		    Quad.addEdge(tsi.header, tsi.which_succ, c0, 0);
 		    //  jmp
-		    Quad.addEdge(c0, 0, ns.nest[0].exitBlock, i);
-		    ((PHI)ns.nest[0].exitBlock).src[0][i] = c0.dst;
+		    Quad.addEdge(c0, 0, exitBlock, i);
+		    exitBlock.src[0][i] = c0.dst;
 		    
 		    // different test for final val.
 		    if (i==ns.nest[0].continuation.size()-1)
@@ -1269,10 +1285,12 @@ class Translate  { // not public.
 	case Op.LRETURN:
 	    q = new RETURN(in, s.stack[0]);
 	    r = new TransState[0];
+	    s.footer.attach(q, 0);
 	    break;
 	case Op.RETURN:
 	    q = new RETURN(in);
 	    r = new TransState[0];
+	    s.footer.attach(q, 0);
 	    break;
 	case Op.ATHROW:
 	    r = transThrow(ts, handlers, Tnull, true);
@@ -1464,6 +1482,7 @@ class Translate  { // not public.
 	// exception not caught in try.  Throw it.
 	Quad q = new THROW(ts.in, Tex);
 	Quad.addEdge(header, which_succ, q, 0);
+	ts.initialState.footer.attach(q, 0);
 	// grok rTS into TransState[]
 	TransState[] r = new TransState[rTS.size()];
 	rTS.copyInto(r);
