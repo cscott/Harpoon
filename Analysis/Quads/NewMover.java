@@ -7,6 +7,7 @@ import harpoon.Analysis.Transformation.*;
 import harpoon.ClassFile.*;
 import harpoon.IR.Quads.*;
 import harpoon.Temp.*;
+import harpoon.Util.Collections.*;
 import harpoon.Util.*;
 
 import java.util.*;
@@ -25,7 +26,7 @@ import java.util.*;
  * <code>NewMover</code> works best on <code>QuadWithTry</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NewMover.java,v 1.1.2.1 2001-11-08 18:08:52 cananian Exp $
+ * @version $Id: NewMover.java,v 1.1.2.2 2001-11-08 19:04:09 cananian Exp $
  */
 public class NewMover extends MethodMutator {
     /** Creates a <code>NewMover</code> that uses the given
@@ -43,8 +44,8 @@ public class NewMover extends MethodMutator {
     void traverseBlock(MoveVisitor mv, Edge in) {
 	mv.from = in;
 	mv.done = false;
-	Util.assert(mv.movingNews.isEmpty());
-	Util.assert(mv.movingMoves.isEmpty());
+	Util.assert(mv.state.moving.isEmpty());
+	Util.assert(mv.state.aliases.isEmpty());
 	while (!mv.done)
 	    ((Quad)mv.from.to()).accept(mv);
 	// okay, recursively invoke on the one that stopped us.
@@ -55,32 +56,41 @@ public class NewMover extends MethodMutator {
 	    for (int i=0; i<stopper.nextLength(); i++)
 		traverseBlock(mv, stopper.nextEdge(i));
     }
+    static class State {
+	/** Set of NEWs we are moving, maintained as a map from dst->NEW. */
+	final Map moving;
+	/** MultiMap of aliases for a given Temp (defined by a NEW) */
+	final InvertibleMultiMap aliases;
+	State() {
+	    this.moving=new HashMap();
+	    this.aliases=new GenericInvertibleMultiMap();
+	}
+	State(State s) {
+	    this.moving=new HashMap(s.moving);
+	    this.aliases=new GenericInvertibleMultiMap(s.aliases);
+	}
+	public Object clone() { return new State(this); }
+    }
     class MoveVisitor extends QuadVisitor {
 	Edge from; boolean done;
-	Map movingNews = new HashMap();
-	Map movingMoves = new HashMap();
+	State state = new State();
 	Set seen = new HashSet();
 	public void visit(Quad q) {
-	    // if this quad uses any NEWs which are in 'movingNews',
-	    // or any MOVEs which are in 'movingMoves', then
-	    // drop them before here. (moves follow news)
+	    // if this quad uses any NEWs which are in 'moving',
+	    // (or any temps which are in aliases.values())
+	    // drop them before here. (MOVEs to aliases follow NEWs)
 	    Util.assert(q.prevLength()==1);
 	    Edge e = q.prevEdge(0);
-	    // find MOVEs first.
 	    for (Iterator it=q.useC().iterator(); it.hasNext(); ) {
 		Temp t = (Temp) it.next();
-		if (movingMoves.containsKey(t)) {
-		    MOVE qM = (MOVE) movingMoves.remove(t);
-		    e = addReversedAt(e, qM);
-		}
-	    }
-	    // now add NEWs before the MOVEs.
-	    for (Iterator it=q.useC().iterator(); it.hasNext(); ) {
-		Temp t = (Temp) it.next();
-		if (movingNews.containsKey(t)) {
-		    NEW qN = (NEW) movingNews.remove(t);
-		    e = addAt(e, qN);
-		}
+		if (!state.aliases.values().contains(t)) continue; //boring.
+		// unmap alias to canonical temp (defined by NEW)
+		Temp src = (Temp) state.aliases.invert().get(t);
+		Util.assert(state.aliases.invert().getValues(t).size()==1);
+		// dump it!
+		e = dumpOne(e, src);
+		state.moving.remove(src);
+		state.aliases.remove(src);
 	    }
 	    // done.
 	    Util.assert(q.nextLength()==1);
@@ -92,29 +102,45 @@ public class NewMover extends MethodMutator {
 	    from = Quad.addEdge((Quad)in.from(), in.which_succ(),
 				(Quad)out.to(), out.which_pred());
 	    // note that q is still in handler sets, which is what we want.
-	    movingNews.put(q.dst(), q);
+	    state.moving.put(q.dst(), q);
+	    state.aliases.add(q.dst(), q.dst()); // always alias to itself.
 	}
 	public void visit(MOVE q) {
 	    // if this MOVE uses the result of a NEW which we're moving,
 	    // pick it up, too.
-	    if (movingNews.containsKey(q.src()) ||
-		false/*movingMoves.containsKey(q.src())*/) {
-		// pick me up!
-		Edge in = q.prevEdge(0), out = q.nextEdge(0);
-		from = Quad.addEdge((Quad)in.from(), in.which_succ(),
-				    (Quad)out.to(), out.which_pred());
-		movingMoves.put(q.dst(), q);
+	    if (state.aliases.values().contains(q.src())) {
+		// get 'real' source (filter through inverted aliasMap)
+		Temp src = (Temp) state.aliases.invert().get(q.src());
+		// add a new alias.
+		state.aliases.add(src, q.dst());
+		// remove this guy.
+		from = q.remove();
 	    } else visit((Quad) q); // fallback to boring.
+	}
+	Edge dumpOne(Edge e, Temp t) {
+	    Util.assert(state.moving.containsKey(t));
+	    // first dump the NEW
+	    NEW qN = (NEW) state.moving.get(t);
+	    e = addAt(e, qN);
+	    // then dump all associated MOVEs.
+	    Temp src = qN.dst(); Util.assert(t.equals(src));
+	    for (Iterator it=state.aliases.getValues(src).iterator();
+		 it.hasNext(); ) {
+		Temp dst = (Temp) it.next();
+		if (src.equals(dst)) continue;
+		// no handler for the MOVE, but we don't care.
+		e = addAt(e, new MOVE(qN.getFactory(), qN, dst, src));
+	    }
+	    // done!
+	    return e;
 	}
 	void visitPhiSigma(Quad q) {
 	    // stop here, dump all moving MOVEs and NEWs on 'from'
 	    Edge e = from;
-	    for (int i=0; i<2; i++) {
-		Map m = (i==0) ? movingNews : movingMoves; // news first.
-		for (Iterator it=m.values().iterator(); it.hasNext(); )
-		    e = addAt(e, (Quad) it.next());
-		m.clear();
-	    }
+	    for (Iterator it=state.moving.keySet().iterator(); it.hasNext(); )
+		e = dumpOne(e, (Temp)it.next());
+	    state.moving.clear();
+	    state.aliases.clear();
 	}
 	public void visit(PHI q) {
 	    visitPhiSigma(q);
@@ -138,8 +164,8 @@ public class NewMover extends MethodMutator {
 	}
 	public void visit(FOOTER q) {
 	    // if we haven't used the MOVE/NEW by now, discard it.
-	    movingNews.clear();
-	    movingMoves.clear();
+	    state.moving.clear();
+	    state.aliases.clear();
 	    done=true;
 	}
     }
