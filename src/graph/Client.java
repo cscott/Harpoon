@@ -7,6 +7,8 @@ import imagerec.corba.CommunicationsModel;
 import imagerec.corba.CommunicationsAdapter;
 import imagerec.corba.CORBA;
 
+import java.io.IOException;
+
 /**
  * {@link Client} is a {@link Node} that connects the in-node through
  * a named CORBA call to a {@link Server}, which connects to an out-node.
@@ -42,22 +44,27 @@ public class Client extends Node {
 	boolean connectionMade = false;
 	while ((count <= triesTillFail) && !connectionMade) { 
 	    try {
+		System.out.println("Client: about to setup id client");
 		cs = cm.setupIDClient(name);
 		connectionMade = true;
+		System.out.println("Client: done setting up id client");
 	    } catch (org.omg.CosNaming.NamingContextPackage.NotFound e){
-		System.out.println("Client/CORBA Exception: No matching server by the name '"+name+"'"+
-				   " was found.\n  Waiting and trying again. (Try #"+count+"/"+triesTillFail+")");
-		try {
-		    Thread.currentThread().sleep(timeoutLength);
-		}
-		catch (InterruptedException ie) {
-		}
-		count++;
-
+		System.out.println("Client/CORBA Exception: No matching server by the name '"+name+"' was found.");
+	    } catch (java.io.IOException e) {
+		System.out.println("Client/Socket Exception: Socket Server \""+name+"\" refused connection.");
 	    } catch (Exception e2) {
 		System.out.println("**** "+e2.getClass()+" ******");
 		throw new Error(e2);
 	    }
+	    System.out.println("  Waiting and trying again. (Try #"+count+"/"+triesTillFail+")");
+	    try {
+		Thread.currentThread().sleep(timeoutLength);
+	    }
+	    catch (InterruptedException ie) {
+	    }
+	    count++;
+
+	
 	}
 
 	if (!connectionMade) {
