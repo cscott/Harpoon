@@ -56,7 +56,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.29 2000-02-28 17:34:32 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.30 2000-02-28 17:40:33 andyb Exp $
  */
 %%
     private InstrFactory instrFactory;
@@ -764,10 +764,9 @@ CALL(retval, retex, NAME(func), arglist, handler)
 %{
     /* AAA - Move paramaters into place, et al. */
 
-
-    emit (ROOT, "mov `s0, `d0",
-                new Temp[] { argo[0] },
-                new Temp[] { handler });
+    emit (ROOT, "mov "+handler+", `d0",
+                new Temp[] { rego[0] },
+                new Temp[] {  });
     emitDIRECTIVE (ROOT, "\t! coming soon: CALL support");
 }%
 
@@ -777,9 +776,9 @@ CALL(retval, retex, func, arglist, handler)
     /* AAA - move parameters into place, et al. */
 
 
-    emit (ROOT, "mov `s0, `d0",
-		new Temp[] { argo[0] },
-		new Temp[] { handler });
+    emit (ROOT, "mov "+handler+", `d0",
+		new Temp[] { rego[0] },
+		new Temp[] {  });
     emitDIRECTIVE (ROOT, "\t! coming soon: CALL support");
 }%
 
