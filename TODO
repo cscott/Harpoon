@@ -1,3 +1,9 @@
+---- Nov-11-98
+Audit code to ensure deterministic generation of quad-ssa form.
+ In particular, quads and temp numbering should not depend on how many and
+ which methods have been loading previously.  Need to make a TempFactory and
+ a QuadFactory to generate numbers. (how do we handle insertion of new 
+ quads/temps without breaking the numbering?)
 ---- Oct-21-98
 X Implement clone() method for IR.Bytecode.Code so that we don't die if we
 X clone a method before doing getCode("quad-ssa") on it.
