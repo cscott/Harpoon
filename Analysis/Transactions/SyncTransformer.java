@@ -85,7 +85,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.5.2.11 2003-07-21 20:58:34 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.5.2.12 2003-07-21 21:12:08 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -125,7 +125,8 @@ public class SyncTransformer
     private final boolean useSmartFieldOracle = // dumb down field oracle
 	!Boolean.getBoolean("harpoon.synctrans.nofieldoracle");
     private final boolean useSmartCheckOracle = // dumb down check oracle
-	!Boolean.getBoolean("harpoon.synctrans.nocheckoracle");
+	// XXX this is currently broken.
+	Boolean.getBoolean("harpoon.synctrans.checkoracle");
     private final boolean useUniqueRWCounters = // high-overhead counters
 	Boolean.getBoolean("harpoon.synctrans.uniquerwcounters");
     // this might have to be tweaked if we're using counters which are
@@ -960,7 +961,7 @@ public class SyncTransformer
 		    !fo.isUnsyncWrite(raf.field)) {
 		    in = CounterFactory.spliceIncrement
 			(qf, in, "synctrans.field_read_checks_skipped");
-		    continue;
+		    //continue; // XXX is this correct?
 		}
 		in = CounterFactory.spliceIncrement
 		    (qf, in, "synctrans.field_read_checks");
@@ -1013,7 +1014,7 @@ public class SyncTransformer
 		    !fo.isUnsyncWrite(raf.field)) {
 		    in = CounterFactory.spliceIncrement
 			(qf, in, "synctrans.field_write_checks_skipped");
-		    continue;
+		    //continue; // XXX is this correct?
 		}
 		in = CounterFactory.spliceIncrement
 		    (qf, in, "synctrans.field_write_checks");
