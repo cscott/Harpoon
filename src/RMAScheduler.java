@@ -88,12 +88,15 @@ public class RMAScheduler extends Scheduler {
     }
 
     protected long chooseThread(long currentTime) {
-	for (int threadID = 0; threadID <= numThreads; threadID++) {
-	    if (startPeriod[threadID] + period[threadID] < currentTime) {
-		startPeriod[threadID] += period[threadID];
-		work[threadID] = 0;
-	    }
-	}
+	NoHeapRealtimeThread.print("\ncurrentTime = ");
+	NoHeapRealtimeThread.print(currentTime);
+ 	for (int threadID = 0; threadID <= numThreads; threadID++) {
+ 	    if ((period[threadID]!=0)&&
+		(startPeriod[threadID] + period[threadID] < currentTime)) {
+ 		startPeriod[threadID] += period[threadID];
+ 		work[threadID] = 0;
+ 	    }
+ 	}
 	long minPeriod = Long.MAX_VALUE;
 	for (int threadID=OFFSET+1; threadID <= numThreads; threadID++) {
 	    if (startPeriod[threadID] + period[threadID] - currentTime < minPeriod) { 
@@ -101,15 +104,27 @@ public class RMAScheduler extends Scheduler {
 		minPeriod = startPeriod[threadID] + period[threadID] - currentTime;
 	    }
 	}
+
+	// Period ended, trigger context switch to rechoose
 	if (minPeriod < 1) {
 	    minPeriod = 1;
-	} // Period ended, trigger context switch to rechoose
+	} else if (minPeriod == Long.MAX_VALUE) { 	
+	    // No soonest period ender, run until block
+	    minPeriod = 0;
+	} else {
+	    // Convert from milliseconds to microseconds...
+	    minPeriod *= 1000;
+	}
+
 	if (currentThreadID != 0) {
 	    int threadID = (int)(currentThreadID+OFFSET);
+	    if (lastTime == 0) {
+		lastTime = startPeriod[threadID];
+	    }
 	    work[threadID]+= currentTime - lastTime; // I've done some work...
 	    lastTime = currentTime;
 	    if (enabled[threadID]) {
-		long timeLeft = cost[threadID] - work[threadID];
+		long timeLeft = (cost[threadID] - work[threadID])*1000;
 		if (timeLeft > 0) { // I'm not done yet with the current thread, keep running...
 		    setQuanta(timeLeft<minPeriod?timeLeft:minPeriod);
 		    return 0;
@@ -128,19 +143,32 @@ public class RMAScheduler extends Scheduler {
     protected long chooseThread2(long nextPeriod) {
 	long minPeriod = Long.MAX_VALUE;
 	int tid = -1;
-	for (int threadID=OFFSET+1; threadID <= numThreads; threadID++) { // Iterate through the Java threads
-	    if (enabled[threadID] && (cost[threadID] > work[threadID])) {
-		if (period[threadID] < minPeriod) { // Choose minimum period thread
+
+	// Iterate through the Java threads
+	for (int threadID=OFFSET+1; threadID <= numThreads; threadID++) { 
+	    if (enabled[threadID] && (period[threadID]!=0) && (cost[threadID] > work[threadID])) {
+		if (period[threadID] < minPeriod) { // Choose minimum period periodic thread
 		    minPeriod = period[threadID];
 		    tid = threadID;
 		}
 	    }
 	}
+
+	if (tid == -1) { // No periodic threads chosen
+	    // Iterate through the Java threads
+	    for (int threadID=OFFSET+1; threadID <= numThreads; threadID++) { 
+		if (enabled[threadID] && (period[threadID]==0)) {
+		    setQuanta(nextPeriod);
+		    return threadID-OFFSET; // Run the non-periodic until next period starts
+		}
+	    }
+	}
+
 	if (tid == -1) { // No threads chosen
 	    for (int threadID=0; threadID<OFFSET; threadID++) { // Go through C threads
 		if (enabled[threadID]) {
-		    setQuanta(0);
-		    return threadID-OFFSET; // Run that one until it blocks
+		    setQuanta(nextPeriod);
+		    return threadID-OFFSET; // Run that one until next period starts
 		}
 	    }
 	}
@@ -150,7 +178,7 @@ public class RMAScheduler extends Scheduler {
 	    return 0;
 	}
 
-	long timeLeft = cost[tid] - work[tid];
+	long timeLeft = (cost[tid] - work[tid])*1000;
 	setQuanta(timeLeft<nextPeriod?timeLeft:nextPeriod);
 	return tid-OFFSET;
     }
@@ -159,28 +187,24 @@ public class RMAScheduler extends Scheduler {
 	int threadID = (int)(thread.getUID()+OFFSET);
 
 	numThreads = threadID>numThreads?threadID:numThreads;
-	work[threadID] = 0;
 
 	ReleaseParameters r = thread.getReleaseParameters();
-	cost[threadID] = r.getCost().getMilliseconds();
-	period[threadID] = r.getDeadline().getMilliseconds();
-	startPeriod[threadID] = System.currentTimeMillis();
 	enabled[threadID] = true;
-	contextSwitch();
+	startPeriod[threadID] = System.currentTimeMillis();
+
+	if (r != null) {
+	    cost[threadID] = r.getCost().getMilliseconds();
+	    period[threadID] = r.getDeadline().getMilliseconds();
+	    contextSwitch();
+	}
     }
 
     protected void removeThread(RealtimeThread thread) {
-	int threadID = (int)(thread.getUID()+OFFSET);
-	enabled[threadID] = false;
+	enabled[(int)(thread.getUID()+OFFSET)] = false;
     }
 
     protected void addThread(long threadID) {
-	int tid = (int)(threadID+OFFSET);
-	work[tid] = 0;
-	cost[tid] = 0;
-	period[tid] = 0;
-	startPeriod[tid] = 0;
-	enabled[tid] = true;
+	enabled[(int)(threadID+OFFSET)] = true;
     }
 
     protected void removeThread(long threadID) {
@@ -200,25 +224,34 @@ public class RMAScheduler extends Scheduler {
     }
 
     public String toString() {
-	return "foo";
+	String s = "[";
+	for (int threadID = 0; threadID <= numThreads; threadID++) {
+	    if (enabled[threadID]) {
+		s+="[id: "+(threadID-OFFSET)+" p: "+period[threadID]+" c: "+
+		    cost[threadID]+" w: "+work[threadID]+" sp: "+
+		    startPeriod[threadID]+"]";
+	    }
+	}
+
+	return s+"]";
     }
 
     public void printNoAlloc() {
 	NoHeapRealtimeThread.print("[");
 	for (int threadID = 0; threadID <= numThreads; threadID++) {
-	    NoHeapRealtimeThread.print("[ id: ");
-	    NoHeapRealtimeThread.print(threadID-OFFSET);
-	    NoHeapRealtimeThread.print(" e: ");
-	    NoHeapRealtimeThread.print(enabled[threadID]?"t":"f");
-	    NoHeapRealtimeThread.print(" p: ");
-	    NoHeapRealtimeThread.print(period[threadID]);
-	    NoHeapRealtimeThread.print(" c: ");
-	    NoHeapRealtimeThread.print(cost[threadID]);
-	    NoHeapRealtimeThread.print(" w: ");
-	    NoHeapRealtimeThread.print(work[threadID]);
-	    NoHeapRealtimeThread.print(" sp: ");
-	    NoHeapRealtimeThread.print(startPeriod[threadID]);
-	    NoHeapRealtimeThread.print("]");
+	    if (enabled[threadID]) {
+		NoHeapRealtimeThread.print("[id: ");
+		NoHeapRealtimeThread.print(threadID-OFFSET);
+		NoHeapRealtimeThread.print(" p: ");
+		NoHeapRealtimeThread.print(period[threadID]);
+		NoHeapRealtimeThread.print(" c: ");
+		NoHeapRealtimeThread.print(cost[threadID]);
+		NoHeapRealtimeThread.print(" w: ");
+		NoHeapRealtimeThread.print(work[threadID]);
+		NoHeapRealtimeThread.print(" sp: ");
+		NoHeapRealtimeThread.print(startPeriod[threadID]);
+		NoHeapRealtimeThread.print("]");
+	    }
 	}
 
 	NoHeapRealtimeThread.print("]");
