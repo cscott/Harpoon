@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.23 2002-03-23 08:18:49 cananian Exp $
+% $Id: oopsla02.tex,v 1.24 2002-03-23 08:54:31 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -33,7 +33,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.23 $ $}{$ $Revision: 1.23 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.24 $ $}{$ $Revision: 1.24 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -642,71 +642,83 @@ is not.}
 \end{figure}
 
 \subsection{Profiling Mostly-Constant Fields}
-To aid the static specialization and field externalization
-transformations, we instrument a ``profiling build'' of the code
-to determine which fields are mostly-constant.  Our implementation
+To inform the static specialization and field externalization
+transformations, we instrument a profiling build of the code
+to determine which fields are {\it mostly-constant}.  Our implementation
 builds one binary per examined constant, that is, one binary to look
 for ``mostly-zero'' fields, a separate binary to look for fields which
 are usually ``one'', a third binary to look for fields commonly
-``two'', and so forth.  We built ten binaries, looking for
-``mostly-$N$'' fields, where $N$ was in the interval $[-5,5]$.
-Only the ``mostly-zero'' build was relevant for pointer fields, where
-we looked for mostly-{\tt null} fields.  We could easily have built
-one combined binary instead of eleven, but for simplicity the following
-discussion will follow our implementation and assume there is only one
-target value $N$ which we are looking for.
+``two'', and so forth.  We built ten binaries for each benchmark, looking for
+field default values in the interval $[-5,5]$.
+For pointer fields, we only look for {\tt null} as a default value.
+Although our use of multiple binaries is by no means necessary,
+for ease of exposition we will discuss our profiling technique
+as if there is a single default value $N$ which we are looking for.
 
-We add one counter per class which is incremented at allocation sites
+Our instrumentation pass starts by
+adding a counter per class
 to record the number of times each exact class type is instantiated.
 We also add per-field counters which are incremented the {\tt first}
-time a non-$N$ value is stored into a certain field.  By comparing the
+time a non-$N$ value is stored into a certain field.%
+\footnote{Note that this requires storing an additional bit per field
+  to record whether a non-$N$ value has been seen previously.}
+By comparing the
 number of times the class (thus field) is instantiated and the number
-of times its value it set to a non-$N$ value, we can determine the
-amount of memory we could save by applying a ``mostly-$N$''
-transformation (static specialization or field externalization) to the
-field.  Static specialization will split first on the field
-demonstrating the largest potential savings, with the most common $N$
-value seen.  Externalization will only apply if the ratio of
-always-$N$-valued fields to total allocated fields exceeds its
-breakeven point (see section {\bf\Large FIXME} for a discussion).
+of times the field is set to a non-$N$ value, we can determine the
+amount of memory recoverable by applying a ``mostly-$N$''
+transformation to the field, whether static specialization or field
+externalization.  We use this potential savings to guide our selection
+of fields for static specialization, using the field and default value
+which the profile indicates will yield the largest gain.  If static
+specialization isn't an option, the
+proportion of non-$N$ fields helps indicate whether externalization is
+likely to result in a net savings; see Section~\ref{sec:extern-impl}
+for further discussion.
 
-When looking for non-zero $N$ values, the default zero value for
+There is one last detail to attend to:  when looking for non-zero $N$
+values, the default zero value of
 uninitialized fields becomes a problem.  For these cases, we use the
-definite-initialization analysis in the previous section to increment the
+definite-initialization analysis described in the previous section to
+increment the
 ``non-$N$'' counter on any path where the field in question is not
 definitely initialized.
 
 \subsection{Finding Subclass-Final Fields}
 \label{sec:subclass-final}
 Our static specialization transformation can only be applied to what
-we call {\it subclass-final} fields.  Subclass-finality is a looser
+we call {\it subclass-final} fields.  Subclass-finality is a less strict
 but similar constraint to Java's {\tt final} modifier.  We do a
 single-pass analysis to determine subclass-finality, using the results
-from the bitwidth analysis to improve our results.  In particular we
+from the bitwidth analysis to improve our precision.  In particular we
 wish to note that we do {\it not} rely on the programmer's manual
-specification of the {\it final} modifier on fields.
+specification of appropriate field modifiers, but obtain this
+information from the way the field is used in the program.
 
-The first generalization past Java's {\tt final} semantics is what we
-will call {\it this-final} fields.  This final fields can be written
-multiple times (or not at all), but all writes must occur within
-constructors of the field's declaring class.
+The first step past Java's {\tt final} semantics is to what we
+will call {\it this-final} fields.  Fields which are this-final can
+be assigned-to multiple times (or not at all), but all writes must
+occur within constructors of the field's declaring class.
 Fields marked {\tt final} in Java, by
-contrast, must be written to {\it exactly once} in each constructor of
+contrast, must be written-to {\it exactly once} in each constructor of
 the declaring class.
-As in Java, the object containing the field must match the receiver of
-the constructor in which it can be written; you cannot write a final
+As with traditional {\tt final} fields, the receiver (``{\tt this}''
+parameter) of the
+constructor in which a {\it this-final} field is written must contain
+the field;  you cannot write a {\tt final} or {\it this-final}
 field in another instance of the class from your instance's
 constructor.
 
-We then loosen the restriction further, and define
+The restrictions on {\it this-final} fields are still more strict than
+static specialization requires.  We will broaden our requirements
+further, and define
 {\it subclass-final} fields which can be written in {\it any method of
   a subclass}, in addition to within the constructor of its declaring
-class.  As before, you can only write to subclass-final fields of {\tt
-  this} inside a constructor of the fields declaring field, but you
+class.  As before, writes must be to fields of {\tt this} within a
+constructor of the field's declaring class, but you
 can write to the field zero or more times.
 
-Subclass-finality matches the requirements of the static
-specialization transformation.  Since we always insert a ``Big''
+Subclass-finality now matches the requirements of the static
+specialization transformation.  Since we always insert a ``big''
 version of the original split class as parent to any subclasses,
 subclasses can write to the split field without restriction.
 We need only restrict writes which occur in the class proper.
@@ -750,9 +762,11 @@ splitting is by magnitude of expected gain, from profiling.
 % pointer size improvements.
 % parameter widening; reflection; interface to native code. stoplist
 
-cp \section{Extensions} % ???
 % header optimizations.
 % pointer compression?
+
+external hashtable implementation
+\label{sec:extern-impl}
 
 \section{Experimental Results}
 \label{sec:results}
@@ -859,6 +873,7 @@ externalization) generate modest increases in the execution times.
 \label{tab:const-unused}
 \end{table}
 
+% distribution of mostly-N fields?
 
 \section{Related work}
 
