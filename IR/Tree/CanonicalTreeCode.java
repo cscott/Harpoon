@@ -27,7 +27,7 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.1.2.12 1999-08-04 06:30:59 cananian Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.1.2.13 1999-08-07 04:35:21 cananian Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
@@ -118,7 +118,8 @@ public class CanonicalTreeCode extends Code {
     public static HCodeFactory codeFactory(final HCodeFactory hcf, 
 					   final Frame frame) {
 	if (hcf.getCodeName().equals(TreeCode.codename)) {
-	    return new HCodeFactory() { 
+	    // note that result will not be serializable unless frame is.
+	    return new harpoon.ClassFile.SerializableCodeFactory() { 
 		public HCode convert(HMethod m) { 
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :

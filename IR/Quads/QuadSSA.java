@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSA.java,v 1.1.2.7 1999-08-04 02:13:33 cananian Exp $
+ * @version $Id: QuadSSA.java,v 1.1.2.8 1999-08-07 04:35:20 cananian Exp $
  */
 public class QuadSSA extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -61,7 +61,7 @@ public class QuadSSA extends Code /* which extends HCode */ {
      */
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
 	if (hcf.getCodeName().equals(QuadNoSSA.codename)) {
-	    return new HCodeFactory() {
+	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null)?null:new QuadSSA((QuadNoSSA)c);

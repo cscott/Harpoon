@@ -26,7 +26,7 @@ import java.util.Map;
  * representation in SSA form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.18 1999-08-05 05:47:16 duncan Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.19 1999-08-07 04:35:20 cananian Exp $
  */
 public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
     private Derivation  m_derivation;
@@ -101,7 +101,7 @@ public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
      */
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
 	if (hcf.getCodeName().equals(QuadSSA.codename)) {
-	    return new HCodeFactory() {
+	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null : new LowQuadSSA((QuadSSA)c);

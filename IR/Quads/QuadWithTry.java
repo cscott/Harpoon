@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.8 1999-08-04 05:52:29 cananian Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.9 1999-08-07 04:35:20 cananian Exp $
  * @see QuadNoSSA
  * @see QuadSSA
  */
@@ -61,7 +61,7 @@ public class QuadWithTry extends Code /* which extends HCode */ {
      *  <code>QuadNoSSA.codeFactory()</code>. */
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
 	if (hcf.getCodeName().equals(harpoon.IR.Bytecode.Code.codename)) {
-	    return new HCodeFactory() {
+	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
@@ -71,7 +71,7 @@ public class QuadWithTry extends Code /* which extends HCode */ {
 		public String getCodeName() { return codename; }
 	    };
 	} else if (hcf.getCodeName().equals(harpoon.IR.Quads.QuadNoSSA.codename)) {
-	    return new HCodeFactory() {
+	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :

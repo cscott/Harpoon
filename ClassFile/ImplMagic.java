@@ -23,7 +23,7 @@ import java.util.Vector;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.5.2.7 1999-02-01 00:40:33 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5.2.8 1999-08-07 04:35:10 cananian Exp $
  */
 public abstract class ImplMagic  { // wrapper for the Real McCoy.
 
@@ -160,7 +160,7 @@ public abstract class ImplMagic  { // wrapper for the Real McCoy.
     }
 
     static final Hashtable repository = new Hashtable();
-    public static final HCodeFactory codeFactory = new HCodeFactory() {
+    public static final HCodeFactory codeFactory = new SerializableCodeFactory() {
 	public String getCodeName() 
 	{ return harpoon.IR.Bytecode.Code.codename; }
 	public HCode convert(HMethod m)

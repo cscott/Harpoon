@@ -27,7 +27,7 @@ import harpoon.Util.Util;
  * The tree form is based around Andrew Appel's tree form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: TreeCode.java,v 1.1.2.14 1999-08-04 06:31:00 cananian Exp $
+ * @version $Id: TreeCode.java,v 1.1.2.15 1999-08-07 04:35:21 cananian Exp $
  * 
  */
 public class TreeCode extends Code {
@@ -110,7 +110,8 @@ public class TreeCode extends Code {
     public static HCodeFactory codeFactory(final HCodeFactory hcf, 
 					   final Frame frame) {
 	if (hcf.getCodeName().equals(LowQuadNoSSA.codename)) {
-	    return new HCodeFactory() { 
+	    // note that result will not be serializable unless frame is.
+	    return new harpoon.ClassFile.SerializableCodeFactory() { 
 		public HCode convert(HMethod m) { 
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
