@@ -1,7 +1,7 @@
-# $Id: GNUmakefile,v 1.61.2.19 1999-02-23 22:53:51 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.20 1999-02-25 21:10:31 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
-JIKES=jikes +$$
+JIKES=jikes +$$ $(JIKES_OPT)
 JCC=javac -J-mx64m
 JDOC=javadoc
 JAR=jar
@@ -134,7 +134,7 @@ Tools/PatMat/Sym.java : Tools/PatMat/Parser.java
 # print graphs
 %.ps : %.vcg
 	@if [ -f $@ ]; then rm $@; fi # xvcg won't overwrite an output file.
-	xvcg -psoutput $@ -paper 8x11 -color $<
+	xvcg -psoutput $@ -paper 8x11 -color $(VCG_OPT) $<
 	@echo "" # xvcg has a nasty habit of forgetting the last newline.
 
 harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog
