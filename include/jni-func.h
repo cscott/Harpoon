@@ -169,7 +169,7 @@ struct JNINativeInterface {
 				  jsize start, jsize len, type * buf);
 #define SETARRAYREGIONPROTO(name, type) \
   void (*Set##name##ArrayRegion) (JNIEnv *env, type##Array array, \
-				  jsize start, jsize len, type * buf);
+				  jsize start, jsize len, const type * buf);
   FORPRIMITIVETYPES(NEWARRAYPROTO);
   FORPRIMITIVETYPES(GETARRAYELEMENTSPROTO);
   FORPRIMITIVETYPES(RELEASEARRAYELEMENTSPROTO);
