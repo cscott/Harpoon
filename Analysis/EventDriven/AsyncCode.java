@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.17 2000-01-06 21:36:11 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.18 2000-01-06 22:14:27 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -171,8 +171,9 @@ public class AsyncCode {
 	    System.out.println("ContVisiting"+ q);
 	    HClass hclass=(HClass) cont_map.get(q);
 	    HClass throwable=HClass.forName("java.lang.Throwable");
-	    HMethod resume=
-		hclass.getDeclaredMethod("resume",
+	    HMethod resume=(q.method().getReturnType()==HClass.Void)?
+		hclass.getDeclaredMethod("resume",new HClass[0])
+		:hclass.getDeclaredMethod("resume",
 					 new HClass[] {q.method().getReturnType()});
 	    HMethod exception=
 		hclass.getDeclaredMethod("exception",
@@ -306,7 +307,7 @@ public class AsyncCode {
 	public void addEdges(Quad q, int resumeexception, Set dontfollow) {
 	    QuadFactory qf=hcode.getFactory();
 	    TempFactory tf=qf.tempFactory();
-	    FOOTER footer=new FOOTER(qf, null, linkFooters.size()+1);
+	    FOOTER footer=new FOOTER(qf, q, linkFooters.size()+1);
 	    Iterator fiterator=linkFooters.iterator();
 	    int count=1;
 	    while(fiterator.hasNext())
@@ -515,7 +516,7 @@ public class AsyncCode {
 		HField hfield=hclass.getField("next");
 		HClass throwable=HClass.forName("java.lang.Throwable");
 		HMethod resume=
-		    hfield.getType().getDeclaredMethod("exception",
+		    hfield.getType().getMethod("exception",
 						       new HClass[] {throwable});
 		Temp tnext=new Temp(tf);
 		GET get=new GET(hcode.getFactory(),q,
@@ -691,11 +692,12 @@ public class AsyncCode {
 		    final HMethod gais = 
 			HClass.forName("java.net.Socket").getDeclaredMethod
 			("getAsyncInputStream", new HClass[0]);   
+		    Temp tstream=ctmap.tempMap(q.params(0));
 		    quadmap.put(q,new CALL(hcode.getFactory(), q, gais,
-				       new Temp[0], ctmap.tempMap(q.retval()),
+				       new Temp[]{tstream}, 
+				       ctmap.tempMap(q.retval()),
 				       ctmap.tempMap(q.retex()), q.isVirtual(),
 				       q.isTailCall(), new Temp[0]));
-
 		}
 		else
 		    quadmap.put(q, q.clone(hcode.getFactory(), ctmap));
