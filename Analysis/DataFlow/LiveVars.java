@@ -20,7 +20,7 @@
   * in the <code>BasicBlock</code>s passed to it.
   *
   * @author  Felix S Klock <pnkfelix@mit.edu>
-  * @version $Id: LiveVars.java,v 1.1.2.13 1999-11-09 07:57:13 pnkfelix Exp $
+  * @version $Id: LiveVars.java,v 1.1.2.14 1999-11-09 08:15:14 pnkfelix Exp $
   */
  public abstract class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 
@@ -28,6 +28,14 @@
 
      // maps a BasicBlock 'bb' to the LiveVarInfo associated with 'bb'
      private Map bbToLvi;
+
+     /** Null arg ctor for use by subclasses so that the system won't
+	 break when calling abstract methods that require data that
+	 subclasses haven't initialized yet.
+     */
+     protected LiveVars() {
+	 
+     }
 
      /** Constructs a new <code>LiveVars</code> for <code>basicblocks</code>.
 	 <BR> <B>requires:</B> <OL> 
@@ -75,7 +83,7 @@
 	initializeBBtoLVI( basicblocks, tempSetFact );
     }
 
-    private void initializeBBtoLVI(Iterator blocks, SetFactory setFact) {
+    protected void initializeBBtoLVI(Iterator blocks, SetFactory setFact) {
 	bbToLvi = new HashMap();
 	while(blocks.hasNext()) {
 	    BasicBlock bb = (BasicBlock) blocks.next();

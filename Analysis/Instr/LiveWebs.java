@@ -11,6 +11,7 @@ import harpoon.IR.Assem.Instr;
 import harpoon.Analysis.DataFlow.LiveVars;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Util.Collections.SetFactory;
+import harpoon.Util.Collections.BitSetFactory;
 import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Collections.DefaultMultiMap;
 
@@ -24,14 +25,14 @@ import java.util.Iterator;
  * <code>LiveWebs</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveWebs.java,v 1.1.2.2 1999-11-09 07:57:14 pnkfelix Exp $
+ * @version $Id: LiveWebs.java,v 1.1.2.3 1999-11-09 08:15:15 pnkfelix Exp $
  */
 public class LiveWebs extends LiveVars {
     
     // universe of values for this analysis
     Set webs;
 
-    // maps a (Temp x reference) to the Webs containing that reference
+    // maps a (Temp x reference) to the Web containing that reference
     // to that Temp
     Map tXrefToWeb;
 
@@ -39,9 +40,10 @@ public class LiveWebs extends LiveVars {
 	its universe of values. 
     */
     public LiveWebs(Set webs, Iterator basicBlocks) {
-	super(basicBlocks);
-        this.webs = webs;
+	super();
+	this.webs = webs;
 	this.tXrefToWeb = new HashMap();
+	initializeBBtoLVI(basicBlocks, new BitSetFactory(webs));
 	Iterator webIter = webs.iterator();
 	while(webIter.hasNext()) {
 	    Web w = (Web) webIter.next();
