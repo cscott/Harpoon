@@ -252,6 +252,7 @@ public class CORBA implements CommunicationsModel {
 
 	    public void process(Frame f) {
 		ImageData id = ImageDataManip.readPPM(f.data);
+		id.header = f.header;
 		id.id = idNum++;
 		id.time = f.timestamp;
 		out.process(id);
