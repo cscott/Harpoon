@@ -1,0 +1,21 @@
+<project name="jTools Demos" default="all" basedir="..">
+
+   <property file="jtools-build-bootstrap.properties"/>
+   <property file="jtools-build.properties"/>
+
+   <target name="all" depends="timer"/>
+
+   <target name="timer">
+      <javac srcdir="${jtools.basedir}"
+             destdir="${jtools.classdir}"
+             classpath="${jtools.classdir}"
+             debug="${jtools.debug}"
+             optimize="${jtools.optimization}"
+             includes="demo/timer/**"/>
+   </target>
+
+   <target name="clean">
+      <delete dir="classes/demo"/>
+   </target>
+
+</project>

@@ -1,0 +1,250 @@
+Tue Apr 23 16:59:21 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/javax/realtime/build.xml: 
+	* src/edu/uci/ece/doc/rtjperf/timer/TimeoutHandler.java: 
+	* src/edu/uci/ece/doc/rtjperf/timer/PeriodicTimerTest.java: 
+	* src/edu/uci/ece/doc/rtjperf/timer/OneShotTimerTest.java: 
+	* src/edu/uci/ece/doc/rtjperf/timer/AbsOneShotTimerTest.java: 
+	* src/edu/uci/ece/doc/rtjperf/thread/plain/YieldTest.java: 
+	* src/edu/uci/ece/doc/rtjperf/thread/plain/SynchYieldTest.java: 
+	* src/edu/uci/ece/doc/rtjperf/thread/plain/CreationLatencyTest.java: 
+	* src/edu/uci/ece/doc/rtjperf/thread/YieldTest.java: 
+	* src/edu/uci/ece/doc/rtjperf/thread/SynchYieldTest.java: 
+	* src/edu/uci/ece/doc/rtjperf/thread/RTCreationLatencyTest.java: 
+	* src/edu/uci/ece/doc/rtjperf/thread/PeriodicThreadTest.java: 
+	* src/edu/uci/ece/doc/rtjperf/thread/CreationLatencyTest.java: 
+	* src/edu/uci/ece/doc/rtjperf/sys/build.xml: 
+	* src/edu/uci/ece/doc/rtjperf/build.xml: 
+	* src/build.xml: 
+	* build.xml:
+
+	  Fixed some import that were still in the pre jTools style
+
+	  Updated build file to include thread and timer tests. (Thanks to
+	  Jim Urnes <james.m.urnes-jr@boeing.com> to pointing this out.
+
+Tue Apr 23 16:30:53 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/edu/uci/ece/doc/rtjperf/sys/build.xml: Removed old target
+	  that used to compile the native implementation of timers. 
+
+Tue Apr 16 13:18:12 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/edu/uci/ece/doc/rtjperf/mem/plain/AllocTimeTest.java: 
+	* src/edu/uci/ece/doc/rtjperf/mem/MemoryAreaFactory.java: 
+	* src/edu/uci/ece/doc/rtjperf/mem/AllocTimeTest.java: 
+	* src/edu/uci/ece/doc/rtjperf/mem/AllocTimeTestHelpHandler.java: 
+
+	  Changed test to use jargo.
+
+Tue Apr 16 12:11:45 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/edu/uci/ece/doc/rtjperf/asynch/build.xml: 
+	* src/edu/uci/ece/doc/rtjperf/asynch/ThreadBoundAsynchHandler.java: 
+	* src/edu/uci/ece/doc/rtjperf/asynch/TestHelpHandler.java: 
+	* src/edu/uci/ece/doc/rtjperf/asynch/EventHandlerLogic.java: 
+	* src/edu/uci/ece/doc/rtjperf/asynch/DispatchDelayTestLauncher.java: 
+
+	  Made change needed in order to have the test use jTools.
+	
+Tue Apr 16 12:11:36 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/edu/uci/ece/doc/rtjperf/asynch/AsyncEventHandlerDispatchDelayTest.java: 
+
+Mon Mar 18 23:25:15 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* VERSION: Added a version file
+	* README: Added some more description to the README file.
+
+Thu Mar  7 19:44:43 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/edu/uci/ece/doc/rtjperf/timer/PeriodicTimerTest.java:
+
+	  PeriodicTimer test.
+
+Thu Mar  7 19:37:56 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/edu/uci/ece/doc/rtjperf/timer/build.xml: 
+	* src/edu/uci/ece/doc/rtjperf/timer/TimeoutHandler.java: 
+	* src/edu/uci/ece/doc/rtjperf/timer/OneShotTimerTest.java:
+
+	  OneShotTimer test code and ANT build file.
+
+Thu Mar  7 18:26:21 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/edu/uci/ece/doc/rtjperf/synch/MonitorTest.java: Test that
+	  measures the time taken to enter and exit a java monitor.
+
+Mon Feb 25 13:24:21 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/edu/uci/ece/doc/rtjperf/mem/plain/AllocTimeTest.cc:
+	* src/edu/uci/ece/doc/rtjperf/mem/plain/AllocTimeTest.java:
+	* src/edu/uci/ece/doc/rtjperf/mem/plain/Makefile
+	* src/edu/uci/ece/doc/rtjperf/mem/plain/build.xml:
+
+	  Added some more allocation test cases that let us measure the
+	  allocation time for regular java, PERC and C++.
+	
+	* src/edu/uci/ece/doc/rtjperf/sys/Makefile: added ability to
+	  create static lib.
+	
+	* src/javax/realtime/CTMemoryArea.java: Wrapper around the RI
+	  LTMemory area that allows us to run the same kind of test to
+	  profile VT, LT and CT memory area.
+	
+	* src/javax/realtime/build.xml:
+	* src/build.xml:
+
+	  Made needed changes to build added directories and files.
+	
+	* src/edu/uci/ece/doc/rtjperf/loading/EagerTypeFactory.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/EagerTypeFactoryTest.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/Makefile:
+
+	  Test to measure the effect of dynamic class loading.
+	
+	* src/edu/uci/ece/doc/rtjperf/mem/AllocTimeTest.java:
+	* src/edu/uci/ece/doc/rtjperf/mem/Makefile:
+	* src/edu/uci/ece/doc/rtjperf/mem/build.xml:
+
+	  Added code to test the piRate CTMemory scheme.
+
+	* rtjperf-build.properties: Added entry to be able to use GCJ as
+	  Java compiler.
+	  
+
+Tue Feb 12 12:57:08 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* bin/runTest:
+	* src/edu/uci/ece/doc/rtjperf/asynch/timing/AsyncEventHandlerDispatchDelayTest.java:
+	* src/edu/uci/ece/doc/rtjperf/asynch/timing/DispatchDelayTestLauncher.java:
+	* src/edu/uci/ece/doc/rtjperf/asynch/timing/EventHandlerLogic.java:
+	* src/edu/uci/ece/doc/rtjperf/asynch/timing/Makefile
+
+	  Extended test to be more portable, and added makefile be able to
+	  compile the test with CCJ/
+	
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeXTest.java:
+
+	  Test for measuring the effect of dynamic class loading.
+	
+	* src/edu/uci/ece/doc/rtjperf/sys/HighResClock.h
+	* src/edu/uci/ece/doc/rtjperf/sys/HighResTime.h
+	* src/edu/uci/ece/doc/rtjperf/sys/HighResTime.java:
+	* src/edu/uci/ece/doc/rtjperf/sys/Makefile:
+	* src/edu/uci/ece/doc/rtjperf/sys/PerformanceReport.java:
+
+	  Misc enhancements
+	
+	* src/javax/realtime/ThreadedAsyncEventHandler.java:
+
+	  This method is added to make some test portable across different
+	  RTSJ Implementations.
+
+Tue Jan 15 16:21:24 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* script/runx.sh: Script that can be used to run N times a given
+	  command
+
+Tue Jan 15 09:06:52 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/edu/uci/ece/doc/rtjperf/loading/EagerClassLoadingTest.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/IFace.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/IIFace.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/IIIFace.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/IVFace.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/IXFace.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TenFace.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeI.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeII.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeIII.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeIIITest.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeIITest.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeITest.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeIV.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeIVTest.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeIX.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeIXTest.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeV.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeVI.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeVII.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeVIII.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeVIIITest.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeVIITest.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeVITest.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeVTest.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeX.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeXTest.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/VFace.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/VIFace.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/VIIFace.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/VIIIFace.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/XFace.java:
+	* src/edu/uci/ece/doc/rtjperf/sys/Makefile:
+
+	 This test check how the time to link-in a class changes depending
+	  on the number of parents, and implemented ifaces.
+
+
+Mon Jan 14 18:58:28 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/edu/uci/ece/doc/rtjperf/loading/Type.java: 
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeA.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeB.java:
+	* src/edu/uci/ece/doc/rtjperf/loading/TypeC.java: 	
+	* src/edu/uci/ece/doc/rtjperf/loading/EagerClassLoadingTest.java:
+
+	  Test that checks for the eager class loading behaviour.
+
+Mon Jan 14 15:30:07 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/edu/uci/ece/doc/rtjperf/sys/Makefile: Set by default the use
+	  of gcj3. It seems that gcj v2.96 is missing some methods
+	  implementations in some of the java.lang package classes
+
+Mon Jan 14 10:47:11 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/edu/uci/ece/doc/rtjperf/util/Spinner.java:
+
+	  This class implements a runnable that simply spins CPU cycle. It
+	  is quite useful to implement low priority logic when testing the
+	  dispacth delay and so on.
+
+	* src/edu/uci/ece/doc/util/HelpHandler.java:
+
+	  This class takes care of managing the --help argument.
+
+Sat Jan 12 18:36:48 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/build.xml:
+	* src/edu/uci/ece/doc/build.xml:
+        * src/edu/uci/ece/doc/rtjperf/build.xml:
+
+	  Added utils dirs to the build file.
+
+
+Sat Jan 12 18:24:25 2002  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/edu/uci/ece/doc/util/CommandLineArgumentParser.java: Fixed mispelling 
+
+Sat Dec 29 11:58:25 2001  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* build.xml:
+
+	  Added target to delete the automatically generated files on a "clean"
+
+	* src/edu/uci/ece/doc/rtjperf/sys/HighResClock.java: 
+	* src/edu/uci/ece/doc/rtjperf/sys/edu_uci_ece_doc_rtjperf_sys_HighResClock.cpp: 
+	* src/edu/uci/ece/doc/rtjperf/sys/HighResClock.cc: 
+	* src/edu/uci/ece/doc/rtjperf/sys/Makefile:
+
+	  Removed use of ACE High_Res_Time. Linking ACE causes the RTJS RI
+	  to segfault. Now <gettimeofday> is used.
+
+Tue Dec 25 17:40:10 2001  Angelo Corsaro  <corsaro@doc.ece.uci.edu>
+
+	* src/edu/uci/ece/doc/rtjperf/sys/build.xml: Added target to
+	  automatically run the makefile to create the gcj executables.
+
+	* src/build.xml: Added target for building the sys package.
+

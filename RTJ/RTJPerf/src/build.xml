@@ -1,0 +1,26 @@
+<!-- $Id: build.xml,v 1.1 2002-07-02 15:35:52 wbeebee Exp $ -->
+
+<project name="RTJPerf Source Build" default="all" basedir="..">
+
+   <property file="rtjperf-build-bootstrap.properties"/>
+   <property file="rtjperf-build.properties"/>
+
+   <target name="all" depends="rtjperf"/>
+
+   <target name="javax-realtime">
+      <ant antfile="${rtjperf.srcdir}/javax/realtime/build.xml"/>
+   </target>
+
+   <target name="rtjperf" depends="javax-realtime">
+      <ant antfile="${rtjperf.srcdir}/edu/uci/ece/doc/rtjperf/build.xml"/>
+   </target>
+
+
+
+   <target name="clean">
+      <ant antfile="${rtjperf.srcdir}/javax/realtime/build.xml" target="clean"/>
+      <ant antfile="${rtjperf.srcdir}/edu/uci/ece/doc/rtjperf/build.xml" target="clean"/>
+      <delete dir="${rtjperf.classdir}"/>
+   </target>
+
+</project>

@@ -1,0 +1,14 @@
+In order to build RTJPerf you will need the following software packages:
+
+   - ANT
+   - GCJ
+   - Any Java 2 compatible Java JDK.
+   - Your favourite Real-Time Java Implementation
+
+Once you have properly installed the software packages listed above,
+to build RTJPerf you have simply to do the following:
+
+
+$ ant
+
+
