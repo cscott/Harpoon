@@ -34,8 +34,8 @@
       (concat " " super-class))))
 ;;;; template for generating visitor classes
 (defun harpoon-list-of-quads ()
-  "Returns list of all quadruple type files defined in IR/QuadSSA."
-  (directory-files (concat (user-specific-project-dir) "IR/QuadSSA/") nil "^[A-Z]+.java"))
+  "Returns list of all quadruple type files defined in IR/Quads."
+  (directory-files (concat (user-specific-project-dir) "IR/Quads/") nil "^[A-Z]+.java"))
 (defun harpoon-list-of-visit-quads (file-names)
   "Returns string which lists empty methods for visiting quad types in file-names."
   (let ((r '(l))
