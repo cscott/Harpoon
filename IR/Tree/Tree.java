@@ -4,6 +4,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
+import harpoon.Backend.Generic.RegFileInfo;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
@@ -28,7 +29,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.29 2000-02-15 17:19:05 cananian Exp $
+ * @version $Id: Tree.java,v 1.1.2.30 2000-02-15 19:06:02 cananian Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 
@@ -185,8 +186,13 @@ public abstract class Tree
     public static Tree clone(TreeFactory ntf, Tree root, CloneCallback cb) {
 	if (root==null) return null;
 	if (cb==null) cb = nullCallback;
-	CloningTempMap ctm = (ntf==root.tf)?null:
-	    new CloningTempMap(root.tf.tempFactory(), ntf.tempFactory());
+	final RegFileInfo rfi = root.tf.getFrame().getRegFileInfo();
+	CloningTempMap ctm = (ntf==root.tf) ? null :
+	    new CloningTempMap(root.tf.tempFactory(), ntf.tempFactory()) {
+		public Temp tempMap(Temp t) { // don't clone registers!
+		    return rfi.isRegister(t) ? t : super.tempMap(t);
+		}
+	    };
 	return root.rename(ntf, ctm, cb);
     }
     /** Clone a subtree.  This is a *deep* copy -- ie, this node and
@@ -235,11 +241,6 @@ public abstract class Tree
     private static final CloneCallback nullCallback = new CloneCallback() {
 	public Tree callback(Tree o, Tree n, TempMap tm) { return n; }
     };
-
-    /** Convenience function for tempmapping. */
-    protected final static Temp map(TempMap tm, Temp t) {
-	return (t==null)?null:(tm==null)?t:tm.tempMap(t);
-    }
 
     /** Return a list of subexpressions of this <code>Tree</code>. */
     public ExpList kids() { // by default, make kids list from all children.
