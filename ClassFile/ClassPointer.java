@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * the HClass itself.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassPointer.java,v 1.1.2.4 2000-11-10 02:32:53 cananian Exp $
+ * @version $Id: ClassPointer.java,v 1.1.2.5 2001-10-03 01:50:19 cananian Exp $
  */
 class ClassPointer extends HPointer implements java.io.Serializable {
     final Linker linker;
@@ -22,6 +22,7 @@ class ClassPointer extends HPointer implements java.io.Serializable {
 	    char c = descriptor.charAt(i);
 	    if (c=='[') continue;
 	    if (c=='L') i = descriptor.indexOf(';', i);
+	    Util.assert(c!='(' && c!=')' && c!='/' && c!=';', descriptor);
 	    break;
 	}
 	descriptor = descriptor.substring(0,i+1);
