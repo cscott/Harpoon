@@ -4,6 +4,7 @@
 package harpoon.Analysis.SizeOpt;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HClassMutator;
@@ -22,6 +23,9 @@ import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.SET;
 import harpoon.Util.Default;
+import harpoon.Util.ParseUtil;
+import harpoon.Util.ParseUtil.BadLineException;
+import harpoon.Util.ParseUtil.StringParser;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
@@ -44,7 +48,7 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.1.2.3 2001-11-12 22:55:58 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.1.2.4 2001-11-13 03:09:01 cananian Exp $
  */
 public class MZFCompressor {
     final CachingCodeFactory parent;
@@ -54,15 +58,19 @@ public class MZFCompressor {
      *  information found in the resource at <code>resourcePath</code>.
      *  This resource should be a unprocessed file in the format output
      *  by the <code>SizeCounters</code> package. */
-    public MZFCompressor(Linker linker, HCodeFactory hcf, ClassHierarchy ch,
+    public MZFCompressor(Frame frame, HCodeFactory hcf, ClassHierarchy ch,
 			 String resourcePath) {
+	Relinker linker = (Relinker) frame.getLinker();
 	ConstructorClassifier cc = new ConstructorClassifier(hcf, ch);
         ProfileParser pp = new ProfileParser(linker, resourcePath);
+	// get 'stop list' of classes we should not touch.
+	Set stoplist = parseStopListResource(frame, "mzf-unsafe.properties");
 	// process the profile data.
 	// collect all good fields; sort them (within class) by savedbytes.
 	Set flds = new HashSet();  Map listmap = new HashMap();
 	for (Iterator it=ch.instantiatedClasses().iterator(); it.hasNext(); ){
 	    HClass hc = (HClass) it.next();
+	    if (stoplist.contains(hc)) continue; // skip this class.
 	    List sorted = sortFields(hc, pp, cc);
 	    if (sorted.size()>0) listmap.put(hc, sorted);
 	    for (Iterator it2=sorted.iterator(); it2.hasNext(); )
@@ -84,7 +92,7 @@ public class MZFCompressor {
 	// okay.  foreach relevant class, split it.
 	for (Iterator it=listmap.keySet().iterator(); it.hasNext(); ) {
 	    HClass hc = (HClass) it.next();
-	    splitOne((Relinker)linker, hc, (List)listmap.get(hc), f2m);
+	    splitOne(linker, hc, (List)listmap.get(hc), f2m);
 	}
 	// we should be done now.
     }
@@ -167,7 +175,8 @@ public class MZFCompressor {
 		   Field2Method f2m) {
 	// make a copy of our empty Template class.
 	HClass hcT = relinker.forClass(Template.class);
-	HClass newC = relinker.createMutableClass(oldC.getName()+"$z", hcT);
+	HClass newC = relinker.createMutableClass
+	    (oldC.getName()+"$$"+hf.getName(), hcT);
 	// remove all constructors from newC (since we're going to
 	// clone them from oldC)
 	for (Iterator it=Arrays.asList(newC.getConstructors()).iterator();
@@ -194,12 +203,13 @@ public class MZFCompressor {
 		relinker.move(allF[i], newC);
 		allF[i].getMutator().removeModifiers(Modifier.PRIVATE);
 	    }
-	// move all non-constructor methods of oldC to newC
+	// move all non-constructor non-static methods of oldC to newC
 	// copy the constructors. make copies of the getter/setters to override
 	HMethod[] allM = oldC.getDeclaredMethods();
 	HMethod getter = (HMethod) f2m.field2getter.get(hf);
 	HMethod setter = (HMethod) f2m.field2setter.get(hf);
 	for (int i=0; i<allM.length; i++) {
+	    if (allM[i].isStatic()) continue;
 	    if (allM[i] instanceof HConstructor) {
 		// copy, don't move.
 		HConstructor newcon =
@@ -282,5 +292,22 @@ public class MZFCompressor {
 		qa[i].remove();
 	// done!
 	return hc;
+    }
+    //---------------------------------------------
+    /** Parse a "stop list" of classes we should not attempt to optimize */
+    Set parseStopListResource(final Frame frame, String resname) {
+	final Set stoplist = new HashSet();
+	try {
+	ParseUtil.readResource
+	    (frame.getRuntime().resourcePath(resname),
+	     new StringParser() {
+		 public void parseString(String s) throws BadLineException {
+		     stoplist.add(ParseUtil.parseClass(frame.getLinker(), s));
+		 }
+	     });
+	} catch (java.io.IOException ioex) {
+	    System.err.println("SKIPPING REST OF "+resname+": "+ioex);
+	}
+	return stoplist;
     }
 }
