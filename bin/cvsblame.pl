@@ -142,7 +142,7 @@ sub match_token {
     my ($match) = @_;
 
     my ($token) = &get_token;
-    die "Unexpected parsing error in RCS file $rcs_pathname.\n",
+    die "Unexpected parsing error in RCS file.\n",
         "Expected token: $match, but saw: $token\n"
             if ($token ne $match);
 }
@@ -153,7 +153,8 @@ sub unget_token {
     $line_buffer = $token . " " . $line_buffer;
 }
 
-# Parses "administrative" header of RCS files, setting these globals:
+# Parses "administrative" header of RCS files, setting these fields in
+# the supplied $rcsobj:
 # 
 # $head_revision           -- Revision for which cleartext is stored
 # $principal_branch
@@ -162,11 +163,12 @@ sub unget_token {
 # %tag_revision            -- mapping from symbolic tag to numerical revision #
 #
 sub parse_rcs_admin {
-    my ($token, $tag, $tag_name, $tag_revision);
+    my ($rcsobj) = shift;
+    my ($token, $tag);
 
     # Undefine variables, because we may have already read another RCS file
-    undef %tag_revision;
-    undef %revision_symbolic_name;
+    undef $rcsobj->{TAG_REVISION};
+    undef $rcsobj->{REVISION_SYMBOLIC_NAME};
 
     while (1) {
         # Read initial token at beginning of line
@@ -181,23 +183,23 @@ sub parse_rcs_admin {
 #       print "token: $token\n";
 
         if ($token eq "head") {
-            $head_revision = &get_token;
-            &get_token;         # Eat semicolon
+            $rcsobj->{HEAD_REVISION} = &get_token;
+            &match_token(';');         # Eat semicolon
         } elsif ($token eq "branch") {
-            $principal_branch = &get_token;
-            &get_token;         # Eat semicolon
+            $rcsobj->{PRINCIPAL_BRANCH} = &get_token;
+            &match_token(';');         # Eat semicolon
         } elsif ($token eq "symbols") {
 
             # Create an associate array that maps from tag name to
             # revision number and vice-versa.
             while (($tag = &get_token) ne ';') {
-                ($tag_name, $tag_revision) = split(':', $tag);
+                my ($tag_name, $tag_revision) = split(':', $tag);
                 
-                $tag_revision{$tag_name} = $tag_revision;
-                $revision_symbolic_name{$tag_revision} = $tag_name;
+                $rcsobj->{TAG_REVISION}->{$tag_name} = $tag_revision;
+                $rcsobj->{REVISION_SYMBOLIC_NAME}->{$tag_revision} = $tag_name;
             }
         } elsif ($token eq "comment") {
-            $file_description = &get_token;
+            $rcsobj->{FILE_DESCRIPTION} = &get_token;
             &get_token;         # Eat semicolon
 
         # Ignore all these other fields - We don't care about them.         
@@ -217,7 +219,8 @@ sub parse_rcs_admin {
 # Construct associative arrays that represent the topology of the RCS tree
 # and other arrays that contain info about individual revisions.
 #
-# The following associative arrays are created, keyed by revision number:
+# Associative arrays are created for the following fields in the
+# supplied $rcsobj; all arrays are keyed by revision_number.
 #   %revision_date     -- e.g. "96.02.23.00.21.52"
 #   %timestamp         -- seconds since 12:00 AM, Jan 1, 1970 GMT
 #   %revision_author   -- e.g. "tom"
@@ -238,20 +241,22 @@ sub parse_rcs_admin {
 #   e.g. $last_revision{"1.2.8"} == 1.2.8.5
 #
 sub parse_rcs_tree {
+    my ($rcsobj) = shift;
     my ($revision, $date, $author, $branches, $next);
-    my ($branch, $is_trunk_revision);
+    my ($branch, $is_trunk_revision, $token);
 
     # Undefine variables, because we may have already read another RCS file
-    undef %timestamp;
-    undef %revision_age;
-    undef %revision_author;
-    undef %revision_branches;
-    undef %revision_ctime;
-    undef %revision_date;
-    undef %prev_revision;
-    undef %prev_delta;
-    undef %next_delta;
-    undef %last_revision;
+    undef $rcsobj->{TIMESTAMP};
+    undef $rcsobj->{REVISION_AGE};
+    undef $rcsobj->{REVISION_AUTHOR};
+    undef $rcsobj->{REVISION_BRANCHES};
+    undef $rcsobj->{REVISION_CTIME};
+    undef $rcsobj->{REVISION_DATE};
+    undef $rcsobj->{REVISION_STATE};
+    undef $rcsobj->{PREV_REVISION};
+    undef $rcsobj->{PREV_DELTA};
+    undef $rcsobj->{NEXT_DELTA};
+    undef $rcsobj->{LAST_REVISION};
 
     while (1) {
         $revision = &get_token;
@@ -259,54 +264,55 @@ sub parse_rcs_tree {
         # End of RCS tree description ?
         if ($revision eq 'desc') {
             &unget_token($revision);
-            return;
+            last;
         }
 
         $is_trunk_revision = ($revision =~ /^[0-9]+\.[0-9]+$/);
         
-        $tag_revision{$revision} = $revision;
+        $rcsobj->{TAG_REVISION}->{$revision} = $revision;
         ($branch) = $revision =~ /(.*)\.[0-9]+/o;
-        $last_revision{$branch} = $revision;
+        $rcsobj->{LAST_REVISION}->{$branch} = $revision;
 
         # Parse date
         &match_token('date');
         $date = &get_token;
-        $revision_date{$revision} = $date;
+        $rcsobj->{REVISION_DATE}->{$revision} = $date;
         &match_token(';');
 
         # Convert date into timestamp
-        @date_fields = reverse(split(/\./, $date));
+        my @date_fields = reverse(split(/\./, $date));
         $date_fields[4]--;      # Month ranges from 0-11, not 1-12
-        $timestamp{$revision} = timegm(@date_fields);
+        $rcsobj->{TIMESTAMP}->{$revision} = timegm(@date_fields);
 
         # Pretty print the date string
         my $formated_date = strftime("%d %b %Y %H:%M",
-                                     localtime($timestamp{$revision}));
-        $revision_ctime{$revision} = $formated_date;
+                                     localtime($rcsobj->{TIMESTAMP}->{$revision}));
+        $rcsobj->{REVISION_CTIME}->{$revision} = $formated_date;
 
         # Save age
-        $revision_age{$revision} =
-            ($time - $timestamp{$revision}) / $SECS_PER_DAY;
+        $rcsobj->{REVISION_AGE}->{$revision} =
+            ($time - $rcsobj->{TIMESTAMP}->{$revision}) / $SECS_PER_DAY;
 
         # Parse author
         &match_token('author');
         $author = &get_token;
-        $revision_author{$revision} = $author;
+        $rcsobj->{REVISION_AUTHOR}->{$revision} = $author;
         &match_token(';');
 
         # Parse state;
         &match_token('state');
-        {} while &get_token ne ';';
+        $rcsobj->{REVISION_STATE}->{$revision} = &get_token;
+        &match_token(';');
 
         # Parse branches
         &match_token('branches');
         $branches = '';
         while (($token = &get_token) ne ';') {
-            $prev_revision{$token} = $revision;
-            $prev_delta{$token} = $revision;
+            $rcsobj->{PREV_REVISION}->{$token} = $revision;
+            $rcsobj->{PREV_DELTA}->{$token} = $revision;
             $branches .= "$token ";
         }
-        $revision_branches{$revision} = $branches;
+        $rcsobj->{REVISION_BRANCHES}->{$revision} = $branches;
 
         # Parse revision of next delta in chain
         &match_token('next');
@@ -314,28 +320,30 @@ sub parse_rcs_tree {
         if (($token = &get_token) ne ';') {
             $next = $token;
             &get_token;         # Eat semicolon
-            $next_delta{$revision} = $next;
-            $prev_delta{$next} = $revision;
+            $rcsobj->{NEXT_DELTA}->{$revision} = $next;
+            $rcsobj->{PREV_DELTA}->{$next} = $revision;
             if ($is_trunk_revision) {
-                $prev_revision{$revision} = $next;
+                $rcsobj->{PREV_REVISION}->{$revision} = $next;
             } else {
-                $prev_revision{$next} = $revision;
+                $rcsobj->{PREV_REVISION}->{$next} = $revision;
             }
         }
 
         if ($debug >= 3) {
-            print "<pre>revision = $revision\n";
+            print "revision = $revision\n";
             print "date     = $date\n";
             print "author   = $author\n";
             print "branches = $branches\n";
-            print "next     = $next</pre>\n\n";
+            print "next     = $next\n\n";
         }
     }
+    return undef;
 }
 
 sub parse_rcs_description {
+    my $rcsobj = shift;
     &match_token('desc');
-    $rcs_file_description = &get_token;
+    $rcsobj->{RCS_FILE_DESCRIPTION} = &get_token;
 }
 
 # Construct associative arrays containing info about individual revisions.
@@ -350,58 +358,33 @@ sub parse_rcs_description {
 #                           relative to its immediate predecessor if this
 #                           revision is on a branch.
 sub parse_rcs_deltatext {
-    undef %revision_log;
-    undef %revision_deltatext;
+    my $rcsobj = shift;
+    undef $rcsobj->{REVISION_LOG};
+    undef $rcsobj->{REVISION_DELTATEXT};
 
     while (!eof(RCSFILE)) {
-        $revision = &get_token;
+        my $revision = &get_token;
         print "Reading delta for revision: $revision\n" if ($debug >= 3);
         &match_token('log');
-        $revision_log{$revision} = &get_token;
+        $rcsobj->{REVISION_LOG}->{$revision} = &get_token;
         &match_token('text');
-        $revision_deltatext{$revision} = &get_token;
+        $rcsobj->{REVISION_DELTATEXT}->{$revision} = &get_token;
     }
 }
 
 # Reads and parses complete RCS file from already-opened RCSFILE descriptor.
 sub parse_rcs_file {
+    my $rcsobj = {};
     print "Reading RCS admin...\n" if ($debug >= 2);
-    &parse_rcs_admin();
+    &parse_rcs_admin($rcsobj);
     print "Reading RCS revision tree topology...\n" if ($debug >= 2);
-    &parse_rcs_tree();
-
-    if( $debug >= 3 ){
-        print "<pre>Keys:\n\n";
-        for $i (keys %tag_revision ){
-            $k = $tag_revision{$i};
-            print "yoyuo $i: $k\n";            
-        }
-        print "</pre>\n";
-    }
-
-    &parse_rcs_description();
+    &parse_rcs_tree($rcsobj);
+    print "Reading RCS file description...\n" if ($debug >= 2);
+    &parse_rcs_description($rcsobj);
     print "Reading RCS revision deltas...\n" if ($debug >= 2);
-    &parse_rcs_deltatext();
+    &parse_rcs_deltatext($rcsobj);
     print "Done reading RCS file...\n" if ($debug >= 2);
-}
-
-# Map a tag to a numerical revision number.  The tag can be a symbolic
-# branch tag, a symbolic revision tag, or an ordinary numerical
-# revision number.
-sub map_tag_to_revision {
-    my ($tag_or_revision) = @_;
-
-    my ($revision) = $tag_revision{$tag_or_revision};
-    
-    # Is this a branch tag, e.g. xxx.yyy.0.zzz
-    if ($revision =~ /(.*)\.0\.([0-9]+)/o) {
-        $branch = $1 . '.' . $2;
-        # Return latest revision on the branch, if any.
-        return $last_revision{$branch} if (defined($last_revision{$branch}));
-        return $1;              # No revisions on branch - return branch point
-    } else {
-        return $revision;
-    }
+    $rcsobj;
 }
 
 # Construct an ordered list of ancestor revisions to the given
@@ -414,13 +397,13 @@ sub map_tag_to_revision {
 #       the path traverses the tree "backwards" on branches.
 
 sub ancestor_revisions {
-    my ($revision, $stop_at) = @_;
+    my ($rcsobj, $revision, $stop_at) = @_;
     my (@ancestors);
      
     while ($revision) {
         push(@ancestors, $revision);
         last if defined $stop_at && $revision eq $stop_at;
-        $revision = $prev_revision{$revision};
+        $revision = $rcsobj->{PREV_REVISION}->{$revision};
     }
 
     return @ancestors;
@@ -429,29 +412,29 @@ sub ancestor_revisions {
 # Extract the given revision from the digested RCS file.
 # (Essentially the equivalent of cvs up -rXXX)
 sub extract_revision {
-    my ($revision) = @_;
+    my ($rcsobj, $revision) = @_;
     my (@path);
 
     # Compute path through tree of revision deltas to most recent trunk revision
     while ($revision) {
         push(@path, $revision);
-        $revision = $prev_delta{$revision};
+        $revision = $rcsobj->{PREV_DELTA}->{$revision};
     }
     @path = reverse(@path);
-    shift @path;                # Get rid of head revision
+    # Get rid of head revision
+    my $head_revision = $rcsobj->{HEAD_REVISION};
+    die "Inconsistent path" unless shift @path eq $head_revision;
 
     # Get complete contents of head revision
-    my (@text) = split(/^/, $revision_deltatext{$head_revision});
+    my (@text) = split(/^/, $rcsobj->{REVISION_DELTATEXT}->{$head_revision});
 
     # Iterate, applying deltas to previous revision
-    foreach $revision (@path) {
+    foreach my $revision (@path) {
         $adjust = 0;
-        @diffs = split(/^/, $revision_deltatext{$revision});
+        my @diffs = split(/^/, $rcsobj->{REVISION_DELTATEXT}->{$revision});
 
-        my ($lines_added) = 0;
-        my ($lines_removed) = 0;
-
-        foreach $command (@diffs) {
+        my $add_lines_remaining=0;
+        foreach my $command (@diffs) {
             if ($add_lines_remaining > 0) {
                 # Insertion lines from a prior "a" command.
                 splice(@text, $start_line + $adjust,
@@ -463,18 +446,14 @@ sub extract_revision {
                 ($start_line, $count) = ($1, $2);
                 splice(@text, $start_line + $adjust - 1, $count);
                 $adjust -= $count;
-                $lines_removed += $count;
             } elsif ($command =~ /^a(\d+)\s(\d+)/) {
                 # "a" - Add command
                 ($start_line, $count) = ($1, $2);
                 $add_lines_remaining = $count;
-                $lines_added += $lines_added;
             } else {
                 die "Error parsing diff commands";
             }
         }
-        $lines_removed{$revision} += $lines_removed;
-        $lines_added{$revision} += $lines_added;
     }
 
     return @text;
@@ -525,7 +504,7 @@ sub make_cvs_rev_map {
     #           $have_rev - revision I have
     #           @have_map - revision map for the revision I have
     # args out: @want_map - revision map for the desired revision
-    my ($want_rev, $have_rev, @have_map) = @_;
+    my ($rcsobj, $want_rev, $have_rev, @have_map) = @_;
     my $skip = 0;
 
     die "improper arguments" unless defined $want_rev && defined $have_rev;
@@ -541,14 +520,14 @@ sub make_cvs_rev_map {
     # Note: These are backward deltas for revisions on the trunk and
     # forward deltas for branch revisions.
 
-    my @ancestors = &ancestor_revisions($want_rev, $have_rev);
-    my $last_revision = pop @ancestors;             # Remove $have_rev
-    die "ancestors is invalid" unless $have_rev eq $last_revision;
+    my @ancestors = &ancestor_revisions($rcsobj, $want_rev, $have_rev);
+    my $last_rev = pop @ancestors;             # Remove $have_rev
+    die "ancestors is invalid" unless $have_rev eq $last_rev;
     foreach my $revision (reverse @ancestors) {
         my $is_trunk_revision = ($revision =~ /^[0-9]+\.[0-9]+$/);
 
         if ($is_trunk_revision) {
-            my @diffs = split(/^/, $revision_deltatext{$last_revision});
+            my @diffs = split(/^/, $rcsobj->{REVISION_DELTATEXT}->{$last_rev});
 
             # Revisions on the trunk specify deltas that transform a
             # revision into an earlier revision, so invert the translation
@@ -579,7 +558,7 @@ sub make_cvs_rev_map {
             # the trunk.  They specify deltas that transform a revision
             # into a later revision.
             my $adjust = 0;
-            my @diffs = split(/^/, $revision_deltatext{$revision});
+            my @diffs = split(/^/, $rcsobj->{REVISION_DELTATEXT}->{$revision});
             foreach my $command (@diffs) {
                 if ($skip > 0) {
                     $skip--;
@@ -604,35 +583,42 @@ sub make_cvs_rev_map {
                 }
             }
         }
-        $last_revision = $revision;
+        $last_rev = $revision;
     }    
 
     # return new have_map
     @have_map;
 }
 
-# find a symbolic revision as it existed at a certain timestamp.
-sub find_revision {
-    my ($tag, $timestamp) = @_;
-    # get numerical revision # for symbolic tag
-    my $tagnum = $tag_revision{$tag};
+# map a tag to a numerical revision number. The tag can be a symbolic
+# branch tag, a symbolic revision tag, or an ordinary numerical revision
+# number.  Branch tags can be further qualified by a time stamp, which means
+# 'find `the revision current on this branch at the given time'.
+sub map_tag_to_revision {
+    my ($rcsobj, $tag_or_rev, $timestamp) = @_;
+    # get numerical revision # for (possibly symbolic) tag
+    my $tagnum = $rcsobj->{TAG_REVISION}->{$tag_or_rev};
     # if it's a branch tag, we have to look up by date...
     # branch tags have an odd number of dot-separated integers; sometimes
     # they have a 'magic' zero in the second rightmost position.
     if ($tagnum =~ m/^((?:\d+\.\d+\.)*)(?:0\.)?(\d+)$/) {
         $tagnum = $1.$2; # remove 'magic' zero if it exists.
-        my $last_rev = $last_revision{$tagnum};
-        # work backwards toward branch root.
-        while ($timestamp{$last_rev} > $timestamp) {
-            $last_rev = $prev_revision{$last_rev};
+        my $last_rev = $rcsobj->{LAST_REVISION}->{$tagnum};
+        # if timestamp given, then work backwards toward branch root.
+        while (defined($timestamp) && defined($last_rev) &&
+               $rcsobj->{TIMESTAMP}->{$last_rev} > $timestamp) {
+            $last_rev = $rcsobj->{PREV_REVISION}->{$last_rev};
         }
-        $tagnum = $last_rev if defined $last_rev;
+        return $last_rev if defined $last_rev;
+        # if no revisions on branch, return branch point.
+        $tagnum =~ s/\.\d+$//; # strip 'branch' component.
     }
-    $tagnum;
+    return $tagnum;
 }
 
 sub parse_cvs_file {
     my ($pathname, $rcs_pathname, $checked_out_revision) = @_;
+    my $revision;
 
     # Args in:  $opt_r - requested revision
     #           $opt_m - time since modified
@@ -647,7 +633,7 @@ sub parse_cvs_file {
     die "$progname: error: This file appeared to be under CVS control, " . 
         "but the RCS file is inaccessible.\n(Couldn't open '$rcs_pathname')\n"
             if !open_cvs_file (\*RCSFILE, $rcs_pathname);
-    &parse_rcs_file();
+    my $rcsobj = &parse_rcs_file();
     close(RCSFILE);
 
     if (!defined($opt_r)) {
@@ -655,49 +641,49 @@ sub parse_cvs_file {
         $revision = $checked_out_revision;
     } elsif ($opt_r eq '' || $opt_r eq 'HEAD') {
         # Explicitly specified topmost revision in tree
-        $revision = $head_revision;
+        $revision = $rcsobj->{HEAD_REVISION};
     } else {
         # Symbolic tag or specific revision number specified.
-        $revision = &map_tag_to_revision($opt_r);
+        $revision = &map_tag_to_revision($rcsobj, $opt_r);
         die "$progname: error: -r: No such revision: $opt_r\n"
             if ($revision eq '');
     }
 
     # The primordial revision is not always 1.1!  Go find it.
     my $primordial = $revision;
-    while (exists($prev_revision{$primordial}) &&
-           $prev_revision{$primordial} ne "") {
-        $primordial = $prev_revision{$primordial};
+    while (exists($rcsobj->{PREV_REVISION}->{$primordial}) &&
+           $rcsobj->{PREV_REVISION}->{$primordial} ne "") {
+        $primordial = $rcsobj->{PREV_REVISION}->{$primordial};
     }
 
     # Don't display file at all, if -m option is specified and no
     # changes have been made in the specified file.
-    return if ($opt_m && $timestamp{$revision} < $opt_m_timestamp);
+    return if ($opt_m && $rcsobj->{TIMESTAMP}->{$revision} < $opt_m_timestamp);
 
     # Figure out how many lines were in the primordial, i.e. version 1.1,
     # check-in by moving backward in time from the head revision to the
     # first revision.
-    $line_count = 0;
-    if (exists ($revision_deltatext{$head_revision}) && 
-        $revision_deltatext{$head_revision}) {
-         my @tmp_array =  split(/^/, $revision_deltatext{$head_revision});
-         $line_count = @tmp_array;
+    my $line_count = 0;
+    my $head_revision = $rcsobj->{HEAD_REVISION};
+    if ($rcsobj->{REVISION_DELTATEXT}->{$head_revision}) {
+         my @tmp = split(/^/, $rcsobj->{REVISION_DELTATEXT}->{$head_revision});
+         $line_count = @tmp;
     }
-    $skip = 0 unless (defined($skip));
-    for ($rev = $prev_revision{$head_revision}; $rev;
-         $rev = $prev_revision{$rev}) {
-        @diffs = split(/^/, $revision_deltatext{$rev});
-        foreach $command (@diffs) {
+    my $skip = 0;
+    for (my $rev = $rcsobj->{PREV_REVISION}->{$head_revision}; $rev;
+            $rev = $rcsobj->{PREV_REVISION}->{$rev}) {
+        my @diffs = split(/^/, $rcsobj->{REVISION_DELTATEXT}->{$rev});
+        foreach my $command (@diffs) {
             if ($skip > 0) {
                 # Skip insertion lines from a prior "a" command.
                 $skip--;
             } elsif ($command =~ /^d(\d+)\s(\d+)/) {
                 # "d" - Delete command
-                ($start_line, $count) = ($1, $2);
+                my ($start_line, $count) = ($1, $2);
                 $line_count -= $count;
             } elsif ($command =~ /^a(\d+)\s(\d+)/) {
                 # "a" - Add command
-                ($start_line, $count) = ($1, $2);
+                my ($start_line, $count) = ($1, $2);
                 $skip = $count;
                 $line_count += $count;
             } else {
@@ -719,22 +705,24 @@ sub parse_cvs_file {
     }
 
     # build ancestor map all the way from $revision down to primordial
-    my @ancestors = &ancestor_revisions($revision);
-    my %seen; my $last_rev = $primordial; my $last_map = @revision_map;
+    my @ancestors = &ancestor_revisions($rcsobj, $revision);
+    my %seen; my $last_rev = $primordial; my @last_map = @revision_map;
     foreach my $r (reverse @ancestors) {
         $seen{$r}=1;
-        if (!$opt_M && $revision_log{$r} =~ m/[@]MERGE:\s*([^@]+)\s*[@]/) {
-            my $from_rev = &find_revision($1, $timestamp{$r});
+        if (!$opt_M &&
+            $rcsobj->{REVISION_LOG}->{$r} =~ m/[@]MERGE:\s*([^@]+)\s*[@]/) {
+            my $from_rev = &map_tag_to_revision($rcsobj, $1,
+                                                $rcsobj->{TIMESTAMP}->{$r});
             # find common point.
             my $com=$from_rev;
             while (!$seen{$com} ) {
-                $com = $prev_revision{$com};
+                $com = $rcsobj->{PREV_REVISION}->{$com};
             }
             # create map for common point.
-            my @com_map = &make_cvs_rev_map($com, $last_rev, @last_map);
+            my @com_map = &make_cvs_rev_map($rcsobj, $com,$last_rev,@last_map);
             # create maps for both sides of merge
-            my @main_map = &make_cvs_rev_map($r, $com, @com_map);
-            my @merge_map= &make_cvs_rev_map($from_rev, $com, @com_map);
+            my @main_map = &make_cvs_rev_map($rcsobj, $r,       $com,@com_map);
+            my @merge_map= &make_cvs_rev_map($rcsobj, $from_rev,$com,@com_map);
             # incrementally update @merge_map to revision $r.
             next unless open(CVSDIFF, "cvs -flnq diff -n "
                              . "-r $from_rev -r $r $pathname |");
@@ -755,7 +743,7 @@ sub parse_cvs_file {
                 } elsif ($command =~ /^a(\d+)\s(\d+)$/) { # Add command
                     my ($start_line, $count) = ($1, $2);
                     $skip = $count; $i+=$count;
-                    my @temp; $#temp1 = -1;
+                    my @temp; $#temp = -1;
                     while ($count--) {
                         push(@temp, $r);
                     }
@@ -776,9 +764,9 @@ sub parse_cvs_file {
         }
     }
     # bring from last merge up to present
-    @revision_map = &make_cvs_rev_map($revision, $last_rev, @last_map);
+    @revision_map = &make_cvs_rev_map($rcsobj, $revision,$last_rev,@last_map);
 
-    $revision;
+    ($rcsobj, $revision);
 }
 
 # Read CVS/Entries, CVS/Repository, and CVS/Root files.
@@ -873,7 +861,7 @@ sub rcs_pathname_and_revision {
 }
 
 sub update_with_local_mods {
-    my ($pathname, @text) = @_;
+    my ($rcsobj, $pathname, @text) = @_;
     my @diffs;
     return @text if !open(CVSDIFF, "cvs -flnq diff -n $pathname |");
     @diffs = <CVSDIFF>;
@@ -905,7 +893,7 @@ sub update_with_local_mods {
     }
     # annotate 'author' of this revision...
     my $whoami = `whoami`; chomp($whoami);
-    $revision_author{"LOCAL"} = $whoami;
+    $rcsobj->{REVISION_AUTHOR}->{"LOCAL"} = $whoami;
     # ok, done.
     return @text;
 }
@@ -915,15 +903,15 @@ sub show_annotated_cvs_file {
     my (@output) = ();
 
     my ($rcs_pathname,$checked_out_rev)=&rcs_pathname_and_revision($pathname);
-    $revision = &parse_cvs_file($pathname,$rcs_pathname,$checked_out_rev);
+    my ($rcsobj, $revision) = &parse_cvs_file($pathname,$rcs_pathname,$checked_out_rev);
 
-    @text = &extract_revision($revision);
+    @text = &extract_revision($rcsobj, $revision);
     die "$progname: Internal consistency error" if ($#text != $#revision_map);
 
     # update with local modifications unless a) a (presumably non-local)
     # revision was explicitly specified on the command-line, or b) the user
     # asked us not to (with the -n option)
-    @text = &update_with_local_mods($pathname, @text)
+    @text = &update_with_local_mods($rcsobj, $pathname, @text)
         unless (defined($opt_r) || $opt_n);
 
     # Set total width of line annotation.
@@ -947,30 +935,33 @@ sub show_annotated_cvs_file {
         $annotation = '';
 
         # Annotate with revision author
-        $annotation .= sprintf("%-8s", $revision_author{$revision}) if $opt_a;
+        $annotation .= sprintf("%-8s",
+                               $rcsobj->{REVISION_AUTHOR}->{$revision})
+            if $opt_a;
 
         # Annotate with revision number
         $annotation .= sprintf(" %-6s", $revision) if $opt_v;
 
         # Date annotation
-        $annotation .= " $revision_ctime{$revision}" if $opt_d;
+        $annotation .= " ".$rcsobj->{REVISION_CTIME}->{$revision} if $opt_d;
 
         # Age annotation ?
         $annotation .= sprintf(" (%3s)",
-                               int($revision_age{$revision})) if $opt_A;
+                               int($rcsobj->{REVISION_AGE}->{$revision}))
+            if $opt_A;
 
         # URL annotation.
         my $partialpath = substr($rcs_truename{$rcs_pathname},
                                  length($cvsroot));
         $partialpath =~ s/,v$//;
-        my $prev_rev = $prev_revision{$revision};
+        my $prev_rev = $rcsobj->{PREV_REVISION}->{$revision};
         $prev_rev = $revision unless defined $prev_rev;
         $prev_rev = $revision = $checked_out_rev if $revision eq "LOCAL";
         $annotation .= " $opt_u$partialpath.diff?".
             "r1=$prev_rev&r2=$revision" if defined $opt_u;
 
         # -m (if-modified-since) annotion ?
-        if ($opt_m && ($timestamp{$revision} < $opt_m_timestamp)) {
+        if ($opt_m && ($rcsobj->{TIMESTAMP}->{$revision} < $opt_m_timestamp)) {
             $annotation = $blank_annotation;
         }
 
@@ -1011,6 +1002,9 @@ sub usage {
 ;
 }
 
+# suppress -w warnings.
+undef $opt_M; undef $opt_h; undef $opt_l; undef $opt_n;
+undef $opt_q; undef $opt_w;
 &usage if (!&getopts('r:m:Aadhlvwqnu:M'));
 &usage if ($opt_h);             # help option
 
