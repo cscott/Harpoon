@@ -20,7 +20,7 @@ import harpoon.Tools.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.11 2000-03-20 00:45:23 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.12 2000-03-22 05:43:48 salcianu Exp $
  */
 final public class PANode {
     // activates some safety tests
@@ -60,18 +60,23 @@ final public class PANode {
     /** Holds the unique ID */
     private final int number;
 
-    // the depth of the call chain associated with this node, if it's
-    // a specialized one.
+    // the depth of the call chain associated with this node
     private int call_chain_depth = 0;
-
     // call context sensitivity: the mapping CALL -> specialized node
     private final LightMap cs_specs;
-    // full thread sensitivity: the mapping MetaMethod -> speciliazed node
+    // the parent of this PANode on the CALL specialization branch
+    private PANode cs_parent = null;
+    // the CALL site that specialized cs_parent into this node
+    private CALL call_site = null;
+
+    // full thread sensitivity: the mapping MetaMethod -> specialized node
     private final LightMap ts_specs;
-    // thread sensitivity: specialized or not?
-    private boolean  thread_spec = false;
     // the weak thread specialization of this node (if any)
     private PANode wtspec = null;
+    // the parent of this PANode on the thread specialization branch
+    private PANode ts_parent = null;
+    // the run MetaMethod site that specialized cs_parent into this node
+    private MetaMethod run_mmethod = null;
 
     /** Creates a <code>PANode</code> of type <code>type</code.
 	<code>type</code> must be one of <code>PANode.INSIDE</code>,
@@ -118,6 +123,8 @@ final public class PANode {
 	if(spec == null){
 	    spec = new PANode(this.type);
 	    spec.call_chain_depth = this.call_chain_depth + 1;
+	    spec.cs_parent = this;
+	    spec.call_site = call_site;
 	    cs_specs.put(call_site, spec);
 	}
 
@@ -134,6 +141,18 @@ final public class PANode {
 	return cs_specs.entrySet();
     }
 
+    /** Checks whether this node is a call site specialization of
+	another node. */
+    public final boolean isCSSpec(){
+	return cs_parent != null;
+    }
+
+    /** Returns the parent of this node, on the call site specialization
+	brach. */
+    public final PANode getCSParent(){
+	return cs_parent;
+    }
+
     //////////////////////// THREAD_SENSITIVE /////////////////////////////
 
     /** Returns the specialized node of <code>this</code> node for the
@@ -144,14 +163,15 @@ final public class PANode {
 	<code>PointerAnalysis.THREAD_SENSITIVE</code> is on. */
     public final PANode tSpecialize(final MetaMethod run){
 	if(CAUTION){
-	    Util.assert(!thread_spec, "Repeated thread specialization!");
+	    Util.assert(!isTSpec(), "Repeated thread specialization!");
 	    Util.assert(PointerAnalysis.THREAD_SENSITIVE,
 			"Turn on THREAD_SENSITIVE!");
 	}
 	PANode spec = (PANode) ts_specs.get(run);
 	if(spec == null){
 	    spec = new PANode(this.type);
-	    spec.thread_spec = true;
+	    spec.ts_parent = this;
+	    spec.run_mmethod = run;
 	    ts_specs.put(run,spec);
 	}
 
@@ -176,13 +196,13 @@ final public class PANode {
 	<code>PointerAnalysis.WEAKLY_THREAD_SENSITIVE</code> is on. */
     public final PANode wtSpecialize(){
 	if(CAUTION){
-	    Util.assert(!thread_spec, "Repeated thread specialization!");
+	    Util.assert(!isTSpec(), "Repeated thread specialization!");
 	    Util.assert(PointerAnalysis.THREAD_SENSITIVE,
 			"Turn on WEAKLY_THREAD_SENSITIVE!");
 	}
 	if(wtspec == null){
 	    wtspec = new PANode(this.type);
-	    wtspec.thread_spec = true;
+	    wtspec.ts_parent = this;
 	}
 	return wtspec;
     }
@@ -195,6 +215,17 @@ final public class PANode {
 	return wtspec;
     }
 
+    /** Checks whether this node is a thread specialization of some other
+	node. */
+    public final boolean isTSpec(){
+	return ts_parent != null;
+    }
+
+    /** Returns the parent of this node, on the thread specialization
+	brach. */
+    public final PANode getTSParent(){
+	return ts_parent;
+    }
     /////////////////////////////////////////////////////////////////////////
 
 
@@ -208,7 +239,7 @@ final public class PANode {
 	other node. Relevant only if the
 	<code>PointerAnalysis.CALL_CONTEXT_SENSITIVE</code> flag is on. */
     public final boolean isSpecialized(){
-	return (call_chain_depth != 0) || thread_spec;
+	return isCSSpec() || isTSpec();
     }
 
     /** Checks whether <code>this</code> node is an unspecialized one
