@@ -189,15 +189,17 @@ public class OpExpr extends Expr {
     }
 
     public boolean usesDescriptor(Descriptor d) {
-	if (opcode==Opcode.GT||opcode==Opcode.GE||opcode==Opcode.LT||
-	    opcode==Opcode.LE||opcode==Opcode.EQ||opcode==Opcode.NE)
-	    return left.usesDescriptor(d)||(right!=null&&right.usesDescriptor(d));
-	    //	    return right.usesDescriptor(d);
-	else
-	    return left.usesDescriptor(d)||(right!=null&&right.usesDescriptor(d));
+	return left.usesDescriptor(d)||(right!=null&&right.usesDescriptor(d));
+    }
+
+    public Set useDescriptor(Descriptor d) {
+	HashSet newset=new HashSet();
+	newset.addAll(left.useDescriptor(d));
+	if (right!=null)
+	    newset.addAll(right.useDescriptor(d));
+	return newset;
     }
     
-
     public int[] getRepairs(boolean negated, Termination t) {
 	if (left instanceof RelationExpr)
 	    return new int[] {AbstractRepair.MODIFYRELATION};

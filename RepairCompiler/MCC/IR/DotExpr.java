@@ -67,6 +67,16 @@ public class DotExpr extends Expr {
 	return name;
     }
     
+    public Set useDescriptor(Descriptor d) {
+	HashSet newset=new HashSet();
+	if (d==fd)
+	    newset.add(this);
+	newset.addAll(left.useDescriptor(d));
+	if (intindex!=null)
+	    newset.addAll(intindex.useDescriptor(d));
+	return newset;
+    }
+
     public boolean usesDescriptor(Descriptor d) {
 	if (d==fd)
 	    return true;

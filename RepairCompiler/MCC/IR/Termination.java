@@ -26,6 +26,7 @@ public class Termination {
     ComputeMaxSize maxsize;
     State state;
     AbstractInterferes abstractinterferes;
+    ConcreteInterferes concreteinterferes;
     ConstraintDependence constraintdependence;
     ExactSize exactsize;
     ArrayAnalysis arrayanalysis;
@@ -62,6 +63,7 @@ public class Termination {
 	arrayanalysis=new ArrayAnalysis(state,this);
 
 	abstractinterferes=new AbstractInterferes(this);
+	concreteinterferes=new ConcreteInterferes(this);
 	generateconjunctionnodes();
 	constraintdependence=new ConstraintDependence(state,this);
 
@@ -99,7 +101,6 @@ public class Termination {
 	    System.out.println("Can't generate terminating repair algorithm!");
 	    System.exit(-1);
 	}
-	constraintdependence.traversedependences(this);
 
 	System.out.println("Removing:");
 	for(Iterator it=removedset.iterator();it.hasNext();) {
@@ -117,7 +118,7 @@ public class Termination {
 	    e.printStackTrace();
 	    System.exit(-1);
 	}
-
+	constraintdependence.traversedependences(this);
     }
 
 
@@ -227,12 +228,12 @@ public class Termination {
 	    /* Cycle through the rules to look for possible conflicts */
 	    for(int i=0;i<state.vRules.size();i++) {
 		Rule r=(Rule) state.vRules.get(i);  
-		if (ConcreteInterferes.interferes(mun,r,true)) {
+		if (concreteinterferes.interferes(mun,r,true)) {
 		    GraphNode scopenode=(GraphNode)scopesatisfy.get(r);
 		    GraphNode.Edge e=new GraphNode.Edge("interferes",scopenode);
 		    gn.addEdge(e);
 		}
-		if (ConcreteInterferes.interferes(mun,r,false)) {
+		if (concreteinterferes.interferes(mun,r,false)) {
 		    GraphNode scopenode=(GraphNode)scopefalsify.get(r);
 		    GraphNode.Edge e=new GraphNode.Edge("interferes",scopenode);
 		    gn.addEdge(e);
@@ -1091,5 +1092,26 @@ public class Termination {
 	    }
 	}
 	return okay;
+    }
+
+    public boolean analyzeQuantifiers(Quantifiers qs,Set set) {
+	for(int i=0;i<qs.numQuantifiers();i++) {
+	    Quantifier q=qs.getQuantifier(i);
+	    if (set.contains(q))
+		continue;
+	    if (q instanceof SetQuantifier) {
+		SetDescriptor sd=((SetQuantifier)q).getSet();
+		if (maxsize.getsize(sd)<=1&&
+		    maxsize.getsize(sd)>=0)
+		    continue;
+	    } else if (q instanceof RelationQuantifier) {
+		RelationDescriptor rd=((RelationQuantifier)q).getRelation();
+		if (maxsize.getsize(rd)<=1&&
+		    maxsize.getsize(rd)>=0)
+		    continue;
+	    }
+	    return false;
+	}
+	return true;
     }
 }

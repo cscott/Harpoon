@@ -33,6 +33,10 @@ public class SizeofExpr extends Expr {
 	return setexpr.usesDescriptor(rd);
     }
 
+    public Set useDescriptor(Descriptor rd) {
+	return setexpr.useDescriptor(rd);
+    }
+
 
     public Descriptor getDescriptor() {
 	return setexpr.getDescriptor();

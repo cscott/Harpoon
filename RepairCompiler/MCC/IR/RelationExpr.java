@@ -66,6 +66,14 @@ public class RelationExpr extends Expr {
 	else
 	    return expr.usesDescriptor(rd);
     }
+
+    public Set useDescriptor(Descriptor rd) {
+	HashSet newset=new HashSet();
+	if (rd==relation)
+	    newset.add(this);
+	newset.addAll(expr.useDescriptor(rd));
+	return newset;
+    }
     
     public RelationDescriptor getRelation() {
         return relation;

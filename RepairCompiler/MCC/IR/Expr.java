@@ -53,6 +53,10 @@ public abstract class Expr {
 	return false;
     }
 
+    public Set useDescriptor(Descriptor d) {
+	return new HashSet();
+    }
+
     public boolean usesDescriptor(Descriptor rd) {
 	System.out.println(this.getClass().getName());
 	throw new Error("UNIMPLEMENTED");
@@ -75,7 +79,7 @@ public abstract class Expr {
     }
 
     public SetDescriptor getSet() {
-	throw new Error("No Set for this Expr");
+	return null; /* unknown value */
     }
 
     public boolean isSafe() {

@@ -39,6 +39,15 @@ public class TupleOfExpr extends Expr {
 	    return left.usesDescriptor(d)||right.usesDescriptor(d);
     }
 
+    public Set useDescriptor(Descriptor d) {
+	HashSet newset=new HashSet();
+	if (d==relation)
+	    newset.add(this);
+	newset.addAll(left.useDescriptor(d));
+	newset.addAll(right.useDescriptor(d));
+	return newset;
+    }
+
     public boolean equals(Map remap, Expr e) {
 	if (e==null||!(e instanceof TupleOfExpr))
 	    return false;

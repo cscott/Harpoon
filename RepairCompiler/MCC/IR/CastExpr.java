@@ -38,6 +38,10 @@ public class CastExpr extends Expr {
 	else return ((this.type==((CastExpr)e).type)&&expr.equals(remap,((CastExpr)e).expr));
     }
 
+    public Set useDescriptor(Descriptor d) {
+	return expr.useDescriptor(d);
+    }
+
     public boolean usesDescriptor(Descriptor d) {
 	return expr.usesDescriptor(d);
     }

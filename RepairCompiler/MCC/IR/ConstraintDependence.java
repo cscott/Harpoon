@@ -179,6 +179,8 @@ public class ConstraintDependence {
 		RelationInclusion ri=(RelationInclusion)r.getInclusion();
 		Expr e=f.isInverse()?ri.getRightExpr():ri.getLeftExpr();
 		SetDescriptor sd=e.getSet();
+		if (sd==null)
+		    sd=f.isInverse()?ri.getRelation().getRange():ri.getRelation().getDomain();
 		if (!(sd.isSubset(f.getSet())||f.getSet().isSubset(sd)))
 		    continue; /* This rule doesn't effect the function */
 		if (foundrule) /* two different rules are a problem */

@@ -23,6 +23,14 @@ public class ElementOfExpr extends Expr {
 	    return true;
 	return element.usesDescriptor(d);
     }
+    public Set useDescriptor(Descriptor d) {
+	HashSet newset=new HashSet();
+	if (d==set)
+	    newset.add(this);
+	newset.addAll(element.useDescriptor(d));
+	return newset;
+    }
+
     public String name() {
 	return element.name()+" in "+set.toString();
     }

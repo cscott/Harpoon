@@ -41,6 +41,13 @@ public class VarExpr extends Expr {
 	return false;
     }
 
+    public Set useDescriptor(Descriptor d) {
+	HashSet newset=new HashSet();
+	if (d==vd)
+	    newset.add(this);
+	return newset;
+    }
+
     public boolean isNonNull() {
 	return true;
     }

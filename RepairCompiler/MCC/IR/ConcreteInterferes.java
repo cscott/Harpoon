@@ -1,7 +1,13 @@
 package MCC.IR;
 import java.util.*;
 
-class ConcreteInterferes {
+public class ConcreteInterferes {
+    Termination termination;
+
+    public ConcreteInterferes(Termination t) {
+	this.termination=t;
+    }
+
 
     static public boolean interferesinclusion(UpdateNode un, Updates update, Rule r) {
 	Descriptor updated_des=update.getDescriptor();
@@ -148,7 +154,7 @@ class ConcreteInterferes {
     /** Returns true if the data structure updates performed by mun may increase (or decrease if satisfy=false)
      * the scope of the model definition rule r. */
 
-    static public boolean interferes(MultUpdateNode mun, Rule r, boolean satisfy) {
+    public boolean interferes(MultUpdateNode mun, Rule r, boolean satisfy) {
 	if (!initialinterferes(mun,r,satisfy)) /* Can't falsify a rule adding something to a set on an initial addition*/
 	    return false;
 	for(int i=0;i<mun.numUpdates();i++) {
@@ -169,36 +175,45 @@ class ConcreteInterferes {
 		       If we're removing something, there is no similar side effect */
 
 		    /* ISSUE: Rules need to be updated if we allow concrete expression of the form x.f.g */
-		    if ((un.getRule()==r)&&
-			(((mun.op==MultUpdateNode.ADD)&&satisfy)||((mun.op==MultUpdateNode.REMOVE)&&!satisfy)||(mun.op==MultUpdateNode.MODIFY))&&
-			(r.numQuantifiers()==1)&&
-			(r.getQuantifier(0) instanceof SetQuantifier)&&
-			update.isField()&&
-			(((DotExpr)update.getLeftExpr()).getExpr() instanceof VarExpr)&&
-			((SetQuantifier)r.getQuantifier(0)).getVar()==((VarExpr)((DotExpr)update.getLeftExpr()).getExpr()).getVar())
-			continue;
-
-    		    if ((un.getRule()==r)&&
-			(((mun.op==MultUpdateNode.ADD)&&satisfy)||((mun.op==MultUpdateNode.REMOVE)&&!satisfy)||(mun.op==MultUpdateNode.MODIFY))&&
-			(r.numQuantifiers()==0))
-			continue;
-		    
-
 		    if (r.getInclusion().usesDescriptor(updated_des)) {
-			if (satisfy) {
-			    if (interferesinclusion(un, update, r))
-			    return true;
-			} else
-			    return true; /* Interferes with inclusion condition */
+			boolean ok=false;
+			if ((un.getRule()==r)&&
+			    (((mun.op==MultUpdateNode.ADD)&&satisfy)
+			     ||((mun.op==MultUpdateNode.REMOVE)&&!satisfy)
+			     ||(mun.op==MultUpdateNode.MODIFY))) {
+			    Inclusion inclusion=r.getInclusion();
+			    if (inclusion instanceof RelationInclusion) {
+				RelationInclusion ri=(RelationInclusion)inclusion;
+				if ((!interferes(update,r,ri.getLeftExpr()))&&
+				    (!interferes(update,r,ri.getRightExpr())))
+				    ok=true;
+			    } else if (inclusion instanceof SetInclusion) {
+				SetInclusion si=(SetInclusion)inclusion;
+				if (!interferes(update,r,si.getExpr()))
+				    ok=true;
+			    } else throw new Error();
+			}
+			if (!ok) {
+			    if (satisfy) {
+				if (interferesinclusion(un, update, r))
+				    return true;
+			    } else
+				return true; /* Interferes with inclusion condition */
+			}
 		    }
 		    
 		    for(int k=0;k<drule.size();k++) {
 			RuleConjunction rconj=drule.get(k);
 			for(int l=0;l<rconj.size();l++) {
-
-
 			    DNFExpr dexpr=rconj.get(l);
 			    /* See if update interferes w/ dexpr */
+			    if ((un.getRule()==r)&&
+				(((mun.op==MultUpdateNode.ADD)&&satisfy)
+				 ||((mun.op==MultUpdateNode.REMOVE)&&!satisfy)
+				 ||(mun.op==MultUpdateNode.MODIFY))) {
+				if (!interferes(update,r,dexpr.getExpr()))
+				    continue; /* unique state - we're okay */
+			    }
 			    if (interferes(un,update, r,dexpr))
 				return true;
 			}
@@ -209,6 +224,90 @@ class ConcreteInterferes {
 	return false;
     }
 
+    private boolean interferes(Updates u, Rule r, Expr e) {
+	Set exprs=e.useDescriptor(u.getDescriptor());
+	for(Iterator eit=exprs.iterator();eit.hasNext();) {
+	    Expr e2=(Expr)eit.next();
+	    if (mayinterfere(u,r,e2))
+		return true;
+	}
+	return false;
+    }
+
+    private boolean mayinterfere(Updates u, Rule r, Expr e) {
+	// Note: rule of u must be r
+
+	Expr update_e=u.getLeftExpr();
+	HashSet quantifierset=new HashSet();
+
+	if (termination.analyzeQuantifiers(r,quantifierset))
+	    return false; /* Can't accidentally interfere with other bindings if there aren't any! */
+
+	boolean firstfield=true;
+	while(true) {
+	    if (update_e instanceof CastExpr)
+		update_e=((CastExpr)update_e).getExpr();
+	    else if (e instanceof CastExpr)
+		e=((CastExpr)e).getExpr();
+	    else if ((update_e instanceof DotExpr)&&(e instanceof DotExpr)) {
+		DotExpr de1=(DotExpr)update_e;
+		DotExpr de2=(DotExpr)e;
+		if (de1.isValue()&&!firstfield)
+		    return true; /* Could have aliasing from this */
+		if (de1.getField()!=de2.getField())
+		    return true; /* Different fields: not comparible */
+		firstfield=false;
+
+		Expr index1=de1.getIndex();
+		Expr index2=de2.getIndex();
+		if (index1!=null) {
+		    assert index2!=null;
+		    if ((index1 instanceof VarExpr)&&(index2 instanceof VarExpr)) {
+			VarDescriptor vd1=((VarExpr)index1).getVar();
+			VarDescriptor vd2=((VarExpr)index2).getVar();
+			if ((vd1==vd2)&&!vd1.isGlobal()) {
+			    quantifierset.add(getQuantifier(r,vd1));
+			    if (termination.analyzeQuantifiers(r,quantifierset))
+				return false; /* State is disjoint from any other example */
+			}
+		    }
+		}
+		update_e=de1.getExpr();
+		e=de2.getExpr();
+	    } else if ((update_e instanceof VarExpr)&&(e instanceof VarExpr)) {
+		VarDescriptor vd1=((VarExpr)update_e).getVar();
+		VarDescriptor vd2=((VarExpr)e).getVar();
+		if ((vd1==vd2)&&!vd1.isGlobal()) {
+		    quantifierset.add(getQuantifier(r,vd1));
+		    if (termination.analyzeQuantifiers(r,quantifierset))
+			return false; /* State is disjoint from any other example */
+		}
+		return true;
+	    } else return true;
+	}
+
+    }
+
+    static private Quantifier getQuantifier(Quantifiers qs, VarDescriptor vd) {
+	for (int i=0;i<qs.numQuantifiers();i++) {
+	    Quantifier q=qs.getQuantifier(i);
+	    if (q instanceof SetQuantifier) {
+		SetQuantifier sq=(SetQuantifier)q;
+		if (sq.getVar()==vd)
+		    return sq;
+	    } else if (q instanceof RelationQuantifier) {
+		RelationQuantifier rq=(RelationQuantifier)q;
+		if ((rq.x==vd)||(rq.y==vd))
+		    return rq;
+	    } else if (q instanceof ForQuantifier) {
+		ForQuantifier fq=(ForQuantifier)q;
+		if (fq.getVar()==vd)
+		    return fq;
+	    }
+	}
+	return null;
+    }
+    
     static private boolean initialinterferes(MultUpdateNode mun, Rule r, boolean satisfy) {
 	AbstractRepair ar=mun.getRepair();
 	if (satisfy)

@@ -27,6 +27,13 @@ public class SetExpr extends Expr {
 	return (s==sd);
     }
 
+    public Set useDescriptor(Descriptor s) {
+	HashSet newset=new HashSet();
+	if (s==sd)
+	    newset.add(this);
+	return newset;
+    }
+
     public SetExpr() {
         this.sd = null;
     }
