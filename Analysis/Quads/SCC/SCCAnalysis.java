@@ -66,7 +66,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.23 2001-07-19 22:19:51 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.24 2001-11-01 20:15:02 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -762,14 +762,33 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    else if (v != null) {
 		xBitWidth bw = extractWidth(v);
 		// mark some edges executable & propagate to all sigmas.
+		int executable=0;
 		for (int j=0; j < q.nextEdge().length; j++) {
-		    if (j<q.keysLength()) { // default edge always executable
+		    if (j<q.keysLength()) { // non-default edge.
 			// learn stuff about cases from bitwidth of v.
 			int k = q.keys(j);
 			if (k>0 && Util.fls(k) > bw.plusWidth())
 			    continue; // key too large to be selected.
 			if (k<0 && Util.fls(-k) > bw.minusWidth())
 			    continue; // key too small to be selected.
+			executable++;
+		    } else {
+			// pigeon-hole principle: default edge is executable
+			// iff number of executable edges (so far) is less
+			// than possible number of cases constrained by
+			// plusWidth and minusWidth.
+			// --- bail if plusWidth/minusWidth too large; we
+			//     know (we hope!) that switch can't have this
+			//     many edges.
+			if (bw.plusWidth<30 && bw.minusWidth<30) {
+			    // number of cases is (2^pw + 2^mw)-1
+			    // (don't count zero twice!)
+			    long cases = -1 +
+				(1L<<bw.plusWidth()) + (1L<<bw.minusWidth());
+			    Util.assert(executable<=cases);
+			    if (executable==cases)
+				continue; // default not executable.
+			}
 		    }
 		    raiseE(Ee, Eq, Wq, q.nextEdge(j) );
 		    for (int i=0; i < q.numSigmas(); i++) {
