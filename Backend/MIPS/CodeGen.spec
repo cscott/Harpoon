@@ -69,7 +69,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.15 2000-09-11 21:32:58 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.16 2000-09-12 17:50:44 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing cc
 // on MIPS IRIX64 lion 6.2 03131016 IP19.  
@@ -489,20 +489,19 @@ import java.util.Iterator;
     private void DoLLCall(HCodeElement root,
                           Temp i, Temp j, Temp k, String func_name) {
        declare( a3, HClass.Void );
-       declare( a2, HClass.Int );
+       declare( a2, HClass.Void );
        declare( a1, HClass.Void );
        declare( a0, HClass.Void );
-       // not certain an emitMOVE is legal with the l/h modifiers
+       // an emitMOVE is not legal with the l/h modifiers
        Util.assert(j instanceof TwoWordTemp);
        Util.assert(k instanceof TwoWordTemp);
        emit( root, "move `d0, `s0h", a0, j );
        emit( root, "move `d0, `s0l", a1, j );
        emit( root, "move `d0, `s0h", a2, k );
        emit( root, "move `d0, `s0l", a3, k );
-       declareCALLDefBuiltin();
+       declareCALLDefFull();
        emit2(root, "jal "+nameMap.c_function_name(func_name),
-             // uses & stomps on these registers:
-             call_def_builtin, call_use);
+             call_def_full, call_use);
        Util.assert(i instanceof TwoWordTemp);
        emit( root, "move `d0h, `s0", i, v0 );
        emit( root, "move `d0l, `s0", i, v1 );
@@ -513,15 +512,16 @@ import java.util.Iterator;
        declare( a2, HClass.Int );
        declare( a1, HClass.Void );
        declare( a0, HClass.Void );
-       // not certain an emitMOVE is legal with the l/h modifiers
+       declareCALLDefBuiltin();
+       // an emitMOVE is not legal with the l/h modifiers
        Util.assert(j instanceof TwoWordTemp);
        emit( root, "move `d0, `s0h", a0, j );
        emit( root, "move `d0, `s0l", a1, j );
        emitMOVE( root, "move `d0, `s0", a2, k );
-       declareCALLDefBuiltin();
+       declareCALLDefFull();
        emit2(root, "jal "+nameMap.c_function_name(func_name),
              // uses & stomps on these registers:
-             call_def_builtin, call_use);
+             call_def_full, call_use);
        Util.assert(i instanceof TwoWordTemp);
        emit( root, "move `d0h, `s0", i, v0 );
        emit( root, "move `d0l, `s0", i, v1 );
@@ -1454,15 +1454,18 @@ TEMP(t) = i %{ i=t; /* this case is basically handled entirely by the CGG */ }%
 
 UNOP(I2B, arg) = i %pred %( ROOT.operandType() == Type.INT )%
 %{
-    emit( ROOT, "sra `d0, `s0, 8", i, arg);
+    emit( ROOT, "sll `d0, `s0, 24", i, arg);
+    emit( ROOT, "sra `d0, `s0, 24", i, i);
 }%
 UNOP(I2S, arg) = i %pred %( ROOT.operandType() == Type.INT )%
 %{
-    emit( ROOT, "sra `d0, `s0, 16", i, arg);
+    emit( ROOT, "sll `d0, `s0, 16", i, arg);
+    emit( ROOT, "sra `d0, `s0, 16", i, i);
 }%
 UNOP(I2C, arg) = i %pred %( ROOT.operandType() == Type.INT )%
 %{
-    emit( ROOT, "sra `d0, `s0, 16", i, arg);
+    emit( ROOT, "sll `d0, `s0, 16", i, arg);
+    emit( ROOT, "srl `d0, `s0, 16", i, i);
 }%
 UNOP(_2F, arg) = i %pred %( ROOT.operandType() == Type.INT )%
 %{
@@ -1482,7 +1485,6 @@ UNOP<p>(_2I, arg) = i %pred %( ROOT.operandType() == Type.POINTER )%
 %{
     emitMOVE( ROOT, "move `d0, `s0", i, arg );
 }%
-
 
 
 UNOP(_2I, arg) = i %pred %( ROOT.operandType() == Type.LONG )%
@@ -1803,7 +1805,7 @@ DATUM(CONST<s:16,u:16>(exp)) %{
                       && exp.intValue()!=96 /* backquotes cause problems */
                       && exp.intValue()!=34 /* so do double quotes */) ?
       ("\t# char "+((char)exp.intValue())) : "";
-   emitDIRECTIVE( ROOT, "\t.half "+exp+chardesc);
+   emitDIRECTIVE( ROOT, "\t.short "+exp+chardesc);
 }%
 
 DATUM(NAME(l)) %{
