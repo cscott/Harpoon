@@ -4,7 +4,7 @@
 package imagerec;
 
 import imagerec.corba.CORBA;
-//import imagerec.corba.EventChannel;
+import imagerec.corba.EventChannel;
 
 import imagerec.graph.*;
 
@@ -81,6 +81,15 @@ public class ATRMain {
 		receivingTimer = new Node();
 	    }
 	    Node pipe = null;
+	    Node alert = null;
+	    if ((pipelineNumber == 1)||
+		(pipelineNumber == 2)||
+		(pipelineNumber == 3)) {
+		alert = new Alert(new CORBA(args), args[3]);
+	    } else if (pipelineNumber == 4) {
+		alert = new Alert(new EventChannel(args), args[3]);
+		pipelineNumber = 3;
+	    }
 	    if (pipelineNumber == 1) {
 		Node alert = new Alert(new CORBA(args), args[3]);
 		
@@ -94,7 +103,6 @@ public class ATRMain {
 		(new ATR(new CORBA(args), args[2], pipe)).run();
 	    }
 	    else if (pipelineNumber == 2) {
-		Node alert = new Alert(new CORBA(args), args[3]);
 		Node labelBlue = new LabelBlue(null, null);
 		Node range = new RangeFind(null);
 		pipe = timer1.linkL(labelBlue.link(null,
@@ -166,14 +174,11 @@ public class ATRMain {
 					     labelBlue.link(null,
 							    getLabelSmCmd.linkL(labelSmCache)))));
     
-		(new ATR(new CORBA(args), args[3], pipe)).run();
-		*/
-	    }
-	    else {
+	    } else {
 		System.out.println("Error: Pipeline #"+pipelineNumber+" not implemented yet.");
 		System.exit(-1);
 	    }
-
+	    (new ATR(new CORBA(args), args[2], pipe)).run();
 	}//else [if(pipelineNumber <= 0)]
     }//public static void main()
 }//public class ATRMain
