@@ -188,8 +188,11 @@ jmethodID FNI_GetMethodInfo(jobject method);
 /* raw allocation routine */
 void *FNI_RawAlloc(JNIEnv *env, jsize length);
 /* allocate and zero memory for the specified object type, using the
- * supplied allocation function.  If allocfunc is NULL, uses FNI_RawAlloc. */
-jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info,
+ * supplied allocation function.  If allocfunc is NULL, uses FNI_RawAlloc.
+ * Efficiency hack: 'info' may be NULL (in which case it is only
+ * looked up if claz has a finalizer that needs to be registered). */
+jobject FNI_Alloc(JNIEnv *env,
+		  struct FNI_classinfo *info, struct claz *claz,
 		  void *(*allocfunc)(jsize length), jsize length);
 
 /* inflation routine/macro */

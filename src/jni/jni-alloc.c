@@ -2,6 +2,7 @@
 #include <jni.h>
 #include <jni-private.h>
 
+#include <assert.h>
 #include <stdlib.h>
 #include "config.h"
 #ifdef WITH_DMALLOC
@@ -32,11 +33,14 @@ void *FNI_RawAlloc(JNIEnv *env, jsize length) {
 
 /* Allocate and zero-out memory for the specified object type.
  * Returns NULL and throws OutOfMemoryError if it cannot
- * allocate the memory.  If allocfunc is NULL, uses FNI_RawAlloc. */
-jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info,
+ * allocate the memory.  If allocfunc is NULL, uses FNI_RawAlloc.
+ * Efficiency hack: 'info' may be NULL (in which case it is only
+ * looked up if claz has a finalizer that needs to be registered). */
+jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, struct claz *claz,
 		  void *(*allocfunc)(jsize length), jsize length) {
   struct oobj *newobj;
 
+  assert(claz); /* info may be NULL.  claz may not be. */
   newobj = (allocfunc==NULL) ? FNI_RawAlloc(env,length) : (*allocfunc)(length);
   if (newobj==NULL) {
     FNI_ThrowNew(env, FNI_FindClass(env, "java/lang/OutOfMemoryError"),
@@ -44,7 +48,7 @@ jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info,
     return NULL;
   }
   memset(newobj, 0, length);
-  newobj->claz = info->claz;
+  newobj->claz = claz;
   /* note -- setting the last bit also has the convenient property of
    * eliminating a possible self-cycle that would keep conservative gc
    * from finalizing the object. */
