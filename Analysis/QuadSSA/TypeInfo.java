@@ -19,7 +19,7 @@ import java.util.Hashtable;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.4 1998-12-05 20:50:15 marinov Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.5 1998-12-09 22:02:11 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
@@ -84,80 +84,80 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	public void visit(Quad q) { modified = false; }
 
 	public void visit(AGET q) {
-	    HClass ty = typeMap(hc, q.objectref);
+	    HClass ty = typeMap(hc, q.objectref());
 	    if (ty==null) {modified=false; return; }
 	    Util.assert(ty.isArray());
-	    modified = merge(hc, q.dst, ty.getComponentType());
+	    modified = merge(hc, q.dst(), ty.getComponentType());
 	    return;
 	}
 	public void visit(ALENGTH q) {
-	    modified = merge(hc, q.dst, HClass.Int);
+	    modified = merge(hc, q.dst(), HClass.Int);
 	}
 	public void visit(ANEW q) {
-	    modified = merge(hc, q.dst, q.hclass);
+	    modified = merge(hc, q.dst(), q.hclass());
 	}
 	public void visit(CALL q) {
-	    boolean r1 = (q.retval==null) ? false:
-		merge(hc, q.retval, q.method.getReturnType());
+	    boolean r1 = (q.retval()==null) ? false:
+		merge(hc, q.retval(), q.method().getReturnType());
 	    // XXX specify class of exception better.
-	    boolean r2 = merge(hc, q.retex, HClass.forClass(Throwable.class));
+	    boolean r2 = merge(hc,q.retex(),HClass.forClass(Throwable.class));
 	    modified = r1 || r2;
 	}
 	public void visit(COMPONENTOF q) {
-	    modified = merge(hc, q.dst, HClass.Boolean);
+	    modified = merge(hc, q.dst(), HClass.Boolean);
 	}
 	public void visit(CONST q) {
-	    modified = merge(hc, q.dst, q.type);
+	    modified = merge(hc, q.dst(), q.type());
 	}
 	public void visit(GET q) {
-	    modified = merge(hc, q.dst, q.field.getType());
+	    modified = merge(hc, q.dst(), q.field().getType());
 	}
 	public void visit(INSTANCEOF q) {
-	    modified = merge(hc, q.dst, HClass.Boolean);
+	    modified = merge(hc, q.dst(), HClass.Boolean);
 	}
-	public void visit(METHODHEADER q) {
+	public void visit(HEADER q) {
 	    boolean r = false;
 	    HMethod m = hc.getMethod();
 	    HClass[] pt = m.getParameterTypes();
 	    int offset = m.isStatic()?0:1;
-	    for (int i=offset; i<q.params.length; i++)
-		if (merge(hc, q.params[i], pt[i-offset])) 
+	    for (int i=offset; i<q.paramsLength(); i++)
+		if (merge(hc, q.params(i), pt[i-offset])) 
 		    r = true;
 	    if (!m.isStatic())
-		r = merge(hc, q.params[0], m.getDeclaringClass()) || r;
+		r = merge(hc, q.params(0), m.getDeclaringClass()) || r;
 	    modified = r;
 	}
 	public void visit(MOVE q) {
-	    HClass ty = typeMap(hc, q.src);
+	    HClass ty = typeMap(hc, q.src());
 	    if (ty==null) { modified = false; return; }
-	    modified = merge(hc, q.dst, ty);
+	    modified = merge(hc, q.dst(), ty);
 	}
 	public void visit(NEW q) {
-	    modified = merge(hc, q.dst, q.hclass);
+	    modified = merge(hc, q.dst(), q.hclass());
 	}
 	public void visit(OPER q) {
-	    modified = merge(hc, q.dst, q.evalType());
+	    modified = merge(hc, q.dst(), q.evalType());
 	}
 	public void visit(PHI q) {
 	    boolean r = false;
-	    for (int i=0; i<q.dst.length; i++)
-		for (int j=0; j<q.src[i].length; j++) {
-		    if (q.src[i][j]==null) continue;
-		    HClass ty = typeMap(hc, q.src[i][j]);
+	    for (int i=0; i<q.numPhis(); i++)
+		for (int j=0; j<q.arity(); j++) {
+		    if (q.src(i,j)==null) continue;
+		    HClass ty = typeMap(hc, q.src(i,j));
 		    if (ty==null) continue;
-		    if (merge(hc, q.dst[i], ty))
+		    if (merge(hc, q.dst(i), ty))
 			r = true;
 		}
 	    modified = r;
 	}
 	public void visit(SIGMA q) {
 	    boolean r = false;
-	    for (int i=0; i<q.src.length; i++) {
-		if (q.src[i]==null) continue;
-		HClass ty = typeMap(hc, q.src[i]);
+	    for (int i=0; i<q.numSigmas(); i++) {
+		if (q.src(i)==null) continue;
+		HClass ty = typeMap(hc, q.src(i));
 		if (ty==null) continue;
-		for (int j=0; j<q.dst[i].length; j++)
-		    if (merge(hc, q.dst[i][j], ty))
+		for (int j=0; j<q.arity(); j++)
+		    if (merge(hc, q.dst(i,j), ty))
 			r = true;
 	    }
 	    modified = r;
@@ -169,42 +169,42 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	    // special case comparisons against NULL.
 	    INSTANCEOF idef = null; // CJMP test is from this INSTANCEOF
 	    OPER       odef = null; // CJMP test is from this OPER
-	    Quad def = (Quad) checkcast.get(q.test);
+	    Quad def = (Quad) checkcast.get(q.test());
 	    if (def instanceof INSTANCEOF) idef = (INSTANCEOF)def;
 	    if (def instanceof OPER)       odef = (OPER)def;
 
 	    boolean r = false;
-	    for (int i=0; i<q.src.length; i++) {
-		if (q.src[i]==null) continue;
-		HClass ty = typeMap(hc, q.src[i]);
+	    for (int i=0; i<q.numSigmas(); i++) {
+		if (q.src(i)==null) continue;
+		HClass ty = typeMap(hc, q.src(i));
 		if (ty==null) continue;
-		for (int j=0; j<q.dst[i].length; j++) {
+		for (int j=0; j<q.arity(); j++) {
 		    if (j==1) { // sometimes we gain info on true side of cjmp
-			if (idef != null && idef.src == q.src[i]) {
+			if (idef != null && idef.src() == q.src(i)) {
 			    // test from INSTANCEOF.  we know class if true.
-			    r = merge(hc, q.dst[i][j], idef.hclass) || r;
+			    r = merge(hc, q.dst(i,j), idef.hclass()) || r;
 			    continue;
 			}
-			if (odef != null && odef.opcode==Qop.ACMPEQ) {
+			if (odef != null && odef.opcode()==Qop.ACMPEQ) {
 			    // check to be sure we've got enough info:
-			    HClass left = typeMap(hc, odef.operands[0]);
-			    HClass right= typeMap(hc, odef.operands[1]);
+			    HClass left = typeMap(hc, odef.operands(0));
+			    HClass right= typeMap(hc, odef.operands(1));
 			    if (left==null||right==null) continue;
 			    // ACMPEQ.  Types are identical if true.
-			    if (odef.operands[0] == q.src[i] &&
+			    if (odef.operands(0) == q.src(i) &&
 				right == HClass.Void) {
-				r = merge(hc, q.dst[i][j], right) || r;
+				r = merge(hc, q.dst(i,j), right) || r;
 				continue;
 			    }
-			    if (odef.operands[1] == q.src[i] &&
+			    if (odef.operands(1) == q.src(i) &&
 				left == HClass.Void) {
-				r = merge(hc, q.dst[i][j], left) || r;
+				r = merge(hc, q.dst(i,j), left) || r;
 				continue;
 			    }
 			}
 		    }
 		    // fall back
-		    r = merge(hc, q.dst[i][j], ty) || r;
+		    r = merge(hc, q.dst(i,j), ty) || r;
 		}
 	    }
 	    modified = r;

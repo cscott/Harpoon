@@ -6,6 +6,8 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Util;
+
 /**
  * <code>CJMP</code> represents conditional branches.<p>
  * <code>next[0]</code> is if-false, which is taken if 
@@ -14,22 +16,40 @@ import harpoon.Temp.TempMap;
  *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.1.2.1 1998-12-01 12:36:41 cananian Exp $
+ * @version $Id: CJMP.java,v 1.1.2.2 1998-12-09 22:02:24 cananian Exp $
  */
-
 public class CJMP extends SIGMA {
-    public Temp test;
+    protected Temp test;
 
-    /** Creates a <code>CJMP</code>. */
+    /** Creates a <code>CJMP</code> representing a conditional branch.
+     * @param test
+     *        the <code>Temp</code> tested by this branch.
+     * @param src
+     *        the source <code>Temp</code>s for the underlying 
+     *        <code>SIGMA</code>. 
+     * @param dst
+     *        the destination <code>Temp</code>s for the underlying
+     *        <code>SIGMA</code>.
+     */
     public CJMP(HCodeElement source, Temp test, Temp dst[][], Temp src[]) {
         super(source, dst, src, 2 /* two branch targets */);
 	this.test = test;
+	Util.assert(test!=null);
     }
+    /** Creates a <code>CJMP</code> representing a conditional branch.
+     *  Abbreviated form of the constructor uses an appropriately-sized
+     *  array of <code>null</code> values for the <code>dst</code> field.
+     */
     public CJMP(HCodeElement source, Temp test, Temp src[]) {
 	this(source, test, new Temp[src.length][2], src);
     }
+    // ACCESSOR FUNCTIONS:
+    /** Returns the <code>Temp</code> tested by this <code>CJMP</code>. */
+    public Temp test() { return test; }
 
-    /** Swaps if-true and if-false targets. */
+    /** Swaps if-true and if-false targets, inverting the sense of the
+     *  test.
+     *  @deprecated Violates immutability of quads. */
     public void invert() {
 	Edge iftrue = nextEdge(0);
 	Edge iffalse= nextEdge(1);

@@ -15,7 +15,7 @@ import java.io.FileInputStream;
 import java.util.Properties;
 
 /**
- * 
+ * <code>Monitor</code> is a static class that logs profiling info.
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
  * @version 
  */

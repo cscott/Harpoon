@@ -52,7 +52,7 @@ public class Profile {
     // Make sure METHODHEADER visited first 
     for (e = hc.getElementsE(); e.hasMoreElements();) {
       Quad q = (Quad) e.nextElement();
-      if (q instanceof METHODHEADER) 
+      if (q instanceof HEADER) 
 	q.visit(v);
     }
     
@@ -132,17 +132,17 @@ public class Profile {
     public void visit(CALL q) {
 
       // log static info
-      _static_monitor.logMAYCALL(_class,_method,q.method.getDeclaringClass(),q.method);
+      _static_monitor.logMAYCALL(_class,_method,q.method().getDeclaringClass(),q.method());
 
       // Set up constants.
       Temp t1 = new Temp();
-      CONST c1 = new CONST(q.getSourceElement(), t1, 
+      CONST c1 = new CONST(q, t1, 
 			   _calling_method_name, 
 			   _java_lang_string);
 
       Temp t2 = new Temp();
-      CONST c2 = new CONST(q.getSourceElement(), t2,
-			   q.method.getName(), _java_lang_string);
+      CONST c2 = new CONST(q, t2,
+			   q.method().getName(), _java_lang_string);
 
       Temp[] parameters = new Temp[4];
 
@@ -151,19 +151,19 @@ public class Profile {
       parameters[3] = t2;
 
       // if this is a static method call then we need a null constant
-      if (q.objectref == null || _this == null) {
+      if (q.objectref() == null || _this == null) {
 
 	Temp t3 = new Temp();
-	CONST c3 = new CONST(q.getSourceElement(), t3,
+	CONST c3 = new CONST(q, t3,
 			     null, HClass.Void);
 
 	if (_this == null) parameters[0] = t3;
 	else parameters[0] = _this;
-	if (q.objectref == null) parameters[2] = t3;
-	else parameters[2] = q.objectref;
+	if (q.objectref() == null) parameters[2] = t3;
+	else parameters[2] = q.objectref();
 
-	CALL profiling_call = new CALL(q.getSourceElement(), _call_profiling_method,
-				       null, parameters, null, new Temp(), false);
+	CALL profiling_call = new CALL(q, _call_profiling_method,
+				       null, parameters, null, new Temp(), true);
 
 	Edge c1_c2 = Quad.addEdge(c1, 0, c2, 0);
 	Edge c2_c3 = Quad.addEdge(c2, 0, c3, 0);
@@ -175,10 +175,10 @@ public class Profile {
       } else {
 
 	parameters[0] = _this;
-	parameters[2] = q.objectref;	
+	parameters[2] = q.objectref();	
 
-	CALL profiling_call = new CALL(q.getSourceElement(), _call_profiling_method,
-				       null, parameters, null, new Temp(), false);
+	CALL profiling_call = new CALL(q, _call_profiling_method,
+				       null, parameters, null, new Temp(), true);
 
 	Edge c1_c2 = Quad.addEdge(c1, 0, c2, 0);
 	Edge c2_profiling_call = Quad.addEdge(c2, 0, profiling_call, 0);
@@ -195,27 +195,27 @@ public class Profile {
       Temp[] parameters = new Temp[4];
 
       Temp t1 = new Temp();
-      CONST c1 = new CONST(q.getSourceElement(), t1,
+      CONST c1 = new CONST(q, t1,
 			     new Integer(q.getLineNumber()), 
 			   HClass.Int);
 
       Temp t2 = new Temp();
-      CONST c2 = new CONST(q.getSourceElement(), t2,
+      CONST c2 = new CONST(q, t2,
 			   _calling_method_name, _java_lang_string);
 
       if (_this == null) {
 
 	Temp t3 = new Temp();
-	CONST c3 = new CONST(q.getSourceElement(), t3,
+	CONST c3 = new CONST(q, t3,
 			     null, HClass.Void);
 
 	parameters[0] = t3;
 	parameters[1] = t2;
-	parameters[2] = q.dst;
+	parameters[2] = q.dst();
 	parameters[3] = t1;
 
-	CALL profiling_call = new CALL(q.getSourceElement(), _new_profiling_method,
-				       null, parameters, null, new Temp(), false);
+	CALL profiling_call = new CALL(q, _new_profiling_method,
+				       null, parameters, null, new Temp(), true);
 
 	Quad.addEdge(c1,0,c2,0);
 	Quad.addEdge(c2,0,c3,0);
@@ -229,11 +229,11 @@ public class Profile {
 
 	parameters[0] = _this;
 	parameters[1] = t2;
-	parameters[2] = q.dst;
+	parameters[2] = q.dst();
 	parameters[3] = t1;
       
-	CALL profiling_call = new CALL(q.getSourceElement(), _new_profiling_method,
-				       null, parameters, null, new Temp(), false);
+	CALL profiling_call = new CALL(q, _new_profiling_method,
+				       null, parameters, null, new Temp(), true);
 
 
 	Quad.addEdge(c1,0,c2,0);
@@ -247,7 +247,7 @@ public class Profile {
 
     }
 
-    public void visit(METHODHEADER q) {
+    public void visit(HEADER q) {
       _this = q.def()[0];
     }
 

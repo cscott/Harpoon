@@ -6,30 +6,42 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Util;
 
 /**
  * <code>ALENGTH</code> represents an array length query.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ALENGTH.java,v 1.1.2.1 1998-12-01 12:36:41 cananian Exp $
+ * @version $Id: ALENGTH.java,v 1.1.2.2 1998-12-09 22:02:22 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ASET
  */
-
 public class ALENGTH extends Quad {
     /** The Temp in which to store the array length. */
-    public Temp dst;
+    protected Temp dst;
     /** The array reference to query. */
-    public Temp objectref;
+    protected Temp objectref;
     
-    /** Creates a <code>ALENGTH</code>. */
+    /** Creates a <code>ALENGTH</code> representing an array length
+     *  query.
+     * @param dst
+     *        the <code>Temp</code> in which to store the array length.
+     * @param objectref
+     *        the <code>Temp</code> holding the array reference to query.
+     */
     public ALENGTH(HCodeElement source,
 		   Temp dst, Temp objectref) {
 	super(source);
 	this.dst = dst;
 	this.objectref = objectref;
+	// VERIFY legality of this ALENGTH
+	Util.assert(dst!=null && objectref!=null);
     }
+    /** Returns the destination <code>Temp</code>. */
+    public Temp dst() { return dst; }
+    /** Returns the <code>Temp</code> holding the array reference to query. */
+    public Temp objectref() { return objectref; }
 
     /** Returns the Temp defined by this Quad. 
      * @return the <code>dst</code> field. */

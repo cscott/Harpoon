@@ -23,7 +23,7 @@ import harpoon.Util.Worklist;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CleanUp.java,v 1.1.2.1 1998-12-01 12:36:41 cananian Exp $
+ * @version $Id: CleanUp.java,v 1.1.2.2 1998-12-09 22:02:26 cananian Exp $
  * @see Translate
  */
 
@@ -37,7 +37,7 @@ class CleanUp  {
 	    // shrink phi functions with null limbs.
 	    for (int j=0; j<phi.prev.length; )
 		if (phi.prev[j]==null)
-		    phi.remove(j);
+		    phi.removePred(j);
 		else j++;
 	}
     }

@@ -17,7 +17,7 @@ import java.util.Enumeration;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.4.2.3 1998-12-05 20:50:15 marinov Exp $
+ * @version $Id: ClassHierarchy.java,v 1.4.2.4 1998-12-09 22:02:09 cananian Exp $
  */
 
 public class ClassHierarchy  {
@@ -110,18 +110,18 @@ public class ClassHierarchy  {
 		    Quad Q = (Quad) e.nextElement();
 		    if (Q instanceof NEW) {
 			NEW q = (NEW) Q;
-			instedClasses.union(q.hclass);
-			discoverClass(q.hclass, W, done,
+			instedClasses.union(q.hclass());
+			discoverClass(q.hclass(), W, done,
 				      classKnownChildren, classMethodsUsed);
 		    }
 		    if (Q instanceof CALL) {
 			CALL q = (CALL) Q;
-			if (q.isSpecial)
-			    discoverSpecial(q.method, W, done,
+			if (q.isStatic() || !q.isVirtual())
+			    discoverSpecial(q.method(), W, done,
 					    classKnownChildren,
 					    classMethodsUsed);
 			else
-			    discoverMethod(q.method, W, done,
+			    discoverMethod(q.method(), W, done,
 					   classKnownChildren,
 					   classMethodsUsed);
 		    }
@@ -222,7 +222,7 @@ public class ClassHierarchy  {
 	}
 	// done.
     }
-    /* methods invoked with INVOKESPECIAL... */
+    /* methods invoked with INVOKESPECIAL or INVOKESTATIC... */
     private void discoverSpecial(HMethod m, 
 			 Worklist W, Set done, Hashtable ckc, Hashtable cmu) {
 	if (!done.contains(m))

@@ -20,7 +20,7 @@ import java.util.Hashtable;
  * unused and seeks to prove otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.11.2.2 1998-12-01 12:36:27 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.11.2.3 1998-12-09 22:02:10 cananian Exp $
  */
 
 public abstract class DeadCode  {
@@ -95,23 +95,20 @@ public abstract class DeadCode  {
 	    // arity-1 phis are useless.
 	    if (q.prev().length == 1) {
 		// make a pseudo-MOVE for every useful function in this useless phi.
-		for (int i=0; i<q.dst.length; i++)
-		    if (useful.contains(q.dst[i]))
-			for (int j=0; j<q.src[i].length; j++)
-			    nm.map(q.dst[i], q.src[i][j]);
+		for (int i=0; i<q.numPhis(); i++)
+		    if (useful.contains(q.dst(i)))
+			for (int j=0; j<q.arity(); j++)
+			    nm.map(q.dst(i), q.src(i,j));
 		// could make a CJMP useless.
 		if (q.prev(0) instanceof CJMP) W.push(q.prev(0));
 		// unlink it. (fun for the whole family)
 		unlink(q);
 	    } else {
 		// check for unused functions in the phi.
-		for (int i=0; i < q.dst.length; i++) {
-		    if (useful.contains(q.dst[i])) continue;
+		for (int i=0; i < q.numPhis(); i++) {
+		    if (useful.contains(q.dst(i))) continue;
 		    // shrink the phi! (secret headhunter's ritual)
-		    q.dst = (Temp[])   Util.shrink(Temp.arrayFactory,
-						   q.dst, i);
-		    q.src = (Temp[][]) Util.shrink(Temp.doubleArrayFactory,
-						   q.src, i);
+		    q.removePhi(i);
 		    // decrement i so we're at the right place still;
 		    i--;
 		}
@@ -120,16 +117,13 @@ public abstract class DeadCode  {
 	public void visit(SIGMA q) {
 	    // check for unused function in the sigma
 	L1:
-	    for (int i=0; i < q.dst.length; i++) {
+	    for (int i=0; i < q.numSigmas(); i++) {
 		// if any dst is used, skip.
-		for (int j=0; j < q.dst[i].length; j++)
-		    if (useful.contains(q.dst[i][j])) continue L1;
+		for (int j=0; j < q.arity(); j++)
+		    if (useful.contains(q.dst(i,j))) continue L1;
 		// safe to delete. ERASER MAN appears.
 		// shrink the sigma function in our secret laboratory.
-		q.dst = (Temp[][]) Util.shrink(Temp.doubleArrayFactory,
-					       q.dst, i);
-		q.src = (Temp[])   Util.shrink(Temp.arrayFactory,
-					       q.src, i);
+		q.removeSigma(i);
 		// decrement index to keep us steady.
 		i--;
 	    }
@@ -138,14 +132,14 @@ public abstract class DeadCode  {
 	    if (q.next(0)==q.next(1) && matchPS(q, (PHI)q.next(0))) {
 		// Mu-ha-ha-ha! KILL THE CJMP!
 		// make a pseudo-MOVE for every useful function in this useless sigma.
-		for (int i=0; i<q.dst.length; i++)
-		    for (int j=0; j<q.dst[i].length; j++)
-			if (useful.contains(q.dst[i][j]))
-			    nm.map(q.dst[i][j], q.src[i]);
+		for (int i=0; i<q.numSigmas(); i++)
+		    for (int j=0; j<q.arity(); j++)
+			if (useful.contains(q.dst(i,j)))
+			    nm.map(q.dst(i,j), q.src(i));
 		// removing this might make a preceding CJMP useless.
 		if (q.prev(0) instanceof CJMP) W.push(q.prev(0));
 		// shrink the phi (and put it on the worklist)
-		((PHI)q.next(0)).remove(q.nextEdge(1).which_pred());
+		((PHI)q.next(0)).removePred(q.nextEdge(1).which_pred());
 		W.push(q.next(0));
 		// link out the CJMP
 		Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(),
@@ -159,16 +153,16 @@ public abstract class DeadCode  {
 	boolean matchPS(CJMP cj, PHI ph) {
 	    // a hashtable makes this easier.
 	    Hashtable h = new Hashtable();
-	    for (int i=0; i<cj.dst.length; i++)
-		for (int j=0; j<cj.dst[i].length; j++)
-		    h.put(cj.dst[i][j], cj.src[i]);
+	    for (int i=0; i<cj.numSigmas(); i++)
+		for (int j=0; j<cj.arity(); j++)
+		    h.put(cj.dst(i,j), cj.src(i));
 
 	    int which_pred0 = cj.nextEdge(0).which_pred();
 	    int which_pred1 = cj.nextEdge(1).which_pred();
-	    for (int i=0; i<ph.src.length; i++) {
-		if (!useful.contains(ph.dst[i])) continue; // not useful, skip.
-		if (h.get(ph.src[i][which_pred0]) !=
-		    h.get(ph.src[i][which_pred1]) )
+	    for (int i=0; i<ph.numPhis(); i++) {
+		if (!useful.contains(ph.dst(i))) continue; // not useful, skip.
+		if (h.get(ph.src(i,which_pred0)) !=
+		    h.get(ph.src(i,which_pred1)) )
 		    return true; // cjmp matters, either in sig or phi.
 	    }
 	    return false; // not useful!
@@ -238,20 +232,20 @@ public abstract class DeadCode  {
 	    // assume all CJMPs are useful (we'll remove useless ones later)
 	    useful.union(q);
 	    // if this is useful, the condition is useful
-	    markUseful(q.test);
+	    markUseful(q.test());
 	    // process sigmas normally.
 	    visit((SIGMA)q);
 	}
 	public void visit(SIGMA q) {
 	    // Sigmas are useful iff one of the definitions is useful.
-	    for (int i=0; i<q.dst.length; i++) {
-		if (useful.contains(q.src[i])) continue; //skip already useful sigs.
-		for (int j=0; j<q.dst[i].length; j++)
-		    if (useful.contains(q.dst[i][j])) // this one's (newly) useful.
-			markUseful(q.src[i]);
+	    for (int i=0; i<q.numSigmas(); i++) {
+		if (useful.contains(q.src(i))) continue; //skip already useful sigs.
+		for (int j=0; j<q.arity(); j++)
+		    if (useful.contains(q.dst(i,j))) // this one's (newly) useful.
+			markUseful(q.src(i));
 	    }
 	}
-	public void visit(METHODHEADER q) { // always useful.
+	public void visit(HEADER q) { // always useful.
 	    markUseful(q);
 	}
 	public void visit(MONITORENTER q) { // always useful.
@@ -261,9 +255,9 @@ public abstract class DeadCode  {
 	    markUseful(q);
 	}
 	public void visit(MOVE q) { // moves are never useful (add to rename map)
-	    if (useful.contains(q.dst)) {
-		markUseful(q.src);
-		nm.map(q.dst, q.src);
+	    if (useful.contains(q.dst())) {
+		markUseful(q.src());
+		nm.map(q.dst(), q.src());
 	    }
 	}
 	public void visit(NOP q) { // never useful.
@@ -272,10 +266,10 @@ public abstract class DeadCode  {
 	    // Assume all phis are useful (will remove arity-1 phis later)
 	    useful.union(q);
 	    // check the individual phi functions for usefulness.
-	    for (int i=0; i < q.dst.length; i++)
-		if (useful.contains(q.dst[i]))
-		    for (int j=0; j<q.src[i].length; j++)
-			markUseful(q.src[i][j]);
+	    for (int i=0; i < q.numPhis(); i++)
+		if (useful.contains(q.dst(i)))
+		    for (int j=0; j<q.arity(); j++)
+			markUseful(q.src(i,j));
 	}
 	public void visit(RETURN q) { // always useful.
 	    markUseful(q);
@@ -287,7 +281,7 @@ public abstract class DeadCode  {
 	    // I'm too lazy to see if the switch actually does anything, so assume
 	    // it's always useful.
 	    useful.union(q);
-	    markUseful(q.index);
+	    markUseful(q.index());
 	    visit((SIGMA)q);
 	}
 	public void visit(THROW q) { // always useful.

@@ -9,37 +9,56 @@ import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
+
 /**
  * <code>SET</code> represents field assignment-to operations.
  * The <code>objectref</code> is null if the field is static.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SET.java,v 1.1.2.1 1998-12-01 12:36:43 cananian Exp $
+ * @version $Id: SET.java,v 1.1.2.2 1998-12-09 22:02:38 cananian Exp $
  */
-
 public class SET extends Quad {
     /** The field description. */
-    public HField field;
+    final protected HField field;
     /** Reference to the object containing the field. <p>
      *  <code>null</code> if the field is static.     */
-    public Temp objectref;
-    /** Temp containing the desired new value of the field. */
-    public Temp src;
+    protected Temp objectref;
+    /** <code>Temp</code> containing the desired new value of the field. */
+    protected Temp src;
 
-    /** Creates a <code>SET</code> for a non-static field. */
+    /** Creates a <code>SET</code> representing a field assignment
+     *  operation.
+     * @param field
+     *        the description of the field to set.
+     * @param objectref
+     *        <code>null</code> for static fields, or a <code>Temp</code>
+     *        referencing the object containing the field otherwise.
+     * @param src
+     *        the <code>Temp</code> containing the value to put into
+     *        the field.
+     */
     public SET(HCodeElement source,
 	       HField field, Temp objectref, Temp src) {
 	super(source);
 	this.field = field;
 	this.objectref = objectref;
 	this.src = src;
-	if (objectref==null) Util.assert(isStatic());
+	// VERIFY legality of SET
+	Util.assert(field!=null && src!=null);
+	if (isStatic())
+	    Util.assert(objectref==null);
+	else
+	    Util.assert(objectref!=null);
     }
-    /** Creates a <code>SET</code> for a static field. */
-    public SET(HCodeElement source,
-	       HField field, Temp src) {
-	this(source, field, null, src);
-    }
+    /** Returns the description of the field to set. */
+    public HField field() { return field; }
+    /** Returns <code>null</code> if the <code>SET</code> is on a static
+     *  field, or the <code>Temp</code> containing the field to set
+     *  otherwise. */
+    public Temp objectref() { return objectref; }
+    /** Returns the <code>Temp</code> containing the desired new value 
+     *  of the field. */
+    public Temp src() { return src; }
 
     /** Returns the Temps used by this Quad. 
      * @return the <code>objectref</code> and <code>src</code> fields. */

@@ -9,7 +9,7 @@ import harpoon.ClassFile.*;
  * <code>OPER</code> opcodes.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Qop.java,v 1.1.2.1 1998-12-01 12:36:43 cananian Exp $
+ * @version $Id: Qop.java,v 1.1.2.2 1998-12-09 22:02:35 cananian Exp $
  */
 
 public abstract class Qop  {
@@ -77,6 +77,10 @@ public abstract class Qop  {
     public final static int LSUB = 61;
     public final static int LUSHR = 62;
     public final static int LXOR = 63;
+
+    public static boolean isValid(int v) {
+	return (0<=v) && (v<=LXOR);
+    }
 
     public static String toString(int v) {
 	switch(v) {

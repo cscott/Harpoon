@@ -6,33 +6,50 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Util;
 
 /**
  * <code>AGET</code> represents an element fetch from an array object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AGET.java,v 1.1.2.1 1998-12-01 12:36:41 cananian Exp $
+ * @version $Id: AGET.java,v 1.1.2.2 1998-12-09 22:02:21 cananian Exp $
  * @see ANEW
  * @see ASET
  * @see ALENGTH
  */
-
 public class AGET extends Quad {
-    /** The Temp in which to store the fetched element. */
-    public Temp dst;
+    /** The <code>Temp</code> in which to store the fetched element. */
+    protected Temp dst;
     /** The array reference. */
-    public Temp objectref;
-    /** The Temp holding the index of the element to get. */
-    public Temp index;
+    protected Temp objectref;
+    /** The <code>Temp</code> holding the index of the element to get. */
+    protected Temp index;
 
-    /** Creates an <code>AGET</code> object. */
+    /** Creates an <code>AGET</code> object representing an element
+     *  fetch from an array object.
+     * @param dst 
+     *        the <code>Temp</code> in which to store the fetched element.
+     * @param objectref
+     *        the array reference.
+     * @param index
+     *        the <code>Temp</code> holding the index of the element to get.
+     */
     public AGET(HCodeElement source,
 		Temp dst, Temp objectref, Temp index) {
 	super(source);
 	this.dst = dst;
 	this.objectref = objectref;
 	this.index = index;
+	// VERIFY legality of this AGET.
+	Util.assert(dst!=null && objectref!=null && index!=null);
     }
+    /** Returns the destination <code>Temp</code>. */
+    public Temp dst() { return dst; }
+    /** Returns the array reference <code>Temp</code>. */
+    public Temp objectref() { return objectref; }
+    /** Returns the <code>Temp</code> holding the index of the element
+     *  to fetch. */
+    public Temp index() { return index; }
 
     /** Returns the Temp defined by this quad.
      * @return the <code>dst</code> field. */

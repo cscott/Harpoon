@@ -4,24 +4,34 @@
 package harpoon.IR.Quads;
 
 import harpoon.ClassFile.*;
+import harpoon.Util.Util;
+
 /**
  * <code>DEBUG</code> prints a debugging string to standard error.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DEBUG.java,v 1.1.2.1 1998-12-01 12:36:41 cananian Exp $
+ * @version $Id: DEBUG.java,v 1.1.2.2 1998-12-09 22:02:27 cananian Exp $
  */
-
 public class DEBUG extends Quad {
     /** The debugging string. */
-    public String str;
+    final protected String str;
 
     /** Creates a <code>DEBUG</code> object. <code>DEBUG</code> prints a
-     *  debugging string to standard error. */
+     *  debugging string to standard error.
+     * @param str
+     *        the debugging string to print.
+     */
     public DEBUG(HCodeElement source, String str) {
         super(source);
 	this.str = str;
+	// VERIFY legality of this DEBUG
+	Util.assert(str!=null);
     }
+    // ACCESSOR METHODS:
+    /** Returns the debugging string printed by this quad. */
+    public String str() { return str; }
+
     public void visit(QuadVisitor v) { v.visit(this); }
     /** Returns a human-readable version of the <code>DEBUG</code> quad. */
-    public String toString() { return "DEBUG: "+str; }
+    public String toString() { return "DEBUG: \""+Util.escape(str)+"\""; }
 }

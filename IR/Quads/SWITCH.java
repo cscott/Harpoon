@@ -6,26 +6,35 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Util;
 
 /**
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.1.2.1 1998-12-01 12:36:44 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.1.2.2 1998-12-09 22:02:39 cananian Exp $
  */
-
 public class SWITCH extends SIGMA {
     /** The discriminant, compared against each value in <code>keys</code>.*/
-    public Temp index;
+    protected Temp index;
     /** Integer keys for switch cases. <p>
      *  <code>next(n)</code> is the jump target corresponding to
      *  <code>keys[n]</code> for <code>0 <= n < keys.length</code>. <p>
      *  <code>next(keys.length)</code> is the default target. */
-    public int keys[];
+    protected int keys[];
+
     /** Creates a <code>SWITCH</code> operation. <p>
      *  <code>next[n]</code> is the jump target corresponding to
      *  <code>keys[n]</code> for <code>0 <= n < keys.length</code>. <p>
      *  <code>next[keys.length]</code> is the default target.
+     * @param index
+     *        the discriminant.
+     * @param keys
+     *        integer keys for switch cases.
+     * @param dst
+     *        sigma function left-hand sides.
+     * @param src
+     *        sigma function arguments.
      */
     public SWITCH(HCodeElement source,
 		  Temp index, int keys[],
@@ -33,12 +42,24 @@ public class SWITCH extends SIGMA {
 	super(source, dst, src, keys.length+1 /*multiple targets*/);
 	this.index = index;
 	this.keys = keys;
+	// VERIFY legality of SWITCH.
+	Util.assert(index!=null && keys!=null);
+	Util.assert(keys.length+1==arity());
     }
+    /** Creates a switch with arity defined by the keys array. */
     public SWITCH(HCodeElement source, Temp index, int keys[], Temp src[]) {
 	this(source, index, keys, new Temp[src.length][keys.length+1], src);
     }
+    /** Returns the <code>Temp</code> holding the discriminant. */
+    public Temp index() { return index; }
+    /** Returns the array of integer keys for the switch cases. */
+    public int[] keys() { return (int[]) keys.clone(); }
+    /** Returns a given element in the <code>keys</code> array. */
+    public int keys(int i) { return keys[i]; }
+    /** Returns the length of the <code>keys</code> array. */
+    public int keysLength() { return keys.length; }
 
-    /** Returns the Temp used by this quad.
+    /** Returns the <code>Temp</code> used by this quad.
      * @return the <code>index</code> field. */
     public Temp[] use() { 
 	Temp[] u = super.use();

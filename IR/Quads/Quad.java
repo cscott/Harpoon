@@ -15,19 +15,21 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.1 1998-12-01 12:36:43 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.2 1998-12-09 22:02:36 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
                harpoon.IR.Properties.UseDef, harpoon.IR.Properties.Edges,
                harpoon.IR.Properties.Renameable, Cloneable
 {
-    HCodeElement source;
+    String source_file;
+    int    source_line;
     int id;
     /** Constructor. */
     protected Quad(HCodeElement source,
 		   int prev_arity, int next_arity) {
-	this.source = source;
+	this.source_file = (source!=null)?source.getSourceFile():"unknown";
+	this.source_line = (source!=null)?source.getLineNumber(): 0;
 	synchronized(lock) {
 	    this.id = next_id++;
 	}
@@ -41,15 +43,12 @@ public abstract class Quad
     static int next_id = 0;
     static final Object lock = new Object();
 
-    /** Returns the <code>HCodeElement</code> that this <code>Quad</code>
-     *  is derived from. */
-    public HCodeElement getSourceElement() { return source; }
     /** Returns the original source file name that this <code>Quad</code>
      *  is derived from. */
-    public String getSourceFile() { return source.getSourceFile(); }
+    public String getSourceFile() { return source_file; }
     /** Returns the line in the original source file that this 
      *  <code>Quad</code> is derived from. */
-    public int getLineNumber() { return source.getLineNumber(); }
+    public int getLineNumber() { return source_line; }
     /** Returns a unique numeric identifier for this <code>Quad</code>. */
     public int getID() { return id; }
     /** Force everyone to reimplement toString() */

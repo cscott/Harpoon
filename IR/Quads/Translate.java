@@ -32,7 +32,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.1 1998-12-01 12:36:44 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.2 1998-12-09 22:02:40 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -293,9 +293,8 @@ class Translate  { // not public.
 
 	Instr firstInstr = (Instr) bytecode.getRootElement();
 
-	HEADER quads = new METHODHEADER(firstInstr, null, params);
 	FOOTER footer= new FOOTER(firstInstr);
-	quads.footer = footer;
+	HEADER quads = new HEADER(firstInstr, footer, params);
 
 	StaticState SS = new StaticState(bytecode.getTryBlocks(), footer,
 					 new Temp("$zero"), new Temp("$null"),
@@ -338,7 +337,7 @@ class Translate  { // not public.
 				     bytecode.getMethod().getDeclaringClass()
 				     .getName(), strC);
 		Quad qq1 = new CALL(quads, cfnM, qq0.def() /*params*/,
-				    lock, SS.Tex, false);
+				    lock, SS.Tex, true /* virtual */);
 		Quad qq2 = new OPER(quads, Qop.ACMPEQ, s.extra(0),
 				    new Temp[] { SS.Tex, SS.Tnull });
 		Quad qq3 = new CJMP(quads, qq2.def()[0], new Temp[0]);
@@ -378,7 +377,7 @@ class Translate  { // not public.
 		// put a MONITOREXIT before the return/throw/whatever.
 		Quad Qexit = footer.prev(i);
 		Util.assert(Qexit.prev.length==1); // only one predecessor.
-		Quad Qm = new MONITOREXIT(Qexit.source, lock);
+		Quad Qm = new MONITOREXIT(Qexit, lock);
 		Edge e = Qexit.prevEdge(0);
 		Quad.addEdge((Quad)e.from(), e.which_succ(), Qm, 0);
 		Quad.addEdge(Qm, 0, (Quad)e.to(), e.which_pred());
@@ -1028,7 +1027,7 @@ class Translate  { // not public.
 		ns = s.push(null).push();
 	    else // 32-bit value.
 		ns = s.push();
-	    q = new GET(in, ns.stack(0), opd.value());
+	    q = new GET(in, ns.stack(0), opd.value(), null/*no objectref*/);
 	    break;
 	    }
 	case Op.IINC:
@@ -1057,7 +1056,7 @@ class Translate  { // not public.
 	case Op.INVOKESTATIC:
 	case Op.INVOKEVIRTUAL:
 	    {
-	    boolean isSpecial = (in.getOpcode()==Op.INVOKESPECIAL);
+	    boolean isVirtual = (in.getOpcode()!=Op.INVOKESPECIAL);
 	    boolean isStatic = (in.getOpcode()==Op.INVOKESTATIC);
 	    OpMethod opd = (OpMethod) in.getOperand(0);
 	    HClass paramtypes[] = opd.value().getParameterTypes();
@@ -1084,7 +1083,7 @@ class Translate  { // not public.
 		Tret = ns.stack(0);
 	    }
 	    // Create CALL quad.
-	    q = new CALL(in, opd.value(), param, Tret, Tex, isSpecial);
+	    q = new CALL(in, opd.value(), param, Tret, Tex, isVirtual);
 	    // check for thrown exception.
 	    Quad q1 = new OPER(in, Qop.ACMPEQ, ns.extra(0),
 			       new Temp[] { Tex, SS.Tnull });
@@ -1303,7 +1302,7 @@ class Translate  { // not public.
 		ns = s.pop(2);
 	    else
 		ns = s.pop(1);
-	    q = new SET(in, opd.value(), s.stack(0));
+	    q = new SET(in, opd.value(), null/*objectref*/, s.stack(0));
 	    break;
 	    }
 	case Op.SWAP:
@@ -1420,12 +1419,8 @@ class Translate  { // not public.
 	case Op.FRETURN:
 	case Op.IRETURN:
 	case Op.LRETURN:
-	    q = new RETURN(in, s.stack(0));
-	    r = new TransState[0];
-	    SS.footer.attach(q, 0);
-	    break;
-	case Op.RETURN:
-	    q = new RETURN(in);
+	case Op.RETURN: // RETURN returns no return value when it returns.
+	    q = new RETURN(in, (in.getOpcode()==Op.RETURN)?null:s.stack(0));
 	    r = new TransState[0];
 	    SS.footer.attach(q, 0);
 	    break;
@@ -1570,7 +1565,7 @@ class Translate  { // not public.
 	    Quad q4 = new NEW(ts.in, Tex, hc);
 	    Quad q5 = new CALL(ts.in, hc.getConstructor(new HClass[0]),
 			       new Temp[] { Tex }, null /*retval*/,
-			       ns.extra(0)/*exception*/, true /*special*/);
+			       ns.extra(0)/*exception*/, false /*virtual*/);
 	    Quad q6 = new OPER(ts.in, Qop.ACMPEQ, ns.extra(1),
 			       new Temp[] { q5.def()[0], SS.Tnull } );
 	    Quad q7 = new CJMP(ts.in, q6.def()[0], new Temp[0]);
@@ -1661,7 +1656,7 @@ class Translate  { // not public.
 	Quad q0 = new NEW(in, Tex, exClass);
 	Quad q1 = new CALL(in, exClass.getConstructor(new HClass[0]),
 			   new Temp[] { q0.def()[0] }, null /*retval*/,
-			   s.extra(0) /*ex*/, true /*special*/);
+			   s.extra(0) /*ex*/, false /*virtual*/);
 	// check whether the constructor threw an exception.
 	Quad q2 = new OPER(in, Qop.ACMPEQ, s.extra(1),
 			   new Temp[] { q1.def()[0], SS.Tnull } );

@@ -29,30 +29,55 @@ import harpoon.Util.Util;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CONST.java,v 1.1.2.1 1998-12-01 12:36:41 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.2 1998-12-09 22:02:26 cananian Exp $
  */
 
 public class CONST extends Quad {
-    public Temp dst;
-    public Object value;
-    public HClass type;
+    /** The destination <code>Temp</code>. */
+    protected Temp dst;
+    /** An object representing the constant value. */
+    final protected Object value;
+    /** The type of the constant value. */
+    final protected HClass type;
+
     /** Creates a <code>CONST</code> from a destination temporary, and object
-     *  value and its class type. */
+     *  value and its class type.
+     * @param dst
+     *        the <code>Temp</code> which will contain the specified 
+     *        constant value.
+     * @param value
+     *        an object representing the constant value.
+     * @param type
+     *        the type of the constant value.
+     */
     public CONST(HCodeElement source,
 		 Temp dst, Object value, HClass type) {
 	super(source);
 	this.dst = dst;
 	this.value = value;
 	this.type = type;
-	Util.assert(type==HClass.Int   || type==HClass.Long   ||
-		    type==HClass.Float || type==HClass.Double ||
-		    type==HClass.Void  || 
-		    type==HClass.forName("java.lang.String"));
+	// VERIFY legality of this CONST.
+	Util.assert(dst!=null && type!=null);
+	Util.assert(type.equals(HClass.Int)   || type.equals(HClass.Long)   ||
+		    type.equals(HClass.Float) || type.equals(HClass.Double) ||
+		    type.equals(HClass.Void)  || 
+		    type.equals(HClass.forClass(String.class)) );
+	if (type.equals(HClass.Void))
+	    Util.assert(value==null);
+	else
+	    Util.assert(value!=null);
     }
+    // ACCESSOR METHODS:
+    /** Returns the <code>Temp</code> which will contain the specified
+     *  constant value. */
+    public Temp dst() { return dst; }
+    /** Returns the object representing the constant value. */
+    public Object value() { return value; }
+    /** Returns the type of the constant value. */
+    public HClass type() { return type; }
 
     /** Returns the Temp defined by this Quad.
-     * @return The <code>dst</code> field.
-     */
+     * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }
 
     /** Rename all used variables in this Quad according to a mapping. */
@@ -69,9 +94,9 @@ public class CONST extends Quad {
     public String toString() {
 	StringBuffer sb = new StringBuffer(dst.toString());
 	sb.append(" = CONST ");
-	if (type == HClass.forName("java.lang.String"))
+	if (type.equals(HClass.forClass(String.class)))
 	    sb.append("(String)\""+Util.escape(value.toString())+"\"");
-	else if (type == HClass.Void && value==null)
+	else if (type.equals(HClass.Void) && value == null)
 	    sb.append("null");
 	else
 	    sb.append("("+type.getName()+")"+value.toString());

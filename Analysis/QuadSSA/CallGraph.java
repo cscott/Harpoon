@@ -14,7 +14,7 @@ import java.util.Vector;
  * <code>CallGraph</code> constructs a simple directed call graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.4.2.3 1998-12-05 20:50:15 marinov Exp $
+ * @version $Id: CallGraph.java,v 1.4.2.4 1998-12-09 22:02:08 cananian Exp $
  */
 
 public class CallGraph  {
@@ -33,10 +33,10 @@ public class CallGraph  {
 	    for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
 		Quad q = (Quad) e.nextElement();
 		if (!(q instanceof CALL)) continue;
-		HMethod cm = ((CALL)q).method;
+		HMethod cm = ((CALL)q).method();
 		if (s.contains(cm)) continue; // duplicate.
 		// for 'special' invocations, we know the class exactly.
-		if (((CALL)q).isSpecial || ((CALL)q).isStatic()) {
+		if ((!((CALL)q).isVirtual()) || ((CALL)q).isStatic()) {
 		    s.union(cm);
 		    continue;
 		}
@@ -70,9 +70,9 @@ public class CallGraph  {
     public HMethod[] calls(final HMethod m, final CALL cs) {
 	final HCode hc = m.getCode("quad-ssa");
 	if (hc==null) { return new HMethod[0]; }
-	HMethod cm = cs.method;
+	HMethod cm = cs.method();
 	// for 'special' invocations, we know the method exactly.
-	if (cs.isSpecial || cs.isStatic()) return new HMethod[]{ cm };
+	if ((!cs.isVirtual()) || cs.isStatic()) return new HMethod[]{ cm };
 	final Set s = new Set();
 	// all methods of children of this class are reachable.
 	Worklist W = new Set();

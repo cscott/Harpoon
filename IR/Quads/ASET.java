@@ -6,33 +6,52 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Util;
 
 /**
  * <code>ASET</code> represents an array element assignment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ASET.java,v 1.1.2.1 1998-12-01 12:36:41 cananian Exp $
+ * @version $Id: ASET.java,v 1.1.2.2 1998-12-09 22:02:23 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ALENGTH
  */
-
 public class ASET extends Quad {
     /** The array reference */
-    public Temp objectref;
-    /** The Temp holding the index of the element to get. */
-    public Temp index;
+    protected Temp objectref;
+    /** The <code>Temp</code> holding the index of the element to get. */
+    protected Temp index;
     /** The new value for the array element. */
-    public Temp src;
+    protected Temp src;
 
-    /** Creates an <code>ASET</code> object. */
+    /** Creates an <code>ASET</code> object representing an array element
+     *  assignment.
+     * @param objectref
+     *        the <code>Temp</code> holding the array reference.
+     * @param index
+     *        the <code>Temp</code> holding the index of the element to get.
+     * @param src
+     *        the <code>Temp</code> holding the new value for the array
+     *        element.
+     */
     public ASET(HCodeElement source,
 		Temp objectref, Temp index, Temp src) {
 	super(source);
 	this.objectref = objectref;
 	this.index = index;
 	this.src = src;
+	// VERIFY legality of this ASET
+	Util.assert(objectref!=null && index!=null && src!=null);
     }
+    // ACCESSOR FUNCTIONS:
+    /** Returns the <code>Temp</code> with the array reference. */
+    public Temp objectref() { return objectref; }
+    /** Returns the <code>Temp</code> with the index of the element to get. */
+    public Temp index() { return index; }
+    /** Returns the <code>Temp</code> holding the new value for the array
+     *  element. */
+    public Temp src() { return src; }
 
     /** Returns all the Temps used by this quad. 
      * @return the <code>objectref</code>, <code>index</code>, and 

@@ -7,26 +7,74 @@ import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
+
 /**
  * <code>SIGMA</code> functions are added where control flow splits. <p>
  * They have the form: <code>&lt;t1, t2, ..., tn&gt; = sigma(t0)</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SIGMA.java,v 1.1.2.2 1998-12-09 00:54:03 cananian Exp $
+ * @version $Id: SIGMA.java,v 1.1.2.3 1998-12-09 22:02:38 cananian Exp $
  */
-
 public abstract class SIGMA extends Quad {
-    public Temp dst[][];
-    public Temp src[];
+    /** dst[i][j] is the j'th element of the tuple on the left-hand side
+     *  of the i'th sigma function in this block. */
+    protected Temp dst[][];
+    /** src[i] is the argument to the i'th sigma function in this block. */
+    protected Temp src[];
     
-    /** Creates a <code>SIGMA</code>. */
+    /** Creates a <code>SIGMA</code> representing a block of sigma 
+     *  functions.
+     * @param dst
+     *        the elements of the tuples on the left-hand side of a sigma
+     *        function assignment block.
+     * @param src
+     *        the arguments to the sigma functions in this block.
+     */
     public SIGMA(HCodeElement source, Temp dst[][], Temp src[], int arity) {
         super(source, 1, arity);
 	this.dst = dst;
 	this.src = src;
+	Util.assert(dst!=null && src!=null);
+	Util.assert(arity>0);
+	Util.assert(dst.length==src.length);
+	for (int i=0; i<dst.length; i++)
+	    Util.assert(dst[i].length==arity);
+	Util.assert(arity==arity());
     }
+    /** Creates a <code>SIGMA</code> object with the specified arity.
+     *  Each sigma function will return a tuple with <code>arity</code>
+     *  elements.
+     * @param src
+     *        the arguments to the sigma functions.
+     * @param arity
+     *        the number of successors to this quad.
+     */
     public SIGMA(HCodeElement source, Temp src[], int arity) {
 	this(source, new Temp[src.length][arity], src, arity);
+    }
+    // ACCESSOR METHODS:
+    /** Returns the argument to the <code>nSigma</code>'th sigma function in
+     *  the block. */
+    public Temp src(int nSigma) { return src[nSigma]; }
+    /** Returns the <code>nTuple</code>'th element of the tuple returned
+     *  by the <code>nSigma</code>'th sigma function in the block. */
+    public Temp dst(int nSigma, int nTuple) { return dst[nSigma][nTuple]; }
+    /** Returns an array holding the elements of the tuple returned by
+     *  the <code>nSigma</code>'th sigma function in the block. */
+    public Temp[] dst(int nSigma)
+    { return (Temp[]) Util.safeCopy(Temp.arrayFactory, dst[nSigma]); }
+    
+    /** Returns the number of sigma functions in the block. */
+    public int numSigmas() { return src.length; }
+    /** Returns the number of elements in the tuple returned by each 
+     *  sigma function. */
+    public int arity() { return next.length; }
+
+    /** Removes a given sigma function from the block. */
+    public void removeSigma(int nSigma) {
+	Util.assert(0<=nSigma && nSigma<numSigmas());
+	src = (Temp[])   Util.shrink(Temp.arrayFactory,       src, nSigma);
+	dst = (Temp[][]) Util.shrink(Temp.doubleArrayFactory, dst, nSigma);
     }
 
     public void assign(Temp[] d, int which_succ) {

@@ -6,6 +6,8 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Util;
+
 /**
  * <code>COMPONENTOF</code> objects implement the test needed to determine
  * if an <code>ASET</code> needs to throw an exception.  Specifically,
@@ -14,28 +16,54 @@ import harpoon.Temp.TempMap;
  * array, or boolean <code>false</code> otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: COMPONENTOF.java,v 1.1.2.1 1998-12-01 12:36:41 cananian Exp $
+ * @version $Id: COMPONENTOF.java,v 1.1.2.2 1998-12-09 22:02:25 cananian Exp $
  * @see ASET
  * @see "The Java Virtual Machine Specification"
  */
-
 public class COMPONENTOF extends Quad {
-    /** The temp in which to store the result of the evaluation. */
-    public Temp dst;
+    /** The <code>Temp</code> in which to store the result of the test. */
+    protected Temp dst;
     /** The array object to test. */
-    public Temp arrayref;
+    protected Temp arrayref;
     /** The compoment object to test. */
-    public Temp objectref;
+    protected Temp objectref;
 
-    /** Creates a <code>COMPONENTOF</code>. */
+    /** Creates a <code>COMPONENTOF</code> representing a typecheck test.
+     * @param dst
+     *        the <code>Temp</code> in which to store the result of the test.
+     *        The <code>Temp</code> specified by <code>dst</code> gets a
+     *        boolean <code>true</code> value if <code>objectref</code>
+     *        contains either <code>null</code> or a reference to an instance
+     *        of the component type of the array in <code>arrayref</code>
+     *        or any subtype; or a boolean <code>false</code> value otherwise.
+     * @param arrayref
+     *        the array object to test.  
+     *        The <code>Temp</code> specified by <code>arrayref</code> 
+     *        <strong>should never</strong> contain the value 
+     *        <code>null</code> at run-time.
+     * @param objectref
+     *        the component object to test.
+     *        The <code>Temp</code> specified by <code>objectref</code> 
+     *        <strong>may</strong> contain the value <code>null</code> 
+     *        at run-time.
+     */
     public COMPONENTOF(HCodeElement source, 
 		       Temp dst, Temp arrayref, Temp objectref) {
 	super(source);
 	this.dst = dst;
 	this.arrayref = arrayref;
 	this.objectref = objectref;
+	Util.assert(dst!=null && arrayref!=null && objectref!=null);
     }
-    
+    // ACCESSOR METHODS:
+    /** Returns the <code>Temp</code> in which to store the result of the
+     *  type check test. */
+    public Temp dst() { return dst; }
+    /** Returns the array reference to test. */
+    public Temp arrayref() { return arrayref; }
+    /** Returns the component object reference to test. */
+    public Temp objectref() { return objectref; }
+
     /** Returns the <code>Temp</code>s used by this quad. */
     public Temp[] use() { return new Temp[] { arrayref, objectref }; }
     /** Returns the <code>Temp</code>s defined by this quad. */

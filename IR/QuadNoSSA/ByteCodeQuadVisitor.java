@@ -4,6 +4,7 @@ import harpoon.IR.Quads.*;
 import harpoon.Temp.Temp;
 import harpoon.ClassFile.*;
 import harpoon.Analysis.Maps.TypeMap;
+import harpoon.Util.Util;
 
 import java.util.*;
  
@@ -175,32 +176,32 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   void addOper (NMethod method, String opc, OPER o, Hashtable indexTable, int src, int dst){
     try {
       if (src == D){
-	for (int i = 0; i < o.operands.length; i++){
-	  adddload (method, o.operands[i], indexTable);
+	for (int i = 0; i < o.operandsLength(); i++){
+	  adddload (method, o.operands(i), indexTable);
 	}
       } else if (src == F){
-	for (int i = 0; i < o.operands.length; i++){
-	  addfload (method, o.operands[i], indexTable);
+	for (int i = 0; i < o.operandsLength(); i++){
+	  addfload (method, o.operands(i), indexTable);
 	}
       } else if (src == I){
-	for (int i = 0; i < o.operands.length; i++){
-	  addiload (method, o.operands[i], indexTable);
+	for (int i = 0; i < o.operandsLength(); i++){
+	  addiload (method, o.operands(i), indexTable);
 	}
       } else if (src == L){
-	for (int i = 0; i < o.operands.length; i++){
-	  addlload (method, o.operands[i], indexTable);
+	for (int i = 0; i < o.operandsLength(); i++){
+	  addlload (method, o.operands(i), indexTable);
 	}
       }
 
       method.addInsn(new NInsn (opc));
       if (dst == D){
-	adddstore (method, o.dst, indexTable);
+	adddstore (method, o.dst(), indexTable);
       } else if (dst == F){
-	addfstore (method, o.dst, indexTable);
+	addfstore (method, o.dst(), indexTable);
       } else if (dst == I){
-	addistore (method, o.dst, indexTable);
+	addistore (method, o.dst(), indexTable);
       } else if (dst == L){
-	addlstore (method, o.dst, indexTable);
+	addlstore (method, o.dst(), indexTable);
       }
     } catch (Exception e){
       e.printStackTrace();
@@ -220,24 +221,24 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       NLabel label1 = new NLabel ("Label" + labelCount++);
       NLabel label2 = new NLabel ("Label" + labelCount++);
       if (src == D){
-	for (int i = 0; i < o.operands.length; i++){
-	  adddload (method, o.operands[i], indexTable);
+	for (int i = 0; i < o.operandsLength(); i++){
+	  adddload (method, o.operands(i), indexTable);
 	}
       } else if (src == F){
-	for (int i = 0; i < o.operands.length; i++){
-	  addfload (method, o.operands[i], indexTable);
+	for (int i = 0; i < o.operandsLength(); i++){
+	  addfload (method, o.operands(i), indexTable);
 	}
       } else if (src == I){
-	for (int i = 0; i < o.operands.length; i++){
-	  addiload (method, o.operands[i], indexTable);
+	for (int i = 0; i < o.operandsLength(); i++){
+	  addiload (method, o.operands(i), indexTable);
 	}
       } else if (src == L){
-	for (int i = 0; i < o.operands.length; i++){
-	  addlload (method, o.operands[i], indexTable);
+	for (int i = 0; i < o.operandsLength(); i++){
+	  addlload (method, o.operands(i), indexTable);
 	}
       } else if (src == A){
-	for (int i = 0; i < o.operands.length; i++){
-	  addaload (method, o.operands[i], indexTable);
+	for (int i = 0; i < o.operandsLength(); i++){
+	  addaload (method, o.operands(i), indexTable);
 	}
       }
       if (opc1 != ""){
@@ -251,7 +252,7 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       method.addInsn(new NInsn ("iconst_1"));//push
       method.addInsn(label2);//label
       
-      method.addInsn(new NInsn ("istore", putIndex (o.dst, indexTable)));
+      method.addInsn(new NInsn ("istore", putIndex (o.dst(), indexTable)));
     } catch (Exception e){
       e.printStackTrace();
     }
@@ -261,12 +262,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   // an extra int
   void addShift (NMethod method, String opc, OPER o, Hashtable indexTable){
     try {
-      addlload (method, o.operands[0], indexTable);
-      addiload (method, o.operands[1], indexTable);
+      addlload (method, o.operands(0), indexTable);
+      addiload (method, o.operands(1), indexTable);
       
       method.addInsn(new NInsn (opc));
 
-      addlstore (method, o.dst, indexTable);
+      addlstore (method, o.dst(), indexTable);
     } catch (Exception e){
       e.printStackTrace();
     }
@@ -284,10 +285,10 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       System.out.println ("Visiting AGET");
     }
     try {
-      method.addInsn(new NInsn ("aload", putIndex(q.objectref, 
+      method.addInsn(new NInsn ("aload", putIndex(q.objectref(), 
 						  indexTable)));
-      method.addInsn(new NInsn ("iload", putIndex(q.index, indexTable)));
-      HClass tempClass = map.typeMap(quadform, q.objectref);
+      method.addInsn(new NInsn ("iload", putIndex(q.index(), indexTable)));
+      HClass tempClass = map.typeMap(quadform, q.objectref());
       if (tempClass.isPrimitive()){
 	if (tempClass == HClass.Boolean){
 	  method.addInsn(new NInsn ("i2b"));
@@ -313,7 +314,7 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       } else {
 	method.addInsn(new NInsn ("aaload"));
       }
-      addStore (method, map, quadform, q.dst, indexTable);
+      addStore (method, map, quadform, q.dst(), indexTable);
     } catch (Exception e){
       e.printStackTrace();
     }
@@ -327,10 +328,10 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       System.out.println ("Visiting ALENGTH");
     }
     try {
-      method.addInsn(new NInsn ("aload", putIndex(q.objectref, 
+      method.addInsn(new NInsn ("aload", putIndex(q.objectref(), 
 						  indexTable)));
       method.addInsn(new NInsn ("arraylength"));
-      method.addInsn(new NInsn ("istore", putIndex (q.dst, indexTable)));
+      method.addInsn(new NInsn ("istore", putIndex (q.dst(), indexTable)));
     } catch (Exception e){
       e.printStackTrace();
     }
@@ -345,11 +346,11 @@ class ByteCodeQuadVisitor extends QuadVisitor{
     }
     try {
       int i = 0;
-      for (; i < q.dims.length; i++){
-	addLoad (method, map, quadform, q.dims[i], indexTable);
+      for (; i < q.dimsLength(); i++){
+	addLoad (method, map, quadform, q.dims(i), indexTable);
       }
-      method.addInsn(new MultiarrayInsn (q.hclass, i));
-      addStore (method, map, quadform, q.dst, indexTable);
+      method.addInsn(new MultiarrayInsn (q.hclass(), i));
+      addStore (method, map, quadform, q.dst(), indexTable);
     } catch (Exception e){
       e.printStackTrace();
     }
@@ -365,11 +366,11 @@ class ByteCodeQuadVisitor extends QuadVisitor{
     }
 
     try {
-      method.addInsn(new NInsn ("aload", putIndex(q.objectref, 
+      method.addInsn(new NInsn ("aload", putIndex(q.objectref(), 
 						  indexTable)));
-      method.addInsn(new NInsn ("iload", putIndex(q.index, indexTable)));
-      addLoad (method, map, quadform, q.src, indexTable);
-      HClass tempClass = map.typeMap(quadform, q.objectref);
+      method.addInsn(new NInsn ("iload", putIndex(q.index(), indexTable)));
+      addLoad (method, map, quadform, q.src(), indexTable);
+      HClass tempClass = map.typeMap(quadform, q.objectref());
       if (tempClass.isPrimitive()){
 	if (tempClass == HClass.Boolean){
 	  method.addInsn(new NInsn ("i2b"));
@@ -402,7 +403,7 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   //**CALL
   public void visit (CALL q) {
     if (writeTypes){
-      method.addInsn (new NLabel (";CALL exceptions go in " + q.retex.name()));
+      method.addInsn (new NLabel (";CALL exceptions go in " + q.retex().name()));
     }
     if (printTypes){
       System.out.println ("Visiting CALL");
@@ -419,11 +420,11 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       
       //put the null value into the local variable for returning exceptions
       method.addInsn (new NInsn ("aconst_null"));
-      method.addInsn (new NInsn ("astore", putIndex(q.retex, indexTable)));
+      method.addInsn (new NInsn ("astore", putIndex(q.retex(), indexTable)));
       
       //and the one for normal returns if there is a return value
-      if (q.retval != null){
-	HClass tempClass = map.typeMap(quadform, q.retval);
+      if (q.retval() != null){
+	HClass tempClass = map.typeMap(quadform, q.retval());
 	if (tempClass.isPrimitive()){
 	  if (tempClass == HClass.Boolean){
 	    method.addInsn(new NInsn ("iconst_0"));
@@ -442,7 +443,7 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 	  } else if (tempClass == HClass.Short){
 	    method.addInsn(new NInsn ("iconst_0"));
 	  } else if (tempClass == HClass.Void){
-	    method.addInsn(new NInsn ("aconst_null", q.retval));
+	    method.addInsn(new NInsn ("aconst_null", q.retval()));
 	    //this should never happen
 	    //System.out.println ("Trying to store into a void reference");
 	  }
@@ -452,21 +453,24 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 	  method.addInsn(new NInsn ("aconst_null"));
 	  //System.out.println ("Not recognizing the type of the store");
 	}
-	addStore (method, map, quadform, q.retval, indexTable);
+	addStore (method, map, quadform, q.retval(), indexTable);
       }
       //put the object ref and all the arguments onto the stack
+      Util.assert(false, "this code needs to be fixed.");
+      /* I BELIEVE THIS IS ALL UNNECESSARY DUE TO THE CALL PARAM REWRITE. CSA.
       if (!q.isStatic()){
-	  method.addInsn(new NInsn ("aload", putIndex(q.objectref, 
+	  method.addInsn(new NInsn ("aload", putIndex(q.objectref(), 
 						      indexTable)));
-	  if (!q.method.getDeclaringClass().getName().replace('.', '/').startsWith("java/lang/Object")
-	      && !q.method.getName().equals ("<init>")){
+	  if (!q.method().getDeclaringClass().getName().replace('.', '/').startsWith("java/lang/Object")
+	      && !q.method().getName().equals ("<init>")){
 	      //System.out.println ("The method name is:" + q.method.getDeclaringClass().getName().replace('.', '/') + ":end");
-	      method.addInsn(new NInsn ("checkcast", q.method.getDeclaringClass()));
+	      method.addInsn(new NInsn ("checkcast", q.method().getDeclaringClass()));
 	  }
       }
-      for (int i = 0; i < q.params.length; i++){
-	addLoad (method, map, quadform, q.params[i], indexTable);
-	HClass tempClass = q.method.getParameterTypes()[i];
+      */
+      for (int i = 0; i < q.paramsLength(); i++){
+	addLoad (method, map, quadform, q.params(i), indexTable);
+	HClass tempClass = q.method().getParameterTypes()[i];
 	if (!tempClass.getName().replace('.', '/').startsWith("java/lang/Object") &&
 	    !tempClass.isPrimitive()){
 	    method.addInsn(new NInsn ("checkcast", tempClass));
@@ -475,14 +479,14 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       //add extra label to use to add the try catch block stuff.
       method.addInsn(start);
       if (q.isStatic()){
-	method.addInsn(new NInsn ("invokestatic", q.method));
+	method.addInsn(new NInsn ("invokestatic", q.method()));
       } else if (q.isInterfaceMethod()){
 	  //System.out.println ("Calling invokeinterface");
-	  method.addInsn(new NInsn("invokeinterface", q.method));
-      } else if (q.isSpecial()){
-	method.addInsn(new NInsn ("invokespecial", q.method));
+	  method.addInsn(new NInsn("invokeinterface", q.method()));
+      } else if (!q.isVirtual()){
+	method.addInsn(new NInsn ("invokespecial", q.method()));
       } else {
-	method.addInsn(new NInsn ("invokevirtual", q.method));
+	method.addInsn(new NInsn ("invokevirtual", q.method()));
       }
       
       //two instructions added to make sure that the exection area si
@@ -491,21 +495,21 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       //addStore (method, map, quadform, q.retex, indexTable);
       method.addInsn(end);
       //if the method actually returns something, then store it
-      if (q.retval != null){
-	addStore (method, map, quadform, q.retval, indexTable);
+      if (q.retval() != null){
+	addStore (method, map, quadform, q.retval(), indexTable);
       }
       method.addInsn(new NInsn ("goto", continueLabel));
       
       method.addInsn(handler);
       
-      addStore (method, map, quadform, q.retex, indexTable);
+      addStore (method, map, quadform, q.retex(), indexTable);
       
       method.addInsn(continueLabel);
-      if (!(q.method instanceof HConstructor)){
-	  if (q.method.getName() == "<init>"){
+      if (!(q.method() instanceof HConstructor)){
+	  if (q.method().getName() == "<init>"){
 	      System.out.println ("opps, somebody fucked up");
 	  } else {
-	      method.addInsn (new NLabel (";The proc is called: " + q.method.getName()));
+	      method.addInsn (new NLabel (";The proc is called: " + q.method().getName()));
 	      method.addCatch (start, end, handler, "all");
 	  }
       } else {
@@ -530,7 +534,7 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       } else {
 	label = (NLabel) labelTable.get (q.next(1));
       }
-      addLoad (method, map, quadform, q.test, indexTable);
+      addLoad (method, map, quadform, q.test(), indexTable);
       method.addInsn(new NInsn ("ifne", label));
     } catch (Exception e){
       e.printStackTrace();
@@ -548,7 +552,7 @@ class ByteCodeQuadVisitor extends QuadVisitor{
     //because the JVM will take care of it
     try{
       method.addInsn(new NInsn ("iconst_1"));
-      method.addInsn(new NInsn ("istore", putIndex(q.dst, indexTable)));
+      method.addInsn(new NInsn ("istore", putIndex(q.dst(), indexTable)));
     } catch (Exception e){
       e.printStackTrace();
     }
@@ -564,23 +568,23 @@ class ByteCodeQuadVisitor extends QuadVisitor{
     }
 
     try {
-      if (q.type.isPrimitive()){
-	if (q.type == HClass.Int){
-	  method.addInsn(new NInsn ("ldc", new NLabel (q.value.toString())));
-	} else if (q.type == HClass.Long){
-	  method.addInsn(new NInsn ("ldc_w", new NLabel (q.value.toString())));
-	} else if (q.type == HClass.Float){
-	  method.addInsn(new NInsn ("ldc", new NLabel (q.value.toString())));
-	} else if (q.type == HClass.Double){
-	  method.addInsn(new NInsn ("ldc_w", new NLabel (q.value.toString())));
-	} else if (q.type == HClass.Void){
+      if (q.type().isPrimitive()){
+	if (q.type() == HClass.Int){
+	  method.addInsn(new NInsn ("ldc", new NLabel (q.value().toString())));
+	} else if (q.type() == HClass.Long){
+	  method.addInsn(new NInsn ("ldc_w", new NLabel (q.value().toString())));
+	} else if (q.type() == HClass.Float){
+	  method.addInsn(new NInsn ("ldc", new NLabel (q.value().toString())));
+	} else if (q.type() == HClass.Double){
+	  method.addInsn(new NInsn ("ldc_w", new NLabel (q.value().toString())));
+	} else if (q.type() == HClass.Void){
 	  method.addInsn(new NInsn ("aconst_null"));
 	}
       }
-      if (q.type == HClass.forName ("java.lang.String")){
-	method.addInsn(new NInsn ("ldc", q.value.toString()));
+      if (q.type() == HClass.forName ("java.lang.String")){
+	method.addInsn(new NInsn ("ldc", q.value().toString()));
       }
-      addStore (method, map, quadform, q.dst, indexTable);
+      addStore (method, map, quadform, q.dst(), indexTable);
     } catch (Exception e){
       e.printStackTrace();
     }
@@ -609,32 +613,21 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       System.out.println ("Visiting GET");
     }
     try {
-      if (q.field.isStatic()){
-	method.addInsn(new NInsn ("getstatic", q.field));
-      } else if (q.objectref == null){
+      if (q.field().isStatic()){
+	method.addInsn(new NInsn ("getstatic", q.field()));
+      } else if (q.objectref() == null){
 	System.out.println ("Hmm.. I think Scott has fucked up");
       } else {
-	method.addInsn(new NInsn ("aload", putIndex (q.objectref, indexTable)));
-       method.addInsn(new NInsn ("checkcast", q.field.getDeclaringClass()));
-	method.addInsn(new NInsn ("getfield", q.field));
+	method.addInsn(new NInsn ("aload", putIndex (q.objectref(), indexTable)));
+       method.addInsn(new NInsn ("checkcast", q.field().getDeclaringClass()));
+	method.addInsn(new NInsn ("getfield", q.field()));
       }
-      addStore (method, map, quadform, q.dst, indexTable);
+      addStore (method, map, quadform, q.dst(), indexTable);
     } catch (Exception e){
       e.printStackTrace();
     }
   }
   
-  //**HEADER
-  public void visit (HEADER q) {
-    if (writeTypes){
-      method.addInsn (new NLabel ("HEADER" + labelCount++));
-    }
-    if (printTypes){
-      System.out.println ("Visiting HEADER");
-    }
-    //do nothing I think
-  }
-
   //**INSTANCEOF
   public void visit (INSTANCEOF q) {
     if (writeTypes){
@@ -644,25 +637,25 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       System.out.println ("Visiting INSTANCEOF");
     }
     try {
-      method.addInsn(new NInsn ("aload", putIndex (q.src, indexTable)));
-      method.addInsn(new NInsn ("checkcast", q.hclass));
-      method.addInsn(new NInsn ("instanceof", q.hclass));
-      method.addInsn(new NInsn ("istore", putIndex (q.dst, indexTable)));
+      method.addInsn(new NInsn ("aload", putIndex (q.src(), indexTable)));
+      method.addInsn(new NInsn ("checkcast", q.hclass()));
+      method.addInsn(new NInsn ("instanceof", q.hclass()));
+      method.addInsn(new NInsn ("istore", putIndex (q.dst(), indexTable)));
     } catch (Exception e){
       e.printStackTrace();
     }
   }
 
   //**METHODHEADER
-  public void visit (METHODHEADER q) {
+  public void visit (HEADER q) {
     if (writeTypes){
       method.addInsn (new NLabel ("METHODHEADER" + labelCount++));
     }
     if (printTypes){
       System.out.println ("Visiting METHODHEADER");
     }
-    for (int i = 0; i < q.params.length; i++){
-      putIndex (q.params[i], indexTable);
+    for (int i = 0; i < q.paramsLength(); i++){
+      putIndex (q.params(i), indexTable);
     }
     
     //need to come back to this, and store all the parameters into the 
@@ -678,7 +671,7 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       System.out.println ("Visiting MONITORENTER");
     }
       try {
-	method.addInsn(new NInsn ("aload", putIndex (q.lock, indexTable)));
+	method.addInsn(new NInsn ("aload", putIndex (q.lock(), indexTable)));
 	method.addInsn(new NInsn ("monitorenter"));
       } catch (Exception e){
 	e.printStackTrace();
@@ -693,7 +686,7 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       System.out.println ("Visiting MONITOREXIT");
     }
     try {
-      method.addInsn(new NInsn ("aload", putIndex (q.lock, indexTable)));
+      method.addInsn(new NInsn ("aload", putIndex (q.lock(), indexTable)));
       method.addInsn(new NInsn ("monitorexit"));
     } catch (Exception e){
       e.printStackTrace();
@@ -709,8 +702,8 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       System.out.println ("Visiting MOVE");
     }
     try {
-      addLoad (method, map, quadform, q.src, indexTable);
-      addStore (method, map, quadform, q.dst, indexTable);
+      addLoad (method, map, quadform, q.src(), indexTable);
+      addStore (method, map, quadform, q.dst(), indexTable);
     } catch (Exception e){
       e.printStackTrace();
     }
@@ -726,9 +719,9 @@ class ByteCodeQuadVisitor extends QuadVisitor{
     }
     try {
       method.addInsn (new NInsn ("aconst_null"));
-      method.addInsn (new NInsn ("astore", putIndex (q.dst, indexTable)));
-      method.addInsn(new NInsn ("new", q.hclass));
-      method.addInsn(new NInsn ("astore", putIndex (q.dst, indexTable)));
+      method.addInsn (new NInsn ("astore", putIndex (q.dst(), indexTable)));
+      method.addInsn(new NInsn ("new", q.hclass()));
+      method.addInsn(new NInsn ("astore", putIndex (q.dst(), indexTable)));
     } catch (Exception e){
       e.printStackTrace();
       }
@@ -843,37 +836,37 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       System.out.println ("Visiting RETUR");
     }
     try {
-      if (q.retval == null){
+      if (q.retval() == null){
 	method.addInsn(new NInsn ("return"));
       } else {
-	HClass tempClass = map.typeMap(quadform, q.retval);
+	HClass tempClass = map.typeMap(quadform, q.retval());
 	if (tempClass.isPrimitive()){
 	  if (tempClass == HClass.Boolean){
-	    addiload (method, q.retval, indexTable);
+	    addiload (method, q.retval(), indexTable);
 	    //method.addInsn(new NInsn ("i2b"));
 	    method.addInsn(new NInsn ("ireturn"));
 	  } else if (tempClass == HClass.Byte){
-	    addiload (method, q.retval, indexTable);
+	    addiload (method, q.retval(), indexTable);
 	    //method.addInsn(new NInsn ("i2b"));
 	    method.addInsn(new NInsn ("ireturn"));
 	  } else if (tempClass == HClass.Char){
-	    addiload (method, q.retval, indexTable);
+	    addiload (method, q.retval(), indexTable);
 	    //method.addInsn(new NInsn ("i2c"));
 	    method.addInsn(new NInsn ("ireturn"));
 	  } else if (tempClass == HClass.Double){
-	    adddload (method, q.retval, indexTable);
+	    adddload (method, q.retval(), indexTable);
 	    method.addInsn(new NInsn ("dreturn"));
 	  } else if (tempClass == HClass.Float){
-	    addfload (method, q.retval, indexTable);
+	    addfload (method, q.retval(), indexTable);
 	    method.addInsn(new NInsn ("freturn"));
 	  } else if (tempClass == HClass.Int){
-	    addiload (method, q.retval, indexTable);
+	    addiload (method, q.retval(), indexTable);
 	    method.addInsn(new NInsn ("ireturn"));
 	  } else if (tempClass == HClass.Long){
-	    addlload (method, q.retval, indexTable);
+	    addlload (method, q.retval(), indexTable);
 	    method.addInsn(new NInsn ("lreturn"));
 	  } else if (tempClass == HClass.Short){
-	    addiload (method, q.retval, indexTable);
+	    addiload (method, q.retval(), indexTable);
 	    //method.addInsn(new NInsn ("i2s"));
 	    method.addInsn(new NInsn ("ireturn"));
 	  } else {
@@ -883,7 +876,7 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 	      method.addInsn(new NInsn ("areturn"));
 	  }
 	}else {
-	  addaload (method, q.retval, indexTable);
+	  addaload (method, q.retval(), indexTable);
 	  method.addInsn (new NInsn ("checkcast", method.myMethod.getReturnType()));
 	  method.addInsn(new NInsn ("areturn"));
 	}
@@ -903,19 +896,19 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       System.out.println ("Visiting SET");
     }
     try {
-      if (!q.field.isStatic()){
-	method.addInsn(new NInsn ("aload", putIndex (q.objectref, indexTable)));
-	method.addInsn(new NInsn ("checkcast", q.field.getDeclaringClass()));
+      if (!q.field().isStatic()){
+	method.addInsn(new NInsn ("aload", putIndex (q.objectref(), indexTable)));
+	method.addInsn(new NInsn ("checkcast", q.field().getDeclaringClass()));
       }
-      addLoad (method, map, quadform, q.src, indexTable);
-      if (!q.field.getType().isPrimitive()){
-	  method.addInsn (new NInsn ("checkcast", q.field.getType()));
+      addLoad (method, map, quadform, q.src(), indexTable);
+      if (!q.field().getType().isPrimitive()){
+	  method.addInsn (new NInsn ("checkcast", q.field().getType()));
       }
       //method.addInsn(new NInsn ("aload", putIndex (q.src, indexTable)));
-      if (q.field.isStatic()){
-	method.addInsn(new NInsn ("putstatic", q.field));
+      if (q.field().isStatic()){
+	method.addInsn(new NInsn ("putstatic", q.field()));
       } else {
-	method.addInsn(new NInsn ("putfield", q.field));
+	method.addInsn(new NInsn ("putfield", q.field()));
       }
     } catch (Exception e){
       e.printStackTrace();
@@ -933,9 +926,9 @@ class ByteCodeQuadVisitor extends QuadVisitor{
     //Assuming that the switch keys arrive in sorted order, which should
     //be the case unless an optimization pass has fucked with them
     //I should come back and change this to explicitly check that they're sorted
-    NLabel targets[] = new NLabel[q.keys.length];
+    NLabel targets[] = new NLabel[q.keysLength()];
     int i = 0;
-    for (i = 0; i < q.keys.length; i++){	
+    for (i = 0; i < q.keysLength(); i++){	
       NLabel label = new NLabel ("Label" + labelCount++);
       if (labelTable.put (q.next(i), label) != null){
 	  System.out.println ("Switch: Hmm... it seems like there was already a label there");
@@ -950,9 +943,9 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 
     try {
       method.addInsn(new NLabel ("; before iload"));
-      method.addInsn(new NInsn ("iload", putIndex (q.index, indexTable)));
+      method.addInsn(new NInsn ("iload", putIndex (q.index(), indexTable)));
       method.addInsn(new NLabel (";after iload, before Lookupswitch"));
-      method.addInsn((NInsn) new LookupswitchInsn (defaultLabel, q.keys, targets));
+      method.addInsn((NInsn) new LookupswitchInsn (defaultLabel, q.keys(), targets));
       method.addInsn(new NLabel (";after switch"));
     } catch (Exception e){
       e.printStackTrace();
@@ -968,7 +961,7 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       System.out.println ("Visiting THROW");
     }
     try {
-      method.addInsn(new NInsn ("aload", putIndex (q.throwable, indexTable)));
+      method.addInsn(new NInsn ("aload", putIndex (q.throwable(), indexTable)));
       method.addInsn(new NInsn ("athrow"));
     } catch (Exception e){
       e.printStackTrace();

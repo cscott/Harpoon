@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * common subexpression elemination, but only within basic blocks.
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: BasicCSE.java,v 1.2.2.1 1998-12-01 12:36:26 cananian Exp $
+ * @version $Id: BasicCSE.java,v 1.2.2.2 1998-12-09 22:02:08 cananian Exp $
  */
 
 public class BasicCSE  {
@@ -77,14 +77,14 @@ public class BasicCSE  {
  		if (in[j] instanceof OPER) {
 		    OPER ins=(OPER) in[j];
 		    Vector exp = new Vector(1);
-		    exp.addElement(Qop.toString(ins.opcode));
+		    exp.addElement(Qop.toString(ins.opcode()));
 		    // for all src 
-		    for (int k=0; k<ins.operands.length; k++) {
-			Integer v=(Integer)var2val.get(ins.operands[k]);
+		    for (int k=0; k<ins.operandsLength(); k++) {
+			Integer v=(Integer)var2val.get(ins.operands(k));
 			// if var2val(src)==no value than var2val=new value 
 			if (v==null) { 
 			    virtval++; Integer vv=new Integer(virtval);
-			    var2val.put(ins.operands[k],vv);
+			    var2val.put(ins.operands(k),vv);
 			    exp.addElement(vv);
 			} else exp.addElement(v);
 		    }
@@ -96,49 +96,49 @@ public class BasicCSE  {
 			// insert MOVE t,dst quad
 			Quad[] q=ins.next();
 			if ((q.length==1)&&(q[0].prev().length==1)) {
-			    MOVE m=new MOVE(ins.getSourceElement(),t,ins.dst);
+			    MOVE m=new MOVE(ins,t,ins.dst());
 			    Quad.addEdge(m,0,q[0],0);
 			    Quad.addEdge(ins,0,m,0);
 			    exp2var.put(str,t);
 			}
 			virtval++; Integer vv=new Integer(virtval);
 			exp2val.put(str,vv);
-			var2val.put(ins.dst,vv);
+			var2val.put(ins.dst(),vv);
 		    } else {
 			Temp t=(Temp) exp2var.get(str);
 			// change OPER quad to a MOVE one
 			if (ins.edges().length==2) { 
-			    MOVE m=new MOVE(ins.getSourceElement(),ins.dst,t);
+			    MOVE m=new MOVE(ins,ins.dst(),t);
 			    Quad next=ins.next(0); Quad prev=ins.prev(0);
 			    if ((prev.next(0)==ins)&&(next.prev(0)==ins)) {
 				Quad.addEdge(m,0,next,0);
 				Quad.addEdge(prev,0,m,0);
 			    }
 			}
-			var2val.put(ins.dst,v);
+			var2val.put(ins.dst(),v);
 		    }
 		    // if instruction is move, just set var2val for src and dst
 		} else if (in[j] instanceof MOVE) {
 		    MOVE ins = (MOVE) in[j];
-		    Integer v=(Integer) var2val.get(ins.src);
+		    Integer v=(Integer) var2val.get(ins.src());
 		    if (v==null) {
 			virtval++; Integer vv=new Integer(virtval);
-			var2val.put(ins.src,vv);
-			var2val.put(ins.dst,vv);
+			var2val.put(ins.src(),vv);
+			var2val.put(ins.dst(),vv);
 		    }
-		    else var2val.put(ins.dst,v);
+		    else var2val.put(ins.dst(),v);
 		    // if instruction is const, set var2val for dst, but also con2val for src
 		} else if (in[j] instanceof CONST) {
 		    CONST ins = (CONST) in[j];
-		    String str=ins.type.toString() + 
-			((ins.value==null)?"null":ins.value.toString());
+		    String str=ins.type().toString() + 
+			((ins.value()==null)?"null":ins.value().toString());
 		    Integer v=(Integer) con2val.get(str);
 		    if (v==null) {
 			virtval++; Integer vv=new Integer(virtval);
 			con2val.put(str,vv);
-			var2val.put(ins.dst,vv);
+			var2val.put(ins.dst(),vv);
 		    }
-		    else var2val.put(ins.dst,v);
+		    else var2val.put(ins.dst(),v);
 		}
 	    } //for all instructions
 	} //foreach basic block

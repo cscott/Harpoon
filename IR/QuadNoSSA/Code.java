@@ -5,6 +5,7 @@ package harpoon.IR.QuadNoSSA;
 import harpoon.IR.Quads.*;
 import harpoon.ClassFile.*;
 import harpoon.Temp.*;
+import harpoon.Util.ArrayFactory;
 import harpoon.Util.Set;
 import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
@@ -19,7 +20,7 @@ import java.util.*;
  * <code>QuadNoSSA.Code</code> is <blink><b>fill me in</b></blink>.
  * 
  * @author  Nate Kushman <nkushman@lcs.mit.edu>
- * @version $Id: Code.java,v 1.2.2.1 1998-12-01 12:36:38 cananian Exp $
+ * @version $Id: Code.java,v 1.2.2.2 1998-12-09 22:02:18 cananian Exp $
  */
 
 public class Code extends HCode{
@@ -53,11 +54,11 @@ public class Code extends HCode{
       }
       public void visit (PHI q) {	
 	//go through each each of each PHI node within the quad
-	for (int i = 0; i < q.src.length; i++){
-	  for (int j = 0; j < q.src[i].length; j++){
+	for (int i = 0; i < q.numPhis(); i++){
+	  for (int j = 0; j < q.arity(); j++){
 	    //add a move edge along each preceding edge.
-	    MOVE newMove = new MOVE (q.getSourceElement(), 
-				     q.dst[i], q.src[i][j]);
+	    MOVE newMove = new MOVE (q,
+				     q.dst(i), q.src(i,j));
 	    Edge predE = q.prevEdge(j);
 	    
 	    Quad.addEdge ((Quad) predE.from(), predE.which_succ(), newMove, 0);
@@ -67,11 +68,11 @@ public class Code extends HCode{
       }
       public void visit (SIGMA q) {
 	  //System.out.println ("Sigma thing: " + q.toString());
-	for (int i = 0; i < q.dst.length; i++){
-	  for (int j = 0; j < q.dst[i].length; j++){
+	for (int i = 0; i < q.numSigmas(); i++){
+	  for (int j = 0; j < q.arity(); j++){
 	      //System.out.println ("Moving " + q.src[i].name() + " to " + q.dst[i][j].name());
-	    MOVE newMove = new MOVE (q.getSourceElement(), 
-				     q.dst[i][j], q.src[i]);
+	    MOVE newMove = new MOVE (q,
+				     q.dst(i,j), q.src(i));
 	    Edge nextEdge = q.nextEdge(j);
 	    //add a move edge along each following edge
 	    Quad.addEdge ((Quad) nextEdge.from(), nextEdge.which_succ(), newMove, 0);
@@ -174,7 +175,7 @@ public class Code extends HCode{
   /** Returns the leaves of the control flow graph. */
   public HCodeElement[] getLeafElements() {
     HEADER h = (HEADER) getRootElement();
-    return new Quad[] { h.footer };
+    return new Quad[] { h.footer() };
   }
 
   /**
@@ -221,4 +222,5 @@ public class Code extends HCode{
       }
     };
   }
+  public ArrayFactory elementArrayFactory() { return Quad.arrayFactory; }
 }

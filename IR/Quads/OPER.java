@@ -12,6 +12,7 @@ import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
+
 /**
  * <code>OPER</code> objects represent arithmetic/logical operations,
  * including mathematical operators such as add and subtract, 
@@ -23,16 +24,15 @@ import harpoon.Util.Util;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.1.2.2 1998-12-09 00:54:03 cananian Exp $
+ * @version $Id: OPER.java,v 1.1.2.3 1998-12-09 22:02:33 cananian Exp $
  */
-
 public class OPER extends Quad {
-    /** The temp in which to store the result of the operation. */
-    public Temp dst;
+    /** The <code>Temp</code> in which to store the result of the operation. */
+    protected Temp dst;
     /** The operation to be performed, from the <code>Qop</code> class. */
-    public int opcode;
+    final protected int opcode;
     /** Operands of the operation, in left-to-right order. */
-    public Temp[] operands;
+    protected Temp[] operands;
     /** Creates a <code>OPER</code>. */
     public OPER(HCodeElement source,
 		int opcode, Temp dst, Temp[] operands) {
@@ -40,12 +40,27 @@ public class OPER extends Quad {
 	this.opcode = opcode;
 	this.dst = dst;
 	this.operands = operands;
+	// VERIFY legality of OPER.
+	Util.assert(dst!=null && operands!=null);
+	Util.assert(Qop.isValid(opcode));
+	for (int i=0; i<operands.length; i++)
+	    Util.assert(operands[i]!=null);
     }
-    /** Backwards-compatibility. */
-    public OPER(HCodeElement source,
-		String opcode, Temp dst, Temp[] operands) {
-	this(source, Qop.forString(opcode), dst, operands);
-    }
+    // ACCESSOR METHODS:
+    /** Returns the <code>Temp</code> in which to store the result of the
+     *  operation. */
+    public Temp dst() { return dst; }
+    /** Returns the operation to be performed, as an integer enumeration
+     *  from the <code>Qop</code> class. */
+    public int  opcode() { return opcode; }
+    /** Returns an array of <code>Temp</code>s which are the operands
+     *  of the operation. */
+    public Temp[] operands()
+    { return (Temp[]) Util.safeCopy(Temp.arrayFactory, operands); }
+    /** Returns a specified element of the <code>operands</code> array. */
+    public Temp operands(int i) { return operands[i]; }
+    /** Returns the length of the <code>operands</code> array. */
+    public int operandsLength() { return operands.length; }
 
     /** Returns the Temps used by this OPER. */
     public Temp[] use() 

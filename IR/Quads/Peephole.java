@@ -9,7 +9,7 @@ import harpoon.Temp.Temp;
  * Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.1 1998-12-01 12:36:43 cananian Exp $
+ * @version $Id: Peephole.java,v 1.1.2.2 1998-12-09 22:02:34 cananian Exp $
  */
 
 class Peephole extends QuadVisitor {
@@ -76,13 +76,12 @@ class Peephole extends QuadVisitor {
 	CJMP cjmp[] = new CJMP[arity];
 	PHI  phi[]  = new PHI [2]; // for true and false.
 	for (int i=0; i<arity; i++) {
-	    op[i] = new OPER(op0.getSourceElement(), op0.opcode,
+	    op[i] = new OPER(op0, op0.opcode,
 			     op0.dst, (Temp[]) op0.operands.clone());
-	    cjmp[i] = new CJMP(cjmp0.getSourceElement(), 
-			       cjmp0.test, new Temp[0]);
+	    cjmp[i] = new CJMP(cjmp0, cjmp0.test, new Temp[0]);
 	}
-	phi[0] = new PHI(cjmp0.next(0).getSourceElement(), new Temp[0], arity);
-	phi[1] = new PHI(cjmp0.next(1).getSourceElement(), new Temp[0], arity);
+	phi[0] = new PHI(cjmp0.next(0), new Temp[0], arity);
+	phi[1] = new PHI(cjmp0.next(1), new Temp[0], arity);
 
 	// make all the links.
 	Quad.addEdge(phi[0], 0, cjmp0.next(0), cjmp0.nextEdge(0).which_pred());
@@ -125,19 +124,19 @@ class Peephole extends QuadVisitor {
 	 * constant propagation, leaving only the INSTANCEOF feeding the
 	 * branch. (The PHIs should go away once the ICMPs go away.)
 	 */
-	Quad qq0 = new CJMP(q.getSourceElement(), q.dst, new Temp[0]);
+	Quad qq0 = new CJMP(q, q.dst, new Temp[0]);
 	Quad.addEdge(q, 0, qq0, 0);
 	// duplicate following ICMP/CJMP; should be optimized out later on.
-	Quad qq1 = new OPER(oper.getSourceElement(), oper.opcode,
+	Quad qq1 = new OPER(oper, oper.opcode,
 			    oper.dst, (Temp[]) oper.operands.clone() );
-	Quad qq2 = new CJMP(cjmp.getSourceElement(), cjmp.test, cjmp.src);
+	Quad qq2 = new CJMP(cjmp, cjmp.test, cjmp.src);
 	// link tops up.
 	Quad.addEdge(qq0, 0, oper, 0);
 	Quad.addEdge(qq0, 1, qq1,  0);
 	Quad.addEdge(qq1, 0, qq2,  0);
 	// now add new PHI nodes where the two CJMPs link up.
-	PHI phi0 = new PHI(cjmp.next(0).getSourceElement(), new Temp[0], 2);
-	PHI phi1 = new PHI(cjmp.next(1).getSourceElement(), new Temp[0], 2);
+	PHI phi0 = new PHI(cjmp.next(0), new Temp[0], 2);
+	PHI phi1 = new PHI(cjmp.next(1), new Temp[0], 2);
 	// link phis to their successors.
 	Quad.addEdge(phi0, 0, cjmp.next(0), cjmp.nextEdge(0).which_pred());
 	Quad.addEdge(phi1, 0, cjmp.next(1), cjmp.nextEdge(1).which_pred());

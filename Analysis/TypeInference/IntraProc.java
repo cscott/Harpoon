@@ -18,7 +18,7 @@ import java.util.Enumeration;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.8 1998-12-07 12:02:31 marinov Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.9 1998-12-09 22:02:15 cananian Exp $
  */
 
 public class IntraProc {
@@ -195,15 +195,15 @@ public class IntraProc {
 	    Quad qq = (Quad) e.nextElement();
 	    if (!(qq instanceof CALL)) continue;
 	    CALL q = (CALL) qq;
-	    SetHClass[] paramTypes = new SetHClass[q.params.length];
-	    for (int i=0; i<q.params.length; i++) {
-		SetHClass s = (SetHClass)map.get(q.params[i]);
+	    SetHClass[] paramTypes = new SetHClass[q.paramsLength()];
+	    for (int i=0; i<q.paramsLength(); i++) {
+		SetHClass s = (SetHClass)map.get(q.params(i));
 		//Util.assert(s!=null);
 		paramTypes[i] = s;
 	    }
 	    HMethod[] m;
-	    if (q.isSpecial) m = new HMethod[]{ q.method };
-	    else m = possibleMethods(q.method, paramTypes);
+	    if (!q.isVirtual()) m = new HMethod[]{ q.method() };
+	    else m = possibleMethods(q.method(), paramTypes);
 	    for (int i=0; i<m.length; i++)
 		r.union(m[i]);
 	}
@@ -216,15 +216,15 @@ public class IntraProc {
     HMethod[] calls(CALL cs, boolean last) {
 	if (map==null) { map = new Hashtable(); analyze(); }
 	Set r = new Set();
-	SetHClass[] paramTypes = new SetHClass[cs.params.length];
-	for (int i=0; i<cs.params.length; i++) {
-	    SetHClass s = (SetHClass)map.get(cs.params[i]);
+	SetHClass[] paramTypes = new SetHClass[cs.paramsLength()];
+	for (int i=0; i<cs.paramsLength(); i++) {
+	    SetHClass s = (SetHClass)map.get(cs.params(i));
 	    //Util.assert(s!=null);
 	    paramTypes[i] = s;
 	}
 	HMethod[] m;
-	if (cs.isSpecial) m = new HMethod[]{ cs.method };
-	else m = possibleMethods(cs.method, paramTypes);
+	if (!cs.isVirtual()) m = new HMethod[]{ cs.method() };
+	else m = possibleMethods(cs.method(), paramTypes);
 	for (int i=0; i<m.length; i++)
 	    r.union(m[i]);
 	if (last) map = null;
@@ -249,16 +249,16 @@ public class IntraProc {
 	public void visit(Quad q) { modified = false; }
 
 	public void visit(AGET q) {
-	    SetHClass t = (SetHClass)map.get(q.objectref);
+	    SetHClass t = (SetHClass)map.get(q.objectref());
 	    if (t==null) { modified=false; return; }
-	    modified = merge(q.dst, t.getComponentType());
+	    modified = merge(q.dst(), t.getComponentType());
 	    return;
 	}
 	public void visit(ALENGTH q) {
-	    modified = merge(q.dst, HClass.Int);
+	    modified = merge(q.dst(), HClass.Int);
 	}
 	public void visit(ANEW q) {
-	    modified = merge(q.dst, environment.cone(q.hclass));
+	    modified = merge(q.dst(), environment.cone(q.hclass()));
 	}
 	public void visit(ASET q) {
 	    /* ??? additional precision could be gained
@@ -267,79 +267,79 @@ public class IntraProc {
 	}
 	public void visit(CALL q) {
 	    boolean r = false;
-	    SetHClass[] paramTypes = new SetHClass[q.params.length];
-	    for (int i=0; i<q.params.length; i++) {
-		SetHClass s = (SetHClass)map.get(q.params[i]);
+	    SetHClass[] paramTypes = new SetHClass[q.paramsLength()];
+	    for (int i=0; i<q.paramsLength(); i++) {
+		SetHClass s = (SetHClass)map.get(q.params(i));
 		if (s==null) { modified = false; return; }
 		paramTypes[i] = s;
 	    }
 	    HMethod[] m;
-	    if (q.isSpecial) m = new HMethod[]{ q.method };
-	    else m = possibleMethods(q.method, paramTypes);
+	    if (!q.isVirtual()) m = new HMethod[]{ q.method() };
+	    else m = possibleMethods(q.method(), paramTypes);
 	    for (int i=0; i<m.length; i++) {
 		IntraProc p = environment.getIntra(IntraProc.this, m[i], paramTypes);
-		boolean r1 = (q.retval==null) ? false : merge(q.retval, p.getReturnType());
-		boolean r2 = merge(q.retex, p.getExceptionType());
+		boolean r1 = (q.retval()==null) ? false : merge(q.retval(), p.getReturnType());
+		boolean r2 = merge(q.retex(), p.getExceptionType());
 		r = r || r1 || r2;
 	    }
 	    modified = r;
 	}
 	public void visit(COMPONENTOF q) {
-	    modified = merge(q.dst, HClass.Boolean);
+	    modified = merge(q.dst(), HClass.Boolean);
 	}
 	public void visit(CONST q) {
-	    modified = merge(q.dst, q.type);
+	    modified = merge(q.dst(), q.type());
 	}
 	public void visit(GET q) {
-	    modified = merge(q.dst, environment.getType(q.field, IntraProc.this));
+	    modified = merge(q.dst(), environment.getType(q.field(), IntraProc.this));
 	}   
 	public void visit(SET q) {
-	    SetHClass t = (SetHClass)map.get(q.src);
+	    SetHClass t = (SetHClass)map.get(q.src());
 	    if (t==null) { modified = false; return; }
-	    environment.mergeType(q.field, t);
+	    environment.mergeType(q.field(), t);
 	    modified = false;
 	}
 	public void visit(INSTANCEOF q) {
-	    modified = merge(q.dst, HClass.Boolean);
+	    modified = merge(q.dst(), HClass.Boolean);
 	}
-	public void visit(METHODHEADER q) {
+	public void visit(HEADER q) {
 	    boolean r = false;
-	    for (int i=0; i<q.params.length; i++)
-		if (merge(q.params[i], parameterTypes[i])) 
+	    for (int i=0; i<q.paramsLength(); i++)
+		if (merge(q.params(i), parameterTypes[i])) 
 		    r = true;
 	    modified = r;
 	}
 	public void visit(MOVE q) {
-	    SetHClass t = (SetHClass)map.get(q.src);
+	    SetHClass t = (SetHClass)map.get(q.src());
 	    if (t==null) { modified = false; return; }
-	    modified = move(q.dst, t);
+	    modified = move(q.dst(), t);
 	}
 	public void visit(NEW q) {
-	    modified = merge(q.dst, q.hclass);
+	    modified = merge(q.dst(), q.hclass());
 	}
 	public void visit(OPER q) {
-	    modified = merge(q.dst, q.evalType());
+	    modified = merge(q.dst(), q.evalType());
 	}
 	public void visit(PHI q) {
 	    boolean r = false;
-	    for (int i=0; i<q.dst.length; i++)
-		for (int j=0; j<q.src[i].length; j++) {
-		    if (q.src[i][j]==null) continue;
-		    SetHClass t = (SetHClass)map.get(q.src[i][j]);
+	    for (int i=0; i<q.numPhis(); i++)
+		for (int j=0; j<q.arity(); j++) {
+		    if (q.src(i,j)==null) continue;
+		    SetHClass t = (SetHClass)map.get(q.src(i,j));
 		    if (t==null) continue;
-		    if (merge(q.dst[i], t))
+		    if (merge(q.dst(i), t))
 			r = true;
 		}
 	    modified = r;
 	}
 	public void visit(SIGMA q) {
 	    boolean r = false;
-	    for (int i=0; i<q.src.length; i++) {
-		if (q.src[i]==null) continue;
-		SetHClass t = (SetHClass)map.get(q.src[i]);
+	    for (int i=0; i<q.numSigmas(); i++) {
+		if (q.src(i)==null) continue;
+		SetHClass t = (SetHClass)map.get(q.src(i));
 		if (t==null) continue;
-		for (int j=0; j<q.dst[i].length; j++)
-		    if (move(q.dst[i][j], t))
+		for (int j=0; j<q.arity(); j++)
+		    if (move(q.dst(i,j), t))
 			r = true;
 	    }
 	    modified = r;
@@ -350,15 +350,15 @@ public class IntraProc {
 	    }
 	*/
 	public void visit(RETURN q) {
-	    if (q.retval!=null) {
-		SetHClass s = (SetHClass)map.get(q.retval);
+	    if (q.retval()!=null) {
+		SetHClass s = (SetHClass)map.get(q.retval());
 		if (s!=null)
 		    outputChanged = returnType.union(s) || outputChanged;
 	    }
 	    modified = false;
 	}
 	public void visit(THROW q) {
-	    SetHClass s = (SetHClass)map.get(q.throwable);
+	    SetHClass s = (SetHClass)map.get(q.throwable());
 	    if (s!=null)
 		if (exceptionAnalysis) // UGLY?! otherwise, running out of memory now
 		    outputChanged = exceptionType.union(s) || outputChanged;

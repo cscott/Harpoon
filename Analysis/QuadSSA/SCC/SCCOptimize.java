@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.5.2.2 1998-12-01 12:36:37 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.5.2.3 1998-12-09 22:02:13 cananian Exp $
  */
 public class SCCOptimize {
     TypeMap  ti;
@@ -75,7 +75,7 @@ public class SCCOptimize {
 		int which_pred = q.nextEdge(0).which_pred();
 
 		for (i=0; i<d.length; i++) {
-		    Quad qq = newCONST(q.getSourceElement(), d[i],
+		    Quad qq = newCONST(q, d[i],
 				       cm.constMap(hc, d[i]),
 				       ti.typeMap(hc, d[i]) );
 		    Quad.addEdge(header, which_succ, qq, 0);
@@ -114,9 +114,8 @@ public class SCCOptimize {
 		    int which_pred = q.nextEdge(liveEdge).which_pred();
 
 		    // insert a series of MOVEs to implement SIGMAs
-		    for (i=0; i < q.src.length; i++) {
-			Quad qq = new MOVE(q.getSourceElement(),
-					   q.dst[i][liveEdge], q.src[i]);
+		    for (i=0; i < q.numSigmas(); i++) {
+			Quad qq = new MOVE(q, q.dst(i,liveEdge), q.src(i));
 			Quad.addEdge(header, which_succ, qq, 0);
 			Ee.union(header.nextEdge(which_succ));
 			header = qq; which_succ = 0;
@@ -130,26 +129,22 @@ public class SCCOptimize {
 		// remove non-executable edges into this PHI.
 		for (int i=0; i < q.prev().length; ) {
 		    if (!execMap(hc, q.prevEdge(i)))
-			q.remove(i);
+			q.removePred(i);
 		    else i++;
 		}
 		// replace any phi's with constant args with a CONST.
-		for (int i=0; i < q.dst.length; ) {
-		    if (cm.isConst(hc, q.dst[i])) {
+		for (int i=0; i < q.numPhis(); ) {
+		    if (cm.isConst(hc, q.dst(i))) {
 			// insert CONST.
-			Quad qq = newCONST(q.getSourceElement(), q.dst[i], 
-					   cm.constMap(hc, q.dst[i]),
-					   ti.typeMap(hc, q.dst[i]) );
+			Quad qq = newCONST(q, q.dst(i), 
+					   cm.constMap(hc, q.dst(i)),
+					   ti.typeMap(hc, q.dst(i)) );
 			Edge edge = q.nextEdge(0);
 			Quad.addEdge(qq, 0,(Quad)edge.to(), edge.which_pred());
 			Quad.addEdge(q, 0, qq, 0);
 			Ee.union(q.nextEdge(0));
 			Ee.union(qq.nextEdge(0));
-			// remove phi.
-			q.dst = (Temp[])   Util.shrink(Temp.arrayFactory, 
-						       q.dst, i);
-			q.src = (Temp[][]) Util.shrink(Temp.doubleArrayFactory,
-						       q.src, i);
+			q.removePhi(i); // remove i'th phi function.
 		    } else i++;
 		}
 	    } // end VISIT PHI.

@@ -7,34 +7,77 @@ import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
+
 /**
  * <code>PHI</code> objects represent blocks of PHI functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.1.2.2 1998-12-09 00:54:03 cananian Exp $
+ * @version $Id: PHI.java,v 1.1.2.3 1998-12-09 22:02:34 cananian Exp $
  */
-
 public class PHI extends Quad {
-    public Temp dst[];
-    public Temp src[][];
-    /** Creates a <code>PHI</code> object. */
+    /** dst[i] is the left-hand side of the i'th phi function in this block. */
+    protected Temp dst[];
+    /** src[i][j] is the j'th parameter to the i'th phi function in this 
+     *	block. */
+    protected Temp src[][];
+
+    /** Creates a <code>PHI</code> object representing a block of
+     *  phi functions.
+     * @param dst
+     *        the left hand sides of a phi function assignment block.
+     * @param src
+     *        the phi function parameters in a phi function assignment block.
+     */
     public PHI(HCodeElement source,
 	       Temp dst[], Temp src[][], int arity) {
         super(source, arity, 1);
 	this.dst = dst;
 	this.src = src;
+	// VERIFY legality of PHI function.
+	Util.assert(dst!=null && src!=null);
+	Util.assert(arity>=0);
+	Util.assert(dst.length==src.length);
+	for (int i=0; i<src.length; i++)
+	    Util.assert(src[i].length==arity);
+	Util.assert(arity==arity());
     }
-    /** Creates a <code>PHI</code> object with the specified arity. */
+    /** Creates a <code>PHI</code> object with the specified arity.
+     *  Each phi function will have <code>arity</code> arguments.
+     * @param dst
+     *        the left hand sides of the phi functions.
+     * @param arity
+     *        the number of predecessors of this quad.
+     */
     public PHI(HCodeElement source,
 	       Temp dst[], int arity) {
 	this(source, dst, new Temp[dst.length][arity], arity);
-	for (int i=0; i<dst.length; i++)
-	    for (int j=0; j<arity; j++)
-		this.src[i][j] = null;
+    }
+    // ACCESSOR METHODS:
+    /** Returns the right hand side of the <code>nPhi</code>'th phi
+     *  function assignment in the block. */
+    public Temp dst(int nPhi) { return dst[nPhi]; }
+    /** Returns the <code>nParam</code>'th argument of the
+     *  <code>nPhi</code>'th phi function in the block. */
+    public Temp src(int nPhi, int nParam) { return src[nPhi][nParam]; }
+    /** Returns an array holding the arguments to the <code>nPhi</code>'th
+     *  phi function in the block. */
+    public Temp[] src(int nPhi)
+    { return (Temp[]) Util.safeCopy(Temp.arrayFactory, src[nPhi]); }
+    
+    /** Returns the number of phi functions in the block. */
+    public int numPhis() { return dst.length; }
+    /** Returns the number of arguments each phi function has. */
+    public int arity() { return prev.length; }
+
+    /** Removes a given phi function from the block. */
+    public void removePhi(int nPhi) {
+	Util.assert(0<=nPhi && nPhi<numPhis());
+	dst = (Temp[])   Util.shrink(Temp.arrayFactory,       dst, nPhi);
+	src = (Temp[][]) Util.shrink(Temp.doubleArrayFactory, src, nPhi);
     }
 
-    /** Remove a predecessor from this phi. */
-    public void remove(int which_pred) {
+    /** Remove a predecessor from this phi, reducing the arity. */
+    public void removePred(int which_pred) {
 	prev = (Edge[]) Util.shrink(Edge.arrayFactory, prev, which_pred);
 	for (int i=0; i<dst.length; i++)
 	    src[i] = (Temp[]) Util.shrink(Temp.arrayFactory,

@@ -9,37 +9,54 @@ import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
+
 /**
  * <code>GET</code> represent field access (get) operations.
  * The <code>objectref</code> is null if the field is static.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.1.2.1 1998-12-01 12:36:42 cananian Exp $
+ * @version $Id: GET.java,v 1.1.2.2 1998-12-09 22:02:28 cananian Exp $
  */
-
 public class GET extends Quad {
-    /** Temp in which to store the fetched field contents. */
-    public Temp dst;
-    /** The field desciption. */
-    public HField field;
+    /** <code>Temp</code> in which to store the fetched field contents. */
+    protected Temp dst;
+    /** The field description. */
+    final protected HField field;
     /** Reference to the object containing the field. <p>
      *  <code>null</code> if field is static.     */
-    public Temp objectref;
+    protected Temp objectref;
 
-    /** Creates a <code>GET</code> for a non-static field. */
+    /** Creates a <code>GET</code> representing a field access.
+     * @param dst
+     *        the <code>Temp</code> in which to store the fetched field.
+     * @param field
+     *        the field description.
+     * @param objectref
+     *        the <code>Temp</code> referencing the object
+     *        containing the specified field, if the field is not static.
+     *        For static fields, <code>objectref</code> is <code>null</code>.
+     */
     public GET(HCodeElement source,
 	       Temp dst, HField field, Temp objectref) {
 	super(source);
 	this.dst = dst;
 	this.field = field;
 	this.objectref = objectref;
-	if (objectref==null) Util.assert(isStatic());
+	// VERIFY legality of GET
+	Util.assert(dst!=null && field!=null);
+	if (isStatic())
+	    Util.assert(objectref==null);
+	else
+	    Util.assert(objectref!=null);
     }
-    /** Creates a <code>GET</code> for a static field. */
-    public GET(HCodeElement source,
-	       Temp dst, HField field) {
-	this(source, dst, field, null);
-    }
+    // ACCESSOR METHODS:
+    /** Returns the <code>Temp</code> in which to store the fetched field. */
+    public Temp dst() { return dst; }
+    /** Returns the field to fetch. */
+    public HField field() { return field; }
+    /** Returns the object containing the specified field, or 
+     *  <code>null</code> if the field is static. */
+    public Temp objectref() { return objectref; }
 
     /** Returns the Temp used by this Quad. 
      * @return the <code>objectref</code> field. */

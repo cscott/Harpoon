@@ -6,22 +6,33 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Util;
+
 /**
  * <code>THROW</code> represents a <Code>throw<code> statement.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: THROW.java,v 1.1.2.1 1998-12-01 12:36:44 cananian Exp $
+ * @version $Id: THROW.java,v 1.1.2.2 1998-12-09 22:02:39 cananian Exp $
  */
-
 public class THROW extends Quad {
     /* The exception object to throw. */
-    public Temp throwable;
+    protected Temp throwable;
 
-    /** Creates a <code>THROW</code>. */
+    /** Creates a <code>THROW</code> representing a exception 
+     *  throw statement.
+     * @param throwable
+     *        the <code>Temp</code> containing the exception object
+     *        to throw.  Should be a subclass of 
+     *        <code>java.lang.Throwable</code>.
+     */
     public THROW(HCodeElement source, Temp throwable) {
         super(source, 1, 1 /* one successor, the footer node. */);
 	this.throwable = throwable;
+	Util.assert(throwable!=null);
     }
+    /** Returns the <code>Temp</code> containing the exception object to
+     *  throw. */
+    public Temp throwable() { return throwable; }
 
     /** Returns all the Temps used by this Quad. 
      * @return the <code>throwable</code> field. */

@@ -6,6 +6,7 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Util;
 /**
  * <code>INSTANCEOF</code> objects represent an 'instanceof' evaluation.
  * <code>INSTANCEOF</code> assigns a boolean value to a temporary after
@@ -20,25 +21,42 @@ import harpoon.Temp.TempMap;
  * <code>null</code> source object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSTANCEOF.java,v 1.1.2.1 1998-12-01 12:36:42 cananian Exp $ 
+ * @version $Id: INSTANCEOF.java,v 1.1.2.2 1998-12-09 22:02:29 cananian Exp $ 
  */
-
 public class INSTANCEOF extends Quad {
-    /** The temp in which to store the result of the evaluation. */
-    public Temp dst;
-    /** The temp to evaluate. */
-    public Temp src;
+    /** The <code>Temp</code> in which to store the result of the test. */
+    protected Temp dst;
+    /** The <code>Temp</code> to evaluate. */
+    protected Temp src;
     /** The class in which <code>src</code> is tested for membership. */
-    public HClass hclass;
+    final protected HClass hclass;
 
-    /** Creates a <code>INSTANCEOF</code>. */
+    /** Creates a <code>INSTANCEOF</code> representing a typecheck test.
+     * @param dst
+     *        the <code>Temp</code> in which to store the result of the test.
+     * @param src
+     *        the <code>Temp</code> to test.
+     * @param hclass
+     *        the class in which <code>src</code> is tested for membership.
+     */
     public INSTANCEOF(HCodeElement source,
 		      Temp dst, Temp src, HClass hclass) {
 	super(source);
 	this.dst = dst;
 	this.src = src;
 	this.hclass = hclass;
+	// VERIFY legality of INSTANCEOF
+	Util.assert(dst!=null && src!=null && hclass!=null);
     }
+    // ACCESSOR METHODS:
+    /** Returns the <code>Temp</code> in which to store the result of the
+     *  <code>instanceof</code> test. */
+    public Temp dst() { return dst; }
+    /** Returns the <code>Temp</code> to test. */
+    public Temp src() { return src; }
+    /** Returns the class in which <code>src</code> is tested for
+     *  membership. */
+    public HClass hclass() { return hclass; }
 
     /** Returns the <code>Temp</code>s used by this quad. */
     public Temp[] use() { return new Temp[] { src }; }

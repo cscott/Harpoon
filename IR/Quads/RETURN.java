@@ -6,26 +6,33 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Util;
+
 /**
  * <code>RETURN</code> objects indicate a method return, with an
  * optional return value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RETURN.java,v 1.1.2.1 1998-12-01 12:36:43 cananian Exp $
+ * @version $Id: RETURN.java,v 1.1.2.2 1998-12-09 22:02:37 cananian Exp $
  */
-
 public class RETURN extends Quad {
     /** Return value. <code>null</code> if there is no return value. */
-    public Temp retval;
-    /** Creates a <code>RETURN</code>. */
+    protected Temp retval;
+
+    /** Creates a <code>RETURN</code> representing a method return.
+     * @param retval
+     *        the <code>Temp</code> holding the return value for the
+     *        method.  The <code>retval</code> field should be 
+     *        <code>null</code> if the method does not return a value.
+     */
     public RETURN(HCodeElement source, Temp retval) {
 	super(source, 1, 1 /* one successor, the footer node. */);
 	this.retval = retval;
+	// nothing to verify.
     }
-    /** Creates a <code>RETURN</code> which does not return a value. */
-    public RETURN(HCodeElement source) {
-	this(source, null);
-    }
+    /** Returns the <code>Temp</code> which holds the method return value,
+     *  or returns <code>null</code> if the method returns no value. */
+    public Temp retval() { return retval; }
 
     /** Returns all the Temps used by this Quad. */
     public Temp[] use() {

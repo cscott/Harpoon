@@ -6,6 +6,8 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Util;
+
 /**
  * <code>MONITORENTER</code> acquires the monitor lock of a particular
  * object.  Note that these java "monitors" are really a flavor of
@@ -16,20 +18,27 @@ import harpoon.Temp.TempMap;
  * See the JVM spec for details.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MONITORENTER.java,v 1.1.2.1 1998-12-01 12:36:42 cananian Exp $
+ * @version $Id: MONITORENTER.java,v 1.1.2.2 1998-12-09 22:02:30 cananian Exp $
  */
-
 public class MONITORENTER extends Quad {
     /** The object containing the monitor to be locked. */
-    public Temp lock;
+    protected Temp lock;
 
     /** Creates a <code>MONITORENTER</code>. Code after this point and
      *  before a <code>MONITOREXIT</code> with the same <code>lock</code>
-     *  reference is protected by a monitor. */
+     *  reference is protected by a monitor.
+     * @param lock 
+     *        the <code>Temp</code> referencing the object monitor to lock.
+     */
     public MONITORENTER(HCodeElement source, Temp lock) {
         super(source);
 	this.lock = lock;
+	Util.assert(lock!=null);
     }
+    // ACCESSOR METHODS:
+    /** Returns the <code>Temp</code> specifying the object to be locked. */
+    public Temp lock() { return lock; }
+
     /** Returns the Temp used by this Quad.
      *  @return the <code>lock</code> field. */
     public Temp[] use() { return new Temp[] { lock }; }
@@ -41,7 +50,7 @@ public class MONITORENTER extends Quad {
 
     public void visit(QuadVisitor v) { v.visit(this); }
 
-    /** Returns a human-readable representation. */
+    /** Returns a human-readable representation of this quad. */
     public String toString() {
 	return "MONITORENTER " + lock;
     }

@@ -12,20 +12,19 @@ import harpoon.Util.Util;
  * <code>ANEW</code> represents an array creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ANEW.java,v 1.1.2.1 1998-12-01 12:36:41 cananian Exp $
+ * @version $Id: ANEW.java,v 1.1.2.2 1998-12-09 22:02:22 cananian Exp $
  * @see NEW
  * @see AGET
  * @see ASET
  * @see ALENGTH
  */
-
 public class ANEW extends Quad {
-    /** The Temp in which to store the new array reference. */
-    public Temp dst;
+    /** The <code>Temp</code> in which to store the new array reference. */
+    protected Temp dst;
     /** Description of array class to create. */
-    public HClass hclass;
+    final protected HClass hclass;
     /** Lengths of each dimension to create. */
-    public Temp dims[];
+    protected Temp dims[];
 
     /** Creates an <code>ANEW</code> object. <code>ANEW</code> creates
      *  an array of the type and number of dimensions indicated by
@@ -35,14 +34,42 @@ public class ANEW extends Quad {
      *  The array class referenced by <code>hclass</code> may have more
      *  dimensions than the length of the <code>dims</code> parameter.  In
      *  that case, only the first <code>dims.length</code> dimensions of the
-     *  array are created. */
+     *  array are created. 
+     * @param dst
+     *        the <code>Temp</code> in which to store the new array
+     *        reference.
+     * @param hclass
+     *        the array class to create.
+     * @param dims
+     *        <code>Temp</code>s holding the length of each array
+     *        dimension.
+     */
     public ANEW(HCodeElement source,
 		Temp dst, HClass hclass, Temp dims[]) {
         super(source);
 	this.dst = dst;
 	this.hclass = hclass;
 	this.dims = dims;
+	// VERIFY legality of this ANEW.
+	Util.assert(dst!=null && hclass!=null && dims!=null);
+	Util.assert(hclass.isArray());
+	Util.assert(dims.length>0);
+	for (int i=0; i<dims.length; i++)
+	    Util.assert(dims[i]!=null);
     }
+    // ACCESSOR FUNCTIONS:
+    /** Returns the destination <code>Temp</code>. */
+    public Temp dst() { return dst; }
+    /** Returns the array class this <code>ANEW</code> will create. */
+    public HClass hclass() { return hclass; }
+    /** Returns an array of <code>Temp</code>s holding the length of
+     *  each array dimension. */
+    public Temp[] dims()
+    { return (Temp[]) Util.safeCopy(Temp.arrayFactory, dims); }
+    /** Returns a particular element of the <code>dims</code> array. */
+    public Temp dims(int i) { return dims[i]; }
+    /** Returns the length of the <code>dims</code> array. */
+    public int dimsLength() { return dims.length; }
 
     /** Returns the Temp defined by this Quad. 
      * @return the <code>dst</code> field. */

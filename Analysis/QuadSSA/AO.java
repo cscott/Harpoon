@@ -14,7 +14,7 @@ import harpoon.Analysis.Maps.UseDefMap;
  * <code>AO</code> deteremines which objects are accessed in the given method.
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: AO.java,v 1.1.2.1 1998-12-03 07:52:38 marinov Exp $
+ * @version $Id: AO.java,v 1.1.2.2 1998-12-09 22:02:07 cananian Exp $
  */
 
 public class AO  {
@@ -71,54 +71,54 @@ public class AO  {
 	
 	public void visit(Quad q) { modified = false; }
 	public void visit(AGET q) { 
-	    if (ptr(c, q.dst)) modified = move(c, q.dst, q.objectref);
+	    if (ptr(c, q.dst())) modified = move(c, q.dst(), q.objectref());
 	    else modified = false;
 	}
 	public void visit(ANEW q) { 
-	    if ((q.dims.length>1)||objectClass(q.hclass)) modified = (ptr2sore.put(q.dst, SORE.singletonNew)!=SORE.singletonNew);
+	    if ((q.dimsLength()>1)||objectClass(q.hclass())) modified = (ptr2sore.put(q.dst(), SORE.singletonNew)!=SORE.singletonNew);
 	    else modified = false;
 	}
 	public void visit(ASET q) { 
-	    if (ptr(c, q.src)) modified = move(c, q.objectref, q.src);
+	    if (ptr(c, q.src())) modified = move(c, q.objectref(), q.src());
 	    else modified = false;
 	}
 	public void visit(CALL q) { /**/ }
 	public void visit(CONST q) { 
-	    if (ptr(c, q.dst)) modified = (ptr2sore.put(q.dst, SORE.emptySet)!=SORE.emptySet);
+	    if (ptr(c, q.dst())) modified = (ptr2sore.put(q.dst(), SORE.emptySet)!=SORE.emptySet);
 	    else modified = false;
 	}
 	public void visit(GET q) { 
-	    if (ptr(c, q.dst)) modified = get(c, q.dst, q.field, q.objectref);
+	    if (ptr(c, q.dst())) modified = get(c, q.dst(), q.field(), q.objectref());
 	    else modified = false;
 	}
-	public void visit(METHODHEADER q) { 
+	public void visit(HEADER q) { 
 	    // this quad is visited only once, at the beginning, in intraprocedural analysis
-	    for (int i=0; i<q.params.length; i++)
-		if (ptr(c, q.params[i]))
-		    ptr2sore.put(q.params[i], new SORE(q.params[i]));
+	    for (int i=0; i<q.paramsLength(); i++)
+		if (ptr(c, q.params(i)))
+		    ptr2sore.put(q.params(i), new SORE(q.params(i)));
 	    modified = true;
 	}
 	public void visit(MOVE q) { 
-	    if (ptr(c, q.dst)) modified = move(c, q.dst, q.src);
+	    if (ptr(c, q.dst())) modified = move(c, q.dst(), q.src());
 	    else modified = false;
 	}
 	public void visit(NEW q) { 
-	    modified = (ptr2sore.put(q.dst, SORE.singletonNew)!=SORE.singletonNew);
+	    modified = (ptr2sore.put(q.dst(), SORE.singletonNew)!=SORE.singletonNew);
 	}
 	public void visit(PHI q) { 
 	    boolean r = false;
-	    for (int i=0; i<q.dst.length; i++)
-		if (ptr(c, q.dst[i]))
-		    if (merge(c, q.dst[i], q.src[i])) r = true;
+	    for (int i=0; i<q.numPhis(); i++)
+		if (ptr(c, q.dst(i)))
+		    if (merge(c, q.dst(i), q.src(i))) r = true;
 	    modified = r;
 	}
 	public void visit(SET q) { /**/ }
 	public void visit(SIGMA q) { 
 	    boolean r = false;
-	    for (int i=0; i<q.src.length; i++) 
-		if (ptr(c, q.src[i]))
-		    for (int j=0; j<q.dst[i].length; j++)
-			if (move(c, q.dst[i][j], q.src[i])) r = true;
+	    for (int i=0; i<q.numSigmas(); i++) 
+		if (ptr(c, q.src(i)))
+		    for (int j=0; j<q.arity(); j++)
+			if (move(c, q.dst(i,j), q.src(i))) r = true;
 	    modified = r;
 	}
 	// cannot assign to a pointer: public void visit(ALENGTH q) { }

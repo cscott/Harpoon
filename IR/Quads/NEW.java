@@ -9,32 +9,44 @@ import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
+
 /**
  * <code>NEW</code> represents an object creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NEW.java,v 1.1.2.1 1998-12-01 12:36:42 cananian Exp $
+ * @version $Id: NEW.java,v 1.1.2.2 1998-12-09 22:02:32 cananian Exp $
  */
-
 public class NEW extends Quad {
-    /** The Temp in which to store the new object. */
-    public Temp dst;
+    /** The <code>Temp</code> in which to store the new object. */
+    protected Temp dst;
     /** Description of the class to create. */
-    public HClass hclass;
+    final protected HClass hclass;
+
     /** Creates a <code>NEW</code> object.  <code>NEW</code> creates
-     *  a new instance of the class <code>hclass</code>. */
+     *  a new instance of the class <code>hclass</code>.
+     * @param dst
+     *        the <code>Temp</code> in which to store the new object.
+     * @param hclass
+     *        the class to create.
+     */
     public NEW(HCodeElement source,
 	       Temp dst, HClass hclass) {
         super(source);
 	this.dst = dst;
 	this.hclass = hclass;
+	// VERIFY legality of NEW
+	Util.assert(dst!=null && hclass!=null);
 	// from JVM spec:
 	Util.assert(!hclass.isArray() && !hclass.isInterface());
 	Util.assert(!hclass.isPrimitive());
 	Util.assert(!Modifier.isAbstract(hclass.getModifiers()));
     }
+    /** Returns the <code>Temp</code> in which to store the new object. */
+    public Temp dst() { return dst; }
+    /** Returns the class this <code>NEW</code> will create. */
+    public HClass hclass() { return hclass; }
 
-    /** Returns the Temp defined by this Quad.
+    /** Returns the <code>Temp</code> defined by this <code>Quad</code>.
      * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }
 
