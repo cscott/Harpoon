@@ -32,13 +32,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 /**
  * <code>SingularFinder</code> is an implementation of
  * <code>SingularOracle</code> for quad IRs.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SingularFinder.java,v 1.3 2003-05-16 00:36:32 cananian Exp $
+ * @version $Id: SingularFinder.java,v 1.4 2003-05-16 00:53:21 cananian Exp $
  */
 public class SingularFinder implements SingularOracle<Quad> {
     private final HCodeFactory hcf;
@@ -51,7 +52,7 @@ public class SingularFinder implements SingularOracle<Quad> {
 	return mutuallySingular(m, Collections.singleton(sv));
     }
 
-    // xxx cache this result?
+    // XXX cache this result?
     public Set<Temp> mutuallySingular(HMethod m,
 				      Collection<StaticValue<Quad>> svs) {
 	if (!methodCache.containsKey(m))
@@ -94,8 +95,20 @@ public class SingularFinder implements SingularOracle<Quad> {
 	    ((harpoon.IR.Quads.Code) hcf.convert(m));
 	Map<QNode,RDInfo> rdResult = new RDSolver().compute(qfg);
 	Map<QNode,RUInfo> ruResult = new RUSolver(rdResult).compute(qfg);
-	// xxx trim these.
-	methodCache.put(m, new PerMethodInfo(qfg, rdResult, ruResult));
+	// trim these; XXX could be trimmed much further.
+	// (for example, I think the only relevant keys are
+	//  array/field stores and calls, and only the defpoints
+	//  mentioned in the trimmed-down rdResult's RDInfos are
+	//  relevant keys in the ruResult's RUInfo.)
+	Map<Quad,RDInfo> _rdResult = new TreeMap<Quad,RDInfo>();
+	Map<Quad,RUInfo> _ruResult = new TreeMap<Quad,RUInfo>();
+	for (Iterator<QNode> it=qfg.nodes().iterator(); it.hasNext(); ) {
+	    QNode qn = it.next();
+	    if (qn.isPhiEntrance() || qn.isSigmaExit()) continue;
+	    _rdResult.put(qn.baseQuad(), rdResult.get(qn));
+	    _ruResult.put(qn.baseQuad(), ruResult.get(qn));
+	}
+	methodCache.put(m, new PerMethodInfo(_rdResult, _ruResult));
 	assert methodCache.containsKey(m);
     }
 
@@ -103,12 +116,10 @@ public class SingularFinder implements SingularOracle<Quad> {
 	new HashMap<HMethod,PerMethodInfo>();
 
     static class PerMethodInfo {
-	final QuadFlowGraph qfg;
-	final Map<QNode,RDInfo> rdResult;
-	final Map<QNode,RUInfo> ruResult;
-	PerMethodInfo(QuadFlowGraph qfg,
-		      Map<QNode,RDInfo> rdResult, Map<QNode,RUInfo> ruResult) {
-	    this.qfg = qfg; this.rdResult = rdResult; this.ruResult = ruResult;
+	final Map<Quad,RDInfo> rdResult;
+	final Map<Quad,RUInfo> ruResult;
+	PerMethodInfo(Map<Quad,RDInfo> rdResult, Map<Quad,RUInfo> ruResult) {
+	    this.rdResult = rdResult; this.ruResult = ruResult;
 	}
     }
 
