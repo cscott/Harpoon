@@ -65,7 +65,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.10 2000-03-19 20:55:56 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.11 2000-03-20 21:23:24 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -464,7 +464,8 @@ public class CloningVisitor extends QuadVisitor {
 	else {
 	    PHI phi=new PHI(qf,first, new Temp[0],2);
 	    Quad.addEdge(prev,0,phi,0);
-	    Quad.addEdge(first.prev(linkinedge),0,phi,1);
+	    int linkinedge2=q.nextEdge(resumeexception).which_succ();
+	    Quad.addEdge(first.prev(linkinedge),linkinedge2,phi,1);
 	    Quad.addEdge(phi,0,first,linkinedge);
 	}
 	return header;
