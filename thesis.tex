@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.73 1999-08-21 05:54:01 cananian Exp $
+% $Id: thesis.tex,v 1.74 1999-08-21 06:49:51 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.73 $ $}
+\date{\today \\ $ $Revision: 1.74 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.73 $ $}{$ $Revision: 1.73 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.74 $ $}{$ $Revision: 1.74 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -542,7 +542,7 @@ However, our SSI construction algorithm doesn't use this property.}
 \caption{Datatypes and operations used in construction of the PST.}
 \label{fig:SESEdata}\end{myfigure}
 
-\begin{myalgorithm}\small\linespread{0.75}\input{Figures/THsesealg}
+\begin{myalgorithm}\small\input{Figures/THsesealg}
 \caption{Computing nested SESE regions and the PST.}
 \label{alg:SESEalg}\end{myalgorithm}
 
@@ -586,7 +586,7 @@ however, which motivates our choice of approach.}  The remainder of
 this section will be devoted to a correctness proof of the algorithm
 of figure~\ref{fig:SSIalg}.
 
-\begin{myalgorithm}\small%\linespread{0.75}
+\begin{myalgorithm}\small
 \input{Figures/THssialg}
 \caption{Placing \phisigfunction{s}.}\label{fig:SSIalg}
 \end{myalgorithm}
