@@ -59,7 +59,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.7 2001-06-14 16:49:18 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.8 2001-06-14 19:00:23 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
@@ -146,11 +146,14 @@ public class CacheEquivalence {
 		//  2) known base & unknown offset, but object is smaller
 		//     than cache line size.
 		//  3) all others.
-		Dataflow.DefPoint dp = null; long offset=0;
+		Dataflow.DefPoint dp = null, kgroup = null;
+		long offset=0; long modulus=0;
 		if (v.isBaseKnown()) {
 		    if (v.isOffsetKnown()) {
 			Dataflow.KnownOffset ko = (Dataflow.KnownOffset) v;
-			dp = ko.def; offset = ko.offset; // case 1
+			if (ko.offset.modulus==0) {
+			    dp = ko.def; offset = ko.offset.offset; // case 1
+			}
 		    } else {
 			Dataflow.UnknownOffset uo = (Dataflow.UnknownOffset) v;
 			if (objSize(uo.def.type()) <= CACHE_LINE_SIZE
@@ -224,11 +227,11 @@ public class CacheEquivalence {
 			}
 		    }
 		    // add all statements s to worklist.
-		    ws.add(s);
+		    ws.addLast(s);
 		}
 		/* for each element on the worklist... */
 		while (!ws.isEmpty()) {
-		    Stm s = (Stm) ws.pop();
+		    Stm s = (Stm) ws.removeFirst();
 		    s.accept(this);
 		}
 	    }
@@ -239,7 +242,7 @@ public class CacheEquivalence {
 		    //put uses of t on the workset.
 		    for (Iterator it = uses.getValues(pair).iterator();
 			 it.hasNext(); )
-			ws.add((Stm)it.next());
+			ws.addLast((Stm)it.next());
 	    }
 	    public void visit(Tree e) { Util.assert(false); }
 	    public void visit(Stm s) { /* no defs */ }
@@ -266,8 +269,9 @@ public class CacheEquivalence {
 		if (s.getDst().kind()==TreeKind.TEMP) {
 		    TEMP t = (TEMP) s.getDst();
 		    Value v = valueOf(s.getSrc(), s);
-		    if (v.isBaseKnown() &&
-			((UnknownOffset)v).def.isWellTyped())
+		    if (s.getDst().type()!=Type.POINTER ||
+			(v.isBaseKnown() &&
+			 ((UnknownOffset)v).def.isWellTyped()))
 			update(t.temp, s, v);
 		    else
 			update(t.temp, s,
@@ -297,6 +301,17 @@ public class CacheEquivalence {
 		    Value left = valueOf(e.getLeft(), root);
 		    Value right= valueOf(e.getRight(), root);
 		    this.value = left.add(right);
+		} else if (e.op==Bop.MUL) {
+		    Value left = valueOf(e.getLeft(), root);
+		    Value right= valueOf(e.getRight(), root);
+		    this.value = left.mul(right);
+		} else if (e.op==Bop.SHL) {
+		    Value left = valueOf(e.getLeft(), root);
+		    Value right= valueOf(e.getRight(), root);
+		    Value mult = (right instanceof Constant) ?
+			new Constant(1<<((Constant)right).offset) :
+			Value.UNKNOWN;
+		    this.value = left.mul(mult);
 		}
 	    }
 	    public void visit(UNOP e) {
@@ -310,63 +325,219 @@ public class CacheEquivalence {
 	    }
 	}
 	/* the value lattice: top/bottom, constants, and base pointers
-	 * with known and unknown offsets. */
+	 * with known and unknown offsets, modulo a constant. */
+	// op rules: most specific is 'this'.  base ptrs more spec than consts.
 	static abstract class Value {  // bottom/noinfo.
+	    abstract protected int specificity();
 	    boolean isBaseKnown() { return false; }
 	    boolean isOffsetKnown() { return false; }
-	    abstract Value unify(Value v);
-	    abstract Value add(Value v);
+	    Value unify(Value v) {
+		if (this==BOTTOM || v==BOTTOM) return BOTTOM;
+		return (this==NOINFO)?v:(v==NOINFO)?this:null;
+		// null case should never happen.
+	    }
+	    final Value add(Value v) {
+		return (this.specificity()>v.specificity()) ?
+		    this._add(v) : v._add(this);
+	    }
+	    protected abstract Value _add(Value v);
+	    final Value mul(Value v) {
+		return (this.specificity()>v.specificity()) ?
+		    this._mul(v) : v._mul(this);
+	    }
+	    protected abstract Value _mul(Value v);
 	    abstract Value negate();
 	    static final Value BOTTOM = new Value() {
-		Value unify(Value v) { return BOTTOM; }
-		Value add(Value v) { return BOTTOM; }
+		protected int specificity() { return 0; }
+		protected Value _add(Value v) { return BOTTOM; }
+		protected Value _mul(Value v) { return BOTTOM; }
 		Value negate() { return BOTTOM; }
 		public String toString() { return "BOTTOM"; }
 	    };
+	    static final Value UNKNOWN = new UnknownConstant();
 	    static final Value NOINFO = new Value() {
-		Value unify(Value v) { return v; }
-		Value add(Value v) { return NOINFO; }
+		protected int specificity() { return 6; }
+		protected Value _add(Value v) { return NOINFO; }
+		protected Value _mul(Value v) { return NOINFO; }
 		Value negate() { return NOINFO; }
 		public String toString() { return "NO INFO"; }
 	    };
 	}
-	static class Constant extends Value {
-	    final long offset;
-	    Constant(long offset) { this.offset = offset; }
+	static class UnknownConstant extends Value {
+	    protected int specificity() { return 1; }
+	    UnknownConstant() {
+		Util.assert(this instanceof ConstantModuloN ||
+			    Value.UNKNOWN==null);
+	    }
+	    Value unify(Value v) {
+		if (!(v instanceof UnknownConstant)) return super.unify(v);
+		// UnknownConstant is common superclass of this and v.
+		return Value.UNKNOWN;
+	    }
+	    protected Value _add(Value v) {
+		// must handle v=BOTTOM, v=UNKNOWN
+		if (v instanceof UnknownConstant) return Value.UNKNOWN;
+		return Value.BOTTOM;
+	    }
+	    //XXXXXXXXXXXXXXXXxXXXXXXXXXXXXXXXXXXXXXX
+	    // UNKNOWN*c = 0 mod c!
+	    // UNKNOWN*(0 mod b) = 0 mod b.
+	    // UNKNOWN*(a mod b) = 0 mod gcd(a, b)
+	    protected Value _mul(Value v) {
+		// must handle v=BOTTOM, v=UNKNOWN
+		if (v instanceof UnknownConstant) return Value.UNKNOWN;
+		return Value.BOTTOM;
+	    }
+	    Value negate() { return this; }
+	    public String toString() { return "X"; }
+	}
+	static class ConstantModuloN extends UnknownConstant {
+	    protected int specificity() { return 2; }
+	    final long offset; final long modulus;
+	    ConstantModuloN(long offset, long modulus) {
+		this.offset=offset; this.modulus=modulus;
+		Util.assert(modulus>1 && offset>=0);
+		Util.assert(offset < modulus);
+	    }
+	    protected ConstantModuloN(long offset) {
+		Util.assert(this instanceof Constant);
+		this.offset=offset; this.modulus=0;
+	    }
 	    boolean isOffsetKnown() { return true; }
 	    Value unify(Value v) {
-		if (this.equals(v)) return this;
-		else return Value.BOTTOM;
+		if (!(v instanceof ConstantModuloN)) return super.unify(v);
+		// ConstantModuloN is common superclass of this and v.
+		ConstantModuloN cmn = (ConstantModuloN) v;
+		long smallM, smallN, largeM, largeN;
+		if (this.modulus > cmn.modulus) {
+		    largeM=this.modulus; largeN=this.offset;
+		    smallM=cmn.modulus;  smallN=cmn.offset;
+		} else {
+		    smallM=this.modulus; smallN=this.offset;
+		    largeM=cmn.modulus;  largeN=cmn.offset;
+		}
+		Util.assert(largeM>0);
+		long off=0, mod=1;
+		if ((smallM==0 || smallM==largeM) &&
+		    mymod(smallN, largeM)==largeN) {
+		    off=largeN; mod=largeM;
+		} else if (smallM > 0 &&
+			   (largeM % smallM)==0 &&
+			   (largeN % smallM)==smallN) {
+		    off=smallN; mod=smallM;
+		} // others?
+		if (mod>1) return new ConstantModuloN(off, mod);
+		// can't unify the constants.
+		return Value.UNKNOWN;
 	    }
-	    Value add(Value v) {
-		if (v instanceof Constant)
-		    return new Constant(this.offset + ((Constant)v).offset);
-		else return v.add(this);
+	    protected Value _add(Value v) {
+		// must handle v=BOTTOM, UNKNOWN, CONSTANTMODULON, CONSTANT
+		if (v==Value.BOTTOM) return v;
+		if (v==Value.UNKNOWN) return Value.UNKNOWN;
+		ConstantModuloN cmn = (ConstantModuloN) v;
+		long smallM, smallN, largeM, largeN;
+		if (this.modulus > cmn.modulus) {
+		    largeM=this.modulus; largeN=this.offset;
+		    smallM=cmn.modulus;  smallN=cmn.offset;
+		} else {
+		    smallM=this.modulus; smallN=this.offset;
+		    largeM=cmn.modulus;  largeN=cmn.offset;
+		}
+		if (smallM>0) {
+		    if ((largeM % smallM)==0)
+			return new ConstantModuloN((largeN+smallN) % smallM,
+						   smallM);
+		} else {
+		    if (largeM>0)
+			return new ConstantModuloN(mymod(largeN+smallN,largeM),
+						   largeM);
+		    else return new Constant(largeN+smallN);
+		}
+		return Value.UNKNOWN;
 	    }
-	    Value negate() { return new Constant(-this.offset); }
+	    protected Value _mul(Value v) {
+		// handles v=BOTTOM, v=UNKNOWN, v=CONSTANTMODULON
+		if (v==Value.BOTTOM) return v;
+		if (v==Value.UNKNOWN) return Value.UNKNOWN;
+		ConstantModuloN cmn = (ConstantModuloN) v;
+		Util.assert(cmn.modulus>1 && this.modulus>1);
+		long mod = Util.gcd(this.modulus, cmn.modulus);
+		if (mod>1)
+		    return new ConstantModuloN
+			((this.offset*cmn.offset) % mod, mod);
+		else return Value.UNKNOWN;
+	    }
+	    Value negate() {
+		return new ConstantModuloN(modulus-offset, modulus);
+	    }
 	    public boolean equals(Object o) {
 		try {
-		    Constant c = (Constant) o;
-		    return this.offset == c.offset;
+		    ConstantModuloN cmn = (ConstantModuloN) o;
+		    return this.offset == cmn.offset &&
+			this.modulus == cmn.modulus;
 		} catch (ClassCastException cce) { return false; }
 	    }
-	    public int hashCode() { return (int) offset; }
-	    public String toString() { return ""+offset; }
+	    public int hashCode() { return (int)offset + 7*(int)modulus; }
+	    public String toString() {
+		return offset+((modulus==0)?"":(" mod "+modulus));
+	    }
+	}
+	static class Constant extends ConstantModuloN {
+	    protected int specificity() { return 3; }
+	    Constant(long offset) { super(offset); }
+	    Value unify(Value v) {
+		if (!(v instanceof Constant)) return super.unify(v);
+		// Constant is common superclass of this and v.
+		Constant c = (Constant) v;
+		if (this.offset==c.offset)
+		    return new Constant(this.offset);
+		long small=Math.min(this.offset, c.offset);
+		long large=Math.max(this.offset, c.offset);
+		long mod=(large-small);
+		Util.assert(mymod(small, mod)==mymod(large, mod));
+		if (mod>1) return new ConstantModuloN(mymod(small, mod), mod);
+		return Value.UNKNOWN;
+	    }
+	    protected Value _mul(Value v) {
+		// must handle BOTTOM, UNKNOWN, CONSTANTMODULON, CONSTANT
+		if (v==Value.BOTTOM) return v;
+		if (v==Value.UNKNOWN) return Value.UNKNOWN;
+		ConstantModuloN cmn = (ConstantModuloN) v;
+		if (cmn.modulus>1) {
+		    long mult = Math.abs(this.offset);
+		    Value r = new ConstantModuloN(cmn.offset*mult,
+						  cmn.modulus*mult);
+		    return (this.offset>=0) ? r : r.negate();
+		}
+		Util.assert(cmn.modulus==0 && this.modulus==0);
+		return new Constant(cmn.offset * this.offset);
+	    }
+	    Value negate() { return new Constant(-this.offset); }
 	}	
 	static class UnknownOffset extends Value {
+	    protected int specificity() { return 4; }
 	    final DefPoint def;
 	    UnknownOffset(DefPoint def) { this.def=def; }
 	    boolean isBaseKnown() { return true; }
 	    Value unify(Value v) {
-		if (this.equals(v)) return this;
+		if (!(v instanceof UnknownOffset)) return super.unify(v);
+		// UnknownOffset is common superclass of this and v
+		UnknownOffset uo = (UnknownOffset) v;
+		if (this.def.equals(uo.def))
+		    return new UnknownOffset(def);
 		else return Value.BOTTOM;
 	    }
-	    Value add(Value v) {
-		if (v instanceof Constant) return this;
-		if (v instanceof KnownOffset) return Value.BOTTOM;
-		else return v.add(this);
+	    protected Value _add(Value v) {
+		// must handle BOTTOM, UNKNOWN, CMN, C, UO.
+		if (v instanceof UnknownConstant) return this;
+		return Value.BOTTOM;
+	    }
+	    protected Value _mul(Value v) {
+		// must handle BOTTOM, UNKNOWN, CMN, C, UO.
+		return Value.BOTTOM;
 	    }
 	    Value negate() { return Value.BOTTOM; }
+
 	    public boolean equals(Object o) {
 		try {
 		    UnknownOffset uo = (UnknownOffset) o;
@@ -377,30 +548,52 @@ public class CacheEquivalence {
 	    public String toString() { return def+"+X"; }
 	}
 	static class KnownOffset extends UnknownOffset {
-	    final long offset;   // constant offset from base pointer, if known
+	    protected int specificity() { return 5; }
+	    final ConstantModuloN offset;
 	    KnownOffset(DefPoint def, long offset) {
+		// special case
+		this(def, new Constant(offset));
+	    }
+	    KnownOffset(DefPoint def, ConstantModuloN offset) {
 		super(def); this.offset = offset;
 	    }
 	    boolean isOffsetKnown() { return true; }
 	    Value unify(Value v) {
-		if (this.equals(v)) return this;
-		if (super.equals(v)) return new UnknownOffset(def);
+		if (!(v instanceof KnownOffset)) return super.unify(v);
+		// KnownOffset is common superclass of this and v
+		KnownOffset ko = (KnownOffset) v;
+		if (this.def.equals(ko.def)) {
+		    Value cc = this.offset.unify(ko.offset);
+		    if (cc instanceof ConstantModuloN)
+			return new KnownOffset(def, (ConstantModuloN) cc);
+		    else return new UnknownOffset(def);
+		}
 		return Value.BOTTOM;
 	    }
-	    Value add(Value v) {
-		if (v instanceof Constant)
-		    return new KnownOffset(def, offset+((Constant)v).offset);
-		if (v instanceof KnownOffset) return Value.BOTTOM;
-		else return v.add(this);
+	    protected Value _add(Value v) {
+		// must handle BOTTOM, UNKNOWN, CMN, C, UO, KO
+		if (!(v instanceof UnknownConstant)) return Value.BOTTOM;
+		Value cc = this.offset.add(v);
+		if (cc instanceof ConstantModuloN)
+		    return new KnownOffset(def, (ConstantModuloN) cc);
+		else return new UnknownOffset(def);
 	    }
 	    public boolean equals(Object o) {
 		try {
 		    KnownOffset ko = (KnownOffset) o;
-		    return super.equals(ko) && this.offset == ko.offset;
+		    return super.equals(ko) && this.offset.equals(ko.offset);
 		} catch (ClassCastException cce) { return false; }
 	    }
-	    public int hashCode() { return super.hashCode() + (int) offset; }
+	    public int hashCode() {
+		return super.hashCode()+7*offset.hashCode();
+	    }
 	    public String toString() { return def+"+"+offset; }
+	}
+	// utility function
+	/** returns the positive value of a mod b, even when a is negative. */
+	static long mymod(long a, long b) {
+	    Util.assert(b>0);
+	    return (a>=0) ? (a%b) : (b+(a%b));
 	}
 	/*------------------------------------------------------------- */
 	/* both pointers in temps and pointer constants can be def points */
