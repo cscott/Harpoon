@@ -3,13 +3,23 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
-import harpoon.Temp.*;
-import harpoon.Util.Collections.*;
-import harpoon.Util.*;
+import harpoon.ClassFile.HCode;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.SIGMA;
+import harpoon.Temp.Temp;
+import harpoon.Util.Util;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A <code>MustParamOracle</code> tells you what method variables
@@ -19,7 +29,7 @@ import java.util.*;
  * operation directly correspond to constructor parameters.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MustParamOracle.java,v 1.1.2.1 2001-11-07 21:48:47 cananian Exp $
+ * @version $Id: MustParamOracle.java,v 1.1.2.2 2001-11-07 22:25:07 cananian Exp $
  */
 public class MustParamOracle {
     // could make this an invertibleMap if you want sets.
