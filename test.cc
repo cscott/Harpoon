@@ -44,6 +44,23 @@ void doanalysis()
   printf("Time used for analysis(us): %ld\n",t);
 }
 
+
+/* returns true if and only if  a bug was found */
+int doanalysisfordebugging()  
+{ 
+  exportmodel->doabstraction(); 
+  exportmodel->getdomainrelation()->fixstuff();
+  bool found = exportmodel->docheck(); 
+
+#ifdef DEBUGMANYMESSAGES
+  exportmodel->getdomainrelation()->print();
+#endif
+
+  return found;
+}
+
+
+
 // returns true if a violated constraint was found
 unsigned long benchmark() 
 {

@@ -8,6 +8,7 @@ unsigned long benchmark();  /* do analysis */
 void doanalysis();  /* do analysis */ 
 void doanalysis2(); /* break the specs and do analysis */
 void doanalysis3(); /* insert errors and do analysis */
+int doanalysisfordebugging();
 void resetanalysis();
 void addmapping(char *, void *,char *);
 void addintmapping(char *key, int value);
