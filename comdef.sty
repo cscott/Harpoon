@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.10 1999-06-13 19:55:54 cananian Exp $
+% $Id: comdef.sty,v 1.11 1999-07-08 00:53:51 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -9,6 +9,7 @@
 \ProvidesPackage{comdef}[1999/05/07 v1.0 (C. Scott Ananian)]
 \RequirePackage{latexsym}
 \RequirePackage{ifthen}
+\RequirePackage{xspace}
 
 % A breaking non-space for URLs
 \newcommand{\bp}{\hspace{0pt}}
@@ -89,9 +90,9 @@ l|l|l|l|l\or l|l|l|l|l|l\fi}%
 \newcommand{\fixme}[1]{\footnote{\textbf{FIXME:} #1}}
 
 % phi, sigma, and xi functions
-\newcommand{\phifunction}{$\phi$-function}
-\newcommand{\sigfunction}{$\sigma$-function}
-\newcommand{\xifunction}{$\xi$-function}
+\newcommand{\phifunction}{$\phi$-function\xspace}
+\newcommand{\sigfunction}{$\sigma$-function\xspace}
+\newcommand{\xifunction}{$\xi$-function\xspace}
 \newcommand{\tuple}[1]{\ensuremath{\left\langle #1 \right\rangle}}
 \newcommand{\xivec}[2]{\ensuremath{\left[\tuple{#1}\atop\tuple{#2}\right]}}
 \newcommand{\phisigfunction}[1][and]{$\phi$- #1 \sigfunction}
@@ -101,8 +102,8 @@ l|l|l|l|l\or l|l|l|l|l|l\fi}%
 \newcommand{\pathplus}{\ensuremath{\stackrel{+}{\path}}}
 
 % SSI0/+
-\newcommand{\ssizero}{SSI$_0$}
-\newcommand{\ssiplus}{SSI$^+$}
+\newcommand{\ssizero}{SSI$_0$\xspace}
+\newcommand{\ssiplus}{SSI$^+$\xspace}
 
 % hyphenation problems
 \hyphenation{con-ver-gence da-ta-flow stat-ic Stat-ic}
