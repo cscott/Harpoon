@@ -238,7 +238,11 @@ JNIEXPORT jobject JNICALL Java_java_lang_System_initProperties
     /* okay, now the tricky stuff... */
     ckey = "java.class.path";
     cvalue = getenv("CLASSPATH");
+    if (cvalue==NULL) cvalue="."; /* default class path */
     _putProperty(env, propobj, methodID, ckey, cvalue);
+    ckey = "java.home";
+    cvalue = getenv("JAVA_HOME");
+    if (cvalue!=NULL) _putProperty(env, propobj, methodID, ckey, cvalue);
     /* uname stuff... */
 #ifdef HAVE_UNAME
     {
