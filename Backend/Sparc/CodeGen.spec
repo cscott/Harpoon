@@ -54,11 +54,9 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.22 2000-02-13 00:43:28 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.23 2000-02-14 20:04:18 andyb Exp $
  */
 %%
-    private Instr root;
-    private Instr last;
     private InstrFactory instrFactory;
     private final RegFileInfo regfile;
     private final TempBuilder tb;
@@ -81,15 +79,6 @@ import java.util.Set;
         SP = regfile.SP();
         FP = regfile.FP();
     }
-
-/*    private Instr emit(Instr i) {
-	if (root == null)
-	    root = i;
-        i.layout(last, null);
-	last = i;
-        return i;
-      }
-*/
 
     // Lots of variations on emit() to make it a bit friendlier
     // to use in the patterns below.
@@ -298,7 +287,7 @@ import java.util.Set;
        // time we do instruction selection on another
        // bit of TreeCode
 
-       root = null; 
+       first = null; 
        last = null;
        this.instrFactory = inf;
        codeGenTempMap = new HashMap();
@@ -308,8 +297,8 @@ import java.util.Set;
        // What to execute at the end of the instruction
        // selection method
 
-       Util.assert(root != null, "Should always generate some instrs");
-       return root;
+       Util.assert(first != null, "Should always generate some instrs");
+       return first;
 }%
 
 ALIGN(n) %{
@@ -914,6 +903,7 @@ METHOD(params) %{
             loc += 2;
         } else {
             if (loc < 6) { // in register
+		Util.assert(params[i] != null);
                 emit (ROOT, "mov `s0, `d0\n", 
                             new Temp[] { params[i] }, 
                             new Temp[] { regfile.getRegister(24+loc) });
@@ -1035,6 +1025,10 @@ SEGMENT(CODE) %{
 
 SEGMENT(GC) %{
     emitDIRECTIVE(ROOT, "\t.data 2\t!.section gc");
+}%
+
+SEGMENT(GC_INDEX) %{
+    emitDIRECTIVE(ROOT, "\t.data 10\t!.section gc_index");
 }%
 
 SEGMENT(INIT_DATA) %{
