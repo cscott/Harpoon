@@ -1,11 +1,11 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.2 2000-09-25 22:15:35 cananian Exp $
+% $Id: transact.tex,v 1.3 2000-09-25 22:35:12 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage{alltt}
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
-\title{Software Atomic Transactions}
-\date{\today \\ $ $Revision: 1.2 $ $}
+\title{Software Atomic Transactions in FLEX}
+\date{\today \\ $ $Revision: 1.3 $ $}
 
 \begin{document}
 %\bibliographystyle{abbrv}
@@ -26,12 +26,28 @@ overhead entailed by such ``false'' transactions is expected to be
 extremely low.
 
 The ``inflated object'' data structure, shown in figure
-\ref{fig:infl}, has a simple ``object versions'' array associated with
+\ref{fig:infl}, has a simple ``object versions'' linked list associated with
 it.  Each entry conceptually stores information about a different,
 possibly-uncommitted, version of the object.  One of these versions is
 guaranteed to be ``most recent committed'', and it is guaranteed that
 the ``most recent committed'' version will be the first committed
 version in the list.
+
+Note that the ``object version'' structure, shown in figure
+\ref{fig:version}, is the same size as the object structure shown in
+figure \ref{fig:oobj}, so that the same field offsets can be used.
+In addition, the \texttt{vinfo} structure contains a ``next'' field
+(as it is a singly linked list) and a pointer to a commit record which
+identifies the transaction which this version is part of.  This allows
+client code to determine which version it should address.
+
+The commit record structure is shown in figure \ref{fig:commitrec}.
+The pointer to the commit record also serves as a transaction
+identifier.  Transactions can be nested, therefore every commit record
+may contain a pointer to a ``parent'' transaction which it is
+dependent upon.  The commit record also contains a three-value
+``status'' field which indicates whether the transaction it represents
+has been committed or aborted yet.
 
 \begin{figure}
 \begin{alltt}\small
@@ -63,7 +79,7 @@ struct inflated_oobj \{
   void (*jni_cleanup_func)(void *jni_data);
 \textbf{  /* TRANSACTION SUPPORT */
 #if WITH_TRANSACTIONS
-  struct vinfo *versions[NESTED_TRANS_MAX];
+  struct vinfo *first_version; /* linked list of object versions */
 #endif}
   /* locking information */
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
@@ -87,6 +103,47 @@ struct inflated_oobj \{
 \caption{The ``inflated object'' structure in the FLEX runtime.}
 \label{fig:infl}
 \end{figure}
+
+\begin{figure}
+\begin{alltt}\small
+#if WITH_TRANSACTIONS
+/* The vinfo structure provides values for a given version of the object.
+/* Note that it is identical in size to the oobj struct, so the same 
+ * offsets can be used. */
+struct vinfo \{
+  struct commitrec *transid; /* transaction id */ 
+  struct vinfo *next; /* next version. */
+  /* fields below this point */
+  char field_start[0];
+\};
+#endif
+\end{alltt}
+\caption{The ``version'' structure in the FLEX runtime.}
+\label{fig:version}
+\end{figure}
+
+\begin{figure}
+\begin{alltt}\small
+#if WITH_TRANSACTIONS
+/* The commit record for a (possibly nested) transaction */
+struct commitrec \{
+  /* The transaction that this depends upon, if any. */
+  struct commitrec *parent;
+  /* The 'state' should be initialized to W and write-once to C or A. */
+  enum \{ WAITING=0, COMMITTED, ABORTED \} state;
+\};
+#endif
+\end{alltt}
+\caption{Commit record structure.}
+\label{fig:commitrec}
+\end{figure}
+
+%\begin{figure}
+%\begin{alltt}\small
+%\end{alltt}
+%\caption{}
+%\label{fig:}
+%\end{figure}
 
 %\bibliography{harpoon}
 \end{document}
