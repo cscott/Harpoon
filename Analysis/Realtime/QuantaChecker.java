@@ -51,7 +51,7 @@ import java.io.PrintWriter;
 
 /**
  * @author  Bryan Fink <wingman@mit.edu>
- * @version $Id: QuantaChecker.java,v 1.8 2002-08-31 00:31:12 cananian Exp $
+ * @version $Id: QuantaChecker.java,v 1.9 2002-11-25 18:49:41 wbeebee Exp $
  */
 public class QuantaChecker extends MethodMutator
 {
@@ -116,24 +116,15 @@ public class QuantaChecker extends MethodMutator
     protected NATIVECALL addCheck(TreeFactory tf, HCodeElement source,
 			   DerivationGenerator dg)
     {
-	CONST zero1 = new CONST(tf, source, 0);
-	CONST zero2 = new CONST(tf, source, 0);
-	CONST one = new CONST(tf, source, 1);
-	List list = new ArrayList();
-	list.add(zero1);
-	list.add(zero2);
-	list.add(one);
-	ExpList args = ExpList.toExpList(list);
-
 	Label func = new Label(tf.getFrame().getRuntime().getNameMap()
-			       .c_function_name("CheckQuanta"));
+			       .c_function_name("CheckTimeSwitch"));
 	return new NATIVECALL
 	    (tf, source,
 	     null,
 	     (NAME)
-	     DECLARE(dg, HClass.Void/*our quanta flag handler*/,
+	     DECLARE(dg, HClass.Void,
 		     new NAME(tf, source, func)),
-	     args);
+	     null);
     }
     protected static Exp DECLARE(DerivationGenerator dg, HClass hc, Exp exp) {
 	if (dg!=null) dg.putType(exp, hc);
