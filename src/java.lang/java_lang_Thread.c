@@ -282,6 +282,7 @@ static void * thread_startup_routine(void *closure) {
   if ( (threadexc = (*env)->ExceptionOccurred(env)) != NULL) {
     // call thread.getThreadGroup().uncaughtException(thread, exception)
     (*env)->ExceptionClear(env); /* clear the thread's exception */
+    fprintf(stderr, "CHILD THREAD THREW UNCAUGHT EXCEPTION.\n");
     threadgroup = (*env)->CallObjectMethod(env, thread, gettgID);
     (*env)->CallVoidMethod(env, threadgroup, uncaughtID, thread, threadexc);
   }
