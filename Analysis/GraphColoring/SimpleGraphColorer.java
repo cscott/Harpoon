@@ -7,12 +7,12 @@ import java.util.*;
  * <code>SimpleGraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.2 1999-01-14 23:16:29 pnkfelix Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.3 1999-01-14 23:55:21 pnkfelix Exp $
  */
 
 public class SimpleGraphColorer  {
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
     
     public static final void findColoring( ColorableGraph graph,
 					   ColorFactory factory ) {
