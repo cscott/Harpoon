@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.81 2000-07-13 06:18:17 jwhaley Exp $
+# $Id: GNUmakefile,v 1.61.2.82 2000-07-21 20:37:56 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -19,8 +19,8 @@ UNMUNGE=bin/unmunge
 FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
-#JDKDOCLINK = http://java.sun.com/products/jdk/1.2/docs/api
-JDKDOCLINK = http://palmpilot.lcs.mit.edu/~pnkfelix/jdk-javadoc/java.sun.com/products/jdk/1.2/docs/api
+JDKDOCLINK = http://java.sun.com/products/jdk/1.2/docs/api
+#JDKDOCLINK = http://palmpilot.lcs.mit.edu/~pnkfelix/jdk-javadoc/java.sun.com/products/jdk/1.2/docs/api
 CVSWEBLINK = http://flexc.lcs.mit.edu/Harpoon/cvsweb.cgi
 
 # make this file work with make version less than 3.77
@@ -289,6 +289,10 @@ srcdoc/java srcdoc/sun srcdoc/sunw: Support/stdlibdoc.tgz
 	mkdir -p srcdoc
 	$(RM) -r $@
 	if [ -r $< ]; then tar -C srcdoc -xzf $<; fi
+	-(echo "order deny,allow"; echo "deny from all"; \
+	 echo "allow from .mit.edu" ) > srcdoc/java/.htaccess && \
+	 cp -f srcdoc/java/.htaccess srcdoc/sun/.htaccess && \
+	 cp -f srcdoc/java/.htaccess srcdoc/sunw/.htaccess
 	touch $@
 srcdoc-clean:
 	-${RM} -r srcdoc
