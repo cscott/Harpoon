@@ -14,7 +14,7 @@ import java.util.Vector;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.7 1999-02-04 23:10:06 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.8 1999-02-05 08:26:34 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -476,10 +476,19 @@ final class UnHandler {
 	}
 	/*public void visit(NOP q);*/
 	public void visit(OPER q) {
-	    // if we were really ambitious, we'd do constant prop
+	    // we're really ambitious; we do limited constant prop
 	    Quad nq = (Quad) q.clone(qf, ss.ctm), head=nq;
 	    Type Td = Type.top;
-	    if (q.operandsLength()==2) {
+	    if (q.operandsLength()==1) {
+		Type To = ti.get(q.operands(0));
+		switch (q.opcode()) {
+		case Qop.INEG:
+		    if (To.isIntConst())
+			Td = new IntConst(-To.getConstValue());
+		    break;
+		default: break;
+		}
+	    } else if (q.operandsLength()==2) {
 		Type Tl = ti.get(q.operands(0));
 		Type Tr = ti.get(q.operands(1));
 		switch (q.opcode()) {
@@ -504,11 +513,6 @@ final class UnHandler {
 		case Qop.IADD:
 		    if (Tl.isIntConst() && Tr.isIntConst())
 			Td = new IntConst(Tl.getConstValue() +
-					  Tr.getConstValue());
-		    break;
-		case Qop.ISUB:
-		    if (Tl.isIntConst() && Tr.isIntConst())
-			Td = new IntConst(Tl.getConstValue() -
 					  Tr.getConstValue());
 		    break;
 		case Qop.IMUL:

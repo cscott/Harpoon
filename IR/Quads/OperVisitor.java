@@ -15,7 +15,7 @@ package harpoon.IR.Quads;
  * methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OperVisitor.java,v 1.1.2.3 1999-01-22 23:06:00 cananian Exp $
+ * @version $Id: OperVisitor.java,v 1.1.2.4 1999-02-05 08:26:33 cananian Exp $
  */
 
 public abstract class OperVisitor  {
@@ -35,7 +35,6 @@ public abstract class OperVisitor  {
     public void visit_dmul(OPER q) { visit_default(q); }
     public void visit_dneg(OPER q) { visit_default(q); }
     public void visit_drem(OPER q) { visit_default(q); }
-    public void visit_dsub(OPER q) { visit_default(q); }
     public void visit_f2d(OPER q) { visit_default(q); }
     public void visit_f2i(OPER q) { visit_default(q); }
     public void visit_f2l(OPER q) { visit_default(q); }
@@ -47,7 +46,6 @@ public abstract class OperVisitor  {
     public void visit_fmul(OPER q) { visit_default(q); }
     public void visit_fneg(OPER q) { visit_default(q); }
     public void visit_frem(OPER q) { visit_default(q); }
-    public void visit_fsub(OPER q) { visit_default(q); }
     public void visit_i2b(OPER q) { visit_default(q); }
     public void visit_i2c(OPER q) { visit_default(q); }
     public void visit_i2d(OPER q) { visit_default(q); }
@@ -65,7 +63,6 @@ public abstract class OperVisitor  {
     public void visit_irem(OPER q) { visit_default(q); }
     public void visit_ishl(OPER q) { visit_default(q); }
     public void visit_ishr(OPER q) { visit_default(q); }
-    public void visit_isub(OPER q) { visit_default(q); }
     public void visit_iushr(OPER q) { visit_default(q); }
     public void visit_ixor(OPER q) { visit_default(q); }
     public void visit_l2d(OPER q) { visit_default(q); }
@@ -82,7 +79,6 @@ public abstract class OperVisitor  {
     public void visit_lrem(OPER q) { visit_default(q); }
     public void visit_lshl(OPER q) { visit_default(q); }
     public void visit_lshr(OPER q) { visit_default(q); }
-    public void visit_lsub(OPER q) { visit_default(q); }
     public void visit_lushr(OPER q) { visit_default(q); }
     public void visit_lxor(OPER q) { visit_default(q); }
     public void visit_unknown(OPER q) 
@@ -103,7 +99,6 @@ public abstract class OperVisitor  {
 	case Qop.DMUL:	visit_dmul(q); break;
 	case Qop.DNEG:	visit_dneg(q); break;
 	case Qop.DREM:	visit_drem(q); break;
-	case Qop.DSUB:	visit_dsub(q); break;
 	case Qop.F2D:	visit_f2d(q); break;
 	case Qop.F2I:	visit_f2i(q); break;
 	case Qop.F2L:	visit_f2l(q); break;
@@ -115,7 +110,6 @@ public abstract class OperVisitor  {
 	case Qop.FMUL:	visit_fmul(q); break;
 	case Qop.FNEG:	visit_fneg(q); break;
 	case Qop.FREM:	visit_frem(q); break;
-	case Qop.FSUB:	visit_fsub(q); break;
 	case Qop.I2B:	visit_i2b(q); break;
 	case Qop.I2C:	visit_i2c(q); break;
 	case Qop.I2D:	visit_i2d(q); break;
@@ -133,7 +127,6 @@ public abstract class OperVisitor  {
 	case Qop.IREM:	visit_irem(q); break;
 	case Qop.ISHL:	visit_ishl(q); break;
 	case Qop.ISHR:	visit_ishr(q); break;
-	case Qop.ISUB:	visit_isub(q); break;
 	case Qop.IUSHR:	visit_iushr(q); break;
 	case Qop.IXOR:	visit_ixor(q); break;
 	case Qop.L2D:	visit_l2d(q); break;
@@ -150,7 +143,6 @@ public abstract class OperVisitor  {
 	case Qop.LREM:	visit_lrem(q); break;
 	case Qop.LSHL:	visit_lshl(q); break;
 	case Qop.LSHR:	visit_lshr(q); break;
-	case Qop.LSUB:	visit_lsub(q); break;
 	case Qop.LUSHR:	visit_lushr(q); break;
 	case Qop.LXOR:	visit_lxor(q); break;
 	default:	visit_unknown(q); break;

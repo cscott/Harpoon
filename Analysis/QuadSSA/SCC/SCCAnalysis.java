@@ -23,7 +23,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.9 1999-02-03 23:10:54 pnkfelix Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.10 1999-02-05 08:26:19 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -828,14 +828,12 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     public void visit_irem(OPER q) { visit_default(q); }
     public void visit_ishl(OPER q) { visit_default(q); }
     public void visit_ishr(OPER q) { visit_default(q); }
-    public void visit_isub(OPER q) { visit_default(q); }
     public void visit_iushr(OPER q) { visit_default(q); }
     public void visit_ixor(OPER q) { visit_default(q); }
     public void visit_lor(OPER q) { visit_default(q); }
     public void visit_lrem(OPER q) { visit_default(q); }
     public void visit_lshl(OPER q) { visit_default(q); }
     public void visit_lshr(OPER q) { visit_default(q); }
-    public void visit_lsub(OPER q) { visit_default(q); }
     public void visit_lushr(OPER q) { visit_default(q); }
     public void visit_lxor(OPER q) { visit_default(q); }
 	    */

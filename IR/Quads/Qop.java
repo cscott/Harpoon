@@ -9,7 +9,7 @@ import harpoon.ClassFile.HClass;
  * <code>OPER</code> opcodes.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Qop.java,v 1.1.2.6 1999-01-18 00:07:53 cananian Exp $
+ * @version $Id: Qop.java,v 1.1.2.7 1999-02-05 08:26:33 cananian Exp $
  */
 public abstract class Qop  {
     /** Compares references for equality. */
@@ -40,8 +40,6 @@ public abstract class Qop  {
     public final static int DNEG = 10;
     /** Computes the remainder of two double values. */
     public final static int DREM = 11;
-    /** Computes the difference of two double values. */
-    public final static int DSUB = 12;
     /** Converts a float to a double. */
     public final static int F2D = 13;
     /** Converts a float to an int. */
@@ -67,8 +65,6 @@ public abstract class Qop  {
     public final static int FNEG = 22;
     /** Computes the remainder of two float values. */
     public final static int FREM = 23;
-    /** Computes the difference of two float values. */
-    public final static int FSUB = 24;
     /** Converts an int to a byte.  Result is still int type, but it is
      *  truncated to 8 bits, then sign-extended. */
     public final static int I2B = 25;
@@ -112,8 +108,6 @@ public abstract class Qop  {
      *  of bits specified in the second int value mod 32, with sign extension.
      *  That is, <code>( -4 >> 33 ) == -2</code>. */
     public final static int ISHR = 42;
-    /** Computes the difference of two int values. */
-    public final static int ISUB = 43;
     /** Computes the value of the first int value shifted right by the number
      *  of bits specified in the second int value mod 32, without sign
      *  extension.  That is, <code>( -4 >>> 63) == 1</code>. */
@@ -153,8 +147,6 @@ public abstract class Qop  {
      *  number of bits specified in the second long value mod 64, with
      *  sign extension. */
     public final static int LSHR = 60;
-    /** Computes the difference of two long values. */
-    public final static int LSUB = 61;
     /** Computes the value of the first long value shifted right by the
      *  number of bits specified in the second long value mod 64, without
      *  sign extension. */
@@ -183,7 +175,6 @@ public abstract class Qop  {
         case DMUL:	return "dmul";
         case DNEG:	return "dneg";
         case DREM:	return "drem";
-        case DSUB:	return "dsub";
         case F2D:	return "f2d";
         case F2I:	return "f2i";
         case F2L:	return "f2l";
@@ -195,7 +186,6 @@ public abstract class Qop  {
         case FMUL:	return "fmul";
         case FNEG:	return "fneg";
         case FREM:	return "frem";
-        case FSUB:	return "fsub";
         case I2B:	return "i2b";
         case I2C:	return "i2c";
         case I2D:	return "i2d";
@@ -213,7 +203,6 @@ public abstract class Qop  {
         case IREM:	return "irem";
         case ISHL:	return "ishl";
         case ISHR:	return "ishr";
-        case ISUB:	return "isub";
         case IUSHR:	return "iushr";
         case IXOR:	return "ixor";
         case L2D:	return "l2d";
@@ -230,7 +219,6 @@ public abstract class Qop  {
         case LREM:	return "lrem";
         case LSHL:	return "lshl";
         case LSHR:	return "lshr";
-        case LSUB:	return "lsub";
         case LUSHR:	return "lushr";
         case LXOR:	return "lxor";
 	default:        throw new RuntimeException("Unknown QOp type: "+v);
@@ -257,7 +245,6 @@ public abstract class Qop  {
         h.put("dmul", new Integer(DMUL));
         h.put("dneg", new Integer(DNEG));
         h.put("drem", new Integer(DREM));
-        h.put("dsub", new Integer(DSUB));
         h.put("f2d", new Integer(F2D));
         h.put("f2i", new Integer(F2I));
         h.put("f2l", new Integer(F2L));
@@ -269,7 +256,6 @@ public abstract class Qop  {
         h.put("fmul", new Integer(FMUL));
         h.put("fneg", new Integer(FNEG));
         h.put("frem", new Integer(FREM));
-        h.put("fsub", new Integer(FSUB));
         h.put("i2b", new Integer(I2B));
         h.put("i2c", new Integer(I2C));
         h.put("i2d", new Integer(I2D));
@@ -287,7 +273,6 @@ public abstract class Qop  {
         h.put("irem", new Integer(IREM));
         h.put("ishl", new Integer(ISHL));
         h.put("ishr", new Integer(ISHR));
-        h.put("isub", new Integer(ISUB));
         h.put("iushr", new Integer(IUSHR));
         h.put("ixor", new Integer(IXOR));
         h.put("l2d", new Integer(L2D));
@@ -304,7 +289,6 @@ public abstract class Qop  {
         h.put("lrem", new Integer(LREM));
         h.put("lshl", new Integer(LSHL));
         h.put("lshr", new Integer(LSHR));
-        h.put("lsub", new Integer(LSUB));
         h.put("lushr", new Integer(LUSHR));
         h.put("lxor", new Integer(LXOR));
     }
@@ -334,7 +318,6 @@ public abstract class Qop  {
         case FMUL:
         case FNEG:
         case FREM:
-        case FSUB:
         case I2F:
         case L2F:
 	    return HClass.Float;
@@ -353,7 +336,6 @@ public abstract class Qop  {
         case IREM:
         case ISHL:
         case ISHR:
-        case ISUB:
         case IUSHR:
         case IXOR:
         case L2I:
@@ -371,7 +353,6 @@ public abstract class Qop  {
         case LREM:
         case LSHL:
         case LSHR:
-        case LSUB:
         case LUSHR:
         case LXOR:
 	    return HClass.Long;
@@ -381,7 +362,6 @@ public abstract class Qop  {
         case DMUL:
         case DNEG:
         case DREM:
-        case DSUB:
         case F2D:
         case I2D:
         case L2D:
@@ -405,7 +385,6 @@ public abstract class Qop  {
 	case DMUL:	return _d( Eval.dmul	(_d(opd[0]), _d(opd[1])));
 	case DNEG:	return _d( Eval.dneg	(_d(opd[0])));
 	case DREM:	return _d( Eval.drem	(_d(opd[0]), _d(opd[1])));
-	case DSUB:	return _d( Eval.dsub	(_d(opd[0]), _d(opd[1])));
 	case F2D:	return _d( Eval.f2d	(_f(opd[0])));
 	case F2I:	return _i( Eval.f2i	(_f(opd[0])));
 	case F2L:	return _l( Eval.f2l	(_f(opd[0])));
@@ -417,7 +396,6 @@ public abstract class Qop  {
 	case FMUL:	return _f( Eval.fmul	(_f(opd[0]), _f(opd[1])));
 	case FNEG:	return _f( Eval.fneg	(_f(opd[0])));
 	case FREM:	return _f( Eval.frem	(_f(opd[0]), _f(opd[1])));
-	case FSUB:	return _f( Eval.fsub	(_f(opd[0]), _f(opd[1])));
 	case I2B:	return _i( Eval.i2b	(_i(opd[0])));
 	case I2C:	return _i( Eval.i2c	(_i(opd[0])));
 	case I2D:	return _d( Eval.i2d	(_i(opd[0])));
@@ -435,7 +413,6 @@ public abstract class Qop  {
 	case IREM:	return _i( Eval.irem	(_i(opd[0]), _i(opd[1])));
 	case ISHL:	return _i( Eval.ishl	(_i(opd[0]), _i(opd[1])));
 	case ISHR:	return _i( Eval.ishr	(_i(opd[0]), _i(opd[1])));
-	case ISUB:	return _i( Eval.isub	(_i(opd[0]), _i(opd[1])));
 	case IUSHR:	return _i( Eval.iushr	(_i(opd[0]), _i(opd[1])));
 	case IXOR:	return _i( Eval.ixor	(_i(opd[0]), _i(opd[1])));
 	case L2D:	return _d( Eval.l2d	(_l(opd[0])));
@@ -452,7 +429,6 @@ public abstract class Qop  {
 	case LREM:	return _l( Eval.lrem	(_l(opd[0]), _l(opd[1])));
 	case LSHL:	return _l( Eval.lshl	(_l(opd[0]), _i(opd[1])));
 	case LSHR:	return _l( Eval.lshr	(_l(opd[0]), _i(opd[1])));
-	case LSUB:	return _l( Eval.lsub	(_l(opd[0]), _l(opd[1])));
 	case LUSHR:	return _l( Eval.lushr	(_l(opd[0]), _i(opd[1])));
 	case LXOR:	return _l( Eval.lxor	(_l(opd[0]), _l(opd[1])));
 	default:        throw new RuntimeException("Unknown Op type: "+opc);

@@ -40,7 +40,7 @@ import java.util.Vector;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.8 1999-02-03 23:11:02 pnkfelix Exp $
+ * @version $Id: Translate.java,v 1.1.2.9 1999-02-05 08:26:34 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -744,12 +744,10 @@ final class Translate { // not public.
 	case Op.DDIV:
 	case Op.DMUL:
 	case Op.DREM:
-	case Op.DSUB:
 	case Op.LADD:
 	case Op.LAND:
 	case Op.LMUL:
 	case Op.LOR:
-	case Op.LSUB:
 	case Op.LXOR:
 	case Op.LDIV:
 	case Op.LREM:
@@ -758,6 +756,19 @@ final class Translate { // not public.
 	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
 			 ns.stack(0), new Temp[] { s.stack(2), s.stack(0) });
 	    break;
+	case Op.DSUB:
+	case Op.LSUB:
+	    {
+	    ns = s.pop(4).pushLong();
+	    Util.assert(ns.isLong(0) && s.isLong(0) && s.isLong(2));
+	    Quad q0 = new OPER(qf, in, (opcode==Op.DSUB)?Qop.DNEG:Qop.LNEG,
+			       s.stack(0), new Temp[] { s.stack(0) });
+	    Quad q1 = new OPER(qf, in, (opcode==Op.DSUB)?Qop.DADD:Qop.LADD,
+			       ns.stack(0), new Temp[]{s.stack(2),s.stack(0)});
+	    Quad.addEdge(q0, 0, q1, 0);
+	    q = q0; last = q1;
+	    break;
+	    }
 	case Op.DCMPG:
 	case Op.DCMPL:
 	    switch (inNext.getOpcode()) {
@@ -1014,14 +1025,12 @@ final class Translate { // not public.
 	case Op.FDIV:
 	case Op.FMUL:
 	case Op.FREM:
-	case Op.FSUB:
 	case Op.IADD:
 	case Op.IAND:
 	case Op.IMUL:
 	case Op.IOR:
 	case Op.ISHL:
 	case Op.ISHR:
-	case Op.ISUB:
 	case Op.IUSHR:
 	case Op.IXOR:
 	case Op.IDIV:
@@ -1030,6 +1039,18 @@ final class Translate { // not public.
 	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
 			 ns.stack(0), new Temp[] {s.stack(1), s.stack(0)});
 	    break;
+	case Op.FSUB:
+	case Op.ISUB:
+	    {
+	    ns = s.pop(2).push();
+	    Quad q0 = new OPER(qf, in, (opcode==Op.FSUB)?Qop.FNEG:Qop.INEG,
+			       s.stack(0), new Temp[] { s.stack(0) });
+	    Quad q1 = new OPER(qf, in, (opcode==Op.FSUB)?Qop.FADD:Qop.IADD,
+			       ns.stack(0), new Temp[]{s.stack(1),s.stack(0)});
+	    Quad.addEdge(q0, 0, q1, 0);
+	    q = q0; last = q1;
+	    break;
+	    }
 	case Op.FCMPG:
 	case Op.FCMPL:
 	    switch (inNext.getOpcode()) { // break this into FCMPGT,etc
