@@ -128,6 +128,7 @@ void FNI_SetObjectArrayElement(JNIEnv *env, jobjectArray array,
   jclass objCls, arrCls, comCls;
   struct FNI_classinfo *info;
   jobject_unwrapped result;
+  assert(FNI_NO_EXCEPTIONS(env) && array != NULL && a != NULL);
   /* check array bounds */
   if (index > a->length || index < 0) {
     jclass oob=FNI_FindClass(env,"java/lang/ArrayIndexOutOfBoundsException");
@@ -135,18 +136,19 @@ void FNI_SetObjectArrayElement(JNIEnv *env, jobjectArray array,
     return;
   }
   /* check type */
-  objCls = FNI_GetObjectClass(env, value);
+  objCls = (value==NULL) ? NULL : FNI_GetObjectClass(env, value);
   arrCls = FNI_GetObjectClass(env, array);
   info = FNI_GetClassInfo(arrCls);
   assert(info && info->name[0]=='[' && info->claz->component_claz);
   comCls = FNI_WRAP(info->claz->component_claz->class_object);
-  if (FNI_IsAssignableFrom(env, objCls, comCls)==JNI_FALSE) {
+  if ((objCls==NULL && info->name[1]!='[' && info->name[1]!='L') ||
+      (objCls!=NULL && FNI_IsAssignableFrom(env, objCls, comCls)==JNI_FALSE)) {
     jclass ase = FNI_FindClass(env,"java/lang/ArrayStoreException");
     if (ase!=NULL) FNI_ThrowNew(env, ase, "JNI: SetObjectArrayElement");
     return;
   }
   /* clean up a bit */
-  FNI_DeleteLocalRef(env, objCls);
+  if (objCls!=NULL) FNI_DeleteLocalRef(env, objCls);
   FNI_DeleteLocalRef(env, arrCls);
   FNI_DeleteLocalRef(env, comCls);
   /* do set */
