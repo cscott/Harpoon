@@ -20,9 +20,9 @@ import java.util.Stack;
  * binary search tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentMap.java,v 1.4 2002-08-30 22:39:56 cananian Exp $
+ * @version $Id: PersistentMap.java,v 1.5 2003-04-19 01:15:22 salcianu Exp $
  */
-public class PersistentMap<K,V>  {
+public class PersistentMap<K,V> implements java.io.Serializable {
     final PersistentTreeNode<K,V> root;
     final Comparator<K> c;
 

@@ -9,9 +9,11 @@ import java.util.Comparator;
  * search tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentTreeNode.java,v 1.3 2002-04-10 03:07:13 cananian Exp $
+ * @version $Id: PersistentTreeNode.java,v 1.4 2003-04-19 01:15:22 salcianu Exp $
  */
-class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V> {
+class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V> 
+    implements java.io.Serializable {
+
     public final K key;
     public final V value;
     public final PersistentTreeNode<K,V> left;
