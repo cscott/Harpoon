@@ -11,7 +11,7 @@ import java.lang.reflect.Modifier;
  * <code>HFieldImpl</code> is the basic implementation of <code>HField</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldImpl.java,v 1.1.2.1 2000-01-11 08:14:08 cananian Exp $
+ * @version $Id: HFieldImpl.java,v 1.1.2.2 2000-01-11 21:52:30 cananian Exp $
  * @see HField
  */
 abstract class HFieldImpl
@@ -105,9 +105,10 @@ abstract class HFieldImpl
     if (object==null) return false;
     if (this==object) return true;
     try { field=(HField)object; } catch (ClassCastException e) {return false; }
-    if (getDeclaringClass() == field.getDeclaringClass() &&
+    if (getDeclaringClass().getDescriptor().equals
+	(field.getDeclaringClass().getDescriptor()) &&
 	getName().equals(field.getName()) &&
-	getType() == field.getType())
+	getType().getDescriptor().equals(field.getType().getDescriptor()))
       return true;
     return false;
   }

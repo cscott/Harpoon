@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodImpl.java,v 1.1.2.1 2000-01-11 08:14:58 cananian Exp $
+ * @version $Id: HMethodImpl.java,v 1.1.2.2 2000-01-11 21:52:30 cananian Exp $
  * @see HMethod
  */
 abstract class HMethodImpl
@@ -164,13 +164,14 @@ abstract class HMethodImpl
     if (this==obj) return true; // common case.
     try { method = (HMethod) obj; }
     catch (ClassCastException e) { return false; }
-    if (getDeclaringClass() != method.getDeclaringClass()) return false;
+    if (!getDeclaringClass().getDescriptor().equals
+	(method.getDeclaringClass().getDescriptor())) return false;
     if (!getName().equals(method.getName())) return false;
     HClass hc1[] = getParameterTypes();
     HClass hc2[] = method.getParameterTypes();
     if (hc1.length != hc2.length) return false;
     for (int i=0; i<hc1.length; i++)
-      if (hc1[i] != hc2[i])
+      if (!hc1[i].getDescriptor().equals(hc2[i].getDescriptor()))
 	return false;
     return true;
   }
