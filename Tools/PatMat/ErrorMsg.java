@@ -7,7 +7,7 @@ package harpoon.Tools.PatMat;
  *  generate intelligible error messages.
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *         <i>Modern Compiler Implementation in Java</i>, by Andrew Appel.
- * @version $Id: ErrorMsg.java,v 1.1.2.5 1999-08-04 06:31:03 cananian Exp $
+ * @version $Id: ErrorMsg.java,v 1.1.2.6 1999-08-12 16:53:30 cananian Exp $
  */
 class ErrorMsg {
   private LineList linePos = new LineList(-1,null);
@@ -24,7 +24,7 @@ class ErrorMsg {
      linePos = new LineList(pos,linePos);
   }
   public void error(int pos, String msg) {
-    System.out.println(errorMsg(pos, msg));
+    System.err.println(errorMsg(pos, msg));
     anyErrors = true;
   }
   public String errorMsg(int pos, String msg) {

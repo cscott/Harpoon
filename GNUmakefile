@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.59 1999-08-06 18:54:23 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.60 1999-08-12 16:53:23 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -115,10 +115,10 @@ java:	$(ALLSOURCE) $(PROPERTIES)
 	@${JCC} ${JFLAGS} ${JFLAGSVERB} IR/Tree/Tree.java $(filter-out IR/Tree/Tree.java, $(ALLSOURCE)) | \
 		egrep -v '^\[[lc]'
 	@if [ -f stubbed-out ]; then \
-	  $(RM) `cat stubbed-out`; \
-	  $(MAKE) --no-print-directory PASS=2 `cat stubbed-out`; \
-	  echo Rebuilding `cat stubbed-out`; \
-	  ${JCC} ${JFLAGS} `cat stubbed-out`; \
+	  $(RM) `uniq stubbed-out`; \
+	  $(MAKE) --no-print-directory PASS=2 `uniq stubbed-out` || exit 1; \
+	  echo Rebuilding `uniq stubbed-out`; \
+	  ${JCC} ${JFLAGS} `uniq stubbed-out` || exit 1; \
 	  $(RM) stubbed-out; \
 	fi 
 	@$(MAKE) --no-print-directory properties
@@ -131,10 +131,10 @@ jikes: 	$(MACHINE_GEN)
 	@${JIKES} ${JFLAGS} ${ALLSOURCE}
 	@echo done.
 	@if [ -f stubbed-out ]; then \
-	  $(RM) `cat stubbed-out`; \
-	  $(MAKE) --no-print-directory PASS=2 `cat stubbed-out`; \
-	  echo Rebuilding `cat stubbed-out`; \
-	  ${JIKES} ${JFLAGS} `cat stubbed-out`; \
+	  $(RM) `uniq stubbed-out`; \
+	  $(MAKE) --no-print-directory PASS=2 `uniq stubbed-out` || exit 1; \
+	  echo Rebuilding `uniq stubbed-out`; \
+	  ${JIKES} ${JFLAGS} `uniq stubbed-out` || exit 1; \
 	  $(RM) stubbed-out; \
 	fi 
 	@$(MAKE) --no-print-directory properties
