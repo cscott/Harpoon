@@ -8,7 +8,7 @@ import harpoon.Temp.Temp;
  * keep track of the temporary variable names used for method parameters.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: METHODHEADER.java,v 1.3 1998-09-09 23:02:49 cananian Exp $
+ * @version $Id: METHODHEADER.java,v 1.4 1998-09-09 23:31:40 cananian Exp $
  */
 
 public class METHODHEADER extends HEADER {
@@ -29,6 +29,7 @@ public class METHODHEADER extends HEADER {
 		sb.append(", ");
 	}
 	sb.append(")");
+	sb.append(": footer is #"+footer.getID());
 	return sb.toString();
     }
 }

@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.59 1998-09-09 23:02:49 cananian Exp $
+ * @version $Id: Translate.java,v 1.60 1998-09-09 23:31:40 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -250,11 +250,15 @@ class Translate  { // not public.
 		locals[i] = new Temp("lv$"+i);
 	}
 
+	// deterimine if this is a synchronized method.
+	boolean isSynchronized = Modifier.isSynchronized(bytecode.getMethod()
+							 .getModifiers());
+
 	Instr firstInstr = (Instr) bytecode.getElements()[0];
 	State s = new State(locals, bytecode.getTryBlocks(),
 			    new FOOTER(firstInstr));
 
-	Quad quads = new METHODHEADER(firstInstr, s.footer, params);
+	HEADER quads = new METHODHEADER(firstInstr, s.footer, params);
 
 	Temp Tnull = new Temp("$null");
 	Temp Tzero = new Temp("$zero");
@@ -263,9 +267,25 @@ class Translate  { // not public.
 	Quad.addEdge(quads, 0, q1, 0);
 	Quad.addEdge(q1, 0, q2, 0);
 
+	// if method is synchronized, place inside MONITOR
+	Quad q = q2;
+	if (isSynchronized) {
+	    MONITOR Qm = new MONITOR(firstInstr, s.lv[0],
+				     new HEADER(firstInstr, s.footer));
+	    Quad.addEdge(q2, 0, Qm, 0);
+
+	    quads.footer = new FOOTER(firstInstr);
+	    quads.footer.attach(Qm, 0);
+
+	    q = Qm.block;
+	}
+
 	// translate using state.
-	trans(new TransState(s, firstInstr, q2, 0),
+	trans(new TransState(s, firstInstr, q, 0),
 	      Tzero, Tnull);
+
+	// FIXME: move all RETURN/THROW inside MONITOR body to
+	// outside (for synchronized methods only).
 
 	// return result.
 	return quads;
