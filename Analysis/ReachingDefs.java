@@ -3,20 +3,29 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
+import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 
 import java.util.Set;
 /**
- * <code>ReachingDefs</code> defines an interface for
+ * <code>ReachingDefs</code> defines an abstract class for
  * analyzing reaching definitions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ReachingDefs.java,v 1.1.2.2 2000-02-02 08:30:28 cananian Exp $
+ * @version $Id: ReachingDefs.java,v 1.1.2.3 2000-02-05 21:28:32 cananian Exp $
  */
-public interface ReachingDefs {
+public abstract class ReachingDefs {
+    /** The <code>HCode</code> for which this object contains analysis
+     *  results. */
+    protected final HCode hc;
+    
+    /** Creates a <code>ReachingDefs</code> object for the provided
+     *  <code>HCode</code>. */
+    public ReachingDefs(HCode hc) { this.hc = hc; }
+
     /** Returns the Set of <code>HCodeElement</code>s providing definitions
      *  of <code>Temp</code> <code>t</code> which reach 
      *  <code>HCodeElement</code> <code>hce</code>. */
-    public Set reachingDefs(HCodeElement hce, Temp t);
+    public abstract Set reachingDefs(HCodeElement hce, Temp t);
 }
