@@ -65,6 +65,8 @@ fi
 
 GC_CFLAGS=${gc_cflags}
 AC_SUBST(GC_CFLAGS)
+GC_LDFLAGS=${gc_ldflags}
+AC_SUBST(GC_LDFLAGS)
 
 AC_ARG_ENABLE(threads, [  --enable-threads=TYPE   choose threading package],
   THREADS=$enableval,

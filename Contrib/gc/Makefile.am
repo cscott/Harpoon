@@ -40,6 +40,7 @@ mips_sgi_mach_dep.S mips_ultrix_mach_dep.s powerpc_macosx_mach_dep.s \
 rs6000_mach_dep.s sparc_mach_dep.S sparc_netbsd_mach_dep.s \
 sparc_sunos4_mach_dep.s ia64_save_regs_in_stack.s
 
+LDFLAGS = @GC_LDFLAGS@
 AM_CXXFLAGS = @GC_CFLAGS@
 AM_CFLAGS = @GC_CFLAGS@
 

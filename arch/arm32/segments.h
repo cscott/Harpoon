@@ -1,3 +1,5 @@
+#include "config.h"
+
 /* machine-specific segment info */
 #ifndef arm32
 # error Wrong segment information included.
