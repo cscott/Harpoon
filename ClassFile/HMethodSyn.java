@@ -16,7 +16,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.6.2.8 2000-01-26 07:11:50 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.6.2.9 2000-01-26 07:50:00 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -35,13 +35,11 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
     this.exceptionTypes = template.getExceptionTypes();
     this.isSynthetic = template.isSynthetic();
     // ensure linker information is consistent.
-    Util.assert(parent.getLinker() == ((HClass)this.returnType).getLinker());
+    Util.assert(checkLinker((HClass)this.returnType));
     for(int i=0; i<this.parameterTypes.length; i++)
-      Util.assert(parent.getLinker() ==
-		  ((HClass)this.parameterTypes[i]).getLinker());
+      Util.assert(checkLinker((HClass)this.parameterTypes[i]));
     for(int i=0; i<this.exceptionTypes.length; i++)
-      Util.assert(parent.getLinker() ==
-		  ((HClass)this.exceptionTypes[i]).getLinker());
+      Util.assert(checkLinker((HClass)this.exceptionTypes[i]));
   }
 
   /** Create a new empty method in the specified class
@@ -91,7 +89,7 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
   }
 
   public void setReturnType(HClass returnType) {
-    Util.assert(parent.getLinker()==returnType.getLinker());
+    Util.assert(checkLinker(returnType));
     if (this.returnType != returnType) parent.hasBeenModified = true;
     this.returnType = returnType;
   }
@@ -99,7 +97,7 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
   /** Warning: use can cause method name conflicts in class. */
   public void setParameterTypes(HClass[] parameterTypes) {
     for (int i=0; i<parameterTypes.length; i++)
-      Util.assert(parent.getLinker()==parameterTypes[i].getLinker());
+      Util.assert(checkLinker(parameterTypes[i]));
     if (this.parameterTypes.length != parameterTypes.length)
       parent.hasBeenModified = true;
     else for (int i=0;
@@ -110,7 +108,7 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
   }
   /** Warning: use can cause method name conflicts in class. */
   public void setParameterType(int which, HClass type) {
-    Util.assert(parent.getLinker()==type.getLinker());
+    Util.assert(checkLinker(type));
     if (this.parameterTypes[which] != type)
       parent.hasBeenModified = true;
     this.parameterTypes[which] = type;
@@ -124,7 +122,7 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
   }
 
   public void addExceptionType(HClass exceptionType) {
-    Util.assert(parent.getLinker()==exceptionType.getLinker());
+    Util.assert(checkLinker(exceptionType));
     for (int i=0; i<exceptionTypes.length; i++)
       if (exceptionTypes[i]==exceptionType)
 	return;
@@ -135,7 +133,7 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
   }
   public void setExceptionTypes(HClass[] exceptionTypes) {
     for (int i=0; i<exceptionTypes.length; i++)
-      Util.assert(parent.getLinker()==exceptionTypes[i].getLinker());
+      Util.assert(checkLinker(exceptionTypes[i]));
     if (this.exceptionTypes.length != exceptionTypes.length)
       parent.hasBeenModified = true;
     else for (int i=0;
@@ -145,7 +143,7 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
     this.exceptionTypes = exceptionTypes;
   }
   public void removeExceptionType(HClass exceptionType) {
-    Util.assert(parent.getLinker()==exceptionType.getLinker());
+    Util.assert(checkLinker(exceptionType));
     for (int i=0; i<exceptionTypes.length; i++)
       if (exceptionTypes[i].actual().equals(exceptionType)) {
 	exceptionTypes = (HPointer[]) Util.shrink(HPointer.arrayFactory,
@@ -175,6 +173,11 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
     return  sb.toString();
   }
 
+  //----------------------------------------------------------
+  // assertion helper.
+  private boolean checkLinker(HClass hc) {
+    return hc.isPrimitive() || hc.getLinker()==parent.getLinker();
+  }
   //----------------------------------------------------------
 
   /** Serializable interface. */

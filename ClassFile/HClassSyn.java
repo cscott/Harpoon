@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.14 2000-01-26 07:14:48 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.15 2000-01-26 07:49:59 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -55,10 +55,9 @@ class HClassSyn extends HClassCls implements HClassMutator {
     Util.assert(methods.length == declaredMethods.length);
 
     // ensure linker information is consistent.
-    Util.assert(this.superclass==null ||
-		getLinker()==((HClass)this.superclass).getLinker());
+    Util.assert(this.superclass==null || checkLinker((HClass)this.superclass));
     for (int i=0; i<this.interfaces.length; i++)
-      Util.assert(getLinker()==((HClass)this.interfaces[i]).getLinker());
+      Util.assert(checkLinker((HClass)this.interfaces[i]));
 
     hasBeenModified = true; // by default, mark this as 'modified'
   }
@@ -210,7 +209,8 @@ class HClassSyn extends HClassCls implements HClassMutator {
 		      "top-level object?  I'm not sure I should allow this."+
 		      "  Please mail me at cananian@alumni.princeton.edu and "+
 		      "tell me why you think it's a good idea.");
-    Util.assert(getLinker()==sc.getLinker());
+    Util.assert(!sc.isPrimitive());
+    Util.assert(checkLinker(sc));
     // XXX more sanity checks?
     if (superclass != sc) hasBeenModified=true; // flag the modification
     superclass = sc;
@@ -221,13 +221,13 @@ class HClassSyn extends HClassCls implements HClassMutator {
 
   public void addInterface(HClass in) {
     if (!in.isInterface()) throw new Error("Not an interface.");
-    Util.assert(getLinker()==in.getLinker());
+    Util.assert(checkLinker(in));
     interfaces = (HClass[]) Util.grow(HClass.arrayFactory,
 				      interfaces, in, interfaces.length);
     hasBeenModified = true;
   }
   public void removeInterface(HClass in) throws NoSuchClassException {
-    Util.assert(getLinker()==in.getLinker());
+    Util.assert(checkLinker(in));
     for (int i=0; i<interfaces.length; i++) {
       if (interfaces[i].equals(in)) {
 	interfaces = (HClass[]) Util.shrink(HClass.arrayFactory,
@@ -251,6 +251,13 @@ class HClassSyn extends HClassCls implements HClassMutator {
     if (!this.sourcefile.equals(sf)) hasBeenModified = true;
     this.sourcefile = sf;
   }
+
+  //----------------------------------------------------------
+  // assertion helper.
+  private boolean checkLinker(HClass hc) {
+    return hc.isPrimitive() || hc.getLinker()==getLinker();
+  }
+  //----------------------------------------------------------
 
   /** Serializable interface. */
   public void writeObject(java.io.ObjectOutputStream out)
