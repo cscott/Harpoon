@@ -15,6 +15,11 @@
  *   OutOfMemoryError: if the system runs out of memory. 
  */
 jobject FNI_AllocObject (JNIEnv *env, jclass clazz) {
+  return FNI_AllocObject_using(env, clazz, NULL/* use default alloc func */);
+}
+/* allocate using a specific allocation function */
+jobject FNI_AllocObject_using (JNIEnv *env, jclass clazz,
+			       void *(*allocfunc)(jsize length)) {
   struct FNI_classinfo *info;
   u_int32_t size;
 
@@ -24,7 +29,7 @@ jobject FNI_AllocObject (JNIEnv *env, jclass clazz) {
   assert(info->name[0] != '[');
   /* FIXME: we don't check to see whether it's an interface or abstract */
   size = info->claz->size; /* size, including the header */
-  return FNI_Alloc(env, info, size);
+  return FNI_Alloc(env, info, allocfunc, size);
 }
 
 /* Constructs a new Java object. The method ID indicates which constructor

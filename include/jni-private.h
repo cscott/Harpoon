@@ -176,8 +176,10 @@ struct FNI_classinfo *FNI_GetClassInfo(jclass clazz);
 
 /* raw allocation routine */
 void *FNI_RawAlloc(JNIEnv *env, jsize length);
-/* allocate and zero memory for the specified object type */
-jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, jsize length);
+/* allocate and zero memory for the specified object type, using the
+ * supplied allocation function.  If allocfunc is NULL, uses FNI_RawAlloc. */
+jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info,
+		  void *(*allocfunc)(jsize length), jsize length);
 
 /* inflation routine/macro */
 #define FNI_IS_INFLATED(obj) ((FNI_UNWRAP(obj)->hashunion.hashcode & 1) == 0)
@@ -243,6 +245,8 @@ jboolean FNI_IsSameObject (JNIEnv *env, jobject ref1, jobject ref2);
 
 /* Object Operations */
 jobject FNI_AllocObject (JNIEnv *env, jclass clazz);
+jobject FNI_AllocObject_using (JNIEnv *env, jclass clazz,
+			       void *(*allocfunc)(jsize length));/* FLEX ext */
 # define NEWOBJECTPROTO(suffix, argtype) \
 jobject FNI_NewObject##suffix (JNIEnv *env, jclass clazz, \
 			       jmethodID methodID, argtype);

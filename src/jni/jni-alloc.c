@@ -10,10 +10,15 @@
 #ifdef BDW_CONSERVATIVE_GC
 #include "gc.h"
 #endif
+#ifdef WITH_CLUSTERED_HEAPS
+#include "../clheap/alloc.h"
+#endif
 
 /* eventually many of these? */
 void *FNI_RawAlloc(JNIEnv *env, jsize length) {
-#ifdef BDW_CONSERVATIVE_GC
+#if defined(WITH_CLUSTERED_HEAPS)
+  return NGBL_malloc(length);
+#elif defined(BDW_CONSERVATIVE_GC)
   return GC_malloc(length);
 #else /* okay, use system-default... */
   return malloc(length);
@@ -22,11 +27,13 @@ void *FNI_RawAlloc(JNIEnv *env, jsize length) {
 
 /* Allocate and zero-out memory for the specified object type.
  * Returns NULL and throws OutOfMemoryError if it cannot
- * allocate the memory. */
-jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, jsize length) {
+ * allocate the memory.  If allocfunc is NULL, uses FNI_RawAlloc. */
+jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info,
+		  void *(*allocfunc)(jsize length), jsize length) {
   struct oobj *newobj;
 
-  newobj = FNI_RawAlloc(env, length);
+  if (allocfunc==NULL) allocfunc=FNI_RawAlloc;
+  newobj = (*allocfunc)(length);
   if (newobj==NULL) {
     FNI_ThrowNew(env, FNI_FindClass(env, "java/lang/OutOfMemoryError"),
 		 "JNI: allocation failed");
