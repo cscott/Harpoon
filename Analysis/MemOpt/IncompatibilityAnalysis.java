@@ -27,7 +27,7 @@ import java.util.*;
 /**
  * Describe class <code>IncompatibilityAnalysis</code> here.
  *
- * @author <a href="mailto:Ovidiu Gheorghioiu <ovy@mit.edu>">ovy</a>
+ * @author <a href="mailto:Ovidiu Gheorghioiu <ovy@mit.edu>">Ovidiu Gheorghioiu</a>
  * @version 1.0
  */
 public class IncompatibilityAnalysis {
@@ -1363,9 +1363,12 @@ public class IncompatibilityAnalysis {
 
 	    
 	System.out.println("Statistics: ");
-        System.out.println("   " + allMethods.size() + " methods analyzed;" +
-                           sizeStatistics(allMethods, codeFactory) + " SSI; " +
-                           sizeStatistics(allMethods, harpoon.IR.Bytecode.Code.codeFactory()) + " bytecodes");
+        System.out.println
+	    ("   " + allMethods.size() + " methods analyzed;\t" +
+	     sizeStatistics(allMethods, codeFactory) + " SSI;\t" +
+	     sizeStatistics(allMethods,
+			    harpoon.IR.Bytecode.Code.codeFactory()) +
+	     " bytecodes");
         System.out.println("   " + globalAllocMap.keySet().size() + " allocations");
         System.out.println("   " + I.size() + " incompatible pairs");
         System.out.println("   " + classes.size() + " classes ("

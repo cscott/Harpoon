@@ -32,12 +32,15 @@ import harpoon.IR.Tree.NATIVECALL;
 import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.MOVE;
 import harpoon.IR.Tree.MEM;
+import harpoon.IR.Tree.BINOP;
+import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.TreeFactory;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.Tree;
 import harpoon.IR.Tree.DerivationGenerator;
 import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.Exp;
+import harpoon.IR.Tree.Bop;
 
 import harpoon.Temp.Temp;
 import harpoon.Temp.Label;
@@ -48,7 +51,7 @@ import harpoon.Temp.Label;
  * chunks of memory that are used by the unitary sites.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AddMemoryPreallocation.java,v 1.6 2003-02-09 21:26:56 salcianu Exp $ */
+ * @version $Id: AddMemoryPreallocation.java,v 1.7 2003-02-14 17:17:08 salcianu Exp $ */
 class AddMemoryPreallocation implements HCodeFactory {
 
     /** Creates a <code>AddMemoryPreallocation</code> code factory: it
@@ -79,10 +82,15 @@ class AddMemoryPreallocation implements HCodeFactory {
 	this.init_method   = init_method;
     }
 
+    public String getCodeName() { return parent_hcf.getCodeName(); }
+    public void clear(HMethod m) { parent_hcf.clear(m); }
+
+
     private final HCodeFactory parent_hcf;
     private final Map/*<HField,Integer>*/ field2size;
     private final Runtime runtime;
     private final HMethod init_method;
+
 
     public HCode convert(HMethod m) {
 	// we don't change any method, except ...
@@ -94,12 +102,27 @@ class AddMemoryPreallocation implements HCodeFactory {
 	DerivationGenerator dg = 
 	    (DerivationGenerator) code.getTreeDerivation();
 
+	// At the beginning of that method, we add code that
+	// 1. allocates one chunk of memory
+	// 2. make the static fields to point inside it (by using a little
+	// pointer arithmetic - this is OK in Tree form).
+	// Doing n additions is faster than n-1 malloc calls.
 	SEQ start = (SEQ) ((SEQ) code.getRootElement()).getRight();
+	Temp tmem = new Temp(start.getFactory().tempFactory(), "tmem");
+
+	// As insertCode adds stuff immediately after start, we insert
+	// code in reverse order: first, item 2 from the list above
+	int offset = 0;
 	for(Iterator it = field2size.keySet().iterator(); it.hasNext(); ) {
 	    HField hfield = (HField) it.next();
 	    int size = ((Integer) field2size.get(hfield)).intValue();
-	    generate_code(start, hfield, size, dg);
+	    insertCode(start,
+		       getFieldAssignment(hfield, tmem, offset, start, dg));
+	    offset += size;
 	}
+	// offset is now equal to total length of preallocated memory
+	// Now, code for item 1 from the list above
+	insertCode(start, getAllocCall(tmem, offset, start, dg));
 
 	System.out.println("After  modifications:");
 	code.print(new PrintWriter(System.out));
@@ -107,51 +130,55 @@ class AddMemoryPreallocation implements HCodeFactory {
 	return code;
     }
 
-    public String getCodeName() { return parent_hcf.getCodeName(); }
-    public void clear(HMethod m) { parent_hcf.clear(m); }
 
-
-    // generate code (linked immediately after start) that initializes
-    // the field hfield with a pointer that points to a preallocated
-    // chunk of memory of size "size".
-    private void generate_code
-	(SEQ start, HField hfield, int size, DerivationGenerator dg) {
-	// TODO: we should be able to get the DerivationGenerator
-	// (a method-wide thing) from "start".
-
+    // produces a native call that allocates "length" bytes of memory;
+    // the returned value (the pointed to the newly allocated piece of
+    // memory) is stored in "tmem"
+    private Stm getAllocCall(Temp tmem, int length,
+			     Tree start, DerivationGenerator dg) {
 	TreeFactory tf = start.getFactory();
-	Temp tmem = new Temp(tf.tempFactory(), "tmem");
-
-	// 1. generate "tmem = GC_malloc_atomic(size);"
-	NATIVECALL call_malloc =
+	
+	return
 	    new NATIVECALL
 	    (tf, start, 
 	     (TEMP)
 	     DECLARE(dg, HClass.Void,
 		     new TEMP(tf, start, Type.POINTER, tmem)),
 	     new NAME(tf, start, new Label("GC_malloc")),
-	     new ExpList
-	     (new CONST(tf, start, size),
-	      null));
+	     new ExpList(new CONST(tf, start, length),
+			 null));
+    }
+    
+    // generate code that initializes the field hfield with a pointer
+    // that is computed by adding offset to tmem.
+    private Stm getFieldAssignment(HField hfield, Temp tmem, int offset,
+				   Tree start, DerivationGenerator dg) {
+	// TODO: we should be able to get the DerivationGenerator
+	// (a method-wide thing) from "start".
+	TreeFactory tf = start.getFactory();
 
-	// 2. generate "field = tmem;"
-	MOVE set_field = 
+	// "field = tmem + offset;"
+	return
 	    new MOVE
 	    (tf, start,
 	     DECLARE(dg, HClass.Void, 
-	      new MEM
-	      (tf, start, Type.POINTER,
-	       new NAME(tf, start, runtime.getNameMap().label(hfield)))),
-	     (TEMP)
-	     DECLARE(dg, HClass.Void,
-		     new TEMP(tf, start, Type.POINTER, tmem)));
+		     new MEM
+		     (tf, start, Type.POINTER,
+		      new NAME(tf, start, runtime.getNameMap().label(hfield)))),
+	     new BINOP(tf, start, Type.POINTER, Bop.ADD,
+		       (TEMP)
+		       DECLARE(dg, HClass.Void,
+			       new TEMP(tf, start, Type.POINTER, tmem)),
+		       new CONST(tf, start, offset)));
+    }
 
-	// 3. insert the generated code code right after start
+
+    // insert a statement right after "start"
+    private SEQ insertCode(SEQ start, Stm code) {
 	Stm former_right = start.getRight();
 	former_right.unlink();
-	start.setRight
-	    (new SEQ(tf, start, call_malloc,
-		     new SEQ(tf, start, set_field, former_right)));
+	start.setRight(new SEQ(code, former_right));
+	return start;
     }
 
 

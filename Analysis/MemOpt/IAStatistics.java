@@ -54,7 +54,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>IAStatistics</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: IAStatistics.java,v 1.9 2003-02-12 19:02:58 salcianu Exp $
+ * @version $Id: IAStatistics.java,v 1.10 2003-02-14 17:17:08 salcianu Exp $
  */
 public abstract class IAStatistics {
     
@@ -171,9 +171,11 @@ public abstract class IAStatistics {
 	TypeStat[] tss = buildStatistics(ia, as, allocs);
 
 	HClass hThrowable = linker.forName("java.lang.Throwable");
+	HClass hStringBuffer = linker.forName("java.lang.StringBuffer");
 	TypeStat total = new TypeStat(null);
 	TypeStat total_arrays = new TypeStat(null);
 	TypeStat total_throwables = new TypeStat(null);
+	TypeStat total_sb = new TypeStat(null);
 	TypeStat total_program = new TypeStat(null);
 
 	System.out.println
@@ -190,6 +192,8 @@ public abstract class IAStatistics {
 		total_arrays.add(ts);
 	    if(ts.hclass.isInstanceOf(hThrowable))
 		total_throwables.add(ts);
+	    if(ts.hclass.isInstanceOf(hStringBuffer))
+		total_sb.add(ts);
 	}
 
 	System.out.println
@@ -201,6 +205,7 @@ public abstract class IAStatistics {
 	printTotal("NON-ARRAYS",     TypeStat.diff(total, total_arrays));
 	printTotal("THROWABLES",     total_throwables);
 	printTotal("NON_THROWABLES", TypeStat.diff(total, total_throwables));
+	printTotal("STRINGBUFFERS",  total_sb); 
     }
 
 
@@ -231,6 +236,10 @@ public abstract class IAStatistics {
 				 total.count[OBJECT][HEAP], 5, 2));
 	System.out.println
 	    (label + " PREALLOCATED SPACE:\t" +
+	     Util.longProportion(total.count[SPACE][PREALLOC],
+				 total.count[SPACE][HEAP], 5, 2));
+	System.out.println
+	    (label + " Preallocated Space:\t" +
 	     Util.longProportion(total.count[SPACE][PREALLOC],
 				 total.count[SPACE][HEAP], 5, 2, true));
     }

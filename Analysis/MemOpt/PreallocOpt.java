@@ -50,7 +50,7 @@ import harpoon.Temp.Temp;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.12 2003-02-08 23:26:56 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.13 2003-02-14 17:17:08 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -261,8 +261,8 @@ public abstract class PreallocOpt {
 	    tree_builder.objectSize(hclass) +
 	    tree_builder.headerSize(hclass);
 	// we allocate only multiples of 4 bytes
-	while((size % 4) != 0)
-	    size++;
+	if((size % 4) != 0)
+	    size += 4 - (size % 4);
 	return size;
     }
 

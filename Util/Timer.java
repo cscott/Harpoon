@@ -69,11 +69,11 @@ public class Timer {
 	    sb.append("running: ");
 	    sb.append(((System.currentTimeMillis() - 
 			timerStart + timeElapsed) / 1000.0));
-	    sb.append("s elapsed.");
+	    sb.append(" s elapsed.");
 	} else {
 	    sb.append("stopped: ");
 	    sb.append(timeElapsed / 1000.0); 
-	    sb.append("s elapsed.");
+	    sb.append(" s elapsed.");
 	}
 	return sb.toString();
     }
