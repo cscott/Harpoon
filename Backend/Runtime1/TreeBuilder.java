@@ -61,7 +61,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.6 2002-07-18 21:06:21 kkz Exp $
+ * @version $Id: TreeBuilder.java,v 1.7 2003-07-15 03:33:51 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -744,7 +744,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 						    false));
     }
     /** wrap objectref and then call FNI_Monitor{Enter|Exit}() */
-    private Stm _call_FNI_Monitor(TreeFactory tf, HCodeElement source,
+    protected Stm _call_FNI_Monitor(TreeFactory tf, HCodeElement source,
 				  DerivationGenerator dg,
 				  Translation.Exp objectref,
 				  boolean isEnter/*else exit*/) {

@@ -63,7 +63,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.5 2003-07-10 03:55:01 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.6 2003-07-15 03:33:52 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
     protected TreeBuilder(harpoon.Backend.Runtime1.Runtime runtime,
@@ -127,85 +127,38 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 	return new Translation.Nx(_call_FNI_Monitor(tf, source, dg, objectref,
 						    false));
     }
-    private Stm _call_FNI_Monitor(TreeFactory tf, HCodeElement source,
+    protected Stm _call_FNI_Monitor(TreeFactory tf, HCodeElement source,
 				  DerivationGenerator dg,
 				  Translation.Exp objectref,
 				  boolean isEnter/*else exit*/) {
-	// keep this synchronized with StubCode.java
-	// and Runtime/include/jni-private.h
+	// if we're using the explicit DynamicSyncRemoval pass, we've already
+	// done this transformation (in quad form) and don't need to repeat
+	// it here.
+	if (Boolean.getBoolean("harpoon.runtime2.skip_monitor_test"))
+	    return super._call_FNI_Monitor(tf, source, dg, objectref, isEnter);
+	// otherwise...
 
-	// first get JNIEnv *
-	Temp envT = new Temp(tf.tempFactory(), "env");
-	Stm result0 = new NATIVECALL
-	    (tf, source, (TEMP)
-	     DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
-	     new TEMP(tf, source, Type.POINTER, envT)) /*retval*/,
-	     DECLARE(dg, HClass.Void/* c function ptr */,
-	     new NAME(tf, source, new Label
-		      (runtime.getNameMap().c_function_name("FNI_GetJNIEnv")))),
-	     null/* no args*/);
-	Temp object= new Temp(tf.tempFactory(), "BRIANSOBJECT");
-	// wrap objectref.
-	Temp objT = new Temp(tf.tempFactory(), "obj");
-	result0 = new SEQ
-	    (tf, source, result0,
-	     new NATIVECALL
-	     (tf, source, (TEMP)
-	      DECLARE(dg, HClass.Void/* jobject */, objT,
-	      new TEMP(tf, source, Type.POINTER, objT)) /*retval*/,
-	      DECLARE(dg, HClass.Void/* c function ptr */,
-	      new NAME(tf, source, new Label
-		       (runtime.getNameMap().c_function_name("FNI_NewLocalRef")))),
-	      new ExpList
-	      (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
-	       new TEMP(tf, source, Type.POINTER, envT)),
-	       new ExpList
-	       (DECLARE(dg, HClass.Void, object,
-	        new TEMP(tf,source,Type.POINTER,object)), null))));
+	HClass HCobj = linker.forName("java.lang.Object");
+	Temp object = new Temp(tf.tempFactory(), "BRIANSOBJECT");
 
-	// call FNI_MonitorEnter or FNI_MonitorExit
-	// proto is 'jint FNI_Monitor<foo>(JNIEnv *env, jobject obj);
-	// i'm going to be anal and make a temp for the return value,
-	// because some architectures might conceivably do weird things if
-	// i just pretend the function is void.  but we don't need the retval.
-	Temp disT = new Temp(tf.tempFactory(), "discard");
-	Stm result1 = new NATIVECALL
+	MOVE move = new MOVE
 	    (tf, source,
-	     new TEMP(tf, source, Type.INT, disT) /*retval*/,
-	     DECLARE(dg, HClass.Void/* c function ptr */,
-	     new NAME(tf, source, new Label
-		      (runtime.getNameMap().c_function_name
-		       (isEnter?"FNI_MonitorEnter":"FNI_MonitorExit")))),
-	     new ExpList
-	     (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
-	      new TEMP(tf, source, Type.POINTER, envT)),
-	      new ExpList
-	      (DECLARE(dg, HClass.Void/* jobject */, objT,
-	       new TEMP(tf, source, Type.POINTER, objT)),
-	       null)));
+	     DECLARE(dg, HCobj, object,
+		     new TEMP(tf, source, Type.POINTER, object)),
+	     objectref.unEx(tf));
 
-	// okay, now free the localref and we're set.
-	result1 = new SEQ
-	    (tf, source, result1,
-	     new NATIVECALL
-	     (tf, source, null/*void retval*/,
-	      DECLARE(dg, HClass.Void/* c function ptr */,
-	      new NAME(tf, source, new Label(runtime.getNameMap().c_function_name
-					     ("FNI_DeleteLocalRefsUpTo")))),
-	      new ExpList
-	      (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
-	       new TEMP(tf, source, Type.POINTER, envT)),
-	       new ExpList
-	       (DECLARE(dg, HClass.Void/* jobject */, objT,
-		new TEMP(tf, source, Type.POINTER, objT)),
-		null))));
-	Stm old=new SEQ(tf,source,result0,result1);
+	Stm old = super._call_FNI_Monitor
+	    (tf, source, dg,
+	     new Translation.Ex
+	     (DECLARE(dg, HCobj, object,
+		      new TEMP(tf, source, Type.POINTER, object))),
+	     isEnter);
 
 	Label DLabel=new Label();
 	Label SLabel=new Label();
 	Exp lockvalue=fetchHash
 	    (tf, source, 
-	     DECLARE(dg, HClass.Void, object,
+	     DECLARE(dg, HCobj, object,
 		     new TEMP(tf,source,Type.POINTER,object)));
 	Exp testcond=new BINOP(tf, source, Type.INT, Bop.AND, lockvalue,
 		       new CONST(tf, source, 2));
@@ -216,12 +169,7 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 	
 	Stm testit=new SEQ(tf,source,dotest,labels);
 
-	Stm myresult=new SEQ(tf,source,
-                        new MOVE(tf,source,
-                         (DECLARE(dg, HClass.Void, object,
-			  new TEMP(tf,source,Type.POINTER,object))),
-                          objectref.unEx(tf)),
-			testit);
+	Stm myresult=new SEQ(tf,source,move,testit);
 
 	return myresult;
     }
