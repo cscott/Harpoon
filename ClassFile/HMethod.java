@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.29 1998-10-21 21:50:24 cananian Exp $
+ * @version $Id: HMethod.java,v 1.30 1998-11-10 00:44:38 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -225,10 +225,11 @@ public abstract class HMethod implements HMember {
   /**
    * Returns a hashcode for thie <code>HMethod</code>.  The hashcode
    * is computed as the exclusive-or of the hashcodes for the
-   * underlying method's declaring class name and the method's name.
+   * underlying method's declaring class, the method's name,
+   * and the method's descriptor string.
    */
   public int hashCode() {
-    return parent.getName().hashCode() ^ getName().hashCode();
+    return parent.hashCode()^getName().hashCode()^getDescriptor().hashCode();
   }
 
   /**

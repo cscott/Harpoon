@@ -10,7 +10,7 @@ import java.lang.reflect.Modifier;
  * constructor for a class.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructor.java,v 1.8 1998-10-16 11:42:57 cananian Exp $
+ * @version $Id: HConstructor.java,v 1.9 1998-11-10 00:44:37 cananian Exp $
  * @see HMethod
  * @see HMember
  * @see HClass
@@ -24,10 +24,13 @@ public abstract class HConstructor extends HMethod {
   public String getName() { return "<init>"/*hclass.getName()*/; }
 
   /**
-   * Returns a hashcode for this Constructor.  The hashcode is the same as
-   * the hashcode for the underlying constructor's declaring class name.
+   * Returns a hashcode for this Constructor.  The hashcode is computed as
+   * the exclusive-or of the hashcodes for the underlying constructor's 
+   * declaring class and the constructor's descriptor string.
    */
-  public int hashCode() { return parent.getName().hashCode(); }
+  public int hashCode() {
+    return parent.hashCode() ^ getDescriptor().hashCode(); 
+  }
 
   /**
    * Return a string describing this Constructor.  The string is formatted

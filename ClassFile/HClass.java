@@ -28,7 +28,7 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.39 1998-10-21 17:20:03 cananian Exp $
+ * @version $Id: HClass.java,v 1.40 1998-11-10 00:44:37 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public abstract class HClass {
@@ -789,6 +789,13 @@ public abstract class HClass {
     return false;
   }
 
+  /** 
+   * Returns a hashcode value for this HClass.
+   * The hashcode is identical to the hashcode for the class descriptor
+   * string. 
+   */
+  public int hashCode() { return getDescriptor().hashCode(); }
+
   /**
    * Converts the object to a string.  The string representation is the
    * string <code>"class"</code> or <code>"interface"</code> followed by
@@ -908,29 +915,23 @@ public abstract class HClass {
   // Special classes for primitive types.
 
   /** The <code>HClass</code> object representing the primitive type boolean.*/
-  public static final HClass Boolean=new HClassPrimitive();
+  public static final HClass Boolean=new HClassPrimitive("boolean", "Z");
   /** The <code>HClass</code> object representing the primitive type byte.*/
-  public static final HClass Byte=new HClassPrimitive();
+  public static final HClass Byte=new HClassPrimitive("byte", "B");
   /** The <code>HClass</code> object representing the primitive type short.*/
-  public static final HClass Short=new HClassPrimitive();
+  public static final HClass Short=new HClassPrimitive("short", "S");
   /** The <code>HClass</code> object representing the primitive type int.*/
-  public static final HClass Int=new HClassPrimitive();
+  public static final HClass Int=new HClassPrimitive("int", "I");
   /** The <code>HClass</code> object representing the primitive type long.*/
-  public static final HClass Long=new HClassPrimitive();
+  public static final HClass Long=new HClassPrimitive("long", "J");
   /** The <code>HClass</code> object representing the primitive type float.*/
-  public static final HClass Float=new HClassPrimitive();
+  public static final HClass Float=new HClassPrimitive("float", "F");
   /** The <code>HClass</code> object representing the primitive type double.*/
-  public static final HClass Double=new HClassPrimitive();
+  public static final HClass Double=new HClassPrimitive("double", "D");
   /** The <code>HClass</code> object representing the primitive type char.*/
-  public static final HClass Char=new HClassPrimitive();
+  public static final HClass Char=new HClassPrimitive("char", "C");
   /** The <code>HClass</code> object representing the primitive type void.*/
-  public static final HClass Void=new HClassPrimitive();
-  static { 
-    Boolean.register(); Byte.register(); Short.register(); Int.register();
-    Long.register(); Float.register(); Double.register(); Char.register();
-    Void.register();
-  }
-  
+  public static final HClass Void=new HClassPrimitive("void", "V");
 
   static HClass[] copy(HClass[] src) {
     if (src.length==0) return src;
@@ -942,32 +943,14 @@ public abstract class HClass {
 }
 
 class HClassPrimitive extends HClass {
-  HClassPrimitive() { }
-  public String getName() {
-    // handle primitive types.
-    if (this==this.Boolean) return "boolean";
-    if (this==this.Byte) return "byte";
-    if (this==this.Short) return "short";
-    if (this==this.Int) return "int";
-    if (this==this.Long) return "long";
-    if (this==this.Float) return "float";
-    if (this==this.Double) return "double";
-    if (this==this.Char) return "char";
-    if (this==this.Void) return "void";
-    throw new Error("Unknown primitive type.");
+  final String name, descriptor;
+  HClassPrimitive(final String name, final String descriptor) {
+    this.name = name; this.descriptor = descriptor;
+    register();
   }
-  public String getDescriptor() {
-    if (this==this.Boolean) return "Z";
-    if (this==this.Byte) return "B";
-    if (this==this.Short) return "S";
-    if (this==this.Int) return "I";
-    if (this==this.Long) return "J";
-    if (this==this.Float) return "F";
-    if (this==this.Double) return "D";
-    if (this==this.Char) return "C";
-    if (this==this.Void) return "V";
-    throw new Error("Unknown primitive type.");
-  }
+  public String getName() { return this.name; }
+  public String getDescriptor() { return this.descriptor; }
+
   public HField[]  getDeclaredFields () { return new HField [0]; }
   public HMethod[] getDeclaredMethods() { return new HMethod[0]; }
   public int getModifiers() { 
@@ -978,6 +961,7 @@ class HClassPrimitive extends HClass {
   public boolean isPrimitive() { return true; }
   public String toString() { return getName(); }
 }
+
 class HClassArray extends HClass {
   HClass baseType;
   int dims;

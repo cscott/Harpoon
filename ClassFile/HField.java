@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.14 1998-10-16 11:42:57 cananian Exp $
+ * @version $Id: HField.java,v 1.15 1998-11-10 00:44:38 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -127,10 +127,10 @@ public abstract class HField implements HMember {
   /**
    * Returns a hashcode for this <code>HField</code>.  This is
    * computed as the exclusive-or of the hashcodes for the
-   * underlying field's declaring class name and its name.
+   * underlying field's declaring class and the field name.
    */
   public int hashCode() {
-    return parent.getDescriptor().hashCode() ^ getName().hashCode();
+    return parent.hashCode() ^ getName().hashCode();
   }
 
   /**
