@@ -94,6 +94,7 @@ public class ATRMain {
 		Node getCropCmd = new Command(Command.GET_CROPPED_IMAGE, null);
 		Node thin = new Thinning(Thinning.BLUE, null);
 		Node range = new RangeFind(null);
+		Node alert = new Alert(args);
 		Node getLabelSmCmd = new Command(Command.GET_IMAGE, null);
 		pipe = 
 		timer1.linkL(cleanCache.link(n.link(calibCmd.linkL(labelBlue),
@@ -103,7 +104,7 @@ public class ATRMain {
 														 label.link(null,
 															    labelSmCache.link(getCropCmd.linkL(cleanCache),
 																	      thin.link(null,
-																			range.linkL(timer2)))))))))),
+																			range.linkL(timer2.linkL(alert))))))))))),
 					    
 					     labelBlue.link(null,
 							    getLabelSmCmd.linkL(labelSmCache))));
