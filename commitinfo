@@ -13,3 +13,9 @@
 #
 # If the name "ALL" appears as a regular expression it is always used
 # in addition to the first matching regex or "DEFAULT".
+#---------------------------------------------------------------------
+# NOTE:  contrib/commit_prep usage:
+# -r    - record directories affected by commit for use with contrib/log_accum
+# -c    - check for things like "$Id" near head of file, no "$Log", etc.
+#---------------------------------------------------------------------
+DEFAULT $CVSROOT/CVSROOT/commit_prep -r

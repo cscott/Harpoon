@@ -25,13 +25,21 @@
 # can be useful for creating a module that consists of many directories
 # spread out over the entire source repository.
 
-CVSROOT	CVSROOT
-modules CVSROOT modules
+# CVS Administrative modules.
+CVSROOT		CVSROOT
+commitinfo	CVSROOT commitinfo
+cvswrappers	CVSROOT cvswrappers
+editinfo	CVSROOT editinfo
+modules 	CVSROOT modules
+loginfo 	CVSROOT loginfo
+rcsinfo 	CVSROOT rcsinfo
+taginfo 	CVSROOT taginfo
 
+# Version controlled sources:
 Code	Code
 Design	Design
 
-# pldi '99 paper.
-pldi99 -d pldi99.sigma Design harpoon.bib acmconf.sty acmconfbig.sty \
-	pldi99-abstract.tex pldi99-intro.tex pldi99-tech.tex \
-	pldi99.tex .cvsignore
+# pldi '99 paper (defunct)
+#pldi99 -d pldi99.sigma Design harpoon.bib acmconf.sty acmconfbig.sty \
+#	pldi99-abstract.tex pldi99-intro.tex pldi99-tech.tex \
+#	pldi99.tex .cvsignore

@@ -17,6 +17,24 @@
 #
 # For example:
 #DEFAULT		(echo ""; who am i; echo %s; date; cat) >> $CVSROOT/CVSROOT/commitlog
+#---------------------------------------------------------------------------
+# Notes for log/log_accum scripts:
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# NOTE: contrib/log usage:  (currently requires perl)
+#	-d		- turn debugging on....
+#	-m mailto	- send mail to "mailto" (multiple -m's permitted)
+#	-f logfile	- required arg:  save messages to logfile
+#	%s		- may follow other options at the end of the line
+#
+# NOTE: contrib/log_accum usage:  (currently requires perl)
+# (must have 'commit_prep -r' in commitinfo)
+#	-d		- turn debugging on....
+#	-M modulename	- use this as the module name (necessary for sub-dirs)
+#	-m mailto	- send mail to "mailto" (multiple -m's permitted) [optional]
+#	-f logfile	- save messages to logfile [optional]
+#	%s		- must follow other options at the end of the line
+#-------------------------------------------------------------------
 ALL	chgrp -R -f java-dev $CVSROOT/.
 ALL	chmod -R g+r $CVSROOT/.
 ALL	mail -s %s java-dev
+DEFAULT $CVSROOT/CVSROOT/log_accum -m java-dev@lesser-magoo.lcs.mit.edu

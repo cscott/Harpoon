@@ -11,3 +11,5 @@
 #	[<whitespace>]<filename><whitespace><error message><end-of-line>
 #
 # comment lines begin with '#'
+log_accum Can't check out log_accum from CVSROOT (mail cananian).
+commit_prep Can't check out commit_prep script from CVSROOT (mail cananian).
