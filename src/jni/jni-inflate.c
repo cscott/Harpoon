@@ -4,7 +4,7 @@
 #endif /* WITH_HASHLOCK_SHRINK */
 
 #include <jni.h>
-#include <jni-privat1e.h>
+#include <jni-private.h>
 
 #include <assert.h>
 #ifdef BDW_CONSERVATIVE_GC
