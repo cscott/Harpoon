@@ -1,5 +1,3 @@
-package harpoon.Test.PA.TestS;
-
 import java.io.*; // Import the package names to be 
 import java.net.*; // used by this application. 
 import java.util.*; 

@@ -1,5 +1,3 @@
-package harpoon.Test.PA.TestS;
-
 import java.util.*;
 import java.lang.*;
 import java.net.*;
