@@ -8,3 +8,4 @@ Test
 cvs-tmp
 *.vcg
 *.ps
+*TIMESTAMP
