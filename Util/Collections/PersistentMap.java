@@ -20,7 +20,7 @@ import java.util.Stack;
  * persistent randomized treap.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentMap.java,v 1.6 2003-06-10 15:13:39 cananian Exp $
+ * @version $Id: PersistentMap.java,v 1.7 2003-06-25 03:11:28 salcianu Exp $
  */
 public class PersistentMap<K,V> implements java.io.Serializable {
     final Node<K,V> root;
@@ -157,7 +157,8 @@ public class PersistentMap<K,V> implements java.io.Serializable {
     }
     // PersistentTreeNode subclass
     private static class Node<K,V>
-	extends PersistentTreeNode<Node<K,V>,K,V> {
+	extends PersistentTreeNode<Node<K,V>,K,V> 
+	implements java.io.Serializable {
 	final V value;
 	/** The hash code of a <code>java.util.Map</code> with the
 	 *  contents of the tree rooted at this node. */
@@ -176,7 +177,8 @@ public class PersistentMap<K,V> implements java.io.Serializable {
 	}
 	public V getValue() { return value; }
 	static class Allocator<K,V>
-	    extends PersistentTreeNode.Allocator<Node<K,V>,K,V> {
+	    extends PersistentTreeNode.Allocator<Node<K,V>,K,V> 
+	    implements java.io.Serializable {
 	    Node<K,V> newNode(K key, V value,
 			      Node<K,V> left, Node<K,V> right) {
 		return new Node<K,V>(key, value, left, right);
