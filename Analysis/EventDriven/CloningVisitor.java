@@ -60,7 +60,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.2 2000-02-08 08:40:10 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.3 2000-02-08 09:03:37 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -814,18 +814,32 @@ public class CloningVisitor extends QuadVisitor {
 	    //need to add an additional call [for makeAsync's, etc]
 	    Temp nretval=(q.retval()==null)?null:new Temp(tf);
 	    //build half
-	    Temp[][] ndst=new Temp[q.numSigmas()][2];
-
+	    int xx=-1;
+	    for(int j=0;j<q.numSigmas();j++)
+		if (q.src(j)==q.params(0)) {
+		    xx=j;
+		    break;
+		}
+	    Temp[][] ndst=new Temp[q.numSigmas()+((xx==-1)?1:0)][2];
+	    Temp[] nsrc=new Temp[q.numSigmas()+((xx==-1)?1:0)];
 	    for (int i=0;i<q.numSigmas();i++) {
 		//rename all 0 edge temps
 		ndst[i][0]=new Temp(tf);
 		ndst[i][1]=ctmap.tempMap(q.dst(i,1));
+		nsrc[i]=ctmap.tempMap(q.src(i));
+	    }
+	    if (xx==-1) {
+		xx=q.numSigmas();
+		ndst[xx][0]=new Temp(tf);		
+		ndst[xx][1]=new Temp(tf);
+		nsrc[xx]=ctmap.tempMap(q.params(0));
 	    }
 
 	    CALL cq=new CALL(hcode.getFactory(), q, q.method(),
 			     map(ctmap, q.params()), nretval,
 			     ctmap.tempMap(q.retex()),q.isVirtual(),
-			     q.isTailCall(), ndst, map(ctmap, q.src()));
+			     q.isTailCall(), ndst, nsrc);
+
 	    quadmap.put(q, cq);
 	    Temp retex=new Temp(tf);
 	    Temp[] src2=new Temp[q.numSigmas()+((nretval==null)?0:1)];
@@ -843,7 +857,7 @@ public class CloningVisitor extends QuadVisitor {
 
 	    CALL nc=new CALL(hcode.getFactory(), q,
 			     swapAdd(q.method()), 
-			     new Temp[] {cq.params(0)},
+			     new Temp[] {ndst[xx][0]},
 			     null, retex, true, false, dst2, src2);
 	    Quad.addEdge(cq,0,nc, 0);
 	    THROW nt=new THROW(hcode.getFactory(), q,
