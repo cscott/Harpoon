@@ -27,6 +27,7 @@ jobject_unwrapped FNI_Unwrap(jobject obj) {
 
 /* clear local refs in stack frame */
 void FNI_DeleteLocalRefsUpTo(JNIEnv *env, jobject markerRef) {
+  struct FNI_Thread_State *fts = (struct FNI_Thread_State *) env;
   while (fts->localrefs.next != markerRef)
     FNI_DeleteLocalRef(env, fts->localrefs.next);
 }
