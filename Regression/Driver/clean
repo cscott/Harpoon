@@ -4,4 +4,4 @@
 
 rm -f *error*
 rm -f *diffs*
-rm -f temp/*
+rm -rf `\ls -Ad temp/* | grep -v CVS`

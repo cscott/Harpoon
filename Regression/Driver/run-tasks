@@ -416,15 +416,15 @@ else
 		tar zxvf $ARCHIVE_ERRORS_FILE -C $TEMP_DIR   # extracting existing error files to $TEMP_DIR
 		cp $ERROR_FILE $TEMP_DIR   # moving $ERROR_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		tar cz * > `cd -; pwd`/$ARCHIVE_ERRORS_FILE   # adding this error file to the $ARCHIVE_ERRORS_FILE archive
-		rm -r *   # removing everything in $TEMP_DIR directory
+		tar cz `\ls -A | grep -v CVS`  > `cd -; pwd`/$ARCHIVE_ERRORS_FILE   # adding this error file to the $ARCHIVE_ERRORS_FILE archive
+		rm -r `\ls -A | grep -v CVS`   # removing everything in $TEMP_DIR directory
 		cd -   # changing the directory back
 	    else
 		tar zxvf $ARCHIVE_ERRORS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting existing error files to $TEMP_DIR
 		cp -f $ERROR_FILE $TEMP_DIR   # moving $ERROR_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		tar cz * > `cd -; pwd`/$ARCHIVE_ERRORS_FILE 2>/dev/null   # adding this error file to the $ARCHIVE_ERRORS_FILE archive
-		rm -rf *   # removing everything in $TEMP_DIR directory
+		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_ERRORS_FILE 2>/dev/null   # adding this error file to the $ARCHIVE_ERRORS_FILE archive
+		rm -rf `\ls -A | grep -v CVS`   # removing everything in $TEMP_DIR directory
 		cd -   # changing the directory back
 	    fi
 	else
@@ -447,26 +447,26 @@ else
 	    fi
 	done
 	
-	for file in `\ls -A $DATE/run* 2>/dev/null`; do   # looping through all files that start with "run"
+	for file in `\ls -Ad $DATE/run* 2>/dev/null`; do   # looping through all files that start with "run"
 	    if [ ! -x $file ]; then   # is $file executable? trying to avoid possible coincidences in names
 		rm -f $file   # remove the file, if it is not executable
 	    fi
 	done
 
-	if [ -e $ARCHIVE_EXECUTABLES_FILE ]; then   # does the $ARCHIVE_EXECUTABLES_FILE exist?
+	if [ -f $ARCHIVE_EXECUTABLES_FILE ]; then   # does the $ARCHIVE_EXECUTABLES_FILE exist?
 	    if [ "$DEBUG" == "yes" ]; then
 		tar zxvf $ARCHIVE_EXECUTABLES_FILE -C $TEMP_DIR   # extracting executables in $ARCHIVE_EXECUTABLES_FILE to $TEMP_DIR
 		mv $DATE $TEMP_DIR   # moving current executables to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		tar cz * > `cd -; pwd`/$ARCHIVE_EXECUTABLES_FILE   # adding new executable files to the $ARCHIVE_EXECUTABLES_FILE archive
-		rm -r *   # removing all files from $TEMP_DIR directory
+		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_EXECUTABLES_FILE   # adding new executable files to the $ARCHIVE_EXECUTABLES_FILE archive
+		rm -r `\ls -A | grep -v CVS`   # removing all files from $TEMP_DIR directory
 		cd -   # changing the directory back
 	    else
 		tar zxvf $ARCHIVE_EXECUTABLES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting executables in $ARCHIVE_EXECUTABLES_FILE to $TEMP_DIR
 		mv -f $DATE $TEMP_DIR   # moving current executables to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		tar cz * > `cd -; pwd`/$ARCHIVE_EXECUTABLES_FILE 2>/dev/null   # adding new executable files to the $ARCHIVE_EXECUTABLES_FILE archive
-		rm -rf *   # removing all files from $TEMP_DIR directory
+		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_EXECUTABLES_FILE 2>/dev/null   # adding new executable files to the $ARCHIVE_EXECUTABLES_FILE archive
+		rm -rf `\ls -A | grep -v CVS`   # removing all files from $TEMP_DIR directory
 		cd -   # changing the directory back
 	    fi
 	else
@@ -489,13 +489,13 @@ else
 
 	REST_TASKS=$TASKS_LIST   # the list of the tasks that were not executed yet
 	while [ "$REST_TASKS" != "" ]; do
-	    task=`echo $REST_TASKS | sed s/:*//`   # get the next task
+	    task=`echo $REST_TASKS | sed s/:.*$//`   # get the next task
 	    if [ "$task" == "$REST_TASKS" ]; then   # is it the last task?
 		REST_TASKS=""
 	    else   # more tasks in the list
 		REST_TASKS=`echo $REST_TASKS | sed s/$task://`
 	    fi
-	    task=`echo $task | sed s/\ .*$//`   # getting rid of possible command-line parameters
+	    task=`echo $task | sed s/\ .*$// | sed s/,.*$//`   # getting rid of possible command-line parameters and bin/build-precisec options
 	    
 	    if [ "$DEBUG" == "yes" ]; then   # print some debug information
 		echo "\$task = $task"
@@ -512,28 +512,28 @@ else
 
 	if [ "$DIFFS" == "yes" ]; then   # we want to generate diffs
 	    diff $DIFFS_TODAY_DIR $DIFFS_YESTERDAY_DIR >> $DIFFS_FILE
-	    rm -f $DIFFS_YESTERDAY_DIR/*   # remove source's from the last session
-	    cp -f $DIFFS_TODAY_DIR/* $DIFFS_YESTERDAY_DIR   # copy today's sources
+	    rm -f `\ls -Ad $DIFFS_YESTERDAY_DIR/* | grep -v CVS`   # remove source's from the last session
+	    cp -f `\ls -Ad $DIFFS_TODAY_DIR/* | grep -v CVS` $DIFFS_YESTERDAY_DIR   # copy today's sources
 
 	    echo >> $DIFFS_FILE
 	    echo "End of diffs file." >> $DIFFS_FILE
 	    echo >> $DIFFS_FILE
 	fi
 
-	if [ -e $ARCHIVE_DIFFS_FILE ]; then   # do we have already an $ARCHIVE_DIFFS_FILE?
+	if [ -f $ARCHIVE_DIFFS_FILE ]; then   # do we have already an $ARCHIVE_DIFFS_FILE?
 	    if [ "$DEBUG" == "yes" ]; then
 		tar zxvf $ARCHIVE_DIFFS_FILE -C $TEMP_DIR   # extracting existing diffs files to $TEMP_DIR
 		cp $DIFFS_FILE $TEMP_DIR   # moving $DIFFS_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		tar cz * > `cd -; pwd`/$ARCHIVE_DIFFS_FILE   # adding this diffs file to the $ARCHIVE_DIFFS_FILE archive
-		rm -r *   # removing everything in $TEMP_DIR directory
+		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_DIFFS_FILE   # adding this diffs file to the $ARCHIVE_DIFFS_FILE archive
+		rm -r `\ls -A | grep -v CVS`   # removing everything in $TEMP_DIR directory
 		cd -   # changing the directory back
 	    else
 		tar zxvf $ARCHIVE_DIFFS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting existing diffs files to $TEMP_DIR
 		cp -f $DIFFS_FILE $TEMP_DIR   # moving $DIFFS_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		tar cz * > `cd -; pwd`/$ARCHIVE_DIFFS_FILE 2>/dev/null   # adding this diffs file to the $ARCHIVE_ERRORS_FILE archive
-		rm -rf *   # removing everything in $TEMP_DIR directory
+		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_DIFFS_FILE 2>/dev/null   # adding this diffs file to the $ARCHIVE_ERRORS_FILE archive
+		rm -rf `\ls -A | grep -v CVS`   # removing everything in $TEMP_DIR directory
 		cd -   # changing the directory back
 	    fi
 	else
@@ -547,7 +547,7 @@ else
 	# Adding bechmark sources to the $ARCHIVE_SOURCES_FILE archive
 
 	mkdir -p $DATE
-	for file in `\ls -A $DIFFS_TODAY_DIR/*.java`; do   # looping through all files with "java" extension
+	for file in `\ls -Ad $DIFFS_TODAY_DIR/*.java`; do   # looping through all files with "java" extension
 	    mv -f $file $DATE   # move today's sources to $DATE directory
 	done
 
@@ -556,15 +556,15 @@ else
 		tar zxvf $ARCHIVE_SOURCES_FILE -C $TEMP_DIR   # extracting all sources from $ARCHIVE_SOURCES_FILE to $TEMP_DIR
 		mv $DATE $TEMP_DIR   # moving $DATE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		tar cz * > `cd -; pwd`/$ARCHIVE_SOURCES_FILE   # adding today's sources to the $ARCHIVE_SOURCES_FILE archive
-		rm -r *   # removing all files in $TEMP_DIR directory
+		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_SOURCES_FILE   # adding today's sources to the $ARCHIVE_SOURCES_FILE archive
+		rm -r `\ls -A | grep -v CVS`   # removing all files in $TEMP_DIR directory
 		cd -   # changing directory back
 	    else
 		tar zxvf $ARCHIVE_SOURCES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting all sources from $ARCHIVE_SOURCES_FILE to $TEMP_DIR
 		mv -f $DATE $TEMP_DIR   # moving $DATE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		tar cz * > `cd -; pwd`/$ARCHIVE_SOURCES_FILE 2>/dev/null   # adding today's sources to the $ARCHIVE_SOURCES_FILE archive
-		rm -fr *   # removing all files in $TEMP_DIR directory
+		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_SOURCES_FILE 2>/dev/null   # adding today's sources to the $ARCHIVE_SOURCES_FILE archive
+		rm -fr `\ls -A | grep -v CVS`   # removing all files in $TEMP_DIR directory
 		cd -   # changing directory back
 	    fi
 	else

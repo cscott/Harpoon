@@ -4,7 +4,24 @@
 
 # Beginning of script
 
-cvs update run-tasks > /dev/null 2>&1   # updating the main script
-./run-tasks $@   # running the main script
+MAILING_FILE=mailto-all
+MAILING_LIST=
+GOT_ERRORS=0   # no errors for now
+
+cd $FLEX_DIR/../Tests/Regression/Driver
+cvs update run-tasks > /dev/null 2>&1 || GOT_ERRORS=1   # updating the main script
+if [ $GOT_ERRORS -eq 1 ]; then   # cvs update finished with an error
+    NUMBER_LINES=`wc -l $MAILING_FILE | sed s/\ $MAILING_FILE//`   # getting the number of lines in $MAILING_FILE
+    n_line=1
+    while [ $n_line -le $NUMBER_LINES ]; do   # getting the list of people who will receive the email
+	MAILING_LIST=$MAILING_LIST" `head -n $n_line $MAILING_FILE | tail -n 1`"
+	n_line=$[$n_line+1]
+    done
+
+    echo "Could not update ./run-tasks. Please make sure that you run ./start-server from the appropriate directory, and the ./run-tasks file was not removed from repository." | mail -s "Regression Testing Server Error" $MAILING_LIST
+else
+    ./run-tasks $@   # running the main script
+fi
+cd -
 
 # End of script

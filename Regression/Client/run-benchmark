@@ -5,7 +5,6 @@
 # Script variables
 
 GOT_ERRORS=0   # No errors up to now
-BENCHMARK=$1   # Saving the benchmarks, because the parameters will be lost due to the shift.
 COMMAND_LINE_PARAMETERS=   # Keeps the command-line parameters for this benchmark
 
 COMPILE_STATS=yes
@@ -13,8 +12,6 @@ RUN_STATS=yes
 ERRORS=yes
 
 # Beginning of script
-
-shift   # getting rid of the benchmark's name in the command-line parameters
 
 echo "1" > $RUNNING_TASK_FILE
 
@@ -35,9 +32,17 @@ while [ "$1" != "" ]; do   # parsing the command-line parameters
 	*)
 	    COMMAND_LINE_PARAMETERS=$COMMAND_LINE_PARAMETERS" $1"
     esac
-    
-    shift
+
+    shift   # getting next parameter
 done
+
+BENCHMARK=`echo $COMMAND_LINE_PARAMETERS | sed s/\ .*$// | sed s/,.*$//`   # Saving the benchmarks, because the parameters will be lost due to the shift.
+COMMAND=`echo $COMMAND_LINE_PARAMETERS | sed s/$BENCHMARK// | sed s/,// | sed s/,.*$//`   # Command which will run this benchmark
+COMMAND_LINE_PARAMETERS=`echo $COMMAND_LINE_PARAMETERS | sed s/$BENCHMARK// | sed s/^.*,//`
+
+if [ "$COMMAND" == "" ]; then
+    COMMAND="bin/build-precisec-gc-debug -m -t ALL_RTJ_PERF_THREADS"
+fi
 
 if [ "$ERRORS" == "no" -a -e $ERROR_FILE ]; then
     rm -f $ERROR_FILE
@@ -48,6 +53,10 @@ fi
 if [ "$ERRORS" == "yes" ]; then   # we want to log errors
     echo >> $ERROR_FILE
 fi
+
+# Reconfiguring FLEX for this task
+
+./remake-everything -clean -task=$BENCHMARK > /dev/null 2>&1
 
 # Trying to compile and run the benchmark
 
@@ -71,7 +80,7 @@ else
 		echo -e "\"javac\" could not compile the file $BENCHMARK.java. Please check the correctness of the syntax of $BENCHMARK.java" >> $ERROR_FILE
 	    fi
 	else
-	    ./build -no-debug-ref $BENCHMARK >> $COMPILING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1
+	    $COMMAND $BENCHMARK $BENCHMARK >> $COMPILING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1
 	    if [ $GOT_ERRORS -eq 1 ]; then   # Did the benchmark compile without any error
 		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 		    echo -e "Benchmark $BENCHMARK did not compile." >> $ERROR_FILE

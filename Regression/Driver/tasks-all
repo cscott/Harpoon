@@ -1,1 +1,1 @@
-TestPOSIX
+TestPOSIX,bin/build-precisec-gc-debug -m -t ALL_RTJ_PERF_THREADS,

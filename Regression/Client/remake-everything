@@ -6,52 +6,76 @@
 
 CWD=`pwd`   # we need to come back to this directory at the end
 HARPOON_ROOT_DIR=$FLEX_DIR/..   # the directory that contains Code, Runtime and Realtime
+CLEAN=no   # do a "hard" clean?
+TASK=   # each task can have it's own parameters to configure
+TASKS_CONFIGURE_FILE=$MAIN_TESTING_DIR/tasks-configure
 
-cd $HARPOON_ROOT_DIR/Code   # entering Code
-echo -e "Making Code...\n"
-if [ "$1" == "-clean" ]; then   # should we do "make clean"?
-    make clean
-    for dir in `\ls -d as*`; do
-	if [ -d $dir ]; then
-	    rm -rf $dir   # removing all as<benchmark> directories
-	fi
-    done
+while [ "$1" != "" ]; do   # iterate through all command-line parameters
+    case "$1" in
+	-clean)
+	    CLEAN=yes;;   # do a hard clean
+	-task=*)
+	    TASK=`echo $1 | sed s/^.*=//`;;   # get task's name
+    esac   # ignore other parameters
+
+    shift
+done
+
+if [ "$TASK" == "" ]; then   # when a task requires a special configuration, it needs to remake only Runtime
+    cd $HARPOON_ROOT_DIR/Code   # entering Code
+    echo -e "Making Code...\n"
+    if [ "$CLEAN" == "yes" ]; then   # should we do "make clean"?
+	make clean
+	for dir in `\ls -d as*`; do
+	    if [ -d $dir ]; then
+		rm -rf $dir   # removing all as<benchmark> directories
+	    fi
+	done
+    fi
+    make   # remaking Code
+    echo -e "Finished making Code.\n"
 fi
-make   # remaking Code
-echo -e "Finished making Code.\n"
 
 cd $HARPOON_ROOT_DIR/Runtime   # entering Runtime
 echo -e "Making Runtime...\n"
-if [ "$1" == "-clean" ]; then   # should we run ./setup, ./configure and do "make clean"?
-    for exec in `\ls -d run*`; do
-	if [ -x $exec ]; then
-	    rm -f $exec   # removing all run<benchmark> executables
+if [ "$CLEAN" == "yes" ]; then   # should we run ./setup, ./configure and do "make clean"?
+    if [ "$TASK" != "" ]; then   # this task requires a special configuration
+	CONFIG_LINE=`cat $TASKS_CONFIGURE_FILE | grep $TASK | sed s/^.*://`
+	if [ "$CONFIG_LINE" == "" ]; then   # did not find the ./configure line for this task in $TASKS_CONFIGURE_FILE; using default
+	    CONFIG_LINE=./configure --with-precise-c --with-gc=copying --with-thread-model=user --with-event-driven --disable-shared --with-all-static -with-realtime-java=threads --with-rtj-perf
 	fi
-    done
-    
-    if [ -e config.status ]; then   # is there a file config.status in Runtime?
-	head -n 7 config.status | tail -n 1 > temp
-	CONFIG_LINE=`sed s/\#\ // temp`   # grabbing the command-line for ./configure from config.status
-	rm temp   # removing the temporary file
-	
-	./setup   # running ./setup
-	$CONFIG_LINE   # running ./configure
-	make clean
-    else   # if the file config.status is missing, then use some default options
-	./setup
-	./configure  --with-precise-c --with-gc=copying --with-thread-model=user --with-event-driven --disable-shared --with-all-static -with-realtime-java=threads --with-rtj-perf
-	make clean
+    else   # this task does not require a special configuration
+	if [ -e config.status ]; then   # is there a file config.status in Runtime?
+	    head -n 7 config.status | tail -n 1 > temp
+	    CONFIG_LINE=`sed s/\#\ // temp`   # grabbing the command-line for ./configure from config.status
+	    rm temp   # removing the temporary file
+	else   # using default config line
+	    CONFIG_LINE=./configure --with-precise-c --with-gc=copying --with-thread-model=user --with-event-driven --disable-shared --with-all-static -with-realtime-java=threads --with-rtj-perf
+	fi
     fi
+    
+    ./setup   # running ./setup
+    $CONFIG_LINE   # running ./configure
+    make clean
 fi
+
+for exec in `\ls -d run*`; do
+    if [ -x $exec ]; then
+	rm -f $exec   # removing all run<benchmark> executables
+    fi
+done
+
 make   # remaking Runtime
 echo -e "Finished making Runtime.\n"
 
-cd $HARPOON_ROOT_DIR/Realtime   # entering Realtime
-echo -e "Making Realtime...\n"
-make   # remaking Realtime; note: make includes "make clean", but this is not essential for Realtime (neither in terms of time, nor in terms of files/data;
-echo -e "Finished making Realtime.\n"
-
-echo -e "Finished making everything.\n"
+if [ "$TASK" == "" ]; then   # when a task requires a special configuration, it needs to remake only Runtime
+    cd $HARPOON_ROOT_DIR/Realtime   # entering Realtime
+    echo -e "Making Realtime...\n"
+    make   # remaking Realtime; note: make includes "make clean", but this is not essential for Realtime (neither in terms of time, nor in terms of files/data;
+    echo -e "Finished making Realtime.\n"
+    
+    echo -e "Finished making everything.\n"
+fi
 
 cd $CWD   # go back to the directory in which the script started
 
