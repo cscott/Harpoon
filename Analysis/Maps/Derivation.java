@@ -7,7 +7,13 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Util;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
 /**
  * <code>Derivation</code> provides a means to access the derivation
  * of a particular derived pointer.  Given a compiler temporary, it
@@ -20,7 +26,7 @@ import harpoon.Temp.TempMap;
  * and its motivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.3 2000-02-01 08:08:37 cananian Exp $
+ * @version $Id: Derivation.java,v 1.1.2.4 2000-02-05 22:29:46 cananian Exp $
  */
 public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 
@@ -67,12 +73,66 @@ public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 	 *  if there are no more base pointers associated with this derived
 	 *  pointer. */
 	public final DList next;
+	/** Specifies whether this <code>DList</code> is in canonical form.
+	 */
+	private final boolean canonical;
 	/** Constructor. */
 	public DList(Temp base, boolean sign, DList next) {
 	    this.base = base; this.sign = sign; this.next = next;
+	    // this is the rule for canonicalization:
+	    this.canonical = (next == null) ||
+		(next.canonical && base==next.base && sign==next.sign) ||
+		(next.canonical && base.compareTo(next.base) < 0);
 	}
       
-      /* Like <code>Quad.clone()</code>, does not clone
+	/** Equality test.  Compares the canonical forms of the
+	 *  <code>DList</code>s for strict equality. */
+	public boolean equals(Object o) {
+	    if (!canonical) return canonicalize().equals(o);
+	    if (!(o instanceof DList)) return false;
+	    DList dl = (DList) o;
+	    if (!dl.canonical) return this.equals(dl.canonicalize());
+	    if (this.base != dl.base) return false;
+	    if (this.sign != dl.sign) return false;
+	    if (this.next == null || dl.next == null)
+		return this.next == dl.next;
+	    else return this.next.equals(dl.next);
+	}
+	/** Canonicalize a <code>DList</code>.  The canonicalized
+	 *  form of a <code>DList</code> has all components sorted
+	 *  by <code>Temp</code> (using the natural ordering of
+	 *  <code>Temp</code>s), and is algebraically simplified
+	 *  --- that is, components with the same <code>Temp</code>
+	 *  and opposite signs cancel out. */
+	public DList canonicalize() {
+	    if (canonical) return this;
+	    List l = new ArrayList();
+	    for (DList dl=this; dl!=null; dl=dl.next)
+		l.add(dl);
+	    Collections.sort(l, new Comparator() {
+		// reverse order by dl.temp natural ordering.
+		public int compare(Object o1, Object o2) {
+		    DList dl1 = (DList) o1, dl2 = (DList) o2;
+		    int order = dl1.base.compareTo(dl2.base);
+		    if (order==0) order = (dl1.sign?1:-1) - (dl2.sign?1:-1);
+		    return -order; // reverse
+		}
+	    });
+	    DList result = null;
+	    for (Iterator it=l.iterator(); it.hasNext(); it.next()) {
+		DList dl = (DList) it.next();
+		if (result!=null &&
+		    result.base == dl.base &&
+		    result.sign != dl.sign)
+		    result = result.next; // cancel out component.
+		else
+		    result = new DList(dl.base, dl.sign, result);
+	    }
+	    Util.assert(result!=null && result.canonical);
+	    return result;
+	}
+
+      /** Like <code>Quad.clone()</code>, does not clone
        * <code>Temp</code>s when not supplied with a
        * <code>TempMap</code>. */
       public static DList clone(DList dlist) {
