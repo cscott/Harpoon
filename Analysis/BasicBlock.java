@@ -63,7 +63,7 @@ import java.util.Collection;
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BasicBlock.java,v 1.1.2.46 2001-06-17 22:28:34 cananian Exp $ */
+ * @version $Id: BasicBlock.java,v 1.1.2.47 2001-06-19 16:53:21 pnkfelix Exp $ */
 public class BasicBlock implements java.io.Serializable {
     
     static final boolean DEBUG = false;
@@ -273,10 +273,9 @@ public class BasicBlock implements java.io.Serializable {
 			if (ind != size) {
 			    Collection succs = factory.grapher.succC(next);
 			    Util.assert(succs.size() == 1,
-					/* next+" has "+ */
-					" wrong succs:" 
-					/* + succs+" (ind:" */
-					/* + ind+", size:"+size+")" */);
+					(true)?" wrong succs:":
+					next+" has wrong succs:" + succs
+					+" (ind:"+ind+", size:"+size+")" );
 			    next = ((HCodeEdge)succs.iterator().next()).to(); 
 
 			} else { 
@@ -703,6 +702,8 @@ public class BasicBlock implements java.io.Serializable {
 	    Util.assert(sz == 0);
 	}
 	public void dumpCFG() { dumpCFG(root); }
+	
+	public String toString() { return "BasicBlock.Factory : \n"+getCFG(root); }
 
 	public static void dumpCFG(BasicBlock start) {
 	    Enumeration e = new ReversePostOrderEnumerator(start);
@@ -714,5 +715,21 @@ public class BasicBlock implements java.io.Serializable {
 		System.out.println();
 	    }
 	}
+
+	public static String getCFG(BasicBlock start) {
+	    Enumeration e = new ReversePostOrderEnumerator(start);
+	    StringBuffer sb = new StringBuffer();
+	    while (e.hasMoreElements()) {
+		BasicBlock bb = (BasicBlock)e.nextElement();
+		sb.append("Basic block "+bb + " size:"+ bb.size);
+		sb.append("\n");
+		sb.append("BasicBlock in : "+bb.pred_bb);
+		sb.append("\n");
+		sb.append("BasicBlock out: "+bb.succ_bb);
+		sb.append("\n");
+	    }
+	    return sb.toString();
+	}
+	
     }
 }
