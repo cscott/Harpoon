@@ -189,11 +189,16 @@ int main(int argc, char *argv[]) {
   // handle uncaught exception in main thread. (see also thread_startup)
   if ( (threadexc = (*env)->ExceptionOccurred(env)) != NULL) {
     // call thread.getThreadGroup().uncaughtException(thread, exception)
+#ifndef WITH_REALTIME_JAVA /* ThreadGroups are explicitly disallowed in RTJ */
     jclass thrGrpCls;
     jobject threadgroup;
     jmethodID gettgID, uncaughtID;
+#else
+    (*env)->ExceptionDescribe(env);
+#endif
     (*env)->ExceptionClear(env); /* clear the thread's exception */
     st=1; /* main() exit status will be non-zero. */
+#ifndef WITH_REALTIME_JAVA
     // Thread.currentThread().getThreadGroup()...
     gettgID = (*env)->GetMethodID(env, thrCls, "getThreadGroup",
 				  "()Ljava/lang/ThreadGroup;");
@@ -210,6 +215,7 @@ int main(int argc, char *argv[]) {
     CHECK_EXCEPTIONS(env); // catch exception thrown by uncaughtException() ?
     (*env)->DeleteLocalRef(env, threadgroup);
     (*env)->DeleteLocalRef(env, threadexc);
+#endif
   }
   (*env)->DeleteLocalRef(env, args);
   (*env)->DeleteLocalRef(env, cls);
@@ -219,6 +225,7 @@ int main(int argc, char *argv[]) {
 #endif
 #ifdef CLASSPATH_VERSION
   {/* remove main thread from thread group using ThreadGroup.removeThread() */
+#ifndef WITH_REALTIME_JAVA /* ThreadGroups are explicitly disallowed in RTJ */
     // call thread.getThreadGroup().removeThread(thread)
     jclass thrGrpCls;
     jobject threadgroup;
@@ -240,6 +247,9 @@ int main(int argc, char *argv[]) {
       CHECK_EXCEPTIONS(env); // catch exception thrown?
       (*env)->DeleteLocalRef(env, threadgroup);
     }
+#else
+    (*env)->ExceptionDescribe(env);
+#endif
   }
 #else /* in the sunjdk, the Thread.exit() method does this for us. */
  {
