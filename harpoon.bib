@@ -1,5 +1,5 @@
 % -*-bibtex-*- This is a BibTeX document.
-% $Id: harpoon.bib,v 1.25 1998-10-01 06:28:54 cananian Exp $
+% $Id: harpoon.bib,v 1.26 1998-10-06 07:25:01 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
@@ -7,6 +7,8 @@
 @string{IEEE = {IEEE}}
 @string{ICCAD  = "Proceedings of the {IEEE}/{ACM} International Conference on
                   Computer Aided Design ({ICCAD})"}
+@string{ICS98  = "ICS '98.  Conference proceedings of the 1998
+                  international conference on Supercomputing"}
 @string{PLDI93 = "Proceedings of the {ACM} {SIGPLAN} '93 Conference on
                   Programming Language Design and Implementation ({PLDI})"}
 @string{PLDI94 = "Proceedings of the {ACM} {SIGPLAN} '94 Conference on
@@ -18,6 +20,12 @@
 @string{PLDI97 = "Proceedings of the {ACM} {SIGPLAN} '97 Conference on
                   Programming Language Design and Implementation ({PLDI})"}
 @string{POPL94 = "Proceedings of the 21st {ACM} Symposium on Principles
+                  of Programming Languages ({POPL})"}
+@string{POPL95 = "Proceedings of the 22nd {ACM} Symposium on Principles
+                  of Programming Languages ({POPL})"}
+@string{POPL96 = "Proceedings of the 23rd {ACM} Symposium on Principles
+                  of Programming Languages ({POPL})"}
+@string{POPL97 = "Proceedings of the 24th {ACM} Symposium on Principles
                   of Programming Languages ({POPL})"}
 @string{POPL98 = "Proceedings of the 25th {ACM} Symposium on Principles
                   of Programming Languages ({POPL})"}
@@ -46,9 +54,28 @@
   year =	 1998,
   address =	 {Melbourne, Australia},
   month =	 jul,
-  annote =	 {Predication, but in an array analysis context.}
+  annote =	 {Predication in an array analysis context.}
 }
 
+
+@InProceedings{webber97:binrel,
+  author = 	 {Adam Brooks Webber},
+  title = 	 {Program Analysis Using Binary Relations},
+  booktitle = 	 PLDI97,
+  pages =	 {249-259},
+  year =	 1997,
+  address =	 {Las Vegas, Nevada},
+  month =	 may,
+  url =		 {http://www.acm.org/pubs/articles/proceedings/pldi/258915/p249-webber/},
+  annote =       {Very powerful analysis/optimization technique.
+                  Originally presented for LISP basic blocks only.
+                  With phi and sigma functions we can extend the
+                  analysis to the whole program and incorporate
+                  elements of reachability analysis.  Analysis
+                  extracts relations between pairs of variables, and
+                  is very type-flexible.  Fairly complicated
+                  implementation, however.}
+}
 
 %%%% Language issues.
 
@@ -198,7 +225,7 @@
   address =	 {Albuquerque, New Mexico},
   month =	 jun,
   pages =	 {68-77},
-  url = 	 {http://www.acm.org/pubs/articles/proceedings/pldi/},
+  url = 	 {http://www.acm.org/pubs/citations/proceedings/pldi/155090/p68-duesterwald/},
   annote =	 {Not terribly useful.  REREAD LATER.}
 }
 
@@ -214,6 +241,18 @@
   annote =	 {Interesting examples of C++ code, but light on
                   optimization results.  We really want to peek at
                   Cliff Click's PhD thesis. [Ed note: I found it!]}
+}
+
+@InProceedings{sreedhar95:lintime,
+  author = 	 {Vugranam C. Sreedhar and Guang R. Gao},
+  title = 	 {A Linear Time Algorithm for Placing $\phi$-Nodes},
+  booktitle = 	 POPL95,
+  pages =	 {62-73},
+  year =	 1995,
+  address =	 {San Francisco, California},
+  month =	 jan,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/plan/199448/p62-sreedhar/},
+  annote =	 {Just what the title says.  I need to implement this eventually.}
 }
 
 @InProceedings{sreedhar96:dj,
@@ -759,6 +798,18 @@
                   non-symmetric functions, too.  Tenth-of-a-second
                   execution times; 1000x faster than comparable
                   methods.  Go Go Go!}
+}
+
+@InProceedings{kol98:kin,
+  author = 	 {Rakefet Kol and Ran Ginosar},
+  title = 	 {Kin: A High Performance Asynchronous Processor Architecture},
+  booktitle = 	 ICS98,
+  pages =	 {433-440},
+  year =	 1998,
+  address =	 {Melbourne, Australia},
+  month =	 jul,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/supercomputing/277830/p433-kol/},
+  annote =	 {Why asynchronous design will take over the world.}
 }
 
 
