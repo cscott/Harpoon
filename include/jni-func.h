@@ -40,10 +40,12 @@ struct JNINativeInterface {
   jclass (*DefineClass) (JNIEnv *env, jobject loader,
 			 const jbyte *buf, jsize bufLen);
   jclass (*FindClass) (JNIEnv *env, const char *name);
-  void *reserved5, *reserved6, *reserved7;
+  jmethodID (*FromReflectedMethod) (JNIEnv *env, jobject method); /* 7 (JNI 1.2) */
+  jfieldID (*FromReflectedField) (JNIEnv *env, jobject field); /* 8 (JNI 1.2) */
+  jobject (*ToReflectedMethod) (JNIEnv *env, jclass cls, jmethodID methodID); /* 9 (JNI 1.2) */
   jclass (*GetSuperclass) (JNIEnv *env, jclass clazz);
   jboolean (*IsAssignableFrom) (JNIEnv *env, jclass clazz1, jclass clazz2);
-  void *reserved8;
+  jobject (*ToReflectedField) (JNIEnv *env, jclass cls, jfieldID fieldID); /* 12 (JNI 1.2) */
 
   /* exceptions */
   jint (*Throw) (JNIEnv *env, jthrowable obj);
@@ -52,14 +54,16 @@ struct JNINativeInterface {
   void (*ExceptionDescribe) (JNIEnv *env);
   void (*ExceptionClear) (JNIEnv *env);
   void (*FatalError) (JNIEnv *env, const char *msg);
-  void *reserved9, *reserved10;
 
   /* global and local references */
+  jint (*PushLocalFrame) (JNIEnv *env, jint capacity); /* 19 (JNI 1.2) */
+  jobject (*PopLocalFrame) (JNIEnv *env, jobject result); /* 20 (JNI 1.2) */
   jobject (*NewGlobalRef) (JNIEnv *env, jobject obj);
   void (*DeleteGlobalRef) (JNIEnv *env, jobject globalRef);
   void (*DeleteLocalRef) (JNIEnv *env, jobject localRef);
   jboolean (*IsSameObject) (JNIEnv *env, jobject ref1, jobject ref2);
-  void *reserved11, *reserved12;
+  jobject (*NewLocalRef) (JNIEnv *env, jobject ref); /* 25 (JNI 1.2) */
+  jint (*EnsureLocalCapacity) (JNIEnv *env, jint capacity); /* 26 (JNI 1.2) */
 
   /* Object Operations */
   jobject (*AllocObject) (JNIEnv *env, jclass clazz);
@@ -187,13 +191,31 @@ struct JNINativeInterface {
   jint (*UnregisterNatives) (JNIEnv *env, jclass clazz);
 
   /* Monitor Operations */
-  jint (*MonitorEnter) (JNIEnv *env, jobject obj);
-  jint (*MonitorExit) (JNIEnv *env, jobject obj);
+  jint (*MonitorEnter) (JNIEnv *env, jobject obj); // 217
+  jint (*MonitorExit) (JNIEnv *env, jobject obj); // 218
 
   /* we don't plan on supporting the invocation api... */
-#if 0
-  jint (*GetJavaVM) (JNIEnv *env, JavaVM **vm);
-#endif
+  jint (*GetJavaVM) (JNIEnv *env, JavaVM **vm); // 219
+
+  /* more jni 1.2 methods */
+  void (*GetStringRegion) (JNIEnv *env, jstring str, jsize start, jsize len, jchar *buf); /* 220 (JNI 1.2) */
+  void (*GetStringUTFRegion) (JNIEnv *env, jstring str, jsize start, jsize len, char *buf); /* 221 (JNI 1.2) */
+
+  void * (*GetPrimitiveArrayCritical) (JNIEnv *env, jarray arr, jboolean *isCopy); /* 222 (JNI 1.2) */
+  void (*ReleasePrimitiveArrayCritical) (JNIEnv *env, jarray arr, void *carray, jint mode); /* 223 (JNI 1.2) */
+
+  const jchar * (*GetStringCritical) (JNIEnv *env, jstring str, jboolean *isCopy); /* 224 (JNI 1.2) */
+  void (*ReleaseStringCritical) (JNIEnv *env, jstring str, const jchar *carray); /* 225 (JNI 1.2) */
+
+  jweak (*NewWeakGlobalRef) (JNIEnv *env, jobject obj); /* 226 (JNI 1.2) */
+  void (*DeleteWeakGlobalRef) (JNIEnv *env, jweak obj); /* 227 (JNI 1.2) */
+
+  jboolean (*ExceptionCheck) (JNIEnv *env); /* 228 (JNI 1.2) */
+
+  /* nio support */
+  jobject (*NewDirectByteBuffer) (JNIEnv *env, void *address, jlong capacity); /* 229 (JNI 1.4) */
+  void * (*GetDirectBufferAddress) (JNIEnv *env, jobject buf); /* 230 (JNI 1.4) */
+  jlong (*GetDirectBufferCapacity) (JNIEnv *env, jobject buf); /* 231 (JNI 1.4) */
 };
 
 #endif /* INCLUDED_JNI_FUNC_H */

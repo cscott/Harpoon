@@ -38,6 +38,8 @@ typedef jarray jfloatArray;
 typedef jarray jdoubleArray;
 /* you can be a bit more clever in c++, but i rather dislike c++ */
 
+typedef jobject jweak; /* added in JNI v1.2 */
+
 /* field and method IDs are regular C pointer types. */
 struct _jfieldID; /* opaque structure */
 typedef struct _jfieldID *jfieldID; /* field IDs */
@@ -69,5 +71,21 @@ typedef struct {
   char *signature;
   void *fnPtr;
 } JNINativeMethod;
+
+/* we're not actually planning on implementing the Invocation API... */
+typedef const struct JNIInvokeInterface *JavaVM;
+    
+struct JNIInvokeInterface
+{
+  void * reserved0;
+  void * reserved1;
+  void * reserved2;
+
+  jint (*DestroyJavaVM)         (JavaVM *vm); /* 3 */
+  jint (*AttachCurrentThread)   (JavaVM *vm, void **penv, void *args); /* 4 */
+  jint (*DetachCurrentThread)   (JavaVM *vm); /* 5 */
+  jint (*GetEnv)                (JavaVM *vm, void **env, jint version); /* 6 (JNI v1.2) */
+  jint (*AttachCurrentThreadAsDaemon) (JavaVM *vm, void **penv, void *args); /* 7 (JNI v1.4) */
+};
 
 #endif /* INCLUDED_JNI_TYPES_H */

@@ -20,4 +20,21 @@
 #define JNI_COMMIT 1
 #define JNI_ABORT  2
 
+/* --- constants below here added in JNI v1.2 --- */
+
+/* version constants */
+#define JNI_VERSION_1_1 0x00010001
+#define JNI_VERSION_1_2 0x00010002
+
+/* Error codes */
+#define JNI_EDETACHED    (-2)              /* thread detached from the VM */
+#define JNI_EVERSION     (-3)              /* JNI version error */
+
+/*     (there was no JNI v1.3)                    */
+
+/* --- constants below here added in JNI v1.4 --- */
+
+/* version constants */
+#define JNI_VERSION_1_4 0x00010004
+
 #endif /* INCLUDED_JNI_H */
