@@ -1,7 +1,7 @@
 #! /usr/bin/perl
 # -*-Perl-*-
 #
-#ident	"@(#)cvs/contrib:$Name:  $:$Id: commit_prep,v 1.4 1998-10-18 09:35:02 cananian Exp $"
+#ident	"@(#)cvs/contrib:$Name:  $:$Id: commit_prep,v 1.5 1998-10-18 09:47:44 cananian Exp $"
 #
 # Perl filter to handle pre-commit checking of files.  This program
 # records the last directory where commits will be taking place for
@@ -74,6 +74,13 @@ $BadVersion = "
 sub write_line {
     local($filename, $line) = @_;
     open(FILE, ">$filename") || die("Cannot open $filename, stopped");
+    print(FILE $line, "\n");
+    close(FILE);
+}
+
+sub append_line {
+    local($filename, $line) = @_;
+    open(FILE, ">>$filename") || die("Cannot open $filename, stopped");
     print(FILE $line, "\n");
     close(FILE);
 }
@@ -225,7 +232,7 @@ if ($track_diffs != 0) {
 	}
 	close(STATUS);
     }
-    &write_line("$DIFF_FILE.$id", join("\n", @diff_txt));
+    &append_line("$DIFF_FILE.$id", join("\n", @diff_txt));
 }
 
 # Record this directory as the last one checked.  This will be used
