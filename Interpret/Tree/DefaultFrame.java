@@ -44,7 +44,7 @@ import java.util.Set;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.4.4 1999-10-13 16:30:53 cananian Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.4.5 1999-10-13 17:17:00 cananian Exp $
  */
 public class DefaultFrame extends harpoon.Backend.Generic.Frame
     implements AllocationInfo {
@@ -98,7 +98,7 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
 	m_memLimit    = new Temp(m_tempFactory);
 	if (map==null) throw new Error("Must specify OffsetMap");
 	else m_offsetMap = map;
-	m_runtime = new harpoon.Backend.Runtime1.Runtime(this, ch);
+	m_runtime = new harpoon.Backend.Runtime1.Runtime(this, null, ch);
     }
 	
     public harpoon.Backend.Generic.Frame newFrame(String scope) {

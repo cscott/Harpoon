@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Runtime1;
 
+import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.LocationFactory;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Tree.BINOP;
@@ -30,13 +31,14 @@ import java.util.List;
  * A simple-minded version of Appel's fast-allocation strategy
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: AppelAllocationStrategy.java,v 1.1.2.1 1999-10-13 16:54:58 cananian Exp $
+ * @version  $Id: AppelAllocationStrategy.java,v 1.1.2.2 1999-10-13 17:16:50 cananian Exp $
  */
-public class DefaultAllocationStrategy extends AllocationStrategy {
+public class AppelAllocationStrategy extends AllocationStrategy {
     final LocationFactory.Location memLimit;
     final LocationFactory.Location nextPtr;
 
-    public DefaultAllocationStrategy(LocationFactory lf) {
+    public AppelAllocationStrategy(Frame frame) {
+	LocationFactory lf = frame.getLocationFactory();
 	memLimit = lf.allocateLocation(Type.POINTER);
 	nextPtr = lf.allocateLocation(Type.POINTER);
     }

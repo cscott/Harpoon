@@ -18,7 +18,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.5 1999-10-13 16:52:21 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.6 1999-10-13 17:16:50 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -26,8 +26,8 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
     final ObjectBuilder ob;
     
     /** Creates a new <code>Runtime1.Runtime</code>. */
-    public Runtime(Frame frame, ClassHierarchy ch) {
-	super(new Object[] { frame, ch });
+    public Runtime(Frame frame, AllocationStrategy as, ClassHierarchy ch) {
+	super(new Object[] { frame, as, ch });
 	this.frame = frame;
 	this.ch = ch;
 	this.ob = new harpoon.Backend.Runtime1.ObjectBuilder(this);
@@ -38,9 +38,8 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
     }
     protected TreeBuilder initTreeBuilder(Object closure) {
 	Frame f = (Frame) ((Object[])closure)[0];
-	ClassHierarchy ch = (ClassHierarchy) ((Object[])closure)[1];
-	AllocationStrategy as =
-	    new DefaultAllocationStrategy(f.getLocationFactory());
+	AllocationStrategy as = (AllocationStrategy) ((Object[])closure)[1];
+	ClassHierarchy ch = (ClassHierarchy) ((Object[])closure)[2];
 	return new harpoon.Backend.Runtime1.TreeBuilder(this, ch, as,
 							f.pointersAreLong());
     }

@@ -45,7 +45,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.7 1999-10-13 16:04:43 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.8 1999-10-13 17:16:58 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -57,7 +57,9 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	super();
 	codegen = new CodeGen(this);
 	regFileInfo = new RegFileInfo();
-	runtime = new harpoon.Backend.Runtime1.Runtime(this, ch);
+	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
+	    new harpoon.Backend.Runtime1.MallocAllocationStrategy("_malloc");
+	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, ch);
 	instrBuilder = new InstrBuilder(regFileInfo);
     }
 
