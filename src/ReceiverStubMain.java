@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package imagerec;
 
+import imagerec.corba.CORBA;
+
 import imagerec.graph.*;
 
 /**
@@ -19,12 +21,12 @@ public class ReceiverStubMain {
      *  @param args Should include parameters for contacting the CORBA nameservice.
      */
     public static void main(String args[]) {
-	if (args.length<2) {
-	    System.out.println("Usage: jar -x receiverStub.jar <jarFile|'none'> <filePrefix> <num> [CORBA options]");
+	if (args.length<4) {
+	    System.out.println("Usage: java -jar receiverStub.jar <jarFile|'none'> <filePrefix> <num> <CORBA name for ATR> [CORBA options]");
 	    System.exit(-1);
 	}
 
-	Node atr = new ATRClient(args);
+	Node atr = new ATRClient(new CORBA(args), args[3]);
 	Node load;
 	if (args[0].equalsIgnoreCase("none")) {
 	    load = new Load(args[1], Integer.parseInt(args[2]), atr);

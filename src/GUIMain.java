@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package imagerec;
 
+import imagerec.corba.CORBA;
+
 import imagerec.graph.*;
 
 /**
@@ -18,8 +20,9 @@ public class GUIMain {
      *  @param args foo
      */
     public static void main(String args[]) {
-	if (args.length<3) {
-	    System.out.println("Usage: java -jar GUI.jar <'pause'|'nopause'> <'corba'|'nocorba'> <pipeline #> [CORBA options]");
+	if (args.length<5) {
+	    System.out.println("Usage: java -jar GUI.jar <'pause'|'nopause'> <'corba'|'nocorba'> <pipeline #>");
+	    System.out.println("       [CORBA name for ATR] [CORBA name for Alert] [CORBA options]");
 	    System.exit(-1);
 	}
 
@@ -79,10 +82,10 @@ public class GUIMain {
 		Node head;
 		if (useCorba) {
 		    Node range = new RangeFind(null);
-		    Node alert = new Alert(args);
+		    Node alert = new Alert(new CORBA(args), args[4]);
 		    label.linkR(n2.link(range.linkL(alert),
 				       circle));
-		    head = new ATR(args, pipe);
+		    head = new ATR(new CORBA(args), args[3], pipe);
 		}
 		else {
 		    head = new Load("GUI.jar", "tank.gz", 533, pipe);
@@ -112,11 +115,11 @@ public class GUIMain {
 		Node head;
 		if (useCorba) {
 		    Node range = new RangeFind(null);
-		    Node alert = new Alert(args);
+		    Node alert = new Alert(new CORBA(args), args[4]);
 		    Node n3 = new Node();
 		    labelBlue.linkR(n3.link(range.linkL(alert),
 				       circle));
-		    head = new ATR(args, pipe);
+		    head = new ATR(new CORBA(args), args[3], pipe);
 		}
 		else {
 		    head = new Load("GUI.jar", "tank.gz", 533, pipe);
@@ -175,11 +178,11 @@ public class GUIMain {
 		if (useCorba) {
 		    Node thin = new Thinning(Thinning.BLUE, null);
 		    Node range = new RangeFind(null);
-		    Node alert = new Alert(args);
+		    Node alert = new Alert(new CORBA(args), args[4]);
 		    Node n4 = new Node();
 		    labelSmCache.linkR(thin.linkL(n4.link(range.linkL(alert),
 							  circle)));
-		    head = new ATR(args, pipe);
+		    head = new ATR(new CORBA(args), args[3], pipe);
 		}
 		else {
 		    head = new Load("GUI.jar", "tank.gz", 533, pipe);

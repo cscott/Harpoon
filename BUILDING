@@ -70,14 +70,17 @@ Start the JacORB NameService:
   java -jar ns.jar /users/wbeebee/.jacorb
 
 Start the ALERT server:
-  java -jar trackerStub.jar -ORBInitRef NameService=file://users/wbeebee/.jacorb
+  java -jar trackerStub.jar "ATR Alert" -ORBInitRef NameService=file://users/wbeebee/.jacorb
 
 Start the ATR:
-  java -jar ATR.jar timer 3 -ORBInitRef NameService=file://users/wbeebee/.jacorb
+  java -jar ATR.jar timer 3 "LMCO ATR" "ATR Alert" -ORBInitRef NameService=file://users/wbeebee/.jacorb
  
 Send images to the ATR:
-  java -jar receiverStub.jar GUI.jar tank.gz 533 -ORBInitRef NameService=file://users/wbeebee/.jacorb
+  java -jar receiverStub.jar GUI.jar tank.gz 533 "LMCO ATR" -ORBInitRef NameService=file://users/wbeebee/.jacorb
 
+
+Note: Use the CORBA names "LMCO ATR" and "ATR Alert" only for drop-in compatibility 
+with the existing Lockheed-Martin ATR.
 
 For main development, develop in src/Main.java and use 'make' and 'make run' 
 

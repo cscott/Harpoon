@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package imagerec;
 
+import imagerec.corba.CORBA;
+
 import imagerec.graph.*;
 
 /**
@@ -26,8 +28,9 @@ public class ATRMain {
 	 * they will be placed in this file.
 	 */
 
-	if (args.length<2) {
-	    System.out.println("Usage: java -jar ATR.jar <'timer'|'notimer'> <pipeline #> [CORBA options]");
+	if (args.length<4) {
+	    System.out.println("Usage: java -jar ATR.jar <'timer'|'notimer'> <pipeline #>"); 
+	    System.out.println("       <CORBA name for ATR> <CORBA name for Alert> [CORBA options]");
 	    System.exit(-1);
 	}
 	
@@ -60,6 +63,12 @@ public class ATRMain {
 		timer2 = new Node();
 	    }
 	    Node pipe = null;
+	    Node alert = null;
+	    if ((pipelineNumber == 1)||
+		(pipelineNumber == 2)||
+		(pipelineNumber == 3)) {
+		alert = new Alert(new CORBA(args), args[3]);
+	    }
 	    if (pipelineNumber == 1) {
 		
 		Node robCross = new RobertsCross(null);
@@ -67,14 +76,12 @@ public class ATRMain {
 		Label label = new Label(Label.DEFAULT1, null, null);
 		label.findOneObject(true);
 		Node range = new RangeFind(null);
-		Node alert = new Alert(args);
 		pipe = timer1.linkL(robCross.linkL(thresh.linkL(label.link(null,
 									   range.linkL(timer2.linkL(alert))))));
 	    }
 	    else if (pipelineNumber == 2) {
 		Node labelBlue = new LabelBlue(null, null);
 		Node range = new RangeFind(null);
-		Node alert = new Alert(args);
 		pipe = timer1.linkL(labelBlue.link(null,
 						   range.linkL(timer2.linkL(alert))));
 	    }
@@ -94,7 +101,6 @@ public class ATRMain {
 		Node getCropCmd = new Command(Command.GET_CROPPED_IMAGE, null);
 		Node thin = new Thinning(Thinning.BLUE, null);
 		Node range = new RangeFind(null);
-		Node alert = new Alert(args);
 		Node getLabelSmCmd = new Command(Command.GET_IMAGE, null);
 		pipe = 
 		timer1.linkL(cleanCache.link(n.link(calibCmd.linkL(labelBlue),
@@ -114,7 +120,7 @@ public class ATRMain {
 		System.out.println("Error: Pipeline #"+pipelineNumber+" not implemented yet.");
 		System.exit(-1);
 	    }
-	    (new ATR(args, pipe)).run();
+	    (new ATR(new CORBA(args), args[2], pipe)).run();
 
 	}//else [if(pipelineNumber <= 0)]
     }//public static void main()

@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package imagerec;
 
+import imagerec.corba.CORBA;
 import imagerec.graph.*;
 
 /**
@@ -20,10 +21,10 @@ public class TrackerStubMain {
      */
     public static void main(String args[]) {
 	if (args.length<2) {
-	    System.out.println("Usage: jaco -jar trackerStub.jar [CORBA options]");
+	    System.out.println("Usage: java -jar trackerStub.jar <CORBA name> [CORBA options]");
 	    System.exit(-1);
 	}
 
-	(new AlertServer(args, new AlertDisplay())).run();
+	(new AlertServer(new CORBA(args), args[0], new AlertDisplay())).run();
     }
 }
