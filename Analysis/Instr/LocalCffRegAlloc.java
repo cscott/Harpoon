@@ -33,7 +33,7 @@ import java.util.AbstractSet;
  * <code>LocalCffRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.36 1999-08-18 17:32:53 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.37 1999-08-18 17:52:30 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -196,7 +196,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			code.assignRegister(i, ref, regs);
 			
 			InstrMEM loadInstr = 
-			    new FskLoad(i.getFactory(), i.getSource(),
+			    new FskLoad(i.getFactory(), i,
 					"FSK-LOAD", regs, ref);
 			Instr.insertInstrBefore(i, loadInstr);
 
@@ -263,7 +263,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 					" val: "+value);
 
 			    InstrMEM spillInstr =
-				new FskStore(i.getFactory(), i.getSource(), 
+				new FskStore(i.getFactory(), i, 
 					     "FSK-STORE", value, regs);
 			    Instr.insertInstrBefore(i, spillInstr);
 			    

@@ -42,7 +42,7 @@ import java.io.FileInputStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.6 1999-08-18 17:32:54 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.7 1999-08-18 17:52:31 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -70,7 +70,7 @@ public class SAMain extends harpoon.IR.Registration {
 	String arg;
 	while((c = g.getopt()) != -1) {
 	    switch(c) {
-	    case 'm': // serialized methToSAFactMap
+	    case 'm': // serialized ClassHierarchy
 		arg = g.getOptarg();
 		classHierarchyFilename = arg;
 		try {
