@@ -29,7 +29,7 @@ import java.util.TreeMap;
  * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.1.2.2 1999-09-09 21:42:54 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.1.2.2.2.1 1999-09-16 19:20:32 cananian Exp $
  */
 
 public abstract class DeadCode  {
@@ -72,11 +72,11 @@ public abstract class DeadCode  {
 	}
 
 	// Finally, do all the necessary renaming
-	Quad[] hce = (Quad[]) hc.getElements(); // put them all in an array.
+	ql = (Quad[]) hc.getElements(); // put them all in an array.
 	// evil: can't replace the header node. [ack]
-	for (int i=0; i<hce.length; i++)
-	    if (!(hce[i] instanceof HEADER))
-		Quad.replace(hce[i], hce[i].rename(nm, nm));
+	for (int i=0; i<ql.length; i++)
+	    if (!(ql[i] instanceof HEADER))
+		Quad.replace(ql[i], ql[i].rename(nm, nm));
 
     } // end OPTIMIZE METHOD.
 
@@ -94,35 +94,14 @@ public abstract class DeadCode  {
 			 (Quad)after.to(), after.which_pred() );
 	}
 
-
-	public void visit(harpoon.IR.Quads.AGET q)    {
-	    visit((Quad)q);
-	}
-
-	public void visit(harpoon.IR.Quads.ASET q)    {
-	    visit((Quad)q);
-	}
-
-	public void visit(harpoon.IR.Quads.CALL q)    {
-	    visit((Quad)q);
-	}
-
-	public void visit(harpoon.IR.Quads.GET q)     {
-	    visit((Quad)q);
-	}
-
-	public void visit(harpoon.IR.Quads.HANDLER q) {
-	    visit((Quad)q);
-	}
-
-	public void visit(harpoon.IR.Quads.OPER q)    {
-	    visit((Quad)q);
-	}
-	
-	public void visit(harpoon.IR.Quads.SET q)     {
-	    visit((Quad)q);
-	}
-	
+	// duplicate default visitors so that this will work with both
+	// quad and low-quad form.
+	public void visit(harpoon.IR.Quads.AGET q)    { visit((Quad)q); }
+	public void visit(harpoon.IR.Quads.ASET q)    { visit((Quad)q); }
+	public void visit(harpoon.IR.Quads.CALL q)    { visit((SIGMA)q); }
+	public void visit(harpoon.IR.Quads.GET q)     { visit((Quad)q); }
+	public void visit(harpoon.IR.Quads.OPER q)    { visit((Quad)q); }
+	public void visit(harpoon.IR.Quads.SET q)     { visit((Quad)q); }
 
 	public void visit(Quad q) {
 	    // generally, remove it if it's worthless.
@@ -313,28 +292,13 @@ public abstract class DeadCode  {
 		markUseful(q);
 	}
 
-
-	public void visit(harpoon.IR.Quads.AGET q)    {
-	    visit((Quad)q);
-	}
-
-	public void visit(harpoon.IR.Quads.ASET q)    {
-	    visit((Quad)q);
-	}
-
-	public void visit(harpoon.IR.Quads.GET q)     {
-	    visit((Quad)q);
-	}
-
-	public void visit(harpoon.IR.Quads.OPER q)    {
-	    visit((Quad)q);
-	}
+	// duplicate default visitors so it works on both quad and low-quad
+	public void visit(harpoon.IR.Quads.AGET q)    { visit((Quad)q); }
+	public void visit(harpoon.IR.Quads.ASET q)    { visit((Quad)q); }
+	public void visit(harpoon.IR.Quads.GET q)     { visit((Quad)q); }
+	public void visit(harpoon.IR.Quads.OPER q)    { visit((Quad)q); }
 	
 	public void visit(ARRAYINIT q) { // always useful.
-	    markUseful(q);
-	}
-	public void visit(CALL q) {
-	    // CALLs may have side-effects, thus they are always useful (conservative)
 	    markUseful(q);
 	}
 
@@ -348,6 +312,17 @@ public abstract class DeadCode  {
 	    markUseful(q);
 	}
 
+	public void visit(CALL q) {
+	    // all CALLs are useful (may have side-effects)
+	    useful.add(q);
+	    // are variables used are useful.
+	    for (int i=0; i<q.paramsLength(); i++)
+		markUseful(q.params(i));
+	    markUseful(q.retex());
+	    if (q.retval()!=null) markUseful(q.retval());
+	    // process sigmas normally
+	    visit((SIGMA)q);
+	}
 	public void visit(CJMP q) {
 	    // assume all CJMPs are useful (we'll remove useless ones later)
 	    useful.add(q);
