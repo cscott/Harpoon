@@ -6,9 +6,9 @@ INSTALLDIR=public_html/Harpoon/
 export TEXINPUTS=/home/cananian/src/tex4ht//:
 
 ALLDOCS=design bibnote readnote quads proposal thesis exec pldi99 pldi02 \
-	pldi03 oopsla02 oqe lctes03 pldi04
+	pldi03 oopsla02 oqe lctes03 pldi04 ecoop04
 
-default: pldi04.ps
+default: ecoop04.ps
 .PRECIOUS: %.dvi
 
 ## funky stuff for martin.
@@ -92,7 +92,7 @@ lctes03-talk.dvi lctes03-talk-notes.tex lctes03-talk-adobe.tex:	\
 	 Figures/Images/model-t-redblue.eps	\
 
 # pldi04 paper dependencies
-pldi04.dvi: \
+pldi04.dvi ecoop04.dvi: \
 	Figures/nb-single-obj.eps Figures/nb-multi-obj.eps \
 	Figures/chuang.eps Figures/funarr.eps Figures/bloat.eps \
 	Figures/tr-w-all.eps Figures/tr-w-ten.eps Figures/tr-sz-all.eps \
