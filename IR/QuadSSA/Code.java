@@ -20,7 +20,7 @@ import java.util.Stack;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.27 1998-10-11 02:37:56 cananian Exp $
+ * @version $Id: Code.java,v 1.28 1998-10-21 15:58:47 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -29,8 +29,6 @@ public class Code extends HCode {
 
     /** The method that this code view represents. */
     HMethod parent;
-    /** The byte code underlying this code view. */
-    harpoon.IR.Bytecode.Code bytecode;
     /** The quadruples composing this code view. */
     Quad quads;
 
@@ -38,13 +36,31 @@ public class Code extends HCode {
     Code(harpoon.IR.Bytecode.Code bytecode) 
     {
 	this.parent = bytecode.getMethod();
-        this.bytecode = bytecode;
-	//harpoon.Temp.Temp.clear(); /* debug */
 	this.quads = Translate.trans(bytecode);
 	CleanUp.cleanup(this); // cleanup null predecessors of phis.
 	Peephole.optimize(this); // peephole optimizations.
 	FixupFunc.fixup(this); // add phi/sigma functions.
 	DeadCode.optimize(this); // get rid of unused phi/sigmas.
+    }
+    /** 
+     * Create a new (synthetic) code object given a quadruple representation
+     * of the method instructions.  If <code>addPhi</code> is true,
+     * adds phi and sigma functions to the <code>PHI</code> and
+     * <code>SIGMA</code> quads in the representations.
+     */
+    public Code(HMethodSyn parent, Quad quads, boolean addPhi) {
+	this.parent = parent;
+	this.quads = quads;
+	Util.assert(quads instanceof HEADER);
+	Util.assert(((HEADER)quads).footer instanceof FOOTER);
+	// if addPhi, check that phis and sigmas are empty?
+	if (addPhi)
+	    FixupFunc.fixup(this);
+	DeadCode.optimize(this);
+    }
+    /** Same as above; with <code>addPhi==false</code>. */
+    public Code(HMethodSyn parent, Quad quads) {
+	this(parent, quads, false);
     }
     /**
      * Return the <code>HMethod</code> this codeview
