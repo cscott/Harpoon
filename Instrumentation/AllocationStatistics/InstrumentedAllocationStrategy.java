@@ -41,7 +41,7 @@ import java.util.ArrayList;
  * <code>InstrumentedAllocationStrategy</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: InstrumentedAllocationStrategy.java,v 1.3 2003-02-11 04:18:03 salcianu Exp $
+ * @version $Id: InstrumentedAllocationStrategy.java,v 1.4 2003-02-11 20:16:01 salcianu Exp $
  */
 public class InstrumentedAllocationStrategy extends MallocAllocationStrategy {
     
@@ -53,11 +53,9 @@ public class InstrumentedAllocationStrategy extends MallocAllocationStrategy {
 	     "harpoon.Runtime.CounterSupport",
 	     "count2",
 	     new HClass[]{HClass.Int, HClass.Int});
-	nameMap = f.getRuntime().getNameMap();
     }
 
     private final HMethod instrumMethod;
-    private final NameMap nameMap;
 
     /* Generates the following sequence of instructions for each
        allocation site:
@@ -72,10 +70,10 @@ public class InstrumentedAllocationStrategy extends MallocAllocationStrategy {
 			DerivationGenerator dg,
 			AllocationProperties ap,
 			Exp length) {
-
 	int id = ap.getUniqueID();
-	assert id != -1;
-	//if(id == -1) return super.memAlloc(tf, source, dg, ap, length);
+	// id == -1 corresponds to allocation sites that are part of
+	// our instrumenting code
+	if(id == -1) return super.memAlloc(tf, source, dg, ap, length);
 	
 	TempFactory tempFact = tf.tempFactory();
 	
@@ -90,13 +88,14 @@ public class InstrumentedAllocationStrategy extends MallocAllocationStrategy {
 	
 	Label contLabel = new Label(getUniqueName());
 	NAME continuation = new NAME(tf, source, contLabel);
-	
+
 	CALL call = new CALL
 	    (tf, source,
 	     null,  /* no return value */
 	     texcp, /* exceptions go to texcp (unused) */
 	     /* method to call */
-	     new NAME(tf, source, nameMap.label(instrumMethod)),
+	     new NAME(tf, source,
+		      frame.getRuntime().getNameMap().label(instrumMethod)),
 	     /* 2 arguments: */
 	     new ExpList(new CONST(tf, source, id), /* allocation ID */
 			 new ExpList(tlength,       /* memory length */
@@ -104,16 +103,18 @@ public class InstrumentedAllocationStrategy extends MallocAllocationStrategy {
 	     /* exception handler = normal continuation */
 	     continuation,
 	     false /* not a tail call*/);
-	
+
 	LABEL label = new LABEL(tf, source, contLabel, false);
 	Exp allocCall = super.memAlloc(tf, source, dg, ap, tlength);
 
 	Exp wholeSequence =
 	    new ESEQ(new SEQ(move, new SEQ(call, label)), allocCall);
 
+	/*
 	System.out.println("IT's COMING!");
 	System.out.println(wholeSequence);
 	System.exit(1);
+	*/
 
 	return wholeSequence;
     }

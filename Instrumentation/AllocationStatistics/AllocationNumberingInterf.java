@@ -13,10 +13,14 @@ import harpoon.IR.Quads.Quad;
  * is only locally unique (in the method of that quad).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AllocationNumberingInterf.java,v 1.1 2003-02-03 16:20:31 salcianu Exp $
+ * @version $Id: AllocationNumberingInterf.java,v 1.2 2003-02-11 20:16:01 salcianu Exp $
  */
 public interface AllocationNumberingInterf {
-    /** Return a unique identifier for the allocation site
-	<code>q</code>. */
-    int allocID(Quad q);    
+    /** @return a unique identifier for the allocation site
+	<code>q</code>. 
+
+	May throw <code>UnknownAllocationSiteError</code> if the
+	instrumentation has not seen that allocation site when the
+	unique IDs where assigned. */
+    int allocID(Quad q);
 }

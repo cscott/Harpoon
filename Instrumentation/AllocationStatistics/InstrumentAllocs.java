@@ -40,7 +40,7 @@ import java.util.Map;
  * the program.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: InstrumentAllocs.java,v 1.2 2003-02-08 23:22:39 salcianu Exp $ */
+ * @version $Id: InstrumentAllocs.java,v 1.3 2003-02-11 20:16:01 salcianu Exp $ */
 public class InstrumentAllocs extends MethodMutator
     implements java.io.Serializable {
 
@@ -115,9 +115,10 @@ public class InstrumentAllocs extends MethodMutator
 	hm_orig_exit = getMethod(linker, "java.lang.System", "exit", "(I)V");
     }
 
-    // returns that method of class clsn that is called mn and has
-    // arguments of types a_types
-    static HMethod getMethod(Linker linker, String clsn, String mn,
+    /** Returns that method of class <code>clsn</code> that is called
+	<code>mn</code> and has arguments of types
+	<code>a_types</code>. */
+    public static HMethod getMethod(Linker linker, String clsn, String mn,
 			     HClass[] atypes) {
 	return linker.forName(clsn).getMethod(mn, atypes);
     }
@@ -267,9 +268,9 @@ public class InstrumentAllocs extends MethodMutator
 	private void treat_allocs(Quad q) {
 	    try {
 		treat_allocs_real(q);
-	    } catch (Error e) {
-		// Ignore, means that its code called only
-		// by our instrumenting code
+	    } catch (UnknownAllocationSiteError e) {
+		// Ignore, means this code called only by our
+		// instrumenting code
 	    }
 	}
 	

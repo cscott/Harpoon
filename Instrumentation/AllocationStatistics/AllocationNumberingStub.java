@@ -35,7 +35,7 @@ import harpoon.IR.Quads.Code;
  * <i>textualized</i> to/from an ASCII file.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AllocationNumberingStub.java,v 1.2 2003-02-03 23:23:19 salcianu Exp $
+ * @version $Id: AllocationNumberingStub.java,v 1.3 2003-02-11 20:16:01 salcianu Exp $
  */
 public class AllocationNumberingStub implements AllocationNumberingInterf {
 
@@ -79,7 +79,9 @@ public class AllocationNumberingStub implements AllocationNumberingInterf {
 	HMethod hm = q.getFactory().getMethod();
 	Integer allocID = 
 	    (Integer) getMap4Method(hm).get(new Integer(q.getID()));
-	assert allocID != null : "Quad unknown: " + q + " #" + q.getID();
+	if(allocID == null)
+	    throw new UnknownAllocationSiteError
+		("Quad unknown: " + q + " #" + q.getID());
 	return allocID.intValue();
     }
 

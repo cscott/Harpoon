@@ -4,6 +4,7 @@
 package harpoon.Instrumentation.AllocationStatistics;
 
 import harpoon.Analysis.Transformation.MethodMutator;
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeAndMaps;
@@ -54,7 +55,7 @@ import java.util.Map;
     identifier and the length of the memory allocated there.
 
     @author Alexandru Salcianu <salcianu@MIT.EDU>
-    @version $Id: InstrumentAllocs2.java,v 1.3 2003-02-11 04:18:03 salcianu Exp $ */
+    @version $Id: InstrumentAllocs2.java,v 1.4 2003-02-11 20:16:01 salcianu Exp $ */
 public class InstrumentAllocs2 extends MethodMutator
     implements java.io.Serializable {
     
@@ -73,7 +74,10 @@ public class InstrumentAllocs2 extends MethodMutator
 			     Linker linker, AllocationNumbering an) {
 	super(parent);
 
-	this.parent = parent;
+	assert
+	    parent.getCodeName().equals(QuadNoSSA.codename) :
+	    "InstrumentAllocs works only with QuadNoSSA";
+
 	this.main   = main;
 	this.an     = an;
 
@@ -85,20 +89,13 @@ public class InstrumentAllocs2 extends MethodMutator
     }
 
     private HMethod main;
-    private HCodeFactory parent;
     private AllocationNumbering an;
 
     private HMethod hm_instr_exit;
     private HMethod hm_orig_exit;
 
-    public HCodeFactory parent() {
-	return parent;
-    }
-
     protected HCode mutateHCode(HCodeAndMaps input) {
 	HCode hc = input.hcode();
-
-	System.out.println("method = " + hc.getMethod());
        
 	// we avoid instrumenting the instrumentation itself !
 	if (hc.getMethod().getDeclaringClass().getName().
@@ -108,7 +105,11 @@ public class InstrumentAllocs2 extends MethodMutator
 	InstrumentAllocs.instrumentProgramTermination
 	    (hc, hm_orig_exit, hm_instr_exit);
 
-	updateAllocationProperties((Code) hc, input.ancestorElementMap());
+	try {
+	    updateAllocationProperties((Code) hc, input.ancestorElementMap());
+	} catch(UnknownAllocationSiteError e) {
+	    // ignore: code called only by the instrumentation
+	}
  
 	if (hc.getMethod().equals(main))
 	    InstrumentAllocs.treatMainMethod(hc, hm_instr_exit);
@@ -127,7 +128,7 @@ public class InstrumentAllocs2 extends MethodMutator
 	}
 
 	for(Iterator it = hc.selectAllocations().iterator(); it.hasNext(); ) {
-	    Quad alloc = (Quad) it.next();
+	    Quad alloc = (Quad)it.next();
 	    final int allocID = an.allocID((Quad) ancestor.get(alloc));
 	    AllocationProperties formerAP = aim.query(alloc);
 	    aim.associate(alloc,
