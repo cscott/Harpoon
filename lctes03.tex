@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: lctes03.tex,v 1.14 2003-04-25 09:05:25 cananian Exp $
+% $Id: lctes03.tex,v 1.15 2003-04-25 09:14:31 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % lctes03.tex
 % Data Size Optimizations for Java Programs
@@ -873,10 +873,10 @@ the end of the object out so that a larger field may be allocated on
 its preferred alignment.  After each field is placed, we begin again
 by attempting to place fields on preferred boundaries.
 
-This heuristic strategy has been observed to work well in practice,
+We have observed that this heuristic strategy works well in practice,
 and the penalties for occasionally placing an unaligned non-pointer
 field have not
-been observed to have a material adverse effect on performance (see
+been seen to have a material adverse effect on performance (see
 Section~\ref{sec:byte-pack}). 
 
 % header optimizations.
