@@ -25,7 +25,7 @@
 ;;;; extract the root project dir
 (defun user-specific-project-dir ()
   "Returns the pathname to the root project directory."
-  (harpoon-basepath-name "Harpoon/Code/"))
+  (harpoon-basepath-name "/Code/"))
 ;;;; changed class-buffer template so that extra space is not generated
 (defun harpoon-gen-get-super-class ()
   "Concatenates a space to the result of jde-gen-get-super-class if it is not empty."
@@ -114,7 +114,7 @@
      "(funcall jde-gen-boilerplate-function)"
      "\"// Copyright (C) 2000 \" (user-full-name) \" <\" user-mail-address \">\" 'n" 
      "\"// Licensed under the terms of the GNU GPL; see COPYING for details.\" 'n" 
-     "\"package harpoon\" (harpoon-package-name \"Harpoon/Code\") \";\" 'n 'n" 
+     "\"package harpoon\" (harpoon-package-name \"/Code\") \";\" 'n 'n" 
      "\"/**\" 'n" 
      "\" * <code>\"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"</code>\" 'n" 
      "\" * \" 'n" 
