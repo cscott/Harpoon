@@ -23,10 +23,10 @@ import harpoon.Temp.Temp;
  * same prototype as <code>malloc()</code> to do the allocation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MallocAllocationStrategy.java,v 1.1.2.5 2000-11-11 18:16:42 bdemsky Exp $
+ * @version $Id: MallocAllocationStrategy.java,v 1.1.2.6 2000-11-12 01:25:10 cananian Exp $
  */
 public class MallocAllocationStrategy extends AllocationStrategy {
-    protected final Frame frame;
+    final Frame frame;
     final String funcname;
 
     /** Creates a <code>MallocAllocationStrategy</code>.
@@ -64,11 +64,11 @@ public class MallocAllocationStrategy extends AllocationStrategy {
 	     DECLARE(dg, HClass.Void/*not an obj yet, just memory*/, Tret,
 	     new TEMP(tf, source, Type.POINTER, Tret)));
     }
-    protected static Exp DECLARE(DerivationGenerator dg, HClass hc, Exp exp) {
+    private static Exp DECLARE(DerivationGenerator dg, HClass hc, Exp exp) {
 	if (dg!=null) dg.putType(exp, hc);
 	return exp;
     }
-    protected static Exp DECLARE(DerivationGenerator dg, HClass hc, Temp t,
+    private static Exp DECLARE(DerivationGenerator dg, HClass hc, Temp t,
 			       Exp exp) {
 	if (dg!=null) dg.putTypeAndTemp(exp, hc, t);
 	return exp;
