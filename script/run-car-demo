@@ -7,7 +7,7 @@ xterm -title "Name Service" -e java -jar ns.jar /home/benster/ImageRec/.jacorb &
 sleep 2
 
 #Start the Alert Server:
-xterm -title "Alert Server" -e java -jar trackerStub.jar "ATR Alert" -ORBInitRef &
+xterm -title "Alert Server" -e java -jar carDemoTrackerStub.jar 1 "ATR Alert" -ORBInitRef &
 
 sleep 2
 
