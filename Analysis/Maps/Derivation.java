@@ -26,7 +26,7 @@ import java.util.List;
  * and its motivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.4 2000-02-05 22:29:46 cananian Exp $
+ * @version $Id: Derivation.java,v 1.1.2.5 2000-02-08 23:19:46 cananian Exp $
  */
 public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 
@@ -85,6 +85,15 @@ public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 		(next.canonical && base.compareTo(next.base) < 0);
 	}
       
+	/** Returns a human-readable description of this <code>DList</code>. */
+	public String toString() {
+	    return "<k>"+toString(canonicalize());
+	}
+	// helper function for toString().
+	private static String toString(DList dl) {
+	    if (dl==null) return "";
+	    else return (dl.sign?"+":"-") + dl.base + toString(dl.next);
+	}
 	/** Equality test.  Compares the canonical forms of the
 	 *  <code>DList</code>s for strict equality. */
 	public boolean equals(Object o) {
