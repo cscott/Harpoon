@@ -42,13 +42,15 @@ public class ReceiverStubMain {
 	    System.exit(-1);
 	}
 	else {
+
 	    if (pipelineNumber == 1) {
 		Node atrClient = new ATRClient(new CORBA(args), args[4]);
+		Node timer = new Timer(true, false, null);
 		Node load;
 		if (args[0].equalsIgnoreCase("none")) {
-		    load = new Load(args[1], Integer.parseInt(args[2]), atrClient);
+		    load = new Load(args[1], Integer.parseInt(args[2]), timer.linkL(atrClient));
 		} else {
-		    load = new Load(args[0], args[1], Integer.parseInt(args[2]), atrClient);
+		    load = new Load(args[0], args[1], Integer.parseInt(args[2]), timer.linkL(atrClient));
 		}
 		while (true) {
 		    load.run();
