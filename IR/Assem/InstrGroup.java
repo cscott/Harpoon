@@ -26,7 +26,7 @@ import java.util.Arrays;
  * single-entry single-exit region.
  * 
  * @author  Felix S Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrGroup.java,v 1.1.2.1 2001-05-15 05:47:23 pnkfelix Exp $ */
+ * @version $Id: InstrGroup.java,v 1.1.2.2 2001-05-15 06:33:50 pnkfelix Exp $ */
 public class InstrGroup {
     Type type;
     Instr entry, exit;
@@ -170,7 +170,8 @@ public class InstrGroup {
 	    Instr i=(Instr)hce;
 
 	    if (!i2g.containsKey(i)) {
-		Util.assert(!i.partOf(t));
+		// FSK: PUT BACK AFTER INSTR IS COMMITTED
+		// Util.assert(!i.partOf(t));
 		return i.useC();
 	    } else {
 		// work backwards, gathering up uses but killing
@@ -192,7 +193,8 @@ public class InstrGroup {
 	public Collection defC(HCodeElement hce) { 
 	    Instr i = (Instr) hce;
 	    if (!i2g.containsKey(i)) {
-		Util.assert(i.partOf(t));
+		// FSK: PUT BACK AFTER INSTR IS COMMITTED
+		// Util.assert(i.partOf(t));
 		return i.defC();
 	    } else {
 		// gather up all defs and pass them out
