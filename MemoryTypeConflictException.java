@@ -12,7 +12,10 @@ public class MemoryTypeConflictException extends Exception {
 	super();
     }
 
-    /** A descriptive constructor for <code>MemoryTypeConflictException</code>. */
+    /** A descriptive constructor for <code>MemoryTypeConflictException</code>.
+     *
+     *  @param s A description of the exception.
+     */
     public MemoryTypeConflictException(String s) {
 	super(s);
     }

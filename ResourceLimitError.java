@@ -10,7 +10,10 @@ public class ResourceLimitError extends Error {
 	super();
     }
 
-    /** A descriptive constructor for <code>ResourceLimitError</code>. */
+    /** A descriptive constructor for <code>ResourceLimitError</code>.
+     *
+     *  @param s The description of the exeption.
+     */
     public ResourceLimitError(String s) {
 	super(s);
     }

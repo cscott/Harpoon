@@ -20,8 +20,11 @@ public class MemoryAccessError extends Error {
 	super(); 
     }
     
-    /** A descriptive constructor for <code>MemoryAccessError</code>. */
-    public MemoryAccessError(String description) { 
-	super(description); 
+    /** A descriptive constructor for <code>MemoryAccessError</code>.
+     *
+     *  @param s Description of the error.
+     */
+    public MemoryAccessError(String s) {
+	super(s); 
     }
 }

@@ -7,10 +7,10 @@ package javax.realtime;
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
-/** This error thrown by <code>enter(Runnable logic)</code> when a
+/** The error thrown by <code>MeoryArea.enter(Runnable)</code> when a
  *  <code>java.lang.Throwable</code> is allocated from memory that is
  *  not usable in the surrounding scope tries to propagate out of the
- *  scope of the <code>enter(Runnable logic)</code.
+ *  scope of the <code>MemoryArea.enter(Runnable)</code>.
  */
 public class ThrowBoundaryError extends Error {
 
@@ -19,8 +19,11 @@ public class ThrowBoundaryError extends Error {
 	super();
     }
 
-    /** A descriptive constructor for <code>ThrowBoundaryError</code>. */
-    public ThrowBoundaryError(String description) {
-	super(description);
+    /** A descriptive constructor for <code>ThrowBoundaryError</code>.
+     *
+     *  @param s Description of the error.
+     */
+    public ThrowBoundaryError(String s) {
+	super(s);
     }
 }

@@ -7,10 +7,11 @@ package javax.realtime;
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
-/** The exception thrown on an attempt to make an illegal assignment.
- *  For example, this will be thrown if logic attempts to assign a
- *  reference to an object in <code>ScopedMemory</code> to a field in
- *  an object in <code>ImmortalMemory</code>.
+/** Thrown if the constructor of an <code>ImmortalPhysicalMemory,
+ *  LTPhyscalMemory, VTPhysicalMemory, RawMemoryAccess</code>, or
+ *  <code>RawMemoryFloatAccess</code> is given an invalid size or
+ *  if an accessor method on one of the above classes cause access
+ *  to an invalid address.
  */
 public class IllegalAssignmentError extends Error {
 
@@ -19,8 +20,11 @@ public class IllegalAssignmentError extends Error {
 	super();
     }
 
-    /** A descriptive constructor for <code>IllegalAssignmentError</code>. */
-    public IllegalAssignmentError(String description) {
-	super(description);
+    /** A descriptive constructor for <code>IllegalAssignmentError</code>.
+     *
+     *  @param s The description of the exception.
+     */
+    public IllegalAssignmentError(String s) {
+	super(s);
     }
 }

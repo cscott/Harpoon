@@ -1,7 +1,7 @@
 package javax.realtime;
 
-/** Thrown when <code>bindTo()</code> is called with an
- *  illegal <code>happening</code>.
+/** This exception is used to indicate a situation where an instance of
+ *  <code>AsyncEvent</code> attempts to bind to a happening that does not exist.
  */
 public class UnknownHappeningException extends Exception {
 
@@ -10,7 +10,10 @@ public class UnknownHappeningException extends Exception {
 	super();
     }
 
-    /** A descriptive constructor for <code>UnknownHappeningException</code> */
+    /** A descriptive constructor for <code>UnknownHappeningException</code>
+     *
+     *  @param s Description of the error.
+     */
     public UnknownHappeningException(String s) {
 	super(s);
     }

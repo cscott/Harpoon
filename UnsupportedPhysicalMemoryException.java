@@ -17,7 +17,10 @@ public class UnsupportedPhysicalMemoryException extends Exception {
 	super();
     }
 
-    /** A descriptive constructor for <code>UnsupportedPhysicalMemoryException</code>. */
+    /** A descriptive constructor for <code>UnsupportedPhysicalMemoryException</code>.
+     *
+     *  @param s The description of the exception.
+     */
     public UnsupportedPhysicalMemoryException(String s) {
 	super(s);
     }

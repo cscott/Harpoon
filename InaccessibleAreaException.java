@@ -10,7 +10,10 @@ public class InaccessibleAreaException extends Exception {
 	super();
     }
 
-    /** A descriptive constructor for <codeInaccessibleAreaException</code>. */
+    /** A descriptive constructor for <codeInaccessibleAreaException</code>.
+     *
+     *  @param s Description of the error.
+     */
     public InaccessibleAreaException(String s) {
 	super(s);
     }

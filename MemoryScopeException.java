@@ -10,7 +10,10 @@ public class MemoryScopeException extends Exception {
 	super();
     }
 
-    /** A descriptive constructor for <code>MemoryScopeException</code>. */
+    /** A descriptive constructor for <code>MemoryScopeException</code>.
+     *
+     *  @param s A description of the exception.
+     */
     public MemoryScopeException(String s) {
 	super(s);
     }

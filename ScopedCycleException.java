@@ -8,7 +8,10 @@ public class ScopedCycleException extends Exception {
 	super();
     }
 
-    /** A descriptive constructor for <code>ScopedCycleException</code>. */
+    /** A descriptive constructor for <code>ScopedCycleException</code>.
+     *
+     *  @param s Description of the error.
+     */
     public ScopedCycleException(String s) {
 	super(s);
     }

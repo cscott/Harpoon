@@ -111,6 +111,14 @@ public final class POSIXSignalHandler {
 
     /** Add the given <code>AsyncEventHandler</code> to the list of
      *  handlers of the <code>AsyncEvent</code> of the given signal.
+     *
+     *  @param signal One of the POSIX signals from <code>this</code> (e.g.,
+     *                <code>this.SIGLOST</code>). If the value given to
+     *                <code>signal</code> is not one of the POSIX signals
+     *                then a <code>java.lang.IllegalArgumentException</code>
+     *                will be thrown.
+     *  @param handler An <code>AsyncEventHandler</code> which will be
+     *                 scheduled when the given signal occurs.
      */
     public static void addHandler(int signal, AsyncEventHandler handler) {
 	signalsHandlersList[signal].addHandler(handler);
@@ -118,6 +126,14 @@ public final class POSIXSignalHandler {
 
     /** Remove the given <code>AsyncEventHandler</code> to the list
      *  of handlers of the <code>AsyncEvent</code> of the given signal.
+     *
+     *  @param signal One of the POSIX signals from <code>this</code> (e.g.,
+     *                <code>this.SIGLOST</code>). If the value given to
+     *                <code>signal</code> is not one of the POSIX signals
+     *                then a <code>java.lang.IllegalArgumentException</code>
+     *                will be thrown.
+     *  @param handler An <code>AsyncEventHandler</code> which will be
+     *                 scheduled when the given signal occurs.
      */
     public static void removeHandler(int signal, AsyncEventHandler handler) {
 	signalsHandlersList[signal].removeHandler(handler);
@@ -125,6 +141,15 @@ public final class POSIXSignalHandler {
 
     /** Set the given <code>AsyncEventHandler</code> as the handler
      *  of the <code>AsyncEvent</code> of the given signal.
+     *  @param signal One of the POSIX signals from <code>this</code> (e.g.,
+     *                <code>this.SIGLOST</code>). If the value given to
+     *                <code>signal</code> is not one of the POSIX signals
+     *                then a <code>java.lang.IllegalArgumentException</code>
+     *                will be thrown.
+     *  @param handler An <code>AsyncEventHandler</code> which will be
+     *                 scheduled when the given signal occurs. If
+     *                 <code>handler</code> is null then no handler will be
+     *                 associated with <code>this</code> (i.e., remove all handlers).
      */
     public static void setHandler(int signal, AsyncEventHandler handler) {
 	signalsHandlersList[signal].setHandler(handler);

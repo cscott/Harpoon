@@ -10,7 +10,10 @@ public class MemoryInUseException extends Exception {
 	super();
     }
 
-    /** A descriptive constructor for <code>MemoryInUseException</code>. */
+    /** A descriptive constructor for <code>MemoryInUseException</code>.
+     *
+     *  @param s Description of the error.
+     */
     public MemoryInUseException(String s) {
 	super(s);
     }

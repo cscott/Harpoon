@@ -1,12 +1,6 @@
 package javax.realtime;
 
-/** Thrown by the <code>fire()</code> method of an instance of
- *  <code>AsyncEvent</code> when the bound instance of
- *  <code>AsyncEventHandler</code> with a <code>ReleaseParameters</code>
- *  type of <code>SporadicParameters</code> has
- *  <code>mitViolationExcept</code> behavior and the minimum
- *  interarrival time gets violated.
- */
+/** The exception is thrown when minimum interarrival time is violated. */
 public class MITViolationException extends Exception {
 
     /** A constructor for <code>MITViolationException</code>. */
@@ -14,7 +8,10 @@ public class MITViolationException extends Exception {
 	super();
     }
 
-    /** A descriptive constructor for <code>MITViolationException</code>. */
+    /** A descriptive constructor for <code>MITViolationException</code>.
+     *
+     *  @param s Description of the error.
+     */
     public MITViolationException(String s) {
 	super(s);
     }
