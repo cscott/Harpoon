@@ -1,11 +1,12 @@
-// EDFScheduler.java, created by wbeebee
-// Copyright (C) 2003 Wes Beebee <wbeebee@mit.edu>
+// EDFScheduler.java, created by wbeebee, laporte
+// Copyright (C) 2003 Wes Beebee <wbeebee@mit.edu>, Nathan LaPorte <laporte@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
 /** <code>EDFScheduler</code> is an example of the dumbest possible EDF scheduler.
  *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
+ * @author Nathan La Porte <<a href="mailto:laporte@mit.edu">laporte@mit.edu</a>>
  */
 public class EDFScheduler extends Scheduler {
     static EDFScheduler instance = null;
@@ -46,7 +47,18 @@ public class EDFScheduler extends Scheduler {
 	return instance;
     }
     
-    /** It is not always feasible to add another thread to a EDFScheduler. */
+    /** Inform the scheduler and cooperating facilities that the resource demands,
+     *  as expressed in associated instances of <code>SchedulingParameters,
+     *  ReleaseParameters, MemoryParameters</code> and <code>ProcessingGroupParameters</code>,
+     *  of this instance of <code>Schedulable</code> will be considered in the 
+     *  feasibility analysis of the associated <code>Scheduler</code> until
+     *  further notice.  Whether the resulting system is feasible or not, the addition 
+     *  is completed.
+     *
+     *  @param schedulable The instance of <code>Schedulable</code> for which the changes
+     *                     are proposed.
+     */
+
     protected void addToFeasibility(Schedulable schedulable) {
     }
 
@@ -59,32 +71,143 @@ public class EDFScheduler extends Scheduler {
 	return "EDF Scheduler";
     }
 
-    /** It is not always feasible to add another thread to a EDFScheduler. */
+    /** Queries the system about the feasibility of the set of 
+     *  <code>Schedulable</code> objects with respect to their include in the 
+     *  feasibility set and the constraints expressed by their associated
+     *  parameter objects.
+     *
+     *  @return True if the system is able to satisfy the constraints expressed
+     *          by the parameter object of all instances of <code>Schedulable</code>
+     *          currently in the feasibility set.  False if the system cannot
+     *          satisfy those constraints.
+     */
     public boolean isFeasible() {
-	return true;
+	class CalcLoad implements Runnable {
+	    public float l = 0.0f;
+
+	    public CalcLoad() {}
+
+	    public void run() {
+		EDFScheduler edf = EDFScheduler.this;
+		int curThread;
+		for (curThread = 0; curThread <= edf.numThreads; curThread++) {
+		    if (edf.enabled[curThread])
+			l += (edf.cost[curThread]-edf.work[curThread])/
+			    ((edf.startPeriod[curThread] + edf.period[curThread])-
+			     System.currentTimeMillis());
+		}
+	    }
+	}
+	
+	CalcLoad c = new CalcLoad();
+	atomic(c);
+	return (c.l < 1.0);
     }
 
     /** It is not always feasible to add another thread to a EDFScheduler. */
-    protected boolean isFeasible(Schedulable s, ReleaseParameters rp) {
-	return true;
+    protected boolean isFeasible(final Schedulable s, final ReleaseParameters rp) {
+	class CalcLoad implements Runnable {
+	    public boolean feas;
+
+	    public CalcLoad() {}
+
+	    public void run() {
+		EDFScheduler edf = EDFScheduler.this;
+		int curThread = (int)(s.getUID() + edf.OFFSET);
+		edf.enabled[curThread] = true;
+		long oldCost = edf.cost[curThread];  // Save the old values
+		long oldPeriod = edf.period[curThread];
+		// Put in the test values
+		edf.cost[curThread] = rp.getCost().getMilliseconds();  
+		edf.period[curThread] = rp.getDeadline().getMilliseconds();
+		feas = edf.isFeasible(); // does it work?
+		edf.cost[curThread] = oldCost; // Either way, restore old ones
+		edf.period[curThread] = oldPeriod;
+	    }
+	}
+	
+	CalcLoad c = new CalcLoad();
+	atomic(c);
+	return c.feas;
     }
 
-    /** It is not always feasible to add another thread to a EDFScheduler. */
+    /** Inform <code>this</code> and cooperating facilities that the
+     *  <code>ReleaseParameters</code> of the given instance of <code>Schedulable</code>
+     *  should <i>not</i> be considered in feasibility analysis until further notified.
+     *
+     *  @param schedulable The instance of <code>Schedulable</code> whose
+     *                     <code>ReleaseParameters</code> are to be removed from the 
+     *                     feasibility set.
+     *  @return True, if the removal was successful. False, if the removal was
+     *          unsucessful.
+     */
     protected void removeFromFeasibility(Schedulable schedulable) {}
 
-    /** It is not always feasible to add another thread to a EDFScheduler. */
+    /** This method appears in many classes in the RTSJ and with various parameters.
+     *  The parameters are either new scheduling characteristics for an instance
+     *  <code>Schedulable</code> or an instance of <code>Schedulable</code>. The
+     *  method first performs a feasibility analysis using the new scheduling
+     *  characteristics of the given instance of <code>Schedulable</code>.  If the
+     *  resuling system is feasible, the method replaces the current scheduling
+     *  characteristics, of either <code>this</code> or the given instance of
+     *  <code>Schedulable</code> as appropriate, with the new scheduling characteristics.
+     *
+     *  @param schedulable The instance of <code>Schedulable</code> for which the
+     *                     changes are proposed
+     *  @param release The proposed release parameters.
+     *  @param memory The proposed memory parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
+     */
     public boolean setIfFeasible(Schedulable schedulable,
 				 ReleaseParameters release,
 				 MemoryParameters memory) {
-	return true;
+	return setIfFeasible(schedulable, release, memory, schedulable.getProcessingGroupParameters());
     }
 
-    /** It is not always feasible to add another thread to a EDFScheduler. */
-    public boolean setIfFeasible(Schedulable schedulable,
-				 ReleaseParameters release,
-				 MemoryParameters memory,
-				 ProcessingGroupParameters group) {
-	return true;
+    /** The method appears in many classes in the RTSJ and with various parameters.
+     *  The parameters are either new scheduling characteristics for an instance
+     *  <code>Schedulable</code> or an instance of <code>Schedulable</code>. The
+     *  method first performs a feasibility analysis using the new scheduling
+     *  characteristics, of either <code>this</code> or the given instance of
+     *  <code>Schedulable</code> as appropriate, with the new scheduling characterics.
+     *
+     *  @param schedulable The instance of <code>Schedulable</code> for which the
+     *                     changes are proposed
+     *  @param release The proposed release parameters.
+     *  @param memory The proposed memory paramaters.
+     *  @param group The proposed processing group parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
+     */
+    public boolean setIfFeasible(final Schedulable schedulable,
+				 final ReleaseParameters release,
+				 final MemoryParameters memory,
+				 final ProcessingGroupParameters group) {
+	class CalcLoad implements Runnable {
+	    public boolean feas;
+	    
+	    public CalcLoad() {}
+
+	    public void run() {
+		EDFScheduler edf = EDFScheduler.this;
+		int curThread = (int)(schedulable.getUID() + EDFScheduler.OFFSET);
+		if (isFeasible(schedulable, release)) {
+		    schedulable.setReleaseParameters(release);
+		    edf.cost[curThread] = release.getCost().getMilliseconds();
+		    edf.period[curThread] = release.getDeadline().getMilliseconds();
+		    schedulable.setMemoryParameters(memory);
+		    schedulable.setProcessingGroupParameters(group);
+		    feas = true;
+		} else {
+		    feas = false;
+		}
+	    }
+	}
+
+	CalcLoad c = new CalcLoad();
+	atomic(c);
+	return c.feas;
     }
 
     protected long chooseThread(long currentTime) {
