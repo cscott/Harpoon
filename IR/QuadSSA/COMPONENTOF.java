@@ -11,7 +11,7 @@ import harpoon.Temp.Temp;
  * array, or boolean <code>false</code> otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: COMPONENTOF.java,v 1.3 1998-09-11 18:23:17 cananian Exp $
+ * @version $Id: COMPONENTOF.java,v 1.4 1998-09-11 18:28:22 cananian Exp $
  * @see ASET
  * @see "The Java Virtual Machine Specification"
  */
@@ -38,7 +38,7 @@ public class COMPONENTOF extends Quad {
     /** Returns the <code>Temp</code>s defined by this quad. */
     public Temp[] def() { return new Temp[] { dst }; }
 
-    public void visit(Visitor v) { v.visit(this); }
+    public void visit(QuadVisitor v) { v.visit(this); }
 
     /** Returns a human-readable representation of this Quad. */
     public String toString() {

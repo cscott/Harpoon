@@ -1,16 +1,16 @@
-// Visitor.java, created Fri Sep 11 12:59:44 1998 by cananian
+// QuadVisitor.java, created Fri Sep 11 12:59:44 1998 by cananian
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 /**
- * <code>Visitor</code> is a Design Pattern, courtesy of Martin.
+ * <code>QuadVisitor</code> is a Design Pattern, courtesy of Martin.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Visitor.java,v 1.2 1998-09-11 17:20:56 cananian Exp $
+ * @version $Id: QuadVisitor.java,v 1.1 1998-09-11 18:28:23 cananian Exp $
  */
 
-public abstract class Visitor  {
-    protected Visitor() { }
+public abstract class QuadVisitor  {
+    protected QuadVisitor() { }
 
     /** Visit a quad q. */
     public abstract void visit(Quad q);

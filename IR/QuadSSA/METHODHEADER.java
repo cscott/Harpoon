@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * keep track of the temporary variable names used for method parameters.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: METHODHEADER.java,v 1.7 1998-09-11 18:23:17 cananian Exp $
+ * @version $Id: METHODHEADER.java,v 1.8 1998-09-11 18:28:22 cananian Exp $
  */
 
 public class METHODHEADER extends HEADER {
@@ -24,7 +24,7 @@ public class METHODHEADER extends HEADER {
     /** Returns the temps defined by this Quad. */
     public Temp[] def() { return (Temp[]) Util.copy(params); }
 
-    public void visit(Visitor v) { v.visit(this); }
+    public void visit(QuadVisitor v) { v.visit(this); }
 
     /** Returns a human-readable representation. */
     public String toString() {

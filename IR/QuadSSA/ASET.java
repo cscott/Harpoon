@@ -8,7 +8,7 @@ import harpoon.Temp.Temp;
  * <code>ASET</code> represents an array element assignment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ASET.java,v 1.5 1998-09-11 18:23:17 cananian Exp $
+ * @version $Id: ASET.java,v 1.6 1998-09-11 18:28:22 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ALENGTH
@@ -37,7 +37,7 @@ public class ASET extends Quad {
      */
     public Temp[] use() { return new Temp[] { objectref, index, src }; }
 
-    public void visit(Visitor v) { v.visit(this); }
+    public void visit(QuadVisitor v) { v.visit(this); }
 
     /** Returns a human-readable representation of this quad. */
     public String toString() {
