@@ -83,7 +83,7 @@ import java.util.Map;
 	 </OL> 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.18 2000-11-10 23:32:37 cananian Exp $
+    @version $Id: MultiMap.java,v 1.1.2.19 2001-11-04 00:30:14 cananian Exp $
  */
 public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 
@@ -188,6 +188,9 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
     */
     boolean addAll(Object key, Collection values);
 
+    /** Adds all mappings in the given multimap to this multimap. */
+    boolean addAll(MultiMap mm);
+
     /** Removes from the current mappings: associations for
 	<code>key</code> to any value not in <code>values</code>. 
 
@@ -224,7 +227,9 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
     */
     public boolean contains(Object a, Object b);
 
-
+    /** Returns the number of key-value mappings in this map (keys which
+     *  map to multiple values count multiple times). */
+    public int size();
 } 
 
 
