@@ -32,7 +32,7 @@ public class Sockets implements CommunicationsModel {
 
     public Sockets() {}
 
-    protected OutputStream setupClient(String name) {
+    protected OutputStream setupClient(String name) throws Exception {
 	int idx = name.indexOf(':');
 	String host = name.substring(0, idx);
 	int port = Integer.parseInt(name.substring(idx+1));
@@ -42,7 +42,7 @@ public class Sockets implements CommunicationsModel {
 	} catch (UnknownHostException e) {
 	    throw new RuntimeException("Unknown host: "+e);
 	} catch (IOException e) {
-	    throw new RuntimeException("Difficulty connecting to "+host+": "+e);
+	    throw new IOException("Difficulty connecting to "+host+": "+e);
 	}
     }
 
@@ -50,11 +50,25 @@ public class Sockets implements CommunicationsModel {
 	int port = Integer.parseInt(name);
 	ServerSocket listenSocket  = null;
 	InputStream is = null;
-	try {
-	    listenSocket = new ServerSocket(port, MAX_CLIENTS);
-	} catch (IOException exc) {
-	    System.err.println("Unable to listen on port " + port + ": " + exc);
-	    System.exit(-1);
+	int count = 0;
+	boolean success = false;
+	while (!success) {
+	    try {
+		listenSocket = new ServerSocket(port, MAX_CLIENTS);
+		success = true;
+	    } catch (IOException exc) {
+		System.err.println("Unable to listen on port " + port + ": " + exc);
+		if (count == 10)
+		    System.exit(-1);
+	    }
+	    count++;
+	    try {
+		Thread.currentThread().sleep(1000);
+		System.out.println("Waiting 1 second.");
+	    }
+	    catch (InterruptedException e) {
+	    }
+
 	}
 	try {
 	    Socket serverSocket = listenSocket.accept();
