@@ -1,7 +1,7 @@
 // MutableGraph.java, created Fri May  9 12:03:45 2003 by cananian
 // Copyright (C) 2003 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis.Companions;
+package harpoon.Util.Collections;
 
 import java.util.Collection;
 
@@ -11,7 +11,7 @@ import java.util.Collection;
  * nodes to the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MutableGraph.java,v 1.2 2003-05-09 20:20:10 cananian Exp $
+ * @version $Id: MutableGraph.java,v 1.1 2003-05-09 20:35:20 cananian Exp $
  */
 public interface MutableGraph<N extends Graph.Node<N,E>,
                               E extends Graph.Edge<N,E>> extends Graph<N,E> {

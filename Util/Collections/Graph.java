@@ -1,7 +1,7 @@
 // Graph.java, created Sat May  3 19:05:43 2003 by cananian
 // Copyright (C) 2003 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis.Companions;
+package harpoon.Util.Collections;
 
 import java.util.Collection;
 import java.util.List;
@@ -11,7 +11,7 @@ import java.util.Set;
  * This is a generic <code>Graph</code> implementation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.3 2003-05-09 16:53:17 cananian Exp $
+ * @version $Id: Graph.java,v 1.1 2003-05-09 20:35:20 cananian Exp $
  */
 public interface Graph<N extends Node<N,E>, E extends Edge<N,E>> {
     /** Return the set of nodes comprising this Graph. */
@@ -24,7 +24,7 @@ public interface Graph<N extends Node<N,E>, E extends Edge<N,E>> {
      * This class represents nodes in a <code>Graph</code>.
      *
      * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
-     * @version $Id: Graph.java,v 1.3 2003-05-09 16:53:17 cananian Exp $
+     * @version $Id: Graph.java,v 1.1 2003-05-09 20:35:20 cananian Exp $
      */
     public static interface Node<N extends Node<N,E>,E extends Edge<N,E>>
     {
@@ -44,7 +44,7 @@ public interface Graph<N extends Node<N,E>, E extends Edge<N,E>> {
      * <code>Graph</code>.
      *
      * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
-     * @version $Id: Graph.java,v 1.3 2003-05-09 16:53:17 cananian Exp $
+     * @version $Id: Graph.java,v 1.1 2003-05-09 20:35:20 cananian Exp $
      */
     public static interface Edge<N extends Node<N,E>,E extends Edge<N,E>>
     {

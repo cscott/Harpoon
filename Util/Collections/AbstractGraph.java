@@ -1,7 +1,7 @@
 // AbstractGraph.java, created Sun May  4 11:29:53 2003 by cananian
 // Copyright (C) 2003 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis.Companions;
+package harpoon.Util.Collections;
 
 import harpoon.Util.Collections.AggregateSetFactory;
 import harpoon.Util.Collections.SetFactory;
@@ -19,7 +19,7 @@ import java.util.Set;
  * of the <code>Graph</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractGraph.java,v 1.4 2003-05-09 16:53:17 cananian Exp $
+ * @version $Id: AbstractGraph.java,v 1.1 2003-05-09 20:35:20 cananian Exp $
  */
 public abstract class AbstractGraph<N extends Node<N,E>,E extends Graph.Edge<N,E>> implements MutableGraph<N,E> {
     final SetFactory<E> edgeSetFactory = new AggregateSetFactory<E>();
@@ -86,7 +86,7 @@ public abstract class AbstractGraph<N extends Node<N,E>,E extends Graph.Edge<N,E
      * the <code>Graph.Node</code> interface.
      *
      * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
-     * @version $Id: AbstractGraph.java,v 1.4 2003-05-09 16:53:17 cananian Exp $
+     * @version $Id: AbstractGraph.java,v 1.1 2003-05-09 20:35:20 cananian Exp $
      */
     public static class Node<N extends Node<N,E>,E extends Graph.Edge<N,E>> implements Graph.Node<N,E> {
 	final Set<E> pred, succ, predRO, succRO;
@@ -117,7 +117,7 @@ public abstract class AbstractGraph<N extends Node<N,E>,E extends Graph.Edge<N,E
      * prefer to use your own <code>Graph.Edge</code> implementation.
      *
      * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
-     * @version $Id: AbstractGraph.java,v 1.4 2003-05-09 16:53:17 cananian Exp $
+     * @version $Id: AbstractGraph.java,v 1.1 2003-05-09 20:35:20 cananian Exp $
      */
     public static class Edge<N extends Node<N,E>,E extends Edge<N,E>> implements Graph.Edge<N,E> {
 	final N from;
