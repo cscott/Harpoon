@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.16 2002-03-23 02:10:03 cananian Exp $
+% $Id: oopsla02.tex,v 1.17 2002-03-23 02:22:34 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -19,6 +19,8 @@
 \newcommand{\mycomment}[1]{}
 \newcommand{\meet}{\ensuremath{\sqcap}}
 
+\renewcommand{\floatpagefraction}{0.8}
+
 \title{\bf Data Size Optimizations for Java Programs}
 
 \author{C.~Scott~Ananian and Martin~Rinard\\
@@ -29,7 +31,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.16 $ $}{$ $Revision: 1.16 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.17 $ $}{$ $Revision: 1.17 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -245,7 +247,7 @@ Note that the {\tt value}, {\tt offset}, and {\tt count}
 fields are all initialized when the string is constructed
 and do not change during the lifetime of the string.
 
-\begin{figure}
+\begin{figure}[tp]
 \begin{samplecode}
 public final class String \{\\
 \>private final char value[];\\
@@ -297,7 +299,7 @@ if not, it allocates a {\tt BigString} object. This transformation
 therefore eliminates the {\tt offset} field in the majority
 of strings. 
 
-\begin{figure}
+\begin{figure}[tp]
 \begin{samplecode}
 public final class SmallString \{\\
 \>private final char value[];\\
@@ -318,7 +320,7 @@ public final class BigString\\
 \label{fig:big-small}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[tp]
 \begin{samplecode}
 public SmallString substring(int start) \{\\
 \>int noff = offset + start;\\
@@ -683,6 +685,8 @@ fields are added to the set of non-subclass-final fields.
 
 \subsection{Constructor Classification}
 % includes MustParamOracle and ConstMap
+As a final step to enable the static specialization transformation, we
+must identify constructors which blah blah blah.
 
 in constructor:
   merge all SET ops on fields of this: is must param?  const? (use bw)
