@@ -27,9 +27,14 @@ public class RangeFind extends Node {
      *  @param id The image to find the range of and annotate.
      */
     public synchronized void process(ImageData id) {
-	id.c1 = 1; /* Calculate the correct vector from the location in the original image, */
-	id.c2 = 2; /* the size of the target and image, the angle of the camera, etc. */
-	id.c3 = 3;
+	/* Calculate the correct vector from the location in the original image, */
+	/* the size of the target and image, the angle of the camera, etc. */
+
+	/* Now, just the center of the image and 0. */
+
+	id.c1 = id.x+(id.width/2); 
+	id.c2 = id.y+(id.height/2); 
+	id.c3 = 0;
 	super.process(id);
     }
 }

@@ -20,13 +20,20 @@ public class Main {
      *  @param args Should include parameters for the servers and clients, if necessary.
      */
     public static void main(String args[]) {
-	boolean headless = true;
+	boolean headless = false;  /* Configure to run without display */
+	boolean timer = false;     /* Time the processing rate */
+
 	if (true) {
-	    Node alert = (args.length>2)?(new Alert(args)):null;
+	    Node alert = (args.length>1)?(new Alert(args)):null;
 	    Node n2;
 	    if (headless) {
-		n2 = new Timer(true, false, new RobertsCross(new Thresholding(new Label(null, 
-					       new RangeFind(new Timer(false, true, alert))))));
+		if (timer) {
+		    alert = new Timer(false, true, alert);
+		}
+		n2 = new RobertsCross(new Thresholding(new Label(null, new RangeFind(alert))));
+		if (timer) {
+		    n2 = new Timer(true, false, n2);
+		}
 	    } else {
 		Node n7 = new Command(Command.GET_IMAGE, null);
 		Node n6 = new Circle(new Display("identified"), n7);
@@ -36,8 +43,9 @@ public class Main {
 		n2 = new Node(new Display("original"), n3);
 		n7.setLeft(n3);
 	    }
-	    Node n1 = (args.length>2)?(Node)(new ATR(args, n2)):
-		(Node)(new Load("movie/tank.jar", "tank.gz", 533, n2));
+	    Node n1 = new Load("movie/tank.jar", "tank.gz", 533, n2);
+//  	    Node n1 = (args.length>1)?(Node)(new ATR(args, n2)):
+//  		(Node)(new Load("movie/tank.jar", "tank.gz", 533, n2));
 	    while (true) {
 	       n1.run();
 	    }

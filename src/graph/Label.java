@@ -40,7 +40,7 @@ public class Label extends Node {
      *                   If <code>null</code>, no individual objects are sent.
      */
     public Label(Node outImage, Node outImages) {
-	this(outImage, outImages, 40, 75, 30, 75, 30, 150);
+	this(outImage, outImages, 38, 78, 23, 69, 77, 129);
     }
 
     /** Construct a new {@link Label} node which will trace the outlines
@@ -99,7 +99,6 @@ public class Label extends Node {
 //  			}
 //  		    }
 		} else {
-		    System.out.println("width: "+(x2-x1)+", height: "+(y2-y1));
 		    if ((--num)==0) {
 			throw new Error("Too many objects!");
 		    }
@@ -107,6 +106,7 @@ public class Label extends Node {
 		    if (right!=null) {
 			right.process(ImageDataManip.crop(id, x1, y1, x2-x1+1, y2-y1+1));
 		    }
+		    break; /* To process only one. */
 		}
 	    }
 	}

@@ -43,7 +43,7 @@ public class Timer extends Node {
 	} else {
 	    total += id.time = time-id.time;
 	    if (announce) {
-		System.out.println(id.time);
+		System.out.println("Time (ms): "+id.time);
 	    }
 	}
 	super.process(id);
