@@ -249,6 +249,7 @@ public class Compiler {
             LineCount.reset();
             FileInputStream infile = new FileInputStream(state.infile + ".struct");
             TDLParser parser = new TDLParser(new Lexer(infile));
+	    parser.filename = state.infile + ".struct";
             CUP$TDLParser$actions.debug = state.verbose > 1 ;
             state.ptStructures = (ParseNode) parser.parse().value;
         } catch (FileNotFoundException fnfe) {
@@ -284,6 +285,7 @@ public class Compiler {
             LineCount.reset();
             FileInputStream infile = new FileInputStream(state.infile + ".space");
             SDLParser parser = new SDLParser(new Lexer(infile));
+	    parser.filename = state.infile + ".space";
             CUP$SDLParser$actions.debug = state.verbose > 1 ;
             state.ptSpace = (ParseNode) parser.parse().value;
         } catch (FileNotFoundException fnfe) {
@@ -301,6 +303,7 @@ public class Compiler {
             LineCount.reset();
             FileInputStream infile = new FileInputStream(state.infile + ".constraints");
             CDLParser parser = new CDLParser(new Lexer(infile));
+	    parser.filename = state.infile + ".constraints";
             CUP$CDLParser$actions.debug = state.verbose > 1 ;
             state.ptConstraints = (ParseNode) parser.parse().value;
         } catch (FileNotFoundException fnfe) {

@@ -63,9 +63,8 @@ parser code {:
 
 		CUP$MDLParser$actions.errors = true;
 		Symbol symbol = (Symbol) current;
-		report_error(filename+": Syntax error at line " +
-(symbol.line + 1) + ", column " + LineCount.getColumn(symbol.left) +
-": " + current.value, current);
+		report_error(filename+":"+(symbol.line+1)+": Syntax error at column " + LineCount.getColumn(symbol.left) +": " + current.value, current);
+		System.exit(0);
 	}
 
 	public void report_fatal_error (String message, Object info) {

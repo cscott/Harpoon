@@ -1,27 +1,33 @@
-1. Copy SimpleHash.h and .c to the working directory and add 
-   include "Simplehash.h"
+Step 1: Building Compiler
+-------------------------
+cd RepairCompiler/MCC
+make clean
+make
 
-2. Create function 
-   void assertvalidmemory(int low, int high) {
-   }
-	
-3. Create function 
-   void calltool(Type name)
-   * this is equiv to establishing a mapping in the interpreter version
-   * Type should be the type of the variable being mapped	
-   * the name of the formal paremater should be the name of the variable
-     used in the specs
-   * multiple parameters for multiple mappings	
-   * the body of the function should contain only
-     #include "spec-file.cc", 
-     where the files spec-file.* contain the specs 
 
-4. Declare global variables in specs.struct
+Step 2: Run Compiler
+--------------------
+Example: 
+For the specifs in ex.constraints, ex.struct, ex.space, ex.abstract, ex.model 
+in directory Repair/Ex:
 
-5. In RepairCompiler/MCC, generate the .cc file:
-   java -cp ../ MCC.Compiler spec-file,
-   where spec-file.* contain the specs
+A) cd Ex
+B) java -classpath <path to RepairCompiler> MCC.Compiler ex
 
-6. Compile the program under analysis
-   g++ program.c SimpleHash.cc libchecker.a -o program
- 
+which builds:
+  ex.cc
+  ex_aux.h
+  ex_aux.cc
+  size.h
+  size.cc
+  
+
+Step 3: Compile checker
+-----------------------
+
+A) copy generated files into Runtime directory
+B) remove old object files rm *.o
+C) run ./buildruntime
+D) build checking object: g++ -g -c ex_aux.cc
+E) g++ -g ex_test.cc *.o
+F) run ./a.out

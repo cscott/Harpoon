@@ -377,8 +377,8 @@ public abstract class lr_parser {
       System.err.print(message);
       if (info instanceof Symbol)
 	if (((Symbol)info).left != -1)
-	System.err.println(" at character " + ((Symbol)info).left + 
-			   " of input");
+	    //System.err.println(" at character " + ((Symbol)info).left + " of input");
+	    System.err.println(" not expected here.");
 	else System.err.println("");
       else System.err.println("");
     }
