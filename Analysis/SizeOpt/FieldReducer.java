@@ -21,19 +21,26 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HFieldMutator;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
+import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.CONST;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.FOOTER;
 import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.THROW;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -44,21 +51,24 @@ import java.util.Set;
  * unused and constant fields from objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldReducer.java,v 1.1.2.2 2001-09-12 18:33:58 cananian Exp $
+ * @version $Id: FieldReducer.java,v 1.1.2.3 2001-09-18 22:10:53 cananian Exp $
  */
 public class FieldReducer extends MethodMutator {
+    private static final boolean DEBUG = false;
     final BitWidthAnalysis bwa;
+    final Linker linker;
     
     /** Creates a <code>FieldReducer</code>. */
     public FieldReducer(HCodeFactory parent, Linker linker, ClassHierarchy ch,
-			Set roots) {
+			Set roots, String fieldRootResourceName) {
         this(new CachingCodeFactory(QuadSSI.codeFactory(parent)),
-	     linker, ch, roots);
+	     linker, ch, roots, fieldRootResourceName);
     }
     private FieldReducer(CachingCodeFactory parent, Linker linker,
-			 ClassHierarchy ch, Set roots) {
+			 ClassHierarchy ch, Set roots, String frrn) {
 	super(parent);
-        this.bwa = new BitWidthAnalysis(linker, parent, ch, roots);
+        this.bwa = new BitWidthAnalysis(linker, parent, ch, roots, frrn);
+	this.linker = linker;
 	// pull all our classes through the mutator.
 	HCodeFactory hcf = codeFactory();
 	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); )
@@ -77,6 +87,10 @@ public class FieldReducer extends MethodMutator {
 	    // remove all unread and constant fields.
 	    // (which should have no more references in any HCode)
 	    if (bwa.isConst(hf) || !bwa.isRead(hf)) {
+		if (DEBUG)
+		    System.err.println("REMOVING "+hf+" BECAUSE "+
+				       (bwa.isConst(hf)?"it is constant ":"")+
+				       (bwa.isRead(hf)?"":"it is unread"));
 		hf.getDeclaringClass().getMutator().removeDeclaredField(hf);
 		continue;
 	    }
@@ -94,18 +108,30 @@ public class FieldReducer extends MethodMutator {
 	    if (hc==HClass.Byte   || (m< 8 && p<= 7)) nhc = HClass.Byte;
 	    if (hc==HClass.Boolean|| (m==0 && p<= 1)) nhc = HClass.Boolean;
 	    Util.assert(nhc!=null); // one of these cases must have matched
+	    if (DEBUG && hc!=nhc) System.err.print("REDUCING "+hf);
 	    hf.getMutator().setType(nhc);
+	    if (DEBUG && hc!=nhc) System.err.println(" TO "+hf);
 	}
 	// done!
     }
     protected HCode mutateHCode(HCodeAndMaps input) {
 	HCode hc = input.hcode();
-	Wrapper w = new Wrapper(input);
+	final Wrapper w = new Wrapper(input);
+
+	// optimize only methods which this analysis knows are callable.
+	// (non-callable methods will be entirely eliminated by dead-code
+	//  elimination, resulting in invalid quad hcodes)
+	boolean isCallable =
+	    w.execMap((METHOD)((Quad)hc.getRootElement()).next(1));
+	if (!isCallable) return eviscerate(hc);
 	new SCCOptimize(w, w, w).optimize(hc);
+
 	Quad[] quads = (Quad[]) hc.getElements();
 	for (int i=0; i<quads.length; i++) {
 	    if (quads[i] instanceof GET) {
 		GET q = (GET) quads[i];
+		// if this GET is not dead, then the field is read.
+		Util.assert(bwa.isRead(q.field()));
 		if (bwa.isConst(q.field())) {
 		    // replace reads of constant fields with constant.
 		    Quad.replace(q, new CONST
@@ -121,11 +147,47 @@ public class FieldReducer extends MethodMutator {
 		if (!bwa.isRead(q.field())) {
 		    // throw away writes to unread fields.
 		    q.remove();
-		}
+		} else if (bwa.isConst(q.field()))
+		    // throw away writes to compile-time constant fields.
+		    q.remove();
 	    }
 	}
 	return hc;
     }
+    // Eviscerate this uncallable method, replacing with a simple throw.
+    private HCode eviscerate(HCode hc) {
+	HEADER header = (HEADER) hc.getRootElement();
+	FOOTER footer = (FOOTER) header.next(0);
+	METHOD method = (METHOD) header.next(1);
+	footer = footer.resize(1); //eliminate all non-HEADER edges into footer
+	Util.assert(footer.prevLength()==1);
+	Util.assert(footer.prev(0)==header);
+	Util.assert(method.nextLength()==1);
+	// create new 'throw new RuntimeException()' body.
+	HClass HCrex = linker.forName("java.lang.RuntimeException");
+	QuadFactory qf = header.getFactory();
+	HCodeElement src = method;
+	Temp t0 = new Temp(qf.tempFactory());
+	Temp t1 = new Temp(qf.tempFactory());
+	Temp t2 = new Temp(qf.tempFactory());
+	// create new RuntimeException object.
+	Quad q0 = new NEW(qf, src, t0, HCrex);
+	// initialize it.
+	Quad q1 = new CALL(qf, src, HCrex.getConstructor(new HClass[0]),
+			   new Temp[] { t0 }, null, t1, false, false,
+			   new Temp[0]);
+	// merge all exceptions from call
+	Quad q2 = new PHI(qf, src, new Temp[] { t2 },
+	                  new Temp[][] { new Temp[] { t0, t1 } }, 2);
+	// throw!
+	Quad q3 = new THROW(qf, src, t2);
+	// link everything together.
+	Quad.addEdges(new Quad[] { method, q0, q1, q2, q3 });
+	Quad.addEdge(q1, 1, q2, 1);
+	footer = footer.attach(q3, 0);
+	return hc;
+    }
+
     // Deal with the fact that external Byte/Short/Char/Boolean classes
     // are represented internally as ints.
     static HClass toInternal(HClass c) {

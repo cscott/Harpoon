@@ -52,6 +52,7 @@ import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.HClassUtil;
+import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 import harpoon.Util.Worklist;
@@ -78,7 +79,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.8 2001-07-24 09:48:24 pnkfelix Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.9 2001-09-18 22:10:53 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -87,14 +88,18 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     final HCodeFactory hcf;
     final ClassHierarchy ch;
 
+    public BitWidthAnalysis(Linker linker, HCodeFactory hcf,
+			    ClassHierarchy ch, Set roots, String resourceName){
+	this(linker, hcf, ch, roots, parseResource(linker, resourceName));
+    }
     /** Creates a <code>BitWidthAnalysis</code>. */
     public BitWidthAnalysis(Linker linker, HCodeFactory hcf,
-			    ClassHierarchy ch, Set roots) {
+			    ClassHierarchy ch, Set roots, Set fieldRoots) {
 	Util.assert(hcf.getCodeName().equals(QuadSSI.codename));
 	this.linker = linker;
 	this.hcf = hcf;
 	this.ch = ch;
-	analyze(roots);
+	analyze(roots, fieldRoots);
 	/* accounting: */
 	long before=0, before8=0, after=0, after8=0;
 	for (Iterator it=Vf.keySet().iterator(); it.hasNext(); ) {
@@ -144,6 +149,8 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     /** Mapping from <code>HField</code>s to <code>Quad</code>s which read
 	them. */
     final MultiMap fieldMap = new GenericMultiMap(new AggregateSetFactory());
+    /** Set of root fields */
+    final Set fieldRoots = new HashSet();
     /** Mapping from <code>HMethod</code>s to <code>METHOD</code>s. */
     final Map methodMap = new HashMap();
     /** Mapping from <code>HMethod</code>s to <code>CALL</code> quads
@@ -161,7 +168,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 
     /** Determine whether the given <code>HField</code> is ever read. */
     public boolean isRead(HField hf) {
-	return fieldMap.containsKey(hf);
+	return fieldMap.containsKey(hf) || fieldRoots.contains(hf);
     }
     /** Determine whether <code>Quad</code> <code>q</code>
      *  is executable. */
@@ -290,7 +297,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     // Analysis code.
 
     /** Main analysis method. */
-    private void analyze(Set roots) {
+    private void analyze(Set roots, Set my_fieldRoots) {
 	// Initialize worklists.
 	Worklist Wv = new WorkSet(); // variable worklist.
 	Worklist Wq = new WorkSet(); // block worklist.
@@ -331,15 +338,14 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	// XXX: main method *could* use xClassExact on String[] arg.
 
-	// special runtime-initialized fields (ugh!)
-	{
-	    HClass HCsystem = linker.forName("java.lang.System");
-	    HField in = HCsystem.getField("in");
-	    HField out= HCsystem.getField("out");
-	    HField err= HCsystem.getField("err");
-	    mergeV(V, Wf, in,  new xClass(in .getType()));
-	    mergeV(V, Wf, out, new xClass(out.getType()));
-	    mergeV(V, Wf, err, new xClass(err.getType()));
+	// raise field root types.
+	for (Iterator it=my_fieldRoots.iterator(); it.hasNext(); ) {
+	    HField hf = (HField) it.next();
+	    HClass ty = hf.getType();
+	    mergeV(V, Wf, hf, ty.isPrimitive() ?
+		   new xClassNonNull( toInternal(ty) ) :
+		   new xClass( ty ) );
+	    this.fieldRoots.add(hf);
 	}
 
 	// Iterate until worklists are empty.
@@ -1990,4 +1996,20 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    return v;
 	}
     };
+    private static Set parseResource(final Linker l, String resourceName) {
+	final Set result = new HashSet();
+	try {
+	    ParseUtil.readResource(resourceName, new ParseUtil.StringParser() {
+		public void parseString(String s)
+		    throws ParseUtil.BadLineException {
+		    result.add(ParseUtil.parseField(l, s));
+		}
+	    });
+	} catch (java.io.IOException ex) {
+	    System.err.println("ERROR READING FIELD ROOTS, SKIPPING REST.");
+	    System.err.println(ex.toString());
+	}
+	// done.
+	return result;
+    }
 }
