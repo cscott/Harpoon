@@ -68,7 +68,7 @@ struct claz {
   } gc_info;
   /* extra claz info goes here */
 #ifdef WITH_CLAZ_SHRINK
-  jint claz_index;              /* enumerated value of this claz */
+  u_int32_t claz_index;         /* enumerated value of this claz */
 #endif
   u_int32_t scaled_class_depth; /* sizeof(struct claz *) * class_depth */
   struct claz *display[0];	/* sized by FLEX */
@@ -115,7 +115,13 @@ struct inflated_oobj {
 /* the oobj structure tells you what's inside the object layout. */
 struct oobj {
 #ifdef WITH_CLAZ_SHRINK
-  jint claz_index; /* claz shrink replaces the pointer w/ a table index */
+  /* claz shrink replaces the pointer w/ a table index. */
+  /* (claz_index should be aligned w/ start of oobj, but bitfields
+   *  don't necessarily provide this guarantee) */
+  unsigned int claz_index:(WITH_CLAZ_SHRINK*8);
+# if WITH_CLAZ_SHRINK < 4
+  int _padding_:(32-WITH_CLAZ_SHRINK*8);
+# endif
 #else
   struct claz *claz;
 #endif
