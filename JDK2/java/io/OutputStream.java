@@ -54,7 +54,11 @@ public abstract class OutputStream {
     public abstract void write(int b) throws IOException;
 
     public VoidContinuation writeAsync(int b) {
-	return VoidDoneContinuation.pesimistic(writeAsync(b));
+	try {
+	    return VoidDoneContinuation.pesimistic(writeAsyncO(b));
+	} catch (IOException e) {
+	    return new VoidDoneContinuation(e);
+	}
     }
     
     public VoidContinuation writeAsyncO(int b) throws IOException

@@ -69,9 +69,13 @@ public abstract class InputStream {
     }
 
     // pesimistic versions are guarranteed not to return null;
-    public IntContinuation readAsync() throws IOException
+    public IntContinuation readAsync()
     {
-	return IntDoneContinuation.pesimistic(readAsyncO());
+	try {
+	    return IntDoneContinuation.pesimistic(readAsyncO());
+	} catch (IOException e) {
+	    return new IntDoneContinuation(e);
+	}
     }
     
     // make this input stream asynchronous
@@ -235,7 +239,7 @@ public abstract class InputStream {
 	}
 	  	
 
-	IntContinuation c = readAsync();
+	IntContinuation c = readAsyncO();
 	if (!c.done) {
 	    b[off]= (byte) c.result;
 	    return new IntContinuationOpt(1);
@@ -333,7 +337,7 @@ public abstract class InputStream {
 	}
 
 	while (remaining > 0) {
-	    IntContinuation c= readAsync(skipBuffer, 0, (int) Math.min(SKIP_BUFFER_SIZE, remaining));
+	    IntContinuation c= readAsyncO(skipBuffer, 0, (int) Math.min(SKIP_BUFFER_SIZE, remaining));
 	    if (!c.done)
 		{
 		    skipAsyncC thisC= new skipAsyncC(n, remaining);

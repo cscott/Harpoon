@@ -275,9 +275,13 @@ class ServerSocket {
     }
 
     // pesimistic version
-    public ObjectContinuation acceptAsync() throws IOException
+    public ObjectContinuation acceptAsync()
     {
-	return ObjectDoneContinuation.pesimistic(acceptAsyncO());
+	try {
+	    return ObjectDoneContinuation.pesimistic(acceptAsyncO());
+	} catch (IOException e) {
+	    return new ObjectDoneContinuation(e);
+	}
     }
     /**
      * Subclasses of ServerSocket use this method to override accept()
