@@ -54,6 +54,7 @@ void free_stacktrace(void *stacktrace) {
   }
 }
 
+/* comparison function for qsort-ing symtab_entrys */
 int compare_symtab_entry(const void *a, const void *b) {
   symtab_entry *sa, *sb;
   sa = (symtab_entry *)a;
@@ -61,6 +62,11 @@ int compare_symtab_entry(const void *a, const void *b) {
   return (sa->value < sb->value) ? -1 : (sa->value > sb->value);
 }
 
+/* Use binary search to find the method name given the return
+   address saved by the callee (key). The name should be 
+   associated with the highest address that is lower than the 
+   return address on the stack.
+*/
 symtab_entry *
 bsearch_symtab(symvalue key, symtab_entry *symtab, size_t size) {
   symtab_entry *curr = symtab;
@@ -74,6 +80,49 @@ bsearch_symtab(symvalue key, symtab_entry *symtab, size_t size) {
     }
   }
   if (key >= curr->value) return curr; else return NULL;
+}
+
+#ifndef FULL_STACK_TRACE
+/* symbols to be filtered from stack trace */
+static char *strtab[] = {
+  "FNI_Dispatch_Boolean",
+  "FNI_Dispatch_Byte",
+  "FNI_Dispatch_Char",
+  "FNI_Dispatch_Double",
+  "FNI_Dispatch_Float",
+  "FNI_Dispatch_Int",
+  "FNI_Dispatch_Long",
+  "FNI_Dispatch_Object",
+  "FNI_Dispatch_Short",
+  "FNI_Dispatch_Void",
+  "_Flex_java_lang_Throwable_fillInStackTrace__"
+};
+#endif
+
+/* if possible, print the method name from the symbol table, 
+   otherwise use the StackTrace entry to print the address */ 
+static void printItem(symtab_entry *item, StackTrace backup) {
+#ifdef FULL_STACK_TRACE
+  if (item != NULL)
+#else
+  if (item != NULL && 
+      item->value >= (symvalue)(&code_start) && 
+      item->value < (symvalue)(&code_end))
+#endif
+    /* make sure we only print methods not in the runtime */
+    {
+#ifndef FULL_STACK_TRACE
+      int i = 0;
+      /* filter out methods that should be "invisible" */
+      for( ; i < (sizeof(strtab)/sizeof(char *)); i++)
+	if (strcmp(strtab[i], item->name) == 0) return;
+#endif
+      fprintf(stderr, "        at %s\n", item->name);
+    }
+  else
+    /* if for some reason we cannot find the symbol, print the address */
+    fprintf(stderr, "        at %p\n", backup->retaddr);
+
 }
 
 static int printStackTrace(StackTrace tr) {
@@ -147,21 +196,17 @@ static int printStackTrace(StackTrace tr) {
   while(curr != NULL) {
     symtab_entry *found = 
       bsearch_symtab((symvalue)curr->retaddr, symtab, number_of_text_symbols);
-    if (found != NULL && 
-	found->value >= (symvalue)(&code_start) && 
-	found->value < (symvalue)(&code_end))
-      /* make sure we only print methods not in the runtime */
-      fprintf(stderr, "        at %s\n", found->name);
-    else
-      fprintf(stderr, "        at %p\n", curr->retaddr);
+    printItem(found, curr);
     curr = curr->next;
   }
 
   /* clean up */
   free(symtab);
   bfd_close(abfd);
+  return(0);
 }
 
+/* prints out return addresses */
 static void printNumericStackTrace(StackTrace tr) {
   StackTrace curr = tr;
   fprintf(stderr, "Exception in thread\n");
@@ -178,10 +223,9 @@ static void printNumericStackTrace(StackTrace tr) {
  */
 JNIEXPORT void JNICALL Java_java_lang_Throwable_printStackTrace0
   (JNIEnv *env, jobject thisobj, jobject sobj) {
-    /* XXX: unimplemented. */
   StackTrace tr;
   tr = (StackTrace)FNI_GetJNIData(env, thisobj);
-  if (!printStackTrace(tr))
+  if (printStackTrace(tr) != 0)
       printNumericStackTrace(tr);
   return;
 }
@@ -197,37 +241,20 @@ JNIEXPORT jthrowable JNICALL Java_java_lang_Throwable_fillInStackTrace
   Frame top = (Frame)((struct FNI_Thread_State *)(env))->stack_top;
   StackTrace tr, prev = NULL;
 
-  fprintf(stderr, "\ncode_start: %p code_end: %p\n", &code_start, &code_end);
-
-  /*
-  fprintf(stderr, "Top of stack is at: %p\n", top);
-  fprintf(stderr, "Scott's functions say: \n");
-  fprintf(stderr, "get_frameptr: %p.\n", get_frameptr());
-  fprintf(stderr, "get_retaddr: %p.\n", get_retaddr());
-  */
   while(fp < top) {
     void *retaddr;
     retaddr = get_my_retaddr(fp);
-
+#ifndef FULL_STACK_TRACE
     if (retaddr >= (void *)(&code_start) && 
-      retaddr < (void *)(&code_end)) {
+	retaddr < (void *)(&code_end))
       /* filter out return addresses that are part of the runtime */
-      tr = (StackTrace)malloc(sizeof(*tr));
-      tr->retaddr = retaddr;
-      tr->next = prev; /* point to callee */
-      prev = tr;       /* setup for next */
-    }
-
-    /*
-    fprintf(stderr, "%8p: %8p (r15/pc/start_of_function + 16)\n", 
-	    &(fp->start_of_function), fp->start_of_function);
-    fprintf(stderr, "%8p: %8p (r14/lr/return address)\n", 
-	    &(fp->start_of_function)-1, tr->retaddr);
-    fprintf(stderr, "%8p: %8p (r12/ip/parent's stack ptr)\n", 
-	    &(fp->start_of_function)-2, get_parent_sp(fp));
-    fprintf(stderr, "%8p: %8p (r11/fp/parent's frame ptr)\n", 
-	    &(fp->start_of_function)-3, get_parent_fp(fp));
-    */
+#endif
+      {
+	tr = (StackTrace)malloc(sizeof(*tr));
+	tr->retaddr = retaddr;
+	tr->next = prev; /* point to callee */
+	prev = tr;       /* setup for next */
+      }
 
     /* setup for next */
     next_fp = (Frame)(get_parent_fp(fp));
@@ -241,16 +268,6 @@ JNIEXPORT jthrowable JNICALL Java_java_lang_Throwable_fillInStackTrace
   }
 
   FNI_SetJNIData(env, thisobj, tr, free_stacktrace);
-
-  {
-    StackTrace test = (StackTrace)FNI_GetJNIData(env, thisobj);
-    if (!printStackTrace(test))
-      printNumericStackTrace(test);
-  }
-  /*
-  free_stacktrace(tr);
-  fprintf(stderr, "Freed stack trace.\n");
-  */
 
   return thisobj;
 }
