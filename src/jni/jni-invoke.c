@@ -5,15 +5,15 @@
   
 extern void FNI_Dispatch_Void(ptroff_t method_pointer, int narg_words,
 			      void * argptr, jobject_unwrapped * exception)
-     __attribute__ ((/*weak,*/ alias ("FNI_Dispatch")));
+     __attribute__ ((alias ("FNI_Dispatch")));
 extern jobject_unwrapped FNI_Dispatch_Object(ptroff_t method_pointer,
 					     int narg_words, void * argptr,
 					     jobject_unwrapped * exception)
-     __attribute__ ((/*weak,*/ alias ("FNI_Dispatch")));
+     __attribute__ ((alias ("FNI_Dispatch")));
 #define FNI_DISPATCH_PROTO(name, type) \
    extern type FNI_Dispatch_##name(ptroff_t method_pointer, int narg_words, \
 				   void *argptr, jobject_unwrapped *exception)\
-   __attribute__ ((/*weak,*/ alias ("FNI_Dispatch")));
+   __attribute__ ((alias ("FNI_Dispatch")));
 FORPRIMITIVETYPES(FNI_DISPATCH_PROTO);
 
 /* OK, wrap & move arguments based on signature. */
