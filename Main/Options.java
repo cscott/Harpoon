@@ -3,13 +3,16 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
+import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
+
 /**
  * <code>Options</code> contains the values of the current runtime
  * environment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Options.java,v 1.2 2002-02-25 21:06:05 cananian Exp $
+ * @version $Id: Options.java,v 1.3 2002-08-08 17:51:38 cananian Exp $
  */
 public class Options {
     /** Stream for writing statistics. */
@@ -43,5 +46,24 @@ public class Options {
 	if (name=="new-mover")
 	    return new harpoon.Analysis.Quads.NewMover(hcf).codeFactory();
 	else throw new Error("Unknown code factory type: "+name);
+    }
+
+    /** Create a frame object, given the name of a backend. */
+    public static Frame frameFromString(String backendName, HMethod mainMethod)
+    {
+	backendName = backendName.toLowerCase().intern();
+	if (backendName == "strongarm")
+	    return new harpoon.Backend.StrongARM.Frame(mainMethod);
+	if (backendName == "sparc")
+	    return new harpoon.Backend.Sparc.Frame(mainMethod);
+	if (backendName == "mips")
+	    return new harpoon.Backend.MIPS.Frame(mainMethod);
+	if (backendName == "mipsyp")
+	    return new harpoon.Backend.MIPS.Frame(mainMethod, "yp");
+	if (backendName == "mipsda")
+	    return new harpoon.Backend.MIPS.Frame(mainMethod, "da");
+	if (backendName == "precisec")
+	    return new harpoon.Backend.PreciseC.Frame(mainMethod);
+	throw new Error("Unknown Backend: "+backendName);
     }
 }

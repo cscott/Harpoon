@@ -96,7 +96,7 @@ import harpoon.Util.DataStructs.LightMap;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPAMain.java,v 1.5 2002-05-02 22:11:45 salcianu Exp $
+ * @version $Id: ODPAMain.java,v 1.6 2002-08-08 17:51:37 cananian Exp $
  */
 public abstract class ODPAMain {
 
@@ -255,14 +255,15 @@ public abstract class ODPAMain {
  	if (!USE_OLD_CLINIT_STRATEGY && !LOADED_LINKER)
  	    linker = new Relinker(linker);  
 
-	runtime_callable = new HashSet
-	    (harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
-
 	get_root_method(params[optind]);
 	if(hroot == null){
 	    System.out.println("Sorry, the root method was not found\n");
 	    System.exit(1);
 	}
+	SAMain.frame = Options.frameFromString(SAMain.BACKEND_NAME, hroot);
+
+	runtime_callable = new HashSet
+	    (SAMain.frame.getRuntime().runtimeCallableMethods());
 
 	System.err.println("*********************");
 	System.err.println("     Hacked code");
@@ -338,7 +339,7 @@ public abstract class ODPAMain {
 
 	    SAMain.USE_OLD_CLINIT_STRATEGY = USE_OLD_CLINIT_STRATEGY;
 	    SAMain.className = root_method.declClass; // params[optind];
-	    SAMain.do_it();
+	    SAMain.do_it(hroot);
 	}
     }
     
@@ -879,17 +880,9 @@ public abstract class ODPAMain {
 		break;
 	    case 'b':
 		COMPILE = true;
-		String backendName = g.getOptarg().toLowerCase().intern();
-		if (backendName == "strongarm"){
-		    SAMain.BACKEND = SAMain.STRONGARM_BACKEND;
+		SAMain.BACKEND_NAME = g.getOptarg().toLowerCase().intern();
+		if (SAMain.BACKEND_NAME == "strongarm")
 		    SAMain.HACKED_REG_ALLOC = true;
-		}
-		if (backendName == "sparc")
-		    SAMain.BACKEND = SAMain.SPARC_BACKEND;
-		if (backendName == "mips")
-		    SAMain.BACKEND = SAMain.MIPS_BACKEND;
-		if (backendName == "precisec")
-		    SAMain.BACKEND = SAMain.PRECISEC_BACKEND;
 		break;
 	    }
 	
@@ -3268,7 +3261,7 @@ public abstract class ODPAMain {
 	Set roots = new HashSet();
 	roots.add(hroot);
 	roots.addAll
-	    (harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+	    (SAMain.frame.getRuntime().runtimeCallableMethods());
 
 	if(SHOW_CH){
 	    System.out.println("Set of roots: {");

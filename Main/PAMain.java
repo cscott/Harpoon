@@ -96,7 +96,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.11 2002-08-07 23:48:53 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.12 2002-08-08 17:51:38 cananian Exp $
  */
 public abstract class PAMain {
 
@@ -256,6 +256,8 @@ public abstract class PAMain {
 	    PointerAnalysis.RECORD_ACTIONS = true;
 
 	get_root_method(params[optind]);
+	// set up Frame.
+	SAMain.frame = Options.frameFromString(SAMain.BACKEND_NAME, hroot);
 
 	if(RTJ_SUPPORT)
 	    Realtime.setupObject(linker);
@@ -337,7 +339,7 @@ public abstract class PAMain {
 	    SAMain.className = root_method.declClass; // params[optind];
 	    SAMain.rootSetFilename = rootSetFilename;
 
-	    SAMain.do_it();
+	    SAMain.do_it(hroot);
 
 	    System.out.println("Backend time: " +
 			       (time() - g_tstart) + "ms");
@@ -962,19 +964,9 @@ public abstract class PAMain {
 		break;
 	    case 'b':
 		COMPILE = true;
-		String backendName = g.getOptarg().toLowerCase().intern();
-		if (backendName == "strongarm") {
+		SAMain.BACKEND_NAME = g.getOptarg().toLowerCase().intern();
+		if (SAMain.BACKEND_NAME=="strongarm")
 		    SAMain.HACKED_REG_ALLOC = true;
-		    SAMain.BACKEND = SAMain.STRONGARM_BACKEND;
-		}
-		if (backendName == "sparc")
-		    SAMain.BACKEND = SAMain.SPARC_BACKEND;
-		if (backendName == "mips")
-		    SAMain.BACKEND = SAMain.MIPS_BACKEND;
-		if (backendName == "precisec") {
-		    SAMain.BACKEND = SAMain.PRECISEC_BACKEND;
-		    SAMain.HACKED_REG_ALLOC = false;
-		}
 		break;
 	    case 32:
 		mainfo_opts.DO_PREALLOCATION = true;
@@ -1499,7 +1491,7 @@ public abstract class PAMain {
         program_roots = new HashSet();
 	program_roots.add(hroot);
 	program_roots.addAll
-	    (harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+	    (SAMain.frame.getRuntime().runtimeCallableMethods());
 
 	if(RTJ_SUPPORT)
 	    program_roots.addAll(Realtime.getRoots(linker));

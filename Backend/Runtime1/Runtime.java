@@ -35,7 +35,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.7 2002-08-08 15:50:33 wbeebee Exp $
+ * @version $Id: Runtime.java,v 1.8 2002-08-08 17:51:25 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
@@ -127,23 +127,13 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
     }
 
     public Collection runtimeCallableMethods() {
-	return runtimeCallableMethods(frame.getLinker(),
-				      resourcePath("method-root.properties"),
-				      resourcePath("class-root.properties"));
-    }
-    /** @deprecated Use frame.getRuntime().runtimeCallableMethods() instead */
-    public static Collection runtimeCallableMethods(final Linker linker) {
-	// yuck!
-	return runtimeCallableMethods(linker,
-				      resourcePath("method-root.properties"),
-				      resourcePath("class-root.properties"));
-    }
-    // yuck yuck yuck yuck.  have to declare it this way because of how much
-    // evil old code uses the original (and now deprecated)
-    // runtimeCallableMethods interface directly above.
-    private static Collection runtimeCallableMethods
-	(final Linker linker,
-	 String methodResourceName, String classResourceName) {
+	final Linker linker = frame.getLinker();
+	String methodResourceName = resourcePath("method-root.properties");
+	String classResourceName = resourcePath("class-root.properties");
+
+	// XXX this is a little crufty, as backwards compatibility
+	// made this a weird little interface.
+
 	// read in root methods and classes from properties files.
 	try {
 	    final List result = new ArrayList();

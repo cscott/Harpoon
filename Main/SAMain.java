@@ -93,7 +93,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.13 2002-07-11 11:12:22 cananian Exp $
+ * @version $Id: SAMain.java,v 1.14 2002-08-08 17:51:38 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -130,7 +130,8 @@ public class SAMain extends harpoon.IR.Registration {
     static final int MIPSYP_BACKEND = 4;
     // MIPS with support for direct address registers
     static final int MIPSDA_BACKEND = 5;
-    static int     BACKEND = STRONGARM_BACKEND;
+    static private int BACKEND = PRECISEC_BACKEND;
+    static String  BACKEND_NAME = "precisec";
     
     static Linker linker = null; // can specify on the command-line.
     static java.io.PrintWriter out = 
@@ -189,33 +190,62 @@ public class SAMain extends harpoon.IR.Registration {
 	parseOpts(args);
 	assert className!= null : "must pass a class to be compiled";
 
-	do_it();
+	// find main method, set up frame.
+	HClass hcl = linker.forName(className);
+	HMethod mainM;
+	try {
+	    mainM = hcl.getDeclaredMethod("main","([Ljava/lang/String;)V");
+	} catch (NoSuchMethodError e) {
+	    throw new Error("Class "+className+" has no main method");
+	}
+	assert mainM != null;
+	assert Modifier.isStatic(mainM.getModifiers()) : "main is not static";
+	assert Modifier.isPublic(mainM.getModifiers()) : "main is not public";
+
+	// create the target Frame way up here!
+	// the frame specifies the combination of target architecture,
+	// runtime, and allocation strategy we want to use.
+	frame = Options.frameFromString(BACKEND_NAME, mainM);
+
+	do_it(mainM);
     }
 
-    public static void do_it() { do_it(false); }
-    // Alex's un-checked-in calls to do_it_nortj should become
-    // do_it(true).  Not sure what purpose this serves.  this hack
-    // should be removed or at least renamed.
-    public static void do_it(boolean alexhack) {
+    static void do_it(HMethod mainM) {
+	// alex had a weird hack; let's pretend it never existed.
+	boolean alexhack=false;
 	if (alexhack) System.out.println("alexhack");
 
 	if (Realtime.REALTIME_JAVA && !alexhack) { 
 	    Realtime.setupObject(linker); 
 	}
 
+	// set up BACKEND enumeration
+	if (BACKEND_NAME == "strongarm")
+	    BACKEND = STRONGARM_BACKEND;
+	if (BACKEND_NAME == "sparc")
+	    BACKEND = SPARC_BACKEND;
+	if (BACKEND_NAME == "mips")
+	    BACKEND = MIPS_BACKEND;
+	if (BACKEND_NAME == "mipsyp")
+	    BACKEND = MIPSYP_BACKEND;
+	if (BACKEND_NAME == "mipsda")
+	    BACKEND = MIPSDA_BACKEND;
+	if (BACKEND_NAME == "precisec")
+	    BACKEND = PRECISEC_BACKEND;
+
 	// Check for compatibility of precise gc options.
 	if (PRECISEGC)
-	    assert (BACKEND==PRECISEC_BACKEND) : "Precise gc is only implemented for "+
-			"the precise C backend.";
+	    assert (BACKEND==PRECISEC_BACKEND) : 
+	        "Precise gc is only implemented for the precise C backend.";
 	if (MULTITHREADED) {
-	    assert PRECISEGC || Realtime.REALTIME_JAVA : "Multi-threaded option is valid only "+
-			"for precise gc.";
+	    assert PRECISEGC || Realtime.REALTIME_JAVA :
+		"Multi-threaded option is valid only for precise gc.";
 	    assert wbOptLevel == 0 : "Write barrier removal not supported "+
-			"for multi-threaded programs.";
+		"for multi-threaded programs.";
 	}
 	if (WRITEBARRIERS || DYNAMICWBS)
-	    assert PRECISEGC : "Write barrier options are valid only "+
-			"for precise gc.";
+	    assert PRECISEGC : 
+	        "Write barrier options are valid only for precise gc.";
 
 	MetaCallGraph mcg=null;
 	
@@ -223,46 +253,6 @@ public class SAMain extends harpoon.IR.Registration {
 	    hcf = harpoon.IR.Quads.ThreadInliner.codeFactory
 		(hcf,SAMain.startset, SAMain.joinset);
 	
-
-	HClass hcl = linker.forName(className);
-	HMethod hm[] = hcl.getDeclaredMethods();
-	HMethod mainM = null;
-	for (int j=0; j<hm.length; j++) {
-	    if (hm[j].getName().equalsIgnoreCase("main")) {
-		mainM = hm[j];
-		break;
-	    }
-	}
-	assert mainM.getDescriptor().equals("([Ljava/lang/String;)V") : 
-	    "main does not have the proper signature";
-	assert Modifier.isStatic(mainM.getModifiers()) : "main is not static";
-	assert mainM != null : "Class " + className + 
-		    " has no main method";
-
-	// create the target Frame way up here!
-	// the frame specifies the combination of target architecture,
-	// runtime, and allocation strategy we want to use.
-	switch(BACKEND) {
-	case STRONGARM_BACKEND:
-	    frame = new harpoon.Backend.StrongARM.Frame(mainM);
-	    break;
-	case SPARC_BACKEND:
-	    frame = new harpoon.Backend.Sparc.Frame(mainM);
-	    break;
-	case MIPS_BACKEND:
-	    frame = new harpoon.Backend.MIPS.Frame(mainM);
-	    break;
-	case MIPSYP_BACKEND:
-	    frame = new harpoon.Backend.MIPS.Frame(mainM, "yp");
-	    break;
-	case MIPSDA_BACKEND:
-	    frame = new harpoon.Backend.MIPS.Frame(mainM, "da");
-	    break;
-	case PRECISEC_BACKEND:
-	    frame = new harpoon.Backend.PreciseC.Frame(mainM);
-	    break;
-	default: throw new Error("Unknown Backend: "+BACKEND);
-	}
 
 	// check the configuration of the runtime.
 	// (in particular, the --with-precise-c option)
@@ -696,7 +686,8 @@ public class SAMain extends harpoon.IR.Registration {
 	Iterator classes = new TreeSet(classHierarchy.classes()).iterator();
 
 	String filesuffix = (BACKEND==PRECISEC_BACKEND) ? ".c" : ".s";
-	if (ONLY_COMPILE_MAIN) classes=Default.singletonIterator(hcl);
+	if (ONLY_COMPILE_MAIN)
+	    classes = Default.singletonIterator(mainM.getDeclaringClass());
 	if (singleClassStr!=null) {
 	    singleClass = linker.forName(singleClassStr);
 	    classes=Default.singletonIterator(singleClass);
@@ -1141,21 +1132,7 @@ public class SAMain extends harpoon.IR.Registration {
 		assert ASSEM_DIR.isDirectory() : ""+ASSEM_DIR+" must be a directory";
 		break;
 	    case 'b': {
-		String backendName = g.getOptarg().toLowerCase().intern();
-		if (backendName == "strongarm")
-		    BACKEND = STRONGARM_BACKEND;
-		if (backendName == "sparc")
-		    BACKEND = SPARC_BACKEND;
-		if (backendName == "mips")
-		    BACKEND = MIPS_BACKEND;
-		if (backendName == "mipsyp") {
-		    BACKEND = MIPSYP_BACKEND;
-        }
-		if (backendName == "mipsda") {
-		    BACKEND = MIPSDA_BACKEND;
-        }
-		if (backendName == "precisec")
-		    BACKEND = PRECISEC_BACKEND;
+		BACKEND_NAME = g.getOptarg().toLowerCase().intern();
 		break;
 	    }
 	    case 'c':

@@ -5,6 +5,7 @@ package harpoon.Main;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
+import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -40,7 +41,7 @@ import harpoon.Util.BasicBlocks.CachingBBConverter;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.3 2002-05-02 22:11:45 salcianu Exp $
+ * @version $Id: EventDriven.java,v 1.4 2002-08-08 17:51:36 cananian Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
@@ -68,6 +69,9 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	    }
         }
 
+	// any frame will do:
+	Frame frame = Options.frameFromString("precisec", m);
+
 	System.out.println("Doing QuadSSI");
 	HCodeFactory hco = 
 	    new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
@@ -75,8 +79,7 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 
 
 	Collection cc = new WorkSet();
-	cc.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
-		 (linker));
+	cc.addAll(frame.getRuntime().runtimeCallableMethods());
 	cc.addAll(knownBlockingMethods());
 	cc.add(m);
 	System.out.println("Getting ClassHierarchy");
@@ -89,7 +92,7 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	// the JVM before main) and next pass it to the MetaCallGraph
 	// constructor. [AS]
 	Set mroots = extract_method_roots(
-	    harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+	    frame.getRuntime().runtimeCallableMethods());
 	mroots.add(m);
 
 	MetaCallGraph mcg = 
@@ -123,8 +126,7 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	final HClass hi = HClass.Int;
 
 	Collection c = new WorkSet();
-	c.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
-		 (linker));
+	c.addAll(frame.getRuntime().runtimeCallableMethods());
 	c.addAll(knownBlockingMethods());
 	//        c.add(linker.forName("java.net.PlainSocketImpl").getMethod("getInputStream",new HClass[0]));
 
@@ -185,8 +187,7 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	System.out.println("Running ClassHierarchy On converted hierarchy");
 	WorkSet todo=new WorkSet();
 	todo.add(mconverted);
-	todo.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
-		 (linker));
+	todo.addAll(frame.getRuntime().runtimeCallableMethods());
 	todo.addAll(knownBlockingMethods());
 	ch=null;
 	ClassHierarchy ch1=new QuadClassHierarchy(linker,todo,hcf);

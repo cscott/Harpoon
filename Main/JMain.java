@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
+import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -29,7 +30,7 @@ import harpoon.Util.Collections.WorkSet;
  * <code>JMain</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JMain.java,v 1.2 2002-02-25 21:06:05 cananian Exp $
+ * @version $Id: JMain.java,v 1.3 2002-08-08 17:51:37 cananian Exp $
  */
 public abstract class JMain extends harpoon.IR.Registration {
 
@@ -82,8 +83,13 @@ public abstract class JMain extends harpoon.IR.Registration {
 
         hcf=harpoon.IR.Quads.QuadWithTry.codeFactory(hcf);
 
+	// any frame / any method will do
+	HMethod mainM = linker.forName(args[n])
+	    .getDeclaredMethod("main","([Ljava/lang/String;)V");
+	Frame frame = Options.frameFromString("precisec", mainM);
+
 	WorkSet todo=new WorkSet();
-	WorkSet todor=new WorkSet(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+	WorkSet todor=new WorkSet(frame.getRuntime().runtimeCallableMethods());
 	for (int i=0; i<args.length-n; i++) {
 	    HMethod hmx[]=(linker.forName(args[n+i])).getDeclaredMethods();
 	    boolean flag=false;

@@ -78,7 +78,7 @@ import harpoon.Util.Collections.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDXMain.java,v 1.5 2002-05-02 22:11:45 salcianu Exp $
+ * @version $Id: EDXMain.java,v 1.6 2002-08-08 17:51:36 cananian Exp $
  */
 public class EDXMain extends harpoon.IR.Registration {
  
@@ -100,6 +100,7 @@ public class EDXMain extends harpoon.IR.Registration {
     private static final int SPARC_BACKEND = 2;
     private static final int PRECISEC_BACKEND = 3;
     private static int     BACKEND = STRONGARM_BACKEND;
+    private static String BACKEND_NAME = "strongarm";
     
     private static java.io.PrintWriter out = 
 	new java.io.PrintWriter(System.out, true);
@@ -120,12 +121,14 @@ public class EDXMain extends harpoon.IR.Registration {
     private static Set joinset=null, startset=null;
 
     static class Stage1 implements Serializable {
+	String backendName;
 	HMethod mo;
 	Linker linker;
 	HCodeFactory hco;
 	ClassHierarchy chx;
-	Stage1(Linker linker) {
+	Stage1(Linker linker, String backendName) {
 	    this.linker = linker; this.mo = mo;
+	    this.backendName = backendName;
 
 	    assert className!= null : "must pass a class to be compiled";
 
@@ -146,33 +149,36 @@ public class EDXMain extends harpoon.IR.Registration {
 		hco=harpoon.IR.Quads.ThreadInliner.codeFactory(hco,EDXMain.startset, EDXMain.joinset);
 	    }
 
+ 	    Frame frame = Options.frameFromString(backendName, mo);
 	    Collection cc = new WorkSet();
-	    cc.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
-		      (linker));
+	    cc.addAll(frame.getRuntime().runtimeCallableMethods());
 	    cc.add(mo);
 	    System.out.println("Getting ClassHierarchy");
 	    chx = new QuadClassHierarchy(linker, cc, hco);
 	}
     }
     static class Stage2 implements Serializable {
+	String backendName;
 	HMethod mo;
 	Linker linker;
 	HCodeFactory hco;
 	MetaCallGraph mcg;
 	ClassHierarchy chx;
 	Stage2(Stage1 stage1) {
+	    backendName = stage1.backendName;
 	    linker = stage1.linker;
 	    hco = stage1.hco;
 	    chx = stage1.chx;//carry forward
 	    mo = stage1.mo;
 	    // CachingBBConverter bbconv=new CachingBBConverter(stage1.hco);
 
+ 	    Frame frame = Options.frameFromString(backendName, mo);
 	    // costruct the set of all the methods that might be called by 
 	    // the JVM (the "main" method plus the methods which are called by
 	    // the JVM before main) and next pass it to the MetaCallGraph
 	    // constructor. [AS]
-	    Set mroots = extract_method_roots(
-	    harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+	    Set mroots = extract_method_roots
+ 		(frame.getRuntime().runtimeCallableMethods());
 	    mroots.add(mo);
 
 	    mcg = new MetaCallGraphImpl
@@ -181,12 +187,14 @@ public class EDXMain extends harpoon.IR.Registration {
 	}
     }
     static class Stage3 implements Serializable {
+	String backendName;
 	HMethod mo;
 	Linker linker;
 	HCodeFactory hcfe;
 	ClassHierarchy ch;
 	MetaCallGraph mcg;
 	Stage3(Stage2 stage2) {
+	    backendName = stage2.backendName;
 	    linker = stage2.linker;
 	    mcg = stage2.mcg;
 	    mo = stage2.mo;
@@ -194,9 +202,10 @@ public class EDXMain extends harpoon.IR.Registration {
 	    System.out.println("Doing CachingCodeFactory");
 	    hcfe = new CachingCodeFactory(ccf, true);
 
+	    Frame frame = Options.frameFromString(backendName, mo);
+
 	    Collection c = new WorkSet();
-	    c.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
-		     (linker));
+	    c.addAll(frame.getRuntime().runtimeCallableMethods());
 	    c.add(mo);
 	    System.out.println("Getting ClassHierarchy");
 
@@ -220,11 +229,13 @@ public class EDXMain extends harpoon.IR.Registration {
 	}
     }
     static class Stage4 implements Serializable {
+	String backendName;
 	HMethod mo;
 	Linker linker;
 	HCodeFactory hcf;
 	HMethod mconverted;
 	Stage4(Stage3 stage3) {
+	    backendName = stage3.backendName;
 	    linker = stage3.linker;
 	    mo = stage3.mo;
 	    CachingCodeFactory hcfe = (CachingCodeFactory) stage3.hcfe;
@@ -272,7 +283,7 @@ public class EDXMain extends harpoon.IR.Registration {
 	if (linker==null)
 	    linker = new Relinker(Loader.systemLinker);
 
-	Stage1 stage1 = new Stage1(linker); 
+	Stage1 stage1 = new Stage1(linker, BACKEND_NAME); 
 	
 	// done with stage 1.
 	Stage2 stage2 = new Stage2(stage1);
@@ -286,6 +297,7 @@ public class EDXMain extends harpoon.IR.Registration {
 	// done with stage 4.
 	linker = stage4.linker;
 	HCodeFactory hcf = stage4.hcf;
+	BACKEND_NAME = stage4.backendName;
 
 	if (OPTIMIZE) {
 	    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
@@ -299,37 +311,31 @@ public class EDXMain extends harpoon.IR.Registration {
 	assert mainM != null : "Class " + className + 
 		    " has no main method";
 
+	// create the target Frame way up here!
+	// the frame specifies the combination of target architecture,
+	// runtime, and allocation strategy we want to use.
+	frame = Options.frameFromString(BACKEND_NAME, mainM);
+	// set up BACKEND enumeration
+	if (BACKEND_NAME == "strongarm")
+	    BACKEND = STRONGARM_BACKEND;
+	else if (BACKEND_NAME == "sparc")
+	    BACKEND = SPARC_BACKEND;
+	else if (BACKEND_NAME == "mips")
+	    BACKEND = MIPS_BACKEND;
+	else if (BACKEND_NAME == "precisec")
+	    BACKEND = PRECISEC_BACKEND;
+	else throw new Error("Unknown Backend.");
+
 	if (classHierarchy == null) {
-	    // XXX: this is non-ideal!  Really, we want to use a non-static
-	    // method in Frame.getRuntime() to initialize the class hierarchy
-	    // roots with.  *BUT* Frame requires a class hierarchy in its
-	    // constructor.  How do we ask the runtime which roots to use
-	    // before the runtime's been created?
-	    // Punting on this question for now, and using a hard-coded
-	    // static method. [CSA 27-Oct-1999]
-	    Set roots =new java.util.HashSet
-		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+	    // ask the runtime which roots it requires.
+	    Set roots = new java.util.HashSet
+		(frame.getRuntime().runtimeCallableMethods());
 	    // and our main method is a root, too...
 	    roots.add(mainM);
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    assert classHierarchy != null : "How the hell...";
 	}
 	callGraph = new CallGraphImpl(classHierarchy, hcf);
-	switch(BACKEND) {
-	case STRONGARM_BACKEND:
-	    frame = new harpoon.Backend.StrongARM.Frame(mainM);
-	    break;
-	case SPARC_BACKEND:
-	    frame = new harpoon.Backend.Sparc.Frame(mainM);
-	    break;
-	case MIPS_BACKEND:
-	    frame = new harpoon.Backend.MIPS.Frame(mainM);
-	    break;
-	case PRECISEC_BACKEND:
-	    frame = new harpoon.Backend.PreciseC.Frame(mainM);
-	    break;
-	default: throw new Error("Unknown Backend: "+BACKEND);
-	}
 	frame.setClassHierarchy(classHierarchy);
 	frame.setCallGraph(callGraph);
 	callGraph=null;// memory management.

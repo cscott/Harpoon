@@ -9,7 +9,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import harpoon.Util.Util;
+import harpoon.Backend.Generic.Frame;
+
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HMethod;
@@ -36,7 +37,7 @@ import harpoon.IR.Quads.CALL;
     soon.
  
  @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- @version $Id: TestMemOpt.java,v 1.4 2002-04-11 18:53:45 salcianu Exp $ */
+ @version $Id: TestMemOpt.java,v 1.5 2002-08-08 17:50:51 cananian Exp $ */
 public abstract class TestMemOpt {
     
     private static Linker linker = new Relinker(Loader.systemLinker);
@@ -117,9 +118,12 @@ public abstract class TestMemOpt {
 	assert hroot != null : "Root method \"" + root_class + ".main"
 		    + "\" not found!";
 
+	// any frame will do:
+	Frame frame = harpoon.Main.Options.frameFromString("precisec", hroot);
+
 	roots.add(hroot);
 	roots.addAll
-	    (harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+	    (frame.getRuntime().runtimeCallableMethods());
 	return roots;
     }
     
