@@ -3,6 +3,7 @@ package harpoon.ClassFile;
 import harpoon.ClassFile.Raw.Attribute.Attribute;
 import harpoon.ClassFile.Raw.Attribute.AttributeCode;
 import harpoon.ClassFile.Raw.Attribute.AttributeExceptions;
+import harpoon.ClassFile.Raw.Attribute.AttributeSynthetic;
 import harpoon.ClassFile.Raw.Constant.ConstantClass;
 import java.lang.reflect.Modifier;
 import java.util.Hashtable;
@@ -15,7 +16,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.5 1998-08-01 23:28:54 cananian Exp $
+ * @version $Id: HMethod.java,v 1.6 1998-08-02 05:24:07 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -160,6 +161,16 @@ public class HMethod implements HMember {
       }
     }
     return HClass.copy(exceptionTypes);
+  }
+
+  /**
+   * Determines whether this <code>HMethod</code> is synthetic.
+   */
+  public boolean isSynthetic() {
+    for (int i=0; i<methodinfo.attributes.length; i++)
+      if (methodinfo.attributes[i] instanceof AttributeSynthetic)
+	return true;
+    return false;
   }
 
   /**

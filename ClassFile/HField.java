@@ -1,6 +1,7 @@
 package harpoon.ClassFile;
 
 import java.lang.reflect.Modifier;
+import harpoon.ClassFile.Raw.Attribute.AttributeSynthetic;
 import harpoon.ClassFile.Raw.Attribute.AttributeConstantValue;
 
 /**
@@ -9,7 +10,7 @@ import harpoon.ClassFile.Raw.Attribute.AttributeConstantValue;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.6 1998-08-01 22:55:13 cananian Exp $
+ * @version $Id: HField.java,v 1.7 1998-08-02 05:24:07 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -64,6 +65,15 @@ public class HField implements HMember {
   public boolean isConstant() {
     for (int i=0; i<fieldinfo.attributes.length; i++)
       if (fieldinfo.attributes[i] instanceof AttributeConstantValue)
+	return true;
+    return false;
+  }
+  /**
+   * Determines whether this <code>HField</code> is synthetic.
+   */
+  public boolean isSynthetic() {
+    for (int i=0; i<fieldinfo.attributes.length; i++)
+      if (fieldinfo.attributes[i] instanceof AttributeSynthetic)
 	return true;
     return false;
   }

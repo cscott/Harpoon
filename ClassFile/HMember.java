@@ -5,7 +5,7 @@ package harpoon.ClassFile;
  * about a single member (a field or a method) or a constructor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMember.java,v 1.3 1998-08-01 22:55:13 cananian Exp $
+ * @version $Id: HMember.java,v 1.4 1998-08-02 05:24:07 cananian Exp $
  * @see HClass
  * @see HField
  * @see HMethod
@@ -31,4 +31,11 @@ public interface HMember {
    * @see java.lang.reflect.Modifier
    */
   public abstract int getModifiers();
+
+  /**
+   * Indicates whether this field or method is 'real' or if it has
+   * been synthesized by the compiler in order to implement scoping
+   * of inner classes.
+   */
+  public abstract boolean isSynthetic();
 }
