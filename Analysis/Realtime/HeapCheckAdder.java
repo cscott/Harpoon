@@ -20,6 +20,7 @@ import harpoon.ClassFile.HMethod;
 
 import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.Bop;
+import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.CONST;
@@ -29,6 +30,7 @@ import harpoon.IR.Tree.ExpList;
 import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.MEM;
+import harpoon.IR.Tree.METHOD;
 import harpoon.IR.Tree.MOVE;
 import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.NATIVECALL;
@@ -77,47 +79,73 @@ public class HeapCheckAdder extends Simplification {
     /** A heap check looks like this:
      *      *foo = bar;
      *
-     *  =>  heapRef1 = foo;
+     *  =>  heapRef1 = *foo;
      *      [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapChecks + 1;]
      *      if (heapRef1&1) goto NoHeap0; else goto TouchedHeap0;
      *    TouchedHeap0:
      *      [*javax.realtime.Stats.heapRefs = *javax.realtime.Stats.heapRefs + 1;]
      *      heapCheck(heapRef1);
      *    NoHeap0:
-     *      heapRef2 = bar;
-     *      [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapChecks + 1;]
-     *      if (heapRef2&1) goto NoHeap1; else goto TouchedHeap1;
-     *    TouchedHeap1:
-     *      [*javax.realtime.Stats.heapRefs = *javax.realtime.Stats.heapRefs + 1;]
-     *      heapCheck(heapRef2);
-     *    NoHeap1:
-     *      *(heapRef1&(~3)) = heapRef2;
+     *      *foo = bar;
      *
      *      bar = *foo; 
      *  
-     *  =>  heapRef1 = foo;
-     *      [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapChecks + 1;]
-     *      if (heapRef1&1) goto NoHeap0; else goto TouchedHeap0;
-     *    TouchedHeap0:
-     *      [*javax.realtime.Stats.heapRefs = *javax.realtime.Stats.heapRefs + 1;]
-     *      heapCheck(heapRef1);
-     *    NoHeap0:
-     *      heapRef2 = *(heapRef1)&(~3);
+     *  =>  heapRef1 = *foo;
      *      [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapChecks + 1;]
      *      if (heapRef2&1) goto NoHeap1; else goto TouchedHeap1;
      *    TouchedHeap1:
      *      [*javax.realtime.Stats.heapRefs = *javax.realtime.Stats.heapRefs + 1;]
-     *      heapCheck(heapRef2);
+     *      heapCheck(heapRef1);
      *    NoHeap1:
-     *      bar = heapRef2;
+     *      bar = heapRef1;
      *
+     *      foo = NATIVECALL(....);
+     *
+     *  =>  heapRef1 = NATIVECALL(....);
+     *      [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapChecks + 1;]
+     *      if (heapRef1&1) goto NoHeap0; else goto TouchedHeap0;
+     *    TouchedHeap0:
+     *      [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapRefs + 1;]      
+     *      heapCheck(heapRef1);
+     *    NoHeap0:
+     *      foo = heapRef1;
+     *
+     *      foo = CALL(....);
+     *
+     *      heapRef1 = CALL(....);
+     *      [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapChecks + 1;]
+     *      if (heapRef1&1) goto NoHeap0; else goto TouchedHeap0;
+     *    TouchedHeap0:
+     *      [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapRefs + 1;]
+     *      heapCheck(heapRef1);
+     *    NoHeap0:
+     *      foo = heapRef1;
+     *
+     *      METHOD(params[]);
+     *
+     *  =>  foreach params st. params[i] is of type POINTER:
+     *          [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapChecks + 1;]
+     *          if (heapRef1&1) goto NoHeapi; else goto TouchedHeapi;
+     *        TouchedHeapi:
+     *          [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapRefs + 1;]
+     *          heapCheck(params[i]);
+     *        NoHeapi:
+     *          
      *  Isn't that awful?
+     *
+     * - On load (of a base POINTER)
+     * - On method call (check formal parameters if POINTER)
+     * - Return of a method CALL if POINTER
+     * - Return of a NATIVECALL if POINTER
+     * - On store (of POINTER type) 
+     *   (possible clobbering of a root during GC ref. forwarding may clobber newly stored 
+     *    value).
      */
 
     public HeapCheckAdder() {
 	super();
 	
-	RULES.add(new Rule("Heap check and pointer mask for read") {
+	RULES.add(new Rule("Heap check for read") {
 		// *foo => above
 		// where I haven't seen this before.
 		//       *foo is not in *foo = bar
@@ -125,81 +153,118 @@ public class HeapCheckAdder extends Simplification {
 		    return (contains(_KIND(e), _MEM)&&
 			    (!(contains(_KIND(e.getParent()), _MOVE)&&
 			       (((MOVE)e.getParent()).getDst()==e)))&&
+			    (((MEM)e).type() == Type.POINTER)&&
 			    (!seenList.contains(e)));
 		}
 		public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) {
 		    MEM mem = (MEM)e;
 		    Exp result = UPDATE(dg, e, mem.build(tf, mem.kids()));
-		    Exp memExp = mem.getExp();
 		    seenList.add(result);
 		    seenList.add(mem);
-		    if (dg.typeMap(memExp) != null) {
-		        Temp t = new Temp(tf.tempFactory(), "heapRef");
-			result = 
-			    new ESEQ(tf, e, 
-				     new MOVE(tf, e, tempRef(dg, tf, memExp, t), memExp),
-				     new ESEQ(tf, e, addCheck(tf, memExp, dg, t), 
-					      memRef(tf, mem, dg, t)));
-			UPDATE(dg, e, result);
-		    } else {
-			DList dl = dg.derivation(memExp);
-			while (dl != null) {
-			    result = new ESEQ(tf, e, addCheck(tf, memExp, dg, dl.base), 
-					      result);
-			    dl = dl.next;
-			}
-		    }
-		    if (mem.type() == Type.POINTER) { 
-			Temp t = new Temp(tf.tempFactory(), "heapRef");
-		        result = 
-			    new ESEQ(tf, e, 
-				     new MOVE(tf, e, tempRef(dg, tf, mem, t), result),
-				     new ESEQ(tf, e, addCheck(tf, mem, dg, t),
-					      tempRef(dg, tf, mem, t)));
-			UPDATE(dg, e, result);
-		    }
+		    Temp t = new Temp(tf.tempFactory(), "heapRef");
+		    result = 
+			new ESEQ(tf, e, 
+				 new MOVE(tf, e, tempRef(dg, tf, mem, t), result),
+				 new ESEQ(tf, e, addCheck(tf, mem, dg, t),
+					  tempRef(dg, tf, mem, t)));
+		    UPDATE(dg, e, result);
 		    return result;
 		}
 	    });
 
-	RULES.add(new Rule("Heap check and pointer mask for write") {
+	// Not sure about this rule -> profile with and without, debug with...
+	RULES.add(new Rule("Heap check for write") {
 		// *foo = bar => above
 		// where I haven't seen this before.
 		public boolean match(Stm e) {
 		    return (contains(_KIND(e), _MOVE)&&
 			    contains(_KIND(((MOVE)e).getDst()), _MEM)&&
+			    (((MEM)(((MOVE)e).getDst())).type() == Type.POINTER)&&
 			    (!seenList.contains((MEM)(((MOVE)e).getDst()))));
 
 		}
 		public Stm apply(TreeFactory tf, Stm e, DerivationGenerator dg) {
 		    MEM mem = (MEM)(((MOVE)e).getDst());
-		    Exp src = ((MOVE)e).getSrc();
-		    Exp memExp = mem.getExp();
-		    List stmList = new ArrayList();
 		    seenList.add(mem);
-		    if (dg.typeMap(mem.getExp()) != null) {
-			Temp t = new Temp(tf.tempFactory(), "heapRef");
-			stmList.add(new MOVE(tf, mem, tempRef(dg, tf, memExp, t), memExp));
-			stmList.add(addCheck(tf, memExp, dg, t));
-			mem = memRef(tf, mem, dg, t);
-		    } else {
-			DList dl = dg.derivation(memExp);
-			while (dl != null) {
-			    stmList.add(addCheck(tf, memExp, dg, dl.base));
-			    dl = dl.next;
-			}
-		    }
-		    if ((mem.type() == Type.POINTER) && (dg.typeMap(src) != null)) { 
-			Temp t = new Temp(tf.tempFactory(), "heapRef");
-			src = new ESEQ(tf, mem, new MOVE(tf, e, tempRef(dg, tf, src, t), src),
-				       new ESEQ(tf, e, addCheck(tf, src, dg, t),
-						tempRef(dg, tf, src, t)));
-			UPDATE(dg, ((MOVE)e).getSrc(), src);
-		    }
-		    stmList.add(new MOVE(tf, mem, mem, src));
+		    Temp t = new Temp(tf.tempFactory(), "heapRef");
+		    List stmList = new ArrayList();
+		    stmList.add(new MOVE(tf, e, tempRef(dg, tf, mem, t), mem));
+		    stmList.add(addCheck(tf, mem, dg, t));
+		    stmList.add(new MOVE(tf, mem, mem, ((MOVE)e).getSrc()));
 		    return Stm.toStm(stmList);
 		}
 	    });
+
+	RULES.add(new Rule("Heap check for NATIVECALL") {
+		// foo = NATIVECALL() above
+		public boolean match(Stm e) {
+		    return (contains(_KIND(e), _NATIVECALL)&&
+			    (((NATIVECALL)e).getRetval() != null)&&
+			    (((NATIVECALL)e).getRetval().type() == Type.POINTER)&&
+			    (!seenList.contains(e)));
+		}
+
+		public Stm apply(TreeFactory tf, Stm e, DerivationGenerator dg) {
+		    seenList.add(e);
+		    NATIVECALL nc = (NATIVECALL)e;
+		    TEMP ret = nc.getRetval();
+		    List stmList = new ArrayList();
+		    stmList.add(nc = new NATIVECALL(nc.getFactory(), nc, ret, 
+						    nc.getFunc(), nc.getArgs()));
+		    seenList.add(nc);
+		    stmList.add(addCheck(tf, ret, dg, ret.temp));
+		    return Stm.toStm(stmList);
+		}
+
+	    });
+		
+	RULES.add(new Rule("Heap check for CALL") {
+		public boolean match(Stm e) {
+		    return (contains(_KIND(e), _CALL)&&
+			    (((CALL)e).getRetval() != null)&&
+			    (((CALL)e).getRetval().type() == Type.POINTER)&&
+			    (!seenList.contains(e)));
+		}
+
+		public Stm apply(TreeFactory tf, Stm e, DerivationGenerator dg) {
+		    seenList.add(e);
+		    CALL c = (CALL)e;
+		    TEMP ret = c.getRetval();
+		    List stmList = new ArrayList();
+		    stmList.add(c = new CALL(tf, c, ret, c.getRetex(), c.getFunc(), 
+					     c.getArgs(), c.getHandler(), 
+					     c.isTailCall));
+		    seenList.add(c);
+		    stmList.add(addCheck(tf, ret, dg, ret.temp));
+		    return Stm.toStm(stmList);
+		}
+
+	    });
+
+	RULES.add(new Rule("Heap check for METHOD") {
+		public boolean match(Stm e) {
+		    return (contains(_KIND(e), _METHOD)&&
+			    (!seenList.contains(e)));
+		}
+
+		public Stm apply(TreeFactory tf, Stm e, DerivationGenerator dg) {
+		    seenList.add(e);
+		    METHOD m = (METHOD)e;
+		    TEMP[] params = m.getParams();
+		    List stmList = new ArrayList();
+		    stmList.add(m = new METHOD(tf, m, m.getMethod(),
+					       m.getReturnType(), params));
+		    seenList.add(m);
+		    for (int i=1; i<params.length; i++) { 
+			if (params[i].type == Type.POINTER) {
+			    stmList.add(addCheck(tf, params[i], dg, params[i].temp));
+			}
+		    }		     
+		    return Stm.toStm(stmList);
+		}
+
+	    });
+		
     }
 
     /**  [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapChecks + 1;]
