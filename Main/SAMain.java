@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.156 2001-06-22 18:51:49 wbeebee Exp $
+ * @version $Id: SAMain.java,v 1.1.2.157 2001-06-30 18:04:00 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -414,7 +414,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    System.out.println("Loop Optimizations On");
 	    hcf=harpoon.IR.LowQuad.LowQuadSSI.codeFactory(hcf);
 	    hcf=harpoon.Analysis.LowQuad.Loop.LoopOptimize.codeFactory(hcf);
-	    hcf=harpoon.IR.LowQuad.DerivationChecker.codeFactory(hcf);
+	    hcf=harpoon.Analysis.LowQuad.DerivationChecker.codeFactory(hcf);
 	}
 	hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
 	// XXX: ToTree doesn't handle TYPESWITCHes right now.
@@ -422,6 +422,7 @@ public class SAMain extends harpoon.IR.Registration {
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
 	hcf = frame.getRuntime().nativeTreeCodeFactory(hcf);
 	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
+	hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);
 	if(Realtime.REALTIME_JAVA && !alexhack)
 	{
 	    hcf = Realtime.addQuantaChecker(hcf);
@@ -446,6 +447,7 @@ public class SAMain extends harpoon.IR.Registration {
 	   (hcf, frame, classHierarchy).codeFactory();
        
     }
+	hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);
     
     
 	HCodeFactory sahcf = frame.getCodeFactory(hcf);
