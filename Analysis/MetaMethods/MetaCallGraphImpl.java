@@ -44,6 +44,7 @@ import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 import harpoon.Util.BasicBlocks.CachingBBConverter;
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
+import harpoon.Analysis.PointerAnalysis.Debug;
 
 import harpoon.Util.Util;
 
@@ -64,7 +65,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.22 2000-07-20 21:22:17 pnkfelix Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.23 2001-01-27 01:07:02 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -348,6 +349,12 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	}
     }
 
+
+    private HClass jl_Thread =
+	Loader.systemLinker.forName("java.lang.Thread");
+    private HClass jl_Runnable =
+	Loader.systemLinker.forName("java.lang.Runnable");
+
     // Checks whether calling "hm" starts a thread or not.
     private boolean thread_start_site(HMethod hm){
 	String name = hm.getName();
@@ -358,13 +365,12 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	return hclass.getName().equals("java.lang.Thread");
     }
 
-    private boolean found_a_run = false;
-
     // Examine a possible thread start site
     private boolean check_thread_start_site(CALL cs){
 	if(!thread_start_site(cs.method())) return false;
 
-	found_a_run = false;
+	boolean found_a_run = false;
+
 	// tbase points to the receiver class
 	Temp tbase = cs.params(0);
 
@@ -377,27 +383,40 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    Quad qdef = (Quad) it_qdef.next();
 	    // possible general types for tbase (as defined in line qdef)
 	    Set pos_gts = getExactTemp(tbase, qdef).getTypeSet();
-	    for(Iterator it_gt = pos_gts.iterator(); it_gt.hasNext(); ){
+	    for(Iterator it_gt = pos_gts.iterator(); it_gt.hasNext(); ) {
 		GenType gt = (GenType) it_gt.next();
-		
-		if(gt.isPOLY()){
-		    Set cls = get_instantiated_children(ch,gt.getHClass());
-		    for(Iterator it_cls = cls.iterator(); it_cls.hasNext(); )
-			check_thread_object(cs, (HClass) it_cls.next());
+		Set cls = gt.isPOLY() ?
+		    get_instantiated_children(ch, gt.getHClass()) :
+		    Collections.singleton(gt.getHClass());
+
+		for(Iterator it_cls = cls.iterator(); it_cls.hasNext(); ) {
+		    boolean hr = has_a_run(cs, (HClass) it_cls.next());
+		    found_a_run = found_a_run || hr;
 		}
-		else
-		    check_thread_object(cs, gt.getHClass());	
 	    }
 	}
+	
+	// The 2nd possibility of launching a thread a Java: calling
+	// start() on a Thread object that doesn't implement run() but
+	// points to a Runnable object.
+	// We have to do a very conservative analysis here: examine ANY
+	// object that implements Runnable and take its run method.
 
-	Util.assert(found_a_run,"No run method was found for " + cs);
+	Set runnables = get_instantiated_children(ch, jl_Runnable);
+	for(Iterator it_cls = runnables.iterator(); it_cls.hasNext(); ) {
+	    boolean hr = has_a_run(cs, (HClass) it_cls.next());
+	    found_a_run = found_a_run || hr;
+	}
+
+	Util.assert(found_a_run, "No run method was found for " + cs);
 
 	return true;
     }
 
-    // hclass.start() might be called. Check it and detect the possible
-    // "run" method.
-    private void check_thread_object(CALL cs, HClass hclass){
+    // Check if hclass has a "run" method. If positive, this method
+    // could be started as a thread body; it must be put in the meta method
+    // worklist if it hasn't been seen before.
+    private boolean has_a_run(CALL cs, HClass hclass){
 	HMethod run = null;
 
 	HMethod[] hms = hclass.getMethods();
@@ -413,7 +432,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    break;
 	}
 	
-	if(run == null) return;
+	if(run == null) return false;
 
 	// create a new MetaMethod corresponding to the run method and try
 	// to put it into the worklist if it's really new.
@@ -423,13 +442,13 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    WMM.add(mm);
 
 	run_mms.add(mm);
-	found_a_run = true;
 
-	if(DEBUG)
+	// if(DEBUG)
 	    System.out.println("THREAD START SITE:" + 
 			       cs.getSourceFile() + ":" + 
 			       cs.getLineNumber() + " " + 
 			       cs + " => " + mm);
+	return true;
     }
 
     // analyze the CALL site "cs" inside the MetaMethod "mm".
@@ -443,6 +462,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// for 'special' invocations, we know the method exactly
 	if(!cs.isVirtual() || cs.isStatic()){
 	    if(DEBUG) System.out.println("//: " + cs);
+	    if(Modifier.isNative(hm.getModifiers()))
+		check_thread_start_site(cs);
 	    rec(hm,cs,0,nb_params);
 	    return;
 	}
@@ -1062,151 +1083,153 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     private QuadVisitor type_inference_qvisitor = new TypeInferenceQVisitor();
 
     private class TypeInferenceQVisitor extends QuadVisitor {
+	
+	public void visit(MOVE q){
+	    Temp       t = ti_wrapper.t;
+	    ExactTemp et = ti_wrapper.et;
+	    if(CAUTION && !t.equals(q.dst()))
+		stop_no_def(q);
+	    for(int i = 0; i < et.next.length ; i++)
+		et.addTypes(et.next[i].getTypeSet());
+	}
+	
+	public void visit(GET q){
+	    Temp       t = ti_wrapper.t;
+	    ExactTemp et = ti_wrapper.et;
+	    if(CAUTION && !t.equals(q.dst()))
+		stop_no_def(q);
+	    et.addType(new GenType(q.field().getType(),GenType.POLY));
+	}
+	
+	public void visit(AGET q){
+	    Temp       t = ti_wrapper.t;
+	    ExactTemp et = ti_wrapper.et;
+	    if(CAUTION && !t.equals(q.dst()))
+		stop_no_def(q);
 	    
-	    public void visit(MOVE q){
-		Temp       t = ti_wrapper.t;
-		ExactTemp et = ti_wrapper.et;
-		if(CAUTION && !t.equals(q.dst()))
-		    stop_no_def(q);
-		for(int i = 0; i < et.next.length ; i++)
-		    et.addTypes(et.next[i].getTypeSet());
-	    }
+	    // For all the possible types for the source array, take
+	    // the type of the component 
 	    
-	    public void visit(GET q){
-		Temp       t = ti_wrapper.t;
-		ExactTemp et = ti_wrapper.et;
-		if(CAUTION && !t.equals(q.dst()))
-		    stop_no_def(q);
-		et.addType(new GenType(q.field().getType(),GenType.POLY));
-	    }
+	    // The Temp representing the array
+	    Temp ta = q.objectref();
+	    Set reaching_defs = rdef.reachingDefs(q,ta);
+	    if(reaching_defs.isEmpty())
+		Util.assert(false,"No reaching defs for "+ta+" in "+q);
 	    
-	    public void visit(AGET q){
-		Temp       t = ti_wrapper.t;
-		ExactTemp et = ti_wrapper.et;
-		if(CAUTION && !t.equals(q.dst()))
-		    stop_no_def(q);
-		
-		// For all the possible types for the source array, take
-		// the type of the component 
-		
-		// The Temp representing the array
-		Temp ta = q.objectref();
-		Set reaching_defs = rdef.reachingDefs(q,ta);
-		if(reaching_defs.isEmpty())
-		    Util.assert(false,"No reaching defs for "+ta+" in "+q);
-		
-		Iterator it_q = reaching_defs.iterator();
-		while(it_q.hasNext()){
-		    Quad qdef = (Quad) it_q.next();
-		    ExactTemp eta = getExactTemp(ta,qdef);
-		    Iterator it_eta_types = eta.getTypes();
-		    while(it_eta_types.hasNext()){
-			HClass c = ((GenType) it_eta_types.next()).getHClass();
-			if(c.equals(HClass.Void))
-			    et.addType(new GenType(HClass.Void, GenType.MONO));
-			else{
-			    HClass hcomp = c.getComponentType();
-			    if(hcomp == null)
-				Util.assert(false,ta + " could have non-array"+
-					    " types in " + q);
-			    et.addType(new GenType(hcomp,GenType.POLY));
-			}
+	    Iterator it_q = reaching_defs.iterator();
+	    while(it_q.hasNext()){
+		Quad qdef = (Quad) it_q.next();
+		ExactTemp eta = getExactTemp(ta,qdef);
+		Iterator it_eta_types = eta.getTypes();
+		while(it_eta_types.hasNext()){
+		    HClass c = ((GenType) it_eta_types.next()).getHClass();
+		    if(c.equals(HClass.Void))
+			et.addType(new GenType(HClass.Void, GenType.MONO));
+		    else{
+			HClass hcomp = c.getComponentType();
+			if(hcomp == null)
+			    Util.assert(false,ta + " could have non-array"+
+					" types in " + q);
+			et.addType(new GenType(hcomp,GenType.POLY));
 		    }
 		}
 	    }
-	    
-	    // Aux. data for visit(CALL q).
-	    // Any method can throw an exception that is subclass of these
-	    // two classes (without explicitly declaring it).
-	    private final HClass jl_RuntimeException =
-		Loader.systemLinker.forName("java.lang.RuntimeException");
-	    private final HClass jl_Error =
-		Loader.systemLinker.forName("java.lang.Error");
-
-	    public void visit(CALL q){
-		Temp       t = ti_wrapper.t;
-		ExactTemp et = ti_wrapper.et;
-		if(t.equals(q.retval())){
-			et.addType(new GenType(q.method().getReturnType(),
-					       GenType.POLY));
-			return;
-		}
-		if(t.equals(q.retex())){
-		    HClass[] excp = q.method().getExceptionTypes();
-		    for(int i=0; i<excp.length; i++)
-			et.addType(new GenType(excp[i],GenType.POLY));
-		    // According to the JLS, exceptions that are subclasses of
-		    // java.lang.RuntimeException and java.lang.Error need
-		    // not be explicitly declared; they can be thrown by any
-		    // method.
-		    et.addType(new GenType(jl_RuntimeException, GenType.POLY));
-		    et.addType(new GenType(jl_Error, GenType.POLY));
-		    return;
-		}
+	}
+	
+	// Aux. data for visit(CALL q).
+	// Any method can throw an exception that is subclass of these
+	// two classes (without explicitly declaring it).
+	private final HClass jl_RuntimeException =
+	    Loader.systemLinker.forName("java.lang.RuntimeException");
+	private final HClass jl_Error =
+	    Loader.systemLinker.forName("java.lang.Error");
+	
+	
+	
+	public void visit(CALL q){
+	    Temp       t = ti_wrapper.t;
+	    ExactTemp et = ti_wrapper.et;
+	    if(t.equals(q.retval())){
+		et.addType(new GenType(q.method().getReturnType(),
+				       GenType.POLY));
+		return;
+	    }
+	    if(t.equals(q.retex())){
+		HClass[] excp = q.method().getExceptionTypes();
+		for(int i=0; i<excp.length; i++)
+		    et.addType(new GenType(excp[i],GenType.POLY));
+		// According to the JLS, exceptions that are subclasses of
+		// java.lang.RuntimeException and java.lang.Error need
+		// not be explicitly declared; they can be thrown by any
+		// method.
+		et.addType(new GenType(jl_RuntimeException, GenType.POLY));
+		et.addType(new GenType(jl_Error, GenType.POLY));
+		return;
+	    }
+	    stop_no_def(q);
+	}
+	
+	public void visit(NEW q){
+	    Temp       t = ti_wrapper.t;
+	    ExactTemp et = ti_wrapper.et;
+	    if(CAUTION && !t.equals(q.dst()))
 		stop_no_def(q);
-	    }
+	    et.addType(new GenType(q.hclass(),GenType.MONO));
+	}
+	
+	public void visit(ANEW q){
+	    Temp       t = ti_wrapper.t;
+	    ExactTemp et = ti_wrapper.et;
+	    if(CAUTION && !t.equals(q.dst()))
+		stop_no_def(q);
+	    et.addType(new GenType(q.hclass(),GenType.MONO));
+	}
 	    
-	    public void visit(NEW q){
-		Temp       t = ti_wrapper.t;
-		ExactTemp et = ti_wrapper.et;
-		if(CAUTION && !t.equals(q.dst()))
-		    stop_no_def(q);
-		et.addType(new GenType(q.hclass(),GenType.MONO));
-	    }
+	public void visit(TYPECAST q){
+	    Temp       t = ti_wrapper.t;
+	    ExactTemp et = ti_wrapper.et;
 	    
-	    public void visit(ANEW q){
-		Temp       t = ti_wrapper.t;
-		ExactTemp et = ti_wrapper.et;
-		if(CAUTION && !t.equals(q.dst()))
-		    stop_no_def(q);
-		et.addType(new GenType(q.hclass(),GenType.MONO));
-	    }
+	    //System.out.println("DDDDDDDDDDDDDDDD");
 	    
-	    public void visit(TYPECAST q){
-		Temp       t = ti_wrapper.t;
-		ExactTemp et = ti_wrapper.et;
-		
-		//System.out.println("DDDDDDDDDDDDDDDD");
-
-		if(CAUTION && !t.equals(q.objectref()))
-		    stop_no_def(q);
-		et.addType(new GenType(q.hclass(), GenType.POLY));
+	    if(CAUTION && !t.equals(q.objectref()))
+		stop_no_def(q);
+	    et.addType(new GenType(q.hclass(), GenType.POLY));
+	}
+	
+	public void visit(METHOD q){
+	    // do nothing; the types of the parameters have been
+	    // already set by set_parameter_types.
+	    if(CAUTION){
+		Temp t = ti_wrapper.t;
+		boolean found = false;
+		for(int i = 0; i < q.paramsLength(); i++)
+		    if(q.params(i).equals(t)){
+			found = true;
+			break;
+		    }
+		if(!found) stop_no_def(q);
 	    }
-	    
-	    public void visit(METHOD q){
-		// do nothing; the types of the parameters have been
-		// already set by set_parameter_types.
-		if(CAUTION){
-		    Temp t = ti_wrapper.t;
-		    boolean found = false;
-		    for(int i = 0; i < q.paramsLength(); i++)
-			if(q.params(i).equals(t)){
-			    found = true;
-			    break;
-			}
-		    if(!found) stop_no_def(q);
-		}
+	}
+	
+	public void visit(CONST q){
+	    if(CAUTION){
+		Temp t = ti_wrapper.t;
+		if(!t.equals(q.dst())) stop_no_def(q);
 	    }
-	    
-	    public void visit(CONST q){
-		if(CAUTION){
-		    Temp t = ti_wrapper.t;
-		    if(!t.equals(q.dst())) stop_no_def(q);
-		}
-		ExactTemp et = ti_wrapper.et;
-		et.addType(new GenType(q.type(), GenType.MONO));
-	    }
-
-	    public void visit(Quad q){
-		Util.assert(false,"Unsupported Quad " + q);
-	    }
-	    
-	    private void stop_no_def(Quad q){
-		Util.assert(false,q + " doesn't define " + ti_wrapper.t);
-	    }
-	    
-	};
-
+	    ExactTemp et = ti_wrapper.et;
+	    et.addType(new GenType(q.type(), GenType.MONO));
+	}
+	
+	public void visit(Quad q){
+	    Util.assert(false,"Unsupported Quad " + q);
+	}
+	
+	private void stop_no_def(Quad q){
+	    Util.assert(false,q + " doesn't define " + ti_wrapper.t);
+	}
+	
+    };
+    
     // TYPE INFERENCE QUAD VISITOR - END
     
     

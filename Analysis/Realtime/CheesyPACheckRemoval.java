@@ -50,7 +50,7 @@ import harpoon.Util.Util;
  * <code>CheesyPACheckRemoval</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CheesyPACheckRemoval.java,v 1.1.2.2 2001-01-24 00:22:36 salcianu Exp $
+ * @version $Id: CheesyPACheckRemoval.java,v 1.1.2.3 2001-01-27 01:08:11 salcianu Exp $
  */
 public class CheesyPACheckRemoval implements CheckRemoval {
 
@@ -72,6 +72,10 @@ public class CheesyPACheckRemoval implements CheckRemoval {
 	// 2. use the pointer analysis to see if ALL the checks
 	// can be removed or not
 	shouldRemoveAllChecks = uselessChecks();
+
+	if(DEBUG)
+	    System.out.println("shouldRemoveAllChecks = " + 
+			      shouldRemoveAllChecks);
     }
 
 
@@ -155,6 +159,14 @@ public class CheesyPACheckRemoval implements CheckRemoval {
 	
 	for(Iterator it = runs.iterator(); it.hasNext(); ) {
 	    MetaMethod mm = (MetaMethod) it.next();
+
+	    HMethod hm  = mm.getHMethod();
+	    String cls_name = hm.getDeclaringClass().getName();
+	    if(cls_name.equals("javax.realtime.RealtimeThread") ||
+	       cls_name.equals("java.lang.Thread")) {
+		System.out.println(mm + " was skipped!");
+		continue;
+	    }
 	    if(containsEscapingStuff(mm)) return false;
 	}
 	return true;
@@ -163,22 +175,22 @@ public class CheesyPACheckRemoval implements CheckRemoval {
     
     /** Checks whether any inside node escapes from <code>mm</code>. */
     private boolean containsEscapingStuff(MetaMethod mm) {
-	if(!analyzable(mm)) return false;
+	if(!analyzable(mm)) return true;
 
 	// the set of nodes appearing in the external pig is the
 	// set of the escaping objects
 	ParIntGraph pig = pa.getExtParIntGraph(mm);
+	System.out.println("ExtPIG(" + mm + ")\n" + pig);
 	Set nodes = pig.allNodes();
 
 	// if one of the elements of the set nodes is an INSIDE node,
 	// some objects are leaking out of the memory scope ...
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
-	    if(node.type == PANode.INSIDE)
-		return false;
+	    if(node.type == PANode.INSIDE) return true;
 	}
 	// nothing escapes!
-	return true;
+	return false;
     }
     
 
