@@ -52,7 +52,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.29 1999-08-23 23:29:24 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.30 1999-08-23 23:50:34 pnkfelix Exp $
  */
 %%
 
@@ -182,13 +182,13 @@ BINOP<d>(ADD, j, k) = i %{
     /* call auxillary fp routines */
     Temp i = makeTwoWordTemp();		
         // not certain an emitMOVE is legal with the l/h modifiers
-    emitMOVE( ROOT, "mov `d0, `s0l", r2, k );
-    emitMOVE( ROOT, "mov `d0, `s0h", r3, k );
-    emitMOVE( ROOT, "mov `d0, `s0l", r0, j );
-    emitMOVE( ROOT, "mov `d0, `s0h", r1, j );
+    emit( ROOT, "mov `d0, `s0l", r2, k );
+    emit( ROOT, "mov `d0, `s0h", r3, k );
+    emit( ROOT, "mov `d0, `s0l", r0, j );
+    emit( ROOT, "mov `d0, `s0h", r1, j );
     emit( ROOT, "bl ___adddf3" );
-    emitMOVE( ROOT, "mov `d0l, `s0", i, r0 );
-    emitMOVE( ROOT, "mov `d0h, `s0", i, r3 );
+    emit( ROOT, "mov `d0l, `s0", i, r0 );
+    emit( ROOT, "mov `d0h, `s0", i, r3 );
 }%
 
 BINOP<p,i>(AND, j, k) = i %{
@@ -610,10 +610,10 @@ BINOP<l>(MUL, j, k) = i %{
 
 BINOP<f>(MUL, j, k) = i %{
     Temp i = makeTemp();		
-    emit( ROOT, "mov `d0, `s0", r1, k );
-    emit( ROOT, "mov `d0, `s0", r0, j );
+    emitMOVE( ROOT, "mov `d0, `s0", r1, k );
+    emitMOVE( ROOT, "mov `d0, `s0", r0, j );
     emit( ROOT, "bl ___mulsf");
-    emit( ROOT, "mov `d0, `s0", i, r0 );
+    emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
 BINOP<d>(MUL, j, k) = i %{
@@ -629,10 +629,10 @@ BINOP<d>(MUL, j, k) = i %{
 
 BINOP<p,i>(DIV, j, k) = i %{
     Temp i = makeTemp();		
-    emit( ROOT, "mov `d0, `s0", r1, k );
-    emit( ROOT, "mov `d0, `s0", r0, j );
+    emitMOVE( ROOT, "mov `d0, `s0", r1, k );
+    emitMOVE( ROOT, "mov `d0, `s0", r0, j );
     emit( ROOT, "bl ___divsi3");
-    emit( ROOT, "mov `d0, `s0", i, r0 );
+    emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
 BINOP<l>(DIV, j, k) = i %{
@@ -648,10 +648,10 @@ BINOP<l>(DIV, j, k) = i %{
 
 BINOP<f>(DIV, j, k) = i %{
     Temp i = makeTemp();		
-    emit( ROOT, "mov `d0, `s0", r1, k );
-    emit( ROOT, "mov `d0, `s0", r0, j );
+    emitMOVE( ROOT, "mov `d0, `s0", r1, k );
+    emitMOVE( ROOT, "mov `d0, `s0", r0, j );
     emit( ROOT, "bl ___divsf3");
-    emit( ROOT, "mov `d0, `s0", i, r0 );
+    emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
 BINOP<d>(DIV, j, k) = i %{
@@ -667,10 +667,10 @@ BINOP<d>(DIV, j, k) = i %{
 
 BINOP<p,i>(REM, j, k) = i %{
     Temp i = makeTemp();		
-    emit( ROOT, "mov `d1, `s1", r1, k );
-    emit( ROOT, "mov `d0, `s0", r0, j );
+    emitMOVE( ROOT, "mov `d1, `s1", r1, k );
+    emitMOVE( ROOT, "mov `d0, `s0", r0, j );
     emit( ROOT, "bl ___modsi3");
-    emit( ROOT, "mov `d2, `s2", i, r0 );
+    emitMOVE( ROOT, "mov `d2, `s2", i, r0 );
 }%
 
 BINOP<l>(REM, j, k) = i %{
@@ -737,7 +737,7 @@ MEM<d,l>(NAME(id)) = i %{
 TEMP<p,i,f>(id) = i %{
     Temp i = makeTemp();
     if (((TEMP)ROOT) != param0) {
-	emit( ROOT, "mov `d0, `s0", i, ((TEMP)ROOT).temp);
+	emitMOVE( ROOT, "mov `d0, `s0", i, ((TEMP)ROOT).temp);
     } else {
 	emit( ROOT, "bl _lookup\n"+
 		    "mov `d0, `s0", i, r2 );
@@ -826,14 +826,14 @@ UNOP<l>(_2D, arg) = i %{
 }%
 UNOP<p,i>(_2D, arg) = i %{
     TwoWordTemp i = makeTwoWordTemp();		
-    emit( ROOT, "mov `d0, `s0", r0, arg );
+    emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     emit( ROOT, "bl ___floatsidf" );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 UNOP<f>(_2D, arg) = i %{
     Temp i = makeTwoWordTemp();		
-    emit( ROOT, "mov `d0, `s0", r0, arg );
+    emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     emit( ROOT, "bl ___extendsfdf2" );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -850,24 +850,24 @@ UNOP<l>(_2F, arg) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
     emit( ROOT, "bl ___floatdisf" );
-    emit( ROOT, "mov `d0, `s0", i, r0 );
+    emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 UNOP<p,i>(_2F, arg) = i %{
     Temp i = makeTemp();		
-    emit( ROOT, "mov `d0, `s0", r0, arg );
+    emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     emit( ROOT, "bl ___floatsisf" );   
-    emit( ROOT, "mov `d0, `s0", i, r0 );
+    emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 UNOP<f>(_2F, arg) = i %{
     Temp i = makeTemp();		
-    emit( ROOT, "mov `d0, `s0", i, arg );
+    emitMOVE( ROOT, "mov `d0, `s0", i, arg );
 }%
 UNOP<d>(_2F, arg) = i %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
     emit( ROOT, "bl ___truncdfsf2" );
-    emit( ROOT, "mov `d0, `s0", i, r0 );
+    emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
 UNOP<l>(_2I, arg) = i %{
@@ -876,20 +876,20 @@ UNOP<l>(_2I, arg) = i %{
 }%
 UNOP<p,i>(_2I, arg) = i %{
     Temp i = makeTemp();		
-    emit( ROOT, "mov `d0, `s0", i, arg );
+    emitMOVE( ROOT, "mov `d0, `s0", i, arg );
 }%
 UNOP<f>(_2I, arg) = i %{
     Temp i = makeTemp();		
-    emit( ROOT, "mov `d0, `s0", r0, arg );
+    emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     emit( ROOT, "bl ___fixsfsi" );
-    emit( ROOT, "mov `d0, `s0", i, r0 );
+    emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 UNOP<d>(_2I, arg) = i %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
     emit( ROOT, "bl ___fixdfsi" );
-    emit( ROOT, "mov `d0, `s0", i, r0 );
+    emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
 UNOP<l>(_2L, arg) = i %{
@@ -904,7 +904,7 @@ UNOP<p,i>(_2L, arg) = i %{
 }%
 UNOP<f>(_2L, arg) = i %{
     Temp i = makeTwoWordTemp();	
-    emit( ROOT, "mov `d0, `s0", r0, arg );
+    emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     emit( ROOT, "bl ___fixsfdi" );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
@@ -982,7 +982,7 @@ MOVE<d,l>(dst, src) %{
 
     Util.assert(src instanceof TwoWordTemp, "why is src: "+src + " a normal Temp?");
         // not certain an emitMOVE is legal with the l/h modifiers
-    emitMOVE( ROOT, "mov `d0l, `s0l\n"+
+    emit( ROOT, "mov `d0l, `s0l\n"+
 		    "mov `d0h, `s0h", dst, src );
 }%
 
@@ -1057,18 +1057,18 @@ CALL(retval, NAME(retex), func, arglist) %{
 	   switch(index) {
 	   case 0: case 1: case 2: // put in registers 
         // not certain an emitMOVE is legal with the l/h modifiers
-	      emitMOVE( ROOT, "mov `d0, `s0l",
+	      emit( ROOT, "mov `d0, `s0l",
 		    frame.getAllRegisters()[index] ,
 		    tempExp.temp );
 	      index++;			     
         // not certain an emitMOVE is legal with the l/h modifiers
-	      emitMOVE( ROOT, "mov `d0, `s0h",
+	      emit( ROOT, "mov `d0, `s0h",
 		    frame.getAllRegisters()[index],
 		    tempExp.temp );
 	      break;			     
 	   case 3: // spread between regs and stack
         // not certain an emitMOVE is legal with the l/h modifiers
-	     emitMOVE( ROOT, "mov `d0, `s0l",
+	     emit( ROOT, "mov `d0, `s0l",
 			      frame.getAllRegisters()[index],
 			      tempExp.temp );
 	     index++;
@@ -1113,9 +1113,9 @@ CALL(retval, NAME(retex), func, arglist) %{
     // Assembly feature to avoid polluting the global name space with
     // local labels
     // emit(new Instr( instrFactory, ROOT, "bl `s0", null, new Temp[]{ func }));
-    emit(new Instr( instrFactory, ROOT, "mov `d0, `s0", 
+    emit(new InstrMOVE( instrFactory, ROOT, "mov `d0, `s0", 
 		    new Temp[]{ SAFrame.LR }, new Temp[]{ SAFrame.PC }));
-    emit(new Instr( instrFactory, ROOT, "mov `d0, `s0",
+    emit(new InstrMOVE( instrFactory, ROOT, "mov `d0, `s0",
 		    new Temp[]{ SAFrame.PC }, new Temp[]{ func }));
 
     // these may need to be included in the previous instr to preserve
@@ -1132,8 +1132,8 @@ CALL(retval, NAME(retex), func, arglist) %{
     emit( ROOT, "add `d0, `s0, #" + stackOffset, SAFrame.SP , SAFrame.SP );
     if (((INVOCATION) ROOT).retval.isDoubleWord()) {
         // not certain an emitMOVE is legal with the l/h modifiers
-        emitMOVE( ROOT, "mov `d0l, `s0", retval, r0 );
-        emitMOVE( ROOT, "mov `d0h, `s0", retval, r1 );
+        emit( ROOT, "mov `d0l, `s0", retval, r0 );
+        emit( ROOT, "mov `d0h, `s0", retval, r1 );
     } else {
         emitMOVE( ROOT, "mov `d0, `s0", retval, r0 );
     }  
@@ -1154,17 +1154,17 @@ NATIVECALL(retval, func, arglist) %{
 	   switch(index) {
 	   case 0: case 1: case 2: // put in registers 
         // not certain an emitMOVE is legal with the l/h modifiers
-	      emitMOVE( ROOT, "mov `d0, `s0l",
+	      emit( ROOT, "mov `d0, `s0l",
 		    frame.getAllRegisters()[index] ,
 		    tempExp.temp );
 	      index++;			     
-	      emitMOVE( ROOT, "mov `d0, `s0h",
+	      emit( ROOT, "mov `d0, `s0h",
 		    frame.getAllRegisters()[index],
 		    tempExp.temp );
 	      break;			     
 	   case 3: // spread between regs and stack
         // not certain an emitMOVE is legal with the l/h modifiers
-	     emitMOVE( ROOT, "mov `d0, `s0l",
+	     emit( ROOT, "mov `d0, `s0l",
 		       frame.getAllRegisters()[index],
 		       tempExp.temp );
 	     index++;
@@ -1191,7 +1191,7 @@ NATIVECALL(retval, func, arglist) %{
 	} else {
 	  // arg is one word
 	  if (index < 4) {
-	     emit( ROOT, "mov `d0, `s0", 
+	     emitMOVE( ROOT, "mov `d0, `s0", 
 		   frame.getAllRegisters()[index], tempExp.temp);
 	  } else {
 	     emit(new InstrMEM(
@@ -1206,9 +1206,9 @@ NATIVECALL(retval, func, arglist) %{
     }
 
 
-    emit(new Instr( instrFactory, ROOT, "mov `d0, `s0", 
+    emit(new InstrMOVE( instrFactory, ROOT, "mov `d0, `s0", 
 		    new Temp[]{ SAFrame.LR }, new Temp[]{ SAFrame.PC }));
-    emit(new Instr( instrFactory, ROOT, "mov `d0, `s0",
+    emit(new InstrMOVE( instrFactory, ROOT, "mov `d0, `s0",
 		    new Temp[]{ SAFrame.PC }, new Temp[]{ func }));
     
 
@@ -1217,8 +1217,8 @@ NATIVECALL(retval, func, arglist) %{
     emit( ROOT, "add `d0, `s0, #" + stackOffset, SAFrame.SP, SAFrame.SP );
     if (((INVOCATION) ROOT).retval.isDoubleWord()) {
         // not certain an emitMOVE is legal with the l/h modifiers
-        emitMOVE( ROOT, "mov `d0l, `s0", retval, r0 );
-        emitMOVE( ROOT, "mov `d0h, `s0", retval, r1 );
+        emit( ROOT, "mov `d0l, `s0", retval, r0 );
+        emit( ROOT, "mov `d0h, `s0", retval, r1 );
     } else {
         emitMOVE( ROOT, "mov `d0, `s0", retval, r0 );
     }  
