@@ -1,0 +1,25 @@
+#!/bin/sh
+
+SCR_DIR=`dirname $0`
+source ${SCR_DIR}/elim_common
+
+BUILD_OUT_DIR=${CALL_DIR}/simple/${name}.simple
+MAMAPS_FILE=${CALL_DIR}/simple/analyze-${name}.simple
+
+rm -rf ${BUILD_OUT_DIR} 
+mkdir ${BUILD_OUT_DIR}
+
+echo "HARPOON_OPTIONS = "${HARPOON_OPTIONS}
+
+java -mx128m -oss100m \
+    ${HARPOON_OPTIONS} \
+harpoon.Main.PAMain ${PREANALYSIS_OPT} \
+    -s --ccs=$levels --wts \
+    --mamaps=${MAMAPS_FILE} --ns 1 --inline 2 \
+    --output ${BUILD_OUT_DIR} --backend precisec --rtj simple \
+$cls
+
+#    --inline \
+#    --details \
+
+exit $?

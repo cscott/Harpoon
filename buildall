@@ -2,9 +2,16 @@
 
 echo "TODO: Write a more elegant version of me!"
 
-./buildone Fib
 
+#./buildone RTWater/Water
+OLD_CLASSPATH=$CLASSPATH
+export CLASSPATH=/home/salcianu/Harpoon/Code/Support/realtime.jar:$CLASSPATH
+
+./buildone Fib
 ./buildone RTWater/Water
+
+export CLASSPATH=${OLD_CLASSPATH}
+
 
 ./buildone ETruc
 
