@@ -14,9 +14,11 @@ import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Util; 
 
+import java.util.ArrayList;
 import java.util.Collection; 
 import java.util.HashMap; 
 import java.util.Iterator; 
+import java.util.List;
 import java.util.Map; 
 
 /**
@@ -24,10 +26,11 @@ import java.util.Map;
  * control-flow graph information with elements of a canonical tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeGrapher.java,v 1.1.2.11 2000-11-10 19:55:08 cananian Exp $
+ * @version $Id: TreeGrapher.java,v 1.1.2.12 2000-11-10 21:43:39 cananian Exp $
  */
 class TreeGrapher extends CFGrapher {
     Tree firstElement = null;
+    List lastElements = new ArrayList();
     final MultiMap predMap = new GenericMultiMap(Factories.arrayListFactory);
     final MultiMap succMap = new GenericMultiMap(Factories.arrayListFactory);
    /** Class constructor.  Don't call this directly -- use
@@ -40,6 +43,10 @@ class TreeGrapher extends CFGrapher {
 	// done.
     }
     public HCodeElement getFirstElement(HCode hcode) { return firstElement; }
+    public HCodeElement[] getLastElements(HCode hcode) {
+	return (HCodeElement[])
+	    lastElements.toArray(new Tree[lastElements.size()]);
+    }
     public Collection predC(HCodeElement hc) { return predMap.getValues(hc); }
     public Collection succC(HCodeElement hc) { return succMap.getValues(hc); }
 
@@ -78,6 +85,8 @@ class TreeGrapher extends CFGrapher {
 		    if (firstElement==null) firstElement = s;
 		    if (last!=null) addEdge(last, s);
 		    last = canFallThrough ? s : null;
+		    if (succMap.getValues(s).size()==0)
+			lastElements.add(s);
 		}
 		public void visit(Tree t) { /* ignore */ }
 		public void visit(Stm s) { linkup(s, true); }
@@ -97,6 +106,7 @@ class TreeGrapher extends CFGrapher {
 		}
 		public void visit(JUMP j) {
 		    // edges to targets list. no fall-through.
+		    Util.assert(j.targets!=null, "JUMP WITH NO TARGETS!");
 		    for (LabelList ll=j.targets; ll!=null; ll=ll.tail)
 			addEdge(j, lookup(ll.head));
 		    linkup(j, false);

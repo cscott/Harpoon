@@ -17,12 +17,23 @@ import java.util.Iterator;
  * representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGrapher.java,v 1.1.2.7 2000-10-27 22:12:24 cananian Exp $
+ * @version $Id: CFGrapher.java,v 1.1.2.8 2000-11-10 21:43:06 cananian Exp $
  * @see harpoon.IR.Properties.CFGraphable
  */
 public abstract class CFGrapher {
-    /** Returns the first <code>HCodeElement</code> to be executed; that is,
-     *  the root of the control-flow graph. */
+    /** Returns the first <code>HCodeElement</code>s to be executed; that is,
+     *  the roots of the control-flow graph. */
+    public HCodeElement[] getFirstElements(HCode hcode) {
+	HCodeElement[] r =
+	    (HCodeElement[]) hcode.elementArrayFactory().newArray(1);
+	r[0] = getFirstElement(hcode);
+	return r;
+    }
+    /** Returns the last <code>HCodeElement</code>s to be executed; that is,
+     *  the leaves of the control-flow graph. */
+    public abstract HCodeElement[] getLastElements(HCode hcode);
+    /** This method is present for compatibility only.
+     *  @deprecated Use getFirstElements() instead. */
     public abstract HCodeElement getFirstElement(HCode hcode);
 
     /** Returns an array of all the edges to and from the specified
@@ -71,6 +82,52 @@ public abstract class CFGrapher {
      */
     public abstract Collection succC(HCodeElement hc);
 
+    /** Returns an edge-reversed grapher based on this one.
+     *  Certain algorithms operate more naturally on this
+     *  representation --- for example, the difference between a
+     *  dominator tree and a post-dominator tree is now simply
+     *  whether you use the <code>grapher</code> or
+     *  <code>grapher.edgeReversed()</code>. */
+    public CFGrapher edgeReversed() {
+	return new ReverseGrapher(this); // cache?
+    }
+    private static class ReverseGrapher extends SerializableGrapher {
+	private final CFGrapher grapher;
+	ReverseGrapher(CFGrapher grapher) { this.grapher = grapher; }
+	public HCodeElement[] getFirstElements(HCode hcode) {
+	    return grapher.getLastElements(hcode);
+	}
+	public HCodeElement getFirstElement(HCode hcode) {
+	    HCodeElement[] r = getFirstElements(hcode);
+	    if (r.length!=1)
+		throw new Error("Deprecated use of getFirstElement() not "+
+				"supported with edge-reversed graphers.");
+	    return r[0];
+	}
+	public HCodeElement[] getLastElements(HCode hcode) {
+	    return grapher.getFirstElements(hcode);
+	}
+	public Collection predC(HCodeElement hc) {
+	    return reverseEdges(grapher.succC(hc));
+	}
+	public Collection succC(HCodeElement hc) {
+	    return reverseEdges(grapher.predC(hc));
+	}
+	private static Collection reverseEdges(Collection edges) {
+	    HCodeEdge[] ea = new HCodeEdge[edges.size()];
+	    Iterator it=edges.iterator();
+	    for (int i=0; it.hasNext(); i++) {
+		final HCodeEdge e = (HCodeEdge) it.next();
+		ea[i] = new HCodeEdge() {
+		    public HCodeElement from() { return e.to(); }
+		    public HCodeElement to() { return e.from(); }
+		};
+	    }
+	    return Arrays.asList(ea);
+	}
+	public CFGrapher edgeReversed() { return grapher; }
+    }
+
     /** Default <code>CFGrapher</code> for <code>HCodeElement</code>s
      *  which implement <code>CFGraphable</code>.  Does nothing
      *  but cast the supplied <code>HCodeElement</code> to a
@@ -86,6 +143,9 @@ public abstract class CFGrapher {
     public static final CFGrapher DEFAULT = new SerializableGrapher() {
 	public HCodeElement getFirstElement(HCode hcode) {
 	    return hcode.getRootElement();
+	}
+	public HCodeElement[] getLastElements(HCode hcode) {
+	    return hcode.getLeafElements();
 	}
 	public HCodeEdge[] edges(HCodeElement hc) {
 	    return ((CFGraphable)hc).edges();
