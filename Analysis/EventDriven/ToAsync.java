@@ -7,10 +7,16 @@ import harpoon.Analysis.AllCallers;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.TypeInfo;
 import harpoon.Analysis.Maps.TypeMap;
+import harpoon.Analysis.MetaMethods.MetaAllCallers;
+import harpoon.Analysis.MetaMethods.MetaCallGraph;
+import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
+import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.ContBuilder.ContBuilder;
 import harpoon.Analysis.EnvBuilder.EnvBuilder;
+import harpoon.Analysis.PointerAnalysis.Relation;
 import harpoon.ClassFile.CachingCodeFactory;
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HMethod;
@@ -21,6 +27,7 @@ import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.Temp.Temp;
+import harpoon.Tools.BasicBlocks.BBConverter;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
@@ -35,7 +42,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.20 2000-03-19 20:55:56 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.21 2000-03-21 20:57:24 bdemsky Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -43,21 +50,62 @@ public class ToAsync {
     protected final ClassHierarchy ch;
     protected final Linker linker;
     protected boolean optimistic;
+    protected HCodeFactory hcf;
+
+    Set blockingmm;
+    MetaCallGraph mcg;
+
 
     /** Creates a <code>ToAsync</code>. */
-    public ToAsync(CachingCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker, boolean optimistic) {
+    public ToAsync(CachingCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker, boolean optimistic, MetaCallGraph mcg) {
 	this.linker=linker;
         this.ucf = ucf;
 	this.hc = hc;
 	this.ch = ch;
 	this.optimistic=optimistic;
+	this.mcg=mcg;
     }
     
+    public void metaStuff(BMethod bm) {
+	//using hcf for now!
+	//BBConverter bbconv=new BBConverter(hcf);
+	//mcg=new MetaCallGraphImpl(bbconv, ch, hc.getMethod());
+	MetaAllCallers mac=new MetaAllCallers(mcg);
+	HMethod[] bmethods=bm.blockingMethods();
+
+	WorkSet mm=new WorkSet();
+	Relation mrelation=mcg.getSplitRelation();
+	for (int i=0;i<bmethods.length;i++) {
+	    mm.addAll(mrelation.getValuesSet(bmethods[i]));
+	}
+	blockingmm=new WorkSet();
+	for (Iterator i=mm.iterator();i.hasNext();) {
+	    MetaMethod[] mma=mac.getTransCallers((MetaMethod)i.next());
+	    blockingmm.addAll(java.util.Arrays.asList(mma));
+	}
+    }
+
     public HMethod transform() {
 	System.out.println("Entering ToAsync.transform()");
-	AllCallers ac = new AllCallers(ch, ucf);
+	Set blockingcalls;
+
 	AllCallers.MethodSet bm = optimistic?((AllCallers.MethodSet)new BlockingMethodsOpt(linker)):((AllCallers.MethodSet)new BlockingMethods(linker));
-	Set blockingcalls = ac.getCallers(bm);
+	
+	if (mcg==null) {
+	    AllCallers ac = new AllCallers(ch, ucf);
+	    blockingcalls = ac.getCallers(bm);
+
+	} else {
+
+	    metaStuff((BMethod)bm);
+	    //CHEAP MetaHack...
+	    //Real algorithm should work on a callsite basis.
+	    blockingcalls=new WorkSet();
+	    for (Iterator i=blockingmm.iterator();i.hasNext();) {
+		MetaMethod mm=(MetaMethod)i.next();
+		blockingcalls.add(mm.getHMethod());
+	    }
+	}
 
 	HashMap old2new=new HashMap();
 	HMethod nhm=AsyncCode.makeAsync(old2new, hc.getMethod(),
@@ -115,6 +163,62 @@ public class ToAsync {
 	 *  blocking method if one exists.
 	 */
 	final private Map cache = new HashMap();
+
+	public HMethod[] blockingMethods() {
+	    final HClass is = linker.forName("java.io.InputStream");
+	    final HClass fis = linker.forName("java.io.FileInputStream");
+	    final HClass os = linker.forName("java.io.OutputStream");
+	    final HClass fos = linker.forName("java.io.FileOutputStream");
+	    final HClass ss = linker.forName("java.net.ServerSocket");
+	    final HClass fd = linker.forName("java.io.FileDescriptor");
+	    final HClass b = HClass.Byte;
+	    final HClass HCthrd = linker.forName("java.lang.Thread");
+
+	    return new HMethod[] {
+		//fd.getMethod("sync", new HClass[0]),
+		//is.getMethod("skip", new HClass[]{HClass.Long}),
+		HCthrd.getMethod("join", new HClass[0]),
+		    
+		is.getDeclaredMethod("read", new HClass[0]),
+
+		is.getDeclaredMethod("read", 
+		   new HClass[] {HClassUtil.arrayClass(b, 1)}),
+
+		is.getDeclaredMethod("read", 
+		   new HClass[] {HClassUtil.arrayClass(b, 1),
+				 HClass.Int, HClass.Int}),
+
+		fis.getDeclaredMethod("read", new HClass[0]),
+			    
+		fis.getDeclaredMethod("read", 
+		    new HClass[] {HClassUtil.arrayClass(b, 1)}),
+
+		fis.getDeclaredMethod("read", 
+		    new HClass[] {HClassUtil.arrayClass(b, 1),
+				  HClass.Int, HClass.Int}),
+
+		//os.getDeclaredMethod("write", new HClass[]{HClass.Int}),
+
+	        //os.getDeclaredMethod("write", 
+		    //new HClass[] {HClassUtil.arrayClass(b, 1)}),
+
+		//os.getDeclaredMethod("write", 
+		    //new HClass[] {HClassUtil.arrayClass(b, 1),
+		    //HClass.Int, HClass.Int}),
+
+		//fos.getDeclaredMethod("write", new HClass[]{HClass.Int}),
+
+		//fos.getDeclaredMethod("write", 
+		    //new HClass[] {HClassUtil.arrayClass(b, 1)}),
+		    
+		//fos.getDeclaredMethod("write", 
+		    //new HClass[] {HClassUtil.arrayClass(b, 1),
+		    //HClass.Int, HClass.Int}),
+
+		ss.getDeclaredMethod("accept", new HClass[0])
+		    };
+	}
+
 	public HMethod swop (final HMethod m) {
 	    final HClass is = linker.forName("java.io.InputStream");
 	    final HClass fis = linker.forName("java.io.FileInputStream");
@@ -271,6 +375,62 @@ public class ToAsync {
 		return true;
 	    } else
 		return false;
+	}
+
+
+	public HMethod[] blockingMethods() {
+	    final HClass is = linker.forName("java.io.InputStream");
+	    final HClass fis = linker.forName("java.io.FileInputStream");
+	    final HClass os = linker.forName("java.io.OutputStream");
+	    final HClass fos = linker.forName("java.io.FileOutputStream");
+	    final HClass ss = linker.forName("java.net.ServerSocket");
+	    final HClass fd = linker.forName("java.io.FileDescriptor");
+	    final HClass b = HClass.Byte;
+	    final HClass HCthrd = linker.forName("java.lang.Thread");
+
+	    return new HMethod[] {
+		//fd.getMethod("sync", new HClass[0]),
+		//is.getMethod("skip", new HClass[]{HClass.Long}),
+		HCthrd.getMethod("join", new HClass[0]),
+		    
+		is.getDeclaredMethod("read", new HClass[0]),
+
+		is.getDeclaredMethod("read", 
+		   new HClass[] {HClassUtil.arrayClass(b, 1)}),
+
+		is.getDeclaredMethod("read", 
+		   new HClass[] {HClassUtil.arrayClass(b, 1),
+				 HClass.Int, HClass.Int}),
+
+		fis.getDeclaredMethod("read", new HClass[0]),
+			    
+		fis.getDeclaredMethod("read", 
+		    new HClass[] {HClassUtil.arrayClass(b, 1)}),
+
+		fis.getDeclaredMethod("read", 
+		    new HClass[] {HClassUtil.arrayClass(b, 1),
+				  HClass.Int, HClass.Int}),
+
+		//os.getDeclaredMethod("write", new HClass[]{HClass.Int}),
+
+	        //os.getDeclaredMethod("write", 
+		    //new HClass[] {HClassUtil.arrayClass(b, 1)}),
+
+		//os.getDeclaredMethod("write", 
+		    //new HClass[] {HClassUtil.arrayClass(b, 1),
+		    //HClass.Int, HClass.Int}),
+
+		//fos.getDeclaredMethod("write", new HClass[]{HClass.Int}),
+
+		//fos.getDeclaredMethod("write", 
+		    //new HClass[] {HClassUtil.arrayClass(b, 1)}),
+		    
+		//fos.getDeclaredMethod("write", 
+		    //new HClass[] {HClassUtil.arrayClass(b, 1),
+		    //HClass.Int, HClass.Int}),
+
+		ss.getDeclaredMethod("accept", new HClass[0])
+		    };
 	}
 
 	/** Returns the corresponding asynchronous method for a given

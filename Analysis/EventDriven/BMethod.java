@@ -15,5 +15,6 @@ import harpoon.ClassFile.HMethod;
 
 public interface BMethod {
     public HMethod swop (final HMethod m);
+    public HMethod[] blockingMethods();
 }
 

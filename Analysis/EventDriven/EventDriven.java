@@ -5,7 +5,11 @@ package harpoon.Analysis.EventDriven;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.CallGraph;
+
+import harpoon.Analysis.MetaMethods.MetaCallGraph;
+
 import harpoon.ClassFile.CachingCodeFactory;
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
@@ -24,7 +28,7 @@ import harpoon.Util.WorkSet;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.8 2000-03-19 20:55:56 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.9 2000-03-21 20:57:24 bdemsky Exp $
  */
 public class EventDriven {
     protected final CachingCodeFactory ucf;
@@ -50,7 +54,7 @@ public class EventDriven {
 
     /** Returns the converted main
      */
-    public HMethod convert() {
+    public HMethod convert(MetaCallGraph mcg) {
 	// Clone the class that main was in, and replace it
 	HMethod oldmain=hc.getMethod();
 	HClass origClass = oldmain.getDeclaringClass();
@@ -73,7 +77,7 @@ public class EventDriven {
 //  	    }
 //  	}
 
-	ToAsync as = new ToAsync(ucf,hc ,ch ,linker,optimistic);
+	ToAsync as = new ToAsync(ucf,hc ,ch ,linker,optimistic,mcg);
 	// transform main to mainAsync
 	HMethod newmain = as.transform();
 

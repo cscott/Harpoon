@@ -29,11 +29,17 @@ import java.io.PrintStream;
 import java.io.FileOutputStream;
 import harpoon.IR.Jasmin.Jasmin;
 
+import harpoon.Analysis.MetaMethods.MetaAllCallers;
+import harpoon.Analysis.MetaMethods.MetaCallGraph;
+import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
+import harpoon.Analysis.MetaMethods.MetaMethod;
+import harpoon.Tools.BasicBlocks.BBConverter;
+
 /**
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.10 2000-03-19 20:55:39 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.11 2000-03-21 20:57:23 bdemsky Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
@@ -62,7 +68,42 @@ public abstract class EventDriven extends harpoon.IR.Registration {
         }
 
 	System.out.println("Doing QuadSSI");
-        HCodeFactory ccf = harpoon.IR.Quads.QuadSSI.codeFactory();
+	HCodeFactory hco = harpoon.IR.Quads.QuadNoSSA.codeFactory();
+
+
+
+	Collection cc = new WorkSet();
+	cc.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
+		 (linker));
+	cc.addAll(knownBlockingMethods());
+	cc.add(m);
+	System.out.println("Getting ClassHierarchy");
+        ClassHierarchy chx = new QuadClassHierarchy(linker, cc, hco);
+
+	BBConverter bbconv=new BBConverter(hco);
+	MetaCallGraph mcg=new MetaCallGraphImpl(bbconv, chx, m);
+	//MetaAllCallers mac=new MetaAllCallers(mcg);
+
+
+
+//using hcf for now!
+
+//  	HMethod[] bmethods=bm.blockingMethods();
+
+//  	WorkSet mm=new WorkSet();
+//  	Relation mrelation=mcg.getSplitRelation();
+//  	for (int i=0;i<bmethods.length;i++) {
+//  	    mm.addAll(mrelation.getValuesSet(bmethods[i]));
+//  	}
+//  	blockingmm=new WorkSet();
+//  	for (Iterator i=mm.iterator();i.hasNext();) {
+//  	    MetaMethod[] mma=mac.getCallers((MetaMethod)i.next());
+//  	    blockingmm.addAll(java.util.Arrays.asList(mma));
+//  	}
+
+
+
+        HCodeFactory ccf = harpoon.IR.Quads.QuadSSI.codeFactory(hco);
 	System.out.println("Doing UpdatingCodeFactory");
 	CachingCodeFactory hcf = new CachingCodeFactory(ccf);
 	final HClass hcc = HClass.Char;
@@ -80,10 +121,13 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	//c.add(linker.forName("java.io.InputStreamReader").getMethod("read",
 	//	new HClass[0]));
 	c.add(m);
-
-
 	System.out.println("Getting ClassHierarchy");
+
+
         ClassHierarchy ch = new QuadClassHierarchy(linker, c, hcf);
+
+
+
 	System.out.println("CALLABLE METHODS");
 	Iterator iterator=ch.callableMethods().iterator();
 	while (iterator.hasNext())
@@ -100,6 +144,9 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	System.out.println("------------------------------------------");
 
 
+
+
+
 	HCode hc = hcf.convert(m);
 	System.out.println("Done w/ set up");
 
@@ -107,8 +154,10 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 
 	harpoon.Analysis.EventDriven.EventDriven ed = 
 	    new harpoon.Analysis.EventDriven.EventDriven(hcf, hc, ch, linker,true);
+
+
 	
-	HMethod mconverted=ed.convert();
+	HMethod mconverted=ed.convert(mcg);
 
 	System.out.println("Converted");
 	System.out.println("Setting up HCodeFactories");
