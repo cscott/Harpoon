@@ -13,7 +13,7 @@ import java.util.List;
  * <code>DynamicSyncRemoval</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DynamicSyncRemoval.java,v 1.1 2003-07-09 22:28:51 cananian Exp $
+ * @version $Id: DynamicSyncRemoval.java,v 1.2 2003-07-10 04:01:10 cananian Exp $
  */
 public abstract class DynamicSyncRemoval {
     
@@ -41,9 +41,6 @@ public abstract class DynamicSyncRemoval {
 	    hcf = new harpoon.Analysis.DynamicSyncRemoval.SyncRemover
 		(hcf, linker).codeFactory();
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    // config checking
-	    frame.getRuntime().configurationSet.add
-		("check_with_dynamic_sync_removal_needed");   
 	}
     }
 

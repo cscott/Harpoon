@@ -37,7 +37,7 @@ import java.util.List;
  * collection.
  *
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeCallOpt.java,v 1.4 2003-07-10 03:54:59 cananian Exp $
+ * @version $Id: TreeCallOpt.java,v 1.5 2003-07-10 04:01:08 cananian Exp $
  */
 class TreeCallOpt extends harpoon.Analysis.Tree.Simplification {
     private final List<Rule> RULES = new ArrayList<Rule>(); 
@@ -86,6 +86,9 @@ class TreeCallOpt extends harpoon.Analysis.Tree.Simplification {
 			  hash,
 			  new CONST(tf, s, 2)));
 		} else {
+		    // config checking
+		    f.getRuntime().configurationSet.add
+			("check_with_dynamic_sync_removal_needed");   
 		    return new NATIVECALL(tf, s, call.getRetval(),
 					  new NAME(tf, s, Lnative_isSync),
 					  call.getArgs());
