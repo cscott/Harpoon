@@ -7,20 +7,11 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
-import harpoon.IR.LowQuad.LowQuadNoSSA;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
-import harpoon.Temp.Label;
 import harpoon.Temp.CloningTempMap;
-import harpoon.Temp.LabelList;
 import harpoon.Temp.Temp;
-import harpoon.Util.HashSet;
-import harpoon.Util.Set;
 import harpoon.Util.Util;
-
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Stack;
 
 /**
  * The <code>CanonicalTreeCode</code> codeview is the same as 
@@ -33,7 +24,7 @@ import java.util.Stack;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.1.2.4 1999-07-07 09:01:27 duncan Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.1.2.5 1999-07-07 09:05:22 duncan Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
