@@ -15,7 +15,7 @@ import java.util.Iterator;
     about the target machine's register file. 
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.2 1999-09-11 16:43:42 cananian Exp $
+    @version $Id: RegFileInfo.java,v 1.1.2.3 1999-09-11 18:40:10 cananian Exp $
  */
 public abstract class RegFileInfo {
     
@@ -91,7 +91,7 @@ public abstract class RegFileInfo {
 	        returned are ordered according to proper placement of
 	        the Register-bitlength words of the value in
 	        <code>t</code>, low-order words first.  
-	@exception <code>Frame.SpillException</code> if the register
+	@exception Frame.SpillException if the register
 	           file represented by <code>regfile</code> does not
 		   have any Register <code>Temp</code>s free to hold a
 		   new value of the type of <code>t</code>.  This
