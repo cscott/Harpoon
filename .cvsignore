@@ -6,3 +6,5 @@ java
 doc
 Test
 cvs-tmp
+*.vcg
+*.ps
