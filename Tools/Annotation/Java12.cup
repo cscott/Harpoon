@@ -10,10 +10,12 @@ import harpoon.Util.HashEnvironment;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Environment;
 import harpoon.Util.Tuple;
+import harpoon.Util.Util;
 
 import java_cup.runtime.Symbol;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
@@ -58,11 +60,13 @@ action code {:
     annotateURL(left, right, new QualName(hc).toURL());
   }
   public void annotateURL(int left, int right, HField hf) {
+    if (hf.getDeclaringClass().isArray()) return;
     String link = new QualName(hf.getDeclaringClass()).toBaseURL();
     link+="#field-"+hf.getDeclaringClass().getName().replace('$','.')+"."+hf.getName();
     annotateURL(left, right, link);
   }
   public void annotateURL(int left, int right, HMethod hm) {
+    if (hm.getDeclaringClass().isArray()) return;
     String link = new QualName(hm.getDeclaringClass()).toBaseURL();
     String cls  = hm.getDeclaringClass().getName().replace('$','.');
     link+="#method-"+cls+".";
@@ -90,6 +94,7 @@ action code {:
       this.packageN=p; this.classN=c; this.innerN=i;
     }
     QualName(HClass hc) {
+      Util.assert(hc!=null && !hc.isPrimitive() && !hc.isArray());
       String pkg=hc.getPackage(), simple=hc.getName(), inner=null;
       if (pkg.length()==0) pkg=null;
       else simple=simple.substring(1+pkg.length());
@@ -223,18 +228,104 @@ action code {:
 	  QualName qn = typeName(Q);
 	  if (qn!=null && qn.toClass()!=null) { // it's a type name
 	      try { return qn.toClass().getField(id); }
-	      catch (NoSuchFieldError e) { return null; /* error */ }
+	      catch (NoSuchFieldError e) { /* hm.  nope. */ }
 	  }
 	  HClass hc = expName(Q); // Q is an expression name?
 	  if (hc==null || hc.isPrimitive()) return null;
-	  try { return hc.getField(id); }
+	  try { return (hc.isArray())?hc.getDeclaredField(id):hc.getField(id);}
 	  catch (NoSuchFieldError e) { return null; /* error */ }
       }
   }
-  public HMethod methodName(String name) {
-      //if (name.indexOf('.')<0) { // simple method name
-      return null;
+  public HMethod methodName(String name, HClass[] paramtypes) {
+      List l = new ArrayList();
+      if (name.indexOf('.')<0) { // simple method name
+	  // check methods in current classes
+	  for (String s=(String)env.get("#qualified");
+	       this_package==null || s.length() > this_package.length();
+	       s = s.substring(0, s.lastIndexOf('.')) ) {
+	      try {
+		  HMethod[] hms = HClass.forName(s).getMethods();
+		  for (int i=0; i<hms.length; i++)
+		      if (hms[i].getName().equals(name))
+			  l.add(hms[i]);
+	      } catch (NoClassDefFoundError e) { /* not a valid class */ }
+	      if (s.indexOf('.')<0) break; // deal with this_package==null.
+	  }
+      } else { // qualified expression names
+	  String Q = name.substring(0,name.lastIndexOf('.'));
+	  String id= name.substring(1+name.lastIndexOf('.'));
+	  QualName qn = typeName(Q);
+	  if (qn!=null && qn.toClass()!=null) { // it's a type name
+	      HMethod[] hms = qn.toClass().getMethods();
+	      for (int i=0; i<hms.length; i++)
+		  if (hms[i].getName().equals(id))
+		      l.add(hms[i]);
+	  } else {
+	      HClass hc = expName(Q); // Q is an expression name?
+	      if (hc!=null && !hc.isPrimitive()) {
+		  HMethod[] hms = hc.getMethods();
+		  for (int i=0; i<hms.length; i++)
+		      if (hms[i].getName().equals(id))
+			  l.add(hms[i]);
+	      }
+	  }
+      }
+      // find most specific applicable method from those in l
+      return methodMatch(l, paramtypes);
   }
+  private HMethod methodMatch(List l, HClass[] params) {
+  L1: // remove invalid matches.
+      for (Iterator it=l.iterator(); it.hasNext(); ) {
+	  HMethod hm = (HMethod) it.next();
+	  HClass hcs[] = hm.getParameterTypes();
+	  if (hcs.length!=params.length) { it.remove(); continue L1; }
+	  for (int i=0; i<params.length; i++)
+	      if (params[i]!=null&&!isValidMethodConversion(params[i], hcs[i]))
+		  { it.remove(); continue L1; }
+      }
+      // now find most specific match (if any are left)
+      Iterator it = l.iterator();
+      if (!it.hasNext()) return null;
+      HMethod spec = (HMethod) it.next(); // candidate for most specific
+      HClass[] specty = spec.getParameterTypes();
+  L2:
+      while (it.hasNext()) {
+	  HMethod chal = (HMethod) it.next(); // the challenger
+	  HClass[] chalty = chal.getParameterTypes();
+	  for (int i=0; i<params.length; i++)
+	      if (!isValidMethodConversion(chalty[i], specty[i]))
+		  continue L2;
+	  if (chal.getDeclaringClass().isInstanceOf(spec.getDeclaringClass())){
+	      spec = chal; // new most-specific method.
+	      specty=chalty;
+	  }
+      }
+      return spec;
+  }
+  private boolean isValidMethodConversion(HClass small, HClass big) {
+      return (small.isPrimitive()||big.isPrimitive()) ?
+	  isValidWidePrimitiveConversion(small, big) :
+	  small.isInstanceOf(big);
+  }
+  private boolean isValidWidePrimitiveConversion(HClass small, HClass big) {
+      if (!(small.isPrimitive() && big.isPrimitive())) return false;
+      if (small==big) return true;
+      if (small==HClass.Boolean || big==HClass.Boolean) return false;
+      if (big==HClass.Byte) return false;
+      if (big==HClass.Char) return false;
+      if (small==HClass.Byte) return true;
+      if (big==HClass.Short) return false;
+      if (small==HClass.Short) return true;
+      if (small==HClass.Char) return true;
+      if (big==HClass.Int) return false;
+      if (small==HClass.Int) return true;
+      if (big==HClass.Long) return false;
+      if (small==HClass.Long) return true;
+      if (big==HClass.Float) return false;
+      if (small==HClass.Float) return true;
+      return false;
+  }
+      
   private String fieldString(String name) {
       return "field-"+env.get("#qualified")+"."+name;
   }
@@ -412,7 +503,7 @@ non terminal finally;
 // 19.12) Expressions
 non terminal HClass primary, primary_no_new_array;
 non terminal class_instance_creation_expression;
-non terminal argument_list_opt, argument_list;
+non terminal List argument_list_opt, argument_list;
 non terminal array_creation_expression;
 non terminal Integer dim_exprs, dim_expr, dims_opt, dims;
 non terminal HClass field_access, method_invocation, array_access;
@@ -493,7 +584,9 @@ array_type ::=	primitive_type:ty dims:d
 		{: RESULT=HClassUtil.arrayClass(ty,d.intValue()); :}
 	|	name:n dims:d
 		{: QualName qn=typeName(n);
-		   RESULT=(qn==null)?null:qn.toClass();
+		   RESULT = (qn==null)?null:qn.toClass();
+		   if (RESULT!=null)
+		     RESULT=HClassUtil.arrayClass(RESULT,d.intValue());
 		   annotateURL(nleft,nright, qn, n); :}
 	;
 
@@ -1001,16 +1094,16 @@ primary ::=	primary_no_new_array:p {: RESULT=p; :}
 	|	array_creation_expression
 	;
 primary_no_new_array ::=
-		literal
+		literal:l {: RESULT=l; :}
 	|	THIS	{:
 		  QualName qn=typeName((String)env.get("#qualified"));
 		  RESULT=(qn==null)?null:qn.toClass();
 		:}
-	|	LPAREN expression RPAREN
+	|	LPAREN expression:e RPAREN	{:RESULT=e;:}
 	|	class_instance_creation_expression
-	|	field_access
-	|	method_invocation
-	|	array_access
+	|	field_access:e		{:RESULT=e;:}
+	|	method_invocation:e	{:RESULT=e;:}
+	|	array_access:e		{:RESULT=e;:}
 	|	primitive_type DOT CLASS
 				{:RESULT=HClass.forName("java.lang.Class");:}
 	|	VOID DOT CLASS	{:RESULT=HClass.forName("java.lang.Class");:}
@@ -1028,11 +1121,15 @@ class_instance_creation_expression ::=
 			LPAREN argument_list_opt RPAREN class_body
 	;
 argument_list_opt ::=
-	|	argument_list
+    		{: RESULT=Collections.EMPTY_LIST; :}
+	|	argument_list:l
+		{: RESULT=l; :}
 	;
 argument_list ::=
-		expression
-	|	argument_list COMMA expression
+		expression:e
+		{: RESULT=new ArrayList(); RESULT.add(e); :}
+	|	argument_list:l COMMA expression:e
+		{: RESULT=l; RESULT.add(e); :}
 	;
 array_creation_expression ::=
 		NEW primitive_type dim_exprs dims_opt
@@ -1065,14 +1162,41 @@ field_access ::=
 	|	name DOT SUPER DOT IDENTIFIER
 	;
 method_invocation ::=
-		name LPAREN argument_list_opt RPAREN
-	|	primary DOT IDENTIFIER LPAREN argument_list_opt RPAREN
+		name:n LPAREN argument_list_opt:al RPAREN
+		{: HClass[] params = (HClass[]) al.toArray(new HClass[al.size()]);
+		   HMethod hm = methodName(n, params);
+		   if (hm!=null) {
+		       annotateURL(nleft,nright,hm);
+		       RESULT=hm.getReturnType();
+		   }
+		:}
+	|	primary:ty DOT IDENTIFIER:id LPAREN argument_list_opt:al RPAREN
+		{: if (ty!=null) {
+		     HClass[] params = (HClass[]) al.toArray(new HClass[al.size()]);
+		     List l = new ArrayList();
+		     HMethod[] hms = ty.getMethods();
+		     for (int i=0; i<hms.length; i++)
+		       if (hms[i].getName().equals(id))
+		         l.add(hms[i]);
+		     HMethod hm = methodMatch(l, params);
+		     if (hm!=null) {
+			 annotateURL(idleft,idright,hm);
+			 RESULT=hm.getReturnType();
+		     }
+		   }
+		:}
 	|	SUPER DOT IDENTIFIER LPAREN argument_list_opt RPAREN
 	|	name DOT SUPER DOT IDENTIFIER LPAREN argument_list_opt RPAREN
 	;
 array_access ::=
 		name:n LBRACK expression RBRACK
-	|	primary_no_new_array LBRACK expression RBRACK
+		{: HField hf=expName2(n);
+		   if (hf!=null) annotateURL(nleft,nright,hf);
+		   HClass hc=(hf==null)?expName(n):hf.getType();
+		   RESULT=(hc==null)?null:hc.getComponentType();
+		:}
+	|	primary_no_new_array:ty LBRACK expression RBRACK
+		{: RESULT=(ty==null)?null:ty.getComponentType(); :}
 	;
 postfix_expression ::=
 		primary:p {: RESULT=p; :}
@@ -1110,7 +1234,8 @@ unary_expression_not_plus_minus ::=
 	|	cast_expression:e	{: RESULT=e; :}
 	;
 cast_expression ::=
-		LPAREN primitive_type dims_opt RPAREN unary_expression
+		LPAREN primitive_type:ty dims_opt:d RPAREN unary_expression
+		{: RESULT=HClassUtil.arrayClass(ty,d.intValue()); :}
 	|	LPAREN expression RPAREN unary_expression_not_plus_minus
 	|	LPAREN name:n dims RPAREN unary_expression_not_plus_minus
 		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
@@ -1187,7 +1312,10 @@ assignment_expression ::=
 assignment ::=	left_hand_side assignment_operator assignment_expression
 	;
 left_hand_side ::=
-		name
+		name:n {:
+		  HField hf=expName2(n);
+		  if (hf!=null) annotateURL(nleft,nright,hf);
+		:}
 	|	field_access
 	|	array_access
 	;
