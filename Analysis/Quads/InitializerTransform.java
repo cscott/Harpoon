@@ -15,7 +15,7 @@ import java.lang.reflect.Modifier;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.1 2000-10-19 19:38:31 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.2 2000-10-19 20:41:18 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -46,13 +46,13 @@ public class InitializerTransform
     private Code mutateInitializer(Code hc) {
 	HMethod hm = hc.getMethod();
 	Util.assert(hm.getReturnType()==HClass.Void);
+	// add checks.
+	hc = addChecks(hc);
+	// make idempotent.
 	HEADER qH = (HEADER) hc.getRootElement();
 	FOOTER qF = (FOOTER) qH.next(0);
 	METHOD qM = (METHOD) qH.next(1);
 	QuadFactory qf = qH.getFactory();
-	// add checks.
-	hc = addChecks(hc);
-	// make idempotent.
 	HClass declcls = hc.getMethod().getDeclaringClass();
 	HField ifield = declcls.getMutator().addDeclaredField
 	    ("$$has$been$initialized$$", HClass.Boolean);
@@ -72,9 +72,48 @@ public class InitializerTransform
     }
     /** Add initialization checks to every static use of a class. */
     private Code addChecks(Code hc) {
+	// static references are found in GET/SET/ANEW/NEW/CALL
+	QuadVisitor qv = new QuadVisitor() {
+	    public void visit(Quad q) { /* default, do nothing. */ }
+	    public void visit(ANEW q) { addCheckBefore(q, q.hclass()); }
+	    public void visit(CALL q) {
+		if (q.isStatic())
+		    addCheckBefore(q, q.method().getDeclaringClass());
+		// XXX: non-virtual methods need to use special checking vrsns.
+	    }
+	    public void visit(GET q) {
+		if (q.isStatic())
+		    addCheckBefore(q, q.field().getDeclaringClass());
+	    }
+	    public void visit(NEW q) { addCheckBefore(q, q.hclass()); }
+	    public void visit(SET q) {
+		if (q.isStatic())
+		    addCheckBefore(q, q.field().getDeclaringClass());
+	    }
+	};
+	// XXX: would be more efficient if we kept track of what had been
+	// initialized.
+	Quad[] quads = (Quad[]) hc.getElements();
+	for (int i=0; i<quads.length; i++)
+	    quads[i].accept(qv);
 	return hc;
     }
-    private String encode(String s) {
-	return s;
+    private static void addCheckBefore(Quad q, HClass class2check) {
+	QuadFactory qf = q.getFactory();
+	if (qf.getMethod().getDeclaringClass().equals(class2check))
+	    return; // we've already initialized (or are initializing) this.
+	HMethod clinit = class2check.getClassInitializer();
+	if (clinit==null) return; // no class initializer for this class.
+	Util.assert(q.prevLength()==1); // otherwise don't know where to link
+	Quad q0 = new CALL(qf, q, clinit, new Temp[0], null, null, false,
+			   false, new Temp[0]);
+	// insert the new call on an edge
+	Edge splitedge = q.prevEdge(0);
+	Quad.addEdge((Quad)splitedge.from(), splitedge.which_succ(), q0, 0);
+	Quad.addEdge(q0, 0, (Quad)splitedge.to(), splitedge.which_pred());
+	// cover this call with the handlers of q
+	q0.addHandlers(q.handlers());
+	// done.
+	return;
     }
 }
