@@ -17,11 +17,15 @@ import harpoon.Analysis.PointerAnalysis.Debug;
  * <code>AbstrRelation</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AbstrRelation.java,v 1.1.2.1 2000-07-01 23:05:15 salcianu Exp $
+ * @version $Id: AbstrRelation.java,v 1.1.2.2 2000-07-02 00:54:59 salcianu Exp $
  */
 public abstract class AbstrRelation implements Relation, Cloneable, 
 					java.io.Serializable {
     
+    /** Optimizes the .hashCode() method by caching the hash code.
+	The cached value is invalidated after each update. */
+    public static final boolean OPTIMIZE_HASH_CODE = true;
+
     protected Relation getEmptyRelation() {
 	throw new UnsupportedOperationException();
     }
@@ -152,37 +156,31 @@ public abstract class AbstrRelation implements Relation, Cloneable,
 
 
     public boolean equals(Object o) {
-	if((o == null) || !(o instanceof Relation)) {
-	    System.out.println("EQUALS3: not a relation");
+	if((o == null) || !(o instanceof Relation))
 	    return false;
-	}
 	Relation rel2 = (Relation) o;
 
 	Set ks  = keys();
 	Set ks2 = rel2.keys();
 	
-	if(!equal_sets(ks, ks2)) {
-	    System.out.println("EQUALS3: different sets of keys");
+	if(!equal_sets(ks, ks2))
 	    return false;
-	}
 
 	for(Iterator it = ks.iterator(); it.hasNext(); ){
 	    Object key = it.next();
 	    Set vs  = getValues(key);
 	    Set vs2 = rel2.getValues(key);
-	    if(!equal_sets(vs, vs2)) {
-		System.out.println("EQUALS3: different values for " + key);
+	    if(!equal_sets(vs, vs2))
 		return false;
-	    }
 	}
 
-	System.out.println("EQUALS3: equals!");
 	return true;
     }
 
 
     public int hashCode() {
-	//	if(hashCode == 0) {
+	if((hashCode == 0) || !OPTIMIZE_HASH_CODE) {
+	    hashCode = 0;
 	    for(Iterator itk = keys().iterator(); itk.hasNext(); ) {
 		Object key = itk.next();
 		hashCode += key.hashCode();
@@ -191,7 +189,7 @@ public abstract class AbstrRelation implements Relation, Cloneable,
 		    hashCode += value.hashCode();
 		}
 	    }
-	    //	}
+	}
 	return hashCode;
     }
     protected int hashCode = 0;
@@ -205,20 +203,15 @@ public abstract class AbstrRelation implements Relation, Cloneable,
 	if((c1 == null) || (c2 == null))
 	    return c1 == c2;
 
-	if(c1.size() != c2.size()) {
-	    System.out.println("EQUALS4: different sizes");
+	if(c1.size() != c2.size())
 	    return false;
-	}
 
 	for(Iterator it = c1.iterator(); it.hasNext(); ) {
 	    Object obj = it.next();
-	    if(!c2.contains(obj)) {
-		System.out.println("EQUALS4: not in c2 " + obj);
+	    if(!c2.contains(obj))
 		return false;
-	    }
 	}
 
-	System.out.println("EQUALS4: equals!");
 	return true;	    
     }
 

@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  the <code>java.util.Map</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightMap.java,v 1.1.2.3 2000-07-01 23:18:21 salcianu Exp $
+ * @version $Id: LightMap.java,v 1.1.2.4 2000-07-02 00:54:59 salcianu Exp $
  */
 public class LightMap implements Map, Cloneable {
     // the number of mappings in this map
@@ -373,18 +373,13 @@ public class LightMap implements Map, Cloneable {
 
     public boolean equals(Object o) {
 	if(this == o) return true;
-	if(!(o instanceof Map)) {
-	    System.out.println("EQUALS2: not instance of Map");
+	if(!(o instanceof Map))
 	    return false;
-	}
 	
 	Map m2 = (Map) o;
 
 	Set set1 = this.entrySet();
 	Set set2 = m2.entrySet();
-
-	System.out.println("EQUALS2: set1 = " + set1);
-	System.out.println("EQUALS2: set2 = " + set2);
 
 	// two maps are equal if they have the same set of entries
 	return set1.equals(set2);

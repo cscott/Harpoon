@@ -24,11 +24,11 @@ import harpoon.Util.Util;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.30 2000-07-01 23:23:26 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.31 2000-07-02 00:54:39 salcianu Exp $
  */
 public class PointsToGraph {
 
-    public static boolean DEBUG = true;
+    public static boolean DEBUG = false;
     
     /** The set of the outside edges. */
     public PAEdgeSet O;

@@ -23,7 +23,7 @@ import harpoon.Temp.Temp;
  * <code>LightPAEdgeSet</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightPAEdgeSet.java,v 1.1.2.1 2000-07-01 23:13:32 salcianu Exp $
+ * @version $Id: LightPAEdgeSet.java,v 1.1.2.2 2000-07-02 00:54:39 salcianu Exp $
  */
 public class LightPAEdgeSet extends AbstrPAEdgeSet {
     
@@ -228,23 +228,17 @@ public class LightPAEdgeSet extends AbstrPAEdgeSet {
 
 
     public boolean equals(Object o) {
-	if((o == null) || !(o instanceof PAEdgeSet)) {
-	    System.out.println("EQUALS: not instance of PAEdgeSet"); 
+	if((o == null) || !(o instanceof PAEdgeSet))
 	    return false;
-	}
 
 	// for efficiency reasons, treat only the homogeneous case
 	if(!(o instanceof LightPAEdgeSet))
 	    throw new UnsupportedOperationException();
 
-	System.out.println("EQUALS CALLED FOR ");
-	System.out.println("        1. this = " + this);
-	System.out.println("        2. o = " + o);
-
 	LightPAEdgeSet les2 = (LightPAEdgeSet) o;
-
+	
 	return
-	    var_edges.equals(les2.var_edges) &&
+	    var_edges.equals(les2.var_edges) && 
 	    node_edges.equals(les2.node_edges);
     }
 

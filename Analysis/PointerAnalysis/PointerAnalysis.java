@@ -72,11 +72,11 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.65 2000-07-01 23:23:25 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.66 2000-07-02 00:54:39 salcianu Exp $
  */
 public class PointerAnalysis {
-    public static final boolean DEBUG     = true;
-    public static final boolean DEBUG2    = true;
+    public static final boolean DEBUG     = false;
+    public static final boolean DEBUG2    = false;
     public static final boolean DEBUG_SCC = true;
 
     /** Turns on the save memory mode. In this mode, some of the speed is
