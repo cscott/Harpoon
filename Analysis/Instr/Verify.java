@@ -140,7 +140,7 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 	    Util.assert(!regfile.hasAssignment(i.use()[0]), 
 			lra.lazyInfo("if we're loading, why in regfile?",
 				 block, i,i.use()[0],regfile,false));
-	    assign(i.use()[0], ((RegAlloc.SpillLoad)i).my_defC());
+	    assign(i.use()[0], ((RegAlloc.SpillLoad)i).defC());
 	} else if (i instanceof RegAlloc.SpillStore) {
 	    // temp <- regs
 	    spillDefsV.add(i.def()[0]);

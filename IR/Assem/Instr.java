@@ -42,7 +42,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.77 2000-06-30 21:57:44 pnkfelix Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.78 2000-07-05 21:07:50 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
@@ -52,8 +52,8 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
     private final String assem; 
     private InstrFactory inf;
 
-    public Temp[] dst; // FSK: had to make these protected due
-    public Temp[] src; // to javac weirdness
+    private final Temp[] dst;
+    private final Temp[] src;
 
     private int hashCode;
 
@@ -571,7 +571,7 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
      *  will come from the <code>InstrFactory</code> for
      *  <code>this</code>. 
      */
-    public Instr rename(TempMap tempmap) {
+    public final Instr rename(TempMap tempmap) {
 	return this.rename(tempmap, tempmap);
     }
 
@@ -581,7 +581,7 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
      *  will come from the <code>InstrFactory</code> for
      *  <code>this</code>. 
      */
-    public Instr rename(TempMap defMap, TempMap useMap) {
+    public final Instr rename(TempMap defMap, TempMap useMap) {
 	return this.rename(this.inf, defMap, useMap);
     }
 

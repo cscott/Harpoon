@@ -6,12 +6,12 @@ package harpoon.Analysis;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGrapher;
-import harpoon.IR.Properties.UseDef;
 import harpoon.Temp.Temp;
 import harpoon.Util.Collections.BitSetFactory;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 import harpoon.Util.WorkSet;
+import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.TYPECAST;
 
 import java.util.Collections;
@@ -28,7 +28,7 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.8 2000-06-24 04:44:44 kkz Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.9 2000-07-05 21:05:25 pnkfelix Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -36,15 +36,25 @@ public class ReachingDefsImpl extends ReachingDefs {
     final private Map Temp_to_BitSetFactories = new HashMap();
     final Map cache = new HashMap(); // maps BasicBlocks to in Sets 
     final boolean check_typecast; // demand the special treatment of TYPECAST
+    final private UseDefer ud;
     /** Creates a <code>ReachingDefsImpl</code> object for the
-	provided <code>HCode</code> using the provided 
-	<code>CFGrapher</code>. This may take a while since the
-	analysis is done at this time.
+	provided <code>HCode</code> for an IR implementing
+	<code>UseDef</code> using the provided <code>CFGrapher</code>.
+	This may take a while since the analysis is done at this time. 
     */
     public ReachingDefsImpl(HCode hc, CFGrapher cfger) {
+	this(hc, cfger, UseDefer.DEFAULT);
+    }
+    /** Creates a <code>ReachingDefsImpl</code> object for the
+	provided <code>HCode</code> using the provided 
+	<code>CFGrapher</code> and <code>UseDefer</code>. This may
+	take a while since the analysis is done at this time.
+    */
+    public ReachingDefsImpl(HCode hc, CFGrapher cfger, UseDefer ud) {
 	super(hc);
 	this.cfger = cfger;
 	this.bbf = new BasicBlock.Factory(hc, cfger);
+	this.ud = ud;
 	// sometimes, TYPECAST need to be treated specially
 	check_typecast = 
 	    hc.getName().equals(harpoon.IR.Quads.QuadNoSSA.codename);
@@ -87,7 +97,7 @@ public class ReachingDefsImpl extends ReachingDefs {
 	    if(check_typecast && (curr instanceof TYPECAST))
 		defC = Collections.singleton(((TYPECAST)curr).objectref());
 	    else
-		defC = ((UseDef)curr).defC();
+		defC = ud.defC(curr);
 	    if (defC.contains(t)) 
 		results = bsf.makeSet(Collections.singleton(curr));
 	}
@@ -128,17 +138,22 @@ public class ReachingDefsImpl extends ReachingDefs {
 	Map m = new HashMap();
 	for(Iterator it=hc.getElementsI(); it.hasNext(); ) {
 	    HCodeElement hce = (HCodeElement)it.next();
-	    report("Getting defs in: "+hce);
+	    StringBuffer strbuf = new StringBuffer();
 	    Temp[] tArray = null;
+	    report("Getting defs in: "+hce+" (defC:"+new java.util.ArrayList
+		   (ud.defC(hce))+")");
 	    // special treatment of TYPECAST
 	    if(check_typecast && (hce instanceof TYPECAST)) {
-		report("TYPECAST");
+		strbuf.append("TYPECAST: ");
 		tArray = new Temp[]{((TYPECAST)hce).objectref()};
-	    } else
-		tArray = ((UseDef)hce).def();
+	    } else {
+		tArray = ud.def(hce);
+		if (tArray.length > 0)
+		    strbuf.append("DEFINES: ");
+	    }
 	    for(int i=0; i < tArray.length; i++) {
 		Temp t = tArray[i];
-		report("Defines: "+t);
+		strbuf.append(t+" ");
 		Set defPts = (Set)m.get(t);
 		if (defPts == null) {
 		    // have not yet encountered this Temp
@@ -149,9 +164,19 @@ public class ReachingDefsImpl extends ReachingDefs {
 		// add this definition point
 		defPts.add(hce);
 	    }
+	    /* for debugging purposes only */
+	    Collection col = ud.useC(hce);
+	    if (!col.isEmpty()) strbuf.append("\nUSES: ");
+	    for(Iterator it2 = col.iterator(); it2.hasNext(); )
+		strbuf.append(it2.next().toString() + " ");
+	    if (strbuf.length() > 0)
+		report(strbuf.toString());
+
 	}
+	StringBuffer strbuf2 = new StringBuffer("Have entry for Temp(s): ");
 	for(Iterator keys = m.keySet().iterator(); keys.hasNext(); )
-	    report("Have entry for Temp: "+keys.next());
+	    strbuf2.append(keys.next()+" ");
+	report(strbuf2.toString());
 	return m;
     }
     // create a mapping of Temps to BitSetFactories
@@ -186,7 +211,7 @@ public class ReachingDefsImpl extends ReachingDefs {
 		if(check_typecast && (hce instanceof TYPECAST))
 		    tArray = new Temp[]{((TYPECAST)hce).objectref()};
 		else
-		    tArray = ((UseDef)hce).def();
+		    tArray = ud.def(hce);
 		for(int i=0; i < tArray.length; i++) {
 		    Temp t = tArray[i];
 		    BitSetFactory bsf 

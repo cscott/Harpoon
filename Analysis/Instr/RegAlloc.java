@@ -63,7 +63,7 @@ import java.util.HashMap;
  * each instruction, storing values to the stack and reloading them as
  * needed. 
  * 
- * <BR> <B>DESIGN NOTE:</B> The <code>abstractCodeFactory</code>
+ * <BR> <B>DESIGN NOTE:</B> The <code>abstractSpillFactory</code>
  * method relies on the subclasses of <code>RegAlloc</code> to perform
  * actual allocation.  This causes a cycle in our module dependency
  * graph, which, while not strictly illegal, tends to be a sign of a
@@ -75,7 +75,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.93 2000-06-30 23:09:00 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.94 2000-07-05 21:06:26 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -107,6 +107,8 @@ public abstract class RegAlloc  {
 	    return new SpillLoad(i,prefix+" "+dsts+" "+src, dsts, src); 
 	}
 
+	private StackOffsetTemp stackOffset;
+
 	SpillLoad(InstrFactory inf, Instr i, String assem, 
 		  Temp dst, Temp src) {
 	    super(inf, i, assem,
@@ -127,24 +129,6 @@ public abstract class RegAlloc  {
 	    this(i.getFactory(), i, assem, dsts, src);
 	}
 
-	// FSK: added these overrides to help workaround a fundamental
-	// bug in the use/def properties for code produced by
-	// IntermediateCodeFactorys.  Need to review and document
-	// carefully 
-	// public Collection defC() { return useC(); }
-
-
-	Temp[] my_def() { 
-	    Collection c = my_defC();
-	    return (Temp[]) c.toArray(new Temp[c.size()]);
-	}
-	Collection my_defC() { return Arrays.asList(dst); }
-
-	public String toString() {
-	    return super.toString() + 
-		" { "+new ArrayList(my_defC())+
-		", "+new ArrayList(useC())+" }"; 
-	}
     }
 
     /** Class for <code>RegAlloc</code> usage in spilling registers. 
@@ -158,49 +142,50 @@ public abstract class RegAlloc  {
     public static class SpillStore extends InstrMEM {
 	static SpillStore makeST(Instr i, String prefix, 
 				 Temp dst, Temp src) {
-	    return new SpillStore(i,prefix+" "+dst+" "+src,dst,src);
+	    SpillStore ss = new SpillStore(i,prefix+" "+dst+" "+src,dst,src);
+	    return ss;
 	}
 	
 	static SpillStore makeST(Instr i, String prefix, 
 				 Temp dst, Collection srcs) {
-	    //	    System.out.println("makeST:"+srcs);
-	    return new SpillStore(i, prefix+" "+dst+" "+srcs,dst,srcs); 
+	    SpillStore ss = new SpillStore(i,prefix+" "+dst+" "+srcs,dst,srcs);
+	    return ss;
 	}
 
-	SpillStore(Instr i, String assem, Temp dst, Temp src) {
+	private StackOffsetTemp stackOffset;
+	
+	private SpillStore(Instr i, String assem, Temp dst, Temp src) {
 	    this(i.getFactory(), i, assem, dst, src);
 	}
 
-	SpillStore(InstrFactory inf, HCodeElement hce, 
+	private SpillStore(InstrFactory inf, HCodeElement hce, 
 		String assem, Temp dst, Temp src) {
-	    super(inf, hce, assem,new Temp[]{dst},new Temp[]{src}); 
+	    this(inf, hce, assem, dst, Collections.singleton(src));
 	}
 
 	// Note that the order that 'dsts' will appear in is the order
 	// that its iterator returns the Temps in.
-	SpillStore(InstrFactory inf, HCodeElement hce,
+	private SpillStore(InstrFactory inf, HCodeElement hce,
 		 String assem, Temp dst, Collection srcs) {
 	    super(inf, hce, assem,new Temp[]{dst}, 
 		  (Temp[])srcs.toArray(new Temp[srcs.size()]));
 	}
 
-	SpillStore(Instr i, String assem, Temp dst, Collection srcs) {
+	private SpillStore(Instr i, String assem, Temp dst, Collection srcs) {
 	    this(i.getFactory(), i, assem, dst, srcs);
 	}
 
-	// FSK: added these overrides to help workaround a fundamental
-	// bug in the use/def properties for code produced by
-	// IntermediateCodeFactorys.  Need to review and document
-	// carefully 
 
-	// public Collection useC() { return defC(); }
-
-	Temp[] my_use() { 	    
-	    Collection c = my_useC();
-	    // System.out.println(this+" my_use:c:"+new ArrayList(c));
-	    return (Temp[]) c.toArray(new Temp[c.size()]);
+	public Collection defC() {
+	    Collection defs = super.defC();
+	    return defs;
 	}
-	Collection my_useC() { return Arrays.asList(src); }
+
+	public String toString() {
+	    return super.toString() + 
+		" { "+new ArrayList(defC())+
+		", "+new ArrayList(useC())+" }"; 
+	}
     }
 
     /** Creates a <code>RegAlloc</code>.  <code>RegAlloc</code>s are
@@ -389,7 +374,7 @@ public abstract class RegAlloc  {
 	    // this. 
 	    private void visitStore(SpillStore m) {
 		StackOffsetTemp def = (StackOffsetTemp) m.def()[0];
-		List regs = Arrays.asList(m.my_use());
+		List regs = Arrays.asList(m.use());
 		Util.assert(allRegs(regs));
 		List instrs = frame.getInstrBuilder().
 		    makeStore(regs, def.offset, m);
@@ -398,7 +383,7 @@ public abstract class RegAlloc  {
 	    
 	    private void visitLoad(SpillLoad m) {
 		StackOffsetTemp use = (StackOffsetTemp) m.use()[0];
-		List regs = Arrays.asList(m.my_def());
+		List regs = Arrays.asList(m.def());
 		Util.assert(allRegs(regs));
 		List instrs = frame.getInstrBuilder().
 		    makeLoad(regs, use.offset, m);
@@ -472,7 +457,6 @@ public abstract class RegAlloc  {
 	    return RegFileInfo.StackOffsetLoc.KIND; 
 	}
 	public int stackOffset() { return offset; }
-
 	
 	public String name() { 
 	    return "StkTmp"+offset+
@@ -511,13 +495,12 @@ public abstract class RegAlloc  {
 		    
 		    int off = ((Integer)tempsToOffsets.get(use)).intValue();
 		    // replace 'use' with StackOffsetTemp
-		    Temp stkOff = new StackOffsetTemp(use, off);
+		    StackOffsetTemp stkOff = 
+			new StackOffsetTemp(use, off);
 		    
-		    SpillLoad newi = 
-			new SpillLoad(m, m.getAssem(), 
-				      m.defC(), stkOff);
-		    Instr.replace(m, newi);
-		    List dxi = Default.pair(use, newi);
+		    m.stackOffset = stkOff;
+
+		    List dxi = Default.pair(use, m);
 		    tempXinstrToCommonLoc.add(dxi, stkOff);
 		    
 		}
@@ -539,12 +522,10 @@ public abstract class RegAlloc  {
 		    // replace 'def' with StackOffsetTemp
 		    StackOffsetTemp stkOff = 
 			new StackOffsetTemp(def, off); 
+
+		    m.stackOffset = stkOff;
 		    
-		    SpillStore newi = 
-			new SpillStore(m, m.getAssem(), 
-				       stkOff, m.useC());
-		    Instr.replace(m, newi);
-		    List dxi = Default.pair(def, newi);
+		    List dxi = Default.pair(def, m);
 		    tempXinstrToCommonLoc.add(dxi, stkOff);
 		} else {
 		    System.out.println("what kind of spill is this??? : "+m);

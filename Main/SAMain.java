@@ -66,48 +66,48 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.84 2000-06-29 23:50:54 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.85 2000-07-05 21:09:00 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
-    private static boolean PRINT_ORIG = false;
-    private static boolean PRINT_DATA = false;
-    private static boolean PRE_REG_ALLOC = false;
-    private static boolean REG_ALLOC = false;
-    private static boolean ABSTRACT_REG_ALLOC = false;
-    private static boolean HACKED_REG_ALLOC = false;
-    private static boolean LIVENESS_TEST = false;
-    private static boolean OUTPUT_INFO = false;
-    private static boolean QUIET = false;
-    private static boolean OPTIMIZE = false;
-    private static boolean LOOPOPTIMIZE = false;
+    protected static boolean PRINT_ORIG = false;
+    protected static boolean PRINT_DATA = false;
+    protected static boolean PRE_REG_ALLOC = false;
+    protected static boolean REG_ALLOC = false;
+    protected static boolean ABSTRACT_REG_ALLOC = false;
+    protected static boolean HACKED_REG_ALLOC = false;
+    protected static boolean LIVENESS_TEST = false;
+    protected static boolean OUTPUT_INFO = false;
+    protected static boolean QUIET = false;
+    protected static boolean OPTIMIZE = false;
+    protected static boolean LOOPOPTIMIZE = false;
 
-    private static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
-    private static HClass  singleClass = null; // for testing single classes
-    private static final int STRONGARM_BACKEND = 0;
-    private static final int MIPS_BACKEND = 1;
-    private static final int SPARC_BACKEND = 2;
-    private static final int PRECISEC_BACKEND = 3;
-    private static int     BACKEND = STRONGARM_BACKEND;
+    protected static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
+    protected static HClass  singleClass = null; // for testing single classes
+    protected static final int STRONGARM_BACKEND = 0;
+    protected static final int MIPS_BACKEND = 1;
+    protected static final int SPARC_BACKEND = 2;
+    protected static final int PRECISEC_BACKEND = 3;
+    protected static int     BACKEND = STRONGARM_BACKEND;
     
-    private static Linker linker = Loader.systemLinker;
+    protected static Linker linker = Loader.systemLinker;
 
-    private static java.io.PrintWriter out = 
+    protected static java.io.PrintWriter out = 
 	new java.io.PrintWriter(System.out, true);
         
-    private static String className;
-    private static String classHierarchyFilename;
+    protected static String className;
+    protected static String classHierarchyFilename;
 
-    private static String methodName;
+    protected static String methodName;
 
-    private static ClassHierarchy classHierarchy;
-    private static CallGraph callGraph;
-    private static Frame frame;
+    protected static ClassHierarchy classHierarchy;
+    protected static CallGraph callGraph;
+    protected static Frame frame;
 
-    private static File ASSEM_DIR = null;
-    private static HCodeFactory hcf;
+    protected static File ASSEM_DIR = null;
+    protected static HCodeFactory hcf;
 
-    private static Set joinset=null, startset=null;
+    protected static Set joinset=null, startset=null;
 
 
     public static void main(String[] args) {
@@ -324,7 +324,7 @@ public class SAMain extends harpoon.IR.Registration {
 	if (LIVENESS_TEST) {
 	    HCode hc = sahcf.convert(hmethod);
 	    
-	    info("\t--- INSTR FORM (basic block check)  ---");
+	    info("\t--- INSTR FORM (liveness check)  ---");
 	    if (hc != null) {
 		BasicBlock.Factory bbFact = 
 		    new BasicBlock.Factory(hc, CFGrapher.DEFAULT);
@@ -337,7 +337,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    } else {
 		info("null returned for " + hmethod);
 	    }
-	    info("\t--- end INSTR FORM (basic block check)  ---");
+	    info("\t--- end INSTR FORM (liveness check)  ---");
 	    out.flush();
 	}
 	
@@ -458,15 +458,15 @@ public class SAMain extends harpoon.IR.Registration {
       }
     }
 
-    private static void message(String msg) {
+    protected static void message(String msg) {
 	if(!QUIET) System.out.print(msg);
     }
 
-    private static void messageln(String msg) {
+    protected static void messageln(String msg) {
 	if(!QUIET) System.out.println(msg);
     }
     
-    private static void parseOpts(String[] args) {
+    protected static void parseOpts(String[] args) {
 
 	Getopt g = new Getopt("SAMain", args, "m:i:s:b:c:o:DOPFHRLlABhq1::C:");
 	
@@ -608,7 +608,7 @@ public class SAMain extends harpoon.IR.Registration {
 	"usage is: [-m <mapfile>] -c <class>"+
 	" [-DOPRLABhq] [-o <assembly output directory>]";
 
-    private static void printHelp() {
+    protected static void printHelp() {
 	out.println("-c <class> (required)");
 	out.println("\tCompile <class>");
 	out.println();
@@ -666,7 +666,7 @@ public class SAMain extends harpoon.IR.Registration {
 	
     }
 
-    private static void info(String str) {
+    protected static void info(String str) {
 	if(OUTPUT_INFO) out.println(str);
     }
 }
