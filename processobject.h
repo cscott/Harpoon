@@ -16,6 +16,7 @@ class processobject {
   bool issatisfied(Constraint *c); // returns true iff c is satisfied
   bool processconstraint(Constraint *c); // evaluates c and if it's not satisfied, calls the repair alg.
   void breakconstraint(Constraint *c);   // breaks the given constraint by invalidating each of its satisfied sentences
+  void modifyconstraint(Constraint *c);  // modifies the given constraint
   void setclean();
   ~processobject();
   

@@ -5,6 +5,7 @@
 #define TEST_H
 void initializeanalysis();
 void doanalysis();
+void doanalysis2();
 void resetanalysis();
 void addmapping(char *, void *,char *);
 void addintmapping(char *key, int value);

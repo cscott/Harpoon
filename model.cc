@@ -169,6 +169,25 @@ void model::breakspec()
 
 
 
+// inserts faults that don not break the specifications
+void model::inserterrors()
+{
+  processobject *po = new processobject(this);
+
+  // takes each satisfied constraint and modifies it with probability prob_modifyconstraint
+  for (int i=0; i<numconstraint; i++)
+    {
+      Constraint *c = getconstraint(i);
+      if (po->issatisfied(c))
+	if (random()<prob_modifyconstraint*RAND_MAX)
+	  po->modifyconstraint(c);
+    }
+
+  delete(po);
+}
+
+
+
 // processes the internal constraints
 void model::docheck() {
   processobject *po=new processobject(this);

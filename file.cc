@@ -62,13 +62,30 @@ int main(int argc, char **argv) {
     alloc(ptr,LENGTH);
     addmapping(dstring,ptr,"Disk");
     //    env->put(dstring,new Element(ptr,exportmodel->getstructure("Disk")));//should be of badstruct
+
+    // insert errors that break the specs
     doanalysis();
     dealloc(ptr);
     chunmountdisk(ptr);
     break;
   }
-  
+
   case '3': {
+    struct block * ptr=chmountdisk("disk");
+    initializeanalysis();
+    Hashtable *env=exportmodel->gethashtable();
+    alloc(ptr,LENGTH);
+    addmapping(dstring,ptr,"Disk");
+
+    //insert errors that do not break the specs
+    doanalysis2();
+    dealloc(ptr);
+    chunmountdisk(ptr);
+    break;
+  }
+
+  
+  case '4': {
   // prints the directory structure, and prints the contents of each file
     struct block * ptr=mountdisk("disk");
     printdirectory(ptr);
@@ -81,7 +98,7 @@ int main(int argc, char **argv) {
     break;
   }
  
-  case '4': {
+  case '5': {
   // the same as "case '1'" only that the files are accessed in reversed order
     struct block * ptr=mountdisk("disk");
     for(int i=145;i>1;i--) {
@@ -102,7 +119,7 @@ int main(int argc, char **argv) {
     break;
   }
 
-  case '5': {
+  case '6': {
     struct block * ptr=mountdisk("disk");
     for(int i=145;i>=0;i--) {
       char filename[10];
@@ -146,7 +163,7 @@ int main(int argc, char **argv) {
   break;
 
 
-  case '6': {
+  case '7': {
     {
       struct block * ptr=chmountdisk("disk");
       initializeanalysis();

@@ -38,6 +38,27 @@ void doanalysis() {
   printf("Time used for analysis(us): %ld\n",t);
 }
 
+
+
+void doanalysis2() {
+  struct timeval begin,end;
+  unsigned long t;
+  gettimeofday(&begin,NULL);
+  exportmodel->doabstraction();
+  exportmodel->getdomainrelation()->fixstuff();
+
+  exportmodel->inserterrors();
+  
+  exportmodel->docheck();
+  exportmodel->doconcrete();
+  gettimeofday(&end,NULL);
+  t=(end.tv_sec-begin.tv_sec)*1000000+end.tv_usec-begin.tv_usec;
+
+  printf("Time used for analysis(us): %ld\n",t);
+}
+
+
+
 void resetanalysis() {
   exportmodel->reset();
 }

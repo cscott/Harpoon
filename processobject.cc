@@ -286,6 +286,139 @@ void processobject::breakconstraint(Constraint *c)
 }
 
 
+
+/* satisfies the given satisfied contraint in another way */
+void processobject::modifyconstraint(Constraint *c)
+{
+#ifdef DEBUGMESSAGES
+  printf("Constraint to be modified: ");
+  c->print();
+  printf("\n");
+  fflush(NULL);
+#endif
+
+  // first, get get the constraint in normal form
+  NormalForm *nf = globalmodel->getnormalform(c);
+
+  /* for each CoerceSentence in nf, find if it's satisfied. 
+     If it's satisfied, we break it with probability prob_breaksatisfiedsentence;
+     If it's not satisfied, we repair it with probability prob_repairbrokensentence
+  */
+
+  bool still_valid = false;
+
+  for (int i=0; i<nf->getnumsentences(); i++)
+    {
+#ifdef DEBUGMESSAGES
+      printf("In processobject::modifyconstraint, i=%d \n", i);
+      fflush(NULL);
+#endif
+
+      CoerceSentence *s = nf->getsentence(i);
+      
+      // find if s is satisfied
+      bool satisfied = true;
+      State *st = new State(c, globalmodel->gethashtable());
+      if (st->initializestate(globalmodel))
+	while(true) 
+	  {
+	    if (!s->issatisfied(this, st->env))
+	      satisfied=false;
+
+	    if (!st->increment(globalmodel))
+	      break;
+	  }  
+      delete(st);
+      
+
+      // if s is satisfied, then break it
+      if  (satisfied)
+	if (random()<model::prob_breaksatisfiedsentence) // then break it
+	  {
+	    // first, select an arbitrary binding, for ex. the first one
+	    st = new State(c, globalmodel->gethashtable());
+	    
+	    if (st->initializestate(globalmodel))
+	      {
+		for (int j=0; j<s->getnumpredicates(); j++)
+		  {
+		    CoercePredicate *cp = s->getpredicate(j);
+		    // break this predicate with probability prob_breakpredicate
+		    if (random()<model::prob_breakpredicate*RAND_MAX)
+		      {
+#ifdef DEBUGMESSAGES
+			printf("po::modifyconstraint:  We break predicate %d\n",j);
+			fflush(NULL);
+#endif
+			
+			Action *action = repair->findbreakaction(cp);
+			action->breakpredicate(st->env, cp);
+			
+#ifdef DEBUGMESSAGES
+			printf("After action->modifypredicate was called\n");
+			fflush(NULL);
+#endif
+		      }
+		  }
+	      }
+	    delete(st);
+	  }
+	else still_valid = true;
+      else // if not satisfied, then repair it with prob_repairbrokensentence
+	if (random()<model::prob_repairbrokensentence)
+	  {
+	    // first, select an arbitrary binding, for ex. the first one
+	    st = new State(c, globalmodel->gethashtable());
+	    
+	    if (st->initializestate(globalmodel))
+	      {
+		for (int j=0; j<s->getnumpredicates(); j++)
+		  {
+		    CoercePredicate *cp = s->getpredicate(j);
+		    Action *action = repair->findrepairaction(cp);
+		    action->repairpredicate(st->env, cp);
+			
+#ifdef DEBUGMESSAGES
+			printf("After action->repairpredicate was called\n");
+			fflush(NULL);
+#endif
+		  }
+	      }
+	    
+	    delete(st);	    
+	    still_valid = true;
+	  }
+    }
+
+  if (!still_valid) // if all sentences are broken, repair the first one
+    {
+      CoerceSentence *saux = nf->getsentence(0);
+      // first, select an arbitrary binding, for ex. the first one
+      State *st = new State(c, globalmodel->gethashtable());
+      
+      if (st->initializestate(globalmodel))
+	{
+	  for (int j=0; j<saux->getnumpredicates(); j++)
+	    {
+	      CoercePredicate *cp = saux->getpredicate(j);
+	      Action *action = repair->findrepairaction(cp);
+	      action->repairpredicate(st->env, cp);
+	      
+#ifdef DEBUGMESSAGES
+	      printf("After action->repairpredicate was called\n");
+	      fflush(NULL);
+#endif
+	    }
+	}
+      
+      delete(st);	    
+    }
+  
+}
+
+
+
+
 processobject::~processobject() {
 }
 
