@@ -11,13 +11,14 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.Util;
 
+import java.lang.reflect.Modifier;
 import java.util.*;
 /**
  * <code>SyncTransformer</code> transforms synchronized code to
  * atomic transactions.  Works on <code>LowQuadNoSSA</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.7 2000-11-10 21:57:25 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.8 2000-11-14 19:37:33 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -35,12 +36,20 @@ public class SyncTransformer
     private final HField  HFcommitrec_parent;
     private final HClass  HCabortex;
     private final HField  HFabortex_upto;
+    /** Our new methods of java.lang.Object */
+    private final HMethod HMrVersion;
+    private final HMethod HMrwVersion;
+    /*
+    private final HMethod HMrCommitted;
+    private final HMethod HMwCommitted;
+    */
     /* flag value */
-    //private final HField HFflagvalue;
+    private final HField HFflagvalue;
 
     /** Creates a <code>SyncTransformer</code>. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l) {
-        super(harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf), ch, false);
+        super(harpoon.IR.Quads.QuadSSA.codeFactory(hcf), ch, false);
+	// and output is NoSSA
 	Util.assert(codeFactory().getCodeName()
 		    .equals(harpoon.IR.Quads.QuadNoSSA.codename));
 	String pkg = "harpoon.Runtime.Transactions.";
@@ -54,7 +63,19 @@ public class SyncTransformer
 	this.HFcommitrec_parent = HCcommitrec.getField("parent");
 	this.HCabortex = l.forName(pkg+"TransactionAbortException");
 	this.HFabortex_upto = HCabortex.getField("abortUpTo");
-	//this.HFflagvalue = l.forName(pkg+"Constants").getField("FLAG_VALUE");
+	// now create methods of java.lang.Object.
+	HClass HCobj = l.forName("java.lang.Object");
+	HClassMutator objM = HCobj.getMutator();
+	this.HMrVersion = objM.addDeclaredMethod
+	    ("getReadableVersion", new HClass[] { HCcommitrec }, HCobj);
+	HMrVersion.getMutator().addModifiers(Modifier.FINAL);
+	this.HMrwVersion = objM.addDeclaredMethod
+	    ("getReadWritableVersion", new HClass[] { HCcommitrec }, HCobj);
+	HMrwVersion.getMutator().addModifiers(Modifier.FINAL);
+	// create a static final field in java.lang.Object that will hold
+	// our 'unique' value.
+	this.HFflagvalue = objM.addDeclaredField("flagValue", HCobj);
+	HFflagvalue.getMutator().addModifiers(Modifier.FINAL|Modifier.STATIC);
     }
     protected String mutateDescriptor(HMethod hm, Token which) {
 	if (which==WITH_TRANSACTION)
@@ -62,6 +83,19 @@ public class SyncTransformer
 	    return "(" + HCcommitrec.getDescriptor() +
 		hm.getDescriptor().substring(1);
 	else return super.mutateDescriptor(hm, which);
+    }
+    protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod) {
+	// make SSA into RSSx.
+	Util.assert(hc.getName().equals(QuadSSA.codename));
+	return MyRSSx.cloneToRSSx((harpoon.IR.Quads.Code)hc, newmethod);
+    }
+    private static class MyRSSx extends QuadRSSx {
+	private MyRSSx(HMethod m) { super(m, null); }
+	public static HCodeAndMaps cloneToRSSx(harpoon.IR.Quads.Code c,
+					       HMethod m) {
+	    MyRSSx r = new MyRSSx(m);
+	    return r.cloneHelper(c, r);
+	}
     }
     protected HCode mutateHCode(HCodeAndMaps input, Token which) {
 	HCode hc = input.hcode();
@@ -103,6 +137,8 @@ public class SyncTransformer
 	final Temp retex;
 	final Temp currtrans; // current transaction.
 	private final Map fixupmap = new HashMap();
+	final CheckOracle co=null;//XXX
+	final TempSplitter ts=null;//XXX
 	// mutable.
 	FOOTER footer; // we attach new stuff to the footer.
 	ListList handlers = null; // points to current abort handler
@@ -118,12 +154,13 @@ public class SyncTransformer
 	    this.retex = new Temp(tf, "trabex"); // transaction abort exception
 	}
 	/** helper routine to add a quad on an edge. */
-	private Edge addAt(Edge e, Quad q) {
-	    Quad frm = (Quad) e.from(); int which_succ = e.which_succ();
-	    Quad to  = (Quad) e.to();   int which_pred = e.which_pred();
-	    Quad.addEdge(frm, which_succ, q, 0);
-	    Quad.addEdge(q, 0, to, which_pred);
-	    return to.prevEdge(which_pred);
+	private Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
+	private Edge addAt(Edge e, int which_pred, Quad q, int which_succ) {
+	    Quad frm = (Quad) e.from(); int frm_succ = e.which_succ();
+	    Quad to  = (Quad) e.to();   int to_pred = e.which_pred();
+	    Quad.addEdge(frm, frm_succ, q, which_pred);
+	    Quad.addEdge(q, which_succ, to, to_pred);
+	    return to.prevEdge(to_pred);
 	}
 	/** Insert abort exception check on the given edge. */
 	private Edge checkForAbort(Edge e, HCodeElement src, Temp tex) {
@@ -159,9 +196,10 @@ public class SyncTransformer
 	    }
 	}
 
-	public void visit(Quad q) { /* do nothing */ }
+	public void visit(Quad q) { addChecks(q); }
 
 	public void visit(METHOD q) {
+	    addChecks(q);
 	    if (handlers==null) return; // don't rewrite if not in trans
 	    Temp[] nparams = new Temp[q.paramsLength()+1];
 	    int i=0;
@@ -174,6 +212,7 @@ public class SyncTransformer
 	}
 
 	public void visit(CALL q) {
+	    addChecks(q);
 	    // if in a transaction, call the transaction version &
 	    // deal with possible abort.
 	    if (handlers==null) return;
@@ -195,6 +234,7 @@ public class SyncTransformer
 	    // done.
 	}
 	public void visit(MONITORENTER q) {
+	    addChecks(q);
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
 	    if (handlers==null)
 		in = addAt(in, new CONST(qf, q, currtrans, null, HClass.Void));
@@ -242,6 +282,7 @@ public class SyncTransformer
 	    fixupmap.put(q5, handlers.head);
 	}
 	public void visit(MONITOREXIT q) {
+	    addChecks(q);
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
 	    // call c.commitTransaction(), linking to abort code if fails.
 	    Quad q0 = new CALL(qf, q, HMcommitrec_commit,
@@ -258,9 +299,47 @@ public class SyncTransformer
 	    handlers = handlers.tail;
 	    if (handlers==null) q1.remove(); // unneccessary.
 	}
-
+	public void visit(AGET q) {
+	    addChecks(q);
+	    if (currtrans==null) { // non-transactional read
+		// XXX: write me
+	    } else { // transactional read
+		Quad.replace(q, new AGET(qf, q, q.dst(),
+					ts.versioned(q.objectref()),
+					 q.index(), q.type()));
+	    }
+	}
+	public void visit(ASET q) {
+	    addChecks(q);
+	    if (currtrans==null) { // non-transactional read
+		// XXX: write me
+	    } else { // transactional read
+		Quad.replace(q, new ASET(qf, q, ts.versioned(q.objectref()),
+					 q.index(), q.src(),
+					 q.type()));
+	    }
+	}
+	public void visit(GET q) {
+	    addChecks(q);
+	    if (currtrans==null) { // non-transactional read
+		// XXX: write me
+	    } else { // transactional read
+		Quad.replace(q, new GET(qf, q, q.dst(), q.field(),
+					ts.versioned(q.objectref())));
+	    }
+	}
+	public void visit(SET q) {
+	    addChecks(q);
+	    if (currtrans==null) { // non-transactional read
+		// XXX: write me
+	    } else { // transactional read
+		Quad.replace(q, new SET(qf, q, q.field(),
+					ts.versioned(q.objectref()),
+					q.src()));
+	    }
+	}
 	/*
-	public void visit(PGET q) {
+	public void visit(GET q) {
 	    if (currtrans==null) { // non-transactional read
 		Temp x = q.dst(); HClass type = q.type();
 		Temp flag = new Temp(tf);
@@ -269,48 +348,120 @@ public class SyncTransformer
 		//Quad q1 = new POPER(qf, q, LQop.XXX);
 	    }
 	}
-	public void visit(PSET q) {
+	*/
+	void addChecks(Quad q) {
+	    // don't add checks if we're not currently in transaction context.
+	    if (handlers==null) return;
+	    // only deal with quads where "just before" makes sense.
+	    Util.assert(q.prevLength()==1);
+	    Edge in = q.prevEdge(0);
+	    // create read/write versions for objects that need it.
+	    Set rS = co.createReadVersions(q);
+	    Set wS = co.createWriteVersions(q);
+	    wS.removeAll(rS); // write really is read-write.
+	    for (int i=0; i<2; i++) {
+		// iteration 0 for read; iteration 1 for write versions.
+		Iterator it = (i==0) ? rS.iterator() : wS.iterator();
+		HMethod hm = (i==0) ? HMrVersion : HMrwVersion ;
+		while (it.hasNext()) {
+		    Temp t = (Temp) it.next();
+		    CALL q0= new CALL(qf, q, hm, new Temp[] { t, currtrans },
+		                      ts.versioned(t), retex,
+				      false/*final, not virtual*/, false,
+				      new Temp[0]);
+		    THROW q1= new THROW(qf, q, retex);
+		    in = addAt(in, q0);
+		    Quad.addEdge(q0, 1, q1, 0);
+		    footer.attach(q1, 0);
+		    checkForAbort(q0.nextEdge(1), q, retex);
+		}
+	    }
+	    // do field checks where necessary.
+	    for (Iterator it=co.checkField(q).iterator(); it.hasNext(); ) {
+		CheckOracle.RefAndField raf=(CheckOracle.RefAndField)it.next();
+		HClass ty = raf.field.getType();
+		Temp t0 = new Temp(tf, "fieldcheck");
+		Temp t1 = new Temp(tf, "fieldcheck");
+		Quad q0 = new GET(qf, q, t0, raf.field, raf.objref);
+		Quad q1 = makeFlagConst(qf, q, t1, ty);
+		Quad q2 = new OPER(qf, q, cmpop(ty), t1, new Temp[]{t0,t1});
+		Quad q3 = new CJMP(qf, q, t1, new Temp[0]);
+		in = addAt(in, q0);
+		in = addAt(in, q1);
+		in = addAt(in, q2);
+		in = addAt(in, 0, q3, 1);
+		// XXX handle case that field is not already correct.
+	    }
+	    // do array index checks where necessary.
+	    for (Iterator it=co.checkArrayElement(q).iterator();it.hasNext();){
+		CheckOracle.RefAndIndexAndType rit =
+		    (CheckOracle.RefAndIndexAndType) it.next();
+		Temp t0 = new Temp(tf, "arraycheck");
+		Temp t1 = new Temp(tf, "arraycheck");
+		Quad q0 = new AGET(qf, q, t0, rit.objref, rit.index, rit.type);
+		Quad q1 = makeFlagConst(qf, q, t1, rit.type);
+		Quad q2 = new OPER(qf, q, cmpop(rit.type), t1,
+				   new Temp[] { t0, t1 } );
+		Quad q3 = new CJMP(qf, q, t1, new Temp[0]);
+		in = addAt(in, q0);
+		in = addAt(in, q1);
+		in = addAt(in, q2);
+		in = addAt(in, 0, q3, 1);
+		// XXX handle case that array element is not already correct.
+	    }
 	}
 
-	private Quad makeFlagConst(LowQuadFactory qf, HCodeElement src,
+	private int cmpop(HClass type) {
+	    if (!type.isPrimitive()) return Qop.ACMPEQ;
+	    else if (type==HClass.Boolean || type==HClass.Byte ||
+		     type==HClass.Char || type==HClass.Short ||
+		     type==HClass.Int) return Qop.ICMPEQ;
+	    else if (type==HClass.Long) return Qop.LCMPEQ;
+	    else if (type==HClass.Float) return Qop.FCMPEQ;
+	    else if (type==HClass.Double) return Qop.DCMPEQ;
+	    else throw new Error("ACK: "+type);
+	}	    
+	// flag values.
+	private static final long FLAG_VALUE = 0xCACACACACACACACAL;
+	private static final Integer booleanFlag=new Integer((int)FLAG_VALUE&3);
+	private static final Integer byteFlag = new Integer((byte)FLAG_VALUE);
+	private static final Integer charFlag = new Integer((char)FLAG_VALUE);
+	private static final Integer shortFlag= new Integer((short)FLAG_VALUE);
+	private static final Integer intFlag = new Integer((int)FLAG_VALUE);
+	private static final Long longFlag = new Long(FLAG_VALUE);
+	private static final Float floatFlag = new Float(1976.0927);
+	private static final Double doubleFlag = new Double(1976.0927);
+
+	private Quad makeFlagConst(QuadFactory qf, HCodeElement src,
 				    Temp dst, HClass type) {
-	    long FLAG_VALUE = 0xCACACACACACACACAL;
-	    // = harpoon.Runtime.Transactions.Constants.FLAG_VALUE;
 	    if (!type.isPrimitive())
-		/ * address of FLAG_VALUE field is used as marker. * /
-		return new PFCONST(qf, src, dst, HFflagvalue);
-	    else if (type==HClass.Boolean)
-		return new CONST(qf, src, dst,
-				 new Integer((int)FLAG_VALUE&1), HClass.Int);
+		/* address of FLAG_VALUE field is used as marker. */
+		return new GET(qf, src, dst, HFflagvalue, null);
+	    else if (type==HClass.Boolean) //XXX
+		return new CONST(qf, src, dst, booleanFlag, HClass.Int);
 	    else if (type==HClass.Byte)
-		return new CONST(qf, src, dst,
-				 new Integer((byte)FLAG_VALUE), HClass.Int);
+		return new CONST(qf, src, dst, byteFlag, HClass.Int);
 	    else if (type==HClass.Char)
-		return new CONST(qf, src, dst,
-				 new Integer((char)FLAG_VALUE), HClass.Int);
+		return new CONST(qf, src, dst, charFlag, HClass.Int);
 	    else if (type==HClass.Short)
-		return new CONST(qf, src, dst,
-				 new Integer((short)FLAG_VALUE), HClass.Int);
+		return new CONST(qf, src, dst, shortFlag, HClass.Int);
 	    else if (type==HClass.Int)
-		return new CONST(qf, src, dst,
-				 new Integer((int)FLAG_VALUE), HClass.Int);
+		return new CONST(qf, src, dst, intFlag, HClass.Int);
 	    else if (type==HClass.Long)
-		return new CONST(qf, src, dst,
-				 new Long(FLAG_VALUE), HClass.Long);
+		return new CONST(qf, src, dst, longFlag, HClass.Long);
 	    else if (type==HClass.Float)
-		return new CONST(qf, src, dst,
-				 new Float(Float.intBitsToFloat((int)FLAG_VALUE)), HClass.Float);
+		return new CONST(qf, src, dst, floatFlag, HClass.Float);
 	    else if (type==HClass.Double)
-		return new CONST(qf, src, dst,
-				 new Double(Double.longBitsToDouble(FLAG_VALUE)), HClass.Double);
+		return new CONST(qf, src, dst, doubleFlag, HClass.Double);
 	    else throw new Error("ACK: "+type);
 	}
-    */
     }
-
-    static abstract class FutureWriteIdentifier {
-	/** Returns <code>true</code> if a <code>PSET</code> may ever
-	 *  be done on a value derived from this <code>PPTR</code>. */
-	public abstract boolean futureWrite(/*PPTR pptr*/);
+    private class TempSplitter {
+	private final Map m = new HashMap();
+	public Temp versioned(Temp t) {
+	    if (!m.containsKey(t))
+		m.put(t, new Temp(t));
+	    return (Temp) m.get(t);
+	}
     }
 }
