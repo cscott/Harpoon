@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.15 2001-05-08 15:17:03 pnkfelix Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.16 2001-06-12 20:53:27 cananian Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
 
@@ -249,7 +249,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
     // as well as a list of defPts defining more than one Temp. 
     // (the latter is to allow a more efficient indexer definition. 
     private DefPtRecord getDefPts() {
-	List hceL = hc.getElementsL();
+	Collection hceL = cfger.getElements(hc);
 	DefPtRecord dpr = new DefPtRecord(hceL.size());
 	Map m = dpr.tempToPairs;
 	List multDefns = dpr.defpts;
