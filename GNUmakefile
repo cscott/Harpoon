@@ -1,4 +1,11 @@
-# $Id: GNUmakefile,v 1.61.2.1 1998-11-22 02:10:08 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.2 1998-11-25 04:24:37 cananian Exp $
+CVS_TAG=$(shell cvs status GNUmakefile | awk '/Sticky Tag/{print $$3}')
+CVS_BRANCH=$(shell cvs status GNUmakefile | awk '/Sticky Tag/{print $$5}' | \
+	sed -e 's/[^0-9.]//g')
+# FIXME: don't add -r option unless CVS_TAG contains something.
+CVS_REVISION=-r $(CVS_TAG)
+# FIXME: fix cvs-add command to use CVS_BRANCH instead of CVS_REVISION
+
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -81,11 +88,11 @@ cvs-add: needs-cvs
 	done
 cvs-commit: needs-cvs cvs-add
 	cvs -q diff -u | tee cvs-tmp # view changes we are committing.
-	cvs -q commit
+	cvs -q commit # $(CVS_REVISION)
 	$(RM) cvs-tmp
 commit: cvs-commit # convenient abbreviation
 update: needs-cvs
-	cvs update -Pd
+	cvs update -Pd $(CVS_REVISION)
 	@echo ""
 	@-$(FORTUNE)
 
