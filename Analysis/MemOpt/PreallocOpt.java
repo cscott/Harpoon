@@ -35,7 +35,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.1 2002-11-27 18:35:28 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.2 2002-11-27 18:44:23 salcianu Exp $
  */
 public class PreallocOpt {
 
@@ -142,7 +142,7 @@ public class PreallocOpt {
 	int max = -1;
 	for(Iterator it_new = coll.iterator(); it_new.hasNext(); ) {
 	    HClass hclass = ((NEW) it_new.next()).hclass();
-	    int size = Backend.Runtime1.TreeBuilder.objectSize(hclass);
+	    int size = 0; //Backend.Runtime1.TreeBuilder.objectSize(hclass);
 	    if(size > max) max = size;
 	}
 	return max;
