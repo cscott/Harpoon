@@ -1,5 +1,5 @@
 // LLDisjointSetStructure.java, created Mon Jan 10 13:48:49 2000 by pnkfelix
-// Copyright (C) 1999 Felix S. Klock <pnkfelix@mit.edu>
+// Copyright (C) 2000 Felix S. Klock <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
@@ -14,7 +14,7 @@ import java.util.Set;
  * <code>LLDisjointSetStructure</code>
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: LLDisjointSetStructure.java,v 1.1.2.3 2000-01-14 12:33:02 cananian Exp $
+ * @version $Id: LLDisjointSetStructure.java,v 1.1.2.4 2000-01-17 23:49:09 cananian Exp $
  */
 public class LLDisjointSetStructure extends DisjointSetStructure {
 

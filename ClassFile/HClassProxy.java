@@ -1,5 +1,5 @@
 // HClassProxy.java, created Tue Jan 11 07:39:47 2000 by cananian
-// Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
@@ -15,7 +15,7 @@ import java.lang.reflect.Modifier;
  * "redefined" after creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassProxy.java,v 1.1.4.2 2000-01-15 00:49:06 cananian Exp $
+ * @version $Id: HClassProxy.java,v 1.1.4.3 2000-01-17 23:49:06 cananian Exp $
  */
 class HClassProxy extends HClass implements HClassMutator {
   Relinker relinker;

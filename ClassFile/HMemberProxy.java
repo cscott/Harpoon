@@ -1,5 +1,5 @@
 // HMemberProxy.java, created Wed Jan 12 19:15:03 2000 by cananian
-// Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * <code>HMember</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMemberProxy.java,v 1.1.4.1 2000-01-13 23:47:47 cananian Exp $
+ * @version $Id: HMemberProxy.java,v 1.1.4.2 2000-01-17 23:49:06 cananian Exp $
  * @see HFieldProxy
  * @see HMethodProxy
  */

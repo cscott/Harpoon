@@ -1,5 +1,5 @@
 // PointerAnalysis.java, created Sat Jan  8 23:22:24 2000 by salcianu
-// Copyright (C) 1999 Alexandru SALCIANU <salcianu@mit.edu>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -47,7 +47,7 @@ import harpoon.IR.Quads.FOOTER;
  * computed results from the caches.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.1.2.3 2000-01-16 02:24:32 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.4 2000-01-17 23:49:03 cananian Exp $
  */
 public class PointerAnalysis {
 

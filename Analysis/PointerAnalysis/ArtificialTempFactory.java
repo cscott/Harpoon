@@ -1,5 +1,5 @@
 // ArtificialTempFactory.java, created Wed Jan 12 19:03:03 2000 by salcianu
-// Copyright (C) 1999 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -27,7 +27,7 @@ import harpoon.ClassFile.HField;
  * algorithm and will generate a bigger number of <i>artificial</i> nodes.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ArtificialTempFactory.java,v 1.1.2.1 2000-01-14 20:50:59 salcianu Exp $
+ * @version $Id: ArtificialTempFactory.java,v 1.1.2.2 2000-01-17 23:49:03 cananian Exp $
  */
 public abstract class ArtificialTempFactory {
 

@@ -1,5 +1,5 @@
 // RuntimeInformation.java, created Mon Jan 17 00:51:55 2000 by cananian
-// Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Generic;
 
@@ -36,7 +36,7 @@ import java.util.Set;
  * be kept <b>completely abstract</b>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RuntimeInformation.java,v 1.1.2.1 2000-01-17 14:07:04 cananian Exp $
+ * @version $Id: RuntimeInformation.java,v 1.1.2.2 2000-01-17 23:49:05 cananian Exp $
  * @see JDK11RuntimeImplementation
  * @see JDK12RuntimeImplementation
  */
