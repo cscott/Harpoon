@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.94 2003-07-21 21:25:57 cananian Exp $
+# $Id: GNUmakefile,v 1.95 2003-07-23 19:12:55 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -239,7 +239,7 @@ java:	$(PROPERTIES) out-of-date gj-files gj-files-2
 	@if [ -x $(firstword ${JSR14_v1}) -a ! -f harpoon.first ]; then \
 	  if [ -n "$(firstword $(filter $(shell grep -v '^#' gj-files), $(shell cat out-of-date)))" ] ; then \
 	    echo Building with $(firstword ${JSR14_v1}). ;\
-	    ${JSR14_v1} ${JFLAGS} $(filter $(shell grep -v "^#" gj-files), $(shell cat out-of-date)) ; \
+	    ${JSR14_v1} ${JFLAGS} $(shell grep -v "^#" gj-files) ; \
 	  fi \
 	else \
 	  echo "**** Using pre-built GJ classes (in Support/gjlib.jar) ****" ;\
@@ -258,7 +258,9 @@ java:	$(PROPERTIES) out-of-date gj-files gj-files-2
 	  $(RM) `sort -u stubbed-out`; \
 	  $(MAKE) --no-print-directory PASS=2 `sort -u stubbed-out` || exit 1; \
 	  echo Rebuilding `sort -u stubbed-out`; \
-	  ${JCC} ${JFLAGS} `sort -u stubbed-out` || exit 1; \
+	  if [ -x $(firstword ${JSR14_v1}) ]; then \
+	     ${JSR14_v1} ${JFLAGS} `sort -u stubbed-out` || exit 1; \
+	  fi ; \
 	  $(RM) stubbed-out; \
 	fi 
 	@$(MAKE) --no-print-directory properties

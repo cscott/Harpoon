@@ -269,8 +269,12 @@ Analysis/Quads/CachingCallGraph.java
 Analysis/Quads/CallGraph.java
 Analysis/Quads/CallGraphImpl2.java
 Analysis/Quads/SSICallGraph.java
+Analysis/SizeOpt/BitWidthAnalysis.java
+Backend/MIPS/CodeGen.java
 Backend/Runtime1/Data.java
 Backend/Runtime2/TreeBuilder.java
+Backend/Sparc/CodeGen.java
+Backend/StrongARM/CodeGen.java
 
 # not GJ-ized, but we need to co-compile w/ these to workaround gjc bugs
 ClassFile/HArrayField.java
