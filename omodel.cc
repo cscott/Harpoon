@@ -300,7 +300,9 @@ void Setexpr::print_size(Hashtable *stateenv, model *m)
     DomainSet *dset = dr->getset(setlabel->getname());
     WorkSet *ws = dset->getset();
 
-    printf("%d", ws->size());
+    if (ws != NULL)
+      printf("%d", ws->size());
+    else printf("NULL");
     break;
   }
 
@@ -320,7 +322,9 @@ void Setexpr::print_size(Hashtable *stateenv, model *m)
    
     WorkSet *ws = wr->getset(key);
 
-    printf("%d", ws->size());
+    if (ws != NULL)
+      printf("%d", ws->size());
+    else printf("NULL);
     break;
   }
 
@@ -341,7 +345,9 @@ void Setexpr::print_size(Hashtable *stateenv, model *m)
    
     WorkSet *ws = wr->invgetset(key);
 
-    printf("%d", ws->size());
+    if (ws != NULL)
+      printf("%d", ws->size());
+    else printf("NULL");
     break;
   }
   }
