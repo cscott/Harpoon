@@ -23,7 +23,7 @@ import harpoon.Temp.Temp;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.1 1999-07-20 21:28:25 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.2 1999-07-20 21:43:59 pnkfelix Exp $
  */
 %%
 
@@ -170,22 +170,10 @@ BINOP<l>(CMPLT, j, k) = i %{
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
-BINOP(DIV, j, k) = i %{
-	   // TODO: FILL IN!!!
-}%
-
-BINOP(MUL, j, k) = i %{
-	   // TODO: FILL IN!!!
-}%
-
 BINOP(OR, j, k) = i %{
     emit(new Instr(inf, ROOT,
 	           "orr `d0, `s0, `s1",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
-}%
-
-BINOP(REM, j, k) = i %{
-	   // TODO: FILL IN!!! 
 }%
 
 BINOP<p,i>(SHL, j, k) = i %{
@@ -218,7 +206,22 @@ CONST<i>(c) = i %{
 		   new Temp[]{ i }, null));
 }%
 
-MEM(e) = i %{
+BINOP<i,p>(MUL, j, k) = i %{
+    emit(new Instr(inf, ROOT,
+		   "mul `d0, `s0, `s1",
+		   new Temp[] { i }, new Temp[] { j , k }));	   
+}%
+
+BINOP(DIV, j, k) = i %{
+	   // TODO: FILL IN!!!
+}%
+
+
+BINOP(REM, j, k) = i %{
+	   // TODO: FILL IN!!! 
+}%
+
+MEM<p,i,f>(e) = i %{
     emit(new InstrMEM(inf, ROOT,
 	           "ldr `d0, `s0",
 		   new Temp[]{ i }, new Temp[]{ e }));
@@ -260,13 +263,18 @@ UNOP(_2S, arg) = i %{
 
 }%
 
-UNOP(NEG, arg) = i %{
+UNOP<p,i>(NEG, arg) = i %{
+    emit(new Instr(inf, ROOT,
+	           "mov `d0, #0\n"+
+		   "sub `d0, `d0, `s0",
+		   new Temp[] { i }, new Temp[]{ arg }));
+}% 
 
-}%
-
-UNOP(NOT, arg) = i %{
-
-}%
+UNOP<p,i>(NOT, arg) = i %{
+    emit(new Instr(inf, ROOT, 
+	           "mvn `d0, `s0",
+		   new Temp[]{ i }, new Temp[]{ arg }));
+}% 
 
 /* STATEMENTS */
 CJUMP(test, iftrue, iffalse) %{
