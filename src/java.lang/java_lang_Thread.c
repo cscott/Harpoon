@@ -15,7 +15,7 @@
 #include <time.h>
 #include <unistd.h> /* for usleep */
 #ifdef WITH_CLUSTERED_HEAPS
-#include "../clheap/alloc.h" /* for NTHR_free */
+#include "../clheap/alloc.h" /* for NTHR_malloc_first/NTHR_free */
 #endif
 
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
@@ -89,17 +89,7 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   jfieldID thrNPID;
   jstring mainStr;
   jobject mainThr, mainThrGrp;
-  /* make the name of the group and the thread. */
-  mainStr = (*env)->NewStringUTF(env, "main");
-  assert(!((*env)->ExceptionOccurred(env)));
-  /* first make main thread group object. */
-  thrGrpCls  = (*env)->FindClass(env, "java/lang/ThreadGroup");
-  assert(!((*env)->ExceptionOccurred(env)));
-  thrGrpConsID = (*env)->GetMethodID(env, thrGrpCls, "<init>", "()V");
-  assert(!((*env)->ExceptionOccurred(env)));
-  mainThrGrp = (*env)->NewObject(env, thrGrpCls, thrGrpConsID);
-  assert(!((*env)->ExceptionOccurred(env)));
-  /* now make main thread object. */
+  /* first make main thread object. */
   thrCls  = (*env)->FindClass(env, "java/lang/Thread");
   assert(!((*env)->ExceptionOccurred(env)));
   thrConsID = (*env)->GetMethodID(env, thrCls, "<init>", "("
@@ -107,10 +97,30 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
 				  "Ljava/lang/Runnable;"
 				  "Ljava/lang/String;)V");
   assert(!((*env)->ExceptionOccurred(env)));
-  mainThr = (*env)->AllocObject(env, thrCls);
+  mainThr = 
+#ifdef WITH_CLUSTERED_HEAPS
+    /* associate with thread-clustered heap */
+    FNI_AllocObject_using(env, thrCls, NTHR_malloc_first);
+#else
+    /* use default allocation strategy. */
+    (*env)->AllocObject(env, thrCls);
+#endif
   /* put thread in env structure as 'current thread' */
   assert(((struct FNI_Thread_State *)env)->thread == NULL);
   ((struct FNI_Thread_State *)env)->thread = mainThr;
+
+  /* okay, now that we've got an object in env, setup this thread properly: */
+
+  /* make the name of the group and the thread. */
+  mainStr = (*env)->NewStringUTF(env, "main");
+  assert(!((*env)->ExceptionOccurred(env)));
+  /* make main thread group object. */
+  thrGrpCls  = (*env)->FindClass(env, "java/lang/ThreadGroup");
+  assert(!((*env)->ExceptionOccurred(env)));
+  thrGrpConsID = (*env)->GetMethodID(env, thrGrpCls, "<init>", "()V");
+  assert(!((*env)->ExceptionOccurred(env)));
+  mainThrGrp = (*env)->NewObject(env, thrGrpCls, thrGrpConsID);
+  assert(!((*env)->ExceptionOccurred(env)));
   /* get info about MIN_PRIORITY/NORM_PRIORITY/MAX_PRIORITY values */
   MIN_PRIORITY = (*env)->GetStaticIntField
     (env, thrCls, (*env)->GetStaticFieldID(env, thrCls, "MIN_PRIORITY", "I"));
