@@ -82,7 +82,12 @@ public class IPaqServoController {
 	    throw new RuntimeException("Position 2 is out of range.");
 	}
 	moveLocal(servo, position1);
-	Thread.currentThread().sleep(millis);
+	try {
+	    Thread.currentThread().sleep(millis);
+	} catch (InterruptedException e) {
+	    System.out.println(e.toString()); 
+	    /* And ignore it... */
+	}
 	moveLocal(servo, position2);
     }
 }
