@@ -212,7 +212,7 @@ void deflate_freed_objs ()
 	{
 	  // forward pointer appropriately
 	  unit->obj = (jobject_unwrapped)PTRMASK(infl_obj->claz);
-	  printf("updating to %p\n", unit->obj);
+	  // printf("updating to %p\n", unit->obj);
 	  // go to next
 	  prev = unit;
 	  unit = unit->next;
