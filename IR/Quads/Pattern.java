@@ -21,7 +21,7 @@ import java.util.Set;
  * <code>Pattern</code> <blink>please document me if I'm public!</blink>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.15 2000-01-13 23:48:02 cananian Exp $
+ * @version $Id: Pattern.java,v 1.1.2.16 2000-01-22 02:36:43 bdemsky Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -178,13 +178,13 @@ public class Pattern {
 	    reachable.remove(phi);
 	}
 
-
 	// Modify this new CFG by emptying PHI nodes
 	// Cleaning up from removal of handlers...
 	// Need to make NoSSA for QuadWithTry
 	// Also empties out phi edges that can't be reached.
 	ReHandler.PHVisitor v = new ReHandler.PHVisitor(code.qf, reachable, typemap);
-	for (Iterator it = reachable.iterator(); it.hasNext();) {
+	WorkSet oldset=new WorkSet(reachable);
+	for (Iterator it = oldset.iterator(); it.hasNext();) {
 	    Quad q=(Quad)it.next();
 	    q.accept(v);
 	}
