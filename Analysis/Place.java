@@ -1,184 +1,100 @@
-// Place.java, created Mon Sep 14 23:41:52 1998 by cananian
-// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Place.java, created Tue Mar  2 13:11:42 1999 by cananian
+// Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.Temp.Temp;
-import harpoon.Util.Worklist;
-import harpoon.Util.NullEnumerator;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
-import harpoon.Util.Util;
+import harpoon.Util.ReverseIterator;
 
-import java.util.Hashtable;
-import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+
 /**
- * <code>Place</code>
+ * <code>Place</code> determines the proper locations for phi/sigma
+ * functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.10.2.3 1999-02-25 21:11:35 cananian Exp $
+ * @version $Id: Place.java,v 1.10.2.4 1999-03-03 01:17:46 cananian Exp $
  */
-
 public class Place  {
-    UseDef ud; // null indicates create-on-demand and release asap.
-    DomFrontier df; // null indicates create-on-demand and release asap.
-    DomFrontier pdf; // null indicates create-on-demand and release asap.
-
+    final SESE sese;
+    final Map info = new HashMap();
+    
     /** Creates a <code>Place</code>. */
-    public Place(UseDef usedef, DomFrontier df, DomFrontier pdf) {
-	this.ud = usedef;
-	this.df = df;
-	this.pdf = pdf;
-    }
-    public Place() {
-	this(null, null, null);
-    }
-    SetHTable Aphi = new SetHTable();
-    SetHTable Asig = new SetHTable();
-
-    public Temp[] phiNeeded(HCode hc, HCodeElement n) {
-	analyze(hc); return Aphi.getSet(n);
-    }
-    public Enumeration phiNeededE(HCode hc, HCodeElement n) {
-	analyze(hc); return Aphi.getSetE(n);
-    }
-    public Temp[] sigNeeded(HCode hc, HCodeElement n) {
-	analyze(hc); return Asig.getSet(n);
-    }
-    public Enumeration sigNeededE(HCode hc, HCodeElement n) {
-	analyze(hc); return Asig.getSetE(n);
-    }
-    public String toString() { return "PHI"+Aphi+"/SIG"+Asig; }
-
-    Hashtable analyzed = new Hashtable();
-    HCode lastHCode = null;
-    void analyze(HCode hc) {
-	if (hc == lastHCode) return; // quick exit for common case.
-	if (analyzed.get(hc)==null) {
-	    boolean tempUse = (ud == null);
-	    boolean tempDF  = (df == null);
-	    boolean tempPDF = (pdf== null);
-	    if (tempUse) ud  = new UseDef();
-	    if (tempDF ) df  = new DomFrontier(false);
-	    if (tempPDF) pdf = new DomFrontier(true);
-
-	    place(hc);
-
-	    if (tempUse)  ud  = null; // free analysis objects.
-	    if (tempDF )  df  = null;
-	    if (tempPDF ) pdf = null;
-
-	    analyzed.put(hc, hc);
-	    lastHCode = hc;
-	}
-    }
-
-    void place(HCode hc) {
-	Worklist Wphi = new HashSet();
-	Worklist Wsig = new HashSet();
-
-	// for each used/defined variable a
-	for (Enumeration aE = ud.allTempsE(hc); aE.hasMoreElements(); ) {
-	    Temp a = (Temp) aE.nextElement();
-
-	    // worklists are empty here.
-	    Util.assert(Wphi.isEmpty() && Wsig.isEmpty());
-
-	    // Wphi <- defsites[a]
-	    for (Enumeration e = ud.defMapE(hc, a); e.hasMoreElements(); )
-		Wphi.push(e.nextElement());
-	    // Wsig <- usesites[a]
-	    for (Enumeration e = ud.useMapE(hc, a); e.hasMoreElements(); )
-		Wsig.push(e.nextElement());
-
-	    while ( ! ( Wphi.isEmpty() && Wsig.isEmpty() ) )  {
-		if (!Wphi.isEmpty()) {
-		    // remove some node n from Wphi
-		    HCodeElement n = (HCodeElement) Wphi.pull();
-		    // for each Y in DF[n]
-		    for (Enumeration yE=df.dfE(hc, n); 
-			 yE.hasMoreElements(); ) {
-			HCodeElement Y = (HCodeElement) yE.nextElement();
-			if (!Aphi.memberSet(Y, a)) {
-			    Aphi.unionSet(Y, a);
-			    update(a, Y, Wphi, Wsig);
-			}
-		    }
-		} // end Wphi processing.
-		if (!Wsig.isEmpty()) {
-		    // remove some node n from Wsig
-		    HCodeElement n = (HCodeElement) Wsig.pull();
-		    // for each Y in PDF[n]
-		    for (Enumeration yE = pdf.dfE(hc, n); 
-			 yE.hasMoreElements(); ) {
-			HCodeElement Y = (HCodeElement) yE.nextElement();
-			if (!Asig.memberSet(Y, a)) {
-			    Asig.unionSet(Y, a);
-			    update(a, Y, Wphi, Wsig);
-			}
-		    }
-		} // end Wsig processing.
-	    } // end while.
-	} // end "for all variables a"
-    } // end place.
-
-    // determine whether we need to add n to Wphi or Wsig.
-    private static void update(Temp a, HCodeElement Y, 
-			       Worklist Wphi, Worklist Wsig)
-    {
-	harpoon.IR.Properties.UseDef Yud =
-	    (harpoon.IR.Properties.UseDef) Y; // access this property.
-	int i;
-	// Get Aorig_def and Aorig_use (pre-phi/sig uses and defs of Y)
-	Temp[] Aorig_def = Yud.def();
-	Temp[] Aorig_use = Yud.use();
-	// if a not in Aorig_def[Y] then Wphi = Wphi union { Y }
-	for (i = 0; i < Aorig_def.length; i++)
-	    if (Aorig_def[i] == a)
-		break;
-	if (i == Aorig_def.length) // a not in Aorig_def[Y]
-	    Wphi.push(Y);
-	// if a not in Aorig_use[Y] then Wsig = Wsig union { Y }
-	for (i = 0; i < Aorig_use.length; i++)
-	    if (Aorig_use[i] == a)
-		break;
-	if (i == Aorig_use.length) // a not in Aorig_use[Y]
-	    Wsig.push(Y);
-    }
-
-    static class SetHTable extends Hashtable {
-	void clearSet(HCodeElement hce) {
-	    remove(hce);
-	}
-	Temp[] getSet(HCodeElement hce) {
-	    Set s = (Set) get(hce);
-	    if (s==null) return new Temp[0];
-	    Temp[] r = new Temp[s.size()];
-	    s.copyInto(r);
-	    return r;
-	}
-	Enumeration getSetE(HCodeElement hce) {
-	    Set s = (Set) get(hce);
-	    if (s==null)
-		return NullEnumerator.STATIC;
-	    else
-		return s.elements();
-	}
-	boolean memberSet(HCodeElement hce, Temp t) {
-	    Set s = (Set) get(hce);
-	    if (s==null) return false;
-	    return s.contains(t);
-	}
-	void unionSet(HCodeElement hce, Temp Tnew) {
-	    Set s = (Set) get(hce);
-	    if (s == null) {
-		s = new HashSet();
-		put(hce, s);
+    public Place(HCode hc) {
+        this.sese = new SESE(hc, true);
+	// make RegionInfos for all Regions
+	for (Iterator it=sese.topDown(); it.hasNext(); )
+	    info.put(it.next(), new RegionInfo());
+	// now fill in the def/use data.
+	for (Iterator it=hc.getElementsI(); it.hasNext(); ) {
+	    HCodeElement hce = (HCodeElement) it.next();
+	    RegionInfo ri = (RegionInfo) info.get(sese.smallestSESE.get(hce));
+	    //
+	    Temp[] use = ((harpoon.IR.Properties.UseDef) hce).use();
+	    Temp[] def = ((harpoon.IR.Properties.UseDef) hce).def();
+	    //
+	    for (int i=0; i<use.length; i++) {
+		ri.useUp.add(use[i]); ri.useDown.add(use[i]);
 	    }
-	    s.union(Tnew);
+	    for (int i=0; i<def.length; i++) {
+		ri.defUp.add(def[i]); ri.defDown.add(def[i]);
+	    }
+	}
+	// smear down.
+	for (Iterator it=sese.topDown(); it.hasNext(); ) {
+	    SESE.Region r = (SESE.Region) it.next();
+	    RegionInfo ri = (RegionInfo) info.get(r);
+	    for (Iterator it2=r.children().iterator(); it2.hasNext(); ) {
+		RegionInfo riC = (RegionInfo) info.get(it2.next());
+		riC.useDown.addAll(ri.useDown);
+		riC.defDown.addAll(ri.defDown);
+	    }
+	}
+	// smear up
+	for (Iterator it=new ReverseIterator(sese.topDown()); it.hasNext(); ) {
+	    SESE.Region r = (SESE.Region) it.next();
+	    RegionInfo ri = (RegionInfo) info.get(r);
+	    if (r.parent()==null) continue; // top-level.
+	    RegionInfo riP= (RegionInfo) info.get(r.parent());
+	    riP.useUp.addAll(ri.useUp);
+	    riP.defUp.addAll(ri.defUp);
+	}
+    }
+    private Temp[] needed(HCodeElement n) {
+	SESE.Region r = (SESE.Region) sese.smallestSESE.get(n);
+	RegionInfo ri = (RegionInfo) info.get(r);
+	Set s = new HashSet(); s.addAll(ri.useUp); s.addAll(ri.defUp);
+	/* THIS IS AN OPTIMIZATION THAT DOESN'T QUITE WORK.
+	if (r.parent()!=null) {
+	    RegionInfo riP = (RegionInfo) info.get(r.parent());
+	    // remove use-before-def at entry phi.
+	    if (((HCodeEdge)r.entry).to().equals(n))
+		s.retainAll(riP.defDown);
+	    // remove unused-def at exit sigma
+	    if (((HCodeEdge)r.exit).from().equals(n))
+		s.retainAll(riP.useDown);
+	}
+	*/
+	return (Temp[]) s.toArray(new Temp[s.size()]);
+    }
+    public Temp[] phiNeeded(HCodeElement n) { return needed(n); }
+    public Temp[] sigNeeded(HCodeElement n) { return needed(n); }
+
+    private static class RegionInfo {
+	final Set useUp = new HashSet(7), useDown = new HashSet(7);
+	final Set defUp = new HashSet(7), defDown = new HashSet(7);
+	public String toString() {
+	    return "< "+ 
+		"useUp:"+useUp+" | useDown:"+useDown+" | "+
+		"defUp:"+defUp+" | defDown:"+defDown+
+		" >";
 	}
     }
 }

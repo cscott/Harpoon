@@ -22,45 +22,46 @@ import java.util.Vector;
  * in the Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FixupFunc.java,v 1.1.2.3 1999-01-22 23:05:59 cananian Exp $
+ * @version $Id: FixupFunc.java,v 1.1.2.4 1999-03-03 01:18:01 cananian Exp $
  * @see Translate
  */
 
 class FixupFunc  {
     static void fixup(QuadSSA c) {
 	DomTree  dt = new DomTree(false);// dominator tree
-	DomTree pdt = new DomTree(true); // post-dominator tree
-	place(c, dt, pdt);
+	place(c);
 	rename(c, dt);
     }
-    private static void place(QuadSSA c, DomTree dt, DomTree pdt) {
-	UseDef ud = new UseDef();
-	Place P = new Place(ud, new DomFrontier(dt), new DomFrontier(pdt));
+    private static void place(QuadSSA c) {
+	Place P = new Place(c);
 	
 	for (Enumeration e = c.getElementsE(); e.hasMoreElements(); ) {
 	    Quad Q = (Quad) e.nextElement();
-	    Temp[] neededPhi = P.phiNeeded(c, Q);
-	    Temp[] neededSig = P.sigNeeded(c, Q);
 	    // algorithm wants to place phis on FOOTER.
-	    if (neededPhi.length > 0 && (!(Q instanceof FOOTER))) {
-		// place phi functions.
-		PHI q = (PHI) Q; // better be a phi!
-		q.dst = neededPhi;
-		q.src = new Temp[q.dst.length][q.prev.length];
-		for (int j=0; j < q.src.length; j++)
-		    for (int k=0; k < q.src[j].length; k++)
-			q.src[j][k] = q.dst[j];
+	    if (Q instanceof PHI) {
+		Temp[] neededPhi = P.phiNeeded(Q);
+		if (neededPhi.length > 0) {
+		    // place phi functions.
+		    PHI q = (PHI) Q; // better be a phi!
+		    q.dst = neededPhi;
+		    q.src = new Temp[q.dst.length][q.prev.length];
+		    for (int j=0; j < q.src.length; j++)
+			for (int k=0; k < q.src[j].length; k++)
+			    q.src[j][k] = q.dst[j];
+		}
 	    }
-	    if (neededSig.length > 0 && 
-		(!(Q instanceof HEADER)) &&
-		(!(Q instanceof METHOD))) {
-		// place sigma functions.
-		SIGMA q = (SIGMA) Q; // better be a sigma!
-		q.src = neededSig;
-		q.dst = new Temp[q.src.length][q.next.length];
-		for (int j=0; j < q.dst.length; j++)
-		    for (int k=0; k < q.dst[j].length; k++)
-			q.dst[j][k] = q.src[j];
+	    // algorithm wants to place sigmas on HEADER and METHOD.
+	    if (Q instanceof SIGMA) {
+		Temp[] neededSig = P.sigNeeded(Q);
+		if (neededSig.length > 0) {
+		    // place sigma functions.
+		    SIGMA q = (SIGMA) Q; // better be a sigma!
+		    q.src = neededSig;
+		    q.dst = new Temp[q.src.length][q.next.length];
+		    for (int j=0; j < q.dst.length; j++)
+			for (int k=0; k < q.dst[j].length; k++)
+			    q.dst[j][k] = q.src[j];
+		}
 	    }
 	}
     }
