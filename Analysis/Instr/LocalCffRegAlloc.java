@@ -52,7 +52,7 @@ import java.util.AbstractSet;
     for the algorithm it uses to allocate and assign registers.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.44 1999-11-15 07:49:01 pnkfelix Exp $
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.45 1999-11-15 09:25:05 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -110,7 +110,14 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    Iterator refs = getRefs(instr);
 	    while(refs.hasNext()) {
 		Temp ref = (Temp) refs.next();
+
 		if (isTempRegister(ref)) continue;
+
+		if (!regfile.inverseMap().getValues(ref).isEmpty()) {
+		    // ref already has register assigned to it
+		    continue;
+		}
+
 		int workOnRef = 1;
 		while(workOnRef != 0) {
 		    try {
@@ -154,8 +161,28 @@ public class LocalCffRegAlloc extends RegAlloc {
 			Iterator regIter = regs.iterator();
 			while(regIter.hasNext()) {
 			    Temp reg = (Temp) regIter.next();
+
+			    Util.assert(regfile.get(reg) == null,
+					"reg must be empty");
+
 			    regfile.put(reg, ref);
 			}
+
+			Iterator futureInstrs = 
+			    (Iterator) instrs.clone();
+			while(futureInstrs.hasNext()) {
+			    Instr finstr =
+				(Instr) futureInstrs.next();
+			    if (finstr.useC().contains(ref)) {
+				code.assignRegister(finstr,ref,regs);
+			    } else if (finstr.defC().contains(ref)) {
+				// redefined 'ref' -- break and allow
+				// for a different register to be
+				// assigned to it.
+				break;
+			    }
+			}
+
 			workOnRef = 0; // stop working on this ref
 
 		    } catch (SpillException s) {
@@ -435,9 +462,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	TwoWayMap() {
 	    rMap = new DefaultMultiMap
-		// don't allow nulls as values (debug...)
-		(Factories.noNullCollectionFactory(Factories.hashSetFactory()), 
-
+		(Factories.hashSetFactory(), 
 		 Factories.hashMapFactory());
 	}
 	
@@ -447,32 +472,40 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    return Collections.unmodifiableSet(super.entrySet()); 
 	}
 
-	public Object put(Object key, Object value) {
-	    // remove any past entry mapping to 'key' in rMap
-	    Iterator entries = rMap.entrySet().iterator();
+	/** Removes all entries that have 'val' as a value in rMap. */
+	private void removeMappingsTo(Object val) {
+	    Iterator entries = new ArrayList(rMap.entrySet()).iterator();
 	    while(entries.hasNext()) {
 		Map.Entry entry = (Map.Entry) entries.next();
-		if (entry.getValue().equals(key)) {
+		if (entry.getValue().equals(val)) {
 		    // should be able to just directly remove 'entry'
 		    // from 'entries' and have rMap updated
 		    // accordingly, but the MultiMap class does not
 		    // support that functionality yet...
 
 		    rMap.removeAll
-			(entry.getKey(), Collections.singleton(key));
+			(entry.getKey(), Collections.singleton(val));
 
 		    System.out.println("rMap: Removing entry " + entry);
 		}
 	    }
+	}
 
+	public Object put(Object key, Object value) {
+	    removeMappingsTo(key);
 	    rMap.add(value, key);
 	    return super.put(key, value);
 	}
 
+	public void putAll(Map map) {
+	    Iterator keys = map.keySet().iterator();
+	    while(keys.hasNext()) { removeMappingsTo(keys.next()); }
+	    super.putAll(map);
+	}
+
 	public Object remove(Object key) {
-	    Object prev = super.remove(key);
-	    rMap.remove(prev);
-	    return prev;
+	    removeMappingsTo(key);
+	    return super.remove(key);
 	}
 
 	public MultiMap inverseMap() {

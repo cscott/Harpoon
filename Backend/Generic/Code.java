@@ -33,7 +33,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.25 1999-10-20 20:22:56 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.26 1999-11-15 09:25:14 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -280,6 +280,21 @@ public abstract class Code extends HCode {
 	<BR> NOTE: This is only an experimental method; only FSK
 	should be using it until he makes sure that it implies no
 	design flaws. 
+
+	<P> FSK: Flaw 1 -- if there are multiple references to
+	<code>pseudoReg</code> in <code>i</code>, like a := a + 1,
+	then this method is too general; it does not allow us to put
+	a's def in a different register from its use.  Now, since
+	we're using SSI form at a high level, I don't know if we'll
+	ever encounter code like that (depends on how Tree->Instr form
+	is performed), but 
+	<BR> (1.) I don't like <b>relying</b> on SSI to catch
+	          undocumented problems like this implicitly, 
+	<BR> (2.) we could, in theory, try to use this backend with a  
+	          non-SSI front end
+	<BR> The other issue here is I don't know when allowing the
+	flexibility of having different registers for a's def and use
+	will buy us anything...
      */
     public abstract void assignRegister(Instr i, Temp pseudoReg, List regs);
 
