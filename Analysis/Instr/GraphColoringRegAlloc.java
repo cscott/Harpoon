@@ -21,7 +21,9 @@ import harpoon.Backend.Generic.RegFileInfo;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrFactory;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 import harpoon.Util.CombineIterator;
 import harpoon.Util.FilterIterator;
@@ -55,11 +57,11 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.30 2000-08-27 09:34:11 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.31 2000-08-27 22:49:39 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
-    private static final boolean TIME = true;
+    private static final boolean TIME = false;
 
     private static final boolean RESULTS = false;
 
@@ -67,7 +69,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
     private static final boolean STATS = false;
 
-    private static final boolean COALESCE_STATS = false;
+    private static final boolean COALESCE_STATS = true;
 
     public static RegAlloc.Factory FACTORY =
 	new RegAlloc.Factory() {
@@ -90,12 +92,12 @@ public class GraphColoringRegAlloc extends RegAlloc {
     static class NodeSelector extends OptimisticGraphColorer.SimpleSelector {
 	GraphColoringRegAlloc gcra;
 	public boolean allowedToRemove(Object n, ColorableGraph g) {
-	    return (! gcra.overlapsWithSpilled( n ) );
+	    return gcra.isAvailableToSpill( n );
 	}
 	public Object chooseNodeForHiding(ColorableGraph g) {
 	    HashSet l = new HashSet();
 	    Object n = super.chooseNodeForHiding(g);
-	    while (gcra.overlapsWithSpilled(n)) {
+	    while (!gcra.isAvailableToSpill(n)) {
 		// delay hiding spilled nodes as long as possible
 		System.out.println("DELAY "+n);
 		g.hide(n);
@@ -109,7 +111,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    Object _n; if (!l.isEmpty()) do {
 		_n = g.replace();
 	    } while(l.contains(_n));
-	    System.out.println("HIDE:"+n);
+	    //System.out.println("HIDE:"+n);
 	    return n;
 	}
 	
@@ -121,7 +123,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		Object n = ns.next();
 		if (g.getColor(n) == null &&
 		    g.getDegree(n) > maxDegree) {
-		    if (! gcra.overlapsWithSpilled(n)) { // <= THIS IS KEY
+		    if (gcra.isAvailableToSpill(n)) { // <= THIS IS KEY
 			spillChoice = n;
 			maxDegree = g.getDegree(n);
 		    } 
@@ -132,7 +134,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		for(Iterator ns=nset.iterator(); ns.hasNext(); ) {
 		    Object n = ns.next();
 		    if (g.getDegree(n) > maxDegree) {
-			if (! gcra.overlapsWithSpilled(n)) { // <= THIS IS KEY
+			if (gcra.isAvailableToSpill(n)) { // <= THIS IS KEY
 			    spillChoice = n;
 			    maxDegree = g.getDegree(n);
 			} else {
@@ -148,7 +150,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		for(Object n=g.replace(); n!=null; n=g.replace()) {
 		    rehide.addLast(n);
 		    if (g.getDegree(n) > maxDegree) {
-			if (!gcra.overlapsWithSpilled(n)) {
+			if (gcra.isAvailableToSpill(n)) {
 			    spillChoice = n;
 			    maxDegree = g.getDegree(n);
 			} else {
@@ -165,18 +167,18 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		// wtf?  Are ALL the nodes spilled?
 		for(Iterator ns=g.nodeSet().iterator();ns.hasNext();){
 		    Object n = ns.next();
-		    Util.assert(gcra.overlapsWithSpilled(n));
+		    Util.assert(!gcra.isAvailableToSpill(n));
 		}
 		LinkedList rehide = new LinkedList();
 		for(Object n=g.replace(); n!=null; n=g.replace()) {
 		    rehide.addLast(n);
-		    Util.assert(gcra.overlapsWithSpilled(n));
+		    Util.assert(!gcra.isAvailableToSpill(n));
 		}
 		while(!rehide.isEmpty()) {
 		    g.hide(rehide.removeLast());
 		}
 	    }
-	    System.out.println("SPILL:"+spillChoice);
+	    //System.out.println("SPILL:"+spillChoice);
 	    return spillChoice;
 	}
     }
@@ -246,10 +248,19 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	rfi = frame.getRegFileInfo();
         colorer = gc;
     }
-
+    private HashMap replToOrig = new HashMap();
     private void replace(Instr orig, Instr repl) {
 	Instr.replace(orig, repl);
 	back(repl, orig);
+	replToOrig.put(repl, orig);
+    }
+    private void undoCoalescing() {
+	for(Iterator ks=replToOrig.keySet().iterator();ks.hasNext();){
+	    Instr repl = (Instr) ks.next();
+	    Instr orig = (Instr) replToOrig.get(repl);   
+	    Instr.replace(repl, orig);
+	}
+	willRemoveLater.clear();
     }
 
     protected Derivation getDerivation() {
@@ -340,7 +351,6 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	boolean success, coalesced;
 	AdjMtx adjMtx = null;
 	
-	Set coalescedInstrs = new HashSet();
 	boolean doCoalescing = true; // HACK
 	
 	if (TIME) System.out.println();
@@ -404,7 +414,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		// System.out.println(adjMtx);
 		if (doCoalescing) {
 		    Set coal = coalesceRegs(adjMtx);
-		    coalesced = coalescedInstrs.addAll(coal);
+		    coalesced = !coal.isEmpty();
 		} else {
 		    coalesced = false;
 		}
@@ -510,19 +520,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		success = false;
 		if (doCoalescing) {
 		    doCoalescing = false;
-		    for (Iterator is=code.getElementsI();is.hasNext();){
-			Instr inst = (Instr) is.next();
-			if (getBack(inst) != inst) {
-			    Instr.replace(inst, getBack(inst));
-			}
-			willRemoveLater.clear();
-		    }
+		    undoCoalescing();
 		} else {
 		    genSpillCode(u, graph);
 		}
-		// necessary?
-		graph.replaceAll();
-		graph.resetColors();		 
 	    }
 	} while (!success);
 
@@ -831,6 +832,17 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		Temp def = i.def()[0];
 		WebRecord wUse = getWR(i, use);
 		WebRecord wDef = getWR(i, def);
+
+		// this assertion seems like it should hold, but
+ 		// doesn't.  Need to review conflictsWith code and
+ 		// change to update adjMtx accordingly
+ 		if (false) 
+ 		    Util.assert( wUse.conflictsWith(wDef) ==
+ 				 adjMtx.get(wUse.sreg(), wDef.sreg()),
+ 				 " conflictsWith:"+wUse.conflictsWith(wDef)+
+ 				 " adjMtx.get:"+adjMtx.get(wUse.sreg(), 
+ 							   wDef.sreg()));
+		
 		// if (!adjMtx.get(wUse.sreg(), wDef.sreg())) {
 		if (!wUse.conflictsWith(wDef)) {
 		    // System.out.println("Removed " + i);
@@ -860,7 +872,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    for(Iterator is=code.getElementsI(); is.hasNext();) {
 		Instr i= (Instr) is.next();
 		if (willRemoveNow.contains(i)) {
-		    replace(i, new InstrMOVEproxy(i));
+		    replace(i, new InstrMOVEproxy(i).rename(remap)); 
 		} else {
 		    Iterator itr = new
 			CombineIterator(i.useC().iterator(),
@@ -868,7 +880,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		    while(itr.hasNext()) {
 			Temp t = (Temp) itr.next();
 			if (!remap.tempMap(t).equals(t)) {
-			    replace(i, i.rename(remap));
+			    Instr repl = i.rename(remap);
+			    replace(i, repl);
+			    if (willRemoveLater.contains(i))
+				willRemoveLater.add(repl);
 			    break;
 			}
 		    }
@@ -900,7 +915,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		WebRecord wr1, wr2;
 		wr1 = adjLsts[i];
 		wr2 = adjLsts[j];
-
+		
+ 		//FSK: using this test breaks (i suspect due to
+ 		//FSK: modifying instr-sequence concurrently with
+ 		//FSK: analysis) 
 		// if (wr1.conflictsWith(wr2)) {		
 		if (adjMtx.get(wr1.sreg(),wr2.sreg())) {
 
@@ -951,6 +969,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    instr = def; 
 	    tmp = t;
 	}
+	public Instr rename(InstrFactory inf,
+			    TempMap defMap, TempMap useMap) {
+	    return new SpillProxy(instr.rename(inf, defMap, useMap),
+				  useMap.tempMap(tmp));
+	}
 	
     }
 
@@ -963,6 +986,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		  true, Collections.EMPTY_LIST);
 	    instr = use; 
 	    tmp = t;
+	}
+	public Instr rename(InstrFactory inf,
+			    TempMap defMap, TempMap useMap){
+	    return new RestoreProxy(instr.rename(inf,defMap,useMap),
+				    defMap.tempMap(tmp));
 	}
     }
 
@@ -977,17 +1005,17 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	return false;
     }
 
-    private boolean overlapsWithSpilled(Object n) {
+    private boolean isAvailableToSpill(Object n) {
 	Graph.Node node = (Graph.Node) n;
 	if (isRegister(node.wr.temp())) 
-	    return true;
+	    return false;
 	for(Iterator sps=spilled.iterator(); sps.hasNext();){ 
 	    WebRecord spl = (WebRecord) sps.next();
 	    if (spl.temp().equals(node.wr.temp()) &&
 		spl.overlaps(node.wr)) 
-		return true;
+		return false;
 	}
-	return false;
+	return true;
     }
 	
 
@@ -998,11 +1026,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	for(Iterator ri=remove.iterator(); ri.hasNext(); ) {
 	    Graph.Node node = (Graph.Node) ri.next();
 
-	    // this if-stm may be useless...
-	    if (isRegister(node.wr.temp()) ||
-		spilled.contains(node.wr)) 
-	    
-	    if (overlapsWithSpilled(node)) {
+	    if (!isAvailableToSpill(node)) {
 		System.out.println("SKIP ONE (1)");
 	    }
 	    
@@ -1019,7 +1043,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    for(Iterator ri=removeLrg.iterator(); ri.hasNext(); ) {
 		Graph.Node node = (Graph.Node) ri.next();
 
-		if (overlapsWithSpilled(node)) {
+		if (!isAvailableToSpill(node)) {
 		    System.out.println("SKIP ONE (2)");
 		    continue nextNode;
 		}
@@ -1045,7 +1069,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		Graph.Node n = (Graph.Node) ns.next();
 		if (g.getDegree(n) > md &&
 		    !isRegister(n.wr.temp()) &&
-		    !overlapsWithSpilled(n)) {
+		    isAvailableToSpill(n)) {
 		    mn = n;
 		    md = g.getDegree(n);
 		}
