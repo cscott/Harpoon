@@ -40,8 +40,10 @@ import harpoon.IR.Tree.PreciselyTyped;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.Label;
+import harpoon.Temp.LabelList;
 import harpoon.Util.Util;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -52,7 +54,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.17 1999-12-01 02:46:50 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.18 1999-12-01 05:19:02 andyb Exp $
  */
 %%
     private Instr root;
@@ -101,6 +103,24 @@ import java.util.Set;
                        Temp[] dst, Temp[] src) {
         return emit(root, assem, dst, src, true, null);
     }
+  
+    // emit instructions with targets and that can fall through
+    private Instr emit(HCodeElement root, String assem,
+                       Temp[] dst, Temp[] src, Label[] targets) {
+        return emit(root, assem, dst, src, true, Arrays.asList(targets));
+    }
+
+    // emit instructions with targets and that cannot fall through to
+    // the next instruction - i.e. absolute jumps.
+    private Instr emitNoFall(HCodeElement root, String assem,
+                             Temp[] dst, Temp[] src, Label[] targets) {
+        return emit(root, assem, dst, src, false, Arrays.asList(targets));
+    }
+
+    private Instr emitNoFall(HCodeElement root, String assem,
+                             Temp[] dst, Temp[] src, List targets) {
+        return emit(root, assem, dst, src, false, targets);
+    }
 
     private Instr emitMEM(HCodeElement root, String assem,
                           Temp[] dst, Temp[] src) {
@@ -114,6 +134,18 @@ import java.util.Set;
     private Instr emitCC(HCodeElement root, String assem,
                          Temp[] dst, Temp[] src) {
         return emit(new InstrCC(instrFactory, root, assem, dst, src));
+    }
+
+    private Instr emitCC(HCodeElement root, String assem,
+                         Temp[] dst, Temp[] src, Label[] targets) {
+        return emit(new InstrCC(instrFactory, root, assem, dst, src,
+                                true, Arrays.asList(targets)));
+    }
+
+    private Instr emitCCNoFall(HCodeElement root, String assem,
+                               Temp[] dst, Temp[] src, Label[] targets) {
+        return emit(new InstrCC(instrFactory, root, assem, dst, src,
+                                false, Arrays.asList(targets)));
     }
 
     private Instr emitLABEL(HCodeElement root, String assem, Label label) {
@@ -169,10 +201,15 @@ import java.util.Set;
     public class InstrCC extends Instr {
 	//a new instr type to indicate dependency on the condition code reg
 	public InstrCC(InstrFactory inf, HCodeElement source, String assem,
-	          Temp[] dst, Temp[] src) {
+	               Temp[] dst, Temp[] src) {
 	    super(inf, source, assem, dst, src);
 	}
-	/** AAA: How does Instr represent LabelLists? */
+    
+        public InstrCC(InstrFactory inf, HCodeElement source, String assem,
+                       Temp[] dst, Temp[] src, boolean canFallThrough, 
+                       List targets) {
+            super(inf, source, assem, dst, src, canFallThrough, targets);
+        }
     }
 
     private class InstrENTRY extends InstrDIRECTIVE {
@@ -673,13 +710,16 @@ CALL(retval, retex, func, arglist, handler) %pred %( !ROOT.isTailCall )% %{
     emitDIRECTIVE(ROOT, "\t! coming soon: CALL support\n");
 }%
 
+// true_label and false_label are harpoon.Temp.Labels, not Exps...
 CJUMP(e, true_label, false_label) %{
     emitCC (ROOT, "cmp `s0, 0\n", null, new Temp[] { e });
-    emitCC (ROOT, "bne " + true_label + "\n", null, null); /* AAA - target */
+    emitCC (ROOT, "bne " + true_label + "\n", null, null,
+                  new Label[] { true_label }); 
     emitDELAYSLOT (ROOT);
 
-    /* should be able to optimize these away. */
-    emitCC (ROOT, "ba " + false_label + "\n", null, null); /* AAA - target */
+    // should be able to optimize these away. 
+    emitCCNoFall (ROOT, "ba " + false_label + "\n", null, null,
+                        new Label[] { false_label }); 
     emitDELAYSLOT (ROOT);
 }%
 
@@ -763,21 +803,55 @@ EXP(e1) %{
 }%
 
 JUMP(NAME(l)) %{
-    emit (ROOT, "b " + l + "\n", null, null); /* AAA - target list?! */
+    emitNoFall (ROOT, "ba " + l + "\n", null, null, new Label[] { l }); 
+    emitDELAYSLOT (ROOT);
+}%
+
+JUMP(BINOP(ADD, CONST<i>(c), e))
+%pred %( is13bit(c) )%
+%{
+    List labelList = LabelList.toList (ROOT.targets);
+    emitNoFall (ROOT, "jmpl `s0 + "+c+", %g0\n", 
+                      null, new Temp[] { e }, labelList);
+    emitDELAYSLOT (ROOT);
+}%
+
+JUMP(BINOP(ADD, e, CONST<i>(c)))
+%pred %( is13bit(c) )%
+%{
+    List labelList = LabelList.toList (ROOT.targets);
+    emitNoFall (ROOT, "jmpl `s0 + "+c+", %g0\n", 
+                      null, new Temp[] { e }, labelList);
     emitDELAYSLOT (ROOT);
 }%
 
 JUMP(BINOP(ADD, e1, e2)) %{
-    /* AAA - target list?! */
+    List labelList = LabelList.toList (ROOT.targets);
+    emitNoFall (ROOT, "jmpl `s0 + `s1, %g0\n", 
+                      null, new Temp[] { e1, e2 }, labelList);
+    emitDELAYSLOT (ROOT);
+}%
+
+JUMP(e) %{
+    List labelList = LabelList.toList (ROOT.targets);
+    emitNoFall (ROOT, "jmpl `s0, %g0\n", null, new Temp[] { e }, labelList);
+    emitDELAYSLOT (ROOT);
+}%
+
+/* AAA - need to fix these.
+         how to do target labels for non-label destinations?
+
+JUMP(BINOP(ADD, e1, e2)) %{
     emit (ROOT, "jmpl `s0+`s1, %g0\n", null, new Temp[] { e1, e2 });
     emitDELAYSLOT (ROOT);
 }%
 
 JUMP(e1) %{
-    /* AAA - target list?! */
     emit (ROOT, "jmpl `s0, %g0\n", null, new Temp[] { e1 });
     emitDELAYSLOT (ROOT);
 }%
+
+*/
 
 LABEL(l) %{
     emitLABEL (ROOT, l.toString()+":\n", ((LABEL) ROOT).label);
