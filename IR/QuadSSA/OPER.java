@@ -20,7 +20,7 @@ import harpoon.Util.Util;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.10 1998-09-10 04:47:48 cananian Exp $
+ * @version $Id: OPER.java,v 1.11 1998-09-11 13:12:50 cananian Exp $
  */
 
 public class OPER extends Quad {
@@ -81,11 +81,11 @@ public class OPER extends Quad {
     /** Evaluates a value for the result of an <code>OPER</code>, given
      *  a mapping from the operand <code>Temp</code>s to constant
      *  values. */
-    public Object evalValue(ConstMap cm) {
+    public Object evalValue(HMethod m, ConstMap cm) {
 	Object[] args = new Object[operands.length];
 	for (int i=0; i<operands.length; i++) {
-	    Util.assert(cm.isConst(operands[i]));
-	    args[i] = cm.constMap(operands[i]);
+	    Util.assert(cm.isConst(m, operands[i]));
+	    args[i] = cm.constMap(m, operands[i]);
 	}
 	return evalValue(args);
     }

@@ -13,20 +13,29 @@ import java.util.Hashtable;
  * <code>TypeInfo</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.3 1998-09-11 03:56:50 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.4 1998-09-11 13:12:50 cananian Exp $
  */
 
 public class TypeInfo implements TypeMap {
-    UseDef usedef = new UseDef();
+    UseDef usedef;
     
     Hashtable map = new Hashtable();
+    Hashtable analyzed = new Hashtable();
 
-    /** Creates a <code>TypeInfo</code>. */
-    public TypeInfo(HMethod method) { analyze(method); }
+    /** Creates a <code>TypeInfo</code> analyzer. */
+    public TypeInfo(UseDef usedef) { this.usedef = usedef; }
+    /** Creates a <code>TypeInfo</code> analyzer. */
+    public TypeInfo() { this(new UseDef()); }
     
-    public HClass typeMap(Temp t) { return (HClass) map.get(t); }
+    public HClass typeMap(HMethod m, Temp t) { 
+	analyze(m);  return (HClass) map.get(t); 
+    }
 
     void analyze(HMethod method) {
+	// don't do the same method more than once.
+	if (analyzed.containsKey(method)) return;
+	analyzed.put(method, method);
+
 	Quad ql[] = (Quad[])harpoon.IR.QuadSSA.Code.code(method).getElements();
 
 	UniqueFIFO worklist = new UniqueFIFO();
@@ -50,33 +59,33 @@ public class TypeInfo implements TypeMap {
 
     boolean analyze(HMethod m, Quad q) {
 	if (false) ;
-	else if (q instanceof AGET) return analyze((AGET)q);
-	else if (q instanceof ALENGTH) return analyze((ALENGTH)q);
-	else if (q instanceof ANEW) return analyze((ANEW)q);
-	//else if (q instanceof ASET) return analyze((ASET)q);
-	else if (q instanceof CALL) return analyze((CALL)q);
-	//else if (q instanceof CJMP) return analyze((CJMP)q);
-	else if (q instanceof COMPONENTOF) return analyze((COMPONENTOF)q);
-	else if (q instanceof CONST) return analyze((CONST)q);
-	//else if (q instanceof FOOTER) return analyze((FOOTER)q);
-	else if (q instanceof GET) return analyze((GET)q);
-	//else if (q instanceof HEADER) return analyze((HEADER)q);
-	else if (q instanceof INSTANCEOF) return analyze((INSTANCEOF)q);
+	else if (q instanceof AGET) return analyze((AGET)q, m);
+	else if (q instanceof ALENGTH) return analyze((ALENGTH)q, m);
+	else if (q instanceof ANEW) return analyze((ANEW)q, m);
+	//else if (q instanceof ASET) return analyze((ASET)q, m);
+	else if (q instanceof CALL) return analyze((CALL)q, m);
+	//else if (q instanceof CJMP) return analyze((CJMP)q, m);
+	else if (q instanceof COMPONENTOF) return analyze((COMPONENTOF)q, m);
+	else if (q instanceof CONST) return analyze((CONST)q, m);
+	//else if (q instanceof FOOTER) return analyze((FOOTER)q, m);
+	else if (q instanceof GET) return analyze((GET)q, m);
+	//else if (q instanceof HEADER) return analyze((HEADER)q, m);
+	else if (q instanceof INSTANCEOF) return analyze((INSTANCEOF)q, m);
 	else if (q instanceof METHODHEADER) return analyze((METHODHEADER)q, m);
-	else if (q instanceof MOVE) return analyze((MOVE)q);
-	else if (q instanceof NEW) return analyze((NEW)q);
-	//else if (q instanceof NOP) return analyze((NOP)q);
-	else if (q instanceof OPER) return analyze((OPER)q);
-	else if (q instanceof PHI) return analyze((PHI)q);
-	//else if (q instanceof RETURN) return analyze((RETURN)q);
-	//else if (q instanceof SET) return analyze((SET)q);
-	//else if (q instanceof SWITCH) return analyze((SWITCH)q);
-	//else if (q instanceof THROW) return analyze((THROW)q);
+	else if (q instanceof MOVE) return analyze((MOVE)q, m);
+	else if (q instanceof NEW) return analyze((NEW)q, m);
+	//else if (q instanceof NOP) return analyze((NOP)q, m);
+	else if (q instanceof OPER) return analyze((OPER)q, m);
+	else if (q instanceof PHI) return analyze((PHI)q, m);
+	//else if (q instanceof RETURN) return analyze((RETURN)q, m);
+	//else if (q instanceof SET) return analyze((SET)q, m);
+	//else if (q instanceof SWITCH) return analyze((SWITCH)q, m);
+	//else if (q instanceof THROW) return analyze((THROW)q, m);
 	return false;
     }
 
-    boolean merge(Temp t, HClass newType) {
-	HClass oldType = typeMap(t);
+    boolean merge(HMethod m, Temp t, HClass newType) {
+	HClass oldType = typeMap(m, t);
 	if (oldType==null) { map.put(t, newType); return true; }
 	if (oldType==newType) return false;
 	// special case 'Void' HClass, which is used for null constants.
@@ -147,66 +156,66 @@ public class TypeInfo implements TypeMap {
 	return r;
     }
 
-    boolean analyze(AGET q) {
-	HClass ty = typeMap(q.objectref);
+    boolean analyze(AGET q, HMethod m) {
+	HClass ty = typeMap(m, q.objectref);
 	if (ty==null) return false;
 	Util.assert(ty.isArray());
-	return merge(q.dst, ty.getComponentType());
+	return merge(m, q.dst, ty.getComponentType());
     }
-    boolean analyze(ALENGTH q) {
-	return merge(q.dst, HClass.Int);
+    boolean analyze(ALENGTH q, HMethod m) {
+	return merge(m, q.dst, HClass.Int);
     }
-    boolean analyze(ANEW q) {
-	return merge(q.dst, q.hclass);
+    boolean analyze(ANEW q, HMethod m) {
+	return merge(m, q.dst, q.hclass);
     }
-    boolean analyze(CALL q) {
+    boolean analyze(CALL q, HMethod m) {
 	boolean r1 = (q.retval==null) ? false:
-	    merge(q.retval, q.method.getReturnType());
-	boolean r2 = merge(q.retex, HClass.forClass(Throwable.class)); // XXX
+	    merge(m, q.retval, q.method.getReturnType());
+	boolean r2 = merge(m, q.retex, HClass.forClass(Throwable.class)); //XXX
 	return r1 || r2;
     }
-    boolean analyze(COMPONENTOF q) {
-	return merge(q.dst, HClass.Boolean);
+    boolean analyze(COMPONENTOF q, HMethod m) {
+	return merge(m, q.dst, HClass.Boolean);
     }
-    boolean analyze(CONST q) {
-	return merge(q.dst, q.type);
+    boolean analyze(CONST q, HMethod m) {
+	return merge(m, q.dst, q.type);
     }
-    boolean analyze(GET q) {
-	return merge(q.dst, q.field.getType());
+    boolean analyze(GET q, HMethod m) {
+	return merge(m, q.dst, q.field.getType());
     }
-    boolean analyze(INSTANCEOF q) {
-	return merge(q.dst, HClass.Boolean);
+    boolean analyze(INSTANCEOF q, HMethod m) {
+	return merge(m, q.dst, HClass.Boolean);
     }
     boolean analyze(METHODHEADER q, HMethod m) {
 	boolean r = false;
 	HClass[] hc = m.getParameterTypes();
 	int offset = m.isStatic()?0:1;
 	for (int i=offset; i<q.params.length; i++)
-	    if (merge(q.params[i], hc[i-offset])) 
+	    if (merge(m, q.params[i], hc[i-offset])) 
 		r = true;
 	if (!m.isStatic())
-	    r = merge(q.params[0], m.getDeclaringClass()) || r;
+	    r = merge(m, q.params[0], m.getDeclaringClass()) || r;
 	return r;
     }
-    boolean analyze(MOVE q) {
-	HClass ty = typeMap(q.src);
+    boolean analyze(MOVE q, HMethod m) {
+	HClass ty = typeMap(m, q.src);
 	if (ty==null) return false;
-	return merge(q.dst, ty);
+	return merge(m, q.dst, ty);
     }
-    boolean analyze(NEW q) {
-	return merge(q.dst, q.hclass);
+    boolean analyze(NEW q, HMethod m) {
+	return merge(m, q.dst, q.hclass);
     }
-    boolean analyze(OPER q) {
-	return merge(q.dst, q.evalType());
+    boolean analyze(OPER q, HMethod m) {
+	return merge(m, q.dst, q.evalType());
     }
-    boolean analyze(PHI q) {
+    boolean analyze(PHI q, HMethod m) {
 	boolean r = false;
 	for (int i=0; i<q.dst.length; i++)
 	    for (int j=0; j<q.src[i].length; j++) {
 		if (q.src[i][j]==null) continue;
-		HClass ty = typeMap(q.src[i][j]);
+		HClass ty = typeMap(m, q.src[i][j]);
 		if (ty==null) continue;
-		if (merge(q.dst[i], ty))
+		if (merge(m, q.dst[i], ty))
 		    r = true;
 	    }
 	return r;

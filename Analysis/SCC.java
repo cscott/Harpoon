@@ -3,7 +3,7 @@ package harpoon.Analysis;
 
 import harpoon.ClassFile.*;
 import harpoon.IR.QuadSSA.*;
-import harpoon.Temp.Temp;
+import harpoon.Temp.*;
 import harpoon.Util.*;
 
 import java.util.Hashtable;
@@ -12,10 +12,10 @@ import java.util.Hashtable;
  * analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCC.java,v 1.2 1998-09-11 07:22:24 cananian Exp $
+ * @version $Id: SCC.java,v 1.3 1998-09-11 13:12:50 cananian Exp $
  */
 
-public class SCC  {
+public class SCC implements TypeMap, ConstMap {
     // Various object types in the lattice (null is Bottom)
     // lattice is ordered: bottom->value->xClass->top.
     // generally even if we don't know the value, we know the class...
