@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.96 2001-11-06 17:58:37 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.97 2001-11-07 17:45:44 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -366,19 +366,16 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	  exit 1;\
 	fi
 # okay, safe to make doc.
-	mkdir doctemp
-	$(RM) -rf doc-link
-	mkdir doc-link
+	$(RM) -rf doc doc-link
+	mkdir doc doc-link
 	cd doc-link; ln -s .. harpoon ; ln -s .. silicon ; ln -s ../Contrib gnu
-	-cd doc-link; ${JDOC} ${JDOCFLAGS} -d ../doctemp \
+	-cd doc-link; ${JDOC} ${JDOCFLAGS} -d ../doc \
 		$(subst harpoon.Contrib,gnu, \
 		$(foreach dir, $(filter-out Test, \
 			  $(filter-out JavaChip,$(PKGSWITHJAVASRC))), \
 			  harpoon.$(subst /,.,$(dir))) silicon.JavaChip) | \
 		grep -v "^@see warning:"
 	$(RM) -r doc-link
-	make doc-clean
-	mv doctemp doc
 	$(MUNGE) doc | \
 	  sed -e 's/<\([a-z]\+\)@\([a-z.]\+\).edu>/\&lt;\1@\2.edu\&gt;/g' \
 	      -e 's/<dd> "The,/<dd> /g' -e 's/<body>/<body bgcolor=white>/' | \
@@ -399,7 +396,7 @@ doc-install: doc/TIMESTAMP mark-executable
 	fi
 	$(SSH) $(INSTALLMACHINE) \
 		/bin/rm -rf $(INSTALLDIR)/doc
-	$(SCP) -r doc $(INSTALLMACHINE):$(INSTALLDIR)
+	tar -c doc | $(SSH) $(INSTALLMACHINE) tar -C $(INSTALLDIR) -x
 
 doc-clean:
 	-${RM} -r doc
