@@ -18,7 +18,7 @@ import harpoon.Util.PredicateWrapper;
  * Analysis algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Relation.java,v 1.3 2002-04-10 23:56:32 salcianu Exp $
+ * @version $Id: Relation.java,v 1.4 2003-06-04 16:06:31 salcianu Exp $
  */
 public interface Relation {
     
@@ -90,9 +90,13 @@ public interface Relation {
     public Set values();
 
 
-    /** Combines <code>this</code> relation with a new one.
-	A <code>null</code> parameter is considered to be an empty relation. */
-    public void union(Relation rel);
+    /** Combines <code>this</code> relation with relation
+	<code>rel</code>.  A <code>null</code> parameter is considered
+	to be an empty relation.
+
+	@return <code>true</code> iff <code>this</code> relation has
+	changed. */
+    public boolean union(Relation rel);
 
 
     /** Checks the equality of two relations */

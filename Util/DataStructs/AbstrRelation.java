@@ -18,7 +18,7 @@ import harpoon.Analysis.PointerAnalysis.Debug;
  * <code>AbstrRelation</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: AbstrRelation.java,v 1.3 2002-04-10 23:56:32 salcianu Exp $
+ * @version $Id: AbstrRelation.java,v 1.4 2003-06-04 16:06:31 salcianu Exp $
  */
 public abstract class AbstrRelation implements Relation, Cloneable, 
 					java.io.Serializable {
@@ -161,11 +161,14 @@ public abstract class AbstrRelation implements Relation, Cloneable,
     }
     
 
-    public void union(Relation rel) {
+    public boolean union(Relation rel) {
+	boolean changed = false;
 	for(Iterator itk = rel.keys().iterator(); itk.hasNext(); ) {
 	    Object key = itk.next();
-	    addAll(key, rel.getValues(key));
+	    if(addAll(key, rel.getValues(key)))
+		changed = true;
 	}
+	return changed;
     }
 
 
