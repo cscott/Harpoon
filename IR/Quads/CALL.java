@@ -18,12 +18,29 @@ import harpoon.Util.Util;
  * The <code>retval</code> field will be <code>null</code>
  * for <code>void</code> methods.  For non-static methods, the
  * method receiver (object reference on which to invoke the method)
- * is the first parameter in the <code>params</code> array.<p>
+ * is the first parameter in the <code>params</code> array.
+ * <p>
+ * <code>CALL</code> behaves like a conditional branch: if
+ * no exception is thrown by the called method, the <code>Temp</code>
+ * specified by <code>retval</code> will be assigned the return
+ * value, if any, and execution will follow the first outgoing
+ * edge, <code>nextEdge(0)</code>.  If an exception is thrown
+ * then the <code>Temp</code> specified by <code>retex</code> will
+ * be assigned the non-null reference to the thrown exception
+ * and execution will follow the second outgoing edge,
+ * <code>nextEdge(1)</code>.  Calls with explicit exception
+ * handling always have exactly two outgoing edges.
+ * <p>
+ * In quad-with-try form, the <code>CALL</code> has only one
+ * outgoing edge, and exceptions are handled by an implicit
+ * control transfer to an appropriate <code>HANDLER</code> quad.
+ * The <code>retex</code> field should be <code>null</code> in
+ * this case (and only in this case).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.12 1999-09-09 21:43:02 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.12.2.1 1999-09-16 06:44:39 cananian Exp $ 
  */
-public class CALL extends Quad {
+public class CALL extends SIGMA {
     /** The method to invoke. */
     final protected HMethod method;
     /** Parameters to pass to the method. 
@@ -40,15 +57,8 @@ public class CALL extends Quad {
      *  (INVOKESPECIAL has different invoke semantics) */
     final protected boolean isVirtual;
 
-    /** Creates a <code>CALL</code> quad representing a method invocation.
-     *  If an exception is thrown by the called method, the <code>Temp</code>
-     *  specified by <code>retex</code> will be assigned the non-null 
-     *  reference to the thrown exception, and the <code>Temp</code>
-     *  specified by the <code>retval</code> field (if any) will have
-     *  an indeterminate value.  If no exception is thrown, the 
-     *  <code>Temp</code> specified by <code>retex</code> will be assigned
-     *  <code>null</code>, and the return value will be assigned to the
-     *  <code>Temp</code> specified by <code>retval</code> (if any).
+    /** Creates a <code>CALL</code> quad representing a method invocation
+     *  with explicit exception handling.
      * @param method
      *        the method to invoke.
      * @param params
@@ -67,8 +77,10 @@ public class CALL extends Quad {
      *        value (return type is <code>void</code>.
      * @param retex
      *        the destination <code>Temp</code> for any exception thrown
-     *        by the called method.  If <code>null</code> exceptions are
-     *        thrown, not caught.
+     *        by the called method.  If <code>null</code> then this
+     *        <code>CALL</code> has arity one and handles exceptions
+     *        implicitly; else it has arity two and exception handling
+     *        is explicit.
      * @param isVirtual
      *        <code>true</code> if invocation semantics are that of a
      *        virtual method; <code>false</code> for constructors,
@@ -77,11 +89,18 @@ public class CALL extends Quad {
      *        Value is unspecified for static methods, although the
      *        <code>isVirtual()</code> method will always return 
      *        <code>false</code> in this case.
+     * @param dst
+     *        the elements of the pairs on the left-hand side of
+     *        the sigma function assignment block associated with
+     *        this <code>CALL</code>.
+     * @param src
+     *        the arguments to the sigma functions associated with
+     *        this <code>CALL</code>.
      */
     public CALL(QuadFactory qf, HCodeElement source,
 		HMethod method, Temp[] params, Temp retval, Temp retex,
-		boolean isVirtual) {
-	super(qf, source);
+		boolean isVirtual, Temp[][] dst, Temp[] src) {
+	super(qf, source, dst, src, retex==null?1:2);
 	this.method = method;
 	this.params = params;
 	this.retval = retval;
@@ -112,6 +131,16 @@ public class CALL extends Quad {
 	if (isStatic()) Util.assert(isVirtual()==false);
 	// I guess it's legal, then.
     }
+    // convenience constructor.
+    /** Creates a <code>CALL</code> with an empty <code>dst</code> array
+     *  of the proper size.  Arguments as above. */
+    public CALL(QuadFactory qf, HCodeElement source,
+		HMethod method, Temp[] params, Temp retval, Temp retex,
+		boolean isVirtual, Temp[] src) {
+	this(qf, source, method, params, retval, retex, isVirtual,
+	     new Temp[src.length][retex==null?1:2], src);
+    }
+    
     // ACCESSOR METHODS:
     /** Returns the method invoked by this <code>CALL</code>. */
     public HMethod method() { return method; }
@@ -147,33 +176,45 @@ public class CALL extends Quad {
      * @return the <code>params</code> array.
      */
     public Temp[] use() {
-	return (Temp[]) Util.safeCopy(Temp.arrayFactory, params);
+	Temp[] u = super.use();
+	Temp[] r = new Temp[u.length+params.length];
+	System.arraycopy(u,      0, r, 0,        u.length);
+	System.arraycopy(params, 0, r, u.length, params.length);
+	return r;
     }
     /** Returns all the Temps defined by this Quad. 
      * @return The non-null members of <code>{ retval, retex }</code>.
      */
     public Temp[] def() {
-	if (retval==null)
-	    return (retex==null)?new Temp[0]:new Temp[]{retex};
-	else
-	    return (retex==null)?new Temp[]{retval}:new Temp[]{retval,retex};
+	Temp[] d = super.def();
+	int len = d.length;
+	if (retval!=null) len++;
+	if (retex !=null) len++;
+	Temp[] r = new Temp[len];
+	System.arraycopy(d, 0, r, 0, d.length);
+	if (retval!=null) r[--len]=retval;
+	if (retex !=null) r[--len]=retex;
+	return r;
     }
 
     public int kind() { return QuadKind.CALL; }
 
     public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
 	return new CALL(qqf, this, method, map(useMap, params),
-			map(defMap,retval),map(defMap, retex), isVirtual);
+			map(defMap,retval),map(defMap, retex), isVirtual,
+			map(defMap, dst), map(useMap, src));
     }
     /** Rename all used variables in this Quad according to a mapping.
      * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) {
+	super.renameUses(tm);
 	for (int i=0; i<params.length; i++)
 	    params[i] = tm.tempMap(params[i]);
     }
     /** Rename all defined variables in this Quad according to a mapping.
      * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
+	super.renameDefs(tm);
 	if (retval!=null)
 	    retval = tm.tempMap(retval);
 	if (retex!=null)
@@ -203,7 +244,8 @@ public class CALL extends Quad {
 	if (retex!=null)
 	    sb.append(" exceptions in "+retex);
 	else
-	    sb.append(" exceptions THROWN DIRECTLY.");
+	    sb.append(" exceptions THROWN DIRECTLY");
+	sb.append(" / "); sb.append(super.toString());
 	return sb.toString();
     }
     // Other information that might be useful.  Or might not.  Who knows?
