@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
  * <p>The <code>remove()</code> method is <b>not</b> implemented.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayIterator.java,v 1.3.2.2 2002-03-04 19:10:56 cananian Exp $
+ * @version $Id: ArrayIterator.java,v 1.3.2.3 2002-03-14 01:54:43 cananian Exp $
  */
 
 public class ArrayIterator<E> extends UnmodifiableIterator<E>
@@ -18,7 +18,8 @@ public class ArrayIterator<E> extends UnmodifiableIterator<E>
     final E[] oa;
     int i = 0;
 
-    /** Creates an <code>ArrayEnumerator</code>. */
+    /** Creates an <code>ArrayIterator</code> that iterates over the
+     *  contents of <code>oa</code>. */
     public ArrayIterator(E[] oa) {
 	assert oa!=null;
         this.oa = oa;
