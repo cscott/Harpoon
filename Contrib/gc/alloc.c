@@ -101,11 +101,13 @@ extern GC_bool GC_print_back_height;
 
 int GC_never_stop_func GC_PROTO((void)) { return(0); }
 
+unsigned long GC_time_limit = TIME_LIMIT;
+
 CLOCK_TYPE GC_start_time;  	/* Time at which we stopped world.	*/
 				/* used only in GC_timeout_stop_func.	*/
 
 int GC_n_attempts = 0;		/* Number of attempts at finishing	*/
-				/* collection within TIME_LIMIT		*/
+				/* collection within GC_time_limit.	*/
 
 #if defined(SMALL_CONFIG) || defined(NO_CLOCK)
 #   define GC_timeout_stop_func GC_never_stop_func
@@ -119,7 +121,7 @@ int GC_n_attempts = 0;		/* Number of attempts at finishing	*/
     if ((count++ & 3) != 0) return(0);
     GET_TIME(current_time);
     time_diff = MS_TIME_DIFF(current_time,GC_start_time);
-    if (time_diff >= TIME_LIMIT) {
+    if (time_diff >= GC_time_limit) {
 #   	ifdef CONDPRINT
 	  if (GC_print_stats) {
 	    GC_printf0("Abandoning stopped marking after ");
@@ -277,9 +279,10 @@ void GC_maybe_gc()
         /* If we run out of time, this turns into	*/
         /* incremental marking.			*/
 #	ifndef NO_CLOCK
-          GET_TIME(GC_start_time);
+          if (GC_time_limit != GC_TIME_UNLIMITED) { GET_TIME(GC_start_time); }
 #	endif
-        if (GC_stopped_mark(GC_timeout_stop_func)) {
+        if (GC_stopped_mark(GC_time_limit == GC_TIME_UNLIMITED? 
+			    GC_never_stop_func : GC_timeout_stop_func)) {
 #           ifdef SAVE_CALL_CHAIN
                 GC_save_callers(GC_last_stack);
 #           endif
@@ -400,7 +403,8 @@ int n;
 #		ifdef PARALLEL_MARK
 		    GC_wait_for_reclaim();
 #		endif
-		if (GC_n_attempts < MAX_PRIOR_ATTEMPTS) {
+		if (GC_n_attempts < MAX_PRIOR_ATTEMPTS
+		    && GC_time_limit != GC_TIME_UNLIMITED) {
 		  GET_TIME(GC_start_time);
 		  if (!GC_stopped_mark(GC_timeout_stop_func)) {
 		    GC_n_attempts++;

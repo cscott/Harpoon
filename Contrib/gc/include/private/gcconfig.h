@@ -718,8 +718,11 @@
 #   define MACH_TYPE "SPARC"
 #   if defined(__arch64__) || defined(__sparcv9)
 #     define ALIGNMENT 8
+#     define CPP_WORDSZ 64
+#     define ELF_CLASS ELFCLASS64
 #   else
 #     define ALIGNMENT 4	/* Required by hardware	*/
+#     define CPP_WORDSZ 32
 #   endif
 #   define ALIGN_DOUBLE
 #   ifdef SUNOS5
@@ -758,7 +761,9 @@
 #       define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
 		/* getpagesize() appeared to be missing from at least one */
 		/* Solaris 5.4 installation.  Weird.			  */
-#	define DYNAMIC_LOADING
+#       if CPP_WORDSZ == 32
+#	  define DYNAMIC_LOADING
+#    	endif
 #   endif
 #   ifdef SUNOS4
 #	define OS_TYPE "SUNOS4"
@@ -780,7 +785,6 @@
 # 	define DYNAMIC_LOADING
 #   endif
 #   ifdef DRSNX
-#       define CPP_WORDSZ 32
 #	define OS_TYPE "DRSNX"
 	extern char * GC_SysVGetDataStart();
 	extern int etext;
@@ -803,7 +807,6 @@
 #     ifdef __arch64__
 #       define STACKBOTTOM ((ptr_t) 0x80000000000ULL)
 #	define DATASTART (ptr_t)GC_SysVGetDataStart(0x100000, &_etext)
-#	define CPP_WORDSZ 64
 #     else
 #       define STACKBOTTOM ((ptr_t) 0xf0000000)
 #	define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, &_etext)
@@ -903,6 +906,10 @@
 #	define ELF_CLASS ELFCLASS32
 #   endif
 #   ifdef LINUX
+#	ifndef __GNUC__
+	  /* The Intel compiler doesn't like inline assembly */
+#	  define USE_GENERIC_PUSH_REGS
+# 	endif
 #	define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
 #	if 0
@@ -1731,17 +1738,64 @@
 	/* descriptions.						*/
 #	define USE_GENERIC_PUSH_REGS
 # endif
-# if defined(I386) && defined(LINUX)
-    /* SAVE_CALL_CHAIN is supported if the code is compiled to save	*/
-    /* frame pointers by default, i.e. no -fomit-frame-pointer flag.	*/
-# ifdef SAVE_CALL_COUNT
-#   define SAVE_CALL_CHAIN 
-# endif
-# endif
+
 # if defined(SPARC)
-#   define SAVE_CALL_CHAIN
 #   define ASM_CLEAR_CODE	/* Stack clearing is crucial, and we 	*/
 				/* include assembly code to do it well.	*/
+# endif
+
+/* Can we save call chain in objects for debugging?   		        */
+/* SET NFRAMES (# of saved frames) and NARGS (#of args for each frame)	*/
+/* to reasonable values for the platform.				*/
+/* Set SAVE_CALL_CHAIN if we can.  SAVE_CALL_COUNT can be specified at	*/
+/* build time, though we feel free to adjust it slightly.		*/
+/* Define NEED_CALLINFO if we either save the call stack or 		*/
+/* GC_ADD_CALLER is defined.						*/
+#ifdef LINUX
+# include <features.h>
+# if __GLIBC__ == 2 && __GLIBC_MINOR__ >= 1 || __GLIBC__ > 2
+#   define HAVE_BUILTIN_BACKTRACE
+# endif
+#endif
+
+#if defined(SPARC)
+# define CAN_SAVE_CALL_STACKS
+# define CAN_SAVE_CALL_ARGS
+#endif
+#if defined(I386) && defined(LINUX)
+    /* SAVE_CALL_CHAIN is supported if the code is compiled to save	*/
+    /* frame pointers by default, i.e. no -fomit-frame-pointer flag.	*/
+# define CAN_SAVE_CALL_STACKS
+# define CAN_SAVE_CALL_ARGS
+#endif
+#if defined(HAVE_BUILTIN_BACKTRACE) && !defined(CAN_SAVE_CALL_STACKS)
+# define CAN_SAVE_CALL_STACKS
+#endif
+
+# if defined(SAVE_CALL_COUNT) && !defined(GC_ADD_CALLER) \
+     && defined(CAN_SAVE_CALL_STACKS)
+#   define SAVE_CALL_CHAIN 
+# endif
+# ifdef SAVE_CALL_CHAIN
+#   if defined(SAVE_CALL_NARGS) && defined(CAN_SAVE_CALL_ARGS)
+#     define NARGS SAVE_CALL_NARGS
+#   else
+#     define NARGS 0	/* Number of arguments to save for each call.	*/
+#   endif
+# endif
+# ifdef SAVE_CALL_CHAIN
+#   ifndef SAVE_CALL_COUNT
+#     define NFRAMES 6	/* Number of frames to save. Even for		*/
+			/* alignment reasons.				*/
+#   else
+#     define NFRAMES ((SAVE_CALL_COUNT + 1) & ~1)
+#   endif
+#   define NEED_CALLINFO
+# endif /* SAVE_CALL_CHAIN */
+# ifdef GC_ADD_CALLER
+#   define NFRAMES 1
+#   define NARGS 0
+#   define NEED_CALLINFO
 # endif
 
 # if defined(MAKE_BACK_GRAPH) && !defined(DBG_HDRS_ALL)

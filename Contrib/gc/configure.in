@@ -207,7 +207,11 @@ case "$host" in
     AC_DEFINE(NO_EXECUTE_PERMISSION)
     ;;
  sparc-sun-solaris2.3*)
+    machdep="sparc_mach_dep.lo"
     AC_DEFINE(SUNOS53_SHARED_LIB)
+    ;;
+ sparc-sun-solaris2.*)
+    machdep="sparc_mach_dep.lo"
     ;;
  ia64-*-*)
     machdep="mach_dep.lo ia64_save_regs_in_stack.lo"

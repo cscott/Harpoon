@@ -104,9 +104,9 @@ HOSTCFLAGS=$(CFLAGS)
 #   See gc_cpp.h for details.  No effect on the C part of the collector.
 #   This is defined implicitly in a few environments.  Must also be defined
 #   by clients that use gc_cpp.h.
-# -DREDIRECT_MALLOC=X causes malloc, realloc, and free to be defined
-#   as aliases for X, GC_realloc, and GC_free, respectively.
-#   Calloc is redefined in terms of the new malloc.  X should
+# -DREDIRECT_MALLOC=X causes malloc, realloc, and free to be
+#   defined as aliases for X, GC_realloc, and GC_free, respectively.
+#   Calloc and strdup are redefined in terms of the new malloc.  X should
 #   be either GC_malloc or GC_malloc_uncollectable, or
 #   GC_debug_malloc_replacement.  (The latter invokes GC_debug_malloc
 #   with dummy source location information, but still results in
@@ -115,7 +115,9 @@ HOSTCFLAGS=$(CFLAGS)
 #   you don't want to (or can't) look at.  It may not work for
 #   existing code, but it often does.  Neither works on all platforms,
 #   since some ports use malloc or calloc to obtain system memory.
-#   (Probably works for UNIX, and win32.)
+#   (Probably works for UNIX, and win32.)  If you build with DBG_HDRS_ALL,
+#   you should only use GC_debug_malloc_replacement as a malloc
+#   replacement.
 # -DREDIRECT_REALLOC=X causes GC_realloc to be redirected to X.
 #   The canonical use is -DREDIRECT_REALLOC=GC_debug_realloc_replacement,
 #   together with -DREDIRECT_MALLOC=GC_debug_malloc_replacement to
@@ -184,8 +186,12 @@ HOSTCFLAGS=$(CFLAGS)
 #   allocated through the debugging interface.  Affects the amount of
 #   information generated in leak reports.  Only matters on platforms
 #   on which we can quickly generate call stacks, currently Linux/(X86 & SPARC)
-#   and Solaris/SPARC.  Turns on call chain saving on X86.  On X86, client
+#   and Solaris/SPARC and platforms that provide execinfo.h.
+#   Default is zero.  On X86, client
 #   code should NOT be compiled with -fomit-frame-pointer.
+# -DSAVE_CALL_NARGS=<n> Set the number of functions arguments to be
+#   saved with each call frame.  Default is zero.  Ignored if we
+#   don't know how to retrieve arguments on the platform.
 # -DCHECKSUMS reports on erroneously clear dirty bits, and unexpectedly
 #   altered stubborn objects, at substantial performance cost.
 #   Use only for debugging of the incremental collector.
@@ -247,7 +253,7 @@ CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordt
 CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
 SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
-    sparc_mach_dep.s include/gc.h include/gc_typed.h \
+    sparc_mach_dep.S include/gc.h include/gc_typed.h \
     include/private/gc_hdrs.h include/private/gc_priv.h \
     include/private/gcconfig.h include/private/gc_pmark.h \
     include/gc_inl.h include/gc_inline.h include/gc_mark.h \
@@ -451,7 +457,7 @@ mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdir)/mips_ul
 #	./if_mach ALPHA "" $(AS) -o mach_dep.o $(srcdir)/alpha_mach_dep.s
 #	alpha_mach_dep.s assumes that pointers are not saved in fp registers.
 #	Gcc on a 21264 can spill pointers to fp registers.  Oops.
-	./if_mach SPARC SUNOS5 $(AS) -o mach_dep.o $(srcdir)/sparc_mach_dep.s
+	./if_mach SPARC SUNOS5 $(CC) -c -o mach_dep.o $(srcdir)/sparc_mach_dep.S
 	./if_mach SPARC SUNOS4 $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./if_mach SPARC OPENBSD $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./if_mach SPARC NETBSD $(AS) -o mach_dep.o $(srcdir)/sparc_netbsd_mach_dep.s

@@ -1741,11 +1741,18 @@ word n;
 {
 }
 
-/* A call hints that h is about to be written.	*/
-/* May speed up some dirty bit implementations.	*/
+/* A call that:						*/
+/* I) hints that [h, h+nblocks) is about to be written.	*/
+/* II) guarantees that protection is removed.		*/
+/* (I) may speed up some dirty bit implementations.	*/
+/* (II) may be essential if we need to ensure that	*/
+/* pointer-free system call buffers in the heap are 	*/
+/* not protected.					*/
 /*ARGSUSED*/
-void GC_write_hint(h)
+void GC_remove_protection(h, nblocks, is_ptrfree)
 struct hblk *h;
+word nblocks;
+GC_bool is_ptrfree;
 {
 }
 
@@ -1848,12 +1855,16 @@ struct hblk *h;
 # endif
 #endif
 #if defined(LINUX)
-#   include <linux/version.h>
-#   if (LINUX_VERSION_CODE >= 0x20100) && !defined(M68K) || defined(ALPHA) || defined(IA64)
+#   if __GLIBC__ > 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ >= 2
       typedef struct sigcontext s_c;
-#   else
-      typedef struct sigcontext_struct s_c;
-#   endif
+#   else  /* glibc < 2.2 */
+#     include <linux/version.h>
+#     if (LINUX_VERSION_CODE >= 0x20100) && !defined(M68K) || defined(ALPHA)
+        typedef struct sigcontext s_c;
+#     else
+        typedef struct sigcontext_struct s_c;
+#     endif
+#   endif  /* glibc < 2.2 */
 #   if defined(ALPHA) || defined(M68K)
       typedef void (* REAL_SIG_PF)(int, int, s_c *);
 #   else
@@ -2319,29 +2330,33 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 
 /*
  * We hold the allocation lock.  We expect block h to be written
- * shortly.
+ * shortly.  Ensure that all pages cvontaining any part of the n hblks
+ * starting at h are no longer protected.  If is_ptrfree is false,
+ * also ensure that they will subsequently appear to be dirty.
  */
-void GC_write_hint(h)
+void GC_remove_protection(h, nblocks, is_ptrfree)
 struct hblk *h;
+word nblocks;
+GC_bool is_ptrfree;
 {
-    register struct hblk * h_trunc;
-    register unsigned i;
-    register GC_bool found_clean;
+    struct hblk * h_trunc;  /* Truncated to page boundary */
+    struct hblk * h_end;    /* Page boundary following block end */
+    struct hblk * current;
+    GC_bool found_clean;
     
     if (!GC_dirty_maintained) return;
     h_trunc = (struct hblk *)((word)h & ~(GC_page_size-1));
+    h_end = (struct hblk *)(((word)(h + nblocks) + GC_page_size-1)
+	                    & ~(GC_page_size-1));
     found_clean = FALSE;
-    for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
-        register int index = PHT_HASH(h_trunc+i);
+    for (current = h_trunc; current < h_end; ++current) {
+        int index = PHT_HASH(current);
             
-        if (!get_pht_entry_from_index(GC_dirty_pages, index)) {
-            found_clean = TRUE;
+        if (!is_ptrfree || current < h || current >= h + nblocks) {
             async_set_pht_entry_from_index(GC_dirty_pages, index);
         }
     }
-    if (found_clean) {
-    	UNPROTECT(h_trunc, GC_page_size);
-    }
+    UNPROTECT(h_trunc, (ptr_t)h_end - (ptr_t)h_trunc);
 }
 
 void GC_dirty_init()
@@ -2460,18 +2475,77 @@ void GC_dirty_init()
 #   endif
 }
 
+int GC_incremental_protection_needs()
+{
+    if (GC_page_size == HBLKSIZE) {
+	return GC_PROTECTS_POINTER_HEAP;
+    } else {
+	return GC_PROTECTS_POINTER_HEAP | GC_PROTECTS_PTRFREE_HEAP;
+    }
+}
 
+#define HAVE_INCREMENTAL_PROTECTION_NEEDS
 
+#define IS_PTRFREE(hhdr) ((hhdr)->hb_descr == 0)
+
+#define PAGE_ALIGNED(x) !((word)(x) & (GC_page_size - 1))
 void GC_protect_heap()
 {
     ptr_t start;
     word len;
+    struct hblk * current;
+    struct hblk * current_start;  /* Start of block to be protected. */
+    struct hblk * limit;
     unsigned i;
-    
+    GC_bool protect_all = 
+	  (0 != (GC_incremental_protection_needs() & GC_PROTECTS_PTRFREE_HEAP));
     for (i = 0; i < GC_n_heap_sects; i++) {
         start = GC_heap_sects[i].hs_start;
         len = GC_heap_sects[i].hs_bytes;
-        PROTECT(start, len);
+	if (protect_all) {
+          PROTECT(start, len);
+	} else {
+	  GC_ASSERT(PAGE_ALIGNED(len))
+	  GC_ASSERT(PAGE_ALIGNED(start))
+	  current_start = current = (struct hblk *)start;
+	  limit = (struct hblk *)(start + len);
+	  while (current < limit) {
+            hdr * hhdr;
+	    word nhblks;
+	    GC_bool is_ptrfree;
+
+	    GC_ASSERT(PAGE_ALIGNED(current));
+	    GET_HDR(current, hhdr);
+	    if (IS_FORWARDING_ADDR_OR_NIL(hhdr)) {
+	      /* This can happen only if we're at the beginning of a 	*/
+	      /* heap segment, and a block spans heap segments.		*/
+	      /* We will handle that block as part of the preceding	*/
+	      /* segment.						*/
+	      GC_ASSERT(current_start == current);
+	      current_start = ++current;
+	      continue;
+	    }
+	    if (HBLK_IS_FREE(hhdr)) {
+	      GC_ASSERT(PAGE_ALIGNED(hhdr -> hb_sz));
+	      nhblks = divHBLKSZ(hhdr -> hb_sz);
+	      is_ptrfree = TRUE;	/* dirty on alloc */
+	    } else {
+	      nhblks = OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
+	      is_ptrfree = IS_PTRFREE(hhdr);
+	    }
+	    if (is_ptrfree) {
+	      if (current_start < current) {
+		PROTECT(current_start, (ptr_t)current - (ptr_t)current_start);
+	      }
+	      current_start = (current += nhblks);
+	    } else {
+	      current += nhblks;
+	    }
+	  } 
+	  if (current_start < current) {
+	    PROTECT(current_start, (ptr_t)current - (ptr_t)current_start);
+	  }
+	}
     }
 }
 
@@ -2528,7 +2602,7 @@ word len;
     register struct hblk *h;
     ptr_t obj_start;
     
-    if (!GC_incremental) return;
+    if (!GC_dirty_maintained) return;
     obj_start = GC_base(addr);
     if (obj_start == 0) return;
     if (GC_base(addr + len - 1) != obj_start) {
@@ -2741,8 +2815,10 @@ void GC_dirty_init()
 
 /* Ignore write hints. They don't help us here.	*/
 /*ARGSUSED*/
-void GC_write_hint(h)
+void GC_remove_protection(h, nblocks, is_ptrfree)
 struct hblk *h;
+word nblocks;
+GC_bool is_ptrfree;
 {
 }
 
@@ -2950,14 +3026,23 @@ struct hblk *h;
 }
 
 /*ARGSUSED*/
-void GC_write_hint(h)
+void GC_remove_protection(h, nblocks, is_ptrfree)
 struct hblk *h;
+word nblocks;
+GC_bool is_ptrfree;
 {
-    PCR_VD_WriteProtectDisable(h, HBLKSIZE);
-    PCR_VD_WriteProtectEnable(h, HBLKSIZE);
+    PCR_VD_WriteProtectDisable(h, nblocks*HBLKSIZE);
+    PCR_VD_WriteProtectEnable(h, nblocks*HBLKSIZE);
 }
 
 # endif /* PCR_VDB */
+
+# ifndef HAVE_INCREMENTAL_PROTECTION_NEEDS
+  int GC_incremental_protection_needs()
+  {
+    return GC_PROTECTS_NONE;
+  }
+# endif /* !HAVE_INCREMENTAL_PROTECTION_NEEDS */
 
 /*
  * Call stack save code for debugging.
@@ -2968,6 +3053,8 @@ struct hblk *h;
 /* long as the frame pointer is explicitly stored.  In the case of gcc,	*/
 /* compiler flags (e.g. -fomit-frame-pointer) determine whether it is.	*/
 #if defined(I386) && defined(LINUX) && defined(SAVE_CALL_CHAIN)
+#   include <features.h>
+
     struct frame {
 	struct frame *fr_savfp;
 	long	fr_savpc;
@@ -2977,6 +3064,8 @@ struct hblk *h;
 
 #if defined(SPARC)
 #  if defined(LINUX)
+#    include <features.h>
+
      struct frame {
 	long	fr_local[8];
 	long	fr_arg[6];
@@ -3011,6 +3100,35 @@ struct hblk *h;
 #ifdef SAVE_CALL_CHAIN
 /* Fill in the pc and argument information for up to NFRAMES of my	*/
 /* callers.  Ignore my frame and my callers frame.			*/
+
+#ifdef LINUX
+# include <features.h>
+# if __GLIBC__ == 2 && __GLIBC_MINOR__ >= 1 || __GLIBC__ > 2
+#   define HAVE_BUILTIN_BACKTRACE
+# endif
+#endif
+
+#if NARGS == 0 && NFRAMES % 2 == 0 /* No padding */ \
+    && defined(HAVE_BUILTIN_BACKTRACE)
+
+#include <execinfo.h>
+
+void GC_save_callers (info) 
+struct callinfo info[NFRAMES];
+{
+  void * tmp_info[NFRAMES + 1];
+  int npcs, i;
+# define IGNORE_FRAMES 1
+  
+  /* We retrieve NFRAMES+1 pc values, but discard the first, since it	*/
+  /* points to our own frame.						*/
+  GC_ASSERT(sizeof(struct callinfo) == sizeof(void *));
+  npcs = backtrace((void **)tmp_info, NFRAMES + IGNORE_FRAMES);
+  BCOPY(tmp_info+IGNORE_FRAMES, info, (npcs - IGNORE_FRAMES) * sizeof(void *));
+  for (i = npcs - IGNORE_FRAMES; i < NFRAMES; ++i) info[i].ci_pc = 0;
+}
+
+#else /* No builtin backtrace; do it ourselves */
 
 #if (defined(OPENBSD) || defined(NETBSD)) && defined(SPARC)
 #  define FR_SAVFP fr_fp
@@ -3057,6 +3175,8 @@ struct callinfo info[NFRAMES];
   }
   if (nframes < NFRAMES) info[nframes].ci_pc = 0;
 }
+
+#endif /* No builtin backtrace */
 
 #endif /* SAVE_CALL_CHAIN */
 
