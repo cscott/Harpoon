@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.13 2000-01-27 06:28:38 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.14 2000-02-01 06:40:12 bdemsky Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -133,6 +133,7 @@ public class ToAsync {
 	final private Map cache = new HashMap();
 	public HMethod swop (final HMethod m) {
 	    final HClass is = linker.forName("java.io.InputStream");
+	    final HClass fis = linker.forName("java.io.FileInputStream");
 	    final HClass ss = linker.forName("java.net.ServerSocket");
 	    final HClass b = HClass.Byte;
 	    final HClass HCthrd = linker.forName("java.lang.Thread");
@@ -164,6 +165,30 @@ public class ToAsync {
 			    cache.put(m, retval);
 			} else if (bm3.equals(m)) {
 			    retval = is.getMethod("readAsync", 
+				new HClass[] {HClassUtil.arrayClass(b, 1),
+					      HClass.Int, HClass.Int});
+			    cache.put(m, retval);
+			}
+		    }
+		} else if (fis.equals(m.getDeclaringClass())) {
+		    if (m.getName().equals("read")) {
+			final HMethod bm1 = 
+			    fis.getDeclaredMethod("read", new HClass[0]);
+			final HMethod bm2 = fis.getDeclaredMethod("read", 
+                            new HClass[] {HClassUtil.arrayClass(b, 1)});
+			final HMethod bm3 = fis.getDeclaredMethod("read", 
+			    new HClass[] {HClassUtil.arrayClass(b, 1),
+					  HClass.Int, HClass.Int});
+			if (bm1.equals(m)) {
+			    retval = fis.getMethod("readAsync", 
+						  new HClass[0]);
+			    cache.put(m, retval);
+			} else if (bm2.equals(m)) {
+			    retval = fis.getMethod("readAsync", 
+			        new HClass[] {HClassUtil.arrayClass(b, 1)});
+			    cache.put(m, retval);
+			} else if (bm3.equals(m)) {
+			    retval = fis.getMethod("readAsync", 
 				new HClass[] {HClassUtil.arrayClass(b, 1),
 					      HClass.Int, HClass.Int});
 			    cache.put(m, retval);

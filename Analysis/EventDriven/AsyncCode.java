@@ -60,7 +60,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.47 2000-01-26 19:21:12 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.48 2000-02-01 06:40:11 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -929,10 +929,14 @@ public class AsyncCode {
 
 	public HMethod swapAdd(HMethod old) {
 	    HClass ss=linker.forName("java.net.ServerSocket");
+	    HClass fis=linker.forName("java.io.FileInputStream");
 	    if (old.equals(ss.getConstructor(new HClass[] {HClass.Int,
 							       HClass.Int,
 							       linker.forName("java.net.InetAddress")})))
 		return ss.getDeclaredMethod("makeAsync", new HClass[0]);
+	    if (old.equals(fis.getConstructor(new HClass[] {linker.forName("java.lang.String")}))||
+		old.equals(fis.getConstructor(new HClass[] {linker.forName("java.io.FileDescriptor")})))
+		return fis.getDeclaredMethod("makeAsync", new HClass[0]);
 	    return null;
 	}
 	
