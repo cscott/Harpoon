@@ -11,6 +11,7 @@ struct role {
   struct rolearraylist * pointedtoal;
   struct identity_relation * identities;
   struct rolefieldlist * nonnullfields;
+  int * methodscalled;
 };
 
 struct rolereferencelist {
@@ -47,7 +48,7 @@ struct rolefieldlist {
 
 void printrole(struct role * r, char * rolename);
 void freerole(struct role * r);
-struct role * calculaterole(struct genhashtable * dommapping,struct heap_object *ho);
+struct role * calculaterole(struct heap_state *heap, struct genhashtable * dommapping,struct heap_object *ho);
 struct identity_relation * find_identities(struct heap_object *ho);
 void free_identities(struct identity_relation *irptr);
 void print_identities(struct identity_relation *irptr);

@@ -20,6 +20,8 @@ struct heap_object {
   struct arraylist *reversearray;
 
   struct rolechange *rc;
+  int * methodscalled;
+
 
   short reachable;/* low order bit=reachable*/
   /* next bit=root*/
@@ -108,12 +110,17 @@ struct heap_state {
   struct objectset * N;
 
   struct genhashtable *roletable;
+  struct genhashtable *reverseroletable;
   struct genhashtable *methodtable;
 
   long long currentmethodcount;
   struct hashtable *dynamiccallchain;
   struct genhashtable *rolechangetable;
   struct genhashtable *atomicmethodtable;
+  
+  struct genhashtable *statechangemethodtable;
+  struct hashtable *statechangereversetable;
+  int statechangesize;
 };
 
 struct identity_relation {
@@ -126,7 +133,15 @@ struct dynamiccallmethod {
   char *classname;
   char *methodname;
   char *signature;
+  char *classnameto;
+  char *methodnameto;
+  char *signatureto;
+
   char status; /* 0=entry, 1=exit */
+};
+
+struct statechangeinfo {
+  int id;
 };
 
 void doincrementalreachability(struct heap_state *hs, struct hashtable *ht);
@@ -170,4 +185,6 @@ int atomic(struct heap_state *heap);
 void loadatomics(struct heap_state *heap);
 int atomicmethod(struct heap_state *hs, struct method *m);
 void atomiceval(struct heap_state *heap);
+void loadstatechange(struct heap_state *heap);
+int convertnumberingobjects(char *sig, int isStatic, int orignumber);
 #endif

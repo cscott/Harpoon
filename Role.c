@@ -11,6 +11,8 @@
 #define DUPTHRESHOLD 2
 
 static long int rolenumber=0;
+struct heap_state *hshash;
+
 
 void printrole(struct role *r, char * rolename) {
   struct rolereferencelist *dominators=r->dominatingroots;
@@ -61,10 +63,22 @@ void printrole(struct role *r, char * rolename) {
       fl=fl->next;
     }
   }
+
+  printf(" Methods invoked on:\n");
+  {
+    if (r->methodscalled!=NULL) {
+      int i=0;
+      for(i=0;i<hshash->statechangesize;i++) {
+	if(r->methodscalled[i]) {
+	  char *methodname=(char *)gettable(hshash->statechangereversetable, i);
+	  printf("   %s\n",methodname);
+	}
+      }
+    }
+  }
   printf("}\n\n");
 }
 
-struct heap_state *hshash;
 
 void setheapstate(struct heap_state *hs) {
   hshash=hs;
@@ -76,11 +90,16 @@ int rchashcode(struct rolechange *rc) {
   long long start=rc->origmethod;
   long long end=rc->newmethod;
   long long index;
+  hashcode^=hashstring(rc->origrole);
+  hashcode^=hashstring(rc->newrole);
   for(index=start-1;index<end;index++) {
     struct dynamiccallmethod *dcm=(struct dynamiccallmethod *)gettable(ht, index);
     hashcode^=hashstring(dcm->classname);
     hashcode^=hashstring(dcm->methodname);
     hashcode^=hashstring(dcm->signature);
+    hashcode^=hashstring(dcm->classnameto);
+    hashcode^=hashstring(dcm->methodnameto);
+    hashcode^=hashstring(dcm->signatureto);
     hashcode^=dcm->status;
   }
   return hashcode;
@@ -101,6 +120,9 @@ int equivalentrc(struct rolechange *rc1, struct rolechange *rc2) {
     if (!equivalentstrings(dcm1->classname,dcm2->classname)||
 	!equivalentstrings(dcm1->methodname,dcm2->methodname)||
 	!equivalentstrings(dcm1->signature,dcm2->signature)||
+	!equivalentstrings(dcm1->classnameto,dcm2->classnameto)||
+	!equivalentstrings(dcm1->methodnameto,dcm2->methodnameto)||
+	!equivalentstrings(dcm1->signatureto,dcm2->signatureto)||
 	dcm1->status!=dcm2->status)
       return 0;
   }
@@ -117,7 +139,9 @@ void printrolechange(struct heap_state * hs, struct rolechange *rc) {
     else
       printf("ENTER: ");
     printf("%s.%s%s\n",dcm->classname,dcm->methodname,dcm->signature);
-    if ((index-rc->origmethod)>6) {
+    if (dcm->classnameto!=NULL)
+      printf("  returning to:%s.%s%s\n",dcm->classnameto,dcm->methodnameto, dcm->signatureto);
+    if ((index-rc->origmethod)>10) {
       printf("TRUNCATED\n");
       break;
     }
@@ -147,7 +171,9 @@ void rolechange(struct heap_state *hs, struct heap_object *ho, char *newrole) {
     /*We should store it...*/
     if (dcm->status==0)
       depth=1;
-    
+    else
+      depth=-1;
+
     for(i=rc->origmethod;i<hs->currentmethodcount;i++) {
       struct dynamiccallmethod * dcm=(struct dynamiccallmethod *) gettable(hs->dynamiccallchain, i);
       if (dcm->status==0)
@@ -155,7 +181,7 @@ void rolechange(struct heap_state *hs, struct heap_object *ho, char *newrole) {
       else
 	depth--;
     }
-    if (depth!=0&&
+    if ((depth!=0||dcm->status==1)&&
 	!equivalentstrings(rc->origrole, rc->newrole)&&
 	!gencontains(hs->rolechangetable, rc)) {
       /*Maybe store it*/
@@ -177,6 +203,14 @@ int equivalentroles(struct role *role1, struct role *role2) {
   if (role1->hashcode!=role2->hashcode)
     return 0;
   if (strcmp(role1->class,role2->class)!=0)
+    return 0;
+
+  if(role1->methodscalled!=NULL&&role2->methodscalled!=NULL) {
+    int i;
+    for(i=0;i<hshash->statechangesize;i++)
+      if (role1->methodscalled[i]!=role2->methodscalled[i])
+	return 0;
+  } else if (role1->methodscalled!=NULL||role2->methodscalled!=NULL)
     return 0;
 
   {
@@ -286,6 +320,13 @@ void assignhashcode(struct role * role) {
   struct rolearraylist * ral=role->pointedtoal;
   struct identity_relation *ri=role->identities;
   struct rolefieldlist * rfl2=role->nonnullfields;
+  
+  
+  if(role->methodscalled!=NULL) {
+    int i;
+    for(i=0;i<hshash->statechangesize;i++)
+      hashcode^=role->methodscalled[i];
+  }
 
   while(dr!=NULL) {
     hashcode^=hashstring(dr->classname);
@@ -319,6 +360,7 @@ void assignhashcode(struct role * role) {
     hashcode^=hashstring(ri->fieldname2);
     ri=ri->next;
   }
+
   role->hashcode=hashcode;
 }
 
@@ -348,6 +390,7 @@ void freerole(struct role * role) {
   struct identity_relation *ri=role->identities;
   struct rolefieldlist * rfl2=role->nonnullfields;
   free(role->class);
+  free(role->methodscalled);
   free(role);
 
   while(dr!=NULL) {
@@ -384,20 +427,22 @@ void freerole(struct role * role) {
     free(ral);
     ral=tmp;
   }
-  
   free_identities(ri);
+}
 
+int currentrolenumber() {
+  return rolenumber;
 }
 
 
 
 char * findrolestring(struct heap_state * heap, struct genhashtable * dommapping,struct heap_object *ho) {
-  struct role * r=calculaterole(dommapping, ho);
+  struct role * r=calculaterole(heap,dommapping, ho);
   if (gencontains(heap->roletable,r)) {
     /* Already seen role */
     char *str=copystr((char *)gengettable(heap->roletable,r));
     freerole(r);
-    rolechange(heap, ho, str);
+    rolechange(heap,ho, str);
     return str;
   } else {
     /* Synthesize string */
@@ -414,18 +459,30 @@ char * findrolestring(struct heap_state * heap, struct genhashtable * dommapping
     }
 
     buf[index]='R';
-    genputtable(heap->roletable, r, copystr(&buf[index]));
-
-    rolechange(heap, ho, &buf[index]);
+    {
+      char *rolename=copystr(&buf[index]);
+      genputtable(heap->roletable, r, rolename);
+      genputtable(heap->reverseroletable, rolename, r);
+    }
+    rolechange(heap,ho, &buf[index]);
     return copystr(&buf[index]);
   }
 }
 
-struct role * calculaterole(struct genhashtable * dommapping,struct heap_object *ho) {
+struct role * calculaterole(struct heap_state *heap, struct genhashtable * dommapping,struct heap_object *ho) {
   struct role * objrole=(struct role *)calloc(1, sizeof(struct role));
   struct referencelist *dominators=calculatedominators(dommapping, ho);
 
   objrole->class=copystr(ho->class);
+
+  if(ho->methodscalled!=NULL) {
+    int i=0;
+    int * methodscalled=(int *)calloc(heap->statechangesize, sizeof(int));
+    objrole->methodscalled=methodscalled;
+    for(i=0;i<heap->statechangesize;i++) {
+      methodscalled[i]=ho->methodscalled[i];
+    }
+  }
   
 
   while(dominators!=NULL) {

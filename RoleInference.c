@@ -10,6 +10,7 @@
 #include "Role.h"
 #include "Method.h"
 #include "Effects.h"
+#include "dot.h"
 #ifdef MDEBUG
 #include <dmalloc.h>
 #endif
@@ -46,14 +47,19 @@ void doanalysis() {
   heap.freelist=NULL;
   heap.freemethodlist=NULL;
   heap.roletable=genallocatehashtable((int (*)(void *)) &rolehashcode, (int (*)(void *,void *)) &equivalentroles);
+  heap.reverseroletable=genallocatehashtable((int (*)(void *)) &hashstring, (int (*)(void *,void *)) &equivalentstrings);
   heap.methodtable=genallocatehashtable((int (*)(void *)) &methodhashcode, (int (*)(void *,void *)) &comparerolemethods);
   heap.currentmethodcount=0;
   heap.dynamiccallchain=allocatehashtable();
   heap.rolechangetable=genallocatehashtable((int (*)(void *)) &rchashcode, (int (*)(void *,void *)) &equivalentrc);
   heap.atomicmethodtable=genallocatehashtable((int (*)(void *)) &hashstring, (int (*)(void *,void *)) &equivalentstrings);
+  heap.statechangemethodtable=genallocatehashtable((int (*)(void *)) &hashstring, (int (*)(void *,void *)) &equivalentstrings);
+  heap.statechangereversetable=allocatehashtable();
+  heap.statechangesize=0;
   setheapstate(&heap);
+  
   loadatomics(&heap);
-
+  loadstatechange(&heap);
   while(1) {
     char *line=getline();
 
@@ -255,35 +261,51 @@ void doanalysis() {
 	    //Lets show the roles!!!!
 	    doincrementalreachability(&heap,ht);
 	    {
-	    int i=0;
-	    struct genhashtable * dommap=builddominatormappings(&heap,0);
-	    struct rolemethod * rolem=(struct rolemethod *) calloc(1, sizeof(struct rolemethod));
-	    
-	    rolem->classname=copystr(heap.methodlist->classname);
-	    rolem->methodname=copystr(heap.methodlist->methodname);
-	    rolem->signature=copystr(heap.methodlist->signature);
-	    rolem->paramroles=(char **)calloc(heap.methodlist->numobjectargs, sizeof(char *));
-	    rolem->numobjectargs=heap.methodlist->numobjectargs;
-	    rolem->isStatic=heap.methodlist->isStatic;
-	    
+	      int i=0;
+	      struct genhashtable * dommap=builddominatormappings(&heap,0);
+	      struct rolemethod * rolem=(struct rolemethod *) calloc(1, sizeof(struct rolemethod));
+	      
+	      rolem->classname=copystr(heap.methodlist->classname);
+	      rolem->methodname=copystr(heap.methodlist->methodname);
+	      rolem->signature=copystr(heap.methodlist->signature);
+	      rolem->paramroles=(char **)calloc(heap.methodlist->numobjectargs, sizeof(char *));
+	      rolem->numobjectargs=heap.methodlist->numobjectargs;
+	      rolem->isStatic=heap.methodlist->isStatic;
+	      
 #ifdef DEBUG
-	    printf("Calling Context for method %s.%s%s:\n", heap.methodlist->classname, heap.methodlist->methodname, heap.methodlist->signature);
+	      printf("Calling Context for method %s.%s%s:\n", heap.methodlist->classname, heap.methodlist->methodname, heap.methodlist->signature);
 #endif
+	      for(;i<heap.methodlist->numobjectargs;i++) {
+		if (heap.methodlist->params[i]!=NULL) {
+		  rolem->paramroles[i]=findrolestring(&heap, dommap, heap.methodlist->params[i]);
+		}
+	      }
+	      methodassignhashcode(rolem);
+	      rolem=methodaddtable(&heap,rolem);
+	      heap.methodlist->rm=rolem;
+	      genfreekeyhashtable(dommap);
+	    }
+	    freemethodlist(&heap);
+	  } 
+	  if(currentparam==heap.methodlist->numobjectargs) {
+	    int i=0;
 	    for(;i<heap.methodlist->numobjectargs;i++) {
-	      if (heap.methodlist->params[i]!=NULL) {
-		rolem->paramroles[i]=findrolestring(&heap, dommap, heap.methodlist->params[i]);
+	      char buf[200];
+	      sprintf(buf,"%s.%s%s %d", heap.methodlist->classname,
+		      heap.methodlist->methodname, heap.methodlist->signature,
+		      convertnumberingobjects(heap.methodlist->signature, heap.methodlist->isStatic,i));
+	      if (gencontains(heap.statechangemethodtable, buf)) {
+		/* Got string....*/
+		struct statechangeinfo *sci=(struct statechangeinfo *) gengettable(heap.statechangemethodtable, buf);
+		int id=sci->id;
+		struct heap_object *ho=heap.methodlist->params[i];
+		if (ho->methodscalled==NULL)
+		  ho->methodscalled=(int *)calloc(heap.statechangesize ,sizeof(int));
+		ho->methodscalled[id]=1; /*Flip flag*/
 	      }
 	    }
-	    methodassignhashcode(rolem);
-	    rolem=methodaddtable(&heap,rolem);
-	    heap.methodlist->rm=rolem;
-	    genfreekeyhashtable(dommap);
-	    }
 	  }
-
-	  freemethodlist(&heap);
 	}
-
       }
       break;
     case 'I':
@@ -394,11 +416,14 @@ void doanalysis() {
 
   {
     struct geniterator *it=gengetiterator(heap.methodtable);
+    struct genhashtable * dotmethodtable=genallocatehashtable((int (*)(void *)) &hashstring, (int (*)(void *,void *)) &equivalentstrings);
+
     while(1) {
       struct rolemethod *method=(struct rolemethod *) gennext(it);
       if (method==NULL)
 	break;
       printrolemethod(method);
+      dotrolemethod(dotmethodtable, heap.reverseroletable, method);
     }
     genfreeiterator(it);
     it=gengetiterator(heap.rolechangetable);
@@ -407,6 +432,7 @@ void doanalysis() {
       if (rc==NULL)
 	break;
       printrolechange(&heap, rc);
+      dotrolechange(dotmethodtable, &heap,rc);
     }
     genfreeiterator(it);
     it=gengetiterator(heap.roletable);
@@ -417,6 +443,16 @@ void doanalysis() {
 	break;
       rolename=gengettable(heap.roletable, role);
       printrole(role, rolename);
+    }
+    genfreeiterator(it);
+    it=gengetiterator(dotmethodtable);
+    while(1) {
+      char *class=(char *)gennext(it);
+      struct dotclass *dotclass=NULL;
+      if (class==NULL)
+	break;
+      dotclass=(struct dotclass *) gengettable(dotmethodtable, class);
+      printdot(class, dotclass);
     }
     genfreeiterator(it);
   }
@@ -436,6 +472,11 @@ void recordexit(struct heap_state *heap) {
   m->classname=copystr(heap->methodlist->classname);
   m->methodname=copystr(heap->methodlist->methodname);
   m->signature=copystr(heap->methodlist->signature);
+  if (heap->methodlist->caller!=NULL) {
+    m->classnameto=copystr(heap->methodlist->caller->classname);
+    m->methodnameto=copystr(heap->methodlist->caller->methodname);
+    m->signatureto=copystr(heap->methodlist->caller->signature);
+  }
   m->status=1;
   puttable(heap->dynamiccallchain, heap->currentmethodcount++, m);
 }
@@ -681,6 +722,7 @@ void doincrementalreachability(struct heap_state *hs, struct hashtable *ht) {
 	free(al);
 	al=tmp;
       }
+      free(possiblegarbage->methodscalled);
       free(possiblegarbage->class);
       /* printf("Freeing Key %lld\n",possiblegarbage->uid);*/
       freekey(ht,possiblegarbage->uid);
@@ -1394,6 +1436,7 @@ int atomicmethod(struct heap_state *hs, struct method *m) {
 void loadatomics(struct heap_state *heap) {
   FILE *file=fopen("atomic","r");
   char buf[200];
+
   if (file==NULL)
     return;
   while(1) {
@@ -1404,4 +1447,68 @@ void loadatomics(struct heap_state *heap) {
     ptr=copystr(buf);
     genputtable(heap->atomicmethodtable, ptr, NULL);
   }
+}
+
+void loadstatechange(struct heap_state *heap) {
+  FILE *file=fopen("statechange","r");
+  char buf[200],tmp[200];
+  int counter=0;
+  if (file==NULL)
+    return;
+  while(1) {
+    char *ptr;
+    int position;
+    int flag=fscanf(file, "%s %d\n", buf, &position);
+    if (flag<=0)
+      break;
+    {
+      struct statechangeinfo *sci=(struct statechangeinfo *) calloc(1, sizeof(struct statechangeinfo));
+      sci->id=counter++;
+      sprintf(tmp, "%s %d", buf, position);
+      ptr=copystr(tmp);
+      genputtable(heap->statechangemethodtable, ptr, sci);
+      sprintf(tmp, "%s PARAM: %d", buf, position);
+      ptr=copystr(tmp);
+      puttable(heap->statechangereversetable, sci->id, ptr);
+    }
+  }
+  heap->statechangesize=counter;
+}
+
+int convertnumberingobjects(char *sig, int isStatic, int orignumber) {
+  int numobjects=0,i=0, c=0;
+
+
+
+  if (isStatic==0) {
+    numobjects++;
+    if (orignumber==0)
+      return c;
+    c++;
+  }
+
+  for(i=1;sig[i]!=0;i++) {
+    switch(sig[i]) {
+    case '[':
+      if (orignumber==numobjects)
+	return c;
+      numobjects++;
+      i++;
+      if (sig[i]=='L') 
+	for(;sig[i]!=';';i++);
+      break;
+    case 'L':
+      if (orignumber==numobjects)
+	return c;
+      numobjects++;
+      for(;sig[i]!=';';i++);
+      break;
+    case ')':
+      return c;
+    default:
+    }
+    c++;
+  }
+  printf("ERROR 2 in convertnumberingobjects\n");
+  return -1;
 }
