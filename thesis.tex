@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.88 1999-08-27 21:33:25 cananian Exp $
+% $Id: thesis.tex,v 1.89 1999-08-27 21:34:55 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.88 $ $}
+\date{\today \\ $ $Revision: 1.89 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.88 $ $}{$ $Revision: 1.88 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.89 $ $}{$ $Revision: 1.89 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -758,7 +758,7 @@ of figure~\ref{alg:SSIplace}.
 \caption{Placing \phisigfunction{s}.}\label{alg:SSIplace}
 \end{myalgorithm}
 
-\begin{lemma}\label{sese_child}
+\begin{lemma}\label{lem:sese_child}
 No \phifunction{s} (\sigfunction{s}) for a variable $v$ are needed in
 an SESE region not containing a definition (use) of $v$.
 \end{lemma}
@@ -793,7 +793,7 @@ The above lemma justifies our algorithm's skipping over any SESE
 region not containing a definition or use of $v$ when placing
 \phisigfunction{s} for $v$.
 
-\begin{lemma}\label{ssi_dom}
+\begin{lemma}\label{lem:ssi_dom}
 If a definition (use) or a \phisigfunction[or]{} for a variable $v$ is
 present at some node $D$ (\/$U$), then a \phifunction (\sigfunction) for
 $v$ is needed at every node $N$:
@@ -836,11 +836,11 @@ symmetric argument holds for post-dominance and \sigfunction{s}.
 \end{itemize}
 This proves that the conditions are necessary.  It is obvious from an
 examination of conditions \ref{crit_phiplace} and \ref{crit_sigplace}
-of the SSI form definition and lemma \ref{sese_child} that they are
+of the SSI form definition and lemma \ref{lem:sese_child} that they are
 sufficient.
 \end{proof}
 
-In practice, the conditions of lemma \ref{ssi_dom} are too expensive
+In practice, the conditions of lemma \ref{lem:ssi_dom} are too expensive
 to implement directly.  Instead, we use a conservative approximation
 to SSI form, which allows us to place more \phisigfunction{s} than
 minimal SSI requires, while satisfying the conditions of the SSI form
@@ -852,7 +852,7 @@ superset of the \phisigfunction{s} that pruned form requires.
 The algorithm in figure~\ref{alg:SSIplace} is conservatively correct.
 \end{theorem}
 \begin{proof}
-Lemma \ref{sese_child} states that the child region exclusion of
+Lemma \ref{lem:sese_child} states that the child region exclusion of
 algorithm~\ref{alg:SSIplace} does not cause required \phisigfunction[or]{s} to
 be omitted.  Lemma \ref{nothereyet} permits \code{MaybeLive} to
 return a conservative approximation of variable liveness without
@@ -860,7 +860,7 @@ causing \phisigfunction[or]{s} required in pruned form to be omitted.
 \end{proof}
 
 \fixme{It would be nice to be able to show a means of using the
-algorithm and the conditions in \ref{ssi_dom} to produce exactly
+algorithm and the conditions in \ref{lem:ssi_dom} to produce exactly
 minimal form or exactly pruned form.  It doesn't hurt our time bounds
 to do fixup later, though.}
 
