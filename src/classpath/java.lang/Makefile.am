@@ -8,6 +8,7 @@ noinst_LTLIBRARIES = libjavalang.la
 
 libjavalang_la_SOURCES = \
 	java_lang_Class.c java_lang_Class.h \
+	java_lang_Console.c java_lang_Console.h \
 	java_lang_Runtime.c java_lang_Runtime.h \
 	java_lang_Thread.c java_lang_Thread.h \
 	java_lang_Throwable.h \
@@ -18,6 +19,7 @@ libjavalang_la_SOURCES = \
 
 JAVASRC = \
 Class.java \
+Console.java \
 Runtime.java \
 Thread.java \
 Throwable.java \
