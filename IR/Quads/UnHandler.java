@@ -19,7 +19,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.18.2.2 1999-09-16 19:23:36 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.18.2.3 1999-09-17 19:34:23 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -413,7 +413,7 @@ final class UnHandler {
 	    // if retex==null, add the proper checks.
 	    if (q.retex()!=null) nq=head=(Quad)q.clone(qf, ss.ctm);
 	    else {
-		Temp Tex = ss.extra(0), Tnull = ss.extra(1), Tr = Tnull;
+		Temp Tex = ss.extra(0);
 		head = new CALL(qf, q, q.method(), Quad.map(ss.ctm,q.params()),
 				Quad.map(ss.ctm, q.retval()),
 				Tex, q.isVirtual(), new Temp[0]);
