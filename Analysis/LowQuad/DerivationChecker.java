@@ -9,7 +9,6 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
-import harpoon.IR.LowQuad.*;
 import harpoon.Temp.Temp;
 
 import java.util.Iterator;
@@ -19,7 +18,7 @@ import java.util.Iterator;
  * derivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationChecker.java,v 1.1.2.1 2001-06-29 18:08:37 cananian Exp $
+ * @version $Id: DerivationChecker.java,v 1.1.2.2 2001-06-29 18:16:59 cananian Exp $
  */
 public class DerivationChecker {
     
