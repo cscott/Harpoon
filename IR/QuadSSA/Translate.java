@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.47 1998-09-04 07:50:12 cananian Exp $
+ * @version $Id: Translate.java,v 1.48 1998-09-04 08:07:14 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -606,7 +606,6 @@ class Translate  { // not public.
 	    break;
 	case Op.DCMPG:
 	case Op.DCMPL:
-	case Op.LCMP:
 	    ns = s.pop(4).push(new Temp());
 	    q = new OPER(in, Op.toString(in.getOpcode())/*"dcmpg" or "dcmpl"*/,
 			 ns.stack[0], new Temp[] { s.stack[2], s.stack[0] });
@@ -728,11 +727,14 @@ class Translate  { // not public.
 	case Op.LDIV:
 	    {
 	    // settle 32/64 bit issues.
+	    String op;
 	    Temp val1, val2, res;
 	    if (in.getOpcode()==Op.IDIV) {
+		op = "icmpeq";
 		ns = s.pop(2).push(new Temp());
 		val1 = s.stack[1]; val2 = s.stack[0]; res = ns.stack[0];
 	    } else {
+		op = "lcmpeq";
 		ns = s.pop(4).push(null).push(new Temp());
 		val1 = s.stack[2]; val2 = s.stack[0]; res = ns.stack[0];
 	    }
@@ -741,7 +743,7 @@ class Translate  { // not public.
 	    HClass HCex = HClass.forClass(ArithmeticException.class);
 	    Temp Tex = new Temp();
 
-	    Quad q0 = new OPER(in, "icmpeq", new Temp(),
+	    Quad q0 = new OPER(in, op, new Temp(),
 			       new Temp[] { val2, Tzero } );
 	    Quad q1 = new CJMP(in, q0.def()[0]);
 	    Quad q2 = transNewException(HCex, Tex, Tnull, in, q1, 1);
@@ -908,6 +910,35 @@ class Translate  { // not public.
 	    last = q2; which_succ = 1;
 	    }
 	    break;
+	case Op.LCMP: // break this up into lcmpeq, lcmpgt, etc.
+	    { // optimization should work well on this.
+	    ns = s.pop(4).push(new Temp());
+	    Quad q0 = new OPER(in, "lcmpeq", new Temp(),
+			       new Temp[] { s.stack[2], s.stack[0] });
+	    Quad q1 = new CJMP(in, q0.def()[0]);
+	    Quad q2 = new OPER(in, "lcmpgt", new Temp(),
+			       new Temp[] { s.stack[2], s.stack[0] });
+	    Quad q3 = new CJMP(in, q0.def()[0]);
+	    Quad q4 = new CONST(in, new Temp(), new Integer(-1), HClass.Int);
+	    Quad q5 = new CONST(in, new Temp(), new Integer(1), HClass.Int);
+	    Quad q6 = new PHI(in,
+			      new Temp[] { ns.stack[0] },
+			      new Temp[][]{new Temp[]{ Tzero,
+						       q4.def()[0],
+						       q5.def()[0] } }, 3);
+	    // link.
+	    Quad.addEdge(q0, 0, q1, 0);
+	    Quad.addEdge(q1, 0, q2, 0);
+	    Quad.addEdge(q1, 1, q6, 0);
+	    Quad.addEdge(q2, 0, q3, 0);
+	    Quad.addEdge(q3, 0, q4, 0);
+	    Quad.addEdge(q3, 1, q5, 0);
+	    Quad.addEdge(q4, 0, q6, 1);
+	    Quad.addEdge(q5, 0, q6, 2);
+	    // setup next state.
+	    q = q0; last = q6;
+	    break;
+	    }
 	case Op.LDC:
 	case Op.LDC_W:
 	case Op.LDC2_W:
