@@ -25,7 +25,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.28 1999-11-12 18:13:38 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.29 1999-11-12 21:07:39 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -65,8 +65,12 @@ public class Jasmin {
 	    if (hfields[i].isConstant())
 		if (hfields[i].getType()==HClass.forName("java.lang.String"))
 		    value=" = "+'"'+Util.jasminEscape(hfields[i].getConstant().toString())+'"';
+		else if (hfields[i].getType()==HClass.Float)
+		    value=" = "+escapeFloat((Float)hfields[i].getConstant());
+		else if (hfields[i].getType()==HClass.Double)
+		    value=" = "+escapeDouble((Double)hfields[i].getConstant());
 		else
-		value=" = "+Util.jasminEscape(hfields[i].getConstant().toString());
+		    value=" = "+Util.jasminEscape(hfields[i].getConstant().toString());
 	    out.println(".field "+Modifier.toString(hfields[i].getModifiers())+" "+Util.jasminEscape(hfields[i].getName()) +" "+Util.jasminEscape(hfields[i].getDescriptor())+value);
 	}
 
@@ -287,13 +291,13 @@ public class Jasmin {
 		else if (q.type()==HClass.Double) {
 		    dup(i,q.value().length);
 		    out.println("    bipush "+(i+q.offset()));
-		    out.println("    ldc2_w "+q.value()[i].toString());
+		    out.println("    ldc2_w "+escapeDouble((Double)q.value()[i]));
 		    out.println("    dastore");
 		}
 		else if (q.type()==HClass.Float) {
 		    dup(i,q.value().length);
 		    out.println("    bipush "+(i+q.offset()));
-		    out.println("    ldc "+q.value()[i].toString());
+		    out.println("    ldc "+escapeFloat((Float)q.value()[i]));
 		    out.println("    fastore");
 		}
 	    }
@@ -539,8 +543,12 @@ public class Jasmin {
 		if (hclass==HClass.forName("java.lang.String"))
 		    out.println("    ldc "+'"'+Util.jasminEscape(q.value().toString())+'"');
 		else
-		    if ((hclass==HClass.Double)||(hclass==HClass.Long))
+		    if (hclass==HClass.Double)
+			out.println("    ldc2_w "+escapeDouble((Double)q.value()));
+		    else if (hclass==HClass.Long)
 			out.println("    ldc2_w "+q.value().toString());
+		    else if (hclass==HClass.Float)
+			out.println("    ldc "+escapeFloat((Float)q.value()));
 		    else
 			out.println("    ldc "+q.value().toString());
 	    }
@@ -1876,7 +1884,27 @@ public class Jasmin {
 		return 0;
 	}
     }
+    String escapeFloat(Float f) {
+	if (f.isNaN()||f.isInfinite()) {
+	    int i=Float.floatToIntBits(f.floatValue());
+	    String s=Integer.toHexString(i);
+	    while (s.length()!=8) 
+		s=new String("0"+s);
+	    return new String("0\\"+s);
+	}
+	else return f.toString();
+    }
 
+    String escapeDouble(Double f) {
+	if (f.isNaN()||f.isInfinite()) {
+	    long i=Double.doubleToLongBits(f.doubleValue());
+	    String s=Long.toHexString(i);
+	    while (s.length()!=16) 
+		s=new String("0"+s);
+	    return new String("1\\"+s);
+	}
+	else return f.toString();
+    }
 }
 
 
