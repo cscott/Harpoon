@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.17 1999-07-29 18:16:22 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.18 1999-07-29 20:52:59 cananian Exp $
  */
 public class Spec  {
 
@@ -737,6 +737,7 @@ public class Spec  {
 	public void visit(LeafId l) { visit((Leaf)l); }
 	public void visit(LeafOp l) { visit((Leaf)l); }
 	public void visit(LeafNumber l) { visit((Leaf)l); }
+	public void visit(LeafSegType l) { visit((Leaf)l); }
     }
 
     /** Abstract representation of leaves in the instruction pattern. */
@@ -790,6 +791,49 @@ public class Spec  {
 	public String toString() { return Integer.toString(op); }
 	public String toBop() { return harpoon.IR.Tree.Bop.toString(op); }
 	public String toUop() { return harpoon.IR.Tree.Uop.toString(op); }
+	/** Applies <code>v</code>'s <code>visit</code> method to
+	    <code>this</code>.
+	    This is effectively a gludge to emulate <B>multiple
+	    dispatch</B>.  Must be reimplemented by all subclasses of
+	    <code>Spec.Leaf</code>.
+	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
+	    @see <U>Design Patterns</U> pgs. 331-344
+	*/
+	public void accept(Spec.LeafVisitor v) { v.visit(this); }
+    }
+    /** Extension of <code>Spec.Leaf</code> which represents a
+	segment type in the specification.
+    */
+    public static class LeafSegType extends Leaf {
+	/* Enumerated segment type. */
+	public final int segtype;
+	/** Constructs a new <code>Spec.LeafSegType</code>.
+	    @param segtype Segment type.
+	*/
+	public LeafSegType(int segtype) {
+	    this.segtype = segtype;
+	}
+	public String toString() {
+	    switch (segtype) {
+	    case harpoon.IR.Tree.SEGMENT.CLASS:
+		return "CLASS";
+	    case harpoon.IR.Tree.SEGMENT.CODE:
+		return "CODE";
+	    case harpoon.IR.Tree.SEGMENT.GC:
+		return "GC";
+	    case harpoon.IR.Tree.SEGMENT.INIT_DATA:
+		return "INIT_DATA";
+	    case harpoon.IR.Tree.SEGMENT.STATIC_OBJECTS:
+		return "STATIC_OBJECTS";
+	    case harpoon.IR.Tree.SEGMENT.STATIC_PRIMITIVES:
+		return "STATIC_PRIMITIVES";
+	    case harpoon.IR.Tree.SEGMENT.TEXT:
+		return "TEXT";
+	    case harpoon.IR.Tree.SEGMENT.ZERO_DATA:
+		return "ZERO_DATA";
+	    default: throw new Error("Unknown segment type.");
+	    }
+	}
 	/** Applies <code>v</code>'s <code>visit</code> method to
 	    <code>this</code>.
 	    This is effectively a gludge to emulate <B>multiple

@@ -20,6 +20,7 @@ import harpoon.Tools.PatMat.Spec.Leaf;
 import harpoon.Tools.PatMat.Spec.LeafId;
 import harpoon.Tools.PatMat.Spec.LeafOp;
 import harpoon.Tools.PatMat.Spec.LeafNumber;
+import harpoon.Tools.PatMat.Spec.LeafSegType;
 import harpoon.Tools.PatMat.Spec.IdList;
 import harpoon.Tools.PatMat.Spec.Rule;
 import harpoon.Tools.PatMat.Spec.RuleExp;
@@ -44,7 +45,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.15 1999-07-29 18:16:19 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.16 1999-07-29 20:52:59 cananian Exp $
  */
 
 action code {:
@@ -108,7 +109,7 @@ non terminal Exp	exp;
 non terminal Stm	stm;
 non terminal TypeSet	types, opt_types;
 non terminal Integer	binops, unops;
-non terminal Leaf	sym_binops, sym_unops, sym_number;
+non terminal Leaf	sym_binops, sym_unops, sym_number, sym_segtype;
 non terminal Number	number;
 non terminal String     opt_start_with, opt_end_with;
 
@@ -213,10 +214,7 @@ stm	::=	CALL LPAREN exp:e1 COMMA exp:e2 COMMA exp:e3 COMMA ID:id RPAREN
 		{: RESULT = new StmNativeCall(e1, e2, e3, id); :}
 	|	RETURN opt_types:t LPAREN exp:e RPAREN
 		{: RESULT = new StmReturn(t, e); :}
-	/* FIXME: this should be sym_segtype below, with all the segment types
-	 * as enumerated constants, but duncan hasn't settled on names for
-	 * all the segment types yet.  Use ID for compatibility. */
-	|	SEGMENT LPAREN sym_number:n RPAREN
+	|	SEGMENT LPAREN sym_segtype:n RPAREN
 		{: RESULT = new StmSegment(n); :}
 	|	SEQ LPAREN stm:s1 COMMA stm:s2 RPAREN
 		{: RESULT = new StmSeq(s1, s2); :}
@@ -298,4 +296,26 @@ unops	::=	_2B	{: RESULT=new Integer(harpoon.IR.Tree.Uop._2B); :}
 	|	_2S	{: RESULT=new Integer(harpoon.IR.Tree.Uop._2S); :}
 	|	NEG	{: RESULT=new Integer(harpoon.IR.Tree.Uop.NEG); :}
 	|	NOT	{: RESULT=new Integer(harpoon.IR.Tree.Uop.NOT); :}
+	;
+
+sym_segtype ::=	ID:id
+		{: if (id.equals("CLASS"))
+		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.CLASS);
+		   else if (id.equals("CODE"))
+		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.CODE);
+		   else if (id.equals("GC"))
+		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.GC);
+		   else if (id.equals("INIT_DATA"))
+		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.INIT_DATA);
+		   else if (id.equals("STATIC_OBJECTS"))
+		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.STATIC_OBJECTS);
+		   else if (id.equals("STATIC_PRIMITIVES"))
+		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.STATIC_PRIMITIVES);
+		   else if (id.equals("TEXT"))
+		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.TEXT);
+		   else if (id.equals("ZERO_DATA"))
+		     RESULT=new LeafSegType(harpoon.IR.Tree.SEGMENT.ZERO_DATA);
+		   else
+		     RESULT=new LeafId(id);
+		:}
 	;
