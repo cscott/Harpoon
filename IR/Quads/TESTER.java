@@ -7,12 +7,14 @@ import harpoon.Util.WorkSet;
 import java.util.Iterator;
 import java.util.Set;
 /**
- * <code>TESTER</code>
+ * <code>TESTER</code> checks that a given <code>QuadWithTry</code> doesn't
+ * mention any quads in its <code>HANDLER</code>'s protectedSets which
+ * aren't reachable in the code.  For debugging purposes.
  * 
  * @author  root <root@BDEMSKY.MIT.EDU>
- * @version $Id: TESTER.java,v 1.1.2.1 2000-11-16 04:23:07 bdemsky Exp $
+ * @version $Id: TESTER.java,v 1.1.2.2 2000-11-16 04:58:01 cananian Exp $
  */
-public class TESTER {
+class TESTER {
     
     static void test(QuadWithTry qwt) {
 	HEADER h=(HEADER)qwt.getRootElement();
