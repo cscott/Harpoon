@@ -39,8 +39,12 @@ module rss
 
 
     typedef struct DataValueStruct {
+	long long timestamp;
+	long long halflife;
+	double credibility;
+	string units;
+	string provenance;
 	data_value value;
-	double      credibility;
     } DataValue; 
 
 

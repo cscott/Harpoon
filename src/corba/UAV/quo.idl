@@ -17,6 +17,9 @@
 
 module quo 
 {
+    exception NoSuchContract {
+	string name;
+    };
 
     typedef sequence<string> strings;
 
@@ -55,6 +58,34 @@ module quo
 
 
     /* ****************************************
+     * SysCond
+     */
+
+    // Generall System Condition interface
+    // All other system conditions must inherit 
+    // from this interface
+    interface SysCond {
+	boolean isReady();
+	string getName();
+    };
+
+    typedef sequence<SysCond> SysCondSeq;
+
+    typedef sequence<SysCondSeq> SysCondSeqSeq;
+
+
+    // Simple Contract meta-data
+    interface ContractRegion;
+    typedef sequence<ContractRegion> ContractRegionSeq;
+    
+    interface ContractRegion {
+	string getName();
+	long getChildCount();
+	ContractRegionSeq getChildren();
+    };
+
+
+    /* ****************************************
      * Contract
      */
 
@@ -72,22 +103,17 @@ module quo
 	long getTotalEvalCount();
 	long getRequestedEvalCount();
 	long getRegionHitCount (in RegionSeq region);
+	
+	string getName();
+	SysCondSeq getSysConds();
+	ContractRegion getRootRegion();
     };
 
-    /* ****************************************
-     * SysCond
-     */
 
-    // Generall System Condition interface
-    // All other system conditions must inherit 
-    // from this interface
-    interface SysCond {
-	boolean isReady();
-    };
 
-    typedef sequence<SysCond> SysCondSeq;
 
-    typedef sequence<SysCondSeq> SysCondSeqSeq;
+    // Specific syscond types
+
 
     // System condition that holds primitive values
     // and has read-only access
@@ -120,13 +146,17 @@ module quo
 	attribute float floatValue;
 	attribute double doubleValue;
 	attribute string stringValue;
+
+	void setNotificationThreshold(in double threshold);
+
     }; 
+
 
     interface ValueSCCallback : ValueSC, Callback {
     };
 
     interface DataSC : ValueSC {
-	// no operations (so far)
+	boolean setPath(in string path);
     };
 
     interface RSSListenerSC : ValueSC, rss::RSSListener {
@@ -183,6 +213,19 @@ module quo
       long getCounter();
     };
 
+    // A counter which can help its caller maintain the
+    // count at a certain level.
+
+    interface PacedCounterSC : SlidingWindowCounterSC {
+
+      // Find out how long, in milliseconds, the caller should
+      // wait before adding "count" to the counter to obtain a
+      // resulting count at or below "target" (though it may
+      // initially be higher.)
+
+      long getWaitTime(in double target, in double count);  
+    };
+
 
     /* ****************************************
      * QuoKernel
@@ -206,6 +249,10 @@ module quo
 			      in CallbackSeq cbSeq);
 
 
+	Contract getContract(in string contractName) raises (NoSuchContract);
+
+	strings getContractNames();
+
         Contract bindContractWithSequences(in string appId,
                                            in string typeStr,
                                            in SysCondSeq scSeq,
@@ -222,6 +269,8 @@ module quo
 			    in string implClass);
 
 	void newFrame();
+        void newFrameAt(in long left, in long top, 
+			in long width, in long height);
       
 	void makeDataScope(in rss::Scopes path);
 
