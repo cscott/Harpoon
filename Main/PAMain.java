@@ -80,7 +80,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.71 2000-07-13 13:47:37 cananian Exp $
+ * @version $Id: PAMain.java,v 1.1.2.72 2000-07-13 14:11:59 jwhaley Exp $
  */
 public abstract class PAMain {
 
@@ -122,6 +122,8 @@ public abstract class PAMain {
     private static boolean INST_SYNCOPS = false;
 
     private static boolean DUMP_JAVA = false;
+    
+    private static boolean COMPILE = false;
     
     // Load the preanalysis results from PRE_ANALYSIS_IN_FILE
     private static boolean LOAD_PRE_ANALYSIS = false;
@@ -236,6 +238,11 @@ public abstract class PAMain {
 	if(DUMP_JAVA)
 	    dump_java(get_classes(pa.getMetaCallGraph().getAllMetaMethods()));
 	
+	if(COMPILE) {
+	    SAMain.hcf = hcf;
+	    SAMain.className = params[optind];
+	    SAMain.do_it();
+	}
     }
     
     // Constructs some data structures used by the analysis: the code factory
@@ -443,6 +450,8 @@ public abstract class PAMain {
 	    new LongOpt("syncelim",  LongOpt.NO_ARGUMENT,       null, 21),
 	    new LongOpt("instsync",  LongOpt.NO_ARGUMENT,       null, 22),
 	    new LongOpt("dumpjava",  LongOpt.NO_ARGUMENT,       null, 23),
+	    new LongOpt("backend",   LongOpt.REQUIRED_ARGUMENT, null, 'b'),
+	    new LongOpt("output",    LongOpt.REQUIRED_ARGUMENT, null, 'o'),
 	};
 
 	Getopt g = new Getopt("PAMain", argv, "mscoa:i", longopts);
@@ -526,6 +535,23 @@ public abstract class PAMain {
 	    case 23:
 		DUMP_JAVA = true;
 		break;
+	    case 'o':
+		SAMain.ASSEM_DIR = new java.io.File(g.getOptarg());
+		harpoon.Util.Util.assert(SAMain.ASSEM_DIR.isDirectory(), ""+SAMain.ASSEM_DIR+" must be a directory");
+		break;
+	    case 'b': {
+		COMPILE = true;
+		String backendName = g.getOptarg().toLowerCase().intern();
+		if (backendName == "strongarm")
+		    SAMain.BACKEND = SAMain.STRONGARM_BACKEND;
+		if (backendName == "sparc")
+		    SAMain.BACKEND = SAMain.SPARC_BACKEND;
+		if (backendName == "mips")
+		    SAMain.BACKEND = SAMain.MIPS_BACKEND;
+		if (backendName == "precisec")
+		    SAMain.BACKEND = SAMain.PRECISEC_BACKEND;
+		break;
+	    }
 	    }
 
 	return g.getOptind();
@@ -1180,4 +1206,3 @@ public abstract class PAMain {
 	return System.currentTimeMillis();
     }
 }
-

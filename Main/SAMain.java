@@ -66,48 +66,48 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.85 2000-07-05 21:09:00 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.86 2000-07-13 14:11:59 jwhaley Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
-    protected static boolean PRINT_ORIG = false;
-    protected static boolean PRINT_DATA = false;
-    protected static boolean PRE_REG_ALLOC = false;
-    protected static boolean REG_ALLOC = false;
-    protected static boolean ABSTRACT_REG_ALLOC = false;
-    protected static boolean HACKED_REG_ALLOC = false;
-    protected static boolean LIVENESS_TEST = false;
-    protected static boolean OUTPUT_INFO = false;
-    protected static boolean QUIET = false;
-    protected static boolean OPTIMIZE = false;
-    protected static boolean LOOPOPTIMIZE = false;
+    static boolean PRINT_ORIG = false;
+    static boolean PRINT_DATA = false;
+    static boolean PRE_REG_ALLOC = false;
+    static boolean REG_ALLOC = false;
+    static boolean ABSTRACT_REG_ALLOC = false;
+    static boolean HACKED_REG_ALLOC = false;
+    static boolean LIVENESS_TEST = false;
+    static boolean OUTPUT_INFO = false;
+    static boolean QUIET = false;
+    static boolean OPTIMIZE = false;
+    static boolean LOOPOPTIMIZE = false;
 
-    protected static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
-    protected static HClass  singleClass = null; // for testing single classes
-    protected static final int STRONGARM_BACKEND = 0;
-    protected static final int MIPS_BACKEND = 1;
-    protected static final int SPARC_BACKEND = 2;
-    protected static final int PRECISEC_BACKEND = 3;
-    protected static int     BACKEND = STRONGARM_BACKEND;
+    static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
+    static HClass  singleClass = null; // for testing single classes
+    static final int STRONGARM_BACKEND = 0;
+    static final int MIPS_BACKEND = 1;
+    static final int SPARC_BACKEND = 2;
+    static final int PRECISEC_BACKEND = 3;
+    static int     BACKEND = STRONGARM_BACKEND;
     
-    protected static Linker linker = Loader.systemLinker;
+    static Linker linker = Loader.systemLinker;
 
-    protected static java.io.PrintWriter out = 
+    static java.io.PrintWriter out = 
 	new java.io.PrintWriter(System.out, true);
         
-    protected static String className;
-    protected static String classHierarchyFilename;
+    static String className;
+    static String classHierarchyFilename;
 
-    protected static String methodName;
+    static String methodName;
 
-    protected static ClassHierarchy classHierarchy;
-    protected static CallGraph callGraph;
-    protected static Frame frame;
+    static ClassHierarchy classHierarchy;
+    static CallGraph callGraph;
+    static Frame frame;
 
-    protected static File ASSEM_DIR = null;
-    protected static HCodeFactory hcf;
+    static File ASSEM_DIR = null;
+    static HCodeFactory hcf;
 
-    protected static Set joinset=null, startset=null;
+    static Set joinset=null, startset=null;
 
 
     public static void main(String[] args) {
@@ -118,6 +118,11 @@ public class SAMain extends harpoon.IR.Registration {
 
 	parseOpts(args);
 	Util.assert(className!= null, "must pass a class to be compiled");
+
+	do_it();
+    }
+
+    public static void do_it() {
 
 	if (SAMain.startset!=null)
 	    hcf=harpoon.IR.Quads.ThreadInliner.codeFactory(hcf,SAMain.startset, SAMain.joinset);
