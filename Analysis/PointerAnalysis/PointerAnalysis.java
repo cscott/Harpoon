@@ -62,6 +62,7 @@ import harpoon.Analysis.MetaMethods.MetaAllCallers;
 import harpoon.Util.LightBasicBlocks.LBBConverter;
 import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 import harpoon.Util.Graphs.SCComponent;
+import harpoon.Util.Graphs.Navigator;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 import harpoon.Util.UComp;
 
@@ -74,7 +75,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.10 2003-04-19 01:16:13 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.11 2003-05-06 15:22:30 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -222,6 +223,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	this.scc_lbb_factory = caching_scc_lbb_factory;
 	// OLD STUFF: new CachingSCCLBBFactory(lbbconv);
 	this.linker = linker;
+	this.nodes = new NodeRepository(linker); 
 	
 	InterProcPA.static_init(this);
 
@@ -416,14 +418,14 @@ public class PointerAnalysis implements java.io.Serializable {
     private PAWorkList  W_intra_proc = new PAWorkList();
 
     // Repository for node management.
-    NodeRepository nodes = new NodeRepository(); 
+    final NodeRepository nodes;
     public final NodeRepository getNodeRepository() { return nodes; }
 
 
     // Navigator for the mmethod SCC building phase. The code is complicated
     // by the fact that we are interested only in yet unexplored methods
     // (i.e. whose parallel interaction graphs are not yet in the cache).
-    class MM_Navigator implements SCComponent.Navigator, java.io.Serializable {
+    class MM_Navigator implements Navigator, java.io.Serializable {
 	public Object[] next(Object node){
 	    MetaMethod[] mms  = mcg.getCallees((MetaMethod) node);
 	    MetaMethod[] mms2 = get_new_mmethods(mms);
@@ -457,7 +459,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	}
     };
 
-    private SCComponent.Navigator mm_navigator = new MM_Navigator();
+    private Navigator mm_navigator = new MM_Navigator();
 
     
 
@@ -627,9 +629,6 @@ public class PointerAnalysis implements java.io.Serializable {
     private MetaMethod current_intra_mmethod = null;
     private ParIntGraph initial_pig = null;
 
-    // the set of the AGETs from arrays of non-primitive types.
-    // private Set good_agets = null;
-
     private void analyze_intra_proc(MetaMethod mm) {
 	analyze_intra_proc(mm, true);
     }
@@ -638,8 +637,8 @@ public class PointerAnalysis implements java.io.Serializable {
     // If clear_cache is true, the basic block -> dataflow info maps
     // are erased at the end of the intra_proc_analysis.
     private void analyze_intra_proc(MetaMethod mm, boolean clear_cache) {
-	if(DEBUG_INTRA)
-	    System.out.println("META METHOD: " + mm);
+	//if(DEBUG_INTRA)
+	    System.out.println("\nMETHOD: " + mm.getHMethod());
 
 	long b_time = System.currentTimeMillis();
 
@@ -677,7 +676,6 @@ public class PointerAnalysis implements java.io.Serializable {
 	// analyze_intra_proc
 	if(clear_cache)
 	    clear_lbb2pig(lbbf); // <- annotation style
-	// good_agets = null;
 
 	/*
 	System.out.println("\nAnalysis time: " + 
@@ -689,7 +687,6 @@ public class PointerAnalysis implements java.io.Serializable {
     // Intra-procedural analysis of a strongly connected component of
     // basic blocks.
     private void analyze_intra_proc_scc(SCComponent scc){
-
 	if(DEBUG2)
 	    System.out.println("\nSCC" + scc.getId());
 
@@ -802,17 +799,9 @@ public class PointerAnalysis implements java.io.Serializable {
 	
 	/** Load statement; special case - arrays. */
 	public void visit(AGET q) {
-	    /*
-	    if(DEBUG2){
-		System.out.println("AGET: " + q);
-		System.out.println("good_agets: " + good_agets);
-	    }
-	    */
-
 	    // AGET from an array of primitive objects (int, float, ...)
 	    if(q.type().isPrimitive()) {
-		//if(!good_agets.contains(q)){
-		if(DEBUG)
+		if(DEBUG2)
 		    System.out.println("NOT-PA RELEVANT AGET: " + 
 				       q.getSourceFile() + ":" + 
 				       q.getLineNumber() + " " + q);
@@ -930,7 +919,12 @@ public class PointerAnalysis implements java.io.Serializable {
 	}
 	
 	public void visit(CONST q) {
-	    // TODO
+	    // remove previous edges from q.dst()
+	    lbbpig.G.I.removeEdges(q.dst());
+	    // if we load a reference to a constant object, make
+	    // q.dst() to point to the corresponding node
+	    if(!q.type().isPrimitive())
+		lbbpig.G.I.addEdge(q.dst(), nodes.getConstNode(q.value()));
 	}
 
 	/** Return statement: r' = I(l) */
@@ -1087,17 +1081,6 @@ public class PointerAnalysis implements java.io.Serializable {
 	    boolean is_main = 
 		current_intra_mmethod.getHMethod().getName().equals("main");
 	    ParIntGraph shrinked_graph =lbbpig.keepTheEssential(nodes,is_main);
-
-	    // We try to correct some imprecisions in the analysis:
-	    //  1. if the meta-method is not returning an Object, clear
-	    // the return set of the shrinked_graph
-	    HMethod hm = current_intra_mmethod.getHMethod();
-	    if(hm.getReturnType().isPrimitive())
-		shrinked_graph.G.r.clear();
-	    //  2. if the meta-method doesn't throw any exception,
-	    // clear the exception set of the shrinked_graph.
-	    if(hm.getExceptionTypes().length == 0)
-		shrinked_graph.G.excp.clear();
 
 	    // The external view of the graph is stored in the
 	    // hash_proc_ext hashtable;
