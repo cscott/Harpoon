@@ -1,0 +1,11 @@
+
+                              RTJPerf
+
+              Copyright (C) 2001-2002 by Angelo Corsaro.
+                        <corsaro@ece.uci.edu>
+                         All Rights Reserved.
+
+
+This version of the timer from RTJPerf jTools was modified by
+Wes Beebee for use with the Harpoon FLEX Compiler.  For the 
+original version of the timer, please download RTJPerf.
