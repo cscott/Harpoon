@@ -190,7 +190,7 @@ List of options with their description:
 	-diffs -- Tells the server whether or not to diff the sources of the tasks with the sources of the same tasks from the last session. If set to "yes", the current sources and sources from the last session are diffed and the diffs are stored in archives/diffs.tar.gz (for more information see Section 2 -- FILES' FORMATS --> archive/diffs.tar.gz). If set to "no", then no diffs are generated. Default value is "yes".
 	-mail-results -- Tells the server whether to mail the results or no. If this option is set to "yes", then a short report will be sent to the list of users specified by -mail-to-all or -mailto-file parameters. If set to "no", then nobody is mailed anything. Default value is "yes".
 	-mail-to-all -- Tells the server where the mailing list is located. If this parameter is equal to "yes", the server reads the file "mailto-all"; if equal to "no", the server reads the file "mailto-selected". If you want to mail the results to a list located in a different file, use -mailto-file parameter. Default value is "yes".
-	-mailto-file -- Tells the server the name of the file that contains the list of the people to be mailed. If you want to use the file "mailto-all" or "mailto-selected", you can use -mail-to-all parameter instead of -maito-file. However, if you want to use other file names, you have to use this parameter. Default value is "mailto-all".
+	-mailto-file -- Tells the server the name of the file that contains the list of the people to be mailed. If you want to use the file "mailto-all" or "mailto-selected", you can use -mail-to-all parameter instead of -mailto-file. However, if you want to use other file names, you have to use this parameter. Default value is "mailto-all".
 
 
 ================================================================
@@ -201,3 +201,8 @@ List of options with their description:
 ====================
 5. A COUPLE OF TIPS
 ====================
+
+0. DON'T RUN SIMULTANEOUSLY 2 SERVERS THAT MAY USE THE SAME MACHINE AS A CLIENT.
+1. If you dont need to update your FLEX stuff, run the server with -update=no option. This might save you a considerable amount of time, especially if you run this server manually (not over night) and you are waiting for the results.
+2. Don't use the -conf-each-test=yes option, unless you really need different configurations for different tasks. Reconfiguring FLEX is again a much-time-consuming process.
+3. It is advisable, in general, to divide the task-set in smaller groups, according to the time it takes to run them, and for each group of tasks to allocate a different group of machines. This way, you will be able to reuse the machines that were running the shorter tasks before the whole task-set is run. Moreover, you will get emails with information for the shorter tasks before the whole task-set is finished running.
