@@ -1,5 +1,5 @@
 /*
- * $Header: /home/cananian/git-conversion/cvs/ImageRec/contrib/JacORB1_3_30/src/HTTPClient/MD5.java,v 1.1 2003-04-03 16:35:43 wbeebee Exp $
+ * $Header: /home/cananian/git-conversion/cvs/ImageRec/contrib/JacORB1_3_30/src/HTTPClient/MD5.java,v 1.2 2003-05-21 21:31:25 wbeebee Exp $
  *
  * MD5 in Java JDK Beta-2
  * written Santeri Paavolainen, Helsinki Finland 1996
@@ -34,7 +34,10 @@
  *
  *
  * $Log: MD5.java,v $
- * Revision 1.1  2003-04-03 16:35:43  wbeebee
+ * Revision 1.2  2003-05-21 21:31:25  wbeebee
+ * Updated to new location
+ *
+ * Revision 1.1  2003/04/03 16:35:43  wbeebee
  * Added JacORB as a contributed component so that imagerec doesn't have to track down a copy of JacORB on the system - and to simplify BBN integration
  *
  * Revision 1.1.1.1  2001/03/17 18:09:08  brose
