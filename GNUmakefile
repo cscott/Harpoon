@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.103 2004-02-08 07:20:33 cananian Exp $
+# $Id: GNUmakefile,v 1.104 2004-04-06 01:32:23 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -34,7 +34,7 @@ SSH=ssh
 MUNGE=bin/munge
 UNMUNGE=bin/unmunge
 FORTUNE=/usr/games/fortune
-INSTALLMACHINE=magic@flex-compiler.csail.mit.edu
+INSTALLMACHINE=magic@flex-master.csail.mit.edu
 INSTALLDIR=public_html/Harpoon/
 JDKDOCLINK = http://java.sun.com/j2se/1.5.0/docs/api
 #JDKDOCLINK = http://java.sun.com/products/jdk/1.2/docs/api
