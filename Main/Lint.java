@@ -26,7 +26,7 @@ import java.util.Iterator;
  * flagged as possibly incorrect.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Lint.java,v 1.1.2.1 1999-09-12 16:05:30 cananian Exp $
+ * @version $Id: Lint.java,v 1.1.2.2 1999-09-12 16:38:38 cananian Exp $
  */
 public abstract class Lint extends harpoon.IR.Registration {
     public static void main(String[] args) {
@@ -45,8 +45,10 @@ public abstract class Lint extends harpoon.IR.Registration {
 		HClass hc = HClass.forName((String)it.next());
 		System.err.println(" - " + hc);
 		HMethod[] hms = hc.getDeclaredMethods();
-		for (int j=0; j<hms.length; j++)
+		for (int j=0; j<hms.length; j++) {
 		    hcf.convert(hms[j]);
+		    hcf.clear(hms[j]); // free memory.
+		}
 	    }
 	}
     }
@@ -81,8 +83,9 @@ public abstract class Lint extends harpoon.IR.Registration {
 	public HCode convert(HMethod hm) {
 	    HCode c = hcf.convert(hm);
 	    if (c==null) return c;
-	    harpoon.Analysis.Maps.TypeMap tm =
+	    harpoon.Analysis.Quads.SCC.SCCAnalysis tm =
 		new harpoon.Analysis.Quads.SCC.SCCAnalysis(c);
+	    new harpoon.Analysis.Quads.SCC.SCCOptimize(tm).optimize(c);
 	    for (Iterator it=c.getElementsI(); it.hasNext(); ) {
 		harpoon.IR.Quads.Quad q = (harpoon.IR.Quads.Quad) it.next();
 		if (!(q instanceof harpoon.IR.Quads.OPER)) continue;
