@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.6 1999-06-11 16:22:50 cananian Exp $
+% $Id: comdef.sty,v 1.7 1999-06-11 23:08:00 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -17,6 +17,13 @@
 \newenvironment{myfigure}[1][tbp]
 	{\begin{figure}[#1]\linespread{1}\hrule\vspace{8pt}}
 	{\vspace{8pt}\hrule\end{figure}}
+
+% vertical centering
+\newlength{\vclength}\newsavebox{\vcbox}
+\newcommand{\vertcenter}[1]{%
+  \savebox{\vcbox}{#1}\settowidth{\vclength}{\usebox{\vcbox}}%
+  \parbox[c]{\vclength}{\usebox{\vcbox}}%
+}
 
 % environment for code examples
 \ifthenelse{\boolean{@compatibility}}{}{% don't define this in 2.09 mode.
