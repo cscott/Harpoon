@@ -20,6 +20,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 /**
@@ -27,7 +28,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.22 2000-03-24 23:41:26 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.23 2000-03-27 20:37:34 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -64,6 +65,9 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
     }
 
     public HCodeFactory nativeTreeCodeFactory(final HCodeFactory hcf) {
+	final HMethod HMobjAclone =
+	    frame.getLinker().forDescriptor("[Ljava/lang/Object;")
+	    .getMethod("clone", new HClass[0]);
 	Util.assert(hcf.getCodeName().endsWith("tree"));
 	return new HCodeFactory() {
 	    public String getCodeName() { return hcf.getCodeName(); }
@@ -71,11 +75,30 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    public HCode convert(HMethod m) {
 		HCode c = hcf.convert(m);
 		// substitute stub for native methods.
-		if (c==null && Modifier.isNative(m.getModifiers()))
-		    c = new StubCode(m, frame);
+		if (c==null && Modifier.isNative(m.getModifiers())) {
+		    // careful w/ array clone methods -- alias out all except
+		    // java.lang.Object[].clone(). UGLY.  but it works.
+		    if (isArrayCloneMethod(m)) {
+			if (m.equals(HMobjAclone)) {
+			    // collect all other array clone methods.
+			    Set all_acm = new HashSet(ch.callableMethods());
+			    for (Iterator it=all_acm.iterator(); it.hasNext();)
+				if (!isArrayCloneMethod((HMethod)it.next()))
+				    it.remove();
+			    all_acm.remove(HMobjAclone);
+			    HMethod[] acm = (HMethod[]) all_acm.toArray
+				(new HMethod[all_acm.size()]);
+			    c = new StubCode(m, frame, acm);
+			} else { /* skip non-Object[] array clone methods */ }
+		    } else c = new StubCode(m, frame);
+		}
 		return c;
 	    }
 	};
+    }
+    private static boolean isArrayCloneMethod(HMethod m) {
+	return m.getDeclaringClass().isArray() && m.getName().equals("clone")
+	    && m.getDescriptor().equals("()Ljava/lang/Object;");
     }
 
     /** Return a <code>Set</code> of <code>HMethod</code>s 
@@ -102,6 +125,10 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    HCthreadGroup.getMethod("uncaughtException", new HClass[] {
 		    HCthread, linker.forName("java.lang.Throwable")
 			}),
+	    // this is the actual implementation used for any array
+	    // clone method, so hack it into the hierarchy.
+	    linker.forDescriptor("[Ljava/lang/Object;")
+		.getMethod("clone", new HClass[0]),
 	    // jni implementation uses these:
 	    linker.forName("java.lang.NoClassDefFoundError")
 		.getConstructor(new HClass[] { HCstring }),
