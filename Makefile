@@ -190,6 +190,32 @@ groundATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
+groundManual.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
+	@rm -rf $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
+embeddedManual.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
+	@rm -rf $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
 RTJ.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
@@ -238,10 +264,15 @@ jars: clean doc
 	@date '+%-d-%b-%Y at %r %Z.' > ATR.jar.TIMESTAMP
 	@echo Generating embeddedATR.jar file...
 	@$(JAR) cfm embeddedATR.jar src/manifest/embeddedATR.jar.MF $(JDIRS)
+	@echo Generating embeddedManual.jar file...
+	@$(JAR) cfm embeddedManual.jar src/manifest/embeddedManual.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > embeddedATR.jar.TIMESTAMP
 	@echo Generating groundATR.jar file...
 	@$(JAR) cfm groundATR.jar src/manifest/groundATR.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > groundATR.jar.TIMESTAMP
+	@echo Generating groundManual.jar file...
+	@$(JAR) cfm groundManual.jar src/manifest/groundManual.jar.MF $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > groundManual.jar.TIMESTAMP
 	@echo Generating ns.jar file...
 	@$(JAR) cfm ns.jar src/manifest/ns.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > ns.jar.TIMESTAMP
