@@ -19,30 +19,30 @@ import java.util.Hashtable;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.1 1999-08-06 17:28:04 bdemsky Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.2 1999-08-09 22:19:10 duncan Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
     UseDefMap usedef;
     
     Hashtable map = new Hashtable();
-    Hashtable analyzed = new Hashtable();
+
+    protected TypeInfo() { } 
+    
+    /** Creates a <code>TypeInfo</code> analyzer. */
+    public TypeInfo(HCode hc, UseDefMap usedef) { 
+	this.usedef = usedef; 
+	analyze((harpoon.IR.Quads.QuadWithTry)hc);
+    }
 
     /** Creates a <code>TypeInfo</code> analyzer. */
-    public TypeInfo(UseDefMap usedef) { this.usedef = usedef; }
-    /** Creates a <code>TypeInfo</code> analyzer. */
-    public TypeInfo() { this(new UseDef()); }
+    public TypeInfo(HCode hc) { this(hc, new UseDef()); }
     
-    public HClass typeMap(HCode hc, Temp t) { 
-	analyze((harpoon.IR.Quads.QuadWithTry)hc);
+    public HClass typeMap(HCodeElement hc, Temp t) { 
 	return (HClass) map.get(t); 
     }
 
     void analyze(harpoon.IR.Quads.QuadWithTry hc) {
-	// don't do the same method more than once.
-	if (analyzed.containsKey(hc)) return;
-	analyzed.put(hc, hc);
-
 	Quad ql[] = (Quad[]) hc.getElements();
 	
 	Worklist worklist = new UniqueFIFO();
@@ -84,44 +84,44 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	public void visit(Quad q) { modified = false; }
 
 	public void visit(AGET q) {
-	    HClass ty = typeMap(hc, q.objectref());
+	    HClass ty = typeMap(q, q.objectref());
 	    if (ty==null) {modified=false; return; }
 	    Util.assert(ty.isArray());
-	    modified = merge(hc, q.dst(), toInternal(ty.getComponentType()));
+	    modified = merge(q, q.dst(), toInternal(ty.getComponentType()));
 	    return;
 	}
 	public void visit(ALENGTH q) {
-	    modified = merge(hc, q.dst(), HClass.Int);
+	    modified = merge(q, q.dst(), HClass.Int);
 	}
 	public void visit(ANEW q) {
-	    modified = merge(hc, q.dst(), q.hclass());
+	    modified = merge(q, q.dst(), q.hclass());
 	}
 	public void visit(CALL q) {
 	    modified = (q.retval()==null) ? false:
-		merge(hc, q.retval(), toInternal(q.method().getReturnType()));
+		merge(q, q.retval(), toInternal(q.method().getReturnType()));
 	    // XXX specify class of exception better.
-	    //boolean r2 = merge(hc,q.retex(),HClass.forClass(Throwable.class));
+	    //boolean r2 = merge(q,q.retex(),HClass.forClass(Throwable.class));
 	    //modified = r1 || r2;
 	}
 	public void visit(COMPONENTOF q) {
-	    modified = merge(hc, q.dst(), toInternal(HClass.Boolean));
+	    modified = merge(q, q.dst(), toInternal(HClass.Boolean));
 	}
 	public void visit(CONST q) {
-	    modified = merge(hc, q.dst(), toInternal(q.type()));
+	    modified = merge(q, q.dst(), toInternal(q.type()));
 	}
 	public void visit(GET q) {
-	    modified = merge(hc, q.dst(), toInternal(q.field().getType()));
+	    modified = merge(q, q.dst(), toInternal(q.field().getType()));
 	}
 
 	public void visit(HANDLER q) {
 	    if (q.caughtException()!=null)
-		modified = merge(hc, q.exceptionTemp(), q.caughtException());
+		modified = merge(q, q.exceptionTemp(), q.caughtException());
 	    else
-		modified = merge(hc, q.exceptionTemp(), HClass.forClass(Throwable.class));
+		modified = merge(q, q.exceptionTemp(), HClass.forClass(Throwable.class));
 	}
 
 	public void visit(INSTANCEOF q) {
-	    modified = merge(hc, q.dst(), toInternal(HClass.Boolean));
+	    modified = merge(q, q.dst(), toInternal(HClass.Boolean));
 	}
 	public void visit(METHOD q) {
 	    boolean r = false;
@@ -129,31 +129,31 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	    HClass[] pt = m.getParameterTypes();
 	    int offset = m.isStatic()?0:1;
 	    for (int i=offset; i<q.paramsLength(); i++)
-		if (merge(hc, q.params(i), toInternal(pt[i-offset]))) 
+		if (merge(q, q.params(i), toInternal(pt[i-offset]))) 
 		    r = true;
 	    if (!m.isStatic())
-		r = merge(hc, q.params(0), m.getDeclaringClass()) || r;
+		r = merge(q, q.params(0), m.getDeclaringClass()) || r;
 	    modified = r;
 	}
 	public void visit(MOVE q) {
-	    HClass ty = typeMap(hc, q.src());
+	    HClass ty = typeMap(q, q.src());
 	    if (ty==null) { modified = false; return; }
-	    modified = merge(hc, q.dst(), ty);
+	    modified = merge(q, q.dst(), ty);
 	}
 	public void visit(NEW q) {
-	    modified = merge(hc, q.dst(), q.hclass());
+	    modified = merge(q, q.dst(), q.hclass());
 	}
 	public void visit(OPER q) {
-	    modified = merge(hc, q.dst(), toInternal(q.evalType()));
+	    modified = merge(q, q.dst(), toInternal(q.evalType()));
 	}
 	public void visit(PHI q) {
 	    boolean r = false;
 	    for (int i=0; i<q.numPhis(); i++)
 		for (int j=0; j<q.arity(); j++) {
 		    if (q.src(i,j)==null) continue;
-		    HClass ty = typeMap(hc, q.src(i,j));
+		    HClass ty = typeMap(q, q.src(i,j));
 		    if (ty==null) continue;
-		    if (merge(hc, q.dst(i), ty))
+		    if (merge(q, q.dst(i), ty))
 			r = true;
 		}
 	    modified = r;
@@ -174,8 +174,8 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
     }
 
 
-    boolean merge(HCode hc, Temp t, HClass newType) {
-	HClass oldType = typeMap(hc, t);
+    boolean merge(HCodeElement hce, Temp t, HClass newType) {
+	HClass oldType = typeMap(hce, t);
 	if (oldType==null) { map.put(t, newType); return true; }
 	if (oldType==newType) return false;
 	// special case 'Void' HClass, which is used for null constants.

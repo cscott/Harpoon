@@ -22,7 +22,7 @@ import java.util.Iterator;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.1 1999-08-06 17:28:04 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.2 1999-08-09 22:19:10 duncan Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -132,7 +132,7 @@ public class Jasmin {
 	public void visit(AGET q) {
 	    String operand="***AGET error";
 
-	    HClass ty = tm.typeMap(hc, q.objectref());
+	    HClass ty = tm.typeMap(q, q.objectref());
 	    HClass tp=ty.getComponentType();
 	    if (tp==HClass.Boolean)
 		operand="baload";
@@ -178,7 +178,7 @@ public class Jasmin {
 	public void visit(ASET q) {
 	    out.println(iflabel(q));
 	    String operand="***ASET error";
-	    HClass ty = tm.typeMap(hc, q.objectref());
+	    HClass ty = tm.typeMap(q, q.objectref());
 	    HClass tp=ty.getComponentType();
 	    if (tp==HClass.Boolean)
 		operand="bastore";
@@ -408,7 +408,7 @@ public class Jasmin {
 	    out.println(iflabel(q));
 	    if (q.retval()!=null) {
 		String operand="Error";
-		HClass tp=tm.typeMap(hc,q.retval());
+		HClass tp=tm.typeMap(q,q.retval());
 		if ((tp==HClass.Boolean)||
 		(tp==HClass.Byte)||
 		(tp==HClass.Char)||
@@ -614,7 +614,8 @@ public class Jasmin {
 	}
 
 	private void store(Temp t) {
-	    HClass tp=tm.typeMap(hc,t);
+	    // Should be ok to pass null for HCodeElement param
+	    HClass tp=tm.typeMap(null,t); 
 	    String operand="***store error";
 	    if ((tp==HClass.Boolean)||
 		(tp==HClass.Byte)||
@@ -640,7 +641,8 @@ public class Jasmin {
 
 	private void load(Temp t) {
 	    String operand="***load error";
-	    HClass tp=tm.typeMap(hc,t);
+	    // Should be ok to pass null for HCodeElement param
+	    HClass tp=tm.typeMap(null,t);
 	    if ((tp==HClass.Boolean)||
 		(tp==HClass.Byte)||
 		(tp==HClass.Char)||
@@ -781,7 +783,8 @@ public class Jasmin {
 		    }
 		}
 		if (broken) {
-		    HClass hclass=tp.typeMap(code,next);
+		    // Should be ok to pass null as HCodeElement param
+		    HClass hclass=tp.typeMap(null,next);
 		    stacktemps.put(next,new TempInfo(j++));
 		    if ((hclass==HClass.Double)||(hclass==HClass.Long))
 			j++;
@@ -791,7 +794,8 @@ public class Jasmin {
 
 	for (int i=0;i<alltemp.length;i++) {
 	    if (!stacktemps.containsKey(alltemp[i])) {
-		HClass hclass=tp.typeMap(code,alltemp[i]);
+		// Should be ok to pass null as HCodeElement param
+		HClass hclass=tp.typeMap(null,alltemp[i]);
 		stacktemps.put(alltemp[i],new TempInfo(j++));
 		if ((hclass==HClass.Double)||(hclass==HClass.Long))
 		    j++;
