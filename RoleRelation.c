@@ -57,7 +57,11 @@ void addentry(struct hashtable *h, int origrole, int newrole) {
 struct intlist * remap(struct hashtable *h, int origrole) {
   struct intlist *retval=NULL;
   struct intlist *todo=NULL;
-  struct intlist *tmp=(struct intlist *) gettable(h,origrole);
+  struct intlist *tmp=NULL;
+  if (contains(h,origrole))
+    tmp=(struct intlist *) gettable(h,origrole);
+  else
+    return NULL;
 
   while(tmp!=NULL) {
     struct intlist *nl=(struct intlist *)calloc(1,sizeof(struct intlist));
@@ -71,7 +75,7 @@ struct intlist * remap(struct hashtable *h, int origrole) {
     struct intlist *todoold=todo;
     todo=todo->next;
     if (contains(h, todo->element)) {
-      struct intlist *tmp=(struct intlist *) gettable(h,origrole);
+      struct intlist *tmp=(struct intlist *) gettable(h,todo->element);
       while(tmp!=NULL) {
 	struct intlist *searchptr=todo;
 	while(searchptr!=NULL) {
@@ -167,7 +171,7 @@ void outputrolerelations(struct heap_state *heap) {
 	    int src=isrc->element;
 	    int dst=idst2->element;
 	    struct rolerelation trr={src,rr->field,dst};
-	    if (!gencontains(rrtable,&trr)) {
+	    if ((src!=dst||rr->srcrole==rr->dstrole)&&!gencontains(rrtable,&trr)) {
 	      struct rolerelation *nrr=(struct rolerelation *) calloc(1,sizeof(struct rolerelation));
 	      nrr->srcrole=src;
 	      nrr->dstrole=dst;
