@@ -46,7 +46,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.5 2003-04-19 01:03:55 salcianu Exp $
+ * @version $Id: ObjectBuilder.java,v 1.6 2003-10-21 02:11:02 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -139,8 +139,8 @@ public class ObjectBuilder
     protected Stm makeHeader(TreeFactory tf, Info info, boolean exported)
     {
 	List<Stm> stmlist = new ArrayList<Stm>(4);
-	// align to word boundary.
-	stmlist.add(new ALIGN(tf, null, 4));
+	// align to word boundary (double-word on 64-bit platforms)
+	stmlist.add(new ALIGN(tf, null, pointersAreLong ? 8 : 4));
 	// label:
 	stmlist.add(new LABEL(tf, null, info.label(), exported));
 	// claz pointer

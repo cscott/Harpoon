@@ -8,6 +8,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HDataElement;
 import harpoon.ClassFile.Linker;
 import harpoon.IR.Tree.ALIGN;
+import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.SEGMENT;
 import harpoon.IR.Tree.Stm;
 import harpoon.Temp.Label;
@@ -22,7 +23,7 @@ import java.util.Set;
  * unless the runtime configuration matches the flex configuration.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataConfigChecker.java,v 1.2 2002-02-25 21:02:20 cananian Exp $
+ * @version $Id: DataConfigChecker.java,v 1.3 2003-10-21 02:11:02 cananian Exp $
  */
 public class DataConfigChecker extends Data {
     
@@ -53,6 +54,9 @@ public class DataConfigChecker extends Data {
 	for (Iterator it=frame.getRuntime().configurationSet.iterator();
 	     it.hasNext(); )
 	    stmlist.add(_DATUM(new Label((String)it.next())));
+
+	// make sure there's something for the labels to point to.
+	stmlist.add(_DATUM(new CONST(tf, null, 0)));
 
 	// done!  fold statement list into nested SEQs and return.
 	return (HDataElement) Stm.toStm(stmlist);

@@ -23,7 +23,7 @@ import java.util.List;
  * this java program.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataJavaMain.java,v 1.2 2002-02-25 21:02:20 cananian Exp $
+ * @version $Id: DataJavaMain.java,v 1.3 2003-10-21 02:11:02 cananian Exp $
  */
 public class DataJavaMain extends Data {
     final NameMap m_nm;
@@ -34,12 +34,12 @@ public class DataJavaMain extends Data {
 	this.m_nm = f.getRuntime().getNameMap();
 	// only build one of these; wait until hc is java.lang.Object.
 	this.root = (hc==linker.forName("java.lang.Object")) ?
-	    build(main) : null;
+	    build(main, f.pointersAreLong()) : null;
     }
-    private HDataElement build(HMethod main) {
+    private HDataElement build(HMethod main, boolean pointersAreLong) {
 	List stmlist = new ArrayList(4);
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.TEXT));
-	stmlist.add(new ALIGN(tf, null, 4)); // word align.
+	stmlist.add(new ALIGN(tf, null, pointersAreLong ? 8 : 4));// word align
 	stmlist.add(new LABEL(tf, null, new Label(m_nm.c_function_name
 						  ("FNI_javamain")), true));
 	stmlist.add(_DATUM(m_nm.label(main.getDeclaringClass(), "namestr")));

@@ -34,7 +34,7 @@ import java.util.Map;
  * of an instantiated object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClazTable.java,v 1.2 2002-04-10 03:03:43 cananian Exp $
+ * @version $Id: DataClazTable.java,v 1.3 2003-10-21 02:11:18 cananian Exp $
  */
 public class DataClazTable extends Data {
     final NameMap m_nm;
@@ -46,13 +46,14 @@ public class DataClazTable extends Data {
 	this.m_nm = f.getRuntime().getNameMap();
 	// only build one of these; wait until hc is java.lang.Object.
 	this.root = (hc==f.getLinker().forName("java.lang.Object")) ?
-	    build(cn,ch) : null;
+	    build(cn, ch, f.pointersAreLong()) : null;
     }
-    private HDataElement build(final ClazNumbering cn, ClassHierarchy ch) {
+    private HDataElement build(final ClazNumbering cn, ClassHierarchy ch,
+			       boolean pointersAreLong) {
 	List<Stm> stmlist = new ArrayList<Stm>
 	    (ch.instantiatedClasses().size()+3);
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.TEXT));
-	stmlist.add(new ALIGN(tf, null, 4)); // word-align.
+	stmlist.add(new ALIGN(tf, null, pointersAreLong?8:4));// pointer-align.
 	stmlist.add(new LABEL(tf, null, new Label(m_nm.c_function_name
 						  ("FNI_claz_table")),true));
 	// make a list of all instantiated classes.

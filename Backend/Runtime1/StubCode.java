@@ -17,7 +17,6 @@ import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Tree;
 import harpoon.IR.Tree.TreeDerivation;
 import harpoon.IR.Tree.Type;
-import harpoon.IR.Tree.ALIGN;
 import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.CONST;
@@ -51,7 +50,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.2 2002-02-25 21:02:20 cananian Exp $
+ * @version $Id: StubCode.java,v 1.3 2003-10-21 02:11:02 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;

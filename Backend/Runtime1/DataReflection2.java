@@ -40,7 +40,7 @@ import java.util.List;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.4 2003-10-21 00:41:08 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.5 2003-10-21 02:11:02 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
@@ -57,10 +57,11 @@ public class DataReflection2 extends Data {
     }
     private HDataElement build(HClass hc, ClassHierarchy ch) {
 	List members = sortedMembers(hc);
+	int ptrsz = pointersAreLong ? 8 : 4;
 
 	List stmlist = new ArrayList(6+7*members.size()/* at least*/);
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.REFLECTION_DATA));
-	stmlist.add(new ALIGN(tf, null, 4)); // align table to word boundary
+	stmlist.add(new ALIGN(tf, null, ptrsz));// align table to word boundary
 	stmlist.add(new LABEL(tf, null, m_nm.label(hc, "classinfo"), true));
 	// first field: a claz structure pointer.
 	stmlist.add(_DATUM(m_nm.label(hc)));
@@ -115,7 +116,7 @@ public class DataReflection2 extends Data {
 	    stmlist.add(emitUtf8String(hm.getDescriptor()));
 	}
 	// pad out to full word after last string bit.
-	stmlist.add(new ALIGN(tf, null, 4));
+	stmlist.add(new ALIGN(tf, null, ptrsz));
 	// done, yay, whee.
 	return (HDataElement) Stm.toStm(stmlist);
     }

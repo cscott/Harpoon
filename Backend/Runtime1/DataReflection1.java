@@ -46,7 +46,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection1.java,v 1.4 2003-07-04 03:41:54 cananian Exp $
+ * @version $Id: DataReflection1.java,v 1.5 2003-10-21 02:11:02 cananian Exp $
  */
 public class DataReflection1 extends Data {
     final NameMap m_nm;
@@ -126,7 +126,7 @@ public class DataReflection1 extends Data {
 	Label ls, le;
 	List stmlist = new ArrayList(3+2*sorted.size());
 	// make a sorted table mapping class objects to class info structures.
-	stmlist.add(new ALIGN(tf, null, 4)); // align table to word boundary
+	stmlist.add(new ALIGN(tf, null, 8)); // align table to double-word boundary
 	stmlist.add(new LABEL(tf, null,
 			      ls = new Label(m_nm.c_function_name
 					     ("class2info_start")), true));

@@ -30,7 +30,7 @@ import java.util.Set;
  * <code>DataStaticFields</code> lays out the static fields of a class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataStaticFields.java,v 1.4 2002-04-10 03:03:20 cananian Exp $
+ * @version $Id: DataStaticFields.java,v 1.5 2003-10-21 02:11:02 cananian Exp $
  */
 public class DataStaticFields extends Data {
     final NameMap m_nm;
@@ -46,9 +46,9 @@ public class DataStaticFields extends Data {
 	// violation of abstraction, but it makes everything more
 	// maintainable *not* to duplicate the code here.
 	this.m_fm = ((TreeBuilder)f.getRuntime().getTreeBuilder()).cfm;
-	this.root = build(hc);
+	this.root = build(hc, f.pointersAreLong());
     }
-    private HDataElement build(HClass hc) {
+    private HDataElement build(HClass hc, boolean pointersAreLong) {
 	HField[] fields = (HField[]) hc.getDeclaredFields().clone();
 	// first, sort fields by size to pack 'em in as tight as we can.
 	Collections.sort(Arrays.asList(fields), new Comparator() {
@@ -59,7 +59,8 @@ public class DataStaticFields extends Data {
 	List stmlist = new ArrayList(2+3*fields.length/*at most*/);
 	// first do static fields with non-primitive type
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.STATIC_OBJECTS));
-	stmlist.add(new ALIGN(tf, null, 4)); // align fields to word boundary
+	stmlist.add(new ALIGN(tf, null, // align pointer fields to pointer size
+			      pointersAreLong ? 8 : 4));
 	for (int i=0; i<fields.length; i++) {
 	    if (!fields[i].isStatic() || fields[i].getType().isPrimitive())
 		continue;

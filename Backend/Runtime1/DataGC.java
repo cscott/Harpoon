@@ -40,13 +40,14 @@ import java.util.TreeSet;
  * <code>DataGC</code> outputs the tables needed by the garbage collector.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: DataGC.java,v 1.4 2002-04-10 03:03:20 cananian Exp $
+ * @version $Id: DataGC.java,v 1.5 2003-10-21 02:11:02 cananian Exp $
  */
 public class DataGC extends Data {
     final GCInfo m_gc;
     final NameMap m_nm;
     final TreeBuilder m_tb;
     final int numRegs;
+    final boolean pointersAreLong;
     
     // number of bits in a 32-bit int
     final int INT_BITS = 32;
@@ -61,6 +62,7 @@ public class DataGC extends Data {
 	this.m_nm = f.getRuntime().getNameMap();
 	this.m_tb = (TreeBuilder) f.getRuntime().getTreeBuilder();
 	this.numRegs = f.getRegFileInfo().maxRegIndex();
+	this.pointersAreLong = f.pointersAreLong();
 	this.root = build();
     }
 
@@ -74,7 +76,7 @@ public class DataGC extends Data {
 	// switch to the GC segment
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.GC));
 	// align on word-boundary
-	stmlist.add(new ALIGN(tf, null, 4));
+	stmlist.add(new ALIGN(tf, null, pointersAreLong ? 8 : 4));
 	for (Iterator it=methods.iterator(); it.hasNext(); ) {
 	    Stm output = outputGCData((HMethod)it.next());
 	    if (output != null)
@@ -142,7 +144,7 @@ public class DataGC extends Data {
 	    // add data entry to GC segment
 	    stmlist.add(new SEGMENT(tf, null, SEGMENT.GC));
 	    // align on word boundary
-	    stmlist.add(new ALIGN(tf, null, 4));
+	    stmlist.add(new ALIGN(tf, null, pointersAreLong ? 8 : 4));
 	    // label GC data
 	    stmlist.add(new LABEL(tf, null, m_nm.label(hm, "gcp_index_"+i), 
 				  true));

@@ -31,7 +31,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.2 2002-04-10 03:03:43 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.3 2003-10-21 02:11:18 cananian Exp $
  */
 public class ObjectBuilder extends harpoon.Backend.Runtime1.ObjectBuilder {
     Runtime runtime;
@@ -49,7 +49,7 @@ public class ObjectBuilder extends harpoon.Backend.Runtime1.ObjectBuilder {
     {
 	List stmlist = new ArrayList(4);
 	// align to word boundary.
-	stmlist.add(new ALIGN(tf, null, 4));
+	stmlist.add(new ALIGN(tf, null, pointersAreLong ? 8 : 4));
 	// label:
 	stmlist.add(new LABEL(tf, null, info.label(), exported));
 	// claz *index* XXX this is the unique part for RuntimeTiny.

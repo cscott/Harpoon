@@ -52,7 +52,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflectionMemberList.java,v 1.4 2003-10-21 00:41:08 cananian Exp $
+ * @version $Id: DataReflectionMemberList.java,v 1.5 2003-10-21 02:11:02 cananian Exp $
  */
 public class DataReflectionMemberList extends Data {
     final NameMap m_nm;
@@ -106,7 +106,8 @@ public class DataReflectionMemberList extends Data {
 	String member = membersAreMethods ? "method" : "field";
 	List stmlist = new ArrayList(3+2*ordered.size());
 	// make a ordered table mapping Field objects to field info structures.
-	stmlist.add(new ALIGN(tf, null, 4)); // align table to word boundary
+	stmlist.add(new ALIGN(tf, null, // align table to pointer size
+			      pointersAreLong ? 8 : 4));
 	stmlist.add(new LABEL(tf, null,
 			      new Label(m_nm.c_function_name
 					(member+"2info_start")), true));
