@@ -52,7 +52,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.7 2000-06-27 23:14:25 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.8 2000-06-28 20:06:46 cananian Exp $
  */
 public class TreeToC {
     
@@ -190,6 +190,14 @@ public class TreeToC {
 	    last_line = curr_line;
 	}
 	private void trans(Tree e) { updateLine(e); e.accept(this); }
+	private static int sizeof(Typed t) {
+	    if (t instanceof PreciselyTyped) {
+		PreciselyTyped pt = (PreciselyTyped) t;
+		if (pt.isSmall())
+		    return (pt.bitwidth()+7) / 8;
+	    }
+	    return t.isDoubleWord() ? 8 : 4;
+	}
 	private static String ctype(Typed t) {
 	    String result;
 	    if (t instanceof PreciselyTyped) {
@@ -292,6 +300,16 @@ public class TreeToC {
 	    pw.print(e.value==null?"NULL":e.value.toString());
 	}
 	public void visit(DATUM e) {
+	    struct_size += sizeof(e.getData());
+	    // alignment constraints mean we ought to start a new struct.
+	    // so does exceeding a struct size of 32 bytes (this is a
+	    // very odd gcc oddity, where too-large structs are aligned
+	    // to a 32-byte boundary).  Also if we haven't entered the
+	    // data mode via a label yet, we should make up a label and do so.
+	    if (current_mode==NONE || struct_size >= 32 || this.align!=null) {
+		startData(new Label(), false);
+		struct_size += sizeof(e.getData());
+	    }
 	    // we ought to handle mode==CODE case, but I don't feel like
 	    // thinking hard today.
 	    Util.assert(current_mode==DATA);
@@ -322,23 +340,24 @@ public class TreeToC {
 	public void visit(LABEL e) {
 	    if (!e.exported) local_labels.add(e.label);
 	    if (current_mode==CODE) pw.println(label(e.label)+":");
-	    else {
-		switchto(DATA);
-		pwa[DD].println("struct "+label(e.label)+" {");
-		pwa[DI].print("} ");
-		// XXX: GCC ignores the following attribute, though
-		// we'd like to have it!
-		pwa[DI].print("__attribute__ ((packed)) ");
-		pwa[DI].print(label(e.label));
-		if (this.align!=null)
-		    pwa[DI].print(" __attribute__ ((aligned (" +
-				  this.align.alignment + ")))");
-		this.align=null; // clear alignment.
-		if (segment!=null)
-		    pwa[DI].print(" __attribute__ ((section (\"" +
-				  sectionname(this.segment) +"\")))");
-		pwa[DI].println(" = {");
-	    }
+	    else startData(e.label, e.exported);
+	}
+	private int struct_size;
+	public void startData(Label l, boolean exported) {
+	    switchto(DATA);
+	    struct_size = 0;
+	    if (!exported) pwa[DD].print("static ");
+	    pwa[DD].println("struct "+label(l)+" {");
+	    pwa[DI].print("} __attribute__ ((packed)) ");
+	    pwa[DI].print(label(l));
+	    if (this.align!=null)
+		pwa[DI].print(" __attribute__ ((aligned (" +
+			      this.align.alignment + ")))");
+	    this.align=null; // clear alignment.
+	    if (segment!=null)
+		pwa[DI].print(" __attribute__ ((section (\"" +
+			      sectionname(this.segment) +"\")))");
+	    pwa[DI].println(" = {");
 	}
 	public void visit(MEM e) {
 	    Exp exp = e.getExp();
