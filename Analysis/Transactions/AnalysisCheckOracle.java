@@ -4,16 +4,22 @@
 package harpoon.Analysis.Transactions;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Util.Collections.*;
+import harpoon.Temp.Temp;
+import harpoon.Util.Collections.AggregateSetFactory;
+import harpoon.Util.Collections.SetFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * An <code>AnalysisCheckOracle</code> is used when one wants to
  * do some analysis and store the results of the check oracle.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AnalysisCheckOracle.java,v 1.1.2.3 2001-01-26 21:37:49 cananian Exp $
+ * @version $Id: AnalysisCheckOracle.java,v 1.1.2.4 2001-01-26 22:31:25 cananian Exp $
  */
 abstract class AnalysisCheckOracle extends CheckOracle {
     final Map results = new HashMap();
@@ -59,6 +65,24 @@ abstract class AnalysisCheckOracle extends CheckOracle {
 	    this.writeVersions.addAll(cs.writeVersions);
 	    this.fields.addAll(cs.fields);
 	    this.elements.addAll(cs.elements);
+	}
+	/** Remove all checks which mention <code>Temp</code>s contained
+	 *  in the given <code>Collection</code>. */
+	void removeAll(Collection temps) {
+	    for (Iterator it=readVersions.iterator(); it.hasNext(); )
+		if (temps.contains((Temp)it.next()))
+		    it.remove();
+	    for (Iterator it=writeVersions.iterator(); it.hasNext(); )
+		if (temps.contains((Temp)it.next()))
+		    it.remove();
+	    for (Iterator it=fields.iterator(); it.hasNext(); )
+		if (temps.contains(((RefAndField)it.next()).objref))
+		    it.remove();
+	    for (Iterator it=elements.iterator(); it.hasNext(); ) {
+		RefAndIndexAndType rit=(RefAndIndexAndType) it.next();
+		if (temps.contains(rit.objref) || temps.contains(rit.index))
+		    it.remove();
+	    }
 	}
 	void removeAll(CheckSet cs) {
 	    this.readVersions.removeAll(cs.readVersions);

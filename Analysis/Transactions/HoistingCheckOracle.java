@@ -31,7 +31,7 @@ import java.util.Set;
  * process is repeated until no checks can be moved higher.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HoistingCheckOracle.java,v 1.1.2.4 2001-01-26 21:37:49 cananian Exp $
+ * @version $Id: HoistingCheckOracle.java,v 1.1.2.5 2001-01-26 22:31:25 cananian Exp $
  */
 class HoistingCheckOracle extends AnalysisCheckOracle {
     /** Creates a <code>HoistingCheckOracle</code> for the given
@@ -60,48 +60,24 @@ class HoistingCheckOracle extends AnalysisCheckOracle {
 	    checks.addAll(hoister((HCodeElement)it.next(),co,udr,dt,pdt,true));
 	/** optimize: write versions are read versions */
 	checks.readVersions.removeAll(checks.writeVersions);
+	/** copy set of all checks. */
+	CheckSet nohoist = new CheckSet(checks);
 
 	/* can't hoist anything unless this==pidom(idom(this)) */
 	canHoist = canHoist && (hce == pdt.idom(dt.idom(hce)));
 	/* never hoist above a MONITORENTER */
 	canHoist = canHoist && !(dt.idom(hce) instanceof MONITORENTER);
-	
-	/** checks which we can't hoist we leave here. */
-	CheckSet nohoist = new CheckSet();
+	/* okay, remove all if !canHoist */
+	if (!canHoist) checks.clear();
 	
 	/* fetch the set of temps defined in our idom */
 	Collection idomDef = (dt.idom(hce)==null) ? Collections.EMPTY_SET :
-	/* read and write versions can't be hoisted above def. */
 	    udr.defC(dt.idom(hce)); /* defs in idom of this */
-	for (Iterator it=checks.readVersions.iterator(); it.hasNext(); ) {
-	    Temp t = (Temp) it.next(); // read version for t.
-	    if (!canHoist || idomDef.contains(t)) {
-		it.remove(); nohoist.readVersions.add(t);
-	    }
-	}
-	for (Iterator it=checks.writeVersions.iterator(); it.hasNext(); ) {
-	    Temp t = (Temp) it.next(); // write version for t.
-	    if (!canHoist || idomDef.contains(t)) {
-		it.remove(); nohoist.writeVersions.add(t);
-	    }
-	}
-	/* field checks can't be hoisted above the objref def */
-	for (Iterator it=checks.fields.iterator(); it.hasNext(); ) {
-	    RefAndField raf = (RefAndField) it.next(); // field check.
-	    if (!canHoist || idomDef.contains(raf.objref)) {
-		it.remove(); nohoist.fields.add(raf);
-	    }
-	}
-	/* element checks can't be hoisted above either the objref or
-	 * index def */
-	for (Iterator it=checks.elements.iterator(); it.hasNext(); ) {
-	    RefAndIndexAndType rit=(RefAndIndexAndType) it.next(); // el check.
-	    if (!canHoist ||
-		idomDef.contains(rit.objref) || idomDef.contains(rit.index)) {
-		it.remove(); nohoist.elements.add(rit);
-	    }
-	}
-	/* unhoisted checks stay here */
+	/* checks for a temp can't be hoisted above def */
+	checks.removeAll(idomDef);
+
+	/** leave checks here which we can't hoist. */
+	nohoist.removeAll(checks);
 	results.put(hce, nohoist);
 
 	/** give all of the rest of the checks to the idom */
