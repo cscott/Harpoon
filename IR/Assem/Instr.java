@@ -15,32 +15,53 @@ import harpoon.Temp.Temp;
  * the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.2 1999-02-09 05:45:33 andyb Exp $
+ * @version $Id: Instr.java,v 1.1.2.3 1999-02-16 21:13:44 andyb Exp $
  */
 public abstract class Instr implements HCodeElement, UseDef {
-    private String assem;
+    protected String assem;
+    protected Temp[] dst;
+    protected Temp[] src;
 
-    public Temp[] use() { return null; }
+    protected InstrFactory inf;
+    protected String source_file;
+    protected int source_line;
+    protected int id;
 
-    public Temp[] def() { return null; }
-
-    /** Returns a list of <code>Instr</code>s which are possible targets of
-     *  jumps from the current instruction */
-    public abstract Instr[] jumps();
-
-    public String getSourcefile() { return null; }
-
-    public int getLineNumber() { return 0; }
-
-    public int getID() { return 0; }
+    /** Creates an <code>Instr</code> consisting of the String 
+     *  assem and the lists of destinations and sources in dst and src. */
+    Instr(InstrFactory inf, HCodeElement source, 
+          String assem, Temp[] dst, Temp[] src) {
+        this.source_file = (source != null)?source.getSourceFile():"unknown";
+        this.source_line = (source != null)?source.getLineNumber():0;
+        this.id = inf.getUniqueID();
+        this.inf = inf;
+        this.assem = assem; this.dst = dst; this.src = src;
+    }
    
     /** Returns the assembly-level instruction as a String, with
      *  <code>Temp</code>s represented either by their temp name or
      *  (if the register allocator has been run), by their register. */
-    public abstract String format(TempMap tm);
-
+    public String format(TempMap tm) {
+        /* XXX - needs to be done. */
+        return null;
+    }
+    
+    /** Defines an array factory which can be used to generate
+     *  arrays of <code>Instr</code>s. */
     public static final ArrayFactory arrayFactory =
         new ArrayFactory() {
             public Object[] newArray(int len) { return new Instr[len]; }
         };
+
+    /* Definitions for the HCodeElement and UseDef interfaces. */
+
+    public Temp[] use() { return src; }
+
+    public Temp[] def() { return dst; }
+
+    public String getSourcefile() { return source_file; }
+
+    public int getLineNumber() { return source_line; }
+
+    public int getID() { return id; }
 }
