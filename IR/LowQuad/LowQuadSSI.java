@@ -12,6 +12,7 @@ import harpoon.Analysis.Maps.TypeMap.TypeNotKnownException;
 import harpoon.Backend.Maps.FinalMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
@@ -30,7 +31,7 @@ import java.util.Map;
  * representation in SSI form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSI.java,v 1.1.2.9 2000-07-20 21:22:36 pnkfelix Exp $
+ * @version $Id: LowQuadSSI.java,v 1.1.2.10 2000-10-06 21:20:26 cananian Exp $
  */
 public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
     /** The name of this code view. */
@@ -91,10 +92,8 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
      * quad graph.
      * <p><b>WARNING: does not preserve derivation or allocation info.</b>
      */
-    public HCode clone(HMethod newMethod) {
-	LowQuadSSI lqs = new LowQuadSSI(newMethod, null);
-	lqs.quads      = Quad.clone(lqs.qf, quads);
-	return lqs;
+    public HCodeAndMaps clone(HMethod newMethod) {
+	return cloneHelper(new LowQuadSSI(newMethod, null));
     }
 
     /**

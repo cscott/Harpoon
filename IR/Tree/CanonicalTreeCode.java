@@ -7,6 +7,7 @@ import harpoon.Analysis.Tree.Canonicalize;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
@@ -25,7 +26,7 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.1.2.25 2000-02-16 06:27:56 cananian Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.1.2.26 2000-10-06 21:20:43 cananian Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
@@ -70,13 +71,11 @@ public class CanonicalTreeCode extends Code {
      * Clone this code representation. The clone has its own
      * copy of the tree structure. 
      */
-    public Code clone(HMethod newMethod, Frame frame) {
+    public HCodeAndMaps clone(HMethod newMethod, Frame frame) {
 	DerivationGenerator dg =
 	    (getTreeDerivation()==null) ? null : new DerivationGenerator();
 	CanonicalTreeCode tc = new CanonicalTreeCode(newMethod,null,frame,dg);
-	tc.tree = Tree.clone(tc.tf, tree, (dg==null) ? null :
-			     dg.cloneCallback(getTreeDerivation()));
-	return tc;
+	return cloneHelper(tc, dg);
     }
 
     /**

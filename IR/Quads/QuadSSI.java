@@ -7,6 +7,7 @@ import harpoon.Analysis.AllocationInformationMap;
 import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Quads.DeadCode;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.Temp.TempMap;
@@ -25,7 +26,7 @@ import java.util.Map;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.1.2.10 2000-05-13 20:10:45 cananian Exp $
+ * @version $Id: QuadSSI.java,v 1.1.2.11 2000-10-06 21:20:33 cananian Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -56,10 +57,8 @@ public class QuadSSI extends Code /* which extends HCode */ {
 
     /** Clone this code representation. The clone has its own
      *  copy of the quad graph. */
-    public HCode clone(HMethod newMethod) {
-	QuadSSI qs = new QuadSSI(newMethod, null);
-	qs.quads = Quad.clone(qs.qf, quads);
-	return qs;
+    public HCodeAndMaps clone(HMethod newMethod) {
+	return cloneHelper(new QuadSSI(newMethod, null));
     }
 
     /**

@@ -37,7 +37,7 @@ import java.util.Set;
  * analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCodeElimination.java,v 1.1.2.5 2000-03-26 06:28:47 jwhaley Exp $
+ * @version $Id: DeadCodeElimination.java,v 1.1.2.6 2000-10-06 21:19:20 cananian Exp $
  */
 public abstract class DeadCodeElimination extends Simplification {
     // hide constructor
@@ -54,7 +54,7 @@ public abstract class DeadCodeElimination extends Simplification {
 		if (hc!=null) {
 		    harpoon.IR.Tree.Code code = (harpoon.IR.Tree.Code) hc;
 		    // clone code...
-		    code = (harpoon.IR.Tree.Code) code.clone(m);
+		    code = (harpoon.IR.Tree.Code) code.clone(m).hcode();
 		    DerivationGenerator dg = null;
 		    try {
 			dg = (DerivationGenerator) code.getTreeDerivation();

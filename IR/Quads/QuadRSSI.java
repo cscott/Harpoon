@@ -5,6 +5,7 @@ package harpoon.IR.Quads;
 
 import harpoon.Analysis.Quads.DeadCode;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
@@ -23,7 +24,7 @@ import harpoon.Util.Util;
  * leading to/coming from the <code>PHI</code>/<code>SIGMA</code> nodes.
  * 
  * @author  Brian Demsky
- * @version $Id: QuadRSSI.java,v 1.1.2.2 2000-02-25 17:32:06 cananian Exp $
+ * @version $Id: QuadRSSI.java,v 1.1.2.3 2000-10-06 21:20:33 cananian Exp $
  */
 public class QuadRSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -41,10 +42,8 @@ public class QuadRSSI extends Code /* which extends HCode */ {
 
     /** Clone this code representation. The clone has its own
      *  copy of the quad graph. */
-    public HCode clone(HMethod newMethod) {
-	QuadRSSI qs = new QuadRSSI(newMethod, null);
-	qs.quads = Quad.clone(qs.qf, quads);
-	return qs;
+    public HCodeAndMaps clone(HMethod newMethod) {
+	return cloneHelper(new QuadRSSI(newMethod, null));
     }
 
     /**

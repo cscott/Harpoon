@@ -27,7 +27,7 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for MIPS assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.7 2000-10-03 21:11:44 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.8 2000-10-06 21:19:40 cananian Exp $
  */
 class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "mips";
@@ -50,12 +50,6 @@ class Code extends harpoon.Backend.Generic.Code {
 
     public String getName() { return codename; }
 
-    /** @exception CloneNotSupportedException <code>clone()</code> is not
-     *             implemented. */
-    public HCode clone(HMethod m) throws CloneNotSupportedException {
-	throw new CloneNotSupportedException(this.toString());
-    }
-    
     /**
      * Returns a code factory for <code>Code</code>, given a 
      * code factory for <code>CanonicalTreeCode</code>.

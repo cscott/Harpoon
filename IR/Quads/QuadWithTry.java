@@ -5,6 +5,7 @@ package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
@@ -21,7 +22,7 @@ import java.util.Map;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.22 2000-01-13 23:48:03 cananian Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.23 2000-10-06 21:20:33 cananian Exp $
  * @see QuadNoSSA
  * @see QuadSSI
  */
@@ -68,10 +69,8 @@ public class QuadWithTry extends Code /* which extends HCode */ {
     }
     /** Clone this code representation.  The clone has its own copy of
      *  the quad graph. */
-    public HCode clone(HMethod newMethod) {
-	QuadWithTry qwt = new QuadWithTry(newMethod, null);
-	qwt.quads = Quad.clone(qwt.qf, quads);
-	return qwt;
+    public HCodeAndMaps clone(HMethod newMethod) {
+	return cloneHelper(new QuadWithTry(newMethod, null));
     }
     /**
      * Return the name of this code view.

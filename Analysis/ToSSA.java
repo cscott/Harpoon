@@ -32,7 +32,7 @@ import harpoon.IR.LowQuad.PCALL;
  * Converts SSI to SSA.  Should work on LowQuads and Quads. 
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ToSSA.java,v 1.1.2.10 2000-05-31 22:41:04 cananian Exp $
+ * @version $Id: ToSSA.java,v 1.1.2.11 2000-10-06 21:18:14 cananian Exp $
  */
 
 public final class ToSSA {
@@ -50,7 +50,7 @@ public final class ToSSA {
 	    public HCode convert(HMethod m) {
 		HCode hc = parent.convert(m);
 		try {
-		hc = hc.clone(m);
+		hc = hc.clone(m).hcode();
 		} catch (CloneNotSupportedException e) {
 		    System.out.println("Error:  clone not supported on class handed to ToSSA");
 		}

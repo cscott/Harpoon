@@ -33,7 +33,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.13 2000-07-27 22:19:59 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.14 2000-10-06 21:20:10 cananian Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -88,15 +88,7 @@ public abstract class Code extends HCode {
 	this.inf = newINF(parent);
 	this.frame = frame;
     }
-    /**
-     * Clone this <code>HCode</code>, possibly moving it to a different method.
-     * Throws <code>CloneNotSupportedException</code> if not overridden.
-     * @exception CloneNotSupportedException if it is not possible to clone
-     *            this <code>HCode</code>.
-     */
-    public HCode clone(HMethod newMethod) throws CloneNotSupportedException {
-	throw new CloneNotSupportedException();
-    }
+
     public HMethod getMethod() { return parent; }
     public HCodeElement getRootElement() { return instrs; }
     public HCodeElement[] getLeafElements() { return null; }

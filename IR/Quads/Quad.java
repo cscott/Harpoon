@@ -24,7 +24,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.37 2000-07-18 19:09:44 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.38 2000-10-06 21:20:33 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -317,6 +317,31 @@ public abstract class Quad
 	Map quadMap = Collections.unmodifiableMap(qm);
 	TempMap tempMap = ctm.unmodifiable();
 	return new Object[] { quadMap, tempMap };
+    }
+
+    public static Map cloneUnified(QuadFactory qf, Quad header)
+    {
+	Util.assert(header instanceof HEADER, 
+		    "Argument to Quad.clone() should be a HEADER.");
+	Map qm = new HashMap();
+	CloningTempMap ctm = new CloningTempMap(header.qf.tempFactory(),
+						qf.tempFactory());
+	copyone(qf, header, qm, ctm);
+	// add all mappings to one map.
+	Map result = new HashMap();
+	for (Iterator it=qm.entrySet().iterator(); it.hasNext(); ) {
+	    Map.Entry me = (Map.Entry) it.next();
+	    Quad qO = (Quad) me.getKey();
+	    Quad qN = (Quad) me.getValue();
+	    result.put(qO, qN); result.put(qN, qO);
+	}
+	for (Iterator it=ctm.asMap().entrySet().iterator(); it.hasNext(); ) {
+	    Map.Entry me = (Map.Entry) it.next();
+	    Temp tO = (Temp) me.getKey();
+	    Temp tN = (Temp) me.getValue();
+	    result.put(tO, tN); result.put(tN, tO);
+	}
+	return Collections.unmodifiableMap(result);
     }
     private static Quad copyone(QuadFactory qf, Quad q, Map old2new,
 				CloningTempMap ctm)

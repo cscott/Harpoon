@@ -63,7 +63,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.63 2000-05-18 17:38:23 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.64 2000-10-06 21:18:47 cananian Exp $
  */
 public class AsyncCode {
 
@@ -507,7 +507,8 @@ public class AsyncCode {
 		    HMethod nhm=continuationClass
 			.getDeclaredMethod(hmethods[i].getName(),
 					   hmethods[i].getDescriptor());
-		    HCode hchc = ((Code)ucf.convert(hmethods[i])).clone(nhm);
+		    HCode hchc = ((Code)ucf.convert(hmethods[i])).clone(nhm)
+			.hcode();
 		    (new ChangingVisitor(template,continuationClass))
 			.reName((Quad)hchc.getRootElement());
 		    ucf.put(nhm, hchc);

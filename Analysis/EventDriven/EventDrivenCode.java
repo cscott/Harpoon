@@ -5,6 +5,7 @@ package harpoon.Analysis.EventDriven;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.Linker;
@@ -23,7 +24,7 @@ import harpoon.Temp.TempFactory;
  * <code>EventDrivenCode</code>
  *
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDrivenCode.java,v 1.1.2.10 2000-03-19 20:55:56 bdemsky Exp $
+ * @version $Id: EventDrivenCode.java,v 1.1.2.11 2000-10-06 21:18:47 cananian Exp $
  */
 public class EventDrivenCode extends harpoon.IR.Quads.QuadSSI {
     /** Creates a <code>EventDrivenCode</code>. */
@@ -40,10 +41,8 @@ public class EventDrivenCode extends harpoon.IR.Quads.QuadSSI {
     /** Clone this code representation.  The clone has its own copy of
      *  the quad graph. 
      */
-    public HCode clone(HMethod newMethod) {
-	EventDrivenCode edc = new EventDrivenCode(newMethod);
-	edc.quads = Quad.clone(edc.qf, this.quads);
-	return edc;
+    public HCodeAndMaps clone(HMethod newMethod) {
+	return cloneHelper(new EventDrivenCode(newMethod));
     }
 
     /**

@@ -41,7 +41,7 @@ import harpoon.ClassFile.HCodeElement;
  * facilities for specifying number of recursive inlinings.
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.3 2000-06-07 23:08:44 salcianu Exp $ */
+ * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.4 2000-10-06 21:19:07 cananian Exp $ */
 public class MethodInliningCodeFactory implements HCodeFactory {
 
     static PrintWriter pw = new PrintWriter(System.out);
@@ -104,7 +104,7 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	
 	// The below was added in response to Scott's request that the
 	// HCode be cloned prior to being fuddled with by the Inliner
-	newCode = (QuadSSI) newCode.clone( m );
+	newCode = (QuadSSI) newCode.clone( m ).hcode();
 
 	Quad[] ql = (Quad[]) newCode.getElements();
 	QuadVisitor qv;

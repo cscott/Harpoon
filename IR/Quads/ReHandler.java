@@ -36,7 +36,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.45 2000-04-14 04:06:24 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.46 2000-10-06 21:20:33 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -45,7 +45,7 @@ final class ReHandler {
 
     public static QuadMapPair rehandler(final QuadFactory qf, final QuadSSI code) {
 	//clone the original
-	QuadSSI ncode=(QuadSSI)code.clone(code.getMethod());
+	QuadSSI ncode=(QuadSSI)code.clone(code.getMethod()).hcode();
 	//make it SSA & return TypeMap
 	TypeMap ti=buildSSAMap(ncode);	
 

@@ -6,6 +6,7 @@ package harpoon.IR.Tree;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
@@ -22,7 +23,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.20 2000-02-15 19:02:05 cananian Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.21 2000-10-06 21:20:44 cananian Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = CanonicalTreeCode.codename;
@@ -68,13 +69,11 @@ public class OptimizedTreeCode extends Code {
      * Clone this code representation. The clone has its own
      * copy of the tree structure. 
      */
-    public Code clone(HMethod newMethod, Frame frame) {
+    public HCodeAndMaps clone(HMethod newMethod, Frame frame) {
 	DerivationGenerator dg =
 	    (getTreeDerivation()==null) ? null : new DerivationGenerator();
 	OptimizedTreeCode tc = new OptimizedTreeCode(newMethod,null,frame,dg);
-	tc.tree = Tree.clone(tc.tf, this.tree, (dg==null) ? null :
-			     dg.cloneCallback(getTreeDerivation()));
-	return tc;
+	return cloneHelper(tc, dg);
     }
 
     /**

@@ -5,6 +5,7 @@ package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
@@ -14,6 +15,7 @@ import harpoon.IR.RawClass.AttributeCode;
 import harpoon.IR.RawClass.AttributeLineNumberTable;
 import harpoon.IR.RawClass.LineNumberTable;
 import harpoon.IR.RawClass.Constant;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 import harpoon.Util.ArrayFactory;
 
@@ -23,13 +25,14 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 /**
  * <code>Bytecode.Code</code> is a code view that exposes the
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9.2.13 2000-03-29 06:43:37 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.14 2000-10-06 21:20:15 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -48,8 +51,16 @@ public class Code extends HCode {
   }
   /** Clone this code representation.  The clone has its own copy of the
    *  bytecode graph. */
-  public HCode clone(HMethod newMethod) {
-    return new Code(newMethod, methodinfo);
+  public HCodeAndMaps clone(HMethod newMethod) {
+    final HCode cloned = new Code(newMethod, methodinfo);
+    return new HCodeAndMaps() {
+      public HCode hcode() { return cloned; }
+      public HCode ancestorHCode() { return Code.this; }
+      public Map elementMap() { return null; }
+      public Map ancestorElementMap() { return null; }
+      public TempMap tempMap() { return null; }
+      public TempMap ancestorTempMap() { return null; }
+    };
   }
 
   /**

@@ -19,7 +19,7 @@ import java.util.*;
  * to effect the specialization.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.2 2000-10-05 21:32:47 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.3 2000-10-06 21:19:14 cananian Exp $
  */
 public class MethodSplitter {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -87,8 +87,8 @@ public class MethodSplitter {
     }
     /** Override this method to effect transformations on split
      *  methods. */
-    protected HCode mutateHCode(HCode input, Token which) {
-	return input;
+    protected HCode mutateHCode(HCodeAndMaps input, Token which) {
+	return input.hcode();
     }
 
     /** Check the validity of a given <code>MethodSplitter.Token</code>.

@@ -5,6 +5,7 @@ package harpoon.IR.LowQuad;
 
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
@@ -20,7 +21,7 @@ import harpoon.IR.Quads.ToNoSSA;
  * always be empty.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.27 2000-05-17 03:19:30 cananian Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.28 2000-10-06 21:20:25 cananian Exp $
  */
 public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
     /** The name of this code view. */
@@ -50,10 +51,8 @@ public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
      * Clone this code representation.  The clone has its own copy of the
      * quad graph.
      */
-    public HCode  clone(HMethod newMethod) {
-	LowQuadNoSSA lqns = new LowQuadNoSSA(newMethod, null);
-	lqns.quads        = Quad.clone(lqns.qf, quads);
-	return lqns;
+    public HCodeAndMaps clone(HMethod newMethod) {
+	return cloneHelper(new LowQuadNoSSA(newMethod, null));
     }
 
     /**

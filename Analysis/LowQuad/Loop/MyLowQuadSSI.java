@@ -6,6 +6,7 @@ package harpoon.Analysis.LowQuad.Loop;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.LowQuad.Code;
@@ -23,7 +24,7 @@ import java.util.Iterator;
  * <code>MyLowQuadSSI</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadSSI.java,v 1.1.2.10 2000-05-17 03:19:52 cananian Exp $
+ * @version $Id: MyLowQuadSSI.java,v 1.1.2.11 2000-10-06 21:18:57 cananian Exp $
  */
 
 public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI
@@ -115,16 +116,14 @@ public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI
 	}
     }
 
-    public HCode clone(HMethod newMethod) {
+    public HCodeAndMaps clone(HMethod newMethod) {
 	MyLowQuadSSI lqs=new MyLowQuadSSI(newMethod, null);
-	lqs.quads=Quad.clone(lqs.qf, quads);
+	HCodeAndMaps hcam = cloneHelper(lqs);
 	lqs.parentDerivation=this.getDerivation();
-	Object[] Maps=Quad.cloneMaps(lqs.qf, (Quad)this.getRootElement());
-	lqs.quadmap=(Map)Maps[0];
-	lqs.tempMap=(TempMap)Maps[1];
-	lqs.quads=(Quad) lqs.quadmap.get(this.getRootElement());
+	lqs.quadmap = hcam.elementMap();
+	lqs.tempMap = hcam.tempMap();
 	lqs.buildmaps(this);
-	return lqs;
+	return hcam;
     }
 
     public String getName() {

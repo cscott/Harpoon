@@ -5,6 +5,7 @@ package harpoon.IR.LowQuad;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
@@ -16,7 +17,7 @@ import harpoon.IR.Quads.QuadSSI;
  * representation in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.28 2000-06-01 00:16:13 cananian Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.29 2000-10-06 21:20:26 cananian Exp $
  */
 public class LowQuadSSA extends Code /*which extends harpoon.IR.Quads.Code*/ {
     /** The name of this code view. */
@@ -47,10 +48,8 @@ public class LowQuadSSA extends Code /*which extends harpoon.IR.Quads.Code*/ {
      * quad graph.
      * <p><b>WARNING: does not preserve derivation or allocation info.</b>
      */
-    public HCode clone(HMethod newMethod) {
-	LowQuadSSA lqs = new LowQuadSSA(newMethod, null);
-	lqs.quads      = Quad.clone(lqs.qf, quads);
-	return lqs;
+    public HCodeAndMaps clone(HMethod newMethod) {
+	return cloneHelper(new LowQuadSSA(newMethod, null));
     }
 
     /**

@@ -23,7 +23,7 @@ import java.util.Set;
  * <code>Code</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.8 2000-03-31 10:13:23 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.9 2000-10-06 21:19:30 cananian Exp $
  */
 public class Code extends harpoon.IR.Assem.Code {
     DerivationGenerator dg;
@@ -57,7 +57,6 @@ public class Code extends harpoon.IR.Assem.Code {
 	return Collections.unmodifiableSet(s);
     }
 
-    public HCode clone(HMethod newMethod) {throw new Error("not supported.");}
     public String getName() { return "hacked-regalloc"; }
     public String getRegisterName(Instr i, Temp val, String suffix) {
 	if (val instanceof TwoWordTemp) {

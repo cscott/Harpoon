@@ -9,6 +9,7 @@ import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Properties.CFGrapher; 
@@ -18,9 +19,11 @@ import harpoon.Util.Util;
 import harpoon.Temp.LabelList;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
+import harpoon.Temp.TempMap;
 import harpoon.Util.UnmodifiableIterator;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,7 +39,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.50 2000-07-25 03:14:46 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.51 2000-10-06 21:20:43 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The Tree Objects composing this code view. */
@@ -85,10 +88,45 @@ public abstract class Code extends HCode {
   
     /** Clone this code representation. The clone has its own copy
      *  of the Tree */
-    public abstract Code clone(HMethod newMethod, Frame frame);
+    public abstract HCodeAndMaps clone(HMethod newMethod, Frame frame);
+    /** Helps to create a proper <code>HCodeAndMaps</code> during cloning */
+    protected final HCodeAndMaps cloneHelper(final Code tc, 
+					     final DerivationGenerator dg) {
+	final Tree.CloneCallback ccb =
+	    (dg==null) ? null : dg.cloneCallback(getTreeDerivation());
+	final Map o2nTree = new HashMap(), n2oTree = new HashMap();
+	final Map o2nTemp = new HashMap(), n2oTemp = new HashMap();
+	tc.tree = Tree.clone(tc.tf, tree, new Tree.CloneCallback() {
+	    public Tree callback(Tree o, Tree n, TempMap tm) {
+		if (ccb!=null) n = ccb.callback(o, n, tm);
+		o2nTree.put(o, n); n2oTree.put(n, o);
+		if (n instanceof TEMP) {
+		    Temp oT = ((TEMP)o).temp, nT = ((TEMP)n).temp;
+		    o2nTemp.put(oT, nT); n2oTemp.put(nT, oT);
+		}
+		return n;
+	    }
+	});
+	final Map o2nTreeIM = Collections.unmodifiableMap(o2nTree);
+	final Map n2oTreeIM = Collections.unmodifiableMap(n2oTree);
+	final TempMap o2nTempIM = new TempMap() {
+	    public Temp tempMap(Temp t) { return (Temp) o2nTemp.get(t); }
+	};
+	final TempMap n2oTempIM = new TempMap() {
+	    public Temp tempMap(Temp t) { return (Temp) n2oTemp.get(t); }
+	};
+	return new HCodeAndMaps() {
+	    public HCode hcode() { return tc; }
+	    public Map elementMap() { return o2nTreeIM; }
+	    public TempMap tempMap() { return o2nTempIM; }
+	    public HCode ancestorHCode() { return Code.this; }
+	    public Map ancestorElementMap() { return n2oTreeIM; }
+	    public TempMap ancestorTempMap() { return n2oTempIM; }
+	};
+    }
     /** Clone this code representation. The clone has its own copy
      *  of the Tree */
-    public final HCode clone(HMethod newMethod) {
+    public final HCodeAndMaps clone(HMethod newMethod) {
 	return clone(newMethod, frame);
     }
 

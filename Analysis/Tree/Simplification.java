@@ -39,7 +39,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Simplification.java,v 1.1.2.8 2000-03-26 06:28:47 jwhaley Exp $
+ * @version $Id: Simplification.java,v 1.1.2.9 2000-10-06 21:19:24 cananian Exp $
  */
 public abstract class Simplification { 
     private static final boolean debug = false;
@@ -59,7 +59,7 @@ public abstract class Simplification {
 		if (hc!=null) {
 		    harpoon.IR.Tree.Code code = (harpoon.IR.Tree.Code) hc;
 		    // clone code...
-		    code = (harpoon.IR.Tree.Code) code.clone(m);
+		    code = (harpoon.IR.Tree.Code) code.clone(m).hcode();
 		    DerivationGenerator dg = null;
 		    try {
 			dg = (DerivationGenerator) code.getTreeDerivation();

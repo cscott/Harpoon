@@ -6,9 +6,11 @@ package harpoon.IR.Quads;
 import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.UnmodifiableIterator;
@@ -16,6 +18,7 @@ import harpoon.Util.Util;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Stack;
@@ -26,7 +29,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.17 2000-07-15 19:33:17 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.18 2000-10-06 21:20:32 cananian Exp $
  */
 public abstract class Code extends HCode implements java.io.Serializable {
     /** The method that this code view represents. */
@@ -60,7 +63,24 @@ public abstract class Code extends HCode implements java.io.Serializable {
     
     /** Clone this code representation. The clone has its own
      *  copy of the quad graph. */
-    public abstract HCode clone(HMethod newMethod);
+    public abstract HCodeAndMaps clone(HMethod newMethod);
+    /** Helper for clone */
+    protected final HCodeAndMaps cloneHelper(final Code qc) {
+	final Map m = Quad.cloneUnified(qc.qf, this.quads);
+	final TempMap tm = new TempMap() {
+	    public Temp tempMap(Temp t) { return (Temp) m.get(t); }
+	};
+	qc.quads = (HEADER) m.get(quads);
+	return new HCodeAndMaps() {
+	    public HCode hcode() { return qc; }
+	    public Map elementMap() { return m; }
+	    public TempMap tempMap() { return tm; }
+	    public HCode ancestorHCode() { return Code.this; }
+	    public Map ancestorElementMap() { return m; }
+	    public TempMap ancestorTempMap() { return tm; }
+	};
+    }
+	
     /**
      * Return the name of this code view.
      */

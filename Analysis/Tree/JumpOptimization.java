@@ -35,7 +35,7 @@ import java.util.List;
  * and redundant labels.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JumpOptimization.java,v 1.1.2.4 2000-08-14 20:51:55 cananian Exp $
+ * @version $Id: JumpOptimization.java,v 1.1.2.5 2000-10-06 21:19:23 cananian Exp $
  */
 public abstract class JumpOptimization extends Simplification {
     // hide constructor
@@ -52,7 +52,7 @@ public abstract class JumpOptimization extends Simplification {
 		if (hc!=null) {
 		    harpoon.IR.Tree.Code code = (harpoon.IR.Tree.Code) hc;
 		    // clone code...
-		    code = (harpoon.IR.Tree.Code) code.clone(m);
+		    code = (harpoon.IR.Tree.Code) code.clone(m).hcode();
 		    DerivationGenerator dg = null;
 		    try {
 			dg = (DerivationGenerator) code.getTreeDerivation();

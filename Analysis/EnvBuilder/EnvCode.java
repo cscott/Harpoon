@@ -4,6 +4,7 @@
 package harpoon.Analysis.EnvBuilder;
 
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HClass;
@@ -26,7 +27,7 @@ import harpoon.Util.Util;
  * <code>EnvCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvCode.java,v 1.1.2.6 2000-03-25 10:14:10 bdemsky Exp $
+ * @version $Id: EnvCode.java,v 1.1.2.7 2000-10-06 21:18:38 cananian Exp $
  */
 public class EnvCode extends harpoon.IR.Quads.QuadSSI {
 
@@ -43,10 +44,8 @@ public class EnvCode extends harpoon.IR.Quads.QuadSSI {
     /** Clone this code representation.  The clone has its own copy of
      *  the quad graph. 
      */
-    public HCode clone(HMethod newMethod) {
-	EnvCode ec = new EnvCode(newMethod);
-	ec.quads = Quad.clone(ec.qf, this.quads);
-	return ec;
+    public HCodeAndMaps clone(HMethod newMethod) {
+	return cloneHelper(new EnvCode(newMethod));
     }
 
     /**

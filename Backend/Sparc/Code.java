@@ -27,7 +27,7 @@ import java.util.Set;
  * <code>Code</code> is a code-view for SPARC assembly.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.12 2000-08-09 04:15:07 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.13 2000-10-06 21:19:45 cananian Exp $
  */
 class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "sparc";
@@ -41,10 +41,6 @@ class Code extends harpoon.Backend.Generic.Code {
     }
 
     public String getName() { return codename; }
-
-    public HCode clone(HMethod m) throws CloneNotSupportedException { 
-	throw new CloneNotSupportedException(this.toString());
-    }
 
     public static HCodeFactory codeFactory(final HCodeFactory prevhcf,
 					   final Frame frame) {
