@@ -2,6 +2,8 @@ package harpoon.Temp;
 
 /**
  * A <code>Label</code> represents a (symbolic) address in assembly language.
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: Label.java,v 1.3.2.5 1999-08-04 04:34:12 cananian Exp $
  */
 
 public class Label  {

@@ -8,6 +8,8 @@ package harpoon.IR.AIRE;
  * An enumerated type must be provided, called <code>IR_Mode</code>,
  * which specifies various options associated with predefined 
  * <code>IIR_InterfaceDeclaration</code> classes.
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: IR_Mode.java,v 1.4.2.1 1999-08-04 04:34:09 cananian Exp $
  */
 public class IR_Mode {
     public final static IR_Mode IR_UNKNOWN_MODE = _(0);

@@ -8,6 +8,8 @@ package harpoon.IR.AIRE;
  * An enumerated type must be provided, called <code>IR_DelayMechanism</code>,
  * which specifies various options associated with predefined 
  * signal assignement statement classes.
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: IR_DelayMechanism.java,v 1.4.2.1 1999-08-04 04:34:09 cananian Exp $
  */
 public class IR_DelayMechanism {
     public final static IR_DelayMechanism IR_UNKNOWN_DELAY = _(0);

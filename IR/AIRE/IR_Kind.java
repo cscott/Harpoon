@@ -13,6 +13,8 @@ import java.util.Hashtable;
  * set.  In either case, the type must include the following labels
  * prior to any labels associated with completely new, instantiable IIR
  * extension classes:
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: IR_Kind.java,v 1.7.2.1 1999-08-04 04:34:09 cananian Exp $
  */
 public final class IR_Kind {
     public final static IR_Kind IR_DESIGN_FILE = _(1);

@@ -10,6 +10,9 @@ import java.util.Map;
 /** <code>ReachingDefInfo</code> is a data structure storing
     information about the sets associated with a
     <code>BasicBlock</code> in Reaching Definitions Analysis.
+ * @author John Whaley
+ * @author Felix Klock (pnkfelix@mit.edu)
+ * @version $Id: ReachingDefInfo.java,v 1.1.2.5 1999-08-04 04:33:56 cananian Exp $
 */ 
 class ReachingDefInfo {
 

@@ -12,6 +12,10 @@ import harpoon.IR.Tree.TreeFactory;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 
+/* <b>FILL ME IN</b>.
+ * @author Duncan Bryce
+ * @version $Id: InterpreterAllocationStrategy.java,v 1.1.2.2 1999-08-04 04:34:11 cananian Exp $
+ */
 public class InterpreterAllocationStrategy implements AllocationStrategy {
 
     public InterpreterAllocationStrategy() { }

@@ -3,6 +3,8 @@ package harpoon.Temp;
 /**
  * A <code>LabelList</code> is a simple singly-linked list of
  * <code>Label</code>s.
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: LabelList.java,v 1.3.2.3 1999-08-04 04:34:12 cananian Exp $
  */
 public final class LabelList {
     /* The head of the list. */

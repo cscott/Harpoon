@@ -13,6 +13,10 @@ import harpoon.Util.Util;
 import harpoon.Util.IteratorEnumerator;
 import harpoon.Analysis.EdgesIterator;
 
+/* <b>FILL ME IN</b>.
+ * @author Duncan Bryce
+ * @version $Id: TreeSolver.java,v 1.1.2.2 1999-08-04 04:33:56 cananian Exp $
+ */
 public abstract class TreeSolver {
 
     public static boolean DEBUG = false;

@@ -5,6 +5,8 @@ package harpoon.Analysis.DataFlow;
  *
  * Implemented similarly to QuadVisitor, with the idea that we may
  * eventually have different kinds of basic blocks.
+ * @author John Whaley
+ * @version $Id: BasicBlockVisitor.java,v 1.1.2.2 1999-08-04 04:33:56 cananian Exp $
  */
 
 public abstract class BasicBlockVisitor  {

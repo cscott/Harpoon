@@ -1,5 +1,11 @@
 package harpoon.Tools.PatMat;
 
+/** Record the character positions of line endings, in order to
+ *  generate intelligible error messages.
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>, based on
+ *         <i>Modern Compiler Implementation in Java</i>, by Andrew Appel.
+ * @version $Id: ErrorMsg.java,v 1.1.2.3 1999-08-04 04:34:12 cananian Exp $
+ */
 class ErrorMsg {
   private LineList linePos = new LineList(-1,null);
   private int lineNum=1;
