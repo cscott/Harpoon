@@ -7,7 +7,7 @@ package harpoon.IR.Bytecode;
  * <code>InRet</code> is an InCti with an operand.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InRet.java,v 1.1.2.3 1999-08-04 05:52:27 cananian Exp $
+ * @version $Id: InRet.java,v 1.1.2.4 2001-09-17 21:47:33 cananian Exp $
  */
 public class InRet extends InCti {
     final OpLocalVariable operand;
@@ -18,4 +18,8 @@ public class InRet extends InCti {
     }
     /** Returns the local variable operand of the RET instruction. */
     public OpLocalVariable getOperand() { return operand; }
+
+    public String toString() {
+	return Op.toString(opcode)+" "+operand;
+    }
 }
