@@ -582,23 +582,7 @@ public class SemanticChecker {
             return null;
         }
 
-        if (pn.getChild("comparison") != null) {
-            ParseNode cn = pn.getChild("comparison");
-            
-            /* get the expr's */
-            Expr left = parse_expr(cn.getChild("left").getChild("expr"));
-            Expr right = parse_expr(cn.getChild("right").getChild("expr"));
-
-            if ((left == null) || (right == null)) {
-                return null;
-            }
-
-            /* get comparison operator */
-            String comparison = cn.getChild("compare").getTerminal();
-            assert comparison != null;
-                         
-            return new ComparisonPredicate(comparison, left, right);
-        } else if (pn.getChild("inclusion") != null) {
+        if (pn.getChild("inclusion") != null) {
             ParseNode in = pn.getChild("inclusion");
             
             /* get quantiifer var */
@@ -616,6 +600,44 @@ public class SemanticChecker {
             }
 
             return new InclusionPredicate(vd, setexpr);
+        } else if (pn.getChild("sizeof") != null) {
+            ParseNode sizeof = pn.getChild("sizeof");
+            
+            /* get set expr */
+            SetExpr setexpr = parse_setexpr(sizeof.getChild("setexpr"));
+
+            if (setexpr == null) {
+                return null;
+            }
+
+            /* get comparison operator */
+            String compareop = sizeof.getChild("compare").getTerminal();
+            Opcode opcode = Opcode.decodeFromString(opname);
+
+            if (opcode == null) {
+                er.report(pn, "Unsupported operation: " + opname);
+                return null;
+            }
+
+
+
+            return new InclusionPredicate(vd, setexpr);
+        } else if (pn.getChild("comparison") != null) {
+            ParseNode cn = pn.getChild("comparison");
+            
+            /* get the expr's */
+            Expr left = parse_expr(cn.getChild("left").getChild("expr"));
+            Expr right = parse_expr(cn.getChild("right").getChild("expr"));
+
+            if ((left == null) || (right == null)) {
+                return null;
+            }
+
+            /* get comparison operator */
+            String comparison = cn.getChild("compare").getTerminal();
+            assert comparison != null;
+                         
+            return new ComparisonPredicate(comparison, left, right);
         } else {
             throw new IRException();
         }       
@@ -1522,36 +1544,9 @@ public class SemanticChecker {
         }
 
         String opname = pn.getChild("op").getTerminal();
+        Opcode opcode = Opcode.decodeFromString(opname);
 
-        Opcode opcode;
-
-        if (opname.equals("add")) {
-            opcode = Opcode.ADD;
-        } else if (opname.equals("sub")) {
-            opcode = Opcode.SUB;
-        } else if (opname.equals("mult")) {
-            opcode = Opcode.MULT;
-        } else if (opname.equals("div")) {
-            opcode = Opcode.DIV;
-        } else if (opname.equals("and")) {
-            opcode = Opcode.AND;
-        } else if (opname.equals("or")) {
-            opcode = Opcode.OR;
-        } else if (opname.equals("not")) {
-            opcode = Opcode.NOT;
-        } else if (opname.equals("gt")) {
-            opcode = Opcode.GT;
-        } else if (opname.equals("ge")) {
-            opcode = Opcode.GE;
-        } else if (opname.equals("lt")) {
-            opcode = Opcode.LT;
-        } else if (opname.equals("le")) {
-            opcode = Opcode.LE;
-        } else if (opname.equals("eq")) {
-            opcode = Opcode.EQ;
-        } else if (opname.equals("ne")) {
-            opcode = Opcode.NE;
-        } else {
+        if (opcode == null) {
             er.report(pn, "Unsupported operation: " + opname);
             return null;
         }
