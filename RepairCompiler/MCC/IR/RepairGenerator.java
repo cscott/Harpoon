@@ -479,6 +479,7 @@ public class RepairGenerator {
 	craux.outputline("while (1)");
 	craux.startblock();
 	craux.outputline(name+ " * "+newmodel.getSafeSymbol()+"=new "+name+"();");
+	craux.outputline(worklist.getSafeSymbol()+"->reset();");
     }
     
     private void generate_teardown() {

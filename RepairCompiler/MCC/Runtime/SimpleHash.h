@@ -46,6 +46,7 @@ private:
 public:
     WorkList();
     ~WorkList();
+    void reset();
     void add(int id, int type, int lvalue, int rvalue);
     int hasMoreElements();
     int getid();

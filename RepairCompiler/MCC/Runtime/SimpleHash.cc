@@ -79,6 +79,12 @@ WorkList::WorkList() {
   tailoffset=0;
 }
 
+void WorkList::reset() {
+  head=tail;
+  headoffset=0;
+  tailoffset=0;
+}
+
 int WorkList::hasMoreElements() {
   //  return (ptr != 0);
   return ((head!=tail)||(headoffset!=tailoffset));
@@ -124,10 +130,12 @@ void WorkList::pop() {
 
 void WorkList::add(int id,int type, int lvalue, int rvalue) {
   if (headoffset==WLISTSIZE) {
-    head->next=(struct ListNode *)malloc(sizeof(struct ListNode));
+    if (head->next==0) {
+      head->next=(struct ListNode *)malloc(sizeof(struct ListNode));
+      head->next=0;
+    }
     headoffset=0;
     head=head->next;
-    head->next=0;
   }
   head->data[headoffset++]=id;
   head->data[headoffset++]=type;
