@@ -11,7 +11,7 @@ import java.util.Enumeration;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.11 1998-10-21 21:50:24 cananian Exp $
+ * @version $Id: HCode.java,v 1.12 1998-11-10 03:31:38 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code
@@ -64,6 +64,8 @@ public abstract class HCode {
   /**
    * Clone this HCode, possibly moving it to a different method.
    * Throws CloneNotSupportedException if not overridden.
+   * @exception CloneNotSupportedException if it is not possible to clone
+   *            this <code>HCode</code>.
    */
   public HCode clone(HMethod newMethod) throws CloneNotSupportedException {
     throw new CloneNotSupportedException(this.toString());
@@ -79,6 +81,11 @@ public abstract class HCode {
       pw.println("  #"+hce[i].getID()+"/"+
 		 hce[i].getSourceFile()+":"+hce[i].getLineNumber()+" - " +
 		 hce[i].toString());
+  }
+
+  /** Returns a human-readable representation of this <code>HCode</code>. */
+  public String toString() {
+    return "codeview " + getName() + " for " + getMethod();
   }
 }
 
