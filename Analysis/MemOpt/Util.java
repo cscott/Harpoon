@@ -15,6 +15,8 @@ import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.AllCallers;
 import harpoon.Analysis.ClassHierarchy;
 
+import harpoon.Analysis.PointerAnalysis.PAWorkList;
+
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 
@@ -23,14 +25,21 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  * <code>Util</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Util.java,v 1.1 2002-05-11 02:53:57 salcianu Exp $
+ * @version $Id: Util.java,v 1.2 2002-05-11 03:25:33 salcianu Exp $
  */
 public abstract class Util {
+
+    private static boolean DEBUG = true;
     
     public static Set getDNEWs(CachingCodeFactory hcf, ClassHierarchy ch,
 			       HMethod entry, CallGraph cg) {
 	Set dnews = new HashSet();
 	Set methods = reachable_from_rec(hcf, ch, entry, cg);
+
+	if(DEBUG)
+	    harpoon.Util.Util.print_collection
+		(methods, "Methods called from recursive methods");
+
 	for(Iterator it = methods.iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
 	    Code hcode = (Code) hcf.convert(hm);
@@ -62,22 +71,36 @@ public abstract class Util {
 	SCCTopSortedGraph method_sccs = 
 	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(entry, nav));
 
+	Set reached_from_rec = new HashSet();
+
+	// scan all strongly connected components of methods
 	for(SCComponent scc = method_sccs.getLast(); scc != null;
 	    scc = scc.prevTopSort()) {
-	    if(scc.isLoop() || (scc.nodeSet().size() != 1)) {
-		for(Iterator it = scc.nodeSet().iterator(); it.hasNext(); ) {
-		    HMethod hm = (HMethod) it.next();
-		    
-		}
-		    
+	    if(scc.isLoop() || (scc.nodeSet().size() > 1)) {
+		// if the method corresponds to a set of mutually
+		// recursive methods, add all the methods transitively called
+		// from it to reached_from_rec
+		HMethod hm = (HMethod) scc.nodes()[0];
+		if(!reached_from_rec.contains(hm))
+		    grab_callees(hm, reached_from_rec);
 	    }
 	}
 
-	// 2. construct the set of the methods from all SCCs
-	// 3. get all methods transitively callable from 2
-
-	return null;
+	return reached_from_rec;
     }
 
+
+    private static void grab_callees(final HMethod hm,
+				     final Set reached_from_rec) {
+	PAWorkList W = new PAWorkList();
+	W.add(hm);
+	reached_from_rec.add(hm);
+
+	while(!W.isEmpty()) {
+	    HMethod callee = (HMethod) W.remove();
+	    if(reached_from_rec.add(callee))
+		W.add(callee);
+	}
+    }
 
 }
