@@ -21,3 +21,5 @@ out-of-date
 tmp-root-set
 #out-of-date#
 .find-gj-cache
+#Main/PAMain.java
+#Main/ODPAMain.java
