@@ -22,7 +22,15 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_forName
     result = (*env)->FindClass(env, buf);
     /* release memory and we're done! */
     (*env)->ReleaseStringUTFChars(env, str, name);
+    /* actually, we need to create and throw a ClassNotFoundException if
+     * things didn't go well; FindClass makes a NoClassDefFoundError,
+     * which isn't the right type for us. */
+    if ((*env)->ExceptionOccurred(env)) goto error;
     return result;
+
+  error:
+    wrapNthrow(env, "java/lang/ClassNotFoundException");
+    return NULL;
 }
 
 // try to wrap currently active exception as the exception specified by
