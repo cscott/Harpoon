@@ -15,18 +15,25 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.4 1998-10-16 11:42:57 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.5 1998-10-21 17:05:45 nkushman Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class HClassSyn extends HClassCls {
   /** Create an <code>HClassSyn</code> from an <code>HClass</code>. */
   public HClassSyn(HClass template) {
+    Util.assert(!template.isArray());
+    Util.assert(!template.isPrimitive());
     this.name = uniqueName(template.getName()); register();
     this.superclass = template.getSuperclass();
     this.interfaces = template.getInterfaces();
     this.modifiers  = template.getModifiers();
+    //XXX fix this field crap!!
     this.declaredFields = template.getDeclaredFields();
-    this.declaredMethods= template.getDeclaredMethods();
+    this.declaredMethods= new HMethodSyn[0];
+    HMethod methods[] = template.getDeclaredMethods();
+    for (int i = 0; i < methods.length; i++){
+      new HMethodSyn (methods[i], this);
+    }
     this.sourcefile = template.getSourceFile();
   }
   /** Create a new, empty <code>HClassSyn</code>. 
@@ -81,8 +88,8 @@ public class HClassSyn extends HClassCls {
   }
 
   public void setModifiers(int m) { 
-    if (Modifier.isInterface(m) != Modifier.isInterface(modifiers))
-      throw new Error("Can't turn a class into an interface or vice versa.");
+    /*if (Modifier.isInterface(m) != Modifier.isInterface(modifiers))
+      throw new Error("Can't turn a class into an interface or vice versa.");*/
     modifiers = m;
   }
 
