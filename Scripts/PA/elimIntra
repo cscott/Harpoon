@@ -12,7 +12,7 @@ mkdir ${BUILD_OUT_DIR}
 
 java -mx128m -oss100m \
     ${HARPOON_OPTIONS} \
-harpoon.Main.PAMain $PREANALYSIS_OPT \
+harpoon.Main.PAMain ${PREANALYSIS_OPT} \
     -s --ccs=$levels --wts \
     --mamaps=${MAMAPS_FILE} --noit --ns 1 \
     --output ${BUILD_OUT_DIR} --backend precisec --inline \

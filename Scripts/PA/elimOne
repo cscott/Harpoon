@@ -9,8 +9,8 @@ dir=$3
 levels=$4
 
 
-echo "1. elimInter($2)"
-$SCR_DIR/elimInter $1 $2 $3 $4 | tee inter/$2.Inter.out
+#echo "1. elimInter($2)"
+#$SCR_DIR/elimInter $1 $2 $3 $4 | tee inter/$2.Inter.out
 
 echo "2. elimIntra($2)"
 $SCR_DIR/elimIntra $1 $2 $3 $4 | tee intra/$2.Intra.out

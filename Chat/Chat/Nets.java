@@ -4,43 +4,41 @@ import java.net.*;
 import java.util.*;
 
 public class Nets {
-
+    
     public static void main(String argv[]) {
-
         kickOff kickoffObject = new kickOff(Integer.parseInt(argv[0]));
 	kickoffObject.run();
     }
-
-
+    
+    
 } // end of Nets class
 
 class kickOff extends Thread {
-
+    
     DataInputStream dis;
     int i = 0;
     int x = 0;
     String name;
     int port;
-
+    
     kickOff(int port) {
 	this.port=port;
     }
-
+    
     public void run() {
         server serverObject = new server(port);
 	serverObject.run();
     }
-
-    void pause (int time) {
-
+    
+    private void pause (int time) {
+	
         try { Thread.sleep(time); }
         catch (InterruptedException e) { }
     }
-
+    
 } // end of kickOff class
 
 class server extends Thread {
-
     read_from_connection readobj;
     int num = 1;
     Thread readthread;
@@ -49,81 +47,70 @@ class server extends Thread {
     static int i = 0;
     static Vector v = new Vector();
     int port;
-
+    
     server(int port) {
 	this.port=port;
     }
-
+    
     private static void startthread(server t) throws IOException {
-	read_from_connection readobj = new read_from_connection(t.listen.accept(), t);
+	read_from_connection readobj = 
+	    new read_from_connection(t.listen.accept(), t);
 	readobj.start();
     }
-
+    
     public void run() {
-
         System.out.println("Server thread started");
 	
         try {
-
 	    listen = new ServerSocket(port);
-	    //     listen = new ServerSocket(8090);
 
 	    while(true) {
 		startthread(this);
 		System.out.println("connection accepted");
-	    }
-	    
+	    }   
         }
-
-        catch (UnknownHostException e ) {System.out.println("can't find host"); }
-        catch ( IOException e ) {System.out.println("Error connecting to host");}
+        catch (UnknownHostException e) {
+	    System.out.println("Can't find host");
+	}
+        catch (IOException e) {
+	    System.out.println("Error connecting to host");
+	}
     }
 
 
     synchronized void add_to_vector(read_from_connection obj) {
-
         v.addElement(obj);
     }
 
 
      synchronized void remove_from_vector(read_from_connection obj) {
-
         v.removeElement(obj);
-
     }
 
      synchronized boolean duplicate_name(read_from_connection obj) {
-
         read_from_connection readobj;
 
         for (int i = 0; i < v.size(); i++) {
-
             readobj = (read_from_connection)v.elementAt(i);
             if (readobj.name.equals(obj.name))
                 return true;
         }
 
         return false;
-
     }
 
 
     void broadcast_message(String message) {
-
        read_from_connection readobj;
 
        for (int i = 0; i < v.size(); i++) {
-
            readobj = (read_from_connection)v.elementAt(i);
            readobj.pout.println(message);
        }
-
-
     }
 
 
      synchronized void list_names(PrintStream pout, String name) {
-
         String line;
         read_from_connection readobj;
 
@@ -139,7 +126,6 @@ class server extends Thread {
         int cnt = 0;
 
         for (int i = 0; i < v.size(); i++) {
-
             readobj = (read_from_connection)v.elementAt(i);
 
             if (line.equals(""))
@@ -149,34 +135,28 @@ class server extends Thread {
 
             cnt++;
             if (cnt == 10) {
-               pout.println(line);
+		pout.println(line);
                line = "";
                cnt = 0;
             }
         }
-
-
+	
         if (line != "")
-           pout.println(line);
-
+	    pout.println(line);
     }
 
-
-
-   void pause (int time) {
-
-        try { Thread.sleep(time); }
-        catch (InterruptedException e) { }
-    }
-
+   private void pause (int time) {
+       try { Thread.sleep(time); }
+       catch (InterruptedException e) { }
+   }
+    
 } // end of server class
+
 
 class read_from_connection extends Thread {
 
     Socket sock;
-    InputStream in;
-    OutputStream out;
-    DataInputStream din;
+    //DataInputStream din; // deprecated
     PrintStream pout;
     int hours;
     int minutes;
@@ -196,53 +176,49 @@ class read_from_connection extends Thread {
         System.out.println("read_from_connection thread started");
 
         try {
-
-            in = sock.getInputStream();
-            out = sock.getOutputStream();
+            InputStream in = sock.getInputStream();
+            OutputStream out = sock.getOutputStream();
             pout = new PrintStream(out);
-            din = new DataInputStream(in);
-
+            //din = new DataInputStream(in); // deprecated
+	    BufferedReader d = new BufferedReader(new InputStreamReader(in)); 
             pout.println("You have connected to the chat server, type something to begin");
-            request = din.readLine();
+            request = d.readLine();
             format_message();
-
+	    
             if (serverobj.duplicate_name(this)) {
-                    pout.println("Name already in use - try another");
-                    pout.println("disconecting...");
-                    sock.close();
-                    return;
+		pout.println("Name already in use - try another");
+		pout.println("disconecting...");
+		sock.close();
+		return;
             }
-
+	    
             serverobj.list_names(pout, name);
             serverobj.add_to_vector(this);
             serverobj.broadcast_message(name + " has entered the chat room");
             pause(1000); // pause before sending
             serverobj.broadcast_message(format_message());
-
-
+	    
+	    
             while(true) {
-                 request = din.readLine();
-		 if (request!=null)
-		     serverobj.broadcast_message(format_message());
-
+		request = d.readLine();
+		if (request!=null)
+		    serverobj.broadcast_message(format_message());
+		
             }
         }
+	catch (UnknownHostException e ) {
+	    System.out.println("can't find host");
+	}
+        catch (IOException e) {
+	    serverobj.remove_from_vector(this);
+	    if (name.equals(" ") == false) {
+		serverobj.broadcast_message(name + " has left the chat room");
+	    }
+	    return;
+	}
+     }
 
-        catch (UnknownHostException e ) {System.out.println("can't find host"); }
-        catch ( IOException e ) {
-                 serverobj.remove_from_vector(this);
-                 if (name.equals(" ") == false) {
-                     serverobj.broadcast_message(name + " has left the chat room");
-                 }
-                 return;
-       }
-    }
-
-
-
-
-   String format_message() {
-
+    private String format_message() {
         String text;
         String hoursout;
         String hoursS;
@@ -273,7 +249,8 @@ class read_from_connection extends Thread {
 	  if (seconds <= 9)
 	  secondsS = "0"+secondsS;
 
-	  hoursout = "[" + hoursS + ":" + minutesS + ":" + secondsS +"]";*/
+	  hoursout = "[" + hoursS + ":" + minutesS + ":" + secondsS +"]";
+	*/
 
 	hoursout = "[0:00:00]";
 
@@ -290,19 +267,11 @@ class read_from_connection extends Thread {
         text = request.substring(b + 1, c - 1);
 
         return hoursout + " " + name + " - " +  text;
-
-
     }
 
-
-      void pause (int time) {
-
+    private void pause (int time) {
         try { Thread.sleep(time); }
         catch (InterruptedException e) { }
     }
-
-
-
-
 } // end of read_from_connection
 

@@ -25,6 +25,7 @@ public class QuoteServer {
     // A boolean used to keep the server looping until 
     // interrupted. 
     private boolean keepRunning = true; 
+
     /** 
      * Starts up the application. 
      * @param args Ignored command line arguments. 
@@ -34,6 +35,7 @@ public class QuoteServer {
 	QuoteServer server = new QuoteServer(); 
 	server.serveQuotes(); 
     } 
+
     /** 
      * The constructor creates an instance of this class, 
      * loads the stock data, and then our server listens 
@@ -54,6 +56,7 @@ public class QuoteServer {
 	    System.exit(1);
 	}
     }
+
     /** 
      * This method loads in the stock data from a file. 
      */ 
@@ -105,6 +108,7 @@ public class QuoteServer {
 	} 
 	return true; 
     } 
+
     /** 
      * This method waits to accept incoming client 
      * connections. 
@@ -150,6 +154,7 @@ public class QuoteServer {
 	} 
     } 
 } 
+
 /** 
  * This class use used to manage a connection to 
  * a specific client. 
@@ -157,8 +162,9 @@ public class QuoteServer {
 class StockQuoteHandler implements Runnable { 
     private Socket mySocket = null; 
     private PrintStream clientSend = null; 
-    private DataInputStream clientReceive = null; 
+    private BufferedReader clientReceive = null; 
     private String[] stockInfo; 
+
      /** 
      * The constructor sets up the necessary instance 
      * variables. 
@@ -171,6 +177,7 @@ class StockQuoteHandler implements Runnable {
 	mySocket = newSocket; 
 	stockInfo = info; 
     } 
+
     /** 
      * This is the thread of execution which implements 
      * the communication. 
@@ -183,12 +190,13 @@ class StockQuoteHandler implements Runnable {
 	    clientSend = 
 		new PrintStream(mySocket.getOutputStream()); 
 	    clientReceive = 
-		new DataInputStream(mySocket.getInputStream()); 
+		new BufferedReader
+		    (new InputStreamReader(mySocket.getInputStream())); 
+
 	    clientSend.println("+HELLO 1/1/00"); 
 	    clientSend.flush(); 
 	    // Read in a line from the client and respond. 
-	    while((nextLine = clientReceive.readLine()) 
-		  != null) { 
+	    while((nextLine = clientReceive.readLine()) != null) {
 		nextLine = nextLine.toUpperCase(); 
 		// QUIT command. 
 		if (nextLine.indexOf("QUIT") == 0) break; 
@@ -208,19 +216,21 @@ class StockQuoteHandler implements Runnable {
 	    }
 	    clientSend.println("+BYE"); 
 	    clientSend.flush(); 
-	} catch(IOException excpt) { 
+	}
+	catch(IOException excpt) { 
 	    System.err.println("Failed I/O: " + excpt); 
-	    // Finally close the streams and socket. 
-	} finally { 
+	} // Finally close the streams and socket. 
+	finally { 
 	    try { 
 		if (clientSend != null) clientSend.close(); 
 		if (clientReceive != null) clientReceive.close(); 
 		if (mySocket != null) mySocket.close(); 
 	    } catch(IOException excpt) { 
 		System.err.println("Failed I/O: " + excpt); 
-	    } 
-	} 
-    } 
+	    }
+	}
+    }
+
     /** 
      * This method matches a stock ID to relevant information. 
      * @param quoteID The stock ID to look up. 

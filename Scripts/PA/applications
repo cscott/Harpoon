@@ -1,2 +1,5 @@
-APPLICATIONS="barnes Nets GameServer2 JhttpServer PhoneServer QuoteServer Echo Time water"
+#APPLICATIONS="ETruc barnes Nets GameServer2 JhttpServer PhoneServer QuoteServer Echo Time water"
+
+APPLICATIONS="JhttpServer PhoneServer JLex JCUP"
+
  

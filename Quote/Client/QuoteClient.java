@@ -11,12 +11,13 @@ public class QuoteClient extends Thread {
     private static int SERVER_PORT = 1701; 
     private String serverName; 
     private Socket quoteSocket = null; 
-    private DataInputStream quoteReceive = null; 
+    private BufferedReader quoteReceive = null; 
     private PrintStream quoteSend = null; 
-    private String[] stockIDs; // Array of requested IDs. 
+    private String[] stockIDs;  // Array of requested IDs. 
     private String[] stockInfo; // Array of returned data. 
     private String currentAsOf = null; // Timestamp of data. 
     private static boolean debug=false;
+
     /** 
      * Start the application running, first checking the 
      * arguments, then instantiating a StockQuoteClient, and 
@@ -25,49 +26,46 @@ public class QuoteClient extends Thread {
      */ 
     public static void main(String[] args) { 
 	if (args.length < 2) { 
-	    System.out.println( 
-			       "Usage: QuoteClient <server> <port> <number of clients> <number of cycles> <debug> <stock ids>"); 
+	    System.out.println("Usage: QuoteClient <server> <port> <number of clients> <number of cycles> <debug> <stock ids>"); 
 	    System.exit(1); 
 	}
-	long starttime=System.currentTimeMillis();
-	QuoteClient.SERVER_PORT=Integer.parseInt(args[1]);
-	int numclients=Integer.parseInt(args[2]);
-	int numcycles=Integer.parseInt(args[3]);
-	QuoteClient.debug=(Integer.parseInt(args[4])==1);
-	int numstocks=args.length-5;
-	QuoteClient[] carray=new QuoteClient[numclients];
-	for (int i=0;i<numclients;i++) {
-	    carray[i]=new QuoteClient(args);
+	
+	long starttime = System.currentTimeMillis();
+	QuoteClient.SERVER_PORT = Integer.parseInt(args[1]);
+	int numclients = Integer.parseInt(args[2]);
+	int numcycles = Integer.parseInt(args[3]);
+	QuoteClient.debug = (Integer.parseInt(args[4]) == 1);
+	int numstocks = args.length - 5;
+	QuoteClient[] carray = new QuoteClient[numclients];
+	for (int i = 0; i < numclients; i++) {
+	    carray[i] = new QuoteClient(args);
 	    carray[i].start();
 	}
 	try {
-	    for (int i=0;i<numclients;i++) {
+	    for (int i = 0; i < numclients; i++) {
 		carray[i].join();
 	    }
 	} catch (Exception e) {
 	    e.printStackTrace();
 	    System.out.println(e);
 	}
-	long endtime=System.currentTimeMillis();
+	long endtime = System.currentTimeMillis();
+
 	System.out.println("QuoteClient");
-	System.out.println("numclients:"+numclients);
-	System.out.println("port:"+QuoteClient.SERVER_PORT);
-	System.out.println("number of cycles:"+numcycles);
-	System.out.println("number of stocks:"+numstocks);
-	System.out.println("Elapsed time:(mS)"+(endtime-starttime));
-	System.out.println("Throughput:"+(double) numcycles*numstocks*numclients/((double) (endtime-starttime)));
-	System.exit(0); 
+	System.out.println("numclients:" + numclients);
+	System.out.println("port:" + QuoteClient.SERVER_PORT);
+	System.out.println("number of cycles:" + numcycles);
+	System.out.println("number of stocks:" + numstocks);
+	System.out.println("Elapsed time:(mS)" + (endtime-starttime));
+	System.out.println("Throughput:" + (double) numcycles * numstocks *
+			   numclients/((double) (endtime-starttime)));
+	System.exit(0);
     } 
-    /** 
-     * This constructor manages the retrieval of the 
-     * stock information. 
-     */ 
 
     String args[];
 
     public QuoteClient(String[] args) { 
 	this.args=args;
-
     }
 
     public void run() {
@@ -96,6 +94,7 @@ public class QuoteClient extends Thread {
 	}
 	quitServer(); // Close the communication.
     }
+
     /** 
      * Open the initial connection to the server. 
      * @return The initial connection response. 
@@ -106,10 +105,13 @@ public class QuoteClient extends Thread {
 	    // Open a socket to the server. 
 	    quoteSocket = new Socket(serverName,SERVER_PORT); 
 	    // Obtain decorated I/O streams. 
-	    quoteReceive = new DataInputStream( 
-					       quoteSocket.getInputStream()); 
-	    quoteSend = new PrintStream( 
-					quoteSocket.getOutputStream()); 
+
+	    quoteReceive = 
+		new BufferedReader
+		    (new InputStreamReader(quoteSocket.getInputStream()));
+
+	    quoteSend = new PrintStream(quoteSocket.getOutputStream()); 
+
 	    // Read the HELLO message. 
 	    serverWelcome = quoteReceive.readLine(); 
 	} catch (UnknownHostException excpt) { 
@@ -121,6 +123,7 @@ public class QuoteClient extends Thread {
 	} 
 	return serverWelcome; // Return the HELLO message. 
     } 
+
     /** 
      * This method asks for all of the stock info. 
      */ 
@@ -137,15 +140,16 @@ public class QuoteClient extends Thread {
 		    // Read response. 
 		    response = quoteReceive.readLine(); 
 		    // Parse out data. 
-		    stockInfo[index] = response.substring( 
-							  response.indexOf(" ")+1); 
-		} 
+		    stockInfo[index] =
+			response.substring(response.indexOf(" ") + 1); 
+		}
 	    } catch (IOException excpt) { 
 		System.err.println("Failed I/O to " + serverName 
 				   + ": " + excpt); 
-	    } 
-	} 
-    } 
+	    }
+	}
+    }
+
     /** 
      * This method disconnects from the server. 
      * @return The final message from the server. 
@@ -170,6 +174,7 @@ public class QuoteClient extends Thread {
 	} 
 	return serverBye; // The BYE message. 
     } 
+
     /** 
      * This method prints out a report on the various 
      * requested stocks. 

@@ -4,6 +4,12 @@ SCR_DIR=`dirname $0`
 
 source ${SCR_DIR}/elim_common
 
+HARPOON_OPTIONS=" -mx512m -oss100m \
+		  -Dharpoon.runtime=2 \
+    	          -Dharpoon.alloc.strategy=bdw \
+    	          -Dharpoon.target.elf=yes \
+                  -Dharpoon.class.path=$stdPath:$dir"
+
 BUILD_OUT_DIR=${CALL_DIR}/none/${name}.none
 
 rm -rf ${BUILD_OUT_DIR} 

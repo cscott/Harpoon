@@ -6,8 +6,6 @@ CALL_DIR=`pwd`
 source ${SCR_DIR}/check-HARPOON
 source ${SCR_DIR}/applications
 
-APPLICATIONS="HelloWorld"
-
 if [ ! -d ${CALL_DIR}/execs ]
 then
     mkdir ${CALL_DIR}/execs
@@ -15,7 +13,7 @@ fi
 
 
 
-echo "Building the with-clustered-heaps runtime";
+echo "Building with-clustered-heaps runtime";
 
 cd ${HARPOON_DIR}/Runtime
 
@@ -28,10 +26,10 @@ make
 
 cd ${CALL_DIR};
 
+#for opt in inter intra none; do
+for opt in intra none; do
 
-
-for opt in inter intra none; do
- if [$opt = none]; then
+ if [ $opt = none ]; then
     echo "Building the normal runtime (no clustered heaps)"
 
     cd ${HARPOON_DIR}/Runtime
@@ -45,6 +43,7 @@ for opt in inter intra none; do
 
     cd ${CALL_DIR};
  fi
+
  for name in $APPLICATIONS; do
     echo "Producing executable for ${name}.${opt}"
     ${SCR_DIR}/compile-precisec-one \

@@ -7,40 +7,43 @@ public class NetsClient extends Thread {
 
     static boolean debug;
     static int sendoption=0;
+
     public static void main(String argv[]) {
 
 	String host=null;
 	int numberofclients=0;
 	int numberofmessages=0;
 	int port=4321;
+
 	NetsClient.debug=false;
 	try {
 	    host=argv[0];
 	    port=Integer.parseInt(argv[1]);
 	    numberofclients=Integer.parseInt(argv[2]);
 	    numberofmessages=Integer.parseInt(argv[3]);
-	} catch (Exception e) {
+	}
+	catch (Exception e) {
 	    System.out.println("NetsClient host port numberofclients numberofmessages debugflag");
 	}
 	try {
 	    NetsClient.debug=(Integer.parseInt(argv[4])==1);
 	    NetsClient.sendoption=Integer.parseInt(argv[5]);
-	} catch (Exception e) {
-	}
-
+	} catch (Exception e) {}
 
 	NetsClient[] tarray=new NetsClient[numberofclients];
-	for (int i=0;i<numberofclients;i++) {
-	    tarray[i]=new NetsClient(i,host,port,numberofmessages,numberofclients);
+	for (int i = 0; i < numberofclients; i++) {
+	    tarray[i] = new NetsClient(i, host, port,
+				       numberofmessages, numberofclients);
 	    if (debug)
 		System.out.println("Attempting to start "+i);
 	    tarray[i].connectt();
 	}
+
 	long starttime=System.currentTimeMillis();
-	for (int i=0;i<numberofclients;i++)
+	for (int i = 0; i < numberofclients; i++)
 	    tarray[i].start();
 	try {
-	    for (int i=0;i<numberofclients;i++) {
+	    for (int i = 0; i < numberofclients; i++) {
 		tarray[i].join();
 	    }
 	} catch (InterruptedException e) {
@@ -48,16 +51,19 @@ public class NetsClient extends Thread {
 	    System.out.println(e);
 	}
 	long endtime=System.currentTimeMillis();
-	System.out.println("ChatClient");
-	System.out.println("numclients:"+numberofclients);
-	System.out.println("port:"+port);
-	System.out.println("number of messages:"+numberofmessages);
-	System.out.println("Elapsed time:(mS)"+(endtime-starttime));
-	System.out.println("Throughput:"+(double) numberofclients*((sendoption==4)?1:numberofclients)*numberofmessages/((double) (endtime-starttime)));
 
+	System.out.println("ChatClient");
+	System.out.println("numclients:" + numberofclients);
+	System.out.println("port:" + port);
+	System.out.println("number of messages:" + numberofmessages);
+	System.out.println("Elapsed time:(mS)" + (endtime - starttime));
+	System.out.println("Throughput:" + (double) numberofclients*
+			   ((sendoption==4) ? 1 : numberofclients) *
+			   numberofmessages/((double) (endtime-starttime)));
     }
 
-    public NetsClient(int clientnumber, String host,int port,int nom, int noc) {
+    public NetsClient(int clientnumber, String host,
+		      int port, int nom, int noc) {
 	this.port=port;
 	this.clientnumber=clientnumber;
 	this.host=host;
@@ -67,12 +73,12 @@ public class NetsClient extends Thread {
 
     int nom, noc,clientnumber,port;
     String host;
-    DataInputStream dis;
     Socket sock;
     PrintStream pout;
     InputStream in;
     OutputStream out;
-    DataInputStream din;
+    //DataInputStream din;
+    BufferedReader d;
 
     public void connectt() {
 	try{
@@ -82,13 +88,19 @@ public class NetsClient extends Thread {
 	    in = sock.getInputStream();
 	    out = sock.getOutputStream();
 	    pout = new PrintStream(out);
-	    din = new DataInputStream(in);
+	    //din = new DataInputStream(in);
+	    d = new BufferedReader(new InputStreamReader(in));  
 	    pout.println("0|"+clientnumber+"|howdy");
 	    String tt="";
 	    while (tt.indexOf('-')==-1)
-		tt=din.readLine();
-	} catch (UnknownHostException e ) {System.out.println("can't find host"); }
-        catch ( IOException e ) {System.out.println("Error connecting to host");}
+		tt=d.readLine();
+	}
+	catch (UnknownHostException e ) {
+	    System.out.println("can't find host");
+	}
+	catch (IOException e) {
+	    System.out.println("Error connecting to host");
+	}
     }
 
     public void run() {
@@ -125,7 +137,7 @@ public class NetsClient extends Thread {
 			pout.println("0|"+clientnumber+"|hello"+ns+"**");
 		    }
 		}
-		String request = din.readLine();
+		String request = d.readLine();
 		if (request.indexOf('-')!=-1)
 		    nr++;
 		if (debug)

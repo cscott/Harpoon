@@ -5,9 +5,7 @@ class EAccumulator {
   Integer value = null;
   synchronized void add(int i) { 
     int v;
-    System.out.print("add ");
-    System.out.print(i);
-    System.out.print("\n");
+    System.out.print("add " + i + "\n");
     if (value == null) v = 0;
     else v = value.intValue();
     value = new Integer(v+i);
@@ -27,7 +25,6 @@ class ETask extends Thread {
     while (e.hasMoreElements()) { 
       sum += ((Integer) e.nextElement()).intValue();
     }
-    dest.add(sum);
     dest.add(sum);
   }
 }
@@ -52,6 +49,6 @@ class ETruc {
   public static void main(String args[]) { 
     ESum s = new ESum();
     EAccumulator a = new EAccumulator();
-    s.generate(8, 2, a);
+    s.generate(100, 10, a);
   }
 }
