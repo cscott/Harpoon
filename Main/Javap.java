@@ -21,7 +21,7 @@ import java.io.InputStream;
  * GJ signatures.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Javap.java,v 1.5 2003-05-30 18:00:18 cananian Exp $
+ * @version $Id: Javap.java,v 1.6 2003-05-30 19:20:24 cananian Exp $
  */
 public abstract class Javap /*extends harpoon.IR.Registration*/ {
     public static final void main(String args[]) {
@@ -269,10 +269,14 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	int off;
 	int semi = descriptor.indexOf(';');
 	int brack= descriptor.indexOf('<');
-	if (brack!=-1 && brack < semi) {
+	if (brack > semi) brack=-1;
+	String id = ((brack!=-1) ?
+		     descriptor.substring(1, brack) :
+		     descriptor.substring(1, semi))
+	    .replace('/','.');
+	sb.append(id);
+	if (brack!=-1) {
 	    // ooh, ooh, type parameters!
-	    sb.append
-		(descriptor.substring(1, brack).replace('/','.'));
 	    off = brack;
 	    OffsetAndString oas = munchTypeArguments
 		(descriptor.substring(off));
@@ -281,23 +285,37 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    assert descriptor.charAt(off)==';';
 	    off++;
 	} else {
-	    sb.append(descriptor
-		      .substring(1, descriptor.indexOf(';'))
-		      .replace('/','.'));
-	    off = descriptor.indexOf(';')+1;
+	    off = semi+1;
 	}
-	// optional '.ID<type args>'
+	// optional '.L ID<type args>;'
 	while (off < descriptor.length() && descriptor.charAt(off)=='.') {
-	    int semi2 = descriptor.indexOf(';', off+1);
-	    String id = descriptor.substring(off+1, semi2);
-	    off=semi2+1;
-	    sb.append('.'); sb.append(id);
-	    // optional type arguments.
-	    if (off < descriptor.length() && descriptor.charAt(off)=='<') {
+	    assert descriptor.charAt(off+1)=='L';
+	    off+=2;
+	    int semi2 = descriptor.indexOf(';', off);
+	    int brack2= descriptor.indexOf('<', off);
+	    // find the proper name.
+	    if (brack2 > semi2) brack2=-1;
+	    String id2 = ((brack2!=-1) ?
+			  descriptor.substring(off, brack2) :
+			  descriptor.substring(off, semi2))
+		.replace('/','.');
+	    // remove bits we've already emitted & emit the rest.
+	    assert id2.startsWith(id);
+	    assert id2.substring(id.length()).startsWith("$");
+	    sb.append('.');
+	    sb.append(id2.substring(1+id.length()));
+	    id=id2;
+	    if (brack2!=-1) {
+		// optional type parameters
+		off = brack2;
 		OffsetAndString oas = munchTypeArguments
 		    (descriptor.substring(off));
 		sb.append(oas.string);
 		off+=oas.offset;
+		assert descriptor.charAt(off)==';';
+		off++;
+	    } else {
+		off = semi2+1;
 	    }
 	}
 	// okay, finally done.
@@ -318,6 +336,7 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    sb.append(oas.string);
 	    off+=oas.offset;
 	}
+	assert descriptor.charAt(off)=='>';
 	sb.append('>');
 	off++;
 	return new OffsetAndString(sb.toString(), off);
