@@ -363,6 +363,7 @@ void removefile(char *filename, struct block *ptr) {
 	  /* Found file */
 	  db->entries[j].name[0]=0; //Delete entry
 	  int inode=db->entries[j].inodenumber;
+	  db->entries[j].inodenumber=0;
 	  
 	  struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
 	  itb->entries[inode].referencecount--;
