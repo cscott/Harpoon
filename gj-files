@@ -6,6 +6,7 @@ Util/BinaryRelation.java
 Util/CombineIterator.java
 Util/Default.java
 Util/EnumerationIterator.java
+Util/FilterIterator.java
 Util/Grapher.java
 Util/IteratorEnumerator.java
 Util/UnmodifiableIterator.java
@@ -13,6 +14,7 @@ Util/UnmodifiableListIterator.java
 Util/Util.java
 Util/Worklist.java
 Util/Collections/AbstractMapEntry.java
+Util/Collections/AggregateSetFactory.java
 Util/Collections/CollectionFactory.java
 Util/Collections/CollectionWrapper.java
 Util/Collections/Factories.java
@@ -38,12 +40,14 @@ Util/Collections/WorkSet.java
 
 # these have hairy dependencies.
 Analysis/ClassHierarchy.java
-Analysis/PointsToAnalysis.java
+Analysis/DomTree.java
 Analysis/InterferenceGraph.java
+Analysis/PointsToAnalysis.java
 Analysis/Quads/QuadClassHierarchy.java
 Analysis/Realtime/RealtimeRuntime.java
 Analysis/Transactions/AnalysisCheckOracle.java
 Analysis/Transactions/CheckOracle.java
+Analysis/Tree/CacheEquivalence.java
 Backend/Analysis/ClassFieldMap.java
 Backend/Analysis/PackedClassFieldMap.java
 Backend/Analysis/SortedClassFieldMap.java
@@ -77,7 +81,9 @@ ClassFile/HMethod.java
 ClassFile/HMethodImpl.java
 ClassFile/HPointer.java
 IR/Properties/UseDefable.java
+IR/Properties/UseDefer.java
 IR/Properties/CFGraphable.java
+IR/Properties/CFGrapher.java
 IR/Properties/CFGEdge.java
 IR/Quads/Code.java
 IR/Quads/Edge.java
@@ -88,6 +94,8 @@ IR/Tree/Code.java
 IR/Tree/Data.java
 IR/Tree/Tree.java
 IR/Tree/TreeCode.java
+IR/Tree/TreeGrapher.java
+IR/Tree/TreeUseDefer.java
 IR/Tree/Print.java
 IR/Tree/Stm.java
 Temp/Temp.java

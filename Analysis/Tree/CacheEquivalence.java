@@ -10,6 +10,7 @@ import harpoon.Analysis.ReachingDefsAltImpl;
 import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Backend.Generic.Runtime.TreeBuilder;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCode.PrintCallback;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGrapher;
@@ -61,7 +62,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.3.2.1 2002-02-27 08:33:37 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.3.2.2 2002-03-14 01:31:28 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
@@ -69,8 +70,8 @@ public class CacheEquivalence {
 
     /** Creates a <code>CacheEquivalence</code>. */
     public CacheEquivalence(harpoon.IR.Tree.Code code, ClassHierarchy ch) {
-	CFGrapher cfg = code.getGrapher();
-	UseDefer udr = code.getUseDefer();
+	CFGrapher<Tree> cfg = code.getGrapher();
+	UseDefer<Tree> udr = code.getUseDefer();
 	TreeDerivation td = code.getTreeDerivation();
 	/* new analysis */
 	final Dataflow df = new Dataflow(code, cfg, udr, td);
@@ -238,7 +239,8 @@ public class CacheEquivalence {
 	final ReachingDefs rd;
 	final TreeDerivation td;
 	Dataflow(Code c, CFGrapher cfg, UseDefer udr, TreeDerivation td) {
-	    this.rd = new ReachingDefsAltImpl(c, cfg, udr);
+	    // XXX BUG IN JAVAC, cast to HCode shldn't be necessary below
+	    this.rd = new ReachingDefsAltImpl((HCode)c, cfg, udr);
 	    this.td = td;
 	    new StmVisitor(c, cfg, udr);
 	}
