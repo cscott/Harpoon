@@ -70,7 +70,9 @@ extern int sched_min_priority, sched_norm_priority, sched_max_priority;
 void FNI_java_lang_Thread_setupMain(JNIEnv *env);
 void FNI_java_lang_Thread_finishMain(JNIEnv *env);
 
+#ifdef WITH_USER_THREADS
 void context_switch();
+#endif
 
 #ifdef WITH_HEAVY_THREADS
 /* scale priority levels from java values to sched.h values */
