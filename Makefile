@@ -1,7 +1,7 @@
 JCC=javac
 IDLCC=idl
 JAR=jar
-JAVADOC=javadoc
+JDOC=javadoc
 SSH=ssh
 FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
@@ -13,12 +13,25 @@ RTJSOURCES=$(wildcard src/rtj/*.java)
 STUBSOURCES=$(wildcard src/rtj/stubs/*.java)
 SOURCES=$(JSOURCES) $(ISOURCES) $(RTJSOURCES) $(STUBSOURCES)
 IMAGES=$(wildcard dbase/*gz*) $(wildcard movie/*gz*)
-RELEASE=$(SOURCES) README BUILDING COPYING Makefile $(IMAGES)
+DSOURCES=$(wildcard paper/README paper/p* src/*.html src/graph/*.html)
+DSOURCES += $(wildcard src/util/*.html src/corba/*.html src/rtj/*.html)
+DSOURCES += $(wildcard src/rtj/stubs/*.html)
+RELEASE=$(SOURCES) README BUILDING COPYING Makefile $(IMAGES) $(DSOURCES)
 
 # figure out what the current CVS branch is, by looking at the Makefile
 CVS_TAG=$(firstword $(shell cvs status Makefile | grep -v "(none)" | \
 		awk '/Sticky Tag/{print $$3}'))
 CVS_REVISION=$(patsubst %,-r %,$(CVS_TAG))
+
+# construct the flags for JavaDoc
+JDOCFLAGS:=-J-mx128m -version -author -breakiterator \
+	   -doctitle "MIT ATR program documentation" \
+	   -quiet -private -linksource 
+JDKDOCLINK=http://java.sun.com/j2se/1.4/docs/api
+JDOCFLAGS += \
+	$(shell if $(JDOC) -help 2>&1 | grep -- "-link " > /dev/null ; \
+	then echo -link $(JDKDOCLINK) ; fi) 
+
 
 all:    clean doc imagerec.jar # imagerec.tgz
 
@@ -35,7 +48,7 @@ doc:	$(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@mkdir -p doc
 	@rm -rf imagerec
 	@$(IDLCC) -d . $(ISOURCES)
-	@javadoc -quiet -private -linksource -d doc/ $(JSOURCES) $(GJSOURCES) > doc/STATUS
+	@javadoc $(JDOCFLAGS) -d doc/ $(JSOURCES) $(GJSOURCES) > doc/STATUS
 	@rm -rf imagerec
 	@date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	@chmod -R a+rX doc

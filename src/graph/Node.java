@@ -8,9 +8,9 @@ import java.io.Serializable;
 /** The image recognition program is composed of a directed graph of nodes and edges.
  *  Each node can have any number of in-edges and can have zero, one, or two out edges. 
  *  {@link ImageData}s flow along the edges.
- *  Object references point in the direction of ImageData flow.
+ *  Object references point in the direction of {@link ImageData} flow.
  *
- *  Nodes are composable first-class entities.
+ *  {@link Node}s are composable first-class entities.
  *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
