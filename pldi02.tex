@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi02.tex,v 1.12 2001-11-16 20:08:47 cananian Exp $
+% $Id: pldi02.tex,v 1.13 2001-11-16 20:50:16 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -27,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-\pagestyle{myheadings}\markboth{$ $Revision: 1.12 $ $}{$ $Revision: 1.12 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.13 $ $}{$ $Revision: 1.13 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -457,12 +457,46 @@ subclass may end up being slotted {\it between} aligned fields of its
 superclass.  This violates the ``traditional'' superclass-first
 ordering of object fields, but does not pose any special problems.
 
-Table {\bf XXX} shows the allocation reductions due to our bitwidth
-analysis under each of the above scenarios.  We can see that {\bf blah
-  blah blah.  ``bit'' does best, of course.}
+\begin{table}
+\begin{tabular}{lccr@{.}lr@{.}lr@{.}l}
+&\multicolumn{2}{c}{static field bits}&
+ \multicolumn{6}{c}{\% alloc'ed space saved} \\
+\bf Benchmark &
+\bf before & \bf after &
+\multicolumn{2}{c}{\bf std} &
+\multicolumn{2}{c}{\bf byte} &
+\multicolumn{2}{l}{\bf bit} \\ \hline
+% data from 11-15 build of NO and 11-01 build of BW.
+200\_check	& 7343& 4958&  0&3\% &  3&4\% &  3&5\% \\
+201\_compress	& 7591& 5430&  0&0\% &  3&0\% &  3&4\% \\
+202\_jess	&13349&10634& 11&8\% & 30&1\% & 31&9\% \\
+205\_raytrace	& 7467& 5296&  0&4\% &  0&9\% &  1&4\% \\
+209\_db 	& 6777& 4983&  0&1\% &  0&3\% &  1&7\% \\
+213\_javac	&11560& 8161&  0&5\% &  5&4\% &  6&3\% \\
+222\_mpegaudio	& 6777& 4983&  0&7\% &  1&5\% &  1&6\% \\
+227\_mtrt	& 7467& 5296&  0&4\% &  0&9\% &  1&4\% \\
+228\_jack	& 8356& 6037&  6&4\% & 17&2\% & 19&0\% \\
+% THE JACK NUMBER IS VERY QUESTIONABLE!!!
+\end{tabular}
+\caption{Number of field bits in SPEC benchmarks statically removed
+  due to bitwidth analysis,
+  and the dynamic savings (in \% of total allocated bytes) of
+  field bitwidth reduction under three different packing strategies.}
+\label{tab:bitwidth-results}
+\end{table}
 
-Recall also table \ref{tab:claz-space}, which shows that aggressive
-field packing can benefit header compression as well.
+Table~\ref{tab:bitwidth-results} shows the allocation reductions due
+to our bitwidth
+analysis (including those due to constant/unread fields)
+under each of the above scenarios.  The logarithmic distribution of
+java type widths largely restricts us from capitalizing on the many small
+width restrictions found by the analysis, although 202\_jess and
+228\_jack still show significant improvements.  Allowing
+byte-alignment helps a great deal, and enables most of the space
+efficiencies of the bit-alignment scenario with a much simpler
+implementation.  Recall also the figures shown in
+table \ref{tab:claz-space}, which illustrate the header compression
+benefits of using a byte or bit alignment strategy.
 
 \subsection{Pointer compression}\label{sec:ptrcmp}
 % sub-topic: pointer compression.
