@@ -1,0 +1,93 @@
+#!/bin/sh
+
+set -e 
+
+# src and h2t should be inverses.
+src=.
+h2t=.
+# where to find config.guess
+cgloc=/usr/share/automake
+
+instdir=/usr
+buildroot=/home/flex/SKIFFROOT/shared
+
+makeopt= # -d
+
+target=$1 # arm-unknown-linuxelf
+shift
+action=#install
+
+build=`$cgloc/config.guess` 
+host=arm-unknown-linuxelf
+
+# Both configure and make need to be told where to find the various pieces. 
+# Define several variables of the things we need to pass to configure and make. 
+
+# These are for building programs that run on $build. 
+CC_FOR_BUILD=gcc 
+CXX_FOR_BUILD=gcc 
+
+# These are for building programs and libraries that run on $host. 
+CC=$host-gcc 
+AR=$host-ar 
+NM=$host-nm
+RANLIB=$host-ranlib 
+
+# These are for building libraries that run on $target. 
+CC_FOR_TARGET="$CC"
+GCC_FOR_TARGET="$CC_FOR_TARGET" 
+CC_FOR_TARGET="$CC_FOR_TARGET" 
+CXX_FOR_TARGET="$CC_FOR_TARGET" 
+AS_FOR_TARGET=$host-gcc
+LD_FOR_TARGET=$host-ld
+NM_FOR_TARGET=$host-nm
+AR_FOR_TARGET=$host-ar 
+RANLIB_FOR_TARGET=$host-ranlib 
+
+# Ready.  Configure and build. 
+if [ ! -f $h2t/configure.done ] ; then 
+    [ -d $h2t ] || mkdir $h2t 
+    (cd $h2t ; CC="$CC" AR="$AR" RANLIB="$RANLIB" NM="$NM" $src/configure --build=${build} --host=${host} --target=${target} --prefix=$instdir --with-gnu-ld --with-gnu-as $* ) || exit $?
+    touch $h2t/configure.done 
+fi 
+
+if [ xx = disable ] ; then 
+
+cd $h2t 
+make -w $makeopt all \
+        CC_FOR_BUILD="$CC_FOR_BUILD" \
+        CXX_FOR_BUILD="$CXX_FOR_BUILD" \
+        CC="$CC" \
+        AR="$AR" \
+        RANLIB="$RANLIB" \
+        GCC_FOR_TARGET="$CC_FOR_TARGET" \
+        CC_FOR_TARGET="$CC_FOR_TARGET" \
+        CXX_FOR_TARGET="$CC_FOR_TARGET" \
+        AS_FOR_TARGET=$AS_FOR_TARGET \
+        LD_FOR_TARGET=$LD_FOR_TARGET \
+        AR_FOR_TARGET=$AR_FOR_TARGET \
+        NM_FOR_TARGET=$NM_FOR_TARGET \
+        RANLIB_FOR_TARGET=$RANLIB_FOR_TARGET
+
+# All done, install if asked to. 
+if [ x"$action" = xinstall ] ; then 
+    make -w $makeopt install \
+        prefix=$buildroot$instdir
+        CC_FOR_BUILD="$CC_FOR_BUILD" \
+        CXX_FOR_BUILD="$CXX_FOR_BUILD" \
+        CC="$CC" \
+        AR="$AR" \
+        RANLIB="$RANLIB" \
+        GCC_FOR_TARGET="$CC_FOR_TARGET" \
+        CC_FOR_TARGET="$CC_FOR_TARGET" \
+        CXX_FOR_TARGET="$CC_FOR_TARGET" \
+        AS_FOR_TARGET=$AS_FOR_TARGET \
+        LD_FOR_TARGET=$LD_FOR_TARGET \
+        AR_FOR_TARGET=$AR_FOR_TARGET \
+        NM_FOR_TARGET=$NM_FOR_TARGET \
+        RANLIB_FOR_TARGET=$RANLIB_FOR_TARGET
+fi 
+fi
+
+exit $?
+
