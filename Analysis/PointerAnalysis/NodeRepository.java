@@ -21,7 +21,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: NodeRepository.java,v 1.1.2.24 2000-06-09 14:39:46 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.25 2000-06-09 22:00:43 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -166,10 +166,6 @@ public class NodeRepository {
 	if((node == null) && make){
 	    code_nodes.put(hce, node = getNewNode(type));
 	    node2code.put(node, hce);
-
-	    /// Debug stuff
-	    System.out.println("NEW CODE NODE: " + node + " " + 
-			       Debug.code2str(hce));
 	}
 	return node;
     }
