@@ -13,7 +13,7 @@ import java.util.Map;
  * to implement this interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractHeap.java,v 1.1.2.4 2001-07-03 00:01:44 cananian Exp $
+ * @version $Id: AbstractHeap.java,v 1.1.2.5 2001-07-03 00:09:32 cananian Exp $
  */
 public abstract class AbstractHeap implements Heap {
     /** A comparator for the keys in <code>Map.Entry</code>s, based
@@ -59,7 +59,7 @@ public abstract class AbstractHeap implements Heap {
      *  <code>Map.Entry</code> to the given <code>newkey</code>.
      *  Implementation is optional, but it is required if you use the
      *  default implementation of <code>updateKey()</code>. */
-    protected void setKey(Map.Entry me, Object newkey) {
+    protected Object setKey(Map.Entry me, Object newkey) {
 	throw new UnsupportedOperationException();
     }
     public Map.Entry extractMinimum() {

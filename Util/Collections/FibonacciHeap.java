@@ -23,7 +23,7 @@ import java.util.Map;
  * Algorithms</i> by Cormen, Leiserson, and Riverst, in Chapter 21.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FibonacciHeap.java,v 1.1.2.4 2001-07-03 00:01:44 cananian Exp $
+ * @version $Id: FibonacciHeap.java,v 1.1.2.5 2001-07-03 00:09:32 cananian Exp $
  */
 public class FibonacciHeap extends AbstractHeap {
     private static final boolean debug = false;
@@ -246,9 +246,9 @@ public class FibonacciHeap extends AbstractHeap {
 	Object _setKey(Object key) { return super.setKey(key); }
     }
     // to implement updateKey, etc...
-    protected final void setKey(Map.Entry me, Object newkey) {
+    protected final Object setKey(Map.Entry me, Object newkey) {
 	Entry e = (Entry) me;
-	e._setKey(newkey);
+	return e._setKey(newkey);
     }
     /** The underlying node representation for the fibonacci heap. */
     static final class Node {

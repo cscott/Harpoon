@@ -24,7 +24,7 @@ import java.util.Map;
  * Sedgewick's book.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinaryHeap.java,v 1.1.2.3 2001-07-03 00:01:44 cananian Exp $
+ * @version $Id: BinaryHeap.java,v 1.1.2.4 2001-07-03 00:09:32 cananian Exp $
  * @see Heap
  */
 public final class BinaryHeap extends AbstractHeap {
@@ -182,9 +182,9 @@ public final class BinaryHeap extends AbstractHeap {
 	Object _setKey(Object newKey) { return setKey(newKey); }
     }
     // to implement updateKey, etc...
-    protected final void setKey(Map.Entry me, Object newkey) {
+    protected final Object setKey(Map.Entry me, Object newkey) {
 	Entry e = (Entry) me;
-	e._setKey(newkey);
+	return e._setKey(newkey);
     }
 
     //--------------------------------------------------

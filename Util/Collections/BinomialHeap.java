@@ -22,7 +22,7 @@ import java.util.Map;
  * Leiserson, and Rivest, on page 400 and following.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinomialHeap.java,v 1.1.2.4 2001-07-03 00:01:44 cananian Exp $
+ * @version $Id: BinomialHeap.java,v 1.1.2.5 2001-07-03 00:09:32 cananian Exp $
  */
 public class BinomialHeap extends AbstractHeap implements Cloneable {
     private static final boolean debug=false;
@@ -338,9 +338,9 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 	Object _setKey(Object key) { return super.setKey(key); }
     }
     // to implement updateKey, etc...
-    protected final void setKey(Map.Entry me, Object newkey) {
+    protected final Object setKey(Map.Entry me, Object newkey) {
 	Entry e = (Entry) me;
-	e._setKey(newkey);
+	return e._setKey(newkey);
     }
     /** The underlying node representation for the binomial heap */
     static final class Node {
