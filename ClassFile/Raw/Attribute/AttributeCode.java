@@ -12,7 +12,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * attribute in each <code>method_info</code> structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeCode.java,v 1.9 1998-08-01 22:55:16 cananian Exp $
+ * @version $Id: AttributeCode.java,v 1.10 1998-08-02 07:36:52 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.4"
  * @see AttributeLineNumberTable
  * @see AttributeLocalVariableTable
@@ -138,4 +138,25 @@ public class AttributeCode extends Attribute {
     return null;
   }
 
+  /** Pretty-print the contents of this attribute.
+   *  @param indent the indentation level to use.
+   */
+  public void print(java.io.PrintWriter pw, int indent) {
+    int in = indent;
+    indent(pw, in, "Code Attribute:");
+    indent(pw, in+1, "Max Stack:   "+max_stack);
+    indent(pw, in+1, "Max Locals:  "+max_locals);
+    indent(pw, in+1, "Code length: "+code.length);
+    // skip the bytecode array.
+    indent(pw, in+1, "Exception Table ["+exception_table.length+"]:");
+    for (int i=0; i<exception_table.length; i++) {
+      indent(pw, in+2, "#"+i+": ");
+      exception_table[i].print(pw, in+3);
+    }
+    indent(pw, in+1, "Attributes ["+attributes.length+"]:");
+    for (int i=0; i<attributes.length; i++) {
+      indent(pw, in+2, "#"+i+": ");
+      attributes[i].print(pw, in+3);
+    }
+  }
 }

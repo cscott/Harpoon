@@ -10,7 +10,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * types of attribute information classes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Attribute.java,v 1.11 1998-08-02 05:24:21 cananian Exp $
+ * @version $Id: Attribute.java,v 1.12 1998-08-02 07:36:52 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7"
  * @see ClassFile
  * @see FieldInfo
@@ -84,8 +84,6 @@ public abstract class Attribute {
     indent(pw, indent, toString());
   }
   static void indent(java.io.PrintWriter pw, int indent, String s) {
-    for (int i=0; i<indent; i++)
-      pw.print("  ");
-    pw.println(s);
+    ClassFile.indent(pw,indent,s);
   }
 }

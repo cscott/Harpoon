@@ -17,7 +17,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>/home/lindholm/foo.java</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeSourceFile.java,v 1.8 1998-08-02 06:57:55 cananian Exp $
+ * @version $Id: AttributeSourceFile.java,v 1.9 1998-08-02 07:36:52 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.2"
  * @see Attribute
  * @see ClassFile
@@ -61,7 +61,9 @@ public class AttributeSourceFile extends Attribute {
     out.write_u2(sourcefile_index);
   }
 
-  /** Pretty-print this attribute structure. */
+  /** Pretty-print this attribute structure. 
+   *  @param indent the indentation level to use.
+   */
   public void print(java.io.PrintWriter pw, int indent) {
     indent(pw, indent, "SourceFile Attribute: " + 
 	   sourcefile() + " {" + sourcefile_index + "}");

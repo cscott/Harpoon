@@ -21,7 +21,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * the attribute is silently ignored.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeConstantValue.java,v 1.9 1998-08-02 07:01:30 cananian Exp $
+ * @version $Id: AttributeConstantValue.java,v 1.10 1998-08-02 07:36:52 cananian Exp $
  * @see Attribute
  * @see FieldInfo
  * @see ClassFile
@@ -66,7 +66,9 @@ public class AttributeConstantValue extends Attribute {
     out.write_u2(constantvalue_index);
   }
 
-  /** Pretty-print the contents of this attribute. */
+  /** Pretty-print the contents of this attribute. 
+   *  @param indent the indentation level to use.
+   */
   public void print(java.io.PrintWriter pw, int indent) {
     int in = indent;
     indent(pw, in, "ConstantValue Attribute:");

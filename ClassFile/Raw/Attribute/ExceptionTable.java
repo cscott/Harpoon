@@ -8,7 +8,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>AttributeCode</code>. 
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ExceptionTable.java,v 1.8 1998-08-01 22:55:16 cananian Exp $
+ * @version $Id: ExceptionTable.java,v 1.9 1998-08-02 07:36:52 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.4"
  * @see AttributeCode
  */
@@ -91,4 +91,31 @@ public class ExceptionTable {
   // convenience
   public ConstantClass catch_type() 
   { return (ConstantClass) parent.constant_pool[catch_type]; }
+
+  /** Human-readable representation. */
+  public String toString() {
+    StringBuffer sb = new StringBuffer("ExceptionTable: ");
+    sb.append("pc=["+start_pc+","+end_pc+") ");
+    sb.append("handler at "+handler_pc+" ");
+    sb.append("catches ");
+    if (catch_type==0)
+      sb.append("<all>");
+    else {
+      sb.append(catch_type().name());
+      sb.append(" {"+catch_type+"}");
+    }
+    return sb.toString();
+  }
+  /** Pretty-print this entry.
+   *  @param indent the indentation level to use.
+   */
+  public void print(java.io.PrintWriter pw, int indent) {
+    int in=indent;
+    ClassFile.indent(pw, in, 
+		     "pc=["+start_pc+","+end_pc+") handler at "+handler_pc);
+    String catches="<all>";
+    if (catch_type!=0)
+      catches = catch_type().name() + " {" + catch_type + "}";
+    ClassFile.indent(pw, in, "catches "+catches);
+  }
 }
