@@ -15,6 +15,9 @@ $gnugpl2 = "$NL".
 FILE: foreach $f (split(/\s+/,`make list`)) {
     next if ($f =~ /^Test/); # skip test code.
     next if ($f =~ /^Contrib/); # skip code not written by us.
+    next if ($f =~ /^NOTES/); # this is just documentation
+    next if ($f =~ /^Tools.Annotation/); # separate copyright.
+    next if ($f =~ /CSAHack/); # not long for this world.
     # snarf input file.
     open(FH, "< $f") or die "Can't open $f for reading.\n";
     $_ = <FH>;
