@@ -28,10 +28,27 @@ if [ ! -d $dir ]; then
     mkdir $dir
 fi
 
+# if PRECISEC_CFLAGS is unset, we'll use '-g -O9'.  Otherwise we'll use
+# whatever you've set PRECISEC_CFLAGS to.  But we'll complain if it's odd.
+if [ -z "$(echo "${PRECISEC_CFLAGS=' -g -O9'}" | grep '[-]O9' )" ]; then
+  echo " "
+  echo "****************************************************************"
+  echo "WARNING: the precisec emits highly inferior binaries if the"
+  echo "         -O9 flag is not passed to gcc.  [we don't do register"
+  echo "         allocation or move coalescing on the emitted code, and"
+  echo "         gcc won't do it either unless you use -O9.  -O8 won't"
+  echo "         do, surprisingly; compile with -S to see for yourself.]"
+  echo "THE BINARIES YOU ARE BUILDING WITHOUT -O9 SHOULD NEVER BE USED"
+  echo "FOR BENCHMARKING OF ANY KIND.            Thank you."
+  echo "****************************************************************"
+  echo " "
+fi
+
 . `dirname $0`/run-java ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain $opts -bprecisec -c $cls -o $dir && \
 if [ -d ${RUNTIME_DIR}/include -a -f ${RUNTIME_DIR}/config.status ] && \
     grep -q "[-]-with-precise-c" ${RUNTIME_DIR}/config.status ; then
-    make $MAKEOPT -C $dir CC="gcc -I${RUNTIME_DIR}/include -g -O9" && \
+    make $MAKEOPT -C $dir CC="gcc -I${RUNTIME_DIR}/include ${PRECISEC_CFLAGS}"\
+    && \
     mv -f $dir/Java.a ${RUNTIME_DIR}/${name}-Java.a && \
     make $MAKEOPT -C ${RUNTIME_DIR} run${name} && \
     if [ -z $KEEP_ARCHIVE ]; then \
