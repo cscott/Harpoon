@@ -3,43 +3,44 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.AbstractCollection;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * <code>BinHeapPriorityQueue</code> is an implementation of the
  * <code>PriorityQueue</code> interface. It supports O(1) time
  * <code>peekMax</code> and O(lg n) time <code>insert</code> and 
  * <code>removeMax</code> operations, assuming that
- * <code>Vector</code> is implemented in a reasonable manner.  The
+ * <code>ArrayList</code> is implemented in a reasonable manner.  The
  * <code>remove</code> operation is probably slow however.
  *
  * Look into implementing a FibinocciHeap-based representation if
  * speed becomes an issue. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.6 1999-06-18 01:48:10 cananian Exp $
+ * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.7 1999-06-19 18:52:37 cananian Exp $
  */
 public class BinHeapPriorityQueue extends AbstractCollection implements MaxPriorityQueue {
 
-    // heap: Vector of Objects, maintaining the invariants: 
+    // heap: List of Objects, maintaining the invariants: 
     // 1. for each element 'o' at index 'i', the parent of 'o' is
     //    located at index ( (i+1)/2 - 1)
     // 2. for each element 'o', the parent of 'o' has a priority
     //    greater than or equal to the priority of 'o'.
-    private Vector heap;
+    private List heap;
 
     // Priorities of Objects in 'heap' are stored in Integer objects
     // here. 
-    private Vector priorities;
+    private List priorities;
 
     
     /** Creates a <code>BinHeapPriorityQueue</code>. */
     public BinHeapPriorityQueue() {
-        heap = new Vector();
-	priorities = new Vector();
+        heap = new ArrayList();
+	priorities = new ArrayList();
     }
     
     private int _parent(int i) { return (i+1)/2 - 1; }
@@ -116,7 +117,7 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
 	    // we just deleted last element
 	} else {
 	    Util.assert(heap.size() == priorities.size(),
-			"Why are the two Vectors' sizes in the BinHeap unequal?");
+			"Why are the two Lists' sizes in the BinHeap unequal?");
 	    _set(0, mov, pri);
 	    _heapify(0);
 	}
@@ -124,21 +125,19 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
     }
 
     public void clear() {
-	heap = new Vector();
+	heap.clear();
+	priorities.clear();
     }
     
+    /** This is slow. */
     public boolean contains(Object o) {
 	return heap.contains(o);
     }
 
-    public boolean containsAll(Collection c) {
-	return heap.containsAll(c);
-    }
-
     public boolean equals(Object o) {
 	BinHeapPriorityQueue bhpq;
-	if (this==o) return true;
-	if (null==o) return false;
+	if (this==o) return true;  // common case
+	if (null==o) return false; // uncommon case
 	try {
 	    bhpq = (BinHeapPriorityQueue) o;
 	} catch (ClassCastException e) {
@@ -167,13 +166,10 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
     public Iterator iterator() {
 	// return a wrapping iterator, to ensure that the state of
 	// 'priorities' is kept consistent
-	return new UnmodifiableIterator() {
-	    final Iterator inner = heap.iterator();
-	    public boolean hasNext() { return inner.hasNext();} 
-	    public Object next() {return inner.next();}
-	};
+	return Default.unmodifiableIterator(heap.iterator());
     }
 
+    /* This is slow. */
     public boolean remove(Object o) {
 	int index = heap.indexOf(o);
 	if (index >= 0) {
@@ -185,21 +181,8 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
 	}
     }
 
-    public boolean removeAll(Collection c) {
-	Iterator iter = c.iterator();
-	boolean altered = false;
-	while(iter.hasNext()) {
-	    if(remove(iter.next()))
-		altered = true;
-	}
-	return altered;
-    }
-
-    /** Throws UnsupportedOperationException. */
-    public boolean retainAll(Collection c) {
-	// don't know a good way to implement this yet.
-	throw new UnsupportedOperationException();
-    }
+    /* Use default implementation from AbstractCollection for
+     * containsAll(), removeAll() and retainAll() */
 
     public int size() {
 	return heap.size();
