@@ -85,7 +85,7 @@ void freekey(struct hashtable *ht, long long key) {
 }
 
 int hashfunction(struct hashtable *ht, long long key) {
-  return key % ht->currentsize;
+  return ((int)key) % ht->currentsize;
 }
 
 struct hashtable * allocatehashtable() {

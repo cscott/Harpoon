@@ -34,21 +34,16 @@ void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, l
       path->fieldname=getfieldc(hs->namer, ((struct heap_object *)gettable(ht, obj))->class,"[]");
       /*Array dereferences are uniquely classified by array class*/
       path->fielddesc=NULL;
-      
-
       path->paramnum=-1;
       puttable(pathtable, dstobj, path);
       newpath=1;
-
     }
-    
     method=method->caller;
   }
   if(newpath)
     addeffect(hs, -1, NULL, dstobj);
   if(newpatho)
     addeffect(hs, -1, NULL, obj);
-
 }
 
 void addpath(struct heap_state *hs, long long obj, struct fieldname * field, struct fielddesc * fielddesc, long long dstobj) {

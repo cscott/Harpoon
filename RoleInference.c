@@ -76,6 +76,7 @@ void doanalysis() {
 #endif
     switch(line[0]) {
     case 'C': {
+      /* Special action for copying array*/
       long long srcuid, dstuid;
       int srcpos, dstpos,length;
       struct arraylist *tmp=NULL, *al;
@@ -84,6 +85,7 @@ void doanalysis() {
       ho=(struct heap_object *)gettable(ht, srcuid);
       dsto=(struct heap_object *)gettable(ht, dstuid);
       al=ho->al;
+      /* Build copy of source region*/
       while(al!=NULL) {
 	if((al->index>=srcpos)&&(al->index<(srcpos+length))) {
 	  struct arraylist *tmpal=(struct arraylist *)calloc(1,sizeof(struct arraylist));
@@ -94,6 +96,7 @@ void doanalysis() {
 	}
 	al=al->next;
       }
+      /* Now do writes*/
       while(tmp!=NULL) {
 	struct arraylist *tmpal=tmp->next;
 	doarrayassignment(&heap, dsto, tmp->index-srcpos+dstpos, tmp->object);
@@ -107,6 +110,7 @@ void doanalysis() {
     }
     break;
     case 'O': {
+      /* Clone object*/
       long long origuid, cloneuid;
       struct fieldlist *fl;
       struct arraylist *al;
@@ -116,6 +120,7 @@ void doanalysis() {
       clone=(struct heap_object *)gettable(ht, cloneuid);
       fl=ho->fl;
       al=ho->al;
+      /* Copy fields and arrays*/
       while(fl!=NULL) {
 	dofieldassignment(&heap, clone, fl->fieldname, fl->object);
 #ifdef EFFECTS
@@ -134,6 +139,7 @@ void doanalysis() {
     break;
     case 'N':
       {
+	/* Natively created object...may not have pointer to it*/
 	struct heap_object *ho=(struct heap_object *) calloc(1, sizeof(struct heap_object));
 
 	char buf[1000];
@@ -146,6 +152,7 @@ void doanalysis() {
       break;
     case 'U':
       {
+	/* New object*/
 	struct heap_object *ho=(struct heap_object *) calloc(1, sizeof(struct heap_object));
 	char buf[1000];
 	sscanf(line,"UI: %s %lld",buf, &ho->uid);
@@ -195,11 +202,10 @@ void doanalysis() {
       break;
 
     case 'G':
-      /* Do Load */
+      /* Do Array Load */
       {
 	struct localvars * lv=(struct localvars *) calloc(1, sizeof(struct localvars));
 	long long uid, objuid;
-
 
 	sscanf(line,"GA: %s %ld %s %lld %lld",lv->name,&lv->linenumber, lv->sourcename, &objuid, &uid);
 	lv->lvnumber=lvnumber(lv->name);

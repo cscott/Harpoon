@@ -100,7 +100,7 @@ void addobject(struct objectset *os, struct heap_object *ho) {
 }
 
 long int oshashfunction(struct heap_object *ho) {
-  return (ho->uid) % OSHASHSIZE;
+  return ((int)ho->uid) % OSHASHSIZE;
 }
 
 void freeobjectset(struct objectset *os) {

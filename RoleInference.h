@@ -10,17 +10,17 @@
 #define EFFECTS
 
 struct heap_object {
-  struct classname *class;
-  long long uid;
-  struct fieldlist *fl;
-  struct arraylist *al;
+  struct classname *class; /*class of object*/
+  long long uid; /* unique id of object */
+  struct fieldlist *fl; /*list of objects field*/
+  struct arraylist *al; /*list of objects array elements*/
   struct referencelist *rl;/*reachable from these roots*/
 
   struct fieldlist *reversefield;/* Objects pointing at us*/
-  struct arraylist *reversearray;
+  struct arraylist *reversearray;/* arrays pointing at us*/
 
-  struct rolechange *rc;
-  int * methodscalled;
+  struct rolechange *rc; /* track role changes outside of methods*/
+  int * methodscalled; /* array of methods called on heap object*/
 
 
   short reachable;/* low order bit=reachable*/
@@ -33,24 +33,26 @@ struct heap_object {
 
 
 struct method {
-  struct methodname * methodname;
-  struct method *caller;
-  struct localvars *lv;
-  struct heap_object ** params;
-  struct rolemethod * rm;
-  int numobjectargs;
-  short isStatic;
+  struct methodname * methodname; /* method name structure*/
+  struct method *caller; /* caller of this method*/
+  struct localvars *lv; /* list of this methods local variables */
+  struct heap_object ** params; /* List of parameters called with */
+  struct rolemethod * rm; /* Appropriate role instantiated method for this method*/
+  int numobjectargs; /* Number of object type arguments*/
+  short isStatic; /* Is method static */
 #ifdef EFFECTS
-  struct hashtable * pathtable;
-  struct effectlist *effects;
+  struct hashtable * pathtable; /* table of paths for effect use*/
+  struct effectlist *effects; /* list of effects for methods */
 #endif
 };
 
+/* Data structure to keep track of references to kill in kill stage of
+   incremental reachability analysis*/
 struct killtuplelist {
   struct heap_object * ho;
   struct referencelist * rl;
   struct killtuplelist * next;
-  short reachable;
+  short reachable; /* Native reachable bits */
 };
 
 struct referencelist {
@@ -92,7 +94,7 @@ struct localvars {
   int lvnumber;
   struct localvars *next;
   long long age;
-  short invalid;
+  short invalid;/* if 1, then the reference isn't valid anymore...it has been killed*/
 };
 
 struct heap_state {

@@ -6,6 +6,25 @@
 void addpath(struct heap_state *hs, long long obj, struct fieldname * field, struct fielddesc * fielddesc, long long dstobj);
 void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, long long dstobj);
 
+/* Path data structure*/
+/* Cases:(nonmention=NULL)*/
+/* Global */
+/* prev_obj=-1, paramnum=-1, fieldname=global*/
+
+/* New object */
+/* paramnum=-1, prev_obj=-1*/
+
+/* Normal */
+/* fielddesc=fielddesc, fieldname=fieldname, paramnum=-1, prev_obj=object*/
+
+/* Param*/
+/* paramnum=paramnum, prev_obj=-1 */
+
+/* Array */
+/* fielddesc=NULL, field=(class, []), paramnum=-1, prev_obj=array object*/
+
+/* Out of hat */
+/* prev_obj=-1, paramnum =-2*/
 struct path {
   int paramnum;
   long long prev_obj;
@@ -18,6 +37,10 @@ struct epointerlist {
   struct epointerlist * next;
 };
 
+/* Effect data structure */
+/* src.fieldname=dst */
+/* or if fieldname==NULL then src[]=dst */
+/* or if src==NULL then read(dst) */
 struct effectlist {
   struct effectregexpr *src;
   struct fieldname *fieldname;
@@ -27,8 +50,8 @@ struct effectlist {
 
 struct effectregexpr {
   char flag; /* 0=Normal, 1=NEW, 2=Native reached object*/
-  int paramnum;
-  struct fieldname * globalname;
+  int paramnum; /*parameter number if !=-1...in which case flag=0*/
+  struct fieldname * globalname;/* global name...if paramnum=-1, flag=0*/
   struct regexprlist *expr;
 };
 
