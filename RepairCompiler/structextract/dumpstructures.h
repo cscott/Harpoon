@@ -48,6 +48,7 @@ struct Structure {
 struct Structure * TypeArray;
 unsigned long TypeArraySize;
 
+char * deref(char *name);
 void daikon_preprocess_entry_array();
 void initializeTypeArray();
 int entry_is_type(dwarf_entry *entry);

@@ -28,19 +28,27 @@
 #define GETJUSTTYPE 3
 
 int FOLLOW_PTRS=0;
-
+struct genhashtable * arrayt=NULL;
+struct genhashtable * arraytype=NULL;
 int process_elf_binary_data(char* filename);
 
 char *rootfile=NULL;
+char *arrayfile=NULL;
 
 int main(int argc, char **argv) {
+  int i;
   if (argc<2)
     return 0;
   if (argc>=3)
     rootfile=argv[2];
-  if (argc==4&&(strcmp("-r",argv[3])==0))
-    FOLLOW_PTRS=1;
-
+  for(i=3;i<argc;i++) {
+    if (strcmp("-r",argv[i])==0)
+      FOLLOW_PTRS=1;
+    if (strcmp("-a",argv[i])==0) {
+      i++;
+      arrayfile=argv[i];
+    }
+  }
   process_elf_binary_data(argv[1]);
   daikon_preprocess_entry_array();
 }
@@ -111,6 +119,44 @@ void initializeTypeArray()
 	{
 	  char *str=copystr(buf);
 	  genputtable(sht,str,str);
+	}
+	offset=0;
+      }
+    }
+  }
+
+  if (arrayfile!=NULL) {
+    char buf[512];
+    char sizebuf[512];
+    char a;
+    int fd=open(arrayfile,O_RDONLY);
+    int offset=0;
+    int readmore=1;
+    int state=0;
+    arrayt=genallocatehashtable((unsigned int (*)(void *)) & hashstring,(int (*)(void *,void *)) &equivalentstrings);
+    arraytype=genallocatehashtable((unsigned int (*)(void *)) & hashstring,(int (*)(void *,void *)) &equivalentstrings);
+    while(readmore) {
+      if (read(fd,&a,1)<=0)
+        readmore=0;
+      if (readmore) {
+        if (a==' ') {
+          state=1;
+          buf[offset]=0;
+          offset=0;
+        } else if (a!=13&&a!=10) {
+          if (state==0)
+            buf[offset++]=a;
+          else
+            sizebuf[offset++]=a;
+        }
+      }
+      if ((state==1)&&offset>0&&(a==13||a==10||!readmore)) {
+        state=0;
+	sizebuf[offset]=0;
+	{
+	  char *str=copystr(buf);
+	  char *sizestr=copystr(sizebuf);
+	  genputtable(arrayt,str,sizestr);
 	}
 	offset=0;
       }
@@ -265,7 +311,18 @@ void initializeTypeArray()
 	      }
 	      offset+=getsize(type);
 	      newname=escapestr(name);
-	      printf("   %s %s%s;\n",typestr,newname,poststr);
+              {
+                char buf[512];
+                char *dtype;
+                sprintf(buf, "%s.%s\0", collection_ptr->name,newname);
+                if (arrayt!=NULL&&gencontains(arrayt, &buf)) {
+                  genputtable(arraytype, copystr(buf), typestr);
+                  dtype=deref(typestr);
+                  printf("   %s_array * %s%s;\n",dtype,newname,poststr);
+                  free(dtype);
+                } else
+                  printf("   %s %s%s;\n",typestr,newname,poststr);
+              }
 	      free(newname);
 	    }
 	  }
@@ -274,6 +331,26 @@ void initializeTypeArray()
 	  printf("}\n\n");
         }
     }
+  if (arrayt!=NULL) {
+    struct geniterator * gi=gengetiterator(arrayt);
+    while(1) {
+      char * str=(char *)gennext(gi);
+      char *size=NULL;
+      char *typestr=NULL;
+      if (str==NULL)
+        break;
+
+      size=(char *)gengettable(arrayt,str);
+      typestr=deref((char *)gengettable(arraytype,str));
+
+      printf("structure %s_array {\n",typestr);
+      printf("  %s elem[%s];\n",typestr,size);
+      printf("}\n");
+      free(typestr);
+    }
+    genfreeiterator(gi);
+  }
+
 }
 
 int printtype(collection_type *collection_ptr,struct genhashtable *ght)
@@ -316,7 +393,18 @@ int printtype(collection_type *collection_ptr,struct genhashtable *ght)
       offset+=getsize(type);
 
       newname=escapestr(name);
-      printf("   %s %s%s;\n",typestr,newname,poststr);
+      {
+        char buf[512];
+        char *dtype;
+        sprintf(buf, "%s.%s\0", collection_ptr->name,newname);
+        if (arrayt!=NULL&&gencontains(arrayt, &buf)) {
+          genputtable(arraytype, buf, typestr);
+          dtype=deref(typestr);
+          printf("   %s_array * %s%s;\n",dtype,newname,poststr);
+          free(dtype);
+        } else
+          printf("   %s %s%s;\n",typestr,newname,poststr);
+      }
       free(newname);
     }
   }
@@ -369,6 +457,22 @@ int getsize(dwarf_entry *type) {
   default:
     return 0;
   }
+}
+
+char * deref(char *name) {
+  char *str=copystr(name);
+  char *initstr=str;
+  for(;(*str)!=0;str++)
+    ;
+  for(;(str!=initstr)&&((*str)!='*');str--)
+    ;
+  if ((*str)=='*') {
+    (*str)=0;
+    str--;
+    for(;(str!=initstr)&&((*str)==' ');str--)
+      (*str)=0;
+  }
+  return initstr;
 }
 
 char * printname(dwarf_entry * type,int op) {
