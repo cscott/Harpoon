@@ -26,7 +26,7 @@ import java.util.List;
  * and its motivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.6 2000-02-15 18:50:23 cananian Exp $
+ * @version $Id: Derivation.java,v 1.1.2.7 2000-10-25 19:36:55 cananian Exp $
  */
 public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 
@@ -61,6 +61,12 @@ public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
      * is the responsibility of the implementor</b> to ensure that the
      * base pointers are not overwritten while the derived value is
      * live.
+     * <p><b>ALSO NOTE</b> that the temporaries named in the
+     * <code>DList</code> are <i>base pointers</i> -- that is,
+     * they have pure types, <i>not derived types</i>.  In particular,
+     * the <code>derivation()</code> method applied to any temporary
+     * named in a <code>DList</code> should return <code>null</code>.
+     * Derived types derived from other derived types are not allowed.
      */
     public static class DList {
 	/** Base pointer. */
