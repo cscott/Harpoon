@@ -148,7 +148,7 @@ JNIEXPORT jstring JNICALL Java_java_lang_Class_getName
   (JNIEnv *env, jobject cls) {
     struct FNI_classinfo *info = FNI_GetClassInfo((jclass)cls);
     /* replace / with . so that we do the same thing as Sun's JDKs */
-    char buf[strlen(info->name)+1], *src, *dst;
+    char buf[strlen(info->name)+1], *dst; const char *src;
     for (src=info->name, dst=buf; *src; src++, dst++)
       *dst = (*src=='/')?'.':*src;
     *dst='\0';
