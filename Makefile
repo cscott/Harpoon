@@ -2,9 +2,10 @@
 # quo.idl, and rss.idl here.
 UAVDIST=src/corba/UAV
 
+JACORB_HOME=contrib/JacORB1_3_30
 JCC=javac 
 JAVA=java
-IDLCC=idl -I$(JACORB_HOME)/idl/omg
+IDLCC=$(JACORB_HOME)/bin/idl -I$(JACORB_HOME)/idl/omg
 JAR=jar
 JDOC=javadoc
 SSH=ssh
@@ -23,9 +24,9 @@ IMAGES=$(wildcard dbase/plane/*gz* dbase/plane/*.jar dbase/tank/*.jar) $(wildcar
 DSOURCES=$(wildcard paper/README paper/p* src/*.html src/graph/*.html)
 DSOURCES += $(wildcard src/util/*.html src/corba/*.html src/rtj/*.html)
 DSOURCES += $(wildcard src/rtj/stubs/*.html)
-MANIFEST=src/MANIFEST.MF
+MANIFEST=$(wildcard src/manifest/*.MF)
 RELEASE=$(SOURCES) README BUILDING COPYING Makefile $(IMAGES) $(DSOURCES) $(BISOURCES) $(MANIFEST)
-JDIRS=imagerec FrameManip omg ATRManip quo rss
+JDIRS=imagerec FrameManip omg ATRManip quo rss HTTPClient demo java_cup org
 
 # figure out what the current CVS branch is, by looking at the Makefile
 CVS_TAG=$(firstword $(shell cvs status Makefile | grep -v "(none)" | \
@@ -50,9 +51,9 @@ JDOCFLAGS += \
 all:    clean doc imagerec.jar # imagerec.tgz
 
 clean:
-	@echo Cleaning up docs and imagerec.jar.
-	@rm -rf doc $(JDIRS)
-	@rm -f imagerec.jar imagerec.jar.TIMESTAMP
+	@echo Cleaning up docs and jars.
+	@rm -rf doc $(JDIRS) META-INF
+	@rm -f *.jar *.jar.TIMESTAMP
 	@rm -f imagerec.tgz imagerec.tgz.TIMESTAMP
 #	@rm -f ChangeLog
 
@@ -68,24 +69,136 @@ doc:	$(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@chmod -R a+rX doc
 
 imagerec.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
-	@echo Generating imagerec.jar file...
+	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
 	@$(IDLCC) -d . $(ISOURCES)
 	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
-	@rm -f $(GJSOURCES)
-	@$(JAR) -cfm $@ $(MANIFEST) $(JDIRS)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
+#test.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+#	@echo Generating $@ file...
+#	@rm -rf $(JDIRS)
+#	@$(IDLCC) -d . $(ISOURCES)
+#	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+#	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+#	@rm -rf $(GJSOURCES)
+#	@$(JAR) xf contrib/jacorb.jar
+#	@rm -rf META-INF
+#	@$(JAR) xf movie/tank.jar
+#	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS) tank.gz.*
+#	@rm -rf $(JDIRS)
+#	@rm -rf tank.gz.*
+#	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
+GUI.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) xf movie/tank.jar
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS) tank.gz.*
+	@rm -rf $(JDIRS) 
+	@rm -rf tank.gz.*
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
+receiverStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
+	@rm -rf $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
+trackerStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
+	@rm -rf $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
+ATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
+	@rm -rf $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
+embeddedATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
+	@rm -rf $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
+groundATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
+	@rm -rf $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
+RTJ.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
+	@rm -rf $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
+jars: clean doc RTJ.jar groundATR.jar embeddedATR.jar ATR.jar trackerStub.jar receiverStub.jar imagerec.jar GUI.jar
 
 imagerec.tgz: $(RELEASE)
 	@echo Generating $@ file.
 	@tar -c $(RELEASE) | gzip -9 > $@
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
-jar-install: imagerec.jar
-	@echo Installing imagerec.jar.
-	tar -c imagerec.jar imagerec.jar.TIMESTAMP | \
+jar-install: jars
+	@echo Installing jars.
+	tar -c *.jar *.jar.TIMESTAMP | \
 		$(SSH) $(INSTALLMACHINE) "tar -C $(INSTALLDIR) -x"
 
 tar-install: imagerec.tgz
