@@ -14,10 +14,14 @@ while [ x$inst = x ]; do
 	export GUI=N;
 	export version='-A';
 	export RTJ=N;;
+	export BENCHMARKS=;;
+	export IMAGEREC=;;
      2) export arm=;
 	export GUI=;
 	export version=;
 	export RTJ=;;
+	export BENCHMARKS=none;;
+	export IMAGEREC=none;;
      *) export inst=;;
   esac;
 done
@@ -31,15 +35,6 @@ while [ x$arm = x ]; do
   esac;
 done
 
-while [ x$GUI = x ]; do
-  read -p "Do you want GUI support (experimental) (Y/N)? " GUI leftover;
-  case $GUI in
-     y* | Y*) export GUI=Y;;
-     n* | N*) export GUI=N;;
-     *) export GUI=;;
-  esac;
-done
-
 echo Downloading dependencies...
 if [ -f /etc/redhat-release ]; then 
    export WEB_ROOT=http://flex-cvs.csail.mit.edu/ImageRec/RPMS; 
@@ -47,12 +42,13 @@ if [ -f /etc/redhat-release ]; then
    cd RPMS;
    if fgrep -q -c '7.2' /etc/redhat-release; then 
       echo RedHat 7.2 detected.;
-
-      wget -q $WEB_ROOT/noGUI/arm-linux-binutils-2.10-1.i386.rpm; 
-      wget -q $WEB_ROOT/noGUI/arm-linux-classpath-libs-0.05-1.i386.rpm; 
-      wget -q $WEB_ROOT/noGUI/arm-linux-gcc-2.95.2-2.i386.rpm; 
-      wget -q $WEB_ROOT/noGUI/arm-linux-glibc-2.1.3-2.i386.rpm;
-
+      export GUI=N;
+      if [ x$arm = xY ]; then
+	 wget -q $WEB_ROOT/noGUI/arm-linux-binutils-2.10-1.i386.rpm; 
+         wget -q $WEB_ROOT/noGUI/arm-linux-classpath-libs-0.05-1.i386.rpm; 
+         wget -q $WEB_ROOT/noGUI/arm-linux-gcc-2.95.2-2.i386.rpm; 
+         wget -q $WEB_ROOT/noGUI/arm-linux-glibc-2.1.3-2.i386.rpm;
+      fi;
       wget -q $WEB_ROOT/noGUI/autoconf-2.53-8.noarch.rpm; 
       wget -q $WEB_ROOT/noGUI/automake-1.6.3-1.noarch.rpm; 
       wget -q $WEB_ROOT/noGUI/db3x-3.2.9-4.i386.rpm; 
@@ -61,63 +57,78 @@ if [ -f /etc/redhat-release ]; then
       wget -q $WEB_ROOT/noGUI/perl-modules-5.6.1-66.i386.rpm; 
    fi;
    if fgrep -q -c '7.3' /etc/redhat-release; then 
-      echo RedHat 7.3 detected.; 
-      wget -q $WEB_ROOT/noGUI/arm-linux-binutils-2.10-1.i386.rpm; 
-      wget -q $WEB_ROOT/noGUI/arm-linux-classpath-libs-0.05-1.i386.rpm; 
-      wget -q $WEB_ROOT/noGUI/arm-linux-gcc-2.95.2-2.i386.rpm; 
-      wget -q $WEB_ROOT/noGUI/arm-linux-glibc-2.1.3-2.i386.rpm; 
+      echo RedHat 7.3 detected.;
+      export GUI=N;
+      if [ x$arm = xY ]; then
+	 wget -q $WEB_ROOT/noGUI/arm-linux-binutils-2.10-1.i386.rpm; 
+         wget -q $WEB_ROOT/noGUI/arm-linux-classpath-libs-0.05-1.i386.rpm; 
+         wget -q $WEB_ROOT/noGUI/arm-linux-gcc-2.95.2-2.i386.rpm; 
+         wget -q $WEB_ROOT/noGUI/arm-linux-glibc-2.1.3-2.i386.rpm; 
+      fi
       wget -q $WEB_ROOT/noGUI/autoconf-2.53-8.noarch.rpm; 
       wget -q $WEB_ROOT/noGUI/automake-1.6.3-1.noarch.rpm; 
       wget -q $WEB_ROOT/noGUI/db3x-3.2.9-4.i386.rpm; 
       wget -q $WEB_ROOT/noGUI/jikes-1.18-2mdk.i586.rpm; 
       wget -q $WEB_ROOT/noGUI/perl-Test-Harness-2.26-2.noarch.rpm; 
       wget -q $WEB_ROOT/noGUI/perl-modules-5.6.1-66.i386.rpm; 
-   fi
+   fi;
    if fgrep -q -c '8.0' /etc/redhat-release; then 
       echo RedHat 8.0 detected.;
-      wget -q $WEB_ROOT/ORBit-devel-0.5.13-5.i386.rpm;
-      wget -q $WEB_ROOT/Xft-2.0-1.i386.rpm;
-      wget -q $WEB_ROOT/Xft-devel-2.0-1.i386.rpm;
-      wget -q $WEB_ROOT/arm-linux-binutils-2.10-1.i386.rpm;
-      wget -q $WEB_ROOT/arm-linux-classpath-libs-0.05-1.i386.rpm;
-      wget -q $WEB_ROOT/arm-linux-gcc-2.95.2-2.i386.rpm;
-      wget -q $WEB_ROOT/arm-linux-glibc-2.1.3-2.i386.rpm;
-      wget -q $WEB_ROOT/atk-1.0.3-1.i386.rpm;
-      wget -q $WEB_ROOT/atk-devel-1.0.3-1.i386.rpm;
-      wget -q $WEB_ROOT/audiofile-devel-0.2.3-3.i386.rpm;
+      while [ x$GUI = x ]; do
+        read -p "Do you want GUI support (experimental) (Y/N)? " GUI leftover;
+        case $GUI in
+          y* | Y*) export GUI=Y;;
+          n* | N*) export GUI=N;;
+          *) export GUI=;;
+        esac;
+      done
+
+      if [ x$arm = xY ]; then
+         wget -q $WEB_ROOT/arm-linux-binutils-2.10-1.i386.rpm;
+         wget -q $WEB_ROOT/arm-linux-classpath-libs-0.05-1.i386.rpm;
+         wget -q $WEB_ROOT/arm-linux-gcc-2.95.2-2.i386.rpm;
+         wget -q $WEB_ROOT/arm-linux-glibc-2.1.3-2.i386.rpm;
+      fi
       wget -q $WEB_ROOT/autoconf-2.53-8.noarch.rpm;
       wget -q $WEB_ROOT/automake-1.6.3-1.noarch.rpm;
       wget -q $WEB_ROOT/db3x-3.2.9-4.i386.rpm;
-      wget -q $WEB_ROOT/esound-0.2.28-1.i386.rpm;
-      wget -q $WEB_ROOT/esound-devel-0.2.28-1.i386.rpm;
-      wget -q $WEB_ROOT/fontconfig-2.0-3.i386.rpm;
-      wget -q $WEB_ROOT/fontconfig-devel-2.0-3.i386.rpm;
-      wget -q $WEB_ROOT/freetype-2.1.2-7.i386.rpm;
-      wget -q $WEB_ROOT/freetype-devel-2.1.2-7.i386.rpm;
-      wget -q $WEB_ROOT/glib2-2.0.6-2.i386.rpm;
-      wget -q $WEB_ROOT/glib2-devel-2.0.6-2.i386.rpm;
-      wget -q $WEB_ROOT/glibc-2.3.2-4.80.i386.rpm;
-      wget -q $WEB_ROOT/glibc-common-2.3.2-4.80.i386.rpm;
-      wget -q $WEB_ROOT/gnome-libs-1.4.1.2.90-22.i386.rpm;
-      wget -q $WEB_ROOT/gnome-libs-devel-1.4.1.2.90-22.i386.rpm;
-      wget -q $WEB_ROOT/gtk2-2.0.6-8.i386.rpm;
-      wget -q $WEB_ROOT/gtk2-devel-2.0.6-8.i386.rpm;
-      wget -q $WEB_ROOT/gtk2-engines-1.9.0-4.i386.rpm;
-      wget -q $WEB_ROOT/htmlview-2.0.0-6.noarch.rpm;
-      wget -q $WEB_ROOT/jikes-1.18-1.i386.rpm;
       wget -q $WEB_ROOT/jikes-1.18-2mdk.i586.rpm;
-      wget -q $WEB_ROOT/libart_lgpl-2.3.10-1.i386.rpm;
-      wget -q $WEB_ROOT/libart_lgpl-devel-2.3.10-1.i386.rpm;
-      wget -q $WEB_ROOT/libpng-1.2.2-8.i386.rpm;
-      wget -q $WEB_ROOT/libpng-devel-1.2.2-8.i386.rpm;
-      wget -q $WEB_ROOT/libpng10-1.0.13-6.i386.rpm;
-      wget -q $WEB_ROOT/libpng10-devel-1.0.13-6.i386.rpm;
-      wget -q $WEB_ROOT/libstdc++-3.2-7.i386.rpm;
-      wget -q $WEB_ROOT/pango-1.1.1-1.i386.rpm;
-      wget -q $WEB_ROOT/pango-devel-1.1.1-1.i386.rpm;
       wget -q $WEB_ROOT/perl-Test-Harness-2.26-2.noarch.rpm;
       wget -q $WEB_ROOT/perl-modules-5.6.1-66.i386.rpm;
-      wget -q $WEB_ROOT/redhat-menus-0.26-1.noarch.rpm; 
+      if [ x$GUI = xY ]; then
+         wget -q $WEB_ROOT/ORBit-devel-0.5.13-5.i386.rpm;
+         wget -q $WEB_ROOT/Xft-2.0-1.i386.rpm;
+         wget -q $WEB_ROOT/Xft-devel-2.0-1.i386.rpm;
+         wget -q $WEB_ROOT/atk-1.0.3-1.i386.rpm;
+         wget -q $WEB_ROOT/atk-devel-1.0.3-1.i386.rpm;
+         wget -q $WEB_ROOT/audiofile-devel-0.2.3-3.i386.rpm;
+         wget -q $WEB_ROOT/esound-0.2.28-1.i386.rpm;
+         wget -q $WEB_ROOT/esound-devel-0.2.28-1.i386.rpm;
+         wget -q $WEB_ROOT/fontconfig-2.0-3.i386.rpm;
+         wget -q $WEB_ROOT/fontconfig-devel-2.0-3.i386.rpm;
+         wget -q $WEB_ROOT/freetype-2.1.2-7.i386.rpm;
+         wget -q $WEB_ROOT/freetype-devel-2.1.2-7.i386.rpm;
+         wget -q $WEB_ROOT/glib2-2.0.6-2.i386.rpm;
+         wget -q $WEB_ROOT/glib2-devel-2.0.6-2.i386.rpm;
+         wget -q $WEB_ROOT/glibc-2.3.2-4.80.i386.rpm;
+         wget -q $WEB_ROOT/glibc-common-2.3.2-4.80.i386.rpm;
+         wget -q $WEB_ROOT/gnome-libs-1.4.1.2.90-22.i386.rpm;
+         wget -q $WEB_ROOT/gnome-libs-devel-1.4.1.2.90-22.i386.rpm;
+         wget -q $WEB_ROOT/gtk2-2.0.6-8.i386.rpm;
+         wget -q $WEB_ROOT/gtk2-devel-2.0.6-8.i386.rpm;
+         wget -q $WEB_ROOT/gtk2-engines-1.9.0-4.i386.rpm;
+         wget -q $WEB_ROOT/htmlview-2.0.0-6.noarch.rpm;
+         wget -q $WEB_ROOT/libart_lgpl-2.3.10-1.i386.rpm;
+         wget -q $WEB_ROOT/libart_lgpl-devel-2.3.10-1.i386.rpm;
+         wget -q $WEB_ROOT/libpng-1.2.2-8.i386.rpm;
+         wget -q $WEB_ROOT/libpng-devel-1.2.2-8.i386.rpm;
+         wget -q $WEB_ROOT/libpng10-1.0.13-6.i386.rpm;
+         wget -q $WEB_ROOT/libpng10-devel-1.0.13-6.i386.rpm;
+         wget -q $WEB_ROOT/libstdc++-3.2-7.i386.rpm;
+         wget -q $WEB_ROOT/pango-1.1.1-1.i386.rpm;
+         wget -q $WEB_ROOT/pango-devel-1.1.1-1.i386.rpm;
+         wget -q $WEB_ROOT/redhat-menus-0.26-1.noarch.rpm; 
+      fi;
    fi;
    export prmpt=
    while [ x$prmpt = x ]; do
@@ -161,12 +172,31 @@ while [ x$version = x ]; do
   esac;
 done
 
+export REALTIME=;
 while [ x$RTJ = x ]; do
   read -p "Do you want to use Real-Time Java (Y/N)? " RTJ leftover;
   case $RTJ in
-     y* | Y*) export RTJ=Y;;
-     n* | N*) export RTJ=N;;
+     y* | Y*) export RTJ=Y; export REALTIME=Realtime;
+     n* | N*) export RTJ=N; export REALTIME=;
      *) export RTJ=;;
+  esac;
+done
+
+while [ x$IMAGEREC = xnone ]; do
+  read -p "Do you want a copy of the Image Recognition application (Y/N)? " IMAGEREC leftover;
+  case $IMAGEREC in
+     y* | Y*) export IMAGEREC=ImageRec;;
+     n* | N*) export IMAGEREC=;;
+     *) export IMAGEREC=none;;
+  esac;
+done
+
+while [ x$BENCHMARKS = xnone ]; do
+  read -p "Do you want a copy of the Benchmarks and Tests (Y/N)? " BENCHMARKS leftover;
+  case $BENCHMARKS in
+     y* | Y*) export BENCHMARKS='Tests Benchmarks';;
+     n* | N*) export BENCHMARKS=;;
+     *) export BENCHMARKS=none;;
   esac;
 done
 
@@ -177,7 +207,7 @@ while [ x$prmpt = x ]; do
         y* | Y*)
 	   read -p "What's your username on the FLEX CVS server? " pass leftover;
 	   echo Please type your password to the FLEX repository:;
-           cvs -d :ext:$pass@flex-cvs.csail.mit.edu:/data/cvs co $version Classpath Code Realtime ImageRec Runtime Tests Benchmarks;
+           cvs -d :ext:$pass@flex-cvs.csail.mit.edu:/data/cvs co $version Classpath Code $REALTIME $IMAGEREC Runtime $BENCHMARKS;
 	   cd Runtime/Contrib/gc;
            echo Please type your password to the FLEX repository (again):;
 	   cvs update -r BOEHM_DIST;
@@ -188,7 +218,7 @@ while [ x$prmpt = x ]; do
 	   echo Please type 'cvsguest' as the password.;
 	   export CVSROOT=:pserver:cvsguest@flex-cvs.csail.mit.edu:/data/cvs;
 	   cvs login;
-	   cvs co $version Classpath Code Realtime ImageRec Runtime Tests Benchmarks;
+	   cvs co $version Classpath Code $REALTIME $IMAGEREC Runtime Tests $BENCHMARKS;
 	   cd Runtime/Contrib/gc;
 	   cvs update -r BOEHM_DIST;
 	   cvs update $version;
@@ -200,12 +230,33 @@ done
 cd Classpath
 echo Building Classpath...
 
-./build
 ./build-noGUI
 ./build-noGUI-debug
-./build-arm
+
+if [ x$GUI = xY ]; then
+   ./build;
+fi;
+
+if [ x$arm = xY ]; then
+   ./build-arm;
+fi;
 	    
 cd -
 echo Building Runtime...
 cd Runtime
+./setup
 ./configure --disable-shared --with-gc=conservative --with-precise-c --with-thread-model=heavy --with-classpath=`pwd`/../install-noGUI/lib/classpath CC="gcc -O9 -DNDEBUG"
+make clean; make
+
+cd ../Code
+make
+
+if [ x$REALTIME == xRealtime ]; then
+  cd ../Realtime;
+  make;
+fi;
+
+if [ x$IMAGEREC == xImageRec ]; then
+  cd ../ImageRec;
+  make jars;
+fi;
