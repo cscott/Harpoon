@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
+import harpoon.Analysis.AllocationInformationMap.AllocationPropertiesImpl;
 import harpoon.Analysis.DefMap;
 import harpoon.Analysis.ReachingDefs;
 import harpoon.Analysis.ReachingDefsImpl;
@@ -71,7 +72,7 @@ import java.util.Stack;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.76 2000-04-04 00:38:19 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.77 2000-04-04 00:49:59 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -851,20 +852,7 @@ static class TranslationVisitor extends LowQuadVisitor {
     // do appropriate temp mapping on allocationproperties object
     private AllocationProperties MAP(final AllocationProperties ap) {
 	if (ap.allocationHeap()==null) return ap;
-	else return new AllocationProperties() {
-	    public boolean hasInteriorPointers() {
-		return ap.hasInteriorPointers();
-	    }
-	    public boolean canBeStackAllocated() {
-		return ap.canBeStackAllocated();
-	    }
-	    public boolean canBeThreadAllocated() {
-		return ap.canBeThreadAllocated();
-	    }
-	    public Temp allocationHeap() {
-		return m_ctm.tempMap(ap.allocationHeap());
-	    }
-	};
+	else return new AllocationPropertiesImpl(ap, m_ctm);
     }
 			   
     private void addStmt(Stm stm) { 

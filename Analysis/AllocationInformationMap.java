@@ -18,7 +18,7 @@ import java.util.Map;
  * from a different <code>AllocationInformation</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformationMap.java,v 1.1.2.3 2000-04-04 00:43:19 cananian Exp $
+ * @version $Id: AllocationInformationMap.java,v 1.1.2.4 2000-04-04 00:50:18 cananian Exp $
  */
 public class AllocationInformationMap implements AllocationInformation {
     private final Map map = new HashMap();
@@ -44,26 +44,25 @@ public class AllocationInformationMap implements AllocationInformation {
 			 TempMap tm, AllocationInformation ai) {
 	AllocationProperties ap = ai.query(oldallocsite);
 	associate(newallocsite, ap.allocationHeap()==null ? ap :
-		  new AllocationPropertiesProxy(ap, tm));
+		  new AllocationPropertiesImpl(ap, tm));
     }
-    // copy the info from the given allocationproperties to avoid leaving
-    // a long chain of live objects...
+    /** A simple implementation of <code>AllocationProperties</code>. */
     public static class AllocationPropertiesImpl
 	implements AllocationProperties {
 	final boolean hasInteriorPointers;
 	final boolean canBeStackAllocated;
 	final boolean canBeThreadAllocated;
 	final Temp allocationHeap;
-	AllocationPropertiesImpl(boolean hasInteriorPointers,
-				 boolean canBeStackAllocated,
-				 boolean canBeThreadAllocated,
-				 Temp allocationHeap) {
+	public AllocationPropertiesImpl(boolean hasInteriorPointers,
+					boolean canBeStackAllocated,
+					boolean canBeThreadAllocated,
+					Temp allocationHeap) {
 	    this.hasInteriorPointers = hasInteriorPointers;
 	    this.canBeStackAllocated = canBeStackAllocated;
 	    this.canBeThreadAllocated= canBeThreadAllocated;
 	    this.allocationHeap = allocationHeap;
 	}
-	AllocationPropertiesImpl(AllocationProperties ap, TempMap tm) {
+	public AllocationPropertiesImpl(AllocationProperties ap, TempMap tm) {
 	    this(ap.hasInteriorPointers(),
 		 ap.canBeStackAllocated(),
 		 ap.canBeThreadAllocated(),
