@@ -9,7 +9,7 @@ import harpoon.Util.WorkSet;
  * <code>InstrSolver</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InstrSolver.java,v 1.1.2.1 1999-05-17 21:55:26 pnkfelix Exp $
+ * @version $Id: InstrSolver.java,v 1.1.2.2 1999-05-27 01:53:35 pnkfelix Exp $
  */
 public final class InstrSolver  {
     
@@ -32,9 +32,10 @@ public final class InstrSolver  {
 	                     <code>root</code> and the
 			     <code>BasicBlock</code>s linked to by
 			     <code>root</code>, performing
-			     <code>v</code>'s transfer function on
-			     each <code>BasicBlock</code> in turn, and
-			     tracking for when the 
+			     <code>v</code>'s transfer function on 
+			     each <code>BasicBlock</code> in turn,
+			     tracking for when no change occurs, at
+			     which point the analysis is complete.    
      */
     public static void worklistSolver(BasicBlock root, DataFlowBasicBlockVisitor v) {
 	WorkSet w = new WorkSet();

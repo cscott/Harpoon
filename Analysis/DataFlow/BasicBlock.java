@@ -15,6 +15,9 @@ import java.util.Hashtable;
 import java.util.Enumeration;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.HashSet;
 
 public class BasicBlock {
     
@@ -39,6 +42,35 @@ public class BasicBlock {
 	first = f; last = l; pred_bb = new HashSet(); succ_bb = new HashSet();
 	num = BBnum++;
     }
+
+
+    /** BasicBlock Iterator genenerator.
+	<BR> <B>effects:</B> returns an <code>Iterator</code> over all
+	of the <code>BasicBlock</code>s linked to and from
+	<code>block</code>.  This <code>Iterator</code> will return
+	each <code>BasicBlock</code> no more than once.
+    */
+    public static Iterator basicBlockIterator(BasicBlock block) { 
+	HashSet set = new HashSet();
+	WorkSet todo = new WorkSet();
+	set.add(block);
+	todo.push(block);
+	while( !todo.isEmpty() ) {
+	    BasicBlock doing = (BasicBlock) todo.pull(); 
+	    Enumeration enum = doing.next(); 
+	    while(enum.hasMoreElements()) { 
+		BasicBlock b = (BasicBlock) enum.nextElement(); 
+		if (set.add(b)) todo.push(b); 
+	    } 
+	    enum = doing.prev();  
+	    while(enum.hasMoreElements()) {
+		BasicBlock b = (BasicBlock) enum.nextElement(); 
+		if (set.add(b)) todo.push(b); 
+	    } 
+	}
+	return set.iterator();
+    }
+
     
     /** BasicBlock generator.
 	<BR> <B>requires:</B> All <code>HCodeEdge</code>s linked to by
@@ -55,7 +87,9 @@ public class BasicBlock {
 	     first instruction in. 
     */
     public static BasicBlock computeBasicBlocks(HasEdges head) {
-	Hashtable h = new Hashtable();
+	// maps HasEdges 'e' -> BasicBlock 'b' starting with 'e'
+	Hashtable h = new Hashtable(); 
+	// stores BasicBlocks to be processed
 	Worklist w = new WorkSet();
 
 	BasicBlock first = new BasicBlock(head);
@@ -64,14 +98,19 @@ public class BasicBlock {
 	
 	while(!w.isEmpty()) {
 	    BasicBlock current = (BasicBlock) w.pull();
-	    HasEdges e = (HasEdges) current.getFirst();
-	    for (;;) {
-		int n = e.succ().length;
+	    
+	    // 'last' is our guess on which elem will be the last;
+	    // thus we start with the most conservative guess
+	    HasEdges last = (HasEdges) current.getFirst();
+	    boolean foundEnd = false;
+	    while(!foundEnd) {
+		int n = last.succ().length;
 		if (n == 0) 
-		    break; // end of method
+		    foundEnd = true;
+
 		else if (n > 1) { // control flow split
 		    for (int i=0; i<n; i++) {
-			HasEdges e_n = (HasEdges) e.succ()[i];
+			HasEdges e_n = (HasEdges) last.succ()[i].to();
 			BasicBlock bb = (BasicBlock) h.get(e_n);
 			if (bb == null) {
 			    h.put(e_n, bb=new BasicBlock(e_n));
@@ -79,24 +118,27 @@ public class BasicBlock {
 			}
 			addEdge(current, bb);
 		    }
-		    break;
-		} else {
-		    HasEdges en = (HasEdges) e.succ()[0];
-		    int m = en.pred().length;
+		    foundEnd = true;
+
+		} else { // one successor
+		    HasEdges next = (HasEdges) last.succ()[0].to();
+		    int m = next.pred().length;
 		    if (m > 1) { // control flow join
-			BasicBlock bb = (BasicBlock) h.get(en);
+			BasicBlock bb = (BasicBlock) h.get(next);
 			if (bb == null) {
-			    h.put(en, bb = new BasicBlock(en));
+			    bb = new BasicBlock(next);
+			    h.put(next, bb);
 			    w.push(bb);
 			}
 			addEdge(current, bb);
-			break;
-		    } else {
-			e = en;
+			foundEnd = true;
+			
+		    } else { // no join; update our guess
+			last = next;
 		    }
 		} 
 	    }
-	    current.setLast(e);
+	    current.setLast(last);
 	}
 	return (BasicBlock) h.get(head);
     }
@@ -104,13 +146,13 @@ public class BasicBlock {
     public HasEdges getFirst() { return first; }
     public HasEdges getLast() { return last; }
     
-    public void addPredecessor(BasicBlock bb) { pred_bb.union(bb); }
-    public void addSuccessor(BasicBlock bb) { succ_bb.union(bb); }
+    public void addPredecessor(BasicBlock bb) { pred_bb.add(bb); }
+    public void addSuccessor(BasicBlock bb) { succ_bb.add(bb); }
     
     public int prevLength() { return pred_bb.size(); }
     public int nextLength() { return succ_bb.size(); }
-    public Enumeration prev() { return pred_bb.elements(); }
-    public Enumeration next() { return succ_bb.elements(); }
+    public Enumeration prev() { return new IteratorEnumerator(pred_bb.iterator()); }
+    public Enumeration next() { return new IteratorEnumerator(succ_bb.iterator()); }
     
     /** Returns an <code>Enumeration</code> of <code>HasEdges</code>
 	within <code>this</code>.  
@@ -120,34 +162,38 @@ public class BasicBlock {
     }
     
     /** Returns an immutable <code>ListIterator</code> for the
-	<code>HasEdges</code> within <code>this</code>. */  
+	<code>HasEdges</code> within <code>this</code>. 
+	The ListIterator returned will iterate through the
+	instructions according to their order in the program.
+    */  
     public ListIterator listIterator() {
 	return new ListIterator() {
-	    HasEdges current = first;
+	    HasEdges next = first;
+	    HasEdges prev = null;
 	    int index = 0;
-	    public boolean hasNext() { return current != last; }
-	    public boolean hasPrevious() { return current != first; } // correct? 
+	    public boolean hasNext() { return next != null; }
+	    public boolean hasPrevious() { return prev != null; } // correct? 
 	    public int nextIndex() { return index + 1; }
 	    public int previousIndex() { return index - 1; } 
 	    public Object next() {
-		if (current == null) throw new NoSuchElementException();
-		Util.assert((current == first) || (current.pred().length == 1));
-		Util.assert(current.succ().length == 1);
-		HasEdges r = current;
-		if (r == last) current = null;
-		else current = (HasEdges) current.succ()[0].to();
+		if (next == null) throw new NoSuchElementException();
+		Util.assert((next == first) || (next.pred().length == 1));
+		Util.assert((next == last) || (next.succ().length == 1));
+		prev = next; 
+		if (next == last) next = null;
+		else next = (HasEdges) next.succ()[0].to();
 		index++;
-		return r;
+		return prev; 
 	    }		
 	    public Object previous() {
-		if (current == null) throw new NoSuchElementException();
-		Util.assert((current == last) || (current.succ().length == 1));
-		Util.assert(current.pred().length == 1);
-		HasEdges r = current;
-		if (r == first) current = null;
-		else current = (HasEdges) current.pred()[0].from();
+		if (prev == null) throw new NoSuchElementException();
+		Util.assert((prev == first) || (prev.pred().length == 1));
+		Util.assert((prev == last) || (prev.succ().length == 1));
+		next = prev;
+		if (prev == first) prev = null;
+		else prev = (HasEdges) prev.pred()[0].from();
 		index--;
-		return r;
+		return next;
 	    }
 	    
 	    public void remove() {throw new UnsupportedOperationException();} 
@@ -176,6 +222,15 @@ public class BasicBlock {
     
     public String toString() {
 	return "BB"+num;
+    }
+
+    public String dumpElems() {
+	StringBuffer s = new StringBuffer();
+	Iterator iter = listIterator();
+	while(iter.hasNext()) {	    
+	    s.append(iter.next() + "\n");
+	}
+	return s.toString();
     }
     
     public static void dumpCFG(BasicBlock start) {

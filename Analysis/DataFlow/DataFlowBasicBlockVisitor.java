@@ -29,13 +29,20 @@ public abstract class DataFlowBasicBlockVisitor extends BasicBlockVisitor {
     public abstract void addSuccessors(Worklist W, BasicBlock q);
     
     /**
-     * Merges operation on the from and to basic block.  Returns true if
-     * the to basic block changes.
-     */
+       Merges operation on the from and to basic block.  Returns true if
+       the to basic block changes.
+       
+       <BR> <B>NOTE:</B> "changes" above refers to our knowledge about
+       the basic block changing, not the contents of the basic block
+       itself, which shouldn't be modified during Analysis.  Thus, an
+       appropriate "change" would be a variable being added to the
+       IN-set of 'to' during Forward Dataflow Analysis
+       
+    */
     public abstract boolean merge(BasicBlock from, BasicBlock to);
 
     
-    /** Performs a transfer function on a basic block b.  
+    /** Performs some transfer function on a basic block b.  
 	<BR> <B>NOTE:</B> Transfer functions must be monotonic for
 	dataflow analysis to terminate.
     */

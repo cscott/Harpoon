@@ -33,7 +33,7 @@ import harpoon.Temp.Temp;
 
     @author  John Whaley
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: ReachingDefs.java,v 1.1.2.7 1999-05-19 06:45:10 andyb Exp $
+    @version $Id: ReachingDefs.java,v 1.1.2.8 1999-05-27 01:53:35 pnkfelix Exp $
 
 */
 public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
@@ -119,10 +119,6 @@ public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
     public void visit(BasicBlock bb) {
 	ReachingDefInfo info = getInfo(bb);
 	if (info == null) {
-	    // FSK: commented out the assertion since it won't apply
-	    // for a generic ReachingDefs implementation  
-	    // Util.assert(bb.getFirst() instanceof HEADER);
-	    
 	    info = new ReachingDefInfo(bb, maxHceID, tempsToPrsvs);
 	    putInfo(bb, info);
 	}
