@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.19 2003-11-11 23:17:56 cananian Exp $
+% $Id: pldi04.tex,v 1.20 2003-11-12 04:37:16 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -35,7 +35,7 @@ Cambridge, MA 02139 \\
 }
 \special{papersize=8.5in,11in}
 
-\date{\today \\ $ $Revision: 1.19 $ $}
+\date{\today \\ $ $Revision: 1.20 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -742,6 +742,8 @@ m memory operations to l locations does m+l extra reads and l+1 CAS operations.
 \subsection{Subsumption?}
 
 \secput{algo}{Algorithms}
+
+\figput{tr-multi-obj}{Implementing software transactions with version lists.}
 
 The ReadNT function does a non-transactional read of field $f$ from
 object $o$.  In the common-case, the only overhead is to check that

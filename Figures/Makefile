@@ -1,3 +1,5 @@
+FIG_MAG_tr-multi-obj=-m 0.5
+
 # definitions for example 1
 EX1FIG=THex1.fig
 EX1SCALE=-m 0.7
@@ -92,7 +94,7 @@ ptrsize.tex: ptrsize.data
 %.pstex: %.fig Makefile
 	fig2dev -L pstex $($(patsubst %.fig,FIG_MAG_%,$<)) $< $@
 %.pstex_t: %.fig Makefile
-	fig2dev -L pstex_t -p $(patsubst %.fig,%.pstex,$<) $($(patsubst %.fig,FIG_MAG_%,$<)) $< $@
+	fig2dev -L pstex_t -p Figures/$(patsubst %.fig,%.pstex,$<) $($(patsubst %.fig,FIG_MAG_%,$<)) $< $@
 
 # graphing helpers
 %.stats: %
