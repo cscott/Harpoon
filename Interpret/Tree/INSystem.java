@@ -12,7 +12,7 @@ import java.util.Properties;
  * <code>java.lang.System</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSystem.java,v 1.1.2.2 1999-05-10 00:01:15 duncan Exp $
+ * @version $Id: INSystem.java,v 1.1.2.3 1999-06-28 18:59:46 duncan Exp $
  */
 final class INSystem extends HCLibrary {
     static final void register(StaticState ss) {
@@ -76,8 +76,8 @@ final class INSystem extends HCLibrary {
 	    }
 	    Object invoke(StaticState ss, Object[] params)
 		throws InterpretedThrowable {
-	         
-	       if (!( params[0] instanceof ArrayRef && 
+		
+		if (!( params[0] instanceof ArrayRef && 
 		       params[2] instanceof ArrayRef) )
 		    throw ase(ss); // array store exception
 		ArrayRef src = (ArrayRef) params[0];
@@ -97,7 +97,6 @@ final class INSystem extends HCLibrary {
 		    throw aie(ss); // array index out of bounds
 		for (int i=0; i<length; i++) {
 		    Object o = src.get(i+src_position);
-		    System.out.println("Copying value: " + i + ", " + o);
 		    if (o instanceof Ref &&
 			!((Ref)o).type.isInstanceOf(dstCT))
 			throw ase(ss);
