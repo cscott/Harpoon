@@ -48,8 +48,8 @@ polish: clean
 wipe:	clean doc-clean
 
 backup:
-	$(RM) ../harpoon-backup.tgz
-	cd ..; tar czvf harpoon-backup.tgz CVSROOT
-	scp ../harpoon-backup.tgz \
+	$(RM) ../harpoon-backup.tar.gz
+	cd ..; tar czvf harpoon-backup.tar.gz CVSROOT
+	scp ../harpoon-backup.tar.gz \
 		miris.lcs.mit.edu:public_html/Projects/Harpoon
-	$(RM) ../harpoon-backup.tgz
+	$(RM) ../harpoon-backup.tar.gz
