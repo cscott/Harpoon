@@ -44,7 +44,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.26 2001-02-21 19:35:34 salcianu Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.27 2001-02-22 01:13:31 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -155,17 +155,8 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 			  .getConstructor(new HClass[0]));
 	}
 	// state.
-	// keeps track of methods which are actually invoked at some point.
-	Map classMethodsUsed = new HashMap(); // class->set map.
-	// keeps track of methods which might be called, if someone gets
-	// around to instantiating an object of the proper type.
-	Map classMethodsPending = new HashMap(); // class->set map
-	// keeps track of all known children of a given class.
-	Map classKnownChildren = new HashMap(); // class->set map.
-	// keeps track of which methods we've done already.
-	Set done = new HashSet();
+	State S = new State();
 
-	WorkSet W = new WorkSet();
 	// make initial worklist from roots collection.
 	for (Iterator it=roots.iterator(); it.hasNext(); ) {
 	    HClass rootC; HMethod rootM; boolean instantiated;
@@ -182,25 +173,20 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 		instantiated = false;
 	    }
 	    if (instantiated)
-		discoverInstantiatedClass(rootC, W, done,
-					  classKnownChildren, classMethodsUsed,
-					  classMethodsPending);
+		discoverInstantiatedClass(S, rootC);
 	    else
-		discoverClass(rootC, W, done,
-			      classKnownChildren, classMethodsUsed,
-			      classMethodsPending);
+		discoverClass(S, rootC);
 	    if (rootM!=null)
-		methodPush(rootM, W, done,
-			   classMethodsUsed, classMethodsPending);
+		methodPush(S, rootM);
 	}
 
 	// worklist algorithm.
-	while (!W.isEmpty()) {
-	    HMethod m = (HMethod) W.pull();
-	    done.add(m); // mark us done with this method.
+	while (!S.W.isEmpty()) {
+	    HMethod m = (HMethod) S.W.pull();
+	    S.done.add(m); // mark us done with this method.
 	    // This method should be marked as usable.
 	    {
-		Set s = (Set) classMethodsUsed.get(m.getDeclaringClass());
+		Set s = (Set) S.classMethodsUsed.get(m.getDeclaringClass());
 		Util.assert(s!=null);
 		Util.assert(s.contains(m));
 	    }
@@ -210,9 +196,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 		if(!m.getReturnType().isPrimitive())
 		    // be safe; assume the native method can make an object
 		    // of its return type.
-		    discoverInstantiatedClass(m.getReturnType(), W, done,
-				  classKnownChildren, classMethodsUsed,
-				  classMethodsPending);
+		    discoverInstantiatedClass(S, m.getReturnType());
 	    } else { // look for CALLs, NEWs, and ANEWs
 		for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
 		    Quad Q = (Quad) it.next();
@@ -226,74 +210,50 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 			createdClass = ((CONST)Q).type();
 		    // handle creation of a (possibly-new) class.
 		    if (createdClass!=null) {
-			discoverInstantiatedClass(createdClass, W, done,
-						  classKnownChildren,
-						  classMethodsUsed,
-						  classMethodsPending);
+			discoverInstantiatedClass(S, createdClass);
 			if (Q instanceof CONST) //string constants use intern()
-			    discoverMethod(HMstrIntern, W, done,
-					   classKnownChildren,
-					   classMethodsUsed,
-					   classMethodsPending);
+			    discoverMethod(S, HMstrIntern);
 		    }			
 		    if (Q instanceof CALL) {
 			CALL q = (CALL) Q;
 			if (q.isStatic() || !q.isVirtual())
-			    discoverSpecial(q.method(), W, done,
-					    classKnownChildren,
-					    classMethodsUsed,
-					    classMethodsPending);
+			    discoverSpecial(S, q.method());
 			else
-			    discoverMethod(q.method(), W, done,
-					   classKnownChildren,
-					   classMethodsUsed,
-					   classMethodsPending);
+			    discoverMethod(S, q.method());
 		    }
 		    // get and set discover classes (don't instantiate, though)
 		    if (Q instanceof GET || Q instanceof SET) {
 			HField f = (Q instanceof GET)
 			    ? ((GET) Q).field() : ((SET) Q).field();
-			discoverClass(f.getDeclaringClass(), W, done,
-				      classKnownChildren,
-				      classMethodsUsed,
-				      classMethodsPending);
+			discoverClass(S, f.getDeclaringClass());
 		    }
 		    // make sure we have the class we're testing against
 		    // handy.
 		    if (Q instanceof INSTANCEOF) {
-			discoverClass(((INSTANCEOF)Q).hclass(), W, done,
-				      classKnownChildren,
-				      classMethodsUsed,
-				      classMethodsPending);
+			discoverClass(S, ((INSTANCEOF)Q).hclass());
 		    }
 		    if (Q instanceof TYPESWITCH) {
 			TYPESWITCH q = (TYPESWITCH) Q;
 			for (int i=0; i<q.keysLength(); i++)
-			    discoverClass(q.keys(i), W, done,
-					  classKnownChildren,
-					  classMethodsUsed,
-					  classMethodsPending);
+			    discoverClass(S, q.keys(i));
 		    }
 		    if (Q instanceof HANDLER &&
 			((HANDLER)Q).caughtException() != null) {
-			discoverClass(((HANDLER)Q).caughtException(), W, done,
-				      classKnownChildren,
-				      classMethodsUsed,
-				      classMethodsPending);
+			discoverClass(S, ((HANDLER)Q).caughtException());
 		    }
 		}
 	    }
 	} // END worklist.
 	
 	// build method table from classMethodsUsed.
-	for (Iterator it = classMethodsUsed.values().iterator();
+	for (Iterator it = S.classMethodsUsed.values().iterator();
 	     it.hasNext(); )
 	    methods.addAll((Set) it.next());
 	// now generate children set from classKnownChildren.
-	for (Iterator it = classKnownChildren.keySet().iterator();
+	for (Iterator it = S.classKnownChildren.keySet().iterator();
 	     it.hasNext(); ) {
 	    HClass c = (HClass) it.next();
-	    Set s = (Set) classKnownChildren.get(c);
+	    Set s = (Set) S.classKnownChildren.get(c);
 	    HClass ch[] = (HClass[]) s.toArray(new HClass[s.size()]);
 	    children.put(c, ch);
 	}
@@ -303,43 +263,33 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
         for each superclass c or superinterface i of this class,
          add all called methods of c/i to worklist of nc, if nc implements.
     */
-    private void discoverClass(HClass c, 
-			       WorkSet W, Set done,
-			       Map ckc, Map cmu, Map cmp) {
-	if (ckc.containsKey(c)) return; // not a new class.
+    private void discoverClass(State S, HClass c) {
+	if (S.classKnownChildren.containsKey(c)) return; // not a new class.
 	// add to known-children lists.
-	Util.assert(!ckc.containsKey(c));
-	ckc.put(c, new HashSet());
-	Util.assert(!cmu.containsKey(c));
-	cmu.put(c, new HashSet());
-	Util.assert(!cmp.containsKey(c));
-	cmp.put(c, new HashSet());
+	Util.assert(!S.classKnownChildren.containsKey(c));
+	S.classKnownChildren.put(c, new HashSet());
+	Util.assert(!S.classMethodsUsed.containsKey(c));
+	S.classMethodsUsed.put(c, new HashSet());
+	Util.assert(!S.classMethodsPending.containsKey(c));
+	S.classMethodsPending.put(c, new HashSet());
 	// add class initializer (if it exists) to "called" methods.
 	HMethod ci = c.getClassInitializer();
-	if ((ci!=null) && (!done.contains(ci)))
-	    methodPush(ci, W, done, cmu, cmp);
+	if ((ci!=null) && (!S.done.contains(ci)))
+	    methodPush(S, ci);
 	// mark component type of arrays
 	if (c.isArray())
-	    discoverClass(c.getComponentType(), W, done, ckc, cmu, cmp);
+	    discoverClass(S, c.getComponentType());
 	// work through parents (superclass and interfaces)
 	for (Iterator it=parents(c).iterator(); it.hasNext(); ) {
 	    HClass p = (HClass) it.next();
-	    discoverClass(p, W, done, ckc, cmu, cmp);
-	    Set knownChildren = (Set) ckc.get(p);
+	    discoverClass(S, p);
+	    Set knownChildren = (Set) S.classKnownChildren.get(p);
 	    knownChildren.add(c); // kC non-null after discoverClass.
 	}
     }
-    private void discoverInstantiatedClass(HClass c,
-					   WorkSet W, Set done,
-					   Map ckc, Map cmu, Map cmp) {
+    private void discoverInstantiatedClass(State S, HClass c) {
 	if (instedClasses.contains(c)) return; else instedClasses.add(c);
-	discoverClass(c, W, done, ckc, cmu, cmp);
-
-	///// bdemsky hack for Scott's bug ...
-	if (c.isArray())
-	    discoverMethod(c.getMethod("clone","()Ljava/lang/Object;"),
-			   W, done, ckc, cmu, cmp);
-	//// EOH (End Of Hack)
+	discoverClass(S, c);
 
 	// collect superclasses and interfaces.
 	// new worklist.
@@ -349,9 +299,9 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 
 	// first, wake up all methods of this class that were
 	// pending instantiation, and clear the pending list.
-	List ml = new ArrayList((Set) cmp.get(c)); // copy list.
+	List ml = new ArrayList((Set) S.classMethodsPending.get(c));//copy list
 	for (Iterator it=ml.iterator(); it.hasNext(); )
-	    methodPush((HMethod)it.next(), W, done, cmu, cmp);
+	    methodPush(S, (HMethod)it.next());
 
 	// if instantiated,
 	// add all called methods of superclasses/interfaces to worklist.
@@ -361,16 +311,16 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    // add superclasses/interfaces of this one to local worklist
 	    sW.addAll(parents(s));
 	    // now add called methods of s to top-level worklist.
-	    Set calledMethods = new WorkSet((Set)cmu.get(s));
-	    calledMethods.addAll((Set)cmp.get(s));
+	    Set calledMethods = new WorkSet((Set)S.classMethodsUsed.get(s));
+	    calledMethods.addAll((Set)S.classMethodsPending.get(s));
 	    for (Iterator it = calledMethods.iterator(); it.hasNext(); ) {
 		HMethod m = (HMethod) it.next();
 		if (!isVirtual(m)) continue; // not inheritable.
 		try {
 		    HMethod nm = c.getMethod(m.getName(),
 					     m.getDescriptor());
-		    if (!done.contains(nm))
-			methodPush(nm, W, done, cmu, cmp);
+		    if (!S.done.contains(nm))
+			methodPush(S, nm);
 		} catch (NoSuchMethodError nsme) { }
 	    }
 	}
@@ -381,16 +331,14 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
        if method in interface i:
         add method of c and all implementations of c.
     */
-    private void discoverMethod(HMethod m, 
-				WorkSet W, Set done,
-				Map ckc, Map cmu, Map cmp) {
-	if (done.contains(m) || W.contains(m)) return;
-	discoverClass(m.getDeclaringClass(), W, done, ckc, cmu, cmp);
+    private void discoverMethod(State S, HMethod m) {
+	if (S.done.contains(m) || S.W.contains(m)) return;
+	discoverClass(S, m.getDeclaringClass());
 	// Thread.start() implicitly causes a call to Thread.run()
 	if (m.equals(HMthrStart))
-	    discoverMethod(HMthrRun, W, done, ckc, cmu, cmp);
+	    discoverMethod(S, HMthrRun);
 	// mark as pending in its own class.
-	Set s = (Set) cmp.get(m.getDeclaringClass());
+	Set s = (Set) S.classMethodsPending.get(m.getDeclaringClass());
 	s.add(m);
 	// now add as 'used' to all instantiated children.
 	// (including itself, if its own class has been instantiated)
@@ -404,12 +352,12 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 		try {
 		    HMethod nm = c.getMethod(m.getName(),
 					     m.getDescriptor());
-		    if (done.contains(nm))
+		    if (S.done.contains(nm))
 			continue; // nothing new to discover.
-		    methodPush(nm, W, done, cmu, cmp);
+		    methodPush(S, nm);
 		} catch (NoSuchMethodError e) { }
 	    // add all children to the worklist.
-	    Set knownChildren = (Set) ckc.get(c);
+	    Set knownChildren = (Set) S.classKnownChildren.get(c);
 	    for (Iterator it = knownChildren.iterator(); it.hasNext(); ) 
 		cW.push(it.next());
 	}
@@ -417,28 +365,41 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     }
 
     /* methods invoked with INVOKESPECIAL or INVOKESTATIC... */
-    private void discoverSpecial(HMethod m, 
-				 WorkSet W, Set done,
-				 Map ckc, Map cmu, Map cmp) {
-	if (done.contains(m) || W.contains(m)) return;
-	discoverClass(m.getDeclaringClass(), W, done, ckc, cmu, cmp);
+    private void discoverSpecial(State S, HMethod m) {
+	if (S.done.contains(m) || S.W.contains(m)) return;
+	discoverClass(S, m.getDeclaringClass());
 	// Thread.start() implicitly causes a call to Thread.run()
 	if (m.equals(HMthrStart))
-	    discoverMethod(HMthrRun, W, done, ckc, cmu, cmp);
+	    discoverMethod(S, HMthrRun);
 	// okay, push this method.
-	methodPush(m, W, done, cmu, cmp);
+	methodPush(S, m);
     }
-    private void methodPush(HMethod m, WorkSet W, Set done, Map cmu, Map cmp) {
-	Util.assert(!done.contains(m));
-	if (W.contains(m)) return; // already on work list.
+    private void methodPush(State S, HMethod m) {
+	Util.assert(!S.done.contains(m));
+	if (S.W.contains(m)) return; // already on work list.
 	// Add to worklist
-	W.add(m);
+	S.W.add(m);
 	// mark this method as used.
-	Set s1 = (Set) cmu.get(m.getDeclaringClass());
+	Set s1 = (Set) S.classMethodsUsed.get(m.getDeclaringClass());
 	s1.add(m);
 	// and no longer pending.
-	Set s2 = (Set) cmp.get(m.getDeclaringClass());
+	Set s2 = (Set) S.classMethodsPending.get(m.getDeclaringClass());
 	s2.remove(m);
+    }
+    // State for algorithm.
+    private static class State {
+	// keeps track of methods which are actually invoked at some point.
+	Map classMethodsUsed = new HashMap(); // class->set map.
+	// keeps track of methods which might be called, if someone gets
+	// around to instantiating an object of the proper type.
+	Map classMethodsPending = new HashMap(); // class->set map
+	// keeps track of all known children of a given class.
+	Map classKnownChildren = new HashMap(); // class->set map.
+	// keeps track of which methods we've done already.
+	Set done = new HashSet();
+
+	// Worklist.
+	WorkSet W = new WorkSet();
     }
 
     // useful utility method
