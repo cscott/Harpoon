@@ -10,7 +10,7 @@ import harpoon.ClassFile.HClass;
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.6.2.5 1999-08-04 19:08:13 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.6.2.6 1999-09-09 00:32:56 cananian Exp $
  */
 public abstract class HClassUtil  {
     // Only static methods.
@@ -65,7 +65,8 @@ public abstract class HClassUtil  {
 
 	HClass[] A = parents(a);
 	HClass[] B = parents(b);
-	Util.assert(A[0]==B[0]); // should be java.lang.Object.
+	// both A[0] and B[0] should be java.lang.Object.
+	Util.assert(A[0]==B[0], "Hierarchy roots differ: "+A[0]+"/"+B[0]);
 	int i;
 	for(i=1; i<A.length && i<B.length; i++)
 	    if (A[i] != B[i]) break;
