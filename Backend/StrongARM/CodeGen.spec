@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.42 1999-09-09 00:36:32 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.43 1999-09-10 15:46:26 cananian Exp $
  */
 %%
 
@@ -654,7 +654,6 @@ CONST<i>(c) = i %{
 */
 }%
 
-/*
 CONST<p>(c) = i %{
     // the only CONST of type Pointer we should see is NULL
     Temp i = makeTemp();
@@ -662,7 +661,6 @@ CONST<p>(c) = i %{
     emit(new Instr( instrFactory, ROOT, 
 		    "mov `d0, #0", new Temp[]{ i }, null));
 }%
-*/
 
 BINOP<p,i>(MUL, j, k) = i %{
     Temp i = makeTemp();		
