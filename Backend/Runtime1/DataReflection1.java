@@ -46,7 +46,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection1.java,v 1.2 2002-02-25 21:02:20 cananian Exp $
+ * @version $Id: DataReflection1.java,v 1.3 2002-09-08 22:51:59 cananian Exp $
  */
 public class DataReflection1 extends Data {
     final NameMap m_nm;
@@ -155,7 +155,11 @@ public class DataReflection1 extends Data {
 		public HClass type() { return HCclass; }
 		public Label label() { return m_nm.label(hc, "classobj"); }
 		public Object get(HField hf) {
-		    throw new Error("Class objects don't have fields: "+hf);
+		    if (hf.getDeclaringClass().equals(HCclass) &&
+			(hf.getName().equals("signers") ||
+			 hf.getName().equals("pd")))
+			return null;
+		    throw new Error("Unknown field of Class object: "+hf);
 		}
 	    };
 	    stmlist.add(m_ob.buildObject(tf, info, true));
