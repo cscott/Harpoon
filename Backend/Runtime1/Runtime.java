@@ -29,7 +29,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.40 2001-09-20 01:48:26 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.41 2001-10-29 16:34:20 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
@@ -74,6 +74,9 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
     // builder are used.
     public void setClassHierarchy(ClassHierarchy ch) {
 	this.ch = ch;
+	// class and field information may have changed; reset caches.
+	treeBuilder = initTreeBuilder();
+	// set the treebuilder's class hierarchy.
 	((harpoon.Backend.Runtime1.TreeBuilder) treeBuilder)
 	    .setClassHierarchy(ch);
     }
