@@ -1,4 +1,4 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.17 2003-06-02 20:10:25 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.18 2003-06-02 21:58:10 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TO DO:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -319,7 +319,7 @@ compression?
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Bitwidth analysis domains}
-Domains:
+{\yellow Domains:}
 \begin{itemize}
 \item $\mathcal{C}:\mathbb{Z}$, integer constants
 \begin{itemize}\yellow
@@ -327,19 +327,19 @@ Domains:
 \end{itemize}
 \item $\mathcal{T}:\mathbb{N}_0\times\mathbb{N}_0$, bitwidth specifications
  %% FIXME: should be on same line as previous.
- ($\mathbb{N}_0=\left\{0,1,2,\ldots\right\}$)
+ \makebox[0pt][l]{\small($\mathbb{N}_0=\left\{0,1,2,\ldots\right\}$)}
 \begin{itemize}\yellow
 \item $\tuple{m,p}\in\mathcal{T}$
 \end{itemize}
 \item $\mathcal{L}:\left(\mathcal{C+T}\right)_\bot$, abstract value lattice
 \end{itemize}
-Concretization: $\mathcal{L}\to 2^\mathcal{Z}$
+{\yellow Concretization: $\mathcal{L}\to 2^\mathcal{Z}$}
 \begin{eqnarray*}
 \mathbb{C}\left[c\right] &=& \left\{ c \right\} \\
 \mathbb{C}\left[\tuple{m,p}\right] &=&
-   \left\{ -n | n\in\mathbb{N}_0 \,\wedge\, \ln n < m\right\} \cup
+   \left\{ -n | n\in\mathbb{N} \;\wedge\; \ln n < m\right\} \cup
    \left\{0\right\} \cup\\
-&& \left\{  n | n\in\mathbb{N}_0 \,\wedge\, \ln n < p\right\}\\
+&& \quad\left\{  n | n\in\mathbb{N} \;\wedge\; \ln n < p\right\}\\
 \end{eqnarray*}
 \end{slide}
 
@@ -381,9 +381,9 @@ c\latleq\tuple{m,p}&\text{ iff }&\func{bw}(c)\latleq\tuple{{\onlySlide*{5}{\yell
 \FromSlide{3}%
 \begin{displaymath}%
 \begin{array}{ccc}
-\text{\tt 0\ldots 0}\overbrace{\text{\tt 1X\ldots XXX}}^{1+\left\lfloor\ln\left|c\right|\right\rfloor\fromSlide{4}{\onlySlide*{4}{\yellow}=p}}
+\text{\tt 0\ldots 0}\overbrace{\text{\tt 1X\ldots XXX}}^{1+\left\lfloor\ln\abs{c}\right\rfloor\fromSlide{4}{\onlySlide*{4}{\yellow}=p}}
 &\quad&
-\text{\tt 1\ldots 1}\overbrace{\text{\tt 0X\ldots XXXX}}^{1+\left\lfloor\ln\left(\left|c\right|-1\right)\right\rfloor\fromSlide{5}{\onlySlide*{5}{\yellow}\leq m}}
+\text{\tt 1\ldots 1}\overbrace{\text{\tt 0X\ldots XXXX}}^{1+\left\lfloor\ln\left(\abs{c}-1\right)\right\rfloor\fromSlide{5}{\onlySlide*{5}{\yellow}\leq m}}
 \\
 \text{\small Positive} && \text{\small Negative}
 \end{array}
@@ -532,19 +532,18 @@ We use a {\yellow field-based} interprocedural analysis.
 \begin{itemize}
 \item $\mathcal{E}$, CFG edges
 \item $\mathcal{V}$, (SSI form) variables
+\item $\mathcal{M}$, call sites in the program
 \item $\mathcal{F}$, declared fields in the program
 \end{itemize}
 \item The interprocedural analysis discovers:
 \begin{itemize}
 \item a set $\func{e}:2^\mathcal{E}$ of executable edges
-\item a map $\func{val}:(\mathcal{V}+\mathcal{F})\to\mathcal{L}$
+\item a map $\func{val}:\left(\left(\mathcal{V}\times\mathcal{M}^*\right)+\mathcal{F}\right)\to\mathcal{L}$
  giving abstract values valid for all possible executions
 \item a set $\func{Read}:2^\mathcal{F}$ of readable fields
 \end{itemize}
 \end{itemize}
 \end{slide}
-% XXX add domain M, declared methods, and change type of val to
-% (F+(VxM*))->L ?
 \begin{talknotes}
 We extend our intraprocedural analysis interprocedurally using a
 field-based scheme.  The domain $\mathcal{F}$ represents the declared
@@ -552,6 +551,8 @@ fields of the program, and our value map $\func{val}$ now maps not
 only variables but also fields to lattice values.  We also collect a
 set $\func{Read}$ of fields read by executable statements in the
 program to allow us to eliminate unread fields.
+
+XXX mention context-sensitivity.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -2155,16 +2156,16 @@ shows through in our rules for logical-AND; let's look at this more closely.
 \begin{displaymath}
 \func{bw}(n)=\begin{cases}
 \tuple{0,0} & n=0 \\
-\tuple{0,{\onlySlide*{3}{\yellow}1+\left\lfloor\ln\left|n\right|\right\rfloor}} & n>0 \\
-\tuple{{\onlySlide*{4}{\yellow}1+\left\lfloor\ln\left|n\right|\right\rfloor},0} & n<0 \\
+\tuple{0,{\onlySlide*{3}{\yellow}1+\left\lfloor\ln\abs{n}\right\rfloor}} & n>0 \\
+\tuple{{\onlySlide*{4}{\yellow}1+\left\lfloor\ln\abs{n}\right\rfloor},0} & n<0 \\
 \end{cases}
 \end{displaymath}
 \FromSlide{2}%
 \begin{displaymath}
 \begin{array}{ccc}
-\text{\tt 0\ldots 0}\overbrace{\text{\tt 1X\ldots XXX}}^{1+\left\lfloor\ln\left|n\right|\right\rfloor\fromSlide*{3}{\onlySlide*{3}{\yellow}=p}}
+\text{\tt 0\ldots 0}\overbrace{\text{\tt 1X\ldots XXX}}^{1+\left\lfloor\ln\abs{n}\right\rfloor\fromSlide*{3}{\onlySlide*{3}{\yellow}=p}}
 &\quad&
-\text{\tt 1\ldots 1}\overbrace{\text{\tt 0X\ldots XXXX}}^{1+\left\lfloor\ln\left(\left|n\right|-1\right)\right\rfloor\fromSlide*{4}{\onlySlide*{4}{\yellow}\leq m}}
+\text{\tt 1\ldots 1}\overbrace{\text{\tt 0X\ldots XXXX}}^{1+\left\lfloor\ln\left(\abs{n}-1\right)\right\rfloor\fromSlide*{4}{\onlySlide*{4}{\yellow}\leq m}}
 \\
 \text{Positive} && \text{Negative} \\
 \end{array}
