@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>FOOTER</code> node as their only successor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FOOTER.java,v 1.1.2.1 1998-12-01 12:36:42 cananian Exp $
+ * @version $Id: FOOTER.java,v 1.1.2.2 1998-12-11 22:21:04 cananian Exp $
  * @see HEADER
  * @see RETURN
  * @see THROW
@@ -23,7 +23,10 @@ public class FOOTER extends Quad {
     
     /** Creates a <code>FOOTER</code>. */
     public FOOTER(HCodeElement source) {
-        super(source, 0/*no predecessors initially*/, 0/*no successors ever*/);
+	this(source, 0/*no predecessors initially*/);
+    }
+    private FOOTER(HCodeElement source, int arity) {
+        super(source, arity/*num predecessors*/, 0/*no successors ever*/);
     }
 
     /** Grow the arity of a FOOTER by one. */
@@ -43,10 +46,15 @@ public class FOOTER extends Quad {
 	prev = (Edge[]) Util.shrink(Edge.arrayFactory, prev, which_pred);
     }
 
+    public int kind() { return QuadKind.FOOTER; }
+
+    public Quad rename(TempMap tm) {
+	return new FOOTER(this, prev.length);
+    }
     /** Rename all used variables in this Quad according to a mapping. */
-    public void renameUses(TempMap tm) { }
+    void renameUses(TempMap tm) { }
     /** Rename all defined variables in this Quad according to a mapping. */
-    public void renameDefs(TempMap tm) { }
+    void renameDefs(TempMap tm) { }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

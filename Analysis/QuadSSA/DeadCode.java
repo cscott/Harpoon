@@ -20,7 +20,7 @@ import java.util.Hashtable;
  * unused and seeks to prove otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.11.2.3 1998-12-09 22:02:10 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.11.2.4 1998-12-11 22:21:03 cananian Exp $
  */
 
 public abstract class DeadCode  {
@@ -63,10 +63,10 @@ public abstract class DeadCode  {
 	}
 
 	// Finally, do all the necessary renaming
-	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
-	    Quad q = (Quad) e.nextElement();
-	    q.rename(nm);
-	}
+	Quad[] hce = (Quad[]) hc.getElements(); // put them all in an array.
+	for (int i=0; i<hce.length; i++)
+	    Quad.replace(hce[i], hce[i].rename(nm));
+
     } // end OPTIMIZE METHOD.
 
     static class EraserVisitor extends QuadVisitor {

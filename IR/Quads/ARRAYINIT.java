@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>ARRAYINIT</code> represents an array initialization operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ARRAYINIT.java,v 1.1.2.1 1998-12-11 20:40:36 cananian Exp $
+ * @version $Id: ARRAYINIT.java,v 1.1.2.2 1998-12-11 22:21:04 cananian Exp $
  */
 public class ARRAYINIT extends Quad {
     /** The array reference to initialize. */
@@ -56,8 +56,14 @@ public class ARRAYINIT extends Quad {
      */
     public Temp[] use() { return new Temp[] { objectref }; }
 
+    public int kind() { return QuadKind.ARRAYINIT; }
+
+    public Quad rename(TempMap tm) {
+	return new ARRAYINIT(this, map(tm,objectref), type, 
+			     (Object[]) value.clone());
+    }
     /** Rename all defined variables in this Quad according to a mapping. */
-    public void renameUses(TempMap tm) {
+    void renameUses(TempMap tm) {
 	objectref = tm.tempMap(objectref);
     }
 

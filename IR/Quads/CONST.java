@@ -29,7 +29,7 @@ import harpoon.Util.Util;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CONST.java,v 1.1.2.2 1998-12-09 22:02:26 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.3 1998-12-11 22:21:04 cananian Exp $
  */
 
 public class CONST extends Quad {
@@ -80,11 +80,16 @@ public class CONST extends Quad {
      * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }
 
+    public int kind() { return QuadKind.CONST; }
+
+    public Quad rename(TempMap tm) {
+	return new CONST(this, map(tm,dst), value, type);
+    }
     /** Rename all used variables in this Quad according to a mapping. */
-    public void renameUses(TempMap tm) {
+    void renameUses(TempMap tm) {
     }
     /** Rename all defined variables in this Quad according to a mapping. */
-    public void renameDefs(TempMap tm) {
+    void renameDefs(TempMap tm) {
 	dst = tm.tempMap(dst);
     }
 

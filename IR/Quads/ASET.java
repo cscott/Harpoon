@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>ASET</code> represents an array element assignment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ASET.java,v 1.1.2.2 1998-12-09 22:02:23 cananian Exp $
+ * @version $Id: ASET.java,v 1.1.2.3 1998-12-11 22:21:04 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ALENGTH
@@ -59,14 +59,19 @@ public class ASET extends Quad {
      */
     public Temp[] use() { return new Temp[] { objectref, index, src }; }
 
+    public int kind() { return QuadKind.ASET; }
+
+    public Quad rename(TempMap tm) {
+	return new ASET(this, map(tm,objectref), map(tm,index), map(tm,src));
+    }
     /** Rename all used variables in this Quad according to a mapping. */
-    public void renameUses(TempMap tm) {
+    void renameUses(TempMap tm) {
 	objectref = tm.tempMap(objectref);
 	index = tm.tempMap(index);
 	src = tm.tempMap(src);
     }
     /** Rename all defined variables in this Quad according to a mapping. */
-    public void renameDefs(TempMap tm) { }
+    void renameDefs(TempMap tm) { }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

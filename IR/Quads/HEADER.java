@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * the temporary variable names used for method parameters.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HEADER.java,v 1.1.2.2 1998-12-09 22:02:28 cananian Exp $
+ * @version $Id: HEADER.java,v 1.1.2.3 1998-12-11 22:21:05 cananian Exp $
  * @see FOOTER
  */
 public class HEADER extends Quad {
@@ -54,10 +54,15 @@ public class HEADER extends Quad {
 	return (Temp[]) Util.safeCopy(Temp.arrayFactory, params);
     }
 
+    public int kind() { return QuadKind.HEADER; }
+    
+    public Quad rename(TempMap tm) {
+	return new HEADER(this, footer, map(tm, params));
+    }
     /** Rename all used variables in this Quad according to a mapping. */
-    public void renameUses(TempMap tm) { }
+    void renameUses(TempMap tm) { }
     /** Rename all defined variables in this Quad according to a mapping. */
-    public void renameDefs(TempMap tm) {
+    void renameDefs(TempMap tm) {
 	for (int i=0; i<params.length; i++)
 	    params[i] = tm.tempMap(params[i]);
     }

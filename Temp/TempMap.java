@@ -8,9 +8,10 @@ package harpoon.Temp;
  * used to represent a set of variable renamings.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TempMap.java,v 1.2 1998-10-11 02:37:58 cananian Exp $
+ * @version $Id: TempMap.java,v 1.2.2.1 1998-12-11 22:21:06 cananian Exp $
  */
 
 public interface TempMap  {
+    /** Rename a single <code>Temp</code>. */
     public Temp tempMap(Temp t);
 }

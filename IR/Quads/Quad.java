@@ -15,12 +15,12 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.2 1998-12-09 22:02:36 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.3 1998-12-11 22:21:05 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
                harpoon.IR.Properties.UseDef, harpoon.IR.Properties.Edges,
-               harpoon.IR.Properties.Renameable, Cloneable
+               /*harpoon.IR.Properties.Renameable,*/ Cloneable
 {
     String source_file;
     int    source_line;
@@ -57,12 +57,19 @@ public abstract class Quad
     /** Accept a visitor. */
     public abstract void visit(QuadVisitor v);
 
-    /** Rename all variables in this Quad according to a mapping. */
-    public void rename(TempMap tm) { renameUses(tm); renameDefs(tm); }
-    /** Rename all used variables in this Quad according to a mapping. */
-    public void renameUses(TempMap tm) { }
-    /** Rename all defined variables in this Quad according to a mapping. */
-    public void renameDefs(TempMap tm) { }
+    /** Return an integer enumeration of the kind of this 
+     *  <code>Quad</code>.  The enumerated values are defined in
+     *  <code>QuadKind</code>. */
+    public abstract int kind();
+
+    /** Create a new <code>Quad</code> identical to the receiver, but 
+     *  with all <code>Temp</code>s renamed according to a mapping.
+     *  The new <code>Quad</code> will have no edges. */
+    public abstract Quad rename(TempMap tm);
+
+    // I want to get rid of these functions eventually.
+    void renameUses(TempMap tm) { }
+    void renameDefs(TempMap tm) { }
 
     /*----------------------------------------------------------*/
     /** Return all the Temps used by this Quad. */
@@ -145,6 +152,21 @@ public abstract class Quad
 	for (int i=0; i<quadlist.length-1; i++)
 	    addEdge(quadlist[i], 0, quadlist[i+1], 0);
     }
+    /** Replace one quad with another. */
+    public static void replace(Quad oldQ, Quad newQ) {
+	Util.assert(oldQ.next.length == newQ.next.length);
+	Util.assert(oldQ.prev.length == newQ.prev.length);
+	for (int i=0; i<oldQ.next.length; i++) {
+	    Edge e = oldQ.next[i];
+	    addEdge(newQ, i, (Quad) e.to(), e.which_pred());
+	    oldQ.next[i] = null;
+	}
+	for (int i=0; i<oldQ.prev.length; i++) {
+	    Edge e = oldQ.prev[i];
+	    addEdge((Quad) e.from(), e.which_succ(), newQ, i);
+	    oldQ.prev[i] = null;
+	}
+    }
 
     //-----------------------------------------------------
     // support cloning.  The pred/succ quads are not cloned, but the
@@ -194,6 +216,23 @@ public abstract class Quad
 	    Quad from = copyone(q.prev[i].from, old2new);
 	    Quad.addEdge(from, q.prev[i].from_index, r, q.prev[i].to_index);
 	}
+	return r;
+    }
+    // ----------------------------------------------------
+    // Useful for temp renaming.  Not exported.
+    Temp map(TempMap tm, Temp t) {
+	return (t==null)?null:tm.tempMap(t);
+    }
+    Temp[] map(TempMap tm, Temp[] ta) {
+	Temp[] r = new Temp[ta.length];
+	for (int i=0; i<r.length; i++)
+	    r[i] = map(tm, ta[i]);
+	return r;
+    }
+    Temp[][] map(TempMap tm, Temp[][] taa) {
+	Temp[][] r = new Temp[taa.length][];
+	for (int i=0; i<r.length; i++)
+	    r[i] = map(tm, taa[i]);
 	return r;
     }
 }

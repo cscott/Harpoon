@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * is the first parameter in the <code>params</code> array.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.2 1998-12-09 22:02:24 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.3 1998-12-11 22:21:04 cananian Exp $ 
  */
 public class CALL extends Quad {
     /** The method to invoke. */
@@ -144,13 +144,19 @@ public class CALL extends Quad {
 	else return new Temp[] { retval, retex };
     }
 
+    public int kind() { return QuadKind.CALL; }
+
+    public Quad rename(TempMap tm) {
+	return new CALL(this, method, map(tm, params), map(tm,retval),
+			map(tm, retex), isVirtual);
+    }
     /** Rename all used variables in this Quad according to a mapping. */
-    public void renameUses(TempMap tm) {
+    void renameUses(TempMap tm) {
 	for (int i=0; i<params.length; i++)
 	    params[i] = tm.tempMap(params[i]);
     }
     /** Rename all defined variables in this Quad according to a mapping. */
-    public void renameDefs(TempMap tm) {
+    void renameDefs(TempMap tm) {
 	if (retval!=null)
 	    retval = tm.tempMap(retval);
 	retex  = tm.tempMap(retex);

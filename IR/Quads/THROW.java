@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>THROW</code> represents a <Code>throw<code> statement.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: THROW.java,v 1.1.2.2 1998-12-09 22:02:39 cananian Exp $
+ * @version $Id: THROW.java,v 1.1.2.3 1998-12-11 22:21:06 cananian Exp $
  */
 public class THROW extends Quad {
     /* The exception object to throw. */
@@ -38,12 +38,17 @@ public class THROW extends Quad {
      * @return the <code>throwable</code> field. */
     public Temp[] use() { return new Temp[] { throwable }; }
 
+    public int kind() { return QuadKind.THROW; }
+
+    public Quad rename(TempMap tm) {
+	return new THROW(this, map(tm, throwable));
+    }
     /** Rename all used variables in this Quad according to a mapping. */
-    public void renameUses(TempMap tm) {
+    void renameUses(TempMap tm) {
 	throwable = tm.tempMap(throwable);
     }
     /** Rename all defined variables in this Quad according to a mapping. */
-    public void renameDefs(TempMap tm) {
+    void renameDefs(TempMap tm) {
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>AGET</code> represents an element fetch from an array object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AGET.java,v 1.1.2.2 1998-12-09 22:02:21 cananian Exp $
+ * @version $Id: AGET.java,v 1.1.2.3 1998-12-11 22:21:04 cananian Exp $
  * @see ANEW
  * @see ASET
  * @see ALENGTH
@@ -58,16 +58,21 @@ public class AGET extends Quad {
      * @return the <code>objectref</code> and <code>index</code> fields. */
     public Temp[] use() { return new Temp[] { objectref, index }; }
 
+    public int kind() { return QuadKind.AGET; }
+
+    public Quad rename(TempMap tm) {
+	return new AGET(this, map(tm,dst), map(tm,objectref), map(tm,index));
+    }
     /** Rename all used variables in this Quad according to a mapping. */
-    public void renameUses(TempMap tm) {
+    void renameUses(TempMap tm) {
 	objectref = tm.tempMap(objectref);
 	index = tm.tempMap(index);
     }
     /** Rename all defined variables in this Quad according to a mapping. */
-    public void renameDefs(TempMap tm) {
+    void renameDefs(TempMap tm) {
 	dst = tm.tempMap(dst);
     }
-
+    
     public void visit(QuadVisitor v) { v.visit(this); }
 
     /** Returns a human-readable representation of this quad. */

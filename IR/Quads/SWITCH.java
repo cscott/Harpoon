@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.1.2.2 1998-12-09 22:02:39 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.1.2.3 1998-12-11 22:21:05 cananian Exp $
  */
 public class SWITCH extends SIGMA {
     /** The discriminant, compared against each value in <code>keys</code>.*/
@@ -70,13 +70,19 @@ public class SWITCH extends SIGMA {
 	return r;
     }
 
+    public int kind() { return QuadKind.SWITCH; }
+
+    public Quad rename(TempMap tm) {
+	return new SWITCH(this, map(tm,index), (int[])keys.clone(),
+			  map(tm,dst), map(tm,src));
+    }
     /** Rename all used variables in this Quad according to a mapping. */
-    public void renameUses(TempMap tm) {
+    void renameUses(TempMap tm) {
 	super.renameUses(tm);
 	index = tm.tempMap(index);
     }
     /** Rename all defined variables in this Quad according to a mapping. */
-    public void renameDefs(TempMap tm) {
+    void renameDefs(TempMap tm) {
 	super.renameDefs(tm);
     }
 
