@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.67 1999-08-19 16:23:29 cananian Exp $
+% $Id: thesis.tex,v 1.68 1999-08-19 17:17:29 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -30,14 +30,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.67 $ $}
+\date{\today \\ $ $Revision: 1.68 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.67 $ $}{$ $Revision: 1.67 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.68 $ $}{$ $Revision: 1.68 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -792,11 +792,11 @@ c     &   c  &c\oplus d& \top \\
 \label{tab:sccmeet1}
 \end{table}
 \begin{myalgorithm}\small
-\input{Figures/THsccalg1.tex}
+\input{Figures/THsccalg1}
 \caption{SCC algorithm for SSA form.}\label{alg:scc}
 \end{myalgorithm}
 \begin{myalgorithm}\small
-\input{Figures/THsccalg2.tex}
+\input{Figures/THsccalg2}
 \caption{SCC algorithm for SSA form, cont.}\label{alg:scc2}
 \end{myalgorithm}
 The SCC algorithm works on a simple three-level value lattice
@@ -859,7 +859,7 @@ else              & else \\
 \label{fig:ssa_vs_ssi}
 \end{myfigure}
 \begin{myalgorithm}\small
-\input{Figures/THsccssi.tex}
+\input{Figures/THsccssi}
 \caption{A revised \code{Visit} procedure for SCC/SSI.}\label{alg:sccssi}
 \end{myalgorithm}
 Porting the SCC algorithm from SSA to SSI form immediately increases
@@ -949,6 +949,11 @@ Objectworks 4.1$^\dag$&Smalltalk & 774 &   4.4     &    10      \\ \hline
 \caption{Class hierarchy statistics for several large O-O projects.}
 \label{tab:chstats}
 \end{table}
+\begin{myalgorithm}\small
+\input{Figures/THscctyped}
+\caption{\code{Visit} procedure for typed SCC/SSI.}
+\label{alg:scctyped}
+\end{myalgorithm}
 In figure \ref{fig:scclat3} we extend the lattice to compute Java type
 information.  The new lattice entry marked ``Typed'' is actually
 forest-structured as shown in figure \ref{fig:scclat4}; it is as deep
