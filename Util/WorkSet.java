@@ -12,7 +12,7 @@ import java.util.Iterator;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WorkSet.java,v 1.1.2.8 2000-01-17 10:59:08 cananian Exp $
+ * @version $Id: WorkSet.java,v 1.1.2.9 2000-01-18 23:02:16 cananian Exp $
  */
 public class WorkSet extends java.util.AbstractSet implements Worklist{
     private /*final*/ HashMap hm;
@@ -141,7 +141,7 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 
     /** Removes all elements from the set. */
     public void clear() {
-	hm.clear(); listhead.next = listfoot;
+	hm.clear(); listhead.next = listfoot; listfoot.prev = listhead;
     }
 
     /** Determines if this contains an item.
