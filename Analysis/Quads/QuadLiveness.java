@@ -9,6 +9,7 @@ import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.PHI;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 import harpoon.Temp.Temp;
@@ -23,7 +24,7 @@ import java.util.Set;
  * <code>QuadLiveness</code> if you have changed the <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: QuadLiveness.java,v 1.1.2.6 2000-01-31 14:11:49 cananian Exp $
+ * @version $Id: QuadLiveness.java,v 1.1.2.7 2000-02-11 00:55:02 bdemsky Exp $
  */
 public class QuadLiveness extends Liveness {
     final Hashtable livein;
@@ -144,21 +145,32 @@ public class QuadLiveness extends Liveness {
 	while (true) {
 	    WorkSet out_ = new WorkSet();
 
-	    // Create a WorkSet of successors
-	    WorkSet successors = new WorkSet(hce.succC());
 
-	    for (Iterator i=successors.iterator(); i.hasNext(); ) {
-		Quad successor = (Quad)((HCodeEdge)i.next()).to();
+	    for (int i=0;i<hce.nextLength();i++) {
+		Quad successor=hce.next(i);
 		if (in.containsKey(successor)) {
 		    for (Iterator j=((WorkSet)in.get(successor)).iterator(); 
 			 j.hasNext(); ) {
 			out_.add(j.next());
 		    }
+		    if (successor instanceof PHI) {
+			Quad[] next=((Quad)hce).next();
+			for (int ii=0;ii<next.length;ii++) {
+			    if (next[ii]==successor) {
+				int edge=((Quad)hce).nextEdge(ii).which_pred();
+				PHI phi=(PHI)successor;
+				for (int k=0;k<phi.arity();k++)
+				    if (k!=edge)
+					for (int j=0;j<phi.numPhis();j++)
+					    out_.remove(phi.src(j,k));
+				break;
+			    }
+			}
+		    }
 		}
 	    }
 
 	    // Add our results to out
-	    out.put(hce, out_);
 
 	    WorkSet in_ = new WorkSet();
 	    
@@ -186,19 +198,14 @@ public class QuadLiveness extends Liveness {
 
 	    // If we have grown our live-in or live-out variables,
 	    // we need to update all of its predecessors.
-	    WorkSet predecessors = new WorkSet(hce.predC());
 	    WorkSet old_in = (WorkSet)in.put(hce, in_);
 	    WorkSet old_out = (WorkSet)out.put(hce, out_);
-	    if (old_in != null && old_in.size() < in_.size()) {
-		for (Iterator i=predecessors.iterator(); i.hasNext(); ) {
-		    Quad predecessor = (Quad)((HCodeEdge)i.next()).from();
-		    ws.add(predecessor);
-		}
-	    } else if (old_out != null && old_out.size() < out_.size()) {
-		for (Iterator i=predecessors.iterator(); i.hasNext(); ) {
-		    Quad predecessor = (Quad)i.next();
-		    ws.add(predecessor);
-		}
+	    if ((old_in == null)|| (old_in.size() < in_.size())) {
+		for (int i=0;i<hce.prevLength();i++)
+		    ws.add(hce.prev(i));
+	    } else if ((old_out == null)|| ( old_out.size() < out_.size())) {
+		for (int i=0;i<hce.prevLength();i++)
+		    ws.add(hce.prev(i));
 	    }
 
 	    if (ws.isEmpty()) {
@@ -210,3 +217,4 @@ public class QuadLiveness extends Liveness {
 	}
     }
 }
+
