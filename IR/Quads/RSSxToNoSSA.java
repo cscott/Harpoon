@@ -1,6 +1,6 @@
 
 
-// RSSIToNoSSA.java, created Thu Feb 10 13:58:12 2000 by root
+// RSSxToNoSSA.java, created Thu Feb 10 13:58:12 2000 by root
 // Copyright (C) 2000 root <root@bdemsky.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
@@ -24,12 +24,12 @@ import java.util.Set;
 import java.util.Map;
 
 /**
- * <code>RSSIToNoSSA</code>
+ * <code>RSSxToNoSSA</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: RSSIToNoSSA.java,v 1.1.2.7 2000-10-11 01:53:23 cananian Exp $
+ * @version $Id: RSSxToNoSSA.java,v 1.1.2.1 2000-11-13 21:05:25 cananian Exp $
  */
-public class RSSIToNoSSA {
+public class RSSxToNoSSA {
     QuadFactory newQF;
     Code code;
     private CloningTempMap ctm;
@@ -38,8 +38,8 @@ public class RSSIToNoSSA {
     AllocationInformation oldai;
     HashMap quadmap;
     
-    /** Creates a <code>RSSIToNoSSA</code>. */
-    public RSSIToNoSSA(QuadFactory newQF, Code code) {
+    /** Creates a <code>RSSxToNoSSA</code>. */
+    public RSSxToNoSSA(QuadFactory newQF, Code code) {
         this.newQF=newQF;
 	this.code=code;
 	ctm=new CloningTempMap(code.qf.tempFactory(),newQF.tempFactory());

@@ -1,4 +1,4 @@
-// QuadRSSI.java, created Fri Aug  7 13:45:29 1998 by cananian
+// QuadRSSx.java, created Fri Aug  7 13:45:29 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
@@ -11,7 +11,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 
 /**
- * <code>Quads.QuadRSSI</code> is a code view in relaxed SSI form.
+ * <code>Quads.QuadRSSx</code> is a code view in relaxed SSI form.
  * Quad form exposes the details of
  * the java classfile bytecodes in a pseudo-quadruple format.  Implementation
  * details of the stack-based JVM are hidden in favor of a flat consistent
@@ -24,9 +24,9 @@ import harpoon.Util.Util;
  * leading to/coming from the <code>PHI</code>/<code>SIGMA</code> nodes.
  * 
  * @author  Brian Demsky
- * @version $Id: QuadRSSI.java,v 1.1.2.4 2000-10-17 03:29:46 cananian Exp $
+ * @version $Id: QuadRSSx.java,v 1.1.2.1 2000-11-13 21:05:25 cananian Exp $
  */
-public class QuadRSSI extends Code /* which extends HCode */ {
+public class QuadRSSx extends Code /* which extends HCode */ {
     /** The name of this code view. */
     public static final String codename = "relaxed-quad-ssi";
 
@@ -36,14 +36,14 @@ public class QuadRSSI extends Code /* which extends HCode */ {
      * Create a new code object given a quadruple representation
      * of the method instructions.
      */
-    protected QuadRSSI(HMethod parent, Quad quads) {
+    protected QuadRSSx(HMethod parent, Quad quads) {
 	super(parent, quads);
     }
 
     /** Clone this code representation. The clone has its own
      *  copy of the quad graph. */
     public HCodeAndMaps clone(HMethod newMethod) {
-	return cloneHelper(new QuadRSSI(newMethod, null));
+	return cloneHelper(new QuadRSSx(newMethod, null));
     }
 
     /**
@@ -52,7 +52,7 @@ public class QuadRSSI extends Code /* which extends HCode */ {
      */
     public String getName() { return codename; }
 
-    /** Return a code factory for <code>QuadRSSI</code>, given a code
+    /** Return a code factory for <code>QuadRSSx</code>, given a code
      *  factory for <code>QuadNoSSA</code> or <code>QuadSSI</code>.
      */
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
@@ -62,7 +62,7 @@ public class QuadRSSI extends Code /* which extends HCode */ {
 	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
 		    Code c = (Code) hcf.convert(m);
-		    return c.cloneHelper(new QuadRSSI(m, null)).hcode();
+		    return c.cloneHelper(new QuadRSSx(m, null)).hcode();
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
