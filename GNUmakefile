@@ -26,8 +26,8 @@ cvs-add:
 		(cd $$dir; cvs add *.java 2>/dev/null); \
 	done
 cvs-commit: cvs-add
-	cvs diff -u | tee cvs-tmp # view changes we are committing.
-	cvs commit
+	cvs -q diff -u | tee cvs-tmp # view changes we are committing.
+	cvs -q commit
 	$(RM) cvs-tmp
 commit: cvs-commit # convenient abbreviation
 
