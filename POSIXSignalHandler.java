@@ -5,9 +5,6 @@ import java.util.HashMap;
 public final class POSIXSignalHandler {
     /** Use instances of <code>asyncEvent</code> to ahandle POSIX signals. */
 
-    private HashMap signalsHandlersLists = null;
-
-    
     // Spec says all these fields should be final, but I don't see how
     // to make them final and to guarantee the "platform independence".
     // So I just "un-final-ed" them, and I'll set them at the runtime,
@@ -55,11 +52,13 @@ public final class POSIXSignalHandler {
 
     // I don't know what are the codes of all these signals, but I guess they are all <50.
     // If you know that any of these signals has a code >50, just change the number of elements.
-    private AsyncEvent[] signalsHandlersList = new AsyncEvent[50];
+    private static final int MAX_SIG = 50;
+    private static AsyncEvent[] signalsHandlersList = new AsyncEvent[MAX_SIG];
     
     public POSIXSignalHandler() {
 	// TODO
 	setSignals();
+	for (int i = 0; i < MAX_SIG; i++) signalsHandlersList[i] = new AsyncEvent();
     }
 
     public static void addHandler(int signal, AsyncEventHandler handler) {

@@ -351,14 +351,17 @@ public class RealtimeThread extends Thread implements Schedulable {
 
     public static void sleep(Clock clock, HighResolutionTime time)
 	throws InterruptedException {
-	// TODO
-	// method exists, but with different specs
+	if (time instanceof AbsoluteTime) {
+	    RelativeTime temp = ((AbsoluteTime)time).subtract(clock.getTime());
+	    Thread.sleep(temp.getMilliseconds(), temp.getNanoseconds());
+	}
+	else 
+	    Thread.sleep(time.getMilliseconds(), time.getNanoseconds());
     }
 
     public static void sleep(HighResolutionTime time)
 	throws InterruptedException {
-	// TODO
-	// method exists, but with different specs
+	sleep(Clock.getRealtimeClock(), time);
     }
 
     public void start() {
