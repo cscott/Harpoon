@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.44 1999-06-14 07:11:54 cananian Exp $
+% $Id: thesis.tex,v 1.45 1999-06-15 04:40:33 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.44 $ $}
+\date{\today \\ $ $Revision: 1.45 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.44 $ $}{$ $Revision: 1.44 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.45 $ $}{$ $Revision: 1.45 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -145,7 +145,7 @@ $\psi$- and $\pi$-functions in \cite{lee99:parssa},
 interprocedural \phifunction{s} in \cite{liao99:issa},
 $\mu$- and $\chi$-functions in \cite{chow96:hssa},
 $\mu$- and $\eta$-functions in \cite{gerlek95:inductssa},\footnote{Compare to
-\cite{ballance90:pdw,tu95:gssa}.}, among others.\footnote{Maybe.
+\cite{ballance90:pdw,tu95:gssa}.} among others.\footnote{Maybe.
 Actually I've named all the ones I know about.  Except for TGSSA,
 an early form of which apparently used $\mu$- and $\nu$-functions (mentioned in
 \cite{weise94:vdg}).}
@@ -965,5 +965,68 @@ that's how.}
 
 \newpage
 \bibliography{harpoon}
+\newpage
 \appendix
+\section{Common errors of IR research papers}
+\begin{enumerate}
+\item Quote: ``The number of $\phi$-nodes needed remains linear''
+\cite{sreedhar95:lintime}.  Often \cite{cytron91:ssa} is cited in
+support of this.  What Cytron \emph{acutally} said was ``For the
+programs we tested, the plot in Figure 21 shows that the number of
+\phifunction{s} is also linear in the size of the original program.''
+In other words, this is not a theoretical or hard bound, this is an
+\emph{experimental} result.  By the same experimental technique that
+showed the run-time of his algorithm to be linear ``in
+practice''---despite the fact that nested \texttt{repeat-until} loops
+yielded quadratic performance.  Wegman and Zadeck get points in
+\cite{wegman91:scc} for stating ``in theory the size can be $O(EV)$,
+but empirical evidence indicates that the work required to compute the
+SSA graph is linear in the program size,'' which is rigorously correct.
+\item Time bounds of Cytron's SSA algorithm stated as being $O(N^2)$.
+Chow et al.\ \cite{chow97:ssapre} claim ``the $\phi$-insertion step is
+$\Omega(v^2)$\ldots'' (where they use $v$ to refer to what we call
+$N$), and further ``[but] there are linear-time SSA $\phi$-placement
+algorithms that can be used to lower it to $O(e)$.''  Wrong, wrong,
+wrong.  Cytron's algorithm (which Chow et al.\ use) is $O(N^2 V)$ and
+the faster algorithms are $O(EV)$.  The $V$ cannot be omitted; $V$ can
+be $O(N)$ (one definition per node).  Dhamdhere et al.\
+\cite{dhamdhere92:large} blame this common error on an early paper by
+Cytron et at.\ \cite{cytron89:ssa}, noting that this was corrected in
+\cite{cytron91:ssa}.  As the error was published in POPL and the
+correction in TOPLAS, one may understand the widespread confusion.  A
+closely related sin is referring to an SSA algorithm as ``linear,''
+since the SSA form itself may be cubic in the size of the input
+program.  Chow et al.\ \cite{chow97:ssapre} do this, too.  Usually
+what happens is a redefinition of the ``size of the program'' until
+the desired algorithm can be called ``linear.''  Sreedhar and Gao
+\cite{sreedhar95:lintime} do this in two ways: first, they restrict
+their algorithm to ``constructing a single SEG,'' which they can do in
+$O(E)$, instead of contructing the SEGs for all variables (otherwise
+known as SSA form), which takes them $O(EV)$.  Then they redefine
+``linear'' to be in terms of $E$ (which could be $N^2$), instead of in
+terms of $N$.  Thus they manage to call an $O(N^3)$ algorithm ($E=N^2$
+and $V=N$) ``linear.''  Cytron et al.\ \cite{cytron91:ssa} win the
+most points by blatently declaring a variable $R$ to be ``the
+largest'' of $N$, $E$, $V$, and a few other metrics.  They then spin
+you in circles to distract you from the $O(R^3)$ figure they cite
+(which may be as high as $O(N^6)$ if you've defined $R=E$!) before
+landing at ``the entire translation process is effectively $O(R)$''!
+Since the algorithm they are describing takes time equivalent to
+$O(E+V_{SSA}|{DF}|+NV_{SSA})$ their conclusion is surprising, to say
+the least.\footnote{Their justification, term by term: $O(E)$ is
+$O(R)$.  Placing \phifunction{s}, which may take as much as
+$V_{SSA}|{DF}|$ time, is linear because their empirical results say
+so.  The total mentions of variables in the final program, which could
+have $V_{SSA}$ variables mentioned in each of $N$ statements, is
+$O(N)$---again, because that's the way it looks ``in practice.''  So,
+everything is ``linear.''}
+\end{enumerate}
+
+\section{Canonical and derived definitions of the empty set}
+\begin{enumerate}
+\item \textbf{``Who cares about Maria?''} (Canonical) \cite{marinov99}
+\item \textbf{``Who cares about Martin and Maria?''} (Radu Revised)
+\item \textbf{``Who cares about \texttt{bash}?''} (Found on FLEX web page)
+\end{enumerate}
+
 \end{document}
