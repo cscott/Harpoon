@@ -479,6 +479,39 @@ sub extract_revision {
     return @text;
 }
 
+# open a cvs file, possibly using a remote repository access method.
+# currently only :ext: is supported, not any of the :?server: methods.
+sub open_cvs_file {
+    local *HANDLE = shift;
+    my $pathname = shift;
+
+    # A file that exists only on the branch, not on the trunk, is found
+    # in the Attic subdir.
+    my $atticname;
+    if ($pathname =~ m:^(.*)/([^/]*)$:) {
+        $atticname = $1 . '/Attic/' . $2;
+    } else {
+        $atticname = 'Attic/' . $pathname;
+    }
+    # Try remote repository access methods, if applicable.
+    if ($pathname =~ m/^:([^:]*):([^:@]*)@([^:@]*):(.*)$/) {
+        my ($method,$user,$host,$path) = ($1, $2, $3, $4);
+        if ($method eq "ext") { # currently the only supported protocol.
+            my $rsh = $ENV{'CVS_RSH'};
+            $rsh = "rsh" unless defined $rsh;
+            $atticname =~ s/^:[^:]*:[^:]*://;
+            my $cmd="if [ -r $path ]; then cat $path; else cat $atticname; fi";
+            $cmd = "$rsh $host -l $user \"sh -c '$cmd'\"";
+            return open(HANDLE, $cmd." |");
+        }
+        # remote access protocol not supported. <sigh>
+        return 0;
+    }
+    # local access.
+    return open(HANDLE, "< $pathname") if (-r $pathname);
+    return open(HANDLE, "< $atticname"); # fall back to attic.
+}
+
 sub parse_cvs_file {
     my ($rcs_pathname, $checked_out_revision) = @_;
 
@@ -494,7 +527,7 @@ sub parse_cvs_file {
 
     die "$progname: error: This file appeared to be under CVS control, " . 
         "but the RCS file is inaccessible.\n(Couldn't open '$rcs_pathname')\n"
-            if !open (RCSFILE, "< $rcs_pathname");
+            if !open_cvs_file (\*RCSFILE, $rcs_pathname);
     &parse_rcs_file();
     close(RCSFILE);
 
@@ -640,7 +673,7 @@ sub parse_cvs_file {
     $revision;
 }
 
-# Read CVS/Entries and CVS/Repository files.
+# Read CVS/Entries, CVS/Repository, and CVS/Root files.
 #
 # Creates these associative arrays, keyed by the CVS file pathname
 #
@@ -649,7 +682,12 @@ sub parse_cvs_file {
 #  %cvs_sticky_revision  -- Sticky tag, if any
 #  
 #  Also, creates %cvs_files, keyed by the directory path, which contains
-#  a space-separated list of the files under CVS control in the directory
+#  a backslash-separated list of the files under CVS control in the directory
+#
+#  Finally, creates %repository which contains a path to the repository
+#  directory, keyed by directory path.  The remote repository access
+#  mode (if any) is read from CVS/Root and prepended to the entry in
+#  %repository.
 sub read_cvs_entries
 {
     my ($directory) = @_;
@@ -681,6 +719,15 @@ sub read_cvs_entries
     chomp($repository);
     close(REPOSITORY);
     $repository{$directory} = $repository;
+
+    # CSA: deal with remote repository.
+    return if !open(CVSROOT, "< $cvsdir/Root");
+    $cvsroot = <CVSROOT>;
+    chomp($cvsroot);
+    close(CVSROOT);
+    if ($cvsroot =~ m/^(:[^:]*:[^:]*:)/) { # remote repository?
+        $repository{$directory} = $1 . $repository;
+    }
 }
 
 # Given path to file in CVS working directory, compute path to RCS
@@ -709,11 +756,6 @@ sub rcs_pathname_and_revision {
     print STDERR "file: $filename\n" if $debug;
     my ($rcs_path) = $repository{$directory} . '/' . $filename . ',v';
     return ($rcs_path,
-            $checked_out_revision) if (-r $rcs_path);
-
-    # A file that exists only on the branch, not on the trunk, is found
-    # in the Attic subdir.
-    return ($repository{$directory} . '/Attic/' . $filename . ',v',
             $checked_out_revision);
 }
 
