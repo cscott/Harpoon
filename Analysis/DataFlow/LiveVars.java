@@ -20,14 +20,13 @@
   * in the <code>BasicBlock</code>s passed to it.
   *
   * @author  Felix S Klock <pnkfelix@mit.edu>
-  * @version $Id: LiveVars.java,v 1.1.2.15 1999-11-29 02:21:09 duncan Exp $
+  * @version $Id: LiveVars.java,v 1.1.2.16 1999-11-29 03:26:09 duncan Exp $
   */
 public abstract class LiveVars extends BackwardDataFlowBasicBlockVisitor {
     private static final boolean DEBUG = false; 
     
      // maps a BasicBlock 'bb' to the LiveVarInfo associated with 'bb'
     private Map bbToLvi;
-    private Map hceToBB; 
 
      /** Null arg ctor for use by subclasses so that the system won't
 	 break when calling abstract methods that require data that
