@@ -1533,30 +1533,34 @@ class NBodySystem {
     size = 1.00002*side;
   }
   
-  void maketreeAux(int first, int num) { 
-    if (num == 1) {
+  void maketreeIteration(int i) { 
       int xp[] = new int[vec.NDIM];
       vec v = new vec();
 
-      body p = bodies.getbody(first);
+      body p = bodies.getbody(i);
       p.PosvecStore(v);
       intcoord(xp,v);
       BH_tree.CellAddBody(p,xp);
-    } else { 
-      maketreeAux(first, num/2);
-      maketreeAux(first+num/2, (num - (num/2)));
+  }
+
+  void maketreeParallelLoop(int first, int num) { 
+    maketreeThread t[] = new maketreeThread[num];
+    for (int i = 0; i < num; i++) {
+      t[i] = new maketreeThread(this, first+i);
+      t[i].start();
+    }
+    for (int i = 0; i < num; i++) {
+      try {
+        t[i].join();
+      } catch (java.lang.InterruptedException e) {
+        System.err.print("InterruptedException in maketreeParallelLoop\n");
+      }
     }
   }
 
   void maketreeLoop(int first, int num) { 
     for (int i = 0; i < num; i++) { 
-      int xp[] = new int[vec.NDIM];
-      vec v = new vec();
-
-      body p = bodies.getbody(i+first);
-      p.PosvecStore(v);
-      intcoord(xp,v);
-      BH_tree.CellAddBody(p,xp);
+      maketreeIteration(first+i);
     }
   }
   
@@ -1564,33 +1568,34 @@ class NBodySystem {
     if (barnes.simparms.getiparam("parallel") == 0) {
       maketreeLoop(0, nbody);
     } else if (barnes.simparms.getiparam("parallel") == 1) {
-      maketreeAux(0, nbody);
-    } else if (barnes.simparms.getiparam("parallel") == 2) { 
-      maketreeThread t = new maketreeThread(this, 0, nbody); 
-      t.inlineStart();
-    } else { 
-      maketreeThread t = new maketreeThread(this, 0, nbody); 
-      t.start();
-      t.join();
-    }
+      maketreeParallelLoop(0, nbody);
+    } 
   }
 
-  void AdvanceAux(double hts, double ts, int first, int num) { 
-    if (num == 1) {
+  void AdvanceIteration(double hts, double ts, int i) { 
       body p;
-      p = bodies.getbody(first);
+      p = bodies.getbody(i);
       p.advance(hts, ts);
-    } else { 
-      AdvanceAux(hts, ts, first, num/2);
-      AdvanceAux(hts, ts, first+num/2, (num - (num/2)));
+  }
+
+  void AdvanceParallelLoop(double hts, double ts, int first, int num) { 
+    AdvanceThread t[] = new AdvanceThread[num];
+    for (int i = 0; i < num; i++) {
+      t[i] = new AdvanceThread(this, hts, ts, first+i);
+      t[i].start();
+    }
+    for (int i = 0; i < num; i++) {
+      try {
+        t[i].join();
+      } catch (java.lang.InterruptedException e) {
+        System.err.print("InterruptedException in AdvanceParallelLoop\n");
+      }
     }
   }
 
   void AdvanceLoop(double hts, double ts, int first, int num) { 
     for (int i = 0; i < num; i++) { 
-      body p;
-      p = bodies.getbody(first+i);
-      p.advance(hts, ts);
+      AdvanceIteration(hts, ts, first+i);
     }
   }
   
@@ -1598,102 +1603,104 @@ class NBodySystem {
     if (barnes.simparms.getiparam("parallel") == 0) {
       AdvanceLoop(hts, ts, 0, nbody);
     } else if (barnes.simparms.getiparam("parallel") == 1) {
-      AdvanceAux(hts, ts, 0, nbody);
-    } else if (barnes.simparms.getiparam("parallel") == 2) { 
-      AdvanceThread t = new AdvanceThread(this, hts, ts, 0, nbody); 
-      t.inlineStart();
-    } else { 
-      AdvanceThread t = new AdvanceThread(this, hts, ts, 0, nbody); 
-      t.start();
-      t.join();
-    }
+      AdvanceParallelLoop(hts, ts, 0,nbody);
+    } 
   }
-  
-  void SwapAccsAux(int first, int num) { 
-    if (num == 1) {
+
+  void SwapAccsIteration(int i) { 
       body p;
-      p = bodies.getbody(first);
+      p = bodies.getbody(i);
       p.swapAcc();
-    } else { 
-      SwapAccsAux(first, num/2);
-      SwapAccsAux(first+num/2, (num - (num/2)));
+  }
+
+  void SwapAccsParallelLoop(int first, int num) { 
+    SwapAccsThread t[] = new SwapAccsThread[num];
+    for (int i = 0; i < num; i++) {
+      t[i] = new SwapAccsThread(this, first+i);
+      t[i].start();
+    }
+    for (int i = 0; i < num; i++) {
+      try {
+        t[i].join();
+      } catch (java.lang.InterruptedException e) {
+        System.err.print("InterruptedException in SwapAccsParallelLoop\n");
+      }
     }
   }
 
   void SwapAccsLoop(int first, int num) { 
     for (int i = 0; i < num; i++) { 
-      body p;
-      p = bodies.getbody(first+i);
-      p.swapAcc();
+      SwapAccsIteration(first+i);
     }
   }
-
+  
   void SwapAccs() throws java.lang.InterruptedException {
     if (barnes.simparms.getiparam("parallel") == 0) {
       SwapAccsLoop(0, nbody);
     } else if (barnes.simparms.getiparam("parallel") == 1) {
-      SwapAccsAux(0, nbody);
-    } else if (barnes.simparms.getiparam("parallel") == 2) { 
-      SwapAccsThread t = new SwapAccsThread(this, 0, nbody); 
-      t.inlineStart();
-    } else { 
-      SwapAccsThread t = new SwapAccsThread(this, 0, nbody); 
-      t.start();
-      t.join();
-    }
+      SwapAccsParallelLoop(0, nbody);
+    } 
   }
 
- 
-  void ComputeAccelsAux(double tol, double eps, int first, int num) { 
-    if (num == 1) {
+  void ComputeAccelsIteration(double tol, double eps, int i) { 
       body p;
-      p = bodies.getbody(first);
+      p = bodies.getbody(i);
       p.walksub(BH_tree, tol, size*size, eps);
-    } else { 
-      ComputeAccelsAux(tol, eps, first, num/2);
-      ComputeAccelsAux(tol, eps, first+num/2, (num - (num/2)));
+  }
+
+  void ComputeAccelsParallelLoop(double tol, double eps, int first, int num) { 
+    ComputeAccelsThread t[] = new ComputeAccelsThread[num];
+    for (int i = 0; i < num; i++) {
+      t[i] = new ComputeAccelsThread(this, tol, eps, first+i);
+      t[i].start();
+    }
+    for (int i = 0; i < num; i++) {
+      try {
+        t[i].join();
+      } catch (java.lang.InterruptedException e) {
+        System.err.print("InterruptedException in ComputeAccelsParallelLoop\n");
+      }
     }
   }
 
   void ComputeAccelsLoop(double tol, double eps, int first, int num) { 
     for (int i = 0; i < num; i++) { 
-      body p;
-      p = bodies.getbody(first+i);
-      p.walksub(BH_tree, tol, size*size, eps);
+      ComputeAccelsIteration(tol, eps, first+i);
     }
   }
-
+  
   void ComputeAccels(double tol, double eps) throws java.lang.InterruptedException {
     if (barnes.simparms.getiparam("parallel") == 0) {
       ComputeAccelsLoop(tol, eps, 0, nbody);
     } else if (barnes.simparms.getiparam("parallel") == 1) {
-      ComputeAccelsAux(tol, eps, 0, nbody);
-    } else if (barnes.simparms.getiparam("parallel") == 2) { 
-      ComputeAccelsThread t = new ComputeAccelsThread(this, tol, eps, 0, nbody); 
-      t.inlineStart();
-    } else { 
-      ComputeAccelsThread t = new ComputeAccelsThread(this, tol, eps, 0, nbody); 
-      t.start();
-      t.join();
-    }
+      ComputeAccelsParallelLoop(tol, eps, 0,nbody);
+    } 
   }
 
-  void StartVelsAux(double hts, int first, int num) { 
-    if (num == 1) {
+  void StartVelsIteration(double hts, int i) { 
       body p;
-      p = bodies.getbody(first);
+      p = bodies.getbody(i);
       p.startVel(hts);
-    } else { 
-      StartVelsAux(hts, first, num/2);
-      StartVelsAux(hts, first+num/2, (num - (num/2)));
+  }
+
+  void StartVelsParallelLoop(double hts, int first, int num) { 
+    StartVelsThread t[] = new StartVelsThread[num];
+    for (int i = 0; i < num; i++) {
+      t[i] = new StartVelsThread(this, hts, first+i);
+      t[i].start();
+    }
+    for (int i = 0; i < num; i++) {
+      try {
+        t[i].join();
+      } catch (java.lang.InterruptedException e) {
+        System.err.print("InterruptedException in StartVelsParallelLoop\n");
+      }
     }
   }
 
   void StartVelsLoop(double hts, int first, int num) { 
     for (int i = 0; i < num; i++) { 
-      body p;
-      p = bodies.getbody(first+i);
-      p.startVel(hts);
+      StartVelsIteration(hts, first+i);
     }
   }
   
@@ -1701,17 +1708,10 @@ class NBodySystem {
     if (barnes.simparms.getiparam("parallel") == 0) {
       StartVelsLoop(hts, 0, nbody);
     } else if (barnes.simparms.getiparam("parallel") == 1) {
-      StartVelsAux(hts, 0, nbody);
-    } else if (barnes.simparms.getiparam("parallel") == 2) { 
-      StartVelsThread t = new StartVelsThread(this, hts, 0, nbody); 
-      t.inlineStart();
-    } else { 
-      StartVelsThread t = new StartVelsThread(this, hts, 0, nbody); 
-      t.start();
-      t.join();
-    }
+      StartVelsParallelLoop(hts, 0, nbody);
+    } 
   }
-  
+
   void computeForces(double tol, double hts, double eps) throws java.lang.InterruptedException {
     SwapAccs();
     ComputeAccels(tol,eps);
@@ -1749,239 +1749,88 @@ class random {
   }
 }
 
-class ComputeAccelsThread extends Thread {
-  NBodySystem nb;
-  double tol, eps;
-  int first, num;
-
-  ComputeAccelsThread(NBodySystem b, double t, double e, int s, int n) { 
-    nb = b;
-    tol = t; 
-    eps = e;
-    first = s;
-    num = n;
-  }
-  public void inlineStart() { 
-    if (num == 1) {
-      body p;
-      p = nb.bodies.getbody(first);
-      p.walksub(nb.BH_tree, tol, nb.size*nb.size, eps);
-    } else {
-      ComputeAccelsThread l = new ComputeAccelsThread(nb, tol, eps, first, num/2);
-      ComputeAccelsThread r = new ComputeAccelsThread(nb, tol, eps, first+num/2, (num - (num/2)));
-      l.inlineStart();
-      r.inlineStart();
-    }
-  }
-
-  public void run() { 
-    if (num == 1) {
-      body p;
-      p = nb.bodies.getbody(first);
-      p.walksub(nb.BH_tree, tol, nb.size*nb.size, eps);
-    } else {
-      ComputeAccelsThread l = new ComputeAccelsThread(nb, tol, eps, first, num/2);
-      ComputeAccelsThread r = new ComputeAccelsThread(nb, tol, eps, first+num/2, (num - (num/2)));
-      l.start();
-      r.start();
-      try { 
-        l.join();
-        r.join();
-      } catch (java.lang.InterruptedException e) { 
-        System.err.print("InterruptedException in ComputeAccelsThread::run\n");
-      }
-    }
-  }
-}
-
-class SwapAccsThread extends Thread {
-  NBodySystem nb;
-  int first, num;
-
-  SwapAccsThread(NBodySystem b, int s, int n) { 
-    nb = b;
-    first = s;
-    num = n;
-  }
-  public void inlineStart() { 
-    if (num == 1) {
-      body p;
-      p = nb.bodies.getbody(first);
-      p.swapAcc();
-    } else {
-      SwapAccsThread l = new SwapAccsThread(nb, first, num/2);
-      SwapAccsThread r = new SwapAccsThread(nb, first+num/2, (num - (num/2)));
-      l.inlineStart();
-      r.inlineStart();
-    }
-  }
-
-  public void run() { 
-    if (num == 1) {
-      body p;
-      p = nb.bodies.getbody(first);
-      p.swapAcc();
-    } else {
-      SwapAccsThread l = new SwapAccsThread(nb, first, num/2);
-      SwapAccsThread r = new SwapAccsThread(nb, first+num/2, (num - (num/2)));
-      l.start();
-      r.start();
-      try { 
-        l.join();
-        r.join();
-      } catch (java.lang.InterruptedException e) { 
-        System.err.print("InterruptedException in SwapAccsThread::run\n");
-      }
-    }
-  }
-}
-
 class maketreeThread extends Thread {
   NBodySystem nb;
-  int first, num;
+  int idx;
 
-  maketreeThread(NBodySystem b, int s, int n) { 
-    nb = b;
-    first = s;
-    num = n;
+  maketreeThread(NBodySystem n, int i) {
+    nb = n;
+    idx = i;
   }
-  public void inlineStart() { 
-    if (num == 1) {
-      int xp[] = new int[vec.NDIM];
-      vec v = new vec();
-
-      body p = nb.bodies.getbody(first);
-      p.PosvecStore(v);
-      nb.intcoord(xp,v);
-      nb.BH_tree.CellAddBody(p,xp);
-    } else {
-      maketreeThread l = new maketreeThread(nb, first, num/2);
-      maketreeThread r = new maketreeThread(nb, first+num/2, (num - (num/2)));
-      l.inlineStart();
-      r.inlineStart();
-    }
-  }
-
-  public void run() { 
-    if (num == 1) {
-      int xp[] = new int[vec.NDIM];
-      vec v = new vec();
-
-      body p = nb.bodies.getbody(first);
-      p.PosvecStore(v);
-      nb.intcoord(xp,v);
-      nb.BH_tree.CellAddBody(p,xp);
-    } else {
-      maketreeThread l = new maketreeThread(nb, first, num/2);
-      maketreeThread r = new maketreeThread(nb, first+num/2, (num - (num/2)));
-      l.start();
-      r.start();
-      try { 
-        l.join();
-        r.join();
-      } catch (java.lang.InterruptedException e) { 
-        System.err.print("InterruptedException in maketreeThread::run\n");
-      }
-    }
-  }
-}
-
-class StartVelsThread extends Thread {
-  NBodySystem nb;
-  double hts;
-  int first, num;
-
-  StartVelsThread(NBodySystem b, double h, int s, int n) { 
-    nb = b;
-    hts = h;
-    first = s;
-    num = n;
-  }
-  public void inlineStart() { 
-    if (num == 1) {
-      body p;
-      p = nb.bodies.getbody(first);
-      p.startVel(hts);
-    } else {
-      StartVelsThread l = new StartVelsThread(nb, hts, first, num/2);
-      StartVelsThread r = new StartVelsThread(nb, hts, first+num/2, (num - (num/2)));
-      l.inlineStart();
-      r.inlineStart();
-    }
-  }
-
-  public void run() { 
-    if (num == 1) {
-      body p;
-      p = nb.bodies.getbody(first);
-      p.startVel(hts);
-    } else {
-      StartVelsThread l = new StartVelsThread(nb, hts, first, num/2);
-      StartVelsThread r = new StartVelsThread(nb, hts, first+num/2, (num - (num/2)));
-      l.start();
-      r.start();
-      try { 
-        l.join();
-        r.join();
-      } catch (java.lang.InterruptedException e) { 
-        System.err.print("InterruptedException in StartVelsThread::run\n");
-      }
-    }
+  public void run() {
+    nb.maketreeIteration(idx);
   }
 }
 
 class AdvanceThread extends Thread {
   NBodySystem nb;
   double hts, ts;
-  int first, num;
+  int idx;
 
-  AdvanceThread(NBodySystem b, double h, double t, int s, int n) { 
+  AdvanceThread(NBodySystem b, double h, double t, int i) { 
     nb = b;
     hts = h;
     ts = t;
-    first = s;
-    num = n;
-  }
-  public void inlineStart() { 
-    if (num == 1) {
-      body p;
-      p = nb.bodies.getbody(first);
-      p.advance(hts, ts);
-    } else {
-      AdvanceThread l = new AdvanceThread(nb, hts, ts, first, num/2);
-      AdvanceThread r = new AdvanceThread(nb, hts, ts, first+num/2, (num - (num/2)));
-      l.inlineStart();
-      r.inlineStart();
-    }
+    idx = i;
   }
 
   public void run() { 
-    if (num == 1) {
-      body p;
-      p = nb.bodies.getbody(first);
-      p.advance(hts, ts);
-    } else {
-      AdvanceThread l = new AdvanceThread(nb, hts, ts, first, num/2);
-      AdvanceThread r = new AdvanceThread(nb, hts, ts, first+num/2, (num - (num/2)));
-      l.start();
-      r.start();
-      try { 
-        l.join();
-        r.join();
-      } catch (java.lang.InterruptedException e) { 
-        System.err.print("InterruptedException in AdvanceThread::run\n");
-      }
-    }
+    nb.AdvanceIteration(hts,ts,idx);
   }
 }
-  
+
+class ComputeAccelsThread extends Thread {
+  NBodySystem nb;
+  double tol, eps;
+  int idx;
+
+  ComputeAccelsThread(NBodySystem b, double t, double e, int i) { 
+    nb = b;
+    tol = t;
+    eps = e;
+    idx = i;
+  }
+  public void run() { 
+    nb.ComputeAccelsIteration(tol,eps,idx);
+  }
+}
+
+class SwapAccsThread extends Thread {
+  NBodySystem nb;
+  int idx;
+
+  SwapAccsThread(NBodySystem n, int i) {
+    nb = n;
+    idx = i;
+  }
+  public void run() {
+    nb.SwapAccsIteration(idx);
+  }
+}
+
+class StartVelsThread extends Thread {
+  NBodySystem nb;
+  double hts;
+  int idx;
+
+  StartVelsThread(NBodySystem b, double h, int i) { 
+    nb = b;
+    hts = h;
+    idx = i;
+  }
+
+  public void run() { 
+    nb.StartVelsIteration(hts, idx);
+  }
+}
+
 class barnes { 
   public static parms simparms = new parms();
   public static NBodySystem Nbody = new NBodySystem();
 
   public static void main(String args[]) throws java.lang.InterruptedException, java.io.IOException, java.io.FileNotFoundException { 
     if (args.length == 0) {
-      System.out.print("usage: java main <input filename>\n");
+      System.out.print("usage: java barnes <input filename>\n");
       return;
     }
     simparms.readParameterFile(args[0]);
