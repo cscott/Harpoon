@@ -48,7 +48,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.25 1999-08-12 16:33:33 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.26 1999-08-19 19:23:03 pnkfelix Exp $
  */
 
 action code {:
@@ -258,9 +258,14 @@ type ::=	ID:id
 	|	ID:id COLON INTEGER:w
 		{: TypeSet ts = new TypeSet();
 		   id = id.intern();
-		   if (id == "s" || id =="u") {
-		     ts.set(harpoon.IR.Tree.Type.INT);
-		     /* XXX: do something intelligent here. */
+		   if ((w.intValue() <= 32) &&
+		       (w.intValue() >= 1 ) &&
+		       ( (id == "s") || (id == "u"))) {
+		      if (id == "s") {
+		         ts.setSignedPrecise(w.intValue());
+		      } else if (id == "u") {
+			 ts.setUnsignedPrecise(w.intValue());
+		      }
 		   } else error("Bad sized type modifier: "+id+":"+w, idleft);
 		   RESULT=ts;
 		:}

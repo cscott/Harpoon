@@ -3,7 +3,11 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Tools.PatMat;
 
-import java.util.BitSet;
+import harpoon.Util.BitString;
+import harpoon.Util.Util;
+import harpoon.IR.Tree.Type;
+import harpoon.IR.Tree.PreciseType;
+
 import java.util.List;
 
 /**
@@ -18,7 +22,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.26 1999-08-12 16:33:34 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.27 1999-08-19 19:23:03 pnkfelix Exp $
  */
 public class Spec  {
 
@@ -1006,11 +1010,26 @@ public class Spec  {
     /** A representation for storing Types that values can be. 
 	
 	@see IR.Tree.Type
+	@see IR.Tree.PreciseType
      */
     public static class TypeSet {
-	final BitSet bs = new BitSet();
+	// maps Type->boolean
+	final BitString bs;
+	
+	// maps ( bitLength - 1 )->boolean
+	// (should only be on if this.contains(PreciseType.SMALL))
+	final BitString unsignedPrecises;
+
+	// maps ( bitLength - 1 )->boolean
+	// (should only be on if this.contains(PreciseType.SMALL))
+	final BitString signedPrecises;
+
 	/** Constructs a new <code>Spec.TypeSet</code>. */
-	public TypeSet() { }
+	public TypeSet() {
+	    bs = new BitString();
+	    unsignedPrecises = new BitString(32);
+	    signedPrecises = new BitString(32);
+	}
 	
 	/** Checks if <code>this</code> contains <code>type</code>.
 	    <BR> <B>effects:</B> Returns true if <code>type</code> has
@@ -1028,6 +1047,28 @@ public class Spec  {
 	    bs.set(type);
 	}
 
+	/** Recordes that <code>this</code> contains
+	    a signed, specific precise type value
+	    <BR> <B>requires:</B>  1 <= numBits <= 32
+	    @param numBits The bit length of the type. 
+	*/
+	public void setSignedPrecise(int numBits) {
+	    Util.assert((numBits <= 32) && (numBits >= 1), 
+			"invalid bit length:"+numBits);
+	    signedPrecises.set(numBits-1);
+	}
+
+	/** Recordes that <code>this</code> contains
+	    an unsigned, specific precise type value
+	    <BR> <B>requires:</B>  1 <= numBits <= 32
+	    @param numBits The bit length of the type. 
+	*/
+	public void setUnsignedPrecise(int numBits) {
+	    Util.assert((numBits <= 32) && (numBits >= 1), 
+			"invalid bit length:"+numBits);
+	    unsignedPrecises.set(numBits-1);
+	}
+	
 	/** Adds all the types contained in <code>TypeSet</code>
 	 *  <code>ts</code> to <code>this</code>.
 	 */
@@ -1035,8 +1076,9 @@ public class Spec  {
 	    bs.or(ts.bs);
 	}
 	
-	/** Records that <code>this</code> contains all five Types,
-	    { INT, LONG, FLOAT, DOUBLE, POINTER }
+	/** Records that <code>this</code> contains all five basic
+	    Types,  { INT, LONG, FLOAT, DOUBLE, POINTER }.
+	    Note that it does not set any bits for the PreciseTypes.
 	*/
 	public void setAll() { 
 	    set(harpoon.IR.Tree.Type.INT);
@@ -1047,11 +1089,23 @@ public class Spec  {
 	}
 	public String toString() {
 	    StringBuffer sb = new StringBuffer();
-	    if (contains(harpoon.IR.Tree.Type.INT))     sb.append(",i");
-	    if (contains(harpoon.IR.Tree.Type.LONG))    sb.append(",l");
-	    if (contains(harpoon.IR.Tree.Type.FLOAT))   sb.append(",f");
-	    if (contains(harpoon.IR.Tree.Type.DOUBLE))  sb.append(",d");
-	    if (contains(harpoon.IR.Tree.Type.POINTER)) sb.append(",p");
+	    if (contains(Type.INT))     sb.append(",i");
+	    if (contains(Type.LONG))    sb.append(",l");
+	    if (contains(Type.FLOAT))   sb.append(",f");
+	    if (contains(Type.DOUBLE))  sb.append(",d");
+	    if (contains(Type.POINTER)) sb.append(",p");
+	    if (contains(PreciseType.SMALL)) {
+		for(int i=0; i<32; i++) {
+		    if(unsignedPrecises.get(i)) {
+			sb.append(",u:"+(i+1));
+		    }
+		}
+		for(int i=0; i<32; i++) {
+		    if(signedPrecises.get(i)) {
+			sb.append(",s:"+(i+1));
+		    }
+		}
+	    }
 	    if (sb.length()>0) sb.setCharAt(0, '<'); else sb.append('<');
 	    sb.append('>');
 	    return sb.toString();

@@ -54,7 +54,7 @@ import java.io.FileInputStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.11 1999-08-18 19:38:38 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.12 1999-08-19 19:23:03 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -132,7 +132,9 @@ public class SAMain extends harpoon.IR.Registration {
 		HCode hc = hcf.convert(hmethod);
 
 		out.println("\t--- TREE FORM ---");
-		if (hc!=null) hc.print(out);
+		if (hc!=null) hc.print(out); 
+		else 
+		    out.println("null returned for " + hmethod);
 		out.println("\t--- end TREE FORM ---");
 		out.println();
 	    }
@@ -144,6 +146,8 @@ public class SAMain extends harpoon.IR.Registration {
 		
 		out.println("\t--- INSTR FORM (no register allocation)  ---");
 		if (hc!= null) hc.print(out);
+		else 
+		    out.println("null returned for " + hmethod);
 		out.println("\t--- end INSTR FORM (no register allocation)  ---");
 		out.println();
 	    }
@@ -154,14 +158,18 @@ public class SAMain extends harpoon.IR.Registration {
 		HCode hc = sahcf.convert(hmethod);
 		
 		out.println("\t--- INSTR FORM (basic block check)  ---");
-		HCodeElement root = hc.getRootElement();
-		BasicBlock block = 
-		    BasicBlock.computeBasicBlocks((HasEdges)root);
-		Iterator iter= BasicBlock.basicBlockIterator(block);
-		LiveVars livevars = new LiveVars(iter); 
-		InstrSolver.worklistSolver
-		    (BasicBlock.basicBlockIterator(block), livevars);
-		out.println(livevars.dump());
+		if (hc != null) {
+		    HCodeElement root = hc.getRootElement();
+		    BasicBlock block = 
+			BasicBlock.computeBasicBlocks((HasEdges)root);
+		    Iterator iter= BasicBlock.basicBlockIterator(block);
+		    LiveVars livevars = new LiveVars(iter); 
+		    InstrSolver.worklistSolver
+			(BasicBlock.basicBlockIterator(block), livevars);
+		    out.println(livevars.dump());
+		} else {
+		    out.println("null returned for " + hmethod);
+		}
 		out.println("\t--- end INSTR FORM (basic block check)  ---");
 	    }
 	    
@@ -174,6 +182,8 @@ public class SAMain extends harpoon.IR.Registration {
 		HCodeFactory regAllocCF = RegAlloc.codeFactory(sahcf, frame);
 		HCode rhc = regAllocCF.convert(hmethod);
 		if (rhc != null) rhc.print(out);
+		else 
+		    out.println("null returned for " + hmethod);
 		out.println("\t--- end INSTR FORM (register allocation)  ---");
 		out.println();
 	    }
