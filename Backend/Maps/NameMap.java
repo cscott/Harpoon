@@ -12,12 +12,12 @@ import harpoon.Util.Util;
  * our methods into C-legal methods. 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: NameMap.java,v 1.1.2.2 1999-08-06 22:41:40 pnkfelix Exp $
+ * @version $Id: NameMap.java,v 1.1.2.3 1999-08-06 22:46:32 pnkfelix Exp $
  */
 public class NameMap {
 
-    public String munge(HMethod hm) {
-	NameMap.munge(hm);
+    public String mangle(HMethod hm) {
+	return NameMap.munge(hm);
     }
     
     public static String munge(HMethod hm) {
