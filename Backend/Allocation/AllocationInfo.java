@@ -2,7 +2,6 @@ package harpoon.Backend.Allocation;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Tree.Exp;
-import harpoon.IR.Tree.MEM;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TreeFactory;
 import harpoon.Temp.Temp;
@@ -12,9 +11,9 @@ import harpoon.Temp.Temp;
  * needed for most memory allocation schemes.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: DefaultAllocationInfo.java,v 1.1.2.4 1999-02-26 22:46:46 andyb Exp $
+ * @version $Id: AllocationInfo.java,v 1.1.2.1 1999-07-28 20:08:24 duncan Exp $
  */
-public interface DefaultAllocationInfo {
+public interface AllocationInfo {
 
   /** Returns code to call the garbage collection function */
   public Stm callGC(TreeFactory tf, HCodeElement src);
@@ -23,7 +22,7 @@ public interface DefaultAllocationInfo {
   public Exp getMemLimit(TreeFactory tf, HCodeElement src);  
 
   /** Returns a pointer to the value of the next free address in memory */
-  public MEM getNextPtr(TreeFactory tf, HCodeElement src);
+  public Temp getNextPtr();
 
   /** Contains code to exit with an OutOfMemoryError */
   public Stm exitOutOfMemory(TreeFactory tf, HCodeElement src);
