@@ -72,7 +72,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopAnalysis.java,v 1.1.2.26 2001-11-20 06:32:43 ovy Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.27 2002-01-02 21:36:00 bdemsky Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -218,10 +218,9 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    analyzetree(hc, (Loops)iterate.next(),st+" ");
 	}
 
-        /* bail out if loop has no entrances (root loop) */
-        if (lp.loopEntrances().isEmpty()) {
-            return;
-        }
+	/* throw assertion if loop has no entrance (root loop) */
+        Util.assert(!lp.loopEntrances().isEmpty());
+
 
 	//Find loop invariants
 	WorkSet elements=(WorkSet)lp.loopIncElements();
