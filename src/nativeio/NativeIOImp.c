@@ -13,6 +13,11 @@
 #include <string.h>
 #include <unistd.h>
 #include "flexthread.h" /* soft syscall mapping for select, etc, in GNU pth */
+#include "config.h"
+/* Note that the entire NativeIO implementation is intimately wired into the Sun JDK.
+ * This directory will eventually be replaced by an implementation that uses wrappers
+ * on OS calls rather than intimate ties to a JDK implementation. - WSB */
+#include "../sunjdk/java.io/javaio.h"
 
 #define ERROR         -2
 #define TRYAGAIN         -3
