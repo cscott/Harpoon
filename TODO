@@ -1,3 +1,6 @@
+---- Sep-23-98, cont
+Fix optimization bug exhibited by harpoon.Test.f!
+Merge improvements to harpoon.Test.Graph over to std harpoon.Main.Graph class.
 ---- Sep-23-98
 Make sure common
  if (i=N; i>=0; i--)
