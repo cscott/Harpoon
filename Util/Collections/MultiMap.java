@@ -83,7 +83,7 @@ import java.util.Map;
 	 </OL> 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.17 2000-11-10 19:55:11 cananian Exp $
+    @version $Id: MultiMap.java,v 1.1.2.18 2000-11-10 23:32:37 cananian Exp $
  */
 public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 
@@ -143,6 +143,19 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 	<code>addAll(MultiMap)</code>.
     */
     public void putAll(Map t);
+
+    /** Removes mappings from key to all associated values from this map.
+     *  This is consistent with the <code>Map</code> definition of
+     *  <code>remove</code>.
+     *  @return one of the previous values associated with the key,
+     *  or <code>null</code> if <code>Map</code> associated
+     *  no values with the key.  Note that a zero-sized collection
+     *  is <i>not</i> returned in the latter case, and that a
+     *  <code>null</code> return value may be ambiguous if the map
+     *  associated <code>null</code> with the given key (in addition
+     *  to possibly other values).
+     */
+    public Object remove(Object key);
 
     /** Removes a mapping from key to value from this map if present.
 
