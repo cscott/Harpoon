@@ -12,6 +12,7 @@ import harpoon.Analysis.UseDef;
 import harpoon.Analysis.Loops.Loops;
 import harpoon.Analysis.LowQuad.Loop.LoopAnalysis;
 import harpoon.Analysis.SSITOSSAMap;
+import harpoon.Analysis.LowQuad.Loop.LoopMap;
 import harpoon.Analysis.Maps.AllInductionsMap;
 import harpoon.Analysis.Maps.BasicInductionsMap;
 import harpoon.Analysis.Maps.InvariantsMap;
@@ -25,7 +26,7 @@ import java.util.Iterator;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.5 1999-06-30 20:02:49 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.6 1999-06-30 21:18:19 bdemsky Exp $
  */
 public final class LoopOptimize {
     
@@ -142,7 +143,8 @@ public final class LoopOptimize {
 		}
 		if (okay) {
 		    //do evil things to SSI
-		    Quad newquad=q.rename(q.getFactory(), ssitossamap, ssitossamap);
+		    LoopMap loopmap=new LoopMap(hc,lp,ssitossamap);
+		    Quad newquad=q.rename(q.getFactory(), loopmap, loopmap);
 		    //we made a good quad now....
 		    //Toss it  in the pile
 		    Quad.addEdge(loopcaller, which_succ,newquad,0);
