@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.80 2002-07-11 19:32:07 cananian Exp $
+# $Id: GNUmakefile,v 1.81 2002-08-31 01:10:20 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -172,7 +172,9 @@ out-of-date:	$(ALLSOURCE) FORCE
 	  echo "No files are outdated.  Forcing rebuild of everything." ; \
 	  for f in $(ALLSOURCE); do echo $$f >> $@ ; done ; \
 	fi
-	@sort -u -o $@ $@
+#	only sort the file if it is not already sorted.  this prevents
+#	unnecessarily changing the timestamp.
+	@if sort -u -c $@ 2> /dev/null ; then : ; else sort -u -o $@ $@ ; fi
 FORCE: # force target eval, even if no source files are outdated
 # this allows us to implement the "rebuild everything if nothing's old" rule
 
@@ -284,11 +286,11 @@ Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
 	date '+%-d-%b-%Y at %r %Z.' > Harpoon.jar.TIMESTAMP
 
 JARFILES=Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORTP)
-jar:	$(JARFILES)
-jar-install: $(JARFILES)
+jar:	$(filter-out %.TIMESTAMP, $(JARFILES))
+jar-install: jar
 	$(RM) -rf jar-install
 	mkdir jar-install
-	cp $^ jar-install
+	cp $(JARFILES) jar-install
 	chmod a+r jar-install/*
 	cd jar-install ; tar c . | \
 		$(SSH) $(INSTALLMACHINE) tar -C $(INSTALLDIR) -xv
