@@ -451,11 +451,85 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #    define UNLOCK() mutex_unlock(&GC_allocate_ml);
 #  endif
 #  if defined(LINUX_THREADS) 
+#   define NO_THREAD (pthread_t)(-1)
 #   if defined(I386)|| defined(POWERPC) || defined(ALPHA) || defined(IA64) \
-    || defined(M68K)
+    || defined(M68K) || defined(SPARC)
 #    include <pthread.h>
-#    define USE_SPIN_LOCK
-#    if defined(I386)
+#    ifdef PARALLEL_MARK
+#     if defined(GENERIC_COMPARE_AND_SWAP)
+	/* Probably not useful, except for debugging.	*/
+	extern pthread_mutex_t GC_compare_and_swap_lock;
+
+	static GC_bool GC_compare_and_exchange(volatile word *addr,
+						     word old, word new)
+	{
+	  GC_bool result;
+	  pthread_mutex_lock(&GC_compare_and_swap_lock);
+	  if (*addr == old) {
+	    *addr = new;
+	    result = TRUE;
+	  } else {
+	    result = FALSE;
+	  }
+	  pthread_mutex_unlock(&GC_compare_and_swap_lock);
+	  return result;
+	}
+#     endif /* GENERIC_COMPARE_AND_SWAP */
+#     if defined(I386)
+#      if !defined(GENERIC_COMPARE_AND_SWAP)
+         /* Returns TRUE if the comparison succeeded. */
+         inline static GC_bool GC_compare_and_exchange(volatile word *addr,
+		  				       word old, word new) 
+         {
+	   char result;
+	   __asm__ __volatile__("lock; cmpxchgl %2, %0; setz %1"
+	    	: "=m"(*(addr)), "=r"(result)
+		: "r" (new), "0"(*(addr)), "a"(old));
+	   return (GC_bool) result;
+         }
+#      endif /* !GENERIC_COMPARE_AND_SWAP */
+       inline static void GC_memory_barrier()
+       {
+	 /* We believe the processor ensures at least processor	*/
+	 /* consistent ordering.  Thus a compiler barrier	*/
+	 /* should suffice.					*/
+         __asm__ __volatile__("" : : : "memory");
+       }
+#     endif
+#     if defined(IA64)
+#      if !defined(GENERIC_COMPARE_AND_SWAP)
+         inline static GC_bool GC_compare_and_exchange(volatile word *addr,
+						       word old, word new) 
+	 {
+	  unsigned long oldval;
+	  __asm__ __volatile__("mov ar.ccv=%4 ;; cmpxchg8.rel %0=%1,%2,ar.ccv"
+		: "=r"(oldval), "=m"(*addr)
+		: "r"(new), "1"(*addr), "r"(old));
+	  return (oldval == old);
+         }
+#      endif /* !GENERIC_COMPARE_AND_SWAP */
+       inline static void GC_memory_barrier()
+       {
+         __asm__ __volatile__("mf" : : : "memory");
+       }
+#     endif /* IA64 */
+      /* Returns the original value of *addr.	*/
+      inline static word GC_atomic_add(volatile word *addr, word how_much)
+      {
+	word old;
+	do {
+	  old = *addr;
+	} while (!GC_compare_and_exchange(addr, old, old+how_much));
+        return old;
+      }
+#    endif /* PARALLEL_MARK */
+#    ifndef THREAD_LOCAL_ALLOC
+      /* In the THREAD_LOCAL_ALLOC case, the allocation lock tends to	*/
+      /* be held for long periods, if it is held at all.  Thus spinning	*/
+      /* and sleeping for fixed periods are likely to result in 	*/
+      /* significant wasted time.  We thus rely mostly on queued locks. */
+#     define USE_SPIN_LOCK
+#     if defined(I386)
        inline static int GC_test_and_set(volatile unsigned int *addr) {
 	  int oldval;
 	  /* Note: the "xchg" instruction does not need a "lock" prefix */
@@ -464,8 +538,8 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 		: "0"(1), "m"(*(addr)));
 	  return oldval;
        }
-#    endif
-#    if defined(IA64)
+#     endif
+#     if defined(IA64)
        inline static int GC_test_and_set(volatile unsigned int *addr) {
 	  int oldval;
 	  __asm__ __volatile__("xchg4 %0=%1,%2"
@@ -477,8 +551,18 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 	 __asm__ __volatile__("st4.rel %0=r0" : "=m" (*addr));
        }
 #      define GC_CLEAR_DEFINED
+#     endif
+#    ifdef SPARC
+       inline static int GC_test_and_set(volatile unsigned int *addr) {
+	 int oldval;
+
+	 __asm__ __volatile__("ldstub %1,%0"
+	 : "=r"(oldval), "=m"(*addr)
+	 : "m"(*addr));
+	 return oldval;
+       }
 #    endif
-#    ifdef M68K
+#     ifdef M68K
        /* Contributed by Tony Mantler.  I'm not sure how well it was	*/
        /* tested.							*/
        inline static int GC_test_and_set(volatile unsigned int *addr) {
@@ -493,13 +577,13 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
                  : "a" (addr));
           return oldval;
        }
-#    endif
-#    if defined(POWERPC)
-      inline static int GC_test_and_set(volatile unsigned int *addr) {
-        int oldval;
-        int temp = 1; // locked value
+#     endif
+#     if defined(POWERPC)
+        inline static int GC_test_and_set(volatile unsigned int *addr) {
+          int oldval;
+          int temp = 1; // locked value
 
-        __asm__ __volatile__(
+          __asm__ __volatile__(
                "1:\tlwarx %0,0,%3\n"   // load and reserve
                "\tcmpwi %0, 0\n"       // if load is
                "\tbne 2f\n"            //   non-zero, return already set
@@ -509,21 +593,21 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
               : "=&r"(oldval), "=p"(addr)
               : "r"(temp), "1"(addr)
               : "memory");
-        return (int)oldval;
-      }
-      inline static void GC_clear(volatile unsigned int *addr) {
-	 __asm__ __volatile__("eieio");
-         *(addr) = 0;
-      }
-#     define GC_CLEAR_DEFINED
-#    endif
-#    ifdef ALPHA
-      inline static int GC_test_and_set(volatile unsigned int * addr)
-      {
-        unsigned long oldvalue;
-        unsigned long temp;
+          return (int)oldval;
+        }
+        inline static void GC_clear(volatile unsigned int *addr) {
+	  __asm__ __volatile__("eieio");
+          *(addr) = 0;
+        }
+#       define GC_CLEAR_DEFINED
+#     endif
+#     ifdef ALPHA
+        inline static int GC_test_and_set(volatile unsigned int * addr)
+        {
+          unsigned long oldvalue;
+          unsigned long temp;
 
-        __asm__ __volatile__(
+          __asm__ __volatile__(
                              "1:     ldl_l %0,%1\n"
                              "       and %0,%3,%2\n"
                              "       bne %2,2f\n"
@@ -538,57 +622,77 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
                              :"=&r" (temp), "=m" (*addr), "=&r" (oldvalue)
                              :"Ir" (1), "m" (*addr));
 
-        return oldvalue;
-      }
-      /* Should probably also define GC_clear, since it needs	*/
-      /* a memory barrier ??					*/
-#    endif /* ALPHA */
-#    ifdef ARM32
-      inline static int GC_test_and_set(volatile unsigned int *addr) {
-        int oldval;
-        /* SWP on ARM is very similar to XCHG on x86.  Doesn't lock the
-         * bus because there are no SMP ARM machines.  If/when there are,
-         * this code will likely need to be updated. */
-        /* See linuxthreads/sysdeps/arm/pt-machine.h in glibc-2.1 */
-        __asm__ __volatile__("swp %0, %1, [%2]"
-      			     : "=r"(oldval)
+          return oldvalue;
+        }
+        /* Should probably also define GC_clear, since it needs	*/
+        /* a memory barrier ??					*/
+#     endif /* ALPHA */
+#     ifdef ARM32
+        inline static int GC_test_and_set(volatile unsigned int *addr) {
+          int oldval;
+          /* SWP on ARM is very similar to XCHG on x86.  Doesn't lock the
+           * bus because there are no SMP ARM machines.  If/when there are,
+           * this code will likely need to be updated. */
+          /* See linuxthreads/sysdeps/arm/pt-machine.h in glibc-2.1 */
+          __asm__ __volatile__("swp %0, %1, [%2]"
+      		  	     : "=r"(oldval)
       			     : "r"(1), "r"(addr));
-        return oldval;
-      }
-#    endif
-#    ifndef GC_CLEAR_DEFINED
-       inline static void GC_clear(volatile unsigned int *addr) {
+          return oldval;
+        }
+#      endif
+#      ifndef GC_CLEAR_DEFINED
+         inline static void GC_clear(volatile unsigned int *addr) {
 	  /* Try to discourage gcc from moving anything past this. */
 	  __asm__ __volatile__(" ");
           *(addr) = 0;
-       }
-#    endif
+         }
+#      endif
 
-     extern volatile unsigned int GC_allocate_lock;
-     extern pthread_t GC_lock_holder;
-     extern void GC_lock(void);
+       extern volatile unsigned int GC_allocate_lock;
+       extern pthread_t GC_lock_holder;
+       extern void GC_lock(void);
 	/* Allocation lock holder.  Only set if acquired by client through */
 	/* GC_call_with_alloc_lock.					   */
-#    define SET_LOCK_HOLDER() GC_lock_holder = pthread_self()
-#    define NO_THREAD (pthread_t)(-1)
-#    define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
-#    define I_HOLD_LOCK() (pthread_equal(GC_lock_holder, pthread_self()))
-#    define LOCK() \
+#      define SET_LOCK_HOLDER() GC_lock_holder = pthread_self()
+#      define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
+#      define I_HOLD_LOCK() (pthread_equal(GC_lock_holder, pthread_self()))
+#      ifdef GC_ASSERTIONS
+#        define LOCK() \
+		{ if (GC_test_and_set(&GC_allocate_lock)) GC_lock(); \
+		  SET_LOCK_HOLDER(); }
+#        define UNLOCK() \
+		{ GC_ASSERT(I_HOLD_LOCK()); UNSET_LOCK_HOLDER(); \
+	          GC_clear(&GC_allocate_lock); }
+#      else
+#        define LOCK() \
 		{ if (GC_test_and_set(&GC_allocate_lock)) GC_lock(); }
-#    define UNLOCK() \
+#        define UNLOCK() \
 		GC_clear(&GC_allocate_lock)
-     extern VOLATILE GC_bool GC_collecting;
-#    define ENTER_GC() \
-		{ \
-		    GC_collecting = 1; \
-		}
-#    define EXIT_GC() GC_collecting = 0;
+#      endif
+#    else /* THREAD_LOCAL_ALLOC */
+#      define USE_PTHREAD_LOCKS
+#    endif
 #   else /* LINUX_THREADS on hardware for which we don't know how	*/
 	 /* to do test and set.						*/
+#      define USE_PTHREAD_LOCKS
+#   endif
+#   ifdef USE_PTHREAD_LOCKS
+     /* At least in the THREAD_LOCAL_ALLOC case, it probably makes 	*/
+     /* sense to spin on pthread_mutex_trylock() for a little bit.	*/
+     /* We don't do that yet.						*/
 #    include <pthread.h>
      extern pthread_mutex_t GC_allocate_ml;
-#    define LOCK() pthread_mutex_lock(&GC_allocate_ml)
+/* #    define LOCK() pthread_mutex_lock(&GC_allocate_ml)  -- too slow	*/
+#    define LOCK() { if (0 != pthread_mutex_trylock(&GC_allocate_ml)) GC_lock(); }
 #    define UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
+#   endif
+    extern VOLATILE GC_bool GC_collecting;
+#   define ENTER_GC() GC_collecting = 1;
+#   define EXIT_GC() GC_collecting = 0;
+    extern void GC_lock(void);
+#   ifdef GC_ASSERTIONS
+      extern pthread_t GC_lock_holder;
+      extern pthread_t GC_mark_lock_holder;
 #   endif
 #  endif /* LINUX_THREADS */
 #  if defined(HPUX_THREADS)
@@ -853,6 +957,8 @@ extern GC_warn_proc GC_current_warn_proc;
 /*  max size objects supported by freelist (larger objects may be   */
 /*  allocated, but less efficiently)                                */
 
+#define CPP_MAXOBJBYTES (CPP_HBLKSIZE/2)
+#define MAXOBJBYTES ((word)CPP_MAXOBJBYTES)
 #define CPP_MAXOBJSZ    BYTES_TO_WORDS(CPP_HBLKSIZE/2)
 #define MAXOBJSZ ((word)CPP_MAXOBJSZ)
 		
@@ -880,7 +986,7 @@ extern GC_warn_proc GC_current_warn_proc;
 #   else
 #       define ALIGNED_WORDS(n) ROUNDED_UP_WORDS(n)
 #   endif
-#   define SMALL_OBJ(bytes) ((bytes) < WORDS_TO_BYTES(MAXOBJSZ))
+#   define SMALL_OBJ(bytes) ((bytes) < MAXOBJBYTES)
 #   define ADD_SLOP(bytes) ((bytes)+1)
 # else
 #   define ROUNDED_UP_WORDS(n) BYTES_TO_WORDS((n) + (WORDS_TO_BYTES(1) - 1))
@@ -890,7 +996,7 @@ extern GC_warn_proc GC_current_warn_proc;
 #   else
 #       define ALIGNED_WORDS(n) ROUNDED_UP_WORDS(n)
 #   endif
-#   define SMALL_OBJ(bytes) ((bytes) <= WORDS_TO_BYTES(MAXOBJSZ))
+#   define SMALL_OBJ(bytes) ((bytes) <= MAXOBJBYTES)
 #   define ADD_SLOP(bytes) (bytes)
 # endif
 
@@ -1113,8 +1219,10 @@ struct _GC_arrays {
   word _words_allocd_before_gc;
 		/* Number of words allocated before this	*/
 		/* collection cycle.				*/
-  word _words_allocd;
+# ifndef SEPARATE_GLOBALS
+    word _words_allocd;
   	/* Number of words allocated during this collection cycle */
+# endif
   word _words_wasted;
   	/* Number of words wasted due to internal fragmentation	*/
   	/* in large objects, or due to dropping blacklisted     */
@@ -1137,10 +1245,13 @@ struct _GC_arrays {
   	/* Table of user-defined mark procedures.  There is	*/
 	/* a small number of these, which can be referenced	*/
 	/* by DS_PROC mark descriptors.  See gc_mark.h.		*/
-  ptr_t _objfreelist[MAXOBJSZ+1];
+
+# ifndef SEPARATE_GLOBALS
+    ptr_t _objfreelist[MAXOBJSZ+1];
 			  /* free list for objects */
-  ptr_t _aobjfreelist[MAXOBJSZ+1];
+    ptr_t _aobjfreelist[MAXOBJSZ+1];
 			  /* free list for atomic objs 	*/
+# endif
 
   ptr_t _uobjfreelist[MAXOBJSZ+1];
 			  /* uncollectable but traced objs 	*/
@@ -1275,8 +1386,11 @@ struct _GC_arrays {
 
 GC_API GC_FAR struct _GC_arrays GC_arrays; 
 
-# define GC_objfreelist GC_arrays._objfreelist
-# define GC_aobjfreelist GC_arrays._aobjfreelist
+# ifndef SEPARATE_GLOBALS
+#   define GC_objfreelist GC_arrays._objfreelist
+#   define GC_aobjfreelist GC_arrays._aobjfreelist
+#   define GC_words_allocd GC_arrays._words_allocd
+# endif
 # define GC_uobjfreelist GC_arrays._uobjfreelist
 # ifdef ATOMIC_UNCOLLECTABLE
 #   define GC_auobjfreelist GC_arrays._auobjfreelist
@@ -1291,7 +1405,6 @@ GC_API GC_FAR struct _GC_arrays GC_arrays;
 # define GC_obj_map GC_arrays._obj_map
 # define GC_last_heap_addr GC_arrays._last_heap_addr
 # define GC_prev_heap_addr GC_arrays._prev_heap_addr
-# define GC_words_allocd GC_arrays._words_allocd
 # define GC_words_wasted GC_arrays._words_wasted
 # define GC_large_free_bytes GC_arrays._large_free_bytes
 # define GC_words_finalized GC_arrays._words_finalized
@@ -1358,10 +1471,27 @@ extern struct obj_kind {
    GC_bool ok_init;   /* Clear objects before putting them on the free list. */
 } GC_obj_kinds[MAXOBJKINDS];
 
-# define endGC_obj_kinds (((ptr_t)(&GC_obj_kinds)) + (sizeof GC_obj_kinds))
+# define beginGC_obj_kinds ((ptr_t)(&GC_obj_kinds))
+# define endGC_obj_kinds (beginGC_obj_kinds + (sizeof GC_obj_kinds))
 
-# define end_gc_area ((ptr_t)endGC_arrays == (ptr_t)(&GC_obj_kinds) ? \
-			endGC_obj_kinds : endGC_arrays)
+/* Variables that used to be in GC_arrays, but need to be accessed by 	*/
+/* inline allocation code.  If they were in GC_arrays, the inlined 	*/
+/* allocation code would include GC_arrays offsets (as it did), which	*/
+/* introduce maintenance problems.					*/
+
+#ifdef SEPARATE_GLOBALS
+  word GC_words_allocd;
+  	/* Number of words allocated during this collection cycle */
+  ptr_t GC_objfreelist[MAXOBJSZ+1];
+			  /* free list for NORMAL objects */
+# define beginGC_objfreelist ((ptr_t)(&GC_objfreelist))
+# define endGC_objfreelist (beginGC_objfreelist + sizeof(GC_objfreelist))
+
+  ptr_t GC_aobjfreelist[MAXOBJSZ+1];
+			  /* free list for atomic (PTRFREE) objs 	*/
+# define beginGC_aobjfreelist ((ptr_t)(&GC_aobjfreelist))
+# define endGC_aobjfreelist (beginGC_aobjfreelist + sizeof(GC_aobjfreelist))
+#endif
 
 /* Predefined kinds: */
 # define PTRFREE 0
@@ -1447,6 +1577,33 @@ extern ptr_t GC_greatest_plausible_heap_addr;
 /*  with it. Only those corresponding to the beginning of an */
 /*  object are used.                                         */
 
+/* Set mark bit correctly, even if mark bits may be concurrently 	*/
+/* accessed.								*/
+#ifdef PARALLEL_MARK
+# define OR_WORD(addr, bits) \
+	{ word old; \
+	  do { \
+	    old = *(addr); \
+	  } while (!GC_compare_and_exchange((addr), old, old | (bits))); \
+	}
+# define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
+	{ word old; \
+	  word my_bits = (bits); \
+	  do { \
+	    old = *(addr); \
+	    if (old & my_bits) goto exit_label; \
+	  } while (!GC_compare_and_exchange((addr), old, old | my_bits)); \
+	}
+#else
+# define OR_WORD(addr, bits) *(addr) |= (bits)
+# define OR_WORD_EXIT_IF_SET(addr, bits, exit_label) \
+	{ \
+	  word old = *(addr); \
+	  word my_bits = (bits); \
+	  if (old & my_bits) goto exit_label; \
+	  *(addr) = (old | my_bits); \
+	}
+#endif
 
 /* Mark bit operations */
 
@@ -1460,8 +1617,9 @@ extern ptr_t GC_greatest_plausible_heap_addr;
 
 # define mark_bit_from_hdr(hhdr,n) (((hhdr)->hb_marks[divWORDSZ(n)] \
 			    >> (modWORDSZ(n))) & (word)1)
-# define set_mark_bit_from_hdr(hhdr,n) (hhdr)->hb_marks[divWORDSZ(n)] \
-				|= (word)1 << modWORDSZ(n)
+# define set_mark_bit_from_hdr(hhdr,n) \
+			    OR_WORD((hhdr)->hb_marks+divWORDSZ(n), \
+				    (word)1 << modWORDSZ(n))
 
 # define clear_mark_bit_from_hdr(hhdr,n) (hhdr)->hb_marks[divWORDSZ(n)] \
 				&= ~((word)1 << modWORDSZ(n))
@@ -1503,9 +1661,9 @@ void GC_initiate_gc();		/* initiate collection.			*/
 				/* it's partial.			*/
 void GC_push_all(/*b,t*/);	/* Push everything in a range 		*/
 				/* onto mark stack.			*/
-void GC_push_dirty(/*b,t*/);      /* Push all possibly changed	 	*/
-				  /* subintervals of [b,t) onto		*/
-				  /* mark stack.			*/
+void GC_push_selected(/*b,t,select_fn,push_fn*/);
+				  /* Push all pages h in [b,t) s.t. 	*/
+				  /* select_fn(h) != 0 onto mark stack. */
 #ifndef SMALL_CONFIG
   void GC_push_conditional(/* ptr_t b, ptr_t t, GC_bool all*/);
 #else
@@ -1662,12 +1820,33 @@ void GC_register_displacement_inner(/*offset*/);
 void GC_new_hblk(/*size_in_words, kind*/);
 				/* Allocate a new heap block, and build */
 				/* a free list in it.			*/				
+ptr_t GC_build_fl(/*h, sz, clear, list*/);
+				/* Build a free list for objects of 	*/
+				/* size sz in block h.  Append list to	*/
+				/* end of the free lists.  Possibly	*/
+				/* clear objects on the list.  Normally	*/
+				/* called by GC_new_hblk, but also	*/
+				/* called explicitly without GC lock.	*/
+
 struct hblk * GC_allochblk(/*size_in_words, kind*/);
-				/* Allocate a heap block, clear it if	*/
-				/* for composite objects, inform	*/
+				/* Allocate a heap block, inform	*/
 				/* the marker that block is valid	*/
 				/* for objects of indicated size.	*/
-				/* sz < 0 ==> atomic.			*/ 
+
+ptr_t GC_alloc_large(/* lw, k, flags */);
+			/* Allocate a large block of size lw words.	*/
+			/* The block is not cleared.			*/
+			/* Flags is 0 or IGNORE_OFF_PAGE.		*/
+			/* Calls GC_allchblk to do the actual 		*/
+			/* allocation, but also triggers GC and/or	*/
+			/* heap expansion as appropriate.		*/
+			/* Does not update GC_words_allocd, but does	*/
+			/* other accounting.				*/
+
+ptr_t GC_alloc_large_and_clear(/* lw, k, flags */);
+			/* As above, but clear block if appropriate	*/
+			/* for kind k.					*/
+
 void GC_freehblk();		/* Deallocate a heap block and mark it  */
 				/* as invalid.				*/
 				
@@ -1692,6 +1871,13 @@ void GC_reclaim_or_delete_all();
 GC_bool GC_reclaim_all(/* GC_stop_func f*/);
 				/* Reclaim all blocks.  Abort (in a	*/
 				/* consistent state) if f returns TRUE. */
+ptr_t GC_reclaim_generic(/*hbp, hhdr, sz, init, list [pointer to word cntr] */);
+				/* Sweep the indicated block, returning	*/
+				/* the new free list.  List is		*/
+				/* concatenated to the end of the 	*/
+				/* free list.  Sz and init specify	*/
+				/* the object size and whether they 	*/
+				/* are cleared.				*/
 GC_bool GC_block_empty(/* hhdr */); /* Block completely unmarked? 	*/
 GC_bool GC_never_stop_func();	/* Returns FALSE.		*/
 GC_bool GC_try_to_collect_inner(/* GC_stop_func f */);
@@ -1783,7 +1969,23 @@ extern void (*GC_print_heap_obj)(/* ptr_t p */);
 			/* If possible print s followed by a more	*/
 			/* detailed description of the object 		*/
 			/* referred to by p.				*/
-			
+
+
+/* Macros used for collector internal allocation.	*/
+/* These assume the collector lock is held.		*/
+#ifdef DBG_HDRS_ALL
+    extern GC_PTR GC_debug_generic_malloc_inner(size_t lb, int k);
+    extern GC_PTR GC_debug_generic_malloc_inner_ignore_off_page(size_t lb,
+								int k);
+#   define GC_INTERNAL_MALLOC GC_debug_generic_malloc_inner
+#   define GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE \
+		 GC_debug_generic_malloc_inner_ignore_off_page
+#else
+#   define GC_INTERNAL_MALLOC GC_generic_malloc_inner
+#   define GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE \
+		 GC_generic_malloc_inner_ignore_off_page
+#endif
+
 /* Memory unmapping: */
 #ifdef USE_MUNMAP
   void GC_unmap_old(void);
@@ -1885,13 +2087,49 @@ void GC_err_puts(/* char *s */);
 			/* newlines, don't ...				*/
 
 
-#   ifdef GC_ASSERTIONS
+# ifdef GC_ASSERTIONS
 #	define GC_ASSERT(expr) if(!(expr)) {\
 		GC_err_printf2("Assertion failure: %s:%ld\n", \
 				__FILE__, (unsigned long)__LINE__); \
 		ABORT("assertion failure"); }
-#   else 
+# else 
 #	define GC_ASSERT(expr)
-#   endif
+# endif
+
+# ifdef PARALLEL_MARK
+    /* We need additional synchronization facilities from the thread	*/
+    /* support.  We believe these are less performance critical		*/
+    /* than the main garbage collector lock; standard pthreads-based	*/
+    /* implementations should be sufficient.				*/
+
+    /* The mark lock and condition variable.  If the GC lock is also 	*/
+    /* acquired, the GC lock must be acquired first.  The mark lock is	*/
+    /* used to both protect some variables used by the parallel		*/
+    /* marker, and to protect GC_fl_builder_count, below.		*/
+    /* GC_notify_all_marker() is called when				*/ 
+    /* the state of the parallel marker changes				*/
+    /* in some significant way (see gc_mark.h for details).  The	*/
+    /* latter set of events includes incrementing GC_mark_no.		*/
+    /* GC_notify_all_builder() is called when GC_fl_builder_count	*/
+    /* reaches 0.							*/
+
+     extern void GC_acquire_mark_lock();
+     extern void GC_release_mark_lock();
+     extern void GC_notify_all_marker();
+     extern void GC_notify_all_builder();
+     extern void GC_wait_marker();
+     /* extern void GC_wait_builder(); */
+     extern void GC_wait_for_reclaim();
+
+     extern word GC_fl_builder_count;	/* Protected by mark lock.	*/
+     extern word GC_mark_no;		/* Protected by mark lock.	*/
+     extern GC_bool GC_parallel;	/* Actually use parallel mark.  */
+
+     extern void GC_help_marker(word my_mark_no);
+		/* Try to help out parallel marker for mark cycle 	*/
+		/* my_mark_no.  Returns if the mark cycle finishes or	*/
+		/* was already done, or there was nothing to do for	*/
+		/* some other reason.					*/
+# endif /* PARALLEL_MARK */
 
 # endif /* GC_PRIVATE_H */

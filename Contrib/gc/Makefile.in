@@ -17,7 +17,7 @@ AS=as $(ABI_FLAG)
 #  Under Irix 6, you will have to specify the ABI (-o32, -n32, or -64)
 #  if you use something other than the default ABI on your machine.
 
-CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS -DSILENT \
+CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS -DSILENT \
     -g @BDWFLAGS@
 
 # For dynamic library builds, it may be necessary to add flags to generate
@@ -37,8 +37,8 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INT
 # -D_SOLARIS_PTHREADS enables support for Solaris pthreads.
 #   Define SOLARIS_THREADS as well.
 # -DIRIX_THREADS enables support for Irix pthreads.  See README.irix.
-# -DHPUX_THREADS enables support for HP/UX 11 pthreads.
-#  Also requires -D_REENTRANT. See README.hp.
+# -DHPUX_THREADS enables support for HP/UX 11 pthreads.  Not currently reliable.
+#   Also requires -D_REENTRANT. See README.hp.
 # -DLINUX_THREADS enables support for Xavier Leroy's Linux threads.
 #   see README.linux.  -D_REENTRANT may also be required.
 # -DALL_INTERIOR_POINTERS allows all pointers to the interior
@@ -120,11 +120,23 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INT
 #   for objects allocated with the debugging allocator.  If all objects
 #   through GC_MALLOC with GC_DEBUG defined, this allows the client
 #   to determine how particular or randomly chosen objects are reachable
-#   for debugging/profiling purposes.  The backptr.h interface is
+#   for debugging/profiling purposes.  The gc_backptr.h interface is
 #   implemented only if this is defined.
 # -DGC_ASSERTIONS Enable some internal GC assertion checking.  Currently
 #   this facility is only used in a few places.  It is intended primarily
 #   for debugging of the garbage collector itself, but could also
+# -DDBG_HDRS_ALL Make sure that all objects have debug headers.  Increases
+#   the reliability (from 99.9999% to 100%) of some of the debugging
+#   code (especially KEEP_BACK_PTRS).  Makes -DSHORT_DBG_HDRS possible.
+#   Assumes that all client allocation is done through debugging
+#   allocators.
+# -DSHORT_DBG_HDRS Assume that all objects have debug headers.  Shorten
+#   the headers to minimize object size, at the expense of checking for
+#   writes past the end of an object.  This is intended for environments
+#   in which most client code is written in a "safe" language, such as
+#   Scheme or Java.  Assumes that all client allocation is done using
+#   the GC_debug_ functions (or through the macros that expand to these.
+#   (Also eliminates the field for the requested object size.)
 #   occasionally be useful for debugging of client code.  Slows down the
 #   collector somewhat, but not drastically.
 # -DCHECKSUMS reports on erroneously clear dirty bits, and unexpectedly
@@ -148,6 +160,15 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INT
 #   causes the collector some system and pthread calls in a more transparent
 #   fashion than the usual macro-based approach.  Requires GNU ld, and
 #   currently probably works only with Linux.
+# -DTHREAD_LOCAL_ALLOC defines GC_local_malloc(), GC_local_malloc_atomic()
+#   and GC_local_gcj_malloc().  Needed for gc_gcj.h interface.  These allocate
+#   in a way that usually does not involve acquisition of a global lock.
+#   Currently requires -DLINUX_THREADS, but should be easy to port to
+#   other pthreads environments.  Recommended for multiprocessors.
+# -DPARALLEL_MARK allows the marker to run in multiple threads.  Recommended
+#   for multiprocessors.  Currently requires Linux on X86 or IA64, though
+#   support for other Posix platforms should be fairly easy to add, if the thread
+#   implementation is otherwise supported.
 #
 
 
@@ -181,8 +202,8 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     threadlibs.c if_mach.c if_not_there.c gc_cpp.cc gc_cpp.h weakpointer.h \
     gcc_support.c mips_ultrix_mach_dep.s include/gc_alloc.h gc_alloc.h \
     include/new_gc_alloc.h include/javaxfc.h sparc_sunos4_mach_dep.s \
-    solaris_threads.h backptr.h hpux_test_and_clear.s include/gc_gcj.h \
-    dbg_mlc.h $(CORD_SRCS)
+    solaris_threads.h gc_backptr.h hpux_test_and_clear.s include/gc_gcj.h \
+    include/gc_local_alloc.h dbg_mlc.h $(CORD_SRCS)
 
 OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            README test.c test_cpp.cc setjmp_t.c SMakefile.amiga \
@@ -190,7 +211,7 @@ OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            cord/gc.h include/gc.h include/gc_typed.h include/cord.h \
            include/ec.h include/private/cord_pos.h include/private/gcconfig.h \
            include/private/gc_hdrs.h include/private/gc_priv.h \
-	   include/gc_cpp.h README.rs6000 include/backptr.h \
+	   include/gc_cpp.h README.rs6000 include/gc_backptr.h \
            include/weakpointer.h README.QUICK callprocs pc_excludes \
            barrett_diagram README.OS2 README.Mac MacProjects.sit.hqx \
            MacOS.c EMX_MAKEFILE makefile.depend README.debugging \

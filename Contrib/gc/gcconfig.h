@@ -2,6 +2,7 @@
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
+ * Copyright (c) 2000 by Hewlett-Packard Company.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -194,10 +195,16 @@
 #   define MACOS
 #   define mach_type_known
 # endif
-# if defined(macosx)
+# if defined(macosx) || \
+     defined(__APPLE__) && defined(__MACH__) && defined(__ppc__)
 #    define MACOSX
 #    define POWERPC
 #    define mach_type_known
+# endif
+# if defined(__APPLE__) && defined(__MACH__) && defined(__i386__)
+#    define MACOSX
+#    define I386
+     --> Not really supported, but at least we recognize it.
 # endif
 # if defined(NeXT) && defined(mc68000)
 #   define M68K
@@ -326,8 +333,8 @@
                     /*		   RT	      ==> IBM PC/RT		*/
                     /*		   HP_PA      ==> HP9000/700 & /800	*/
                     /*				  HP/UX			*/
-		    /*		   SPARC      ==> SPARC under SunOS	*/
-		    /*			(SUNOS4, SUNOS5,		*/
+		    /*		   SPARC      ==> SPARC	v7/v8/v9	*/
+		    /*			(SUNOS4, SUNOS5, LINUX,		*/
 		    /*			 DRSNX variants)		*/
 		    /* 		   ALPHA      ==> DEC Alpha 		*/
 		    /*			(OSF1 and LINUX variants)	*/
@@ -567,6 +574,7 @@
 #     define DATAEND (&_end)
 #   endif
 #   ifdef MACOSX
+      /* There are reasons to suspect this may not be reliable. 	*/
 #     define ALIGNMENT 4
 #     define OS_TYPE "MACOSX"
 #     define DATASTART ((ptr_t) get_etext())
@@ -600,7 +608,11 @@
 
 # ifdef SPARC
 #   define MACH_TYPE "SPARC"
-#   define ALIGNMENT 4	/* Required by hardware	*/
+#   if defined(__arch64__) || defined(__sparcv9)
+#     define ALIGNMENT 8
+#   else
+#     define ALIGNMENT 4	/* Required by hardware	*/
+#   endif
 #   define ALIGN_DOUBLE
     extern int etext;
 #   ifdef SUNOS5
@@ -661,15 +673,21 @@
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     ifdef __ELF__
-#       define LINUX_DATA_START
 #       define DYNAMIC_LOADING
 #     else
-          Linux Sparc non elf ?
+          Linux Sparc/a.out not supported
 #     endif
       extern int _end;
 #     define DATAEND (&_end)
 #     define SVR4
-#     define STACKBOTTOM ((ptr_t) 0xf0000000)
+#     ifdef __arch64__
+#       define STACKBOTTOM ((ptr_t) 0x80000000000ULL)
+#	define DATASTART (ptr_t)GC_SysVGetDataStart(0x100000, &_etext)
+#	define CPP_WORDSZ 64
+#     else
+#       define STACKBOTTOM ((ptr_t) 0xf0000000)
+#	define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, &_etext)
+#     endif
 #   endif
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
@@ -1009,6 +1027,12 @@
 #   endif
 #   include <unistd.h>
 #   define GETPAGESIZE() sysconf(_SC_PAGE_SIZE)
+#   ifndef __GNUC__
+#     define PREFETCH(x)  { \
+                            register long addr = (long)(x); \
+                            (void) _asm ("LDW", 0, 0, addr, 0); \
+                          }
+#   endif
 # endif
 
 # ifdef ALPHA
@@ -1264,6 +1288,10 @@
 #   undef MPROTECT_VDB  /* Can't deal with address space holes. */
 # endif
 
+# ifdef PARALLEL_MARK
+#   undef MPROTECT_VDB  /* For now.	*/
+# endif
+
 # if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB)
 #   define DEFAULT_VDB
 # endif
@@ -1318,7 +1346,7 @@
 	/* Use setjmp based hack to mark from callee-save registers. */
 #	define USE_GENERIC_PUSH_REGS
 # endif
-# if defined(SPARC) && !defined(LINUX)
+# if defined(SPARC)
 #   define SAVE_CALL_CHAIN
 #   define ASM_CLEAR_CODE	/* Stack clearing is crucial, and we 	*/
 				/* include assembly code to do it well.	*/

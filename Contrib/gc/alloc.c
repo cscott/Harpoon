@@ -251,6 +251,9 @@ void GC_maybe_gc()
 	   	(long)WORDS_TO_BYTES(GC_words_allocd));
 #           endif
 	    GC_promote_black_lists();
+#   	    ifdef PARALLEL_MARK
+		GC_wait_for_reclaim();
+#   	    endif
 	    (void)GC_reclaim_all((GC_stop_func)0, TRUE);
 	    GC_clear_marks();
             n_partial_gcs = 0;
@@ -315,6 +318,9 @@ GC_stop_func stop_func;
     /* Make sure all blocks have been reclaimed, so sweep routines	*/
     /* don't see cleared mark bits.					*/
     /* If we're guaranteed to finish, then this is unnecessary.		*/
+#       ifdef PARALLEL_MARK
+	    GC_wait_for_reclaim();
+#       endif
 	if (stop_func != GC_never_stop_func
 	    && !GC_reclaim_all(stop_func, FALSE)) {
 	    /* Aborted.  So far everything is still consistent.	*/
