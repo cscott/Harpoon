@@ -6,20 +6,30 @@ public abstract class Timer extends AsyncEvent {
     protected boolean enabled = true;
     protected boolean started = false;
     protected Clock defaultClock;
+    protected RelativeTime fireAfter;
+    protected AsyncEventHandler handler;
 
     protected Timer(HighResolutionTime t, Clock c,
 		    AsyncEventHandler handler) {
-	// TODO
+	if (t instanceof AbsoluteTime)
+	    fireAfter = new RelativeTime(((RelativeTime)t).getMilliseconds() -
+					 c.getTime().getMilliseconds(),
+					 ((RelativeTime)t).getNanoseconds() -
+					 c.getTime().getNanoseconds());
+	else fireAfter = (RelativeTime)t;
+
+	defaultClock = c;
+	this.handler = handler;
     }
 
     public ReleaseParameters createReleaseParameters() {
-	// TODO
-
-	return null;
+	return new AperiodicParameters(null, fireAfter, handler, null);
     }
 
     public void destroy() {
-	// TODO
+	defaultClock = null;
+	fireAfter = null;
+	handler = null;
     }
 
     public void disable() {
@@ -35,9 +45,12 @@ public abstract class Timer extends AsyncEvent {
     }
 
     public AbsoluteTime getFireTime() {
-	// TODO
-
-	return null;
+	return new AbsoluteTime(fireAfter.getMilliseconds() -
+				defaultClock.getTime().getMilliseconds() +
+				Clock.getRealtimeClock().getTime().getMilliseconds(),
+				fireAfter.getNanoseconds() -
+				defaultClock.getTime().getNanoseconds() +
+				Clock.getRealtimeClock().getTime().getNanoseconds());
     }
 
     public boolean isRunning() {
@@ -45,7 +58,10 @@ public abstract class Timer extends AsyncEvent {
     }
 
     public void reschedule(HighResolutionTime time) {
-	// TODO
+	if (time instanceof AbsoluteTime)
+	    fireAfter.set(time.getMilliseconds() - defaultClock.getTime().getMilliseconds(),
+			  time.getNanoseconds() - defaultClock.getTime().getNanoseconds());
+	else fireAfter = (RelativeTime)time;
     }
 
     public void start() {
@@ -54,10 +70,10 @@ public abstract class Timer extends AsyncEvent {
     }
 
     public boolean stop() {
-	boolean wasStarted = started;
+	boolean wasStarted = started && enabled;
 	started = false;
 	// TODO
 
-	return (wasStarted && enabled);
+	return wasStarted;
     }
 }

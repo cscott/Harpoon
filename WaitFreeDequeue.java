@@ -6,42 +6,82 @@ public class WaitFreeDequeue {
      *  <code>Thread</code>.
      */
 
+    protected Object[] queue = null;
+    protected int queueSize;
+    protected int currentIndex = 0;
+    
     public WaitFreeDequeue(Thread writer, Thread reader,
 			   int maximum, MemoryArea area)
 	throws IllegalArgumentException, IllegalAccessException,
 	       ClassNotFoundException, InstantiationException {
 	// TODO
+
+	queueSize = maximum;
     }
 
-    public Object blockingRead() {
-	// TODO
-
-	return null;
+    private boolean isEmpty() {
+	return (currentIndex == 0);
     }
 
-    public boolean blockingWrite(Object object)
+    private boolean isFull() {
+	return (currentIndex == queueSize - 1);
+    }
+
+    public synchronized Object blockingRead() {
+	while (isEmpty())
+	    try {
+		Thread.sleep(100);
+	    } catch (Exception e) {};
+	
+	Object temp = queue[0];
+	for (int i = 0; i < currentIndex; i++)
+	    queue[i] = queue[i+1];
+	currentIndex--;
+	return temp;
+    }
+
+    public synchronized boolean blockingWrite(Object object)
 	throws MemoryScopeException {
-	// TODO
+	while (isFull())
+	    try {
+		Thread.sleep(100);
+	    } catch (Exception e) {};
 
-	return false;
+	queue[++currentIndex] = object;
+	return true;
     }
 
     public boolean force(Object object) {
-	// TODO
-
-	return false;
+	if (!isFull()) {
+	    boolean b = false;
+	    try {
+		b = nonBlockingWrite(object);
+	    } catch (Exception e) {}
+	    return b;
+	}
+	else {
+	    queue[currentIndex] = object;
+	    return true;
+	}
     }
 
     public Object nonBlockingRead() {
-	// TODO
-
-	return null;
+	if (isEmpty()) return null;
+	else {
+	    Object temp = queue[0];
+	    for (int i = 0; i < currentIndex; i++)
+		queue[i] = queue[i+1];
+	    currentIndex--;
+	    return temp;
+	}
     }
 
     public boolean nonBlockingWrite(Object object)
 	throws MemoryScopeException {
-	// TODO
-
-	return false;
+	if (isFull()) return false;
+	else {
+	    queue[++currentIndex] = object;
+	    return true;
+	}
     }
 }

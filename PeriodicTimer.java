@@ -23,33 +23,28 @@ public class PeriodicTimer extends Timer {
     public PeriodicTimer(HighResolutionTime start,
 			 RelativeTime interval,
 			 AsyncEventHandler handler) {
-	// TODO
-
-	// This line inserted only to make everything compile!
-	super(start, null, handler);
+	super(start, Clock.getRealtimeClock(), handler);
+	this.interval = interval;
     }
 
     public PeriodicTimer(HighResolutionTime start,
 			 RelativeTime interval, Clock clock,
 			 AsyncEventHandler handler) {
-	this(start, interval, handler);
-	defaultClock = clock;
+	super(start, clock, handler);
+	this.interval = interval;
     }
 
     public ReleaseParameters createReleaseParameters() {
-	// TODO
-
-	return null;
+	return new PeriodicParameters(getFireTime(), interval, null, null,
+				      handler, null);
     }
 
     public void fire() {
-	// TODO
+	handler.run();
     }
 
     public AbsoluteTime getFireTime() {
-	// TODO
-
-	return null;
+	return super.getFireTime();
     }
 
     public RelativeTime getInterval() {

@@ -5,9 +5,9 @@ package javax.realtime;
 
 // These are the runtime-constraints associated with a thread. 
 public class ThreadConstraints {
-	Schedulable schedulable;
+    Schedulable schedulable;
     long threadID;
-	RelativeTime workLeft;
-	AbsoluteTime beginPeriod, endPeriod, deadline;
-	// Is the deadline Relative?
+    RelativeTime workLeft;
+    AbsoluteTime beginPeriod, endPeriod, deadline;
+    // Is the deadline Relative?
 }

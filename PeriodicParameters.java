@@ -32,6 +32,7 @@ public class PeriodicParameters extends ReleaseParameters {
 	return start;
     }
 
+    // What is the scheduler that has to be feasible?
     public boolean setIfFeasible(RelativeTime period, RelativeTime cost, 
 				 RelativeTime deadline) {
 	// TODO

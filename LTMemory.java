@@ -36,10 +36,7 @@ public class LTMemory extends ScopedMemory {
 
     public LTMemory(SizeEstimator initial,
 		    SizeEstimator maximum) {
-	// TODO
-
-	// This line inserted only to make everything compile!
-	super(maximum);
+	this(initial.getEstimate(), maximum.getEstimate());
     }
 
     public LTMemory(SizeEstimator initial,
@@ -63,9 +60,7 @@ public class LTMemory extends ScopedMemory {
      *  this can grow.
      */
     public long getMaximumSize() {
-	// TODO
-
-	return 0;
+	return size;
     }
 
     /** Returns a representation of this LTMemory object */

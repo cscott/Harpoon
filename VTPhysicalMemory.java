@@ -76,10 +76,7 @@ public class VTPhysicalMemory extends ScopedMemory {
 	throws SecurityException, SizeOutOfBoundsException,
 	       UnsupportedPhysicalMemoryException,
 	       MemoryTypeConflictException {
-	// TODO
-
-	// This line inserted only to make everything compile!
-	super(size);
+	this(type, size.getEstimate());
     }
 
     public VTPhysicalMemory(Object type, SizeEstimator size,
@@ -95,9 +92,7 @@ public class VTPhysicalMemory extends ScopedMemory {
     // METHODS IN SPECS
 
     public String toString() {
-	// TODO
-
-	return "";
+	return "VTPhysicalMemory: " + super.toString();
     }
 }
 

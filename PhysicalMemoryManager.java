@@ -12,16 +12,16 @@ public final class PhysicalMemoryManager {
      */
 
     /** Specify this to identify aligned memory. */
-    public static final String ALIGNED = "";
+    public static final String ALIGNED = "ALIGNED";
 
     /** Specify this if byte swapping should be used. */
-    public static final String BYTESWAP = "";
+    public static final String BYTESWAP = "BYTESWAP";
 
     /** Specify this to identify DMA memory. */
-    public static final String DMA = "";
+    public static final String DMA = "DMA";
 
     /** Specify this to identify shared memory. */
-    public static final String SHARED = "";
+    public static final String SHARED = "SHARED";
 
 
     // METHODS IN SPECS

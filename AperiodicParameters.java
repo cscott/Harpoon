@@ -14,7 +14,8 @@ public class AperiodicParameters extends ReleaseParameters {
 	      deadline,
 	      overrunHandler, missHandler);
     }
-    
+
+    // What is the scheduler that has to be feasible?
     public boolean setIfFeasible(RelativeTime cost, RelativeTime deadline) {
 	// TODO
 	return false;

@@ -75,10 +75,7 @@ public class ImmortalPhysicalMemory extends MemoryArea {
 	throws SecurityException, SizeOutOfBoundsException,
 	       UnsupportedPhysicalMemoryException,
 	       MemoryTypeConflictException {
-	// TODO
-
-	// This line inserted only to make everything compile!
-	super(size);
+	this(type, size.getEstimate());
     }
     
     public ImmortalPhysicalMemory(Object type, SizeEstimator size,

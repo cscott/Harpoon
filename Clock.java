@@ -14,13 +14,10 @@ public abstract class Clock {
 	// TODO
     }
     
-    public Clock(long millis, int nanos) {
-	// TODO
-	
-	// Why would it be like this?
-	//	resolution = new RelativeTime(1, 0);
-    }
-    
+//     public Clock(long millis, int nanos) {
+// 	resolution = new RelativeTime(1, 0);
+//     }
+        
     public static Clock getRealtimeClock() {
 	// Only allow one RealtimeClock, because all RealtimeClocks are
 	// equivalent (i.e. they all advance in sync with the real world).

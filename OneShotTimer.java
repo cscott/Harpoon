@@ -9,15 +9,11 @@ public class OneShotTimer extends Timer {
 
     public OneShotTimer(HighResolutionTime time,
 			AsyncEventHandler handler) {
-	// TODO
-
-	// This line inserted, just to make everything compile!
-	super(time, null, handler);
+	super(time, Clock.getRealtimeClock(), handler);
     }
 
     public OneShotTimer(HighResolutionTime start, Clock clock,
 			AsyncEventHandler handler) {
-	this(start, handler);
-	defaultClock = clock;
+	super(start, clock, handler);
     }
 }

@@ -10,15 +10,17 @@ public class WaitFreeReadQueue {
      */
 
     protected boolean notify;
-    protected boolean empty = true;
-    protected boolean full = false;
-    protected int size = 0;
+    protected Object[] readQueue = null;
+    protected int queueSize;
+    protected int currentIndex = 0;
 
     public WaitFreeReadQueue(Thread writer, Thread reader,
 			     int maximum, MemoryArea memory)
 	throws IllegalArgumentException, InstantiationException,
 	       ClassNotFoundException, IllegalAccessException {
 	// TODO
+
+	queueSize = maximum;
     }
 
     public WaitFreeReadQueue(Thread writer, Thread reader,
@@ -31,36 +33,43 @@ public class WaitFreeReadQueue {
     }
 
     public void clear() {
-	empty = true;
-	full = false;
-	// TODO
+	currentIndex = 0;
     }
 
     public boolean isEmpty() {
-	return empty;
+	return (currentIndex == 0);
     }
 
     public boolean isFull() {
-	return full;
+	return (currentIndex == queueSize - 1);
     }
 
     public Object read() {
-	// TODO
-
-	return null;
+	if (isEmpty()) return null;
+	else {
+	    Object temp = readQueue[0];
+	    for (int i = 0; i < currentIndex; i++)
+		readQueue[i] = readQueue[i+1];
+	    currentIndex--;
+	    return temp;
+	}
     }
 
     public int size() {
-	return size;
+	return currentIndex;
     }
 
     public void waitForData() {
 	// TODO
     }
 
-    public boolean write(Object object) throws MemoryScopeException {
-	// TODO 
+    public synchronized boolean write(Object object) throws MemoryScopeException {
+	while (isFull())
+	    try {
+		Thread.sleep(100);
+	    } catch (Exception e) {};
 
-	return false;
+	readQueue[++currentIndex] = object;
+	return true;
     }
 }

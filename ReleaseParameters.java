@@ -55,7 +55,8 @@ public class ReleaseParameters {
     public void setDeadlineMissHandler(AsyncEventHandler handler) {
 	this.missHandler = handler;
     }
-    
+
+    // What is the scheduler that has to be feasible?
     public boolean setIfFeasible(RelativeTime cost,
 				 RelativeTime deadline) {
 	// TODO

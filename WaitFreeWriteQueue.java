@@ -9,50 +9,61 @@ public class WaitFreeWriteQueue {
      *  execution of the garbage collector.
      */
 
-    protected boolean empty = true;
-    protected boolean full = false;
-    protected int size = 0;
+    protected Object[] writeQueue = null;
+    protected int queueSize;
+    protected int currentIndex = 0;
 
     public WaitFreeWriteQueue(Thread writer, Thread reader,
 			      int maximum, MemoryArea memory)
 	throws IllegalArgumentException, InstantiationException,
 	       ClassNotFoundException, IllegalAccessException {
 	// TODO
+
+	queueSize = maximum;
     }
 
     public void clear() {
-	empty = true;
-	full = false;
-	// TODO
+	currentIndex = 0;
     }
 
     public boolean force(Object object) throws MemoryScopeException {
-	// TODO
-
-	return false;
+	if (!isFull()) return write(object);
+	else {
+	    writeQueue[currentIndex] = object;
+	    return true;
+	}
     }
 
     public boolean isEmpty() {
-	return empty;
+	return (currentIndex == 0);
     }
 
     public boolean isFull() {
-	return full;
+	return (currentIndex == queueSize - 1);
     }
 
-    public Object read() {
-	// TODO
+    public synchronized Object read() {
+	while (isEmpty())
+	    try {
+		Thread.sleep(100);
+	    } catch (Exception e) {};
 
-	return null;
+	Object temp = writeQueue[0];
+	for (int i = 0; i < currentIndex; i++)
+	    writeQueue[i] = writeQueue[i+1];
+	currentIndex--;
+	return temp;
     }
 
     public int size() {
-	return size;
+	return currentIndex;
     }
 
     public boolean write(Object object) throws MemoryScopeException {
-	// TODO
-
-	return false;
+	if (isFull()) return false;
+	else {
+	    writeQueue[++currentIndex] = object;
+	    return true;
+	}
     }
 }

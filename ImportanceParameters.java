@@ -5,24 +5,24 @@
 package javax.realtime;
 
 public class ImportanceParameters extends PriorityParameters {
-
-	private int importance;
-
-	public ImportanceParameters(int priority, int importance) {
-		super(priority);
-		this.importance = importance;
-	}
-
-	public int getImportance() {
-		return importance;
-	}
-
-	public void setImportance(int importance) {
-		this.importance = importance;
-	}
-
-	public String toString() {
-		return "ImportanceParameters: Priority = " + getPriority()
-			+ ", Importance = " + getImportance();
-	}
+    
+    private int importance;
+    
+    public ImportanceParameters(int priority, int importance) {
+	super(priority);
+	this.importance = importance;
+    }
+    
+    public int getImportance() {
+	return importance;
+    }
+    
+    public void setImportance(int importance) {
+	this.importance = importance;
+    }
+    
+    public String toString() {
+	return "ImportanceParameters: Priority = " + getPriority()
+	    + ", Importance = " + getImportance();
+    }
 }

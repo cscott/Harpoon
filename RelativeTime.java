@@ -20,7 +20,6 @@ public class RelativeTime extends HighResolutionTime {
     
     // Notice: we normalize the time, converting every 10^6 ns to 1 ms.
     public RelativeTime(long millis, int nanos) {
-	super();
 	set(millis, nanos);
     }
     
