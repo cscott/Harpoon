@@ -211,16 +211,6 @@ class ServerSocket {
     	Socket s;
 	public void exception(Throwable t) {};
 	
-	private Continuation link;
-	
-	public void setLink(Continuation newLink) { 
-	    link= newLink;
-	}
-	
-	public Continuation getLink() { 
-	    return link;
-	}
-    	
     	public acceptAsyncC() {
 	    s= new Socket();
 	    Scheduler.addRead(this);

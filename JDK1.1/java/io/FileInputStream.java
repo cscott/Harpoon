@@ -140,15 +140,6 @@ class FileInputStream extends InputStream
     {
 	public void exception(Throwable t) {}
 	
-	private Continuation link;
-	
-	public void setLink(Continuation newLink) { 
-	    link= newLink;
-	}
-	
-	public Continuation getLink() { 
-	    return link;
-	}
 	public readAsyncC() { Scheduler.addRead(this); }
 	public void resume()
 	{
@@ -267,15 +258,6 @@ class FileInputStream extends InputStream
     {
 	public void exception(Throwable t) {}
 	
-	private Continuation link;
-	
-	public void setLink(Continuation newLink) { 
-	    link= newLink;
-	}
-	
-	public Continuation getLink() { 
-	    return link;
-	}
 	byte b[];
 	int ofs, len;
 	public readAsync2C(byte b[], int ofs, int len) {

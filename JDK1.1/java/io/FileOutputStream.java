@@ -174,15 +174,6 @@ class FileOutputStream extends OutputStream
     {
 	public void exception(Throwable t) {}
 	
-	private Continuation link;
-	
-	public void setLink(Continuation newLink) { 
-	    link= newLink;
-	}
-	
-	public Continuation getLink() { 
-	    return link;
-	}
 	int b;
 	
 	public WriteAsyncC(int b) { this.b= b; Scheduler.addWrite(this); }
@@ -265,16 +256,6 @@ class FileOutputStream extends OutputStream
     
     class WriteAsync2C extends VoidContinuation implements IOContinuation {
 	public void exception(Throwable t) {}
-	
-	private Continuation link;
-	
-	public void setLink(Continuation newLink) { 
-	    link= newLink;
-	}
-
-	public Continuation getLink() { 
-	    return link;
-	}
 	
 	byte b[];
 	int off, len;

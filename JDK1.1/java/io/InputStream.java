@@ -197,16 +197,6 @@ public abstract class InputStream {
 	public void exception(Throwable t) {
 	}
 	
-	private Continuation link;
-	
-	public void setLink(Continuation newLink) { 
-	    link= newLink;
-	}
-	
-	public Continuation getLink() { 
-	    return link;
-	}
-	
 	
 	byte b[]; int off;
 	public readAsync2C(byte b[], int off) { this.b= b; this.off= off; }
