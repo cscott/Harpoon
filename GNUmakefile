@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.53 1999-07-30 23:40:38 pnkfelix Exp $
+# $Id: GNUmakefile,v 1.61.2.54 1999-07-31 00:07:43 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -167,9 +167,13 @@ olderfirst:
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 
 Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
-	${JAR} c0f Harpoon.jar COPYING VERSIONS \
+	@echo -n "Building JAR file... "
+	@${JAR} c0f Harpoon.jar COPYING VERSIONS \
+		$(foreach file,\
 		$(foreach pkg,$(JARPKGS),\
-		 $(wildcard $(pkg)/*.class) $(wildcard $(pkg)/*.properties))
+		 $(wildcard $(pkg)/*.class) $(wildcard $(pkg)/*.properties)),\
+		'$(file)')
+	@echo done.
 	date '+%-d-%b-%Y at %r %Z.' > Harpoon.jar.TIMESTAMP
 
 jar:	Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORT)
