@@ -42,7 +42,7 @@ import java.util.Set;
  * It should be safe with respect to the revised Java memory model.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MemoryOptimization.java,v 1.1.2.1 2001-06-18 04:14:43 cananian Exp $
+ * @version $Id: MemoryOptimization.java,v 1.1.2.2 2001-06-18 08:18:03 cananian Exp $
  */
 public final class MemoryOptimization
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -79,6 +79,7 @@ public final class MemoryOptimization
 		Quad.replace(quads[i],
 			     quads[i].rename(a.tempMap, a.tempMap));
 	}
+	DeadCode.optimize((harpoon.IR.Quads.Code)hc, null);
 	/*
 	System.out.println("AFTER: ");
 	hc.print(new java.io.PrintWriter(System.out));
@@ -86,7 +87,6 @@ public final class MemoryOptimization
 	// done!
 	return hc;
     }
-
 
     class Analysis {
 	/** <BasicBlock,temp,field> -> temp */
@@ -120,32 +120,55 @@ public final class MemoryOptimization
 	    */
 	    // done.
 	}
+	Map valuemaptempmap(Map m, Quad q, int which_pred) {
+	    if (m==null) return null;
+	    HashMap result = new HashMap();
+	    for (Iterator it=m.entrySet().iterator(); it.hasNext(); ) {
+		Map.Entry me = (Map.Entry) it.next();
+		Value v = ((Value)me.getKey()).map(ds, q, which_pred);
+		Temp  t = Value.map((Temp)me.getValue(),ds, q, which_pred);
+		result.put(v, t);
+	    }
+	    return result;
+	}
+
 	boolean doBlockGET(BasicBlock.Factory bbF, BasicBlock bb) {
 	    List quads = bb.statements();
 	    // compute in set by merging outs.
 	    // map <temp,field>->temp; only present if all inputs have it.
 	    // do renaming as per PHI.
 	    Map in = new HashMap();
-	    /*
 	    Quad first = (Quad) quads.get(0);
 	    Quad[] pred = first.prev();
+	    // collect maps from each pred.
+	    Map[] prin = new Map[pred.length];
 	    for (int i=0; i<pred.length; i++) {
 		BasicBlock prbb = bbF.getBlock(pred[i]);
-		Map pin = (Map) out.get(prbb);
-		if (pin==null) continue; // no info yet.
-		for (Iterator it=pin.entrySet().iterator(); it.hasNext(); ) {
-		    Map.Entry me = (Map.Entry) it.next();
-		    Value v = (Value) me.getKey();
-		    Temp  t = (Temp) me.getValue();
-		    v = v.map(ds, first, i); t = Value.map(t, ds, first, i);
-		    if (i==0) in.put(v, t);
-		    else if (!in.containsKey(v
-		
-		for out.getValues(prbb)
-		if (i==0) in.putAll((Map)out.get(prbb));
-		else in.
+		prin[i] = valuemaptempmap((Map) out.get(prbb), first, i);
 	    }
-	    */
+	    // merge key sets
+	    Set merged=null; boolean allknown=true;
+	    for (int i=0; i<pred.length; i++) {
+		if (prin[i]==null) { allknown=false; continue; }// no info yet.
+		if (merged==null) merged = prin[i].keySet();
+		else merged.retainAll(prin[i].keySet());
+	    }
+	    // handle merged inputs.
+	    if (merged!=null && allknown)
+		for (Iterator it=merged.iterator(); it.hasNext(); ) {
+		    Value v = (Value) it.next();
+		    Temp t=null; boolean same=true;
+		    for (int i=0; i<pred.length; i++) {
+			if (prin[i]==null) continue; // no info.
+			Temp tt = (Temp) prin[i].get(v);
+			if (t==null) t=tt;
+			else if (!t.equals(tt)) same=false;
+		    }
+		    if (t!=null && same)
+			in.put(v, t);
+		}
+		    
+
 	    ReadVisitor rv = new ReadVisitor(in);
 	    for (Iterator it=quads.iterator(); it.hasNext(); ) {
 		Quad q = (Quad) it.next();
@@ -167,7 +190,6 @@ public final class MemoryOptimization
 		    ds.union(q.dst(), (Temp) map.get(v));
 		    useless.add(q);
 		} else {
-		    Util.assert(ds.find(q.dst())==q.dst());
 		    map.put(v, q.dst());
 		}
 	    }
@@ -187,7 +209,6 @@ public final class MemoryOptimization
 		    ds.union(q.dst(), (Temp) map.get(v));
 		    useless.add(q);
 		} else {
-		    Util.assert(ds.find(q.dst())==q.dst());
 		    map.put(v, q.dst());
 		}
 	    }
