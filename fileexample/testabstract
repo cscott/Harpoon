@@ -1,0 +1,19 @@
+[], true => literal(0) in SuperBlock
+[], true => literal(1) in GroupBlock
+[], d.g.InodeTableBlock < d.s.NumberofBlocks => d.g.InodeTableBlock in InodeTableBlock
+[], d.g.InodeBitmapBlock < d.s.NumberofBlocks => d.g.InodeBitmapBlock in InodeBitmapBlock
+[], d.g.BlockBitmapBlock < d.s.NumberofBlocks => d.g.BlockBitmapBlock in BlockBitmapBlock
+[], d.s.RootDirectoryInode < d.s.NumberofInodes => d.s.RootDirectoryInode in RootDirectoryInode
+delay [for j=literal(0) to d.s.NumberofInodes-literal(1)], !(j in UsedInode) => j in FreeInode
+delay [for j=literal(0) to d.s.NumberofBlocks-literal(1)], !(j in UsedBlock) => j in FreeBlock
+[forall di in DirectoryInode, forall itb in InodeTableBlock, for j=literal(0) to (d.s.blocksize/literal(128))-literal(1), for k=literal(0) to literal(11)], cast(InodeTable,d.b[itb]).itable[di].Blockptr[k] < d.s.NumberofBlocks => cast(DirectoryBlock,d.b[cast(InodeTable,d.b[itb]).itable[di].Blockptr[k]]).de[j] in DirectoryEntry
+[forall i in UsedInode, forall itb in InodeTableBlock, for j=literal(0) to literal(11)], !cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]=literal(0) => <i,cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]> in contents
+[forall i in UsedInode, forall itb in InodeTableBlock, for j=literal(0) to literal(11)], cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]<d.s.NumberofBlocks and !cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]=literal(0) => cast(InodeTable,d.b[itb]).itable[i].Blockptr[j] in FileDirectoryBlock
+[for j=literal(0) to d.s.NumberofInodes-literal(1), forall ibb in InodeBitmapBlock], cast(InodeBitmap,d.b[ibb]).inodebitmap[j]=literal(false) => <j,literal(Free)> in inodestatus
+[for j=literal(0) to d.s.NumberofInodes-literal(1), forall ibb in InodeBitmapBlock], cast(InodeBitmap,d.b[ibb]).inodebitmap[j]=literal(true) => <j,literal(Used)> in inodestatus
+[forall de in DirectoryEntry], de.inodenumber<d.s.NumberofInodes and !de.inodenumber = literal(0) => de.inodenumber in FileInode
+[forall de in DirectoryEntry], de.inodenumber<d.s.NumberofInodes => <de, de.inodenumber> in inodeof
+[forall j in UsedInode, forall itb in InodeTableBlock], true => <j,cast(InodeTable,d.b[itb]).itable[j].referencecount> in referencecount
+[forall j in UsedInode, forall itb in InodeTableBlock], true => <j,cast(InodeTable,d.b[itb]).itable[j].filesize> in filesize
+[for j=literal(0) to d.s.NumberofBlocks-literal(1), forall bbb in BlockBitmapBlock], cast(BlockBitmap,d.b[bbb]).blockbitmap[j]=literal(false) => <j,literal(Free)> in blockstatus
+[for j=literal(0) to d.s.NumberofBlocks-literal(1), forall bbb in BlockBitmapBlock], cast(BlockBitmap,d.b[bbb]).blockbitmap[j]=literal(true) => <j,literal(Used)> in blockstatus
