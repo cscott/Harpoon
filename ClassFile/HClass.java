@@ -29,7 +29,7 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.2 1998-11-30 21:21:01 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.3 1998-11-30 21:58:25 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public abstract class HClass {
@@ -596,13 +596,14 @@ public abstract class HClass {
    * <code>null</code>.
    * @see "The Java Virtual Machine Specification, section 3.8"
    */
-  public HMethod getClassInitializer() {
+  public HInitializer getClassInitializer() {
     try {
-      return getDeclaredMethod("<clinit>", new HClass[0]);
+      return (HInitializer) getDeclaredMethod("<clinit>", new HClass[0]);
     } catch (NoSuchMethodError e) {
       return null;
     }
   }
+
   /**
    * Returns the Java language modifiers for this class or interface,
    * encoded in an integer.  The modifiers consist of the Java Virtual

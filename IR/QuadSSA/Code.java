@@ -22,12 +22,12 @@ import java.util.Vector;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.31.2.1 1998-11-30 21:21:02 cananian Exp $
+ * @version $Id: Code.java,v 1.31.2.2 1998-11-30 21:58:26 cananian Exp $
  */
 
 public class Code extends HCode {
     /** The name of this code view. */
-    private static final String codename = "quad-ssa";
+    public static final String codename = "quad-ssa";
 
     /** The method that this code view represents. */
     HMethod parent;

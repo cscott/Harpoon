@@ -21,10 +21,12 @@ import java.util.Enumeration;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9.2.1 1998-11-30 21:21:02 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.2 1998-11-30 21:58:26 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
+  /** The name of this code view. */
+  public static final String codename = "bytecode";
 
   HMethod parent;
   MethodInfo methodinfo;
@@ -50,7 +52,7 @@ public class Code extends HCode {
    * Return the name of this code view, <code>"bytecode"</code>.
    * @return the string <code>"bytecode"</code>.
    */
-  public String getName() { return "bytecode"; }
+  public String getName() { return codename; }
 
   /**
    * Convert from a different code view, by way of intermediates.

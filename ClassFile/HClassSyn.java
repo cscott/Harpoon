@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.1 1998-11-30 21:21:01 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.2 1998-11-30 21:58:25 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class HClassSyn extends HClassCls {
@@ -79,6 +79,8 @@ public class HClassSyn extends HClassCls {
   }
 
   public void addDeclaredMethod(HMethod m) {
+    // only one class initializer ever.
+    if (m instanceof HInitializer) Util.assert(getClassInitializer()==null);
     declaredMethods = 
       (HMethod[]) Util.grow(HMethod.arrayFactory,
 			    declaredMethods, m, declaredMethods.length);
@@ -96,6 +98,12 @@ public class HClassSyn extends HClassCls {
       }
     }
     throw new NoSuchMethodError(m.toString());
+  }
+  public void setClassInitializer(HInitializer m) {
+    HInitializer hi = getClassInitializer();
+    if (hi!=null) removeDeclaredMethod(hi);
+    Util.assert(getClassInitializer()==null);
+    addDeclaredMethod(m);
   }
 
   public void setModifiers(int m) { 

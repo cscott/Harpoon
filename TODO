@@ -1,3 +1,5 @@
+---- Nov-30-98
+Add HInitializerSyn superclass of HInitializer.
 ---- Nov-25-98
 Make HClass demand-driven again: special 'caching' HClass that stores
  string reference to class and waits to load it until an accessor method

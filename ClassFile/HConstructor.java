@@ -8,11 +8,11 @@ import harpoon.Util.ArrayFactory;
 import java.lang.reflect.Modifier;
 
 /**
- * A <code>HConstructor</code> provides information about a single
+ * An <code>HConstructor</code> provides information about a single
  * constructor for a class.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructor.java,v 1.9.2.1 1998-11-30 21:21:01 cananian Exp $
+ * @version $Id: HConstructor.java,v 1.9.2.2 1998-11-30 21:58:25 cananian Exp $
  * @see HMethod
  * @see HMember
  * @see HClass
@@ -36,7 +36,7 @@ public abstract class HConstructor extends HMethod {
 
   /**
    * Return a string describing this Constructor.  The string is formatted
-   * as the constructor access modifiers, if any, followed by the
+   * as: the constructor access modifiers, if any, followed by the
    * fully-qualified name of the declaring class, followed by a 
    * parenthesized, comma-separated list of the constructor's formal
    * parameter types.  For example: <p>

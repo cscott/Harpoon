@@ -8,6 +8,7 @@ import harpoon.ClassFile.Raw.Constant.*;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
+import java.util.Hashtable;
 import java.util.Vector;
 /**
  * <code>ImplMagic</code> provides concrete implementation for
@@ -16,7 +17,7 @@ import java.util.Vector;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.5 1998-10-16 12:09:31 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5.2.1 1998-11-30 21:58:25 cananian Exp $
  */
 
 abstract class ImplMagic  { // wrapper for the Real McCoy.
@@ -47,7 +48,9 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    for (int i=0; i<declaredMethods.length; i++)
 		declaredMethods[i] = // constructors are different.
 		    (classfile.methods[i].name().equals("<init>"))
-		    ?(HMethod)new MagicConstructor(this, classfile.methods[i]) 
+		    ?(HMethod)new MagicConstructor(this, classfile.methods[i])
+		    :(classfile.methods[i].name().equals("<clinit>"))
+		    ?(HMethod)new MagicInitializer(this, classfile.methods[i])
 		    :(HMethod)new MagicMethod(this, classfile.methods[i]);
 	    this.sourcefile = "";
 	    for (int i=0; i<classfile.attributes.length; i++)
@@ -60,7 +63,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	} 
     } // END MagicClass
     
-    // utility function to initialize HMethod/HConstructor.
+    // utility function to initialize HMethod/HConstructor/HInitializer.
     static private final void initMethod(HMethod _this, HClass parent,
 		      harpoon.ClassFile.Raw.MethodInfo methodinfo) {
 	_this.parent = parent;
@@ -137,7 +140,22 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	// Add the default code representation, if method is not native.
 	if (!Modifier.isNative(_this.getModifiers()) &&
 	    !Modifier.isAbstract(_this.getModifiers()))
-	    _this.putCode(new harpoon.IR.Bytecode.Code(_this, methodinfo));
+	    repository.put(_this, methodinfo);
+    }
+
+    static final Hashtable repository = new Hashtable();
+    static { HMethod.register(new HCodeFactory() {
+	    public String getCodeName() 
+	    { return harpoon.IR.Bytecode.Code.codename; }
+	    public HCode convert(HMethod m)
+	    {
+		harpoon.ClassFile.Raw.MethodInfo methodinfo =
+		    (harpoon.ClassFile.Raw.MethodInfo) repository.get(m);
+		if (methodinfo==null) return null;
+		else repository.remove(m); // make methodinfo garbage.
+		return new harpoon.IR.Bytecode.Code(m, methodinfo);
+	    }
+	});
     }
 
     static class MagicMethod extends HMethod {
@@ -157,6 +175,15 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    initMethod(this, parent, methodinfo);
 	}
     } // END MagicConstructor
+
+    static class MagicInitializer extends HInitializer {
+	/** Creates a <code>MagicInitializer</code> from a
+	 *  <code>harpoon.ClassFile.Raw.MethodInfo</code>. */
+	MagicInitializer(HClass parent,
+			 harpoon.ClassFile.Raw.MethodInfo methodinfo) {
+	    initMethod(this, parent, methodinfo);
+	}
+    } // END MagicInitializer
 
     static class MagicField extends HField {
 	/** Creates a <code>MagicField</code> from a 

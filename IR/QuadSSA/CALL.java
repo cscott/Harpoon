@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * receiver reference is <code>null</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.27.2.2 1998-11-30 21:21:02 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.27.2.3 1998-11-30 21:58:26 cananian Exp $ 
  */
 
 public class CALL extends Quad {
@@ -47,7 +47,7 @@ public class CALL extends Quad {
 
     /** Creates a <code>CALL</code>. <code>params</code> should match
      *  exactly the number of parameters in the method descriptor for a
-     *  static method, and/or contain an extra receiver object reference
+     *  static method, or contain an extra receiver object reference
      *  as element 0 of <code>params</code> for a virtual method.
      *  The <code>retval</code> field should be <code>null</code> if the
      *  method returns no value.  The <code>retex</code> field
