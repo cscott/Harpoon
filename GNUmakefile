@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.94 2001-06-27 15:21:15 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.95 2001-09-13 21:24:49 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -12,8 +12,8 @@ JDOC=javadoc
 JAR=jar
 JDOCFLAGS=-J-mx128m -version -author # -package
 JDOCIMAGES=/usr/local/jdk/docs/api/images
-SSH=ssh
-SCP=scp -q
+SSH=ssh -1
+SCP=scp -q -o"Protocol 1"
 MUNGE=bin/munge
 UNMUNGE=bin/unmunge
 FORTUNE=/usr/games/fortune
