@@ -13,7 +13,7 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.4.6 2000-10-22 08:41:22 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.4.7 2000-11-11 23:43:12 cananian Exp $
  */
 public class Relinker extends Linker implements java.io.Serializable {
     protected final Linker linker;
@@ -74,7 +74,7 @@ public class Relinker extends Linker implements java.io.Serializable {
 	// out the next line if we decide to delete the old descriptor
 	// mapping when we relink.
 	//descCache.remove(oldClass.getDescriptor());
-	((HClassProxy)oldClass).relink(newClass);
+	((HClassProxy)oldClass).relink(((HClassProxy)newClass).proxy);
 	descCache.put(oldClass.getDescriptor(), oldClass);
     }
     // stub to help in reloading proxies.
