@@ -20,8 +20,8 @@ public class ReversePostOrderIterator implements Iterator {
     public static void db(String s) { System.out.println(s); }
     
     Stack order;
-
-    ReversePostOrderIterator(BasicBlock start) {
+    
+    public ReversePostOrderIterator(BasicBlock start) {
 	Stack iter_stack = new Stack();
 	Stack bb_stack   = new Stack();
 	order = new Stack();
