@@ -8,16 +8,19 @@ package harpoon.Runtime.AltArray;
  * array implementation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ChunkArrayJavaType.jt,v 1.2 2002-02-25 21:06:36 cananian Exp $
+ * @version $Id: ChunkArrayJavaType.jt,v 1.3 2004-06-26 00:05:44 cananian Exp $
  */
 public final class ChunkArrayJavaType extends ArrayImplJavaType {
     private static final int CHUNK_SIZE=8;
     private final javaType[][] a;
+    private final int len;
     /* can't enforce this, but should have a constructor like the following */
     public ChunkArrayJavaType(int length) { super(length);
 	this.a = new javaType[(length+(CHUNK_SIZE-1))/CHUNK_SIZE][CHUNK_SIZE];
 	// XXX: last chunk is slightly oversized.
+	this.len = length;
     }
+    public int length() { return len; }
     public javaType get(int index) {
 	return a[index/CHUNK_SIZE][index%CHUNK_SIZE];
     }
