@@ -90,7 +90,7 @@ public class Realtime {
 	    ANALYSIS_METHOD = REAL_POINTER_ANALYSIS;
 	    System.out.print("realpa");
 	} else if (opts.indexOf("all")!=-1) {
-	    System.out.print("all, Keep Tags: ");
+	    System.out.print("all, Remove Tags: ");
 	    if (opts.indexOf("keeptags")!=-1) {
 		System.out.print("no");
 		REMOVE_TAGS = false;
