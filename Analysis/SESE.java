@@ -25,14 +25,14 @@ import java.util.Stack;
  * from a cycle-equivalency set.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SESE.java,v 1.1.2.2 1999-03-02 08:29:20 cananian Exp $
+ * @version $Id: SESE.java,v 1.1.2.3 1999-03-02 09:56:20 cananian Exp $
  */
 public class SESE  {
     /** Root of <code>Region</code> tree. */
     public final Region topLevel=new Region();
     /** Mapping from Nodes/Edges to smallest enclosing canonical SESE
      *  <code>Region</code>. */
-    public final Map smallestSESE;
+    public /*final*/ Map smallestSESE;
 
     /** Creates a <code>SESE</code> from a <code>CycleEq</code>. */
     public SESE(HCode hc, boolean edgegraph) {
