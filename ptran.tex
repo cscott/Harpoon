@@ -1,13 +1,14 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.22 2002-07-24 19:21:12 cananian Exp $
+% $Id: ptran.tex,v 1.23 2002-07-24 21:06:37 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
 \usepackage{pdffonts} % PDF-friendly fonts
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
+\usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.22 $ $}
+\date{\today \\ $ $Revision: 1.23 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -27,14 +28,12 @@ value of $v_2$ at an execution of $s_2$.
 
 Now we can say that a set $S$ of statements is
 \newterm{mutually-singular} iff
-\begin{displaymath}
-%\begin{eqnarray}\lefteqn{
+\begin{eqnarray*}\lefteqn{
 \forall s_1 \in S, s_2 \in S, v_1 \in \text{use}(s_1), v_2 \in \text{use}(s_2),
-  s_1 \neq s_2 :
-%} \\ & &
+  s_1 \neq s_2 \vee v_1 \neq v_2:
+} \hspace{4cm}\\ & &
 v_1 \text{ at } s_1 \text{ is pairwise-singular with } v_2 \text{ at } s_2
-%\end{eqnarray}
-\end{displaymath}
+\end{eqnarray*}
 
 We can compute a conservative approximation to singularity as follows.
 We say a variable $v$ is singular at a use $s$ iff:
@@ -68,7 +67,8 @@ is pairwise-singular with $v_2$ at $s_2$ if
 \end{displaymath}
 where $\text{Path}_{\mathcal{G}-z}(x, y)$ is true iff there is a path
 from $x$ to $y$ in directed control-flow graph $\mathcal{G}$ which
-does not pass through $z$.
+does not pass through $z$.  Note that
+$\text{Path}_\mathcal{G}(x,y)$ is true if $x=y$.
 An infeasible path analysis \cite{267921} could be used to refine
 this predicate by excluding paths never traversed by any
 execution of the program.
@@ -176,15 +176,15 @@ definitions of formal parameters.
 This analysis can be performed using a sparse representation, such as
 SSA or SSI, as well.
 
-Statements $s_1$ and $s_2$ are pairwise-singular if
-\begin{eqnarray*}
-\neg\exists v_1\in\text{use}(s_1), v_2\in\text{use}(s_2),
-     d &:& \tuple{v_1, d} \in \text{In}_\text{Gs}(s_1) \wedge
+Variable $v_1$ singular at $s_1$ is pairwise-singular to $v_2$
+singular at $s_2$ if
+\begin{displaymath}
+\neg\exists 
+     d : \tuple{v_1, d} \in \text{In}_\text{Gs}(s_1) \wedge
          \tuple{v_2, d} \in \text{In}_\text{Gs}(s_2) \wedge
-\\&&\quad
 \left(\text{Path}_{\mathcal{G}-d}(s_1, s_2) \vee
       \text{Path}_{\mathcal{G}-d}(s_2, s_1) \right)
-\end{eqnarray*}
+\end{displaymath}
 
 The mutual singularity of a group of statements can be computed from
 the variable singularity and generation site information using the
@@ -220,12 +220,13 @@ representing formal parameters.  The set $P_m$ of formal parameters for
 a method $m$ consists of unique tokens (possibly ordinal integers) for
 each formal parameter of the method.
 
+\textbf{DEFINE FORMAL(p)}
+
 Instead of initializing $\forall n :
 \text{In}_\text{Gs}(n)=\emptyset$, we let
 \begin{displaymath}
 \text{In}_\text{Gs}(\text{\tt HEADER}) =
-   \left\{ \tuple{v,p} | p\in P_m \wedge v
-\text{ is the variable assigned to formal parameter } p \right\}
+   \left\{ \tuple{v,p} | p\in P_m \wedge v=\text{formal}(p) \right\}
 \end{displaymath}
 We also extend the $\text{IsBad}$ predicate:
 \begin{displaymath}
@@ -242,34 +243,34 @@ non-singular reaching definitions.  Now we can define
 A variable $v$ is singular at $n$ conditional on $P$ if
 $P=\text{CondParam}(v,n)$ and $\neg\text{Ns}(v,n)$.  This
 is identical to our former case of non-conditional singularity
-when $P=\emptyset$.  Statements $s_1$ and $s_2$ are pairwise singular
-conditional on $P$ if
-\begin{eqnarray*}
-\neg\exists v_1\in\text{use}(s_1), v_2\in\text{use}(s_2),
-     d &:& \tuple{v_1, d} \in \text{In}_\text{Gs}(s_1) \wedge
+when $P=\emptyset$.  Variable $v_1$ singular at $s_1$ conditional on
+$P_1$ is pairwise singular conditional on $P_1\cup P_2$ to variable
+$v_2$ singular at $s_2$ conditional on $P_2$ if
+\begin{displaymath}
+\neg\exists 
+     d : \tuple{v_1, d} \in \text{In}_\text{Gs}(s_1) \wedge
          \tuple{v_2, d} \in \text{In}_\text{Gs}(s_2) \wedge
-\\&&\quad
 \left(\text{Path}_{\mathcal{G}-d}(s_1, s_2) \vee
       \text{Path}_{\mathcal{G}-d}(s_2, s_1) \right)
-\end{eqnarray*}
-as before, where $\mathcal{G}-d=\mathcal{G}$ if $d\notin\mathcal{S}$.
-In this case
-\begin{displaymath}
-P = \left(\bigcup_{v_1\in\text{use}(s_1)} \text{CondParam}(v_1,s_1)\right)
-         \cup
-    \left(\bigcup_{v_2\in\text{use}(s_2)} \text{CondParam}(v_2,s_2)\right)
 \end{displaymath}
+as before, where $\mathcal{G}-d=\mathcal{G}$ if $d\notin\mathcal{S}$.
 
 Similarly, a set of statements $S$ is mutually singular conditional on $P$
 if
-\begin{displaymath}
-\forall \{s_1,s_2\} \subseteq S :
-  s_1 \text{ and } s_2 \text{ are pairwise-singular}
-\end{displaymath}
-and
-\begin{displaymath}
-P = \bigcup_{s\in S} \bigcup_{v\in\text{use}(s)} \text{CondParam}(v,s)
-\end{displaymath}
+\begin{multline*}
+\forall s_1 \in S, s_2 \in S, v_1 \in \text{use}(s_1), v_2 \in \text{use}(s_2),
+  s_1 \neq s_2 \vee v_1 \neq v_2:
+\\\shoveright{
+v_1 \text{ singular at } s_1 \text{ conditional on } P_1
+}\\\shoveright{{}\wedge
+v_2 \text{ singular at } s_2 \text{ conditional on } P_2
+}\\\shoveright{{}\wedge
+v_1,s_1,P_1
+\text{ is pairwise-singular with }
+v_2,s_2,P_2
+}\\{}\wedge
+P_1 \cup P_2 \subseteq P
+\end{multline*}
 
 Now we can resolve conditional singularity compositionally by
 examining actual parameters at a call-site.
