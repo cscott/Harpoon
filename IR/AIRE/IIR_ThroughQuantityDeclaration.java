@@ -5,7 +5,7 @@ package harpoon.IR.AIRE;
  * The predefined <code>IIR_ThroughQuantityDeclaration</code> class.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ThroughQuantityDeclaration.java,v 1.1 1998-10-10 09:21:39 cananian Exp $
+ * @version $Id: IIR_ThroughQuantityDeclaration.java,v 1.2 1998-10-11 00:32:28 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -14,7 +14,8 @@ public class IIR_ThroughQuantityDeclaration extends IIR_QuantityDeclaration
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_THROUGH_QUANTITY_DECLARATION
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_THROUGH_QUANTITY_DECLARATION; }
     //CONSTRUCTOR:
     public IIR_ThroughQuantityDeclaration(){}
     //METHODS:  

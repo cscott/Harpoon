@@ -7,7 +7,7 @@ package harpoon.IR.AIRE;
  * statements may appear anywhere a sequential statement may appear.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_VariableAssignmentStatement.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
+ * @version $Id: IIR_VariableAssignmentStatement.java,v 1.3 1998-10-11 00:32:28 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -16,7 +16,8 @@ public class IIR_VariableAssignmentStatement extends IIR_SequentialStatement
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_VARIABLE_ASSIGNMENT_STATEMENT
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_VARIABLE_ASSIGNMENT_STATEMENT; }
     //CONSTRUCTOR:
     public IIR_VariableAssignmentStatement() { }
     //METHODS:  

@@ -7,7 +7,7 @@ package harpoon.IR.AIRE;
  * subnatures.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ArraySubnatureDefinition.java,v 1.1 1998-10-10 09:21:37 cananian Exp $
+ * @version $Id: IIR_ArraySubnatureDefinition.java,v 1.2 1998-10-11 00:32:16 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -16,7 +16,8 @@ public class IIR_ArraySubnatureDefinition extends IIR_ArrayNatureDefinition
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_ARRAY_SUBNATURE_DEFINITION
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_ARRAY_SUBNATURE_DEFINITION; }
     //CONSTRUCTOR:
     public IIR_ArraySubnatureDefinition() { }
     //METHODS:  

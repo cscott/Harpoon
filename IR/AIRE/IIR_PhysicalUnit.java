@@ -7,7 +7,7 @@ package harpoon.IR.AIRE;
  * within a physical type or subtype definition).
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_PhysicalUnit.java,v 1.1 1998-10-10 07:53:40 cananian Exp $
+ * @version $Id: IIR_PhysicalUnit.java,v 1.2 1998-10-11 00:32:23 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -16,7 +16,8 @@ public class IIR_PhysicalUnit extends IIR_Declaration
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_PHYSICAL_UNIT
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_PHYSICAL_UNIT; }
 
     /** The constructor method initializes a physical unit with an 
      *  unspecified source location, an unspecifier declarator, and

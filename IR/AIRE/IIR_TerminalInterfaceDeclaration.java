@@ -5,7 +5,7 @@ package harpoon.IR.AIRE;
  * The predefined <code>IIR_TerminalInterfaceDeclaration</code> class.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_TerminalInterfaceDeclaration.java,v 1.1 1998-10-10 07:53:45 cananian Exp $
+ * @version $Id: IIR_TerminalInterfaceDeclaration.java,v 1.2 1998-10-11 00:32:28 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -14,7 +14,8 @@ public class IIR_TerminalInterfaceDeclaration extends IIR_InterfaceDeclaration
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_TERMINAL_INTERFACE_DECLARATION
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_TERMINAL_INTERFACE_DECLARATION; }
     //CONSTRUCTOR:
     public IIR_TerminalInterfaceDeclaration() { }
     //METHODS:  

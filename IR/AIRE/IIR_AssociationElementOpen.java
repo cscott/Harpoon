@@ -11,7 +11,7 @@ package harpoon.IR.AIRE;
  * (sub)type of the declaration itself.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_AssociationElementOpen.java,v 1.1 1998-10-10 07:53:32 cananian Exp $
+ * @version $Id: IIR_AssociationElementOpen.java,v 1.2 1998-10-11 00:32:16 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -20,7 +20,8 @@ public class IIR_AssociationElementOpen extends IIR_AssociationElement
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_ASSOCIATION_ELEMENT_OPEN
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_ASSOCIATION_ELEMENT_OPEN; }
 
     /** The constructor initializes an association element by open object
      * with an undefined source location, an undefined formal, an undefined

@@ -9,7 +9,7 @@ import java.util.Hashtable;
  * range must be a subset of the base type's range.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_PhysicalSubtypeDefinition.java,v 1.1 1998-10-10 07:53:39 cananian Exp $
+ * @version $Id: IIR_PhysicalSubtypeDefinition.java,v 1.2 1998-10-11 00:32:23 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -18,7 +18,8 @@ public class IIR_PhysicalSubtypeDefinition extends IIR_PhysicalTypeDefinition
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_PHYSICAL_SUBTYPE_DEFINITION
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_PHYSICAL_SUBTYPE_DEFINITION; }
     
     //METHODS:  
     public static IIR_PhysicalSubtypeDefinition get(IIR_PhysicalTypeDefinition base_type, IIR left_limit, IIR direction, IIR right_limit, IIR_FunctionDeclaration resolution_function) {

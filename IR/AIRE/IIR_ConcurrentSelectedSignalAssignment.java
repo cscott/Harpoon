@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_ConcurrentSelectedSignalAssignment</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ConcurrentSelectedSignalAssignment.java,v 1.2 1998-10-10 11:10:33 cananian Exp $
+ * @version $Id: IIR_ConcurrentSelectedSignalAssignment.java,v 1.3 1998-10-11 00:32:18 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -13,7 +13,8 @@ public class IIR_ConcurrentSelectedSignalAssignment extends IIR_ConcurrentStatem
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_CONCURRENT_SELECTED_SIGNAL_ASSIGNMENT
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_CONCURRENT_SELECTED_SIGNAL_ASSIGNMENT; }
     //CONSTRUCTOR:
     public IIR_ConcurrentSelectedSignalAssignment() { }
     //METHODS:  

@@ -8,7 +8,7 @@ package harpoon.IR.AIRE;
  * statements, and generate statements.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ConcurrentStatementList.java,v 1.1 1998-10-10 07:53:34 cananian Exp $
+ * @version $Id: IIR_ConcurrentStatementList.java,v 1.2 1998-10-11 00:32:18 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -17,7 +17,8 @@ public class IIR_ConcurrentStatementList extends IIR_List
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_CONCURRENT_STATEMENT_LIST
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_CONCURRENT_STATEMENT_LIST; }
     //CONSTRUCTOR:
     public IIR_ConcurrentStatementList() { }
     //METHODS:  

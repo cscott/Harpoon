@@ -6,7 +6,7 @@ package harpoon.IR.AIRE;
  * described zero or more characteristic expressions.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_SimpleSimultaneousStatement.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
+ * @version $Id: IIR_SimpleSimultaneousStatement.java,v 1.3 1998-10-11 00:32:25 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -15,7 +15,8 @@ public class IIR_SimpleSimultaneousStatement extends IIR_SimultaneousStatement
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_SIMPLE_SIMULTANEOUS_STATEMENT
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_SIMPLE_SIMULTANEOUS_STATEMENT; }
     //CONSTRUCTOR:
     public IIR_SimpleSimultaneousStatement(){}
     //METHODS:  

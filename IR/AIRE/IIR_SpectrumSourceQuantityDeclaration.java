@@ -5,7 +5,7 @@ package harpoon.IR.AIRE;
  * The predefined <code>IIR_SpectrumSourceQuantityDeclaration</code> class.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_SpectrumSourceQuantityDeclaration.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
+ * @version $Id: IIR_SpectrumSourceQuantityDeclaration.java,v 1.3 1998-10-11 00:32:27 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -14,7 +14,8 @@ public class IIR_SpectrumSourceQuantityDeclaration extends IIR_QuantityDeclarati
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_SPECTRUM_SOURCE_QUANTITY_DECLARATION
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_SPECTRUM_SOURCE_QUANTITY_DECLARATION; }
     //CONSTRUCTOR:
     public IIR_SpectrumSourceQuantityDeclaration() { }
     //METHODS:  

@@ -10,7 +10,7 @@ package harpoon.IR.AIRE;
  * which is itself an array.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ArrayNatureDefinition.java,v 1.3 1998-10-10 09:58:34 cananian Exp $
+ * @version $Id: IIR_ArrayNatureDefinition.java,v 1.4 1998-10-11 00:32:16 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -19,7 +19,8 @@ public abstract class IIR_ArrayNatureDefinition extends IIR_CompositeNatureDefin
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_ARRAY_NATURE_DEFINITION
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_ARRAY_NATURE_DEFINITION; }
 
     /** The constructor methods creates a valid array type definition. */
     public IIR_ArrayNatureDefinition() { }

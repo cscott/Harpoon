@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_UseClause</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_UseClause.java,v 1.1 1998-10-10 07:53:46 cananian Exp $
+ * @version $Id: IIR_UseClause.java,v 1.2 1998-10-11 00:32:28 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -13,7 +13,8 @@ public class IIR_UseClause extends IIR_Declaration
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_USE_CLAUSE
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_USE_CLAUSE; }
     //CONSTRUCTOR:
     public IIR_UseClause() { }
     

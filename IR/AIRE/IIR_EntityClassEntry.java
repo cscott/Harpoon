@@ -8,7 +8,7 @@ package harpoon.IR.AIRE;
  * template declaration.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_EntityClassEntry.java,v 1.2 1998-10-10 09:21:38 cananian Exp $
+ * @version $Id: IIR_EntityClassEntry.java,v 1.3 1998-10-11 00:32:19 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -17,13 +17,14 @@ public class IIR_EntityClassEntry extends IIR_Tuple
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_ENTITY_CLASS_ENTRY
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_ENTITY_CLASS_ENTRY; }
     //CONSTRUCTOR:
     public IIR_EntityClassEntry() { }
     //METHODS:  
-    public void set_entity_kind(int entity_kind)
+    public void set_entity_kind(IR_Kind entity_kind)
     { _entity_kind = entity_kind; }
-    public int get_entity_kind()
+    public IR_Kind get_entity_kind()
     { return _entity_kind; }
  
     public void set_boxed(boolean is_boxed)
@@ -34,7 +35,7 @@ public class IIR_EntityClassEntry extends IIR_Tuple
     //MEMBERS:  
 
 // PROTECTED:
-    int _entity_kind;
+    IR_Kind _entity_kind;
     boolean _boxed;
 } // END class
 

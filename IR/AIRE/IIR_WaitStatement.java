@@ -8,7 +8,7 @@ package harpoon.IR.AIRE;
  * (some restrictions in subprograms).
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_WaitStatement.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
+ * @version $Id: IIR_WaitStatement.java,v 1.3 1998-10-11 00:32:28 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -17,7 +17,8 @@ public class IIR_WaitStatement extends IIR_SequentialStatement
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_WAIT_STATEMENT
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_WAIT_STATEMENT; }
     //CONSTRUCTOR:
     public IIR_WaitStatement() { }
     //METHODS:  

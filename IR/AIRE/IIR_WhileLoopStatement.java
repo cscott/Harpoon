@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_WhileLoopStatement</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_WhileLoopStatement.java,v 1.3 1998-10-10 11:05:37 cananian Exp $
+ * @version $Id: IIR_WhileLoopStatement.java,v 1.4 1998-10-11 00:32:29 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -13,7 +13,8 @@ public class IIR_WhileLoopStatement extends IIR_SequentialStatement
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_WHILE_LOOP_STATEMENT
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_WHILE_LOOP_STATEMENT; }
     //CONSTRUCTOR:
     public IIR_WhileLoopStatement() { }
     //METHODS:  

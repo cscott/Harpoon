@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_CaseStatementAlternativeByChoices</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_CaseStatementAlternativeByChoices.java,v 1.2 1998-10-10 11:05:35 cananian Exp $
+ * @version $Id: IIR_CaseStatementAlternativeByChoices.java,v 1.3 1998-10-11 00:32:17 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -13,7 +13,8 @@ public class IIR_CaseStatementAlternativeByChoices extends IIR_CaseStatementAlte
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_CASE_STATEMENT_ALTERNATIVE_BY_CHOICES
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_CASE_STATEMENT_ALTERNATIVE_BY_CHOICES; }
     //CONSTRUCTOR:
     public IIR_CaseStatementAlternativeByChoices() { }
     //METHODS:  

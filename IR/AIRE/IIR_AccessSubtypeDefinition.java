@@ -8,7 +8,7 @@ import java.util.Hashtable;
  * a subtype of an access type definition.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_AccessSubtypeDefinition.java,v 1.1 1998-10-10 07:53:31 cananian Exp $
+ * @version $Id: IIR_AccessSubtypeDefinition.java,v 1.2 1998-10-11 00:32:15 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -17,7 +17,8 @@ public class IIR_AccessSubtypeDefinition extends IIR_AccessTypeDefinition
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_ACCESS_SUBTYPE_DEFINITION
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_ACCESS_SUBTYPE_DEFINITION; }
     
     //METHODS:  
     public static IIR_AccessSubtypeDefinition get(IIR_TypeDefinition designated_type, IIR_FunctionDeclaration resolution_function) {

@@ -8,7 +8,7 @@ package harpoon.IR.AIRE;
  * representation.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_FloatingPointLiteral32.java,v 1.1 1998-10-10 07:53:36 cananian Exp $
+ * @version $Id: IIR_FloatingPointLiteral32.java,v 1.2 1998-10-11 00:32:20 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -17,7 +17,8 @@ public class IIR_FloatingPointLiteral32 extends IIR_Literal
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_FLOATING_POINT_LITERAL32
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_FLOATING_POINT_LITERAL32; }
     
     
     //METHODS:  

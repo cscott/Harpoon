@@ -8,7 +8,7 @@ package harpoon.IR.AIRE;
  * elements within <code>IIR_GroupTemplateDeclaration</code>s.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_EntityClassEntryList.java,v 1.1 1998-10-10 07:53:35 cananian Exp $
+ * @version $Id: IIR_EntityClassEntryList.java,v 1.2 1998-10-11 00:32:19 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -17,7 +17,8 @@ public class IIR_EntityClassEntryList extends IIR_List
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_ENTITY_CLASS_ENTRY_LIST
+    public IR_Kind get_kind()
+    { return IR_Kind.IR_ENTITY_CLASS_ENTRY_LIST; }
     //CONSTRUCTOR:
     public IIR_EntityClassEntryList() { }
     //METHODS:  
