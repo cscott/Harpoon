@@ -1,4 +1,4 @@
-# $Revision: 1.33 $
+# $Revision: 1.34 $
 JFLAGS=-g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JCC=javac -d .
@@ -49,8 +49,8 @@ cvs-commit: needs-cvs cvs-add
 	cvs -q commit
 	$(RM) cvs-tmp
 commit: cvs-commit # convenient abbreviation
-update: needs-cvs # it's so easy to forget...
-	cvs update 
+update: needs-cvs
+	cvs update -Pd
 	@echo ""
 	@-$(FORTUNE)
 
