@@ -13,7 +13,7 @@ import java.util.Map;
  * to code/data/object descriptions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Linker.java,v 1.1.4.1 2000-01-13 23:47:47 cananian Exp $
+ * @version $Id: Linker.java,v 1.1.4.2 2000-02-11 00:19:44 pnkfelix Exp $
  */
 public abstract class Linker implements ReferenceUnique {
   protected Linker() { }
@@ -60,7 +60,8 @@ public abstract class Linker implements ReferenceUnique {
    */
   public final HClass forDescriptor(String descriptor)
     throws NoSuchClassException {
-    Util.assert(descriptor.indexOf('.')==-1); // should be desc, not name.
+    Util.assert(descriptor.indexOf('.')==-1, // should be desc, not name.
+		"'.' in descriptor: " + descriptor); 
     // Trim descriptor.
     int i;
     for (i=0; i<descriptor.length(); i++) {
@@ -76,7 +77,9 @@ public abstract class Linker implements ReferenceUnique {
     if (cls==null) {    // not in the cache.
       cls = _forDescriptor_(descriptor); // do actual descriptor resolution.
       Util.assert(!descCache.containsKey(descriptor));
-      Util.assert(descriptor.equals(cls.getDescriptor()));
+      Util.assert(descriptor.equals(cls.getDescriptor()),
+		  "descriptor " + descriptor + 
+		  "should equals() "+ cls.getDescriptor());
       descCache.put(descriptor, cls);
     }
     return cls;    
