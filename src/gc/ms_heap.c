@@ -83,7 +83,7 @@ int expand_marksweep_heap(size_t size, struct marksweep_heap *h)
 */
 void free_unreachable_blocks(struct marksweep_heap *h)
 {
-  static num_collections = 0;
+  static int num_collections = 0;
   size_t free_bytes = 0;
   float occupancy;
   struct block *curr_block = h->heap_begin;

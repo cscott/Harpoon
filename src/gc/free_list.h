@@ -10,7 +10,7 @@ struct block
 {
 #ifdef WITH_STATS_GC
   jint time
-#endif
+#endif /* WITH_STATS_GC */
   size_t size;
   union { ptroff_t mark; struct block *next; } markunion;
   struct oobj object[0];
@@ -33,12 +33,22 @@ struct block
 
 #ifdef DEBUG_GC
 void debug_clear_memory(struct block *bl);
-#else
-# define debug_clear_memory(bl)
-#endif
+#else /* DEBUG_GC */
+# define debug_clear_memory(bl) ((void)0)
+#endif /* !DEBUG_GC */
 
+/* effects: adds small blocks to the small blocks table, and
+   large blocks to the correct location in the free list
+*/
+void add_to_free_blocks(struct block *new_block,
+			struct block **free_list,
+			struct block *small_blocks[]);
+
+/* returns: a block that is greater than or equal in size to the
+   request; block is initialized before being returned
+ */
 struct block *find_free_block(size_t size,
 			      struct block **free_list_ptr,
 			      struct block *small_blocks[]);
 
-#endif
+#endif /* INCLUDED_FREE_LIST_H */

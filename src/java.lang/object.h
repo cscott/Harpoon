@@ -13,7 +13,7 @@ jobject fni_object_cloneHelper(JNIEnv *env, jobject obj, jsize len) {
 			    NULL/*default alloc func*/, len);
 #ifdef WITH_GENERATIONAL_GC
   add_to_curr_obj_list(FNI_UNWRAP_MASKED(clone));
-#endif
+#endif /* WITH_GENERATIONAL_GC */
   memcpy(FNI_UNWRAP_MASKED(clone)->field_start,
 	 FNI_UNWRAP_MASKED(obj  )->field_start,
 	 len - sizeof(struct oobj));

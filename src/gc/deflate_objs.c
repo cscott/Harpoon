@@ -1,6 +1,7 @@
 #include "deflate_objs.h"
 #include "cp_heap.h"
 #include "precise_gc.h"
+#include <stdlib.h>
 
 FLEX_MUTEX_DECLARE_STATIC(inflated_objs_mutex);
 
