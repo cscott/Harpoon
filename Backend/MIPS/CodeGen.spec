@@ -69,7 +69,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.20 2000-10-04 21:06:17 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.21 2000-10-11 18:22:17 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -731,7 +731,8 @@ import java.util.Iterator;
           // float retval passed in float registers.
           declare(retval, type); declare ( SP, HClass.Void );
           //emitMOVE( ROOT, "move `d0, `s0", retval, v0 );
-          emit( ROOT, "swc1 $f0, 0($sp)", null, SP);
+          // XXX does not use SP, but null trips an assert in Instr.java:checkForNull
+          emit( ROOT, "swc1 $f0, 0($sp)", SP, SP);
           emit2( ROOT, "lw   `d0, 0(`s0)", 
                  new Temp[]{retval,SP},new Temp[]{SP});
           //emit2(ROOT, "lw `d0, 4($sp)",new Temp[]{retval,SP},new Temp[]{SP});
@@ -743,7 +744,8 @@ import java.util.Iterator;
           //emit( ROOT, "move `d0h, `s0", retval, v0 );
           // emit( ROOT, "move `d0l, `s0", retval, v1 );
           // sdc1 is mips2
-          emit( ROOT, "sdc1 $f0, 0($sp)", null, SP);
+          // XXX does not use SP, but null trips an assert in Instr.java:checkForNull
+          emit( ROOT, "sdc1 $f0, 0($sp)", SP, SP);
           emit(ROOT, "lw `d0l, 4($sp)", retval, SP);
           emit(ROOT, "lw `d0h, 0($sp)", retval, SP);
        } else if (ROOT.getRetval().isDoubleWord()) {
