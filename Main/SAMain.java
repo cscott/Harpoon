@@ -65,7 +65,7 @@ import java.io.PrintStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.49 2003-04-17 15:24:27 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.50 2003-04-17 15:34:45 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -126,18 +126,19 @@ public class SAMain extends harpoon.IR.Registration {
 	stages = new LinkedList/*<CompilerStage>*/();
 
 	addStage(new BuildQuadForm());
+	// At this point in the pipeline, we have a full compiler
+	// state (including class hierarchy). Let it roll!
 
-	// Now, we have a full compiler state (including class
-	// hierarchy). Let it roll!
-
-	// TODO: we should have a CompilerState object up here and
-	// next just obtain new variations of it (almost identical
-	// copies of it with only a few elements changed).
-
+	// quad-form analyses
 	buildQuadFormPipeline();
 
+	// quad->tree
+	addStage(new LowQuadToTree()); 
+
+	// tree-form analyses
 	buildTreeFormPipeline();
 
+	// final compilation stage
 	addStage(new CodeGenerator());
     }
 
@@ -146,12 +147,10 @@ public class SAMain extends harpoon.IR.Registration {
 	AllocationInstrCompStage aics = new AllocationInstrCompStage();
 	addStage(aics);
 	addStage(new PreallocOpt.QuadPass(aics));
-
 	addStage(new EventDrivenTransformation.QuadPass1());
 	addStage(new RoleInference());
 	addStage(new Transactions.QuadPass());
 	addStage(new Realtime.QuadPass());
-	// Scott's fancy stuff: not part of the normal flow of execution
 	addStage(new MZFCompilerStage());
 	addStage(new MIPSOptimizations.QuadPass());
         addStage(new GeneralQuadOptimizations());
@@ -164,9 +163,6 @@ public class SAMain extends harpoon.IR.Registration {
 
 
     private static void buildTreeFormPipeline() {
-
-	addStage(new LowQuadToTree());
-
 	addStage(new WriteBarriers.WBDynamicWBTreePass());
 	addStage(new PreallocOpt.TreePass());
 	addStage(new Realtime.TreePass());
