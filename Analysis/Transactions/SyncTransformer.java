@@ -90,7 +90,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.14 2004-07-02 00:08:52 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.15 2004-07-02 21:16:50 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -133,7 +133,7 @@ public class SyncTransformer
     private final boolean noArrayModification = // only do regular objects
 	Boolean.getBoolean("harpoon.synctrans.noarraymods");
     private final boolean noNestedTransactions = // only top-level trans.
-	Boolean.getBoolean("harpoon.synctrans.nonestedtrans");
+	!Boolean.getBoolean("harpoon.synctrans.nestedtrans");
     private final boolean useSmartFieldOracle = // dumb down field oracle
 	!Boolean.getBoolean("harpoon.synctrans.nofieldoracle");
     private final boolean useSmartCheckOracle = // dumb down check oracle
