@@ -25,7 +25,7 @@ import java.io.FileReader;
 /**
  * 
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
- * @version $Id: Main.java,v 1.6 2002-02-25 20:58:28 cananian Exp $
+ * @version $Id: Main.java,v 1.7 2003-07-28 22:33:36 cananian Exp $
  */
 
 public class Main  {
@@ -129,14 +129,14 @@ public class Main  {
 	gain = Partition.exchange(_partition[0], _partition[1]);
 	System.err.println("Edge sum:  "+Partition.computeEdgeSum(_partition[0], _partition[1]));
 	WGNode node;
-	Enumeration enum = _partition[0].getNodes();
-	while (enum.hasMoreElements()) {
-	  node = (WGNode) enum.nextElement();
+	Enumeration _enum_ = _partition[0].getNodes();
+	while (_enum_.hasMoreElements()) {
+	  node = (WGNode) _enum_.nextElement();
 	  if (!node._dummy) System.err.println("MACHINE "+node._value+" 0");
 	}
-	enum = _partition[1].getNodes();
-	while (enum.hasMoreElements()) {
-	  node = (WGNode) enum.nextElement();
+	_enum_ = _partition[1].getNodes();
+	while (_enum_.hasMoreElements()) {
+	  node = (WGNode) _enum_.nextElement();
 	  if (!node._dummy) System.err.println("MACHINE "+node._value+" 1");
 	}
 	if (gain == 0) {

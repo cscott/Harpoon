@@ -41,7 +41,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  * <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: InterThreadPA.java,v 1.5 2003-05-06 15:35:22 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.6 2003-07-28 22:33:34 cananian Exp $
  */
 public abstract class InterThreadPA implements java.io.Serializable {
 
@@ -196,9 +196,9 @@ public abstract class InterThreadPA implements java.io.Serializable {
        with the Starter haven't been analyzed yet. */
     private static PANode pick_an_unanalyzed_thread(ParIntGraph pig,
 						    Set analyzed_threads){
-	Enumeration enum = pig.tau.activeThreads();
-	while(enum.hasMoreElements()){
-	    PANode nt = (PANode) enum.nextElement();
+	Enumeration _enum_ = pig.tau.activeThreads();
+	while(_enum_.hasMoreElements()){
+	    PANode nt = (PANode) _enum_.nextElement();
 	    if((nt.type == PANode.INSIDE) && !analyzed_threads.contains(nt))
 		return nt;
 	}
@@ -796,9 +796,9 @@ public abstract class InterThreadPA implements java.io.Serializable {
 	    if(!analyzable_run_mmethods(pa, ops)) continue;
 	    for(int i = 0; i < ops.length; i++){
 		PAThreadMap tau_nt1 = pa.getExtParIntGraph(ops[i]).tau;
-		Enumeration enum = tau_nt1.activeThreads();
-		while(enum.hasMoreElements()){
-		    PANode nt2 = (PANode) enum.nextElement();
+		Enumeration _enum_ = tau_nt1.activeThreads();
+		while(_enum_.hasMoreElements()){
+		    PANode nt2 = (PANode) _enum_.nextElement();
 		    if(threads.add(nt2)) W.add(nt2);
 		}
 	    }
