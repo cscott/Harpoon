@@ -49,7 +49,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.12 1999-05-10 02:07:40 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.13 1999-06-28 18:55:37 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -936,7 +936,7 @@ class TranslationVisitor extends LowQuadVisitor {
 	else if (type==HClass.Char)
 	    constant = new CONST 
 		(m_tf, src, 
-		 Character.getNumericValue(((Character)value).charValue())); 
+		 (int)(((Character)value).charValue())); 
 	else if (type==HClass.Short)
 	    constant = new CONST(m_tf, src, ((Short)value).intValue()); 
 	else if(type==HClass.Int) 
@@ -1247,7 +1247,7 @@ class TranslationVisitor extends LowQuadVisitor {
 		new CONST
 		(m_tf, classPtr, 
 		 m_offm.componentTypeOffset
-		 (HClass.forName("java.lang.Object[]")))))),
+		 (HClass.forClass(new Object[1].getClass())))))),
 	     classPtr);
     }
 	
@@ -1368,10 +1368,8 @@ class TranslationVisitor extends LowQuadVisitor {
 	     result);
     }
     
-    // FIX THIS PLEASE
     private int wordSize() {
 	int size = m_offm.size(HClass.forName("java.lang.Object"));
-	System.out.println("Returning word size: " + size);
 	return size;
     }
 }
