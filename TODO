@@ -1,3 +1,27 @@
+---- Sep-11-98, cont
+Add SWITCH nodes to CJMP, SWITCH:
+ call them lamba-functions.  <t1, t2, ...> = lambda(t0)
+ return a tuple, given a temp (and a predicate?)
+ reverse of phi functions.  translated the same way.
+ There should be a lamba-function for variable a at node z of the flowgraph
+ example when:
+  1) block x contains a *use* of a
+  2) block y contains a *use* of a
+  3) there is a non-empty path Pxz of edges from z to x,
+  4) there is a non-empty path Pyz of edges from z to y, and
+  5) paths Pxz and Pyz do not have any node in common except z (that is,
+     z is the first point of convergence of these paths).
+QUESTION: are criteria 1 and 2 correct.  Maybe where 1 *or* 2 is true?
+QUESTION: how do you make a predicated analysis based on this?
+QUESTION: how does phi-function placement interact with lamba-function 
+          placement?
+write analysis to remove unnecessary control dependencies.  PARALLEL quad?
+
+Write registration routines for HMethod.
+Make superclass 'Register' or 'Initialize' or 'Harpoon' or something
+ that registers all necessary representations (extend to do-it-yourself).
+ Standard interface for registration object.  Static method in HCode
+ to return instance of registration object.
 ---- Sep-11-98
 Optimize INSTANCEOF and COMPONENTOF in SCC.
 Update xLass to hold 'canbeNull' boolean.
