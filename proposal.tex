@@ -1,19 +1,21 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: proposal.tex,v 1.4 1999-05-08 00:18:34 cananian Exp $
+% $Id: proposal.tex,v 1.5 1999-08-05 19:55:40 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage,twocolumn,twoside]{article}
+\usepackage{pdffonts}
 \usepackage{comdef}
 
 % the name of the project
-\newcommand{\magic}{\textsc{Magic}}
+\newcommand{\magic}{\textsc{Flex}}
+\linespread{1.1}
 
 \title{{\large Master's Thesis proposal for}\\
 \magic: An Optimizing Java Compiler using SSI Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.4 $ $}
+\date{March 1999\\\vspace{5pt}}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.4 $ $}{$ $Revision: 1.4 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.5 $ $}{$ $Revision: 1.5 $ $}
 
 \maketitle
 
@@ -25,7 +27,7 @@ of a program to do reasonable optimization of threading and memory
 management code, especially when pointers are present. Among the goals
 of the \magic\ project are automatic code partitioning for distributed
 systems, memory allocation strategy conversion for embedded systems,
-and the use of java as a high-level hardware description language.
+and the use of Java as a high-level hardware description language.
 
 This thesis concentrates on the code representation used in the
 \magic\ compiler; specifically, on Static Single Information (SSI)
