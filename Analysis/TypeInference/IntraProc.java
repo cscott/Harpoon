@@ -18,7 +18,7 @@ import java.util.Enumeration;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.4 1998-12-05 16:03:16 marinov Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.5 1998-12-05 20:52:08 marinov Exp $
  */
 
 public class IntraProc {
@@ -99,6 +99,8 @@ public class IntraProc {
     void analyze() {
 	//DEBUG
 	//if (method.getName().equals("t")) {
+	//System.out.println(System.currentTimeMillis());
+	//System.out.println("   analyzing " + method.getDeclaringClass() + " " + method.getName());
 	//System.out.print("   analyzing " + method.getDeclaringClass() + " " + method.getName());
 	//HClass[] II = method.getParameterTypes();
 	//for (int ii=0; ii<II.length; ii++)
@@ -183,6 +185,24 @@ public class IntraProc {
 	    for (int i=0; i<m.length; i++)
 		r.union(m[i]);
 	}
+	HMethod[] ret = new HMethod[r.size()];
+	r.copyInto(ret);
+	return ret;
+    }
+
+    HMethod[] calls(CALL cs) {
+	Set r = new Set();
+	SetHClass[] paramTypes = new SetHClass[cs.params.length];
+	for (int i=0; i<cs.params.length; i++) {
+	    SetHClass s = (SetHClass)map.get(cs.params[i]);
+	    Util.assert(s!=null);
+	    paramTypes[i] = s;
+	}
+	HMethod[] m;
+	if (cs.isSpecial) m = new HMethod[]{ cs.method };
+	else m = possibleMethods(cs.method, paramTypes);
+	for (int i=0; i<m.length; i++)
+	    r.union(m[i]);
 	HMethod[] ret = new HMethod[r.size()];
 	r.copyInto(ret);
 	return ret;

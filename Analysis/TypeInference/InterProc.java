@@ -13,7 +13,7 @@ import harpoon.Analysis.QuadSSA.ClassHierarchy;
  * <code>InterProc</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: InterProc.java,v 1.1.2.3 1998-12-05 16:03:16 marinov Exp $
+ * @version $Id: InterProc.java,v 1.1.2.4 1998-12-05 20:52:08 marinov Exp $
  */
 
 public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
@@ -48,9 +48,13 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
 	analyze();
 	return ((IntraProc)proc.get(m)).calls();
     }
+    public HMethod[] calls(HMethod m, CALL cs) { 
+	analyze();
+	return ((IntraProc)proc.get(m)).calls(cs);
+    }
 
     Worklist wl;
-    void analyze() {
+    public void analyze() {
 	if (analyzed) return; else analyzed = true;	
 	/* main method, the one from which the analysis starts. */
 	HMethod m = main.getMethod();
@@ -108,7 +112,7 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
 	} 
 	t.addCallee(i);
 	return t.getType();
-    }   
+    }
     void mergeType(HField f, SetHClass s) {
 	FieldType t = (FieldType)instVar.get(f);
 	if (t==null) {
