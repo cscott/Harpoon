@@ -9,6 +9,8 @@ import java.awt.Canvas;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
+import java.awt.Toolkit;
+import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -74,11 +76,11 @@ public class Display extends Node {
     /**
        The width of all new windows.
     */
-    public static int defaultWidth = 133;
+    public static int defaultWidth = 200;
     /**
        The height of all new windows.
     */
-    public static int defaultHeight = 100;
+    public static int defaultHeight = 150;
     /**
        The horizonal padding between all new windows.
     */
@@ -178,11 +180,20 @@ public class Display extends Node {
 	frame.setLocation(currentX, currentY);
 	currentX += defaultWidth + defaultXPadding;
 	currentNumAcross++;
-	if (currentNumAcross == 3) {
+	if (currentNumAcross == numAcross) {
 	    currentNumAcross = 0;
 	    currentX = 0;
 	    currentY += defaultHeight + defaultYPadding;
 	}
+
+	Dimension resolution = Toolkit.getDefaultToolkit().getScreenSize();
+	int h=resolution.height;
+	int w=resolution.width;
+
+	if (currentY + defaultHeight > h) {
+	    currentY = 0;
+	}
+
 	frame.setVisible(true);
 	
 	this.displayRed = displayRed;
