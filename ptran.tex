@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.31 2002-07-25 17:59:58 cananian Exp $
+% $Id: ptran.tex,v 1.32 2002-07-25 18:06:33 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.31 $ $}
+\date{\today \\ $ $Revision: 1.32 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -531,11 +531,15 @@ evaluated monomorphically.
 
 (Roughly) If an allocated (internal?) node escapes via the return
 value, then this is a factory method.  Evaluate it polymorphically.
-If we have ``possible companion'' edges --- that is, we allocate
-a node internally which may be a companion of a node allocated
-externally --- then evaluate it polymorphically.  [I'm guessing
-that possible companion edges which touch only outside, not inside,
-nodes are not sufficient grounds for polymorphic evaluation.]
+If we have companion edges (including possible companions) from
+an outside node to an inside node (or vice-versa?) --- that is, we
+allocate a node internally which may be a companion of a node allocated
+externally --- then evaluate it polymorphically.%
+\footnote{Think hard about possible companion edges between an
+outside and an outside node.  This could be, for example, a
+link between two parameters of a method, both which would be
+conditionally singular.  We should probably evaluate these
+polymorphically, too?}
 Otherwise, evaluate it monomorphically.
 
 \section{Related Work}
