@@ -24,7 +24,7 @@ import java.util.TreeSet;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.1 1999-09-08 19:30:16 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.2 1999-09-09 05:04:32 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -36,8 +36,9 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	@return <code>Set</code> of <code>HMethod</code>s.
      */
     public Set callableMethods() {
-	return Collections.unmodifiableSet(methods);
+	return _unmod_methods;
     }
+    private Set _unmod_methods = Collections.unmodifiableSet(methods);
 
     /** Returns all usable/reachable children of an <code>HClass</code>. */
     public Set children(HClass c) {
@@ -60,17 +61,19 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 		for (int i=0; i<ch.length; i++)
 		    _classes.add(ch[i]);
 	    }
+	    _classes = Collections.unmodifiableSet(_classes);
 	}
-	return Collections.unmodifiableSet(_classes);
+	return _classes;
     }
     private transient Set _classes = null;
     /** Returns the set of all classes instantiated.
 	(Actually only the list of classes for which an explicit NEW is found;
 	should include list of classes that are automatically created by JVM!) */ 
     public Set instantiatedClasses() {
-	return Collections.unmodifiableSet(instedClasses);
+	return _unmod_insted;
     }
     private Set instedClasses = new HashSet();
+    private Set _unmod_insted = Collections.unmodifiableSet(instedClasses);
 
     /** Returns a human-readable representation of the hierarchy. */
     public String toString() {
