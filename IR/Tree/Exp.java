@@ -11,9 +11,9 @@ import harpoon.Util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Exp.java,v 1.1.2.5 1999-04-05 21:50:44 duncan Exp $
+ * @version $Id: Exp.java,v 1.1.2.6 1999-06-29 05:43:53 cananian Exp $
  */
-abstract public class Exp extends Tree {
+abstract public class Exp extends Tree implements Typed {
     protected Exp(TreeFactory tf, harpoon.ClassFile.HCodeElement source) {
 	super(tf, source);
     }
@@ -31,5 +31,15 @@ abstract public class Exp extends Tree {
     abstract public Exp build(ExpList kids);
     
     public abstract Tree rename(TreeFactory tf, CloningTempMap ctm);
+
+    // Typed interface:
+    /** Result type. */
+    public abstract int type();
+    /** Returns <code>true</code> if the expression corresponds to a
+     *  64-bit value. */
+    public boolean isDoubleWord() { return Type.isDoubleWord(tf, type()); }
+    /** Returns <code>true</code> if the expression corresponds to a
+     *  floating-point value. */
+    public boolean isFloatingPoint() { return Type.isFloatingPoint(type()); }
 }
 

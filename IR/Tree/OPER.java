@@ -11,9 +11,9 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: OPER.java,v 1.1.2.6 1999-02-09 21:54:23 duncan Exp $
+ * @version $Id: OPER.java,v 1.1.2.7 1999-06-29 05:43:53 cananian Exp $
  */
-public abstract class OPER extends Exp implements Typed {
+public abstract class OPER extends Exp {
     /** An enumerated type encoding the operator.
      * @see Bop
      * @see Uop
@@ -36,12 +36,6 @@ public abstract class OPER extends Exp implements Typed {
 
     /** Return result type. */
     public abstract int type();
-    /** Returns <code>true</code> if the expression corresponds to a
-     *  64-bit value. */
-    public boolean isDoubleWord() { return Type.isDoubleWord(tf, type()); }
-    /** Returns <code>true</code> if the expression corresponds to a
-     *  floating-point value. */
-    public boolean isFloatingPoint() { return Type.isFloatingPoint(type()); }
     /** Return type of operands (not necessarily the result type). */
     public int operandType() { return optype; }
 

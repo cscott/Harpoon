@@ -9,9 +9,9 @@ import harpoon.Temp.CloningTempMap;
  *
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: RETURN.java,v 1.1.2.3 1999-06-28 18:49:16 duncan Exp $
+ * @version  $Id: RETURN.java,v 1.1.2.4 1999-06-29 05:43:53 cananian Exp $
  */
-public class RETURN extends Stm {
+public class RETURN extends Stm implements Typed {
     /** The value to return */
     public Exp retval;
   
@@ -37,6 +37,11 @@ public class RETURN extends Stm {
 	return new RETURN(tf, this, (Exp)retval.rename(tf, ctm));
     }
 
+    /** @return the type of the return value expression */
+    public int type() { return retval.type(); }
+    public boolean isDoubleWord() { return retval.isDoubleWord(); }
+    public boolean isFloatingPoint() { return retval.isFloatingPoint(); }
+    
     public String toString() {
 	return "RETURN(#"+retval.getID()+")";
     }

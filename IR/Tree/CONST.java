@@ -11,9 +11,9 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.10 1999-06-28 18:49:16 duncan Exp $
+ * @version $Id: CONST.java,v 1.1.2.11 1999-06-29 05:43:53 cananian Exp $
  */
-public class CONST extends Exp implements Typed {
+public class CONST extends Exp {
     /** The constant value of this <code>CONST</code> expression. */
     public final Number value;
     /** The type of this <code>CONST</code> expression. */
@@ -53,12 +53,6 @@ public class CONST extends Exp implements Typed {
 
     // Typed interface.
     public int type() { return type; }
-    /** Returns <code>true</code> if the expression corresponds to a
-     *  64-bit value. */
-    public boolean isDoubleWord() { return Type.isDoubleWord(tf, type); }
-    /** Returns <code>true</code> if the expression corresponds to a
-     *  floating-point value. */
-    public boolean isFloatingPoint() { return Type.isFloatingPoint(type); }
 
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
