@@ -1,17 +1,21 @@
+# Usage: ./run-corba-with-stats <ATR Pipeline number> <"arguments to be passed into the VM">
+# Note that all arguments to the VM need to be passed in as one big string.
+# Dumps data to ../raw-stats.txt and ../raw-tracker-stats.txt
+
 cd ..
-xterm -title "Name Service" -e java -server -jar ns.jar .jacorb &
+xterm -title "Name Service" -e java $2 -jar ns.jar .jacorb &
 sleep 5
 
 exec 6>&1
 exec > raw-tracker-stats.txt
-java -server -jar trackerStub.jar timer "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb &
+java $2 -jar trackerStub.jar timer "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb &
 exec 1>&6 6>&-
 sleep 5
 
 exec 6>&1
 exec > raw-stats.txt
-java -server -jar ATR.jar timer 2 "LMCO ATR" "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb &
+java $2 -jar ATR.jar timer $1 "LMCO ATR" "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb &
 exec 1>&6 6>&-
 sleep 5
 
-xterm -hold -title "Sending to ATR" -e java -server -jar receiverStub.jar GUI.jar tank.gz 533 1 "LMCO ATR" -ORBInitRef NameService=file:/`pwd`/.jacorb &
+xterm -hold -title "Sending to ATR" -e java $2 -jar receiverStub.jar GUI.jar tank.gz 533 1 "LMCO ATR" -ORBInitRef NameService=file:/`pwd`/.jacorb &
