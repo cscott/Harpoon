@@ -7,9 +7,9 @@ import java.util.Enumeration;
 import java.util.NoSuchElementException;
 
 /**
- * <code>ColorableGraph</code> is an extension of <code>Graph</code>
- * that adds methods that are useful for the purposes of a
- * graph-coloring system.  Two main pieces of state are added:
+ * <code>ColorableGraph</code> extends <code>Graph</code> with methods
+ * that are useful for a graph-coloring system.  Two main pieces of
+ * state are added:  
  * <OL>
  * <LI> A Node -> Color mapping
  * <LI> A stack of "hidden" nodes.
@@ -25,7 +25,7 @@ import java.util.NoSuchElementException;
  * <code>addNode(Object)</code>.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableGraph.java,v 1.1.2.11 2000-07-20 21:05:37 pnkfelix Exp $ */
+ * @version $Id: ColorableGraph.java,v 1.1.2.12 2000-07-25 03:01:02 pnkfelix Exp $ */
 
 public interface ColorableGraph extends Graph {
 
@@ -58,6 +58,25 @@ public interface ColorableGraph extends Graph {
 	public AlreadyHiddenException(String s) { super(s); }
     }
     
+    /** AlreadyColoredException will be thrown on attempt to call
+	<code>g.setColor(node,color)</code> when n is present in the
+	node -> color mapping.
+    */
+    public static class AlreadyColoredException 
+	extends IllegalArgumentException {
+ 	/** The node that was targetted for coloring. */
+	public final Object node;
+
+	public AlreadyColoredException(Object n) { 
+	    super(); 
+	    node = n; 
+	}
+	public AlreadyColoredException(String s, Object n) { 
+	    super(s);
+	    node = n;
+	}
+    }
+
     /** Returns all nodes in graph to their original state.
 	<BR> <B>modifies:</B> <code>this</code>
 	<BR> <B>effects:</B> the Node -> Color mapping 
@@ -76,9 +95,10 @@ public interface ColorableGraph extends Graph {
 	<BR> <B>effects:</B> If <code>c</code> is null, then
 	     removes <code>n</code> from the Node -> Color mapping.
 	     Else puts (n, c) in the Node -> Color mapping.
-        @throws IllegalArgumentException If <code>n</code> is not
-	     present in the node set for <code>this</code> or
-	     <code>n</code> has already been colored.
+        @throws IllegalArgumentException <code>n</code> is not
+	     present in the node set for <code>this</code>.
+	@throws AlreadyColoredException <code>n</code> is already
+	     present in the Node -> Color mapping.
     */
     void setColor(Object n, Color c);
 

@@ -23,6 +23,7 @@ import harpoon.Analysis.GraphColoring.Color;
 import harpoon.Analysis.GraphColoring.ColorableNode;
 import harpoon.Analysis.GraphColoring.ColorFactory;
 import harpoon.Analysis.GraphColoring.SimpleGraphColorer;
+import harpoon.Analysis.GraphColoring.UnboundedGraphColorer;
 import harpoon.Analysis.GraphColoring.SparseGraph;
 import harpoon.Analysis.GraphColoring.SparseNode;
 import harpoon.Analysis.GraphColoring.IllegalEdgeException;
@@ -32,7 +33,7 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * object layout.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.4.3 2000-07-22 01:23:29 pnkfelix Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.4.4 2000-07-25 03:01:19 pnkfelix Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
@@ -70,25 +71,23 @@ public class InterfaceMethodMap extends MethodMap {
 	factory = new HmNodeFactory();
 
         SparseGraph g = assembleGraph( hclasses );
-	SimpleGraphColorer colorer =
-	    new SimpleGraphColorer( new SlotColorFactory() );
+	UnboundedGraphColorer colorer =
+	    new UnboundedGraphColorer(new SimpleGraphColorer(),
+				      new SlotColorFactory() );
 	colorer.findColoring( g );
 	
     }
     /** Creates a <code>InterfaceMethodMap</code> for interfaces in
 	the given <code>ClassHierarchy</code> <code>ch</code>. 
 	<BR> <B>effects:</B> Iterates through the class hierarchy
-	              accumulating all of the interface-methods and
-		      returns a method->int mapping, where the integer
-		      returned represents the placement of the method.
-		      This method is not guaranteed to use any
-		      information besides what is passed to it;
-		      methods from interfaces not in the
-		      class hierarchy are not required to be
-		      included in the method map returned, and
-		      interferences from classes not in
-		      the class hierarchy are not required to be
-		      accounted for.  
+	     accumulating all of the interface-methods and returns a
+	     method->int mapping, where the integer returned
+	     represents the placement of the method.  This method is
+	     not guaranteed to use any information besides what is
+	     passed to it; methods from interfaces not in the class
+	     hierarchy are not required to be included in the method
+	     map returned, and interferences from classes not in 
+	     the class hierarchy are not required to be accounted for.
 	@see HClass
 	@see harpoon.Analysis.ClassHierarchy
 	@see harpoon.Main.CallGraph

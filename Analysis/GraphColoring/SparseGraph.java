@@ -23,10 +23,10 @@ import java.util.Iterator;
  * references <code>SparseNode</code>s store internally.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseGraph.java,v 1.1.2.12 2000-07-22 01:09:04 pnkfelix Exp $ 
+ * @version $Id: SparseGraph.java,v 1.1.2.13 2000-07-25 03:01:02 pnkfelix Exp $ 
  */
 
-public class SparseGraph extends ColorableGraphImpl { // implements ColorableGraph {
+public class SparseGraph extends ColorableGraphImpl implements ColorableGraph {
 
     // List of hidden nodes, so that we may properly check when nodes
     // are unhid.
@@ -202,6 +202,10 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
 
 	hiddenNodes.push( sNode );
 	sNode.setHidden( true );
+
+	// FSK: definition of nodes is loose in terms of
+	// whether node is still present in nodes after being hidden
+	nodes.remove( sNode );
 	
 	Enumeration fromNodes = sNode.getFromNodes(); 
 	while (fromNodes.hasMoreElements()) {
@@ -260,6 +264,9 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
 
 	hiddenNodes.removeElement( sNode );
 	sNode.setHidden( false );
+
+	// FSK: added to match corresponding "remove" in hideNode
+	nodes.add( sNode );
 
 	Enumeration fromNodes = sNode.getFromNodes(); 
 	
@@ -358,6 +365,9 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
     */
     public boolean addNode( Object node ) {
 	try {
+	    if (hiddenNodes.contains(node)) {
+		throw new ColorableGraph.AlreadyHiddenException();
+	    }
 	    if (!nodes.contains(node)) {
 		addNode( (SparseNode) node );
 		return true;
@@ -397,12 +407,12 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
     public void setColor(Object n, Color c) {
 	try {
 	    SparseNode sn = (SparseNode) n;
-
-	    // hack to get around poor spec of SparseNode
-	    sn.setColor(null);
-
 	    sn.setColor(c);
-	} catch (ClassCastException e) { throw new NsnEx(n); }
+	} catch (ClassCastException e) { 
+	    throw new NsnEx(n); 
+    	} catch (NodeAlreadyColoredException e) { 
+	    throw new ColorableGraph.AlreadyColoredException(n);
+	}
     }
 
     /** Returns the color of <code>node</code>.
@@ -451,9 +461,13 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
 		  Returns n. 
     */
     public Object replace() {
-	ColorableNode n = (ColorableNode) hiddenNodes.peek();
-	unhideNode(n);
-	return n;
+	if (hiddenNodes.isEmpty()) {
+	    return null;
+	} else {
+	    ColorableNode n = (ColorableNode) hiddenNodes.peek();
+	    unhideNode(n);
+	    return n;
+	}
     }
 
     /** Replaces all hidden nodes in graph.

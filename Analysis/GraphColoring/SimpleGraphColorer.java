@@ -4,25 +4,94 @@
 package harpoon.Analysis.GraphColoring;
 
 import java.util.List;
+import java.util.Iterator;
+import java.util.Collection;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Vector;
 import java.util.Stack;
 import java.util.Enumeration;
+
+import harpoon.Util.Util;
 
 /**
  * <code>SimpleGraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.9 2000-07-20 21:05:37 pnkfelix Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.10 2000-07-25 03:01:02 pnkfelix Exp $
  */
 
 public class SimpleGraphColorer extends GraphColorer {
 
     private static final boolean DEBUG = false;
 
-    public SimpleGraphColorer(ColorFactory factory) {
-	super(factory);
-    }
+    public SimpleGraphColorer() { }
     
+    public final void color(ColorableGraph graph, List colors) 
+	throws UncolorableGraphException {
+	// System.out.println("entered color("+graph+", "+colors+")");
+
+	boolean moreNodesToHide = false;
+	do {
+	    moreNodesToHide = false;
+	    
+	    // make new copy of nodeSet (can't modify graph and
+	    // iterate over it at same time)
+	    HashSet nodeSet = new HashSet(graph.nodeSet());
+	    Iterator nodes = nodeSet.iterator();
+	    while(nodes.hasNext()) {
+		Object n = nodes.next();
+		if (graph.getDegree( n ) < colors.size() ) {
+		    graph.hide(n);
+		    
+		    // removing n may have made previous nodes in
+		    // the enumeration available to be hidden 
+		    moreNodesToHide = true;
+		}
+	    }
+	} while(moreNodesToHide);
+	
+	// at this point, we are assured that there are no more
+	// nodes to hide.  Either the graph is finished (no nodes
+	// remain) or all nodes present have degree >=
+	// colors.size(), in which case this algorithm can't color
+	// it without more colors.
+	if (!graph.nodeSet().isEmpty()) {
+	    throw new UncolorableGraphException
+		(graph + " could not be colored " + 
+		 "in this manner with " +
+		 colors.size() + " colors.");
+	}
+	
+	for(Object n=graph.replace(); n!=null; n=graph.replace()){
+	    // find color that none of n's neighbors is set to
+	    Collection neighborsC = graph.neighborsOf(n);
+	    Iterator neighbors = neighborsC.iterator();
+	    HashSet nColors = new HashSet(neighborsC.size());
+	    while(neighbors.hasNext()) {
+		Object nb = neighbors.next();
+		nColors.add(graph.getColor(nb));
+	    }
+	    
+	    Color color = null;
+	    for(Iterator cIter = colors.iterator(); cIter.hasNext();){
+		Color col = (Color) cIter.next();
+		if (!nColors.contains(col)) {
+		    color = col;
+		    break;
+		}
+	    }
+	    
+	    // color should be guaranteed to have been assigned at
+	    // this point
+	    Util.assert(color != null);
+
+	    // FSK: hack to get around double coloring restriction
+	    graph.setColor(n, null);	    
+	    graph.setColor(n, color);
+	}
+    }
+
     /** Simple Graph Colorer based on algorithm given in 6.035 lecture
 	( http://ceylon.lcs.mit.edu/6035/lecture18/sld064.htm ).
     */
