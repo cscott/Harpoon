@@ -256,7 +256,7 @@ void FNI_java_lang_Thread_finishMain(JNIEnv *env) {
 #endif
 }
 
-#ifdef WITH_INIT_CHECK
+#if defined(WITH_INIT_CHECK) && defined(WITH_THREADS)
 /* functions for dealing with threads deferred during static initialization */
 static struct deferred_thread_list {
   jobject thread;
@@ -286,4 +286,4 @@ void fni_thread_startDeferredThreads(JNIEnv *env) {
   }
   /* done! */
 }
-#endif /* WITH_INIT_CHECK */
+#endif /* WITH_INIT_CHECK && WITH_THREADS */
