@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.12 2002-07-24 15:34:57 cananian Exp $
+% $Id: ptran.tex,v 1.13 2002-07-24 15:53:49 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -7,7 +7,7 @@
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.12 $ $}
+\date{\today \\ $ $Revision: 1.13 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -60,11 +60,18 @@ g(d) = \left\{ \begin{array}{cl}
 \end{displaymath}
 
 We can then approximate pairwise-singularity by saying $v_1$ at $s_1$
-is pairwise-singular with $v_2$ at $s_2$ if either
-there is no path from $s_1$ to $s_2$ or from $s_2$ to $s_1$, or
-$\text{GenSite}(s_1,v_1) \cap \text{GenSite}(s_2,v_2) = \emptyset $.
+is pairwise-singular with $v_2$ at $s_2$ if
+\begin{displaymath}
+\neg\exists d \in \text{GenSite}(s_1, v_1) \cap \text{GenSite}(s_2, v_2)
+     : \text{Path}_{\mathcal{G}-d}(s_1, s_2) \vee
+       \text{Path}_{\mathcal{G}-d}(s_2, s_1)
+\end{displaymath}
+where $\text{Path}_{\mathcal{G}-z}(x, y)$ is true iff there is a path
+from $x$ to $y$ in directed control-flow graph $\mathcal{G}$ which
+does not pass through $z$.
 An infeasible path analysis \cite{267921} could be used to refine
-the path criterion.
+this predicate by excluding paths never traversed by any
+execution of the program.
 
 \subsection{Intraprocedural singular value analysis}
 
