@@ -1,4 +1,5 @@
 // Display.java, created by wbeebee
+//               modified by benster
 // Copyright (C) 2003 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package imagerec.graph;
@@ -251,5 +252,12 @@ public class Display extends Node {
     public static void setDefaultSize(int width, int height) {
 	defaultWidth = width;
 	defaultHeight = height;
+    }
+
+    /**
+       Returns the AWT Frame contained by this {@link Display} node.
+     */
+    Frame getFrame() {
+	return this.frame;
     }
 }
