@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.103 1999-11-07 00:49:51 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.104 1999-11-11 22:11:19 cananian Exp $
  */
 %%
 
@@ -647,9 +647,9 @@ BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
      * for ___nedf2, but are reversed from what you'd expect for
      * ___eqdf2.  So we use the ___nedf2 routine here. */
     emit ( ROOT, "mov `d0, `s0l", r0, j);
-    emit ( ROOT, "mov `d1, `s0h", r1, j);
-    emit ( ROOT, "mov `d2, `s0l", r2, k);
-    emit ( ROOT, "mov `d3, `s0h", r3, k);
+    emit ( ROOT, "mov `d0, `s0h", r1, j);
+    emit ( ROOT, "mov `d0, `s0l", r2, k);
+    emit ( ROOT, "mov `d0, `s0h", r3, k);
     emit2( ROOT, "bl ___nedf2",
 	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
     // don't move these into seperate Instrs; there's an implicit
@@ -700,9 +700,9 @@ BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 
     emit ( ROOT, "mov `d0, `s0l", r0, j);
-    emit ( ROOT, "mov `d1, `s0h", r1, j);
-    emit ( ROOT, "mov `d2, `s0l", r2, k);
-    emit ( ROOT, "mov `d3, `s0h", r3, k);
+    emit ( ROOT, "mov `d0, `s0h", r1, j);
+    emit ( ROOT, "mov `d0, `s0l", r2, k);
+    emit ( ROOT, "mov `d0, `s0h", r3, k);
     emit2( ROOT, "bl ___gtdf2",
 	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
     // don't move these into seperate Instrs; there's an implicit
@@ -754,9 +754,9 @@ BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     /* result from ___ge is inverted. */
     emit ( ROOT, "mov `d0, `s0l", r0, j);
-    emit ( ROOT, "mov `d1, `s0h", r1, j);
-    emit ( ROOT, "mov `d2, `s0l", r2, k);
-    emit ( ROOT, "mov `d3, `s0h", r3, k);
+    emit ( ROOT, "mov `d0, `s0h", r1, j);
+    emit ( ROOT, "mov `d0, `s0l", r2, k);
+    emit ( ROOT, "mov `d0, `s0h", r3, k);
     emit2( ROOT, "bl ___gedf2",
 	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
     // don't move these into seperate Instrs; there's an implicit
@@ -808,9 +808,9 @@ BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     /* result from ___le is inverted. */
     emit ( ROOT, "mov `d0, `s0l", r0, j);
-    emit ( ROOT, "mov `d1, `s0h", r1, j);
-    emit ( ROOT, "mov `d2, `s0l", r2, k);
-    emit ( ROOT, "mov `d3, `s0h", r3, k);
+    emit ( ROOT, "mov `d0, `s0h", r1, j);
+    emit ( ROOT, "mov `d0, `s0l", r2, k);
+    emit ( ROOT, "mov `d0, `s0h", r3, k);
     emit2( ROOT, "bl ___ledf2",
 	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
     // don't move these into seperate Instrs; there's an implicit
@@ -861,9 +861,9 @@ BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 
     emit ( ROOT, "mov `d0, `s0l", r0, j);
-    emit ( ROOT, "mov `d1, `s0h", r1, j);
-    emit ( ROOT, "mov `d2, `s0l", r2, k);
-    emit ( ROOT, "mov `d3, `s0h", r3, k);
+    emit ( ROOT, "mov `d0, `s0h", r1, j);
+    emit ( ROOT, "mov `d0, `s0l", r2, k);
+    emit ( ROOT, "mov `d0, `s0h", r3, k);
     emit2( ROOT, "bl ___ltdf2",
 	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
     // don't move these into seperate Instrs; there's an implicit
