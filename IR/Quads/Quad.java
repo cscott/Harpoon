@@ -16,12 +16,12 @@ import java.util.Hashtable;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.16 1999-02-12 21:43:51 pnkfelix Exp $
+ * @version $Id: Quad.java,v 1.1.2.17 1999-02-24 22:50:22 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
                harpoon.IR.Properties.UseDef, harpoon.IR.Properties.Edges,
-               Cloneable
+               Cloneable, Comparable
 {
     /*final*/ QuadFactory qf;
     /*final*/ String source_file;
@@ -214,6 +214,14 @@ public abstract class Quad
 	    if (((HANDLER)ql[i]).isProtected(this))
 		hs=new HandlerSet((HANDLER)ql[i], hs);
 	return hs;
+    }
+    //-----------------------------------------------------
+    // Comparable interface.
+    public int compareTo(Object o) {
+	int cmp = ((Quad)o).getID() - this.getID();
+	if (cmp==0 && !this.equals(o))
+	    throw new ClassCastException("Comparing uncomparable Quads.");
+	return cmp;
     }
     //-----------------------------------------------------
     // support cloning.  The pred/succ quads are not cloned, but the
