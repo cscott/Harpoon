@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * reference is <code>null</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.24 1998-10-11 03:01:17 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.25 1998-10-12 00:53:55 cananian Exp $ 
  */
 
 public class CALL extends Quad {
@@ -89,7 +89,7 @@ public class CALL extends Quad {
 	}
     }
     /** Returns all the Temps defined by this Quad. 
-     * @return retval, if retval!=null; else a zero-length array.
+     * @return { retval, retex }, if retval!=null; else { retex }
      */
     public Temp[] def() {
 	if (retval==null) return new Temp[] { retex };
