@@ -8,11 +8,12 @@ all: $(ALLDOCS:=.ps)
 preview: pldi99-xdvi
 
 # bibtex dependencies
+thesis.dvi: harpoon.bib
 quads.dvi: harpoon.bib
 design.dvi: harpoon.bib
 bibnote.dvi: harpoon_.bib
 readnote.dvi: unread_.bib
-# lots dependencies for the pldi paper
+# lots of dependencies for the pldi paper
 pldi99.dvi: harpoon.bib pldi99-intro.tex pldi99-abstract.tex pldi99-tech.tex
 
 # Tex rules. [have to add explicit dependencies on appropriate bibtex files.]
