@@ -9,11 +9,14 @@ package harpoon.ClassFile;
  * @see HMethod#getMutator
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodMutator.java,v 1.2 2002-02-25 21:03:04 cananian Exp $
+ * @version $Id: HMethodMutator.java,v 1.3 2003-03-17 05:43:37 salcianu Exp $
  */
 public interface HMethodMutator {
+    /** @see java.lang.reflect.Modifier */
     public void addModifiers(int m);
+    /** @see java.lang.reflect.Modifier */
     public void setModifiers(int m);
+    /** @see java.lang.reflect.Modifier */
     public void removeModifiers(int m);
 
     public void setReturnType(HClass returnType);
