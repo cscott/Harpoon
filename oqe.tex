@@ -1,4 +1,4 @@
-% CVSId: $Id: oqe.tex,v 1.8 2002-05-03 03:13:55 cananian Exp $
+% CVSId: $Id: oqe.tex,v 1.9 2002-05-04 05:44:13 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -89,6 +89,10 @@ Applying transformations to reduce the memory consumption of the program.
 \end{slide}
 
 \begin{talknotes}
+This talk is about size optimizations for Java programs.  Our goal is
+to reduce the amount of memory used by object-oriented programs (in
+this case, Java) by using static whole-program analyses to identify
+opportunities and applying transformations to effect the reduction.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -102,19 +106,42 @@ Applying transformations to reduce the memory consumption of the program.
 \end{slide}
 
 \begin{talknotes}
+Here's our starting point.  This is how most Java implementations lay
+out objects.  I want you to notice that there are three kinds of space
+in this layout, helpfully delineated with red lines.  The first
+section of the object usually consists of information required by
+the runtime implementation but not directly specified by the
+programmer.  This includes a claz pointer, which points to an
+external structure of information about the object's type, and
+some information to support the hashcode and locking semantics of
+Java.  Every object has a hashcode and can be locked upon, etc, etc.
+The second section of the object contains the fields declared by
+the programmer.  If this were a car object, these fields might
+indicate the color and model of the car.  The last section
+consists of padding which the runtime implementation will
+add to bring the object's size to some alignment boundary, typically
+word-size.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
+\overlays{2}{
 \begin{slide}{Strategy}
+\fromSlide{2}{
 \begin{center}
 Push hard on all the bits.
 
 \vspace{0.5cm}
 \includegraphics[scale=0.5]{Figures/Kontour/strategy-bbox.eps}
 \end{center}
+}
 \end{slide}
+}
 
 \begin{talknotes}
+Our strategy is simple: @ we're going to push hard on all the bits,
+in the object header, in the fields of the object, and even on the
+padding bytes, in order to reduce the size of each object and thus
+the total allocated and live memory of the program.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -122,35 +149,41 @@ Push hard on all the bits.
 \newrgbcolor{fieldelim}{0 1 1}
 \newrgbcolor{headeropt}{1 0 0}
 
-\overlays{3}{
+\overlays{4}{
 \begin{slide}{How to compress objects}
 
 Three broad techniques:
 %
 \parbox[b]{2.5in}{%
+\fromSlide{2}{
 \begin{itemize}%
 \fieldcomp\renewcommand{\green}{\fieldcomp}% new bullet color
 \item Field compression
-\fromSlide{2}{
+\fromSlide{3}{
 \fieldelim\renewcommand{\green}{\fieldelim}% new bullet color
 \item Mostly-constant field elimination
-\fromSlide{3}{
+\fromSlide{4}{
 \headeropt\renewcommand{\green}{\headeropt}% new bullet color
 \item Header optimizations
 }}
 \renewcommand{\green}{\yellow} % restore yellow bullet color
 \end{itemize}
-}%
+}}%
 \parbox[b]{1.75in}{%
-\onlySlide*{1}{\hspace*{0.106in}\hspace*{0.261in}\includegraphics[scale=0.4]{Figures/Kontour/how-fieldcomp-bbox.eps}}%
-\onlySlide*{2}{\hspace*{0.106in}\includegraphics[scale=0.4]{Figures/Kontour/how-fieldelim-bbox.eps}}%
-\onlySlide*{3}{\includegraphics[scale=0.4]{Figures/Kontour/how-header-bbox.eps}}%
+\onlySlide*{1}{\hspace*{0.106in}\hspace*{0.261in}\includegraphics[scale=0.4]{Figures/Kontour/how-none-bbox.eps}}%
+\onlySlide*{2}{\hspace*{0.106in}\hspace*{0.261in}\includegraphics[scale=0.4]{Figures/Kontour/how-fieldcomp-bbox.eps}}%
+\onlySlide*{3}{\hspace*{0.106in}\includegraphics[scale=0.4]{Figures/Kontour/how-fieldelim-bbox.eps}}%
+\onlySlide*{4}{\includegraphics[scale=0.4]{Figures/Kontour/how-header-bbox.eps}}%
 }%
 
 \end{slide}
 }
 
 \begin{talknotes}
+There are three broad techniques we are going to use to effect our
+size reductions: @ field compression, @ mostly-constant field
+elimination, and @ header optimizations.  We will look at each
+of these in order, starting with\ldots
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -175,82 +208,67 @@ Three broad techniques:
 \end{slide}
 
 \begin{talknotes}
+\ldots field compression.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{3}{
+\overlays{6}{
 \begin{slide}{Field Compression}
 Reduce the space taken up by an object's fields.
-\fromSlide{2}{
 \begin{itemize}
+\fromSlide{2}{
+\item \bp{\yellow SCC analysis} to discover unread/unused/constant
+  fields.
+\fromSlide{4}{
 \item \bp{\yellow Bitwidth analysis} to discover tight upper bounds on
   field size.
-\fromSlide{3}{
+\fromSlide{6}{
 \item \bp{\yellow Field packing} into bytes or bits.
-}
-\end{itemize}
-}
-\end{slide}
-}
-
-\begin{talknotes}
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
-\overlays{3}{
-\begin{slide}{Bitwidth analysis}
-Motivation:
-\begin{itemize}
-\item Tedious and error-prone for programmer to manually specify
-  widths.
+}}}
 \end{itemize}
 
-\begin{tabular}{lll}%
-%\hspace*{0in}&% spacing
-\parbox[t]{1.3in}{\small\bfseries\begin{samplecode}%
-\onlySlide*{3}{\pnode{tlx}}%
-struct foo \{\\
-\>int x:24;\\
-\>int y:5;\\
-\>int z:1;\\
-\};\\
-\onlySlide*{3}{\pnode{blx}}~
-\end{samplecode}
-}&%
-\parbox[t]{1.3in}{\fromSlide{2}{
+\framebox{\parbox{2in}{%
 \small\bfseries\begin{samplecode}%
-void foo() \{\\
-\>int x:24;\\
-\>int y:5;\\
-\>int z:1;\\
-\>\ldots\\
-\}%
-\end{samplecode}
-}}&%
-\parbox[t]{1.3in}{\fromSlide{3}{\small\bfseries\yellow\begin{samplecode}%
-\pnode{trx}%
-void foo() \{\\
-\>int x, y, z;\\
-\>\\
+class Car \{\\
+\>int color;\\
 \>\ldots\\
 \}\\
-\pnode{brx}%
-~
-\end{samplecode}
-}}\\
-\end{tabular}
-
-\fromSlide{3}{
-\begin{itemize}
-\item The compiler can do it for us!
-\end{itemize}
-\ncline[linecolor=red,linewidth=3pt]{tlx}{brx}%
-\ncline[linecolor=red,linewidth=3pt]{blx}{trx}%
+\end{samplecode}%
+}%
+\parbox{3in}{%
+\fromSlide{3}{\includegraphics[height=.8in]{Figures/Images/model-t-black.eps}}
+\fromSlide{5}{\includegraphics[height=.8in]{Figures/Images/model-t-redblue.eps}}\\
+\tt\bfseries%
+~\fromSlide{3}{{\black BLACK=0}}%
+~\fromSlide{5}{{\red RED=1}~{\blue BLUE=2}}
+}%
 }
+
 \end{slide}
 }
 
 \begin{talknotes}
+Field compression targets the space directly allocated by the
+programmer.  In the sample class at the bottom of the slide, we
+define an object representing cars.  It's first field is a color,
+and it is declared an integer which allows the enumeration of up
+to $2^32$ different colors of cars.
+%
+@ The first analysis we do is a standard sparse conditional constant
+propagation pass over the whole program to identify unused, unread,
+or constant fields.  @ Suppose we're building Ford Model-T's.
+Since they only come in black, this field will be constant and
+can be removed.
+%
+@ The novel contribution is the next step, bitwidth analysis, which discovers
+tigher upper bounds on field sizes.  @  Actually, Model-T's were
+produced in several different colors before Ford started
+mass-production.  Our bitwidth analysis could determine that
+we really only need two bits to store colors, since our program
+only ever stores three different colors in a Car.
+%
+@ After we perform the analysis, we use the results to pack the fields
+more tightly together.  We will return to this step later.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -343,6 +361,8 @@ element indicating whether zero is a possible value has been omitted.
 \end{slide}
 
 \begin{talknotes}
+Our discussion earlier may have implied that padding took place only
+at the end of an object.  That is not correct. \ldots
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -375,21 +395,21 @@ Three broad techniques:
 \begin{itemize}
  \item It's easy to remove {\yellow constant} fields.
  \fromSlide{2}{
- \item Key idea: remove {\yellow mostly} constant fields.
+ \item Key idea: remove \textit{\yellow mostly} constant fields.
  \fromSlide{3}{
  \begin{itemize}
   \item \bp{\yellow Identify} fields which have a certain value ``most of
         the time.''
   \fromSlide{4}{
   \begin{itemize}
-   \item Static analysis/Profiling
+   \item \small Static analysis/profiling.
   \end{itemize}
   \fromSlide{5}{
   \item \bp{\yellow Transform} objects to remove fields w/ the common
         value.
   \fromSlide{6}{
   \begin{itemize}
-   \item Static specialization/externalization.
+   \item \small Static specialization/externalization.
   \end{itemize}
   }}}
  \end{itemize}
@@ -533,8 +553,8 @@ else\\
 \begin{slide}{Creating external fields}
 \vspace{1cm}
 \begin{itemize}
- \item Sometimes fields are {\yellow run-time} constants (or nearly so)
-      but not {\yellow compile-time} constants.
+ \item Sometimes fields are \textit{\yellow run-time} constants (or nearly so)
+      but not \textit{\yellow compile-time} constants.
  \begin{itemize}
   \item Examples: sparse matrices, ``two-input nodes'' in Jess expert
         system, the ``next'' field in short linked lists.
@@ -554,7 +574,7 @@ else\\
 \item Accessing an object field {\tt a.b} (where {\tt a} is the object
   reference and {\tt b} is the field name) is equivalent to evaluating
   a map from \tuple{a, b} to the value type.
-\item The mapping we will implement will be {\yellow incomplete}.  We
+\item The mapping we will implement will be \textit{\yellow incomplete}.  We
   define the result of accessing a non-existing mapping to be $\bot$.
 \item To achieve our storage savings, we map $\bot$ to the frequent
   ``mostly-constant'' value.
@@ -823,6 +843,66 @@ Class statistics for applications in SPECjvm98 benchmark suite:
 \includegraphics[scale=0.45]{Figures/spec-space-2.eps}
 \end{center}
 \end{slide}
+
+\begin{talknotes}
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Bitwidth analysis}
+Motivation:
+\begin{itemize}
+\item Tedious and error-prone for programmer to manually specify
+  widths.
+\end{itemize}
+
+\begin{tabular}{lll}%
+%\hspace*{0in}&% spacing
+\parbox[t]{1.3in}{\small\bfseries\begin{samplecode}%
+\onlySlide*{3}{\pnode{tlx}}%
+struct foo \{\\
+\>int x:24;\\
+\>int y:5;\\
+\>int z:1;\\
+\};\\
+\onlySlide*{3}{\pnode{blx}}~
+\end{samplecode}
+}&%
+\parbox[t]{1.3in}{\fromSlide{2}{
+\small\bfseries\begin{samplecode}%
+void foo() \{\\
+\>int x:24;\\
+\>int y:5;\\
+\>int z:1;\\
+\>\ldots\\
+\}%
+\end{samplecode}
+}}&%
+\parbox[t]{1.3in}{\fromSlide{3}{\small\bfseries\yellow\begin{samplecode}%
+\pnode{trx}%
+void foo() \{\\
+\>int x, y, z;\\
+\>\\
+\>\ldots\\
+\}\\
+\pnode{brx}%
+~
+\end{samplecode}
+}}\\
+\end{tabular}
+
+\fromSlide{3}{
+\begin{itemize}
+\item The compiler can do it for us!
+\end{itemize}
+\ncline[linecolor=red,linewidth=3pt]{tlx}{brx}%
+\ncline[linecolor=red,linewidth=3pt]{blx}{trx}%
+}
+\end{slide}
+}
+
+\begin{talknotes}
+\end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
 %\begin{slide}{Title here}
