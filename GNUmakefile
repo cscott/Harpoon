@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.67 1999-09-14 08:55:16 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.68 1999-09-15 05:15:52 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -60,6 +60,9 @@ ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
 		egrep -v "^[.]/java_cup" | \
 		sed -e "s|^[.]/*||")
 
+SCRIPTS := bin/test-collections bin/annotate.perl $(MUNGE) $(UNMUNGE) \
+	   bin/source-markup.perl bin/cvsblame.pl
+
 MACHINE_SRC := Tools/PatMat/Lexer.jlex Tools/PatMat/Parser.cup \
                Tools/Annotation/Java12.cup
 MACHINE_GEN := Tools/PatMat/Lexer.java Tools/PatMat/Parser.java \
@@ -93,7 +96,7 @@ PKGSWITHJAVASRC := $(shell ls  $(filter-out GNUmakefile,$(TARSOURCE))  | \
 endif
 # list all the definitions in the above block for export to children.
 export BUILD_IGNORE ALLPKGS MACHINE_SRC MACHINE_GEN CGSPECS CGJAVA
-export ALLSOURCE TARSOURCE JARPKGS PROPERTIES PKGDESC
+export SCRIPTS ALLSOURCE TARSOURCE JARPKGS PROPERTIES PKGDESC
 export NONEMPTYPKGS PKGSWITHJAVASRC
 
 all:	java
@@ -249,8 +252,8 @@ Tools/PatMat/Sym.java : Tools/PatMat/Parser.java
 	xvcg -psoutput $@ -paper 8x11 -color $(VCG_OPT) $<
 	@echo "" # xvcg has a nasty habit of forgetting the last newline.
 
-harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) Support/NullCodeGen.template bin/test-collections bin/annotate.perl $(MUNGE) $(UNMUNGE) mark-executable
-	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) Support/NullCodeGen.template bin/test-collections bin/annotate.perl $(MUNGE) $(UNMUNGE)
+harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) Support/NullCodeGen.template $(SCRIPTS) mark-executable
+	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) Support/NullCodeGen.template $(SCRIPTS)
 	date '+%-d-%b-%Y at %r %Z.' > harpoon.tgz.TIMESTAMP
 
 tar:	harpoon.tgz harpoon.tgz.TIMESTAMP
