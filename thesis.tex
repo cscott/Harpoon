@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.32 1999-06-12 19:42:52 cananian Exp $
+% $Id: thesis.tex,v 1.33 1999-06-12 21:34:52 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.32 $ $}
+\date{\today \\ $ $Revision: 1.33 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.32 $ $}{$ $Revision: 1.32 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.33 $ $}{$ $Revision: 1.33 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -499,6 +499,33 @@ We get this for free in our compiler framework.  There's also an
 $O(E+N^2)$ algorithm.  I hope to do better using the properties of the
 PST.  I want an $O(EV)$ algorithm, which means solving the
 one-variable case in $O(E)$.  Argh.
+
+\subsubsection{Discussion}
+Note that our algorithm for constructing SSI form is
+\emph{optimistic}; that is, we at first assume every node in the
+control-flow graph with input arity larger than one requires a
+\phifunction{} for every variable and every node with out-arity larger
+than one requires a \sigfunction{} for every variable, and then use
+the PST and liveness information to determine safe places to
+\emph{omit} $\phi$- or \sigfunction{s}.  Most SSA construction
+algorithms, by contrast, are \emph{pessimistic}; they assume no
+$\phi$- or \sigfunction{s} are needed and attempt to determine where
+they are necessary.  In my experience, pessimistic algorithms tend to
+have poor time bounds because of the possibility of input graphs like
+figure~\ref{fig:evil}.  Proving that all but two nodes require $\phi$-
+and/or \sigfunction{s} for $a$ in this example seems to inherently
+require $O(N)$ passes over the graph; the \phifunction{s} ``spread''
+one node left from the circled node on each pass.  On the other hand,
+an optimistic algorithm assumes the correct answer at the start, fails
+to show that any $\phi$- or \sigfunction{s} can be removed, and
+terminates in one pass.\fixme{Are we \emph{sure} similar worst cases
+don't exist for the optimistic algorithm?}
+
+\begin{myfigure}\small
+\centering\input{Figures/evil}
+\caption{A worst-case CFG for ``pessimistic'' algorithms.}
+\label{fig:evil}
+\end{myfigure}
 
 \subsection{Uses and applications}
 \textbf{Discuss predicated analysis, anticipatibility, PRE, etc.}%

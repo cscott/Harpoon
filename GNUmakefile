@@ -28,7 +28,7 @@ thesis.dvi: Figures/THex1base.tex \
 	Figures/THundir.tex \
 	Figures/THcqdata.tex Figures/THcqalg.tex Figures/THcqex.tex \
 	Figures/THsesedata.tex Figures/THsesealg.tex Figures/THseseex.tex \
-	Figures/THpst.tex
+	Figures/THpst.tex Figures/evil.tex
 # thesis figure rules
 Figures/%: always
 	$(MAKE) -C Figures $(notdir $@)
