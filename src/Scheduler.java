@@ -63,8 +63,8 @@ public abstract class Scheduler {
      */
     public static Scheduler getDefaultScheduler() {
 	if (defaultScheduler == null) {
-//	    setDefaultScheduler(PreAllocRoundRobinScheduler.instance());
-	    setDefaultScheduler(NativeScheduler.instance());
+	    setDefaultScheduler(RMAScheduler.instance());
+//	    setDefaultScheduler(NativeScheduler.instance());
 	    return getDefaultScheduler();
 	}
 	return defaultScheduler;
@@ -191,7 +191,9 @@ public abstract class Scheduler {
     protected final native void setQuanta(long microsecs);
 
     /** Force a context switch at the earliest legal time */
-    protected final native void contextSwitch();
+    protected final void contextSwitch() {
+	setQuanta(1);
+    }
 
     /** Turns on/off timed thread switching */
     protected final native void setTimer(boolean state);
@@ -217,6 +219,10 @@ public abstract class Scheduler {
      *  with the Real-Time NET development kit.
      */
     protected final native boolean reserveNET(long bytes, long transfer, long period, long begin);
+
+    /** Sleep the process for the given number of microseconds.
+     */
+    protected final native void sleep(long microsecs);
 
     /** This is the list of handlers that can be registered with a new scheduler to
 	intercept events.  When these run out, register multiplexer events and send messages. */
