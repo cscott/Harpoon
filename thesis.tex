@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.22 1999-06-11 16:27:05 cananian Exp $
+% $Id: thesis.tex,v 1.23 1999-06-11 16:33:10 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.22 $ $}
+\date{\today \\ $ $Revision: 1.23 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.22 $ $}{$ $Revision: 1.22 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.23 $ $}{$ $Revision: 1.23 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -393,103 +393,13 @@ and \cite{johnson94:pst}.}
 \end{myfigure}
 
 \begin{myfigure}\small
-Data type \texttt{BracketList}:
-\begin{tightdesc}
-\item[create():~BracketList]
-:	Make an empty BracketList structure
-\item[size(bl:BracketList):~integer]
-:	Number of elements in BracketList structure
-\item[push(bl:BracketList,~e:bracket):~BracketList]
-:	Push \textbf{e} on top of \textbf{bl}
-\item[top(bl:BracketList):~bracket]
-:	Topmost bracket in \textbf{bl}
-\item[delete(bl:BracketList,~e:bracket):~BracketList]
-:	Delete \textbf{e} from \textbf{bl}
-\item[concat(bl1,bl2:BracketList):~BracketList]
-:	Concatenate \textbf{bl1} and \textbf{bl2}
-\end{tightdesc}
-
-Operations on nodes:
-\begin{tightdesc}
-\item[Number(n:node):~integer]
-:	DFS preorder number of node
-\item[Class(n:node):~integer]
-:	Cycle-equivalency class of node
-\item[BList(n:node):~BracketList]
-:	List of brackets of node
-\item[Hi(n:node):~integer]
-:	Highest destination node of any edge originating from a
-	descendant of node \textbf{n}
-\end{tightdesc}
-
-Operations on edges:
-\begin{tightdesc}
-\item[Class(e:node):~integer]
-:	Cycle-equivalency class of edge
-\item[RecentSize(e:edge):~integer]
-:	Size of bracket set when \textbf{e} was most recently the
-	topmost bracket for a representative node
-\item[RecentClass(e:edge):~integer]
-:	Cycle-equivalency class number of representative node for
-	which \textbf{e} was most recently the topmost bracket.
-\end{tightdesc}
+\input{Figures/THcqdata}
 \caption{Datatypes and operation`s used in the cycle-equivalency algorithm.}
 \label{fig:CQtypes}
 \end{myfigure}
 
 \begin{myfigure}\small\linespread{0.75}
-\begin{verbatim}
-Procedure cycle_equiv (G: CFG)
-{
-  /* Preprocessing */
-  G' := Preprocess (G); /* described in text */
-
-  /* Compute CD equivalence classes */
-  for each node n of G', in reverse depth-first order, do {
-    /* Compute Hi(n) */
-    /*  hi0 is highest using backedges only */
-    hi0 := min{ Number(t) | (t,n) is a backedge };
-    /*  hi1 is highest through children */
-    hi1 := min{ Hi(c) | c is a child of n };
-|   /*  hi2 is lowest through children */
-|   hi2 := max{ Hi(c) | c is a child of n };
-
-    Hi(n) := min{ hi0, hi1 };
-
-    /* Compute BList(n) */
-    BList(n) := create ();
-
-    for each child c of n, do
-      BList(n) := concat (BList(n), BList(c));
-
-    for each backedge <d, n> from a descendant d of n to n, do
-      BList(n) := delete (BList(n), <d, n>);
-|   for each capping backedge <d, n> of n, do
-|     BList(n) := delete (BList(n), <d, n>);
-
-    for each backedge <n, a> from n to an ancestor a of n, do {
-      BList(n) := push (BList(n), <n, a>)
-      RecentSize(<n, a>) := -1; /* not a representative node */
-    }
-
-    if n has more than one child, then {
-      BList(n) := push (BList(n), <n, hi2>); /* capping backedge */
-|     RecentSize(<n, hi2>) := -1;
-|     add <n, hi2> to capping backedges list of hi2;
-    }
-
-    /* Compute Class (n) */
-    if n is a representative node, then {
-      if RecentSize (top (BList(n))) != size (BList(n)), then {
-        /* start a new equivalence class */
-        RecentSize (top (BList(n))) := size (BList(n));
-        RecentClass (top (BList(n))) := new-class-name();
-      }
-      Class (n) := RecentClass (top (Blist(n)));
-    }
-  } /* for each node */
-}
-\end{verbatim}
+\input{Figures/THcqalg}
 \caption{The cycle-equivalency algorithm
 	 (corrected from \cite{johnson93:sese}).}
 \label{fig:CQalg}
