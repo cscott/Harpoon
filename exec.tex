@@ -1,7 +1,8 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: exec.tex,v 1.3 1999-04-29 18:45:57 cananian Exp $
+% $Id: exec.tex,v 1.4 1999-04-30 05:01:19 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage,twoside]{article}
+\usepackage{latexsym}
 
 % A breaking non-space for URLs
 \newcommand{\bnsp}{\hspace{0pt}}
@@ -15,6 +16,17 @@
 l|l|l|l|l\or l|l|l|l|l|l\fi}%
 \begin{center}\tt\begin{tabular}{\ells{#1}}}
   {\end{tabular}\end{center}}
+% math abbreviations
+\newenvironment{transitions}{
+ \newcommand{\isdef}[1]{\ensuremath{##1\:\mbox{defined}}}
+ \newcommand{\notdef}[1]{\ensuremath{##1\:\mbox{undefined}}}
+% \newcommand{\isdef}[1]{\ensuremath{##1\succ\bot}}
+% \newcommand{\notdef}[1]{\ensuremath{##1=\bot}}
+ \newcommand{\trule}[2]{\ensuremath{\displaystyle\frac{##1}{##2}}}
+ \renewcommand{\arraystretch}{2.5}
+ \newcommand{\myarray}[2]{\renewcommand{\arraystretch}{1}\begin{array}{##1}##2\end{array}\renewcommand{\arraystretch}{2.5}}
+ \begin{center}\begin{math}\begin{array}{lc}}
+{\end{array}\end{math}\end{center}\renewcommand{\arraystretch}{1}}
 
 % phi and sigma functions
 \newcommand{\phifunction}{$\phi$-function}
@@ -33,7 +45,7 @@ l|l|l|l|l\or l|l|l|l|l|l\fi}%
 
 \title{Executability in the Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.3 $ $}
+\date{\today \\ $ $Revision: 1.4 $ $}
 
 \begin{document}
 \bibliographystyle{plain}
@@ -174,25 +186,62 @@ event-driven semantics, which (incidentally) correspond to synchronous
 and asynchronous hardware models.
 
 \subsection{Cycle-oriented semantics}
-
 \begin{figure}[t]
-\begin{center}\begin{tabular}{lc}
-$t =\phi(t_1, t_2)$: & foo\\
-\end{tabular}\end{center}
-\caption{Cycle-oriented transition rules for \ssiplus}
+\begin{transitions}
+t=c,\,c\:\mbox{a constant}:
+& \trule{\rho_i[t]=\bot}{\rho_i \to \rho_i[t \mapsto c]} \\
+t=\mathbf{op}(t_1,\ldots,t_n):
+& \trule{\rho_i[t]=\bot \wedge \bigwedge_{j=1}^n \rho_i[t_j]\succ\bot}
+        {\rho_i \to \rho_i[t \mapsto \mathbf{op}(\rho_i[t_1],\ldots,\rho_i[t_n])]} \\
+t=\phi(t_1,\ldots,t_n):
+& \trule{\rho_i[t_j]\succ\bot \wedge \mbox{all other}\,\rho_i[t_1],\ldots,\rho_i[t_n]=\bot}
+        {\rho_i \to \rho_i[t \mapsto \rho_i[t_j]]} \\
+\tuple{t_1,\ldots,t_n}=\sigma(P,t):
+& \trule{\rho_i[P]\succ\bot \wedge \rho_i[t]\succ\bot \wedge (0\leq P\leq n-1)}
+        {\rho_i \to \rho_i[t_{P-1} \mapsto \rho_i[t]]} \\
+\xivec{t_1,\ldots,t_n}{t_{n+1},\ldots,t_{m}}=\xi(\xivec{t'_1,\ldots,t'_n}{t'_{n+1},\ldots,t'_m}):
+& \trule{\bigwedge_{j=1}^m \rho_i[t'_j]\succ\bot}{\rho_{i+1} \to \rho_{i+1}[t_1,\ldots,t_m \mapsto \rho_i[t'_1],\ldots,\rho_i[t'_m]]} \\
+\end{transitions}
+\caption{Cycle-oriented transition rules for \ssiplus.}
 \label{fig:cyclesemantics}
 \end{figure}
+See figure \ref{fig:cyclesemantics}.  There is a bug in either the
+first or last rule.
 
 \subsection{Event-driven semantics}
-
 \begin{figure}[t]
-\begin{center}\begin{displaymath}\begin{array}{lc}
-t =\phi(t_1, t_2): &
-\frac{t_2\mbox{ defined }\Delta t,t_1\mbox{ undefined}}{bar}\\
-\end{array}\end{displaymath}\end{center}
-\caption{Event-driven transition rules for \ssiplus}
+\begin{transitions}
+t=c,\,c\:\mbox{a constant}:
+& \myarray{r}{
+  \tuple{E,D,S} \to \tuple{E[t=c],D\cup\{t\},S}\\\mbox{ iff } t\notin D
+  }\\
+t=\mathbf{op}(t_1,\ldots,t_n):
+& \tuple{E[t_1=v_1]\ldots[t_n=v_n],D,S} \to \tuple{E[t=\mathbf{op}(v_1,\ldots,v_n)],D,S}\\
+t=\phi(t_1,\ldots,t_n):
+& \tuple{E[t_i=v],D,S} \to \tuple{E[t=v],D,S}\\
+\tuple{t_1,\ldots,t_n}=\sigma(P,t):
+& \tuple{E[t=v][P=i],D,S} \to \tuple{E[t_i=v],D,S}\\
+\xivec{t_1,\ldots,t_n}{t_{n+1},\ldots,t_m}=\xi(\xivec{t'_1,\ldots,t'_n}{t'_{n+1},\ldots,t'_m}):
+& \myarray{r}{
+  \tuple{E[t'_i=v],D,S} \to \tuple{E[t_i=v],D,S[K\mapsto S[K]\cup\tuple{t_i,v}]}\\
+   \mbox{where }1\le i \le n\\
+%  \mbox{where }K\mbox{ is a unique constant corresponding to}\\
+%  \mbox{this \ssiplus\ statement}\\
+  }\\
+\xivec{t_1,\ldots,t_n}{t_{n+1},\ldots,t_m}=\xi(\xivec{t'_1,\ldots,t'_n}{t'_{n+1},\ldots,t'_m}):
+& \myarray{r}{
+   \tuple{E[t'_{n+1}=v_{n+1}]\ldots[t'_m=v_m],D,S} \to\quad\quad\quad\quad\\
+   \tuple{E[t_1=v_1]\ldots[t_m=v_m],D,S}\\
+%   \mbox{where }S[K]=\bigcup_{i=1}^n \{\tuple{t_i,v_i}\}\\
+   \mbox{where }S[K]=\left\{\tuple{t_1,v_1},\ldots,\tuple{t_n,v_n}\right\}\\
+  }
+\end{transitions}
+\caption{Event-driven transition rules for \ssiplus.  Note the
+unfortunate synchronization in the last rule. $K$ is a
+statement-identifier constant which is unique for each source \xifunction.}
 \label{fig:eventsemantics}
 \end{figure}
+See figure \ref{fig:eventsemantics}.
 
 \section{Hardware correspondence}
 
