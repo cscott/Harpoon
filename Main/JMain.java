@@ -29,7 +29,7 @@ import harpoon.Util.WorkSet;
  * <code>JMain</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JMain.java,v 1.1.2.6 1999-11-17 15:34:56 bdemsky Exp $
+ * @version $Id: JMain.java,v 1.1.2.7 1999-11-17 18:22:16 bdemsky Exp $
  */
 public abstract class JMain extends harpoon.IR.Registration {
 
@@ -38,12 +38,14 @@ public abstract class JMain extends harpoon.IR.Registration {
      *  codeview to use.
      */
     public static void main(String args[]) throws java.io.IOException {
+	boolean minimizemethods=false;
 	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
 
 	HCodeFactory hcf1 = // default code factory.
 	    harpoon.IR.Quads.QuadNoSSA.codeFactory();
+	hcf1=new harpoon.ClassFile.CachingCodeFactory(hcf1);
 	HCodeFactory hcf=harpoon.IR.Quads.QuadSSI.codeFactory(hcf1);
-        hcf=harpoon.IR.Quads.QuadWithTry.codeFactory(hcf1);
+
 	int n=0;  // count # of args/flags processed.
 	for (; n < args.length ; n++) {
 	    if (args[n].startsWith("-pass")) {
@@ -61,9 +63,23 @@ public abstract class JMain extends harpoon.IR.Registration {
 		    throw new Error("Could not open " + filename +
 				    " for statistics: " + e.toString());
 		}
-	    } else break; // no more command-line options.
+	    } else if (args[n].startsWith("-onlycallable")) {
+		minimizemethods=true;
+	    } else if (args[n].startsWith("-help")) {
+		//be nice to users
+		System.out.println("Valid options:");
+		System.out.println("-pass");
+		System.out.println("-stat/-stat:filename");
+		System.out.println("-onlycallable");
+		System.exit(0);
+	    }
+	    else break; // no more command-line options.
 	}
 	// rest of command-line options are class names.
+
+	//allow some options to work...
+
+        hcf=harpoon.IR.Quads.QuadWithTry.codeFactory(hcf);
 
 	WorkSet todo=new WorkSet();
 	WorkSet todor=new WorkSet(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods());
@@ -106,9 +122,14 @@ public abstract class JMain extends harpoon.IR.Registration {
 	    WorkSet hmo=new WorkSet();
 	    System.out.println(interfaceClasses[i]+":");
 	    for (int ind=0;ind<hm1.length;ind++) {
-		//		if (cm1.contains(hm1[ind])||cm2.contains(hm1[ind])) {
+		//reflection sees a little too commonplace to allow this
+		//sort of thing as a default
+		if (minimizemethods) {
+		    if (cm1.contains(hm1[ind])||cm2.contains(hm1[ind])) {
+			hmo.add(hm1[ind]);
+		    }
+		} else
 		    hmo.add(hm1[ind]);
-		    //}
 	    }
 	    HMethod hm[] = new HMethod[hmo.size()];
 	    Iterator hmiter=hmo.iterator();
@@ -139,8 +160,3 @@ public abstract class JMain extends harpoon.IR.Registration {
 	r.exit(0);
     }
 }
-
-
-
-
-
