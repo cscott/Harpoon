@@ -19,7 +19,7 @@ import java.io.PrintStream;
  * data types.  Input is from named resource files.
  * 
  * @author   <cananian@alumni.princeton.edu>
- * @version $Id: ParseUtil.java,v 1.1.2.1 2000-11-16 07:19:01 cananian Exp $
+ * @version $Id: ParseUtil.java,v 1.1.2.2 2000-11-16 08:08:00 cananian Exp $
  */
 public abstract class ParseUtil {
     /** Reads from the given resource, ignoring '#' comments and blank lines,
@@ -93,11 +93,22 @@ public abstract class ParseUtil {
 	String method = methodName.substring(dot+1, lparen);
 	String classN = methodName.substring(0, dot);
 	HClass hc = parseClass(l, classN);
-	try {
-	    return hc.getMethod(method, desc);
+	if (desc.length()>2) try { // explicit descriptor.
+	    return hc.getDeclaredMethod(method, desc);
 	} catch (NoSuchMethodError ex) {
 	    throw new BadLineException("No method named "+method+" with "+
 				       "descriptor "+desc+" in "+hc);
+	} else { // no descriptor.  hopefully method name is unique.
+	    HMethod[] hm = hc.getDeclaredMethods();
+	    HMethod r = null;
+	    for (int i=0; i<hm.length; i++)
+		if (hm[i].getName().equals(method))
+		    if (r==null) r = hm[i];
+		    else throw new BadLineException("More than one method "+
+						    "named "+method+" in "+hc);
+	    if (r==null) throw new BadLineException("No method named "+method+
+						    " in "+hc);
+	    return r;
 	}
     }
     /** Parse a string as a set.  The string may be surrounded by optional
