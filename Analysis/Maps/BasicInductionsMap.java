@@ -6,7 +6,7 @@ package harpoon.Analysis.Maps;
 import harpoon.Analysis.Loops.Loops;
 import harpoon.ClassFile.HCode;
 
-import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -14,9 +14,9 @@ import java.util.HashMap;
  * <code>Set</code> of basic induction <code>Temp</code>s.
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: BasicInductionsMap.java,v 1.1.2.2 1999-07-01 19:23:00 bdemsky Exp $
+ * @version $Id: BasicInductionsMap.java,v 1.1.2.3 1999-07-01 20:55:03 bdemsky Exp $
  */
 public interface BasicInductionsMap {
     /** Returns a <code>Set</code> of basic induction <code>Temp</code>s. */
-    public HashMap basicInductionsMap(HCode hc, Loops lp);
+    public Map basicInductionsMap(HCode hc, Loops lp);
 }
