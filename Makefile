@@ -120,3 +120,7 @@ needs-cvs:
 run: doc imagerec.jar
 	@echo Running the program...
 	@$(JAVA) -jar imagerec.jar
+
+run-nodoc: imagerec.jar
+	@echo Running the program...
+	@$(JAVA) -jar imagerec.jar
