@@ -21,7 +21,7 @@ import java.util.Hashtable;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.6 1999-07-30 20:41:35 duncan Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.7 1999-07-30 22:15:10 duncan Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
@@ -91,20 +91,15 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 
     // translate to canonical form
     private Tree translate(TreeFactory tf, TreeCode code, Hashtable dT) {
-	CanonicalizingVisitor cv;  // Translates the TreeCode
-	CloningTempMap ctm; // The TempMap used to clone temps in the TreeCode
-	Stm     root;       // The root of the TreeCode to be translated
-	Stm     rootClone;  // A clone of the TreeCode which uses the new tf.
-	TreeMap tm;         // Maps old Tree objects to translated ones
+	CanonicalizingVisitor cv;          // Translates the TreeCode
+	Stm                   rootClone;   // root Tree of codeClone
+	TreeCode              codeClone;   // A clone of code
+	TreeMap               tm;          // maps old trees to x-lated trees
  
-	tm   = new TreeMap();
-	root = (Stm)code.getRootElement();
-	ctm  = new CloningTempMap
-	    (root.getFactory().tempFactory(), tf.tempFactory());
-	
-	// OK, frame is updated.  now clone the tree form
-	rootClone = (Stm)(Tree.clone(tf, ctm, root));
-	cv = new CanonicalizingVisitor(tf, tm, code, dT);
+	tm        = new TreeMap();
+	codeClone = (TreeCode)(code.clone(code.getMethod(), code.getFrame()));
+	rootClone = (Stm)codeClone.getRootElement();
+	cv        = new CanonicalizingVisitor(tf, tm, codeClone, dT);
 
 	// This visitor recursively visits all relevant nodes on its own
 	rootClone.visit(cv);
