@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.37 1998-09-03 06:46:20 cananian Exp $
+ * @version $Id: Translate.java,v 1.38 1998-09-03 19:16:23 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -785,7 +785,6 @@ class Translate  { // not public.
 	    break;
 	    }
 	case Op.GETFIELD:
-	case Op.GETSTATIC:
 	    {
 	    OpField opd = (OpField) in.getOperand(0);
 	    if (isLongDouble(opd.value().getType()))  // 64-bit value.
@@ -795,7 +794,16 @@ class Translate  { // not public.
 	    q = new GET(in, ns.stack[0], opd.value(), s.stack[0]);
 	    break;
 	    }
-
+	case Op.GETSTATIC:
+	    {
+	    OpField opd = (OpField) in.getOperand(0);
+	    if (isLongDouble(opd.value().getType()))  // 64-bit value.
+		ns = s.push(null).push(new Temp());
+	    else // 32-bit value.
+		ns = s.push(new Temp());
+	    q = new GET(in, ns.stack[0], opd.value());
+	    break;
+	    }
 	case Op.IINC:
 	    {
 		OpLocalVariable opd0 = (OpLocalVariable) in.getOperand(0);
@@ -936,7 +944,6 @@ class Translate  { // not public.
 	    ns = s.pop(2); q = null;
 	    break;
 	case Op.PUTFIELD:
-	case Op.PUTSTATIC:
 	    {
 	    OpField opd = (OpField) in.getOperand(0);
 	    if (isLongDouble(opd.value().getType())) { // 64-bit value.
@@ -947,6 +954,16 @@ class Translate  { // not public.
 		ns = s.pop(2);
 		q = new SET(in, opd.value(), s.stack[1], s.stack[0]);
 	    }
+	    break;
+	    }
+	case Op.PUTSTATIC:
+	    {
+	    OpField opd = (OpField) in.getOperand(0);
+	    if (isLongDouble(opd.value().getType())) // 64-bit value.
+		ns = s.pop(2);
+	    else
+		ns = s.pop(1);
+	    q = new SET(in, opd.value(), s.stack[0]);
 	    break;
 	    }
 	case Op.SWAP:
