@@ -23,7 +23,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.17 1999-09-02 18:18:11 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.18 1999-09-04 20:36:26 sportbilly Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -423,6 +423,11 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    if (vA instanceof xClass && vO instanceof xClass) {
 		HClass hcA = ((xClass) vA).type().getComponentType() ;
 		HClass hcO = ((xClass) vO).type();
+		if (hcA==null) { // can't prove type is array; usually this
+		                 // means we've turned useSigmas off.
+		    raiseV(V, Wv, q.dst(), new xBitWidth(toInternal(HClass.Boolean),0,1));
+		    return;
+		}
 		hcA = toInternal(hcA); // normalize external types.
 		// special case when q.objectref is null
 		if (hcO == HClass.Void) // always true.
