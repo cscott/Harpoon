@@ -6,17 +6,32 @@
 #include <stdlib.h>	/* for malloc, size_t */
 #ifdef BDW_CONSERVATIVE_GC
 # include "gc.h"	/* for GC_malloc */
-#else
-/* don't use B-D-W allocator */
-# define GC_malloc malloc
-# define GC_malloc_atomic malloc
 #endif
 
+/* allocate but don't update statistics: this is used in various places
+ * when REALLY_DO_ALLOC is not defined. */
+void *NGBL_malloc_noupdate(size_t size) {
+#ifdef BDW_CONSERVATIVE_GC
+  return GC_malloc(size);
+#else
+  return malloc(size);
+#endif
+}
+/* allocate on the global heap. */
 void *NGBL_malloc(size_t size) {
   UPDATE_STATS(gbl, size);
+#ifdef BDW_CONSERVATIVE_GC
   return GC_malloc(size);
+#else
+  return malloc(size);
+#endif
 }
+/* allocate an object with no internal pointers on the global heap. */
 void *NGBL_malloc_atomic(size_t size) {
   UPDATE_STATS(gbl, size);
+#ifdef BDW_CONSERVATIVE_GC
   return GC_malloc_atomic(size);
+#else
+  return malloc(size);
+#endif
 }

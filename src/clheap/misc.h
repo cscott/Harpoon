@@ -11,4 +11,9 @@
 #define MAKE_STATS
 /* #define REALLY_DO_ALLOC */
 
+/* do allocation without updating statistics: this is used
+ * by various allocators when REALLY_DO_ALLOC is not defined. */
+#include <stdlib.h>	/* for size_t */
+void *NGBL_malloc_noupdate(size_t size);
+
 #endif /* INCLUDED_NIFTY_MISC_H */
