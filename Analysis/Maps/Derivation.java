@@ -26,7 +26,7 @@ import java.util.List;
  * and its motivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.7 2000-10-25 19:36:55 cananian Exp $
+ * @version $Id: Derivation.java,v 1.1.2.8 2000-11-08 16:36:35 cananian Exp $
  */
 public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 
@@ -89,6 +89,7 @@ public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 	    this.canonical = (next == null) ||
 		(next.canonical && base==next.base && sign==next.sign) ||
 		(next.canonical && base.compareTo(next.base) < 0);
+	    Util.assert(base!=null, "Null base pointer in DList.");
 	}
       
 	/** Returns a human-readable description of this <code>DList</code>. */
