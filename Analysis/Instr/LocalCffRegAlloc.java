@@ -66,11 +66,11 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.103 2000-07-13 18:52:22 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.104 2000-07-14 07:18:52 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
-    private static boolean VERIFY = true;
+    private static boolean VERIFY = false;
 
     private static boolean PREASSIGN_INFO = false;
     private static boolean SPILL_INFO = false;
@@ -211,7 +211,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 	replaceInstrs();
 	if (COALESCE_MOVES) coalesceMoves();
 
-	if (TIME) System.out.print("V");
 	if (VERIFY) verifyLRA();
 
         // code.printNoAssem(new java.io.PrintWriter(System.out));
@@ -221,7 +220,11 @@ public class LocalCffRegAlloc extends RegAlloc {
 	liveTemps = 
 	    new LiveTemps(bbFact, frame.getRegFileInfo().liveOnExit());
 	harpoon.Analysis.DataFlow.Solver.worklistSolve
-	    (bbFact.blockSet().iterator(), liveTemps);
+
+	    // (bbFact.preorderBlocksIter(),
+	    (new harpoon.Util.ReverseIterator(bbFact.postorderBlocksIter()),
+	    
+	    liveTemps);
     }
 
     private void allocationAnalysis() {
@@ -295,6 +298,7 @@ public class LocalCffRegAlloc extends RegAlloc {
    }
 
     private void verifyLRA() {
+	if (TIME) System.out.print("V");
 	
 	// after LRA is completed, load and store instructions may
 	// have been inserted at block beginings/endings.
@@ -311,7 +315,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    Set liveOnExit = liveTemps.getLiveOnExit(b);
 	    // System.out.println();
 	    verify(b, liveOnExit, spillUses, spillDefs);
-
 	}	
 	
 	// code.print(new java.io.PrintWriter(System.out));
@@ -461,7 +464,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    nextRef = buildNextRef(b);
 	    preassignMap = 
 		buildPreassignMap(block, allRegisters, lvOnExit);
-	    tempSets = EqTempSets.make(LocalCffRegAlloc.this, true);
+	    tempSets = EqTempSets.make(LocalCffRegAlloc.this, false);
 	    buildTempSets(tempSets, b);
 	}
 

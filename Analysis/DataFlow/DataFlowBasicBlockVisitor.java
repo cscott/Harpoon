@@ -18,14 +18,7 @@ public abstract class DataFlowBasicBlockVisitor extends harpoon.Analysis.BasicBl
 
     private static boolean DEBUG = false;
     public static void db(String s) { System.out.println(s); }
-    
-    /**
-     * This bit is set whenever something changes.  Used to check for
-     * termination.
-     */
-    // FSK taking this out; code using Visitor should track this on its own
-    //protected boolean changed;
-    
+
     /**
      * Adds the successors of the basic block q to the worklist W,
      * performing merge operations if necessary.

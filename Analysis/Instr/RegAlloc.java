@@ -78,7 +78,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.104 2000-07-13 18:52:22 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.105 2000-07-14 07:18:52 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -490,13 +490,14 @@ public abstract class RegAlloc  {
 		    instrs = absCode.getElementsI(); // debug check
 		    while(instrs.hasNext()) {
 			Instr i = (Instr) instrs.next();
-			Util.assert(!(i instanceof SpillLoad), "SpillLoad in i-list!");
+			Util.assert(!(i instanceof SpillLoad), 
+				    "SpillLoad in i-list!");
 			Util.assert(!(i instanceof SpillStore), 
 				    "SpillStore in i-list! "+
 				    i.getPrev() + " " +
 				    i + " " + i.getNext());
 		    }
-		}	    
+		}
 		
 
 		return absCode; 

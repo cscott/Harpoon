@@ -28,7 +28,7 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.12 2000-07-14 00:13:09 pnkfelix Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.13 2000-07-14 07:18:22 pnkfelix Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
     public final static boolean TIME = false;
@@ -262,7 +262,7 @@ public class ReachingDefsImpl extends ReachingDefs {
 
 	while(!worklist.isEmpty()) {
 	    BasicBlock b = (BasicBlock)worklist.pull();
-
+	    revisits++;
 	    // get all the bitSets for this BasicBlock
 	    Map bitSets = (Map)cache.get(b);
 	    for(Iterator it=bitSets.keySet().iterator(); it.hasNext(); ) {
@@ -286,13 +286,11 @@ public class ReachingDefsImpl extends ReachingDefs {
 		    continue;
 		for(Iterator succs=b.nextSet().iterator();succs.hasNext();){
 		    Object block = (BasicBlock)succs.next();
-		    if(worklist.add(block)) {
-			revisits++;
-		    }
+		    worklist.push(block);
 		}
 	    }
 	}
-	if (TIME) System.out.print("re"+revisits+"("+blockSet.size()+")");
+	if (TIME) System.out.print("(r:"+revisits+"/"+blockSet.size()+")");
 
     }
     // debugging utility
