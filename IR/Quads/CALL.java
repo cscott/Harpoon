@@ -45,7 +45,7 @@ import harpoon.Util.Util;
  * is so.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.16 1999-11-17 23:18:52 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.17 2000-03-30 09:48:13 cananian Exp $ 
  */
 public class CALL extends SIGMA {
     /** The method to invoke. */
@@ -117,6 +117,7 @@ public class CALL extends SIGMA {
 		boolean isVirtual, boolean isTailCall,
 		Temp[][] dst, Temp[] src) {
 	super(qf, source, dst, src, retex==null?1:2);
+	Util.assert(method!=null); // assert early, before call to isStatic()
 	this.method = method;
 	this.params = params;
 	this.retval = retval;
