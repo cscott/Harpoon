@@ -1,5 +1,6 @@
 # makefile.
-HOST = miris.lcs.mit.edu
+INSTALLMACHINE=magic@www.magic.lcs.mit.edu
+INSTALLDIR=public_html/Harpoon/
 
 all: design.ps bibnote.ps readnote.ps quads.dvi
 preview: quads-xdvi
@@ -50,12 +51,14 @@ html-pdf: html design.pdf bibnote.pdf quads.pdf
 	ln quads.pdf html/quads
 html-install: html-pdf
 	chmod a+r html/*/* ; chmod a+rx html/*
-	ssh $(HOST) /bin/rm -rf \
-		public_html/Projects/Harpoon/design \
-		public_html/Projects/Harpoon/biblio \
-		public_html/Projects/Harpoon/quads
+	ssh $(INSTALLMACHINE) /bin/rm -rf \
+		$(INSTALLDIR)/design \
+		$(INSTALLDIR)/biblio \
+		$(INSTALLDIR)/quads
 	cd html; scp -r design biblio quads \
-		$(HOST):public_html/Projects/Harpoon
+		$(INSTALLMACHINE):$(INSTALLDIR)
+
+install: html-install
 
 clean:
 	$(RM) *.dvi *.log *.aux *.bbl *.blg
@@ -69,12 +72,17 @@ clean:
 wipe: clean
 	$(RM) *~ core
 
-backup:
+backup: only-me # DOESN'T WORK ON NON-LOCAL MACHINES
+	if [ ! `hostname` = "lesser-magoo.lcs.mit.edu" ]; then exit 1; fi
 	$(RM) ../harpoon-backup.tar.gz
 	cd ..; tar czvf harpoon-backup.tar.gz CVSROOT
 	scp ../harpoon-backup.tar.gz \
-		$(HOST):public_html/Projects/Harpoon
+		miris.lcs.mit.edu:public_html/Projects/Harpoon
 	$(RM) ../harpoon-backup.tar.gz
+
+# some rules only makes sense if you're me.
+only-me:
+	if [ ! `whoami` = "cananian" ]; then exit 1; fi
 
 # Try to convince make to delete these sometimes.
 .INTERMEDIATE: %.aux %.log
