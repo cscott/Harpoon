@@ -82,6 +82,7 @@ void * getnext(struct genhashtable *ht, void * key) {
 
 int gencontains(struct genhashtable *ht, void * key) {
   struct genpointerlist * ptr=ht->bins[genhashfunction(ht,key)];
+  //printf("In gencontains2\n");fflush(NULL);
   while(ptr!=NULL) {
     if (((ht->comp_function==NULL)&&(ptr->src==key))||((ht->comp_function!=NULL)&&(*ht->comp_function)(ptr->src,key)))
       return 1;

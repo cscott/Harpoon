@@ -4,8 +4,9 @@
 #ifndef TEST_H
 #define TEST_H
 void initializeanalysis();
-void doanalysis();
-void doanalysis2();
+void doanalysis();  // do analysis
+void doanalysis2(); // break the specs and do analysis
+void doanalysis3(); // insert errors and do analysis
 void resetanalysis();
 void addmapping(char *, void *,char *);
 void addintmapping(char *key, int value);

@@ -334,10 +334,9 @@ void processobject::modifyconstraint(Constraint *c)
 	  }  
       delete(st);
       
-
       // if s is satisfied, then break it
       if  (satisfied)
-	if (random()<model::prob_breaksatisfiedsentence) // then break it
+	if (random()<model::prob_breaksatisfiedsentence*RAND_MAX) // then break it
 	  {
 	    // first, select an arbitrary binding, for ex. the first one
 	    st = new State(c, globalmodel->gethashtable());

@@ -120,8 +120,8 @@ void ActionAssign::breakpredicate(Hashtable *env, CoercePredicate *cp)
 #ifdef DEBUGMESSAGES
   printf("index=%s\n", p->getvalueexpr()->getlabel()->label());
   if (index == NULL)    
-    printf("Index Naspa\n");
-  else printf("Index Cool\n");
+    printf("index - bad\n");
+  else printf("index - ok\n");
 #endif
   
   char *rel = p->getvalueexpr()->getrelation()->getname(); // rel=R
@@ -129,8 +129,8 @@ void ActionAssign::breakpredicate(Hashtable *env, CoercePredicate *cp)
 
 #ifdef DEBUGMESSAGES
   if (relation == NULL)    
-    printf("relation Naspa\n");
-  else printf("relation Cool\n");
+    printf("relation - bad\n");
+  else printf("relation - ok\n");
   fflush(NULL);
 #endif
 
@@ -189,6 +189,7 @@ void ActionAssign::breakpredicate(Hashtable *env, CoercePredicate *cp)
       else 
 	{
 	  relation->put(index, ele);
+	  
 
 	  /* WRONG
 	  printf("range name = %s\n", drel->getrange()); fflush(NULL);

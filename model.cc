@@ -5,7 +5,7 @@
 #include "aparser.h"
 #include "cparser.h"
 #include "oparser.h"
-//#include "rparser.h"
+#include "rparser.h"
 #include "dmodel.h"
 #include "omodel.h"
 #include "amodel.h"
@@ -17,6 +17,7 @@
 #include "normalizer.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "Hashtable.h"
 #include "element.h"
 #include "bitreader.h"
@@ -27,6 +28,7 @@
 #include "fieldcheck.h"
 #include "tmap.h"
 #include "string.h"
+#include "set.h"
 
 
 Hashtable * model::gethashtable() {
@@ -41,7 +43,7 @@ Guidance * model::getguidance() {
   return guidance;
 }
 
-model::model(char * abstractfile, char * modelfile, char *spacefile,char *structfile,char * concretefile) {
+model::model(char *abstractfile, char *modelfile, char *spacefile, char *structfile, char *concretefile, char *rangefile) {
   parsestructfile(structfile);
 
   //Hashtable first for lookups
@@ -51,6 +53,7 @@ model::model(char * abstractfile, char * modelfile, char *spacefile,char *struct
   parsemodelfile(modelfile);
   parsespacefile(spacefile);
   parseconcretefile(concretefile);
+  parserangefile(rangefile);
 
   br=new bitreader(this,env);
   guidance=new DefGuidance2(this);  // for the file system benchmark
@@ -155,6 +158,8 @@ void model::doconcrete() {
 // inserts faults that break the specifications
 void model::breakspec() 
 {
+  srandom((unsigned) time(NULL));
+
   processobject *po = new processobject(this);
 
   // takes each satisfied constraint and breaks it with probability prob_breakconstraint
@@ -174,15 +179,32 @@ void model::breakspec()
 // inserts faults that don not break the specifications
 void model::inserterrors()
 {
+  srandom((unsigned) time(NULL));
+
   processobject *po = new processobject(this);
 
   // takes each satisfied constraint and modifies it with probability prob_modifyconstraint
+  long int r;
   for (int i=0; i<numconstraint; i++)
     {
       Constraint *c = getconstraint(i);
+#ifdef DEBUGMESSAGES
+      printf("Constraint: ");
+      c->print();
       if (po->issatisfied(c))
-	if (random()<prob_modifyconstraint*RAND_MAX)
-	  po->modifyconstraint(c);
+	printf("     is satisfied\n");
+      else printf("     is not satisfied\n");
+      fflush(NULL);
+#endif
+      if (po->issatisfied(c))
+	{
+	  r=random();
+#ifdef DEBUGMESSAGES
+	  printf("r=%ld\n", r);
+#endif
+	  if (r<prob_modifyconstraint*RAND_MAX)
+	    po->modifyconstraint(c);
+	}
     }
 
   delete(po);
@@ -360,7 +382,7 @@ void model::parsemodelfile(char *modelfile) {
   for(int i=0;i<list->size();i++)
     constraintnormal[i]=new NormalForm(constraintarray[i]);
   
-  ifs->close();
+  ifs->close();  
   delete(ifs);
   delete(list);
 }
@@ -372,7 +394,7 @@ void model::parsemodelfile(char *modelfile) {
    This information is used only by the fault injection mechanism.  
    This file should be read only after the testspace file.
 */
-/*void model::parserangefile(char *rangefile) 
+void model::parserangefile(char *rangefile) 
 {
   ifstream *ifs=new ifstream();
   ifs->open(rangefile);
@@ -381,6 +403,10 @@ void model::parsemodelfile(char *modelfile) {
 
   do {
     char* relation = rp->parserelation();
+#ifdef DEBUGMESSAGES
+    printf("Reading relation: %s\n", relation);
+    fflush(NULL);
+#endif
 
     if (relation != NULL)
       {
@@ -393,7 +419,19 @@ void model::parsemodelfile(char *modelfile) {
 	  }
 
 	WorkSet *ws = rp->parseworkset();
+#ifdef DEBUGMESSAGES
+	printf("The range for %s is:\n", relation);
+	void *obj = ws->firstelement();
+	while (obj)
+	  {
+	    printf("%s ", (char *) obj);
+	    obj = ws->getnextelement(obj);
+	  }
+	fflush(NULL);
+	printf("\n\n");
+#endif
 	drel->settokenrange(ws);
+	free(relation);
       }
     else 
       break;
@@ -401,7 +439,9 @@ void model::parsemodelfile(char *modelfile) {
 
   ifs->close();
   delete(ifs);
-}*/
+  delete(r);
+  delete(rp);
+}
 
 
 

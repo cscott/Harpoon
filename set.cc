@@ -1,6 +1,7 @@
 #include "set.h"
 #include "GenericHashtable.h"
 #include "element.h"
+#include <stdio.h>
 
 
 // class WorkSet
@@ -19,7 +20,10 @@ WorkSet::WorkSet(bool) {
 
 void WorkSet::addobject(void *obj) {
   if (!contains(obj))
-    genputtable(ght,obj,obj);
+    {
+      fflush(NULL);
+      genputtable(ght,obj,obj);
+    }
 }
 
 void WorkSet::removeobject(void *obj) {

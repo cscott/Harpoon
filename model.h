@@ -6,7 +6,7 @@
 
 class model {
  public:
-  model(char * abstractfile, char * modelfile, char *spacefile,char *structfile,char * concretefile);
+  model(char *abstractfile, char *modelfile, char *spacefile,char *structfile, char *concretefile, char *rangefile);
   DomainRelation * getdomainrelation(); 
   structure *getstructure(char * name);
   void doabstraction();  // processes the model definition rules
@@ -32,11 +32,11 @@ class model {
   typemap * gettypemap();
   void reset();
 
-  static const double prob_breakconstraint = 0.2;  // the probability with which each constraint is broken when inserting errors
+  static const double prob_breakconstraint = 1;  // the probability with which each constraint is broken when inserting errors
   static const double prob_breakpredicate = 1; // the probability with which each predicate from the selected sentences is broken
-  static const double prob_modifyconstraint = 0.2;  // the probability with which each constraint is modified when inserting errors
-  static const double prob_breaksatisfiedsentence = 0.5;  // the probability with which each satisfied sentence is modified (broken) when inserting errors
-  static const double prob_repairbrokensentence = 0.5;  // the probability with which each broken sentence is modified (repaired) when inserting errors
+  static const double prob_modifyconstraint = 1;  // the probability with which each constraint is modified when inserting errors
+  static const double prob_breaksatisfiedsentence = 1;  // the probability with which each satisfied sentence is modified (broken) when inserting errors
+  static const double prob_repairbrokensentence = 1;  // the probability with which each broken sentence is modified (repaired) when inserting errors
 
  private:
   void parsespacefile(char *spacefile);

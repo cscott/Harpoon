@@ -19,20 +19,23 @@ RParser::RParser(Reader *r)
 // returns the name of the relation whose range is defined
 char* RParser::parserelation()
 {
-  Token token=reader->peakahead();
+  Token token = reader->peakahead();
+
   while(token.token_type==TOKEN_EOL) 
     {
       skiptoken();
-      token=reader->peakahead();
+      token = reader->peakahead();
     }
   
   if (token.token_type==TOKEN_EOF)
     return NULL;
-  
-  needtoken(0); // we need a normal string
+
+  needtoken(0);
   needtoken(TOKEN_COLON); // we need a colon
 
-  return token.str;
+  char* relation = (char*) malloc(strlen(token.str));
+  strcpy(relation, token.str);
+  return relation;
 }
 
 
@@ -43,17 +46,26 @@ WorkSet* RParser::parseworkset()
   printf("Parsing a new workset... \n");
 #endif
 
-  WorkSet *wset = new WorkSet();
+  WorkSet *wset = new WorkSet(true);
   needtoken(TOKEN_OPENBRACE);  // need an open brace
-  
-  Token token = reader->peakahead();
+
+  Token token = reader->readnext();
+
   while (token.token_type != TOKEN_CLOSEBRACE)
-    {
+    {      
 #ifdef DEBUGMESSAGES
-      printf("%s ", token.str);
+      //printf("Adding %s...\n", token.str);
+      //fflush(NULL);
 #endif
-      wset->addobject(token.str);
-      token = reader->peakahead();
+      char* newtoken = (char*) malloc(strlen(token.str));
+      strcpy(newtoken, token.str);
+
+      wset->addobject(newtoken);
+      
+      token = reader->readnext();
+      
+      if (token.token_type == TOKEN_COMMA)
+	token = reader->readnext();
     }
 
   return wset;

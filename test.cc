@@ -17,7 +17,7 @@ extern "C" {
 model * exportmodel;
 
 void initializeanalysis() {
-  exportmodel=new model("testabstract","testmodel","testspace","teststruct","testconcrete");
+  exportmodel=new model("testabstract", "testmodel", "testspace", "teststruct", "testconcrete", "testrange");
 }
 
 
@@ -26,9 +26,25 @@ void doanalysis() {
   unsigned long t;
   gettimeofday(&begin,NULL);
   exportmodel->doabstraction();
+  exportmodel->getdomainrelation()->fixstuff();  
+  exportmodel->docheck();
+  exportmodel->doconcrete();
+  gettimeofday(&end,NULL);
+  t=(end.tv_sec-begin.tv_sec)*1000000+end.tv_usec-begin.tv_usec;
+
+  printf("Time used for analysis(us): %ld\n",t);
+}
+
+
+  // insert errors that break the specs
+void doanalysis2() {
+  struct timeval begin,end;
+  unsigned long t;
+  gettimeofday(&begin,NULL);
+  exportmodel->doabstraction();
   exportmodel->getdomainrelation()->fixstuff();
-  /*  This should be ifdef'd in */
-  /*  exportmodel->breakspec();*/
+
+  exportmodel->breakspec();
   
   exportmodel->docheck();
   exportmodel->doconcrete();
@@ -39,8 +55,8 @@ void doanalysis() {
 }
 
 
-
-void doanalysis2() {
+// insert errors that do not break the specs
+void doanalysis3() {
   struct timeval begin,end;
   unsigned long t;
   gettimeofday(&begin,NULL);

@@ -70,6 +70,8 @@ int main(int argc, char **argv) {
     break;
   }
 
+
+  // insert errors that break the specs
   case '3': {
     struct block * ptr=chmountdisk("disk");
     initializeanalysis();
@@ -77,15 +79,31 @@ int main(int argc, char **argv) {
     alloc(ptr,LENGTH);
     addmapping(dstring,ptr,"Disk");
 
-    //insert errors that do not break the specs
+    // insert errors that break the specs
     doanalysis2();
     dealloc(ptr);
     chunmountdisk(ptr);
     break;
   }
 
-  
+
+  // insert errors that do not break the specs
   case '4': {
+    struct block * ptr=chmountdisk("disk");
+    initializeanalysis();
+    Hashtable *env=exportmodel->gethashtable();
+    alloc(ptr,LENGTH);
+    addmapping(dstring,ptr,"Disk");
+
+    // insert errors that do not break the specs
+    doanalysis3();
+    dealloc(ptr);
+    chunmountdisk(ptr);
+    break;
+  }
+
+  
+  case '5': {
   // prints the directory structure, and prints the contents of each file
     struct block * ptr=mountdisk("disk");
     printdirectory(ptr);
@@ -98,7 +116,7 @@ int main(int argc, char **argv) {
     break;
   }
  
-  case '5': {
+  case '6': {
   // the same as "case '1'" only that the files are accessed in reversed order
     struct block * ptr=mountdisk("disk");
     for(int i=145;i>1;i--) {
@@ -119,7 +137,7 @@ int main(int argc, char **argv) {
     break;
   }
 
-  case '6': {
+  case '7': {
     struct block * ptr=mountdisk("disk");
     for(int i=145;i>=0;i--) {
       char filename[10];
@@ -163,7 +181,7 @@ int main(int argc, char **argv) {
   break;
 
 
-  case '7': {
+  case '8': {
     {
       struct block * ptr=chmountdisk("disk");
       initializeanalysis();
@@ -215,15 +233,20 @@ int main(int argc, char **argv) {
   }
 }
 
+
+
 struct block * chmountdisk(char *filename) {
   int fd=open(filename,O_CREAT|O_RDWR);
   struct block *ptr=(struct block *) mmap(NULL,LENGTH,PROT_READ|PROT_WRITE|PROT_EXEC,MAP_SHARED,fd,0);
   return ptr;
 }
 
+
+
 void chunmountdisk(struct block *vptr) {
   int val=munmap(vptr,LENGTH);
 }
+
 
 
 // mounts the disk from the file "filename"
