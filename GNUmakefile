@@ -3,19 +3,22 @@
 all: design.ps bibnote.ps
 preview: design-xdvi
 
-design.dvi: design.tex harpoon.bib
-	latex design
-	bibtex design
-	latex design
-	latex design
-bibnote.dvi: bibnote.tex harpoon.bib
+# bibtex dependencies
+design.dvi: harpoon.bib
+bibnote.dvi: harpoon_.bib
+readnote.dvi: unread_.bib
+
+# Tex rules. [have to add explicit dependencies on appropriate bibtex files.]
+%.dvi : %.tex
+	latex $(basename $<)
+	bibtex $(basename $<)
+	latex $(basename $<)
+	latex $(basename $<)
+# Make annotation-visible versions of bibtex files.
+%_.bib : %.bib
 	sed -e "s/^  note =/  Xnote =/" -e "s/^  annote =/  note =/" \
-		harpoon.bib > bibnote.bib
-	latex bibnote
-	bibtex bibnote
-	latex bibnote
-	latex bibnote
-	$(RM) bibnote.bib
+		$< > $@
+# dvi-to-postscript-to-acrobat chain.
 %.ps : %.dvi
 	dvips -o $@ $<
 %.pdf : %.ps
@@ -28,7 +31,9 @@ bibnote.dvi: bibnote.tex harpoon.bib
 	fi
 clean:
 	$(RM) *.dvi *.log *.aux *.bbl *.blg
-	$(RM) design.ps design.pdf bibnote.ps bibnote.pdf bibnote.bib
+	$(RM) design.ps design.pdf bibnote.ps bibnote.pdf
+	$(RM) harpoon_.bib unread_.bib
+
 wipe: clean
 	$(RM) *~ core
 
