@@ -101,7 +101,8 @@ static void wrapNthrow(JNIEnv *env, char *exclsname) {
     return;
 }
 #ifdef WITH_INIT_CHECK
-// run the static initializer for the given class.
+/* run the static initializer for the given class. */
+/* this method also copied to java_lang_reflect_Field.c */
 static int staticinit(JNIEnv *env, jclass c) {
   jmethodID methodID; jclass sc;
   /* XXX: Doesn't initialize interfaces */

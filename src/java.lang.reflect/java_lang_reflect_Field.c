@@ -4,6 +4,7 @@
 #include "java_lang_reflect_Field.h"
 #include "java_lang_reflect_Modifier.h"
 #include "reflect-util.h"
+#include "config.h" /* for WITH_INIT_CHECK */
 
 /*
  * Class:     java_lang_reflect_Field
@@ -14,6 +15,28 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getModifiers
   (JNIEnv *env, jobject _this) {
     return FNI_GetFieldInfo(_this)->modifiers;
 }
+
+#ifdef WITH_INIT_CHECK
+/* run the static initializer for the given class. */
+/* helper method copied from java_lang_Class.c */
+static int staticinit(JNIEnv *env, jclass c) {
+  jmethodID methodID; jclass sc;
+  /* XXX: Doesn't initialize interfaces */
+  sc = (*env)->GetSuperclass(env, c);
+  if (sc && !staticinit(env, sc)) return 0; /* fail if superclass init fails */
+  methodID=(*env)->GetStaticMethodID(env, c, "<clinit>", "()V");
+  if (methodID==NULL) {
+    (*env)->ExceptionClear(env); /* no static initializer, ignore */
+  } else {
+    (*env)->CallStaticVoidMethod(env, c, methodID);
+    if ((*env)->ExceptionOccurred(env)) {
+      /* XXX: wrapNthrow(env, "java/lang/ExceptionInInitializerError"); */
+      return 0; /* exception in initializer */
+    }
+  }
+  return 1; /* success */
+}
+#endif /* WITH_INIT_CHECK */
 
 /*
  * Class:     java_lang_reflect_Field
@@ -77,6 +100,26 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Field_get
     return REFLECT_wrapPrimitive(env, value, desc);
   }
 }
+
+#ifdef WITH_INIT_CHECK
+JNIEXPORT jobject JNICALL Java_java_lang_reflect_Field_get_00024_00024initcheck
+  (JNIEnv *env, jobject fieldobj, jobject receiverobj) {
+  struct FNI_field2info *field; /* field information */
+
+  /* from javadoc: if the field is static, the class that declared the field
+   * is initialized if it has not already been initialized */
+
+  assert(fieldobj!=NULL);
+  field = FNI_GetFieldInfo(fieldobj);
+  assert(field!=NULL);
+
+  if (field->modifiers & java_lang_reflect_Modifier_STATIC) /* static field */
+    staticinit(env, FNI_WRAP(field->declaring_class_object));
+  
+  /* okay, tail-call regular implementation */
+  return Java_java_lang_reflect_Field_get(env, fieldobj, receiverobj);
+}
+#endif /* WITH_INIT_CHECK */
 
 /*
  * Class:     java_lang_reflect_Field
@@ -155,6 +198,26 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set
     }
   }
 }
+
+#ifdef WITH_INIT_CHECK
+JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set_00024_00024initcheck
+  (JNIEnv *env, jobject fieldobj, jobject receiverobj, jobject value) {
+  struct FNI_field2info *field; /* field information */
+
+  /* from javadoc: if the field is static, the class that declared the field
+   * is initialized if it has not already been initialized */
+
+  assert(fieldobj!=NULL);
+  field = FNI_GetFieldInfo(fieldobj);
+  assert(field!=NULL);
+
+  if (field->modifiers & java_lang_reflect_Modifier_STATIC) /* static field */
+    staticinit(env, FNI_WRAP(field->declaring_class_object));
+  
+  /* okay, tail-call regular implementation */
+  return Java_java_lang_reflect_Field_set(env, fieldobj, receiverobj, value);
+}
+#endif /* WITH_INIT_CHECK */
 
 #if !defined(WITHOUT_HACKED_REFLECTION) /* this is our hacked implementation */
 /*
