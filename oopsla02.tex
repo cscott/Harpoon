@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.25 2002-03-23 09:23:21 cananian Exp $
+% $Id: oopsla02.tex,v 1.26 2002-03-23 10:19:57 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -33,7 +33,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.25 $ $}{$ $Revision: 1.25 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.26 $ $}{$ $Revision: 1.26 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -775,7 +775,7 @@ classification step could yield good results.
 
 % header optimizations.
 % java-vs-byte-vs-bit packing.
-% byte-packing strategy.
+byte-packing strategy.
 % garbage collection; dynamic methods.  conservative gc. ole aggeson's blah.
 % efficiency of field virtualization.
 % single-inheritance when splitting.
@@ -788,18 +788,47 @@ classification step could yield good results.
 % header optimizations.
 % pointer compression?
 
-external hashtable implementation
+\subsection{External hashtable implementation}
 \label{sec:extern-impl}
+Close attention to the implementation of this external map is
+necessary to realize the gains possible in theory.  In order to
+maximize space savings, it is necessary to utilize as little space
+per field stored in the table as possible.  The overhead of
+dynamically allocated buckets and the required {\it next} pointers
+makes separate chaining impractical as an implementation technique
+for all but fields with very few non-zero entries.  Open-addressing
+implementations are preferable: in addition to the value being stored,
+all that is necessary is a key value and the empty space required to
+limit the load-factor.  A load factor of two-thirds and one-word keys
+and values yield an average space consumption of three words per
+field.  This implementation breaks even when the mostly-zero fields
+identified are zero over 66\% of the time.
+
+Key-size reduction is an important component of the implementation:
+a na{\"\i}ve approach
+would combine a one-word reference to the virtual-container object and a
+one-word field identifier for a two-word key.  The large key will
+shift the break-even point up so that only fields which are 82\% zero
+will profit.  Instead, we can offset the
+object reference (up to the limit of its size) by small integers
+to discriminate the externalized fields of the object, which yields
+a single-word key.  This technique is
+subject to object-size-dependent limits on the number
+of class fields which may be externalized.  The pointer compression
+techniques of section \ref{sec:ptrcmp} may also be applied to the
+keys.
 
 \section{Experimental Results}
 \label{sec:results}
 
 We have implemented all of the analyses and transformations described
-in this paper in the MIT Flex compiler infrastructure 
-(available at {\tt www.flexc.lcs.mit.edu}). We measure the effectiveness
+in this paper in the MIT FLEX compiler infrastructure.%
+\footnote{Available from {\tt http://flexc.lcs.mit.edu/}.} 
+We measure the effectiveness
 of our optimizations by compiling the SPECjvm98 benchmarks with 
 this compiler, then measuring the resulting space savings and
-performance. 
+performance.   All benchmarks were run on a dual-processor 900 MHz
+Pentium III running Linux.
 
 \subsection{Memory Savings}
 
@@ -807,94 +836,107 @@ To evaluate the effectiveness of our technique at reducing the
 amount of memory required to execute the program, 
 we first ran an instrumented version of each
 application without any space optimizations. We used this
-instrumented version to compute the total amount of memory 
-allocated during the entire execution of the program. 
-We then ran an instrumented version of our program after optimization.
-This version enabled us to calculate the amount by which each 
-technique reduced the size of the allocated data. 
-Figure~\ref{} presents the total space savings numbers. This
+instrumented version to compute the total amount of data live on the
+heap at any point during the execution.  
+We then ran an instrumented version of our program after each stage of
+optimization.
+These versions enabled us to calculate the amount by which each 
+technique reduced the size of the live heap data.
+
+\begin{figure}
+\includegraphics[scale=0.32,clip=true]{Figures/oopsla-ttllive.eps}
+\caption{Reduction in the maximum live heap achieved with our
+  transformations.}
+\label{fig:live-heap}
+\end{figure}
+
+Figure~\ref{fig:live-heap} presents the total space savings numbers. This
 figure contains a bar for each application, with the bar broken
-down into categories that indicate the percentage of memory from 
+down into categories that indicate the percentage of live data from 
 the original unoptimized execution that we were able to eliminate
 with each optimization. The black section of each bar indicates the
-amount of memory remaining after all optimizations. 
-(Discussion here...)
+amount of live heap data remaining after all optimizations. 
+We obtain as much as 40\% reduction in live data on the {\tt
+  213\_javac} benchmark, with almost all of this coming from our
+bitwidth-driven field reductions and static specialization.  In fact
+we obtain more than 15\% reduction on all of the ``object-oriented''
+benchmarks.  The {\tt 201\_compress} benchmark allocates a small
+number of very large arrays, limiting the optimization opportunities
+discoverable by our analysis.  Likewise, the {\tt 205\_raytrace} and
+{\tt 227\_mtrt} benchmarks make heavy use of floating-point numbers.
+However, these raytracing benchmarks {\it do} allocate a large number
+of small arrays to represent vectors and matrices, and so our header
+optimizations still allow us to reduce the maximum live data size by
+over 20\%.
 
-We used then instrumented version to compute the amount of memory required
-to store the maximum amount of data live at any point in the
-execution, in both the optimized and unoptimized versions. 
-Figure~\ref{} presents the space savings according to this
-metric. 
+We also used an instrumented executable to determine the total amount
+of memory allocated during the entire execution of the program, in
+both the optimized and unoptimized versions.  Reducing this total
+allocation reduces the load on the garbage collector.
+Figure~\ref{fig:total-alloc} presents the space savings according to this
+metric.  By comparing to the previous figure, you will notice that
+long-lived objects apparently provide us with more opportunities to
+optimize.
+
+\begin{figure}
+\includegraphics[scale=0.32,clip=true]{Figures/oopsla-ttlalloc.eps}
+\caption{Cumulative reduction in dynamic allocation achieved with
+  our transformations.}
+\label{fig:total-alloc}
+\end{figure}
 
 \subsection{Objects Versus Arrays}
 
 The majority of our optimizations are designed to optimize
-object fields rather than arrays. We next present numbers 
-that characterize the space reductions for objects only,
-rather than for both objects and arrays. Figure~\ref{}
+object fields rather than arrays. For context, we present numbers 
+that characterize the reductions in total allocation for objects only,
+rather than for both objects and arrays. Figure~\ref{fig:non-array}
 presents space savings numbers for objects alone, omitting
-any storage required for arrays. 
-
-\subsection{Execution Times} 
-
-We next evaluate the execution time impact of applying our space
-optimizations. Figure~\ref{} presents the normalized execution 
-times of each application after the application of our sequence
-of optimizations. These numbers show that the first several
-optimizations (Claz Compression, Field Reduction, and Byte Packing)
-typically reduce the execution times, while the
-remainder (Static Specialization, Field Externalization, and  Hash/Lock
-externalization) generate modest increases in the execution times. 
-
-\begin{figure}
-\includegraphics[scale=0.32,clip=true]{Figures/spec-space.eps}
-\caption{Total allocation in spec benchmarks.}
-\label{fig:space}
-\end{figure}
+any storage required for arrays.  The difference is explained by
+Figure~\ref{fig:object-array-pointer}, which shows how the total
+program allocation for each benchmark is broken down into array and
+object allocations.  The reason for our poor performance on {\tt
+  201\_compress} is now obvious.  Note that {\tt 222\_mpegaudio}
+allocates so much less memory than the other benchmarks that its bar
+is barely visible.  Arrays account for 79\% of {\tt mpegaudio}'s total
+allocations.
 
 \begin{figure}
 \includegraphics[scale=0.32,clip=true]{Figures/oopsla-objalloc.eps}
 \caption{Reduction in non-array dynamic allocation achieved with
   our transformations.}
-\label{fig:total}
+\label{fig:non-array}
 \end{figure}
+
 \begin{figure}
-\includegraphics[scale=0.32,clip=true]{Figures/oopsla-ttlalloc.eps}
-\caption{Cumulative reduction in dynamic allocation achieved with
-  our transformations.}
-\label{fig:total}
+\includegraphics[scale=0.32,clip=true]{Figures/spec-space.eps}
+\caption{Total allocation in spec benchmarks.}
+\label{fig:object-array-pointer}
 \end{figure}
-\begin{figure}
-\includegraphics[scale=0.32,clip=true]{Figures/oopsla-ttllive.eps}
-\caption{Reduction in the maximum live heap achieved with our transformations.}
-\end{figure}
+
+\subsection{Execution Times} 
+
+We next evaluate the execution time impact of applying our space
+optimizations. Figure~\ref{fig:performance} presents the normalized execution 
+times of each application after the application of our sequence
+of optimizations. These numbers show that the first several
+optimizations (claz compression, field reduction, and byte packing)
+typically reduce the execution times, while the
+remainder (static specialization, field externalization, and  hash/lock
+externalization) generate modest increases in the execution times. 
+Static specialization's virtualization of fields is responsible for
+its slowdown; it is likely that an optimized speculatively-inlined
+implementation of the field accessors which it adds to the program
+would improve its performance.  Field externalization (including
+hash/lock externalization) causes the expected penalty for hashtable
+lookup; note that synchronization elimination would greatly reduce the
+cost of hash/lock externalization.
 
 \begin{figure}
 \includegraphics[scale=0.32,clip=true]{Figures/oopsla-speed.eps}
 \caption{Runtime performance of space optimizations.}
-\label{fig:space}
+\label{fig:performance}
 \end{figure}
-
-\begin{table}
-\begin{tabular}{lcccr@{.}l}
-&\bf total&&&\multicolumn{2}{c}{\bf\% alloc'ed}\\
-\bf Benchmark &\bf fields &\bf unread &\bf constant &
-\multicolumn{2}{c}{\bf space saved} \\\hline
-200\_check      & 279 &   79   &   35   &  2&6\% \\
-201\_compress   & 298 &   75   &   31   &  2&5\% \\
-202\_jess       & 485 &   91   &   43   &  9&9\% \\
-205\_raytrace   & 341 &   75   &   30   &  0&0\% \\
-209\_db         & 286 &   75   &   35   &  0&0\% \\
-213\_javac      & 531 &   85   &   34   &  0&6\% \\
-222\_mpegaudio  & 286 &   75   &   35   &  1&4\% \\
-227\_mtrt       & 341 &   75   &   30   &  0&0\% \\
-228\_jack       & 378 &   77   &   31   & 10&2\% \\
-\end{tabular}
-\caption{Number of unused and constant fields in SPEC benchmarks,
-  and the savings realized (in \% of total dynamic allocated bytes) by
-  removing them.}
-\label{tab:const-unused}
-\end{table}
 
 % distribution of mostly-N fields?
 
