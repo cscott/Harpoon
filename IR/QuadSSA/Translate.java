@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.30 1998-09-03 01:10:58 cananian Exp $
+ * @version $Id: Translate.java,v 1.31 1998-09-03 01:30:02 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -865,6 +865,7 @@ class Translate  { // not public.
 		q = new CALL(in, opd.value(), s.stack[j], param, ns.stack[0]);
 	    }
 	    }
+	    break;
 	case Op.LDC:
 	case Op.LDC_W:
 	case Op.LDC2_W:
