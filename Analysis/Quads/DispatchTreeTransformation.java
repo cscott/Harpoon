@@ -44,7 +44,7 @@ import java.util.Set;
  * speed up dispatch.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DispatchTreeTransformation.java,v 1.1.2.5 2000-11-16 04:54:59 cananian Exp $
+ * @version $Id: DispatchTreeTransformation.java,v 1.1.2.6 2001-06-15 06:18:34 cananian Exp $
  */
 public class DispatchTreeTransformation
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -134,10 +134,15 @@ public class DispatchTreeTransformation
 
 	// find the set of relevant calls.
 	List methods = new ArrayList();
-	methods.add(call.method());
-	if (!etm.isExactType(null, recvr))
-	    methods.addAll(ch.overrides(etm.typeMap(null, recvr),
-					call.method(), true));
+	{ // find the actual method which will be called.
+	    HClass hc = etm.typeMap(null, recvr);
+	    HMethod declarM = call.method();
+	    HMethod actualM = hc.getMethod(declarM.getName(),
+					   declarM.getDescriptor());
+	    methods.add(actualM);
+	    if (!etm.isExactType(null, recvr))
+		methods.addAll(ch.overrides(hc, actualM, true));
+	}
 	// remove uncallable methods.
 	methods.retainAll(ch.callableMethods());
 	// remove interface and abstract methods.
