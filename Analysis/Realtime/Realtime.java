@@ -31,7 +31,7 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.1.2.32 2001-07-20 15:19:00 wbeebee Exp $
+ * @version $Id: Realtime.java,v 1.1.2.33 2001-08-14 00:48:31 wbeebee Exp $
  */
 
 public class Realtime {
@@ -165,7 +165,7 @@ public class Realtime {
      *  <li>javax.realtime.RealtimeThread(java.lang.ThreadGroup, 
      *                                          java.lang.Runnable,
      *                                          java.lang.String)</li>
-     *  <li>javax.realtime.RealtimeThread.getMemoryArea()</li>
+     *  <li>javax.realtime.RealtimeThread.memoryArea()</li>
      *  <li>javax.realtime.RealtimeThread.currentRealtimeThread()</li>
      *  <li>java.lang.Thread.setPriority(int)</li>
      *  <li>javax.realtime.MemoryArea.checkAccess(java.lang.Object)</li>
@@ -183,10 +183,11 @@ public class Realtime {
 	    linker.forName("java.lang.Runnable"),
 	    linker.forName("java.lang.String")}));
 	roots.add(realtimeThread
-		  .getMethod("getMemoryArea", new HClass[] {}));
+		  .getMethod("memoryArea", new HClass[] {}));
 	roots.add(realtimeThread
 		  .getMethod("currentRealtimeThread", new HClass[] {}));
-	
+	roots.add(realtimeThread
+		  .getMethod("cleanup", new HClass[] {}));
 	roots.add(linker.forName("java.lang.Thread")
 		  .getMethod("setPriority", 
 			     new HClass[] { HClass.Int }));
@@ -219,24 +220,6 @@ public class Realtime {
 				      new HClass[] { memoryArea }));
 	}
 
-	if (REAL_SCOPES) {
-	    roots.add(linker.forName("javax.realtime.CTMemory")
-		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	    roots.add(linker.forName("javax.realtime.HeapMemory")
-		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	    roots.add(linker.forName("javax.realtime.ImmortalMemory")
-		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	    roots.add(linker.forName("javax.realtime.ImmortalPhysicalMemory")
-		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	    roots.add(linker.forName("javax.realtime.LTMemory")
-		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	    roots.add(linker.forName("javax.realtime.NullMemoryArea")
-		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	    roots.add(linker.forName("javax.realtime.ScopedPhysicalMemory")
-		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	    roots.add(linker.forName("javax.realtime.VTMemory")
-		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
-	}
 	roots.add(linker.forName("javax.realtime.ImmortalMemory")
 		  .getMethod("instance", new HClass[] { }));
 	roots.add(linker.forName("javax.realtime.CTMemory")
@@ -258,7 +241,50 @@ public class Realtime {
 		  .getMethod("checkAccess", new HClass[] { object }));
 	roots.add(linker.forName("javax.realtime.NoHeapRealtimeThread"));
 	roots.add(linker.forName("java.lang.IllegalAccessException"));
-
+	roots.add(linker.forName("java.lang.Boolean")
+		  .getConstructor(new HClass[] { HClass.Boolean }));
+	roots.add(linker.forName("java.lang.Boolean")
+		  .getMethod("booleanValue", new HClass[] {}));
+	roots.add(linker.forName("java.lang.Byte")
+		  .getConstructor(new HClass[] { HClass.Byte }));
+	roots.add(linker.forName("java.lang.Byte")
+		  .getMethod("byteValue", new HClass[] {}));
+	roots.add(linker.forName("java.lang.Character")
+		  .getConstructor(new HClass[] { HClass.Char }));
+	roots.add(linker.forName("java.lang.Character")
+		  .getMethod("charValue", new HClass[] {}));
+	roots.add(linker.forName("java.lang.Double")
+		  .getConstructor(new HClass[] { HClass.Double }));
+	roots.add(linker.forName("java.lang.Double")
+		  .getMethod("doubleValue", new HClass[] {}));
+	roots.add(linker.forName("java.lang.Float")
+		  .getConstructor(new HClass[] { HClass.Float }));
+	roots.add(linker.forName("java.lang.Float")
+		  .getMethod("floatValue", new HClass[] {}));
+	roots.add(linker.forName("java.lang.Integer")
+		  .getConstructor(new HClass[] { HClass.Int }));
+	roots.add(linker.forName("java.lang.Integer")
+		  .getMethod("intValue", new HClass[] {}));
+	roots.add(linker.forName("java.lang.Long")
+		  .getConstructor(new HClass[] { HClass.Long }));
+	roots.add(linker.forName("java.lang.Long")
+		  .getMethod("longValue", new HClass[] {}));
+	roots.add(linker.forName("java.lang.Short")
+		  .getConstructor(new HClass[] { HClass.Short }));
+	roots.add(linker.forName("java.lang.Short")
+		  .getMethod("shortValue", new HClass[] {}));
+	roots.add(linker.forName("java.lang.NoSuchMethodException")
+		  .getConstructor(new HClass[] { 
+		      linker.forName("java.lang.String") }));
+	roots.add(linker.forName("javax.realtime.RefCountArea")
+		  .getConstructor(new HClass[] {}));
+	roots.add(linker.forName("javax.realtime.RefCountArea")
+		  .getMethod("refInstance", new HClass[] {}));
+	roots.add(linker.forName("javax.realtime.MemAreaStack"));
+	roots.add(linker.forName("javax.realtime.MemAreaStack")
+		  .getConstructor(new HClass[] {
+		      linker.forName("javax.realtime.MemoryArea"),
+		      linker.forName("javax.realtime.MemAreaStack")}));
 	if(REALTIME_THREADS)
 	    {
 		roots.add(linker.forName("javax.realtime.QuantaThread")
@@ -266,22 +292,6 @@ public class Realtime {
 		roots.add(linker.forName("javax.realtime.QuantaThread")
 			  .getMethod("flagHandler", new HClass[] {}));
 	    }
-//  	roots.add(linker.forName("java.lang.Class")
-//  		  .getMethod("getConstructor", 
-//  			     new HClass[] { 
-//  				 HClassUtil
-//  				 .arrayClass(linker, 
-//  					     linker
-//  					     .forName("java.lang.Class"),
-//  					     1) }));
-//  	roots.add(linker.forName("java.lang.reflect.Constructor")
-//  		  .getMethod("newInstance", 
-//  			     new HClass[] { 
-//  				 HClassUtil
-//  				 .arrayClass(linker,
-//  					     linker
-//  					     .forName("java.lang.Object"),
-//  					     1) }));
 	return roots;
     }
     

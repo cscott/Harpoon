@@ -44,7 +44,7 @@ import harpoon.Util.Util;
  * It takes QuadsWithTry form code as input. 
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: CheckAdderWithTry.java,v 1.1.2.5 2001-07-16 13:05:00 wbeebee Exp $
+ * @version $Id: CheckAdderWithTry.java,v 1.1.2.6 2001-08-14 00:48:30 wbeebee Exp $
  */
 
 // Fix to be non-static...
@@ -133,7 +133,7 @@ class CheckAdderWithTry extends CheckAdder {
     /** Attaches the current memory area to a new instance of an object.
      * <p>
      * <p>obj = new foo() becomes:
-     * <p>t = RealtimeThread.currentRealtimeThread().getMemoryArea();
+     * <p>t = RealtimeThread.currentRealtimeThread().memoryArea();
      * <p>obj = new foo();
      * <p>obj.memoryArea = t;
      * <p>
@@ -177,7 +177,7 @@ class CheckAdderWithTry extends CheckAdder {
     /** Attaches the current memory area to a new instance of an object.
      * <p>
      * <p>obj = new foo() becomes:
-     * <p>t = RealtimeThread.currentRealtimeThread().getMemoryArea();
+     * <p>t = RealtimeThread.currentRealtimeThread().memoryArea();
      * <p>obj = new foo();
      * <p>t.bless(obj);
      * <p>
@@ -208,7 +208,7 @@ class CheckAdderWithTry extends CheckAdder {
     /** Attaches the current memory area to a new instance of an object.
      * <p>
      * <p>obj = new foo()[1][2][3] becomes:
-     * <p>t = RealtimeThread.currentRealtimeThread().getMemoryArea();
+     * <p>t = RealtimeThread.currentRealtimeThread().memoryArea();
      * <p>obj = new foo()[1][2][3]
      * <p>obj.memoryArea = t;
      * <p>
@@ -251,7 +251,7 @@ class CheckAdderWithTry extends CheckAdder {
     /** Attaches the current memory area to a new instance of an object.
      * <p>
      * <p>obj = new foo()[1][2][3] becomes:
-     * <p>t = RealtimeThread.currentRealtimeThread().getMemoryArea();
+     * <p>t = RealtimeThread.currentRealtimeThread().memoryArea();
      * <p>obj = new foo()[1][2][3]
      * <p>t.bless(obj, {1, 2, 3});
      * <p>
@@ -400,7 +400,7 @@ class CheckAdderWithTry extends CheckAdder {
 	return currentMemArea;
     }
 
-    /** Adds t = RealtimeThread.currentRealtimeThread().getMemoryArea() */
+    /** Adds t = RealtimeThread.currentRealtimeThread().memoryArea() */
 
     private Temp realAddGetCurrentMemArea(Linker linker, 
 					  QuadFactory qf, HMethod hm, 
@@ -416,7 +416,7 @@ class CheckAdderWithTry extends CheckAdder {
 			   .getMethod("currentRealtimeThread", new HClass[0]), 
 			   new Temp[0], t1, null, false, false, new Temp[0]);
 	Quad q1 = new CALL(qf, inst, realtimeThread
-			   .getMethod("getMemoryArea", new HClass[0]), 
+			   .getMethod("memoryArea", new HClass[0]), 
 			   new Temp[] { t1 }, currentMemArea, null, false, 
 			   false, new Temp[0]);
 	Edge splitEdge = inst.prevEdge(0);
