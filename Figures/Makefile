@@ -49,7 +49,8 @@ THcqex2.tex: THcqex.fig
 
 #default gnu-plot to latex rule
 %.tex: %.gnuplot
-	gnuplot $< | uniq > $@
+	gnuplot $< | uniq | sed -e '/setlength{.unitlength}/r head.tex' > $@
+	echo '\renewcommand{\figscale}{1.00}%' >> $@
 
 # extra dependencies for data files of gnuplots
 phisig.tex: phisig.data-sorted
