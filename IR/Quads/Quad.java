@@ -11,6 +11,7 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.ArrayIterator;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.CombineIterator;
 import harpoon.Util.EnumerationIterator;
 import harpoon.Util.Util;
@@ -28,7 +29,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.5 2002-04-11 04:00:34 cananian Exp $
+ * @version $Id: Quad.java,v 1.6 2002-07-16 21:54:17 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -362,23 +363,43 @@ public abstract class Quad
 	});
     }
     private static Quad copyone(QuadFactory qf, Quad q, Map old2new,
-				CloningTempMap ctm)
-    {
+				CloningTempMap ctm) {
+	// we split copyone in half and used an explicit worklist to
+	// avoid deep recursion which was crashing the JVM.
+	WorkSet<Quad> worklist = new WorkSet<Quad>();
+	Quad r = copyoneStart(qf, q, old2new, ctm, worklist);
+	while  (!worklist.isEmpty())
+	    copyoneFinish(qf, worklist.removeFirst(),
+			  old2new, ctm, worklist);
+	return r;
+    }
+
+    private static Quad copyoneStart(QuadFactory qf, Quad q, Map old2new,
+				     CloningTempMap ctm, WorkSet<Quad> ws) {
 	Quad r = (Quad) old2new.get(q);
 	// if we've already done this one, return previous clone.
 	if (r!=null) return r;
 	// clone the fields, add to map.
 	r = (Quad) q.clone(qf, ctm);
 	old2new.put(q, r);
+	// we need to fix up this quad.
+	ws.add(q);
+	// okay, return for now.  We're not done yet, but done w/ first part.
+	return r;
+    }
+    private static void copyoneFinish(QuadFactory qf, Quad q, Map old2new,
+				      CloningTempMap ctm, WorkSet<Quad> ws) {
+	Quad r = (Quad) old2new.get(q);
+	assert r!=null;
 	// fixup the edges.
 	for (int i=0; i<q.next.length; i++) {
 	    assert q.next[i].from == q;
-	    Quad to = copyone(qf, q.next[i].to, old2new, ctm);
+	    Quad to = copyoneStart(qf, q.next[i].to, old2new, ctm, ws);
 	    Quad.addEdge(r, q.next[i].from_index, to, q.next[i].to_index);
 	}
 	for (int i=0; i<q.prev.length; i++) {
 	    assert q.prev[i].to == q;
-	    Quad from = copyone(qf, q.prev[i].from, old2new, ctm);
+	    Quad from = copyoneStart(qf, q.prev[i].from, old2new, ctm, ws);
 	    Quad.addEdge(from, q.prev[i].from_index, r, q.prev[i].to_index);
 	}
 	// for HANDLER quads, fixup the protectedSet.
@@ -389,10 +410,9 @@ public abstract class Quad
 	    Quad[] oldqs=(Quad[])h.protectedSet().toArray(new Quad[ps.size()]);
 	    for (int i=0; i < oldqs.length; i++) {
 		ps.remove(oldqs[i]);
-		ps.insert(copyone(qf, oldqs[i], old2new, ctm));
+		ps.insert(copyoneStart(qf, oldqs[i], old2new, ctm, ws));
 	    }
 	}
-	return r;
     }
     // ----------------------------------------------------
     // Useful for temp renaming.  Exported only to subclasses.
