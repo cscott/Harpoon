@@ -35,7 +35,7 @@ import java.util.List;
  * and redundant labels.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JumpOptimization.java,v 1.1.2.2 2000-02-23 22:39:39 cananian Exp $
+ * @version $Id: JumpOptimization.java,v 1.1.2.3 2000-02-24 01:22:21 cananian Exp $
  */
 public abstract class JumpOptimization extends Simplification {
     // hide constructor
@@ -140,7 +140,7 @@ public abstract class JumpOptimization extends Simplification {
 		}
 	    },
 	    // this rule will flip CJUMPs to achieve better lay-out.
-	    // CJUMP(BINOP(op, ..), iftrue, iffalse) ; LABEL(iffalse)  -->
+	    // CJUMP(BINOP(op, ..), iftrue, iffalse) ; LABEL(iftrue)  -->
 	    //   CJUMP(BINOP(inv(op),..), iffalse, iftrue)
 	    new Rule("flipCjump") {
 		public boolean match(Stm s) {
@@ -155,7 +155,7 @@ public abstract class JumpOptimization extends Simplification {
 		    Stm next = next(s);
 		    if (next.kind() != TreeKind.LABEL) return false;
 		    LABEL l = (LABEL) next;
-		    return l.label == cjump.iffalse;
+		    return l.label == cjump.iftrue;
 		}
 		public Stm apply(TreeFactory tf,Stm s,DerivationGenerator dg) {
 		    CJUMP cjump = (CJUMP) s;
