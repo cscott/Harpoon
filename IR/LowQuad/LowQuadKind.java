@@ -7,12 +7,15 @@ package harpoon.IR.LowQuad;
  * <code>LowQuadKind</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LowQuadKind.java,v 1.1.2.1 1999-01-21 03:44:30 cananian Exp $
+ * @version $Id: LowQuadKind.java,v 1.1.2.2 1999-01-21 05:19:13 cananian Exp $
  */
 public abstract class LowQuadKind extends harpoon.IR.Quads.QuadKind {
     private static int n = min();
 
-    public static final int PGET = n++;
+    public static final int PCALL  = n++;
+    public static final int PGET   = n++;
+    public static final int POPER  = n++;
+    public static final int PSET   = n++;
 
     public static int min() { return harpoon.IR.Quads.QuadKind.max(); }
     public static int max() { return n; }

@@ -10,11 +10,11 @@ import harpoon.Util.Util;
 
 /**
  * <code>PGET</code> represents a <code>POINTER</code> dereference to
- * get a field or array element.  The source <code>Temp</code> ought to
- * contain a <code>POINTER</code> value.
+ * get a field or array element.  The <code>ptr</code> <code>Temp</code>
+ * ought to contain a <code>POINTER</code> value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PGET.java,v 1.1.2.1 1999-01-21 03:44:30 cananian Exp $
+ * @version $Id: PGET.java,v 1.1.2.2 1999-01-21 05:19:14 cananian Exp $
  */
 public class PGET extends LowQuad {
     /** <code>Temp</code> in which to store the fetched field or array
@@ -24,7 +24,8 @@ public class PGET extends LowQuad {
      *  dereference and fetch. */
     protected final Temp ptr;
     
-    /** Creates a <code>PGET</code> representing a pointer dereference.
+    /** Creates a <code>PGET</code> representing a pointer dereference and
+     *  fetch.
      * @param dst
      *        the <code>Temp</code> in which to store the fetched field or
      *        element.
@@ -60,6 +61,6 @@ public class PGET extends LowQuad {
     void visit(LowQuadVisitor v) { v.visit(this); }
 
     public String toString() {
-	return dst.toString() + " = PGET " + ptr.toString();
+	return dst.toString() + " = PGET *" + ptr.toString();
     }
 }
