@@ -194,6 +194,35 @@ public abstract class Scheduler {
     /** Turns on/off timed thread switching */
     protected final native void setTimer(boolean state);
 
+//  Notes for reflection optimization... - WSB
+//      private static final String[] s = new String[] {
+//  	"method"
+//      };
+//      public boolean overridden() {
+//  	Method[] m = getClass().getMethods();
+//  	for (int i=0; i<m.length; i++) {
+//  	    for (int j=0; j<s.length; j++) {
+//  		if ((m[i].getDeclaringClass()==Foo.class)&&
+//  		    (m[i].getName().equals(s[j]))) {
+//  		    return false;
+//  		}
+//  	    }
+//  	}
+//  	return true;
+//      }
+    
+    protected void handleLock(long threadID) {
+    }
+
+    protected void handleTryLock(long threadID) {
+    }
+
+    protected void handleSignal(long threadID) {
+    }
+
+    protected void handleWait(long threadID) {
+    }
+
     /** Print out the status of the scheduler */
     public final static void print() {
 	Scheduler sched = RealtimeThread.currentRealtimeThread().getScheduler();
