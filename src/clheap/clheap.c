@@ -67,7 +67,7 @@ void clheap_detach(clheap_t clh) {
 #ifdef BDW_CONSERVATIVE_GC
   /* first call all finalizers. */
   {
-    GC_finalization_proc *finfunc=NULL; void *findata;
+    GC_finalization_proc finfunc=NULL; void *findata;
     GC_register_finalizer(clh->heap_start,NULL,NULL,&finfunc,&findata);
     if (finfunc!=NULL) (*finfunc)(clh->heap_start, findata);
   }
