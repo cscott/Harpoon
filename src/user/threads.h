@@ -12,6 +12,8 @@
 #include "../realtime/threads.h"
 #endif
 
+#include "../nativeio/NativeIO.h"
+
 struct thread_list {
   struct thread_list *prev;
   struct machdep_pthread mthread;
