@@ -30,9 +30,12 @@ import harpoon.Util.Util;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1.2.33 2001-06-17 22:30:41 cananian Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.34 2001-12-16 05:26:33 salcianu Exp $
  */
 public class NodeRepository implements java.io.Serializable {
+
+    public final PANode CONST_NODE = null;
+    public final PANode NULL_NODE  = null;
     
     private Hashtable static_nodes;
     private Hashtable param_nodes;

@@ -26,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.39 2001-06-17 22:30:49 cananian Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.40 2001-12-16 05:26:33 salcianu Exp $
  */
 public class PointsToGraph implements Cloneable, java.io.Serializable{
 
@@ -99,7 +99,7 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 
 
     /** Returns the set of nodes reachable from the returned nodes
-	(including these returned nodes). */
+	(including the returned nodes). */
     public Set getReachableFromR(){
 	if(reachable_from_r == null)
 	    reachable_from_r = reachableNodes(r);
@@ -109,7 +109,7 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 
 
     /** Returns the set of nodes reachable from the exceptionally returned
-	nodes (including these exceptionally returned nodes). */
+	nodes (including the exceptionally returned nodes). */
     public Set getReachableFromExcp(){
 	if(reachable_from_excp == null)
 	    reachable_from_excp = reachableNodes(excp);
@@ -652,4 +652,3 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
     }
     
 }
-
