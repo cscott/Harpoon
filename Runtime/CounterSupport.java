@@ -10,7 +10,7 @@ import java.io.PrintStream;
  * using counters identified by integers.
  * 
  * @author  bdemsky <bdemsky@lm.lcs.mit.edu>
- * @version $Id: CounterSupport.java,v 1.1.2.6 2000-11-14 16:21:36 bdemsky Exp $
+ * @version $Id: CounterSupport.java,v 1.1.2.7 2000-11-14 16:50:46 bdemsky Exp $
  */
 public class CounterSupport {
     static int size,sizesync;
@@ -23,20 +23,24 @@ public class CounterSupport {
     static boolean counton,setup;
     static int error;
     static int overflow;
-    static int[] callchain;
-    static int csize, depth;
+    static int[][] callchain;
+    static int csize,tsize;
+    static int[] depth;
     static int[][] alloccall;
     static int size1,size2;
+    static Thread[] threadarray;
 
     static {
 	//redefine these
 	numbins=211;
 	bincap=30;
 	csize=100;
-	depth=0;
+	tsize=100;
 	boundedkey=new Object[numbins][bincap];
 	boundedvalue=new int[numbins][bincap];
-	callchain=new int[csize];
+	callchain=new int[csize][tsize];
+	depth=new int[tsize];
+	threadarray=new Thread[tsize];
 
 	overflow=0;
 	error=0;
@@ -61,11 +65,20 @@ public class CounterSupport {
 		    nsize1=value*2;
 		    resize=true;
 		}
-		if ((depth!=0)&&((depth-1)<csize))
-		    if (callchain[depth-1]>=size2) {
-			nsize2=callchain[depth-1]*2;
-			resize=true;
+		int thisthread=-1;
+		Thread t=Thread.currentThread();
+		for(int j=0;j<tsize;j++) {
+		    if (t==threadarray[j]) {
+			thisthread=j;
+			break;
 		    }
+		}
+		if (thisthread!=-1)
+		    if ((depth[thisthread]!=0)&&((depth[thisthread]-1)<csize))
+			if (callchain[depth[thisthread]-1][thisthread]>=size2) {
+			    nsize2=callchain[depth[thisthread]-1][thisthread]*2;
+			    resize=true;
+			}
 		if (resize) {
 		    int[][] newarray=new int[nsize1][nsize2];
 		    for(int i=0;i<size1;i++) {
@@ -75,9 +88,10 @@ public class CounterSupport {
 		    size2=nsize2;
 		    alloccall=newarray;
 		}
-		if ((depth!=0)&&((depth-1)<csize))
-		    alloccall[value][callchain[depth-1]]++;
-		else alloccall[value][0]++;
+		if (thisthread!=-1) {
+		    if ((depth[thisthread]!=0)&&((depth[thisthread]-1)<csize))
+			alloccall[value][callchain[depth[thisthread]-1][thisthread]]++;
+		} else alloccall[value][0]++;
 
 		if (value>=size) {
 		    long[] newarray=new long[value*2];
@@ -152,9 +166,28 @@ public class CounterSupport {
 	if (setup)
 	    synchronized(lock) {
 		if (counton) {
-		    if (depth<csize)
-			callchain[depth]=callsite+1;
-		    depth++;
+		    int firstnull=-1,thisthread=-1;
+		    Thread t=Thread.currentThread();
+		    for(int j=0;j<tsize;j++) {
+			if (t==threadarray[j]) {
+			    thisthread=j;
+			    break;
+			}
+			if ((threadarray[j]==null)&&(firstnull==-1))
+			    firstnull=j;
+		    }
+		    if (thisthread==-1) {
+			if (firstnull!=-1) {
+			    threadarray[firstnull]=t;
+			    depth[firstnull]=0;
+			    thisthread=firstnull;
+			}
+		    }
+		    if (thisthread!=-1) {
+			if (depth[thisthread]<csize)
+			    callchain[depth[thisthread]][thisthread]=callsite+1;
+			depth[thisthread]++;
+		    }
 		}
 	    }
     }
@@ -162,8 +195,21 @@ public class CounterSupport {
     static void callexit() {
 	if (setup)
 	    synchronized(lock) {
-		if (counton)
-		    depth--;
+		if (counton) {
+		    int thisthread=-1;
+		    Thread t=Thread.currentThread();
+		    for(int j=0;j<tsize;j++) {
+			if (t==threadarray[j]) {
+			    thisthread=j;
+			    break;
+			}
+		    }
+		    if (thisthread!=-1) {
+			depth[thisthread]--;
+			if (depth[thisthread]==0)
+			    threadarray[thisthread]=null;
+		    }
+		}
 	    }
     }
 
