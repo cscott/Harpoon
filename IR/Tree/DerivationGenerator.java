@@ -22,14 +22,14 @@ import java.util.Map;
  * <code>Tree.Exp</code>s can be inferred from these.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationGenerator.java,v 1.1.2.2 2000-02-05 22:32:05 cananian Exp $
+ * @version $Id: DerivationGenerator.java,v 1.1.2.3 2000-02-09 05:12:12 cananian Exp $
  */
-class DerivationGenerator implements TreeDerivation {
+public class DerivationGenerator implements TreeDerivation {
     /** private partial type map */
     private Map dtM = new HashMap();
     
     /** Creates a <code>DerivationGenerator</code>. */
-    DerivationGenerator() { }
+    public DerivationGenerator() { }
 
     /** internal structure of type/derivation information */
     private static class TypeAndDerivation {
@@ -67,17 +67,27 @@ class DerivationGenerator implements TreeDerivation {
     }
 
     // allow implementations to add explicit type/derivation information
-    void putType(Exp exp, HClass type) {
+    /** Add a mapping from the given <code>Tree.Exp</code> <code>exp</code>
+     *  to the given <code>HClass</code> <code>type</code> to this
+     *  <code>DerivationGenerator</code>. */
+    public void putType(Exp exp, HClass type) {
 	Util.assert(exp!=null && type!=null);
 	Util.assert(!dtM.containsKey(exp));
 	dtM.put(exp, new TypeAndDerivation(type));
     }
-    void putTypeAndTemp(Exp exp, HClass type, Temp temp) {
+    /** Add a mapping from the given <code>Tree.Exp</code> <code>exp</code>
+     *  to the given <code>HClass</code> <code>type</code> to the 
+     *  <code>DerivationGenerator</code>, indicating that this value lives
+     *  in <code>Temp</code> <code>temp</code>. */
+    public void putTypeAndTemp(Exp exp, HClass type, Temp temp) {
 	Util.assert(exp!=null && type!=null && temp!=null);
 	Util.assert(!dtM.containsKey(exp));
 	dtM.put(exp, new TypeAndDerivation(type, temp));
     }
-    void putDerivation(Exp exp, DList derivation) {
+    /** Add a mapping from the given <code>Tree.Exp</code> <code>exp</code>
+     *  to the given <code>Derivation.DList</code> <code>derivation</code>.
+     */
+    public void putDerivation(Exp exp, DList derivation) {
 	Util.assert(exp!=null && derivation!=null);
 	Util.assert(!dtM.containsKey(exp));
 	dtM.put(exp, new TypeAndDerivation(derivation));
