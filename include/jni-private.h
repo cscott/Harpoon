@@ -6,6 +6,9 @@
 #include <sys/types.h>
 #include <stdarg.h>
 #include "config.h"
+#ifdef BDW_CONSERVATIVE_GC
+#include "gc.h"
+#endif
 #ifdef WITH_HEAVY_THREADS
 #include <pthread.h>
 #endif
@@ -61,10 +64,33 @@ struct aux_gcbitmap {
   ptroff_t bitmap[0];          /* variable size bitmap */
 };
 
+/* the inflated_oobj structure has various bits of information that we
+ * want to associate with *some* (not all) objects. */
+struct inflated_oobj {
+  ptroff_t hashcode; /* the real hashcode, since we've booted it */
+  void *jni_data; /* information associated with this object by the JNI */
+  void (*jni_cleanup_func)(void *jni_data);
+  /* locking information */
+#ifdef WITH_HEAVY_THREADS
+  pthread_t tid; /* can be zero, if no one has this lock */
+  jint nesting_depth; /* recursive lock nesting depth */
+  pthread_mutex_t mutex; /* simple (not recursive) lock */
+  pthread_cond_t  cond; /* condition variable */
+#endif
+#ifdef BDW_CONSERVATIVE_GC
+  /* for cleanup via finalization */
+  GC_finalization_proc old_finalizer;
+  GC_PTR old_client_data;
+#endif
+};
+
 /* the oobj structure tells you what's inside the object layout. */
 struct oobj {
   struct claz *claz;
-  u_int32_t hashcode;
+  /* if low bit is one, then this is a fair-dinkum hashcode. else, it's a
+   * pointer to a struct inflated_oobj. this pointer needs to be freed
+   * when the object is garbage collected, which is done w/ a finalizer. */
+  union { ptroff_t hashcode; struct inflated_oobj *inflated; } hashunion;
   /* fields below this point */
   char field_start[0];
 };
@@ -107,6 +133,9 @@ struct _jobject {
 #define FNI_UNWRAP(_x) ({jobject x=_x; (x==NULL)?NULL:x->obj; })
 
 /* ---------------------- thread state ---------------------------------*/
+// any changes to this structure should be reflected in
+// Code/Backend/Runtime1/StubCode.<foo>_OFFSET (see constructor)
+// and Code/Backend/Runtime1/TreeBuilder._call_FNI_Monitor()
 struct FNI_Thread_State {
   JNIEnv vtable;
   jthrowable exception; /* outstanding exception, or NULL if no exception. */
@@ -142,6 +171,10 @@ struct FNI_classinfo *FNI_GetClassInfo(jclass clazz);
 void *FNI_RawAlloc(JNIEnv *env, jsize length);
 /* allocate and zero memory for the specified object type */
 jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, jsize length);
+
+/* inflation routine/macro */
+#define FNI_IS_INFLATED(obj) ((FNI_UNWRAP(obj)->hashunion.hashcode & 1) == 0)
+void FNI_InflateObject(JNIEnv *env, jobject obj);
 
 /* auxilliary thread synchronization operations */
 void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime);
