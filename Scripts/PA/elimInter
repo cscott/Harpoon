@@ -1,4 +1,7 @@
 #!/bin/sh
+
+CALL_DIR=`pwd`
+
 cd 
 cd Harpoon/Code
 
@@ -11,18 +14,20 @@ stdPath=./Support/NewThread.jar:./Support/sunthunk.jar:./Support/collections.jar
 
 echo "Analyzing $cls to analyze-$name."
 
-rm -rf $name.Inter
-mkdir $name.Inter
+PRE_FILE=${CALL_DIR}/pre${name}
+BUILD_OUT_DIR=${CALL_DIR}/${name}.Inter
+MAMAPS_FILE=${CALL_DIR}/analyze-${name}.Inter
 
-if test -e pre$name
+rm -rf ${BUILD_OUT_DIR} 
+mkdir ${BUILD_OUT_DIR}
+
+
+if test -e $PRE_FILE
 then
-    PREANALYSIS_OPT=--loadpre=pre$name
+    PREANALYSIS_OPT=--loadpre=$PRE_FILE
 else
-    PREANALYSIS_OPT=--savepre=pre$name
+    PREANALYSIS_OPT=--savepre=$PRE_FILE
 fi
-
-echo "harpoon.class.path  = " $stdPath:$dir
-echo "current directory . = " `pwd`
 
 java -mx128m -oss100m \
     -Dharpoon.alloc.strategy=nifty \
@@ -30,9 +35,9 @@ java -mx128m -oss100m \
     -Dharpoon.class.path=$stdPath:$dir \
 harpoon.Main.PAMain $PREANALYSIS_OPT \
     -s --ccs=$levels --wts \
-    --mamaps=analyze-$name --ns 1 \
+    --mamaps=${MAMAPS_FILE} --ns 1 \
+    --output ${BUILD_OUT_DIR} --backend strongarm --inline \
     --details \
-    --output $name.Inter/ --backend strongarm --inline \
 $cls
 
 #--syncelimroots --analyzeroots

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+CALL_DIR=`pwd`
+
 cd 
 cd Harpoon/Code
 
@@ -8,19 +10,19 @@ name=$2
 dir=$3
 levels=$4
 
-rm -rf $name.None
-mkdir $name.None
+BUILD_OUT_DIR=${CALL_DIR}/${name}.Inter
+
+rm -rf ${BUILD_OUT_DIR} 
+mkdir ${BUILD_OUT_DIR}
+
 
 export stdPath=./Support/EventDriven1.jar:./Support/sunthunk.jar:./Support/collections.jar:./classes.zip:.
-
-echo "harpoon.class.path  = " $stdPath:$dir
-echo "current directory . = " `pwd`
 
 java -mx128m -oss100m \
     -Dharpoon.alloc.strategy=bdw \
     -Dharpoon.target.elf=yes \
     -Dharpoon.class.path=$stdPath:$dir \
 harpoon.Main.SAMain \
-    -H -c $cls -b precisec -o $name.None/
+    -H -c $cls -bstrongarm -o ${BUILD_OUT_DIR}
 
 exit $?

@@ -12,14 +12,18 @@ stdPath=./Support/NewThread.jar:./Support/sunthunk.jar:./Support/collections.jar
 
 echo "Analyzing $cls to analyze-$name."
 
-rm -rf $name.Intra
-mkdir $name.Intra
+PRE_FILE=${CALL_DIR}/pre$name
+BUILD_OUT_DIR=${CALL_DIR}/${name}.Intra
+MAMAPS_FILE=${CALL_DIR}/analyze-${name}.Intra
 
-if test -e pre$name
+rm -rf ${BUILD_OUT_DIR} 
+mkdir ${BUILD_OUT_DIR}
+
+if test -e $PRE_FILE
 then
-    PREANALYSIS_OPT=--loadpre=pre$name
+    PREANALYSIS_OPT=--loadpre=$PRE_FILE
 else
-    PREANALYSIS_OPT=--savepre=pre$name
+    PREANALYSIS_OPT=--savepre=$PRE_FILE
 fi
 
 
@@ -34,8 +38,9 @@ java -mx128m -oss100m \
     -Dharpoon.class.path=$stdPath:$dir \
 harpoon.Main.PAMain $PREANALYSIS_OPT \
     -s --ccs=$levels --wts \
-    --mamaps=analyze-$name --noit --ns 1 \
-    --details --output $name.Intra/ --backend strongarm --inline \
+    --mamaps=${MAMAPS_FILE} --noit --ns 1 \
+    --output ${BUILD_OUT_DIR} --backend strongarm --inline \
+    --details \
 $cls
 
 
