@@ -20,7 +20,7 @@ import harpoon.Temp.TempMap;
  * and its motivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.2 2000-02-01 07:43:35 cananian Exp $
+ * @version $Id: Derivation.java,v 1.1.2.3 2000-02-01 08:08:37 cananian Exp $
  */
 public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 
@@ -43,8 +43,8 @@ public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
      *  and <code>t3</code>, a derived pointer <code>d</code> whose value
      *  can be described by the equation:<pre>
      *   d = K + t1 - t2 + t3
-     *  </pre> for some integer K at every point during runtime can be
-     *  represented as the <code>DList</code><pre>
+     *  </pre> for some (non-constant) integer K at every point during
+     *  runtime can be represented as the <code>DList</code><pre>
      *   new DList(t1, true, new DList(t2, false, new DList(t3, true)))
      *  </pre>.<p>
      * <b>NOTE</b> that the temporaries named in the <code>DList</code>
