@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.64.2.4 2002-03-21 11:27:45 cananian Exp $
+# $Id: GNUmakefile,v 1.64.2.5 2002-04-07 21:18:53 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -7,7 +7,7 @@ JAVA:=java
 JFLAGS=-d . -g
 JFLAGSVERB=#-verbose -J-Djavac.pipe.output=true
 JIKES:=jikes $(JIKES_OPT)
-JCC5=/home/cananian/jsr14_adding_generics-1_0-ea/scripts/javac -source 1.4 #-warnunchecked
+JCC5=$(JSR14DISTR)/scripts/javac -source 1.4 -gj #-warnunchecked
 JCC=javac -J-mx64m -source 1.4
 JDOC=javadoc
 JAR=jar
@@ -136,7 +136,7 @@ list-packages-with-java-src:
 	@echo $(filter-out Test,$(PKGSWITHJAVASRC))
 
 java:	PASS = 1
-java:	$(ALLSOURCE) $(PROPERTIES)
+java:	$(ALLSOURCE) $(PROPERTIES) gj-files
 	if [ ! -d harpoon ]; then \
 	  $(MAKE) first; \
 	fi
