@@ -10,7 +10,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * types of attribute information classes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Attribute.java,v 1.9 1998-08-02 03:19:40 cananian Exp $
+ * @version $Id: Attribute.java,v 1.10 1998-08-02 05:07:39 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7"
  * @see ClassFile
  * @see FieldInfo
@@ -58,6 +58,8 @@ public abstract class Attribute {
       return new AttributeLineNumberTable(parent, in, attribute_name_index);
     if (attribute_name.equals("LocalVariableTable"))
       return new AttributeLocalVariableTable(parent, in, attribute_name_index);
+    if (attribute_name.equals("InnerClasses"))
+      return new AttributeInnerClasses(parent, in, attribute_name_index);
     // Unknown attribute type.
     return new AttributeUnknown(parent, in, attribute_name_index);
   }

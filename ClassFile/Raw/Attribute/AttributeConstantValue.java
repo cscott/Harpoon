@@ -15,10 +15,13 @@ import harpoon.ClassFile.Raw.Constant.*;
  * table of a given <code>field_info</code> structure.  The constant
  * field represented by the <code>field_info</code> structure is
  * assigned the value referenced by its <code>ConstantValue</code>
- * attribute as part of its initialization.
+ * attribute as part of its initialization.<p>
+ * <strong>CORRECTION FROM ERRATA:</strong>
+ * If a non-static field has a <code>ConstantValue</code> attribute, then
+ * the attribute is silently ignored.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeConstantValue.java,v 1.7 1998-08-01 22:55:16 cananian Exp $
+ * @version $Id: AttributeConstantValue.java,v 1.8 1998-08-02 05:07:39 cananian Exp $
  * @see Attribute
  * @see FieldInfo
  * @see ClassFile
