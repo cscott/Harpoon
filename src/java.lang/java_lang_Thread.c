@@ -5,8 +5,8 @@
 #include <assert.h>
 #include "config.h"
 #include <errno.h>
+#include "flexthread.h"
 #ifdef WITH_HEAVY_THREADS
-#include <pthread.h>
 #include <sys/time.h>
 #endif
 #include <sched.h> /* for sched_yield */

@@ -6,14 +6,12 @@
 #ifdef BDW_CONSERVATIVE_GC
 #include "gc.h"
 #endif
-#ifdef WITH_HEAVY_THREADS
-#include <pthread.h>
-#endif
+#include "flexthread.h"
 #include <stdlib.h>
 
-#ifdef WITH_HEAVY_THREADS
+#ifdef WITH_THREADS
 /* lock for inflating locks */
-static pthread_mutex_t global_inflate_mutex = PTHREAD_MUTEX_INITIALIZER;
+static flex_mutex_t global_inflate_mutex = FLEX_MUTEX_INITIALIZER;
 #endif
 
 #ifdef BDW_CONSERVATIVE_GC
@@ -22,8 +20,8 @@ static void deflate_object(GC_PTR obj, GC_PTR client_data);
 
 void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
   struct oobj *obj = FNI_UNWRAP(wrapped_obj);
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_lock(&global_inflate_mutex);
+#ifdef WITH_THREADS
+  flex_mutex_lock(&global_inflate_mutex);
 #endif
   /* be careful in case someone inflates this guy while our back is turned */
   if (obj->hashunion.hashcode & 1) {
@@ -32,7 +30,7 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     /* initialize infl */
     memset(infl, 0, sizeof(*infl));
     infl->hashcode = obj->hashunion.hashcode;
-#ifdef WITH_HEAVY_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
     pthread_mutex_init(&(infl->mutex), NULL);
     pthread_cond_init(&(infl->cond), NULL);
     pthread_rwlock_init(&(infl->jni_data_lock), NULL);
@@ -47,8 +45,8 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
 			      &(infl->old_client_data));
 #endif
   }
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_unlock(&global_inflate_mutex);
+#ifdef WITH_THREADS
+  flex_mutex_unlock(&global_inflate_mutex);
 #endif
 }
 
@@ -72,16 +70,16 @@ static void deflate_object(GC_PTR obj, GC_PTR client_data) {
      * JNI data */
     if (infl->jni_cleanup_func)
 	(infl->jni_cleanup_func)(infl->jni_data);
-    infl->jni_data = infl->jni_cleanup_func = NULL;
+    infl->jni_data = NULL; infl->jni_cleanup_func = NULL;
     /* release clustered heap */
 #ifdef WITH_CLUSTERED_HEAPS
     /* call release function if non-null */
     if (infl->heap_release)
       (infl->heap_release)(infl->heap);
-    infl->heap = infl->heap_release = NULL;
+    infl->heap = NULL; infl->heap_release = NULL;
 #endif
     /* okay deallocate mutexes, etc. */
-#ifdef WITH_HEAVY_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
     pthread_mutex_destroy(&(infl->mutex));
     pthread_cond_destroy(&(infl->cond));
 #endif

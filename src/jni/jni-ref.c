@@ -11,9 +11,7 @@
 #ifdef BDW_CONSERVATIVE_GC
 #include "gc.h"
 #endif
-#ifdef WITH_HEAVY_THREADS
-#include <pthread.h>
-#endif
+#include "flexthread.h"
 
 jobject FNI_NewLocalRef(JNIEnv *env, jobject_unwrapped obj) {
   struct FNI_Thread_State *fts = (struct FNI_Thread_State *) env;
@@ -66,8 +64,8 @@ void FNI_DeleteLocalRef(JNIEnv *env, jobject localRef) {
   } else assert(0); /* can't find local ref */
 }
 
-#ifdef WITH_HEAVY_THREADS
-static pthread_mutex_t globalref_mutex = PTHREAD_MUTEX_INITIALIZER;
+#ifdef WITH_THREADS
+static flex_mutex_t globalref_mutex = FLEX_MUTEX_INITIALIZER;
 #endif
 
 jobject FNI_NewGlobalRef(JNIEnv * env, jobject obj) {
@@ -84,14 +82,14 @@ jobject FNI_NewGlobalRef(JNIEnv * env, jobject obj) {
     (sizeof(*result));
   result->obj = obj->obj;
   /* acquire global lock */
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_lock(&globalref_mutex);
+#ifdef WITH_THREADS
+  flex_mutex_lock(&globalref_mutex);
 #endif
   result->next = FNI_globalrefs.next;
   FNI_globalrefs.next = result;
   /* release global lock */
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_unlock(&globalref_mutex);
+#ifdef WITH_THREADS
+  flex_mutex_unlock(&globalref_mutex);
 #endif
   /* done. */
   return result;
@@ -101,8 +99,8 @@ void FNI_DeleteGlobalRef (JNIEnv *env, jobject globalRef) {
   jobject prev;
   assert(FNI_NO_EXCEPTIONS(env));
   /* acquire global lock */
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_lock(&globalref_mutex);
+#ifdef WITH_THREADS
+  flex_mutex_lock(&globalref_mutex);
 #endif
   /* scan through local refs until we find it. */
   for (prev = &FNI_globalrefs; prev->next != NULL; prev=prev->next)
@@ -117,7 +115,7 @@ void FNI_DeleteGlobalRef (JNIEnv *env, jobject globalRef) {
     prev->next = prev->next->next;
   } else assert(0); /* can't find global ref */
   /* release global lock */
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_unlock(&globalref_mutex);
+#ifdef WITH_THREADS
+  flex_mutex_unlock(&globalref_mutex);
 #endif
 }

@@ -4,9 +4,7 @@
 #define INCLUDED_CLHEAP_H
 
 #include "config.h"
-#ifdef WITH_HEAVY_THREADS
-#include <pthread.h>
-#endif
+#include "flexthread.h"
 
 typedef struct clustered_heap {
   char *heap_start, *heap_top, *heap_end;
@@ -14,8 +12,8 @@ typedef struct clustered_heap {
   /* reference counting */
   int use_count;
 
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_t heap_lock;
+#ifdef WITH_THREADS
+  flex_mutex_t heap_lock;
 #endif
 } * clheap_t;
 

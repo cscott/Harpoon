@@ -4,11 +4,9 @@
 
 #include <assert.h>
 #include "config.h"
-#ifdef WITH_HEAVY_THREADS
-#include <pthread.h>
-#endif
+#include "flexthread.h"
 
-#ifdef WITH_NO_THREADS
+#ifndef WITH_THREADS
 jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
   assert(FNI_NO_EXCEPTIONS(env));
   return 0;
@@ -23,9 +21,9 @@ void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime){
 void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall) {
   return; /* we'll just ignore the notify in single-threaded mode */
 }
-#endif
+#endif /* !WITH_THREADS */
 
-#ifdef WITH_HEAVY_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
 
 jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
   pthread_t self = pthread_self();

@@ -9,9 +9,7 @@
 #ifdef BDW_CONSERVATIVE_GC
 #include "gc.h"
 #endif
-#ifdef WITH_HEAVY_THREADS
-#include <pthread.h>
-#endif
+#include "flexthread.h"
 #include <time.h>
 
 #if SIZEOF_VOID_P==4
@@ -75,7 +73,7 @@ struct inflated_oobj {
   void *jni_data; /* information associated with this object by the JNI */
   void (*jni_cleanup_func)(void *jni_data);
   /* locking information */
-#ifdef WITH_HEAVY_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   pthread_t tid; /* can be zero, if no one has this lock */
   jint nesting_depth; /* recursive lock nesting depth */
   pthread_mutex_t mutex; /* simple (not recursive) lock */
@@ -150,7 +148,7 @@ struct FNI_Thread_State {
   jthrowable exception; /* outstanding exception, or NULL if no exception. */
   struct _jobject localrefs; /* header node in a local refs list. */
   jobject thread; /* thread object corresponding to this thread state. */
-#ifdef WITH_HEAVY_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   pthread_t pthread; /* the pthread corresponding to this thread state. */
   pthread_cond_t sleep_cond; /* condition variable for sleep/suspend. */
   pthread_mutex_t sleep_mutex; /* mutex for sleep/suspend. */

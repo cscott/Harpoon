@@ -5,21 +5,19 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#ifdef WITH_HEAVY_THREADS
-#include <pthread.h>    /* for mutex ops */
-#endif
+#include "flexthread.h" /* for mutex ops */
 
 static jfieldID pathID = 0; /* The field ID of File.path */
 static int inited = 0; /* whether the above variables have been initialized */
-#ifdef WITH_HEAVY_THREADS
-static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
+#ifdef WITH_THREADS
+static flex_mutex_t init_mutex = FLEX_MUTEX_INITIALIZER;
 #endif
 
 static int initializeFI(JNIEnv *env) {
   jclass FIcls;
 
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_lock(&init_mutex);
+#ifdef WITH_THREADS
+  flex_mutex_lock(&init_mutex);
   // other thread may win race to lock and init before we do.
   if (inited) goto done;
 #endif
@@ -31,8 +29,8 @@ static int initializeFI(JNIEnv *env) {
   
   inited = 1;
  done:
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_unlock(&init_mutex);
+#ifdef WITH_THREADS
+  flex_mutex_unlock(&init_mutex);
 #endif
   return inited;
 }

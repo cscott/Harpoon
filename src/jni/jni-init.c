@@ -9,6 +9,7 @@ extern struct JNINativeInterface FLEX_JNI_vtable;
 #ifdef WITH_DMALLOC
 #include "dmalloc.h"
 #endif
+#include "flexthread.h"
 
 /* no global refs, initially. */
 struct _jobject FNI_globalrefs = { NULL, NULL };
@@ -23,7 +24,7 @@ static JNIEnv * FNI_CreateThreadState(void) {
   env->localrefs.obj = NULL;
   env->localrefs.next= NULL;
   env->thread = NULL;
-#ifdef WITH_HEAVY_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   pthread_mutex_init(&(env->sleep_mutex), NULL);
   pthread_mutex_lock(&(env->sleep_mutex));
   pthread_cond_init(&(env->sleep_cond), NULL);
@@ -35,7 +36,7 @@ static void FNI_DestroyThreadState(void *cl) {
   if (cl==NULL) return; // death of uninitialized thread.
   // ignore wrapped exception; free localrefs.
   FNI_DeleteLocalRefsUpTo((JNIEnv *)env, NULL);
-#ifdef WITH_HEAVY_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   // destroy condition variable & mutex
   pthread_mutex_unlock(&(env->sleep_mutex));
   pthread_mutex_destroy(&(env->sleep_mutex));
@@ -47,15 +48,15 @@ static void FNI_DestroyThreadState(void *cl) {
 
 /** implementations of JNIEnv management functions.  */
 
-#ifdef WITH_NO_THREADS
+#ifndef WITH_THREADS
 /** single-threaded implementation. Single, global, JNIEnv. */
 static JNIEnv *FNI_JNIEnv = NULL;
 void FNI_InitJNIEnv(void) { /* do nothing */ }
 JNIEnv *FNI_CreateJNIEnv(void) { return FNI_JNIEnv = FNI_CreateThreadState(); }
 JNIEnv *FNI_GetJNIEnv(void) { return FNI_JNIEnv; }
-#endif /* WITH_NO_THREADS */
+#endif /* !WITH_THREADS */
 
-#ifdef WITH_HEAVY_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
 /** threaded implementation: JNIEnv is stored in per-thread memory. */
 #include <pthread.h>
 static pthread_key_t FNI_JNIEnv_key;
@@ -72,4 +73,4 @@ JNIEnv *FNI_CreateJNIEnv(void) {
 JNIEnv *FNI_GetJNIEnv(void) {
   return (JNIEnv *) pthread_getspecific(FNI_JNIEnv_key);
 }
-#endif /* WITH_HEAVY_THREADS */
+#endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS */

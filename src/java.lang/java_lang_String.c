@@ -4,16 +4,14 @@
 
 #include <assert.h>
 #include "config.h"
-#ifdef WITH_HEAVY_THREADS
-#include <pthread.h>
-#endif
+#include "flexthread.h"
 
 static jobject internTable = 0; /* Table mapping strings to interned strings */
 static jmethodID getID = 0; /* method ID of get() in class Hashtable */
 static jmethodID putID = 0; /* method ID of put() in class Hashtable */
 static int inited = 0; /* whether the above variables have been initialized */
-#ifdef WITH_HEAVY_THREADS
-static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
+#ifdef WITH_THREADS
+static flex_mutex_t init_mutex = FLEX_MUTEX_INITIALIZER;
 #endif
 
 int initializeJLS(JNIEnv *env) {
@@ -23,8 +21,8 @@ int initializeJLS(JNIEnv *env) {
   char *p;
   int strsize;
 
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_lock(&init_mutex);
+#ifdef WITH_THREADS
+  flex_mutex_lock(&init_mutex);
   // other thread may win race to lock and init before we do.
   if (inited) goto done;
 #endif
@@ -68,8 +66,8 @@ int initializeJLS(JNIEnv *env) {
   /* done. */
   inited = 1;
  done:
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_unlock(&init_mutex);
+#ifdef WITH_THREADS
+  flex_mutex_unlock(&init_mutex);
 #endif
   return 1;
 }

@@ -9,24 +9,22 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
-#ifdef WITH_HEAVY_THREADS
-#include <pthread.h>
-#endif
+#include "flexthread.h"
 
 #include "javaio.h" /* for getfd/setfd */
 
 static jfieldID fdObjID = 0; /* The field ID of fd in class RandomAccessFile */
 static jclass IOExcCls  = 0; /* The java/io/IOException class object */
 static int inited = 0; /* whether the above variables have been initialized */
-#ifdef WITH_HEAVY_THREADS
-static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
+#ifdef WITH_THREADS
+static flex_mutex_t init_mutex = FLEX_MUTEX_INITIALIZER;
 #endif
 
 int initializeRAF(JNIEnv *env) {
     jclass RAFCls;
 
-#ifdef WITH_HEAVY_THREADS
-    pthread_mutex_lock(&init_mutex);
+#ifdef WITH_THREADS
+    flex_mutex_lock(&init_mutex);
     // other thread may win race to lock and init before we do.
     if (inited) goto done;
 #endif
@@ -41,8 +39,8 @@ int initializeRAF(JNIEnv *env) {
     IOExcCls = (*env)->NewGlobalRef(env, IOExcCls);
     inited = 1;
  done:
-#ifdef WITH_HEAVY_THREADS
-    pthread_mutex_unlock(&init_mutex);
+#ifdef WITH_THREADS
+    flex_mutex_unlock(&init_mutex);
 #endif
     return 1;
 }

@@ -3,9 +3,7 @@
 #ifdef BDW_CONSERVATIVE_GC
 #include "gc.h"
 #endif
-#ifdef WITH_HEAVY_THREADS
-#include <pthread.h>
-#endif
+#include "flexthread.h"
 
 #define HEAPSIZE 65536
 #define ALIGNMENT 4
@@ -13,14 +11,14 @@
 
 void *clheap_alloc(clheap_t clh, int size) {
   char *result;
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_lock(&(clh->heap_lock));
+#ifdef WITH_THREADS
+  flex_mutex_lock(&(clh->heap_lock));
 #endif
   result = clh->heap_top;
   clh->heap_top = result + ALIGN(size);
   if (clh->heap_top > clh->heap_end) result=NULL;
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_unlock(&(clh->heap_lock));
+#ifdef WITH_THREADS
+  flex_mutex_unlock(&(clh->heap_lock));
 #endif
   return (void *) result;
 }
@@ -36,30 +34,30 @@ clheap_t clheap_create() {
     (HEAPSIZE);
   clh->heap_end = clh->heap_start + HEAPSIZE;
   clh->use_count = 1;
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_init(&(clh->heap_lock), NULL);
+#ifdef WITH_THREADS
+  flex_mutex_init(&(clh->heap_lock));
 #endif
 }
 
 /* race condition here if someone detaches before we attach */
 clheap_t clheap_attach(clheap_t clh) {
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_lock(&(clh->heap_lock));
+#ifdef WITH_THREADS
+  flex_mutex_lock(&(clh->heap_lock));
 #endif
   clh->use_count++;
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_unlock(&(clh->heap_lock));
+#ifdef WITH_THREADS
+  flex_mutex_unlock(&(clh->heap_lock));
 #endif
 }
 
 void clheap_detach(clheap_t clh) {
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_lock(&(clh->heap_lock));
+#ifdef WITH_THREADS
+  flex_mutex_lock(&(clh->heap_lock));
 #endif
   if (--clh->use_count > 0) {
     /* unlock and leave. */
-#ifdef WITH_HEAVY_THREADS
-    pthread_mutex_unlock(&(clh->heap_lock));
+#ifdef WITH_THREADS
+    flex_mutex_unlock(&(clh->heap_lock));
 #endif
     return;
   }
@@ -70,8 +68,8 @@ void clheap_detach(clheap_t clh) {
   free
 #endif
     (clh->heap_start);
-#ifdef WITH_HEAVY_THREADS
-  pthread_mutex_destroy(&(clh->heap_lock));
+#ifdef WITH_THREADS
+  flex_mutex_destroy(&(clh->heap_lock));
 #endif
   free(clh);
 }
