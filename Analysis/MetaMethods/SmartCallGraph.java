@@ -12,6 +12,7 @@ import java.util.Iterator;
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.Linker;
 import harpoon.IR.Quads.CALL;
@@ -35,7 +36,7 @@ import harpoon.Util.DataStructs.RelationImpl;
     connected component in the call graph) decreased from 53 to 8.
 
     @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
-    @version $Id: SmartCallGraph.java,v 1.6 2002-11-30 06:32:29 salcianu Exp $
+    @version $Id: SmartCallGraph.java,v 1.7 2003-04-18 16:25:00 salcianu Exp $
 */
 public class SmartCallGraph implements CallGraph {
     
@@ -50,22 +51,27 @@ public class SmartCallGraph implements CallGraph {
 	does not already exist.
 
 	@param hcf Caching code factory used to produce the code of the methods
+
 	@param linker Linker to get classes
-	@param ch  Class hierarchy 
-	@param mroots Set of method roots (entry points into the program: usually the main method, static initializers and methods called by the JVM before main. 
+
+	@param ch  Class hierarchy
+
+	@param roots Set of program roots (the same notion of roots
+	as that used by <code>QuadClassHierarchy</code>).
 	
 	The parameters of this constructor are used to construct a
 	meta call graph that is used to create <code>this</code> smart
 	call graph. */
     public SmartCallGraph(CachingCodeFactory hcf, Linker linker,
-			  ClassHierarchy ch, Set mroots) {
+			  ClassHierarchy ch, Set roots) {
 	assert
 	    hcf.getCodeName().equals(harpoon.IR.Quads.QuadNoSSA.codename) ||
 	    hcf.getCodeName().equals(harpoon.IR.Quads.QuadSSA.codename) ||
 	    hcf.getCodeName().equals(harpoon.IR.Quads.QuadSSI.codename) :
 	    "unsupported quad factory " + hcf;
 	// can't call this(...) because this is not the first statement ...
-	construct(new MetaCallGraphImpl(hcf, linker, ch, mroots));
+	construct(new MetaCallGraphImpl(hcf, linker, ch,
+					constructMRoots(roots, ch)));
     }
 
     // empty array to return in case of no callee
@@ -174,4 +180,53 @@ public class SmartCallGraph implements CallGraph {
 	}
     }
 
+
+    /** Constructs the set of method roots for the compiled program.
+	<code>MetaCallGraphImpl<code> has a different definition of
+	roots than <code>QuadClassHierarchy</code>
+	(<code>SAMain</code> uses that definition).  Note: the
+	constructor of <code>SmartCallGraph</code> already calls this;
+	no need to call it externally.
+	
+	@param roots Set of roots from SAMain (this includes both
+	methods and classes)
+	
+	@param ch Class hierarchy for the compiled program.
+	
+	@return Set of method roots for the compiled program.  This
+	set includes: the main method + all methods that may be called
+	by JVM (including all static initializers).
+
+	TODO: unify the two concepts of roots. */
+    public static Set/*<HMethod>*/ constructMRoots(Set roots,
+						   ClassHierarchy ch) {
+	Set/*<HMethod>*/ mroots = new HashSet/*<HMethod>*/();
+	mroots.addAll(select_methods(roots));
+	mroots.addAll(get_static_initializers(ch));
+	return mroots;
+    }
+
+    // returns the set of methods from "set"
+    private static Set select_methods(Set set) {
+	Set retval = new HashSet();
+	for(Iterator it = set.iterator(); it.hasNext(); ) {
+	    Object elm = it.next();
+	    if(elm instanceof HMethod)
+		retval.add((HMethod) elm);
+	}
+	return retval;
+    }
+    
+
+    // Returns the set of static initializers of all the instanciated classes.
+    private static Set get_static_initializers(ClassHierarchy ch) {
+	Set retval = new HashSet();
+	for(Iterator it = ch.classes().iterator(); it.hasNext(); ) {
+	    HClass hclass = (HClass) it.next();
+	    HMethod hm = hclass.getClassInitializer();
+	    if(hm != null)
+		retval.add(hm);
+	}
+	return retval;
+    }
 }

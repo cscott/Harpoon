@@ -65,7 +65,7 @@ import harpoon.Util.Options.Option;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.20 2003-04-17 00:21:48 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.21 2003-04-18 16:25:01 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -294,21 +294,6 @@ public abstract class PreallocOpt {
     private static CallGraph buildCallGraph
 	(Linker linker, CachingCodeFactory hcf_nossa,
 	 ClassHierarchy ch, Set roots) {
-	Set mroots = new HashSet();
-	// filter out things that are not hmethods
-        for (Iterator it = roots.iterator(); it.hasNext(); ) {
-            Object root = it.next();
-            if(root instanceof HMethod) mroots.add(root);
-        }
-
-	// now add static initializers;
-        for(Iterator it = ch.classes().iterator(); it.hasNext(); ) {
-            HClass hclass = (HClass) it.next();
-            HMethod hm = hclass.getClassInitializer();
-            if (hm != null)
-                mroots.add(hm);
-        }
-
 	MetaCallGraphImpl.COLL_HACK = false;
         return new SmartCallGraph(hcf_nossa, linker, ch, mroots);
     }

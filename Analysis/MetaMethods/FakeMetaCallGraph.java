@@ -29,20 +29,17 @@ import harpoon.IR.Quads.CALL;
  <code>FakeMetaCallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: FakeMetaCallGraph.java,v 1.3 2002-11-30 06:33:41 salcianu Exp $
+ * @version $Id: FakeMetaCallGraph.java,v 1.4 2003-04-18 16:25:00 salcianu Exp $
  */
 public class FakeMetaCallGraph extends MetaCallGraphAbstr {
 
     /** Creates a <code>FakeMetaCallGraph</code>. Receives as parameters
-      a <code>CallGraph</code> object and the set of all the executable
-      methods of the program. The <code>methods</code> parameter can be
-      obtained by using the <code>callableMethods</code> method of 
-      <code>ClassHierarchy</code>.
+      a <code>CallGraph</code> object.
       The resulting <code>FakeMetaCallGraph</code> object is just a
       <code>MetaMethod</code> view of the data contained into <code>cg</code>.
     */
-    public FakeMetaCallGraph(CallGraph cg, Set methods, Set runs) {
-	Map map = create_map(methods);
+    public FakeMetaCallGraph(CallGraph cg, Set runs) {
+	Map map = create_map(cg.callableMethods());
 	translate(cg, map);
 
 	// initialize the set of "run" methods.
@@ -51,6 +48,16 @@ public class FakeMetaCallGraph extends MetaCallGraphAbstr {
 		MetaMethod mm = (MetaMethod) it.next();
 		run_mms.add(new MetaMethod(mm.getHMethod(), true));
 	    }
+	else  {
+	    // try to get run_mms through some other means
+	    // currently, only SmartCallGraphs support getRunMethods()
+	    for(Iterator it = cg.getRunMethods().iterator(); it.hasNext(); )
+		run_mms.add(new MetaMethod((HMethod) it.next(), true));
+	}
+    }
+
+    public FakeMetaCallGraph(CallGraph cg) {
+	this(cg, null);
     }
 
     // Create the HMethod -> MetaMethod one-to-one map.
