@@ -27,6 +27,7 @@ import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.ANEW;
 import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.QuadFactory;
 
 import harpoon.Temp.Temp;
@@ -38,7 +39,7 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.3 2000-04-04 07:05:14 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.4 2000-04-04 07:38:03 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
     
@@ -156,12 +157,15 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    }
 	    else{
 		if(depth == 0){
-		    Quad q = (Quad) node_rep.node2Code(node);
-		    Util.assert(q != null, "No quad for " + node);
-		    if(escapes_only_in_methods(node, pig)){
+		    if(remainInThread(node, hm)){
+			Quad q = (Quad) node_rep.node2Code(node);
+			Util.assert(q != null, "No quad for " + node);
+
+			//if(escapes_only_in_methods(node, pig)){
 			// objects that escape only in a method hole are
 			// considered to remain in this thread and so, they
 			// can be thread allocated
+			
 			MyAP ap = getAPObj(q);
 			ap.ta = true; // thread allocation
 			ap.ah = null; // on the current heap
@@ -324,6 +328,58 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    return false;
 	return true;
     }
+
+
+    /** Checks whether <code>node</code> escapes only in the caller:
+	it is reached through a parameter or it is returned from the
+	method but not lost due to some other reasons. */
+    private boolean lostOnlyInCaller(PANode node, ParIntGraph pig){
+	// if node escapes into a method hole it's wrong ...
+	if(pig.G.e.hasEscapedIntoAMethod(node))
+	    return false;
+
+	for(Iterator it=pig.G.e.nodeHolesSet(node).iterator();it.hasNext();){
+	    PANode nhole = (PANode)it.next();
+	    // if the node escapes through some node that is not a parameter
+	    // it's wrong ...
+	    if(nhole.type != PANode.PARAM)
+		return false;
+	}
+
+	return true;
+    }
+    
+    
+    // Checks whether node defined into hm, remain into the current
+    // thread even if it escapes from the method which defines it.
+    private boolean remainInThread(PANode node, HMethod hm){
+	if(node.getCallChainDepth() == PointerAnalysis.MAX_SPEC_DEPTH)
+	    return false;
+
+	MetaMethod mm = new MetaMethod(hm, true);
+	ParIntGraph pig = pa.getIntParIntGraph(mm);
+	
+	if(pig.G.captured(node))
+	    return true;
+
+	if(!lostOnlyInCaller(node, pig))
+	    return false;
+
+	for(Iterator it = node.getAllCSSpecs().iterator(); it.hasNext(); ){
+	    Map.Entry entry = (Map.Entry) it.next();
+	    CALL   call = (CALL) entry.getKey();
+	    PANode spec = (PANode) entry.getValue();
+	    
+	    QuadFactory qf = call.getFactory();
+	    HMethod hm_caller = qf.getMethod();
+
+	    if(!remainInThread(spec, hm_caller))
+		return false;
+	}
+
+	return true;	
+    }
+
 
     /** Pretty printer for debug. */
     public void print(){
