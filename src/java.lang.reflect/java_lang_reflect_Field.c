@@ -35,19 +35,12 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Field_get
   if (field->modifiers & java_lang_reflect_Modifier_STATIC) {/* static field */
     /* fetch field value */
     switch(desc=field->fieldID->desc[0]) {
-#define STATICCASE(descchar, jvalfield, shortname)\
+#define STATICCASE(typename,shortname,longname,descchar,jvalfield)\
     case descchar:\
       value.jvalfield =\
 	(*env)->GetStatic##shortname##Field(env, fieldclazz, field->fieldID);\
-      break
-    STATICCASE('Z', z, Boolean);
-    STATICCASE('B', b, Byte);
-    STATICCASE('C', c, Char);
-    STATICCASE('S', s, Short);
-    STATICCASE('I', i, Int);
-    STATICCASE('J', j, Long);
-    STATICCASE('F', f, Float);
-    STATICCASE('D', d, Double);
+      break;
+    FORPRIMITIVETYPESX(STATICCASE)
 #undef STATICCASE
     default: /* object type */
       assert(field->fieldID->desc[0]=='L' || field->fieldID->desc[0]=='[');
@@ -70,19 +63,12 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Field_get
     /* fetch field value */
     /* (note similarities with the way we did things above */
     switch(desc=field->fieldID->desc[0]) {
-#define NONSTATICCASE(desc, jvalfield, shortname)\
-    case desc:\
+#define NONSTATICCASE(typename,shortname,longname,descchar,jvalfield)\
+    case descchar:\
       value.jvalfield =\
 	(*env)->Get##shortname##Field(env, receiverobj, field->fieldID);\
-      break
-    NONSTATICCASE('Z', z, Boolean);
-    NONSTATICCASE('B', b, Byte);
-    NONSTATICCASE('C', c, Char);
-    NONSTATICCASE('S', s, Short);
-    NONSTATICCASE('I', i, Int);
-    NONSTATICCASE('J', j, Long);
-    NONSTATICCASE('F', f, Float);
-    NONSTATICCASE('D', d, Double);
+      break;
+    FORPRIMITIVETYPESX(NONSTATICCASE)
 #undef NONSTATICCASE
     default: /* object type */
       assert(field->fieldID->desc[0]=='L' || field->fieldID->desc[0]=='[');
@@ -140,19 +126,12 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set
   if (field->modifiers & java_lang_reflect_Modifier_STATIC) {/* static field */
     /* set field value */
     switch(desc) {
-#define STATICCASE(sigchar, name, jvalfield)\
-    case sigchar:\
-      (*env)->SetStatic##name##Field(env, fieldclazz, field->fieldID,\
-				     primval.jvalfield);\
-      return
-    STATICCASE('Z', Boolean, z);
-    STATICCASE('B', Byte,    b);
-    STATICCASE('C', Char,    c);
-    STATICCASE('S', Short,   s);
-    STATICCASE('I', Int,     i);
-    STATICCASE('J', Long,    j);
-    STATICCASE('F', Float,   f);
-    STATICCASE('D', Double,  d);
+#define STATICCASE(typename,shortname,longname,descchar,jvalfield)\
+    case descchar:\
+      (*env)->SetStatic##shortname##Field(env, fieldclazz, field->fieldID,\
+				          primval.jvalfield);\
+      return;
+    FORPRIMITIVETYPESX(STATICCASE)
 #undef STATICCASE
     default:
       /* object type */
@@ -162,19 +141,12 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set
   } else { /* non-static field */
     /* set field value */
     switch(desc) {
-#define NONSTATICCASE(sigchar, name, jvalfield)\
-    case sigchar:\
-      (*env)->Set##name##Field(env, receiverobj, field->fieldID,\
-			       primval.jvalfield);\
-      return
-    NONSTATICCASE('Z', Boolean, z);
-    NONSTATICCASE('B', Byte,    b);
-    NONSTATICCASE('C', Char,    c);
-    NONSTATICCASE('S', Short,   s);
-    NONSTATICCASE('I', Int,     i);
-    NONSTATICCASE('J', Long,    j);
-    NONSTATICCASE('F', Float,   f);
-    NONSTATICCASE('D', Double,  d);
+#define NONSTATICCASE(typename,shortname,longname,descchar,jvalfield)\
+    case descchar:\
+      (*env)->Set##shortname##Field(env, receiverobj, field->fieldID,\
+			            primval.jvalfield);\
+      return;
+    FORPRIMITIVETYPESX(NONSTATICCASE)
 #undef NONSTATICCASE
     default:
       /* object type */

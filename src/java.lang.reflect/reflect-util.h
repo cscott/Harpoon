@@ -2,6 +2,18 @@
 #ifndef INCLUDED_REFLECT_UTIL_H
 #define INCLUDED_REFLECT_UTIL_H
 
+/* convenience macro (FORPRIMITIVETYPES, extended) */
+#define FORPRIMITIVETYPESX(what) \
+	what(jboolean, Boolean, Boolean,   'Z', z) \
+	what(jbyte,    Byte,    Byte,      'B', b) \
+	what(jchar,    Char,    Character, 'C', c) \
+	what(jshort,   Short,   Short,     'S', s) \
+	what(jint,     Int,     Integer,   'I', i) \
+	what(jlong,    Long,    Long,      'J', j) \
+	what(jfloat,   Float,   Float,     'F', f) \
+	what(jdouble,  Double,  Double,    'D', d)
+/* what(typename, shortname, longname, descchar, fieldname) */
+
 /* Return the class object corresponding to the first component of the
  * given descriptor. */
 jclass REFLECT_parseDescriptor(JNIEnv *env, const char *desc);
