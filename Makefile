@@ -1,4 +1,4 @@
-JCC=javac
+JCC=jikes
 JAR=jar
 
 realtime.jar: 
