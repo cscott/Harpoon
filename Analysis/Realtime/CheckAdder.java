@@ -4,6 +4,7 @@
 package harpoon.Analysis.Realtime;
 
 import java.io.PrintWriter;
+import java.util.Iterator;
 
 import harpoon.Analysis.Transformation.MethodMutator;
 
@@ -44,7 +45,7 @@ import harpoon.Util.Util;
  * <code>CheckRemoval</code> indicates that the check cannot be removed.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: CheckAdder.java,v 1.4 2002-04-10 03:01:16 cananian Exp $
+ * @version $Id: CheckAdder.java,v 1.5 2002-08-14 20:51:45 wbeebee Exp $
  */
 
 // Fix to be non-static...
@@ -94,9 +95,8 @@ abstract class CheckAdder extends MethodMutator {
 	    hc.print(new PrintWriter(System.out));
 	}
 
-	Quad[] ql = (Quad[]) hc.getElements();
-	for (int i=0; i<ql.length; i++) 
-	    ql[i].accept(visitor);
+	Iterator qi = hc.getElementsI();
+	while (qi.hasNext()) ((Quad)(qi.next())).accept(visitor);
 
 	if (debugOutput) {
 	    System.out.println("After:");

@@ -42,13 +42,14 @@ import harpoon.Temp.Temp;
 
 import harpoon.Util.Util;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
 import java.io.PrintWriter;
 
 /**
  * @author  Bryan Fink <wingman@mit.edu>
- * @version $Id: QuantaChecker.java,v 1.6 2002-06-27 20:30:04 wbeebee Exp $
+ * @version $Id: QuantaChecker.java,v 1.7 2002-08-14 20:51:45 wbeebee Exp $
  */
 public class QuantaChecker extends MethodMutator
 {
@@ -88,11 +89,8 @@ public class QuantaChecker extends MethodMutator
 		{}
 	    };
 
-	Tree[] tl = (Tree[]) hc.getElements();
-
-	for (int i=0; i<tl.length; i++) {
-	    tl[i].accept(visitor);
-	}
+	Iterator ti = hc.getElementsI();
+	while (ti.hasNext()) ((Tree)(ti.next())).accept(visitor);
 
 	return hc;
     }

@@ -122,7 +122,8 @@ public class ClassReplacer extends MethodMutator {
 		if (fromMethods[i].getReturnType()
 		    .equals(toMethods[j].getReturnType())&&
 		    (types.length == types2.length)&&
-		    fromMethods[i].getName().equals(toMethods[j].getName())) {
+		    fromMethods[i].getName().equals(toMethods[j].getName())&&
+		    (!fromMethods[i].getDeclaringClass().equals(toMethods[j].getDeclaringClass()))) {
 		    boolean mapMethod = true;
 		    for (int k=0; k<types.length; k++) {
 			if (!types[k].equals(types2[k])) {
@@ -159,11 +160,9 @@ public class ClassReplacer extends MethodMutator {
 		    HMethod method = q.method();
 		    HClass claz = method.getDeclaringClass();
 
-		    if ((claz == from) || // Current class automatically on 
+		    if ((claz == to) || // Current class automatically on 
 			                  // ignore list.
-			(!methodMap.containsKey(method))) {
-			return;
-		    }
+			(!methodMap.containsKey(method))) return;
 
 		    CALL newCALL =
 			new CALL(q.getFactory(), q,
@@ -171,6 +170,9 @@ public class ClassReplacer extends MethodMutator {
 				 q.params(), q.retval(), q.retex(),
 				 q.isVirtual(), q.isTailCall(),
 				 q.dst(), q.src());
+		    if (debugOutput) {
+			System.out.println("Replacing "+q+" with "+newCALL);
+		    }
 		    Quad.replace(q, newCALL);
 		    if (codeName.equals(QuadWithTry.codename)) {
 			Quad.transferHandlers(q, newCALL);
@@ -185,6 +187,9 @@ public class ClassReplacer extends MethodMutator {
 
 		    NEW newNEW = new NEW(q.getFactory(),
 					 q, q.dst(), to);
+		    if (debugOutput) {
+			System.out.println("Replacing "+q+" with "+newNEW);
+		    }
 		    Quad.replace(q, newNEW);
 		    if (codeName.equals(QuadWithTry.codename)) {
 			Quad.transferHandlers(q, newNEW);
@@ -211,20 +216,18 @@ public class ClassReplacer extends MethodMutator {
 	QuadVisitor visitor = getQuadVisitor(codeName);
 
 	if (debugOutput) {
-	    System.out.println("Before replacing " + fromClass.getName() +
-			       " with " + toClass.getName() + ":");
-	    hc.print(new PrintWriter(System.out));
+ 	    System.out.println("Before replacing " + fromClass.getName() +
+ 			       " with " + toClass.getName() + ":");
+ 	    hc.print(new PrintWriter(System.out));
 	}
 
-	Quad[] ql = (Quad[]) hc.getElements();
-	for (int i=0; i<ql.length; i++) {
-	    ql[i].accept(visitor);
-	}
+	Iterator qi = hc.getElementsI();
+	while (qi.hasNext()) ((Quad)(qi.next())).accept(visitor);
 
 	if (debugOutput) {
-	    System.out.println("After replacing " + fromClass.getName() +
-			       " with " + toClass.getName() + ":");
-	    hc.print(new PrintWriter(System.out));
+ 	    System.out.println("After replacing " + fromClass.getName() +
+ 			       " with " + toClass.getName() + ":");
+ 	    hc.print(new PrintWriter(System.out));
 	}
 	return hc;
     }

@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * <code>javax.realtime.RealtimeThread</code>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: ThreadToRealtimeThread.java,v 1.4 2002-04-10 03:01:16 cananian Exp $
+ * @version $Id: ThreadToRealtimeThread.java,v 1.5 2002-08-14 20:51:45 wbeebee Exp $
  */
 
 class ThreadToRealtimeThread extends ClassReplacer {
@@ -46,30 +46,7 @@ class ThreadToRealtimeThread extends ClassReplacer {
 	      linker.forName("java.lang.Thread"), 
 	      linker.forName("javax.realtime.RealtimeThread"));
 	addIgnorePackage("javax.realtime");
-
-	HConstructor[] threadConstructors = 
-	    linker.forName("java.lang.Thread").getConstructors();
-	HConstructor[] realtimeThreadConstructors = 
-	    linker.forName("javax.realtime.RealtimeThread").getConstructors();
-	for (int i=0; i<threadConstructors.length; i++) {
-	    for (int j=0; j<realtimeThreadConstructors.length; j++) {
-		HClass[] types = threadConstructors[i].getParameterTypes();
-		HClass[] types2 = realtimeThreadConstructors[i].getParameterTypes();
-		if (types.length == types2.length) {
-		    boolean mapMethod = true;
-		    for (int k=0; k<types.length; k++) {
-			if (!types[k].equals(types2[k])) {
-			    mapMethod = false;
-			    break;
-			}
-		    }
-		    if (mapMethod) {
-			map(threadConstructors[i],
-			    realtimeThreadConstructors[j]);
-		    }
-		}
-	    }
-	}
+	mapAll(linker.forName("java.lang.Thread"), linker.forName("javax.realtime.RealtimeThread"));
     }
     
     /** Updates the <code>ClassHierarchy</code> so that all classes that
