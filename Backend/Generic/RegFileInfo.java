@@ -58,8 +58,16 @@ import java.util.Iterator;
     maintained by the hardcoded references.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.21 2000-02-08 00:20:20 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.22 2000-02-09 02:34:46 pnkfelix Exp $ */
 public abstract class RegFileInfo {
+
+    /** Defines function from 
+	(<code>Temp</code> x <code>Instr</code>) -> 
+	<code>Set</code> of <code>CommonLoc</code>.
+     */
+    public interface TempLocator {
+	public Set locate(Temp t, harpoon.IR.Assem.Instr i);
+    }
     
     /** Common super class for <code>StackOffsetLoc</code> and 
 	<code>MachineRegLoc</code>.  Should only be implemented by
