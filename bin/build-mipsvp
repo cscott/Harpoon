@@ -62,8 +62,8 @@ fi
 
 ${JAVA:=java} -${optprefix}mx${FLEXMEM:=1536m} -Dharpoon.class.path=$harpoonpath  harpoon.Main.SAMain $opts -Rspec.regalloc -bMIPS -c $cls -o $dir && \
 if [ -d ${RUNTIME_DIR}/include -a -f ${RUNTIME_DIR}/config.status ] && \
-    grep -q "[-]-target=mips-unknown-linux" ${RUNTIME_DIR}/config.status ; then
-    make -f ${RUNTIME_DIR}/Makefile.spec -C $dir && \
+    grep -q "[-]-target=vpekoe" ${RUNTIME_DIR}/config.status ; then
+    make HOST_PREFIX=vpekoe- ASFLAGS=-mips2 -C $dir && \
     mv -f $dir/Java.a ${RUNTIME_DIR}/${name}-Java.a && \
     make -C ${RUNTIME_DIR} run${name} && \
     if [ -z $KEEP_ARCHIVE ]; then \
