@@ -18,23 +18,23 @@ import harpoon.ClassFile.HCodeEdge;
  * the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.8 1999-04-05 21:36:36 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.9 1999-04-20 19:06:41 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, Edges {
-    protected String assem;
-    protected Temp[] dst;
-    protected Temp[] src;
-    protected Label[] targets;
+    public String assem;
+    public Temp[] dst;
+    public Temp[] src;
+    public Label[] targets;
 
-    protected InstrFactory inf;
-    protected String source_file;
-    protected int source_line;
-    protected int id;
+    public InstrFactory inf;
+    public String source_file;
+    public int source_line;
+    public int id;
 
     // FSK: below variables are needed for proper implementation of the Edges interface
-    protected HCodeEdge[] edges;
-    protected HCodeEdge[] pred;
-    protected HCodeEdge[] succ;
+    public HCodeEdge[] edges;
+    public HCodeEdge[] pred;
+    public HCodeEdge[] succ;
     
     /** Creates an <code>Instr</code> consisting of the String 
      *  assem and the lists of destinations and sources in dst and src. */

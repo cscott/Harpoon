@@ -4,11 +4,11 @@
 package harpoon.IR.Assem;
 
 /**
- * <code>InstrVisitor</code>
+ * <code>InstrVisitor</code> is an implementation of the Visitor
+ * pattern coupled to the Instr intermediate representation.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InstrVisitor.java,v 1.1.2.1 1999-04-05 21:36:36 pnkfelix Exp $
- */
+ * @version $Id: InstrVisitor.java,v 1.1.2.2 1999-04-20 19:06:42 pnkfelix Exp $ */
 public abstract class InstrVisitor  {
     
     /** Creates a <code>InstrVisitor</code>. */
