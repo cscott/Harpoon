@@ -3,14 +3,14 @@
 (defun harpoon-subdir-name (basename-fragment)
   "Returns the subdirectory of the current buffer, after stripping everything up to and including the basename-fragment."
   (let ((directory (file-name-directory buffer-file-name)))
-    (string-match (concat "\\(.*" basename-fragment "\\)*\\(.*\\)/$") 
+    (string-match (concat "\\(.*" basename-fragment "\\)*\\(.*\\)$") 
 		  directory)
     (substring directory (match-end 1) (match-end 2))))
 ;;;; extract the work directory name from the buffer-file-name
 (defun harpoon-basepath-name (basename-fragment)
   "Returns the subdirectory of the current buffer, after stripping everything after (but not including) the basename-fragment."
   (let ((directory (file-name-directory buffer-file-name)))
-    (string-match (concat "\\(.*" basename-fragment "\\)*\\(.*\\)/$") 
+    (string-match (concat "\\(.*" basename-fragment "\\)*\\(.*\\)$") 
 		  directory)
     (substring directory (match-beginning 1) (match-end 1))))
 ;;;; extract a dot-delimited package name from the path to the current buffer.
