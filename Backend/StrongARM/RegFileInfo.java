@@ -35,7 +35,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.12 1999-12-11 23:31:15 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.13 2000-01-26 21:05:14 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -153,7 +153,8 @@ public class RegFileInfo
 	    // double word, find two registers ( the strongARM
 	    // doesn't require them to be in a row, but its 
 	    // simpler to search for adjacent registers )
-	    for (int i=0; i<regGeneral.length-1; i++) {
+	    // FSK: forcing alignment to solve regalloc problem
+	    for (int i=0; i<regGeneral.length-1; i+=2) {
 		Temp[] assign = new Temp[] { regGeneral[i] ,
 					     regGeneral[i+1] };
 		if ((regFile.get(assign[0]) == null) &&
