@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.34 2001-01-21 01:26:54 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.35 2001-03-30 20:10:56 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -489,6 +489,8 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     public Translation.Exp monitorEnter(TreeFactory tf, HCodeElement source,
 					DerivationGenerator dg,
 					Translation.Exp objectref) {
+	if (Boolean.getBoolean("harpoon.runtime1.nosync"))
+	    return new Translation.Ex(new CONST(tf, source, 0));
 	// call FNI_MonitorEnter()
 	return new Translation.Nx(_call_FNI_Monitor(tf, source, dg, objectref,
 						    true));
@@ -497,6 +499,8 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     public Translation.Exp monitorExit(TreeFactory tf, HCodeElement source,
 				       DerivationGenerator dg,
 				       Translation.Exp objectref) {
+	if (Boolean.getBoolean("harpoon.runtime1.nosync"))
+	    return new Translation.Ex(new CONST(tf, source, 0));
 	// call FNI_MonitorExit()
 	return new Translation.Nx(_call_FNI_Monitor(tf, source, dg, objectref,
 						    false));
