@@ -12,47 +12,46 @@ import java.util.HashSet;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.1.2.6 2000-02-07 02:11:46 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.7 2000-02-08 05:23:31 salcianu Exp $
  */
 public class ParIntGraph {
 
     /** Default (empty) graph. It doesn't contain any information.  */
     public static final ParIntGraph EMPTY_GRAPH = new ParIntGraph();
 
-    // Points-to escape graph that summarizes the points-to and escape
-    // information for the current thread
+    /** Points-to escape graph that summarizes the points-to and escape
+	information for the current thread. */
     public PointsToGraph G;
     
-    // The parralel thread map; it attaches to each thread node nT, an 
-    // integer from the set {0,1,2} where 2 signifies the possibility
-    // that multiple instances of nT execute in parallel with the current
-    // thread
+    /** The parralel thread map; it attaches to each thread node nT, an 
+	integer from the set {0,1,2} where 2 signifies the possibility
+	that multiple instances of nT execute in parallel with the current
+	thread. */
     public PAThreadMap tau;
     
-    // The set of actions executed by the analyzed computation
-    // PAActionSet alpha;
+    /** Maintains the actions executed by the analysed code and the parallel\
+	action relation. <code>alpha</code> and <code>pi</code> from the 
+	original paper have been merged into this single field for efficiency
+	reasons. */
+    public ActionRepository ar;
     
-    // The parallel action relation that records ordering information
-    // about the actions of the current thread and threads that execute
-    // in parallel with it
-    // PAParallelAction pi;
     
     /** Creates a <code>ParIntGraph</code>. */
     public ParIntGraph() {
-	G = new PointsToGraph();
+	G   = new PointsToGraph();
 	tau = new PAThreadMap();
+	ar  = new ActionRepository();
     }
     
-    /** <code>join</code> combines two <code>ParIntGraph</code>s in
-     *  a control-flow join poin */
+    /** <code>join</code> combines two <code>ParIntGraph</code>s in \
+	a control-flow join point. */
     public void join(ParIntGraph pig2){
 	G.join(pig2.G);
 	tau.join(pig2.tau);
-	// alpha.join(pig2.alpha);
-	// pi.join(pig2.alpha);
+	ar.join(pig2.ar);
     }
 
-    /** Check the equality of two <code>ParIntGraph</code>s */
+    /** Check the equality of two <code>ParIntGraph</code>s. */
     public boolean equals(Object o){
 	if(o==null) return false;
 	ParIntGraph pig2 = (ParIntGraph)o;
@@ -64,27 +63,28 @@ public class ParIntGraph {
 	if(!tau.equals(pig2.tau)){
 	    //System.out.println("The tau's are different");
 	    return false;
-	    
+	}
+	if(!ar.equals(pig2.ar)){
+	    //System.out.println("The ar's are different");
+	    return false;
 	}
 	return true;
     }
 
     /** Private constructor for <code>clone</code> and 
-     * <code>keepTheEssential</code>. */
-    private ParIntGraph(PointsToGraph _G,PAThreadMap _tau 
-			/*,PAActionSet _alpha, PAParallelAction _pi*/){
-	G     = _G;
-	tau   = _tau;
-	// alpha = _alpha;
-	// pi    = _pi;
+	<code>keepTheEssential</code>. */
+    private ParIntGraph(PointsToGraph G,PAThreadMap tau,ActionRepository ar){
+	this.G   = G;
+	this.tau = tau;
+	this.ar  = ar;
     }
 
     /** <code>clone</code> produces a copy of the <code>this</code>
      * Parallel Interaction Graph. */
     public Object clone(){
 	return new ParIntGraph((PointsToGraph)G.clone(),
-			       (PAThreadMap)tau.clone()
-			       /* ,alpha.clone(),pi.clone() */);
+			       (PAThreadMap)tau.clone(),
+			       (ActionRepository)ar.clone());
     }
 
     
@@ -99,14 +99,15 @@ public class ParIntGraph {
 	PointsToGraph _G = 
 	    G.keepTheEssential(params, remaining_nodes, is_main);
 	PAThreadMap _tau = (PAThreadMap) tau.clone(); 
-	//keepTheEssential(remaining_nodes); 
-	return new ParIntGraph(_G,_tau);
+	//TODO: find something more intelligent!
+	ActionRepository _ar = (ActionRepository) ar.clone(); 
+	return new ParIntGraph(_G,_tau,_ar);
     }
 
 
     /** pretty-print function for debug purposes */
     public String toString(){
-	return "\nParIntGraph{\n" + G + " " + tau + /* alpha + pi + */ "}"; 
+	return "\nParIntGraph{\n" + G + " " + tau + ar + "}"; 
     }
 
 }
