@@ -12,6 +12,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGraphable;
+import harpoon.IR.LowQuad.DerivationMap;
 import harpoon.IR.LowQuad.PCALL;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
@@ -34,9 +35,12 @@ import java.util.Stack;
  * <code>SSIRename</code> is a new, improved, fast SSI-renaming
  * algorithm.  Detailed in the author's thesis.  This Java version
  * is hairy because of the big "efficiency-vs-immutable quads" fight.
+ * Also, we have to keep <code>Derivation</code>s and
+ * <code>AllocationInformation</code> up-to-date.
+ * XXX: DERIVATION INFORMATION FOR PHI/SIGMAS IS CURRENTLY LOST. [CSA]
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.11 2000-05-13 21:19:55 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.12 2000-05-17 15:24:02 cananian Exp $
  */
 public class SSIRename {
     private static final boolean sort_phisig = false;
@@ -59,13 +63,13 @@ public class SSIRename {
      *  SSI form. */
     public SSIRename(final Code c, final QuadFactory nqf) {
 	final SearchState S = new SearchState(c, nqf,
+					      c.getDerivation(),
 					      c.getAllocationInformation());
 	this.rootQuad = (Quad) S.old2new.get(c.getRootElement());
 	this.tempMap = S.varmap;
 	this.quadMap = S.old2new;
 	this.allocInfo = S.naim;
-	/** XXX: derivation information is discarded here. */
-	this.derivation = null;
+	this.derivation = S.nderiv;
     }
     
     static class VarMap implements TempMap {
@@ -100,8 +104,10 @@ public class SSIRename {
 	final AllocationInformation oaim;
 	/** AllocationInformationMap for new Quads */
 	final AllocationInformationMap naim;
+	/** Derivation for old Quads */
+	final Derivation oderiv;
 	/** Derivation map for new Quads */
-	final Derivation deriv;
+	final DerivationMap nderiv;
 	
 	// algorithm state
 	/** maps old variables to new variables */
@@ -111,13 +117,15 @@ public class SSIRename {
 	/** mark edges as we visit them */
 	final Set marked = new HashSet();
 
-	SearchState(HCode c, QuadFactory nqf, AllocationInformation oaim) { 
+	SearchState(HCode c, QuadFactory nqf,
+		    Derivation oderiv, AllocationInformation oaim) { 
 	    this.place = new Place(c, new QuadLiveness(c));
 	    this.varmap= new VarMap(nqf.tempFactory());
 	    this.nqf   = nqf;
 	    this.oaim  = oaim;
 	    this.naim  = (oaim==null) ? null : new AllocationInformationMap();
-	    this.deriv = null; // XXX FIXME FIXME
+	    this.oderiv= oderiv;
+	    this.nderiv= (oderiv==null) ? null : new DerivationMap();
 	    
 	    setup(c);
 
@@ -264,6 +272,8 @@ public class SSIRename {
 		    varmap.inc(d[i]);
 		Quad nq = q.rename(nqf, varmap, wtm);
 		old2new.put(q, nq);
+		if (nderiv!=null)
+		    nderiv.transfer(nq, q, q.def(), varmap, oderiv);
 		if (nq instanceof ANEW || nq instanceof NEW)
 		    if (naim!=null) naim.transfer(nq, q, varmap, oaim);
 		if (q instanceof FOOTER) break;
