@@ -26,7 +26,7 @@
 #endif
 
 /* eventually many of these? */
-void *FNI_RawAlloc(JNIEnv *env, jsize length) {
+void *FNI_RawAlloc(JNIEnv *env, size_t length) {
 #if defined(WITH_CLUSTERED_HEAPS)
   return NGBL_malloc(length);
 #elif defined(WITH_REALTIME_JAVA)
@@ -50,7 +50,7 @@ void *FNI_RawAlloc(JNIEnv *env, jsize length) {
  * Efficiency hack: 'info' may be NULL (in which case it is only
  * looked up if claz has a finalizer that needs to be registered). */
 jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, struct claz *claz,
-		  void *(*allocfunc)(jsize length), jsize length) {
+		  void *(*allocfunc)(size_t length), size_t length) {
   struct oobj *newobj, *masked;
   jobject result;
 

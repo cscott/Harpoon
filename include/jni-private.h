@@ -202,14 +202,14 @@ struct FNI_field2info *FNI_GetFieldInfo(jobject field);
 struct FNI_method2info *FNI_GetMethodInfo(jobject method);
 
 /* raw allocation routine */
-void *FNI_RawAlloc(JNIEnv *env, jsize length);
+void *FNI_RawAlloc(JNIEnv *env, size_t length);
 /* allocate and zero memory for the specified object type, using the
  * supplied allocation function.  If allocfunc is NULL, uses FNI_RawAlloc.
  * Efficiency hack: 'info' may be NULL (in which case it is only
  * looked up if claz has a finalizer that needs to be registered). */
 jobject FNI_Alloc(JNIEnv *env,
 		  struct FNI_classinfo *info, struct claz *claz,
-		  void *(*allocfunc)(jsize length), jsize length);
+		  void *(*allocfunc)(size_t length), size_t length);
 
 /* inflation routine/macro */
 void FNI_InflateObject(JNIEnv *env, jobject obj);
@@ -291,7 +291,7 @@ jboolean FNI_IsSameObject (JNIEnv *env, jobject ref1, jobject ref2);
 /* Object Operations */
 jobject FNI_AllocObject (JNIEnv *env, jclass clazz);
 jobject FNI_AllocObject_using (JNIEnv *env, jclass clazz,
-			       void *(*allocfunc)(jsize length));/* FLEX ext */
+			       void *(*allocfunc)(size_t length));/* FLEX ext */
 # define NEWOBJECTPROTO(suffix, argtype) \
 jobject FNI_NewObject##suffix (JNIEnv *env, jclass clazz, \
 			       jmethodID methodID, argtype);

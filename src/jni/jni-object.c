@@ -21,7 +21,7 @@ jobject FNI_AllocObject (JNIEnv *env, jclass clazz) {
 }
 /* allocate using a specific allocation function */
 jobject FNI_AllocObject_using (JNIEnv *env, jclass clazz,
-			       void *(*allocfunc)(jsize length)) {
+			       void *(*allocfunc)(size_t length)) {
   struct FNI_classinfo *info;
   struct claz *claz;
   u_int32_t size;
