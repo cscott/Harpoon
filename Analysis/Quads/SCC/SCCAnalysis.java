@@ -68,7 +68,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.4 2002-04-10 03:01:10 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.5 2002-07-22 18:48:11 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -929,16 +929,24 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    // conversions
 	    public void visit_i2b(OPER q) {
 		xBitWidth bw = extractWidth( get( q.operands(0) ) );
+		int mbw = bw.minusWidth(), pbw = bw.plusWidth();
+		if (bw.plusWidth>=8)
+		    mbw = 8; // large + val may become large - val.
+		if (bw.minusWidth()>=8)
+		    pbw = 7; // large - val may become large + val.
 		raiseV(V, Wv, q.dst(), 
 		       new xBitWidth(HClass.Int, 
-				     Math.min(8, bw.minusWidth()),
-				     Math.min(7, bw.plusWidth()) ));
+				     Math.min(8, mbw),
+				     Math.min(7, pbw) ));
 	    }
 	    public void visit_i2c(OPER q) {
 		xBitWidth bw = extractWidth( get( q.operands(0) ) );
+		int mbw = bw.minusWidth(), pbw = bw.plusWidth();
+		if (bw.minusWidth()>0)
+		    pbw = 16; // - val may become large + val.
 		raiseV(V, Wv, q.dst(), 
 		       new xBitWidth(HClass.Int, 0, 
-				     Math.min(16, bw.plusWidth()) ));
+				     Math.min(16, pbw) ));
 	    }
 	    public void visit_i2l(OPER q) {
 		xBitWidth bw = extractWidth( get( q.operands(0) ) );
@@ -949,32 +957,48 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    }
 	    public void visit_i2s(OPER q) {
 		xBitWidth bw = extractWidth( get( q.operands(0) ) );
+		int mbw = bw.minusWidth(), pbw = bw.plusWidth();
+		if (bw.plusWidth>=16)
+		    mbw = 16; // large + val may become large - val.
+		if (bw.minusWidth()>=16)
+		    pbw = 15; // large - val may become large + val.
 		raiseV(V, Wv, q.dst(), 
 		       new xBitWidth(HClass.Int,
-				     Math.min(16, bw.minusWidth()),
-				     Math.min(15, bw.plusWidth()) ));
+				     Math.min(16, mbw),
+				     Math.min(15, pbw) ));
 	    }
 	    public void visit_l2i(OPER q) {
 		xBitWidth bw = extractWidth( get( q.operands(0) ) );
+		int mbw = bw.minusWidth(), pbw = bw.plusWidth();
+		if (bw.plusWidth>=32)
+		    mbw = 32; // large + val may become large - val.
+		if (bw.minusWidth()>=32)
+		    pbw = 31; // large - val may become large + val.
 		raiseV(V, Wv, q.dst(), 
 		       new xBitWidth(HClass.Int,
-				     Math.min(32, bw.minusWidth()),
-				     Math.min(31, bw.plusWidth()) ));
+				     Math.min(32, mbw),
+				     Math.min(31, pbw) ));
 	    }
 	    // binops
-	    void visit_add(OPER q) {
+	    void visit_add(OPER q, int maxbits) {
 		xBitWidth left = extractWidth( get( q.operands(0) ) );
 		xBitWidth right= extractWidth( get( q.operands(1) ) );
 		int m = Math.max( left.minusWidth(), right.minusWidth() );
 		int p = Math.max( left.plusWidth(),  right.plusWidth() );
 		// zero plus zero is always zero, but other numbers grow.
-		if (m > 0) m++;
-		if (p > 0) p++;
-		// XXX special case 0+x: x doesn't grow.
+		// also 0+x: x doesn't grow.
+		if (left.minusWidth()>0 && right.minusWidth()>0) m++;
+		if (left.plusWidth()>0 && right.plusWidth()>0) p++;
+		// handle overflow.
+		if (p >= maxbits)
+		    m = maxbits; // large + val becomes large - val.
+		if (m >= maxbits)
+		    p = maxbits-1; // large - val becomes large + val.
+		// okay, raise it!
 		raiseV(V, Wv, q.dst(), new xBitWidth(q.evalType(), m, p) );
 	    }
-	    public void visit_iadd(OPER q) { visit_add(q); }
-	    public void visit_ladd(OPER q) { visit_add(q); }
+	    public void visit_iadd(OPER q) { visit_add(q, 32); }
+	    public void visit_ladd(OPER q) { visit_add(q, 64); }
 
 	    void visit_and(OPER q) {
 		xBitWidth left = extractWidth( get( q.operands(0) ) );
@@ -1017,13 +1041,14 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 			p = Math.max(0, left.plusWidth() -right.minusWidth());
 		    }
 		}
+		// XXX overflow?
 		// done.
 		raiseV(V, Wv, q.dst(), new xBitWidth(q.evalType(), m, p) );
 	    }
 	    public void visit_idiv(OPER q) { visit_div(q); }
 	    public void visit_ldiv(OPER q) { visit_div(q); }
 
-	    void visit_mul(OPER q) {
+	    void visit_mul(OPER q, int maxbits) {
 		xBitWidth left = extractWidth( get( q.operands(0) ) );
 		xBitWidth right= extractWidth( get( q.operands(1) ) );
 		// worst case: either number both pos and neg
@@ -1049,20 +1074,28 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		    }
 		}
 		// XXX special case multiplication by one-bit quantities?
+		// handle overflow.
+		if (p >= maxbits)
+		    m = maxbits; // large + val becomes large - val.
+		if (m >= maxbits)
+		    p = maxbits-1; // large - val becomes large + val.
 		// done.
 		raiseV(V, Wv, q.dst(), new xBitWidth(q.evalType(), m, p) );
 	    }
-	    public void visit_imul(OPER q) { visit_mul(q); }
-	    public void visit_lmul(OPER q) { visit_mul(q); }
+	    public void visit_imul(OPER q) { visit_mul(q,32); }
+	    public void visit_lmul(OPER q) { visit_mul(q,64); }
 
-	    void visit_neg(OPER q) {
+	    void visit_neg(OPER q, int maxbits) {
 		xBitWidth bw = extractWidth( get( q.operands(0) ) );
 		int m = bw.plusWidth();
 		int p = bw.minusWidth();
+		// special case: negating the largest neg num results in neg
+		if (bw.minusWidth() >= maxbits)
+		    m = maxbits; // -X = X  for largest negative number
 		raiseV(V, Wv, q.dst(), new xBitWidth(q.evalType(), m, p) );
 	    }
-	    public void visit_ineg(OPER q) { visit_neg(q); }
-	    public void visit_lneg(OPER q) { visit_neg(q); }
+	    public void visit_ineg(OPER q) { visit_neg(q, 32); }
+	    public void visit_lneg(OPER q) { visit_neg(q, 64); }
 
 	    void visit_or(OPER q) {
 		xBitWidth left = extractWidth( get( q.operands(0) ) );
@@ -1097,6 +1130,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		// abs value of dividend.
 		int m = Math.min(right.minusWidth(), absmag);
 		int p = Math.min(right.plusWidth(), absmag);
+		// XXX overflow?
 		raiseV(V, Wv, q.dst(), new xBitWidth(q.evalType(), m, p) );
 	    }
 	    public void visit_irem(OPER q) { visit_rem(q); }
