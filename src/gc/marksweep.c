@@ -381,15 +381,13 @@ void pointerreversed_handle_reference(jobject_unwrapped *obj)
 		{
 		  // we have an array
 		  struct aarray *arr = (struct aarray *) curr;
-		  next_index = next_array_index(arr, 0, 1);
-		  elements_and_fields = (jobject_unwrapped *)(arr->element_start);
+		  elements_and_fields = (jobject_unwrapped *)(arr->_padding_);
 		}
 	      else
-		{
-		  // we have a non-array object
-		  next_index = next_field_index(curr, 0, 1);
-		  elements_and_fields = (jobject_unwrapped *)(curr->field_start);
-		}
+		// we have a non-array object
+		elements_and_fields = (jobject_unwrapped *)(curr->field_start);
+
+	      next_index = get_next_index(curr, 0, 1);
 
 	      if (next_index == NO_POINTERS)
 		{
@@ -404,12 +402,14 @@ void pointerreversed_handle_reference(jobject_unwrapped *obj)
 		}
 	      else
 		{
-		  // the indices returned by next_array_index 
-		  // and next_field_index are off by one; do fix up
-		  next_index = next_index - INDEX_OFFSET;
+		  // the indices returned by next_index 
+		  // is off by one; do fix up
+		  next_index -= INDEX_OFFSET;
 		  assert(next_index >= 0);
-		  
-		  // look at the next index in the array
+
+		  error_gc("next_index = %d\n", next_index); 
+
+		  // look at the next index
 		  root->bheader.markunion.mark = make_mark(next_index);
 		  next = elements_and_fields[next_index];
 		  elements_and_fields[next_index] = prev;
@@ -449,13 +449,12 @@ void pointerreversed_handle_reference(jobject_unwrapped *obj)
 	    {
 	      // prev is an array
 	      struct aarray *arr = (struct aarray *)prev;
-	      next_index = next_array_index(arr, last_index, 0);
-	      elements_and_fields = (jobject_unwrapped *)(arr->element_start);	    }
-	  else
-	    {
-	      next_index = next_field_index(prev, last_index, 0);
-	      elements_and_fields = (jobject_unwrapped *)(prev->field_start);
+	      elements_and_fields = (jobject_unwrapped *)(arr->_padding_);
 	    }
+	  else
+	      elements_and_fields = (jobject_unwrapped *)(prev->field_start);
+
+	  next_index = get_next_index(prev, last_index, 0);
 
 	  if (next_index == NO_POINTERS)
 	    {
@@ -477,8 +476,11 @@ void pointerreversed_handle_reference(jobject_unwrapped *obj)
 	    {
 	      // the indices returned by next_array_index 
 	      // and next_field_index are off by one; do fix up
-	      next_index = next_index - INDEX_OFFSET;
+	      next_index -= INDEX_OFFSET;
 	      assert(next_index > 0);
+
+	      error_gc("last_index = %d\n", last_index); 
+	      error_gc("next_index = %d\n", next_index); 
 	      
 	      root->bheader.markunion.mark = make_mark(next_index);
 	      next = elements_and_fields[next_index];

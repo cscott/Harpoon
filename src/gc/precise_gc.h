@@ -34,16 +34,6 @@
 #define aligned_size_of_p_array(_p_arr_) \
 (align((HEADERSZ + (_p_arr_)->length) * WORDSZ_IN_BYTES))
 
-void trace_array(struct aarray *arr);
-
-void trace_object(jobject_unwrapped obj);
-
-#define NO_POINTERS  0
-#define INDEX_OFFSET 1
-ptroff_t next_array_index(struct aarray *arr, ptroff_t last_index, int new);
-
-ptroff_t next_field_index(jobject_unwrapped obj, ptroff_t last_index, int new);
-
 #ifndef WITH_THREADED_GC
 #define halt_for_GC()
 #define setup_for_threaded_GC()
@@ -59,10 +49,15 @@ void setup_for_threaded_GC();
 void cleanup_after_threaded_GC();
 #endif
 
-/* x: jobject_unwrapped
-   effects: if obj is an object, adds object fields to root set;
-   if an array, adds object elements to root set. */
-#define trace(x) ({ ((x)->claz->component_claz == NULL) ? \
-                    trace_object(x) : trace_array((struct aarray *)(x)); })
+/* ---- functions for COPYING and MARKSWEEP GC ---- */ 
+/* trace takes a pointer to an object and traces the pointers w/in it */
+void trace(jobject_unwrapped obj);
+
+/* ---- constants and functions for POINTER-REVERSED MARKSWEEP GC ---- */
+#define NO_POINTERS  0
+
+#define INDEX_OFFSET 1
+
+ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t last_index, int new);
 
 #endif
