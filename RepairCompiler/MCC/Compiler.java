@@ -21,7 +21,7 @@ public class Compiler {
     public static boolean REPAIR=true;
     public static boolean AGGRESSIVESEARCH=false;
     public static boolean PRUNEQUANTIFIERS=false;
-    public static boolean GENERATEDEBUGHOOKS=true;
+    public static boolean GENERATEDEBUGHOOKS=false;
     public static boolean GENERATEDEBUGPRINT=false;
 
     public static void main(String[] args) {
