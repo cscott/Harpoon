@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_ConcurrentSelectedSignalAssignment</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ConcurrentSelectedSignalAssignment.java,v 1.1 1998-10-10 07:53:34 cananian Exp $
+ * @version $Id: IIR_ConcurrentSelectedSignalAssignment.java,v 1.2 1998-10-10 11:10:33 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -41,10 +41,10 @@ public class IIR_ConcurrentSelectedSignalAssignment extends IIR_ConcurrentStatem
     public boolean get_guarded()
     { return _guarded; }
  
-    public void set_delay_mechanism(IIR_DelayMechanism delay_mechanism)
+    public void set_delay_mechanism(IR_DelayMechanism delay_mechanism)
     { _delay_mechanism = delay_mechanism; }
  
-    public IIR_DelayMechanism get_delay_mechanism()
+    public IR_DelayMechanism get_delay_mechanism()
     { return _delay_mechanism; }
  
     public void set_reject_time_expression(IIR reject_time_expression)
@@ -61,7 +61,7 @@ public class IIR_ConcurrentSelectedSignalAssignment extends IIR_ConcurrentStatem
     boolean _postponed;
     IIR _target;
     boolean _guarded;
-    IIR_DelayMechanism _delay_mechanism;
+    IR_DelayMechanism _delay_mechanism;
     IIR _reject_time_expression;
 } // END class
 

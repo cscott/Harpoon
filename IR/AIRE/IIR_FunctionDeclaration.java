@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_FunctionDeclaration</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_FunctionDeclaration.java,v 1.1 1998-10-10 07:53:36 cananian Exp $
+ * @version $Id: IIR_FunctionDeclaration.java,v 1.2 1998-10-10 11:10:33 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -17,10 +17,10 @@ public class IIR_FunctionDeclaration extends IIR_SubprogramDeclaration
     //CONSTRUCTOR:
     public IIR_FunctionDeclaration() { }
     //METHODS:  
-    public void set_pure(IIR_Pure purity)
+    public void set_pure(IR_Pure purity)
     { _purity = purity; }
  
-    public IIR_Pure get_pure()
+    public IR_Pure get_pure()
     { return _purity; }
  
     public void set_return_type(IIR_TypeDefinition return_type)
@@ -32,7 +32,7 @@ public class IIR_FunctionDeclaration extends IIR_SubprogramDeclaration
     //MEMBERS:  
 
 // PROTECTED:
-    IIR_Pure _purity;
+    IR_Pure _purity;
     IIR_TypeDefinition _return_type;
 } // END class
 
