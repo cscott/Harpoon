@@ -33,7 +33,7 @@ import java.util.List;
  * <code>RoleInference</code>
  * 
  * @author  bdemsky <bdemsky@mit.edu>
- * @version $Id: RoleInference.java,v 1.1.2.1 2001-05-18 18:48:47 bdemsky Exp $
+ * @version $Id: RoleInference.java,v 1.1.2.2 2001-05-18 18:57:14 bdemsky Exp $
  */
 public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator {
     final Linker linker;
@@ -69,6 +69,7 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	HMethod fieldassignmethod;
 	HMethod marklocalmethod;
 	HMethod returnmethod;
+	HMethod entermethod;
 	HClass strclass;
 	HClass fieldclass;
 	HClass clsclass;
@@ -88,7 +89,7 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	    marklocalmethod=roleclass.getDeclaredMethod("marklocal",
 							new HClass[] {strclass, objclass});
 	    returnmethod=roleclass.getDeclaredMethod("returnmethod", new HClass[0]);
-	    entermethod=roleclass.getDeclaredMethod("entermethod", new HClass{clsclass});
+	    entermethod=roleclass.getDeclaredMethod("entermethod", new HClass[] {clsclass});
 	    
 	}
 
