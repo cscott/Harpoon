@@ -21,7 +21,7 @@ import java.util.TreeSet;
     operate on or return <code>CollectionFactory</code>s. 
  
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: Factories.java,v 1.3.2.2 2002-02-27 22:24:13 cananian Exp $
+    @version $Id: Factories.java,v 1.3.2.3 2002-04-07 20:50:31 cananian Exp $
  */
 public final class Factories {
     
@@ -34,8 +34,11 @@ public final class Factories {
     public static final MapFactory hashMapFactory = hashMapFactory();
     public static final <K,V> MapFactory<K,V> hashMapFactory() {
 	return new SerialMapFactory<K,V>() {
-	    public HashMap<K,V> makeMap(Map<K,V> map) {
-		return new HashMap<K,V>(map);
+	    public <K2 extends K, V2 extends V> HashMap<K,V> makeMap(Map<K2,V2> map) {
+		// return new HashMap<K,V>(map); // XXX BUG IN JAVAC
+		HashMap<K,V> hm = new HashMap<K,V>();
+		hm.putAll(map);
+		return hm;
 	    }
 	};
     }
@@ -44,7 +47,7 @@ public final class Factories {
     public static final SetFactory hashSetFactory = hashSetFactory();
     public static final <V> SetFactory<V> hashSetFactory() {
 	return new SerialSetFactory<V>() {
-	    public HashSet<V> makeSet(Collection<V> c) {
+	    public <T extends V> HashSet<V> makeSet(Collection<T> c) {
 		return new HashSet<V>(c);
 	    }
 	    public HashSet<V> makeSet(int i) {
@@ -57,7 +60,7 @@ public final class Factories {
     public static final SetFactory workSetFactory = workSetFactory();
     public static final <V> SetFactory<V> workSetFactory() {
 	return new SerialSetFactory<V>() {
-	    public WorkSet<V> makeSet(Collection<V> c) {
+	    public <T extends V> WorkSet<V> makeSet(Collection<T> c) {
 		return new WorkSet<V>(c);
 	    }
 	    public WorkSet<V> makeSet(int i) {
@@ -71,11 +74,11 @@ public final class Factories {
     public static final SetFactory linearSetFactory = linearSetFactory();
     public static final <V> SetFactory<V> linearSetFactory() {
       return new SerialSetFactory<V>() {
-	public LinearSet<V> makeSet(Collection<V> c) {
+	public <T extends V> LinearSet<V> makeSet(Collection<T> c) {
 	    LinearSet<V> ls;
-	    /*if (c instanceof Set<V>) {
-		ls = new LinearSet<V>((Set<V>)c);
-	    } else*/ { // XXX BUG IN JAVAC makes Set<V> and Collection<V> incompat
+	    if (c instanceof Set<T>) {
+		ls = new LinearSet<V>((Set<T>)c);
+	    } else {
 		ls = new LinearSet<V>(c.size());
 		ls.addAll(c);
 	    }
@@ -91,7 +94,7 @@ public final class Factories {
     public static final SetFactory treeSetFactory = treeSetFactory();
     public static final <V> SetFactory<V> treeSetFactory() {
 	return new SerialSetFactory<V>() {
-	    public TreeSet<V> makeSet(Collection<V> c) {
+	    public <T extends V> TreeSet<V> makeSet(Collection<T> c) {
 		return new TreeSet<V>(c);
 	    }
 	};
@@ -101,7 +104,7 @@ public final class Factories {
     public static final ListFactory linkedListFactory = linkedListFactory();
     public static final <V> ListFactory<V> linkedListFactory() {
 	return new SerialListFactory<V>() {
-	    public LinkedList<V> makeList(Collection<V> c) {
+	    public <T extends V> LinkedList<V> makeList(Collection<T> c) {
 		return new LinkedList<V>(c);
 	    }
 	};
@@ -112,7 +115,7 @@ public final class Factories {
     public static final ListFactory arrayListFactory = arrayListFactory();
     public static final <V> ListFactory<V> arrayListFactory() {
 	return new SerialListFactory<V>() {
-	    public ArrayList<V> makeList(Collection<V> c) {
+	    public <T extends V> ArrayList<V> makeList(Collection<T> c) {
 		return new ArrayList<V>(c);
 	    }
 	    public ArrayList<V> makeList(int i) {
@@ -127,19 +130,17 @@ public final class Factories {
      *  for example, to make a multimap of maps. */
     public static <K,V> SetFactory<Map.Entry<K,V>> mapSetFactory(final MapFactory<K,V> mf) {
 	return new SerialSetFactory<Map.Entry<K,V>>() {
-		public Set<Map.Entry<K,V>> makeSet(Collection<Map.Entry<K,V>> c) {
+		public <T extends Map.Entry<K,V>> Set<Map.Entry<K,V>> makeSet(Collection<T> c) {
 		    final Map<K,V> m = mf.makeMap();
 		    // we could call addAll on the result, but we'll be
 		    // gentle on entrySet()s which might not allow 'add'.
-		    for (Iterator<Map.Entry<K,V>> it=c.iterator(); it.hasNext(); ) {
-			Map.Entry<K,V> me = it.next();
+		    for (Iterator<T> it=c.iterator(); it.hasNext(); ) {
+			T me = it.next();
 			m.put(me.getKey(), me.getValue());
 		    }
 		    Set<Map.Entry<K,V>> s = m.entrySet();
-		    /* XXX BUG IN JAVAC
 		    if (s instanceof MapSet<K,V> && ((MapSet)s).asMap()==m)
 			return s; // optimize!
-		    */
 		    return new MapSetWrapper<K,V>(s) {
 			    public Map<K,V> asMap() { return m; }
 			};
@@ -157,20 +158,18 @@ public final class Factories {
      *  example, to make a multimap of multimaps. */
     public static <K,V> SetFactory<Map.Entry<K,V>> multiMapSetFactory(final MultiMapFactory<K,V> mf) {
 	return new SerialSetFactory<Map.Entry<K,V>>() {
-		public Set<Map.Entry<K,V>> makeSet(Collection<Map.Entry<K,V>> c) {
+		public <T extends Map.Entry<K,V>> Set<Map.Entry<K,V>> makeSet(Collection<T> c) {
 		    final MultiMap<K,V> m = mf.makeMultiMap();
 		    // we could call addAll on the result, but we'll be
 		    // gentle on entrySet()s which might not allow 'add'.
-		    for (Iterator<Map.Entry<K,V>> it=c.iterator(); it.hasNext(); ) {
-			Map.Entry<K,V> me = it.next();
+		    for (Iterator<T> it=c.iterator(); it.hasNext(); ) {
+			T me = it.next();
 			m.add(me.getKey(), me.getValue());
 		    }
 		    Set<Map.Entry<K,V>> s = m.entrySet();
-		    /* XXX BUG IN JAVAC
 		    if (s instanceof MultiMapSet &&
 			((MultiMapSet)s).asMultiMap()==m)
 			return s; // optimize!
-		    */
 		    return new MultiMapSetWrapper<K,V>(s) {
 			    public MultiMap<K,V> asMap() { return asMultiMap(); }
 			    public MultiMap<K,V> asMultiMap() { return m; }
@@ -192,7 +191,7 @@ public final class Factories {
     public static <V> CollectionFactory<V>
 	synchronizedCollectionFactory(final CollectionFactory<V> cf) { 
 	return new SerialCollectionFactory<V>() {
-	    public Collection<V> makeCollection(Collection<V> c) {
+	    public <T extends V> Collection<V> makeCollection(Collection<T> c) {
 		return Collections.synchronizedCollection
 		    (cf.makeCollection(c));
 	    }
@@ -208,7 +207,7 @@ public final class Factories {
     public static <V> SetFactory<V>
 	synchronizedSetFactory(final SetFactory<V> sf) {
 	return new SerialSetFactory<V>() {
-	    public Set<V> makeSet(Collection<V> c) {
+	    public <T extends V> Set<V> makeSet(Collection<T> c) {
 		return Collections.synchronizedSet(sf.makeSet(c));
 	    }
 	};
@@ -223,7 +222,7 @@ public final class Factories {
     public static <V> ListFactory<V>
 	synchronizedListFactory(final ListFactory<V> lf) {
 	return new SerialListFactory<V>() {
-	    public List<V> makeList(Collection<V> c) {
+	    public <T extends V> List<V> makeList(Collection<T> c) {
 		return Collections.synchronizedList(lf.makeList(c));
 	    }
 	};
@@ -238,7 +237,7 @@ public final class Factories {
     public static <K,V> MapFactory<K,V>
 	synchronizedMapFactory(final MapFactory<K,V> mf) {
 	return new SerialMapFactory<K,V>() {
-	    public Map<K,V> makeMap(Map<K,V> map) {
+	    public <K2 extends K, V2 extends V> Map<K,V> makeMap(Map<K2,V2> map) {
 		return Collections.synchronizedMap(mf.makeMap(map));
 	    }
 	};
@@ -247,7 +246,7 @@ public final class Factories {
     public static <V> CollectionFactory<V>
 	noNullCollectionFactory(final CollectionFactory<V> cf) {
 	return new SerialCollectionFactory<V>() {
-	    public Collection<V> makeCollection(final Collection<V> c) {
+	    public <T extends V> Collection<V> makeCollection(final Collection<T> c) {
 		assert noNull(c);
 		final Collection<V> back = cf.makeCollection(c);
 		return new CollectionWrapper<V>(back) {
@@ -255,7 +254,7 @@ public final class Factories {
 			assert o != null;
 			return super.add(o);
 		    }
-		    public boolean addAll(Collection<V> c2) {
+		    public <T extends V> boolean addAll(Collection<T> c2) {
 			assert Factories.noNull(c2);
 			return super.addAll(c2);
 		    }
