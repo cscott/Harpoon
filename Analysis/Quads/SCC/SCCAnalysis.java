@@ -66,7 +66,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.25 2001-11-05 02:16:04 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.26 2001-11-05 20:58:49 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -1030,6 +1030,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		int p = Math.max(left.minusWidth() + right.minusWidth(),
 				 left.plusWidth()  + right.plusWidth());
 		// special case multiplication by zero, one, and two.
+		if (right instanceof xIntConstant) { // switch r and l
+		    xBitWidth temp=left; left=right; right=temp;
+		}
 		if (left instanceof xIntConstant) {
 		    long val = ((xIntConstant)left).value();
 		    if (val==0) {
@@ -1041,19 +1044,6 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		    if (val==2) {
 			m = right.minusWidth()+1;
 			p = right.plusWidth() +1;
-		    }
-		}
-		if (right instanceof xIntConstant) {
-		    long val = ((xIntConstant)right).value();
-		    if (val==0) {
-			raiseV(V, Wv, q.dst(), right); return;
-		    }
-		    if (val==1) {
-			raiseV(V, Wv, q.dst(), left); return;
-		    }
-		    if (val==2) {
-			m = left.minusWidth()+1;
-			p = left.plusWidth() +1;
 		    }
 		}
 		// XXX special case multiplication by one-bit quantities?
@@ -1085,18 +1075,139 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    }
 	    public void visit_ior(OPER q) { visit_or(q); }
 	    public void visit_lor(OPER q) { visit_or(q); }
-	    /*
-    public void visit_irem(OPER q) { visit_default(q); }
-    public void visit_ishl(OPER q) { visit_default(q); }
-    public void visit_ishr(OPER q) { visit_default(q); }
-    public void visit_iushr(OPER q) { visit_default(q); }
-    public void visit_ixor(OPER q) { visit_default(q); }
-    public void visit_lrem(OPER q) { visit_default(q); }
-    public void visit_lshl(OPER q) { visit_default(q); }
-    public void visit_lshr(OPER q) { visit_default(q); }
-    public void visit_lushr(OPER q) { visit_default(q); }
-    public void visit_lxor(OPER q) { visit_default(q); }
-	    */
+
+	    void visit_rem(OPER q) {
+		// we don't have to worry about division by zero.
+		xBitWidth left = extractWidth( get( q.operands(0) ) );
+		xBitWidth right= extractWidth( get( q.operands(1) ) );
+		// from JLS 15.17.3: "the result of the remainder
+		// operation can be negative only if the dividend is
+		// negative, and can be positive only if the dividend
+		// is positive; moreover, the magnitude of the result
+		// is always less than the magnitude of the divisor."
+		if (right instanceof xIntConstant) {
+		    // use the fact that result is strictly less to narrow
+		    long val = ((xIntConstant)right).value();
+		    right = new xIntConstant(right.type(), val-1 );
+		}
+		int absmag=Math.max(left.minusWidth(), left.plusWidth());
+		// abs value of result will also always be smaller than
+		// abs value of dividend.
+		int m = Math.min(right.minusWidth(), absmag);
+		int p = Math.min(right.plusWidth(), absmag);
+		raiseV(V, Wv, q.dst(), new xBitWidth(q.evalType(), m, p) );
+	    }
+	    public void visit_irem(OPER q) { visit_rem(q); }
+	    public void visit_lrem(OPER q) { visit_rem(q); }
+
+	    // SHIFTS. From the JLS, 15.19: "If the promoted type of
+	    // the left-hand operand is int, only the five
+	    // lowest-order bits of the right-hand operand are used as
+	    // the shift distance. It is as if the right-hand operand
+	    // were subjected to a bitwise logical AND operator &
+	    // (15.22.1) with the mask value 0x1f. The shift distance
+	    // actually used is therefore always in the range 0 to 31,
+	    // inclusive.
+	    //
+	    // "If the promoted type of the left-hand operand is long,
+	    // then only the six lowest-order bits of the right-hand
+	    // operand are used as the shift distance. It is as if the
+	    // right-hand operand were subjected to a bitwise logical
+	    // AND operator & (15.22.1) with the mask value 0x3f. The
+	    // shift distance actually used is therefore always in the
+	    // range 0 to 63, inclusive."
+
+	    void visit_shl(OPER q, boolean isLong) {
+		xBitWidth left = extractWidth( get( q.operands(0) ) );
+		xBitWidth right= extractWidth( get( q.operands(1) ) );
+		int shift;
+		// compute largest possible shift.
+		if (right instanceof xIntConstant) {
+		    // we know the shift exactly.  whoo-hoo!
+		    long val = ((xIntConstant)right).value();
+		    shift = (int) (val & (isLong ? 0x3F : 0x1F ));
+		    // equivalent to mult by constant 2^shift.
+		} else if (right.minusWidth()==0 &&
+			   right.plusWidth() < (isLong ? 6 : 5)) {
+		    //largest value possible on right is (2^p)-1.
+		    shift = (1<<right.plusWidth())-1;
+		} else
+		    shift = (isLong) ? 63 : 31;
+		// okay.  nominally widths are width+shift.
+		int m = left.minusWidth()+shift;
+		int p = left.plusWidth()+shift;
+		// zero shifted by anything is still zero, though.
+		if (left.minusWidth()==0) m=0;
+		if (left.plusWidth()==0) p=0;
+		// if we could corrupt the sign bit, all bets are off.
+		boolean canFrobSign = 
+		    /* can leftmost one move into sign bit? */
+		    ( (left.plusWidth()+shift) >= (isLong?64:32) ) ||
+		    /* can leftmost zero move into sign bit? */
+		    ( (left.minusWidth()+shift) >= (isLong?64:32) );
+		if (canFrobSign) { m=1000; p=1000; }
+		// rely on bitwidth limiting the below.
+		raiseV(V, Wv, q.dst(), new xBitWidth(q.evalType(), m, p) );
+	    }
+	    public void visit_ishl(OPER q) { visit_shl(q, false); }
+	    public void visit_lshl(OPER q) { visit_shl(q, true); }
+
+	    void visit_shr(OPER q, boolean isSigned, boolean isLong) {
+		xBitWidth left = extractWidth( get( q.operands(0) ) );
+		xBitWidth right= extractWidth( get( q.operands(1) ) );
+		int shift; boolean exactlyZero=false;
+		// compute smallest possible shift.
+		if (right instanceof xIntConstant) {
+		    // we know the shift exactly.  whoo-hoo!
+		    long val = ((xIntConstant)right).value();
+		    shift = (int) (val & (isLong ? 0x3F : 0x1F ));
+		    if (shift==0) exactlyZero=true;
+		} else
+		    // smallest possible shift is zero.
+		    shift = 0;
+		// okay.  nominally widths are width-shift.
+		int m = Math.max(0, left.minusWidth()-shift);
+		int p = Math.max(0, left.plusWidth()-shift);
+		// zero shifted by anything is still zero, though.
+		if (left.minusWidth()==0) m=0;
+		if (left.plusWidth()==0) p=0;
+		// if we could corrupt the sign bit, negative numbers
+		// can become large positive numbers.
+		if (left.minusWidth()>0 && !isSigned && !exactlyZero)
+		    p=Math.max(p, (isLong?64:32)-shift);
+		// rely on bitwidth limiting the below.
+		raiseV(V, Wv, q.dst(), new xBitWidth(q.evalType(), m, p) );
+	    }
+	    public void visit_ishr(OPER q) { visit_shr(q, false, false); }
+	    public void visit_lshr(OPER q) { visit_shr(q, false, true); }
+	    public void visit_iushr(OPER q) { visit_shr(q, true, false); }
+	    public void visit_lushr(OPER q) { visit_shr(q, true, true); }
+
+	    void visit_xor(OPER q) {
+		xBitWidth left = extractWidth( get( q.operands(0) ) );
+		xBitWidth right= extractWidth( get( q.operands(1) ) );
+		int mL=left.minusWidth(), pL=left.plusWidth();
+		int mR=right.minusWidth(), pR=right.plusWidth();
+		int m=0, p=0;
+		// note that <0,0>=constant zero is included in plus range
+		// (i.e. all ranges are said to have '+' components (the 0) )
+		// <0,pL> xor <0,pR> = <0,MAX(pL,pR)>
+		if (pL>=0 && pR>=0)
+		    p = Math.max(p, Math.max(pL, pR));
+		// <0,pL> xor <mR,0> = <MAX(pL,mR),0>
+		if (pL>=0 && mR>0)
+		    m = Math.max(m, Math.max(pL, mR));
+		// <mL,0> xor <0,pR> = <MAX(mL,pR),0>
+		if (mL>0 && pR>=0)
+		    m = Math.max(m, Math.max(mL, pR));
+		// <mL,0> xor <mR,0> = <0,MAX(mL,mR)>
+		if (mL>0 && mR>0)
+		    p = Math.max(p, Math.max(mL, mR));
+		// ta-da!
+		raiseV(V, Wv, q.dst(), new xBitWidth(q.evalType(), m, p) );
+	    }
+	    public void visit_ixor(OPER q) { visit_xor(q); }
+	    public void visit_lxor(OPER q) { visit_xor(q); }
 	}
     }
     /*-------------------------------------------------------------*/
