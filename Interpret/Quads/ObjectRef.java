@@ -8,7 +8,7 @@ import harpoon.Util.Util;
  * <code>ObjectRef</code> is an object reference in the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectRef.java,v 1.1.2.3 1999-01-03 03:01:44 cananian Exp $
+ * @version $Id: ObjectRef.java,v 1.1.2.4 1999-01-09 19:53:14 cananian Exp $
  */
 class ObjectRef implements Cloneable {
     /** The type of the object. */
@@ -22,7 +22,7 @@ class ObjectRef implements Cloneable {
     /** Native method closure. */
     Object closure;
     /** Profiling information. */
-    final long creation_time;
+    /*final*/ long creation_time;
 
     /** create a new objectref with default field values.
      * @exception InterpretedThrowable
