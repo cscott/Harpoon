@@ -68,7 +68,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.38 2001-06-05 07:50:09 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.39 2001-06-07 06:29:34 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -148,7 +148,7 @@ import java.util.Iterator;
     // Add yellow pekoe register usage suffixes to long instr patterns
     private boolean yellow_pekoe = false;
     // Add phantom instructions that indicate DA register usage
-private boolean enable_daregs = true;
+    private boolean enable_daregs = false;
 
     public CodeGen(Frame frame, boolean is_elf) {
        super(frame);
@@ -157,6 +157,7 @@ private boolean enable_daregs = true;
 	this.nameMap = frame.getRuntime().nameMap;
 	this.is_elf = is_elf;
     this.yellow_pekoe = frame.getType().equalsIgnoreCase("yp");
+    this.enable_daregs = frame.getType().equalsIgnoreCase("da");
     v0 = regfile.V0;
     v1 = regfile.V1;
     a0 = regfile.A0;
