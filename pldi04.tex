@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.9 2003-11-10 07:49:52 cananian Exp $
+% $Id: pldi04.tex,v 1.10 2003-11-10 08:18:41 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -97,38 +97,196 @@ mutual-exclusion--based synchronization methods.
 \end{abstract}
 
 %
-\section{Introduction}
+\secput{intro}{Introduction}
 
-\subsection{Contributions}
+\subsecput{contrib}{Contributions}
+The contributions of this paper include:
+\begin{itemize}
+\item A concrete language design to integrate transactions into Java
+providing fault-tolerance, backtracing, synchronization, and
+optimistic concurrency.
+\item An efficient implementation of this design which extends
+  race-protection to unsynchronized code.  Also, how hardware
+  support for small transactions can improve this implementation.
+\item Empirical data to justify the implementation choices.
+\item An application of fast functional arrays to solve the ``large
+  object'' problem with Herlihy's universal non-blocking protocol.
+\item Compiler optimizations to improve the speed of software
+  transactions.
+\item A way to ``transactify'' existing Java programs, and a
+  description of the transaction properties of typical Java programs
+  transformed in such a way.
+\end{itemize}
 
-\section{Example and Motivation}
+\secput{example}{Example and Motivation}
+This section illustrates how transactions can ease
+the programming of multithreaded applications.  In particular, we show
+that implementing mutual exclusion with locks can be quite
+complicated, even for simple code.  Moreover, the overheads of a
+locking solution can be significant, especially if the locks enforce
+mutual exclusion in a tight inner loop.
 
-\section{Related work}
-
-\section{Designing Efficient Transactions}
-
-\section{Algorithms}
-\subsection{Scales}
-\subsection{Allocation}
-\subsection{Object expansion}
-\subsection{Large objects}
-\subsection{Subsumption}
-
-\section{Optimizations}
-
-\section{Integration}
-% JNI tricks, etc.
-
-\section{Evaluation}
-
-\section{Conclusions}
-
-\section{EXTRA TEXT}
-xxx x xx x xxx xxxx xxx xxx xx x x x x x xxxxxxxx xx x x x x
+A transaction can be thought of as a sequence of loads and stores
+performed as part of a program.  The intuition for transactions is
+that they either \defn{commit} or they \defn{abort}.  If a transaction
+commits, then all of the loads and stores appear to have run
+atomically with respect to other transactions.  That is, the
+transaction's operations are not interleaved with those of other
+transactions.  If a transaction aborts, then none of its stores take
+effect and the transaction must be restarted, typically using a
+backoff algorithm to preclude livelock.
 
 
-\section{Non-blocking synchronization}\label{sec:nb-sync}
-%\subsection{History}
+\subsecput{flow}{Network flow}
+
+Consider a serial program for computing network flow (see, for
+example, \cite[Chapter 26]{CormenLeRi01}).  The inner loop of the code
+pushes flow across an edge by increasing the ``excess flow'' on one
+vertex and decreasing it by the same amount on another vertex.  One
+might see the following Java code: \par {\footnotesize\samepage
+\begin{verbatim}
+void pushFlow(Vertex v1, Vertex v2, double flow) {
+  v1.excess += flow; /* Move excess flow from v1 */
+  v2.excess -= flow; /* to v2.                   */
+}
+\end{verbatim}
+}
+
+To parallelize this code, one must preclude multiple threads from
+modifying the excess flow on those two vertices at the same time.
+Locks provide one way to enforce this mutual exclusion: 
+\par {\footnotesize\samepage
+\begin{verbatim}
+void pushFlow(Vertex v1, Vertex v2, double f) {
+  Object lock1, lock2;
+  if (v1.id < v2.id) {       /* Avoid deadlock. */
+    lock1 = v1; lock2 = v2;
+  } else {
+    lock1 = v2; lock2 = v1;
+  }
+  synchronized(lock1) {
+    synchronized(lock2) {
+      v1.excess += f; /* Move excess flow from v1 */
+      v2.excess -= f; /* to v2.                   */
+    } /* unlock lock2 */
+  } /* unlock lock1 */
+}
+\end{verbatim}
+}
+
+This code is surprisingly complicated and slow compared to the
+original.  Space for each object's lock must be reserved.
+To avoid deadlock, the code must acquire the locks in
+a consistent linear order, resulting in an unpredictable branch in the
+code.
+In Java, we require the programmer to insert an \texttt{id} field into
+each vertex to maintain this order.
+Moreover, the time required to acquire the locks is
+an order of magnitude larger on today's processors than the time to
+modify the excess flow.
+\note{Using FLEX, the locking code is over 11x
+  slower than the no-locks code.  With Sun's JVM, this overhead falls
+  to about 1.7x, because Sun is wicked smart about their lock
+  implementations.}
+What's more, all of this overhead is rarely
+needed!  For a graph with thousands or millions of vertices, the
+number of threads operating on the graph is likely to be less than a
+hundred.  Consequently, the chances are quite small that two different
+threads actually conflict.  Without the locks to implement mutual
+exclusion, however, the program would fail intermittently.
+
+Software transactions (and some language support) allow the
+programmer to parallelize the original code using an \texttt{atomic}
+keyword to indicate that the code block should appear to execute
+atomically: 
+\par {\footnotesize\samepage
+\begin{verbatim}
+void pushFlow(Vertex v1, Vertex v2, double flow) {
+  atomic { /* Transaction begin. */
+    v1.excess += flow; /* Move excess flow from v1 */
+    v2.excess -= flow; /* to v2.                   */
+  } /* Transaction end. */
+}
+\end{verbatim}
+} 
+
+This simple example is not meant to be a definitive defense of
+transactional memory.  Rather, its aim is to show the reader how
+convoluted locking protocol can be compared with transactions.  As we
+shall see in \secref{eval},\note{Sure would be nice if we could make
+good on this promise.} BTM can implement this code with essentially no
+overhead, allowing excess flows to be updated safely by multiple
+parallel threads. 
+
+
+\subsecput{stringbuffer}{The \texttt{StringBuffer} class}
+
+\par {\footnotesize
+\samepage
+\begin{verbatim}
+public final class StringBuffer ... {
+  private char value[];
+  private int count;
+  ... 
+  public synchronized
+  StringBuffer append(StringBuffer sb) {
+    ...
+    int len = sb.length(); // len may be stale.
+    int newcount = count + len; 
+    if (newcount > value.length)
+      expandCapacity(newcount);
+    // next statement may use stale len
+    sb.getChars(0, len, value, count);
+    count = newcount;
+    return this;
+  }
+  public synchronized int length() { return count; }
+  public synchronized void getChars(...) { ... }
+}
+\end{verbatim}
+}
+
+This\note{This text is mostly just to get the ideas down for now.}  
+source code is from the \texttt{java.lang.StringBuffer} class in
+version 1.4.2 of Sun's Java standard library.  \texttt{StringBuffer}
+represents a mutable string of characters.  The documentation for the
+class states:
+\par{\footnotesize
+\begin{quote}
+ String buffers are safe for use by multiple threads. The methods 
+ are synchronized where necessary so that all the operations on any 
+ particular instance behave as if they occur in some serial order 
+ that is consistent with the order of the method calls made by each of 
+ the individual threads involved. 
+\end{quote}
+}
+
+The \texttt{synchronized} modified on the \texttt{append()} method is
+meant to ensure that this method operates atomically.  But it does
+not: another thread can change the parameter \texttt{sb} between the
+call to \texttt{sb.length()} and the call to \texttt{sb.getChars()},
+causing incorrect data to be appended or a
+\texttt{StringIndexOutOfBoundException} to be thrown.  The calls to
+\texttt{sb.length()} and \texttt{sb.getChars()} are individually
+atomic, but they do not compose to form an atomic implementation of
+\texttt{append()}.  An \texttt{atomic} declaration (or running under
+our transactions implementation) would fix this programmer error.
+[This bug was found by \cite{FlanaganQa03}.]
+\note{What about just saying \texttt{public synchronzied Append} ? -Bradley}
+
+Further, if the synchronization in this method is implemented with
+transactions, note that the call to \texttt{sb.getChars()} means that
+the size of the transaction for this method will grow like the length
+of the parameter~\texttt{sb}.  In other words, the transaction can be
+made arbitrarily large by increasing the length of \texttt{sb}; or,
+equivalently, there is no bound on transaction size without a bound on
+the size of the string~\texttt{sb}.  This means that boundless
+transactions must be supported if this method is operate on arbitrary
+inputs.
+
+
+\secput{related}{Related work}
+\subsecput{nb-sync}{Non-blocking synchronization}
 
 \begin{figure}
 {\ttfamily
@@ -208,7 +366,7 @@ We will be concerned mainly with lock-free algorithms.%
   our three specific progress criteria, and the dissimilar
   \emph{non-blocking} for the general class.}
 
-\subsection{Advantages over mutual exclusion}\label{sec:nb-adv}
+\subsecput{nb-adv}{Advantages over mutual exclusion}
 Non-blocking synchronization offers a number of advantages over mutual
 exclusion within critical regions.  Foremost for the concerns of this paper is
 fault-tolerance:  a process which fails while holding a lock within a
@@ -254,7 +412,7 @@ progress.\footnote{Note that the progress guarantees made are
   with differing priorities; obstruction-freedom then guarantees that
   the high-priority task ``in isolation'' will make progress.}
 
-\subsection{Efficiency}
+\subsecput{efficiency}{Efficiency}
 Herlihy presented the first \emph{universal} method for wait-free
 concurrent implementation of an arbitrary sequential object
 \cite{Herlihy88,Herlihy91}.  This original method was based on
@@ -295,7 +453,7 @@ be copied efficiently (in, say, $O(1)$ time).  He also presented a
 manually break the object into small blocks, after which the small
 object protocol can be employed.  This trouble with large objects is
 common to many non-blocking implementations; our solution is presented
-in Section~\ref{sec:proposal}.
+in \secref{proposal}.
 
 Barnes provided the first universal non-blocking implementation
 method which avoids object copying \cite{Barnes93}.  He eliminates the
@@ -341,10 +499,198 @@ protocols of LaMarca and Alemany and Felten, and a
 % Afek et al have a somewhat complicated improved wait-free method.
 
 % Transactional memories?
+\subsecput{tm}{Transactional Memory Systems}
+
+Several software transaction systems have been proposed.  Some constrain the
+programmer and make transactions difficult to use.  All have
+relatively high overheads, which make transactions unattractive for
+uniprocessor and small SMP systems. [Once the number of processors is
+large enough, the increased parallelism which can be provided by
+optimistic transactions may cancel out the performance penalty of
+their use.]
+
+The first proposal for software transactional memory was proposed by
+Shavit and Touitou \cite{ShavitTo95}; their system requires that all
+input and output locations touched by a transaction be known in
+advance, which limits its application.  It performs at least 10
+fetches and 4 stores per location accessed (not counting the loads and
+stores directly required by the computation).  The benchmarks
+presented were collected on a 64-processor machine; no performance
+numbers were shown for less than 10 processors.
+
+Rudys and Wallach \cite{RudysWa02} proposed a copying-based
+transaction system to allow rollback of hostile codelets.
+They shows an order of magnitude slowdown for field and array
+accessed, and 6x to 23x slowdown on their benchmarks.
+
+Herlihy, Luchango, Moss, and Scherer's scheme \cite{HerlihyLuMoSc03}
+allows transactions to touch a dynamic set of memory locations;
+however the user still has to explicitly \emph{open} every object touched
+before it can be used in a transaction.  This implementation is based
+on object copying, and so has poor performance for large objects and
+arrays.  Not including work necessary to copy objects involved in
+writes, they require $O(R(R+W))$ work to open R objects for reading
+and W objects for writing, which is quadratic in the number of objects
+involved in the transaction.   A list insertion benchmark which they
+present shows 9x slowdown over a locking scheme, they beat the locking
+implementation when more than 5-10 processors are active.  They
+present benchmark data with up to 576 threads on 72 processors.
+
+Harris and Fraser built a software transaction system on a flat
+word-oriented transactional memory abstraction \cite{HarrisFr03},
+roughly similar to simulating Herlihy's original hardware
+transactional memory proposal in software.  This avoids problems with
+large objects.  Performing $m$ memory operations touching $l$ distinct
+locations costs at least $m+l$ extra reads and $l+1$ CAS operations, in
+addition to the reads and writes required by the computation.
+They appear to execute about twice as slowly as a locking
+implementation on some microbenchmarks.  They benchmark on a
+4-processor as well as a 106-processor machine; their crossover point
+(at which the blocking overhead of locks matches the software
+transaction overhead) is around 4 processors.
+
+Programmers will be loathe to use transactions to synchronize their
+code when it results in their code running more slowly on the uniprocessor
+and small-SMP systems which are most common today.
+
+Programming with small non-blocking synchronization primitives alone
+is like using overlays instead of virtual memory.
+
+Our SPECjvm98 and Linux case studies indicate that
+transactional memory operations can be extremely common when
+transactions are made easy to use and natural to express.  Programmers
+can be expected to use both very small and very large transactions
+when they are able, and transactions are used by the operating system
+and programming libraries to provide synchronization and safety
+properties.  Implementing transactional memory in hardware allows the
+overheads to be low (\textbf{cite figures here}), which is appropriate
+when transactional operations are common.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\punt{
+Ideas:
+ - virtual memory/overlays comparison
+ - what is expensive in software versions XBEGIN?  XLD?
+ - basic ideas of software impls
+   also, how they handle overflow & other limits.
+ - honest about what we're showing.
+   here's what happens if you explore the hardware avenue.
+   sw technology problems become solved hw problems.
+ - k-compare-and-swap insufficient?
+ - say when we couldn't find performance numbers.
+   performance #s in terms of reads/writes.
+ - now that we know what transactions look like,
+   we want to use BTM\@.
+ - use categories?
+ - STM systems always use ridiculously large # processors for benchmarks.
+
+The software just ain't good enough!
+\begin{itemize}
+\item Argue that SW isn't good
+\item Also, lots of transactional loads and stores
+\end{itemize}
+
+Software transactional memory implementations:
+% FOR EACH: PERFORMANCE.  IDEA.  LIMITS.
+\begin{itemize}
+\item Shavit and Touitou \cite{ShavitTo95}: static transactions only;
+  that is, input and output locations must be known in advance.
+  Performance?
+  Non-blocking, based on LL/SC. k-word compare\&swap operation.
+  ``outperforms Herlihy's translation method for sufficiently large
+  numbers of processors.''  Alleges Herlihy/Moss is blocking?
+  I think this is actually the case.  Our scheme is not.
+  Elsewhere, ``but not non-blocking, since a single process which is
+  repeatedly swapped during the execution of a transaction will never
+  terminate successfully''.  They define non-blocking as ``repeated
+  execution of some transaction by a process implies that some process
+  (not necessarily the same one and with a possibly different
+  transaction) will terminate successfully after a finite number of
+  attempts in the whole system.''
+  ``static transactions, that is, transactions which access a
+  pre-determined sequence of locations.  This class includes most of
+  the known and proposed synchronization primitives in the
+  literature.''
+  Requires one ownership record for every location in the memory.
+  no limits to size of trans, since we allocate one ownership record
+  per memory location.
+
+  Performance: *at least* 5 fetches, 5 LL, and 4SC per location
+  accessed.
+
+  64 processors; no numbers presented for less than 10 processors.
+
+  acquire/release/agree are expensive.
+
+\item Rudys and Wallach \cite{RudysWa02}: transactions for security.
+  6x to 23x slowdown.  Creates 'backup' objects.  Predictably bad
+  for large objects.  10x slowdown for field/array accesses.
+  only uniprocessor.
+
+\item Herlihy et al \cite{HerlihyLuMoSc03}: dynamic transactions, but
+  copies entire object and so works for small objects only.  Basically
+  Herlihy's method.  You must explicitly \emph{open} every object
+  accessed, at which time conflict-checking is done.
+  O((R+W)R) work to open R objects for reading and W objects for
+  writing, plus cost to copy W objects once.  Concretely: for simple
+  list insert/delete, locks perform 768 ops/ms, and best DSTM scheme
+  is 80 ops/ms.   So over 9x slowdown.
+  Up to 576 threads on 72 processors.
+
+  open and commit are the expensive operations.
+\item Harris and Fraser \cite{HarrisFr03}: atomic sections, word-based
+  scheme.  no safety for non-transactional operations which might
+  touch transactional locations.  transactional operation at least 2x
+  slower than normal op.
+  XBEGIN = CAS + STORE
+  XFAIL = STORE
+  Tread = 2 FETCH (best case)
+  Twrite = 1 FETCH + (1 FETCH and 2 STOREs, on same cache line)
+  XEND = > (1 FETCH + 1 CAS) for each distinct word read or written.
+
+  overhead of a committing transaction performing r reads and w writes
+  to 'l' distinct locations.
+  is at least (2r+2w+(l)) reads (2w+1) writes, and (l+1) CAS
+  operations.  2(r+w)+l reads, 2w+1 writes, and (l+1) CAS operations.
+
+m memory operations to l locations does m+l extra reads and l+1 CAS operations.
+
+  4 proc; also 48 proc of 106-processor machine.  I think the
+  crossover point is around 4 proc.
+
+  COMMIT is the most expensive operation.
+\end{itemize}
+}
+
+
+\secput{efficient}{Designing Efficient Transactions}
+
+\secput{algo}{Algorithms}
+\subsection{Scales}
+\subsection{Allocation}
+\subsection{Object expansion}
+\subsection{Large objects}
+\subsection{Subsumption}
+
+\secput{opt}{Optimizations}
+
+\secput{integrate}{Integration}
+% JNI tricks, etc.
+
+\secput{eval}{Evaluation}
+
+\secput{concl}{Conclusions}
+
+\renewcommand{\baselinestretch}{1}
+\bibliographystyle{plain}
+\bibliography{xaction}
+
+\appendix
+\secput{extra}{Text with nowhere else to go}
 
 \section{Analyses and Implementation}
 
-\section{A proposal for a non-blocking Java OS}\label{sec:proposal}
+\secput{proposal}{A proposal for a non-blocking Java OS}
 \begin{figure}[t]
 {\it
 \begin{tabular}{l}
@@ -1038,179 +1384,6 @@ using this six-step approach.
 
 %% % scales method of tagging fields.
 
-\section{Experimental Results}
-
-\section{Related Work}
-
-\secput{boundless}{The case for boundless transactions}
-
-[The organization of this section needs to be rethought from scratch.]
-
-This section illustrates how boundless transactional memory can ease
-the programming of multithreaded applications.  In particular, we show
-that implementing mutual exclusion with locks can be quite
-complicated, even for simple code.  Moreover, the overheads of a
-locking solution can be significant, especially if the locks enforce
-mutual exclusion in a tight inner loop.
-
-A transaction can be thought of as a sequence of loads and stores
-performed as part of a program.  The intuition for transactions is
-that they either \defn{commit} or they \defn{abort}.  If a transaction
-commits, then all of the loads and stores appear to have run
-atomically with respect to other transactions.  That is, the
-transaction's operations are not interleaved with those of other
-transactions.  If a transaction aborts, then none of its stores take
-effect and the transaction must be restarted, typically using a
-backoff algorithm to preclude livelock.
-
-
-\subsecput{flow}{Network flow}
-
-Consider a serial program for computing network flow (see, for
-example, \cite[Chapter 26]{CormenLeRi01}).  The inner loop of the code
-pushes flow across an edge by increasing the ``excess flow'' on one
-vertex and decreasing it by the same amount on another vertex.  One
-might see the following Java code: \par {\footnotesize\samepage
-\begin{verbatim}
-void pushFlow(Vertex v1, Vertex v2, double flow) {
-  v1.excess += flow; /* Move excess flow from v1 */
-  v2.excess -= flow; /* to v2.                   */
-}
-\end{verbatim}
-}
-
-To parallelize this code, one must preclude multiple threads from
-modifying the excess flow on those two vertices at the same time.
-Locks provide one way to enforce this mutual exclusion: 
-\par {\footnotesize\samepage  % Note:  Don't call the variable ``flow'', it makes the code not fit in the column. -Bradley
-\begin{verbatim}
-void pushFlow(Vertex v1, Vertex v2, double f) {
-  Object lock1, lock2;
-  if (v1.id < v2.id) {       /* Avoid deadlock. */
-    lock1 = v1; lock2 = v2;
-  } else {
-    lock1 = v2; lock2 = v1;
-  }
-  synchronized(lock1) {
-    synchronized(lock2) {
-      v1.excess += f; /* Move excess flow from v1 */
-      v2.excess -= f; /* to v2.                   */
-    } /* unlock lock2 */
-  } /* unlock lock1 */
-}
-\end{verbatim}
-}
-
-This code is surprisingly complicated and slow compared to the
-original.  Space for each object's lock must be reserved.
-To avoid deadlock, the code must acquire the locks in
-a consistent linear order, resulting in an unpredictable branch in the
-code.
-In Java, we require the programmer to insert an \texttt{id} field into
-each vertex to maintain this order.
-Moreover, the time required to acquire the locks is
-an order of magnitude larger on today's processors than the time to
-modify the excess flow.
-\note{CSA: I think this is where Charles wanted actual lock overhead
-  numbers to be inserted.  Using FLEX, the locking code is over 11x
-  slower than the no-locks code.  With Sun's JVM, this overhead falls
-  to about 1.7x, because Sun is wicked smart about their lock
-  implementations.}
-What's more, all of this overhead is rarely
-needed!  For a graph with thousands or millions of vertices, the
-number of threads operating on the graph is likely to be less than a
-hundred.  Consequently, the chances are quite small that two different
-threads actually conflict.  Without the locks to implement mutual
-exclusion, however, the program would fail intermittently.
-
-Transactional memory (and some language support) allows the
-programmer to parallelize the original code using an \texttt{atomic}
-keyword to indicate that the code block should appear to execute
-atomically: 
-\par {\footnotesize\samepage
-\begin{verbatim}
-void pushFlow(Vertex v1, Vertex v2, double flow) {
-  atomic { /* Transaction begin. */
-    v1.excess += flow; /* Move excess flow from v1 */
-    v2.excess -= flow; /* to v2.                   */
-  } /* Transaction end. */
-}
-\end{verbatim}
-} 
-
-This simple example is not meant to be a definitive defense of
-transactional memory.  Rather, its aim is to show the reader how
-convoluted locking protocol can be compared with transactions.  As we
-shall see in \secref{eval},\note{Sure would be nice if we could make
-good on this promise.} BTM can implement this code with essentially no
-overhead, allowing excess flows to be updated safely by multiple
-parallel threads. 
-
-
-\subsecput{stringbuffer}{The \texttt{StringBuffer} class}
-
-\par {\footnotesize
-\samepage
-\begin{verbatim}
-public final class StringBuffer ... {
-  private char value[];
-  private int count;
-  ... 
-  public synchronized
-  StringBuffer append(StringBuffer sb) {
-    ...
-    int len = sb.length(); // len may be stale.
-    int newcount = count + len; 
-    if (newcount > value.length)
-      expandCapacity(newcount);
-    // next statement may use stale len
-    sb.getChars(0, len, value, count);
-    count = newcount;
-    return this;
-  }
-  public synchronized int length() { return count; }
-  public synchronized void getChars(...) { ... }
-}
-\end{verbatim}
-}
-
-This\note{This text is mostly just to get the ideas down for now.}  
-source code is from the \texttt{java.lang.StringBuffer} class in
-version 1.4.2 of Sun's Java standard library.  \texttt{StringBuffer}
-represents a mutable string of characters.  The documentation for the
-class states:
-\par{\footnotesize
-\begin{quote}
- String buffers are safe for use by multiple threads. The methods 
- are synchronized where necessary so that all the operations on any 
- particular instance behave as if they occur in some serial order 
- that is consistent with the order of the method calls made by each of 
- the individual threads involved. 
-\end{quote}
-}
-
-The \texttt{synchronized} modified on the \texttt{append()} method is
-meant to ensure that this method operates atomically.  But it does
-not: another thread can change the parameter \texttt{sb} between the
-call to \texttt{sb.length()} and the call to \texttt{sb.getChars()},
-causing incorrect data to be appended or a
-\texttt{StringIndexOutOfBoundException} to be thrown.  The calls to
-\texttt{sb.length()} and \texttt{sb.getChars()} are individually
-atomic, but they do not compose to form an atomic implementation of
-\texttt{append()}.  An \texttt{atomic} declaration (or running under
-our transactions implementation) would fix this programmer error.
-[This bug was found by \cite{FlanaganQa03}.]
-\note{What about just saying \texttt{public synchronzied Append} ? -Bradley}
-
-Further, if the synchronization in this method is implemented with
-transactions, note that the call to \texttt{sb.getChars()} means that
-the size of the transaction for this method will grow like the length
-of the parameter~\texttt{sb}.  In other words, the transaction can be
-made arbitrarily large by increasing the length of \texttt{sb}; or,
-equivalently, there is no bound on transaction size without a bound on
-the size of the string~\texttt{sb}.  This means that boundless
-transactions must be supported if this method is operate on arbitrary
-inputs.
 
 \subsecput{os}{Operating systems}
 
@@ -1225,169 +1398,6 @@ verify.  And many kernel bugs involve races and deadlocks.
 [Dealing with nested transactions: modularity, semantics.]
 
 \subsecput{htm}{HTM versus STM}
-
-Several software transactions have been proposed.  Some constrain the
-programmer and make transactions difficult to use.  All have
-relatively high overheads, which make transactions unattractive for
-uniprocessor and small SMP systems. [Once the number of processors is
-large enough, the increased parallelism which can be provided by
-optimistic transactions may cancel out the performance penalty of
-their use.]
-
-The first proposal for software transactional memory was proposed by
-Shavit and Touitou \cite{ShavitTo95}; their system requires that all
-input and output locations touched by a transaction be known in
-advance, which limits its application.  It performs at least 10
-fetches and 4 stores per location accessed (not counting the loads and
-stores directly required by the computation).  The benchmarks
-presented were collected on a 64-processor machine; no performance
-numbers were shown for less than 10 processors.
-
-Rudys and Wallach \cite{RudysWa02} proposed a copying-based
-transaction system to allow rollback of hostile codelets.
-They shows an order of magnitude slowdown for field and array
-accessed, and 6x to 23x slowdown on their benchmarks.
-
-Herlihy, Luchango, Moss, and Scherer's scheme \cite{HerlihyLuMoSc03}
-allows transactions to touch a dynamic set of memory locations;
-however the user still has to explicitly \emph{open} every object touched
-before it can be used in a transaction.  This implementation is based
-on object copying, and so has poor performance for large objects and
-arrays.  Not including work necessary to copy objects involved in
-writes, they require $O(R(R+W))$ work to open R objects for reading
-and W objects for writing, which is quadratic in the number of objects
-involved in the transaction.   A list insertion benchmark which they
-present shows 9x slowdown over a locking scheme, they beat the locking
-implementation when more than 5-10 processors are active.  They
-present benchmark data with up to 576 threads on 72 processors.
-
-Harris and Fraser built a software transaction system on a flat
-word-oriented transactional memory abstraction \cite{HarrisFr03},
-roughly similar to simulating Herlihy's original hardware
-transactional memory proposal in software.  This avoids problems with
-large objects.  Performing $m$ memory operations touching $l$ distinct
-locations costs at least $m+l$ extra reads and $l+1$ CAS operations, in
-addition to the reads and writes required by the computation.
-They appear to execute about twice as slowly as a locking
-implementation on some microbenchmarks.  They benchmark on a
-4-processor as well as a 106-processor machine; their crossover point
-(at which the blocking overhead of locks matches the software
-transaction overhead) is around 4 processors.
-
-Programmers will be loathe to use transactions to synchronize their
-code when it results in their code running more slowly on the uniprocessor
-and small-SMP systems which are most common today.
-
-Programming with small non-blocking synchronization primitives alone
-is like using overlays instead of virtual memory.
-
-Our SPECjvm98 and Linux case studies indicate that
-transactional memory operations can be extremely common when
-transactions are made easy to use and natural to express.  Programmers
-can be expected to use both very small and very large transactions
-when they are able, and transactions are used by the operating system
-and programming libraries to provide synchronization and safety
-properties.  Implementing transactional memory in hardware allows the
-overheads to be low (\textbf{cite figures here}), which is appropriate
-when transactional operations are common.
-
-\secput{sw}{The case for HTM over STM}
-
-\punt{
-Ideas:
- - virtual memory/overlays comparison
- - what is expensive in software versions XBEGIN?  XLD?
- - basic ideas of software impls
-   also, how they handle overflow & other limits.
- - honest about what we're showing.
-   here's what happens if you explore the hardware avenue.
-   sw technology problems become solved hw problems.
- - k-compare-and-swap insufficient?
- - say when we couldn't find performance numbers.
-   performance #s in terms of reads/writes.
- - now that we know what transactions look like,
-   we want to use BTM\@.
- - use categories?
- - STM systems always use ridiculously large # processors for benchmarks.
-}
-
-
-The software just ain't good enough!
-\begin{itemize}
-\item Argue that SW isn't good
-\item Also, lots of transactional loads and stores
-\end{itemize}
-
-Software transactional memory implementations:
-% FOR EACH: PERFORMANCE.  IDEA.  LIMITS.
-\begin{itemize}
-\item Shavit and Touitou \cite{ShavitTo95}: static transactions only;
-  that is, input and output locations must be known in advance.
-  Performance?
-  Non-blocking, based on LL/SC. k-word compare\&swap operation.
-  ``outperforms Herlihy's translation method for sufficiently large
-  numbers of processors.''  Alleges Herlihy/Moss is blocking?
-  I think this is actually the case.  Our scheme is not.
-  Elsewhere, ``but not non-blocking, since a single process which is
-  repeatedly swapped during the execution of a transaction will never
-  terminate successfully''.  They define non-blocking as ``repeated
-  execution of some transaction by a process implies that some process
-  (not necessarily the same one and with a possibly different
-  transaction) will terminate successfully after a finite number of
-  attempts in the whole system.''
-  ``static transactions, that is, transactions which access a
-  pre-determined sequence of locations.  This class includes most of
-  the known and proposed synchronization primitives in the
-  literature.''
-  Requires one ownership record for every location in the memory.
-  no limits to size of trans, since we allocate one ownership record
-  per memory location.
-
-  Performance: *at least* 5 fetches, 5 LL, and 4SC per location
-  accessed.
-
-  64 processors; no numbers presented for less than 10 processors.
-
-  acquire/release/agree are expensive.
-
-\item Rudys and Wallach \cite{RudysWa02}: transactions for security.
-  6x to 23x slowdown.  Creates 'backup' objects.  Predictably bad
-  for large objects.  10x slowdown for field/array accesses.
-  only uniprocessor.
-
-\item Herlihy et al \cite{HerlihyLuMoSc03}: dynamic transactions, but
-  copies entire object and so works for small objects only.  Basically
-  Herlihy's method.  You must explicitly \emph{open} every object
-  accessed, at which time conflict-checking is done.
-  O((R+W)R) work to open R objects for reading and W objects for
-  writing, plus cost to copy W objects once.  Concretely: for simple
-  list insert/delete, locks perform 768 ops/ms, and best DSTM scheme
-  is 80 ops/ms.   So over 9x slowdown.
-  Up to 576 threads on 72 processors.
-
-  open and commit are the expensive operations.
-\item Harris and Fraser \cite{HarrisFr03}: atomic sections, word-based
-  scheme.  no safety for non-transactional operations which might
-  touch transactional locations.  transactional operation at least 2x
-  slower than normal op.
-  XBEGIN = CAS + STORE
-  XFAIL = STORE
-  Tread = 2 FETCH (best case)
-  Twrite = 1 FETCH + (1 FETCH and 2 STOREs, on same cache line)
-  XEND = > (1 FETCH + 1 CAS) for each distinct word read or written.
-
-  overhead of a committing transaction performing r reads and w writes
-  to 'l' distinct locations.
-  is at least (2r+2w+(l)) reads (2w+1) writes, and (l+1) CAS
-  operations.  2(r+w)+l reads, 2w+1 writes, and (l+1) CAS operations.
-
-m memory operations to l locations does m+l extra reads and l+1 CAS operations.
-
-  4 proc; also 48 proc of 106-processor machine.  I think the
-  crossover point is around 4 proc.
-
-  COMMIT is the most expensive operation.
-\end{itemize}
 
 \subsecput{performance}{Performance improvements}
 
@@ -1416,14 +1426,6 @@ exposed to user code, Herlihy's system is vulnerable to this simple
 denial-of-service attack.  BTM does not suffer from this
 problem. [although starvation may still occur.]
 
-\section{Conclusions}
-
-\renewcommand{\baselinestretch}{1}
-\bibliographystyle{plain}
-\bibliography{xaction}
-
-%\appendix
-%\input{pldi02-appendix}
 \end{document}
 
 % LocalWords:  csail mit edu AFRL
