@@ -25,7 +25,7 @@ import harpoon.Tools.UComp;
  * to <code>BasicBlock</code>s.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCBBFactory.java,v 1.1.2.1 2000-03-18 17:38:11 salcianu Exp $
+ * @version $Id: SCCBBFactory.java,v 1.1.2.2 2000-03-23 08:17:04 salcianu Exp $
  */
 public class SCCBBFactory {
 
@@ -36,6 +36,13 @@ public class SCCBBFactory {
     /** Creates a <code>SCCBBFactory</code>. */
     public SCCBBFactory(BBConverter bbconv) {
 	this.bbconv = bbconv;
+    }
+
+    /** Returns the underlying <code>BBConverter</code>. This is the 
+	same as the one passed to the constructor of <code>this</code>
+	object. */
+    public BBConverter getBBConverter(){
+	return bbconv;
     }
 
     /** Generates the code of the method <code>hm</code> using the 
