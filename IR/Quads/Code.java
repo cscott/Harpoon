@@ -21,9 +21,9 @@ import java.util.Vector;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.4 1998-12-27 21:26:54 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.5 1999-01-21 03:45:07 cananian Exp $
  */
-abstract class Code extends HCode {
+public abstract class Code extends HCode {
     /** The method that this code view represents. */
     final HMethod parent;
     /** The quadruples composing this code view. */

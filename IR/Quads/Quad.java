@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.10 1998-12-28 23:52:40 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.11 1999-01-21 03:45:07 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -256,16 +256,16 @@ public abstract class Quad
     }
     // ----------------------------------------------------
     // Useful for temp renaming.  Not exported.
-    final static Temp map(TempMap tm, Temp t) {
+    protected final static Temp map(TempMap tm, Temp t) {
 	return (t==null)?null:(tm==null)?t:tm.tempMap(t);
     }
-    final static Temp[] map(TempMap tm, Temp[] ta) {
+    protected final static Temp[] map(TempMap tm, Temp[] ta) {
 	Temp[] r = new Temp[ta.length];
 	for (int i=0; i<r.length; i++)
 	    r[i] = map(tm, ta[i]);
 	return r;
     }
-    final static Temp[][] map(TempMap tm, Temp[][] taa) {
+    protected final static Temp[][] map(TempMap tm, Temp[][] taa) {
 	Temp[][] r = new Temp[taa.length][];
 	for (int i=0; i<r.length; i++)
 	    r[i] = map(tm, taa[i]);
