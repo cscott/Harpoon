@@ -355,7 +355,6 @@ class UpdateNode {
 
 	    if (u.getType()==Updates.ACCESSPATH) {
 		VarDescriptor newright=VarDescriptor.makeNew("right");
-		/* Need to do the modulo computation here...FIXME */
 		generate_accesspath(cr, right,newright,u);
 		right=newright;
 	    }
@@ -437,6 +436,8 @@ class UpdateNode {
     private void generate_accesspath(CodeWriter cr, VarDescriptor right, VarDescriptor newright, Updates u) {
 	Vector dotvector=new Vector();
 	Expr ptr=u.getRightExpr();
+	VarExpr rightve=new VarExpr(right);
+	right.td=ReservedTypeDescriptor.INT;
 
 	while(true) {
 	    /* Does something other than a dereference? */
@@ -445,7 +446,6 @@ class UpdateNode {
 		ptr=((DotExpr)ptr).left;
 	    else if (ptr instanceof CastExpr)
 		ptr=((CastExpr)ptr).getExpr();
-
 	    if (ptr instanceof VarExpr) {
 		/* Finished constructing vector */
 		break;
@@ -454,15 +454,44 @@ class UpdateNode {
 	ArrayAnalysis.AccessPath ap=u.getAccessPath();
 	VarDescriptor init=VarDescriptor.makeNew("init");
 	if (ap.isSet()) {
-	    cr.outputline("int "+init.getSafeSymbol()+"="+ap.getSet().getSafeSymbol()+"_hash->firstkey();")
+	    cr.outputline("int "+init.getSafeSymbol()+"="+ap.getSet().getSafeSymbol()+"_hash->firstkey();");
+	    init.td=ap.getSet().getType();
 	} else {
 	    init=ap.getVar();
 	}
+	Expr newexpr=new VarExpr(init);
+	int apindex=0;
 	for(int i=dotvector.size()-1;i>=0;i--) {
 	    Expr e=(Expr)dotvector.get(i);
-	    
+	    if (e instanceof CastExpr) {
+		newexpr=new CastExpr(((CastExpr)e).getType(),newexpr);
+	    } else if (e instanceof DotExpr) {
+		DotExpr de=(DotExpr)e;
+		if (de.getField() instanceof ArrayDescriptor) {
+		    DotExpr de2=new DotExpr(newexpr,de.field,new IntegerLiteralExpr(0));
+		    de2.fd=de.fd;
+		    de2.fieldtype=de.fieldtype;
+		    OpExpr offset=new OpExpr(Opcode.SUB,rightve,de2);
+		    OpExpr index=new OpExpr(Opcode.DIV,offset,de.fieldtype.getSizeExpr());
+		    if (u.getRightPos()==apindex) {
+			index.generate(cr,newright);
+			return;
+		    } else {
+			DotExpr de3=new DotExpr(newexpr,de.field,index);
+			de3.fd=de.fd;
+			de3.fieldtype=de.fieldtype;
+			newexpr=de3;
+		    }
+		} else {
+		    DotExpr de2=new DotExpr(newexpr,de.field,null);
+		    de2.fd=de.fd;
+		    de2.fieldtype=de.fieldtype;
+		    newexpr=de2;
+		}
+		apindex++;
+	    } else throw new Error();
 	}
-	
+	throw new Error();
     }
 
     private void generate_bindings(CodeWriter cr, String slot0, String slot1) {

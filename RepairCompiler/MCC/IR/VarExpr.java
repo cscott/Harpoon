@@ -79,7 +79,6 @@ public class VarExpr extends Expr {
 
     public void generate(CodeWriter writer, VarDescriptor dest) {        
         // #TBD#: bit of a hack, really should have been type checked properly 
-        vd = (VarDescriptor) writer.getSymbolTable().get(varname);
         assert vd != null;
         assert vd.getType() != null;
 	this.td = vd.getType();
