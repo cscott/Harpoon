@@ -1,12 +1,16 @@
 #ifndef INCLUDED_FREE_LIST_H
 #define INCLUDED_FREE_LIST_H
 
+#include "jni-gc.h"
 #include "jni-types.h"
 #include "jni-private.h"
 
 /* data structure for a block of memory */
 struct block
 {
+#ifdef WITH_STATS_GC
+  jint time;
+#endif
   size_t size;
   union { ptroff_t mark; struct block *next; } markunion;
   struct oobj object[0];
