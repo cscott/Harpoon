@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.101 1999-11-06 04:17:52 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.102 1999-11-06 20:00:55 cananian Exp $
  */
 %%
 
@@ -424,7 +424,7 @@ import java.util.Iterator;
 	Instr last=instr;
 	for (Instr il = instr; il!=null; il=il.getNext()) {
 	    if (il instanceof InstrENTRY) { // entry stub.
-		Instr in1 = new InstrDIRECTIVE(inf, il, ".align 4");
+		Instr in1 = new InstrDIRECTIVE(inf, il, ".balign 4");
 		Instr in2 = new InstrDIRECTIVE(inf, il, ".global " +
 					       methodlabel.name);
 		Instr in2a= new InstrDIRECTIVE(inf, il, ".type " +
@@ -1765,7 +1765,7 @@ DATA(NAME(l)) %{
 }%
 
 ALIGN(n) %{
-    emitDIRECTIVE( ROOT, "\t.align "+n);
+    emitDIRECTIVE( ROOT, "\t.balign "+n);
 }%
 
 SEGMENT(CLASS) %{
