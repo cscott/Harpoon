@@ -91,7 +91,7 @@ void context_switch() {
   /* Lock/thread end during atomic section => deadlock */
   assert(!sigismember(&old_set, SIGALRM)); 
 #ifdef WITH_REALTIME_THREADS_MEASURE_JITTER
-  gettimeofday(&compareSwitch);
+  gettimeofday(&compareSwitch, NULL);
 #endif  
   kill(getpid(), SIGALRM);
 }
