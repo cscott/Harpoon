@@ -79,7 +79,7 @@ while [ x$dep = x ]; do
   esac;
 done
 
-if [ x$dep = xY ]; do
+if [ x$dep = xY ]; then
   echo Downloading dependencies...
 fi;
 
