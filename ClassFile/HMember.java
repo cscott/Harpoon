@@ -3,12 +3,13 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
+import harpoon.Util.ArrayFactory;
 /**
  * <Code>HMember</code> is an interface that reflects identifying information
  * about a single member (a field or a method) or a constructor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMember.java,v 1.5.2.2 1999-10-16 22:17:15 cananian Exp $
+ * @version $Id: HMember.java,v 1.5.2.2.2.1 2000-01-11 23:06:57 cananian Exp $
  * @see HClass
  * @see HField
  * @see HMethod
@@ -45,4 +46,8 @@ public interface HMember {
    * of inner classes.
    */
   public abstract boolean isSynthetic();
+
+  /** Array factory: returns new <code>HMember[]</code>. */
+  public static final ArrayFactory arrayFactory =
+    Factories.hmemberArrayFactory;
 }

@@ -13,7 +13,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.15.2.9.6.3 2000-01-11 21:55:39 bdemsky Exp $
+ * @version $Id: HField.java,v 1.15.2.9.6.4 2000-01-11 23:06:57 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -112,10 +112,8 @@ public interface HField extends HMember {
   public String toString();
 
   /** Array factory: returns new <code>HField[]</code>. */
-  public static final ArrayFactory arrayFactory = new HFieldArrayFactory();
-  static class HFieldArrayFactory implements ArrayFactory {
-    public Object[] newArray(int len) { return new HField[len]; }
-  };
+  public static final ArrayFactory arrayFactory =
+    Factories.hfieldArrayFactory;
 }
 // set emacs indentation style.
 // Local Variables:

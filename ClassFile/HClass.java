@@ -27,7 +27,7 @@ import java.lang.reflect.Modifier;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.29.2.5 2000-01-11 15:30:36 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.29.2.6 2000-01-11 23:06:57 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -555,11 +555,9 @@ public abstract class HClass extends HPointer
   /** The <code>HClass</code> object representing the primitive type void.*/
   public static final HClass Void=new HClassPrimitive("void", "V");
 
-  /** Array factory: returns new <Code>HClass[]</code>. */
-  public static final ArrayFactory arrayFactory =
-    new ArrayFactory() {
-      public Object[] newArray(int len) { return new HClass[len]; }
-    };
+  /** Array factory: returns new <code>HClass[]</code>. */
+  public static final ArrayFactory arrayFactory = Factories.hclassArrayFactory;
+
   /** HPointer interface. */
   final HClass actual() { return this; /* no dereferencing necessary. */ }
 
