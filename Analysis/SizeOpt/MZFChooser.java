@@ -3,21 +3,43 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.SizeOpt;
 
-import harpoon.Analysis.Transformation.*;
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
-import harpoon.Temp.*;
-import harpoon.Util.Collections.*;
-import harpoon.Util.*;
+import harpoon.Analysis.Transformation.MethodMutator;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HConstructor;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HMethod;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.Code;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Qop;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadFactory;
+import harpoon.IR.Quads.QuadRSSx;
+import harpoon.IR.Quads.QuadSSA;
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.Temp.Temp;
+import harpoon.Util.Util;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 /**
  * <code>MZFChooser</code> adds code to instantiate the correct
  * MZF-compressed version of a class at run-time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFChooser.java,v 1.1.2.1 2001-11-13 05:32:33 cananian Exp $
+ * @version $Id: MZFChooser.java,v 1.1.2.2 2001-11-13 22:01:34 cananian Exp $
  */
 class MZFChooser extends MethodMutator {
     /** an oracle to determine the properties of constructors. */
@@ -35,6 +57,23 @@ class MZFChooser extends MethodMutator {
 	this.cc = cc;
 	this.listmap = listmap;
 	this.field2class = field2class;
+    }
+    protected String mutateCodeName(String codeName) {
+	// input SSA, output RSSx.
+	return QuadRSSx.codename;
+    }
+    protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod) {
+	// make SSA into RSSx.
+	Util.assert(hc.getName().equals(QuadSSA.codename));
+	return MyRSSx.cloneToRSSx((harpoon.IR.Quads.Code)hc, newmethod);
+    }
+    private static class MyRSSx extends QuadRSSx {
+	private MyRSSx(HMethod m) { super(m, null); }
+	public static HCodeAndMaps cloneToRSSx(harpoon.IR.Quads.Code c,
+					       HMethod m) {
+	    MyRSSx r = new MyRSSx(m);
+	    return r.cloneHelper(c, r);
+	}
     }
     protected HCode mutateHCode(HCodeAndMaps input) {
 	HCode hc = input.hcode();
@@ -56,10 +95,6 @@ class MZFChooser extends MethodMutator {
 	    // fetch field list for this class.
 	    List sortedFields = (List) listmap.get(qN.hclass());
 	    if (sortedFields==null) continue; // nothing known about this class
-	    if (true) {
-		System.err.println("can optimize call to "+qC.method());
-		continue;
-	    }
 	    // delete the NEW.
 	    qN.remove();
 	    // replace CALL with test-and-NEW-and-CALL.
@@ -100,8 +135,9 @@ class MZFChooser extends MethodMutator {
 	}
     }
     void refactor(HMethod constructor, CALL qC, List sortedFields) {
+	QuadFactory qf = qC.getFactory();
 	if (sortedFields.size()==0) { // base case.
-	    Quad qN = new NEW(qC.getFactory(), qC, qC.params(0),
+	    Quad qN = new NEW(qf, qC, qC.params(0),
 			      qC.method().getDeclaringClass());
 	    addAt(qC.prevEdge(0), qN);
 	    return;
@@ -109,17 +145,19 @@ class MZFChooser extends MethodMutator {
 	List pair = (List) sortedFields.get(0);
 	HField hf = (HField) pair.get(0); // field
 	Number num = (Number) pair.get(1); // 'mostly-what?'
+	// lookup 'spiffy constructor'
+	HClass newC = (HClass) field2class.get(hf);
+	HMethod newM = newC.getDeclaredMethod
+	    (constructor.getName(), constructor.getDescriptor());
 	// check whether this field is constant w/ this constructor.
 	if (cc.isConstant(constructor, hf)) {
 	    Object val = cc.constantValue(constructor, hf);
 	    if (val==null ? num.longValue()==0 :
-		((Number)val).doubleValue()==num.doubleValue()) {
+		(val instanceof Number && /* no String, etc constants */
+		 ((Number)val).doubleValue()==num.doubleValue())) {
 		// okay, always a constant of the right value.
 		// we can replace original constructor with alternate.
-		HClass newC = (HClass) field2class.get(hf);
-		HMethod newM = newC.getDeclaredMethod
-		    (constructor.getName(), constructor.getDescriptor());
-		CALL qCN = new CALL(qC.getFactory(), qC, newM,
+		CALL qCN = new CALL(qf, qC, newM,
 				    qC.params(), qC.retval(), qC.retex(),
 				    qC.isVirtual(), qC.isTailCall(),
 				    qC.dst(), qC.src());
@@ -133,13 +171,55 @@ class MZFChooser extends MethodMutator {
 	// check whether this field is a function of a param.
 	if (cc.isParam(constructor, hf)) {
 	    int which = cc.paramNumber(constructor, hf);
-	    // XXX test whether param(which) is equal to 'num'.
+	    // test whether param(which) is equal to 'num'.
 	    // if so, use specialized class, else fall back.
-	    System.err.println("COULD FURTHER SPECIALIZE "+constructor+" FOR "+hf);
+	    Temp tZ = new Temp(qf.tempFactory(), "mostly");
+	    Temp tC = new Temp(qf.tempFactory(), "lucky");
+	    // tZ = CONST(mostlyN)
+	    // tC = CMPEQ(tZ, param(which))
+	    // if (tC)
+	    //   call spiffy constructor (recurse here)
+	    // else
+	    //   NEW boring class
+	    //   call new boring constructor.
+	    // PHI/return (output is SSx?)     PHI/throw
+	    HClass ty = widen(hf.getType());
+	    Quad q0 = ty.isPrimitive() ?
+		new CONST(qf, qC, tZ, makeValue(ty, num), ty) :
+		new CONST(qf, qC, tZ, null, HClass.Void);
+	    Util.assert(ty.isPrimitive()?true:num.intValue()==0);
+	    Quad q1 = new OPER(qf, qC, makeEqOp(ty), tC,
+			       new Temp[] { tZ, qC.params(which) });
+	    Quad q2 = new CJMP(qf, qC, tC, new Temp[0]);
+	    CALL q3 = new CALL(qf, qC, newM /* spiffy */,
+			       qC.params(), qC.retval(), qC.retex(),
+			       qC.isVirtual(), qC.isTailCall(),
+			       qC.dst(), qC.src());
+	    Util.assert(qC.retval()==null); // constructor should be void
+	    Quad q4 = new NEW(qf, qC, qC.params(0), /* boring */
+			      qC.method().getDeclaringClass());
+	    Quad q5 = new PHI(qf, qC, new Temp[0], 2); //retval phi
+	    Quad q6 = new PHI(qf, qC, new Temp[0], 2); //retex phi
+	    Edge in = qC.prevEdge(0);
+	    Edge retout=qC.nextEdge(0);
+	    Edge exout=qC.nextEdge(1);
+	    in = addAt(in, q0);
+	    in = addAt(in, q1);
+	    in = addAt(in, q2);
+	    in = addAt(in, q4);
+	    addAt(retout, q5);
+	    addAt(exout, q6);
+	    Quad.addEdge(q2, 1, q3, 0);
+	    Quad.addEdge(q3, 0, q5, 1);
+	    Quad.addEdge(q3, 1, q6, 1);
+	    // now recursively invoke on rest of list.
+	    refactor(constructor, q3,
+		     sortedFields.subList(1, sortedFields.size()));
+	    return;
 	}
 	// nothing known about this field w/ this constructor.
 	// clean up (add NEW) and go home.
-	Quad qN = new NEW(qC.getFactory(), qC, qC.params(0),
+	Quad qN = new NEW(qf, qC, qC.params(0),
 			  qC.method().getDeclaringClass());
 	addAt(qC.prevEdge(0), qN);
 	return;
@@ -152,5 +232,22 @@ class MZFChooser extends MethodMutator {
 	Quad.addEdge(frm, frm_succ, q, which_pred);
 	Quad.addEdge(q, which_succ, to, to_pred);
 	return to.prevEdge(to_pred);
+    }
+    // widen sub-int primitive types.
+    private static HClass widen(HClass hc) {
+	return MZFCompressor.widen(hc);
+    }
+    // wrap a value w/ an object of the appropriate type.
+    private static Object makeValue(HClass type, Number num) {
+	return MZFCompressor.wrap(type, num);
+    }
+    private static int makeEqOp(HClass type) {
+	if (!type.isPrimitive()) return Qop.ACMPEQ;
+	if (type==HClass.Int) return Qop.ICMPEQ;
+	if (type==HClass.Long) return Qop.LCMPEQ;
+	if (type==HClass.Float) return Qop.FCMPEQ;
+	if (type==HClass.Double) return Qop.DCMPEQ;
+	Util.assert(false, "unknown type: "+type);
+	return -1;
     }
 }
