@@ -319,6 +319,19 @@ ns.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
+buffer.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
+	@rm -rf $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
 jars: clean doc
 	@echo Generating imagerec.jar file...
 	@rm -rf $(JDIRS)
@@ -381,6 +394,9 @@ jars: clean doc
 	@echo Generating RTJ.jar file...
 	@$(JAR) cfm RTJ.jar src/manifest/RTJ.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > RTJ.jar.TIMESTAMP
+	@echo Generating buffer.jar file...
+	@$(JAR) cfm buffer.jar src/manifest/buffer.jar.MF $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > buffer.jar.TIMESTAMP
 	@echo Generating GUI.jar file...
 	@$(JAR) xf movie/tank.jar
 	@rm -rf META-INF
