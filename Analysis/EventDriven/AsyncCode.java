@@ -62,7 +62,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.30 2000-01-14 17:53:25 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.31 2000-01-14 18:29:29 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -553,7 +553,7 @@ public class AsyncCode {
 		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
 
 		Quad.addEdge(call,1,qthrow,0);
-		RETURN qreturn=new RETURN(hcode.getFactory(),q,null);
+		RETURN qreturn=new RETURN(hcode.getFactory(),q,newt);
 		Quad.addEdge(call,0,qreturn,0);
 		linkFooters.add(qthrow);
 		linkFooters.add(qreturn);
@@ -637,7 +637,7 @@ public class AsyncCode {
 		Quad.addEdge(newq,0,call,0);
 		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
 		Quad.addEdge(call,1,qthrow,0);
-		RETURN qreturn=new RETURN(hcode.getFactory(),q,null);
+		RETURN qreturn=new RETURN(hcode.getFactory(),q,newt);
 		Quad.addEdge(call,0,qreturn,0);
 		linkFooters.add(qthrow);
 		linkFooters.add(qreturn);
