@@ -9,7 +9,7 @@ import harpoon.IR.QuadSSA.*;
  * <code>Main</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.7 1998-10-11 02:37:58 cananian Exp $
+ * @version $Id: Main.java,v 1.8 1998-11-10 00:45:48 cananian Exp $
  */
 
 public abstract class Main extends harpoon.IR.Registration {
@@ -28,7 +28,7 @@ public abstract class Main extends harpoon.IR.Registration {
 	    HMethod hm[] = interfaceClasses[i].getDeclaredMethods();
 	    for (int j=0; j<hm.length; j++) {
 		HCode hc = hm[j].getCode("quad-ssa");
-		hc.print(out);
+		if (hc!=null) hc.print(out);
 	    }
 	}
     }
