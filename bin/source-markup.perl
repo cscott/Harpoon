@@ -142,8 +142,11 @@ for ($i=0; $i<=$#lines; $i++) {
 	   m"(http://[/~A-Za-z0-9_#,.?&=%:;+-]+)|(\w+@[A-Za-z0-9._]+)"g){
 	my $endloc = pos $lines[$i];
 	my $startloc=$endloc - (defined($1)?length($1):length($2));
-        &insertBefore($i,$startloc,"<A HREF=\"$1\">") if defined $1;
-        &insertBefore($i,$startloc,"<A HREF=\"mailto:$2\">") if defined $2;
+        # don't include trailing period (if any) in HREF or email address
+        $endloc-- if substr($lines[$i],$endloc-1,1) eq ".";
+        my $match = substr($lines[$i],$startloc,$endloc-$startloc);
+        &insertBefore($i,$startloc,"<A HREF=\"$match\">") if defined $1;
+        &insertBefore($i,$startloc,"<A HREF=\"mailto:$match\">") if defined $2;
         &insertAfter($i,$endloc-1,"</A>");
     }
 }
