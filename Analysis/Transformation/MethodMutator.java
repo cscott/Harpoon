@@ -19,7 +19,7 @@ import java.util.Map;
  * to effect the change.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodMutator.java,v 1.1.2.4 2000-11-12 18:50:02 cananian Exp $
+ * @version $Id: MethodMutator.java,v 1.1.2.5 2000-11-14 18:27:25 cananian Exp $
  */
 public abstract class MethodMutator implements java.io.Serializable {
     /** This is the code factory which contains the representations of the
@@ -40,6 +40,15 @@ public abstract class MethodMutator implements java.io.Serializable {
     protected String mutateCodeName(String codeName) {
 	return codeName;
     }
+    /** Override this method if you do not want the mutatable HCode to be
+     *  a straight clone of the original HCode: for example, if the
+     *  input HCodes were <code>QuadSSI</code> and you wanted to
+     *  clone them into <code>QuadRSSI</code>s before mutating.
+     *  By default, this method returns <code>hc.clone(newmethod)</code>. */
+    protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod)
+	throws CloneNotSupportedException {
+	return hc.clone(newmethod);
+    }
     /** Returns a <code>HCodeFactory</code> containing representations for
      *  the methods split by the <code>MethodSplitter</code>. */
     public final HCodeFactory codeFactory() { return hcf; }
@@ -55,7 +64,7 @@ public abstract class MethodMutator implements java.io.Serializable {
             HCode hc = parent.convert(m);
             if (hc!=null)
 		try {
-		    hc = mutateHCode(hc.clone(m));
+		    hc = mutateHCode(cloneHCode(hc, m));
 		} catch (CloneNotSupportedException ex) {
 		    Util.assert(false, "cloning HCode failed: "+ex);
 		}

@@ -40,7 +40,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.19 2000-11-12 18:50:02 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.20 2000-11-14 18:27:25 cananian Exp $
  */
 public abstract class MethodSplitter implements java.io.Serializable {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -88,7 +88,7 @@ public abstract class MethodSplitter implements java.io.Serializable {
 		    else hc = (HCode) origcache.get( swpair.get(0) );
 		}
 		try {
-		    if (hc!=null) hc = mutateHCode(hc.clone(m), tok);
+		    if (hc!=null) hc = mutateHCode(cloneHCode(hc, m), tok);
 		} catch (CloneNotSupportedException ex) {
 		    Util.assert(false, "cloning HCode failed: "+ex);
 		}
@@ -180,6 +180,15 @@ public abstract class MethodSplitter implements java.io.Serializable {
      *  <code>MethodMutator</code>'s codefactory reports. */
     protected String mutateCodeName(String codeName) {
 	return codeName;
+    }
+    /** Override this method if you do not want the mutatable HCode to be
+     *  a straight clone of the original HCode: for example, if the
+     *  input HCodes were <code>QuadSSI</code> and you wanted to
+     *  clone them into <code>QuadRSSI</code>s before mutating.
+     *  By default, this method returns <code>hc.clone(newmethod)</code>. */
+    protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod)
+	throws CloneNotSupportedException {
+	return hc.clone(newmethod);
     }
 
     /** Check the validity of a given <code>MethodSplitter.Token</code>.
