@@ -26,7 +26,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.32 1999-08-18 21:30:53 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.33 1999-08-26 04:41:01 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -227,7 +227,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		}
 		public void visit(Spec.LeafSegType l) {
 		    append(exp, "&& ((" + TREE_SEGMENT + ")"+stmPrefix+
-			   ").segtype == "+l.segtype);
+			   ").segtype == " +
+			   TREE_SEGMENT + "." + SEGMENT.decode(l.segtype));
 		}
 		public void visit(Spec.LeafId l) {
 		    initStms.append(l.id + " = ((" + TREE_SEGMENT + ")"+
