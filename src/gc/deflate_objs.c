@@ -40,8 +40,8 @@ void deflate_freed_objs (struct copying_heap *h)
 
 	  // invoke deflate fcn only if the object has really been GC'd
 	  if (CLAZ_OKAY(infl_obj))
-	    infl_obj->hashunion.inflated->precise_deflate_obj(infl_obj, 
-							      (ptroff_t)0);
+	    INFLATED_MASK(infl_obj->hashunion.inflated)->
+	      precise_deflate_obj(infl_obj, (ptroff_t)0);
 
 	  // update links
 	  if (prev == NULL)

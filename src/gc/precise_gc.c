@@ -66,7 +66,7 @@ void precise_register_inflated_obj(jobject_unwrapped obj,
 				   void (*deflate_fcn)(struct oobj *obj, 
 						       ptroff_t client_data))
 {
-  obj->hashunion.inflated->precise_deflate_obj = deflate_fcn;
+  INFLATED_MASK(obj->hashunion.inflated)->precise_deflate_obj = deflate_fcn;
   internal_register_inflated_obj(obj);
 }
 

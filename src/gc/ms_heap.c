@@ -99,7 +99,7 @@ void free_unreachable_blocks(struct marksweep_heap *h)
 	  if ((curr_block->object[0].hashunion.hashcode & 1) == 0)
 	    {
 	      //printf("@");
-	      curr_block->object[0].hashunion.inflated->
+	      INFLATED_MASK(curr_block->object[0].hashunion.inflated)->
 		precise_deflate_obj(curr_block->object, (ptroff_t)0);
 	    }
 	  

@@ -203,7 +203,8 @@ JNIEXPORT jint JNICALL Java_java_lang_System_identityHashCode
 #ifndef WITH_HASHLOCK_SHRINK
     jobject_unwrapped oobj = FNI_UNWRAP_MASKED(obj);
     ptroff_t hashcode = oobj->hashunion.hashcode;
-    if ((hashcode & 1) == 0) hashcode = oobj->hashunion.inflated->hashcode;
+    if ((hashcode & 1) == 0)
+      hashcode = INFLATED_MASK(oobj->hashunion.inflated)->hashcode;
     return (jint) (hashcode>>2);
 #else
 # ifndef BDW_CONSERVATIVE_GC
