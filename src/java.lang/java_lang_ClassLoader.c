@@ -135,10 +135,20 @@ JNIEXPORT jobject JNICALL Java_java_lang_ClassLoader_getSystemResourceAsStream0
  */
 JNIEXPORT jstring JNICALL Java_java_lang_ClassLoader_getSystemResourceAsName0
   (JNIEnv *env, jclass cls, jstring name) {
-  /* XXX cheat: claim resource is never found.
-   * in reality, we should search the CLASSPATH for the given
+  /* search the CLASSPATH for the given
    * resource, and return a URL string that will enable the
    * user to open it. */
-  assert(0); /* should call find_system_resource and construct a URL */
+  const char *filename = find_system_resource(env, name);
+  if (filename!=NULL) {
+    /* XXX: hack: prepend 'file:' and hope that's good enough. */
+    /* would obviously fail if resource is in .zip/.jar file or whatnot */
+    char buf[strlen(filename)+strlen("file:")+1];
+    jstring result;
+    strcpy(buf, "file:");
+    strcat(buf, filename);
+    /* make buf into a java string */
+    return (*env)->NewStringUTF(env, buf);
+  }
+  /* couldn't find the resource */
   return NULL;
 }
