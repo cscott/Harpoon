@@ -27,7 +27,7 @@ import java.util.Set;
  This is the most conservative implementation of <code>CallGraph</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl.java,v 1.7 2002-04-11 18:53:49 salcianu Exp $
+ * @version $Id: CallGraphImpl.java,v 1.8 2002-04-12 06:00:57 salcianu Exp $
  */
 public class CallGraphImpl extends AbstrCallGraph  {
     final ClassHierarchy ch;
@@ -36,12 +36,9 @@ public class CallGraphImpl extends AbstrCallGraph  {
      *  factory that generates quad-ssi or quad-no-ssa form. */
     public CallGraphImpl(ClassHierarchy ch, HCodeFactory hcf) {
 	// this is maybe a little too draconian
-	assert hcf.getCodeName()
-		    .equals(harpoon.IR.Quads.QuadSSI.codename) ||
-		    hcf.getCodeName()
-		    .equals(harpoon.IR.Quads.QuadSSA.codename) ||
-		    hcf.getCodeName()
-		    .equals(harpoon.IR.Quads.QuadNoSSA.codename);
+	assert (hcf.getCodeName().equals(harpoon.IR.Quads.QuadSSI.codename) ||
+	    hcf.getCodeName().equals(harpoon.IR.Quads.QuadSSA.codename) ||
+	    hcf.getCodeName().equals(harpoon.IR.Quads.QuadNoSSA.codename));
 	this.ch = ch;
 	this.hcf = hcf;
     }

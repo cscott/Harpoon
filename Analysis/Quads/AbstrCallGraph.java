@@ -19,7 +19,7 @@ import harpoon.IR.Quads.CALL;
  * implementations of <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AbstrCallGraph.java,v 1.1 2002-04-11 04:28:49 salcianu Exp $
+ * @version $Id: AbstrCallGraph.java,v 1.2 2002-04-12 06:00:56 salcianu Exp $
  */
 abstract class AbstrCallGraph implements CallGraph {
 
@@ -31,12 +31,18 @@ abstract class AbstrCallGraph implements CallGraph {
     public CALL[] getCallSites(final HMethod hm) {
 	CALL[] retval = (CALL[]) cache_cs.get(hm);
 	if(retval == null) {
-	    List<Quad> l = ((Code) hcf.convert(hm)).selectCALLs();
-	    retval = l.toArray(new CALL[l.size()]);
+	    Code code = (Code) hcf.convert(hm);
+	    if(code == null) {
+		retval = new CALL[0];
+	    }
+	    else {
+		List<Quad> l = code.selectCALLs();
+		retval = l.toArray(new CALL[l.size()]);
+	    }
 	    cache_cs.put(hm, retval);
 	}
 	return retval;
     }
     final private Map cache_cs = new HashMap();
-    
+    final private static CALL[] empty_array = new CALL[0];
 }
