@@ -11,7 +11,7 @@ import MCC.IR.DebugItem;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.13 2005-02-04 20:14:52 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.14 2005-02-20 20:31:28 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -21,13 +21,13 @@ public class CLI {
      * should be performed.
      */
     public boolean opts[];
-  
+
     /**
      * Vector of String containing the command-line arguments which could
      * not otherwise be parsed.
      */
     public Vector extras;
-  
+
     /**
      * Vector of String containing the optimizations which could not be
      * parsed.  It is okay to complain about anything in this list, even
@@ -39,7 +39,7 @@ public class CLI {
      * Name of the file to put the output in.
      */
     public String outfile;
-  
+
     /**
      * Name of the file to get input from.  This is null if the user didn't
      * provide a file name.
@@ -108,6 +108,7 @@ public class CLI {
 	    System.out.println("-cplusplus");
 	    System.out.println("-time");
 	    System.out.println("-omitcomp");
+	    System.out.println("-mergenodes");
 	    System.exit(-1);
 	}
 
@@ -119,6 +120,8 @@ public class CLI {
                 Compiler.REPAIR=false;
 	    } else if (args[i].equals("-omitcomp")) {
                 Compiler.OMITCOMP=true;
+	    } else if (args[i].equals("-mergenodes")) {
+                Compiler.MERGENODES=true;
 	    } else if (args[i].equals("-depth")) {
 		Compiler.debuggraphs.add(new DebugItem(Integer.parseInt(args[i+1]),Integer.parseInt(args[i+2])));
 		i+=2;
@@ -180,7 +183,7 @@ public class CLI {
         int i = 0;
         while (infile == null && i < extras.size()) {
             String fn = (String) extras.elementAt(i);
-	  
+
             if (fn.charAt(0) != '-')
 	    {
                 infile = fn;

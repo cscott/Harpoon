@@ -26,6 +26,7 @@ public class Compiler {
     public static boolean GENERATEINSTRUMENT=false;
     public static boolean ALLOCATECPLUSPLUS=false;
     public static boolean OMITCOMP=false;
+    public static boolean MERGENODES=false;
     public static boolean TIME=false;
 
     public static Vector debuggraphs=new Vector();
