@@ -27,7 +27,7 @@ import java.util.HashMap;
  * their own extensions of <code>CodeGen</code>.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: MaxMunchCG.java,v 1.1.2.10 2000-07-11 19:19:04 pnkfelix Exp $ */
+ * @version $Id: MaxMunchCG.java,v 1.1.2.11 2000-07-11 19:21:23 pnkfelix Exp $ */
 public abstract class MaxMunchCG extends CodeGen {
     
     /** Creates a <code>MaxMunchCG</code>. */
@@ -74,12 +74,7 @@ public abstract class MaxMunchCG extends CodeGen {
 	if (instrTemp==null) {
 	    instrTemp = frame.getTempBuilder().makeTemp(t, tf);
 	    tempmap.put(treeTemp, instrTemp);
-	    System.out.println("Constructed new iTemp:"+instrTemp+
-			       " for tTemp:"+treeTemp);
-	} else {
-	    System.out.println("Found old iTemp:"+instrTemp+
-			       " for tTemp:"+treeTemp);
-	}
+	} 
 	Util.assert(instrTemp.tempFactory()==tf);
 	return instrTemp;
     }
