@@ -314,40 +314,24 @@ public class ConcreteInterferes {
 	    return true;
 	if (ar==null)
 	    return true;
-	if (ar.getType()!=AbstractRepair.ADDTOSET)
-	    return true;
-	//	if (mun.op!=MultUpdateNode.ADD)  (Redundant)
-	//    return true;
-	if (!r.getInclusion().getTargetDescriptors().contains(ar.getDescriptor()))
-	    return true;
-	boolean negated=ar.getPredicate().isNegated();
-	Predicate p=ar.getPredicate().getPredicate();
-	if (!(p instanceof ExprPredicate))
-	    return true;
-	ExprPredicate ep=(ExprPredicate)p;
-	if (ep.getType()!=ExprPredicate.SIZE)
-	    return true;
-	if ((ep.getOp()==Opcode.EQ)&&(ep.rightSize()==1)&&!negated)
-	    return false;
-	if ((ep.getOp()==Opcode.NE)&&(ep.rightSize()==1)&&negated)
-	    return false;
-
-	if ((ep.getOp()==Opcode.NE)&&(ep.rightSize()==0)&&!negated)
-	    return false;
-	if ((ep.getOp()==Opcode.EQ)&&(ep.rightSize()==0)&&negated)
-	    return false;
-
-
-
-	if ((ep.getOp()==Opcode.GT)&&(ep.rightSize()==0)&&!negated)
-	    return false;
-	if ((ep.getOp()==Opcode.LE)&&(ep.rightSize()==0)&&negated)
-	    return false;
-
-	if ((ep.getOp()==Opcode.GE)&&(ep.rightSize()==1)&&!negated)
-	    return false;
-	if ((ep.getOp()==Opcode.LT)&&(ep.rightSize()==1)&&negated)
-	    return false;
+	if (ar.getType()==AbstractRepair.ADDTOSET) {
+	    if (!r.getInclusion().getTargetDescriptors().contains(ar.getDescriptor()))
+		return true;
+	    boolean negated=ar.getPredicate().isNegated();
+	    Predicate p=ar.getPredicate().getPredicate();
+	    if (!(p instanceof ExprPredicate))
+		return true;
+	    ExprPredicate ep=(ExprPredicate)p;
+	    if (ep.getType()!=ExprPredicate.SIZE)
+		return true;
+	    Opcode op=Opcode.translateOpcode(negated,ep.getOp());
+	    
+	    if (((op==Opcode.EQ)&&(ep.rightSize()==1))|| //(=1)
+		((op==Opcode.NE)&&(ep.rightSize()==0))|| //(!=0)
+		((op==Opcode.GT)&&(ep.rightSize()==0))|| //(>0)
+		((op==Opcode.GE)&&(ep.rightSize()==1))) //(>=1)
+		return false;
+	}
 	
 	return true;
 
