@@ -38,7 +38,6 @@ static size_t heap_size;
 static int num_gcs = 0;
 static int num_mallocs = 0;
 static size_t total_memory_requested = 0;
-static jobject_unwrapped special;
 #endif
 
 #ifdef WITH_THREADED_GC
@@ -76,24 +75,25 @@ void relocate(jobject_unwrapped *obj);
    outside the heap are traced. */
 void copying_handle_reference(jobject_unwrapped *ref)
 {
+  jobject_unwrapped obj = PTRMASK((*ref));
   // we only have to do something if we are given a reference in the heap.
   // we cannot trace through non-root references outside the heap because 
   // we may end up in an undetectable infinite loop.
-  if (IN_HEAP((void *)(*ref)))
+  if (IN_HEAP((void *)obj))
     {
       // handle objects that have already been moved
-      if (((void *)((*ref)->claz) >= to_space) && 
-	  ((void *)((*ref)->claz) < top_of_to_space))
+      if (((void *)(obj->claz) >= to_space) && 
+	  ((void *)(obj->claz) < top_of_to_space))
 	{
 	  // forward pointer appropriately
-	  (*ref) = (jobject_unwrapped)((*ref)->claz);
-	  error_gc("already moved to %p.\n", (*ref));
+	  (*ref) = (jobject_unwrapped)(obj->claz);
+	  error_gc("already moved to %p.\n", obj);
 	}
       else
 	{
 	  // move to new semispace
 	  relocate(ref);
-	  error_gc("relocated to %p.\n", (*ref));
+	  error_gc("relocated to %p.\n", obj);
 	}
     }
   else
@@ -115,18 +115,19 @@ void debug_overwrite_to_space()
 }
 #endif
 
-void relocate(jobject_unwrapped *obj) {
+void relocate(jobject_unwrapped *ref) {
+  jobject_unwrapped obj = (jobject_unwrapped)PTRMASK((*ref));
   void *forwarding_address;
   /* figure out how big the object is */
-  size_t obj_size = copying_get_size_of_obj(*obj);
+  size_t obj_size = copying_get_size_of_obj(obj);
   /* relocated objects should not exceed size of heap */
   assert(free + obj_size <= top_of_to_space);
   /* copy over to to_space */
-  forwarding_address = memcpy(free, (*obj), obj_size);
+  forwarding_address = TAG_HEAP_PTR(memcpy(free, obj, obj_size));
   /* write forwarding address to previous location;
      the order of the following two operations are critical */
-  (*obj)->claz = /* not really */(struct claz *)forwarding_address;
-  (*obj) = (jobject_unwrapped)forwarding_address;
+  obj->claz = /* not really */(struct claz *)forwarding_address;
+  (*ref) = forwarding_address;
   /* increment free */
   free += obj_size;
 }
