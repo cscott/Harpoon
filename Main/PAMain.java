@@ -96,7 +96,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.9 2002-08-07 19:42:35 andoni Exp $
+ * @version $Id: PAMain.java,v 1.10 2002-08-07 21:59:10 cananian Exp $
  */
 public abstract class PAMain {
 
@@ -377,8 +377,9 @@ public abstract class PAMain {
 		hcf = harpoon.IR.Quads.QuadWithTry.codeFactory();
 		construct_class_hierarchy();
 		
+		// XXX only valid if we're compiling against the sunjdk.
 		String resource =
-		    "harpoon/Backend/Runtime1/init-safe.properties";
+		    "harpoon/Backend/Runtime1/sunjdk.init-safe.properties";
 		hcf = new harpoon.Analysis.Quads.InitializerTransform
 		    (hcf, ch, linker, resource).codeFactory();
 		
