@@ -16,7 +16,7 @@ import java.util.Set;
  * <code>SSITOSSAMap</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: SSITOSSAMap.java,v 1.1.2.2 1999-06-21 18:19:01 bdemsky Exp $
+ * @version $Id: SSITOSSAMap.java,v 1.1.2.3 1999-06-24 20:06:22 bdemsky Exp $
  */
 public class SSITOSSAMap implements TempMap {
     
@@ -179,7 +179,7 @@ public class SSITOSSAMap implements TempMap {
 		    //
 		    //2) One source is not in the set {phi destinations,
 		    //sigma sources, sigma destinations}
-		    //Useless phi, toss it!
+		    //
 		    //
 		    //3) Two sources are not in the set
 		    //{phi destination, sigma destinations}
@@ -208,8 +208,7 @@ public class SSITOSSAMap implements TempMap {
 		    } else {
 			if (!phiresults.contains(nxtPhi.src[i])) {
 			    //Approach here is to get useless nodes out of our list to speed up iterations
-			    if (backward.containsKey(nxtPhi.src[i])) {
-				//This node is referenced already...Could possibly be good?
+
 				if (outsidedef) {
 				    //If we already have a unique outside definition, trash this one
 				    if(uniquedef!=nxtPhi.src[i]) {
@@ -234,14 +233,6 @@ public class SSITOSSAMap implements TempMap {
 					}
 				    }
 				}
-      			    } else {
-				//This phi has a temp that will never match with everything else
-				//Toss it out of the pool
-			    	phiresults.remove(nxtPhi.src[i]);
-				good=false;
-				iterate.remove();
-				break;
-			    }
 			} else {
 			    //This one has a src that is in the Phi pool
 			    if (nxtPhi.src[i]!=nxtPhi.dst) {
