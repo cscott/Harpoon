@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.16 2000-03-22 17:39:14 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.17 2000-03-27 18:33:44 salcianu Exp $
  */
 public class PointsToGraph {
     
@@ -343,7 +343,7 @@ public class PointsToGraph {
 	Set _excp = (Set) ((HashSet)excp).clone();
 
 	// Put the parameter nodes in the root set
-	for(int i=0;i<params.length;i++)
+	for(int i = 0; i < params.length; i++)
 	    remaining_nodes.add(params[i]);
 
 	// In the case of the main method, the static nodes are no longer
@@ -379,7 +379,7 @@ public class PointsToGraph {
 	    I.forAllPointedNodes(node,visitor);
 	}
 
-	// System.out.println("REMAINING NODES: " + remaining_nodes);
+	// System.out.println("\nREMAINING NODES: " + remaining_nodes);
 
 	// retain only the escape information for the remaining nodes
 	PAEscapeFunc _e = e.select(remaining_nodes);

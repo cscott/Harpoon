@@ -1,5 +1,5 @@
 // PAMain.java, created Fri Jan 14 10:54:16 2000 by salcianu
-// Copyright (C) 1999 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+// Copyright (C) 1999 Alexandru SALCIANU <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
@@ -19,6 +19,7 @@ import gnu.getopt.LongOpt;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
@@ -51,12 +52,15 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
 import harpoon.Analysis.PointerAnalysis.Debug;
 import harpoon.Analysis.MetaMethods.SmartCallGraph;
 
+import harpoon.IR.Quads.CALL;
+
+
 /**
  * <code>PAMain</code> is a simple Pointer Analysis top-level class.
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.23 2000-03-27 16:32:36 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.24 2000-03-27 18:33:45 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -73,9 +77,10 @@ public abstract class PAMain {
     private static boolean SHOW_CG = false;
     // show the split relation HMethod -> MetaMethods
     private static boolean SHOW_SPLIT = false;
-
     // show some memory allocation statistics
     private static boolean MA_STATS = false;
+    // show some statistics about the method hole of the analyzed program
+    private static boolean HOLE_STATS = false;
 
     private static String[] examples = {
 	"java harpoon.Main.PAMain harpoon.Test.PA.Test1.complex multiplyAdd",
@@ -100,7 +105,8 @@ public abstract class PAMain {
 	"--ts           activates full thread sensitivity",
 	"--wts          activates weak thread sensitivity",
 	"--ls           activates loop sensitivity",
-	"--mastats   show some statistics about memory allocation"
+	"--mastats      shows some statistics about memory allocation",
+	"--holestats    shows statistics about holes"
     };
 
     static PointerAnalysis pa = null;
@@ -306,6 +312,8 @@ public abstract class PAMain {
 	}
 
 	pa.print_stats();
+
+	if(HOLE_STATS) hole_stats(pa);
     }
     
     private static void display_method(Method method){
@@ -374,7 +382,7 @@ public abstract class PAMain {
     private static int get_options(String[] argv){
 	int c, c2;
 	String arg;
-	LongOpt[] longopts = new LongOpt[12];
+	LongOpt[] longopts = new LongOpt[13];
 	longopts[0]  = new LongOpt("meta", LongOpt.NO_ARGUMENT, null, 'm');
 	longopts[1]  = new LongOpt("smartcg", LongOpt.NO_ARGUMENT, null, 's');
 	longopts[2]  = new LongOpt("showch", LongOpt.NO_ARGUMENT, null, 'c');
@@ -387,6 +395,7 @@ public abstract class PAMain {
 	longopts[9]  = new LongOpt("showsplit", LongOpt.NO_ARGUMENT, null, 10);
 	longopts[10] = new LongOpt("shownodes", LongOpt.NO_ARGUMENT, null, 11);
 	longopts[11] = new LongOpt("mastats", LongOpt.NO_ARGUMENT, null, 12);
+	longopts[12] = new LongOpt("holestats", LongOpt.NO_ARGUMENT, null, 13);
 
 
 	Getopt g = new Getopt("PAMain", argv, "msco", longopts);
@@ -436,6 +445,9 @@ public abstract class PAMain {
 	    case 12:
 		MA_STATS = true;
 		break;
+	    case 13:
+		HOLE_STATS = true;
+		break;
 	    }
 
 	return g.getOptind();
@@ -478,6 +490,9 @@ public abstract class PAMain {
 
 	if(MA_STATS)
 	    System.out.print(" MA_STATS");
+
+	if(HOLE_STATS)
+	    System.out.print(" HOLE_STATS");
 
 	System.out.println();
     }
@@ -530,6 +545,43 @@ public abstract class PAMain {
 	}
 
 	System.out.println("TOTAL: " + nb_captured + " captured node(s)");
+    }
+
+    // displays the set of method holes from the analyzed program
+    private static void hole_stats(PointerAnalysis pa){
+	MetaCallGraph mcg = pa.getMetaCallGraph();
+	harpoon.Analysis.PointerAnalysis.InterThreadPA.TIMING = false;
+
+	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext();){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    if(!pa.analyzable(mm.getHMethod())) continue;
+	    pa.getIntParIntGraph(mm);
+	    pa.getExtParIntGraph(mm);
+	    pa.threadInteraction(mm);  
+	}
+
+	Set holes = new HashSet();
+	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext();){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    if(!pa.analyzable(mm.getHMethod())) continue;
+	    ParIntGraph pig = pa.threadInteraction(mm);
+	    for(Iterator it2 = pig.allNodes().iterator(); it2.hasNext(); ){
+		PANode node = (PANode) it2.next();
+		Set mhs = pig.G.e.methodHolesSet(node);
+		for(Iterator it_mh = mhs.iterator(); it_mh.hasNext(); ){
+		    CALL q = (CALL) it_mh.next();
+		    HCodeElement hce = (HCodeElement) q;
+		    if(holes.add(q.method()))
+			System.out.println("NEW HOLE:" + hce.getSourceFile() + 
+					   ":" + hce.getLineNumber() + " " + q);
+		}
+	    }
+	}
+
+	System.out.println("METHOD HOLES:");
+	for(Iterator it = holes.iterator(); it.hasNext(); )
+	    System.out.println("  " + (HMethod) it.next());
+	System.out.println("==========================================");
     }
 
 }

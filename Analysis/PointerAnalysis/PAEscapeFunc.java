@@ -11,7 +11,10 @@ import java.util.Iterator;
 import java.util.Enumeration;
 import java.util.Map;
 
+import harpoon.IR.Quads.CALL;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HMethod;
+
 
 /**
  * <code>PAEscapeFunc</code> models the escape information.
@@ -19,7 +22,7 @@ import harpoon.ClassFile.HCodeElement;
  and unanalyzed call sites <code>n</code> escapes through.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.11 2000-03-18 23:39:27 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.12 2000-03-27 18:33:44 salcianu Exp $
  */
 public class PAEscapeFunc {
 
@@ -261,10 +264,17 @@ public class PAEscapeFunc {
 
 	    Object[] mholes = Debug.sortedSet(methodHolesSet(n));
 	    for(int j = 0 ; j < mholes.length ; j++){
-		buffer.append(" ");
+		//buffer.append(" ");
 		HCodeElement hce = (HCodeElement) mholes[j];
-		buffer.append("M" + hce.getSourceFile() + ":" +
-			      hce.getLineNumber());
+		CALL q = (CALL) hce;
+		HMethod hm = q.method();
+
+		buffer.append("\n   ");
+		buffer.append(hce.getSourceFile());
+		buffer.append(":");
+		buffer.append(hce.getLineNumber());
+		buffer.append(" | ");
+		buffer.append(hm);
 	    }
 	    buffer.append("\n");
 	}

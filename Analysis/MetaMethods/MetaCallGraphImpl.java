@@ -58,12 +58,12 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.6 2000-03-23 21:29:00 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.7 2000-03-27 18:33:29 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
     private static boolean DEBUG = false;
-    private static boolean DEBUG_CH = false;
+    private static boolean DEBUG_CH = true;
 
     // in "caution" mode, plenty of tests are done to protect ourselves
     // against errors in other components (ex: ReachingDefs)
