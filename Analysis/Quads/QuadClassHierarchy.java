@@ -43,7 +43,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.20 2000-10-11 14:27:24 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.21 2000-10-17 03:22:27 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -310,6 +310,8 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 					   base.getSuperclass(), dims);
 	    else
 		su = HClassUtil.arrayClass(c.getLinker(), base, dims-1);
+	    // claz object mentions component type as well.
+	    discoverClass(c.getComponentType(), W, done, ckc, cmu, cmp);
 	}
 	if (su!=null) { // maybe discover super class?
 	    discoverClass(su, W, done, ckc, cmu, cmp);
