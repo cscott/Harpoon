@@ -9,10 +9,8 @@
 #include "flexthread.h"
 #include <stdlib.h>
 
-#ifdef WITH_THREADS
 /* lock for inflating locks */
-static flex_mutex_t global_inflate_mutex = FLEX_MUTEX_INITIALIZER;
-#endif
+FLEX_MUTEX_DECLARE_STATIC(global_inflate_mutex);
 
 #ifdef BDW_CONSERVATIVE_GC
 static void deflate_object(GC_PTR obj, GC_PTR client_data);
@@ -20,9 +18,7 @@ static void deflate_object(GC_PTR obj, GC_PTR client_data);
 
 void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
   struct oobj *obj = FNI_UNWRAP(wrapped_obj);
-#ifdef WITH_THREADS
-  flex_mutex_lock(&global_inflate_mutex);
-#endif
+  FLEX_MUTEX_LOCK(&global_inflate_mutex);
   /* be careful in case someone inflates this guy while our back is turned */
   if (obj->hashunion.hashcode & 1) {
     /* all data in inflated_oobj is managed manually, so we can use malloc */
@@ -45,9 +41,7 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
 			      &(infl->old_client_data));
 #endif
   }
-#ifdef WITH_THREADS
-  flex_mutex_unlock(&global_inflate_mutex);
-#endif
+  FLEX_MUTEX_UNLOCK(&global_inflate_mutex);
 }
 
 /* here's the deallocation function.  warning: this *may* misbehave if

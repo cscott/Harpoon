@@ -20,18 +20,14 @@
 static jfieldID fdObjID = 0; /* The field ID of fd in class FileInputStream */
 static jclass IOExcCls  = 0; /* The java/io/IOException class object */
 static int inited = 0; /* whether the above variables have been initialized */
-#ifdef WITH_THREADS
-static flex_mutex_t init_mutex = FLEX_MUTEX_INITIALIZER;
-#endif
+FLEX_MUTEX_DECLARE_STATIC(init_mutex);
 
 static int initializeFIS(JNIEnv *env) {
     jclass FISCls;
 
-#ifdef WITH_THREADS
-    flex_mutex_lock(&init_mutex);
+    FLEX_MUTEX_LOCK(&init_mutex);
     // other thread may win race to lock and init before we do.
     if (inited) goto done;
-#endif
 
     FISCls  = (*env)->FindClass(env, "java/io/FileInputStream");
     if ((*env)->ExceptionOccurred(env)) goto done;
@@ -44,9 +40,7 @@ static int initializeFIS(JNIEnv *env) {
     /* done. */
     inited = 1;
  done:
-#ifdef WITH_THREADS
-    flex_mutex_unlock(&init_mutex);
-#endif
+    FLEX_MUTEX_UNLOCK(&init_mutex);
     return inited;
 }
 

@@ -118,4 +118,18 @@ extern pth_key_t flex_timedwait_key; /* defined in java_lang_Thread.c */
 
 #endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS */
 
+
+/* simply declarations to avoid lots of tedious #ifdef WITH_THREAD'ing. */
+/* declare nop-variants of mutex ops if WITH_THREADS not defined */
+#ifdef WITH_THREADS
+#define FLEX_MUTEX_DECLARE_STATIC(name) \
+	static flex_mutex_t name = FLEX_MUTEX_INITIALIZER
+#define FLEX_MUTEX_LOCK flex_mutex_lock
+#define FLEX_MUTEX_UNLOCK flex_mutex_unlock
+#else /* if WITH_THREADS not defined, then mutex lock/unlock does nothing. */
+#define FLEX_MUTEX_DECLARE_STATIC(name)
+#define FLEX_MUTEX_LOCK(x) x
+#define FLEX_MUTEX_UNLOCK(x) x
+#endif /* WITH_THREADS */
+
 #endif /* INCLUDED_FLEXTHREAD_H */

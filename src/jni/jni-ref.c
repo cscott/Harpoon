@@ -64,9 +64,7 @@ void FNI_DeleteLocalRef(JNIEnv *env, jobject localRef) {
   } else assert(0); /* can't find local ref */
 }
 
-#ifdef WITH_THREADS
-static flex_mutex_t globalref_mutex = FLEX_MUTEX_INITIALIZER;
-#endif
+FLEX_MUTEX_DECLARE_STATIC(globalref_mutex);
 
 jobject FNI_NewGlobalRef(JNIEnv * env, jobject obj) {
   jobject result;
@@ -82,15 +80,11 @@ jobject FNI_NewGlobalRef(JNIEnv * env, jobject obj) {
     (sizeof(*result));
   result->obj = obj->obj;
   /* acquire global lock */
-#ifdef WITH_THREADS
-  flex_mutex_lock(&globalref_mutex);
-#endif
+  FLEX_MUTEX_LOCK(&globalref_mutex);
   result->next = FNI_globalrefs.next;
   FNI_globalrefs.next = result;
   /* release global lock */
-#ifdef WITH_THREADS
-  flex_mutex_unlock(&globalref_mutex);
-#endif
+  FLEX_MUTEX_UNLOCK(&globalref_mutex);
   /* done. */
   return result;
 }
@@ -99,9 +93,7 @@ void FNI_DeleteGlobalRef (JNIEnv *env, jobject globalRef) {
   jobject prev;
   assert(FNI_NO_EXCEPTIONS(env));
   /* acquire global lock */
-#ifdef WITH_THREADS
-  flex_mutex_lock(&globalref_mutex);
-#endif
+  FLEX_MUTEX_LOCK(&globalref_mutex);
   /* scan through local refs until we find it. */
   for (prev = &FNI_globalrefs; prev->next != NULL; prev=prev->next)
     if (prev->next == globalRef) break;
@@ -115,7 +107,5 @@ void FNI_DeleteGlobalRef (JNIEnv *env, jobject globalRef) {
     prev->next = prev->next->next;
   } else assert(0); /* can't find global ref */
   /* release global lock */
-#ifdef WITH_THREADS
-  flex_mutex_unlock(&globalref_mutex);
-#endif
+  FLEX_MUTEX_UNLOCK(&globalref_mutex);
 }
