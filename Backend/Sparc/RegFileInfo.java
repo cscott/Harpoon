@@ -19,27 +19,45 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * AAA - <code>RegFileInfo</code> 
+ * <code>RegFileInfo</code> contains architecture specific information
+ * about the registers for the Sparc architecture.  It also implements
+ * the LocationFactory interface for allocating and tracking registers
+ * which are used for tracking global data.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.1 1999-11-02 07:07:04 andyb Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.2 1999-11-02 22:09:01 andyb Exp $
  */
 public class RegFileInfo 
   extends harpoon.Backend.Generic.RegFileInfo 
   implements harpoon.Backend.Generic.LocationFactory
 {
-    final TempFactory regtf;
-    final Temp[] reg;
-    final Temp[] generalRegs;
-    final Set callerSaveRegs;
-    final Set calleeSaveRegs;
-    final Set liveOnExitRegs;
+    private final TempFactory regtf;
+    private final Temp[] reg;
+    private final Temp[] generalRegs;
+    private final Set callerSaveRegs;
+    private final Set calleeSaveRegs;
+    private final Set liveOnExitRegs;
 
     public RegFileInfo() {
+
+        /* Sparc registers:
+         *   %g0 - %g7: global, general registers. %g0 is zero register.
+         *   %o0 - %o7: registers for local data and arguments to called
+         *              subroutines. %o6 is stack pointer, %o7 is called
+         *              subroutine return address.
+         *   %l0 - %l7: local variables
+         *   %i0 - %i7: registers for incoming subroutine arguments.
+         *              %i6 is frame pointer and %i7 is subroutine return
+         *              address.
+         */
         regtf = new TempFactory() {
             private int i = 0;
             private final String scope = "sparc-registers";
-            private final String[] names = {"r0", "r1"};
+            private final String[] names = {"%g0", "%g1", "%g2", "%g3",
+                "%g4", "%g5", "%g6", "%g7", "%o0", "%o1", "%o2", "%o3",
+                "%o4", "%o5", "%sp", "%o7", "%l0", "%l1", "%l2", "%l3",
+                "%l4", "%l5", "%l6", "%l7", "%i0", "%i1", "%i2", "%i3",
+                "%i4", "%i5", "%fp", "%i7" };
 
             public String getScope() { return scope; }
             public synchronized String getUniqueID(String suggestion) {
@@ -49,22 +67,29 @@ public class RegFileInfo
                 return names[i-1];
             }
         };
-      
-        reg = new Temp[2]; 
-        generalRegs = new Temp[2];
+
+        reg = new Temp[32]; 
+        generalRegs = new Temp[27];
+
+        int j = 0;
+        for (int i = 0; i < 32; i++) {
+            reg[i] = new Temp(regtf);
+            if ((i != 0) && (i != 14) && (i != 15) && (i != 30) && (i != 31)) {
+                generalRegs[j] = reg[i];
+                j++;
+            }
+        }
+ 
+        /* AAA - still need to do liveOnExit, callerSave, and calleeSave
+         * for real here */
+
         callerSaveRegs = new LinearSet(2);
         calleeSaveRegs = new LinearSet(2);
         liveOnExitRegs = new LinearSet(2);
 
-        for (int i = 0; i < 2; i++) {
-            reg[i] = new Temp(regtf);
-            generalRegs[i] = reg[i];
-            liveOnExitRegs.add(reg[i]);
-            callerSaveRegs.add(reg[i]);
-            liveOnExitRegs.add(reg[i]);
-        }
-
-        // add registers to liveOnExit, calleeSave, and callerSave
+        // liveOnExitRegs.add(reg[i]);
+        // callerSaveRegs.add(reg[i]);
+        // calleeSaveRegs.add(reg[i]);
     }
                
     public Set liveOnExit() { 
@@ -88,7 +113,7 @@ public class RegFileInfo
         return null;
     }
 
-    // SpillException goes here ??
+    /* AAA - SpillException could go here - do I need to override? */
 
     public Temp[] getAllRegisters() {
         return (Temp[]) Util.safeCopy(Temp.arrayFactory, reg);
@@ -102,10 +127,12 @@ public class RegFileInfo
 
     // implementing LocationFactory
 
+    /* AAA - to do */
     public Location allocateLocation(final int type) {
         return null;
     }
 
+    /* AAA - to do */
     public HData makeLocationData(final Frame f) {
         return null;
     }

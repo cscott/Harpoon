@@ -21,12 +21,12 @@ import java.util.Map;
  * <code>Code</code> is a code-view for SPARC assembly.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.1 1999-11-02 07:07:04 andyb Exp $
+ * @version $Id: Code.java,v 1.1.2.2 1999-11-02 22:09:01 andyb Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "sparc";
 
-    Map tempInstrPairToRegisterMap;
+    private Map tempInstrPairToRegisterMap;
 
     public Code(harpoon.IR.Tree.Code treeCode) {
 	super(treeCode.getMethod(), null, treeCode.getFrame());

@@ -14,11 +14,11 @@ import java.util.List;
  * <code>Generic.InstrBuilder</code> - for the Sparc architecture.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrBuilder.java,v 1.1.2.1 1999-11-02 07:07:04 andyb Exp $
+ * @version $Id: InstrBuilder.java,v 1.1.2.2 1999-11-02 22:09:01 andyb Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
-    RegFileInfo regFileInfo;
-    TempBuilder tempBuilder;
+    private final RegFileInfo regFileInfo;
+    private final TempBuilder tempBuilder;
 
     InstrBuilder(RegFileInfo regFileInfo, TempBuilder tempBuilder) {
         super();
@@ -26,14 +26,17 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
         this.tempBuilder = tempBuilder;
     }
 
+    /* AAA - todo */
     public List makeLoad(Temp r, int offset, Instr template) {
         return null;
     }
 
+    /* AAA - todo */
     public List makeStore(Temp r, int offset, Instr template) {
         return null;
     }    
 
+    /* AAA - todo */
     public InstrLABEL makeLabel(Instr template) {
         return null;
     }

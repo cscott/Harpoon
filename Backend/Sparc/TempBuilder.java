@@ -11,10 +11,12 @@ import java.util.Set;
 import java.util.HashSet;
 
 /**
- * <code>TempBuilder</code> for Sparc.
+ * <code>TempBuilder</code> for creating Temps for the Sparc architecture,
+ * and providing an interface for querying whether these Temps require
+ * two words of storage or use floating point registers.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: TempBuilder.java,v 1.1.2.1 1999-11-02 07:07:04 andyb Exp $
+ * @version $Id: TempBuilder.java,v 1.1.2.2 1999-11-02 22:09:01 andyb Exp $
  */
 public class TempBuilder extends harpoon.Backend.Generic.TempBuilder {
     private Set twoWordTemps; 

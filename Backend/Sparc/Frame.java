@@ -8,10 +8,11 @@ import harpoon.Analysis.Quads.CallGraph;
 import harpoon.ClassFile.HMethod;
 
 /**
- * AAA -<code>Frame</code> 
+ * <code>Sparc.Frame</code> contains architecture specific info
+ * for the Sparc Backend.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.1 1999-11-02 07:07:04 andyb Exp $
+ * @version $Id: Frame.java,v 1.1.2.2 1999-11-02 22:09:01 andyb Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame
 {
