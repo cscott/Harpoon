@@ -107,6 +107,10 @@ doc:	$(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	@chmod -R a+rX doc
 
+movie/tank.jar:
+	@wget http://flex-cvs.lcs.mit.edu/ImageRec/tank.jar
+	@mv tank.jar movie/
+
 imagerec.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
@@ -135,7 +139,7 @@ imagerec.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 #	@rm -rf tank.gz.*
 #	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
-GUI.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+GUI.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES) movie/tank.jar
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
 	@$(IDLCC) -d . $(ISOURCES)
@@ -358,7 +362,7 @@ buffer.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
-jars: clean doc
+jars: clean doc movie/tank.jar
 	@echo Generating imagerec.jar file...
 	@rm -rf $(JDIRS)
 	@$(IDLCC) -d . $(ISOURCES)
