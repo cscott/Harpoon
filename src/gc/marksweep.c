@@ -324,26 +324,6 @@ int marksweep_in_heap(void *ptr)
   return result;
 }
 
-/* GC bitmaps for objects whose size (minus the object header) is 
-   less than COMPACT_ENCODING_SIZE fits inside the claz object. */
-#define COMPACT_ENCODING_SIZE (SIZEOF_VOID_P*SIZEOF_VOID_P*8)
-
-void print_bitmap(ptroff_t bitmap)
-{
-  int i, j;
-
-  printf("BITMAP ");
-
-  // start from the high bit
-  for (i = SIZEOF_VOID_P*8 - 1; i >= 0; i--)
-    {
-      // print a 1 for every set bit,
-      // a 0 for every cleared bit
-      printf("%d", ((bitmap & (1 << i)) != 0));
-    }
-  printf("\n");
-}
-
 #define make_mark(index) ((index)+2)
 #define get_index_from_mark(mark) ((mark)-2)
 
@@ -515,7 +495,5 @@ void pointerreversed_handle_reference(jobject_unwrapped *obj)
   printf("Exiting pointerreversed_handle_reference.\n");
   printf("---------------------------------------------\n\n");
   fflush(stdout);
-
 }
-
 #endif
