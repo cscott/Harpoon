@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.24 2000-12-03 20:16:11 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.25 2001-03-03 17:18:44 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -286,8 +286,9 @@ public class TreeToC extends java.io.PrintWriter {
 	}
 
 	// useful line number update function.
+	private boolean EMIT_LINE_DIRECTIVES=
+	    Boolean.getBoolean("harpoon.precisec.emit_line_directives");
 	private int suppress_directives=0;
-	private boolean EMIT_LINE_DIRECTIVES=false;
 	private String last_file = null;
 	private int last_line = 0;
 	private void updateLine(Tree e) {
