@@ -4,6 +4,7 @@
 package harpoon.Analysis.SizeOpt;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.Maps.ConstMap;
 import harpoon.Analysis.Quads.MustParamOracle;
 import harpoon.Analysis.Quads.SCC.SCCAnalysis;
 import harpoon.ClassFile.HClass;
@@ -36,7 +37,7 @@ import java.util.Set;
  * of several 'mostly-zero field' transformations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstructorClassifier.java,v 1.1.2.6 2001-11-13 21:30:56 cananian Exp $
+ * @version $Id: ConstructorClassifier.java,v 1.1.2.7 2001-11-14 19:11:49 cananian Exp $
  */
 public class ConstructorClassifier {
     private static final boolean DEBUG=false;
@@ -233,10 +234,10 @@ public class ConstructorClassifier {
 	    return "NO INFO";
 	}
     }
-    Classification makeClassification(SCCAnalysis scc, MustParamOracle mpo,
+    Classification makeClassification(ConstMap cm, MustParamOracle mpo,
 				      HCodeElement hce, Temp t) {
-	if (scc.isConst(hce, t)) // constant value?
-	    return new Classification(scc.constMap(hce, t));
+	if (cm.isConst(hce, t)) // constant value?
+	    return new Classification(cm.constMap(hce, t));
 	if (mpo.isMustParam(t)) // must be a parameter?
 	    return new Classification(mpo.whichMustParam(t));
 	return new Classification(); // no info
