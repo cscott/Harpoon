@@ -15,9 +15,19 @@ import java.util.List;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.39 2000-01-26 06:04:54 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.40 2000-01-29 00:13:27 pnkfelix Exp $
  */
 public abstract class Code extends harpoon.IR.Assem.Code {
+    
+    /** Generates a new <code>Generic.Code</code> from 
+	another <code>Generic.Code</code>, <code>code</code>, with
+	<code>i</code> as the root instruction (instead of whatever
+	root was used in <code>code</code>.
+    */
+    protected Code(Code code, Instr i) {
+	super(code.getMethod(), code.getFrame());
+	this.instrs = i;
+    }
 
     protected Code(harpoon.IR.Tree.Code treeCode) {
 	super(treeCode.getMethod(), treeCode.getFrame());

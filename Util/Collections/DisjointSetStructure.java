@@ -17,22 +17,21 @@ import java.util.Set;
  * Algorithms</i>, by Cormen, Leiserson, and Rivest, in Chapter 22,
  * "Data Structures for Disjoint Sets"
  *
- * The main difference is that instead of using an element of the Set
- * as its 'representative', to use CLR's terminology, we use the
- * references to the individual sets as their representative.  This
- * raises some issues (for example, the ability to have a
- * representative for an empty set).
- *
- * The sets produced are actually of type 'Set[ Elem[ T ] ]' , where 'T'
- * is the generic type that the user wishes to collect.  Thus several 
- * standard operations, such as <code>contains(Object)</code> will not
- * be able to be used on the Sets returned.  To work around this, a 
- * standardView(Set s) method is provided, which, given a set
- * produced by <code>this</code> of type 'Set[ Elem[ T ] ]', will return
- * a view of <code>s</code> of type 'Set[ T ]'.
+ * Just as in CLR, each set has a unique 'representative', which are
+ * <code>Elem</code> objects here.  We do not use the
+ * <code>java.util.Set</code> interface for the produced
+ * sets because to properly implement that interface, one must
+ * sacrifice the benefits provided by using specialized data
+ * structures for disjoint sets.
+ * 
+ * However, to encourage use of this class with code using the
+ * standard Collections API, <code>DisjointSetStructure</code> also
+ * provides a <code>setView(Elem rep)</code> method, which will construct a 
+ * <code>java.util.Set</code> containing the members of the
+ * <code>Set</code> represented by <code>rep</code>.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: DisjointSetStructure.java,v 1.1.2.4 2000-01-17 23:49:09 cananian Exp $
+ * @version $Id: DisjointSetStructure.java,v 1.1.2.5 2000-01-29 00:13:41 pnkfelix Exp $
  */
 public abstract class DisjointSetStructure { 
     // note: having this extend SetFactory doesn't make sense any

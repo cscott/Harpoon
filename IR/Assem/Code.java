@@ -32,7 +32,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.2 2000-01-26 06:03:25 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.3 2000-01-29 00:13:39 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -309,7 +309,7 @@ public abstract class Code extends HCode {
     /** Returns an assembly code identifier for the register that
 	<code>val</code> will be stored into.
     */
-    protected abstract String getRegisterName(Instr i,
-					      Temp val, String suffix);
+    public abstract String getRegisterName(Instr i, Temp val, 
+					   String suffix);
 }
 

@@ -22,7 +22,7 @@ import java.util.Set;
  * <code>Code</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.4 2000-01-26 06:06:45 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.5 2000-01-29 00:13:23 pnkfelix Exp $
  */
 public class Code extends harpoon.IR.Assem.Code {
     TempMap tm;
@@ -52,7 +52,7 @@ public class Code extends harpoon.IR.Assem.Code {
 
     public HCode clone(HMethod newMethod) {throw new Error("not supported.");}
     public String getName() { return "hacked-regalloc"; }
-    protected String getRegisterName(Instr i, Temp val, String suffix) {
+    public String getRegisterName(Instr i, Temp val, String suffix) {
 	if (val instanceof TwoWordTemp) {
 	    if (suffix.equals("l"))
 		return tm.tempMap(((TwoWordTemp)val).getLow()).toString();

@@ -4,6 +4,7 @@
 package harpoon.Util.Collections;
 
 import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Util;
 
 import java.util.AbstractSet;
 import java.util.Iterator;
@@ -14,7 +15,7 @@ import java.util.Set;
  * <code>LLDisjointSetStructure</code>
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: LLDisjointSetStructure.java,v 1.1.2.4 2000-01-17 23:49:09 cananian Exp $
+ * @version $Id: LLDisjointSetStructure.java,v 1.1.2.5 2000-01-29 00:13:42 pnkfelix Exp $
  */
 public class LLDisjointSetStructure extends DisjointSetStructure {
 
@@ -28,8 +29,15 @@ public class LLDisjointSetStructure extends DisjointSetStructure {
 	LLElem last; 
 	int size;
 
+	// True if 'this' is a representative for a set.  else False.
+	boolean isRep; 
+
 	/** Constructs a new Linked-List based set element, 
 	    setting its fields to the defaults.
+	    Note that <code>Elem</code>s are automatically
+	    representatives upon construction (for the singleton set 
+	    { o } ), so 'last', 'size', and 'isRep' will be set
+	    accordingly.
 	*/
 	LLElem(Object o) {
 	    super(o);
@@ -37,6 +45,7 @@ public class LLDisjointSetStructure extends DisjointSetStructure {
 	    rep = this;
 	    last = this;
 	    next = null;
+	    isRep = true;
 	}
     }
 
@@ -49,6 +58,13 @@ public class LLDisjointSetStructure extends DisjointSetStructure {
 	LLElem append;
 	x = (LLElem) ex;
 	y = (LLElem) ey;
+	Util.assert(x.isRep, ex+" must be a set representative");
+	Util.assert(y.isRep, ey+" must be a set representative");
+
+	// set Elems to non-representatives
+	x.isRep = false; 
+	y.isRep = false;
+
 	if (x.size >= y.size) {
 	    start = x;
 	    append = y;
@@ -64,15 +80,25 @@ public class LLDisjointSetStructure extends DisjointSetStructure {
 	    append.rep = start;
 	    append = append.next;
 	}
+
 	
 	return start; 
     }
 
-    public Elem findSet(Elem elem) { 
-	return ((LLElem)elem).rep;
+    public Elem findSet(final Elem elem) { 
+	LLElem rep = ((LLElem)elem).rep;
+	Util.assert(rep.isRep, 
+		    "Elem "+elem+" shouldn't think "+rep+
+		    "is its set representaive");
+	return rep;
     }
 
     public Set setView(final Elem o) { 
+	LLElem rep = (LLElem) o;
+	Util.assert(rep.isRep, o+
+		    " must be a set-rerepresentative to "+
+		    "call setView on it");
+		    
 	return new AbstractSet() {
 	    public Iterator iterator() {
 		return new UnmodifiableIterator() {
