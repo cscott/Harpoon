@@ -1,7 +1,7 @@
 package javax.realtime;
 
 public class RationalTime extends RelativeTime {
-    /** An object that represents a time interval millis/1E3+nanos/!E9
+    /** An object that represents a time interval millis/1E3+nanos/1E9
      *  seconds long that is divided into subintervals by some frequency.
      *  This is generally used in periodic events, threads, and
      *  feasibility analysis to specify periods where there is a basic
