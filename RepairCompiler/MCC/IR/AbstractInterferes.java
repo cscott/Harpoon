@@ -103,8 +103,10 @@ class AbstractInterferes {
 
     public boolean interfereswithpredicate(AbstractRepair ar, DNFPredicate dp) {
 	if ((ar.getDescriptor()!=dp.getPredicate().getDescriptor()) &&
-	    ((ar.getDescriptor() instanceof SetDescriptor)||
-	     !dp.getPredicate().usesDescriptor((RelationDescriptor)ar.getDescriptor())))
+	    //	    ((ar.getDescriptor() instanceof SetDescriptor)||
+	    // If the second predicate uses the size of the set, modifying the set size could falsify it...
+	    !dp.getPredicate().usesDescriptor(ar.getDescriptor()))
+	    //)
 	    return false;
 
 	/* This if handles all the c comparisons in the paper */
@@ -181,6 +183,9 @@ class AbstractInterferes {
 	    int size2=isInt2?((ExprPredicate)dp.getPredicate()).rightSize():0;
 	    Expr expr2=((OpExpr)((ExprPredicate)dp.getPredicate()).expr).right;
 
+	    
+	    /* If the left sides of the comparisons are both from
+               different sets, the update is orthogonal to the expr dp */
 	    {
 		Expr lexpr1=((RelationExpr)((OpExpr)((ExprPredicate)ar.getPredicate().getPredicate()).expr).getLeftExpr()).getExpr();
 		Expr lexpr2=((RelationExpr)((OpExpr)((ExprPredicate)dp.getPredicate()).expr).getLeftExpr()).getExpr();
@@ -205,9 +210,11 @@ class AbstractInterferes {
 		((op2==Opcode.LT)||
 		 (op2==Opcode.LE)))
 		return false;
+	    // FIXME
 	    if (((op1==Opcode.EQ)||(op1==Opcode.GE)||(op1==Opcode.LE))&&
 		((op2==Opcode.EQ)||(op2==Opcode.GE)||(op2==Opcode.LE))&&
 		expr1.equals(null,expr2)) {
+		// Need to check free variables...
 		return false;
 	    }
 	    if (isInt1&&isInt2) {
@@ -370,8 +377,8 @@ class AbstractInterferes {
 
     private boolean interferes(Descriptor des, boolean satisfy, DNFPredicate dp) {
 	if ((des!=dp.getPredicate().getDescriptor()) &&
-	    ((des instanceof SetDescriptor)||
-	     !dp.getPredicate().usesDescriptor((RelationDescriptor)des)))
+	    //((des instanceof SetDescriptor)||
+	    !dp.getPredicate().usesDescriptor(des))//)
 	    return false;
 
 	/* This if handles all the c comparisons in the paper */

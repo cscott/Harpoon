@@ -41,10 +41,9 @@ IR/RelationExpr.class IR/RelationQuantifier.class			\
 IR/ForQuantifier.class IR/GraphNode.class IR/DependencyBuilder.class	\
 IR/RelationInclusion.class IR/SetInclusion.class IR/TupleOfExpr.class	\
 IR/ElementOfExpr.class IR/Rule.class IR/Inclusion.class			\
-IR/NaiveGenerator.class IR/CodeWriter.class IR/SymbolTableStack.class	\
-IR/StandardCodeWriter.class IR/WorklistGenerator.class			\
-IR/WorkList.class IR/Optimizer.class IR/MetaInclusion.class		\
-IR/SizeofFunction.class IR/RelationFunctionExpr.class			\
+IR/CodeWriter.class IR/SymbolTableStack.class	\
+IR/StandardCodeWriter.class 		\
+IR/WorkList.class 		\
 IR/RepairGenerator.class IR/AbstractInterferes.class			\
 IR/PrettyPrinter.class IR/AbstractRepair.class IR/Quantifiers.class	\
 IR/Binding.class IR/ConcreteInterferes.class IR/Conjunction.class	\

@@ -61,7 +61,7 @@ public class ExprPredicate extends Predicate {
 	return expr.inverted();
     }
 
-    public boolean usesDescriptor(RelationDescriptor rd) {
+    public boolean usesDescriptor(Descriptor rd) {
 	return expr.usesDescriptor(rd);
     }
 

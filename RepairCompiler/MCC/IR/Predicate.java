@@ -10,7 +10,7 @@ public abstract class Predicate extends LogicStatement {
     abstract public int[] getRepairs(boolean negated, Termination t);
     abstract public Descriptor getDescriptor();
     abstract public boolean inverted();
-    public boolean usesDescriptor(RelationDescriptor rd) {
+    public boolean usesDescriptor(Descriptor rd) {
 	return false;}
 }
     
