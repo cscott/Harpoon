@@ -77,18 +77,16 @@ bool ActionEQ1::conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, Coe
   case SETEXPR_LABEL: {
     char *boundname=NULL;
     Guidance *g=globalmodel->getguidance();
-    //    DomainSet *fromset=domrelation->getsource(domrelation->getset(pse->getsetlabel()->getname()));
-    char *setname=pse->getsetlabel()->getname();
+    DomainSet *fromset=domrelation->getsource(domrelation->getset(pse->getsetlabel()->getname()));
 
-    DomainSet *fromset=domrelation->getset(setname);
-    {
+    if (fromset!=NULL) {
       Source s=g->sourceforsetsize(fromset->getname());
       if (s.setname!=NULL)
 	boundname=s.setname;
     }
+    char *setname=pse->getsetlabel()->getname();
 
     {
-      /* See what additional addsets we get*/
       WorkSet *ws=domrelation->conflictaddsets(pse->getsetlabel()->getname(),boundname,globalmodel);
       DomainSet *ds=(DomainSet *) ws->firstelement();
       while(ds!=NULL) {
@@ -101,7 +99,6 @@ bool ActionEQ1::conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, Coe
       delete(ws);
     }
     {
-      /* What additions do we get from removal */
       WorkSet *ws=domrelation->removeconflictaddsets(pse->getsetlabel()->getname(),globalmodel);
       DomainSet *ds=(DomainSet *) ws->firstelement();
       while(ds!=NULL) {
@@ -113,8 +110,8 @@ bool ActionEQ1::conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, Coe
       }
       delete(ws);
     }
-    /* Check what removals addition into set can cause */
-    if (boundname!=NULL) {
+    /* Check conflicts arrising from deletions from set */
+    {
       WorkSet *ws=domrelation->conflictdelsets(pse->getsetlabel()->getname(), boundname);
       DomainSet *ds=(DomainSet *) ws->firstelement();
       while (ds!=NULL) {
@@ -126,8 +123,6 @@ bool ActionEQ1::conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, Coe
       }
       delete(ws);
     }
- 
-    /* What sets will removal cause removal from */
     {
       WorkSet *ws=domrelation->removeconflictdelsets(pse->getsetlabel()->getname());
       DomainSet *ds=(DomainSet *) ws->firstelement();

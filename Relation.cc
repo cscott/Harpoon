@@ -3,17 +3,8 @@
 #include "GenericHashtable.h"
 #include "set.h"
 
-WorkRelation::WorkRelation() {
-  forward=genallocatehashtable((unsigned int (*)(void *)) & hashelement,(int (*)(void *,void *)) & elementequals);
-  inverse=genallocatehashtable((unsigned int (*)(void *)) & hashelement,(int (*)(void *,void *)) & elementequals);
-  flag=false;
-}
 
-WorkRelation::WorkRelation(bool flag) {
-  forward=genallocatehashtable(NULL,NULL);
-  inverse=genallocatehashtable(NULL,NULL);
-  flag=true;
-}
+// class Tuple
 
 Tuple::Tuple(void *l,void *r) {
   left=l;
@@ -29,6 +20,23 @@ bool Tuple::isnull() {
     return true;
   else
     return false;
+}
+
+
+
+
+// class WorkRelation
+
+WorkRelation::WorkRelation() {
+  forward=genallocatehashtable((unsigned int (*)(void *)) & hashelement,(int (*)(void *,void *)) & elementequals);
+  inverse=genallocatehashtable((unsigned int (*)(void *)) & hashelement,(int (*)(void *,void *)) & elementequals);
+  flag=false;
+}
+
+WorkRelation::WorkRelation(bool flag) {
+  forward=genallocatehashtable(NULL,NULL);
+  inverse=genallocatehashtable(NULL,NULL);
+  flag=true;
 }
 
 Tuple WorkRelation::firstelement() {

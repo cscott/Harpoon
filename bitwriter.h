@@ -1,3 +1,5 @@
+// Interface for writing structures
+
 #ifndef BITWRITER_H
 #define BITWRITER_H
 #include "classlist.h"

@@ -26,6 +26,7 @@
 #include "fieldcheck.h"
 #include "tmap.h"
 
+
 Hashtable * model::gethashtable() {
   return env;
 }
@@ -40,6 +41,7 @@ Guidance * model::getguidance() {
 
 model::model(char * abstractfile, char * modelfile, char *spacefile,char *structfile,char * concretefile) {
   parsestructfile(structfile);
+
   //Hashtable first for lookups
   env=new Hashtable((unsigned int (*)(void *)) & hashstring,(int (*)(void *,void *)) &equivalentstrings);
   //  env->put(&bstring,new Element(&badstruct,getstructure("arrayofstructs")));//should be of badstruct
@@ -47,8 +49,9 @@ model::model(char * abstractfile, char * modelfile, char *spacefile,char *struct
   parsemodelfile(modelfile);
   parsespacefile(spacefile);
   parseconcretefile(concretefile);
+
   br=new bitreader(this,env);
-  guidance=new DefGuidance(this); //DefGuidance2
+  guidance=new DefGuidance2(this); //DefGuidance2
   repair=new Repair(this);
   if (!repair->analyzetermination()) {
     printf("Constraint set might not terminate and can't be repaired!\n");
@@ -94,6 +97,8 @@ Constraint * model::getconstraint(int i) {
   return constraintarray[i];
 }
 
+
+// processes the model definition rules
 void model::doabstraction() {
   pa=new processabstract(this);
   bool clean=false;
@@ -110,6 +115,7 @@ void model::doabstraction() {
       }
     }
   } while(clean);
+
   /* Then the delayed rules */
   do {
     clean=false;
@@ -132,6 +138,8 @@ void model::triggerrule(Element *ele,char *set) {
   }
 }
 
+
+// processes the external constraints
 void model::doconcrete() {
   processconcrete *pr=new processconcrete(this);
   for(int i=0;i<numconcrete;i++) {
@@ -140,6 +148,8 @@ void model::doconcrete() {
   delete(pr);
 }
 
+
+// processes the internal constraints
 void model::docheck() {
   processobject *po=new processobject(this);
   bool t=false;
@@ -154,23 +164,35 @@ void model::docheck() {
   delete(po);
 }
 
+
+
 DomainRelation * model::getdomainrelation() {
   return domainrelation;
 }
 
+
+
+/* reads the testspace file, which keeps the sets and relations involved;
+   these sets and relations are managed by "domainrelation" */
 void model::parsespacefile(char *spacefile) {
   ifstream *ifs=new ifstream();
   ifs->open(spacefile);
   Reader *r=new Reader(ifs);
   Dparser *p=new Dparser(r);
-  domainrelation=p->parsesetrelation();
-#ifdef DEBUGMESSAGES
+  domainrelation=p->parsesetrelation(); 
+#define DEBUGMESSAGES  
+#ifdef DEBUGMESSAGES  
   domainrelation->print();
 #endif
+#undef DEBUGMESSAGES  
   ifs->close();
   delete(ifs);
 }
 
+
+
+/* reads the teststruct file, which keeps the structure definitions;
+   these definitions are kept in "structurearray" */
 void model::parsestructfile(char *structfile) {
   ifstream *ifs=new ifstream();
   ifs->open(structfile);
@@ -182,9 +204,11 @@ void model::parsestructfile(char *structfile) {
     structure *st=p->parsestructure();
     if (st!=NULL) {
       list->addobject(st);
+
 #ifdef DEBUGMESSAGES
       st->print();
 #endif
+
     }
     else
       break;
@@ -198,6 +222,9 @@ void model::parsestructfile(char *structfile) {
   delete(ifs);
 }
 
+
+/* parses the testabstract file, which contains the model definition rules 
+   these rules are kept in "rulearray" */
 void model::parseabstractfile(char *abstractfile) {
   ifstream *ifs=new ifstream();
   ifs->open(abstractfile);
@@ -234,6 +261,10 @@ void model::parseabstractfile(char *abstractfile) {
   delete(list);
 }
 
+
+
+/* parses the testconcrete file, which contains the external constraints;
+   these constraints are kept in "concretearray" */
 void model::parseconcretefile(char *abstractfile) {
   ifstream *ifs=new ifstream();
   ifs->open(abstractfile);
@@ -260,6 +291,11 @@ void model::parseconcretefile(char *abstractfile) {
   delete(list);
 }
 
+
+
+/* parses the testmodel file, which contains the internal constraints 
+   these constraints are kept in constraintarray;  
+   the constraints in normal form are kept in constraintnormal */
 void model::parsemodelfile(char *modelfile) {
   ifstream* ifs=new ifstream();
   ifs->open(modelfile);

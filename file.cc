@@ -9,7 +9,6 @@
 #include "file.h"
 extern "C" {
 #include "test.h"
-#include "catcherror.h"
 }
 #include "Hashtable.h"
 #include "model.h"
@@ -20,13 +19,22 @@ struct filedesc files[MAXFILES];
 struct InodeBitmap ib;
 struct BlockBitmap bb;
 int bbbptr,ibbptr,itbptr,rdiptr;
+
+
 int main(int argc, char **argv) {
   for(int i=0;i<MAXFILES;i++)
     files[i].used=false;
   switch(argv[1][0]) {
-  case '0': createdisk();
+    
+  case '0': 
+    //creates a disk
+    createdisk(); 
     return 1;
-  case '1': {
+
+
+  case '1': { 
+    /* mounts the disk, creates 145 files, and writes "buf" in each file 
+       for 90 times */ 
     struct block * ptr=mountdisk("disk");
     for(int i=0;i<145;i++) {
       char filename[10];
@@ -45,6 +53,8 @@ int main(int argc, char **argv) {
     unmountdisk(ptr);
     break;
   }
+
+
   case '2': {
     struct block * ptr=chmountdisk("disk");
     initializeanalysis();
@@ -52,14 +62,14 @@ int main(int argc, char **argv) {
     alloc(ptr,LENGTH);
     addmapping(dstring,ptr,"Disk");
     //    env->put(dstring,new Element(ptr,exportmodel->getstructure("Disk")));//should be of badstruct
-    STARTREPAIR(doanalysis();,lab)
-    
-    ENDREPAIR(lab)
+    doanalysis();
     dealloc(ptr);
     chunmountdisk(ptr);
     break;
   }
+  
   case '3': {
+  // prints the directory structure, and prints the contents of each file
     struct block * ptr=mountdisk("disk");
     printdirectory(ptr);
     for(int i=1;i<145;i++) {
@@ -70,7 +80,9 @@ int main(int argc, char **argv) {
     unmountdisk(ptr);
     break;
   }
+ 
   case '4': {
+  // the same as "case '1'" only that the files are accessed in reversed order
     struct block * ptr=mountdisk("disk");
     for(int i=145;i>1;i--) {
       char filename[10];
@@ -89,6 +101,7 @@ int main(int argc, char **argv) {
     unmountdisk(ptr);
     break;
   }
+
   case '5': {
     struct block * ptr=mountdisk("disk");
     for(int i=145;i>=0;i--) {
@@ -96,6 +109,7 @@ int main(int argc, char **argv) {
       sprintf(filename,"fil%d",i);
       openfile(ptr,filename);
     }
+
     for(int j=0;j<6000;j++) {
       for(int i=145;i>=0;i--) {
 	char name[10];
@@ -111,6 +125,7 @@ int main(int argc, char **argv) {
       sprintf(filename,"fil%d",i);
       openfile(ptr,filename);
     }
+
     for(int j=0;j<400;j++) {
       for(int i=145;i>=0;i--) {
 	int l=0;
@@ -129,6 +144,8 @@ int main(int argc, char **argv) {
     unmountdisk(ptr);
   }
   break;
+
+
   case '6': {
     {
       struct block * ptr=chmountdisk("disk");
@@ -191,6 +208,8 @@ void chunmountdisk(struct block *vptr) {
   int val=munmap(vptr,LENGTH);
 }
 
+
+// mounts the disk from the file "filename"
 struct block * mountdisk(char *filename) {
   int fd=open(filename,O_CREAT|O_RDWR);
   struct block *ptr=(struct block *) mmap(NULL,LENGTH,PROT_READ|PROT_WRITE|PROT_EXEC,MAP_SHARED,fd,0);
@@ -210,6 +229,8 @@ struct block * mountdisk(char *filename) {
   return ptr;
 }
 
+
+
 void unmountdisk(struct block *vptr) {
   struct InodeBitmap *ibb=(struct InodeBitmap *) &vptr[ibbptr];
   for(int i=0;i<(NUMINODES/8+1);i++)
@@ -220,6 +241,7 @@ void unmountdisk(struct block *vptr) {
     bbb->blocks[i]=bb.blocks[i];
   int val=munmap(vptr,LENGTH);
 }
+
 
 void printdirectory(struct block *ptr) {
   struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
@@ -234,6 +256,7 @@ void printdirectory(struct block *ptr) {
   }
 }
 
+// prints the contents of the file with filename "filename"
 void printfile(char *filename, struct block *ptr) {
   struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
   for(int i=0;i<12;i++) {
@@ -350,6 +373,7 @@ int writefile(struct block *ptr, int fd, char *s, int len) {
 }
 
 
+// reads one char from the file fd and returns it
 char readfile(struct block *ptr, int fd) {
   char array[1];
   if (readfile(ptr,fd,array,1)==1)
@@ -358,6 +382,7 @@ char readfile(struct block *ptr, int fd) {
     return EOF;
 }
 
+// reads len chars from file fd (file system *ptr) and returns them in buf
 int readfile(struct block *ptr, int fd, char *buf, int len) {
   struct filedesc *tfd=&files[fd];
   if (tfd->used==false)
@@ -365,8 +390,11 @@ int readfile(struct block *ptr, int fd, char *buf, int len) {
 
   struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
   int filelen=itb->entries[tfd->inode].filesize;
+
+  // if there are fewer than len chars left, read until the end
   if ((filelen-tfd->offset)<len)
     len=filelen-tfd->offset;
+
   for(int i=0;i<len;) {
     int nbuffer=tfd->offset/BLOCKSIZE;
     int noffset=tfd->offset%BLOCKSIZE;
@@ -473,16 +501,20 @@ void createdisk() {
   int blocksize=BLOCKSIZE;
   int numblocks=NUMBLOCK;
   int fd=open("disk",O_CREAT|O_RDWR|O_TRUNC);
+
+  // creates numblocks and initializes them with 0
   char *buf=(char *)calloc(1,blocksize);
   for(int i=0;i<numblocks;i++) {
     write(fd,buf,blocksize);
   }
   free(buf);
+
+  // maps the file 'disk' into memory
   void *vptr=mmap(NULL,LENGTH,PROT_READ|PROT_WRITE|PROT_EXEC,MAP_SHARED,fd,0);
   struct block *ptr=(struct block *)vptr;
   {
     struct SuperBlock * sb=(struct SuperBlock*) &ptr[0];
-    sb->FreeBlockCount=BLOCKSIZE-5;
+    sb->FreeBlockCount=NUMBLOCK-5; //!!! it was BLOCKSIZE instead of NUMBLOCKS
     sb->FreeInodeCount=NUMINODES-1;
     sb->NumberofInodes=NUMINODES;
     sb->NumberofBlocks=NUMBLOCK;
@@ -494,7 +526,7 @@ void createdisk() {
     gb->BlockBitmapBlock=2;
     gb->InodeBitmapBlock=3;
     gb->InodeTableBlock=4;
-    gb->GroupFreeBlockCount=BLOCKSIZE-5;
+    gb->GroupFreeBlockCount=NUMBLOCK-5;
     gb->GroupFreeInodeCount=NUMINODES-1;
   }
   {

@@ -1,3 +1,4 @@
+// stores the structure definitions
 #ifndef TMODEL_H
 #define TMODEL_H
 
@@ -9,6 +10,7 @@
 #define STYPE_BYTE 4
 #define STYPE_SHORT 5
 #define STYPE_ARRAY 0x100
+
 
 class structure {
   public:
@@ -52,6 +54,8 @@ class structure {
 #define TTYPE_SHORT 0x5
 #define TTYPE_PTR 0x100
 
+
+
 class ttype {
  public:
   void print();
@@ -91,6 +95,8 @@ class ttype {
   ttype *type;
   char *name;
   };*/
+
+
 
 class tlabel {
  public:

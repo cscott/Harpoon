@@ -5,20 +5,47 @@
 #include "model.h"
 #include "Hashtable.h"
 #include "common.h"
+#include <stdio.h>
 
 void structure::print() {
+  printf("\nBEGIN structure:\n");
+  printf("   name=%s\n", name);
+  printf("   type=%d\n", type);
+  
+  if (subtype == NULL)
+    printf("   subtype=null\n");
+  else subtype->print();
+
+  for (int i=0; i<getnumfields(); i++)
+    getfield(i)->print();
+
+  for (int i=0; i<getnumlabels(); i++)
+    getlabel(i)->print();
+  
+  printf("END structure\n\n");
 }
 
 void ttype::print() {
+  printf("\nBEGIN ttype\n");
+  printf("   ttype: primtype=%ld, intlength=%ld, type=%s\n", primtype, intlength, type);
+  printf("END ttype\n\n");
 }
 
 /*void tparam::print() {
   }*/
 
 void tlabel::print() {
+  printf("\nBEGIN tlabel\n");
+  printf("   field=%s\n", field);
+  specifictype->print();
+  printf("END tlabel\n\n");
 }
 
 void tfield::print() {
+  printf("\nBEGIN tfield\n");
+  printf("   name=\%s\n", name);
+  type->print();
+  printf("END tfield\n\n");
 }
 
 AElementexpr * ttype::getsize() {

@@ -1,3 +1,6 @@
+// evaluates constraints in the ICL
+
+
 #ifndef PROCESSOBJECT_H
 #define PROCESSOBJECT_H
 #include "classlist.h"

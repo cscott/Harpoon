@@ -48,15 +48,15 @@ char * ActionAssign::gettype(Constraint *c,Elementexpr *ee) {
 
 void ActionAssign::repair(Hashtable *env,CoercePredicate *cp) {
   Predicate *p=cp->getpredicate();
-  Element *ele=evaluateexpr(p->geteleexpr(),env,globalmodel);
-  Element *index=(Element *) env->get(p->getvalueexpr()->getlabel()->label());
+  Element *ele=evaluateexpr(p->geteleexpr(),env,globalmodel); //ele=E
+  Element *index=(Element *) env->get(p->getvalueexpr()->getlabel()->label()); // index=V
   char *rel=p->getvalueexpr()->getrelation()->getname();
   WorkRelation *relation=domrelation->getrelation(rel)->getrelation();
-  Element *old=(Element *)relation->getobj(index);
+  Element *old=(Element *)relation->getobj(index); // old=V.R
   if (old!=NULL)
     relation->remove(index,old);
   DRelation *drel=domrelation->getrelation(rel);
-
+  
   if(!equivalentstrings(drel->getdomain(),"int")) {
     DomainSet *domain=domrelation->getset(drel->getdomain());
     if (!domain->getset()->contains(index))

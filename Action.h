@@ -4,7 +4,7 @@
 class Action {
  public:
   virtual void repair(Hashtable *env, CoercePredicate *p)=0;
-  virtual bool conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, CoercePredicate *p2)=0;
+  virtual bool conflict(Constraint *c1, CoercePredicate *p1, Constraint *c2, CoercePredicate *p2)=0;
   virtual bool canrepair(CoercePredicate *p)=0;
 
  protected:

@@ -3,6 +3,9 @@
 #include "omodel.h"
 #include <stdio.h>
 
+
+// class CAElementexpr
+
 CAElementexpr::CAElementexpr(CAElementexpr *index, Setexpr *se) {
   left=index;right=NULL;type=CAELEMENTEXPR_ELEMENT;
   setexpr=se;
@@ -103,6 +106,13 @@ Setexpr * CAElementexpr::getsetexpr() {
   return setexpr;
 }
 
+
+
+
+
+// class Expr
+
+
 Expr::Expr(Label *l) {
   label=l;
   type=EXPR_LABEL;
@@ -172,6 +182,13 @@ void Expr::print() {
     break;
   }
 }
+
+
+
+
+
+
+// class CStatementb
 
 void CStatementb::print() {
   switch(type) {

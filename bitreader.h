@@ -1,3 +1,5 @@
+// Interface for reading structures
+
 #ifndef BITREADER_H
 #define BITREADER_H
 #include "classlist.h"

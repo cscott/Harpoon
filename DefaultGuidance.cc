@@ -1,3 +1,5 @@
+// for CIV
+
 #include "DefaultGuidance.h"
 #include "model.h"
 #include "dmodel.h"
@@ -40,19 +42,19 @@ char * DefGuidance::removefromset(char * set) {
   DomainSet *ds=dr->getset(set);
   DomainSet *ss=dr->getsuperset(ds);
   while(ss!=NULL&&ss->gettype()==DOMAINSET_PARTITION) {
-    /*    for(int i=0;i<ss->getnumsubsets();i++) {
+    for(int i=0;i<ss->getnumsubsets();i++) {
       char *name=ss->getsubset(i);
       if (!equivalentstrings(ds->getname(),name)&&
 	  !equivalentstrings(ds->getname(),name)) {
 	/* Do search */
-    /*	ss=dr->getset(name);
+	ss=dr->getset(name);
 	while(ss->gettype()==DOMAINSET_PARTITION) {
 	  char *name=ss->getsubset(0);
 	  ss=dr->getset(name);
 	}
 	return ss->getname();
       }
-    }*/
+    }
     ds=ss;
     ss=dr->getsuperset(ss);
   }

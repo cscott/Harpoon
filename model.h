@@ -7,7 +7,7 @@
 class model {
  public:
   model(char * abstractfile, char * modelfile, char *spacefile,char *structfile,char * concretefile);
-  DomainRelation * getdomainrelation();
+  DomainRelation * getdomainrelation(); 
   structure *getstructure(char * name);
   void doabstraction();
   void doconcrete();
@@ -39,23 +39,24 @@ class model {
   Repair *repair;
   FieldCheck *fc;
   processabstract *pa;
-  DomainRelation *domainrelation;
 
-  Constraint **constraintarray;
-  int numconstraint;
-
-  NormalForm **constraintnormal;
-
-  structure **structurearray;
+  structure **structurearray;     // the structure definitions
   int numstarray;
 
-  Rule **concretearray;
+  DomainRelation *domainrelation; // the sets and relations
+
+  Rule **rulearray;               // the model definition rules 
+  int numrules;              
+  NormalForm **rulenormal;        // the model definition rules in normal form
+  int numrulenormal;
+ 
+  Constraint **constraintarray;   // the internal constraints
+  int numconstraint;
+  NormalForm **constraintnormal;  // the internal constraints in normal form
+
+  Rule **concretearray;           // the external constraints
   int numconcrete;
 
-  Rule **rulearray;
-  int numrules;
-  NormalForm **rulenormal;
-  int numrulenormal;
 
   typemap * typmap;
 };

@@ -1,3 +1,6 @@
+/* Defines interfaces for the applications and exports function calls that  
+   the applications should use instead of the standard ones. */
+
 #include "classlist.h"
 #include "model.h"
 #include "dmodel.h"
@@ -36,14 +39,14 @@ void resetanalysis() {
   exportmodel->reset();
 }
 
-void addmapping(char *key, void * address,char *type) {
+void addmapping(char *key, void * address, char *type) {
   Hashtable *env=exportmodel->gethashtable();
   env->put(key,new Element(address,exportmodel->getstructure(type)));//should be of badstruct
 }
 
 void addintmapping(char *key, int value) {
   Hashtable *env=exportmodel->gethashtable();
-  env->put(key,new Element(value));//should be of badstruct
+  env->put(key,new Element(value)); //should be of badstruct
 }
 
 void *ourcalloc(size_t nmemb, size_t size) {

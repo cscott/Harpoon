@@ -1,3 +1,5 @@
+// defines the sets and the relations used
+
 #include "dmodel.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -6,6 +8,9 @@
 #include "Hashtable.h"
 #include "model.h"
 #include "Guidance.h"
+
+
+// class DomainSet
 
 DomainSet::DomainSet(char *name) {
   setname=name;
@@ -76,6 +81,11 @@ char * DomainSet::getsubset(int i) {
   return subsets[i];
 }
 
+
+
+
+// class DRelation
+
 DRelation::DRelation(char *n, char *d, char *r, int t, bool b) {
   domain=d;range=r;type=t;name=n;
   relation=new WorkRelation();
@@ -121,6 +131,11 @@ WorkRelation * DRelation::getrelation() {
   return relation;
 }
  
+
+
+
+
+// class DomainRelation
 
 DomainRelation::DomainRelation(DomainSet **s, int ns, DRelation **r,int nr) {
   sets=s; numsets=ns;
@@ -460,6 +475,7 @@ DRelation * DomainRelation::getrelation(int i) {
   return relations[i];
 }
 
+
 void DomainRelation::fixstuff() {
   /* Guaranteed fixpoint because we keep removing items...finite # of items */
   while(true) {
@@ -477,11 +493,18 @@ void DomainRelation::fixstuff() {
   }
 }
 
+
+
+
+/* propagate the changes so that all the subset inclusion and partition
+   constraints are satisfied. */
 bool DomainRelation::checksubset(DomainSet *ds) {
+  // remove all elements in ds that are not contained by its superset
   bool changed=false;
   DomainSet *superset=getsuperset(ds);
   WorkSet *ws=ds->getset();
   WorkSet *wssuper=ds->getset();
+
   void *ele=ws->firstelement();
   while(ele!=NULL) {
     if (!wssuper->contains(ele)) {
@@ -493,6 +516,11 @@ bool DomainRelation::checksubset(DomainSet *ds) {
       ele=ws->getnextelement(ele);
   }
   /* Superset inclusion property guaranteed */
+
+
+  /* If an element is contained by more than one subset, remove it from
+     all subsets but the first one.  If an element is not contained by 
+     any subset, remove it from the superset */
   if (ds->gettype()==DOMAINSET_PARTITION) {
     ele=ws->firstelement();
     while(ele!=NULL) {
@@ -520,6 +548,8 @@ bool DomainRelation::checksubset(DomainSet *ds) {
   }
   return changed;
 }
+
+
 
 bool DomainRelation::checkrelations(DRelation *dr) {
   DomainSet  *range=getset(dr->getrange());

@@ -1,3 +1,5 @@
+// evaluates constraints in the ICL
+
 #include "processobject.h"
 #include "processabstract.h"
 #include "omodel.h"
@@ -15,55 +17,8 @@ processobject::processobject(model *m) {
   repair=m->getrepair();
 }
 
-bool processobject::processconstraint(Constraint *c) {
-  State *st=new State(c,globalmodel->gethashtable());
-  bool clean=true;
-  if (st->initializestate(globalmodel)) {
-    while(true) {
-      if (c->getstatement()!=NULL) {
-	if (processstatement(c->getstatement(),st->env)!=PTRUE) {
-	  printf("ERROR: Predicate violation\n");
-	  repair->repairconstraint(c,this,st->env);
-	  clean=false;
-	}
-      }
-      if (!st->increment(globalmodel))
-	break; /* done */
-    }
-  }
-  delete(st);
-  return clean;
-}
 
-processobject::~processobject() {
-}
-
-int processobject::processstatement(Statement *s, Hashtable *env) {
-  switch (s->gettype()) {
-  case STATEMENT_OR: {
-    int l=processstatement(s->getleft(),env);
-    int r=processstatement(s->getright(),env);
-    if (l==PFAIL&&(r==PFAIL||r==PFALSE)) return PFAIL;
-    if ((l==PFAIL||l==PFALSE)&&r==PFAIL) return PFAIL;
-    return l||r;
-  }
-  case STATEMENT_AND: {
-    int l=processstatement(s->getleft(),env);
-    int r=processstatement(s->getright(),env);
-    if (l==PFAIL&&(r==PFAIL||r==PTRUE)) return PFAIL;
-    if (r==PFAIL&&(l==PFAIL||l==PTRUE)) return PFAIL;
-    return l&&r;
-  }
-  case STATEMENT_NOT: {
-    int l=processstatement(s->getleft(),env);
-    if (l==PFAIL) return PFAIL;
-    return !l;
-  }
-  case STATEMENT_PRED:
-    return processpredicate(s->getpredicate(),env);
-  }
-}
-
+// evaluates the truth value of the given predicate
 int processobject::processpredicate(Predicate *p, Hashtable *env) {
   switch(p->gettype()) {
   case PREDICATE_LT: {
@@ -176,11 +131,75 @@ int processobject::processpredicate(Predicate *p, Hashtable *env) {
 }
 
 
+// evaluates the truth value of the given statement
+int processobject::processstatement(Statement *s, Hashtable *env) {
+  switch (s->gettype()) {
+  case STATEMENT_OR: {
+    int l=processstatement(s->getleft(),env);
+    int r=processstatement(s->getright(),env);
+    if (l==PFAIL&&(r==PFAIL||r==PFALSE)) return PFAIL;
+    if ((l==PFAIL||l==PFALSE)&&r==PFAIL) return PFAIL;
+    return l||r;
+  }
+  case STATEMENT_AND: {
+    int l=processstatement(s->getleft(),env);
+    int r=processstatement(s->getright(),env);
+    if (l==PFAIL&&(r==PFAIL||r==PTRUE)) return PFAIL;
+    if (r==PFAIL&&(l==PFAIL||l==PTRUE)) return PFAIL;
+    return l&&r;
+  }
+  case STATEMENT_NOT: {
+    int l=processstatement(s->getleft(),env);
+    if (l==PFAIL) return PFAIL;
+    return !l;
+  }
+  case STATEMENT_PRED:
+    return processpredicate(s->getpredicate(),env);
+  }
+}
+
+
+
+bool processobject::processconstraint(Constraint *c) {
+  State *st=new State(c,globalmodel->gethashtable());
+  bool clean=true;
+  if (st->initializestate(globalmodel)) {
+    while(true) {
+      if (c->getstatement()!=NULL) {
+	if (processstatement(c->getstatement(),st->env)!=PTRUE) {
+	  printf("ERROR: Predicate violation\n");
+	  repair->repairconstraint(c,this,st->env);
+	  clean=false;
+	}
+      }
+      if (!st->increment(globalmodel))
+	break; /* done */
+    }
+  }
+  delete(st);
+  return clean;
+}
+
+
+processobject::~processobject() {
+}
+
+
+
+
+
+
+
+
+// computes ve = V.R
 Element * evaluatevalueexpr(Valueexpr *ve, Hashtable *env, model *m) {
   Element * e=(Element *) env->get(ve->getlabel()->label());
   return (Element *)m->getdomainrelation()->getrelation(ve->getrelation()->getname())->getrelation()->getobj(e);
 }
 
+
+
+// evaluates E = V | number | string | E-E | E+E | E*E | E/E | E.R |size(SE)
 Element * evaluateexpr(Elementexpr *ee, Hashtable *env, model *m) {
   switch(ee->gettype()) {
   case ELEMENTEXPR_LABEL: {
@@ -272,3 +291,5 @@ Element * evaluateexpr(Elementexpr *ee, Hashtable *env, model *m) {
     break;
   }
 }
+
+

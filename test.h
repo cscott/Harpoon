@@ -1,3 +1,6 @@
+/* Defines interfaces for the applications and exports function calls that  
+   the applications should use instead of the standard ones. */
+
 #ifndef TEST_H
 #define TEST_H
 void initializeanalysis();

@@ -1,3 +1,5 @@
+// evaluates model definition rules
+
 #include "processabstract.h"
 #include "processconcrete.h"
 #include "amodel.h"
@@ -13,6 +15,9 @@
 #include <assert.h>
 #include "tmap.h"
 
+
+// class processabstract
+
 processabstract::processabstract(model *m) {
   globalmodel=m;
   br=new bitreader(globalmodel,m->gethashtable());
@@ -27,145 +32,6 @@ void processabstract::setclean() {
   dirtyflag=false;
 }
 
-void processabstract::processrule(Rule *r) {
-  State *st=new State(r, globalmodel->gethashtable());
-  if (st->initializestate(br, globalmodel)) {
-    while(true) {
-      if (evaluatestatementa(r->getstatementa(),st->env))
-	satisfystatementb(r->getstatementb(),st->env);
-
-      if (!st->increment(br, globalmodel))
-	break; /* done */
-    }
-  }
-  delete(st);
-}
-
-void processabstract::processrule(Rule *r, Element *ele, char *set) {
-  int count=-1;
-
-
-  for(int i=0;i<r->numquants();i++) {
-    AQuantifier *aq=r->getquant(i);
-    switch(aq->gettype()) {
-    case AQUANTIFIER_SING:
-      count=i;
-      break;
-    default:
-      break;
-    }
-  }
-  AQuantifier *aq=r->getquant(count);
-  if (!equivalentstrings(aq->getset()->getname(),set))
-    return;
-
-  Hashtable *env=new Hashtable((unsigned int (*)(void *)) & hashstring,(int (*)(void *,void *)) &equivalentstrings);
-  env->setparent(globalmodel->gethashtable());
-    
-  RelationSet **relset=new RelationSet*[r->numquants()-1];
-  int c=0;
-  for(int i=0;i<r->numquants();i++) {
-    if (i!=count) {
-      AQuantifier *aq=r->getquant(i);
-      RelationSet *rs=new RelationSet(aq->getleft()->label(),aq->getlower(),aq->getupper());
-      rs->incrementassignment(br,env,globalmodel);
-      relset[c++]=rs;
-    }
-  }
-  
-  env->put(aq->getleft()->label(),ele);
-  bool flag=true;
-  while(flag) {
-    if (evaluatestatementa(r->getstatementa(),env))
-      satisfystatementb(r->getstatementb(),env);
-    int i=r->numquants()-2;
-    for(;i>=0;i--) {
-      if (relset[i]->incrementassignment(br,env,globalmodel)) {
-	break;
-      } else {
-	relset[i]->resetassignment(env);
-	if (!relset[i]->incrementassignment(br,env,globalmodel)) {
-	  flag=false;
-	  break;
-	}
-      }
-    }
-    if (i==-1)
-      flag=false;
-  }
-  for(int i=0;i<r->numquants()-1;i++) {
-    delete(relset[i]);
-  }
-  delete(relset);
-  delete(env);
-}
-
-processabstract::~processabstract() {
-  delete(br);
-}
-
-bool State::initializestate(bitreader *br, model * m) {
-  for(int i=0;i<numrelset;i++) {
-    if (!relset[i]->incrementassignment(br,env,m))
-      return false;
-  }
-  return true;
-}
-
-bool State::initializestate(model * m) {
-  for(int i=0;i<numrelset;i++) {
-    if (!relset[i]->incrementassignment(env,m))
-      return false;
-  }
-  return true;
-}
-
-bool State::initializestate(processconcrete *pc,model * m) {
-  for(int i=0;i<numrelset;i++) {
-    if (!relset[i]->incrementassignment(pc,env,m))
-      return false;
-  }
-  return true;
-}
-
-bool State::increment(bitreader *br, model *m) {
-  for(int i=numrelset-1;i>=0;i--) {
-      if (relset[i]->incrementassignment(br,env,m))
-	return true;
-      else {
-	relset[i]->resetassignment(env);
-	if (!relset[i]->incrementassignment(br,env,m))
-	  return false;
-      }
-  }
-  return false;
-}
-
-bool State::increment(model *m) {
-  for(int i=numrelset-1;i>=0;i--) {
-      if (relset[i]->incrementassignment(env,m))
-	return true;
-      else {
-	relset[i]->resetassignment(env);
-	if (!relset[i]->incrementassignment(env,m))
-	  return false;
-      }
-  }
-  return false;
-}
-
-bool State::increment(processconcrete *pc,model *m) {
-  for(int i=numrelset-1;i>=0;i--) {
-      if (relset[i]->incrementassignment(pc,env,m))
-	return true;
-      else {
-	relset[i]->resetassignment(env);
-	if (!relset[i]->incrementassignment(pc,env,m))
-	  return false;
-      }
-  }
-  return false;
-}
 
 bool processabstract::evaluatestatementa(Statementa *sa, Hashtable *env) {
   switch(sa->gettype()) {
@@ -251,6 +117,9 @@ bool processabstract::evaluatestatementa(Statementa *sa, Hashtable *env) {
   }
 }
 
+
+/* a Statementb is of the type "E in S" or "<E,E> in R" so we just add the 
+   respective element to S or R if the statement is not satisfied */
 void processabstract::satisfystatementb(Statementb *sb, Hashtable *env) {
   switch(sb->gettype()) {
   case STATEMENTB_SING: {
@@ -318,6 +187,197 @@ void processabstract::satisfystatementb(Statementb *sb, Hashtable *env) {
   }
   }
 }
+
+
+void processabstract::processrule(Rule *r) {
+  State *st=new State(r, globalmodel->gethashtable());
+  if (st->initializestate(br, globalmodel)) {
+    while(true) {
+      if (evaluatestatementa(r->getstatementa(),st->env))
+	satisfystatementb(r->getstatementb(),st->env);
+
+      if (!st->increment(br, globalmodel))
+	break; /* done */
+    }
+  }
+  delete(st);
+}
+
+void processabstract::processrule(Rule *r, Element *ele, char *set) {
+  int count=-1;
+
+
+  for(int i=0;i<r->numquants();i++) {
+    AQuantifier *aq=r->getquant(i);
+    switch(aq->gettype()) {
+    case AQUANTIFIER_SING:
+      count=i;
+      break;
+    default:
+      break;
+    }
+  }
+
+  AQuantifier *aq=r->getquant(count);
+  if (!equivalentstrings(aq->getset()->getname(),set))
+    return;
+
+  Hashtable *env=new Hashtable((unsigned int (*)(void *)) & hashstring,(int (*)(void *,void *)) &equivalentstrings);
+  env->setparent(globalmodel->gethashtable());
+    
+  RelationSet **relset=new RelationSet*[r->numquants()-1];
+  int c=0;
+  for(int i=0;i<r->numquants();i++) {
+    if (i!=count) {
+      AQuantifier *aq=r->getquant(i);
+      RelationSet *rs=new RelationSet(aq->getleft()->label(),aq->getlower(),aq->getupper());
+      rs->incrementassignment(br,env,globalmodel);
+      relset[c++]=rs;
+    }
+  }
+  
+  env->put(aq->getleft()->label(),ele);
+  bool flag=true;
+  while(flag) {
+    if (evaluatestatementa(r->getstatementa(),env))
+      satisfystatementb(r->getstatementb(),env);
+    int i=r->numquants()-2;
+    for(;i>=0;i--) {
+      if (relset[i]->incrementassignment(br,env,globalmodel)) {
+	break;
+      } else {
+	relset[i]->resetassignment(env);
+	if (!relset[i]->incrementassignment(br,env,globalmodel)) {
+	  flag=false;
+	  break;
+	}
+      }
+    }
+    if (i==-1)
+      flag=false;
+  }
+  for(int i=0;i<r->numquants()-1;i++) {
+    delete(relset[i]);
+  }
+  delete(relset);
+  delete(env);
+}
+
+processabstract::~processabstract() {
+  delete(br);
+}
+
+
+
+
+
+// class State
+
+State::State(Rule *r, Hashtable *oldenv) {
+  env=new Hashtable((unsigned int (*)(void *)) & hashstring,(int (*)(void *,void *)) &equivalentstrings);;
+  env->setparent(oldenv);
+  numrelset=r->numquants();
+  relset=new RelationSet*[numrelset];
+  for(int i=0;i<r->numquants();i++) {
+    AQuantifier *aq=r->getquant(i);
+
+    switch(aq->gettype()) {
+    case AQUANTIFIER_SING:
+      relset[i]=new RelationSet(aq->getset(),aq->getleft()->label(),aq->gettleft());
+      break;
+    case AQUANTIFIER_TUPLE:
+      relset[i]=new RelationSet(aq->getset(),aq->getleft()->label(),aq->gettleft(),aq->getright()->label(),aq->gettright());
+      break;
+    case AQUANTIFIER_RANGE:
+      relset[i]=new RelationSet(aq->getleft()->label(),aq->getlower(),aq->getupper());
+      break;
+    }
+  }
+}
+
+State::State(Constraint *c,Hashtable *oldenv) {
+  env=new Hashtable((unsigned int (*)(void *)) & hashstring,(int (*)(void *,void *)) &equivalentstrings);;
+  env->setparent(oldenv);
+  numrelset=c->numquants();
+  relset=new RelationSet*[numrelset];
+  for(int i=0;i<c->numquants();i++) {
+    Quantifier *q=c->getquant(i);
+    relset[i]=new RelationSet(q->getset(),q->getlabel()->label(),NULL);
+  }
+}
+
+State::~State() {
+  delete(env);
+  for(int i=0;i<numrelset;i++)
+    delete(relset[i]);
+  delete(relset);
+}
+
+
+bool State::initializestate(bitreader *br, model * m) {
+  for(int i=0;i<numrelset;i++) {
+    if (!relset[i]->incrementassignment(br,env,m))
+      return false;
+  }
+  return true;
+}
+
+bool State::initializestate(model * m) {
+  for(int i=0;i<numrelset;i++) {
+    if (!relset[i]->incrementassignment(env,m))
+      return false;
+  }
+  return true;
+}
+
+bool State::initializestate(processconcrete *pc,model * m) {
+  for(int i=0;i<numrelset;i++) {
+    if (!relset[i]->incrementassignment(pc,env,m))
+      return false;
+  }
+  return true;
+}
+
+bool State::increment(bitreader *br, model *m) {
+  for(int i=numrelset-1;i>=0;i--) {
+      if (relset[i]->incrementassignment(br,env,m))
+	return true;
+      else {
+	relset[i]->resetassignment(env);
+	if (!relset[i]->incrementassignment(br,env,m))
+	  return false;
+      }
+  }
+  return false;
+}
+
+bool State::increment(model *m) {
+  for(int i=numrelset-1;i>=0;i--) {
+      if (relset[i]->incrementassignment(env,m))
+	return true;
+      else {
+	relset[i]->resetassignment(env);
+	if (!relset[i]->incrementassignment(env,m))
+	  return false;
+      }
+  }
+  return false;
+}
+
+bool State::increment(processconcrete *pc,model *m) {
+  for(int i=numrelset-1;i>=0;i--) {
+      if (relset[i]->incrementassignment(pc,env,m))
+	return true;
+      else {
+	relset[i]->resetassignment(env);
+	if (!relset[i]->incrementassignment(pc,env,m))
+	  return false;
+      }
+  }
+  return false;
+}
+
+
 
 Element * evaluateexpr(model *m,AElementexpr *ee, Hashtable *env, bool enforcetyping, bool compute) {
   bitreader *br=m->getbitreader();
@@ -488,44 +548,40 @@ Element * evaluateexpr(model *m,AElementexpr *ee, Hashtable *env, bool enforcety
 }
 
 
-State::State(Rule *r, Hashtable *oldenv) {
-  env=new Hashtable((unsigned int (*)(void *)) & hashstring,(int (*)(void *,void *)) &equivalentstrings);;
-  env->setparent(oldenv);
-  numrelset=r->numquants();
-  relset=new RelationSet*[numrelset];
-  for(int i=0;i<r->numquants();i++) {
-    AQuantifier *aq=r->getquant(i);
 
-    switch(aq->gettype()) {
-    case AQUANTIFIER_SING:
-      relset[i]=new RelationSet(aq->getset(),aq->getleft()->label(),aq->gettleft());
-      break;
-    case AQUANTIFIER_TUPLE:
-      relset[i]=new RelationSet(aq->getset(),aq->getleft()->label(),aq->gettleft(),aq->getright()->label(),aq->gettright());
-      break;
-    case AQUANTIFIER_RANGE:
-      relset[i]=new RelationSet(aq->getleft()->label(),aq->getlower(),aq->getupper());
-      break;
-    }
-  }
+
+
+
+
+// class RelationSet
+
+RelationSet::RelationSet(Set *s, char *l,Type *tl) {
+  set=s;
+  type=TYPE_SET;
+  left=l;
+  tleft=tl;
+  tright=NULL;
+  right=NULL;
 }
 
-State::State(Constraint *c,Hashtable *oldenv) {
-  env=new Hashtable((unsigned int (*)(void *)) & hashstring,(int (*)(void *,void *)) &equivalentstrings);;
-  env->setparent(oldenv);
-  numrelset=c->numquants();
-  relset=new RelationSet*[numrelset];
-  for(int i=0;i<c->numquants();i++) {
-    Quantifier *q=c->getquant(i);
-    relset[i]=new RelationSet(q->getset(),q->getlabel()->label(),NULL);
-  }
+RelationSet::RelationSet(Set *s,char *l, Type *tl,char *r,Type *tr) {
+  set=s;
+  type=TYPE_RELATION;
+  left=l;
+  tleft=tl;
+  tright=tr;
+  right=r;
 }
 
-State::~State() {
-  delete(env);
-  for(int i=0;i<numrelset;i++)
-    delete(relset[i]);
-  delete(relset);
+RelationSet::RelationSet(char *l,AElementexpr *lower,AElementexpr*upper) {
+  this->lower=lower;
+  this->upper=upper;
+  left=l;
+  type=TYPE_RANGE;
+}
+
+int RelationSet::gettype() {
+  return type;
 }
 
 void RelationSet::resetassignment(Hashtable *env) {
@@ -836,6 +892,7 @@ bool RelationSet::incrementassignment(processconcrete *pc,Hashtable *env, model 
   }
 }
 
+
 bool RelationSet::incrementassignment(Hashtable *env, model *m) {
   switch(type) {
   case TYPE_SET: {
@@ -875,31 +932,4 @@ bool RelationSet::incrementassignment(Hashtable *env, model *m) {
   }
 }
 
-RelationSet::RelationSet(Set *s, char *l,Type *tl) {
-  set=s;
-  type=TYPE_SET;
-  left=l;
-  tleft=tl;
-  tright=NULL;
-  right=NULL;
-}
 
-RelationSet::RelationSet(Set *s,char *l, Type *tl,char *r,Type *tr) {
-  set=s;
-  type=TYPE_RELATION;
-  left=l;
-  tleft=tl;
-  tright=tr;
-  right=r;
-}
-
-RelationSet::RelationSet(char *l,AElementexpr *lower,AElementexpr*upper) {
-  this->lower=lower;
-  this->upper=upper;
-  left=l;
-  type=TYPE_RANGE;
-}
-
-int RelationSet::gettype() {
-  return type;
-}

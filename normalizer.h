@@ -1,39 +1,9 @@
+// converts constraints into disjunctive normal form
+
 #ifndef NORMALIZER_H
 #define NORMALIZER_H
 #include "classlist.h"
 
-class NormalForm {
- public:
-  NormalForm(Constraint *c);
-  CoerceSentence * closestmatch(WorkSet *,processobject *po,Hashtable *env);
-  int getnumsentences();
-  CoerceSentence *getsentence(int i);
-  NormalForm(Rule *r);
- private:
-  Constraint *c; /*keep reference for quantifiers */
-  CoerceSentence **sentences;
-  int length;
-};
-
-class SentenceArray {
- public:
-  SentenceArray(CoerceSentence **sentences, int l);
-  int length;
-  CoerceSentence **sentences;
-};
-
-class CoerceSentence {
- public:
-  CoerceSentence(CoercePredicate **pred, int numpredicates);
-  CoercePredicate *getpredicate(int i);
-  int getnumpredicates();
-  ~CoerceSentence();
-  int cost(processobject *po, Hashtable *env);
-
- private:
-  CoercePredicate **predicates;
-  int numpreds;
-};
 
 class CoercePredicate {
  public:
@@ -59,6 +29,47 @@ class CoercePredicate {
   bool coercebool;
   Predicate *predicate;
 };
+
+
+
+class CoerceSentence {
+ public:
+  CoerceSentence(CoercePredicate **pred, int numpredicates);
+  CoercePredicate *getpredicate(int i);
+  int getnumpredicates();
+  ~CoerceSentence();
+  int cost(processobject *po, Hashtable *env);
+
+ private:
+  CoercePredicate **predicates;
+  int numpreds;
+};
+
+
+
+// represents a statement in normal form
+class SentenceArray {
+ public:
+  SentenceArray(CoerceSentence **sentences, int l);
+  int length;
+  CoerceSentence **sentences;
+};
+
+
+
+class NormalForm {
+ public:
+  NormalForm(Constraint *c);
+  CoerceSentence * closestmatch(WorkSet *,processobject *po,Hashtable *env);
+  int getnumsentences();
+  CoerceSentence *getsentence(int i);
+  NormalForm(Rule *r);
+ private:
+  Constraint *c; /*keep reference for quantifiers */
+  CoerceSentence **sentences;
+  int length;
+};
+
 
 SentenceArray * computesentences(Statement *st,bool stat);
 int costfunction(CoercePredicate *p);

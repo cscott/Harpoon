@@ -2,6 +2,9 @@
 #include "GenericHashtable.h"
 #include "element.h"
 
+
+// class WorkSet
+
 WorkSet::WorkSet() {
   ght=genallocatehashtable((unsigned int (*)(void *)) & hashelement,(int (*)(void *,void *)) & elementequals);
 }
@@ -62,6 +65,11 @@ bool WorkSet::isEmpty() {
 WorkSet::~WorkSet() {
   genfreehashtable(ght);
 }
+
+
+
+
+// class Iterator
 
 Iterator::Iterator(struct genhashtable *ght) {
   gi=gengetiterator(ght);

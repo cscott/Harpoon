@@ -1,6 +1,13 @@
+// evaluates model definition rules
+
 #ifndef PROCESSABSTRACT_H
 #define PROCESSABSTRACT_H
 #include "classlist.h"
+
+
+Element * evaluateexpr(model *m, AElementexpr *ee, Hashtable *env,bool enforcetyping,bool compute);
+
+
 
 class processabstract {
  public:
@@ -17,6 +24,8 @@ class processabstract {
   bool dirtyflag;
   bitreader * br;
 };
+
+
 
 #define TYPE_SET 1
 #define TYPE_RELATION 2
@@ -41,8 +50,10 @@ class RelationSet {
   Set *set;
 };
 
-Element * evaluateexpr(model *m, AElementexpr *ee, Hashtable *env,bool enforcetyping,bool compute);
 
+
+
+// Keeps the current state of the quantifiers of a given rule or constraint
 class State {
  public:
   State(Rule *r, Hashtable *h);

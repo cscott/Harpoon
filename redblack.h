@@ -1,5 +1,5 @@
 /*
- * RCS $Id: redblack.h,v 1.1 2003-02-21 16:13:54 bdemsky Exp $
+ * RCS $Id: redblack.h,v 1.2 2003-03-02 23:06:33 cristic Exp $
  */
 
 /*
@@ -76,11 +76,9 @@ void rbcloselist(RBLIST *);
 /*
  *
  * $Log: redblack.h,v $
- * Revision 1.1  2003-02-21 16:13:54  bdemsky
- * Adding c files for repair system.
+ * Revision 1.2  2003-03-02 23:06:33  cristic
  *
- * Revision 1.1  2003/02/21 16:11:56  bdemsky
- * Modified red-black tree - it implements a balanced interval tree...
+ * Added some comments.
  *
  * Revision 1.5  2002/01/30 07:54:53  damo
  * Fixed up the libtool versioning stuff (finally)

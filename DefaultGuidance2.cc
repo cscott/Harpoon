@@ -1,3 +1,5 @@
+// for the File System benchmark
+
 #include "DefaultGuidance2.h"
 #include "model.h"
 #include "dmodel.h"
@@ -40,6 +42,7 @@ char * DefGuidance2::removefromset(char * set) {
     return "FreeBlock";
   if (equivalentstrings(dr->getsuperset(ds)->getname(),"UsedInode"))
     return "FreeInode";
+
   DomainSet *ss=dr->getsuperset(ds);
   while(ss!=NULL&&ss->gettype()==DOMAINSET_PARTITION) {
     for(int i=0;i<ss->getnumsubsets();i++) {

@@ -1,3 +1,5 @@
+// Interface for reading structures
+
 #include "bitreader.h"
 #include <assert.h>
 #include "element.h"

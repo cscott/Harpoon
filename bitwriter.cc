@@ -1,3 +1,5 @@
+// Interface for writing structures
+
 #include "bitwriter.h"
 #include "bitreader.h"
 #include <assert.h>

@@ -1,3 +1,5 @@
+// converts constraints into disjunctive normal form
+
 #include "normalizer.h"
 #include "omodel.h"
 #include "processobject.h"
@@ -5,6 +7,116 @@
 #include <stdlib.h>
 #include "amodel.h"
 #include "common.h"
+
+
+
+// class CoercePredicate
+
+CoercePredicate::CoercePredicate(char *ts, char *lt, char *rs) {
+  triggerset=ts;
+  ltype=lt;
+  rtype=NULL;
+  relset=rs;
+  rule=false;
+  tuple=false;
+  predicate=NULL;
+}
+
+CoercePredicate::CoercePredicate(char *ts, char *lt, char *rt,char *rs) {
+  triggerset=ts;
+  ltype=lt;
+  rtype=rt;
+  relset=rs;
+  rule=false;
+  tuple=true;
+  predicate=NULL;
+}
+
+CoercePredicate::CoercePredicate(bool b, Predicate *p) {
+  rule=true;
+  coercebool=b;
+  predicate=p;
+  if((p->gettype()==PREDICATE_EQ1||
+      p->gettype()==PREDICATE_GTE1)&&coercebool==false) {
+    printf("Possible forcing size predicate to be false.  Error!\n");
+    exit(-1);
+  }
+}
+
+Predicate * CoercePredicate::getpredicate() {
+  return predicate;
+}
+
+bool CoercePredicate::isrule() {
+  return rule;
+}
+
+bool CoercePredicate::istuple() {
+  return tuple;
+}
+
+bool CoercePredicate::getcoercebool() {
+  return coercebool;
+}
+
+char * CoercePredicate::gettriggerset() {
+  return triggerset;
+}
+
+char * CoercePredicate::getrelset() {
+  return relset;
+}
+
+char * CoercePredicate::getltype() {
+  return ltype;
+}
+
+char * CoercePredicate::getrtype() {
+  return rtype;
+}
+
+
+
+
+// class CoerceSentence
+
+CoerceSentence::CoerceSentence(CoercePredicate **pred, int numpred) {
+  predicates=pred;
+  numpreds=numpred;
+}
+
+int CoerceSentence::cost(processobject *po, Hashtable *env) {
+  int cost=0;
+  for(int i=0;i<numpreds;i++) {
+    CoercePredicate *cp=predicates[i];
+    bool pvalue;
+    if (cp->getpredicate()!=NULL)
+      pvalue=po->processpredicate(cp->getpredicate(),env);
+    if (pvalue!=cp->getcoercebool())
+      cost+=costfunction(cp);
+  }
+  return cost;
+}
+
+CoercePredicate * CoerceSentence::getpredicate(int i) {
+  return predicates[i];
+}
+
+int CoerceSentence::getnumpredicates() {
+  return numpreds;
+}
+
+
+CoerceSentence::~CoerceSentence() {
+  for(int i=0;i<numpreds;i++)
+    delete(predicates[i]);
+  delete predicates;
+}
+
+
+
+
+// class NormalForm
 
 NormalForm::NormalForm(Constraint *c) {
   SentenceArray *sa=computesentences(c->getstatement(),true);
@@ -99,6 +211,8 @@ int costfunction(CoercePredicate *p) {
   return 1;
 }
 
+
+// computes the normal form of the given statement
 SentenceArray * computesentences(Statement *st,bool stat) {
   switch(st->gettype()) {
   case STATEMENT_OR: {
@@ -186,102 +300,13 @@ SentenceArray * computesentences(Statement *st,bool stat) {
   }
 }
 
+
+
+
+// class SentenceArray
+
 SentenceArray::SentenceArray(CoerceSentence **sentences, int l) {
   length=l;
   this->sentences=sentences;
 }
 
-CoerceSentence::CoerceSentence(CoercePredicate **pred, int numpred) {
-  predicates=pred;
-  numpreds=numpred;
-}
-
-int CoerceSentence::cost(processobject *po, Hashtable *env) {
-  int cost=0;
-  for(int i=0;i<numpreds;i++) {
-    CoercePredicate *cp=predicates[i];
-    bool pvalue;
-    if (cp->getpredicate()!=NULL)
-      pvalue=po->processpredicate(cp->getpredicate(),env);
-    if (pvalue!=cp->getcoercebool())
-      cost+=costfunction(cp);
-  }
-  return cost;
-}
-
-CoercePredicate * CoerceSentence::getpredicate(int i) {
-  return predicates[i];
-}
-
-int CoerceSentence::getnumpredicates() {
-  return numpreds;
-}
-
-CoercePredicate::CoercePredicate(char *ts, char *lt, char *rs) {
-  triggerset=ts;
-  ltype=lt;
-  rtype=NULL;
-  relset=rs;
-  rule=false;
-  tuple=false;
-  predicate=NULL;
-}
-
-CoercePredicate::CoercePredicate(char *ts, char *lt, char *rt,char *rs) {
-  triggerset=ts;
-  ltype=lt;
-  rtype=rt;
-  relset=rs;
-  rule=false;
-  tuple=true;
-  predicate=NULL;
-}
-
-CoercePredicate::CoercePredicate(bool b, Predicate *p) {
-  rule=true;
-  coercebool=b;
-  predicate=p;
-  if((p->gettype()==PREDICATE_EQ1||
-      p->gettype()==PREDICATE_GTE1)&&coercebool==false) {
-    printf("Possible forcing size predicate to be false.  Error!\n");
-    exit(-1);
-  }
-}
-
-Predicate * CoercePredicate::getpredicate() {
-  return predicate;
-}
-
-bool CoercePredicate::isrule() {
-  return rule;
-}
-
-bool CoercePredicate::istuple() {
-  return tuple;
-}
-
-bool CoercePredicate::getcoercebool() {
-  return coercebool;
-}
-
-CoerceSentence::~CoerceSentence() {
-  for(int i=0;i<numpreds;i++)
-    delete(predicates[i]);
-  delete predicates;
-}
-
-char * CoercePredicate::gettriggerset() {
-  return triggerset;
-}
-
-char * CoercePredicate::getrelset() {
-  return relset;
-}
-
-char * CoercePredicate::getltype() {
-  return ltype;
-}
-
-char * CoercePredicate::getrtype() {
-  return rtype;
-}

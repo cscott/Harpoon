@@ -1,3 +1,6 @@
+// provides an object wrapper around elementary types
+
+
 #include "element.h"
 #include <stdio.h>
 #include <assert.h>

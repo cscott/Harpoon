@@ -1,3 +1,5 @@
+// defines the sets and the relations used
+
 #ifndef DMODEL_H
 #define DMODEL_H
 
@@ -8,6 +10,7 @@
 #define DOMAINSET_PARTITION 2
 #define DOMAINSET_TYPED 0x100
 
+// represents a set
 class DomainSet {
  public:
   DomainSet(char *name);
@@ -23,19 +26,23 @@ class DomainSet {
   char * getelementtype();
   void reset();
  private:
-  WorkSet *set;
-  char *type;
-  char *setname;
-  int flag;
-  char ** subsets;
-  int numsubsets;
+  WorkSet *set;   // the set itself
+  char *type;     // the type of the elements in the set 
+  char *setname;  // the name of the set
+  int flag; 
+  char ** subsets;// the subsets
+  int numsubsets; 
 };
+
+
+
 
 #define DRELATION_SINGDOMAIN 0x1
 #define DRELATION_MANYDOMAIN 0x2
 #define DRELATION_SINGRANGE 0x10
 #define DRELATION_MANYRANGE 0x20
 
+// represents a relation
 class DRelation {
  public:
   DRelation(char *name, char *d, char *r, int t, bool);
@@ -55,6 +62,9 @@ class DRelation {
   WorkRelation *relation;
 };
 
+
+
+// manages the entire collection of sets and relations
 class DomainRelation {
  public:
   DomainRelation(DomainSet **s, int ns, DRelation **r,int nr);
@@ -77,6 +87,7 @@ class DomainRelation {
   DRelation * getrelation(int i);
   void fixstuff();
   void reset();
+
  private:
   bool checkrelations(DRelation *dr);
   bool checksubset(DomainSet *ds);

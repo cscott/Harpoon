@@ -1,3 +1,6 @@
+// provides an object wrapper around elementary types
+
+
 #ifndef ELEMENT_H
 #define ELEMENT_H
 #include "common.h"

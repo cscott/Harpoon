@@ -1,4 +1,4 @@
-static char rcsid[]="$Id: redblack.c,v 1.1 2003-02-21 16:13:54 bdemsky Exp $";
+static char rcsid[]="$Id: redblack.c,v 1.2 2003-03-02 23:06:33 cristic Exp $";
 
 /*
    Redblack balanced tree algorithm
@@ -921,11 +921,9 @@ dumptree(struct rbnode *x, int n)
 
 /*
  * $Log: redblack.c,v $
- * Revision 1.1  2003-02-21 16:13:54  bdemsky
- * Adding c files for repair system.
+ * Revision 1.2  2003-03-02 23:06:33  cristic
  *
- * Revision 1.1  2003/02/21 16:11:56  bdemsky
- * Modified red-black tree - it implements a balanced interval tree...
+ * Added some comments.
  *
  * Revision 1.5  2002/01/30 07:54:53  damo
  * Fixed up the libtool versioning stuff (finally)

@@ -1,3 +1,5 @@
+// implements a generic hash table
+
 #ifndef GENHASHTABLE
 #define GENHASHTABLE
 #define geninitialnumbins 10
@@ -28,13 +30,15 @@ struct geniterator {
   bool finished;
 };
 
+struct genhashtable * genallocatehashtable(unsigned int (*hash_function)(void *),int (*comp_function)(void *,void *));
+void genfreehashtable(struct genhashtable * ht);
+
 void * getnext(struct genhashtable *,void *);
 int genputtable(struct genhashtable *, void *, void *);
 void * gengettable(struct genhashtable *, void *);
 int gencontains(struct genhashtable *, void *);
 unsigned int genhashfunction(struct genhashtable *,void *);
-struct genhashtable * genallocatehashtable(unsigned int (*hash_function)(void *),int (*comp_function)(void *,void *));
-void genfreehashtable(struct genhashtable * ht);
+
 int hashsize(struct genhashtable * ht);
 void genfreekey(struct genhashtable *ht, void *);
 struct geniterator * gengetiterator(struct genhashtable *ht);

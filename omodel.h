@@ -1,3 +1,6 @@
+// Defines the Internal Constraint Language
+
+
 #ifndef ObjectModel_H
 #define ObjectModel_H
 #include<unistd.h>
@@ -8,6 +11,7 @@
 #define LITERAL_NUMBER 1
 #define LITERAL_TOKEN 2
 #define LITERAL_BOOL 3
+
 
 class Literal {
  public:
@@ -22,6 +26,9 @@ class Literal {
   char *str;
 };
 
+
+
+
 class Setlabel {
  public:
   Setlabel(char *s);
@@ -31,20 +38,63 @@ class Setlabel {
   char *str;
 };
 
-class Constraint {
+
+
+
+
+#define SET_label 0
+#define SET_literal 1
+
+class Set {
  public:
-  Constraint();
-  Constraint(Quantifier **q, int nq);
-  void setstatement(Statement *s);
+  Set(Setlabel *sl);
+  Set(Literal **l, int nl);
+  ~Set();
   void print();
-  int numquants();
-  Quantifier * getquant(int i);
-  Statement * getstatement();
+  int gettype();
+  char * getname();
+  int getnumliterals();
+  Literal * getliteral(int i);
  private:
-  int numquantifiers;
-  Quantifier **quantifiers;
-  Statement *statement;
+  int type;
+  Setlabel *setlabel;
+  int numliterals;
+  Literal **literals;
 };
+
+
+
+
+
+class Label {
+ public:
+  Label(char *s);
+  void print();
+  char* label() {
+    return str;
+  }
+
+ private:
+  char *str;
+};
+
+
+
+
+
+class Relation {
+ public:
+  Relation(char * r);
+  void print();
+  char * getname();
+
+ private:
+  char *str;
+};
+
+
+
+
 
 class Quantifier {
  public:
@@ -58,54 +108,36 @@ class Quantifier {
   Set *set;
 };
 
-#define STATEMENT_OR 1
-#define STATEMENT_AND 2
-#define STATEMENT_NOT 3
-#define STATEMENT_PRED 4
 
-class Statement {
+
+
+
+
+#define SETEXPR_LABEL 1
+#define SETEXPR_REL 2
+#define SETEXPR_INVREL 3
+
+class Setexpr {
  public:
-  Statement(Statement *l, Statement *r, int t);
-  Statement(Statement *l);
-  Statement(Predicate *p);
+  Setexpr(Setlabel *sl);
+  Setexpr(Label *l, bool invert, Relation *r);
   void print();
-  int gettype();
-  Statement *getleft();
-  Statement *getright();
-  Predicate *getpredicate();
- private:
-  int type;
-  Statement *left,*right;
-  Predicate *pred;
-};
-
-#define PREDICATE_LT 1
-#define PREDICATE_LTE 2
-#define PREDICATE_EQUALS 3
-#define PREDICATE_GTE 4
-#define PREDICATE_GT 5
-#define PREDICATE_SET 6
-#define PREDICATE_EQ1 7
-#define PREDICATE_GTE1 8
-
-class Predicate {
- public:
-  Predicate(Label *l,Setexpr *se);
-  Predicate(Valueexpr *ve, int t, Elementexpr *ee);
-  Predicate(bool greaterthan, Setexpr *se);
-  void print();
-  int gettype();
-  Valueexpr * getvalueexpr();
-  Elementexpr * geteleexpr();
+  Setlabel * getsetlabel();
+  Relation * getrelation();
   Label * getlabel();
-  Setexpr * getsetexpr();
+  int gettype();
+
  private:
   int type;
-  Valueexpr *valueexpr;
-  Elementexpr *elementexpr;
+  Setlabel *setlabel;
   Label *label;
-  Setexpr *setexpr;
+  Relation *relation;
 };
+
+
+
+
+
 
 class Valueexpr {
  public:
@@ -118,6 +150,10 @@ class Valueexpr {
   Label *label;
   Relation *relation;
 };
+
+
+
+
 
 
 #define ELEMENTEXPR_LABEL 1
@@ -153,66 +189,83 @@ class Elementexpr {
   Setexpr *setexpr;
 };
 
-#define SET_label 0
-#define SET_literal 1
 
-class Set {
+
+
+
+#define PREDICATE_LT 1
+#define PREDICATE_LTE 2
+#define PREDICATE_EQUALS 3
+#define PREDICATE_GTE 4
+#define PREDICATE_GT 5
+#define PREDICATE_SET 6
+#define PREDICATE_EQ1 7
+#define PREDICATE_GTE1 8
+
+class Predicate {
  public:
-  Set(Setlabel *sl);
-  Set(Literal **l, int nl);
-  ~Set();
+  Predicate(Label *l,Setexpr *se);
+  Predicate(Valueexpr *ve, int t, Elementexpr *ee);
+  Predicate(bool greaterthan, Setexpr *se);
   void print();
   int gettype();
-  char * getname();
-  int getnumliterals();
-  Literal * getliteral(int i);
- private:
-  int type;
-  Setlabel *setlabel;
-  int numliterals;
-  Literal **literals;
-};
-
-#define SETEXPR_LABEL 1
-#define SETEXPR_REL 2
-#define SETEXPR_INVREL 3
-
-class Setexpr {
- public:
-  Setexpr(Setlabel *sl);
-  Setexpr(Label *l, bool invert, Relation *r);
-  void print();
-  Setlabel * getsetlabel();
-  Relation * getrelation();
+  Valueexpr * getvalueexpr();
+  Elementexpr * geteleexpr();
   Label * getlabel();
-  int gettype();
-
+  Setexpr * getsetexpr();
  private:
   int type;
-  Setlabel *setlabel;
+  Valueexpr *valueexpr;
+  Elementexpr *elementexpr;
   Label *label;
-  Relation *relation;
+  Setexpr *setexpr;
 };
 
-class Relation {
+
+
+
+
+
+#define STATEMENT_OR 1
+#define STATEMENT_AND 2
+#define STATEMENT_NOT 3
+#define STATEMENT_PRED 4
+
+class Statement {
  public:
-  Relation(char * r);
+  Statement(Statement *l, Statement *r, int t);
+  Statement(Statement *l);
+  Statement(Predicate *p);
   void print();
-  char * getname();
-
+  int gettype();
+  Statement *getleft();
+  Statement *getright();
+  Predicate *getpredicate();
  private:
-  char *str;
+  int type;
+  Statement *left,*right;
+  Predicate *pred;
 };
 
-class Label {
+
+
+
+
+
+class Constraint {
  public:
-  Label(char *s);
+  Constraint();
+  Constraint(Quantifier **q, int nq);
+  void setstatement(Statement *s);
   void print();
-  char* label() {
-    return str;
-  }
-
+  int numquants();
+  Quantifier * getquant(int i);
+  Statement * getstatement();
  private:
-  char *str;
+  int numquantifiers;
+  Quantifier **quantifiers;
+  Statement *statement;
 };
+
+
 #endif

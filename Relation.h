@@ -10,6 +10,8 @@ class Tuple {
   void *left,*right;
 };
 
+
+
 #define WRELATION_SINGDOMAIN 0x1
 #define WRELATION_MANYDOMAIN 0x2
 #define WRELATION_SINGRANGE 0x10

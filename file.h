@@ -1,5 +1,16 @@
 #ifndef FILE_H
 #define FILE_H
+
+#define BLOCKSIZE 8192
+#define NUMBLOCK 1024
+#define LENGTH BLOCKSIZE*NUMBLOCK
+#define NUMINODES BLOCKSIZE/56
+
+struct block {
+  char array[BLOCKSIZE];
+};
+
+
 struct SuperBlock {
   int FreeBlockCount;
   int FreeInodeCount;
@@ -9,6 +20,7 @@ struct SuperBlock {
   int blocksize;
 };
 
+
 struct GroupBlock {
   int BlockBitmapBlock;
   int InodeBitmapBlock;
@@ -17,41 +29,45 @@ struct GroupBlock {
   int GroupFreeInodeCount;
 };
 
+
+struct BlockBitmap {
+  char blocks[NUMBLOCK/8+1];
+};
+
+
+struct InodeBitmap {
+  char inode[NUMINODES/8+1];
+};
+
+
 struct Inode {
   int filesize;
   int Blockptr[12];
   int referencecount;
 };
 
+
+//the inode table
+struct InodeBlock {
+  struct Inode entries[NUMINODES];
+};
+
+
+
 struct DirectoryEntry {
   char name[124];
   int inodenumber;
 };
 
-#define BLOCKSIZE 8192
-#define NUMBLOCK 1024
-#define LENGTH BLOCKSIZE*NUMBLOCK
-#define NUMINODES BLOCKSIZE/56
 
-struct InodeBlock {
-  struct Inode entries[NUMINODES];
-};
 
 struct DirectoryBlock {
   struct DirectoryEntry entries[BLOCKSIZE/128];
 };
 
-struct block {
-  char array[BLOCKSIZE];
-};
 
-struct InodeBitmap {
-  char inode[NUMINODES/8+1];
-};
 
-struct BlockBitmap {
-  char blocks[NUMBLOCK/8+1];
-};
+
 
 void createdisk();
 void createfile(struct block *ptr,char *filename, char *buf,int buflen);
