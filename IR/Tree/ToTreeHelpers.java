@@ -9,13 +9,23 @@ import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.UseDefer;
+import harpoon.IR.Quads.MONITORENTER;
+import harpoon.IR.Quads.MONITOREXIT;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.LowQuad.PCALL;
+import harpoon.IR.LowQuad.PSET;
 import harpoon.Temp.Temp;
 import harpoon.Util.Collections.BinaryHeap;
+import harpoon.Util.Collections.BinomialHeap;
+import harpoon.Util.Collections.FibonacciHeap;
 import harpoon.Util.Collections.Heap;
+import harpoon.Util.Environment;
+import harpoon.Util.HashEnvironment;
 import harpoon.Util.Util;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -23,7 +33,7 @@ import java.util.Set;
  * <code>ToTreeHelpers</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTreeHelpers.java,v 1.1.2.2 2000-02-12 17:50:05 cananian Exp $
+ * @version $Id: ToTreeHelpers.java,v 1.1.2.3 2000-02-13 02:34:58 cananian Exp $
  */
 abstract class ToTreeHelpers {
     //------------ EdgeOracle IMPLEMENTATIONS ------------------
@@ -68,7 +78,7 @@ abstract class ToTreeHelpers {
 	    // we're going to need a mapping from HCodeElements to Map.Entry's
 	    Map m = new HashMap();
 	    // make the priority queue, and initialize it.
-	    Heap Q = new BinaryHeap();
+	    Heap Q = new BinaryHeap(); // new FibonacciHeap();
 	    for (Iterator it=hc.getElementsI(); it.hasNext(); ) {
 		HCodeElement hce = (HCodeElement) it.next();
 		// d[v] = infinity.
@@ -146,5 +156,71 @@ abstract class ToTreeHelpers {
     static class DefaultFoldNanny implements ToTree.FoldNanny {
 	DefaultFoldNanny() { }
 	public boolean canFold(HCodeElement hce, Temp t) { return false; }
+    }
+    static class SSISimpleFoldNanny implements ToTree.FoldNanny {
+	final Set safe = new HashSet();
+	SSISimpleFoldNanny(HCode hc) {
+	    // first, find all the single-use variables
+	    HashSet singleUse = new HashSet(), multiUse = new HashSet();
+	    for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
+		Quad q = (Quad) it.next();
+		for (Iterator it2 = q.useC().iterator(); it2.hasNext(); ) {
+		    Temp t = (Temp) it2.next();
+		    if (multiUse.contains(t)) continue;
+		    if (singleUse.contains(t)) {
+			multiUse.add(t); singleUse.remove(t);
+		    } else singleUse.add(t);
+		}
+	    }
+	    multiUse = null;
+	    // now filter the safe set.
+	    // we don't want anything folded which is live over a memory
+	    // store or a synchronization.  we're going to be a bit
+	    // conservative here.
+	    dfs((Quad)hc.getRootElement(), new HashSet(),
+		new HashEnvironment(), singleUse);
+	    // done!
+	    //System.err.print("[FOLDING: "+safe+"]");
+	}
+	void dfs(Quad q, Set seen, Environment reachingDefs, Set singleUse) {
+	    Util.assert(!seen.contains(q));
+	    seen.add(q);
+	    { // if def reached this use, add to safe set.
+		Temp[] use = q.use();
+		for (int i=0; i<use.length; i++)
+		    if (reachingDefs.containsKey(use[i]))
+			safe.add(use[i]); // reaching def means its safe.
+	    }
+	    { // stores and syncs clear the defs
+		if (isBarrier(q))
+		    reachingDefs.clear();
+	    }
+	    { // add environment entries for all appropriate defs
+		Temp[] def = q.def();
+		for (int i=0; i<def.length; i++)
+		    if (singleUse.contains(def[i]))
+			if (!(q instanceof PCALL)) // CALLS CAN NOT BE FOLDED!
+			    reachingDefs.put(def[i], def[i]);
+	    }
+	    { // recurse.
+		Quad[] next = q.next();
+		Environment.Mark m = reachingDefs.getMark();
+		for (int i=0; i<next.length; i++) {
+		    if (!seen.contains(next[i])) {
+			dfs(next[i], seen, reachingDefs, singleUse);
+			reachingDefs.undoToMark(m);
+		    }
+		}
+	    }
+	}
+	public static boolean isBarrier(Quad q) {
+	    // ASET,CALL,SET are Quad-only.  We only deal with LowQuads here
+	    if (q instanceof MONITORENTER || q instanceof MONITOREXIT ||
+		q instanceof PCALL || q instanceof PSET) return false;
+	    return true;
+	}
+	public boolean canFold(HCodeElement hce, Temp t) {
+	    return safe.contains(t);
+	}
     }
 }
