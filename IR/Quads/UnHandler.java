@@ -21,9 +21,11 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.31 2001-03-03 23:28:00 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.32 2001-07-05 19:07:39 cananian Exp $
  */
 final class UnHandler {
+    private static final boolean ARRAY_BOUNDS_CHECKS
+	= !Boolean.getBoolean("harpoon.unhandler.noarraychecks");
     // entry point.
     public static final Quad unhandler(final QuadFactory qf, final Code code,
 				       boolean coalesce_exceptions) {
@@ -438,7 +440,8 @@ final class UnHandler {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm), head = nq;
 	    Type Tobj = ti.get(q.objectref());
 	    Type Tind = ti.get(q.index());
-	    if (! (Tobj.isFixedArray() &&
+	    if (ARRAY_BOUNDS_CHECKS &&
+		! (Tobj.isFixedArray() &&
 		   Tind.isIntConst() &&
 		   Tind.getConstValue() < Tobj.getArrayLength() &&
 		   Tind.getConstValue() >= 0) )
@@ -499,7 +502,8 @@ final class UnHandler {
 	    // do COMPONENTOF test for non-primitive arrays.
 	    if (!q.type().isPrimitive())
 		head = componentCheck(q, head, q.objectref(), q.src());
-	    if (! (Tobj.isFixedArray() &&
+	    if (ARRAY_BOUNDS_CHECKS &&
+		! (Tobj.isFixedArray() &&
 		   Tind.isIntConst() &&
 		   Tind.getConstValue() < Tobj.getArrayLength() &&
 		   Tind.getConstValue() >= 0) )
