@@ -8,7 +8,6 @@ import harpoon.Analysis.ContBuilder.ContBuilder;
 import harpoon.Analysis.EnvBuilder.EnvBuilder;
 import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.Analysis.Quads.Unreachable;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.AllCallers;
 import harpoon.ClassFile.CachingCodeFactory;
@@ -71,7 +70,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.32 2000-07-03 01:40:58 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.33 2000-10-16 23:51:50 cananian Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;

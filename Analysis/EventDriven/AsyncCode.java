@@ -8,7 +8,6 @@ import harpoon.Analysis.ContBuilder.ContBuilder;
 import harpoon.Analysis.EnvBuilder.EnvBuilder;
 import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.Analysis.Quads.Unreachable;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.AllCallers;
 import harpoon.ClassFile.CachingCodeFactory;
@@ -63,7 +62,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.64 2000-10-06 21:18:47 cananian Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.65 2000-10-16 23:51:49 cananian Exp $
  */
 public class AsyncCode {
 

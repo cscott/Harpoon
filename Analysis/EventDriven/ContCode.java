@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.EventDriven;
 
-import harpoon.Analysis.Quads.Unreachable;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HField;
@@ -22,7 +21,7 @@ import java.util.Map;
  * using <code>quad-no-ssa</code> <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContCode.java,v 1.1.2.3 2000-02-13 04:39:35 bdemsky Exp $
+ * @version $Id: ContCode.java,v 1.1.2.4 2000-10-16 23:51:50 cananian Exp $
  */
 public class ContCode extends harpoon.IR.Quads.QuadRSSI {
 
