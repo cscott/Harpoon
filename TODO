@@ -1,4 +1,11 @@
 ---- Sep-04-98
+Add FOOTER block to allow reverse traversals.
+Fix RET handling -- RET should return to source of JSR.
+Fix the way the 'any exception' try is handled (should rewrite as 'Throwable')
+Check assumption that 'any' == Throwable in exception handler description.
+Make list of exception handling statements in translate phase so we can
+ strip them all out when regenerating java.  obviously try/catch block-related
+ statements must stay.
 Make monitor blocks work.
 Enclose synchronized methods in monitor blocks.
 Runtime exception check on MONITOREXIT.
