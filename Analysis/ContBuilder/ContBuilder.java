@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * <code>quad-no-ssa</code> form.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContBuilder.java,v 1.1.2.3 1999-11-17 00:15:30 kkz Exp $
+ * @version $Id: ContBuilder.java,v 1.1.2.4 1999-11-20 06:37:34 bdemsky Exp $
  */
 public class ContBuilder {
     protected final UpdateCodeFactory ucf;
@@ -76,6 +76,10 @@ public class ContBuilder {
 	// extend <type>Continuation.
 	String s = "harpoon.Analysis.ContBuilder." + 
 	    getPrefix(hcrettype) + "Continuation";
+	//BCD start
+	System.out.println("Setting superclass "+s);
+	//BCD stop
+
 	try {
 	    cont.setSuperclass(HClass.forName(s));
 	} catch (NoClassDefFoundError e) {

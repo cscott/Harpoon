@@ -31,7 +31,7 @@ import java.util.Map;
  * using <code>quad-no-ssa</code> <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContCode.java,v 1.1.2.3 1999-11-17 00:15:30 kkz Exp $
+ * @version $Id: ContCode.java,v 1.1.2.4 1999-11-20 06:37:34 bdemsky Exp $
  */
 public class ContCode extends Code {
 
@@ -175,13 +175,14 @@ public class ContCode extends Code {
 	}
 
 	// add "next.resume(retval)" or "next.exception(retval)" CALL
+	Temp exc=new Temp(tf);
 	if (retval != null) {
 	    rc = new CALL(this.qf, r, resume, 
-			  new Temp[] {new Temp(tf), retval}, null, null, 
+			  new Temp[] {new Temp(tf), retval}, null, exc, 
 			  true, false, new Temp[0]);
 	} else {
 	    rc = new CALL(this.qf, r, resume, new Temp[] {new Temp(tf)}, 
-	    null, null, true, false, new Temp[0]);
+	    null, exc, true, false, new Temp[0]);
 	}
 
 	Edge[] prevs = r.prevEdge();
@@ -191,9 +192,16 @@ public class ContCode extends Code {
 			 rc, prevs[i].which_pred());
 	}
 
+	THROW throwq=new THROW(this.qf, nc, exc);
+	Quad.addEdge(rc, 1, throwq, 0);
+
 	RETURN nr = new RETURN(this.qf, nc, null);
+	PHI phi= new PHI(this.qf, nc, new Temp[0], 2);
+	Quad.addEdge(throwq,0, phi, 0);
+	Quad.addEdge(nr, 0, phi, 1);
+
 	Quad.addEdge(rc, 0, nr, 0);
-	Quad.addEdge(nr, 0, r.next(0), r.nextEdge(0).which_pred());
+	Quad.addEdge(phi, 0, r.next(0), r.nextEdge(0).which_pred());
 
 	Unreachable.prune(h);
 
@@ -201,3 +209,5 @@ public class ContCode extends Code {
 	return h;
     }    
 }
+
+

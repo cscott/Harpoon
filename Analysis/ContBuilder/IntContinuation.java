@@ -7,7 +7,7 @@ package harpoon.Analysis.ContBuilder;
  * <code>IntContinuation</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: IntContinuation.java,v 1.1.2.2 1999-11-12 05:18:37 kkz Exp $
+ * @version $Id: IntContinuation.java,v 1.1.2.3 1999-11-20 06:37:34 bdemsky Exp $
  */
 public abstract class IntContinuation implements Continuation {
     protected IntResultContinuation next;
@@ -15,4 +15,5 @@ public abstract class IntContinuation implements Continuation {
     public void setNext(IntResultContinuation next) {
 	this.next = next;
     }
+    public static int result;
 }
