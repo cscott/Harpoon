@@ -14,7 +14,7 @@
  */
 JNIEXPORT void JNICALL Java_java_lang_Runtime_exitInternal
   (JNIEnv *env, jobject objRuntime, jint status) {
-    fni_runtime_exitInternal(status);
+    fni_runtime_exitInternal(env, status);
 }
 
 /*

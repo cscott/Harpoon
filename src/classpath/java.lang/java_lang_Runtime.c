@@ -104,7 +104,7 @@ JNIEXPORT void JNICALL Java_java_lang_Runtime_runFinalizersOnExitInternal
  */
 JNIEXPORT void JNICALL Java_java_lang_Runtime_exitInternal
   (JNIEnv *env, jobject runtime, jint status) {
-    fni_runtime_exitInternal(status);
+    fni_runtime_exitInternal(env, status);
 }
 
   /**
@@ -122,6 +122,7 @@ JNIEXPORT void JNICALL Java_java_lang_Runtime_exitInternal
 JNIEXPORT jint JNICALL Java_java_lang_Runtime_nativeLoad
   (JNIEnv *env, jobject runtime, jstring filename) {
     /* yeah, we already loaded this. =) so do nothing. */
+    return 1;
 }
 
   /**
@@ -163,7 +164,7 @@ JNIEXPORT jstring JNICALL Java_java_lang_Runtime_nativeGetLibname
  * Signature: ([Ljava/lang/String;[Ljava/lang/String;Ljava/io/File;)Ljava/lang/Process;
  */
 JNIEXPORT jobject JNICALL Java_java_lang_Runtime_execInternal
-  (JNIEnv *env, jobject runtime, jobjectArray cmd, jobjectArray env,
+  (JNIEnv *env, jobject runtime, jobjectArray cmd, jobjectArray environment,
    jobject dir) {
     assert(0); /* unimplemented */
 }
