@@ -11,7 +11,7 @@ import harpoon.Util.BasicBlocks.BBConverter;
  into <code>LightBasicBlock</code>s.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: LBBConverter.java,v 1.1.2.5 2001-06-17 22:37:13 cananian Exp $
+ * @version $Id: LBBConverter.java,v 1.1.2.6 2001-12-16 05:19:20 salcianu Exp $
  */
 public class LBBConverter implements java.io.Serializable {
     
@@ -22,7 +22,7 @@ public class LBBConverter implements java.io.Serializable {
         this.bbconv = bbconv;
     }
 
-    /** Returns a <code>LighBasicBlock.Factory</code> for the body of
+    /** Returns a <code>LightBasicBlock.Factory</code> for the body of
 	a method. */
     public LightBasicBlock.Factory convert2lbb(HMethod hm){
 	return new LightBasicBlock.Factory(bbconv.convert2bb(hm));
