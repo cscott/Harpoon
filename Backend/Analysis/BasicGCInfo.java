@@ -11,6 +11,7 @@ import harpoon.Analysis.Instr.RegAlloc.IntermediateCodeFactory;
 import harpoon.Analysis.Liveness;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Maps.Derivation.DList;
+import harpoon.Analysis.Maps.TypeMap.TypeNotKnownException;
 import harpoon.Analysis.ReachingDefs;
 import harpoon.Analysis.ReachingDefsImpl;
 import harpoon.Backend.Generic.Frame;
@@ -57,7 +58,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.16 2000-07-06 21:15:51 kkz Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.17 2000-07-07 16:03:38 kkz Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
@@ -156,7 +157,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		// For now, ignoring back edges.
 		GCPointFinder gcpf = 
 		    new GCPointFinder(hm, hc, gcps, ltAnalysis, rdAnalysis, 
-				      new HashSet(), hc.getDerivation());
+				      new HashSet(), hc.getDerivation(), ud);
 		for(Iterator instrs = hc.getElementsL().iterator();
 		    instrs.hasNext(); )
 		    ((Instr)instrs.next()).accept(gcpf);
@@ -237,6 +238,8 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		protected final harpoon.Analysis.Maps.Derivation d;
 		protected final HMethod hm;
 		protected final HCode hc;
+		protected final Set specialRegisters;
+		protected final UseDefer ud;
 		protected int index = 0;
 		/** Creates a <code>GCPointFinder</code> object.
 		    @param results
@@ -251,7 +254,8 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		public GCPointFinder(HMethod hm, HCode hc, List results, 
 				     LiveTemps lt, 
 				     ReachingDefs rd, Set s, 
-				     harpoon.Analysis.Maps.Derivation d) {
+				     harpoon.Analysis.Maps.Derivation d,
+				     UseDefer ud) {
 		    this.hm = hm;
 		    this.hc = hc;
 		    Util.assert(results != null && results.isEmpty());
@@ -261,6 +265,12 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    this.s = s;
 		    this.d = d;
 		    this.tl = ((IntermediateCode)hc).getTempLocator();
+		    this.ud = ud;
+		    specialRegisters = new HashSet();
+		    specialRegisters.addAll
+			(f.getRegFileInfo().getAllRegistersC());
+		    specialRegisters.removeAll
+			(f.getRegFileInfo().getGeneralRegistersC());
 		}
 		public void visit(InstrCALL c) {
 		    // all InstrCALLs are GC points
@@ -342,10 +352,34 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 				    i.toString());
 			Instr defPt = (Instr)defPtsit.next();
 			// all of the above defPts should work
-			DList ddl = d.derivation(defPt, t);
+			DList ddl;
+			try {
+			    ddl = d.derivation(defPt, t);
+			} catch (TypeNotKnownException e) {
+			    System.out.println
+				("kkz0: "+e.toString()+" thrown for "+
+				 t.toString()+" at def "+defPt.toString()+
+				 " (defC:"+
+				 new java.util.ArrayList(ud.defC(defPt))+")");
+			    if (specialRegisters.contains(t))
+				continue;
+			    else
+				throw e;
+			}			    
 			if (ddl == null) {
 			    // try and find its type
-			    HClass hclass = d.typeMap(i, t);
+			    HClass hclass;
+			    try {
+				hclass = d.typeMap(defPt, t);
+			    } catch (TypeNotKnownException e) {
+				System.out.println
+				    ("kkz0: "+e.toString()+" thrown for "+
+				     t.toString()+" at def "+defPt.toString());
+				if (specialRegisters.contains(t))
+				    continue;
+				else
+				    throw e;
+			    }
 			    if (hclass == null) {
 				// no derivation, no type means
 				// this is a callee-saved register
