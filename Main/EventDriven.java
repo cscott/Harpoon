@@ -33,7 +33,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.6 2000-01-15 01:12:32 cananian Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.7 2000-01-16 03:54:28 bdemsky Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
@@ -97,6 +97,9 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	System.out.println("Running ClassHierarchy On converted hierarchy");
 	WorkSet todo=new WorkSet();
 	todo.add(mconverted);
+	todo.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
+		 (linker));
+	todo.addAll(knownBlockingMethods());
 	ch=null;
 	ClassHierarchy ch1=new QuadClassHierarchy(linker,todo,hcf);
 
