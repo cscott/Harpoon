@@ -37,15 +37,16 @@ import java.util.AbstractSet;
     This has a number of implications for the behavior of
     <code>MultiMap</code>:
 
-    <BR> Let 
-            <code>mm</code> be a <code>MultiMap</code>,
-	    <code>k</code> be an <code>Object</code> (which may or may
-	          not be a Key in <code>mm</code>
-	    <code>c</code> is the <code>Collection</code> returned by
-	          <code>mm.getCollection(k)</code>.
+    <BR> Let <UL>
+         <LI> <code>mm</code> be a <code>MultiMap</code>,
+	 <LI> <code>k</code> be an <code>Object</code> (which may or may
+	          not be a Key in <code>mm</code>)
+	 <LI> <code>c</code> be the <code>Collection</code> returned by
+	          <code>mm.getValues(k)</code>.
+    </UL>
     <BR> Then <code>c</code> will either be a non-empty
          <code>Collection</code> (the case where <code>k</code> is a
-	 Key in <code>mm</code> or it will be a empty collection (the
+	 Key in <code>mm</code> or it will be an empty collection (the
 	 case where <code>k</code> is not a Key in <code>mm</code>.
 	 In this case, however, <code>k</code> is still considered to
 	 not be a Key in <code>mm</code> until <code>c</code> is made
@@ -69,7 +70,7 @@ import java.util.AbstractSet;
     map to more than one value.
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.2 1999-10-20 06:29:09 pnkfelix Exp $
+    @version $Id: MultiMap.java,v 1.1.2.3 1999-10-20 07:19:07 pnkfelix Exp $
  */
 public class MultiMap implements Map {
     
@@ -349,7 +350,7 @@ public class MultiMap implements Map {
     
     /** Returns the collection of Values associated with
 	<code>key</code>.  Modifications to the returned
-	<code>Collection</code> affect <code>this</code> as well.  If
+	<code>Collection</code> affect <code>this</code> as well.  If 
 	there are no Values currently associated with
 	<code>key</code>, constructs a new, mutable, empty
 	<code>Collection</code> and returns it.
