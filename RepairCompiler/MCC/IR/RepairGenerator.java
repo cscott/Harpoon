@@ -1252,6 +1252,8 @@ public class RepairGenerator {
     }
 
     private boolean need_compensation(Rule r) {
+	if (!Compiler.REPAIR)
+	    return false;
 	GraphNode gn=(GraphNode)termination.scopefalsify.get(r);
 	for(Iterator edgeit=gn.edges();edgeit.hasNext();) {
 	    GraphNode.Edge edge=(GraphNode.Edge)edgeit.next();
