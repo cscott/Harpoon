@@ -3,9 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
-import harpoon.Analysis.Instr.AppelRegAlloc.Move;
-import harpoon.Analysis.Instr.AppelRegAlloc.MoveList;
-
 import harpoon.IR.Assem.Instr;
 
 import harpoon.Temp.Temp;
@@ -25,9 +22,11 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.4 2001-06-18 16:03:54 pnkfelix Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.5 2001-06-20 18:10:23 pnkfelix Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
+    public static final boolean CHECK_INV = false;
+
     public AppelRegAllocClasses(harpoon.Backend.Generic.Code code) { 
 	super(code); 
     }
@@ -482,6 +481,217 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	public boolean isEmpty() { return size == 0; }
     }
 
+
+
+
+    final class Move {
+	Collection dsts() { return Collections.singleton(dst); }
+	Collection srcs() { return Collections.singleton(src); }
+	Node dst, src;
+	Move s_prev, s_next;
+	MoveSet s_rep; // Set Representative
+	Instr instr = null; // null for dummy header Moves
+
+	// dummy ctor
+	Move() { s_prev = s_next = this; }
+
+	Move(Instr i, Node dest, Node source) {
+	    this();
+	    instr = i;
+	    this.dst = dest;
+	    this.src = source;
+	}
+	public boolean isCoalesced()   { return s_rep == coalesced_moves; }
+	public boolean isConstrained() { return s_rep == constrained_moves; }
+	public boolean isFrozen()      { return s_rep == frozen_moves; }
+	public boolean isWorklist()    { return s_rep == worklist_moves; }
+	public boolean isActive()      { return s_rep == active_moves; }
+
+	public String toString() {
+	    // remove package info cruft from identity-based String
+	    String s = super.toString();
+	    int i = s.indexOf("Move");
+	    return 
+		s.substring(i)+
+		" set:"+s_rep+
+		" instr:"+instr;
+	}
+    }
+
+    HashMap instrToMove;
+    
+    MoveSet coalesced_moves;
+    MoveSet constrained_moves;
+    MoveSet frozen_moves;
+    MoveSet worklist_moves;
+    MoveSet active_moves;
+    void checkMoveSets() {
+	if( ! CHECK_INV ) 
+	    return;
+
+	MoveSet[] sets = new MoveSet[]{
+	    coalesced_moves,constrained_moves,
+	    frozen_moves,worklist_moves,
+	    active_moves
+	};
+	for(int i=0; i<sets.length; i++) 
+	    sets[i].checkRep();
+    }
+
+    // these sets collectively partition the space of Moves
+    void initializeMoveSets() {
+	coalesced_moves   = new MoveSet("coalesced_moves");
+	constrained_moves = new MoveSet("constrained_moves");
+	frozen_moves      = new MoveSet("frozen_moves");
+	worklist_moves    = new MoveSet("worklist_moves");
+	active_moves      = new MoveSet("active_moves");
+    }
+
+    void resetMoveSets() {
+	// all sets except worklist_moves
+	MoveSet[] sets = new MoveSet[]{ 	
+	    coalesced_moves,constrained_moves,
+	    frozen_moves,active_moves
+	};
+	for(int i=0; i<sets.length; i++) 
+	    while( ! sets[i].isEmpty() ) {
+		sets[i].checkRep();
+		worklist_moves.add( sets[i].pop() );
+	    }
+    }
+
+    final class MoveSet { 
+	private int size;
+	private Move head; // dummy element
+	final String name;
+	public String toString() {
+	    return "MoveSet:"+name;
+	}
+	MoveSet(String name) { 
+	    this.name = name;
+	    head = new Move(); 
+	    add_no_check_rep(head); 
+	    size = 0;
+	    checkRep();
+	}
+	
+	void checkRep() {
+	    if( ! CHECK_INV )
+		return;
+
+	    Move curr = head;
+	    int checkSize = -1;
+	    do {
+		checkSize++;
+		Util.assert( curr.s_next.s_prev == curr );
+		Util.assert( curr.s_next.s_prev == curr );
+		Util.assert( curr.s_rep == this );
+		curr = curr.s_next;
+	    } while(curr != head);
+	    if (CHECK_INV)
+	    Util.assert( size == checkSize, 
+			 "size should be "+checkSize+" not "+size );
+	}
+	Iterator iter() {
+	    return new harpoon.Util.UnmodifiableIterator() {
+		    Move curr = head;
+		    public boolean hasNext() { return curr.s_next != head; }
+		    public Object next() {
+			Move n = curr.s_next;
+			curr = curr.s_next;
+			return n;
+		    }
+		};
+	}
+	boolean isEmpty() { return size == 0; }
+	Move pop() { 
+	    Util.assert(!isEmpty(), "should not be empty");
+	    Move n = head.s_next; 
+	    if (CHECK_INV)
+	    Util.assert(n!=head, "should not return head, "+
+			"size:"+size+" set:"+asSet()); 
+	    remove(n); 
+	    return n; 
+	}
+	
+	void remove(Move n) {
+	    checkRep();
+	    if (CHECK_INV)
+	    Util.assert(n.s_rep == this, 
+			"called "+this+".remove(..) "+
+			"on move:"+n+" in "+n.s_rep );
+	    Util.assert(size != 0);
+	    n.s_prev.s_next = n.s_next;
+	    n.s_next.s_prev = n.s_prev;
+	    n.s_rep = null; n.s_prev = null; n.s_next = null;
+	    size--;
+	    checkRep();
+	}
+	void add(Move n) {
+	    checkRep();
+	    add_no_check_rep(n);
+	    checkRep();
+	}
+	private void add_no_check_rep(Move n){
+	    Move prev = head.s_prev;
+	    prev.s_next = n;
+	    n.s_prev = prev; n.s_next = head;
+	    n.s_rep = this;
+	    head.s_prev = n;
+	    size++;
+	}
+	Set asSet() {
+	    HashSet rtn = new HashSet();
+	    for(Iterator iter=iter(); iter.hasNext();) 
+		rtn.add(iter.next());
+	    return rtn;
+	}
+    }
+    static final class MoveList {
+	final static class Cons { Move elem; Cons next; }
+	Cons first;
+	int size = 0;
+	boolean isEmpty() {
+	    return size == 0;
+	}
+	void add(Move m) {
+	    Cons c = new Cons();
+	    c.elem = m;
+	    if (first == null) {
+		first = c;
+	    } else {
+		c.next = first;
+		first = c;
+	    }
+	    size++;
+	}
+	/** INVALIDATES 'l' */
+	void append(MoveList l) {
+	    Cons last = first;
+	    while(last.next != null) 
+		last = last.next;
+
+	    last.next = l.first;
+	    size += l.size;
+
+	    l.first = null;
+	    l.size = -1;
+	}
+	Iterator iterator() {
+	    return new UnmodifiableIterator() {
+		    Cons c = first;
+		    public boolean hasNext() { return c != null; }
+		    public Object next() { Move m=c.elem; c=c.next; return m;}
+		};
+	}
+	public String toString() {
+	    java.util.ArrayList l = new java.util.ArrayList();
+	    for(Iterator m=iterator(); m.hasNext(); ){
+		l.add(m.next());
+	    }
+	    return l.toString();
+	}
+    }
 
 
 }
