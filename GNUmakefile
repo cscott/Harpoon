@@ -1,10 +1,11 @@
 # makefile.
 HOST = miris.lcs.mit.edu
 
-all: design.ps bibnote.ps readnote.ps
-preview: design-xdvi
+all: design.ps bibnote.ps readnote.ps quads.dvi
+preview: quads-xdvi
 
 # bibtex dependencies
+quads.dvi: harpoon.bib
 design.dvi: harpoon.bib
 bibnote.dvi: harpoon_.bib
 readnote.dvi: unread_.bib
@@ -53,7 +54,8 @@ clean:
 	$(RM) *.dvi *.log *.aux *.bbl *.blg
 	$(RM) design.ps design.pdf \
 	      bibnote.ps bibnote.pdf \
-	      readnote.ps readnote.pdf
+	      readnote.ps readnote.pdf \
+	      quads.ps quads.pdf
 	$(RM) harpoon_.bib unread_.bib
 	$(RM) -r html
 

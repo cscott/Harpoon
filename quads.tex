@@ -1,0 +1,245 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: quads.tex,v 1.1 1998-09-08 14:31:21 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,notitlepage,twocolumn]{article}
+
+% What's the name of this project this week?
+\newcommand{\Harpoon}{Harpoon}%{ActiveWorld}
+\newcommand{\harpoon}{harpoon}%{activeWorld}
+
+\author{C.~Scott~Ananian}
+\title{\Harpoon\ Project Compiler Intermediate Representation}
+\date{\today \\ $ $Revision: 1.1 $ $}
+
+% PDF-friendly fonts:
+%\renewcommand{\rmdefault}{ptm}
+%\renewcommand{\sfdefault}{phv}
+%\renewcommand{\ttdefault}{pcr}
+
+\newcommand{\phifunction}{$\phi$-function}
+
+\begin{document}
+\bibliographystyle{abbrv}
+\maketitle
+
+\section{Conceptual Overview}
+
+The \Harpoon\ project compiler front-end translates java bytecode files
+into a class-oriented intermediate representation which is intended to
+be easier to analyze and manipulate than bytecode assembly language.
+The intermediate representation is control-flow-graph structured, with
+all control flow explicit.  It is also maximally factored and in
+static single assignment (SSA) form.  Internally the intermediate
+representation (henceforth, ``IR'') is known as ``QuadSSA,'' referring
+to its derivation from quadruple-style IRs and its SSA form.
+
+\subsection{Quadruples}
+Unlike expression-tree structures intermediate representations, where
+every operand can optionally be the root of an expression, quadruple
+representations are flat.  The ``typical'' statement is of the form
+$a \leftarrow b \oplus c$; the name \textit{quadruple} comes from the fact
+that there are four components ($a$, $b$, $c$, $\oplus$)
+\cite{appel:modern}.\footnote{We use $\oplus$ to stand for an arbitrary
+binary operator.}  Obviously an IR expressive enough to represent the
+entire Java language needs more than a four component operation
+statement, however, we have attempted to retain the atomic simplicity
+of the quadruple form.
+
+\subsection{Static Single-Assignment Form}
+
+Quoting from \cite{appel:modern}:
+\begin{quote}
+Many dataflow analyses need to find the use-sites of each defined
+variable, or the definition-sites of each variable used in an
+expression.  The \textit{def-use chain} is a data structure that makes
+this efficient: for each statement in the flow graph, the compiler can
+keep a list of pointers to all the \textit{use} sites of variables
+defined there, and a list of pointers to all \textit{definition} sites
+of the variables used there.\ldots
+
+An improvement on the idea of def-use chains is \textit{static
+single-assignment form}, or \textit{SSA form}, an intermediate
+representation in which each variable has only one definition in the
+program text.  The one (static) definition-site may be in a loop that
+is executed many (dynamic) times, thus the name \textit{static}
+single-assignment form.
+\end{quote}
+
+An example of the use of SSA form is shown in figure \ref{fig:ssa1}.
+Simple variable renaming suffices to transform straight-line code into
+SSA form.  Subscripts are used to emphasize the relationship of the
+renamed variables to the original variables.  A benefit of SSA form
+obvious from the example is that unrelated uses of the same variable
+in the source program ($\tt i_1$, $\tt i_2$) become different
+variables in the SSA form, eliminating false dependencies.
+
+\begin{figure}[t]
+\begin{tabular}{lll}
+Conventional    && Static Single Assignment \\ \hline
+$\tt \ldots$    && $\tt \ldots$ \\
+$\tt i=0$       && $\tt i_0 = 0$ \\
+$\tt i=i+1$     && $\tt i_1 = i_0 + 1$ \\
+$\tt j=func(i)$ && $\tt j_0 = func(i_1)$ \\
+$\tt i=2$       && $\tt i_2 = 2$ \\
+$\tt \ldots$    && $\tt \ldots$ \\
+\\
+\end{tabular}
+\caption{SSA transformation of straight-line code.}
+\label{fig:ssa1}
+\end{figure}
+
+SSA form becomes more complex when we move from straight-line code to
+introduce branches and loops.  Figure \ref{fig:ssa2} shows the
+necessary transformation.  You will notice the introduction of
+\textit{phi functions} at locations where control flow merges.  The
+\phifunction{} ``magically'' chooses a value from among its arguments
+based on the control flow path used to reach it.  Note that, although
+\phifunction{s} are impossible to implement directly in an instruction set
+(due to their magical properties), they can be replaced by \texttt{move}
+instructions along each control flow edge leading to the
+\phifunction{}.  Doing so violates the static single assignment
+constraints, but leads to executable code.
+
+Unless you are implementing code generator backends, it is unlikely
+you will need to so replace \phifunction{s} or view them as anything
+but magical n-ary operators.  However, it is important to observe and 
+maintain the ordering relationship between control-flow edges and 
+\phifunction{} arguments during transformation and analysis.
+
+\begin{figure}[t]
+\begin{tabular}{lll}
+Conventional    && Static Single Assignment \\ \hline
+$\tt \ldots$    && $\tt \ldots$ \\
+$\tt i=0$       && $\tt i_0 = 0$ \\
+$\tt if$ $x$ $\tt then$ && $\tt if$ $x$ $\tt then$ \\
+~~$\tt i=1$     && ~~$\tt i_1 = 1$ \\
+                && $\tt i_2 = \phi(i_0, i_1)$ \\
+$\tt j=func(i)$ && $\tt j_0 = func(i_2)$ \\
+$\tt \ldots$    && $\tt \ldots$ \\
+\end{tabular}
+\caption{SSA transformation of branching code.}
+\label{fig:ssa2}
+\end{figure}
+
+You will find that analysis, transformation, and optimization of the
+IR is simplified by its SSA form.
+In addition, the QuadSSA form is \textit{maximally factored}.
+Constants are not allowed as quadruple operands (except for a special
+\texttt{const} operation); which creates a unique mapping from
+variable names to values in the computation.  This simplifies value
+analysis.
+
+Appel describes several other benefits of the SSA form in \cite{appel:modern}:
+
+\begin{quote}
+%\begin{enumerate}
+---%\item 
+If a variable has $N$ uses and $M$ definitions (which occupy
+about $N+M$ instructions in a program), it takes space (and time)
+proportional to $N\cdot M$ to represent def-use chains---a quadratic
+blowup.  For almost all realistic programs, the size of the SSA form
+is linear in the size of the original program.
+
+---%\item 
+Uses and defs of variables in SSA form relate in a useful way to
+the dominator structure of the control flow graph, which simplifies
+algorithms such as interference-graph construction.
+%\end{enumerate}
+\end{quote}
+
+\subsection{Exception handling}
+Exception handling in the Java language complicates control-flow.
+Operations (such as division, possibly by zero) may implicitly throw
+exceptions that radically redirect the flow of control.  To facilitate
+analysis, exception handling and its associated control-flow is made
+explicit in the intermediate representation.  For example, null
+pointer and array bounds checks are inserted before object and array
+references, and division by zero is explicitly checked before every
+division operation.  These explicit and comprehensive checks are
+intended to be targeted by agressive optimizations designed to
+removed those checks with are redundant, impossible, or otherwise
+unnecessary.  The design goal of the IR is that \textit{no} IR
+statement should throw an implicit exception under any 
+circumstance.\footnote{This goal is actual impossible for the java
+bytecode opcode \texttt{aastore}, which throws an
+\texttt{ArrayStoreException} under circumstances which cannot be
+otherwise tested for in java code.  Thus array stores are
+currently the single exception to our design goals; the lack of exception
+handling for this one case is not likely to cause difficulties for most
+applications.}  Pursuing that goal involves changing the semantics of method
+invocation slightly: so that the \texttt{call} statement not throw an
+implicit exception, the IR \texttt{call} has been defined to return
+\textit{two} values.  In addition to the conventional (and optional)
+method return value, an ``exception return value'' is defined to hold
+the exception thrown by a method, or \texttt{null} if the method
+completed without throwing an exception.  Explicit tests of the
+exception return value can then be added after the \texttt{call}
+statement, and control-flow made explicit as with the other IR
+operations.  The \texttt{throw} statement in the IR is thus stripped
+of its special meaning and becomes simply an alternate \texttt{return}
+statement for the exception return value.
+
+\section{Implementation Details}
+
+The IR described in these notes is defined in the java package
+\texttt{harpoon.IR.QuadSSA}.  The \texttt{harpoon.IR.QuadSSA.Code}
+class provides a means to access the QuadSSA form of a given method;
+see the definition of superclass \texttt{harpoon.ClassFile.HCode} and
+the example code in \texttt{harpoon.Main.Main} for details.  The
+QuadSSA statements are called \texttt{Quad}s and are subclasses of
+\texttt{harpoon.IR.QuadSSA.Quad}; they are graph-structured and
+doubly-linked to enable both forward and reverse traversal of the
+control-flow graph.  The parent class \texttt{Quad} contains the
+graph-oriented methods of the objects.  Its superinterface
+\texttt{harpoon.ClassFile.HCodeElement} defines standard methods to
+get object ID numbers and source file information for debugging which
+ought to be implemented for elements of any intermediate representation.
+An enumeration of
+\texttt{Quad} types and their uses is provided in figure
+\ref{fig:quads}.  It may be observed that the representation uses both
+header and footer nodes, in the \texttt{HEADER} and \texttt{FOOTER}
+classes.  \texttt{HEADER} nodes contain a special link to the
+\texttt{FOOTER} to allow this node to be easily identified, and a
+special subclass of \texttt{HEADER}, \texttt{METHODHEADER}, provides
+information on the assignment of method arguments to compiler
+temporary variables at the start of method code.
+
+\begin{figure}[!p]
+\begin{tabular}{p{1in}p{5in}} 
+\small\bf Class Name & \small\bf Description \\ \hline
+\tt HEADER & Dummy start node for control-flow graph.\\
+\tt METHODHEADER & Same as \texttt{HEADER}, but with additional 
+                   method-argument information.\\
+\tt FOOTER & Dummy end node for control-flow graph.\\ \hline
+\tt AGET & Fetch from an indexed array element.\\
+\tt ALENGTH & Access the length of an array. \\
+\tt ANEW & Create a new array object (uninitialized). \\
+\tt ASET & Assign a value to an indexed array element. \\
+\tt CALL & Invoke an object method. \\
+\tt CJMP & Conditional jump based on a boolean value. \\
+\tt CONST & Assign numeric or string constants to 
+            compiler temporary variables. \\
+\tt GET & Fetch the value of an object field. \\
+\tt INSTANCEOF & Determine whether an object reference is an instance of a
+                 given class; result is a boolean value. \\
+\tt JMP & Unconditional branch.  Unused. \\
+%MONITOR 
+\tt MOVE & Assign one compiler temporary to another. \\
+\tt NEW  & Create a new class object (uninitialized). \\
+\tt NOP  & Do nothing. \\
+\tt OPER & Perform a n-ary operation on set of compiler temporaries.\\
+\tt PHI  & \phifunction{} representation.\\
+\tt RETURN & Return a value for this method invocation.\\
+\tt SET  & Assign a value to an object field. \\
+\tt SWITCH & Jump to one of multiple targets, depending on a key value. \\
+\tt THROW & Return an exception for this method invocation. \\
+\hline
+\end{tabular}
+\caption{Class names of QuadSSA statement types.
+\small (Public classes in \texttt{harpoon.IR.QuadSSA})}
+\label{fig:quads}
+\end{figure}
+
+\bibliography{harpoon}
+
+\end{document}
