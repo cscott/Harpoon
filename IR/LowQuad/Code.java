@@ -20,7 +20,7 @@ import java.util.Hashtable;
  * shared methods for the various codeviews using <code>LowQuad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.12 2000-01-31 22:16:10 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.13 2000-03-29 06:52:28 cananian Exp $
  */
 public abstract class Code extends harpoon.IR.Quads.Code 
     implements Derivation, TypeMap
@@ -29,7 +29,9 @@ public abstract class Code extends harpoon.IR.Quads.Code
     protected harpoon.IR.Quads.QuadFactory newQF(final HMethod parent) {
 	final String scope = parent.getDeclaringClass().getName() + "." +
 	    parent.getName() + parent.getDescriptor() + "/" + getName();
-	return new LowQuadFactory() {
+	abstract class SerializableLowQuadFactory extends LowQuadFactory
+	    implements java.io.Serializable { /* only declare inheritance */ }
+	return new SerializableLowQuadFactory() {
 	    private final TempFactory tf = Temp.tempFactory(scope);
 	    private int id=0;
 	    public TempFactory tempFactory() { return tf; }
