@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Vector;
 import java.util.Stack;
+import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -46,6 +47,9 @@ import java.io.IOException;
 import java.io.OptionalDataException;
 import java.io.FileOutputStream;
 import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.File;
+import java.io.PrintWriter;
 
 
 /**
@@ -54,7 +58,7 @@ import java.io.FileInputStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.13 1999-08-23 23:29:25 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.14 1999-08-25 20:42:47 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -74,6 +78,9 @@ public class SAMain extends harpoon.IR.Registration {
     private static Frame frame;
     private static OffsetMap offmap;
 
+    private static File ASSEM_DIR = null;
+
+
     public static void main(String[] args) {
 	HCodeFactory hcf = // default code factory.
 	    // harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
@@ -83,10 +90,9 @@ public class SAMain extends harpoon.IR.Registration {
 	parseOpts(args);
 	Util.assert(className!= null, "must pass a class to be compiled");
 
-	info("Compiling: " + className);
 
-	HClass hclass = HClass.forName(className);
-	HMethod hm[] = hclass.getDeclaredMethods();
+	HClass hcl = HClass.forName(className);
+	HMethod hm[] = hcl.getDeclaredMethods();
 	HMethod mainM = null;
 	for (int j=0; j<hm.length; j++) {
 	    if (hm[j].getName().equalsIgnoreCase("main")) {
@@ -123,132 +129,169 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 
 	Set methods = classHierarchy.callableMethods();
-	
-	Iterator methodIter = methods.iterator();
-	HMethod hmethod;
-	while (methodIter.hasNext()) {
-	    hmethod = (HMethod)methodIter.next();
+	Iterator classes = classHierarchy.classes().iterator();
 
-	    if (PRINT_ORIG) {
-		HCode hc = hcf.convert(hmethod);
+	while(classes.hasNext()) {
+	    HClass hclass = (HClass) classes.next();
+	    System.out.println("Compiling: " + hclass.getName());
 
-		info("\t--- TREE FORM ---");
-		if (hc!=null) hc.print(out); 
-		else 
-		    info("null returned for " + hmethod);
-		info("\t--- end TREE FORM ---");
-		out.println();
-	    }
-	    
-	    out.flush();
-
-	    if (PRE_REG_ALLOC) {
-		HCode hc = sahcf.convert(hmethod);
+	    try {
+		out = new PrintWriter
+		    (new FileWriter
+		     (new File(ASSEM_DIR, 
+			       hclass.getName() + ".s")));
 		
-		info("\t--- INSTR FORM (no register allocation)  ---");
-		if (hc!=null) {
-		    info("Codeview \""+hc.getName()+"\" for "+
-			 hc.getMethod()+":");
-		    hc.print(out);
-		} else {
-		    info("null returned for " + hmethod);
-		} 
-		info("\t--- end INSTR FORM (no register allocation)  ---");
-		out.println();
-	    }
-		
-	    out.flush();
-
-	    if (LIVENESS_TEST) {
-		HCode hc = sahcf.convert(hmethod);
-		
-		info("\t--- INSTR FORM (basic block check)  ---");
-		if (hc != null) {
-		    HCodeElement root = hc.getRootElement();
-		    BasicBlock block = 
-			BasicBlock.computeBasicBlocks((HasEdges)root);
-		    Iterator iter= BasicBlock.basicBlockIterator(block);
-		    LiveVars livevars = new LiveVars(iter); 
-		    InstrSolver.worklistSolver
-			(BasicBlock.basicBlockIterator(block), livevars);
-		    out.println(livevars.dump());
-		} else {
-		    info("null returned for " + hmethod);
+		HMethod[] hmarray = hclass.getDeclaredMethods();
+		HashSet hmset = new HashSet(Arrays.asList(hmarray));
+		hmset.retainAll(methods);
+		Iterator hms = hmset.iterator();
+		System.out.print("\t");
+		while(hms.hasNext()) {
+		    HMethod m = (HMethod) hms.next();
+		    System.out.print(m.getName());
+		    if (hms.hasNext()) System.out.print(", ");
+		    outputMethod(m, hcf, sahcf, out);
 		}
-		info("\t--- end INSTR FORM (basic block check)  ---");
-	    }
-	    
-	    out.flush();
-	    
-	    if (REG_ALLOC) {
-		HCode hc = sahcf.convert(hmethod);
-			
-		info("\t--- INSTR FORM (register allocation)  ---");
-		HCodeFactory regAllocCF = RegAlloc.codeFactory(sahcf, frame);
-		HCode rhc = regAllocCF.convert(hmethod);
-		if (rhc != null) {
-		    info("Codeview \""+rhc.getName()+"\" for "+
-			 rhc.getMethod()+":");
-		    rhc.print(out);
-		} else {
-		    info("null returned for " + hmethod);
-		}
-		info("\t--- end INSTR FORM (register allocation)  ---");
+		System.out.println();
+
 		out.println();
+		outputClassData(hclass, out);
+
+	    } catch (IOException e) {
+		System.out.println("Error outputting class "+
+				   hclass.getName());
+		System.exit(-1);
 	    }
-
-	    if (PRINT_DATA) {
-		final Data data = new Data(hclass, frame);
-		
-		if (PRINT_ORIG) {
-		    info("\t--- TREE FORM (for DATA)---");
-		    data.print(out);
-		    info("\t--- end TREE FORM (for DATA)---");
-		}		
-
-		final String scope = data.getName();
-		final Instr instr = 
-		    frame.codegen().gen(data, new InstrFactory() {
-			private final TempFactory tf = Temp.tempFactory(scope);
-			{ Util.assert(tf != null, "TempFactory cannot be null"); }
-			private int id = 0;
-			public TempFactory tempFactory() { return tf; }
-			public HCode getParent() { return data; }
-			public Frame getFrame() { return frame; }
-			public synchronized int getUniqueID() { return id++; }
-			public HMethod getMethod() { return null; }
-		    });
-	    
-		Iterator iter = new UnmodifiableIterator() {
-		    Set visited = new HashSet();
-		    Stack stk = new Stack();
-		    { stk.push(instr); visited.add(instr); }
-		    public boolean hasNext(){return !stk.empty(); }
-		    public Object next() {
-			if (stk.empty()) throw new NoSuchElementException();
-			Instr instr2 = (Instr) stk.pop();
-			HCodeEdge[] next = instr2.succ();
-			for (int j=next.length-1; j>=0; j--) {
-			    if (!visited.contains(next[j].to())) {
-				stk.push(next[j].to());
-				visited.add(next[j].to());
-			    }
-			}
-			return instr2;
-		    }
-		};
-		info("\t--- INSTR FORM (for DATA)---");
-		while(iter.hasNext()) { out.println( iter.next() ); }
-		info("\t--- end INSTR FORM (for DATA)---");
-		
-	    }
-
-	    out.flush();
 	}
+
     }
 
+    public static void outputMethod(HMethod hmethod, 
+				    HCodeFactory hcf,
+				    HCodeFactory sahcf,
+				    PrintWriter out) 
+	throws IOException {
+	if (PRINT_ORIG) {
+	    HCode hc = hcf.convert(hmethod);
+	    
+	    info("\t--- TREE FORM ---");
+	    if (hc!=null) hc.print(out); 
+	    else 
+		info("null returned for " + hmethod);
+	    info("\t--- end TREE FORM ---");
+	    out.println();
+	}
+	    
+	out.flush();
+
+	if (PRE_REG_ALLOC) {
+	    HCode hc = sahcf.convert(hmethod);
+	    
+	    info("\t--- INSTR FORM (no register allocation)  ---");
+	    if (hc!=null) {
+		info("Codeview \""+hc.getName()+"\" for "+
+		     hc.getMethod()+":");
+		hc.print(out);
+	    } else {
+		info("null returned for " + hmethod);
+	    } 
+	    info("\t--- end INSTR FORM (no register allocation)  ---");
+	    out.println();
+	}
+	
+	out.flush();
+	
+	if (LIVENESS_TEST) {
+	    HCode hc = sahcf.convert(hmethod);
+	    
+	    info("\t--- INSTR FORM (basic block check)  ---");
+	    if (hc != null) {
+		HCodeElement root = hc.getRootElement();
+		BasicBlock block = 
+		    BasicBlock.computeBasicBlocks((HasEdges)root);
+		Iterator iter= BasicBlock.basicBlockIterator(block);
+		LiveVars livevars = new LiveVars(iter); 
+		InstrSolver.worklistSolver
+		    (BasicBlock.basicBlockIterator(block), livevars);
+		out.println(livevars.dump());
+	    } else {
+		info("null returned for " + hmethod);
+	    }
+	    info("\t--- end INSTR FORM (basic block check)  ---");
+	}
+	
+	out.flush();
+	
+	if (REG_ALLOC) {
+	    HCode hc = sahcf.convert(hmethod);
+	    
+	    info("\t--- INSTR FORM (register allocation)  ---");
+	    HCodeFactory regAllocCF = RegAlloc.codeFactory(sahcf, frame);
+	    HCode rhc = regAllocCF.convert(hmethod);
+	    if (rhc != null) {
+		info("Codeview \""+rhc.getName()+"\" for "+
+		     rhc.getMethod()+":");
+		rhc.print(out);
+	    } else {
+		info("null returned for " + hmethod);
+	    }
+	    info("\t--- end INSTR FORM (register allocation)  ---");
+	    out.println();
+	}
+	
+	out.flush();
+	
+    }
+    
+    public static void outputClassData(HClass hclass, PrintWriter out) 
+	throws IOException {
+	final Data data = new Data(hclass, frame);
+	
+	if (PRINT_ORIG) {
+	    info("\t--- TREE FORM (for DATA)---");
+	    data.print(out);
+	    info("\t--- end TREE FORM (for DATA)---");
+	}		
+	
+	final String scope = data.getName();
+	final Instr instr = 
+	    frame.codegen().gen(data, new InstrFactory() {
+		private final TempFactory tf = Temp.tempFactory(scope);
+		{ Util.assert(tf != null, "TempFactory cannot be null"); }
+		private int id = 0;
+		public TempFactory tempFactory() { return tf; }
+		public HCode getParent() { return data; }
+		public Frame getFrame() { return frame; }
+		public synchronized int getUniqueID() { return id++; }
+		public HMethod getMethod() { return null; }
+	    });
+	
+	Iterator iter = new UnmodifiableIterator() {
+	    Set visited = new HashSet();
+	    Stack stk = new Stack();
+	    { stk.push(instr); visited.add(instr); }
+	    public boolean hasNext(){return !stk.empty(); }
+	    public Object next() {
+		if (stk.empty()) throw new NoSuchElementException();
+		Instr instr2 = (Instr) stk.pop();
+		HCodeEdge[] next = instr2.succ();
+		for (int j=next.length-1; j>=0; j--) {
+		    if (!visited.contains(next[j].to())) {
+			stk.push(next[j].to());
+			visited.add(next[j].to());
+		    }
+		}
+		return instr2;
+	    }
+	};
+	info("\t--- INSTR FORM (for DATA)---");
+	while(iter.hasNext()) { out.println( iter.next() ); }
+	info("\t--- end INSTR FORM (for DATA)---");
+	
+    }
+    
     private static void parseOpts(String[] args) {
-	Getopt g = new Getopt("SAMain", args, "m:c:DOPRLAh");
+	Getopt g = new Getopt("SAMain", args, "m:c:o:DOPRLAh");
 	
 	int c;
 	String arg;
@@ -291,12 +334,16 @@ public class SAMain extends harpoon.IR.Registration {
 		OUTPUT_INFO = PRE_REG_ALLOC = PRINT_ORIG = 
 		    REG_ALLOC = LIVENESS_TEST = true;
 		break;
+	    case 'o':
+		ASSEM_DIR = new File(g.getOptarg());
+		Util.assert(ASSEM_DIR.isDirectory(), ""+ASSEM_DIR+" must be a directory");
+		break;
 	    case 'c':
 		className = g.getOptarg();
 		break;
 	    case '?':
 	    case 'h':
-		System.out.println("usage is: [-m <mapfile>] -c <class> [-DOPRLA]");
+		System.out.println("usage is: [-m <mapfile>] -c <class> [-DOPRLA] [-o <assembly output directory>]");
 		System.out.println();
 		printHelp();
 		System.exit(-1);

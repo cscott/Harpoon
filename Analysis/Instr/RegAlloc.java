@@ -43,7 +43,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.28 1999-08-23 23:29:20 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.29 1999-08-25 20:42:47 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -323,7 +323,7 @@ public abstract class RegAlloc  {
 		Instr.insertInstrBefore(first, 
 					new Instr(first.getFactory(),
 						  first,
-						  "\t@storing " + m.def(),
+						  "\t@storing " + m.def()[0],
 						  null, null));
 	    }
 	    
@@ -340,7 +340,7 @@ public abstract class RegAlloc  {
 		Instr.insertInstrBefore(first, 
 					new Instr(first.getFactory(),
 						  first,
-						  "\t@loading" + m.use(),
+						  "\t@loading " + m.use()[0],
 						  null, null));
 	    }
 	    
