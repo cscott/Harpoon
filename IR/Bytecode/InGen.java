@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * opcode in the raw bytecode array.
  *
  * @author  C. Scott Ananian
- * @version $Id: InGen.java,v 1.3.2.4 1999-08-04 06:30:57 cananian Exp $
+ * @version $Id: InGen.java,v 1.3.2.5 1999-11-12 19:16:10 cananian Exp $
  */
 public class InGen extends Instr {
   final byte opcode;
@@ -201,7 +201,7 @@ public class InGen extends Instr {
       if (code[pc+1]==Op.IINC) // very evil.
 	operands = new Operand[] { 
 	  new OpLocalVariable(u2(code, pc+2)),
-	  new OpConstant(new Integer(u2(code,pc+4)), HClass.Int) 
+	  new OpConstant(new Integer(s2(code,pc+4)), HClass.Int) 
 	};
       else
 	  operands = new Operand[] { new OpLocalVariable(u2(code, pc+2)) };
@@ -243,6 +243,11 @@ public class InGen extends Instr {
   /** Create an integer from an unsigned two-byte quantity (big-endian). */
   static int u2(byte[] code, int pc) {
     return (u1(code,pc) << 8) | u1(code,pc+1);
+  }
+  /** Create an integer from a signed two-byte quantity (big-endian). */
+  static int s2(byte[] code, int pc) {
+    int s = u2(code, pc);
+    return (s&0x8000)==0 ? s : (s | ~0xFFFF);
   }
 
   /** Return the bytecode opcode of this instruction.
