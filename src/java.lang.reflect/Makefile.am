@@ -14,8 +14,18 @@ libjavalangreflect_la_SOURCES = \
 	java_lang_reflect_Modifier.h \
 	reflect-util.c reflect-util.h
 
-EXTRA_DIST = \
+JAVASRC = \
 AccessibleObject.java \
 Constructor.java \
 Field.java \
 Method.java
+
+EXTRA_DIST = $(JAVASRC)
+
+noinst_DATA = reflect-thunk.jar
+
+reflect-thunk.jar: $(JAVASRC)
+	-$(RM) -rf java
+	jikes -d . -g $^
+	jar cf $@ java
+	-$(RM) -rf java
