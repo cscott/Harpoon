@@ -546,12 +546,14 @@ void EnableThreadList(struct thread_queue_struct* queue)
   rttClass = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
   assert(!((*env)->ExceptionOccurred(env)));
       
-  getSchedMethod = (*env)->GetStaticMethodID(env, rttClass,
-					     "getScheduler",
-					     "()Ljavax/realtime/Scheduler;");
+  getSchedMethod = (*env)->GetMethodID(env, rttClass,
+				       "getScheduler",
+				       "()Ljavax/realtime/Scheduler;");
   assert(!((*env)->ExceptionOccurred(env)));
   
-  scheduler = (*env)->CallStaticObjectMethod(env, rttClass, getSchedMethod);
+  scheduler = 
+    (*env)->CallObjectMethod(env, ((struct FNI_Thread_State*)env)->thread, 
+			     getSchedMethod);
   assert(!((*env)->ExceptionOccurred(env)));
   
   if(scheduler == NULL) {
