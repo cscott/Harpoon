@@ -28,7 +28,7 @@ import java.util.Vector;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.12 1998-08-25 07:47:15 cananian Exp $
+ * @version $Id: Translate.java,v 1.13 1998-08-25 22:52:36 cananian Exp $
  */
 
 /*
@@ -48,78 +48,80 @@ class Translate  { // not public.
 	ExceptionEntry tryBlock[];
 	/** Current monitor nesting level */
 	int monitorDepth;
+
+	static class BlockContext {
 	/** Exit block for nested tries/monitors */
-	Quad exitBlock[];
+	    Quad exitBlock;
+	/** Temp to store exit destination instr index in. */
+	    Temp exitTemp;
 	/** Indexed continuation Instrs after close of try/monitor block. */
-	Vector continuation[];
+	    Vector continuation;
+	/** Constructor */
+	    BlockContext(Quad eb, Temp et, Vector c) {
+		exitBlock = eb; exitTemp = et; continuation = c;
+	    }
+	    BlockContext() {
+		this(new NOP(), new Temp(), new Vector());
+	    }
+	}
+	BlockContext nest[];
 
 	private State(Temp stack[], Temp lv[], ExceptionEntry tryBlock[],
-		      int monitorDepth, Quad exitBlock[], 
-		      Vector continuation[]) {
+		      int monitorDepth, BlockContext nest[]) {
 	    this.stack = stack; this.lv = lv; this.tryBlock = tryBlock;
 	    this.monitorDepth = monitorDepth;
-	    this.exitBlock = exitBlock;
-	    Util.assert(exitBlock.length == monitorDepth + tryBlock.length);
-	    Util.assert(exitBlock.length == continuation.length);
+	    this.nest = nest;
+	    Util.assert(nest.length == monitorDepth + tryBlock.length);
 	}
 	/** Make new state by popping top of stack */
 	State pop() { return pop(1); }
 	/** Make new state by popping multiple entries off top of stack */
 	State pop(int n) {
 	    Temp stk[] = (Temp[]) shrink(this.stack, n);
-	    return new State(stk, lv, tryBlock, monitorDepth, 
-			     exitBlock, continuation);
+	    return new State(stk, lv, tryBlock, monitorDepth, nest);
 	}
 	/** Make new state by pushing temp onto top of stack */
 	State push(Temp t) {
 	    Temp stk[] = (Temp[]) grow(this.stack);
 	    stk[0] = t;
-	    return new State(stk, lv, tryBlock, monitorDepth, 
-			     exitBlock, continuation);
+	    return new State(stk, lv, tryBlock, monitorDepth, nest);
 	}
 	/** Make new state by exiting innermost try/catch context. */
 	State exitTry() {
 	    ExceptionEntry tb[] = (ExceptionEntry[]) shrink(this.tryBlock);
-	    Quad eb[] = (Quad[]) shrink(this.exitBlock);
-	    Vector cv[] = (Vector[]) shrink(this.continuation);
-	    return new State(stack, lv, tb, monitorDepth, eb, cv);
+	    BlockContext ns[] = (BlockContext[]) shrink(this.nest);
+	    return new State(stack, lv, tb, monitorDepth, ns);
 	}
 	/** Make new state by entering a new try/catch context. */
 	State enterTry(ExceptionEntry ee) {
 	    ExceptionEntry tb[] = (ExceptionEntry[]) grow(this.tryBlock);
-	    Quad eb[] = (Quad[]) grow(this.exitBlock);
-	    Vector cv[] = (Vector[]) grow(this.continuation);
+	    BlockContext ns[] = (BlockContext[]) grow(this.nest);
 	    tb[0] = ee;
-	    eb[0] = new NOP();
-	    cv[0] = new Vector();
-	    return new State(stack, lv, tb, monitorDepth, eb, cv);
+	    ns[0] = new BlockContext();
+	    return new State(stack, lv, tb, monitorDepth, ns);
 	}
 	/** Make new state by entering a monitor block. */
 	State enterMonitor() {
-	    Quad eb[] = (Quad[]) grow(this.exitBlock);
-	    Vector cv[] = (Vector[]) grow(this.continuation);
-	    eb[0] = new NOP();
-	    cv[0] = new Vector();
-	    return new State(stack, lv, tryBlock, monitorDepth+1, eb, cv);
+	    BlockContext ns[] = (BlockContext[]) grow(this.nest);
+	    ns[0] = new BlockContext();
+	    return new State(stack, lv, tryBlock, monitorDepth+1, ns);
 	}
 	/** Make new state by exiting a monitor block. */
 	State exitMonitor() {
 	    Util.assert(monitorDepth>0);
-	    Quad eb[] = (Quad[]) shrink(this.exitBlock);
-	    Vector cv[] = (Vector[]) shrink(this.continuation);
-	    return new State(stack, lv, tryBlock, monitorDepth-1, eb, cv);
+	    BlockContext ns[] = (BlockContext[]) shrink(this.nest);
+	    return new State(stack, lv, tryBlock, monitorDepth-1, ns);
 	}
 	/** Make new state by changing the temp corresponding to an lv. */
 	State assignLV(int lv_index, Temp t) {
 	    Temp nlv[] = (Temp[]) lv.clone();
 	    nlv[lv_index] = t;
-	    return new State(stack, nlv, tryBlock, monitorDepth, exitBlock,
-			     continuation);
+	    return new State(stack, nlv, tryBlock, monitorDepth, nest);
 	}
 	/** Initialize state with temps corresponding to parameters. */
 	State(Temp[] locals) {
 	    this(new Temp[0], locals, new ExceptionEntry[0], 0, 
-		 new Quad[0], new Vector[0]);
+		 new BlockContext[0]);
 	}
 	/** Creates a new State object identical to this one. */
 	public Object clone() {
@@ -127,8 +129,7 @@ class Translate  { // not public.
 			     (Temp[]) lv.clone(), 
 			     (ExceptionEntry[]) tryBlock.clone(),
 			     monitorDepth,
-			     (Quad[]) exitBlock.clone(),
-			     (Vector[]) continuation.clone());
+			     (BlockContext[]) nest.clone());
 	}
 	/** Check to see if a given Instr is in all of the current try blocks.
 	 */
@@ -226,21 +227,36 @@ class Translate  { // not public.
 	    // Recursively generate tryBlock quads.
 	    State ns = s.enterTry(newTry);
 	    trans(ns, allTries, in, tryBlock, 0);
-	    // FIXME catchBlock, finallyBlock
+	    // FIXME catchBlock
 	    Quad q = new TRY(in, tryBlock, catchBlock, 
 			     newTry.caughtException());
 	    // Link everything together.
 	    Quad.addEdge(header, which_succ, q, 0);
+	    // FIXME make post-TRY quads.
 	    return q;
 	}
 	// Are we entering a new MONITOR block?
 	else if (in.getOpcode() == Op.MONITORENTER) {
+	    // Make header nodes for block.
+	    Quad monitorBlock = new HEADER();
+	    // Recursively generate monitor quads.
+	    State ns = s.enterMonitor().pop();
+	    trans(ns, allTries, in, monitorBlock, 0);
+	    // Make and link MONITOR
+	    Quad q = new MONITOR(in, s.stack[0], monitorBlock);
+	    Quad.addEdge(header, which_succ, q, 0);
+	    // FIXME make post-MONITOR quads.
+	    return q;
 	}
-	// Are we exiting a TRY block?
-	else if (!s.tryBlock[0].inTry(in)) {
-	}
-	// Are we exiting a MONITOR block?
-	else if (in.getOpcode() == Op.MONITOREXIT) {
+	// Are we exiting a TRY or MONITOR block?
+	else if ((!s.tryBlock[0].inTry(in)) ||
+		 (in.getOpcode() == Op.MONITOREXIT)) {
+	    Quad q1 = new CONST(in, s.nest[0].exitTemp,
+				new Integer(s.nest[0].continuation.size()),
+				HClass.Int);
+	    s.nest[0].continuation.addElement(in);
+	    Quad q2 = new JMP(in); // to s.exitBlock()
+	    // FIXME
 	}
 	// None of the above.
 	else {
