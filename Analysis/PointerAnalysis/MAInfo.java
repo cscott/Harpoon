@@ -76,7 +76,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.14 2003-06-04 18:44:31 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.15 2003-06-05 22:14:03 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -555,7 +555,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    /*
 	    DEBUG = 
 		(q instanceof NEW) && 
-		((NEW) q).hclass().getName().equals("java.util.Vector");
+		((NEW) q).hclass().getName().equals
+		("java.io.BufferedInputStream");
 	    */
 
 	    if(!ap.sa) {
@@ -824,8 +825,13 @@ public class MAInfo implements AllocationInformation, Serializable {
 	ParIntGraph pig = pa.getIntParIntGraph(mm);
 	if(pig == null) // PA unable to process mm
 	    return false;
+	Set/*<PANode>*/ lost = pa.getLostNodes(mm);
+	if(DEBUG) {
+	    System.out.println("PIG: " + pig);
+	    System.out.println("Lost nodes = " + lost);
+	}
 
-	if(pa.getLostNodes(mm).contains(node)) {
+	if(lost.contains(node)) {
 	    if(DEBUG) 
 		System.out.println(ident + node + " is lost -> false");
 	    return false;
@@ -1955,8 +1961,12 @@ public class MAInfo implements AllocationInformation, Serializable {
 		CALL cs = (CALL) it.next();
 
 		MetaMethod[] callees = mcg.getCallees(mcaller, cs);
-		assert callees.length > 0 : 
-		    "there has to be at least one callee: " + mm;
+		if(callees.length == 0) {
+		    System.out.println
+			("there has to be at least one callee: " + 
+			 Util.code2str(cs));
+		    continue;
+		}
 
 		// we can only inline call sites that calls only mm
 		if((callees.length != 1) || !callees[0].equals(mm)

@@ -27,7 +27,6 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.Linker;
 
-
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.AllCallers;
 import harpoon.Analysis.ClassHierarchy;
@@ -84,7 +83,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.12 2003-06-04 18:44:32 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.13 2003-06-05 22:14:03 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -705,11 +704,10 @@ public class PointerAnalysis implements java.io.Serializable {
 	    MetaMethod mm = (MetaMethod) methods[i];
 
 	    PANode[] nodes = getParamNodes(mm);
-	    boolean is_main = mm.getHMethod().getName().equals("main");
 	    ParIntGraph pig = (ParIntGraph) hash_proc_ext.get(mm);
 
 	    hash_proc_ext.put
-		(mm, pig.compressLostNodes(get_compression_map(mm)));
+		(mm, pig.compressLostNodes(getLostNodes(mm)));
 	}
     }
 
@@ -757,38 +755,6 @@ public class PointerAnalysis implements java.io.Serializable {
 	    System.out.println("hash_proc_int cleared!");
 	    hash_proc_int.clear();
 	}
-	// 4. Clean the compression maps for the methods from the last
-	// analyzed SCC.
-	if(COMPRESS_LOST_NODES) {
-	    Object[] mms = scc.nodes();
-	    for(int i = 0; i < mms.length; i++) {
-		MetaMethod mm = (MetaMethod) mms[i];
-		Set lost = extract_lost_nodes((Relation) mm2cmu.get(mm));
-		mm2lost.put(mm, selectInsideNodes(lost));
-	    }
-	    mm2cmu.clear();
-	}
-    }
-
-
-    private Set/*<PANode>*/ extract_lost_nodes(Relation mu) {
-	Set lost = new HashSet();
-	for(Iterator it = mu.keys().iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
-	    if(mu.getValues(node).contains(NodeRepository.LOST_SUMMARY))
-		lost.add(node);
-	}
-	return lost;
-    }
-
-    private Set/*<PANode>*/ selectInsideNodes(Set/*<PANode>*/ s) {
-	Set result = new HashSet();
-	for(Iterator it = s.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
-	    if(node.type == PANode.INSIDE)
-		result.add(node);
-	}
-	return result;
     }
 
     private MetaMethod current_intra_mmethod = null;
@@ -1347,21 +1313,20 @@ public class PointerAnalysis implements java.io.Serializable {
 	    if(MEGA_DEBUG)
 		System.out.println("Unshrinked graph: " + lbbpig);
 
-	    Relation compression_map = 
+	    Set/*<PANode>*/ lost_nodes = 
 		(COMPRESS_LOST_NODES && AGGRESSIVE_COMPRESS_LOST_NODES) ?
-		get_compression_map(current_intra_mmethod) : null;
-		
+		getLostNodes(current_intra_mmethod) : null;
+
 	    ParIntGraph shrinked_graph =
-		lbbpig.keepTheEssential(nodes, is_main, compression_map);
+		lbbpig.keepTheEssential(nodes, is_main, lost_nodes);
 
 	    if(MEGA_DEBUG)
-		System.out.println("Unshrinked graph: " + shrinked_graph);
+		System.out.println("Shrinked graph: " + shrinked_graph);
 
 	    // The external view of the graph is stored in the
 	    // hash_proc_ext hashtable;
 	    hash_proc_ext.put(current_intra_mmethod, shrinked_graph);
 	}
-
     }
     
 
@@ -1465,21 +1430,6 @@ public class PointerAnalysis implements java.io.Serializable {
 	*/
     }
     
-
-    // get the compression map for mm
-    private Relation get_compression_map(MetaMethod mm) {
-	Relation mu = (Relation) mm2cmu.get(mm);
-	if(mu == null)
-	    mm2cmu.put(mm, mu = new LightRelation());
-	return mu;
-    }
-    // Maintains the compression maps for all the analyzed methods:
-    // The compression maps are always maintained by growing them: the
-    // new map is the old one + some new stuff.  Constructing a new
-    // compression map from scratch is NOT monotonic.
-    private Map/*<MetaMethod,Relation>*/ mm2cmu = 
-	COMPRESS_LOST_NODES ? new HashMap() : null;
-
     // For each method, maintains the set of inside nodes that are
     // merged into LOST during the analysis of that method.  These
     // nodes do not appear in the pig for the method, but they are
@@ -1494,8 +1444,10 @@ public class PointerAnalysis implements java.io.Serializable {
 	if(!COMPRESS_LOST_NODES)
 	    return Collections.EMPTY_SET;
 	Set lost = (Set) mm2lost.get(mm);
-	if(lost == null)
-	    lost = Collections.EMPTY_SET;
+	if(lost == null) {
+	    lost = new HashSet();
+	    mm2lost.put(mm, lost);
+	}
 	return lost;
     }
 

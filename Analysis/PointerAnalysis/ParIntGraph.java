@@ -30,7 +30,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.7 2003-06-04 18:44:32 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.8 2003-06-05 22:14:03 salcianu Exp $
  */
 public class ParIntGraph implements java.io.Serializable {
 
@@ -69,7 +69,7 @@ public class ParIntGraph implements java.io.Serializable {
 	and the outside edges. <code>before(ei,eo)</code> is true if the
 	inside edge ei might be created before the ouside edge eo was read. */
     public EdgeOrdering eo;
-    
+
     /** Creates a <code>ParIntGraph</code>. */
     public ParIntGraph() {
 	G   = new PointsToGraph();
@@ -77,7 +77,6 @@ public class ParIntGraph implements java.io.Serializable {
 	ar  = PointerAnalysis.RECORD_ACTIONS ? new ActionRepository() : null;
 	eo  = PointerAnalysis.IGNORE_EO ? null : new EdgeOrdering();
     }
-    
 
     /** <code>join</code> combines two <code>ParIntGraph</code>s in \
 	a control-flow join point. */
@@ -89,7 +88,7 @@ public class ParIntGraph implements java.io.Serializable {
 
 	G.join(pig2.G);
 	tau.join(pig2.tau);
-	
+
 	if(PointerAnalysis.RECORD_ACTIONS)
 	    ar.join(pig2.ar);
 
@@ -319,7 +318,7 @@ public class ParIntGraph implements java.io.Serializable {
 
 
     public ParIntGraph keepTheEssential
-	(PANode[] params, boolean is_main, Relation compression_mu) {
+	(PANode[] params, boolean is_main, Set/*<PANode>*/ lost_nodes) {
 
 	Relation new_mu = null;
 	if(PointerAnalysis.MEGA_DEBUG)
@@ -327,32 +326,26 @@ public class ParIntGraph implements java.io.Serializable {
 
 	ParIntGraph pig2 = retain_essential(params, is_main);
 
-	//if(PointerAnalysis.MEGA_DEBUG)
-	//    System.out.println("After retain_essential graph is " + pig2);
-
 	if(AGGRESSIVE_SHRINKING) {
 	    pig2.shrinking();
 	    pig2 = pig2.retain_essential(params, is_main);
 	}
 
-	if(compression_mu != null)
-	    pig2 = pig2.compressLostNodes(compression_mu);
-
-	System.out.println("End of kTE:    " + pig2.stats());
-	//System.out.println("GRAPH IS " + pig2);
+	if(lost_nodes != null)
+	    pig2 = pig2.compressLostNodes(lost_nodes);
 
 	return pig2;
     }
 
 
-    public ParIntGraph compressLostNodes(Relation compression_mu) {
+    public ParIntGraph compressLostNodes(Set/*<PANode>*/ lost) {
 	System.out.println("Before cmprss: " + stats());
 
 	// don't do any optimization in this case
 	if(PointerAnalysis.RECORD_ACTIONS || !PointerAnalysis.IGNORE_EO)
 	    return this;
 
-	extend_compression_map(compression_mu);
+	Relation compression_mu = get_compression_map(lost);
 
 	if(PointerAnalysis.MEGA_DEBUG)
 	    System.out.println("Compress relation mu = " + compression_mu);
@@ -367,16 +360,23 @@ public class ParIntGraph implements java.io.Serializable {
     
     // return null if there is compresion is useless
     // (i.e., no node is mapped to LOST except LOST itself).
-    private void extend_compression_map
-	(final Relation/*<PANode,PANode>*/ mu) {
-
+    private Relation get_compression_map(final Set/*<PANode>*/ lost) {
+	// extend "lost" with newly discovered lost nodes
 	for(Iterator it = allNodes().iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
 	    if(compressable_node(node))
+		lost.add(node);
+	}
+	// build the compression map mu
+	Relation mu = new LightRelation();
+	for(Iterator it = allNodes().iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(lost.contains(node))
 		mu.add(node, NodeRepository.LOST_SUMMARY);
 	    else
 		mu.add(node, node);
 	}
+	return mu;
     }
 
     // checks whether "node" escapes globally (i.e., in an unanalyzed

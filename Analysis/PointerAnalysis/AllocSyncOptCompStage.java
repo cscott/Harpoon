@@ -28,7 +28,7 @@ import java.util.Iterator;
  * <code>AllocSyncOptCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocSyncOptCompStage.java,v 1.2 2003-06-04 18:44:31 salcianu Exp $
+ * @version $Id: AllocSyncOptCompStage.java,v 1.3 2003-06-05 22:14:03 salcianu Exp $
  */
 public class AllocSyncOptCompStage extends CompilerStageEZ {
 
@@ -148,7 +148,7 @@ public class AllocSyncOptCompStage extends CompilerStageEZ {
 
 	Set/*<MetaMethod>*/ mms = 
 	    OPTIMIZE_ALL ? mcg.getAllMetaMethods() : 
-	    mcg.transitiveSucc(new MetaMethod(mainM, true));
+	    mcg.transitiveSucc(mainAndRuns(mcg));
 
 	time_analysis(pa, mms);
 	
@@ -163,6 +163,16 @@ public class AllocSyncOptCompStage extends CompilerStageEZ {
 	
 	if(SHOW_ALLOC_PROPERTIES) // show allocation policies
 	    mainfo.print();
+    }
+
+    private Set/*<MetaMethod>*/ mainAndRuns(MetaCallGraph mcg) {
+	Set roots = new HashSet();
+	roots.add(new MetaMethod(mainM, true));
+	roots.addAll(mcg.getRunMetaMethods());
+
+	System.out.println("MAINANDRUNS: " + roots);
+
+	return roots;
     }
 
     // time the pointer analysis over all (meta)methods from mms. 

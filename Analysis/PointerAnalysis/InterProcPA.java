@@ -57,13 +57,13 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: InterProcPA.java,v 1.8 2003-06-04 18:44:31 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.9 2003-06-05 22:14:03 salcianu Exp $
  */
 public abstract class InterProcPA implements java.io.Serializable {
 
     /** Call sites with more than <code>MAX_CALLEES</code> callees are simply
      *  considered to be holes. */ 
-    public static final int MAX_CALLEES = 5;
+    public static final int MAX_CALLEES = 10;
 
     /** Activates a lot of debug messages. */
     public static final boolean DEBUG = false;
@@ -128,6 +128,12 @@ public abstract class InterProcPA implements java.io.Serializable {
 						 MetaMethod current_mmethod,
 						 CALL q,
 						 ParIntGraph pig_before) {
+
+	if(q.method().getName().equals("setIn0")) {
+	    System.out.println("IN0: " + Util.code2str(q) + "\n" + 
+			       current_mmethod);
+	}
+
 	/*
 	PointerAnalysis.MEGA_DEBUG2 = 
 	    PointerAnalysis.MEGA_DEBUG && 
@@ -566,6 +572,7 @@ public abstract class InterProcPA implements java.io.Serializable {
     static {
 	if(THESIS_MAPPING_CONSTRAINTS)
 	    System.out.println("InterProcPA: Alex Salcianu's SM thesis");
+	System.out.println("MAX_CALLEES = " + MAX_CALLEES);
     }
 
     // generates lots of debug messages about the construction of mu
