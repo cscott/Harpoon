@@ -60,7 +60,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.40 2000-01-16 03:49:56 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.41 2000-01-22 08:39:12 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -265,6 +265,7 @@ public class AsyncCode {
 	HMethod mroot;
 	Linker linker;
 	ClassHierarchy ch;
+	Set makeasync;
 	
 	public CloningVisitor(Set blockingcalls, Set cont_todo,
 			      Map cont_map, Map env_map, 
@@ -300,6 +301,7 @@ public class AsyncCode {
 	    else
 		tthis=null;
 	    phiset=new WorkSet();
+	    makeasync=new WorkSet();
 	}
 
 	public HCode getCode() {
@@ -340,7 +342,20 @@ public class AsyncCode {
 		    done.add(nq);
 		    Quad cnq=(Quad)quadmap.get(nq);
 		    Quad[] next=nq.next();
-		    if (!dontfollow.contains(nq))
+		    if (makeasync.contains(cnq)) {
+			if (!done.contains(next[0]))
+			    todo.push(next[0]);
+			Quad cn=(Quad)quadmap.get(next[0]);
+			//add the edge in
+			Quad cnq2=cnq.next(0);
+			Quad.addEdge(cnq2,0,cn,nq.nextEdge(0).which_pred());
+
+			if (!done.contains(next[1]))
+			    todo.push(next[1]);
+			cn=(Quad)quadmap.get(next[1]);
+			//add the edge in
+			Quad.addEdge(cnq,1,cn,nq.nextEdge(1).which_pred());
+		    } else if (!dontfollow.contains(nq))
 			for (int i=0;i<next.length;i++) {
 			    //this quad was cloned
 			    if (!done.contains(next[i]))
@@ -421,7 +436,20 @@ public class AsyncCode {
 		    done.add(nq);
 		    Quad cnq=(Quad)quadmap.get(nq);
 		    Quad[] next=nq.next();
-		    if (!dontfollow.contains(nq))
+		    if (makeasync.contains(cnq)) {
+			if (!done.contains(next[0]))
+			    todo.push(next[0]);
+			Quad cn=(Quad)quadmap.get(next[0]);
+			//add the edge in
+			Quad cnq2=cnq.next(0);
+			Quad.addEdge(cnq2,0,cn,nq.nextEdge(0).which_pred());
+
+			if (!done.contains(next[1]))
+			    todo.push(next[1]);
+			cn=(Quad)quadmap.get(next[1]);
+			//add the edge in
+			Quad.addEdge(cnq,1,cn,nq.nextEdge(1).which_pred());
+		    } else if (!dontfollow.contains(nq))
 			for (int i=0;i<next.length;i++) {
 			    //this quad was cloned
 			    if (!done.contains(next[i]))
@@ -821,12 +849,34 @@ public class AsyncCode {
 				       (q.retval()==null)?null:ctmap.tempMap(q.retval()),
 				       (q.retex()==null)?null:ctmap.tempMap(q.retex()), q.isVirtual(),
 				       q.isTailCall(), new Temp[0]));
+		} else if (swapAdd(q.method())!=null) {
+		    CALL cq=(CALL)q.clone(hcode.getFactory(), ctmap);
+		    quadmap.put(q, cq);
+		    Temp retex=new Temp(tf);
+		    CALL nc=new CALL(hcode.getFactory(), q,
+				     swapAdd(q.method()), 
+				     new Temp[] {cq.params(0)},
+				     null, retex, true, false, new Temp[0]);
+		    Quad.addEdge(cq,0,nc, 0);
+		    THROW nt=new THROW(hcode.getFactory(), q,
+				       retex);
+		    Quad.addEdge(nc,1,nt,0);
+		    makeasync.add(cq);
+		    linkFooters.add(nt);
 		}
 		else
 		    quadmap.put(q, q.clone(hcode.getFactory(), ctmap));
 	    }
 	}
 
+	public HMethod swapAdd(HMethod old) {
+	    HClass ss=linker.forName("java.net.ServerSocket");
+	    if (old.getDeclaringClass().equals(ss)&&
+		old.getName().equals("<init>"))
+		return ss.getDeclaredMethod("makeAsync", new HClass[0]);
+	    return null;
+	}
+	
 	public HMethod swapTo(HMethod old) {
 	    HMethod gis=linker.forName("java.net.Socket").getDeclaredMethod("getInputStream", new HClass[0]);
 	    if (gis.equals(old))
