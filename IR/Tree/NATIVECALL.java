@@ -7,11 +7,14 @@ import harpoon.Util.Util;
 
 /**
  * <code>NATIVECALL</code> objects are statements which stand for
- * native method calls.  
+ * function calls using standard C calling convention.  These are
+ * typically used to implement java "native" method calls, although
+ * they can also be used to implement part of the runtime system
+ * (for example, to invoke the garbage collector).
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NATIVECALL.java,v 1.1.2.6 1999-06-28 18:49:16 duncan Exp $
+ * @version $Id: NATIVECALL.java,v 1.1.2.7 1999-08-03 21:07:09 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see INVOCATION
