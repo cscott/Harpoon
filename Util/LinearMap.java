@@ -12,7 +12,7 @@ import java.util.Iterator;
  * small.  It is backed by a <code>LinearSet</code>.
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LinearMap.java,v 1.1.2.1 1999-08-04 17:57:15 pnkfelix Exp $
+ * @version $Id: LinearMap.java,v 1.1.2.2 1999-08-12 20:42:38 pnkfelix Exp $
  */
 public class LinearMap extends AbstractMap {
     private LinearSet set;
@@ -21,7 +21,12 @@ public class LinearMap extends AbstractMap {
     public LinearMap() {
         set = new LinearSet();
     }
-    
+
+    /** Creates a <code>LinearMap</code> with specified capacity. */
+    public LinearMap(int capacity) {
+        set = new LinearSet(capacity);
+    }
+
     public Set entrySet() {
 	return set;
     }

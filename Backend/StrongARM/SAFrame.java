@@ -31,8 +31,10 @@ import harpoon.IR.Tree.TreeFactory;
 import harpoon.Temp.Label;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Util;
+import harpoon.Util.LinearSet;
 import harpoon.Util.ListFactory;
 
+import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,7 +47,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.30 1999-08-10 18:41:29 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.31 1999-08-12 20:42:38 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -266,8 +268,9 @@ public class SAFrame extends Frame implements AllocationInfo {
     }
 
     /** Stub added by FSK */
-    public Iterator suggestRegAssignment(Temp t, final Map regFile) {
+    public Iterator suggestRegAssignment(Temp t, final Map regFile) throws Frame.SpillException {
 	final ArrayList suggests = new ArrayList();
+	final ArrayList spills = new ArrayList();
 	if (t instanceof TwoWordTemp) {
 	    // double word, find two registers (the strongARM
 	    // doesn't require them to be in a row, but its faster
@@ -275,12 +278,17 @@ public class SAFrame extends Frame implements AllocationInfo {
 	    // can change the system to make the iterator do a
 	    // lazy-evaluation and dynamically create all pairs as
 	    // requested.  
-	    for (int i=0; i<regGeneral.length; i++) {
-		if ((regFile.get(regGeneral[i]) == null) &&
-		    (regFile.get(regGeneral[i+1]) == null)) {
-		    suggests.add(Arrays.asList
-				 (new Temp[]{ regGeneral[i], 
-						  regGeneral[i+1]}));
+	    for (int i=0; i<regGeneral.length-1; i++) {
+		Temp[] assign = new Temp[] { regGeneral[i] ,
+					     regGeneral[i+1] };
+		if ((regFile.get(assign[0]) == null) &&
+		    (regFile.get(assign[1]) == null)) {
+		    suggests.add(Arrays.asList(assign));
+		} else {
+		    Set s = new LinearSet(2);
+		    s.add(assign[0]);
+		    s.add(assign[1]);
+		    spills.add(s);
 		}
 	    }
 
@@ -289,8 +297,19 @@ public class SAFrame extends Frame implements AllocationInfo {
 	    for (int i=0; i<regGeneral.length; i++) {
 		if ((regFile.get(regGeneral[i]) == null)) {
 		    suggests.add(ListFactory.singleton(regGeneral[i]));
+		} else {
+		    Set s = new LinearSet(1);
+		    s.add(regGeneral[i]);
+		    spills.add(s);
 		}
 	    }
+	}
+	if (suggests.isEmpty()) {
+	    throw new Frame.SpillException() {
+		public Iterator getPotentialSpills() {
+		    return spills.iterator();
+		}
+	    };
 	}
 	return suggests.iterator();
     }

@@ -43,29 +43,65 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.22 1999-08-06 19:11:12 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.23 1999-08-12 20:42:33 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
     protected Code code;
     protected BasicBlock rootBlock;
 
-    /** Class for <code>RegAlloc</code> usage in loading registers. */
+    private static String getSrcStr(int num) {
+	String s = "`s0";
+	for(int i=1; i<num; i++) {
+	    s += ", `s"+i;
+	}
+	return s;
+    }
+    private static String getDstStr(int num) {
+	String s = "`d0";
+	for(int i=1; i<num; i++) {
+	    s += ", `d"+i;
+	}
+	return s;
+    }
+
+    /** Class for <code>RegAlloc</code> usage in loading registers. 
+	
+	Note that the constructors automagically put in the
+	"appropriate" `d# and `s# operands.
+
+     */
     protected class FskLoad extends InstrMEM {
 	FskLoad(InstrFactory inf, HCodeElement hce, 
 		String assem, Temp dst, Temp src) {
-	    super(inf, hce, assem, 
+	    super(inf, hce, assem + " `d0, `s0", 
 		  new Temp[]{dst}, new Temp[]{src});
 	}
 	FskLoad(InstrFactory inf, HCodeElement hce, 
 		String assem, List dsts, Temp src) {
-	    super(inf, hce, assem, 
-		  (Temp[])dsts.toArray(new Temp[0]), new Temp[]{src});
+	    super(inf, hce, assem + " " + 
+		  getDstStr(dsts.size()) + ", `s0",
+		  (Temp[])dsts.toArray(new Temp[dsts.size()]), 
+		  new Temp[]{src});
 	}
-	
+	// this is prolly bad (set order not specified) but its my
+	// sketchy class and no one else should be using it anyway.  
+	FskLoad(InstrFactory inf, HCodeElement hce,
+		String assem, Set dsts, Temp src) {
+	    super(inf, hce, assem + " " + 
+		  getDstStr(dsts.size()) + ", `s0", 
+		  (Temp[])dsts.toArray(new Temp[dsts.size()]), 
+		  new Temp[]{src});
+	}
+
     }
 
-    /** Class for <code>RegAlloc</code> usage in spilling registers. */
+    /** Class for <code>RegAlloc</code> usage in spilling registers. 
+	
+	Note that the constructors automagically put in the
+	"appropriate" `d# and `s# operands.
+
+    */
     protected class FskStore extends InstrMEM {
 	FskStore(InstrFactory inf, HCodeElement hce, 
 		String assem, Temp dst, Temp src) {
@@ -74,10 +110,20 @@ public abstract class RegAlloc  {
 	}
 	FskStore(InstrFactory inf, HCodeElement hce, 
 		String assem, Temp dst, List srcs) {
-	    super(inf, hce, assem, 
-		  new Temp[]{dst}, (Temp[])srcs.toArray(new Temp[0]));
+	    super(inf, hce, assem + " `d0, " +
+		  getSrcStr(srcs.size()), 
+		  new Temp[]{dst}, 
+		  (Temp[])srcs.toArray(new Temp[srcs.size()]));
 	}
-
+	// this is prolly bad (set order not specified) but its my
+	// sketchy class and no one else should be using it anyway.  
+	FskStore(InstrFactory inf, HCodeElement hce,
+		 String assem, Temp dst, Set srcs) {
+	    super(inf, hce, assem + " `d0, " +
+		  getSrcStr(srcs.size()),
+		  new Temp[]{dst}, 
+		  (Temp[])srcs.toArray(new Temp[srcs.size()]));
+	}
     }
 
     /** Creates a <code>RegAlloc</code>. 
@@ -391,14 +437,9 @@ public abstract class RegAlloc  {
 			    Iterator iter =
 				frame.suggestRegAssignment(preg, regFile); 
 			    List regList = (List) iter.next();
-			    String dests = ""; 
-			    for(int j=0; j<regList.size(); j++) {
-				regFile.put(regList.get(j), preg);
-				dests += ("`d"+j+", ");
-			    }
 			    InstrMEM loadSrcs = 
-				new FskLoad(inf, null, "FSK-LOAD " + dests
-					    + "`s0", regList, preg); 
+				new FskLoad(inf, null, "FSK-LOAD", 
+					    regList, preg); 
 			    Instr.insertInstrBefore(instr, loadSrcs);
 			    code.assignRegister(instr, preg, regList);
 			}
@@ -410,15 +451,12 @@ public abstract class RegAlloc  {
 			    Iterator iter =
 				frame.suggestRegAssignment(preg, regFile); 
 			    List regList = (List) iter.next();
-			    String srcs = "";
-			    for (int j=0; j<regList.size(); j++) {
-				regFile.put(regList.get(j), preg);
-				srcs += (", `s"+j);
-			    }
 			    InstrMEM storeDsts = 
-				new FskStore(inf, null, "FSK-STORE `d0"+srcs,
+				new FskStore(inf, null, "FSK-STORE",
 					     preg, regList);
 			    Instr.insertInstrAfter(instr, storeDsts);
+			    // I'm not certain this code will handle 
+			    // "add t0, t0, t1" properly
 			    code.assignRegister(instr, preg, regList);
 			}
 		    }

@@ -35,7 +35,7 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.24 1999-08-07 00:43:45 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.25 1999-08-12 20:42:36 pnkfelix Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -304,7 +304,7 @@ public abstract class Frame {
 	    <BR> <B>effects:</B> Returns a <code>Set</code>
     	         <code>Iterator</code> of spill candidates.  Each
 		 element of the <code>Iterator</code> returned
-		 represents a <code>Set</code> of Register
+		 represents a mutable <code>Set</code> of Register
 		 <code>Temp</code>s that could be spilled to free up
 		 the amount of space needed for the attempted
 		 assignment in the register file.  The returned
@@ -314,6 +314,8 @@ public abstract class Frame {
 		 through a decent selection so that the Register
 		 Allocator has significant freedom in selecting
 		 registers to spill. 
+
+	   <BR> NOTE: consider making the Sets returned immutable...
 	*/ 
 	public abstract Iterator getPotentialSpills();
     }
