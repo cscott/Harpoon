@@ -17,7 +17,7 @@ import java.lang.reflect.InvocationTargetException;
 
 public abstract class MemoryArea {
   protected MemoryArea parent;
-  protected long size, memoryConsumed;
+  protected long size, memoryConsumed;  // Size is somewhat inaccurate - may want to fix in future
   protected boolean scoped;
   
   protected MemoryArea(long sizeInBytes) {

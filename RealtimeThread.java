@@ -5,6 +5,7 @@ public class RealtimeThread extends java.lang.Thread {
   
   public RealtimeThread() {  // All of the same constructors as Thread...
     super();
+    mem = HeapMemory.instance();  // All RealtimeThreads default to pointing to the heap upon creation.
   }
 
   public RealtimeThread(Runnable target) {
@@ -33,6 +34,11 @@ public class RealtimeThread extends java.lang.Thread {
   
   public static RealtimeThread currentRealtimeThread() {
     return (RealtimeThread)Thread.currentThread();
+  }
+
+  public void run() { // When the run method is called, this RealtimeThread points to the current scope.
+    mem = currentRealtimeThread().mem;
+    super.run();
   }
   
   public MemoryArea getMemoryArea() {
