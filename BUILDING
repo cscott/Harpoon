@@ -1,5 +1,5 @@
 Make sure that JacORB 1.3.30 is in your CLASSPATH, and
-some 1.4 compliant JDK and JVM.  
+some 1.4 compliant JDK and JVM.
 
 (Currently works with SunJDK 1.4 and HotSpot - 
 FLEX and GNU Classpath support should be added soon.)
@@ -13,4 +13,7 @@ to run the program.
 
 src/MANIFEST.MF points to the Main class to be run.
 
+To run as part of the BBN UAV OEP code, use
+jaco imagerec.Main -ORBInitRef NameService=..., and
+make sure imagerec.jar is in your CLASSPATH.
 
