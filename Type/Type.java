@@ -9,7 +9,7 @@ import java.util.Vector;
  * Each instance of this class represents a unique datatype.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Type.java,v 1.1 1998-07-29 00:56:46 cananian Exp $
+ * @version $Id: Type.java,v 1.2 1998-07-29 01:26:04 cananian Exp $
  * @see     BaseType
  * @see     ArrayType
  * @see     ObjectType
@@ -69,7 +69,7 @@ public abstract class Type {
   }
   /** Given a class object, return the correct BaseType or ObjectType */
   static Type objType(Class theClass) {
-    // Check to see if this class is a subclass of Builtin.Datatype
+    // Check to see if this class is a subclass of harpoon.Type.Basic.Datatype
     for (Class c=theClass; c!=null; c=c.getSuperclass())
       if (c == harpoon.Type.Basic.Datatype.class)
         return BaseType.type(theClass);
