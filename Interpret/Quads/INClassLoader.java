@@ -6,6 +6,7 @@ package harpoon.Interpret.Quads;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.NoSuchClassException;
 
 /**
  * <code>INClassLoader</code> provides implementations for (some of) the native
@@ -13,13 +14,15 @@ import harpoon.ClassFile.HMethod;
  * <code>java.lang.ClassLoader.NativeLibrary</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INClassLoader.java,v 1.1.2.1 2000-01-28 05:27:26 cananian Exp $
+ * @version $Id: INClassLoader.java,v 1.1.2.2 2000-01-28 06:00:15 cananian Exp $
  */
 public class INClassLoader {
     static final void register(StaticState ss) {
 	// JDK 1.2 only
+	try { // the following are ClassLoader.NativeLibrary methods.
 	try { ss.register(NLload(ss)); } catch (NoSuchMethodError e) {}
 	try { ss.register(NLunload(ss)); } catch (NoSuchMethodError e) {}
+	} catch (NoSuchClassException e) { /* ignore */ }
     }
     static long handle=0; // help make unique non-zero handles
     // Load the named native library.
