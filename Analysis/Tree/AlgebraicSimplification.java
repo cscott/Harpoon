@@ -3,8 +3,12 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Tree; 
 
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
 import harpoon.IR.Tree.BINOP; 
 import harpoon.IR.Tree.Bop; 
+import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Tree.Code; 
 import harpoon.IR.Tree.CONST; 
 import harpoon.IR.Tree.ESEQ; 
@@ -22,6 +26,7 @@ import harpoon.IR.Tree.Uop;
 import harpoon.Util.Util; 
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator; 
 import java.util.List; 
 import java.util.Stack; 
@@ -33,9 +38,12 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.7 2000-01-17 23:41:26 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.8 2000-02-13 18:51:05 cananian Exp $
  */
 public abstract class AlgebraicSimplification { 
+    // hide constructor
+    private AlgebraicSimplification() { }
+
     // Define new operator constants that can be masked together. 
     private final static int _CMPLT = (1<<0);
     private final static int _CMPLE = (1<<1);
@@ -82,7 +90,38 @@ public abstract class AlgebraicSimplification {
     private final static int _CONST0     = (1<<21); 
     private final static int _CONSTNULL  = (1<<22); 
 
-    private static List DEFAULT_RULES = new ArrayList(); 
+    private final static List _DEFAULT_RULES = new ArrayList(); 
+    /** Default alegraic simplification rules. */
+    public final static List DEFAULT_RULES = // protect the rules list.
+	Collections.unmodifiableList(_DEFAULT_RULES);
+
+    /**
+     * Code factory for applying a set of simplification rules to
+     * tree form.  Clones the tree before simplifying it in-place.
+     */
+    public static HCodeFactory codeFactory(final HCodeFactory parent,
+					   final List rules) {
+	Util.assert(parent.getCodeName().equals(CanonicalTreeCode.codename));
+	return new HCodeFactory() {
+	    public HCode convert(HMethod m) {
+		HCode hc = parent.convert(m);
+		if (hc!=null) {
+		    harpoon.IR.Tree.Code code = (harpoon.IR.Tree.Code) hc;
+		    // um, i should really clone code here. FIXME
+		    simplify((Stm)code.getRootElement(), rules);
+		}
+		return hc;
+	    }
+	    public String getCodeName() { return parent.getCodeName(); }
+	    public void clear(HMethod m) { parent.clear(m); }
+	};
+    }
+    /** Code factory for applying the default set of simplifications to
+     *  the given tree form.  Clones the tree before simplifying it
+     *  in-place. */
+    public static HCodeFactory codeFactory(final HCodeFactory parent) {
+	return codeFactory(parent, DEFAULT_RULES);
+    }
 
     /**
      * Performs algebraic simplification on <code>root</code>.
@@ -364,13 +403,13 @@ public abstract class AlgebraicSimplification {
 
 	// Add rules to the rule set.  
 	// 
-	DEFAULT_RULES.add(combineConstants); 
-	DEFAULT_RULES.add(removeZero); 
-	DEFAULT_RULES.add(commute); 
-	DEFAULT_RULES.add(doubleNegative); 
-	DEFAULT_RULES.add(negZero); 
-	DEFAULT_RULES.add(mulToShift); 
-	DEFAULT_RULES.add(divToMul); 
+	_DEFAULT_RULES.add(combineConstants); 
+	_DEFAULT_RULES.add(removeZero); 
+	_DEFAULT_RULES.add(commute); 
+	_DEFAULT_RULES.add(doubleNegative); 
+	_DEFAULT_RULES.add(negZero); 
+	_DEFAULT_RULES.add(mulToShift); 
+	_DEFAULT_RULES.add(divToMul); 
     }
 		  
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
