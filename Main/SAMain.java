@@ -64,6 +64,8 @@ import harpoon.Analysis.PreciseGC.WriteBarrierStats;
 import harpoon.Analysis.PreciseGC.WriteBarrierTreePass;
 import harpoon.Analysis.Realtime.Realtime;
 
+import harpoon.Analysis.EventDriven.EventDriven;
+
 import harpoon.Analysis.SizeOpt.BitWidthAnalysis;
 
 import harpoon.Analysis.Transactions.SyncTransformer;
@@ -109,14 +111,11 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.39 2003-03-28 21:23:30 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.40 2003-04-01 02:59:51 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
     static boolean EVENTDRIVEN = false;
-    static boolean recycle = false;
-    static boolean optimistic = false;
-    static MetaCallGraph mcg = null; // MetaCallGraph used by EVENTDRIVEN
 
     static boolean PRINT_ORIG = false;
     static boolean PRINT_DATA = false;
@@ -177,8 +176,12 @@ public class SAMain extends harpoon.IR.Registration {
 
     static File ASSEM_DIR = null;
     static HCodeFactory hcf;
+    static HMethod mainM; // main method of the program to compile
+    static Set roots;     // all roots (includes mainM)
 
-    static Set joinset=null, startset=null;
+
+    static boolean THREAD_INLINER = false;
+    static Set joinset, startset;
 
     // Support for transactions transformation
     static boolean DO_TRANSACTIONS = false;
@@ -199,8 +202,7 @@ public class SAMain extends harpoon.IR.Registration {
 
     public static void main(String[] args) {
 	hcf = // default code factory.
-	    new harpoon.ClassFile.CachingCodeFactory
-	    (harpoon.IR.Quads.QuadWithTry.codeFactory());
+	    new CachingCodeFactory(harpoon.IR.Quads.QuadWithTry.codeFactory());
 
 	// the new mover will try to put NEWs closer to their constructors.
 	// in the words of a PLDI paper, this reduces "drag time".
@@ -222,7 +224,7 @@ public class SAMain extends harpoon.IR.Registration {
 	// create the target Frame way up here!
 	frame = constructFrame(mainM);
 
-	do_it(mainM);
+	do_it();
     }
 
 
@@ -352,62 +354,47 @@ public class SAMain extends harpoon.IR.Registration {
     }
 
 
+
+    // top level method for compiling a program
+    // TODO: find a more appropriate name here
+    static void do_it() {
+	quad_form_processing();
+
+	tree_form_processing();
+
+	generate_code();
+    }
+
+
     // hcf is QuadWithTry at the beginning of do_it();
-    static void do_it(HMethod mainM) {
-	if (Realtime.REALTIME_JAVA) { 
+    private static void quad_form_processing() {
+	if (Realtime.REALTIME_JAVA)
 	    Realtime.setupObject(linker); 
-	}
 	
-	if (SAMain.startset!=null)
+	if (THREAD_INLINER)
 	    hcf = harpoon.IR.Quads.ThreadInliner.codeFactory
-		(hcf,SAMain.startset, SAMain.joinset);
+		(hcf, startset, joinset);
 	
 	// needed for creating the class hierarchy
-	Set roots = getRoots(mainM);
+	roots = getRoots(mainM);
 
 	// okay, we've got the roots, make a rough class hierarchy.
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	assert classHierarchy != null : "How the hell...";
 	
-	// use the rough class hierarchy to devirtualize as many call sites
-	// as possible.
+	// use the rough class hierarchy to devirtualize as many call
+	// sites as possible.
 	hcf = new harpoon.Analysis.Quads.Nonvirtualize
 	    (hcf, new harpoon.Backend.Maps.CHFinalMap(classHierarchy),
 	     classHierarchy).codeFactory();
-	
-	if (!USE_OLD_CLINIT_STRATEGY) {
-	    // transform the class initializers using the class hierarchy.
-	    String resource = frame.getRuntime().resourcePath
-		("init-safe.properties");
-	    hcf = new harpoon.Analysis.Quads.InitializerTransform
-		(hcf, classHierarchy, linker, resource).codeFactory();
-	    // recompute the hierarchy after transformation.
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    // config checking
-	    frame.getRuntime().configurationSet.add
-		("check_with_init_check_needed");
-	} else
-	    frame.getRuntime().configurationSet.add
-		("check_with_init_check_not_needed");
 
-	if (EVENTDRIVEN) {
-	    hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
-	    Set mroots =
-		extract_method_roots(frame.getRuntime().
-				     runtimeCallableMethods());
-	    mroots.add(mainM);
-	    mcg = new MetaCallGraphImpl
-		(new CachingCodeFactory(hcf), linker, classHierarchy, mroots);
-	}
+	handle_class_initializers();
 	
-	if (ROLE_INFER) {
-	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
-	    hcf = (new harpoon.Analysis.RoleInference.RoleInference
-		   (hcf,linker)).codeFactory();
-	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	}
+	if (EVENTDRIVEN)
+	    event_driven_step_one();
+	
+	if (ROLE_INFER) 
+	    role_inference();
 	
 	handleAllocationInstrumentation(roots, mainM);
 
@@ -416,180 +403,26 @@ public class SAMain extends harpoon.IR.Registration {
 		(linker, hcf, classHierarchy, mainM, roots, as, frame);
 	}
 	
-	if (DO_TRANSACTIONS) {
-	    String resource = frame.getRuntime().resourcePath
-		("transact-safe.properties");
-	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
-	    hcf = new harpoon.Analysis.Transactions.ArrayCopyImplementer
-		(hcf, linker);
-	    hcf = new harpoon.Analysis.Transactions.CloneImplementer
-		(hcf, linker, classHierarchy.classes());
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    
-	    hcf = new harpoon.Analysis.Quads.ArrayInitRemover(hcf)
-		.codeFactory();
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    
-	    syncTransformer = new SyncTransformer
-		(hcf, classHierarchy, linker, mainM, roots, resource);
-	    hcf = syncTransformer.codeFactory();
-	    hcf = harpoon.Analysis.Counters.CounterFactory
-		.codeFactory(hcf, linker, mainM);
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    // config checking
-	    frame.getRuntime().configurationSet.add
-		("check_with_transactions_needed");
-	}
+	if (DO_TRANSACTIONS)
+	    do_transactions_step_one();
 	
 	if (Realtime.REALTIME_JAVA) {
 	    hcf = Realtime.setupCode(linker, classHierarchy, hcf);
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    hcf = Realtime.addChecks(linker, classHierarchy, hcf, roots);
 	}
-	
-	/* counter factory must be set up before field reducer,
-	 * or it will be optimized into nothingness. */
-	if (Boolean.getBoolean("size.counters") ||
-	    Boolean.getBoolean("mzf.counters") ||
-	    Boolean.getBoolean("harpoon.sizeopt.bitcounters")) {
-	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
-	    hcf = harpoon.Analysis.Counters.CounterFactory
-		.codeFactory(hcf, linker, mainM);
-	    // recompute the hierarchy after transformation.
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	}
-	/*--- size optimizations ---*/
-	if (Boolean.getBoolean("mzf.compressor")) {
-	    // if we're going to do mzf compression, make sure that
-	    // the MZFExternalMap methods are in the root set and
-	    // the class hierarchy (otherwise the FieldReducer
-	    // will stub them out as uncallable).
-	    HClass hcx = linker.forClass
-		(harpoon.Runtime.MZFExternalMap.class);
-	    roots.addAll(Arrays.asList(hcx.getDeclaredMethods()));
-	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	}	    
-	if (Boolean.getBoolean("bitwidth")) {
-	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    // read field roots
-	    String resource = frame.getRuntime().resourcePath
-		("field-root.properties");
-	    System.out.println("STARTING BITWIDTH ANALYSIS");
-	    hcf = new harpoon.Analysis.SizeOpt.FieldReducer
-		(hcf, frame, classHierarchy, roots, resource)
-		.codeFactory();
-	}
-	if (Boolean.getBoolean("mzf.compressor") &&
-	    System.getProperty("mzf.profile","").length()>0) {
-	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
-	    if (!Boolean.getBoolean("bitwidth"))
-		// SCCOptimize makes the SimpleConstMap used by
-		// ConstructorClassifier more accurate.  However, if
-		// we've used the FieldReducer, we're already
-		// SCCOptimized, so no need to do it again.
-		hcf = harpoon.Analysis.Quads.SCC.SCCOptimize
-		    .codeFactory(hcf);
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    hcf = new harpoon.Analysis.SizeOpt.MZFCompressor
-		(frame, hcf, classHierarchy,
-		 System.getProperty("mzf.profile")).codeFactory();
-	    // START HACK: main still creates a String[], even after the
-	    // Compressor has split String.  So re-add String[] to the
-	    // root-set.
-	    roots.add(linker.forDescriptor("[Ljava/lang/String;"));
-	    // END HACK!
-	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	}
-	/* -- add counters to all allocations? -- */
-	if (Boolean.getBoolean("size.counters")) {
-	    hcf = new harpoon.Analysis.SizeOpt.SizeCounters(hcf, frame)
-		.codeFactory();
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    // pull everything through the size counter factory
-	    for (Iterator it=classHierarchy.callableMethods().iterator();
-		 it.hasNext(); )
-		hcf.convert((HMethod)it.next());
-	}
-	/* -- find mostly-zero fields -- */
-	if (Boolean.getBoolean("mzf.counters")) {
-	    hcf = new harpoon.Analysis.SizeOpt.MostlyZeroFinder
-		(hcf, classHierarchy, frame).codeFactory();
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    // pull everything through the 'mostly zero finder', to make
-	    // sure that all relevant counter fields show up before
-		// we start emitting code.
-	    for (Iterator it=classHierarchy.callableMethods().iterator();
-		 it.hasNext(); )
-		hcf.convert((HMethod)it.next());
-	}
-	
-	if (BACKEND == Backend.MIPSDA || BACKEND == Backend.MIPSYP) {
-	    hcf = new harpoon.Analysis.Quads.ArrayUnroller(hcf).codeFactory();
-	    /*
-	    hcf = new harpoon.Analysis.Quads.DispatchTreeTransformation
-		(hcf, classHierarchy).codeFactory();
-	    */
-	    hcf = harpoon.IR.Quads.QuadSSA.codeFactory(hcf);
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    hcf = new harpoon.Analysis.Quads.SmallMethodInliner
-		(hcf, classHierarchy);
-	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    hcf = new harpoon.Analysis.Quads.MemoryOptimization
-		(hcf, classHierarchy, new CallGraphImpl(classHierarchy, hcf))
-		.codeFactory();
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	}
 
-	if (OPTIMIZE) {
-	    /*
-	    hcf = new harpoon.Analysis.Quads.DispatchTreeTransformation
-		(hcf, classHierarchy).codeFactory();
-	    */
-	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
-	    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
-	    hcf = harpoon.IR.Quads.QuadSSA.codeFactory(hcf);
-	    if (Boolean.getBoolean("harpoon.inline.arraycopy")) {
-		// inline System.arraycopy in particular.
-		hcf = new harpoon.Analysis.Transactions.ArrayCopyImplementer
-		    (hcf, linker);
-		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-		hcf = new harpoon.Analysis.Quads.ArrayCopyInliner
-		    (hcf, classHierarchy);
-	    } else {
-		// just inline small methods.
-		hcf = new harpoon.Analysis.Quads.SmallMethodInliner
-		    (hcf, classHierarchy);
-	    }
-	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
-	    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	}
+	// fancy stuff: not part of the normal flow
+	handle_mzf_stuff();
+	
+	if (BACKEND == Backend.MIPSDA || BACKEND == Backend.MIPSYP)
+	    quad_form_mips_specific_optimizations();
 
-	HMethod mconverted=null;
+	if (OPTIMIZE)
+	    fancy_optimizations();
+
 	if (EVENTDRIVEN) {
-	    if (!OPTIMIZE) {
-		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf); 
-	    }
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf,true);
-	    HCode hc = hcf.convert(mainM);
-	    harpoon.Analysis.EventDriven.EventDriven ed = 
-		new harpoon.Analysis.EventDriven.EventDriven((harpoon.ClassFile.CachingCodeFactory)hcf, hc, classHierarchy, linker,optimistic,recycle);
-	    mainM=ed.convert(mcg);
-	    mcg=null; /*Memory management*/
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    Set eroots = new java.util.HashSet
-		(frame.getRuntime().runtimeCallableMethods());
-	    // and our main method is a root, too...
-	    eroots.add(mainM);
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    classHierarchy = new QuadClassHierarchy(linker, eroots, hcf);
-	    callGraph=new CallGraphImpl2(classHierarchy, hcf);
+	    event_driven_step_two();
 	} else if (true) {
 	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
@@ -598,59 +431,11 @@ public class SAMain extends harpoon.IR.Registration {
 	    callGraph = new CallGraphImpl(classHierarchy, hcf);//less precise
 	}
 
-	if (WRITEBARRIERS) {
-	    System.out.println("Using write barriers for generational gc.");
-	    if (wbOptLevel != 0)
-		System.out.println
-		    ("Removing write barriers at optimization level "+
-		     wbOptLevel+".");
-	    String rName = frame.getRuntime().resourcePath
-		("writebarrier-safe.properties");
-	    System.out.println(rName);
-	    if (WB_TRANSFORMS == 2 || WB_TRANSFORMS == 3) {
-		// transform recursive constructors
-		hcf = new harpoon.Analysis.PreciseGC.RCTransformer
-		    (hcf, classHierarchy, linker).codeFactory();
-		// re-generate class hierarchy to handle modified methods
-		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    }
-	    if (WB_TRANSFORMS == 1 || WB_TRANSFORMS == 3) {
-		// perform allocation hoisting
-		System.out.println("Performing allocation hoisting.");
-		hcf = new CachingCodeFactory(hcf);
-		hcf = new harpoon.Analysis.PreciseGC.AllocationHoisting
-		    (hcf, classHierarchy, linker, rName, 
-		     (wbOptLevel != 0) ? wbOptLevel : 2).codeFactory();
-		// re-generate class hierarchy to handle modified methods
-		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    }
-	    hcf = new CachingCodeFactory(hcf);
-	    hcf = (new harpoon.Analysis.PreciseGC.WriteBarrierQuadPass
-		   (classHierarchy, hcf, linker, rName, wbOptLevel)).
-		codeFactory();
-	    // re-generate class hierarchy to handle added calls
-	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	}
-
-	if (DYNAMICWBS) {
-	    System.out.println
-		("Using dynamic write barriers for generational gc.");
-	    if (wbOptLevel == 1)
-		System.out.println("Optimistically removing write barriers.");
-	    harpoon.Analysis.PreciseGC.DynamicWBQuadPass dynamicWB = null;
-	    if (wbOptLevel == 1 || WB_STATISTICS) {
-		dynamicWB = new harpoon.Analysis.PreciseGC.DynamicWBQuadPass
-		    (hcf, linker);
-		hcf = dynamicWB.codeFactory();
-	    }
-	    hcf = (wbOptLevel == 0) ?
-		(new harpoon.Analysis.PreciseGC.WriteBarrierInserter
-		 (hcf, linker)).codeFactory() :
-		(new harpoon.Analysis.PreciseGC.WriteBarrierInserter
-		 (hcf, linker, dynamicWB)).codeFactory();
-	    // re-generate class hierarchy to handle added calls
-	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	}
+	if (WRITEBARRIERS)
+	    write_barriers_step_one();
+	
+	if (DYNAMICWBS)
+	    dynamic_wb_step_one();
 
 	// now we can finally set the (final?) classHierarchy and callGraph
 	// which the frame will use (among other things, for vtable numbering)
@@ -670,21 +455,105 @@ public class SAMain extends harpoon.IR.Registration {
 	// in the low-quad translation, but doing so is unsafe unless
 	// you've got a classHierarchy handy -- you could inadventently
 	// create a new dangling reference to an uncallable method.
-	hcf=new harpoon.Analysis.Quads.Nonvirtualize
+	hcf = new harpoon.Analysis.Quads.Nonvirtualize
 	    (hcf, new harpoon.Backend.Maps.CHFinalMap(classHierarchy),
 	     classHierarchy).codeFactory();
 
-	if (LOOPOPTIMIZE) {
-	    // XXX: you might have to add a TypeSwitchRemover here, if
-	    //      LoopOptimize don't handle TYPESWITCHes. --CSA
-	    System.out.println("Loop Optimizations On");
-	    hcf=harpoon.IR.LowQuad.LowQuadSSI.codeFactory(hcf);
-	    hcf=harpoon.Analysis.LowQuad.Loop.LoopOptimize.codeFactory(hcf);
-	    hcf=harpoon.Analysis.LowQuad.DerivationChecker.codeFactory(hcf);
-	}
+	if (LOOPOPTIMIZE)
+	    loop_optimizations();
 
 	hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
+    }
 
+
+    // Class initialization is delicate in an ahead of time compiler.
+    // The JVM deals with it by explicitly testing before each each
+    // class member access whether the class is initialized or not; we
+    // try to be more effcient: we run the initializers of all the
+    // classes from the program before the main method.  Only the code
+    // of the static initializers checks for un-initialized classes;
+    // when the main method is called, all the relevant classes have
+    // been initialized.
+    private static void handle_class_initializers() {
+	if (!USE_OLD_CLINIT_STRATEGY) {
+	    // transform the class initializers using the class hierarchy.
+	    String resource = frame.getRuntime().resourcePath
+		("init-safe.properties");
+	    hcf = new harpoon.Analysis.Quads.InitializerTransform
+		(hcf, classHierarchy, linker, resource).codeFactory();
+	    // recompute the hierarchy after transformation.
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    // config checking
+	    frame.getRuntime().configurationSet.add
+		("check_with_init_check_needed");
+	} else // old and buggy class initialization strategy
+	    frame.getRuntime().configurationSet.add
+		("check_with_init_check_not_needed");
+    }
+
+
+    // loop optimizations [BRIAN]
+    private static void loop_optimizations() {
+	// XXX: you might have to add a TypeSwitchRemover here, if
+	//      LoopOptimize don't handle TYPESWITCHes. --CSA
+	System.out.println("Loop Optimizations On");
+	hcf = harpoon.IR.LowQuad.LowQuadSSI.codeFactory(hcf);
+	hcf = harpoon.Analysis.LowQuad.Loop.LoopOptimize.codeFactory(hcf);
+	hcf = harpoon.Analysis.LowQuad.DerivationChecker.codeFactory(hcf);
+    }
+
+
+    // TODO: add some comments: why are these optimizations done only
+    // for MIPS architectures?
+    private static void quad_form_mips_specific_optimizations() {
+	hcf = new harpoon.Analysis.Quads.ArrayUnroller(hcf).codeFactory();
+	/*
+	  hcf = new harpoon.Analysis.Quads.DispatchTreeTransformation
+	  (hcf, classHierarchy).codeFactory();
+	*/
+	hcf = harpoon.IR.Quads.QuadSSA.codeFactory(hcf);
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	hcf = new harpoon.Analysis.Quads.SmallMethodInliner
+	    (hcf, classHierarchy);
+	hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	hcf = new harpoon.Analysis.Quads.MemoryOptimization
+	    (hcf, classHierarchy, new CallGraphImpl(classHierarchy, hcf))
+	    .codeFactory();
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+    }
+
+
+    // TODO: add some comments: what are these fancy optimizations?
+    private static void fancy_optimizations() {
+	/*
+	  hcf = new harpoon.Analysis.Quads.DispatchTreeTransformation
+	  (hcf, classHierarchy).codeFactory();
+	*/
+	hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	hcf = harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
+	hcf = harpoon.IR.Quads.QuadSSA.codeFactory(hcf);
+	if (Boolean.getBoolean("harpoon.inline.arraycopy")) {
+	    // inline System.arraycopy in particular.
+	    hcf = new harpoon.Analysis.Transactions.ArrayCopyImplementer
+		(hcf, linker);
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    hcf = new harpoon.Analysis.Quads.ArrayCopyInliner
+		(hcf, classHierarchy);
+	} else {
+	    // just inline small methods.
+	    hcf = new harpoon.Analysis.Quads.SmallMethodInliner
+		(hcf, classHierarchy);
+	}
+	hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	hcf = harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+    }
+
+    
+    private static void tree_form_processing() {
 	// XXX: ToTree doesn't handle TYPESWITCHes right now.
 	hcf = new harpoon.Analysis.Quads.TypeSwitchRemover(hcf).codeFactory();
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
@@ -695,24 +564,7 @@ public class SAMain extends harpoon.IR.Registration {
 //  	hcf = (new harpoon.Backend.Analysis.GCTraceStore()).codeFactory(hcf);
 
 	if (WRITEBARRIERS || DYNAMICWBS) {
-	    // run constant propagation
-	    hcf = new harpoon.Analysis.Tree.ConstantPropagation(hcf).
-		codeFactory();
-	    // remove write barriers for assignment to constants
-	    hcf = harpoon.Analysis.PreciseGC.WriteBarrierConstElim.codeFactory
-		(frame, hcf, linker);
-	    if (WB_STATISTICS) {
-		System.out.println("Compiling for write barrier statistics.");
-		if (wbps != null)
-		    wbps.println("\nWRITE BARRIER LIST FOR "+className);
-		writeBarrierStats = 
-		    new harpoon.Analysis.PreciseGC.WriteBarrierStats
-		    (frame, hcf, classHierarchy, wbps, linker);
-		hcf = writeBarrierStats.codeFactory();
-	    } else {
-		hcf = harpoon.Analysis.PreciseGC.WriteBarrierTreePass.
-		    codeFactory(hcf, frame, classHierarchy, linker);
-	    }
+	    write_barriers_step_two();
 	}
 
 	if(PreallocOpt.PREALLOC_OPT)
@@ -727,6 +579,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	}
+
 	hcf = harpoon.Analysis.Tree.AlgebraicSimplification.codeFactory(hcf);
 	//hcf = harpoon.Analysis.Tree.DeadCodeElimination.codeFactory(hcf);
 	//hcf = harpoon.Analysis.Tree.JumpOptimization.codeFactory(hcf);
@@ -749,11 +602,14 @@ public class SAMain extends harpoon.IR.Registration {
 		(hcf, frame, classHierarchy).codeFactory();
 	}
 	hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);    
-    
+    }
+
+
+    private static void generate_code() {
 	HCodeFactory sahcf = frame.getCodeFactory(hcf);
 	if (sahcf!=null)
 	    sahcf = new harpoon.ClassFile.CachingCodeFactory(sahcf);
-
+	
 	if (LOCAL_REG_ALLOC) 
 	    regAllocFactory = RegAlloc.LOCAL;
 	else 
@@ -771,95 +627,101 @@ public class SAMain extends harpoon.IR.Registration {
 	    singleClass = linker.forName(singleClassStr);
 	    classes=Default.singletonIterator(singleClass);
 	}
-	if (true) { // this is only here because i don't want to re-indent
-	            // all the code below this point.
-	    while(classes.hasNext()) {
-		HClass hclass = (HClass) classes.next();
-		if (singleClass!=null && singleClass!=hclass) continue;//skip
-		messageln("Compiling: " + hclass.getName());
-		
+
+	while(classes.hasNext()) {
+	    HClass hclass = (HClass) classes.next();
+	    if (singleClass!=null && singleClass!=hclass) continue;//skip
+	    messageln("Compiling: " + hclass.getName());
+	    
+	    try {
+		String filename = frame.getRuntime().getNameMap().mangle(hclass);
+		java.io.Writer w;
 		try {
-		    String filename = frame.getRuntime().getNameMap().mangle(hclass);
-		    java.io.Writer w;
-		    try {
-			w = new FileWriter
-			    (new File(ASSEM_DIR, filename+filesuffix));
-		    } catch (java.io.FileNotFoundException ffe) {
-			// filename too long?  try shorter, unique, name.
-			// XXX: sun's doc for File.createTempFile() states
-			// "If the prefix is too long then it will be
-			// truncated" but it is actually not.  We must
-			// truncate it ourselves, for now.  200-chars?
-			if (filename.length()>200)
-			    filename=filename.substring(0, 200);
-			w = new FileWriter
-			    (File.createTempFile(filename, filesuffix,
-						 ASSEM_DIR));
-		    }
-		    out = new PrintWriter(new BufferedWriter(w));
-
-		    if (BACKEND == Backend.PRECISEC)
-			out = new harpoon.Backend.PreciseC.TreeToC(out);
-		    
-		    HMethod[] hmarray = hclass.getDeclaredMethods();
-		    Set hmset = new TreeSet(Arrays.asList(hmarray));
-		    hmset.retainAll(methods);
-		    Iterator hms = hmset.iterator();
-		    if (ONLY_COMPILE_MAIN)
-			hms = Default.singletonIterator(mainM);
-		    message("\t");
-		    while(hms.hasNext()) {
-			HMethod m = (HMethod) hms.next();
-			message(m.getName());
-			if (!Modifier.isAbstract(m.getModifiers()))
-			    outputMethod(m, hcf, sahcf, out);
-			if (hms.hasNext()) message(", ");
-		    }
-		    messageln("");
-		    
-		    //out.println();
-		    messageln("Writing data for " + hclass.getName());
-		    outputClassData(hclass, out);
-		    
-		    out.close();
-		} catch (IOException e) {
-		    System.err.println("Error outputting class "+
-				       hclass.getName()+": "+e);
-		    System.exit(1);
+		    w = new FileWriter
+			(new File(ASSEM_DIR, filename+filesuffix));
+		} catch (java.io.FileNotFoundException ffe) {
+		    // filename too long?  try shorter, unique, name.
+		    // XXX: sun's doc for File.createTempFile() states
+		    // "If the prefix is too long then it will be
+		    // truncated" but it is actually not.  We must
+		    // truncate it ourselves, for now.  200-chars?
+		    if (filename.length()>200)
+			filename=filename.substring(0, 200);
+		    w = new FileWriter
+			(File.createTempFile(filename, filesuffix,
+					     ASSEM_DIR));
 		}
-	    }
-
-	    if (Realtime.REALTIME_JAVA) {
-		Realtime.printStats();
-	    }
-
-	    // put a proper makefile in the directory.
-	    File makefile = new File(ASSEM_DIR, "Makefile");
-	    InputStream templateStream;
-	    String resourceName="harpoon/Support/nativecode-makefile.template";
-	    if (BACKEND == Backend.PRECISEC)
-		resourceName="harpoon/Support/precisec-makefile.template";
-	    if (BACKEND == Backend.MIPSDA)
-		resourceName="harpoon/Support/mipsda-makefile.template";
-	    if (makefile.exists())
-		System.err.println("WARNING: not overwriting pre-existing "+
-				   "file "+makefile);
-	    else if ((templateStream=ClassLoader.getSystemResourceAsStream
-		      (resourceName))==null)
-		System.err.println("WARNING: can't find Makefile template.");
-	    else try {
-		BufferedReader in = new BufferedReader
-		    (new InputStreamReader(templateStream));
-		out = new PrintWriter
-		    (new BufferedWriter(new FileWriter(makefile)));
-		String line;
-		while ((line=in.readLine()) != null)
-		    out.println(line);
-		in.close(); out.close();
+		out = new PrintWriter(new BufferedWriter(w));
+		
+		if (BACKEND == Backend.PRECISEC)
+		    out = new harpoon.Backend.PreciseC.TreeToC(out);
+		
+		HMethod[] hmarray = hclass.getDeclaredMethods();
+		Set hmset = new TreeSet(Arrays.asList(hmarray));
+		hmset.retainAll(methods);
+		Iterator hms = hmset.iterator();
+		if (ONLY_COMPILE_MAIN)
+		    hms = Default.singletonIterator(mainM);
+		message("\t");
+		while(hms.hasNext()) {
+		    HMethod m = (HMethod) hms.next();
+		    message(m.getName());
+		    if (!Modifier.isAbstract(m.getModifiers()))
+			outputMethod(m, hcf, sahcf, out);
+		    if (hms.hasNext()) message(", ");
+		}
+		messageln("");
+		
+		//out.println();
+		messageln("Writing data for " + hclass.getName());
+		outputClassData(hclass, out);
+		
+		out.close();
 	    } catch (IOException e) {
-		System.err.println("Error writing "+makefile+".");
+		System.err.println("Error outputting class "+
+				   hclass.getName()+": "+e);
 		System.exit(1);
 	    }
+	}
+	
+	if (Realtime.REALTIME_JAVA) {
+	    Realtime.printStats();
+	}
+
+	generate_Makefile();
+    }
+
+
+    // generate the Makefile that can be used to assemble / compile the
+    // generated files into a single executable
+    private static void generate_Makefile() {	
+	// put a proper makefile in the directory.
+	File makefile = new File(ASSEM_DIR, "Makefile");
+	InputStream templateStream;
+	String resourceName = "harpoon/Support/nativecode-makefile.template";
+
+	if (BACKEND == Backend.PRECISEC)
+	    resourceName="harpoon/Support/precisec-makefile.template";
+	if (BACKEND == Backend.MIPSDA)
+	    resourceName="harpoon/Support/mipsda-makefile.template";
+	if (makefile.exists())
+	    System.err.println("WARNING: not overwriting pre-existing " +
+			       "file " + makefile);
+	else if ((templateStream = 
+		  ClassLoader.getSystemResourceAsStream(resourceName)) == null)
+	    System.err.println("WARNING: can't find Makefile template.");
+	else try {
+	    BufferedReader in = new BufferedReader
+		(new InputStreamReader(templateStream));
+	    out = new PrintWriter
+		(new BufferedWriter(new FileWriter(makefile)));
+	    String line;
+	    while ((line=in.readLine()) != null)
+		out.println(line);
+	    in.close(); out.close();
+	} catch (IOException e) {
+	    System.err.println("Error writing "+makefile+".");
+	    System.exit(1);
 	}
     }
 
@@ -1245,6 +1107,7 @@ public class SAMain extends harpoon.IR.Registration {
 		Realtime.configure(g.getOptarg());
 		break;
 	    case 's':
+		THREAD_INLINER = true;
 		arg=g.getOptarg();
 		try {
 		    ObjectInputStream ois =
@@ -1519,4 +1382,249 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 	return mroots;
     }
+
+
+
+    ///////////////////////////////////////////////////////////////////
+    // DO_TRANSACTIONS BEGIN
+
+    private static void do_transactions_step_one() {
+	String resource = frame.getRuntime().resourcePath
+	    ("transact-safe.properties");
+	hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	hcf = new harpoon.Analysis.Transactions.ArrayCopyImplementer
+	    (hcf, linker);
+	hcf = new harpoon.Analysis.Transactions.CloneImplementer
+	    (hcf, linker, classHierarchy.classes());
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	
+	hcf = new harpoon.Analysis.Quads.ArrayInitRemover(hcf)
+	    .codeFactory();
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	
+	syncTransformer = new SyncTransformer
+	    (hcf, classHierarchy, linker, mainM, roots, resource);
+	hcf = syncTransformer.codeFactory();
+	hcf = harpoon.Analysis.Counters.CounterFactory
+	    .codeFactory(hcf, linker, mainM);
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	// config checking
+	frame.getRuntime().configurationSet.add
+	    ("check_with_transactions_needed");
+    }
+
+    // DO_TRANSACTIONS END
+    ///////////////////////////////////////////////////////////////////
+
+
+    // MZF BEGIN
+    private static void handle_mzf_stuff() {
+	/* counter factory must be set up before field reducer,
+	 * or it will be optimized into nothingness. */
+	if (Boolean.getBoolean("size.counters") ||
+	    Boolean.getBoolean("mzf.counters") ||
+	    Boolean.getBoolean("harpoon.sizeopt.bitcounters")) {
+	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+	    hcf = harpoon.Analysis.Counters.CounterFactory
+		.codeFactory(hcf, linker, mainM);
+	    // recompute the hierarchy after transformation.
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	}
+	/*--- size optimizations ---*/
+	if (Boolean.getBoolean("mzf.compressor")) {
+	    // if we're going to do mzf compression, make sure that
+	    // the MZFExternalMap methods are in the root set and
+	    // the class hierarchy (otherwise the FieldReducer
+	    // will stub them out as uncallable).
+	    HClass hcx = linker.forClass
+		(harpoon.Runtime.MZFExternalMap.class);
+	    roots.addAll(Arrays.asList(hcx.getDeclaredMethods()));
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	}	    
+	if (Boolean.getBoolean("bitwidth")) {
+	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    // read field roots
+	    String resource = frame.getRuntime().resourcePath
+		("field-root.properties");
+	    System.out.println("STARTING BITWIDTH ANALYSIS");
+	    hcf = new harpoon.Analysis.SizeOpt.FieldReducer
+		(hcf, frame, classHierarchy, roots, resource)
+		.codeFactory();
+	}
+	if (Boolean.getBoolean("mzf.compressor") &&
+	    System.getProperty("mzf.profile","").length()>0) {
+	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	    if (!Boolean.getBoolean("bitwidth"))
+		// SCCOptimize makes the SimpleConstMap used by
+		// ConstructorClassifier more accurate.  However, if
+		// we've used the FieldReducer, we're already
+		// SCCOptimized, so no need to do it again.
+		hcf = harpoon.Analysis.Quads.SCC.SCCOptimize
+		    .codeFactory(hcf);
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    hcf = new harpoon.Analysis.SizeOpt.MZFCompressor
+		(frame, hcf, classHierarchy,
+		 System.getProperty("mzf.profile")).codeFactory();
+	    // START HACK: main still creates a String[], even after the
+	    // Compressor has split String.  So re-add String[] to the
+	    // root-set.
+	    roots.add(linker.forDescriptor("[Ljava/lang/String;"));
+	    // END HACK!
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	}
+	/* -- add counters to all allocations? -- */
+	if (Boolean.getBoolean("size.counters")) {
+	    hcf = new harpoon.Analysis.SizeOpt.SizeCounters(hcf, frame)
+		.codeFactory();
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    // pull everything through the size counter factory
+	    for (Iterator it=classHierarchy.callableMethods().iterator();
+		 it.hasNext(); )
+		hcf.convert((HMethod)it.next());
+	}
+	/* -- find mostly-zero fields -- */
+	if (Boolean.getBoolean("mzf.counters")) {
+	    hcf = new harpoon.Analysis.SizeOpt.MostlyZeroFinder
+		(hcf, classHierarchy, frame).codeFactory();
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    // pull everything through the 'mostly zero finder', to make
+	    // sure that all relevant counter fields show up before
+	    // we start emitting code.
+	    for (Iterator it=classHierarchy.callableMethods().iterator();
+		 it.hasNext(); )
+		hcf.convert((HMethod)it.next());
+	}
+    }
+    // MZF END
+
+
+    // WRITEBARRIERS and DYNAMICWBS BEGIN
+    private static void write_barriers_step_one() {
+	System.out.println("Using write barriers for generational gc.");
+	if (wbOptLevel != 0)
+	    System.out.println
+		("Removing write barriers at optimization level "+
+		 wbOptLevel+".");
+	String rName = frame.getRuntime().resourcePath
+	    ("writebarrier-safe.properties");
+	System.out.println(rName);
+	if (WB_TRANSFORMS == 2 || WB_TRANSFORMS == 3) {
+	    // transform recursive constructors
+	    hcf = new harpoon.Analysis.PreciseGC.RCTransformer
+		(hcf, classHierarchy, linker).codeFactory();
+	    // re-generate class hierarchy to handle modified methods
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	}
+	if (WB_TRANSFORMS == 1 || WB_TRANSFORMS == 3) {
+	    // perform allocation hoisting
+	    System.out.println("Performing allocation hoisting.");
+	    hcf = new CachingCodeFactory(hcf);
+	    hcf = new harpoon.Analysis.PreciseGC.AllocationHoisting
+		(hcf, classHierarchy, linker, rName, 
+		 (wbOptLevel != 0) ? wbOptLevel : 2).codeFactory();
+	    // re-generate class hierarchy to handle modified methods
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	}
+	hcf = new CachingCodeFactory(hcf);
+	hcf = (new harpoon.Analysis.PreciseGC.WriteBarrierQuadPass
+	       (classHierarchy, hcf, linker, rName, wbOptLevel)).
+	    codeFactory();
+	// re-generate class hierarchy to handle added calls
+	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+    }
+
+
+    private static void dynamic_wb_step_one() {
+	System.out.println
+	    ("Using dynamic write barriers for generational gc.");
+	if (wbOptLevel == 1)
+	    System.out.println("Optimistically removing write barriers.");
+	harpoon.Analysis.PreciseGC.DynamicWBQuadPass dynamicWB = null;
+	if (wbOptLevel == 1 || WB_STATISTICS) {
+	    dynamicWB = new harpoon.Analysis.PreciseGC.DynamicWBQuadPass
+		(hcf, linker);
+	    hcf = dynamicWB.codeFactory();
+	}
+	hcf = (wbOptLevel == 0) ?
+	    (new harpoon.Analysis.PreciseGC.WriteBarrierInserter
+	     (hcf, linker)).codeFactory() :
+	    (new harpoon.Analysis.PreciseGC.WriteBarrierInserter
+	     (hcf, linker, dynamicWB)).codeFactory();
+	// re-generate class hierarchy to handle added calls
+	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+    }
+
+
+    private static void write_barriers_step_two() {
+	// run constant propagation
+	hcf = new harpoon.Analysis.Tree.ConstantPropagation(hcf).
+	    codeFactory();
+	// remove write barriers for assignment to constants
+	hcf = harpoon.Analysis.PreciseGC.WriteBarrierConstElim.codeFactory
+	    (frame, hcf, linker);
+	if (WB_STATISTICS) {
+	    System.out.println("Compiling for write barrier statistics.");
+	    if (wbps != null)
+		wbps.println("\nWRITE BARRIER LIST FOR "+className);
+	    writeBarrierStats = 
+		new harpoon.Analysis.PreciseGC.WriteBarrierStats
+		(frame, hcf, classHierarchy, wbps, linker);
+	    hcf = writeBarrierStats.codeFactory();
+	} else {
+	    hcf = harpoon.Analysis.PreciseGC.WriteBarrierTreePass.
+		codeFactory(hcf, frame, classHierarchy, linker);
+	}
+    }
+    // WRITEBARRIERS and DYNAMICWBS END
+
+
+    // EVENTDRIVEN BEGIN
+    static MetaCallGraph mcg = null; // MetaCallGraph used by EVENTDRIVEN
+    static boolean recycle = false;
+    static boolean optimistic = false;
+
+    private static void event_driven_step_one() {
+	hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+	Set mroots = 
+	    extract_method_roots(frame.getRuntime().runtimeCallableMethods());
+	mroots.add(mainM);
+	mcg = new MetaCallGraphImpl
+	    (new CachingCodeFactory(hcf), linker, classHierarchy, mroots);
+    }
+
+    private static void event_driven_step_two() {
+	if (!OPTIMIZE) {
+	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf); 
+	}
+	hcf = new CachingCodeFactory(hcf, true);
+	HCode hc = hcf.convert(mainM);
+	EventDriven ed = 
+	    new EventDriven((harpoon.ClassFile.CachingCodeFactory) hcf, hc,
+			    classHierarchy, linker, optimistic, recycle);
+	mainM=ed.convert(mcg);
+	mcg=null; /*Memory management*/
+	hcf = new CachingCodeFactory(hcf);
+	Set eroots = new java.util.HashSet
+	    (frame.getRuntime().runtimeCallableMethods());
+	// and our main method is a root, too...
+	eroots.add(mainM);
+	hcf = new CachingCodeFactory(hcf);
+	classHierarchy = new QuadClassHierarchy(linker, eroots, hcf);
+	callGraph=new CallGraphImpl2(classHierarchy, hcf);
+    }
+    // EVENTDRIVEN END
+
+
+    // ROLE_INFER BEGIN
+    private static void role_inference() {
+	hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+	hcf = (new harpoon.Analysis.RoleInference.RoleInference
+	       (hcf,linker)).codeFactory();
+	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+    }
+    // ROLE_INFER END
 }
