@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.6 1999-04-05 21:50:44 duncan Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.7 1999-06-28 18:49:16 duncan Exp $
  */
 public class ESEQ extends Exp {
     /** The statement to evaluate for side-effects. */
@@ -41,6 +41,9 @@ public class ESEQ extends Exp {
     }
 
     public ExpList kids() {throw new Error("kids() not applicable to ESEQ");}
+
+    public int kind() { return TreeKind.ESEQ; }
+
     public Exp build(ExpList kids) {throw new Error("build() not applicable to ESEQ");}
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }

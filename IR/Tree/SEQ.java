@@ -15,7 +15,7 @@ import java.util.Enumeration;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.1.2.6 1999-04-05 21:50:44 duncan Exp $
+ * @version $Id: SEQ.java,v 1.1.2.7 1999-06-28 18:49:16 duncan Exp $
  */
 public class SEQ extends Stm {
     /** The statement to evaluate first. */
@@ -39,6 +39,8 @@ public class SEQ extends Stm {
     }
     
     public ExpList kids() {throw new Error("kids() not applicable to SEQ");}
+    public int kind() { return TreeKind.SEQ; }
+
     public Stm build(ExpList kids) {throw new Error("build() not applicable to SEQ");}
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }

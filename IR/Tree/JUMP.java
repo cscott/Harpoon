@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: JUMP.java,v 1.1.2.5 1999-02-24 01:18:54 andyb Exp $
+ * @version $Id: JUMP.java,v 1.1.2.6 1999-06-28 18:49:16 duncan Exp $
  */
 public class JUMP extends Stm {
     /** An expression giving the address to jump to. */
@@ -34,6 +34,9 @@ public class JUMP extends Stm {
 	     new NAME(tf, source, target), new LabelList(target,null));
     }
     public ExpList kids() { return new ExpList(exp,null); }
+
+    public int kind() { return TreeKind.JUMP; }
+
     public Stm build(ExpList kids) {
 	return new JUMP(tf, this, kids.head,targets);
     }

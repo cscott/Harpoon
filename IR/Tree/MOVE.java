@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.7 1999-04-05 21:50:44 duncan Exp $
+ * @version $Id: MOVE.java,v 1.1.2.8 1999-06-28 18:49:16 duncan Exp $
  */
 public class MOVE extends Stm {
     /** The expression giving the destination for the computed value. */
@@ -37,7 +37,7 @@ public class MOVE extends Stm {
   
     protected Set defSet() { 
 	HashSet def = new HashSet();
-	if (dst instanceof TEMP) {
+	if (dst.kind()==TreeKind.TEMP) { 
 	    def.union(((TEMP)dst).temp);
 	}
 	return def;
@@ -49,7 +49,7 @@ public class MOVE extends Stm {
 	for (Enumeration e = srcUse.elements(); e.hasMoreElements();) {
 	    use.union(e.nextElement());
 	}
-	if (!(dst instanceof TEMP)) { 
+	if (!(dst.kind()==TreeKind.TEMP)) { 
 	    Set dstUse = dst.useSet();
 	    for (Enumeration e = dstUse.elements(); e.hasMoreElements();) {
 		use.union(e.nextElement());
@@ -59,12 +59,15 @@ public class MOVE extends Stm {
     }
 
     public ExpList kids() {
-        if (dst instanceof MEM)
+        if (dst.kind()==TreeKind.MEM)
 	   return new ExpList(((MEM)dst).exp, new ExpList(src,null));
 	else return new ExpList(src,null);
     }
+
+    public int kind() { return TreeKind.MOVE; }
+
     public Stm build(ExpList kids) {
-        if (dst instanceof MEM)
+        if (dst.kind()==TreeKind.MEM)
 	    return new MOVE(tf, this, dst.build(new ExpList(kids.head, null)),
 			    kids.tail.head);
 	else return new MOVE(tf, this, dst, kids.head);

@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.1.2.12 1999-04-05 21:49:08 duncan Exp $
+ * @version $Id: TEMP.java,v 1.1.2.13 1999-06-28 18:49:16 duncan Exp $
  */
 public class TEMP extends Exp implements Typed {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -38,6 +38,7 @@ public class TEMP extends Exp implements Typed {
     }
   
     public ExpList kids() {return null;}
+    public int kind() { return TreeKind.TEMP; }
     public Exp build(ExpList kids) {return this;}
 
     // Typed interface:

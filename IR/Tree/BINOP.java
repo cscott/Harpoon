@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: BINOP.java,v 1.1.2.10 1999-05-10 02:07:38 duncan Exp $
+ * @version $Id: BINOP.java,v 1.1.2.11 1999-06-28 18:49:16 duncan Exp $
  * @see Bop
  */
 public class BINOP extends OPER {
@@ -39,6 +39,9 @@ public class BINOP extends OPER {
     }
 
     public ExpList kids() {return new ExpList(left, new ExpList(right,null));}
+    
+    public int kind() { return TreeKind.BINOP; }
+    
     public Exp build(ExpList kids) {
 	return new BINOP(tf, this, optype, op, kids.head, kids.tail.head);
     }

@@ -23,7 +23,7 @@ import java.util.Iterator;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.8 1999-06-15 20:30:54 sportbilly Exp $
+ * @version $Id: Tree.java,v 1.1.2.9 1999-06-28 18:49:16 duncan Exp $
  */
 public abstract class Tree 
     implements harpoon.ClassFile.HCodeElement, 
@@ -92,6 +92,12 @@ public abstract class Tree
 
     /** Return a list of subexpressions of this <code>Tree</code>. */
     public abstract ExpList kids();
+
+    /** Return an integer enumeration of the kind of this 
+     *  <code>Tree</code>.  The enumerated values are defined in
+     *  <code>TreeKind</code>. */
+    public abstract int kind();
+
     /** Accept a visitor. */
     public abstract void visit(TreeVisitor v);
 
@@ -211,7 +217,7 @@ public abstract class Tree
     }
     
     public HCodeEdge[] succ() { 
-	Util.assert(((Code)tf.getParent()).isCanonical());
+        Util.assert(((Code)tf.getParent()).isCanonical());
 	return nextEdge(); 
     }
 

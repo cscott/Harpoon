@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NATIVECALL.java,v 1.1.2.5 1999-06-23 23:19:50 cananian Exp $
+ * @version $Id: NATIVECALL.java,v 1.1.2.6 1999-06-28 18:49:16 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see INVOCATION
@@ -29,6 +29,8 @@ public class NATIVECALL extends INVOCATION {
         return new ExpList
 	    (retval, new ExpList(retex, new ExpList(func, args))); 
     }
+
+    public int kind() { return TreeKind.NATIVECALL; }
   
     public Stm build(ExpList kids) {
 	return new NATIVECALL(tf, this,
