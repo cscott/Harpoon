@@ -7,12 +7,12 @@
 // Time-stamp: <1998-11-22 17:31:54 mfoltz> 
 // Keywords: 
 
-package harpoon.Analysis.QuadSSA;
+package harpoon.Analysis.Partition;
 
 import harpoon.ClassFile.*;
-import harpoon.IR.QuadSSA.*;
-import harpoon.Temp.Temp;
-import harpoon.Util.Set;
+import harpoon.IR.Quads.*;
+import harpoon.Temp.*;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Util;
 import harpoon.RunTime.Monitor;
 
@@ -21,7 +21,6 @@ import java.io.FileOutputStream;
 import java.io.FileInputStream;
 import java.util.Properties;
 import java.util.Enumeration;
-
 /**
  * 
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
@@ -32,13 +31,13 @@ public class Profile {
 
   private Profile() { }
 
-  public static void optimize(HCode hc) {
+  public static void optimize(HCode hc, Linker l) {
 
     HMethod _method = hc.getMethod();
     HClass _class = _method.getDeclaringClass();
-    Set W = new Set();
+    WorkSet W = new WorkSet();
 
-    Visitor v = new Visitor(W, _method, _class);
+    Visitor v = new Visitor(W, _method, _class, l);
 
     Enumeration e;
 
@@ -49,24 +48,24 @@ public class Profile {
 	W.push(q);
     }
 
-    // Make sure METHODHEADER visited first 
+    // Make sure HEADER visited first 
     for (e = hc.getElementsE(); e.hasMoreElements();) {
       Quad q = (Quad) e.nextElement();
-      if (q instanceof METHODHEADER) 
-	q.visit(v);
+      if (q instanceof HEADER) 
+	q.accept(v);
     }
     
     // Grovel over worklist until empty
     while (!W.isEmpty()) {
       Quad q = (Quad) W.pull();
-      q.visit(v);
+      q.accept(v);
     }
   }
 
   static class Visitor extends QuadVisitor {
 
     // worklist
-    Set _W;
+    WorkSet _W;
 
     // calling method, class, and this for this quad graph
     HMethod _method;
@@ -84,30 +83,34 @@ public class Profile {
     // static monitor implementation
     StaticMonitor _static_monitor;
 
-    Visitor(Set W, HMethod M, HClass C) {
+    // linker
+    Linker linker;
+
+    Visitor(WorkSet W, HMethod M, HClass C, Linker l) {
 
       this._W = W;
       this._method = M;
       this._class = C;
+      this.linker = l;
 
       _static_monitor = new StaticMonitor();
 
-      _java_lang_string = HClass.forName("java.lang.String");
-      //      _java_lang_integer = HClass.forName("java.lang.Integer");
+      _java_lang_string = linker.forName("java.lang.String");
+      //      _java_lang_integer = linker.forName("java.lang.Integer");
 
       _null_temp = new Temp();
       _calling_method_name_temp = new Temp();
       _calling_class_name_temp = new Temp();
 
       // Get HMethods for profiling callbacks.
-      HClass monitor = HClass.forName("harpoon.RunTime.Monitor");
+      HClass monitor = linker.forName("harpoon.RunTime.Monitor");
 
 //        HMethod[] monitor_methods = monitor.getMethods();
 //        // dump method descriptiors
 //        for (int i = 0; i < monitor_methods.length; i++) 
 //  	System.out.println(monitor_methods[i].getDescriptor());
 
-      HClass _java_lang_object = HClass.forName("java.lang.Object");
+      HClass _java_lang_object = linker.forName("java.lang.Object");
       try {
 
  	_call_profiling_method = 
@@ -138,7 +141,7 @@ public class Profile {
       // Set up constants.
 
       Temp t1 = new Temp();
-      CONST c1 = new CONST(q.getSourceElement(), t1,
+      CONST c1 = new CONST(q, t1,
 			   q.method.getName(), _java_lang_string);
 
       Temp[] parameters = new Temp[4];
@@ -160,7 +163,7 @@ public class Profile {
 	parameters[2] = q.objectref;	
       }
 
-      CALL profiling_call = new CALL(q.getSourceElement(), _call_profiling_method,
+      CALL profiling_call = new CALL(q, _call_profiling_method,
 				     null, parameters, null, new Temp(), false);
 
       Quad.addEdge(c1, 0, profiling_call, 0);
@@ -175,7 +178,7 @@ public class Profile {
       Temp[] parameters = new Temp[5];
 
       Temp t1 = new Temp();
-      CONST c1 = new CONST(q.getSourceElement(), t1,
+      CONST c1 = new CONST(q, t1,
 			   new Integer(q.getLineNumber()), 
 			   HClass.Int);
 
@@ -187,7 +190,7 @@ public class Profile {
       if (_this == null) parameters[0] = _null_temp;
       else parameters[0] = _this;
 
-      CALL profiling_call = new CALL(q.getSourceElement(), _new_profiling_method,
+      CALL profiling_call = new CALL(q, _new_profiling_method,
 				     null, parameters, null, new Temp(), false);
 
       Quad.addEdge(c1,0,profiling_call,0);
@@ -198,17 +201,17 @@ public class Profile {
 
     }
 
-    public void visit(METHODHEADER q) {
+    public void visit(METHOD q) {
 
-      CONST _null_CONST = new CONST(q.getSourceElement(), _null_temp,
+      CONST _null_CONST = new CONST(q, _null_temp,
 				    null, HClass.Void);
 
       CONST _calling_method_name_CONST = 
-	new CONST(q.getSourceElement(), _calling_method_name_temp,
+	new CONST(q, _calling_method_name_temp,
 		  _method.getName(), _java_lang_string);
 
       CONST _calling_class_name_CONST =
-	new CONST(q.getSourceElement(), _calling_class_name_temp,
+	new CONST(q, _calling_class_name_temp,
 		  _class.getName(), _java_lang_string);
 
       Quad.addEdge(_null_CONST,0,_calling_method_name_CONST,0);
