@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.9.2.3 2000-01-11 11:34:49 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.9.2.4 2000-01-11 12:35:04 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -214,7 +214,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
 				      interfaces, in, interfaces.length);
     hasBeenModified = true;
   }
-  public void removeInterface(HClass in) throws NoClassDefFoundError {
+  public void removeInterface(HClass in) throws NoSuchClassException {
     for (int i=0; i<interfaces.length; i++) {
       if (interfaces[i].equals(in)) {
 	interfaces = (HClass[]) Util.shrink(HClass.arrayFactory,
@@ -223,7 +223,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
 	return;
       }
     }
-    throw new NoClassDefFoundError(in.toString());
+    throw new NoSuchClassException(in.toString());
   }
   public void removeAllInterfaces() {
     if (interfaces.length!=0) hasBeenModified = true;

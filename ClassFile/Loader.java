@@ -32,7 +32,7 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.12.6.2 2000-01-11 02:08:55 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.12.6.3 2000-01-11 12:35:04 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
@@ -209,21 +209,22 @@ public abstract class Loader {
    */
   public static final Linker systemLinker = new SystemLinker();
   private static class SystemLinker extends Linker implements Serializable {
-    protected final HClass forDescriptor0(String descriptor) {
+    protected final HClass forDescriptor0(String descriptor) 
+      throws NoSuchClassException {
       Util.assert(descriptor.startsWith("L") && descriptor.endsWith(";"));
       // classname in descriptor is '/' delimited.
       String className = descriptor.substring(1, descriptor.indexOf(';'));
       className = className.replace('/','.'); // make proper class name.
       InputStream is = 
 	  Loader.getResourceAsStream(Loader.classToResource(className));
-      if (is == null) throw new NoClassDefFoundError(className);
+      if (is == null) throw new NoSuchClassException(className);
       // OK, go ahead and load this.
       try {
 	return /*ImplGNU*/ImplMagic.forStream(this, new BufferedInputStream(is));
       } catch (java.lang.ClassFormatError e) {
-	throw new NoClassDefFoundError(className+" ["+e.toString()+"]");
+	throw new NoSuchClassException(className+" ["+e.toString()+"]");
       } catch (java.io.IOException e) {
-	throw new NoClassDefFoundError(className);
+	throw new NoSuchClassException(className);
       } finally {
 	try { is.close(); } catch(java.io.IOException e) { }
       }

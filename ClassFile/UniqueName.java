@@ -10,7 +10,7 @@ import java.util.Map;
  * field, or method names.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueName.java,v 1.1.2.1 2000-01-11 08:12:24 cananian Exp $
+ * @version $Id: UniqueName.java,v 1.1.2.2 2000-01-11 12:35:04 cananian Exp $
  */
 public abstract class UniqueName {
   private final static Map suffixMap = new HashMap(); // efficiency hack.
@@ -28,14 +28,14 @@ public abstract class UniqueName {
       suggestion = suggestion.substring(0, suggestion.lastIndexOf("$$"));
     // try unadorned name & return it if unique.
     try { context.forName(suggestion); }
-    catch (NoClassDefFoundError e) { return suggestion; }
+    catch (NoSuchClassException e) { return suggestion; }
     // find lowest unique number for class.
     // the goal here is determinism.  the suffixMap makes it efficient.
     Integer lastsuffix = (Integer) suffixMap.get(suggestion);
     for (int i=(lastsuffix==null)?0:(lastsuffix.intValue()+1); true; i++) {
       String className = suggestion + "$$" + i;
       try { context.forName(className); }
-      catch (NoClassDefFoundError e) {
+      catch (NoSuchClassException e) {
 	suffixMap.put(suggestion, new Integer(i));
 	return className;
       }

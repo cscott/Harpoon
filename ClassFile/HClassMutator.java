@@ -9,7 +9,7 @@ package harpoon.ClassFile;
  * @see HClass#getMutator
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassMutator.java,v 1.1.2.5 2000-01-11 08:20:06 cananian Exp $
+ * @version $Id: HClassMutator.java,v 1.1.2.6 2000-01-11 12:35:04 cananian Exp $
  */
 public interface HClassMutator {
     public HField addDeclaredField(String name, HClass type)
@@ -46,7 +46,8 @@ public interface HClassMutator {
 	throws NoSuchMemberException;
 
     public void addInterface(HClass in);
-    public void removeInterface(HClass in);
+    public void removeInterface(HClass in)
+	throws NoSuchClassException;
     public void removeAllInterfaces();
 
     public void addModifiers(int m);
