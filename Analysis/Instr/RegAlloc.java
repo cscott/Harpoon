@@ -41,7 +41,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.16 1999-08-04 18:41:41 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.17 1999-08-04 18:57:17 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -104,7 +104,14 @@ public abstract class RegAlloc  {
 	     registers for the values defined and used in the code for
 	     <code>this</code>.  Values will be preserved in the code;
 	     any live value will be stored before its assigned
-	     register is overwritten.
+	     register is overwritten.  Loads and Stores in general
+	     are added in the form of <code>FskLoad</code>s and
+	     <code>FskStore</code>s; the main <code>RegAlloc</code>
+	     class will use <code>resolveOutstandingTemps(HCode</code> 
+	     to replace these "fake" loads and stores with frame
+	     specified Memory instructions.
+
+	@see RegAlloc#resolveOutstandingTemps(HCode)
     */
     protected abstract Code generateRegAssignment();
 
@@ -126,7 +133,10 @@ public abstract class RegAlloc  {
 	     <code>parentFactory</code> using the machine properties
 	     specified in <code>frame</code>.
 
-	<BR> <B>DESIGN NOTE:</B> This method relies on the subclasses
+	<!-- (Design Note is (temporarily?) outdated; we've gone From
+	     Smart To Dumb, and we're loving every minute of it.)
+
+	     <BR> <B>DESIGN NOTE:</B> This method relies on the subclasses
 	     of <code>RegAlloc</code> to perform actual allocation.
 	     This causes a cycle in our module dependency graph,
 	     which, while not strictly illegal, tends to be a sign of
@@ -136,7 +146,8 @@ public abstract class RegAlloc  {
 	     <code>RegAlloc</code> subclasses can be incorporated into
 	     this method to be used in the compiler.  Perhaps should
 	     also design a way to parameterize which
-	     <code>RegAlloc</code> subclasses will be used.
+	     <code>RegAlloc</code> subclasses will be used. 
+	  -->
      */
     public static HCodeFactory codeFactory(final HCodeFactory parentFactory, 
 					   final Frame frame) {
@@ -145,8 +156,13 @@ public abstract class RegAlloc  {
 	    Frame f = frame;
 	    public HCode convert(HMethod m) {
 		HCode preAllocCode = parent.convert(m);
-		LocalCffRegAlloc localCode = 
-		    new LocalCffRegAlloc((Code) preAllocCode);
+
+		BrainDeadLocalAlloc localCode = 
+		    new BrainDeadLocalAlloc((Code) preAllocCode);
+
+		// FSK: <<sigh>> these were too smart for their own good
+		// LocalCffRegAlloc localCode = 
+		// new LocalCffRegAlloc((Code) preAllocCode);
 		//DemandDrivenRegAlloc globalCode = 
 		//   new DemandDrivenRegAlloc(frame, localCode.generateRegAssignment()); 
 		//return globalCode.generateRegAssignment();
