@@ -101,7 +101,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.25 2002-12-02 18:08:04 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.26 2002-12-02 19:14:54 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -122,6 +122,7 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean LOOPOPTIMIZE = false;
     static boolean USE_OLD_CLINIT_STRATEGY = false;
     static boolean INSTRUMENT_ALLOCS = false;
+    static boolean INSTRUMENT_ALLOCS_STUB = false;
     static String IFILE=null;
     static InstrumentAllocs insta = null;
     static boolean ROLE_INFER= false;
@@ -321,36 +322,36 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 	
 
-	if (INSTRUMENT_ALLOCS) {
+	if (INSTRUMENT_ALLOCS || INSTRUMENT_ALLOCS_STUB) {
 	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
 	    AllocationNumbering an =
 		new AllocationNumbering(hcf, classHierarchy, true);
 	    try {
-
-		System.out.println("Writing AllocationNumbering");
-		an.writeToFile(IFILE);
-
-		System.out.println("Reading AllocationNumberingStub");
-		AllocationNumberingStub ans = new AllocationNumberingStub
-		    (linker, IFILE);
-		
-		System.out.print("Verification ... ");
-		for(Iterator it = an.getAllocs().iterator(); it.hasNext(); ) {
-		    Quad quad = (Quad) it.next();
-		    assert an.allocID(quad) == ans.allocID(quad) :
-			"different allocID's for " + Debug.code2str(quad);
+		if(INSTRUMENT_ALLOCS_STUB) { // "textualize" only a stub
+		    System.out.println("Writing AllocationNumbering into " +
+				       IFILE);
+		    an.writeToFile(IFILE);
+		    System.out.println("Reading AllocationNumberingStub");
+		    AllocationNumberingStub ans = new AllocationNumberingStub
+			(linker, IFILE);
+		    System.out.print("Verification ... ");
+		    for(Iterator it = an.getAllocs().iterator();
+			it.hasNext(); ) {
+			Quad quad = (Quad) it.next();
+			assert an.allocID(quad) == ans.allocID(quad) :
+			    "different allocID's for " + Debug.code2str(quad);
+		    }
+		    System.out.println("OK");
 		}
-		System.out.println("OK");
-
-		/*
-		ObjectOutputStream oos =
-		    new ObjectOutputStream(new FileOutputStream(IFILE));
-		oos.writeObject(an);
-		oos.writeObject(linker);
-		oos.writeObject(roots);
-		oos.writeObject(mainM);
-		oos.close();
-		*/
+		else { // classic INSTRUMENT_ALLOCS: serialize serious stuff
+		    ObjectOutputStream oos =
+			new ObjectOutputStream(new FileOutputStream(IFILE));
+		    oos.writeObject(an);
+		    oos.writeObject(linker);
+		    oos.writeObject(roots);
+		    oos.writeObject(mainM);
+		    oos.close();
+		}
 	    } catch (java.io.IOException e) {
 		System.out.println(e + " was thrown:");
 		e.printStackTrace(System.out);
@@ -1047,7 +1048,7 @@ public class SAMain extends harpoon.IR.Registration {
     protected static void parseOpts(String[] args) {
 	Getopt g = 
 	    new Getopt("SAMain", args, 
-		       "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Td::mw::x::y::YZ:");
+		       "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Td::mw::x::y::YZ:W:");
 	
 	int c;
 	String arg;
@@ -1159,6 +1160,10 @@ public class SAMain extends harpoon.IR.Registration {
 		break;
 	    case 'N':
 		INSTRUMENT_ALLOCS=true;
+		IFILE=g.getOptarg();
+		break;
+	    case 'W':
+		INSTRUMENT_ALLOCS_STUB=true;
 		IFILE=g.getOptarg();
 		break;
 	    case 'l':
@@ -1330,7 +1335,15 @@ public class SAMain extends harpoon.IR.Registration {
 	out.println("Read CodeFactory in from FileName");
 
 	out.println("-N <filename>");
-	out.println("Write out allocation Instrumentation to FileName");
+	out.println("\tWrite out allocation Instrumentation to FileName");
+
+	out.println("-W <filename>");
+	out.println("\tSame as -N <filename>, but writes only a small text file (an AllocationNumberingStub)");
+	out.println("\tThis file can be read with the -Z option");
+	out.println("\tUse if serialization makes if troubles.");
+
+	out.println("-Z <allocNumberingStub.filename>,<instrResults.filename>");
+	out.println("\tReads in an allocation numbering stub and an instrumentation result file; prints dynamic memory allocation statistics");
 
 	out.println("-b <backend name>");
 	out.println("\t Supported backends are StrongARM (default), MIPS, " +
