@@ -284,7 +284,7 @@ jboolean _fni_class_isAptMember
   return JNI_TRUE;
 }
 
-static /* used too many times to inline profitably. */
+static /* used too many times to inline profitably. */ /* not used at all - WSB */
 jobjectArray fni_class_getMembers
   (JNIEnv *env, jclass cls, 
    enum _fni_class_restrictionType which,
