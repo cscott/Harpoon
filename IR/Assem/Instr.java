@@ -20,7 +20,7 @@ import java.util.*;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.14 1999-05-27 01:55:23 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.15 1999-06-03 01:48:32 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -187,24 +187,27 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
         for (int i = 0; i < len; i++) 
             if (assem.charAt(i) == '`')
                 switch (assem.charAt(++i)) {
-                    case 's': {
-                        int n = Character.digit(assem.charAt(++i), 10);
-                        s.append(dst[n]);
-                        }
-                        break;
-                    case 'd': {
-                        int n = Character.digit(assem.charAt(++i), 10);
-                        s.append(src[n]);
-                        }
-                        break;
-                    case 'j': {
-                        int n = Character.digit(assem.charAt(++i), 10);
-                        s.append(src[n]);
-                        }
-                        break;
-                    case '`': 
-                        s.append('`');
-                        break;
+		case 'd': { // FSK changed s -> d
+		    int n = Character.digit(assem.charAt(++i), 10);
+		    Util.assert(n < dst.length, "Instr can't parse " + assem);
+		    s.append(dst[n]);
+		}
+		break;
+		case 's': { // FSK changed d -> s
+		    int n = Character.digit(assem.charAt(++i), 10);
+		    Util.assert(n < src.length, "Instr can't parse " + assem);
+		    s.append(src[n]);
+		}
+		break;
+		case 'j': {
+		    int n = Character.digit(assem.charAt(++i), 10);
+		    Util.assert(n < src.length, "Instr can't parse " + assem);
+		    s.append(src[n]);
+		}
+		break;
+		case '`': 
+		    s.append('`');
+		    break;
                 }
             else s.append(assem.charAt(i));
 
