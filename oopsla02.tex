@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.18 2002-03-23 04:39:15 cananian Exp $
+% $Id: oopsla02.tex,v 1.19 2002-03-23 06:23:09 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -31,7 +31,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.18 $ $}{$ $Revision: 1.18 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.19 $ $}{$ $Revision: 1.19 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -772,21 +772,27 @@ typically reduce the execution times, while the
 remainder (Static Specialization, Field Externalization, and  Hashlock
 externalization) generate modest increases in the execution times. 
 
-
-\begin{figure}
-\includegraphics[scale=0.32,clip=true]{Figures/spaceopt.eps}
-\caption{Cumulative reduction in dynamic allocation achieved with
-  our transformations.}
-\label{fig:total}
-\end{figure}
-%\begin{figure*}
-%\includegraphics[scale=0.65]{Figures/spaceopt-bit.eps}
-%\caption{results w/ bit alignment}
-%\end{figure*}
 \begin{figure}
 \includegraphics[scale=0.32,clip=true]{Figures/spec-space.eps}
 \caption{Total allocation in spec benchmarks.}
 \label{fig:space}
+\end{figure}
+
+\begin{figure}
+\includegraphics[scale=0.32,clip=true]{Figures/oopsla-objalloc.eps}
+\caption{Reduction in non-array dynamic allocation achieved with
+  our transformations.}
+\label{fig:total}
+\end{figure}
+\begin{figure}
+\includegraphics[scale=0.32,clip=true]{Figures/oopsla-ttlalloc.eps}
+\caption{Cumulative reduction in dynamic allocation achieved with
+  our transformations.}
+\label{fig:total}
+\end{figure}
+\begin{figure}
+\includegraphics[scale=0.32,clip=true]{Figures/oopsla-ttllive.eps}
+\caption{Reduction in the maximum live heap achieved with our transformations.}
 \end{figure}
 
 \begin{figure}
