@@ -65,6 +65,8 @@ PRIMITIVEARRAYCLONE(Int, jint, I);
 PRIMITIVEARRAYCLONE(Long, jlong, J);
 PRIMITIVEARRAYCLONE(Float, jfloat, F);
 PRIMITIVEARRAYCLONE(Double, jdouble, D);
+/* not really a primitive =) */
+PRIMITIVEARRAYCLONE(Object, struct oobj *, Ljava_lang_Object_2);
 
 /*
  * Class:     java_lang_Object
