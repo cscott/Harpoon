@@ -15,18 +15,21 @@ public class Buffer extends Node implements Runnable {
 
     public void run() {
 	while (true) {
+	    ImageData tmp;
 	    synchronized (this) {
 		if (dequeue == enqueue) {
 		    try {
+			System.out.println("Out of frames, waiting");
 			wait();
 		    } catch (InterruptedException e) {
 			System.out.println(e.toString());
 			System.exit(-1);
 		    }
 		}
-		super.process(buf[dequeue]);
+		tmp = buf[dequeue];
 		dequeue=(dequeue+1)%buf.length;
 	    }
+	    super.process(tmp);
 	}
     }
 
@@ -38,9 +41,11 @@ public class Buffer extends Node implements Runnable {
 
     public synchronized void process(ImageData id) {
 	if (enqueue == dequeue) {
+	    System.out.println("Notify fired.");
 	    notify();
 	}
 	if ((enqueue+1)%buf.length == dequeue) {
+	    System.out.println("Dropping frame" + id.id);
 	    return; // Drop frames... too many to process.
 	}
 	buf[enqueue] = id;
