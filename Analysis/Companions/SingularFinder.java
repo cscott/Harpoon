@@ -8,6 +8,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
 import harpoon.Temp.Temp;
+import harpoon.Util.Collections.Graph;
 import harpoon.Util.Collections.SetFactory;
 import harpoon.Util.Collections.WorkSet;
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ import java.util.Set;
  * <code>SingularOracle</code> for quad IRs.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SingularFinder.java,v 1.1 2003-05-07 22:53:04 cananian Exp $
+ * @version $Id: SingularFinder.java,v 1.2 2003-05-09 21:16:28 cananian Exp $
  */
 public class SingularFinder implements SingularOracle<Quad> {
     private final HCodeFactory hcf;
