@@ -791,7 +791,7 @@ public class RepairGenerator {
                 cr.outputline("if (maybe)");
                 cr.startblock();
                 cr.outputline("printf(\"maybe fail " +  escape(constraint.toString()) + ". \\n\");");
-                cr.outputline("exit(1);");
+		//cr.outputline("exit(1);");
                 cr.endblock();
 
                 cr.outputline("else if (!" + constraintboolean.getSafeSymbol() + ")");
@@ -1088,7 +1088,6 @@ public class RepairGenerator {
 	    }
 	} else {
 	    /* Start with scheduling removal */
-	    
 	    if (ar.needsRemoves(state))
 		for(int i=0;i<state.vRules.size();i++) {
 		    Rule r=(Rule)state.vRules.get(i);

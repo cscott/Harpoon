@@ -159,7 +159,7 @@ public class ConstraintDependence {
 		    if (rulesensurefunction(state,f,false))
 			continue; //no constraint needed to ensure
 
-		    Set s=providesfunction(f);
+		    Set s=providesfunction(state,f);
 		    if (s.size()==0) {
 			System.out.println("Warning: No constraint ensures that [forall v in "+f.getSet()+"], size(v."+(f.isInverse()?"~":"")+f.getRelation()+")=1");
 			continue;
@@ -216,7 +216,7 @@ public class ConstraintDependence {
 	return foundrule;
     }
  
-    private Set providesfunction(Function f) {
+    static private Set providesfunction(State state, Function f) {
 	HashSet set=new HashSet();
 	for(int i=0;i<state.vConstraints.size();i++) {
 	    Constraint c=(Constraint)state.vConstraints.get(i);
@@ -272,6 +272,16 @@ public class ConstraintDependence {
 
     static public boolean rulesensurefunction(State state,RelationDescriptor r, SetDescriptor sd,boolean inverse, boolean isPartial) {
 	return rulesensurefunction(state, new Function(r,sd,inverse,null),isPartial);
+    }
+
+    /** This method determines whether the model constraints ensure
+     * that the relation r (or inverse relation if inverse is true)
+     * evaluated on the domain sd is either a function (if
+     * isPartial=false) or a partial function (if isPartial=true). */
+
+    static public boolean constraintsensurefunction(State state,RelationDescriptor r, SetDescriptor sd,boolean inverse) {
+	Set constraints=providesfunction(state, new Function(r,sd,inverse,null));
+	return (!constraints.isEmpty());
     }
 
     public static class Function {

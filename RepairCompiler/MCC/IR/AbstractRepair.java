@@ -152,7 +152,7 @@ class AbstractRepair {
     }
 
 
-    /** Thie method tells whether the repair needs to remove objects *
+    /** This method tells whether the repair needs to remove objects *
      *  from the relation, or whether the model definition rules make
      *  the remove unnecessary.*/
 
@@ -162,6 +162,19 @@ class AbstractRepair {
 	return !ConstraintDependence.rulesensurefunction(state,(RelationDescriptor)getDescriptor(), sd, getPredicate().getPredicate().inverted(), true);
     }
 
+    /** This method tells whether the repair needs to force the
+     *  relation to be function-like.  */
+    
+    public boolean mayNeedFunctionEnforcement(State state) {
+	assert type==MODIFYRELATION;
+	SetDescriptor sd=getPredicate().getPredicate().inverted()?getRangeSet():getDomainSet();	
+	if (ConstraintDependence.rulesensurefunction(state,(RelationDescriptor)getDescriptor(), sd, getPredicate().getPredicate().inverted(), false))
+	    return false;
+	if (ConstraintDependence.constraintsensurefunction(state,(RelationDescriptor)getDescriptor(), sd, getPredicate().getPredicate().inverted()))
+	    return false;
+	return true;
+    }
+    
     public AbstractRepair(DNFPredicate dp,int typ, Descriptor d, Sources s) {
 	torepair=dp;
 	type=typ;
