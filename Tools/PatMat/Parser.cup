@@ -48,7 +48,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.24 1999-08-11 13:26:20 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.25 1999-08-12 16:33:33 cananian Exp $
  */
 
 action code {:
@@ -95,7 +95,7 @@ terminal UNOP;
 terminal SEGMENT, DATA, METHOD;
 // punctuation & brackets
 terminal LPAREN, RPAREN, LBRACK, RBRACK, LBRACE, RBRACE, LANGLE, RANGLE;
-terminal COMMA, EQUALS;
+terminal COLON, COMMA, EQUALS;
 // binops
 terminal ADD, AND, CMPEQ, CMPGE, CMPGT, CMPLE, CMPLT;
 terminal DIV, MUL, OR, REM, SHL, SHR, USHR, XOR;
@@ -112,7 +112,7 @@ non terminal DetailList detailSeq;
 non terminal IdList	idList, opt_idList;
 non terminal Exp	exp;
 non terminal Stm	stm;
-non terminal TypeSet	types, opt_types;
+non terminal TypeSet	type, typeList, opt_types;
 non terminal Integer	binops, unops;
 non terminal Leaf	sym_binops, sym_unops, sym_number, sym_segtype;
 non terminal Number	number;
@@ -219,7 +219,6 @@ stm	::=	CALL LPAREN exp:e1 COMMA exp:e2 COMMA exp:e3 COMMA ID:id RPAREN
 		{: RESULT = new StmMethod(id); :}
 	|	MOVE opt_types:t LPAREN exp:dst COMMA exp:src RPAREN
 		{: RESULT = new StmMove(t, dst, src); :}
-	/* Transitional: Remove either NATIVECALL exp or this stm. */
 	|	NATIVECALL LPAREN exp:e1 COMMA exp:e2 COMMA ID:id RPAREN
 		{: RESULT = new StmNativeCall(e1, e2, id); :}
 	|	RETURN opt_types:t LPAREN exp:e RPAREN
@@ -228,34 +227,41 @@ stm	::=	CALL LPAREN exp:e1 COMMA exp:e2 COMMA exp:e3 COMMA ID:id RPAREN
 		{: RESULT = new StmSegment(n); :}
 	|	SEQ LPAREN stm:s1 COMMA stm:s2 RPAREN
 		{: RESULT = new StmSeq(s1, s2); :}
-	/* Transitional: Remove when Felix has updated his code. */
-	|	THROW LPAREN exp:e RPAREN
-		{: RESULT = new StmThrow(e); :}
 	|	THROW LPAREN exp:e1 COMMA exp:e2 RPAREN
 		{: RESULT = new StmThrow(e1, e2); :}
 	;
 
-opt_types ::=	/* nothing */
+opt_types ::=	/* no type info; rule valid for all types */
 		{: TypeSet ts = new TypeSet(); ts.setAll(); RESULT=ts; :}
-	|	types:t
-		{: RESULT=t; :}
+	|	LANGLE typeList:tl RANGLE
+		{: RESULT=tl; :}
 	;
 
-types	::=	LANGLE idList:il RANGLE
+typeList ::=	type:t
+		{: RESULT=t; :}
+	|	type:t COMMA typeList:tl
+		{: t.addAll(tl); RESULT=t; :}
+	;
+
+type ::=	ID:id
 		{: TypeSet ts = new TypeSet();
-		   for (IdList ilp=il; ilp!=null; ilp=ilp.tail) {
-		     if (ilp.head.equals("i"))
-		       ts.set(harpoon.IR.Tree.Type.INT);
-		     else if (ilp.head.equals("l"))
-		       ts.set(harpoon.IR.Tree.Type.LONG);
-		     else if (ilp.head.equals("f"))
-		       ts.set(harpoon.IR.Tree.Type.FLOAT);
-		     else if (ilp.head.equals("d"))
-		       ts.set(harpoon.IR.Tree.Type.DOUBLE);
-		     else if (ilp.head.equals("a") || ilp.head.equals("p"))
-		       ts.set(harpoon.IR.Tree.Type.POINTER);
-		     else error("Bad type modifier: "+ilp.head, illeft);
-		   }
+		   id = id.intern();
+		   if (id == "i") ts.set(harpoon.IR.Tree.Type.INT);
+		   else if (id == "l") ts.set(harpoon.IR.Tree.Type.LONG);
+		   else if (id == "f") ts.set(harpoon.IR.Tree.Type.FLOAT);
+		   else if (id == "d") ts.set(harpoon.IR.Tree.Type.DOUBLE);
+		   else if (id == "a" || id == "p")
+		     ts.set(harpoon.IR.Tree.Type.POINTER);
+		   else error("Bad type modifier: "+id, idleft);
+		   RESULT=ts;
+		:}
+	|	ID:id COLON INTEGER:w
+		{: TypeSet ts = new TypeSet();
+		   id = id.intern();
+		   if (id == "s" || id =="u") {
+		     ts.set(harpoon.IR.Tree.Type.INT);
+		     /* XXX: do something intelligent here. */
+		   } else error("Bad sized type modifier: "+id+":"+w, idleft);
 		   RESULT=ts;
 		:}
 	;

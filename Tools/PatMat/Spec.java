@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.25 1999-08-11 00:04:01 pnkfelix Exp $
+ * @version $Id: Spec.java,v 1.1.2.26 1999-08-12 16:33:34 cananian Exp $
  */
 public class Spec  {
 
@@ -1026,6 +1026,13 @@ public class Spec  {
 	*/
 	public void set(int type) {
 	    bs.set(type);
+	}
+
+	/** Adds all the types contained in <code>TypeSet</code>
+	 *  <code>ts</code> to <code>this</code>.
+	 */
+	public void addAll(TypeSet ts) {
+	    bs.or(ts.bs);
 	}
 	
 	/** Records that <code>this</code> contains all five Types,
