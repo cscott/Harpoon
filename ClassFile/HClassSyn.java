@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.6 1999-08-07 11:17:21 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.7 1999-10-30 22:20:23 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class HClassSyn extends HClassCls {
@@ -39,7 +39,10 @@ public class HClassSyn extends HClassCls {
     this.declaredMethods= new HMethodSyn[0];
     HMethod methods[] = template.getDeclaredMethods();
     for (int i = 0; i < methods.length; i++){
-      new HMethodSyn(this, methods[i]);
+      if (methods[i] instanceof HConstructor)
+	new HConstructorSyn(this, (HConstructor) methods[i]);
+      else
+	new HMethodSyn(this, methods[i]);
     }
     Util.assert(methods.length == declaredMethods.length);
   }
