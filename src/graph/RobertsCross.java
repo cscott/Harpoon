@@ -21,6 +21,7 @@ public class RobertsCross extends Node {
      *  result onto <code>out</code>.  
      */
     public void process(ImageData id) {
+	//System.out.println("Robert's Crossing Image #"+id.id);
 	int width = id.width;
 	int height = id.height;
 	byte[] outs = new byte[width*height];
