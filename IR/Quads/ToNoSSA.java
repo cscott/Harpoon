@@ -27,7 +27,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.22 1999-10-23 05:59:33 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.23 1999-11-12 07:46:00 cananian Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -45,7 +45,7 @@ public class ToNoSSA implements Derivation, TypeMap
 
     public ToNoSSA(QuadFactory newQF, Code code)
     {
-	this(newQF, code, new DerivationI());	   
+	this(newQF, code, null, null);
     }
 
     static class TypeMapI implements TypeMap {
@@ -55,11 +55,6 @@ public class ToNoSSA implements Derivation, TypeMap
 	} 
     }
   
-    public ToNoSSA(QuadFactory newQF, Code code, Derivation derivation)
-    {
-	this(newQF, code, derivation, new TypeMapI());
-    }
-
     public ToNoSSA(final QuadFactory newQF, Code code,
 		   Derivation derivation, TypeMap typeMap) {
 	Util.assert(code.getName().equals(harpoon.IR.Quads.QuadSSI.codename) ||
@@ -67,6 +62,8 @@ public class ToNoSSA implements Derivation, TypeMap
 		    code.getName().equals(harpoon.IR.Quads.QuadWithTry.codename));
     
 	final Map dT = new HashMap();
+	if (derivation==null) derivation = new DerivationI();
+	if (typeMap==null) typeMap = new TypeMapI();
 
 	m_ctm   = new CloningTempMap
 	    (((Quad)code.getRootElement()).getFactory().tempFactory(),
