@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
-import harpoon.Util.*;
+import harpoon.Util.BitString;
 import harpoon.Temp.Temp;
 import harpoon.Analysis.BasicBlock;
 import harpoon.IR.Properties.UseDef;
@@ -16,7 +16,7 @@ import java.util.Map;
     <code>BasicBlock</code> in Reaching Definitions Analysis.
  * @author John Whaley
  * @author Felix Klock (pnkfelix@mit.edu)
- * @version $Id: ReachingDefInfo.java,v 1.1.2.8 1999-09-20 16:06:23 pnkfelix Exp $
+ * @version $Id: ReachingDefInfo.java,v 1.1.2.9 1999-10-16 23:57:56 pnkfelix Exp $
 */ 
 class ReachingDefInfo {
 

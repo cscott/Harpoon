@@ -23,11 +23,15 @@ import java.util.Map;
 import java.util.HashMap;
 import harpoon.Analysis.EdgesIterator;
 import harpoon.Analysis.BasicBlock;
-import harpoon.Util.*;
+
 import harpoon.IR.Properties.HasEdges;
 import harpoon.IR.Properties.UseDef;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
+
+import harpoon.Util.IteratorEnumerator;
+import harpoon.Util.BitString;
+import harpoon.Util.Util;
 
 /** <code>ReachingDefs</code> is a
     <code>ForwardDataFlowBasicBlockVisitor</code> for performing
@@ -37,7 +41,7 @@ import harpoon.Temp.Temp;
 
     @author  John Whaley
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: ReachingDefs.java,v 1.1.2.12 1999-09-20 16:06:23 pnkfelix Exp $
+    @version $Id: ReachingDefs.java,v 1.1.2.13 1999-10-16 23:57:56 pnkfelix Exp $
 
 */
 public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {

@@ -25,6 +25,9 @@ import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 import harpoon.Util.LinearMap;
 
+import harpoon.Analysis.DataFlow.ReachingDefs;
+import harpoon.Analysis.DataFlow.ForwardDataFlowBasicBlockVisitor;
+import harpoon.Analysis.DataFlow.InstrSolver;
 
 import java.util.Hashtable;
 import java.util.Arrays;
@@ -47,7 +50,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.41 1999-10-15 02:42:58 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.42 1999-10-16 23:58:00 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = true;
@@ -565,5 +568,197 @@ class BrainDeadLocalAlloc extends RegAlloc {
 	}
 	
 	return code;
+    }
+
+    class Web extends harpoon.Analysis.GraphColoring.SparseNode {
+	Temp var;
+	HashSet instrs;
+	
+	Web(Temp var) {
+	    this.var = var;
+	    instrs = new HashSet();
+	}
+
+	Web(Temp var, Set instrs) {
+	    this(var);
+	    Iterator iter = instrs.iterator();
+	    while(iter.hasNext()) {
+		instrs.add(iter.next());
+	    }
+	}
+
+	public boolean equals(Object o) {
+	    return this == o;
+	}
+
+	public int hashCode() {
+	    return System.identityHashCode(this);
+	}
+
+	public String toString() {
+	    return "";
+	}
+    }
+
+    
+    void makeWebs(Iterator basicBlocks) {
+	// start by doing ReachingDefs
+	BasicBlock root = (BasicBlock) basicBlocks.next();
+
+	ReachingDefs rDefs = 
+	    new ReachingDefs((HasEdges)root.listIterator().next());
+	InstrSolver.worklistSolver(root, rDefs);
+	
+
+	    
+    }
+
+    
+    /** Visits <code>BasicBlock</code>s of <code>Instr</code>s and
+	uses the <code>FskLoad</code> and <code>FskStore</code>
+	instructions to construct <code>Web</code>s for this method,
+	These webs will need to be run through a merging dataflow
+	analysis pass.  This is effectively ReachingDefs, but I
+	couldn't figure out how to easily adapt Whaley's version of
+	ReachingDefs to my needs (note to FSK, either figure out
+	Whaley's version or rewrite it in a form thats at least as
+	useful as the LiveVars class)
+    */
+    class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
+	/** struct class: 
+	    'in' maps a Temp to a Web that is defined somewhere above
+	           this block. 
+	    'out' maps a Temp to a Web that is defined somewhere above
+	         or within this block (note that the Web defined IN
+		 this block is a distinct object from the one defined
+		 ABOVE this block)
+	    'use' maps a Temp to the Set of Instrs that refer to it up
+	         until (and not including) that Temp's LAST definition
+		 in the block
+	    'def' maps a Temp to the Set of Instrs from that Temp's
+	         LAST definition in the basic block through all of its
+		 subsequent uses in the block
+	*/
+	class WebInfo {
+	    HashMap in = new HashMap();
+	    HashMap out = new HashMap();
+	    HashMap use = new ToSetMap();
+	    HashMap def = new ToSetMap();
+
+	    class ToSetMap extends HashMap {
+		public Object get(Object key) {
+		    Object s = super.get(key);
+		    if (s == null) {
+			HashSet set = new HashSet();
+			put(key, set);
+			return set;
+		    } else {
+			return s;
+		    }
+		}		
+	    }
+
+	    void foundLoad(FskLoad instr) {
+		Iterator uses = instr.useC().iterator();
+		while(uses.hasNext()) {
+		    Temp t = (Temp) uses.next();
+		    
+
+		    if (((Set)def.get(t)).isEmpty()) {
+			// if it uses a variable defined in
+			// another block, then add to USE
+			((Set)use.get(t)).add(instr);
+		    } else {
+			// put it in the DEF set; we'll move the DEF
+			// set into the USE set later if we have to.
+			((Set)def.get(t)).add(instr);
+		    }
+		}
+	    }
+		
+	    void foundStore(FskStore instr) {
+		Iterator defs = instr.defC().iterator();
+		while(defs.hasNext()) {
+		    Temp t = (Temp) defs.next();
+		    
+		    if (!((Set)def.get(t)).isEmpty()) {
+			// We have seen a DEF for t in this block
+			// before; need to move all those instrs over
+			// before putting this in the DEF set
+			Iterator instrs =
+			    ((Set)def.get(t)).iterator();
+			while(instrs.hasNext()) {
+			    ((Set)use.get(t)).add(instrs.next());
+			}
+		    }
+		    ((Set)def.get(t)).add(instr);
+		}
+	    }
+	}
+
+	HashMap bbInfoMap;
+
+	MakeWebsDumb(Iterator basicBlocks) {
+	    bbInfoMap = new HashMap();
+	    
+	    // initialize USE/DEF info
+	    while(basicBlocks.hasNext()) {
+		BasicBlock bb = (BasicBlock) basicBlocks.next();
+		WebInfo info = new WebInfo();
+		bbInfoMap.put(bb, info);
+
+		ListIterator instrs = bb.listIterator();
+		while(instrs.hasNext()) {
+		    Instr instr = (Instr) instrs.next();
+		    if (instr instanceof FskLoad) {
+			// LOAD FROM MEM
+			info.foundLoad((FskLoad) instr);
+		    } else if (instr instanceof FskStore) { 
+			// STORE TO MEM
+			info.foundStore((FskStore) instr);
+		    }
+		}		
+	    }
+	}
+
+	public boolean merge(BasicBlock to, BasicBlock from) {
+	    WebInfo fromInfo = (WebInfo) bbInfoMap.get(from);
+	    WebInfo toInfo = (WebInfo) bbInfoMap.get(to);
+	    
+	    
+	    // FIXME
+
+	    return false;
+	}
+
+	public void visit(BasicBlock b) {
+	    WebInfo webInfo = (WebInfo) bbInfoMap.get(b);
+	    webInfo.out = new HashMap();
+	    Iterator inEntries = webInfo.in.entrySet().iterator();
+	    while(inEntries.hasNext()) {
+		Map.Entry entry = (Map.Entry) inEntries.next();
+		Temp t = (Temp) entry.getKey();
+		Web web = (Web) entry.getValue();
+		Iterator instrs = ((Set)webInfo.use.get(t)).iterator();
+		while(instrs.hasNext()) {
+		    web.instrs.add(instrs.next());
+		}
+		
+		webInfo.out.put(t, web);
+	    }
+	    
+	    Iterator defEntries = webInfo.def.entrySet().iterator();
+	    while(defEntries.hasNext()) {
+		Map.Entry entry = (Map.Entry) defEntries.next();
+		Temp t = (Temp) entry.getKey();
+		Set instrs = (Set) entry.getValue();
+		Web web = new Web(t, instrs);
+
+		// Note that this will replace any web in OUT that was
+		// in IN but is redefined in this Basic Block (the
+		// correct behavior)
+		webInfo.out.put(t, web);
+	    }
+	}
     }
 }

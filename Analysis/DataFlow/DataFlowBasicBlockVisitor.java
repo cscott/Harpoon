@@ -38,10 +38,11 @@ public abstract class DataFlowBasicBlockVisitor extends harpoon.Analysis.BasicBl
        the to basic block changes.
        
        <BR> <B>NOTE:</B> "changes" above refers to our knowledge about
-       the basic block changing, not the contents of the basic block
-       itself, which shouldn't be modified during Analysis.  Thus, an
-       appropriate "change" would be a variable being added to the
-       IN-set of 'to' during Forward Dataflow Analysis
+            the basic block changing, not the contents of the basic
+	    block itself, which shouldn't be modified during Analysis.
+	    Thus, an appropriate "change" would be a variable being
+	    added to the IN-set of 'to' during Forward Dataflow
+	    Analysis.
        
     */
     public abstract boolean merge(BasicBlock from, BasicBlock to);
