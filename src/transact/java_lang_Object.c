@@ -47,12 +47,8 @@ static struct vinfo *CreateNewVersion(struct inflated_oobj *infl,
 				      struct oobj *template,
 				      jboolean from_scratch) {
     struct vinfo *nv; /* new version goes here */
-    struct claz *claz = template->claz;
-    u_int32_t size = claz->size;/* size including header */
-    struct claz *cclaz;
-    if (NULL != (cclaz=claz->component_claz)) { /* is an array */
-	int elsize = isPrimitive(cclaz) ? cclaz->size : sizeof(ptroff_t);
-	size += (elsize * ((struct aarray *)template)->length);
+    u_int32_t size = FNI_ObjectSize(template);/* size including header */
+    if (NULL != template->claz->component_claz) { /* is an array */
 	INCREMENT_STATS(transact_versions_arr_num_alloc, 1);
 	INCREMENT_STATS(transact_versions_arr_bytes_alloc, size);
     } else {

@@ -285,22 +285,7 @@ size_t copying_get_size_of_obj(jobject_unwrapped ptr_to_obj)
   /* assert that the object is in the currently occupied heap */
   assert(ptr_to_obj >= (jobject_unwrapped)from_space && 
 	 ptr_to_obj <  (jobject_unwrapped)top_of_space);
-  if (ptr_to_obj->claz->component_claz == NULL) {
-    /* non-array, simply returned aligned size */
-    return align(ptr_to_obj->claz->size);
-  } else {
-    struct aarray *ptr_to_arr = (struct aarray *)(ptr_to_obj);
-    ptroff_t containsPointers = ptr_to_arr->obj.claz->gc_info.bitmap;
-    /* only two valid values: 0 or 1 */
-    assert(containsPointers == 0 || containsPointers == 1);
-    if (!containsPointers) {
-      /* array of non-pointers */
-      return aligned_size_of_np_array(ptr_to_arr);
-    } else {
-      /* array of pointers */
-      return aligned_size_of_p_array(ptr_to_arr);
-    }
-  }
+  return align(FNI_ObjectSize(ptr_to_obj));
 }
 
 /* copying_free allows explicit freeing of memory allocated by the
