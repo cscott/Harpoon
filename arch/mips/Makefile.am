@@ -10,7 +10,7 @@ noinst_LTLIBRARIES = libheader.la libfooter.la
 
 libheader_la_SOURCES = segments.h
 libfooter_la_SOURCES = lookup.S dispatch.S Flex_MIPS.S \
-floatem.c long_long_support.c
+floatem.c long_long_support.c softfloat.c
 
 Flex_MIPS.S: Flex_MIPS.pl
 	perl $< > $@
