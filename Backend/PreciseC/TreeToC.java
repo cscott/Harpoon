@@ -51,7 +51,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.4 2000-06-26 22:00:36 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.5 2000-06-27 21:32:05 cananian Exp $
  */
 public class TreeToC {
     
@@ -89,6 +89,11 @@ public class TreeToC {
 	    }
 	    pw = pwa[GD];
 	}
+	// keep track of current alignment, section, method, etc.
+	ALIGN alignment = null;
+	SEGMENT segment = null;
+	METHOD method = null;
+
 	/** these are the symbols referenced (and declarations for them) */
 	Map sym2decl = new HashMap();
 	/** these are the *local* labels which are defined in this file. */
@@ -128,7 +133,7 @@ public class TreeToC {
 	    last_line = curr_line;
 	}
 	private void trans(Tree e) { updateLine(e); e.accept(this); }
-	private String ctype(Typed t) {
+	private static String ctype(Typed t) {
 	    String result;
 	    if (t instanceof PreciselyTyped) {
 		PreciselyTyped pt = (PreciselyTyped) t;
@@ -137,31 +142,30 @@ public class TreeToC {
 	    }
 	    return ctype(t.type());
 	}
-	private String ctype(int type) {
+	private static String ctype(int type) {
 	    if (type==Type.DOUBLE) return "jdouble";
 	    if (type==Type.FLOAT) return "jfloat";
 	    if (type==Type.INT) return "jint";
 	    if (type==Type.LONG) return "jlong";
-	    if (type==Type.POINTER) return "void *";
+	    if (type==Type.POINTER) return "jptr";
 	    throw new Error("unknown type: "+type);
 	}
-	private String ctype_and_ex(int type) {
-	    if (type==Type.DOUBLE) return "jdouble_and_ex";
-	    if (type==Type.FLOAT) return "jfloat_and_ex";
-	    if (type==Type.INT) return "jint_and_ex";
-	    if (type==Type.LONG) return "jlong_and_ex";
-	    if (type==Type.POINTER) return "jptr_and_ex";
-	    throw new Error("unknown type: "+type);
-	}
-	private String label(Label l) {
+	private static String label(Label l) {
 	    String r = l.toString();
 	    return r.startsWith(".")?r.substring(1):r;
 	}
+	private static String sectionname(SEGMENT s) {
+	    switch (s.segtype) {
+	    case SEGMENT.TEXT: return ".text";
+	    case SEGMENT.ZERO_DATA: return ".flex.zero";
+	    default:
+		return ".flex."+s.decode(s.segtype).toLowerCase();
+	    }
+	}	    
 
 	// okay, shoot:
 	public void visit(ALIGN e) {
-	    // ack! unimpl!
-	    pw.print("/* align "+e.alignment+" */");
+	    this.alignment = e;
 	}
 	public void visit(BINOP e) {
 	    pw.print("(");
@@ -193,36 +197,33 @@ public class TreeToC {
 	    pw.print(")");
 	}
 	public void visit(CALL e) {
-	    String rettype = 
-		(e.getRetval()==null) ? "void *" :
-		ctype_and_ex(e.getRetval().type());
-	    String suffix =
-		(e.getRetval()==null) ? "" : ".ex";
-	    pw.print("\t{ "+rettype+" _rex = ");
-	    pw.print("(");
+	    boolean callv = (e.getRetval()==null);
+	    if (callv) {
+		pw.print("\tCALLV(");
+		pw.print("((FUNCPROTOV(");
+	    } else {
+		pw.print("\tCALL("+ctype(e.getRetval())+", ");
+		trans(e.getRetval());
+		pw.print(", ((FUNCPROTO("+ctype(e.getRetval())+", ");
+	    }
+	    pw.print("(FIRST_PROTO_ARG(void *) ");
 	    /* function type cast */
-	    pw.print("("+rettype+"(*)(");
 	    for (ExpList el=e.getArgs(); el!=null; el=el.tail) {
 		pw.print(ctype(el.head));
 		if (el.tail!=null) pw.print(", ");
 	    }
-	    pw.print("))");
+	    pw.print("))) ");
 	    /* function expression */
 	    trans(e.getFunc());
-	    pw.print(")(");
+	    pw.print("), (FIRST_CALL_ARG(&&"+label(e.getHandler().label)+") ");
 	    for (ExpList el=e.getArgs(); el!=null; el=el.tail) {
 		trans(el.head);
 		if (el.tail!=null) pw.print(", ");
 	    }
-	    pw.print(");");
-	    pw.print(" if (_rex"+suffix+") { ");
-	    trans(e.getRetex()); pw.print(" = _rex"+suffix+"; ");
-	    pw.print("goto "+label(e.getHandler().label)+"; } ");
-	    if (e.getRetval()!=null) {
-		pw.print("else ");
-		trans(e.getRetval()); pw.print(" = _rex.value; ");
-	    }
-	    pw.println("}");
+	    pw.print("), ");
+	    trans(e.getRetex());
+	    pw.print(", "+label(e.getHandler().label)+");");
+	    pw.println();
 	}
 	public void visit(CJUMP e) {
 	    pw.print("\tif ("); trans(e.getTest()); pw.print(")");
@@ -263,22 +264,27 @@ public class TreeToC {
 	}
 	private boolean isVoidMethod = false;
 	public void visit(METHOD e) {
+	    this.method = e;
 	    // emit declaration.
 	    pw = pwa[MD];
 	    if (e.getReturnType() < 0) {
-		isVoidMethod = true; pw.print("void *");//returns exception
-	    } else pw.print(ctype_and_ex(e.getReturnType()));
-	    pw.print(" "+label(e.getMethod())+"(");
-	    for (int i=1/*skip handler*/; i<e.getParamsLength(); i++) {
+		isVoidMethod = true;
+		pw.print("DECLAREFUNCV(");
+	    } else {
+		isVoidMethod = false;
+		pw.print("DECLAREFUNC("+ctype(e.getReturnType())+", ");
+	    }
+	    pw.print(label(e.getMethod())+", (");
+	    for (int i=0; i<e.getParamsLength(); i++) {
+		if (i==0) pw.print("FIRST_DECL_ARG(");
 		pw.print(ctype(e.getParams(i))+" ");
 		temps_seen.add(e.getParams(i).temp);//suppress declaration
 		trans(e.getParams(i));
-		if (i+1 < e.getParamsLength()) pw.print(", ");
+		if (i==0) pw.print(") ");
+		else if (i+1 < e.getParamsLength()) pw.print(", ");
 	    }
-	    pw.println(") {");
-	    if (!isVoidMethod)
-		pw.println("\t"+ctype_and_ex(e.getReturnType())+" _retval_ = "+
-			   "{0,0};");
+	    pw.println("), \""+sectionname(this.segment)+"\")");
+	    pw.println("{");
 	    pw = pwa[MB];
 	}
 	public void visit(MOVE e) {
@@ -319,16 +325,16 @@ public class TreeToC {
 	    pw.println(");");
 	}
 	public void visit(RETURN e) {
-	    if (isVoidMethod) pw.println("\treturn NULL; /* RETURN */");
+	    if (isVoidMethod)
+		pw.println("\tRETURNV();");
 	    else {
-		pw.println("\t_retval_.value = ");
+		pw.print("\tRETURN("+ctype(this.method.getReturnType())+",");
 		trans(e.getRetval());
-		pw.println(";");
-		pw.println("\treturn _retval_; /* RETURN */");
+		pw.println(");");
 	    }
 	}
 	public void visit(SEGMENT e) {
-	    pw.println("\t/* segment: "+e+" */");
+	    this.segment = e;
 	}
 	public void visit(SEQ e) {
 	    trans(e.getLeft());
@@ -345,12 +351,11 @@ public class TreeToC {
 	}
 	public void visit(THROW e) {
 	    if (isVoidMethod) {
-		pw.print("\treturn "); trans(e.getRetex()); pw.println(";");
+		pw.print("\tTHROWV("); trans(e.getRetex()); pw.println(");");
 	    } else {
-		pw.print("\t_retval_.ex = ");
+		pw.print("\tTHROW("+ctype(this.method.getReturnType())+", ");
 		trans(e.getRetex());
-		pw.println(";");
-		pw.println("\treturn _retval_; /* THROW */");
+		pw.println(");");
 	    }
 	}
 	public void visit(UNOP e) {
