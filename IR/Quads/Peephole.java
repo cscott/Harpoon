@@ -18,7 +18,7 @@ import java.util.Enumeration;
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.9 1999-09-09 21:43:02 cananian Exp $
+ * @version $Id: Peephole.java,v 1.1.2.9.2.1 1999-09-17 19:35:07 cananian Exp $
  */
 
 final class Peephole  {
@@ -171,6 +171,13 @@ final class Peephole  {
 			SIGMA Qs = (SIGMA) Qp.rename(Qp.qf, null, tm);
 			todo.removeElement(Qp); // remove old SIGMA from todo
 			Quad.replace(Qp, Qs);
+			if (Qp instanceof CALL &&
+			    (q.dst() == ((CALL)Qp).retval() ||
+			     q.dst() == ((CALL)Qp).retex())) {
+			    // ok.  the move is gone & we don't need it any mo'
+			    changed=true;
+			    return;
+			}
 			HandlerSet hs=q.handlers();
 			Edge[] el = Qs.nextEdge();
 			for (int i=0; i<el.length; i++) {
