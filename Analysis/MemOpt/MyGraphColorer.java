@@ -52,6 +52,7 @@ public final class MyGraphColorer {
             for (Iterator it = classes.iterator();
                  it.hasNext() && !assigned; ) {
                 Collection members = (Collection) it.next();
+
                 boolean compatible = true;
                 for (Iterator it2 = members.iterator();
                      it2.hasNext() && compatible; ) {

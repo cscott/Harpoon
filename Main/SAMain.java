@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.6 2002-04-24 01:21:49 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.7 2002-04-24 23:04:09 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -350,13 +350,13 @@ public class SAMain extends harpoon.IR.Registration {
 		AllocationNumbering an =
 		    new AllocationNumbering(hcf, classHierarchy, true);
 		try {
-		    ObjectOutputStream ois =
+		    ObjectOutputStream oos =
 			new ObjectOutputStream(new FileOutputStream(IFILE));
-		    ois.writeObject(an);
-		    ois.writeObject(linker);
-		    ois.writeObject(roots);
-		    ois.writeObject(mainM);
-		    ois.close();
+		    oos.writeObject(an);
+		    oos.writeObject(linker);
+		    oos.writeObject(roots);
+		    oos.writeObject(mainM);
+		    oos.close();
 		} catch (java.io.IOException e) {
 		    System.out.println(e + " was thrown:");
 		    e.printStackTrace(System.out);

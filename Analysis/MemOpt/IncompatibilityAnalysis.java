@@ -161,7 +161,8 @@ public class IncompatibilityAnalysis {
     private HCodeFactory codeFactory;
     private CallGraph callGraph;
 
-    private LinkedList allMethods;
+    // FIXME: change to private
+    public LinkedList allMethods;
 
     // globally maps temps to the allocations defining them
     private Map globalAllocMap;
@@ -220,7 +221,7 @@ public class IncompatibilityAnalysis {
         NEW qNew = (NEW) e;
         Temp alloc = qNew.dst();
 
-        return I.contains(alloc, alloc);
+        return I.contains(alloc, alloc) || !globalAllocMap.containsKey(alloc);
     }
 
     // returns true if the given SSI NEW quads are incompatible
@@ -410,7 +411,7 @@ public class IncompatibilityAnalysis {
                 CALL qCall = (CALL) q;
 
 		CALL qCallNoSSA = (CALL) quadSSI2NoSSA.get(qCall);
-		assert quadSSI2NoSSA != null;
+		assert qCallNoSSA != null;
 
                 HMethod[] calledMethods = callGraph.calls(method, qCallNoSSA);
 
@@ -1305,6 +1306,21 @@ public class IncompatibilityAnalysis {
         System.out.println("   " + classes.size() + " classes ("
                            + (100 - (classes.size()*100/(globalAllocMap.keySet().size() - selfIncompatible.size()))) +"% reduction)");
         System.out.println("   " + selfIncompatible.size() + " self-incompatible vars ("+(selfIncompatible.size()*100/globalAllocMap.keySet().size())+"%)");
+    }
+
+    private void printmap(Map map) {
+	for (Iterator it = map.entrySet().iterator(); it.hasNext(); ) {
+	    Map.Entry entry = (Map.Entry) it.next();
+	    Quad from = (Quad) entry.getKey();
+	    Quad to = (Quad) entry.getValue();
+
+	    if (from instanceof NEW) { 
+		System.out.println("  " +Debug.code2str(from) + " | " +
+				   from.hashCode() + " -> ");
+		System.out.println("  " +Debug.code2str(to) + " | " +
+				   to.hashCode());
+	    }
+	}
     }
 
     private void printTypeStatistics(Collection temps) {
