@@ -58,7 +58,7 @@ import java.util.Iterator;
     maintained by the hardcoded references.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.23 2000-02-09 03:03:06 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.24 2000-02-29 19:35:48 cananian Exp $ */
 public abstract class RegFileInfo {
 
     /** Defines function from 
@@ -99,7 +99,8 @@ public abstract class RegFileInfo {
     public int maxRegIndex() { throw new Error("Unimplemented."); }
 
     /** Represents Machine Register <code>Temp</code>s. */
-    public interface MachineRegLoc extends CommonLoc {
+    public interface MachineRegLoc
+	extends CommonLoc, harpoon.Backend.Maps.BackendDerivation.Register {
 	public static int KIND = 2;
 	
 	/** Returns the index of <code>this</code> in the register file.
