@@ -24,7 +24,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.5 1998-08-01 05:08:32 cananian Exp $
+ * @version $Id: HClass.java,v 1.6 1998-08-01 07:22:09 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -187,6 +187,19 @@ public class HClass {
     return classfile.this_class().name().replace('/','.');
   }
   /**
+   * Returns the package name of this <code>HClass</code>.  If this
+   * <code>HClass</code> represents a primitive or array type,
+   * then returns null.  Returns <code>""</code> (a zero-length string)
+   * if this class is not in a package.
+   */
+  public String getPackage() {
+    if (isPrimitive() || isArray()) return null;
+    String fullname = classfile.this_class().name().replace('/','.');
+    int lastdot = fullname.lastIndexOf('.');
+    if (lastdot<0) return ""; // no package.
+    else return fullname.substring(0, lastdot);
+  }
+  /**
    * Returns a ComponentType descriptor for the type represented by this
    * <code>HClass</code> object.
    */
@@ -232,9 +245,13 @@ public class HClass {
    */
   public HField getDeclaredField(String name)
     throws NoSuchFieldException {
-    for (int i=0; i<classfile.fields.length; i++)
-      if (classfile.fields[i].name().equals(name))
-	return new HField(this, classfile.fields[i]);
+    // construct master declaredField list, if we haven't already.
+    if (declaredFields==null) getDeclaredFields();
+    // look for field name in master list.
+    for (int i=0; i<declaredFields.length; i++)
+      if (declaredFields[i].getName().equals(name))
+	return declaredFields[i];
+    // not found.
     throw new NoSuchFieldException(name);
   }
   /**
@@ -250,21 +267,28 @@ public class HClass {
    * @see HField
    */
   public HField[] getDeclaredFields() {
-    if (isPrimitive() || isArray()) return new HField[0];
-    HField hf[] = new HField[classfile.fields.length];
-    for (int i=0; i<hf.length; i++)
-      hf[i] = new HField(this, classfile.fields[i]);
-    return hf;
+    if (declaredFields==null) {
+      if (isPrimitive() || isArray()) 
+	declaredFields = new HField[0];
+      else {
+	declaredFields = new HField[classfile.fields.length];
+	for (int i=0; i<declaredFields.length; i++)
+	  declaredFields[i] = new HField(this, classfile.fields[i]);
+      }
+    }
+    return HField.copy(declaredFields);
   }
+  private HField[] declaredFields = null;
   /**
    * Returns a <code>HField</code> object that reflects the specified
-   * member field of the class or interface represented by this
+   * accessible member field of the class or interface represented by this
    * <code>HClass</code> object.  The <code>name</code> parameter is
    * a <code>String</code> specifying the simple name of the
    * desired field. <p>
    * The field to be reflected is located by searching all member fields
    * of the class or interface represented by this <code>HClass</code>
-   * object for a non-private field with the specified name.
+   * object (and its superclasses and interfaces) for an accessible 
+   * field with the specified name.
    * @see "The Java Language Specification, sections 8.2 and 8.3"
    * @exception NoSuchFieldException
    *            if a field with the specified name is not found.
@@ -283,14 +307,14 @@ public class HClass {
   }
   /**
    * Returns an array containing <code>HField</code> objects reflecting
-   * all the fields of the class or interface represented by this
+   * all the accessible fields of the class or interface represented by this
    * <code>HClass</code> object.  Returns an array of length 0 if the
-   * class or interface has no fields, or if it represents an array type
-   * or a primitive type. <p>
+   * class or interface has no accessible fields, or if it represents an 
+   * array type or a primitive type. <p>
    * Specifically, if this <code>HClass</code> object represents a class,
-   * returns the non-private fields of this class and of all its superclasses.
+   * returns the accessible fields of this class and of all its superclasses.
    * If this <code>HClass</code> object represents an interface, returns 
-   * the non-private fields
+   * the accessible fields
    * of this interface and of all its superinterfaces.  If this 
    * <code>HClass</code> object represents an array type or a primitive
    * type, returns an array of length 0. <p>
@@ -299,40 +323,55 @@ public class HClass {
    * @see "The Java Language Specification, sections 8.2 and 8.3"
    * @see HField
    */
-  private HField[] fields=null;
-  public HField[] getFields() {
+  public HField[] getFields() { 
+    // Cache fields value so we only have to compute this once.
     if (fields==null) {
       if (isPrimitive() || isArray()) {
 	fields = new HField[0];
       } else {
-	UniqueVector v = new UniqueVector();
-	// add fields from interfaces.
-	HClass[] in = getInterfaces();
-	for (int i=0; i<in.length; i++) {
-	  HField[] inf = in[i].getFields();
-	  for (int j=0; j<inf.length; j++)
-	    v.addElement(inf[j]);
-	}
-	// now fields from superclasses, subject to access mode constraints.
-	HClass sup = getSuperclass();
-	HField supf[] = (sup==null)?new HField[0]:sup.getFields();
-	for (int i=0; i<supf.length; i++) {
-	  if (Modifier.isPrivate(supf[i].getModifiers()))
-	    continue; // skip this field.
-	  // XXX we skip the package identity check for package variables.
-	  v.addElement(supf[i]);
-	}
-	// now fields from our local class.
-	HField locf[] = getDeclaredFields();
-	for (int i=0; i<locf.length; i++)
-	  v.addElement(locf[i]);
-
-	// Merge into one array.
-	fields = new HField[v.size()];
-	v.copyInto(fields);
+	fields = getFields(this); 
       }
     }
     return HField.copy(fields);
+  }
+  private HField[] fields=null;
+  /* does the actual work.  Because of permissions issues, it's important
+   * to know which class is asking for the fields listing.
+   */
+  protected HField[] getFields(HClass frmClass) {
+    String frmPackage = frmClass.getPackage();
+    UniqueVector v = new UniqueVector();
+    // add fields from interfaces.
+    HClass[] in = getInterfaces();
+    for (int i=0; i<in.length; i++) {
+      HField[] inf = in[i].getFields(frmClass);
+      for (int j=0; j<inf.length; j++)
+	v.addElement(inf[j]);
+    }
+    // now fields from superclasses, subject to access mode constraints.
+    HClass sup = getSuperclass();
+    HField supf[] = (sup==null)?new HField[0]:sup.getFields(frmClass);
+    for (int i=0; i<supf.length; i++) {
+      int m = supf[i].getModifiers();
+      // private fields of superclasses are invisible.
+      if (Modifier.isPrivate(m))
+	continue; // skip this field.
+      // default access is invisible if packages not identical.
+      if (!Modifier.isPublic(m) && !Modifier.isProtected(m))
+	if (!supf[i].getDeclaringClass().getPackage().equals(frmPackage))
+	  continue;
+      // all's good. Add this one.
+      v.addElement(supf[i]);
+    }
+    // now fields from our local class.
+    HField locf[] = getDeclaredFields();
+    for (int i=0; i<locf.length; i++)
+      v.addElement(locf[i]);
+    
+    // Merge into one array.
+    HField[] result = new HField[v.size()];
+    v.copyInto(result);
+    return result;
   }
 
   /**
@@ -349,8 +388,22 @@ public class HClass {
    */
   public HMethod getDeclaredMethod(String name, HClass parameterTypes[])
     throws NoSuchMethodException {
-    // XXX WRITE ME XXX
-    return null;
+    // construct master declaredMethod list, if we haven't already.
+    if (declaredMethods==null) getDeclaredMethods();
+    // look for method name/type in master list.
+    for (int i=0; i<declaredMethods.length; i++)
+      if (declaredMethods[i].getName().equals(name)) {
+	HClass[] methodParamTypes = declaredMethods[i].getParameterTypes();
+	if (methodParamTypes.length == parameterTypes.length) {
+	  int j; for (j=0; j<parameterTypes.length; j++)
+	    if (methodParamTypes[i] != parameterTypes[i])
+	      break; // oops, this one doesn't match.
+	  if (j==parameterTypes.length) // hey, we made it to the end!
+	    return declaredMethods[i];
+	}
+      }
+    // didn't find a match.  Oh, well.
+    throw new NoSuchMethodException(name);
   }
   /**
    * Returns an array of <code>HMethod</code> objects reflecting all the
@@ -365,8 +418,107 @@ public class HClass {
    * @see HMethod
    */
   public HMethod[] getDeclaredMethods() {
-    // XXX WRITE ME XXX
-    return null;
+    if (declaredMethods==null) {
+      if (isPrimitive() || isArray())
+	declaredMethods = new HMethod[0];
+      else {
+	declaredMethods = new HMethod[classfile.methods.length];
+	for (int i=0; i<declaredMethods.length; i++)
+	  declaredMethods[i] = new HMethod(this, classfile.methods[i]);
+      }
+    }
+    return HMethod.copy(declaredMethods);
+  }
+  private HMethod[] declaredMethods = null;
+  /**
+   * Returns a <code>HMethod</code> object that reflects the specified
+   * accessible method of the class or interface represented by this
+   * <code>HClass</code> object.  The <code>name</code> parameter is
+   * a string specifying the simple name of the desired method, and
+   * the <code>parameterTypes</code> parameter is an array of
+   * <code>HClass</code> objects that identify the method's formal
+   * parameter types, in declared order. <p>
+   * The method to reflect is located by searching all the member methods
+   * of the class or interface represented by this <code>HClass</code>
+   * object for an accessible method with the specified name and exactly
+   * the same formal parameter types.
+   * @see "The Java Language Specification, sections 8.2 and 8.4"
+   * @exception NoSuchMethodException if a matching method is not found.
+   */
+  public HMethod getMethod(String name, HClass parameterTypes[])
+    throws NoSuchMethodException {
+    // construct master method list, if we haven't already.
+    if (methods==null) getMethods();
+    // look for method name is master method list.
+    // look backwards to be sure we find local methods first (scoping).
+    for (int i=methods.length-1; i>=0; i--)
+      if (methods[i].getName().equals(name)) {
+	HClass[] methodParamTypes = methods[i].getParameterTypes();
+	if (methodParamTypes.length == parameterTypes.length) {
+	  int j; for (j=0; j<parameterTypes.length; j++)
+	    if (methodParamTypes[i] != parameterTypes[i])
+	      break; // oops, this one doesn't match.
+	  if (j==parameterTypes.length) // hey, we made it to the end!
+	    return methods[i];
+	}
+      }
+    // didn't find a match. Oh, well.
+    throw new NoSuchMethodException(name);
+  }
+  /**
+   * Returns an array containing <code>HMethod</code> object reflecting
+   * all accessible member methods of the class or interface represented
+   * by this <code>HClass</code> object, including those declared by
+   * the class or interface and those inherited from superclasses and
+   * superinterfaces.  Returns an array of length 0 if the class or
+   * interface has no public member methods, or if the <code>HClass</code>
+   * corresponds to a primitive type or array type.
+   * @see "The Java Language Specification, sections 8.2 and 8.4"
+   */
+  public HMethod[] getMethods() {
+    // cache methods value so we only have to compute this once.
+    if (methods==null) {
+      if (isPrimitive() || isArray()) {
+	methods = new HMethod[0];
+      } else {
+	methods = getMethods(this);
+      }
+    }
+    return HMethod.copy(methods);
+  }
+  private HMethod[] methods=null;
+  /* does the actual work.  Because of permissions issues, it's important
+   * to know which class is asking for the methods listing.
+   */
+  protected HMethod[] getMethods(HClass frmClass) {
+    String frmPackage = frmClass.getPackage();
+    UniqueVector v = new UniqueVector();
+    // can ignore methods from interfaces (they'll be declared methods)
+    // XXX CHECK THIS ASSERTION.
+    // grab fields from superclasses, subject to access mode constraints.
+    HClass sup = getSuperclass();
+    HMethod supm[] = (sup==null)?new HMethod[0]:sup.getMethods(frmClass);
+    for (int i=0; i<supm.length; i++) {
+      int m = supm[i].getModifiers();
+      // private methods of superclasses are invisible.
+      if (Modifier.isPrivate(m))
+	continue; // skip this method.
+      // default access is invisible if packages not identical
+      if (!Modifier.isPublic(m) && !Modifier.isProtected(m))
+	if (!supm[i].getDeclaringClass().getPackage().equals(frmPackage))
+	  continue; // skip this (inaccessible) method.
+      // all's good.  Add this one.
+      v.addElement(supm[i]);
+    }
+    // now methods we declare locally.
+    HMethod[] locm = getDeclaredMethods();
+    for (int i=0; i<locm.length; i++)
+      v.addElement(locm[i]);
+
+    // Merge into a single array.
+    HMethod[] result = new HMethod[v.size()];
+    v.copyInto(result);
+    return result;
   }
 
   /**
