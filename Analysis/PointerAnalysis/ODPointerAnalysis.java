@@ -63,6 +63,7 @@ import harpoon.Util.TypeInference.CachingArrayInfo;
 import harpoon.Util.LightBasicBlocks.LBBConverter;
 import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 import harpoon.Util.Graphs.SCComponent;
+import harpoon.Util.Graphs.Navigator;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 import harpoon.Util.UComp;
 
@@ -82,7 +83,7 @@ import harpoon.Util.DataStructs.LightMap;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPointerAnalysis.java,v 1.4 2002-04-10 03:00:42 cananian Exp $
+ * @version $Id: ODPointerAnalysis.java,v 1.5 2003-05-06 15:34:58 salcianu Exp $
  */
 public class ODPointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -247,10 +248,11 @@ public class ODPointerAnalysis {
      *
      *</ul> */
     public ODPointerAnalysis(MetaCallGraph _mcg, MetaAllCallers _mac,
-			     LBBConverter lbbconv){
+			     LBBConverter lbbconv, Linker linker) {
 	mcg  = _mcg;
 	mac  = _mac;
 	scc_lbb_factory = new CachingSCCLBBFactory(lbbconv);
+	this.nodes = new NodeRepository(linker);
 	if(SAVE_MEMORY)
 	    aamm = new HashSet();
     }
@@ -532,15 +534,15 @@ public class ODPointerAnalysis {
     private PAWorkList  W_intra_proc = new PAWorkList();
 
     // Repository for node management.
-    NodeRepository nodes = new NodeRepository(); 
+    final NodeRepository nodes;
     final NodeRepository getNodeRepository() { return nodes; }
 
 
     // Navigator for the mmethod SCC building phase. The code is complicated
     // by the fact that we are interested only in yet unexplored methods
     // (i.e. whose parallel interaction graphs are not yet in the cache).
-    private SCComponent.Navigator mm_navigator =
-	new SCComponent.Navigator(){
+    private Navigator mm_navigator =
+	new Navigator() {
 		public Object[] next(Object node){
 		    MetaMethod[] mms  = mcg.getCallees((MetaMethod)node);
 		    MetaMethod[] mms2 = get_new_mmethods(mms);

@@ -57,6 +57,7 @@ import harpoon.Util.Collections.WorkSet;
 
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Util.Graphs.SCComponent;
+import harpoon.Util.Graphs.Navigator;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 
 
@@ -69,7 +70,7 @@ import harpoon.Util.DataStructs.LightMap;
  * <code>ODMAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODMAInfo.java,v 1.5 2003-02-12 19:03:34 salcianu Exp $
+ * @version $Id: ODMAInfo.java,v 1.6 2003-05-06 15:34:58 salcianu Exp $
  */
 public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -1647,7 +1648,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	    m2csTOm.add(cs.method(), cs);
 	}
 
-	final SCComponent.Navigator nav = new SCComponent.Navigator() {
+	final Navigator nav = new Navigator() {
 		public Object[] next(final Object node) {
 		    Set set = m2csINm.getValues(node);
 		    return set.toArray(new Object[set.size()]);
