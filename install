@@ -328,9 +328,25 @@ if [ x$arm = xY ]; then
    ./build-arm;
 fi;
 	    
-cd -
+cd $FLEX_ROOT/BuildScripts
+echo Writing configuration file...
+echo export arm=$arm > config.status
+echo export GUI=$GUI >> config.status
+echo export version=$version >> config.status
+echo export RTJ=$RTJ >> config.status
+echo export BENCHMARKS=$BENCHMARKS >> config.status
+echo export IMAGEREC=$IMAGEREC >> config.status
+echo export dep=$dep >> config.status
+echo export prmpt=$prmpt >> config.status
+echo export inst=$inst >> config.status
+echo export dep=$dep >> config.status
+echo export version=$version >> config.status
+echo export REALTIME=$REALTIME >> config.status
+chmod a+rx config.status
+source ./sourceme
+
 echo Building Runtime...
-cd Runtime
+cd $FLEX_ROOT/Runtime
 ./setup
 cd ..
 cp -r Runtime Runtime-debug
@@ -357,18 +373,7 @@ if [ x$IMAGEREC == xImageRec ]; then
   make jars;
 fi;
 
-cd $FLEX_ROOT/BuildScripts
-echo Writing configuration file...
-echo export arm=$arm > config.status
-echo export GUI=$GUI >> config.status
-echo export version=$version >> config.status
-echo export RTJ=$RTJ >> config.status
-echo export BENCHMARKS=$BENCHMARKS >> config.status
-echo export IMAGEREC=$IMAGEREC >> config.status
-echo export dep=$dep >> config.status
-echo export prmpt=$prmpt >> config.status
-echo export inst=$inst >> config.status
-echo export dep=$dep >> config.status
-echo export version=$version >> config.status
-echo export REALTIME=$REALTIME >> config.status
-chmod a+rx config.status
+echo 1) Type "javac Hello.java" to compile the "Hello, world\!" application to Java bytecode.
+echo 2) Type "java -cp .:$CLASSPATH Hello" to test the "Hello, world\!" application using SunJVM.
+echo 3) Type "./build Hello HI" to compile the "Hello, world\!" application using FLEX.
+echo 4) Type "./runHI" to run the compiled "Hello, world\!" application.
