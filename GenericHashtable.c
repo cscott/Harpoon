@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <values.h>
 #include "GenericHashtable.h"
+#include "RoleInference.h"
 #ifdef MDEBUG
 #include <dmalloc.h>
 #endif

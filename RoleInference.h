@@ -8,7 +8,6 @@
 
 #define EFFECTS
 
-
 struct heap_object {
   char *class;
   long long uid;
@@ -187,4 +186,5 @@ int atomicmethod(struct heap_state *hs, struct method *m);
 void atomiceval(struct heap_state *heap);
 void loadstatechange(struct heap_state *heap);
 int convertnumberingobjects(char *sig, int isStatic, int orignumber);
+void dccfree(struct dynamiccallmethod *dcm);
 #endif

@@ -370,17 +370,29 @@ int rolehashcode(struct role * r) {
 
 int hashstring(char *strptr) {
   int hashcode=0;
-  int bitstoshift=0;
-  if(strptr==NULL)
+  int *intptr=(int *) strptr;
+  if(intptr==NULL)
     return 0;
-  while(*strptr!=0) {
-    hashcode^=((*strptr)<<bitstoshift);
-    bitstoshift+=8;
-    if (bitstoshift==32)
-      bitstoshift=0;
-    strptr++;
+  while(1) {
+    int copy1=*intptr;
+    if((copy1&0xFF000000)&&
+       (copy1&0xFF0000)&&
+       (copy1&0xFF00)&&
+       (copy1&0xFF)) {
+      hashcode^=*intptr;
+      intptr++;
+    } else {
+      if (!copy1&0xFF000000)
+	hashcode^=copy1&0xFF000000;
+      else if (!copy1&0xFF0000)
+	hashcode^=copy1&0xFF0000;
+      else if (!copy1&0xFF00)
+	hashcode^=copy1&0xFF00;
+      else if (!copy1&0xFF)
+	hashcode^=copy1&0xFF;
+      return hashcode;
+    }
   }
-  return hashcode;
 }
 
 void freerole(struct role * role) {

@@ -17,7 +17,7 @@
 
 static int programfd;
 #define bufsize 1000
-//#define DEBUG
+/*#define DEBUG*/
 long long pointerage=0;
 
 
@@ -457,6 +457,17 @@ void doanalysis() {
     }
     genfreeiterator(it);
   }
+  freedatahashtable(heap.dynamiccallchain, (void (*)(void *)) &dccfree);
+}
+
+void dccfree(struct dynamiccallmethod *dcm) {
+  free(dcm->classname);
+  free(dcm->methodname);
+  free(dcm->signature);
+  free(dcm->classnameto);
+  free(dcm->methodnameto);
+  free(dcm->signatureto);
+  free(dcm);
 }
 
 void recordentry(struct heap_state *heap, char *classname, char*methodname, char*signature) {
@@ -725,7 +736,7 @@ void doincrementalreachability(struct heap_state *hs, struct hashtable *ht) {
       }
       free(possiblegarbage->methodscalled);
       free(possiblegarbage->class);
-      /* printf("Freeing Key %lld\n",possiblegarbage->uid);*/
+      /*printf("Freeing Key %lld\n",possiblegarbage->uid);*/
       freekey(ht,possiblegarbage->uid);
       free(possiblegarbage);
     }
@@ -811,8 +822,24 @@ struct objectset * dokills(struct heap_state *hs) {
     struct fieldlist * fl=ho->fl;
     struct arraylist * al=ho->al;
     struct referencelist * orl=ho->rl;
+
     kptr=kptr->next;
-    addobject(os, tuple->ho);
+    /*    addobject(os, tuple->ho);*/
+    {
+      /*Add all incoming nodes to set...*/
+      struct arraylist *ral=ho->reversearray;
+      struct fieldlist *rfl=ho->reversefield;
+      while(ral!=NULL) {
+	addobject(os,ral->src);
+	ral=ral->dstnext;
+      }
+      while(rfl!=NULL) {
+	addobject(os,rfl->src);
+	rfl=rfl->dstnext;
+      }
+      addobject(os,ho); /*Allow gc of ho if everything is unreachable*/
+    }
+    
     
     /*cycle through the lists*/
     /*adding only if R(t) intersect S!={}*/
@@ -1104,8 +1131,9 @@ void dofieldassignment(struct heap_state *hs, struct heap_object * src, char * f
   }
   
   /*No match*/
-  if (dst!=NULL)
+  if (dst!=NULL) {
     fldptr->next=newfld;
+  }
   else
     free(newfld);
 }
