@@ -23,7 +23,7 @@ import java.util.ArrayList;
     
     @see harpoon.Analysis.Instr
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.3 1999-12-01 17:12:39 pnkfelix Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.4 1999-12-20 17:22:22 pnkfelix Exp $
  */
 public abstract class InstrBuilder {
     
@@ -64,11 +64,16 @@ public abstract class InstrBuilder {
 	@see InstrBuilder#getSize
     */ 
     public List makeLoad(List regs, int startingOffset, Instr template) { 
-        ArrayList lists = new ArrayList();
+        ArrayList list = new ArrayList();
+	Instr last=null, curr=null;
 	for (int i=0; i<regs.size(); i++) {
-	    lists.add(makeLoad((Temp)regs.get(i), startingOffset+i, template));
+	    List cl = makeLoad((Temp)regs.get(i), startingOffset+i, template);
+	    curr = (Instr) cl.get(0);
+	    curr.layout(last, curr.getNext());
+	    list.addAll(cl);
+	    last = (Instr) cl.get(cl.size() - 1);
 	}
-	return ListFactory.concatenate(lists);
+	return list;
     }
 
     /** Generates a new set of <code>Instr</code>s for memory traffic
@@ -104,11 +109,21 @@ public abstract class InstrBuilder {
 
     */ 
     public List makeStore(List regs, int startingOffset, Instr template) { 
-        ArrayList lists = new ArrayList();
+        ArrayList list = new ArrayList();
+	Instr last=null, curr=null;
 	for (int i=0; i<regs.size(); i++) {
-	    lists.add(makeStore((Temp)regs.get(i), startingOffset+i, template));
+	    List cl = makeStore((Temp)regs.get(i), startingOffset+i, template);
+	    curr = (Instr) cl.get(0);
+	    Instr next = curr.getNext();
+	    curr.remove(); // FSK: being safe; removing before relayouting
+	    curr.layout(last, next);
+	    list.addAll(cl);
+	    last = (Instr) cl.get(cl.size() - 1);
 	}
-	return ListFactory.concatenate(lists);
+	
+	// System.out.println("store: "+list);
+	
+	return list;
     }
 
     /** Generates a new set of <code>Instr</code>s for memory traffic

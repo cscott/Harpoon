@@ -19,7 +19,7 @@ import java.util.Arrays;
     StrongARM architecture.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.5 1999-12-20 12:42:39 pnkfelix Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.6 1999-12-20 17:22:23 pnkfelix Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
@@ -147,6 +147,8 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 			strs.length == 2);
 	    
 	    if (strs.length == 2) {
+		System.out.println("In makeStore, twoWord case");
+
 		InstrMEM store1 = 
 		    new InstrMEM(template.getFactory(), template,
 				 strs[0],
@@ -162,6 +164,7 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 		Util.assert(store2.getPrev() == store1, "store2.prev == store1");
 		return Arrays.asList(new InstrMEM[]{ store1, store2 });
 	    } else {
+
 		InstrMEM store = 
 		    new InstrMEM(template.getFactory(), template,
 				 strs[0],
@@ -170,8 +173,6 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 		return Arrays.asList(new InstrMEM[] { store });
 	    }
 	} else {
-	    // System.out.println("Offset exceeded!");
-
 	    // need to wrap store with instructions to shift SP down
 	    // and up again, and need to make it *ONE* Instr
 	    

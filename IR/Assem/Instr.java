@@ -43,7 +43,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.64 1999-12-20 12:42:40 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.65 1999-12-20 17:22:24 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private final String assem; 
@@ -267,61 +267,26 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	     <code>oldi</code>.   
     */
     public static void replaceInstrList(final Instr oldi, final List newis) {
+	// System.out.println("("+oldi.prev+") "+oldi+" ("+oldi.next+")" + " -> " + newis); 
 	Util.assert(oldi != null && newis != null, "Null Arguments are bad");
 	Util.assert(oldi.canFallThrough &&
 		    oldi.getTargets().isEmpty(), 
 		    "oldi must be a nonbranching instruction.");
-	Util.assert(isLinear(newis), "newis must be a basic block: " +
-		    pprint(newis));
+
+	// There's something wrong, either with my code or with the
+	// jikes compiler, but it does CRAZY shit if i leave this in...
+	//Util.assert(isLinear(newis), "newis must be a basic block: "+pprint(newis));
 	
-	final Instr next = oldi.next;
-	final Instr prev = oldi.prev;
-	final Instr newiF = (Instr) newis.get(0);
-	final Instr newiL = (Instr) newis.get(newis.size() - 1);
-
-	if(prev!=null)prev.next = newiF;
-	newiF.prev = prev;
-	newiL.next = next;
-	if(next!=null)next.prev = newiL;
-
-	// DEBUG check that the stream still flows from prev to next
-	// FSK: note to self; check if the prev==null case screws
-	//      things up in subtle ways
-	Instr i = (prev == null)?newiF:prev;
-	while (i != next && i.next != null) {
-	    i = i.next;
+	Instr last = oldi.prev;
+	Iterator iter = newis.iterator();
+	while(iter.hasNext()) { 
+	    Instr i = (Instr) iter.next();
+	    if (last != null) last.next = i;
+	    i.prev = last;
+	    last = i;
 	}
-	final Instr ifinal = i;
-	
-	Util.assert(ifinal == next, 
-		    new Util.LazyString() {
-			public String eval() {
-			    Instr i2 = null;
-			    String s = ("replacing "+oldi+" -> "+newis+" ; "+
-					"started at prev:"+prev+
-					" but ended up at "+ifinal+
-					" instead of "+newiL+" , "+next+"\n");
-			    if (prev != null) { 
-				i2 = prev; 
-			    } else {
-				s += "null | ";
-				i2 = newiF;
-			    }
-			    while(i2 != null && i2 != next) {
-				s += i2.toString() + " | ";
-				i2 = i2.next;
-			    }
-			    if (i2 != null) { 
-				s += i2.toString(); 
-			    } else { 
-				s += "null"; 
-			    }
-			    return s;
-			}   
-		    });
-	
-	//System.out.println("Changed \n" + prev +" "+ oldi +" "+ next +"\n to " + s);
-
+	last.next = oldi.next;
+	if (oldi.next != null) oldi.next.prev = last;
     }
 
     private static String pprint(List l) {
@@ -553,10 +518,10 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 			"if they already exist");
 	}
 	
-	if(from!=null)from.next = this;
+	if (from!=null) from.next = this;
 	this.prev = from;
 	this.next = to;
-	if(to!=null)to.prev = this;
+	if (to!=null) to.prev = this;
 
 	/* add this to inf.labelToBranchingInstrSetMap */
  	if (this.targets != null) {

@@ -56,7 +56,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.57 1999-12-20 12:42:36 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.58 1999-12-20 17:22:20 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = false;
@@ -436,23 +436,29 @@ public abstract class RegAlloc  {
 	    // of it, at least when assigning offsets.  Check over
 	    // this. 
 	    public void visitStore(FskStore m) {
+		// System.out.println("Visiting Store: " + m);
+
 		// replace all non-Register Temps with appropriate
 		// stack offset locations
+		Util.assert(m.getPrev() != null &&
+			    m.getNext() != null, "too weird if this isn't true...");
+
 		Integer i = (Integer) tempsToOffsets.get(m.def()[0]);
 		Util.assert(i != null, "tempsToOffsets should have "+
 			    "a value for "+m.def()[0]);
-		List instrs = 
-		    frame.getInstrBuilder().
+		List instrs = frame.getInstrBuilder().
 		    makeStore(Arrays.asList(m.use()), i.intValue(), m);
 		
 		if (instrs.size() > 1) { // linearity check
 		    Iterator iter = instrs.iterator();
 		    Instr i1 = (Instr) iter.next();
+		    Util.assert(!(i1 instanceof FskStore), "No FskStores Allowed");
 		    while(iter.hasNext()) {
 			Instr i2 = (Instr) iter.next();
 			Util.assert(i1.getNext() == i2, "i1.next != i2:( "+i1+" , "+i2+")");
 			Util.assert(i2.getPrev() == i1, "i2.prev != i1:( "+i1+" , "+i2+")");
 			i1 = i2;
+			Util.assert(!(i1 instanceof FskStore), "No FskStores Allowed");
 		    }
 		}
 
@@ -491,16 +497,23 @@ public abstract class RegAlloc  {
 	    Instr i = (Instr) instrs.next();
 	    i.accept(tf);
 	}
-	// now tf should have a full map of Temps to needed Stack
-	// Offsets.
-
-	// System.out.println("TempsToOffsets Mapping: " + tf.tempsToOffsets);
+	// now tf has a full map of Temps to needed Stack Offsets.
 
 	InstrReplacer ir = new InstrReplacer(tf.tempsToOffsets);
 	instrs = in.getElementsI();
 	while(instrs.hasNext()) {
 	    Instr i = (Instr) instrs.next();
 	    i.accept(ir);
+	}
+
+	instrs = in.getElementsI(); // debug check
+	while(instrs.hasNext()) {
+	    Instr i = (Instr) instrs.next();
+	    Util.assert(!(i instanceof FskLoad), "FskLoad in i-list!");
+	    Util.assert(!(i instanceof FskStore), 
+			"FskStore in i-list! "+
+			i.getPrev() + " " +
+			i + " " + i.getNext());
 	}
 
 	Instr instr = (Instr) in.getRootElement();
