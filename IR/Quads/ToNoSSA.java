@@ -18,10 +18,15 @@ import java.util.Vector;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.3 1999-02-06 21:51:03 duncan Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.4 1999-02-06 22:15:05 duncan Exp $
  */
 public class ToNoSSA 
 {
+  public static Quad translate(QuadFactory qf, Code code)
+    {
+      return translate(qf, new Hashtable(), code);
+    }
+
   /**
    * Translates the code in the supplied codeview from SSA to No-SSA form, 
    * returning the new root <code>Quad</code>.  The <code>Hashtable</code>

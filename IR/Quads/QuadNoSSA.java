@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * It does not have <code>HANDLER</code> quads, and is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadNoSSA.java,v 1.1.2.7 1999-02-06 21:55:28 duncan Exp $
+ * @version $Id: QuadNoSSA.java,v 1.1.2.8 1999-02-06 22:15:05 duncan Exp $
  * @see QuadWithTry
  * @see QuadSSA
  */
@@ -31,7 +31,7 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
     QuadNoSSA(QuadSSA qsa) {
 	super(qsa.getMethod(), null);
 	// Throw away derivation information
-	this.quads = ToNoSSA.translate(this.qf, new Hashtable(), qsa);
+	this.quads = ToNoSSA.translate(this.qf, qsa);
     }
     private QuadNoSSA(HMethod parent, Quad quads) {
 	super(parent, quads);
