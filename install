@@ -14,8 +14,6 @@ if [ -f /etc/redhat-release ]; then
       wget -q $WEB_ROOT/noGUI/jikes-1.18-2mdk.i586.rpm; 
       wget -q $WEB_ROOT/noGUI/perl-Test-Harness-2.26-2.noarch.rpm; 
       wget -q $WEB_ROOT/noGUI/perl-modules-5.6.1-66.i386.rpm; 
-      echo Installing packages, please enter root password:;
-      su -c 'rpm -i --nosignature *.rpm';
    fi;
    if fgrep -q -c '7.3' /etc/redhat-release; then 
       echo RedHat 7.3 detected.; 
@@ -29,8 +27,6 @@ if [ -f /etc/redhat-release ]; then
       wget -q $WEB_ROOT/noGUI/jikes-1.18-2mdk.i586.rpm; 
       wget -q $WEB_ROOT/noGUI/perl-Test-Harness-2.26-2.noarch.rpm; 
       wget -q $WEB_ROOT/noGUI/perl-modules-5.6.1-66.i386.rpm; 
-      echo Installing packages, please enter root password:;
-      su -c 'rpm -i --nosignature *.rpm';
    fi
    if fgrep -q -c '8.0' /etc/redhat-release; then 
       echo RedHat 8.0 detected.;
@@ -77,9 +73,21 @@ if [ -f /etc/redhat-release ]; then
       wget -q $WEB_ROOT/perl-Test-Harness-2.26-2.noarch.rpm;
       wget -q $WEB_ROOT/perl-modules-5.6.1-66.i386.rpm;
       wget -q $WEB_ROOT/redhat-menus-0.26-1.noarch.rpm; 
-      echo Installing packages, please enter root password:;
-      su -c 'rpm -i --nosignature *.rpm';
    fi;
+   export prmpt=
+   while [ x$prmpt = x ]; do
+        read -p "Are you a (S)udoer or do you have the (R)oot password (S/R)? " prmpt leftover;
+	case $prmpt in
+	    s* | S*)
+		echo Installing packages, please enter your password:;
+		sudo rpm -i --force *.rpm;;
+	    r* | R*)
+	     	echo Installing packages, please enter root password:;
+      		su -c 'rpm -i --force *.rpm';;
+            *)
+		export prmpt=;;
+	esac
+      done
    cd ..
    rm -rf RPMS
 fi
@@ -90,8 +98,37 @@ if [ -f /etc/debian_version ]; then
    fi;
 fi
 
-read -p "What's your username on the FLEX CVS server? " prmpt
 cd ..
 export CVS_RSH=ssh
 export CVSEDITOR=emacs
-cvs -d :ext:$prmpt@flex-cvs.lcs.mit.edu:/data/cvs co -A Classpath Code Realtime ImageRec Runtime
+
+export version=
+while [ x$version = x ]; do
+  echo FLEX Versions: 1.3 2.0 3.0 3.1 3.2 latest;
+  read -p "What version of FLEX do you want? " version leftover;
+  case $version in
+	1.3) export version='-r magic-1-3';;
+	2.0) export version='-r magic-2-0';;
+	3.0) export version='-r magic-3-0';;
+	3.1) export version='-r magic-3-1';;
+	3.2) export version='-r magic-3-2';;
+	latest) export version='-A';;
+	*) export version=;;
+  esac;
+done
+
+export prmpt=
+while [ x$prmpt = x ]; do
+   read -p "Do you have read/write access to the FLEX repository (Y/N)? " prmpt leftover;
+   case $prmpt in
+        y* | Y*)
+	   read -p "What's your username on the FLEX CVS server? " pass leftover;
+	   echo Please type your password to the FLEX repository:;
+           cvs -d :ext:$pass@flex-cvs.csail.mit.edu:/data/cvs co $version Classpath Code Realtime ImageRec Runtime Tests Benchmarks;;
+	n* | N*)
+	   cvs -d :pserver:cvsguest@flex-cvs.csail.mit.edu:/data/cvs co $version Classpath Code Realtime ImageRec Runtime Tests Benchmarks;;
+	*) export prmpt=;;
+   esac;
+done
+
+	    
