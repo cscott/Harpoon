@@ -146,6 +146,7 @@ jintArray getFDsSEL(JNIEnv *env, jint blockMode)
     cresult=(*env)->GetIntArrayElements(env, result, 0);
     memcpy(cresult, buf, sizeof(jint)*size);
     (*env)->ReleaseIntArrayElements(env, result, cresult, 0);
+    free(buf);
     return result;
 }
 
