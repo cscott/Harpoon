@@ -6,6 +6,7 @@ package harpoon.Analysis;
 import harpoon.Util.Util;
 import harpoon.Util.IteratorEnumerator;
 import harpoon.Util.WorkSet;
+import harpoon.Util.LinearSet;
 import harpoon.Util.Worklist;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeEdge;
@@ -26,6 +27,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
+import java.util.Collection;
 
 /**
    BasicBlock collects a serial list of operations.  It is designed to
@@ -51,7 +53,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.25 2000-03-09 00:49:00 salcianu Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.26 2000-04-06 21:37:23 pnkfelix Exp $
 */
 public class BasicBlock {
     
@@ -173,12 +175,11 @@ public class BasicBlock {
 			Util.assert(ind <= size, 
 				    "ind > size:"+ind+", "+size);
 			if (ind != size) {
-			    HCodeEdge[] succs = factory.grapher.succ(next);
-			    Util.assert(succs.length == 1,
+			    Collection succs = factory.grapher.succC(next);
+			    Util.assert(succs.size() == 1,
 					next+" has wrong succs:" + 
-					java.util.Arrays.asList(succs)+
-					" (ind: "+ind+")");
-			    next = succs[0].to(); 
+					succs+" (ind: "+ind+")");
+			    next = ((HCodeEdge)succs.iterator().next()).to(); 
 
 			} else { 
 			    // keep 'next' the same, since previous()
@@ -429,10 +430,10 @@ public class BasicBlock {
 	    // efficiency hack; make various immutable Collections
 	    // unmodifable at construction time rather than at
 	    // accessor time.
-	    leaves = Collections.unmodifiableSet(myLeaves);
+	    leaves = Collections.unmodifiableSet(new LinearSet(myLeaves));
 	    hceToBB = Collections.unmodifiableMap(myHceToBB);
-	    blocks = 
-		Collections.unmodifiableSet(new HashSet(hceToBB.values()));
+	    blocks = Collections.unmodifiableSet(new LinearSet
+						 (new HashSet(hceToBB.values())));
 	
 	    
 	}

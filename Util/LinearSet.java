@@ -4,6 +4,7 @@
 package harpoon.Util;
 
 import java.util.AbstractSet;
+import java.util.Set;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -13,7 +14,7 @@ import java.util.Iterator;
  * small.  It is backed by an <code>ArrayList</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LinearSet.java,v 1.1.2.3 1999-08-18 17:32:54 pnkfelix Exp $
+ * @version $Id: LinearSet.java,v 1.1.2.4 2000-04-06 21:37:24 pnkfelix Exp $
  */
 public class LinearSet extends AbstractSet {
     private ArrayList list;
@@ -24,8 +25,20 @@ public class LinearSet extends AbstractSet {
     }
 
     /** Creates a <code>LinearSet</code> with given capacity. */
-    public LinearSet(int capacity) {
+    public LinearSet(final int capacity) {
         list = new ArrayList(capacity);
+    }
+
+    /** Creates a <code>LinearSet</code>, filling it with the elements
+	of <code>set</code>.
+    */
+    public LinearSet(final Set set) {
+	int sz = set.size();
+	list = new ArrayList(sz);
+	Iterator iter = set.iterator();
+	for(int i=0; i<sz; i++) {
+	    list.set(i, iter.next());
+	}
     }
     
     public Iterator iterator() {

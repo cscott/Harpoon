@@ -12,7 +12,7 @@ import java.util.NoSuchElementException;
  * <code>Iterator</code>s into one.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CombineIterator.java,v 1.1.2.3 1999-09-12 15:55:23 cananian Exp $
+ * @version $Id: CombineIterator.java,v 1.1.2.4 2000-04-06 21:37:24 pnkfelix Exp $
  */
 
 public class CombineIterator implements Iterator {
@@ -22,6 +22,13 @@ public class CombineIterator implements Iterator {
     public CombineIterator(Iterator[] ita) {
         this.ita = ita;
     }
+    /** Creates a <code>CombineIterator</code> from a pair of
+	Iterators. 
+    */
+    public CombineIterator(Iterator i1, Iterator i2) {
+	this(new Iterator[]{ i1, i2 });
+    }
+
     /** Creates a <code>CombineIterator</code> from an
      *  Iterator over Iterators. */
     public CombineIterator(Iterator it) {
