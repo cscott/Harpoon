@@ -5,6 +5,7 @@ package javax.realtime;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.lang.Thread;
 import java.lang.Object; 
+
 /** The queue class provides blocking and non-blocking reads and writes
  *  to the same queue.  It combines the functionality of <code>WaitFreeReadQueue</code>,
  *  <code>WaitFreeWriteQueue</code>, and <code>WaitFreeDequeue</code> and adds 
@@ -55,7 +56,6 @@ public class Queue {
 	    throw new IllegalArgumentException("Maximum must be at least 1 and no more than " + MAX_SIZE +".");
 	}
 	this.queue = new Object[maximum];
-
     }
 
     public Queue(int maximum, Object notify, MemoryArea ma){
@@ -158,8 +158,7 @@ public class Queue {
 		this.notify();
 		return tmp;
 	    } else {
-		/* Avoid deadly embrace */
-		
+		Thread.sleep(java.lang.Math.random()*100);
 		continue;
 	    }
 	}
@@ -189,8 +188,7 @@ public class Queue {
 		queue[write]=object;
 		break;
 	    } else {
-		/* Avoid deadly embrace */
-
+		Thread.sleep(java.lang.Math.random()*100);
 		continue;
 	    }
 	}
