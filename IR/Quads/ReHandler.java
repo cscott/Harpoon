@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.28.2.5 1999-09-17 05:24:10 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.28.2.6 1999-09-17 18:04:51 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -121,7 +121,7 @@ final class ReHandler {
 		    HandInfo nexth=(HandInfo)iterate.next();
 		    //cover any handler if it is needed
 		    if (nexth.anyhandler()&&!any)
-			makeanyhandler(qf, ss, qm, call, nexth, protlist, phiset,typemap, ti);
+			makeanyhandler(qf, ss, qm, call, nexth, protlist, phiset,typemap, ti, callset);
 		    //cover other handlers
    		    if (nexth.specificex()) 
 			makespechandler(qf, ss, qm, call, throwset, nexth, protlist, phiset, phiold, any,typemap, ti);
@@ -274,7 +274,7 @@ final class ReHandler {
 
 
     //makes an exit for the anyhandler
-    private static void makeanyhandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, ReProtection protlist, Set phiset, Map ntypemap, TypeMap otypemap) {
+    private static void makeanyhandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, ReProtection protlist, Set phiset, Map ntypemap, TypeMap otypemap, Set callset) {
 	Quad newhandler = new HANDLER(qf, qm.getHead(call),
 				      Quad.map(ss.ctm, call.retex()),
 				      null, protlist);
@@ -305,8 +305,14 @@ final class ReHandler {
 	}
 	phiset.add(phi);
 	Quad.addEdge(newhandler,0, phi, 0);
-	Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
-		     qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
+	if (callset.contains((nexth.handler()).prev(nexth.handleredge()))) {
+	    //This is the case that the previous node we is
+	    //a call statement...we don't want to link to this edge, because it
+	    //is no longer here.
+	}
+	else
+	    Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
+			 qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
 	Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
     }
 
