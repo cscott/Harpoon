@@ -14,7 +14,7 @@ import java.io.IOException;
 /* Main entry point for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.1.2.6 1999-06-30 04:52:42 pnkfelix Exp $
+ * @version $Id: Main.java,v 1.1.2.7 1999-06-30 05:50:18 pnkfelix Exp $
  */
 public class Main {
     private static boolean DEBUG_parser = false;
@@ -28,7 +28,7 @@ public class Main {
 	Lexer l = new Lexer(r, e);
 	Parser p = new Parser(l, e);
 	Spec s = (Spec) p.parse().value;
-	Util.assert(!e.anyErrors, "Error in parsing " + args[0]);
+	//	Util.assert(!e.anyErrors, "Error in parsing " + args[0]);
 
 	if (DEBUG_parser) {
 	    System.out.println(s);

@@ -28,7 +28,7 @@ import java.util.Collections;
  * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.8 1999-06-30 04:52:42 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.9 1999-06-30 05:50:18 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -136,8 +136,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 			       indentPrefix + "\t");
 	    s.func.accept(r);
 	    degree += r.degree;
-	    append(exp, "&& (" + r.exp.toString() +")");
-	    append(initStms, r.initStms.toString());
+	    append(exp, "&& (" + r.exp.toString() +indentPrefix+")");
+	    initStms.append(r.initStms.toString());
 
 	    // look at retex
 	    // NOTE: THIS WILL BREAK WHEN WE UPDATE EXCEPTION HANDLING 
@@ -145,8 +145,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 				   indentPrefix + "\t");
 	    s.retex.accept(r);
 	    degree += r.degree;
-	    append(exp, indentPrefix + "&& (" + r.exp.toString() + ")");
-	    append(initStms, r.initStms.toString());
+	    append(exp, indentPrefix + "&& (" + r.exp.toString() + indentPrefix+")");
+	    initStms.append(r.initStms.toString());
 
 	    // look at retval
 	    r = new TypeExpRecurse("(("+TREE_CALL+")"+stmPrefix + ").retval",
@@ -154,7 +154,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.retval.accept(r);
 	    degree += r.degree;
 	    append(exp, "&& (" + r.exp.toString() + ")");
-	    append(initStms, r.initStms.toString());
+	    initStms.append(r.initStms.toString());
 	}
 
 	public void visit(Spec.StmCjump s) {
@@ -169,8 +169,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 			       indentPrefix + "\t");
 	    s.test.accept(r);
 	    degree += r.degree;
-	    append(exp, "&& (" + r.exp.toString() + ")");
-	    append(initStms, r.initStms.toString());
+	    append(exp, "&& (" + r.exp.toString() + indentPrefix+")");
+	    initStms.append(r.initStms.toString());
 
 	    // code to initialize the target label identifiers so
 	    // that they can be referred to.
@@ -195,8 +195,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 			       indentPrefix + "\t");
 	    s.exp.accept(r);
 	    degree += r.degree;
-	    append(exp, "&& (" + r.exp.toString() + ")");
-	    append(initStms, r.initStms.toString());
+	    append(exp, "&& (" + r.exp.toString() + indentPrefix+")");
+	    initStms.append(r.initStms.toString());
 	}
 
 	public void visit(Spec.StmJump s) {
@@ -211,8 +211,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 			       indentPrefix + "\t");
 	    s.exp.accept(r);
 	    degree += r.degree;
-	    append(exp, "&& (" + r.exp.toString() + ")");
-	    append(initStms, r.initStms.toString());
+	    append(exp, "&& (" + r.exp.toString() + indentPrefix+")");
+	    initStms.append(r.initStms.toString());
 
 	}
 
@@ -242,15 +242,15 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.src.accept(r);
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() + indentPrefix  +")");
-	    append(initStms, r.initStms.toString());
+	    initStms.append(r.initStms.toString());
 
 	    // look at dst
 	    r = new TypeExpRecurse("(("+TREE_MOVE+") " + stmPrefix + ").dst",
 				   indentPrefix + "\t");
 	    s.dst.accept(r);
 	    degree += r.degree;
-	    append(exp, "&& (" + r.exp.toString() + ")");
-	    append(initStms, r.initStms.toString());
+	    append(exp, "&& (" + r.exp.toString() + indentPrefix+")");
+	    initStms.append(r.initStms.toString());
 	}
 
 	public void visit(Spec.StmNativeCall s) {
@@ -266,7 +266,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.func.accept(r);
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+")");
-	    append(initStms, r.initStms.toString());
+	    initStms.append(r.initStms.toString());
 
 	    // look at retex
 	    // NOTE: THIS WILL BREAK WHEN WE UPDATE EXCEPTION HANDLING 
@@ -275,7 +275,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.retex.accept(r);
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+ ")");
-	    append(initStms, r.initStms.toString());
+	    initStms.append(r.initStms.toString());
 
 	    // look at retval
 	    r = new TypeExpRecurse("(("+TREE_NATIVECALL+")"+stmPrefix + ").retval",
@@ -283,7 +283,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.retval.accept(r);
 	    degree += r.degree;
 	    append(exp, "&& (" + r.exp.toString() +indentPrefix+ ")");
-	    append(initStms, r.initStms.toString());
+	    initStms.append(r.initStms.toString());
 	    
 	    // initialize arg list
 	    append(initStms, TREE_ExpList + s.arglist + 
@@ -321,7 +321,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.retval.accept(r);
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+")");
-	    append(initStms, r.initStms.toString());
+	    initStms.append(r.initStms.toString());
 	}
 
 	public void visit(Spec.StmSeq s) {
@@ -361,7 +361,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    s.exp.accept(r); 
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+ ")");
-	    append(initStms, r.initStms.toString());
+	    initStms.append(r.initStms.toString());
 	}
     }
 
@@ -422,7 +422,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		}
 		public void visit(Spec.LeafOp l) {
 		    append(exp, "// check opcode");
-		    append(exp, "&& ((" + TREE_BINOP + ")" + expPrefix + ").op == " + e.opcode.toBop());
+		    append(exp, "&& ((" + TREE_BINOP + ")" + expPrefix + ").op == " + l.op);
 		}
 		public void visit(Spec.LeafId l) {
 		    append(initStms, "int " + l.id + " = ((" + TREE_BINOP + ") " + 
@@ -597,8 +597,20 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 	    append(exp, "// check expression type");
 	    append(exp, "&& " + expPrefix + " instanceof " + TREE_UNOP + " ");
-	    append(exp, "// check opcode");
-	    append(exp, "&& ((" + TREE_UNOP +")" + expPrefix + ").op == " + e.opcode.toUop());
+
+	    e.opcode.accept(new Spec.LeafVisitor() {
+		public void visit(Spec.Leaf l) {
+		    Util.assert(false, "Should never visit generic Leaf in ExpUnop");
+		}
+		public void visit(Spec.LeafOp l) {
+		    append(exp, "// check opcode");
+		    append(exp, "&& ((" + TREE_UNOP + ")" + expPrefix + ").op == " + l.op);
+		}
+		public void visit(Spec.LeafId l) {
+		    append(initStms, "int " + l.id + " = ((" + TREE_UNOP + ") " + 
+			   expPrefix + ").op;");
+		}
+	    });
 
 	    append(exp, "// check operand types");
 	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer;
@@ -668,7 +680,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 		// TODO: add PREDICATE CHECK to end of matchStm
 		String matchStm = (indent + "if (" + typeCheck + indent + "){\n"+
-				   indent + "\t" + recurse.initStms.toString() +
+				   recurse.initStms.toString() +
 				   indent + "\t_matched_ = true;\n" +
 				   indent + TREE_Tree + " ROOT = " + stmArg + ";\n");
 
@@ -690,7 +702,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		
 		// TODO: add PREDICATE CHECK to end of matchStm
 		String matchStm = (indent + "if ("+typeCheck+indent+"){\n" +
-				   indent+"\t"+recurse.initStms.toString() +
+				   recurse.initStms.toString() +
 				   indent + "\t_matched_ = true;\n" +
 				   indent + TREE_Tree + " ROOT = " + expArg + ";\n");
 		//String matchStm = indent + "_matched_ =  (" + typeCheck + indent + ");";
@@ -714,7 +726,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	
 	// Implement a recursive function by making a helper class to
 	// visit the nodes
-	out.println("\tstatic final class CggVisitor extends "+TREE_TreeVisitor+" {");
+	out.println("\tfinal class CggVisitor extends "+TREE_TreeVisitor+" {");
 
 	// for each rule for an exp we need to implement a
 	// clause in munchExp()
@@ -726,7 +738,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	while(expPairsIter.hasNext()) {
 	    RuleTuple triplet = (RuleTuple) expPairsIter.next();
 	    out.println(triplet.matchStms);
-	    out.println("\t\t\tif (_matched_) { // action code!");
+	    out.println("\t\t\t\tif (_matched_) { // action code!");
 	    out.println(triplet.actionStms);
 	    
 	    out.println("\t\t\t}");
@@ -745,7 +757,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	while(stmPairsIter.hasNext()) {
 	    RuleTuple triplet = (RuleTuple) stmPairsIter.next();
 	    out.println(triplet.matchStms);
-	    out.println("\t\t\tif (_matched_) { // action code!");
+	    out.println("\t\t\t\tif (_matched_) { // action code!");
 	    out.println(triplet.actionStms);
 	    
 	    out.println("\t\t\t}");
