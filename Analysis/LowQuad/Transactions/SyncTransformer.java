@@ -46,10 +46,12 @@ import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.HClassUtil;
+import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -58,10 +60,10 @@ import java.util.Map;
 import java.util.Set;
 /**
  * <code>SyncTransformer</code> transforms synchronized code to
- * atomic transactions.  Works on <code>LowQuadNoSSA</code> form.
+ * atomic transactions.  Works on <code>QuadSSA</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.14 2000-11-16 05:31:42 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.15 2000-11-16 08:10:11 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -93,13 +95,29 @@ public class SyncTransformer
     private final HMethod HMwriteFlagA;
     /* flag value */
     private final HField HFflagvalue;
+    /** Set of safe methods. */
+    private final Set safeMethods;
 
-    /** Creates a <code>SyncTransformer</code>. */
+    /** Creates a <code>SyncTransformer</code> with no safe methods. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l) {
+	this(hcf, ch, l, Collections.EMPTY_SET);
+    }
+    /** Creates a <code>SyncTransformer</code> with a safe method set loaded
+     *  from the specified resource name. */
+    public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
+			   String resourceName) {
+	this(hcf, ch, l, parseResource(l, resourceName));
+    }
+    /** Creates a <code>SyncTransformer</code> with the specified safe
+     *  method set. */
+    public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
+			   Set safeMethods) {
+	// input is SSA...
         super(harpoon.IR.Quads.QuadSSA.codeFactory(hcf), ch, false);
 	// and output is NoSSA
 	Util.assert(codeFactory().getCodeName()
 		    .equals(harpoon.IR.Quads.QuadRSSx.codename));
+	this.safeMethods = safeMethods;
 	this.HCclass = l.forName("java.lang.Class");
 	this.HCfield = l.forName("java.lang.reflect.Field");
 	String pkg = "harpoon.Runtime.Transactions.";
@@ -302,6 +320,7 @@ public class SyncTransformer
 	    // if in a transaction, call the transaction version &
 	    // deal with possible abort.
 	    if (handlers==null) return;
+	    if (safeMethods.contains(q.method())) return; // it's safe.
 	    Temp[] nparams = new Temp[q.paramsLength()+1];
 	    int i=0;
 	    if (!q.isStatic())
@@ -689,5 +708,22 @@ public class SyncTransformer
 		m.put(t, new Temp(t));
 	    return (Temp) m.get(t);
 	}
+    }
+
+    private static Set parseResource(final Linker l, String resourceName) {
+	final Set result = new HashSet();
+	try {
+	    ParseUtil.readResource(resourceName, new ParseUtil.StringParser() {
+		public void parseString(String s)
+		    throws ParseUtil.BadLineException {
+		    result.add(ParseUtil.parseMethod(l, s));
+		}
+	    });
+	} catch (java.io.IOException ex) {
+	    System.err.println("ERROR READING SAFE SET, SKIPPING REST.");
+	    System.err.println(ex.toString());
+	}
+	// done.
+	return result;
     }
 }
