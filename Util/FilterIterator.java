@@ -19,17 +19,17 @@ import java.util.NoSuchElementException;
  * Filters which remain consistent throughout the iteration be used. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FilterIterator.java,v 1.2 2002-02-25 21:08:45 cananian Exp $
+ * @version $Id: FilterIterator.java,v 1.2.2.1 2002-03-14 01:05:39 cananian Exp $
  */
-public class FilterIterator extends UnmodifiableIterator implements Iterator {
-    /*final*/ Iterator i;
-    /*final*/ Filter f;
+public class FilterIterator<A,B> extends UnmodifiableIterator<B> {
+    /*final*/ Iterator<A> i;
+    /*final*/ Filter<A,B> f;
     /** Creates a <code>FilterIterator</code>. */
-    public FilterIterator(Iterator i, Filter f) {
+    public FilterIterator(Iterator<A> i, Filter<A,B> f) {
         this.i = i; this.f = f; advance();
     }
 
-    private Object next = null;
+    private A next = null;
     private boolean done = false;
 
     private void advance() {
@@ -41,28 +41,28 @@ public class FilterIterator extends UnmodifiableIterator implements Iterator {
 	done = true; // found end of enumeration.
     }
 
-    public Object next() {
+    public B next() {
 	if (done) throw new NoSuchElementException();
-	Object o = next; advance(); return f.map(o);
+	A o = next; advance(); return f.map(o);
     }
     public boolean hasNext() {
 	return !done;
     }
 
-    public static class Filter { // default is an identity mapping.
+    public static class Filter<A,B> { // default is an identity mapping.
 	/** Return <code>true</code> if the specified element should be
 	    included in the filtered enumeration. 
 	 
 	    <BR> Default implementation returns true for all
 	    <code>Object</code>s (no filter).   
 	 */
-	public boolean isElement(Object o) { return true; }
+	public boolean isElement(A o) { return true; }
 
 	/** Perform a mapping on elements from the source enumeration. 
 
 	    <BR> Default implementation returns <code>o</code>
 	    (identity mapping). 
 	 */
-	public Object map(Object o) { return o; }
+	public B map(A o) { return (B) o; } // cast is only safe if A extends B
     }
 }
