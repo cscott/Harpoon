@@ -13,9 +13,11 @@ import java.util.Set;
  * analyzing reaching definitions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ReachingDefs.java,v 1.1.2.3 2000-02-05 21:28:32 cananian Exp $
+ * @version $Id: ReachingDefs.java,v 1.1.2.4 2000-07-14 22:17:58 pnkfelix Exp $
  */
 public abstract class ReachingDefs {
+    public final static boolean TIME = false;
+
     /** The <code>HCode</code> for which this object contains analysis
      *  results. */
     protected final HCode hc;

@@ -28,10 +28,9 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.1 2000-07-14 19:26:32 pnkfelix Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.2 2000-07-14 22:17:58 pnkfelix Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
-    public final static boolean TIME = false;
     final private CFGrapher cfger;
     final protected BasicBlock.Factory bbf;
 
@@ -40,8 +39,8 @@ public class ReachingDefsAltImpl extends ReachingDefs {
     final protected BitSetFactory bsf;
     
     // maps Temp:t -> Set:d where `bsf'-produced `d' contains all (t,x) 
-    // (FSK: not used yet; just an idea for optimization later)
-    protected Map tempToAllDefs;
+    // (FSK: an idea for optimization later)
+    final protected Map tempToAllDefs;
 
     final protected Map cache = new HashMap(); // maps BasicBlocks to in Sets 
     final protected boolean check_typecast; // demand the special treatment of TYPECAST
@@ -78,13 +77,29 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	check_typecast = 
 	    hc.getName().equals(harpoon.IR.Quads.QuadNoSSA.codename);
 	report("Entering analyze()");
-	final Map Temp_To_DefPts = getDefPts();
+	tempToAllDefs = getDefPts();
 	
-	final Set universe = createPairs(Temp_To_DefPts);
+	Iterator pairsets = tempToAllDefs.values().iterator();
+	Set universe = new HashSet();
+	while(pairsets.hasNext()) {
+	    universe.addAll((Set)pairsets.next());
+	}
+
 	bsf = new BitSetFactory(universe);
-	analyze(Temp_To_DefPts);
+
+	// replace HashSets with BitSets in tempToAllDefs.values()
+	Iterator ts = tempToAllDefs.keySet().iterator();
+	while(ts.hasNext()) {
+	    Object t = ts.next();
+	    tempToAllDefs.put(t, bsf.makeSet((Set)tempToAllDefs.get(t)));
+	}
+
+	analyze(tempToAllDefs);
 	report("Leaving analyze()");
+
+
     }
+
 
     /** Returns the Set of <code>HCodeElement</code>s providing definitions
      *  of <code>Temp</code> <code>t</code> which reach 
@@ -99,13 +114,15 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	Record r = (Record)cache.get(b);
 
 	// find HCodeElements associated with `t' in the IN Set
-	Iterator pairs = r.IN.iterator();
-	Set results = new HashSet();
+	Set results = bsf.makeSet(r.IN);
+	results.retainAll( (Set) tempToAllDefs.get(t) );
+
+	Iterator pairs = results.iterator();
+	results = new HashSet();
 	while(pairs.hasNext()) {
-	    List l = (List) pairs.next();
-	    if (l.get(0).equals(t))
-		results.add(l.get(1));
+	    results.add( ((List)pairs.next()).get(1) );
 	}
+
 	// propagate in Set through the HCodeElements 
 	// of the BasicBlock in correct order
 	report("Propagating...");
@@ -113,23 +130,25 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	    HCodeElement curr = (HCodeElement)it.next();
 	    if (curr == hce) return results;
 	    Collection defC = null;
+
 	    // special treatment of TYPECAST
 	    if(check_typecast && (curr instanceof TYPECAST))
 		defC = Collections.singleton(((TYPECAST)curr).objectref());
 	    else
 		defC = ud.defC(curr);
+
 	    if (defC.contains(t)) 
-		results = bsf.makeSet(Collections.singleton(curr));
+		results = Collections.singleton(curr);
 	}
 	Util.assert(false);
 	return null; // should never happen
     }
 
     // do analysis
-    private void analyze(Map Temp_To_DefPts) {
+    private void analyze(Map Temp_To_Pairs) {
 	// build Gen and Kill sets
 	report("Entering buildGenKillSets()");
-	buildGenKillSets(Temp_To_DefPts);
+	buildGenKillSets(Temp_To_Pairs);
 	report("Leaving buildGenKillSets()");
 
 	// solve for fixed point
@@ -144,7 +163,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	}
     }
 
-    // create a mapping of Temps to a Set of possible definition points
+    // create a mapping of Temps to a Set of (t, defPt) Pairs 
     private Map getDefPts() {
 	Map m = new HashMap();
 	for(Iterator it=hc.getElementsI(); it.hasNext(); ) {
@@ -173,7 +192,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 		    m.put(t, defPts);
 		}
 		// add this definition point
-		defPts.add(hce);
+		defPts.add(Default.pair(t,hce));
 	    }
 	    if (DEBUG) {
 		Collection col = ud.useC(hce);
@@ -193,21 +212,13 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	}
 	return m;
     }
-    // create a universe of (Temp, DefPt) pairs
-    // using a mapping of Temps to Sets of definitions points
-    private Set createPairs(Map input) {
-	Set universe = new HashSet();
-	for(Iterator ts=input.keySet().iterator(); ts.hasNext(); ) {
-	    Temp t = (Temp)ts.next();
-	    for (Iterator hs=((Set)input.get(t)).iterator(); hs.hasNext();){
-		universe.add(Default.pair(t, hs.next()));
-	    }
-	}
-	return universe;
-    }
+
     // makes the singleton set { (t,h) }
     private Set makeSet(Temp t, HCodeElement h) {
-	return bsf.makeSet(Collections.singleton(Default.pair(t, h)));
+	Set s = bsf.makeSet();
+	List p = Default.pair(t, h);
+	s.add(p);
+	return s;
     }
     final class Record {
 	Set IN, OUT, GEN, KILL;
@@ -219,7 +230,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	}
     }
     // builds a BasicBlock -> Record mapping in `cache'
-    private void buildGenKillSets(Map DefPts) {
+    private void buildGenKillSets(Map Temp_To_Pairs) {
 	// calculate Gen and Kill sets for each basic block 
 	for(Iterator blocks=bbf.blockSet().iterator(); blocks.hasNext(); ) {
 	    BasicBlock b = (BasicBlock)blocks.next();
@@ -238,7 +249,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 		for(int i=0; i < tArray.length; i++) {
 		    Temp t = tArray[i];
 		    bitSets.GEN.addAll(makeSet(t, hce));
-		    Set kill = new HashSet((Set)DefPts.get(t));
+		    Set kill = bsf.makeSet((Set)Temp_To_Pairs.get(t));
 		    kill.remove(hce);
 		    bitSets.KILL.addAll(bsf.makeSet(kill));
 		}

@@ -12,6 +12,7 @@ import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.ReachingDefs;
 import harpoon.Analysis.ReachingDefsCachingImpl;
+import harpoon.Analysis.ReachingDefsAltImpl;
 import harpoon.Analysis.Instr.TempInstrPair;
 import harpoon.Analysis.Instr.RegAlloc.SpillLoad;
 import harpoon.Analysis.Instr.RegAlloc.SpillStore;
@@ -66,7 +67,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.104 2000-07-14 07:18:52 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.105 2000-07-14 22:18:03 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -131,7 +132,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	backedInstrs = new HashMap();
 
 	if (TIME) System.out.print("D");
-	reachingDefs = new ReachingDefsCachingImpl(code);
+	// reachingDefs = new ReachingDefsCachingImpl(code);
+	reachingDefs = new ReachingDefsAltImpl(code);
     }
 
     private Instr definition(Instr i, Temp t) {

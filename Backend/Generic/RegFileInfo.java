@@ -48,7 +48,7 @@ import java.util.Iterator;
     together before mapping them to Physical Register Temps.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.29 2000-06-26 17:48:55 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.30 2000-07-14 22:18:06 pnkfelix Exp $ */
 public abstract class RegFileInfo {
 
     /** Defines function from 
@@ -188,6 +188,24 @@ public abstract class RegFileInfo {
 	return t.tempFactory() == regTempFactory();
     }
 
+    /** Produces a <code>Set</code> of register assignments that can
+	hold <code>t</code>.  FSK: experimental method.
+	<BR> <B>effects:</B> Returns a <code>Set</code> of possible
+	     register assignments for <code>t</code>, where each
+	     assignment is a <code>List</code> of Register
+	     <code>Temp</code>s.  The elements of each
+	     <code>List</code> are ordered according to proper
+	     placement of the Register-bitlength words of the value in
+	     <code>t</code>, low-order words first.   The Set may be
+	     a <code>SortedSet</code>, in which case the earlier
+	     assignments are favored over later ones.
+    */
+    public Set getRegAssignments(Temp t) { 
+	harpoon.Util.Util.assert(false, 
+				 "abstract and implement in subclasses");
+	return null;
+    }
+
     /** Analyzes <code>regfile</code> to find free registers that
 	<code>t</code> can be assigned to.  
 	(FSK: Need to update this method to incorporate knowledge of
@@ -282,7 +300,7 @@ public abstract class RegFileInfo {
 	    <BR> <B>effects:</B> Returns a <code>Set</code>
     	         <code>Iterator</code> of spill candidates.  Each
 		 element of the <code>Iterator</code> returned
-		 represents a mutable <code>Set</code> of Register
+		 represents a <code>Set</code> of Register
 		 <code>Temp</code>s that could be spilled to free up
 		 the amount of space needed for the attempted
 		 assignment in the register file.  The returned
@@ -292,7 +310,6 @@ public abstract class RegFileInfo {
 		 through a decent selection so that the Register
 		 Allocator has significant freedom in selecting
 		 registers to spill. 
-	   <BR> NOTE: consider making the Sets returned immutable...
 	*/ 
 	public abstract Iterator getPotentialSpills();
     }

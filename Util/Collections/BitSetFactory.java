@@ -31,7 +31,7 @@ import java.util.HashMap;
     cause an assertion failure.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.15 2000-07-13 10:15:39 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.16 2000-07-14 22:18:13 pnkfelix Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -141,7 +141,7 @@ public class BitSetFactory extends SetFactory {
 
 	public boolean add(Object o) {
 	    Util.assert(fact.universe.contains(o),
-			"Attempted to add an object "+
+			"Attempted to add an object: "+o+
 			"that was not part of the "+
 			"original universe of values.");
 	    int ind = fact.indexer.getID(o);

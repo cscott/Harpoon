@@ -28,10 +28,9 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.13 2000-07-14 07:18:22 pnkfelix Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.14 2000-07-14 22:17:58 pnkfelix Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
-    public final static boolean TIME = false;
     final private CFGrapher cfger;
     final protected BasicBlock.Factory bbf;
     final protected Map Temp_to_BitSetFactories = new HashMap();
@@ -286,7 +285,7 @@ public class ReachingDefsImpl extends ReachingDefs {
 		    continue;
 		for(Iterator succs=b.nextSet().iterator();succs.hasNext();){
 		    Object block = (BasicBlock)succs.next();
-		    worklist.push(block);
+		    worklist.addLast(block);
 		}
 	    }
 	}

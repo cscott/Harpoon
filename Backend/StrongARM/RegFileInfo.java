@@ -39,7 +39,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.20 2000-06-26 17:49:12 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.21 2000-07-14 22:18:11 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -141,6 +141,20 @@ public class RegFileInfo
 	    calleeSaveRegs.add(reg[i]);
 	}
 	calleeSaveRegs.add(reg[13]);
+
+	oneWordAssigns = new HashSet();
+	for (int i=0; i<regGeneral.length; i++) {
+	    Temp[] assign = new Temp[] { regGeneral[i] };
+	    oneWordAssigns.add(Arrays.asList(assign));
+	}
+	oneWordAssigns = Collections.unmodifiableSet(oneWordAssigns);
+	twoWordAssigns = new HashSet();
+	for (int i=0; i<regGeneral.length-1; i+=2) {
+	    Temp[] assign = new Temp[] { regGeneral[i] ,
+					 regGeneral[i+1] };
+	    twoWordAssigns.add(Arrays.asList(assign));
+	}
+	twoWordAssigns = Collections.unmodifiableSet(twoWordAssigns);
     }
     
     public Temp[] getAllRegisters() { 
@@ -248,6 +262,15 @@ public class RegFileInfo
 
     public VRegAllocator allocator() {
 	return new MyVRegAllocator();
+    }
+
+    Set oneWordAssigns, twoWordAssigns;
+    public Set getRegAssignments(Temp t) {
+	if (t instanceof TwoWordTemp) {
+	    return twoWordAssigns;
+	} else {
+	    return oneWordAssigns;
+	}
     }
 
     public Iterator suggestRegAssignment(Temp t, final Map regFile) 

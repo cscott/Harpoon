@@ -15,11 +15,12 @@ import java.util.Collection;
  * AbstractCollection's interface
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CollectionWrapper.java,v 1.1.2.1 1999-11-15 07:52:52 pnkfelix Exp $
+ * @version $Id: CollectionWrapper.java,v 1.1.2.2 2000-07-14 22:18:13 pnkfelix Exp $
  */
 public class CollectionWrapper implements Collection {
     
-    private final Collection b; 
+    /** Collection backing <code>this</code>. */
+    protected final Collection b; 
 
     /** Creates a <code>CollectionWrapper</code>. */
     public CollectionWrapper(Collection c) {
