@@ -64,7 +64,7 @@ import java.util.TreeSet;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.12 2003-07-03 22:34:54 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.13 2003-07-04 03:44:47 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     // Support losing platforms (like, say, AIX) where multiple segments
@@ -246,6 +246,9 @@ public class TreeToC extends java.io.PrintWriter {
 		flushAndAppendTo(DI, MD);
 		break;
 	    case DATA:
+		assert field_counter>0 : "gcc will put this guy in .bss "+
+		    "regardless of the specified section, which will likely "+
+		    "break your build.";
 		pwa[DI].println("};");
 		if (NO_SECTION_SUPPORT) pwa[DI].println("#endif");
 		flushAndAppend(DD);
@@ -596,8 +599,19 @@ public class TreeToC extends java.io.PrintWriter {
 		if (lv.local_code_labels.contains(e.label)) {
 		    pw.print(label(e.label)+":"); nl();
 		} else assert lv.local_table_labels.contains(e.label);
-	    } else if (!lv.method_labels.contains(e.label))
-		startData(DATA, e.label, e.exported);
+	    } else if (!lv.method_labels.contains(e.label)) {
+		if (current_mode==DATA && field_counter==0) {
+		    // two labels back-to-back.  Treat this one as an
+		    // alias.
+		    sym2decl.put(e.label,
+				 "extern void * "+label(e.label)+
+				 " __attribute__ "+
+				 "((alias(\""+label(last_label)+"\")));");
+		    return;
+		} else {
+		    startData(DATA, e.label, e.exported);
+		}
+	    }
 	    last_label=e.label;
 	}
 	private int struct_size;
@@ -605,7 +619,9 @@ public class TreeToC extends java.io.PrintWriter {
 	    switchto(mode);
 	    // without section support, sections are going to be compiled
 	    // separately, so force exported to be true.
-	    if (NO_SECTION_SUPPORT) exported=true;
+	    if (NO_SECTION_SUPPORT && mode!=CODETABLE) exported=true;
+	    assert (mode==CODETABLE ? !exported : true) :
+		"non-static symbols don't work well on the stack.";
 	    if (!lv.local_table_labels.contains(l))
 		sym2decl.put(l, (exported?"extern ":"static ") +
 			     "struct "+label(l)+" "+label(l)+";");
@@ -627,6 +643,10 @@ public class TreeToC extends java.io.PrintWriter {
 	    if (segment!=null && mode!=CODETABLE && !NO_SECTION_SUPPORT)
 		pwa[DI].print(" __attribute__ ((section (\"" +
 			      sectionname(this.segment) +"\")))");
+	    // note that you will require -fno-zero-initialized-in-bss
+	    // if building with NO_SECTION_SUPPORT, as gcc may change
+	    // the section of any data struction without an explicit
+	    // section attribute. (moves empty data structures to bss)
 	    pwa[DI].println(" = {");
 	}
 	public void visit(MEM e) {
