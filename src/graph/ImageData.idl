@@ -41,6 +41,24 @@ module imagerec
       float angle;
       long blueThreshold1;
       long blueThreshold2;
+      /**
+       * Factor used to adjust for dynamic resolution changes.
+       * An object with a width of 100 pixels at one resolution
+       * could be the same actual size as an object with a width
+       * of 200 pixels at another resolution.<br><br>
+       *
+       * The scale factor is intended to be 1/width of the
+       * <b>original</b> image.
+       */
+      float scaleFactor;
+      /**
+       * If this ImageData has been cropped around a particular
+       * object, and if tracking is being used, then this
+       * field contains the unique tracking ID of the object.
+       * Use this ID to obtain info about the tracked object
+       * from the designated ObjectTracker in CommonMemory.
+       */
+      long trackedObjectUniqueID;
     };
   };
 };
