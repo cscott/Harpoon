@@ -4,10 +4,10 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Sun Oct 25 16:14:14 1998> 
-// Time-stamp: <1998-11-16 23:25:47 mfoltz> 
+// Time-stamp: <1998-11-16 23:49:54 mfoltz> 
 // Keywords: 
 
-package harpoon.Analyze.Partition;
+package harpoon.Analysis.Partition;
 
 import java.awt.*;
 import java.awt.event.ActionListener;

@@ -4,10 +4,10 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Sun Oct 25 12:37:16 1998> 
-// Time-stamp: <1998-11-16 23:29:55 mfoltz> 
+// Time-stamp: <1998-11-16 23:49:39 mfoltz> 
 // Keywords: 
 
-package harpoon.Analyze.Partition;
+package harpoon.Analysis.Partition;
 import java.util.Observer;
 import java.util.Observable;
 import java.util.Properties;

@@ -4,10 +4,10 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Fri Oct 23 00:24:17 1998> 
-// Time-stamp: <1998-11-16 23:24:57 mfoltz> 
+// Time-stamp: <1998-11-16 23:49:48 mfoltz> 
 // Keywords: 
 
-package harpoon.Analyze.Partition;
+package harpoon.Analysis.Partition;
 
 import java.util.Enumeration;
 import java.util.Vector;
