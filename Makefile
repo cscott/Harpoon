@@ -34,9 +34,9 @@ doc:	$(SOURCES)
 realtime.jar: $(SOURCES)
 	@echo Generating realtime.jar file...
 	@rm -rf javax java
-	@mkdir -p javax/realtime java/lang
+	@mkdir -p javax/realtime java/lang java/util/concurrent/atomic
 	@$(JCC) -d . -g $^
-	@jar -cf $@ javax/realtime
+	@jar -cf $@ javax/realtime java/util/concurrent 
 	@rm -rf javax java
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
