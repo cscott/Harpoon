@@ -115,7 +115,8 @@ static void printItem(symtab_entry *item, StackTrace backup) {
       int i = 0;
       /* filter out methods that should be "invisible" */
       for( ; i < (sizeof(strtab)/sizeof(char *)); i++)
-	if (strcmp(strtab[i], item->name) == 0) return;
+	if (strcmp(item->name, strtab[i]) == 0) return;
+      if (strstr(item->name, "__0003cinit_0003e__")) return;
 #endif
       fprintf(stderr, "        at %s\n", item->name);
     }
@@ -263,11 +264,9 @@ JNIEXPORT jthrowable JNICALL Java_java_lang_Throwable_fillInStackTrace
       fprintf(stderr, "STACK ERROR fp: %p, next: %p\n", fp, next_fp); 
       break;
     }
-
     fp = next_fp;
   }
 
   FNI_SetJNIData(env, thisobj, tr, free_stacktrace);
-
   return thisobj;
 }
