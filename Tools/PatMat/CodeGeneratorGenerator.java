@@ -16,10 +16,12 @@ import java.io.PrintWriter;
  * <code>TreeCode</code>.  In short, a CGG generates a Code Generator.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.10 1999-07-07 00:25:23 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.11 1999-07-29 00:38:36 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
+    private static final String TREE_Code = "harpoon.IR.Tree.Code";
+    private static final String GENERIC_Code = "harpoon.Backend.Generic.Code";
 
     /** The machine specification that the CodeGenerators outputted by
 	<code>this</code> will target.  
@@ -69,15 +71,18 @@ public abstract class CodeGeneratorGenerator {
 	         This is already defined by <code>this.className</code>.
 	     <LI>class signature.
 	         This is already hardcoded as 
-		 <code>public class <u>this.className</u></code>.
+		 <code>public class <u>this.className</u> extends
+		 harpoon.Backend.Generic.CodeGen</code>. 
 	     <LI>codegen method signature.  This is already hardcoded as 
-		 <code>public final void codegen(harpoon.IR.Tree.TreeCode tree)</code>.
+		 <code>public final harpoon.Backend.Generic.Code
+		       gen(harpoon.IR.Tree.TreeCode tree)</code>. 
 	     </OL>
 	@param out Target output device for the Java source code.
     */
     public void outputJavaFile(PrintWriter out) {
 	out.println(spec.global_stms);
-	out.println("public class " + className + " { ");
+	out.println("public class " + className + 
+		    " extends harpoon.Backend.Generic.GenericCodeGen { ");
 	out.println(spec.class_stms);
 	
 	out.println("\t/** Generates assembly code from a <code>" + TREE_TreeCode + "</code>.");
@@ -89,7 +94,7 @@ public abstract class CodeGeneratorGenerator {
 	out.println("\t    @param tree Set of abstract <code>Tree</code> instructions ");
 	out.println("\t                that form the body of the procedure being compiled.");
 	out.println("\t*/");
-	out.println("\tpublic final void codegen(" + TREE_TreeCode +" tree) {"); // method start
+	out.println("\tpublic final "+GENERIC_Code+" gen(" + TREE_Code +" tree) {"); // method start
 
 	outputSelectionMethod(out);
 

@@ -9,6 +9,7 @@ import harpoon.Backend.Allocation.AllocationInfo;
 import harpoon.Backend.Allocation.AllocationStrategy;
 import harpoon.Backend.Allocation.DefaultAllocationStrategy;
 import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Generic.GenericCodeGen;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.IR.Assem.Instr;
@@ -42,7 +43,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.17 1999-07-28 21:35:04 duncan Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.18 1999-07-29 00:38:35 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -221,6 +222,18 @@ public class SAFrame extends Frame implements AllocationInfo {
     /** Stub added by FSK */
     public Iterator suggestRegAssignment(Temp t, Map regfile) {
 	Util.assert(false, "SAFrame.suggestRegAssigment() Not implemented yet");
+	return null;
+    }
+    /** Not implemented. */    
+    public String getRegisterName(Temp val, String suffix, Map valToRegMap) {
+	Util.assert(false, "DefaultFrame.getRegisterName() Not implemented");
+	return null;
+
+    }
+
+    /** Not implemented. */
+    public GenericCodeGen codegen() { 
+	Util.assert(false, "DefaultFrame.codegen() Not implemented");
 	return null;
     }
 }

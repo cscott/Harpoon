@@ -39,7 +39,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.10 1999-06-16 17:01:02 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.11 1999-07-29 00:38:33 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -249,15 +249,17 @@ public abstract class RegAlloc  {
 	     then returns true.  Else returns false.   
     */ 
     protected boolean isTempRegister(Temp t) {
-	Temp[] allRegs = frame.getAllRegisters();
-	boolean itIs = false;
-	for (int i=0; i < allRegs.length; i++) {
-	    if (t.equals(allRegs[i])) {
-		itIs = true;
-		break;
-	    }
-	}
-	return itIs;
+	return frame.isRegister(t);
+        
+	// Temp[] allRegs = frame.getAllRegisters();
+	// boolean itIs = false;
+	// for (int i=0; i < allRegs.length; i++) {
+	//    if (t.equals(allRegs[i])) {
+	//	itIs = true;
+	//	break;
+	//    }
+	// }
+	// return itIs;
     }
 
     /** Checks if <code>i</code> is last use of <code>reg</code> in

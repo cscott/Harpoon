@@ -21,7 +21,7 @@ import java.util.List;
  * speed becomes an issue. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.8 1999-06-19 21:49:24 cananian Exp $
+ * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.9 1999-07-29 00:38:36 pnkfelix Exp $
  */
 public class BinHeapPriorityQueue extends AbstractCollection implements MaxPriorityQueue {
 
@@ -63,14 +63,14 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
 	priorities.set(index2, p1);
     }
 
-    private void _set(int index, Object item, Object priority) {
+    private void _set(int index, Object item, Integer priority) {
 	heap.set(index, item);
 	priorities.set(index, priority);
     }
 
     private void _heapify(int i) {
 	Util.assert(i < heap.size(),
-		    "heapify param out of bounds");
+		    "heapify param "+i+" out of bounds "+heap.size());
 	int l = _left(i);
 	int r = _right(i);
 	int largest;
@@ -95,18 +95,18 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
 	// replace element to remove with smallest element.
 	int sizem1 = size()-1;
 	heap.set(index, heap.get(sizem1));
-	priorities.set(index, heap.get(sizem1));
+	priorities.set(index, priorities.get(sizem1));
 	heap.remove(sizem1);
 	priorities.remove(sizem1);
 	// now heapify to restore heap condition.
-	_heapify(index);
+	if (index<sizem1) _heapify(index); //FSK:not sure if this is correct
     }
 
     public void insert(Object item, int priority) {
 	heap.add(null); priorities.add(null);
 	int i = heap.size()-1;
 	while(i > 0 && ((Integer)priorities.get(_parent(i))).intValue() < priority) {
-	    _set(i, heap.get(_parent(i)), priorities.get(_parent(i)));
+	    _set(i, heap.get(_parent(i)), (Integer)priorities.get(_parent(i)));
 	    i = _parent(i);
 	}
 	_set(i, item, new Integer(priority));

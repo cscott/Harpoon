@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
 import java.util.Stack;
 import java.util.Enumeration;
@@ -44,7 +45,7 @@ import java.util.Iterator;
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.24 1999-06-18 18:27:26 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.25 1999-07-29 00:38:32 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -114,10 +115,12 @@ public class LocalCffRegAlloc extends RegAlloc {
 
     */
     private void localRegAlloc(BasicBlock bb, LiveVars lv) {
-	// The following code assumes that our Temp objects are
-	// effectively the same as pseudo-registers (definition
-	// below).  If this is not true, then the code is probably
-	// broken.
+	CloneableIterator instrs = 
+	    new CloneableIterator(bb.listIterator());
+
+	// first, scan 'bb' for multiple assignments to the same Temp,
+	// and replace said Temp with a new one, thus changing all
+	// Temps into 'pseudo-registers'
 
 	// Definition of pseudo-register: Pseudo-registers contain
 	// Temporary Values and Constants.  No aliasing between
@@ -126,8 +129,12 @@ public class LocalCffRegAlloc extends RegAlloc {
 	// variable.  Register allocation assigns pseudo-registers to
 	// a set of N registers.
 
-	CloneableIterator instrs = 
-	    new CloneableIterator(bb.listIterator());
+	enforcePseudoRegisterProperty((Iterator)instrs.clone());
+
+	// The following code assumes that our Temp objects are
+	// effectively the same as pseudo-registers (definition
+	// below).  If this is not true, then the code is probably
+	// broken.
 
 	InstrFactory inf = null;
 
@@ -324,20 +331,21 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    
 		    memInstrs.getPrior(j).push(load);
 		    
-		    for (int ji = 0; ji < j.dst.length; ji++) {
+		    for (int x = 0; x < j.dst.length; x++) {
 			// FSK: Following two lines were ignoring
 			// invariant that Temps have only one def
-			//if (j.dst[ji] == i) { j.dst[ji] = reg; }
-			//regFile.writeTo(j.dst[ji]); // set DIRTY bit
+
+			//if (j.dst[x] == i) { j.dst[x] = reg; }
+			//regFile.writeTo(j.dst[x]); // set DIRTY bit
 			    
-			if (j.dst[ji] == i) { 
+			if (j.dst[x] == i) { 
 			    Util.assert(false, "Why is Temp " + i + 
 					" being used in its own definition: " + 
 					j + " ?");
 			}
 		    }
-		    for (int ji = 0; ji < j.src.length; ji++) {
-			if (j.src[ji] == i) { j.src[ji] = reg; }
+		    for (int x = 0; x < j.src.length; x++) {
+			if (j.src[x] == i) { j.src[x] = reg; }
 		    }
 		    
 		    // visit all the remaining instructions,
@@ -353,6 +361,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 			}
 			for (int ind=0; ind<instr.dst.length; ind++) {
 			    if (instr.dst[ind].equals(i)) {
+				Util.assert(!frame.isRegister(i), 
+					    "Why are we trying to assign a register" + 
+					    " to a register temp???");
 				Util.assert(false, "Why is Temp " + i
 					    + " being redefined in " +
 					    instr);
@@ -395,8 +406,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    // when the same register is written multiple
 		    // times by CodeGen w/o being saved (like, for
 		    // example, PC)
+
 		    //regFile.put(i, new Temp(regFile.unknownTF, "unk_"));
 		    //regFile.writeTo(i);
+
 		    continue;
 		}
 		
@@ -458,8 +471,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    }
 		}
 		
-
-		
 		CloneableIterator remainInstrs = (CloneableIterator) jnstrs.clone();
 		while(remainInstrs.hasNext()) {
 		    Instr instr = (Instr) remainInstrs.next();
@@ -514,7 +525,48 @@ public class LocalCffRegAlloc extends RegAlloc {
 	memInstrs.updateInstrs();
     } // end localRegAlloc(BasicBlock, LiveVars)
 
+    
+    /** Forces Temps in 'instrs' to conform to the pseudo-register
+	property.
+    */
+    private void enforcePseudoRegisterProperty(Iterator instrs) {
+	// tempToReplacementMap:
+	//     1. prior to first assignment to Temp 't', map.get(t)
+	//        yields null. 
+	//     2. after the first assignment to Temp 't', map.get(t)
+	//        yields 't'
+	//     3. after the second assignment to Temp 't', map.get(t) 
+	//        yields the new Temp that subsequent uses of 't'
+	//        should be replaced with
+	Map tempToReplacementMap = new HashMap();
+	
+	while(instrs.hasNext()) {
+	    Instr instr = (Instr) instrs.next();
+	    for(int i=0; i<instr.src.length; i++) {
+		Temp t = instr.src[i];
+		Temp r = (Temp) tempToReplacementMap.get(t);
+		if (r != null) {
+		    instr.src[i] = r;
+		}
+	    }
+	    for (int i=0; i<instr.dst.length; i++) {
+		Temp t = instr.dst[i];
+		if (!frame.isRegister(t)) {
+		    Temp r = (Temp) tempToReplacementMap.get(t);
+		    if (r == null) {
+			tempToReplacementMap.put(t, t);
+		    } else {
+			tempToReplacementMap.put
+			    (t, new Temp(r.tempFactory()));
+		    }
+		}
+	    }
+	}
+    }
 
+    /** Checks whether 'value' has been modified at any point up to
+       'instr' in 'bb'. 
+    */
     private boolean isDirty(Temp value, Instr instr, BasicBlock bb) {
 	boolean dirty = false;
 	Iterator pastInstrs = bb.listIterator();
