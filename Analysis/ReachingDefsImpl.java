@@ -28,7 +28,7 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.17 2001-06-18 20:44:43 cananian Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.18 2001-08-28 19:59:56 kkz Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -58,9 +58,7 @@ public class ReachingDefsImpl extends ReachingDefs {
 	// sometimes, TYPECAST need to be treated specially
 	check_typecast = 
 	    hc.getName().equals(harpoon.IR.Quads.QuadNoSSA.codename);
-	report("Entering analyze()");
 	analyze();
-	report("Leaving analyze()");
     }
     /** Creates a <code>ReachingDefsImpl</code> object for the
 	provided <code>HCode</code> using <code>CFGrapher.DEFAULT</code>.
@@ -71,25 +69,24 @@ public class ReachingDefsImpl extends ReachingDefs {
     }
     /** Returns the Set of <code>HCodeElement</code>s providing definitions
      *  of <code>Temp</code> <code>t</code> which reach 
-     *  <code>HCodeElement</code> <code>hce</code>. */
+     *  <code>HCodeElement</code> <code>hce</code>. Returns the empty
+     *  Set if the given <code>HCodeElement</code> is unreachable. */
     public Set reachingDefs(HCodeElement hce, Temp t) {
-	report("Processing HCodeElement: "+hce+" Temp: "+t);
 	// find out which BasicBlock this HCodeElement is from
 	BasicBlock b = bbf.getBlock(hce);
-	Util.assert(b != null, "no block for "+hce);
-	report("In BasicBlock: "+b.toString());
+	if (b == null) {
+	    // dead code, no definitions reach
+	    return java.util.Collections.EMPTY_SET;
+	}
 	// get the map for the BasicBlock
 	Map m = (Map)cache.get(b);
-	report("Got map for the BasicBlock");
 	// get the BitSetFactory
 	BitSetFactory bsf = (BitSetFactory)Temp_to_BitSetFactories.get(t);
-	report("Got BitSetFactory");
 	Util.assert(m.get(t) != null, t.toString());
 	// make a copy of the in Set for the Temp
 	Set results = bsf.makeSet((Set)m.get(t));
 	// propagate in Set through the HCodeElements 
 	// of the BasicBlock in correct order
-	report("Propagating...");
 	for(Iterator it=b.statements().iterator(); it.hasNext(); ) {
 	    HCodeElement curr = (HCodeElement)it.next();
 	    if (curr == hce) return results;
@@ -107,22 +104,14 @@ public class ReachingDefsImpl extends ReachingDefs {
     }
     // do analysis
     private void analyze() {
-	report("Entering getDefPts()");
 	final Map Temp_to_DefPts = getDefPts();
-	report("Leaving getDefPts()");
-	report("Entering getDefPts()");
 	getBitSets(Temp_to_DefPts);
-	report("Leaving getDefPts()");
 	
 	// build Gen and Kill sets
-	report("Entering buildGenKillSets()");
 	buildGenKillSets(Temp_to_DefPts);
-	report("Leaving buildGenKillSets()");
 
 	// solve for fixed point
-	report("Entering solve()");
 	solve();
-	report("Leaving solve()");
 	// store only essential information
 	for(Iterator it=cache.keySet().iterator(); it.hasNext(); ) {
 	    BasicBlock b = (BasicBlock)it.next();
@@ -137,7 +126,7 @@ public class ReachingDefsImpl extends ReachingDefs {
     // create a mapping of Temps to a Set of possible definition points
     private Map getDefPts() {
 	Map m = new HashMap();
-	for(Iterator it=hc.getElementsI(); it.hasNext(); ) {
+	for(Iterator it=cfger.getElements(hc).iterator(); it.hasNext(); ) {
 	    HCodeElement hce = (HCodeElement)it.next();
 	    StringBuffer strbuf = new StringBuffer();
 	    Temp[] tArray = null;
