@@ -61,6 +61,12 @@ public class RegAlloc implements TempMap {
     code = c;
     instrs = root;
 
+    // thunk the register array to a register list...
+    TempList registers=null;
+    Temp[] reg = f.getRegFileInfo().getAllRegisters();
+    for (int i=reg.length-1; i>=0; i--)
+	registers = new TempList(reg[i], registers);
+    
     // repeat these steps until no more variables need to be spilled:
     do {
       // create a flow graph
@@ -72,11 +78,6 @@ public class RegAlloc implements TempMap {
 	flow.show(System.err);
         live.show(System.err);
       }
-      // thunk the register array to a register list...
-      TempList registers=null;
-      Temp[] reg = f.getRegFileInfo().getAllRegisters();
-      for (int i=reg.length-1; i>=0; i--)
-	  registers = new TempList(reg[i], registers);
       // color the temporaries using the interference graph.
       color = new Color(flow, live, new TempMap() {
 	  public Temp tempMap(Temp t) {
