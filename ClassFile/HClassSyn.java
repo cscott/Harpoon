@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.10 2000-01-13 23:47:46 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.11 2000-01-26 06:48:50 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -32,8 +32,8 @@ class HClassSyn extends HClassCls implements HClassMutator {
     Util.assert(!template.isPrimitive());
     Util.assert(l==template.getLinker());
     this.name = name;
-    this.superclass = template.getSuperclass();
-    this.interfaces = template.getInterfaces();
+    this.superclass = relink(template.getSuperclass());
+    this.interfaces = relink(template.getInterfaces());
     this.modifiers  = template.getModifiers();
     this.sourcefile = template.getSourceFile();
 
@@ -243,6 +243,17 @@ class HClassSyn extends HClassCls implements HClassMutator {
     this.sourcefile = sf;
   }
 
+  // helper functions to get an appropriate class object consistent
+  // with our parent's linker.
+  private HClass relink(HClass hc) {
+    return getLinker().forDescriptor(hc.getDescriptor());
+  }
+  private HClass[] relink(HClass[] hc) {
+    HClass[] r = new HClass[hc.length];
+    for (int i=0; i<r.length; i++)
+      r[i] = relink(hc[i]);
+    return r;
+  }
   /** Serializable interface. */
   public void writeObject(java.io.ObjectOutputStream out)
     throws java.io.IOException {
