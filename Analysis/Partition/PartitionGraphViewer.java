@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Sun Oct 25 16:14:14 1998> 
-// Time-stamp: <1998-11-16 23:49:54 mfoltz> 
+// Time-stamp: <1998-11-21 16:52:38 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.Partition;
@@ -78,7 +78,7 @@ public class PartitionGraphViewer extends Observable implements ActionListener {
       _vizstyle = vizstyle;
     }
 
-    public void update(Graphics g) {
+    public void paint(Graphics g) {
       
       switch (_vizstyle) {
       case PartitionGraphViewer.MULTI_CIRCLE:
@@ -105,7 +105,7 @@ public class PartitionGraphViewer extends Observable implements ActionListener {
       long weight;
       double colorcoef;
 
-      g.clearRect(0,0,dim.width,dim.height);
+      // g.clearRect(0,0,dim.width,dim.height);
 
       // first get total number of nodes
       int k = _partition.length;
