@@ -22,7 +22,7 @@ import java.util.Set;
  * <code>Code</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.1 1999-10-21 02:17:13 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.2 1999-11-06 00:36:19 cananian Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     TempMap tm;
@@ -58,7 +58,7 @@ public class Code extends harpoon.Backend.Generic.Code {
 		return tm.tempMap(((TwoWordTemp)val).getLow()).toString();
 	    if (suffix.equals("h"))
 		return tm.tempMap(((TwoWordTemp)val).getHigh()).toString();
-	    throw new Error("Unknown suffix: "+suffix);
+	    throw new Error("Unknown suffix: \""+suffix+"\" in "+i);
 	}
 	return tm.tempMap(val).toString();
     }
