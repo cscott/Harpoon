@@ -43,8 +43,9 @@ DECLARE_FNI_Dispatch(Float)
 DECLARE_FNI_Dispatch(Double)
 #endif /* WITH_SOFT_FLOAT */
 .entry:
-	stmfd sp!, { methptr, excptr, fp, sp, lr } @ save caller''s state
-	add fp, sp, #16			@ make frame pointer point at lr.
+	mov ip, sp			@ ip gets out sp
+	stmfd sp!, { methptr, excptr, fp, ip, lr, pc } @ save caller''s state
+	add fp, sp, #20			@ make frame pointer point at pc.
 	cmp nargs, #2
 	stmlsfd sp!, { r1, r2, r3 }	@ write three pad words if necessary
 	add argend, argptr, nargs, lsl #2 @ argend points at end of list
@@ -55,10 +56,10 @@ DECLARE_FNI_Dispatch(Double)
 	bcc 1b
 	ldmfd sp!, { r0, r1, r2, r3 }	@ first args go in registers
 	mov lr, pc			@ set up link register
-	ldr pc, [fp, #-16]		@ go go gadget method invocation.
+	ldr pc, [fp, #-20]		@ go go gadget method invocation.
 
 3:					@ we''re back!
-	ldmda fp, { fp, sp, pc }	@ go home, james.
+	ldmdb fp, { fp, sp, pc }	@ go home, james.
 
 	FIXUP_SEGMENT
 	.word 3b, 4f @ (retaddr, handler)
@@ -67,7 +68,7 @@ DECLARE_FNI_Dispatch(Double)
 4:	@ exception handler code.
 	@ let the caller wrap the exceptional value@ 
 	@ we just stash it away.
-	ldr excptr, [fp, #-12]	@ load address to store exception into.
+	ldr excptr, [fp, #-16]	@ load address to store exception into.
 	str r0, [excptr]	@ put the exception object away
 	mov r0, #0	@ zero out the 'return value'
 	mov r1, #0	@ ...
