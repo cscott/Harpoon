@@ -40,7 +40,8 @@ public class Timer extends Node {
      *
      *  @param id The image to stamp or read the latency.
      */
-    public synchronized void process(ImageData id) {
+    //public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	long time = System.currentTimeMillis();
 	frames++;
 	if (start) {
@@ -87,7 +88,8 @@ public class Timer extends Node {
     /** Get the average latency of frames that have passed through this point
      *  in seconds.
      */
-    public synchronized float getLatency() {
+    //public synchronized float getLatency() {
+    public float getLatency() {
 	return ((float)total)/(1000*((float)frames));
     }
 
@@ -95,7 +97,8 @@ public class Timer extends Node {
      *  Get the standard deviation of the latency (in seconds) of the frames
      *  that have passed through this point.
      */
-    public synchronized float getStdDev() {
+    //public synchronized float getStdDev() {
+    public float getStdDev() {
 	/* PROOF: std. dev. = sqrt(E[(x-E[x])^2])
 	 *                  = sqrt(sum((x-(sum(x)/n))^2)/n)
 	 *                  = sqrt(sum((x^2 - 2*(sum(x)/n)*x + (sum(x)/n)^2))/n)
