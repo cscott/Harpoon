@@ -12,16 +12,13 @@ import java.util.Enumeration;
  * <code>Graph</code> is a command-line graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.7 1998-09-24 21:35:02 cananian Exp $
+ * @version $Id: Graph.java,v 1.8 1998-09-24 23:46:21 cananian Exp $
  */
 
 public final class Graph extends harpoon.IR.Registration {
     // hide away constructor.
     private Graph() { }
 
-    /** The compiler should be invoked with the names of classes
-     *  extending <code>java.lang.Thread</code>.  These classes
-     *  define the external interface of the machine. */
     public static final void main(String args[]) {
 	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
 
