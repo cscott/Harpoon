@@ -6,8 +6,10 @@ JDOCFLAGS=-version -author # -package
 JDOCIMAGES=/usr/local/jdk/docs/api/images
 SSH=ssh
 SCP=scp -A
+MUNGE=bin/munge
+UNMUNGE=bin/unmunge
 
-ALLPKGS = $(shell find . -type d | grep -v CVS | grep -v "^./harpoon" | grep -v "^./doc" | grep -v "^./NOTES" | sed -e "s|^[.]/*||")
+ALLPKGS = $(shell find . -type d | grep -v CVS | grep -v "^./harpoon" | grep -v "^./silicon" | grep -v "^./doc" | grep -v "^./NOTES" | sed -e "s|^[.]/*||")
 ALLSOURCE = $(filter-out .%.java, \
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java)))
 
@@ -38,17 +40,18 @@ doc:	doc/TIMESTAMP
 doc/TIMESTAMP:	$(ALLSOURCE)
 	make doc-clean
 	mkdir doc
-	cd doc; ln -s .. harpoon
+	cd doc; ln -s .. harpoon ; ln -s .. silicon
 	cd doc; ${JDOC} ${JDOCFLAGS} -d . \
-		$(foreach dir, $(filter-out Test,$(ALLPKGS)), \
-			  harpoon.$(subst /,.,$(dir))) | \
+		$(foreach dir, $(filter-out Test, \
+			  $(filter-out JavaChip,$(ALLPKGS))), \
+			  harpoon.$(subst /,.,$(dir))) silicon.JavaChip | \
 		grep -v "^@see warning:"
-	$(RM) doc/harpoon
-	munge doc | \
+	$(RM) doc/harpoon doc/silicon
+	$(MUNGE) doc | \
 	  sed -e 's/<cananian@/\&lt;cananian@/g' \
 	      -e 's/princeton.edu>/princeton.edu\&gt;/g' \
-	      -e 's/<dd> "The,/<dd> /g' > doc-tmp
-	unmunge doc-tmp; $(RM) doc-tmp
+	      -e 's/<dd> "The,/<dd> /g' | \
+		$(UNMUNGE)
 	cd doc; ln -s $(JDOCIMAGES) images
 	cd doc; ln -s packages.html index.html
 	cd doc; ln -s index.html API_users_guide.html
@@ -68,7 +71,7 @@ wc:
 	@wc -l $(ALLSOURCE) | sort -n | tail -6 | head -5
 
 clean:
-	-${RM} -r harpoon 
+	-${RM} -r harpoon silicon
 	-${RM} java `find . -name "*.class"`
 
 polish: clean
