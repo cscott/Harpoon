@@ -22,13 +22,9 @@ import java.util.Collections;
  * tree.  See Appel "Modern Compiler Implementation in Java", Section
  * 9.1 for a description of Maximal Munch.
  * 
- * TODO: replace all Class references with full names (so there's no
- * chance of a name conflict in whatever import statements that the
- * user includes in their .spec file (just make static Strings in this
- * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.23 1999-08-06 21:00:59 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.24 1999-08-06 22:30:49 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -250,6 +246,24 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 	    append(exp, "// check statement type");
 	    append(exp, "&& " + stmPrefix + " instanceof "+TREE_MOVE+" ");
+	    append(exp, "// check operand types");
+	    append(exp, "// check operand types");
+	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer;
+	    allowDouble = s.types.contains(Type.DOUBLE);
+	    allowFloat = s.types.contains(Type.FLOAT);
+	    allowInt = s.types.contains(Type.INT);
+	    allowLong = s.types.contains(Type.LONG);
+	    allowPointer = s.types.contains(Type.POINTER);
+
+	    String checkPrefix = "\t(("+TREE_MOVE+")" + stmPrefix + ").type() ==";
+	    append(exp, "&& ( ");
+	    if(allowDouble) append(exp, checkPrefix + " Type.DOUBLE ||");
+	    if(allowFloat) append(exp, checkPrefix + " Type.FLOAT ||");
+	    if(allowInt) append(exp, checkPrefix + " Type.INT ||");
+	    if(allowLong) append(exp, checkPrefix + " Type.LONG ||");
+	    if(allowPointer) append(exp, checkPrefix + " Type.POINTER ||");
+	    append(exp, "\tfalse )"); 
+	    append(exp, "// end check operand types");
 	    
 	    // look at src
 	    TypeExpRecurse r = new 
@@ -375,6 +389,15 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		TypeExpRecurse("(("+TREE_THROW+") " + stmPrefix + ").retex",
 			       indentPrefix + "\t");
 	    s.retex.accept(r); 
+	    degree += r.degree;
+	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+ ")");
+	    initStms.append(r.initStms.toString());
+
+	    // look at handler
+	    r = new 
+		TypeExpRecurse("(("+TREE_THROW+") " + stmPrefix + ").handler",
+			       indentPrefix + "\t");
+	    s.handler.accept(r); 
 	    degree += r.degree;
 	    append(exp, indentPrefix + "&& (" + r.exp.toString() +indentPrefix+ ")");
 	    initStms.append(r.initStms.toString());
