@@ -17,7 +17,7 @@ import java.util.Map;
  * information about an <code>HClass</code>. 
  *
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: HClassInfo.java,v 1.1.2.13 1999-08-11 10:26:33 duncan Exp $
+ * @version $Id: HClassInfo.java,v 1.1.2.14 1999-09-06 18:45:10 duncan Exp $
  * @see     harpoon.ClassFile.HClass
  */
 public class HClassInfo
@@ -171,7 +171,8 @@ class HCIUnit {
 	    int    offset;
 	    String sig = getSignature(hm);
 	
-	    if (m_table.get(sig) == null) { // Method does not override anything
+	    if (m_table.get(sig) == null) { 
+		// Method does not override anything
 		offset = next++;
 	    }
 	    else {

@@ -28,7 +28,7 @@ import java.util.StringTokenizer;
  * A simple OffsetMap, used by the Tree Interpreter
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterpreterOffsetMap.java,v 1.1.2.10 1999-08-18 19:24:02 duncan Exp $
+ * @version $Id: InterpreterOffsetMap.java,v 1.1.2.11 1999-09-06 18:45:12 duncan Exp $
  */
 public class InterpreterOffsetMap extends OffsetMap {
 
@@ -101,6 +101,8 @@ public class InterpreterOffsetMap extends OffsetMap {
 	    
 	throw new Error("Label not found in map: " + label);
     }
+    
+    public Label jlClass(HClass hc) { return null; } 
 
     /** Returns the label corresponding to the specified HClass */
     public Label label(HClass hc) { 

@@ -7,6 +7,7 @@ import harpoon.Analysis.QuadSSA.ClassHierarchy;
 import harpoon.Backend.Analysis.DisplayInfo.HClassInfo;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.DefaultFrame;
+import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -27,7 +28,7 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TestRun.java,v 1.1.2.8 1999-08-11 10:50:38 duncan Exp $
+ * @version $Id: TestRun.java,v 1.1.2.9 1999-09-06 18:45:12 duncan Exp $
  */
 public abstract class TestRun extends HCLibrary {
     public static void main(String args[]) {
@@ -46,27 +47,22 @@ public abstract class TestRun extends HCLibrary {
 	    (cls.getMethod("main", new HClass[] { HCstringA }), hcf);
 	System.err.println("done!");
 	
-	Frame frame = new DefaultFrame(new InterpreterOffsetMap(ch),
-				       new InterpreterAllocationStrategy());
+	//	Frame frame = new DefaultFrame(new InterpreterOffsetMap(ch),
+	//		       new InterpreterAllocationStrategy());
 	
+	Frame frame = new  DefaultFrame(new OffsetMap32(ch),
+					new InterpreterAllocationStrategy());
 	hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
 	hcf = harpoon.IR.LowQuad.LowQuadNoSSA.codeFactory(hcf);
        	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
 	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
 	hcfOpt = harpoon.IR.Tree.OptimizedTreeCode.codeFactory(hcf, frame);
 
-	//HCode c = hcf.convert(HClass.forName("sun.io.CharacterEncoding").getMethod("<clinit>", new HClass[0]));
-	//c.print(new java.io.PrintWriter(System.out));
-
-	//HData data = new Data(cls, frame);
-	//	data.print(new java.io.PrintWriter(System.out));
-	
 	hcf = new InterpreterCachingCodeFactory(hcf, hcf);
 	PrintWriter prof = null;	
 	String[] params = new String[args.length-1];
 	System.arraycopy(args, 1, params, 0, params.length);
 	harpoon.Interpret.Tree.Method.run(prof, hcf, cls, params);
-	
 	if (prof!=null) prof.close();   
     }
 }

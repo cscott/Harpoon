@@ -6,10 +6,12 @@ package harpoon.IR.Tree;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
+import java.util.Stack;
 
 /**
  * <code>Stm</code> objects are statements which perform side effects and
@@ -17,7 +19,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Stm.java,v 1.1.2.10 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: Stm.java,v 1.1.2.11 1999-09-06 18:45:12 duncan Exp $
  */
 abstract public class Stm extends Tree {
     protected Stm(TreeFactory tf, harpoon.ClassFile.HCodeElement source) {
@@ -66,6 +68,37 @@ abstract public class Stm extends Tree {
 	    }
 	    return s;
 	}		
+    }
+
+    /**
+     * Returns a <code>Stm</code> such that all <code>SEQ</code> objects
+     * contained within the <code>Stm</code> object are on the top level.
+     */
+    public static Stm linearize(Stm stm) { 
+	List  l = new ArrayList();
+	Stack s = new Stack();
+	s.push(stm);
+
+	while (!s.isEmpty()) { 
+	    Stm next = (Stm)s.pop();
+	    if (next.kind() == TreeKind.SEQ) { 
+		SEQ seq = (SEQ)next; 
+		s.push(seq.right);
+		s.push(seq.left);
+	    } 
+	    else { 
+		l.add(next);
+	    } 
+	}
+	return toStm(l);
+    }
+
+    /** 
+     * Returns true if <code>stm</code> has no effect. 
+     */
+    public static boolean isNop(Stm stm) { 
+	return (stm.kind()==TreeKind.EXP) && 
+	    ((((EXP)stm).exp).kind()==TreeKind.CONST);
     }
 }
 

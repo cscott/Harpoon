@@ -12,9 +12,13 @@ import harpoon.ClassFile.HMethod;
 import harpoon.Temp.Label;
 import harpoon.Util.Util;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -68,7 +72,7 @@ import java.util.StringTokenizer;
  * 
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.22 1999-08-18 21:30:52 pnkfelix Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.23 1999-09-06 18:45:11 duncan Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
@@ -126,6 +130,9 @@ public class OffsetMap32 extends OffsetMap
      *                                                           *
      *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
+    public Label jlClass(HClass hc) { 
+	return new Label(nm.mangle(hc, "jlc"));
+    }
 
     /** Returns the label corresponding to the specified HClass */
     public Label label(HClass hc) { 
@@ -228,33 +235,71 @@ public class OffsetMap32 extends OffsetMap
 	return cdm.classDepth(hc) * WORDSIZE;
     }
 
+    private interface ComparableHField extends Comparable { 
+	public HField getField();
+    }
+
     /** Returns the offset from the object reference of the specified 
      *  non-static field */
     public int offset(HField hf) {
 	Util.assert(!hf.isStatic());
 
-	HClass    hc;
-	HField[]  hfields, orderedFields;
-	int       fieldOrder, offset = 0;
+	final HClass   hc;
+	Iterator       allFields;
+	List           orderedFields;
+	int            offset = 0;
     
 	if (!this.fields.containsKey(hf)) { 
-	    hc            = hf.getDeclaringClass();
-	    hfields       = hc.getDeclaredFields();
-	    orderedFields = new HField[hfields.length];
-	    int numNonStatic = 0;
-	    for (int i=0; i<hfields.length; i++) {
-		if (!hfields[i].isStatic()) { 
-		    int index = fm.fieldOrder(hfields[i]);
-		    Util.assert(index < orderedFields.length,
-				"'fieldOrder()' should not return an index "+
-				"that exceeds the bounds of 'orderedFields'");
-		    orderedFields[index] = hfields[i];
-		    numNonStatic++;
+	    hc         = hf.getDeclaringClass();
+	    allFields  = new Iterator() { 
+		private HClass   cls    = hc;
+		private HField[] fields = hc.getDeclaredFields();
+		private int      index  = 0;
+		public void remove() 
+		{ throw new UnsupportedOperationException(); } 
+		public boolean hasNext() { 
+		    if (index<fields.length) return true; 
+		    else { 
+			if (cls==null) return false;
+			for (HClass sCls=cls.getSuperclass(); sCls!=null; 
+			     sCls=sCls.getSuperclass()) 
+			    if (sCls.getDeclaredFields().length != 0)
+			         return true;
+			return false;
+		    }
 		}
+		public Object next() { 
+		    if (index<fields.length) { 
+			return fields[index++];
+		    }
+		    else { 
+			cls = cls.getSuperclass();
+			if (cls==null) throw new NoSuchElementException();
+			else { index=0; fields = cls.getDeclaredFields(); 
+			       return next(); }
+		    }
+		}
+	    };
+	    orderedFields = new ArrayList();
+	    for (Iterator i=allFields; i.hasNext();) { 
+		final HField nextField = (HField)i.next();
+		if (!nextField.isStatic()) 
+		    orderedFields.add(new ComparableHField() { 
+			public HField getField() { return nextField; } 
+			public int compareTo(Object o) { 
+			    HField hfo = ((ComparableHField)o).getField();
+			    int    thisOrder = fm.fieldOrder(nextField);
+			    int    hfOrder   = fm.fieldOrder(hfo);
+			    return (thisOrder>hfOrder) ? 1 : 
+				(thisOrder==hfOrder) ? 0 : -1;
+			}
+		    });
 	    }
-	    for (int j=0; j<numNonStatic; j++) { 
-		HClass type = orderedFields[j].getType();
-		this.fields.put(hfields[j], new Integer(offset));
+	    Collections.sort(orderedFields);
+	    for (Iterator i=orderedFields.iterator(); i.hasNext();) { 
+		HField hfield = ((ComparableHField)i.next()).getField();
+		HClass type   = hfield.getType();
+		this.fields.put(hfield, new Integer(offset));
 		// No inlining
 		offset += ((type==HClass.Long)||(type==HClass.Double)) ? 8 : 4;
 	    }

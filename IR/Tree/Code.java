@@ -33,7 +33,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.28 1999-08-11 04:12:11 duncan Exp $
+ * @version $Id: Code.java,v 1.1.2.29 1999-09-06 18:45:11 duncan Exp $
  */
 public abstract class Code extends HCode 
     implements Derivation, TypeMap {
@@ -274,7 +274,9 @@ public abstract class Code extends HCode
 	void computeEdges() { 
 	    for (state=0; state<3; state++) { 
 		nextNode = (Stm)getRootElement();
-		while (nextNode!=null) { nextNode.visit(this); }
+		while (nextNode!=null) { 
+		    nextNode.visit(this); 
+		}
 	    }
 	}
 
@@ -481,8 +483,8 @@ public abstract class Code extends HCode
 	}	    
 
 	private Stm RS(Stm seq) { 
-	    try { while (true) seq = ((SEQ)seq).left; } 
-	    catch (ClassCastException e) { return seq; }
+	    while (seq.kind()==TreeKind.SEQ) seq = ((SEQ)seq).left;  
+	    return seq;
 	}
     }
 }

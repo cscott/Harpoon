@@ -11,7 +11,6 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
-import harpoon.Analysis.QuadSSA.ClassHierarchy;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
@@ -33,7 +32,7 @@ import java.util.List;
  * class.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Data.java,v 1.1.2.15 1999-09-02 21:28:11 pnkfelix Exp $
+ * @version $Id: Data.java,v 1.1.2.16 1999-09-06 18:45:12 duncan Exp $
  */
 public class Data extends Code implements HData { 
     public static final String codename = "tree-data";
@@ -41,12 +40,9 @@ public class Data extends Code implements HData {
     private /*final*/ EdgeInitializer  edgeInitializer;
     private /*final*/ HClass           cls;
     
-    private ClassHierarchy classHierarchy;
-
-    public Data(HClass cls, Frame frame, ClassHierarchy ch) { 
+    public Data(HClass cls, Frame frame) { 
 	super(cls.getMethods()[0], null, frame);
 	this.cls = cls;
-	this.classHierarchy = ch;
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	//                                                           //
@@ -92,24 +88,16 @@ public class Data extends Code implements HData {
 	    HMethod[] iMethods = iFace.getMethods();
 	    iList.add(_DATA(offm.label(iFace)));  // Add to interface list
 	    for (int j=0; j<iMethods.length; j++) { 
-		HMethod hm = iMethods[j];
-		DATA data = null;
-		if (classHierarchy.callableMethods().contains(hm)) {
-		    // Point to class method
-		    data = _DATA(offm.label(cls.getMethod  
-					    (hm.getName(),
-					     hm.getParameterTypes())));
-		    //System.out.println("output "+data+" for " + hm);
-		} else {
-		    // null (never used, so don't create reference)
-		    data = _DATA(new CONST(tf, null, 0));
-		    //System.out.println("output "+data+" for " + hm);
-		}
-		add(offm.offset(hm)/ws, data, up, down);
+		add(offm.offset(iMethods[i])/ws, 
+		    _DATA(offm.label(cls.getMethod  // Point to class method
+				     (iMethods[i].getName(),
+				      iMethods[i].getParameterTypes()))),
+		    up,
+		    down);
 	    }
 	}
 	iList.add(_DATA(new CONST(tf, null, 0)));
-	iList.add(0, new LABEL(tf, null, iListPtr, false));
+	iList.add(0, new LABEL(tf, null, iListPtr,false));
 	
 
 	// Add display to list
@@ -119,25 +107,15 @@ public class Data extends Code implements HData {
 	// Add non-static class methods to list 
 	HMethod[] methods = cls.getMethods();
 	for (int i=0; i<methods.length; i++) { 
-	    HMethod hm = methods[i];
-	    if (!hm.isStatic()) { 
-		DATA data = null;
-		if (classHierarchy.callableMethods().contains(hm)) {
-		    // Point to class method
-		    data = _DATA(offm.label(hm));
-		    //System.out.println("output "+data+" for " + hm);
-		} else {
-		    // null (never used, so don't create reference)
-		    data = _DATA(new CONST(tf, null, 0));
-		    //System.out.println("output "+data+" for " + hm);
-		}
-		add(offm.offset(hm)/ws, data, up, down);
+	    if (!methods[i].isStatic()) { 
+		add(offm.offset(methods[i])/ws,
+		    _DATA(offm.label(methods[i])),up,down);
 	    }
 	}
 
 	// Reverse the upward list
 	Collections.reverse(up);
-	down.add(0, new LABEL(tf,null,offm.label(cls),true));
+	down.add(0, new LABEL(tf,null,offm.label(cls),false));
 
 	for (HClass sCls = cls; sCls!=null; sCls=sCls.getSuperclass()) { 
 	    HField[] hfields  = sCls.getDeclaredFields();
@@ -145,47 +123,47 @@ public class Data extends Code implements HData {
 		HField hfield = hfields[i];
 		if (hfield.isStatic()) { 
 		    if (hfield.getType().isPrimitive()) {
-			spList.add(new LABEL(tf, null, offm.label(hfield), true));
+			spList.add(new LABEL(tf, null, offm.label(hfield),false));
 			spList.add(_DATA(new CONST(tf, null, 0)));
 		    }
 		    else { 
-			soList.add(new LABEL(tf, null, offm.label(hfield), true));
+			soList.add(new LABEL(tf, null, offm.label(hfield),false));
 			soList.add(_DATA(new CONST(tf, null, 0)));
 		    }
 		}
 	    }
 	}
 
+
 	// Assign segment types:
 	iList  .add(0, new SEGMENT(tf, null, SEGMENT.CLASS));
 	up     .add(0, new SEGMENT(tf, null, SEGMENT.CLASS));
 	soList .add(0, new SEGMENT(tf, null, SEGMENT.STATIC_OBJECTS));
 	spList .add(0, new SEGMENT(tf, null, SEGMENT.STATIC_PRIMITIVES));
-	rList  .add(   new SEGMENT(tf, null, SEGMENT.REFLECTION_DATA));
-	//rList  .add(ObjectBuilder.makeClass(tf,frame,this.cls).stm);
+	rList  .add(   new SEGMENT(tf, null, SEGMENT.REFLECTION_PTRS));
 
-	// At last, assign the root element
-	this.tree = 
-	    Stm.toStm
-	    (Arrays.asList
-	     (new Stm[] { 
-		 Stm.toStm(up),
-		 Stm.toStm(down),
-		 Stm.toStm(spList),
-		 Stm.toStm(soList),
-		 Stm.toStm(iList)
-		 // Stm.toStm(rList)
-	     }));
-	     
-	// Compute the edges of this HData
+	ESEQ objectData = ObjectBuilder.buildClass(tf,frame,this.cls);
+	rList.add(new LABEL(tf,null,offm.jlClass(this.cls),false));
+	rList.add(_DATA(objectData.exp));
+	rList.add(new SEGMENT(tf,null,SEGMENT.REFLECTION_DATA));
+	rList.add(objectData.stm);
+
+	List result = new ArrayList();
+	result.addAll(up);
+	result.addAll(down);
+	result.addAll(spList);
+	result.addAll(soList);
+	result.addAll(iList);
+	result.addAll(rList);
+
+	this.tree = Stm.toStm(result);
 	(this.edgeInitializer = new EdgeInitializer()).computeEdges();
     }
     
     // Copy constructor, should only be used by the clone() method 
-    private Data(HClass cls, Tree tree, Frame frame, ClassHierarchy ch) { 
+    private Data(HClass cls, Tree tree, Frame frame) { 
 	super(cls.getMethods()[0], tree, frame);
 	this.cls = cls;
-	this.classHierarchy = ch;
 	final CloningTempMap ctm = 
 	    new CloningTempMap
 	    (tree.getFactory().tempFactory(), this.tf.tempFactory());
@@ -196,14 +174,14 @@ public class Data extends Code implements HData {
     /** Clone this data representation. The clone has its own copy
      *  of the Tree */
     public HData clone(HClass cls) { 
-	return new Data(cls, this.tree, this.frame, this.classHierarchy);
+	return new Data(cls, this.tree, this.frame);
     }
 
     /** Return the <code>HClass</code> that this data view belongs to */
     public HClass getHClass() { return this.cls; } 
 
     /** Return the name of this data view. */
-    public String getName() { return codename; }  
+    public String getName() { return codename; } 
     
     /** Returns <code>true</code>.  */
     public boolean isCanonical() { return true; } 

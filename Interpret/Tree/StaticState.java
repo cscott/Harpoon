@@ -11,6 +11,7 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.Temp.Label;
 import harpoon.Util.Tuple;
+import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
 import java.io.PrintWriter;
@@ -21,7 +22,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.8 1999-08-11 10:50:38 duncan Exp $
+ * @version $Id: StaticState.java,v 1.1.2.9 1999-09-06 18:45:12 duncan Exp $
  */
 final class StaticState extends HCLibrary {
     
@@ -104,12 +105,29 @@ final class StaticState extends HCLibrary {
     private void loadDisplay(Label clsLabel, HClass current) {
 	HClass sc;
 
-	sc = current.getSuperclass();
+	sc = getSuperclass(current);
 	if (sc!=null) loadDisplay(clsLabel, sc);
 
 	map(new ClazPointer(clsLabel, this, map.offset(current)),
 	    new ConstPointer(map.label(current), this));
 
+    }
+    
+    private HClass getSuperclass(HClass cls) { 
+	if (cls.isArray()) { 
+	    HClass obj  = HClass.forName("java.lang.Object");
+	    int    dims = HClassUtil.dims(cls);
+	    HClass base = HClassUtil.baseClass(cls);
+	    if (base.isPrimitive()) 
+		return obj;
+	    else if (base.getDescriptor().equals(obj.getDescriptor()))
+		return HClassUtil.arrayClass(obj, dims-1);
+	    else 
+		return HClassUtil.arrayClass(base.getSuperclass(), dims);
+	}
+	else { 
+	    return cls.getSuperclass();
+	}
     }
 
     private void loadInterfaces(Label clsLabel, HClass cls) {

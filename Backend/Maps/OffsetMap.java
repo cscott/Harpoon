@@ -16,7 +16,7 @@ import java.util.Set;
  * total size of an <code>HClass</code> object.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: OffsetMap.java,v 1.1.2.16 1999-08-18 19:22:42 duncan Exp $
+ * @version $Id: OffsetMap.java,v 1.1.2.17 1999-09-06 18:45:10 duncan Exp $
  */
 public abstract class OffsetMap { // use an abstract class, if we can.
 
@@ -40,6 +40,10 @@ public abstract class OffsetMap { // use an abstract class, if we can.
      *  array's 0th element. */
     public abstract int elementsOffset(HClass hc);
 
+    /** Maps an <code>HClass</code> to an offset (in bytes).  
+     *  Returns the offset of the object's first field. */
+    public abstract int fieldsOffset(HClass hc);
+
     /** Maps an <code>HClass</code> to an offset (in bytes).
      *  Returns the offset from an object reference at which the hashcode
      *  is stored. */
@@ -49,6 +53,8 @@ public abstract class OffsetMap { // use an abstract class, if we can.
      *  implemented by the specified class
      */
     public abstract int interfaceListOffset(HClass hc);
+
+    public abstract Label jlClass(HClass hc);
 
     /** Maps an <code>HClass</code> to a <code>Label</code> representing the 
      *  location of its class pointer  */
