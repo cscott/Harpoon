@@ -1,4 +1,5 @@
 #include <jni.h>
+#include "java_lang_Class.h" /* for Java_java_lang_Class_forName() */
 #include "java_lang_ClassLoader.h"
 
 /*
@@ -38,10 +39,7 @@ JNIEXPORT void JNICALL Java_java_lang_ClassLoader_resolveClass0
 JNIEXPORT jclass JNICALL Java_java_lang_ClassLoader_findSystemClass0
   (JNIEnv *env, jobject _this, jstring name) {
   /* XXX: not sure if this is technically correct, but it will work. */
-  const char *namestr = (*env)->GetStringUTFChars(env, name, NULL);
-  jclass result = (*env)->FindClass(env, namestr);
-  (*env)->ReleaseStringUTFChars(env, name, namestr);
-  return result;
+  return Java_java_lang_Class_forName(env, NULL, name);
 }
 
 /*

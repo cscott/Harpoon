@@ -13,6 +13,7 @@ int name2class_compare(const void *key, const void *element) {
 jclass FNI_FindClass(JNIEnv *env, const char *name) {
   const struct FNI_name2class * result;
   assert(FNI_NO_EXCEPTIONS(env));
+  assert(strchr(name, '.')==NULL /* all dots should be slashes! */);
   result =
     bsearch(name, name2class_start, name2class_end-name2class_start,
 	    sizeof(*name2class_start), name2class_compare);
