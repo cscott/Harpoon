@@ -24,9 +24,9 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.13 2000-02-15 05:36:02 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.14 2000-03-29 06:52:12 cananian Exp $
  */
-public abstract class Code extends HCode {
+public abstract class Code extends HCode implements java.io.Serializable {
     /** The method that this code view represents. */
     protected final HMethod parent;
     /** The quadruples composing this code view. */
@@ -38,7 +38,9 @@ public abstract class Code extends HCode {
     protected QuadFactory newQF(final HMethod parent) {
 	final String scope = parent.getDeclaringClass().getName() + "." +
 	    parent.getName() + parent.getDescriptor() + "/" + getName();
-	return new QuadFactory() {
+	abstract class SerializableQuadFactory extends QuadFactory
+	    implements java.io.Serializable { /* only declare inheritance */ }
+	return new SerializableQuadFactory() {
 	    private final TempFactory tf = Temp.tempFactory(scope);
 	    private int id=0;
 	    public TempFactory tempFactory() { return tf; }
