@@ -25,12 +25,12 @@ import java.util.Iterator;
 /** <code>LocalRegAlloc</code> performs Local Register Allocation for
     a given set of <code>Instr</code>s.  It uses the
     conservative-furthest-first algorithm laid out in the paper <A
-    HREF="http://dimacs.rutgers.edu/TechnicalReports/abstracts/1997/97-33.html">
+    HREF="http://lm.lcs.mit.edu/~pnkfelix/OnLocalRegAlloc.ps.gz">
     "On Local Register Allocation"</A> as the basis for the algorithm
     it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.7 1999-05-18 00:55:17 andyb Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.8 1999-05-24 19:00:42 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
     

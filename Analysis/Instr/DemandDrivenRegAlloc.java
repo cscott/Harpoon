@@ -20,12 +20,12 @@ import java.util.Map;
 import java.util.HashMap;
 
 /** <code>DemandDrivenRegAlloc</code> performs 
-    <A HREF="http://www.acm.org/pubs/citations/journals/toplas/1996-18-6/p683-proebsting/"> 
+    <A HREF="http://lm.lcs.mit.edu/~pnkfelix/DemandDrivenRegAlloc.pdf"> 
     Demand-Driven Register Allocation</A> for a set of
     <code>Instr</code>s in a <code>Code</code>.
 
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.1 1999-04-20 19:49:01 pnkfelix Exp $ 
+    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.2 1999-05-24 19:00:41 pnkfelix Exp $ 
 */
 public class DemandDrivenRegAlloc extends RegAlloc {
 
@@ -48,16 +48,17 @@ public class DemandDrivenRegAlloc extends RegAlloc {
     }
    
     protected Code generateRegAssignment() {
-	return null;
-    }
-    
-    /* procedure for register allocation for a procedure (taken from
-       Demand-Driven Register Allocation):
-       
-       1. Do local allocation for all basic blocks in the procedure.
-       2. For all loops, l. in the procedure, from innermost to
-          outermost do the following: 
-          (a) Attempt to remove loads in l: 
+
+	/* procedure for register allocation for a procedure (taken from
+	   Demand-Driven Register Allocation):
+
+	   (assumes that Local Allocation has already been performed)
+	*/
+	
+	/*
+	   2. For all loops, l. in the procedure, from innermost to
+	   outermost do the following: 
+	   (a) Attempt to remove loads in l: 
 	      i.   Compute delta-estimates for all instructions in the
 	           loop (with ComputeDeltas() ).
 	      ii.  For each load of a register candidate in the loop,
@@ -87,13 +88,30 @@ public class DemandDrivenRegAlloc extends RegAlloc {
 	           figure of merit, and allocate the candidate a
 		   register along all paths to the postexits.  This
 		   requires putting stores in the loop's postexits.
-       3. Remove loads that are not in any loop (Use techniques
-          described in (2a) above.)
-       4. Remove stores that are not in any loop (Use techniques
-          described in (2b) above).
-       5. Assign registers to all candidates allocated registers using
+	*/
+
+
+	/*
+	
+	3. Remove loads that are not in any loop (Use techniques
+           described in (2a) above.)
+        4. Remove stores that are not in any loop (Use techniques
+           described in (2b) above).
+
+	*/
+
+
+	/*
+
+       5. Assign registers to all candidates allocated registers using 
           the Graph Coloring Framework.
-    */ 
+
+	*/
+
+
+	return null;
+    }
+    
 
     /** Delta computing function. Taken from the paper "Demand-Driven
 	Register Allocation." 
