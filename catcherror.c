@@ -1,9 +1,5 @@
-#include "stack.h"
 #include "catcherror.h"
-#include <signal.h>
-#include <setjmp.h>
-#include <stdio.h>
-#include <stdlib.h>
+
 
 struct StackElement * stackptr=NULL;
 

@@ -1,7 +1,11 @@
 #!/bin/bash
-for i in *.cc *.c
+for i in *.cc
 do
 g++ -Wno-deprecated -g -O0 -c $i
+done
+for i in *.c
+do
+gcc -Wno-deprecated -g -O0 -c $i
 done
 
 g++ -Wno-deprecated -O0 -g *.o -o main

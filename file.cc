@@ -9,6 +9,7 @@
 #include "file.h"
 extern "C" {
 #include "test.h"
+#include "catcherror.h"
 }
 #include "Hashtable.h"
 #include "model.h"
@@ -51,7 +52,9 @@ int main(int argc, char **argv) {
     alloc(ptr,LENGTH);
     addmapping(dstring,ptr,"Disk");
     //    env->put(dstring,new Element(ptr,exportmodel->getstructure("Disk")));//should be of badstruct
-    doanalysis();
+    STARTREPAIR(doanalysis();,lab)
+    
+    ENDREPAIR(lab)
     dealloc(ptr);
     chunmountdisk(ptr);
     break;

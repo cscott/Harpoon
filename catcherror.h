@@ -1,3 +1,12 @@
+#ifndef CATCHERROR_H
+#define CATCHERROR_H
+
+#include "stack.h"
+#include <signal.h>
+#include <setjmp.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 void handler(int signal);
 void installhandlers();
 extern struct StackElement * stackptr;
@@ -8,10 +17,13 @@ extern struct StackElement * stackptr;
     repair \
     goto label$error; \
   } \
-  pushstack(stackptr, &save_buf); \
+  pushstack(&stackptr, &save_buf); \
 }
 
 #define ENDREPAIR(label) popstack(&stackptr); \
   goto label$skip;\
 label$error: \
 label$skip:
+
+
+#endif
