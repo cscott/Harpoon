@@ -23,7 +23,19 @@ if test $TEST == 0; then
    exit 1;
 fi
 
-echo
+if [ -d `pwd`/../Code ]; then
+   echo A previous install of FLEX exists.;
+   export prmpt=;
+   while [ x$prmpt = x ]; do
+     read -p "Do you want to (O)verwrite or (Q)uit (O/Q)? " prmpt leftover;
+     case $prmpt in
+        O* | o*) rm -rf ../Code ../Classpath ../Runtime ../Realtime ../ImageRec ../Benchmarks ../Tests;;
+        Q* | q*) exit 1;;
+        *) export prmpt=;;
+     esac;
+   done;
+fi;
+
 echo 1\) Standard FLEX Java compiler install
 echo 2\) Custom FLEX install
 
@@ -34,14 +46,14 @@ while [ x$inst = x ]; do
      1) export arm=N;
 	export GUI=N;
 	export version='-A';
-	export RTJ=N;;
-	export BENCHMARKS=;;
+	export RTJ=N;
+	export BENCHMARKS=;
 	export IMAGEREC=;;
      2) export arm=;
 	export GUI=;
 	export version=;
-	export RTJ=;;
-	export BENCHMARKS=none;;
+	export RTJ=;
+	export BENCHMARKS=none;
 	export IMAGEREC=none;;
      *) export inst=;;
   esac;
@@ -156,7 +168,7 @@ if [ -f /etc/redhat-release ]; then
         read -p "Are you a (S)udoer or do you have the (R)oot password (S/R)? " prmpt leftover;
 	case $prmpt in
 	    s* | S*)
-		echo Installing packages, please enter your password:;
+		echo Installing packages, you may have to enter your password:;
 		sudo rpm -i --force *.rpm;;
 	    r* | R*)
 	     	echo Installing packages, please enter root password:;
@@ -197,8 +209,8 @@ export REALTIME=;
 while [ x$RTJ = x ]; do
   read -p "Do you want to use Real-Time Java (Y/N)? " RTJ leftover;
   case $RTJ in
-     y* | Y*) export RTJ=Y; export REALTIME=Realtime;
-     n* | N*) export RTJ=N; export REALTIME=;
+     y* | Y*) export RTJ=Y; export REALTIME=Realtime;;
+     n* | N*) export RTJ=N; export REALTIME=;;
      *) export RTJ=;;
   esac;
 done
@@ -230,11 +242,11 @@ export LINE3=`fgrep -c -v 'no java' $LINE3`
 
 if test $LINE1 == 0 -o $LINE2 == 0 -o $LINE3 == 0; then
   echo;
-  echo Do you want to add the following lines to your ~/.bashrc (Y/N)?;
+  echo Do you want to add the following lines to your ~/.bashrc \(Y/N\)?;
   if test $LINE1 == 0; then echo    export CVS_RSH=ssh; fi;
   if test $LINE2 == 0; then echo    export CVSEDITOR=emacs; fi;
   if test $LINE3 == 0; then echo    export PATH=`cd /usr/java/j2sdk*/bin; pwd`:\$PATH; fi;
-  export prmpt=
+  export prmpt=;
   while [ x$prmpt = x ]; do
     read -p "Add lines (Y/N)? " prmpt leftover;
     case $prmpt in
@@ -244,9 +256,10 @@ if test $LINE1 == 0 -o $LINE2 == 0 -o $LINE3 == 0; then
 	   if test $LINE3 == 0; then echo export PATH=`cd /usr/java/j2sdk*/bin; pwd`:\$PATH >> ~/.bashrc; fi;;
 	n* | N*) export prmpt=N;;
 	*) export prmpt=;;
-  esac;
+    esac;
+  done;
   source ~/.bashrc;
-done
+fi
 
 export prmpt=
 while [ x$prmpt = x ]; do
@@ -257,10 +270,10 @@ while [ x$prmpt = x ]; do
 	   echo Please type your password to the FLEX repository:;
            cvs -d :ext:$pass@flex-cvs.csail.mit.edu:/data/cvs co $version Classpath Code $REALTIME $IMAGEREC Runtime $BENCHMARKS;
 	   cd Runtime/Contrib/gc;
-           echo Please type your password to the FLEX repository (again):;
+           echo Please type your password to the FLEX repository \(again\):;
 	   cvs update -r BOEHM_DIST;
-	   echo Please type your password to the FLEX repository (one last time):;
-	   cvs update $version;
+	   echo Please type your password to the FLEX repository \(one last time\):;
+	   cvs update -A;
 	   cd -;;
 	n* | N*)
 	   echo Please type 'cvsguest' as the password.;
@@ -269,7 +282,7 @@ while [ x$prmpt = x ]; do
 	   cvs co $version Classpath Code $REALTIME $IMAGEREC Runtime Tests $BENCHMARKS;
 	   cd Runtime/Contrib/gc;
 	   cvs update -r BOEHM_DIST;
-	   cvs update $version;
+	   cvs update -A;
 	   cd -;;
 	*) export prmpt=;;
    esac;
