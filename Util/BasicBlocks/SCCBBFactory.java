@@ -3,12 +3,11 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.BasicBlocks;
 
-
-import java.util.Hashtable;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.Set;
 
-import harpoon.Analysis.BasicBlock;
+import harpoon.Analysis.BasicBlockInterf;
+import harpoon.Analysis.BasicBlockFactoryInterf;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
@@ -22,7 +21,7 @@ import harpoon.Util.UComp;
  topollogically sorted component graph of <code>BasicBlock</code>s.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCCBBFactory.java,v 1.1.2.6 2001-06-17 22:36:26 cananian Exp $
+ * @version $Id: SCCBBFactory.java,v 1.1.2.7 2001-12-16 05:16:34 salcianu Exp $
  */
 public class SCCBBFactory implements java.io.Serializable {
 
@@ -46,12 +45,14 @@ public class SCCBBFactory implements java.io.Serializable {
     private static final SCComponent.Navigator navigator = 
 	new SCComponent.Navigator(){
 		public Object[] next(Object node){
-		    Object[] obj = ((BasicBlock)node).getNext();
+		    Set next_bb = ((BasicBlockInterf) node).nextSet();
+		    Object[] obj = next_bb.toArray(new Object[next_bb.size()]);
 		    Arrays.sort(obj, UComp.uc);
 		    return obj;
 		}
 		public Object[] prev(Object node){
-		    Object[] obj =  ((BasicBlock)node).getPrev();
+		    Set prev_bb = ((BasicBlockInterf) node).prevSet();
+		    Object[] obj = prev_bb.toArray(new Object[prev_bb.size()]);
 		    Arrays.sort(obj, UComp.uc);
 		    return obj;
 		}
@@ -63,10 +64,10 @@ public class SCCBBFactory implements java.io.Serializable {
 	<code>BasicBlock</code>s) and topologically sorts the
 	component graph. Returns the sorted graph. */
     public SCCTopSortedGraph computeSCCBB(HMethod hm){
-	BasicBlock.Factory bbf = bbconv.convert2bb(hm);
-	BasicBlock bb = bbf.getRoot();
+	BasicBlockFactoryInterf bbf = bbconv.convert2bb(hm);
+	BasicBlockInterf bb = bbf.getRootBBInterf();
 
-	SCComponent scc = SCComponent.buildSCC(bb,navigator);
+	SCComponent scc = SCComponent.buildSCC(bb, navigator);
 	SCCTopSortedGraph bb_scc = SCCTopSortedGraph.topSort(scc);
 
 	return bb_scc;

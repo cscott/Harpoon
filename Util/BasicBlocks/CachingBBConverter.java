@@ -8,8 +8,8 @@ import java.util.HashMap;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeFactory;
-import harpoon.Analysis.BasicBlock; 
-
+import harpoon.Analysis.BasicBlock;
+import harpoon.Analysis.BasicBlockFactoryInterf;
 
 /**
  * <code>CachingBBConverter</code> provides some caching for the
@@ -18,7 +18,7 @@ import harpoon.Analysis.BasicBlock;
  * don't want to litter all your code with caching mechanisms.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: CachingBBConverter.java,v 1.1.2.2 2001-06-17 22:36:26 cananian Exp $
+ * @version $Id: CachingBBConverter.java,v 1.1.2.3 2001-12-16 05:16:34 salcianu Exp $
  */
 public class CachingBBConverter extends BBConverter{
     
@@ -36,8 +36,8 @@ public class CachingBBConverter extends BBConverter{
 	the <code>HCodeFactory</code> that was passed to the constructor of
 	<code>this</code>.<br>
 	<b>Note</b>: the results are cached. */
-    public BasicBlock.Factory convert2bb(HMethod hm){
-	BasicBlock.Factory bb = (BasicBlock.Factory)cache.get(hm);
+    public BasicBlockFactoryInterf convert2bb(HMethod hm){
+	BasicBlockFactoryInterf bb = (BasicBlockFactoryInterf) cache.get(hm);
 	if(bb == null){
 	    bb = super.convert2bb(hm);
 	    cache.put(hm,bb);
