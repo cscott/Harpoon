@@ -1,4 +1,4 @@
-# $Revision: 1.47 $
+# $Revision: 1.48 $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -154,4 +154,4 @@ needs-cvs:
 	   exit 1; \
 	fi
 
-install: doc-install tar-install jar-install
+install: jar-install tar-install doc-install
