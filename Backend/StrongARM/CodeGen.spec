@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.131 2000-02-14 16:49:34 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.132 2000-02-17 00:02:09 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1104,7 +1104,7 @@ BINOP<l>(SHL, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
-    emit( ROOT, "mov `d0, `s0 ", r2, k );
+    emitMOVE( ROOT, "mov `d0, `s0 ", r2, k );
     emit2(ROOT, "bl ___ashldi3",
 	  new Temp[]{r0,r1,r2,r3,IP,LR},new Temp[]{r0,r1,r2});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
@@ -1115,7 +1115,7 @@ BINOP<l>(SHR, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
-    emit( ROOT, "mov `d0, `s0 ", r2, k );
+    emitMOVE( ROOT, "mov `d0, `s0 ", r2, k );
     emit2(ROOT, "bl ___ashrdi3",
 	  new Temp[]{r0,r1,r2,r3,IP,LR},new Temp[]{r0,r1,r2});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
@@ -1126,7 +1126,7 @@ BINOP<l>(USHR, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
-    emit( ROOT, "mov `d0, `s0 ", r2, k );
+    emitMOVE( ROOT, "mov `d0, `s0 ", r2, k );
     emit2(ROOT, "bl ___lshrdi3",
 	  new Temp[]{r0,r1,r2,r3,IP,LR},new Temp[]{r0,r1,r2});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
