@@ -12,13 +12,13 @@ import harpoon.Util.Util;
  * <code>ALENGTH</code> represents an array length query.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ALENGTH.java,v 1.1.2.4 1998-12-17 21:38:35 cananian Exp $
+ * @version $Id: ALENGTH.java,v 1.1.2.5 1998-12-21 04:41:33 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ASET
  */
 public class ALENGTH extends Quad {
-    /** The Temp in which to store the array length. */
+    /** The <code>Temp</code> in which to store the array length. */
     protected Temp dst;
     /** The array reference to query. */
     protected Temp objectref;
@@ -43,10 +43,10 @@ public class ALENGTH extends Quad {
     /** Returns the <code>Temp</code> holding the array reference to query. */
     public Temp objectref() { return objectref; }
 
-    /** Returns the Temp defined by this Quad. 
+    /** Returns the <code>Temp</code> defined by this Quad. 
      * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }
-    /** Returns the Temp used by this Quad.
+    /** Returns the <code>Temp</code> used by this Quad.
      * @return the <code>objectref</code> field. */
     public Temp[] use() { return new Temp[] { objectref }; }
 

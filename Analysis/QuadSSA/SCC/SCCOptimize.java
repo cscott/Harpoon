@@ -14,19 +14,19 @@ import harpoon.Temp.Temp;
 import harpoon.Util.Set;
 import harpoon.Util.Util;
 /**
- * <code>SCCOptimize</code> optimizes the code after SCCAnalysis.
- * The optimization invalidates the ExecMap used.  All edges in the
- * graph after optimization are executable.
+ * <code>SCCOptimize</code> optimizes the code after <code>SCCAnalysis</code>.
+ * The optimization invalidates the <code>ExecMap</code> used.
+ * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.5.2.4 1998-12-17 21:38:34 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.5.2.5 1998-12-21 04:41:32 cananian Exp $
  */
 public class SCCOptimize {
     TypeMap  ti;
     ConstMap cm;
     ExecMap  em;
     
-    /** Creates a <code>SCCOptimize</code>. */
+    /** Creates an <code>SCCOptimize</code>. */
     public SCCOptimize(TypeMap ti, ConstMap cm, ExecMap em) {
 	this.ti = ti;
 	this.cm = cm;

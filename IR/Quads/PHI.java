@@ -9,10 +9,10 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 /**
- * <code>PHI</code> objects represent blocks of PHI functions.
+ * <code>PHI</code> objects represent blocks of phi functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.1.2.5 1998-12-17 21:38:37 cananian Exp $
+ * @version $Id: PHI.java,v 1.1.2.6 1998-12-21 04:41:33 cananian Exp $
  */
 public class PHI extends Quad {
     /** dst[i] is the left-hand side of the i'th phi function in this block. */

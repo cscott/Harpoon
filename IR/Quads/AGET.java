@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>AGET</code> represents an element fetch from an array object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AGET.java,v 1.1.2.4 1998-12-17 21:38:35 cananian Exp $
+ * @version $Id: AGET.java,v 1.1.2.5 1998-12-21 04:41:33 cananian Exp $
  * @see ANEW
  * @see ASET
  * @see ALENGTH
@@ -51,10 +51,10 @@ public class AGET extends Quad {
      *  to fetch. */
     public Temp index() { return index; }
 
-    /** Returns the Temp defined by this quad.
+    /** Returns the <code>Temp</code> defined by this quad.
      * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }
-    /** Returns all the Temps used by this quad.
+    /** Returns all the <code>Temp</code>s used by this quad.
      * @return the <code>objectref</code> and <code>index</code> fields. */
     public Temp[] use() { return new Temp[] { objectref, index }; }
 
@@ -64,12 +64,14 @@ public class AGET extends Quad {
 	return new AGET(qqf, this,
 			map(tm,dst), map(tm,objectref), map(tm,index));
     }
-    /** Rename all used variables in this Quad according to a mapping. */
+    /** Rename all used variables in this <code>Quad</code> according
+     *  to a mapping. */
     void renameUses(TempMap tm) {
 	objectref = tm.tempMap(objectref);
 	index = tm.tempMap(index);
     }
-    /** Rename all defined variables in this Quad according to a mapping. */
+    /** Rename all defined variables in this <code>Quad</code> according
+     *  to a mapping. */
     void renameDefs(TempMap tm) {
 	dst = tm.tempMap(dst);
     }

@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.11 1998-12-09 02:48:17 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.12 1998-12-21 04:41:08 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -144,7 +144,11 @@ doc/TIMESTAMP:	$(ALLSOURCE) ChangeLog mark-executable
 	date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	chmod a+rx doc ; chmod a+r doc/*
 
-doc-install: doc/TIMESTAMP
+doc-install: doc/TIMESTAMP mark-executable
+	if [ ! -f doc/annotated ]; then \
+		bin/annotate.sh ; touch doc/annotated; \
+		chmod a+rx doc ; chmod a+r doc/* ;\
+	fi
 	$(SSH) $(INSTALLMACHINE) \
 		/bin/rm -rf $(INSTALLDIR)/doc
 	$(SCP) -r doc $(INSTALLMACHINE):$(INSTALLDIR)

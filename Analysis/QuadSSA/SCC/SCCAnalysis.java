@@ -22,7 +22,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.5 1998-12-17 21:38:34 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.6 1998-12-21 04:41:32 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -39,37 +39,40 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     Set Ee = new Set();
     /** Set of all executable quads. */
     Set Eq = new Set();
-    /** Mapping from Temps to lattice values. */
+    /** Mapping from <code>Temp</code>s to lattice values. */
     Hashtable V = new Hashtable();
 
     /*---------------------------*/
     // public information accessor methods.
 
-    /** Determine whether <code>Quad q</code> in <code>HMethod m</code>
+    /** Determine whether <code>Quad</code> <code>q</code> in
+     *  <code>HMethod</code> <code>m</code>
      *  is executable. */
     public boolean execMap(HCode hc, HCodeElement quad) {
 	analyze(hc); return Eq.contains(quad);
     }
-    /** Determine whether <code>Edge e</code> in <code>HMethod m</code>
+    /** Determine whether <code>Edge</code> <code>e</code> in 
+     *  <code>HMethod</code> <code>m</code>
      *  is executable. */
     public boolean execMap(HCode hc, HCodeEdge edge) {
 	analyze(hc); return Ee.contains(edge);
     }
-    /** Determine the static type of <code>Temp t</code> in 
-     *  <code>HMethod m</code>. */
+    /** Determine the static type of <code>Temp</code> <code>t</code> in 
+     *  <code>HMethod</code> <code>m</code>. */
     public HClass typeMap(HCode hc, Temp t) {
 	analyze(hc);  LatticeVal v = (LatticeVal) V.get(t);
 	if (v instanceof xClass) return ((xClass)v).type();
 	return null;
     }
-    /** Determine whether <code>Temp t</code> in <code>HMethod m</code>
+    /** Determine whether <code>Temp</code> <code>t</code> in 
+     *  <code>HMethod</code> <code>m</code>
      *  has a constant value. */
     public boolean isConst(HCode hc, Temp t) {
 	analyze(hc); return (V.get(t) instanceof xConstant);
     }
-    /** Determine the constant value of <code>Temp t</code> in 
-     *  <code>HMethod m</code>. 
-     *  @exception Error if <code>Temp t</code> is not a constant.
+    /** Determine the constant value of <code>Temp</code> <code>t</code> in 
+     *  <code>HMethod</code> <code>m</code>. 
+     *  @exception Error if <code>Temp</code> <code>t</code> is not a constant.
      */
     public Object constMap(HCode hc, Temp t) {
 	analyze(hc);  LatticeVal v = (LatticeVal) V.get(t);
@@ -77,8 +80,8 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	throw new Error(t.toString() + " not a constant");
     }
 
-    /** Determine the positive bit width of <code>Temp t</code> in
-     *  <code>HMethod m</code>.
+    /** Determine the positive bit width of <code>Temp</code> <code>t</code>
+     *  in <code>HMethod</code> <code>m</code>.
      */
     public int plusWidthMap(HCode hc, Temp t) {
 	analyze(hc); LatticeVal v = (LatticeVal) V.get(t);
@@ -86,8 +89,8 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	xBitWidth bw = extractWidth(v);
 	return bw.plusWidth();
     }
-    /** Determine the negative bit width of <code>Temp t</code> in
-     *  <code>HMethod m</code>.
+    /** Determine the negative bit width of <code>Temp</code> <code>t</code>
+     *  in <code>HMethod</code> <code>m</code>.
      */
     public int minusWidthMap(HCode hc, Temp t) {
 	analyze(hc); LatticeVal v = (LatticeVal) V.get(t);
@@ -882,13 +885,13 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     // Lattice classes.
 
     /** No information obtainable about a temp. */
-    public static class LatticeVal {
+    static class LatticeVal {
 	public String toString() { return "Top"; }
 	public boolean equals(Object o) { return o instanceof LatticeVal; }
 	public boolean higherThan(LatticeVal v) { return false; }
     }
     /** A typed temp. */
-    public static class xClass extends LatticeVal {
+    static class xClass extends LatticeVal {
 	protected HClass type;
 	public xClass(HClass type) { this.type = type; }
 	public HClass type() { return type; }
@@ -906,7 +909,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	}
     }
     /** A single class type; guaranteed the value is not null. */
-    public static class xClassNonNull extends xClass {
+    static class xClassNonNull extends xClass {
 	public xClassNonNull(HClass type) { 
 	    super( type );
 	}
@@ -923,7 +926,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	}
     }
     /** An array with constant length.  The array is not null, of course. */
-    public static class xClassArray extends xClassNonNull {
+    static class xClassArray extends xClassNonNull {
 	protected int length;
 	public xClassArray(HClass type, int length) {
 	    super(type);
@@ -945,7 +948,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	}
     }
     /** An integer value of the specified bitwidth. */
-    public static class xBitWidth extends xClassNonNull {
+    static class xBitWidth extends xClassNonNull {
 	/** Highest significant bit for positive numbers. */
 	protected int plusWidth;
 	/** Highest significant bit for negative numbers. */
@@ -993,7 +996,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	}
     }
     /** An integer or boolean constant. */
-    public static class xIntConstant extends xBitWidth implements xConstant {
+    static class xIntConstant extends xBitWidth implements xConstant {
 	protected long value;
 	public xIntConstant(HClass type, long value) {
 	    super(type, value<0?Util.fls(-value):0, value>0?Util.fls(value):0);
@@ -1019,7 +1022,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    return true;
 	}
     }
-    public static class xNullConstant extends xClass implements xConstant {
+    static class xNullConstant extends xClass implements xConstant {
 	public xNullConstant() {
 	    super(HClass.Void);
 	}
@@ -1036,7 +1039,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    return true;
 	}
     }
-    public static class xFloatConstant extends xClassNonNull 
+    static class xFloatConstant extends xClassNonNull 
 	implements xConstant {
 	protected Object value;
 	public xFloatConstant(HClass type, Object value) {
@@ -1056,7 +1059,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    return true;
 	}
     }
-    public static class xStringConstant extends xClassNonNull
+    static class xStringConstant extends xClassNonNull
 	implements xConstant {
 	protected Object value;
 	public xStringConstant(HClass type, Object value) {
@@ -1077,7 +1080,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    return true;
 	}
     }
-    public static interface xConstant {
+    static interface xConstant {
 	public Object constValue();
     }
 }

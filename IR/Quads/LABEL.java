@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>LABEL</code> marks a basic-block entrance.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LABEL.java,v 1.1.2.3 1998-12-17 21:38:36 cananian Exp $
+ * @version $Id: LABEL.java,v 1.1.2.4 1998-12-21 04:41:33 cananian Exp $
  */
 public class LABEL extends PHI {
     /** the (optional) name of this label. <p>
@@ -33,7 +33,7 @@ public class LABEL extends PHI {
 	super(qf, source, dst, arity);
 	this.label = label;
     }
-    /** Creates a LABEL to replace a PHI.
+    /** Creates a <code>LABEL</code> to replace a <code>PHI</code>.
      * @param label the name of this label, or <code>null</code> for no name.
      */
     public LABEL(QuadFactory qf, PHI phi, String label) {

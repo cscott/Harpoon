@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.1.2.5 1998-12-20 07:11:59 cananian Exp $
+ * @version $Id: CJMP.java,v 1.1.2.6 1998-12-21 04:41:33 cananian Exp $
  */
 public class CJMP extends SIGMA {
     protected Temp test;
@@ -48,24 +48,7 @@ public class CJMP extends SIGMA {
     /** Returns the <code>Temp</code> tested by this <code>CJMP</code>. */
     public Temp test() { return test; }
 
-    /** Swaps if-true and if-false targets, inverting the sense of the
-     *  test.
-     *  @deprecated Violates immutability of quads. */
-    public void invert() {
-	Edge iftrue = nextEdge(0);
-	Edge iffalse= nextEdge(1);
-
-	Quad.addEdge(this, 0, (Quad)iffalse.to(), iffalse.which_pred());
-	Quad.addEdge(this, 1, (Quad)iftrue.to(), iftrue.which_pred());
-
-	for (int i=0; i<src.length; i++) {
-	    Temp Ttrue = dst[i][0];
-	    Temp Tfalse= dst[i][1];
-	    dst[i][0] = Tfalse;
-	    dst[i][1] = Ttrue;
-	}
-    }
-    /** Returns all the Temps used by this Quad.
+    /** Returns all the <code>Temp</code>s used by this Quad.
      * @return the <code>test</code> field.
      */
     public Temp[] use() { 
