@@ -27,7 +27,7 @@ import java.util.HashMap;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.8 2002-12-01 06:30:56 salcianu Exp $
+ * @version $Id: QuadSSI.java,v 1.9 2003-03-15 23:26:10 kkz Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -83,8 +83,19 @@ public class QuadSSI extends Code /* which extends HCode */ {
     }
 
     /** Creates a <code>Code</code> object from a bytecode object. */
-    public QuadSSI(QuadNoSSA qns) 
-    {
+    public QuadSSI(QuadNoSSA qns) {
+	this((Code)qns);
+    }
+
+    /** Creates a <code>Code</code> object from a resilient-no-ssa
+     *  object. */
+    public QuadSSI(ResilientNoSSA rns) {
+	this((Code)rns);
+    }
+
+    /** Creates a <code>Code</code> object from either a quad-no-ssa
+     *  or a resilient-no-ssa object. */
+    private QuadSSI(Code qns) {
 	super(qns.getMethod(), null);
 	SSIRename rt0 = new SSIRename(qns, qf);
 	quads = rt0.rootQuad;
@@ -150,6 +161,15 @@ public class QuadSSI extends Code /* which extends HCode */ {
 		   || hcf.getCodeName().equals(QuadSSA.codename)) {
 	    // do some implicit chaining.
 	    return codeFactory(QuadNoSSA.codeFactory(hcf));
+	} else if (hcf.getCodeName().equals(ResilientNoSSA.codename)) {
+	    return new harpoon.ClassFile.SerializableCodeFactory() {
+		public HCode convert(HMethod m) {
+		    HCode c = hcf.convert(m);
+		    return (c==null)?null:new QuadSSI((ResilientNoSSA)c);
+		}
+		public void clear(HMethod m) { hcf.clear(m); }
+		public String getCodeName() { return codename; }
+	    };
 	} else throw new Error("don't know how to make " + codename + 
 			       " from " + hcf.getCodeName());
     }
