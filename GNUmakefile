@@ -1,4 +1,4 @@
-# $Revision: 1.45 $
+# $Revision: 1.46 $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -85,7 +85,7 @@ tar-install: tar
 
 doc:	doc/TIMESTAMP
 
-doc/TIMESTAMP:	$(ALLSOURCE)
+doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	make doc-clean
 	mkdir doc
 	cd doc; ln -s .. harpoon ; ln -s .. silicon
@@ -113,6 +113,9 @@ doc-install: doc/TIMESTAMP
 
 doc-clean:
 	-${RM} -r doc
+
+mark-executable:
+	@chmod a+x bin/*
 
 wc:
 	@wc -l $(ALLSOURCE)
