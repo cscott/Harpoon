@@ -45,7 +45,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.4.11 2001-01-21 16:21:59 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.4.12 2001-05-16 18:49:27 bdemsky Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -64,7 +64,7 @@ public class ObjectBuilder
 	this(runtime, new RootOracle() {
 	    public Object get(HField hf, Info addlinfo) {
 	      if (hf.getDeclaringClass().getName().equals("java.lang.Object"))
-		  return null; // fields of Object initialized with null.
+		  return defaultValue(hf);// fields of Object initialized to 0
 	      else return NOT_A_VALUE;
 	    }
 	});
@@ -178,6 +178,24 @@ public class ObjectBuilder
     }
     DATUM _DATUM(TreeFactory tf, Label l) {
 	return new DATUM(tf,null,new NAME(tf,null,l));
+    }
+
+    /** utility function copied from Interpret/Quads/Ref.java */
+    static final Object defaultValue(HField f) {
+	if (f.isConstant()) return f.getConstant();
+	return defaultValue(f.getType());
+    }
+    static final Object defaultValue(HClass ty) {
+	if (!ty.isPrimitive()) return null;
+	if (ty == HClass.Boolean) return new Boolean(false);
+	if (ty == HClass.Byte) return new Byte((byte)0);
+	if (ty == HClass.Char) return new Character((char)0);
+	if (ty == HClass.Double) return new Double(0);
+	if (ty == HClass.Float) return new Float(0);
+	if (ty == HClass.Int) return new Integer(0);
+	if (ty == HClass.Long) return new Long(0);
+	if (ty == HClass.Short) return new Short((short)0);
+	throw new Error("Ack!  What kinda default value is this?!");
     }
 
 
