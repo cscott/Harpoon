@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.17 2002-03-23 02:22:34 cananian Exp $
+% $Id: oopsla02.tex,v 1.18 2002-03-23 04:39:15 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -31,7 +31,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.17 $ $}{$ $Revision: 1.17 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.18 $ $}{$ $Revision: 1.18 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -713,11 +713,66 @@ splitting is by magnitude of expected gain, from profiling.
 % pointer size improvements.
 % parameter widening; reflection; interface to native code. stoplist
 
-\section{Extensions} % ???
+cp \section{Extensions} % ???
 % header optimizations.
 % pointer compression?
 
 \section{Experimental Results}
+\label{sec:results}
+
+We have implemented all of the analyses and transformations described
+in this paper in the MIT Flex compiler infrastructure 
+(available at {\tt www.flexc.lcs.mit.edu}). We measure the effectiveness
+of our optimizations by compiling the SPECjvm98 benchmarks with 
+this compiler, then measuring the resulting space savings and
+performance. 
+
+\subsection{Memory Savings}
+
+To evaluate the effectiveness of our technique at reducing the
+amount of memory required to execute the program, 
+we first ran an instrumented version of each
+application without any space optimizations. We used this
+instrumented version to compute the total amount of memory 
+allocated during the entire execution of the program. 
+We then ran an instrumented version of our program after optimization.
+This version enabled us to calculate the amount by which each 
+technique reduced the size of the allocated data. 
+Figure~\ref{} presents the total space savings numbers. This
+figure contains a bar for each application, with the bar broken
+down into categories that indicate the percentage of memory from 
+the original unoptimized execution that we were able to eliminate
+with each optimization. The black section of each bar indicates the
+amount of memory remaining after all optimizations. 
+(Discussion here...)
+
+We used then instrumented version to compute the amount of memory required
+to store the maximum amount of data live at any point in the
+execution, in both the optimized and unoptimized versions. 
+Figure~\ref{} presents the space savings according to this
+metric. 
+
+\subsection{Objects Versus Arrays}
+
+The majority of our optimizations are designed to optimize
+object fields rather than arrays. We next present numbers 
+that characterize the space reductions for objects only,
+rather than for both objects and arrays. Figure~\ref{}
+presents space savings numbers for objects alone, omitting
+any storage required for arrays. 
+
+\subsection{Execution Times} 
+
+We next evaluate the execution time impact of applying our space
+optimizations. Figure~\ref{} presents the normalized execution 
+times of each application after the application of our sequence
+of optimizations. These numbers show that the first several
+optimizations (Claz Compression, Field Reduction, and Byte Packing)
+typically reduce the execution times, while the
+remainder (Static Specialization, Field Externalization, and  Hashlock
+externalization) generate modest increases in the execution times. 
+
+
 \begin{figure}
 \includegraphics[scale=0.32,clip=true]{Figures/spaceopt.eps}
 \caption{Cumulative reduction in dynamic allocation achieved with
