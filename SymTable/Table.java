@@ -1,21 +1,19 @@
-package SymTable;
-
-class Binder {
-  Object value;
-  Symbol prevtop;
-  Binder tail;
-  Binder(Object v, Symbol p, Binder t) {
-	value=v; prevtop=p; tail=t;
-  }
-}
+package harpoon.SymTable;
 
 /**
  * The Table class is similar to java.util.Dictionary, except that
  * each key must be a Symbol and there is a scope mechanism.
  */
 
-
 public class Table {
+  class Binder {
+    Object value;
+    Symbol prevtop;
+    Binder tail;
+    Binder(Object v, Symbol p, Binder t) {
+      value=v; prevtop=p; tail=t;
+    }
+  }
 
   private java.util.Dictionary dict = new java.util.Hashtable();
   private Symbol top;

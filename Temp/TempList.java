@@ -1,4 +1,4 @@
-package Temp;
+package harpoon.Temp;
 
 /** A singly-linked list of temporary variables. */
 public class TempList {

@@ -1,5 +1,5 @@
-package Temp;
-import SymTable.Symbol;
+package harpoon.Temp;
+import harpoon.SymTable.Symbol;
 
 /**
  * A Label represents an address in a quadruple list.

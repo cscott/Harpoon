@@ -1,4 +1,5 @@
-package SymTable;
+package harpoon.SymTable;
+
 public class Symbol {
   private String name;
   private Symbol(String n) {

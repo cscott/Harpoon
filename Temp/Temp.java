@@ -1,7 +1,7 @@
-package Temp;
+package harpoon.Temp;
 
-import Type.Type;
-import Type.TypedObject;
+import harpoon.Type.Type;
+import harpoon.Type.TypedObject;
 import java.util.Hashtable;
 
 /** 
@@ -10,7 +10,7 @@ import java.util.Hashtable;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.1 1998-07-28 05:09:44 cananian Exp $
+ * @version $Id: Temp.java,v 1.2 1998-07-29 00:56:44 cananian Exp $
  * @see TempList
  */
 public class Temp implements TypedObject {
