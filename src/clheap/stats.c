@@ -13,6 +13,7 @@ size_t thr_bytes_overflow = 0;
 int thread_heaps_created = 0;
 int threads_created = 0;
 DECLARE_LOCK_LOCAL(thrcnt);
+double ttl_gc_time = 0;
 
 static void stat_signal_handler(int sig) { print_statistics(); }
 
@@ -20,6 +21,7 @@ void print_statistics(void) {
 #ifdef MAKE_STATS
   printf("\n"
 	 "HEAPSIZE: %ld  POOLSIZE: %ld  THRALLOC: %d  STKALLOC: %d\n"
+	 "Total gc time at this point: %f ms\n"
 	 "Stack allocation:        %8ld bytes %8ld objects\n"
 	 "Thread-local allocation: %8ld bytes %8ld objects\n"
 	 "Global allocation:       %8ld bytes %8ld objects\n"
@@ -37,6 +39,7 @@ void print_statistics(void) {
 #else
 	 0,
 #endif
+	 (float) ttl_gc_time,
 	 (long) stk_bytes_alloc, (long) stk_objs_alloc,
 	 (long) thr_bytes_alloc, (long) thr_objs_alloc,
 	 (long) gbl_bytes_alloc, (long) gbl_objs_alloc,
