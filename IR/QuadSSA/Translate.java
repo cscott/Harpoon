@@ -32,7 +32,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.90.2.3 1998-11-25 20:14:22 cananian Exp $
+ * @version $Id: Translate.java,v 1.90.2.4 1998-11-27 03:44:10 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -267,7 +267,9 @@ class Translate  { // not public.
 
 	Temp[] locals = new Temp[bytecode.getMaxLocals()];
 	// we may use as many as 5 'extra' variables above stack top.
-	Temp[] stack  = new Temp[bytecode.getMaxStack() + 5];
+	// FIXME: upped to 105 in workaround, but should really fix
+	// workaround in PHI merge to require limited number of 'extra's.
+	Temp[] stack  = new Temp[bytecode.getMaxStack() + 105];
 
 	// Initialize stack names
 	for (int i=0; i < stack.length; i++)
@@ -1363,7 +1365,7 @@ class Translate  { // not public.
 	    Temp dst=(Temp)e.nextElement();
 	    Temp src=(Temp)permutation.get(dst);
 	    // create new Temp in order to accomplish the permutation safely.
-	    Temp t = phiState.extra(j++);
+	    Temp t = phiState.extra(j++); // FIXME: unlimited extra temps.
 	    Quad q1 = new MOVE(in, t, src);
 	    Quad q2 = new MOVE(in, dst, t);
 	    Quad.addEdge(q, which_succ, q1, 0);
