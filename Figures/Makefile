@@ -47,6 +47,10 @@ THcqex2.tex: THcqex.fig
 	awk "/^[[:blank:]]/{if (foo==1) next;} /^2 4 1/||/^4 0 0 100 0 0 12 0.0000 2/{foo=1;next} {print; foo=0;}" < $< | \
 	fig2dev -L latex -m 0.5 > $@
 
+# default fig->eps rule
+%.eps: %.fig
+	fig2dev -L eps -m 1.0 $< > $@
+
 #default gnu-plot to latex rule
 %.tex: %.gnuplot
 	gnuplot $< | uniq | sed -e '/setlength{.unitlength}/r head.tex' > $@
@@ -57,6 +61,14 @@ phisig.tex: phisig.data-sorted
 THussi.tex: Data/ussi.data
 THv0.tex: Data/v0.data
 ptrsize.tex: ptrsize.data
+
+# fix bounding boxes of kontour eps files (hence the a4 papersize)
+%-bbox.eps : %.eps
+	( head -1 $< ; \
+	gs -sDEVICE=bbox -dNOPAUSE -dBATCH -sPAPERSIZE=a4 -q $< 2>&1 ; \
+	tail +2 $< | \
+	  grep -v "^%%BoundingBox:" | \
+	  grep -v "^%%HiResBoundingBox:" ) > $@
 
 # graphing helpers
 %.stats: %
