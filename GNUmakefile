@@ -1,4 +1,4 @@
-# $Version$
+# $Revision: 1.31 $
 JFLAGS=-g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JCC=javac -d .
@@ -17,7 +17,8 @@ ALLPKGS = $(shell find . -type d | grep -v CVS | \
 		sed -e "s|^[.]/*||")
 ALLSOURCE = $(filter-out .%.java, \
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java)))
-
+TARSOURCE = $(filter-out JavaChip%, \
+	        $(filter-out Test%,$(ALLSOURCE))) GNUmakefile
 all:	java
 
 java:	$(ALLSOURCE)
@@ -33,8 +34,10 @@ first:
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 Harpoon.jar:	java
 	${JAR} c0f Harpoon.jar harpoon silicon
+
 jar:	Harpoon.jar
-jar-install: jar
+jar-install: only-me jar
+	chmod a+r Harpoon.jar
 	$(SCP) Harpoon.jar miris.lcs.mit.edu:public_html/Projects/Harpoon
 
 cvs-add:
@@ -51,9 +54,12 @@ update: # it's so easy to forget...
 	@echo ""
 	@-$(FORTUNE)
 
-tar:
-	@tar czvf harpoon.tgz $(filter-out JavaChip%,$(filter-out Test%,$(ALLSOURCE))) GNUmakefile
-tar-install: tar
+harpoon.tgz: $(TARSOURCE)
+	tar czf harpoon.tgz $(TARSOURCE)
+
+tar:	harpoon.tgz
+tar-install: only-me tar
+	chmod a+r harpoon.tgz
 	$(SCP) harpoon.tgz miris.lcs.mit.edu:public_html/Projects/Harpoon
 
 doc:	doc/TIMESTAMP
@@ -79,12 +85,10 @@ doc/TIMESTAMP:	$(ALLSOURCE)
 	date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	chmod a+rx doc ; chmod a+r doc/*
 
-doc-install: doc/TIMESTAMP
-	if [ `whoami` = "cananian" ]; then \
-	  $(SSH) miris.lcs.mit.edu \
-		/bin/rm -rf public_html/Projects/Harpoon/doc; \
-	  $(SCP) -r doc miris.lcs.mit.edu:public_html/Projects/Harpoon; \
-	fi
+doc-install: only-me doc/TIMESTAMP
+	$(SSH) miris.lcs.mit.edu \
+		/bin/rm -rf public_html/Projects/Harpoon/doc
+	$(SCP) -r doc miris.lcs.mit.edu:public_html/Projects/Harpoon
 
 doc-clean:
 	-${RM} -r doc
@@ -103,14 +107,16 @@ polish: clean
 
 wipe:	clean doc-clean
 
-backup: # DOESN'T WORK ON NON-LOCAL MACHINES
-	if [ `whoami` = "cananian" -a \
-	     `hostname` = "lesser-magoo.lcs.mit.edu" ]; then \
-	  $(RM) ../harpoon-backup.tar.gz ; \
-	  (cd ..; tar czf harpoon-backup.tar.gz CVSROOT); \
-	  $(SCP) ../harpoon-backup.tar.gz \
-		miris.lcs.mit.edu:public_html/Projects/Harpoon ; \
-	  $(RM) ../harpoon-backup.tar.gz ; \
-	fi
+backup: only-me # DOESN'T WORK ON NON-LOCAL MACHINES
+	if [ ! `hostname` = "lesser-magoo.lcs.mit.edu" ]; then exit 1; fi
+	$(RM) ../harpoon-backup.tar.gz
+	(cd ..; tar czf harpoon-backup.tar.gz CVSROOT)
+	$(SCP) ../harpoon-backup.tar.gz \
+		miris.lcs.mit.edu:public_html/Projects/Harpoon
+	$(RM) ../harpoon-backup.tar.gz
+
+# the 'install' rules only make sense if you're me.
+only-me:
+	if [ ! `whoami` = "cananian" ]; then exit 1; fi
 
 install: doc-install tar-install jar-install
