@@ -23,7 +23,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.15 1999-08-09 23:39:48 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.16 1999-08-31 00:03:40 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -169,6 +169,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     /** Raise element t to a in V, adding t to Wv if necessary. */
     void raiseV(Hashtable V, Worklist Wv, Temp t, LatticeVal a) {
 	LatticeVal old = (LatticeVal) V.get(t);
+	if (corruptor!=null) a=corruptor.corrupt(a); // support incrementalism
 	// only allow raising value in lattice.
 	if (old != null && old.equals(a)) return;
 	if (old != null && !a.higherThan(old)) return;
@@ -393,14 +394,14 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 
 		// look at definition of boolean condition.
 		Quad def= (Quad)udm.defMap(hc, q.test())[0];// SSA form, right?
-		if (def instanceof OPER) // only case we care about
+		if (useSigmas&& def instanceof OPER) // only case we care about
 		    handleSigmas((CJMP) q, (OPER) def);
-		else if (def instanceof INSTANCEOF) // ok, i lied.
+		else if (useSigmas&& def instanceof INSTANCEOF) // ok, i lied.
 		    handleSigmas((CJMP) q, (INSTANCEOF) def);
 		else // fallback.
 		    for (int i=0; i < q.numSigmas(); i++) {
 			// is this the CJMP condition?
-			if (q.src(i) == q.test()) {
+			if (useSigmas&& q.src(i) == q.test()) {
 			    raiseV(V, Wv, q.dst(i,0), 
 				   new xIntConstant(toInternal(HClass.Boolean), 0));
 			    raiseV(V, Wv, q.dst(i,1),
@@ -1115,4 +1116,47 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     static interface xConstant {
 	public Object constValue();
     }
+    /////////////////////////////////////////////////////////
+    // ways to degrade the analysis to collect statistics.
+    private final Corruptor corruptor = null; // no corruption.
+    private final boolean useSigmas = true;
+    /** A <code>Corruptor</code> lets you 'dumb-down' the analysis 
+     *  incrementally, so that we can generate numbers showing that
+     *  every step makes it better and better. */
+    static abstract class Corruptor {
+	/** make this lattice value worse than we know it to be. */
+	abstract LatticeVal corrupt(LatticeVal v);
+    }
+    static final Corruptor nobitwidth = new Corruptor() {
+	public LatticeVal corrupt(LatticeVal v) {
+	    if (v instanceof xBitWidth)
+	      return new xClassNonNull(((xClassNonNull)v).type);
+	    return v;
+	}
+    };
+    static final Corruptor nofixedarray = new Corruptor() {
+	public LatticeVal corrupt(LatticeVal v) {
+	    v = nobitwidth.corrupt(v);
+	    if (v instanceof xClassArray)
+	      return new xClassNonNull(((xClassNonNull)v).type);
+	    return v;
+	}
+    };
+    static final Corruptor nonullpointer = new Corruptor() {
+	public LatticeVal corrupt(LatticeVal v) {
+	    if (v instanceof xClassNonNull)
+	      return new xClass(((xClassNonNull)v).type);
+	    return v;
+	}
+    };
+    static final Corruptor nononint = new Corruptor() {
+	public LatticeVal corrupt(LatticeVal v) {
+	    v = nonullpointer.corrupt(v);
+	    if (v instanceof xFloatConstant ||
+		v instanceof xStringConstant ||
+		(v instanceof xIntConstant && ((xClass)v).type!=HClass.Int))
+	      return new xClass(((xClass)v).type);
+	    return v;
+	}
+    };
 }
