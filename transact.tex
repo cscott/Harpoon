@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.12 2000-09-28 22:58:51 cananian Exp $
+% $Id: transact.tex,v 1.13 2000-09-28 23:08:48 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,7 +8,7 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.12 $ $}
+\date{\today \\ $ $Revision: 1.13 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
@@ -247,7 +247,9 @@ $\text{Write}(\code{struct oobj *} o, \code{int } n,
 $\text{ReadTrans}(\code{struct commitrec *}c, 
                   \code{struct oobj *} o, \code{int } n)=$
 \begin{myalgorithmic}
-\STATE blah
+\STATE $v \gets \text{appropriate version, creating it if necessary}$
+  \COMMENT{doesn't abort non-appropriate versions}
+\RETURN $v\ptr\code{field}[n]$
 \end{myalgorithmic}
 \caption{Algorithm for transactional read of a field.}
 \label{fig:readtrans}
@@ -258,7 +260,14 @@ $\text{WriteTrans}(\code{struct commitrec *}c,
                    \code{struct oobj *} o, \code{int } n,
                    \code{<ty> } x)=$
 \begin{myalgorithmic}
-\STATE blah
+\STATE $v \gets \text{appropriate version, creating it if necessary}$
+  \COMMENT{aborts all non-appropriate versions found}
+\IF{$o\ptr\code{field}[n] \neq \code{FLAG\_VALUE}$}
+  \STATE watch for races here
+  \STATE copy current value somewhere (how far over?)
+  \STATE $o\ptr\code{field}[n] \gets \code{FLAG\_VALUE}$
+\ENDIF
+\STATE $v\ptr\code{field}[n] \gets x$
 \end{myalgorithmic}
 \caption{Algorithm for transactional write of a field.}
 \label{fig:writetrans}
