@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi02.tex,v 1.6 2001-11-15 22:26:04 cananian Exp $
+% $Id: pldi02.tex,v 1.7 2001-11-15 23:45:40 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -26,7 +26,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-\pagestyle{myheadings}\markboth{$ $Revision: 1.6 $ $}{$ $Revision: 1.6 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.7 $ $}{$ $Revision: 1.7 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -119,8 +119,8 @@ second word is used to represent the lock and any other information
 kept by the runtime.  In the FLEX compiler system used for the
 research in this paper \cite{flexweb}, 30 bits of hashcode are kept, and the
 remaining 2 bits indicate whether the value is actually a hashcode or
-a pointer to an ``inflated'' object structure containing other
-information: a copy of the displaced hashcode, pthreads locks,
+a pointer to an ``inflated'' object structure containing
+a copy of the displaced hashcode, pthreads locks,
 and other runtime information.
 
 \subsection{{\tt claz} compression}
@@ -139,12 +139,33 @@ variable length encoding could be used so that ``young'' class types
 limiting the index size as the class universe grows.  The runtime cost
 of such a scheme is likely to be prohibitive, however.}
 
-Table {\bf XX} shows the number of classes required to build each of
+Table \ref{tab:claz-space} shows the number of classes required to
+build each of
 the spec benchmarks, as determined by a standard class hierarchy
 analysis at compile-time.  Also enumerated are the heap savings to be
 expected from reducing the size of the {\tt claz} information using
 table-lookup; the meanings of the various alignment alternatives will
-be discussed in section {\bf XX}.
+be discussed in section \ref{sec:field-packing}.
+\begin{table}
+\begin{tabular}{lcr@{.}lr@{.}l}
+&& \multicolumn{4}{c}{\% alloc'ed space saved} \\
+\bf Benchmark & \# classes & \multicolumn{2}{c}{std/byte} &
+                             \multicolumn{2}{l}{~~bit} \\ \hline
+200\_check	& 253 &  3&8\% &  3&8\% \\
+201\_compress	& 216 &  0&0\% &  0&0\% \\
+202\_jess	& 379 &  6&0\% &  8&6\% \\
+205\_raytrace	& 239 & 14&4\% & 14&4\% \\
+209\_db 	& 213 & 12&6\% & 12&6\% \\
+213\_javac	& 399 &  6&8\% &  9&8\% \\
+222\_mpegaudio	& 213 &  3&7\% &  3&7\% \\
+227\_mtrt	& 239 & 14&4\% & 14&4\% \\
+228\_jack	& 265 &  7&3\% & 10&6\% \\
+\end{tabular}
+\caption{Number of classes statically referenced in SPEC benchmarks,
+  and the savings (in \% of total allocated bytes) of {\tt claz} field
+  compression to nearest byte and bit boundaries.}
+\label{tab:claz-space}
+\end{table}
 
 \subsection{Hashcode/lock compression}
 Many objects in a typical Java program are neither locked nor inserted
@@ -220,6 +241,7 @@ Sparse Conditional Constant (SCC) propagation algorithm
 % field-based
 
 \subsection{Field packing}
+\label{sec:field-packing}
 If the program is going to run on a standard java virtual machine, or
 for some other reason modifications to the runtime environment are not
 possible, then optimization based on the bitwidth analysis can only
