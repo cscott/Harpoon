@@ -48,6 +48,7 @@ public class HTTPHeader{
     ct.put("snd",   "audio/basic");
     ct.put("wav",   "audio/x-wave");
     ct.put("class", "application/octet-stream");
+    ct.put("ps", "application/postscript");
   }
   
 //*************************************************************************

@@ -11,7 +11,7 @@
 #include <dmalloc.h>
 #endif
 
-#define KARENHACK /* Gross hack for Karen's free stuff...*/
+#undef KARENHACK /* Gross hack for Karen's free stuff...*/
 
 void exitmethod(struct heap_state *heap, struct hashtable *ht, long long uid) {
   //Lets show the roles!!!!
@@ -288,6 +288,7 @@ void mergerolechanges(struct heap_state *heap) {
     if (rc==NULL)
       break;
 
+
     while(method!=NULL) {
       struct rolemethod *rm=method->rm;
       struct genhashtable * rolechanges=rm->rolechanges;
@@ -368,7 +369,7 @@ int rcshashcode(struct rolechangesum *rcs) {
 int equivalentrcs(struct rolechangesum *rcs1, struct rolechangesum *rcs2) {
   if (
 #ifndef KARENHACK
-equivalentstrings(rcs1->origrole, rcs2->origrole) &&
+      equivalentstrings(rcs1->origrole, rcs2->origrole) &&
 #endif
       equivalentstrings(rcs1->newrole, rcs2->newrole))
     return 1;

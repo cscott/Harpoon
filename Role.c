@@ -9,8 +9,8 @@
 #include <dmalloc.h>
 #endif
 
-#define DUPTHRESHOLD 2
-#define ARRDUPTHRESHOLD 2
+#define DUPTHRESHOLD 1
+#define ARRDUPTHRESHOLD 1
 
 static long int rolenumber=2;
 struct heap_state *hshash;
@@ -151,20 +151,22 @@ void rolechange(struct heap_state *hs, struct genhashtable * dommapping, struct 
 
   rc->newrole=copystr(newrole);
   rc->uid=ho->uid;
+
+
   if (enterexit&1) {
     /* Exit case*/
-    if (!gencontains(hs->methodlist->rolechangetable,rc))
+    if (!gencontains(hs->methodlist->rolechangetable,rc)) {
       genputtable(hs->methodlist->rolechangetable,rc,NULL);
-    else {
+    } else {
       free(rc->newrole);
       free(rc->origrole);
       free(rc);
     }
   } else {
     /* Enter case*/
-    if (!gencontains(hs->methodlist->caller->rolechangetable,rc))
+    if (!gencontains(hs->methodlist->caller->rolechangetable,rc)) {
       genputtable(hs->methodlist->caller->rolechangetable,rc,NULL);
-    else {
+    } else {
       free(rc->newrole);
       free(rc->origrole);
       free(rc);
@@ -184,7 +186,7 @@ void rolechange(struct heap_state *hs, struct genhashtable * dommapping, struct 
       if (rfl->propagaterole) {
 	/* Need to propagate role change upwards*/
 	if (dommapping!=NULL)
-	  findrolestring(hs, dommapping, rfl->object ,enterexit);
+	  findrolestring(hs, dommapping, rfl->src ,enterexit);
 	/* Gross hack, but works...*/
 	/* If dommapping==NULL, then we are garbage and hence anything that points to us is also*/
 	/* The garbage collector will catch it then*/
@@ -192,6 +194,22 @@ void rolechange(struct heap_state *hs, struct genhashtable * dommapping, struct 
       rfl=rfl->dstnext;
     }
   }
+  {
+    /* Need to backwards propagation of rolechange */
+    struct arraylist * ral=ho->reversearray;
+    while(ral!=NULL) {
+      if (ral->propagaterole) {
+	/* Need to propagate role change upwards*/
+	if (dommapping!=NULL)
+	  findrolestring(hs, dommapping, ral->src ,enterexit);
+	/* Gross hack, but works...*/
+	/* If dommapping==NULL, then we are garbage and hence anything that points to us is also*/
+	/* The garbage collector will catch it then*/
+      }
+      ral=ral->dstnext;
+    }
+  }
+
   return;
 }
 
@@ -703,7 +721,8 @@ void insertnonal(struct role * role, struct rolearraylist * ral) {
     role->nonnullarrays=ral;
     return;
   }
-  if ((ac=arraycompare(ral, role->nonnullarrays))<=0) {
+  ac=arraycompare(ral, role->nonnullarrays);
+  if (ac<=0) {
     if (ac<0) {
       ral->next=role->nonnullarrays;
       role->nonnullarrays=ral;
@@ -720,12 +739,12 @@ void insertnonal(struct role * role, struct rolearraylist * ral) {
 
   while(tmpptr->next!=NULL) {
     ac=arraycompare(ral, tmpptr->next);
-    if (ac>=0)
+    if (ac<=0)
       break;
     tmpptr=tmpptr->next;
   }
   
-  if (tmpptr->next==NULL||ac>0) {
+  if ((tmpptr->next==NULL)||(ac<0)) {
     ral->next=tmpptr->next;
     tmpptr->next=ral;
     return;
@@ -791,9 +810,10 @@ int arraycompare(struct rolearraylist *array1, struct rolearraylist *array2) {
       return 1;
     return -1;
   }
-  if (array1->class<array2->class)
-    return 1;
-  return -1;
+  return strcmp(array1->class->classname,array2->class->classname);
+  /*  if (array1->class<array2->class)
+      return 1;
+      return -1;*/
 }
 
 void insertral(struct role * role, struct rolearraylist * ral) {

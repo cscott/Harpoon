@@ -590,6 +590,7 @@ class RoleI {
 	Iterator it=transet.iterator();
 	ps.println("digraph \""+classname+"\" {");
 	ps.println("ratio=auto");
+	ps.println("size=\"40,40\"");
 	Set observedroles=new HashSet();
 
 	while(it.hasNext()) {
@@ -773,10 +774,13 @@ class RoleI {
 	    p1.waitFor();
 	    Process p2=runtime.exec("dot -Timap rolerelationmerged -o rolerelationmerged.imap");	
 	    p2.waitFor();
+	    Process p3=runtime.exec("dot -Tps rolerelationmerged -o rolerelationmerged.ps");	
+	    p3.waitFor();
 	    FileOutputStream fos=new FileOutputStream("rolerelationmerged.html");
 	    PrintStream ps=new PrintStream(fos);
 	    menuline(ps);
-	    ps.println("<a href=\"ri-rolerelationmerged\"><img src=\"/rolerelationmerged.gif\" ismap> </a>");
+	    ps.println("<a href=\"ri-rolerelationmerged\"><img src=\"/rolerelationmerged.gif\" ismap> </a><p>");
+	    ps.println("<a href=\"/rolerelationmerged.ps\">PostScript Version</a>");
 	    ps.close();
 	} catch (Exception e) {
 	    e.printStackTrace();
@@ -794,10 +798,13 @@ class RoleI {
 	    p1.waitFor();
 	    Process p2=runtime.exec("dot -Timap rolerelation -o rolerelation.imap");	
 	    p2.waitFor();
+	    Process p3=runtime.exec("dot -Tps rolerelation -o rolerelation.ps");	
+	    p3.waitFor();
 	    FileOutputStream fos=new FileOutputStream("rolerelation.html");
 	    PrintStream ps=new PrintStream(fos);
 	    menuline(ps);
-	    ps.println("<a href=\"ri-rolerelation\"><img src=\"/rolerelation.gif\" ismap> </a>");
+	    ps.println("<a href=\"ri-rolerelation\"><img src=\"/rolerelation.gif\" ismap> </a><p>");
+	    ps.println("<a href=\"/rolerelation.ps\">PostScript Version</a>");
 	    ps.close();
 	} catch (Exception e) {
 	    e.printStackTrace();
@@ -817,6 +824,7 @@ class RoleI {
 	Iterator it=diagram.iterator();
 	ps.println("digraph \"Role Relationship Diagram\" {");
 	ps.println("ratio=auto");
+	ps.println("size=\"40,40\"");
 	Set observedroles=new HashSet();
 
 	while(it.hasNext()) {
@@ -884,6 +892,7 @@ class RoleI {
 	Iterator it=diagram.iterator();
 	ps.println("digraph \"Merged Role Relationship Diagram\" {");
 	ps.println("ratio=auto");
+	ps.println("size=\"40,40\"");
 	Set observedroles=new HashSet();
 	Set edges=new HashSet();
 	while(it.hasNext()) {

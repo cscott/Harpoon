@@ -215,11 +215,12 @@ struct objectset * dokills(struct heap_state *heap, struct hashtable *ht) {
 	struct referencelist *rtmp=tuple->rl;
 	if ((fl->object->reachable&REACHABLEMASK)==1)
 	  ktpl->reachable=tuple->reachable;
+
+	ktpl->ho=fl->object;
+	ktpl->next=kptr;
+	kptr=ktpl;
+	/*loop through src*/
 	if (rtmp!=NULL) {
-	  ktpl->ho=fl->object;
-	  ktpl->next=kptr;
-	  kptr=ktpl;
-	  /*loop through src*/
 	  while(rtmp!=NULL) {
 	    if (((rtmp->lv!=NULL)&&(rtmp->lv->invalid==0)&&(rtmp->lv->object==fl->object))||((rtmp->gl!=NULL)&&(rtmp->gl->invalid==0)&&(rtmp->gl->object==fl->object))) {
 	    /*Don't propagate kills to object being pointed to by live localpointer*/
@@ -232,7 +233,7 @@ struct objectset * dokills(struct heap_state *heap, struct hashtable *ht) {
 	    }
 	    rtmp=rtmp->next;
 	  }
-	} else printf("WEIRDNESS\n");
+	}/* else printf("WEIRDNESS\n");*/
       }
       fl=fl->next;
     }
@@ -248,13 +249,14 @@ struct objectset * dokills(struct heap_state *heap, struct hashtable *ht) {
       if (matchlist(al->object->rl, tuple->rl)||(((al->object->reachable&REACHABLEMASK)==1)&&(tuple->reachable==1))) {
 	struct killtuplelist *ktpl=(struct killtuplelist *) calloc(1,sizeof(struct killtuplelist));
 	struct referencelist *rtmp=tuple->rl;
-	if (rtmp!=NULL) {
+
 	  ktpl->ho=al->object;
 	  ktpl->next=kptr;
 	  kptr=ktpl;
 	  if ((al->object->reachable&REACHABLEMASK)==1)
 	    ktpl->reachable=tuple->reachable;
 	  /*loop through src*/
+	if (rtmp!=NULL) {
 	  while(rtmp!=NULL) {
 	    if (((rtmp->lv!=NULL)&&(rtmp->lv->invalid==0)&&(rtmp->lv->object==al->object))||((rtmp->gl!=NULL)&&(rtmp->gl->invalid==0)&&(rtmp->gl->object==al->object))) {
 	      /*Don't propagate kills to object being pointed to by live localpointer*/
@@ -267,7 +269,7 @@ struct objectset * dokills(struct heap_state *heap, struct hashtable *ht) {
 	    }
 	    rtmp=rtmp->next;
 	  }
-	} else printf("WEIRDNESS\n");
+	} /*else printf("WEIRDNESS\n");*/
       }
       al=al->next;
     }
