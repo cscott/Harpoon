@@ -2,8 +2,10 @@
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 
-all: design.ps bibnote.ps readnote.ps quads.dvi
-preview: quads-xdvi
+ALLDOCS=design bibnote readnote quads pldi
+
+all: $(ALLDOCS:=.ps)
+preview: pldi-xdvi
 
 # bibtex dependencies
 quads.dvi: harpoon.bib
@@ -34,38 +36,30 @@ readnote.dvi: unread_.bib
 	fi
 
 # latex2html
-html: design.dvi bibnote.dvi quads.dvi
+html: $(ALLDOCS:=.dvi)
 	$(RM) -r html ; mkdir html
-	latex2html -local_icons -dir html/design design
-	latex2html -local_icons -dir html/biblio bibnote
-	latex2html -local_icons -dir html/quads  quads
-	date '+%-d-%b-%Y at %r %Z.' > html/design/TIMESTAMP
-	date '+%-d-%b-%Y at %r %Z.' > html/biblio/TIMESTAMP
-	date '+%-d-%b-%Y at %r %Z.' > html/quads/TIMESTAMP
-html-pdf: html design.pdf bibnote.pdf quads.pdf
-	$(RM) html/design/design.pdf \
-	      html/biblio/bibnote.pdf \
-              html/quads/quads.pdf
-	ln design.pdf html/design
-	ln bibnote.pdf html/biblio 
-	ln quads.pdf html/quads
+	for doc in $(ALLDOCS); do \
+		latex2html -local_icons -dir html/$$doc $$doc; \
+		date '+%-d-%b-%Y at %r %Z.' > html/$$doc/TIMESTAMP; \
+	done
+
+html-pdf: html $(ALLDOCS:=.pdf)
+	-for doc in $(ALLDOCS); do $(RM) html/$$doc/$$doc.pdf; done
+	for doc in $(ALLDOCS); do ln $$doc.pdf html/$$doc; done
 html-install: html-pdf
 	chmod a+r html/*/* ; chmod a+rx html/*
 	ssh $(INSTALLMACHINE) /bin/rm -rf \
-		$(INSTALLDIR)/design \
-		$(INSTALLDIR)/biblio \
-		$(INSTALLDIR)/quads
-	cd html; scp -r design biblio quads \
-		$(INSTALLMACHINE):$(INSTALLDIR)
+		$(foreach doc,$(ALLDOCS),$(INSTALLDIR)/$(doc))
+	cd html; scp -r $(ALLDOCS) $(INSTALLMACHINE):$(INSTALLDIR)
 
 install: html-install
 
+update:
+	cvs update -Pd
+
 clean:
 	$(RM) *.dvi *.log *.aux *.bbl *.blg
-	$(RM) design.ps design.pdf \
-	      bibnote.ps bibnote.pdf \
-	      readnote.ps readnote.pdf \
-	      quads.ps quads.pdf
+	$(RM) $(foreach doc,$(ALLDOCS),$(doc).ps $(doc).pdf)
 	$(RM) harpoon_.bib unread_.bib
 	$(RM) -r html
 
