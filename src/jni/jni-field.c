@@ -8,7 +8,7 @@ void FNI_SetStaticObjectField(JNIEnv *env, jclass clazz,
 			      jfieldID fieldID, jobject value) {
   assert(FNI_NO_EXCEPTIONS(env));
 #ifdef WITH_ROLE_INFER
-  Java_java_lang_RoleInference_fieldassign(env, NULL, NULL, fieldID, value);
+  Java_java_lang_RoleInference_fieldassign(env, NULL, NULL, fieldID->reflectinfo, value);
 #endif
   *((jobject_unwrapped *)(fieldID->offset)) = FNI_UNWRAP(value);
 }
@@ -35,7 +35,7 @@ void FNI_SetObjectField(JNIEnv *env, jobject obj,
 			jfieldID fieldID, jobject value){
   assert(FNI_NO_EXCEPTIONS(env));
 #ifdef WITH_ROLE_INFER
-  Java_java_lang_RoleInference_fieldassign(env, NULL, obj, fieldID, value);
+  Java_java_lang_RoleInference_fieldassign(env, NULL, obj, fieldID->reflectinfo, value);
 #endif
   *((jobject_unwrapped *)(fieldID->offset+(ptroff_t)FNI_UNWRAP(obj))) =
     FNI_UNWRAP(value);
