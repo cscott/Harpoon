@@ -21,7 +21,7 @@ import java.io.InputStream;
  * GJ signatures.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Javap.java,v 1.2 2002-04-10 03:06:09 cananian Exp $
+ * @version $Id: Javap.java,v 1.3 2003-04-09 22:21:59 cananian Exp $
  */
 public abstract class Javap /*extends harpoon.IR.Registration*/ {
     public static final void main(String args[]) {
@@ -227,7 +227,6 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	StringBuffer sb = new StringBuffer("<");
 	int off = 1;
 	boolean first = true;
-	//for (String s=psig.substring(off); s.charAt(0)!='>'; ) {
 	while (psig.charAt(off)!='>') {
 	    int colon = psig.indexOf(':', off);
 	    String name = psig.substring(off, colon);
@@ -238,13 +237,20 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    sb.append(name);
 	    // back to parsing.
 	    boolean firstbound=true;
+	    // note that bounds of
+	    //    ':Ljava/lang/Object/Object;:Ljava/lang/Comparable;'
+	    // is different from (has a different erasure than)
+	    //    '::Ljava/lang/Comparable;'
+	    // [The first is declared as 'extends Object & Comparable'
+	    //  while the second is declared as 'extends Comparable' ]
 	    while (psig.charAt(off)==':') {
 		off++;
-		if (psig.charAt(off)==':') continue; // XXX 1.2 BUG WORKAROUND
+		if (psig.charAt(off)==':') {
+		    // no class type specified.
+		    continue;
+		}
 		OffsetAndString oas = munchTypeSig(psig.substring(off));
 		off += oas.offset;
-		// ignore java.lang.Object.
-		if (oas.string.equals("java.lang.Object")) continue;
 		if (firstbound) { sb.append(" extends "); firstbound=false; }
 		else sb.append(" & ");
 		sb.append(oas.string);
