@@ -6,7 +6,7 @@ CALL_DIR=`pwd`
 source ${SCR_DIR}/check-HARPOON
 source ${SCR_DIR}/applications
 
-APPLICATIONS="water"
+APPLICATIONS="JLex"
 
 if [ ! -d ${CALL_DIR}/execs ]
 then
@@ -19,7 +19,7 @@ echo "Building the with-clustered-heaps runtime";
 
 cd ${HARPOON}/Runtime
 
-configure \
+./configure \
     --with-precise-c --with-gc=conservative \
     --with-thread-model=heavy --disable-shared \
     --with-clustered-heaps --with-statistics

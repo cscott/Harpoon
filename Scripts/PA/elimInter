@@ -17,7 +17,7 @@ harpoon.Main.PAMain $PREANALYSIS_OPT \
     -s --ccs=$levels --wts \
     --mamaps=${MAMAPS_FILE} --ns 1 \
     --output ${BUILD_OUT_DIR} --backend precisec --inline \
-    --details -i \
+    --details \
 $cls
 
 exit $?

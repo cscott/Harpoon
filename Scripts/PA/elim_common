@@ -21,11 +21,12 @@ else
 fi
 
 
-stdPath=$HARPOON/Code/Support/NewThread.jar:$HARPOON/Code/Support/sunthunk.jar:$HARPOON/Code/Support/collections.jar:$HARPOON/Code/classes.zip:.
+stdPath=$HARPOON/Code/Support/AbstractList.jar:$HARPOON/Code/Support/NewThread.jar:$HARPOON/Code/Support/sunthunk.jar:$HARPOON/Code/Support/collections.jar:$HARPOON/Code/classes.zip:.
 
 echo "harpoon.class.path = \""${stdPath}:${dir}"\""
 
-HARPOON_OPTIONS=" -Dharpoon.runtime=2 \
+HARPOON_OPTIONS=" -mx512m -oss100m \
+		  -Dharpoon.runtime=2 \
     	          -Dharpoon.alloc.strategy=niftystats \
     	          -Dharpoon.target.elf=yes \
                   -Dharpoon.class.path=$stdPath:$dir"
