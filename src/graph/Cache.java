@@ -116,16 +116,16 @@ public class Cache extends Node {
 	    }
 	    break;
 	}
-	case Command.GET_NEXT_IMAGE: {
-	    ImageData retID = ids[nextIDToSend];
-	    nextIDToSend++;
-	    if (nextIDToSend >= ids.length)
-		nextIDToSend = 0;
-	    if (retID != null) {
-		right.process(retID);
-	    }
-	    break;
-	}
+// 	case Command.GET_NEXT_IMAGE: {
+//	    ImageData retID = ids[nextIDToSend];
+//	    nextIDToSend++;
+//	    if (nextIDToSend >= ids.length)
+//		nextIDToSend = 0;
+//	    if (retID != null) {
+//		right.process(retID);
+//	    }
+//	    break;
+//	}
 	case Command.NONE: {
 	default: {
 	    if (id!=null) {
