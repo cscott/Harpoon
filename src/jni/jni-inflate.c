@@ -10,6 +10,8 @@
 #include <string.h> /* for memset */
 #ifdef BDW_CONSERVATIVE_GC
 #include "gc.h"
+#elif WITH_PRECISE_GC
+#include "jni-gc.h"
 #endif
 #include "flexthread.h"
 #include <stdlib.h>
@@ -48,7 +50,7 @@ FLEX_MUTEX_DECLARE_STATIC(global_inflate_mutex);
 static void deflate_object(void* obj, void* client_data);
 #elif defined(BDW_CONSERVATIVE_GC)
 static void deflate_object(GC_PTR obj, GC_PTR client_data);
-#elif defined(WITH_PRECISE_GC
+#elif defined(WITH_PRECISE_GC)
 static void deflate_object(jobject_unwrapped obj, ptroff_t client_data);
 #endif
 
