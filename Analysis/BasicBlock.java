@@ -7,11 +7,13 @@ import harpoon.Util.Util;
 import harpoon.Util.IteratorEnumerator;
 import harpoon.Util.WorkSet;
 import harpoon.Util.Worklist;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.HasEdges;
 
 import harpoon.Analysis.DataFlow.ReversePostOrderEnumerator;
 
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Enumeration;
 import java.util.ListIterator;
@@ -42,7 +44,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.3 1999-10-26 16:03:21 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.4 1999-11-24 00:37:00 pnkfelix Exp $
 */
 public class BasicBlock {
     
@@ -61,6 +63,22 @@ public class BasicBlock {
     
     private BasicBlock root;
     private Set leaves;
+    
+    // each block contains a reference to a Map shared between all of
+    // the blocks that it is connected to.  It provides a mapping from
+    // every instr that is contained in these blocks to the BasicBlock
+    // containing that instr. 
+    private Map hceToBB; 
+
+    /** Returns a <code>Map</code> from every
+	<code>HCodeElement</code> that 	is contained in this
+	collection of basic blocks to the <code>BasicBlock</code>
+	containing that <code>HCodeElement</code>. 
+    */
+    public Map getHceToBB() {
+	return Collections.unmodifiableMap(hceToBB);
+    }
+
 
     /** BasicBlock constructor.
 
@@ -134,6 +152,10 @@ public class BasicBlock {
 	     created. 
     */
     public static BasicBlock computeBasicBlocks(HasEdges head) {
+	// maps from every hce 'h' -> BasicBlock 'b' such that 'b'
+	// contains 'h' 
+	HashMap hceToBB = new HashMap();
+
 	// maps HasEdges 'e' -> BasicBlock 'b' starting with 'e'
 	Hashtable h = new Hashtable(); 
 	// stores BasicBlocks to be processed
@@ -144,7 +166,9 @@ public class BasicBlock {
 	}
 	
 	BasicBlock first = new BasicBlock(head);
+	first.hceToBB = hceToBB;
 	h.put(head, first);
+	hceToBB.put(head, first);
 	w.push(first);
 	
 	first.root = first;
@@ -169,6 +193,8 @@ public class BasicBlock {
 			BasicBlock bb = (BasicBlock) h.get(e_n);
 			if (bb == null) {
 			    h.put(e_n, bb=new BasicBlock(e_n));
+			    bb.hceToBB = hceToBB;
+			    hceToBB.put(e_n, bb);
 			    bb.root = first; bb.leaves = first.leaves;
 			    w.push(bb);
 			}
@@ -183,14 +209,17 @@ public class BasicBlock {
 			BasicBlock bb = (BasicBlock) h.get(next);
 			if (bb == null) {
 			    bb = new BasicBlock(next);
+			    bb.hceToBB = hceToBB;
 			    bb.root = first; bb.leaves = first.leaves;
 			    h.put(next, bb);
+			    hceToBB.put(next, bb);
 			    w.push(bb);
 			}
 			addEdge(current, bb);
 			foundEnd = true;
 			
 		    } else { // no join; update our guess
+			hceToBB.put(next, current);
 			last = next;
 		    }
 		} 
