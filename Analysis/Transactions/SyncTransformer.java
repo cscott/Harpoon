@@ -72,7 +72,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.10 2001-01-25 23:57:24 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.11 2001-01-26 00:06:35 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -131,6 +131,8 @@ public class SyncTransformer
     private final HMethod HMwriteFlagA;
     /** flag value */
     private final HField HFflagvalue;
+    /** Set of safe methods. */
+    private final Set safeMethods;
     /** Our version of the codefactory. */
     private final HCodeFactory hcf;
 
@@ -150,7 +152,7 @@ public class SyncTransformer
      *  method set. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
 			   HMethod mainM, Set roots,
-			   final Set safeMethods) {
+			   Set safeMethods) {
 	// hcf should be SSI. our input is SSA...
         super(harpoon.IR.Quads.QuadSSA.codeFactory(hcf), ch, false);
 	// and output is NoSSA
@@ -158,6 +160,7 @@ public class SyncTransformer
 		    .equals(harpoon.IR.Quads.QuadSSI.codename));
 	Util.assert(super.codeFactory().getCodeName()
 		    .equals(harpoon.IR.Quads.QuadRSSx.codename));
+	this.safeMethods = safeMethods;
 	this.HCclass = l.forName("java.lang.Class");
 	this.HCfield = l.forName("java.lang.reflect.Field");
 	String pkg = "harpoon.Runtime.Transactions.";
@@ -223,7 +226,8 @@ public class SyncTransformer
 	    public void clear(HMethod m) { superfactory.clear(m); }
 	    public HCode convert(HMethod m) {
 		if (Modifier.isNative(m.getModifiers()) &&
-		    safeMethods.contains(select(m, ORIGINAL)) &&
+		    SyncTransformer.this.safeMethods
+		    	.contains(select(m, ORIGINAL)) &&
 		    select(select(m, ORIGINAL), WITH_TRANSACTION).equals(m))
 		    // call the original, 'safe' method.
 		    return redirectCode(m);
@@ -400,6 +404,8 @@ public class SyncTransformer
 	    // if in a transaction, call the transaction version &
 	    // deal with possible abort.
 	    if (handlers==null) return;
+	    if (safeMethods.contains(q.method()) && !q.isVirtual())
+		return; // it's safe. (this is an optimization)
 	    Temp[] nparams = new Temp[q.paramsLength()+1];
 	    int i=0;
 	    if (!q.isStatic())
