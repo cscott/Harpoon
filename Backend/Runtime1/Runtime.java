@@ -28,7 +28,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.32 2000-11-14 21:53:29 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.33 2000-11-17 07:26:33 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -132,6 +132,9 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    linker.forName("java.lang.Class"),
 	    linker.forName("java.lang.reflect.Field"),
 	    linker.forName("java.lang.reflect.Method"),
+	    // FNI_ExceptionDescribe uses this
+	    linker.forName("java.lang.Throwable")
+		.getMethod("toString", new HClass[0]),
 
 	    // in java.io implementations
 	    linker.forName("java.io.IOException") 
