@@ -31,7 +31,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.6 1999-11-22 20:59:27 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.7 1999-11-22 21:38:53 bdemsky Exp $
  */
 public class AsyncCode extends harpoon.IR.Quads.QuadNoSSA {
 
@@ -217,7 +217,6 @@ public class AsyncCode extends harpoon.IR.Quads.QuadNoSSA {
 	// this is a tail call, but that's not supported yet,
 	// so we mark it as not a tail call.
 
-	// BCD need exception handler for this CALL!!!
 	curr = new CALL(this.qf, cc, setnextmethod, 
 				  new Temp[] {async, newcont}, null, 
 				  exc, true, false, new Temp[0]);

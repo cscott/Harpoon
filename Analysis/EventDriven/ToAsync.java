@@ -31,7 +31,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.2 1999-11-17 00:15:31 kkz Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.3 1999-11-22 21:38:53 bdemsky Exp $
  */
 public class ToAsync {
     protected final UpdateCodeFactory ucf;
@@ -118,7 +118,7 @@ public class ToAsync {
 						     eb.liveout);
 		    HClass contClass = cb.makeCont();
 		    
-		    // get the transformed version of the method we're callling
+		    // get the transformed version of the method we're calling
 		    HMethod transformed = bm.swop(callee);
 		    if (transformed == null)
 			transformed = (new ToAsync(this.ucf, 
