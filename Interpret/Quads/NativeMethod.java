@@ -9,12 +9,12 @@ import java.util.Hashtable;
  * native method implementations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NativeMethod.java,v 1.1.2.1 1998-12-28 23:43:21 cananian Exp $
+ * @version $Id: NativeMethod.java,v 1.1.2.2 1998-12-30 04:39:40 cananian Exp $
  */
 abstract class NativeMethod  {
     /** The implemented method. */
     abstract HMethod getMethod();
     /** Invoke the method. */
-    abstract Object invoke(StaticState ss, Object[] params, Object closure)
+    abstract Object invoke(StaticState ss, Object[] params)
 	throws InterpretedThrowable;
 }

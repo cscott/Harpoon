@@ -8,7 +8,7 @@ import harpoon.Util.Util;
  * <code>ObjectRef</code> is an object reference in the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectRef.java,v 1.1.2.1 1998-12-28 23:43:21 cananian Exp $
+ * @version $Id: ObjectRef.java,v 1.1.2.2 1998-12-30 04:39:40 cananian Exp $
  */
 class ObjectRef  {
     /** The type of the object. */
@@ -19,12 +19,15 @@ class ObjectRef  {
     final StaticState ss;
     /** A monitor lock. */
     //boolean lock;
+    /** Native method closure. */
+    Object closure;
 
     /** create a new objectref with default field values.
      * @exception InterpretedThrowable
      *            if class initializer throws an exception.  */
     ObjectRef(StaticState ss, HClass type) {
-	this.ss = ss; this.type = type; this.fields = null;//this.lock = false;
+	this.ss = ss; this.type = type; this.fields = null;
+	/*this.lock = false;*/ this.closure = null;
 	// load class into StaticState, if needed.
 	if (!ss.isLoaded(type)) ss.load(type);
 	// then initialize our fields, too
@@ -44,6 +47,9 @@ class ObjectRef  {
     }
     synchronized void lock() { /* FIXME */ }
     synchronized void unlock() { /* FIXME */ }
+
+    Object getClosure() { return closure; }
+    void putClosure(Object cl) { closure = cl; }
 
     protected void finalize() throws Throwable {
 	// finalize the referenced object by evaluating its finalize method.

@@ -12,9 +12,9 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.1 1998-12-28 23:43:21 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.2 1998-12-30 04:39:40 cananian Exp $
  */
-final class StaticState  {
+final class StaticState extends HCLibrary {
     /** which code representation to use. */
     /*final*/ HCodeFactory hcf;
     StaticState(HCodeFactory hcf) {
@@ -35,22 +35,18 @@ final class StaticState  {
     }
     // PUBLIC:
     boolean isLoaded(HClass cls) { return classInfo.get(cls)!=null; }
-    void load(HClass cls) {
-	try {
-	    Util.assert(!isLoaded(cls));
-	    System.err.println("LOADING "+cls);
-	    classInfo.put(cls, new ClassHeader());
-	    HField[] fl = cls.getDeclaredFields();
-	    for (int i=0; i<fl.length; i++)
-		if (fl[i].isStatic())
-		    update(fl[i], ObjectRef.defaultValue(fl[i]));
-	    // execute static initializer.
-	    HMethod hm = cls.getClassInitializer();
-	    if (hm!=null) Method.invoke(this, hm, new Object[0]);
-	    Util.assert(isLoaded(cls));
-	} catch (InterpretedThrowable it) {
-	    throw new Error("Could not load "+cls);
-	}
+    void load(HClass cls) throws InterpretedThrowable {
+	Util.assert(!isLoaded(cls));
+	System.err.println("LOADING "+cls);
+	classInfo.put(cls, new ClassHeader());
+	HField[] fl = cls.getDeclaredFields();
+	for (int i=0; i<fl.length; i++)
+	    if (fl[i].isStatic())
+		update(fl[i], ObjectRef.defaultValue(fl[i]));
+	// execute static initializer.
+	HMethod hm = cls.getClassInitializer();
+	if (hm!=null) Method.invoke(this, hm, new Object[0]);
+	Util.assert(isLoaded(cls));
     }
 
     Object get(HField sf) {
@@ -85,7 +81,9 @@ final class StaticState  {
     String[] stackTrace() {
 	String[] st = new String[callStack.size()];
 	for (int i=0; i<st.length; i++)
-	    st[i] = stack(i).getMethod() + 
+	    st[i] =
+		stack(i).getMethod().getDeclaringClass().getName() + "." +
+		stack(i).getMethod().getName() +
 		"("+stack(i).getSourceFile()+":"+stack(i).getLineNumber()+")";
 	return st;
     }
@@ -103,9 +101,9 @@ final class StaticState  {
 	return obj;
     }
     final String ref2str(ObjectRef str) {
-	HField HFvalue = Support.HCstring.getField("value");
-	HField HFoffset= Support.HCstring.getField("offset");
-	HField HFcount = Support.HCstring.getField("count");
+	HField HFvalue = HCstring.getField("value");
+	HField HFoffset= HCstring.getField("offset");
+	HField HFcount = HCstring.getField("count");
 
 	ArrayRef value = (ArrayRef)str.get(HFvalue);
 	int offset = ((Integer)str.get(HFoffset)).intValue();
@@ -118,12 +116,11 @@ final class StaticState  {
     }
     final ObjectRef makeString(String s)
 	throws InterpretedThrowable {
-	ObjectRef obj = new ObjectRef(this, Support.HCstring);
-	ArrayRef ca=new ArrayRef(this, Support.HCcharA, new int[]{s.length()});
+	ObjectRef obj = new ObjectRef(this, HCstring);
+	ArrayRef ca=new ArrayRef(this, HCcharA, new int[]{s.length()});
 	for (int i=0; i<s.length(); i++)
 	    ca.update(i, new Character(s.charAt(i)));
-	HMethod hm =
-	    Support.HCstring.getConstructor(new HClass[] { Support.HCcharA });
+	HMethod hm = HCstring.getConstructor(new HClass[] { HCcharA });
 	Method.invoke(this, hm, new Object[] { obj, ca } );
 	return obj;
     }
@@ -133,6 +130,20 @@ final class StaticState  {
 	if (obj!=null) return obj;
 	obj = makeString(s);
 	internTable.put(s, obj);
+	return obj;
+    }
+    final ObjectRef makeThrowable(HClass HCex) 
+	throws InterpretedThrowable {
+	ObjectRef obj = new ObjectRef(this, HCex);
+	Method.invoke(this, HCex.getConstructor(new HClass[0]),
+		      new Object[] { obj } );
+	return obj;
+    }
+    final ObjectRef makeThrowable(HClass HCex, String msg)
+	throws InterpretedThrowable {
+	ObjectRef obj = new ObjectRef(this, HCex);
+	Method.invoke(this, HCex.getConstructor(new HClass[] { HCstring }),
+		      new Object[] { obj, makeString(msg) } );
 	return obj;
     }
     // --------------------------------------------------------
@@ -145,10 +156,15 @@ final class StaticState  {
     final NativeMethod findNative(HMethod hm) {
 	return (NativeMethod) nativeRegistry.get(hm);
     }
-    final Object getNativeClosure(HMethod hm) {
-	return nativeClosure.get(hm.getDeclaringClass());
+    final Object getNativeClosure(HClass hc) {
+	return nativeClosure.get(hc);
     }
     final void putNativeClosure(HClass hc, Object cl) {
 	nativeClosure.put(hc, cl);
     }
+    // --------------------------------------------------------
+    // PROFILING SUPPORT.
+    private long count; // instruction count.
+    final synchronized void incrementInstructionCount() { count++; }
+    final synchronized long getInstructionCount() { return count; }
 }
