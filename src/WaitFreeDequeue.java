@@ -1,5 +1,5 @@
-// WaitFreeDequeue.java, created by Dumitru Daniliuc
-// Copyright (C) 2003 Dumitru Daniliuc
+// WaitFreeDequeue.java, created by Dumitru Daniliuc, rewritten by Harvey Jones
+// Copyright (C) 2003 Dumitru Daniliuc, Harvey Jones
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
@@ -11,9 +11,8 @@ package javax.realtime;
  */
 public class WaitFreeDequeue {
 
-    protected Object[] queue = null;
-    protected int queueSize;
-    protected int currentIndex = 0;
+    protected WaitFreeReadQueue readQueue= null;
+    protected WaitFreeWriteQueue writeQueue = null;
     
     protected Thread writerThread = null, readerThread = null;
     protected MemoryArea memArea;
@@ -44,31 +43,15 @@ public class WaitFreeDequeue {
 	throws IllegalArgumentException {
 	writerThread = writer;
 	readerThread = reader;
-	queueSize = maximum;
 	memArea = area;
 	try{
-	    queue=(Object[])area.newArray(java.lang.Object.class, queueSize);
+	    readQueue=new WaitFreeReadQueue(writer, reader, maximum, area, null);
+	    writeQueue=new WaitFreeWriteQueue(writer, reader, maximum, area, null);
 	} catch (Exception e){
 	    System.out.println(e);
 	    System.exit(-1);
 	}
    }
-
-    /** Used to check if the queue is empty.
-     *
-     *  @return True, if the queue is empty. False, if it is not.
-     */
-    private boolean isEmpty() {
-	return (currentIndex == 0);
-    }
-
-    /** Used to check if the queue is full.
-     *
-     *  @return True, if the queue is full. False, if it is not.
-     */
-    private boolean isFull() {
-	return (currentIndex == queueSize - 1);
-    }
 
     /** A synchronized call of the <code>read()</code> method of the
      *  underlying <code>WaitFreeWriteQueue</code>. This call blocks on
@@ -78,16 +61,7 @@ public class WaitFreeDequeue {
      *  @return The <code>java.lang.Object</code> read.
      */
     public synchronized Object blockingRead() {
-	while (isEmpty())
-	    try {
-		Thread.sleep(100);
-	    } catch (Exception e) {};
-	
-	Object temp = queue[0];
-	for (int i = 0; i < currentIndex; i++)
-	    queue[i] = queue[i+1];
-	currentIndex--;
-	return temp;
+	return writeQueue.blockingRead();
     }
 
     /** A synchronized call of the <code>write()</code> method of the
@@ -102,13 +76,7 @@ public class WaitFreeDequeue {
      */
     public synchronized boolean blockingWrite(Object object)
 	throws MemoryScopeException {
-	while (isFull())
-	    try {
-		Thread.sleep(100);
-	    } catch (Exception e) {};
-
-	queue[++currentIndex] = object;
-	return true;
+	return readQueue.blockingWrite(object);
     }
 
     /** If <code>this</code> is full then this call overwrites the
@@ -123,6 +91,7 @@ public class WaitFreeDequeue {
      *  @return True, if an element was overwritten. False, if there
      *          is an empty element into which the write occured.
      */
+    // TODO: Figure out where to force.
     public boolean force(Object object) {
 	if (!isFull()) {
 	    boolean b = false;
@@ -132,7 +101,7 @@ public class WaitFreeDequeue {
 	    return b;
 	}
 	else {
-	    queue[currentIndex] = object;
+	    writeQueue.force(object);
 	    return true;
 	}
     }
@@ -145,14 +114,7 @@ public class WaitFreeDequeue {
      *          <code>this</code> then null is returned.
      */
     public Object nonBlockingRead() {
-	if (isEmpty()) return null;
-	else {
-	    Object temp = queue[0];
-	    for (int i = 0; i < currentIndex; i++)
-		queue[i] = queue[i+1];
-	    currentIndex--;
-	    return temp;
-	}
+	return readQueue.nonBlockingRead();
     }
 
     /** An unsynchronized call of the <code>write()</code> method of the
@@ -168,10 +130,6 @@ public class WaitFreeDequeue {
      */
     public boolean nonBlockingWrite(Object object)
 	throws MemoryScopeException {
-	if (isFull()) return false;
-	else {
-	    queue[++currentIndex] = object;
-	    return true;
-	}
+	return writeQueue.nonBlockingWrite(object);
     }
 }
