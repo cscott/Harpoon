@@ -41,7 +41,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>MemTestMain</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: MemOptMain.java,v 1.4 2002-05-02 22:11:45 salcianu Exp $
+ * @version $Id: MemOptMain.java,v 1.5 2002-06-05 23:23:57 ovy Exp $
  */
 public abstract class MemOptMain {
     
@@ -65,9 +65,6 @@ public abstract class MemOptMain {
 	read_data(args);
 
 	IncompatibilityAnalysis ia = get_ia();
-
-	// debug messages
-	ia.printSomething();
 
 	statistics(ia);
     }
@@ -249,7 +246,7 @@ public abstract class MemOptMain {
 	    Quad q = (Quad) it.next();
 	    HMethod hm = get_method(q);
 
-	    if(!ia.allMethods.contains(hm)) {
+	    if(!ia.allMethods().contains(hm)) {
 		//System.out.println("Warn: " + hm + " not in the ssi cache!");
 		continue;
 	    }
