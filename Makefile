@@ -255,6 +255,19 @@ carDemoReceiverStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
+carDemoTrackerStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
+	@rm -rf $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
 RTJ.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
@@ -324,6 +337,11 @@ jars: clean doc
 	@echo Generating carDemoReceiverStub.jar file...
 	@$(JAR) cfm carDemoReceiverStub.jar src/manifest/carDemoReceiverStub.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > carDemoReceiverStub.jar.TIMESTAMP
+
+	@echo Generating carDemoTrackerStub.jar file...
+	@$(JAR) cfm carDemoTrackerStub.jar src/manifest/carDemoTrackerStub.jar.MF $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > carDemoTrackerStub.jar.TIMESTAMP
+
 
 	@echo Generating ns.jar file...
 	@$(JAR) cfm ns.jar src/manifest/ns.jar.MF $(JDIRS)
