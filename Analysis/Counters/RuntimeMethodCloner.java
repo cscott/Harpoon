@@ -14,9 +14,21 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HMethodMutator;
 import harpoon.ClassFile.Linker;
 import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Qop;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadFactory;
+import harpoon.IR.Quads.QuadSSI;
+import harpoon.Temp.Temp;
 import harpoon.Util.Collections.GenericInvertibleMultiMap;
 import harpoon.Util.Collections.InvertibleMultiMap;
+import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
 import java.util.HashSet;
@@ -32,7 +44,7 @@ import java.util.Set;
  * statistics as we're attempting to report them.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RuntimeMethodCloner.java,v 1.1.2.2 2001-11-03 19:16:14 cananian Exp $
+ * @version $Id: RuntimeMethodCloner.java,v 1.1.2.3 2001-11-15 03:01:18 cananian Exp $
  */
 public class RuntimeMethodCloner extends MethodMutator {
     private static final String classname = "harpoon.Runtime.Counters";
@@ -42,6 +54,8 @@ public class RuntimeMethodCloner extends MethodMutator {
     final Set badboys = new HashSet();
     // the linker.
     final Linker linker;
+    // methods to add a null-check on 'this' to.
+    final Set needsNullCheck = new HashSet();
     
     /** Creates a <code>RuntimeMethodCloner</code>. */
     public RuntimeMethodCloner(final HCodeFactory parent, Linker linker) {
@@ -107,6 +121,30 @@ public class RuntimeMethodCloner extends MethodMutator {
 					    call.dst(), call.src()));
 		// whoo-hoo! on to the next!
 	    }
+	// when we relocate a method here, we make it static.  that
+	// means that analyses can't automatically determine that the
+	// 'this' pointer is non-null.  Insert an explicit test to
+	// inform these methods what's what.
+	if (needsNullCheck.contains(hc.getMethod())) {
+	    Util.assert(!hc.getName().equals(QuadSSI.codename));
+	    HEADER header = (HEADER) hc.getRootElement();
+	    METHOD method = header.method();
+	    QuadFactory qf = method.getFactory();
+	    Temp nulT = new Temp(qf.tempFactory(), "nullconst");
+	    Temp chkT = new Temp(qf.tempFactory(), "nullcheck");
+	    Quad q0 = new CONST(qf, method, nulT, null, HClass.Void);
+	    Quad q1 = new OPER(qf, method, Qop.ACMPEQ, chkT,
+			       new Temp[] { nulT, method.params(0) });
+	    Quad q2 = new CJMP(qf, method, chkT, new Temp[0]);
+	    Quad q3 = new PHI(qf, method, new Temp[0], 2);
+	    Edge e = method.nextEdge(0);
+	    Quad.addEdge((Quad)e.from(), e.which_succ(), q0, 0);
+	    Quad.addEdges(new Quad[] { q0, q1, q2 });
+	    Quad.addEdge(q2, 0, (Quad)e.to(), e.which_pred());
+	    Quad.addEdge(q2, 1, q3, 0);
+	    Quad.addEdge(q3, 0, q3, 1);
+	    // not in SSI form. (in valid SSA/RSSx/NoSSx form, though).
+	}
 	// done!
 	return hc;
     }
@@ -149,14 +187,12 @@ public class RuntimeMethodCloner extends MethodMutator {
 	    HMethod newm = hc.getMutator().addDeclaredMethod(name, desc);
 	    // make it static (and public, just for kicks)
 	    newm.getMutator().addModifiers(Modifier.STATIC|Modifier.PUBLIC);
+	    // methods we've just made static need null-checks added on 'this'
+	    if (!hm.isStatic()) needsNullCheck.add(newm);
 	    // done! add it to the cache.
 	    old2new.put(hm, newm);
 	}
 	return (HMethod) old2new.get(hm);
-    }
-    // mutate
-    private HCode makeCloned(HMethod hm) {
-	return null;
     }
     private static String replace(String s, String oldstr, String newstr) {
 	StringBuffer sb = new StringBuffer();

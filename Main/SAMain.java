@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.180 2001-11-14 23:03:04 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.181 2001-11-15 03:01:13 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -405,7 +405,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    if (Boolean.getBoolean("size.counters") ||
 		Boolean.getBoolean("mzf.counters") ||
 		Boolean.getBoolean("harpoon.sizeopt.bitcounters")) {
- 		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+ 		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
 		hcf = harpoon.Analysis.Counters.CounterFactory
 		    .codeFactory(hcf, linker, mainM);
 		// recompute the hierarchy after transformation.
@@ -434,6 +434,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    // SCCOptimized, so no need to do it again.
 		    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize
 			.codeFactory(hcf);
+ 		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 		hcf = new harpoon.Analysis.SizeOpt.MZFCompressor
 		    (frame, hcf, classHierarchy,
 		     System.getProperty("mzf.profile")).codeFactory();
