@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.70 2002-04-12 05:32:06 cananian Exp $
+# $Id: GNUmakefile,v 1.71 2002-05-01 19:20:54 kkz Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -80,7 +80,7 @@ ifeq (0, ${MAKELEVEL})
 BUILD_IGNORE := $(strip $(shell if [ -f .ignore ]; then cat .ignore; fi))
 
 ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
-		$(patsubst %,egrep -v % |,$(BUILD_IGNORE)) \
+		$(patsubst %,egrep -v "%" |,$(BUILD_IGNORE)) \
 		egrep -v "^[.]/(harpoon|silicon|gnu|(src)?doc|NOTES|bin|jdb)"|\
 		egrep -v "^[.]/(as|java_cup)" | \
 		egrep -v "/doc-files" | \
