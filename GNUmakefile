@@ -2,7 +2,7 @@ JFLAGS=-g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JCC=javac -d .
 JDOC=javadoc
-JDOCFLAGS=-version -author -package
+JDOCFLAGS=-version -author # -package
 JDOCIMAGES=/usr/local/jdk1.1.6/docs/api/images
 
 ALLPKGS = $(shell find . -type d | grep -v CVS | grep -v "^./harpoon" | grep -v "^./doc" | sed -e "s|^[.]/*||")
@@ -12,7 +12,9 @@ all:	java
 
 java:	$(ALLSOURCE)
 #	${JCC} ${JFLAGS} `javamake.sh */*.java`
-	${JCC} ${JFLAGS} ${JFLAGSVERB} `javamake.sh $(ALLSOURCE)` | \
+#	${JCC} ${JFLAGS} ${JFLAGSVERB} `javamake.sh $(ALLSOURCE)` | \
+#		egrep -v '^\[[lc]'
+	${JCC} ${JFLAGS} ${JFLAGSVERB} $(ALLSOURCE) | \
 		egrep -v '^\[[lc]'
 	touch java
 
