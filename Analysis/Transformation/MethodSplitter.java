@@ -33,7 +33,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.7 2000-10-19 19:30:46 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.8 2000-10-19 23:54:29 cananian Exp $
  */
 public abstract class MethodSplitter {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -90,6 +90,8 @@ public abstract class MethodSplitter {
 			    orig.getDeclaringClass()+" because it already "+
 			    "exists");
 	    }
+	    splitM.getMutator().setModifiers(orig.getModifiers());
+	    splitM.getMutator().setSynthetic(orig.isSynthetic());
 	    /* now add this to known versions */
 	    versions.put(Default.pair(source, which), splitM);
 	    split2orig.put(splitM, orig);
