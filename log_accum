@@ -1,7 +1,7 @@
 #! /usr/bin/perl
 # -*-Perl-*-
 #
-#ident	"@(#)ccvs/contrib:$Name:  $:$Id: log_accum,v 1.11 1998-10-18 10:12:45 cananian Exp $"
+#ident	"@(#)ccvs/contrib:$Name:  $:$Id: log_accum,v 1.12 2001-01-21 05:53:01 cananian Exp $"
 #
 # Perl filter to handle the log messages from the checkin of files in
 # a directory.  This script will group the lists of files by log
@@ -71,6 +71,7 @@ sub cleanup_tmpfiles {
     foreach (@files) {
 	unlink $_;
     }
+    unlink $DIFF_FILE . "." . $id;
     unlink $LAST_FILE . "." . $id;
 
     chdir($wd);
