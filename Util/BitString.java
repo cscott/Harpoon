@@ -44,7 +44,15 @@ public final class BitString implements Cloneable, java.io.Serializable {
      * nbits.  Can also be written 1+subscript(nbits-1). */
     bits = new int[subscript(nbits + MASK)];
   }
-  
+
+  /** Returns the first index greater than <code>where</code> in the
+      bit string which is set, or -1 if there is no such index.
+  */
+  public int firstSet(int where) {
+    Util.assert(false);
+    return -1;
+  }
+
   /**
    * Sets all bits.
    */
@@ -341,3 +349,7 @@ public final class BitString implements Cloneable, java.io.Serializable {
 
 }
 
+// set emacs indentation style.
+// Local Variables:
+// c-basic-offset:2
+// End:

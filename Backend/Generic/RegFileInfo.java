@@ -58,7 +58,7 @@ import java.util.Iterator;
     maintained by the hardcoded references.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.20 2000-02-07 19:46:48 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.21 2000-02-08 00:20:20 pnkfelix Exp $ */
 public abstract class RegFileInfo {
     
     /** Common super class for <code>StackOffsetLoc</code> and 
@@ -67,14 +67,16 @@ public abstract class RegFileInfo {
 	multiple inheritance problmes).
     */
     public interface CommonLoc {
-	/** Checks if <code>this</code> is a particular
-	    <code>KIND</code> of Loc.
+	/** Returns the <code>KIND</code> of Loc <code>this</code> is.
 	    <BR> <B>effects:</B> 
-	         If <code>kind</code> matches a particular kind of
-		 Loc that <code>this</code> is, returns True.  Else
-		 returns False.
+	         If <code>this</code> is a
+		 <code>StackOffsetLoc</code>, returns
+		 <code>StackOffsetLoc.KIND</code> 
+		 Else <code>this</code> implicitly is a
+		 <code>MachineRegLoc</code>, and returns
+		 <code>MachineRegLoc.KIND</code>. 
 	*/
-	boolean isKind(int kind);
+	int kind();
     }
     
     /** Represents Stack Offset <code>Temp</code>s. */
