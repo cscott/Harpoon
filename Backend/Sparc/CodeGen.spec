@@ -54,28 +54,32 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.18 1999-12-01 05:19:02 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.19 2000-01-02 21:28:49 andyb Exp $
  */
 %%
     private Instr root;
     private Instr last;
     private InstrFactory instrFactory;
     private final RegFileInfo regfile;
+    private final TempBuilder tb;
 
     // short variable names for commonly used register temps
-    private Temp r0, r1, r8, r9, r10, r11;
+    private Temp r0, r1, r8, r9, r10, r11, SP, FP;
 
     private Map codeGenTempMap;
 
     public CodeGen(Frame frame) {
         super(frame);
         this.regfile = (RegFileInfo) frame.getRegFileInfo();
+        this.tb = (TempBuilder) frame.getTempBuilder();
         r0 = regfile.getRegister(0);
         r1 = regfile.getRegister(1);
         r8 = regfile.getRegister(8);
         r9 = regfile.getRegister(9);
         r10 = regfile.getRegister(10);
         r11 = regfile.getRegister(11);
+        SP = regfile.SP();
+        FP = regfile.FP();
     }
 
     private Instr emit(Instr i) {
@@ -167,7 +171,7 @@ import java.util.Set;
     private Temp makeTemp(Typed ROOT, Temp orig, TempFactory tf) {
         Temp newTemp = (Temp) codeGenTempMap.get(orig);    
         if (newTemp == null) {
-            newTemp = frame.getTempBuilder().makeTemp(ROOT, tf);
+            newTemp = tb.makeTemp(ROOT, tf);
             codeGenTempMap.put(orig, newTemp);
         }
         return newTemp;
@@ -705,8 +709,11 @@ BINOP(CMPGT, e1, e2) = r
     emitLABEL (ROOT, templabel + ":", templabel);
 }%
 
-/* AAA - to do */
-CALL(retval, retex, func, arglist, handler) %pred %( !ROOT.isTailCall )% %{
+CALL(retval, retex, NAME(func), arglist, handler) 
+%pred %( !ROOT.isTailCall )% 
+%{
+    /* AAA - Move paramaters into place, et al. */
+
     emitDIRECTIVE(ROOT, "\t! coming soon: CALL support\n");
 }%
 
@@ -838,21 +845,6 @@ JUMP(e) %{
     emitDELAYSLOT (ROOT);
 }%
 
-/* AAA - need to fix these.
-         how to do target labels for non-label destinations?
-
-JUMP(BINOP(ADD, e1, e2)) %{
-    emit (ROOT, "jmpl `s0+`s1, %g0\n", null, new Temp[] { e1, e2 });
-    emitDELAYSLOT (ROOT);
-}%
-
-JUMP(e1) %{
-    emit (ROOT, "jmpl `s0, %g0\n", null, new Temp[] { e1 });
-    emitDELAYSLOT (ROOT);
-}%
-
-*/
-
 LABEL(l) %{
     emitLABEL (ROOT, l.toString()+":\n", ((LABEL) ROOT).label);
 }%
@@ -893,8 +885,45 @@ MEM<s:8,u:8,s:16,u:16,i,l,f,p,d>(e) = r %{
 }%
 
 METHOD(params) %{
+    int loc = 0;
     emitENTRY(ROOT);
-    /* AAA - move params into right place */
+
+    // skip param[0],the explicit 'exceptional return address'
+    for (int i = 1; i < params.length; i++) {
+        if (tb.isTwoWord(params[i])) {
+            if (loc < 6) { // first half in register
+                emit (ROOT, "mov `s0, `d0h\n",
+                            new Temp[] { params[i] },
+                            new Temp[] { regfile.getRegister(24+loc) });
+            } else { // on stack
+                emit (ROOT, "ld [`s0 + "+4*(loc-6)+92+"], `d0h\n",
+                            new Temp[] { params[i] },
+                            new Temp[] { SP });
+            }
+
+            if (loc < 5) { // second half in register
+                emit (ROOT, "mov `s0, `d0l\n",
+                            new Temp[] { params[i] },
+                            new Temp[] { regfile.getRegister(25+loc) });
+            } else { // on stack
+                emit (ROOT, "ld [`s0 + "+4*(loc-6)+92+"], `d0l\n",
+                            new Temp[] { params[i] },
+                            new Temp[] { SP });
+            }
+            loc += 2;
+        } else {
+            if (loc < 6) { // in register
+                emit (ROOT, "mov `s0, `d0\n", 
+                            new Temp[] { params[i] }, 
+                            new Temp[] { regfile.getRegister(24+loc) });
+            } else { // on stack
+                emitMEM (ROOT, "ld [`s0 + "+4*(loc-6)+92+"], `d0\n",
+                               new Temp[] { params[i] }, 
+                               new Temp[] { SP });
+            }
+            loc++;
+        }
+    }
 }%
 
 // st* rs2, [ rs0 + rs1 ]
@@ -976,7 +1005,20 @@ NATIVECALL(retval, func, arglist) %{
 }%    
 
 RETURN(val) %{
-    /* AAA - put return value in right place */
+    // Assume for now that this is non-leaf.
+    // procFixup will need to change these to %o0 and %o1 if it is leaf...
+    if (tb.isTwoWord(val)) {
+        emit (ROOT, "mov `s0h, `d0\n", 
+                    new Temp[] { regfile.getRegister(24) }, /* %i0 */
+                    new Temp[] { val });
+        emit (ROOT, "mov `s0l, `d0\n",
+                    new Temp[] { regfile.getRegister(25) }, /* %i1 */
+                    new Temp[] { val });
+    } else { 
+        emit (ROOT, "mov `s0, `d0\n",
+                    new Temp[] { regfile.getRegister(24) }, /* %i0 */
+                    new Temp[] { val });
+    }
     emitEXIT(ROOT);
 }%
 
@@ -1031,7 +1073,15 @@ TEMP<p,i,f,l,d>(id) = i %{
 }%
 
 THROW(val, handler) %{
-    /* AAA - lookup destination here */
+    // again, assume non-leaf for now - might have to change registers
+    // in procFixup
+    emit (ROOT, "mov `s0, `d0\n", 
+                new Temp[] { regfile.getRegister(24) }, /* %i0 */
+                new Temp[] { val });
+    emit (ROOT, "call _lookup\n",
+                new Temp[] { }, /* AAA - need clobbers list */
+                new Temp[] { }, /* AAA - need uses list */
+                true, null);
     emitEXIT (ROOT);
 }%
 
