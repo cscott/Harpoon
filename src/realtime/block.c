@@ -4,7 +4,8 @@
 
 #include "block.h"
 
-struct Block* Block_new(void* superBlockTag, size_t size) {
+inline struct Block* Block_new(void* superBlockTag, 
+			       size_t size) {
   struct Block* bl = (struct Block*)
 #ifdef BDW_CONSERVATIVE_GC
     GC_malloc_uncollectable
@@ -28,31 +29,25 @@ struct Block* Block_new(void* superBlockTag, size_t size) {
   (bl->end) = (bl->begin) + size;
   (bl->superBlockTag) = superBlockTag;
   (bl->next) = (bl->prev) = NULL;
-  flex_mutex_init(&(bl->lock));
   return bl;
 }
 
-void* Block_alloc(struct Block* block, size_t size) {
+inline void* Block_alloc(struct Block* block, size_t size) {
+  void* ptr;
 #ifdef DEBUG
   printf("Block_alloc(%08x, %d)\n", block, size);
 #endif
-  flex_mutex_lock(&(block->lock));
-  if ((block->free + size) > block->end) {
-    flex_mutex_unlock(&(block->lock));
-    return NULL; /* Block allocation failed for lack of space. */
-  } else {
-    void* ptr = block->free;
-    block->free += size;
-    flex_mutex_unlock(&(block->lock));
-    return ptr;
-  }
+  return ((ptr = (void*)exchange_and_add((void*)(&(block->free)), size)) 
+	  > block->end)?NULL:ptr;
+  /* Returns NULL in case the allocation failed - all subsequent
+     allocations will fail as well..., and block->free will be
+     trashed. */
 }
 
-void Block_free(struct Block* block) {
+inline void Block_free(struct Block* block) {
 #ifdef DEBUG
   printf("Block_free(%08x)\n", block);
 #endif
-  flex_mutex_destroy(&(block->lock));
 #ifdef BDW_CONSERVATIVE_GC
   GC_free(block->begin);
   GC_free(block);

@@ -5,8 +5,8 @@
 #include "heapMemory.h"
 
 inline void HeapMemory_init() {
-  heapPtrs = ObjectList_new(HEAP_SIZE);
-  heapRefs = ObjectList_new(HEAP_REFS);
+/*    heapPtrs = ObjectList_new(HEAP_SIZE); */
+/*    heapRefs = ObjectList_new(HEAP_REFS); */
 }
 
 inline void* HeapMemory_alloc(size_t size) {
@@ -17,7 +17,7 @@ inline void* HeapMemory_alloc(size_t size) {
     malloc
 #endif
     (size);
-  HeapMemory_register(result);
+/*    HeapMemory_register(result); */
   return result;
 }
 
@@ -30,7 +30,8 @@ inline void HeapMemory_registerRef(void** heapRef) {
 }
 
 inline void HeapMemory_free(void* ptr) {
-  ObjectList_delete(heapPtrs, ptr);  /* Register as finalizer? */
+/*    ObjectList_delete(heapPtrs, ptr);  */
+/* Register as finalizer? */ 
 /*    GC_free(ptr); */
 }
 
@@ -40,11 +41,11 @@ inline int HeapMemory_contains(void* ptr) {
 
 inline void HeapMemory_freeAll() {
 #ifdef BDW_CONSERVATIVE_GC
-  GC_free(heapPtrs);
-  GC_free(heapRefs);
+/*    GC_free(heapPtrs); */
+/*    GC_free(heapRefs); */
 #else
-  free(heapPtrs);
-  free(heapRefs);
+/*    free(heapPtrs); */
+/*    free(heapRefs); */
 #endif
   /* At end of program - register w/pthreads... */
 }

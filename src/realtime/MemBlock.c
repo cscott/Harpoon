@@ -47,7 +47,8 @@ struct MemBlock* MemBlock_new(JNIEnv* env,
   return mb;
 }
 
-inline struct inflated_oobj* getInflatedObject(JNIEnv* env, jobject obj) {
+inline struct inflated_oobj* getInflatedObject(JNIEnv* env, 
+					       jobject obj) {
 #ifdef DEBUG
   printf("getInflatedObject(%08x, %08x)\n", env, obj);
 #endif
@@ -60,7 +61,8 @@ inline struct inflated_oobj* getInflatedObject(JNIEnv* env, jobject obj) {
   return FNI_UNWRAP(obj)->hashunion.inflated;
 }
 
-inline int IsNoHeapRealtimeThread(JNIEnv *env, jobject realtimeThread) {
+inline int IsNoHeapRealtimeThread(JNIEnv *env, 
+				  jobject realtimeThread) {
 #ifdef DEBUG  
   printf("IsNoHeapRealtimeThread(%08x, %08x)\n", env, realtimeThread);
   checkException(env);
@@ -109,7 +111,8 @@ inline struct MemBlock* HeapMemory_RThread_MemBlock_new() {
   return memBlock;
 }
 
-inline void* MemBlock_alloc(struct MemBlock* memBlock, size_t size) {
+inline void* MemBlock_alloc(struct MemBlock* memBlock, 
+			    size_t size) {
 #ifdef DEBUG
   printf("MemBlock_alloc(%08x, %d)\n", (int)memBlock, size);
 #endif
@@ -151,7 +154,7 @@ inline struct MemBlock* MemBlock_prevMemBlock(struct MemBlock* memBlock) {
 }
 
 void* ScopedPhysical_RThread_MemBlock_alloc(struct MemBlock* mem, 
-						   size_t size) {
+					    size_t size) {
 #ifdef DEBUG
   printf("ScopedPhysical_RThread_MemBlock_alloc(%d)\n", size);
 #endif
@@ -239,9 +242,10 @@ inline Allocator ImmortalPhysical_NoHeapRThread_MemBlock_allocator(jobject memor
 }
 
 
-void* CTScope_RThread_MemBlock_alloc(struct MemBlock* mem, size_t size) {
-  void* ptr;
+void* CTScope_RThread_MemBlock_alloc(struct MemBlock* mem, 
+				     size_t size) {
 #ifdef DEBUG
+  void* ptr;
   printf("CTScope_RThread_MemBlock_alloc(%08x, %d)\n", mem, size);
   printf("  current usage: %d of %d\n", 
 	 (size_t)((mem->block->free)-(mem->block->begin)),
@@ -251,18 +255,18 @@ void* CTScope_RThread_MemBlock_alloc(struct MemBlock* mem, size_t size) {
 	 mem->block->free,
 	 mem->block->end);
   printf("  retrieving memBlock from %08x\n", mem->block);
-#endif
   ptr = Block_alloc(mem->block, size);
-#ifdef DEBUG
   printf("  begin: %08x, free: %08x, end: %08x\n", 
 	 mem->block->begin,
 	 mem->block->free,
 	 mem->block->end);
-#endif
   if (!ptr) {
     assert("Out of memory!!!");
   }
   return ptr;
+#else
+  return Block_alloc(mem->block, size);
+#endif
 }
 
 void  CTScope_RThread_MemBlock_free(struct MemBlock* mem) {
@@ -285,7 +289,8 @@ inline Allocator CTScope_RThread_MemBlock_allocator(jobject memoryArea) {
   return NULL;
 }
 
-void* VTScope_RThread_MemBlock_alloc(struct MemBlock* mem, size_t size) {
+void* VTScope_RThread_MemBlock_alloc(struct MemBlock* mem, 
+				     size_t size) {
 #ifdef DEBUG
   printf("VTScope_RThread_MemBlock_alloc(%d)\n", (int)size);
 #endif
@@ -316,7 +321,8 @@ inline Allocator VTScope_RThread_MemBlock_allocator(jobject memoryArea) {
   return ListAllocator_new(0);
 }
 
-void* LTScope_RThread_MemBlock_alloc(struct MemBlock* mem, size_t size) {
+void* LTScope_RThread_MemBlock_alloc(struct MemBlock* mem, 
+				     size_t size) {
 #ifdef DEBUG
   printf("LTScope_RThread_MemBlock_alloc(%d)\n", size);
 #endif
@@ -337,7 +343,8 @@ inline Allocator LTScope_RThread_MemBlock_allocator(jobject memoryArea) {
   return NULL;
 }
 
-void* CTScope_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem, size_t size) {
+void* CTScope_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem, 
+					   size_t size) {
 #ifdef DEBUG
   printf("CTScope_NoHeapRThread_MemBlock_alloc(%d)\n", size);
 #endif
@@ -351,14 +358,15 @@ void  CTScope_NoHeapRThread_MemBlock_free(struct MemBlock* mem) {
   Scope_RThread_MemBlock_free(mem);
 }
 
-inline  Allocator CTScope_NoHeapRThread_MemBlock_allocator(jobject memoryArea) {
+inline Allocator CTScope_NoHeapRThread_MemBlock_allocator(jobject memoryArea) {
 #ifdef DEBUG
   printf("CTScope_NoHeapRThread_MemBlock_allocator()\n");
 #endif
   return NULL;
 }
 
-void* VTScope_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem, size_t size) {
+void* VTScope_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem, 
+					   size_t size) {
 #ifdef DEBUG
   printf("VTScope_NoHeapRThread_MemBlock_alloc(%d)\n", size);
 #endif
@@ -379,7 +387,8 @@ inline Allocator VTScope_NoHeapRThread_MemBlock_allocator(jobject memoryArea) {
   return NULL;
 }
 
-void* LTScope_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem, size_t size) {
+void* LTScope_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem, 
+					   size_t size) {
 #ifdef DEBUG
   printf("LTScope_NoHeapRThread_MemBlock_alloc(%d)\n", size);
 #endif
@@ -401,7 +410,8 @@ inline Allocator LTScope_NoHeapRThread_MemBlock_allocator(jobject memoryArea) {
 }
 
 
-inline void* Scope_RThread_MemBlock_alloc(struct MemBlock* mem, size_t size) {
+inline void* Scope_RThread_MemBlock_alloc(struct MemBlock* mem, 
+						size_t size) {
 #ifdef DEBUG
   printf("Scope_RThread_MemBlock_alloc(%d)\n", size);
 #endif
@@ -422,7 +432,7 @@ inline Allocator Scope_RThread_MemBlock_allocator(jobject memoryArea) {
 }
 
 inline void* Scope_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem, 
-					 size_t size) {
+						size_t size) {
 #ifdef DEBUG
   printf("Scope_NoHeapRThread_MemBlock_alloc(%d)\n", size);
 #endif
@@ -442,7 +452,8 @@ inline Allocator Scope_NoHeapRThread_MemBlock_allocator(jobject memoryArea) {
   return NULL;
 }
 
-void* Heap_RThread_MemBlock_alloc(struct MemBlock* mem, size_t size) {
+void* Heap_RThread_MemBlock_alloc(struct MemBlock* mem, 
+				  size_t size) {
 #ifdef DEBUG
   printf("Heap_RThread_MemBlock_alloc(%d)\n", size);
 #endif
@@ -456,14 +467,15 @@ void  Heap_RThread_MemBlock_free(struct MemBlock* mem) {
   HeapMemory_freeAll();
 }
 
-inline  Allocator Heap_RThread_MemBlock_allocator(jobject memoryArea) {
+inline Allocator Heap_RThread_MemBlock_allocator(jobject memoryArea) {
 #ifdef DEBUG
   printf("Heap_RThread_MemBlock_allocator()\n");
 #endif
   return NULL;
 }
 
-void* Immortal_RThread_MemBlock_alloc(struct MemBlock* mem, size_t size) {
+void* Immortal_RThread_MemBlock_alloc(struct MemBlock* mem, 
+				      size_t size) {
 #ifdef DEBUG
   printf("Immortal_RThread_MemBlock_alloc(%d)\n", size);
 #endif
@@ -476,14 +488,15 @@ void  Immortal_RThread_MemBlock_free(struct MemBlock* mem) {
 #endif
 }
 
-inline  Allocator Immortal_RThread_MemBlock_allocator(jobject memoryArea) {
+inline Allocator Immortal_RThread_MemBlock_allocator(jobject memoryArea) {
 #ifdef DEBUG
   printf("Immortal_RThread_MemBlock_allocator()\n");
 #endif
   return NULL;
 }
 
-void* Immortal_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem, size_t size) {
+void* Immortal_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem, 
+					    size_t size) {
 #ifdef DEBUG
   printf("Immortal_NoHeapRThread_MemBlock_alloc(%d)\n", size);
 #endif
