@@ -28,7 +28,7 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  * <code>Util</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Util.java,v 1.6 2002-05-11 14:58:04 ovy Exp $
+ * @version $Id: Util.java,v 1.7 2002-05-11 15:23:31 salcianu Exp $
  */
 public abstract class Util {
 
@@ -84,6 +84,18 @@ public abstract class Util {
 	// caller-callee interaction).
 	SCCTopSortedGraph method_sccs = 
 	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(entry, nav));
+
+	if(DEBUG) {
+	    System.out.println("SETS OF MUTUALLY RECURSIVE METHODS");
+	    int count = 0;
+	    for(SCComponent scc = method_sccs.getLast(); scc != null;
+		scc = scc.prevTopSort()) {
+		count++;
+		harpoon.Util.Util.print_collection
+		    (scc.nodeSet(), "SCC " + count);
+	    }
+	    System.out.println();
+	}
 
 	Set reached_from_rec = new HashSet();
 
