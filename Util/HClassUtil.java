@@ -9,7 +9,7 @@ import harpoon.ClassFile.*;
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.6 1998-10-11 02:37:58 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.6.2.1 1998-12-03 04:55:45 marinov Exp $
  */
 
 public abstract class HClassUtil  {
@@ -59,7 +59,7 @@ public abstract class HClassUtil  {
     public static final HClass commonSuper(HClass a, HClass b) {
 	HClass[] A = parents(a);
 	HClass[] B = parents(b);
-	Util.assert(A[0]==A[0]); // should be java.lang.Object.
+	Util.assert(A[0]==B[0]); // should be java.lang.Object.
 	int i;
 	for(i=1; i<A.length && i<B.length; i++)
 	    if (A[i] != B[i]) break;

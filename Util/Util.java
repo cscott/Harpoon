@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.4 1998-12-01 11:08:24 cananian Exp $
+ * @version $Id: Util.java,v 1.12.2.5 1998-12-03 04:55:45 marinov Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -155,54 +155,55 @@ public abstract class Util {
     8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8 /* 256 */
   };
   static { assert(bytemsb.length==0x100); }
-  /** Lowest bit set in a byte. */
-  static final byte bytelsb[] = {
-    0, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 5, 1, 2, 1, 3, 1, 2, 1,
-    4, 1, 2, 1, 3, 1, 2, 1, 6, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
-    5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 7, 1, 2, 1, 3, 1, 2, 1,
-    4, 1, 2, 1, 3, 1, 2, 1, 5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
-    6, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 5, 1, 2, 1, 3, 1, 2, 1,
-    4, 1, 2, 1, 3, 1, 2, 1, 8, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
-    5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 6, 1, 2, 1, 3, 1, 2, 1,
-    4, 1, 2, 1, 3, 1, 2, 1, 5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
-    7, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 5, 1, 2, 1, 3, 1, 2, 1,
-    4, 1, 2, 1, 3, 1, 2, 1, 6, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
-    5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1  };
-  static { assert(bytelsb.length==0x100); }
-
-  /** Find first set (least significant bit).
-   *  @return the first bit set in the argument.  
-   *          <code>ffs(0)==0</code> and <code>ffs(1)==1</code>. */
-  public static final int ffs(int v) {
-    if ( (v & 0x0000FFFF) != 0)
-      if ( (v & 0x000000FF) != 0)
-	return bytelsb[v&0xFF];
-      else
-	return 8 + bytelsb[(v>>8)&0xFF];
-    else
-      if ( (v & 0x00FFFFFF) != 0)
-	return 16 + bytelsb[(v>>16)&0xFF];
-      else
-	return 24 + bytelsb[(v>>24)&0xFF];
-  }
-  /** Find first set (least significant bit).
-   *  @return the first bit set in the argument.  
-   *          <code>ffs(0)==0</code> and <code>ffs(1)==1</code>. */
-  public static final int ffs(long v) {
-    if ( (v & 0xFFFFFFFFL) != 0) 
-      return ffs( (int) (v & 0xFFFFFFFFL) );
-    else
-      return 32 + ffs( (int) ( v >> 32 ) );
-  }
+  ///** Lowest bit set in a byte. */
+  //static final byte bytelsb[] = {
+  //  0, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 5, 1, 2, 1, 3, 1, 2, 1,
+  //  4, 1, 2, 1, 3, 1, 2, 1, 6, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+  //  5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 7, 1, 2, 1, 3, 1, 2, 1,
+  //  4, 1, 2, 1, 3, 1, 2, 1, 5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+  //  6, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 5, 1, 2, 1, 3, 1, 2, 1,
+  //  4, 1, 2, 1, 3, 1, 2, 1, 8, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+  //  5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 6, 1, 2, 1, 3, 1, 2, 1,
+  //  4, 1, 2, 1, 3, 1, 2, 1, 5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+  //  7, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 5, 1, 2, 1, 3, 1, 2, 1,
+  //  4, 1, 2, 1, 3, 1, 2, 1, 6, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+  //  5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1  };
+  //static { assert(bytelsb.length==0x100); }
+  //
+  //
+  ///** Find first set (least significant bit).
+  // *  @return the first bit set in the argument.  
+  // *          <code>ffs(0)==0</code> and <code>ffs(1)==1</code>. */
+  //public static final int ffs(int v) {
+  //  if ( (v & 0x0000FFFF) != 0)
+  //    if ( (v & 0x000000FF) != 0)
+  //      return bytelsb[v&0xFF];
+  //    else
+  //      return 8 + bytelsb[(v>>8)&0xFF];
+  //  else
+  //    if ( (v & 0x00FFFFFF) != 0)
+  //      return 16 + bytelsb[(v>>16)&0xFF];
+  //    else
+  //      return 24 + bytelsb[(v>>24)&0xFF];
+  //}
+  ///** Find first set (least significant bit).
+  // *  @return the first bit set in the argument.  
+  // *          <code>ffs(0)==0</code> and <code>ffs(1)==1</code>. */
+  //public static final int ffs(long v) {
+  //  if ( (v & 0xFFFFFFFFL) != 0) 
+  //    return ffs( (int) (v & 0xFFFFFFFFL) );
+  //  else
+  //    return 32 + ffs( (int) ( v >> 32 ) );
+  //}
   /** Find last set (most significant bit).
    *  @return the last bit set in the argument.
    *          <code>fls(0)==0</code> and <code>fls(1)==1</code>. */
   public static final int fls(int v) {
     if ( (v & 0xFFFF0000) != 0)
       if ( (v & 0xFF000000) != 0)
-	return 24 + bytemsb[v>>24];
+        return 24 + bytemsb[v>>24];
       else
-	return 16 + bytemsb[v>>16];
+  	  return 16 + bytemsb[v>>16];
     if ( (v & 0x0000FF00) != 0)
       return 8 + bytemsb[v>>8];
     else
