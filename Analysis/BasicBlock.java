@@ -64,7 +64,7 @@ import java.util.Collection;
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BasicBlock.java,v 1.5 2002-08-30 22:37:12 cananian Exp $ */
+ * @version $Id: BasicBlock.java,v 1.6 2004-01-30 20:09:37 cananian Exp $ */
 public class BasicBlock<HCE extends HCodeElement>
     implements BasicBlockInterf<HCE,BasicBlock<HCE>>, java.io.Serializable {
     
@@ -145,23 +145,6 @@ public class BasicBlock<HCE extends HCodeElement>
 	@see BasicBlock#prevSet
     */
     public Enumeration<BasicBlock<HCE>> next() { return new IteratorEnumerator<BasicBlock<HCE>>(succ_bb.iterator()); }
-
-    /** Returns all the predecessors of <code>this</code> basic
-	block. 
-	@deprecated Use prevSet() instead
-	@see BasicBlock#prevSet
-    */
-    public BasicBlock<HCE>[] getPrev() {
-	return pred_bb.toArray(new BasicBlock<HCE>[pred_bb.size()]);
-    }
-
-    /** Returns all the successors of <code>this</code> basic block. 
-	@deprecated Use nextSet() instead
-	@see BasicBlock#nextSet
-    */
-    public BasicBlock<HCE>[] getNext() {
-	return succ_bb.toArray(new BasicBlock<HCE>[succ_bb.size()]);
-    }
 
     /** Returns all the predecessors of <code>this</code>. 
 	<BR> <B>effects:</B> returns a <code>Set</code> of
