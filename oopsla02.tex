@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.3 2002-03-22 01:32:25 cananian Exp $
+% $Id: oopsla02.tex,v 1.4 2002-03-22 05:02:20 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -27,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.3 $ $}{$ $Revision: 1.3 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.4 $ $}{$ $Revision: 1.4 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -67,13 +67,13 @@ within each object and the header information used by the
 run-time system:
 \begin{itemize}
 \item {\bf Field Reduction:} 
-Our a flow-sensitive, interprocedural value flow
+Our a flow-sensitive, interprocedural bitwidth analysis
 analysis computes the range of values that the program
 may assign to each field. The compiler then transforms the program
 to reduce the size of the field to the smallest size 
 capable of storing that range of values. 
 \item {\bf Constant Field Elimination:} 
-If the value flow analysis finds that field always holds
+If the bitwidth analysis finds that field always holds
 the same constant value, the compiler eliminates the field. 
 It removes each write to the field, and replaces each read
 with the constant value.
@@ -143,167 +143,105 @@ of our transformations.
 \end{itemize}
 
 \section{Example}
-Figure \ref{fig:jess-classes} presents an example that illustrates the
-kinds of application code where our transformations can optimize space
-utilization.  The code presented is taken from the SPECjvm98 {\tt
-  \_202\_jess} benchmark, which is a rule-based expert system shell
-written at Sandia National Laboratories.  The class presented is {\tt
-  jess.Value}, which implements a tagged-union type, and {\tt
-  jess.RU}, which defines the tag constants used.  Some slight
-modifications have been made for clarity and ease of exposition.
+
+We next present several examples that illustrate the kinds of 
+analyses and transformations that our compiler performs.
+
+\subsection{Field Reduction and Constant Field Elimination}
+
+Figure~\ref{fig:value} presents the {\tt Value} class, which is 
+a wrapper around either an {\tt Integer} object or a {\tt Float}
+object. The {\tt type} field indicates which kind of object
+is stored in the {\tt value} field of the class, 
+which essentially implements a tagged 
+union.\footnote{This class is a simplfied version of similar
+classes that appear in some of our benchmarks.} 
+The class also maintains the {\tt positive} field, which is
+{\tt 1} if the wrapped number is positive and {\tt 0} otherwise. 
+
+Our bitwidth analysis uses an interprocedural
+value-flow algorithm to compute upper and lower bounds for the
+values that can appear in each variable. This analysis tracks
+the flow of values across procedure boundaries via parameters,
+into and out of the heap via instance variables of classes, and through
+intermediate temporaries and local variables in the program.
+It also reasons about the semantics of arithmetic operators such
+as {\tt +} and {\tt *} to obtain bounds for the values computed
+by arithmetic expressions. 
+This analysis discovers the following facts about 
+how the program uses this class: 1) the {\tt integerType} 
+field always has the value {\tt 0}, 2) the {\tt floatType} 
+field always has the value {\tt 1}, 3) the {\tt type} 
+field always has a value between {\tt 0} and {\tt 1} (inclusive),
+and 4) the {\tt positive} field always has a value between 
+{\tt 0} and {\tt 1} (also inclusive).
 
 \begin{figure}
-\begin{samplecode}
-public final class Value \{\\
-\>private final int NUM\_TYPES =\\
-\>\>\>\>RU.INTEGER | RU.FLOAT;\\
-\>private int FACT\_TYPES =\\
-\>\>\>\>RU.FACT\_ID | NUM\_TYPES;\\
-\>\ldots\\
-\\
-\>private int            \_type;\\
-\>private int            intval;\\
-\>private double       floatval;\\
-\>private Object      Objectval;\\
-\\
-\>public Value(Object o, int type) \{\\
-\>\>if (type != RU.EXTERNAL\_ADDRESS)\\
-\>\>\>throw new ReteException();\\
-\>\>\_type = type;\\
-\>\>Objectval = o;\\
-\>\}\\
-\\
-\>public int FactIDValue() \{\\
-\>\>if ((\_type {\&} FACT\_TYPES) != 0)\\
-\>\>\>return intval;\\
-\>\>throw new ReteException();\\
-\>\}\\
-\>\ldots\\
-\}\\
-\\
-public class RU \{\\
-\>final public static int NONE             =     0;\\
-\>final public static int ATOM             =     1;\\
-\>final public static int STRING           =     2;\\
-\>final public static int INTEGER          =     4;\\
-\>\ldots\\
-\>final public static int MULTISLOT        = 32768;\\
-\}\\
-\end{samplecode}
-\caption{Portions of the {\tt jess.Value} and {\tt jess.RU} classes.}
-\label{fig:jess-classes}
+\begin{verbatim}
+public class Value { 
+  int integerType = 0;
+  int floatType = 1;
+  int type;
+  int positive;
+  Object value;
+  void setInteger(Integer i) { 
+    type = integerType;
+    value = i;
+    if (i.intValue() > 0) positive = 0;
+    else positive = 1;
+  }
+  void setFloat(Float f) { 
+    type = floatType;
+    value = f;
+    if (f.floatValue() > 0.0) positive = 0;
+    else positive = 1;
+  }
+  void setValue(int t, int p, Object v) { 
+    type = t;
+    positive = p;
+    value = v;
+  }
+}
+
+public class main { 
+  public static void main() { 
+    Value v = new Value();
+    Integer i = new Integer(5);
+    v.setValue(v.integerType, 1, i);
+  }
+}
+\end{verbatim}
+\caption{\label{fig:value} Value Class}
 \end{figure}
 
-\subsection{Small Integer Types in the Example}
-\newcommand{\tyf}{\texttt{\_type}\xspace}
+Our compiler uses this information to remove all occurrences
+of the {\tt integerType} and {\tt floatType} fields from the
+program. It replaces each read of the {\tt integerType} field
+with the constant {\tt 0}, and each read of the {\tt floatType}
+field with the constant {\tt 1}. It also uses the bounds on the 
+values of the {\tt type} and {\tt positive} variables to reduce the size of the 
+corresponding fields. Our currently implemented compiler rounds
+field sizes to the nearest byte required to hold the range
+of values that can occur. Our byte packing algorithm then 
+generates a dense packing of the values, attempting to preserve
+the alignment of the variables if possible. In this case, the
+algorithm can reduce the field sizes by six bytes and the overall
+size of the object by one four-byte word. 
 
-Programmers often use the {\tt int} type in Java when a smaller type
-would suffice.  This may be done to provide for future extension, or
-to improve the clarity or maintainability of the code.  At
-compile-time, none of these need constrain us.  The \tyf field of 
-{\tt jess.Value} is typical of the bitfields and enumerations which are
-the most common examples of this.  As examination of the enumeration
-in {\tt jess.RU} would reveal, the maximum value ever stored in the
-\tyf field is {\tt RU.MULTISLOT}, or 32768.\footnote{The power-of-two
-  constant values in {\tt jess.RU} are used only to implement
-  efficient inclusion tests; the \tyf field is never given a compound
-  tag.}  The minimum value stored in \tyf is {\tt RU.NONE}, or 0.  A
-16-bit unsigned type ({\tt char} in Java) would suffice to hold this
-value, saving two bytes per instance of this class.
+\subsection{Static Specialization} 
 
-\subsection{Unused and Constant Fields in the Example}
-The {\tt NUM\_TYPES} and {\tt FACT\_TYPES} fields were not marked
-{\tt static} by the programmer, causing them to occupy 8 bytes in every
-instance of {\tt jess.Value}.  Furthermore, the {\tt NUM\_TYPES} field
-is never actually read by the program!  The original Java-to-bytecode
-compiler performed constant propagation on {\tt NUM\_TYPES} because it
-was marked final, so that the computation of {\tt FACT\_TYPES} does
-not actually read the {\tt NUM\_TYPES} field.  Thus, both fields are
-{\it constant}, and {\tt NUM\_TYPES} is, in addition, {\it unused}.%
-\footnote{{\tt FACT\_TYPES} is used only once, in the {\tt
-    FactIDValue()} method shown.}
-Table \ref{tab:const-unused} shows that such fields are surprisingly
-common in Java code, although often unused fields are found in
-infrequently-instantiated classes.
-
-\begin{table}
-\begin{tabular}{lcccr@{.}l}
-&&&&\multicolumn{2}{c}{\bf Alloc'ed}\\
-&\bf Total&&&\multicolumn{2}{c}{\bf space}\\
-\bf Benchmark &\bf fields &\bf Unread &\bf Const. &
-\multicolumn{2}{c}{\bf saved} \\\hline
-200\_check      & 279 &   79   &   35   &  2&6\% \\
-201\_compress   & 298 &   75   &   31   &  2&5\% \\
-202\_jess       & 485 &   91   &   43   &  9&9\% \\
-205\_raytrace   & 341 &   75   &   30   &  0&0\% \\
-209\_db         & 286 &   75   &   35   &  0&0\% \\
-213\_javac      & 531 &   85   &   34   &  0&6\% \\
-222\_mpegaudio  & 286 &   75   &   35   &  1&4\% \\
-227\_mtrt       & 341 &   75   &   30   &  0&0\% \\
-228\_jack       & 378 &   77   &   31   & 10&2\% \\
-\end{tabular}
-\caption{Number of unused and constant fields in SPEC benchmarks,
-  and the savings realized (in \% of total dynamic allocated bytes) by
-  removing them.}
-\label{tab:const-unused}
-\end{table}
-
-In this case, the {\tt Value} object accounts for 23\% of the total
-allocations made by the {\tt jess} benchmark, and so eliminating these
-field has a major impact.
-
-\subsection{Mostly-Constant Fields in the Example}
-As a tagged union, the value fields of {\tt
-  jess.Value} are unused in certain circumstances.  For example,
-when the {\tt Value} is representing an {\tt RU.EXTERNAL\_ADDRESS}
-via the constructor shown, the {\tt intval} and {\tt floatval} fields
-are zero.  We would like to take advantage of this fact to remove
-the storage occupied by {\tt intval} and {\tt floatval} when it is
-not needed.  We call {\tt intval} and {\tt floatval} {\it mostly-zero
-  fields} in this context: they are not zero in all instances of the
-class, but there is an important subset of the instances of {\tt
-  jess.Value} where they {\it are} constant and zero.  For those
-instances, we'd like to eliminate the space required by the fields.
-
-\begin{figure}
-\begin{samplecode}
-public Value(Object o, int type) \{\\
-\>if (type != RU.EXTERNAL\_ADDRESS)\\
-\>\>throw new ReteException();\\
-\>\_type = type;\\
-\>Objectval = o;\\
-\>intval = Integer.MIN\_VALUE;\\
-\>floatval=Double.NaN;\\
-\}\\
-\end{samplecode}
-\caption{An alternate constructor for {\tt jess.Value}.}
-\label{fig:alt-constructor}
-\end{figure}
-
-This concept can be generalized to {\it mostly-constant} fields,
-for any arbitrary constant.  For example, suppose the {\tt Value}
-constructor looked like figure \ref{fig:alt-constructor} instead.
-In this case {\tt Integer.MIN\_VALUE} and the {\tt NaN} double value
-are used to represent ``invalid'' fields.  We may equally well
-eliminate the {\tt intval} and {\tt floatval} fields with these
-values, since their values are fixed from the time {\tt Value} is
-instantiated.
-We will often discuss ``mostly-zero'' fields in concrete cases, but
-our analyses and transformations are valid in the general
-``mostly-constant'' case.
-
-{\bf Awkward?}
-
-We will use the more-familiar {\tt java.lang.String} class to
-illustrate how we may eliminate mostly-constant fields.
-
-\section{Another Example}
-{\bf FIX THE SECTION TITLE}
-% java.lang.String.
-% add 'suffix' function to String to motivate externalization.
-% talk about MZF implementation details here.
-
-%%%% static specialization example.
+Figure~\ref{fig:string} presents portions of the implementation
+of the Java {\tt String} class. The {\tt value} field in this
+class refers to a character array that holds the characters
+in the string; the {\tt count} field holds the length of the
+string. In some cases, instances of the {\tt String} class
+are derived substrings of other instances 
+(see the {\tt substring} method in Figure~\ref{}), in which case the
+{\tt offset} field provides the offset of the starting 
+point of the string within the {\vv value} character array. 
+Note that the {\tt value}, {\tt offset}, and {\tt count} 
+fields are all initialized when the string is constructed
+and do not change during the lifetime of the string.
 
 \begin{figure}
 \begin{samplecode}
@@ -325,6 +263,18 @@ public final class String \{\\
 \caption{Portions of the {\tt java.lang.String} class.}
 \label{fig:string-fields}
 \end{figure}
+
+In practice, most strings are not substrings of other strings. 
+The {\tt offset} field in most strings is therefore {\tt 0}.
+Moreover, it is possible to tell at the object creation site
+whether the {\tt offset} will be {\tt 0} or some other number.
+In fact, all of the public {\tt String} constructors create
+strings with {\tt offset} 0; only the {\tt substring} method
+creates strings with a non-zero offset. And even at 
+calls to the private {\tt String(char [], int, int)} constructor
+inside the {\vv substring} method, it is possible to dynamically
+test the values of the parameters to determine if the newly
+constructed string will have a zero or non-zero offset.
 
 \begin{figure}
 \begin{samplecode}
