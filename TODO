@@ -73,13 +73,13 @@ X Write copy-quadssa method. [called clone]
 Target AIRE for backend.
 Write 'UndoRecursion' analysis/optimization pass.
 ---- Sep-25-98
-Undo peephole optimization and replace with a rule in SCCAnalysis that
- makes icmpeq on a one-bit (boolean) value into a MOVE instruction.
- Actually, since sense of result of icmpeq and boolean is different,
- this would entail switching all CJMPs that use boolean value and
- negative value in all other uses.  May be more complicated.
-Make LCMP/FCMP/DCMP smarter.  We currently two twice as many tests as is
-necessary at times.
+O Undo peephole optimization and replace with a rule in SCCAnalysis that
+O  makes icmpeq on a one-bit (boolean) value into a MOVE instruction.
+O  Actually, since sense of result of icmpeq and boolean is different,
+O  this would entail switching all CJMPs that use boolean value and
+O  negative value in all other uses.  May be more complicated.
+O Make LCMP/FCMP/DCMP smarter.  We currently two twice as many tests as is
+O  necessary at times.
 ---- Sep-24-98
 Xfigure out what to do about related variables/induction variables in bitwidth.
 find induction variables and use this info in bitwidth.
@@ -107,27 +107,27 @@ X  splits/joins). Note that peephole optimizations may need to change.
 ---- Sep-18-98
 X Fix MONITOR handling.
 ---- Sep-16-98
-[cananian@lesser-magoo Code]$ time java -mx128m harpoon.Main.Main harpoon.IR.QuadSSA.Translate
-java.lang.OutOfMemoryError: 
-        at java.util.Hashtable.<init>(Hashtable.java)
-        at java.util.Hashtable.<init>(Hashtable.java)
-        at harpoon.Util.Set.<init>(Set.java:17)
-        at harpoon.IR.QuadSSA.CleanUp$UsedTable.addDef(CleanUp.java:61)
-        at harpoon.IR.QuadSSA.CleanUp.cleanupUnused(CleanUp.java:88)
-        at harpoon.IR.QuadSSA.CleanUp.cleanup2(CleanUp.java:35)
-        at harpoon.IR.QuadSSA.Code.<init>(Code.java:40)
-        at harpoon.IR.QuadSSA.Code$1.convert(Code.java:57)
-        at harpoon.ClassFile.HMethod.getCode(HMethod.java:83)
-        at harpoon.Main.Main.main(Main.java:30)
-354.490u 2.850s 9:55.96 59.9%   0+0k 0+0io 20466pf+5635w
+O [cananian@lesser-magoo Code]$ time java -mx128m harpoon.Main.Main harpoon.IR.QuadSSA.Translate
+O java.lang.OutOfMemoryError: 
+O         at java.util.Hashtable.<init>(Hashtable.java)
+O         at java.util.Hashtable.<init>(Hashtable.java)
+O         at harpoon.Util.Set.<init>(Set.java:17)
+O         at harpoon.IR.QuadSSA.CleanUp$UsedTable.addDef(CleanUp.java:61)
+O         at harpoon.IR.QuadSSA.CleanUp.cleanupUnused(CleanUp.java:88)
+O         at harpoon.IR.QuadSSA.CleanUp.cleanup2(CleanUp.java:35)
+O         at harpoon.IR.QuadSSA.Code.<init>(Code.java:40)
+O         at harpoon.IR.QuadSSA.Code$1.convert(Code.java:57)
+O         at harpoon.ClassFile.HMethod.getCode(HMethod.java:83)
+O         at harpoon.Main.Main.main(Main.java:30)
+O 354.490u 2.850s 9:55.96 59.9%   0+0k 0+0io 20466pf+5635w
 ---- Sep-15-98
 X Phi-placement analysis works, it just needs 'dead-code elimination'.
 X  Remove any phi function that defines a variable that is never used.
 ---- Sep-14-98
 X Make sure Test/zeroopt.java is properly optimized.
 X SWITCH processing is still broken.
-Check try/catch processing.  I don't think we're putting in the right
-  PHI functions.
+X Check try/catch processing.  I don't think we're putting in the right
+X   PHI functions.
 X Maybe split phi/switch stuff into separate entities:
 X  QUESTION: what do we do about optimizing ( x+1 < y )
 ---- Sep-14-98
@@ -137,7 +137,7 @@ X     all boolean functions should feed a cjmp directly.
 X  2) lcmp,dcmp mess.  Look for CJMP whose test is def'd in a PHI statement,
 X     and remove the PHI, duplicating the CJMP.  May need to be a PHI->CJMP
 X     sequence. 
-make sure cmpgt->cmpeq is properly translated to cmpge, too.
+O make sure cmpgt->cmpeq is properly translated to cmpge, too.
 ---- Sep-13-98
 Write tool to print 'ConstantClass'es from bytecode files, and delete
  .classes that depend on out-of-date classes. Then some other tool can
@@ -238,16 +238,16 @@ X      synchronized(new Object()) {
 X      }
 X    }
 X  }
-Test:
- method() {
-  try {
-   try {
-    ;
-   } catch (x) {
-   }
-  } catch (y) {
-  }
- }
+O Test:
+O  method() {
+O   try {
+O    try {
+O     ;
+O    } catch (x) {
+O    }
+O   } catch (y) {
+O   }
+O  }
 
 ---- Aug-21-98
 X Implement INSTANCEOF in the IR (special method? special Quad? subclass OPER?)
