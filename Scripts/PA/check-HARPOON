@@ -1,7 +1,7 @@
-# make sure HARPOON is initialized
-if [ ! -n "$HARPOON" -a -d $HARPOON ]
+# make sure HARPOON_DIR is initialized
+if [ ! -n "${HARPOON_DIR}" -a -d ${HARPOON_DIR} ]
 then
-    echo "Please set HARPOON to the Harpoon root directory";
-    echo "e.g. export HARPOON=/home/salcianu/Harpoon";
+    echo "Please set HARPOON_DIR to the Harpoon root directory";
+    echo "e.g. export HARPOON_DIR=/home/salcianu/Harpoon";
     exit 1;
 fi

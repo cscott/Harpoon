@@ -1,8 +1,8 @@
 #!/bin/bash
 
-if test -n "$BENCHS_DIR" -a -d $BENCHS_DIR
+if test -n "${BENCHS_DIR}" -a -d ${BENCHS_DIR}
 then
-    echo "BENCHS_DIR = \"$BENCHS_DIR\" ok!";
+    echo "BENCHS_DIR = \"${BENCHS_DIR}\" ok!";
 else
     echo "Please set BENCHS_DIR to the directory the benchmarks are in";
     exit 1;
@@ -14,37 +14,37 @@ SCR_DIR=`dirname $0`
 if [ ! -d size ]; then mkdir size; fi
 
 echo "Sizing barnes"
-$SCR_DIR/size barnes barnes $BENCHS_DIR/Barnes/Barnes 2 > size/barnes.Size.out
+${SCR_DIR}/size barnes barnes ${BENCHS_DIR}/Barnes/Barnes 2 > size/barnes.Size.out
 
 echo "Sizing Chat (ie Nets)"
-$SCR_DIR/size Nets Nets $BENCHS_DIR/Chat/Chat 2 > size/Chat.Size.out
+${SCR_DIR}/size Nets Nets ${BENCHS_DIR}/Chat/Chat 2 > size/Chat.Size.out
 
 echo "Sizing Echo"
-$SCR_DIR/size Echo Echo $BENCHS_DIR/Echo/Echo 2 > size/Echo.Size.out
+${SCR_DIR}/size Echo Echo ${BENCHS_DIR}/Echo/Echo 2 > size/Echo.Size.out
 
 echo "Sizing GameServer2"
-$SCR_DIR/size GameServer2 GameServer2 $BENCHS_DIR/Game/Game 2 > size/GameServer2.Size.out
+${SCR_DIR}/size GameServer2 GameServer2 ${BENCHS_DIR}/Game/Game 2 > size/GameServer2.Size.out
 
 echo "Sizing JhttpServer"
-$SCR_DIR/size JhttpServer JhttpServer $BENCHS_DIR/HTTP/HTTP 2 > size/JhttpServer.Size.out
+${SCR_DIR}/size JhttpServer JhttpServer ${BENCHS_DIR}/HTTP/HTTP 2 > size/JhttpServer.Size.out
 
 echo "Sizing PhoneServer"
-$SCR_DIR/size PhoneServer PhoneServer $BENCHS_DIR/Phone/Phone 2 > size/PhoneServer.Size.out
+${SCR_DIR}/size PhoneServer PhoneServer ${BENCHS_DIR}/Phone/Phone 2 > size/PhoneServer.Size.out
 
 echo "Sizing QuoteServer"
-$SCR_DIR/size QuoteServer QuoteServer $BENCHS_DIR/Quote/Quote 2 > size/QuoteServer.Size.out
+${SCR_DIR}/size QuoteServer QuoteServer ${BENCHS_DIR}/Quote/Quote 2 > size/QuoteServer.Size.out
 
 echo "Sizing Time"
-$SCR_DIR/size Time Time $BENCHS_DIR/Time/Time 2 > size/Time.Size.out
+${SCR_DIR}/size Time Time ${BENCHS_DIR}/Time/Time 2 > size/Time.Size.out
 
 echo "Sizing water"
-$SCR_DIR/size water water $BENCHS_DIR/Water/Water 2 > size/water.Size.out
+${SCR_DIR}/size water water ${BENCHS_DIR}/Water/Water 2 > size/water.Size.out
 
 
 echo "Sizing JLex"
-$SCR_DIR/size JLex.Main     JLex  $HARPOON/Code/Support/Lex.jar 2 > size/JLex.Size.out
+${SCR_DIR}/size JLex.Main     JLex  ${HARPOON_DIR}/Code/Support/Lex.jar 2 > size/JLex.Size.out
 
 echo "Sizing JCUP"
-$SCR_DIR/size java_cup.Main JCUP  $HARPOON/Code/Support/CUP.jar 2 > size/JCUP.Size.out
+${SCR_DIR}/size java_cup.Main JCUP  ${HARPOON_DIR}/Code/Support/CUP.jar 2 > size/JCUP.Size.out
 
 

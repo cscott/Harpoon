@@ -7,9 +7,9 @@ SCR_DIR=`dirname $0`
 source check-HARPOON
 
 # make sure BENCHS_DIR is initialized
-if test -n "$BENCHS_DIR" -a -d $BENCHS_DIR
+if test -n "${BENCHS_DIR}" -a -d ${BENCHS_DIR}
 then
-    echo "BENCHS_DIR = \"$BENCHS_DIR\" ok!";
+    echo "BENCHS_DIR = \"${BENCHS_DIR}\" ok!";
 else
     echo "Please set BENCHS_DIR to the directory the benchmarks are in";
     exit 1;
@@ -27,19 +27,19 @@ done
 
 
 # let the fun begin!
-$SCR_DIR/elimOne  barnes       barnes       $BENCHS_DIR/Barnes/Barnes  2
-$SCR_DIR/elimOne  Nets         Nets         $BENCHS_DIR/Chat/Chat      2
-$SCR_DIR/elimOne  GameServer2  GameServer2  $BENCHS_DIR/Game/Game      2
-$SCR_DIR/elimOne  JhttpServer  JhttpServer  $BENCHS_DIR/HTTP/HTTP      2
-$SCR_DIR/elimOne  PhoneServer  PhoneServer  $BENCHS_DIR/Phone/Phone    2
-$SCR_DIR/elimOne  QuoteServer  QuoteServer  $BENCHS_DIR/Quote/Quote    2
-$SCR_DIR/elimOne  Echo         Echo         $BENCHS_DIR/Echo/Echo      2
-$SCR_DIR/elimOne  Time         Time         $BENCHS_DIR/Time/Time      2
-$SCR_DIR/elimOne  water        water        $BENCHS_DIR/Water/Water    2
+${SCR_DIR}/elimOne  barnes       barnes       ${BENCHS_DIR}/Barnes/Barnes  2
+${SCR_DIR}/elimOne  Nets         Nets         ${BENCHS_DIR}/Chat/Chat      2
+${SCR_DIR}/elimOne  GameServer2  GameServer2  ${BENCHS_DIR}/Game/Game      2
+${SCR_DIR}/elimOne  JhttpServer  JhttpServer  ${BENCHS_DIR}/HTTP/HTTP      2
+${SCR_DIR}/elimOne  PhoneServer  PhoneServer  ${BENCHS_DIR}/Phone/Phone    2
+${SCR_DIR}/elimOne  QuoteServer  QuoteServer  ${BENCHS_DIR}/Quote/Quote    2
+${SCR_DIR}/elimOne  Echo         Echo         ${BENCHS_DIR}/Echo/Echo      2
+${SCR_DIR}/elimOne  Time         Time         ${BENCHS_DIR}/Time/Time      2
+${SCR_DIR}/elimOne  water        water        ${BENCHS_DIR}/Water/Water    2
 
 # the hard work
-$SCR_DIR/elimOne  JLex.Main       JLex   $HARPOON/Code/Support/Lex.jar   2
-$SCR_DIR/elimOne  java_cup.Main   JCUP   $HARPOON/Code/Support/CUP.jar   2
+${SCR_DIR}/elimOne  JLex.Main     JLex  ${HARPOON_DIR}/Code/Support/Lex.jar 2
+${SCR_DIR}/elimOne  java_cup.Main JCUP  ${HARPOON_DIR}/Code/Support/CUP.jar 2
 
 
 

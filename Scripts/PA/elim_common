@@ -21,7 +21,7 @@ else
 fi
 
 
-stdPath=$HARPOON/Code/Support/AbstractList.jar:$HARPOON/Code/Support/NewThread.jar:$HARPOON/Code/Support/sunthunk.jar:$HARPOON/Code/Support/collections.jar:$HARPOON/Code/classes.zip:.
+stdPath=${HARPOON_DIR}/Code/Support/AbstractList.jar:${HARPOON_DIR}/Code/Support/NewThread.jar:${HARPOON_DIR}/Code/Support/sunthunk.jar:${HARPOON_DIR}/Code/Support/collections.jar:${HARPOON_DIR}/Code/classes.zip:.
 
 echo "harpoon.class.path = \""${stdPath}:${dir}"\""
 

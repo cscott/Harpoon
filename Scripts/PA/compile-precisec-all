@@ -6,7 +6,7 @@ CALL_DIR=`pwd`
 source ${SCR_DIR}/check-HARPOON
 source ${SCR_DIR}/applications
 
-APPLICATIONS="JLex"
+APPLICATIONS="HelloWorld"
 
 if [ ! -d ${CALL_DIR}/execs ]
 then
@@ -17,7 +17,7 @@ fi
 
 echo "Building the with-clustered-heaps runtime";
 
-cd ${HARPOON}/Runtime
+cd ${HARPOON_DIR}/Runtime
 
 ./configure \
     --with-precise-c --with-gc=conservative \
@@ -34,7 +34,7 @@ for opt in inter intra none; do
  if [$opt = none]; then
     echo "Building the normal runtime (no clustered heaps)"
 
-    cd ${HARPOON}/Runtime
+    cd ${HARPOON_DIR}/Runtime
 
     ./configure \
 	--with-precise-c --with-gc=conservative \

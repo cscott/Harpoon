@@ -10,9 +10,9 @@ name=$1
 # the directory where all the .c files are
 dir=$2
 
-make -C $dir CC="gcc -I$HARPOON/Runtime/include -g -O9" && \
-mv -f $dir/Java.a $HARPOON/Runtime/${name}-Java.a && \
-make -C $HARPOON/Runtime run${name} && \
-rm -f $HARPOON/Runtime/${name}-Java.a && \
+make -C $dir CC="gcc -I${HARPOON_DIR}/Runtime/include -g -O9" && \
+mv -f $dir/Java.a ${HARPOON_DIR}/Runtime/${name}-Java.a && \
+make -C ${HARPOON_DIR}/Runtime run${name} && \
+rm -f ${HARPOON_DIR}/Runtime/${name}-Java.a && \
 rm -f $dir/*.o && \
-mv -f $HARPOON/Runtime/run${name} $dir;
+mv -f ${HARPOON_DIR}/Runtime/run${name} $dir;
