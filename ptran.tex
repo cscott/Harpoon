@@ -1,31 +1,41 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.4 2002-07-22 21:42:48 cananian Exp $
+% $Id: ptran.tex,v 1.5 2002-07-23 22:50:36 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage{comdef} % common definitions
 \usepackage{pdffonts} % PDF-friendly fonts
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.4 $ $}
+\date{\today \\ $ $Revision: 1.5 $ $}
 
 \begin{document}
-%\bibliographystyle{abbrv}
+\bibliographystyle{abbrv}
 \maketitle
 \section{Singular Values}
 
 We say a program variable $v$ is \newterm{singular} at a statement $s$
 if $v$ will have a different value at every execution of $s$.  An
 allocation site \code{a = new A()} produces a value which is singular
-at the site; other defintions of $a$ might reach other statements in
-the program, so $a$ is not guaranteed to be singular there.
+at the site; other defintions of $a$ might reach other statements
+$s_x$ in the program, so $a$ is not guaranteed to be singular at $s_x$.
 
 A variable $v_1$ singular at a statement $s_1$ is
 \newterm{pairwise-singular} with a variable $v_2$ singular at a statement
 $s_2$ iff no value of $v_1$ at an execution $s_1$ is ever equal to any
 value of $v_2$ at an execution of $s_2$.
 
+Now we can say that a set $S$ of statements is
+\newterm{mutually-singular} iff
+\begin{displaymath}
+%\begin{eqnarray}\lefteqn{
+\forall s_1 \in S, s_2 \in S, v_1 \in \text{use}(s_1), v_2 \in \text{use}(s_2),
+  s_1 \neq s_2 :
+%} \\ & &
+v_1 \text{ at } s_1 \text{ is pairwise-singular with } v_2 \text{ at } s_2
+%\end{eqnarray}
+\end{displaymath}
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 We can compute singularity using a dataflow algorithm as follows.
 Let $\text{SIN}(P)$ be the set of variables which are singular
@@ -124,7 +134,7 @@ each execution.  A pair of statements is mutually singular if the
 values used either come from different generation sites or cannot be
 included in the same trace from the generation site.
 
-We want all the 'set' operations associated with edges from $A$ to $B$
+We want all the ``set'' operations associated with edges from $A$ to $B$
 to be mutually singular.
 
 \section{Compositional Pointer Analysis}
@@ -138,5 +148,22 @@ We evaluate sites polymorphically if they are factory methods, or
 contain unbalanced companion objects.  Otherwise, the site is
 evaluated monomorphically.
 
-%\bibliography{harpoon}
+\section{Related Work}
+
+Bod{\'\i}k et al outlined a method for detecting infeasible paths
+in \cite{267921} which could be used to extend the set of statements
+we determine are mutually singular (by enabling us to be less conservative).
+
+Altucher et al renamed allocation sites for better alias analysis
+precision on C programs with factory methods \cite{199466}.  They
+do not handle Java or companion objects.
+
+Collberg et al described a Java obfuscation technique that relies in
+part on the intractability of alias analysis \cite{268962}.  The
+analysis we describe is sufficient to break some of their predicates.
+This could be used to construct a deobfuscator.  (These techniques
+have been used in at least one commerical obfuscator \cite{humper02}.)
+
+
+\bibliography{harpoon}
 \end{document}
