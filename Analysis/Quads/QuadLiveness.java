@@ -9,6 +9,7 @@ import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.CALL;
+import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 import harpoon.Temp.Temp;
 
@@ -22,21 +23,24 @@ import java.util.Set;
  * <code>QuadLiveness</code> if you have changed the <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: QuadLiveness.java,v 1.1.2.3 1999-12-15 22:30:13 bdemsky Exp $
+ * @version $Id: QuadLiveness.java,v 1.1.2.4 2000-01-02 22:19:36 bdemsky Exp $
  */
 public class QuadLiveness extends Liveness {
     final Hashtable livein;
     final Hashtable liveout;
+    final Hashtable tempin;
+    final Hashtable tempout;
 
     /** Creates a <code>QuadLiveness</code>. Requires 
      *  that the <code>HCode</code> be quad-no-ssa.
      */
     public QuadLiveness(HCode hc) {
 	super(hc);
-
-	Hashtable[] live = this.analyze();
+       	Hashtable[] live = this.analyze();
 	this.livein = live[0];
 	this.liveout = live[1];
+	this.tempin = new Hashtable();
+	this.tempout = new Hashtable();
     }
 
     /** Returns the <code>Set</code> of <code>Temp</code>s 
@@ -48,14 +52,19 @@ public class QuadLiveness extends Liveness {
     public Set getLiveIn(HCodeElement hce) {
 	return (Set)this.livein.get((Quad)hce);
     }
-    /** Same as getLiveIn, but returns array of <code>Temp</code>s.**/
+    /** Same as getLiveIn, but returns array of <code>Temp</code>s.  This
+	array is guaranteed to have the Temp's in the same order for a given
+	QuadLiveness object,Quad pair.**/
 
     public Temp[] getLiveInArray(HCodeElement hce) {
-	Object[] array=((Set)this.livein.get((Quad) hce)).toArray();
-	Temp[] retval=new Temp[array.length];
-	for (int i=0;i<array.length;i++)
-	    retval[i]=(Temp)array[i];
-	return retval;
+	if (tempin.containsKey(hce))
+	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, (Temp[]) tempin.get(hce));
+	else {
+	    Set set=(Set) this.livein.get((Quad) hce);
+	    Temp[] retval=(Temp[]) set.toArray(new Temp[set.size()]);
+	    tempin.put(hce,retval);
+	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, retval);
+	}
     }
     /** Returns the <code>Set</code> of <code>Temp</code>s 
      *  that are live-out at the <code>HCodeElement</code>. 
@@ -67,13 +76,17 @@ public class QuadLiveness extends Liveness {
 	return (Set)this.liveout.get((Quad)hce);
     }
 
-    /** Same as getLiveOut, but returns array of <code>Temp</code>s.**/
+    /** Same as getLiveOut, but returns array of <code>Temp</code>s.
+	Makes the same order guarantees as <code>getLiveInArray</code>.**/
     public Temp[] getLiveOutArray(HCodeElement hce) {
-	Object[] array=((Set)this.liveout.get((Quad) hce)).toArray();
-	Temp[] retval=new Temp[array.length];
-	for (int i=0;i<array.length;i++)
-	    retval[i]=(Temp)array[i];
-	return retval;
+	if (tempout.containsKey(hce))
+	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, (Temp[]) tempout.get(hce));
+	else {
+	    Set set=(Set) this.liveout.get((Quad) hce);
+	    Temp[] retval=(Temp[]) set.toArray(new Temp[set.size()]);
+	    tempout.put(hce, retval);
+	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, retval);
+	}
     }
 
     private Hashtable[] analyze() {
