@@ -6,19 +6,28 @@ package harpoon.IR.Properties;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Util.ArrayFactory;
+import harpoon.Util.ArrayIterator;
 import harpoon.Util.CombineIterator;
+import harpoon.Util.FilterIterator;
+import harpoon.Util.UnmodifiableIterator;
 
+import java.util.AbstractCollection;
+import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.AbstractCollection;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.Stack;
 /**
  * <code>CFGrapher</code> provides a means to externally associate
  * control-flow graph information with elements of an intermediate
  * representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGrapher.java,v 1.1.2.9 2001-05-16 00:10:15 pnkfelix Exp $
+ * @version $Id: CFGrapher.java,v 1.1.2.10 2001-06-12 16:24:47 cananian Exp $
  * @see harpoon.IR.Properties.CFGraphable
  */
 public abstract class CFGrapher {
@@ -91,12 +100,12 @@ public abstract class CFGrapher {
 	return new AbstractCollection() {
 		public int size() { return predEdges.size(); }
 		public Iterator iterator() {
-		    return new 
-			harpoon.Util.FilterIterator
+		    return new FilterIterator
 			(predEdges.iterator(), 
-			 new harpoon.Util.FilterIterator.Filter() { 
-				 public Object map(Object o) { return ((HCodeEdge)o).from(); }
-			     });
+			 new FilterIterator.Filter() { 
+			    public Object map(Object o)
+				{ return ((HCodeEdge)o).from(); }
+			});
 		}
 	    };
     }
@@ -109,14 +118,55 @@ public abstract class CFGrapher {
 	return new AbstractCollection() {
 		public int size() { return succEdges.size(); }
 		public Iterator iterator() {
-		    return new 
-			harpoon.Util.FilterIterator
+		    return new FilterIterator
 			(succEdges.iterator(), 
-			 new harpoon.Util.FilterIterator.Filter() {
-				 public Object map(Object o) { return ((HCodeEdge)o).to(); }
-			     });
+			 new FilterIterator.Filter() {
+			    public Object map(Object o)
+				{ return ((HCodeEdge)o).to(); }
+			});
 		}
 	    };
+    }
+
+    public Set getElements(final HCode code) {
+	return new AbstractSet() {
+	    public int size() {
+		int i=0;
+		for (Iterator it=iterator(); it.hasNext(); it.next())
+		    i++;
+		return i;
+	    }
+	    public Iterator iterator() {
+		return new UnmodifiableIterator() {
+		    // implementation borrowed from IR/Quads/Code.
+		    Set visited = new HashSet();
+		    Stack s = new Stack();
+		    { // initialize stack/set.
+			Iterator it=new CombineIterator
+			    (new ArrayIterator(getLastElements(code)),
+			     new ArrayIterator(getFirstElements(code)));
+			while (it.hasNext()) {
+			    HCodeElement hce = (HCodeElement) it.next();
+			    s.push(hce); visited.add(hce);
+			}
+		    }
+		    public boolean hasNext() { return !s.isEmpty(); }
+		    public Object next() {
+			if (s.empty()) throw new NoSuchElementException();
+			HCodeElement hce = (HCodeElement) s.pop();
+			// push successors on stack before returning.
+			Iterator it=succElemC(hce).iterator();
+			while (it.hasNext()) {
+			    HCodeElement nxt = (HCodeElement) it.next();
+			    if (!visited.contains(nxt)) {
+				s.push(nxt); visited.add(nxt);
+			    }
+			}
+			return hce;
+		    }
+		};
+	    }
+	};
     }
     
     /** Returns an edge-reversed grapher based on this one.
