@@ -67,7 +67,7 @@ import java.util.TreeSet;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.22 2004-02-08 03:20:54 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.23 2004-07-02 00:01:32 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     // Support losing platforms (like, say, AIX) where multiple segments
@@ -231,6 +231,9 @@ public class TreeToC extends java.io.PrintWriter {
 	    case CODE:
 		if (mode==CODETABLE) break; // postpone flush.
 		flushAndAppend(MD);
+		// emit a semicolon to suppress 'label at end of compound
+		// statement' deprecation.
+		pwa[MB].println("\t;");
 		pwa[MB].println("}");
 		if (NO_SECTION_SUPPORT) pwa[MB].println("#endif");
 		flushAndAppend(MB);
