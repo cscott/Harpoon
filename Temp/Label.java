@@ -6,7 +6,7 @@ package harpoon.Temp;
 /**
  * A <code>Label</code> represents a (symbolic) address in assembly language.
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Label.java,v 1.3.2.10 2000-03-09 03:47:41 cananian Exp $
+ * @version $Id: Label.java,v 1.3.2.11 2000-06-30 01:32:58 cananian Exp $
  */
 
 public class Label  {
@@ -47,4 +47,6 @@ public class Label  {
        try { l=(Label) o; } catch (ClassCastException e) { return false; }
        return name.equals(l.name);
    }
+   // make hashCode consistent with equals()
+   public int hashCode() { return name.hashCode(); }
 }
