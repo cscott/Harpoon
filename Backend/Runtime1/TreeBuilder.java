@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.37 2001-06-12 21:50:44 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.38 2001-06-12 22:36:08 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -171,6 +171,9 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	if (l.size()==0) return 0;
 	HField lastfield = (HField) l.get(l.size()-1);
 	return cfm.fieldOffset(lastfield) + cfm.fieldSize(lastfield);
+    }
+    public int headerSize(HClass hc) { // hc is ignored
+	return OBJECT_HEADER_SIZE;
     }
 
     // allocate 'length' bytes plus object header; fill in object header.

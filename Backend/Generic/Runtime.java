@@ -30,7 +30,7 @@ import java.util.List;
  * runtime system.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.11 2000-11-14 22:20:56 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.12 2001-06-12 22:35:55 cananian Exp $
  */
 public abstract class Runtime {
     /** A <code>NameMap</code> valid for this
@@ -87,8 +87,14 @@ public abstract class Runtime {
      */
     public abstract static class TreeBuilder {
 	/** Utility method for external analyses that want to know the
-	 *  exact size of an object. */
+	 *  exact size of an object. This returns the size in bytes
+	 *  <strong>not including the header</strong>. */
 	public abstract int objectSize(HClass hc);
+	/** Utility method for external analyses that want to know the
+	 *  size of an object header.  Returns the header size in bytes.
+	 *  The total allocated memory for an object is
+	 *  <code>objectSize(hc)+headerSize(hc)</code>. */
+	public abstract int headerSize(HClass hc);
 
 	/** Return a <code>Translation.Exp</code> giving the length of the
 	 *  array pointed to by the given expression. */
