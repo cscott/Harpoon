@@ -13,6 +13,7 @@
 
 ./buildone Water/Water_RTJ
 ./buildone Water/Water_RTJ/groups
+./buildone Water/Water_RTJ/groups/noheap
 
 ./buildone Barnes/Barnes_RTJ
 ./buildone Barnes/Barnes_RTJ/groups
@@ -22,7 +23,9 @@
 ./buildone Quote/Quote_RTJ
 
 ./buildone ToyArray
+./buildone ToyArray/noheap
 
 ./buildone ToyTree
+./buildone ToyTree/noheap
 
 
