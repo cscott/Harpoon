@@ -8,7 +8,7 @@ import java.util.Hashtable;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.8 1998-08-24 19:52:56 cananian Exp $
+ * @version $Id: Temp.java,v 1.9 1998-08-26 22:01:52 cananian Exp $
  * @see TypeMap
  * @see TempList
  */
@@ -16,6 +16,8 @@ public class Temp {
   private static Hashtable table = new Hashtable();
 
   private String name;
+  private int index;
+
   private static final String prefix = "t";
 
   /** Creates a unique temporary variable, using default prefix ("t").
@@ -36,18 +38,21 @@ public class Temp {
     // Look up appropriate suffix from table.
     Integer i = (Integer) table.get(m_prefix);
     if (i==null) i = new Integer(0);
-    // Create the name of this temp.
-    this.name = m_prefix + "_" + i.toString();
+
+    // Initialize the fields of this temp.
+    this.name = m_prefix;
+    this.index= i.intValue();
+
     // update the table.
     table.put(m_prefix, new Integer(i.intValue()+1));
   }
   /** Creates a new temp based on the name of an existing temp. */
   public Temp(Temp t) {
-    this(t.name().substring(0, t.name().lastIndexOf('_')));
+    this(t.name);
   }
 
   /** Returns the name of this temporary */
-  public String name() { return name; }
+  public String name() { return name + "_" + index; }
 
   /** Returns a string representation of this temporary. */
   public String toString() { return name(); }
