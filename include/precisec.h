@@ -4,6 +4,7 @@
 #include "jni.h"
 #include "config.h"
 #include "fni-threadstate.h" /* for struct FNI_Thread_State */
+#include "fni-ptroff.h" /* for ptroff_t */
 
 typedef void * jptr;
 #define SHR(x,y) (((int32_t)(x))>>((y)&0x1f))
