@@ -1,11 +1,11 @@
-# $Id: GNUmakefile,v 1.61.2.22 1999-03-02 02:01:29 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.23 1999-04-06 14:55:56 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
 
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
-JIKES=jikes +$$ $(JIKES_OPT)
+JIKES=jikes $(JIKES_OPT)
 JCC=javac -J-mx64m
 JDOC=javadoc
 JAR=jar
@@ -39,6 +39,7 @@ MACHINE_GEN := Tools/PatMat/Lexer.java Tools/PatMat/Parser.java \
 ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
 		$(patsubst %,egrep -v % |,$(BUILD_IGNORE)) \
 		egrep -v "^[.]/(harpoon|silicon|gnu|doc|NOTES|bin|jdb)" | \
+		egrep -v "^[.]/java_cup" | \
 		sed -e "s|^[.]/*||")
 ALLSOURCE :=  $(MACHINE_GEN) $(filter-out $(MACHINE_GEN), \
 		$(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
