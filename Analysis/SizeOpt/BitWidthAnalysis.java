@@ -86,7 +86,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.7 2002-08-02 17:13:46 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.8 2002-09-27 18:54:38 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -182,6 +182,11 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     /** Mapping from [<code>HMethod</code>,callee context] pairs to all
      *  executable <code>THROW</code>s in that context. */
     final MultiMap throwMap = new GenericMultiMap(new AggregateSetFactory());
+    /** Keep a list around of all the 'definitely initialized' fields
+     *  we're asked about.  Some of these may need to be thunked with
+     *  a value because their declaring class ends up never instantiated.
+     */
+    final Set diFields = new HashSet();
 
     /*---------------------------*/
     // public information accessor methods.
@@ -382,6 +387,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 
 	// Iterate until worklists are empty.
+	do {
 	while (! (Wq.isEmpty() && Wv.isEmpty() && Wf.isEmpty()) ) {
 
 	    if (!Wq.isEmpty()) { // grab statement from We if we can.
@@ -422,6 +428,41 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		}
 	    }
 	} // end while loop.
+	
+	// OKAY, sometimes we get in a weird spot: we've left definitely
+	// intialized fields at bottom, but then their declaring fields
+	// end up uninstantiated (this analysis tells us their constructors
+	// are never called; but the classhierarchy wasn't smart enough
+	// to know this).  Now the uses of those fields are left hanging
+	// around, still waiting for a value from the definite initializer.
+	// We're going to let a separate class hierarchy analysis figure
+	// out that the class is uninstantiated LATER, for now we're just
+	// going to hack some values into its fields to keep things going.
+	// NOTE that these values will never be used at runtime.
+	boolean changed = false;
+	for (Iterator it=diFields.iterator(); it.hasNext(); ) {
+	    HField hf = (HField) it.next();
+	    if (get(hf)==null) { // STILL BOTTOM!
+		System.err.println("INFO: "+hf.getDeclaringClass()+
+				   " is uninstantiated!");
+		// set to zero value.
+		changed = true;
+		HClass type = hf.getType();
+		if (!type.isPrimitive())
+		    mergeV(Wf, hf, new xNullConstant());
+		else if (type==HClass.Float)
+		    mergeV(Wf, hf, new xFloatConstant(type, new Float(0.0)));
+		else if (type == HClass.Double)
+		    mergeV(Wf, hf, new xFloatConstant(type, new Double(0.0)));
+		else if (type == HClass.Int || type==HClass.Long)
+		    mergeV(Wf, hf, new xIntConstant(type, 0 ));
+		else throw new Error("Unknown field type: "+type);
+	    }
+	}
+	diFields.clear();
+	// wouldn't a goto statement be so much clearer?
+	if (!changed) break;
+	} while (true); // go up and do it all again.
     } // end analysis.
 
     /*----------------------------------------*/
@@ -513,8 +554,10 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	if (Modifier.isFinal(hf.getModifiers()))
 	    return null; // bottom
 	// definitely initialized fields can be bottom until initialization.
-	if (dio.isDefinitelyInitialized(hf))
+	if (dio.isDefinitelyInitialized(hf)) {
+	    diFields.add(hf); // remember this for later.
 	    return null; // bottom
+	}
 	// else assume that field is set to zero upon object creation.
 	if (!type.isPrimitive()) return new xNullConstant();
 	if (type==HClass.Float)
