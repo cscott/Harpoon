@@ -71,7 +71,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.1.2.8 1999-09-20 16:06:24 pnkfelix Exp $ 
+ * @version $Id: TreeFolding.java,v 1.1.2.9 1999-11-30 05:24:55 cananian Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
@@ -139,7 +139,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
      * <BR>  <B>Modifies:</B> this class's tree code
      * <BR>  <B>Effects:</B> Performs the tree-folding optimization on 
      *                       this class's tree code, and returns the resulting
-     *                       tree code.  Preserves the <code>HasEdges</code>
+     *                       tree code.  Preserves the <code>CFGraphable</code>
      *                       interface correctly by calling the code's 
      *                       <code>recomputeEdges()</code> method. 
      */

@@ -9,7 +9,7 @@ import harpoon.Analysis.LowQuad.Loop.Induction;
 import harpoon.Analysis.UseDef;
 import harpoon.ClassFile.*;
 import harpoon.IR.LowQuad.*;
-import harpoon.IR.Properties.HasEdges;
+import harpoon.IR.Properties.CFGraphable;
 import harpoon.IR.Quads.*;
 import harpoon.Util.WorkSet;
 import harpoon.Temp.Temp;
@@ -24,7 +24,7 @@ import java.util.Iterator;
  * <code>BasicInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: BasicInductions.java,v 1.1.2.6 1999-09-24 16:39:25 bdemsky Exp $
+ * @version $Id: BasicInductions.java,v 1.1.2.7 1999-11-30 05:24:49 cananian Exp $
  */
 public class BasicInductions {
     HCode hc;
@@ -123,7 +123,7 @@ public class BasicInductions {
 			while (origin!=phi.dst(k)) k++;
 
 			//Get an array of the predecessor edges
-			HCodeEdge[] pred=((HasEdges) phi).pred();
+			HCodeEdge[] pred=((CFGraphable) phi).pred();
 			//Loop through the edges of this phi
 			for (int j=0; j<phi.arity();j++) {
 

@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.11 1999-09-08 21:33:08 cananian Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.12 1999-11-30 05:25:06 cananian Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = CanonicalTreeCode.codename;
@@ -111,7 +111,7 @@ public class OptimizedTreeCode extends Code {
 
     /** 
      * Recomputes the control-flow graph exposed through this codeview
-     * by the <code>HasEdges</code> interface of its elements.  
+     * by the <code>CFGraphable</code> interface of its elements.  
      * This method should be called whenever the tree structure of this
      * codeview is modified. 
      */

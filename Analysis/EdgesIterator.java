@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
-import harpoon.IR.Properties.HasEdges;
+import harpoon.IR.Properties.CFGraphable;
 import harpoon.Util.UnmodifiableIterator;
 
 import java.util.Iterator;
@@ -12,10 +12,10 @@ import java.util.HashSet;
 
 /**
  * <code>EdgesIterator</code> is a generic iterator for a set of
- * <code>HasEdges</code> objects. 
+ * <code>CFGraphable</code> objects. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: EdgesIterator.java,v 1.1.2.3 1999-06-16 02:34:52 cananian Exp $
+ * @version $Id: EdgesIterator.java,v 1.1.2.4 1999-11-30 05:24:41 cananian Exp $
  */
 public class EdgesIterator extends UnmodifiableIterator implements Iterator {
     
@@ -26,7 +26,7 @@ public class EdgesIterator extends UnmodifiableIterator implements Iterator {
 	reachable by recursively traversing the successors of
 	<code>e</code>.  Predecessors are not included in the set.  
     */
-    public EdgesIterator(HasEdges e) {
+    public EdgesIterator(CFGraphable e) {
         worklist = new HashSet();
 	done = new HashSet();
 	worklist.add(e);
@@ -34,21 +34,21 @@ public class EdgesIterator extends UnmodifiableIterator implements Iterator {
     }
     
     /** Checks if the set is empty.
-	<BR> <B>effects:</B> returns true if more <code>HasEdges</code>
+	<BR> <B>effects:</B> returns true if more <code>CFGraphable</code>
 	remain in the set.  Else returns false.
     */
     public boolean hasNext() { return worklist.size()!=0; } 
     
-    /** Returns an <code>HasEdges</code> if one remains.
+    /** Returns an <code>CFGraphable</code> if one remains.
 	<BR> <B>requires:</B> <code>this.hasNext()</code> == true.
-	<BR> <B>effects:</B> returns an <code>HasEdges</code> from the
+	<BR> <B>effects:</B> returns an <code>CFGraphable</code> from the
 	set contained in <code>this</code> and removes it from the
 	set.
     */ 
     public Object next() {
-	HasEdges e = (HasEdges) worklist.iterator().next(); worklist.remove(e);
+	CFGraphable e = (CFGraphable) worklist.iterator().next(); worklist.remove(e);
 	for (int i=0, n=e.succ().length; i<n; ++i) {
-	    HasEdges ne = (HasEdges) e.succ()[i].to();
+	    CFGraphable ne = (CFGraphable) e.succ()[i].to();
 	    if (!done.contains(ne)) {
 		done.add(ne);
 		worklist.add(ne);

@@ -6,7 +6,7 @@ package harpoon.Analysis;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Properties.HasEdges;
+import harpoon.IR.Properties.CFGraphable;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.Util;
 
@@ -15,10 +15,10 @@ import java.util.Vector;
 /**
  * <code>DomTree</code> computes the dominator tree of a flowgraph-structured
  * IR.  The <code>HCodeElement</code>s must implement the 
- * <code>harpoon.IR.Properties.HasEdges</code> interface.
+ * <code>harpoon.IR.Properties.CFGraphable</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.8.2.4 1999-06-18 01:47:56 cananian Exp $
+ * @version $Id: DomTree.java,v 1.8.2.5 1999-11-30 05:24:41 cananian Exp $
  */
 
 public class DomTree /*implements Graph*/ {
@@ -63,7 +63,7 @@ public class DomTree /*implements Graph*/ {
     }
     
     HCode lastHCode = null; // most-recently analyzed HCode.
-    /** Analyze an <code>HCode</code> which implements </code>HasEdges</code>. */
+    /** Analyze an <code>HCode</code> which implements </code>CFGraphable</code>. */
     void analyze(HCode hc) {
 	if (hc == lastHCode) return; // quick exit for common case.
 	if (analyzed.get(hc) != null) return; // check hashtable.
@@ -71,8 +71,8 @@ public class DomTree /*implements Graph*/ {
 	lastHCode = hc;
 
 	// Check interfaces
-	Util.assert(hc.getRootElement() instanceof HasEdges,
-		    hc.getName() + " does not implement HasEdges");
+	Util.assert(hc.getRootElement() instanceof CFGraphable,
+		    hc.getName() + " does not implement CFGraphable");
 
 	// Setup lists and tables.
 	final IntHTable dfnum = new IntHTable();
@@ -97,12 +97,12 @@ public class DomTree /*implements Graph*/ {
 		    vertex.addElement(n);
 		    if (!isPost) {
 			// for each successor of n...
-			HCodeEdge[] el = ((HasEdges)n).succ();
+			HCodeEdge[] el = ((CFGraphable)n).succ();
 			for (int i=0; i<el.length; i++)
 			    DFS(n, el[i].to());
 		    } else {
 			// for each predecessor of n...
-			HCodeEdge[] el = ((HasEdges)n).pred();
+			HCodeEdge[] el = ((CFGraphable)n).pred();
 			for (int i=0; i<el.length; i++)
 			    DFS(n, el[i].from());
 		    }
@@ -148,7 +148,7 @@ public class DomTree /*implements Graph*/ {
 	    if (p == null) continue; // skip root(s).
 
 	    //   (for each predecessor v of n)
-	    HCodeEdge el[] = (!isPost) ? ((HasEdges)n).pred() : ((HasEdges)n).succ();
+	    HCodeEdge el[] = (!isPost) ? ((CFGraphable)n).pred() : ((CFGraphable)n).succ();
 	    for (int j=0; j<el.length; j++) {
 		HCodeElement v = (!isPost) ? el[j].from() : el[j].to();
 		// ignore unreachable nodes.

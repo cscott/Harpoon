@@ -27,7 +27,7 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.1.2.15 1999-09-08 21:33:08 cananian Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.1.2.16 1999-11-30 05:25:06 cananian Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
@@ -99,7 +99,7 @@ public class CanonicalTreeCode extends Code {
 
     /** 
      * Recomputes the control-flow graph exposed through this codeview
-     * by the <code>HasEdges</code> interface of its elements.  
+     * by the <code>CFGraphable</code> interface of its elements.  
      * This method should be called whenever the tree structure of this
      * codeview is modified. 
      */

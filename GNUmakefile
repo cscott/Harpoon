@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.74 1999-11-06 01:29:07 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.75 1999-11-30 05:24:25 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -174,7 +174,7 @@ oldfirst:
 		Temp/Temp*.java
 	-${JCC} ${JFLAGS} IR/RawClass/*.java
 	-${JCC} ${JFLAGS} IR/Bytecode/*.java ClassFile/*.java \
-		IR/Properties/HasEdges.java
+		IR/Properties/CFGraphable.java
 	-${JCC} ${JFLAGS} IR/Quads/*.java IR/Properties/*.java \
 		2> /dev/null # not perfect, but it does the base quads well.
 	-${JCC} ${JFLAGS} \

@@ -6,7 +6,7 @@ package harpoon.Analysis.LowQuad.Loop;
 import harpoon.ClassFile.*;
 import harpoon.IR.LowQuad.*;
 import harpoon.IR.Quads.*;
-import harpoon.IR.Properties.HasEdges;
+import harpoon.IR.Properties.CFGraphable;
 import harpoon.Analysis.UseDef;
 import harpoon.Analysis.Loops.Loops;
 import harpoon.Analysis.LowQuad.Loop.LoopAnalysis;
@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.23 1999-09-24 04:37:05 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.24 1999-11-30 05:24:49 cananian Exp $
  */
 public final class LoopOptimize {
     
@@ -552,7 +552,7 @@ public final class LoopOptimize {
 	Iterator iterate=complete.iterator();
 
       	int linkin;
-	Util.assert(((HasEdges)header).pred().length==2);
+	Util.assert(((CFGraphable)header).pred().length==2);
 	//Only worry about headers with two edges
 	if (lp.loopIncelements().contains(header.prev(0)))
 	    linkin=1;
@@ -906,7 +906,7 @@ public final class LoopOptimize {
 	int linkin;
 	Quad header=hcnew.quadMap(oheader);
 
-	Util.assert(((HasEdges)header).pred().length==2);
+	Util.assert(((CFGraphable)header).pred().length==2);
 	//Only worry about headers with two edges
 	if (lp.loopIncelements().contains(header.prev(0)))
 	    linkin=1;

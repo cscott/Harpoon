@@ -24,7 +24,7 @@ import java.util.HashMap;
 import harpoon.Analysis.EdgesIterator;
 import harpoon.Analysis.BasicBlock;
 
-import harpoon.IR.Properties.HasEdges;
+import harpoon.IR.Properties.CFGraphable;
 import harpoon.IR.Properties.UseDef;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
@@ -36,12 +36,12 @@ import harpoon.Util.Util;
 /** <code>ReachingDefs</code> is a
     <code>ForwardDataFlowBasicBlockVisitor</code> for performing
     Reaching Definitions Analysis on any IR that implements
-    <code>HCodeElement</code>, <code>HasEdges</code>, and
+    <code>HCodeElement</code>, <code>CFGraphable</code>, and
     <code>UseDef</code>.  
 
     @author  John Whaley
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: ReachingDefs.java,v 1.1.2.13 1999-10-16 23:57:56 pnkfelix Exp $
+    @version $Id: ReachingDefs.java,v 1.1.2.14 1999-11-30 05:24:43 cananian Exp $
 
 */
 public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
@@ -59,7 +59,7 @@ public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
 	<BR> <B>requires:</B> <code>q</code> implements
 	<code>HCodeElement</code> and <code>UseDef</code>.
     */
-    public ReachingDefs(HasEdges q) {
+    public ReachingDefs(CFGraphable q) {
 	bbToSets = new Hashtable();
 	this.maxHceID = QuadSolver.getMaxID((HCodeElement) q);
 	initTempsToPrsvs(q);
@@ -70,13 +70,13 @@ public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
 	temp.  
 
 	<BR> <B>requires:</B> <code>root</code> and all
-	                      <code>HasEdges</code> linked to by
+	                      <code>CFGraphable</code> linked to by
 			      <code>root</code> implement 
 	                      <code>HCodeElement</code> and
 			      <code>UseDef</code>. 
         <BR> <B>effects:</B> <B>TODO:</B> fill in effects clause. 
     */
-    void initTempsToPrsvs(HasEdges root) {
+    void initTempsToPrsvs(CFGraphable root) {
 	tempsToPrsvs = new HashMap();
 	Enumeration q_en = new IteratorEnumerator(new EdgesIterator(root));
 	while (q_en.hasMoreElements()) {

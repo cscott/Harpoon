@@ -6,7 +6,7 @@ package harpoon.Analysis;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Properties.HasEdges;
+import harpoon.IR.Properties.CFGraphable;
 import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Util;
 
@@ -28,7 +28,7 @@ import java.util.Stack;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.20 1999-09-09 20:53:21 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.21 1999-11-30 05:24:40 cananian Exp $
  */
 
 public class CycleEq  {
@@ -52,7 +52,7 @@ public class CycleEq  {
     newnode: // this is an obvious hack to allow a 'goto' statement
 	do { // despite java's "prohibition".
 	    mark.add(hce);
-	    s.push(((HasEdges)hce).succC().iterator());
+	    s.push(((CFGraphable)hce).succC().iterator());
 	    
 	    while (!s.isEmpty()) {
 		for (Iterator i = (Iterator) s.pop(); i.hasNext(); ) {
@@ -233,8 +233,8 @@ public class CycleEq  {
 	    }
 	    Iterator adj() {
 		return new UnmodifiableIterator() {
-		    final HCodeEdge[] pred=((HasEdges)hce).pred();
-		    final HCodeEdge[] succ=((HasEdges)hce).succ();
+		    final HCodeEdge[] pred=((CFGraphable)hce).pred();
+		    final HCodeEdge[] succ=((CFGraphable)hce).succ();
 		    Edge se = (Edge) start_edges.get(hce);
 		    Edge ee = (Edge) end_edges.get(hce);
 		    int i=0, j=0;

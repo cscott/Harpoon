@@ -11,14 +11,14 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.Analysis.DomTree;
 import harpoon.Analysis.DomFrontier;
-import harpoon.IR.Properties.HasEdges;
+import harpoon.IR.Properties.CFGraphable;
 import java.util.Enumeration;
 import java.util.Iterator;
 /**
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.2.2.9 1999-09-08 19:30:21 cananian Exp $
+ * @version $Id: Graph.java,v 1.2.2.10 1999-11-30 05:25:10 cananian Exp $
  */
 
 public abstract class Graph  {
@@ -41,10 +41,10 @@ public abstract class Graph  {
     /** Print (vcg format) control flow graph representing code view. */
     public static final void printCFG(HCode hc, java.io.PrintWriter pw, String title, String[] setup) {
 	commonHeader(hc, pw, title, setup, "CFG");
-	// control flow graph. The HCodeElements better implement HasEdges
+	// control flow graph. The HCodeElements better implement CFGraphable
 	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
 	    HCodeElement hce = (HCodeElement) e.nextElement();
-	    HCodeEdge[] next = ((HasEdges)hce).succ();
+	    HCodeEdge[] next = ((CFGraphable)hce).succ();
 	    for (int j=0; j<next.length; j++) {
 		String label;
 		if (next.length==1)
@@ -55,7 +55,7 @@ public abstract class Graph  {
 		    label = Integer.toString(j);
 		// also print which_pred of edge, for QuadSSI.
 		if (next[j] instanceof harpoon.IR.Quads.Edge &&
-		    ((HasEdges)next[j].to()).pred().length > 1)
+		    ((CFGraphable)next[j].to()).pred().length > 1)
 		    label = ((label==null)?"":label) + "[" + 
 			((harpoon.IR.Quads.Edge)next[j]).which_pred() +
 			"]";

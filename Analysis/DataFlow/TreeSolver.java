@@ -7,7 +7,7 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import harpoon.IR.Properties.HasEdges;
+import harpoon.IR.Properties.CFGraphable;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Worklist;
 import harpoon.Util.Set;
@@ -25,7 +25,7 @@ import harpoon.Analysis.BasicBlock;
  * <code>BasicBlockSolver</code> class. 
  * 
  * @author Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeSolver.java,v 1.1.2.7 1999-11-29 02:21:52 duncan Exp $
+ * @version $Id: TreeSolver.java,v 1.1.2.8 1999-11-30 05:24:43 cananian Exp $
  */
 public abstract class TreeSolver {
 
@@ -88,7 +88,7 @@ public abstract class TreeSolver {
 
     public static int getMaxID(HCodeElement root) {
 	int max = 0;
-	for (Iterator i = new EdgesIterator((HasEdges)root); i.hasNext();) { 
+	for (Iterator i = new EdgesIterator((CFGraphable)root); i.hasNext();) { 
 	    int id = ((HCodeElement)(i.next())).getID();
 	    Util.assert(id >= 0);
 	    if (id > max) max = id;

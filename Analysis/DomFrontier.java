@@ -6,7 +6,7 @@ package harpoon.Analysis;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Properties.HasEdges;
+import harpoon.IR.Properties.CFGraphable;
 import harpoon.Util.Util;
 import harpoon.Util.ArrayEnumerator;
 import harpoon.Util.Default;
@@ -18,10 +18,10 @@ import java.util.HashSet;
 /**
  * <code>DomFrontier</code> computes the dominance frontier of a 
  * flowgraph-structured IR.  The <code>HCodeElement</code>s must implement
- * the <code>harpoon.IR.Properties.HasEdges</code> interface.
+ * the <code>harpoon.IR.Properties.CFGraphable</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.6.2.6 1999-06-17 20:57:18 cananian Exp $
+ * @version $Id: DomFrontier.java,v 1.6.2.7 1999-11-30 05:24:41 cananian Exp $
  */
 
 public class DomFrontier  {
@@ -101,7 +101,7 @@ public class DomFrontier  {
 	Set S = new HashSet();
 	
 	// for every child y in succ[n]
-	HCodeEdge[] yl = (!isPost) ? ((HasEdges)n).succ() : ((HasEdges)n).pred();
+	HCodeEdge[] yl = (!isPost) ? ((CFGraphable)n).succ() : ((CFGraphable)n).pred();
 	for (int i=0; i < yl.length; i++) {
 	    HCodeElement y = (!isPost) ? yl[i].to() : yl[i].from();
 	    if (!n.equals( dt.idom(hc, y) ))

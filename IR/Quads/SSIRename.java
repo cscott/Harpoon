@@ -7,7 +7,7 @@ import harpoon.Analysis.Place;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Properties.HasEdges;
+import harpoon.IR.Properties.CFGraphable;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
@@ -31,7 +31,7 @@ import java.util.Stack;
  * is hairy because of the big "efficiency-vs-immutable quads" fight.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.5 1999-10-23 05:59:33 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.6 1999-11-30 05:25:04 cananian Exp $
  */
 class SSIRename {
     private static final boolean sort_phisig = false;
@@ -87,7 +87,7 @@ class SSIRename {
 	    setup(c);
 
 	    HCodeElement ROOT = c.getRootElement();
-	    for (Iterator it=((HasEdges)ROOT).edgeC().iterator();
+	    for (Iterator it=((CFGraphable)ROOT).edgeC().iterator();
 		 it.hasNext(); )
 		We.push(it.next());
 	    

@@ -8,7 +8,7 @@ import harpoon.Util.IteratorEnumerator;
 import harpoon.Util.WorkSet;
 import harpoon.Util.Worklist;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Properties.HasEdges;
+import harpoon.IR.Properties.CFGraphable;
 
 import harpoon.Analysis.DataFlow.ReversePostOrderEnumerator;
 
@@ -44,7 +44,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.4 1999-11-24 00:37:00 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.5 1999-11-30 05:24:40 cananian Exp $
 */
 public class BasicBlock {
     
@@ -55,8 +55,8 @@ public class BasicBlock {
 
     static int BBnum = 0;
     
-    HasEdges first;
-    HasEdges last;
+    CFGraphable first;
+    CFGraphable last;
     Set pred_bb;
     Set succ_bb;
     protected int num;
@@ -86,7 +86,7 @@ public class BasicBlock {
 	                      the basic block and <code>l</code> is
 			      the last element of the BasicBlock.
     */
-    protected BasicBlock (HasEdges f, HasEdges l) {
+    protected BasicBlock (CFGraphable f, CFGraphable l) {
 	first = f; last = l; pred_bb = new HashSet(); succ_bb = new HashSet();
 	num = BBnum++;
     }
@@ -134,35 +134,35 @@ public class BasicBlock {
 		     this requirement, but for now its safer to keep
 		     it) 
 	     <LI> 2. All <code>HCodeEdge</code>s linked to by the set
-	             of <code>HasEdges</code> in the code body have
-		     <code>HasEdges</code> objects in their
+	             of <code>CFGraphable</code> in the code body have
+		     <code>CFGraphable</code> objects in their
 		     <code>to</code> and <code>from</code> fields.
 		     <B>NOTE:</B> this really should be an implicit
-		     invariant of <code>HasEdges</code>.  Convince 
+		     invariant of <code>CFGraphable</code>.  Convince 
 		     Scott to change it or let us change it. 
 	     </UL>
 	<BR> <B>effects:</B>  Creates a set of
      	     <code>BasicBlock</code>s corresponding to the blocks
 	     implicitly contained in <code>head</code> and the
-	     <code>HasEdges</code> objects that <code>head</code>
+	     <code>CFGraphable</code> objects that <code>head</code>
 	     points to, and returns the <code>BasicBlock</code> that
 	     <code>head</code> is an instruction in.  The
 	     <code>BasicBlock</code> returned is considered to be the
 	     root (entry-point) of the set of <code>BasicBlock</code>s
 	     created. 
     */
-    public static BasicBlock computeBasicBlocks(HasEdges head) {
+    public static BasicBlock computeBasicBlocks(CFGraphable head) {
 	// maps from every hce 'h' -> BasicBlock 'b' such that 'b'
 	// contains 'h' 
 	HashMap hceToBB = new HashMap();
 
-	// maps HasEdges 'e' -> BasicBlock 'b' starting with 'e'
+	// maps CFGraphable 'e' -> BasicBlock 'b' starting with 'e'
 	Hashtable h = new Hashtable(); 
 	// stores BasicBlocks to be processed
 	Worklist w = new WorkSet();
 
 	while (head.pred().length == 1) {
-	    head = (HasEdges) head.pred()[0].from();
+	    head = (CFGraphable) head.pred()[0].from();
 	}
 	
 	BasicBlock first = new BasicBlock(head);
@@ -179,7 +179,7 @@ public class BasicBlock {
 	    
 	    // 'last' is our guess on which elem will be the last;
 	    // thus we start with the most conservative guess
-	    HasEdges last = (HasEdges) current.getFirst();
+	    CFGraphable last = (CFGraphable) current.getFirst();
 	    boolean foundEnd = false;
 	    while(!foundEnd) {
 		int n = last.succ().length;
@@ -189,7 +189,7 @@ public class BasicBlock {
 
 		} else if (n > 1) { // control flow split
 		    for (int i=0; i<n; i++) {
-			HasEdges e_n = (HasEdges) last.succ()[i].to();
+			CFGraphable e_n = (CFGraphable) last.succ()[i].to();
 			BasicBlock bb = (BasicBlock) h.get(e_n);
 			if (bb == null) {
 			    h.put(e_n, bb=new BasicBlock(e_n));
@@ -203,7 +203,7 @@ public class BasicBlock {
 		    foundEnd = true;
 		    
 		} else { // one successor
-		    HasEdges next = (HasEdges) last.succ()[0].to();
+		    CFGraphable next = (CFGraphable) last.succ()[0].to();
 		    int m = next.pred().length;
 		    if (m > 1) { // control flow join
 			BasicBlock bb = (BasicBlock) h.get(next);
@@ -230,8 +230,8 @@ public class BasicBlock {
 	return (BasicBlock) h.get(head);
     }
 
-    public HasEdges getFirst() { return first; }
-    public HasEdges getLast() { return last; }
+    public CFGraphable getFirst() { return first; }
+    public CFGraphable getLast() { return last; }
     
     public void addPredecessor(BasicBlock bb) { pred_bb.add(bb); }
     public void addSuccessor(BasicBlock bb) { succ_bb.add(bb); }
@@ -241,7 +241,7 @@ public class BasicBlock {
     public Enumeration prev() { return new IteratorEnumerator(pred_bb.iterator()); }
     public Enumeration next() { return new IteratorEnumerator(succ_bb.iterator()); }
     
-    /** Returns an <code>Enumeration</code> of <code>HasEdges</code>
+    /** Returns an <code>Enumeration</code> of <code>CFGraphable</code>
 	within <code>this</code>.  
     */
     public Enumeration elements() {
@@ -249,7 +249,7 @@ public class BasicBlock {
     }
 
     /** Returns an unmodifiable <code>Iterator</code> for the
-	<code>HasEdges</code>s within <code>this</code>.
+	<code>CFGraphable</code>s within <code>this</code>.
 	The <code>Iterator</code> returned will iterate through the
 	instructions according to their order in the program.
     */
@@ -258,14 +258,14 @@ public class BasicBlock {
     }
 
     /** Returns an unmodifiable <code>ListIterator</code> for the
-	<code>HasEdges</code>s within <code>this</code>. 
+	<code>CFGraphable</code>s within <code>this</code>. 
 	The <code>ListIterator</code> returned will iterate through the
 	instructions according to their order in the program.
     */  
     public ListIterator listIterator() {
 	return new ListIterator() {
-	    HasEdges next = first;
-	    HasEdges prev = null;
+	    CFGraphable next = first;
+	    CFGraphable prev = null;
 	    int index = 0;
 	    public boolean hasNext() { return next != null; }
 	    public boolean hasPrevious() { return prev != null; } // correct? 
@@ -285,7 +285,7 @@ public class BasicBlock {
 		}
 		prev = next; 
 		if (next == last) next = null;
-		else next = (HasEdges) next.succ()[0].to();
+		else next = (CFGraphable) next.succ()[0].to();
 		index++;
 		return prev; 
 	    }		
@@ -295,7 +295,7 @@ public class BasicBlock {
 		Util.assert((prev == last) || (prev.succ().length == 1));
 		next = prev;
 		if (prev == first) prev = null;
-		else prev = (HasEdges) prev.pred()[0].from();
+		else prev = (CFGraphable) prev.pred()[0].from();
 		index--;
 		return next;
 	    }
@@ -309,14 +309,14 @@ public class BasicBlock {
     /** Accept a visitor. */
     public void visit(BasicBlockVisitor v) { v.visit(this); }
     
-    protected BasicBlock (HasEdges f) {
+    protected BasicBlock (CFGraphable f) {
 	first = f; last = null; pred_bb = new HashSet(); succ_bb = new HashSet();
 	num = BBnum++;
     }
 
     /** Returns the root <code>BasicBlock</code>.
 	<BR> <B>effects:</B> returns the <code>BasicBlock</code> that
-	     is at the start of the set of <code>HasEdges</code>s
+	     is at the start of the set of <code>CFGraphable</code>s
 	     being analyzed. 
     */
     public BasicBlock getRoot() {
@@ -332,7 +332,7 @@ public class BasicBlock {
 	return Collections.unmodifiableSet(leaves);
     }
 
-    protected void setLast (HasEdges l) {
+    protected void setLast (CFGraphable l) {
 	last = l;
 	if (DEBUG) db(this+": from "+first+" to "+last);
     }
@@ -365,8 +365,8 @@ public class BasicBlock {
 	while (e.hasMoreElements()) {
 	    BasicBlock bb = (BasicBlock)e.nextElement();
 	    System.out.println("Basic block "+bb);
-	    System.out.println("HasEdges in : "+bb.pred_bb);
-	    System.out.println("HasEdges out: "+bb.succ_bb);
+	    System.out.println("CFGraphable in : "+bb.pred_bb);
+	    System.out.println("CFGraphable out: "+bb.succ_bb);
 	    System.out.println();
 	}
     }

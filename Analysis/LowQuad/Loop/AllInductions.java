@@ -8,7 +8,7 @@ import harpoon.Util.WorkSet;
 import harpoon.Analysis.UseDef;
 import harpoon.ClassFile.*;
 import harpoon.IR.LowQuad.*;
-import harpoon.IR.Properties.HasEdges;
+import harpoon.IR.Properties.CFGraphable;
 import harpoon.IR.Quads.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
@@ -21,7 +21,7 @@ import java.util.Iterator;
  * <code>AllInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: AllInductions.java,v 1.1.2.9 1999-09-22 06:15:46 bdemsky Exp $
+ * @version $Id: AllInductions.java,v 1.1.2.10 1999-11-30 05:24:49 cananian Exp $
  */
 public class AllInductions {
     TempMap tm;

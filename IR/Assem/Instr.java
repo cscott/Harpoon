@@ -5,7 +5,7 @@ package harpoon.IR.Assem;
 
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Properties.HasEdges;
+import harpoon.IR.Properties.CFGraphable;
 import harpoon.IR.Properties.UseDef;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
@@ -43,9 +43,9 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.60 1999-11-15 07:49:05 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.61 1999-11-30 05:24:58 cananian Exp $
  */
-public class Instr implements HCodeElement, UseDef, HasEdges {
+public class Instr implements HCodeElement, UseDef, CFGraphable {
     public final String assem; // changed to public for debugging
     private InstrFactory inf;
 
@@ -652,7 +652,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 
     public int getID() { return id; }
 
-    // ******************** HasEdges interface
+    // ******************** CFGraphable interface
 
     /** Returns the <I>control flow</I> edges of <code>this</code>.
 	Note that this returns edges according to <I>control flow</I>, not in

@@ -18,13 +18,13 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrFactory.java,v 1.1.2.19 1999-11-15 07:49:05 pnkfelix Exp $
+ * @version $Id: InstrFactory.java,v 1.1.2.20 1999-11-30 05:24:58 cananian Exp $
  */
 public abstract class InstrFactory {
     /** Maintains a
 	<code>Temp.Label</code><code>-></code><code>InstrLABEL</code>
 	<code>Map</code> for <code>Instr</code>s constructed by
-	<code>this</code>.  Used in dynamic <code>HasEdges</code>
+	<code>this</code>.  Used in dynamic <code>CFGraphable</code>
 	successor resolution.
     */
     Map labelToInstrLABELmap = new HashMap();
@@ -33,7 +33,7 @@ public abstract class InstrFactory {
 	<code>Temp.Label</code> <code>-></code>
 	</code>Set</code><code>[</code> <code>Instr</code> <code>]</code>     
 	<code>Map</code> for <code>Instr</code>s constructed by
-	<code>this</code>.  Used in dynamic <code>HasEdges</code>
+	<code>this</code>.  Used in dynamic <code>CFGraphable</code>
 	predecessor resolution. 
 	Note that the <code>get(label)</code> method for this object
 	will never return <code>null</code>; it will just create new

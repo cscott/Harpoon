@@ -33,7 +33,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.34 1999-10-23 05:59:34 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.35 1999-11-30 05:25:06 cananian Exp $
  */
 public abstract class Code extends HCode 
     implements Derivation, TypeMap {
@@ -223,7 +223,7 @@ public abstract class Code extends HCode
 
     /** 
      * Recomputes the control-flow graph exposed through this codeview
-     * by the <code>HasEdges</code> interface of its elements.  
+     * by the <code>CFGraphable</code> interface of its elements.  
      * This method should be called whenever the tree structure of this
      * codeview is modified.  This is an optional operation, which should
      * be implemented by all canonical codeviews.  

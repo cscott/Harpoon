@@ -24,11 +24,11 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.28 1999-11-04 22:13:24 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.29 1999-11-30 05:25:04 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
-               harpoon.IR.Properties.UseDef, harpoon.IR.Properties.HasEdges,
+               harpoon.IR.Properties.UseDef, harpoon.IR.Properties.CFGraphable,
                Cloneable, Comparable
 {
     /*final*/ QuadFactory qf;

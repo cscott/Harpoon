@@ -4,7 +4,7 @@
 package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlock;
-import harpoon.IR.Properties.HasEdges; 
+import harpoon.IR.Properties.CFGraphable; 
 import harpoon.IR.Properties.UseDef;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
@@ -24,7 +24,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.3 1999-11-29 02:21:09 duncan Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.4 1999-11-30 05:24:43 cananian Exp $
  */
 public class LiveTemps extends LiveVars {
     private Map hceToBB; 
@@ -119,12 +119,12 @@ public class LiveTemps extends LiveVars {
 
 	BasicBlock bb        = (BasicBlock)this.hceToBB.get(hce); 
 	Set        liveAfter = this.getLiveOnExit(bb); 
-	HasEdges   current   = bb.getLast(); 
+	CFGraphable   current   = bb.getLast(); 
 
 	// Starting from the last element in hce's basic block, traverse
 	// the block in reverse order, until hce is reached.  Each step 
 	// updates the liveness information.
-	for (; current != hce; current = (HasEdges)current.pred()[0].from()) {
+	for (; current != hce; current = (CFGraphable)current.pred()[0].from()) {
 	    UseDef udCurrent = (UseDef)current;
 	    liveAfter.addAll(udCurrent.useC()); 
 	    liveAfter.removeAll(udCurrent.defC()); 
