@@ -21,6 +21,7 @@ public class RepairGenerator {
     HashSet usedupdates;
     Termination termination;
     Set removed;
+    HashSet togenerate;
     static boolean DEBUG=false;
     Cost cost;
     Sources sources;
@@ -31,6 +32,11 @@ public class RepairGenerator {
 	usedupdates=new HashSet();
 	termination=t;
 	removed=t.removedset;
+	togenerate=new HashSet();
+        togenerate.addAll(termination.conjunctions);
+        togenerate.removeAll(removed);
+        GraphNode.computeclosure(togenerate,removed);
+
 	cost=new Cost();
 	sources=new Sources(state);
 	Repair.repairgenerator=this;
@@ -42,6 +48,7 @@ public class RepairGenerator {
 	    GraphNode gn=(GraphNode) it.next();
 	    TermNode tn=(TermNode) gn.getOwner();
 	    MultUpdateNode mun=tn.getUpdate();
+	    if (togenerate.contains(gn))
 	    for (int i=0;i<mun.numUpdates();i++) {
 		UpdateNode un=mun.getUpdate(i);
 		String name="update"+String.valueOf(count++);
@@ -69,9 +76,73 @@ public class RepairGenerator {
 	CodeWriter craux = new StandardCodeWriter(this.outputaux);
 	crhead.outputline("};");
 	craux.outputline("};");
+	generate_updates();
     }
 
-    
+    private void generate_updates() {
+	int count=0;
+        CodeWriter crhead = new StandardCodeWriter(outputhead);        
+        CodeWriter craux = new StandardCodeWriter(outputaux);        
+	String state="state";
+	String model="model";
+	String repairtable="repairtable";
+	String left="left";
+	String right="right";
+	for(Iterator it=termination.updatenodes.iterator();it.hasNext();) {
+	    GraphNode gn=(GraphNode) it.next();
+	    TermNode tn=(TermNode) gn.getOwner();
+	    MultUpdateNode mun=tn.getUpdate();
+	    boolean isrelation=(mun.getDescriptor() instanceof RelationDescriptor);
+	    if (togenerate.contains(gn))
+	    for (int i=0;i<mun.numUpdates();i++) {
+		UpdateNode un=mun.getUpdate(i);
+		String methodname=(String)updatenames.get(un);
+		
+		switch(mun.op) {
+		case MultUpdateNode.ADD:
+		    if (isrelation) {
+			crhead.outputline("void "+methodname+"("+name+"_state * " +state+","+name+" * "+model+", RepairHash * "+repairtable+", int "+left+", int "+right+");");
+			craux.outputline("void "+methodname+"("+name+"_state * "+ state+","+name+" * "+model+", RepairHash * "+repairtable+", int "+left+", int "+right+")");
+		    } else {
+			crhead.outputline("void "+methodname+"("+name+"_state * "+ state+","+name+" * "+model+", RepairHash * "+repairtable+", int "+left+");");
+			craux.outputline("void "+methodname+"("+name+"_state * "+state+","+name+" * "+model+", RepairHash * "+repairtable+", int "+left+")");
+		    }
+		    craux.startblock();
+		    un.generate(craux, false, left,right);
+		    craux.endblock();
+		    break;
+		case MultUpdateNode.REMOVE:
+		    Rule r=un.getRule();
+		    String methodcall="void "+methodname+"("+name+"_state * "+state+","+name+" * "+model+", RepairHash * "+repairtable;
+		    for(int j=0;j<r.numQuantifiers();j++) {
+			Quantifier q=r.getQuantifier(j);
+			if (q instanceof SetQuantifier) {
+			    SetQuantifier sq=(SetQuantifier) q;
+			    methodcall+=","+sq.getVar().getType().getGenerateType().getSafeSymbol()+" "+sq.getVar().getSafeSymbol();
+			} else if (q instanceof RelationQuantifier) {
+			    RelationQuantifier rq=(RelationQuantifier) q;
+			    
+			    methodcall+=","+rq.x.getType().getGenerateType().getSafeSymbol()+" "+rq.x.getSafeSymbol();
+			    methodcall+=","+rq.y.getType().getGenerateType().getSafeSymbol()+" "+rq.y.getSafeSymbol();
+			} else if (q instanceof ForQuantifier) {
+			    ForQuantifier fq=(ForQuantifier) q;
+			    methodcall+=",int "+fq.getVar().getSafeSymbol();
+			}
+		    }
+		    methodcall+=")";
+		    crhead.outputline(methodcall+";");
+		    craux.outputline(methodcall);
+		    craux.startblock();
+		    un.generate(craux, true, null,null);
+		    craux.endblock();
+		    break;
+		case MultUpdateNode.MODIFY:
+		default:
+		    throw new Error("Nonimplement Update");
+		}
+	    }
+	}
+    }
 
     private void generate_call() {
         CodeWriter cr = new StandardCodeWriter(outputrepair);        
@@ -513,6 +584,7 @@ public class RepairGenerator {
 			    cr.outputline("if (maybe||"+predvalue.getSafeSymbol()+")");
 			else
 			    cr.outputline("if (maybe||!"+predvalue.getSafeSymbol()+")");
+			cr.startblock();
 			if (p instanceof InclusionPredicate)
 			    generateinclusionrepair(conj,dpred, cr);
 			else if (p instanceof ExprPredicate) {
@@ -522,6 +594,7 @@ public class RepairGenerator {
 			    else if (ep.getType()==ExprPredicate.COMPARISON)
 				generatecomparisonrepair(conj,dpred,cr);
 			} else throw new Error("Unrecognized Predicate");
+			cr.endblock();
 		    }
 		    /* Update model */
 		    
@@ -553,7 +626,6 @@ public class RepairGenerator {
     private MultUpdateNode getmultupdatenode(Conjunction conj, DNFPredicate dpred, int repairtype) {
 	MultUpdateNode mun=null;
 	GraphNode gn=(GraphNode) termination.conjtonodemap.get(conj);
-
 	for(Iterator edgeit=gn.edges();(mun==null)&&edgeit.hasNext();) {
 	    GraphNode gn2=((GraphNode.Edge) edgeit.next()).getTarget();
 	    TermNode tn2=(TermNode)gn2.getOwner();
@@ -561,7 +633,7 @@ public class RepairGenerator {
 		AbstractRepair ar=tn2.getAbstract();
 		if (((repairtype==-1)||(ar.getType()==repairtype))&&
 		    ar.getPredicate()==dpred) {
-		    for(Iterator edgeit2=gn2.edges();edgeit.hasNext();) {
+		    for(Iterator edgeit2=gn2.edges();edgeit2.hasNext();) {
 			GraphNode gn3=((GraphNode.Edge) edgeit2.next()).getTarget();
 			if (!removed.contains(gn3)) {
 			    TermNode tn3=(TermNode)gn3.getOwner();
@@ -796,8 +868,77 @@ public class RepairGenerator {
 	    cr.endblock();
 	}
 	if (generateadd) {
+
 	    cr.outputline("for(;"+change.getSafeSymbol()+">0;"+change.getSafeSymbol()+"--)");
 	    cr.startblock();
+	    VarDescriptor newobject=VarDescriptor.makeNew("newobject");
+	    if (d instanceof RelationDescriptor) {
+		VarDescriptor otherside=((ImageSetExpr)((SizeofExpr)ep.expr).setexpr).vd;
+		RelationDescriptor rd=(RelationDescriptor)d;
+		if (sources.relsetSource(rd,!ep.inverted())) {
+		    /* Set Source */
+		    SetDescriptor sd=sources.relgetSourceSet(rd,!ep.inverted());
+		    VarDescriptor iterator=VarDescriptor.makeNew("iterator");
+		    cr.outputline(sd.getType().getGenerateType().getSafeSymbol() +" "+newobject.getSafeSymbol()+";");
+		    cr.outputline("for("+iterator.getSafeSymbol()+"="+sd.getSafeSymbol()+"_hash->iterator();"+iterator.getSafeSymbol()+".hasNext();)");
+		    cr.startblock();
+		    if (ep.inverted()) {
+			cr.outputline("if !"+rd.getSafeSymbol()+"_hashinv->contains("+iterator.getSafeSymbol()+"->key(),"+otherside.getSafeSymbol()+")");
+		    } else {
+			cr.outputline("if !"+rd.getSafeSymbol()+"_hash->contains("+otherside.getSafeSymbol()+","+iterator.getSafeSymbol()+"->key())");
+		    }
+		    cr.outputline(newobject.getSafeSymbol()+"="+iterator.getSafeSymbol()+".key();");
+		    cr.outputline(iterator.getSafeSymbol()+"->next();");
+		    cr.endblock();
+		} else if (sources.relallocSource(rd,!ep.inverted())) {
+		    /* Allocation Source*/
+		    sources.relgenerateSourceAlloc(cr,newobject,rd,!ep.inverted());
+		} else throw new Error("No source for adding to Relation");
+		if (ep.inverted()) {
+		    boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
+		    boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
+		    if (usageimage)
+			cr.outputline(rd.getSafeSymbol()+"_hash->add("+newobject.getSafeSymbol()+","+otherside.getSafeSymbol()+");");
+		    if (usageinvimage)
+			cr.outputline(rd.getSafeSymbol()+"_hashinv->add("+otherside.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
+
+		    UpdateNode un=munadd.getUpdate(0);
+		    String name=(String)updatenames.get(un);
+		    cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+newobject.getSafeSymbol()+","+otherside.getSafeSymbol()+");");
+		} else {
+		    boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
+		    boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
+		    if (usageimage)
+			cr.outputline(rd.getSafeSymbol()+"_hash->add("+otherside.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
+		    if (usageinvimage)
+			cr.outputline(rd.getSafeSymbol()+"_hashinv->add("+newobject.getSafeSymbol()+","+otherside.getSafeSymbol()+");");
+		    UpdateNode un=munadd.getUpdate(0);
+		    String name=(String)updatenames.get(un);
+		    cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+otherside.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
+		}
+	    } else {
+		SetDescriptor sd=(SetDescriptor)d;
+		if (sources.setSource(sd)) {
+		    /* Set Source */
+		    /* Set Source */
+		    SetDescriptor sourcesd=sources.getSourceSet(sd);
+		    VarDescriptor iterator=VarDescriptor.makeNew("iterator");
+		    cr.outputline(sourcesd.getType().getGenerateType().getSafeSymbol() +" "+newobject.getSafeSymbol()+";");
+		    cr.outputline("for("+iterator.getSafeSymbol()+"="+sourcesd.getSafeSymbol()+"_hash->iterator();"+iterator.getSafeSymbol()+".hasNext();)");
+		    cr.startblock();
+		    cr.outputline("if !"+sd.getSafeSymbol()+"_hash->contains("+iterator.getSafeSymbol()+"->key())");
+		    cr.outputline(newobject.getSafeSymbol()+"="+iterator.getSafeSymbol()+".key();");
+		    cr.outputline(iterator.getSafeSymbol()+"->next();");
+		    cr.endblock();
+		} else if (sources.allocSource(sd)) {
+		    /* Allocation Source*/
+		    sources.generateSourceAlloc(cr,newobject,sd);
+		} else throw new Error("No source for adding to Set");
+		cr.outputline(sd.getSafeSymbol()+"_hash->add("+newobject.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
+		UpdateNode un=munadd.getUpdate(0);
+		String name=(String)updatenames.get(un);
+		cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
+	    }
 	    cr.endblock();
 	}
     }

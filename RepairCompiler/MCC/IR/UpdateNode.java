@@ -193,4 +193,74 @@ class UpdateNode {
     public Updates getUpdate(int i) {
 	return (Updates)updates.get(i);
     }
+    public void generate(CodeWriter cr, boolean removal, String slot0, String slot1) {
+	if (!removal)
+	    generate_bindings(cr, slot0,slot1);
+	for(int i=0;i<updates.size();i++) {
+	    Updates u=(Updates)updates.get(i);
+	    VarDescriptor right=VarDescriptor.makeNew("right");
+	    if (u.getType()==Updates.ABSTRACT)
+		throw new Error("Abstract update not implemented");
+
+	    switch(u.getType()) {
+	    case Updates.EXPR:
+		u.getRightExpr().generate(cr,right);
+		break;
+	    case Updates.POSITION:
+		if (u.getRightPos()==0)
+		    cr.outputline("int "+right.getSafeSymbol()+"="+slot0+";");
+		else if (u.getRightPos()==1)
+		    cr.outputline("int "+right.getSafeSymbol()+"="+slot1+";");
+		else throw new Error("Error w/ Position");
+		break;
+	    default:
+		throw new Error();
+	    }
+	    VarDescriptor left=VarDescriptor.makeNew("left");
+	    u.getLeftExpr().generate(cr,left);
+	    Opcode op=u.getOpcode();
+	    cr.outputline("if ("+left.getSafeSymbol()+op+right.getSafeSymbol()+")");
+	    cr.startblock();
+
+	    if (op==Opcode.GT)
+		cr.outputline(right.getSafeSymbol()+"++;");
+	    else if (op==Opcode.GE)
+		;
+	    else if (op==Opcode.EQ)
+		;
+	    else if (op==Opcode.NE)
+		cr.outputline(right.getSafeSymbol()+"++;");
+	    else if (op==Opcode.LT)
+		cr.outputline(right.getSafeSymbol()+"--;");
+	    else if (op==Opcode.LE)
+		;
+	    else throw new Error();
+	    if (u.isGlobal()) {
+		VarDescriptor vd=((VarExpr)u.getLeftExpr()).getVar();
+		cr.outputline(vd.getSafeSymbol()+"="+right.getSafeSymbol()+";");
+	    } else if (u.isField()) {
+		/* NEED TO FIX */
+	    }
+ 	    cr.endblock();
+	    
+	}
+    }
+    private void generate_bindings(CodeWriter cr, String slot0, String slot1) {
+	for(int i=0;i<bindings.size();i++) {
+	    Binding b=(Binding)bindings.get(i);
+	    if (b.search)
+		throw new Error("Search not implemented for bindings");
+	    VarDescriptor vd=b.getVar();
+	    switch(b.getPosition()) {
+	    case 0:
+		cr.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"="+slot0+";");
+		break;
+	    case 1:
+		cr.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"="+slot1+";");
+		break;
+	    default:
+		throw new Error("Slot >1 doesn't exist.");
+	    }
+	}
+    }
 }

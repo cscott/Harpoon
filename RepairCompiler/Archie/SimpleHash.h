@@ -7,8 +7,11 @@ class LinkedHashNode {
     
 public:
     LinkedHashNode *next;
+    LinkedHashNode *lnext,*lprev;
     int data;
     int key;  
+
+
     LinkedHashNode(int key, int data, LinkedHashNode *next);
     LinkedHashNode();
 
@@ -27,6 +30,34 @@ public:
     void reset();
     int hasMoreElements();
     int nextElement();
+};
+
+
+/* WorkList *********************************************************/
+#define WLISTSIZE 4*100
+
+class WorkList {
+private:
+  struct ListNode *head;
+  struct ListNode *tail;
+  int headoffset;
+  int tailoffset;
+
+public:
+    WorkList();
+    ~WorkList();
+    void add(int id, int type, int lvalue, int rvalue);
+    int hasMoreElements();
+    int getid();
+    int gettype();
+    int getlvalue();
+    int getrvalue();
+    void pop();
+};
+
+struct ListNode {
+  int data[WLISTSIZE];
+  ListNode *next;
 };
 
 
@@ -71,47 +102,33 @@ public:
 /* SimpleHash *********************************************************/
 
 class SimpleHash {
-
 private:
     int numelements;
-
     int size;
-    LinkedHashNode *bucket;
-    LinkedHashNode all;    
-    LinkedHashNode *last;
-
+    LinkedHashNode **bucket;
+    LinkedHashNode *nodelist;
     int numparents;
+    int numchildren;
     SimpleHash* parents[10];
-
+    SimpleHash* children[10];
+    void addChild(SimpleHash* child);
 public:
-
     SimpleHash();
-
     SimpleHash(int size);
-
     ~SimpleHash();
-
     int add(int key, int data);
-    void forceAdd(int key, int data);
-
+    int remove(int key, int data);
     bool contains(int key);
-
     bool contains(int key, int data);
-
     int get(int key, int& data);
-
     int countdata(int data);
-
     void addParent(SimpleHash* parent);
-
     inline SimpleIterator* iterator() {
-        return new SimpleIterator(&all);
+        return new SimpleIterator(nodelist);
     }
-
     inline int count() {
         return numelements;
     }
-
     int count(int key);
 
 };
@@ -121,6 +138,38 @@ public:
 class SimpleHashException {
 public:
     SimpleHashException();
+};
+
+class RepairHashNode {
+ public:
+    RepairHashNode *next;
+    RepairHashNode *lnext;
+    int data;
+    int setrelation;  
+    int lvalue;  
+    int rvalue;  
+    int rule;
+    RepairHashNode(int setrelation, int rule, int lvalue, int rvalue, int data);
+};
+
+class RepairHash {
+
+private:
+    int numelements;
+    int size;
+    RepairHashNode **bucket;
+    RepairHashNode *nodelist;
+
+public:
+    RepairHash();
+    RepairHash(int size);
+    ~RepairHash();
+    int addset(int setv, int rule, int value, int data);
+    int addrelation(int relation, int rule, int lvalue, int rvalue, int data);
+    bool containsset(int setv, int rule, int value);
+    bool containsrelation(int relation, int rule, int lvalue, int rvalue);
+    int getset(int setv, int rule, int value);
+    int getrelation(int relation, int rule, int lvalue, int rvalue);
 };
 
 #endif

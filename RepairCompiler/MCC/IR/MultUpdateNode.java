@@ -28,6 +28,13 @@ class MultUpdateNode {
 	scopenode=sn;
 	op=MultUpdateNode.REMOVE;
     }
+
+    public Descriptor getDescriptor() {
+	if (abstractrepair!=null)
+	    return abstractrepair.getDescriptor();
+	else
+	    return scopenode.getDescriptor();
+    }
     void addUpdate(UpdateNode un) {
 	updates.add(un);
     }

@@ -273,9 +273,10 @@ public class Termination {
 	    Rule r=(Rule) state.vRules.get(i);
 	    Vector possiblerules=new Vector();
 	    /* Construct bindings */
-	    Vector bindings=new Vector();
-	    constructbindings(bindings, r,true);
-	    
+	    /* No need to construct bindings on remove
+	       Vector bindings=new Vector();
+	       constructbindings(bindings, r,true);
+	    */
 	    for(int j=0;j<(r.numQuantifiers()+r.getDNFNegGuardExpr().size());j++) {
 		GraphNode gn=(GraphNode)scopesatisfy.get(r);
 		TermNode tn=(TermNode) gn.getOwner();
@@ -284,7 +285,8 @@ public class Termination {
 		TermNode tn2=new TermNode(mun);
 		GraphNode gn2=new GraphNode("CompRem"+compensationcount,tn2);
 		UpdateNode un=new UpdateNode(r);
-		un.addBindings(bindings);
+		//		un.addBindings(bindings);
+		// Not necessary
 		if (j<r.numQuantifiers()) {
 		    /* Remove quantifier */
 		    Quantifier q=r.getQuantifier(j);
@@ -384,9 +386,10 @@ public class Termination {
 		Rule r=(Rule)possiblerules.get(i);
 		UpdateNode un=new UpdateNode(r);
 		/* Construct bindings */
-		Vector bindings=new Vector();
-		constructbindings(bindings, r,true);
-		un.addBindings(bindings);
+		/* No Need to construct bindings on remove
+		   Vector bindings=new Vector();
+		   constructbindings(bindings, r,true);
+		  un.addBindings(bindings);*/
 		if (count[i]<r.numQuantifiers()) {
 		    /* Remove quantifier */
 		    Quantifier q=r.getQuantifier(count[i]);
