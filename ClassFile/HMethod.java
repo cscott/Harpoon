@@ -20,7 +20,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.23 1998-10-11 03:01:01 cananian Exp $
+ * @version $Id: HMethod.java,v 1.24 1998-10-11 23:43:42 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -48,7 +48,8 @@ public class HMethod implements HMember {
 	this.synthetic = (AttributeSynthetic) methodinfo.attributes[i];
     }
     // Add the default code representation, if method is not native.
-    if (!Modifier.isNative(getModifiers()))
+    if (!Modifier.isNative(getModifiers()) &&
+	!Modifier.isAbstract(getModifiers()))
       putCode(new harpoon.IR.Bytecode.Code(this, this.methodinfo));
   }
   /** provide means for <code>HArrayMethod</code> to subclass. */
