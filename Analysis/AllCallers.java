@@ -23,12 +23,11 @@ import java.util.Collections;
  * of the call graph for methods that fulfill a certain condition.
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: AllCallers.java,v 1.2 2002-02-25 20:56:02 cananian Exp $
+ * @version $Id: AllCallers.java,v 1.3 2003-04-30 22:52:49 salcianu Exp $
  */
 
 public class AllCallers {
-    final HCodeFactory hcf;
-    final ClassHierarchy ch;
+    final Set/*<HMethod>*/ callableMethods;
     final Hashtable g;
 
     /** Creates an <code>AllCallers</code> object using the specified
@@ -37,15 +36,14 @@ public class AllCallers {
      *  the dual of the call graph is built using <code>CallGraph</code>.
      */
     public AllCallers(ClassHierarchy ch, HCodeFactory hcf) {
-	this.hcf = hcf;
-	this.ch = ch;
-	CallGraph cg = new CallGraphImpl(this.ch, this.hcf);
-	this.g = buildGraph(cg);
+	this(new CallGraphImpl(ch, hcf));
     }
 
-    public AllCallers(ClassHierarchy ch, HCodeFactory hcf, CallGraph cg) {
-	this.hcf = hcf;
-	this.ch = ch;
+    /** Creates an <code>AllCallers</code> object that is the dual of
+        the callgraph <code>cg</code> (of type
+        <code>harpoon.Analysis.Quads.CallGraoh</code>). */
+    public AllCallers(CallGraph cg) {
+	this.callableMethods = cg.callableMethods();
 	this.g = buildGraph(cg);
     }
 
@@ -55,9 +53,8 @@ public class AllCallers {
      */
     public Set getCallers(MethodSet ms) {
 	Worklist toadd = new WorkSet();
-	for (Iterator cm = this.ch.callableMethods().iterator(); 
-	     cm.hasNext(); ) {
-	    HMethod m = (HMethod)cm.next();
+	for (Iterator cm = callableMethods.iterator(); cm.hasNext(); ) {
+	    HMethod m = (HMethod) cm.next();
 	    if (ms.select(m)) {
 		toadd.push(m);
 	    }
@@ -94,8 +91,7 @@ public class AllCallers {
      */
     private Hashtable buildGraph(CallGraph cg) {
 	Hashtable ht = new Hashtable();
-	for (Iterator cm = this.ch.callableMethods().iterator(); 
-	     cm.hasNext(); ) {
+	for (Iterator cm = callableMethods.iterator(); cm.hasNext(); ) {
 	    HMethod m = (HMethod)cm.next();
 	    HMethod[] callees = cg.calls(m);
 	    for (int i = 0; i < callees.length; i++) {

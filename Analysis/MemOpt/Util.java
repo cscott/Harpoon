@@ -28,7 +28,7 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  * <code>Util</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Util.java,v 1.7 2002-05-11 15:23:31 salcianu Exp $
+ * @version $Id: Util.java,v 1.8 2003-04-30 22:52:50 salcianu Exp $
  */
 public abstract class Util {
 
@@ -44,10 +44,10 @@ public abstract class Util {
 	    }
 	};
     
-    public static Set getDNEWs(CachingCodeFactory hcf, ClassHierarchy ch,
+    public static Set getDNEWs(CachingCodeFactory hcf, 
 			       HMethod entry, CallGraph cg) {
 	Set dnews = new HashSet();
-	Set methods = reachable_from_rec(hcf, ch, entry, cg);
+	Set methods = reachable_from_rec(entry, cg);
 
 	if(DEBUG)
 	    harpoon.Util.Util.print_collection
@@ -63,12 +63,10 @@ public abstract class Util {
     }
 
 
-    private static Set reachable_from_rec(final CachingCodeFactory hcf,
-					  final ClassHierarchy ch,
-					  final HMethod entry,
+    private static Set reachable_from_rec(final HMethod entry,
 					  final CallGraph cg) {
 	// 1. construct the SCCs of the subgraph rooted in entry
-	final AllCallers ac = new AllCallers(ch, hcf, cg);
+	final AllCallers ac = new AllCallers(cg);
 
 	SCComponent.Navigator nav = new SCComponent.Navigator() {
 	    public Object[] next(Object node) {
