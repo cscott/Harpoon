@@ -21,22 +21,24 @@ import java.util.Arrays;
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
     @author  Emmett Witchel <witchel@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.2 2000-07-12 14:31:56 cananian Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.3 2000-08-26 04:54:41 witchel Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
     private static final int OFFSET_LIMIT = 1023;
 
     RegFileInfo rfInfo;
+   private Frame frame;
 
     /* helper macro. */
     private final Temp SP() { 
 	return rfInfo.SP;
     }
     
-    InstrBuilder(RegFileInfo rfInfo) {
+    InstrBuilder(RegFileInfo rfInfo, Frame _frame) {
 	super();
 	this.rfInfo = rfInfo;
+    frame = _frame;
     }
 
     // TODO: override makeStore/Load(List, int, Instr) to take
@@ -51,6 +53,8 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
     }
 
    public List makeLoad(Temp r, int offset, Instr template) {
+      StackInfo stack = ((CodeGen)frame.getCodeGen()).getStackInfo();
+      offset = stack.localSaveOffset(offset);
       String[] strs = getLdrAssemStrs(r, offset);
       Util.assert(strs.length == 1 ||
                   strs.length == 2 );
@@ -81,24 +85,26 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
     private String[] getLdrAssemStrs(Temp r, int offset) {
        if (r instanceof TwoWordTemp) {
           return new String[] {
-             "lw `d0h, ", + (4*offset) + "(`s0)" ,
-             "lw `d0l, ", + (4*(offset+1)) + "(`s0)" };
+             "lw `d0h, ", + offset + "(`s0)        # tmp restore (h)" ,
+             "lw `d0l, ", + (offset+4) + "(`s0)        # tmp restore (l)" };
        } else {
-          return new String[] { "lw `d0, " + (4*offset) + "(`s0)" };
+          return new String[] { "lw `d0, " + offset + "(`s0)        # tmp restore" };
        }
     }
 
     private String[] getStrAssemStrs(Temp r, int offset) {
        if (r instanceof TwoWordTemp) {
           return new String[] {
-             "sw `s0h, " + (4*offset) + "(`s1)", 
-             "sw `s0l, " + (4*(offset+1)) + "(`s1)" };
+             "sw `s0h, " + offset + "(`s1)        # tmp save (h)", 
+             "sw `s0l, " + (offset+4) + "(`s1)        # tmp save (l)" };
        } else {
-          return new String[] { "sw `s0, " + (4*offset) + "(`s1)" };
+          return new String[] { "sw `s0, " + offset + "(`s1)          # tmp save" };
        }
     }
 
     public List makeStore(Temp r, int offset, Instr template) {
+       StackInfo stack = ((CodeGen)frame.getCodeGen()).getStackInfo();
+       offset = stack.localSaveOffset(offset);       
        String[] strs = getStrAssemStrs(r, offset);
        Util.assert(strs.length == 1 || 
                    strs.length == 2);

@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.4 2000-08-24 23:35:38 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.5 2000-08-26 04:54:41 witchel Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
    private final harpoon.Backend.Generic.Runtime   runtime;
@@ -59,7 +59,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	// be careful about ordering of constructions.
 	codegen = new CodeGen(this, is_elf);
 
-	instrBuilder = new InstrBuilder(regFileInfo);
+	instrBuilder = new InstrBuilder(regFileInfo, this);
 	tempBuilder = new TempBuilder();
     }
 
