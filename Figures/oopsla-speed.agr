@@ -1,7 +1,7 @@
 # Grace project file
 #
 @version 50107
-@page size 790, 610
+@page size 789, 609
 @page scroll 5%
 @page inout 5%
 @link page off
@@ -54,7 +54,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Fri Mar 22 19:13:44 2002"
+@timestamp def "Fri Mar 22 20:23:13 2002"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -104,7 +104,7 @@
 @    world xmin 1.5
 @    world xmax 9.5
 @    world ymin 0
-@    world ymax 1.6
+@    world ymax 1.75
 @    stack world 0, 0, 0, 0
 @    znorm 1
 @    view xmin 0.150000
@@ -130,7 +130,7 @@
 @    xaxis  bar color 1
 @    xaxis  bar linestyle 1
 @    xaxis  bar linewidth 1.0
-@    xaxis  label "Benchmarks"
+@    xaxis  label "SPECjvm98 Benchmarks"
 @    xaxis  label layout para
 @    xaxis  label place spec
 @    xaxis  label place 0.000000, 0.080000
@@ -201,7 +201,7 @@
 @    yaxis  bar color 1
 @    yaxis  bar linestyle 1
 @    yaxis  bar linewidth 1.0
-@    yaxis  label "Normalized Execution Time"
+@    yaxis  label "Execution time, normalized to no-optimization case"
 @    yaxis  label layout para
 @    yaxis  label place spec
 @    yaxis  label place 0.000000, 0.080000
@@ -210,7 +210,7 @@
 @    yaxis  label color 1
 @    yaxis  label place normal
 @    yaxis  tick on
-@    yaxis  tick major 100
+@    yaxis  tick major 1
 @    yaxis  tick minor ticks 4
 @    yaxis  tick default 3
 @    yaxis  tick place rounded true
@@ -218,8 +218,8 @@
 @    yaxis  tick major size 1.000000
 @    yaxis  tick major color 1
 @    yaxis  tick major linewidth 1.0
-@    yaxis  tick major linestyle 1
-@    yaxis  tick major grid off
+@    yaxis  tick major linestyle 3
+@    yaxis  tick major grid on
 @    yaxis  tick minor color 1
 @    yaxis  tick minor linewidth 1.0
 @    yaxis  tick minor linestyle 1
@@ -250,7 +250,7 @@
 @    altyaxis  off
 @    legend on
 @    legend loctype view
-@    legend 0.75, 0.4
+@    legend 0.63, 0.4
 @    legend box color 1
 @    legend box pattern 1
 @    legend box linewidth 1.0
@@ -258,7 +258,7 @@
 @    legend box fill color 0
 @    legend box fill pattern 1
 @    legend font 0
-@    legend char size 1.000000
+@    legend char size 0.850000
 @    legend color 1
 @    legend length 4
 @    legend vgap 1
@@ -271,7 +271,7 @@
 @    frame pattern 1
 @    frame background color 0
 @    frame background pattern 0
-@    s0 hidden true
+@    s0 hidden false
 @    s0 type bar
 @    s0 symbol 0
 @    s0 symbol size 0.650000
@@ -319,7 +319,7 @@
 @    s0 errorbar riser clip off
 @    s0 errorbar riser clip length 0.100000
 @    s0 comment "Claz Compression"
-@    s0 legend  "+Claz Compression"
+@    s0 legend  "Claz Compression"
 @    s1 hidden false
 @    s1 type bar
 @    s1 symbol 0
@@ -368,7 +368,7 @@
 @    s1 errorbar riser clip off
 @    s1 errorbar riser clip length 0.100000
 @    s1 comment "+Field Reduction"
-@    s1 legend  "+Field Reduction"
+@    s1 legend  "add Field Reduction to previous"
 @    s2 hidden false
 @    s2 type bar
 @    s2 symbol 0
@@ -417,7 +417,7 @@
 @    s2 errorbar riser clip off
 @    s2 errorbar riser clip length 0.100000
 @    s2 comment "+Byte Packing"
-@    s2 legend  "+Byte Packing"
+@    s2 legend  "add Byte Packing to previous"
 @    s3 hidden false
 @    s3 type bar
 @    s3 symbol 0
@@ -466,7 +466,7 @@
 @    s3 errorbar riser clip off
 @    s3 errorbar riser clip length 0.100000
 @    s3 comment "+Static Specialization"
-@    s3 legend  "+Static Specialization"
+@    s3 legend  "add Static Specialization to previous"
 @    s4 hidden false
 @    s4 type bar
 @    s4 symbol 0
@@ -515,7 +515,7 @@
 @    s4 errorbar riser clip off
 @    s4 errorbar riser clip length 0.100000
 @    s4 comment "+Field Externalization"
-@    s4 legend  "+Field Externalization"
+@    s4 legend  "add Field Externalization to previous"
 @    s5 hidden false
 @    s5 type bar
 @    s5 symbol 0
@@ -564,7 +564,7 @@
 @    s5 errorbar riser clip off
 @    s5 errorbar riser clip length 0.100000
 @    s5 comment "+Hash"
-@    s5 legend  "+Hash"
+@    s5 legend  "add Hash/Lock Externalization to previous"
 @    s6 hidden true
 @    s6 type bar
 @    s6 symbol 0
