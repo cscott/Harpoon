@@ -65,7 +65,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.17 2001-01-24 22:44:18 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.18 2001-01-25 02:16:13 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -1275,7 +1275,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		    ((xInstanceofResult)o).tested == tested);
 	}
 	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xInstanceofResult)) return false;
+	    if (!(v instanceof xBitWidth)) return false;
 	    if (v.equals(this)) return false;
 	    return true;
 	}
@@ -1320,7 +1320,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    return true;
 	}
 	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xOperBooleanResult)) return false;
+	    if (!(v instanceof xBitWidth)) return false;
 	    if (v.equals(this)) return false;
 	    return true;
 	}
