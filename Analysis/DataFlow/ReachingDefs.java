@@ -40,7 +40,7 @@ public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
     */
     public ReachingDefs(Edges q) {
 	bbToSets = new Hashtable();
-	this.maxQuadID = Solver.getMaxID((HCodeElement) q);
+	this.maxQuadID = QuadSolver.getMaxID((HCodeElement) q);
 	initTempsToPrsvs(q);
     }
     

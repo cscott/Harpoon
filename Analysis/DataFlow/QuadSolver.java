@@ -20,7 +20,7 @@ import harpoon.Util.Util;
 import harpoon.Util.IteratorEnumerator;
 import harpoon.Analysis.EdgesIterator;
 
-public abstract class Solver {
+public abstract class QuadSolver {
 
   public static boolean DEBUG = false;
   public static void db(String s) { System.out.println(s); }
