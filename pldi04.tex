@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.16 2003-11-11 06:24:42 cananian Exp $
+% $Id: pldi04.tex,v 1.17 2003-11-11 06:29:55 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -35,7 +35,7 @@ Cambridge, MA 02139 \\
 }
 \special{papersize=8.5in,11in}
 
-\date{\today \\ $ $Revision: 1.16 $ $}
+\date{\today \\ $ $Revision: 1.17 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -301,27 +301,22 @@ back-tracking.}
 
  \par {\footnotesize\samepage
 \begin{verbatim}
+// destructive list traversal.
 void traverse(List l) {
   List last = null, t;
   
   /* zip through the list, reversing links */
-  do {
-    preVisit(l); // visit the node
-    t = l.next;
-    l.next = last;
-    last = l;
-    l = t;
-  } while (l!=null);
-
-  /* now zip backwards, fixing up the links. */
-  l = last;
-  do {
-    t = l.next; // "previous"
-    l.next = last; // "next"
-    postVisit(l); // visit the node.
-    last = l;
-    l = t;
-  } while (l!=null);
+  for (int i=0; i<2; i++) {
+    do {
+      if (i==0) visit(l); // visit node
+      t = l.next;
+      l.next = last;
+      last = l;
+      l = t;
+    } while (l!=null);
+    l = last;
+    // now do again, backwards.
+  }
 }
 \end{verbatim}
 }
@@ -336,6 +331,20 @@ try {
   }
 } else { // try-else construct
   throw new Error();
+}
+\end{verbatim}
+}
+
+ \par {\footnotesize\samepage
+\begin{verbatim}
+while(true) {
+  try {
+    // atomic actions
+  } else {
+    backOff();
+    continue;
+  }
+  break; // success!
 }
 \end{verbatim}
 }
