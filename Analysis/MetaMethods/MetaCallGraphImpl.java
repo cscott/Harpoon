@@ -58,7 +58,7 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.9 2000-03-28 23:51:33 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.10 2000-03-29 23:43:56 cananian Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
@@ -89,8 +89,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	// activate the GC
 	callees1    = null;
 	callees2    = null;
-	ch          = null;
-	bbconv      = null;
+	this.ch     = null;
+	this.bbconv = null;
 	analyzed_mm = null;
 	WMM         = null;
 	mm_work     = null;
@@ -98,6 +98,16 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	ets2et      = null;
 	mh2md       = null;
 	param_types = null;
+	// null these out so that we can serialize the object [CSA]
+	// (alternatively, could mark all of these as 'transient')
+	call_detector           = null;
+	dd_wrapper              = null;
+	dep_detection_visitor   = null;
+	ti_wrapper              = null;
+	type_inference_qvisitor = null;
+	ets2et                  = null;
+	ets_test                = null;
+	// okay, now garbage-collect.
 	System.gc();
     }
 
@@ -738,10 +748,10 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	ExactTemp[] deps = null;
 	Temp           t = null;
     }; 
-    private final DDWrapper dd_wrapper = new DDWrapper();
+    private DDWrapper dd_wrapper = new DDWrapper();
 
     // Visitor for the dependency detection
-    private final QuadVisitor dep_detection_visitor = new QuadVisitor(){
+    private QuadVisitor dep_detection_visitor = new QuadVisitor(){
 	    public void visit(MOVE q){
 		Temp t = dd_wrapper.t;
 		if(CAUTION && !t.equals(q.dst())) stop_no_def(q);
@@ -1012,9 +1022,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	Temp       t = null;
 	ExactTemp et = null;
     };
-    private final TIWrapper ti_wrapper = new TIWrapper();
+    private TIWrapper ti_wrapper = new TIWrapper();
 
-    private final QuadVisitor type_inference_qvisitor = new QuadVisitor(){
+    private QuadVisitor type_inference_qvisitor = new QuadVisitor(){
 	    
 	    public void visit(MOVE q){
 		Temp       t = ti_wrapper.t;

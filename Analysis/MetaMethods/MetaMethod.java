@@ -41,9 +41,9 @@ import harpoon.Util.Util;
  concerned call-sites to point to it.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaMethod.java,v 1.1.2.2 2000-03-20 21:28:59 salcianu Exp $
+ * @version $Id: MetaMethod.java,v 1.1.2.3 2000-03-29 23:43:56 cananian Exp $
  */
-public class MetaMethod {
+public class MetaMethod implements java.io.Serializable {
     // Turns on some severe correctness tests.
     private static final boolean CAUTION = true;
  
@@ -112,7 +112,7 @@ public class MetaMethod {
 	should be used to specialize the types of the arguments. */
     public void setType(int i, GenType gt){
 	types[i] = gt;
-	hash = -1; // invalidate the cashed hash code
+	hash = 0; // invalidate the cashed hash code
     }
 
     /** Returns the number of parameters of <code>this</code> metamethod. */
@@ -121,10 +121,10 @@ public class MetaMethod {
     }
 
     // some caching hack
-    private int hash = -1;
+    private transient int hash = 0;
     /** Computes the hash code of <code>this</code> object. */
     public int hashCode(){
-	if(hash != -1) return hash;
+	if(hash != 0) return hash;
 	hash = hm.hashCode();
 	int nb_types = types.length;
 	for(int i = 0; i < nb_types; i++)

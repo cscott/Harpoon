@@ -19,9 +19,9 @@ import harpoon.Util.Util;
  rooted in a specific <code>HClass</code>)
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: GenType.java,v 1.1.2.1 2000-03-18 01:55:14 salcianu Exp $
+ * @version $Id: GenType.java,v 1.1.2.2 2000-03-29 23:43:55 cananian Exp $
  */
-public class GenType {
+public class GenType implements java.io.Serializable {
 
     /** Monomorphic type. This is an exact type, just the point 
 	<code>hclass</code> into the type space. */
@@ -69,11 +69,11 @@ public class GenType {
 	return (kind == gt2.kind) && hclass.equals(gt2.hclass);
     }
 
-    private int hash = -1;
+    private transient int hash = 0;
     /** Computes the hash code of <code>this</code> object. */
     public int hashCode(){
-	if(hash == -1)
-	    hash = hclass.hashCode();
+	if(hash == 0)
+	    hash = hclass.hashCode() + kind;
 	return hash;
     }
 
