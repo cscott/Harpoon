@@ -57,9 +57,13 @@ THlat6c2.tex: THlat6c.tex
 	    -e 's/\\color\[rgb\]{0,0,1}/\\white\\onlySlide*{4}{\\yellow}/g' \
 	< $< > $@
 
+# default pbm->eps rule
+%.eps : %.pbm
+	pnmtops -equalpixels -noturn $< > $@
+
 # default fig->eps rule
 %.eps: %.fig
-	fig2dev -L eps -m 1.0 $< > $@
+	fig2dev -L eps $($(patsubst %.fig,FIG_MAG_%,$<)) $< > $@
 
 #default gnu-plot to latex rule
 %.tex: %.gnuplot
