@@ -4,12 +4,12 @@
 package harpoon.Main;
 
 import harpoon.ClassFile.*;
-import harpoon.IR.QuadSSA.*;
+import harpoon.IR.Quads.*;
 /**
  * <code>Main</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.8 1998-11-10 00:45:48 cananian Exp $
+ * @version $Id: Main.java,v 1.8.2.1 1998-12-01 12:36:44 cananian Exp $
  */
 
 public abstract class Main extends harpoon.IR.Registration {

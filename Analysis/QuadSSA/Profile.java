@@ -10,7 +10,7 @@
 package harpoon.Analysis.QuadSSA;
 
 import harpoon.ClassFile.*;
-import harpoon.IR.QuadSSA.*;
+import harpoon.IR.Quads.*;
 import harpoon.Temp.Temp;
 import harpoon.Util.Set;
 import harpoon.Util.Util;

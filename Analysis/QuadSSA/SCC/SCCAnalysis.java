@@ -8,7 +8,7 @@ import harpoon.Analysis.Maps.ExecMap;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.ClassFile.*;
-import harpoon.IR.QuadSSA.*;
+import harpoon.IR.Quads.*;
 import harpoon.Temp.Temp;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Set;
@@ -22,7 +22,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.1 1998-12-01 10:26:16 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.2 1998-12-01 12:36:37 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {

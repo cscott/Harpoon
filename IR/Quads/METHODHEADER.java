@@ -1,7 +1,7 @@
 // METHODHEADER.java, created Thu Aug 20 17:34:12 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.IR.QuadSSA;
+package harpoon.IR.Quads;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * keep track of the temporary variable names used for method parameters.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: METHODHEADER.java,v 1.13.2.1 1998-11-30 21:21:03 cananian Exp $
+ * @version $Id: METHODHEADER.java,v 1.1.2.1 1998-12-01 12:36:42 cananian Exp $
  */
 
 public class METHODHEADER extends HEADER {

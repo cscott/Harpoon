@@ -1,6 +1,6 @@
 package harpoon.IR.QuadNoSSA;
 
-import harpoon.IR.QuadSSA.*;
+import harpoon.IR.Quads.*;
 import harpoon.Temp.Temp;
 import harpoon.ClassFile.*;
 import harpoon.Analysis.Maps.TypeMap;

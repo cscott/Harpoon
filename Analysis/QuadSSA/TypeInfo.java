@@ -6,7 +6,7 @@ package harpoon.Analysis.QuadSSA;
 import harpoon.Analysis.UseDef;
 import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.ClassFile.*;
-import harpoon.IR.QuadSSA.*;
+import harpoon.IR.Quads.*;
 import harpoon.Temp.*;
 import harpoon.Util.Util;
 import harpoon.Util.UniqueFIFO;
@@ -19,7 +19,7 @@ import java.util.Hashtable;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.2 1998-11-22 02:50:14 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.3 1998-12-01 12:36:27 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
@@ -34,11 +34,11 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
     public TypeInfo() { this(new UseDef()); }
     
     public HClass typeMap(HCode hc, Temp t) { 
-	analyze((harpoon.IR.QuadSSA.Code)hc);
+	analyze((harpoon.IR.Quads.QuadSSA)hc);
 	return (HClass) map.get(t); 
     }
 
-    void analyze(harpoon.IR.QuadSSA.Code hc) {
+    void analyze(harpoon.IR.Quads.QuadSSA hc) {
 	// don't do the same method more than once.
 	if (analyzed.containsKey(hc)) return;
 	analyzed.put(hc, hc);
@@ -75,10 +75,10 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
     }
 
     class TypeInfoVisitor extends QuadVisitor {
-	harpoon.IR.QuadSSA.Code hc;
+	harpoon.IR.Quads.QuadSSA hc;
 	boolean modified = false;
 	Hashtable checkcast;
-	TypeInfoVisitor(harpoon.IR.QuadSSA.Code hc, Hashtable checkcast) 
+	TypeInfoVisitor(harpoon.IR.Quads.QuadSSA hc, Hashtable checkcast) 
 	{ this.hc = hc; this.checkcast = checkcast; }
 
 	public void visit(Quad q) { modified = false; }

@@ -1,7 +1,7 @@
 // BasicCSE.java, created Sat Sep 26 04:27:12 1998 by marinov
 package harpoon.Analysis.QuadSSA;
 
-import harpoon.IR.QuadSSA.*;
+import harpoon.IR.Quads.*;
 import harpoon.ClassFile.*;
 import harpoon.Temp.*;
 import harpoon.Util.UniqueVector;
@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * common subexpression elemination, but only within basic blocks.
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: BasicCSE.java,v 1.2 1998-11-11 05:06:12 cananian Exp $
+ * @version $Id: BasicCSE.java,v 1.2.2.1 1998-12-01 12:36:26 cananian Exp $
  */
 
 public class BasicCSE  {

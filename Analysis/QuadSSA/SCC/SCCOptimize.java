@@ -9,7 +9,7 @@ import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.Analysis.QuadSSA.DeadCode;
 import harpoon.ClassFile.*;
-import harpoon.IR.QuadSSA.*;
+import harpoon.IR.Quads.*;
 import harpoon.Temp.Temp;
 import harpoon.Util.Set;
 import harpoon.Util.Util;
@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.5.2.1 1998-11-30 21:21:00 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.5.2.2 1998-12-01 12:36:37 cananian Exp $
  */
 public class SCCOptimize {
     TypeMap  ti;

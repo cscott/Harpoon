@@ -4,7 +4,7 @@
 package harpoon.Analysis.QuadSSA;
 
 import harpoon.ClassFile.*;
-import harpoon.IR.QuadSSA.*;
+import harpoon.IR.Quads.*;
 import harpoon.Util.Set;
 import harpoon.Util.Worklist;
 import java.util.Enumeration;
@@ -14,7 +14,7 @@ import java.util.Vector;
  * <code>CallGraph</code> constructs a simple directed call graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.4 1998-10-16 12:09:23 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.4.2.1 1998-12-01 12:36:26 cananian Exp $
  */
 
 public class CallGraph  {

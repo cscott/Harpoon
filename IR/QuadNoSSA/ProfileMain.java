@@ -8,7 +8,7 @@ import java.io.*;
 import harpoon.Analysis.QuadSSA.SCC.*;
 import harpoon.Analysis.*;
 import harpoon.ClassFile.*;
-import harpoon.IR.QuadSSA.*;
+import harpoon.IR.Quads.*;
 import harpoon.Analysis.QuadSSA.TypeInfo;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.QuadSSA.Profile;
@@ -74,7 +74,7 @@ public  class ProfileMain extends harpoon.IR.Registration {
 		// out.close();
 		
 		
-		harpoon.IR.QuadNoSSA.Code hc = new harpoon.IR.QuadNoSSA.Code((harpoon.IR.QuadSSA.Code)hc1);
+		harpoon.IR.QuadNoSSA.Code hc = new harpoon.IR.QuadNoSSA.Code((harpoon.IR.Quads.QuadSSA)hc1);
 		System.out.println ("Right before calling create Java on: " +hm[j].getName());
 
 		//NMethod method = hc.createJavaByte (scc, hm[j].getCode("quad-ssa"));

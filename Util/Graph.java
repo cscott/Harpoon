@@ -10,7 +10,7 @@ import java.util.Enumeration;
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.2.2.1 1998-11-25 20:05:50 cananian Exp $
+ * @version $Id: Graph.java,v 1.2.2.2 1998-12-01 12:36:45 cananian Exp $
  */
 
 public abstract class Graph  {
@@ -46,10 +46,10 @@ public abstract class Graph  {
 		else
 		    label = Integer.toString(j);
 		// also print which_pred of edge, for QuadSSA.
-		if (next[j] instanceof harpoon.IR.QuadSSA.Edge &&
+		if (next[j] instanceof harpoon.IR.Quads.Edge &&
 		    ((Edges)next[j].to()).pred().length > 1)
 		    label = ((label==null)?"":label) + "[" + 
-			((harpoon.IR.QuadSSA.Edge)next[j]).which_pred() +
+			((harpoon.IR.Quads.Edge)next[j]).which_pred() +
 			"]";
 		pw.println(edgeString(next[j].from(), next[j].to(), 
 				      label));

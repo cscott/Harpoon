@@ -4,7 +4,7 @@
 package harpoon.Analysis.QuadSSA;
 
 import harpoon.ClassFile.*;
-import harpoon.IR.QuadSSA.*;
+import harpoon.IR.Quads.*;
 import harpoon.Util.Set;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
@@ -17,7 +17,7 @@ import java.util.Enumeration;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.4 1998-10-16 12:09:23 cananian Exp $
+ * @version $Id: ClassHierarchy.java,v 1.4.2.1 1998-12-01 12:36:27 cananian Exp $
  */
 
 public class ClassHierarchy  {

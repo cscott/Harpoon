@@ -4,7 +4,7 @@
 package harpoon.Analysis.QuadSSA;
 
 import harpoon.ClassFile.*;
-import harpoon.IR.QuadSSA.*;
+import harpoon.IR.Quads.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Set;
@@ -20,7 +20,7 @@ import java.util.Hashtable;
  * unused and seeks to prove otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.11.2.1 1998-11-30 21:21:00 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.11.2.2 1998-12-01 12:36:27 cananian Exp $
  */
 
 public abstract class DeadCode  {

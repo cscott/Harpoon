@@ -2,15 +2,15 @@
 package harpoon.IR.QuadNoSSA;
 
 //import harpoon.Analysis.QuadSSA.DeadCode;
-import harpoon.IR.QuadSSA.*;
+import harpoon.IR.Quads.*;
 import harpoon.ClassFile.*;
 import harpoon.Temp.*;
 import harpoon.Util.Set;
 import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
 import harpoon.Analysis.Maps.TypeMap;
-import harpoon.IR.QuadSSA.SIGMA.*;
-import harpoon.IR.QuadSSA.*;
+import harpoon.IR.Quads.SIGMA.*;
+import harpoon.IR.Quads.*;
 
 //import jas.*;
 
@@ -19,7 +19,7 @@ import java.util.*;
  * <code>QuadNoSSA.Code</code> is <blink><b>fill me in</b></blink>.
  * 
  * @author  Nate Kushman <nkushman@lcs.mit.edu>
- * @version $Id: Code.java,v 1.2 1998-10-16 12:09:59 cananian Exp $
+ * @version $Id: Code.java,v 1.2.2.1 1998-12-01 12:36:38 cananian Exp $
  */
 
 public class Code extends HCode{
@@ -33,7 +33,7 @@ public class Code extends HCode{
   Quad quads;
 
   /** Creates a <code>Code</code> object from a bytecode object. */
-  public Code(harpoon.IR.QuadSSA.Code ssa) 
+  public Code(harpoon.IR.Quads.QuadSSA ssa) 
   {
     this.parent = ssa.getMethod();
     //harpoon.Temp.Temp.clear(); /* debug */
@@ -160,7 +160,7 @@ public class Code extends HCode{
       HCodeFactory f = new HCodeFactory() {
 	  public HCode convert(HMethod m) {
 	      HCode c = m.getCode("quad-ssa");
-	      return (c==null)?null:new Code((harpoon.IR.QuadSSA.Code) c);
+	      return (c==null)?null:new Code((harpoon.IR.Quads.QuadSSA) c);
 	  }
 	  public String getCodeName() {
 	      return codename;
