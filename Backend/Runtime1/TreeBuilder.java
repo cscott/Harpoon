@@ -60,48 +60,48 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.30 2000-11-10 22:43:58 bdemsky Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.31 2000-11-10 23:30:56 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
     final AllocationStrategy as;
 
     // integer constant sizes:
-    final int WORD_SIZE;
-    final int LONG_WORD_SIZE;
+    protected final int WORD_SIZE;
+    protected final int LONG_WORD_SIZE;
     protected final int POINTER_SIZE;
-    final int OBJECT_HEADER_SIZE;
+    protected final int OBJECT_HEADER_SIZE;
     // integer constant offsets:
     // layout of oobj
-    final int OBJ_CLAZ_OFF;
+    protected final int OBJ_CLAZ_OFF;
     protected final int OBJ_HASH_OFF;
-    final int OBJ_ALENGTH_OFF;
-    final int OBJ_AZERO_OFF;
-    final int OBJ_FZERO_OFF;
+    protected final int OBJ_ALENGTH_OFF;
+    protected final int OBJ_AZERO_OFF;
+    protected final int OBJ_FZERO_OFF;
     // layout of claz
-    final int CLAZ_INTERFACES_OFF;
-    final int CLAZ_CLAZINFO;
-    final int CLAZ_COMPONENT_OFF;
-    final int CLAZ_INTERFZ_OFF;
-    final int CLAZ_SIZE_OFF;
-    final int CLAZ_GCENTRY_OFF;
-    final int CLAZ_DEPTH_OFF;
-    final int CLAZ_DISPLAY_OFF;
-    final int CLAZ_METHODS_OFF;
+    protected final int CLAZ_INTERFACES_OFF;
+    protected final int CLAZ_CLAZINFO;
+    protected final int CLAZ_COMPONENT_OFF;
+    protected final int CLAZ_INTERFZ_OFF;
+    protected final int CLAZ_SIZE_OFF;
+    protected final int CLAZ_GCENTRY_OFF;
+    protected final int CLAZ_DEPTH_OFF;
+    protected final int CLAZ_DISPLAY_OFF;
+    protected final int CLAZ_METHODS_OFF;
     
     // helper maps.
-    final Runtime runtime;
-    final Linker linker;
-    final ClassDepthMap cdm;
-    final MethodMap imm;
-    final MethodMap cmm;
-    final FieldMap  cfm;
+    protected final Runtime runtime;
+    protected final Linker linker;
+    protected final ClassDepthMap cdm;
+    protected final MethodMap imm;
+    protected final MethodMap cmm;
+    protected final FieldMap  cfm;
 
     // set of string references made
     final Set stringSet = new HashSet();
 
-    public TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
-		AllocationStrategy as, boolean pointersAreLong) {
+    protected TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
+			  AllocationStrategy as, boolean pointersAreLong) {
 	this.runtime = runtime;
 	this.linker = linker;
 	this.as  = as;
