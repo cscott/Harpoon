@@ -40,12 +40,16 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.27 2001-01-24 19:33:40 cananian Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.28 2001-07-04 05:05:06 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
     implements harpoon.Backend.Generic.LocationFactory
 {
+    // FSK: experiment; expose all regs to allocator to try to
+    // match Scott's performance
+    private static final boolean EXPOSE_ALL_REGS = true;
+
     final Temp[] reg;
     final Set callerSaveRegs;
     final Set calleeSaveRegs;
@@ -146,16 +150,18 @@ public class RegFileInfo
 	calleeSaveRegs.add(FP);
 	calleeSaveRegs.add(SP);
 
+	Temp[] regs = EXPOSE_ALL_REGS ? reg : regGeneral;
+
 	oneWordAssigns = new HashSet();
-	for (int i=0; i<regGeneral.length; i++) {
-	    Temp[] assign = new Temp[] { regGeneral[i] };
+	for (int i=0; i<regs.length; i++) {
+	    Temp[] assign = new Temp[] { regs[i] };
 	    oneWordAssigns.add(Arrays.asList(assign));
 	}
 	oneWordAssigns = Collections.unmodifiableSet(oneWordAssigns);
 	twoWordAssigns = new HashSet();
-	for (int i=0; i<regGeneral.length-1; i++) {
-	    Temp[] assign = new Temp[] { regGeneral[i] ,
-					 regGeneral[i+1] };
+	for (int i=0; i<regs.length-1; i++) {
+	    Temp[] assign = new Temp[] { regs[i] ,
+					 regs[i+1] };
 	    twoWordAssigns.add(Arrays.asList(assign));
 	}
 	twoWordAssigns = Collections.unmodifiableSet(twoWordAssigns);
@@ -170,7 +176,10 @@ public class RegFileInfo
     }
 
     public Temp[] getGeneralRegisters() { 
-	return (Temp[]) Util.safeCopy(Temp.arrayFactory, regGeneral); 
+	return EXPOSE_ALL_REGS 
+	    ? getAllRegisters() 
+	    : (Temp[]) Util.safeCopy(Temp.arrayFactory, regGeneral)
+	    ; 
     }
 
     private TempFactory regTempFactory() { return regtf; }
@@ -285,14 +294,17 @@ public class RegFileInfo
 	final ArrayList suggests = new ArrayList();
 	final ArrayList spills = new ArrayList();
 	
+	Temp[] regs = EXPOSE_ALL_REGS ? reg : regGeneral;
+
 	if (t instanceof TwoWordTemp) {
 	    // double word, find two registers ( the strongARM
 	    // doesn't require them to be in a row, but its 
 	    // simpler to search for adjacent registers )
 	    // FSK: forcing alignment to solve regalloc problem
-	    for (int i=0; i<regGeneral.length-1; i+=2) {
-		Temp[] assign = new Temp[] { regGeneral[i] ,
-					     regGeneral[i+1] };
+
+	    for (int i=0; i<regs.length-1; i+=2) {
+		Temp[] assign = new Temp[] { regs[i] ,
+					     regs[i+1] };
 		if ((regFile.get(assign[0]) == null) &&
 		    (regFile.get(assign[1]) == null)) {
 		    suggests.add(Arrays.asList(assign));
@@ -306,12 +318,12 @@ public class RegFileInfo
 
 	} else {
 	    // single word, find one register
-	    for (int i=0; i<regGeneral.length; i++) {
-		if ((regFile.get(regGeneral[i]) == null)) {
-		    suggests.add(ListFactory.singleton(regGeneral[i]));
+	    for (int i=0; i<regs.length; i++) {
+		if ((regFile.get(regs[i]) == null)) {
+		    suggests.add(ListFactory.singleton(regs[i]));
 		} else {
 		    Set s = new LinearSet(1);
-		    s.add(regGeneral[i]);
+		    s.add(regs[i]);
 		    spills.add(s);
 		}
 	    }
