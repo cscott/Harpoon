@@ -20,6 +20,17 @@ jobject FNI_NewLocalRef(JNIEnv *env, jobject_unwrapped obj) {
   return result;
 }
 
+/* convenience function for runtime jni stub */
+jobject_unwrapped FNI_Unwrap(jobject obj) {
+  return FNI_UNWRAP(obj);
+}
+
+/* clear local refs in stack frame */
+void FNI_DeleteLocalRefsUpTo(JNIEnv *env, jobject markerRef) {
+  while (fts->localrefs.next != markerRef)
+    FNI_DeleteLocalRef(env, fts->localrefs.next);
+}
+
 void FNI_DeleteLocalRef(JNIEnv *env, jobject localRef) {
   struct FNI_Thread_State *fts = (struct FNI_Thread_State *) env;
   jobject prev;
