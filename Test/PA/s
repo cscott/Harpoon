@@ -1,0 +1,1 @@
+sed -e s/KeY_ShOrT/$1/g -e s/VaLuE_ShOrT/$2/g -e s/KeY_LoNg/$3/g -e s/VaLuE_LoNg/$4/g Hashtable.template >${1}2$2Map.java

@@ -18,7 +18,7 @@ import java.io.*;
 public class HTTPHeader{
 
   // make a hashtable of return codes to messages
-  static private Hashtable rc = new Hashtable();
+  static private HashStrings rc = new HashStrings();
   static
   {
     rc.put("200", "OK");
@@ -28,7 +28,7 @@ public class HTTPHeader{
   }
 
   // hashtable of content type matchings
-  static private Hashtable ct = new Hashtable();   // p. 817
+  static private HashStrings ct = new HashStrings();   // p. 817
   static
   {
     ct.put("txt",   "text/plain");
