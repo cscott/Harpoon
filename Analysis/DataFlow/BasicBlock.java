@@ -3,11 +3,12 @@ package harpoon.Analysis.DataFlow;
 /**
    BasicBlock collects a serial list of operations.  It is designed to
    abstract away specific operation and allow the compiler to focus on
-   control flow at a higher level.  (It also allows for some analysis to
-   operate more efficiently by taking advantage of the fact that the
-   elements of a BasicBlock have a total ordering of execution).
+   control flow at a higher level.  (It also allows for some analysis
+   within the block to operate more efficiently by taking advantage of
+   the fact that the elements of a BasicBlock have a total ordering of
+   execution). 
 
-   <BR> <B>TODO:</B> right now <code>BasicBlock</code> only guarantees
+   <BR> <B>NOTE:</B> right now <code>BasicBlock</code> only guarantees
    that it preserves the Maximal Basic Block property (where the first
    element is the entry point and the last element is the exit point)
    if the graph of operations is not modified while the basic block is
@@ -18,10 +19,14 @@ package harpoon.Analysis.DataFlow;
    group. 
  *
  * @author  John Whaley
- * @author Felix Klock (pnkfelix@mit.edu) */
+ * @author  Felix Klock (pnkfelix@mit.edu) 
+ * @version $id$
+*/
 
-import harpoon.Util.*;
-import harpoon.ClassFile.*;
+import harpoon.Util.Util;
+import harpoon.Util.IteratorEnumerator;
+import harpoon.Util.WorkSet;
+import harpoon.Util.Worklist;
 import harpoon.IR.Properties.HasEdges;
 import java.util.Map;
 import java.util.Hashtable;
@@ -31,6 +36,7 @@ import java.util.NoSuchElementException;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Collections;
 
 public class BasicBlock {
     
@@ -47,6 +53,9 @@ public class BasicBlock {
     Set succ_bb;
     int num;
     
+    private BasicBlock root;
+    private Set leaves;
+
     /** BasicBlock constructor.
 
 	<BR> <B>requires:</B> <code>f</code> is the first element of
@@ -89,23 +98,28 @@ public class BasicBlock {
     
     /** BasicBlock generator.
 	<BR> <B>requires:</B> 
-	     <BR> 1. <code>head</code> is an appropriate entry point
+	     <UL>
+	     <LI> 1. <code>head</code> is an appropriate entry point
 	             for a basic block (I'm working on eliminating
 		     this requirement, but for now its safer to keep
 		     it) 
-	     <BR> 2. All <code>HCodeEdge</code>s linked to by the set
+	     <LI> 2. All <code>HCodeEdge</code>s linked to by the set
 	             of <code>HasEdges</code> in the code body have
 		     <code>HasEdges</code> objects in their
 		     <code>to</code> and <code>from</code> fields.
 		     <B>NOTE:</B> this really should be an implicit
 		     invariant of <code>HasEdges</code>.  Convince 
 		     Scott to change it or let us change it. 
-	<BR> <B>effects:</B>  Creates a set of BasicBlocks
-	     corresponding to the blocks implicitly contained in
-	     <code>head</code> and the <code>HasEdges</code> objects that
-	     <code>head</code> points to, and returns the
-	     <code>BasicBlock</code> that <code>head</code> is an
-	     instruction in.  
+	     </UL>
+	<BR> <B>effects:</B>  Creates a set of
+     	     <code>BasicBlock</code>s corresponding to the blocks
+	     implicitly contained in <code>head</code> and the
+	     <code>HasEdges</code> objects that <code>head</code>
+	     points to, and returns the <code>BasicBlock</code> that
+	     <code>head</code> is an instruction in.  The
+	     <code>BasicBlock</code> returned is considered to be the
+	     root (entry-point) of the set of <code>BasicBlock</code>s
+	     created. 
     */
     public static BasicBlock computeBasicBlocks(HasEdges head) {
 	// maps HasEdges 'e' -> BasicBlock 'b' starting with 'e'
@@ -121,6 +135,9 @@ public class BasicBlock {
 	h.put(head, first);
 	w.push(first);
 	
+	first.root = first;
+	first.leaves = new HashSet();
+
 	while(!w.isEmpty()) {
 	    BasicBlock current = (BasicBlock) w.pull();
 	    
@@ -130,15 +147,17 @@ public class BasicBlock {
 	    boolean foundEnd = false;
 	    while(!foundEnd) {
 		int n = last.succ().length;
-		if (n == 0) 
+		if (n == 0) {
 		    foundEnd = true;
-		
-		else if (n > 1) { // control flow split
+		    first.leaves.add(current); 
+
+		} else if (n > 1) { // control flow split
 		    for (int i=0; i<n; i++) {
 			HasEdges e_n = (HasEdges) last.succ()[i].to();
 			BasicBlock bb = (BasicBlock) h.get(e_n);
 			if (bb == null) {
 			    h.put(e_n, bb=new BasicBlock(e_n));
+			    bb.root = first; bb.leaves = first.leaves;
 			    w.push(bb);
 			}
 			addEdge(current, bb);
@@ -152,6 +171,7 @@ public class BasicBlock {
 			BasicBlock bb = (BasicBlock) h.get(next);
 			if (bb == null) {
 			    bb = new BasicBlock(next);
+			    bb.root = first; bb.leaves = first.leaves;
 			    h.put(next, bb);
 			    w.push(bb);
 			}
@@ -165,6 +185,7 @@ public class BasicBlock {
 	    }
 	    current.setLast(last);
 	}
+
 	return (BasicBlock) h.get(head);
     }
 
@@ -242,6 +263,25 @@ public class BasicBlock {
 	first = f; last = null; pred_bb = new HashSet(); succ_bb = new HashSet();
 	num = BBnum++;
     }
+
+    /** Returns the root <code>BasicBlock</code>.
+	<BR> <B>effects:</B> returns the <code>BasicBlock</code> that
+	     is at the start of the set of <code>HasEdges</code>s
+	     being analyzed. 
+    */
+    public BasicBlock getRoot() {
+	return root;
+    }
+
+    /** Returns the leaf <code>BasicBlock</code>s.
+	<BR> <B>effects:</B> returns a <code>Set</code> of
+	     <code>BasicBlock</code>s that are at the ends of the
+	     <code>HasEdge</code>s being analyzed.  
+    */
+    public Set getLeaves() {
+	return Collections.unmodifiableSet(leaves);
+    }
+
     protected void setLast (HasEdges l) {
 	last = l;
 	if (DEBUG) db(this+": from "+first+" to "+last);

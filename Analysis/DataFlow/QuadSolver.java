@@ -29,8 +29,10 @@ public abstract class QuadSolver {
 
     ReversePostOrderEnumerator rpo = new ReversePostOrderEnumerator(root);
 
+    boolean changed = false;
     do {
-      v.changed = false;
+	//v.changed = false;
+	changed = false;
 
       ReversePostOrderEnumerator iter = rpo.copy();
       while (iter.hasMoreElements()) {
@@ -40,11 +42,11 @@ public abstract class QuadSolver {
 	for (int i=0, n=q.nextLength(); i<n; ++i) {
 	  Quad qn = q.next(i);
 	  if (DEBUG) db("doing edge "+q+" -> "+qn);
-	  if (v.merge(q, qn)) v.changed = true;
+	  if (v.merge(q, qn)) changed = true;
 	}
       }
 
-    } while (v.changed);
+    } while (changed);
 
   }
 
@@ -66,8 +68,10 @@ public abstract class QuadSolver {
 
     ReversePostOrderEnumerator rpo = new ReversePostOrderEnumerator(root);
 
+    boolean changed = false;
     do {
-      v.changed = false;
+	//v.changed = false;
+	changed = false;
 
       ReversePostOrderEnumerator iter = rpo.copy();
       while (iter.hasMoreElements()) {
@@ -77,11 +81,11 @@ public abstract class QuadSolver {
 	for (Enumeration e=q.next(); e.hasMoreElements(); ) {
 	  BasicBlock qn = (BasicBlock)e.nextElement();
 	  if (DEBUG) db("doing edge "+q+" -> "+qn);
-	  if (v.merge(q, qn)) v.changed = true;
+	  if (v.merge(q, qn)) changed = true;
 	}
       }
 
-    } while (v.changed);
+    } while (changed);
 
   }
 
@@ -90,7 +94,7 @@ public abstract class QuadSolver {
     Worklist W = new HashSet();
     W.push(root);
     while (!W.isEmpty()) {
-      v.changed = false;
+	//v.changed = false;
       BasicBlock q = (BasicBlock) W.pull();
       if (DEBUG) db("visiting: "+q);
       q.visit(v);
@@ -118,17 +122,5 @@ public abstract class QuadSolver {
     if (DEBUG) db("max quad ID is "+max);
     return max;
   }
-
-  /*
-  public static void worklist_solver(Visitable root, Visitor v) {
-    Worklist W = new HashSet();
-    W.push(root);
-    while (!W.isEmpty()) {
-      Visitable q = (Visitable) W.pull();
-      if (DEBUG) db("visiting: "+q);
-      q.visit(v);
-    }
-  }
-  */
 
 }

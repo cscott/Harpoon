@@ -13,14 +13,15 @@ import harpoon.IR.Quads.*;
 
 public abstract class DataFlowBasicBlockVisitor extends BasicBlockVisitor {
 
-    public static boolean DEBUG = false;
+    private static boolean DEBUG = false;
     public static void db(String s) { System.out.println(s); }
     
     /**
      * This bit is set whenever something changes.  Used to check for
      * termination.
      */
-    protected boolean changed;
+    // FSK taking this out; code using Visitor should track this on its own
+    //protected boolean changed;
     
     /**
      * Adds the successors of the basic block q to the worklist W,

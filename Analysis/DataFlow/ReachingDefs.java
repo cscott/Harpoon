@@ -33,10 +33,12 @@ import harpoon.Temp.Temp;
 
     @author  John Whaley
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: ReachingDefs.java,v 1.1.2.8 1999-05-27 01:53:35 pnkfelix Exp $
+    @version $Id: ReachingDefs.java,v 1.1.2.9 1999-06-18 18:27:26 pnkfelix Exp $
 
 */
 public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
+
+    private static final boolean DEBUG = false;
 
     private Map bbToSets; // BasicBlock -> ReachingDefInfo
 
@@ -89,7 +91,7 @@ public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
 	
 	<BR> <B>requires:</B> The instructions in <code>f</code> and
  	                      <code>t</code> implement
-			      <code>HCodeElement</code>, < 
+			      <code>HCodeElement</code>
     */
     public boolean merge(BasicBlock f, BasicBlock t) {
 	ReachingDefInfo from_info = getInfo(f);

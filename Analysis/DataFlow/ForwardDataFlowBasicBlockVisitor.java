@@ -10,6 +10,8 @@ import harpoon.Util.Worklist;
  */
 
 public abstract class ForwardDataFlowBasicBlockVisitor extends DataFlowBasicBlockVisitor {
+    
+    private static final boolean DEBUG = false;
 
   /**
    * Adds the successors of the basic block q to the worklist W,

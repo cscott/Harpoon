@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.35 1999-06-13 18:12:35 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.36 1999-06-18 18:27:25 pnkfelix Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -49,6 +49,9 @@ ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
 		egrep -v "^[.]/(harpoon|silicon|gnu|doc|NOTES|bin|jdb)" | \
 		egrep -v "^[.]/java_cup" | \
 		sed -e "s|^[.]/*||")
+
+
+
 ALLSOURCE :=  $(MACHINE_GEN) $(filter-out $(MACHINE_GEN), \
 		$(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java))))
@@ -59,12 +62,18 @@ JARPKGS := $(subst harpoon/Contrib,gnu, \
 			$(filter-out Test%,$(ALLPKGS))), harpoon/$(pkg)))
 PROPERTIES:=Contrib/getopt/MessagesBundle.properties
 
+NONEMPTYPKGS := $(shell ls  $(filter-out GNUmakefile,$(TARSOURCE))  | \
+		sed -e 's|/*[A-Za-z0-9_]*\.[A-Za-z0-9_]*$$||' | sort -u)
+
 all:	java
 
 list:
 	@echo $(filter-out GNUmakefile,$(TARSOURCE))
 list-packages:
 	@echo $(filter-out Test,$(ALLPKGS))
+list-nonempty-packages:
+	@echo $(filter-out Test,$(NONEMPTYPKGS))
+
 
 java:	$(ALLSOURCE) $(PROPERTIES)
 	if [ ! -d harpoon ]; then \
@@ -190,7 +199,7 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	cd doc; ${JDOC} ${JDOCFLAGS} -d . \
 		$(subst harpoon.Contrib,gnu, \
 		$(foreach dir, $(filter-out Test, \
-			  $(filter-out JavaChip,$(ALLPKGS))), \
+			  $(filter-out JavaChip,$(NONEMPTYPKGS))), \
 			  harpoon.$(subst /,.,$(dir))) silicon.JavaChip) | \
 		grep -v "^@see warning:"
 	$(RM) doc/harpoon doc/silicon

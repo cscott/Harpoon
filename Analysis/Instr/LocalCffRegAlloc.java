@@ -44,7 +44,7 @@ import java.util.Iterator;
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.23 1999-06-16 17:01:02 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.24 1999-06-18 18:27:26 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -77,7 +77,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    new CloneableIterator(BasicBlock.basicBlockIterator(block));
 	LiveVars livevars=null;
 	livevars =  new LiveVars((Iterator)iter.clone());
-	InstrSolver.worklistSolver(block, livevars);
+	InstrSolver.worklistSolver((Iterator)iter.clone(), livevars);
 	
 	// Now perform local reg alloc on each basic block
 	while(iter.hasNext()) {

@@ -21,10 +21,12 @@ import java.util.Iterator;
  * rep instead of <code>Set</code>s of <code>Temp</code>s.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.4 1999-06-16 17:00:57 pnkfelix Exp $
+ * @version $Id: LiveVars.java,v 1.1.2.5 1999-06-18 18:27:26 pnkfelix Exp $
  */
 public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
-    
+
+    private static final boolean DEBUG = false;
+   
     // maps a BasicBlock 'bb' to the LiveVarInfo associated with 'bb'
     private Map bbToLvi;
     
@@ -44,7 +46,9 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 	 <BR> <B>effects:</B> constructs a new
 	      <code>BasicBlockVisitor</code> and initializes its
 	      internal datasets for analysis of the
-	      <code>BasicBlock</code>s in <code>basicblocks</code>
+	      <code>BasicBlock</code>s in <code>basicblocks</code>,
+	      iterating over all of <code>basicblocks</code> in the
+	      process.
     */	     
     public LiveVars(Iterator basicblocks) {
 	bbToLvi = new HashMap();
@@ -56,13 +60,33 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
     }
 
 
-    /** Merge (confluence) operator.
+    /** Merge (Confluence) operator.
 	<BR> LVout(bb) = Union over (j elem Succ(bb)) of ( LVin(j) ) 
+	<BR> <code>parent</code> corresponds to 'bb' above, while
+	<code>child</code> corresponds to a member of Succ('bb').  It
+	is the responsibility of the DataFlow Equation Solver to run
+	<code>merge</code> on all of the Succ('bb')
+	<BR> This method isn't meant to be called by application code;
+	     instead, look at one of the DataFlow Equation Solvers in
+	     the <code>harpoon.Analysis.DataFlow</code> package.
+	<BR> <B>requires:</B> <code>child</code> and <code>parent</code>
+	                      are contained in <code>this</code>
+	<BR> <B>effects:</B> Updates the internal information
+                             associated with <code>to</code> to
+			     include information associated with
+			     <code>from</code>
+	@see harpoon.Analysis.DataFlow.InstrSolver
     */
-    public boolean merge(BasicBlock from, BasicBlock to) {
-	LiveVarInfo finfo = (LiveVarInfo) bbToLvi.get(from);
-	LiveVarInfo tinfo = (LiveVarInfo) bbToLvi.get(to);
-	return tinfo.lvOUT.addAll(finfo.lvIN);
+    public boolean merge(BasicBlock child, BasicBlock parent) {
+	LiveVarInfo finfo = (LiveVarInfo) bbToLvi.get(child);
+	LiveVarInfo tinfo = (LiveVarInfo) bbToLvi.get(parent);
+	boolean rtn = tinfo.lvOUT.addAll(finfo.lvIN);
+	if (DEBUG) 
+	    System.out.println
+		("merge( succ: "+child+" pred: "+parent+" ) \n"+
+		 "pred.LiveOut: " + tinfo.lvOUT + "\n" +
+		 "succ.LiveIn: " + finfo.lvIN + "\n");
+	return rtn;
     }
 
     /** Visit (Transfer) function.  
@@ -108,7 +132,7 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
     }
 
     /** Returns the <code>Set</code> of <code>Temp</code>s that are
-	live on entry to <code>b</code>
+	live on entry to <code>b</code> 
 	<BR> <B>requires:</B> A DataFlow Solver has been run to
 	     completion on the graph of <code>BasicBlock</code>s
 	     containing <code>b</code> with <code>this</code> as the
@@ -121,7 +145,8 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 
     /** Returns the <code>Set</code> of <code>Temp</code>s that are
 	live on exit from <code>b</code>
-	<BR> <B>requires:</B> A DataFlow Solver has been run to
+	<BR> <B>requires:</B> A DataFlow Equation Solver has been run
+             to 
 	     completion on the graph of <code>BasicBlock</code>s
 	     containing <code>b</code> with <code>this</code> as the
 	     <code>DataFlowBasicBlockVisitor</code>.
@@ -139,14 +164,14 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 	    s.append("BasicBlock " + bb);
 	    LiveVarInfo lvi = (LiveVarInfo) bbToLvi.get(bb);
 	    s.append("\n" + lvi);
-	    s.append("\n -- " + bb + " INSTRS --\n" + 
+	    s.append(" -- " + bb + " INSTRS --\n" + 
 		     bb.dumpElems() + 
-		     " -- END " + bb + " --\n");
+		     " -- END " + bb + " --\n\n");
 	}
 	return s.toString();
     }
 
-    // LiveVarInfo groups together four sets: 
+    // LiveVarInfo is a record type grouping together four sets: 
     // use(bb): set of vars used in 'bb' before being defined in 'bb',
     //          if at all. 
     // def(bb): set of vars defined in 'bb' before being used in 'bb',

@@ -10,19 +10,29 @@ import harpoon.Util.Worklist;
  * <code>BackwardDataFlowBasicBlockVisitor</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: BackwardDataFlowBasicBlockVisitor.java,v 1.1.2.1 1999-05-27 22:58:59 pnkfelix Exp $
+ * @version $Id: BackwardDataFlowBasicBlockVisitor.java,v 1.1.2.2 1999-06-18 18:27:25 pnkfelix Exp $
  */
-public abstract class BackwardDataFlowBasicBlockVisitor extends DataFlowBasicBlockVisitor {
+public abstract class BackwardDataFlowBasicBlockVisitor 
+    extends DataFlowBasicBlockVisitor {
+
+    private static final boolean DEBUG = false;
 
     /** Adds the successors of the basic block q to the worklist W,
 	performing merge operations if necessary.
     */
     public void addSuccessors(Worklist W, BasicBlock q) {
 	for (Enumeration e=q.prev(); e.hasMoreElements(); ) {
-	    BasicBlock qn = (BasicBlock) e.nextElement();
-	    if (merge(q, qn)) {
-		W.push(qn);
+	    BasicBlock parent = (BasicBlock) e.nextElement();
+	    if (DEBUG) 
+		System.out.println
+		    ("addSucc: merging from: " + q + 
+		     " to: " + parent);
+	    if (merge(q, parent)) {
+		W.push(parent);
 	    }
+	    if (DEBUG) 
+		System.out.println
+		    ("addSucc: worklist: " + W);
 	}
     }
     
