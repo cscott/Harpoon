@@ -194,10 +194,10 @@ if [ -f /etc/redhat-release ]; then
 	case $prmpt in
 	    s* | S*)
 		echo Installing packages, you may have to enter your password:;
-		sudo rpm -i --force *.rpm;;
+		sudo rpm -i --force --nodeps *.rpm;;
 	    r* | R*)
 	     	echo Installing packages, please enter root password:;
-      		su -c 'rpm -i --force *.rpm';;
+      		su -c 'rpm -i --force --nodeps *.rpm';;
             *)
 		export prmpt=;;
 	esac;

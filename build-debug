@@ -8,7 +8,7 @@ cd $HERE
 source ./sourceme
 cd $HERE/../Code
 rm -rf as*
-JAVA="java -server" PRECISEC_CFLAGS="-g" bin/build-precisec $@
+JAVA="java -server" PRECISEC_CFLAGS="-g" CLASSPATH=.:$CLASSPATH FLEXPATH=$HERE:$FLEXPATH bin/build-precisec $@
 cd $HERE/../Runtime
 mv run* $HERE
-
+cd $HERE
