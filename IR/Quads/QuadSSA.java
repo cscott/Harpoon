@@ -26,28 +26,20 @@ import java.util.Map;
  * control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSA.java,v 1.1.2.11 2000-11-14 22:16:30 cananian Exp $
+ * @version $Id: QuadSSA.java,v 1.1.2.12 2000-11-15 17:57:53 cananian Exp $
  */
 public class QuadSSA extends Code /* which extends HCode */ {
     /** The name of this code view. */
     public static final String codename = "quad-ssa";
 
     /** Creates a <code>Code</code> object from a bytecode object. */
-    public QuadSSA(QuadSSI qns) 
+    public QuadSSA(QuadSSI code) 
     {
-	super(qns.getMethod(), null);
-	/* XXX: write me.
-	SSIRename rt0 = new SSIRename(qns, qf);
-	quads = rt0.rootQuad;
-	setAllocationInformation(rt0.allocInfo);
-	// get rid of unused phi/sigmas.
-	AllocationInformationMap aim =
-	    (getAllocationInformation()==null) ? null :
-	    new AllocationInformationMap();
-	DeadCode.optimize(this, aim);
-	setAllocationInformation(aim);
-	*/
-	Util.assert(false);
+	super(code.getMethod(), null);
+	SSIToSSA ssi2ssa = new SSIToSSA(code, qf);
+	quads = ssi2ssa.rootQuad;
+	setAllocationInformation(ssi2ssa.allocInfo);
+	// no derivation in high-quad form.
     }
 
     /** 

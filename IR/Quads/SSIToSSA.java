@@ -9,7 +9,7 @@ import harpoon.Analysis.Maps.Derivation;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.LowQuad.Code;
+import harpoon.IR.Quads.Code;
 import harpoon.IR.LowQuad.DerivationMap;
 import harpoon.IR.LowQuad.LowQuadFactory;
 import harpoon.IR.LowQuad.LowQuadVisitor;
@@ -30,7 +30,7 @@ import java.util.Map;
  * in an SSI-form codeview, yielding an SSA codeview.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIToSSA.java,v 1.1.2.2 2000-10-11 01:53:23 cananian Exp $
+ * @version $Id: SSIToSSA.java,v 1.1.2.3 2000-11-15 17:57:53 cananian Exp $
  */
 public class SSIToSSA {
     // Return values for the algorithm:
