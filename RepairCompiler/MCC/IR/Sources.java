@@ -2,6 +2,7 @@ package MCC.IR;
 
 import MCC.State;
 import MCC.Compiler;
+import java.util.Iterator;
 
 public class Sources {
     State state;
@@ -43,13 +44,20 @@ public class Sources {
 	cr.pushSymbolTable(state.stGlobals);
 	e.generate(cr, size);
 	cr.popSymbolTable();
-	cr.outputline(td.getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"=("+td.getGenerateType().getSafeSymbol()+") malloc("+size.getSafeSymbol()+");");
+	cr.outputline(td.getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"=("+td.getGenerateType().getSafeSymbol()+") calloc(1,"+size.getSafeSymbol()+");");
 	
 	if (Compiler.ALLOCATECPLUSPLUS) {
-	    String vtable="_ZTV";
-	    vtable+=sd.getType().getSafeSymbol().length();
-	    vtable+=sd.getType().getSafeSymbol();
-	    cr.outputline("((int**)"+vd.getSafeSymbol()+")[0] = (int *)"+vtable+"+2;");
+	    if (td instanceof StructureTypeDescriptor) {
+		if (((StructureTypeDescriptor)td).size()>0) {
+		    FieldDescriptor fd=((StructureTypeDescriptor)td).get(0);
+		    if (fd.getSymbol().startsWith("_vptr_")) {
+			String vtable="_ZTV";
+			vtable+=td.getSymbol().length();
+			vtable+=td.getSymbol();
+			cr.outputline("((int**) &"+vd.getSafeSymbol()+")[0] = (int *)"+vtable+"+2;");
+		    }
+		}
+	    }
 	}
     }
 
@@ -75,12 +83,7 @@ public class Sources {
 	    sd=rd.getDomain();
 	else
 	    sd=rd.getRange();
-	TypeDescriptor td=sd.getType();
-	Expr e=td.getSizeExpr();
-	VarDescriptor size=VarDescriptor.makeNew("size");
-	cr.pushSymbolTable(state.stGlobals);
-	e.generate(cr, size);
-	cr.popSymbolTable();
-	cr.outputline(td.getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"=("+td.getGenerateType().getSafeSymbol()+") malloc("+size.getSafeSymbol()+");");
+	
+	generateSourceAlloc(cr, vd, sd);
     }
 }

@@ -387,7 +387,22 @@ public class RepairGenerator {
 	crhead.outputline("~"+name+"();");
         craux.outputline("#include \""+headername+"\"");
         craux.outputline("#include \"size.h\"");
-
+	if (Compiler.ALLOCATECPLUSPLUS) {
+	    for(Iterator it=state.stTypes.descriptors();it.hasNext();) {
+		TypeDescriptor td=(TypeDescriptor)it.next();
+		if (td instanceof StructureTypeDescriptor) {
+		    if (((StructureTypeDescriptor)td).size()>0) {
+			FieldDescriptor fd=((StructureTypeDescriptor)td).get(0);
+			if (fd.getSymbol().startsWith("_vptr_")) {
+			    String vtable="_ZTV";
+			    vtable+=td.getSymbol().length();
+			    vtable+=td.getSymbol();
+			    craux.outputline("extern void * "+vtable+";");
+			}
+		    }
+		}
+	    }
+	}
         craux.outputline(name+"::"+name+"() {");
         craux.outputline("// creating hashtables ");
         

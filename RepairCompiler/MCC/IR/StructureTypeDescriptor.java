@@ -17,6 +17,14 @@ public class StructureTypeDescriptor extends TypeDescriptor {
     Hashtable labels = new Hashtable();
 
 
+    public int size() {
+	return fieldlist.size();
+    }
+
+    public FieldDescriptor get(int i) {
+	return (FieldDescriptor) fieldlist.get(i);
+    }
+
     public StructureTypeDescriptor(String name) {
         super(name);
     }
