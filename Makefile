@@ -31,17 +31,21 @@ realtime.jar:
 	@rm -rf javax
 
 realtime.tgz:
+	@echo Generating realtime.tgz file.
 	tar c $(RELEASE) | gzip -9 > realtime.tgz 	
 
 jar-install: realtime.jar
+	@echo Installing realtime.jar.
 	tar c ../Code/Support/realtime.jar | \
 		$(SSH) $(INSTALLMACHINE) "tar -C $(INSTALLDIR) -x"
 
 tar-install: realtime.tgz
+	@echo Installing realtime.tgz.
 	tar c realtime.tgz | \
 		$(SSH) $(INSTALLMACHINE) "tar -C $(INSTALLDIR) -x"
 
 doc-install: doc
+	@echo Installing documentation.
 	tar c doc | \
 		$(SSH) $(INSTALLMACHINE) "tar -C $(INSTALLDIR)/Realtime -x"
 
