@@ -3,14 +3,17 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Map;
 /**
  * A <code>MapComparator</code> compares two unsorted maps by first
  * sorting their keys and then comparing them entry-by-entry (treating
  * the map as a sorted pair list).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MapComparator.java,v 1.1.2.1 2001-09-17 23:00:13 cananian Exp $
+ * @version $Id: MapComparator.java,v 1.1.2.2 2001-09-17 23:08:45 cananian Exp $
  */
 public class MapComparator implements Comparator {
     final Comparator entryComparator, listComparator;
