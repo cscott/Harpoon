@@ -33,7 +33,7 @@ import java.util.List;
  * <code>RoleInference</code>
  * 
  * @author  bdemsky <bdemsky@mit.edu>
- * @version $Id: RoleInference.java,v 1.1.2.2 2001-05-18 18:57:14 bdemsky Exp $
+ * @version $Id: RoleInference.java,v 1.1.2.3 2001-05-22 19:18:52 bdemsky Exp $
  */
 public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator {
     final Linker linker;
@@ -69,17 +69,17 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	HMethod fieldassignmethod;
 	HMethod marklocalmethod;
 	HMethod returnmethod;
-	HMethod entermethod;
+	HMethod invokemethod;
 	HClass strclass;
 	HClass fieldclass;
-	HClass clsclass;
+	HClass methodclass;
 
 	public RoleVisitor(Linker linker) {
 	    HClass objclass=linker.forName("java.lang.Object");
 	    strclass=linker.forName("java.lang.String");
 	    HClass roleclass=linker.forName("java.lang.RoleInference");
 	    fieldclass=linker.forName("java.lang.reflect.Field");
-	    clsclass=linker.forName("java.lang.Class");
+	    methodclass=linker.forName("java.lang.reflect.Method");
 	    arrayinitmethod=roleclass.getDeclaredMethod("arrayassignUID", 
 							new HClass[] {objclass, HClass.Int});
 	    arrayassignmethod=roleclass.getDeclaredMethod("arrayassign",
@@ -89,7 +89,7 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	    marklocalmethod=roleclass.getDeclaredMethod("marklocal",
 							new HClass[] {strclass, objclass});
 	    returnmethod=roleclass.getDeclaredMethod("returnmethod", new HClass[0]);
-	    entermethod=roleclass.getDeclaredMethod("entermethod", new HClass[] {clsclass});
+	    invokemethod=roleclass.getDeclaredMethod("invokemethod", new HClass[] {methodclass});
 	    
 	}
 
@@ -99,7 +99,7 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	public void visit(ANEW q) {
 	    int dims=q.dimsLength();
 	    Temp dst=q.dst();
-	    //FIXME
+
 	    Temp t=new Temp(q.getFactory().tempFactory());
 	    Temp texc=new Temp(q.getFactory().tempFactory());
 	    CONST c=new CONST(q.getFactory(), q, t, new Integer(dims), HClass.Int);
@@ -116,19 +116,21 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	}
 
        	public void visit(ASET q) {
-	    Temp array=q.objectref();
-	    Temp index=q.index();
-	    Temp component=q.src();
-	    Temp texc=new Temp(q.getFactory().tempFactory());
-	    CALL nc=new CALL(q.getFactory(), q, arrayassignmethod,
-			     new Temp[] {array, index, component},
-			     null, texc, false, false, new Temp[0]);
-	    PHI phi=new PHI(q.getFactory(),q, new Temp[0], 2);
-	    
-	    Quad.addEdge(phi,0, q.next(0),q.nextEdge(0).which_pred());
-	    Quad.addEdge(nc,0,phi,0);
-	    Quad.addEdge(nc,1,phi,1);
-	    Quad.addEdge(q,0,nc,0);
+	    if (!q.type().isPrimitive()) {
+		Temp array=q.objectref();
+		Temp index=q.index();
+		Temp component=q.src();
+		Temp texc=new Temp(q.getFactory().tempFactory());
+		CALL nc=new CALL(q.getFactory(), q, arrayassignmethod,
+				 new Temp[] {array, index, component},
+				 null, texc, false, false, new Temp[0]);
+		PHI phi=new PHI(q.getFactory(),q, new Temp[0], 2);
+		
+		Quad.addEdge(phi,0, q.next(0),q.nextEdge(0).which_pred());
+		Quad.addEdge(nc,0,phi,0);
+		Quad.addEdge(nc,1,phi,1);
+		Quad.addEdge(q,0,nc,0);
+	    }
 	}
 
 	public void visit(AGET q) {
@@ -154,34 +156,36 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	public void visit(SET q) {
 	    //Potential Global Variable Assignment or
 	    //Heap modification
-	    Temp array=q.objectref();
-	    HField field=q.field();
-	    Temp tfield=new Temp(q.getFactory().tempFactory());
-	    Temp component=q.src();
-
-	    CONST nconst=null;
-	    if (array==null) {
-		array=new Temp(q.getFactory().tempFactory());
-		nconst=new CONST(q.getFactory(),q,array,null, HClass.Void);
+	    if (!q.field().getType().isPrimitive()) {
+		Temp array=q.objectref();
+		HField field=q.field();
+		Temp tfield=new Temp(q.getFactory().tempFactory());
+		Temp component=q.src();
+		
+		CONST nconst=null;
+		if (array==null) {
+		    array=new Temp(q.getFactory().tempFactory());
+		    nconst=new CONST(q.getFactory(),q,array,null, HClass.Void);
+		}
+		
+		CONST cfield=new CONST(q.getFactory(),q,tfield,
+				       field, fieldclass);
+		Temp texc=new Temp(q.getFactory().tempFactory());
+		CALL nc=new CALL(q.getFactory(), q, fieldassignmethod,
+				 new Temp[] {array, tfield, component},
+				 null, texc, false, false, new Temp[0]);
+		PHI phi=new PHI(q.getFactory(),q, new Temp[0], 2);
+		
+		Quad.addEdge(phi,0, q.next(0),q.nextEdge(0).which_pred());
+		Quad.addEdge(q,0,cfield,0);
+		if (nconst!=null) {
+		    Quad.addEdge(cfield,0,nconst,0);
+		    Quad.addEdge(nconst,0,nc,0);
+		} else
+		    Quad.addEdge(cfield,0,nc,0);
+		Quad.addEdge(nc,0,phi,0);
+		Quad.addEdge(nc,1,phi,1);
 	    }
-
-	    CONST cfield=new CONST(q.getFactory(),q,tfield,
-				   field, fieldclass);
-	    Temp texc=new Temp(q.getFactory().tempFactory());
-	    CALL nc=new CALL(q.getFactory(), q, fieldassignmethod,
-			     new Temp[] {array, tfield, component},
-			     null, texc, false, false, new Temp[0]);
-	    PHI phi=new PHI(q.getFactory(),q, new Temp[0], 2);
-	    
-	    Quad.addEdge(phi,0, q.next(0),q.nextEdge(0).which_pred());
-	    Quad.addEdge(q,0,cfield,0);
-	    if (nconst!=null) {
-		Quad.addEdge(cfield,0,nconst,0);
-		Quad.addEdge(nconst,0,nc,0);
-	    } else
-		Quad.addEdge(cfield,0,nc,0);
-	    Quad.addEdge(nc,0,phi,0);
-	    Quad.addEdge(nc,1,phi,1);
 	}
 
 	public void visit(GET q) {
@@ -267,6 +271,46 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	public void visit(METHOD q) {
 	    //Method invocation
 	    //Potential Local Variable Assignment
+
+
+	    Quad old=null;
+	    {
+		Temp texc=new Temp(q.getFactory().tempFactory());
+		Temp tmethod=new Temp(q.getFactory().tempFactory());
+		HMethod method=q.getFactory().getMethod();
+		CONST mconst=new CONST(q.getFactory(),q, tmethod, method,
+				       methodclass);
+		CALL cn=new CALL(q.getFactory(), q, invokemethod,
+				 new Temp[]{tmethod}, null, texc,
+				 false, false, new Temp[0]);
+		PHI phi=new PHI(q.getFactory(),q, new Temp[0], 2);
+		Quad.addEdge(mconst, 0, cn,0);
+		Quad.addEdge(cn,0,phi,0);
+		Quad.addEdge(cn,1,phi,1);
+		Quad.addEdge(phi,0,q.next(0),q.nextEdge(0).which_pred());
+		Quad.addEdge(q,0,mconst,0);
+		old=phi;
+	    }
+
+	    for(int i=0;i<q.paramsLength();i++) {
+		Temp t=q.params(i);
+		Temp tname=new Temp(q.getFactory().tempFactory());
+		String name=t.name();
+		CONST nameconst=new CONST(q.getFactory(), q, tname, name,
+					  strclass);
+		Temp texc=new Temp(q.getFactory().tempFactory());
+		CALL nc=new CALL(q.getFactory(),q,marklocalmethod,
+				 new Temp[] {tname,t}, null,texc,
+				 false,false, new Temp[0]);
+		PHI phi=new PHI(q.getFactory(),q, new Temp[0], 2);
+		
+		Quad.addEdge(phi,0, old.next(0),old.nextEdge(0).which_pred());
+		Quad.addEdge(nc,0,phi,0);
+		Quad.addEdge(nc,1,phi,1);
+		Quad.addEdge(old,0,nameconst,0);
+		Quad.addEdge(nameconst,0, nc,0);
+		old=phi;
+	    }
 	}
        
 	public void visit(RETURN q) {
