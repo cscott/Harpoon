@@ -1,6 +1,6 @@
 ---- Aug-7-98
-Figure out how classes will be laid out in the JavaChip.
-Figure out what we're doing about arrays.
+O Figure out how classes will be laid out in the JavaChip.
+X Figure out what we're doing about arrays.
 
 ---- Aug-5-98
 X Fix munge/unmunge to be pipeline-safe
