@@ -54,19 +54,25 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.1.2.10 2001-06-21 05:13:11 pnkfelix Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.1.2.11 2001-07-03 23:54:57 pnkfelix Exp $
  */
 public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     // FSK: super class really SHOULD be RegAlloc, but am doing this
     // for now to inherit fields from ARAClasses (refactoring)
     
+    public static final boolean PRINT_DEPTH_TO_SPILL_INFO = true;
     public static final boolean PRINT_HEURISTIC_INFO = false;
     public static final boolean PRINT_CLEANING_INFO = false;
 
 
     private static final int NUM_CLEANINGS_TO_TRY = 3;
-    private boolean try_to_clean = true;
+    private boolean try_to_clean = false; // trackdown _213_javac
+    // activates an extension to cleaning that doesn't spill defs that
+    // are dead at the BasicBlock's end.
+    private static final boolean CLEAN_BB_LOCAL_DEFS = true;
 
+    // activates a prepass removing "mov t0, t0" InstrMOVEs.
+    private static final boolean TRIVIAL_MOVE_COALESCE = true;
     static RegAlloc.Factory FACTORY = new RegAlloc.Factory() {
 	    public RegAlloc makeRegAlloc(Code c) {
 		return new AppelRegAlloc(c);
@@ -89,6 +95,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 		i.remove();
 	    }
 	}
+	dontSpillTheseDefs.clear();
 	depthToNumSpills = new int[SPILL_STAT_DEPTH];
 	try_to_clean = false;
 	bbFact = computeBasicBlocks();
@@ -191,7 +198,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 			combineWebs = intersects( web1.defs, web2.defs );
 
 			if( ! combineWebs ){
-			    // IMPORTANT: current temp->reg assignment
+			    // FSK IMPORTANT: current temp->reg assignment
 			    // design breaks if an instr needs two
 			    // different regs for the same temp in the
 			    // uses and defines.  Take this clause out
@@ -465,40 +472,71 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	
     }
     
+    private void trivialMoveCoalesce() {
+	// FSK: TODO: insert code here to do a prepass eliminating
+	// moves of the form "mov t0, t0;" because they are truly
+	// useless (unless we add support for assigning different regs
+	// to the same temp based on its status in its instr as a use
+	// or a def)
+	if (!TRIVIAL_MOVE_COALESCE) 
+	    return;
+	
+	int numRemoved = 0;
+	for(Iterator instrs=code.getElementsI(); instrs.hasNext(); ){
+	    Instr i = (Instr) instrs.next();
+	    if (i.isMove()) {
+		Util.assert( i.defC().size() == 1);
+		Util.assert( i.useC().size() == 1); 
+		Temp dst = (Temp) i.defC().iterator().next(); 
+		Temp src = (Temp) i.useC().iterator().next(); 
+		if (dst == src) {
+		    i.remove();
+		    numRemoved++;
+		}
+	    }
+	}
+	
+	if (numRemoved > 0) {
+	    bbFact = computeBasicBlocks();
+	}
+    }
+    
+    void time(String note) { //System.out.println("TIME "+note+" "+new java.util.Date()); 
+    }
+
     public void generateRegAssignment() { 
+	time("A");
+	trivialMoveCoalesce();
+
 	while (true) {
 	    // System.out.println("post spill coloring");
-	    initializeSets();     
-	    preAnalysis();        
-	    buildTempToWebs();    
-	    buildWebToNodes();    
+	    time("B");	
+	    initializeSets();     	    time("C");	
+	    preAnalysis();             	    time("D");	
+	    buildTempToWebs();         	    time("E");	
+	    buildWebToNodes();         	    time("F");	
 	    
-	    // FSK: Lazily building...
-	    // System.out.print("N");
-	    // buildNodeToLiveAt();  
-	    nodeToLiveAt = null;
-
 	    // Appel's real code begins here
-	    buildInterferenceGraph();
+	    buildInterferenceGraph();     	    time("G");	
 	    
-	    checkInv();
-	    checkpointState();
+	    checkInv();     	    time("H");	
+	    checkpointState();     	    time("I");	
 	    final boolean USE_CHAITIN_ALONE = false;
 	    final boolean INCREMENTAL_OUTPUT = false;
 	    try {
 		SpillHeuristic h_min = null;
-		SpillHeuristic[] h = spillHeuristics();
+		SpillHeuristic[] h = spillHeuristics();     	    time("J");	
 		if ( ! USE_CHAITIN_ALONE ) {
 		    for(int i = 0; i < h.length; i++) {
 			// FSK: look into breaking out of this loop if
 			// we color without any spilling at all.
-			appelLoopBody( h[i] );
+			appelLoopBody( h[i] );     	    time("K");	
 			
-			checkMoveSets();
+			checkMoveSets();     	    time("L");	
 			
-			assignColors();
+			assignColors();     	    time("M");	
 			
-			checkInv();
+			checkInv();     	    time("N");	
 			
 			if (h[i].maxExpSpills == 0)
 			    Util.assert( spilled_nodes.isEmpty() );
@@ -507,13 +545,16 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 			    h_min = h[i];
 			    
 			    // FSK: break here later for better speed
-			    // (disabled to gather data on whether alt
-			    // spill heuristics have any benefit)
+			    // (no spills ==> don't need reiteration of heuristics) 
+			    // ((may want disable later if i gather
+			    //   data measuring benefit of alt spill
+			    //   heuristics))
+			    break;
 			} else {
 			    h[i].reallySpill(spilled_nodes.iter());
 			}
 			
-			resetState();
+			resetState();     	    time("O");	
 			
 			if (INCREMENTAL_OUTPUT && PRINT_HEURISTIC_INFO ) 
 			    System.out.print
@@ -542,6 +583,8 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 			minIndex = -2; // -2 means "any will do && no spilling"
 		    } 
 
+		    time("P");	
+		    
 		    if( PRINT_HEURISTIC_INFO 
 			
 			// (leave -2 results out of output when not incremental)
@@ -559,17 +602,17 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 			    ("\nCHOOSING SPILL HEURISTIC "+minIndex+" \t=> "+h_min);
 		    }
 		    h_min.reset();
-		    appelLoopBody( h_min );
+		    appelLoopBody( h_min );		    time("Q");	
 		    
 		} else {
 		    appelLoopBody( h[2] );
 		}
-		
-		assignColors(); 
+				    time("R");	
+		assignColors(); 		    time("S");	
 		// h_min.reallySpill(spilled_nodes.iter());
 		// System.out.println("\nFINAL SPILL HEURISTIC   \t=> "+h_min);
 		
-		checkInv();
+		checkInv();		    time("T");	
 		
 		if( ! spilled_nodes.isEmpty()) {
 		    System.out.print(" R"+rewriteCalledNumTimes+", S!"+spilled_nodes.asSet().size());
@@ -647,10 +690,12 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    for(int i=0; i < depthToNumSpills.length; i++) {
 		globalDepthToNumSpills[i] += depthToNumSpills[i];
 	    }
-	    String global_stats = spillStats(globalDepthToNumSpills);
-	    System.out.println();
-	    System.out.print("globally "+global_stats);
-	    System.out.println();
+	    if (PRINT_DEPTH_TO_SPILL_INFO) {
+		String global_stats = spillStats(globalDepthToNumSpills);
+		System.out.println();
+		System.out.print("globally "+global_stats);
+		System.out.println();
+	    }
 	}
     }
 
@@ -720,22 +765,31 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 				      " completed successfully ");
 
 	
-	buildNestedLoopDepth();
+	resetNestedLoopDepth();
 
 
     } 
 
-    // requires: nestedLoopDepth has been properly initalized
-    int depth(Instr i){ return((Integer)nestedLoopDepth.get(i)).intValue(); }
+    int depth(Instr i){ return((Integer)nestedLoopDepth().get(i)).intValue(); }
     int width(Instr i){ return liveAt(i).size(); }
 
-    // Instr -> Integer, val is loop nesting depth for the key (0 for
-    // non-looped code)
-    Map nestedLoopDepth; 
-    void buildNestedLoopDepth() { 
+
+    /** Instr -> Integer, val is loop nesting depth for the key (0 for
+	non-looped code).  Constructed on demand; access through method
+	call only. */
+    Map nestedLoopDepth() {
+	if (__nestedLoopDepth == null)
+	    __nestedLoopDepth = buildNestedLoopDepth();
+	return __nestedLoopDepth;
+    }
+    /** Marks nestedLoopDepth() for reconstruction. */
+    void resetNestedLoopDepth() { __nestedLoopDepth = null; }
+
+    private Map __nestedLoopDepth;
+    private Map buildNestedLoopDepth() { 
 	// builds the nestedLoopDepth map, doing a breadth-first
 	// traversal of the loop tree.
-	nestedLoopDepth = new HashMap();
+	HashMap depthMap = new HashMap();
 	LoopFinder root = new LoopFinder(code);
 	
 	// List<Loops> where index of vector is the looping depth
@@ -754,8 +808,8 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 		Iterator instrs=curr.loopExcElements().iterator(); 
 		while( instrs.hasNext() ){
 		    Instr i = (Instr) instrs.next();
-		    Util.assert( ! nestedLoopDepth.keySet().contains( i ));
-		    nestedLoopDepth.put( i , currDepth );
+		    Util.assert( ! depthMap.keySet().contains( i ));
+		    depthMap.put( i , currDepth );
 		}
 	    }
 	    depth++;
@@ -767,9 +821,11 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    for(Iterator iter = code.getElementsI(); iter.hasNext(); ) {
 		Instr i = (Instr) iter.next();
 		Util.assert( bbFact.getBlock(i) == null ||
-			     nestedLoopDepth.keySet().contains(i), 
+			     depthMap.keySet().contains(i), 
 			     "reachable instrs should have loop depth"); 
 	    }
+
+	return depthMap;
     }
     
     public void buildInterferenceGraph() {  
@@ -792,9 +848,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    Set/*Node*/ live = liveOut(bb);
 	    
 	    for(Instr i = lastStm(bb); !i.equals( firstStm(bb) ); i = pred(i)){
-		// FSK: *DUDE* , find out if this is still necessary !!!!
-		// 5/12/01: temporarily disabling move coalescing (debug segfault)
-		if( false && i.isMove() ){
+		if( i.isMove() ){
 		    live.removeAll( useCN( i ) );
 		    for( NodeIter ni = usedef(i); ni.hasNext(); ){
 			Node n = ni.next();
@@ -807,7 +861,8 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 		for( NodeIter di = def(i); di.hasNext(); ){
 		    Node d = di.next();
 		    for( Iterator li=live.iterator(); li.hasNext(); ){
-			addEdge( (Node) li.next(), d );
+			Node n = (Node) li.next();
+			addEdge( n, d );
 		    }
 		}
 		live.removeAll( defCN(i) );
@@ -901,6 +956,12 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     }
 
     private void addEdge( Node u, Node v ) {
+	// FSK: (6/27/01) adding because having these edges is dumb.  
+	// Shouldn't break anything.  And yet...
+	if (u.isPrecolored() && v.isPrecolored()) {
+	    return;
+	}
+
 	if( ! adjSet.contains(u,v) && ! u.equals(v) ){
 	    adjSet.add(u,v);
 	    adjSet.add(v,u);
@@ -991,11 +1052,15 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 
     /** modifies: m, active_moves, worklist_moves, spill_worklist, 
 	          freeze_worklist, simplify_worklist
-        effects: decrements degree of m, moving it (and associated moves)  
+        effects: m in Precolored ==> no changes
+	         else decrements degree of m, moving it (and associated moves)  
                  into the appropriate lists if it has crossed the threshold 
 		 from K to K-1.
     */
     private void decrementDegree( Node m ) {
+	if (m.isPrecolored())
+	    return;
+
 	int d = m.degree;
 	m.degree--;
 	if( d == K 
@@ -1087,13 +1152,12 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	// ( possibly adding new cases here?!!? )
 
 	if (u.equals(v)) {
-	    // System.out.println( u+" .equals "+v );
 
 	    coalesced_moves.add(m);
 	    addWorkList(u);
-
-	} else if (v.isPrecolored() && adjSet.contains(u,v) ) {
-	    // System.out.println( v+" .isPrecolored "+"and adjSet.contains ("+u+","+v+")" );
+	
+	} else if (v.isPrecolored() || adjSet.contains(u,v) ) {
+	    // slightly obfuscated way of asking "do u and v conflict?"
 
 	    constrained_moves.add(m);
 	    addWorkList(u);
@@ -1155,10 +1219,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    ! moveRelated( u ) &&
 	    u.degree < K ) {
 
-	    // FSK: invariant "u isIn freeze_worklist" here is being
-	    // violated.  Track down later.
 	    freeze_worklist.remove( u );
-	    // u.s_rep.remove( u );
 
 	    simplify_worklist.add( u );
 	}
@@ -1200,7 +1261,6 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
        modifies; freeze_worklist, spill_worklist, 
      */
     private void combine(Node u, Node v) {
-	// System.out.println("called combine("+u+","+v+")");
 	if (v.isFreezeWorkL()) {
 	    freeze_worklist.remove(v);
 	} else {
@@ -1369,6 +1429,11 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     private SpillHeuristic[] spillHeuristics() {
 	SpillHeuristic[] hs = new SpillHeuristic[] { 
 
+	    // ** SCOTT'S SPILL HEURISTIC
+	    new SpillHeuristic() { double cost(Node m) {
+		return (1000*(m.web.defs.size()+m.web.uses.size() ) ) / m.degree;  }}
+	    ,
+
 	    // ** CHAITIN'S SPILL HEURISTIC **
 	    new SpillHeuristic() { double cost( Node m ) {  
 		return chaitinCost(m) / m.degree; }}
@@ -1392,19 +1457,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    
 	};
 	
-
-	// reordering heuristics to ensure that the fact that
-	// Chaitin is always chosen is not a stagnant data fluke. 
-
-	// this ordering may seem odd, but its intended to more easily
-	// expose the cases where Chaitin's method is beaten.  
-	SpillHeuristic[] hs_r = new SpillHeuristic[ 4 ];
-	Util.assert(hs_r.length == hs.length);
-	hs_r[0] = hs[3];
-	hs_r[1] = hs[2];
-	hs_r[2] = hs[0]; // ** CHAITIN'S SPILL HEURISTIC **
-	hs_r[3] = hs[1]; 
-	return hs_r;
+	return hs;
     }
     static class CouldntFindSpillExn extends Exception {}
     private void selectSpill(SpillHeuristic sh) throws CouldntFindSpillExn {
@@ -1420,10 +1473,13 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    Util.assert( ! isRegister(n.web.temp) );
 	    
 	    // these loops skip over prev. spilled nodes... 
-	    for(Iterator di = n.web.defs.iterator(); di.hasNext(); )
-		if (di.next() instanceof RestoreProxy) {
+	    for(Iterator di = n.web.defs.iterator(); di.hasNext(); ) {
+		Instr d = (Instr) di.next();
+		if (d instanceof RestoreProxy ||
+		    dontSpillTheseDefs.contains(d)) {
 		    continue nextNode;
 		}
+	    }
 	    for(Iterator ui = n.web.uses.iterator(); ui.hasNext(); )
 		if (ui.next() instanceof SpillProxy) {
 		    continue nextNode;
@@ -1451,7 +1507,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	while( !select_stack.isEmpty() ){
 	    Node n = select_stack.pop();
 	    ColorSet okColors = new ColorSet(K);
-	    for( NodeIter adj=adjacent(n); adj.hasNext(); ) {
+	    for( NodeIter adj=n.neighbors.iter(); adj.hasNext(); ) {
 		Node w = adj.next(); w = getAlias(w);
 		if( w.isColored() || 
 		    w.isPrecolored() ){
@@ -1508,9 +1564,11 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    }
 	}
 
-	System.out.println();
-	System.out.print("locally "+spillStats(depthToNumSpills));
-	System.out.println();
+	if (PRINT_DEPTH_TO_SPILL_INFO) {
+	    System.out.println();
+	    System.out.print("locally "+spillStats(depthToNumSpills));
+	    System.out.println();
+	}
 
 	// FSK: this is dumb; it removes all of the work we just did
 	// in this method.  Move to earlier point in the control flow
@@ -1523,19 +1581,33 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	bbFact = computeBasicBlocks();
     }
 
+    private HashSet dontSpillTheseDefs = new HashSet();
     private Collection addDefs(Web w) {
 	HashSet groupDefs = new HashSet(w.defs.size());
+	int cleanedNum = 0;
 	for(Iterator ds=w.defs.iterator(); ds.hasNext();) {
 	    Instr d = (Instr) ds.next();
 	    Instr exit = d.getExit(InstrGroup.NO_SPILL);
-	    groupDefs.add(exit);
+	    
+	    BasicBlock bb = bbFact.getBlock(exit);
 	    Util.assert(bbFact.getBlock(exit) != null, 
 			"no BB found for exit");
+
+	    if (CLEAN_BB_LOCAL_DEFS && try_to_clean) {
+		Set liveOut = liveTemps.getLiveAfter(bb.getLast());
+		if ( ! liveOut.contains( w.temp )) {
+		    System.out.println
+			("refusing to spill bb-local! "+w.temp);
+		    dontSpillTheseDefs.add(d);
+		    cleanedNum++;
+		    continue;
+		}
+	    }
+	    groupDefs.add(exit);
 	}
 
 	if ( try_to_clean ){
 	    // clean out redundant targets
-	    int cleanedNum = 0;
 	    LinearSet blocks = new LinearSet();
 	    for(Iterator ds = groupDefs.iterator(); ds.hasNext(); ){
 		Instr instr = (Instr)ds.next(); 
@@ -1551,7 +1623,8 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 		    Instr i = (Instr) stms.next();
 		    if (groupDefs.contains(i)){ 
 			if (!seenOne) {
-			    seenOne = true; continue;
+			    seenOne = true; 
+			    continue;
 			} else {
 			    groupDefs.remove(i);
 			    cleanedNum++;
@@ -1573,7 +1646,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    Util.assert( d.canFallThrough &&
 			 d.getTargets().isEmpty() );
 
-	    depthToNumSpills[((Integer)nestedLoopDepth.get(d)).intValue()]++;
+	    depthToNumSpills[((Integer)nestedLoopDepth().get(d)).intValue()]++;
 
 	    SpillProxy sp = new SpillProxy(d, w.temp);
 	    spills.add(sp);
@@ -1612,8 +1685,9 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 			    cleanedNum++;
 			}
 		    }
-		    if ( PRINT_CLEANING_INFO && !seenOne && w.defs.contains(i) ){
-			System.out.print("\nFSK saw a def before a use: "+i);
+		    if ( !seenOne && w.defs.contains(i) ){
+			if ( PRINT_CLEANING_INFO )
+			    System.out.print("\nFSK saw a def before a use: "+i);
 			seenOne = true;
 		    }
 		}
@@ -1633,7 +1707,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 			 p.getTargets().isEmpty() &&
 			 u.predC().size() == 1 );
 
-	    depthToNumSpills[((Integer)nestedLoopDepth.get(u)).intValue()]++;
+	    depthToNumSpills[((Integer)nestedLoopDepth().get(u)).intValue()]++;
 
 	    RestoreProxy rp = new RestoreProxy(u, w.temp);
 	    spills.add(rp);
@@ -1678,6 +1752,9 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	initializeNodeSets();
 	initializeMoveSets();
 	adjSet = new NodePairSet();
+
+	// FSK: Lazily building this mapping...
+	nodeToLiveAt = null;
     }
 
     
