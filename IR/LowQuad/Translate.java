@@ -26,7 +26,7 @@ import java.util.Map;
  * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.16 2000-01-13 23:47:55 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.17 2000-01-14 05:12:34 cananian Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,
@@ -199,14 +199,10 @@ final class Translate { // not public
 	    for (int i=0; i<nsrc.length; i++) { // copy copy copy
 		nsrc[i] = q.src(i); ndst[i] = q.dst(i);
 	    }
-	    // make paramtypes array.
-	    HClass[] paramTypes = new HClass[q.paramsLength()];
-	    for (int i=0; i<paramTypes.length; i++)
-		paramTypes[i] = q.paramType(i);
 	    // CALL->PCALL.
 	    Quad q3 = new PCALL(qf, q, qN.def()[0], map(q.params()),
 				map(q.retval()), map(q.retex()),
-				map(ndst), map(nsrc), paramTypes,
+				map(ndst), map(nsrc),
 				isVirtual, q.isTailCall());
 	    Quad.addEdge(qN, 0, q3, 0);
 	    lqm.put(q, q0, q3);

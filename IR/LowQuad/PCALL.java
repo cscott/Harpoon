@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.LowQuad;
 
-import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
@@ -14,7 +13,7 @@ import harpoon.Util.Util;
  * invocation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PCALL.java,v 1.1.2.5 2000-01-13 09:31:15 cananian Exp $
+ * @version $Id: PCALL.java,v 1.1.2.6 2000-01-14 05:12:33 cananian Exp $
  */
 public class PCALL extends harpoon.IR.Quads.SIGMA {
     /** The method pointer to dereference. */
@@ -31,11 +30,6 @@ public class PCALL extends harpoon.IR.Quads.SIGMA {
     protected boolean isVirtual;
     /** Whether this should be treated as a tail call. */
     protected boolean isTailCall;
-    /** Types and number of parameters to this call.  Used to setup
-     *  parameter passing. If the method is non-static, then the
-     *  entry in array location 0 should represent the type of the
-     *  'this' pointer. */
-    protected HClass[] paramTypes;
 
     /** Creates a <code>PCALL</code> representing a method pointer dereference
      *  and method invocation. Interpretation is similar to that of
@@ -76,15 +70,6 @@ public class PCALL extends harpoon.IR.Quads.SIGMA {
      * @param src
      *        the arguments to the sigma functions associated with
      *        this <code>PCALL</code>.
-     * @param paramTypes
-     *        an array of <code>HClass</code> objects that represent the
-     *        formal parameter types, in declaration order, of the
-     *        <code>params</code> parameter.  The length of the
-     *        <code>paramTypes</code> array must be identical to
-     *        the length of the <code>params</code> array, and similarly
-     *        element 0 of the <code>paramTypes</code> array must
-     *        represent the type of the method's declaring class for
-     *        non-static methods.
      * @param isVirtual
      *        <code>true</code> if this is a virtual method invocation,
      *        in which case <code>ptr</code> <i>points to</i> the address of
@@ -100,18 +85,16 @@ public class PCALL extends harpoon.IR.Quads.SIGMA {
      */
     public PCALL(LowQuadFactory qf, HCodeElement source,
 		 Temp ptr, Temp[] params, Temp retval, Temp retex,
-		 Temp[][] dst, Temp[] src, HClass[] paramTypes,
+		 Temp[][] dst, Temp[] src,
 		 boolean isVirtual, boolean isTailCall) {
 	super(qf, source, dst, src, 2/* always arity two */);
 	this.ptr = ptr;
 	this.params = params;
 	this.retval = retval;
 	this.retex = retex;
-	this.paramTypes = (HClass[]) paramTypes.clone();
 	this.isVirtual = isVirtual;
 	this.isTailCall = isTailCall;
 	Util.assert(ptr!=null && params!=null && retex !=null);
-	Util.assert(params.length==paramTypes.length);
 	// hm.  can't check much else without knowing the method identity.
     }
     // convenience constructor.
@@ -119,10 +102,9 @@ public class PCALL extends harpoon.IR.Quads.SIGMA {
      *  of the proper size and arity.  Other arguments as above. */
     public PCALL(LowQuadFactory qf, HCodeElement source,
 		 Temp ptr, Temp[] params, Temp retval, Temp retex,
-		 Temp[] src, HClass[] paramTypes,
-		 boolean isVirtual, boolean isTailCall){
+		 Temp[] src, boolean isVirtual, boolean isTailCall){
 	this(qf, source, ptr, params, retval, retex,
-	     new Temp[src.length][2], src, paramTypes, isVirtual, isTailCall);
+	     new Temp[src.length][2], src, isVirtual, isTailCall);
     }
 
     // ACCESSOR METHODS:
@@ -136,10 +118,6 @@ public class PCALL extends harpoon.IR.Quads.SIGMA {
     public Temp params(int i) { return params[i]; }
     /** Returns the number of parameters in the <code>params</code> array. */
     public int paramsLength() { return params.length; }
-    /** Returns a copy of the <code>paramTypes</code> array. */
-    public HClass[] paramTypes() { return (HClass[]) paramTypes.clone(); }
-    /** Returns a specific element of the <code>paramTypes</code> array. */
-    public HClass paramTypes(int i) { return paramTypes[i]; }
     /** Returns the <code>Temp</code> which will hold the return value of
      *  the method, or the value <code>null</code> if the method returns
      *  no value. */
@@ -185,7 +163,7 @@ public class PCALL extends harpoon.IR.Quads.SIGMA {
 			 map(useMap, ptr), map(useMap, params),
 			 map(defMap, retval), map(defMap, retex),
 			 map(defMap, dst), map(useMap, src),
-			 paramTypes, isVirtual, isTailCall);
+			 isVirtual, isTailCall);
     }
 
     public void accept(harpoon.IR.Quads.QuadVisitor v) {
