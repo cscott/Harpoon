@@ -1,21 +1,23 @@
 // Start.java, created Fri Sep 25 02:24:11 1998 by marinov
 package harpoon.Main;
 
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HMethod;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.Quad;
 import java.util.Enumeration;
-import harpoon.Analysis.QuadSSA.*;
-import harpoon.Analysis.TypeInference.*;
+import harpoon.Analysis.QuadSSA.ClassHierarchy;
+import harpoon.Analysis.TypeInference.InterProc;
 import harpoon.Util.Set;
 import harpoon.Util.Worklist;
-import harpoon.Temp.*;
+
 /**
  * <code>PrintTypes</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: TypesMain.java,v 1.1.2.1 1998-12-07 22:08:04 marinov Exp $
+ * @version $Id: TypesMain.java,v 1.1.2.2 1999-01-22 23:33:49 cananian Exp $
  */
-
 public class TypesMain extends harpoon.IR.Registration {
     public static void main(String args[]) {
 	if (args.length >= 2) {

@@ -3,8 +3,10 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
-import harpoon.ClassFile.*;
-import harpoon.Util.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HConstructor;
+import harpoon.ClassFile.HMethod;
+import harpoon.Util.UniqueVector;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -13,7 +15,7 @@ import java.util.Vector;
  * <code>CallGraph</code> is a command-line call-graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.2 1998-10-12 11:22:08 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.2.2.1 1999-01-22 23:33:48 cananian Exp $
  */
 
 public abstract class CallGraph extends harpoon.IR.Registration {

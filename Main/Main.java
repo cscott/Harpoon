@@ -3,15 +3,16 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HMethod;
+
 /**
  * <code>Main</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.8.2.1 1998-12-01 12:36:44 cananian Exp $
+ * @version $Id: Main.java,v 1.8.2.2 1999-01-22 23:33:48 cananian Exp $
  */
-
 public abstract class Main extends harpoon.IR.Registration {
 
     /** The compiler should be invoked with the names of classes

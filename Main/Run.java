@@ -1,20 +1,23 @@
 // Run.java, created Mon Dec 28 02:34:11 1998 by cananian
 package harpoon.Main;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
 import harpoon.Interpret.Quads.Method;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.zip.GZIPOutputStream;
+
 /**
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Run.java,v 1.1.2.3 1999-01-03 03:01:44 cananian Exp $
+ * @version $Id: Run.java,v 1.1.2.4 1999-01-22 23:33:48 cananian Exp $
  */
-
 public abstract class Run extends harpoon.IR.Registration {
     public static final String codename="quad-with-try";
     public static void main(String args[]) {

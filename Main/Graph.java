@@ -3,7 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HMethod;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
@@ -11,7 +13,7 @@ import harpoon.Util.Util;
  * <code>Graph</code> is a command-line graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.12.2.1 1998-11-23 22:55:29 marinov Exp $
+ * @version $Id: Graph.java,v 1.12.2.2 1999-01-22 23:33:48 cananian Exp $
  */
 
 public abstract class Graph extends harpoon.IR.Registration {
