@@ -17,6 +17,9 @@ inline RefCountAllocator RefCountAllocator_new() {
 
 inline void* RefCountAllocator_alloc(RefCountAllocator rc, size_t size, int clear) {
   struct refCons* head = NULL;
+#ifndef WITH_MEMORYAREA_TAGS 
+  JNIEnv* env = FNI_GetJNIEnv(); 
+#endif
 #ifdef RTJ_DEBUG
   printf("RefCountAllocator_alloc(0x%08x, %d)\n", rc, size);
   checkException();
@@ -35,6 +38,9 @@ inline void* RefCountAllocator_alloc(RefCountAllocator rc, size_t size, int clea
 			   (long int)(head->next = rc->in_use),
 			   (long int)head)) {}
   RefCountAllocator_DEC(rc);
+#ifndef WITH_MEMORYAREA_TAGS
+  RTJ_tagObject(env, FNI_WRAP(&(head->obj))); 
+#endif
 #ifdef RTJ_DEBUG
   checkException();
   printf("  = 0x%08x\n", &(head->obj));
@@ -268,13 +274,7 @@ inline void RefCountAllocator_oobj_finalizer(RefCountAllocator rc, void* obj) {
 static jfieldID memoryAreaID = NULL;
 static struct oobj* refCountInstance = NULL;
 
-inline void RefCountAllocator_oobj_handle_reference(RefCountAllocator rc,
-						    struct oobj** oobj) {
-  struct _jobject obj;
-#ifdef RTJ_DEBUG
-  printf("RefCountAllocator_oobj_handle_reference(0x%08x, 0x%08x)\n", rc, *oobj);
-#endif
-  obj.obj = *oobj;
+inline void RefCountAllocator_getRefCountInstance() {
   if (!refCountInstance) {  
     JNIEnv* env = FNI_GetJNIEnv();
     jclass refCountAreaClass;
@@ -303,6 +303,16 @@ inline void RefCountAllocator_oobj_handle_reference(RefCountAllocator rc,
     checkException();
 #endif
   } 
+}
+
+inline void RefCountAllocator_oobj_handle_reference(RefCountAllocator rc,
+						    struct oobj** oobj) {
+  struct _jobject obj;
+#ifdef RTJ_DEBUG
+  printf("RefCountAllocator_oobj_handle_reference(0x%08x, 0x%08x)\n", rc, *oobj);
+#endif
+  obj.obj = *oobj;
+  RefCountAllocator_getRefCountInstance();
   if ((!(((ptroff_t)(*oobj))&1)) && refCountInstance &&
       ((FNI_UNWRAP_MASKED(FNI_GetObjectField(FNI_GetJNIEnv(), &obj, memoryAreaID)))
        == refCountInstance)) {

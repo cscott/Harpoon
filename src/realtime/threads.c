@@ -281,6 +281,7 @@ void print_queue(struct thread_queue_struct* q, char* message) {
   }
   printf(")");
 #endif
+  printScheduler();
 }
 
 void enqueue(struct thread_queue_struct** h, struct thread_queue_struct** t,
@@ -387,6 +388,9 @@ void cleanupThreadQueue(JNIEnv* env)
 {
   struct thread_queue_struct* nextPiece;
 
+#ifdef RTJ_DEBUG_THREADS
+  printf("\ncleanupThreadQueue(0x%08x)", env);
+#endif
   while(thread_queue != NULL) {
     nextPiece = thread_queue->next;
     if(thread_queue->jthread != NULL)
@@ -415,6 +419,7 @@ struct thread_queue_struct* lookupThread(jlong threadID)
 void DisableThread(struct thread_queue_struct* queue)
 {
   JNIEnv* env = FNI_GetJNIEnv();
+  jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
   jmethodID disableMethod;
   jclass schedClass; 
 
@@ -430,19 +435,20 @@ void DisableThread(struct thread_queue_struct* queue)
 
   schedClass = (*env)->FindClass(env, "javax/realtime/Scheduler");
   assert(!((*env)->ExceptionOccurred(env)));
-  disableMethod = (*env)->GetStaticMethodID(env, schedClass, "jDisableThread", "()V");
+  disableMethod = (*env)->GetStaticMethodID(env, schedClass, "jDisableThread", "(Ljavax/realtime/RealtimeThread;J)V");
   assert(!((*env)->ExceptionOccurred(env)));
   (*env)->CallStaticVoidMethod(env, schedClass, disableMethod, 
 			       ((struct FNI_Thread_State*)env)->thread, queue->threadID);
   assert(!((*env)->ExceptionOccurred(env)));
-  (*env)->DeleteLocalRef(env, schedClass);
 
   print_queue(thread_queue, "END disableThread queue");
+  FNI_DeleteLocalRefsUpTo(env, ref_marker);
 }
 
 void EnableThread(struct thread_queue_struct* queue)
 {
   JNIEnv* env = FNI_GetJNIEnv();
+  jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
   jmethodID enableMethod;
   jclass schedClass;
   assert(!((*env)->ExceptionOccurred(env)));
@@ -458,14 +464,14 @@ void EnableThread(struct thread_queue_struct* queue)
   queue->queue_state = IN_ACTIVE_QUEUE;
 
   schedClass = (*env)->FindClass(env, "javax/realtime/Scheduler");
-  enableMethod = (*env)->GetStaticMethodID(env, schedClass, "jEnableThread", "()V");
+  enableMethod = (*env)->GetStaticMethodID(env, schedClass, "jEnableThread", "(Ljavax/realtime/RealtimeThread;J)V");
   assert(!((*env)->ExceptionOccurred(env)));
   (*env)->CallStaticVoidMethod(env, schedClass, enableMethod, 
 			       ((struct FNI_Thread_State*)env)->thread, queue->threadID);
   assert(!((*env)->ExceptionOccurred(env)));
-  (*env)->DeleteLocalRef(env, schedClass);
   
   print_queue(thread_queue, "END enableThread queue");
+  FNI_DeleteLocalRefsUpTo(env, ref_marker);
 }
 
 void EnableThreadList(struct thread_queue_struct* queue)
@@ -567,7 +573,7 @@ void start_realtime_threads(JNIEnv *env, jobject mainthread, jobject args,
     CheckQuanta(1, 1, 1); //check the threads to start the program
   }
 #ifdef RTJ_DEBUG_THREADS
-  if (nest == 1) {
+  if (nest == 2) {
     printf("\n  ...back from main thread!");
   }
 #endif
@@ -689,24 +695,41 @@ void* startMain(void* mclosure) {
 }
 
 void realtime_schedule_thread(JNIEnv *env, jobject thread) {
+  jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
   jmethodID addThreadMethod = 
-    (*env)->GetMethodID(env, FNI_GetObjectClass(env, thread), "schedule", "()V");
+    (*env)->GetMethodID(env, (*env)->GetObjectClass(env, thread), "schedule", "()V");
+#ifdef RTJ_DEBUG_THREADS
+  printf("\n  realtime_schedule_thread(0x%08x, 0x%08x)", env, thread);
+#endif
   assert(!((*env)->ExceptionOccurred(env)));
+  printScheduler();
   (*env)->CallVoidMethod(env, thread, addThreadMethod, NULL);
   assert(!((*env)->ExceptionOccurred(env)));
+  printScheduler();
+  FNI_DeleteLocalRefsUpTo(env, ref_marker);
 }
 
 void realtime_unschedule_thread(JNIEnv *env, jobject thread) {
   /* remove the thread from the scheduler */
+  jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
   jmethodID removeThreadMethod =
-    (*env)->GetMethodID(env, FNI_GetObjectClass(env, thread), "unschedule", "()V");
+    (*env)->GetMethodID(env, (*env)->GetObjectClass(env, thread), "unschedule", "()V");
+#ifdef RTJ_DEBUG_THREADS
+  printf("\n  realtime_unschedule_thread(0x%08x, 0x%08x)", env, thread);
+#endif
   assert(!((*env)->ExceptionOccurred(env)));
+  printScheduler();
   (*env)->CallVoidMethod(env, thread, removeThreadMethod, NULL);
   assert(!((*env)->ExceptionOccurred(env)));
+  printScheduler();
+  FNI_DeleteLocalRefsUpTo(env, ref_marker);
 }
 
 void realtime_destroy_thread(JNIEnv *env, jobject thread, void *cls) {
   struct thread_queue_struct *oldthread;
+#ifdef RTJ_DEBUG_THREADS
+  printf("\n  realtime_destroy_thread(0x%08x, 0x%08x, 0x%08x)", env, thread, cls);
+#endif
   oldthread = currentThread;
   FNI_DeleteGlobalRef(env, thread); //remove the global ref to the thread
   RTJ_FREE(cls); //free the closure argument
@@ -717,10 +740,30 @@ void realtime_destroy_thread(JNIEnv *env, jobject thread, void *cls) {
 }
 
 void initScheduler(JNIEnv *env, jobject thread) {
-  jmethodID setSchedID = (*env)->GetMethodID(env, FNI_GetObjectClass(env, thread),
-					     "initScheduler",
-					     "()V");
+  jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
+  jmethodID setSchedID = (*env)->GetMethodID(env, (*env)->GetObjectClass(env, thread),
+					     "initScheduler", "()V");
+#ifdef RTJ_DEBUG_THREADS
+  printf("\n  initScheduler(0x%08x, 0x%08x)");
+#endif
   assert(!((*env)->ExceptionOccurred(env)));
   (*env)->CallVoidMethod(env, thread, setSchedID, NULL);
   assert(!((*env)->ExceptionOccurred(env)));
+  printScheduler();
+  FNI_DeleteLocalRefsUpTo(env, ref_marker);
+}
+
+void printScheduler() {
+#ifdef RTJ_DEBUG_THREADS
+  JNIEnv* env = FNI_GetJNIEnv();
+  jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
+  jclass schedClass = (*env)->FindClass(env, "javax/realtime/Scheduler");
+  jmethodID printID;
+  assert(!((*env)->ExceptionOccurred(env)));
+  printID = (*env)->GetStaticMethodID(env, schedClass, "print", "()V");
+  assert(!((*env)->ExceptionOccurred(env)));
+  (*env)->CallStaticVoidMethod(env, schedClass, printID, NULL);
+  assert(!((*env)->ExceptionOccurred(env)));
+  FNI_DeleteLocalRefsUpTo(env, ref_marker);
+#endif
 }

@@ -70,6 +70,8 @@ void initScheduler(JNIEnv *env, jobject thread);
 void setupEnv(JNIEnv *env);
 void destroyEnv();
 
+void printScheduler();
+
 #endif
 
 
