@@ -17,7 +17,7 @@ import java.io.PrintWriter;
  * 
  * @see harpoon.Backend.Generic.CodeGen
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.24 2000-02-19 08:22:41 cananian Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.25 2001-06-05 04:17:24 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
@@ -114,7 +114,7 @@ public abstract class CodeGeneratorGenerator {
 	out.println("\t    @param tree Set of abstract <code>Tree</code> instructions ");
 	out.println("\t                that form the body of the procedure being compiled.");
 	out.println("\t*/");
-	out.println("\tpublic final "+UTIL_List+" genCode(final " + 
+	out.println("\tpublic final "+UTIL_List+" cgg_genCode(final " + 
 		    TREE_Code +" code, final " + ASSEM_InstrFactory +
 		    " inf) {"); // method start
 
@@ -138,7 +138,7 @@ public abstract class CodeGeneratorGenerator {
 	out.println("\t    @param tree Set of abstract <code>Tree</code> instructions ");
 	out.println("\t                that form the body of the data structure being compiled.");
 	out.println("\t*/");
-	out.println("\tpublic final "+ASSEM_Instr+" genData(" + 
+	out.println("\tpublic final "+ASSEM_Instr+" cgg_genData(" + 
  		    TREE_Data +" code, final " + ASSEM_InstrFactory + 
 		    " inf) {"); // method start
 

@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * <code>NullCodeGen</code> does nothing.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NullCodeGen.template,v 1.1.2.15 2000-08-26 04:55:59 witchel Exp $ */
+ * @version $Id: NullCodeGen.template,v 1.1.2.16 2001-06-05 04:17:02 pnkfelix Exp $ */
 public class NullCodeGen extends harpoon.Backend.Generic.CodeGen {
     // a constructor here corresponding to every type of codegen
     //  constructor we have
@@ -20,15 +20,15 @@ public class NullCodeGen extends harpoon.Backend.Generic.CodeGen {
     protected void declare(Temp t, harpoon.ClassFile.HClass hc) {}   
     protected void declare(Temp t, 
 		           harpoon.Analysis.Maps.Derivation.DList dl) {}       
-    public java.util.List genCode(harpoon.IR.Tree.Code tree, 
+    public java.util.List cgg_genCode(harpoon.IR.Tree.Code tree, 
 			 harpoon.IR.Assem.InstrFactory inf) {
 	return null;
     }
-    public Instr genData(harpoon.IR.Tree.Data tree, 
+    public Instr cgg_genData(harpoon.IR.Tree.Data tree, 
 			 harpoon.IR.Assem.InstrFactory inf) {
 	return null;
     }
-    protected Instr emit(Instr i) { return null; }
+    protected Instr cgg_backendEmit(Instr i) { return null; }
     public NullCodeGen(harpoon.PACKAGE.Frame f) { super(f); }
     public Instr procFixup(harpoon.ClassFile.HMethod hm,
 		           Instr instr,
