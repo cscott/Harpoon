@@ -88,22 +88,29 @@ public class RMAScheduler extends Scheduler {
     }
 
     protected long chooseThread(long currentTime) {
-	NoHeapRealtimeThread.print("\ncurrentTime = ");
-	NoHeapRealtimeThread.print(currentTime);
  	for (int threadID = 0; threadID <= numThreads; threadID++) {
- 	    if ((period[threadID]!=0)&&
-		(startPeriod[threadID] + period[threadID] < currentTime)) {
- 		startPeriod[threadID] += period[threadID];
+	    long p = period[threadID];
+ 	    if ((p!=0)&&
+		(startPeriod[threadID] + p < currentTime)) { 
+		// Period past, update startPeriod to start of current period.
+		// Reset work done to zero.
+		startPeriod[threadID] = currentTime - ((currentTime - startPeriod[threadID])%p);
  		work[threadID] = 0;
  	    }
  	}
 	long minPeriod = Long.MAX_VALUE;
 	for (int threadID=OFFSET+1; threadID <= numThreads; threadID++) {
-	    if (startPeriod[threadID] + period[threadID] - currentTime < minPeriod) { 
+	    long p = period[threadID];
+	    if (p == 0) continue;
+	    long newPeriod = (p+startPeriod[threadID])-currentTime;
+	    if (newPeriod < minPeriod) { 
 		// Find the time of the soonest period ender...
-		minPeriod = startPeriod[threadID] + period[threadID] - currentTime;
+		minPeriod = newPeriod;
 	    }
 	}
+
+// 	NoHeapRealtimeThread.print("\nMin Period (before): ");
+// 	NoHeapRealtimeThread.print(minPeriod);
 
 	// Period ended, trigger context switch to rechoose
 	if (minPeriod < 1) {
@@ -116,6 +123,9 @@ public class RMAScheduler extends Scheduler {
 	    minPeriod *= 1000;
 	}
 
+// 	NoHeapRealtimeThread.print("\nMin Period (after): ");
+// 	NoHeapRealtimeThread.print(minPeriod);
+
 	if (currentThreadID != 0) {
 	    int threadID = (int)(currentThreadID+OFFSET);
 	    if (lastTime == 0) {
@@ -125,7 +135,11 @@ public class RMAScheduler extends Scheduler {
 	    lastTime = currentTime;
 	    if (enabled[threadID]) {
 		long timeLeft = (cost[threadID] - work[threadID])*1000;
-		if (timeLeft > 0) { // I'm not done yet with the current thread, keep running...
+		if (cost[threadID]!=0) {
+// 		    NoHeapRealtimeThread.print("\nTime Left: ");
+// 		    NoHeapRealtimeThread.print(timeLeft);
+		}
+		if ((cost[threadID]!=0)&&(timeLeft > 0)) { // I'm not done yet with the current thread, keep running...
 		    setQuanta(timeLeft<minPeriod?timeLeft:minPeriod);
 		    return 0;
 		} else { // I'm done with this thread, choose another to run...
