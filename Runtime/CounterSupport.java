@@ -10,7 +10,7 @@ import java.io.PrintStream;
  * using counters identified by integers.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: CounterSupport.java,v 1.5 2003-02-11 21:56:59 salcianu Exp $ */
+ * @version $Id: CounterSupport.java,v 1.6 2003-03-18 03:54:34 salcianu Exp $ */
 public class CounterSupport {
     static int sizesync;
     static int numbins, bincap;
@@ -86,6 +86,10 @@ public class CounterSupport {
 	// allocID == -1 stands for allocation sites that haven't
 	// received an unique integer ID 
 	if (allocID == -1) return;
+
+	if((length % 4) != 0)
+	    length += 4 - (length % 4);
+
 	if (allocID >= mem_amount_length) {
 	    long[] new_mem_amount = new long[allocID * 2];
 	    System.arraycopy(mem_amount, 0,
