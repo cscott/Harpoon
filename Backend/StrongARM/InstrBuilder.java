@@ -19,7 +19,7 @@ import java.util.Arrays;
     StrongARM architecture.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.7 2000-01-05 23:22:04 pnkfelix Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.8 2000-01-27 14:55:59 pnkfelix Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
@@ -97,7 +97,8 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 		newOffset -= OFFSET_LIMIT;
 	    }
 	    String assem = 
-		getWrappedAssem(getLdrAssemStrs(r, newOffset), offset); 
+		getWrappedAssem(getLdrAssemStrs(r, newOffset), 
+				offset, "`s0"); 
 
 	    return Arrays.asList
 		(new InstrMEM[] 
@@ -175,7 +176,8 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 		newOffset -= OFFSET_LIMIT;
 	    }
 	    String assem = 
-		getWrappedAssem(getStrAssemStrs(r, newOffset), offset);
+		getWrappedAssem(getStrAssemStrs(r, newOffset), 
+				offset, "`s1");
 
 	    return Arrays.asList
 		(new InstrMEM[]
@@ -186,7 +188,7 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 	}
     }
 
-    private String getWrappedAssem(String[] strs, int offset) {
+    private String getWrappedAssem(String[] strs, int offset, String spStr) {
 	String assem = "";
 	int numSPdec = 0;
 	while (offset >= OFFSET_LIMIT) {
@@ -196,7 +198,7 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 	    while(op2 != 0) {
 		// FSK: trusting CSA's code from CodeGen here...
 		int eight = op2 & (0xFF << ((Util.ffs(op2)-1) & ~1));
-		assem += "sub `s0, `s0, #"+eight+"\n";		
+		assem += "sub "+spStr+", "+spStr+", #"+eight+"\n";		
 		op2 ^= eight;
 	    }
 	    offset -= OFFSET_LIMIT;
@@ -213,7 +215,7 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 	    while(op2 != 0) {
 		// FSK: symmetric with above code (sort of)
 		int eight = op2 & (0xFF << ((Util.ffs(op2)-1) & ~1));
-		assem += "add `s0, `s0, #"+eight;
+		assem += "add "+spStr+", "+spStr+", #"+eight;
 		op2 ^= eight;
 		if (numSPdec > 0 || op2 != 0) assem += "\n";
 	    }

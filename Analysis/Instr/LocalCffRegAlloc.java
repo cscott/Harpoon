@@ -31,11 +31,11 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Collections;
 import java.util.Iterator;
 
 
@@ -53,12 +53,12 @@ import java.util.Iterator;
   
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.63 2000-01-26 21:13:41 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.64 2000-01-27 14:55:57 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
     private static boolean TIME = false;
-    private static boolean VERIFY = false;
+    private static boolean VERIFY = true;
     
     /** Creates a <code>LocalCffRegAlloc</code>. */
     public LocalCffRegAlloc(Code code) {

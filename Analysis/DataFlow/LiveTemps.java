@@ -25,7 +25,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.7 2000-01-26 21:39:56 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.8 2000-01-27 14:55:49 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars {
     private Map hceToBB; 
@@ -202,7 +202,12 @@ public class LiveTemps extends LiveVars {
     protected LiveVarInfo makeUseDef(BasicBlock bb, SetFactory sf) {
 	LiveVarInfo info = new LiveVarInfo(sf);
 
-	if (liveOnProcExit != null) {
+	if (liveOnProcExit != null &&
+	    bb.nextLength() == 0) {
+
+	    // Check that last instr is a method exit point
+	    // System.out.println("FSK found last bb: " + bb.getLast());
+
 	    info.lvOUT.addAll(liveOnProcExit);
 	    info.lvIN.addAll(liveOnProcExit);
 	}

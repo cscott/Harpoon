@@ -28,7 +28,7 @@ import java.util.HashMap;
     cause an assertion failure.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.2 1999-11-02 06:07:20 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.3 2000-01-27 14:56:00 pnkfelix Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -78,6 +78,8 @@ public class BitSetFactory extends SetFactory {
 
 	public boolean add(Object o) {
 	    Integer i = (Integer) objToBitIndex.get(o);
+
+	    
 	    Util.assert(i != null, 
 			"Attempted to add an object "+
 			"that was not part of the "+
