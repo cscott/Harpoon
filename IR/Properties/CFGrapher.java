@@ -6,15 +6,18 @@ package harpoon.IR.Properties;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Util.CombineIterator;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 /**
  * <code>CFGrapher</code> provides a means to externally associate
  * control-flow graph information with elements of an intermediate
  * representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGrapher.java,v 1.1.2.5 2000-06-29 21:28:18 cananian Exp $
+ * @version $Id: CFGrapher.java,v 1.1.2.6 2000-07-16 23:26:42 cananian Exp $
  */
 public abstract class CFGrapher {
     /** Returns the first <code>HCodeElement</code> to be executed; that is,
@@ -43,7 +46,13 @@ public abstract class CFGrapher {
     // JDK 1.2 collections API: [CSA, 15-Jun-1999]
     /** Returns a <code>Collection</code> of all the edges to and from
      *  this <code>HCodeElement</code>. */
-    public abstract Collection edgeC(HCodeElement hc);
+    public Collection edgeC(HCodeElement hc) {
+	Collection p = predC(hc), s = succC(hc);
+	HCodeEdge[] ea = new HCodeEdge[p.size()+s.size()];
+	Iterator it=new CombineIterator(p.iterator(),s.iterator());
+	for (int i=0; it.hasNext(); i++) ea[i] = (HCodeEdge) it.next();
+	return Arrays.asList(ea);
+    }
     /** Returns a <code>Collection</code> of all the edges to
 	this <code>HCodeElement</code>. 
         Each <code>HCodeEdge</code> returned is guaranteed to return 
