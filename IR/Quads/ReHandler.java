@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.25 1999-09-09 21:43:02 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.26 1999-09-13 15:58:40 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -47,7 +47,7 @@ final class ReHandler {
 	QuadSSI ncode=(QuadSSI)code.clone(code.getMethod());
 	//make it SSA
 	(new ToSSA(new SSITOSSAMap(ncode))).optimize(ncode);
-
+	
        	UseDef nd=new UseDef();
 	TypeInfo ti=new TypeInfo(ncode, nd);
 	//add in TYPECAST as necessary to make the bytecode verifier happy
@@ -183,9 +183,11 @@ final class ReHandler {
 	// Modify this new CFG by emptying PHI nodes
 	// Need to make NoSSA for QuadWithTry
 	PHVisitor v = new PHVisitor(qf, reachable);
-	for (Iterator it = phiset.iterator(); it.hasNext();)
-	    ((Quad)it.next()).accept(v);
-
+	for (Iterator it = phiset.iterator(); it.hasNext();) {
+	    Quad q=(Quad)it.next();
+	    if (reachable.contains(q))
+		q.accept(v);
+	}
 	return qH;
     }
 
@@ -792,10 +794,13 @@ class PHVisitor extends QuadVisitor
 	int count=0;
 	boolean[] info=new boolean[q.arity()];
 	for (int i=0;i<q.arity();i++) {
-	    if (reachable.contains(q.prev(i))) {
-		count++;
-		info[i]=true;
-	    } else
+	    if (q.prevEdge(i)!=null)
+		if (reachable.contains(q.prev(i))) {
+		    count++;
+		    info[i]=true;
+		} else
+		    info[i]=false;
+	    else
 		info[i]=false;
 	}
 	LABEL label = new LABEL(m_qf, q, q.label(), new Temp[0], count);
@@ -832,10 +837,13 @@ class PHVisitor extends QuadVisitor
 	int count=0;
 	boolean[] info=new boolean[q.arity()];
 	for (int i=0;i<q.arity();i++) {
-	    if (reachable.contains(q.prev(i))) {
-		count++;
-		info[i]=true;
-	    } else
+	    if (q.prevEdge(i)!=null)
+		if (reachable.contains(q.prev(i))) {
+		    count++;
+		    info[i]=true;
+		} else
+		    info[i]=false;
+	    else
 		info[i]=false;
 	}
 	PHI phi = new PHI(q.getFactory(), q, new Temp[0], count);
