@@ -19,7 +19,7 @@ struct oobj_with_clheap {
 #define CLHEAP_FROM_OOBJ(oobj) \
   (((struct oobj_with_clheap *) (((char *)oobj)-sizeof(clheap_t)))->clheap)
 
-#ifdef REALLY_DO_ALLOC
+#ifdef REALLY_DO_THR_ALLOC
 
 #if defined(WITH_THREADS) && !defined(WITH_EVENT_DRIVEN)
 /* Heavy-weight threads.  Not the thing to use if you've got an
@@ -64,7 +64,7 @@ static clheap_t next_clheap() {
 }
 
 void *NTHR_malloc(size_t size) {
-#ifdef REALLY_DO_ALLOC
+#ifdef REALLY_DO_THR_ALLOC
 #if 0
   printf("THREAD ALLOCATING %ld bytes from %p\n",
 	 (long) size, __builtin_return_address(0));
@@ -79,7 +79,7 @@ void *NTHR_malloc_with_heap(size_t size) {
   clheap_t clh;
   struct oobj_with_clheap *result;
   UPDATE_STATS(thr, size);
-#ifdef REALLY_DO_ALLOC
+#ifdef REALLY_DO_THR_ALLOC
   clh = next_clheap();
   result = clheap_alloc(clh, size+sizeof(clheap_t));
   result->clheap = clh;
@@ -92,7 +92,7 @@ void *NGBL_malloc_with_heap(size_t size) {
   clheap_t clh;
   struct oobj_with_clheap *result;
   UPDATE_STATS(gbl, size);
-#ifdef REALLY_DO_ALLOC
+#ifdef REALLY_DO_THR_ALLOC
   clh = next_clheap();
   // the above line might be changed to pool clheaps.
   result = NGBL_malloc_noupdate(size+sizeof(clheap_t));
@@ -105,7 +105,7 @@ void *NGBL_malloc_with_heap(size_t size) {
 void *NTHR_malloc_other(size_t size, struct oobj *oobj) {
   clheap_t clh; void *result;
   UPDATE_STATS(thr, size);
-#ifdef REALLY_DO_ALLOC
+#ifdef REALLY_DO_THR_ALLOC
   clh = CLHEAP_FROM_OOBJ(oobj);
   result = clheap_alloc(clh, size);
   if (result!=NULL) return result;
@@ -119,7 +119,7 @@ void *NTHR_malloc_other(size_t size, struct oobj *oobj) {
 }
 /* release a thread-clustered heap */
 void NTHR_free(jobject obj) {
-#ifdef REALLY_DO_ALLOC
+#ifdef REALLY_DO_THR_ALLOC
   /* warning -- don't gc in here! We're going to unwrap the obj... */
   struct oobj *oobj = FNI_UNWRAP(obj);
   /* see if this might be a thread w/ a clustered heap */

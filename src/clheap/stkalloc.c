@@ -9,7 +9,7 @@
 void *NSTK_malloc(size_t size) {
   register char *result;
   UPDATE_STATS(stk, size);
-#ifdef REALLY_DO_ALLOC
+#ifdef REALLY_DO_STK_ALLOC
   result = get_stackptr()-ALIGN(size);
 #if 0
   printf("STACK ALLOCATING %ld bytes from %p (at %p)\n",

@@ -10,8 +10,9 @@
 
 /* undefine to disable statistics logging */
 #define MAKE_STATS
-/* undefine to replace all the fancy allocation types with simple malloc */
-#define REALLY_DO_ALLOC
+/* undefine to replace the fancy allocation types with simple malloc */
+#define REALLY_DO_STK_ALLOC
+#define REALLY_DO_THR_ALLOC
 /* undefine to explicitly malloc() and free() each thread heap */
 #define RECYCLE_HEAPS
 
