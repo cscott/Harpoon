@@ -60,7 +60,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.46 2000-01-25 23:25:35 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.47 2000-01-26 19:21:12 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -929,8 +929,9 @@ public class AsyncCode {
 
 	public HMethod swapAdd(HMethod old) {
 	    HClass ss=linker.forName("java.net.ServerSocket");
-	    if (old.getDeclaringClass().equals(ss)&&
-		old.getName().equals("<init>"))
+	    if (old.equals(ss.getConstructor(new HClass[] {HClass.Int,
+							       HClass.Int,
+							       linker.forName("java.net.InetAddress")})))
 		return ss.getDeclaredMethod("makeAsync", new HClass[0]);
 	    return null;
 	}
@@ -946,9 +947,8 @@ public class AsyncCode {
 		    ("getAsyncOutputStream", new HClass[0]);
 
 	    HClass HCthrd=linker.forName("java.lang.Thread");
-	    if (HCthrd.equals(old.getDeclaringClass())&&
-		(old.equals(old.getDeclaringClass().getMethod("start",
-							      new HClass[0])))) {
+	    if (old.equals(HCthrd.getMethod("start",
+					    new HClass[0]))) {
 		HMethod hmrun=old.getDeclaringClass().getMethod("run",
 							       new HClass[0]);
 //              This code not needed anymore
