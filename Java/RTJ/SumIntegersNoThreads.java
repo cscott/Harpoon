@@ -8,7 +8,7 @@ import java.util.LinkedList;
 
 public class SumIntegersNoThreads {
     public static void main(String argv[]) {
-	Integer taskNum = new Integer(1);
+	Integer taskNum = new Integer(100);
 	final Integer intNum = new Integer(1000);
 
 	Runnable task = new Runnable() {
