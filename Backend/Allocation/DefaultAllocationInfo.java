@@ -1,8 +1,10 @@
 package harpoon.Backend.Allocation;
 
+import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.MEM;
 import harpoon.IR.Tree.Stm;
+import harpoon.IR.Tree.TreeFactory;
 import harpoon.Temp.Temp;
 
 /** 
@@ -10,20 +12,20 @@ import harpoon.Temp.Temp;
  * needed for most memory allocation schemes.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: DefaultAllocationInfo.java,v 1.1.2.2 1999-02-12 08:01:41 duncan Exp $
+ * @version $Id: DefaultAllocationInfo.java,v 1.1.2.3 1999-02-15 08:38:00 duncan Exp $
  */
 public interface DefaultAllocationInfo {
 
   /** Returns code to call the garbage collection function */
-  public Stm GC();
+  public Stm GC(TreeFactory tf, HCodeElement src);
 
   /** Returns the highest legal address in memory */
-  public Exp mem_limit();  
+  public Exp mem_limit(TreeFactory tf, HCodeElement src);  
 
   /** Returns a pointer to the value of the next free address in memory */
-  public MEM next_ptr();
+  public MEM next_ptr(TreeFactory tf, HCodeElement src);
 
   /** Contains code to exit with an OutOfMemoryError */
-  public Stm out_of_memory();
+  public Stm out_of_memory(TreeFactory tf, HCodeElement src);
 }
   

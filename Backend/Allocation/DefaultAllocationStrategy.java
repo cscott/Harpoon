@@ -5,6 +5,7 @@ import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.CONST;
+import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.JUMP;
 import harpoon.IR.Tree.LABEL;
@@ -22,9 +23,9 @@ import harpoon.Temp.Temp;
  * A simple-minded version of Appel's fast-allocation strategy
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: DefaultAllocationStrategy.java,v 1.1.2.1 1999-02-12 08:01:41 duncan Exp $
+ * @version  $Id: DefaultAllocationStrategy.java,v 1.1.2.2 1999-02-15 08:38:00 duncan Exp $
  */
-public class DefaultAllocationStrategy {
+public class DefaultAllocationStrategy implements AllocationStrategy {
 
   private DefaultAllocationInfo m_info;
 
@@ -36,17 +37,18 @@ public class DefaultAllocationStrategy {
    *  Returns a <code>Stm</code> object which allocates a block of memory 
    *  of the specified size.   
    */
-  public Stm malloc(TreeFactory tf, HCodeElement src, TEMP ptr, Exp size)
+  public Exp malloc(Exp size)
     {
-      LABEL  l0, l1, l2, l3, l4;
-      Stm    s0, s1, s2, s3, s4, s5;
-      TEMP   triedGC; // INT type
-      TEMP   newMemPtr;
+      LABEL       l0, l1, l2, l3, l4;
+      Stm         s0, s1, s2, s3, s4, s5;
+      TEMP        triedGC; // INT type
+      TEMP        newMemPtr, resultPtr;
+      HCodeElement src = size;
+      TreeFactory  tf  = size.getFactory();
 
-      triedGC = new TEMP(tf, src,
-			 Type.INT, new Temp(ptr.temp.tempFactory()));
-      newMemPtr = new TEMP(tf, src, 
-			   Type.POINTER, new Temp(ptr.temp.tempFactory()));
+      triedGC = new TEMP(tf, src, Type.INT, new Temp(tf.tempFactory()));
+      newMemPtr = new TEMP(tf, src, Type.POINTER, new Temp(tf.tempFactory()));
+      resultPtr = new TEMP(tf, src, Type.POINTER, new Temp(tf.tempFactory()));
 
       l0 = new LABEL(tf, src, new Label());
       l1 = new LABEL(tf, src, new Label());
@@ -61,7 +63,7 @@ public class DefaultAllocationStrategy {
 		   new MOVE(tf, src, triedGC, new CONST(tf, src, (int)0)),
 		   new MOVE(tf, src, newMemPtr, 
 			    new BINOP(tf, src, Type.POINTER, Bop.ADD,
-				      m_info.next_ptr(),
+				      m_info.next_ptr(tf, src),
 				      size)));
 
       // Is (limit > next + N) ?
@@ -70,7 +72,7 @@ public class DefaultAllocationStrategy {
 	(tf, src, l0,
 	 new CJUMP(tf, src, 
 		   new BINOP(tf, src, Type.POINTER, Bop.CMPGT,
-			     m_info.mem_limit(),
+			     m_info.mem_limit(tf, src),
 			     newMemPtr),
 		   l1.label,   // There's enough space
 		   l2.label)); // Not enough space!
@@ -88,7 +90,7 @@ public class DefaultAllocationStrategy {
       // Throw OutOfMemoryError
       //
       s3 = new SEQ(tf, src, l3,
-		   m_info.out_of_memory());
+		   m_info.out_of_memory(tf, src));
 
       // triedGC <-- 1
       // call the garbage collector
@@ -98,7 +100,7 @@ public class DefaultAllocationStrategy {
 		   new SEQ(tf, src, new MOVE(tf, src,
 					     triedGC,
 					     new CONST(tf, src, (int)1)),
-			   new SEQ(tf, src, m_info.GC(),
+			   new SEQ(tf, src, m_info.GC(tf, src),
 				   new JUMP(tf, src, l0.label))));
 
       // There is enough memory to allocate.  
@@ -108,15 +110,19 @@ public class DefaultAllocationStrategy {
       s5 = new SEQ(tf, src, 
 		   l1,
 		   new SEQ(tf, src, 
-			   new MOVE(tf, src, ptr, m_info.next_ptr()),
-			   new MOVE(tf, src, m_info.next_ptr(), newMemPtr)));
+			   new MOVE(tf, src, resultPtr, m_info.next_ptr(tf, src)),
+			   new MOVE(tf, src, m_info.next_ptr(tf, src), newMemPtr)));
 
-      // Combine the Stm objects into one SEQ object, and return it.
+      // Combine the Stm objects into one ESEQ object, and return it.
       //
-      return new SEQ(tf, src, s1,
-		     new SEQ(tf, src, s2,
-			     new SEQ(tf, src, s3,
-				     new SEQ(tf, src, s4, s5))));
+      return new ESEQ
+	(tf, src, 
+	 new SEQ(tf, src, s0, 
+		 new SEQ(tf, src, s1,
+			 new SEQ(tf, src, s2,
+				 new SEQ(tf, src, s3,
+					 new SEQ(tf, src, s4, s5))))),
+	 resultPtr);
     }
 
 }
