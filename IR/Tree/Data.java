@@ -11,7 +11,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
-import harpoon.Analysis.QuadSSA.ClassHierarchy;
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
@@ -33,7 +33,7 @@ import java.util.List;
  * class.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Data.java,v 1.1.2.18 1999-09-08 00:36:58 pnkfelix Exp $
+ * @version $Id: Data.java,v 1.1.2.19 1999-09-08 19:31:16 cananian Exp $
  */
 public class Data extends Code implements HData { 
     public static final String codename = "tree-data";
