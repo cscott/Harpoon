@@ -58,16 +58,11 @@ public class PriorityScheduler extends Scheduler {
     // This method is not thread-safe!
     public static PriorityScheduler getScheduler() {
 	if (defaultScheduler == null) 
-	    try {
-		ImmortalMemory.instance().enter(new Runnable() {
-			public void run() {
-			    PriorityScheduler.defaultScheduler = new PriorityScheduler();
-			}
-		    });
-	    } catch (ScopedCycleException e) {
-		System.out.println("ScopeCycleException should never occur " + e);
-	    }
-	
+	    ImmortalMemory.instance().enter(new Runnable() {
+		public void run() {
+		    PriorityScheduler.defaultScheduler = new PriorityScheduler();
+		}
+	    });
 	return (PriorityScheduler)defaultScheduler;
     }
     
@@ -87,17 +82,13 @@ public class PriorityScheduler extends Scheduler {
 	thread[nThreads].beginPeriod = null;
 	nThreads++;
 	
-	try {
-	    ImmortalMemory.instance().enter(new Runnable() {
-		    public void run() {
-			// Give the runtime system a chance to update its data structures
-			addThreadInC(schedulable, nextThreadID);
-		    }
-		});
-	} catch (ScopedCycleException e) {
-	    System.out.println("ScopedCycleException should never occur : " + e);
-	}
-
+	ImmortalMemory.instance().enter(new Runnable() {
+	    public void run() {
+		// Give the runtime system a chance to update its data structures
+		addThreadInC(schedulable, nextThreadID);
+	    }
+	});
+	
 	return isFeasible();
     }
 

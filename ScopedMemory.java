@@ -18,14 +18,11 @@ package javax.realtime;
  *  are run for all objects in the memory area, and the area is emptied.
  *  <p>
  *  A <code>ScopedMemory</code> area is a connection to a particular region of
- *  memory and reflects the current status of it. The object does not necessarily
- *  contain direct references to the region of memory that is implementation dependent.
+ *  memory and reflects the current status of it.
  *  <p>
  *  Whe a <code>ScopedMemory</code> area is instantiated, the object itself is allocated
  *  from the current memory allocation scheme in use, but the memory space that object
- *  represents is not. Typically, the memory for a <code>ScopedMemory</code> area might
- *  be allocated using native method implementations that make appropriate use of
- *  <code>malloc()</code> and <code>free()</code> or similar routines to manipulate memory.
+ *  represents is not.  Memory is allocated, as always, using an <code>RTJ_malloc</code> call.
  *  <p>
  *  The <code>enter()</code> method of <code>ScopedMemory</code> is the mechanism used
  *  to activate a new memory scope. Entry into the scope is done by calling the method
@@ -107,8 +104,8 @@ public abstract class ScopedMemory extends MemoryArea {
      *  is exited. A runtime exception is thrown if this method is called from a
      *  thread other than a <code>RealtimeThread</code> or <code>NoHeapRealtimeThrea</code>.
      */
-    public void enter() throws ScopedCycleException {
-	// Need to implement single parent rule.
+    public void enter() {
+	// Will NEVER implement single parent rule.
 	super.enter();
     }
 
@@ -120,7 +117,8 @@ public abstract class ScopedMemory extends MemoryArea {
      *  is exited. A runtime exception is thrown if this method is called from a
      *  thread other than a <code>RealtimeThread</code> or <code>NoHeapRealtimeThrea</code>.
      */
-    public void enter(Runnable logic) throws ScopedCycleException {
+    public void enter(Runnable logic) {
+	// Will NEVER implement single parent rule.
 	super.enter(logic);
     }
 
@@ -163,8 +161,7 @@ public abstract class ScopedMemory extends MemoryArea {
      *  method from <code>logic</code> passed in the constructor. if no <code>Runnable</code>
      *  was passed, the maethod returns immediately.
      */
-    public void joinAndEnter() throws InterruptedException,
-				      ScopedCycleException {
+    public void joinAndEnter() throws InterruptedException {
 	joinAndEnter(this.logic);
     }
 
@@ -176,7 +173,7 @@ public abstract class ScopedMemory extends MemoryArea {
      *  was passed, the maethod returns immediately.
      */
     public void joinAndEnter(HighResolutionTime time)
-	throws InterruptedException, ScopedCycleException {
+	throws InterruptedException {
 	joinAndEnter(this.logic, time);
     }
 
@@ -187,8 +184,7 @@ public abstract class ScopedMemory extends MemoryArea {
      *  method from <code>logic</code> passed in the constructor. if no <code>Runnable</code>
      *  was passed, the maethod returns immediately.
      */
-    public void joinAndEnter(Runnable logic) throws InterruptedException,
-						    ScopedCycleException {
+    public void joinAndEnter(Runnable logic) throws InterruptedException {
 	// TODO
     }
 
@@ -200,7 +196,7 @@ public abstract class ScopedMemory extends MemoryArea {
      *  was passed, the maethod returns immediately.
      */
     public void joinAndEnter(Runnable logic, HighResolutionTime time)
-	throws InterruptedException, ScopedCycleException {
+	throws InterruptedException {
 	// TODO
     }
 

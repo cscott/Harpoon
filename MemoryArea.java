@@ -101,7 +101,7 @@ public abstract class MemoryArea {
      *  called from thread other than a <code>RealtimeThread</code> or
      *  <code>NoHeapRealtimeThrea</code>.
      */
-    public void enter() throws ScopedCycleException {
+    public void enter() {
 	enter(this.logic);
     }
 
@@ -114,7 +114,7 @@ public abstract class MemoryArea {
      *  called from thread other than a <code>RealtimeThread</code> or
      *  <code>NoHeapRealtimeThrea</code>.
      */
-    public void enter(Runnable logic) throws ScopedCycleException {
+    public void enter(Runnable logic) {
 	RealtimeThread.checkInit();
 	RealtimeThread current = RealtimeThread.currentRealtimeThread();
 	MemoryArea oldMem = current.memoryArea();
