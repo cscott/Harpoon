@@ -21,7 +21,7 @@ import java.util.Set;
  * permitted.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinomialMap.java,v 1.1.2.5 1999-11-08 16:45:06 pnkfelix Exp $
+ * @version $Id: BinomialMap.java,v 1.1.2.6 2000-02-12 13:38:21 cananian Exp $
  */
 public class BinomialMap extends AbstractMap implements Cloneable {
     private static final boolean debug=false;
@@ -143,11 +143,21 @@ public class BinomialMap extends AbstractMap implements Cloneable {
      *  value is <b>not replaced</b>; both mappings will be present after
      *  the <code>put()</code>.  O(lg n) time.
      */
-    public Object put(Object key, Object value) { // binomial-heap-insert
+    public Object put(Object key, Object value) {
+	insert(key, value); return null;
+    }
+    /** Associates the specified value with the specified key in the map.
+     *  If the map previously contained a mapping for this key, the old
+     *  value is <b>not replaced</b>; both mappings will be present after
+     *  the <code>insert()</code>.  O(lg n) time.
+     * @return The <code>Map.Entry</code> added.
+     */
+    public Map.Entry insert(Object key, Object value) { // binomial-heap-insert
 	Util.assert(isHeapOrdered(head, c));
-	putAll(new Node(key, value));
+	Node x = new Node(key, value);
+	putAll(x);
 	Util.assert(isHeapOrdered(head, c));
-	return null;
+	return x;
     }
     /** Remove and return the map entry with minimal key. O(lg n) time. */
     public Map.Entry extractMinimum() {
@@ -196,6 +206,8 @@ public class BinomialMap extends AbstractMap implements Cloneable {
 	// done.
 	Util.assert(isHeapOrdered(head, c));
     }
+    // XXX FIXME! bubbleUp *exchanges* node information, which means that
+    // the Map.Entries the client's got tucked away are not valid anymore!
     private Node _bubbleUp(final Node x, boolean delete) {
 	Node y = x;
 	Node z = y.parent;
