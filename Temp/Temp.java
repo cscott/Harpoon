@@ -8,7 +8,7 @@ import java.util.Hashtable;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.7 1998-08-22 05:46:44 cananian Exp $
+ * @version $Id: Temp.java,v 1.8 1998-08-24 19:52:56 cananian Exp $
  * @see TypeMap
  * @see TempList
  */
@@ -18,20 +18,18 @@ public class Temp {
   private String name;
   private static final String prefix = "t";
 
-  /** Creates a unique temporary variable.
+  /** Creates a unique temporary variable, using default prefix ("t").
    */
   public Temp() { 
-    this(null);
+    this(prefix); /* use default prefix. */
   }
   /** Creates a unique temporary with a suggested name.
    *  Trailing underscores will be stripped from the suggested name,
    *  and a digit string will be appended to make the name unique.
    *  @param m_prefix the name prefix.
-   *                  If m_prefix is null, a default prefix ("t") will be used.
+   *                  <code>m_prefix</code> may not be null.
    */
   public Temp(String m_prefix) {
-    // if prefix is null, use default prefix
-    if (m_prefix==null) m_prefix = this.prefix;
     // Strip trailing underscores.
     while (m_prefix.charAt(m_prefix.length()-1)=='_')
       m_prefix = m_prefix.substring(0, m_prefix.length()-1);
