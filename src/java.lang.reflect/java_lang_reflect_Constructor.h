@@ -7,23 +7,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/*
- * Class:     java_lang_reflect_Constructor
- * Method:    getModifiers
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_java_lang_reflect_Constructor_getModifiers
-  (JNIEnv *, jobject);
-
-/*
- * Class:     java_lang_reflect_Constructor
- * Method:    newInstance
- * Signature: ([Ljava/lang/Object;)Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_newInstance
-  (JNIEnv *, jobject, jobjectArray);
-
-#if !defined(WITHOUT_HACKED_REFLECTION) /* this is our hacked implementation */
+/* Inaccessible static: class_00024Ljava_00024lang_00024Class */
+/* Inaccessible static: class_00024Ljava_00024lang_00024reflect_00024AccessibleObject */
 /*
  * Class:     java_lang_reflect_Constructor
  * Method:    getDeclaringClass
@@ -42,6 +27,14 @@ JNIEXPORT jstring JNICALL Java_java_lang_reflect_Constructor_getName
 
 /*
  * Class:     java_lang_reflect_Constructor
+ * Method:    getModifiers
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_java_lang_reflect_Constructor_getModifiers
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     java_lang_reflect_Constructor
  * Method:    getParameterTypes
  * Signature: ()[Ljava/lang/Class;
  */
@@ -56,7 +49,13 @@ JNIEXPORT jobjectArray JNICALL Java_java_lang_reflect_Constructor_getParameterTy
 JNIEXPORT jobjectArray JNICALL Java_java_lang_reflect_Constructor_getExceptionTypes
   (JNIEnv *, jobject);
 
-#endif /* !WITHOUT_HACKED_REFLECTION */
+/*
+ * Class:     java_lang_reflect_Constructor
+ * Method:    newInstance
+ * Signature: ([Ljava/lang/Object;)Ljava/lang/Object;
+ */
+JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_newInstance
+  (JNIEnv *, jobject, jobjectArray);
 
 #ifdef __cplusplus
 }
