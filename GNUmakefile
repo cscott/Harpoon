@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.3 1998-11-25 06:16:20 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.4 1998-11-25 06:41:50 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -21,7 +21,10 @@ CVS_BRANCH=$(firstword $(shell cvs status GNUmakefile | \
 			awk '/Sticky Tag/{print $$5}' | sed -e 's/[^0-9.]//g'))
 CVS_REVISION=$(patsubst %,-r %,$(CVS_TAG))
 
+BUILD_IGNORE = $(strip $(shell if [ -f .ignore ]; then cat .ignore; fi))
+
 ALLPKGS = $(shell find . -type d | grep -v CVS | grep -v AIRE | \
+		$(patsubst %,egrep -v % |,$(BUILD_IGNORE)) \
 		egrep -v "^[.]/(harpoon|silicon|gnu|doc|NOTES|bin|jdb)" | \
 		sed -e "s|^[.]/*||")
 ALLSOURCE = $(filter-out .%.java, \
