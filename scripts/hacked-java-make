@@ -1,13 +1,13 @@
 #!/bin/sh
-make -C ~/Harpoon/Runtime/arch/arm32 header.s footer.s lookup.s native.s
+make -C ~/Harpoon/Runtime/arch/arm32 CPPFLAGS=-P header.s footer.s lookup.s native.s
 mv  ~/Harpoon/Runtime/arch/arm32/header.s \
     ~/Harpoon/Runtime/arch/arm32/footer.s \
     ~/Harpoon/Runtime/arch/arm32/lookup.s \
     ~/Harpoon/Runtime/arch/arm32/native.s \
     .
-echo REMOVING TROUBLESOME BUGGERS
-mv _Class_java_lang_FloatingDecimal.s _Class_java_lang_FloatingDecimal.sX
-mv _Class_java_lang_Integer.s _Class_java_lang_Integer.sX
+#echo REMOVING TROUBLESOME BUGGERS
+#mv _Class_java_lang_FloatingDecimal.s _Class_java_lang_FloatingDecimal.sX
+#mv _Class_java_lang_Integer.s _Class_java_lang_Integer.sX
 
 echo Concatenating files.
 rm -f all.s

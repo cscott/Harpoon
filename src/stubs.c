@@ -1,6 +1,7 @@
 /* stubs to get our files to link */
 
 /* native methods */
+int Flex_Hello2_hello__I(int i) { printf("Hello, world! (%d)\n", i); }
 /* in java.io.FileDescriptor */
 void *Flex_java_io_FileDescriptor_initSystemFD__Ljava_io_FileDescriptor_2I;
 /* in java.io.FileOutputStream */
@@ -28,13 +29,7 @@ void *Flex_java_lang_Throwable_fillInStackTrace__;
 // all gone.
 
 /* errors in backend */
-asm(".global L2290\nL2290:");
-asm(".global L2302\nL2302:");
-asm(".global L4289\nL4289:");
+// all gone.
 
 /* errors in register allocator */
-void *Class_java_lang_Integer;
-void *Class_java_lang_Integer_9classinfo;
-void *Flex_java_lang_Integer__0003cclinit_0003e__;
-void *Flex_java_lang_Integer_toHexString__I;
-void *Flex_java_lang_Integer_toString__II;
+// all gone.
