@@ -3,11 +3,26 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime; 
 
-/** <code>RealtimeThread</code>
- * 
+/**
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
+/** <code>RealtimeThread</code> extends <code>java.lang.Thread</code>
+ *  and includes classes and methods to get and set parameterer objects,
+ *  manage the execution of those threads with a
+ *  <code>ReleaseParameters</code> type of <code>PeriodicParameters</code>,
+ *  and waiting.
+ *  <p>
+ *  A <code>RealtimeThread</code> object must be placed in a memory area
+ *  such that thread logic may unexceptionally access instance variables
+ *  and such that Java methods on <code>java.lang.Thread</code> (e.g.,
+ *  enumerate and join) complete normally except where such execution
+ *  would cause access violations.
+ *  <p>
+ *  Parameters for constructors may be <code>null</code>. In such cases
+ *  the default value will be the default value set for the particular
+ *  type by the associated instance of <code>Schedulable</code>.
+ */
 public class RealtimeThread extends Thread implements Schedulable {
 
     public static Scheduler currentScheduler = null;
@@ -84,10 +99,6 @@ public class RealtimeThread extends Thread implements Schedulable {
 	processingGroupParameters = group;
     }
 
-    // -------------------------------
-    // Other constructors not in specs
-    // -------------------------------
-
     public RealtimeThread(ThreadGroup group, Runnable target) {
 	super(group, (Runnable)null);
 	this.target = target;
@@ -150,17 +161,12 @@ public class RealtimeThread extends Thread implements Schedulable {
     }
 
     /** This sets up the unspecified local variables for the constructor. */
-    
     private void setup() {
 	memAreaStack = null;
 	noHeap = false;
 	heapMemCount = 0;
 	topStack = null;
     }
-
-    // ------------------
-    // methods from specs
-    // ------------------
 
     /** Add to the feasibility of the already set scheduler if the resulting
      *  feasibility set is schedulable. If successful return true, if not
@@ -528,46 +534,41 @@ public class RealtimeThread extends Thread implements Schedulable {
 	memoryParameters.unbindSchedulable(this);
     }
 
-    
-    // --------------------
-    // Methods not in specs
-    // --------------------
-
     public static int activeCount() {
 	return Thread.activeCount();
     }
 
-    /** */    
+    /** Returns the current running thread. */    
 
     public static Thread currentThread() {
 	return Thread.currentThread();
     }
 
-    /** */
+    /** Same as <code>java.lang.Thread.enumerate()</code>. */
     
     public static int enumerate(Thread tarray[]) {
 	return Thread.enumerate(tarray);
     }
     
-    /** */
+    /** Same as <code>java.lang.Thread.interrupted()</code>. */
     
     public static boolean interrupted() {
 	return Thread.interrupted();
     }
     
-    /** */
+    /** Same as <code>java.lang.Thread.yield()</code>. */
 
     public static void yield() {
 	Thread.yield();
     }
     
-    /** */
+    /** Same as <code>java.lang.Thread.sleep(long)</code>. */
 
     public static void sleep(long millis) throws InterruptedException {
 	Thread.sleep(millis);
     }
     
-    /** */
+    /** Same as <code>java.lang.Thread.sleep(long, int)</code>. */
 
     public static void sleep(long millis, int nanos) 
 	throws InterruptedException {
@@ -582,8 +583,6 @@ public class RealtimeThread extends Thread implements Schedulable {
 	Thread.dumpStack();
     }
     
-    // The following methods are part of the RTJ spec.
-
     /** Override the Thread.run() method, because Thread.run() doesn't work. */
     public void run() {
 	if (target != null) {
@@ -592,7 +591,6 @@ public class RealtimeThread extends Thread implements Schedulable {
     }
 
     /** For internal use only. */
-
     public MemoryArea memoryArea() {
 	if (mem == null) { // Bypass static initializer problem.
 	    mem = (original = HeapMemory.instance()).shadow;
@@ -601,7 +599,6 @@ public class RealtimeThread extends Thread implements Schedulable {
     }  
 
     /** */
-
     public MemoryArea getMemoryArea() {
 	if (mem == null) {
 	    mem = (original = HeapMemory.instance()).shadow;
@@ -617,7 +614,6 @@ public class RealtimeThread extends Thread implements Schedulable {
     }
 
     /** */
-
     void exitMem() {
 	mem.exitMemBlock(this, memAreaStack);
 	mem = memAreaStack.entry;
@@ -626,7 +622,6 @@ public class RealtimeThread extends Thread implements Schedulable {
     }
     
     /** */
-
     void cleanup() {
         while (memAreaStack != topStack) {
 	    exitMem();
@@ -653,7 +648,6 @@ public class RealtimeThread extends Thread implements Schedulable {
     }
     
     /** */
-    
     boolean checkAccess(MemoryArea source, MemoryArea target) {
 	MemAreaStack sourceStack = (source == memoryArea()) ? 
 	    memAreaStack : memAreaStack.first(source);

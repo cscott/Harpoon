@@ -40,6 +40,7 @@ public class PriorityScheduler extends Scheduler {
     
     // Do not call this constructor; instead, call
     // PriorityScheduler.getScheduler().
+    /** Constructor for the required scheduler. */
     protected PriorityScheduler() {
 	super();
 	if (thread == null) {

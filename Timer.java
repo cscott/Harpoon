@@ -134,8 +134,8 @@ public abstract class Timer extends AsyncEvent {
 
     /** Stops a timer that is running and changes its state to
      *  <i>not started</i>.
-     *  @return True, if this was started and enabled and stops this.
-     *          False, if this was not started or disabled.
+     *  @return True, if this was <b>started and enabled</b> and stops this.
+     *          False, if this was not <b>started or disabled</b>.
      */
     public boolean stop() {
 	boolean wasStarted = started && enabled;
