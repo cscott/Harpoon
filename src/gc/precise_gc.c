@@ -46,9 +46,6 @@ void precise_gc_init() {
 /* saved_registers[13] <- lr (use to walk stack) */
 #ifdef WITH_PRECISE_C_BACKEND
 
-/* prints given bitmap */
-void print_bitmap(ptroff_t bitmap);
-
 /* simply declarations to avoid lots of tedious #ifdef'ing. */
 /* declare nop-variants of ops if WITH_THREADED_GC not defined */
 #ifdef WITH_THREADED_GC
@@ -182,6 +179,23 @@ void trace_array(struct aarray *arr)
     }
 }
 
+/* prints given bitmap */
+inline void print_bitmap(ptroff_t bitmap)
+#ifndef DEBUG_GC
+{ /* do absolutely nothing */ }
+#else
+{
+  int i, j;
+  error_gc("BITMAP ", "");
+  for (i = SIZEOF_VOID_P*8 - 1; i >= 0; i--)
+    {
+      error_gc("%d", ((bitmap & (1 << i)) != 0));
+    }
+  error_gc("\n", "");
+}
+#endif
+
+
 /* GC bitmaps for objects whose size (minus the object header) is 
    less than COMPACT_ENCODING_SIZE fits inside the claz object. */
 #define COMPACT_ENCODING_SIZE (SIZEOF_VOID_P*SIZEOF_VOID_P*8)
@@ -189,7 +203,7 @@ void trace_array(struct aarray *arr)
 /* trace_object takes a jobject_unwrapped that points to a non-array object. */
 void trace_object(jobject_unwrapped obj)
 {
-  size_t obj_size;
+  size_t obj_size_minus_header;
   int num_bitmaps, i;
   ptroff_t *bitmap_ptr;
   jobject_unwrapped *field_ptrs;
@@ -203,10 +217,11 @@ void trace_object(jobject_unwrapped obj)
   // we may want to be dumber but more efficient in the future
   // by borrowing the low bit to indicate whether the bitmap
   // is inline or not.
-  obj_size = obj->claz->size;
-  num_bitmaps = (obj_size + COMPACT_ENCODING_SIZE - 1)/COMPACT_ENCODING_SIZE;
+  obj_size_minus_header = obj->claz->size - sizeof(struct oobj);
+  num_bitmaps = (obj_size_minus_header + COMPACT_ENCODING_SIZE - 1)/COMPACT_ENCODING_SIZE;
   error_gc("object size = %d bytes\n", obj->claz->size);
   error_gc("header size = %d bytes\n", sizeof(struct oobj));
+  error_gc("obj_size_minus_header = %d bytes\n", obj_size_minus_header);
   error_gc("COMPACT_ENCODING_SIZE = %d bytes\n", COMPACT_ENCODING_SIZE);
   error_gc("num_bitmaps = %d\n", num_bitmaps);
   assert(num_bitmaps >= 0);
@@ -239,34 +254,19 @@ void trace_object(jobject_unwrapped obj)
 	  // the current bit is always the low bit 
 	  // since we shift the bitmap right at each 
 	  // iteration.
-	  if ((bitmap & 1) && field_ptrs[j-2] != NULL)
+	  if ((bitmap & 1) && field_ptrs[j] != NULL)
 	    {
-	      error_gc("    field at %p ", field_ptrs[j-2]);
-	      handle_nonroot(&field_ptrs[j-2]);
+	      error_gc("    field at %p ", field_ptrs[j]);
+	      handle_nonroot(&field_ptrs[j]);
 	    }
 
-	  // shift bitmap one right; this will always shift
+	  // shift bitmap one right; this should always shift
 	  // in a zero since ptroff_t is always unsigned
 	  bitmap = bitmap >> 1;
 	}
     }
 }
 
-/* prints given bitmap */
-void print_bitmap(ptroff_t bitmap)
-#ifndef DEBUG_GC
-{ /* do absolutely nothing */ }
-#else
-{
-  int i, j;
-  error_gc("BITMAP ", "");
-  for (i = SIZEOF_VOID_P*8; i > 0; i--)
-    {
-      error_gc("%d", ((bitmap & (1 << i)) != 0));
-    }
-  error_gc("\n", "");
-}
-#endif
 #endif /* WITH_PRECISE_GC */
 
 
