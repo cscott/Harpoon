@@ -15,7 +15,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.6.2.3 1999-08-07 04:14:20 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.6.2.4 1999-10-30 22:15:22 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -158,7 +158,7 @@ public class HMethodSyn extends HMethod {
 
   /** Make a mathod descriptor string given parameter and return value types.
    *  A helper function. */
-  private static String makeDescriptor(HClass[] paramTypes, HClass returnType){
+  static String makeDescriptor(HClass[] paramTypes, HClass returnType){
     StringBuffer sb = new StringBuffer();
     sb.append ('(');
     for (int i = 0; i < paramTypes.length; i++){
