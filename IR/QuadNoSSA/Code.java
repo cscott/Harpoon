@@ -1,7 +1,9 @@
 // Code.java, created by nkushman
 package harpoon.IR.QuadNoSSA;
 
-//import harpoon.Analysis.QuadSSA.DeadCode;
+import harpoon.Analysis.QuadSSA.DeadCode;
+import harpoon.Analysis.QuadSSA.SCC.*;
+import harpoon.Analysis.*;
 import harpoon.IR.QuadSSA.*;
 import harpoon.ClassFile.*;
 import harpoon.Temp.*;
@@ -21,7 +23,7 @@ import java.util.*;
  * <code>QuadNoSSA.Code</code> is <blink><b>fill me in</b></blink>.
  * 
  * @author  Nate Kushman <nkushman@lcs.mit.edu>
- * @version $Id: Code.java,v 1.2.4.1 1998-11-22 03:32:39 nkushman Exp $
+ * @version $Id: Code.java,v 1.2.4.2 1998-11-27 20:28:41 nkushman Exp $
  */
 
 public class Code extends HCode{
@@ -257,7 +259,6 @@ public class Code extends HCode{
 	byteCodeClass.addMethod (new NMethod(hm[j], new java.util.Hashtable()));
       }else {
 	HCode hc1 =  hm[j].getCode("quad-ssa");
-		
 	if (hc1 == null) {
 	  System.out.println ("Yep.. this is Null!");
 	  System.out.println ("Class is: " + hm[j].getDeclaringClass().getName());
@@ -297,20 +298,32 @@ public class Code extends HCode{
     }
     String assemblyFileName = hclass.getName().replace ('.', '_') + ".j";
     try {
+      //run the garbage collector to get file descriptors back..
       PrintWriter out = new PrintWriter (new FileOutputStream (assemblyFileName));
       byteCodeClass.writeClass (out);
       out.close();
     } catch (Exception e){
       e.printStackTrace();
     }
-    try {
-      Runtime.getRuntime().exec ("jasmin " + assemblyFileName.replace ('/', '.')).waitFor();
-    } catch (Exception exception){
-      exception.printStackTrace();
+    if ((hclass.getName().indexOf ("__") != -1 ) ||
+	(hclass.getName().indexOf ("remoteInterface") != -1)){
+      try {
+	Runtime.getRuntime().exec ("jasmin " + assemblyFileName.replace ('/', '.')).waitFor();
+      } catch (Exception exception){
+	exception.printStackTrace();
+      }
     }
   }
     
+  void verify (){
+    HCodeElement[] hc = getElements();
+    for (int i = 0; i < hc.length; i++){
+      Quad currentQuad = (Quad) hc[i];
+      
+    }
     
+    
+  }
 
 }
 
