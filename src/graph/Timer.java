@@ -45,9 +45,9 @@ public class Timer extends Node {
 	} else {
 	    total += id.time = time-id.time;
 	    if (announce) {
-		System.out.println("Time (ms): "+id.time);
+		System.out.print("Time (ms): "+id.time);
 		//line below added by Benji 
-		System.out.println("Avg (ms) : "+(int)(getLatency()*1000));
+		System.out.println(" Avg (ms) : "+(int)(getLatency()*1000));
 	    }
 	}
 	super.process(id);
