@@ -12,10 +12,11 @@ import harpoon.IR.Quads.SET;
 import java.util.Collections;
 import java.util.Set;
 /**
- * <code>SimpleCheckOracle</code>
+ * A <code>SimpleCheckOracle</code> provides a valid but extremely
+ * simple-minded implementation of <code>CheckOracle</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SimpleCheckOracle.java,v 1.1.2.3 2000-11-15 19:50:20 cananian Exp $
+ * @version $Id: SimpleCheckOracle.java,v 1.1.2.4 2000-11-15 23:48:37 cananian Exp $
  */
 class SimpleCheckOracle extends CheckOracle {
     public Set createReadVersions(HCodeElement hce) {

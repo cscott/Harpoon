@@ -57,7 +57,7 @@ import java.util.Set;
  * atomic transactions.  Works on <code>LowQuadNoSSA</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.12 2000-11-15 19:50:20 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.13 2000-11-15 23:48:37 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -206,6 +206,7 @@ public class SyncTransformer
 	final Temp currtrans; // current transaction.
 	private final Map fixupmap = new HashMap();
 	final CheckOracle co=new SimpleCheckOracle(); //XXX
+	final FieldOracle fo=new SimpleFieldOracle(); //XXX
 	final TempSplitter ts=new TempSplitter();
 	// mutable.
 	FOOTER footer; // we attach new stuff to the footer.
@@ -405,6 +406,9 @@ public class SyncTransformer
 	}
 	public void visit(GET q) {
 	    addChecks(q);
+	    if (handlers==null &&
+		!fo.isSyncRead(q.field()) && !fo.isSyncWrite(q.field()))
+		return; // we can simply read/write fields with no sync access
 	    if (q.isStatic()) {
 		if (handlers==null) return;
 		System.err.println("WARNING: read of "+q.field()+" in "+
@@ -475,6 +479,9 @@ public class SyncTransformer
 	}
 	public void visit(SET q) {
 	    addChecks(q);
+	    if (handlers==null &&
+		!fo.isSyncRead(q.field()) && !fo.isSyncWrite(q.field()))
+		return; // we can simply read/write fields with no sync access
 	    if (q.isStatic()) {
 		if (handlers==null) return;
 		System.err.println("WARNING: write of "+q.field()+" in "+
@@ -530,6 +537,10 @@ public class SyncTransformer
 	    // do field checks where necessary.
 	    for (Iterator it=co.checkField(q).iterator(); it.hasNext(); ) {
 		CheckOracle.RefAndField raf=(CheckOracle.RefAndField)it.next();
+		// skip check for fields unaccessed outside a sync context.
+		if (!fo.isUnsyncRead(raf.field) &&
+		    !fo.isUnsyncWrite(raf.field)) continue;
+		// create check code.
 		HClass ty = raf.field.getType();
 		Temp t0 = new Temp(tf, "fieldcheck");
 		Temp t1 = new Temp(tf, "fieldcheck");
