@@ -50,7 +50,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.42 1999-10-16 23:58:00 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.43 1999-10-21 23:06:10 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = true;
@@ -233,7 +233,7 @@ public abstract class RegAlloc  {
 		    */
 		}
 
-		return globalCode.resolveOutstandingTemps
+		return resolveOutstandingTemps
 		    ( globalCode.generateRegAssignment() );
 	    }
 	    public String getCodeName() {
@@ -245,14 +245,89 @@ public abstract class RegAlloc  {
 	};
     }
 
+
     /** Transforms Temp references in 'in' into appropriate offsets
 	from the Stack Pointer in the Memory. 
-        <BR> <B>modifies:</B> in
+        <BR> <B>modifies:</B> inHc
 	<BR> <B>effects:</B> Replaces the <code>FskLoad</code> and
 	     <code>FskStore</code>s with memory instructions for the
 	     appropriate <code>Frame</code>.
     */
-    protected HCode resolveOutstandingTemps(HCode in) {
+    protected static HCode resolveOutstandingTemps(final HCode inHc) {
+	final Code in = (Code) inHc;
+	HasEdges first = (HasEdges) in.getRootElement();
+	BasicBlock block = BasicBlock.computeBasicBlocks(first);
+	
+	final MakeWebsDumb makeWebs = 
+	    new MakeWebsDumb(BasicBlock.basicBlockIterator(block));
+	InstrSolver.worklistSolver(BasicBlock.basicBlockIterator(block), makeWebs);
+	
+
+	class Debug {
+	    private int indent;
+	    Debug(int indent) {
+		this.indent = indent;
+	    }
+
+	    void indent() {
+		for(int i=0; i<indent; i++)
+		    System.out.print(" ");
+	    }
+
+	    void print(BasicBlock bb, MakeWebsDumb mW) {
+		System.out.println();
+		MakeWebsDumb.WebInfo webInfo = 
+		    (MakeWebsDumb.WebInfo) mW.bbInfoMap.get(bb);
+		indent(); System.out.println("--"+ bb + " USE Map[Temp, Set[Instr]] start");  
+		printEntries(webInfo.use);
+		indent(); System.out.println("--"+ bb + " USE Map[Temp, Set[Instr]] end");  
+		
+		indent(); System.out.println("--"+ bb + " DEF Map[Temp, Set[Instr]] start");  
+		printEntries(webInfo.def);
+		indent(); System.out.println("--"+ bb + " DEF Map[Temp, Set[Instr]] end");  
+
+		indent(); System.out.println("--"+ bb + " IN Map[Temp, Web] start");
+		printEntries(webInfo.in);
+		indent(); System.out.println("--"+ bb + " IN Map[Temp, Web] end");
+		
+		printInstrs(bb);
+		
+		indent(); System.out.println("--"+ bb + " OUT Map[Temp, Web] start");
+		printEntries(webInfo.out);
+		indent(); System.out.println("--"+ bb + " OUT Map[Temp, Web] end");
+	    }
+
+	    void printEntries(Map map) {
+		Iterator entries = map.entrySet().iterator();
+		while(entries.hasNext()) {
+		    Map.Entry entry = (Map.Entry) entries.next();
+		    indent(); indent(); System.out.println("[ "+ entry.getKey() + ", " + entry.getValue() + " ]");
+		}
+	    }
+	    void printInstrs(BasicBlock bb) {
+		Iterator instrs = bb.listIterator();
+		while(instrs.hasNext()) {
+		    Instr instr = (Instr) instrs.next();
+		    System.out.println("(" + instr.getID() + ")\t"+ in.toAssem(instr));
+		}
+	    }
+	    
+	}
+
+	Iterator bbIter = BasicBlock.basicBlockIterator(block);
+	while(bbIter.hasNext()) {
+	    BasicBlock bb = (BasicBlock) bbIter.next();
+	    (new Debug(10)).print(bb, makeWebs);
+
+	    System.out.println();
+	    
+	}
+    
+	    
+	return null;
+    }
+
+/*    protected HCode resolveOutstandingTemps(HCode in) {
 	// This implementation is REALLY braindead.  Fix to do a
 	// smarter Graph-Coloring stack offset allocator
 
@@ -393,7 +468,7 @@ public abstract class RegAlloc  {
 
 	return in;
     }
-    
+*/    
 
     /** Checks if <code>t</code> is a register (Helper method).
 	<BR> <B>effects:</B> If <code>t</code> is a register for the
@@ -458,7 +533,7 @@ public abstract class RegAlloc  {
 	}
 	return yes;
     }
-
+    
 }
 
 class BrainDeadLocalAlloc extends RegAlloc {
@@ -570,195 +645,247 @@ class BrainDeadLocalAlloc extends RegAlloc {
 	return code;
     }
 
-    class Web extends harpoon.Analysis.GraphColoring.SparseNode {
-	Temp var;
-	HashSet instrs;
-	
-	Web(Temp var) {
-	    this.var = var;
-	    instrs = new HashSet();
-	}
+}
 
-	Web(Temp var, Set instrs) {
-	    this(var);
-	    Iterator iter = instrs.iterator();
-	    while(iter.hasNext()) {
-		instrs.add(iter.next());
-	    }
-	}
+class Web extends harpoon.Analysis.GraphColoring.SparseNode {
+    Temp var;
+    HashSet instrs;
 
-	public boolean equals(Object o) {
-	    return this == o;
-	}
+    static int counter=1;
+    int id;
 
-	public int hashCode() {
-	    return System.identityHashCode(this);
-	}
-
-	public String toString() {
-	    return "";
+    Web(Temp var) {
+	this.var = var;
+	instrs = new HashSet();
+	id = counter;
+	counter++;
+    }
+    
+    Web(Temp var, Set instrSet) {
+	this(var);
+	Iterator iter = instrSet.iterator();
+	while(iter.hasNext()) {
+	    this.instrs.add(iter.next());
 	}
     }
-
     
-    void makeWebs(Iterator basicBlocks) {
-	// start by doing ReachingDefs
-	BasicBlock root = (BasicBlock) basicBlocks.next();
-
-	ReachingDefs rDefs = 
-	    new ReachingDefs((HasEdges)root.listIterator().next());
-	InstrSolver.worklistSolver(root, rDefs);
-	
-
-	    
+    public boolean equals(Object o) {
+	try {
+	    Web w = (Web) o;
+	    return w.var.equals(this.var) &&
+		w.instrs.equals(this.instrs);
+	} catch (ClassCastException e) {
+	    return false;
+	}
     }
-
     
-    /** Visits <code>BasicBlock</code>s of <code>Instr</code>s and
-	uses the <code>FskLoad</code> and <code>FskStore</code>
-	instructions to construct <code>Web</code>s for this method,
-	These webs will need to be run through a merging dataflow
-	analysis pass.  This is effectively ReachingDefs, but I
-	couldn't figure out how to easily adapt Whaley's version of
-	ReachingDefs to my needs (note to FSK, either figure out
-	Whaley's version or rewrite it in a form thats at least as
-	useful as the LiveVars class)
+    public int hashCode() {
+	// reusing Temp's hash; we shouldn't be using both Webs and
+	// Temps as keys in the same table anyway.
+	return var.hashCode();
+    }
+    
+    public String toString() {
+	String ids = "";
+	Iterator iter = instrs.iterator();
+	while(iter.hasNext()) {
+	    ids += ((Instr)iter.next()).getID();
+	    if (iter.hasNext()) ids+=", ";
+	}
+	return "Web[id: "+id+", Var: " + var + ", Instrs: {"+ ids +"} ]";
+    }
+}
+
+/** Visits <code>BasicBlock</code>s of <code>Instr</code>s and
+    uses the <code>FskLoad</code> and <code>FskStore</code>
+    instructions to construct <code>Web</code>s for this method,
+    These webs will need to be run through a merging dataflow
+    analysis pass.  This is effectively ReachingDefs, but I
+    couldn't figure out how to easily adapt Whaley's version of
+    ReachingDefs to my needs (note to FSK, either figure out
+    Whaley's version or rewrite it in a form thats at least as
+    useful as the LiveVars class) (also note to FSK: the current
+    implementation is soft and flabby (space and time
+    inefficient); look into really fixing up ReachingDefs and
+    LiveVars to be fast AND easy-to-use)
+*/
+class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
+    /** struct class: 
+	'in' maps a Temp to a Web that is defined somewhere above
+	     this block. 
+	'out' maps a Temp to a Web that is defined somewhere above
+	      or within this block (note that the Web defined IN
+	      this block is a distinct object from the one defined
+	      ABOVE this block)
+	'use' maps a Temp to the Set of Instrs that refer to it up
+	      until (and not including) that Temp's LAST definition
+	      in the block
+	'def' maps a Temp to the Set of Instrs from that Temp's
+	      LAST definition in the basic block through all of its
+	      subsequent uses in the block
     */
-    class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
-	/** struct class: 
-	    'in' maps a Temp to a Web that is defined somewhere above
-	           this block. 
-	    'out' maps a Temp to a Web that is defined somewhere above
-	         or within this block (note that the Web defined IN
-		 this block is a distinct object from the one defined
-		 ABOVE this block)
-	    'use' maps a Temp to the Set of Instrs that refer to it up
-	         until (and not including) that Temp's LAST definition
-		 in the block
-	    'def' maps a Temp to the Set of Instrs from that Temp's
-	         LAST definition in the basic block through all of its
-		 subsequent uses in the block
-	*/
-	class WebInfo {
-	    HashMap in = new HashMap();
-	    HashMap out = new HashMap();
-	    HashMap use = new ToSetMap();
-	    HashMap def = new ToSetMap();
-
-	    class ToSetMap extends HashMap {
-		public Object get(Object key) {
-		    Object s = super.get(key);
-		    if (s == null) {
-			HashSet set = new HashSet();
-			put(key, set);
-			return set;
-		    } else {
-			return s;
-		    }
-		}		
-	    }
-
-	    void foundLoad(FskLoad instr) {
-		Iterator uses = instr.useC().iterator();
-		while(uses.hasNext()) {
-		    Temp t = (Temp) uses.next();
-		    
-
-		    if (((Set)def.get(t)).isEmpty()) {
-			// if it uses a variable defined in
-			// another block, then add to USE
-			((Set)use.get(t)).add(instr);
-		    } else {
-			// put it in the DEF set; we'll move the DEF
-			// set into the USE set later if we have to.
-			((Set)def.get(t)).add(instr);
-		    }
+    class WebInfo {
+	HashMap in  = new HashMap();  // Map[Temp, Web]
+	HashMap out = new HashMap();  // Map[Temp, Web]
+	HashMap use = new ToSetMap(); // Map[Temp, Set[Instr] ] 
+	HashMap def = new ToSetMap(); // Map[Temp, Set[Instr] ]
+	
+	class ToSetMap extends HashMap {
+	    public Object get(Object key) {
+		Object s = super.get(key);
+		if (s == null) {
+		    HashSet set = new HashSet() {
+			/** temporarily overriding this.toString() to
+			    give dense description of Set's contents. */  
+			public String toString() {
+			    StringBuffer str = new StringBuffer("{ ");
+			    Iterator iter = iterator();
+			    while(iter.hasNext()) {
+				Instr i = (Instr) iter.next();
+				str.append( i.getID() );
+				if (iter.hasNext()) str.append(", ");
+			    }
+			    str.append(" }");
+			    return str.toString();
+			}
+		    };
+		    super.put(key, set);
+		    return set;
+		} else {
+		    return s;
 		}
 	    }
+
+	    public boolean containsKey(Object key) {
+		Set s = (Set) super.get(key);
+		return (s != null &&
+			s.size() != 0);
+	    }
+
+	}
+	
+	void foundLoad(RegAlloc.FskLoad instr) {
+	    Iterator uses = instr.useC().iterator();
+	    while(uses.hasNext()) {
+		Temp t = (Temp) uses.next();
 		
-	    void foundStore(FskStore instr) {
-		Iterator defs = instr.defC().iterator();
-		while(defs.hasNext()) {
-		    Temp t = (Temp) defs.next();
-		    
-		    if (!((Set)def.get(t)).isEmpty()) {
-			// We have seen a DEF for t in this block
-			// before; need to move all those instrs over
-			// before putting this in the DEF set
-			Iterator instrs =
-			    ((Set)def.get(t)).iterator();
-			while(instrs.hasNext()) {
-			    ((Set)use.get(t)).add(instrs.next());
-			}
-		    }
+		
+		if (((Set)def.get(t)).isEmpty()) {
+		    // if it uses a variable defined in
+		    // another block, then add to USE
+		    ((Set)use.get(t)).add(instr);
+		} else {
+		    // put it in the DEF set; we'll move the DEF
+		    // set into the USE set later if we have to.
 		    ((Set)def.get(t)).add(instr);
 		}
 	    }
 	}
-
-	HashMap bbInfoMap;
-
-	MakeWebsDumb(Iterator basicBlocks) {
-	    bbInfoMap = new HashMap();
-	    
-	    // initialize USE/DEF info
-	    while(basicBlocks.hasNext()) {
-		BasicBlock bb = (BasicBlock) basicBlocks.next();
-		WebInfo info = new WebInfo();
-		bbInfoMap.put(bb, info);
-
-		ListIterator instrs = bb.listIterator();
-		while(instrs.hasNext()) {
-		    Instr instr = (Instr) instrs.next();
-		    if (instr instanceof FskLoad) {
-			// LOAD FROM MEM
-			info.foundLoad((FskLoad) instr);
-		    } else if (instr instanceof FskStore) { 
-			// STORE TO MEM
-			info.foundStore((FskStore) instr);
-		    }
-		}		
-	    }
-	}
-
-	public boolean merge(BasicBlock to, BasicBlock from) {
-	    WebInfo fromInfo = (WebInfo) bbInfoMap.get(from);
-	    WebInfo toInfo = (WebInfo) bbInfoMap.get(to);
-	    
-	    
-	    // FIXME
-
-	    return false;
-	}
-
-	public void visit(BasicBlock b) {
-	    WebInfo webInfo = (WebInfo) bbInfoMap.get(b);
-	    webInfo.out = new HashMap();
-	    Iterator inEntries = webInfo.in.entrySet().iterator();
-	    while(inEntries.hasNext()) {
-		Map.Entry entry = (Map.Entry) inEntries.next();
-		Temp t = (Temp) entry.getKey();
-		Web web = (Web) entry.getValue();
-		Iterator instrs = ((Set)webInfo.use.get(t)).iterator();
-		while(instrs.hasNext()) {
-		    web.instrs.add(instrs.next());
-		}
 		
-		webInfo.out.put(t, web);
-	    }
-	    
-	    Iterator defEntries = webInfo.def.entrySet().iterator();
-	    while(defEntries.hasNext()) {
-		Map.Entry entry = (Map.Entry) defEntries.next();
-		Temp t = (Temp) entry.getKey();
-		Set instrs = (Set) entry.getValue();
-		Web web = new Web(t, instrs);
-
-		// Note that this will replace any web in OUT that was
-		// in IN but is redefined in this Basic Block (the
-		// correct behavior)
-		webInfo.out.put(t, web);
+	void foundStore(RegAlloc.FskStore instr) {
+	    Iterator defs = instr.defC().iterator();
+	    while(defs.hasNext()) {
+		Temp t = (Temp) defs.next();
+		
+		if (!((Set)def.get(t)).isEmpty()) {
+		    // We have seen a DEF for t in this block
+		    // before; need to move all those instrs over
+		    // before putting this in the DEF set
+		    Iterator instrs =
+			((Set)def.get(t)).iterator();
+		    while(instrs.hasNext()) {
+			((Set)use.get(t)).add(instrs.next());
+		    }
+		}
+		((Set)def.get(t)).add(instr);
 	    }
 	}
     }
+    
+    HashMap bbInfoMap;
+    
+    MakeWebsDumb(Iterator basicBlocks) {
+	bbInfoMap = new HashMap();
+	
+	// initialize USE/DEF info
+	while(basicBlocks.hasNext()) {
+	    BasicBlock bb = (BasicBlock) basicBlocks.next();
+	    WebInfo info = new WebInfo();
+	    bbInfoMap.put(bb, info);
+	    
+	    ListIterator instrs = bb.listIterator();
+	    while(instrs.hasNext()) {
+		Instr instr = (Instr) instrs.next();
+		if (instr instanceof RegAlloc.FskLoad) {
+		    // LOAD FROM MEM
+		    info.foundLoad((RegAlloc.FskLoad) instr);
+		} else if (instr instanceof RegAlloc.FskStore) { 
+		    // STORE TO MEM
+		    info.foundStore((RegAlloc.FskStore) instr);
+		}
+	    }		
+	}
+    }
+    
+    public boolean merge(BasicBlock to, BasicBlock from) {
+	WebInfo fromInfo = (WebInfo) bbInfoMap.get(from);
+	WebInfo toInfo = (WebInfo) bbInfoMap.get(to);
+	
+	// FSK: can't just use putAll(); need to track if a change
+	// FSK: occurred. 
+	// toInfo.in.putAll(fromInfo.out);
+	boolean changed = false;
+	Iterator keys = fromInfo.out.keySet().iterator();
+	while(keys.hasNext()) {
+	    Object key = keys.next();
+	    Object newVal = fromInfo.out.get(key);
+	    Object oldVal = toInfo.in.put(key, newVal);
+	    if (newVal == null && oldVal == null) {
+		// no change
+	    } else if (oldVal == null && newVal != null) {
+		changed = true;
+	    } else if (!oldVal.equals(newVal)) {
+		changed = true;
+	    }
+	}
+	
+	return changed;
+    }
+    
+    public void visit(BasicBlock b) {
+	// System.out.println("\t\t\tVisiting " + b);
+
+	WebInfo webInfo = (WebInfo) bbInfoMap.get(b);
+	webInfo.out = new HashMap();
+	
+	Iterator inEntries = webInfo.in.entrySet().iterator();
+	while(inEntries.hasNext()) {
+	    Map.Entry entry = (Map.Entry) inEntries.next();
+	    Temp t = (Temp) entry.getKey();
+	    Web web = (Web) entry.getValue();
+	    Iterator instrs = ((Set)webInfo.use.get(t)).iterator();
+	    while(instrs.hasNext()) {
+		web.instrs.add(instrs.next());
+	    }
+	    
+	    webInfo.out.put(t, web);
+	}
+	
+	Iterator defEntries = webInfo.def.entrySet().iterator();
+	while(defEntries.hasNext()) {
+	    Map.Entry entry = (Map.Entry) defEntries.next();
+	    Temp t = (Temp) entry.getKey();
+	    Set instrs = (Set) entry.getValue();
+
+	    Web web = new Web(t, instrs);
+	    
+	    // Note that this will replace any web in OUT that was
+	    // in IN with the last defined web (with the same temp) in
+	    // this Basic Block (if one exists).  This is the correct
+	    // behavior. 
+	    webInfo.out.put(t, web);
+
+	}
+    }
 }
+

@@ -9,17 +9,19 @@ import harpoon.Temp.Label;
 import java.util.Arrays;
 
 /** <code>InstrJUMP</code> represents a shift in control flow to one
-    target <code>Label</code>.  This instruction is being specialized
-    to allow for easier detection of JUMPs which could guide
-    optimizations (mainly in laying out basic blocks to allow for
-    elimination of unnecessary JUMPs.)
+    target <code>Label</code> with no side-effects.  This instruction
+    is being specialized to allow for easier detection of JUMPs which
+    could guide optimizations (mainly in laying out basic blocks to
+    allow for elimination of unnecessary JUMPs.)
 
     Execution of an <code>InstrJUMP</code> should have no side-effects
     other than changing the Program Counter to the target location in
-    the code. 
+    the code.  Thus, <code>InstrJUMP</code>s can be eliminated if
+    control would already flow through the code in the same way
+    without the JUMP in place.
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrJUMP.java,v 1.1.2.2 1999-09-10 22:26:05 pnkfelix Exp $ */
+    @version $Id: InstrJUMP.java,v 1.1.2.3 1999-10-21 23:06:12 pnkfelix Exp $ */
 public class InstrJUMP extends Instr {
     
     /** Creates a <code>InstrJUMP</code>. */

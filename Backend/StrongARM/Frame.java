@@ -47,27 +47,28 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.13 1999-10-20 20:34:13 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.14 1999-10-21 23:06:11 pnkfelix Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
     private final RegFileInfo regFileInfo; 
     private final InstrBuilder instrBuilder;
     private final CodeGen codegen;
-    
+    private final TempBuilder tempBuilder;
+
     public Frame(HMethod main, ClassHierarchy ch, CallGraph cg) { 
 	super();
 	regFileInfo = new RegFileInfo();
 	
-	// FSK: grr.  I need to fix something.  right now the CodeGen
-	// ctor needs regFileInfo set in 'this' Frame, which, while
-	// doable, is a TERRIBLE design choice 
+	// FSK: CodeGen ctor needs regFileInfo set in 'this' Frame, so
+	// be careful about ordering of constructions.
 	codegen = new CodeGen(this);
 
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy("_malloc");
 	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg);
 	instrBuilder = new InstrBuilder(regFileInfo);
+	tempBuilder = new TempBuilder();
     }
 
     public boolean pointersAreLong() { return false; }
@@ -96,5 +97,8 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 
     public harpoon.Backend.Generic.InstrBuilder getInstrBuilder() { 
 	return instrBuilder; 
+    }
+    public harpoon.Backend.Generic.TempBuilder getTempBuilder() {
+	return tempBuilder;
     }
 }

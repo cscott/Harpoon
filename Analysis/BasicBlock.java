@@ -41,7 +41,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.1 1999-09-20 16:06:22 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.2 1999-10-21 23:06:09 pnkfelix Exp $
 */
 public class BasicBlock {
     
@@ -73,7 +73,7 @@ public class BasicBlock {
     }
 
 
-    /** BasicBlock Iterator genenerator.
+    /** BasicBlock Iterator generator.
 	<BR> <B>effects:</B> returns an <code>Iterator</code> over all
 	of the <code>BasicBlock</code>s linked to and from
 	<code>block</code>.  This <code>Iterator</code> will return
@@ -212,9 +212,18 @@ public class BasicBlock {
 	return new IteratorEnumerator(listIterator());
     }
 
-    /** Returns an immutable <code>ListIterator</code> for the
-	<code>HasEdges</code> within <code>this</code>. 
-	The ListIterator returned will iterate through the
+    /** Returns an unmodifiable <code>Iterator</code> for the
+	<code>HasEdges</code>s within <code>this</code>.
+	The <code>Iterator</code> returned will iterate through the
+	instructions according to their order in the program.
+    */
+    public Iterator iterator() {
+	return listIterator();
+    }
+
+    /** Returns an unmodifiable <code>ListIterator</code> for the
+	<code>HasEdges</code>s within <code>this</code>. 
+	The <code>ListIterator</code> returned will iterate through the
 	instructions according to their order in the program.
     */  
     public ListIterator listIterator() {

@@ -17,9 +17,16 @@ public abstract class ForwardDataFlowBasicBlockVisitor extends DataFlowBasicBloc
     
     private static final boolean DEBUG = false;
 
-  /**
-   * Adds the successors of the basic block q to the worklist W,
-   * performing merge operations if necessary.
+  /** Performs the <i>merge</i> operation between <code>q</code> and
+      its successors, readding <code>BasicBlock</code>s to
+      <code>W</code> where necessary. 
+      <BR> <B>effects:</B> Runs <code>merge(q, s)</code> for all
+           <code>s</code> element of Successors(<code>q</code>).  
+	   If the <code>merge(q, s)</code> operation returns
+	   <code>true</code> for a given <code>s</code>, adds
+	   <code>s</code> to <code>W</code>, indicating that
+	   <code>s</code> must be revisited by <code>this</code>.
+       @see merge
    */
   public void addSuccessors(Worklist W, BasicBlock q) {
     if (DEBUG) db("adding successors of "+q+" to worklist");

@@ -13,7 +13,7 @@ import java.util.Collections;
  * <code>InstrSolver</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InstrSolver.java,v 1.1.2.5 1999-09-20 16:06:23 pnkfelix Exp $
+ * @version $Id: InstrSolver.java,v 1.1.2.6 1999-10-21 23:06:10 pnkfelix Exp $
  */
 public final class InstrSolver  {
     
@@ -44,7 +44,7 @@ public final class InstrSolver  {
 	     performing <code>v</code>'s transfer function on each
 	     <code>BasicBlock</code> in turn, tracking for when no
 	     change occurs, at which point the analysis is complete.
-	     Note that while this method guarantees that
+	<BR> <B>NOTE:</B> While this method guarantees that
 	     <code>root</code> will be visited by <code>v</code>,
 	     there is no guarantee on the number of times, if at all,
 	     <code>v</code> will visit the siblings of

@@ -5,6 +5,7 @@ package harpoon.Interpret.Tree;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Backend.Generic.InstrBuilder;
+import harpoon.Backend.Generic.TempBuilder;
 import harpoon.Backend.Generic.LocationFactory;
 import harpoon.Backend.Generic.RegFileInfo;
 import harpoon.Backend.Generic.Runtime;
@@ -45,7 +46,7 @@ import java.util.Set;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.4.7 1999-10-15 18:25:39 cananian Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.4.8 1999-10-21 23:06:12 pnkfelix Exp $
  */
 public class DefaultFrame extends harpoon.Backend.Generic.Frame
     implements AllocationInfo {
@@ -180,6 +181,10 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
 
     /** Stub added by FSK. */
     public InstrBuilder getInstrBuilder() {
+	return null;
+    }
+    /** Stub added by FSK. */
+    public TempBuilder getTempBuilder() {
 	return null;
     }
     /** Stub added by CSA. */

@@ -37,7 +37,7 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.35 1999-10-20 20:34:06 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.36 1999-10-21 23:06:11 pnkfelix Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -76,4 +76,9 @@ public abstract class Frame {
 	associated with <code>this</code>.
      */
     public abstract CodeGen getCodeGen();
+
+    /** Returns the <code>Generic.TempBuilder</code> for the backend
+	associated with <code>this</code>.
+     */
+    public abstract TempBuilder getTempBuilder();
 }

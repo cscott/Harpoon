@@ -69,7 +69,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.42 1999-10-21 02:12:41 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.43 1999-10-21 23:06:13 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -81,6 +81,8 @@ public class SAMain extends harpoon.IR.Registration {
     private static boolean LIVENESS_TEST = false;
     private static boolean OUTPUT_INFO = false;
     private static boolean QUIET = false;
+
+    private static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
     
     private static java.io.PrintWriter out = 
 	new java.io.PrintWriter(System.out, true);
@@ -153,43 +155,66 @@ public class SAMain extends harpoon.IR.Registration {
 	Set methods = classHierarchy.callableMethods();
 	Iterator classes = new TreeSet(classHierarchy.classes()).iterator();
 
-	while(classes.hasNext()) {
-	    HClass hclass = (HClass) classes.next();
-	    messageln("Compiling: " + hclass.getName());
+	if (!ONLY_COMPILE_MAIN) {
+	    while(classes.hasNext()) {
+		HClass hclass = (HClass) classes.next();
+		messageln("Compiling: " + hclass.getName());
+		
+		try {
+		    String filename = frame.getRuntime().nameMap.mangle(hclass);
+		    out = new PrintWriter
+			(new BufferedWriter
+			 (new FileWriter
+			  (new File(ASSEM_DIR, filename + ".s"))));
+		    
+		    HMethod[] hmarray = hclass.getDeclaredMethods();
+		    Set hmset = new TreeSet(Arrays.asList(hmarray));
+		    hmset.retainAll(methods);
+		    Iterator hms = hmset.iterator();
+		    message("\t");
+		    while(!hclass.isInterface() && hms.hasNext()) {
+			HMethod m = (HMethod) hms.next();
+			message(m.getName());
+			if (hms.hasNext()) message(", ");
+			if (!Modifier.isAbstract(m.getModifiers()))
+			    outputMethod(m, hcf, sahcf, out);
+		    }
+		    messageln("");
+		    
+		    out.println();
+		    messageln("Writing data for " + hclass.getName());
+		    outputClassData(hclass, out);
+		    
+		    out.close();
+		} catch (IOException e) {
+		    System.err.println("Error outputting class "+
+				       hclass.getName());
+		    System.exit(-1);
+		}
+	    }
+	} else { // ONLY_COMPILE_MAIN
+	    // hcl is our class
+	    // mainM is our method
 
 	    try {
-		String filename = frame.getRuntime().nameMap.mangle(hclass);
+		String filename = frame.getRuntime().nameMap.mangle(hcl);
 		out = new PrintWriter
-		   (new BufferedWriter
-		    (new FileWriter
-		     (new File(ASSEM_DIR, filename + ".s"))));
-		
-		HMethod[] hmarray = hclass.getDeclaredMethods();
-		Set hmset = new TreeSet(Arrays.asList(hmarray));
-		hmset.retainAll(methods);
-		Iterator hms = hmset.iterator();
+		    (new BufferedWriter
+		     (new FileWriter
+		      (new File(ASSEM_DIR, filename + ".s"))));
 		message("\t");
-		while(!hclass.isInterface() && hms.hasNext()) {
-		    HMethod m = (HMethod) hms.next();
-		    message(m.getName());
-		    if (hms.hasNext()) message(", ");
-		    if (!Modifier.isAbstract(m.getModifiers()))
-			outputMethod(m, hcf, sahcf, out);
-		}
+		message(mainM.getName());
+		outputMethod(mainM, hcf, sahcf, out);
 		messageln("");
 
 		out.println();
-		messageln("Writing data for " + hclass.getName());
-		outputClassData(hclass, out);
-
 		out.close();
 	    } catch (IOException e) {
 		System.err.println("Error outputting class "+
-				   hclass.getName());
+				   hcl.getName());
 		System.exit(-1);
 	    }
 	}
-
     }
 
     public static void outputMethod(final HMethod hmethod, 
@@ -346,7 +371,8 @@ public class SAMain extends harpoon.IR.Registration {
     }
     
     private static void parseOpts(String[] args) {
-	Getopt g = new Getopt("SAMain", args, "m:c:o:DOPHRLAhq");
+
+	Getopt g = new Getopt("SAMain", args, "m:c:o:DOPHRLAhq1");
 	
 	int c;
 	String arg;
@@ -404,6 +430,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 'q':
 		QUIET = true;
 		break;
+	    case '1':  
+		ONLY_COMPILE_MAIN = true;
+		break;
 	    case '?':
 	    case 'h':
 		System.out.println(usage);
@@ -459,6 +488,9 @@ public class SAMain extends harpoon.IR.Registration {
 
 	out.println("-q");
 	out.println("\tTurns on quiet mode (status messages are not output)");
+
+	out.println("-1"); 
+	out.println("\tTurns off compilation of dependencies (only main() is compiled, no other methods)");
 
 	out.println("-h");
 	out.println("\tPrints out this help message");
