@@ -1,7 +1,7 @@
 /* ==== machdep.h ============================================================
  * Copyright (c) 1993 Chris Provenzano, proven@athena.mit.edu
  *
- * $Id: engine-i386-linux-1.0.h,v 1.6 2002-10-22 19:40:23 wbeebee Exp $
+ * $Id: engine-i386-linux-1.0.h,v 1.7 2003-06-18 18:35:40 wbeebee Exp $
  */
 #ifndef MACHDEP
 #define MACHDEP
@@ -10,6 +10,7 @@
 #include <setjmp.h>
 #include <sys/time.h>
 #include <limits.h>
+#include "config.h"
 
 /*
  * The first machine dependent functions are the SEMAPHORES
