@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
@@ -24,7 +25,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.14 2000-03-29 06:52:12 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.15 2000-04-04 01:16:20 cananian Exp $
  */
 public abstract class Code extends HCode implements java.io.Serializable {
     /** The method that this code view represents. */
@@ -33,6 +34,8 @@ public abstract class Code extends HCode implements java.io.Serializable {
     protected Quad quads;
     /** Quad factory. */
     protected final QuadFactory qf;
+    /** <code>AllocationInformation</code> for this <code>HCode</code>. */
+    protected AllocationInformation ai = null;
 
     /** Create a proper QuadFactory. */
     protected QuadFactory newQF(final HMethod parent) {
@@ -67,6 +70,17 @@ public abstract class Code extends HCode implements java.io.Serializable {
      * belongs to.
      */
     public HMethod getMethod() { return parent; }
+
+    /**
+     * Return the <code>AllocationInformation</code> for this codeview.
+     */
+    public AllocationInformation getAllocationInformation() { return ai; }
+    /**
+     * Set an <code>AllocationInformation</code> for this codeview.
+     */
+    public void setAllocationInformation(AllocationInformation ai) {
+	this.ai = ai;
+    }
 
     /** Returns the root of the control flow graph. */
     public HCodeElement getRootElement() { return quads; }
