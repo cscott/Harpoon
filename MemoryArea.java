@@ -2,70 +2,54 @@
 // Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-/** <code>MemoryArea</code> represents an area of memory from which objects
- *  can be allocated.  Use the "enter" method to pass in a Runnable which 
- *  will run in this MemoryArea.  You can also .newinstance and .newArray
- *  objects out of this MemoryArea and pass this MemoryArea to the constructor
- *  of a RealtimeThread, indicating that the thread is to be run in the new
- *  MemoryArea.  See the RTJ specification for more details.
+/**
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
+/** <code>MemoryArea</code> is the abstract base class of all classes dealing
+ *  with the representations of allocatable memory areas, including the
+ *  immortal memory area, physical memory and scoped memory areas.
+ */
 public abstract class MemoryArea {
 
-    /** The size of this MemoryArea.
-     */
-
+    /** The size of this MemoryArea. */
     protected long size;
 
-    /** */
+    /** The size of the consumed memory */
+    // Size is somewhat inaccurate
+    protected long memoryConsumed;
 
-    protected long memoryConsumed;  // Size is somewhat inaccurate
-
-    /** Indicates whether this is a ScopedMemory. 
-     */
-
+    /** Indicates whether this is a ScopedMemory. */
     boolean scoped;
 
-    /** Indicates whether this is a HeapMemory.
-     */
-
+    /** Indicates whether this is a HeapMemory. */
     boolean heap;
 
-    /** Indicates whether this is a NullMemoryArea. 
-     */
-    
+    /** Indicates whether this is a NullMemoryArea. */
     protected boolean nullMem;
 
-    /** Every MemoryArea has a unique ID. 
-     */
-
+    /** Every MemoryArea has a unique ID. */
     protected int id;
 
-    /** The run() method of this object is called whenever enter() is called
-     */
-
+    /** The run() method of this object is called whenever enter() is called. */
     protected Runnable logic;
 
-    /** This is used to create the unique ID.
-     */
-
+    /** This is used to create the unique ID. */
     private static int num = 0;
 
     /** Indicates whether this memoryArea refers to a constant or not. 
      *  This is set by the compiler.
      */
-
     boolean constant;
 
+    /** The shadow of <code>this</code>. */
     MemoryArea shadow;
   
-    // CONSTUCTORS IN SPECS
-
     abstract protected void initNative(long sizeInBytes);
 
     protected MemoryArea(long sizeInBytes) {
@@ -108,15 +92,28 @@ public abstract class MemoryArea {
 	this.logic = logic;
     }
 
-    
-    // METHODS IN SPECS
-
+    /** Associate this memory area to the current real-time thread for the
+     *  duration of the execution of the <code>run()</code> method of the
+     *  <code>java.lang.Runnable</code> passed at construction time. During
+     *  this bound period of execution, all objects are allocated from the
+     *  memory area until another one takes effect, or the <code>enter()</code>
+     *  method is exited. A runtime exception is thrown if this method is
+     *  called from thread other than a <code>RealtimeThread</code> or
+     *  <code>NoHeapRealtimeThrea</code>.
+     */
     public void enter() throws ScopedCycleException {
 	enter(this.logic);
     }
 
-    /** */
-
+    /** Associate this memory area to the current real-time thread for the
+     *  duration of the execution of the <code>run()</code> method of the
+     *  <code>java.lang.Runnable</code> passed at construction time. During
+     *  this bound period of execution, all objects are allocated from the
+     *  memory area until another one takes effect, or the <code>enter()</code>
+     *  method is exited. A runtime exception is thrown if this method is
+     *  called from thread other than a <code>RealtimeThread</code> or
+     *  <code>NoHeapRealtimeThrea</code>.
+     */
     public void enter(Runnable logic) throws ScopedCycleException {
 	RealtimeThread.checkInit();
 	RealtimeThread current = RealtimeThread.currentRealtimeThread();
@@ -130,9 +127,9 @@ public abstract class MemoryArea {
 		oldMem.checkAccess(e);
 	    } catch (Exception checkException) {
 		current.exitMem();
-		throw new ThrowBoundaryError("An exception occurred that was "
-					     +"allocated in an inner scope that "
-					     +"just exited.");
+		throw new ThrowBoundaryError("An exception occurred that was " +
+					     "allocated in an inner scope that " +
+					     "just exited.");
 	    }
 	    current.exitMem();
 	    throw new ThrowBoundaryError(e.toString());
@@ -142,9 +139,9 @@ public abstract class MemoryArea {
 		oldMem.checkAccess(e);
 	    } catch (Exception checkException) {
 		current.exitMem();
-		throw new ThrowBoundaryError("An exception occurred that was "
-					     +"allocated in an inner scope that "
-					     +"just exited.");
+		throw new ThrowBoundaryError("An exception occurred that was " +
+					     "allocated in an inner scope that " +
+					     "just exited.");
 	    }
 	    current.exitMem();
 	    throw e;
@@ -152,12 +149,20 @@ public abstract class MemoryArea {
 	current.exitMem();
     }
 
+    /** Execute the <code>run()</code> method from the <code>logic</code> parameter
+     *  using this memory area as the current allocation context. If the memory
+     *  area is a scoped memory type, this method behaves as if it had moved the
+     *  allocation context up the scope stack to the occurrence of the memory area.
+     *  If the memory area is heap or immortal memory, this method behaves as if
+     *  the <code>run()</code> method were running in that memory type with an
+     *  empty scope stack.
+     */
     public void executeInArea(Runnable logic)
 	throws InaccessibleAreaException {
 	// TODO
     }
 
-    /** */
+    /** Returns the <code>MemoryArea</code> in which the given object is located. */
     public static MemoryArea getMemoryArea(Object object) {
 	if (object == null) {
 	    return ImmortalMemory.instance();
@@ -177,32 +182,30 @@ public abstract class MemoryArea {
 	return mem;
     }
     
-    /** Return the amount of memory consumed in this MemoryArea.
+    /** An exact count, in bytes, of the all of the memory currently
+     *  used by the system for the allocated objects.
      */
-
     public long memoryConsumed() {
 	return memoryConsumed;
     }
     
-    /** Return the amount of memory remaining in this MemoryArea.
+    /** An approximation to the total amount of memory currently
+     *  available for future allocated objects, measured in bytes.
      */
-
     public long memoryRemaining() {
 	return size()-memoryConsumed();
     }
     
-    /** Create a new array, allocated out of this MemoryArea. 
-     */
-
     protected native Object newArray(RealtimeThread rt, 
 				     Class type, 
 				     int number);
     protected native Object newArray(RealtimeThread rt, 
 				     Class type, int[] dimensions);
 
+    /** Allocate an array of <code>type</code> in this memory area. */
     public Object newArray(final Class type, final int number) 
 	throws IllegalAccessException, InstantiationException,
-    OutOfMemoryError {
+	       OutOfMemoryError {
 	RealtimeThread.checkInit();
 	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
 	if (number<0) {
@@ -215,20 +218,19 @@ public abstract class MemoryArea {
 	return o;
     }
 
-    /** Create a new object, allocated out of this MemoryArea.
-     */
-    
     protected native Object newInstance(RealtimeThread rt, 
 			      Constructor constructor, 
 			      Object[] parameters)
 	throws InvocationTargetException;
     
+    /** Allocate an object in this memory area. */
     public Object newInstance(Class type)
 	throws IllegalAccessException, InstantiationException,
 	       OutOfMemoryError {
 	return newInstance(type, new Class[0], new Object[0]);
     }
     
+    /** Allocate an object in this memory area. */
     public Object newInstance(final Class type,
 			      final Class[] parameterTypes,
 			      final Object[] parameters) 
@@ -251,6 +253,7 @@ public abstract class MemoryArea {
 	return o;
     }
     
+    /** Allocate an object in this memory area. */
     public Object newInstance(Constructor c, Object[] args)
 	throws IllegalAccessException, InstantiationException,
 	       OutOfMemoryError {
@@ -259,9 +262,10 @@ public abstract class MemoryArea {
 	return null;
     }
 
-    /** Return the size of this MemoryArea.
+    /** Query the size of the memory area. The returned value is the
+     *  current size. Current size may be larger than initial size for
+     *  those areas that are allowed to grow.
      */
-
     public long size() {
 	return size;
     }

@@ -36,8 +36,6 @@ public class PriorityScheduler extends Scheduler {
     long runningThread = 0;
     RelativeTime runningTime = null;
     
-    static PriorityScheduler thisScheduler = null;
-    
     // Do not call this constructor; instead, call
     // PriorityScheduler.getScheduler().
     protected PriorityScheduler() {
@@ -56,28 +54,31 @@ public class PriorityScheduler extends Scheduler {
 				       new RelativeTime(1, 0), null, null, null);
 	}
     }
-    
-    // Creates and returns a scheduler of this type
-    // NOT IN SPECS -----------------------
 
     // This method is not thread-safe!
     public static PriorityScheduler getScheduler() {
-	if (thisScheduler == null) 
+	if (defaultScheduler == null) 
 	    try {
 		ImmortalMemory.instance().enter(new Runnable() {
 			public void run() {
-			    PriorityScheduler.thisScheduler = new PriorityScheduler();
+			    PriorityScheduler.defaultScheduler = new PriorityScheduler();
 			}
 		    });
 	    } catch (ScopedCycleException e) {
 		System.out.println("ScopeCycleException should never occur " + e);
 	    }
 	
-	return thisScheduler;
+	return (PriorityScheduler)defaultScheduler;
     }
     
-    // Start maintaining this thread (called by the runtime system during
-    // execution of the thread.start() method).
+    /** Inform the scheduler and cooperating facilities that the resource demands,
+     *  as expressed in associated instances of <code>SchedulingParameters,
+     *  ReleaseParameters, MemoryParameters</code> and <code>ProcessingGroupParameters</code>,
+     *  of this instance of <code>Schedulable</code> will be considered in the
+     *  feasibility analysis of the associated <code>Scheduler</code> until
+     *  further notice. Whether the resulting system is feasible or not, the addition
+     *  is completed.
+     */
     protected boolean addToFeasibility(final Schedulable schedulable) {
 	allThreads.add(schedulable);
 	thread[nThreads] = new ThreadConstraints();
@@ -97,53 +98,75 @@ public class PriorityScheduler extends Scheduler {
 	    System.out.println("ScopedCycleException should never occur : " + e);
 	}
 
-	// SPECS CHANGED -- return 'boolean' instead of 'void'
-	return false;
+	return isFeasible();
     }
 
-    // NOT IN SPECS --------------------------
     protected native void addThreadInC(Schedulable t, long threadID);
 
+    /** Trigger the execution of a schedulable object (like
+     *  an instance of <code>AsyncEventHandler</code>).
+     */
     public void fireSchedulable(Schedulable schedulable) {
 	schedulable.run();
     }
-    
+
+    /** Returns the maximum priority available for a thread managed by this scheduler. */
     public int getMaxPriority() {
 	return MAX_PRIORITY;
     }
-    
+
+    /** If the given thread is scheduled by the required <code>PriorityScheduler</code>
+     *  the maximum priority of the <code>PriorityScheduler</code> is returned;
+     *  otherwise <code>Thread.MAX_PRIORITY</code> is returned.
+     */
     public static int getMaxPriority(Thread thread) {
 	return (allThreads.contains(thread)) ?
 	    MAX_PRIORITY : Thread.MAX_PRIORITY;
     }
-    
+
+    /** Returns the minimum priority available for a thread managed by this scheduler. */
     public int getMinPriority() {
 	return MIN_PRIORITY;
     }
     
+    /** If the given thread is scheduled by the required <code>PriorityScheduler</code>
+     *  the minimum priority of the <code>PriorityScheduler</code> is returned;
+     *  otherwise <code>Thread.MIN_PRIORITY</code> is returned.
+     */
     public static int getMinPriority(Thread thread) {
 	return (allThreads.contains(thread)) ?
 	    MIN_PRIORITY : Thread.MIN_PRIORITY;
     }
     
+    /** Returns the nomral priority available for a thread managed by this scheduler. */
     public int getNormPriority() {
 	return NORM_PRIORITY;
     }
-    
+
+    /** If the given thread is scheduled by the required <code>PriorityScheduler</code>
+     *  the normal priority of the <code>PriorityScheduler</code> is returned;
+     *  otherwise <code>Thread.NORM_PRIORITY</code> is returned.
+     */
     public static int getNormPriority(Thread thread) {
 	return (allThreads.contains(thread)) ?
 	    NORM_PRIORITY : Thread.NORM_PRIORITY;
     }
     
+    /** Used to determine the policy of the <code>Scheduler</code>. */
     public String getPolicyName() {
 	return "EDF";
     }
     
+    /** Return a pointer to an instance of <code>PriorityScheduler</code>. */
     public static PriorityScheduler instance() {
-	if (defaultScheduler == null) return new PriorityScheduler();
-	else return (PriorityScheduler)defaultScheduler;
+	if (defaultScheduler == null) defaultScheduler = new PriorityScheduler();
+	return (PriorityScheduler)defaultScheduler;
     }
 
+    /** Returns ture if and only if the system is able to satisfy the
+     *  constraints expressed in the release parameteres of the existing
+     *  schdulable objects.
+     */
     // This one's a bit twisted, but it's much more
     // implementation-friendly. We decide feasibility by calling
     // changeIfFeasible with no parameters.
@@ -205,6 +228,13 @@ public class PriorityScheduler extends Scheduler {
 	return (load <= 1.0);
     }
 
+    /** Inform the scheduler and cooperating facilities that the resource demands,
+     *  as expressed in the associated instances of <code>SchedulableParameters,
+     *  ReleaseParameters, MemoryParameters</code>, and <code>ProcessingGroupParameters</code>,
+     *  of this instance of <code>Schedulable</code> should no longer be considered
+     *  in the feasibility analysis of the associated <code>Scheduler</code>.
+     *  Whether the resulting system is feasible or not, the subtraction is completed.
+     */
     protected boolean removeFromFeasibility(Schedulable schedulable) {
 	long threadID = removeThreadInC(schedulable);
 	allThreads.remove(schedulable);
@@ -218,19 +248,27 @@ public class PriorityScheduler extends Scheduler {
 	    thread[i] = thread[--nThreads];
 	}
 
-	// SPECS CHANGED -- return 'boolean' instead of 'void'
-	return false;
+	return isFeasible();
     }
     
-    // NOT IN SPECS ---------------
     protected native long removeThreadInC(Schedulable t);
     
+    /** Returns true if, after considering the values of the parameters, the task set
+     *  would still ve feasible. In this case the values of the parameters are changed.
+     *  Returns false if, after considering the values of the parameters, the task set
+     *  would not be feasible. In this case the values of the parameters are not changed.
+     */
     public boolean setIfFeasible(Schedulable schedulable,
 				 ReleaseParameters release,
 				 MemoryParameters memory) {
 	return setIfFeasible(schedulable, release, memory, schedulable.getProcessingGroupParameters());
     }
 
+    /** Returns true if, after considering the values of the parameters, the task set
+     *  would still ve feasible. In this case the values of the parameters are changed.
+     *  Returns false if, after considering the values of the parameters, the task set
+     *  would not be feasible. In this case the values of the parameters are not changed.
+     */
     public boolean setIfFeasible(Schedulable schedulable,
 				 ReleaseParameters release,
 				 MemoryParameters memory,
@@ -240,13 +278,10 @@ public class PriorityScheduler extends Scheduler {
     }
 
 
-    // ----------------------------
-    // NOT IN SPECS
-    // ----------------------------
-    
     protected native void setQuantaInC(long microsecs);
     protected native long getTimeInC();
     
+    /** Implements EDF (Earliest Deadline First) Algorithm */
     public long chooseThread(long micros) {
 	long microsBegin = getTimeInC();
 	invocations++;

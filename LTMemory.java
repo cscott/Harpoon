@@ -3,11 +3,39 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/** <code>LTMemory</code> represents a linear-time memory scope.  
- *  It uses stack allocation and is very fast and has predictable performance.
+/**
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
+/** <code>LTMemory</code> represents a memory area, allocated per
+ *  <code>RealtimeThread</code>, or for a group of real-time threads,
+ *  guaranteed by the system to have linear time allocation. The memory
+ *  area described by a <code>LTMemory</code> instance does not exist in
+ *  the Java heap, and is not subject to garbage collection. Thus, it is
+ *  safe to use a <code>LTMemory</code> object as the memory area associated
+ *  with a <code>NoHeapRealtimeThread</code>, or to enter the memory area
+ *  using the <code>enter()</code> method within a <code>NoHeapRealtimeThread</code>.
+ *  An <code>LTMemory</code> area has an initial size. Enough memory must be
+ *  committed by the completion of the constructor to satisfy this initial
+ *  requirement. (Committed means that this memory must always be available
+ *  for allocation). The initial memory allocation must behave, with respect
+ *  to successful allocation, as if it were contiguous; i.e., a correct
+ *  implementation must guarantee that any sequence of object allocations
+ *  that could ever without exceeding a specified initial memory size will
+ *  always succeed without exceeding that initial memory size and succeed
+ *  for any instance of <code>LTMemory</code> with that initial memory size.
+ *  <i>(Note: It is important to understand that the above statement does
+ *  <b>not require that if the initial memory size is N and
+ *  (sizeof(object1) + sizeof(object2) + ... + sizeof(objectn) = N) the
+ *  allocations of objects 1 through n will necessarily succeed.)</b></i>
+ *  Execution time of an allocator aloocating from this initial area must
+ *  be linear in the size of the allocated object. Execution time of an
+ *  allocator allocating from memory between initial and maximum is
+ *  allowed to vary. Furthermore, the underlying system is not required to
+ *  guarantee that memory between initial and maximum will always be available.
+ *  (Node: to ensure that all requested memory is available set initial and
+ *  maximum to the same value).
+ */
 public class LTMemory extends ScopedMemory {
 
     /** The logic associated with <code>this</code>. */
@@ -21,12 +49,14 @@ public class LTMemory extends ScopedMemory {
 
     protected void initNative(long sizeInBytes) {}
 
+    /** Create an <code>LTMemory</code> of the given size. */
     public LTMemory(long initialSizeInBytes,
 		    long maxSizeInBytes) {
 	super(maxSizeInBytes);
 	initNative(initialSizeInBytes, maxSizeInBytes);
     }
-    
+
+    /** Create an <code>LTMemory</code> of the given size and logic. */
     public LTMemory(long initialSizeInBytes,
 		    long maxSizeInBytes,
 		    Runnable logic) {
@@ -34,11 +64,17 @@ public class LTMemory extends ScopedMemory {
 	this.logic = logic;
     }
 
+    /** Creates a <code>LTMemory</code> of the given size estimated by
+     *  two instances of <code>SizeEstimator</code>.
+     */
     public LTMemory(SizeEstimator initial,
 		    SizeEstimator maximum) {
 	this(initial.getEstimate(), maximum.getEstimate());
     }
 
+    /** Creates a <code>LTMemory</code> of the given size estimated by
+     *  two instances of <code>SizeEstimator</code> and logic.
+     */
     public LTMemory(SizeEstimator initial,
 		    SizeEstimator maximum,
 		    Runnable logic) {
@@ -46,39 +82,30 @@ public class LTMemory extends ScopedMemory {
 	this.logic = logic;
     }
 
-    // CONSTRUCTORS NOT IN SPECS
-
+    /** Creates a <code>LTMemory</code> of the given size. */
     public LTMemory(long size) {
 	super(size);
 	initNative(size, size);
     }
 
-
-    // METHODS IN SPECS
-
-    /** Return the value which defines the maximum size to which
-     *  this can grow.
-     */
+    /** Return the value which defines the maximum size to which this can grow. */
     public long getMaximumSize() {
 	return size;
     }
 
     /** Returns a representation of this LTMemory object */
-    
     public String toString() {
 	return "LTMemory: " + super.toString();
     }
 
 
-    // METHODS NOT IN SPECS
 
-    /** Initialize the native component of this MemoryArea 
-     *  (set up the MemBlock) */
-    
+    /** Initialize the native component of this MemoryArea (set up the MemBlock) */
     private native void initNative(long minimum, long maximum);
 
     /** Invoke this method when you're finished with the MemoryArea 
-     *	(could be a finalizer if we had finalizers...) */
+     *	(could be a finalizer if we had finalizers...)
+     */
 
     public void done() {
 	doneNative();

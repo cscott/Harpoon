@@ -1,16 +1,29 @@
 package javax.realtime;
 
+/** The <code>PhysicalMemoryManager</code> is available for use
+ *  by the various physical memory accessor objects
+ *  (<code>VTPhysicalMemory, LTPhysicalMemory, ImmortalPhysicalMemory,
+ *  RawMemoryAccess, RawMemoryFloatAccess</code>) to create objects
+ *  of the correct type that are bound to areas of physical memory
+ *  with the appropriate characteristics -- or with appropriate
+ *  accessor behavior. Esxamples of characteristics that might be
+ *  specified are: DMA memory, accessors with byte swapping, etc.
+ *  <p>
+ *  The base implementation will provide a <code>PhysicalMemoryManager</code>
+ *  and a set of <code>PhysicalMemoryTypeFilter</code> classes that correctly
+ *  identify memory classes that are standard for the (OS, JVM, and processor)
+ *  platform.
+ *  <p>
+ *  OEMs may provide a <code>PhysicalMemoryTypeFilter</code> classes that allow
+ *  additional characteristics of memory devices to be specified.
+ *  <p>
+ *  Memory attributes that are configured may not be compatible with one another.
+ *  For instance, copy-back cache enable may be imcompatible with execute-only.
+ *  In this case, the implementation of memory filters may detect conflicts and
+ *  throw a <code>MemoryTypeConflictException</code>, but since filters are not
+ *  part of the normative RTSJ, this exception is at best advisory.
+ */
 public final class PhysicalMemoryManager {
-    /** The <code>PhysicalMemoryManager</code> is available for use
-     *  by the various physical memory accessor objects
-     *  (<code>VTPhysicalMemory, LTPhysicalMemory, ImmortalPhysicalMemory,
-     *  RawMemoryAccess, RawMemoryFloatAccess</code>) to create objects
-     *  of the correct type that are bound to areas of physical memory
-     *  with the appropriate characteristics -- or with appropriate
-     *  accessor behavior. Esxamples of characteristics that might be
-     *  specified are: DMA memory, accessors with byte swapping, etc.
-     */
-
     /** Specify this to identify aligned memory. */
     public static final String ALIGNED = "ALIGNED";
 
@@ -33,8 +46,7 @@ public final class PhysicalMemoryManager {
 	return false;
     }
 
-    /** Is any part of the specified range of memory presently removed?
-     */
+    /** Is any part of the specified range of memory presently removed? */
     public static boolean isRemoved(long address, long size) {
 	// TODO
 
@@ -58,16 +70,14 @@ public final class PhysicalMemoryManager {
 	// TODO
     }
 
-    /** Register a memory type filter with the physical memory manager.
-     */
+    /** Register a memory type filter with the physical memory manager. */
     public static final void registerFilter(Object name,
 					    PhysicalMemoryTypeFilter filter)
 	throws DuplicateFilterException, IllegalArgumentException {
 	// TODO
     }
 
-    /** Remove the identified filter from the set of registered filters.
-     */
+    /** Remove the identified filter from the set of registered filters. */
     public static final void removeFilter(Object name) {
 	// TODO
     }

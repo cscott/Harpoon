@@ -3,12 +3,19 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/** <code>ImmortalMemory</code> is a <code>MemoryArea</code> which allows
- *  access from anywhere, access to the heap, and all objects allocated
- *  in this live for the life of the program.
+/**
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
+/** <code>ImmortalMemory</code> is a memory resource that is shared among
+ *  all threads. Objects allocated in the immortal memory live until the
+ *  end of the application. Objects in immoral memory are nver subjected
+ *  to garbage collection, although some GC algorithms may require a scan
+ *  of the immortal memory. An immortal object may only contain reference
+ *  to other immortal objects or to heap objects. Unlike standard Java
+ *  heap objects, immoratl objects continue to exist even after there are
+ *  no other references to them.
+ */
 public class ImmortalMemory extends MemoryArea {
     private static ImmortalMemory immortalMemory;
    
@@ -17,11 +24,7 @@ public class ImmortalMemory extends MemoryArea {
 	super(1000000000); // Totally bogus
     }
 
-    // METHODS IN SPECS
-
-    /** Returns the only ImmortalMemory instance (which was itself allocated
-     *  out of ImmortalMemory) 
-     */ 
+    /** Returns a pointer to the singleton <code>ImmortalMemory</code> space. */
     public static ImmortalMemory instance() {
 	if (immortalMemory == null) {
 	    immortalMemory = (ImmortalMemory)((new ImmortalMemory()).shadow);
@@ -30,16 +33,8 @@ public class ImmortalMemory extends MemoryArea {
 	return immortalMemory;
     }
 
-
-    // METHODS NOT IN SPECS
-
-
-    /** */
-
     protected native void initNative(long sizeInBytes);
     
-    /** */
-
     public String toString() {
 	return "ImmortalMemory: " + super.toString();
     }

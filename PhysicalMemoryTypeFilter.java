@@ -7,8 +7,6 @@ public interface PhysicalMemoryTypeFilter {
 
     boolean removable = false;
     
-    // METHODS IN SPECS
-
     /** Does the specified range of memory contain any of thie type? */
     public boolean contains(long base, long size);
 

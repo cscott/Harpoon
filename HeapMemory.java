@@ -2,13 +2,16 @@
 // Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
+
 import java.lang.Runtime;
 
-/** <code>HeapMemory</code> represents garbage-collected memory.  
- *
+/**
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
+/** The <code>HeapMemory</code> class is a singleton object that allows logic
+ *  within other scoped memory to allocate objects in the Java heap.
+ */
 public final class HeapMemory extends MemoryArea {
     /** The one and only HeapMemory. */
     private static HeapMemory theHeap;
@@ -21,9 +24,7 @@ public final class HeapMemory extends MemoryArea {
 	heap = true;
     }
 
-    // METHODS IN SPECS
-
-    /** Return the instance of the one and only HeapMemory. */
+    /** Return a pointer to the singleton <code>HeapMemory</code> space. */
     public static HeapMemory instance() {
 	if (theHeap == null) { // Bypass static initializer problem.
 	    theHeap = new HeapMemory();
@@ -40,10 +41,6 @@ public final class HeapMemory extends MemoryArea {
     public long memoryRemaining() {
 	return (size - memoryConsumed);
     }
-
-
-    // METHODS NOT IN SPECS
-
 
     /** Initialize the native component of the HeapMemory. */
     protected native void initNative(long sizeInBytes);
@@ -100,8 +97,7 @@ public final class HeapMemory extends MemoryArea {
 	return super.newInstance(type);
     }
 
-    /** Check to make sure that we're not in a NoHeapRealtimeThread 
-     */
+    /** Check to make sure that we're not in a NoHeapRealtimeThread. */
 
     public void checkNoHeap() {
 	RealtimeThread realtimeThread = 
