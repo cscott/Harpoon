@@ -26,7 +26,7 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.AbstractMapEntry;
 import harpoon.Util.Default;
-import harpoon.Util.ListComparator;
+import harpoon.Util.MapComparator;
 import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Util;
 
@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.29 2000-11-14 22:21:12 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.30 2001-09-18 20:35:01 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -101,13 +101,21 @@ final class Translate { // not public.
 	    this.liveness = liveness;
 	    this.transHandler =
 		new TreeMap(new Comparator() {
+		    final Comparator mapComparator =
+		        new MapComparator(null,null);
 		    public int compare(Object o1, Object o2) {
-			ExceptionEntry e1 = (ExceptionEntry) ((List)o1).get(0);
-			ExceptionEntry e2 = (ExceptionEntry) ((List)o2).get(0);
+			List l1 = (List) o1, l2 = (List) o2;
+			Util.assert(l1.size()==l2.size() && l1.size()==2);
+			ExceptionEntry e1 = (ExceptionEntry) l1.get(0);
+			ExceptionEntry e2 = (ExceptionEntry) l2.get(0);
 			// null is larger than anything else.
 			if (e1==null) return (e2==null)?0:1;
 			if (e2==null) return (e1==null)?0:-1;
-			return e1.compareTo(e2);
+			int c = e1.compareTo(e2);
+			if (c!=0) return c;
+			Map m1 = (Map) l1.get(1);
+			Map m2 = (Map) l2.get(1);
+			return mapComparator.compare(m1, m2);
 		    }
 		});
 	    this.todoHandler = new Stack();
