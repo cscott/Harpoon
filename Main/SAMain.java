@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.173 2001-10-31 03:38:30 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.174 2001-11-07 23:40:34 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -437,8 +437,8 @@ public class SAMain extends harpoon.IR.Registration {
 	    }
 	    /* -- find mostly-zero fields -- */
 	    if (Boolean.getBoolean("mzf.counters")) {
-		hcf = new harpoon.Analysis.SizeOpt.MostlyZeroFinder(hcf, frame)
-		    .codeFactory();
+		hcf = new harpoon.Analysis.SizeOpt.MostlyZeroFinder
+		    (hcf, classHierarchy, frame).codeFactory();
  		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 		// pull everything through the 'mostly zero finder', to make
 		// sure that all relevant counter fields show up before

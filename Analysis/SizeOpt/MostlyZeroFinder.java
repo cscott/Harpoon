@@ -3,11 +3,14 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.SizeOpt;
 
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Counters.CounterFactory;
+import harpoon.Analysis.Quads.DefiniteInitOracle;
 import harpoon.Analysis.Transactions.BitFieldNumbering;
 import harpoon.Analysis.Transactions.BitFieldNumbering.BitFieldTuple;
 import harpoon.Analysis.Transformation.MethodMutator;
 import harpoon.Backend.Generic.Frame;
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeAndMaps;
@@ -34,21 +37,38 @@ import harpoon.Util.Util;
 
 import java.util.Iterator;
 /**
- * <code>MostlyZeroFinder</code>
+ * The <code>MostlyZeroFinder</code> will add counters to find fields
+ * which are mostly zero (or mostly 1, 2, etc).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MostlyZeroFinder.java,v 1.1.2.2 2001-10-31 03:35:19 cananian Exp $
+ * @version $Id: MostlyZeroFinder.java,v 1.1.2.3 2001-11-07 23:40:29 cananian Exp $
  */
 public class MostlyZeroFinder extends MethodMutator {
+    /** the mostly-zero analysis can actually find mostly-N fields.  this
+     *  parameter lets you chose what 'N' should be. */
+    final static int MOSTLY_WHAT =
+	Integer.parseInt(System.getProperty("harpoon.mzf.lookfor", "0"));
     final BitFieldNumbering bfn;
     final boolean pointersAreLong;
     final String suffix = "$mzf";
+    final DefiniteInitOracle dio;
     
-    /** Creates a <code>MostlyZeroFinder</code>. */
-    public MostlyZeroFinder(HCodeFactory parent, Frame frame) {
-        super(QuadNoSSA.codeFactory(parent));
+    /** Creates a <code>MostlyZeroFinder</code> using the given
+     *  code factory, class hierarchy, and frame. */
+    public MostlyZeroFinder(HCodeFactory parent, ClassHierarchy ch,
+			    Frame frame) {
+	// force a caching quad-ssa code factory.
+	this(new CachingCodeFactory(QuadNoSSA.codeFactory(parent)), ch, frame);
+    }
+    // the private constructor knows the code factory is cached and produces
+    // quad-ssa form.
+    private MostlyZeroFinder(CachingCodeFactory parent, ClassHierarchy ch,
+			     Frame frame) {
+        super(parent);
 	this.bfn = new BitFieldNumbering(frame.getLinker(), suffix);
 	this.pointersAreLong = frame.pointersAreLong();
+	this.dio = (MOSTLY_WHAT==0) ? null :
+	    new DefiniteInitOracle(parent, ch);
     }
     protected HCode mutateHCode(HCodeAndMaps input) {
 	HCode hc = input.hcode();
@@ -85,6 +105,7 @@ public class MostlyZeroFinder extends MethodMutator {
 		Util.assert(hc==hf.getDeclaringClass());
 		if (hf.isStatic()) continue;
 		if (hf.getName().endsWith(suffix)) continue;//don't count bits
+		if (!isOkay(hf)) continue; // some limits if MOSTLY_WHAT!=0
 		e = CounterFactory.spliceIncrement
 		    (qf, e, "mzf.alloc."+hc.getName()+"."+hf.getName());
 		e = CounterFactory.spliceIncrement
@@ -97,6 +118,8 @@ public class MostlyZeroFinder extends MethodMutator {
 	public void visit(SET q) {
 	    // skip static fields.
 	    if (q.field().isStatic()) return;
+	    // skip non-definitely-initialized fields if MOSTLY_WHAT != 0
+	    if (!isOkay(q.field())) return;
 
 	    // get bit.
 	    // if zero and x != 0
@@ -146,19 +169,33 @@ public class MostlyZeroFinder extends MethodMutator {
 		 "."+hf.getName(), -sizeOf(hf.getType()));
 	}
     }
+    // we can only compile meaningful numbers for primitive fields that
+    // are definitely-initialized if MOSTLY_WHAT is not zero.
+    private boolean isOkay(HField hf) {
+	if (MOSTLY_WHAT!=0)
+	    return dio.isDefinitelyInitialized(hf) &&
+		hf.getType().isPrimitive();
+	return true;
+    }
     private static CONST zeroConst(QuadFactory qf, HCodeElement src,
 				   Temp dst, HClass type) {
+	// psst: here's a secret.  the 'zeroConst' is actually not
+	// zero if MOSTLY_WHAT is not zero.
 	if (!type.isPrimitive())
 	    return new CONST(qf, src, dst, null, HClass.Void);
 	if (type==HClass.Boolean || type==HClass.Byte ||
 	    type==HClass.Short || type==HClass.Int || type==HClass.Char)
-	    return new CONST(qf, src, dst, new Integer(0), HClass.Int);
+	    return new CONST(qf, src, dst,
+			     new Integer(MOSTLY_WHAT), HClass.Int);
 	if (type==HClass.Long)
-	    return new CONST(qf, src, dst, new Long(0), HClass.Long);
+	    return new CONST(qf, src, dst,
+			     new Long(MOSTLY_WHAT), HClass.Long);
 	if (type==HClass.Float)
-	    return new CONST(qf, src, dst, new Float(0), HClass.Float);
+	    return new CONST(qf, src, dst,
+			     new Float(MOSTLY_WHAT), HClass.Float);
 	if (type==HClass.Double)
-	    return new CONST(qf, src, dst, new Double(0), HClass.Double);
+	    return new CONST(qf, src, dst,
+			     new Double(MOSTLY_WHAT), HClass.Double);
 	Util.assert(false, "forgot a primitive type?");
 	return null;
     }
