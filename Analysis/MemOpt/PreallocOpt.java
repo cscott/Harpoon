@@ -49,6 +49,7 @@ import harpoon.Analysis.AllocationInformationMap;
 import harpoon.Analysis.DefaultAllocationInformationMap;
 import harpoon.Analysis.DefaultAllocationInformation;
 import harpoon.Instrumentation.AllocationStatistics.AllocationStatistics;
+import harpoon.Instrumentation.AllocationStatistics.AllocationInstrCompStage;
 import harpoon.Analysis.Tree.Canonicalize;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Runtime;
@@ -57,11 +58,14 @@ import harpoon.Temp.Temp;
 
 import harpoon.Util.Util;
 
+import harpoon.Main.CompilerStageEZ;
+import harpoon.Util.Options.Option;
+
 /**
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.19 2003-04-08 19:17:52 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.20 2003-04-17 00:21:48 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -523,5 +527,62 @@ public abstract class PreallocOpt {
 	    hm.getName().equals("finalize") &&
 	    // java.lang.Object.finalize() is not a real finalizer
 	    !hm.getDeclaringClass().getName().equals("java.lang.Object");
+    }
+
+
+
+    public static class QuadPass extends CompilerStageEZ {
+
+	public QuadPass(AllocationInstrCompStage aics) {
+	    super("prealloc-opt-quad-pass");
+	    this.aics = aics;
+	}
+	private AllocationInstrCompStage aics;
+
+	public List/*<Option>*/ getOptions() {
+	    List/*<Option>*/ opts = new LinkedList/*<Option>*/();
+
+	    opts.add(new Option("prealloc-opt",
+				"Preallocation Optimization using Incompatibility Analysis; syncronizations on preallocated objects are removed (prealocated objects are anyway thread local)") {
+		public void action() {
+		    PREALLOC_OPT = true;
+		    // make sure we use Runtime2
+		    System.setProperty("harpoon.runtime", "2");
+		}
+	    });
+	    
+	    opts.add(new Option("ia-only-sync-removal",
+				"Uses the Incompatibility Analysis only to remove syncronizations on the preallocatable objects; no preallocation.") {
+		public void action() {
+		    ONLY_SYNC_REMOVAL = true;
+		    // make sure we use Runtime2
+		    System.setProperty("harpoon.runtime", "2");
+		}
+	    });
+	    
+	    return opts;
+	}
+
+	protected boolean enabled() {  return _enabled(); }
+
+	protected void real_action() {
+	    hcf = PreallocOpt.preallocAnalysis
+		(linker, hcf, classHierarchy, mainM, roots,
+		 aics.getAllocationStatistics(), frame);
+	}
+    };
+
+
+    public static class TreePass extends CompilerStageEZ {
+
+	public TreePass() { super("prealloc-opt-tree-pass"); }
+	protected boolean enabled() { return _enabled(); }
+
+	protected void real_action() {
+	}
+    };
+
+    private static boolean _enabled() {
+	return PREALLOC_OPT || ONLY_SYNC_REMOVAL;
     }
 }
