@@ -19,7 +19,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ExpList.java,v 1.1.2.15 2000-01-17 23:41:30 cananian Exp $
+ * @version $Id: ExpList.java,v 1.1.2.16 2000-02-14 20:59:23 cananian Exp $
  */
 public final class ExpList {
     /** The expression at this list entry. */
@@ -61,6 +61,12 @@ public final class ExpList {
 		return o;
 	    }
 	};
+    }
+    public static int size(ExpList e) {
+	int i=0;
+	for (ExpList ep = e; ep!=null; ep=ep.tail)
+	    i++;
+	return i;
     }
 
     public static ExpList replace(ExpList e, Exp eOld, Exp eNew) { 
