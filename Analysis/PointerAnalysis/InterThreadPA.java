@@ -19,10 +19,13 @@ import harpoon.IR.Quads.NEW;
 
 
 /**
- * <code>InterThreadPA</code>
+ * <code>InterThreadPA</code> groups together the functions related to the
+ * inter-thread analysis. Normally, this should
+ * be a part of the <code>PointerAnalysis</code>, but that class is already
+ * too big and some code segmentation is always good! 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.11 2000-03-02 04:45:30 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.12 2000-03-02 17:42:16 salcianu Exp $
  */
 abstract class InterThreadPA {
     
@@ -30,10 +33,16 @@ abstract class InterThreadPA {
     private static final boolean DEBUG2 = true;
     private static final boolean TIMING = true;
 
+
+    private static final Set processed_threads = new HashSet();
+
     public static ParIntGraph resolve_threads(ParIntGraph pig,
 					      PointerAnalysis pa){
 
-	long begin_time = System.currentTimeMillis();
+	long begin_time;
+	if(TIMING) begin_time = System.currentTimeMillis();
+
+	processed_threads.clear();
 
 	pig = (ParIntGraph) pig.clone();
 
@@ -46,13 +55,15 @@ abstract class InterThreadPA {
 	    if(DEBUG)
 		System.out.println(nt + " was chosen");
 
-	    HMethod[] ops = get_run_methods(nt,pig,pa);
+	    HMethod[] ops = get_run_methods(nt,pa);
 	    analyzed_threads.add(nt);
 	    if((ops == null) || (ops.length==0) ||
 	       !analyzable_run_methods(ops,pa)) continue;	    
 
 	    ParIntGraph old_pig = pig;
 	    pig = interaction_nt(pig,nt,ops,pa);
+
+	    processed_threads.add(nt);
 
 	    if(!pig.equals(old_pig))
 		analyzed_threads.clear();
@@ -95,9 +106,8 @@ abstract class InterThreadPA {
 
     // Returns a vector containing all the run() methods that could be
     // the body of the threads abstracted by nt.
-    private static HMethod[] get_run_methods(PANode nt, ParIntGraph pig,
-					     PointerAnalysis pa){
-
+    private static HMethod[] get_run_methods(PANode nt, PointerAnalysis pa){
+	// TODO: think about the LOAD && PARAM thread nodes (not only INSIDE) 
 	NEW q = (NEW) pa.getNodeRepository().node2Code(nt);
 	HClass hclass = q.hclass();
 
@@ -254,7 +264,8 @@ abstract class InterThreadPA {
 	    System.out.println("startee -> starter:" + mu[1]);
 	}
 
-	ParIntGraph new_pig = build_new_pig(pig,mu,params[0],nt);
+	Set actives = active_threads_outside_startee(pig[0],pa);
+	ParIntGraph new_pig = build_new_pig(pig,mu,params[0],nt,actives);
 
 	if(DEBUG2){
 	    System.out.println("NEW GRAPH:");
@@ -388,25 +399,70 @@ abstract class InterThreadPA {
     // Build the new graph using the graphs from the starter and the startee
     // and the mu mappings.
     private static ParIntGraph build_new_pig(ParIntGraph[] pig, Relation[] mu,
-					     PANode nparam, PANode nt){
+					     PANode nparam, PANode nt,
+					     Set active_threads_in_starter){
 
 	ParIntGraph new_pig = new ParIntGraph();
 
 	new_pig.insertAllButAr(pig[0],mu[0], true);
-	new_pig.insertAllButAr(pig[1],mu[1], false, Collections.singleton(nparam));
+	new_pig.insertAllButAr(pig[1],mu[1], false,
+			       Collections.singleton(nparam));
 
 	// compute the escape function for the new graph
 	new_pig.G.propagate();
 
+	// all the actions from starter run in parallel with the threads
+	// that are started by the startee (it is not necessary to do a
+	// transitive closure, the threads that are indirectly launched by the
+	// startee will be considered when their direct started is analyzed.
 	bring_starter_actions(pig[0], new_pig, mu[0],
 			      pig[1].tau.activeThreadSet(), nt);
 
+	// all the actions from startee run in parallel with all the other
+	// threads that could be (transitively) started by the starter.
+	// Transitive closure is necessary since we may never revisit this
+	// actions (we must put the parallel relation action || thread  now).
 	bring_startee_actions(pig[1], new_pig, mu[1],
-			      pig[0].tau.activeThreadSet(), nt);
+			      active_threads_in_starter, nt);
 
 	return new_pig;
     }
 
+    // Returns the set of all the threads that can run in parallel with the
+    // startee thread: the threads that have already been processed +
+    // the threads that are still unanalyzed and the transitive closure of
+    // them (the threads that are directly/indirectly started by them)
+    // This method is expected to be called after adjusting the tau function
+    // for the startee node; that's why it doesn'y need to take it as an
+    // argument.
+    private static Set active_threads_outside_startee(ParIntGraph pig_starter,
+						      PointerAnalysis pa){
+	Set active_threads = new HashSet(pig_starter.tau.activeThreadSet());
+	thread_closure(active_threads,pa);
+	active_threads.addAll(processed_threads);
+	return active_threads;
+    }
+
+    // Transitively closes (extends) the set "threads" according to the 
+    // relation "thread nt1 launched thread nt2"
+    private static void thread_closure(Set threads, PointerAnalysis pa){
+	PAWorkList W = new PAWorkList();
+	W.addAll(threads);
+
+	while(!W.isEmpty()){
+	    PANode nt1 = (PANode) W.remove();
+	    HMethod[] ops = get_run_methods(nt1,pa);
+	    if(!analyzable_run_methods(ops,pa)) continue;
+	    for(int i=0;i<ops.length;i++){
+		PAThreadMap tau_nt1 = pa.getExtParIntGraph(ops[i]).tau;
+		Enumeration enum = tau_nt1.activeThreads();
+		while(enum.hasMoreElements()){
+		    PANode nt2 = (PANode) enum.nextElement();
+		    if(threads.add(nt2)) W.add(nt2);
+		}
+	    }
+	}
+    }
 
     // Add the actions from the starter into the new graph.
     private static void bring_starter_actions(final ParIntGraph pig_starter,
