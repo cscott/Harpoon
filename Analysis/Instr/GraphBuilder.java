@@ -44,7 +44,7 @@ import java.util.Collections;
  * information, depending on what is needed.  
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GraphBuilder.java,v 1.1.2.1 1999-11-05 22:32:42 pnkfelix Exp $
+ * @version $Id: GraphBuilder.java,v 1.1.2.2 1999-11-06 01:58:34 pnkfelix Exp $
  */
 public class GraphBuilder {
     
@@ -68,7 +68,7 @@ public class GraphBuilder {
 	    <BR> <B>requires:</B> regs is a <code>List</code> of
 	    <code>Temp</code>s. 
 	*/
-	private AssignmentNode(List regs) {
+	AssignmentNode(List regs) {
 	    super();
 	    registers = Collections.unmodifiableList(regs);
 	}
