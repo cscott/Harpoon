@@ -22,7 +22,7 @@ import java.util.Vector;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.6 1999-02-08 20:15:19 duncan Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.7 1999-02-16 21:14:14 duncan Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -47,40 +47,39 @@ public class ToNoSSA implements Derivation, TypeMap
 	   }});
     }
 
-  public ToNoSSA(QuadFactory newQF, Code code,
-		 Derivation derivation, TypeMap typeMap)
-    {
+  public ToNoSSA(final QuadFactory newQF, Code code,
+		 Derivation derivation, TypeMap typeMap) {
       Util.assert(code.getName().equals("quad-ssa") ||
 		  code.getName().equals("low-quad-ssa") ||
 		  code.getName().equals("quad-with-try"));
-      
+    
       final Hashtable dT = new Hashtable();
 
       m_ctm   = new CloningTempMap
-	(((Quad)code.getRootElement()).getFactory().tempFactory(),
-	 newQF.tempFactory());
+ 	  (((Quad)code.getRootElement()).getFactory().tempFactory(),
+	   newQF.tempFactory());
       m_quads = translate(newQF, derivation, typeMap, dT, code);
       m_derivation = new Derivation() {
-	public DList derivation(HCodeElement hce, Temp t) {
-	  return (DList)dT.get(new Tuple(new Object[] { hce, t }));
-	}
+	  public DList derivation(HCodeElement hce, Temp t) {
+	      return (DList)dT.get(new Tuple(new Object[] { hce, t }));
+	  }
       };
       m_typeMap = new TypeMap() {
-	public HClass typeMap(HCode hc, Temp t) {
-	  return (HClass)dT.get(t);
-	}
+	  public HClass typeMap(HCode hc, Temp t) {
+	      Util.assert(t.tempFactory()==newQF.tempFactory());
+	      return (HClass)dT.get(t);
+	  }
       };
-    }
+  }
 
   public DList derivation(HCodeElement hce, Temp t)
     { return m_derivation.derivation(hce, t); }
 
   public Quad getQuads()        { return m_quads; }
-  public HClass typeMap(HCode hc, Temp t) 
-    { 
-      // Ignores HCode parameter
-      return m_typeMap.typeMap(hc, t);
-    }
+  public HClass typeMap(HCode hc, Temp t) { 
+    // Ignores HCode parameter
+    return m_typeMap.typeMap(hc, t);
+  }
 
   /**
    * Translates the code in the supplied codeview from SSA to No-SSA form, 
@@ -236,7 +235,8 @@ class PHIVisitor extends LowQuadVisitor
       m_nm          = nm;
     }
 
-  public void visit(Quad q)    { /* Do nothing */ }
+  public void visit(Quad q) { }
+
   public void visit(AGET q)    { visit((Quad)q); }
   public void visit(ASET q)    { visit((Quad)q); }
   public void visit(CALL q)    { visit((Quad)q); }
@@ -374,12 +374,10 @@ class QuadMap
 								usemap);
 	  tmp         = defmap.tempMap((Temp)tupleElems.nextElement());
 	  m_dT.put(new Tuple(new Object[] { q, tmp }), dl);
-	  m_dT.remove(tmp);
 	}
 	else if (next instanceof Temp) {
 	  tmp = defmap.tempMap((Temp)next);
 	  m_dT.put(tmp, m_dT.get(next));
-	  m_dT.remove(next);
 	}
       }
     }
@@ -397,30 +395,29 @@ class QuadMap
   
   private void updateDTInfo(Quad qOld, Quad qNew)
     {
-      DList dl; HClass hc; Temp[] tDef, tUse;
+      DList dl; HClass hc; Temp[] tmps;
 
-      tDef = qOld.def(); tUse = qOld.use();
-      for (int i=0; i<tDef.length; i++) {
-	dl = DList.clone(m_derivation.derivation(qOld, tDef[i]), m_ctm);
-	if (dl!=null) m_dT.put(new Tuple(new Object[] {qNew,map(tDef[i])}),dl);
-	hc = m_typeMap.typeMap(m_code, tDef[i]);
-	if (hc!=null) m_dT.put(map(tDef[i]), hc);
-      }
-      for (int i=0; i<tUse.length; i++) {
-	dl = DList.clone(m_derivation.derivation(qOld, tUse[i]), m_ctm);
-	if (dl!=null) m_dT.put(new Tuple(new Object[] {qNew,map(tUse[i])}),dl);
-	hc = m_typeMap.typeMap(m_code, tUse[i]);
-	if (hc!=null) m_dT.put(map(tUse[i]), hc);
+      for (int j=0; j<2; j++) {
+	tmps = (j==0)?qOld.def():qOld.use();
+	for (int i=0; i<tmps.length; i++) {
+	  dl = DList.clone(m_derivation.derivation(qOld, tmps[i]), m_ctm);
+	  if (dl!=null) 
+	    m_dT.put(new Tuple(new Object[] {qNew,map(tmps[i])}),dl);
+	  hc = m_typeMap.typeMap(m_code, tmps[i]);
+	  if (hc!=null) {
+	    m_dT.put(map(tmps[i]), hc);
+	  }
+	}
       }
     }
-}
-
-class NameMap implements TempMap {
-  Hashtable h = new Hashtable();
-  public Temp tempMap(Temp t) {
-    while (h.containsKey(t)) { t = (Temp)h.get(t); }
-    return t;
+  
+  class NameMap implements TempMap {
+    Hashtable h = new Hashtable();
+    public Temp tempMap(Temp t) {
+      while (h.containsKey(t)) { t = (Temp)h.get(t); }
+      return t;
+    }
+    public void map(Temp Told, Temp Tnew) { h.put(Told, Tnew); }
   }
-  public void map(Temp Told, Temp Tnew) { h.put(Told, Tnew); }
 }
 
