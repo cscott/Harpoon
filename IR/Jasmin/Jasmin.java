@@ -8,6 +8,7 @@ import harpoon.Temp.Temp;
 import harpoon.ClassFile.*;
 import harpoon.Analysis.UseDef;
 import harpoon.Util.WorkSet;
+import harpoon.Util.Util;
 import harpoon.Analysis.Maps.TypeMap;
 
 import java.io.*;
@@ -24,7 +25,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.15 1999-09-13 05:42:33 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.16 1999-09-20 20:57:55 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -88,7 +89,8 @@ public class Jasmin {
     private void outputQuads(PrintStream out,HMethod hm, HCode hc) {
 	//Output assembly from the quads
 
-        TypeInfo tp=new TypeInfo(hc);
+	TypeMap tp=((QuadWithTry)hc).typeMap();
+	Util.assert(tp!=null, "Need TypeMap support");
 	//Build mapping from temps to localvars/stack
 	Object[] tuple=buildmap(hc,tp);
 	//Store the map
@@ -207,31 +209,31 @@ public class Jasmin {
 		operand="aaload";
 
 	    out.println(iflabel(q));
-	    load(q.objectref());
-	    load(q.index());
+	    load(q,q.objectref());
+	    load(q,q.index());
 	    out.println("    "+operand);
-	    store(q.dst());
+	    store(q,q.dst());
 	}
 
 	public void visit(ALENGTH q) {
 	    out.println(iflabel(q));
-	    load(q.objectref());
+	    load(q,q.objectref());
 	    out.println("    arraylength");
-	    store(q.dst());
+	    store(q,q.dst());
 	}
 
 	public void visit(ANEW q) {
 	    out.println(iflabel(q));
 	    for (int i=0;i<q.dimsLength();i++)
-		load(q.dims(i));
+		load(q,q.dims(i));
 	    out.println("    multianewarray "+q.hclass().getName().replace('.','/') +" "+q.dimsLength());
-            store(q.dst());
+            store(q,q.dst());
 	}
 
 	public void visit(ARRAYINIT q) {
 	    out.println(iflabel(q));
 	    if (q.value().length>0)
-		load(q.objectref());
+		load(q,q.objectref());
 	    for (int i=0;i<q.value().length;i++) {
 		if (q.type()==HClass.Boolean) {
 		    Boolean b=(Boolean)q.value()[i];
@@ -317,9 +319,9 @@ public class Jasmin {
 	    else
 		operand="aastore";
 
-	    load(q.objectref());
-	    load(q.index());
-	    load(q.src());
+	    load(q,q.objectref());
+	    load(q,q.index());
+	    load(q,q.src());
 	    out.println("    "+operand); 
 	}
 
@@ -334,7 +336,7 @@ public class Jasmin {
 	    if (dest.stack)
 		out.println("    pop");
 	    out.println("    bipush 1");
-	    store(q.dst());
+	    store(q,q.dst());
 	}
 
 	public void visit(METHOD q) {
@@ -356,7 +358,7 @@ public class Jasmin {
 	    Enumeration e=q.protectedQuads();
 	    String h=labeler(q);
 	    out.println(h+":");
-	    store(q.exceptionTemp());
+	    store(q,q.exceptionTemp());
 	    out.println("    goto "+labeler(q.next(0)));
 	    while(e.hasMoreElements()) {
 		Quad qd=(Quad)e.nextElement();
@@ -372,9 +374,9 @@ public class Jasmin {
 
 	public void visit(INSTANCEOF q) {
 	    out.println(iflabel(q));
-	    load(q.src());
+	    load(q,q.src());
 	    out.println("    instanceof "+q.hclass().getName().replace('.','/'));
-	    store(q.dst());
+	    store(q,q.dst());
 	}
 	
 	public void visit(CALL q) {
@@ -382,20 +384,20 @@ public class Jasmin {
 		//virtual method
 		out.println(iflabel(q));
 		for(int i=0;i<q.params().length;i++) {
-		    load(q.params(i)); 
+		    load(q,q.params(i)); 
 		}
 		out.println("    invokevirtual "+
 			    q.method().getDeclaringClass().getName().replace('.','/')
 			    +"/"+q.method().getName().replace('.','/')
 			    +q.method().getDescriptor().replace('.','/'));
 		if (q.retval()!=null)
-		    store(q.retval());
+		    store(q,q.retval());
 	    } 
 	    else {
 		if (q.isInterfaceMethod()) {
 		    out.println(iflabel(q));
 		    for(int i=0;i<q.params().length;i++) {
-			load(q.params(i)); 
+			load(q,q.params(i)); 
 		    }
 		    out.println("    invokeinterface "+
 				q.method().getDeclaringClass().getName().replace('.','/')
@@ -403,34 +405,34 @@ public class Jasmin {
 				+q.method().getDescriptor().replace('.','/')
 				+" "+q.params().length);
 		    if (q.retval()!=null)
-			store(q.retval());
+			store(q,q.retval());
 		}
 		else
 		    if(q.isStatic()) {
 			//static method
 			out.println(iflabel(q));
 			for(int i=0;i<q.params().length;i++) {
-			    load(q.params(i)); 
+			    load(q,q.params(i)); 
 			}
 			out.println("    invokestatic "+
 			    q.method().getDeclaringClass().getName().replace('.','/')
 			    +"/"+q.method().getName().replace('.','/')
 			    +q.method().getDescriptor().replace('.','/'));
 			if (q.retval()!=null)
-			    store(q.retval());
+			    store(q,q.retval());
 		    }
 		    else {
 					//non-virtual method
 			out.println(iflabel(q));
 			for(int i=0;i<q.params().length;i++) {
-			    load(q.params(i)); 
+			    load(q,q.params(i)); 
 			}
 			out.println("    invokespecial "+
 			    q.method().getDeclaringClass().getName().replace('.','/')
 			    +"/"+q.method().getName().replace('.','/')
 			    +q.method().getDescriptor().replace('.','/'));
 			if (q.retval()!=null)
-			    store(q.retval());
+			    store(q,q.retval());
 		    }
 	    }
 	}
@@ -446,52 +448,52 @@ public class Jasmin {
 	    }
 	    else {
 		out.println(iflabel(q));
-		load(q.objectref());
+		load(q,q.objectref());
 		out.println("    getfield "
 			    +q.field().getDeclaringClass().getName().replace('.','/')
 			    +"/"+q.field().getName().replace('.','/')
 			    +" "+q.field().getDescriptor().replace('.','/'));
 	    }
-	    store(q.dst());
+	    store(q,q.dst());
 	}
 
 	public void visit(CJMP q) {
 	    if (!skip.contains(q)) {
 		String target=labeler(q);
 		out.println(iflabel(q));
-		load(q.test());
+		load(q,q.test());
 		out.println("    ifne "+labeler(q.next(1)));
 	    }
 	}
 
 	public void visit(THROW q) {
 	    out.println(iflabel(q));
-	    load(q.throwable());
+	    load(q,q.throwable());
 	    out.println("    athrow");
 	}
 
 	public void visit(MONITORENTER q) {
 	    out.println(iflabel(q));
-	    load(q.lock());
+	    load(q,q.lock());
 	    out.println("    monitorenter");
 	}
 
 	public void visit(MONITOREXIT q) {
 	    out.println(iflabel(q));
-	    load(q.lock());
+	    load(q,q.lock());
 	    out.println("    monitorexit");
 	}
 
 	public void visit(MOVE q) {
 	    out.println(iflabel(q));
-	    load(q.src());
-	    store(q.dst());
+	    load(q,q.src());
+	    store(q,q.dst());
 	}
 
 	public void visit(NEW q) {
 	    out.println(iflabel(q));
 	    out.println("    new "+q.hclass().getName().replace('.','/'));
-	    store(q.dst());
+	    store(q,q.dst());
 	}
 
 	public void visit(LABEL q) {
@@ -517,7 +519,7 @@ public class Jasmin {
 			out.println("    ldc "+q.value().toString());
 	    }
 	    else out.println("    aconst_null");
-	    store(q.dst());
+	    store(q,q.dst());
 
 	    //HClass.Void
 	}
@@ -544,7 +546,7 @@ public class Jasmin {
 			    operand="    lreturn";
 			else
 			    operand="    areturn";
-		load(q.retval());
+		load(q,q.retval());
 		out.println(operand);
 	    }
 	    else
@@ -555,7 +557,7 @@ public class Jasmin {
 	    if (q.objectref()==null) {
 		//Static
 		out.println(iflabel(q));
-		load(q.src());
+		load(q,q.src());
 		out.println("    putstatic "
 			    +q.field().getDeclaringClass().getName().replace('.','/')
 			    +"/"+q.field().getName().replace('.','/')
@@ -563,8 +565,8 @@ public class Jasmin {
 	    }
 	    else {
 		out.println(iflabel(q));
-		load(q.objectref());
-		load(q.src());
+		load(q,q.objectref());
+		load(q,q.src());
 		out.println("    putfield "
 			    +q.field().getDeclaringClass().getName().replace('.','/')
 			    +"/"+q.field().getName().replace('.','/')
@@ -574,7 +576,7 @@ public class Jasmin {
 
 	public void visit(SWITCH q) {
             out.println(iflabel(q));
-	    load(q.index());
+	    load(q,q.index());
 	    out.println("    lookupswitch");
 	    for(int i=0;i<q.keysLength();i++)
 		out.println("    "+q.keys(i)+" : "+labeler(q.next(i)));
@@ -583,11 +585,11 @@ public class Jasmin {
 
 	public void visit(TYPECAST q) {
 	    out.println(iflabel(q));
-	    load(q.objectref());
+	    load(q,q.objectref());
 	    out.println("    checkcast "+q.hclass().getName().replace('.','/'));
 	    TempInfo dest=(TempInfo)tempmap.get(q.objectref());
 	    if (!dest.stack)
-		store(q.objectref());
+		store(q,q.objectref());
 	    else
 		out.println("    pop");
 	}
@@ -604,7 +606,7 @@ public class Jasmin {
 		
 		String l1=label(),l2=label();
 		for (int i=0;i<q.operandsLength();i++)
-		    load(q.operands(i));
+		    load(q,q.operands(i));
 		out.println("    lcmp");
 		q.next(0).accept(cjmp);
 		boolean testcjmp=cjmp.cjmp();
@@ -624,14 +626,14 @@ public class Jasmin {
 		    out.println(l1+":");
 		    out.println("    bipush 1");
 		    out.println(l2+":");
-		    store(q.dst());
+		    store(q,q.dst());
 		}
 		break;
 
 	    case Qop.LCMPGT:
 		l1=label();l2=label();
 		for (int i=0;i<q.operandsLength();i++)
-		    load(q.operands(i));
+		    load(q,q.operands(i));
 		out.println("    lcmp");
 
 	        q.next(0).accept(cjmp);
@@ -652,7 +654,7 @@ public class Jasmin {
 		    out.println(l1+":");
 		    out.println("    bipush 1");
 		    out.println(l2+":");
-		    store(q.dst());
+		    store(q,q.dst());
 		}
 		break;
 	    case Qop.DCMPEQ:
@@ -660,7 +662,7 @@ public class Jasmin {
 	    case Qop.DCMPGT:
 		l1=label();l2=label();
 		for (int i=0;i<q.operandsLength();i++)
-		    load(q.operands(i));
+		    load(q,q.operands(i));
 		out.println("    dcmpl");
 
 		q.next(0).accept(cjmp);
@@ -691,7 +693,7 @@ public class Jasmin {
 		    out.println(l1+":");
 		    out.println("    bipush 1");
 		    out.println(l2+":");
-		    store(q.dst());
+		    store(q,q.dst());
 		}
 		break;
 
@@ -700,7 +702,7 @@ public class Jasmin {
 	    case Qop.FCMPGT:
 		l1=label();l2=label();
 		for (int i=0;i<q.operandsLength();i++)
-		    load(q.operands(i));
+		    load(q,q.operands(i));
 		out.println("    fcmpl");
 
 		q.next(0).accept(cjmp);
@@ -732,7 +734,7 @@ public class Jasmin {
 		    out.println(l1+":");
 		    out.println("    bipush 1");
 		    out.println(l2+":");
-		    store(q.dst());
+		    store(q,q.dst());
 		}
 		break;
 
@@ -743,7 +745,7 @@ public class Jasmin {
 		l1=label();
 		l2=label();
 		for (int i=0;i<q.operandsLength();i++) {
-		    load(q.operands(i));
+		    load(q,q.operands(i));
 		}
 		q.next(0).accept(cjmp);
 		testcjmp=cjmp.cjmp();
@@ -766,7 +768,7 @@ public class Jasmin {
 		    out.println(l2+":");
 		    //Need code to do jump/etc...
 		    //To store 0/1
-		    store(q.dst());
+		    store(q,q.dst());
 		}
 		break;
 	    case Qop.D2F:
@@ -818,19 +820,19 @@ public class Jasmin {
 	    case Qop.LXOR:
 		String cbase=Qop.toString(q.opcode());
 		for (int i=0;i<q.operandsLength();i++) {
-		    load(q.operands(i));
+		    load(q,q.operands(i));
 		}
 		out.println("    "+cbase);
-		store(q.dst());
+		store(q,q.dst());
 		break;
 	    default:
 		out.println(q.toString()+" unimplemented");
 	    }
 	}
 
-	private void store(Temp t) {
+	private void store(Quad q,Temp t) {
 	    // Should be ok to pass null for HCodeElement param
-	    HClass tp=tm.typeMap(null,t); 
+	    HClass tp=tm.typeMap(q,t); 
 	    String operand="***store error";
 	    if ((tp==HClass.Boolean)||
 		(tp==HClass.Byte)||
@@ -854,10 +856,10 @@ public class Jasmin {
 		out.println("    "+operand+(new Integer(dest.localvar)).toString());
 	}
 
-	private void load(Temp t) {
+	private void load(Quad q,Temp t) {
 	    String operand="***load error";
 	    // Should be ok to pass null for HCodeElement param
-	    HClass tp=tm.typeMap(null,t);
+	    HClass tp=tm.typeMap(q,t);
 	    if ((tp==HClass.Boolean)||
 		(tp==HClass.Byte)||
 		(tp==HClass.Char)||
@@ -955,7 +957,7 @@ public class Jasmin {
 	//appropriate local variables
 	for(int i=0;i<m.params().length;i++) {
 	    stacktemps.put(m.params(i),new TempInfo(j++));
-	    HClass hclass=tp.typeMap(null,m.params(i));
+	    HClass hclass=tp.typeMap(m,m.params(i));
 	    if ((hclass==HClass.Double)||(hclass==HClass.Long))
 		j++;
 	}
@@ -1037,8 +1039,7 @@ public class Jasmin {
 		if (broken) {
 		    // If this stack allocation failed,
 		    // allocate it to a local variable.
-		    // Should be ok to pass null as HCodeElement param
-		    HClass hclass=tp.typeMap(null,next);
+		    HClass hclass=tp.typeMap(hdefs[0],next);
 		    stacktemps.put(next,new TempInfo(j++));
 		    if ((hclass==HClass.Double)||(hclass==HClass.Long))
 			j++;
@@ -1051,7 +1052,8 @@ public class Jasmin {
 	for (int i=0;i<alltemp.length;i++) {
 	    if (!stacktemps.containsKey(alltemp[i])) {
 		// Should be ok to pass null as HCodeElement param
-		HClass hclass=tp.typeMap(null,alltemp[i]);
+		HCodeElement[] huses=ud.useMap(code,alltemp[i]);	     
+ 		HClass hclass=tp.typeMap(huses[0],alltemp[i]);
 		stacktemps.put(alltemp[i],new TempInfo(j++));
 		if ((hclass==HClass.Double)||(hclass==HClass.Long))
 		    j++;
