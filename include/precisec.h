@@ -35,8 +35,8 @@ extern inline JNIEnv *FNI_GetJNIEnv(void) { return FNI_JNIEnv; }
 
 /* select which calling convention you'd like to use in the generated code */
 #if !defined(USE_PAIR_RETURN) && !defined(USE_GLOBAL_SETJMP)
-  /* default is USE_GLOBAL_SETJMP */
-# define USE_GLOBAL_SETJMP
+  /* default is USE_PAIR_RETURN */
+# define USE_PAIR_RETURN
 #endif
 
 #ifdef USE_PAIR_RETURN /* ----------------------------------------------- */
