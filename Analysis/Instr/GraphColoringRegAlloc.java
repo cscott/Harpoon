@@ -58,7 +58,7 @@ import java.util.Date;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.36 2000-10-31 01:41:26 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.37 2000-11-01 00:31:09 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
 
@@ -283,22 +283,23 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	aggressivelyCoalesce = aggressiveCoalesce;
     }
 
-    private HashMap replToOrig = new HashMap();
+    private LinkedList replOrigPairs = new LinkedList(); 
     private void replace(Instr orig, Instr repl) {
 	Instr.replace(orig, repl);
 	back(repl, orig);
-	replToOrig.put(repl, orig);
+	replOrigPairs.addFirst(Default.pair(repl, orig));
     }
     private void undoCoalescing() {
 	if (SCARY_OUTPUT) System.out.print(" UNDO");
-	for(Iterator ks=replToOrig.keySet().iterator();ks.hasNext();){
-	    Instr repl = (Instr) ks.next();
-	    Instr orig = (Instr) replToOrig.get(repl);   
+	for(Iterator prs=replOrigPairs.iterator();prs.hasNext();){
+	    List pr = (List) prs.next();
+	    Instr repl = (Instr) pr.get(0);
+	    Instr orig = (Instr) pr.get(1);
 	    // System.out.println("UNDO: replacing "+repl+" w/ "+orig);
 	    // System.out.println("==:"+(repl==orig)+" equls:"+repl.equals(orig));
 	    Instr.replace(repl, orig);
 	}
-	replToOrig.clear();
+	replOrigPairs.clear();
 	willRemoveLater.clear();
 	webPrecolor.clear();
 	// remap = EqTempSets.make(this, false);
