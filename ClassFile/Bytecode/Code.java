@@ -14,7 +14,7 @@ import java.util.Vector;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.5 1998-08-04 01:56:56 cananian Exp $
+ * @version $Id: Code.java,v 1.6 1998-08-04 04:09:00 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -90,9 +90,12 @@ public class Code extends HCode {
 	if (merge[pc] > 1)
 	  v.addElement(m = new InMerge(sf, getLine(pc), merge[pc] /*arity*/));
 	// make Instr object for this pc.
-	if (Op.isBranch(code[pc]))
-	  sparse[pc] = new InCti(sf, line, code, pc);
-	else
+	if (Op.isBranch(code[pc])) {
+	  if (code[pc]==Op.TABLESWITCH || code[pc]==Op.LOOKUPSWITCH)
+	    sparse[pc] = new InSwitch(sf, line, code, pc);
+	  else
+	    sparse[pc] = new InCti(sf, line, code, pc);
+	} else
 	  sparse[pc] = new InGen(sf, line, code, pc, this);
 	v.addElement(sparse[pc]);
 	// Daisy-chain merge node if appropriate.

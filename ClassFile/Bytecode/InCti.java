@@ -6,7 +6,7 @@ import harpoon.Util.Util;
  * <code>InCti</code> is used for control-transfer instructions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InCti.java,v 1.6 1998-08-04 03:33:19 cananian Exp $
+ * @version $Id: InCti.java,v 1.7 1998-08-04 04:09:00 cananian Exp $
  * @see Instr
  */
 public class InCti extends Instr {
@@ -18,7 +18,6 @@ public class InCti extends Instr {
     this.opcode=code[pc];
     this.arity = Op.branchTargets(code, pc).length;
     if (!Op.isUnconditionalBranch(code[pc])) this.arity++;
-    // FIXME tableswitch, lookupswitch
   }
 
   // Provide run-time checks on arity.
@@ -48,7 +47,6 @@ public class InCti extends Instr {
       if (i<targets.length-1)
 	sb.append(", ");
     }
-    // FIXME: doesn't handle tableswitch, lookupswitch
     return sb.toString();
   }
 }
