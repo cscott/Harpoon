@@ -482,7 +482,8 @@ mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.S \
 	    $(srcdir)/ia64_save_regs_in_stack.s \
 	    $(srcdir)/sparc_netbsd_mach_dep.s $(UTILS)
 	rm -f mach_dep.o
-	./if_mach MIPS IRIX5 $(AS) -o mach_dep.o $(srcdir)/mips_sgi_mach_dep.S
+	./if_mach MIPS IRIX5 $(CC) -E $(srcdir)/mips_sgi_mach_dep.S \
+	 | ./if_mach MIPS IRIX5 grep -v "^\#" > $(srcdir)/mips_sgi_mach_dep.s
 	./if_mach MIPS RISCOS $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
 	./if_mach MIPS ULTRIX $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
 	./if_mach POWERPC MACOSX $(AS) -o mach_dep.o $(srcdir)/powerpc_macosx_mach_dep.s
@@ -552,7 +553,7 @@ if_not_there: $(srcdir)/if_not_there.c
 clean: 
 	rm -f gc.a *.o *.exe tests/*.o gctest gctest_dyn_link test_cpp \
 	      setjmp_test  mon.out gmon.out a.out core if_not_there if_mach \
-	      threadlibs $(CORD_OBJS) cord/cordtest cord/de
+	      threadlibs $(CORD_OBJS) cord/cordtest cord/de mips_sgi_mach_dep.s
 	-rm -f *~
 
 gctest: tests/test.o gc.a $(UTILS)

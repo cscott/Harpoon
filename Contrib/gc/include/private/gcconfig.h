@@ -1124,7 +1124,7 @@
 #	endif
 	extern char etext[];
 	extern char * GC_FreeBSDGetDataStart();
-#	define DATASTART GC_FreeBSDGetDataStart(&_etext)
+#	define DATASTART GC_FreeBSDGetDataStart(0x1000, &etext)
 #   endif
 #   ifdef NETBSD
 #	define OS_TYPE "NETBSD"
@@ -1930,29 +1930,19 @@
   /* at build time, though we feel free to adjust it slightly.		*/
   /* Define NEED_CALLINFO if we either save the call stack or 		*/
   /* GC_ADD_CALLER is defined.						*/
-#ifdef LINUX
-# include <features.h>
-# if __GLIBC__ == 2 && __GLIBC_MINOR__ >= 1 || __GLIBC__ > 2
-#   define HAVE_BUILTIN_BACKTRACE
-# endif
-#endif
+  /* GC_CAN_SAVE_CALL_STACKS is set in gc.h.				*/
 
 #if defined(SPARC)
-# define CAN_SAVE_CALL_STACKS
 # define CAN_SAVE_CALL_ARGS
 #endif
 #if (defined(I386) || defined(X86_64)) && defined(LINUX)
 	    /* SAVE_CALL_CHAIN is supported if the code is compiled to save	*/
 	    /* frame pointers by default, i.e. no -fomit-frame-pointer flag.	*/
-# define CAN_SAVE_CALL_STACKS
 # define CAN_SAVE_CALL_ARGS
-#endif
-#if defined(HAVE_BUILTIN_BACKTRACE) && !defined(CAN_SAVE_CALL_STACKS)
-# define CAN_SAVE_CALL_STACKS
 #endif
 
 # if defined(SAVE_CALL_COUNT) && !defined(GC_ADD_CALLER) \
-	     && defined(CAN_SAVE_CALL_STACKS)
+	     && defined(GC_CAN_SAVE_CALL_STACKS)
 #   define SAVE_CALL_CHAIN 
 # endif
 # ifdef SAVE_CALL_CHAIN

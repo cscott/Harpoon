@@ -137,7 +137,7 @@ user_threads.c backgraph.c win32_threads.c
 # linuxthread semaphore functions get linked:
 libgc_la_LIBADD = @addobjs@ $(THREADLIBS)
 libgc_la_DEPENDENCIES = @addobjs@
-libgc_la_LDFLAGS = -version-info 1:1:0
+libgc_la_LDFLAGS = -version-info 1:2:0
 
 EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
 mips_sgi_mach_dep.S mips_ultrix_mach_dep.s powerpc_macosx_mach_dep.s \
@@ -148,7 +148,8 @@ sparc_sunos4_mach_dep.s ia64_save_regs_in_stack.s gc_cpp.cc
 AM_CXXFLAGS = @GC_CFLAGS@
 AM_CFLAGS = @GC_CFLAGS@
 
-check_PROGRAMS = gctest test_cpp
+check_PROGRAMS = gctest @addtests@
+EXTRA_PROGRAMS = test_cpp
 
 # gctest_OBJECTS = test.o
 gctest_SOURCES = 
@@ -225,7 +226,8 @@ am_libgc_la_OBJECTS = allchblk.lo alloc.lo blacklst.lo checksums.lo \
 	reclaim.lo solaris_pthreads.lo solaris_threads.lo specific.lo \
 	stubborn.lo typd_mlc.lo user_threads.lo backgraph.lo win32_threads.lo
 libgc_la_OBJECTS = $(am_libgc_la_OBJECTS)
-check_PROGRAMS = gctest$(EXEEXT) test_cpp$(EXEEXT)
+EXTRA_PROGRAMS = test_cpp$(EXEEXT)
+check_PROGRAMS = gctest$(EXEEXT) @addtests@
 am_gctest_OBJECTS =
 gctest_OBJECTS = $(am_gctest_OBJECTS)
 gctest_DEPENDENCIES = test.o ./libgc.la
@@ -726,16 +728,15 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-am uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLTLIBRARIES
 
-# The following hack produces a warning from automake, but we need it in order 
-# to build a file from a subdirectory. FIXME.
+
 test.o:	$(srcdir)/tests/test.c
 	$(COMPILE) -c $(srcdir)/tests/test.c
 # 	Using $< in the above seems to fail with the HP/UX on Itanium make.
 test_cpp.o:	$(srcdir)/tests/test_cpp.cc
 	$(COMPILE) -c $(srcdir)/tests/test_cpp.cc
 $(all_objs) : include/private/gcconfig.h include/private/gc_priv.h \
-include/private/gc_hdrs.h include/gc.h include/gc_gcj.h include/gc_mark.h \
-@addincludes@
+include/private/gc_hdrs.h include/gc.h include/gc_gcj.h \
+include/gc_mark.h @addincludes@
 
 .s.lo:
 	$(LTCOMPILE) -Wp,-P -x assembler-with-cpp -c $<
