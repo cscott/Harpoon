@@ -1,0 +1,15 @@
+HOW TO USE
+----------
+
+1) Read ../RefImpl/README and make sure the whole system works.
+2) Copy ThreadBenchAutomated.java and the input file(s) (or/and "default") to ../RefImpl/bin and make it your current directory. (please, dont ask me why...)
+3) Adjust your $CLASSPATH variable. It shouldn't take much time. Mine looks like this:
+	export CLASSPATH=.:/home/dumi/projects/FLEX/Harpoon/Benchmarks/RTJ/RefImpl/lib/foundation.jar:/home/dumi/projects/FLEX/Harpoon/Benchmarks/RTJ/RefImpl/realtime.jar:/usr/local/j2sdk1.4.0/jre/lib/:/usr/local/j2sdk1.4.0/jre/lib/rt.jar
+
+Make sure no other realtime.jar file (or other Realtime Java files) appears in $CLASSPATH before RefImpl/realtime.jar.
+
+4) Compile ThreadBenchAutomated.java with standart "javac" in the standart way.
+5) Run something like:
+	 ./tjvm -Djava.class.path=$CLASSPATH ThreadBenchAutomated <input_file>
+
+	where <input_file> is either a file, or nothing (in which case it is considered to be the file "default"). The input files should have a certain format, which (hopefully) can be learnt by taking a look at "default" and other input files.
