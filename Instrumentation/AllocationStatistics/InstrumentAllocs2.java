@@ -39,16 +39,36 @@ import java.util.Iterator;
 import java.util.Map;
 
 
-/**
- * <code>InstrumentAllocs2</code>
- * 
- * @author Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: InstrumentAllocs2.java,v 1.1 2003-02-08 23:22:39 salcianu Exp $
- */
+/** <code>InstrumentAllocs2</code> can be used together with
+    <code>InstrumentedAllocationStrategy</code> to instrument the
+    allocation sites from a program to record how many times each of
+    them is executed, and the total amount of memory allocated at each
+    site.  
+
+    <p>
+    Unlike <code>InstrumentAllocs</code> (which takes place at Quad
+    level), <code>InstrumentAllocs2</code> operates at the Tree form
+    level.  It changes the allocation properties of each allocation
+    site such that the code generated for it in Tree form will contain
+    a call to an instrumentation method, passing it both an unique
+    identifier and the length of the memory allocated there.
+
+    @author Alexandru Salcianu <salcianu@MIT.EDU>
+    @version $Id: InstrumentAllocs2.java,v 1.2 2003-02-08 23:35:11 salcianu Exp $ */
 public class InstrumentAllocs2 extends MethodMutator
     implements java.io.Serializable {
     
-    /** Creates a <code>InstrumentAllocs2</code>. */
+    /** Creates a <code>InstrumentAllocs2</code> object.
+
+	@param parent code factory providing the original,
+	uninstrumented code
+
+	@param main main method of the program
+
+	@param linker linker for the analyzed program
+
+	@param an provides a globally unique integer ID for each
+	allocation site from the program */
     public InstrumentAllocs2(HCodeFactory parent, HMethod main,
 			     Linker linker, AllocationNumbering an) {
 	super(parent);
