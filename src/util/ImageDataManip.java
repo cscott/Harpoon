@@ -435,11 +435,13 @@ public class ImageDataManip {
 				 x, y, width, height,
 				 id.time, id.id, id.command, id.receiverID,
 				 id.c1, id.c2, id.c3, id.lastImage, id.labelID,
-				 id.conditional, id.angle);
+				 id.conditional, id.angle, id.blueThreshold1,
+				 id.blueThreshold2);
 	} else {
 	    return new ImageData(rvals, gvals, bvals,
 				 x, y, width, height,
-				 0, 0, 0, 0, (float)0.0, (float)0.0, (float)0.0, false, (byte)0, false, 0);
+				 0, 0, 0, 0, (float)0.0, (float)0.0, 
+				 (float)0.0, false, (byte)0, false, 0, 0, 0);
 	}
     }
 
@@ -452,7 +454,7 @@ public class ImageDataManip {
     public static ImageData create(float c1, float c2, float c3) {
 	return new ImageData(null, null, null,
 			     0, 0, 0, 0, 0, 0, 0, 0,
-			     c1, c2, c3, false, (byte)0, false, 0);
+			     c1, c2, c3, false, (byte)0, false, 0, 0, 0);
     }
 
     /**
