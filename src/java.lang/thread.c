@@ -187,12 +187,17 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   {
     jclass itlCls; jmethodID itlInitID;
     itlCls  = (*env)->FindClass(env, "java/lang/InheritableThreadLocal");
-    assert(!((*env)->ExceptionOccurred(env)));
-    itlInitID = /* hopefully clinit is idempotent! */
-      (*env)->GetStaticMethodID(env, itlCls, "<clinit>","()V");
-    assert(!((*env)->ExceptionOccurred(env)));
-    (*env)->CallStaticVoidMethod(env, itlCls, itlInitID);
-    assert(!((*env)->ExceptionOccurred(env)));
+    if ((*env)->ExceptionOccurred(env)) {
+      /* "minilib" version of classpath library omits this class.
+       * don't worry about initializing it, then. */
+      (*env)->ExceptionClear(env);
+    } else {
+      itlInitID = /* hopefully clinit is idempotent! */
+	(*env)->GetStaticMethodID(env, itlCls, "<clinit>","()V");
+      assert(!((*env)->ExceptionOccurred(env)));
+      (*env)->CallStaticVoidMethod(env, itlCls, itlInitID);
+      assert(!((*env)->ExceptionOccurred(env)));
+    }
   }
 #endif /* CLASSPATH_VERSION */
   /* finish constructing the thread object */
