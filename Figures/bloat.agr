@@ -1,6 +1,6 @@
 # Grace project file
 #
-@version 50112
+@version 50113
 @page size 792, 612
 @page scroll 5%
 @page inout 5%
@@ -166,7 +166,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Fri Jun 20 16:10:00 2003"
+@timestamp def "Mon Nov 10 23:04:00 2003"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -364,8 +364,8 @@
 @    frame background pattern 0
 @    s0 hidden false
 @    s0 type xy
-@    s0 symbol 0
-@    s0 symbol size 1.000000
+@    s0 symbol 1
+@    s0 symbol size 0.800000
 @    s0 symbol color 1
 @    s0 symbol pattern 1
 @    s0 symbol fill color 1
@@ -376,7 +376,7 @@
 @    s0 symbol char font 0
 @    s0 symbol skip 0
 @    s0 line type 1
-@    s0 line linestyle 1
+@    s0 line linestyle 2
 @    s0 line linewidth 1.0
 @    s0 line color 1
 @    s0 line pattern 1
@@ -413,11 +413,11 @@
 @    s0 legend  "compress"
 @    s1 hidden false
 @    s1 type xy
-@    s1 symbol 0
-@    s1 symbol size 1.000000
-@    s1 symbol color 2
+@    s1 symbol 2
+@    s1 symbol size 0.800000
+@    s1 symbol color 1
 @    s1 symbol pattern 1
-@    s1 symbol fill color 2
+@    s1 symbol fill color 1
 @    s1 symbol fill pattern 0
 @    s1 symbol linewidth 1.0
 @    s1 symbol linestyle 1
@@ -425,9 +425,9 @@
 @    s1 symbol char font 0
 @    s1 symbol skip 0
 @    s1 line type 1
-@    s1 line linestyle 1
+@    s1 line linestyle 3
 @    s1 line linewidth 1.0
-@    s1 line color 2
+@    s1 line color 1
 @    s1 line pattern 1
 @    s1 baseline type 0
 @    s1 baseline off
@@ -449,7 +449,7 @@
 @    s1 avalue offset 0.000000 , 0.000000
 @    s1 errorbar on
 @    s1 errorbar place both
-@    s1 errorbar color 2
+@    s1 errorbar color 1
 @    s1 errorbar pattern 1
 @    s1 errorbar size 1.000000
 @    s1 errorbar linewidth 1.0
@@ -462,11 +462,11 @@
 @    s1 legend  "jess"
 @    s2 hidden false
 @    s2 type xy
-@    s2 symbol 0
-@    s2 symbol size 1.000000
-@    s2 symbol color 3
+@    s2 symbol 3
+@    s2 symbol size 0.800000
+@    s2 symbol color 1
 @    s2 symbol pattern 1
-@    s2 symbol fill color 3
+@    s2 symbol fill color 1
 @    s2 symbol fill pattern 0
 @    s2 symbol linewidth 1.0
 @    s2 symbol linestyle 1
@@ -474,9 +474,9 @@
 @    s2 symbol char font 0
 @    s2 symbol skip 0
 @    s2 line type 1
-@    s2 line linestyle 1
+@    s2 line linestyle 4
 @    s2 line linewidth 1.0
-@    s2 line color 3
+@    s2 line color 1
 @    s2 line pattern 1
 @    s2 baseline type 0
 @    s2 baseline off
@@ -498,7 +498,7 @@
 @    s2 avalue offset 0.000000 , 0.000000
 @    s2 errorbar on
 @    s2 errorbar place both
-@    s2 errorbar color 3
+@    s2 errorbar color 1
 @    s2 errorbar pattern 1
 @    s2 errorbar size 1.000000
 @    s2 errorbar linewidth 1.0
@@ -511,11 +511,11 @@
 @    s2 legend  "raytrace"
 @    s3 hidden false
 @    s3 type xy
-@    s3 symbol 0
-@    s3 symbol size 1.000000
-@    s3 symbol color 4
+@    s3 symbol 4
+@    s3 symbol size 0.800000
+@    s3 symbol color 1
 @    s3 symbol pattern 1
-@    s3 symbol fill color 4
+@    s3 symbol fill color 1
 @    s3 symbol fill pattern 0
 @    s3 symbol linewidth 1.0
 @    s3 symbol linestyle 1
@@ -523,9 +523,9 @@
 @    s3 symbol char font 0
 @    s3 symbol skip 0
 @    s3 line type 1
-@    s3 line linestyle 1
+@    s3 line linestyle 2
 @    s3 line linewidth 1.0
-@    s3 line color 4
+@    s3 line color 1
 @    s3 line pattern 1
 @    s3 baseline type 0
 @    s3 baseline off
@@ -547,7 +547,7 @@
 @    s3 avalue offset 0.000000 , 0.000000
 @    s3 errorbar on
 @    s3 errorbar place both
-@    s3 errorbar color 4
+@    s3 errorbar color 1
 @    s3 errorbar pattern 1
 @    s3 errorbar size 1.000000
 @    s3 errorbar linewidth 1.0
@@ -560,11 +560,11 @@
 @    s3 legend  "db"
 @    s4 hidden false
 @    s4 type xy
-@    s4 symbol 0
-@    s4 symbol size 1.000000
-@    s4 symbol color 5
+@    s4 symbol 5
+@    s4 symbol size 0.800000
+@    s4 symbol color 1
 @    s4 symbol pattern 1
-@    s4 symbol fill color 5
+@    s4 symbol fill color 1
 @    s4 symbol fill pattern 0
 @    s4 symbol linewidth 1.0
 @    s4 symbol linestyle 1
@@ -572,9 +572,9 @@
 @    s4 symbol char font 0
 @    s4 symbol skip 0
 @    s4 line type 1
-@    s4 line linestyle 1
+@    s4 line linestyle 6
 @    s4 line linewidth 1.0
-@    s4 line color 5
+@    s4 line color 1
 @    s4 line pattern 1
 @    s4 baseline type 0
 @    s4 baseline off
@@ -596,7 +596,7 @@
 @    s4 avalue offset 0.000000 , 0.000000
 @    s4 errorbar on
 @    s4 errorbar place both
-@    s4 errorbar color 5
+@    s4 errorbar color 1
 @    s4 errorbar pattern 1
 @    s4 errorbar size 1.000000
 @    s4 errorbar linewidth 1.0
@@ -609,11 +609,11 @@
 @    s4 legend  "javac"
 @    s5 hidden false
 @    s5 type xy
-@    s5 symbol 0
-@    s5 symbol size 1.000000
-@    s5 symbol color 6
+@    s5 symbol 6
+@    s5 symbol size 0.800000
+@    s5 symbol color 1
 @    s5 symbol pattern 1
-@    s5 symbol fill color 6
+@    s5 symbol fill color 1
 @    s5 symbol fill pattern 0
 @    s5 symbol linewidth 1.0
 @    s5 symbol linestyle 1
@@ -621,9 +621,9 @@
 @    s5 symbol char font 0
 @    s5 symbol skip 0
 @    s5 line type 1
-@    s5 line linestyle 1
+@    s5 line linestyle 3
 @    s5 line linewidth 1.0
-@    s5 line color 6
+@    s5 line color 1
 @    s5 line pattern 1
 @    s5 baseline type 0
 @    s5 baseline off
@@ -645,7 +645,7 @@
 @    s5 avalue offset 0.000000 , 0.000000
 @    s5 errorbar on
 @    s5 errorbar place both
-@    s5 errorbar color 6
+@    s5 errorbar color 1
 @    s5 errorbar pattern 1
 @    s5 errorbar size 1.000000
 @    s5 errorbar linewidth 1.0
@@ -658,11 +658,11 @@
 @    s5 legend  "mpegaudio"
 @    s6 hidden false
 @    s6 type xy
-@    s6 symbol 0
-@    s6 symbol size 1.000000
-@    s6 symbol color 7
+@    s6 symbol 7
+@    s6 symbol size 0.800000
+@    s6 symbol color 1
 @    s6 symbol pattern 1
-@    s6 symbol fill color 7
+@    s6 symbol fill color 1
 @    s6 symbol fill pattern 0
 @    s6 symbol linewidth 1.0
 @    s6 symbol linestyle 1
@@ -670,9 +670,9 @@
 @    s6 symbol char font 0
 @    s6 symbol skip 0
 @    s6 line type 1
-@    s6 line linestyle 1
+@    s6 line linestyle 8
 @    s6 line linewidth 1.0
-@    s6 line color 7
+@    s6 line color 1
 @    s6 line pattern 1
 @    s6 baseline type 0
 @    s6 baseline off
@@ -694,7 +694,7 @@
 @    s6 avalue offset 0.000000 , 0.000000
 @    s6 errorbar on
 @    s6 errorbar place both
-@    s6 errorbar color 7
+@    s6 errorbar color 1
 @    s6 errorbar pattern 1
 @    s6 errorbar size 1.000000
 @    s6 errorbar linewidth 1.0
@@ -707,11 +707,11 @@
 @    s6 legend  "mtrt"
 @    s7 hidden false
 @    s7 type xy
-@    s7 symbol 0
-@    s7 symbol size 1.000000
-@    s7 symbol color 8
+@    s7 symbol 8
+@    s7 symbol size 0.800000
+@    s7 symbol color 1
 @    s7 symbol pattern 1
-@    s7 symbol fill color 8
+@    s7 symbol fill color 1
 @    s7 symbol fill pattern 0
 @    s7 symbol linewidth 1.0
 @    s7 symbol linestyle 1
@@ -719,9 +719,9 @@
 @    s7 symbol char font 0
 @    s7 symbol skip 0
 @    s7 line type 1
-@    s7 line linestyle 1
+@    s7 line linestyle 5
 @    s7 line linewidth 1.0
-@    s7 line color 8
+@    s7 line color 1
 @    s7 line pattern 1
 @    s7 baseline type 0
 @    s7 baseline off
@@ -743,7 +743,7 @@
 @    s7 avalue offset 0.000000 , 0.000000
 @    s7 errorbar on
 @    s7 errorbar place both
-@    s7 errorbar color 8
+@    s7 errorbar color 1
 @    s7 errorbar pattern 1
 @    s7 errorbar size 1.000000
 @    s7 errorbar linewidth 1.0
@@ -756,11 +756,11 @@
 @    s7 legend  "jack"
 @    s8 hidden false
 @    s8 type xy
-@    s8 symbol 10
+@    s8 symbol 0
 @    s8 symbol size 0.910000
-@    s8 symbol color 9
+@    s8 symbol color 1
 @    s8 symbol pattern 1
-@    s8 symbol fill color 9
+@    s8 symbol fill color 1
 @    s8 symbol fill pattern 0
 @    s8 symbol linewidth 2.0
 @    s8 symbol linestyle 1
@@ -769,8 +769,8 @@
 @    s8 symbol skip 0
 @    s8 line type 1
 @    s8 line linestyle 1
-@    s8 line linewidth 2.0
-@    s8 line color 9
+@    s8 line linewidth 3.0
+@    s8 line color 1
 @    s8 line pattern 1
 @    s8 baseline type 1
 @    s8 baseline off
@@ -792,7 +792,7 @@
 @    s8 avalue offset 0.000000 , 0.000000
 @    s8 errorbar on
 @    s8 errorbar place both
-@    s8 errorbar color 9
+@    s8 errorbar color 1
 @    s8 errorbar pattern 1
 @    s8 errorbar size 1.000000
 @    s8 errorbar linewidth 1.0
