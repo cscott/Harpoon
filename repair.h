@@ -19,8 +19,10 @@ class Repair {
   void detectcycles(CoerceSentence *cs,WorkSet *searchset,WorkSet *cycleset, WorkRelation *wr);
   WorkSet * searchcycles(WorkRelation *wr);
   model * globalmodel;
-  Action ** repairactions;
+
+  Action ** repairactions;  // the available repair actions
   int numactions;
+
   WorkSet *removedsentences;
 };
 #endif

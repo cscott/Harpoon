@@ -160,6 +160,8 @@ int processobject::processstatement(Statement *s, Hashtable *env) {
 
 
 
+/* processed the given constraint and if it's not satisfied, 
+   displays a message and tries to repair the constraint */
 bool processobject::processconstraint(Constraint *c) {
   State *st=new State(c,globalmodel->gethashtable());
   bool clean=true;

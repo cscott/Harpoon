@@ -56,7 +56,7 @@ class SentenceArray {
 };
 
 
-
+// represents a constraint in normal form
 class NormalForm {
  public:
   NormalForm(Constraint *c);
@@ -66,7 +66,7 @@ class NormalForm {
   NormalForm(Rule *r);
  private:
   Constraint *c; /*keep reference for quantifiers */
-  CoerceSentence **sentences;
+  CoerceSentence **sentences;  // the number of sentences in this constraint
   int length;
 };
 

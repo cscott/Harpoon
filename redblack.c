@@ -1,4 +1,4 @@
-static char rcsid[]="$Id: redblack.c,v 1.2 2003-03-02 23:06:33 cristic Exp $";
+static char rcsid[]="$Id: redblack.c,v 1.3 2003-03-03 02:39:40 cristic Exp $";
 
 /*
    Redblack balanced tree algorithm
@@ -921,9 +921,8 @@ dumptree(struct rbnode *x, int n)
 
 /*
  * $Log: redblack.c,v $
- * Revision 1.2  2003-03-02 23:06:33  cristic
- *
- * Added some comments.
+ * Revision 1.3  2003-03-03 02:39:40  cristic
+ * *** empty log message ***
  *
  * Revision 1.5  2002/01/30 07:54:53  damo
  * Fixed up the libtool versioning stuff (finally)

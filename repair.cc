@@ -37,6 +37,7 @@ Repair::Repair(model *m) {
   delete(list);
 }
 
+
 void Repair::repaireleexpr(Constraint *c, processobject *po, Elementexpr *ee, Hashtable *env) {
   /* We're here because we have a bad elementexpr */
   switch(ee->gettype()) {
@@ -100,6 +101,7 @@ void Repair::repaireleexpr(Constraint *c, processobject *po, Elementexpr *ee, Ha
   }
 }
 
+
 void Repair::repairconstraint(Constraint *c, processobject *po, Hashtable *env) {
   NormalForm *nf=globalmodel->getnormalform(c);
   CoerceSentence *coercionstate=nf->closestmatch(removedsentences,po,env);
@@ -122,6 +124,8 @@ void Repair::repairconstraint(Constraint *c, processobject *po, Hashtable *env) 
   }
 }
 
+
+// returns the action that can repair the given constraint
 Action * Repair::findrepairaction(CoercePredicate *cp) {
   for(int i=0;i<numactions;i++) {
     if (repairactions[i]->canrepair(cp))
@@ -129,6 +133,7 @@ Action * Repair::findrepairaction(CoercePredicate *cp) {
   }
   return NULL;
 }
+
 
 bool Repair::analyzetermination() {
   WorkRelation *wr=new WorkRelation(true);
@@ -150,6 +155,8 @@ bool Repair::analyzetermination() {
     return true;
 }
 
+
+
 bool Repair::breakcycles(WorkSet *removeedge, int number, WorkSet *cyclelinks, WorkRelation *wr) {
   for(CoerceSentence *cs=(CoerceSentence *)cyclelinks->firstelement();
       cs!=NULL;cs=(CoerceSentence *)cyclelinks->getnextelement(cs)) {
@@ -167,6 +174,7 @@ bool Repair::breakcycles(WorkSet *removeedge, int number, WorkSet *cyclelinks, W
   }
   return false;
 }
+
 
 bool Repair::checkforcycles(WorkSet *removededges, WorkRelation *wr) {
   /* Check that there are no cycles and
@@ -210,6 +218,8 @@ bool Repair::checkforcycles(WorkSet *removededges, WorkRelation *wr) {
   return false; /*yeah...no cycles*/
 }
 
+
+
 bool Repair::checkcycles(CoerceSentence *cs,WorkSet *removededges, WorkSet *searchset,WorkRelation *wr) {
   if (searchset->contains(cs)) {
     /* found cycle */
@@ -240,6 +250,7 @@ bool Repair::checkcycles(CoerceSentence *cs,WorkSet *removededges, WorkSet *sear
 }
 
 
+
 WorkSet * Repair::searchcycles(WorkRelation *wr) {
   /* Do cycle search */
   WorkSet *cycleset=new WorkSet(true);
@@ -253,6 +264,8 @@ WorkSet * Repair::searchcycles(WorkRelation *wr) {
   delete(searchset);
   return cycleset;
 }
+
+
 
 void Repair::detectcycles(CoerceSentence *cs,WorkSet *searchset,WorkSet *cycleset, WorkRelation *wr) {
   if (searchset->contains(cs)) {
@@ -282,6 +295,8 @@ void Repair::detectcycles(CoerceSentence *cs,WorkSet *searchset,WorkSet *cyclese
   }
   searchset->removeobject(cs);
 }
+
+
 
 void Repair::buildmap(WorkRelation *wr) {
   for(int i=0;i<globalmodel->getnumconstraints();i++) {
@@ -327,6 +342,8 @@ void Repair::buildmap(WorkRelation *wr) {
   }
   delete(repairnormal);
 }
+
+
 
 void Repair::checkpredicate(Action *repair,WorkRelation *wr, Constraint *c,CoercePredicate *cp) {
   for(int i=0;i<globalmodel->getnumconstraints();i++) {

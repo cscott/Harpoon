@@ -1,3 +1,5 @@
+// Repairs and destroys size propositions of the form "size(SE)=1"
+
 #include "ActionEQ1.h"
 #include <assert.h>
 #include "dmodel.h"
@@ -15,8 +17,9 @@ ActionEQ1::ActionEQ1(DomainRelation *drel, model *m) {
 }
 
 void ActionEQ1::repair(Hashtable *env,CoercePredicate *p) {
-  switch(p->getpredicate()->getsetexpr()->gettype()) {
-  case SETEXPR_LABEL: {
+  switch(p->getpredicate()->getsetexpr()->gettype()) {  
+  // size(S)=1
+  case SETEXPR_LABEL: { 
     char *setname=p->getpredicate()->getsetexpr()->getsetlabel()->getname();
     DomainSet *ds=domrelation->getset(setname);
     if (ds->getset()->size()>1) {
@@ -30,7 +33,9 @@ void ActionEQ1::repair(Hashtable *env,CoercePredicate *p) {
       this->ActionGEQ1::repair(env,p);
   }
   break;
-  case SETEXPR_REL: {
+
+  // size(V.R)=1
+  case SETEXPR_REL: { 
     DRelation *dr=domrelation->getrelation(p->getpredicate()->getsetexpr()->getrelation()->getname());
     WorkRelation *wr=dr->getrelation();
     Element *key=(Element *)env->get(p->getpredicate()->getsetexpr()->getlabel()->label());
@@ -47,6 +52,8 @@ void ActionEQ1::repair(Hashtable *env,CoercePredicate *p) {
       this->ActionGEQ1::repair(env,p);
   }
   break;
+
+  // size(R.V)>=1
   case SETEXPR_INVREL: {
     DRelation *dr=domrelation->getrelation(p->getpredicate()->getsetexpr()->getrelation()->getname());
     WorkRelation *wr=dr->getrelation();
@@ -66,6 +73,8 @@ void ActionEQ1::repair(Hashtable *env,CoercePredicate *p) {
   break;
   }
 }
+
+
 
 bool ActionEQ1::conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, CoercePredicate *p2) {
   assert(canrepair(p1));
@@ -246,6 +255,9 @@ bool ActionEQ1::conflict(Constraint *c1, CoercePredicate *p1,Constraint *c2, Coe
   }
 }
 
+
+
+
 bool ActionEQ1::canrepair(CoercePredicate *cp) {
   if (cp->getcoercebool()==false)
     return false;
@@ -254,6 +266,7 @@ bool ActionEQ1::canrepair(CoercePredicate *cp) {
 
   if (p->gettype()!=PREDICATE_EQ1)
     return false;
+
   /* Coercing set membership */
   Setexpr *se=p->getsetexpr();
   int setexprtype=se->gettype();

@@ -85,6 +85,8 @@ CoerceSentence::CoerceSentence(CoercePredicate **pred, int numpred) {
   numpreds=numpred;
 }
 
+
+// returns how much we pay if we satisfy this sentence 
 int CoerceSentence::cost(processobject *po, Hashtable *env) {
   int cost=0;
   for(int i=0;i<numpreds;i++) {
@@ -154,6 +156,7 @@ NormalForm::NormalForm(Rule *r) {
   length=1;
 }
 
+
 char * gettype(char *label, char *set,AElementexpr *ae) {
   switch(ae->gettype()) {
   case AELEMENTEXPR_SUB:
@@ -185,24 +188,31 @@ char * gettype(char *label, char *set,AElementexpr *ae) {
   }
 }
 
+
 int NormalForm::getnumsentences() {
   return length;
 }
+
 
 CoerceSentence * NormalForm::getsentence(int i) {
   return sentences[i];
 }
 
-CoerceSentence * NormalForm::closestmatch(WorkSet *badsentences,processobject *po, Hashtable *env) {
-  int totalcost=-1;int bestmatch=-1;
+
+/* returns the sentence in this constraint that can be satisfied 
+   with a minimum cost, and which is different from any sentence 
+   in the "badsentences" structure /*
+CoerceSentence * NormalForm::closestmatch(WorkSet *badsentences, processobject *po, Hashtable *env) {
+  int totalcost=-1; int bestmatch=-1;
   for(int i=0;i<length;i++) {
-    if (badsentences==NULL||
-	!badsentences->contains(sentences[i])) {
-      int cost=sentences[i]->cost(po,env);
-      if ((totalcost==-1)||(totalcost>cost)) {
-	totalcost=cost;bestmatch=i;
+    if (badsentences==NULL || !badsentences->contains(sentences[i])) 
+      {
+	int cost=sentences[i]->cost(po,env);
+	if ((totalcost==-1)||(totalcost>cost)) {
+	  totalcost=cost; 
+	  bestmatch=i;
+	}
       }
-    }
   }
   return sentences[bestmatch];
 }
