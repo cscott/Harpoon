@@ -1,4 +1,4 @@
-// LocalCffRegAlloc3.java, created Sat Dec 11 15:20:45 1999 by pnkfelix
+// LocalCffRegAlloc.java, created Sat Dec 11 15:20:45 1999 by pnkfelix
 // Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
@@ -40,7 +40,7 @@ import java.util.Iterator;
 
 
 /**
- * <code>LocalCffRegAlloc3</code> performs <A
+ * <code>LocalCffRegAlloc</code> performs <A
     HREF="http://lm.lcs.mit.edu/~pnkfelix/papers/hardnessLRA.ps">
     Local Register Allocation</A> for a given set of
     <code>Instr</code>s using a conservative-furthest-first algorithm.
@@ -53,12 +53,12 @@ import java.util.Iterator;
   
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.59 2000-01-18 15:28:46 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.60 2000-01-18 15:35:21 pnkfelix Exp $
  */
-public class LocalCffRegAlloc3 extends RegAlloc {
+public class LocalCffRegAlloc extends RegAlloc {
     
-    /** Creates a <code>LocalCffRegAlloc3</code>. */
-    public LocalCffRegAlloc3(Code code) {
+    /** Creates a <code>LocalCffRegAlloc</code>. */
+    public LocalCffRegAlloc(Code code) {
         super(code);
     }
     

@@ -56,7 +56,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.60 2000-01-09 09:12:15 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.61 2000-01-18 15:35:21 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = false;
@@ -227,7 +227,7 @@ public abstract class RegAlloc  {
 			new BrainDeadLocalAlloc((Code) preAllocCode);
 		} else {
 		    localCode = 
-			new LocalCffRegAlloc3((Code) preAllocCode);
+			new LocalCffRegAlloc((Code) preAllocCode);
 		}
 
 		if (true) {
