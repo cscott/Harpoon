@@ -1,7 +1,7 @@
 // OffsetMap.java, created Thu Jan 14 22:17:20 1999 by duncan
 // Copyright (C) 1998 Duncan Bryce  <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Backend.Maps;
+package harpoon.Interpret.Tree;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HField;
@@ -16,9 +16,9 @@ import java.util.Set;
  * total size of an <code>HClass</code> object.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: OffsetMap.java,v 1.1.2.18 1999-09-11 20:06:39 cananian Exp $
+ * @version $Id: OffsetMap.java,v 1.1.2.1 2000-01-17 12:49:34 cananian Exp $
  */
-public abstract class OffsetMap { // use an abstract class, if we can.
+abstract class OffsetMap { // use an abstract class, if we can.
 
     /** Maps an <code>HClass</code> to an offset (in bytes).  
      *  Returns the offset from an object reference of the class pointer */
