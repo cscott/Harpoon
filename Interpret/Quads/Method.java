@@ -58,7 +58,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.18 2000-01-13 23:48:10 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.19 2000-01-21 10:15:37 cananian Exp $
  */
 public final class Method {
 
@@ -100,6 +100,10 @@ public final class Method {
 	} try {
 	    run(ss, cls, args);
 	} catch (InterpretedThrowable it) { prettyPrint(ss, it); }
+	// if profiling, force gc and finalization.
+	if (ss.prof!=null) {
+	    ss=null; System.gc(); System.runFinalization();
+	}
     }
 
     /** invoke a static main method with no static state. */
@@ -114,6 +118,10 @@ public final class Method {
 	    invoke(ss, HMinit, new Object[0]);
 	    run(ss, cls, args);
 	} catch (InterpretedThrowable it) { prettyPrint(ss, it); }
+	// if profiling, force gc and finalization.
+	if (ss.prof!=null) {
+	    ss=null; System.gc(); System.runFinalization();
+	}
     }
 
     private static final void run(StaticState ss, HClass cls, String[] args)
@@ -127,6 +135,10 @@ public final class Method {
 	// run main() method.
 	ss.load(cls);
 	invoke(ss, method, new Object[] { params } );
+	// if profiling, force gc and finalization.
+	if (ss.prof!=null) {
+	    System.gc(); System.runFinalization();
+	}
     }
     private static void prettyPrint(StaticState ss, InterpretedThrowable it) {
 	String msg = it.ex.type.getName();
