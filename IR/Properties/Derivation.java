@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Properties;
 
+import harpoon.Analysis.Maps.TypeMap.TypeNotKnownException;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
@@ -20,18 +21,26 @@ import harpoon.Temp.TempMap;
  * and its motivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.8 1999-09-09 21:55:21 cananian Exp $
+ * @version $Id: Derivation.java,v 1.1.2.9 2000-01-31 01:46:59 cananian Exp $
  */
-public interface Derivation  {
+public interface Derivation /*extends harpoon.Analysis.Maps.TypeMap*/ {
 
     /** Map compiler temporaries to their derivations.
+     * @param t The temporary to query.
+     * @param hce A definition point for <code>t</code>.
      * @return <code>null</code> if the temporary has no derivation (is
      *         a base pointer, for example), or the derivation otherwise.
+     * @exception NullPointerException if <code>t</code> or <code>hc</code>
+     *            is <code>null</code>.
+     * @exception TypeNotKnownException if the <code>Derivation</code>
+     *            has no information about <code>t</code> as defined
+     *            at <code>hce</code>.
      */
-    public DList derivation(HCodeElement hce, Temp t);
+    public DList derivation(HCodeElement hce, Temp t)
+	throws TypeNotKnownException;
 
     /** Structure of the derivation information. */
-    public class DList {
+    public static class DList {
 	/** Base pointer. */
 	public final Temp base;
 	/** Sign of base pointer.  <code>true</code> if derived pointer
