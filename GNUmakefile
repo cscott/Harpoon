@@ -4,6 +4,8 @@ JCC=javac -d .
 JDOC=javadoc
 JDOCFLAGS=-version -author # -package
 JDOCIMAGES=/usr/local/jdk1.1.6/docs/api/images
+SSH=ssh
+SCP=scp -A
 
 ALLPKGS = $(shell find . -type d | grep -v CVS | grep -v "^./harpoon" | grep -v "^./doc" | sed -e "s|^[.]/*||")
 ALLSOURCE = $(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java))
@@ -48,8 +50,8 @@ doc/TIMESTAMP:	$(ALLSOURCE)
 	chmod a+rx doc doc/*
 
 doc-install: doc/TIMESTAMP
-	ssh miris.lcs.mit.edu /bin/rm -rf public_html/Projects/Harpoon/doc
-	scp -r doc miris.lcs.mit.edu:public_html/Projects/Harpoon
+	$(SSH) miris.lcs.mit.edu /bin/rm -rf public_html/Projects/Harpoon/doc
+	$(SCP) -r doc miris.lcs.mit.edu:public_html/Projects/Harpoon
 
 doc-clean:
 	-${RM} -r doc
@@ -71,6 +73,6 @@ wipe:	clean doc-clean
 backup:
 	$(RM) ../harpoon-backup.tar.gz
 	cd ..; tar czf harpoon-backup.tar.gz CVSROOT
-	scp ../harpoon-backup.tar.gz \
+	$(SCP) ../harpoon-backup.tar.gz \
 		miris.lcs.mit.edu:public_html/Projects/Harpoon
 	$(RM) ../harpoon-backup.tar.gz
