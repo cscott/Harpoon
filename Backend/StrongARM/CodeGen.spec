@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.105 1999-11-12 19:14:08 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.106 1999-11-12 22:02:55 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1548,7 +1548,9 @@ JUMP(e) %{
        emit(new Instr( instrFactory, ROOT, 
 		       "mov `d0, `s0",
 		       new Temp[]{ PC },
-		       new Temp[]{ e },
+		       // fake use of PC so that the register allocator
+		       // doesn't think that PC is not live above this point
+		       new Temp[]{ e, PC },
 		       false, labelList ) {
 			      public boolean hasModifiableTargets(){ 
 				     return false; 
@@ -1680,7 +1682,8 @@ CALL(retval, retex, func, arglist, handler)
     // realloc doesn't clobber these between the time they are set and
     // the time the call happens.
     emitNoFall( ROOT, "mov `d0, `s0", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
-                new Temp[]{ func }, new Label[] { rlabel, elabel } );
+                // fake use of PC so that it remains live above this point.
+                new Temp[]{ func, PC }, new Label[] { rlabel, elabel } );
     // make handler stub.
     emitLABEL( ROOT, elabel+":", elabel);
     emitHandlerStub(ROOT, retex, handler);
@@ -1724,7 +1727,8 @@ NATIVECALL(retval, func, arglist) %{
     // realloc doesn't clobber these between the time they are set and
     // the time the call happens.
     emit2( ROOT, "mov `d0, `s0", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
-                new Temp[]{ func });
+                // fake use of PC so that it remains live above this point.
+                new Temp[]{ func, PC });
     // clean up.
     emitCallEpilogue(ROOT, retval, stackOffset);
 }%
