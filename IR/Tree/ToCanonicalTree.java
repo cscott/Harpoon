@@ -24,7 +24,7 @@ import java.util.Map;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.11 1999-08-09 22:11:13 duncan Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.12 1999-08-11 10:48:39 duncan Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
@@ -110,6 +110,7 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	private TreeMap     treeMap;
 	private TypeMap     typeMap;
 	private Map         dT, tT;
+	private java.util.Set visited = new java.util.HashSet();
 
 	public CanonicalizingVisitor(TreeFactory tf, TreeMap tm, 
 				     TreeCode code, Map dT, Map tT) {
@@ -130,8 +131,9 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	}
 
 	public void visit(MOVE s) {
-	    s.src.visit(this);
+	    if (!visited.add(s)) return;
 
+	    s.src.visit(this);
 	    if (s.dst.kind()==TreeKind.ESEQ) {
 		Util.assert(false, "Dangerous use of ESEQ");
 		ESEQ eseq = (ESEQ)s.dst;
@@ -153,25 +155,32 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	}
       
 	public void visit(SEQ s) {
+	    if (!visited.add(s)) return;
 	    s.left.visit(this);
 	    s.right.visit(this);
 	    treeMap.map(s, seq(treeMap.get(s.left), treeMap.get(s.right)));
 	}
 
-	public void visit(Stm s) { 
+	public void visit(Stm s) {
+	    if (!visited.add(s)) return;
 	    treeMap.map(s, reorderStm(s));
 	}
 
 	public void visit(Exp e) { 
+	    if (!visited.add(e)) { 
+		return;
+	    }
 	    treeMap.map(e, reorderExp(e));
 	}
 
 	public void visit(TEMP e) { 
+	    if (!visited.add(e)) return;
 	    TEMP tNew = _MAP(e);
 	    treeMap.map(e, reorderExp(tNew));
 	}
 
 	public void visit(ESEQ e) { 
+	    if (!visited.add(e)) return;
 	    e.stm.visit(this);
 	    e.exp.visit(this);
 	    treeMap.map(e, new ESEQ(tf, e, 
@@ -233,14 +242,15 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	    }
 	}
 	
-	
 	protected void updateDT(TEMP tOld, TEMP tNew) {
 	    if (this.derivation.derivation(tOld, tOld.temp) != null) {
+		Tuple hceT = new Tuple(new Object[] { tNew, tNew.temp });
 		dT.put
-		    (new Tuple(new Object[] { tNew, tNew.temp }),
+		    (hceT, 
 		     DList.clone(this.derivation.derivation(tOld, tOld.temp)));
-		dT.put
-		    (tNew.temp,new Error("*** Derived pointers have no type"));
+		tT.put
+		    (hceT, 
+		     new Error("*** Derived pointers have no type"));
 	    }
 	    else {
 		if (this.typeMap.typeMap(tOld, tOld.temp) != null) {

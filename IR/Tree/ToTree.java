@@ -42,6 +42,7 @@ import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
+import harpoon.Util.HClassUtil;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 
@@ -60,7 +61,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.33 1999-08-10 18:56:22 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.34 1999-08-11 10:48:39 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -349,7 +350,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 		  new BINOP
 		  (m_tf, q, Type.POINTER, Bop.ADD,
 		   arrayRefs[i], 
-		   new CONST(m_tf, q, m_offm.classOffset(arrayClass)))), 
+		   new CONST(m_tf, q, m_offm.clazzPtrOffset(arrayClass)))), 
 		 classPtr);
 
 	    // Move the pointer to the new array into the appropriate 
@@ -546,7 +547,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	      new BINOP
 	      (m_tf, q, Type.POINTER, Bop.ADD,
 	       objectref,
-	       new CONST(m_tf, q, m_offm.classOffset(q.hclass())))),
+	       new CONST(m_tf, q, m_offm.clazzPtrOffset(q.hclass())))),
 	     new NAME(m_tf, q, m_offm.label(q.hclass())));
 	
 	updateDT(q.dst(), q, objectref.temp, objectref);
@@ -738,7 +739,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	      (m_tf, q, Type.POINTER, Bop.ADD, 
 	       objectref, 
 	       new CONST
-	       (m_tf, q, m_offm.classOffset(type)))));
+	       (m_tf, q, m_offm.clazzPtrOffset(type)))));
 	
 	updateDT(q.dst(), q, dst.temp, dst);
 	updateDT(q.objectref(), q, objectref.temp, objectref);
@@ -907,6 +908,10 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	return new LABEL(m_tf, label, (Label)m_labels.get(label.label()));
     }
 
+    private LABEL _LABEL(LABEL label) { 
+	return new LABEL(m_tf, label, label.label);
+    }
+
     private TEMP _TEMP(TEMP t) { 
 	return new TEMP(m_tf, t, t.type(), t.temp);
     }
@@ -1032,167 +1037,113 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
      *  with this algorithm.
      */
     private Exp isInstanceOf(Quad q, Temp src, HClass type) {
-	TEMP src1     = _TEMP(src, q), src2 = _TEMP(src, q);
-	TEMP classPtr = extra(q, Type.POINTER);
+
+	TEMP SRC1     = _TEMP(src, q);
+	TEMP SRC2     = _TEMP(src, q);
 	TEMP RESULT1  = extra(q, Type.INT);
 	TEMP RESULT2  = _TEMP(RESULT1);
 	TEMP RESULT3  = _TEMP(RESULT1);
 	
-	updateDT(src, q, src1.temp, src1);
-	updateDT(src, q, src2.temp, src2);
-	addDT(classPtr.temp, classPtr, new DList(src, true, null), null);
+	updateDT(src, q, SRC1.temp, SRC1);
+	updateDT(src, q, SRC2.temp, SRC2);
 	addDT(RESULT1.temp, RESULT1, null, HClass.Int);
 	updateDT(RESULT1.temp, RESULT1, RESULT2.temp, RESULT2);
 	updateDT(RESULT1.temp, RESULT1, RESULT3.temp, RESULT3);
 
 	if (type.isPrimitive()) {
-	    return new CONST
-		(m_tf,q,maptype(type)==maptype(typeMap(q,src))?1:0);
+	    return new CONST(m_tf,q,type==typeMap(q,src)?1:0);
 	}
 	else {
+	    Util.assert(TYPE(q,src)==Type.POINTER);
 	    LABEL isNonNull = new LABEL(m_tf, q, new Label());
 	    LABEL isNull    = new LABEL(m_tf, q, new Label());
 	    LABEL end       = new LABEL(m_tf, q, new Label());
-	    
-	    Stm s0 = new CJUMP
-		(m_tf, q, 
-		 new BINOP
-		 (m_tf, q, Type.POINTER, Bop.CMPEQ,
-		  src1, 
-		  new CONST(m_tf, q, 0)),
-		 isNull.label, 
-		 isNonNull.label);
-	    Stm s1 = isNull;
-	    Stm s2 = new MOVE(m_tf, q, RESULT1, new CONST(m_tf, q, 0));
-	    Stm s3 = new JUMP(m_tf, q, end.label);
-	    Stm s4 = isNonNull;
-	    Stm s5 = new MOVE
-		(m_tf, q, 
-		 RESULT2,
-		 new ESEQ
-		 (m_tf, q, 
- 		  new MOVE
-		  (m_tf, q,  
-		   classPtr,  
-		   new MEM 
-		   (m_tf, q, Type.POINTER,
-		    new BINOP
-		    (m_tf, q, Type.POINTER, Bop.ADD,
-		     new CONST(m_tf, q, m_offm.classOffset(typeMap(q,src))),
-		     src2))),
-		  isInstanceOf(q, classPtr, type)));
-	    Stm s6 = end;
-	    
+
 	    return new ESEQ
 		(m_tf, q, 
-		 Stm.toStm(Arrays.asList(new Stm[] {s0,s1,s2,s3,s4,s5,s6})), 
+		 Stm.toStm
+		 (Arrays.asList
+		  (new Stm[] {
+		      // null instanceof X  is always false
+		      new CJUMP
+			  (m_tf, q, 
+			   new BINOP
+			   (m_tf, q, Type.POINTER, Bop.CMPEQ,
+			    SRC1, 
+			    new CONST(m_tf, q, 0)),
+			   isNull.label, 
+			   isNonNull.label),
+
+		      // we've done instanceof on a null pointer, return false
+		      isNull,
+		      new MOVE(m_tf, q, RESULT1, new CONST(m_tf, q, 0)),
+		      new JUMP(m_tf, q, end.label),
+
+		      // the pointer is not null, use our run-time 
+		      // type-checking algorithm
+		      isNonNull,
+		      new MOVE
+			  (m_tf, q, 
+			   RESULT2,
+			   HClassUtil.baseClass(type).isInterface() ? 
+			   isImplemented
+			   (new MEM 
+			    (m_tf, q, Type.POINTER,
+			     new BINOP
+			     (m_tf, q, Type.POINTER, Bop.ADD,
+			      new CONST
+			      (m_tf, q, 
+			       m_offm.clazzPtrOffset(typeMap(q,src))),
+			      SRC2)), 
+			    type) : 
+			   classExtends
+			   (new MEM 
+			    (m_tf, q, Type.POINTER,
+			     new BINOP
+			     (m_tf, q, Type.POINTER, Bop.ADD,
+			      new CONST
+			      (m_tf, q, 
+			       m_offm.clazzPtrOffset(typeMap(q,src))),
+			      SRC2)),
+			    type)), 
+		      end})),
 		 RESULT3);
 	}
     }
   
-    private Exp isArray(TEMP tagBits) {
-	TEMP tag = _TEMP(tagBits); updateDT(tagBits.temp,tagBits,tag.temp,tag);
-	return new BINOP
-	    (m_tf, tag, Type.INT, Bop.CMPEQ,
-	     tag,
-	     new CONST(m_tf, tag, m_offm.arrayTag()));
-    }
+    private Exp classExtends(Exp classPtr, HClass type) { 
+	Util.assert(!(HClassUtil.baseClass(type).isInterface() || 
+		      HClassUtil.baseClass(type).isPrimitive()));
 
-    private Exp isClass(TEMP tagBits) {
-	TEMP tag = _TEMP(tagBits); updateDT(tagBits.temp,tagBits,tag.temp,tag);
-	return new BINOP
-	    (m_tf, tag, Type.INT, Bop.CMPEQ,
-	     tag, 
-	     new CONST(m_tf, tag, m_offm.classTag()));
-	
-    }
-    
-    private Exp isInterface(TEMP tagBits) {
-	TEMP tag = _TEMP(tagBits); updateDT(tagBits.temp,tagBits,tag.temp,tag);
-	return new BINOP
-	    (m_tf, tag, Type.INT, Bop.CMPEQ,
-	     tag, 
-	     new CONST(m_tf, tag, m_offm.interfaceTag()));
-    }
-
-    private Exp classExtends(TEMP classPtr, HClass type) { 
-	Util.assert(!type.isInterface() &&
-		    !type.isArray() &&
-		    !type.isPrimitive());
-
-	Stm  s0, s1;
 	NAME typeLabel   = new NAME(m_tf, classPtr, m_offm.label(type));
-	TEMP classLabel1 = extra(classPtr, Type.POINTER);
-	TEMP classLabel2 = _TEMP(classLabel1); 
-	TEMP classPtr1   = _TEMP(classPtr);
-	TEMP result1     = extra(classPtr, Type.INT);
-	TEMP result2     = _TEMP(result1);
-
-	// FIXME:  derivation info not correct
-	addDT(classLabel1.temp, classLabel1, 
-	      new DList(classPtr.temp,true,derivation(classPtr,classPtr.temp)),
-	      null);
-	updateDT(classLabel1.temp, classLabel1, classLabel2.temp, classLabel2);
-	updateDT(classPtr.temp, classPtr, classPtr1.temp, classPtr1);
-	addDT(result1.temp, result1, null, HClass.Int);
-	updateDT(result1.temp, result1, result2.temp, result2);
-
-	s0 = new MOVE
-	    (m_tf, classPtr, 
-	     classLabel1,
+	return new BINOP
+	    (m_tf, classPtr, Type.POINTER, Bop.CMPEQ,
+	     typeLabel,
 	     new MEM
 	     (m_tf, classPtr, Type.POINTER,
 	      new BINOP
 	      (m_tf, classPtr, Type.POINTER, Bop.ADD,
-	       classPtr1,
-	       new CONST(m_tf, classPtr, m_offm.displayOffset(type)))));
-
-	s1 = new MOVE
-	    (m_tf, classPtr, 
-	     result1,
-	     new BINOP
-	     (m_tf, classPtr, Type.POINTER, Bop.CMPEQ, 
-	      classLabel2, 
-	      typeLabel));
-
-	return new ESEQ
-	    (m_tf,classPtr,Stm.toStm(Arrays.asList(new Stm[]{s0,s1})),result2);
+	       classPtr,
+	       new CONST
+	       (m_tf, classPtr, m_offm.offset(type)))));
     }
 
-    private Exp isImplemented(TEMP classPtr, HClass type) {
-	Util.assert(type.isInterface());
+    private Exp isImplemented(Exp classPtr, HClass type) {
+	Util.assert(HClassUtil.baseClass(type).isInterface());
 
-	Stm   s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12;
+	NAME  typeLabel   = new NAME(m_tf, classPtr, m_offm.label(type));
+	TEMP  IFACEPTR1   = extra(classPtr, Type.POINTER);
+	TEMP  IFACEPTR2   = _TEMP(IFACEPTR1);
+	TEMP  IFACEPTR3   = _TEMP(IFACEPTR1);
+	TEMP  IFACEPTR4   = _TEMP(IFACEPTR1);
+	TEMP  IFACELABEL1 = extra(classPtr, Type.POINTER);
+	TEMP  IFACELABEL2 = _TEMP(IFACELABEL1);
+	TEMP  IFACELABEL3 = _TEMP(IFACELABEL1);
+	TEMP  RESULT1     = extra(classPtr, Type.INT);
+	TEMP  RESULT2     = _TEMP(RESULT1);
+	TEMP  RESULT3     = _TEMP(RESULT1);
 
-	NAME  typeLabel       = new NAME(m_tf, classPtr, m_offm.label(type));
-	TEMP  classPtr1       = _TEMP(classPtr);
-	TEMP  iFacePtr1   = extra(classPtr, Type.POINTER);
-	TEMP  iFacePtr2   = _TEMP(iFacePtr1);
-	TEMP  iFacePtr3   = _TEMP(iFacePtr1);
-	TEMP  iFacePtr4   = _TEMP(iFacePtr1);
-	TEMP  iFaceLabel1 = extra(classPtr, Type.POINTER);
-	TEMP  iFaceLabel2 = _TEMP(iFaceLabel1);
-	TEMP  iFaceLabel3 = _TEMP(iFaceLabel1);
-	TEMP  result1         = extra(classPtr, Type.INT);
-	TEMP  result2         = _TEMP(result1);
-	TEMP  result3         = _TEMP(result1);
-
-	// FIXME: deriv info not correct
-	updateDT(classPtr.temp, classPtr, classPtr1.temp, classPtr1);
-	addDT(iFacePtr1.temp, iFacePtr1, 
-	      new DList(classPtr.temp,true,derivation(classPtr,classPtr.temp)),
-	      null);
-	updateDT(iFacePtr1.temp, iFacePtr1, iFacePtr2.temp, iFacePtr2);
-	updateDT(iFacePtr1.temp, iFacePtr1, iFacePtr3.temp, iFacePtr3);
-	updateDT(iFacePtr1.temp, iFacePtr1, iFacePtr4.temp, iFacePtr4);
-	addDT(iFaceLabel1.temp, iFaceLabel1, 
-	      new DList(classPtr.temp,true,derivation(classPtr,classPtr.temp)),
-	      null);
-	updateDT(iFaceLabel1.temp, iFaceLabel1, iFaceLabel2.temp, iFaceLabel2);
-	updateDT(iFaceLabel1.temp, iFaceLabel1, iFaceLabel3.temp, iFaceLabel3);
-	addDT(result1.temp, result1, null, HClass.Int);
-	updateDT(result1.temp, result1, result2.temp, result2);
-	updateDT(result1.temp, result1, result3.temp, result3);
+	// FIXME: add deriv info 
 
 	LABEL endLabel      = new LABEL(m_tf, classPtr, new Label());
 	LABEL loop          = new LABEL(m_tf, classPtr, new Label());
@@ -1200,240 +1151,96 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	LABEL successLabel  = new LABEL(m_tf, classPtr, new Label());
 	LABEL failureLabel  = new LABEL(m_tf, classPtr, new Label());
 	
-	// Assign iFacePtr to point to the block of memory 
-	// directly before the first interface.
-	// 
-	s0 = new MOVE
-	    (m_tf, classPtr,
-	     iFacePtr1,
-	     new BINOP
-	     (m_tf, classPtr, Type.POINTER, Bop.ADD,
-	      new MEM
-	      (m_tf, classPtr, Type.POINTER, 
-	       new BINOP
-	       (m_tf, classPtr, Type.POINTER, Bop.ADD,
-		classPtr1, 
-		new CONST(m_tf, classPtr, m_offm.interfaceListOffset(type)))),
-	      new CONST(m_tf, classPtr, -wordSize())));
-	
-	// Label the top of the loop
-	//
-	s1 = loop;
-
-	// Increment the current interface ptr
-	// 
-	s2 = new MOVE
-	    (m_tf, classPtr, 
-	     iFacePtr2,
-	     new BINOP
-	     (m_tf, classPtr, Type.POINTER, Bop.ADD,
-	      iFacePtr3,
-	      new CONST(m_tf, classPtr, wordSize())));
-
-	// Derefence the current interface ptr
-	//
-	s3 = new MOVE
-	    (m_tf, classPtr, 
-	     iFaceLabel1, 
-	     new MEM(m_tf, classPtr, Type.POINTER, iFacePtr4));
-
-	// Check if we have reached the end of the interface list
-	//
-	s4 = new CJUMP
-	    (m_tf, classPtr, 
-	     new BINOP
-	     (m_tf, classPtr, Type.POINTER, Bop.CMPEQ,
-	      iFaceLabel2, 
-	      new CONST(m_tf, classPtr)),
-	     failureLabel.label,
-	     next.label);
-
-	s5 = next;
-	
-	// See if we've found the correct label
-	// 
-	s6 = new CJUMP
-	    (m_tf, classPtr, 
-	     new BINOP
-	     (m_tf, classPtr, Type.POINTER, Bop.CMPEQ,
-	      typeLabel,
-	      iFaceLabel3),
-	     successLabel.label,
-	     loop.label);
-
-	// We've reached the end of the interface list without finding 
-	// a match.  Return 0.
-	// 
-	s7 = failureLabel;
-	
-	s8 = new MOVE(m_tf, classPtr, result1, new CONST(m_tf, classPtr, 0));
-	s9 = new JUMP(m_tf, classPtr, endLabel.label);
-
-	// We found the interface label we wanted.  Yay!  Return 1.
-	// 
-	s10 = successLabel;
-	s11 = new MOVE(m_tf, classPtr, result2, new CONST(m_tf, classPtr, 1));
-
-	s12 = endLabel;
-
 	return new ESEQ
 	    (m_tf, classPtr, 
-	     Stm.toStm(Arrays.asList(new Stm[] 
-				     {s0,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12})),
-	     result3);
+	     Stm.toStm
+	     (Arrays.asList
+	      (new Stm[] {
+
+		  // Assign IFACEPTR to point to the block of memory 
+		  // directly before the first interface.
+		  // 
+		  new MOVE
+		      (m_tf, classPtr,
+		       IFACEPTR1,
+		       new MEM
+		       (m_tf, classPtr, Type.POINTER, 
+			new BINOP
+			(m_tf, classPtr, Type.POINTER, Bop.ADD,
+			 classPtr, 
+			 new CONST
+			 (m_tf, classPtr, 
+			  m_offm.interfaceListOffset(type)-wordSize())))),
+		  
+		  // Label the top of the loop
+		  //
+		  loop,
+
+		  // Increment the current interface ptr
+	          // 
+		  new MOVE
+		      (m_tf, classPtr, 
+		       IFACEPTR2,
+		       new BINOP
+		       (m_tf, classPtr, Type.POINTER, Bop.ADD,
+			IFACEPTR3,
+			new CONST(m_tf, classPtr, wordSize()))),
+
+		  new MOVE
+		      (m_tf, classPtr,
+		       IFACELABEL1, 
+			new MEM(m_tf, classPtr, Type.POINTER, IFACEPTR4)),
+
+		  // Check if we have reached the end of the interface list
+		  //
+		  new CJUMP
+		      (m_tf, classPtr, 
+		       new BINOP
+		       (m_tf, classPtr, Type.POINTER, Bop.CMPEQ,
+			IFACELABEL2, 
+			new CONST(m_tf, classPtr)),
+		       failureLabel.label,
+		       next.label),
+		  
+		  next,
+	
+		  // See if we've found the correct label
+		  // 
+		  new CJUMP
+		      (m_tf, classPtr, 
+		       new BINOP
+		       (m_tf, classPtr, Type.POINTER, Bop.CMPEQ,
+			typeLabel,
+			IFACELABEL3),
+		       successLabel.label,
+		       loop.label),
+		  
+		  // We've reached the end of the interface list without
+		  // finding a match.  Return 0.
+		  // 
+		  failureLabel,
+	
+		  new MOVE
+		      (m_tf, classPtr, 
+		       RESULT1, 
+		       new CONST(m_tf, classPtr, 0)),
+
+		  new JUMP(m_tf, classPtr, endLabel.label),
+
+		  // We found the interface label we wanted.  Yay!  Return 1.
+		  // 
+		  successLabel,
+		  new MOVE
+		      (m_tf, classPtr, 
+		       RESULT2, 
+		       new CONST(m_tf, classPtr, 1)),
+		  
+		  endLabel
+		      })),
+	     RESULT3);
 
     }
-
-    private ESEQ componentType(TEMP classPtr) {
-	TEMP classPtr1 = _TEMP(classPtr),
-	     classPtr2 = _TEMP(classPtr),
-	     classPtr3 = _TEMP(classPtr);
-	updateDT(classPtr.temp, classPtr, classPtr1.temp, classPtr1);
-	updateDT(classPtr.temp, classPtr, classPtr2.temp, classPtr2);
-	updateDT(classPtr.temp, classPtr, classPtr3.temp, classPtr3);
-	return new ESEQ
-	    (m_tf, classPtr, 
-	     new MOVE
-	     (m_tf, classPtr, 
-	      classPtr1, 
-	      new MEM
-	      (m_tf, classPtr, Type.POINTER,
-	       new BINOP
-	       (m_tf, classPtr, Type.POINTER, Bop.ADD,
-		classPtr2, 
-		new CONST
-		(m_tf, classPtr, 
-		 m_offm.componentTypeOffset
-		 (HClass.forDescriptor("[Ljava/lang/Object;")))))),
-	     classPtr3);
-    }
 	
-    /** 
-     *  The isInstantceOf check uses the casting conversion algorithm
-     *  found in the Java Language Specification at 
-     *  http://java.sun.com/docs/books/jls/html/5.doc.html#176921.
-     *  Returns an Exp that evaluates to true if "q" can be cast to "type"
-     *  with this algorithm.
-     */
-    private Exp isInstanceOf(Quad q, TEMP classPtr, HClass type) {
-	Exp    classCheckResult, interfaceCheckResult, arrayCheckResult;
-	LABEL  classCheck, interfaceCheck, arrayCheck, isInterfaceLabel, end;
-	Stm    s0, s1, s2, s3, s4, s5;
-	TEMP   classPtr1, result1, result2, result3, result4, tagBits;
-	
-	arrayCheck        = new LABEL(m_tf, q, new Label());
-	classCheck        = new LABEL(m_tf, q, new Label());
-	interfaceCheck    = new LABEL(m_tf, q, new Label());
-	isInterfaceLabel  = new LABEL(m_tf, q, new Label());
-	end               = new LABEL(m_tf, q, new Label());
-	
-	classPtr1         = _TEMP(classPtr);
-	result1           = extra(classPtr, Type.INT);
-	result2           = _TEMP(result1);
-	result3           = _TEMP(result1);
-	result4           = _TEMP(result1);
-	tagBits           = extra(classPtr, Type.INT);
-
-	updateDT(classPtr.temp, classPtr, classPtr1.temp, classPtr1);
-	addDT(result1.temp, result1, null, HClass.Int);
-	updateDT(result1.temp, result1, result2.temp, result2);
-	updateDT(result1.temp, result1, result3.temp, result3);
-	updateDT(result1.temp, result1, result4.temp, result4);
-	addDT(tagBits.temp, tagBits, null, HClass.Int);
-
-	s0 = new MOVE
-	    (m_tf, q, 
-	     tagBits,
-	     new MEM
-	     (m_tf, q, Type.INT, 
-	      new BINOP
-	      (m_tf, q, Type.POINTER, Bop.ADD,
-	       classPtr, 
-	       new CONST(m_tf, q, m_offm.tagOffset(HClass.Void))))); 
-	// FIX: eliminate hc param for static data
-
-	s1 = new CJUMP
-	    (m_tf, q, isClass(tagBits), 
-	     classCheck.label, 
-	     isInterfaceLabel.label);
-	
-	s2 = new SEQ
-	    (m_tf, q, 
-	     isInterfaceLabel,
-	     new CJUMP
-	     (m_tf, q, isInterface(tagBits), 
-	      interfaceCheck.label, 
-	      arrayCheck.label));
-	
-	//
-	// Now, make use of our compile-time type information:
-	//
-
-	// CASE 1: "type" is known to be an array type.  Simply return false.
-	// 
-	if (type.isArray()) {
-	    classCheckResult     = new CONST(m_tf, q, 0);
-	    interfaceCheckResult = new CONST(m_tf, q, 0);
-	    if (type.getComponentType().isPrimitive()) {
-		arrayCheckResult = new BINOP
-		    (m_tf, q, Type.POINTER, Bop.CMPEQ,
-		     componentType(classPtr),
-		     new NAME(m_tf, q, m_offm.label(type.getComponentType())));
-	    }
-	    else {
-		arrayCheckResult 
-		    = isInstanceOf(q, 
-				   (TEMP)componentType(classPtr).exp, 
-				   type.getComponentType());
-	    }
-	}
-	// CASE 2: "type" is known to be an interface type.  In this case,
-	//         the type
-	//
-	else if (type.isInterface()) {
-	    classCheckResult     = isImplemented(classPtr, type);
-	    // Because checking if an interface extends another interface
-	    // is the same as checking if a class implements some interface
-	    interfaceCheckResult = classCheckResult;  
-	    arrayCheckResult     = new CONST
-		(m_tf, q, type==HClass.forName("java.lang.Cloneable")?1:0);
-	}
-	// CASE 3: "type is a class type
-	//
-	else {
-	    classCheckResult     = classExtends(classPtr, type);
-	    interfaceCheckResult = new CONST
-		(m_tf, q, type==HClass.forName("java.lang.Object")?1:0);
-	    arrayCheckResult     = interfaceCheckResult;  // Same
-	}
-	
-	s3 = new SEQ
-	    (m_tf, q, 
-	     classCheck,
-	     new SEQ
-	     (m_tf, q, 
-	      new MOVE(m_tf, q, result1, classCheckResult),
-	      new JUMP(m_tf, q, end.label)));
-
-	s4 = new SEQ
-	    (m_tf, q, 
-	     interfaceCheck,
-	     new SEQ
-	     (m_tf, q, 
-	      new MOVE(m_tf, q, result2, interfaceCheckResult),
-	      new JUMP(m_tf, q, end.label)));
-
-	s5 = new SEQ
-	    (m_tf, q, 
-	     arrayCheck,
-	     new MOVE(m_tf, q, result3, arrayCheckResult));
-
-	return new ESEQ
-	    (m_tf, q, 
-	     Stm.toStm(Arrays.asList(new Stm[] {s0,s1,s2,s3,s4,s5,end})), 
-	     result4);
-    }
-    
     private int wordSize() {
 	int size = m_offm.size(HClass.forName("java.lang.Object"));
 	return size;

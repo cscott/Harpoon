@@ -20,6 +20,7 @@ import harpoon.IR.Properties.Derivation.DList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -31,7 +32,7 @@ import java.util.List;
  * class.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Data.java,v 1.1.2.7 1999-08-10 18:56:22 duncan Exp $
+ * @version $Id: Data.java,v 1.1.2.8 1999-08-11 10:48:39 duncan Exp $
  */
 public class Data extends Code implements HData { 
     public static final String codename = "tree-data";
@@ -49,22 +50,25 @@ public class Data extends Code implements HData {
 	//                                                           //
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-	ArrayList up     = new ArrayList(); // class data above the cls ptr
-	ArrayList down   = new ArrayList(); // class data below the cls ptr
-	List      iList  = new ArrayList(); // interface list
-	List      soList = new ArrayList(); // static objects
-	List      spList = new ArrayList(); // static primitives
-	List      rList  = new ArrayList(); // tables for reflection
+	ArrayList up      = new ArrayList(); // class data above the cls ptr
+	ArrayList down    = new ArrayList(); // class data below the cls ptr
+	List      iList   = new ArrayList(); // interface list
+	List      soList  = new ArrayList(); // static objects
+	List      spList  = new ArrayList(); // static primitives
+	List      strList = new ArrayList(); // string constants 
+	List      caList  = new ArrayList(); // character arrays 
+	List      rList   = new ArrayList(); // tables for reflection
+	// Shouldn't get DefaultNameMap, could be different than what 
+	harpoon.Backend.Maps.NameMap nm = 
+	    new harpoon.Backend.Maps.DefaultNameMap();
+
+	// OffsetMap uses. 
 	OffsetMap offm   = frame.getOffsetMap();
 
 	// Add interface list pointer
 	Label iListPtr = new Label();
 	add(offm.interfaceListOffset(cls), _DATA(iListPtr), up, down);
 	
-	// Add class tag
-	add(offm.tagOffset(cls),
-	    _DATA(new CONST(tf, null, offm.classTag())), up, down);
-	    
 	// FIX: need to lay out GC tables
 	// FIX: need tables for reflection 
 	// FIX: need tables for static methods
@@ -90,7 +94,7 @@ public class Data extends Code implements HData {
 
 	// Add display to list
 	for (HClass sCls=cls; sCls!=null; sCls=sCls.getSuperclass()) 
-	    add(offm.displayOffset(sCls),_DATA(offm.label(sCls)),up,down);
+	    add(offm.offset(sCls),_DATA(offm.label(sCls)),up,down);
 	
 	// Add non-static class methods to list 
 	HMethod[] methods = cls.getMethods();
@@ -103,26 +107,50 @@ public class Data extends Code implements HData {
 	// Reverse the upward list
 	Collections.reverse(up);
 
-	HField[]  fields  = cls.getDeclaredFields();
-	for (int i=0; i<fields.length; i++) { 
-	    HField field = fields[i];
-	    if (field.isStatic()) { 
-		if (field.getType().isPrimitive()) {
-		    spList.add(new LABEL(tf, null, offm.label(field)));
+	HField[] hfields  = cls.getDeclaredFields();
+	for (int i=0; i<hfields.length; i++) { 
+	    HField hfield = hfields[i];
+	    if (hfield.isStatic()) { 
+		if (hfield.getType().isPrimitive()) {
+		    spList.add(new LABEL(tf, null, offm.label(hfield)));
 		    spList.add(_DATA(new CONST(tf, null, 0)));
 		}
 		else { 
-		    soList.add(new LABEL(tf, null, offm.label(field)));
+		    soList.add(new LABEL(tf, null, offm.label(hfield)));
 		    soList.add(_DATA(new CONST(tf, null, 0)));
 		}
 	    }
 	}
 
+	// FIXME:  how to guarantee that all classes have been translated?
+	//
+	// Calculate string constants.  
+	HClass HCstring  = HClass.forName("java.lang.String");
+	Label  strClsPtr = offm.label(HCstring);
+	HField count     = HCstring.getField("count");
+	HField offset    = HCstring.getField("offset");
+	HField value     = HCstring.getField("value");
+	ArrayList u = new ArrayList(), d = new ArrayList();
+	for (Iterator i = offm.stringConstants(); i.hasNext();) { 
+	    u.clear(); d.clear();
+	    String str   = (String)i.next();
+	    Label  strCA = new Label(nm.mangle(str, "CA"));
+	    add(offm.hashCodeOffset(HCstring),
+		_DATA(new CONST(tf,null,str.hashCode())),u,d);
+	    add(offm.clazzPtrOffset(HCstring),
+		_DATA(new NAME(tf,null,strClsPtr)),u,d);
+	    add(offm.offset(count),_DATA(new CONST(tf,null,str.length())),u,d);
+	    add(offm.offset(offset),_DATA(new CONST(tf,null,0)),u,d);
+	    add(offm.offset(value),_DATA(new NAME(tf,null,strCA)),u,d);
+	}
+
 	// Assign segment types:
-	iList .add(0, new SEGMENT(tf, null, SEGMENT.CLASS));
-	up    .add(0, new SEGMENT(tf, null, SEGMENT.CLASS));
-	soList.add(0, new SEGMENT(tf, null, SEGMENT.STATIC_OBJECTS));
-	spList.add(0, new SEGMENT(tf, null, SEGMENT.STATIC_PRIMITIVES));
+	iList  .add(0, new SEGMENT(tf, null, SEGMENT.CLASS));
+	up     .add(0, new SEGMENT(tf, null, SEGMENT.CLASS));
+	soList .add(0, new SEGMENT(tf, null, SEGMENT.STATIC_OBJECTS));
+	spList .add(0, new SEGMENT(tf, null, SEGMENT.STATIC_PRIMITIVES));
+	strList.add(0, new SEGMENT(tf, null, SEGMENT.STRING_CONSTANTS));
+	caList .add(0, new SEGMENT(tf, null, SEGMENT.STRING_CONSTANTS_CA));
 
 	// At last, assign the root element
 	this.tree = 
