@@ -30,7 +30,7 @@ import java.util.Iterator;
     it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.8 1999-05-24 19:00:42 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.9 1999-05-25 16:43:44 andyb Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -122,7 +122,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 		// storing registers[index] -> values[index]
 		InstrMEM minstr = 
-		    new InstrMEM(null, null, null, values[index], registers[index]);
+		    new InstrMEM(null, null, null, 
+                        new Temp[] { values[index] }, 
+                        new Temp[] { registers[index] });
 
 	    }
 	    for (int u=0; u<instr.use().length; u++) {
@@ -139,8 +141,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 			// Instruction List for 'bb'
 			// storing registers[index] -> values[index]
 			InstrMEM store = new InstrMEM (null, null, null, 
-						 values[index],
-						 registers[index]); 
+				new Temp[] { values[index] },
+				new Temp[] {  registers[index] });
 			
 		    }
 		}
