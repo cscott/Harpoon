@@ -17,7 +17,7 @@ public abstract class HighResolutionTime implements Comparable {
     
     private long millis;
     private int nanos;
-    protected Clock defaultClock = Clock.getRealtimeClock();
+    static protected Clock defaultClock = Clock.getRealtimeClock();
     
     /** Convert this time to an absolute time, relative to some clock.
      *  Convenient for situations where you really need an absolute time.
