@@ -272,8 +272,8 @@ public abstract class MemoryArea {
 	if ((obj != null) && (obj.memoryArea != null) && 
 	    obj.memoryArea.scoped) {
 // Sun's libraries are broken - just annotate that this is the problem area...
-//  	  throw new IllegalAssignmentError();
-	    java_lang_Brokenness++; 
+  	  throw new IllegalAssignmentError();
+//	    java_lang_Brokenness++; 
 	}
     }
 
