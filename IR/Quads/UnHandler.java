@@ -19,7 +19,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.18.2.1 1999-09-16 16:03:38 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.18.2.2 1999-09-16 19:23:36 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -747,14 +747,12 @@ final class UnHandler {
 	    Temp Tex = ss.hm.Tex, Tex2 = ss.extra(0), Tnull = ss.extra(1);
 	    Quad q0 = new NEW(qf, old, Tex, HCex);
 	    Quad q1 = new CALL(qf, old, HCex.getConstructor(new HClass[0]),
-			       new Temp[] { Tex }, null, Tex2, false,
+			       new Temp[] { Tex }, null, Tex, false,
 			       new Temp[0]);
-	    Quad q5 = new MOVE(qf, old, Tex, Tex2);
 	    Quad q6 = new PHI(qf, old, new Temp[0], 2);
 	    Quad q7 = _throwException_(qf, old, Tex);
 	    Quad.addEdges(new Quad[] { q0, q1, q6, q7 });
-	    Quad.addEdge(q1, 1, q5, 0);
-	    Quad.addEdge(q5, 0, q6, 1);
+	    Quad.addEdge(q1, 1, q6, 1);
 	    // save the header so we can reuse this exception-generation code.
 	    if (ss.coalesce) l.add(q0);
 	    return q0;

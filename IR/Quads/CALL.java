@@ -36,9 +36,15 @@ import harpoon.Util.Util;
  * control transfer to an appropriate <code>HANDLER</code> quad.
  * The <code>retex</code> field should be <code>null</code> in
  * this case (and only in this case).
+ * <p>
+ * Note that <b>exactly one</b> of { <code>retval</code>, <code>retex</code> }
+ * will be defined execution of <code>CALL</code>; thus it is <b>perfectly
+ * valid for <code>retval</code> and <code>retex</code> to be identical</b>.
+ * Of course, for typesafety the return type cannot be a primitive if this
+ * is so.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.12.2.1 1999-09-16 06:44:39 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.12.2.2 1999-09-16 19:23:36 cananian Exp $ 
  */
 public class CALL extends SIGMA {
     /** The method to invoke. */
@@ -124,11 +130,18 @@ public class CALL extends SIGMA {
 			"private, or declared in a superclass of the "+
 			"current method.");
 	// check params and retval against method.
-	if (method.getReturnType()==HClass.Void) Util.assert(retval==null);
-	else Util.assert(retval!=null);
+	Util.assert(method.getReturnType()==HClass.Void
+		    ? retval==null : retval!=null,
+		    "retval not consistent with return type.");
 	Util.assert((method.getParameterTypes().length + (isStatic()?0:1)) ==
 		    params.length);
-	if (isStatic()) Util.assert(isVirtual()==false);
+	Util.assert(!isStatic() || isVirtual()==false,
+		    "method can't be both static and virtual");
+	// check that retval and retex are different if return val is primitive
+	Util.assert(!(retval==retex && retex!=null &&
+		      method.getReturnType().isPrimitive()),
+		    "can't merge a primitive and a Throwable w/o violating "+
+		    "type safety.");
 	// I guess it's legal, then.
     }
     // convenience constructor.
