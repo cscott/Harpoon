@@ -51,7 +51,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.24 2000-02-25 00:20:32 cananian Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.25 2000-03-09 00:49:00 salcianu Exp $
 */
 public class BasicBlock {
     
@@ -248,6 +248,9 @@ public class BasicBlock {
 	<code>HCode</code>s.  	
     */
     public static class Factory { 
+	// the underlying HCode
+	private final HCode hcode;
+
 	private final Map hceToBB;
 
 	private final CFGrapher grapher;
@@ -278,6 +281,11 @@ public class BasicBlock {
 	    return leaves;
 	}
 
+	/** Returns the <code>HCode</code> that <code>this</code> factory
+	    produces basic blocks of. */
+	public HCode getHCode(){
+	    return hcode;
+	}
 
 	/** Returns the <code>BasicBlock</code>s constructed by
 	    <code>this</code>.
@@ -326,6 +334,7 @@ public class BasicBlock {
 
 	    HCodeElement head = grapher.getFirstElement(hcode);
 	    this.grapher = grapher;
+	    this.hcode   = hcode;
 
 	    // modifable util classes for construction use only
 	    HashSet myLeaves = new HashSet();
