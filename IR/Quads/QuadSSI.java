@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.1.2.4 2000-01-13 23:48:03 cananian Exp $
+ * @version $Id: QuadSSI.java,v 1.1.2.5 2000-01-31 14:55:37 cananian Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -29,15 +29,9 @@ public class QuadSSI extends Code /* which extends HCode */ {
     QuadSSI(QuadNoSSA qns) 
     {
 	super(qns.getMethod(), null);
-	if (use_new_rename_algorithm)
-	    quads = SSIRename.rename(qns, qf);
-	else {
-	    quads = Quad.clone(qf, qns.quads);
-	    FixupFunc.fixup(this); // add phi/sigma functions.
-	}
+	quads = SSIRename.rename(qns, qf);
 	DeadCode.optimize(this); // get rid of unused phi/sigmas.
     }
-    private final static boolean use_new_rename_algorithm=true;
 
     /** 
      * Create a new code object given a quadruple representation
