@@ -20,8 +20,8 @@ pc	.req	r15
 1:	.word csymbol(fixup_start)	@ first entry in fixup table
 	.word csymbol(fixup_end) - 8	@ last entry in fixup table
 
-	.global _lookup
-_lookup:
+	.global csymbol(_lookup_handler)
+csymbol(_lookup_handler):
 	stmfd sp!, {r4,r5,r6}   @ save r4, r5, r6
 	ldr r1, [fp, #-4]	@ key (== return address of caller)
 	ldr r2, 1b		@ left
