@@ -3,16 +3,21 @@ package harpoon.IR.Tree;
 
 /**
  * The <code>Typed</code> interface allows access to type information for
- * <code>TEMP</code>, <code>MEM</code>, and <code>CONST</code>.
+ * <code>TEMP</code>, <code>MEM</code>, <code>CONST</code>,
+ * <code>OPER</code>, and <code>UNOP</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Typed.java,v 1.1.2.1 1999-01-15 00:19:34 cananian Exp $
+ * @version $Id: Typed.java,v 1.1.2.2 1999-02-05 10:40:45 cananian Exp $
  */
 public interface Typed  {
-    /** Returns <code>true</code> if the expression corresponds to a 64-bit
-     *  value. */
-    public boolean isDoubleWord();
-    /** Returns <code>true</code> if the expressions corresponds to a
-     *  floating-point value. */
-    public boolean isFloatingPoint();
+    // enumerated constants.
+    public int INT=Type.INT;
+    public int LONG=Type.LONG;
+    public int FLOAT=Type.FLOAT;
+    public int DOUBLE=Type.DOUBLE;
+    public int POINTER=Type.POINTER;
+
+    /** Returns enumerated constant (INT, LONG, FLOAT, DOUBLE, or POINTER)
+     *  corresponding to the type of the expression. */
+    public int type();
 }

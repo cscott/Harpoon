@@ -23,13 +23,13 @@ abstract class MemoryAllocator
    *  Returns a temporary variable which points to the highest location 
    *  in memory in which data can be allocated.    
    */
-  abstract public TEMPA  mem_limit(); 
+  abstract public TEMP  mem_limit(); // POINTER type
 
   /**
    *  Returns a temporary variable which points to the next free location 
    *  in memory.     
    */
-  abstract public TEMPA  next_ptr();
+  abstract public TEMP  next_ptr(); // POINTER type
 
   /**
    *  Returns a <code>Stm</code> object which contains code executed 
@@ -42,13 +42,13 @@ abstract class MemoryAllocator
    *  Returns a <code>Stm</code> object which allocates a block of memory 
    *  of the specified size.   
    */
-  public Stm allocateMemory(TEMPA ptr, Exp size)
+  public Stm allocateMemory(TEMP ptr, Exp size)
     {
       LABEL  l0, l1, l2, l3, l4;
       Stm    s0, s1, s2, s3, s4, s5;
-      TEMPI  triedGC;
+      TEMP   triedGC; // INT type
 
-      triedGC = new TEMPI(new Temp(ptr.temp.tempFactory()));
+      triedGC = new TEMP(Typed.INT, new Temp(ptr.temp.tempFactory()));
       l0 = new LABEL(new Label());
       l1 = new LABEL(new Label());
       l2 = new LABEL(new Label());
@@ -58,14 +58,16 @@ abstract class MemoryAllocator
       //
       // triedGC <-- 0
       //
-      s0 = new MOVE(triedGC, new CONSTI(0));
+      s0 = new MOVE(triedGC, new CONST((int)0));
 
       // Is (limit > next + N) ?
       //
       s1 = new SEQ(l0,
-		   new CJUMP(new BINOP(LQop.PCMPGT,
+		   new CJUMP(new BINOP(Typed.POINTER,
+				       Bop.CMPGT,
 				       mem_limit(),
-				       new BINOP(LQop.PADD,
+				       new BINOP(Typed.POINTER,
+						 Bop.ADD,
 						 size,
 						 next_ptr())),
 			     l1.label,   // There's enough space
@@ -91,7 +93,7 @@ abstract class MemoryAllocator
       // try to allocate memory again
       //
       s4 = new SEQ(l4,
-		   new SEQ(new MOVE(triedGC, new CONSTI(1)),
+		   new SEQ(new MOVE(triedGC, new CONST((int)1)),
 			   new SEQ(call_GC(),
 				   new JUMP(l0.label))));
 

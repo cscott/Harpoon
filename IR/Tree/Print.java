@@ -10,7 +10,7 @@ import java.io.PrintStream;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.4 1999-01-15 19:09:29 duncan Exp $
+ * @version $Id: Print.java,v 1.1.2.5 1999-02-05 10:40:45 cananian Exp $
  */
 public class Print 
 {
@@ -56,26 +56,6 @@ public class Print
 	  m_out.print(' ');
       }
 
-    private void printCONST(CONST e, String constStr)
-      {
-	indent(m_indent);
-	say(constStr + " "); say(String.valueOf(e.value()));
-      }
-
-    private void printMEM(MEM e, String memStr)
-      {
-	indent(m_indent++);
-	sayln(memStr + "("); e.exp.visit(this); say(")");
-	m_indent--;
-      }
-    
-    private void printTEMP(TEMP e, String tempStr)
-      {
-	indent(m_indent); say(tempStr + " ");
-	Temp t = (m_tMap==null)?e.temp:m_tMap.tempMap(e.temp);
-	say(t.toString());
-      }
-
     private void say(String s) 
       {
 	m_out.print(s);
@@ -89,24 +69,10 @@ public class Print
     public void visit(BINOP e)
       {
 	indent(m_indent++);
-	say("BINOP("); 
-	say("FIXME");
-	/*
-	  switch(e.op) {
-	  case BINOP.PLUS: say("PLUS"); break;
-	  case BINOP.MINUS: say("MINUS"); break;
-	  case BINOP.MUL: say("MUL"); break;
-	  case BINOP.DIV: say("DIV"); break;
-	  case BINOP.AND: say("AND"); break;
-	  case BINOP.OR: say("OR"); break;
-	  case BINOP.LSHIFT: say("LSHIFT"); break;
-	  case BINOP.RSHIFT: say("RSHIFT"); break;
-	  case BINOP.ARSHIFT: say("ARSHIFT"); break;
-	  case BINOP.XOR: say("XOR"); break;
-	  default:
-	  throw new Error("Print.prExp.BINOP");
-	  }
-	*/
+	say("BINOP(");
+	say(Type.toString(e.type));
+	say(", ");
+	say(Bop.toString(e.op));
 	sayln(",");
 	e.left.visit(this); sayln(","); 
 	e.right.visit(this); say(")");
@@ -130,15 +96,13 @@ public class Print
 	m_indent -= 2;
       }
     
-    public void visit(CONST e)  { printCONST(e, "CONST"); }
-
-    public void visit(CONSTD e) { printCONST(e, "CONSTD"); }
-
-    public void visit(CONSTF e) { printCONST(e, "CONSTF"); }
-
-    public void visit(CONSTI e) { printCONST(e, "CONSTI"); }
-
-    public void visit(CONSTL e) { printCONST(e, "CONSTL"); }
+    public void visit(CONST e)  {
+	indent(m_indent);
+	say("CONST (");
+	say(Type.toString(e.type));
+	say(") ");
+	say(String.valueOf(e.value()));
+    }
 
     public void visit(CJUMP s)
       {
@@ -184,17 +148,13 @@ public class Print
 	say("LABEL "); say(s.label.toString());
       }
 
-    public void visit(MEM e)  { printMEM(e, "MEM"); }
-
-    public void visit(MEMA e) { printMEM(e, "MEMA"); }
-
-    public void visit(MEMD e) { printMEM(e, "MEMD"); }
-
-    public void visit(MEMF e) { printMEM(e, "MEMF"); }
-
-    public void visit(MEMI e) { printMEM(e, "MEMI"); }
-
-    public void visit(MEML e) { printMEM(e, "MEML"); }
+    public void visit(MEM e)  {
+	indent(m_indent++);
+	sayln("MEM("); say(Type.toString(e.type)); say(", ");
+	e.exp.visit(this);
+	say(")");
+	m_indent--;
+    }
 
     public void visit(MOVE s)
       {
@@ -224,38 +184,20 @@ public class Print
 	throw new Error("Print.visit(Stm s)");
       }
 
-    public void visit(TEMP e)  { printTEMP(e, "TEMP"); }
-
-    public void visit(TEMPA e) { printTEMP(e, "TEMPA"); }
-
-    public void visit(TEMPD e) { printTEMP(e, "TEMPD"); }
-
-    public void visit(TEMPF e) { printTEMP(e, "TEMPF"); }
-
-    public void visit(TEMPI e) { printTEMP(e, "TEMPI"); }
-
-    public void visit(TEMPL e) { printTEMP(e, "TEMPL"); }
+    public void visit(TEMP e)  {
+	indent(m_indent); say("TEMP (");
+	say(Type.toString(e.type));
+	say(") ");
+	Temp t = (m_tMap==null)?e.temp:m_tMap.tempMap(e.temp);
+	say(t.toString());
+    }
 
     public void visit(UNOP e)
       {
 	indent(m_indent++); say("UNOP("); 
-	say("FIXME");
-	/*
-	  switch(e.op) {
-	  case BINOP.PLUS: say("PLUS"); break;
-	  case BINOP.MINUS: say("MINUS"); break;
-	  case BINOP.MUL: say("MUL"); break;
-	  case BINOP.DIV: say("DIV"); break;
-	  case BINOP.AND: say("AND"); break;
-	  case BINOP.OR: say("OR"); break;
-	  case BINOP.LSHIFT: say("LSHIFT"); break;
-	  case BINOP.RSHIFT: say("RSHIFT"); break;
-	  case BINOP.ARSHIFT: say("ARSHIFT"); break;
-	  case BINOP.XOR: say("XOR"); break;
-	  default:
-	  throw new Error("Print.prExp.BINOP");
-	  }
-	*/
+	say(Type.toString(e.type));
+	say(", ");
+	say(Uop.toString(e.op));
 	sayln(",");
 	e.operand.visit(this); say(")");
 	m_indent--;
