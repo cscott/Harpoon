@@ -3,7 +3,7 @@
 
 //#define GC_EVERY_TIME
 
-#if defined(WITH_HEAVY_THREADS) || defined(WITH_PTH_THREADS)
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
 # define WITH_THREADED_GC
 #endif
 

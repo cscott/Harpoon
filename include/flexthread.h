@@ -3,6 +3,10 @@
 #define INCLUDED_FLEXTHREAD_H
 #include "config.h"
 
+#ifndef HAVE_PTHREAD_BARRIER_T
+# define NEED_PTHREAD_BARRIER_T
+#endif /* HAVE_PTHREAD_BARRIER_T */
+
 #ifdef WITH_HEAVY_THREADS
 #include <pthread.h>
 #include <sched.h>	/* for sched_yield */
@@ -11,10 +15,6 @@
 #ifndef HAVE_PTHREAD_RWLOCK_T
 # define NEED_PTHREAD_RWLOCK_T
 #endif /* HAVE_PTHREAD_RWLOCK_T */
-
-#ifndef HAVE_PTHREAD_BARRIER_T
-# define NEED_PTHREAD_BARRIER_T
-#endif /* HAVE_PTHREAD_BARRIER_T */
 
 /* Make sure the BDW collector has a chance to redefine 
  * pthread_create/sigmask/join for its own nefarious purposes. */

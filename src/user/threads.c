@@ -251,8 +251,10 @@ int user_mutex_trylock(user_mutex_t *x) {
   semaphore test= SEMAPHORE_TEST_AND_SET(&(x->mutex));
   if (test==SEMAPHORE_CLEAR)
     return 0;
-  else
+  else {
+    context_switch();
     return EBUSY;
+  }
 }
 
 int user_mutex_unlock(user_mutex_t *x) {

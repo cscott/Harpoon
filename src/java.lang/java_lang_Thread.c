@@ -57,39 +57,6 @@ static pthread_mutex_t running_threads_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t gc_thread_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t running_threads_mutex = PTHREAD_MUTEX_INITIALIZER;
 int num_running_threads = 1;
-
-/* effects: decrements the number of threads that the GC waits for */
-void decrement_running_thread_count() {
-  // we don't want to block in case GC is occurring
-  // since we are still counted as a running thread
-  while (pthread_mutex_trylock(&gc_thread_mutex))
-    if (halt_for_GC_flag) halt_for_GC();
-  num_running_threads--;
-  pthread_mutex_unlock(&gc_thread_mutex);
-}
-
-/* effects: increments the number of threads that the GC waits for */
-void increment_running_thread_count() {
-  // we want to block if someone else has the lock.
-  // even if GC is occurring, it won't be waiting
-  // for us since we are off the thread count
-  // we definitely don't want to call halt_for_GC().
-  pthread_mutex_lock(&gc_thread_mutex);
-  num_running_threads++;
-  pthread_mutex_unlock(&gc_thread_mutex);
-}
-
-void find_other_thread_local_refs(struct FNI_Thread_State *curr_thrstate) {
-  struct thread_list *rt = &running_threads;
-  while(rt->next != NULL) {
-    struct FNI_Thread_State *thrstate = rt->next->thrstate;
-    if (thrstate != curr_thrstate) {
-      error_gc("Other thread (%p)\n", thrstate);
-      handle_local_refs_for_thread(thrstate);
-    }
-    rt = rt->next;
-  }
-}
 #endif
 
 
@@ -157,24 +124,75 @@ static void wait_on_running_thread() {
 #define EXTRACT_PTHREAD_T(env, thread) \
   ( EXTRACT_OTHER_ENV(env, thread)->pthread )
 
-#ifdef WITH_THREADED_GC
-# error /* unimplemented */
-#endif
+#ifdef WITH_PRECISE_GC
+struct gc_thread_list {
+  struct FNI_Thread_State *thrstate;
+  struct gc_thread_list *next;
+};
 
+static struct gc_thread_list gc_running_threads = { NULL, NULL };
+
+/* mutex for garbage collection vs thread addition/deletion */
+pthread_mutex_t gc_thread_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t running_threads_mutex = PTHREAD_MUTEX_INITIALIZER;
+int num_running_threads = 1;
+#else
 static pthread_mutex_t running_threads_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 static pthread_cond_t running_threads_cond = PTHREAD_COND_INITIALIZER;
 
-static void add_running_thread(const struct FNI_Thread_State *thrstate) {
+static void add_running_thread(struct FNI_Thread_State *thrstate) {
+#ifdef WITH_PRECISE_GC
+  struct gc_thread_list *gctl = malloc(sizeof(struct gc_thread_list));
+  gctl->thrstate = thrstate;
+  gctl->next = gc_running_threads.next;
+  pthread_mutex_lock(&running_threads_mutex);
+  gc_running_threads.next = gctl;
+  num_running_threads++;
+  pthread_mutex_unlock(&running_threads_mutex);
+#endif
 }
 
 static void remove_running_thread() {
+#ifdef WITH_PRECISE_GC
+  struct gc_thread_list *gctl = gc_running_threads.next, *prev = NULL;
+  // may need to stop for GC
+  while (pthread_mutex_trylock(&gc_thread_mutex))
+    if (halt_for_GC_flag) halt_for_GC();
+#endif
   pthread_mutex_lock(&running_threads_mutex);
+#ifdef WITH_PRECISE_GC
+  while (gctl) {
+    if (gctl->thrstate == (struct FNI_Thread_State *)FNI_GetJNIEnv()) {
+      if (prev) 
+	prev->next = gctl->next;
+      else 
+	gc_running_threads.next = gctl->next;
+      free(gctl);
+      break;
+    }
+    prev = gctl;
+    gctl = gctl->next;
+  }
+  num_running_threads--;
+  pthread_mutex_unlock(&gc_thread_mutex);
+#endif
   pthread_cond_signal(&running_threads_cond);
   pthread_mutex_unlock(&running_threads_mutex);
 }
 
 static void wait_on_running_thread() {
+#ifdef WITH_PRECISE_GC
+  // may need to stop for GC
+  while (pthread_mutex_trylock(&gc_thread_mutex))
+    if (halt_for_GC_flag) halt_for_GC();
+#endif
   pthread_mutex_lock(&running_threads_mutex);
+#ifdef WITH_PRECISE_GC
+  // one less thread to wait for
+  num_running_threads--;
+  pthread_mutex_unlock(&gc_thread_mutex);
+#endif
   while((gtl!=gtl->next)||(ioptr!=NULL)) {
     pthread_cond_wait(&running_threads_cond, &running_threads_mutex);
   }
@@ -182,6 +200,47 @@ static void wait_on_running_thread() {
 }
 
 #endif /* WITH_USER_THREADS */
+
+#ifdef WITH_PRECISE_GC
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
+/* effects: decrements the number of threads that the GC waits for */
+void decrement_running_thread_count() {
+  // we don't want to block in case GC is occurring
+  // since we are still counted as a running thread
+  while (pthread_mutex_trylock(&gc_thread_mutex))
+    if (halt_for_GC_flag) halt_for_GC();
+  num_running_threads--;
+  pthread_mutex_unlock(&gc_thread_mutex);
+}
+
+/* effects: increments the number of threads that the GC waits for */
+void increment_running_thread_count() {
+  // we want to block if someone else has the lock.
+  // even if GC is occurring, it won't be waiting
+  // for us since we are off the thread count
+  // we definitely don't want to call halt_for_GC().
+  pthread_mutex_lock(&gc_thread_mutex);
+  num_running_threads++;
+  pthread_mutex_unlock(&gc_thread_mutex);
+}
+
+void find_other_thread_local_refs(struct FNI_Thread_State *curr_thrstate) {
+#ifdef WITH_USER_THREADS
+  struct gc_thread_list *rt = &gc_running_threads;
+#else
+  struct thread_list *rt = &running_threads;
+#endif
+  while(rt->next != NULL) {
+    struct FNI_Thread_State *thrstate = rt->next->thrstate;
+    if (thrstate != curr_thrstate) {
+      error_gc("Other thread (%p)\n", thrstate);
+      handle_local_refs_for_thread(thrstate);
+    }
+    rt = rt->next;
+  }
+}
+#endif // WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
+#endif // WITH_PRECISE_GC
 
 
 
@@ -614,6 +673,11 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
 
   __machdep_stack_set(&(tl->mthread), stackptr);
 
+#ifdef WITH_PRECISE_GC
+  /* may need to stop for GC */
+  while (pthread_mutex_trylock(&gc_thread_mutex))
+    if (halt_for_GC_flag) halt_for_GC();
+#endif
 
   __machdep_pthread_create(&(tl->mthread), &thread_startup_routine, &cls,STACKSIZE, 0,0);
 
@@ -624,11 +688,12 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   tl->prev=gtl;
   tl->prev->next=tl;
   tl->next->prev=tl;
-  
-
   pthread_mutex_lock(&(cls.parampass_mutex));
   /* wait for new thread to copy _this before proceeding */
   pthread_cond_wait(&(cls.parampass_cond), &(cls.parampass_mutex));
+#ifdef WITH_PRECISE_GC
+  pthread_mutex_unlock(&gc_thread_mutex);
+#endif
   /* okay, we're done, man. Release our resources. */
   pthread_cond_destroy(&(cls.parampass_cond));
   pthread_mutex_unlock(&(cls.parampass_mutex));
