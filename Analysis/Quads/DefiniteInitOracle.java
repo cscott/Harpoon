@@ -45,7 +45,7 @@ import java.util.Set;
  * before its definite initialization point.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefiniteInitOracle.java,v 1.1.2.6 2001-11-07 21:48:47 cananian Exp $
+ * @version $Id: DefiniteInitOracle.java,v 1.1.2.7 2001-11-07 22:24:15 cananian Exp $
  */
 public class DefiniteInitOracle {
     private static final boolean DEBUG=true;
@@ -181,23 +181,6 @@ public class DefiniteInitOracle {
 		exits.add(q);
 	}
 	return Collections.unmodifiableSet(exits);
-    }
-    /** Returns true iff the given method hm contains no reads of fields
-     *  in hc. */
-    boolean isSafe(HMethod hm, HClass hc) {
-	for (Iterator it=Arrays.asList(hc.getDeclaredFields()).iterator();
-	     it.hasNext(); ) {
-	    HField hf = (HField) it.next();
-	    if (hf.isStatic()) continue;
-	    if (fso.isRead(hm, hf))
-		return false;
-	}
-	return true;
-    }
-    // convenience.
-    boolean isSafe(HMethod hm, HCodeElement hce) {
-	return isSafe
-	    (hm, ((Quad)hce).getFactory().getMethod().getDeclaringClass());
     }
     Set findDefInit(HCodeElement exit,
 		    DomTree dt, MustParamOracle mpo, MayReadOracle mro,
