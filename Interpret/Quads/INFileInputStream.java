@@ -15,7 +15,7 @@ import java.io.IOException;
  * methods in <code>java.io.FileInputStream</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFileInputStream.java,v 1.1.2.8 2000-01-30 04:58:39 cananian Exp $
+ * @version $Id: INFileInputStream.java,v 1.1.2.9 2001-09-28 21:51:53 cananian Exp $
  */
 final class INFileInputStream {
     static final void register(StaticState ss) {
@@ -46,6 +46,22 @@ final class INFileInputStream {
 	    default: throw new java.io.InvalidObjectException("Unknown input stream.");
 	    }
 	}
+    }
+    // helper method: create a new interpreted FileInputStream from a real one.
+    static ObjectRef openInputStream(StaticState ss, InputStream is) {
+	// make fileinputstream object
+	ObjectRef fis_obj = new ObjectRef(ss, ss.HCfistream);
+	fis_obj.putClosure(new InputStreamWrapper(is));
+	// make file descriptor object
+	ObjectRef fd_obj = new ObjectRef(ss, ss.HCfiledesc);
+	// mark file descriptor to indicate it is 'valid'.
+	HField hf1 = ss.HCfiledesc.getField("fd");
+	fd_obj.update(hf1, new Integer(4));
+	// set fileinputstream's filedescriptor.
+	HField hf0 = ss.HCfistream.getField("fd");
+	fis_obj.update(hf0, fd_obj);
+	// done.
+	return fis_obj;
     }
 
     private static final ObjectRef security(StaticState ss) 
@@ -101,6 +117,7 @@ final class INFileInputStream {
 		throws InterpretedThrowable {
 		ObjectRef obj = (ObjectRef) params[0];
 		String filename = ss.ref2str((ObjectRef) params[1]);
+		if (ss.TRACE)
 		System.err.println("OPENING "+filename);
 		try {
 		    obj.putClosure(new InputStreamWrapper(new FileInputStream(filename)));

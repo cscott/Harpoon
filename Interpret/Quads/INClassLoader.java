@@ -6,7 +6,10 @@ package harpoon.Interpret.Quads;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.NoSuchClassException;
+
+import java.io.InputStream;
 
 /**
  * <code>INClassLoader</code> provides implementations for (some of) the native
@@ -14,16 +17,73 @@ import harpoon.ClassFile.NoSuchClassException;
  * <code>java.lang.ClassLoader.NativeLibrary</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INClassLoader.java,v 1.1.2.3 2000-01-30 04:58:39 cananian Exp $
+ * @version $Id: INClassLoader.java,v 1.1.2.4 2001-09-28 21:51:53 cananian Exp $
  */
 public class INClassLoader {
     static final void register(StaticState ss) {
+	try{ ss.register(findSystemClass0(ss)); } catch (NoSuchMethodError e){}
+	/*try*/{ ss.register(getSystemResourceAsStream0(ss)); }/* catch (NoSuchMethodError e) {}*/
+	try{ ss.register(init(ss)); } catch (NoSuchMethodError e) {}
 	// JDK 1.2 only
 	try{ss.register(getCallerClassLoader(ss));}catch(NoSuchMethodError e){}
 	try { // the following are ClassLoader.NativeLibrary methods.
 	try { ss.register(NLload(ss)); } catch (NoSuchMethodError e) {}
 	try { ss.register(NLunload(ss)); } catch (NoSuchMethodError e) {}
 	} catch (NoSuchClassException e) { /* ignore */ }
+    }
+    // ClassLoader.findSystemClass0 behaves (in our implementation) exactly
+    // like Class.forName
+    private static final NativeMethod findSystemClass0(StaticState ss0) {
+	final HClass hc = ss0.linker.forName("java.lang.ClassLoader");
+	final HMethod hm =
+	    hc.getMethod("findSystemClass0", new HClass[] { ss0.HCstring } );
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    // implementation borrowed from INClass.forName
+	    // throws ClassNotFoundException
+	    Object invoke(StaticState ss, Object[] params)
+		throws InterpretedThrowable {
+		// params[0] is 'this' because findSystemClass is non-static
+		String clsname = ss.ref2str((ObjectRef)params[1]);
+		try {
+		    return INClass.forClass(ss, ss.linker.forName(clsname));
+		} catch (NoSuchClassException e) {
+		    ObjectRef obj = ss.makeThrowable(ss.HCclassnotfoundE);
+		    throw new InterpretedThrowable(obj, ss);
+		}
+	    }
+	};
+    }
+    // getSystemResourceAsStream0 is identical in functionality to
+    // Loader.getResourceAsStream().  But we must wrap the result.
+    private static final NativeMethod getSystemResourceAsStream0(StaticState ss0) {
+	final HClass hc = ss0.linker.forName("java.lang.ClassLoader");
+	final HMethod hm =
+	    hc.getMethod("getSystemResourceAsStream0", new HClass[] { ss0.HCstring } );
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    Object invoke(StaticState ss, Object[] params) {
+		String resname = ss.ref2str((ObjectRef)params[0]);
+		InputStream is = Loader.getResourceAsStream(resname);
+		if (is==null) return null; // unsuccessful.
+		// okay, now create new 'interpreted' FileInputStream from
+		// the real one.
+		return INFileInputStream.openInputStream(ss, is);
+	    }
+	};
+    }
+    // do-nothing 'init' method (initialization of class loader)
+    private static final NativeMethod init(StaticState ss0) {
+	final HClass hc = ss0.linker.forName("java.lang.ClassLoader");
+	final HMethod hm =
+	    hc.getMethod("init", new HClass[0] );
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    Object invoke(StaticState ss, Object[] params) {
+		// do nothing.
+		return null;
+	    }
+	};
     }
     // Returns the caller's class loader
     private static final NativeMethod getCallerClassLoader(StaticState ss0) {
