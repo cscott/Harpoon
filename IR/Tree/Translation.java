@@ -5,6 +5,7 @@ package harpoon.IR.Tree;
 
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
+import harpoon.Util.Util;
 /**
  * <code>Translation</code> is an empty class wrapper for various
  * special context-sensitive <code>Tree.Exp</code> wrappers.
@@ -15,7 +16,7 @@ import harpoon.Temp.Temp;
  * this sort of conditional context-sensitive expression resolution.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translation.java,v 1.1.4.2 2000-01-11 00:44:23 pnkfelix Exp $
+ * @version $Id: Translation.java,v 1.1.4.3 2000-02-11 18:03:58 cananian Exp $
  */
 public abstract class Translation {
     /** The <code>Translation.Exp</code> class represents an expression
@@ -27,18 +28,22 @@ public abstract class Translation {
      *  should be called, and it should only be called once.
      */
     public static abstract class Exp {
+	private boolean once=false;
 	public final harpoon.IR.Tree.Exp unEx(TreeFactory tf) {
+	    Util.assert(!once); once=true;
 	    return unExImpl(tf);
 	}
 	protected abstract harpoon.IR.Tree.Exp unExImpl(TreeFactory tf);
 	
 	public final harpoon.IR.Tree.Stm unNx(TreeFactory tf) {
+	    Util.assert(!once); once=true;
 	    return unNxImpl(tf);
 	}
 	protected abstract harpoon.IR.Tree.Stm unNxImpl(TreeFactory tf);
 	public final harpoon.IR.Tree.Stm unCx(TreeFactory tf,
 					      Label iftrue, 
 					      Label iffalse) {
+	    Util.assert(!once); once=true;
 	    return unCxImpl(tf, iftrue, iffalse);
 	}
 	protected abstract harpoon.IR.Tree.Stm unCxImpl(TreeFactory tf,
@@ -75,7 +80,7 @@ public abstract class Translation {
 	    Temp  Tr = new Temp(tf.tempFactory(), "cx");
 	    Label Lt = new Label();
 	    Label Lf = new Label();
-	    Stm s = unCx(tf, Lt, Lf);
+	    Stm s = unCxImpl(tf, Lt, Lf);
 	    return new ESEQ
 		(tf, s,
 		 new SEQ
@@ -99,7 +104,7 @@ public abstract class Translation {
 	}
 	protected harpoon.IR.Tree.Stm unNxImpl(TreeFactory tf) {
 	    Label l = new Label();
-	    Stm s = unCx(tf, l, l);
+	    Stm s = unCxImpl(tf, l, l);
 	    return new SEQ(tf, s, s, new LABEL(tf, s, l, false));
 	}
     }
