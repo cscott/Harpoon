@@ -12,14 +12,6 @@ extern "C" {
 /* Inaccessible static: unknownProtectionDomain */
 /*
  * Class:     java_lang_Class
- * Method:    forName
- * Signature: (Ljava/lang/String;)Ljava/lang/Class;
- */
-JNIEXPORT jclass JNICALL Java_java_lang_Class_forName
-  (JNIEnv *, jclass, jstring);
-
-/*
- * Class:     java_lang_Class
  * Method:    isInstance
  * Signature: (Ljava/lang/Object;)Z
  */
@@ -40,6 +32,14 @@ JNIEXPORT jboolean JNICALL Java_java_lang_Class_isAssignableFrom
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_java_lang_Class_isInterface
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     java_lang_Class
+ * Method:    isArray
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_java_lang_Class_isArray
   (JNIEnv *, jobject);
 
 /*
@@ -72,6 +72,14 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_getSuperclass
  * Signature: ()[Ljava/lang/Class;
  */
 JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getInterfaces
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     java_lang_Class
+ * Method:    getComponentType
+ * Signature: ()Ljava/lang/Class;
+ */
+JNIEXPORT jclass JNICALL Java_java_lang_Class_getComponentType
   (JNIEnv *, jobject);
 
 /*
@@ -201,14 +209,6 @@ JNIEXPORT jobject JNICALL Java_java_lang_Class_getDeclaredMethod
  */
 JNIEXPORT jobject JNICALL Java_java_lang_Class_getDeclaredConstructor
   (JNIEnv *, jobject, jobjectArray);
-
-/*
- * Class:     java_lang_Class
- * Method:    getClassLoader0
- * Signature: ()Ljava/lang/ClassLoader;
- */
-JNIEXPORT jobject JNICALL Java_java_lang_Class_getClassLoader0
-  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

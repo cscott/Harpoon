@@ -50,9 +50,7 @@ import java.security.ProtectionDomain;
 import gnu.java.lang.ClassHelper;
 
 /*
- * This class is a reference version, mainly for compiling a class library
- * jar.  It is likely that VM implementers replace this with their own
- * version that can communicate effectively with the VM.
+ * This class has been hacked by CSA to play nicely with FLEX.
  */
 
 /**
@@ -76,6 +74,7 @@ import gnu.java.lang.ClassHelper;
  * <code>TC_CLASS ClassDescriptor</code>. For more serialization information,
  * see {@link ObjectStreamClass}.
  *
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author John Keiser
  * @author Eric Blake <ebb9@email.byu.edu>
  * @since 1.0
@@ -137,15 +136,15 @@ public final class Class implements Serializable
    * @throws ExceptionInInitializerError if the class loads, but an exception
    *         occurs during initialization
    */
-  //XXX This does not need to be native.
-  public static native Class forName(String name)
-    throws ClassNotFoundException;
-  /*
+  public static Class forName(String name)
+    throws ClassNotFoundException
   {
+    return forName(name, true, null); // CSA HACK! punt to system class loader
+    /*
     return forName(name, true,
                    VMSecurityManager.getClassContext()[1].getClassLoader());
+    */
   }
-  */
 
   /**
    * Use the specified classloader to load and link a class. If the loader
@@ -272,10 +271,12 @@ public final class Class implements Serializable
    * @return whether this class is an array type
    * @since 1.1
    */
-  public boolean isArray()
+  public native boolean isArray();
+  /* CSA HACK
   {
     return getName().charAt(0) == '[';
   }
+  */
 
   /**
    * Return whether this class is a primitive type.  A primitive type class
@@ -395,7 +396,9 @@ public final class Class implements Serializable
    * @see Array
    * @since 1.1
    */
-  public Class getComponentType()
+  public native Class getComponentType();
+    // CSA: made native
+    /*
   {
     if (isArray())
       try
@@ -435,6 +438,7 @@ public final class Class implements Serializable
         }
     return null;
   }
+    */
 
   /**
    * Get the modifiers of this class.  These can be decoded using Modifier,
@@ -469,7 +473,8 @@ public final class Class implements Serializable
    */
   void setSigners(Object[] signers)
   {
-    this.signers = signers;
+      throw new RuntimeException("Classes are read-only in FLEX"); // CSA HACK.
+      //this.signers = signers;
   }
 
   /**
@@ -871,5 +876,5 @@ public final class Class implements Serializable
    *
    * @return the class loader
    */
-  native ClassLoader getClassLoader0();
+  /*native*/ ClassLoader getClassLoader0() { return null; } // CSA HACK.
 } // class Class
