@@ -6,8 +6,9 @@ package harpoon.Backend.Maps;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HClass;
-
 import harpoon.Temp.Label;
+
+import java.util.Iterator;
 
 /**
  * An <code>OffsetMap</code> maps an <code>HField</code> or an 
@@ -15,35 +16,17 @@ import harpoon.Temp.Label;
  * total size of an <code>HClass</code> object.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: OffsetMap.java,v 1.1.2.13 1999-08-11 03:51:48 cananian Exp $
+ * @version $Id: OffsetMap.java,v 1.1.2.14 1999-08-11 10:41:14 duncan Exp $
  */
 public abstract class OffsetMap { // use an abstract class, if we can.
 
-    /** Returns an int used to tag a class as being an array type */
-    public abstract int arrayTag(); 
-
     /** Maps an <code>HClass</code> to an offset (in bytes).  
      *  Returns the offset from an object reference of the class pointer */
-    public abstract int classOffset(HClass hc);
+    public abstract int clazzPtrOffset(HClass hc);
 
-    /** Returns an int used to tag a class as being a class type */
-    public abstract int classTag();
-
-    /** For array types, returns the offset from the class pointer of 
-     *  the component type */
-    public abstract int componentTypeOffset(HClass hc);
-
-    /** Maps an <code>HClass</code> to an offset (in bytes).
-     *  Returns the offset from the class pointer of the specified
-     *  class.  This will be some function of the class's depth in
-     *  the class hierarchy. */
-    public abstract int displayOffset(HClass hc);
-
-    /** Returns the size of the display information.  Like many of the
-     *  methods in OffsetMap, this should return the same value regardless
-     *  of the paramter.  Perhaps the HClass parameter should be abandoned? 
+    /** Returns the size (in bytes) of the display information.  
      */
-    public abstract int displaySize(HClass hc);
+    public abstract int displaySize();
 
     /** Maps an <code>HClass</code> to an offset (in bytes).  
      *  If hc is an array type, returns the offset of the
@@ -59,9 +42,6 @@ public abstract class OffsetMap { // use an abstract class, if we can.
      *  implemented by the specified class
      */
     public abstract int interfaceListOffset(HClass hc);
-
-    /** Returns an int used to tag a class as being an interface type */
-    public abstract int interfaceTag();
 
     /** Maps an <code>HClass</code> to a <code>Label</code> representing the 
      *  location of its class pointer  */
@@ -85,6 +65,12 @@ public abstract class OffsetMap { // use an abstract class, if we can.
      *  an object reference of the array's length field. */
     public abstract int lengthOffset(HClass hc); 
 
+    /** Maps an <code>HClass</code> to an offset (in bytes).
+     *  Returns the offset from the class pointer of the specified
+     *  class.  This will be some function of the class's depth in
+     *  the class hierarchy. */
+    public abstract int offset(HClass hc);
+
     /** Maps a non-static <code>HField</code> to an offset (in bytes).
      *  If the field is inlined using type 1 inlining (which preserves
      *  the class pointer) then the specified offset points just after the
@@ -95,21 +81,15 @@ public abstract class OffsetMap { // use an abstract class, if we can.
     public abstract int offset(HField hf);
 
     /** Maps a non-static <code>HMethod</code> to an offset (in bytes).
-     *  This method must work for interface methods as well as class methods. */
+     *  This method must work for interface methods as well as class methods.*/
     public abstract int offset(HMethod hm);
-
-    /** Returns an int used to tag a class as being a primitive type */
-    public abstract int primitiveTag();
 
     /** Maps an <code>HClass</code> to a size (in bytes). */
     public abstract int size(HClass hc);
 
-    /** Maps an <code>HClass</code> to an offset (in bytes).  The offset
-     *  returned should be the offset from the class pointer of the class's
-     *  tag.  The tag should be one of:  arrayTag(), classTag(), interfaceTag(),
-     *  and primitiveTag().  */
-    public abstract int tagOffset(HClass hc);
-
+    /** Returns an <code>Iterator</code> of all string constants which this
+     *  offset map knows about.  */
+    public abstract Iterator stringConstants();
 }
 
 

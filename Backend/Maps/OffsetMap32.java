@@ -12,7 +12,9 @@ import harpoon.ClassFile.HMethod;
 import harpoon.Temp.Label;
 import harpoon.Util.Util;
 
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 /**
@@ -20,63 +22,56 @@ import java.util.StringTokenizer;
  * specializing them for 32-bit architectures.
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.17 1999-08-11 03:51:48 cananian Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.18 1999-08-11 10:41:14 duncan Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
     private static int WORDSIZE = 4;
 
-    private ClassDepthMap       m_cdm;   
-    private FieldMap            m_fm;     
-    private Hashtable           m_fields; // Cache of field-orderings
-    private Hashtable           m_labels; // Cache of label mappings
-    private HClassInfo          m_hci;
-    private InterfaceMethodMap  m_imm; 
-    private MethodMap           m_cmm;
-    private NameMap             m_nm;
+    private ClassDepthMap       cdm;   
+    private FieldMap            fm;     
+    private HClassInfo          hci;
+    private InterfaceMethodMap  imm; 
+    private MethodMap           cmm;
+    private NameMap             nm;
+
+    private Map fields  = new HashMap();
+    private Map labels  = new HashMap();
+    private Map strings = new HashMap();
 
     /** Class constructor */
     public OffsetMap32(ClassHierarchy ch, NameMap nm) {
-	// Util.assert(ch!=null);
-    
-	m_cmm     = new MethodMap() {
-	    public int methodOrder(HMethod hm) { 
-		return m_hci.getMethodOffset(hm); 
-	    }
+	Util.assert(ch!=null, "Class hierarchy must be non-null");
+	
+	int _maxDepth = 0;
+	for (Iterator it=ch.classes().iterator();it.hasNext();){
+	    HClass hc    = (HClass)it.next();
+	    int    depth = hci.depth(hc);
+	    _maxDepth    = (depth>_maxDepth) ? depth : _maxDepth;
+	}
+	final int maxDepth = _maxDepth;
+
+	this.cdm = new ClassDepthMap() {
+	    public int classDepth(HClass hc) { return hci.depth(hc); }
+	    public int maxDepth() { return maxDepth; } 
 	};
-	m_cdm     = new ClassDepthMap() {
-	    public int classDepth(HClass hc) { return m_hci.depth(hc); }
-	    public int maxDepth() { throw new Error("Not impl:  maxDepth()"); }
+	this.fm = new FieldMap() {
+	    public int fieldOrder(HField hf) {return hci.getFieldOffset(hf);}
 	};
-	m_fm      = new FieldMap() {
-	    public int fieldOrder(HField hf) { 
-		return m_hci.getFieldOffset(hf); 
-	    }
+	this.hci = new HClassInfo();
+	this.imm = new InterfaceMethodMap
+	    (new harpoon.Util.IteratorEnumerator(ch.classes().iterator()));
+	this.cmm = new MethodMap() {
+	    public int methodOrder(HMethod hm){return hci.getMethodOffset(hm);}
 	};
-	m_fields  = new Hashtable();
-	m_labels  = new Hashtable();
-	m_hci     = new HClassInfo();
-	// m_imm     = new InterfaceMethodMap(ch.classes());
-	m_nm      = nm;
+	this.nm  = nm;
     }
+    
     /** Create an <code>OffsetMap32</code> using a
      *  <code>DefaultNameMap</code>. */
     public OffsetMap32(ClassHierarchy ch) {
 	this(ch, new DefaultNameMap());
     }
-
-    /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-     *                                                           *
-     *              Implementation of type tags                  *
-     *                                                           *
-     *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-
-
-    public int arrayTag()     { return 0; }
-    public int classTag()     { return 1; }
-    public int interfaceTag() { return 2; }
-    public int primitiveTag() { return 3; }
-
 
     /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
      *                                                           *
@@ -87,39 +82,39 @@ public class OffsetMap32 extends OffsetMap
 
     /** Returns the label corresponding to the specified HClass */
     public Label label(HClass hc) { 
-	if (!m_labels.containsKey(hc)) {
-	    m_labels.put(hc, new Label(m_nm.mangle(hc)));
+	if (!labels.containsKey(hc)) {
+	    labels.put(hc, new Label(nm.mangle(hc)));
 	}
-	return (Label)m_labels.get(hc);
+	return (Label)labels.get(hc);
     }
 	    
     /** Returns the label corresponding to the specified static field */
     public Label label(HField hf) { 
 	Util.assert(hf.isStatic());
-	if (!m_labels.containsKey(hf)) {
-	    m_labels.put(hf, new Label(m_nm.mangle(hf)));
+	if (!labels.containsKey(hf)) {
+	    labels.put(hf, new Label(nm.mangle(hf)));
 	}
-	return (Label)m_labels.get(hf);
+	return (Label)labels.get(hf);
     }
 
     /** Returns the label corrensponding to the specified method.  This
      *  method is not necessarily static */
     public Label label(HMethod hm) { 
-	if (!m_labels.containsKey(hm)) {
-	    m_labels.put(hm, new Label(m_nm.mangle(hm))); 
+	if (!labels.containsKey(hm)) {
+	    labels.put(hm, new Label(nm.mangle(hm))); 
 	}
-	return (Label)m_labels.get(hm);
+	return (Label)labels.get(hm);
     }
 
     /** Returns the label corresponding to the specified String constant */
     public Label label(String stringConstant) { 
-	if (!m_labels.containsKey(stringConstant)) {
-	    m_labels.put(stringConstant,
-			 new Label(m_nm.mangle(stringConstant)));
+	if (!strings.containsKey(stringConstant)) {
+	    strings.put(stringConstant, new Label(nm.mangle(stringConstant)));
 	}
-	return (Label)m_labels.get(stringConstant);
+	return (Label)strings.get(stringConstant);
     }
 
+    public Iterator stringConstants() {	return strings.keySet().iterator(); }
     
     /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
      *                                                           *
@@ -129,7 +124,7 @@ public class OffsetMap32 extends OffsetMap
 
 
     /** Returns the offset of the class pointer */
-    public int classOffset(HClass hc)   { 
+    public int clazzPtrOffset(HClass hc)   { 
 	Util.assert(!hc.isPrimitive());
 	return -1 * WORDSIZE;
     }
@@ -141,19 +136,9 @@ public class OffsetMap32 extends OffsetMap
 	return -1 * WORDSIZE;
     }
 
-    /** Returns the offset from the class pointer of this class's pointer
-     *  in the display */
-    public int displayOffset(HClass hc) { 
-	Util.assert(!hc.isPrimitive() && !hc.isInterface());
-	return m_cdm.classDepth(hc) * WORDSIZE;
-    }
-
-    /** Returns the size of the display information of the specified class */
-    public int displaySize(HClass hc) {
-	Util.assert(!hc.isPrimitive() && !hc.isInterface());
-	
-	// Arrays always extend _only_ Object
-	return hc.isArray()?2*WORDSIZE:64*WORDSIZE;
+    /** Returns the size of the display information */
+    public int displaySize() {
+	return cdm.maxDepth() * WORDSIZE;
     }
 
     /** Returns the offset of the first array element if hc is an array
@@ -180,7 +165,7 @@ public class OffsetMap32 extends OffsetMap
      *  the class pointer of the pointer to implemented interfaces */
     public int interfaceListOffset(HClass hc) { 
 	Util.assert(!hc.isPrimitive() && !hc.isArray());
-	return -3 * WORDSIZE;
+	return -4 * WORDSIZE;
     }
 
     /** If hc is an array type, returns the offset of its length field */
@@ -189,28 +174,35 @@ public class OffsetMap32 extends OffsetMap
 	return -3 * WORDSIZE; 
     }
 
+    /** Returns the offset from the class pointer of this class's pointer
+     *  in the display */
+    public int offset(HClass hc) { 
+	Util.assert(!hc.isPrimitive() && !hc.isInterface());
+	return cdm.classDepth(hc) * WORDSIZE;
+    }
+
     /** Returns the offset from the object reference of the specified 
      *  non-static field */
     public int offset(HField hf) {
 	Util.assert(!hf.isStatic());
 
 	HClass    hc;
-	HField[]  fields, orderedFields;
+	HField[]  hfields, orderedFields;
 	int       fieldOrder, offset;
     
 	hc = hf.getDeclaringClass();
-	if (!m_fields.containsKey(hc)) {
-	    fields         = hc.getDeclaredFields();
-	    orderedFields  = new HField[fields.length];
-	    for (int i=0; i<fields.length; i++) 
-		orderedFields[m_fm.fieldOrder(fields[i])] = fields[i];
+	if (!this.fields.containsKey(hc)) {
+	    hfields        = hc.getDeclaredFields();
+	    orderedFields  = new HField[hfields.length];
+	    for (int i=0; i<hfields.length; i++) 
+		orderedFields[fm.fieldOrder(hfields[i])] = hfields[i];
 	    // Cache field ordering
-	    m_fields.put(hc, orderedFields);
+	    this.fields.put(hc, orderedFields);
 	}
 	else 
-	    orderedFields  = (HField[])m_fields.get(hc);
+	    orderedFields  = (HField[])this.fields.get(hc);
 
-	fieldOrder = m_fm.fieldOrder(hf);
+	fieldOrder = fm.fieldOrder(hf);
 	offset     = fieldsOffset(hc);
     
 	for (int i=0; i<fieldOrder; i++)
@@ -225,9 +217,8 @@ public class OffsetMap32 extends OffsetMap
     public int offset(HMethod hm) { 
 	Util.assert(!hm.isStatic());
 	HClass hc = hm.getDeclaringClass(); 
-    
-	if (hc.isInterface()) return (-m_imm.methodOrder(hm) - 4) * WORDSIZE;
-	else return (m_cmm.methodOrder(hm) + displaySize(hc)) * WORDSIZE;
+	if (hc.isInterface()) return (-imm.methodOrder(hm) - 4) * WORDSIZE;
+	else return (cmm.methodOrder(hm)*WORDSIZE) + displaySize();
     }
 
     /** Returns the size of the specified class */
@@ -260,11 +251,5 @@ public class OffsetMap32 extends OffsetMap
 	}
 	
 	return size; 
-    }
-
-    /** Returns the offset from the class pointer of the tag 
-     *  specifying the type of data hc is */
-    public int tagOffset(HClass hc) { 
-	return -2;
     }
 }
