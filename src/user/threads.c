@@ -68,6 +68,18 @@ void free(void* ptr) {
 }
 #endif
 
+#ifdef GLIBC_COMPAT5
+extern unsigned short int *__ctype_b;
+extern __int32_t *__ctype_tolower;
+extern __int32_t *__ctype_toupper;
+
+void glibc_compat5() {
+  __ctype_b = *(unsigned short int**)__ctype_b_loc();
+  __ctype_tolower = *(__int32_t**)__ctype_tolower_loc();
+  __ctype_toupper = *(__int32_t**)__ctype_toupper_loc();
+}
+#endif
+
 void startnext();
 int * getFDsintSEL(int);
 void wakeacondthread(user_cond_t *x);
@@ -344,6 +356,9 @@ void inituser(int *bottom) {
   struct thread_list * tl =
     (struct thread_list *)malloc(sizeof(struct thread_list));
 #endif  
+#ifdef GLIBC_COMPAT5
+  glibc_compat5();
+#endif
 #ifndef WITH_REALTIME_THREADS
   INCREMENT_MEM_STATS(sizeof(struct thread_list));
   /*build stack and stash it*/

@@ -4,6 +4,10 @@
 #ifdef __GLIBC__
 /* Ugly workarounds for some broken versions of glibc. -WSB */
 
+#ifndef GLIBC_COMPAT5
+#define GLIBC_COMPAT5
+#endif
+
 #ifndef GLIBC_COMPAT4
 #define GLIBC_COMPAT4
 #endif
