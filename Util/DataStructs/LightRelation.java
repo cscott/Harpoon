@@ -16,7 +16,7 @@ import harpoon.Util.Collections.LinearSet;
  * <code>LightRelation</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightRelation.java,v 1.1.2.2 2000-07-02 08:37:52 salcianu Exp $
+ * @version $Id: LightRelation.java,v 1.1.2.3 2000-07-06 02:38:18 cananian Exp $
  */
 public class LightRelation extends AbstrRelationMapBased
     implements Serializable {
@@ -64,8 +64,8 @@ public class LightRelation extends AbstrRelationMapBased
 
     public Object clone() {
 	LightRelation newrel = (LightRelation) super.clone();
-	Map newmap = (Map) ((LightMap) map).clone();
-	for(Iterator it = newmap.entrySet().iterator(); it.hasNext(); ) {
+	newrel.map = (Map) ((LightMap) map).clone();
+	for(Iterator it = newrel.map.entrySet().iterator(); it.hasNext(); ) {
 	    Map.Entry entry = (Map.Entry) it.next();
 	    LinearSet newvals = 
 		(LinearSet) ((LinearSet) entry.getValue()).clone();
