@@ -61,6 +61,8 @@ typedef struct user_cond {
 #endif
 } user_cond_t;
 
+void exitthread();
+
 #define USER_COND_INIT {0,NULL}
 int user_cond_init(user_cond_t *x, void *);
 int user_cond_broadcast(user_cond_t *x);
@@ -69,6 +71,7 @@ int user_cond_wait(user_cond_t *x, user_mutex_t *y);
 int user_cond_timedwait(user_cond_t *cond,
 			   user_mutex_t *mutex, 
 			   const struct timespec *abstime);
+int user_cond_destroy(user_cond_t *x);
 
 void SchedulerAddRead(int fd);
 void SchedulerAddWrite(int fd);
