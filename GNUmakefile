@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.92 2003-07-03 22:34:50 cananian Exp $
+# $Id: GNUmakefile,v 1.93 2003-07-08 08:59:46 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -36,12 +36,12 @@ SSH=ssh
 MUNGE=bin/munge
 UNMUNGE=bin/unmunge
 FORTUNE=/usr/games/fortune
-INSTALLMACHINE=magic@www.magic.lcs.mit.edu
+INSTALLMACHINE=magic@flex-compiler.csail.mit.edu
 INSTALLDIR=public_html/Harpoon/
 JDKDOCLINK = http://java.sun.com/j2se/1.4/docs/api
 #JDKDOCLINK = http://java.sun.com/products/jdk/1.2/docs/api
 #JDKDOCLINK = http://palmpilot.lcs.mit.edu/~pnkfelix/jdk-javadoc/java.sun.com/products/jdk/1.2/docs/api
-CVSWEBLINK = http://flex-cvs.lcs.mit.edu/cgi-bin/viewcvs.cgi
+CVSWEBLINK = http://flex-cvs.csail.mit.edu/cgi-bin/viewcvs.cgi
 
 # make this file work with make version less than 3.77
 ifndef CURDIR
@@ -227,7 +227,7 @@ java:	$(PROPERTIES) out-of-date gj-files gj-files-2
 	  fi \
 	else \
 	  echo "**** Using pre-built JSR14 v2 classes (in Support/gjlib2.jar) ****" ;\
-	  echo "See http://www.flex-compiler.lcs.mit.edu/Harpoon/jsr14.txt"  ;\
+	  echo "See http://www.flex-compiler.csail.mit.edu/Harpoon/jsr14.txt";\
 	  echo " for information on how to install/use the GJ compiler." ; \
 	  ${JAR} xf Support/gjlib2.jar harpoon ; \
 	fi
@@ -243,7 +243,7 @@ java:	$(PROPERTIES) out-of-date gj-files gj-files-2
 	  fi \
 	else \
 	  echo "**** Using pre-built GJ classes (in Support/gjlib.jar) ****" ;\
-	  echo "See http://www.flex-compiler.lcs.mit.edu/Harpoon/jsr14.txt"  ;\
+	  echo "See http://www.flex-compiler.csail.mit.edu/Harpoon/jsr14.txt";\
 	  echo " for information on how to install/use the GJ compiler." ; \
 	  ${JAR} xf Support/gjlib.jar harpoon ; \
 	fi
@@ -289,7 +289,7 @@ jikes: 	$(PROPERTIES) out-of-date gj-files gj-files-2
 	  fi \
 	else \
 	  echo "**** Using pre-built JSR14 v2 classes (in Support/gjlib2.jar) ****" ;\
-	  echo "See http://www.flex-compiler.lcs.mit.edu/Harpoon/jsr14.txt"  ;\
+	  echo "See http://www.flex-compiler.csail.mit.edu/Harpoon/jsr14.txt";\
 	  echo " for information on how to install/use the GJ compiler." ; \
 	  ${JAR} xf Support/gjlib2.jar harpoon ; \
 	fi
@@ -300,7 +300,7 @@ jikes: 	$(PROPERTIES) out-of-date gj-files gj-files-2
 	  fi \
 	else \
 	  echo "**** Using pre-built GJ classes (in Support/gjlib.jar) ****" ;\
-	  echo "See http://www.flex-compiler.lcs.mit.edu/Harpoon/jsr14.txt"  ;\
+	  echo "See http://www.flex-compiler.csail.mit.edu/Harpoon/jsr14.txt";\
 	  echo " for information on how to install/use the GJ compiler." ; \
 	  ${JAR} xf Support/gjlib.jar harpoon ; \
 	fi
@@ -566,7 +566,7 @@ polish: clean
 
 wipe:	clean doc-clean
 
-NONLOCAL=$(shell if [ ! `hostname` = "flex-cvs.lcs.mit.edu" ]; then echo $(SSH) cananian@flex-cvs.lcs.mit.edu ; fi)
+NONLOCAL=$(shell if [ ! `hostname` = "flex-cvs.csail.mit.edu" ]; then echo $(SSH) cananian@flex-cvs.csail.mit.edu ; fi)
 backup: only-me # SLOW ON NON-LOCAL MACHINES
 	$(NONLOCAL) tar -C /data -c cvs | \
 	   $(SSH) catfish.lcs.mit.edu \
