@@ -10,7 +10,7 @@ import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrVisitor;
 import harpoon.IR.Properties.UseDef;
-import harpoon.IR.Properties.CFGraphable;
+import harpoon.IR.Properties.CFGrapher;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Code;
 import harpoon.Backend.Generic.RegFileInfo;
@@ -56,7 +56,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.59 2000-01-05 23:22:02 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.60 2000-01-09 09:12:15 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = false;
@@ -155,8 +155,8 @@ public abstract class RegAlloc  {
     protected RegAlloc(Code code) {
         this.frame = code.getFrame();
 	this.code = code;
-	CFGraphable first = (CFGraphable) code.getRootElement();
-	rootBlock = BasicBlock.computeBasicBlocks(first);
+	Instr first = (Instr) code.getRootElement();
+	rootBlock = BasicBlock.computeBasicBlocks(first, CFGrapher.DEFAULT);
     }
 
     

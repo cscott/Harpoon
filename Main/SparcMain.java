@@ -11,7 +11,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Properties.CFGraphable;
+import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Tree.Data;
 import harpoon.IR.Assem.Instr;
@@ -71,7 +71,7 @@ import java.io.PrintWriter;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SparcMain.java,v 1.1.2.3 1999-11-30 05:25:08 cananian Exp $
+ * @version $Id: SparcMain.java,v 1.1.2.4 2000-01-09 09:12:27 pnkfelix Exp $
  */
 public class SparcMain extends harpoon.IR.Registration {
  
@@ -279,7 +279,7 @@ public class SparcMain extends harpoon.IR.Registration {
 	    if (hc != null) {
 		HCodeElement root = hc.getRootElement();
 		BasicBlock block = 
-		    BasicBlock.computeBasicBlocks((CFGraphable)root);
+		    BasicBlock.computeBasicBlocks(root, CFGrapher.DEFAULT);
 		Iterator iter= BasicBlock.basicBlockIterator(block);
 
 		// wrong but makes it compile for now

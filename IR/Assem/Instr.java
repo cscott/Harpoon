@@ -42,13 +42,13 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.67 2000-01-06 02:25:54 pnkfelix Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.68 2000-01-09 09:12:25 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private final String assem; 
     private InstrFactory inf;
 
-    protected Temp[] dst; // FSK: had to make these protected due
-    protected Temp[] src; // to javac weirdness
+    public Temp[] dst; // FSK: had to make these protected due
+    public Temp[] src; // to javac weirdness
 
     private int hashCode;
 
@@ -464,6 +464,7 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	@see Instr#layout
     */    
     public void remove() {
+	Util.assert( ! this.hasMultiplePredecessors());
 	if (this.next != null) {
 	    // remove ref to this in this.next
 	    this.next.prev = this.prev; 

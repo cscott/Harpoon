@@ -26,7 +26,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.14 1999-11-04 09:46:24 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.15 2000-01-09 09:12:22 pnkfelix Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -94,6 +94,14 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    HCstring.getConstructor(new HClass[] { HCcharA }),
 	    HCstring.getMethod("length", "()I"),
 	    HCstring.getMethod("toCharArray","()[C"),
+
+		// FSK start
+	    HClass.forName("java.io.IOException") 
+		.getConstructor(new HClass[0]),
+	    HClass.forName("java.io.IOException")
+		.getConstructor(new HClass[] { HCstring }),
+		// FSK end
+
 	    // in java.lang implementations
 	    HClass.forName("java.lang.ArrayIndexOutOfBoundsException")
 		.getConstructor(new HClass[] { HCstring }),

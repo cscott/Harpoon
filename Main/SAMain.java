@@ -11,7 +11,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Properties.CFGraphable;
+import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Tree.Data;
 import harpoon.IR.Assem.Instr;
@@ -69,7 +69,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.51 1999-12-11 23:31:18 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.52 2000-01-09 09:12:27 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -91,6 +91,9 @@ public class SAMain extends harpoon.IR.Registration {
         
     private static String className;
     private static String classHierarchyFilename;
+
+    private static String methodName;
+
     private static ClassHierarchy classHierarchy;
     private static CallGraph callGraph;
     private static Frame frame;
@@ -274,7 +277,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    if (hc != null) {
 		HCodeElement root = hc.getRootElement();
 		BasicBlock block = 
-		    BasicBlock.computeBasicBlocks((CFGraphable)root);
+		    BasicBlock.computeBasicBlocks(root, CFGrapher.DEFAULT);
 		Iterator iter= BasicBlock.basicBlockIterator(block);
 
 		// wrong but makes it compile for now
@@ -448,14 +451,19 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 'c':
 		className = g.getOptarg();
 		break;
+	    case 'M':
+		methodName = g.getOptarg();
+		break;
 	    case 'q':
 		QUIET = true;
 		break;
 	    case '1':  
-		ONLY_COMPILE_MAIN = true;
 		String optclassname = g.getOptarg();
-		if (optclassname!=null)
+		if (optclassname!=null) {
 		    singleClass = HClass.forName(optclassname);
+		} else {
+		    ONLY_COMPILE_MAIN = true;
+		}
 		break;
 	    case '?':
 	    case 'h':

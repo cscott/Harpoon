@@ -4,7 +4,7 @@ import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.DataFlow.ReachingDefs; 
 import harpoon.Analysis.DataFlow.ReachingHCodeElements; 
 import harpoon.Analysis.DataFlow.Solver; 
-import harpoon.IR.Properties.CFGraphable; 
+import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Tree.CALL; 
 import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.CONST;
@@ -40,7 +40,7 @@ import java.util.Stack;
  * <p><b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: ConstantPropagation.java,v 1.1.2.4 2000-01-09 00:23:20 duncan Exp $
+ * @version $Id: ConstantPropagation.java,v 1.1.2.5 2000-01-09 09:12:19 pnkfelix Exp $
  */
 public final class ConstantPropagation { 
 
@@ -79,7 +79,7 @@ public final class ConstantPropagation {
 
 	    // Perform reaching definitions analysis on the tree code. 
 	    BasicBlock root = BasicBlock.computeBasicBlocks
-		((CFGraphable)RS((Stm)code.getRootElement())); 
+		(RS((Stm)code.getRootElement()), CFGrapher.DEFAULT); 
 	    CloneableIterator bbi = new CloneableIterator
 		(BasicBlock.basicBlockIterator(root)); 
 	    this.rch = new ReachingHCodeElements((Iterator)bbi.clone()); 

@@ -7,6 +7,8 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 
+import harpoon.Util.Util;
+
 /**
  * <code>InstrMOVE</code> represents a copying of a set of source
  * <code>Temp</code>s to a set of destination <code>Temp</code>s.
@@ -25,7 +27,7 @@ import harpoon.Temp.TempMap;
  * <code>InstrMEM</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrMOVE.java,v 1.1.2.3 1999-11-05 01:10:30 cananian Exp $ 
+ * @version $Id: InstrMOVE.java,v 1.1.2.4 2000-01-09 09:12:25 pnkfelix Exp $ 
  */
 public class InstrMOVE extends Instr {
     
@@ -33,6 +35,8 @@ public class InstrMOVE extends Instr {
     public InstrMOVE(InstrFactory inf, HCodeElement codeSrc, 
 		     String assem, Temp[] dst, Temp[] tempSrc) {
         super(inf, codeSrc, assem, dst, tempSrc);
+	Util.assert(dst.length == 1, "can only have one dest");
+	Util.assert(tempSrc.length == 1, "can only have one src");
     }
     
     /** Accept a visitor */

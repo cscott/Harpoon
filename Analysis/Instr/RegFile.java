@@ -20,7 +20,7 @@ import java.util.Iterator;
  * most processor architectures for storing working sets of data.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFile.java,v 1.1.2.2 1999-12-20 02:41:35 pnkfelix Exp $
+ * @version $Id: RegFile.java,v 1.1.2.3 2000-01-09 09:12:15 pnkfelix Exp $
  */
 class RegFile {
     
@@ -80,8 +80,8 @@ class RegFile {
 	return regToTmp.toString();
     }
     
-    /** Returns a view of the current mapping from registers to pseudo
-	registers.
+    /** Returns a snapshot of the current mapping from registers to
+	pseudoregisters.
 	<BR> <B>effects:</B> Returns an immutable <code>Map</code> of
 	     Register <code>Temp</code>s to Pseudo-Register
 	     <code>Temp</code>s, representing the current state of the

@@ -9,7 +9,7 @@ import harpoon.Util.WorkSet;
 import harpoon.Util.Worklist;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeEdge;
-import harpoon.IR.Properties.CFGraphable;
+import harpoon.IR.Properties.CFGrapher;
 
 import harpoon.Analysis.DataFlow.ReversePostOrderEnumerator;
 
@@ -45,7 +45,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.8 2000-01-05 23:22:01 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.9 2000-01-09 09:12:02 pnkfelix Exp $
 */
 public class BasicBlock {
     
@@ -56,8 +56,9 @@ public class BasicBlock {
 
     static int BBnum = 0;
     
-    CFGraphable first;
-    CFGraphable last;
+    HCodeElement first;
+    HCodeElement last;
+    CFGrapher grapher;
     Set pred_bb;
     Set succ_bb;
     protected int num;
@@ -87,8 +88,10 @@ public class BasicBlock {
 	                      the basic block and <code>l</code> is
 			      the last element of the BasicBlock.
     */
-    protected BasicBlock (CFGraphable f, CFGraphable l) {
-	first = f; last = l; pred_bb = new HashSet(); succ_bb = new HashSet();
+    protected BasicBlock (HCodeElement f, HCodeElement l, CFGrapher gr) {
+	first = f; last = l; 
+	pred_bb = new HashSet(); succ_bb = new HashSet();
+	grapher = gr;
 	num = BBnum++;
     }
 
@@ -135,38 +138,39 @@ public class BasicBlock {
 		     this requirement, but for now its safer to keep
 		     it) 
 	     <LI> 2. All <code>HCodeEdge</code>s linked to by the set
-	             of <code>CFGraphable</code> in the code body have
-		     <code>CFGraphable</code> objects in their
+	             of <code>HCodeElement</code> in the code body have
+		     <code>HCodeElement</code> objects in their
 		     <code>to</code> and <code>from</code> fields.
 		     <B>NOTE:</B> this really should be an implicit
-		     invariant of <code>CFGraphable</code>.  Convince 
+		     invariant of <code>HCodeElement</code>.  Convince 
 		     Scott to change it or let us change it. 
 	     </UL>
 	<BR> <B>effects:</B>  Creates a set of
      	     <code>BasicBlock</code>s corresponding to the blocks
 	     implicitly contained in <code>head</code> and the
-	     <code>CFGraphable</code> objects that <code>head</code>
+	     <code>HCodeElement</code> objects that <code>head</code>
 	     points to, and returns the <code>BasicBlock</code> that
 	     <code>head</code> is an instruction in.  The
 	     <code>BasicBlock</code> returned is considered to be the
 	     root (entry-point) of the set of <code>BasicBlock</code>s
 	     created. 
     */
-    public static BasicBlock computeBasicBlocks(CFGraphable head) {
+    public static BasicBlock computeBasicBlocks(HCodeElement head,
+						final CFGrapher gr) {
 	// maps from every hce 'h' -> BasicBlock 'b' such that 'b'
 	// contains 'h' 
 	HashMap hceToBB = new HashMap();
 
-	// maps CFGraphable 'e' -> BasicBlock 'b' starting with 'e'
+	// maps HCodeElement 'e' -> BasicBlock 'b' starting with 'e'
 	Hashtable h = new Hashtable(); 
 	// stores BasicBlocks to be processed
 	Worklist w = new WorkSet();
 
-	while (head.pred().length == 1) {
-	    head = (CFGraphable) head.pred()[0].from();
+	while (gr.pred(head).length == 1) {
+	    head = gr.pred(head)[0].from();
 	}
 	
-	BasicBlock first = new BasicBlock(head);
+	BasicBlock first = new BasicBlock(head, gr);
 	first.hceToBB = hceToBB;
 	h.put(head, first);
 	hceToBB.put(head, first);
@@ -180,20 +184,20 @@ public class BasicBlock {
 	    
 	    // 'last' is our guess on which elem will be the last;
 	    // thus we start with the most conservative guess
-	    CFGraphable last = (CFGraphable) current.getFirst();
+	    HCodeElement last = current.getFirst();
 	    boolean foundEnd = false;
 	    while(!foundEnd) {
-		int n = last.succC().size();
+		int n = gr.succC(last).size();
 		if (n == 0) {
 		    foundEnd = true;
 		    first.leaves.add(current); 
 
 		} else if (n > 1) { // control flow split
 		    for (int i=0; i<n; i++) {
-			CFGraphable e_n = (CFGraphable) last.succ()[i].to();
+			HCodeElement e_n = gr.succ(last)[i].to();
 			BasicBlock bb = (BasicBlock) h.get(e_n);
 			if (bb == null) {
-			    h.put(e_n, bb=new BasicBlock(e_n));
+			    h.put(e_n, bb=new BasicBlock(e_n, gr));
 			    bb.hceToBB = hceToBB;
 			    hceToBB.put(e_n, bb);
 			    bb.root = first; bb.leaves = first.leaves;
@@ -205,12 +209,12 @@ public class BasicBlock {
 		    
 		} else { // one successor
 		    Util.assert(n == 1, "must have one successor");
-		    CFGraphable next = (CFGraphable) last.succ()[0].to();
-		    int m = next.predC().size();
+		    HCodeElement next = gr.succ(last)[0].to();
+		    int m = gr.predC(next).size();
 		    if (m > 1) { // control flow join
 			BasicBlock bb = (BasicBlock) h.get(next);
 			if (bb == null) {
-			    bb = new BasicBlock(next);
+			    bb = new BasicBlock(next, gr);
 			    bb.hceToBB = hceToBB;
 			    bb.root = first; bb.leaves = first.leaves;
 			    h.put(next, bb);
@@ -236,19 +240,19 @@ public class BasicBlock {
 	    todo.add(head);
 
 	    while(!todo.isEmpty()) {
-		CFGraphable hce = (CFGraphable) todo.remove(0);
+		HCodeElement hce =(HCodeElement) todo.remove(0);
  		BasicBlock bb = (BasicBlock) hceToBB.get(hce);
 		Util.assert(bb != null, "hce "+hce+" should map to some BB");
 		boolean missing = true;
 		for(Iterator elems = bb.iterator(); missing && elems.hasNext(); ) {
-		    CFGraphable o = (CFGraphable) elems.next();
+		    HCodeElement o = (HCodeElement) elems.next();
 		    if (hce.equals(o)) missing = false;
 		}
 		Util.assert(!missing, 
 			    "hce "+hce+" should be somewhere in "+
 			    "BB "+bb);
 		checked.add(hce);
-		Iterator predEdges = hce.predC().iterator();
+		Iterator predEdges = gr.predC(hce).iterator();
 		while(predEdges.hasNext()) {
 		    HCodeEdge edge = (HCodeEdge) predEdges.next();
 		    if (!checked.contains(edge.from()) &&
@@ -256,7 +260,7 @@ public class BasicBlock {
 			todo.add(edge.from());
 		    } 
 		}
-		Iterator succEdges = hce.succC().iterator();
+		Iterator succEdges = gr.succC(hce).iterator();
 		while(succEdges.hasNext()) {
 		    HCodeEdge edge = (HCodeEdge) succEdges.next();
 		    if (!checked.contains(edge.to()) &&
@@ -270,8 +274,8 @@ public class BasicBlock {
 	return (BasicBlock) h.get(head);
     }
 
-    public CFGraphable getFirst() { return first; }
-    public CFGraphable getLast() { return last; }
+    public HCodeElement getFirst() { return first; }
+    public HCodeElement getLast() { return last; }
     
     public void addPredecessor(BasicBlock bb) { pred_bb.add(bb); }
     public void addSuccessor(BasicBlock bb) { succ_bb.add(bb); }
@@ -281,7 +285,7 @@ public class BasicBlock {
     public Enumeration prev() { return new IteratorEnumerator(pred_bb.iterator()); }
     public Enumeration next() { return new IteratorEnumerator(succ_bb.iterator()); }
     
-    /** Returns an <code>Enumeration</code> of <code>CFGraphable</code>
+    /** Returns an <code>Enumeration</code> of <code>HCodeElement</code>s
 	within <code>this</code>.  
     */
     public Enumeration elements() {
@@ -289,7 +293,7 @@ public class BasicBlock {
     }
 
     /** Returns an unmodifiable <code>Iterator</code> for the
-	<code>CFGraphable</code>s within <code>this</code>.
+	<code>HCodeElement</code>s within <code>this</code>.
 	The <code>Iterator</code> returned will iterate through the
 	instructions according to their order in the program.
     */
@@ -298,14 +302,14 @@ public class BasicBlock {
     }
 
     /** Returns an unmodifiable <code>ListIterator</code> for the
-	<code>CFGraphable</code>s within <code>this</code>. 
+	<code>HCodeElement</code>s within <code>this</code>. 
 	The <code>ListIterator</code> returned will iterate through the
 	instructions according to their order in the program.
     */  
     public ListIterator listIterator() {
 	return new ListIterator() {
-	    CFGraphable next = first;
-	    CFGraphable prev = null;
+	    HCodeElement next = first;
+	    HCodeElement prev = null;
 	    int index = 0;
 	    public boolean hasNext() { return next != null; }
 	    public boolean hasPrevious() { return prev != null; } // correct? 
@@ -315,7 +319,7 @@ public class BasicBlock {
 		if (next == null) throw new NoSuchElementException();
 		if (CHECK_REP) {
 		    Util.assert((next == first) ||
-				(next.pred().length == 1), 
+				(grapher.pred(next).length == 1), 
 				new Util.LazyString() {
 			public String eval() {
 			    return "BasicBlock REP error; non-first elem has only " + 
@@ -324,7 +328,7 @@ public class BasicBlock {
 			}
 		    });
 		    Util.assert((next == last) ||
-				(next.succ().length == 1),
+				(grapher.succ(next).length == 1),
 				new Util.LazyString() {
 			public String eval() {
 			    return "BasicBlock REP error; non-last elem has only " + 
@@ -334,17 +338,17 @@ public class BasicBlock {
 		}
 		prev = next; 
 		if (next == last) next = null;
-		else next = (CFGraphable) next.succ()[0].to();
+		else next = grapher.succ(next)[0].to();
 		index++;
 		return prev; 
 	    }		
 	    public Object previous() {
 		if (prev == null) throw new NoSuchElementException();
-		Util.assert((prev == first) || (prev.pred().length == 1));
-		Util.assert((prev == last) || (prev.succ().length == 1));
+		Util.assert((prev == first) || (grapher.pred(prev).length == 1));
+		Util.assert((prev == last) || (grapher.succ(prev).length == 1));
 		next = prev;
 		if (prev == first) prev = null;
-		else prev = (CFGraphable) prev.pred()[0].from();
+		else prev = grapher.pred(prev)[0].from();
 		index--;
 		return next;
 	    }
@@ -358,14 +362,16 @@ public class BasicBlock {
     /** Accept a visitor. */
     public void visit(BasicBlockVisitor v) { v.visit(this); }
     
-    protected BasicBlock (CFGraphable f) {
-	first = f; last = null; pred_bb = new HashSet(); succ_bb = new HashSet();
+    protected BasicBlock (HCodeElement f, CFGrapher gr) {
+	first = f; last = null; 
+	pred_bb = new HashSet(); succ_bb = new HashSet();
+	grapher = gr;
 	num = BBnum++;
     }
 
     /** Returns the root <code>BasicBlock</code>.
 	<BR> <B>effects:</B> returns the <code>BasicBlock</code> that
-	     is at the start of the set of <code>CFGraphable</code>s
+	     is at the start of the set of <code>HCodeElement</code>s
 	     being analyzed. 
     */
     public BasicBlock getRoot() {
@@ -381,7 +387,7 @@ public class BasicBlock {
 	return Collections.unmodifiableSet(leaves);
     }
 
-    protected void setLast (CFGraphable l) {
+    protected void setLast (HCodeElement l) {
 	last = l;
 	if (DEBUG) db(this+": from "+first+" to "+last);
     }
@@ -414,8 +420,8 @@ public class BasicBlock {
 	while (e.hasMoreElements()) {
 	    BasicBlock bb = (BasicBlock)e.nextElement();
 	    System.out.println("Basic block "+bb);
-	    System.out.println("CFGraphable in : "+bb.pred_bb);
-	    System.out.println("CFGraphable out: "+bb.succ_bb);
+	    System.out.println("HCodeElement in : "+bb.pred_bb);
+	    System.out.println("HCodeElement out: "+bb.succ_bb);
 	    System.out.println();
 	}
     }

@@ -12,6 +12,7 @@ package harpoon.Analysis.Quads;
 
 import harpoon.Util.*;
 import harpoon.IR.Quads.*;
+import harpoon.IR.Properties.CFGrapher;
 import java.util.Map;
 import java.util.Hashtable;
 import java.util.Enumeration;
@@ -20,11 +21,11 @@ import java.util.NoSuchElementException;
 public class BasicBlock extends harpoon.Analysis.BasicBlock{
     
     public BasicBlock(Quad s, Quad e) {
-	super(s, e);
+	super(s, e, CFGrapher.DEFAULT);
     }
 
     private BasicBlock (Quad f) {
-	super(f);
+	super(f, CFGrapher.DEFAULT);
     }
 
     public Enumeration quads() {

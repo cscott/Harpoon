@@ -52,7 +52,7 @@ import java.util.Iterator;
   
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc3.java,v 1.1.2.2 1999-12-20 02:41:34 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc3.java,v 1.1.2.3 2000-01-09 09:12:15 pnkfelix Exp $
  */
 public class LocalCffRegAlloc3 extends RegAlloc {
     
@@ -69,10 +69,37 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 	    BasicBlock.basicBlockIterator(rootBlock);
 	while(blocks.hasNext()) {
 	    BasicBlock b = (BasicBlock) blocks.next();
-	    localAlloc(b, liveTemps.getLiveOnExit(b));
+	    Set liveOnExit = liveTemps.getLiveOnExit(b);
+	    coalesceMoves(b, liveOnExit);
+	    localAlloc(b, liveOnExit);
 	}
 	
 	return code;
+    }
+
+    private void coalesceMoves(BasicBlock b, Set liveOnExit) {
+	if (true) return;
+	// Set[Temp] with 1st use preceding 1st def
+	HashSet hasFutureUse = new HashSet(liveOnExit);
+	Iterator instrs = new harpoon.Util.ReverseIterator(b.iterator());
+	
+	Map replaceTemps = new HashMap();
+
+	while(instrs.hasNext()) {
+	    Instr i = (Instr) instrs.next();
+	    if (i instanceof harpoon.IR.Assem.InstrMOVE) {
+		replaceTemps.put(i.def()[0], i.use()[0]);
+		i.remove();
+	    } else {
+		for(int j=0; j<i.src.length; j++) {
+		    Temp t = (Temp) replaceTemps.get(i.src[j]);
+		    while(t != null) {
+			i.src[j] = t;
+			t = (Temp) replaceTemps.get(i.src[j]);
+		    }
+		}
+	    }
+	}
     }
 
     private void localAlloc(BasicBlock b, Set liveOnExit) {
@@ -124,6 +151,29 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 		    (i, t, regfile.getAssignment(t));
 		    evictables.remove(t);
 		} else {
+
+		    // FSK: the benefits of this code block are
+		    // dubious at best, so i'm keeping it out for now 
+		    if (false) {
+			// regfile has mappings to dead temps; such
+			// registers won't be suggested unless we spill
+			// them here...
+			final Collection temps = 
+			    regfile.getRegToTemp().values();
+			final Iterator tmpIter = temps.iterator(); 
+			while(tmpIter.hasNext()) {
+			    Temp tt = (Temp) tmpIter.next();
+			    Integer X = (Integer) nextRef.get
+				(new TempInstrPair(i, tt));
+			    if (X == null) {
+				spillValue(tt, 
+					   new InstrEdge(i.getPrev(), i),
+					   regfile);
+			    }
+			}
+		    }
+		    
+
 		    Iterator suggs = getSuggestions(t, regfile, i, evictables);
 		    List regList = chooseSuggestion(suggs);
 		    code.assignRegister(i, t, regList);
