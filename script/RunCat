@@ -1,0 +1,1 @@
+java -jar carDemoGroundATR.jar 2 nocompress 11111 18.24.6.181:22222 18.24.6.181:33333 18.24.6.181:44444 18.24.6.181:55555 MovingDemoDefaults.txt
