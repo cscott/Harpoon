@@ -52,9 +52,11 @@ import java.util.Set;
  * unused and constant fields from objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldReducer.java,v 1.1.2.4 2001-10-31 03:38:25 cananian Exp $
+ * @version $Id: FieldReducer.java,v 1.1.2.5 2001-10-31 23:46:55 cananian Exp $
  */
 public class FieldReducer extends MethodMutator {
+    private static final boolean no_mutate =
+	Boolean.getBoolean("harpoon.sizeopt.no-field-reducer");
     private static final boolean DEBUG = false;
     final BitWidthAnalysis bwa;
     final Linker linker;
@@ -86,6 +88,7 @@ public class FieldReducer extends MethodMutator {
 	// now munge fields!
 	for (Iterator it=flds.iterator(); it.hasNext(); ) {
 	    HField hf = (HField) it.next();
+	    if (no_mutate) continue;
 	    // remove all unread and constant fields.
 	    // (which should have no more references in any HCode)
 	    if (bwa.isConst(hf) || !bwa.isRead(hf)) {
@@ -114,6 +117,8 @@ public class FieldReducer extends MethodMutator {
 	    hf.getMutator().setType(nhc);
 	    if (DEBUG && hc!=nhc) System.err.println(" TO "+hf);
 	}
+	// update field sizes in frame. (this is a bit of a hack)
+	frame.setClassHierarchy(ch);
 	// wrap a size counter around everything (maybe).
 	if (Boolean.getBoolean("harpoon.sizeopt.bitcounters")) {
 	    this.hcf = new CachingCodeFactory
@@ -138,8 +143,8 @@ public class FieldReducer extends MethodMutator {
 	boolean isCallable =
 	    w.execMap((METHOD)((Quad)hc.getRootElement()).next(1));
 	if (!isCallable) return eviscerate(hc);
-	hc.getElements();
 	new SCCOptimize(w, w, w).optimize(hc);
+	if (no_mutate) return hc;
 
 	Quad[] quads = (Quad[]) hc.getElements();
 	for (int i=0; i<quads.length; i++) {
