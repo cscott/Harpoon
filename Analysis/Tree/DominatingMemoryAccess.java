@@ -27,17 +27,19 @@ import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.MOVE;
 import harpoon.IR.Tree.MEM;
 import harpoon.IR.Tree.Exp;
+import harpoon.Analysis.Tree.CacheEquivalence;
 import harpoon.Util.Util;
 import harpoon.Util.Collections.BitSetFactory;
 import harpoon.Backend.Generic.Frame;
 
 import java.util.Iterator;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.Stack;
 import java.util.BitSet;
 import java.util.ArrayList;
-import java.util.Set;
 import java.util.List;
 import java.util.Comparator;
 import java.util.Collection;
@@ -69,7 +71,7 @@ import java.util.Collection;
  used since it needs to invalidate them on a function return.
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.1.2.5 2001-06-07 22:27:22 witchel Exp $
+ * @version $Id: DominatingMemoryAccess.java,v 1.1.2.6 2001-06-08 00:49:33 witchel Exp $
  */
 public class DominatingMemoryAccess {
 
@@ -91,14 +93,14 @@ public class DominatingMemoryAccess {
             edges.put(m, new HashSet());
             edges.put(m.getSrc(), new HashSet());
             edges.put(m.getDst(), new HashSet());
-            ((HashSet)edges.get(m)).add(m.getSrc());
-            ((HashSet)edges.get(m.getSrc())).add(m.getDst());
+            ((Set)edges.get(m)).add(m.getSrc());
+            ((Set)edges.get(m.getSrc())).add(m.getDst());
          }
          nodes.add(hce);
          HCodeEdge[] edge = cfgr.succ(hce);
          for(int i = 0; i < edge.length; ++i) {
             if(m != null) {
-               ((HashSet)edges.get(m.getDst())).add(edge[i].to());
+               ((Set)edges.get(m.getDst())).add(edge[i].to());
             }
             if(nodes.contains(edge[i].to()) == false)
                collectElts(edge[i].to(), cfgr);
@@ -138,9 +140,9 @@ public class DominatingMemoryAccess {
       public Set succS(HCodeElement hce) {
          Util.assert(nodes.contains(hce), "hce " + hce 
                      + " was not part of original graph");
-         HashSet succ;
+         Set succ;
          if(edges.containsKey(hce)) {
-            succ = (HashSet)edges.get(hce);
+            succ = (Set)edges.get(hce);
          } else {
             succ = new HashSet();
             HCodeEdge[] edges = cfgr.succ(hce);
@@ -155,9 +157,9 @@ public class DominatingMemoryAccess {
          return new HashSet(nodes);
       }
 
-      private HashSet nodes;
+      private Set nodes;
       private CFGrapher cfgr;
-      private HashMap edges;
+      private Map edges;
    }
 /** Solves data flow equations for live variables
  */
@@ -165,7 +167,7 @@ public class DominatingMemoryAccess {
       // Buid a version of the graph
       private void collectElts(harpoon.ClassFile.HCodeElement hce, 
                                final MoveCFGrapher mcfgr,
-                               HashSet nodes) {
+                               Set nodes) {
          nodes.add(hce);
          Set edge = mcfgr.succS(hce);
          for(Iterator it = edge.iterator(); it.hasNext();) {
@@ -177,7 +179,7 @@ public class DominatingMemoryAccess {
       }
 
       private void init(final MoveCFGrapher mcfgr, final HCode code,
-                        HashSet nodes) {
+                        Set nodes) {
          HCodeElement[] hcroots = mcfgr.getFirstElements(code);
          for(int i = 0; i < hcroots.length; ++i) {
             collectElts(hcroots[i], mcfgr, nodes);
@@ -185,7 +187,7 @@ public class DominatingMemoryAccess {
          this.bsf = new BitSetFactory (nodes);
       }
       // Not strictly necessary, but then in/out is never null
-      private void init_inout(HashSet nodes) {
+      private void init_inout(Set nodes) {
          this.in  = new HashMap(nodes.size());
          this.out = new HashMap(nodes.size());
          for(Iterator it = nodes.iterator(); it.hasNext();) {
@@ -195,8 +197,8 @@ public class DominatingMemoryAccess {
          }
       }
       public Live(MoveCFGrapher mcfgr, HCode code,
-                  HashMap _defUseMap, HashMap _useDefMap) {
-         HashSet nodes = new HashSet();
+                  Map _defUseMap, Map _useDefMap) {
+         Set nodes = new HashSet();
          init(mcfgr, code, nodes);
          this.defUseMap = _defUseMap;
          this.useDefMap = _useDefMap;
@@ -299,10 +301,10 @@ public class DominatingMemoryAccess {
          return bs;
       }
       
-      private HashMap in;
-      private HashMap out;
-      private HashMap useDefMap;
-      private HashMap defUseMap;
+      private Map in;
+      private Map out;
+      private Map useDefMap;
+      private Map defUseMap;
       private harpoon.Util.Collections.BitSetFactory bsf;
       private static final boolean trace = false;
    }
@@ -334,7 +336,7 @@ public class DominatingMemoryAccess {
    class DARegAlloc {
 
       class byDefLength implements Comparator {
-         byDefLength(HashMap defUseMap) {
+         byDefLength(Map defUseMap) {
             this.defUseMap = defUseMap;
          }
          // Sort biggest first
@@ -359,7 +361,7 @@ public class DominatingMemoryAccess {
             ArrayList sub2 = (ArrayList)defUseMap.get(h2);
             return sub1.size() == sub2.size();
          }
-         HashMap defUseMap;
+         Map defUseMap;
       }
 
       // Return the list of defining references sorted by the ones
@@ -374,13 +376,13 @@ public class DominatingMemoryAccess {
 
       // All DA variables that are simultaneously live interfere with
       // each other
-      private void addInter(HashMap inter, Set in) {
+      private void addInter(Map inter, Set in) {
          for(Iterator it = in.iterator(); it.hasNext();) {
             HCodeElement me = (HCodeElement) it.next();
             Util.assert(defUseMap.containsKey(me));
-            HashSet interset = (HashSet)inter.get(me);
+            Set interset = (Set)inter.get(me);
             if(interset == null) {
-               interset = new HashSet(2);
+               interset = new HashSet();
                inter.put(me, interset);
             }
             for(Iterator it2 = in.iterator(); it2.hasNext();) {
@@ -397,8 +399,8 @@ public class DominatingMemoryAccess {
       // point.  Each of these 
       // point in the interference set.
       // This is an interference graph
-      private HashMap interfereClasses() {
-         HashMap inter = new HashMap(nodes.size()/4);
+      private Map interfereClasses() {
+         Map inter = new HashMap(nodes.size()/4);
          for(Iterator it = nodes.iterator(); it.hasNext(); ) {
             HCodeElement node = (HCodeElement)it.next();
             addInter(inter, live.in(node));
@@ -406,9 +408,9 @@ public class DominatingMemoryAccess {
          }
          return inter;
       }
-      private void removeEdgesTo(HCodeElement hce, HashMap interGrph) {
+      private void removeEdgesTo(HCodeElement hce, Map interGrph) {
          for(Iterator it = interGrph.values().iterator(); it.hasNext();) {
-            HashSet interset = (HashSet)it.next();
+            Set interset = (Set)it.next();
             interset.remove(hce);
          }
       }
@@ -420,7 +422,7 @@ public class DominatingMemoryAccess {
           necessarily prevent all of the member of the interference
           set from being colored, but it seems like a good heuristic.
        */
-      private int score(HCodeElement hce, HashSet interset) {
+      private int score(HCodeElement hce, Set interset) {
          Util.assert(defUseMap.containsKey(hce));
          int provides = ((ArrayList)defUseMap.get(hce)).size();
          int prevents = 0;
@@ -433,7 +435,7 @@ public class DominatingMemoryAccess {
       /** Do traditional simplification
        */
       // This dismantles the interGrph data structure
-      private void simplify(HashMap interGrph, Stack colorable) {
+      private void simplify(Map interGrph, Stack colorable) {
         // For each iteration, find the 
          boolean done = true;
          Set nodes = interGrph.keySet();
@@ -443,10 +445,10 @@ public class DominatingMemoryAccess {
             do {
                simpWorked = false;
                // Read-only copy for iteration
-               HashSet nodesRO = new HashSet(nodes);
+               Set nodesRO = new HashSet(nodes);
                for(Iterator it = nodesRO.iterator();it.hasNext();) {
                   HCodeElement hce = (HCodeElement)it.next();
-                  HashSet interset = (HashSet)interGrph.get(hce);
+                  Set interset = (Set)interGrph.get(hce);
                   if(interset.size() < maxRegs) {
                      simpWorked = true;
                      colorable.push(hce);
@@ -461,7 +463,7 @@ public class DominatingMemoryAccess {
             HCodeElement spillme = null;
             for(Iterator it = nodes.iterator(); it.hasNext();) {
                HCodeElement hce = (HCodeElement)it.next();
-               HashSet interset = (HashSet)interGrph.get(hce);
+               Set interset = (Set)interGrph.get(hce);
                if(interset.size() > maxRegs) {
                   done = false;
                   int score = score(hce, interset);
@@ -480,11 +482,11 @@ public class DominatingMemoryAccess {
             }
          } while( !done );
       }
-      private void select(HashMap interGrph, Stack interNodes) {
+      private void select(Map interGrph, Stack interNodes) {
          while(!interNodes.empty()) {
             HCodeElement hce = (HCodeElement)interNodes.pop();
-            HashSet interset = (HashSet)interGrph.get(hce);
-            HashSet takenDA = new HashSet();
+            Set interset = (Set)interGrph.get(hce);
+            Set takenDA = new HashSet();
             for(Iterator it = interset.iterator(); it.hasNext();) {
                HCodeElement inter = (HCodeElement)it.next();
                if(ref2dareg.containsKey(inter)) {
@@ -513,11 +515,11 @@ public class DominatingMemoryAccess {
             }
          }
       }
-      public HashSet usedDANum() {
+      public Set usedDANum() {
          return usedDANum;
       }
       DARegAlloc(MoveCFGrapher mcfgr, Live _live, 
-                 HashMap _defUseMap, HashMap _useDefMap) {
+                 Map _defUseMap, Map _useDefMap) {
          nodes = mcfgr.nodes();
          live = _live;
          defUseMap = _defUseMap;
@@ -529,7 +531,7 @@ public class DominatingMemoryAccess {
          // Allocation.  We modify it because we have a clear metric
          // of usefulness--number of tag checks eliminated, and we
          // have no notion of spilling.
-         HashMap interGrph = interfereClasses();
+         Map interGrph = interfereClasses();
          Stack interNodes = new Stack();
          simplify(new HashMap(interGrph), interNodes);
          select(interGrph, interNodes);
@@ -537,20 +539,19 @@ public class DominatingMemoryAccess {
       public boolean isDef(HCodeElement hce) {
          return defUseMap.containsKey(hce);
       }
-      public HashMap getRef2Dareg() {
+      public Map getRef2Dareg() {
          return ref2dareg;
       }
 
       private final int maxRegs = 8;
       private Live live;
       private Set nodes;
-      private HashMap defUseMap;
-      private HashMap useDefMap;
-      private HashMap ref2dareg;
-      private HashSet usedDANum;
+      private Map defUseMap;
+      private Map useDefMap;
+      private Map ref2dareg;
+      private Set usedDANum;
       private static final boolean trace = false;
    }
-
 
 
    /** Memory equivalence classes.  Each class corresponds to a unique
@@ -609,7 +610,7 @@ public class DominatingMemoryAccess {
       public void clearTemps() {
          currtemps.clear();
       }
-      public HashMap getClasses() {
+      public Map getClasses() {
          return classes;
       }
 
@@ -657,14 +658,7 @@ public class DominatingMemoryAccess {
       private void mkClass(HCodeElement hce, TEMP T) {
          Temp t = T.temp;
          Util.assert(classes.containsKey(hce) == false);
-         HClass hclass = ((CanonicalTreeCode)hc).getTreeDerivation().typeMap(T);
-         int sz = 0;
-         if(hclass == null) {
-            // System.out.println("Yikes TEMP = " + T + " Temp=" + t + " hce " + hce + " hcecode=" + hce.hashCode());
-            sz = 37; /* XXX */
-         } else {
-            sz = frame.getRuntime().treeBuilder.objectSize(hclass);
-         }
+         int sz = getSize(hce, T);
          EqClass newcl = new EqClass(++class_num, sz);
          if(trace) {
             System.err.println(newcl + " gets hce " + hce + " hcecode=" 
@@ -675,8 +669,8 @@ public class DominatingMemoryAccess {
          currtemps.put(t, newcl);
       }
 
-      private HashMap currtemps;
-      private HashMap classes;
+      private Map currtemps;
+      private Map classes;
       private HCode hc;
       int class_num = 0;
    }
@@ -753,7 +747,7 @@ public class DominatingMemoryAccess {
    }
 
    private void doEqClasses(Tree tr, CFGrapher cfgr, 
-                            EqClasses eqClasses, HashMap visited) {
+                            EqClasses eqClasses, Map visited) {
       visited.put(tr, new Integer(0));
       if(cfgr.pred(tr).length > 1) {
          // This is a join point
@@ -781,7 +775,7 @@ public class DominatingMemoryAccess {
    }
 
    private void tryDominate(HCodeElement hce, final EqClasses eqClasses,
-                            HashMap active, HashMap defUseMap, HashMap useDefMap) {
+                               Map active, Map defUseMap, Map useDefMap) {
       EqClasses.EqClass eqc = eqClasses.getClass(hce);
       if(eqc != null) {
          if(active.containsKey(eqc)) {
@@ -803,13 +797,50 @@ public class DominatingMemoryAccess {
          }
       }
    }
+
+   private int getSize(HCodeElement hce, TEMP T) {
+      Temp t = T.temp;
+      HClass hclass = ((CanonicalTreeCode)hc).getTreeDerivation().typeMap(T);
+      int sz = 0;
+      if(hclass == null) {
+         // System.out.println("Yikes TEMP = " + T + " Temp=" + t + " hce " + hce + " hcecode=" + hce.hashCode());
+         sz = 37; /* XXX */
+      } else {
+         sz = frame.getRuntime().treeBuilder.objectSize(hclass);
+      }
+      return sz;
+   }
+
+
+   private void tryDominate(Exp exp, final CacheEquivalence eqClasses,
+                            Map defUseMap, Map useDefMap) {
+      if(exp.kind() == TreeKind.MEM) {
+         MEM mem = (MEM)exp;
+         // XXX This shoud go away when Scott tells me the real way to
+         // do this. 
+         if(mem.kind() == TreeKind.TEMP
+            && getSize(mem, (TEMP)mem.getExp()) <= 32) {
+            if(eqClasses.needs_tag_check(mem) == false) {
+               // This is it, this use is dominated
+               MEM dom = eqClasses.whose_tag_check(mem);
+               ArrayList subs = (ArrayList)defUseMap.get(dom);
+               subs.add(mem);
+               Util.assert(useDefMap.containsKey(mem) == false);
+               useDefMap.put(mem, dom);
+            } else if(eqClasses.ops_using_this_tag(mem) > 1) {
+               defUseMap.put(mem, new ArrayList(2));
+            }
+         }
+      }
+   }
+
    // For every access that dominates another access to the same base
    // pointer (memory equiv class), make the dominating access the Def
    // and the subordinate accesses uses
    private void findDADefUse(DomTree dt, HCodeElement hce, 
                              harpoon.IR.Tree.Code code, CFGrapher cfgr,
-                             final EqClasses eqClasses, HashMap active,
-                             HashMap defUseMap, HashMap useDefMap) {
+                             final EqClasses eqClasses, Map active,
+                             Map defUseMap, Map useDefMap) {
       HCodeElement[] children = dt.children(hce);
       switch(((Tree)hce).kind()) {
       case TreeKind.MOVE:
@@ -832,17 +863,46 @@ public class DominatingMemoryAccess {
       }
    }
 
+   // For every access that dominates another access to the same base
+   // pointer (memory equiv class), make the dominating access the Def
+   // and the subordinate accesses uses
+   private void findDADefUse(DomTree dt, HCodeElement hce, 
+                             harpoon.IR.Tree.Code code, CFGrapher cfgr,
+                             final CacheEquivalence eqClasses, 
+                             Map defUseMap, Map useDefMap) {
+      HCodeElement[] children = dt.children(hce);
+      switch(((Tree)hce).kind()) {
+      case TreeKind.MOVE:
+         MOVE m = (MOVE)hce;
+         if(trace) {
+            System.err.println("hce " + hce + " code " + hce.hashCode() + " (" + children.length + ")");
+         }
+         tryDominate(m.getSrc(), eqClasses, defUseMap, useDefMap);
+         tryDominate(m.getDst(), eqClasses, defUseMap, useDefMap);
+         break;
+      case TreeKind.CALL:
+      case TreeKind.NATIVECALL:
+      case TreeKind.THROW:
+         // Calls can clear DA state, but possibly not, so don't clear
+         // the active list
+      }
+      for(int i = 0; i < children.length; ++i) {
+         findDADefUse(dt, children[i], code, cfgr, eqClasses, 
+                      defUseMap, useDefMap);
+      }
+   }
+
    private void printDA (harpoon.IR.Tree.Code code,
                          final Live live, 
-                         final HashMap defUseMap,
-                         final HashMap useDefMap,
-                         final HashMap ref2dareg) {
+                         final Map defUseMap,
+                         final Map useDefMap,
+                         final Map ref2dareg) {
       HCodeElement[] nodes = code.getElements();
-      HashMap _h2n = new HashMap(nodes.length);
+      Map _h2n = new HashMap(nodes.length);
       for(int i = 0; i < nodes.length; ++i) {
          _h2n.put(nodes[i], new Integer(i));
       }
-      final HashMap h2n = _h2n;
+      final Map h2n = _h2n;
       harpoon.IR.Tree.Print.print(
          new java.io.PrintWriter(System.out), code, 
          new HCode.PrintCallback(){
@@ -898,11 +958,11 @@ public class DominatingMemoryAccess {
 
    private void report_stats (harpoon.IR.Tree.Code code,
                          final Live live, 
-                         final HashMap defUseMap,
-                         final HashMap useDefMap,
+                         final Map defUseMap,
+                         final Map useDefMap,
                          final DARegAlloc alloc) {
-      HashMap ref2dareg = alloc.getRef2Dareg();
-      HashSet useda = alloc.usedDANum();
+      Map ref2dareg = alloc.getRef2Dareg();
+      Set useda = alloc.usedDANum();
       int tot_defs = defUseMap.keySet().size();
       int tot_uses = 0;
       for(Iterator it = defUseMap.values().iterator(); it.hasNext();) {
@@ -978,30 +1038,37 @@ public class DominatingMemoryAccess {
       Util.assert(parent.getCodeName().equals(CanonicalTreeCode.codename));
       return new HCodeFactory() {
             public HCode convert(HMethod m) {
-               HCode hc = parent.convert(m);
+               hc = parent.convert(m);
                harpoon.IR.Tree.Code code = (harpoon.IR.Tree.Code) hc;
                final CFGrapher cfgr = code.getGrapher();
-               EqClasses eqClasses = new EqClasses(hc);
+               // My crapo analysis
+                EqClasses eqClasses = new EqClasses(hc);
                doEqClasses((Tree)cfgr.getFirstElement(code), cfgr, eqClasses, 
                            new HashMap());
                if( trace ) {
                   harpoon.IR.Tree.Print.print(
                      new java.io.PrintWriter(System.out), code, eqClasses.getClasses());
                }
-
-               HashMap defUseMap = new HashMap();
-               HashMap useDefMap = new HashMap();
+               // Scott's neato analysis
+               CacheEquivalence cacheEq = new CacheEquivalence(code);
+               Map defUseMap = new HashMap();
+               Map useDefMap = new HashMap();
                DomTree dt = new DomTree(hc, cfgr, false);
                HCodeElement[] roots = dt.roots();
                for(int i = 0; i < roots.length; ++i) {
-                  findDADefUse(dt, roots[i], code, cfgr, eqClasses, 
-                              new HashMap(), defUseMap, useDefMap);
+                  if(emmett_crappy) {
+                     findDADefUse(dt, roots[i], code, cfgr, eqClasses, 
+                                  new HashMap(), defUseMap, useDefMap);
+                  } else {
+                     findDADefUse(dt, roots[i], code, cfgr, cacheEq,
+                                  defUseMap, useDefMap);
+                  }
                }
                MoveCFGrapher mcfgr = new MoveCFGrapher(code);
                Live live = new Live(mcfgr, code, defUseMap, useDefMap);
                alloc = new DARegAlloc(mcfgr, live, defUseMap, useDefMap);
-               HashMap ref2dareg = alloc.getRef2Dareg();
-               ((harpoon.Backend.MIPS.Frame)frame).setNoTagCheckHashMap(ref2dareg);
+               Map ref2dareg = alloc.getRef2Dareg();
+               ((harpoon.Backend.MIPS.Frame)frame).setNoTagCheckMap(ref2dareg);
                ((harpoon.Backend.MIPS.Frame)frame).setUsedDANum(alloc.usedDANum());
                if(trace)
                   printDA(code, live, defUseMap, useDefMap, ref2dareg);
@@ -1020,9 +1087,13 @@ public class DominatingMemoryAccess {
       this.parent = parent;
       this.frame  = frame;
    }
+
+   private HCode hc;
    private HCodeFactory parent;
    private Frame frame;
    private DARegAlloc alloc;
    private boolean trace = false;
    private boolean static_stats = false;
+   // If true, use Emmett's crappy memory analysis
+   private boolean emmett_crappy = true;
 }
