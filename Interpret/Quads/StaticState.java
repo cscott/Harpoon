@@ -20,7 +20,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.14 2000-01-28 05:27:26 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.15 2001-09-26 20:06:20 cananian Exp $
  */
 final class StaticState extends HCLibrary implements java.io.Serializable {
     /** which linker to use. */
@@ -66,6 +66,7 @@ final class StaticState extends HCLibrary implements java.io.Serializable {
 	Util.assert(!isLoaded(cls));
 	HClass sc = cls.getSuperclass();
 	if (sc!=null && !isLoaded(sc)) load(sc); // load superclasses first.
+	if (TRACE)
 	System.err.println("LOADING "+cls);
 	classInfo.put(cls, new ClassHeader());
 	HField[] fl = cls.getDeclaredFields();
@@ -233,4 +234,7 @@ final class StaticState extends HCLibrary implements java.io.Serializable {
 	if (prof==null) return;
 	else prof.println("N "+cls.getDescriptor()+" "+start+" "+end+" "+size);
     }
+    // --------------------------------------------------------
+    // DEBUGGING INFORMATION.
+    public boolean TRACE = true;
 }

@@ -61,21 +61,24 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.23 2001-09-26 16:02:31 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.24 2001-09-26 20:06:19 cananian Exp $
  */
 public final class Method {
 
     /** Write a start-up static state to disk. */
     public static final void makeStartup(Linker linker, HCodeFactory hcf,
-					 java.io.OutputStream os)
+					 java.io.OutputStream os,
+					 boolean trace)
 	throws java.io.IOException {
 	StaticState ss = new StaticState(linker, hcf);
+	ss.TRACE = trace;
 	try {
 	    HMethod HMinit =
 		ss.HCsystem.getMethod("initializeSystemClass", "()V");
 	    // set up static state.
 	    ss.load(ss.HCsystem);
 	    invoke(ss, HMinit, new Object[0]);
+	    if (ss.TRACE)
 	    System.err.println("Writing.");
 	    java.io.ObjectOutputStream oos=new java.io.ObjectOutputStream(os);
 	    oos.writeObject(ss);
@@ -86,7 +89,7 @@ public final class Method {
     /** invoke a static main method, using a static state loaded from disk. */
     public static final void run(PrintWriter prof, HCodeFactory hcf,
 				 HClass cls, String[] args,
-				 java.io.InputStream is)
+				 java.io.InputStream is, boolean trace)
 	throws java.io.IOException {
 	StaticState ss;
 	try {
@@ -95,6 +98,7 @@ public final class Method {
 	    ss = (StaticState) ois.readObject();
 	    ss.prof = prof;
 	    ss.hcf = hcf;
+	    ss.TRACE = trace;
 	    ois.close();
 	    Util.assert(cls.getLinker()==ss.linker,
 			"Saved static state uses incompatible linker");
@@ -111,8 +115,9 @@ public final class Method {
 
     /** invoke a static main method with no static state. */
     public static final void run(PrintWriter prof, HCodeFactory hcf,
-				 HClass cls, String[] args) {
+				 HClass cls, String[] args, boolean trace) {
 	StaticState ss = new StaticState(cls.getLinker(), hcf, prof);
+	ss.TRACE = trace;
 	try {
 	    HMethod HMinit =
 		ss.HCsystem.getMethod("initializeSystemClass", "()V");
@@ -209,6 +214,7 @@ public final class Method {
 			}
 		    }
 		    // no handler caught it; rethrow.
+		    if (ss.TRACE)
 		    System.err.println("RETHROWING "+it.ex.type+" at "+
 				       sf.pc.getSourceFile() + ":" +
 				       sf.pc.getLineNumber());
@@ -218,6 +224,7 @@ public final class Method {
 	    // Return or throw.
 	    if (i.Texc!=null) {
 		Util.assert(sf.get(i.Texc)!=null, "Undefined throwable");
+		if (ss.TRACE)
 		System.err.println("THROWING " +
 				   ((ObjectRef)sf.get(i.Texc)).type +
 				   " at " + sf.pc.getSourceFile() + ":" +
@@ -254,6 +261,7 @@ public final class Method {
 	    sf.pc = (Quad) e.to();
 	    last_pred = e.which_pred();
 	    sf.update(h.exceptionTemp(), ex);
+	    if (ss.TRACE)
 	    System.err.println("HANDLING "+ex.type+" at "+
 			       sf.pc.getSourceFile() + ":" +
 			       sf.pc.getLineNumber());
@@ -439,6 +447,7 @@ public final class Method {
 	    advance(0);
 	}
 	public void visit(DEBUG q) {
+	    if (ss.TRACE)
 	    System.err.println(q.str());
 	    advance(0);
 	}

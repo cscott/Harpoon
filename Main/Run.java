@@ -24,12 +24,13 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Run.java,v 1.1.2.11 2000-01-13 23:48:17 cananian Exp $
+ * @version $Id: Run.java,v 1.1.2.12 2001-09-26 20:06:08 cananian Exp $
  */
 public abstract class Run extends harpoon.IR.Registration {
     public static void main(String args[]) throws IOException {
 	java.io.InputStream startup = null;
 	java.io.OutputStream dump = null;
+	boolean trace=true;
 	Linker linker = Loader.systemLinker;
 	HCodeFactory hf = // default code factory.
 	    harpoon.IR.Quads.QuadWithTry.codeFactory();
@@ -83,10 +84,13 @@ public abstract class Run extends harpoon.IR.Registration {
 		    throw new Error("Could not open " + filename +
 				    " for dump: " + e.toString());
 		}
+	    } else if (args[i].startsWith("-q")) { // for -quiet
+		trace=false;
 	    } else break; // no more command-line options.
 	}
 	if (dump!=null) { // make quick-startup dump.
-	    harpoon.Interpret.Quads.Method.makeStartup(linker, hf, dump);
+	    harpoon.Interpret.Quads.Method.makeStartup(linker, hf, dump,
+						       trace);
 	    return;
 	}
 	// arg[i] is class name.  Load its main method.
@@ -105,10 +109,11 @@ public abstract class Run extends harpoon.IR.Registration {
 	System.arraycopy(args, i, params, 0, params.length);
 	if (startup!=null)
 	    harpoon.Interpret.Quads.Method.run(Options.profWriter,
-					       hf, cls, params, startup);
+					       hf, cls, params, startup,
+					       trace);
 	else
 	    harpoon.Interpret.Quads.Method.run(Options.profWriter,
-					       hf, cls, params);
+					       hf, cls, params, trace);
 	if (Options.profWriter!=null) Options.profWriter.close();
 	if (Options.statWriter!=null) Options.statWriter.close();
     }
