@@ -46,7 +46,7 @@ public class IPaqServoController {
 	}
     }
 
-    private final void send(String s) {
+    private synchronized final void send(String s) {
 	try {
 	    char c[] = s.toCharArray();
 	    for (int i = 0; i<c.length; i++) {
