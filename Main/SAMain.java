@@ -50,6 +50,8 @@ import java.util.Stack;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.NoSuchElementException;
+import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
@@ -67,7 +69,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.39 1999-10-15 00:44:57 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.40 1999-10-15 01:30:11 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -128,8 +130,10 @@ public class SAMain extends harpoon.IR.Registration {
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
 	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
 	//hcf = harpoon.IR.Tree.OptimizedTreeCode.codeFactory(hcf, frame);
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
     
 	HCodeFactory sahcf = Code.codeFactory(hcf, frame);
+	sahcf = new harpoon.ClassFile.CachingCodeFactory(sahcf);
 
 	if (classHierarchyFilename != null) {
 	    try {
@@ -155,8 +159,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    try {
 		String filename = frame.getRuntime().nameMap.mangle(hclass);
 		out = new PrintWriter
+		   (new BufferedWriter
 		    (new FileWriter
-		     (new File(ASSEM_DIR, filename + ".s")));
+		     (new File(ASSEM_DIR, filename + ".s"))));
 		
 		HMethod[] hmarray = hclass.getDeclaredMethods();
 		Set hmset = new TreeSet(Arrays.asList(hmarray));
@@ -200,10 +205,9 @@ public class SAMain extends harpoon.IR.Registration {
 		info("null returned for " + hmethod);
 	    info("\t--- end TREE FORM ---");
 	    out.println();
+	    out.flush();
 	}
 	    
-	out.flush();
-
 	if (PRE_REG_ALLOC) {
 	    HCode hc = sahcf.convert(hmethod);
 	    
@@ -217,9 +221,8 @@ public class SAMain extends harpoon.IR.Registration {
 	    } 
 	    info("\t--- end INSTR FORM (no register allocation)  ---");
 	    out.println();
+	    out.flush();
 	}
-	
-	out.flush();
 	
 	if (LIVENESS_TEST) {
 	    HCode hc = sahcf.convert(hmethod);
@@ -241,9 +244,8 @@ public class SAMain extends harpoon.IR.Registration {
 		info("null returned for " + hmethod);
 	    }
 	    info("\t--- end INSTR FORM (basic block check)  ---");
+	    out.flush();
 	}
-	
-	out.flush();
 	
 	if (REG_ALLOC) {
 	    HCode hc = sahcf.convert(hmethod);
@@ -260,13 +262,11 @@ public class SAMain extends harpoon.IR.Registration {
 	    }
 	    info("\t--- end INSTR FORM (register allocation)  ---");
 	    out.println();
+	    out.flush();
 	}
 	// free memory associated with this method's IR:
 	hcf.clear(hmethod);
 	sahcf.clear(hmethod);
-	
-	out.flush();
-	
     }
     
     public static void outputClassData(HClass hclass, PrintWriter out) 
@@ -338,7 +338,9 @@ public class SAMain extends harpoon.IR.Registration {
 		classHierarchyFilename = arg;
 		try {
 		    ObjectInputStream mIS = 
-			new ObjectInputStream(new FileInputStream(arg)); 
+			new ObjectInputStream
+			(new BufferedInputStream
+			 (new FileInputStream(arg)));
 		    classHierarchy = (ClassHierarchy) mIS.readObject();
 		} catch (OptionalDataException e) {
 		} catch (ClassNotFoundException e) {
