@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.37 2002-07-31 00:25:00 cananian Exp $
+% $Id: ptran.tex,v 1.38 2002-07-31 16:24:23 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.37 $ $}
+\date{\today \\ $ $Revision: 1.38 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -597,6 +597,10 @@ link between two parameters of a method, both which would be
 conditionally singular.  We should probably evaluate these
 polymorphically, too?}
 Otherwise, evaluate it monomorphically.
+
+Possibly unify polymorphic allocation sites using a companion-based
+naming system.  For example; A-pointed-to-by-B instead of
+A-allocated-inside-foo().
 
 \section{Related Work}
 
