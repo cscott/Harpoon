@@ -13,8 +13,9 @@ import harpoon.Util.Util;
 import harpoon.Util.Collections.WorkSet;
 import harpoon.Temp.Temp;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -23,26 +24,23 @@ import java.util.Set;
  * <code>QuadLiveness</code> if you have changed the <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: QuadLiveness.java,v 1.2 2002-02-25 20:59:23 cananian Exp $
+ * @version $Id: QuadLiveness.java,v 1.2.2.1 2002-04-07 20:40:05 cananian Exp $
  */
-public class QuadLiveness extends Liveness {
-    final Hashtable livein;
-    final Hashtable liveout;
-    final Hashtable tempin;
-    final Hashtable tempout;
-    final Hashtable tempinout;
+public class QuadLiveness extends Liveness<Quad> {
+    final Map<Quad,Set<Temp>> livein, liveout;
+    final Map<Quad,Temp[]> tempin, tempout, tempinout;
 
     /** Creates a <code>QuadLiveness</code>. Requires 
      *  that the <code>HCode</code> be quad-no-ssa.
      */
-    public QuadLiveness(HCode hc) {
+    public QuadLiveness(HCode<Quad> hc) {
 	super(hc);
-       	Hashtable[] live = this.analyze();
+       	Map<Quad,Set<Temp>>[] live = this.analyze();
 	this.livein = live[0];
 	this.liveout = live[1];
-	this.tempin = new Hashtable();
-	this.tempout = new Hashtable();
-	this.tempinout = new Hashtable();
+	this.tempin = new HashMap<Quad,Temp[]>();
+	this.tempout = new HashMap<Quad,Temp[]>();
+	this.tempinout = new HashMap<Quad,Temp[]>();
     }
 
     /** Returns the <code>Set</code> of <code>Temp</code>s 
@@ -51,21 +49,21 @@ public class QuadLiveness extends Liveness {
      *  quad-no-ssa form. Returns <code>null</code> if there
      *  no live-in variables.
      */
-    public Set getLiveIn(HCodeElement hce) {
-	return new WorkSet((Set)livein.get((Quad)hce));
+    public Set<Temp> getLiveIn(Quad hce) {
+	return new WorkSet<Temp>(livein.get(hce));
     }
     /** Same as getLiveIn, but returns array of <code>Temp</code>s.  This
 	array is guaranteed to have the Temp's in the same order for a given
 	QuadLiveness object,Quad pair.**/
 
-    public Temp[] getLiveInArray(HCodeElement hce) {
+    public Temp[] getLiveInArray(Quad hce) {
 	if (tempin.containsKey(hce))
-	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, (Temp[]) tempin.get(hce));
+	    return Util.safeCopy(Temp.arrayFactory, tempin.get(hce));
 	else {
-	    Set set=(Set) this.livein.get((Quad) hce);
-	    Temp[] retval=(Temp[]) set.toArray(new Temp[set.size()]);
+	    Set<Temp> set = this.livein.get(hce);
+	    Temp[] retval = set.toArray(new Temp[set.size()]);
 	    tempin.put(hce,retval);
-	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, retval);
+	    return Util.safeCopy(Temp.arrayFactory, retval);
 	}
     }
     /** Returns the <code>Set</code> of <code>Temp</code>s 
@@ -74,30 +72,30 @@ public class QuadLiveness extends Liveness {
      *  quad-no-ssa form. Returns <code>null</code> if there
      *  no live-in variables.
      */
-    public Set getLiveOut(HCodeElement hce) {
-	return new WorkSet((Set)liveout.get((Quad)hce));
+    public Set<Temp> getLiveOut(Quad hce) {
+	return new WorkSet<Temp>(liveout.get(hce));
     }
 
     /** Same as getLiveOut, but returns array of <code>Temp</code>s.
 	Makes the same order guarantees as <code>getLiveInArray</code>.**/
-    public Temp[] getLiveOutArray(HCodeElement hce) {
+    public Temp[] getLiveOutArray(Quad hce) {
 	if (tempout.containsKey(hce))
-	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, (Temp[]) tempout.get(hce));
+	    return Util.safeCopy(Temp.arrayFactory, tempout.get(hce));
 	else {
-	    Set set=(Set) this.liveout.get((Quad) hce);
-	    Temp[] retval=(Temp[]) set.toArray(new Temp[set.size()]);
+	    Set<Temp> set = this.liveout.get(hce);
+	    Temp[] retval = set.toArray(new Temp[set.size()]);
 	    tempout.put(hce, retval);
-	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, retval);
+	    return Util.safeCopy(Temp.arrayFactory, retval);
 	}
     }
 
-    public Temp[] getLiveInandOutArray(HCodeElement hce) {
+    public Temp[] getLiveInandOutArray(Quad hce) {
 	if (tempinout.containsKey(hce))
-	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, (Temp[]) tempinout.get(hce));
+	    return Util.safeCopy(Temp.arrayFactory, tempinout.get(hce));
 	else {
-	    Set set=(Set) this.liveout.get((Quad) hce);
-	    Set setin=(Set) this.livein.get((Quad) hce);
-	    Iterator iter=set.iterator();
+	    Set<Temp> set = this.liveout.get(hce);
+	    Set<Temp> setin = this.livein.get(hce);
+	    Iterator<Temp> iter=set.iterator();
 	    int count=0;
 	    while (iter.hasNext())
 		if (setin.contains(iter.next()))
@@ -106,50 +104,53 @@ public class QuadLiveness extends Liveness {
 	    iter=set.iterator();
 	    count=0;
 	    while (iter.hasNext()) {
-		Temp tt=(Temp) iter.next();
+		Temp tt = iter.next();
 		if (setin.contains(tt))
 		    retval[count++]=tt;
 	    }
 	    tempinout.put(hce, retval);
-	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, retval);
+	    return Util.safeCopy(Temp.arrayFactory, retval);
 	}
     }
 
-    private Hashtable[] analyze() {
+    private Map<Quad,Set<Temp>>[] analyze() {
 	//System.err.println("Entering QuadLiveness.analyze()");
-	WorkSet ws = new WorkSet(this.hc.getElementsL());
+	WorkSet<Quad> ws = new WorkSet<Quad>(this.hc.getElementsL());
 
 	if (ws.isEmpty()) {
-	    Hashtable[] retval = {new Hashtable(), new Hashtable()};
+	    Map<Quad,Set<Temp>>[] retval = {
+		new HashMap<Quad,Set<Temp>>(),
+		new HashMap<Quad,Set<Temp>>(),
+	    };
 	    //System.err.println("Leaving QuadLiveness.analyze()");
 	    return retval;
 	}
 
-	HCodeElement[] leaves = this.hc.getLeafElements();
+	Quad[] leaves = this.hc.getLeafElements();
 	
 	// For efficiency reasons, we want to start w/ a leaf
 	// element if one exists. Otherwise, just start w/
 	// any element.
 	Quad hce = null;
 	if (leaves != null) {
-	    hce = (Quad)leaves[0];
+	    hce = leaves[0];
 	    ws.remove(hce);
 	} else {
-	    hce = (Quad)ws.pull();
+	    hce = ws.pull();
 	}
 
-	Hashtable in = new Hashtable();
-	Hashtable out = new Hashtable();
+	Map<Quad,Set<Temp>> in = new HashMap<Quad,Set<Temp>>();
+	Map<Quad,Set<Temp>> out = new HashMap<Quad,Set<Temp>>();
 
 	while (true) {
-	    WorkSet out_ = new WorkSet();
+	    Set<Temp> out_ = new WorkSet<Temp>();
 
 
 	    for (int i=0;i<hce.nextLength();i++) {
 		Quad successor=hce.next(i);
 		if (in.containsKey(successor)) {
 		    if (successor instanceof PHI) {
-			WorkSet w=new WorkSet((Set)out.get(successor));
+			WorkSet<Temp> w=new WorkSet<Temp>(out.get(successor));
 			
 			//search for successor
 			int edge=hce.nextEdge(i).which_pred();
@@ -162,20 +163,20 @@ public class QuadLiveness extends Liveness {
 			    w.add(phi.src(j,edge));
 			out_.addAll(w);
 		    } else
-			out_.addAll((WorkSet)in.get(successor));
+			out_.addAll(in.get(successor));
 		}
 	    }
 
 	    // Calculate "in" Set
-	    WorkSet in_ = new WorkSet(out_);
+	    Set<Temp> in_ = new WorkSet<Temp>(out_);
 	    in_.removeAll(hce.defC());
 	    in_.addAll(hce.useC());
 
 	    // If we have grown our live-in or live-out variables,
 	    // we need to update all of its predecessors.
-	    // TRICK: doing a put on a Hashtable returns the previous mapping
-	    WorkSet old_in = (WorkSet)in.put(hce, in_);
-	    WorkSet old_out = (WorkSet)out.put(hce, out_);
+	    // TRICK: doing a put on a Map returns the previous mapping
+	    Set<Temp> old_in = in.put(hce, in_);
+	    Set<Temp> old_out = out.put(hce, out_);
 	    if ((old_in == null)|| (old_in.size() < in_.size())) {
 		for (int i=0;i<hce.prevLength();i++)
 		    ws.push(hce.prev(i));
@@ -185,9 +186,9 @@ public class QuadLiveness extends Liveness {
 	    }
 
 	    if (ws.isEmpty()) break;
-	    hce = (Quad)ws.pull();
+	    hce = ws.pull();
 	}
-	return new Hashtable[] {in, out};
+	return new Map<Quad,Set<Temp>>[] {in, out};
     }
 }
 
