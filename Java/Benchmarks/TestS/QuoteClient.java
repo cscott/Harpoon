@@ -30,7 +30,7 @@ public class QuoteClient extends Thread {
 	    System.exit(1); 
 	}
 	long starttime=System.currentTimeMillis();
-	int SERVER_PORT=Integer.parseInt(args[1]);
+	QuoteClient.SERVER_PORT=Integer.parseInt(args[1]);
 	int numclients=Integer.parseInt(args[2]);
 	int numcycles=Integer.parseInt(args[3]);
 	QuoteClient.debug=(Integer.parseInt(args[4])==1);
@@ -51,7 +51,7 @@ public class QuoteClient extends Thread {
 	long endtime=System.currentTimeMillis();
 	System.out.println("QuoteClient");
 	System.out.println("numclients:"+numclients);
-	System.out.println("port:"+SERVER_PORT);
+	System.out.println("port:"+QuoteClient.SERVER_PORT);
 	System.out.println("number of cycles:"+numcycles);
 	System.out.println("number of stocks:"+numstocks);
 	System.out.println("Elapsed time:(mS)"+(endtime-starttime));
