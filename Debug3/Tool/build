@@ -1,1 +1,2 @@
 g++ file3.cc libchecker.a -o file3
+/mit/cristic/Public/build-third-tool
