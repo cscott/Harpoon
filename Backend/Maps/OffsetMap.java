@@ -12,7 +12,7 @@ import harpoon.Temp.Label;
  * total size of an <code>HClass</code> object.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: OffsetMap.java,v 1.1.2.6 1999-01-23 08:28:15 cananian Exp $
+ * @version $Id: OffsetMap.java,v 1.1.2.7 1999-01-27 03:11:32 duncan Exp $
  */
 public abstract class OffsetMap // use an abstract class, if we can.
 {
@@ -41,4 +41,21 @@ public abstract class OffsetMap // use an abstract class, if we can.
 
   /** Maps an <code>HClass</code> to a size (in bytes). */
   public abstract int size(HClass hc);
+
+  /** Maps an <code>HClass</code> to an offset (in bytes).  
+   *  If <code>hc</code> is an array type, returns the offset of the
+   *  array's length field. */
+  public abstract int lengthOffset(HClass hc); 
+
+  /** Maps an <code>HClass</code> to an offset (in bytes).  
+   *  If hc is an array type, returns the offset of the
+   *  array's 0th element. */
+  public abstract int elementsOffset(HClass hc);
+
+  /** Maps an <code>HClass</code> to an offset (in bytes).  
+   *  Returns the offset of the pointer to the method table */
+  public abstract int methodOffset(HClass hc);
 }
+
+
+
