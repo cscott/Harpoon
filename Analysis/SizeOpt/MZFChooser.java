@@ -39,7 +39,7 @@ import java.util.Set;
  * MZF-compressed version of a class at run-time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFChooser.java,v 1.1.2.2 2001-11-13 22:01:34 cananian Exp $
+ * @version $Id: MZFChooser.java,v 1.1.2.3 2001-11-19 19:00:21 cananian Exp $
  */
 class MZFChooser extends MethodMutator {
     /** an oracle to determine the properties of constructors. */
@@ -169,7 +169,10 @@ class MZFChooser extends MethodMutator {
 	    }
 	}
 	// check whether this field is a function of a param.
-	if (cc.isParam(constructor, hf)) {
+	// (oh, it also can't be a function of param#0, which isn't
+	//  defined yet)
+	if (cc.isParam(constructor, hf) &&
+	    0 != cc.paramNumber(constructor, hf)) {
 	    int which = cc.paramNumber(constructor, hf);
 	    // test whether param(which) is equal to 'num'.
 	    // if so, use specialized class, else fall back.
