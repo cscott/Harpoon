@@ -18,7 +18,7 @@ import harpoon.IR.QuadNoSSA.*;
  * <code>Main</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ProfileMain.java,v 1.2.4.5 1998-11-28 00:18:54 mfoltz Exp $
+ * @version $Id: ProfileMain.java,v 1.2.4.6 1998-12-01 16:26:06 mfoltz Exp $
  */
 
 //<<<<<<< Main.java
@@ -49,42 +49,46 @@ public class ProfileMain extends harpoon.IR.Registration {
 	    for (int j=0; j<hm.length; j++) {
 	      //SCCAnalysis scc = new SCCAnalysis (new UseDef());
 	      //SCCOptimize sco = new SCCOptimize (scc,scc,scc);
-	      if (hm[j].isInterfaceMethod()){
+	      System.err.println("Translating method "+hm[j].getName());
+	      if (hm[j].isInterfaceMethod() || 
+		  java.lang.reflect.Modifier.isAbstract(hm[j].getModifiers()) ||
+		  java.lang.reflect.Modifier.isNative(hm[j].getModifiers())) {
+		System.err.println("Empty method: "+interfaceClasses[i].getName()+":"+hm[j].toString());
 		nclass.addMethod (new NMethod(hm[j], new java.util.Hashtable()));
 	      } else {
 		HCode hc1 =  hm[j].getCode("quad-ssa");
-		
 		if (hc1 == null) {
 		  System.out.println ("Yep.. this is Null!");
-		}
-		//sco.optimize(hc1);
-		try {
-		//insert profiling stuff -- mfoltz
-		if (profile) harpoon.Analysis.QuadSSA.Profile.optimize(hc1);
-		title = interfaceClasses[i].getName()+":"+hm[j].getName();
-		// out = new PrintWriter( 
+		} else {
+		  //sco.optimize(hc1);
+		  try {
+		    //insert profiling stuff -- mfoltz
+		    if (profile) harpoon.Analysis.QuadSSA.Profile.optimize(hc1);
+		    // title = interfaceClasses[i].getName()+":"+hm[j].getName();
+		    // out = new PrintWriter( 
 // 				      new FileOutputStream 
 // 				      (interfaceClasses[i].getName().replace('.','/')+":"+hm[j].getName()+".vcg"));
-// 		harpoon.Util.Graph.printCFG(hc1,out,title);
-// 		out.close();
-		
-		harpoon.IR.QuadNoSSA.Code hc = new harpoon.IR.QuadNoSSA.Code((harpoon.IR.QuadSSA.Code)hc1);
-		//		System.out.println ("Right before calling create Java on: " +
+		    // 		harpoon.Util.Graph.printCFG(hc1,out,title);
+		    // 		out.close();
+		    
+		    harpoon.IR.QuadNoSSA.Code hc = new harpoon.IR.QuadNoSSA.Code((harpoon.IR.QuadSSA.Code)hc1);
+		    //		System.out.println ("Right before calling create Java on: " +
 		//				    hm[j].getName());
 
-		  //NMethod method = hc.createJavaByte (scc, hm[j].getCode("quad-ssa"));
-		  NMethod method = hc.createJavaByte (new TypeInfo(), hm[j].getCode("quad-ssa"));
-		  nclass.addMethod (method);
-		} catch (Exception e){
-		  e.printStackTrace();
+		    //NMethod method = hc.createJavaByte (scc, hm[j].getCode("quad-ssa"));
+		    NMethod method = hc.createJavaByte (new TypeInfo(), hm[j].getCode("quad-ssa"));
+		    nclass.addMethod (method);
+		  } catch (Exception e){
+		    e.printStackTrace();
+		  }
 		}
 	      }
 	      
 	    }
 	    try {
-	      String j_name = "profiled/"+interfaceClasses[i].getName().replace('.','/')+".j";
-	      System.err.println("Writing "+j_name);
-	      PrintWriter c_out = new PrintWriter (new FileOutputStream (j_name));
+	      String j_name = interfaceClasses[i].getName().replace('.','/')+".j";
+	      System.err.println("Writing profiled/"+j_name);
+	      PrintWriter c_out = new PrintWriter (new FileOutputStream ("profiled/"+j_name));
 	      nclass.writeClass (c_out);
 	      c_out.close();
 	      String arguments[] = new String[2];
@@ -98,4 +102,5 @@ public class ProfileMain extends harpoon.IR.Registration {
 	}
     }
 }
+
 
