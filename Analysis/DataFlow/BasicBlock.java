@@ -13,6 +13,7 @@ import harpoon.IR.Properties.Edges;
 import java.util.Map;
 import java.util.Hashtable;
 import java.util.Enumeration;
+import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
 public class BasicBlock {
@@ -66,21 +67,46 @@ public class BasicBlock {
     public Enumeration next() { return succ_bb.elements(); }
     
     public Enumeration elements() {
-	return new Enumeration() {
+	return new IteratorEnumerator(listIterator());
+    }
+    
+    /** Returns an immutable <code>ListIterator</code> for the
+	<code>Edges</code> within <code>this</code>. */  
+    public ListIterator listIterator() {
+	return new ListIterator() {
 	    Edges current = first;
-	    public boolean hasMoreElements() { return current != last; }
-	    public Object nextElement() {
+	    int index = 0;
+	    public boolean hasNext() { return current != last; }
+	    public boolean hasPrevious() { return current != first; } // correct? 
+	    public int nextIndex() { return index + 1; }
+	    public int previousIndex() { return index - 1; } 
+	    public Object next() {
 		if (current == null) throw new NoSuchElementException();
 		Util.assert((current == first) || (current.pred().length == 1));
 		Util.assert(current.succ().length == 1);
 		Edges r = current;
 		if (r == last) current = null;
 		else current = (Edges) current.succ()[0].to();
+		index++;
+		return r;
+	    }		
+	    public Object previous() {
+		if (current == null) throw new NoSuchElementException();
+		Util.assert((current == last) || (current.succ().length == 1));
+		Util.assert(current.pred().length == 1);
+		Edges r = current;
+		if (r == first) current = null;
+		else current = (Edges) current.pred()[0].from();
+		index--;
 		return r;
 	    }
+	    
+	    public void remove() {throw new UnsupportedOperationException();} 
+	    public void set(Object o) {throw new UnsupportedOperationException();} 
+	    public void add(Object o)  {throw new UnsupportedOperationException();} 
 	};
     }
-    
+
     /** Accept a visitor. */
     public void visit(BasicBlockVisitor v) { v.visit(this); }
     
