@@ -7,6 +7,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.Temp.Temp;
 import harpoon.Util.Collections.BitSetFactory;
 import harpoon.Util.Collections.SetFactory;
+import harpoon.Util.Collections.UniqueVector;
 import harpoon.Util.Util;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,7 +21,7 @@ import java.util.Set;
  * and gets most of the egregious dead vars.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Prune.java,v 1.4 2002-04-10 03:05:15 cananian Exp $
+ * @version $Id: Prune.java,v 1.5 2002-07-16 20:37:32 cananian Exp $
  */
 class Prune {
     private final static boolean DEBUG=false;
@@ -64,7 +65,32 @@ class Prune {
 	    this.EMPTY_SET = sf.makeSet();
 	    this.FULL_SET  = sf.makeSet(universe);
 	    // okay, do the thing that we do.
-	    knownDeadInto((Quad)hc.getRootElement());
+	    // This command will suffice:
+	    //-------------------------------------
+	    //knownDeadInto((Quad)hc.getRootElement());
+	    //-------------------------------------
+	    // Instead of directly doing the above, we're going to
+	    // first visit all PHIs in post-order DFS.  This will
+	    // limit the amount of on-stack recursion required for
+	    // the algorithm, without changing any of the results.
+	    // (or the running time, hopefully!)
+
+	    UniqueVector worklist = new UniqueVector();
+	    // order nodes in pre-order dfs.
+	    worklist.add(hc.getRootElement());
+	    for (int i=0; i<worklist.size(); i++) {
+		Quad q = (Quad) worklist.get(i);
+		for (int j=0; j<q.nextLength(); j++)
+		    worklist.add(q.next(j));
+	    }
+	    // now post-order dfs is just the reverse of the pre-order dfs.
+	    // so, do knownDeadInto() in that order.
+	    for (int i=worklist.size()-1; i>=0; i--) {
+		Quad q = (Quad) worklist.get(i);
+		if (q instanceof PHI || q instanceof HEADER)
+		    knownDeadInto(q);
+	    }
+
 	    // now we've got a useless set.
 	}
 
