@@ -100,7 +100,9 @@ JNIEXPORT void JNICALL Java_java_lang_Runtime_traceMethodCalls
  */
 JNIEXPORT jstring JNICALL Java_java_lang_Runtime_initializeLinkerInternal
   (JNIEnv *env, jobject objRuntime) {
-    assert(0);
+    /* stub this out; we don't really pay attention to the search path */
+    jstring str = (*env)->NewStringUTF(env, "/usr/lib");
+    return str;
 }
 
 /*
@@ -110,7 +112,8 @@ JNIEXPORT jstring JNICALL Java_java_lang_Runtime_initializeLinkerInternal
  */
 JNIEXPORT jstring JNICALL Java_java_lang_Runtime_buildLibName
   (JNIEnv *env, jobject objRuntime, jstring pathname, jstring filename) {
-    assert(0);
+    /* stub this out; we ignore the pathname */
+    return filename;
 }
 
 /*
@@ -120,5 +123,6 @@ JNIEXPORT jstring JNICALL Java_java_lang_Runtime_buildLibName
  */
 JNIEXPORT jint JNICALL Java_java_lang_Runtime_loadFileInternal
   (JNIEnv *env, jobject objRuntime, jstring filename) {
-    assert(0);
+    /* ignore! */
+    return 1;
 }
