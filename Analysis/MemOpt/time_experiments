@@ -11,7 +11,7 @@ JOLDEN_DIR=$HOME/jolden
 #SPEC_APPS="_200_check _201_compress _205_raytrace _209_db _222_mpegaudio _228_jack"
 
 #SPEC_APPS="_200_check"
-SPEC_APPS="_205_raytrace"
+#SPEC_APPS="_205_raytrace"
 #SPEC_APPS="_202_jess _213_javac"
 #SPEC_APPS="_228_jack"
 #SPEC_APPS="_222_mpegaudio"
@@ -20,11 +20,11 @@ SPEC_APPS="_205_raytrace"
 #SPEC_APPS="_201_compress"
 
 # all Java OLDEN applications
-#JOLDEN_APPS="BH BiSort Em3d Health MST Perimeter Power TreeAdd TSP Voronoi"
+JOLDEN_APPS="BH BiSort Em3d Health MST Perimeter Power TreeAdd TSP Voronoi"
 
 #JOLDEN_APPS="TreeAdd"
 #JOLDEN_APPS="MST"
-#JOLDEN_APPS="Em3d"
+#JOLDEN_APPS="BH"
 
 export FLEXRUN_ARGS="-Xmx 256"
 TIME="time -p"
@@ -89,13 +89,13 @@ function time_spec_app2() {
     echo Timing ${name} - version with preallocation
     $specialCmd
     if [ "$testCaseParams" = "< Parser.cup" ] ; then
-	${RUNTIME_DIR}/run$name.pre_alloc ${FLEXRUN_ARGS} < Parser.cup > /dev/null 2> /dev/null
-	${RUNTIME_DIR}/run$name.pre_alloc ${FLEXRUN_ARGS} < Parser.cup > /dev/null 2> /dev/null
-	(${TIME} ${RUNTIME_DIR}/run$name.pre_alloc ${FLEXRUN_ARGS} < Parser.cup)  > ${resultDir}/$name.pre_alloc.time.out  2> ${resultDir}/$name.pre_alloc.time
+	${RUNTIME_DIR}/run$name.prealloc ${FLEXRUN_ARGS} < Parser.cup > /dev/null 2> /dev/null
+	${RUNTIME_DIR}/run$name.prealloc ${FLEXRUN_ARGS} < Parser.cup > /dev/null 2> /dev/null
+	(${TIME} ${RUNTIME_DIR}/run$name.prealloc ${FLEXRUN_ARGS} < Parser.cup)  > ${resultDir}/$name.prealloc.time.out  2> ${resultDir}/$name.prealloc.time
     else
-	${RUNTIME_DIR}/run$name.pre_alloc ${FLEXRUN_ARGS} $testCaseParams > /dev/null 2> /dev/null
-	${RUNTIME_DIR}/run$name.pre_alloc ${FLEXRUN_ARGS} $testCaseParams > /dev/null 2> /dev/null
-	(${TIME} ${RUNTIME_DIR}/run$name.pre_alloc ${FLEXRUN_ARGS} $testCaseParams)  > ${resultDir}/$name.pre_alloc.time.out  2> ${resultDir}/$name.pre_alloc.time
+	${RUNTIME_DIR}/run$name.prealloc ${FLEXRUN_ARGS} $testCaseParams > /dev/null 2> /dev/null
+	${RUNTIME_DIR}/run$name.prealloc ${FLEXRUN_ARGS} $testCaseParams > /dev/null 2> /dev/null
+	(${TIME} ${RUNTIME_DIR}/run$name.prealloc ${FLEXRUN_ARGS} $testCaseParams)  > ${resultDir}/$name.prealloc.time.out  2> ${resultDir}/$name.prealloc.time
     fi
     save_result $name time
 }
@@ -153,13 +153,13 @@ function time_jolden_app2() {
     
     cd ${RUNTIME_DIR}
     rm run${name}sa
-    ln -sf run${name}.pre_alloc run${name}sa
+    ln -sf run${name}.prealloc run${name}sa
 
     echo Timing ${name} - version with preallocation
     cd $dir
     make flexrun > /dev/null 2> /dev/null &&
     make flexrun > /dev/null 2> /dev/null &&
-    (${TIME} make flexrun)  > ${resultDir}/$name.pre_alloc.time.out  2> ${resultDir}/$name.pre_alloc.time
+    (${TIME} make flexrun)  > ${resultDir}/$name.prealloc.time.out  2> ${resultDir}/$name.prealloc.time
     error=$?
     if [ $error -ne 0 ]; then
 	echo Error while timing $name: $error
@@ -188,8 +188,8 @@ function use_normal_runtime() {
     use_runtime normal;
 }
 
-function use_pre_alloc_runtime() {
-    use_runtime pre_alloc;
+function use_prealloc_runtime() {
+    use_runtime prealloc;
 }
 
 
@@ -203,7 +203,7 @@ time_jolden 1;
 
 echo "---------------------"
 
-use_pre_alloc_runtime;
+use_prealloc_runtime;
 #time_spec_app2 JLEX ${FLEX_DIR}/Support/Lex.jar JLex.Main " " Lexer.jlex "cd ${RUNTIME_DIR}"
 #time_spec_app2 JCUP ${FLEX_DIR}/Support/CUP.jar java_cup.Main "-r Support/locale-root-set"  "< Parser.cup"  "cd ${RUNTIME_DIR}"
 time_spec 2;

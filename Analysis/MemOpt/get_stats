@@ -198,10 +198,10 @@ function speedup_aux() {
     app=$1;
     dir=$2;
     normal_time=`grep real $dir/$app.normal.time | cut -d" " -f 2`;
-    pre_alloc_time=`grep real $dir/$app.pre_alloc.time | cut -d" " -f 2`;
-    speedup=`variation ${normal_time} ${pre_alloc_time}`;
+    prealloc_time=`grep real $dir/$app.prealloc.time | cut -d" " -f 2`;
+    speedup=`variation ${normal_time} ${prealloc_time}`;
     
-    echo -e `expand "$app:"`\\t${normal_time}\\t${pre_alloc_time}\\t${speedup}\%
+    echo -e `expand "$app:"`\\t${normal_time}\\t${prealloc_time}\\t${speedup}\%
 }
 
 function speedup() {

@@ -15,7 +15,7 @@ PRE_ALLOC_RUNTIME_OPTS="${NORMAL_RUNTIME_OPTS} --with-prealloc-opt"
 #SPEC_APPS="_200_check _201_compress _205_raytrace _209_db _222_mpegaudio _228_jack"
 
 #SPEC_APPS="_200_check"
-SPEC_APPS="_205_raytrace"
+#SPEC_APPS="_205_raytrace"
 #SPEC_APPS="_228_jack"
 #SPEC_APPS="_202_jess _213_javac"
 #SPEC_APPS="_222_mpegaudio"
@@ -25,9 +25,9 @@ SPEC_APPS="_205_raytrace"
 
 
 # all Java OLDEN applications
-#JOLDEN_APPS="BH BiSort Em3d Health MST Perimeter Power TreeAdd TSP Voronoi"
+JOLDEN_APPS="BH BiSort Em3d Health MST Perimeter Power TreeAdd TSP Voronoi"
 
-#JOLDEN_APPS="MST"
+#JOLDEN_APPS="BH"
 
 
 function execute_build_command() {
@@ -119,6 +119,7 @@ function build_spec_app2() {
     echo specialCmd     = \"$specialCmd\"
 
     resultDir=${FLEX_DIR}/results/spec/$name
+    mkdir -p ${resultDir}
 
     cd ${FLEX_DIR}
 
@@ -126,17 +127,17 @@ function build_spec_app2() {
 
     echo
     echo Building version with preallocation for $name
-    execute_build_command "bin/build-precisec -Dharpoon.runtime=2 $buildOptions -Z tmp/$name.an.txt,tmp/$name.profile --prealloc-opt $mainClass $name.pre_alloc" | tee $resultDir/$name.ia.stat
-    #rm -rf ${FLEX_DIR}/as$name.pre_alloc
+    execute_build_command "bin/build-precisec -Dharpoon.runtime=2 $buildOptions -Z tmp/$name.an.txt,tmp/$name.profile --prealloc-opt $mainClass $name.prealloc" | tee $resultDir/$name.ia.stat
+    #rm -rf ${FLEX_DIR}/as$name.prealloc
 
     $specialCmd
     if [ "$testCaseParams" = "< Parser.cup" ] ; then
-	${RUNTIME_DIR}/run$name.pre_alloc < Parser.cup > $resultDir/$name.pre_alloc.out 2> ${resultDir}/$name.pre_alloc.err
+	${RUNTIME_DIR}/run$name.prealloc < Parser.cup > $resultDir/$name.prealloc.out 2> ${resultDir}/$name.prealloc.err
     else
-	${RUNTIME_DIR}/run$name.pre_alloc $testCaseParams > $resultDir/$name.pre_alloc.out 2> ${resultDir}/$name.pre_alloc.err
+	${RUNTIME_DIR}/run$name.prealloc $testCaseParams > $resultDir/$name.prealloc.out 2> ${resultDir}/$name.prealloc.err
     fi
 
-    save_result $name pre_alloc;
+    save_result $name prealloc;
 }
 
 
@@ -147,8 +148,8 @@ function use_runtime() {
     echo
 
     cd ${HARPOON_DIR}
-    rm Runtime
-    ln -sf Runtime.$runtime Runtime
+    rm ${RUNTIME_DIR}
+    ln -sf ${RUNTIME_DIR}.$runtime ${RUNTIME_DIR}
 }
 
 function verify() {
@@ -166,25 +167,37 @@ function build_runtime() {
     extension=$1;
     RUNTIME_OPTS=$2;
 
+    # create the two directories (normal / prealloc), if necessary
     if [ ! -d ${RUNTIME_DIR}.${extension} ]; then
 	if [ ! -d ${RUNTIME_DIR} ]; then
 	    echo Could not find ${RUNTIME_DIR} ...
 	    exit 1;
 	fi;
-	cp -r ${RUNTIME_DIR} ${RUNTIME_DIR}.${extension};
+
+	echo  Copy ${RUNTIME_DIR} to ${RUNTIME_DIR}.normal
+
+	cp -r ${RUNTIME_DIR} ${RUNTIME_DIR}.normal;
+	
+	echo  Preparing to move!
+
+	mv ${RUNTIME_DIR} ${RUNTIME_DIR}.prealloc;
+
+	ls -ld ${RUNTIME_DIR}*
     fi;
 
     cd ${RUNTIME_DIR}.${extension}
 
     if verify "${RUNTIME_OPTS}"; then
-	echo Runtime.${extension} already built, reuse it
+	echo Runtime.${extension} already configured
     else
-	echo Setup, Config and Make Runtime.${extension}
+	echo Setup and Config Runtime.${extension}
 	./setup
 	./configure ${RUNTIME_OPTS}
 	make clean
-	make
     fi
+
+    # 2 is better than 1 :)
+    make; make 
 }
 
 function use_normal_runtime() {
@@ -192,9 +205,9 @@ function use_normal_runtime() {
     use_runtime normal;
 }
 
-function use_pre_alloc_runtime() {
-    build_runtime pre_alloc "${PRE_ALLOC_RUNTIME_OPTS}"
-    use_runtime pre_alloc;
+function use_prealloc_runtime() {
+    build_runtime prealloc "${PRE_ALLOC_RUNTIME_OPTS}"
+    use_runtime prealloc;
 }
 
 
@@ -205,6 +218,8 @@ function build_spec() {
     for test in ${SPEC_APPS}; do
 	
 	cd ${FLEX_DIR}
+
+	mkdir -p results/spec/$test
 
 	tmprootset=tmp/${test}-root-set
 	
@@ -226,12 +241,6 @@ function build_jolden_app1() {
     name=$1
     dir=$2
     mainClass=$3
-
-    echo
-    echo build_jolden_app1: name=\"$name\"
-    echo build_jolden_app1: dir=\"$dir\"
-    echo build_jolden_app1: mainClass=\"$mainClass\"
-    echo
 
     resultDir=${FLEX_DIR}/results/jolden/$name
     mkdir -p ${resultDir}
@@ -288,16 +297,16 @@ function build_jolden_app2() {
     
     echo
     echo Building version with preallocation for $name
-    execute_build_command "bin/build-precisec --prealloc-opt -Z tmp/${name}.an.txt,tmp/${name}.profile $mainClass ${name}.pre_alloc" | tee ${resultDir}/${name}.ia.stat
-    #rm -rf ${FLEX_DIR}/as$name.pre_alloc
+    execute_build_command "bin/build-precisec --prealloc-opt -Z tmp/${name}.an.txt,tmp/${name}.profile $mainClass ${name}.prealloc" | tee ${resultDir}/${name}.ia.stat
+    #rm -rf ${FLEX_DIR}/as$name.prealloc
 
     cd ${RUNTIME_DIR}
     rm run${name}sa
-    ln -sf run${name}.pre_alloc run${name}sa
+    ln -sf run${name}.prealloc run${name}sa
     echo Running version with preallocation for ${name}
     cd $dir
 #    export EXTRA_FLEXRUN_PARMS="-Xmx 200"
-    make flexrun > ${resultDir}/$name.pre_alloc.out 2> ${resultDir}/$name.pre_alloc.err
+    make flexrun > ${resultDir}/$name.prealloc.out 2> ${resultDir}/$name.prealloc.err
 }
 
 function build_jolden() {
@@ -309,16 +318,15 @@ function build_jolden() {
     done
 }
 
-
 mkdir -p ${FLEX_DIR}/tmp
 
 use_normal_runtime;
 #build_spec_app1 JLEX ${FLEX_DIR}/Support/Lex.jar JLex.Main " " Lexer.jlex "cd ${RUNTIME_DIR}"
 #build_spec_app1 JCUP ${FLEX_DIR}/Support/CUP.jar java_cup.Main "-r Support/locale-root-set"  "< Parser.cup"  "cd ${RUNTIME_DIR}"
-#build_spec 1;
-#build_jolden 1;
+build_spec 1;
+build_jolden 1;
 
-use_pre_alloc_runtime;
+use_prealloc_runtime;
 #build_spec_app2 JLEX ${FLEX_DIR}/Support/Lex.jar JLex.Main " " Lexer.jlex "cd ${RUNTIME_DIR}"
 #build_spec_app2 JCUP ${FLEX_DIR}/Support/CUP.jar java_cup.Main "-r Support/locale-root-set"  "< Parser.cup"  "cd ${RUNTIME_DIR}"
 build_spec 2;
