@@ -14,7 +14,7 @@ import harpoon.Util.WorkSet;
  * form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Liveness.java,v 1.1.2.1 1999-02-23 10:36:14 cananian Exp $
+ * @version $Id: Liveness.java,v 1.1.2.2 1999-02-23 12:01:02 cananian Exp $
  */
 public class Liveness  {
     /** internal data structure is a hashtable of boolean arrays */
@@ -69,8 +69,12 @@ public class Liveness  {
 		if (isLong(in)) 
 		    liveIn.markLive(uses+1);
 	    }
+	    // optimization hack: try to share LiveSets.
+	    if (in.next.size()>0 && live.get(in.next(0)).equals(liveIn))
+		liveIn = live.get(in.next(0)); // share livesets if equal.
+
+	    // if live set has changed, add predecessors to work set
 	    boolean changed = live.update(in, liveIn);
-	    // if it has changed, add predecessors to work set
 	    if (changed)
 		for (Iterator i=in.prev.iterator(); i.hasNext(); )
 		    workset.add(i.next());
