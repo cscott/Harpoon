@@ -50,7 +50,7 @@ import harpoon.Util.Util;
  * <code>CheesyPACheckRemoval</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CheesyPACheckRemoval.java,v 1.1.2.1 2001-01-23 22:28:10 salcianu Exp $
+ * @version $Id: CheesyPACheckRemoval.java,v 1.1.2.2 2001-01-24 00:22:36 salcianu Exp $
  */
 public class CheesyPACheckRemoval implements CheckRemoval {
 
@@ -85,6 +85,8 @@ public class CheesyPACheckRemoval implements CheckRemoval {
 	CachingBBConverter bbconv = new CachingBBConverter(ccf);
 	LBBConverter lbbconv = new CachingLBBConverter(bbconv);
 
+	mroots = filter(mroots);
+
 	Set run_mms = null;
 	CallGraph cg = null;
 	
@@ -98,24 +100,41 @@ public class CheesyPACheckRemoval implements CheckRemoval {
 	else
 	    cg = new CallGraphImpl(ch, ccf);
 
-	MetaCallGraph mcg = 
-	    new FakeMetaCallGraph(cg, cg.callableMethods(), run_mms);
+	mcg = new FakeMetaCallGraph(cg, cg.callableMethods(), run_mms);
 
 	MetaAllCallers mac = new MetaAllCallers(mcg);
 	System.out.println((time() - tstart) + "ms");
 
+	PointerAnalysis.CALL_CONTEXT_SENSITIVE = true;
+	PointerAnalysis.MAX_SPEC_DEPTH = 2;
+
 	System.out.println("PointerAnalysis ... ");
 	tstart = time();
         pa = new PointerAnalysis(mcg, mac, lbbconv);
+	/*
 	// intrathread analysis of all the callable methods
 	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext(); ) {
             MetaMethod mm = (MetaMethod) it.next();
             if(!analyzable(mm)) continue;
             pa.getIntParIntGraph(mm);
         }
+	*/
 	System.out.println((time() - tstart) + "ms");
     }
 
+
+    private Set filter(Set mroots) {
+	Set result = new HashSet();
+	if(DEBUG) System.out.println("Root methods:");
+	for(Iterator it = mroots.iterator(); it.hasNext(); ) {
+	    Object obj = it.next();
+	    if(obj instanceof HMethod) {
+		if(DEBUG) System.out.println(" " + obj);
+		result.add(obj);
+	    }
+	}
+	return result;
+    }
     
     /** Checks whether all the checks done in the program are useless or not:
 	for any method m having the name "run", no inside object escapes
@@ -148,7 +167,7 @@ public class CheesyPACheckRemoval implements CheckRemoval {
 
 	// the set of nodes appearing in the external pig is the
 	// set of the escaping objects
-	ParIntGraph pig = pa.getIntParIntGraph(mm);
+	ParIntGraph pig = pa.getExtParIntGraph(mm);
 	Set nodes = pig.allNodes();
 
 	// if one of the elements of the set nodes is an INSIDE node,

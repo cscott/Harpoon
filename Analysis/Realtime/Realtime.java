@@ -15,6 +15,8 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeFactory;
 
+import harpoon.IR.Quads.QuadNoSSA;
+
 import harpoon.Util.Util;
 
 /**
@@ -150,7 +152,9 @@ public class Realtime {
 	    break; 
 	}
 	case CHEESY_POINTER_ANALYSIS: {
-	    cr = new CheesyPACheckRemoval(linker, ch, parent, roots);
+	    CachingCodeFactory ccf = 
+		new CachingCodeFactory(QuadNoSSA.codeFactory(parent));
+	    cr = new CheesyPACheckRemoval(linker, ch, ccf, roots);
 	    break;
 	}
 	case REAL_POINTER_ANALYSIS: {
