@@ -58,7 +58,9 @@ public class RegAlloc implements TempMap {
    * allocation process.
    * Unnecessary moves may similarly be deleted.
    */
-  public Instr instrs; // this is the head of the list.
+  Instr instrs; // this is the head of the list.
+    /** A derivation generator, or null. */
+  DerivationGenerator dg;
 
   boolean debug = false; // enable debugging output.
 
@@ -70,15 +72,16 @@ public class RegAlloc implements TempMap {
    * @param f a machine-specific frame and register description
    * @param il a list of instructions to be register allocated.
    */
-  public RegAlloc(final Frame f, Code c, Instr root) {
+  public RegAlloc(final Frame f, Code c, Instr root, DerivationGenerator dg) {
     AssemFlowGraph flow;
-    UseDefer ud = UseDefer.DEFAULT;
+    UseDefer ud0 = UseDefer.DEFAULT;
 
     frame = f;
     code = c;
     instrs = root;
+    this.dg = dg;
 
-    if (c.getDerivation()!=null) ud = new DerivedUseDefer(c, ud);
+    UseDefer ud = (dg==null) ? ud0 : new DerivedUseDefer(c, ud0);
 
     // thunk the register array to a register list...
     TempList registers=null;
@@ -105,8 +108,11 @@ public class RegAlloc implements TempMap {
 	  }
       }, registers);
       // rewrite program to spill temporaries, if necessary.
-      if (color.spills() != null)
+      if (color.spills() != null) {
 	rewriteProgram(root, color.spills());
+	// re-create derived ptr use info.
+	if (dg!=null) ud = new DerivedUseDefer(c, ud0);
+      }
     } while (color.spills() != null);
 
     // trim redundant instructions.

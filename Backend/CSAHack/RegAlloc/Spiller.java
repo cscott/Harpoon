@@ -31,6 +31,7 @@ import java.util.Set;
  * @author	C. Scott Ananian
  * @see RegAlloc.RegAlloc
  */
+// XXX SPILLER SHOUD USE code.dg TO UPDATE DERIVATION WHILE IT SPILLS!
 class Spiller {
   Code code;
   Map  spills;

@@ -23,10 +23,10 @@ import java.util.Set;
  * <code>Code</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.6 2000-02-28 06:50:29 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.7 2000-02-29 06:30:48 cananian Exp $
  */
 public class Code extends harpoon.IR.Assem.Code {
-    Derivation deriv;
+    DerivationGenerator dg;
     TempMap tm;
     
     /** Creates a <code>Code</code>. */
@@ -36,13 +36,14 @@ public class Code extends harpoon.IR.Assem.Code {
         super(parent, frame);
 	// XXX: should clone instrs and deriv here.
 	this.instrs = instrs;
-	this.deriv = deriv;
-	RegAlloc ra = new RegAlloc(frame, this, instrs);
+	this.dg = (deriv==null)? null :new DerivationGenerator(instrs, deriv);
+	this.dg = null; // XXX SPILLING DERIVED POINTERS IS BROKEN.
+	RegAlloc ra = new RegAlloc(frame, this, instrs, dg);
 	this.tm = ra;
 	this.instrs = frame.getCodeGen().procFixup(parent, instrs, locals,
 						   computeUsedRegs(instrs));
     }
-    public Derivation getDerivation() { return deriv; }
+    public Derivation getDerivation() { return dg; }
     private Set computeUsedRegs(Instr instrs) {
 	Set s = new HashSet();
 	for (Instr il = instrs; il!=null; il=il.getNext()) {
