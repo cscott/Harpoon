@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.5 2000-06-27 18:24:17 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.6 2000-06-27 20:30:42 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing cc
 // on MIPS IRIX64 lion 6.2 03131016 IP19.  
@@ -494,9 +494,6 @@ import java.util.Iterator;
     /** Source for long long arithmetic routines is in Flex_MIPS.S */
     private void DoLLShiftCall(HCodeElement root,
                                Temp i, Temp j, Temp k, String func_name) {
-       declare( t0, HClass.Void );
-       declare( t1, HClass.Void );
-       declare( t2, HClass.Void );
        declare( a2, HClass.Int );
        declare( a1, HClass.Void );
        declare( a0, HClass.Void );
@@ -564,19 +561,25 @@ import java.util.Iterator;
     private void DoDCall(HCodeElement root,
                          Temp i, Temp j, String func_name) {
        /* call auxillary fp routines */
-       declare( a1, HClass.Void );
        declare( a0, HClass.Void );
-       // not certain an emitMOVE is legal with the l/h modifiers
-       Util.assert(j instanceof TwoWordTemp);
-       emit( root, "move `d0, `s0h", a0, j );
-       emit( root, "move `d0, `s0l", a1, j );
+       if(j instanceof TwoWordTemp) {
+          declare( a1, HClass.Void );
+          // not certain an emitMOVE is legal with the l/h modifiers
+          emit( root, "move `d0, `s0h", a0, j );
+          emit( root, "move `d0, `s0l", a1, j );
+       } else {
+          emit( root, "move `d0, `s0", a0, j );
+       }
        declareCALLDefFull();
        emit2(root, "jal "+nameMap.c_function_name(func_name),
              // uses & stomps on these registers:
              call_def_full, call_use);
-       Util.assert(i instanceof TwoWordTemp);
-       emit( root, "move `d0h, `s0", i, v0 );
-       emit( root, "move `d0l, `s0", i, v1 );
+       if(i instanceof TwoWordTemp) {
+          emit( root, "move `d0h, `s0", i, v0 );
+          emit( root, "move `d0l, `s0", i, v1 );
+       } else {
+          emit( root, "move `d0, `s0", i, v0 );
+       }
     }
 
     private boolean isDoubleWord(Typed ty) {
@@ -1151,34 +1154,34 @@ BINOP(CMPNE, j, k) = i %extra<i>{ extra } /* void*/
 BINOP(CMPLT, j, k) = i
 %pred %( ROOT.operandType()==Type.LONG )%
 %{
-    emit( ROOT, "slt `d0, `s0h, `s1h", i, j, k );
-    emit( ROOT, "bne `s0h, `s1h, 1f", i, j, k );
-    emit( ROOT, "sltu `d0, `s0l, `s1l", i, j, k );
-    emitNoFallLABEL( ROOT, "1:", new Label("1"));
+    emit( ROOT, "slt `d0, `s0h, `s1h \n"
+                +"bne `s0h, `s1h, 1f \n"
+                +"sltu `d0, `s0l, `s1l \n"
+                +"1:", i, j, k );
 }%
 BINOP(CMPLE, j, k) = i
 %pred %( ROOT.operandType()==Type.LONG )%
 %{
-    emit( ROOT, "slt `d0, `s0h, `s1h", i, j, k );
-    emit( ROOT, "bne `s0h, `s1h, 1f", i, j, k );
-    emit( ROOT, "sltu `d0, `s0l, `s1l", i, j, k );
-    emitNoFallLABEL( ROOT, "1:", new Label("1"));
+    emit( ROOT, "slt `d0, `s0h, `s1h \n"
+                + "bne `s0h, `s1h, 1f \n"
+                + "sltu `d0, `s0l, `s1l \n"
+                + "1:", i, j, k );
 }%
 BINOP(CMPGT, j, k) = i
 %pred %( ROOT.operandType()==Type.LONG )%
 %{
-    emit( ROOT, "sgt `d0, `s0h, `s1h", i, j, k );
-    emit( ROOT, "bne `s0h, `s1h, 1f", i, j, k );
-    emit( ROOT, "sgtu `d0, `s0l, `s1l", i, j, k );
-    emitNoFallLABEL( ROOT, "1:", new Label("1"));
+    emit( ROOT, "sgt `d0, `s0h, `s1h \n"
+                + "bne `s0h, `s1h, 1f \n"
+                + "sgtu `d0, `s0l, `s1l \n"
+                + "1:", i, j, k );
 }%
 BINOP(CMPGE, j, k) = i
 %pred %( ROOT.operandType()==Type.LONG )%
 %{
-    emit( ROOT, "sgt `d0, `s0h, `s1h", i, j, k );
-    emit( ROOT, "bne `s0h, `s1h, 1f", i, j, k );
-    emit( ROOT, "sgeu `d0, `s0l, `s1l", i, j, k );
-    emitNoFallLABEL( ROOT, "1:", new Label("1"));
+    emit( ROOT, "sgt `d0, `s0h, `s1h \n"
+                + "bne `s0h, `s1h, 1f \n"
+                + "sgeu `d0, `s0l, `s1l"
+                + "1:", i, j, k );
 }%
   
 BINOP(cmpop, j, k) = i
