@@ -10,7 +10,7 @@ import java.io.PrintStream;
  * using counters identified by integers.
  * 
  * @author  bdemsky <bdemsky@lm.lcs.mit.edu>
- * @version $Id: CounterSupport.java,v 1.1.2.4 2000-11-13 20:12:30 bdemsky Exp $
+ * @version $Id: CounterSupport.java,v 1.1.2.5 2000-11-14 00:05:25 bdemsky Exp $
  */
 public class CounterSupport {
     static int size,sizesync;
@@ -92,7 +92,9 @@ public class CounterSupport {
     static void countm(Object obj) {
 	synchronized(lock) {
 	    if (counton) {
+		counton=false;
 		int hash=obj.hashCode();
+		counton=true;
 		int hashmod=hash % numbins;
 		int bin=-1;
 		for(int i=0;i<bincap;i++)
@@ -123,36 +125,40 @@ public class CounterSupport {
     }
 
     static void label(Object obj, int value) {
-	if (counton)
 	synchronized(lock) {
-	    int hash=obj.hashCode();
-	    int hashmod=hash % numbins;
-	    if (boundedkey[hashmod][bincap-1]!=null)
-		overflow++;
-	    //	    for (int i=bincap-1;i>0;i--) {
-	    //	boundedkey[hashmod][i]=boundedkey[hashmod][i-1];
-	    //}
-	    System.arraycopy(boundedkey[hashmod],0,boundedkey[hashmod],1,bincap-1);
-	    System.arraycopy(boundedvalue[hashmod],0,boundedvalue[hashmod],1,bincap-1);
-	    boundedkey[hashmod][0]=obj;
-	    boundedvalue[hashmod][0]=value;
+	    if (counton) {
+		counton=false;
+		int hash=obj.hashCode();
+		counton=true;
+		int hashmod=hash % numbins;
+		if (boundedkey[hashmod][bincap-1]!=null)
+		    overflow++;
+		//	    for (int i=bincap-1;i>0;i--) {
+		//	boundedkey[hashmod][i]=boundedkey[hashmod][i-1];
+		//}
+		System.arraycopy(boundedkey[hashmod],0,boundedkey[hashmod],1,bincap-1);
+		System.arraycopy(boundedvalue[hashmod],0,boundedvalue[hashmod],1,bincap-1);
+		boundedkey[hashmod][0]=obj;
+		boundedvalue[hashmod][0]=value;
+	    }
 	}
     }
 
     static void callenter(int callsite) {
-	if (counton)
-	    synchronized(lock) {
+	synchronized(lock) {
+	    if (counton) {
 		if (depth<csize)
 		    callchain[depth]=callsite+1;
 		depth++;
 	    }
+	}
     }
 
     static void callexit() {
-	if (counton)
-	    synchronized(lock) {
+	synchronized(lock) {
+	    if (counton)
 		depth--;
-	    }
+	}
     }
 
     static void exit() {
@@ -217,3 +223,7 @@ public class CounterSupport {
     }
 
 }
+
+
+
+
