@@ -21,9 +21,9 @@ import harpoon.Util.Util;
  * <code>EnvCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvCode.java,v 1.1.2.2 1999-11-12 05:18:39 kkz Exp $
+ * @version $Id: EnvCode.java,v 1.1.2.3 1999-11-22 21:38:08 bdemsky Exp $
  */
-public class EnvCode extends Code {
+public class EnvCode extends harpoon.IR.Quads.QuadNoSSA {
 
     /** Creates a <code>EnvCode</code>. */
     public EnvCode(HMethod parent, HField[] fields) {
