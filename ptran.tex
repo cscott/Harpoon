@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.41 2002-07-31 22:18:45 cananian Exp $
+% $Id: ptran.tex,v 1.42 2002-08-01 04:04:41 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.41 $ $}
+\date{\today \\ $ $Revision: 1.42 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -315,7 +315,9 @@ there is no path from $s_1$ to $s_\text{call}$
              from $s_\text{call}$ to $s_1$,%
 \footnote{Assuming METHOD\-ENTER in callee reaches all 
           $s\in S_\text{callee}$ and
-          all $s\in S_\text{callee}$ reach METHOD\-EXIT in callee.}
+          all $s\in S_\text{callee}$ reach METHOD\-EXIT in callee.}%
+$^,$%
+\footnote{\textbf{XXX: I DON'T THINK THIS CRITERION IS NECESSARY.}}
 and
 \item all actual parameters corresponding to $P'$ at callsite $s_\text{call}$
   unioned with $\bigvar{SV}_1$ are mutually-singular conditional on $P$;
@@ -386,7 +388,11 @@ $s\in S$ & statements                &$N_G\subseteq N_O$ & global nodes\\
 \label{fig:defin}
 \end{myfigure}
 
-A points-to graph $\mathcal{G}_p$ is a quintuple of the form \tuple{O,I,\func{e},\func{c},r}, where
+% abbreviate the points-to-graph tuple.
+\newcommand{\ptgraph}
+           {\tuple{O,I,\func{e},\func{c}_\text{from},\func{c}_\text{to},r}}
+                             
+A points-to graph $\mathcal{G}_\bigvar{pt}$ is a quintuple of the form \ptgraph, where
 \begin{itemize}
 \item $O \subseteq (N\times F)\times(N_L \cup N_G)$ is a set of
 outside edges.  Outside edges represent references which may be
@@ -397,8 +403,12 @@ edges.  Inside edges represent references created inside the current
 analysis scope.
 \item $\func{e}:N\to 2^S$ is an escape function that records the set of
 unanalyzed method invocation sites that a node escapes down into.
-\item $\func{c}:I\to 2^S$ collects store statements associated with
-inside edges.  This allows us to detect possible companion edges.
+\item $\func{c}_\text{from}:I\to 2^{V\times S}$ collects static values
+used on the left-hand side of store statements associated with
+inside edges.  This allows us to detect possible from-companion edges.
+\item $\func{c}_\text{to}:I\to 2^{V\times S}$ collects static values
+used on the right-hand size of store statements associated with
+inside edges.  This allows us to detect possible to-companion edges.
 \item $r \subseteq N$ is a return set representing the set of objects
 that may be returned by the currently analyzed method.
 \end{itemize}
@@ -406,39 +416,40 @@ that may be returned by the currently analyzed method.
 
 We define:
 \begin{eqnarray*}
-\func{unanalyzed}_\text{direct}(\tuple{O,I,\func{e},\func{c},r}, n) &=&
+\func{unanalyzed}_\text{direct}(\ptgraph, n) &=&
 \func{e}(n)\neq\emptyset
 \\
-\func{escaped}_\text{direct}(\tuple{O,I,\func{e},\func{c},r}, n) &=&
+\func{escaped}_\text{direct}(\ptgraph, n) &=&
  n\in N_P \cup N_R \cup N_T \cup \bigvar{CL}
  \vee
  \func{unanalyzed}(n)
 %\\
-%\func{escaped}_\text{v}(\tuple{O,I,\func{e},\func{c},r},v) &=&
+%\func{escaped}_\text{v}(\ptgraph,v) &=&
 % \exists n\in N : \tuple{v,n}\in I
 % \wedge
-% \func{escaped}_\text{n}(\tuple{O,I,\func{e},\func{c},r},n)
+% \func{escaped}_\text{n}(\ptgraph,n)
 \end{eqnarray*}
 and then recursively:
 \begin{multline*}
 \func{escaped}%_\text{n}
-              (\tuple{O,I,\func{e},\func{c},r},n) =
- \func{escaped}_\text{direct}(\tuple{O,I,\func{e},\func{c},r},n) \vee {}
+              (\ptgraph,n) =
+ \func{escaped}_\text{direct}(\ptgraph,n) \vee {}
 \\
  \exists n'\in N,f\in F : \left(\tuple{\tuple{n,f},n'}\in O\cup I
  \wedge
+{} \right. \\ \left.
  \func{escaped}%_\text{n}
-               (\tuple{O,I,\func{e},\func{c},r},n')\right)
+               (\ptgraph,n')\right)
 \end{multline*}
 %\begin{multline*}
 %\func{unanalyzed}
-%              (\tuple{O,I,\func{e},\func{c},r},n) =
-% \func{unanalyzed}_\text{direct}(\tuple{O,I,\func{e},\func{c},r},n) \vee {}
+%              (\ptgraph,n) =
+% \func{unanalyzed}_\text{direct}(\ptgraph,n) \vee {}
 %\\
 % \exists n'\in N,f\in F : \left(\tuple{\tuple{n,f},n'}\in O\cup I
 % \wedge
 % \func{unanalyzed}
-%               (\tuple{O,I,\func{e},\func{c},r},n')\right)
+%               (\ptgraph,n')\right)
 %\end{multline*}
 
 % INVARIANT: a node n never *un*escapes during the (intraproc?) analysis.
@@ -449,18 +460,8 @@ We define the following auxilliary functions:
 P&\text{such that }\bigvar{SV}\text{ are mutually-singular conditional on }P \\
 \bot & \text{if no such }P\text{ exists.}
 \end{cases}
-\\
-\func{lhs}(s):S\to 2^{V\times S} &=& \begin{cases}
-\left\{\tuple{v_1,s}\right\} &\text{if $s$ is \tt [v$_1$.f=v$_2$]}\\
-\emptyset & \text{otherwise}
-\end{cases}
-\\
-\func{rhs}(s):S\to 2^{V\times S} &=& \begin{cases}
-\left\{\tuple{v_2,s}\right\} &\text{if $s$ is \tt [v$_1$.f=v$_2$]}\\
-\emptyset & \text{otherwise}
-\end{cases}
 \end{eqnarray*}
-Now we say that given \tuple{O,I,\func{e},\func{c},r},
+Now we say that given \ptgraph,
 an edge $e_i=\tuple{\tuple{n_1,f},n_2} \in I$ is a:
 \begin{itemize}
 \item \newterm{Definite companion} if:
@@ -485,8 +486,8 @@ create any new $n_1.f=n_2$ references between them.
 \item \newterm{Possible companion} otherwise;
 \end{itemize}
 where 
-$U=\bigcup_{s\in\func{c}(e_i)} \func{lhs}(s)$ for \newterm{from-companions} and
-$U=\bigcup_{s\in\func{c}(e_i)} \func{rhs}(s)$) for \newterm{to-companions}.
+$U=\func{c}_\text{from}(e_i)$ for \newterm{from-companions} and
+$U=\func{c}_\text{to}(e_i)$ for \newterm{to-companions}.
 We will say that an edge is a \newterm{companion edge} if it is a
 definite or possible companion.  
 
@@ -497,7 +498,8 @@ kills them.
 
 \subsection{Inference rules}
 At the start of the analysis, we set $I=\emptyset$, $O=\emptyset$,
-$\func{e}(n)=\emptyset$ for all $n\in N$, $\func{c}(i)=\emptyset$ for all $i\in I$,
+$\func{e}(n)=\emptyset$ for all $n\in N$, 
+$\func{c}_\text{from}(i)=\func{c}_\text{to}(i)=\emptyset$ for all $i\in I$,
 and $r=\emptyset$.
 
 \subsubsection{Static fields}
@@ -550,7 +552,8 @@ Given method $m$ with formals $p_0,\ldots,p_k$:
  \tuple{l_1,n_1}\in I \wedge
  \tuple{l_2,n_2}\in I }
 {\tuple{\tuple{n_1,f},n_2}\in I \wedge
- s\in \func{c}(\tuple{\tuple{n_1,f},n_2}) }
+ \tuple{l_1,s}\in\func{c}_\text{from}(\tuple{\tuple{n_1,f},n_2}) \wedge
+ \tuple{l_2,s}\in\func{c}_\text{to}(\tuple{\tuple{n_1,f},n_2}) }
 \end{displaymath}
 
 \textbf{More unification here??}
