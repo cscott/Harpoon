@@ -201,9 +201,9 @@ sexpr y;
 
 #ifdef GC_GCJ_SUPPORT
 
-#include "gc_mark.h"
-#include "dbg_mlc.h"
-#include "include/gc_gcj.h"
+#include "private/gc_mark.h"
+#include "private/dbg_mlc.h"
+#include "gc_gcj.h"
 
 /* The following struct emulates the vtable in gcj.	*/
 /* This assumes the default value of MARK_DESCR_OFFSET. */
