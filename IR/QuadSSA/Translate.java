@@ -24,7 +24,7 @@ import java.util.Hashtable;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.10 1998-08-24 23:00:02 cananian Exp $
+ * @version $Id: Translate.java,v 1.11 1998-08-24 23:17:52 cananian Exp $
  */
 
 /*
@@ -230,9 +230,10 @@ class Translate  { // not public.
 						 opd.value().getDescriptor());
 		ns = s.pop().push(new Temp());
 		q = new NEW(in, ns.stack[0], hc);
-		q.next[0] = new CALL(in, hc.getMethod("<init>","(I)V"),
-				     ns.stack[0], new Temp[] {s.stack[0]});
-		q.next[0].prev[0] = q; // fixup link.
+		Quad.addEdge(q,
+			     new CALL(in, hc.getMethod("<init>","(I)V"),
+				      ns.stack[0], new Temp[] {s.stack[0]})
+			     );
 		break;
 	    }
 	case Op.ARRAYLENGTH:
@@ -567,10 +568,11 @@ class Translate  { // not public.
 		ns = s.assignLV(opd0.getIndex(),
 				new Temp(s.lv[opd0.getIndex()]));
 		q = new CONST(in, constant, opd1.getValue(), opd1.getType());
-		q.next[0] = new OPER(in, "iadd", ns.lv[opd0.getIndex()],
-				     new Temp[] { s.lv[opd0.getIndex()], 
-						  constant});
-		q.next[0].prev[0] = q; // fixup link.
+		Quad.addEdge(q,
+			     new OPER(in, "iadd", ns.lv[opd0.getIndex()],
+				      new Temp[] { s.lv[opd0.getIndex()], 
+						       constant})
+			     );
 		break;
 	    }
 	case Op.INSTANCEOF:
