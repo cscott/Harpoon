@@ -21,9 +21,10 @@ import java.util.Enumeration;
 /**
  * <code>SCCAnalysis</code> implements Sparse Conditional Constant Propagation,
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
+ * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.5 1999-11-11 22:10:44 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.6 1999-11-12 07:44:57 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -36,6 +37,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 
     /** Creates a <code>SCC</code>. */
     public SCCAnalysis(HCode hc, UseDefMap usedef) {
+	Util.assert(hc.getName().equals(QuadSSI.codename));
 	this.udm = usedef;
 	analyze(hc);
     }
