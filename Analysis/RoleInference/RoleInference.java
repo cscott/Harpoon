@@ -43,7 +43,7 @@ import java.util.Set;
  * <code>RoleInference</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: RoleInference.java,v 1.1.2.7 2001-06-17 22:31:43 cananian Exp $
+ * @version $Id: RoleInference.java,v 1.1.2.8 2001-07-04 19:03:16 bdemsky Exp $
  */
 public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator {
     final Linker linker;
@@ -72,6 +72,7 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 		q.accept(rv);
 	    }
 	}
+	hcode.print(new java.io.PrintWriter(System.out, true));
 	return hcode;
     }
 
@@ -87,6 +88,7 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	HMethod objectinitmethod;
 	HMethod arrayassignmethod;
 	HMethod fieldassignmethod;
+	HMethod fieldloadmethod;
 	HMethod marklocalmethod;
 	HMethod killlocalmethod;
 	HMethod returnmethod;
@@ -124,6 +126,8 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 							  new HClass[] {objclass, fieldclass, objclass});
 	    marklocalmethod=roleclass.getDeclaredMethod("marklocal",
 							new HClass[] {strclass, objclass});
+	    fieldloadmethod=roleclass.getDeclaredMethod("fieldload",
+							new HClass[] {strclass, objclass, fieldclass, objclass});
 	    killlocalmethod=roleclass.getDeclaredMethod("killlocal",
 							new HClass[] {strclass});
 	    returnmethod=roleclass.getDeclaredMethod("returnmethod", new HClass[]{objclass});
@@ -299,13 +303,29 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	    //Potential Local Variable Assignment
 	    if (!q.type().isPrimitive()) {
 		Temp t=q.dst();
+		Temp t2=new Temp(q.getFactory().tempFactory());
+
+		if (q.dst()!=null) {
+		    MOVE move=new MOVE(q.getFactory(),q,
+				   t2, q.dst());
+		    Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), move,0);
+		    Quad.addEdge(move,0,q,0);
+		} else {
+		    CONST qconst=new CONST(q.getFactory(), q, t2, null, HClass.Void);
+		    Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), qconst,0);
+		    Quad.addEdge(qconst,0,q,0);
+		}
 		Temp tname=new Temp(q.getFactory().tempFactory());
 		String name=buildname(q,t);
+		Temp tfield=new Temp(q.getFactory().tempFactory());
+
+		CONST cfield=new CONST(q.getFactory(),q,tfield,
+				       null, HClass.Void);
 		CONST nameconst=new CONST(q.getFactory(), q, tname, name,
 					  strclass);
 		Temp texc=new Temp(q.getFactory().tempFactory());
-		CALL nc=new CALL(q.getFactory(),q,marklocalmethod,
-				 new Temp[] {tname,t}, null,texc,
+		CALL nc=new CALL(q.getFactory(),q,fieldloadmethod,
+				 new Temp[] {tname,t2,tfield,t}, null,texc,
 				 false,false, new Temp[0]);
 		PHI phi=new PHI(q.getFactory(),q, new Temp[0], 2);
 		
@@ -313,7 +333,8 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 		Quad.addEdge(nc,0,phi,0);
 		Quad.addEdge(nc,1,phi,1);
 		Quad.addEdge(q,0,nameconst,0);
-		Quad.addEdge(nameconst,0, nc,0);
+		Quad.addEdge(nameconst,0,cfield,0);
+		Quad.addEdge(cfield,0, nc,0);
 	    }
 	}
 
@@ -356,13 +377,29 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	    //Potential Local Variable Assignment
 	    if (!q.field().getType().isPrimitive()) {
 		Temp t=q.dst();
+		Temp t2=new Temp(q.getFactory().tempFactory());
+
+		if (q.objectref()!=null) {
+		    MOVE move=new MOVE(q.getFactory(),q,
+				   t2, q.objectref());
+		    Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), move,0);
+		    Quad.addEdge(move,0,q,0);
+		} else {
+		    CONST qconst=new CONST(q.getFactory(), q, t2, null, HClass.Void);
+		    Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), qconst,0);
+		    Quad.addEdge(qconst,0,q,0);
+		}
 		Temp tname=new Temp(q.getFactory().tempFactory());
 		String name=buildname(q,t);
+		Temp tfield=new Temp(q.getFactory().tempFactory());
+
+		CONST cfield=new CONST(q.getFactory(),q,tfield,
+				       q.field(), fieldclass);
 		CONST nameconst=new CONST(q.getFactory(), q, tname, name,
 					  strclass);
 		Temp texc=new Temp(q.getFactory().tempFactory());
-		CALL nc=new CALL(q.getFactory(),q,marklocalmethod,
-				 new Temp[] {tname,t}, null,texc,
+		CALL nc=new CALL(q.getFactory(),q,fieldloadmethod,
+				 new Temp[] {tname,t2,tfield,t}, null,texc,
 				 false,false, new Temp[0]);
 		PHI phi=new PHI(q.getFactory(),q, new Temp[0], 2);
 		
@@ -370,7 +407,8 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 		Quad.addEdge(nc,0,phi,0);
 		Quad.addEdge(nc,1,phi,1);
 		Quad.addEdge(q,0,nameconst,0);
-		Quad.addEdge(nameconst,0, nc,0);
+		Quad.addEdge(nameconst,0,cfield,0);
+		Quad.addEdge(cfield,0, nc,0);
 	    }
 	}
 
