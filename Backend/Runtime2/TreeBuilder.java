@@ -63,12 +63,18 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.3 2001-05-15 16:07:07 wbeebee Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.4 2001-07-06 21:21:09 wbeebee Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
-    TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
+    public TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
 		AllocationStrategy as, boolean pointersAreLong) {
 	super(runtime,linker,ch,as,pointersAreLong);
+    }
+
+    public TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
+		AllocationStrategy as, boolean pointersAreLong,
+		int pointerAlignment) {
+	super(runtime,linker,ch,as,pointersAreLong,pointerAlignment);
     }
     // allocate 'length' bytes plus object header; fill in object header.
     // shift return pointer appropriately for an object reference.

@@ -31,7 +31,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.2 2001-05-15 16:07:07 wbeebee Exp $
+ * @version $Id: Runtime.java,v 1.1.2.3 2001-07-06 21:21:08 wbeebee Exp $
  */
 public class Runtime extends harpoon.Backend.Runtime1.Runtime {
     public Runtime(Frame frame, AllocationStrategy as,
@@ -47,16 +47,11 @@ public class Runtime extends harpoon.Backend.Runtime1.Runtime {
     }
 
     protected TreeBuilder initTreeBuilder(Object closure) {
-	// Gross hack to get around the lack of dynamic inheritance in Java...
-	if (System.getProperty("harpoon.runtime", "1").equals("2")) {
-	    Frame f = (Frame) ((Object[])closure)[0];
-	    AllocationStrategy as = (AllocationStrategy) ((Object[])closure)[1];
-	    ClassHierarchy ch = (ClassHierarchy) ((Object[])closure)[2];
-	    return new harpoon.Backend.Runtime2.TreeBuilder(this, f.getLinker(),
-							    ch, as,
-							    f.pointersAreLong());
-	} else {
-	    return super.initTreeBuilder(closure);
-	}
+	Frame f = (Frame) ((Object[])closure)[0];
+	AllocationStrategy as = (AllocationStrategy) ((Object[])closure)[1];
+	ClassHierarchy ch = (ClassHierarchy) ((Object[])closure)[2];
+	return new harpoon.Backend.Runtime2.TreeBuilder(this, f.getLinker(),
+							ch, as,
+							f.pointersAreLong());
     }
 }

@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.43 2001-07-06 20:01:30 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.44 2001-07-06 21:21:01 wbeebee Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -115,12 +115,12 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // should/may mask.
     private final int pointerAlignment;
 
-    protected TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
+    public TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
 			  AllocationStrategy as, boolean pointersAreLong) {
 	this(runtime,linker,ch,as,pointersAreLong,0);
     }
     // pointerAlignment==0 means don't mask pointers.
-    protected TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
+    public TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
 			  AllocationStrategy as, boolean pointersAreLong,
 			  int pointerAlignment) {
 	this.pointerAlignment = pointerAlignment;

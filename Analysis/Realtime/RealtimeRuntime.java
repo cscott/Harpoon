@@ -38,7 +38,7 @@ import java.util.List;
  * for debugging purposes when Realtime.DEBUG_REF is turned on.
  * 
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: RealtimeRuntime.java,v 1.1.2.5 2001-07-02 17:59:20 wbeebee Exp $
+ * @version $Id: RealtimeRuntime.java,v 1.1.2.6 2001-07-06 21:20:55 wbeebee Exp $
  */
 
 public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
@@ -131,8 +131,8 @@ public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
 	    }    
 	}
 	
-	class DataConstCharArray extends Data {
-	    DataConstCharArray() {
+	class DataConstCharPointer extends Data {
+	    DataConstCharPointer() {
 		super("constChar-data", hc, RealtimeRuntime.this.frame);
 
 		this.root = (HDataElement)
@@ -141,12 +141,30 @@ public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
 	}
 	
 	List r = super.classData(hc);
-	ArrayList stmlist = new ArrayList(r.size() + (Realtime.DEBUG_REF?2:1));
-	stmlist.addAll(r);
-	stmlist.add(new DataConstMemoryArea());
+	ArrayList datalst = new ArrayList(r.size() + (Realtime.DEBUG_REF?2:1));
+	datalst.addAll(r);
+	datalst.add(new DataConstMemoryArea());
 	if (Realtime.DEBUG_REF) {
-	    stmlist.add(new DataConstCharArray());
+	    datalst.add(new DataConstCharPointer());
 	}
-	return stmlist;
+	return datalst;
+    }
+
+    /** Initialize the tree builder with masking turned on if needed. */
+
+    protected TreeBuilder initTreeBuilder(Object closure) {
+	Frame f = (Frame) ((Object[])closure)[0];
+	AllocationStrategy as = (AllocationStrategy) ((Object[])closure)[1];
+	ClassHierarchy ch = (ClassHierarchy) ((Object[])closure)[2];
+	if (System.getProperty("harpoon.runtime", "1").equals("2")) {
+	    return new harpoon.Backend.Runtime1
+		.TreeBuilder(this, f.getLinker(), ch, as, f.pointersAreLong(), 
+			     Realtime.NOHEAP_CHECKS?0:4);
+	} else {
+	    return new harpoon.Backend.Runtime2
+		.TreeBuilder(this, f.getLinker(), ch, as, f.pointersAreLong(),
+			     Realtime.NOHEAP_CHECKS?0:4);
+	    
+	}
     }
 }
