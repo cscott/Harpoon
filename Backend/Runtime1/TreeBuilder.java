@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.49 2001-07-11 20:24:45 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.50 2001-07-12 02:00:52 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -68,8 +68,13 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // primitives are actually needed by the program, but allows us to
     // make a quick-and-dirty benchmark of the maximum-possible performance
     // improvement due to synchronization optimizations.
-    private static boolean noSync =
+    private static final boolean noSync =
 	Boolean.getBoolean("harpoon.runtime1.nosync");
+    /* turning this on means that no alignment to boundaries larger than
+     * a single word will be done.  This is sufficient on some architectures.
+     */
+    private static final boolean singleWordAlign =
+	Boolean.getBoolean("harpoon.runtime1.single-word-align");
 
     // allocation strategy to use.
     final AllocationStrategy as;
@@ -132,9 +137,10 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		    (type==HClass.Int||type==HClass.Float) ? WORD_SIZE :
 		    (type==HClass.Short||type==HClass.Char) ? 2 : 1;
 	    }
+	    // on some archs we only need to align to WORD_SIZE
 	    public int fieldAlignment(HField hf) {
-		// every field is aligned to its size
-		return fieldSize(hf);
+		int align = super.fieldAlignment(hf);
+		return singleWordAlign ? Math.min(WORD_SIZE, align) : align;
 	    }
 	};
 	// ----------    INITIALIZE SIZES AND OFFSETS    -----------

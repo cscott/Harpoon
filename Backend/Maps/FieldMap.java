@@ -18,27 +18,16 @@ import java.util.List;
  * fieldSize() is taken into account.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldMap.java,v 1.1.2.3 1999-10-12 20:04:49 cananian Exp $ */
+ * @version $Id: FieldMap.java,v 1.1.2.4 2001-07-12 01:59:42 cananian Exp $ */
 public abstract class FieldMap  {
     /** Return an offset to the given field. */
-    public int fieldOffset(HField hf) {
-	Util.assert(hf!=null);
-	int offset=0;
-	for (Iterator it=fieldList(hf.getDeclaringClass()).iterator();
-	     it.hasNext(); ) {
-	    HField nexthf = (HField) it.next();
-	    if (hf.equals(nexthf)) return offset;
-	    else offset+=fieldSize(nexthf);
-	}
-	// this is an error not an assert() because asserts can be
-	// optimized away.  the algorithm is well and truely broken
-	// if we get to this point, and it's better to throw an
-	// odd Error than return some bogus value.
-	throw new Error("HField "+hf+" not in fieldList()");
-    }
+    public abstract int fieldOffset(HField hf);
     /** Return an unmodifiable List over all appropriate fields in the given
      *  class, in order from smallest to largest offset. */
     public abstract List fieldList(HClass hc);
     /** Return the allocated size of a given field. */
     public abstract int fieldSize(HField hf);
+    /* Override this method if you need the fields aligned in any special
+     * way.  Default implementation aligns every field to its size. */
+    public int fieldAlignment(HField hf) { return fieldSize(hf); }
 }
