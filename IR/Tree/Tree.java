@@ -25,7 +25,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.11 1999-07-17 11:58:16 cananian Exp $
+ * @version $Id: Tree.java,v 1.1.2.12 1999-07-30 20:51:24 duncan Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 
@@ -118,9 +118,17 @@ public abstract class Tree
 	};
   
     
-    /** Dangerous, because this introduces an inconsistency with the
-     *  Temps in the associated Frame object.  Only use if you are sure
-     *  of what you're doing.
+    /** 
+     * Returns a clone of <code>root</code>.  
+     * NOTE:  tree objects may actually contain temps from two different
+     *        temp factories.  The first temp factory with which a tree's 
+     *        temps may be associated is the <code>TempFactory</code>
+     *        stored in their <code>TreeFactory</code>.  The second
+     *        is the <code>TempFactory</code> used by the tree's 
+     *        <code>Frame</code> to generate registers.  Since these 
+     *        registers are assumed to be immutable, no temps from that
+     *        temp factory will be cloned by this method.  All other temps
+     *        will be cloned using <code>ctm</code>.  
      */
     static Tree clone(TreeFactory tf, CloningTempMap ctm, Tree root) { 
 	if (root==null) return null;
