@@ -107,7 +107,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.34 2003-02-22 04:42:35 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.35 2003-02-22 17:29:14 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -1016,14 +1016,12 @@ public class SAMain extends harpoon.IR.Registration {
       // output global data with the java.lang.Object class.
       if (hclass==linker.forName("java.lang.Object")) {
 	  HData data=frame.getLocationFactory().makeLocationData(frame);
-	  it=new CombineIterator(new Iterator[]
-				 { it, Default.singletonIterator(data) });
+	  it=new CombineIterator(it, Default.singletonIterator(data));
 	  if (WB_STATISTICS) {
 	      assert writeBarrierStats != null :
 		  "WriteBarrierStats need to be run before WriteBarrierData.";
 	      HData wbData = writeBarrierStats.getData(hclass, frame);
-	      it=new CombineIterator
-		  (new Iterator[] { it, Default.singletonIterator(wbData) });
+	      it=new CombineIterator(it, Default.singletonIterator(wbData));
 	  }
       }
       while (it.hasNext() ) {
