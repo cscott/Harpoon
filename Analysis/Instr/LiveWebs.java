@@ -13,7 +13,7 @@ import harpoon.Analysis.BasicBlock;
 import harpoon.Util.Collections.SetFactory;
 import harpoon.Util.Collections.BitSetFactory;
 import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.DefaultMultiMap;
+import harpoon.Util.Collections.GenericMultiMap;
 
 import java.util.Set;
 import java.util.Map;
@@ -25,7 +25,7 @@ import java.util.Iterator;
  * <code>LiveWebs</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveWebs.java,v 1.1.2.5 2000-01-31 20:49:09 pnkfelix Exp $
+ * @version $Id: LiveWebs.java,v 1.1.2.6 2000-01-31 21:53:56 cananian Exp $
  */
 public class LiveWebs extends LiveVars {
     

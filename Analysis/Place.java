@@ -10,7 +10,7 @@ import harpoon.IR.Properties.UseDef;
 import harpoon.Temp.Temp;
 import harpoon.Util.WorkSet;
 import harpoon.Util.Collections.BitSetFactory;
-import harpoon.Util.Collections.DefaultMultiMap;
+import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.Factories;
 import harpoon.Util.Collections.MultiMap;
 
@@ -23,7 +23,7 @@ import java.util.Set;
  * thesis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.10.2.7 2000-01-31 15:03:16 cananian Exp $
+ * @version $Id: Place.java,v 1.10.2.8 2000-01-31 21:53:49 cananian Exp $
  */
 public class Place {
     private final MultiMap phis;
@@ -38,9 +38,9 @@ public class Place {
 	for (Iterator it=hc.getElementsI(); it.hasNext(); )
 	    vars.addAll(((UseDef)it.next()).defC());
 	// create result multimaps
-	phis = new DefaultMultiMap(new BitSetFactory(vars),
+	phis = new GenericMultiMap(new BitSetFactory(vars),
 				   Factories.hashMapFactory());
-	sigmas = new DefaultMultiMap(new BitSetFactory(vars),
+	sigmas = new GenericMultiMap(new BitSetFactory(vars),
 				   Factories.hashMapFactory());
 	// for each variable v in G, do:
 	for (Iterator it=vars.iterator(); it.hasNext(); ) {

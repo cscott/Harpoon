@@ -26,7 +26,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 import harpoon.Util.LinearMap;
 import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.DefaultMultiMap;
+import harpoon.Util.Collections.GenericMultiMap;
 
 import harpoon.Analysis.DataFlow.ReachingDefs;
 import harpoon.Analysis.DataFlow.ForwardDataFlowBasicBlockVisitor;
@@ -70,7 +70,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.71 2000-01-31 20:49:11 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.72 2000-01-31 21:53:56 cananian Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -726,11 +726,11 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
     class WebInfo {
 	MultiMap.Factory mmf = new MultiMap.Factory();
 	
-	MultiMap in = new DefaultMultiMap(); // Map[Temp, [Web] ]
-	MultiMap out = new DefaultMultiMap(); // Map[Temp, [Web] ]
-	MultiMap use = new DefaultMultiMap(new MySetFactory(), // Map[Temp, [Instr] ]
+	MultiMap in = new GenericMultiMap(); // Map[Temp, [Web] ]
+	MultiMap out = new GenericMultiMap(); // Map[Temp, [Web] ]
+	MultiMap use = new GenericMultiMap(new MySetFactory(), // Map[Temp, [Instr] ]
 					harpoon.Util.Collections.Factories.hashMapFactory());
-	MultiMap def = new DefaultMultiMap(new MySetFactory(), // Map[Temp, [Instr] ]
+	MultiMap def = new GenericMultiMap(new MySetFactory(), // Map[Temp, [Instr] ]
 					harpoon.Util.Collections.Factories.hashMapFactory());
 	
 	class MySetFactory extends harpoon.Util.Collections.SetFactory {

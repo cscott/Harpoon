@@ -14,7 +14,7 @@ import harpoon.Temp.TempFactory;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Util;
-import harpoon.Util.Collections.DefaultMultiMap;
+import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.MultiMap;
 
 import java.io.BufferedReader;
@@ -32,7 +32,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.4 2000-01-29 01:27:26 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.5 2000-01-31 21:54:02 cananian Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -149,7 +149,7 @@ public abstract class Code extends HCode {
     public void print(java.io.PrintWriter pw) {
 	final boolean DEBUG = false;
 	final HashSet outputLabels = new HashSet();
-	final MultiMap labelsNeeded = new DefaultMultiMap();
+	final MultiMap labelsNeeded = new GenericMultiMap();
 
 	Instr instr = instrs;
         while(instr.getNext() != null) {

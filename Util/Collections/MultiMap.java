@@ -102,7 +102,7 @@ import java.util.HashSet;
 	 </OL> 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.9 1999-11-09 06:28:28 pnkfelix Exp $
+    @version $Id: MultiMap.java,v 1.1.2.10 2000-01-31 21:54:04 cananian Exp $
  */
 public interface MultiMap extends Map {
 
@@ -118,12 +118,12 @@ public interface MultiMap extends Map {
 	    of the <code>Map.Entry</code>s in <code>map</code>
 	 */
 	public MultiMap makeMultiMap(Map map) {
-	    return new DefaultMultiMap(map);
+	    return new GenericMultiMap(map);
 	}
 
 	public MultiMap makeMultiMap(CollectionFactory cf, 
 				     MapFactory mf) {
-	    return new DefaultMultiMap(cf, mf);
+	    return new GenericMultiMap(cf, mf);
 	}
     } 
 

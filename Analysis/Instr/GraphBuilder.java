@@ -10,7 +10,7 @@ import harpoon.Analysis.GraphColoring.Graph;
 import harpoon.Analysis.GraphColoring.SparseGraph;
 
 import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.DefaultMultiMap;
+import harpoon.Util.Collections.GenericMultiMap;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -50,7 +50,7 @@ import java.util.Collections;
  * information, depending on what is needed.  
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GraphBuilder.java,v 1.1.2.3 1999-11-09 06:28:26 pnkfelix Exp $
+ * @version $Id: GraphBuilder.java,v 1.1.2.4 2000-01-31 21:53:56 cananian Exp $
  */
 public class GraphBuilder {
     
@@ -115,7 +115,7 @@ public class GraphBuilder {
 			LiveVars liveVars, Map instrToBBmap) {
         // initialize object-wide data structures.
 	regLstToNodes = new HashMap();
-	interferesWith = new DefaultMultiMap();
+	interferesWith = new GenericMultiMap();
 	graph = new SparseGraph();
 
 	// procedure local data structures
