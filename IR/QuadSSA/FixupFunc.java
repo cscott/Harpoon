@@ -19,7 +19,7 @@ import java.util.Vector;
  * in the Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FixupFunc.java,v 1.7 1998-09-16 15:57:53 cananian Exp $
+ * @version $Id: FixupFunc.java,v 1.8 1998-09-16 19:47:39 cananian Exp $
  * @see Translate
  */
 
@@ -32,13 +32,12 @@ public class FixupFunc  {
     }
     private static void place(Code c, DomTree dt, DomTree pdt) {
 	UseDef ud = new UseDef();
-	Place Pphi = new Place(ud, new DomFrontier(dt));
-	Place Plam = new Place(ud, new DomFrontier(pdt));
+	Place P = new Place(ud, new DomFrontier(dt), new DomFrontier(pdt));
 	
 	Quad[] ql = (Quad[]) c.getElements();
 	for (int i=0; i< ql.length; i++) {
-	    Temp[] neededPhi = Pphi.neededFunc(c, ql[i]);
-	    Temp[] neededLam = Plam.neededFunc(c, ql[i]);
+	    Temp[] neededPhi = P.phiNeeded(c, ql[i]);
+	    Temp[] neededLam = P.lamNeeded(c, ql[i]);
 	    // algorithm wants to place phis on FOOTER.
 	    if (neededPhi.length > 0 && (!(ql[i] instanceof FOOTER))) {
 		// place phi functions.
