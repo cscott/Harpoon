@@ -5,7 +5,7 @@ package harpoon.Tools.PatMat;
 
 import harpoon.Util.Util;
 import harpoon.IR.Tree.Type;
-import harpoon.IR.Tree.PreciseType;
+import harpoon.IR.Tree.PreciselyTyped;
 import harpoon.IR.Tree.SEGMENT;
 import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.Uop;
@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.34 1999-08-26 04:50:12 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.35 1999-09-09 15:02:29 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -91,10 +91,17 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
         super(s, className);
     }
 
+    /** Abstract interface for 'appending visitors' */
+    static interface AppendingVisitor {
+	/** Append 's' to 'buf' with the proper indentation. */
+	public void append(StringBuffer buf, String s);
+    }
+
     /** Sets up a series of checks to ensure all of the values in the
 	visited statement are of the appropriate type.
     */
-    static class TypeStmRecurse extends Spec.StmVisitor {
+    static class TypeStmRecurse extends Spec.StmVisitor
+	implements AppendingVisitor {
 	/** constantly updated boolean expression to match a tree's
 	    types. */
 	StringBuffer exp;
@@ -113,7 +120,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	/** Indentation. */
 	String indentPrefix;
 	
-	private void append(StringBuffer buf, String s) {
+	public void append(StringBuffer buf, String s) {
 	    buf.append(indentPrefix + s + "\n");
 	}
 
@@ -293,26 +300,9 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 	    append(exp, "// check statement type");
 	    append(exp, "&& " + stmPrefix + " instanceof "+TREE_MOVE+" ");
-	    append(exp, "// check operand types");
-	    append(exp, "// check operand types");
-	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer, allowSmall;
-	    allowDouble = s.types.contains(Type.DOUBLE);
-	    allowFloat = s.types.contains(Type.FLOAT);
-	    allowInt = s.types.contains(Type.INT);
-	    allowLong = s.types.contains(Type.LONG);
-	    allowPointer = s.types.contains(Type.POINTER);
-	    allowSmall = s.types.contains(PreciseType.SMALL);
 
 	    String checkPrefix = "\t(("+TREE_MOVE+")" + stmPrefix + ").type() ==";
-	    append(exp, "&& ( ");
-	    if(allowDouble) append(exp, checkPrefix + " Type.DOUBLE ||");
-	    if(allowFloat) append(exp, checkPrefix + " Type.FLOAT ||");
-	    if(allowInt) append(exp, checkPrefix + " Type.INT ||");
-	    if(allowLong) append(exp, checkPrefix + " Type.LONG ||");
-	    if(allowPointer) append(exp, checkPrefix + " Type.POINTER ||");
-	    if(allowSmall) append(exp, checkPrefix + " PreciseType.SMALL ||");
-	    append(exp, "\tfalse )"); 
-	    append(exp, "// end check operand types");
+	    appendTypeCheck(this, exp, checkPrefix, s.types);
 	    
 	    // look at src
 	    TypeExpRecurse r = new 
@@ -375,25 +365,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "// check expression type");
 	    append(exp, "&& " + stmPrefix + " instanceof "+TREE_RETURN+"");
 
-	    append(exp, "// check operand types");
-	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer, allowSmall;
-	    allowDouble = s.types.contains(Type.DOUBLE);
-	    allowFloat = s.types.contains(Type.FLOAT);
-	    allowInt = s.types.contains(Type.INT);
-	    allowLong = s.types.contains(Type.LONG);
-	    allowPointer = s.types.contains(Type.POINTER);
-	    allowSmall = s.types.contains(PreciseType.SMALL);
-
 	    String checkPrefix = "\t(("+TREE_RETURN+")" + stmPrefix + ").retval.type() ==";
-	    append(exp, "&& ( ");
-	    if(allowDouble) append(exp, checkPrefix + " Type.DOUBLE ||");
-	    if(allowFloat) append(exp, checkPrefix + " Type.FLOAT ||");
-	    if(allowInt) append(exp, checkPrefix + " Type.INT ||");
-	    if(allowLong) append(exp, checkPrefix + " Type.LONG ||");
-	    if(allowPointer) append(exp, checkPrefix + " Type.POINTER ||");
-	    if(allowSmall) append(exp, checkPrefix + " PreciseType.SMALL ||");
-	    append(exp, "\tfalse )"); 
-	    append(exp, "// end check operand types");
+	    appendTypeCheck(this, exp, checkPrefix, s.types);
 	    
 	    // look at exp
 	    TypeExpRecurse r = new
@@ -438,7 +411,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	in the visited expression are of the appropriate
 	type. 
     */
-    static class TypeExpRecurse extends Spec.ExpVisitor {
+    static class TypeExpRecurse extends Spec.ExpVisitor
+	implements AppendingVisitor {
 	/** constantly updated boolean expression to match a tree's
 	    types. */ 
 	StringBuffer exp;
@@ -458,7 +432,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	String indentPrefix;
 
 	/** Helper function to prettify resulting code. */
-	private void append(StringBuffer buf, String s) {
+	public void append(StringBuffer buf, String s) {
 	    buf.append(indentPrefix + s +"\n");
 	}
 
@@ -498,25 +472,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		}
 	    });
 
-	    append(exp, "// check operand types");
-	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer, allowSmall;
-	    allowDouble = e.types.contains(Type.DOUBLE);
-	    allowFloat = e.types.contains(Type.FLOAT);
-	    allowInt = e.types.contains(Type.INT);
-	    allowLong = e.types.contains(Type.LONG);
-	    allowPointer = e.types.contains(Type.POINTER);
-	    allowSmall = e.types.contains(PreciseType.SMALL);
-
 	    String checkPrefix = "\t" + expPrefix + ".type() ==";
-	    append(exp, "&& ( ");
-	    if(allowDouble) append(exp, checkPrefix + " Type.DOUBLE ||");
-	    if(allowFloat) append(exp, checkPrefix + " Type.FLOAT ||");
-	    if(allowInt) append(exp, checkPrefix + " Type.INT ||");
-	    if(allowLong) append(exp, checkPrefix + " Type.LONG ||");
-	    if(allowPointer) append(exp, checkPrefix + " Type.POINTER ||");
-	    if(allowSmall) append(exp, checkPrefix + " PreciseType.SMALL ||");
-	    append(exp, "\tfalse )");
-	    append(exp, "// end check operand types");
+	    appendTypeCheck(this, exp, checkPrefix, e.types);
 
 	    // save state before outputing children-checking code
 	    String oldPrefix = expPrefix;
@@ -543,25 +500,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "// check expression type");
 	    append(exp, "&& " + expPrefix + " instanceof " + TREE_CONST + " ");
 
-	    append(exp, "// check operand types");
-	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer, allowSmall;
-	    allowDouble = e.types.contains(Type.DOUBLE);
-	    allowFloat = e.types.contains(Type.FLOAT);
-	    allowInt = e.types.contains(Type.INT);
-	    allowLong = e.types.contains(Type.LONG);
-	    allowPointer = e.types.contains(Type.POINTER);
-	    allowSmall = e.types.contains(PreciseType.SMALL);
-
 	    final String checkPrefix = "\t" + expPrefix + ".type() ==";
-	    append(exp, "&& ( ");
-	    if(allowDouble) append(exp, checkPrefix + " Type.DOUBLE ||");
-	    if(allowFloat) append(exp, checkPrefix + " Type.FLOAT ||");
-	    if(allowInt) append(exp, checkPrefix + " Type.INT ||");
-	    if(allowLong) append(exp, checkPrefix + " Type.LONG ||");
-	    if(allowPointer) append(exp, checkPrefix + " Type.POINTER ||");
-	    if(allowSmall) append(exp, checkPrefix + " PreciseType.SMALL ||");
-	    append(exp, "\tfalse )");
-	    append(exp, "// end check operand types");
+	    appendTypeCheck(this, exp, checkPrefix, e.types);
 
 	    e.value.accept(new Spec.LeafVisitor() {
 		public void visit(Spec.Leaf l) {
@@ -597,25 +537,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "// check expression type");
 	    append(exp, "&& " + expPrefix + " instanceof " + TREE_MEM + " ");
 
-	    append(exp, "// check operand types");
-	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer, allowSmall;
-	    allowDouble = e.types.contains(Type.DOUBLE);
-	    allowFloat = e.types.contains(Type.FLOAT);
-	    allowInt = e.types.contains(Type.INT);
-	    allowLong = e.types.contains(Type.LONG);
-	    allowPointer = e.types.contains(Type.POINTER);
-	    allowSmall = e.types.contains(PreciseType.SMALL);
-
 	    String checkPrefix = "\t" + expPrefix + ".type() ==";
-	    append(exp, "&& ( ");
-	    if(allowDouble) append(exp, checkPrefix + " Type.DOUBLE ||");
-	    if(allowFloat) append(exp, checkPrefix + " Type.FLOAT ||");
-	    if(allowInt) append(exp, checkPrefix + " Type.INT ||");
-	    if(allowLong) append(exp, checkPrefix + " Type.LONG ||");
-	    if(allowPointer) append(exp, checkPrefix + " Type.POINTER ||");
-	    if(allowSmall) append(exp, checkPrefix + " PreciseType.SMALL ||");
-	    append(exp, "\tfalse )");
-	    append(exp, "// end check operand types");
+	    appendTypeCheck(this, exp, checkPrefix, e.types);
 
 	    // save state before outputing child-checking code
 	    String oldPrefix = expPrefix;
@@ -648,25 +571,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "// check expression type");
 	    append(exp, "&& " + expPrefix + " instanceof " + TREE_TEMP +" ");
 	    
-	    append(exp, "// check operand type");
-	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer, allowSmall;
-	    allowDouble = e.types.contains(Type.DOUBLE);
-	    allowFloat = e.types.contains(Type.FLOAT);
-	    allowInt = e.types.contains(Type.INT);
-	    allowLong = e.types.contains(Type.LONG);
-	    allowPointer = e.types.contains(Type.POINTER);
-	    allowSmall = e.types.contains(PreciseType.SMALL);
-
 	    String checkPrefix = "\t" + expPrefix + ".type() ==";
-	    append(exp, "&& ( ");
-	    if(allowDouble) append(exp, checkPrefix + " Type.DOUBLE ||");
-	    if(allowFloat) append(exp, checkPrefix + " Type.FLOAT ||");
-	    if(allowInt) append(exp, checkPrefix + " Type.INT ||");
-	    if(allowLong) append(exp, checkPrefix + " Type.LONG ||");
-	    if(allowPointer) append(exp, checkPrefix + " Type.POINTER ||");
-	    if(allowSmall) append(exp, checkPrefix + " PreciseType.SMALL ||");
-	    append(exp, "\tfalse )");
-	    append(exp, "// end check operand types");
+	    appendTypeCheck(this, exp, checkPrefix, e.types);
 
 	    append(initStms, TEMP_Temp +" "+ e.name + " = ((" +TREE_TEMP + ")"+
 		   expPrefix + ").temp;");
@@ -691,26 +597,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		}
 	    });
 
-	    append(exp, "// check operand types");
-	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer, allowSmall;
-	    allowDouble = e.types.contains(Type.DOUBLE);
-	    allowFloat = e.types.contains(Type.FLOAT);
-	    allowInt = e.types.contains(Type.INT);
-	    allowLong = e.types.contains(Type.LONG);
-	    allowPointer = e.types.contains(Type.POINTER);
-	    allowSmall = e.types.contains(PreciseType.SMALL);
-
 	    String checkPrefix = "\t"+expPrefix + ".type() ==";
-	    append(exp, "&& ( ");
-	    if(allowDouble) append(exp, checkPrefix + " Type.DOUBLE ||");
-	    if(allowFloat) append(exp, checkPrefix + " Type.FLOAT ||");
-	    if(allowInt) append(exp, checkPrefix + " Type.INT ||");
-	    if(allowLong) append(exp, checkPrefix + " Type.LONG ||");
-	    if(allowPointer) append(exp, checkPrefix + " Type.POINTER ||");
-	    if(allowSmall) append(exp, checkPrefix + " PreciseType.SMALL ||");
-	    append(exp, "\tfalse )"); 
-	    append(exp, "// end check operand types");
-
+	    appendTypeCheck(this, exp, checkPrefix, e.types);
 	    
 	    // save state before outputting child-checking code
 	    String oldPrefix = expPrefix;
@@ -727,6 +615,26 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    indentPrefix = oldIndent;
 	}
     }	    
+
+    /** Append a type-checking expression to <code>exp</code>. */
+    static void appendTypeCheck(AppendingVisitor av, StringBuffer exp,
+				String checkPrefix, Spec.TypeSet types) {
+	av.append(exp, "// check operand types");
+	boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer;
+	allowDouble = types.contains(Type.DOUBLE);
+	allowFloat = types.contains(Type.FLOAT);
+	allowInt = types.contains(Type.INT) || types.containsSmall();
+	allowLong = types.contains(Type.LONG);
+	allowPointer = types.contains(Type.POINTER);
+	av.append(exp, "&& ( ");
+	if(allowDouble) av.append(exp, checkPrefix + " Type.DOUBLE ||");
+	if(allowFloat) av.append(exp, checkPrefix + " Type.FLOAT ||");
+	if(allowInt) av.append(exp, checkPrefix + " Type.INT ||");
+	if(allowLong) av.append(exp, checkPrefix + " Type.LONG ||");
+	if(allowPointer) av.append(exp, checkPrefix + " Type.POINTER ||");
+	av.append(exp, "\tfalse )"); 
+	av.append(exp, "// end check operand types");
+    }
 
     /**javac 1.1 sez this class (which is only used inside the 
      * outputSelectionMethod below) has to be out here, instead of

@@ -7,7 +7,7 @@ package harpoon.IR.Tree;
  * <code>Type</code> enumerates the possible Tree expression types.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Type.java,v 1.1.2.4 1999-08-12 03:37:27 cananian Exp $
+ * @version $Id: Type.java,v 1.1.2.5 1999-09-09 15:02:28 cananian Exp $
  */
 public abstract class Type {
     // enumerated constants.
@@ -44,6 +44,7 @@ public abstract class Type {
     }
 
     // human-readability.
+    /** Return a string describing the given enumerated type. */
     public static String toString(int type) {
 	switch(type) {
 	case INT: return "INT";
@@ -53,5 +54,13 @@ public abstract class Type {
 	case POINTER: return "POINTER";
 	default: throw new RuntimeException("Unknown Type: "+type);
 	}
+    }
+    /** Return a string describing the type of a <code>PreciselyTyped</code>
+     *  expression. */
+    public static String toString(PreciselyTyped pt) {
+	String ty = toString(pt.type());
+	if (pt.isSmall())
+	    ty += "["+(pt.signed()?"s":"u")+":"+pt.bitwidth()+"]";
+	return ty;
     }
 }

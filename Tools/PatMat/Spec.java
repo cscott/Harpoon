@@ -6,7 +6,6 @@ package harpoon.Tools.PatMat;
 import harpoon.Util.BitString;
 import harpoon.Util.Util;
 import harpoon.IR.Tree.Type;
-import harpoon.IR.Tree.PreciseType;
 
 import java.util.List;
 
@@ -22,7 +21,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.27 1999-08-19 19:23:03 pnkfelix Exp $
+ * @version $Id: Spec.java,v 1.1.2.28 1999-09-09 15:02:29 cananian Exp $
  */
 public class Spec  {
 
@@ -1010,7 +1009,7 @@ public class Spec  {
     /** A representation for storing Types that values can be. 
 	
 	@see IR.Tree.Type
-	@see IR.Tree.PreciseType
+	@see IR.Tree.PreciselyTyped
      */
     public static class TypeSet {
 	// maps Type->boolean
@@ -1039,7 +1038,11 @@ public class Spec  {
 	public boolean contains(int type) {
 	    return bs.get(type);
 	}
-	
+	/** Returns true if <code>this</code> contains any small types. */
+	public boolean containsSmall() {
+	    return !bs.isZero();
+	}
+
 	/** Records that <code>this</code> contains
 	    <code>type</code>.  
 	*/
@@ -1094,18 +1097,12 @@ public class Spec  {
 	    if (contains(Type.FLOAT))   sb.append(",f");
 	    if (contains(Type.DOUBLE))  sb.append(",d");
 	    if (contains(Type.POINTER)) sb.append(",p");
-	    if (contains(PreciseType.SMALL)) {
-		for(int i=0; i<32; i++) {
-		    if(unsignedPrecises.get(i)) {
-			sb.append(",u:"+(i+1));
-		    }
-		}
-		for(int i=0; i<32; i++) {
-		    if(signedPrecises.get(i)) {
-			sb.append(",s:"+(i+1));
-		    }
-		}
-	    }
+	    for(int i=0; i<32; i++)
+		if(unsignedPrecises.get(i))
+		    sb.append(",u:"+(i+1));
+	    for(int i=0; i<32; i++)
+		if(signedPrecises.get(i))
+		    sb.append(",s:"+(i+1));
 	    if (sb.length()>0) sb.setCharAt(0, '<'); else sb.append('<');
 	    sb.append('>');
 	    return sb.toString();

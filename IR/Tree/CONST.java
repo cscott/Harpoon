@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.19 1999-09-08 21:33:08 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.20 1999-09-09 15:02:28 cananian Exp $
  */
 public class CONST extends Exp implements PreciselyTyped, HDataElement {
     /** The constant value of this <code>CONST</code> expression. */
@@ -25,33 +25,32 @@ public class CONST extends Exp implements PreciselyTyped, HDataElement {
     /** The type of this <code>CONST</code> expression. */
     public final int type;
 
-    // Force access through the PreciselyTyped interface, so we can assert
-    // that type==SMALL.  
+    // PreciselyTyped interface
+    public final boolean isSmall;
     private int bitwidth   = -1;
     private boolean signed = true;
 
     public CONST(TreeFactory tf, HCodeElement source, int ival) {
 	super(tf, source);
-	this.type = INT; this.value = new Integer(ival);
+	this.type = INT; this.value = new Integer(ival); this.isSmall=false;
     }
     public CONST(TreeFactory tf, HCodeElement source, long lval) {
 	super(tf, source);
-	this.type = LONG; this.value = new Long(lval);
+	this.type = LONG; this.value = new Long(lval); this.isSmall=false;
     }
     public CONST(TreeFactory tf, HCodeElement source, float fval) {
 	super(tf, source);
-	this.type = FLOAT; this.value = new Float(fval);
+	this.type = FLOAT; this.value = new Float(fval); this.isSmall=false;
     }
     public CONST(TreeFactory tf, HCodeElement source, double dval) {
 	super(tf, source);
-	this.type = DOUBLE; this.value = new Double(dval);
+	this.type = DOUBLE; this.value = new Double(dval); this.isSmall=false;
     }
     /** Creates a <code>CONST</code> representing the constant 
      * <code>null</code>. */
     public CONST(TreeFactory tf, HCodeElement source) { 
 	super(tf, source);
-	this.type  = POINTER; 
-	this.value = null;
+	this.type  = POINTER; this.value = null; this.isSmall=false;
     }
 
     /** Creates a CONST with a precisely defined type.  
@@ -70,18 +69,21 @@ public class CONST extends Exp implements PreciselyTyped, HDataElement {
 		 int bitwidth, boolean signed, int val) { 
 	super(tf, source);
 	Util.assert((0<=bitwidth)&&(bitwidth<32), "Invalid bitwidth");
-	this.type     = SMALL;
+	this.type     = INT;
 	this.bitwidth = bitwidth;
 	this.signed   = signed;
 	this.value    = new Integer(val & ((~0) >> (32-bitwidth)));
+	this.isSmall  = true;
     }
 
     private CONST(TreeFactory tf, HCodeElement source, 
-		  int type, Number value, int bitwidth, boolean signed) {
+		  int type, Number value,
+		  boolean isSmall, int bitwidth, boolean signed) {
         super(tf, source);
-	this.type = type; this.value = value;
+	this.type = type; this.value = value; this.isSmall = isSmall;
 	this.bitwidth = bitwidth; this.signed = signed;
-	Util.assert(PreciseType.isValid(type));
+	Util.assert(Type.isValid(type));
+	Util.assert(!isSmall || type==INT);
     }
     
     /** Return the constant value of this <code>CONST</code> expression. */
@@ -94,30 +96,30 @@ public class CONST extends Exp implements PreciselyTyped, HDataElement {
     public Exp build(ExpList kids) { return build(tf, kids); }
 
     public Exp build(TreeFactory tf, ExpList kids) {
-	return new CONST(tf, this, type, value, bitwidth, signed);
+	return new CONST(tf, this, type, value, isSmall, bitwidth, signed);
     }
 
     // Typed interface.
-    public int type() { Util.assert(PreciseType.isValid(type)); return type; }
+    public int type() { Util.assert(Type.isValid(type)); return type; }
 
     // PreciselyTyped interface.
+    /** Returns true if this is a sub-integer expression. */
+    public boolean isSmall() { return isSmall; }
     /** Returns the size of the expression, in bits.
-     *  Only valid if the type of the expression is <code>SMALL</code>. */
-    public int bitwidth() { Util.assert(type==SMALL); return bitwidth; } 
+     *  Only valid if the <code>isSmall()==true</code>. */
+    public int bitwidth() { Util.assert(type==INT&&isSmall); return bitwidth; }
     /** Returns true if this is a signed expression, false otherwise.
-     *  Only valid if the type of the expression is <code>SMALL</code>. */
-    public boolean signed() { Util.assert(type==SMALL); return signed; } 
+     *  Only valid if the <code>isSmall()==true</code>. */
+    public boolean signed() { Util.assert(type==INT&&isSmall); return signed; }
     
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new CONST(tf, this, type, value, bitwidth, signed);
+        return new CONST(tf, this, type, value, isSmall, bitwidth, signed);
     }
 
     public String toString() {
-        return "CONST<"+PreciseType.toString(type)+ 
-	    ((type==SMALL) ? (":" +  bitwidth + (signed ? "sext" : "")) : "") +
-	    ">("+value+")";
+        return "CONST<"+Type.toString(this)+">("+value+")";
     }
 }

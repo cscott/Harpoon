@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.14 1999-08-18 21:14:07 cananian Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.15 1999-09-09 15:02:28 cananian Exp $
  */
 public class ESEQ extends Exp implements PreciselyTyped {
     /** The statement to evaluate for side-effects. */
@@ -67,6 +67,11 @@ public class ESEQ extends Exp implements PreciselyTyped {
     }
 
     public int type() { return exp.type(); }
+    public boolean isSmall() { 
+	return (exp instanceof PreciselyTyped)
+	    ? ((PreciselyTyped)exp).isSmall()
+	    : false;
+    }
     public int bitwidth() { return ((PreciselyTyped)exp).bitwidth(); }
     public boolean signed() { return ((PreciselyTyped)exp).signed(); }
 

@@ -5,11 +5,13 @@ package harpoon.IR.Tree;
 
 /**
  * The <code>Typed</code> interface allows access to type information for
+ * <code>Exp</code>s (including
  * <code>TEMP</code>, <code>MEM</code>, <code>CONST</code>,
- * <code>OPER</code>, and <code>UNOP</code>.
+ * <code>OPER</code>, and <code>UNOP</code>) and the <code>Stm</code>s
+ * <code>THROW</code>, <code>RETURN</code>, and <code>MOVE</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Typed.java,v 1.1.2.6 1999-08-12 03:37:27 cananian Exp $
+ * @version $Id: Typed.java,v 1.1.2.7 1999-09-09 15:02:28 cananian Exp $
  */
 public interface Typed  {
     // enumerated constants.

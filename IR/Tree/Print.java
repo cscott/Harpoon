@@ -14,7 +14,7 @@ import java.io.StringWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.24 1999-09-09 05:05:02 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.25 1999-09-09 15:02:28 cananian Exp $
  */
 public class Print {
     public final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -135,7 +135,7 @@ public class Print {
 
         public void visit(CONST e) {
             indent(indlevel);
-            pw.print("CONST<" + PreciseType.toString(e.type) + ">(" + e.value + ")");
+            pw.print("CONST<" + Type.toString(e) + ">(" + e.value + ")");
         }
 
 	public void visit(DATA s) { 
@@ -190,7 +190,7 @@ public class Print {
 
         public void visit(MEM e) {
             indent(indlevel++);
-            pw.print("MEM<" + PreciseType.toString(e.type) + ">(");
+            pw.print("MEM<" + Type.toString(e) + ">(");
             e.exp.visit(this);
             pw.print(")");
             indlevel--;

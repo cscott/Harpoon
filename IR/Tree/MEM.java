@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MEM.java,v 1.1.2.16 1999-08-12 03:37:27 cananian Exp $
+ * @version $Id: MEM.java,v 1.1.2.17 1999-09-09 15:02:28 cananian Exp $
  */
 public class MEM extends Exp implements PreciselyTyped {
     /** A subexpression evaluating to a memory reference. */
@@ -24,8 +24,8 @@ public class MEM extends Exp implements PreciselyTyped {
     /** The type of this memory reference expression. */
     public final int type;
 
-    // Force access through the PreciselyTyped interface, so we can assert
-    // that type==SMALL.  
+    // PreciselyTyped interface
+    public final boolean isSmall;
     private int bitwidth   = -1;
     private boolean signed = true;
 
@@ -33,7 +33,7 @@ public class MEM extends Exp implements PreciselyTyped {
     public MEM(TreeFactory tf, HCodeElement source,
 	       int type, Exp exp) {
 	super(tf, source);
-	this.type=type; this.exp=exp;
+	this.type=type; this.exp=exp; this.isSmall=false;
 	Util.assert(Type.isValid(type) && exp!=null);
 	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
     }
@@ -47,7 +47,7 @@ public class MEM extends Exp implements PreciselyTyped {
     public MEM(TreeFactory tf, HCodeElement source, 
 	       int bitwidth, boolean signed, Exp exp) { 
 	super(tf, source);
-	this.type=SMALL; this.exp=exp; 
+	this.type=INT; this.exp=exp; this.isSmall=true;
 	this.bitwidth=bitwidth; this.signed=signed;
 	Util.assert(exp!=null);
 	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
@@ -55,13 +55,14 @@ public class MEM extends Exp implements PreciselyTyped {
     }
     
     private MEM(TreeFactory tf, HCodeElement source, int type, Exp exp, 
-		int bitwidth, boolean signed) { 
+		boolean isSmall, int bitwidth, boolean signed) { 
 	super(tf, source);
-	this.type=type; this.exp=exp; 
+	this.type=type; this.exp=exp; this.isSmall=isSmall;
 	this.bitwidth=bitwidth; this.signed=signed;
 	Util.assert(exp!=null);
 	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
-	Util.assert(PreciseType.isValid(type));
+	Util.assert(Type.isValid(type));
+	Util.assert(!isSmall || type==INT);
     }
 
     public ExpList kids() {return new ExpList(exp,null);}
@@ -72,32 +73,32 @@ public class MEM extends Exp implements PreciselyTyped {
 
     public Exp build(TreeFactory tf, ExpList kids) {
 	Util.assert(tf == kids.head.tf);
-	return new MEM(tf, this, type, kids.head, bitwidth, signed);
+	return new MEM(tf, this, type, kids.head, isSmall, bitwidth, signed);
     }
 
     // Typed interface:
-    public int type() { Util.assert(PreciseType.isValid(type)); return type; }
+    public int type() { Util.assert(Type.isValid(type)); return type; }
     
     // PreciselyTyped interface:
+    /** Returns true if this is a sub-integer expression. */
+    public boolean isSmall() { return isSmall; }
     /** Returns the size of the expression, in bits.
-     *  Only valid if the type of the expression is <code>SMALL</code>. */
-    public int bitwidth() { Util.assert(type==SMALL); return bitwidth; } 
+     *  Only valid if the <code>isSmall()==true</code>. */
+    public int bitwidth() { Util.assert(type==INT&&isSmall); return bitwidth; }
     /** Returns true if this is a signed expression, false otherwise.
-     *  Only valid if the type of the expression is <code>SMALL</code>. */
-    public boolean signed() { Util.assert(type==SMALL); return signed; } 
+     *  Only valid if the <code>isSmall()==true</code>. */
+    public boolean signed() { Util.assert(type==INT&&isSmall); return signed; }
 
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new MEM(tf, this, type, (Exp)exp.rename(tf, ctm), 
-		       bitwidth, signed);
+		       isSmall, bitwidth, signed);
     }
 
     public String toString() {
-        return "MEM<" + PreciseType.toString(type) + 
-	    ((type==SMALL) ? (":" +  bitwidth + (signed ? "sext" : "")) : "") +
-	    ">(#" + exp.getID() + ")";
+        return "MEM<" + Type.toString(this) + ">(#" + exp.getID() + ")";
     }
 }
 

@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * </PRE>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: DATA.java,v 1.1.2.8 1999-09-08 21:33:08 cananian Exp $
+ * @version $Id: DATA.java,v 1.1.2.9 1999-09-09 15:02:28 cananian Exp $
  */
 public class DATA extends Stm implements harpoon.ClassFile.HDataElement { 
     /** The expression to write to memory.  If null, this location in 
@@ -75,7 +75,10 @@ public class DATA extends Stm implements harpoon.ClassFile.HDataElement {
 
     public String toString() { 
 	StringBuffer sb = new StringBuffer("DATA<");
-	sb.append(data==null?"Unspecified type":(PreciseType.toString(data.type())));
+	sb.append(data==null?"Unspecified type":
+		  data instanceof PreciselyTyped ?
+		  Type.toString((PreciselyTyped)data) :
+		  Type.toString(data.type()));
 	sb.append(">(#"); sb.append(getID()); sb.append(")");
 	return sb.toString();
     }
