@@ -5,13 +5,14 @@ import MCC.State;
 class UpdateNode {
     Vector updates;
     Vector bindings;
+    Vector invariants;
     Hashtable binding;
     Rule rule;
-    
 
     public UpdateNode(Rule r) {
 	updates=new Vector();
 	bindings=new Vector();
+	invariants=new Vector();
 	binding=new Hashtable();
 	rule=r;
     }
@@ -22,14 +23,21 @@ class UpdateNode {
 
     public String toString() {
 	String st="";
+	st+="Bindings:\n";
 	for(int i=0;i<bindings.size();i++)
 	    st+=bindings.get(i).toString()+"\n";
 	st+="---------------------\n";
+	st+="Updates:\n";
 	for(int i=0;i<updates.size();i++)
 	    st+=updates.get(i).toString()+"\n";
+	st+="---------------------\n";
+	st+="Invariants:\n";
+	for(int i=0;i<invariants.size();i++)
+	    st+=((Expr)invariants.get(i)).name()+"\n";
+	st+="---------------------\n";
 	return st;
     }
-
+  
     public void addBindings(Vector v) {
 	for (int i=0;i<v.size();i++) {
 	    addBinding((Binding)v.get(i));
@@ -98,6 +106,14 @@ class UpdateNode {
 	Set toremove=new HashSet();
 	for(int i=0;i<updates.size();i++) {
 	    Updates u1=(Updates)updates.get(i);
+	    if (!u1.isAbstract()) {
+		Descriptor d=u1.getDescriptor();
+		for(int j=0;j<invariants.size();j++) {
+		    Expr invariant=(Expr)invariants.get(j);
+		    if (invariant.usesDescriptor(d))
+			return false;
+		}
+	    }
 	    for(int j=0;j<updates.size();j++) {
 		Updates u2=(Updates)updates.get(j);
 		if (i==j)
@@ -190,6 +206,18 @@ class UpdateNode {
 	    return (Binding)binding.get(vd);
 	else
 	    return null;
+    }
+
+    public void addInvariant(Expr e) {
+	invariants.add(e);
+    }
+
+    public int numInvariants() {
+	return invariants.size();
+    }
+
+    public Expr getInvariant(int i) {
+	return (Expr)invariants.get(i);
     }
 
     public void addUpdate(Updates u) {

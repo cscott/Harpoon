@@ -159,6 +159,12 @@ class AbstractInterferes {
 		 (op2==Opcode.LE)))
 		return false;
 		
+	    if (((op1==Opcode.EQ)||(op1==Opcode.GE)||(op1==Opcode.LE))&&
+		((op2==Opcode.EQ)||(op2==Opcode.GE)||(op2==Opcode.LE))&&
+		expr1.equals(null,expr2)) {
+		return false;
+	    }
+
 	    if (isInt1&&isInt2) {
 		if (((op1==Opcode.EQ)||(op1==Opcode.GE)||(op1==Opcode.LE))&&
 		    ((op2==Opcode.EQ)||(op2==Opcode.GE)||(op2==Opcode.LE))&&

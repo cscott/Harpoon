@@ -1,0 +1,66 @@
+// sEXT2 - Simple File System Example
+// Space Definition Language File
+
+set Block(Block) :
+    UsedBlock | 
+    FreeBlock;
+
+set FreeBlock(Block);
+
+set Inode(Inode) :
+    UsedInode | 
+    FreeInode;
+
+set FreeInode(Inode);
+
+set UsedInode(Inode) :
+    FileInode | 
+    DirectoryInode ;
+
+set FileInode(Inode);
+
+set DirectoryInode(Inode) : RootDirectoryInode;
+
+set RootDirectoryInode(Inode);
+
+set UsedBlock(Block) :
+    SuperBlock | 
+    GroupBlock | 
+    FileDirectoryBlock | 
+    InodeTableBlock | 
+    InodeBitmapBlock | 
+    BlockBitmapBlock;
+
+set FileDirectoryBlock(Block) : 
+    DirectoryBlock | 
+    FileBlock;
+
+set SuperBlock(Superblock);
+
+set GroupBlock(Groupblock);
+
+set FileBlock(Block);
+
+set DirectoryBlock(Block);
+
+set InodeTableBlock(InodeTable);
+
+set InodeBitmapBlock(InodeBitmap);
+
+set BlockBitmapBlock(BlockBitmap);
+
+set DirectoryEntry(DirectoryEntry);
+
+// relations xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+inodeof: DirectoryEntry -> UsedInode (many->1);
+
+contents: UsedInode -> FileDirectoryBlock (1->many);
+
+inodestatus: Inode -> int (many->1);
+
+blockstatus: Block -> int (many->1);
+
+referencecount: Inode -> int (many->1);
+
+filesize: Inode -> int (many->1);

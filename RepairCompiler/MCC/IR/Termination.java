@@ -683,8 +683,11 @@ public class Termination {
 		    if (ri.getLeftExpr().isValue()) {
 			Updates up=new Updates(ri.getLeftExpr(),leftindex);
 			un.addUpdate(up);
-		    } else
-			goodflag=false;
+		    } else {
+			if (inverted)
+			    goodflag=false;
+			else un.addInvariant(ri.getLeftExpr());
+		    }
 		} else {
 		    VarDescriptor vd=((VarExpr)ri.getLeftExpr()).getVar();
 		    if (vd.isGlobal()) {
@@ -697,8 +700,12 @@ public class Termination {
 		    if (ri.getRightExpr().isValue()) {
 			Updates up=new Updates(ri.getRightExpr(),rightindex);
 			un.addUpdate(up);
-		    } else
-			goodflag=false;
+		    } else {
+			if (!inverted)
+			    goodflag=false;
+			else
+			    un.addInvariant(ri.getLeftExpr());
+		    }
 		} else {
 		    VarDescriptor vd=((VarExpr)ri.getRightExpr()).getVar();
 		    if (vd.isGlobal()) {
