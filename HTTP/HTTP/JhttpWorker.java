@@ -9,6 +9,8 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 
+import sun.io.CharToByteConverter;
+
 //****************************************************************************
 // Class:   JhttpWorker
 // Purpose: Takes an HTTP request and executes it in a separate thread
@@ -22,12 +24,12 @@ public class JhttpWorker extends Thread{
     public  int    fileLength, returnCode;
     private boolean logging;
 
-    public JhttpWorker(Socket client, boolean logging){
+    public JhttpWorker(Socket client, boolean logging) {
 	this.client = client;
 	this.logging=logging;
     }
     
-    public void run(){ 
+    public void run() { 
 	HTTPResponse resp = new HTTPResponse();
 
 	BufferedReader  in = null;
@@ -36,26 +38,29 @@ public class JhttpWorker extends Thread{
 	resp.returnCode = 200;
 	resp.sentBytes = 0;
 
-	try{
+	try {
 
-	    in = new BufferedReader(
-		   new InputStreamReader(
-		    client.getInputStream()));
+	    in =
+		new BufferedReader
+		    (new InputStreamReader
+			(client.getInputStream()));
 
-	    out = new BufferedWriter(
-		   new OutputStreamWriter(
-		    client.getOutputStream()));
+	    out = 
+		new BufferedWriter
+		    (new OutputStreamWriter
+			(client.getOutputStream()));
+
 	}
-	catch(IOException e){
+	catch(IOException e) {
 	    // I'm not too good at HTTP. Normally, we should put some
 	    // error code here. Anyway, I have assumed that an error
 	    // is equivalent to an unhandled request / method (501)
 	    resp.returnCode = 501; 
 	}
 
-	if(resp.returnCode == 200){
+	if(resp.returnCode == 200) {
 	    // call the appropriate hanndler
-	    switch(method(in)){
+	    switch(method(in)) {
 	    case 0:
 		HTTPServices.GET_handler(fileName, out, resp);
 		break;
@@ -69,17 +74,18 @@ public class JhttpWorker extends Thread{
 		resp.returnCode = 501; //error
 	    }
 	    
-	    try{
+	    try {
 		out.flush();
 		if (logging)
-		    LogFile.write_log(client,methodType,fileName,httpVersion,
-				      resp.returnCode,resp.sentBytes);
+		    LogFile.write_log(client, methodType, fileName,
+				      httpVersion,
+				      resp.returnCode, resp.sentBytes);
 
 		out.close();
 		in.close();
 		client.close();
 	    }
-	    catch(IOException e){
+	    catch(IOException e) {
 		; // do nothing
 	    }
 	}

@@ -36,8 +36,8 @@ public class JhttpServer extends Thread{
 
     public void run(){
 	// infinite loop 
-	while (true){
-	    try{
+	while (true) {
+	    try {
 		startWorker(server.accept());
 	    }
 	    catch (Exception e){
@@ -56,13 +56,15 @@ public class JhttpServer extends Thread{
     if (args.length < 1)
     {
       System.out.println("Usage:");
-      System.out.println("   java JhttpServer <port>");
+      System.out.println("   java JhttpServer <port> <logging>");
       System.out.println();
-      System.out.println("Ex: java JhttpServer 10000");
+      System.out.println("Ex: java JhttpServer 10000 0");
       System.exit(1);
     }
 
-    (new JhttpServer(Integer.parseInt(args[0]),Integer.parseInt(args[1])==1)).start();
+    (new JhttpServer(Integer.parseInt(args[0]),
+		     Integer.parseInt(args[1])==1))
+	.start();
   }
 }
 
