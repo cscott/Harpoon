@@ -55,9 +55,12 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.4 1999-10-13 14:38:17 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.5 1999-10-13 16:52:21 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
+    // allocation strategy to use.
+    final AllocationStrategy as;
+
     // integer constant sizes:
     final int WORD_SIZE;
     final int LONG_WORD_SIZE;
@@ -90,8 +93,10 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // set of string references made
     final Set stringSet = new HashSet();
 
-    TreeBuilder(Runtime runtime, ClassHierarchy ch, boolean pointersAreLong) {
+    TreeBuilder(Runtime runtime, ClassHierarchy ch,
+		AllocationStrategy as, boolean pointersAreLong) {
 	this.runtime = runtime;
+	this.as  = as;
 	this.cdm = new harpoon.Backend.Maps.DefaultClassDepthMap(ch);
 	this.imm = new harpoon.Backend.Analysis.InterfaceMethodMap(ch);
 	this.cmm = new harpoon.Backend.Analysis.ClassMethodMap();
@@ -148,7 +153,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	       new TEMP(tf, source, Type.POINTER, Tobj),
 	       new BINOP
 	       (tf, source, Type.POINTER, Bop.ADD,
-		memAlloc
+		as.memAlloc
 		(tf, source,
 		 new BINOP
 		 (tf, source, Type.POINTER, Bop.ADD,
@@ -178,11 +183,6 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		new NAME(tf, source, runtime.nameMap.label(objectType))))),
 	     // result of ESEQ is new object pointer
 	     new TEMP(tf, source, Type.POINTER, Tobj));
-    }
-
-    public Exp memAlloc(TreeFactory tf, HCodeElement source, Exp length) {
-	// XXX: implement memory allocation here.
-	return new CONST(tf, source);
     }
 
     public Translation.Exp arrayLength(TreeFactory tf, HCodeElement source,

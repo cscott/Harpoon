@@ -30,9 +30,9 @@ import java.util.List;
  * A simple-minded version of Appel's fast-allocation strategy
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: DefaultAllocationStrategy.java,v 1.1.2.2 1999-10-13 16:31:43 cananian Exp $
+ * @version  $Id: DefaultAllocationStrategy.java,v 1.1.2.3 1999-10-13 16:52:21 cananian Exp $
  */
-public class DefaultAllocationStrategy implements AllocationStrategy {
+public class DefaultAllocationStrategy extends AllocationStrategy {
     final LocationFactory.Location memLimit;
     final LocationFactory.Location nextPtr;
 
@@ -45,14 +45,12 @@ public class DefaultAllocationStrategy implements AllocationStrategy {
    *  Returns a <code>Stm</code> object which allocates a block of memory 
    *  of the specified size.   
    */
-    public Exp memAlloc(Exp size)
+    public Exp memAlloc(TreeFactory tf, HCodeElement src, Exp size)
     {
 	LABEL        l0, l1, l2, l3, l4;
 	NAME         gc, exit_oom;
 	TEMP         triedGC; // INT type
 	TEMP         newMemPtr, resultPtr, tmp;
-	HCodeElement src = size;
-	TreeFactory  tf  = size.getFactory();
 	Stm[]        stms;
 
 	triedGC   = new TEMP(tf,src,Type.INT,     new Temp(tf.tempFactory()));
