@@ -78,7 +78,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_InetAddressImpl_lookupAllHostAddr
     return baarray;
 }
 #ifdef WITH_TRANSACTIONS
-#include "../transact/transact.h"
+#include "../../transact/transact.h"
 JNIEXPORT jobjectArray JNICALL Java_java_net_InetAddressImpl_lookupAllHostAddr_00024_00024withtrans
   (JNIEnv *env, jobject _this, jobject commitrec, jstring name) {
   return Java_java_net_InetAddressImpl_lookupAllHostAddr

@@ -259,8 +259,8 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_available
 }
 
 #ifdef WITH_TRANSACTIONS
-#include "../transact/transact.h" /* FNI_StrTrans2Str */
-#include "../transact/java_lang_Object.h" /* version fetch methods */
+#include "../../transact/transact.h" /* FNI_StrTrans2Str */
+#include "../../transact/java_lang_Object.h" /* version fetch methods */
 #include "../java.lang/java_lang_Class.h" /* Class.getComponentType() */
 /* transactional version of readBytes -- problematic!  how do we
  * undo bytes read from a file descriptor? punting on the problem

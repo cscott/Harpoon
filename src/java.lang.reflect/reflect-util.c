@@ -4,7 +4,8 @@
 #include <string.h>
 #include <jni.h>
 #include "jni-private.h"
-#include "../java.lang/java_lang_Class.h"
+// XXX this is a dependency on the SunJDK implementation of java.lang.Class
+#include "../sunjdk/java.lang/java_lang_Class.h"
 #include "reflect-util.h"
 
 /* Return the (first character of the) descriptor corresponding to the

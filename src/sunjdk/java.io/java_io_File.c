@@ -387,7 +387,7 @@ JNIEXPORT jboolean JNICALL Java_java_io_File_isAbsolute(JNIEnv *env, jobject thi
 }
 
 #ifdef WITH_TRANSACTIONS
-#include "../transact/transact.h" /* for FNI_StrTrans2Str */
+#include "../../transact/transact.h" /* for FNI_StrTrans2Str */
 JNIEXPORT jlong JNICALL Java_java_io_File_length0_00024_00024withtrans
 	(JNIEnv * env, jobject this, jobject commitrec)
 {

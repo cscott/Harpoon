@@ -1,7 +1,8 @@
 #include <signal.h> /* for signal(), to ignore SIGPIPE */
 #include <jni.h>
 #include <jni-private.h>
-#include "java.lang/java_lang_Thread.h"
+// XXX this is a dependency on the SunJDK implementation of java.lang.Thread
+#include "sunjdk/java.lang/java_lang_Thread.h"
 #include "flexthread.h"
 #include <assert.h>
 #ifdef WITH_PRECISE_GC

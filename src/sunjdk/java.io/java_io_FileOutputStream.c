@@ -187,8 +187,8 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_close
 }
 
 #ifdef WITH_TRANSACTIONS
-#include "../transact/transact.h" /* for FNI_StrTrans2Str */
-#include "../transact/java_lang_Object.h" /* version fetch methods */
+#include "../../transact/transact.h" /* for FNI_StrTrans2Str */
+#include "../../transact/java_lang_Object.h" /* version fetch methods */
 #include "../java.lang/java_lang_Class.h" /* Class.getComponentType() */
 /* transactional version of writeBytes -- problematic!  how do we
  * undo bytes written to a file descriptor? punting on the problem

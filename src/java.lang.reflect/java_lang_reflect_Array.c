@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <jni.h>
 #include "jni-private.h"
-#include "../java.lang/java_lang_Class.h"
+// XXX this is a dependency on the SunJDK implementation of java.lang.Class
+#include "../sunjdk/java.lang/java_lang_Class.h" // for Java_java_lang_Class_isArray
 #include "java_lang_reflect_Array.h"
 #include "reflect-util.h"
 

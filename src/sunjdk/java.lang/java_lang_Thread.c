@@ -17,7 +17,7 @@
 #include <time.h> /* for nanosleep */
 #include <unistd.h> /* for usleep */
 #ifdef WITH_CLUSTERED_HEAPS
-#include "../clheap/alloc.h" /* for NTHR_malloc_first/NTHR_free */
+#include "../../clheap/alloc.h" /* for NTHR_malloc_first/NTHR_free */
 #endif
 #include "memstats.h"
 #ifdef WITH_PRECISE_GC
@@ -27,9 +27,9 @@
 #endif
 #endif
 #ifdef WITH_REALTIME_THREADS
-#include "../realtime/RTJconfig.h" /* for RTJ_MALLOC_UNCOLLECTABLE */
-#include "../realtime/threads.h"
-#include "../realtime/qcheck.h"
+#include "../../realtime/RTJconfig.h" /* for RTJ_MALLOC_UNCOLLECTABLE */
+#include "../../realtime/threads.h"
+#include "../../realtime/qcheck.h"
 #endif /* WITH_REALTIME_THREADS */
 
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
@@ -734,7 +734,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
 }
 #endif
 #ifdef WITH_USER_THREADS
-#include "../user/engine-i386-linux-1.0.h"
+#include "../../user/engine-i386-linux-1.0.h"
 /*
  * Class:     java_lang_Thread
  * Method:    start

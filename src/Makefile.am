@@ -1,19 +1,29 @@
 ## Process this file with automake to produce Makefile.in
 MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
-SUBDIRS = jni java.io java.lang java.lang.reflect java.net \
-	java.util java.util.zip \
+SUBDIRS = jni java.lang.reflect \
+	$(NATIVEDIR) \
 	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) $(STATSDIR) $(CAMDIR) $(USERDIR) \
 	$(TRANSACTDIR) $(REALTIMEDIR) $(RTJPERFDIR) $(ROLEINFERDIR) $(MZFDIR)
 # make sure even the conditionally-compiled subdirectories are included
 # in the distribution.
-DIST_SUBDIRS = jni java.io java.lang java.lang.reflect java.net \
-	java.util java.util.zip \
+DIST_SUBDIRS = jni java.lang.reflect sunjdk \
         gc clheap nativeio stats cam user transact realtime rtjperf roles mzf
 EXTRA_DIST = README
 
 # cruft to define the conditional directories. --------------------------
 # please keep these in the same order that they appear in the SUBDIRS list
+
+# for compiling against Sun'd JDK, add sunjdk to SUBDIRS
+if SUNJDK
+NATIVEDIR=sunjdk
+NATIVELIB=\
+	sunjdk/java.lang/libjavalang.la \
+	sunjdk/java.io/libjavaio.la \
+	sunjdk/java.net/libjavanet.la \
+	sunjdk/java.util/libjavautil.la \
+	sunjdk/java.util.zip/libjavautilzip.la
+endif
 
 # for precise gc, add gc to SUBDIRS
 if PRECISE_GC
@@ -73,7 +83,7 @@ endif
 
 # see run% rule in top-level makefile to see how to generate a binary
 # executable from the Java.a file and these two libraries.
-lib_LTLIBRARIES = libflexc0.la libflexc1.la $(AOUTLIBRARY) 
+lib_LTLIBRARIES = libflexc0.la libflexc1.la
 
 libflexc0_la_SOURCES = startup.c
 libflexc0_la_LIBADD = \
@@ -84,32 +94,9 @@ libflexc0_la_LDFLAGS = -version-info 0:0:0
 libflexc1_la_SOURCES = config_checker.c
 libflexc1_la_LIBADD = \
 	../arch/@ARCHDIR@/libfooter.la \
-	java.io/libjavaio.la java.lang/libjavalang.la \
 	java.lang.reflect/libjavalangreflect.la \
-	java.net/libjavanet.la \
-	java.util/libjavautil.la \
-	java.util.zip/libjavautilzip.la \
+	$(NATIVELIB) \
 	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB) $(STATSLIB) $(CAMLIB) $(USERLIB) \
 	$(TRANSACTLIB) $(REALTIMELIB) $(RTJPERFLIB) $(ROLEINFERLIB) $(MZFLIB)
 libflexc1_la_LDFLAGS = -version-info 0:0:0 # -lbfd -liberty
-# this library depends on -lbfd and -liberty, but these ought to be in $LIBS
-
-# backwards compatibility: a.out targets ####################
-if AOUT_BUILD
-LDADD = jni/libjni.la ../Java.a libflexc.la \
-	jni/jni-inflate.lo jni/jni-jnidata.lo \
-	$(foreach lib,@GC_LIB@,../$(lib)) $(PGCLIB) $(STATSLIB) $(USERLIB) \
-	$(CLHEAPLIB) $(NATIVEIOLIB) $(CAMLIB) $(TRANSACTLIB) $(REALTIMELIB) \
-	$(RTJPERFLIB) $(ROLEINFERLIB) $(MZFLIB)
-bin_PROGRAMS = startup # dump-fixup test-lookup test-gc static
-AOUTLIBRARY = libflexc.la
-endif
-libflexc_la_SOURCES =
-libflexc_la_LIBADD = \
-        java.io/libjavaio.la java.lang/libjavalang.la \
-	java.lang.reflect/libjavalangreflect.la \
-	java.net/libjavanet.la \
-	java.util/libjavautil.la \
-        java.util.zip/libjavautilzip.la
-libflexc_la_LDFLAGS = -version-info 0:0:0 # -lbfd -liberty
 # this library depends on -lbfd and -liberty, but these ought to be in $LIBS
