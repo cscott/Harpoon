@@ -59,7 +59,7 @@ import java.util.Map;
  * 
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierTreePass.java,v 1.1.2.1 2001-08-30 23:00:06 kkz Exp $
+ * @version $Id: WriteBarrierTreePass.java,v 1.1.2.2 2001-11-10 20:45:59 kkz Exp $
  */
 public abstract class WriteBarrierTreePass extends 
     harpoon.Analysis.Tree.Simplification {
@@ -126,6 +126,7 @@ public abstract class WriteBarrierTreePass extends
 		}
 		public Stm apply(TreeFactory tf, Stm stm, 
 				 DerivationGenerator dg) {
+		    //System.out.println(Print.print(stm));
 		    Runtime runtime = tf.getFrame().getRuntime();
 		    TreeBuilder tb = runtime.getTreeBuilder();
 		    final NAME func = new NAME(tf, stm, cfunc);
@@ -135,8 +136,10 @@ public abstract class WriteBarrierTreePass extends
 		    // first argument
 		    TEMP objectref = (TEMP) explist.head;
 		    explist = explist.tail;
-		    // second argument
-		    TEMP index = (TEMP) explist.head;
+		    // second argument is the array index
+		    // after constant propagation, this
+		    // may be either a TEMP or a CONST
+		    Exp index = explist.head;
 		    // ignore last 2 arguments
 		    explist = explist.tail.tail;
 		    // no more arguments
