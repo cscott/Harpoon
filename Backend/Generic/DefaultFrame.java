@@ -6,11 +6,16 @@ import harpoon.Backend.Allocation.DefaultAllocationInfo;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrFactory;
+import harpoon.IR.Assem.InstrList;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.MEM;
+import harpoon.IR.Tree.MOVE;
 import harpoon.IR.Tree.NAME;
+import harpoon.IR.Tree.SEQ;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.TreeFactory;
@@ -18,6 +23,8 @@ import harpoon.IR.Tree.Type;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
+import harpoon.Temp.CloningTempMap;
+import harpoon.Util.Util;
 
 /**
  *  The DefaultFrame class implements the abstract methods of the 
@@ -25,7 +32,7 @@ import harpoon.Temp.TempFactory;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.4 1999-02-17 21:14:08 andyb Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.5 1999-02-26 22:45:19 andyb Exp $
  */
 public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 
@@ -37,19 +44,24 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 
     public DefaultFrame() {
         m_allocator   = new DefaultAllocationStrategy(this);
-	m_nextPtr     = 0x0fff0000;  // completely arbitrary
+	    m_nextPtr     = 0x0fff0000;  // completely arbitrary
         m_offsetMap   = new OffsetMap32(null);
-	m_tempFactory = Temp.tempFactory("global");
-	m_registers = new Temp[16];
-	for (int i=0; i<16; i++) 
-	    m_registers[i] = new Temp(m_tempFactory, "register_");
     }
 
-    public Exp malloc(Exp size) {
-        return m_allocator.malloc(size);
+    public Frame newFrame(String scope) {
+        DefaultFrame fr = new DefaultFrame();
+        fr.m_registers = new Temp[16];
+        fr.m_tempFactory = Temp.tempFactory(scope);
+        for (int i = 0; i < 16; i++)
+            fr.m_registers[i] = new Temp(fr.m_tempFactory, "register_");
+        return fr;
+    }
+
+    public Exp memAlloc(Exp size) {
+        return m_allocator.memAlloc(size);
     }
     
-    public OffsetMap offsetMap() {
+    public OffsetMap getOffsetMap() {
         return m_offsetMap;
     }
 
@@ -57,19 +69,15 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
         return false;
     }
 
-    public Temp RV() {
-        return registers()[0];
-    }
-
-    public Temp RX() {
-        return registers()[1];
-    }
-
     public Temp FP() {
-        return registers()[2];
+        return getAllRegisters()[2];
     }
 
-    public Temp[] registers() {
+    public Temp[] getAllRegisters() {
+        return m_registers;
+    }
+
+    public Temp[] getGeneralRegisters() {
         return m_registers;
     }
 
@@ -77,12 +85,51 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
         return m_tempFactory;
     }
 
+    public TempFactory regTempFactory() {
+        return m_tempFactory;
+    }
+
+    public Stm procPrologue(TreeFactory tf, HCodeElement src, 
+                            Temp[] paramdsts, CloningTempMap ctm) {
+        Util.assert(tf != null, "tf is null");
+        Stm prologue = null;
+        Stm move = null;
+        int i = 0;
+        for (i = 0; i < paramdsts.length && i < 16; i++) {
+            move =  new MOVE(tf, src, 
+                        new TEMP(tf, src, Type.INT, 
+                                 ctm.tempMap(paramdsts[i])),
+                        new TEMP(tf, src, Type.INT, m_registers[i]));
+            if (prologue == null) {
+                prologue = move;
+            } else {
+                prologue = new SEQ(tf, src, move, prologue);
+            }
+        }
+        return prologue;
+    }
+
+    public InstrList procLiveOnExit(InstrList body) {
+        return body;
+    }
+
+    public InstrList procAssemDirectives(InstrList body) {
+        HCodeElement src = body.head;
+        InstrFactory inf = ((Instr)src).getFactory();
+        return new InstrList( new Instr(inf, src, ".text", null, null),
+               new InstrList( new Instr(inf, src, ".align 0", null, null),
+               new InstrList( new Instr(inf, src, ".global " +
+                    inf.getMethod().getName()  + ":", null, null),
+               new InstrList( new Instr(inf, src, inf.getMethod().getName()+":",
+                    null, null), body))));
+    }
+
     /* Implementation of the DefaultAllocationInfo interface.
      * NOTE that this is not really a realistic implementation,
      * rather, it is a placeholder that allows me to test other
      * parts of the code.  
      */
-    public Stm GC(TreeFactory tf, HCodeElement src) { 
+    public Stm callGC(TreeFactory tf, HCodeElement src) { 
         return new CALL(tf, src, 
 			new TEMP(tf, src, 
 				 Type.POINTER, new Temp(tf.tempFactory())), 
@@ -92,16 +139,16 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 			null); 
     }
     
-    public Exp mem_limit(TreeFactory tf, HCodeElement src) { 
+    public Exp getMemLimit(TreeFactory tf, HCodeElement src) { 
         return new CONST(tf, src, 4000000);  // again, completely arbitrary
     }
   
-    public MEM next_ptr(TreeFactory tf, HCodeElement src) { 
+    public MEM getNextPtr(TreeFactory tf, HCodeElement src) { 
         return new MEM(tf, src, Type.INT,
 		       new CONST(tf, src, m_nextPtr));
     }
     
-    public Stm out_of_memory(TreeFactory tf, HCodeElement src) {
+    public Stm exitOutOfMemory(TreeFactory tf, HCodeElement src) {
         return new CALL(tf, src, 
 			new TEMP(tf, src, 
 				 Type.POINTER, new Temp(tf.tempFactory())), 
@@ -112,4 +159,3 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
     }
 
 }
-

@@ -4,16 +4,22 @@
 package harpoon.Backend.Generic;
 
 import harpoon.Temp.Temp;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.Assem.InstrList;
+import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Tree.Exp;
+import harpoon.IR.Tree.Stm;
+import harpoon.IR.Tree.TreeFactory;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Temp.TempFactory;
+import harpoon.Temp.CloningTempMap;
 
 /**
  * A <code>Frame</code> encapsulates the machine-dependent information
  * needed for compilation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.8 1999-02-17 21:14:08 andyb Exp $
+ * @version $Id: Frame.java,v 1.1.2.9 1999-02-26 22:45:19 andyb Exp $
  */
 public abstract class Frame {
 
@@ -21,32 +27,46 @@ public abstract class Frame {
      *  to a newly allocated block of memory, of the specified size.  
      *  Generates code to handle garbage collection, and OutOfMemory errors.
      */
-    public abstract Exp malloc(Exp size);
+    public abstract Exp memAlloc(Exp size);
     
-    /** Returns the appropriate offset map for this frame */
-    public abstract OffsetMap offsetMap();
-
     /** Returns <code>false</code> if pointers can be represented in
      *  32 bits, or <code>true</code> otherwise. */
     public abstract boolean pointersAreLong();
 
-    /** Returns a <code>Temp</code> to represent where return values
-     *  for procedures will be stored. */
-    public abstract Temp RV();
-
-    /** Returns a <code>Temp</code> to represent where exceptional return 
-     *  values for procedures will be stored */
-    public abstract Temp RX();
-
-    /** Returns a specially-named Temp to use for the frame pointer.
-     */
-    public abstract Temp FP();
-
     /** Returns an array of <code>Temp</code>s which represent all
      *  the available registers on the machine. */
-    public abstract Temp[] registers();
+    public abstract Temp[] getAllRegisters();
 
-    /** Returns the TempFactory used by this Frame */
+    /** Returns an array of <code>Temp</code>s for all the registers
+     *  that the register allocator can feel free to play with */
+    public abstract Temp[] getGeneralRegisters();
+    /** Returns a specially-named Temp to use as the frame pointer. */
+    public abstract Temp FP();
+
+    /** Returns a <code>Tree.Stm</code> object which contains code
+     *  to move method parameters from their passing location into
+     *  the Temps that the method expects them to be in. */
+    public abstract Stm procPrologue(TreeFactory tf, HCodeElement src, 
+                                     Temp[] paramdsts, CloningTempMap ctm);
+
+    /** Returns an <code>InstrList</code> which adds a "sink" 
+     *  instruction to specify registers that are live on procedure exit. */
+    public abstract InstrList procLiveOnExit(InstrList body);
+
+    /** Returns an <code>InstrList</code> which wraps the 
+     *  method body in assembler directives and other instructions
+     *  needed to initialize stack space. */
+    public abstract InstrList procAssemDirectives(InstrList body);
+
+    /** Returns the appropriate offset map for this frame */
+    public abstract OffsetMap getOffsetMap();
+
+    /** Returns the TempFactory to create new Temps in this Frame */
     public abstract TempFactory tempFactory();
-      
+
+    /** Returns the TempFactory of the register Temps in this Frame */
+    public abstract TempFactory regTempFactory();
+    
+    /** Create a new Frame one level below the current one. */
+    public abstract Frame newFrame(String scope);
 }
