@@ -1,6 +1,14 @@
 #include "java_io_FileDescriptor.h"
 
+#define IO_ERROR(env, str) do { \
+    (JNIEnv *)env;  (const char *)str;  /* Check types */             \
+    IOExcCls = (*env)->FindClass(env, "java/io/IOException");         \
+    if (IOExcCls == NULL) return; /* give up */                       \
+    else (*env)->ThrowNew(env, IOExcCls, "Couldn't write to file");   \
+    } while (0)
+
 static jfieldID fdID = 0;
+static jclass IOExcCls;
 
 /*
  * Class:     java_io_FileDescriptor
@@ -10,7 +18,7 @@ static jfieldID fdID = 0;
 JNIEXPORT jboolean JNICALL Java_java_io_FileDescriptor_valid
 (JNIEnv * env, jobject obj) { 
     if (fdID==0) 
-	if (!initialize_FD_data(env)) IO_ERROR("Couldn't init native I/O");
+	if (!initialize_FD_data(env)) IO_ERROR(env,"Couldn't init native I/O");
     
     return (*env)->GetIntField(env, obj, fdID) >= 0;
 }
@@ -26,7 +34,7 @@ JNIEXPORT void JNICALL Java_java_io_FileDescriptor_sync
     jclass SFExcCls;  /* SyncFailedException class */
     
     if (fdID==0) 
-	if (!initialize_FD_data(env)) IO_ERROR("Couldn't init native I/O");
+	if (!initialize_FD_data(env)) IO_ERROR(env,"Couldn't init native I/O");
     
     fd = (*env)->GetIntField(env, obj, fdID);
     if (fsync(fd) < 0) { /* An error has occured */
@@ -46,7 +54,7 @@ JNIEXPORT void JNICALL Java_java_io_FileDescriptor_sync
 JNIEXPORT jobject JNICALL Java_java_io_FileDescriptor_initSystemFD
   (JNIEnv * env, jclass lcs, jobject obj, jint fd) { 
     if (fdID==0) 
-	if (!initialize_FD_data(env)) IO_ERROR("Couldn't init native I/O");
+	if (!initialize_FD_data(env)) IO_ERROR(env,"Couldn't init native I/O");
     
     (*env)->SetIntField(env, obj, fdID, fd);
     return obj;
