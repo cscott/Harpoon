@@ -204,7 +204,7 @@ class TranslationVisitor extends LowQuadVisitor
       m_dT           = dT;
       m_frame        = frame;
       m_labelMap     = new LabelMap();
-      m_offm         = frame.offsetMap();
+      m_offm         = frame.getOffsetMap();
       m_stmList      = null;
       m_tempMap      = new TreeTempMap();
       m_tf           = tf;
@@ -236,7 +236,7 @@ class TranslationVisitor extends LowQuadVisitor
     s0 = new MOVE
       (m_tf, q, 
        arrayref, 
-       m_frame.malloc(new BINOP
+       m_frame.memAlloc(new BINOP
 		      (m_tf, q, Type.INT, Bop.MUL,
 		       length,
 		       new CONST
@@ -367,6 +367,11 @@ class TranslationVisitor extends LowQuadVisitor
     addStmt(MAP(q));
   }
 
+  public void visit(harpoon.IR.Quads.METHOD q) {
+     Stm s0 = m_frame.procPrologue(m_tf, q, q.params(), m_ctm);
+     if (s0 != null) addStmt(s0);
+  }
+
   public void visit(harpoon.IR.Quads.MONITORENTER q) {
     // Call to runtime libraries here
   }
@@ -392,7 +397,7 @@ class TranslationVisitor extends LowQuadVisitor
     s0 = new MOVE
       (m_tf, q, 
        objectref, 
-       m_frame.malloc(new CONST(m_tf, q, m_offm.size(type(q.dst())))));
+       m_frame.memAlloc(new CONST(m_tf, q, m_offm.size(type(q.dst())))));
 
     // Assign the new object a hashcode
     s1 = new MOVE

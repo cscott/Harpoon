@@ -32,10 +32,7 @@ public abstract class Code extends HCode
   /** Create a proper TreeFactory. */
   protected TreeFactory newTF(final HMethod parent)
     {
-      final String scope = parent.getDeclaringClass().getName() + "." +
-	parent.getName() + parent.getDescriptor() + "/" + getName();
       return new TreeFactory() {
-	private final TempFactory tFact = Temp.tempFactory(scope);
 	private int id=0;
 	// Everyone uses same TempFactory now.
 	public TempFactory tempFactory() { return frame.tempFactory(); }
@@ -49,11 +46,13 @@ public abstract class Code extends HCode
     }
 
   /** constructor. */
-  protected Code(final HMethod parent, final Tree tree, final Frame frame)
+  protected Code(final HMethod parent, final Tree tree, final Frame topframe)
     {
+      final String scope = parent.getDeclaringClass().getName() + "." +
+        parent.getName() + parent.getDescriptor() + "/" + getName();
       this.parent = parent;
       this.tree   = tree;
-      this.frame  = frame;
+      this.frame  = topframe.newFrame(scope);
       this.tf     = newTF(parent);
     }
   

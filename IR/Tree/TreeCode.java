@@ -18,9 +18,9 @@ public class TreeCode extends Code
   private Derivation m_derivation;
   private TypeMap    m_typeMap;
   
-  TreeCode(LowQuadNoSSA code, Frame frame)
+  TreeCode(LowQuadNoSSA code, Frame topframe)
     {
-      super(code.getMethod(), null, frame);
+      super(code.getMethod(), null, topframe);
 
       ToTree translator;
 
@@ -30,9 +30,9 @@ public class TreeCode extends Code
       m_typeMap    = translator;
     }
 
-  private TreeCode(HMethod newMethod, Tree tree, Frame frame)
+  private TreeCode(HMethod newMethod, Tree tree, Frame topframe)
     {
-      super(newMethod, tree, frame);
+      super(newMethod, tree, topframe);
     }
 
   public HCode clone(HMethod newMethod, Frame frame) {

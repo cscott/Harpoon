@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.1.2.10 1999-02-24 01:18:54 andyb Exp $
+ * @version $Id: TEMP.java,v 1.1.2.11 1999-02-26 22:38:37 andyb Exp $
  */
 public class TEMP extends Exp implements Typed {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -20,13 +20,13 @@ public class TEMP extends Exp implements Typed {
     /** The type of this <code>Temp</code> expression. */
     public final int type;
     /** Constructor. */
-    public TEMP(TreeFactory tf, HCodeElement source,
-		int type, Temp temp) {
+    public TEMP(TreeFactory tf, HCodeElement source, int type, Temp temp) {
 	super(tf, source);
 	this.type=type; this.temp=temp;
 	Util.assert(Type.isValid(type) &&
 		    temp!=null &&
-		    temp.tempFactory() == tf.tempFactory());
+		    (temp.tempFactory() == tf.tempFactory() ||
+                    temp.tempFactory() == tf.getFrame().regTempFactory()));
     }
     public ExpList kids() {return null;}
     public Exp build(ExpList kids) {return this;}
@@ -51,5 +51,3 @@ public class TEMP extends Exp implements Typed {
         return "TEMP<"+Type.toString(type)+">("+temp+")";
     }
 }
-
-
