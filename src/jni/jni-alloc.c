@@ -5,7 +5,9 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "config.h"
+#if defined(WITH_REALTIME_JAVA) || defined(WITH_REALTIME_JAVA_STUBS)
 #include "../realtime/RTJconfig.h"
+#endif
 #ifdef WITH_DMALLOC
 #include "dmalloc.h"
 #endif

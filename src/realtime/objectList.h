@@ -18,8 +18,9 @@
 #include "../gc/precise_gc.h"
 #endif
 
-/* Small (but not too small) prime number */
-#define PROBE_INC 13  
+/* Small (but not smaller than the average object size) prime number that's */
+/* one more than a multiple of 8. */
+#define PROBE_INC 17
 
 /* Should be templated, but C doesn't support templates */
 typedef struct oobj* Object; 

@@ -8,7 +8,9 @@
 #endif
 #include "flexthread.h"
 #include <stdlib.h>
+#if defined(WITH_REALTIME_JAVA) || defined(WITH_REALTIME_JAVA_STUBS)
 #include "../realtime/RTJconfig.h"
+#endif
 #include "memstats.h"
 
 #ifdef WITH_REALTIME_JAVA
