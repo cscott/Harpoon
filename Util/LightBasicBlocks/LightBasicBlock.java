@@ -30,11 +30,11 @@ import harpoon.Util.UComp;
  nor the <code>i</code>-th predecessor. Here is why: you are expect to
  traverse the list of predecessors in the cheapest way: extract the array
  of predecessors and then do a for whose condition looks something like
- <code>i<pred.length</code> instead of <code>i<lbb.predLength()</code>
+ <code>i&lt;pred.length</code> instead of <code>i&lt;lbb.predLength()</code>
  (one method call per iteration!).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightBasicBlock.java,v 1.1.2.6 2001-02-15 19:51:35 salcianu Exp $
+ * @version $Id: LightBasicBlock.java,v 1.1.2.7 2001-04-19 17:17:20 salcianu Exp $
  */
 public class LightBasicBlock implements java.io.Serializable {
 

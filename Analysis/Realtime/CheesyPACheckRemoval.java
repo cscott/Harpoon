@@ -38,6 +38,7 @@ import harpoon.Util.BasicBlocks.CachingBBConverter;
 import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 import harpoon.Util.LightBasicBlocks.LBBConverter;
 import harpoon.Util.LightBasicBlocks.CachingLBBConverter;
+import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.Quads.CallGraphImpl;
@@ -50,7 +51,7 @@ import harpoon.Util.Util;
  * <code>CheesyPACheckRemoval</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CheesyPACheckRemoval.java,v 1.1.2.5 2001-03-08 21:39:44 salcianu Exp $
+ * @version $Id: CheesyPACheckRemoval.java,v 1.1.2.6 2001-04-19 17:16:37 salcianu Exp $
  */
 public class CheesyPACheckRemoval implements CheckRemoval {
 
@@ -114,7 +115,9 @@ public class CheesyPACheckRemoval implements CheckRemoval {
 
 	System.out.println("PointerAnalysis ... ");
 	tstart = time();
-        pa = new PointerAnalysis(mcg, mac, lbbconv, linker);
+        pa = new PointerAnalysis(mcg, mac,
+				 new CachingSCCLBBFactory(lbbconv),
+				 linker);
 	/*
 	// intrathread analysis of all the callable methods
 	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext(); ) {

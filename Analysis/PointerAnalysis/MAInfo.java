@@ -58,11 +58,12 @@ import harpoon.Temp.TempFactory;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 
+import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
+import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
-
 
 import harpoon.Util.DataStructs.Relation;
 import harpoon.Util.DataStructs.LightRelation;
@@ -72,7 +73,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.52 2001-04-10 21:47:10 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.53 2001-04-19 17:15:35 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -82,6 +83,28 @@ public class MAInfo implements AllocationInformation, Serializable {
 	/** Controls the generation of stack allocation hints.
 	    Default <code>false</code>. */
 	public boolean DO_STACK_ALLOCATION  = false;
+
+	/** Forbids stack allocation in a loop. Should be one of the
+	    <code>STACK_ALLOCATE_*</code> constants. Default is
+	    <code>STACK_ALLOCATE_NOT_IN_LOOPS</code>. */
+	public int STACK_ALLOCATION_POLICY = STACK_ALLOCATE_NOT_IN_LOOPS;
+
+	/** Stack allocate everything that's captured. */
+	public static int STACK_ALLOCATE_ALWAYS       = 0;
+	/** Returns true if the stack allocation policy is
+	    <code>STACK_ALLOCATE_ALWAYS</code>. */
+	public final boolean stack_allocate_always() {
+	    return STACK_ALLOCATION_POLICY == STACK_ALLOCATE_ALWAYS; 
+	}
+
+	/** Don't stack allocate in loops. */
+	public static int STACK_ALLOCATE_NOT_IN_LOOPS = 1;
+
+	/** Returns true if the stack allocation policy is
+	    <code>STACK_ALLOCATE_NOT_IN_LOOPS</code>. */
+	public final boolean stack_allocate_not_in_loops() {
+	    return STACK_ALLOCATION_POLICY == STACK_ALLOCATE_NOT_IN_LOOPS; 
+	}
 
 	/** Controls the generation of thread local heap allocation hints.
 	    Default <code>false</code>. */
@@ -134,6 +157,19 @@ public class MAInfo implements AllocationInformation, Serializable {
 	/** Pretty printer. */
 	public void print(String prefix) {
 	    print_opt(prefix, "DO_STACK_ALLOCATION", DO_STACK_ALLOCATION);
+	    if(DO_STACK_ALLOCATION) {
+		System.out.print(prefix + "\tSTACK_ALLOCATION_POLICY = ");
+		if(stack_allocate_always())
+		    System.out.println("STACK_ALLOCATE_ALWAYS");
+		else {
+		    if(stack_allocate_not_in_loops())
+			System.out.println("STACK_ALLOCATE_NOT_IN_LOOPS");
+		    else {
+			System.out.println("unknown -> fatal!");
+			System.exit(1);
+		    }
+		}
+	    }
 	    print_opt(prefix, "DO_THREAD_ALLOCATION", DO_THREAD_ALLOCATION);
 	    print_opt(prefix, "DO_PREALLOCATION", DO_PREALLOCATION);
 	    print_opt(prefix, "GEN_SYNC_FLAG", GEN_SYNC_FLAG);
@@ -190,14 +226,21 @@ public class MAInfo implements AllocationInformation, Serializable {
 
     private MAInfoOptions opt = null;
 
+    // the factory that generates the SCC LBB representation (ie
+    // strongly connected components of the light basic blocks of
+    // quads) for the code of a method.
+    private CachingSCCLBBFactory caching_scc_lbb_factory = null;
+
     /** Creates a <code>MAInfo</code>. */
-    public MAInfo(PointerAnalysis pa, HCodeFactory hcf, Linker linker, Set mms,
+    public MAInfo(PointerAnalysis pa, HCodeFactory hcf,
+		  Linker linker, Set mms,
 		  final MAInfoOptions opt) {
 	Util.assert(hcf instanceof CachingCodeFactory,
 		    "hcf should be a CachingCodeFactory!");
         this.pa  = pa;
 	this.mcg = pa.getMetaCallGraph();
 	this.mac = pa.getMetaAllCallers();
+	this.caching_scc_lbb_factory = pa.getCachingSCCLBBFactory();
 	this.hcf = hcf;
 	this.linker = linker;
 	this.mms = mms;
@@ -287,8 +330,16 @@ public class MAInfo implements AllocationInformation, Serializable {
     //  CALL to be inlined -> array of (A)NEWs that can be stack allocated
     private Map ih = null;
 
+    private static long time() {
+	return System.currentTimeMillis();
+    }
+
     // analyze all the methods
     public void analyze() {
+	if(opt.DO_METHOD_INLINING ||
+	   (opt.DO_STACK_ALLOCATION && opt.stack_allocate_not_in_loops()))
+	    build_quad2scc();
+
 	if(opt.DO_METHOD_INLINING) {
 	    if(opt.USE_OLD_INLINING)
 		ih = new HashMap();
@@ -315,6 +366,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 		hm2rang = null;
 	    }
 	}
+	quad2scc = null;
     }
 
 
@@ -462,7 +514,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    MyAP ap = getAPObj(q);
 	    
 	    if(pig.G.captured(node) && stack_alloc_extra_cond(node, q)) {
-		ap.sa = true;
+		// ap.sa = false;
+		ap.sa = true; // MAD DEBUG
 		if(DEBUG)
 		    System.out.println("STACK: " + node + 
 				       " was stack allocated " +
@@ -907,6 +960,14 @@ public class MAInfo implements AllocationInformation, Serializable {
 	Normally, some other conditions should be tested too: e.g. do not
 	stack allocate objects that are too big etc. */
     private boolean stack_alloc_extra_cond(PANode node, Quad q) {
+	// if the appropriate options is turned on in opt,
+	// refuse to do stack allocation in a loop
+	if(opt.stack_allocate_not_in_loops() && in_a_loop(q)) {
+	    System.out.println(Debug.code2str(q) +
+			       " is in a LOOP -> don't sa");
+	    return false;
+	}
+
 	// a hack for the Thread objects ...
 	HClass hclass = getAllocatedType(q);
 	if(java_lang_Thread.isSuperclassOf(hclass)){
@@ -918,6 +979,48 @@ public class MAInfo implements AllocationInformation, Serializable {
 	// ... and nothing else
 	return true;
     }
+
+
+    /** Checks whether Quad q is in a loop; this is equivalent to
+	testing if it's in a strongly connected component of Quads. */
+    private boolean in_a_loop(Quad q) {
+	SCComponent scc = (SCComponent) quad2scc.get(q);
+	return scc.isLoop();
+    }
+
+    // map quad -> strongly connected component
+    private Map quad2scc = null;
+
+    private void build_quad2scc() {
+	long tstart = time();
+	quad2scc = new HashMap();
+	System.out.print("quad2scc construction ... ");
+	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext(); ) {
+	    HMethod hm = ((MetaMethod) it.next()).getHMethod();
+	    HCode hcode = hcf.convert(hm);
+	    if(hcode != null)
+		extend_quad2scc(hm);
+	}
+	System.out.println((time() - tstart) + " ms");
+    }
+
+    private void extend_quad2scc(HMethod hm) {
+	System.out.println("extend_quad2scc " + hm);
+
+	SCCTopSortedGraph graph = 
+	    caching_scc_lbb_factory.computeSCCLBB(hm);
+	for(SCComponent scc = graph.getFirst(); scc != null;
+	    scc = scc.nextTopSort()) {
+	    Object nodes[] = scc.nodes();
+	    for(int i = 0; i < nodes.length; i++) {
+		LightBasicBlock lbb = (LightBasicBlock) nodes[i];
+		HCodeElement[] hce = lbb.getElements();
+		for(int j = 0; j < hce.length; j++)
+		    quad2scc.put(hce[j], scc);
+	    }
+	}
+    }
+
 
     private boolean thread_on_stack(PANode node, Quad q) {
 	HClass hclass = getAllocatedType(q);
@@ -1141,7 +1244,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	if(hcode.getElementsL().size() > MAX_INLINING_SIZE) return;
 
 	// obtain in A the set of nodes that might be captured after inlining 
-	Set A = getInterestingLevel0InsideNodes(pig);
+	Set A = getInterestingLevel0InsideNodes(mm.getHMethod());
 	if(A.isEmpty()) return;
 
 	// very dummy 1-level inlining
@@ -1160,6 +1263,14 @@ public class MAInfo implements AllocationInformation, Serializable {
     }
 
     private void try_inlining(MetaMethod mcaller, CALL cs, Set A) {
+	// refuse to stack allocate stuff in a loop
+	// TODO: this stuff can still be allocated in the thread local heap
+	if(opt.stack_allocate_not_in_loops() && in_a_loop(cs)) {
+	    System.out.println(Debug.code2str(cs) +
+			       " is in a loop -> don't sa");
+	    return;
+	}
+
 	ParIntGraph caller_pig = pa.getIntParIntGraph(mcaller);
 
 	Set B = new HashSet();
@@ -1181,8 +1292,15 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    Util.assert((q != null) && 
 			((q instanceof NEW) || (q instanceof ANEW)),
 			" Bad quad attached to " + node + " " + q);
-	    news.add(q);
+	    if(!(opt.stack_allocate_not_in_loops() && in_a_loop(q)))
+		news.add(q);
+	    else
+		System.out.println(Debug.code2str(q) + 
+				   " is in a loop -> don't sa");
 	}
+
+	// no stack allocation benefits from this inlining
+	if(news.isEmpty()) return;
 
 	Quad[] news_array = (Quad[]) news.toArray(new Quad[news.size()]);
 	ih.put(cs, news_array);
@@ -1290,6 +1408,19 @@ public class MAInfo implements AllocationInformation, Serializable {
 	return A;
     }
 
+    private Set getInterestingLevel0InsideNodes(HMethod hm) {
+	Set A = new HashSet();
+	HCode hcode = hcf.convert(hm);
+	for(Iterator it = hcode.getElementsI(); it.hasNext(); ) {
+	    Quad q = (Quad) it.next();
+	    if((q instanceof NEW) || (q instanceof ANEW)) {
+		PANode node = node_rep.getCodeNode(q, PANode.INSIDE);
+		A.add(node);
+	    }
+	}
+	return A;
+    }
+
     /* Normally, we should refuse to inline calls that are inside loops
        because that + stack allocation might lead to stack overflow errors.
        However, at this moment we don't test this condition. */
@@ -1342,6 +1473,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    System.out.println("STKALLOC " + Debug.code2str(q));
 
 	    MyAP ap = new MyAP(getAllocatedType(q));
+	    // ap.sa = false; //// MAD DEBUG
 	    ap.sa = true;
 	    ap.ns = true; // SYNC
 	    setAPObj(q, ap);
@@ -1653,7 +1785,8 @@ public class MAInfo implements AllocationInformation, Serializable {
     private void generate_inlining_chains(MetaMethod mm) {
 	ParIntGraph pig = pa.getExtParIntGraph(mm);
 
-	Set nodes = getInterestingLevel0InsideNodes(pig);
+	Set nodes = getInterestingLevel0InsideNodes(mm.getHMethod());
+	trim_nodes(nodes);
 	if(nodes.isEmpty()) return;
 
 	current_chain_cs = new LinkedList();
@@ -1667,6 +1800,21 @@ public class MAInfo implements AllocationInformation, Serializable {
     private LinkedList current_chain_cs;
     private LinkedList current_chain_callees;
 
+
+    private void trim_nodes(Set nodes) {
+	if(!opt.stack_allocate_not_in_loops())
+	    return;
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    Quad q = (Quad) node_rep.node2Code(node);
+	    // refuse to stack allocate stuff in a loop
+	    if(in_a_loop(q)) {
+		System.out.println(Debug.code2str(q) +
+				   " is in a loop -> don't sa");
+		it.remove();
+	    }
+	}
+    }
 
     private int get_rang(HMethod hm) {
 	return ((Integer) hm2rang.get(hm)).intValue();
@@ -1694,8 +1842,16 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	    Set call_sites = mcg.getCallSites(mcaller);
 	    for(Iterator it = call_sites.iterator(); it.hasNext(); ) {
-
 		CALL cs = (CALL) it.next();
+
+		// refuse to stack allocate stuff in a loop
+		// TODO: this stuff can be allocated in the thread local heap
+		if(opt.stack_allocate_not_in_loops() && in_a_loop(cs)) {
+		    System.out.println(Debug.code2str(cs) +
+				       " is in a loop -> don't sa");
+		    continue;
+		}
+
 		MetaMethod[] callees = mcg.getCallees(mcaller, cs);
 
 		// we can inline call sites that are only to mm
@@ -1810,7 +1966,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    System.out.println("STKALLOC " + Debug.code2str(q));
 
 	    MyAP ap = new MyAP(getAllocatedType(q));
-	    ap.sa = true;
+	    // ap.sa = false; 
+	    ap.sa = true; // MAD DEBUG
 	    ap.ns = true; // SYNC
 	    setAPObj(q, ap);
 	}

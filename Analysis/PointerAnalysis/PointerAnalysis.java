@@ -73,7 +73,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.82 2001-03-08 21:39:11 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.83 2001-04-19 17:15:36 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -164,13 +164,26 @@ public class PointerAnalysis implements java.io.Serializable {
 
     // meta call graph
     private MetaCallGraph  mcg;
+    /** Returns the call graph graph used by <code>this</code>
+	<code>PointerAnalysis</code> object. */
     public final MetaCallGraph getMetaCallGraph() { return mcg; }
 
     // meta all callers
     private MetaAllCallers mac;
+    /** Returns the all callers graph used by <code>this</code>
+	<code>PointerAnalysis</code> object. */
     public final MetaAllCallers getMetaAllCallers() { return mac; }
-    private final CachingSCCLBBFactory scc_lbb_factory;
 
+    // the factory that generates the SCC LBB representation (ie
+    // strongly connected components of the light basic blocks of
+    // quads) for the code of a method.
+    private final CachingSCCLBBFactory scc_lbb_factory;
+    /** Returns the SCC LBB factory used by <code>this</code>
+	<code>PointerAnalysis</code> object. */
+    public final CachingSCCLBBFactory getCachingSCCLBBFactory() {
+	return scc_lbb_factory;
+    }
+    
     // linker
     public Linker linker;
     public final Linker getLinker() { return linker; }
@@ -203,10 +216,12 @@ public class PointerAnalysis implements java.io.Serializable {
      *
      *</ul> */
     public PointerAnalysis(MetaCallGraph mcg, MetaAllCallers mac,
-			   LBBConverter lbbconv, Linker linker) {
+			   CachingSCCLBBFactory caching_scc_lbb_factory,
+			   Linker linker) {
 	this.mcg  = mcg;
 	this.mac  = mac;
-	scc_lbb_factory = new CachingSCCLBBFactory(lbbconv);
+	this.scc_lbb_factory = caching_scc_lbb_factory;
+	// OLD STUFF: new CachingSCCLBBFactory(lbbconv);
 	this.linker = linker;
 	
 	InterProcPA.static_init(this);

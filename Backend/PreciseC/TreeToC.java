@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.25 2001-03-03 17:18:44 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.26 2001-04-19 17:16:50 salcianu Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -288,6 +288,10 @@ public class TreeToC extends java.io.PrintWriter {
 	// useful line number update function.
 	private boolean EMIT_LINE_DIRECTIVES=
 	    Boolean.getBoolean("harpoon.precisec.emit_line_directives");
+	// the line "directives" will be just comments containing the
+	// line numbers
+	private boolean EMIT_FAKE_LINE_DIRECTIVES=
+	    Boolean.getBoolean("harpoon.precisec.emit_fake_line_directives");
 	private int suppress_directives=0;
 	private String last_file = null;
 	private int last_line = 0;
@@ -310,8 +314,15 @@ public class TreeToC extends java.io.PrintWriter {
 	    if (!EMIT_LINE_DIRECTIVES || suppress_directives>0) return;
 	    if (last_file==null && last_line==0) return;
 	    pw.println();
-	    pw.print("#line "+last_line);
+
+	    if(EMIT_FAKE_LINE_DIRECTIVES) // just comments - useful for debug
+		pw.print("/* line " + last_line);
+	    else
+		pw.print("#line " + last_line);
+
 	    if (emitFile) pw.print(" \""+last_file+"\"");
+	    if(EMIT_FAKE_LINE_DIRECTIVES)
+		pw.print(" */");
 	    pw.println();
 	}
 	private void nl() {

@@ -12,6 +12,7 @@ import java.util.Hashtable;
 import java.util.Arrays;
 import java.util.Collections;
 
+import java.io.Serializable;
 
 // TODO: These things allow me to obtain some nice debug messages for
 // my Pointer Analysis stuff. Remove them when the PointerAnalysis is
@@ -40,9 +41,9 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCComponent.java,v 1.1.2.4 2001-02-15 19:51:26 salcianu Exp $
+ * @version $Id: SCComponent.java,v 1.1.2.5 2001-04-19 17:17:12 salcianu Exp $
  */
-public final class SCComponent implements Comparable {
+public final class SCComponent implements Comparable, Serializable {
 
     // THE FIRST PART CONTAINS JUST SOME STATIC METHODS & FIELDS
 
@@ -284,8 +285,11 @@ public final class SCComponent implements Comparable {
     // The predecessors.
     private SCComponent[] prev;
 
-    // is there any edge to itself?
+    // is there any arc to itself?
     private boolean loop;
+    /** Checks whether <code>this</code> strongly connected component
+	corresponds to a loop, <i>ie</i> it has at least one arc to
+	itself. */
     public final boolean isLoop() { return loop; }
 
     //The only way to produce SCCs is through SCComponent.buildSSC !

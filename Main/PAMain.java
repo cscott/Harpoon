@@ -67,6 +67,7 @@ import harpoon.Util.BasicBlocks.CachingBBConverter;
 import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 import harpoon.Util.LightBasicBlocks.LBBConverter;
 import harpoon.Util.LightBasicBlocks.CachingLBBConverter;
+import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 import harpoon.Util.WorkSet;
@@ -93,7 +94,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.98 2001-04-10 21:47:27 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.99 2001-04-19 17:17:01 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -204,6 +205,7 @@ public abstract class PAMain {
     private static Relation split_rel = null;
     private static CachingBBConverter bbconv = null;
     private static LBBConverter lbbconv = null;
+    private static CachingSCCLBBFactory caching_scc_lbb_factory = null;
     // the class hierarchy of the analyzed program
     private static ClassHierarchy ch = null;
 
@@ -253,7 +255,8 @@ public abstract class PAMain {
 		if(SAVE_PRE_ANALYSIS)
 		    save_pre_analysis();
 	    }
-	    pa = new PointerAnalysis(mcg, mac, lbbconv, linker);
+	    pa = new PointerAnalysis(mcg, mac,
+				     caching_scc_lbb_factory, linker);
 	}
 
 	if(RTJ_REMOVE_CHECKS) {
@@ -359,6 +362,9 @@ public abstract class PAMain {
 	lbbconv = new CachingLBBConverter(bbconv);
 	lbb_generation();
 
+	caching_scc_lbb_factory = new CachingSCCLBBFactory(lbbconv);
+	scc_lbb_generation();
+
 	construct_mroots();
 	construct_meta_call_graph();
 	construct_split_relation();
@@ -393,6 +399,26 @@ public abstract class PAMain {
 	}
 	System.out.println((time() - istart) + " ms");
     }
+
+    // Generates the SCC light basic block representation for the
+    // entire program (for each method we compute the component graph
+    // of its (light) basic blocks).  As caching_scc_lbb_factory
+    // caches its data, by doing all the conversion here, we're able
+    // to time it accurately.
+    private static void scc_lbb_generation() {
+	long istart = time();
+	System.out.print("SCC Light Basic Blocks generation ... ");
+	for(Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
+	    HMethod hm  = (HMethod) it.next();
+	    HCode hcode = hcf.convert(hm);
+	    if(hcode != null)
+		caching_scc_lbb_factory.computeSCCLBB(hm);
+	}
+	System.out.println((time() - istart) + " ms");
+    }
+
+
+    
 
     private static final int MAX_CALLEES = 100;
     private static void check_no_callees() {
@@ -482,7 +508,7 @@ public abstract class PAMain {
 	linker    = (Linker) ois.readObject();
 	hcf       = (CachingCodeFactory) ois.readObject();
 	bbconv    = (CachingBBConverter) ois.readObject();
-	lbbconv   = (LBBConverter) ois.readObject();
+	caching_scc_lbb_factory = (CachingSCCLBBFactory) ois.readObject();
 	ch        = (ClassHierarchy) ois.readObject();
 	mroots    = (Set) ois.readObject();
 	mcg       = (MetaCallGraph) ois.readObject();
@@ -515,7 +541,7 @@ public abstract class PAMain {
 	oos.writeObject(linker);
 	oos.writeObject(hcf);
 	oos.writeObject(bbconv);
-	oos.writeObject(lbbconv);
+	oos.writeObject(caching_scc_lbb_factory);
 	oos.writeObject(ch);
 	oos.writeObject(mroots);
 	oos.writeObject(mcg);
@@ -538,7 +564,8 @@ public abstract class PAMain {
 	    linker      = (Linker) ois.readObject();
 	    hcf         = (CachingCodeFactory) ois.readObject();
 	    bbconv      = (CachingBBConverter) ois.readObject();
-	    lbbconv     = (LBBConverter) ois.readObject();
+	    // lbbconv     = (LBBConverter) ois.readObject();
+	    caching_scc_lbb_factory = (CachingSCCLBBFactory) ois.readObject();
 	    ch          = (ClassHierarchy) ois.readObject();
 	    mroots      = (Set) ois.readObject();
 	    mcg         = (MetaCallGraph) ois.readObject();
@@ -568,7 +595,8 @@ public abstract class PAMain {
 	    oos.writeObject(linker);
 	    oos.writeObject(hcf);
 	    oos.writeObject(bbconv);
-	    oos.writeObject(lbbconv);
+	    oos.writeObject(caching_scc_lbb_factory);
+	    // oos.writeObject(lbbconv);
 	    oos.writeObject(ch);
 	    oos.writeObject(mroots);
 	    oos.writeObject(mcg);

@@ -8,6 +8,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Collections;
 
+import java.io.Serializable;
+
 import harpoon.Util.Util;
 
 
@@ -19,9 +21,9 @@ import harpoon.Util.Util;
  * It uses a Depth First Search to do the sortting in linear time (see
  * <code>Section 23.4</code> in Cormen and co for the exact algorithm).
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCTopSortedGraph.java,v 1.1.2.1 2000-03-23 21:29:13 salcianu Exp $
+ * @version $Id: SCCTopSortedGraph.java,v 1.1.2.2 2001-04-19 17:17:12 salcianu Exp $
  */
-public class SCCTopSortedGraph {
+public class SCCTopSortedGraph implements Serializable {
     
     private SCComponent first;
     private SCComponent last;
