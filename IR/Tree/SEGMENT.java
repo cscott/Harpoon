@@ -16,7 +16,7 @@ import java.util.Set;
  *  stored in the specified section.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: SEGMENT.java,v 1.1.2.9 1999-08-16 23:48:04 duncan Exp $
+ * @version $Id: SEGMENT.java,v 1.1.2.10 1999-08-25 18:28:05 duncan Exp $
  */
 public class SEGMENT extends Stm {
     /** R/O storage for static class data (display, vmtable, etc) */
@@ -26,20 +26,25 @@ public class SEGMENT extends Stm {
     /** R/O storage for GC tables */
     public static final int GC                   = 2;
     /** R/W memory that must be initialized before use */
-    public static final int INIT_DATA            = 3; 
+    public static final int INIT_DATA            = 3;
+    /** R/O memory that stores pointers to reflection data. */
+    public static final int REFLECTION_PTRS      = 4;
+    /** R/O memory that stores reflection information.  Pointed to by a pointer
+     *  from the REFLECTION_PTRS section. */
+    public static final int REFLECTION_DATA      = 5;
     /** R/W storage for static aggregate data */
-    public static final int STATIC_OBJECTS       = 4;
+    public static final int STATIC_OBJECTS       = 6;
     /** R/W storage for static primitive data */
-    public static final int STATIC_PRIMITIVES    = 5;
+    public static final int STATIC_PRIMITIVES    = 7;
     /** R/O storage for string constant objects */
-    public static final int STRING_CONSTANTS     = 6;
+    public static final int STRING_CONSTANTS     = 8;
     /** R/O storage for component character arrays of statically allocated 
      *  string constant objects. */
-    public static final int STRING_DATA  = 7;
+    public static final int STRING_DATA          = 9;
     /** Read-only memory (other than machine instructions) */
-    public static final int TEXT                 = 8; 
+    public static final int TEXT                 = 10; 
     /** R/W memory initialized at load time to be 0 */
-    public static final int ZERO_DATA            = 9; 
+    public static final int ZERO_DATA            = 11; 
 
     /** Converts a segtype into its string representation.
      */
@@ -49,6 +54,8 @@ public class SEGMENT extends Stm {
 	case CODE:                return "CODE";
 	case GC:                  return "GC";
 	case INIT_DATA:           return "INIT_DATA";
+	case REFLECTION_PTRS:     return "REFLECTION_PTRS";
+	case REFLECTION_DATA:     return "REFLECTION_DATA";
 	case STATIC_OBJECTS:      return "STATIC_OBJECTS";
 	case STATIC_PRIMITIVES:   return "STATIC_PRIMITIVES";
 	case STRING_CONSTANTS:    return "STRING_CONSTANTS";
