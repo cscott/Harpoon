@@ -53,7 +53,7 @@ import java.util.Set;
  * This pass is invoked in <code>harpoon.Main.SAMain</code>.
  *
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: MakeGCThreadSafe.java,v 1.4 2002-04-10 03:02:22 cananian Exp $
+ * @version $Id: MakeGCThreadSafe.java,v 1.5 2003-03-11 18:46:55 cananian Exp $
  */
 public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
     // hide constructor
@@ -90,20 +90,21 @@ public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
 	    public void clear(HMethod m) { parent.clear(m); }
 	};
     }
-    public static List HCE_RULES(final harpoon.IR.Tree.Code code, 
+    public static List<Rule> HCE_RULES(final harpoon.IR.Tree.Code code, 
 				 final Frame f) {
 	// collect information about reachable JUMPs and CJUMPs
-	CFGrapher cfgr = code.getGrapher();
-	final HCodeElement[] roots = cfgr.getFirstElements(code);
-	final Set reachable = new HashSet();
-	Worklist worklist = new WorkSet();
+	CFGrapher<Tree> cfgr = code.getGrapher();
+	final Tree[] roots = cfgr.getFirstElements(code);
+	final Set<Tree> reachable = new HashSet<Tree>();
+	Worklist<Tree> worklist = new WorkSet<Tree>();
 	for(int i = 0; i < roots.length; i++)
 	    worklist.push(roots[i]);
 	while(!worklist.isEmpty()) {
-	    HCodeElement curr = (HCodeElement)worklist.pull();
+	    Tree curr = worklist.pull();
 	    reachable.add(curr);
-	    for(Iterator it = cfgr.succC(curr).iterator(); it.hasNext(); ) {
-		HCodeEdge succ = (HCodeEdge)it.next();
+	    for(Iterator<HCodeEdge<Tree>> it = cfgr.succC(curr).iterator();
+		it.hasNext(); ) {
+		HCodeEdge<Tree> succ = it.next();
 		if (!reachable.contains(succ.to()))
 		    worklist.push(succ.to());
 	    }
@@ -113,8 +114,8 @@ public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
 	// collect information to identify back edges
 	final Map m = new HashMap();
 	int count = 0;
-	for (Iterator it=code.getElementsI(); it.hasNext(); ) {
-	    Tree tr = (Tree) it.next();
+	for (Iterator<Tree> it=code.getElementsI(); it.hasNext(); ) {
+	    Tree tr = it.next();
 	    if (tr.kind() == TreeKind.LABEL)
 		m.put(((LABEL)tr).label, new Integer(count++));
 	    else if (tr.kind() == TreeKind.CJUMP ||
@@ -124,10 +125,10 @@ public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
 	final Label LGCflag = new Label("halt_for_GC_flag");
 	final Label LGCfunc = new Label(f.getRuntime().getNameMap().c_function_name
 					("halt_for_GC"));
-	final Set cjumps = new HashSet();
+	final Set<CJUMP> cjumps = new HashSet<CJUMP>();
 	return Arrays.asList(new Rule[] {
 	    new Rule("GCpollatMethod") {
-		private final Set clones = new HashSet();
+		private final Set<Stm> clones = new HashSet<Stm>();
 		public boolean match(Stm stm) {
 		    // poll at the beginning of each method
 		    return (contains(_KIND(stm), _METHOD) && 
@@ -168,7 +169,7 @@ public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
 		}
 	    },
             new Rule("GCpollatCjump") {
-		private final Set clones = new HashSet();
+		private final Set<Stm> clones = new HashSet<Stm>();
 		public boolean match(Stm stm) {
 		    // not a cjump, already processed, or our cjump
 		    if (!contains(_KIND(stm), _CJUMP) || 
@@ -217,7 +218,7 @@ public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
 		}
 	    },
 	    new Rule("GCpollatJump") {
-		private final Set clones = new HashSet();
+		private final Set<Stm> clones = new HashSet<Stm>();
 		public boolean match(Stm stm) {
 		    // not a jump or already processed or not reachable
 		    if (!contains(_KIND(stm), _JUMP) || 

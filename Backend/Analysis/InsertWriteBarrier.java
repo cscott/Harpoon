@@ -37,7 +37,7 @@ import java.util.Set;
  * younger generations.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: InsertWriteBarrier.java,v 1.4 2002-04-10 03:02:22 cananian Exp $
+ * @version $Id: InsertWriteBarrier.java,v 1.5 2003-03-11 18:46:55 cananian Exp $
  */
 public abstract class InsertWriteBarrier extends 
     harpoon.Analysis.Tree.Simplification {
@@ -71,10 +71,10 @@ public abstract class InsertWriteBarrier extends
 	};
     }
 
-    public static List HCE_RULES(final DerivationGenerator _dg) {
+    public static List<Rule> HCE_RULES(final DerivationGenerator _dg) {
 	// we keep track of MEMs we have created
 	// since they don't need to be visited
-	final Set created = new HashSet();
+	final Set<MOVE> created = new HashSet<MOVE>();
 	// now make rules.
 	return Arrays.asList(new Rule[] {
 	    // this rule matches moves into memory

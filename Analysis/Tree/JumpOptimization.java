@@ -35,7 +35,7 @@ import java.util.List;
  * and redundant labels.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JumpOptimization.java,v 1.5 2002-06-06 17:42:09 cananian Exp $
+ * @version $Id: JumpOptimization.java,v 1.6 2003-03-11 18:46:47 cananian Exp $
  */
 public abstract class JumpOptimization extends Simplification {
     // hide constructor
@@ -68,17 +68,17 @@ public abstract class JumpOptimization extends Simplification {
 	};
     }
 
-    public static List HCE_RULES(final harpoon.IR.Tree.Code code) {
-	final CFGrapher cfgr = code.getGrapher();
+    public static List<Rule> HCE_RULES(final harpoon.IR.Tree.Code code) {
+	final CFGrapher<Tree> cfgr = code.getGrapher();
 	// collect info about useless branches
-	final DisjointSet labelmap = new DisjointSet();
-	for (Iterator it=code.getElementsI(); it.hasNext(); ) {
-	    Tree tr = (Tree) it.next();
+	final DisjointSet<Label> labelmap = new DisjointSet<Label>();
+	for (Iterator<Tree> it=code.getElementsI(); it.hasNext(); ) {
+	    Tree tr = it.next();
 	    if (tr.kind() == TreeKind.LABEL) {
 		LABEL label = (LABEL) tr;
-		HCodeEdge[] succ = cfgr.succ(label);
+		HCodeEdge<Tree>[] succ = cfgr.succ(label);
 		if (succ.length==1 &&
-		    ((Tree)succ[0].to()).kind() == TreeKind.JUMP) {
+		    succ[0].to().kind() == TreeKind.JUMP) {
 		    JUMP jump = (JUMP) succ[0].to();
 		    assert jump.targets!=null;
 		    // note that self-loops are not considered useless.

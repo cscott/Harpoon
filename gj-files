@@ -129,9 +129,13 @@ Analysis/Transactions/SimpleCheckOracle.java
 Analysis/Transformation/MethodMutator.java
 Analysis/Tree/AlignmentAnalysis.java
 Analysis/Tree/CacheEquivalence.java
+Analysis/Tree/DeadCodeElimination.java
+Analysis/Tree/JumpOptimization.java
 Analysis/Tree/MemHoisting.java
 Analysis/Tree/Simplification.java
 Backend/Analysis/ClassFieldMap.java
+Backend/Analysis/InsertWriteBarrier.java
+Backend/Analysis/MakeGCThreadSafe.java
 Backend/Analysis/PackedClassFieldMap.java
 Backend/Analysis/SortedClassFieldMap.java
 Backend/Generic/Runtime.java

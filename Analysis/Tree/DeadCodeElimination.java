@@ -37,7 +37,7 @@ import java.util.Set;
  * analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCodeElimination.java,v 1.4 2002-04-10 03:02:06 cananian Exp $
+ * @version $Id: DeadCodeElimination.java,v 1.5 2003-03-11 18:46:47 cananian Exp $
  */
 public abstract class DeadCodeElimination extends Simplification {
     // hide constructor
@@ -70,21 +70,21 @@ public abstract class DeadCodeElimination extends Simplification {
 	};
     }
     
-    public static List HCE_RULES(final harpoon.IR.Tree.Code code) {
+    public static List<Rule> HCE_RULES(final harpoon.IR.Tree.Code code) {
 	// compute liveness
-	final CFGrapher cfgr = code.getGrapher();
-	final UseDefer ud = code.getUseDefer();
+	final CFGrapher<Tree> cfgr = code.getGrapher();
+	final UseDefer<Tree> ud = code.getUseDefer();
 	final Liveness l = new LiveVars(code, cfgr, ud, Collections.EMPTY_SET);
 	// now collect info about dead moves.
-	final Set deadMoves = new HashSet();
-	for (Iterator it=code.getElementsI(); it.hasNext(); ) {
-	    Tree tr = (Tree) it.next();
+	final Set<MOVE> deadMoves = new HashSet<MOVE>();
+	for (Iterator<Tree> it=code.getElementsI(); it.hasNext(); ) {
+	    Tree tr = it.next();
 	    if (tr.kind() == TreeKind.MOVE &&
 		((MOVE)tr).getDst().kind() == TreeKind.TEMP) {
 		Temp temp = ((TEMP) ((MOVE) tr).getDst()).temp;
 		Set liveOut = l.getLiveOut(tr);
 		if (!liveOut.contains(temp)) // a MOVE to an unused temp.
-		    deadMoves.add(tr);
+		    deadMoves.add((MOVE)tr);
 	    }
 	}
 	// debugging
