@@ -12,19 +12,31 @@ package javax.realtime;
  */
 
 class MemAreaStack {
+    /** A MemoryArea on the stack 
+     */
     public MemoryArea entry;
+
+    /** The "next" pointer for the stack.
+     */
     public MemAreaStack next;
 
+    /** Create a new, null MemAreaStack.
+     */
     public MemAreaStack() {
 	next = null;
 	entry = null;
     }
 
+    /** Push the MemoryArea on the cactus stack. 
+     */
     public MemAreaStack(MemoryArea entry, MemAreaStack next) {
 	this.entry = entry;
 	this.next = next;
     }
 
+    /** Get the MemAreaStack of the first occurance of the 
+     *  MemoryArea mem, or null if it is not found.
+     */
     public MemAreaStack first(MemoryArea mem) {
 	MemAreaStack current = this;
 	
@@ -37,7 +49,9 @@ class MemAreaStack {
 
 	return null;
     }
-
+    
+    /** Dump a description of each MemoryArea on the stack. 
+     */
     public String toString() {
 	if (next != null) {
 	    return entry.toString()+"\n"+next.toString();

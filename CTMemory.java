@@ -53,7 +53,7 @@ public class CTMemory extends ScopedMemory {
      *  getInflatedObject(env, rt)->temp */
     
     protected native void newMemBlock(RealtimeThread rt);
-    
+
     /** Invoke this method when you're finished with the MemoryArea 
      *	(could be a finalizer if we had finalizers...) */
 

@@ -8,23 +8,33 @@ package javax.realtime;
 // native methods.
 
 public class NullMemoryArea extends MemoryArea {
+    /** Count how many instances of the NullMemoryArea are asked for.
+     */
     public static long count = 0;
+
+    /** The one and only NullMemoryArea. 
+     */
     private static NullMemoryArea nullMemory;
 
+    /** Create the one and only NullMemoryArea.
+     */
     private NullMemoryArea() {
 	super(0);
 	nullMem = true;
     }
 
-    /** */
+    /** Initialize the native component of this NullMemoryArea. 
+     */
 
     protected native void initNative(long sizeInBytes);
 
-    /** */
+    /** Create a new MemBlock when entering a NullMemoryArea. 
+     */
 
     protected native void newMemBlock(RealtimeThread rt);
 
-    /** */
+    /** Return an instance of the one and only NullMemoryArea. 
+     */
 
     public static NullMemoryArea instance() {
 	if (nullMemory == null) {
@@ -34,13 +44,14 @@ public class NullMemoryArea extends MemoryArea {
 	return nullMemory;
     }
 
-    /** */
+    /** Check access to this NullMemoryArea. 
+     */
 
     public void checkAccess(Object obj) {
 //  	System.out.println("Checking access from a NullMemory!");
     }
 
-    /** */
+    /** Print out a helpful string representing this NullMemoryArea. */
 
     public String toString() {
 	return "NullMemory: " + super.toString();

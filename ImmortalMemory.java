@@ -9,7 +9,7 @@ package javax.realtime;
  */
 
 public class ImmortalMemory extends MemoryArea {
-    private static ImmortalMemory immortalMemory = null;
+    private static ImmortalMemory immortalMemory;
 
     private ImmortalMemory() {
 	super(1000000000); // Totally bogus

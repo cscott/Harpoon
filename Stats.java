@@ -3,46 +3,79 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/** <code>Stats</code>
+/** <code>Stats</code> keeps track of Runtime statistics of how many
+ *  objects are created, access checks done from which MemoryArea to 
+ *  which MemoryArea, etc.  Stats.print() allows you to print out 
+ *  this information and must be present right before termination of
+ *  any program which you want to collect these statistics from.
  *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
 public final class Stats {
     
-    /** */
-
+    /** Count how many access checks are done in total. */
     private static long accessChecks = 0;
 
-    /** */
-
+    /** Count how many new objects are created. */
     private static long newObjects = 0;
 
-    /** */
-
+    /** Count how many array objects are created. */
     private static long newArrayObjects = 0;
     
-    /** */
-
+    /** How many HeapMemory -> HeapMemory assignments? */
     private static long HEAP_TO_HEAP = 0;
+
+    /** How many HeapMemory -> ScopedMemory assignments? */
     private static long HEAP_TO_SCOPE = 0;
+
+    /** How many HeapMemory -> ImmortalMemory assignments? */
     private static long HEAP_TO_IMMORTAL = 0;
+
+    /** How many ScopedMemory -> HeapMemory assignments? */
     private static long SCOPE_TO_HEAP = 0;
+
+    /** How many ScopedMemory -> ScopedMemory assignments? */
     private static long SCOPE_TO_SCOPE = 0;
+
+    /** How many ScopedMemory -> ImmortalMemory assignments? */
     private static long SCOPE_TO_IMMORTAL = 0;
+
+    /** How many ImmortalMemory -> HeapMemory assignments? */
     private static long IMMORTAL_TO_HEAP = 0;
+
+    /** How many ImmortalMemory -> ScopedMemory assignments? */
     private static long IMMORTAL_TO_SCOPE = 0;
+
+    /** How many ImmortalMemory -> ImmortalMemory assignments? */
     private static long IMMORTAL_TO_IMMORTAL = 0;
+    
+    /** How many objects were allocated out of HeapMemory? */
     private static long NEW_HEAP = 0;
+    
+    /** How many objects were allocated out of ScopedMemory? */
     private static long NEW_SCOPE = 0;
+
+    /** How many objects were allocated out of ImmortalMemory? */
     private static long NEW_IMMORTAL = 0;
+
+    /** How many array objects were allocated out of HeapMemory? */
     private static long NEW_ARRAY_HEAP = 0;
+
+    /** How many array objects were allocated out of ScopedMemory? */
     private static long NEW_ARRAY_SCOPE = 0;
+
+    /** How many array objects were allocated out of ImmortalMemory? */
     private static long NEW_ARRAY_IMMORTAL = 0;
+
+    /** Has anything been added?  If not, it's possible that the user
+     *  did not compile with the _STATS compiler option to add Runtime
+     *  statistics to the compiled output. 
+     */
     private static boolean touched = false;
 
-    /** */
-
+    /** Add an access check from one MemoryArea to another MemoryArea. 
+     */
     public final static void addCheck(MemoryArea from,
 				      MemoryArea to) {
 	touched = true;
@@ -74,8 +107,8 @@ public final class Stats {
 	accessChecks++;	
     }
 
-    /** */
-
+    /** Add a new object to the statistics for that MemoryArea. 
+     */
     public final static void addNewObject(MemoryArea to) {
 	touched = true;
 	if (to.heap) {
@@ -88,8 +121,8 @@ public final class Stats {
 	newObjects++;
     }
     
-    /** */
-
+    /** Add a new array object to the statistics for that MemoryArea. 
+     */
     public final static void addNewArrayObject(MemoryArea to) {
 	touched = true;
 	if (to.heap) {
@@ -102,7 +135,15 @@ public final class Stats {
 	newArrayObjects++;
     }
     
-    /** */
+    /** Print out the statistics for this program.  You must place
+     *  Stats.print() at the end of your programs if you want to
+     *  display the Runtime statistics of your program.  You also
+     *  need to compile with the _STATS option to tell the compiler 
+     *  to output calls to the above methods in order to collect these
+     *  statistics.  Note that when _STATS is on, you cannot say 
+     *  anything about the runtime of the program, because it takes
+     *  significant time to collect information about your program.
+     */
 
     public final static void print() {
 	if (touched) {

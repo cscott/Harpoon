@@ -13,7 +13,8 @@ import java.lang.reflect.InvocationTargetException;
 
 public abstract class MemoryArea {
 
-    /** */
+    /** The size of this MemoryArea.
+     */
 
     protected long size;
 
@@ -21,23 +22,28 @@ public abstract class MemoryArea {
 
     protected long memoryConsumed;  // Size is somewhat inaccurate
 
-    /** */
+    /** Indicates whether this is a ScopedMemory. 
+     */
 
     boolean scoped;
 
-    /** */
+    /** Indicates whether this is a HeapMemory.
+     */
 
     boolean heap;
 
-    /** */
+    /** Indicates whether this is a NullMemoryArea. 
+     */
     
     protected boolean nullMem;
 
-    /** */
+    /** Every MemoryArea has a unique ID. 
+     */
 
     protected int id;
 
-    /** */
+    /** This is used to create the unique ID.
+     */
 
     private static int num = 0;
 
@@ -47,13 +53,22 @@ public abstract class MemoryArea {
 
     boolean constant;
 
-    native void enterMemBlock(RealtimeThread rt, MemAreaStack mas);
-    native void exitMemBlock(RealtimeThread rt);
-    native Object newArray(RealtimeThread rt, Class type, int number, Object memBlock);
-    native Object newArray(RealtimeThread rt, Class type, int[] dimensions, Object memBlock);
-    native Object newInstance(RealtimeThread rt, Constructor constructor, Object[] parameters, 
+    protected native void enterMemBlock(RealtimeThread rt, MemAreaStack mas);
+    protected native void exitMemBlock(RealtimeThread rt);
+    protected native Object newArray(RealtimeThread rt, 
+				     Class type, 
+				     int number, Object memBlock);
+    protected native Object newArray(RealtimeThread rt, 
+				     Class type, int[] dimensions, 
+				     Object memBlock);
+    protected native Object newInstance(RealtimeThread rt, 
+			      Constructor constructor, 
+			      Object[] parameters, 
 			      Object memBlock)
 	throws InvocationTargetException;
+    protected native void throwIllegalAssignmentError(Object obj, 
+						      MemoryArea ma)
+	throws IllegalAssignmentError;
 
     protected MemoryArea(long sizeInBytes) {
 	size = sizeInBytes;
@@ -101,19 +116,22 @@ public abstract class MemoryArea {
 	return mem;
     }
     
-    /** */
+    /** Return the amount of memory consumed in this MemoryArea.
+     */
 
     public long memoryConsumed() {
 	return memoryConsumed;
     }
     
-    /** */
+    /** Return the amount of memory remaining in this MemoryArea.
+     */
 
     public long memoryRemaining() {
-	return size-memoryConsumed;
+	return size()-memoryConsumed();
     }
     
-    /** */
+    /** Return the size of this MemoryArea.
+     */
 
     public long size() {
 	return size;
@@ -125,7 +143,8 @@ public abstract class MemoryArea {
 	obj.memoryArea = this;
     }
     
-    /** */
+    /** Create a new array, allocated out of this MemoryArea. 
+     */
 
     public Object newArray(final Class type, final int number) 
 	throws IllegalAccessException, InstantiationException, OutOfMemoryError
@@ -151,7 +170,8 @@ public abstract class MemoryArea {
 	return o;
     }
 
-    /** */
+    /** Create a new array, allocated out of this MemoryArea. 
+     */
     
     public Object newArray(final Class type,
 			   final int[] dimensions) 
@@ -178,7 +198,8 @@ public abstract class MemoryArea {
 	return o;
     }
 
-    /** */
+    /** Create a new object, allocated out of this MemoryArea.
+     */
     
     public Object newInstance(Class type)
 	throws IllegalAccessException, InstantiationException,
@@ -186,7 +207,8 @@ public abstract class MemoryArea {
 	return newInstance(type, new Class[0], new Object[0]);
     }
     
-    /** */
+    /** Create a new object, allocated out of this MemoryArea.
+     */
     
     public Object newInstance(final Class type,
 			      final Class[] parameterTypes,
@@ -220,34 +242,39 @@ public abstract class MemoryArea {
 	return o;
     }
     
-    /** */
+    /** Check to see if this object can be accessed from this MemoryArea
+     */
     
     public void checkAccess(Object obj) {
 	if ((obj != null) && (obj.memoryArea != null) && 
 	    obj.memoryArea.scoped) {
-	    throw new IllegalAssignmentError();
+	    throwIllegalAssignmentError(obj, obj.memoryArea);
 	}
     }
     
-    /** */
+    /** Get the outerScope of this MemoryArea, for non-ScopedMemory's,
+     *  this defaults to null.
+     */
 
     public MemoryArea getOuterScope() {
 	return null;
     }
     
-    /** */
+    /** Output a helpful string describing this MemoryArea.
+     */
 
     public String toString() {
-	MemoryArea parent = null;
-	try {
-	    parent = getOuterScope();
-	} catch (MemoryScopeError e) {
-	    return String.valueOf(id + " not in execution path");
-	}
-	if (parent == null) {
-	    return String.valueOf(id);      
-	} else {
-	    return parent.toString() + "." + String.valueOf(id);
-	}    
+//  	MemoryArea parent = null;
+//  	try {
+//  	    parent = getOuterScope();
+//  	} catch (MemoryScopeError e) {
+//  	    return String.valueOf(id + " not in execution path");
+//  	}
+//  	if (parent == null) {
+//  	    return String.valueOf(id);      
+//  	} else {
+//  	    return parent.toString() + "." + String.valueOf(id);
+//  	}    
+	return String.valueOf(id);
     }
 }

@@ -4,15 +4,14 @@
 package javax.realtime;
 import java.lang.Runtime;
 
-// Memory left is kinda bogus - may want to fix sometime.
-
-/** <code>HeapMemory</code>
+/** <code>HeapMemory</code> represents garbage-collected memory.  
  *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
 public final class HeapMemory extends MemoryArea {
-    private static HeapMemory theHeap = null;
+    /** The one and only HeapMemory. */
+    private static HeapMemory theHeap;
     
     private HeapMemory() {  
 	super(1000000000); // Totally bogus
@@ -22,16 +21,13 @@ public final class HeapMemory extends MemoryArea {
 	heap = true;
     }
 
-    /** */
-    
+    /** Initialize the native component of the HeapMemory. */
     protected native void initNative(long sizeInBytes);
 
-    /** */
-
+    /** .enter the heap - create a new MemBlock */
     protected native void newMemBlock(RealtimeThread rt);
 
-    /** */
- 
+    /** Return the instance of the one and only HeapMemory. */
     public static HeapMemory instance() {
 	if (theHeap == null) { // Bypass static initializer problem.
 	    theHeap = new HeapMemory();
@@ -39,12 +35,14 @@ public final class HeapMemory extends MemoryArea {
 	return theHeap;
     }
     
-    /** */
-
+    /** Print a helpful string describing this HeapMemory. */
     public String toString() {
 	return "HeapMemory: " + super.toString();
     }
 
+    /** Create a new array, checking to make sure that we're not in a 
+     *  NoHeapRealtimeThread. 
+     */
     public synchronized Object newArray(Class type,
 					int number) 
 	throws IllegalAccessException, InstantiationException, OutOfMemoryError
@@ -53,6 +51,10 @@ public final class HeapMemory extends MemoryArea {
 	return super.newArray(type, number);
     }
 
+    /** Create a new multi-dimensional array, checking to make sure that 
+     *  we're not in a NoHeapRealtimeThread. 
+     */
+
     public synchronized Object newArray(Class type,
 					int[] dimensions) 
 	throws IllegalAccessException, OutOfMemoryError
@@ -60,6 +62,10 @@ public final class HeapMemory extends MemoryArea {
 	checkNoHeap();
 	return super.newArray(type, dimensions);
     }
+
+    /** Create a new object, checking to make sure that we're not in a 
+     *  NoHeapRealtimeThread.
+     */
 
     public synchronized Object newInstance(Class type, 
 					   Class[] parameterTypes,
@@ -70,12 +76,19 @@ public final class HeapMemory extends MemoryArea {
 	return super.newInstance(type, parameterTypes, parameters);
     }
 
+    /** Create a new object, checking to make sure that we're not in a 
+     *  NoHeapRealtimeThread.
+     */
+
     public synchronized Object newInstance(Class type) 
 	throws IllegalAccessException, InstantiationException,
 	       OutOfMemoryError {
 	checkNoHeap();
 	return super.newInstance(type);
     }
+
+    /** Check to make sure that we're not in a NoHeapRealtimeThread 
+     */
 
     public void checkNoHeap() {
 	RealtimeThread realtimeThread = 

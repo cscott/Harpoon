@@ -219,13 +219,17 @@ public class RealtimeThread extends Thread {
 
     void exit() {
 	mem.exitMemBlock(this);
+	mem = memAreaStack.entry;
 	memAreaStack = memAreaStack.next;
     }
     
-    /** */
+    /** Get the outerScope of a given MemoryArea */
 
     MemoryArea outerScope(MemoryArea child) {
 	MemAreaStack current = memAreaStack.first(child);
+	if (current != null) {
+	    current = current.next;
+	}
 	while ((current != null) && (!current.entry.scoped)) {
 	    current = current.next;
 	}

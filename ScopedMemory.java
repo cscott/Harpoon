@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/** <code>ScopedMemory</code>
+/** <code>ScopedMemory</code> is an abstract class that 
  *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
@@ -11,38 +11,42 @@ package javax.realtime;
 public abstract class ScopedMemory extends MemoryArea {
     protected Object portal;
 
-    /** */
-
+    /** Create a new ScopedMemory of a certain maximum size. 
+     */
     public ScopedMemory(long size) {
 	super(size);
 	portal = null;
 	scoped = true;
     }
     
-    /** */
-
+    /** Return the maximum size of this ScopedMemory. 
+     */
     public long getMaximumSize() { 
 	return size;
     }
     
-    /** */
-
+    /** Get the portal object for this ScopedMemory. 
+     */
     public Object getPortal() {
 	return portal;
     }
     
-    /** */
-
+    /** Set the portal object for this ScopedMemory.
+     */
     public void setPortal(Object object) {
 	portal = object;
     }
     
-    /** */
-
+    /** Get the MemoryArea which contains this ScopedMemory for
+     *  the current RealtimeThread.
+     */
     public MemoryArea getOuterScope() {
 	return RealtimeThread.currentRealtimeThread().outerScope(this);
     }
 
+    /** Check to see if this ScopedMemory can have access to 
+     *  the given object.
+     */
     public void checkAccess(Object obj) { 
 	//      Stats.addCheck();
 	if (obj != null) {
@@ -50,8 +54,7 @@ public abstract class ScopedMemory extends MemoryArea {
 	    if ((this != target) && target.scoped &&
 		(!RealtimeThread.currentRealtimeThread()
 		 .checkAccess(this, target))) {
-  		throw new IllegalAssignmentError();	    
-//		java_lang_Brokenness++;
+		throwIllegalAssignmentError(obj, target);
 	    }
 	}	    
     }

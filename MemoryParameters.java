@@ -3,8 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/** <code>MemoryParameters</code>
- *
+/** <code>MemoryParameters</code> stores parameters to pace the rate
+ *  of memory allocation.  MemoryParameters are passed into the 
+ *  <code>RealtimeThread</code> constructor.
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 

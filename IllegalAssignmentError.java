@@ -3,8 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/** <code>IllegalAssignmentError</code> 
- *
+/** <code>IllegalAssignmentError</code> is thrown when there is an
+ *  assignment that could create a dangling reference.
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
@@ -21,4 +21,4 @@ public class IllegalAssignmentError extends Error {
     public IllegalAssignmentError(String description) {
 	super(description);
     }
-}
+};
