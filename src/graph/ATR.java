@@ -16,6 +16,7 @@ import imagerec.corba.CORBA;
  */
 public class ATR extends Server {
     private Node out;
+    private Node out2;
     
     /** Construct an {@link ATR} node with the default {@link CommunicationsModel}
      *  and name of server for integration with existing BBN UAV software.
@@ -51,11 +52,44 @@ public class ATR extends Server {
 	try {
 	    cm.runATRServer(name, new CommunicationsAdapter() {
 		    public void process(ImageData id) {
-			ATR.this.out.process(id);
+			//System.out.println("ATR Server #"+getUniqueID()+" received image #"+id.id);
+			if (out != null) {
+			    ATR.this.out.process(id);
+			}
+			if (out2 != null) {
+			    ATR.this.out2.process(id);
+			}
 		    }
 		});
 	} catch (Exception e) {
 	    throw new Error(e);
 	}
+    }
+
+
+    public void setLeft(Node out) {
+	super.setLeft(out);
+	this.out = out;
+    }
+
+    public void setRight(Node out2) {
+	super.setRight(out2);
+	this.out2 = out2;
+    }
+
+    public Node linkL(Node out) {
+	setLeft(out);
+	return this;
+    }
+
+    public Node linkR(Node out2) {
+	setRight(out2);
+	return this;
+    }
+
+    public Node link(Node out, Node out2) {
+	setLeft(out);
+	setRight(out2);
+	return this;
     }
 }
