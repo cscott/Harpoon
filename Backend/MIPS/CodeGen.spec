@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.6 2000-06-27 20:30:42 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.7 2000-06-27 20:37:09 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing cc
 // on MIPS IRIX64 lion 6.2 03131016 IP19.  
@@ -1180,7 +1180,7 @@ BINOP(CMPGE, j, k) = i
 %{
     emit( ROOT, "sgt `d0, `s0h, `s1h \n"
                 + "bne `s0h, `s1h, 1f \n"
-                + "sgeu `d0, `s0l, `s1l"
+                + "sgeu `d0, `s0l, `s1l \n"
                 + "1:", i, j, k );
 }%
   
