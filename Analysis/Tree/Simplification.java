@@ -38,7 +38,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Simplification.java,v 1.1.2.1 2000-02-15 01:22:40 cananian Exp $
+ * @version $Id: Simplification.java,v 1.1.2.2 2000-02-15 19:04:18 cananian Exp $
  */
 public abstract class Simplification { 
     private static final boolean debug = false;
@@ -57,7 +57,9 @@ public abstract class Simplification {
 		HCode hc = parent.convert(m);
 		if (hc!=null) {
 		    harpoon.IR.Tree.Code code = (harpoon.IR.Tree.Code) hc;
-		    // um, i should really clone code here. FIXME
+		    // clone code...
+		    code = (harpoon.IR.Tree.Code) code.clone(m);
+		    // ...and modify cloned code in-place.
 		    simplify((Stm)code.getRootElement(), rules);
 		}
 		return hc;
