@@ -32,7 +32,7 @@ import java.util.Map;
  * <code>InstrumentAllocs</code> adds counters to each allocation site.
  * 
  * @author  root <root@BDEMSKY.MIT.EDU>
- * @version $Id: InstrumentAllocs.java,v 1.1.2.8 2000-11-14 18:26:42 bdemsky Exp $
+ * @version $Id: InstrumentAllocs.java,v 1.1.2.9 2000-11-17 00:40:13 bdemsky Exp $
  */
 public class InstrumentAllocs extends MethodMutator implements java.io.Serializable {
     int count;
@@ -67,7 +67,7 @@ public class InstrumentAllocs extends MethodMutator implements java.io.Serializa
 	    Iterator it=hc.getElementsI();
 	    while(it.hasNext()) {
 		Quad q=(Quad)it.next();
-		if ((q instanceof NEW)||(q instanceof ANEW)||(syncs&&(q instanceof MONITORENTER))||(callchains&(q instanceof CALL)))
+		if ((q instanceof NEW)||(q instanceof ANEW)||(syncs&&(q instanceof MONITORENTER))||(callchains&&(q instanceof CALL)))
 		    newset.add(q);
 	    }
 	    Iterator setit=newset.iterator();
