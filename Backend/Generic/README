@@ -1,0 +1,2 @@
+The harpoon.Backend.Generic package contains abstract superclasses for
+machine-dependent classes (Frame, CodeGen).

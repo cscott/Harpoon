@@ -1,0 +1,2 @@
+The harpoon.Backend.Sparc package contains machine-dependent classes
+for the SPARC backend. (Frame/CodeGen)

@@ -1,0 +1,2 @@
+The harpoon.Backend.StrongARM package contains machine-dependent classes
+for the StrongARM backend. (Frame/CodeGen)
