@@ -8,7 +8,6 @@ import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrFactory;
-import harpoon.IR.Assem.InstrList;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.CONST;
@@ -31,7 +30,7 @@ import harpoon.Util.Util;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.6 1999-02-26 23:22:28 andyb Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.7 1999-03-08 09:01:55 andyb Exp $
  */
 public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 
@@ -107,19 +106,23 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
         return prologue;
     }
 
-    public InstrList procLiveOnExit(InstrList body) {
+    public Instr[] procLiveOnExit(Instr[] body) {
         return body;
     }
 
-    public InstrList procAssemDirectives(InstrList body) {
-        HCodeElement src = body.head;
+    public Instr[] procAssemDirectives(Instr[] body) {
+        Util.assert((body != null) && (body.length > 0));
+        Instr[] newbody = new Instr[body.length + 4];
+        HCodeElement src = body[0];
         InstrFactory inf = ((Instr)src).getFactory();
-        return new InstrList( new Instr(inf, src, ".text", null, null),
-               new InstrList( new Instr(inf, src, ".align 0", null, null),
-               new InstrList( new Instr(inf, src, ".global " +
-                    inf.getMethod().getName()  + ":", null, null),
-               new InstrList( new Instr(inf, src, inf.getMethod().getName()+":",
-                    null, null), body))));
+        newbody[0] = new Instr(inf, src, ".text", null, null);
+        newbody[1] = new Instr(inf, src, ".align 0", null, null);
+        newbody[2] = new Instr(inf, src, ".global " + 
+                        inf.getMethod().getName() + ":", null, null);
+        newbody[3] = new Instr(inf, src, inf.getMethod().getName() + ":",
+                        null, null);
+        System.arraycopy(body, 0, newbody, 4, body.length);
+        return newbody;
     }
 
     /* Implementation of the DefaultAllocationInfo interface.

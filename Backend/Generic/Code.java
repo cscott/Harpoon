@@ -12,6 +12,7 @@ import harpoon.Temp.TempFactory;
 import harpoon.Util.ArrayFactory;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrFactory;
+import harpoon.Backend.Generic.Frame;
 
 import java.util.*;
 
@@ -20,7 +21,7 @@ import java.util.*;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.1 1999-02-17 03:25:11 andyb Exp $
+ * @version $Id: Code.java,v 1.1.2.2 1999-03-08 09:01:55 andyb Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -29,6 +30,8 @@ public abstract class Code extends HCode {
     protected Instr[] instrs;
     /** Instruction factory. */
     protected final InstrFactory inf;
+    /** The Frame associated with this codeview. */
+    protected final Frame frame;
 
     /** Creates a new <code>InstrFactory</code> for this codeview.
      *
@@ -44,12 +47,14 @@ public abstract class Code extends HCode {
             private int id = 0;
             public TempFactory tempFactory() { return tf; }
             public HCode getParent() { return Code.this; }
+            public Frame getFrame() { return frame; }
             public synchronized int getUniqueID() { return id++; }
         };
     }
 
-    protected Code(final HMethod parent, final Instr[] instrs) {
-        this.parent = parent; this.instrs = instrs;
+    protected Code(final HMethod parent, final Instr[] instrs, 
+                   final Frame frame) {
+        this.parent = parent; this.instrs = instrs; this.frame = frame;
         this.inf = newINF(parent);
     }
     

@@ -5,7 +5,7 @@ package harpoon.Backend.Generic;
 
 import harpoon.Temp.Temp;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Assem.InstrList;
+import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.Stm;
@@ -18,7 +18,7 @@ import harpoon.Temp.TempFactory;
  * needed for compilation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.10 1999-02-26 23:22:28 andyb Exp $
+ * @version $Id: Frame.java,v 1.1.2.11 1999-03-08 09:01:55 andyb Exp $
  */
 public abstract class Frame {
 
@@ -48,14 +48,14 @@ public abstract class Frame {
     public abstract Stm procPrologue(TreeFactory tf, HCodeElement src, 
                                      Temp[] paramdsts);
 
-    /** Returns an <code>InstrList</code> which adds a "sink" 
+    /** Returns an array of <code>Instr</code>s which adds a "sink" 
      *  instruction to specify registers that are live on procedure exit. */
-    public abstract InstrList procLiveOnExit(InstrList body);
+    public abstract Instr[] procLiveOnExit(Instr[] body);
 
-    /** Returns an <code>InstrList</code> which wraps the 
+    /** Returns an array of <code>Instr</code>s which wraps the 
      *  method body in assembler directives and other instructions
      *  needed to initialize stack space. */
-    public abstract InstrList procAssemDirectives(InstrList body);
+    public abstract Instr[] procAssemDirectives(Instr[] body);
 
     /** Returns the appropriate offset map for this frame */
     public abstract OffsetMap getOffsetMap();
