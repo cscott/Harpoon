@@ -1,0 +1,12 @@
+#!/bin/bash
+
+export NAME_SERVICE=corbaloc::tracker.lmdistributed.pces.emulab.net:50010/NameService
+
+cd ..
+
+xterm -hold -title "ATR" -e java -DORBInitRef.NameService=$NAME_SERVICE -server -jar ATR.jar timer 4 "LMCO ATR" contactService contactService -ORBInitRef NameService=$NAME_SERVICE &
+sleep 5
+
+xterm -hold -title "Sending to ATR" -e java -DORBInitRef.NameService=$NAME_SERVICE -server -jar receiverStub.jar GUI.jar tank.gz 533 1 "LMCO ATR" -ORBInitRef NameService=$NAME_SERVICE &
+
+cd script
