@@ -78,7 +78,7 @@ import harpoon.Util.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDMain.java,v 1.1.2.1 2000-03-29 08:19:38 bdemsky Exp $
+ * @version $Id: EDMain.java,v 1.1.2.2 2000-03-29 17:55:52 bdemsky Exp $
  */
 public class EDMain extends harpoon.IR.Registration {
  
@@ -259,7 +259,7 @@ public class EDMain extends harpoon.IR.Registration {
 	}
 
 	Set methods = classHierarchy.callableMethods();
-	Iterator classes = new TreeSet(classHierarchy.classes()).iterator();
+	Iterator classes = new WorkSet(classHierarchy.classes()).iterator();
 
 
 	if (singleClass!=null || !ONLY_COMPILE_MAIN) {
@@ -276,7 +276,7 @@ public class EDMain extends harpoon.IR.Registration {
 			  (new File(ASSEM_DIR, filename + ".s"))));
 		    
 		    HMethod[] hmarray = hclass.getDeclaredMethods();
-		    Set hmset = new TreeSet(Arrays.asList(hmarray));
+		    Set hmset = new WorkSet(Arrays.asList(hmarray));
 		    hmset.retainAll(methods);
 		    Iterator hms = hmset.iterator();
 		    message("\t");
@@ -501,7 +501,7 @@ public class EDMain extends harpoon.IR.Registration {
     
     private static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("EDMain", args, "m:c:o:DOPFHRLAhq1::C:");
+	Getopt g = new Getopt("EDMain", args, "m:c:o:DOPFHRLArphq1::C:");
 	
 	int c;
 	String arg;
