@@ -35,7 +35,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.1 1999-10-12 20:04:50 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.2 1999-10-15 21:00:10 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -105,7 +105,7 @@ public class DataClaz extends Data {
 	// now reverse list.
 	Collections.reverse(clslist);
 	// okay, root should always be java.lang.Object.
-	Util.assert(hc.isInterface() ||
+	Util.assert(hc.isInterface() || hc.isPrimitive() ||
 		    clslist.get(0)==HClass.forName("java.lang.Object"));
 	// make statements.
 	List stmlist = new ArrayList(m_tb.cdm.maxDepth());
