@@ -7,6 +7,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HMethod;
 import harpoon.Util.ArraySet;
+import harpoon.Util.Default;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 import harpoon.Util.Collections.WorkSet;
@@ -20,7 +21,7 @@ import java.util.Set;
  * and methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.3.2.1 2002-02-27 08:30:23 cananian Exp $
+ * @version $Id: ClassHierarchy.java,v 1.3.2.2 2002-03-04 20:35:44 cananian Exp $
  */
 public abstract class ClassHierarchy {
     // tree of callable classes
@@ -31,7 +32,7 @@ public abstract class ClassHierarchy {
      *  are all reachable subclasses.
      *	@return <code>Set</code> of <code>HClass</code>es.
      */
-    public abstract Set children(HClass c);
+    public abstract Set<HClass> children(HClass c);
     /** Return the parents of an <code>HClass</code>.
      *  The parents of a class <code>c</code> are its superclass and 
      *  interfaces.  The results should be complementary to the 
@@ -39,7 +40,7 @@ public abstract class ClassHierarchy {
      *  <code>parent(c)</code> of any class <code>c</code> returned
      *  by <code>children(cc)</code> should include <code>cc</code>.
      */
-    public final Set parents(HClass c) {
+    public final Set<HClass> parents(HClass c) {
 	// odd inheritance properties:
 	//  interfaces: all instances of an interface are also instances of
 	//              java.lang.Object, so root all interfaces there.
@@ -77,7 +78,7 @@ public abstract class ClassHierarchy {
 	// okay, done.  Did we size the array correctly?
 	assert n==parents.length;
 	// okay, return as Set.
-	return new ArraySet(parents);
+	return new ArraySet<HClass>(parents);
     }
     /** Returns a set of methods in the hierarchy (not necessary reachable
      *  methods) which override the given method.  The set is only one
@@ -89,7 +90,7 @@ public abstract class ClassHierarchy {
      *  hm1.getDeclaringClass().   For example, ListIterator.next() may
      *  be implemented by A, but B (a subclass of A which doesn't override
      *  A.next()) may be the class which implements ListIterator. */
-    public final Set overrides(HMethod hm) {
+    public final Set<HMethod> overrides(HMethod hm) {
 	return overrides(hm.getDeclaringClass(), hm, false);
     }
     /** Returns the set of methods, excluding <code>hm</code>, declared
@@ -97,15 +98,15 @@ public abstract class ClassHierarchy {
      *  <code>hm</code>.  If <code>all</code> is true, returns all such
      *  methods in the class hierarchy; otherwise returns only the methods
      *  which *immediately* override <code>hm</code>. */
-    public Set overrides(HClass hc, HMethod hm, boolean all) {
+    public Set<HMethod> overrides(HClass hc, HMethod hm, boolean all) {
 	// non-virtual methods have no overrides.
 	if (hm.isStatic() || Modifier.isPrivate(hm.getModifiers()) ||
-	    hm instanceof HConstructor) return Collections.EMPTY_SET;
+	    hm instanceof HConstructor) return Default.EMPTY_SET();
 	// determine overrides for virtual methods.
-	Set result = new WorkSet();
-	WorkSet ws = new WorkSet(this.children(hc));
+	Set<HMethod> result = new WorkSet<HMethod>();
+	WorkSet<HClass> ws = new WorkSet<HClass>(this.children(hc));
 	while (!ws.isEmpty()) {
-	    HClass hcc = (HClass) ws.pop();
+	    HClass hcc = ws.pop();
 	    // note we don't catch MethodNotFoundError 'cuz we should find hm.
 	    HMethod hmm = hcc.getMethod(hm.getName(), hm.getDescriptor());
 	    if (!hm.equals(hmm)) {
@@ -124,17 +125,17 @@ public abstract class ClassHierarchy {
     /** Returns set of all callable methods. 
      *	@return <code>Set</code> of <code>HMethod</code>s.
      */
-    public abstract Set callableMethods();
+    public abstract Set<HMethod> callableMethods();
     /** Returns the set of all reachable/usable classes.
      *  If any method in a class is callable (including static methods),
      *  then the class will be a member of the returned set.
      *  @return <code>Set</code> of <code>HClass</code>es.
      */
-    public abstract Set classes();
+    public abstract Set<HClass> classes();
     /** Returns the set of all *instantiated* classes.
      *  This is a subset of the set returned by the <code>classes()</code>
      *  method.  A class is included in the return set only if an
      *  object of that type is at some point created.
      */
-    public abstract Set instantiatedClasses();
+    public abstract Set<HClass> instantiatedClasses();
 }

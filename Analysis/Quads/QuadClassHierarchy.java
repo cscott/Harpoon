@@ -23,6 +23,7 @@ import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.TYPECAST;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Util.ArraySet;
+import harpoon.Util.Default;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 import harpoon.Util.Collections.WorkSet;
@@ -46,36 +47,40 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.3.2.1 2002-02-27 08:32:32 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.3.2.2 2002-03-04 20:35:51 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     implements java.io.Serializable {
-    private final Map children = new HashMap();
-    private final Set methods = new HashSet();
+    private final Map<HClass,HClass[]> children =
+	new HashMap<HClass,HClass[]>();
+    private final Set<HMethod> methods = new HashSet<HMethod>();
 
     /** Returns set of all callable methods. 
 	@return <code>Set</code> of <code>HMethod</code>s.
      */
-    public Set callableMethods() {
+    public Set<HMethod> callableMethods() {
 	return _unmod_methods;
     }
-    private final Set _unmod_methods = Collections.unmodifiableSet(methods);
+    private final Set<HMethod> _unmod_methods =
+	Collections.unmodifiableSet(methods);
 
     // inherit description from parent class.
-    public Set children(HClass c) {
+    public Set<HClass> children(HClass c) {
 	if (children.containsKey(c))
-	    return new ArraySet((HClass[]) children.get(c));
-	return Collections.EMPTY_SET;
+	    return new ArraySet<HClass>(children.get(c));
+	return Default.EMPTY_SET();
     }
     // inherit description from parent class.
-    public Set classes() {
+    public Set<HClass> classes() {
 	if (_classes == null) {
-	    _classes = new HashSet();
-	    for (Iterator it = children.keySet().iterator(); it.hasNext(); )
+	    _classes = new HashSet<HClass>();
+	    for(Iterator<HClass> it = children.keySet().iterator();
+		it.hasNext(); )
 		_classes.add(it.next());
-	    for (Iterator it = children.values().iterator(); it.hasNext();) {
-		HClass[] ch = (HClass[]) it.next();
+	    for(Iterator<HClass[]> it = children.values().iterator();
+		it.hasNext(); ) {
+		HClass[] ch = it.next();
 		for (int i=0; i<ch.length; i++)
 		    _classes.add(ch[i]);
 	    }
@@ -83,25 +88,26 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	}
 	return _classes;
     }
-    private transient Set _classes = null;
+    private transient Set<HClass> _classes = null;
     /** Returns the set of all classes instantiated.
 	(Actually only the list of classes for which an explicit NEW is found;
 	should include list of classes that are automatically created by JVM!) */ 
-    public Set instantiatedClasses() {
+    public Set<HClass> instantiatedClasses() {
 	return _unmod_insted;
     }
-    private final Set instedClasses = new HashSet();
-    private final Set _unmod_insted=Collections.unmodifiableSet(instedClasses);
+    private final Set<HClass> instedClasses = new HashSet<HClass>();
+    private final Set<HClass> _unmod_insted =
+	Collections.unmodifiableSet(instedClasses);
 
     /** Returns a human-readable representation of the hierarchy. */
     public String toString() {
 	// not the most intuitive representation...
 	StringBuffer sb = new StringBuffer("{");
-	for (Iterator it = children.keySet().iterator(); it.hasNext(); ) {
-	    HClass c = (HClass) it.next();
+	for (Iterator<HClass> it=children.keySet().iterator(); it.hasNext(); ){
+	    HClass c = it.next();
 	    sb.append(c.toString());
 	    sb.append("={");
-	    for (Iterator it2=children(c).iterator(); it2.hasNext(); ) {
+	    for (Iterator<HClass> it2=children(c).iterator(); it2.hasNext(); ){
 		sb.append(it2.next().toString());
 		if (it2.hasNext())
 		    sb.append(',');
@@ -184,16 +190,18 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 
 	// worklist algorithm.
 	while (!S.W.isEmpty()) {
-	    HMethod m = (HMethod) S.W.pull();
+	    HMethod m = S.W.pull();
 	    S.done.add(m); // mark us done with this method.
 	    // This method should be marked as usable.
 	    {
-		Set s = (Set) S.classMethodsUsed.get(m.getDeclaringClass());
+		Set<HMethod> s = S.classMethodsUsed.get(m.getDeclaringClass());
 		assert s!=null;
 		assert s.contains(m);
 	    }
 	    // look at the hcode for the method.
-	    harpoon.IR.Quads.Code hc = (harpoon.IR.Quads.Code) hcf.convert(m);
+	    harpoon.IR.Quads.Code hc = (harpoon.IR.Quads.Code)
+		((harpoon.ClassFile.HCode) // XXX BUG IN JAVAC
+		 hcf.convert(m) );
 	    if (hc==null) { // native or unanalyzable method.
 		if(!m.getReturnType().isPrimitive())
 		    // be safe; assume the native method can make an object
@@ -247,21 +255,21 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 		    }
 		};
 		// iterate through quads with visitor.
-		for (Iterator it = hc.getElementsI(); it.hasNext(); )
-		    ((Quad) it.next()).accept(qv);
+		for (Iterator<Quad> it = hc.getElementsI(); it.hasNext(); )
+		    it.next().accept(qv);
 	    }
 	} // END worklist.
 	
 	// build method table from classMethodsUsed.
-	for (Iterator it = S.classMethodsUsed.values().iterator();
+	for (Iterator<Set<HMethod>> it= S.classMethodsUsed.values().iterator();
 	     it.hasNext(); )
-	    methods.addAll((Set) it.next());
+	    methods.addAll(it.next());
 	// now generate children set from classKnownChildren.
-	for (Iterator it = S.classKnownChildren.keySet().iterator();
+	for (Iterator<HClass> it = S.classKnownChildren.keySet().iterator();
 	     it.hasNext(); ) {
-	    HClass c = (HClass) it.next();
-	    Set s = (Set) S.classKnownChildren.get(c);
-	    HClass ch[] = (HClass[]) s.toArray(new HClass[s.size()]);
+	    HClass c = it.next();
+	    Set<HClass> s = S.classKnownChildren.get(c);
+	    HClass ch[] = s.toArray(new HClass[s.size()]);
 	    children.put(c, ch);
 	}
     }
@@ -290,7 +298,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	for (Iterator it=parents(c).iterator(); it.hasNext(); ) {
 	    HClass p = (HClass) it.next();
 	    discoverClass(S, p);
-	    Set knownChildren = (Set) S.classKnownChildren.get(p);
+	    Set<HClass> knownChildren = S.classKnownChildren.get(p);
 	    knownChildren.add(c); // kC non-null after discoverClass.
 	}
     }
@@ -300,28 +308,30 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 
 	// collect superclasses and interfaces.
 	// new worklist.
-	WorkSet sW = new WorkSet();
+	WorkSet<HClass> sW = new WorkSet<HClass>();
 	// put superclass and interfaces on worklist.
 	sW.addAll(parents(c));
 
 	// first, wake up all methods of this class that were
 	// pending instantiation, and clear the pending list.
-	List ml = new ArrayList((Set) S.classMethodsPending.get(c));//copy list
-	for (Iterator it=ml.iterator(); it.hasNext(); )
-	    methodPush(S, (HMethod)it.next());
+	List<HMethod> ml =
+	    new ArrayList<HMethod>(S.classMethodsPending.get(c));//copy list
+	for (Iterator<HMethod> it=ml.iterator(); it.hasNext(); )
+	    methodPush(S, it.next());
 
 	// if instantiated,
 	// add all called methods of superclasses/interfaces to worklist.
 	while (!sW.isEmpty()) {
 	    // pull a superclass or superinterface off the list.
-	    HClass s = (HClass) sW.pop();
+	    HClass s = sW.pop();
 	    // add superclasses/interfaces of this one to local worklist
 	    sW.addAll(parents(s));
 	    // now add called methods of s to top-level worklist.
-	    Set calledMethods = new WorkSet((Set)S.classMethodsUsed.get(s));
-	    calledMethods.addAll((Set)S.classMethodsPending.get(s));
-	    for (Iterator it = calledMethods.iterator(); it.hasNext(); ) {
-		HMethod m = (HMethod) it.next();
+	    Set<HMethod> calledMethods =
+		new WorkSet<HMethod>(S.classMethodsUsed.get(s));
+	    calledMethods.addAll(S.classMethodsPending.get(s));
+	    for (Iterator<HMethod> it=calledMethods.iterator(); it.hasNext();){
+		HMethod m = it.next();
 		if (!isVirtual(m)) continue; // not inheritable.
 		try {
 		    HMethod nm = c.getMethod(m.getName(),
@@ -358,15 +368,15 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    return; // that's all folks.
 	}
 	// mark as pending in its own class if not already used.
-	if (!((Set) S.classMethodsUsed.get(m.getDeclaringClass())).contains(m))
-	    ((Set) S.classMethodsPending.get(m.getDeclaringClass())).add(m);
+	if (!S.classMethodsUsed.get(m.getDeclaringClass()).contains(m))
+	    S.classMethodsPending.get(m.getDeclaringClass()).add(m);
 	// now add as 'used' to all instantiated children.
 	// (including itself, if its own class has been instantiated)
-	WorkSet cW = new WorkSet();
+	WorkSet<HClass> cW = new WorkSet<HClass>();
 	cW.push(m.getDeclaringClass());
 	while (!cW.isEmpty()) {
 	    // pull a class from the worklist
-	    HClass c = (HClass) cW.pull();
+	    HClass c = cW.pull();
 	    // see if we should add method-of-c to method worklist.
 	    if (c.isInterface() || instedClasses.contains(c))
 		try {
@@ -380,8 +390,8 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 		    else S.nonvirtual.remove(nm); // since we're virtual here.
 		} catch (NoSuchMethodError e) { }
 	    // add all children to the worklist.
-	    Set knownChildren = (Set) S.classKnownChildren.get(c);
-	    for (Iterator it = knownChildren.iterator(); it.hasNext(); ) 
+	    Set<HClass> knownChildren = S.classKnownChildren.get(c);
+	    for (Iterator<HClass> it=knownChildren.iterator(); it.hasNext(); )
 		cW.push(it.next());
 	}
 	// done.
@@ -393,28 +403,31 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	// Add to worklist
 	S.W.add(m);
 	// mark this method as used.
-	Set s1 = (Set) S.classMethodsUsed.get(m.getDeclaringClass());
+	Set<HMethod> s1 = S.classMethodsUsed.get(m.getDeclaringClass());
 	s1.add(m);
 	// and no longer pending.
-	Set s2 = (Set) S.classMethodsPending.get(m.getDeclaringClass());
+	Set<HMethod> s2 = S.classMethodsPending.get(m.getDeclaringClass());
 	s2.remove(m);
     }
     // State for algorithm.
     private static class State {
 	// keeps track of methods which are actually invoked at some point.
-	final Map classMethodsUsed = new HashMap(); // class->set map.
+	final Map<HClass,Set<HMethod>> classMethodsUsed
+	    = new HashMap<HClass,Set<HMethod>>(); // class->set map.
 	// keeps track of methods which might be called, if someone gets
 	// around to instantiating an object of the proper type.
-	final Map classMethodsPending = new HashMap(); // class->set map
+	final Map<HClass,Set<HMethod>> classMethodsPending
+	    = new HashMap<HClass,Set<HMethod>>(); // class->set map
 	// keeps track of all known children of a given class.
-	final Map classKnownChildren = new HashMap(); // class->set map.
+	final Map<HClass,Set<HClass>> classKnownChildren
+	    = new HashMap<HClass,Set<HClass>>(); // class->set map.
 	// keeps track of which methods we've done already.
-	final Set done = new HashSet();
+	final Set<HMethod> done = new HashSet<HMethod>();
 	// keeps track of methods we've only seen non-virtual invocations for.
-	final Set nonvirtual = new HashSet();
+	final Set<HMethod> nonvirtual = new HashSet<HMethod>();
 
 	// Worklist.
-	final WorkSet W = new WorkSet();
+	final WorkSet<HMethod> W = new WorkSet<HMethod>();
     }
 
     // useful utility method

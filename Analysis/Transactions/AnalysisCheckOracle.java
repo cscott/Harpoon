@@ -19,27 +19,28 @@ import java.util.Set;
  * do some analysis and store the results of the check oracle.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AnalysisCheckOracle.java,v 1.2 2002-02-25 21:00:09 cananian Exp $
+ * @version $Id: AnalysisCheckOracle.java,v 1.2.2.1 2002-03-04 20:36:02 cananian Exp $
  */
 abstract class AnalysisCheckOracle extends CheckOracle {
-    final Map results = new HashMap();
-    public Set createReadVersions(HCodeElement hce) {
-	return ((CheckSet) results.get(hce)).readVersions;
+    final Map<HCodeElement,CheckSet> results =
+	new HashMap<HCodeElement,CheckSet>();
+    public Set<Temp> createReadVersions(HCodeElement hce) {
+	return results.get(hce).readVersions;
     }
-    public Set createWriteVersions(HCodeElement hce) {
-	return ((CheckSet) results.get(hce)).writeVersions;
+    public Set<Temp> createWriteVersions(HCodeElement hce) {
+	return results.get(hce).writeVersions;
     }
-    public Set checkFieldReads(HCodeElement hce) {
-	return ((CheckSet) results.get(hce)).fieldReads;
+    public Set<RefAndField> checkFieldReads(HCodeElement hce) {
+	return results.get(hce).fieldReads;
     }
-    public Set checkFieldWrites(HCodeElement hce) {
-	return ((CheckSet) results.get(hce)).fieldWrites;
+    public Set<RefAndField> checkFieldWrites(HCodeElement hce) {
+	return results.get(hce).fieldWrites;
     }
-    public Set checkArrayElementReads(HCodeElement hce) {
-	return ((CheckSet) results.get(hce)).elementReads;
+    public Set<RefAndIndexAndType> checkArrayElementReads(HCodeElement hce) {
+	return results.get(hce).elementReads;
     }
-    public Set checkArrayElementWrites(HCodeElement hce) {
-	return ((CheckSet) results.get(hce)).elementWrites;
+    public Set<RefAndIndexAndType> checkArrayElementWrites(HCodeElement hce) {
+	return results.get(hce).elementWrites;
     }
     
     /** Creates a <code>AnalysisCheckOracle</code>. */
@@ -48,12 +49,12 @@ abstract class AnalysisCheckOracle extends CheckOracle {
     private final SetFactory sf = new AggregateSetFactory();
 
     class CheckSet {
-	final Set/*<Temp>*/ readVersions = sf.makeSet();
-	final Set/*<Temp>*/ writeVersions = sf.makeSet();
-	final Set/*<RefAndField>*/ fieldReads = sf.makeSet();
-	final Set/*<RefAndField>*/ fieldWrites = sf.makeSet();
-	final Set/*<RefAndIndexAndType>*/ elementReads = sf.makeSet();
-	final Set/*<RefAndIndexAndType>*/ elementWrites = sf.makeSet();
+	final Set<Temp> readVersions = sf.makeSet();
+	final Set<Temp> writeVersions = sf.makeSet();
+	final Set<RefAndField> fieldReads = sf.makeSet();
+	final Set<RefAndField> fieldWrites = sf.makeSet();
+	final Set<RefAndIndexAndType> elementReads = sf.makeSet();
+	final Set<RefAndIndexAndType> elementWrites = sf.makeSet();
 	
 	CheckSet() { /* new empty set */ }
 	CheckSet(CheckSet cs) { // new set w/ contents of given set.
@@ -82,26 +83,28 @@ abstract class AnalysisCheckOracle extends CheckOracle {
 	}
 	/** Remove all checks which mention <code>Temp</code>s contained
 	 *  in the given <code>Collection</code>. */
-	void removeAll(Collection temps) {
-	    for (Iterator it=readVersions.iterator(); it.hasNext(); )
-		if (temps.contains((Temp)it.next()))
+	void removeAll(Collection<Temp> temps) {
+	    for (Iterator<Temp> it=readVersions.iterator(); it.hasNext(); )
+		if (temps.contains(it.next()))
 		    it.remove();
-	    for (Iterator it=writeVersions.iterator(); it.hasNext(); )
-		if (temps.contains((Temp)it.next()))
+	    for (Iterator<Temp> it=writeVersions.iterator(); it.hasNext(); )
+		if (temps.contains(it.next()))
 		    it.remove();
-	    for (Iterator it=fieldReads.iterator(); it.hasNext(); )
-		if (temps.contains(((RefAndField)it.next()).objref))
+	    for (Iterator<RefAndField> it=fieldReads.iterator();it.hasNext();)
+		if (temps.contains(it.next().objref))
 		    it.remove();
-	    for (Iterator it=fieldWrites.iterator(); it.hasNext(); )
-		if (temps.contains(((RefAndField)it.next()).objref))
+	    for (Iterator<RefAndField> it=fieldWrites.iterator();it.hasNext();)
+		if (temps.contains(it.next().objref))
 		    it.remove();
-	    for (Iterator it=elementReads.iterator(); it.hasNext(); ) {
-		RefAndIndexAndType rit=(RefAndIndexAndType) it.next();
+	    for (Iterator<RefAndIndexAndType> it=elementReads.iterator();
+		 it.hasNext(); ) {
+		RefAndIndexAndType rit = it.next();
 		if (temps.contains(rit.objref) || temps.contains(rit.index))
 		    it.remove();
 	    }
-	    for (Iterator it=elementWrites.iterator(); it.hasNext(); ) {
-		RefAndIndexAndType rit=(RefAndIndexAndType) it.next();
+	    for (Iterator<RefAndIndexAndType> it=elementWrites.iterator();
+		 it.hasNext(); ) {
+		RefAndIndexAndType rit = it.next();
 		if (temps.contains(rit.objref) || temps.contains(rit.index))
 		    it.remove();
 	    }
