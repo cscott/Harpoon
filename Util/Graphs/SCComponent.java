@@ -41,7 +41,7 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCComponent.java,v 1.8 2003-05-08 01:10:59 cananian Exp $
+ * @version $Id: SCComponent.java,v 1.9 2003-06-04 16:11:04 salcianu Exp $
  */
 public final class SCComponent implements Comparable, Serializable {
 
@@ -197,7 +197,7 @@ public final class SCComponent implements Comparable, Serializable {
 	put_the_edges(navigator);
 
 	// Convert the big format SCCs into the compressed format SCCs.
-	build_compressed_format();
+	build_compressed_format(navigator);
 
 	// Save the root SCComponents somewhere before activating the GC.
 	Set root_sccs = new HashSet();
@@ -282,7 +282,7 @@ public final class SCComponent implements Comparable, Serializable {
     // Build the compressed format attached to each "fat" SCComponentInt.
     // This requires converting some sets to arrays (and sorting them in
     // the deterministic case). 
-    private static final void build_compressed_format() {
+    private static final void build_compressed_format(Navigator nav) {
 	for(int i = 0; i < scc_vector.size(); i++){
 	    SCComponentInt compInt = (SCComponentInt) scc_vector.elementAt(i);
 	    SCComponent comp = compInt.comp;
@@ -294,6 +294,49 @@ public final class SCComponent implements Comparable, Serializable {
 			      new SCComponent[compInt.next_vec.size()]);
 	    comp.prev  = (SCComponent[]) compInt.prev_vec.toArray(
 			      new SCComponent[compInt.prev_vec.size()]);
+	    comp.fillEntriesAndExits(nav);
+	}
+    }
+
+
+    final void fillEntriesAndExits(Navigator nav) {
+	int size = this.size();
+
+	boolean isEntry[] = new boolean[size()];
+	boolean isExit[]  = new boolean[size()];
+	int nb_entries = 0;
+	int nb_exits = 0;
+	
+	for(int i = 0; i < size; i++) {
+	    Object node = nodes_array[i];
+
+	    Object[] next = nav.next(node);
+	    int nb_succs = next.length;
+	    for(int j = 0; j < nb_succs; j++)
+		if(!nodes.contains(next[j])) {
+		    isEntry[i] = true;
+		    nb_entries++;
+		    break;
+		}
+	    
+	    Object[] prev = nav.prev(node);
+	    int nb_preds = prev.length;
+	    for(int j = 0; j < nb_preds; j++)
+		if(!nodes.contains(prev[j])) {
+		    isExit[i] = true;
+		    nb_exits++;
+		    break;
+		}
+	}
+	
+	entries = new Object[nb_entries];
+	exits   = new Object[nb_exits];
+
+	for(int i = 0, pentries = 0, pexits = 0; i < size; i++) {
+	    if(isEntry[i])
+		entries[pentries++] = nodes_array[i];
+	    if(isExit[i])
+		exits[pexits++] = nodes_array[i];
 	}
     }
 
@@ -314,6 +357,10 @@ public final class SCComponent implements Comparable, Serializable {
     private SCComponent[] next;
     // The predecessors.
     private SCComponent[] prev;
+
+    // entries into this SCC
+    private Object[] entries;
+    private Object[] exits;
 
     // is there any arc to itself?
     private boolean loop;
@@ -362,6 +409,16 @@ public final class SCComponent implements Comparable, Serializable {
     public final boolean contains(Object node){
 	return nodes.contains(node);
     }
+
+    /** Returns the entry nodes of <code>this</code> strongly
+        connected component.  These are the nodes taht are reachable
+        from outside the component. */
+    public final Object[] entries() { return entries; }
+    /** Returns the exit nodes of <code>this</code> strongly connected
+        component.  These are the nodes that have arcs toward nodes
+        outside the component. */
+    public final Object[] exits()   { return exits; }
+
 
     // the next and prev links in the double linked list of SCCs in
     // decreasing topological order
