@@ -243,7 +243,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_throwIllegalAssignmentErro
 }
 
 void* allocfunc(jsize length) {
-  return RTJ_MALLOC_UNCOLLECTABLE(length);
+  return (void*)RTJ_MALLOC_UNCOLLECTABLE(length);
 }
 
 /*

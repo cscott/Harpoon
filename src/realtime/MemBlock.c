@@ -86,10 +86,11 @@ void checkException() {
 }
 
 const char* className(jobject obj) {
-  return FNI_GetClassInfo(FNI_GetObjectClass(obj))->name;
+  return FNI_GetClassInfo(FNI_GetObjectClass(FNI_GetJNIEnv(), obj))->name;
 }
 
 const char* classNameUnwrap(struct oobj* obj) {
+  JNIEnv* env = FNI_GetJNIEnv();
   return className(FNI_WRAP(obj));
 }
 
