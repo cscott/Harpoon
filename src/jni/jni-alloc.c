@@ -60,11 +60,11 @@ jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, struct claz *claz,
     return NULL;
   }
   memset(newobj, 0, length);
-  newobj->claz = claz;
+  ((struct oobj *)PTRMASK(newobj))->claz = claz;
   /* note -- setting the last bit also has the convenient property of
    * eliminating a possible self-cycle that would keep conservative gc
    * from finalizing the object. */
-  newobj->hashunion.hashcode = 1 | (ptroff_t) newobj; /* low bit always set */
+  ((struct oobj *)PTRMASK(newobj))->hashunion.hashcode = 1 | (ptroff_t) newobj; /* low bit always set */
   /* FIXME: register finalizer.  */
   return FNI_WRAP(newobj);
 }
