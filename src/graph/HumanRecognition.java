@@ -18,11 +18,11 @@ import java.awt.event.WindowListener;
 import java.awt.event.MouseListener;
 import java.awt.event.KeyListener;
 
-public class HumanRecognition extends Node {
+public class HumanRecognition extends Node implements VariableLatency {
 
     private Pair head;
 
-    private static final int confirmEvery = 10;
+    //private static final int confirmEvery = 5;
 
     MyDisplay currentSelected = null;
 
@@ -46,7 +46,7 @@ public class HumanRecognition extends Node {
        is actually stored in a {@link Boolean} object wrapper.
        @see CommonMemory
      */
-    private String memName;
+    //private String memName;
 
     /**
      * This method either tells the {@link HumanRecognition} node to
@@ -66,13 +66,18 @@ public class HumanRecognition extends Node {
      *
      * @see CommonMemory
      */
-    public void setCommonMemory(String name) {
-	this.memName = name;
-    }
+    //public void setCommonMemory(String name) {
+    //this.memName = name;
+    //}
 
-
+    private int latency;
 
     public void process(ImageData id) {
+	try {
+	    Thread.currentThread().sleep(latency);
+	}
+	catch (InterruptedException e) {
+	}
 	int targetID = id.trackedObjectUniqueID;
 	//System.out.println("ImageData #"+id.id);
 	//System.out.println("   target #"+targetID);
@@ -91,45 +96,53 @@ public class HumanRecognition extends Node {
 	}
        
 	if (foundIt) {
-	    currentPair.count++;
+	    //currentPair.count++;
 	    MyDisplay d = currentPair.d;
-	    if (currentPair.count == confirmEvery) {
-		currentPair.count = 0;
-		Frame f = d.getFrame();
-		
-		if (d == currentSelected) {
+	    d.process(id);
+	    //if (currentPair.count == confirmEvery) {
+	    //if ((id.rvals.length != 0) && (id.gvals.length != 0) && (id.bvals.length != 0)) {
+		//currentPair.count = 0;
+	    //Frame f = d.getFrame();
+	    
+	    if (d == currentSelected) {
 		    //System.out.println(f.getTitle()+" is selected.");
-		    currentPair.d.process(id);
-		    super.process(id);
-		    if (this.memName != null) {
-			CommonMemory.setValue(this.memName, new Boolean(true));
-		    }
-		}
-		else {
-		    currentPair.d.process(id);
-		    if (this.memName != null) {
-			CommonMemory.setValue(this.memName, new Boolean(false));
-		    }
-		}
+		//currentPair.d.process(id);
+		id.command = Command.IS_TANK;
+		super.process(id);
+		//if (this.memName != null) {
+		//CommonMemory.setValue(this.memName, new Boolean(true));
+		//}
 	    }
 	    else {
-		if (this.memName != null) {
-		    if (d == currentSelected) {
-			super.process(id);
-			CommonMemory.setValue(this.memName, new Boolean(true));
-		    }
-		    else {
-			CommonMemory.setValue(this.memName, new Boolean(false));			
-		    }
-		}
+		id.command = Command.IS_NOT_TANK;
+		super.process(id);
+		//currentPair.d.process(id);
+		//if (this.memName != null) {
+		//CommonMemory.setValue(this.memName, new Boolean(false));
+		//}
 	    }
+	    //}
+	    //else {
+		//if (this.memName != null) {
+		//    if (d == currentSelected) {
+		//	super.process(id);
+		//	CommonMemory.setValue(this.memName, new Boolean(true));
+		//    }
+		//    else {
+		//	CommonMemory.setValue(this.memName, new Boolean(false));			
+		//    }
+		//}
+	    //}
 	}
+    
 	else { //if (!foundIt)
 	    Pair newPair = addTarget(id);
 	    newPair.d.process(id);
-	    if (this.memName != null) {
-		CommonMemory.setValue(this.memName, new Boolean(false));
-	    }
+	    id.command = Command.IS_NOT_TANK;
+	    super.process(id);
+	    //if (this.memName != null) {
+	    //CommonMemory.setValue(this.memName, new Boolean(false));
+	    //}
 	}
     }
 
@@ -167,7 +180,7 @@ public class HumanRecognition extends Node {
 	MyDisplay d;
 	int targetID;
 	Pair next;
-	int count;
+	//int count;
 	Pair(int targetID){
 	    init(targetID, null);
 	}
@@ -176,9 +189,14 @@ public class HumanRecognition extends Node {
 	}
 	private void init(int targetID, Pair next) {
 	    this.targetID = targetID;
-	    d = new MyDisplay("Target #"+targetID);
+	    if (targetID == -2) {
+		d = new MyDisplay("NO TARGET");
+	    }
+	    else {
+		d = new MyDisplay("Target #"+targetID);
+	    }
 	    this.next = next;
-	    count = 0;
+	    //count = 0;
 	}
     }
 
@@ -216,6 +234,10 @@ public class HumanRecognition extends Node {
 	    return super.frame;
 	}
 	
+    }
+
+    public void setLatency(int latency) {
+	this.latency = latency;
     }
 
 }
