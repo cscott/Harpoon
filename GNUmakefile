@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.78 2000-01-14 19:39:25 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.79 2000-03-01 05:23:40 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -87,7 +87,7 @@ JARPKGS := $(subst harpoon/Contrib,gnu, \
 		$(foreach pkg, $(filter-out JavaChip%, \
 			$(filter-out Test%,$(ALLPKGS))), harpoon/$(pkg)))
 PROPERTIES:=Contrib/getopt/MessagesBundle.properties \
-	    RunTime/Monitor.properties
+	    RunTime/Monitor.properties Support/nativecode-makefile.template
 PKGDESC:=$(wildcard overview.html) $(wildcard README) \
 	 $(foreach dir, $(ALLPKGS),\
 	    $(wildcard $(dir)/package.html) $(wildcard $(dir)/README))
@@ -152,9 +152,10 @@ jikes: 	$(MACHINE_GEN)
 
 properties:
 	@echo -n Updating properties... ""
-	@-mkdir -p gnu/getopt harpoon/RunTime
+	@-mkdir -p gnu/getopt harpoon/RunTime harpoon/Support
 	@cp Contrib/getopt/MessagesBundle.properties gnu/getopt
 	@cp RunTime/Monitor.properties harpoon/RunTime
+	@cp Support/nativecode-makefile.template harpoon/Support
 	@echo done.
 
 first:
