@@ -8,6 +8,7 @@
 
 #include <assert.h>
 #include <unistd.h>
+#include <stdlib.h> /* for exit */
 
 static inline
 void fni_runtime_exitInternal(JNIEnv *env, jint status) {
