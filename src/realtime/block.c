@@ -16,7 +16,8 @@ inline struct Block* Block_new(void* superBlockTag,
 #ifdef RTJ_DEBUG
   printf("Block_new(0x%08x, %d)\n", superBlockTag, size);
 #endif
-  (bl->free) = ((bl->begin) = (void*)RTJ_MALLOC_UNCOLLECTABLE(size));
+  (bl->free) = (bl->oldBegin) = (bl->begin) = 
+    (void*)RTJ_MALLOC_UNCOLLECTABLE(size);
 #ifdef RTJ_TIMER
   gettimeofday(&end, NULL);
   printf("Block_new: %ds %dus\n", 
@@ -30,7 +31,7 @@ inline struct Block* Block_new(void* superBlockTag,
   (bl->superBlockTag) = superBlockTag;
   (bl->next) = (bl->prev) = NULL;
 #ifdef WITH_NOHEAP_SUPPORT
-  bl->begin = (void*)RTJ_ALIGN((bl->begin+1));
+  (bl->free) = (bl->begin) = (void*)RTJ_ALIGN((((char*)(bl->begin))+1));
 #ifdef RTJ_DEBUG
   printf("  adjusted begin for NoHeapRealtimeThread support: 0x%08x\n", 
 	 bl->begin);
@@ -84,7 +85,11 @@ inline void Block_free(struct Block* block) {
   printf("Block_free(0x%08x)\n", block);
 #endif
   Block_finalize(block);
+#ifdef WITH_NOHEAP_SUPPORT
+  RTJ_FREE(block->oldBegin);
+#else
   RTJ_FREE(block->begin);
+#endif
   RTJ_FREE(block);
 #ifdef RTJ_TIMER
   gettimeofday(&end, NULL);
@@ -116,7 +121,7 @@ inline void Block_scan(struct Block* block) {
   for(oobj_ptr = block->begin; ((void*)oobj_ptr) < block->free;
       ((void*)oobj_ptr) += 
 #ifdef WITH_NOHEAP_SUPPORT
-	RTJ_ALIGN(FNI_ObjectSize(oobj_ptr)+1)
+	RTJ_ALIGN(((char*)FNI_ObjectSize(oobj_ptr))+1)
 #else
 	RTJ_ALIGN(FNI_ObjectSize(oobj_ptr))
 #endif
@@ -159,7 +164,7 @@ inline void Block_finalize(struct Block* block) {
   for (obj = block->begin; ((void*)obj) < block->free;
        ((void*)obj) +=
 #ifdef WITH_NOHEAP_SUPPORT
-	 RTJ_ALIGN(FNI_ObjectSize(obj)+1)
+	 RTJ_ALIGN(((char*)FNI_ObjectSize(obj))+1)
 #else
 	 RTJ_ALIGN(FNI_ObjectSize(obj))
 #endif

@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.97 $)dnl
+AC_REVISION($Revision: 1.98 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -169,7 +169,7 @@ AM_CONDITIONAL(ROLE_INFER, test $with_role_infer = yes)
 dnl process option for Realtime Java support.
 AC_MSG_CHECKING([for realtime java support])
 AC_ARG_WITH(realtime-java,
-[  --with-realtime-java[={yes,full,stubs,threads}][,noheap] incorporate Realtime Java support],
+[  --with-realtime-java[={yes,full,stubs,fake,threads}][,noheap][,debug[-ref]][,gc-stats][,timer]],
 with_realtime_java="$withval", with_realtime_java="no")
 case ",$with_realtime_java," in
 ,yes* | ,full, | ,threads*) AC_MSG_RESULT([yes])
@@ -182,6 +182,12 @@ case ",$with_realtime_java," in
 ,stubs,)	AC_MSG_RESULT([stubs])
 	AC_DEFINE(WITH_REALTIME_JAVA_STUBS, 1,
 	[Define if you want to incorporate stubs for RTJ support, but no real support])
+	;;
+,fake,)	AC_MSG_RESULT([fake])
+	AC_DEFINE(WITH_REALTIME_JAVA_STUBS, 1,
+	[Define if you want to incorporate stubs for RTJ support, but no real support])
+	AC_DEFINE(WITH_FAKE_SCOPES, 1,
+	[Define if you want fake scopes to accompany the FAKE_SCOPES compiler option])
 	;;
 *)	AC_MSG_RESULT([no])
 	;;
@@ -207,9 +213,45 @@ case ",$with_realtime_java," in
 *)	AC_MSG_RESULT([no])
 	;;
 esac 
+AC_MSG_CHECKING([for debugging info for RTJ programs (no compiler support)])
+case ",$with_realtime_java," in
+*,debug*)	AC_MSG_RESULT([yes])
+	AC_DEFINE(RTJ_DEBUG, 1,
+	[Define if you want debugging support for RTJ programs (no compiler support)])
+	;;
+*)	AC_MSG_RESULT([no])
+	;;
+esac
+AC_MSG_CHECKING([for debugging info for RTJ programs (with DEBUG_REF option)])
+case ",$with_realtime_java," in
+*,debug-ref*) AC_MSG_RESULT([yes])
+	AC_DEFINE(RTJ_DEBUG_REF, 1,
+	[Define if you want debugging support for RTJ programs (with DEBUG_REF option)])
+	;;
+*)	AC_MSG_RESULT([no])
+	;;
+esac
+AC_MSG_CHECKING([for GC pause-time statistics for RTJ programs])
+case ",$with_realtime_java," in
+*,gc-stats*) AC_MSG_RESULT([yes])
+	AC_DEFINE(WITH_GC_STATS, 1,
+	[Define if you want GC pause-time statistics for RTJ programs])
+	;;
+*)	AC_MSG_RESULT([no])
+	;;
+esac
+AC_MSG_CHECKING([for timing of RTJ-internal calls])
+case ",$with_realtime_java," in
+*,timer*) AC_MSG_RESULT([yes])
+	AC_DEFINE(RTJ_TIMER, 1,
+	[Define if you want RTJ-internal call timings])
+	;;
+*)	AC_MSG_RESULT([no])
+	;;
+esac
 
 AM_CONDITIONAL(REALTIME_JAVA, test $with_realtime_java != no)
-AM_CONDITIONAL(REALTIME_JAVA_STUBS, test $with_realtime_java = stubs)
+AM_CONDITIONAL(REALTIME_JAVA_STUBS, test $with_realtime_java = stubs -o $with_realtime_java = fake)
 AM_CONDITIONAL(REALTIME_JAVA_THREADS, test $with_realtime_threads = yes)
 
 dnl process option to select full stack trace on exceptions.

@@ -450,7 +450,8 @@ inline void _heapCheck_leap(struct oobj* ptr, const int line, const char* file) 
 }
 
 #ifdef RTJ_DEBUG_REF
-inline void heapCheckRef(struct oobj* ptr, const int line, const char* file) {
+inline void heapCheckRef(struct oobj* ptr, const int line, const char* file, 
+			 const char* op) {
 #else
 inline void heapCheckJava(struct oobj* ptr) {
 #endif 
@@ -458,13 +459,16 @@ inline void heapCheckJava(struct oobj* ptr) {
   if (((struct FNI_Thread_State*)env)->noheap) {
     char desc[400];
     jclass excls = (*env)->FindClass(env, "java/lang/IllegalAccessException");
+#ifdef RTJ_DEBUG
 #ifdef RTJ_DEBUG_REF
-    printf("attempted heap reference 0x%08x in java code at %s:%d\n", ptr, file, line);
+    printf("attempted heap reference 0x%08x in java code at %s:%d during %s\n", 
+	   ptr, file, line, op);
     printPointerInfo(ptr, 0);
     exit(1);
 #else
     printf("attempted heap reference 0x%08x in java code\n", ptr);
     exit(1);
+#endif
 #endif
     (*env)->ThrowNew(env, excls, 
 		     "Illegal heap access.  Use RTJ_DEBUG_REF for more information.");

@@ -26,6 +26,9 @@
 
 struct Block {
   void* superBlockTag;
+#ifdef WITH_NOHEAP_SUPPORT 
+  void* oldBegin;
+#endif
   void* begin;
   void* end;
   void* free;

@@ -23,6 +23,8 @@ JNIEXPORT void JNICALL Java_javax_realtime_ImmortalMemory_initNative
 	 env, memoryArea, (size_t)size);
   checkException();
 #endif
+  /* Thread must be set up before you can create a real ImmortalMemory. */
+  assert(!RTJ_init_in_progress);
   (inflated_ma = getInflatedObject(env, memoryArea))->memBlock = mbHeap;
 #ifdef WITH_NOHEAP_SUPPORT
   inflated_ma->temp = mbNoHeap;

@@ -103,7 +103,8 @@ inline int IsNoHeapRealtimeThread(JNIEnv *env,
 inline void _heapCheck_leap(struct oobj* ptr, const int line, const char* file);
 #define heapCheck(ptr) _heapCheck_leap(ptr, __LINE__, __FILE__)
 #ifdef RTJ_DEBUG_REF
-inline void heapCheckRef(struct oobj* ptr, const int line, const char* file);
+inline void heapCheckRef(struct oobj* ptr, const int line, const char* file,
+			 const char* op);
 #else
 inline void heapCheckJava(struct oobj* ptr);
 #endif

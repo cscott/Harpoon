@@ -28,7 +28,7 @@
 void *FNI_RawAlloc(JNIEnv *env, jsize length) {
 #if defined(WITH_CLUSTERED_HEAPS)
   return NGBL_malloc(length);
-#elif defined(WITH_RTJ_NATIVE_MALLOC)
+#elif defined(WITH_REALTIME_JAVA)
   return RTJ_malloc(length);
 #elif defined(WITH_PRECISE_GC)
   return precise_malloc(length);

@@ -7,7 +7,8 @@ noinst_LTLIBRARIES = librealtime.la
 
 
 if REALTIME_JAVA_STUBS
-librealtime_la_SOURCES = RTJstubs.c GCstats.h GCstats.c
+librealtime_la_SOURCES = RTJstubs.c GCstats.h GCstats.c NoHeapRealtimeThread.h \
+NoHeapRealtimeThread.c
 else
 if REALTIME_JAVA_THREADS
 librealtime_la_SOURCES =  MemBlock.h MemBlock.c MemoryArea.c MemoryArea.h \
@@ -18,7 +19,7 @@ ImmortalMemory.c ImmortalPhysicalMemory.h ImmortalPhysicalMemory.c \
 LTMemory.h LTMemory.c NullMemoryArea.h NullMemoryArea.c ScopedPhysicalMemory.h \
 ScopedPhysicalMemory.c VTMemory.h VTMemory.c block.c block.h GCstats.c \
 GCstats.h RawMemory.h RawMemory.c RTJfinalize.h RTJfinalize.c RealtimeSystem.h \
-RealtimeSystem.c threads.c
+RealtimeSystem.c NoHeapRealtimeThread.h NoHeapRealtimeThread.c threads.c
 else
 librealtime_la_SOURCES =  MemBlock.h MemBlock.c MemoryArea.c MemoryArea.h \
 RTJmalloc.h RTJmalloc.c blockAllocator.h blockAllocator.c heapMemory.h \
@@ -28,7 +29,7 @@ ImmortalMemory.c ImmortalPhysicalMemory.h ImmortalPhysicalMemory.c \
 LTMemory.h LTMemory.c NullMemoryArea.h NullMemoryArea.c ScopedPhysicalMemory.h \
 ScopedPhysicalMemory.c VTMemory.h VTMemory.c block.c block.h GCstats.c \
 GCstats.h RawMemory.h RawMemory.c RTJfinalize.h RTJfinalize.c RealtimeSystem.h \
-RealtimeSystem.c
+RealtimeSystem.c NoHeapRealtimeThread.h NoHeapRealtimeThread.c
 endif
 endif
 

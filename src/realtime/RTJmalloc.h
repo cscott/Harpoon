@@ -11,6 +11,7 @@
 
 inline void RTJ_preinit();
 inline void RTJ_init();
+int RTJ_init_in_progress;
 
 #ifdef RTJ_DEBUG_REF
 #define RTJ_malloc(size) RTJ_malloc_ref(size, __LINE__, __FILE__);

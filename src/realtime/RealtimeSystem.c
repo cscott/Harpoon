@@ -32,7 +32,7 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_RealtimeSystem_getCurrentGC
   checkException();
 #endif
 #elif defined(WITH_PRECISE_GC)
-#ifdef MARKSWEEP
+#ifdef WITH_MARKSWEEP_GC
   gcCls = (*env)->FindClass(env, "javax/realtime/MarkSweepGarbageCollector");
 #ifdef RTJ_DEBUG
   printf("Mark & Sweep\n");
@@ -46,7 +46,8 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_RealtimeSystem_getCurrentGC
 #ifdef RTJ_DEBUG
   checkException();
 #endif
-#else
+#endif
+#ifdef WITH_COPYING_GC
   gcCls = (*env)->FindClass(env, "javax/realtime/CopyingGarbageCollector");
 #ifdef RTJ_DEBUG
   printf("Stop & Copy\n");

@@ -58,12 +58,11 @@ int main(int argc, char *argv[]) {
 #endif
   /* initialize Realtime Java extensions */
   /* setup main thread info. */
-#ifdef WITH_REALTIME_JAVA
+#if defined(WITH_REALTIME_JAVA) || defined(WITH_FAKE_SCOPES)
   RTJ_preinit();
 #endif
   FNI_java_lang_Thread_setupMain(env);
-#ifdef WITH_REALTIME_JAVA
-
+#if defined(WITH_REALTIME_JAVA) || defined(WITH_FAKE_SCOPES)
   RTJ_init();
 #endif
   thrCls  = (*env)->FindClass(env, "java/lang/Thread");

@@ -313,7 +313,7 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   jobject mainThr, mainThrGrp;
   /* first make main thread object. */
   thrCls  = (*env)->FindClass(env,
-#ifdef WITH_REALTIME_JAVA
+#if defined(WITH_REALTIME_JAVA) || defined(WITH_FAKE_SCOPES)
                               "javax/realtime/RealtimeThread"
 #else
                               "java/lang/Thread"
