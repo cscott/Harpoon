@@ -46,7 +46,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.14 2000-01-31 20:48:36 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.15 2000-01-31 23:43:51 pnkfelix Exp $
 */
 public class BasicBlock {
     
@@ -86,21 +86,6 @@ public class BasicBlock {
 	return Collections.unmodifiableMap(hceToBB);
     }
 
-
-    /** BasicBlock constructor.
-
-	<BR> <B>requires:</B> <code>f</code> is the first element of
-	                      the basic block and <code>l</code> is
-			      the last element of the BasicBlock.
-    */
-    private BasicBlock (HCodeElement f, HCodeElement l, CFGrapher gr) {
-	first = f; last = l; 
-	pred_bb = new HashSet(); succ_bb = new HashSet();
-	grapher = gr;
-	num = BBnum++;
-    }
-
-
     /** BasicBlock Iterator generator.
 	<BR> <B>effects:</B> returns an <code>Iterator</code> over all
 	of the <code>BasicBlock</code>s linked to and from
@@ -132,6 +117,10 @@ public class BasicBlock {
 	    } 
 	}
 	return lst.iterator();
+    }
+
+    public Iterator blocksIterator() {
+	return basicBlockIterator(this);
     }
 
     
@@ -167,7 +156,6 @@ public class BasicBlock {
 	}
 	
 	BasicBlock first = new BasicBlock(head, gr);
-	first.size = 1;
 	first.hceToBB = hceToBB;
 	h.put(head, first);
 	hceToBB.put(head, first);
@@ -186,10 +174,14 @@ public class BasicBlock {
 	    while(!foundEnd) {
 		int n = gr.succC(last).size();
 		if (n == 0) {
+		    if(DEBUG) System.out.println("found end:   "+last);
+
 		    foundEnd = true;
 		    first.leaves.add(current); 
 
 		} else if (n > 1) { // control flow split
+		    if(DEBUG) System.out.println("found split: "+last);
+
 		    for (int i=0; i<n; i++) {
 			HCodeElement e_n = gr.succ(last)[i].to();
 			BasicBlock bb = (BasicBlock) h.get(e_n);
@@ -207,9 +199,10 @@ public class BasicBlock {
 		} else { // one successor
 		    Util.assert(n == 1, "must have one successor");
 		    HCodeElement next = gr.succ(last)[0].to();
-		    current.size++;
 		    int m = gr.predC(next).size();
 		    if (m > 1) { // control flow join
+			if(DEBUG) System.out.println("found join:  "+next);
+
 			BasicBlock bb = (BasicBlock) h.get(next);
 			if (bb == null) {
 			    bb = new BasicBlock(next, gr);
@@ -223,6 +216,10 @@ public class BasicBlock {
 			foundEnd = true;
 			
 		    } else { // no join; update our guess
+			if(DEBUG) System.out.println("found line:  "+
+						     last+", "+ next);
+			
+			current.size++;
 			hceToBB.put(next, current);
 			last = next;
 		    }
@@ -338,17 +335,17 @@ public class BasicBlock {
 		// iterate to correct starting point
 		HCodeElement curr = first;
 		int i;
+
+		// slight rep inconsistency in upper bound; we'll keep
+		// next pointing at curr, even though that's the
+		// prev-elem, not the next one.  See implementation
+		// below for details 
 		for(i=0; i<index-1; i++) {
 		    curr = grapher.succ(curr)[0].to();
 		}
-		if (index != size) { 
-		    curr = grapher.succ(curr)[0].to();
-		} else {
-		    // slight rep inconsistency; we'll keep next
-		    // pointing at curr, even though that's the
-		    // prev-elem, not the next one.  See
-		    // implementation below for details
-		}
+
+
+		
 
 		// new final vars to be passed to ListIterator
 		final HCodeElement fcurr = curr;
@@ -367,14 +364,24 @@ public class BasicBlock {
 			}
 			ind++;
 			Object ret = next;
+			Util.assert(ind <= size, 
+				    "ind > size:"+ind+", "+size);
 			if (ind != size) {
-			    next = grapher.succ(next)[0].to();
-			} else {
+			    HCodeEdge[] succs = grapher.succ(next);
+			    Util.assert(succs.length == 1,
+					next+" has wrong succs:" + 
+					java.util.Arrays.asList(succs)+
+					" (ind: "+ind+")");
+			    next = succs[0].to(); 
+
+			} else { 
 			    // keep 'next' the same, since previous()
 			    // needs to be able to return it
 			}
 			return ret;
 		    }
+		    
+		    
 		    public boolean hasPrevious() {
 			if (ind == size) {
 			    return true;
@@ -403,11 +410,12 @@ public class BasicBlock {
     /** Accept a visitor. */
     public void accept(BasicBlockVisitor v) { v.visit(this); }
     
-    protected BasicBlock (HCodeElement f, CFGrapher gr) {
+    protected BasicBlock(HCodeElement f, CFGrapher gr) {
 	first = f; last = null; 
 	pred_bb = new HashSet(); succ_bb = new HashSet();
 	grapher = gr;
 	num = BBnum++;
+	size = 1;
     }
 
     /** Returns the root <code>BasicBlock</code>.
@@ -431,7 +439,6 @@ public class BasicBlock {
     private static void addEdge(BasicBlock from, BasicBlock to) {
 	from.addSuccessor(to);
 	to.addPredecessor(from);
-	if (DEBUG) System.out.println("adding CFG edge from "+from+" to "+to);
     }
     
     public String toString() {
@@ -451,9 +458,9 @@ public class BasicBlock {
 	Enumeration e = new ReversePostOrderEnumerator(start);
 	while (e.hasMoreElements()) {
 	    BasicBlock bb = (BasicBlock)e.nextElement();
-	    System.out.println("Basic block "+bb);
-	    System.out.println("HCodeElement in : "+bb.pred_bb);
-	    System.out.println("HCodeElement out: "+bb.succ_bb);
+	    System.out.println("Basic block "+bb + " size:"+ bb.size);
+	    System.out.println("BasicBlock in : "+bb.pred_bb);
+	    System.out.println("BasicBlock out: "+bb.succ_bb);
 	    System.out.println();
 	}
     }
