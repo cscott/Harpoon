@@ -14,11 +14,11 @@ import java.util.Iterator;
  *  object becomes bound to the object being created. Changes to the values
  *  in the <code>SporadicParameters</code> object affect the constructed
  *  object. If given to more than one constructor, then changes to the
- *  values in the <code>SporadicParameters</code> object affect ALL of the
- *  associated objects. Note that this is a one-to-many relationship and
- *  NOT a many-to-many.
+ *  values in the <code>SporadicParameters</code> object affect <i>all</i>
+ *  of the associated objects. Note that this is a one-to-many relationship
+ *  and <i>not</i> a many-to-many.
  */
-public abstract class SporadicParameters extends AperiodicParameters {
+public class SporadicParameters extends AperiodicParameters {
     private RelativeTime minInterarrival;
     private String arrivalTimeQueueOverflowBehavior;
     private int initialArrivalTimeQueueLength;

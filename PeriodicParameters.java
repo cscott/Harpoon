@@ -16,8 +16,8 @@ import java.util.Iterator;
  *  the object being created. Changes to the values in the
  *  <code>PeriodicParameters</code> object affect the constructed object. If
  *  fiben to more than one constructor then changes to the values in the
- *  <code>PeriodicParameters</code> object affect ALL the associated objects.
- *  Note that this is a one-to-many relationship, NOT many-to-many.
+ *  <code>PeriodicParameters</code> object affect <i>all</i> the associated objects.
+ *  Note that this is a one-to-many relationship, <i>not</i> many-to-many.
  */
 public class PeriodicParameters extends ReleaseParameters {
     

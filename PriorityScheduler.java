@@ -77,7 +77,7 @@ public class PriorityScheduler extends Scheduler {
      *  further notice. Whether the resulting system is feasible or not, the addition
      *  is completed.
      */
-    protected boolean addToFeasibility(final Schedulable schedulable) {
+    protected void addToFeasibility(final Schedulable schedulable) {
 	allThreads.add(schedulable);
 	thread[nThreads] = new ThreadConstraints();
 	thread[nThreads].threadID = ++nextThreadID;
@@ -91,8 +91,6 @@ public class PriorityScheduler extends Scheduler {
 		addThreadInC(schedulable, nextThreadID);
 	    }
 	});
-	
-	return isFeasible();
     }
 
     protected native void addThreadInC(Schedulable t, long threadID);

@@ -230,6 +230,14 @@ public class RealtimeThread extends Thread implements Schedulable {
 
 	return -1;
     }
+    
+    /** Gets a reference to the current <code>MemoryArea</code>. */
+    public MemoryArea getMemoryArea() {
+	if (mem == null) {
+	    mem = (original = HeapMemory.instance()).shadow;
+	}
+	return original;
+    }
 
     /** Get the size of the stack of <code>MemoryArea</code> instances to which
      *  this <code>RealtimeThread</code> has access.
@@ -593,14 +601,6 @@ public class RealtimeThread extends Thread implements Schedulable {
 	}
 	return mem;
     }  
-
-    /** */
-    public MemoryArea getMemoryArea() {
-	if (mem == null) {
-	    mem = (original = HeapMemory.instance()).shadow;
-	}
-	return original;
-    }
 
     void enter(MemoryArea mem, MemoryArea original) {
 	memAreaStack = MemAreaStack.PUSH(this.mem, this.original, memAreaStack);

@@ -11,6 +11,13 @@ import java.io.*;
  *  to execute the <code>run()</code> method.
  */
 public interface Schedulable extends java.lang.Runnable {
+
+    /** Add the scheduling and release characteristics of <code>this</code>
+     *  to the set of such chracteristics already being considered, if the
+     *  addition would result in the new, larger set being feasible.
+     */
+    public boolean addIfFeasible();
+
     /** Inform the scheduler and cooperating facilities that the resource
      *  demands (as expressed in the associated instances of
      *  <code>SchedulingParameters, ReleaseParameters, MemoryParameters</code>
@@ -46,6 +53,43 @@ public interface Schedulable extends java.lang.Runnable {
      *  or not, the subtraction is completed.
      */
     public void removeFromFeasibility();
+
+    /** This method appears in many classes in the RTSJ and with various parameters.
+     *  The parameters are either new scheduling characteristics for an instance of
+     *  <code>Schedulable</code> or an instance of <code>Schedulable</code>. The
+     *  method first performs a feasibility analysis using the new scheduling
+     *  characteristics of either <code>this</code> or the given instance of
+     *  <code>Schedulable</code>. If the resulting system is feasible the method
+     *  replaces the current sheduling characteristics, of either <code>this</code>
+     *  or the given instance of <code>Schedulable</code> as appropriate, with the
+     *  new scheduling characteristics.
+     */
+    public boolean setIfFeasible(ReleaseParameters release, MemoryParameters memory);
+
+    /** This method appears in many classes in the RTSJ and with various parameters.
+     *  The parameters are either new scheduling characteristics for an instance of
+     *  <code>Schedulable</code> or an instance of <code>Schedulable</code>. The
+     *  method first performs a feasibility analysis using the new scheduling
+     *  characteristics of either <code>this</code> or the given instance of
+     *  <code>Schedulable</code>. If the resulting system is feasible the method
+     *  replaces the current sheduling characteristics, of either <code>this</code>
+     *  or the given instance of <code>Schedulable</code> as appropriate, with the
+     *  new scheduling characteristics.
+     */
+    public boolean setIfFeasible(ReleaseParameters release, MemoryParameters memory,
+				 ProcessingGroupParameters group);
+
+    /** This method appears in many classes in the RTSJ and with various parameters.
+     *  The parameters are either new scheduling characteristics for an instance of
+     *  <code>Schedulable</code> or an instance of <code>Schedulable</code>. The
+     *  method first performs a feasibility analysis using the new scheduling
+     *  characteristics of either <code>this</code> or the given instance of
+     *  <code>Schedulable</code>. If the resulting system is feasible the method
+     *  replaces the current sheduling characteristics, of either <code>this</code>
+     *  or the given instance of <code>Schedulable</code> as appropriate, with the
+     *  new scheduling characteristics.
+     */
+    public boolean setIfFeasible(ReleaseParameters release, ProcessingGroupParameters group);
 
     /** Set the <code>MemoryParameters</code> of this schedulable object. */
     public void setMemoryParameters(MemoryParameters memory);
