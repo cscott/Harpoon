@@ -41,7 +41,7 @@ import harpoon.ClassFile.HCodeElement;
  * facilities for specifying number of recursive inlinings.
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.2 1999-09-09 21:42:55 cananian Exp $ */
+ * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.3 2000-06-07 23:08:44 salcianu Exp $ */
 public class MethodInliningCodeFactory implements HCodeFactory {
 
     static PrintWriter pw = new PrintWriter(System.out);
@@ -255,7 +255,9 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	    // assertion to ensure that it doesn't?
 	    replace = new NOP(site.getFactory(), null);
 	  }
-	  Quad[] qArray = { q.prev()[0], replace, site.next()[0] };
+	  // make the successor(replace) be the 1-successor of the
+	  // calling site (the succesor for the "exception thrown" case).
+	  Quad[] qArray = { q.prev()[0], replace, site.next()[1] };
 	  Quad.addEdges( qArray );
 	}
 
@@ -273,67 +275,11 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 		// a NOP and replace := NOP
 		replace = new NOP(site.getFactory(), null);
 	    }
-	    // make the successor(replace) be the successor of the
-	    // calling site.
+	    // make the successor(replace) be the 0-successor of the
+	    // calling site (the succesor for the normal case).
 	    Quad[] qArray = { q.prev()[0], replace, site.next()[0] };
 	    Quad.addEdges( qArray );
 	}
     }
-
-
-
-
-//     // temporary main method to try some ideas out on...is supposed to
-//     // be removed before I commit to repository
-//     public static void main(String[] args) {
-//  	HClass hc = HClass.forName(args[0]);
-// 	HMethod[] methods = hc.getMethods();
-// 	for (int i=0; i<methods.length; i++) {
-// 	    HMethod method = methods[i];
-// 	    // pw.println(method.getName());
-// 	    if (method.getName().equals("main")) {
-// 		performTest(method);
-// 	    }
-// 	}
-//     }
-
-//     // scans method for all CALL sites, and inlines each one,
-//     // nonrecursively (thus a breadth-first traversal of the call
-//     // graph)
-//     public static void performTest(HMethod method) {
-// 	MethodInliningCodeFactory factory = 
-// 	    new MethodInliningCodeFactory();
-// 	HCode code;
-// 	code = factory.convert(method);
-
-// 	if (code == null) return;
-
-// 	pw.println("Code prior to inlining");	
-// 	code.print(pw);
-// 	pw.println();
-
-	
-// 	HCodeElement[] hces = code.getElements();
-
-// 	for (int i=0; i<hces.length; i++) {
-// 	    HCodeElement q = hces[i];
-// 	    if (q instanceof CALL) {
-// 		pw.println("INLINING " + q);
-// 	        factory.inline( (CALL) q);
-// 	    }
-// 	}
-	
-	
-// 	code = factory.convert(method);
-
-// 	pw.println("---------------------------");
-// 	pw.println("Code after inlining");
-// 	code.print(pw);
-// 	pw.println();
-	
-// 	pw.flush();
-	
-//     }
-
 
 }
