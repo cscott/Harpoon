@@ -6,6 +6,7 @@ package harpoon.Analysis;
 import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
@@ -20,7 +21,7 @@ import java.util.Map;
  * from a different <code>AllocationInformation</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformationMap.java,v 1.5 2002-06-25 18:09:28 kkz Exp $
+ * @version $Id: AllocationInformationMap.java,v 1.6 2002-11-29 20:34:21 salcianu Exp $
  */
 public class AllocationInformationMap
     implements AllocationInformation, java.io.Serializable {
@@ -45,7 +46,16 @@ public class AllocationInformationMap
      *  <code>AllocationInformation</code>. */
     public void transfer(HCodeElement newallocsite, HCodeElement oldallocsite,
 			 TempMap tm, AllocationInformation ai) {
+
 	AllocationProperties ap = ai.query(oldallocsite);
+
+
+	if(ap == null) {
+	    System.out.println("ap IS null!");
+	    System.out.println("ai instanceof " + ai.getClass().getName());
+	    assert false : " ";
+	}
+
 	associate(newallocsite, ap.allocationHeap()==null ? ap :
 		  new AllocationPropertiesImpl(ap, tm));
     }
@@ -60,6 +70,8 @@ public class AllocationInformationMap
 	final Temp allocationHeap;
 	final HClass actualClass;
 	final boolean setDynamicWBFlag;
+	final HField memoryChunkField;
+	
 	public AllocationPropertiesImpl(boolean hasInteriorPointers,
 					boolean canBeStackAllocated,
 					boolean canBeThreadAllocated,
@@ -68,6 +80,21 @@ public class AllocationInformationMap
 					Temp allocationHeap,
 					HClass actualClass,
 					boolean setDynamicWBFlag) {
+	    this(hasInteriorPointers,
+		 canBeStackAllocated, canBeThreadAllocated, makeHeap,
+		 noSynchronization, allocationHeap,
+		 actualClass, setDynamicWBFlag, null);
+	}
+
+	public AllocationPropertiesImpl(boolean hasInteriorPointers,
+					boolean canBeStackAllocated,
+					boolean canBeThreadAllocated,
+					boolean makeHeap,
+					boolean noSynchronization,
+					Temp allocationHeap,
+					HClass actualClass,
+					boolean setDynamicWBFlag,
+					HField memoryChunkField) {
 	    assert !(allocationHeap!=null && !canBeThreadAllocated);
 	    assert !(allocationHeap!=null && makeHeap);
 	    this.hasInteriorPointers  = hasInteriorPointers;
@@ -78,6 +105,7 @@ public class AllocationInformationMap
 	    this.allocationHeap       = allocationHeap;
 	    this.actualClass          = actualClass;
 	    this.setDynamicWBFlag     = setDynamicWBFlag;
+	    this.memoryChunkField     = memoryChunkField;
 	}
 	public AllocationPropertiesImpl(AllocationProperties ap, 
 					TempMap tm) {
@@ -89,7 +117,8 @@ public class AllocationInformationMap
 		 ap.allocationHeap() != null ?
 		 tm.tempMap(ap.allocationHeap()) : null,
 		 ap.actualClass(),
-		 ap.setDynamicWBFlag());
+		 ap.setDynamicWBFlag(),
+		 ap.getMemoryChunkField());
 	}
 	public boolean hasInteriorPointers() { return hasInteriorPointers; }
 	public boolean canBeStackAllocated() { return canBeStackAllocated; }
@@ -99,5 +128,6 @@ public class AllocationInformationMap
 	public Temp allocationHeap()         { return allocationHeap; }
 	public HClass actualClass()          { return actualClass; }
 	public boolean setDynamicWBFlag()    { return setDynamicWBFlag; }
+	public HField getMemoryChunkField()  { return memoryChunkField; }
     }
 }
