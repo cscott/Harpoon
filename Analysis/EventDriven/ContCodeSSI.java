@@ -24,7 +24,7 @@ import java.util.Map;
  * using <code>quad-no-ssa</code> <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContCodeSSI.java,v 1.1.2.1 2000-02-13 04:39:35 bdemsky Exp $
+ * @version $Id: ContCodeSSI.java,v 1.1.2.2 2000-04-04 02:16:36 bdemsky Exp $
  */
 public class ContCodeSSI extends harpoon.IR.Quads.QuadSSI  {
 
@@ -57,3 +57,6 @@ public class ContCodeSSI extends harpoon.IR.Quads.QuadSSI  {
         return qf;
     }
 }
+
+
+

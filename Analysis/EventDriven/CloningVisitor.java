@@ -61,11 +61,15 @@ import java.util.Set;
 import java.util.Arrays;
 import java.util.Collections;
 import java.lang.reflect.Modifier;
+
+import harpoon.Analysis.AllocationInformationMap;
+import harpoon.Analysis.Maps.AllocationInformation;
+
 /**
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.20 2000-04-01 05:58:17 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.21 2000-04-04 02:16:36 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -92,6 +96,8 @@ public class CloningVisitor extends QuadVisitor {
     Set blocking;
     CALL origCall;
     Set cclasses;
+    AllocationInformation oldai;
+    AllocationInformationMap newai;
 
     public CloningVisitor(Set blockingcalls, Set cont_todo,
 			  Map cont_map, Map env_map, 
@@ -123,11 +129,16 @@ public class CloningVisitor extends QuadVisitor {
 	this.optimistic=optimistic;
 	this.recycle=recycle;
 	this.cclasses=cclasses;
+	this.oldai=((QuadSSI)hc).getAllocationInformation();
     }
 
     public void reset(HMethod nhm, TempFactory otf, boolean isCont, CALL origCall) {
 	followchildren=true;
 	hcode=new ContCodeSSI(nhm);
+	if (oldai!=null) {
+	    newai=new AllocationInformationMap();
+	    ((QuadSSI)hcode).setAllocationInformation(newai);
+	}
 	cclasses.add(nhm.getDeclaringClass());
 	qf=((ContCodeSSI)hcode).getFactory();
 	stillokay=methodstatus;
@@ -238,6 +249,24 @@ public class CloningVisitor extends QuadVisitor {
     public void visit(Quad q) {
 	followchildren=true;
 	quadmap.put(q, q.clone(qf, ctmap));
+    }
+
+    public void visit(NEW q) {
+	//DONE AIMAP[if !methodstatus then change stack-->Thread Heap] 
+	followchildren=true;
+	Quad qc=(Quad)q.clone(qf,ctmap);
+	quadmap.put(q, qc);
+	if (newai!=null)
+	    if (methodstatus) {
+		newai.transfer(qc,q,ctmap, oldai);
+	    } else {
+		AllocationInformation.AllocationProperties aiprop=oldai.query(q);
+		newai.associate(qc,new AllocationInformationMap.AllocationPropertiesImpl(aiprop.hasInteriorPointers(),
+											 false,
+											 aiprop.canBeThreadAllocated()||aiprop.canBeStackAllocated(),
+											 aiprop.useOwnHeap(),
+											 ((aiprop.allocationHeap()!=null)&&(aiprop.canBeThreadAllocated()))?ctmap.tempMap(aiprop.allocationHeap()) : null));
+	    }
     }
     
     public void visit(PHI q) {
@@ -454,8 +483,12 @@ public class CloningVisitor extends QuadVisitor {
 	    //Build Exception Thrower
 	    HClass HCex=linker.forName("java.lang.ClassCastException");
 	    Temp tex=new Temp(tf), tex2=new Temp(tf), tex3=new Temp(tf);
+	    //XXXX AIMAP [HEAP]
 	    NEW nquad=new NEW(qf, first, tex,
 			      HCex);
+	    if (newai!=null)
+		newai.associate(nquad, new AllocationInformationMap.AllocationPropertiesImpl(true,
+											 false, false,false,null));
 	    Temp t1ex=new Temp(tf),t2=new Temp(tf);
 	    CALL call=new CALL(qf, first, HCex.getConstructor(new HClass[0]),
 			       new Temp[]{tex}, null, tex2, false, false,
@@ -636,8 +669,10 @@ public class CloningVisitor extends QuadVisitor {
 	    :linker.forName
 	    ("harpoon.Analysis.ContBuilder." + pref + "DoneContinuation");
 	Temp newt=new Temp(tf);
+	//XXXX AIMAP [CURRENT THREAD]
 	NEW newq=new NEW(qf,q,newt, continuation);
-	
+	if (newai!=null)
+	    newai.associate(newq, new AllocationInformationMap.AllocationPropertiesImpl(true, false, true, false, null));
 	
 	//---------------------------------------------------------------------
 	//Build CALL to DoneContinuation constructor
@@ -746,6 +781,7 @@ public class CloningVisitor extends QuadVisitor {
      */
 
     private void scheduleMethods(HMethod hm) {
+	HMethod hmorig=hm;
 	if (!old2new.containsKey(hm)) {
 	    HClass hcl=hm.getDeclaringClass();
 	    Set classes=ch.children(hcl);
@@ -774,8 +810,9 @@ public class CloningVisitor extends QuadVisitor {
 			    HCode toConvert=ucf.convert(hm);
 			    if (toConvert!=null)
 				async_todo.add(toConvert);
-			    else if (Modifier.isNative(hm.getModifiers()))
+			    else if (Modifier.isNative(hm.getModifiers())) {
 				System.out.println("XXX:ERROR Native blocking: "+hm);
+			    }
 			    HMethod temp=AsyncCode.makeAsync(old2new, hm,
 							     ucf,linker,optimistic);
 			} else {
@@ -890,8 +927,11 @@ public class CloningVisitor extends QuadVisitor {
 		    //Build Exception Thrower
 		    HClass HCex=linker.forName("java.lang.ClassCastException");
 		    Temp tex=new Temp(tf), tex2=new Temp(tf), tex3=new Temp(tf);
+		    //XXXX AIMAP [HEAP]
 		    NEW nquad=new NEW(qf, q, tex,
 				      HCex);
+		    if (newai!=null)
+			newai.associate(nquad, new AllocationInformationMap.AllocationPropertiesImpl(true, false, false, false, null));
 		    Temp t1ex=new Temp(tf),t2=new Temp(tf);
 		    CALL calla=new CALL(qf, q, HCex.getConstructor(new HClass[0]),
 				       new Temp[]{tex}, null, tex2, false, false,
@@ -968,7 +1008,11 @@ public class CloningVisitor extends QuadVisitor {
 	    //---------------------------------------------------------------------
 	    //Build Environment NEW & CALL to init
 	    HClass env=getEnv(q);
+	    //XXXXXXXXXX
+	    //AIMAP[Current Thread]
 	    NEW envq=new NEW(qf, q, tenv, env);
+	    if (newai!=null)
+		newai.associate(envq, new AllocationInformationMap.AllocationPropertiesImpl(true, false, true,false, null));
 	    Quad.addEdge(cnext,0,envq,0);
 	    Temp t1=new Temp(tf),t2=new Temp(tf),t21=new Temp(tf),t22=new Temp(tf);
 	    CALL callenv=new CALL(qf, q, env.getConstructors()[0],
@@ -984,7 +1028,10 @@ public class CloningVisitor extends QuadVisitor {
 	    
 	    Temp tcont=new Temp(tf);
 	    HClass contclass=(HClass)cont_map.get(q);
+	    //XXX AIMAP[Current Thread]
 	    NEW newc=new NEW(qf, q, tcont, contclass);
+	    if (newai!=null)
+		newai.associate(newc, new AllocationInformationMap.AllocationPropertiesImpl(true, false, true,false, null));
 	    Quad.addEdge(callenv,0,newc,0);
 	    //	HClass environment=linker.forName("harpoon.Analysis.EnvBuilder.Environment");
 	    HConstructor call2const=contclass.getConstructor(new HClass[]{

@@ -20,6 +20,7 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.Temp.Temp;
 
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -29,7 +30,7 @@ import harpoon.Util.WorkSet;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.11 2000-03-24 06:15:35 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.12 2000-04-04 02:16:36 bdemsky Exp $
  */
 public class EventDriven {
     protected final CachingCodeFactory ucf;
@@ -97,11 +98,14 @@ public class EventDriven {
 	HEADER header=(HEADER) (hc.getRootElement());
 	METHOD method=(METHOD) (header.next(1));
 	params=method.params();
-
+	//NO ALLOCATION IN HERE
 	ucf.put(oldmain, new EventDrivenCode(oldmain, newmain, params, linker));
 	return oldmain;
     }
 }
+
+
+
 
 
 

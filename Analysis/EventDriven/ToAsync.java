@@ -42,7 +42,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.28 2000-04-01 05:58:17 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.29 2000-04-04 02:16:36 bdemsky Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -56,6 +56,7 @@ public class ToAsync {
 
     Set blockingmm;
     MetaCallGraph mcg;
+
 
 
     /** Creates a <code>ToAsync</code>. */

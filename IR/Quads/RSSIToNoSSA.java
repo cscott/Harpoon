@@ -12,6 +12,9 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.WorkSet;
 
+import harpoon.Analysis.AllocationInformationMap;
+import harpoon.Analysis.Maps.AllocationInformation;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
@@ -21,13 +24,15 @@ import java.util.Map;
  * <code>RSSIToNoSSA</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: RSSIToNoSSA.java,v 1.1.2.1 2000-02-13 04:38:09 bdemsky Exp $
+ * @version $Id: RSSIToNoSSA.java,v 1.1.2.2 2000-04-04 02:16:14 bdemsky Exp $
  */
 public class RSSIToNoSSA {
     QuadFactory newQF;
     Code code;
     private CloningTempMap ctm;
     private Quad header;
+    AllocationInformationMap newai;
+    AllocationInformation oldai;
 
     /** Creates a <code>RSSIToNoSSA</code>. */
     public RSSIToNoSSA(QuadFactory newQF, Code code) {
@@ -35,8 +40,15 @@ public class RSSIToNoSSA {
 	this.code=code;
 	ctm=new CloningTempMap(code.qf.tempFactory(),newQF.tempFactory());
 	this.header=translate();
+	this.oldai=code.getAllocationInformation();
+	if (oldai!=null)
+	    this.newai=new AllocationInformationMap();
+	else
+	    this.newai=null;
     }
     public Quad getQuads() { return header; }
+
+    public AllocationInformation getAllocationInfo() {return newai;}
 
     private Quad translate() {
 	HashMap quadmap=new HashMap();
@@ -44,7 +56,12 @@ public class RSSIToNoSSA {
 	     qiter.hasNext();) {
 	    Quad q=(Quad)qiter.next();
 	    try {
-		quadmap.put(q, q.clone(newQF, ctm));
+		Quad qc=(Quad)q.clone(newQF,ctm);
+		if ((newai!=null)&&((q instanceof harpoon.IR.Quads.NEW)||
+		(q instanceof harpoon.IR.Quads.ANEW))) {
+		    newai.transfer(qc,q,ctm, oldai);
+		}
+		quadmap.put(q, qc);
 	    } catch (Exception e) {
 		e.printStackTrace();
 		System.out.println(((CALL)q).method());

@@ -63,7 +63,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.59 2000-03-25 10:14:26 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.60 2000-04-04 02:16:36 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -140,7 +140,7 @@ public class AsyncCode {
 	CachingCodeFactory ucf;
 	Linker linker;
 	boolean methodstatus;
-
+	
 	public ContVisitor(WorkSet cont_todo, Set async_todo, 
 			   Map old2new, Map cont_map, 
 			   Map env_map, QuadLiveness liveness,
@@ -173,6 +173,8 @@ public class AsyncCode {
 	}
 
 	void addCode(HMethod hm, HCode hc) {
+	    //XXXXX NEED HOOK FOR AIMAP
+
 	    if (clonevisit.needsRepair()) {
 		//	hc.print(new java.io.PrintWriter(System.out, true));
 		ucf.put(hm,hc);
@@ -363,6 +365,7 @@ public class AsyncCode {
 	String methodNamePrefix = original.getName() + ((optimistic)?"AsyncO":"Async");
 	String newMethodName = methodNamePrefix;
 	boolean threadrun=false;
+	boolean createmethod=true;
 	if (linker.forName("java.lang.Runnable").
 	    isSuperinterfaceOf(originalClass)&&
 	    originalClass.getMethod("run",new HClass[0]).equals(original)) {
@@ -381,13 +384,17 @@ public class AsyncCode {
 		newMethodName = methodNamePrefix; 
 		originalClass.getDeclaredMethod(newMethodName, 
 					original.getParameterTypes());
-		throw new RuntimeException("Name collision with "+newMethodName+ " method");
+		//throw new RuntimeException("Name collision with "+newMethodName+ " method");
+		System.out.println("Name collision with "+newMethodName+ " method");
+		createmethod=false;
+		old2new.put(original,originalClass.getDeclaredMethod(newMethodName, 
+								     original.getParameterTypes()));
 	    } catch (NoSuchMethodError e) {
 	    }
 	}
 	// create replacement method
 	HMethod replacement=null;
-	if (!threadrun) {
+	if (createmethod&&(!threadrun)) {
 	    replacement=originalMutator.addDeclaredMethod(newMethodName, 
 							  original.getParameterTypes(),
 							  newReturnType);
@@ -402,8 +409,8 @@ public class AsyncCode {
 	    HMethodMutator rmutator=replacement.getMutator();
 	    rmutator.setReturnType(newReturnType);
 	}
-
-	old2new.put(original, replacement);
+	if (createmethod)
+	    old2new.put(original, replacement);
 	return replacement;
     }
 
