@@ -38,13 +38,14 @@ import harpoon.Util.Util;
  * this case (and only in this case).
  * <p>
  * Note that <b>exactly one</b> of { <code>retval</code>, <code>retex</code> }
- * will be defined execution of <code>CALL</code>; thus it is <b>perfectly
+ * will be defined after the execution of <code>CALL</code>; thus it is 
+ * <b>perfectly
  * valid for <code>retval</code> and <code>retex</code> to be identical</b>.
- * Of course, for typesafety the return type cannot be a primitive if this
+ * Of course, for type-safety the return type cannot be primitive if this
  * is so.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.14 1999-10-23 05:59:33 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.15 1999-11-17 20:12:25 cananian Exp $ 
  */
 public class CALL extends SIGMA {
     /** The method to invoke. */
@@ -73,10 +74,10 @@ public class CALL extends SIGMA {
      *        an array of <code>Temp</code>s containing the parameters
      *        to pass to the method.  The object on which to invoke the 
      *        method is the first element in the parameter list of a
-     *        virtual method; non-virtual methods do not need to specify a
-     *        receiver.  For non-virtual methods, <code>params</code>
+     *        non-static method; static methods do not need to specify a
+     *        receiver.  For static methods, <code>params</code>
      *        should match exactly the number and types of parameters in 
-     *        the method descriptor.  For virtual methods, the receiver
+     *        the method descriptor.  For non-static methods, the receiver
      *        object (which is not included in the descriptor) is element
      *        zero of the <code>params</code> array.
      * @param retval
@@ -94,7 +95,7 @@ public class CALL extends SIGMA {
      *        virtual method; <code>false</code> for constructors,
      *        private methods, and static initializers, which have
      *        non-virtual invocation semantics.
-     *        Value is unspecified for static methods, although the
+     *        Value doesn't matter for static methods; the
      *        <code>isVirtual()</code> method will always return 
      *        <code>false</code> in this case.
      * @param isTailCall
