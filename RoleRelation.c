@@ -60,8 +60,11 @@ struct intlist * remap(struct hashtable *h, int origrole) {
   struct intlist *tmp=NULL;
   if (contains(h,origrole))
     tmp=(struct intlist *) gettable(h,origrole);
-  else
-    return NULL;
+  else {
+    struct intlist *nl=(struct intlist *)calloc(1,sizeof(struct intlist));
+    nl->element=origrole;
+    return nl;
+  }
 
   while(tmp!=NULL) {
     struct intlist *nl=(struct intlist *)calloc(1,sizeof(struct intlist));
@@ -74,13 +77,14 @@ struct intlist * remap(struct hashtable *h, int origrole) {
   while(todo!=NULL) {
     struct intlist *todoold=todo;
     todo=todo->next;
-    if (contains(h, todo->element)) {
-      struct intlist *tmp=(struct intlist *) gettable(h,todo->element);
+    if (contains(h, todoold->element)) {
+      struct intlist *tmp=(struct intlist *) gettable(h,todoold->element);
       while(tmp!=NULL) {
-	struct intlist *searchptr=todo;
+	struct intlist *searchptr=todoold;
 	while(searchptr!=NULL) {
 	  if(searchptr->element==tmp->element)
 	    break;
+	  searchptr=searchptr->next;
 	}
 	if (searchptr==NULL) {
 	  struct intlist *nl=(struct intlist *)calloc(1,sizeof(struct intlist));
@@ -93,12 +97,13 @@ struct intlist * remap(struct hashtable *h, int origrole) {
     } else {
       struct intlist *searchptr=retval;
       while(searchptr!=NULL) {
-	if(searchptr->element==tmp->element)
+	if(searchptr->element==todoold->element)
 	  break;
+	searchptr=searchptr->next;
       }
       if(searchptr==NULL) {
 	struct intlist *nl=(struct intlist *)calloc(1,sizeof(struct intlist));
-	nl->element=tmp->element;
+	nl->element=todoold->element;
 	nl->next=retval;
 	retval=nl;
       }
