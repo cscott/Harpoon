@@ -11,14 +11,14 @@ import harpoon.ClassFile.*;
 import harpoon.IR.QuadSSA.*;
 import harpoon.Analysis.TypeInfo;
 import harpoon.Analysis.Maps.TypeMap;
-import harpoon.Analysis.QuadSSA.Profile;
+import harpoon.Analysis.QuadSSA.*;
 
 import harpoon.IR.QuadNoSSA.*;
 /**
  * <code>Main</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ProfileMain.java,v 1.2.4.6 1998-12-01 16:26:06 mfoltz Exp $
+ * @version $Id: ProfileMain.java,v 1.2.4.7 1998-12-08 21:22:49 mfoltz Exp $
  */
 
 //<<<<<<< Main.java
@@ -36,12 +36,17 @@ public class ProfileMain extends harpoon.IR.Registration {
 	java.io.PrintWriter out;
 	String title;
 	boolean profile = false;
+	boolean scc = false;
+	harpoon.Analysis.UseDef usedef = new UseDef();
+	SCCAnalysis scc_analysis = new SCCAnalysis(usedef);
+	SCCOptimize scc_optimize = new SCCOptimize(scc_analysis, scc_analysis, scc_analysis);
 
 	if (args[0].equals("1")) profile = true;
+	if (args[1].equals("1")) scc = true;
 
-	HClass interfaceClasses[] = new HClass[args.length-1];
-	for (int i=1; i<args.length; i++)
-	    interfaceClasses[i-1] = HClass.forName(args[i]);
+	HClass interfaceClasses[] = new HClass[args.length-2];
+	for (int i=2; i<args.length; i++)
+	    interfaceClasses[i-2] = HClass.forName(args[i]);
 	// Do something intelligent with these classes. XXX
 	for (int i=0; i<interfaceClasses.length; i++) {
 	    NClass nclass = new NClass(interfaceClasses[i]);
@@ -64,6 +69,8 @@ public class ProfileMain extends harpoon.IR.Registration {
 		  try {
 		    //insert profiling stuff -- mfoltz
 		    if (profile) harpoon.Analysis.QuadSSA.Profile.optimize(hc1);
+		    if (scc) { scc_optimize.optimize(hc1); }
+		      
 		    // title = interfaceClasses[i].getName()+":"+hm[j].getName();
 		    // out = new PrintWriter( 
 // 				      new FileOutputStream 
