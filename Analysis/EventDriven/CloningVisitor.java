@@ -63,7 +63,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.8 2000-02-14 15:51:28 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.9 2000-03-15 20:18:29 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -968,6 +968,7 @@ public class CloningVisitor extends QuadVisitor {
     public HMethod swapAdd(HMethod old) {
 	HClass ss=linker.forName("java.net.ServerSocket");
 	HClass fis=linker.forName("java.io.FileInputStream");
+	HClass fos=linker.forName("java.io.FileOutputStream");
 	if (old.equals(ss.getConstructor(new HClass[] {HClass.Int,
 							   HClass.Int,
 							   linker.forName("java.net.InetAddress")})))
@@ -975,6 +976,9 @@ public class CloningVisitor extends QuadVisitor {
 	if (old.equals(fis.getConstructor(new HClass[] {linker.forName("java.lang.String")}))||
 	    old.equals(fis.getConstructor(new HClass[] {linker.forName("java.io.FileDescriptor")})))
 	    return fis.getDeclaredMethod("makeAsync", new HClass[0]);
+	if (old.equals(fos.getConstructor(new HClass[] {linker.forName("java.lang.String"), HClass.Boolean}))||
+	    old.equals(fos.getConstructor(new HClass[] {linker.forName("java.io.FileDescriptor")})))
+	    return fos.getDeclaredMethod("makeAsync", new HClass[0]);
 	return null;
     }
     
