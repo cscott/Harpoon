@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.30 1998-10-11 03:01:01 cananian Exp $
+ * @version $Id: HClass.java,v 1.31 1998-10-11 19:19:55 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -436,6 +436,29 @@ public class HClass {
 	    return declaredMethods[i];
 	}
       }
+    // didn't find a match.  Oh, well.
+    throw new NoSuchMethodError(name);
+  }
+  /**
+   * Returns a <code>HMethod</code> object that reflects the specified 
+   * declared method of the class or interface represented by this 
+   * <code>HClass</code> object.  The <code>name</code> parameter is a
+   * <code>String</code> that specifies the simple name of the desired
+   * method, and <code>descriptor</code> is a string describing
+   * the parameter types and return value of the method.
+   * @exception NoSuchMethodError
+   *            if a matching method is not found.
+   * @see HMethod#getDescriptor
+   */
+  public HMethod getDeclaredMethod(String name, String descriptor)
+    throws NoSuchMethodError {
+    // construct master declaredMethod list, if we haven't already.
+    if (declaredMethods==null) getDeclaredMethods();
+    // look for method name/type in master list.
+    for (int i=0; i<declaredMethods.length; i++)
+      if (declaredMethods[i].getName().equals(name) &&
+	  declaredMethods[i].getDescriptor().equals(descriptor))
+	return declaredMethods[i];
     // didn't find a match.  Oh, well.
     throw new NoSuchMethodError(name);
   }
