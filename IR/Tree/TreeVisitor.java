@@ -4,7 +4,7 @@ package harpoon.IR.Tree;
  * <code>TreeVisitor</code> is a Design Pattern, courtesy of Martin.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version 1.1.2.1 
+ * @version 1.1.2.3
  */
 public abstract class TreeVisitor
 {
@@ -16,14 +16,14 @@ public abstract class TreeVisitor
   public void visit(CALL e)           { visit((Exp)e); }
   public void visit(CJUMP e)          { visit((Stm)e); }
   public void visit(CONST e)          { visit((Exp)e); }
-  public void visit(DCONST e)         { visit((CONST)e); }
+  public void visit(CONSTD e)         { visit((CONST)e); }
+  public void visit(CONSTF e)         { visit((CONST)e); }
+  public void visit(CONSTI e)         { visit((CONST)e); }  
+  public void visit(CONSTL e)         { visit((CONST)e); }
   public void visit(ESEQ e)           { visit((Exp)e); }
   public void visit(EXP e)            { visit((Stm)e); }
-  public void visit(FCONST e)         { visit((CONST)e); }
-  public void visit(ICONST e)         { visit((CONST)e); }
   public void visit(JUMP e)           { visit((Stm)e); }
   public void visit(LABEL e)          { visit((Stm)e); }
-  public void visit(LCONST e)         { visit((CONST)e); }
   public void visit(LMEM e)           { visit((Exp)e); }
   public void visit(LTEMP e)          { visit((Exp)e); }
   public void visit(MEM e)            { visit((Exp)e); }
@@ -37,6 +37,11 @@ public abstract class TreeVisitor
   public void visit(OPER e)           { visit((Exp)e); }
   public void visit(SEQ e)            { visit((Stm)e); }
   public void visit(TEMP e)           { visit((Exp)e); }
+  public void visit(TEMPA e)          { visit((TEMP)e); }
+  public void visit(TEMPD e)          { visit((TEMP)e); }
+  public void visit(TEMPF e)          { visit((TEMP)e); }
+  public void visit(TEMPI e)          { visit((TEMP)e); }
+  public void visit(TEMPL e)          { visit((TEMP)e); }
   public void visit(UNOP e)           { visit((OPER)e); }
 
 }
