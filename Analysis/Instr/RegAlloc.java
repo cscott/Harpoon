@@ -47,10 +47,10 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.40 1999-10-15 02:13:53 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.41 1999-10-15 02:42:58 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
-    private static final boolean BRAIN_DEAD = false;
+    private static final boolean BRAIN_DEAD = true;
 
     protected Frame frame;
     protected Code code;
