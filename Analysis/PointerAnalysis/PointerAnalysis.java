@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.74 2001-01-23 22:26:15 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.75 2001-02-09 23:44:47 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -82,6 +82,9 @@ public class PointerAnalysis {
 
     /** crazy, isn't it? */
     public static boolean MEGA_DEBUG = false;
+
+    /** Turns on the recording of the actions done by the program. */
+    public static boolean RECORD_ACTIONS = false;
 
     /** Turns on the save memory mode. In this mode, some of the speed is
 	sacrified for the sake of the memory consumption. More specifically,
@@ -107,10 +110,6 @@ public class PointerAnalysis {
 	methods with loops, it tends to be just a cartesian product between
 	I and O. */
     public static final boolean IGNORE_EO = true;
-
-    /** Controls the recording of data about the thread nodes that are
-	touched after being started. */
-    public static final boolean TOUCHED_THREAD_SUPPORT= false;
 
     // TODO: Most of the following flags should be final (which will
     // help somehow the compiler to perform some dead code elimination
@@ -160,7 +159,7 @@ public class PointerAnalysis {
 	don't have any conflict with real fields. */
     public static final String ARRAY_CONTENT = "+ae+";
 
-    public static final boolean DO_INTRA_PROC_TRIMMING = true;
+    public static final boolean DO_INTRA_PROC_TRIMMING = false;
 
     // The HCodeFactory providing the actual code of the analyzed methods
     private final MetaCallGraph  mcg;
@@ -187,18 +186,18 @@ public class PointerAnalysis {
 
     /** Creates a <code>PointerAnalysis</code>.
      *
-     *  @param _mcg The (meta) Call Graph that models the caller-callee
+     *  @param mcg The (meta) Call Graph that models the caller-callee
      *  relation between methods.
-     *  @param _mac The dual of <code>_mcg</code> (<i>ie</i> the
+     *  @param mac The dual of <code>_mcg</code> (<i>ie</i> the
      *  callee-caller relation.
      *  @param lbbconv The producer of the (Light) Basic Block representation
      *  of a method body. 
      *
      *</ul> */
-    public PointerAnalysis(MetaCallGraph _mcg, MetaAllCallers _mac,
+    public PointerAnalysis(MetaCallGraph mcg, MetaAllCallers mac,
 			   LBBConverter lbbconv) {
-	mcg  = _mcg;
-	mac  = _mac;
+	this.mcg  = mcg;
+	this.mac  = mac;
 	scc_lbb_factory = new CachingSCCLBBFactory(lbbconv);
 	if(SAVE_MEMORY)
 	    aamm = new HashSet();
@@ -238,7 +237,7 @@ public class PointerAnalysis {
      * parameters will disappear anyway).
      * Returns <code>null</code> if no such graph is available. */
     public ParIntGraph getExtParIntGraph(MetaMethod mm){
-	return getExtParIntGraph(mm,true);
+	return getExtParIntGraph(mm, true);
     }
 
     // internal method doing the job
@@ -330,12 +329,6 @@ public class PointerAnalysis {
 	return InterThreadPA.resolve_threads(this, pig);
     }
 
-    private ParIntGraph threadIntInteraction(MetaMethod mm){
-	System.out.println("threadIntInteraction for " + mm);
-	ParIntGraph pig = (ParIntGraph) getIntParIntGraph(mm);
-	return InterThreadPA.resolve_threads(this, pig);
-    }
-
     private ParIntGraph threadExtInteraction(MetaMethod mm){
 	System.out.println("threadExtInteraction for " + mm);
 
@@ -371,15 +364,11 @@ public class PointerAnalysis {
     public ParIntGraph getIntThreadInteraction(MetaMethod mm){
             ParIntGraph pig = (ParIntGraph)hash_proc_interact_int.get(mm);
             if(pig == null){
-                pig = threadIntInteraction(mm);
+                pig = threadInteraction(mm);
                 hash_proc_interact_int.put(mm, pig);
             }
             return pig;
     }
-
-
-
-
 
     // Worklist of <code>MetaMethod</code>s for the inter-procedural analysis
     private PAWorkStack W_inter_proc = new PAWorkStack();
@@ -440,9 +429,9 @@ public class PointerAnalysis {
     
 
     // Top-level procedure for the analysis. Receives the main method as
-    // parameter. For the moment, it is not doing the inter-thread analysis
+    // parameter.
     private void analyze(MetaMethod mm){
-	if(DEBUG)
+	//if(DEBUG)
 	    System.out.println("ANALYZE: " + mm);
 
 	long begin_time = TIMING ? System.currentTimeMillis() : 0;
@@ -761,16 +750,19 @@ public class PointerAnalysis {
 	    // do not analyze loads from non-pointer fields
 	    if(hf.getType().isPrimitive()) return;
 
-	    if(l2 == null){
+	    if(l2 != null)
+		process_load(q,q.dst(),l2,hf.getName());
+	    else {
 		// special treatement of the static fields
 		l2 = ArtificialTempFactory.getTempFor(hf);
 		// this part should really be put in some preliminary step
 		PANode static_node =
 		    nodes.getStaticNode(hf.getDeclaringClass().getName());
-		lbbpig.G.I.addEdge(l2,static_node);
-		lbbpig.G.e.addNodeHole(static_node,static_node);
-	    }
-	    process_load(q,q.dst(),l2,hf.getName());
+		lbbpig.G.I.addEdge(l2, static_node);
+		lbbpig.G.e.addNodeHole(static_node, static_node);
+		process_load(q, q.dst(), l2, hf.getName());
+		lbbpig.G.I.removeEdge(l2, static_node);
+	    }	    
 	}
 	
 	/** Load statement; special case - arrays. */
@@ -821,25 +813,25 @@ public class PointerAnalysis {
 		set_S.add(load_node);
 		lbbpig.G.O.addEdges(set_E,f,load_node);
 
-		if(!PointerAnalysis.IGNORE_EO)
+		if(!IGNORE_EO)
 		    lbbpig.eo.add(set_E, f, load_node, lbbpig.G.I);
 
 		lbbpig.G.I.addEdges(l1,set_S);
 		lbbpig.G.propagate(set_E);
 
-		// update the action repository
-		Set active_threads = lbbpig.tau.activeThreadSet();
-		Iterator it_esc_nodes = set_E.iterator();
-
-		while(it_esc_nodes.hasNext()){
-		    PANode ne = (PANode) it_esc_nodes.next();
-		    lbbpig.ar.add_ld(ne, f, load_node,
-				    ActionRepository.THIS_THREAD,
-				    active_threads);
+		if(RECORD_ACTIONS) {
+		    // update the action repository
+		    Set active_threads = lbbpig.tau.activeThreadSet();
+		    Iterator it_esc_nodes = set_E.iterator();
+		    
+		    while(it_esc_nodes.hasNext()){
+			PANode ne = (PANode) it_esc_nodes.next();
+			lbbpig.ar.add_ld(ne, f, load_node,
+					 ActionRepository.THIS_THREAD,
+					 active_threads);
+		    }
 		}
 	    }
-
-	    if(TOUCHED_THREAD_SUPPORT) touch_threads(set_aux);
 	}
 
 
@@ -916,8 +908,6 @@ public class PointerAnalysis {
 		
 	    lbbpig.G.I.addEdges(set1,f,set2);
 	    lbbpig.G.propagate(set1);
-
-	    if(TOUCHED_THREAD_SUPPORT) touch_threads(set1);
 	}
 	
 	public void process_thread_start_site(CALL q){
@@ -946,6 +936,10 @@ public class PointerAnalysis {
 	}
 
 	public void visit(CALL q){
+
+	    // DEBUG
+	    System.out.println("CALL " + Debug.code2str(q));
+
 	    // treat the thread start sites specially
 	    if(thread_start_site(q)){
 		process_thread_start_site(q);
@@ -978,39 +972,26 @@ public class PointerAnalysis {
 
 	/** Process an acquire statement. */
 	public void visit(MONITORENTER q){
-	    process_acquire_release(q, q.lock());
+	    if(RECORD_ACTIONS)
+		process_acquire_release(q, q.lock());
 	}
 
 	/** Process a release statement. */
 	public void visit(MONITOREXIT q){
-	    process_acquire_release(q, q.lock());
+	    if(RECORD_ACTIONS)
+		process_acquire_release(q, q.lock());
 	}
 
 	// Does the real processing for acquire/release statements.
 	private void process_acquire_release(Quad q, Temp l){
 	    Set active_threads = lbbpig.tau.activeThreadSet();
 	    Iterator it_nodes = lbbpig.G.I.pointedNodes(l).iterator();
-	    while(it_nodes.hasNext()){
+	    while(it_nodes.hasNext()) {
 		PANode node = (PANode) it_nodes.next();
 		PASync sync = new PASync(node,ActionRepository.THIS_THREAD, q);
 		lbbpig.ar.add_sync(sync, active_threads);
 	    }
-
-	    if(TOUCHED_THREAD_SUPPORT)
-		touch_threads(lbbpig.G.I.pointedNodes(l));
 	}
-
-	// Records the fact that the started thread from the set 
-	// "set_touched_nodes" have been touched.
-	private void touch_threads(Set set_touched_nodes){
-	    for(Iterator it = set_touched_nodes.iterator(); it.hasNext();){
-		PANode touched_node = (PANode)it.next();
-		if((touched_node.type == PANode.INSIDE) &&
-		   lbbpig.tau.isStarted(touched_node))
-		    lbbpig.touch_thread(touched_node);
-	    }
-	}
-
 
 	/** End of the currently analyzed method; store the graph
 	    in the hash table. */

@@ -32,7 +32,7 @@ import harpoon.Util.TypeInference.TypeInference;
 import harpoon.IR.Quads.QuadFactory;
 
 import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.LightRelation;
+import harpoon.Util.DataStructs.RelationImpl;
 import harpoon.Util.DataStructs.RelationEntryVisitor;
 
 import harpoon.Util.Util;
@@ -49,7 +49,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.47 2000-07-02 08:37:43 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.48 2001-02-09 23:44:46 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -390,7 +390,7 @@ abstract class InterProcPA {
 
 	// update the node mapping by matching outside edges from the caller
 	// with inside edges from the callee
-	match_edges(mu,pig_caller,pig_callee);
+	match_edges(mu, pig_caller, pig_callee);
 
 	if(DEBUG) System.out.println("After matching edges:" + mu);
 
@@ -410,8 +410,9 @@ abstract class InterProcPA {
 	pig_caller.insertAllButArEo(pig_callee, mu, false, params);
 
 	// bring the actions of the callee into the caller's graph
-	bring_actions(pig_caller.ar, pig_callee.ar,
-		      pig_caller.tau.activeThreadSet(), mu);
+	if(PointerAnalysis.RECORD_ACTIONS)
+	    bring_actions(pig_caller.ar, pig_callee.ar,
+			  pig_caller.tau.activeThreadSet(), mu);
 
 	// bring the edge ordering relation into the caller's graph
 	if(!PointerAnalysis.IGNORE_EO)
@@ -460,7 +461,7 @@ abstract class InterProcPA {
 						ParIntGraph pig_caller,
 						ParIntGraph pig_callee,
 						PANode[] callee_params){
-	Relation mu = new LightRelation();
+	Relation mu = new RelationImpl();
 	Temp[] args = q.params();
 	int object_params_count = 0;
 
@@ -545,7 +546,7 @@ abstract class InterProcPA {
 			PANode node4 = (PANode)it4.next();
 			if(mu.add(node2,node4)){
 			    changed = true;
-			    new_info.add(node2,node4);
+			    new_info.add(node2, node4);
 			}
 		    }
 		    // nodes with new info are put in the worklist
@@ -593,7 +594,7 @@ abstract class InterProcPA {
 				      final Relation mu){
 	// Add this "common-sense" rule to the mapping: the inter-procedural
 	// analysis stays in the same thread.
-	mu.add(ActionRepository.THIS_THREAD,ActionRepository.THIS_THREAD);
+	mu.add(ActionRepository.THIS_THREAD, ActionRepository.THIS_THREAD);
 
 	// Step 1. Put all the actions from the callee as being executed
 	// in // with all the threads that are active in the caller.
@@ -757,9 +758,13 @@ abstract class InterProcPA {
 	if(pig.G.escaped(n_src)){
 	    PANode n_L = node_rep.getLoadNodeSpecial(q, f);
 	    pig.G.O.addEdge(n_src, f, n_L);
-	    pig.ar.add_ld(n_src, f, n_L, ActionRepository.THIS_THREAD,
-			  pig.tau.activeThreadSet());
-	    // TODO: edge ordering relation (if we want to maintain it)
+	    if(PointerAnalysis.RECORD_ACTIONS)
+		pig.ar.add_ld(n_src, f, n_L, ActionRepository.THIS_THREAD,
+			      pig.tau.activeThreadSet());
+	    if(!PointerAnalysis.IGNORE_EO) {
+		// TODO: edge ordering relation (if we want to maintain it)
+		Util.assert(false, "edge ordering not implemented here!");
+	    }
 	    f_set.add(n_L);
 	}
 
@@ -878,7 +883,7 @@ abstract class InterProcPA {
 
 	if(set_E.isEmpty())
 	    pig_before.G.I.addEdges(dst_set, f, set_S);
-	else{
+	else {
 	    PANode load_node = node_rep.getCodeNode(q, PANode.LOAD);
 
 	    pig_before.G.O.addEdges(set_E, f, load_node);
@@ -891,12 +896,14 @@ abstract class InterProcPA {
 
 	    pig_before.G.propagate(set_E);
 
-	    // update the action repository
-	    Set active_threads = pig_before.tau.activeThreadSet();
-	    for(Iterator it_E = set_E.iterator(); it_E.hasNext(); )
-		pig_before.ar.add_ld((PANode) it_E.next(), f, load_node,
-				     ActionRepository.THIS_THREAD,
-				     active_threads);
+	    if(PointerAnalysis.RECORD_ACTIONS) {
+		// update the action repository
+		Set active_threads = pig_before.tau.activeThreadSet();
+		for(Iterator it_E = set_E.iterator(); it_E.hasNext(); )
+		    pig_before.ar.add_ld((PANode) it_E.next(), f, load_node,
+					 ActionRepository.THIS_THREAD,
+					 active_threads);
+	    }
 	}
 
 	ParIntGraph pig_after1 = (ParIntGraph) pig_before.clone();

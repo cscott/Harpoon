@@ -67,7 +67,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.43 2000-12-07 00:43:56 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.44 2001-02-09 23:44:46 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -700,7 +700,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 	// Case 4: node doesn't escape into a static, a method hole or the
 	// caller, so it must escape only into one/more thread(s).
-	if(!USE_INTER_THREAD)
+
+	// some conservative guards
+	if(!(USE_INTER_THREAD && PointerAnalysis.RECORD_ACTIONS))
 	    return false;
 	ParIntGraph pig_t = pa.threadInteraction(mm);
 	// if node is not captured in pig_t, we give up (it means that the

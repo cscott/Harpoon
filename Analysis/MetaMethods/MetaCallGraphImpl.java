@@ -49,14 +49,14 @@ import harpoon.Analysis.PointerAnalysis.Debug;
 import harpoon.Util.Util;
 
 import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.LightRelation;
+import harpoon.Util.DataStructs.RelationImpl;
 import harpoon.Util.DataStructs.RelationEntryVisitor;
 
 
 /**
  * <code>MetaCallGraphImpl</code> is a full-power implementation of the
- <code>MetaCallGraph</code> interface. This is <i>the</i> interface to use
- if you want to play with meta-methods. <br>
+ <code>MetaCallGraph</code> interface. This is <i>the</i> class to use
+ if you want to play with meta-methods.<br>
 
  Otherwise, you can simply use
  <code>FakeCallGraph</code> which allows you to run things that need
@@ -65,13 +65,15 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.23 2001-01-27 01:07:02 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.24 2001-02-09 23:44:21 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
     private static boolean DEBUG = false;
     private static boolean DEBUG_CH = false;
     private static boolean COUNTER = true;
+
+    private static int SPEC_BOUND = 3;
 
     // in "caution" mode, plenty of tests are done to protect ourselves
     // against errors in other components (ex: ReachingDefs)
@@ -80,6 +82,10 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     private CachingBBConverter bbconv;
     private ClassHierarchy ch;
 
+    // the set of the classes T such that a new T instruction might be executed
+    // by the analyzed application.
+    private Set instantiated_classes = null;
+
     /** Creates a <code>MetaCallGraphImpl</code>. It must receive, in its
 	last parameter, the <code>main</code> method of the program. */
     public MetaCallGraphImpl(CachingBBConverter bbconv, ClassHierarchy ch,
@@ -87,9 +93,47 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
         this.bbconv = bbconv;
 	this.ch     = ch;
 
+	// HACK: Normally, the call graph and the set instantiated_classes
+	// should be computed simultaneously; we use the ClassHierarchy
+	// to get the latter.
+	// For any type T such that a new T might be executed, there is at
+	// least one method of T executed. So, we can approximate the set
+	// of actually instantiated classes by looking at the declaring
+	// class of all callable methods.
+	instantiated_classes = new HashSet();
+	Set old_ic = ch.instantiatedClasses();
+	for(Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    if(Modifier.isStatic(hm.getModifiers())) continue;
+	    HClass hclass = hm.getDeclaringClass();
+	    if(Modifier.isAbstract(hclass.getModifiers())) continue;
+	    if(old_ic.contains(hclass))
+		instantiated_classes.add(hclass);
+	}
+	// however, there is an exception: the arrays (they are objects too) 
+	for(Iterator it = ch.instantiatedClasses().iterator(); it.hasNext();) {
+	    HClass hclass = (HClass) it.next();
+	    if(hclass.isArray())
+		instantiated_classes.add(hclass);
+	}
+	
+	if(DEBUG_CH) {
+	    Set cls = instantiated_classes;
+	    System.out.println("INSTANTIATED CLASS(ES) (" +
+			       cls.size() + ") : {");
+	    for(Iterator it = cls.iterator(); it.hasNext(); )
+		System.out.println("  " + ((HClass) it.next()));
+	    System.out.println("}");
+	}
+
 	// analyze all the roots
 	for(Iterator it = hmroots.iterator(); it.hasNext(); )
 	    analyze((HMethod) it.next());
+
+	System.out.println("Avg. call site processing time " +
+			   ((double) call_time / nb_calls));
+	System.out.println("#calls = " + nb_calls);
+	System.out.println("#BIG calls = " + nb_big_calls);
 
 	// convert the big format (Set oriented) into the compact one (arrays)
 	compact();
@@ -101,19 +145,18 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	analyzed_mm = null;
 	WMM         = null;
 	mm_work     = null;
-	rdef        = null;
 	ets2et      = null;
 	mh2md       = null;
 	param_types = null;
 	// null these out so that we can serialize the object [CSA]
 	// (alternatively, could mark all of these as 'transient')
-	call_detector           = null;
-	dd_wrapper              = null;
-	dep_detection_visitor   = null;
-	ti_wrapper              = null;
-	type_inference_qvisitor = null;
-	ets2et                  = null;
-	ets_test                = null;
+	qvis_dd     = null;
+	qvis_ti     = null;
+	ets2et      = null;
+	ets_test    = null;
+	implementers = null;
+	kids = null;
+	instantiated_classes = null;
 	// okay, now garbage-collect.
 	System.gc();
     }
@@ -148,7 +191,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
     // Relation<MetaMethod, MetaMethod>  stores the association between
     //  the caller and its callees
-    private Relation callees1 = new LightRelation();
+    private Relation callees1 = new RelationImpl();
 
     // Map<MetaMethod,Relation<CALL,MetaMethod>> stores the association
     // between the caller and its calees at a specific call site
@@ -161,14 +204,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// we are extremely conservative: a root method could be called
 	// with any subtypes for its arguments, so we treat it as a 
 	// polymorphic one.
-	analyze(new MetaMethod(main_method,true));
-
-	if(DEBUG){
-	    Set classes = ch.instantiatedClasses();
-	    System.out.println(classes.size() + " instantiated class(es):");
-	    for(Iterator it=classes.iterator();it.hasNext();)
-		System.out.println(" " + (HClass)it.next());
-	}
+	analyze(new MetaMethod(main_method, true));
     }
 
     private PAWorkList WMM = null;
@@ -197,30 +233,26 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    analyze_meta_method();
 	}
 	all_meta_methods.addAll(analyzed_mm);
-	initial_set.clear();
 
 	if(COUNTER)
 	    System.out.println(mm_count + " analyzed meta-method(s)");
     }
 
-    private final Set calls = new HashSet();
-    private ReachingDefs rdef = null;
+    private Set calls = null;
 
-    private void analyze_meta_method(){
-
-	if(DEBUG) System.out.println("\n\n%%: " + mm_work);
+    private void analyze_meta_method() {
+	if(DEBUG)
+	    System.out.println("\n\n%%: " + mm_work);
 
 	HMethod hm = mm_work.getHMethod();
 
 	// native method, no code for analysis  -> return immediately
 	if(Modifier.isNative(hm.getModifiers())) return;
 
-	BasicBlock.Factory bbf = bbconv.convert2bb(hm);
-	HCode hcode = bbf.getHCode();
-	rdef = new ReachingDefsImpl(hcode);
-
-	// put the set of CALLs in the "calls".
-	extract_the_calls(hcode);
+	MethodData  md  = get_method_data(hm);
+	SCComponent scc = md.first_scc;
+	ets2et = md.ets2et;
+	calls  = md.calls;
 
 	if(DEBUG){
 	    System.out.println("Call sites: =======");
@@ -231,31 +263,27 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    System.out.println("===================");
 	}
 
-	MethodData md = get_method_data(hm);
-	SCComponent scc = md.last_scc;
-	ets2et = md.ets2et;
-
 	if(DEBUG){
 	    System.out.println("SCC of ExactTemp definitions: =====");
-	    for(SCComponent scc2=scc; scc2!=null; scc2=scc2.prevTopSort())
+	    for(SCComponent scc2=scc; scc2!=null; scc2=scc2.nextTopSort())
 		System.out.println(scc2.toString());
 	    System.out.println("===================================");
 	}
 
-	set_parameter_types(mm_work,hcode);
+	BasicBlock.Factory bbf = bbconv.convert2bb(hm);
+	HCode hcode = bbf.getHCode();
+	set_parameter_types(mm_work, hcode);
+
 	compute_types(scc);
-
 	analyze_calls();
-
-	calls.clear();
 
 	// before quiting this meta-method, remove the types we computed
 	// for the ExactTemps. The component graph of ExactTemps (and so,
-	// teh ExactTemps themselves) is specific to an HMethod and so, 
+	// the ExactTemps themselves) is specific to an HMethod and so, 
 	// they can be shared by many meta-methods derived from the same
 	// HMethod. Of course, I don't want the next analyzed meta-method
 	// to use the types computed for this one.
-	for(SCComponent scc2 = scc; scc2 != null; scc2 = scc2.prevTopSort())
+	for(SCComponent scc2 = scc; scc2 != null; scc2 = scc2.nextTopSort())
 	    for(Iterator it = scc2.nodes(); it.hasNext(); )
 		((ExactTemp)it.next()).clearTypeSet();
     }
@@ -276,7 +304,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	callees1.add(mcaller,mcallee);
 	Relation rel = (Relation) callees2.get(mcaller);
 	if(rel == null)
-	    callees2.put(mcaller,rel = new LightRelation());
+	    callees2.put(mcaller,rel = new RelationImpl());
 	rel.add(cs,mcallee);
     }
 
@@ -299,7 +327,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    }
 	    MetaMethod mm_callee = new MetaMethod(hm,param_types);
 	    nb_meta_methods++;
-	    record_call(mm_work,cs,mm_callee);
+	    record_call(mm_work, cs, mm_callee);
 	    if(!analyzed_mm.contains(mm_callee))
 		WMM.add(mm_callee);
     }
@@ -320,32 +348,20 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    return;
 	}
 
-	// Go over all the possible reaching defs for the pos-th parameter
-	// and over all the possible types for it. For each such type,
-	// set param_types[pos] to it and recurse on the remaining params.
-	Temp t = cs.params(pos);
+	// For any possible ExactType T of the pos-th param, set
+	// param_types[pos] to it and recurse on the remaining params.
+	ExactTemp et = getExactTemp(cs.params(pos), cs, ExactTemp.USE);
 
-	if(CAUTION && rdef.reachingDefs(cs,t).isEmpty())
-	    Util.assert(false,"No reaching defs for " + t);
+	if(CAUTION && et.getTypeSet().isEmpty())
+	    Util.assert(false, "\nNo possible type detected for " + et.t +
+			"\n in method " + cs.getFactory().getMethod() +
+			"\n at instr  " + cs.getSourceFile() + ":" +
+			cs.getLineNumber() + " " + cs);
 
-	Iterator it_rdef = rdef.reachingDefs(cs,t).iterator();
-	while(it_rdef.hasNext()){
-	    Quad qdef = (Quad) it_rdef.next(); 
-
-	    if(CAUTION && getExactTemp(t,qdef).getTypeSet().isEmpty())
-		Util.assert(false,"\nNo possible type detected for " + t +
-			    "\n in method " + cs.getFactory().getMethod() +
-			    "\n at instr  " + cs.getSourceFile() + ":" +
-			    cs.getLineNumber() + " " + cs);
-
-	    Iterator it_types = getExactTemp(t,qdef).getTypes();
-	    while(it_types.hasNext()){
-		GenType gt = (GenType) it_types.next();
-		// fix some strange bug // TODO: study the impact of type "void"
-		// if(gt.getHClass().isPrimitive()) return;
-		param_types[pos] = gt;
-		rec(hm,cs,pos+1,max_pos);
-	    }
+	for(Iterator it_types = et.getTypes(); it_types.hasNext(); ) {
+	    GenType gt = (GenType) it_types.next();
+	    param_types[pos] = gt;
+	    rec(hm, cs, pos+1, max_pos);
 	}
     }
 
@@ -371,28 +387,18 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
 	boolean found_a_run = false;
 
-	// tbase points to the receiver class
-	Temp tbase = cs.params(0);
+	// etbase.t points to the receiver class
+	ExactTemp etbase = getExactTemp(cs.params(0), cs, ExactTemp.USE);
 
-	// reaching defs for tbase
-	Set rdefs = rdef.reachingDefs(cs, tbase);
-	Util.assert(!rdefs.isEmpty(), 
-		    "Thread start site with no reaching def: " + cs);
-	
-	for(Iterator it_qdef = rdefs.iterator(); it_qdef.hasNext(); ){
-	    Quad qdef = (Quad) it_qdef.next();
-	    // possible general types for tbase (as defined in line qdef)
-	    Set pos_gts = getExactTemp(tbase, qdef).getTypeSet();
-	    for(Iterator it_gt = pos_gts.iterator(); it_gt.hasNext(); ) {
-		GenType gt = (GenType) it_gt.next();
-		Set cls = gt.isPOLY() ?
-		    get_instantiated_children(ch, gt.getHClass()) :
-		    Collections.singleton(gt.getHClass());
+	for(Iterator it_gt = etbase.getTypes(); it_gt.hasNext(); ) {
+	    GenType gt = (GenType) it_gt.next();
+	    Set cls = gt.isPOLY() ?
+		get_instantiated_children(gt.getHClass()) :
+		Collections.singleton(gt.getHClass());
 
-		for(Iterator it_cls = cls.iterator(); it_cls.hasNext(); ) {
-		    boolean hr = has_a_run(cs, (HClass) it_cls.next());
-		    found_a_run = found_a_run || hr;
-		}
+	    for(Iterator it_cls = cls.iterator(); it_cls.hasNext(); ) {
+		boolean hr = has_a_run(cs, (HClass) it_cls.next());
+		found_a_run = found_a_run || hr;
 	    }
 	}
 	
@@ -402,7 +408,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// We have to do a very conservative analysis here: examine ANY
 	// object that implements Runnable and take its run method.
 
-	Set runnables = get_instantiated_children(ch, jl_Runnable);
+	Set runnables = get_instantiated_children(jl_Runnable);
 	for(Iterator it_cls = runnables.iterator(); it_cls.hasNext(); ) {
 	    boolean hr = has_a_run(cs, (HClass) it_cls.next());
 	    found_a_run = found_a_run || hr;
@@ -451,8 +457,12 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	return true;
     }
 
+    private long call_time = 0L;
+    private int nb_calls = 0;
+    private int nb_big_calls = 0;
+
     // analyze the CALL site "cs" inside the MetaMethod "mm".
-    private void analyze_one_call(CALL cs){
+    private void analyze_one_call(CALL cs) {
 	HMethod hm = cs.method();
 	int nb_params = cs.paramsLength();
 	param_types = new GenType[nb_params];
@@ -483,83 +493,148 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	nb_meta_methods = 0;
 
 	if(nb_params == 0)
-	    Util.assert(false,"Non static method with no parameters " + cs);
+	    Util.assert(false, "Non static method with no parameters " + cs);
 
 	// the first parameter (the method receiver) must be treated specially
-	Temp tbase = cs.params(0);
+	ExactTemp etbase = getExactTemp(cs.params(0), cs, ExactTemp.USE);
+	if(CAUTION && etbase.getTypeSet().isEmpty())
+	    Util.assert(false, "No possible type detected for " + etbase);
 
-	if(CAUTION && rdef.reachingDefs(cs,tbase).isEmpty())
-	    Util.assert(false,"No reaching defs for " + tbase);
+	boolean poly = false;
 
-	Iterator it_rdef = rdef.reachingDefs(cs,tbase).iterator();
-	while(it_rdef.hasNext()){
-	    Quad qdef = (Quad) it_rdef.next();
+	long start = time();
 
-	    if(CAUTION && getExactTemp(tbase,qdef).getTypeSet().isEmpty())
-		Util.assert(false,"No possible type detected for <" + 
-			    tbase + "," + qdef + ">");
-	    
-	    Iterator it_type_base = getExactTemp(tbase,qdef).getTypes();
-	    while(it_type_base.hasNext()){
-		GenType gt = (GenType) it_type_base.next();
-		if(gt.isPOLY())
-		    treat_poly_base(hm, cs, gt);
-		else
-		    treat_mono_base(hm, cs, gt);
+	for(Iterator it_types = etbase.getTypes(); it_types.hasNext(); ) {
+	    GenType gt = (GenType) it_types.next();
+	    if(gt.isPOLY()) {
+		poly = true;
+		treat_poly_base(hm, cs, gt);
 	    }
+	    else
+		treat_mono_base(hm, cs, gt);
 	}
+
+	call_time += time() - start;
+	nb_calls++;
 
 	if(DEBUG)
 	    System.out.println("||: " + cs + " calls " + nb_meta_methods +
 			       " meta-method(s)");
 
-	if(DEBUG_CH && (nb_meta_methods == 0)){
-	    System.out.println("ALARM!<\n" + "mm = " + mm_work + 
-			       "\ncs = " + cs + "> 0 callees!");
-	    it_rdef = rdef.reachingDefs(cs,tbase).iterator();
-	    while(it_rdef.hasNext()){
-		Quad qdef = (Quad) it_rdef.next();
-		
-		if(CAUTION && getExactTemp(tbase,qdef).getTypeSet().isEmpty())
-		    Util.assert(false,"No possible type detected for <" + 
-				tbase + "," + qdef + ">");
-		
-		Iterator it_type_base = getExactTemp(tbase,qdef).getTypes();
-		while(it_type_base.hasNext()){
-		    GenType gt = (GenType) it_type_base.next();
-		    System.out.println(gt);
-		}
-	    }    
+	if(DEBUG_CH && (nb_meta_methods == 0)) {
+	    System.out.println("ALARM!<\n" + "  mm = " + mm_work + 
+			       "\n  " +
+			       (poly ? "POLY" : "MONO") + 
+			       " cs = " + Debug.code2str(cs) +
+			       "> 0 callees!");
+	    // display the SCC of exact temps and their types
+	    display_mm_data(mm_work);
 	}
 	
 	param_types = null; // enable the GC
     }
 
+    private void display_mm_data(MetaMethod mm) {
+	HMethod hm = mm_work.getHMethod();
+	MethodData md = get_method_data(hm);
+	System.out.println("DATA FOR " + mm_work + ":");
+	System.out.println(md);
+	System.out.println("COMPUTED TYPES:");
+	for(SCComponent scc = md.first_scc; scc != null; 
+	    scc = scc.nextTopSort())
+	    for(Iterator it = scc.nodeSet().iterator(); it.hasNext(); ) {
+		ExactTemp et = (ExactTemp) it.next();
+		System.out.println("< " + et.t + ", " + 
+				   ((et.ud == ExactTemp.USE)?"USE":"DEF") +
+				   ", " + Debug.code2str(et.q) +
+				   " > has type(s) {");
+		for(Iterator it2 = et.getTypes(); it2.hasNext(); )
+		    System.out.println("\t" + ((GenType) it2.next()));
+		System.out.println("}");
+	    }
+
+	System.out.println("CODE:");
+	BasicBlock.Factory bbf = bbconv.convert2bb(hm);
+	HCode hcode = bbf.getHCode();
+	hcode.print(new java.io.PrintWriter(System.out, true));
+	System.out.println("--------------------------------------");
+    }
+
+
     // Treat the case of a polymorphic type for the receiver of the method hm
-    private void treat_poly_base(HMethod hm, CALL cs, GenType gt){
-	Set cls = get_possible_classes(gt.getHClass(),hm);
-	for(Iterator it = cls.iterator(); it.hasNext();){
+    private void treat_poly_base(HMethod hm, CALL cs, GenType gt) {
+	Set classes = get_possible_classes(gt.getHClass(), hm);
+
+	// compute the set of objects that actually provide an
+	// implementation for the method hm
+	implementers.clear();
+	nb_cls = 0;
+	for(Iterator it = classes.iterator(); it.hasNext(); ) {
 	    HClass c = (HClass) it.next();
 	    // fix some strange bug
 	    if(c.isPrimitive()) continue;
-	    HMethod callee = c.getMethod(hm.getName(),hm.getDescriptor());
-	    param_types[0] = new GenType(c,GenType.MONO);
-	    rec(callee,cs,1,cs.paramsLength());
+	    HMethod callee = c.getMethod(hm.getName(), hm.getDescriptor());
+	    HClass dc = callee.getDeclaringClass();
+	    implementers.add(dc);
+	    cls[nb_cls]  = c;
+	    impl[nb_cls] = dc;
+	    nb_cls++;
+ 	}
+
+	//System.out.println("\nBIG call: " + Debug.code2str(cs));
+	nb_big_calls++;
+	//System.out.println("  implementers = " + implementers);
+
+	for(Iterator it = implementers.iterator(); it.hasNext(); ) {
+	    HClass c = (HClass) it.next();
+	    HMethod callee = c.getMethod(hm.getName(), hm.getDescriptor());
+
+	    nb_kids = 0;
+	    for(int i = 0; i < nb_cls; i++)
+		if(c.equals(impl[i]))
+		    kids[nb_kids++] = cls[i];
+
+	    /*
+	    System.out.print("  " + c + " -> kids = [ ");
+	    for(int i = 0; i < nb_kids; i++)
+		System.out.print(kids[i] + " ");
+	    System.out.println("]");
+	    */
+
+	    if(nb_kids > SPEC_BOUND) {
+		param_types[0] = new GenType(c, GenType.POLY);
+		rec(callee, cs, 1, cs.paramsLength());
+	    }
+	    else {
+		for(int i = 0; i < nb_kids; i++) {
+		    param_types[0] = new GenType(kids[i], GenType.MONO);
+		    rec(callee, cs, 1, cs.paramsLength());
+		}
+	    }
 	}
     }
+    private Set implementers = new HashSet();
+    private HClass kids[] = new HClass[1000];
+    private int nb_kids = 0;
+    private HClass cls[]  = new HClass[1000];
+    private HClass impl[] = new HClass[1000];
+    private int nb_cls = 0;
 
-    // Returns the set of all the subclasses of root (including root) that
-    // implement the method "hm".
-    private Set get_possible_classes(HClass root, HMethod hm){
-	Set children = MetaCallGraphImpl.get_instantiated_children(ch,root);
+    // Returns the set of all the instantiated (sub)classes of root
+    // (including root) that implement the method "hm".
+    private Set get_possible_classes(HClass root, HMethod hm) {
+	Set children = 
+	    get_instantiated_children(root);
 	Set possible_classes = new HashSet();
 
-	for(Iterator it = children.iterator(); it.hasNext(); ){
+	for(Iterator it = children.iterator(); it.hasNext(); ) {
 	    HClass c = (HClass) it.next();
+	    if(Modifier.isAbstract(c.getModifiers()))
+		continue;
 	    boolean implemented = true;
 	    HMethod callee = null;
 	    try{
-		callee = c.getMethod(hm.getName(),hm.getDescriptor());
+		callee = c.getMethod(hm.getName(), hm.getDescriptor());
 	    }catch(NoSuchMethodError nsme){
 		implemented = false;
 	    }
@@ -572,98 +647,116 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     
     // Returns the set of all the subclasses of class root that could
     // be instantiated by the program.
-    static Set get_instantiated_children(ClassHierarchy ch, HClass root){
+    Set get_instantiated_children(HClass root){
 	Set children = new HashSet();
 	PAWorkList Wc = new PAWorkList();
 	Wc.add(root);
-	while(!Wc.isEmpty()){
+	while(!Wc.isEmpty()) {
 	    HClass c = (HClass) Wc.remove();
-	    if(ch.instantiatedClasses().contains(c))
+	    if(instantiated_classes.contains(c))
 		children.add(c);
-	    Iterator it_children = ch.children(c).iterator();
-	    while(it_children.hasNext())
-		Wc.add(it_children.next());
+	    for(Iterator it = ch.children(c).iterator(); it.hasNext(); )
+		Wc.add(it.next());
 	}
 	return children;
     }
 
     // Treat the case of a monomorphyc type for the receiver of the method hm
-    private void treat_mono_base(HMethod hm, CALL cs, GenType gt){
+    private void treat_mono_base(HMethod hm, CALL cs, GenType gt) {
 	HClass c = gt.getHClass();
 	// fix some strange bug: HClass.Void keeps appearing here!
 	if(c.isPrimitive()) return;
+
+	//System.out.println("SMALL call " + cs);
+
 	HMethod callee = null;
 	boolean implements_hm = true;
 	try{
-	    callee = c.getMethod(hm.getName(),hm.getDescriptor());
+	    callee = c.getMethod(hm.getName(), hm.getDescriptor());
 	}
 	catch(NoSuchMethodError nsme){
+	    System.out.println("treat_mono_base: " + 
+			       Debug.code2str(cs) + " " + nsme);
 	    implements_hm = false;
 	}
+
+	//System.out.println(" callee = " + callee);
+
 	if(implements_hm && !Modifier.isAbstract(callee.getModifiers())){
 	    param_types[0] = gt;
-	    rec(callee,cs,1,cs.paramsLength());
+	    rec(callee, cs, 1, cs.paramsLength());
 	}
     }
 
     ////// "analyze_one_call" related stuff END ===========
 
-    // Quad visitor that scans the instructions and puts the CALLs in the set
-    // "calls". Only one call_detector visitor is created for each instance of
-    // MetaCallGraph - that's why it is created here, not
-    // in extract_the_calls().
-    private QuadVisitor call_detector = new QuadVisitor(){
-	    public void visit(Quad q){
+
+    // Returns the set of all the CALLs in hcode.
+    private Set extract_the_calls(HCode hcode){
+	class QuadVisitorCALL extends QuadVisitor {
+	    QuadVisitorCALL() {
+		calls = new HashSet();
 	    }
+	    public Set calls;
+	    public void visit(Quad q){}
 	    public void visit(CALL q){
 		calls.add(q);
 	    }
 	};
-
-    // Detects all the CALLs in hcode and puts them in the "calls" set.
-    private void extract_the_calls(HCode hcode){
 	Iterator it = hcode.getElementsI();
-	while(it.hasNext()){
+	QuadVisitorCALL qvc = new QuadVisitorCALL();
+	while(it.hasNext()) {
 	    Quad q = (Quad) it.next();
-	    q.accept(call_detector);
+	    q.accept(qvc);
 	}
+	return qvc.calls;
     }
 
 
-    // The set of the exact temps we are interested in (the arguments of
-    // the CALLs from calls).
-    private final Set initial_set = new HashSet();
-
-    private final void build_initial_set(ReachingDefs rdef){
-	initial_set.clear();
+    // Computes the set of the exact temps we are interested in
+    // (the arguments of the CALLs from the code of the analyzed method).
+    private final Set get_initial_set(ReachingDefs rdef, Set calls) {
+	Set initial_set = new HashSet();
 	Iterator it = calls.iterator();
-	while(it.hasNext()){
+	while(it.hasNext()) {
 	    CALL q = (CALL) it.next();
-	    // System.out.println(" CALL SITE " + q);
 	    int nb_params = q.paramsLength();
 	    for(int i = 0; i < nb_params; i++)
-		if(!q.paramType(i).isPrimitive()){
+		if(!q.paramType(i).isPrimitive()) {
 		    Temp t = q.params(i);
-		    Iterator it2 = rdef.reachingDefs(q,t).iterator();
-		    //System.out.println("UUUUUUU: " + t);
-		    while(it2.hasNext()){
-			Quad qdef = (Quad) it2.next();
-			// System.out.println("  " + qdef);
-			initial_set.add(getExactTemp(t,qdef));
-		    }
+		    initial_set.add(getExactTemp(t, q, ExactTemp.USE));
 		}
 	}
+	
+	return initial_set;
     }
 
     // Data attached to a method
-    private class MethodData{
-	// The last scc (in decreasing topological order)
-	SCComponent last_scc;
-	// The ets2et map for that method (see the comments around ets2et
+    private class MethodData {
+	// The first scc (in decreasing topological order)
+	SCComponent first_scc;
+	// The ets2et map for this method (see the comments around ets2et)
 	Map ets2et;
-	MethodData(SCComponent last_scc, Map ets2et){
-	    this.last_scc = last_scc;
+	// The set of CALL quads occuring in the code of the method
+	Set calls;
+
+	MethodData(SCComponent first_scc, Map ets2et, Set calls) {
+	    this.first_scc = first_scc;
 	    this.ets2et   = ets2et;
+	    this.calls    = calls;
+	}
+
+	public String toString() {
+	    StringBuffer buff = new StringBuffer();
+	    buff.append("SCC(s):\n" );
+	    for(SCComponent scc = first_scc; scc != null;
+		scc = scc.nextTopSort()) {
+		buff.append(scc.toString());
+	    }
+	    buff.append("CALL(s):");
+	    for(Iterator it = calls.iterator(); it.hasNext(); )
+		buff.append("\n  " + it.next().toString());
+	    return buff.toString();
 	}
     }
 
@@ -672,33 +765,45 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     // Adds some caching over "compute_md".
     private MethodData get_method_data(HMethod hm){
 	MethodData md = (MethodData) mh2md.get(hm);
-	if(md == null){
+	if(md == null) {
+	    BasicBlock.Factory bbf = bbconv.convert2bb(hm);
+	    HCode hcode = bbf.getHCode();
+	    Set calls = extract_the_calls(hcode);
 	    // initialize the ets2et map (see the comments near its definition)
-	    ets2et = new HashMap();		    
-	    build_initial_set(rdef);
-	    SCComponent scc = compute_scc(initial_set,rdef);
-	    mh2md.put(hm,md = new MethodData(scc,ets2et));
+	    ets2et = new HashMap();
+	    ReachingDefs rdef = new ReachingDefsImpl(hcode);
+	    Set initial_set = get_initial_set(rdef, calls);
+	    SCComponent scc = compute_scc(initial_set, rdef);
+	    md = new MethodData(scc, ets2et, calls);
+	    mh2md.put(hm, md);
 	}
 	return md;
     }
 
-    // an "exact" temp: the Temp "t" defined in the Quand "q"
-    class ExactTemp{
 
-	Quad q;
-	Temp t;
+    // an "exact" temp: the Temp "t" defined in the Quad "q"
+    private class ExactTemp {
+
+	Temp t; // the Temp t that is
+	int ud; // defined/used in
+	Quad q; // quad q
+
+	static final int DEF = 0;
+	static final int USE = 1;
 
 	// Set<GenType> - the possible types of this ExactTemp.
-	Set gtypes = new HashSet();
+	Set gtypes;
 
-	// The ExactTemps whose types influence the type of this one.
+	// The ExactTemps whose types are influenced by the type of this one.
 	ExactTemp[] next = new ExactTemp[0];
-	// The ExactTemps whose types are influence by the type of this one.
+	// The ExactTemps whose types influence the type of this one.
 	ExactTemp[] prev = new ExactTemp[0];
 
-	ExactTemp(Temp t, Quad q){
-	    this.q = q;
-	    this.t = t;
+	ExactTemp(Temp t, Quad q, int ud){
+	    this.t  = t;
+	    this.q  = q;
+	    this.ud = ud;
+	    this.gtypes = new HashSet();
 	}
 
 	/** Returns an iterator over the set of all the possible types
@@ -724,8 +829,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
 	    if(type.isPOLY()){
 		// TODO : add some caching here
-		Set children = 
-	     MetaCallGraphImpl.get_instantiated_children(ch,type.getHClass());
+		Set children = get_instantiated_children(type.getHClass());
 		if(children.size() == 1)
 		    type = new GenType((HClass)children.iterator().next(),
 				       GenType.MONO);
@@ -755,9 +859,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	}
 
 	String shortDescription(){
-	    return "<" + t.toString() + "\t, " + 
-		q.getSourceFile() + ":" + q.getLineNumber() + "\t" +
-		q.toString() + ">";
+	    return "<" + t.toString() + ", " +
+		((ud == ExactTemp.DEF) ? "DEF" : "USE") + ", " +
+		Debug.code2str(q) + ">";
 	}
 
 	public String toString(){
@@ -769,14 +873,14 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    }
 	    buffer.append("(\n");
 	    if(next.length > 0){
-		buffer.append("Depends on the following defs:\n");
+		buffer.append("The following defs depends on this one:\n");
 		for(int i = 0 ; i < next.length ; i++)
 		    buffer.append("  " + 
 				  (next[i]==null?"null":
 				   next[i].shortDescription()) + "\n");
 	    }
 	    if(prev.length > 0){
-		buffer.append("The following defs depends on this one:\n");
+		buffer.append("Depends on the following defs:\n");
 		for(int i = 0 ; i < prev.length ; i++)
 		    buffer.append("  " + prev[i].shortDescription() + "\n");
 	    }
@@ -786,223 +890,196 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     }
 
 
-    // Maps each ExactTemp to the set of its possible types
-    // Relation<ExactTemp,GenType>
-    // final Relation et2types = new Relation();
-
-
     ////// DEPENDENCY DETECTION (getDependencies) - BEGIN
 
-    // Ugly stuff. Java inner classes cannot access anything but final data;
-    // I want to create a single quad visitor instead of creating one each time
-    // getDependencies is called; so, I cannot pass the parameters of
-    // getDependencies to the constructor of the visitor. Instead, I have a 
-    // final wrapper (that the quad visitor can access): each time
-    // getDependencies is called, it puts some arguments into the wrapper's
-    // fields, launch the visitor and finally retrieve the results from the 
-    // wrapper.
-    private class DDWrapper{
-	ExactTemp[] deps = null;
-	Temp           t = null;
-    }
-    private DDWrapper dd_wrapper = new DDWrapper();
+    // Quad visitor class for the dependency detection. This class is
+    // declared here (and not inside getDependencies as it were more elegant)
+    // such that we are able to allocate a single QuadVisitorDD for the 
+    // entire meta call graph construction (instead of one for each analyzed
+    // ExactTemp). 
+    private class QuadVisitorDD extends QuadVisitor {
 
-    // Visitor for the dependency detection
-    private QuadVisitor dep_detection_visitor = new QuadVisitor(){
-	    public void visit(MOVE q){
-		Temp t = dd_wrapper.t;
-		if(CAUTION && !t.equals(q.dst())) stop_no_def(q);
-		add_deps(q.src(),q);
-	    }
-	    
-	    public void visit(AGET q){
-		Temp t = dd_wrapper.t;
-		if(CAUTION && !t.equals(q.dst())) stop_no_def(q);
-		add_deps(q.objectref(),q);
-	    }
-	    
-	    // The next "visit" functions don't do anything: the type 
-	    // of "et" defined by the visited quad is fully determined by it.
-	    public void visit(CALL q){
+	ExactTemp[]  deps = null;
+	Temp            t = null;
+	int ud = ExactTemp.DEF;
+	ReachingDefs rdef = null;
+	
+	public void visit(MOVE q) {
+	    if(CAUTION && !t.equals(q.dst())) stop_no_def(q);
+	    add_deps(q.src(), q);
+	}
+	
+	public void visit(AGET q) {
+	    if(CAUTION && !t.equals(q.dst())) stop_no_def(q);
+	    add_deps(q.objectref(), q);
+	}
+	
+	// The next "visit" functions don't do anything: the type 
+	// of "et" defined by the visited quad is fully determined by it.
+	public void visit(CALL q) {
+	    if(ud == ExactTemp.DEF) {
 		if(CAUTION){
-		    Temp t = dd_wrapper.t;
 		    if(!t.equals(q.retval()) && !t.equals(q.retex()))
 			stop_no_def(q);
 		}
+		return;
 	    }
-
-	    public void visit(NEW q){
-		if(CAUTION){
-		    Temp t = dd_wrapper.t;
-		    if(!t.equals(q.dst())) stop_no_def(q);
-		}
+	    Set rdefs = rdef.reachingDefs(q, t);
+	    deps = new ExactTemp[rdefs.size()];
+	    Iterator it = rdefs.iterator();
+	    for(int i = 0; i < rdefs.size(); i++) {
+		Quad qdef = (Quad) it.next();
+		deps[i] = getExactTemp(t, qdef, ExactTemp.DEF);
 	    }
-	    
-	    public void visit(ANEW q){
-		if(CAUTION){
-		    Temp t = dd_wrapper.t;
-		    if(!t.equals(q.dst())) stop_no_def(q);
-		}
+	}
+	
+	public void visit(NEW q) {
+	    if(CAUTION && !t.equals(q.dst())) stop_no_def(q);
+	}
+	
+	public void visit(ANEW q) {
+	    if(CAUTION && !t.equals(q.dst())) stop_no_def(q);
+	}
+	
+	public void visit(TYPECAST q) {
+	    if(CAUTION && !t.equals(q.objectref())) stop_no_def(q);
+	}
+	
+	public void visit(GET q) {
+	    if(CAUTION && !t.equals(q.dst())) stop_no_def(q);
+	}
+	
+	public void visit(METHOD q) {
+	    // do nothing: the type of "et" defined here does not
+	    // depend on any other ExactType's type.
+	    if(CAUTION){
+		boolean found = false;
+		for(int i = 0; i < q.paramsLength(); i++)
+		    if(q.params(i).equals(t)){
+			found = true;
+			break;
+		    }
+		if(!found) stop_no_def(q);
 	    }
-
-	    public void visit(TYPECAST q){
-		if(CAUTION){
-		    Temp t = dd_wrapper.t;
-		    if(!t.equals(q.objectref())) stop_no_def(q);
-		}
-
-		//System.out.println("EEEEEEEEEEEEEEEEE");
+	}
+	
+	public void visit(CONST q) {
+	    if(CAUTION && !t.equals(q.dst())) stop_no_def(q);
+	}
+	
+	// catch the forgotten quads
+	public void visit(Quad q) {
+	    Util.assert(false,"Unsupported Quad " + q);		    
+	}
+	
+	// crash the system in the most spectacular way
+	private void stop_no_def(Quad q) {
+	    Util.assert(false, q + " doesn't define " + t);
+	}
+	
+	// The Temp "tdep" is used in quad "q" to define "t" and
+	// can affect its type. This function qoes along the list
+	// of possible definitions for tdep and put the corresponding
+	// ExactTemp's in the array of dependencies for <t,q>.
+	private void add_deps(Temp tdep, Quad q) {
+	    Set reaching_defs = rdef.reachingDefs(q, tdep);
+	    if(reaching_defs.isEmpty())
+		Util.assert(false, "Temp " + t + " in " + q +
+			    " has no reaching definition!");
+	    deps = new ExactTemp[reaching_defs.size()];
+	    Iterator it_defs = reaching_defs.iterator();
+	    for(int i = 0; i < reaching_defs.size(); i++) {
+		Quad qdef = (Quad) it_defs.next();
+		deps[i] = getExactTemp(tdep,qdef);
 	    }
-	    
-	    public void visit(GET q){
-		if(CAUTION){
-		    Temp t = dd_wrapper.t;
-		    if(!t.equals(q.dst())) stop_no_def(q);
-		}
-	    }
-	    
-	    public void visit(METHOD q){
-		// do nothing: the type of "et" defined here does not
-		// depend on any other ExactType's type.
-		if(CAUTION){
-		    Temp t = dd_wrapper.t;
-		    boolean found = false;
-		    for(int i = 0; i < q.paramsLength(); i++)
-			if(q.params(i).equals(t)){
-			    found = true;
-			    break;
-			}
-		    if(!found) stop_no_def(q);
-		}
-	    }
-	    
-	    public void visit(CONST q){
-		if(CAUTION){
-		    Temp t = dd_wrapper.t;
-		    if(!t.equals(q.dst())) stop_no_def(q);
-		}
-		// do nothing; the type of "et" defined here does not
-		// depend on any other ExactType's type.
-	    }
-
-	    // catch the forgotten quads
-	    public void visit(Quad q){
-		Util.assert(false,"Unsupported Quad " + q);		    
-	    }
-	    
-	    // crash the system in the most spectacular way
-	    private void stop_no_def(Quad q){
-		Temp t = dd_wrapper.t;
-		Util.assert(false,q + " doesn't define " + t);
-	    }
-	    
-	    // The Temp "tdep" is used in quad "q" to define "t" and
-	    // can affect its type. This function qoes along the list
-	    // of possible definitions for tdep and put the corresponding
-	    // ExactTemp's in the array of dependencies for <t,q>.
-	    private void add_deps(Temp tdep, Quad q){
-		Temp t = dd_wrapper.t;
-		Set reaching_defs = rdef.reachingDefs(q,tdep);
-		if(reaching_defs.isEmpty())
-		    Util.assert(false,"Temp " + t + " in " + q +
-				    " has no reaching definition!");
-		dd_wrapper.deps = new ExactTemp[reaching_defs.size()];
-		int i = 0;
-		Iterator it_defs = reaching_defs.iterator();
-		while(it_defs.hasNext()){
-		    Quad qdef = (Quad) it_defs.next();
-		    dd_wrapper.deps[i] = getExactTemp(tdep,qdef);
-		    i++;
-		}
-	    }
-	};
-    
+	}
+    };
+    private QuadVisitorDD qvis_dd = new QuadVisitorDD();
 
     // Returns all the ExactTemps whose types influence the type of the
     // ExactType et.
-    private ExactTemp[] getDependencies(final ExactTemp et){
-	dd_wrapper.t    = et.t;
-	dd_wrapper.deps = null;
-	et.q.accept(dep_detection_visitor);
-	if(dd_wrapper.deps == null)
+    private ExactTemp[] getDependencies(ExactTemp et, ReachingDefs rdef) {
+	qvis_dd.t    = et.t;
+	qvis_dd.ud   = et.ud;
+	qvis_dd.deps = null;
+	qvis_dd.rdef = rdef;
+	et.q.accept(qvis_dd);
+	if(qvis_dd.deps == null)
 	    return (new ExactTemp[0]);
-	return dd_wrapper.deps;
+	return qvis_dd.deps;
     }
 
     ////// DEPENDENCY DETECTION (getDependencies) - END
 
+
     // The following code is responsible for assuring that at most one
-    // ExactTemp object representing the temp t defined at quad q exists
+    // ExactTemp object representing the temp t defined/used at quad q exists
     // at the execution time. This is necessary since we keep the next and
     // prev info *into* the ExactTemp structure and not in a map (for
     // efficiency reasons), so all the info related to a conceptual ExactTemp
     // must be in a single place.
-    // This is enforced by having a Map<ExactTempI,ExactTemp> that maps
-    // an ExactTempS (just a <t,q> couple) to the full ExactTemp object.
-    // When we need the ExactTemp for a given <t,q>
-    // pair, we search <t,q> in that map; if found we return the existent 
+    // This is enforced by having a Map<ExactTempS,ExactTemp> that maps
+    // an ExactTempS (just a <t, q, ud> tuple) to the full ExactTemp object.
+    // When we need the ExactTemp for a given <t, q, ud>
+    // pair, we search <t, q, ud> in that map; if found we return the existent 
     // object, otherwise we create a new one and put it into the map.
     // Of course, no part of the program should dirrectly allocate an
     // ExactTemp, instead the "getExactTemp" function should be called. 
-    private class ExactTempS{ // S for short
+    private class ExactTempS { // S for short
 	Temp t;
 	Quad q;
-	ExactTempS(Temp t, Quad q){
-	    this.t = t;
-	    this.q = q;
+	int ud;
+	ExactTempS(Temp t, Quad q, int ud) {
+	    this.t  = t;
+	    this.q  = q;
+	    this.ud = ud;
 	}
 	public int hashCode(){
-	    return t.hashCode() + q.hashCode();
+	    return t.hashCode() + q.hashCode() + ud;
 	}
 	public boolean equals(Object o){
 	    ExactTempS ets2 = (ExactTempS) o;
-	    return (this.t == ets2.t) && (this.q == ets2.q);
+	    return
+		(this.t  == ets2.t) &&
+		(this.q  == ets2.q) && 
+		(this.ud == ets2.ud);
 	}
     }
     private Map ets2et = null;
-    private ExactTempS ets_test = new ExactTempS(null,null);
-    private ExactTemp getExactTemp(Temp t, Quad q){
-	ets_test.t = t;
-	ets_test.q = q;
+    private ExactTempS ets_test = new ExactTempS(null, null, ExactTemp.DEF);
+    private ExactTemp getExactTemp(Temp t, Quad q, int ud) {
+	ets_test.t  = t;
+	ets_test.q  = q;
+	ets_test.ud = ud;
 	ExactTemp et = (ExactTemp) ets2et.get(ets_test);
 	if(et == null){
-	    et = new ExactTemp(t,q);
-	    ExactTempS ets = new ExactTempS(t,q);
-	    ets2et.put(ets,et);
+	    et = new ExactTemp(t, q, ud);
+	    ExactTempS ets = new ExactTempS(t, q, ud);
+	    ets2et.put(ets, et);
 	}
 	return et;
     }
+    private ExactTemp getExactTemp(Temp t, Quad q) {
+	return getExactTemp(t, q, ExactTemp.DEF);
+    }
+
     // the end of "unique ExactTemp" code.
     
 
     // Computes the topologically sorted list of strongly connected
     // components containing the definitions of the "interesting" temps.
     // The edges between this nodes models the relation
-    // "definition x uses the exact temp introduced by the definition y".
-    // Returns a structure consisting of the last element of the sorted list
-    // (in decreasing topological order)
-    // (the rest can be retrieved by navigating with prevTopSort()) and the
-    // ets2et map that assures the unicity of ExactTemps associated with the
-    // same <t,q> pair.
-    private SCComponent compute_scc(Set initial_set, final ReachingDefs rdef){
-	// navigator into the graph of ExactTemps: next returns the ExactTemps
-	// whose types influence the type of "node" ExactTemp; prev returns
-	// teh ExactTemps whose types is affected by the type of node.  
-	SCComponent.Navigator et_navigator =
-	    new SCComponent.Navigator(){
-		    public Object[] next(Object node){
-			return ((ExactTemp)node).next;
-		    }
-		    public Object[] prev(Object node){
-			return ((ExactTemp)node).prev;
-		    }
-		};
-
-	// first, compute the successors and the predecessors of each node
-	// (ExactTemp); the successors are put into the next field of the
-	// the ExactTemps; predecessors are not put into the ExactTemps, but
-	// into a separate relation - "prev_rel".
-	Relation prev_rel = new LightRelation();
+    // "the type of ExactType x influences the type of the ExactType y"
+    // Returns the first element of the sorted list
+    // (in reverse topological order)
+    // (the rest can be retrieved by navigating with nextTopSort())
+    private SCComponent compute_scc(Set initial_set, ReachingDefs rdef) {
+	// 1. Compute the graph: ExactTemps, successors and predecessors.
+	// predecessors are put into the next field of the ExactTemps;
+	// successors are not put into the ExactTemps, but into a separate
+	// relation - "next_rel" - as they are gradually discovered.
+	// ReachingDefs gives us the prev part.
+	Relation next_rel = new RelationImpl();
 	Set already_visited = new HashSet();
 	PAWorkList W = new PAWorkList();
 	W.addAll(initial_set);
@@ -1010,38 +1087,46 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    ExactTemp et = (ExactTemp) W.remove();
 	    already_visited.add(et);
 
-	    et.next = getDependencies(et);
+	    et.prev = getDependencies(et, rdef);
 
-	    //System.out.println("RRRRRRRRR: " + et + " <- { ");
-	    //for(int i = 0; i < et.next.length; i++)
-	    //System.out.print(et.next[i] + " ");
-	    //System.out.println("}");
-
-	    for(int i = 0; i < et.next.length; i++){
-		ExactTemp et2 = (ExactTemp) et.next[i];
+	    for(int i = 0; i < et.prev.length; i++){
+		ExactTemp et2 = (ExactTemp) et.prev[i];
 
 		if(et2 == null)
 		    Util.assert(false,"Something wrong with " + et);
 
-		prev_rel.add(et2,et);
+		next_rel.add(et2, et);
 		if(!already_visited.contains(et2))
 		    W.add(et2);
 	    }
 	}
 
 	// now, put the predecessors in the ExactTemps
-	for(Iterator it = prev_rel.keys().iterator(); it.hasNext(); ) {
+	for(Iterator it = next_rel.keys().iterator(); it.hasNext(); ) {
 	    ExactTemp et = (ExactTemp) it.next();
-	    Set values = prev_rel.getValues(et);
-	    et.prev = 
-		(ExactTemp[]) values.toArray(new ExactTemp[values.size()]);
+	    Set next = next_rel.getValues(et);
+	    et.next = (ExactTemp[]) next.toArray(new ExactTemp[next.size()]);
 	}
 
-	// build the component graph and sort it topollogically
-	Set scc_set = SCComponent.buildSCC(initial_set, et_navigator);
+	// 2. Build the component graph and sort it topollogically.
+
+	// Navigator into the graph of ExactTemps. prev returns the ExactTemps
+	// whose types influence the type of "node" ExactTemp; next returns
+	// the ExactTemps whose types are affected by the type of node.  
+	SCComponent.Navigator et_navigator =
+	    new SCComponent.Navigator() {
+		    public Object[] next(Object node){
+			return ((ExactTemp) node).next;
+		    }
+		    public Object[] prev(Object node){
+			return ((ExactTemp) node).prev;
+		    }
+		};
+
+	Set scc_set = SCComponent.buildSCC(already_visited, et_navigator);
 	SCCTopSortedGraph ts_scc = SCCTopSortedGraph.topSort(scc_set);
 
-	return ts_scc.getLast();
+	return ts_scc.getFirst();
     }
 
 
@@ -1052,85 +1137,60 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
 	int nb_params = m.paramsLength();
 	if(CAUTION && (nb_params != mm.nbParams()))
-	    Util.assert(false,"Wrong number of params in " + m);
+	    Util.assert(false, "Wrong number of params in " + m);
 
 	for(int i = 0; i < nb_params ; i++)
-	    getExactTemp(m.params(i),m).addType(mm.getType(i));
+	    getExactTemp(m.params(i), m).addType(mm.getType(i));
     }
 
 
     // computes the types of the interesting ExactTemps, starting 
     // with those in the strongly connected component "scc".
-    private void compute_types(SCComponent scc){
-	SCComponent p = scc;
-	while(p != null){
-	    process_scc(p);
-	    p = p.prevTopSort();
-	}
+    private void compute_types(SCComponent scc) {
+	for( ; scc != null; scc = scc.nextTopSort())
+	    process_scc(scc);
     }
 
 
     // TYPE INFERENCE QUAD VISITOR - BEGIN
 
-    // For more or less the same reasons as for the dependecy detection, I use
-    // a final wrapper containing the arguments and the results of the visitor.
-    private class TIWrapper{
-	Temp       t = null;
+    private class QuadVisitorTI extends QuadVisitor {
+
+	Temp t       = null;
 	ExactTemp et = null;
-    };
-    private TIWrapper ti_wrapper = new TIWrapper();
-
-    private QuadVisitor type_inference_qvisitor = new TypeInferenceQVisitor();
-
-    private class TypeInferenceQVisitor extends QuadVisitor {
 	
-	public void visit(MOVE q){
-	    Temp       t = ti_wrapper.t;
-	    ExactTemp et = ti_wrapper.et;
+	public void visit(MOVE q) {
 	    if(CAUTION && !t.equals(q.dst()))
 		stop_no_def(q);
-	    for(int i = 0; i < et.next.length ; i++)
-		et.addTypes(et.next[i].getTypeSet());
+	    for(int i = 0; i < et.prev.length ; i++)
+		et.addTypes(et.prev[i].getTypeSet());
 	}
 	
-	public void visit(GET q){
-	    Temp       t = ti_wrapper.t;
-	    ExactTemp et = ti_wrapper.et;
+	public void visit(GET q) {
 	    if(CAUTION && !t.equals(q.dst()))
 		stop_no_def(q);
-	    et.addType(new GenType(q.field().getType(),GenType.POLY));
+	    et.addType(new GenType(q.field().getType(), GenType.POLY));
 	}
-	
-	public void visit(AGET q){
-	    Temp       t = ti_wrapper.t;
-	    ExactTemp et = ti_wrapper.et;
+
+	public void visit(AGET q) {
 	    if(CAUTION && !t.equals(q.dst()))
 		stop_no_def(q);
 	    
 	    // For all the possible types for the source array, take
 	    // the type of the component 
-	    
-	    // The Temp representing the array
-	    Temp ta = q.objectref();
-	    Set reaching_defs = rdef.reachingDefs(q,ta);
-	    if(reaching_defs.isEmpty())
-		Util.assert(false,"No reaching defs for "+ta+" in "+q);
-	    
-	    Iterator it_q = reaching_defs.iterator();
-	    while(it_q.hasNext()){
-		Quad qdef = (Quad) it_q.next();
-		ExactTemp eta = getExactTemp(ta,qdef);
-		Iterator it_eta_types = eta.getTypes();
-		while(it_eta_types.hasNext()){
-		    HClass c = ((GenType) it_eta_types.next()).getHClass();
+	    for(int i = 0; i < et.prev.length; i++) {
+		ExactTemp eta = et.prev[i];
+		for(Iterator it_types = eta.getTypes(); it_types.hasNext(); ) {
+		    HClass c = ((GenType) it_types.next()).getHClass();
 		    if(c.equals(HClass.Void))
 			et.addType(new GenType(HClass.Void, GenType.MONO));
-		    else{
+		    else {
 			HClass hcomp = c.getComponentType();
 			if(hcomp == null)
-			    Util.assert(false,ta + " could have non-array"+
+			    Util.assert(false, q.objectref() +
+					" could have non-array" +
 					" types in " + q);
-			et.addType(new GenType(hcomp,GenType.POLY));
+			et.addType(new GenType(hcomp, GenType.POLY));
 		    }
 		}
 	    }
@@ -1143,64 +1203,55 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    Loader.systemLinker.forName("java.lang.RuntimeException");
 	private final HClass jl_Error =
 	    Loader.systemLinker.forName("java.lang.Error");
-	
-	
-	
-	public void visit(CALL q){
-	    Temp       t = ti_wrapper.t;
-	    ExactTemp et = ti_wrapper.et;
-	    if(t.equals(q.retval())){
-		et.addType(new GenType(q.method().getReturnType(),
-				       GenType.POLY));
-		return;
+
+	public void visit(CALL q) {
+	    if(et.ud == ExactTemp.DEF) {
+		if(t.equals(q.retval())) {
+		    et.addType(new GenType(q.method().getReturnType(),
+					   GenType.POLY));
+		    return;
+		}
+		if(t.equals(q.retex())) {
+		    HClass[] excp = q.method().getExceptionTypes();
+		    for(int i = 0; i < excp.length; i++)
+			et.addType(new GenType(excp[i],GenType.POLY));
+		    // According to the JLS, exceptions that are subclasses of
+		    // java.lang.RuntimeException and java.lang.Error need
+		    // not be explicitly declared; they can be thrown by any
+		    // method.
+		    et.addType(new GenType(jl_RuntimeException, GenType.POLY));
+		    et.addType(new GenType(jl_Error, GenType.POLY));
+		    return;
+		}
+		stop_no_def(q);
 	    }
-	    if(t.equals(q.retex())){
-		HClass[] excp = q.method().getExceptionTypes();
-		for(int i=0; i<excp.length; i++)
-		    et.addType(new GenType(excp[i],GenType.POLY));
-		// According to the JLS, exceptions that are subclasses of
-		// java.lang.RuntimeException and java.lang.Error need
-		// not be explicitly declared; they can be thrown by any
-		// method.
-		et.addType(new GenType(jl_RuntimeException, GenType.POLY));
-		et.addType(new GenType(jl_Error, GenType.POLY));
-		return;
-	    }
-	    stop_no_def(q);
+	    // it's a USE; we just have to merge the reaching defs
+	    for(int i = 0; i < et.prev.length ; i++)
+		et.addTypes(et.prev[i].getTypeSet());
 	}
 	
-	public void visit(NEW q){
-	    Temp       t = ti_wrapper.t;
-	    ExactTemp et = ti_wrapper.et;
+	public void visit(NEW q) {
 	    if(CAUTION && !t.equals(q.dst()))
 		stop_no_def(q);
 	    et.addType(new GenType(q.hclass(),GenType.MONO));
 	}
 	
-	public void visit(ANEW q){
-	    Temp       t = ti_wrapper.t;
-	    ExactTemp et = ti_wrapper.et;
+	public void visit(ANEW q) {
 	    if(CAUTION && !t.equals(q.dst()))
 		stop_no_def(q);
 	    et.addType(new GenType(q.hclass(),GenType.MONO));
 	}
 	    
-	public void visit(TYPECAST q){
-	    Temp       t = ti_wrapper.t;
-	    ExactTemp et = ti_wrapper.et;
-	    
-	    //System.out.println("DDDDDDDDDDDDDDDD");
-	    
+	public void visit(TYPECAST q) {
 	    if(CAUTION && !t.equals(q.objectref()))
 		stop_no_def(q);
 	    et.addType(new GenType(q.hclass(), GenType.POLY));
 	}
 	
-	public void visit(METHOD q){
+	public void visit(METHOD q) {
 	    // do nothing; the types of the parameters have been
 	    // already set by set_parameter_types.
-	    if(CAUTION){
-		Temp t = ti_wrapper.t;
+	    if(CAUTION) {
 		boolean found = false;
 		for(int i = 0; i < q.paramsLength(); i++)
 		    if(q.params(i).equals(t)){
@@ -1211,29 +1262,28 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    }
 	}
 	
-	public void visit(CONST q){
-	    if(CAUTION){
-		Temp t = ti_wrapper.t;
+	public void visit(CONST q) {
+	    if(CAUTION) {
 		if(!t.equals(q.dst())) stop_no_def(q);
 	    }
-	    ExactTemp et = ti_wrapper.et;
 	    et.addType(new GenType(q.type(), GenType.MONO));
 	}
 	
-	public void visit(Quad q){
-	    Util.assert(false,"Unsupported Quad " + q);
+	public void visit(Quad q) {
+	    Util.assert(false, "Unsupported Quad " + q);
 	}
 	
-	private void stop_no_def(Quad q){
-	    Util.assert(false,q + " doesn't define " + ti_wrapper.t);
+	private void stop_no_def(Quad q) {
+	    Util.assert(false, q + " doesn't define " + t);
 	}
 	
     };
+    private QuadVisitorTI qvis_ti = new QuadVisitorTI();
     
     // TYPE INFERENCE QUAD VISITOR - END
     
     
-    private void process_scc(SCComponent scc){
+    private void process_scc(SCComponent scc) {
 	final PAWorkList W = new PAWorkList();
 
 	if(DEBUG)
@@ -1243,17 +1293,20 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	while(!W.isEmpty()){
 	    ExactTemp et = (ExactTemp) W.remove();
 
-	    ti_wrapper.t  = et.t;
-	    ti_wrapper.et = et;
+	    // This inelegant modality of passing parameters to the
+	    // type inference quad visitor is motivated by our struggle to
+	    // create a single QuadVisitorTI object.
+	    qvis_ti.t  = et.t;
+	    qvis_ti.et = et;
 
 	    Set old_gen_type = new HashSet(et.getTypeSet()); 
-	    et.q.accept(type_inference_qvisitor);
+	    et.q.accept(qvis_ti);
 	    Set new_gen_type = et.getTypeSet();
 
 	    if(!new_gen_type.equals(old_gen_type))
-		for(int i = 0; i < et.prev.length; i++){
-		    ExactTemp et2 = et.prev[i];
-		    if(scc.contains(et2)) W.add(et);
+		for(int i = 0; i < et.next.length; i++){
+		    ExactTemp et2 = et.next[i];
+		    if(scc.contains(et2)) W.add(et2);
 		}
 	}
 
@@ -1265,5 +1318,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    }
     }
 
+
+    private static long time() {
+	return System.currentTimeMillis();
+    }
 }
 

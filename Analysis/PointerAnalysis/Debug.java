@@ -26,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.1.2.13 2000-11-15 21:48:38 salcianu Exp $
+ * @version $Id: Debug.java,v 1.1.2.14 2001-02-09 23:44:46 salcianu Exp $
  */
 public abstract class Debug {
 
@@ -164,6 +164,12 @@ public abstract class Debug {
 	return buffer2.toString() + buffer.toString();
     }
 
+
+    /** Returns a string representing the proportion a/total (in percents). */
+    public static String get_perct(double a, double total) {
+	double perct = (100.0 * a) / total;
+	return doubleRep(perct, 5, 2) + "%";
+    }
 
     /** Returns the line of the instruction q in the format
 	<code>source_file:line_number</code>. */

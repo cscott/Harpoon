@@ -83,7 +83,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.88 2001-01-23 22:28:14 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.89 2001-02-09 23:44:51 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -92,7 +92,7 @@ public abstract class PAMain {
     // use FakeMetaCallGraph(SmartCallGraph)
     private static boolean SMART_CALL_GRAPH = false;
     // debug the class hierarchy
-    private static boolean SHOW_CH = false;
+    private static boolean SHOW_CH = true;
 
     // show the call graph
     private static boolean SHOW_CG = false;
@@ -120,6 +120,7 @@ public abstract class PAMain {
     // will be serialized
     private static String MA_MAPS_OUTPUT_FILE = null;
 
+    private static boolean CHECK_NO_CALLEES = false;
 
     // use the inter-thread stage of the analysis while determining the
     // memory allocation policies
@@ -234,6 +235,9 @@ public abstract class PAMain {
 		save_pre_analysis();
 	}
 
+	if(CHECK_NO_CALLEES)
+	    check_no_callees();
+
 	/* JOIN STATS
 	   join_stats(lbbconv, mcg);
 	   System.exit(1);
@@ -300,6 +304,67 @@ public abstract class PAMain {
 	
 	System.out.println("Total pre-analysis time : " +
 			   (time() - g_tstart) + "ms");
+    }
+
+
+    private static final int MAX_CALLEES = 100;
+    private static void check_no_callees() {
+	long nb_nvirtual_calls  = 0L;
+	long nb_virtual_calls = 0L;
+	long vcalls[] = new long[MAX_CALLEES];
+	long nb_total_callees = 0L;
+	for(int i = 0; i < MAX_CALLEES; i++)
+	    vcalls[i] = 0L;
+
+	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext(); ) {
+	    MetaMethod mm = (MetaMethod) it.next();
+	    HMethod hm = mm.getHMethod();
+	    Set calls = get_calls(hm);
+	    for(Iterator it_calls = calls.iterator(); it_calls.hasNext(); ) {
+		CALL call = (CALL) it_calls.next();
+		MetaMethod[] callees = mcg.getCallees(mm, call);
+		int nb_callees = callees.length;
+		if(callees.length == 0)
+		    System.out.println("EMPTY CALL " + Debug.code2str(call) +
+				       "\n  in " + mm);
+		nb_total_callees += nb_callees;
+		if(call.isVirtual()) {
+		    nb_virtual_calls++;
+		    if(nb_callees >= MAX_CALLEES)
+			nb_callees = MAX_CALLEES-1;
+		    vcalls[nb_callees]++;
+		}
+		else
+		    nb_nvirtual_calls++;
+	    }
+	}
+
+	long nb_calls = nb_virtual_calls + nb_nvirtual_calls;
+	System.out.println("\nCALL SITES STATISTICS:\n");
+	System.out.println("Total calls       = " + nb_calls);
+	System.out.println("Non-virtual calls = " + nb_nvirtual_calls + "\t" +
+			   Debug.get_perct(nb_nvirtual_calls, nb_calls));
+	System.out.println("Virtual calls     = " + nb_virtual_calls + "\t" +
+			   Debug.get_perct(nb_virtual_calls, nb_calls));
+	for(int i = 0; i < MAX_CALLEES; i++)
+	    if(vcalls[i] > 0)
+		System.out.println("  " + i + " callee(s) = " + vcalls[i] +
+		      "\t" + Debug.get_perct(vcalls[i], nb_virtual_calls));
+	System.out.println("Average callees/call site = " + 
+		Debug.doubleRep(((double) nb_total_callees) / nb_calls, 2));
+	System.out.println("-----------------------------------------------");
+    }
+
+    private static Set get_calls(HMethod hm) {
+	Set result = new HashSet();
+	HCode hcode = hcf.convert(hm);
+	if(hcode == null) return result;
+	for(Iterator it = hcode.getElementsI(); it.hasNext(); ) {
+	    Quad quad = (Quad) it.next();
+	    if(quad instanceof CALL)
+		result.add(quad);
+	}
+	return result;
     }
 
     // load the results of the preanalysis from the disk
@@ -517,6 +582,7 @@ public abstract class PAMain {
 	    new LongOpt("sa",            LongOpt.REQUIRED_ARGUMENT, null, 26),
 	    new LongOpt("ta",            LongOpt.REQUIRED_ARGUMENT, null, 27),
 	    new LongOpt("ns",            LongOpt.REQUIRED_ARGUMENT, null, 28),
+	    new LongOpt("check_nc",      LongOpt.NO_ARGUMENT,       null, 29)
 	};
 
 	Getopt g = new Getopt("PAMain", argv, "mscoa:iIN:P:", longopts);
@@ -668,6 +734,9 @@ public abstract class PAMain {
 		System.exit(1);
 		SYNC_ELIM_ALL_ROOTS = true;
 		break;
+	    case 29:
+		CHECK_NO_CALLEES = true;
+		break;
 	    case 'o':
 		SAMain.ASSEM_DIR = new java.io.File(g.getOptarg());
 		harpoon.Util.Util.assert(SAMain.ASSEM_DIR.isDirectory(),
@@ -733,6 +802,9 @@ public abstract class PAMain {
 
 	if(SHOW_CG)
 	    System.out.println("\tSHOW_CG");
+
+	if(CHECK_NO_CALLEES)
+	    System.out.println("\tCheck for CALLs with no callees");
 
 	if(SHOW_DETAILS)
 	    System.out.println("\tSHOW_DETAILS");
@@ -821,8 +893,11 @@ public abstract class PAMain {
 	// the entire program. Doing it here, before any memory allocation
 	// optimization, allows us to time it accurately.
 	g_tstart = System.currentTimeMillis();
-	for(Iterator it = allmms.iterator(); it.hasNext(); ) {
-            MetaMethod mm = (MetaMethod) it.next();
+	// TODO: uncomment the next line and comment the other one
+	//	for(Iterator it = allmms.iterator(); it.hasNext(); ) {
+	for(Iterator it = mroots.iterator(); it.hasNext(); ) {
+	    MetaMethod mm = new MetaMethod((HMethod) it.next(), true);
+            // MetaMethod mm = (MetaMethod) it.next();
             if(!analyzable(mm)) continue;
             pa.getIntParIntGraph(mm);
         }
@@ -1294,6 +1369,7 @@ public abstract class PAMain {
 	"--loadpre file  Loads the precomputed preanalysis results from disk.",
 	"--savepre file  Saves the preanalysis results to disk.",
 	"--showcg        Shows the (meta) call graph.",
+	"--check_nc      Check for CALLs with no detected callees",
 	"--showsplit     Shows the split relation.",
 	"--details       Shows details/statistics.",
 	"--ccs=depth     Activates call context sensitivity with a given",
@@ -1359,7 +1435,7 @@ public abstract class PAMain {
 
 	if(SHOW_CH){
 	    System.out.println("Set of roots: {");
-	    for(Iterator it = roots.iterator(); it.hasNext(); ){
+	    for(Iterator it = roots.iterator(); it.hasNext(); ) {
 		Object o = it.next();
 		if(o instanceof HMethod)
 		    System.out.println(" m: " + o);
@@ -1367,6 +1443,7 @@ public abstract class PAMain {
 		    System.out.println(" c: " + o);
 	    }
 	    System.out.println("}");
+
 	}
 
 	System.out.print("ClassHierarchy ... ");
@@ -1376,14 +1453,26 @@ public abstract class PAMain {
 
 	System.out.println((time() - tstart) + "ms");
 
-	if(SHOW_CH){
+
+	if(SHOW_CH) {
 	    System.out.println("Root method = " + hroot);	    
-	    System.out.println("Instantiated classes: {");
 	    Set inst_cls = ch.instantiatedClasses();
+	    System.out.println("Instantiated classes (" +
+			       inst_cls.size() + ") : {");
 	    for(Iterator it = inst_cls.iterator(); it.hasNext(); )
 		System.out.println(" " + it.next());
-	    System.out.println("}");
+	    System.out.println("}\n\n");
+
+	    /*
+	    for(Iterator it = ch.instantiatedClasses().iterator();
+		it.hasNext(); ) {
+		HClass hc = (HClass) it.next();
+		hc.print(new PrintWriter(System.out, true));
+		System.out.println("\n\n");
+	    }
+	    */
 	}
+
     }
 
 

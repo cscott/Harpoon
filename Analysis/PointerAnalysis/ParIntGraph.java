@@ -29,7 +29,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.41 2001-01-23 22:26:13 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.42 2001-02-09 23:44:47 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -40,7 +40,7 @@ public class ParIntGraph {
     public static boolean DEBUG_AS = false;
 
     /** Activates the aggressive shrinking. Buggy for the moment ... */
-    public static boolean AGGRESSIVE_SHRINKING = false;
+    public static boolean AGGRESSIVE_SHRINKING = true;
 
     /** Default (empty) graph. It doesn't contain any information.  */
     public static final ParIntGraph EMPTY_GRAPH = new ParIntGraph();
@@ -55,14 +55,6 @@ public class ParIntGraph {
 	thread. */
     public PAThreadMap tau;
     
-    /** The set of thread objects that are accessed after they are started.
-	This is not exactly part of the PA, but we need it for the thread
-	specific heaps; Martin intend to allocate even the thread object in
-	the thread heap - it is atomically collected at the end of the thread.
-	For the moment, this info is accurate only for captured nodes
-	(it is not carried over in the inter-procedural phase). */
-    public Set touched_threads;
-
     /** Maintains the actions executed by the analysed code and the parallel
 	action relation. <code>alpha</code> and <code>pi</code> from the 
 	original paper have been merged into this single field for efficiency
@@ -78,11 +70,8 @@ public class ParIntGraph {
     public ParIntGraph() {
 	G   = new PointsToGraph();
 	tau = new PAThreadMap();
-	ar  = new ActionRepository();
-	
-	eo = PointerAnalysis.IGNORE_EO ? null : new EdgeOrdering();
-
-	touched_threads = new HashSet();
+	ar  = PointerAnalysis.RECORD_ACTIONS ? new ActionRepository() : null;
+	eo  = PointerAnalysis.IGNORE_EO ? null : new EdgeOrdering();
     }
     
 
@@ -93,12 +82,12 @@ public class ParIntGraph {
 
 	G.join(pig2.G);
 	tau.join(pig2.tau);
-	ar.join(pig2.ar);
+	
+	if(PointerAnalysis.RECORD_ACTIONS)
+	    ar.join(pig2.ar);
 
 	if(!PointerAnalysis.IGNORE_EO)
 	    eo.join(pig2.eo);
-
-	touched_threads.addAll(pig2.touched_threads);
     }
 
 
@@ -119,7 +108,7 @@ public class ParIntGraph {
     /** Convenient function equivalent to 
 	<code>insertAllButArEo(pig2,mu,principal,Collections.EMPTY_SET). */
     void insertAllButArEo(ParIntGraph pig2, Relation mu, boolean principal){
-	insertAllButArEo(pig2,mu,principal,Collections.EMPTY_SET);
+	insertAllButArEo(pig2, mu, principal, Collections.EMPTY_SET);
     }
 
 
@@ -138,58 +127,50 @@ public class ParIntGraph {
 		System.out.println("The tau's are different");
 	    return false;
 	}
-	if(!ar.equals(pig2.ar)){
-	    if(DEBUG2){
-		System.out.println("The ar's are different");
-		ar.show_evolution(pig2.ar);
+
+	if(PointerAnalysis.RECORD_ACTIONS)
+	    if(!ar.equals(pig2.ar)){
+		if(DEBUG2){
+		    System.out.println("The ar's are different");
+		    ar.show_evolution(pig2.ar);
+		}
+		return false;
 	    }
-	    return false;
-	}
 
 	if(!PointerAnalysis.IGNORE_EO)
-	    if(!eo.equals(pig2.eo)){
+	    if(!eo.equals(pig2.eo)) {
 		if(DEBUG2)
 		    System.out.println("The eo's are different");
 		return false;
 	    }
 
-	if(!touched_threads.equals(pig2.touched_threads)){
-	    if(DEBUG2)
-		System.out.println("The touched_thread's are different");
-	    return false;
-	}
 	return true;
     }
 
     /** Private constructor for <code>clone</code> and 
 	<code>keepTheEssential</code>. */
     private ParIntGraph(PointsToGraph G, PAThreadMap tau, ActionRepository ar,
-			EdgeOrdering eo, Set touched_threads){
+			EdgeOrdering eo) {
 	this.G   = G;
 	this.tau = tau;
 	this.ar  = ar;
 	this.eo  = eo;
-	this.touched_threads = touched_threads;
-    }
-
-    /** Records the fact that the started thread nt is accessed by its 
-	direct startee. */
-    public final void touch_thread(PANode nt){
-	touched_threads.add(nt);
     }
 
     /** <code>clone</code> produces a copy of the <code>this</code>
 	Parallel Interaction Graph. */
-    public Object clone(){
+    public Object clone() {
+
+	ActionRepository _ar =
+	    PointerAnalysis.RECORD_ACTIONS ?
+	    (ActionRepository) ar.clone() : null;
 
 	EdgeOrdering _eo = 
-	    PointerAnalysis.IGNORE_EO ? null : (EdgeOrdering)eo.clone();
+	    PointerAnalysis.IGNORE_EO ? null : (EdgeOrdering) eo.clone();
 
 	return new ParIntGraph((PointsToGraph)G.clone(),
 			       (PAThreadMap)tau.clone(),
-			       (ActionRepository)ar.clone(),
-			       _eo, Collections.EMPTY_SET);
-	//	       (HashSet)((HashSet)touched_threads).clone());
+			       _ar, _eo );
     }
 
     
@@ -219,15 +200,15 @@ public class ParIntGraph {
 
 	PAThreadMap _tau = (PAThreadMap) tau.clone();
 
-	ActionRepository _ar = ar.keepTheEssential(remaining_nodes);
+	ActionRepository _ar =
+	    PointerAnalysis.RECORD_ACTIONS ?
+	    ar.keepTheEssential(remaining_nodes) : null;
 
 	EdgeOrdering _eo = 
 	    PointerAnalysis.IGNORE_EO ? null : 
 	    eo.keepTheEssential(remaining_nodes);
 
-	// the "touched_threads" info is valid only for captured threads
-	// i.e. not for the remaining nodes (accessible from the outside).
-	return new ParIntGraph(_G, _tau, _ar, _eo, Collections.EMPTY_SET);
+	return new ParIntGraph(_G, _tau, _ar, _eo);
     }
 
 
@@ -247,13 +228,15 @@ public class ParIntGraph {
 
 	PAThreadMap _tau = (PAThreadMap) tau.clone();
 
-	ActionRepository _ar = ar.keepTheEssential(remaining_nodes);
+	ActionRepository _ar =
+	    PointerAnalysis.RECORD_ACTIONS ? 
+	    ar.keepTheEssential(remaining_nodes) : null;
 
 	EdgeOrdering _eo = 
 	    PointerAnalysis.IGNORE_EO ? null : 
 	    eo.keepTheEssential(remaining_nodes);
 
-	return new ParIntGraph(_G, _tau, _ar, _eo, Collections.EMPTY_SET);
+	return new ParIntGraph(_G, _tau, _ar, _eo);
     }
 
 
@@ -288,11 +271,11 @@ public class ParIntGraph {
 	Set remaining_vars = new HashSet(G.I.allVariables());
 	ParIntGraph newpig = copy_from_roots(remaining_vars,roots);
 
-	/*
 	System.out.println("ipt: " + this.allNodes().size() + " -> " +
 			   newpig.allNodes().size() + " delta=" +
 			   (this.allNodes().size() -
-			    newpig.allNodes().size()) + 
+			    newpig.allNodes().size()));
+	/* + 
 			   " r = " + G.r + " " + newpig.G.r +  
 			   " excp = " + G.excp + " " + newpig.G.excp);
 	*/
@@ -329,11 +312,9 @@ public class ParIntGraph {
 	    }
 	}
 
-	/*
 	System.out.println("as: " + nodes.size() + " -> " +
 			   useful_nodes.size() + " delta=" +
 			   (nodes.size() - useful_nodes.size()));
-	*/
 
 	// unuseful_nodes = nodes - useful_nodes
 	nodes.removeAll(useful_nodes);
@@ -372,7 +353,7 @@ public class ParIntGraph {
 	    return true;
 	case PANode.LOAD:
 	    if(!G.e.escapesOnlyInCaller(node) ||
-	       ar.isSyncOn(node) ||
+	       (PointerAnalysis.RECORD_ACTIONS && ar.isSyncOn(node)) ||
 	       G.r.contains(node) || G.excp.contains(node))
 		return true;
 	default:
@@ -400,27 +381,28 @@ public class ParIntGraph {
 	forSet(G.e.escapedNodes(),visitor);
 	forSet(tau.activeThreadSet(),visitor);
 
-	ar.forAllActions(new ActionVisitor(){
-		public void visit_ld(PALoad load){
-		    visitor.visit(load.n1);
-		    visitor.visit(load.n2);
-		    visitor.visit(load.nt);
-		}
-		public void visit_sync(PASync sync){
-		    visitor.visit(sync.n);
-		    visitor.visit(sync.nt);
-		}
-	    });
-
-	ar.forAllParActions(new ParActionVisitor() {
-		public void visit_par_ld(PALoad load, PANode nt2) {
-		    visitor.visit(nt2);
-		}
-		public void visit_par_sync(PASync sync, PANode nt2) {
-		    visitor.visit(nt2);
-		}
-	    });
-
+	if(PointerAnalysis.RECORD_ACTIONS) {
+	    ar.forAllActions(new ActionVisitor(){
+		    public void visit_ld(PALoad load){
+			visitor.visit(load.n1);
+			visitor.visit(load.n2);
+			visitor.visit(load.nt);
+		    }
+		    public void visit_sync(PASync sync){
+			visitor.visit(sync.n);
+			visitor.visit(sync.nt);
+		    }
+		});
+	    
+	    ar.forAllParActions(new ParActionVisitor() {
+		    public void visit_par_ld(PALoad load, PANode nt2) {
+			visitor.visit(nt2);
+		    }
+		    public void visit_par_sync(PASync sync, PANode nt2) {
+			visitor.visit(nt2);
+		    }
+		});
+	}
 	// the edges appearing in the edge ordering relation are also
 	// present into G.O and G.I and so, they have been already visited
     }
@@ -450,19 +432,14 @@ public class ParIntGraph {
 		map.put(node, node.csSpecialize(call));
 	} 
 
-	//System.out.println("csSPECIALIZE -----------------");
-	//System.out.println("Map: " + map);
-	//System.out.println("AllNodes: " + allNodes());
-	//System.out.println("OLD GRAPH: " + this);
+	ActionRepository _ar = PointerAnalysis.RECORD_ACTIONS ?
+	    ar.csSpecialize(map, call) : null;
+
+	EdgeOrdering _eo = PointerAnalysis.IGNORE_EO ?
+	    null : eo.specialize(map);
 
 	ParIntGraph new_graph = 
-	    new ParIntGraph(G.specialize(map), tau.specialize(map), 
-			    ar.csSpecialize(map, call),
-			    PointerAnalysis.IGNORE_EO? null:eo.specialize(map),
-			    PANode.specialize_set(touched_threads, map));
-
-	//	System.out.println("NEW GRAPH: " + new_graph);
-	//	System.out.println("-------------------------------");
+	    new ParIntGraph(G.specialize(map), tau.specialize(map), _ar, _eo);
 
 	return new_graph;
     }
@@ -484,8 +461,7 @@ public class ParIntGraph {
 	return
 	    new ParIntGraph(G.specialize(map), tau.specialize(map), 
 			    ar.tSpecialize(map, run), 
-			    PointerAnalysis.IGNORE_EO? null: eo.specialize(map),
-			    PANode.specialize_set(touched_threads, map));
+			    PointerAnalysis.IGNORE_EO?null:eo.specialize(map));
     }
 
     // weak thread specialization
@@ -500,12 +476,15 @@ public class ParIntGraph {
 		map.put(node, node2);
 	    }
 	}
+
+	ActionRepository _ar = PointerAnalysis.RECORD_ACTIONS ?
+	    ar.tSpecialize(map, run) : null;
+
+	EdgeOrdering _eo = PointerAnalysis.IGNORE_EO ?
+	    null : eo.specialize(map);
 	
 	return
-	    new ParIntGraph(G.specialize(map), tau.specialize(map), 
-			    ar.tSpecialize(map, run),
-			    PointerAnalysis.IGNORE_EO?null:eo.specialize(map),
-			    PANode.specialize_set(touched_threads, map));
+	    new ParIntGraph(G.specialize(map), tau.specialize(map), _ar, _eo);
     }
 
 
@@ -514,12 +493,12 @@ public class ParIntGraph {
     public void remove(Set nodes){
 	G.remove(nodes);
 	tau.remove(nodes);
-	ar.removeNodes(nodes);
+	
+	if(PointerAnalysis.RECORD_ACTIONS)
+	    ar.removeNodes(nodes);
 
 	if(!PointerAnalysis.IGNORE_EO)
 	    eo.removeNodes(nodes);
-
-	touched_threads.removeAll(nodes);
     }
 
     /** Simplify <code>this</code> parallel interaction graph by removing the
@@ -554,7 +533,8 @@ public class ParIntGraph {
 	    G.O.removeEdge(edge.n1,edge.f,edge.n2);
 	}
 
-	ar.removeEdges(fake_outside_edges);
+	if(PointerAnalysis.RECORD_ACTIONS)
+	    ar.removeEdges(fake_outside_edges);
 
 	if(!PointerAnalysis.IGNORE_EO)
 	    eo.removeEdges(fake_outside_edges);
@@ -565,29 +545,11 @@ public class ParIntGraph {
 	string representation. */
     public String toString(){
 	return
-	    "\nParIntGraph{\n" + G + " " + tau;
-	/* + 
-	    " Touched threads: " + touchedToString() + "\n" +
-	    ar + 
+	    "\nParIntGraph{\n" + G + " " + tau +
+	    (PointerAnalysis.RECORD_ACTIONS ? ar.toString() : "") + 
 	    (PointerAnalysis.IGNORE_EO ? "" : eo.toString()) + 
 	    "}";
-	*/
     }
-
-    // Produces a string representation of the
-    // captured, started but touched threads.
-    private String touchedToString(){
-	StringBuffer buffer = new StringBuffer();
-
-	Iterator it = touched_threads.iterator();
-	while(it.hasNext()){
-	    PANode nt = (PANode) it.next();
-	    if(G.captured(nt))
-		buffer.append(nt + " ");		
-	}
-	return buffer.toString();
-    }
-
 
     /** Checks whether two <code>ParIntGraph</code>s are equal or not. In
 	addition to the <code>equals</code> method, this handles the 

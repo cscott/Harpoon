@@ -39,7 +39,7 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCComponent.java,v 1.1.2.2 2000-04-02 03:28:16 salcianu Exp $
+ * @version $Id: SCComponent.java,v 1.1.2.3 2001-02-09 23:45:01 salcianu Exp $
  */
 public final class SCComponent implements Comparable{
 
@@ -435,7 +435,7 @@ public final class SCComponent implements Comparable{
 
 	boolean extended = nodes.size() > 1;
 
-	buffer.append("SCC" + id + " {\n");
+	buffer.append("SCC" + id + " (size " + nodes.size() + ") {\n");
 	Iterator it = nodes.iterator();
 	while(it.hasNext()){
 	    Object o = it.next();

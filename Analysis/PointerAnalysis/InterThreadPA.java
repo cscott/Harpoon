@@ -40,7 +40,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  * <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.33 2000-11-09 01:05:04 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.34 2001-02-09 23:44:46 salcianu Exp $
  */
 public abstract class InterThreadPA {
 
@@ -254,18 +254,22 @@ public abstract class InterThreadPA {
     /* Constructs a new set of outside edges for pig, containing only those
        outside edges that are read in parallel with an nt thread.
        Returns the new set of edges. */
-    private static PAEdgeSet construct_new_O(ParIntGraph pig, PANode nt){
-	PAEdgeSet new_O = new LightPAEdgeSet();
+    private static PAEdgeSet construct_new_O(ParIntGraph pig, PANode nt) {
 
-	Iterator it_loads = pig.ar.parallelLoads(nt);
-	while(it_loads.hasNext()){
-	    PALoad load = (PALoad) it_loads.next();
-	    new_O.addEdge(load.n1,load.f,load.n2);
+	if(PointerAnalysis.RECORD_ACTIONS) {
+	    PAEdgeSet new_O = new LightPAEdgeSet();
+	    
+	    Iterator it_loads = pig.ar.parallelLoads(nt);
+	    while(it_loads.hasNext()){
+		PALoad load = (PALoad) it_loads.next();
+		new_O.addEdge(load.n1, load.f, load.n2);
+	    }
+
+	    return new_O;
 	}
-
-	return new_O;
+	else
+	    return (PAEdgeSet) pig.G.O.clone();
     }
-
 
     /* Computes the interaction with a SINGLE instance of a thread launched
        by the nt node. This involves separately computing the interactions
@@ -486,19 +490,22 @@ public abstract class InterThreadPA {
 	// compute the escape function for the new graph
 	new_pig.G.propagate();
 
-	// all the actions from starter run in parallel with the threads
-	// that are started by the startee (it is not necessary to do a
-	// transitive closure, the threads that are indirectly launched by the
-	// startee will be considered when their direct started is analyzed.
-	bring_starter_actions(pig[0], new_pig, mu[0],
-			      pig[1].tau.activeThreadSet(), nt);
-
-	// all the actions from startee run in parallel with all the other
-	// threads that could be (transitively) started by the starter.
-	// Transitive closure is necessary since we may never revisit this
-	// actions (we must put the parallel relation action || thread  now).
-	bring_startee_actions(pig[1], new_pig, mu[1],
-			      active_threads_in_starter, nt);
+	if(PointerAnalysis.RECORD_ACTIONS) {
+	    // all the actions from starter run in parallel with the threads
+	    // that are started by the startee (it is not necessary to do a
+	    // transitive closure, the threads that are indirectly launched
+	    // by the startee will be considered when their direct started
+	    // is analyzed.
+	    bring_starter_actions(pig[0], new_pig, mu[0],
+				  pig[1].tau.activeThreadSet(), nt);
+	    
+	    // all the actions from startee run in parallel with all the other
+	    // threads that could be (transitively) started by the starter.
+	    // Transitive closure is necessary since we may never revisit this
+	    // actions (we must put the parallel relation action || thread now)
+	    bring_startee_actions(pig[1], new_pig, mu[1],
+				  active_threads_in_starter, nt);
+	}
 
 	return new_pig;
     }
