@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.3 1999-03-20 20:23:16 cananian Exp $
+% $Id: thesis.tex,v 1.4 1999-03-21 20:47:49 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage,twoside]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -23,10 +23,10 @@
 
 \title{\magic: An Optimizing Java Compiler using SSI Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.3 $ $}
+\date{\today \\ $ $Revision: 1.4 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.3 $ $}{$ $Revision: 1.3 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.4 $ $}{$ $Revision: 1.4 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -45,6 +45,15 @@ Static Single Assignment (SSA) form, introduced by Cytron in
 \ldots
 
 \textbf{Define SSA form here.}
+
+Figure \ref{fig:tossa} illustrates the conversion to SSA form.
+\begin{figure}\label{fig:tossa}
+\begin{center}
+\input{Figures/THex1base} \vline\ \input{Figures/THex1ssa}
+\end{center}
+\caption{\phifunction{s} are added to the program on the left to
+produce the SSA-form IR on the right.}
+\end{figure}
 
 \subsection{Minimal and pruned SSA forms}
 Cytron defines a minimal SSA form in \cite{cytron91:ssa}.  His minimal
@@ -68,12 +77,21 @@ is the most important.
 %The other two can be summarized by noting that in proper SSA form,
 %there is exactly one reaching definition for a variable $V$ at every
 %non-$\phi$ use of $V$.
+The SSA form in figure \ref{fig:tossa} is minimal.
 
 A variation
 on minimal SSA form, called \textit{pruned} form \cite{ferrante91:pruned},
 avoids placing \phifunction{s} which define variables which are never used.
 In most cases, the more regular properties of minimal SSA form
 outweigh the pruned form's slight increase in space efficiency.
+Figure \ref{fig:prunedssa} compares minimal and pruned SSA form for
+our example program.
+\begin{figure}\label{fig:prunedssa}
+\begin{center}
+\input{Figures/THex1ssa} \vline\ \input{Figures/THex1ssaPr}
+\end{center}
+\caption{Minimal SSA form on the left; pruned SSA form on the right.}
+\end{figure}
 
 \section{Static Single Information Form}
 
@@ -95,6 +113,15 @@ contains a definition of $V$; and
 \item[$(\sigma)$] at locations where control-flow splits and at least
 one of the disjoint paths from the split uses the value of $V$.
 \end{enumerate}
+
+Figure \ref{fig:tossi} compares the SSA and SSI forms for our example program.
+% add text here about how SSI is better.
+\begin{figure}\label{fig:tossi}
+\begin{center}
+\input{Figures/THex1ssa} \vline\ \input{Figures/THex1ssi}
+\end{center}
+\caption{SSA form on the left; SSI form on the right.}
+\end{figure}
 
 \subsection{Minimal and pruned SSI forms}
 \textit{Minimal} and \textit{pruned} SSI forms can be defined which
@@ -124,6 +151,15 @@ compact SSI form may be produced by removing \sigfunction{s} for which
 there are uses for \textit{exactly one} of the variables on the
 left-hand side, but it does not seem profitable to split this
 particular hair.}
+
+Figure \ref{fig:prunedssi} compares minimal and pruned SSI form for
+our example program.
+\begin{figure}\label{fig:prunedssi}
+\begin{center}
+\input{Figures/THex1ssi} \vline\ \input{Figures/THex1ssiPr}
+\end{center}
+\caption{Minimal SSI form on the left; pruned SSI form on the right.}
+\end{figure}
 
 \section{Results}
 \section{Conclusions}

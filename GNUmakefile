@@ -8,13 +8,20 @@ all: $(ALLDOCS:=.ps)
 preview: pldi99-xdvi
 
 # bibtex dependencies
-thesis.dvi: harpoon.bib
 quads.dvi: harpoon.bib
 design.dvi: harpoon.bib
 bibnote.dvi: harpoon_.bib
 readnote.dvi: unread_.bib
 # lots of dependencies for the pldi paper
 pldi99.dvi: harpoon.bib pldi99-intro.tex pldi99-abstract.tex pldi99-tech.tex
+# thesis figure dependencies
+thesis.dvi: harpoon.bib Figures/THex1base.tex \
+	Figures/THex1ssa.tex Figures/THex1ssaPr.tex \
+	Figures/THex1ssi.tex Figures/THex1ssiPr.tex
+# thesis figure rules
+Figures/%: always
+	$(MAKE) -C Figures $(notdir $@)
+always:
 
 # Tex rules. [have to add explicit dependencies on appropriate bibtex files.]
 %.dvi %.aux: %.tex
@@ -66,6 +73,7 @@ clean:
 	$(RM) $(foreach doc,$(ALLDOCS),$(doc).ps $(doc).pdf)
 	$(RM) harpoon_.bib unread_.bib
 	$(RM) -r html
+	$(MAKE) -C Figures clean
 
 wipe: clean
 	$(RM) *~ core
@@ -86,6 +94,7 @@ only-me:
 .PHONY: clean wipe backup only-me update install
 .PHONY: html html-pdf html-install
 .PHONY: preview all
+.PHONY: always
 
 # Try to convince make to delete these sometimes.
 .INTERMEDIATE: $(ALLDOCS:=.log)
