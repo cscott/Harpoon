@@ -28,7 +28,7 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.35 1998-10-16 08:54:09 cananian Exp $
+ * @version $Id: HClass.java,v 1.36 1998-10-16 10:09:24 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public abstract class HClass {
@@ -112,19 +112,15 @@ public abstract class HClass {
       {
 	String className = descriptor.substring(1, descriptor.indexOf(';'));
 	// classname in descriptor should be '/' delimited.
-	return /*ImplGNU*/ImplMagic.forPath(className);
-	/*
 	InputStream is = 
 	  Loader.getResourceAsStream(Loader.classToResource(className));
 	if (is == null) throw new NoClassDefFoundError(className);
-	System.err.println("Loading "+className);
 	// OK, go ahead and load this.
 	try {
-	  return / *ImplGNU* /ImplMagic.forStream(new BufferedInputStream(is));
+	  return /*ImplGNU*/ImplMagic.forStream(new BufferedInputStream(is));
 	} catch (java.io.IOException e) {
 	  throw new NoClassDefFoundError(className);
 	}
-	*/
       }
     default:
       break;

@@ -6,12 +6,7 @@ import harpoon.ClassFile.Raw.Constant.*;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
-import java.io.InputStream;
-import java.util.Enumeration;
-import java.util.Hashtable;
 import java.util.Vector;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 /**
  * <code>ImplMagic</code> provides concrete implementation for
  * <code>HClass</code>, <code>HMethod</code>, <code>HConstructor</code>,
@@ -19,67 +14,12 @@ import java.util.zip.ZipFile;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.2 1998-10-16 08:54:09 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.3 1998-10-16 10:09:25 cananian Exp $
  */
 
 abstract class ImplMagic  { // wrapper for the Real McCoy.
-    static Hashtable preload = new Hashtable();
-    static {
-	for (Enumeration e=Loader.preloadable(); e.hasMoreElements(); ) {
-	    try {
-		ZipFile zf = new ZipFile((String)e.nextElement());
-		for (Enumeration ee=zf.entries(); ee.hasMoreElements(); ) {
-		    ZipEntry ze = (ZipEntry) ee.nextElement();
-		    if (!ze.getName().toLowerCase().endsWith(".class"))
-			continue; // not a .class file.
-		    if (!ze.getName().toLowerCase().startsWith("java"))
-			continue; // not worth preloading.
-		    InputStream is = zf.getInputStream(ze);
-		    harpoon.ClassFile.Raw.ClassFile raw =
-			new harpoon.ClassFile.Raw.ClassFile(is);
-		    System.err.println("Preloaded "+raw.this_class().name());
-		    preload.put(raw.this_class().name(), raw);
-		    is.close();
-		}
-		/*
-		java.io.FileInputStream fis 
-		    = new java.io.FileInputStream((String)e.nextElement());
-		java.util.zip.ZipInputStream zis
-		    = new java.util.zip.ZipInputStream(fis);
-		while(true) {
-		    ZipEntry ze = zis.getNextEntry();
-		    if (!ze.getName().toLowerCase().endsWith(".class"))
-			continue; // not a .class file.
-		    if (!ze.getName().toLowerCase().startsWith("java"))
-			continue; // not worth preloading.
-		    harpoon.ClassFile.Raw.ClassFile raw =
-			new harpoon.ClassFile.Raw.ClassFile(zis);
-		    System.err.println("Preloaded "+raw.this_class().name());
-		    preload.put(raw.this_class().name(), raw);
-		    zis.closeEntry();
-		}
-		*/
-	    } catch (java.io.IOException ex) { /* ignore */ }
-	}
-    }
 
-    static HClass forPath(String path) {
-	harpoon.ClassFile.Raw.ClassFile r = 
-	    (harpoon.ClassFile.Raw.ClassFile) preload.get(path);
-	if (r!=null) 
-	    preload.remove(path);
-	else {
-	    InputStream is =
-		Loader.getResourceAsStream(Loader.classToResource(path));
-	    if (is!=null)
-		r = new harpoon.ClassFile.Raw.ClassFile(is);
-	    System.err.println("Loading "+path);
-	}
-	if (r==null) throw new NoClassDefFoundError(path);
-	return new MagicClass(r);
-    }
-
-    static HClass forStream(InputStream is) throws java.io.IOException{
+    static HClass forStream(java.io.InputStream is) throws java.io.IOException{
 	harpoon.ClassFile.Raw.ClassFile raw =
 	    new harpoon.ClassFile.Raw.ClassFile(is);
 	return new MagicClass(raw);
@@ -192,7 +132,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    }
 	}
 	_this.isSynthetic = (synthetic!=null);
-	
+
 	// Add the default code representation, if method is not native.
 	if (!Modifier.isNative(_this.getModifiers()) &&
 	    !Modifier.isAbstract(_this.getModifiers()))

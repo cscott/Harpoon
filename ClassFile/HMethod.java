@@ -3,15 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
-import harpoon.ClassFile.Raw.Attribute.Attribute;
-import harpoon.ClassFile.Raw.Attribute.AttributeCode;
-import harpoon.ClassFile.Raw.Attribute.AttributeExceptions;
-import harpoon.ClassFile.Raw.Attribute.AttributeSynthetic;
-import harpoon.ClassFile.Raw.Attribute.AttributeLocalVariableTable;
-import harpoon.ClassFile.Raw.Constant.ConstantClass;
 import java.lang.reflect.Modifier;
 import java.util.Hashtable;
-import java.util.Vector;
 import harpoon.Util.Util;
 
 /**
@@ -21,7 +14,7 @@ import harpoon.Util.Util;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.25 1998-10-16 06:21:03 cananian Exp $
+ * @version $Id: HMethod.java,v 1.26 1998-10-16 10:09:25 cananian Exp $
  * @see HMember
  * @see HClass
  */
