@@ -49,7 +49,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.11 2000-03-02 02:10:23 kkz Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.12 2000-03-02 05:33:00 kkz Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
@@ -291,10 +291,11 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 				// this may be a bad assumption, but...
 				Util.assert(locationSet.size() == 1);
 				for (Iterator it=locationSet.iterator();
-				     it.hasNext(); )
-				    // another possibly bad assumption
+				     it.hasNext(); ) {
+				    // another series of bad assumptions
 				    calleeSaved[rindex] = 
 					(StackOffsetLoc)it.next();
+				}
 			    } else if (!hclass.isPrimitive())
 				// a non-derived pointer: add all 
 				// locations where it can be found

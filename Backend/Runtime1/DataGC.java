@@ -40,7 +40,7 @@ import java.util.TreeSet;
  * <code>DataGC</code> outputs the tables needed by the garbage collector.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: DataGC.java,v 1.1.2.8 2000-02-18 21:28:59 kkz Exp $
+ * @version $Id: DataGC.java,v 1.1.2.9 2000-03-02 05:33:09 kkz Exp $
  */
 public class DataGC extends Data {
     final GCInfo m_gc;
@@ -51,7 +51,7 @@ public class DataGC extends Data {
     // number of bits in a 32-bit int
     final int INT_BITS = 32;
     // size of descriptor in bits
-    final int DESC_BITS = 6;
+    final int DESC_BITS = 8;
 
     /** Creates a <code>DataGC</code>. */
     public DataGC(Frame f, HClass hc) {
@@ -154,6 +154,8 @@ public class DataGC extends Data {
     final int STACK_SAME_AS_PREV  = 28;
     final int DERIVS_ARE_ZERO     = 27;
     final int DERIVS_SAME_AS_PREV = 26;
+    final int CSAVED_ARE_ZERO     = 25;
+    final int CSAVED_SAME_AS_PREV = 24;
     // requires: current and previous GC point
     // modifies: nil
     // effects:  returns statements for outputting data relevant
@@ -193,6 +195,16 @@ public class DataGC extends Data {
 	    output |= 1 << DERIVS_SAME_AS_PREV;
 	    needDerivs = false;
 	}
+	// handle callee-saved registers
+	boolean needCSaved = true;
+	StackOffsetLoc[] cSaved = curr.calleeSaved();
+	if (cSaved.length == 0) {
+	    output |= 1 << CSAVED_ARE_ZERO;
+	    needCSaved = false;
+	} else if (prev != null && cSavedEquals(cSaved, prev.calleeSaved())) {
+	    output |= 1 << CSAVED_SAME_AS_PREV;
+	    needCSaved = false;
+	}
 	List stmlist = new ArrayList();
 	if (!needRegs && !needStack)
 	    // output descriptor (int)
@@ -202,27 +214,29 @@ public class DataGC extends Data {
 	    stmlist.add(outputRS(needRegs, needStack, regs, stack, output));
 	if (needDerivs)
 	    stmlist.add(outputDerivs(regDerivs, stackDerivs));
+	if (needCSaved)
+	    stmlist.add(outputCSaved(cSaved));
 	return Stm.toStm(stmlist);
     } // outputGCData
 
-    // requires: 6-bit descriptor set in output
+    // requires: 8-bit descriptor set in output
     // modifies: nil
-    // effects: returns statements that output 6-bit descriptor
+    // effects: returns statements that output 8-bit descriptor
     //          plus register data (if needed) and stack data
     //          (if needed)
     private Stm outputRS(boolean needRegs, boolean needStack,
 			 Set regs, Set stack, int output)
     {
-	// number of bits needed to store the 6-bit descriptor,
+	// number of bits needed to store the 8-bit descriptor,
 	// the register bitmap and the stack bitmap
 	final int bits = 
 	    DESC_BITS + (needRegs?numRegs:0) + (needStack?stack.size():0);
 	// number of 32-bit integers needed to encode the data 
 	final int numInts = (bits + INT_BITS - 1) / INT_BITS;
 	int[] data = new int[numInts];
-	// remember the 6-bit descriptor
+	// remember the 8-bit descriptor
 	int offset = DESC_BITS;
-	// get 6-bit descriptor from output
+	// get 8-bit descriptor from output
 	data[0] = output;
 	// do registers first
 	if (needRegs) {
@@ -310,6 +324,54 @@ public class DataGC extends Data {
 		stmlist.add(_DATUM(new CONST(tf, null, sign[k])));
 	}
 	return Stm.toStm(stmlist);
+    }
+    // output information about callee-saved registers
+    private Stm outputCSaved(StackOffsetLoc[] cSaved) {
+	List stmlist = new ArrayList();
+	// calculate how many 32-bit ints we need to encode bit field
+	final int numInts = (2 * numRegs + INT_BITS - 1) / INT_BITS;
+	int[] bitfield = new int[numInts];
+	// output a bit field indicating which entries have data
+	for(int index = 0; index < cSaved.length; index++) {
+	    int i = index / INT_BITS;
+	    int j = index % INT_BITS;
+	    bitfield[i] |= 1 << (INT_BITS - j - 1);
+	}
+	// dump out bitfield
+	for(int k = 0; k < numInts; k++)
+	    stmlist.add(_DATUM(new CONST(tf, null, bitfield[k])));
+	// sanity check
+	Util.assert(cSaved.length == numRegs);
+	// dump out only the fields that have data
+	for(int i=0; i < cSaved.length; i++) {
+	    if (cSaved[i] != null)
+		stmlist.add(_DATUM(new CONST(tf, null, 
+					     cSaved[i].stackOffset())));
+	}
+	return Stm.toStm(stmlist);
+    }
+    // compares two arrays of StackOffsetLocs and returns true if they
+    // are equal, and false otherwise. They are considered equal if all
+    // of the following are true:
+    // - a and b are the same length
+    // - for all 0 <= i < a.length, a[i].stackOffset() == b[i].stackOffset
+    private boolean cSavedEquals(StackOffsetLoc[] a, StackOffsetLoc[] b) {
+	if (a.length != b.length) return false;
+	for(int i = 0; i < a.length; i++) {
+	    if (a[i] != null && b[i] != null) {
+		// if neither a[i] nor b[i] is null, then
+		// they must represent the same stack offset
+		// for equality to hold
+		if (a[i].stackOffset() != b[i].stackOffset())
+		    return false;
+	    } else {
+		// if one of a[i] or b[i] is null, then
+		// both must be null for equality to hold
+		if (a[i] != b[i])
+		    return false;
+	    }
+	}
+	return true;
     }
     final private boolean DEBUG = true;
     // convenient debugging utility

@@ -28,7 +28,7 @@ import java.util.Set;
  * the instruction stream.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: GCInfo.java,v 1.1.2.7 2000-03-02 02:10:24 kkz Exp $
+ * @version $Id: GCInfo.java,v 1.1.2.8 2000-03-02 05:33:08 kkz Exp $
  */
 public abstract class GCInfo {
     /** Creates an <code>IntermediateCodeFactory</code> that
@@ -94,11 +94,11 @@ public abstract class GCInfo {
 	           a <code>Set</code> of <code>CommonLoc</code>s that
 		   represent live pointers at the given GC point
 	    @param calleeSaved
-	           an array of <code>StackOffsetLoc</code>s where
-                   the contents of some callee-saved register with
-		   register index i has been stored at index i in
-                   the array. The definition of register index in
-                   this context corresponds to the definition in
+	           an array of <code>StackOffsetLoc</code>s 
+		   where the contents of some callee-saved register 
+		   with register index i has been stored at index i in
+                   the array. The definition of register index in this 
+		   context corresponds to the definition in
                    <code>harpoon.Backend.Maps.BackendDerivation.Register</code>
 	*/
 	public GCPoint(Instr gcPoint, Label label, Map liveDerivations,
@@ -160,10 +160,10 @@ public abstract class GCInfo {
 	/** Returns the <code>Set</code> of live, non-derived pointers
 	    in <code>MachineRegLoc</code>s at that GC point */
 	public Set liveMachineRegLocs() { return liveMachineRegLocs; }
-	/** Returns the array of <code>StackOffsetLoc</code>s where
-	    the contents callee-save registers have been dumped.
-	    The definition of register index in this context 
-	    corresponds to the definition in
+	/** Returns the array of <code>StackOffsetLoc</code>s 
+	    where the contents callee-save registers have been dumped.
+	    The definition of register index in this context corresponds 
+	    to the definition in
 	    <code>harpoon.Backend.Maps.BackendDerivation.Register</code> */
 	public StackOffsetLoc[] calleeSaved() { return calleeSaved; }
     }
