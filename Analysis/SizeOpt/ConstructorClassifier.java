@@ -37,7 +37,7 @@ import java.util.Set;
  * of several 'mostly-zero field' transformations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstructorClassifier.java,v 1.3.2.1 2002-02-27 08:33:09 cananian Exp $
+ * @version $Id: ConstructorClassifier.java,v 1.3.2.2 2002-04-07 21:20:14 cananian Exp $
  */
 public class ConstructorClassifier {
     private static final boolean STATISTICS=true;
@@ -187,6 +187,9 @@ public class ConstructorClassifier {
 		    // fields, unless the method is a constructor)
 		    if (qq.field().getDeclaringClass()
 			.isInstanceOf(thisClass) &&
+			// XXX i think the presence of the 'isConstructor'
+			// clause here is a bug. constructor writes
+			// should be taken care of by clause above.
 			(isConstructor(hm) ||
 			 !thisClass.equals(qq.field().getDeclaringClass())))
 			continue; // subclass writes are permitted.
