@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.QuadSSA;
 
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.QuadSSA;
@@ -22,9 +23,19 @@ import harpoon.Util.Util;
  * 
  * @deprecated This will be replaced by MethodInliningCodeFactory.  Do not use.
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: MethodInlining.java,v 1.1.2.4 1999-02-08 10:04:31 pnkfelix Exp $
+ * @version $Id: MethodInlining.java,v 1.1.2.5 1999-02-12 21:42:11 pnkfelix Exp $
  */
 public abstract class MethodInlining {
+
+    public static HCodeFactory codeFactory() {
+	return new MethodInliningCodeFactory();
+    }
+    
+    public static HCodeFactory codeFactory(HCodeFactory fact) {
+	return new MethodInliningCodeFactory(fact);
+    }
+
+    
 
     /** Retrieves the code for method called at <code>site</code> and 
 	returns an <code>HCode</code> represented the code to be
