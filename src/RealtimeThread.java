@@ -137,14 +137,14 @@ public class RealtimeThread extends Thread implements Schedulable {
     }
 
     public RealtimeThread(ThreadGroup group, Runnable target) {
-	super(group, (Runnable)null);
+	super("");
 	this.target = target;
 	mem = null;
 	setup();
     }
     
     public RealtimeThread(MemoryArea memory) {
-	super();
+	super("");
 	target = null;
 	mem = ((original=memory)==null)?null:(memory.shadow);
 	setup();
@@ -178,14 +178,15 @@ public class RealtimeThread extends Thread implements Schedulable {
     }
     
     public RealtimeThread(MemoryArea memory, Runnable target) {
-	super(target);
+	super("");
+	this.target = target;
 	mem = memory;
 	setup();
     }
 
     public RealtimeThread(ThreadGroup group, Runnable target,
 			  String name, MemoryArea memory) {
-	super(group, target, name);
+	super(name);
 	this.target = target;
 	mem = ((original=memory)==null)?null:(memory.shadow);
 	setup();

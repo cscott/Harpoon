@@ -179,20 +179,19 @@ public class NoHeapRealtimeThread extends RealtimeThread {
      *                            is allocated on heap.
      */
     public void start() {
-	HeapMemory heap = HeapMemory.instance();
-	if (heap.equals(getMemoryArea()))
+	if (getMemoryArea().heap)
 	    throw new MemoryAccessError("NoHeapRealtimeThread cannot be allocated in heap.");
 	SchedulingParameters scheduling = getSchedulingParameters();
-	if ((scheduling != null) && (heap.equals(MemoryArea.getMemoryArea(scheduling))))
+	if ((scheduling != null) && (MemoryArea.getMemoryArea(scheduling).heap))
 	    throw new MemoryAccessError("SchedulingParameters of a NoHeapRealtimeThread cannot be allocated in heap.");
 	ReleaseParameters release = getReleaseParameters();
-	if ((release != null) && (heap.equals(MemoryArea.getMemoryArea(release))))
+	if ((release != null) && (MemoryArea.getMemoryArea(release).heap))
 	    throw new MemoryAccessError("ReleaseParameters of a NoHeapRealtimeThread cannot be allocated in heap.");
 	MemoryParameters memParams = getMemoryParameters();
-	if ((memParams != null) && (heap.equals(MemoryArea.getMemoryArea(memParams))))
+	if ((memParams != null) && (MemoryArea.getMemoryArea(memParams).heap))
 	    throw new MemoryAccessError("MemoryParameters of a NoHeapRealtimeThread cannot be allocated in heap.");
 	ProcessingGroupParameters group = getProcessingGroupParameters();
-	if ((group != null) && (heap.equals(MemoryArea.getMemoryArea(group))))
+	if ((group != null) && (MemoryArea.getMemoryArea(group).heap))
 	    throw new MemoryAccessError("ProcessingGroupParameters of a NoHeapRealtimeThread cannot be allocated in heap.");
 
 	super.start();
