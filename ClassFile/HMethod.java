@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.30.2.9 1999-08-07 04:14:20 cananian Exp $
+ * @version $Id: HMethod.java,v 1.30.2.10 1999-08-07 11:17:21 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -335,7 +335,6 @@ public abstract class HMethod implements HMember, java.io.Serializable {
   private static final class HMethodStub implements java.io.Serializable {
     private HClass parent;
     private String name, descriptor;
-    HMethodStub() {}
     HMethodStub(HMethod m) {
       this.parent=m.getDeclaringClass();
       this.name=m.getName().intern();

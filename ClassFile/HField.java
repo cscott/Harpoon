@@ -13,7 +13,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.15.2.7 1999-08-07 04:14:20 cananian Exp $
+ * @version $Id: HField.java,v 1.15.2.8 1999-08-07 11:17:21 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -205,7 +205,6 @@ public abstract class HField implements HMember, java.io.Serializable {
   private static final class HFieldStub implements java.io.Serializable {
     private HClass parent;
     private String name;
-    HFieldStub() {}
     HFieldStub(HField f) {
       this.parent = f.getDeclaringClass();
       this.name = f.getName().intern();

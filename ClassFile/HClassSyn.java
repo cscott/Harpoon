@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.5 1999-08-07 04:14:19 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.6 1999-08-07 11:17:21 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class HClassSyn extends HClassCls {
@@ -203,8 +203,6 @@ public class HClassSyn extends HClassCls {
     // make name unique & register it.
     this.name = uniqueName(name); register();
   }
-  /** Constructor for the use of the Serializable interface. */
-  HClassSyn() { }
 }
 // set emacs indentation style.
 // Local Variables:
