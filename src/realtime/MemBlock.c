@@ -16,7 +16,7 @@ inline void MemBlock_finalize(struct refCountAllocator* rc, void* obj) {
   struct MemBlock* memBlock = (struct MemBlock*)obj;
   JNIEnv* env = FNI_GetJNIEnv();
 #ifdef RTJ_DEBUG
-  printf("MemBlock_finalize(0x%08x)\n", memBlock);
+  printf("MemBlock_finalize(%p)\n", memBlock);
 #endif
   if (memBlock->finalize) memBlock->finalize(memBlock);
   pthread_cond_destroy(&(memBlock->finalize_cond));
@@ -41,7 +41,7 @@ struct MemBlock* MemBlock_new(JNIEnv* env,
 #endif
 #ifdef RTJ_DEBUG
   checkException();
-  printf("MemBlock_new(%s, 0x%08x)\n", 
+  printf("MemBlock_new(%s, %p)\n", 
 	 className((*env)->GetObjectClass(env, memoryArea)));
   checkException();
 #endif
@@ -59,7 +59,7 @@ struct MemBlock* MemBlock_new(JNIEnv* env,
 
 inline struct inflated_oobj* getInflatedObject(JNIEnv* env, jobject obj) {
 #ifdef RTJ_DEBUG
-  printf("getInflatedObject(0x%08x, 0x%08x)\n", env, obj);
+  printf("getInflatedObject(%p, %p)\n", env, obj);
   checkException();
 #endif
   if (!FNI_IS_INFLATED(obj)) {
@@ -97,7 +97,7 @@ const char* classNameUnwrap(struct oobj* obj) {
 inline long MemBlock_INCREF(struct MemBlock* memBlock) {
   long* refcount = &(memBlock->refCount);
 #ifdef RTJ_DEBUG
-  printf("MemBlock_INCREF(0x%08x): %d -> ", memBlock, *refcount); 
+  printf("MemBlock_INCREF(%p): %d -> ", memBlock, *refcount); 
   checkException();
 #endif
   atomic_add((uint32_t*)refcount, 1);
@@ -110,7 +110,7 @@ inline long MemBlock_INCREF(struct MemBlock* memBlock) {
 inline long MemBlock_DECREF(struct MemBlock* memBlock) {
   long* refcount = &(memBlock->refCount);
 #ifdef RTJ_DEBUG
-  printf("MemBlock_DECREF(0x%08x): %d -> ", memBlock, *refcount);
+  printf("MemBlock_DECREF(%p): %d -> ", memBlock, *refcount);
   checkException();
 #endif
   atomic_add((uint32_t*)refcount, -1);
@@ -123,7 +123,7 @@ inline long MemBlock_DECREF(struct MemBlock* memBlock) {
 inline void* MemBlock_alloc(struct MemBlock* memBlock, 
 			    size_t size) {
 #ifdef RTJ_DEBUG
-  printf("MemBlock_alloc(0x%08x, %d)\n", (int)memBlock, size);
+  printf("MemBlock_alloc(%p, %d)\n", (int)memBlock, size);
   checkException();
 #endif
   if (!memBlock) { 
@@ -172,7 +172,7 @@ inline int MemBlock_free(struct MemBlock* memBlock) {
 #endif
   JNIEnv* env = FNI_GetJNIEnv();
 #ifdef RTJ_DEBUG
-  printf("MemBlock_free(0x%08x)\n", memBlock);
+  printf("MemBlock_free(%p)\n", memBlock);
   checkException();
 #endif
   if (MemBlock_DECREF(memBlock)) {
@@ -190,7 +190,7 @@ inline int MemBlock_free(struct MemBlock* memBlock) {
     local_ptr_info = memBlock->ptr_info;
     while (local_ptr_info) {
       struct PTRinfo* next = local_ptr_info->next;
-      printf("    %s (0x%08x) allocated at %s:%d, %d bytes freed!\n", 
+      printf("    %s (%p) allocated at %s:%d, %d bytes freed!\n", 
 	     classNameUnwrap(local_ptr_info->ptr),
 	     local_ptr_info->ptr, local_ptr_info->file, local_ptr_info->line, 
 	     local_ptr_info->size);
@@ -217,7 +217,7 @@ inline void RTJ_gc_scan(void* obj, struct accum* acc) {
   struct MemBlock* mb = (struct MemBlock*)obj;
   void (*gc) (struct MemBlock* mem);
 #ifdef RTJ_DEBUG
-  printf("  MemBlock: 0x%08x\n", mb);
+  printf("  MemBlock: %p\n", mb);
 #endif
   if ((mb->refCount)&&(gc=mb->gc)) gc(mb);
 #ifdef RTJ_DEBUG
@@ -237,7 +237,7 @@ void printPointerInfo(struct oobj* obj, int getClassInfo) {
   struct PTRinfo* ptrInfo = NULL;
   JNIEnv* env = FNI_GetJNIEnv();
   topPtrInfo = ptr_info;
-  printf("pointer at 0x%08x ", obj);
+  printf("pointer at %p ", obj);
   while ((topPtrInfo != NULL)&&(ptrInfo == NULL)) {
     for (ptrInfo = (memBlock = topPtrInfo->memBlock)->ptr_info;
 	 (ptrInfo != NULL)&&(ptrInfo->ptr != obj); 
@@ -251,16 +251,16 @@ void printPointerInfo(struct oobj* obj, int getClassInfo) {
 	     FNI_ObjectSize(obj));
     } 
   } else {
-    printf("found in MemBlock = 0x%08x, \n", memBlock);
+    printf("found in MemBlock = %p, \n", memBlock);
     if (memBlock->memoryArea == NULL) {
       printf("allocated during the main thread in the initial HeapMemory\n");
     } else {
       if (getClassInfo) {
-	printf("belonging to %s = 0x%08x\n",
+	printf("belonging to %s = %p\n",
 	       className(memBlock->memoryArea), 
 	       memBlock->memoryArea);
       } else {
-	printf("belonging to MemoryArea = 0x%08x\n", 
+	printf("belonging to MemoryArea = %p\n", 
 	       memBlock->memoryArea);
       }
     }
@@ -279,17 +279,17 @@ void dumpMemoryInfo(int classInfo) {
   topPtrInfo = ptr_info;
   while (topPtrInfo != NULL) {
     if (classInfo) {
-      printf("%s (0x%08x):\n", 
+      printf("%s (%p):\n", 
 	     className(topPtrInfo->memBlock->memoryArea), 
 	     topPtrInfo->memBlock->memoryArea);
     } else {
-      printf("MemoryArea (0x%08x):\n",
+      printf("MemoryArea (%p):\n",
 	     topPtrInfo->memBlock->memoryArea);
     }
     printf("  ");
     for (ptrInfo = (memBlock = topPtrInfo->memBlock)->ptr_info;
 	 (ptrInfo != NULL); ptrInfo = ptrInfo->next) {
-      printf("0x%08x (%s:%d of %d bytes), ", ptrInfo->ptr, ptrInfo->file, ptrInfo->line, ptrInfo->size);
+      printf("%p (%s:%d of %d bytes), ", ptrInfo->ptr, ptrInfo->file, ptrInfo->line, ptrInfo->size);
     }
     printf("\n");
     topPtrInfo = topPtrInfo->next;
@@ -304,7 +304,7 @@ inline void _heapCheck_leap(struct oobj* ptr, const int line, const char* file) 
   if ((((int)ptr)&1)&&(((struct FNI_Thread_State*)(env = FNI_GetJNIEnv()))->noheap)) {
     char desc[200];
     jclass excls = (*env)->FindClass(env, "java/lang/IllegalAccessException");
-    snprintf(desc, 200, "attempted heap reference 0x%08x in native code at %s:%d\n", 
+    snprintf(desc, 200, "attempted heap reference %p in native code at %s:%d\n", 
 	     ptr, file, line); 
     (*env)->ThrowNew(env, excls, desc);
 #ifdef RTJ_DEBUG
@@ -326,12 +326,12 @@ inline void heapCheckJava(struct oobj* ptr) {
     jclass excls = (*env)->FindClass(env, "java/lang/IllegalAccessException");
 #ifdef RTJ_DEBUG
 #ifdef RTJ_DEBUG_REF
-    printf("attempted heap reference 0x%08x in java code at %s:%d during %s\n", 
+    printf("attempted heap reference %p in java code at %s:%d during %s\n", 
 	   ptr, file, line, op);
     printPointerInfo(ptr, 0);
     exit(1);
 #else
-    printf("attempted heap reference 0x%08x in java code\n", ptr);
+    printf("attempted heap reference %p in java code\n", ptr);
     exit(1);
 #endif
 #endif
@@ -346,7 +346,7 @@ inline void heapCheckJava(struct oobj* ptr) {
 inline int IsNoHeapRealtimeThread(JNIEnv *env, 
 				  jobject realtimeThread) {
 #ifdef RTJ_DEBUG  
-  printf("IsNoHeapRealtimeThread(0x%08x, 0x%08x)\n", env, realtimeThread);
+  printf("IsNoHeapRealtimeThread(%p, %p)\n", env, realtimeThread);
   checkException();
 #endif
   return (*env)->IsInstanceOf(env, realtimeThread, 

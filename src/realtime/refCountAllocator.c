@@ -9,7 +9,7 @@ inline RefCountAllocator RefCountAllocator_new() {
     RTJ_CALLOC_UNCOLLECTABLE(sizeof(struct refCountAllocator), 1);
 #ifdef RTJ_DEBUG
   checkException();
-  printf("0x%08x = RefCountAllocator_new()\n", rc);
+  printf("%p = RefCountAllocator_new()\n", rc);
 #endif  
   rc->scan = &(rc->in_use);
   return rc;
@@ -21,7 +21,7 @@ inline void* RefCountAllocator_alloc(RefCountAllocator rc, size_t size, int clea
   JNIEnv* env = FNI_GetJNIEnv(); 
 #endif
 #ifdef RTJ_DEBUG
-  printf("RefCountAllocator_alloc(0x%08x, %d)\n", rc, size);
+  printf("RefCountAllocator_alloc(%p, %d)\n", rc, size);
   checkException();
 #endif
   RefCountAllocator_INC(rc);
@@ -43,7 +43,7 @@ inline void* RefCountAllocator_alloc(RefCountAllocator rc, size_t size, int clea
 #endif
 #ifdef RTJ_DEBUG
   checkException();
-  printf("  = 0x%08x\n", &(head->obj));
+  printf("  = %p\n", &(head->obj));
 #endif
   return (void*)(&(head->obj));
 }
@@ -53,7 +53,7 @@ inline void RefCountAllocator_free(RefCountAllocator rc) {
   struct refCons* current;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("RefCountAllocator_free(0x%08x)\n", rc);
+  printf("RefCountAllocator_free(%p)\n", rc);
 #endif
   current = rc->in_use;
   rc->in_use = NULL;
@@ -81,7 +81,7 @@ inline void cleanup(RefCountAllocator rc) {
   int i;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("    RefCountAllocator_cleanup(0x%08x)\n", rc);
+  printf("    RefCountAllocator_cleanup(%p)\n", rc);
   printf("     ");
 #endif
   if (!(rc->refCount)) {
@@ -109,7 +109,7 @@ inline void cleanup(RefCountAllocator rc) {
 				  (long int)current, (long int)(current->nextFree)))) {}
 	if (current) {
 #ifdef RTJ_DEBUG
-	  printf(" 0x%08x (free),", &(current->obj));
+	  printf(" %p (free),", &(current->obj));
 #endif
 	  if (current->finalize) current->finalize(rc, (void*)(&(current->obj)));
 	  RTJ_FREE(current);
@@ -132,14 +132,14 @@ inline void cleanup(RefCountAllocator rc) {
       compare_and_swap((long int*)(&(rc->scan)), (long int)currentRef,
 		       (long int)(&(current->next)));
 #ifdef RTJ_DEBUG
-      printf(" 0x%08x,", &(current->obj));
+      printf(" %p,", &(current->obj));
 #endif
     } else {
       while (!compare_and_swap((long int*)(&(rc->freeList)), 
 			       (long int)(current->nextFree = rc->freeList),
 			       (long int)current)) {}
 #ifdef RTJ_DEBUG
-      printf(" 0x%08x (dead),", &(current->obj));
+      printf(" %p (dead),", &(current->obj));
 #endif
     }
   }
@@ -151,7 +151,7 @@ inline void cleanup(RefCountAllocator rc) {
 inline void RefCountAllocator_INC(RefCountAllocator rc) {
 #ifdef RTJ_DEBUG 
   checkException();
-  printf("  RefCountAllocator_INC(0x%08x) was %d\n", rc, rc->refCount);
+  printf("  RefCountAllocator_INC(%p) was %d\n", rc, rc->refCount);
 #endif
   cleanup(rc);
   atomic_add(&(rc->refCount), 1);
@@ -161,7 +161,7 @@ inline void RefCountAllocator_INC(RefCountAllocator rc) {
 inline void RefCountAllocator_DEC(RefCountAllocator rc) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("  RefCountAllocator_DEC(0x%08x) was %d\n", rc, rc->refCount);
+  printf("  RefCountAllocator_DEC(%p) was %d\n", rc, rc->refCount);
 #endif
   atomic_add(&(rc->refCount), -1);
   cleanup(rc);
@@ -171,7 +171,7 @@ inline long int RefCountAllocator_INCREF(void* obj) {
   if (!obj) return -1;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("  RefCountAllocator_INCREF(0x%08x) was %d\n", obj, 
+  printf("  RefCountAllocator_INCREF(%p) was %d\n", obj, 
 	 REF_HEADER(obj)->refCount);
 #endif
   return exchange_and_add(&(REF_HEADER(obj)->refCount), 1);
@@ -181,7 +181,7 @@ inline void RefCountAllocator_DECREF(RefCountAllocator rc, void* obj) {
   if (!obj) return;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("  RefCountAllocator_DECREF(0x%08x, 0x%08x) was %d\n", rc, obj,
+  printf("  RefCountAllocator_DECREF(%p, %p) was %d\n", rc, obj,
 	 REF_HEADER(obj)->refCount);
 #endif
   exchange_and_add(&(REF_HEADER(obj)->refCount), -1);
@@ -217,7 +217,7 @@ inline void* RefCountAllocator_accumulate(RefCountAllocator rc,
 inline void RefCountAllocator_gc_visit(void* obj, struct accum* accum) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("0x%08x ", obj);
+  printf("%p ", obj);
 #endif
   if (((struct oobj*)obj)->claz) trace(((struct oobj*)obj));
 }
@@ -225,7 +225,7 @@ inline void RefCountAllocator_gc_visit(void* obj, struct accum* accum) {
 inline void RefCountAllocator_gc(RefCountAllocator rc) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("RefCountAllocator_gc(0x%08x)\n", rc);
+  printf("RefCountAllocator_gc(%p)\n", rc);
 #endif
   RefCountAllocator_accumulate(rc, RefCountAllocator_gc_visit);
 }
@@ -236,7 +236,7 @@ inline void RefCountAllocator_register_finalizer(void* obj,
 						 (RefCountAllocator rc, void* obj)) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("RefCountAllocator_register_finalizer(0x%08x, 0x%08x)\n", obj, finalize);
+  printf("RefCountAllocator_register_finalizer(%p, %p)\n", obj, finalize);
 #endif
   REF_HEADER(obj)->finalize = finalize;
 }
@@ -265,7 +265,7 @@ inline void RefCountAllocator_oobj_finalizer(RefCountAllocator rc, void* obj) {
   struct oobj* oobj = (struct oobj*)obj;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("RefCountAllocator_oobj_finalizer(0x%08x): %s\n", obj, classNameUnwrap(oobj));
+  printf("RefCountAllocator_oobj_finalizer(%p): %s\n", obj, classNameUnwrap(oobj));
 #endif
   if (oobj->claz) RTJ_finalize(oobj);
   RefCountAllocator_oobj_trace(rc, oobj);
@@ -309,7 +309,7 @@ inline void RefCountAllocator_oobj_handle_reference(RefCountAllocator rc,
 						    struct oobj** oobj) {
   struct _jobject obj;
 #ifdef RTJ_DEBUG
-  printf("RefCountAllocator_oobj_handle_reference(0x%08x, 0x%08x)\n", rc, *oobj);
+  printf("RefCountAllocator_oobj_handle_reference(%p, %p)\n", rc, *oobj);
 #endif
   obj.obj = *oobj;
   RefCountAllocator_getRefCountInstance();

@@ -42,7 +42,7 @@ inline Allocator ImmortalPhysical_MemBlock_allocator(jobject memoryArea) {
 void  ImmortalPhysical_MemBlock_gc(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("ImmortalPhysical_RThread_MemBlock_gc(0x%08x)\n", mem);
+  printf("ImmortalPhysical_RThread_MemBlock_gc(%p)\n", mem);
 #endif
 }
 #endif

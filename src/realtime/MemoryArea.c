@@ -16,7 +16,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_enterMemBlock
   struct MemBlock* memBlock;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("MemoryArea.enterMemBlock(0x%08x, 0x%08x, 0x%08x, 0x%08x)\n", 
+  printf("MemoryArea.enterMemBlock(%p, %p, %p, %p)\n", 
 	 env, memoryArea, realtimeThread, memAreaStack);
 #endif
   if (!MemAreaStack_next) {
@@ -54,7 +54,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_exitMemBlock
 (JNIEnv* env, jobject memoryArea, jobject realtimeThread, jobject memAreaStack) {
   struct MemBlock *memBlock, *newMemBlock;
 #ifdef RTJ_DEBUG
-  printf("MemoryArea.exitMemBlock(0x%08x, 0x%08x, 0x%08x)\n",
+  printf("MemoryArea.exitMemBlock(%p, %p, %p)\n",
 	 env, memoryArea, realtimeThread);
 #endif
   memBlock = MemBlock_currentMemBlock();
@@ -77,7 +77,7 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realti
   jobject result;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("MemoryArea.newArray(0x%08x, 0x%08x, 0x%08x, 0x%08x, %d)\n",
+  printf("MemoryArea.newArray(%p, %p, %p, %p, %d)\n",
 	 env, memoryArea, realtimeThread, componentClass, length);
 #endif  
   oldMemBlock = MemBlock_currentMemBlock();
@@ -99,7 +99,7 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realti
   jobject result;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("MemoryArea.newArray(0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x)\n",
+  printf("MemoryArea.newArray(%p, %p, %p, %p, %p)\n",
 	 env, memoryArea, realtimeThread, componentClass, dims);
 #endif
   oldMemBlock = MemBlock_currentMemBlock();
@@ -124,7 +124,7 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newInstance
   jobject result;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("MemoryArea.newInstance(0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x)\n",
+  printf("MemoryArea.newInstance(%p, %p, %p, %p, %p)\n",
 	 env, memoryArea, realtimeThread, constructor, parameters);
 #endif
   oldMemBlock = MemBlock_currentMemBlock();
@@ -176,7 +176,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_throwIllegalAssignmentErro
 #ifdef RTJ_DEBUG_REF
   printPointerInfo(FNI_UNWRAP_MASKED(toObj), 1);
 #else
-  printf("location 0x%08x of type %s\n", toObj, className(toObj));
+  printf("location %p of type %s\n", toObj, className(toObj));
 #endif
 #endif
   excls = (*env)->FindClass(env, "javax/realtime/IllegalAssignmentError");
@@ -227,7 +227,7 @@ void MemoryArea_finalize(void* obj, void* client_data) {
   memoryArea.obj = obj+((ptroff_t)client_data);
 #ifdef RTJ_DEBUG
   checkException();
-  printf("%s.finalNative(0x%08x, 0x%08x)\n", classNameUnwrap(PTRMASK(obj)), 
+  printf("%s.finalNative(%p, %p)\n", classNameUnwrap(PTRMASK(obj)), 
 	 obj, client_data);
   assert(!getInflatedObject(env, &memoryArea)->memBlock->refCount);
 #endif
@@ -240,7 +240,7 @@ void MemoryArea_finalize(void* obj, void* client_data) {
   if (FNI_UNWRAP(shadow) != memoryArea.obj) {
     struct oobj* shadow_unwrapped = FNI_UNWRAP(shadow);
 #ifdef RTJ_DEBUG
-    printf("  freeing shadow = 0x%08x\n", shadow_unwrapped);
+    printf("  freeing shadow = %p\n", shadow_unwrapped);
 #endif
     (*env)->DeleteLocalRef(env, shadow);
     RTJ_FREE(shadow_unwrapped);
@@ -274,7 +274,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_registerFinal
   }
 #ifdef RTJ_DEBUG
   checkException();
-  printf("MemoryArea.registerFinal(0x%08x, 0x%08x)\n", env, memoryArea);
+  printf("MemoryArea.registerFinal(%p, %p)\n", env, memoryArea);
 #endif
 #ifdef WITH_PRECISE_GC 
   infl->precise_deflate_obj = ((void*)MemoryArea_finalize);

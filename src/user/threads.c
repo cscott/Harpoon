@@ -51,13 +51,20 @@ void transfer(struct thread_queue_struct * mthread)
   }
 #else
   /* if the transfer thread is the current thread, just return */
-  if(mthread == currentThread)
+#ifdef RTJ_DEBUG_THREADS
+  printf("\nTransfer from %p to %p", currentThread, mthread);
+#endif
+  if(mthread == currentThread) {
     return;
+  }
 
   /* if there is currently a thread running, save it's state */
   if(currentThread != NULL) {
     machdep_save_float_state(currentThread->mthread);
     if (machdep_save_state()) {
+#ifdef RTJ_DEBUG_THREADS
+      printf(" returning directly!");
+#endif
       return;
     }
   }
@@ -91,6 +98,7 @@ void transfer(struct thread_queue_struct * mthread)
 }
 
 void context_switch() {
+#ifndef WITH_REALTIME_THREADS
   machdep_save_float_state(&(gtl->mthread));
   if (_setjmp(gtl->mthread.machdep_state)) {
     return;
@@ -102,6 +110,7 @@ void context_switch() {
   gtl=gtl->next;
 
   startnext();
+#endif
 }
 
 void startnext() {
@@ -246,8 +255,12 @@ void exitthread() {
   //  printf("CurrentThread is %p\n", currentThread);
   if(currentThread == NULL)
     longjmp(main_return_jump, 1); //jump back to main to clean up and end
-  else
+  else {
+#ifdef RTJ_DEBUG_THREADS
+    printf("\nPrevious thread is dead, switching to %p", currentThread);
+#endif
     restorethread(); //otherwise, restore the new thread
+  }
 #endif
 
 }

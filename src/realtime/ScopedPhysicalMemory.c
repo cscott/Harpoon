@@ -30,7 +30,7 @@ void  ScopedPhysical_MemBlock_free(struct MemBlock* mem) {
 #ifdef WITH_PRECISE_GC
 void  ScopedPhysical_MemBlock_gc(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
-  printf("ScopedPhysical_RThread_MemBlock_gc(0x%08x)\n", mem);
+  printf("ScopedPhysical_RThread_MemBlock_gc(%p)\n", mem);
 #endif
 }
 #endif

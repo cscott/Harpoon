@@ -683,7 +683,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
     (*env)->FindClass(env, "javax/realtime/NoHeapRealtimeThread");
 #endif
 #ifdef RTJ_DEBUG_THREADS
-  printf("\nThread.start(0x%08x, 0x%08x)", env, FNI_UNWRAP(_this));
+  printf("\nThread.start(%p, %p)", env, FNI_UNWRAP(_this));
 #endif
   assert(runID!=NULL/* run() is certainly callable! */);
   /* first of all, see if this thread has already been started. */
@@ -756,7 +756,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   int switching_state;
 
 #ifdef RTJ_DEBUG_THREADS
-  printf("\nThread.start(0x%08x, 0x%08x)", env, FNI_UNWRAP(_this));
+  printf("\nThread.start(%p, %p)", env, FNI_UNWRAP(_this));
 #endif
   _this = (*env)->NewGlobalRef(env, _this);
   cls.thread = _this;

@@ -13,7 +13,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_ImmortalMemory_initNative
 (JNIEnv* env, jobject memoryArea, jlong size) {
   struct MemBlock* mb = MemBlock_new(env, memoryArea);
 #ifdef RTJ_DEBUG
-  printf("ImmortalMemory.initNative(0x%08x, 0x%08x, %d)\n",
+  printf("ImmortalMemory.initNative(%p, %p, %d)\n",
 	 env, memoryArea, (size_t)size);
   checkException();
 #endif
@@ -30,7 +30,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_ImmortalMemory_initNative
 void* Immortal_MemBlock_alloc(struct MemBlock* mem, size_t size) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("Immortal_MemBlock_alloc(0x%08x, %d)\n", mem, size);
+  printf("Immortal_MemBlock_alloc(%p, %d)\n", mem, size);
 #endif
   return LListAllocator_alloc(mem->alloc_union.lls, size);
 }
@@ -39,7 +39,7 @@ void* Immortal_MemBlock_alloc(struct MemBlock* mem, size_t size) {
 void Immortal_MemBlock_gc(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("Immortal_MemBlock_gc(0x%08x)\n", mem);
+  printf("Immortal_MemBlock_gc(%p)\n", mem);
 #endif
   LListAllocator_gc(mem->alloc_union.lls);
 }
@@ -48,7 +48,7 @@ void Immortal_MemBlock_gc(struct MemBlock* mem) {
 void Immortal_MemBlock_finalize(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("Immortal_MemBlock_finalize(0x%08x)\n", mem);
+  printf("Immortal_MemBlock_finalize(%p)\n", mem);
 #endif
   LListAllocator_free(mem->alloc_union.lls);
 }

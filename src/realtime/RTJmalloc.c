@@ -44,7 +44,7 @@ inline void* RTJ_malloc(size_t size) {
 #endif
 			  MemBlock_currentMemBlock(), size); 
 #ifdef RTJ_DEBUG
-  printf("= 0x%08x\n", (int)newPtr);
+  printf("= %p\n", (int)newPtr);
 #endif
 #ifdef RTJ_DEBUG_REF
   if (memBlock) {
@@ -79,7 +79,7 @@ inline void MemBlock_setCurrentMemBlock(JNIEnv* env,
 					jobject realtimeThread,
 					struct MemBlock* memBlock) {
 #ifdef RTJ_DEBUG
-  printf("MemBlock_setCurrentMemBlock(0x%08x, 0x%08x, 0x%08x)\n",
+  printf("MemBlock_setCurrentMemBlock(%p, %p, %p)\n",
 	 env, realtimeThread, memBlock);
   checkException();
 #endif
@@ -152,7 +152,7 @@ inline void RTJ_init() {
 void RTJ_tagObject(JNIEnv* env, jobject obj) {
   jobject memoryArea;
 #ifdef RTJ_DEBUG
-  printf("RTJ_tagObject(0x%08x, 0x%08x)\n", env, obj);
+  printf("RTJ_tagObject(%p, %p)\n", env, obj);
 #endif
   memoryArea = 
     RTJ_init_in_progress?NULL:(MemBlock_currentMemBlock()->memoryArea);

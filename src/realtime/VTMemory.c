@@ -24,7 +24,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_VTMemory_initNative
 void* VTScope_MemBlock_alloc(struct MemBlock* mem, size_t size) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("VTScope_MemBlock_alloc(0x%08x, %d)\n", mem, (int)size);
+  printf("VTScope_MemBlock_alloc(%p, %d)\n", mem, (int)size);
 #endif
   return LListAllocator_alloc(mem->alloc_union.lls, size);
 }
@@ -32,7 +32,7 @@ void* VTScope_MemBlock_alloc(struct MemBlock* mem, size_t size) {
 void  VTScope_MemBlock_free(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("VTScope_MemBlock_free(0x%08x)\n", mem);
+  printf("VTScope_MemBlock_free(%p)\n", mem);
 #endif
   LListAllocator_free(mem->alloc_union.lls);
 }
@@ -41,7 +41,7 @@ void  VTScope_MemBlock_free(struct MemBlock* mem) {
 void  VTScope_MemBlock_gc(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("VTScope_MemBlock_gc(0x%08x)\n", mem);
+  printf("VTScope_MemBlock_gc(%p)\n", mem);
 #endif
   LListAllocator_gc(mem->alloc_union.lls);
 }
@@ -50,7 +50,7 @@ void  VTScope_MemBlock_gc(struct MemBlock* mem) {
 void  VTScope_MemBlock_finalize(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("VTScope_MemBlock_finalize(0x%08x)\n", mem);
+  printf("VTScope_MemBlock_finalize(%p)\n", mem);
 #endif
   RTJ_FREE(mem->alloc_union.lls);
   mem->alloc_union.lls = NULL;

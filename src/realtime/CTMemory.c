@@ -13,7 +13,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_initNative
 (JNIEnv* env, jobject memoryArea, jlong minimum, jlong maximum) {
   struct MemBlock* mb = MemBlock_new(env, memoryArea);
 #ifdef RTJ_DEBUG
-  printf("CTMemory.initNative(0x%08x, 0x%08x, %d, %d)\n", 
+  printf("CTMemory.initNative(%p, %p, %d, %d)\n", 
 	 env, memoryArea, minimum, maximum);
   checkException();
 #endif
@@ -23,7 +23,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_initNative
   }
 #ifdef RTJ_DEBUG
   checkException();
-  printf("  storing MemBlock in 0x%08x\n", mb->block); 
+  printf("  storing MemBlock in %p\n", mb->block); 
 #endif
   mb->alloc =    CTScope_MemBlock_alloc;
   mb->free =     CTScope_MemBlock_free;
@@ -43,7 +43,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_doneNative
   struct MemBlock* mb = getInflatedObject(env, memoryArea)->memBlock;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("CTMemory.doneNative(0x%08x, 0x%08x)\n", env, memoryArea);
+  printf("CTMemory.doneNative(%p, %p)\n", env, memoryArea);
 #endif
   if (!mb->refCount) {
     Block_free(mb->block);
@@ -61,7 +61,7 @@ void* CTScope_MemBlock_alloc_alternative(struct MemBlock* mem, size_t size) {
   struct Block* bl = mem->block;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("CTScope_MemBlock_alloc_alternative(0x%08x, %d)\n", mem, size);
+  printf("CTScope_MemBlock_alloc_alternative(%p, %d)\n", mem, size);
 #endif
   if (!(ptr = Block_alloc(bl, size))) {
     ptr = LListAllocator_alloc(mem->alloc_union.lls, size);
@@ -79,11 +79,11 @@ void* CTScope_MemBlock_alloc(struct MemBlock* mem, size_t size) {
   struct Block* bl = mem->block;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("CTScope_MemBlock_alloc(0x%08x, %d)\n", mem, size);
+  printf("CTScope_MemBlock_alloc(%p, %d)\n", mem, size);
   printf("  current usage: %d of %d\n", (size_t)((bl->free)-(bl->begin)), 
 	 (size_t)((bl->end)-(bl->begin)));
-  printf("  begin: 0x%08x, free: 0x%08x, end: 0x%08x\n", bl->begin, bl->free, bl->end);
-  printf("  retrieving memBlock from 0x%08x\n", mem->block);
+  printf("  begin: %p, free: %p, end: %p\n", bl->begin, bl->free, bl->end);
+  printf("  retrieving memBlock from %p\n", mem->block);
 #endif
   ptr = Block_alloc(bl, size);
   if (!ptr) {
@@ -96,7 +96,7 @@ void* CTScope_MemBlock_alloc(struct MemBlock* mem, size_t size) {
     }
   }
 #ifdef RTJ_DEBUG
-  printf("  begin: 0x%08x, free: 0x%08x, end: 0x%08x\n", bl->begin, bl->free, bl->end);
+  printf("  begin: %p, free: %p, end: %p\n", bl->begin, bl->free, bl->end);
   if (!ptr) {
     assert("Out of memory!!!");
     checkException();
@@ -107,7 +107,7 @@ void* CTScope_MemBlock_alloc(struct MemBlock* mem, size_t size) {
 
 void  CTScope_MemBlock_free(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
-  printf("CTScope_MemBlock_free(0x%08x)\n", mem);
+  printf("CTScope_MemBlock_free(%p)\n", mem);
 #endif
   Block_reset(mem->block);
 }
@@ -116,7 +116,7 @@ void  CTScope_MemBlock_free(struct MemBlock* mem) {
 void  CTScope_MemBlock_gc(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("CTScope_MemBlock_gc(0x%08x)\n", mem);
+  printf("CTScope_MemBlock_gc(%p)\n", mem);
 #endif
   Block_scan(mem->block);
 }
@@ -125,7 +125,7 @@ void  CTScope_MemBlock_gc(struct MemBlock* mem) {
 void  CTScope_MemBlock_finalize(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("CTScope_MemBlock_finalize(0x%08x)\n", mem);
+  printf("CTScope_MemBlock_finalize(%p)\n", mem);
 #endif
   Block_free(mem->block);
 }

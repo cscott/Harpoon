@@ -6,10 +6,11 @@
  *	1.00 93/08/04 proven
  *      -Started coding this file.
  */
+#include <assert.h>
 #include "config.h"
 #ifdef WITH_USER_THREADS
 #ifndef lint
-static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.7 2002-07-15 18:27:03 wbeebee Exp $";
+static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.8 2002-08-23 19:07:09 wbeebee Exp $";
 #endif
 
 #include "config.h"
@@ -34,7 +35,7 @@ int machdep_save_state(void)
 #ifndef WITH_REALTIME_THREADS
   return(_setjmp(gtl->mthread.machdep_state));
 #else
-  //  puts(">>>>>>>>>>>>>>>>>>>>>>>>>>>>machdep_save_state");
+  // puts(">>>>>>>>>>>>>>>>>>>>>>>>>>>>machdep_save_state");
   return(_setjmp(currentThread->mthread->machdep_state));
   //set jump in currentThread
 #endif
@@ -61,24 +62,30 @@ void machdep_restore_state(void)
 int machdep_save_float_state(struct machdep_pthread * mthread)
 {
   char * fdata = (char *)mthread->machdep_float_state;
-  //  puts(">>>>>>>>>>>>>>>>>>>>>>>>>>>>machdep_save_float_state");  
+#ifdef RTJ_DEBUG_THREADS
+  printf("\nSaving float state to %p, mthread is %p, currentthread is %p (%d)",
+	 fdata, mthread, currentThread, currentThread->threadID);
+#endif
   __asm__ ("fsave %0"::"m" (*fdata));
 }
 
 /* ==========================================================================
  * machdep_restore_float_state()
  */
+
 int machdep_restore_float_state(void)
 {
+
 #ifndef WITH_REALTIME_THREADS
   char * fdata = (char *)gtl->mthread.machdep_float_state;
 #else
   /* restore currentThread's float state */
   char * fdata = (char *)currentThread->mthread->machdep_float_state;
 #endif
-  //  printf("threadid = %d\n", currentThread->threadID);
-  //printf("Restoring float state from %p, currentthread is %p\n",
-  //	 fdata, currentThread);
+#ifdef RTJ_DEBUG_THREADS
+  printf("\nRestoring float state from %p, currentthread is %p (%d)",
+  	 fdata, currentThread, currentThread->threadID);
+#endif
   __asm__ ("frstor %0"::"m" (*fdata));
 }
 
@@ -132,6 +139,9 @@ void __machdep_pthread_create(struct machdep_pthread *machdep_pthread,
   void *(* start_routine)(), void *start_argument, 
   long stack_size, long nsec, long flag)
 {
+#ifdef RTJ_DEBUG_THREADS
+    printf("\nCreating thread: %p", machdep_pthread);
+#endif
     machdep_pthread->start_routine = start_routine;
     machdep_pthread->start_argument = start_argument;
 

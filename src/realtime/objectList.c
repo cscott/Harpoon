@@ -156,7 +156,7 @@ inline void ObjectList_freeRefs(struct ObjectList* ol) {
     struct oobj* obj = ol->objects[i];
     if (obj != Object_null) {
 #ifdef RTJ_DEBUG
-      printf("0x%08x ", ol->objects[i]);
+      printf("%p ", ol->objects[i]);
 #endif
       RTJ_finalize(obj);
       RTJ_FREE(PTRMASK(obj));
@@ -173,11 +173,11 @@ inline void ObjectList_freeRefs(struct ObjectList* ol) {
 inline void ObjectList_free(struct ObjectList* ol) {
   flex_mutex_destroy(&(ol->lock));
 #ifdef RTJ_DEBUG
-  printf("  ol->objects = 0x%08x\n", ol->objects);
+  printf("  ol->objects = %p\n", ol->objects);
 #endif
   RTJ_FREE(ol->objects);
 #ifdef RTJ_DEBUG
-  printf("  ol = 0x%08x\n", ol);
+  printf("  ol = %p\n", ol);
 #endif
   RTJ_FREE(ol);
 }

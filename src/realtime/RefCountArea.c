@@ -14,7 +14,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_RefCountArea_initNative
   struct MemBlock* mb = MemBlock_new(env, refCountArea);
 #ifdef RTJ_DEBUG
   checkException();
-  printf("RefCountArea.initNative(0x%08x, 0x%08x)\n", env, refCountArea);
+  printf("RefCountArea.initNative(%p, %p)\n", env, refCountArea);
 #endif
   mb->alloc_union.rc  = RefCountAllocator_new();
   mb->alloc           = RefCount_MemBlock_alloc;
@@ -29,7 +29,7 @@ void* RefCount_MemBlock_alloc(struct MemBlock* mem, size_t size) {
   void* result;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("RefCount_MemBlock_alloc(0x%08x, %d)\n", mem, size);
+  printf("RefCount_MemBlock_alloc(%p, %d)\n", mem, size);
 #endif
   result = RefCountAllocator_alloc(mem->alloc_union.rc, size, 0);
   RefCountAllocator_register_finalizer(result, 
@@ -41,7 +41,7 @@ void* RefCount_MemBlock_alloc(struct MemBlock* mem, size_t size) {
 void  RefCount_MemBlock_gc(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("RefCount_MemBlock_gc(0x%08x)\n", mem);
+  printf("RefCount_MemBlock_gc(%p)\n", mem);
 #endif
   RefCountAllocator_gc(mem->alloc_union.rc);
 }
@@ -57,7 +57,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_RefCountArea_INCREF
 (JNIEnv* env, jobject refCountArea, jobject obj) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("RefCountArea.INCREF(0x%08x, 0x%08x, 0x%08x)\n", 
+  printf("RefCountArea.INCREF(%p, %p, %p)\n", 
 	 env, refCountArea, obj);
 #endif  
   RefCountAllocator_INCREF(FNI_UNWRAP_MASKED(obj));
@@ -74,7 +74,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_RefCountArea_DECREF
     getInflatedObject(env, refCountArea)->memBlock->alloc_union.rc;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("RefCountArea.DECREF(0x%08x, 0x%08x, 0x%08x)\n", 
+  printf("RefCountArea.DECREF(%p, %p, %p)\n", 
 	 env, refCountArea, obj);
 #endif
   RefCountAllocator_DECREF(rc, FNI_UNWRAP_MASKED(obj));

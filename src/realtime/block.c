@@ -28,7 +28,7 @@ inline struct Block* Block_new(size_t size) {
   }
 #endif
 #ifdef RTJ_DEBUG
-  printf("  block: 0x%08x, block->begin: 0x%08x\n", bl, bl->begin);
+  printf("  block: %p, block->begin: %p\n", bl, bl->begin);
 #endif
   (bl->end) = (bl->begin) + size;
   bl->free = (void*)RTJ_ALIGN((bl->begin)+sizeof(void*));
@@ -45,7 +45,7 @@ inline void* Block_alloc(struct Block* block, size_t size) {
   void* ptr;
   ptroff_t objSize = RTJ_ALIGN(size+sizeof(void*));
 #ifdef RTJ_DEBUG
-  printf("Block_alloc(0x%08x, %d)\n", block, size);
+  printf("Block_alloc(%p, %d)\n", block, size);
 #endif
   if ((ptr = (void*)exchange_and_add((void*)(&(block->free)), objSize)) 
       >= block->end) {
@@ -60,13 +60,13 @@ inline void* Block_alloc(struct Block* block, size_t size) {
 inline void Block_scan(struct Block* block) {
   struct oobj* oobj_ptr;
 #ifdef RTJ_DEBUG
-  printf("Block_scan(0x%08x)\n  ", block);
+  printf("Block_scan(%p)\n  ", block);
 #endif
   for(oobj_ptr = (struct oobj*)RTJ_ALIGN(block->begin+sizeof(void*)); 
       oobj_ptr; oobj_ptr = *(((struct oobj**)oobj_ptr)-1)) {
     if (FNI_CLAZ(oobj_ptr)) {
 #ifdef RTJ_DEBUG
-      printf("0x%08x ", oobj_ptr);
+      printf("%p ", oobj_ptr);
 #endif
       trace(oobj_ptr);
     }
@@ -89,13 +89,13 @@ inline void Block_finalize(struct Block* block) {
   clock_gettime(CLOCK_REALTIME, &begin);
 #endif
 #ifdef RTJ_DEBUG
-  printf("Block_finalize(0x%08x)\n  ", block);
+  printf("Block_finalize(%p)\n  ", block);
 #endif
   for(obj = (struct oobj*)RTJ_ALIGN(block->begin+sizeof(void*)); obj; 
       obj = *(((struct oobj**)obj)-1)) {
 #ifdef RTJ_DEBUG
     if (FNI_CLAZ(obj)&&(RTJ_should_finalize(obj))) {
-      printf("0x%08x ", obj);
+      printf("%p ", obj);
     }
 #endif
     if (FNI_CLAZ(obj)) {
@@ -125,7 +125,7 @@ inline void Block_free(struct Block* block) {
   gettimeofday(&begin, NULL);
 #endif 
 #ifdef RTJ_DEBUG
-  printf("Block_free(0x%08x)\n", block);
+  printf("Block_free(%p)\n", block);
 #endif
   Block_finalize(block);
 #ifdef BDW_CONSERVATIVE_GC
@@ -146,7 +146,7 @@ inline void Block_free(struct Block* block) {
 
 inline void Block_reset(struct Block* block) {
 #ifdef RTJ_DEBUG
-  printf("Block_reset(0x%08x)\n", block);
+  printf("Block_reset(%p)\n", block);
 #endif
   Block_finalize(block);
   memset(block->begin, 0, (size_t)((block->free)-(block->begin)));
