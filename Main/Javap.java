@@ -21,7 +21,7 @@ import java.io.InputStream;
  * GJ signatures.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Javap.java,v 1.7 2003-05-30 21:41:08 cananian Exp $
+ * @version $Id: Javap.java,v 1.8 2003-07-23 20:35:16 cananian Exp $
  */
 public abstract class Javap /*extends harpoon.IR.Registration*/ {
     public static final void main(String args[]) {
@@ -378,10 +378,13 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	// first characters in signature could be variance specifiers -/+/=/*
 	switch(descriptor.charAt(off)) {
 	case '*':
-	    return new OffsetAndString("*", 1);
+	    return new OffsetAndString("?", 1);
 	case '-':
+	    sb.append("? super "); off++; break;
 	case '+':
+	    sb.append("? extends "); off++; break;
 	case '=':
+	    assert false : "= is no longer supported in GJ prototype 2.2";
 	    sb.append(descriptor.charAt(off++));
 	    break;
 	}
@@ -402,6 +405,7 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    case '-':
 	    case '+':
 	    case '=':
+		assert false : "array variance no longer supported";
 		sb.append(descriptor.charAt(off++));
 		break;
 	    }
