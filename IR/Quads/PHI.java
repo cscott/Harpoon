@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>PHI</code> objects represent blocks of phi functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.1.2.7 1998-12-24 03:25:38 cananian Exp $
+ * @version $Id: PHI.java,v 1.1.2.8 1998-12-27 21:26:55 cananian Exp $
  */
 public class PHI extends Quad {
     /** dst[i] is the left-hand side of the i'th phi function in this block. */
@@ -69,14 +69,16 @@ public class PHI extends Quad {
     /** Returns the number of arguments each phi function has. */
     public int arity() { return prev.length; }
 
-    /** Removes a given phi function from the block. */
+    /** Removes a given phi function from the block.
+     * @deprecated does not preserve immutability. */
     public void removePhi(int nPhi) {
 	Util.assert(0<=nPhi && nPhi<numPhis());
 	dst = (Temp[])   Util.shrink(Temp.arrayFactory,       dst, nPhi);
 	src = (Temp[][]) Util.shrink(Temp.doubleArrayFactory, src, nPhi);
     }
 
-    /** Remove a predecessor from this phi, reducing the arity. */
+    /** Remove a predecessor from this phi, reducing the arity.
+     * @deprecated does not preserve immutability. */
     public void removePred(int which_pred) {
 	prev = (Edge[]) Util.shrink(Edge.arrayFactory, prev, which_pred);
 	for (int i=0; i<dst.length; i++)
@@ -90,22 +92,50 @@ public class PHI extends Quad {
 	    Util.assert(prev[i].to_index == i);
     }
 
-    /** Grow the arity of a PHI by one. */
-    public void grow(Temp args[]) {
-	// increase number of prev links by one.
-	Edge[] nprev = new Edge[prev.length+1];
-	System.arraycopy(prev, 0, nprev, 0, prev.length);
-	nprev[prev.length] = null;
-	prev = nprev;
-	// add contents of src to each phi function.
-	for (int i=0; i<dst.length; i++) {
-	    Temp[] nsrc = new Temp[src[i].length+1];
-	    System.arraycopy(src[i], 0, nsrc, 0, src[i].length);
-	    nsrc[src[i].length] = args[i];
-	    src[i] = nsrc;
-	}
+    /** Shrink the arity of a PHI by replacing it.
+     * @return the new PHI.
+     */
+    public PHI shrink(int which_pred) {
+	Temp ndst[] = (Temp[]) dst.clone();
+	Temp nsrc[][] = new Temp[src.length][];
+	for (int i=0; i<nsrc.length; i++)
+	    nsrc[i] = (Temp[]) Util.shrink(Temp.arrayFactory,
+					   src[i], which_pred);
+	PHI p = new PHI(qf, this, ndst, nsrc, this.arity()-1);
+	// copy the edges.
+	for (int i=0, j=0; i < this.arity(); i++)// i indexes this, j indexes p
+	    if (i==which_pred) continue;
+	    else if (this.prevEdge(i)==null) j++;
+	    else Quad.addEdge(this.prev(i), this.prevEdge(i).which_succ(),
+			      p, j++);
+	if (this.nextEdge(0)!=null)
+	    Quad.addEdge(p, 0, this.next(0), this.nextEdge(0).which_pred());
+	return p;
     }
-    /** Returns all the Temps used by this Quad. */
+    /** Grow the arity of a PHI by one by replacing it.
+     * @return the new PHI.
+     */
+    public PHI grow(Temp args[], int which_pred) {
+	Temp ndst[] = (Temp[]) dst.clone();
+	Temp nsrc[][] = new Temp[src.length][];
+	// add contents of src to each phi function.
+	for (int i=0; i<nsrc.length; i++)
+	    nsrc[i] = (Temp[]) Util.grow(Temp.arrayFactory, src[i],
+					 args[i], which_pred);
+	PHI p = new PHI(qf, this, ndst, nsrc, arity()+1);
+	// copy the edges.
+	for (int i=0, j=0; i < p.arity(); i++) {// i indexes p, j indexes this
+	    if (i==which_pred) continue; // skip this edge without increasing j
+	    else if (this.prevEdge(j)!=null)
+		Quad.addEdge(this.prev(j), this.prevEdge(j).which_succ(),p,i);
+	    j++;
+	}
+	if (this.nextEdge(0)!=null)
+	    Quad.addEdge(p, 0, this.next(0), this.nextEdge(0).which_pred());
+	return p;
+    }
+
+    /** Returns all the <code>Temp</code>s used by this <code>Quad</code>. */
     public Temp[] use() {
 	int n=0;
 	for (int i=0; i<src.length; i++)
@@ -141,16 +171,6 @@ public class PHI extends Quad {
 	for (int i=0; i<dst.length; i++) {
 	    dst[i] = tm.tempMap(dst[i]);
 	}
-    }
-
-    /** Properly clone <code>src[][]</code> and <code>dst[]</code> arrays. */
-    public Object clone() {
-	PHI q = (PHI) super.clone();
-	q.dst = (Temp[]) dst.clone();
-	q.src = (Temp[][]) src.clone();
-	for (int i=0; i<q.src.length; i++)
-	    q.src[i] = (Temp[]) src[i].clone();
-	return q;
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

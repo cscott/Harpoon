@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.1.2.6 1998-12-24 03:23:10 cananian Exp $
+ * @version $Id: OPER.java,v 1.1.2.7 1998-12-27 21:26:55 cananian Exp $
  */
 public class OPER extends Quad {
     /** The <code>Temp</code> in which to store the result of the operation. */
@@ -84,13 +84,6 @@ public class OPER extends Quad {
      * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	dst = tm.tempMap(dst);
-    }
-
-    /** Properly clone <code>operands[]</code> array. */
-    public Object clone() {
-	OPER q = (OPER) super.clone();
-	q.operands = (Temp[]) operands.clone();
-	return q;
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

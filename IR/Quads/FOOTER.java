@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>FOOTER</code> node as their only successor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FOOTER.java,v 1.1.2.7 1998-12-24 03:23:09 cananian Exp $
+ * @version $Id: FOOTER.java,v 1.1.2.8 1998-12-27 21:26:55 cananian Exp $
  * @see HEADER
  * @see RETURN
  * @see THROW
@@ -28,22 +28,26 @@ public class FOOTER extends Quad {
     /** Returns the number of predecessors of this <Code>FOOTER</code>. */
     public int arity() { return prev.length; }
 
-    /** Attach a new Quad to this <code>FOOTER</code> by replacing it. */
-    public void attach(Quad q, int which_succ) {
+    /** Attach a new Quad to this <code>FOOTER</code> by replacing it.
+     * @return the new <code>FOOTER</code>. */
+    public FOOTER attach(Quad q, int which_succ) {
 	FOOTER f = new FOOTER(qf, this, arity()+1);
 	for (int i=0; i<arity(); i++)
 	    Quad.addEdge(this.prev(i), this.prevEdge(i).which_succ(), f, i);
 	addEdge(q, which_succ, f, arity());
+	return f;
     }
     /** Remove an attachment from this <code>FOOTER</code> by replacing
-     *  the footer. */
-    public void remove(int which_pred) {
+     *  the footer.
+     * @return the new <code>FOOTER</code>. */
+    public FOOTER remove(int which_pred) {
 	FOOTER f = new FOOTER(qf, this, arity()-1);
 	for (int i=0, j=0; i<prev.length; i++)
 	    if (i!=which_pred) {
 		Edge e = prevEdge(i);
 		Quad.addEdge((Quad)e.from(), e.which_succ(), f, j++);
 	    }
+	return f;
     }
 
     public int kind() { return QuadKind.FOOTER; }

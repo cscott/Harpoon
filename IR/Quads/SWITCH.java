@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.1.2.6 1998-12-24 03:23:10 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.1.2.7 1998-12-27 21:26:55 cananian Exp $
  */
 public class SWITCH extends SIGMA {
     /** The discriminant, compared against each value in <code>keys</code>.*/
@@ -87,13 +87,6 @@ public class SWITCH extends SIGMA {
      * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	super.renameDefs(tm);
-    }
-
-    /** Properly clone <code>keys[]</code> array. */
-    public Object clone() {
-	SWITCH q = (SWITCH) super.clone();
-	q.keys = (int[]) keys.clone();
-	return q;
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * They have the form: <code>&lt;t1, t2, ..., tn&gt; = sigma(t0)</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SIGMA.java,v 1.1.2.6 1998-12-24 03:23:10 cananian Exp $
+ * @version $Id: SIGMA.java,v 1.1.2.7 1998-12-27 21:26:55 cananian Exp $
  */
 public abstract class SIGMA extends Quad {
     /** dst[i][j] is the j'th element of the tuple on the left-hand side
@@ -112,16 +112,6 @@ public abstract class SIGMA extends Quad {
 	    for (int j=0; j<dst[i].length; j++)
 		dst[i][j] = tm.tempMap(dst[i][j]);
 	}
-    }
-
-    /** Properly clone <code>dst[][]</code> and <code>src[]</code> arrays. */
-    public Object clone() {
-	SIGMA q = (SIGMA) super.clone();
-	q.dst = (Temp[][]) dst.clone();
-	q.src = (Temp[]) src.clone();
-	for (int i=0; i<q.dst.length; i++)
-	    q.dst[i] = (Temp[]) dst[i].clone();
-	return q;
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

@@ -1,3 +1,9 @@
+---- Dec-20-98
+MOVE collation for quad-with-try, within basic blocks.
+---- Dec-19-98
+X Fix ARRAYINIT constructor to behave properly with try blocks.
+X Implement translation of JSR/RET.
+X Optimize LCMP/DCMP/FCMP instructions.
 ---- Dec-10-98
 Make Util.Set abstract and move the current implementation to Util.HashSet.
  Add methods to abstract set to handle set union/intersection.
@@ -8,25 +14,25 @@ Make HClassPtr, HMethodPtr and HFieldPtr types and change everything to use
 Move mutable methods to HClass.  Create HClassReadOnly and HClassReadWrite
  hierarchy.  Everything else splits from that.  HClassPtr and friends
  are read-only.
-Rename interface: Quad rename(TempMap) returns a new Quad exactly like the
- receiver, only with all temps renamed according to TempMap.
+X Rename interface: Quad rename(TempMap) returns a new Quad exactly like the
+X  receiver, only with all temps renamed according to TempMap.
 Check that harpoon.ClassFile package is not == comparing two HPointers.
 ---- Dec-01-98
 Bring back the equals() method of HClass.  Needed for caching.
 Write script to read javadoc and automagically insert links to
  classes mentioned inside <code></code> blocks.
 X Make LABEL superclass of PHI.
-Add kind() method to Quad; new class QuadKind enumerates.
+X Add kind() method to Quad; new class QuadKind enumerates.
 ---- Nov-30-98
 Add HInitializerSyn superclass of HInitializer.
 ---- Nov-26-98
-Fix unlimited-temp-during-phi-stack-merge problem.  (See today's ChangeLog
- messages).
+X Fix unlimited-temp-during-phi-stack-merge problem.  (See today's ChangeLog
+X  messages).
 ---- Nov-25-98
-Make HClass demand-driven again: special 'caching' HClass that stores
- string reference to class and waits to load it until an accessor method
- is called.  Think hard about this.
-Insert proper labels in quadSSA print() method to make it readable.
+X Make HClass demand-driven again: special 'caching' HClass that stores
+X  string reference to class and waits to load it until an accessor method
+X  is called.  Think hard about this.
+X Insert proper labels in quadSSA print() method to make it readable.
 ---- Nov-20-98
 javac allows circular interface dependencies that could result in infinite
  loops in our class reader code.  jikes disallows this.  think through
@@ -35,11 +41,11 @@ javac allows circular interface dependencies that could result in infinite
 Write QuadSSA checker: verify edge links, no unreachable code, correct
  format, correct args to each Quad, in SSA form, header and footer correct,
  etc.
-Audit code to ensure deterministic generation of quad-ssa form.
- In particular, quads and temp numbering should not depend on how many and
- which methods have been loading previously.  Need to make a TempFactory and
- a QuadFactory to generate numbers. (how do we handle insertion of new 
- quads/temps without breaking the numbering?)
+X Audit code to ensure deterministic generation of quad-ssa form.
+X  In particular, quads and temp numbering should not depend on how many and
+X  which methods have been loading previously.  Need to make a TempFactory and
+X  a QuadFactory to generate numbers. (how do we handle insertion of new 
+X  quads/temps without breaking the numbering?)
 ---- Oct-21-98
 X Implement clone() method for IR.Bytecode.Code so that we don't die if we
 X clone a method before doing getCode("quad-ssa") on it.
@@ -78,15 +84,15 @@ Finish bitwidth analysis in SCC.
 X Write move/const collation pass to remove unnecesssary quads and collate 
   MOVEs. [const collation not done; MOVE collation in DeadCode now.]
 Figure out what to do about OutOfMemoryError. (explicit?)
-VERIFY that, if Tnull is on Stack, phis are handled correctly.
-Check merges of try: only constrain state to be equivalent.  Possibly
-  we can more aggressively merge catch blocks?
+O VERIFY that, if Tnull is on Stack, phis are handled correctly.
+O Check merges of try: only constrain state to be equivalent.  Possibly
+O   we can more aggressively merge catch blocks?
 ---- Sep-20-98
 Predicated interprocedural analysis.
 ---- Sep-19-98
-Remove Tnull, Tzero code from top of function.  It's increasing the
- phi/sigma count by a lot (some multiple of n, where n is the number of
- splits/joins). Note that peephole optimizations may need to change.
+X Remove Tnull, Tzero code from top of function.  It's increasing the
+X  phi/sigma count by a lot (some multiple of n, where n is the number of
+X  splits/joins). Note that peephole optimizations may need to change.
 ---- Sep-18-98
 X Fix MONITOR handling.
 ---- Sep-16-98

@@ -15,20 +15,19 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.7 1998-12-24 03:28:56 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.8 1998-12-27 21:26:55 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
                harpoon.IR.Properties.UseDef, harpoon.IR.Properties.Edges,
-               /*harpoon.IR.Properties.Renameable,*/ Cloneable
+               Cloneable
 {
-    // These should all be final.
-    QuadFactory qf;
-    String source_file;
-    int    source_line;
-    int    id;
+    /*final*/ QuadFactory qf;
+    /*final*/ String source_file;
+    /*final*/ int    source_line;
+    /*final*/ int    id;
     // cached.
-    private int hashCode;
+    /*final*/ private int hashCode;
 
     /** Constructor. */
     protected Quad(QuadFactory qf, HCodeElement source,
@@ -47,7 +46,7 @@ public abstract class Quad
 	    qf.getParent().getMethod().hashCode();
     }
     protected Quad(QuadFactory qf, HCodeElement source) {
-	this(qf, source, 1, 1);
+    	this(qf, source, 1, 1);
     }
     public int hashCode() { return hashCode; }
 
@@ -210,45 +209,35 @@ public abstract class Quad
     //-----------------------------------------------------
     // support cloning.  The pred/succ quads are not cloned, but the
     // array holding them is.
-    public Object clone() {
-	try {
-	    Quad q = (Quad) super.clone();
-	    q.next = (Edge[]) next.clone();
-	    q.prev = (Edge[]) prev.clone();
-	    return q;
-	} catch (CloneNotSupportedException e) {
-	    // The compiler is too stupid to see that this can't ever happen.
-	    Util.assert(false, "This should never ever happen.");
-	    return null;
-	}
-    }
+    public final Object clone() { return clone(this.qf); }
+    public final Object clone(QuadFactory qf) { return rename(qf, null,null); }
 
     //-----------------------------------------------------
     /** Create a new copy of a string of <code>Quad</code>s starting at
-     *  the given header. */
-    public static Quad clone(Quad header)
+     *  the given header using <code>QuadFactory</code>. */
+    public static Quad clone(QuadFactory qf, Quad header)
     {
 	Util.assert(header instanceof HEADER, 
 		    "Argument to Quad.clone() should be a HEADER.");
-	return copyone(header, new Hashtable());
+	return copyone(qf, header, new Hashtable());
     }
-    private static Quad copyone(Quad q, Hashtable old2new)
+    private static Quad copyone(QuadFactory qf, Quad q, Hashtable old2new)
     {
 	Quad r = (Quad) old2new.get(q);
 	// if we've already done this one, return previous clone.
 	if (r!=null) return r;
 	// clone the fields, add to hashtable.
-	r = (Quad) q.clone();
+	r = (Quad) q.clone(qf);
 	old2new.put(q, r);
 	// fixup the edges.
 	for (int i=0; i<q.next.length; i++) {
 	    Util.assert(q.next[i].from == q);
-	    Quad to = copyone(q.next[i].to, old2new);
+	    Quad to = copyone(qf, q.next[i].to, old2new);
 	    Quad.addEdge(r, q.next[i].from_index, to, q.next[i].to_index);
 	}
 	for (int i=0; i<q.prev.length; i++) {
 	    Util.assert(q.prev[i].to == q);
-	    Quad from = copyone(q.prev[i].from, old2new);
+	    Quad from = copyone(qf, q.prev[i].from, old2new);
 	    Quad.addEdge(from, q.prev[i].from_index, r, q.prev[i].to_index);
 	}
 	return r;

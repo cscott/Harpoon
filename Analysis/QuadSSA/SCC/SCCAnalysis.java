@@ -22,7 +22,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.6 1998-12-21 04:41:32 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.7 1998-12-27 21:26:53 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -257,7 +257,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 			raiseV(V, Wv, q.dst(i,1), // true branch: constant!
 			       right);
 			handled = true;
-		    } else if ((opc == Qop.ICMPGE || opc == Qop.LCMPGE ||
+		    } else if ((/*opc == Qop.ICMPGE || opc == Qop.LCMPGE ||*/
 				opc == Qop.ICMPGT || opc == Qop.LCMPGT ) &&
 			       right instanceof xBitWidth) {
 			// XXX we can tighten bounds on gt, as opposed to ge.
@@ -290,7 +290,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 			raiseV(V, Wv, q.dst(i,1), // true branch: constant!
 			       left);
 			handled = true;
-		    } else if ((opc == Qop.ICMPGE || opc == Qop.LCMPGE ||
+		    } else if ((/*opc == Qop.ICMPGE || opc == Qop.LCMPGE ||*/
 				opc == Qop.ICMPGT || opc == Qop.LCMPGT ) &&
 			       left instanceof xBitWidth) {
 			// XXX we can tighten bounds on gt, as opposed to ge.

@@ -16,7 +16,7 @@ import harpoon.ClassFile.*;
  * methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OperVisitor.java,v 1.1.2.1 1998-12-01 12:36:43 cananian Exp $
+ * @version $Id: OperVisitor.java,v 1.1.2.2 1998-12-27 21:26:55 cananian Exp $
  */
 
 public abstract class OperVisitor  {
@@ -58,7 +58,6 @@ public abstract class OperVisitor  {
     public void visit_iadd(OPER q) { visit_default(q); }
     public void visit_iand(OPER q) { visit_default(q); }
     public void visit_icmpeq(OPER q) { visit_default(q); }
-    public void visit_icmpge(OPER q) { visit_default(q); }
     public void visit_icmpgt(OPER q) { visit_default(q); }
     public void visit_idiv(OPER q) { visit_default(q); }
     public void visit_imul(OPER q) { visit_default(q); }
@@ -76,7 +75,6 @@ public abstract class OperVisitor  {
     public void visit_ladd(OPER q) { visit_default(q); }
     public void visit_land(OPER q) { visit_default(q); }
     public void visit_lcmpeq(OPER q) { visit_default(q); }
-    public void visit_lcmpge(OPER q) { visit_default(q); }
     public void visit_lcmpgt(OPER q) { visit_default(q); }
     public void visit_ldiv(OPER q) { visit_default(q); }
     public void visit_lmul(OPER q) { visit_default(q); }
@@ -128,7 +126,6 @@ public abstract class OperVisitor  {
 	case Qop.IADD:	visit_iadd(q); break;
 	case Qop.IAND:	visit_iand(q); break;
 	case Qop.ICMPEQ:	visit_icmpeq(q); break;
-	case Qop.ICMPGE:	visit_icmpge(q); break;
 	case Qop.ICMPGT:	visit_icmpgt(q); break;
 	case Qop.IDIV:	visit_idiv(q); break;
 	case Qop.IMUL:	visit_imul(q); break;
@@ -146,7 +143,6 @@ public abstract class OperVisitor  {
 	case Qop.LADD:	visit_ladd(q); break;
 	case Qop.LAND:	visit_land(q); break;
 	case Qop.LCMPEQ:	visit_lcmpeq(q); break;
-	case Qop.LCMPGE:	visit_lcmpge(q); break;
 	case Qop.LCMPGT:	visit_lcmpgt(q); break;
 	case Qop.LDIV:	visit_ldiv(q); break;
 	case Qop.LMUL:	visit_lmul(q); break;

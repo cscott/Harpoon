@@ -1,10 +1,8 @@
-// Translate.java, created Sat Aug  8 10:53:03 1998 by cananian
+// Translate.java, created Wed Dec  9 00:19:51 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.Temp.Temp;
-import harpoon.Temp.TempFactory;
 import harpoon.ClassFile.*;
 import harpoon.IR.Bytecode.Op;
 import harpoon.IR.Bytecode.Operand;
@@ -17,214 +15,390 @@ import harpoon.IR.Bytecode.Instr;
 import harpoon.IR.Bytecode.InGen;
 import harpoon.IR.Bytecode.InCti;
 import harpoon.IR.Bytecode.InMerge;
+import harpoon.IR.Bytecode.InRet;
 import harpoon.IR.Bytecode.InSwitch;
 import harpoon.IR.Bytecode.Code.ExceptionEntry;
+import harpoon.IR.Quads.HANDLER.ProtectedSet;
+import harpoon.Temp.Temp;
+import harpoon.Temp.TempFactory;
+import harpoon.Util.FilterEnumerator;
+import harpoon.Util.Set;
+import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Vector;
 import java.util.Stack;
+import java.util.Vector;
 
 /**
- * <code>Translate</code> is a utility class to implement the
- * actual Bytecode-to-QuadSSA translation.
+ * <code>Translate</code> is a utility class which implements a
+ * bytecode-to-quad translation.  The result is a simple quad
+ * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.3 1998-12-17 21:38:38 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.4 1998-12-27 21:26:55 cananian Exp $
  */
-
-class Translate  { // not public.
-    /** Static State has all of the per-method (constant) information. */
-    static class StaticState {
-	/** QuadFactory. */
-	QuadFactory qf;
-	/** All try blocks for this method. */
-	ExceptionEntry allTries[];
-	/** The header for this block. */
-	HEADER header;
-	/** A Temp containing the constant zero. */
-	Temp Tzero;
-	/** A Temp containing the constant 'null'. */
-	Temp Tnull;
-	/** A Temp used for exception values. */
-	Temp Tex;
-	
-	/** Make new StaticState */
-	StaticState(QuadFactory qf, ExceptionEntry allTries[], HEADER header,
-		    Temp Tzero, Temp Tnull, Temp Tex) {
-	    this.allTries = allTries;
-	    this.header   = header;
-	    this.Tzero    = Tzero;
-	    this.Tnull    = Tnull;
-	    this.Tex      = Tex;
-	    this.qf       = qf;
-	}
-	FOOTER footer() { return (FOOTER) header.next(0); }
-    }
-    static class StackElement {
-	Temp t;
-	StackElement next; // singly-linked list.
-	StackElement(Temp t, StackElement next) {
-	    this.t = t; this.next = next;
-	}
-    }
-    /** <code>State</code> represents the stack, local variable, and block
-     *  context (for try and monitor quads) of a given bytecode Instr. */
-    static class State { // inner class
-	/** Current temps used for each position of stack.
-	 *  <code>null</code>s are valid placeholders for empty spaces
-	 *  in double-word representations. */
-	StackElement stack;
-	/** Current size of the stack. */
-	int stackSize;
-	/** Current temps used for local variables. */
-	Temp lv[];
-	/** Current stack of JSRs being processed. */
-	JSRState jsrStack[];
-
-	/** special secret store of temps for the stack. */
-	private Temp[] stackNames;
+final class Translate { // not public.
+    static final private class StaticState {
+	/** <code>QuadFactory</code> to use for this method. 
+	 *  (contains <code>TempFactory</code> to use for this method.) */
+	final QuadFactory qf;
+	/** <code>Temp</code>s representing the bytecode stack. */
+	final Temp[] stack;
+	/** <code>Temp</code>s used for local variables. */
+	final Temp lv[];
+	/** Extra <code>Temp</code>s used for temporary values during
+	 *  translation. */
+	final Vector extra;
+	/** HEADER quad for method. */
+	final HEADER header;
+	/** Try block information from original bytecode. */
+	final ExceptionEntry[] tryBlocks;
+	/** Mapping from <code>InMerge</code>s to corresponding 
+	 *  <code>PHI</code>s. */
+	final MergeMap mergeMap;
+	/** Keep track of JSRs and RETs during translation. */
+	final ContInfo contInfo;
 
 	/** Constructor. */
-	private State(StackElement stack, int stackSize,
-		      Temp lv[], JSRState jsrStack[], Temp[] stackNames) {
-	    this.stack = stack; 
-	    this.stackSize = stackSize;
-	    this.lv = lv;
-	    this.jsrStack = jsrStack;
-	    this.stackNames = stackNames;
-	}
-	/** Make new state by popping top of stack */
-	State pop() { return pop(1); }
-	/** Make new state by popping multiple entries off top of stack */
-	State pop(int n) {
-	    StackElement s = stack;
-	    for (int i=0; i < n; i++)
-		s = s.next;
-	    return new State(s, stackSize-n, lv, jsrStack, stackNames);
-	}
-	/** Make new state by pushing temp onto top of stack. */
-	State push(Temp t) {
-	    StackElement s = new StackElement(t, stack);
-	    return new State(s, stackSize+1, lv, jsrStack, stackNames);
-	}
-	/** Make new stack by pushing some temp onto top of stack. */
-	State push() { 
-	    return push(stackNames[stackSize]); 
-	}
-	/** Return the name of an 'extra' temp n above the stack top. */
-	Temp extra(int n) {
-	    Temp t = stackNames[stackSize+n];
-	    for (StackElement s=stack; s!=null; s=s.next)
-		if (s.t == t) return new Temp(t);// can't reuse.
-	    return t; // reduce, reuse, recycle.
-	}
-	/** Returns the 'n'th entry in the stack. */
-	Temp stack(int n) {
-	    StackElement s;
-	    for (s = stack; n>0; n--)
-		s = s.next;
-	    return s.t;
-	}
+	StaticState(QuadFactory qf, int max_stack, int max_locals,
+		    ExceptionEntry[] tryBlocks, HEADER header) {
+	    this.qf = qf;
+	    stack = new Temp[max_stack];
+	    for (int i=0; i<max_stack; i++)
+		stack[i] = new Temp(qf.tempFactory(), "stk"+i+"_");
+	    lv = new Temp[max_locals];
+	    for (int i=0; i<max_locals; i++)
+		lv[i] = new Temp(qf.tempFactory(), "lv"+i+"_");
+	    extra = new Vector();
 
-	/** Make new state by clearing all but the top entry of the stack. */
-	State enterCatch() {
-	    StackElement s = new StackElement(stack.t, null);
-	    return new State(s, 1, lv, jsrStack, stackNames);
-	}
-	/** Make new state by entering a JSR/RET block. The "return address"
-	 *  <code>t</code> gets pushed on top of the stack. */
-	State enterJSR(Temp t, Instr in, Quad header, int which_succ) {
-	    JSRState js[] = (JSRState[]) grow(this.jsrStack);
-	    js[0] = new JSRState(in, header, which_succ);
-	    return new State(stack, stackSize, lv, js, stackNames).push(t);
-	}
-	/** Make new state, as when exiting a JSR/RET block. */
-	State exitJSR() {
-	    JSRState js[] = (JSRState[]) shrink(this.jsrStack);
-	    return new State(stack, stackSize, lv, jsrStack, stackNames);
-	}
-	/** Scrub state prior to entering PHI (use canonical names). */
-	State scrub() {
-	    StackElement nstk = null;
-	    for (int i=stackSize-1; i >= 0; i--)
-		nstk = new StackElement(stackNames[i], nstk);
-	    return new State(nstk, stackSize, lv, jsrStack, stackNames);
-	}
-
-	/** Initialize state with temps corresponding to parameters. */
-	State(Temp[] locals, Temp[] stackNames) {
-	    this(null, 0, locals, new JSRState[0], stackNames);
-	}
-	/** Creates a new State object identical to this one. */
-	public Object clone() {
-	    return new State(stack, stackSize,
-			     (Temp[]) lv.clone(), 
-			     (JSRState[]) jsrStack.clone(),
-			     stackNames);
-	}
-
-	// Utility functions... ///////////////////////////////
-
-	/** Makes a new array by popping first 'n' elements off. */
-	private static final Object[] shrink(Object[] src, int n) {
-	    Util.assert(src.length>=n);
-	    Object[] dst = (Object[]) Array.newInstance(src.getClass()
-							.getComponentType(),
-							src.length-n);
-	    System.arraycopy(src, n, dst, 0, dst.length);
-	    return dst;
-	}
-	/** Makes a new array by popping the first element off. */
-	private static final Object[] shrink(Object[] src) 
-	{ return shrink(src,1); }
-
-	/** Make a new array by pushing on 'n' elements to front. */
-	private static final Object[] grow(Object[] src, int n) {
-	    Object[] dst = (Object[]) Array.newInstance(src.getClass()
-							.getComponentType(),
-							src.length+n);
-	    System.arraycopy(src, 0, dst, n, src.length);
-	    return dst;
-	}
-	/** Make a new array by pushing a new element onto front. */
-	private static final Object[] grow(Object[] src) 
-	{ return grow(src,1); }
-    }
-    /** Extended JSR state. */
-    static class JSRState {
-	/** The original JSR bytecode. */
-	Instr in;
-	/** Header node for handler quads. */
-	Quad header;
-	/** Which exit edge of <code>header</code> to use. */
-	int which_succ;
-	/** Stack of continuation TransStates at ret from jsr block. */
-	Vector continuation;
-	/** Constructor. */
-	JSRState(Instr in, Quad header, int which_succ) {
-	    this.in = in;
+	    this.tryBlocks = tryBlocks;
 	    this.header = header;
-	    this.which_succ = which_succ;
-	    this.continuation = new Vector();
-	    Util.assert(in.getOpcode()==Op.JSR || in.getOpcode()==Op.JSR_W);
+	    this.mergeMap = new MergeMap();
+	    this.contInfo = new ContInfo();
+	}	
+	/** Get an "extra" <code>Temp</code>. */
+	final Temp extra(int n) {
+	    while (n >= extra.size())
+		extra.addElement(new Temp(qf.tempFactory(),
+					  "extra"+extra.size()+"_"));
+	    return (Temp)extra.elementAt(n);
 	}
     }
+    /** Auxillary class to implement mergeMap. */
+    static final private class MergeMap {
+	private final Hashtable h = new Hashtable();
+	private Object[] tuple(InMerge m)
+	{ return (Object[])h.get(m); }
+	PHI get(InMerge m)
+	{ Object[] oa=tuple(m); return (oa==null)?null:(PHI)oa[0]; }
+	int arity(InMerge m)
+	{ return ((Integer)(tuple(m)[1])).intValue(); }
+	void put(InMerge m, PHI p, int arity)
+	{ h.put(m, new Object[] { p, new Integer(arity) });}
+	void fixupPhis(State s) { // eliminate null limbs
+	    for (Enumeration e=h.keys(); e.hasMoreElements(); ) {
+		InMerge in = (InMerge) e.nextElement();
+		PHI phi = get(in); int arity = arity(in);
+		while (arity < phi.arity())
+		    phi = phi.shrink(phi.arity()-1); // null branch.
+		// might as well kill one-input phi functions while we're at it
+		if (arity==1)
+		    Quad.addEdge(phi.prev(0), phi.prevEdge(0).which_succ(),
+				 phi.next(0), phi.nextEdge(0).which_pred());
+		else s.recordHandler(in, phi, phi);
+		    
+	    }
+	}
+    }
+    /** Static state tracking JSR/RETs */
+    static final private class ContInfo {
+	/*
+	target->list of <jsr, int>
+	list of <ret, target> (translate last)
+        target->ret state->list of ret
+	reach jsr, assign number, make goto
+         if ret(s) for target is known, translate from jsr.next
+        reach ret, translate from jsr.next for all current jsr to target.
+	*/
+
+	final private Vector t2j = new Vector(2);
+	/** Record and number <JSR, target> pairs. */
+	final int recordJSR(Instr jsr, Instr target) {
+	    t2j.addElement(new Instr[] { jsr, target } );
+	    return t2j.size()-1;
+	}
+	final private Vector t2r = new Vector(2);
+	/** Record RET, associated target, and temp. */
+	final void recordRET(TransState ret, Instr target, Temp t) {
+	    t2r.addElement(new Object[] { ret, target, t } );
+	}
+	final private Hashtable r2c = new Hashtable(2);
+	/** Record RET target for a given jsr. */
+	final void recordNOP(TransState ret, Instr jsr, NOP continuation) {
+	    r2c.put(new Tuple(new Object[]{ret,jsr}), continuation);
+	}
+	/** Return the NOP continuation for a given <jsr,ret> pair. */
+	private NOP cont(TransState ret, Instr jsr) {
+	    return (NOP) r2c.get(new Tuple(new Object[]{ret,jsr}));
+	}
+	/** Return all RETs associated with a given target. */
+	Enumeration ret4target(final Instr target) {
+	    return new FilterEnumerator(t2r.elements(), filter(target));
+	}
+	/** Return all JSRs associated with a given target. */
+	Enumeration jsr4target(final Instr target) {
+	    return new FilterEnumerator(t2j.elements(), filter(target));
+	}
+	/** Make an enumerator filter on target. */
+	private FilterEnumerator.Filter filter(final Instr target) {
+	    return new FilterEnumerator.Filter() {
+		public boolean isElement(Object o)
+		{ return (((Object[])o)[1]==target); }
+		public Object  map(Object o)
+		{ return ((Object[])o)[0]; }
+	    };
+	}
+
+	/** fixup RET instructions after all JSRs have been discovered. */
+	void fixupRets() {
+	    for (int i=0; i<t2r.size(); i++) { // for all RETs
+		Object[] oa = (Object[]) t2r.elementAt(i);
+		TransState ret = (TransState) oa[0];
+		Instr target   = (Instr) oa[1];
+		Temp t         = (Temp) oa[2];
+
+		// for all jsrs to this target, record key val and continuation
+		Vector keys = new Vector(2);
+		Vector conts = new Vector(2);
+		for (int j=0; j<t2j.size(); j++) {
+		    Instr[] ia = (Instr[]) t2j.elementAt(j);
+		    if (ia[1]!=target) continue;
+		    Instr jsr = ia[0];
+		    
+		    keys.addElement(new Integer(j));
+		    conts.addElement(cont(ret,jsr));
+		}
+		// then make & link switch.
+		int k[] = new int[keys.size()-1]; // last key is default.
+		for (int j=0; j<k.length; j++)
+		    k[j] = ((Integer)keys.elementAt(j)).intValue();
+		Quad q = new SWITCH(ret.initialState.qf(), ret.in, t, k,
+				    new Temp[0]);
+		Quad.addEdge(ret.header, ret.which_succ, q, 0);
+		for (int j=0; j<conts.size(); j++) {
+		    // link cont to SWITCH, skipping NOP placeholder.
+		    Edge e = ((NOP)conts.elementAt(j)).nextEdge(0);
+		    Quad.addEdge(q, j, (Quad)e.to(), e.which_pred());
+		}
+		// add SWITCH to handler scope.
+		ret.initialState.recordHandler(ret.in, q, q);
+	    }
+	}
+    }
+    /** Auxillary stack to track JSR return addresses on the main stack. */
+    static final private class JSRStack {
+	/** Index of return address on the stack, or local variable. */
+	final int index;
+	/** Target of the JSR. */
+	final Instr target;
+	/** Link to rest of the list. */
+	final JSRStack next;
+	/** Constructor. Indices are always in increasing order. */
+	JSRStack(int index, Instr target, JSRStack next) {
+	    this.index=index; this.target=target; this.next=next;
+	    Util.assert(next==null || index > next.index);
+	    Util.assert(target!=null);
+	}
+	/** Find index. */
+	static Instr getTarget(JSRStack js, int index) {
+	    if (js==null || index > js.index) return null;
+	    if (js.index==index) return js.target;
+	    return getTarget(js.next, index);
+	}
+	/** Insert index into stack. */
+	static JSRStack insert(JSRStack js, int index, Instr target) {
+	    if (js==null || index > js.index)
+		return new JSRStack(index, target, js);
+	    return new JSRStack(js.index, js.target,
+				insert(js.next, index, target));
+	}
+	/** Remove index from stack. */
+	static JSRStack remove(JSRStack js, int index) {
+	    if (js==null || index > js.index) return js;
+	    if (js.index==index) return js.next;
+	    JSRStack nnxt = remove(js.next, index);
+	    if (js.next == nnxt) return js;
+	    return new JSRStack(js.index, js.target, nnxt);
+	}
+    }
+    /** Auxilliary stack to track LONG values on main stack. */
+    static final private class LongStack {
+	/** Index of topmost LONG value on main stack. */
+	final int index;
+	/** Link to the rest of the LongStack. */
+	final LongStack next;
+	/** Constructor. */
+	LongStack(int index, LongStack next) {
+	    this.index = index; this.next = next;
+	}
+    }
+    static final private class State {
+	/** Pointer to the static state for this method. */
+	private final StaticState ss;
+	/** Current size of the stack. */
+	private final int stackSize;
+	/** LongStack to track long values on the stack. */
+	private final LongStack ls;
+	/** JSRStack to track jsr targets. */
+	private final JSRStack js;
+	/** JSRStack to track jsr targets in local variables. */
+	private final JSRStack jlv;
+	/** private constructor */
+	private State(StaticState ss, int stackSize,
+		      LongStack ls, JSRStack js, JSRStack jlv) {
+	    this.ss = ss; this.stackSize = stackSize;
+	    this.ls = ls; this.js = js; this.jlv = jlv;
+	}
+	/** public constructor */
+	State(QuadFactory qf, int max_stack, int max_locals, 
+	      ExceptionEntry[] tryBlocks, HEADER header) {
+	    this.ss = new StaticState(qf, max_stack, max_locals, tryBlocks,
+				      header);
+	    this.stackSize = 0;
+	    this.ls = null;
+	    this.js = null;
+	    this.jlv= null;
+	}
+
+	State pop()       { return pop(1); }
+	State pop(int n)  { 
+	    LongStack lsp = ls;
+	    while (lsp!=null && lsp.index >= stackSize-n) lsp=lsp.next;
+	    JSRStack jsp = js;
+	    while (jsp!=null && jsp.index >= stackSize-n) jsp=jsp.next;
+	    return new State(ss, stackSize-n, lsp, jsp, jlv);
+	}
+	State push()      { return push(1); }
+	State push(int n) { return new State(ss, stackSize+n, ls, js, jlv); }
+	State pushLong()  {
+	    return new State(ss, stackSize+2,
+			     new LongStack(stackSize+1, ls), js, jlv);
+	}
+	State pushRetAddr(Instr target) {
+	    return new State(ss, stackSize+1, ls,
+			     new JSRStack(stackSize, target, js), jlv);
+	}
+	
+	Temp stack(int n) { return ss.stack[stackSize-n-1]; }
+	Temp extra(int n) { return ss.extra(n); }
+	Temp lv   (int n) { return ss.lv[n]; }
+
+	boolean isLong(int n) {
+	    int i = stackSize-n-1;
+	    for (LongStack lp = ls; lp!=null && lp.index>=i; lp=lp.next)
+		if (lp.index==i) return true;
+	    return false;
+	}
+
+	/** mark a local variable as *not* containing a return address. */
+	State clearLV(int lvIndex) {
+	    JSRStack jlvp = JSRStack.remove(jlv, lvIndex);
+	    return (jlv==jlvp)?this:new State(ss, stackSize, ls, js, jlvp);
+	}
+	/** track a return address going from local variables to the stack */
+	State trackLV2S(int lvFrom, int stkTo) {
+	    if (!isRetAddrLV(lvFrom)) return this;
+	    JSRStack jsp=JSRStack.insert(js, stackSize-stkTo-1,
+					 getJSRtargetLV(lvFrom));
+	    return new State(ss, stackSize, ls, jsp, jlv);
+	}
+	/** track a return address going from the stack to a local variable */
+	State trackS2LV(int stkFrom, int lvTo) {
+	    // lv is being rewritten either way, so remove lvTo from lv state.
+	    JSRStack jlvp = JSRStack.remove(jlv, lvTo);
+	    if (isRetAddrS(stkFrom))
+		jlvp = JSRStack.insert(jlv, lvTo, getJSRtargetS(stkFrom));
+	    return (jlv!=jlvp)?new State(ss, stackSize, ls, js, jlvp):this;
+	}
+	/** track a return address going from the stack to the stack. */
+	State trackS2S(State old, int oldFrom, int newTo) {
+	    if (!old.isRetAddrS(oldFrom)) return this;
+	    JSRStack jsp = JSRStack.insert(js, stackSize-newTo-1,
+					   old.getJSRtargetS(oldFrom));
+	    return new State(ss, stackSize, ls, jsp, jlv);
+	}
+	boolean isRetAddrS(int n)
+	{ return JSRStack.getTarget(js, stackSize-n-1)!=null; }
+	boolean isRetAddrLV(int n)
+	{ return JSRStack.getTarget(jlv, n)!=null; }
+	Instr getJSRtargetLV(int n)
+	{ return JSRStack.getTarget(jlv, n); }
+	Instr getJSRtargetS(int n)
+	{ return JSRStack.getTarget(js, stackSize-n-1); }
+
+	QuadFactory qf()  { return ss.qf; }
+	TempFactory tf()  { return ss.qf.tempFactory(); }
+
+	HEADER header() { return ss.header; }
+	METHOD method() { return (METHOD) ss.header.next(1); }
+	FOOTER footer() { return (FOOTER) ss.header.next(0); }
+
+	MergeMap mergeMap() { return ss.mergeMap; }
+	ContInfo contInfo() { return ss.contInfo; }
+
+	Enumeration targets() {
+	    final Set s = new Set();
+	    targets2set(js, s);
+	    targets2set(jlv,s);
+	    return s.elements();
+	}
+	private void targets2set(final JSRStack jp, final Set s) {
+	    for (JSRStack p = jp; p!=null; p=p.next)
+		s.union(p.target);
+	}
+
+	State enterCatch() { return new State(ss, 1, null, null, null); }
+	HandlerSet handlers(Instr orig) {
+	    HandlerSet hs = null;
+	    for (int i=0; i<ss.tryBlocks.length; i++)
+		if (ss.tryBlocks[i].inTry(orig)) {
+		    HANDLER h = (HANDLER) (method().next(i+1));
+		    hs = new HandlerSet(h, hs);
+		}
+	    return hs;
+	}
+	void recordHandler(Instr orig, Quad start, Quad end) {
+	    for (Enumeration e = HandlerSet.elements(handlers(orig));
+		 e.hasMoreElements(); ) {
+		HANDLER h = (HANDLER) e.nextElement();
+		recordHandler(new Set(), start, end, (Set) h.protectedSet);
+	    }
+	}
+	private void recordHandler(Set done, Quad start, Quad end, Set s) {
+	    s.union(start); done.union(start);
+	    if (start!=end) {
+		Quad next[] = start.next();
+		for (int i=0; i<next.length; i++)
+		    if (!done.contains(next[i]))
+			recordHandler(done, next[i], end, s);
+	    }
+	}
+    }
+
     /** Extended state to keep track of translation process. */
-    static class TransState {
-	/** State to use when translating <code>Instr</code> <Code>in</code> */
-	State initialState;
-	/** Next <code>Instr</code> to translate. */
-	Instr in;
-	/** <code>Quad</code> to append translation of 
-	    <code>in</code> to. */
-	Quad  header; 
-	/** Which exit edge of <code>header</code> to append the translation
-	 * of <code>in</code> to. */
-	int   which_succ;
+    static final private class TransState {
+	/** Initial state for translation. */
+	final State initialState;
+	/** <code>Instr</code> to translate. */
+	final Instr in;
+	/** <code>Quad</code> to which to append the translation. */
+	final Quad  header;
+	/** Exit edge of <code>header</code> to which to append the 
+	 *  translation. */
+	final int   which_succ;
 	/** Constructor. */
 	TransState(State initialState, Instr in, Quad header, int which_succ) {
 	    this.initialState = initialState;
@@ -233,105 +407,69 @@ class Translate  { // not public.
 	    this.which_succ = which_succ;
 	}
     }
-    /** Keep track of MERGE instrs and the PHI quads that they correspond to.*/
-    static class MergeMap {
-	private Hashtable phimap, predmap, statemap;
-	MergeMap() { 
-	    phimap = new Hashtable(); 
-	    predmap= new Hashtable();
-	    statemap = new Hashtable();
-	}
-	void put(Instr in, PHI phi, int which_pred, State s) {
-	    phimap.put(in, phi); 
-	    predmap.put(in, new Integer(which_pred)); 
-	    statemap.put(in, s);
-	}
-	PHI getPhi(Instr in) 
-	{ return (PHI) phimap.get(in); }
-	int getPred(Instr in) 
-	{ return ((Integer) predmap.get(in)).intValue(); }
-	State getState(Instr in)
-	{ return (State) statemap.get(in); }
+
+    /** Our ProtectedSet. */
+    static final private class TransProtection extends Set
+	implements ProtectedSet {
+	TransProtection() { super(); }
+	public boolean isProtected(Quad q) { return contains(q); }
     }
 
-    /** Return a <code>Quad</code> representation of the method code in
-     *  <code>bytecode</code>. */
-    static final Quad trans(final harpoon.IR.Bytecode.Code bytecode,
-			    final harpoon.IR.Quads.Code parent) {
-	final HMethod method = bytecode.getMethod();
-	final boolean isStatic = method.isStatic();
+    /** Return a <code>Quad</code> representation of the method code
+     *  in <code>bytecode</code>. */
+    static final Quad trans(harpoon.IR.Bytecode.Code bytecode,
+			    harpoon.IR.Quads.Code  parent) {
+	HMethod method   = bytecode.getMethod();
+	boolean isStatic = method.isStatic();
+	int     offset   = isStatic?0:1;
 
-	final TempFactory tf = Temp.tempFactory(method.getDeclaringClass()
-						.getName() + "." + 
-						method.getName() +
-						method.getDescriptor());
-	QuadFactory qf = new QuadFactory() {
-	    private int id=0;
-	    public TempFactory tempFactory() { return tf; }
-	    public Code getParent() { return parent; }
-	    synchronized int getUniqueID() { return id++; }
-	    public int hashCode() {
-		return tf.hashCode() ^
-		parent.getName().hashCode() ^
-		parent.getMethod().hashCode();
-	    }
-	};
-	
-	// set up initial state.
-	HClass[] paramTypes = method.getParameterTypes();
-	String[] paramNames = method.getParameterNames();
-	Temp[] params = new Temp[paramNames.length+(isStatic?0:1)];
-	int offset = 0;
-	if (!isStatic)
-	    params[offset++] = new Temp(tf, "this");
-	for (int i=0; i<paramNames.length; i++)
-	    params[offset+i] = new Temp(tf, (paramNames[i]==null)?"param"+i:
-					paramNames[i]);
+	ExceptionEntry[] tb = bytecode.getTryBlocks();
 
-	Temp[] locals = new Temp[bytecode.getMaxLocals()];
-	// we may use as many as 5 'extra' variables above stack top.
-	// FIXME: upped to 105 in workaround, but should really fix
-	// workaround in PHI merge to require limited number of 'extra's.
-	Temp[] stack  = new Temp[bytecode.getMaxStack() + 105];
+	// Make QuadFactory.
+	QuadFactory qf = parent.qf;
 
-	// Initialize stack names
-	for (int i=0; i < stack.length; i++)
-	    stack[i] = new Temp(tf, "stk");
-
-	// copy parameter Temps into locals.
-	int j = 0;
-	for (int i=0; i<params.length; i++) {
-	    locals[i+j] = params[i];
-	    if (i>=offset && isLongDouble(paramTypes[i-offset])) {
-		locals[i+ ++j] = null;
-	    }
-	}
-	// use generic names for the rest of the locals.
-	for (int i=params.length+j; i<locals.length; i++)
-	    locals[i] = new Temp(tf, "lv$"+i);
-	
-	// deterimine if this is a synchronized method.
-	boolean isSynchronized = Modifier.isSynchronized(method
-							 .getModifiers());
-
+	// Find first bytecode instruction, make header and footer quads.
 	Instr firstInstr = (Instr) bytecode.getRootElement();
 
-	HEADER quads = new HEADER(qf, firstInstr);
-	METHOD Qm = new METHOD(qf, firstInstr, params, 1);
-	FOOTER footer= new FOOTER(qf, firstInstr, 1);
-	Quad.addEdge(quads, 0, footer, 0);
-	Quad.addEdge(quads, 1, Qm, 0);
+	FOOTER footer = new FOOTER(qf, firstInstr, 1);
+	HEADER header = new HEADER(qf, firstInstr);
+	Quad.addEdge(header, 0, footer, 0);
 
-	StaticState SS = new StaticState(qf, bytecode.getTryBlocks(), quads,
-					 new Temp(tf, "$zero"),
-					 new Temp(tf, "$null"),
-					 new Temp(tf, "$ex"));
-	State s = new State(locals, stack);
+	// set up initial state.
+	State s=new State(qf, bytecode.getMaxStack(), bytecode.getMaxLocals(),
+			  tb /* exception handling information */,
+			  header /* header quad for method. */ );
 
-	Quad q1 = new CONST(qf, quads, SS.Tnull, null, HClass.Void);
-	Quad q2 = new CONST(qf, quads, SS.Tzero, new Integer(0), HClass.Int);
-	Quad.addEdge(Qm, 0, q1, 0);
-	Quad.addEdge(q1, 0, q2, 0);
+ 	// Make parameter array, then make METHOD.
+	HClass[] paramTypes = method.getParameterTypes();
+	Temp[] params = new Temp[paramTypes.length+offset];
+	
+	for (int i=0, j=0; i<params.length; i++) {
+	    params[i] = s.lv(i+j);
+	    if (i>=offset && isLongDouble(paramTypes[i-offset])) j++;
+	}
+	METHOD qM = new METHOD(qf, firstInstr, params, 
+			       1+tb.length /*arity*/);
+	Quad.addEdge(header, 1, qM, 0);
+
+	// Vector of translation states to process
+	TransState workset[] = new TransState[tb.length+1];
+
+	// make HANDLER quads, and add to workset
+	for (int i=0; i<tb.length; i++) {
+	    State hS = s.enterCatch();
+	    HANDLER h = new HANDLER(qf, tb[i].handler(),
+				    hS.stack(0), tb[i].caughtException(),
+				    new TransProtection());
+	    Quad.addEdge(qM, i+1, h, 0);
+	    workset[i+1] = new TransState(hS, tb[i].handler(), h, 0);
+	}
+	// add HANDLER quads to appropriate handler sets.
+	for (int i=0; i<tb.length; i++)
+	    s.recordHandler(tb[i].handler(), qM.next(i+1), qM.next(i+1));
+
+	// deterimine if this is a synchronized method.
+	boolean isSynchronized=Modifier.isSynchronized(method.getModifiers());
 
 	/* From section 8.4.3.5 of the Java Language Specification: */
 	/* A synchronized method acquires a lock (17.1) before it
@@ -344,196 +482,140 @@ class Translate  { // not public.
 	/* In particular, static synchronized methods are equivalent to:
 	 *   synchronized (Class.forName("CLASSNAME")) { ...method body... }
 	 * wrapped in a catch of ClassNotFoundException. */
+
 	Temp lock = null;
 
 	// if method is synchronized, place MONITORENTER at top.
-	Quad q = q2;
+	Quad q = qM;
 	if (isSynchronized) {
 	    if (!isStatic) { // virtual synchronized is easy.
-		lock = s.lv[0]; // 'this'
+		lock = s.lv(0); // 'this'
 		q = new MONITORENTER(qf, firstInstr, lock);
-		Quad.addEdge(q2, 0, q, 0);
+		Quad.addEdge(qM, 0, q, 0);
 	    } else { // static synchronized, what a kludge.
 		// lock is Class.forName(this.class)
-		lock = new Temp(qf.tempFactory());
+		lock = new Temp(s.tf(), "lock");
+		Temp Tex = s.extra(0);
 		HClass strC = HClass.forClass(String.class);
 		HClass exC = HClass.forClass(NoClassDefFoundError.class);
 		HMethod cfnM = HClass.forClass(Class.class)
 				    .getMethod("forName", 
 					       new HClass[] { strC } );
-		Quad qq0 = new CONST(qf, quads, s.extra(0), 
-				     method.getDeclaringClass()
-				     .getName(), strC);
-		Quad qq1 = new CALL(qf, quads, cfnM, qq0.def() /*params*/,
-				    lock, SS.Tex, true /* virtual */);
-		Quad qq2 = new OPER(qf, quads, Qop.ACMPEQ, s.extra(0),
-				    new Temp[] { SS.Tex, SS.Tnull });
-		Quad qq3 = new CJMP(qf, quads, qq2.def()[0], new Temp[0]);
-		Quad qq4 = new OPER(qf, quads, Qop.ACMPEQ, s.extra(0),
-				    new Temp[] { lock, SS.Tnull });
-		Quad qq5 = new CJMP(qf, quads, qq4.def()[0], new Temp[0]);
-		Quad qq6 = new MONITORENTER(qf, quads, lock);
+		Quad qq0 = new CONST(qf, q, s.extra(1), 
+				     method.getDeclaringClass().getName(),
+				     strC);
+		Quad qq1 = new CALL(qf, q, cfnM, qq0.def() /*params*/,
+				    lock, Tex, true /* virtual */);
+		Quad qq2 = new CONST(qf, q, s.extra(2), null, HClass.Void);
+		Quad qq3 = new OPER(qf, q, Qop.ACMPEQ, s.extra(1),
+				    new Temp[] { Tex, s.extra(2) });
+		Quad qq4 = new CJMP(qf, q, s.extra(1), new Temp[0]);
+		Quad qq5 = new OPER(qf, q, Qop.ACMPEQ, s.extra(1),
+				    new Temp[] { lock, s.extra(2) });
+		Quad qq6 = new CJMP(qf, q, s.extra(1), new Temp[0]);
+		Quad qq7 = new MONITORENTER(qf, q, lock);
 		// handle exceptions of various kinds.
-		Quad qq7 = new PHI(qf, quads, new Temp[0], 2);
-		Quad qq8 = transNewException(SS, exC, SS.Tex,
-					     new TransState(s, firstInstr,
-							    qq7, 0));
-		Quad qq9 = new THROW(qf, quads, SS.Tex);
+		Quad qq8 = new PHI(qf, q, new Temp[0], 2);
+		Quad qq9 = new NEW(qf, q, Tex, exC);
+		Quad qq10 = new CALL(qf, q, exC.getConstructor(new HClass[0]),
+				     new Temp[] { Tex }, null/*retval*/,
+				     s.extra(1) /* ex */, false /*virtual*/);
+		Quad qq11 = new OPER(qf, q, Qop.ACMPEQ, s.extra(2),
+				     new Temp[] { s.extra(1), s.extra(2) });
+		Quad qq12 = new CJMP(qf, q, s.extra(2), new Temp[0]);
+		Quad qq13 = new MOVE(qf, q, Tex, s.extra(1));
+		Quad qq14 = new PHI(qf, q, new Temp[0], 2);
+		Quad qq15 = new THROW(qf, q, Tex);
 		// okay, link 'em up.
-		Quad.addEdges(new Quad[] {  q2, qq0, qq1, qq2, qq3 } );
-		Quad.addEdge(qq3, 0, qq7, 0);
-		Quad.addEdge(qq3, 1, qq4, 0);
-		Quad.addEdges(new Quad[] { qq4, qq5, qq6} );
-		Quad.addEdge(qq5, 1, qq7, 1);
-		Quad.addEdge(qq8, 0, qq9, 0);
-		SS.footer().attach(qq9, 0);
-		q = qq6;
+		Quad.addEdges(new Quad[] {  qM, qq0, qq1, qq2, qq3, qq4 } );
+		Quad.addEdge(qq4, 0, qq8, 0);
+		Quad.addEdge(qq4, 1, qq5, 0);
+		Quad.addEdges(new Quad[] { qq5, qq6, qq7 } );
+		Quad.addEdge(qq6, 1, qq8, 1);
+		Quad.addEdges(new Quad[] {  qq8,  qq9, qq10, qq11,
+					   qq12, qq13, qq14, qq15 } );
+		Quad.addEdge(qq12, 1, qq14, 1);
+		s.footer().attach(qq15, 0);
+		q = qq7;
 	    }
 	}
 
 	// translate using state.
-	trans(SS, new TransState(s, firstInstr, q, 0));
+	workset[0] = new TransState(s, firstInstr, q, 0);
+	trans(workset);
 
 	// if method is synchronized, place MONITOREXIT at bottom(s).
 	if (isSynchronized) {
 	    Util.assert(lock!=null);
 	    // for all predecessors of FOOTER
-	    for (int i=0; i < footer.prev.length; i++) {
+	    for (int i=1; i < s.footer().arity(); i++) { // skip HEADER edge
 		// static synchronized methods have a single exception
 		// exit *before* the monitor is entered.
 		if (isStatic&&i==0) continue;
 		// put a MONITOREXIT before the return/throw/whatever.
-		Quad Qexit = footer.prev(i);
+		Quad Qexit = s.footer().prev(i);
 		Util.assert(Qexit.prev.length==1); // only one predecessor.
-		Quad Qme = new MONITOREXIT(qf, Qexit, lock);
+		Quad Qm = new MONITOREXIT(qf, Qexit, lock);
 		Edge e = Qexit.prevEdge(0);
-		Quad.addEdge((Quad)e.from(), e.which_succ(), Qme, 0);
-		Quad.addEdge(Qme, 0, (Quad)e.to(), e.which_pred());
+		Quad.addEdge((Quad)e.from(), e.which_succ(), Qm, 0);
+		Quad.addEdge(Qm, 0, (Quad)e.to(), e.which_pred());
 	    }
 	}
 
 	// return result.
-	return quads;
+	return header;
     }
 
-    /** Translate a block starting with a given <code>TransState</code>.<p> 
+    /** Translate blocks starting with the given <code>TransState</code>s.<p>
      *  Start at <code>ts.in</code> using <code>ts.initialState</code>. */
-    static final void trans(StaticState SS, TransState ts0) {
-	QuadFactory qf = SS.qf;
-	Stack todo = new Stack(); todo.push(ts0);
-	MergeMap mm = new MergeMap();
-	MergeMap handlers = new MergeMap();
+    static final void trans(TransState ts0[]) {
+	Stack todo = new Stack();
+	for (int i=ts0.length-1; i>=0; i--)
+	    todo.push(ts0[i]);
 
-    worklist:
 	while (!todo.empty()) {
 	    TransState ts = (TransState) todo.pop();
-	    // convenient abbreviations of TransState fields.
-	    State s = ts.initialState;
 
-	    // Are we entering a JSR/RET block?
-	    if ((ts.in.getOpcode() == Op.JSR) ||
-		(ts.in.getOpcode() == Op.JSR_W)) {
-		// Special case evil JSRs that never return.
-		for (int i=0; i<s.jsrStack.length; i++)
-		    if (ts.in == s.jsrStack[i].in) {
-			// aha! a handler loop! <evil evil>
-			/*---- BEWARE: EVILNESS ENSUES ----*/ 
-			PHI  p = new PHI(qf, ts.in, new Temp[0], 2);
-			Quad.addEdge(ts.header, ts.which_succ, p, 0);
-			Edge e = s.jsrStack[i].header
-			    .nextEdge(s.jsrStack[i].which_succ);
-			Quad.addEdge((Quad)e.from(), e.which_succ(), p, 1);
-			Quad.addEdge(p, 0, (Quad)e.to(), e.which_pred());
-			/* NO MORE PROCESSING OF THIS JSR NEEDED. */
-			continue worklist;
-		    }
-
-		// okay, continue with your normal lives, folks.
-		Instr in = ts.in.next()[1];
-		if (in instanceof InMerge) in = in.next()[0];
-		State ns = s.enterJSR(SS.Tnull,ts.in,ts.header,ts.which_succ);
-		trans(SS, new TransState(ns, in, ts.header, ts.which_succ));
-		
-		// sometimes, JSRs never return.
-		if (ns.jsrStack[0].continuation.size() == 0)
-		    continue worklist; // just bail.
-
-		// make PHI after RET
-		TransState tsi = 
-		    (TransState) ns.jsrStack[0].continuation.elementAt(0);
-		tsi = new TransState(tsi.initialState.exitJSR(), 
-				     ts.in.next()[0] /* after JSR */,
-				     tsi.header, tsi.which_succ);
-		PHI phi = null;
-		State phiState = tsi.initialState;
-		for (int i=1; i < ns.jsrStack[0].continuation.size(); i++) {
-		    if (i==1) { // make
-			phi = new PHI(qf, tsi.in, new Temp[0],
-				      ns.jsrStack[0].continuation.size());
-			Quad.addEdge(tsi.header, tsi.which_succ, phi, 0);
-			tsi = new TransState(phiState, tsi.in, phi, 0);
-		    }
-		    TransState c = 
-			(TransState) ns.jsrStack[0].continuation.elementAt(i); 
-		    for (int j=0; j<phiState.stackSize; j++) {
-			if (phiState.stack(j)==null) continue;
-			Quad q2 = new MOVE(qf, c.in, 
-				      phiState.stack(j),
-				      c.initialState.stack(j));
-			Quad.addEdge(c.header, c.which_succ, q2, 0);
-			c = new TransState(c.initialState, c.in, q2, 0);
-		    }
-		    Quad.addEdge(c.header, c.which_succ, phi, i);
-		}
-
-		todo.push(tsi);
-		continue;
-	    }
-	    // Are we exiting a JSR block?
-	    else if (s.jsrStack.length>0 && ts.in.getOpcode() == Op.RET) {
-		s.jsrStack[0].continuation.addElement(ts);
-		// we'll fix up the dangling end later.
-		continue;
-	    }
-	    // None of the above.
-	    else {
-		TransState nts[] = transInstr(SS, ts, mm, handlers);
-		for (int i=nts.length-1; i>=0; i--)
-		    todo.push(nts[i]);
-		continue;
-	    }
+	    TransState nts[] = transInstr(ts);
+	    for (int i=nts.length-1; i>=0; i--)
+		todo.push(nts[i]);
 	}
+	// can't translate RETs until we know all possible JSRs to them.
+	ts0[0].initialState.contInfo().fixupRets();
+	// when a JSR never returns, it leaves null edges into PHIs
+	//  corresponding to the execution path following the JSR.
+	ts0[0].initialState.mergeMap().fixupPhis(ts0[0].initialState);
 	// done.
 	return;
     }
 
-    /** Translate a single instruction, using a <code>MergeMap</code>.
+    /** Translate a single instruction.
      * @return the <code>TransState</code>s of the following instructions.
      */
-    static final TransState[] transInstr(StaticState SS, TransState ts, 
-					 MergeMap mm, MergeMap handlers) {
+    static final TransState[] transInstr(TransState ts) {
+	Instr in = ts.in; byte opc = in.getOpcode();
 	// Dispatch to correct specific function.
-	//System.out.println("Translating "+Op.toString(ts.in.getOpcode()));
-	if (ts.in instanceof InGen)    return transInGen(SS, ts, handlers);
-	if (ts.in instanceof InSwitch) return transInSwitch(SS, ts);
-	if (ts.in instanceof InCti)    return transInCti(SS, ts, handlers);
-	if (ts.in instanceof InMerge)  return transInMerge(SS, ts, mm);
+	if (in instanceof InGen)    return transInGen(ts);
+	if (in instanceof InSwitch) return transInSwitch(ts);
+	if (in instanceof InCti)    return transInCti(ts);
+	if (in instanceof InMerge)  return transInMerge(ts);
 	throw new Error("Unknown Instr type.");
     }
 
     /** Translate an <code>InGen</code>. 
-     *  @return a <Code>TransState[]</code> of length zero or one. */
-    static final TransState[] transInGen(StaticState SS, TransState ts, 
-					 MergeMap handlers) {
-	QuadFactory qf = SS.qf;
+     * @return a <code>TransState[]</code> of length one. */
+    static final TransState[] transInGen(TransState ts) {
+	QuadFactory qf = ts.initialState.qf();
 	InGen in = (InGen) ts.in;
+	Instr inNext = in.next(0); // Util.assert(in.next().length==1);
+	byte opcode = in.getOpcode();
 	State s = ts.initialState;
+	TransState[] r = null;
 	State ns;
 	Quad q;
 	Quad last = null; int which_succ = 0;
-	TransState[] r = new TransState[0]; // only CHECKCAST/INVOKE* use this.
 
-	switch(in.getOpcode()) {
+	switch(opcode) {
 	case Op.AALOAD:
 	case Op.BALOAD:
 	case Op.CALOAD:
@@ -543,21 +625,15 @@ class Translate  { // not public.
 	case Op.LALOAD:
 	case Op.SALOAD:
 	    {
-	    if (in.getOpcode()==Op.DALOAD ||
-		in.getOpcode()==Op.LALOAD)
-		ns = s.pop(2).push(null).push(); // 64-bit val.
+	    if (opcode==Op.DALOAD ||
+		opcode==Op.LALOAD)
+		ns = s.pop(2).pushLong(); // 64-bit val.
 	    else
 		ns = s.pop(2).push(); // 32-bit val
 
 	    Temp Tobj  = s.stack(1);
 	    Temp Tindex= s.stack(0);
-	    // the actual operation.
-	    Quad q0= new AGET(qf, in, ns.stack(0), Tobj, Tindex);
-	    // bounds check
-	    r = transBoundsCheck(SS, Tobj, Tindex, q0, handlers, ts);
-	    q = ts.header.next()[ts.which_succ];
-	    last = q0;
-	    // done.
+	    q = new AGET(qf, in, ns.stack(0), Tobj, Tindex);
 	    break;
 	    }
 	case Op.AASTORE:
@@ -570,8 +646,8 @@ class Translate  { // not public.
 	case Op.SASTORE:
 	    {
 	    Temp Tobj, Tindex, Tsrc;
-	    if (in.getOpcode()==Op.DASTORE ||
-		in.getOpcode()==Op.LASTORE) { // 64-bit val.
+	    if (opcode==Op.DASTORE ||
+		opcode==Op.LASTORE) { // 64-bit val.
 		ns = s.pop(4);
 		Tobj   = s.stack(3);
 		Tindex = s.stack(2);
@@ -584,39 +660,12 @@ class Translate  { // not public.
 	    }
 	    
 	    // the actual operation.
-	    Quad q0= new ASET(qf, in, Tobj, Tindex, Tsrc);
-	    last = q0;
-
-	    // funky additional check for AASTORE
-	    if (in.getOpcode() == Op.AASTORE) {
-		// AASTORE also throws ArrayStoreException.
-		HClass HCase = HClass.forClass(ArrayStoreException.class);
-		Quad qq0 = new COMPONENTOF(qf, in, s.extra(0), Tobj, Tsrc);
-		Quad qq1 = new CJMP(qf, in, qq0.def()[0], new Temp[0]);
-		Quad qq2 = transNewException(SS, HCase, SS.Tex, 
-					     new TransState(ts.initialState, 
-							    in, qq1, 0));
-		r = transThrow(SS, new TransState(ts.initialState.push(SS.Tex),
-						  ts.in, qq2, 0),
-			       handlers, false);
-		// link
-		Quad.addEdge(qq0, 0, qq1, 0);
-		Quad.addEdge(qq1, 1, q0,  0);
-		q0 = qq0;
-	    }
-	    // bounds check
-	    TransState r2[] = transBoundsCheck(SS, Tobj, Tindex, 
-					       q0, handlers, ts);
-	    // merge TransState arrays.
-	    r = mergeTS(r, r2);
-	    // set up next state.
-	    q = ts.header.next()[ts.which_succ];
-	    // done.
+	    q = new ASET(qf, in, Tobj, Tindex, Tsrc);
 	    break;
 	    }
 	case Op.ACONST_NULL:
-	    ns = s.push(SS.Tnull);
-	    q = null;
+	    ns = s.push();
+	    q = new CONST(qf, in, ns.stack(0), null, HClass.Void);
 	    break;
 	case Op.ALOAD:
 	case Op.ALOAD_0:
@@ -625,52 +674,25 @@ class Translate  { // not public.
 	case Op.ALOAD_3:
 	    {
 		OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
-		ns = s.push(s.lv[opd.getIndex()]);
-		q = null;
+		// could be a return address, so fix up the stack.
+		ns = s.push().trackLV2S(opd.getIndex(), 0);
+		q = new MOVE(qf, in, ns.stack(0), s.lv(opd.getIndex()));
 		break;
 	    }
 	case Op.ANEWARRAY:
 	    {
-		// if (count<0) throw new NegativeArraySizeException();
 		OpClass opd = (OpClass) in.getOperand(0);
 		HClass hc = HClass.forDescriptor("[" + 
 						 opd.value().getDescriptor());
 		ns = s.pop().push();
-
-		HClass HCex=HClass.forClass(NegativeArraySizeException.class);
-
-		// check whether count>=0.
-		Quad q2 = new OPER(qf, in, Qop.ICMPGE, s.extra(0),
-				   new Temp[] { s.stack(0), SS.Tzero });
-		Quad q3 = new CJMP(qf, in, q2.def()[0], new Temp[0]);
-		Quad q4 = transNewException(SS, HCex, SS.Tex, 
-					    new TransState(s, in, q3, 0));
-		r = transThrow(SS, new TransState(s.push(SS.Tex), in, q4, 0),
-			       handlers, false);
-		Quad q5 = new ANEW(qf, in, ns.stack(0), hc, 
-				   new Temp[] { s.stack(0) });
-		// link
-		Quad.addEdge(q2, 0, q3, 0);
-		Quad.addEdge(q3, 1, q5, 0);
-
-		q = q2;
-		last = q5;
+		q = new ANEW(qf, in, ns.stack(0), hc,
+			     new Temp[] { s.stack(0) });
 		break;
 	    }
 	case Op.ARRAYLENGTH:
 	    {
-	    // if (objref==null) throw new NullPointerException()
 	    ns = s.pop().push();
-
-	    Temp Tobj  = s.stack(0);
-
-	    // actual operation:
-	    Quad q0 = new ALENGTH(qf, in, ns.stack(0), Tobj);
-	    // null check.
-	    r = transNullCheck(SS, Tobj, q0, handlers, ts);
-	    // setup next state
-	    q = ts.header.next()[ts.which_succ];
-	    last = q0;
+	    q = new ALENGTH(qf, in, ns.stack(0), s.stack(0));
 	    break;
 	    }
 	case Op.ASTORE:
@@ -680,63 +702,67 @@ class Translate  { // not public.
 	case Op.ASTORE_3:
 	    {
 	    OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
-	    ns = s.pop();
-	    q = new MOVE(qf, in, ns.lv[opd.getIndex()], s.stack(0));
+	    // value could be return address so track it.
+	    ns = s.trackS2LV(0, opd.getIndex()).pop();
+	    q = new MOVE(qf, in, ns.lv(opd.getIndex()), s.stack(0));
 	    break;
 	    }
 	case Op.BIPUSH:
 	case Op.SIPUSH:
 	    {
-		OpConstant opd = (OpConstant) in.getOperand(0);
-		int val = ((Number)opd.getValue()).intValue();
-		ns = s.push();
-		q = new CONST(qf, in, ns.stack(0), new Integer(val), HClass.Int);
-		break;
+	    OpConstant opd = (OpConstant) in.getOperand(0);
+	    int val = ((Number)opd.getValue()).intValue();
+	    ns = s.push();
+	    q = new CONST(qf, in, ns.stack(0), new Integer(val), HClass.Int);
+	    break;
 	    }
 	case Op.CHECKCAST:
 	    // translate as:
 	    //  if (obj!=null && !(obj instanceof class))
 	    //     throw new ClassCastException();
 	    {
-		OpClass opd = (OpClass) in.getOperand(0);
-		ns = s;
-		Temp Tobj = s.stack(0);
+	    OpClass opd = (OpClass) in.getOperand(0);
+	    Temp Tobj = s.stack(0);
 
-		HClass HCex = HClass.forClass(ClassCastException.class);
+	    HClass HCex = HClass.forClass(ClassCastException.class);
 
-		// make quads
-		Quad q1 = new OPER(qf, in, Qop.ACMPEQ, s.extra(0), // equal is true
-				   new Temp[] { Tobj, SS.Tnull } ); 
-		Quad q2 = new CJMP(qf, in, q1.def()[0], new Temp[0]);
-		Quad q3 = new INSTANCEOF(qf, in, s.extra(0), Tobj, opd.value());
-		Quad q4 = new CJMP(qf, in, q3.def()[0], new Temp[0]);
-		Quad q5 = transNewException(SS, HCex, SS.Tex, 
-					    new TransState(s, in, q4, 0));
-		r = transThrow(SS, new TransState(s.push(SS.Tex), in, q5, 0),
-			       handlers, false);
-		Quad q6 = new PHI(qf, in, new Temp[0], 2);
-		// link quads.
-		Quad.addEdges(new Quad[] { q1, q2, q3, q4 });
-		Quad.addEdge(q2, 1, q6, 0);
-		Quad.addEdge(q4, 1, q6, 1);
-		// and setup the next state.
-		ns = s;
-		q = q1;
-		last = q6;
-		break;
+	    // make quads
+	    Quad q0 = new CONST(qf, in, s.extra(0), null, HClass.Void);
+	    Quad q1 = new OPER(qf, in, Qop.ACMPEQ, s.extra(0), // equal is true
+			       new Temp[] { Tobj, s.extra(0)/*null*/ } ); 
+	    Quad q2 = new CJMP(qf, in, q1.def()[0], new Temp[0]);
+	    Quad q3 = new INSTANCEOF(qf, in, s.extra(0), Tobj, opd.value());
+	    Quad q4 = new CJMP(qf, in, q3.def()[0], new Temp[0]);
+	    Quad q5 = new NEW(qf, in, s.extra(0), HCex);
+	    Quad q6 = new CALL(qf, in, HCex.getConstructor(new HClass[0]),
+			       new Temp[] { q5.def()[0] }, null /*retval*/,
+			       null /*ex*/, false /*virtual*/);
+	    Quad q7 = new THROW(qf, in, q5.def()[0]);
+	    Quad q8 = new PHI(qf, in, new Temp[0], 2);
+	    // link quads.
+	    Quad.addEdges(new Quad[] { q0, q1, q2, q3, q4, q5, q6, q7 });
+	    Quad.addEdge(q2, 1, q8, 0);
+	    Quad.addEdge(q4, 1, q8, 1);
+	    s.footer().attach(q7, 0);
+
+	    // and setup the next state.
+	    ns = s;
+	    q = q0;
+	    last = q8;
+	    break;
 	    }
 	case Op.D2F:
 	case Op.D2I:
 	case Op.L2F:
 	case Op.L2I:
-	    ns = s.pop(2).push();
-	    q = new OPER(qf, in, Qop.forString(Op.toString(in.getOpcode())),
+	    ns = s.pop(2).push(); Util.assert(s.isLong(0));
+	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
 			 ns.stack(0), new Temp[] { s.stack(0) });
 	    break;
 	case Op.D2L:
 	case Op.L2D:
-	    ns = s.pop(2).push(null).push();
-	    q = new OPER(qf, in, Qop.forString(Op.toString(in.getOpcode())),
+	    ns = s.pop(2).pushLong(); Util.assert(s.isLong(0) && ns.isLong(0));
+	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
 			 ns.stack(0), new Temp[] { s.stack(0) });
 	    break;
 	case Op.DADD:
@@ -750,15 +776,55 @@ class Translate  { // not public.
 	case Op.LOR:
 	case Op.LSUB:
 	case Op.LXOR:
-	    ns = s.pop(4).push(null).push();
-	    q = new OPER(qf, in, Qop.forString(Op.toString(in.getOpcode())),
+	case Op.LDIV:
+	case Op.LREM:
+	    ns = s.pop(4).pushLong();
+	    Util.assert(ns.isLong(0) && s.isLong(0) && s.isLong(2));
+	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
 			 ns.stack(0), new Temp[] { s.stack(2), s.stack(0) });
 	    break;
 	case Op.DCMPG:
 	case Op.DCMPL:
+	    switch (inNext.getOpcode()) {
+	    case Op.IFLT: case Op.IFGT: // special cases.
+	    case Op.IFLE: case Op.IFGE:
+	    case Op.IFEQ: case Op.IFNE:
 	    {
-	    boolean isDCMPG = (in.getOpcode()==Op.DCMPG);
-	    ns = s.pop(4).push();
+		boolean invert = false, swap = false;
+		int op;
+		switch (inNext.getOpcode()) {
+		case Op.IFNE: invert = true;
+		case Op.IFEQ: op = Qop.DCMPEQ; break;
+		case Op.IFLT: swap = true;
+		case Op.IFGT: op = Qop.DCMPGT; break;
+		case Op.IFLE: swap = true;
+		case Op.IFGE: op = Qop.DCMPGE; break;
+		default: throw new Error("Impossible!");
+		}
+		// NaN handling.
+		if (op!=Qop.DCMPEQ &&
+		    ((opcode==Op.DCMPG && !swap) ||
+		     (opcode==Op.DCMPL &&  swap) ) ) { // swap handling of NaN
+		    swap=!swap; invert=true;
+		    op=(op==Qop.DCMPGT)?Qop.DCMPGE:Qop.DCMPGT;
+		}
+		ns = s.pop(4); // IF?? pops off result of DCMP?
+		q = new OPER(qf, in, op, ns.extra(0),
+			     swap
+			     ? new Temp[] { s.stack(0), s.stack(2) }
+			     : new Temp[] { s.stack(2), s.stack(0) } );
+		last = new CJMP(qf, in, ns.extra(0), new Temp[0]);
+		Quad.addEdge(q, 0, last, 0);
+		r = new TransState[] {
+		    new TransState(ns, inNext.next(0), last, invert?1:0),
+		    new TransState(ns, inNext.next(1), last, invert?0:1)
+		};
+		break; // done translating.
+	    }
+	    default: // use full expansion of dcmp
+	    {
+	    boolean isDCMPG = (opcode==Op.DCMPG);
+	    ns = s.pop(4).push(); Util.assert(s.isLong(0) && s.isLong(2));
 	    Quad q0 = new OPER(qf, in, Qop.DCMPGT, s.extra(0),
 			       isDCMPG ?
 			       new Temp[] { s.stack(0), s.stack(2) } :
@@ -785,14 +851,17 @@ class Translate  { // not public.
 	    q = q0; last = q7;
 	    break;
 	    }
+	    }
+	    break;
 	case Op.DCONST_0:
 	case Op.DCONST_1:
 	case Op.LCONST_0:
 	case Op.LCONST_1:
 	    {
 		OpConstant opd = (OpConstant) in.getOperand(0);
-		ns = s.push(null).push();
-		q = new CONST(qf, in, ns.stack(0), opd.getValue(), opd.getType());
+		ns = s.pushLong();
+		q = new CONST(qf, in, ns.stack(0),
+			      opd.getValue(), opd.getType());
 		break;
 	    }
 	case Op.DLOAD:
@@ -807,14 +876,14 @@ class Translate  { // not public.
 	case Op.LLOAD_3:
 	    {
 		OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
-		ns = s.push(null).push(s.lv[opd.getIndex()]);
-		q = null;
+		ns = s.pushLong();
+		q = new MOVE(qf, in, ns.stack(0), s.lv(opd.getIndex()));
 		break;
 	    }
 	case Op.DNEG:
 	case Op.LNEG:
-	    ns = s.pop(2).push(null).push();
-	    q = new OPER(qf, in, Qop.forString(Op.toString(in.getOpcode())),
+	    ns = s.pop(2).pushLong(); Util.assert(s.isLong(0));
+	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
 			 ns.stack(0), new Temp[] {s.stack(0)});
 	    break;
 	case Op.DSTORE:
@@ -829,44 +898,132 @@ class Translate  { // not public.
 	case Op.LSTORE_3:
 	    {
 	    OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
-	    ns = s.pop(2);
-	    q = new MOVE(qf, in, ns.lv[opd.getIndex()], s.stack(0));
+	    // values can't be return addresses, so clear tag in stack.
+	    ns = s.pop(2).clearLV(opd.getIndex()); Util.assert(s.isLong(0));
+	    q = new MOVE(qf, in, ns.lv(opd.getIndex()), s.stack(0));
 	    break;
 	    }
 	case Op.DUP:
-	    ns = s.push(s.stack(0));
-	    q = null;
+	    // value could be a return address so track it.
+	    ns = s.push().trackS2S(s, 0, 0); Util.assert(!s.isLong(0));
+	    q = new MOVE(qf, in, ns.stack(0), s.stack(0));
 	    break;
 	case Op.DUP_X1:
-	    ns = s.pop(2).push(s.stack(0)).push(s.stack(1)).push(s.stack(0));
-	    q = null;
+	    {
+	    ns = s.pop(2).push(3); Util.assert(!s.isLong(0) && !s.isLong(1));
+	    Quad q0 = new MOVE(qf, in, ns.stack(0), s.stack(0));
+	    Quad q1 = new MOVE(qf, in, ns.stack(1), s.stack(1));
+	    Quad q2 = new MOVE(qf, in, ns.stack(2), ns.stack(0));
+	    Quad.addEdges(new Quad[] { q0, q1, q2 });
+	    q = q0;
+	    last = q2;
+	    // track possible return addresses
+	    ns = ns.trackS2S(s, 0, 0).trackS2S(s, 1, 1).trackS2S(s, 0, 2);
 	    break;
-	case Op.DUP_X2:
-	    ns = s.pop(3).push(s.stack(0)).push(s.stack(2)).push(s.stack(1))
-		.push(s.stack(0));
-	    q = null;
+	    }
+	case Op.DUP_X2: // operates differently if stack contains a long value
+	    {
+	    Util.assert(!s.isLong(0));
+	    // don't forget to track possible return addresses.
+	    if (s.isLong(1)) {
+		ns = s.pop(3).push().pushLong().push();
+		ns = ns.trackS2S(s, 0, 0).trackS2S(s, 0, 3); // retadd != long
+	    } else {
+		ns = s.pop(3).push(4);
+		ns = ns.trackS2S(s, 0, 0).trackS2S(s, 1, 1)
+		       .trackS2S(s, 2, 2).trackS2S(s, 0, 3);
+	    }
+	    Quad q0 = new MOVE(qf, in, ns.stack(0), s.stack(0));
+	    Quad q1 = new MOVE(qf, in, ns.stack(1), s.stack(1));
+	    Quad q2 = new MOVE(qf, in, ns.stack(2), s.stack(2));
+	    Quad q3 = new MOVE(qf, in, ns.stack(3), ns.stack(0));
+	    if (s.isLong(1))
+		Quad.addEdges(new Quad[] { q0, q1, q3 });
+	    else
+		Quad.addEdges(new Quad[] { q0, q1, q2, q3 });
+	    q = q0; last = q3;
 	    break;
-	case Op.DUP2:
-	    ns = s.push(s.stack(1)).push(s.stack(0));
-	    q = null;
+	    }
+	case Op.DUP2: // either dup two short values or one long value.
+	    if (s.isLong(0)) {
+		ns = s.pushLong();
+		q = new MOVE(qf, in, ns.stack(0), s.stack(0));
+	    } else {
+		// could be return address.
+		ns = s.push(2).trackS2S(s, 0, 0).trackS2S(s, 1, 1);
+		Quad q0 = new MOVE(qf, in, ns.stack(0), s.stack(0));
+		Quad q1 = new MOVE(qf, in, ns.stack(1), s.stack(1));
+		Quad.addEdges(new Quad[] { q0, q1 } );
+		q = q0; last = q1;
+	    }
 	    break;
-	case Op.DUP2_X1:
-	    ns = s.pop(3).push(s.stack(1)).push(s.stack(0))
-		.push(s.stack(2)).push(s.stack(1)).push(s.stack(0));
-	    q = null;
+	case Op.DUP2_X1: // again, different if top value is long.
+	    Util.assert(!s.isLong(2));
+	    if (s.isLong(0)) { // only !long in center could be ret addr.
+		ns = s.pop(3).pushLong().push().pushLong().trackS2S(s, 2, 2);
+		Quad q0 = new MOVE(qf, in, ns.stack(0), s.stack(0));
+		Quad q1 = new MOVE(qf, in, ns.stack(2), s.stack(2));
+		Quad q2 = new MOVE(qf, in, ns.stack(3), ns.stack(0));
+		Quad.addEdges(new Quad[] { q0, q1, q2 });
+		q = q0; last = q2;
+	    } else { // ack.  lots of possible return addresses.
+		ns = s.pop(3).push(5);
+		ns = ns.trackS2S(s, 0, 0).trackS2S(s, 1, 1).trackS2S(s, 2, 2)
+		       .trackS2S(s, 0, 3).trackS2S(s, 1, 4);
+		Quad q0 = new MOVE(qf, in, ns.stack(0), s.stack(0));
+		Quad q1 = new MOVE(qf, in, ns.stack(1), s.stack(1));
+		Quad q2 = new MOVE(qf, in, ns.stack(2), s.stack(2));
+		Quad q3 = new MOVE(qf, in, ns.stack(3), ns.stack(0));
+		Quad q4 = new MOVE(qf, in, ns.stack(4), ns.stack(1));
+		Quad.addEdges(new Quad[] { q0, q1, q2, q3, q4 });
+		q = q0; last = q4;
+	    }
 	    break;
-	case Op.DUP2_X2:
-	    ns = s.pop(4).push(s.stack(1)).push(s.stack(0))
-		.push(s.stack(3)).push(s.stack(2))
-		.push(s.stack(1)).push(s.stack(0));
-	    q = null;
+	case Op.DUP2_X2: // ack.  top and next could both be long.
+	    {
+	    if (s.isLong(0))
+		ns = s.isLong(2)
+		    ? s.pushLong()
+		    : s.pop(4).pushLong().push(2).pushLong()
+                       .trackS2S(s, 2, 2).trackS2S(s, 3, 3);
+	    else
+		ns = s.isLong(2)
+		    ? s.pop(4).push(2).pushLong().push(2)
+                       .trackS2S(s, 0, 0).trackS2S(s, 1, 1)
+                       .trackS2S(s, 0, 4).trackS2S(s, 1, 5)
+		    : s.pop(4).push(6) // ack. lots of possible ret addresses
+                       .trackS2S(s, 0, 0).trackS2S(s, 1, 1)
+                       .trackS2S(s, 2, 2).trackS2S(s, 3, 3)
+                       .trackS2S(s, 0, 4).trackS2S(s, 1, 5);
+	    Quad q0 = new MOVE(qf, in, ns.stack(0), s.stack(0));
+	    Quad q1 = new MOVE(qf, in, ns.stack(1), s.stack(1));
+	    Quad q2 = new MOVE(qf, in, ns.stack(2), s.stack(2));
+	    Quad q3 = new MOVE(qf, in, ns.stack(3), s.stack(3));
+	    Quad q4 = new MOVE(qf, in, ns.stack(4), ns.stack(0));
+	    Quad q5 = new MOVE(qf, in, ns.stack(5), ns.stack(1));
+	    if (s.isLong(0))
+		Quad.addEdge(q0, 0, q2, 0);
+	    else {
+		Quad.addEdges(new Quad[] { q0, q1, q2 });
+		Quad.addEdge(q4, 0, q5, 0);
+	    }
+	    if (s.isLong(2))
+		Quad.addEdge(q2, 0, q4, 0);
+	    else
+		Quad.addEdges(new Quad[] { q2, q3, q4 });
+	    q = q0;
+	    last = s.isLong(0)?q4:q5;
+	    Util.assert(s.isLong(0)==ns.isLong(0));
+	    Util.assert(s.isLong(0)==ns.isLong(4));
+	    Util.assert(s.isLong(2)==ns.isLong(2));
 	    break;
+	    }
 	case Op.F2D:
 	case Op.F2L:
 	case Op.I2D:
 	case Op.I2L:
-	    ns = s.pop().push(null).push();
-	    q = new OPER(qf, in, Qop.forString(Op.toString(in.getOpcode())),
+	    ns = s.pop().pushLong();
+	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
 			 ns.stack(0), new Temp[] {s.stack(0)});
 	    break;
 	case Op.F2I:
@@ -875,7 +1032,7 @@ class Translate  { // not public.
 	case Op.I2F:
 	case Op.I2S:
 	    ns = s.pop().push();
-	    q = new OPER(qf, in, Qop.forString(Op.toString(in.getOpcode())),
+	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
 			 ns.stack(0), new Temp[] {s.stack(0)});
 	    break;
 	case Op.FADD:
@@ -892,66 +1049,53 @@ class Translate  { // not public.
 	case Op.ISUB:
 	case Op.IUSHR:
 	case Op.IXOR:
-	    ns = s.pop(2).push();
-	    q = new OPER(qf, in, Qop.forString(Op.toString(in.getOpcode())),
-			 ns.stack(0), new Temp[] {s.stack(1), s.stack(0)});
-	    break;
 	case Op.IDIV:
 	case Op.IREM:
-	    {
 	    ns = s.pop(2).push();
-
-	    // if (divisor==0) throw new ArithmeticException();
-	    HClass HCex = HClass.forClass(ArithmeticException.class);
-
-	    Quad q0 = new OPER(qf, in, Qop.ICMPEQ, s.extra(0),
-			       new Temp[] { s.stack(0), SS.Tzero } );
-	    Quad q1 = new CJMP(qf, in, q0.def()[0], new Temp[0]);
-	    Quad q2 = transNewException(SS, HCex, SS.Tex, 
-					new TransState(s, in, q1, 1));
-	    r = transThrow(SS, new TransState(s.push(SS.Tex), in, q2, 0),
-			   handlers, false);
-	    // actual division operation:
-	    Quad q3 = new OPER(qf, in, Qop.forString(Op.toString(in.getOpcode())),
-			       ns.stack(0),
-			       new Temp[] {s.stack(1), s.stack(0)});
-	    // link quads.
-	    Quad.addEdges(new Quad[] { q0, q1, q3 } );
-	    // setup next state.
-	    q = q0; last = q3;
+	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
+			 ns.stack(0), new Temp[] {s.stack(1), s.stack(0)});
 	    break;
-	    }
-	case Op.LDIV:
-	case Op.LREM:
-	    {
-	    ns = s.pop(4).push(null).push();
-
-	    // if (divisor==0) throw new ArithmeticException();
-	    HClass HCex = HClass.forClass(ArithmeticException.class);
-
-	    Quad q0 = new CONST(qf, in, s.extra(0),
-				new Long(0), HClass.Long);
-	    Quad q1 = new OPER(qf, in, Qop.LCMPEQ, s.extra(0),
-			       new Temp[] { s.stack(0), q0.def()[0] } );
-	    Quad q2 = new CJMP(qf, in, q1.def()[0], new Temp[0]);
-	    Quad q3 = transNewException(SS, HCex, SS.Tex, 
-					new TransState(s, in, q2, 1));
-	    r = transThrow(SS, new TransState(s.push(SS.Tex), in, q3, 0),
-			   handlers, false);
-	    // actual division operation:
-	    Quad q4 = new OPER(qf, in, Qop.forString(Op.toString(in.getOpcode())),
-			       ns.stack(0), 
-			       new Temp[] {s.stack(2), s.stack(0)});
-	    // link quads.
-	    Quad.addEdges(new Quad[] { q0, q1, q2, q4 } );
-	    // setup next state.
-	    q = q0; last = q4;
-	    break;
-	    }
 	case Op.FCMPG:
 	case Op.FCMPL:
+	    switch (inNext.getOpcode()) { // break this into FCMPGT,etc
+	    case Op.IFLT: case Op.IFGT: // special cases.
+	    case Op.IFLE: case Op.IFGE:
+	    case Op.IFEQ: case Op.IFNE:
 	    {
-	    boolean isFCMPG = (in.getOpcode()==Op.FCMPG);
+		boolean invert = false, swap = false;
+		int op;
+		switch (inNext.getOpcode()) {
+		case Op.IFNE: invert = true;
+		case Op.IFEQ: op = Qop.FCMPEQ; break;
+		case Op.IFLT: swap = true;
+		case Op.IFGT: op = Qop.FCMPGT; break;
+		case Op.IFLE: swap = true;
+		case Op.IFGE: op = Qop.FCMPGE; break;
+		default: throw new Error("Impossible!");
+		}
+		// NaN handling.
+		if (op!=Qop.FCMPEQ &&
+		    ((opcode==Op.FCMPG && !swap) ||
+		     (opcode==Op.FCMPL &&  swap) ) ) { // swap handling of NaN
+		    swap=!swap; invert=true;
+		    op=(op==Qop.FCMPGT)?Qop.FCMPGE:Qop.FCMPGT;
+		}
+		ns = s.pop(2); // IF?? pops off result of FCMP?
+		q = new OPER(qf, in, op, ns.extra(0),
+			     swap
+			     ? new Temp[] { s.stack(0), s.stack(1) }
+			     : new Temp[] { s.stack(1), s.stack(0) } );
+		last = new CJMP(qf, in, ns.extra(0), new Temp[0]);
+		Quad.addEdge(q, 0, last, 0);
+		r = new TransState[] {
+		    new TransState(ns, inNext.next(0), last, invert?1:0),
+		    new TransState(ns, inNext.next(1), last, invert?0:1)
+		};
+		break; // done translating.
+	    }
+	    default: // use full expansion of fcmp
+	    {
+	    boolean isFCMPG = (opcode==Op.FCMPG);
 	    ns = s.pop(2).push();
 	    Quad q0 = new OPER(qf, in, Qop.FCMPGT, s.extra(0),
 			       isFCMPG ?
@@ -979,6 +1123,8 @@ class Translate  { // not public.
 	    q = q0; last = q7;
 	    break;
 	    }
+	    }
+	    break;
 	case Op.FCONST_0:
 	case Op.FCONST_1:
 	case Op.FCONST_2:
@@ -992,7 +1138,8 @@ class Translate  { // not public.
 	    {
 		OpConstant opd = (OpConstant) in.getOperand(0);
 		ns = s.push();
-		q = new CONST(qf, in, ns.stack(0), opd.getValue(), opd.getType());
+		q = new CONST(qf, in, ns.stack(0),
+			      opd.getValue(), opd.getType());
 		break;
 	    }
 	case Op.FLOAD:
@@ -1007,14 +1154,14 @@ class Translate  { // not public.
 	case Op.ILOAD_3:
 	    {
 		OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
-		ns = s.push(s.lv[opd.getIndex()]);
-		q = null;
+		ns = s.push();
+		q = new MOVE(qf, in, ns.stack(0), s.lv(opd.getIndex()));
 		break;
 	    }
 	case Op.FNEG:
 	case Op.INEG:
 	    ns = s.pop().push();
-	    q = new OPER(qf, in, Qop.forString(Op.toString(in.getOpcode())),
+	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
 			 ns.stack(0), new Temp[] {s.stack(0)});
 	    break;
 	case Op.FSTORE:
@@ -1029,50 +1176,44 @@ class Translate  { // not public.
 	case Op.ISTORE_3:
 	    {
 	    OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
-	    ns = s.pop();
-	    q = new MOVE(qf, in, ns.lv[opd.getIndex()], s.stack(0));
+	    ns = s.pop().clearLV(opd.getIndex()); // not a return address
+	    q = new MOVE(qf, in, ns.lv(opd.getIndex()), s.stack(0));
 	    break;
 	    }
 	case Op.GETFIELD:
 	    {
 	    OpField opd = (OpField) in.getOperand(0);
 	    if (isLongDouble(opd.value().getType()))  // 64-bit value.
-		ns = s.pop().push(null).push();
+		ns = s.pop().pushLong();
 	    else // 32-bit value.
 		ns = s.pop().push();
 
-	    // actual operation:
-	    Quad q0 = new GET(qf, in, ns.stack(0), opd.value(), s.stack(0));
-	    // null check.
-	    r = transNullCheck(SS, s.stack(0), q0, handlers, ts);
-	    // setup next state.
-	    q = ts.header.next()[ts.which_succ]; 
-	    last = q0;
+	    q = new GET(qf, in, ns.stack(0), opd.value(), s.stack(0));
 	    break;
 	    }
 	case Op.GETSTATIC:
 	    {
 	    OpField opd = (OpField) in.getOperand(0);
 	    if (isLongDouble(opd.value().getType()))  // 64-bit value.
-		ns = s.push(null).push();
+		ns = s.pushLong();
 	    else // 32-bit value.
 		ns = s.push();
-	    q = new GET(qf, in, ns.stack(0), opd.value(), null/*no objectref*/);
+	    q = new GET(qf, in, ns.stack(0), opd.value(),null/*no objectref*/);
 	    break;
 	    }
 	case Op.IINC:
 	    {
-		OpLocalVariable opd0 = (OpLocalVariable) in.getOperand(0);
-		OpConstant opd1 = (OpConstant) in.getOperand(1);
-		Temp constant = s.extra(0);
-		ns = s;
-		q = new CONST(qf, in, constant, opd1.getValue(), opd1.getType());
-		Quad.addEdge(q, 0,
-			     new OPER(qf, in, Qop.IADD, ns.lv[opd0.getIndex()],
-				      new Temp[] { s.lv[opd0.getIndex()], 
-						       constant}), 0);
-		last = q.next(0);
-		break;
+	    OpLocalVariable opd0 = (OpLocalVariable) in.getOperand(0);
+	    OpConstant opd1 = (OpConstant) in.getOperand(1);
+	    Temp Tc = s.extra(0);
+	    ns = s;
+	    Quad q0 = new CONST(qf, in, Tc,
+				opd1.getValue(), opd1.getType());
+	    Quad q1 = new OPER(qf, in, Qop.IADD, ns.lv(opd0.getIndex()),
+			       new Temp[] { s.lv(opd0.getIndex()), Tc});
+	    Quad.addEdge(q0, 0, q1, 0);
+	    q = q0; last = q1;
+	    break;
 	    }
 	case Op.INSTANCEOF:
 	    {
@@ -1086,8 +1227,8 @@ class Translate  { // not public.
 	case Op.INVOKESTATIC:
 	case Op.INVOKEVIRTUAL:
 	    {
-	    boolean isVirtual = (in.getOpcode()!=Op.INVOKESPECIAL);
-	    boolean isStatic = (in.getOpcode()==Op.INVOKESTATIC);
+	    boolean isVirtual = (opcode!=Op.INVOKESPECIAL);
+	    boolean isStatic = (opcode==Op.INVOKESTATIC);
 	    OpMethod opd = (OpMethod) in.getOperand(0);
 	    HClass paramtypes[] = opd.value().getParameterTypes();
 	    Temp param[] = new Temp[paramtypes.length+(isStatic?0:1)];
@@ -1097,7 +1238,6 @@ class Translate  { // not public.
 		if (isLongDouble(paramtypes[i])) j++;
 	    }
 	    if (!isStatic) param[0]=s.stack(j++); // objectref.
-	    Temp Tex = SS.Tex;
 	    Temp Tret;
 	    if (opd.value().getReturnType()==HClass.Void) { 
 		// no return value.
@@ -1109,43 +1249,48 @@ class Translate  { // not public.
 		Tret = ns.stack(0);
 	    } else { 
 		// 64-bit return value.
-		ns = s.pop(j).push(null).push();
+		ns = s.pop(j).pushLong();
 		Tret = ns.stack(0);
 	    }
 	    // Create CALL quad.
-	    q = new CALL(qf, in, opd.value(), param, Tret, Tex, isVirtual);
-	    // check for thrown exception.
-	    Quad q1 = new OPER(qf, in, Qop.ACMPEQ, ns.extra(0),
-			       new Temp[] { Tex, SS.Tnull });
-	    Quad q2 = new CJMP(qf, in, q1.def()[0], new Temp[0]);
-	    r = transThrow(SS, new TransState(s.push(Tex), in, q2, 0),
-			   handlers, false);
-	    Quad.addEdges(new Quad[] { q, q1, q2 });
-	    last = q2; which_succ = 1;
-	    // null dereference check (JVM disallows on uninit objects)
-	    if (!isStatic && !(opd.value() instanceof HConstructor)) {
-		HClass HCex = HClass.forClass(NullPointerException.class);
-
-		// test objectref against null.
-		Quad q3 = new OPER(qf, in, Qop.ACMPEQ, s.extra(0),
-				   new Temp[] { param[0], SS.Tnull } );
-		Quad q4 = new CJMP(qf, in, q3.def()[0], new Temp[0]);
-		Quad q5 = transNewException(SS, HCex, Tex, 
-					    new TransState(s, in, q4, 1));
-		Quad q6 = new PHI(qf, in, new Temp[0], 2);
-		// rewrite links.
-		Quad.addEdge(q3, 0, q4, 0);
-		Quad.addEdge(q4, 0, q,  0);
-		Quad.addEdge(q5, 0, q6, 0);
-		Quad.addEdge(q6, 0, q2.next(0), q2.nextEdge(0).which_pred());
-		Quad.addEdge(q2, 0, q6, 1);
-		q = q3;
-	    }
-	    }
+	    q = new CALL(qf, in, opd.value(), param, Tret, null, isVirtual);
 	    break;
+	    }
 	case Op.LCMP: // break this up into lcmpeq, lcmpgt, etc.
+	    switch (inNext.getOpcode()) {
+	    case Op.IFEQ: case Op.IFGT: case Op.IFGE: // special cases.
+	    case Op.IFNE: case Op.IFLT: case Op.IFLE:
+	    {
+		boolean invert = false, swap = false;
+		int op;
+		switch (inNext.getOpcode()) {
+		case Op.IFNE: invert=true;
+		case Op.IFEQ: op = Qop.LCMPEQ;
+		    break;
+		case Op.IFGE: invert=true;
+		case Op.IFLT: swap=true; op=Qop.LCMPGT;
+		    break;
+		case Op.IFLE: invert=true;
+		case Op.IFGT: op = Qop.LCMPGT;
+		    break;
+		default: throw new Error("Impossible!");
+		}
+		ns = s.pop(4); // IF?? pops off result of LCMP.
+		q = new OPER(qf, in, op, ns.extra(0),
+			     swap
+			     ? new Temp[] {s.stack(0), s.stack(2)}
+			     : new Temp[] {s.stack(2), s.stack(0)} );
+		last = new CJMP(qf, in, ns.extra(0), new Temp[0]);
+		Quad.addEdge(q, 0, last, 0);
+		r = new TransState[] {
+		    new TransState(ns, inNext.next(0), last, invert?1:0),
+		    new TransState(ns, inNext.next(1), last, invert?0:1)
+		};
+		break; // done translating.
+	    }
+	    default: // use full expansion of lcmp
 	    { // optimization doesn't work well on this, unfortunately.
-	    ns = s.pop(4).push();
+	    ns = s.pop(4).push(); Util.assert(s.isLong(0) && s.isLong(2));
 	    Quad q0 = new OPER(qf, in, Qop.LCMPEQ, s.extra(0),
 			       new Temp[] { s.stack(2), s.stack(0) });
 	    Quad q1 = new CJMP(qf, in, q0.def()[0], new Temp[0]);
@@ -1166,13 +1311,15 @@ class Translate  { // not public.
 	    q = q0; last = q7;
 	    break;
 	    }
+	    }
+	    break;
 	case Op.LDC:
 	case Op.LDC_W:
 	case Op.LDC2_W:
 	    {
 	    OpConstant opd = (OpConstant) in.getOperand(0);
 	    if (isLongDouble(opd.getType()))
-		ns = s.push(null).push();
+		ns = s.pushLong();
 	    else
 		ns = s.push();
 	    q = new CONST(qf, in, ns.stack(0), opd.getValue(), opd.getType());
@@ -1181,23 +1328,17 @@ class Translate  { // not public.
 	case Op.LSHL:
 	case Op.LSHR:
 	case Op.LUSHR:
-	    ns = s.pop(3).push(null).push();
-	    q = new OPER(qf, in, Qop.forString(Op.toString(in.getOpcode())),
+	    ns = s.pop(3).pushLong(); Util.assert(s.isLong(1));
+	    q = new OPER(qf, in, Qop.forString(Op.toString(opcode)),
 			 ns.stack(0), new Temp[] { s.stack(1), s.stack(0) });
 	    break;
 	case Op.MONITORENTER:
 	    ns = s.pop();
-	    last = new MONITORENTER(qf, in, s.stack(0));
-	    // null dereference check.
-	    r = transNullCheck(SS, s.stack(0), last, handlers, ts);
-	    q = ts.header.next()[ts.which_succ];
+	    q = new MONITORENTER(qf, in, s.stack(0));
 	    break;
 	case Op.MONITOREXIT:
 	    ns = s.pop();
-	    last = new MONITOREXIT(qf, in, s.stack(0));
-	    // null dereference check.
-	    r = transNullCheck(SS, s.stack(0), last, handlers, ts);
-	    q = ts.header.next()[ts.which_succ];
+	    q = new MONITOREXIT(qf, in, s.stack(0));
 	    break;
 	case Op.MULTIANEWARRAY:
 	    {
@@ -1208,30 +1349,8 @@ class Translate  { // not public.
 		Temp Tdims[] = new Temp[dims];
 		for (int i=0; i<dims; i++)
 		    Tdims[i] = s.stack((dims-1)-i);
-		// check dimensions.
-		HClass HCex=HClass.forClass(NegativeArraySizeException.class);
-		Quad Qp = new PHI(qf, in, new Temp[0], dims);
-		Quad Qn = transNewException(SS, HCex, SS.Tex, 
-					    new TransState(s, in, Qp, 0));
-		r = transThrow(SS, new TransState(s.push(SS.Tex), in, Qn, 0),
-			       handlers, false);
 
-		last = ts.header; which_succ = ts.which_succ;
-		for (int i=0; i<dims; i++) {
-		    Quad q0 = new OPER(qf, in, Qop.ICMPGT, s.extra(0),
-				       new Temp[] { SS.Tzero, Tdims[i] });
-		    Quad q1 = new CJMP(qf, in, q0.def()[0], new Temp[0]);
-		    Quad.addEdge(last, which_succ, q0, 0);
-		    Quad.addEdge(q0, 0, q1, 0);
-		    Quad.addEdge(q1, 1, Qp, i);
-		    last=q1; which_succ=0;
-		}
-		// the actual operation:
-		Quad Qa = new ANEW(qf, in, ns.stack(0), opd0.value(), Tdims);
-		Quad.addEdge(last, which_succ, Qa, 0);
-		// make next state
-		q = ts.header.next()[ts.which_succ];
-		last = Qa; which_succ=0;
+		q = new ANEW(qf, in, ns.stack(0), opd0.value(), Tdims);
 		break;
 	    }
 	case Op.NEWARRAY:
@@ -1270,25 +1389,16 @@ class Translate  { // not public.
 		}
 
 		ns = s.pop().push();
-		
-		HClass HCex=HClass.forClass(NegativeArraySizeException.class);
-
-		// ensure that size>=0
-		Quad q0 = new OPER(qf, in, Qop.ICMPGE, s.extra(0),
-				   new Temp[] { s.stack(0), SS.Tzero });
-		Quad q1 = new CJMP(qf, in, q0.def()[0], new Temp[0]);
-		Quad q2 = transNewException(SS, HCex, SS.Tex, 
-					    new TransState(s, in, q1, 0));
-		r = transThrow(SS, new TransState(s.push(SS.Tex), in, q2, 0),
-			       handlers, false);
-		// actual operation:
-		Quad q3 = new ANEW(qf, in, ns.stack(0), arraytype, 
-				   new Temp[] { s.stack(0) });
-		// link
-		Quad.addEdge(q0, 0, q1, 0);
-		Quad.addEdge(q1, 1, q3, 0);
-		// make next state.
-		q = q0; last=q3;
+		q = new ANEW(qf, in, ns.stack(0), arraytype, 
+			     new Temp[] { s.stack(0) });
+		// crunch down array initializers.
+		HClass comptype = arraytype.getComponentType();
+		TransState r0 = new TransState(ns, inNext, q, 0);
+		for (TransState rOld = null; r0!=rOld; ) {
+		    rOld = r0; r0 = processArrayInitializers(r0, comptype);
+		}
+		r = new TransState[] { r0 };
+		last = q; // only record handlers for q.
 		break;
 	    }
 	case Op.NEW:
@@ -1299,7 +1409,8 @@ class Translate  { // not public.
 	    break;
 	    }
 	case Op.NOP:
-	    ns = s; q = null;
+	    ns = s;
+	    q = null; // new NOP(qf, in);
 	    break;
 	case Op.POP:
 	    ns = s.pop(); q = null;
@@ -1310,19 +1421,18 @@ class Translate  { // not public.
 	case Op.PUTFIELD:
 	    {
 	    OpField opd = (OpField) in.getOperand(0);
+	    Temp Tobj;
 	    if (isLongDouble(opd.value().getType())) { // 64-bit value.
+		Util.assert(s.isLong(0) && !s.isLong(2));
 		ns = s.pop(3);
-		last = new SET(qf, in, opd.value(), s.stack(2), s.stack(0));
+		Tobj = s.stack(2);
 	    }
 	    else {
+		Util.assert(!s.isLong(0) && !s.isLong(1));
 		ns = s.pop(2);
-		last = new SET(qf, in, opd.value(), s.stack(1), s.stack(0));
+		Tobj = s.stack(1);
 	    }
-	    // null check.
-	    r = transNullCheck(SS, ((SET)last).objectref, last, 
-			       handlers, ts);
-	    // setup next state.
-	    q = ts.header.next()[ts.which_succ];
+	    q = new SET(qf, in, opd.value(), Tobj, s.stack(0));
 	    break;
 	    }
 	case Op.PUTSTATIC:
@@ -1336,89 +1446,64 @@ class Translate  { // not public.
 	    break;
 	    }
 	case Op.SWAP:
-	    ns = s.pop(2).push(s.stack(0)).push(s.stack(1));
-	    q = null;
+	    {
+	    Util.assert(!s.isLong(0) && !s.isLong(1));
+	    ns = s.pop(2).push(2).trackS2S(s, 0, 1).trackS2S(s, 1, 0);
+	    Quad q0 = new MOVE(qf, in, s.extra(0), s.stack(0));
+	    Quad q1 = new MOVE(qf, in, ns.stack(0), s.stack(1));
+	    Quad q2 = new MOVE(qf, in, ns.stack(1), s.extra(0));
+	    Quad.addEdges(new Quad[] { q0, q1, q2 });
+	    q = q0; last = q2;
 	    break;
-
+	    }
 	default:
 	    throw new Error("Unknown InGen opcode.");
 	}
 	if (last == null) last = q;
-	// make & return next translation states to hit.
-	TransState result[] = new TransState[r.length+1];
-	System.arraycopy(r, 0, result, 1, r.length);
-	if (q!=null) {
-	    // Link new quad if necessary.
+
+	// Link new quad if necessary.
+	if (q!=null)
 	    Quad.addEdge(ts.header, ts.which_succ, q, 0);
-	    result[0] = new TransState(ns, in.next()[0], last, which_succ);
-	} else {
-	    result[0] = new TransState(ns, in.next()[0], 
-				       ts.header, ts.which_succ);
+	else {
+	    last = ts.header; which_succ = ts.which_succ;
 	}
-	return result;
+
+	// Cover these quads with the proper try handler.
+	if (q!=null) ns.recordHandler(in, q, last);
+
+	// return next translation state.
+	if (r==null)
+	    r=new TransState[]{new TransState(ns, inNext, last, which_succ)};
+	return r;
     }
 
     /** 
-     * Translate a single <Code>InMerge</code> using a <code>MergeMap</code>.
+     * Translate a single <Code>InMerge</code>.
      */
-    static final TransState[] transInMerge(StaticState SS, TransState ts, 
-					   MergeMap mm) {
-	QuadFactory qf = SS.qf;
-	InMerge in = (InMerge) ts.in;
+    static final TransState[] transInMerge(TransState ts) {
 	State s = ts.initialState; // abbreviation.
-	TransState[] result = new TransState[0]; // eventual result.
+	InMerge in = (InMerge) ts.in;
+	QuadFactory qf = s.qf();
+	TransState[] r;
 
-	// First, look up the InMerge in the MergeMap.
-	PHI phi = mm.getPhi(in);
-	if (phi==null) {
-	    // create new phi
+	PHI phi = s.mergeMap().get(in);
+	int arity = 0;
+	if (phi == null) { // no previous PHI
 	    phi = new PHI(qf, in, new Temp[0], in.arity());
-	    State ns = s.scrub(); // canonicalize names.
-	    mm.put(in, phi, 0, ns);
-	    // Create new state & keep it around.
-	    result = new TransState[] { new TransState(ns, in.next()[0],
-						       phi, 0) };
+	    r = new TransState[]{new TransState(s, in.next(0), phi, 0)};
+	    s.recordHandler(in, phi, phi);
+	} else {
+	    arity = s.mergeMap().arity(in);
+	    r = new TransState[0];
 	}
-	// Look up the edge to use.
-	int which_pred = mm.getPred(in);
-	// look up the names to use for stack values.
-	State phiState = mm.getState(in);
-	Quad q = ts.header; int which_succ = ts.which_succ;
-	// move stack temps around.
-	Hashtable permutation = new Hashtable();
-	for (int i=0; i<s.stackSize; i++) {
-	    if (s.stack(i) == null) continue;
-	    if (phiState.stack(i) == s.stack(i)) continue;
-	    permutation.put(phiState.stack(i), s.stack(i));
-	}
-	// BE CAREFUL: permutation may define an ordering on MOVEs.
-	Quad Qmid=new NOP(qf, in); Quad Qend=Qmid; int j=0;
-	for (Enumeration e=permutation.keys(); e.hasMoreElements(); ) {
-	    Temp dst=(Temp)e.nextElement();
-	    Temp src=(Temp)permutation.get(dst);
-	    // create new Temp in order to accomplish the permutation safely.
-	    Temp t = phiState.extra(j++); // FIXME: unlimited extra temps.
-	    Quad q1 = new MOVE(qf, in, t, src);
-	    Quad q2 = new MOVE(qf, in, dst, t);
-	    Quad.addEdge(q, which_succ, q1, 0);
-	    q = q1; which_succ = 0;
-	    Quad.addEdge(Qend, 0, q2, 0);
-	    Qend = q2;
-	}
-	if (Qend!=Qmid) { // add second chain of MOVEs, if there are any.
-	    Quad.addEdge(q, which_succ, Qmid.next(0), 0); // skip initial NOP
-	    q = Qend; which_succ = 0;
-	}
-	// link
-	Quad.addEdge(q, which_succ, phi, which_pred);
-	// increment which_pred
-	mm.put(in, phi, which_pred+1, phiState);
-	// done
-	return result;
+	s.mergeMap().put(in, phi, arity+1);
+	Quad.addEdge(ts.header, ts.which_succ, phi, arity);
+	return r;
     }
+
     /** Translate a single <code>InSwitch</code>. */
-    static final TransState[] transInSwitch(StaticState SS, TransState ts) {
-	QuadFactory qf = SS.qf;
+    static final TransState[] transInSwitch(TransState ts) {
+	QuadFactory qf = ts.initialState.qf();
 	InSwitch in = (InSwitch) ts.in;
 	State s = ts.initialState;
 	State ns = s.pop();
@@ -1436,35 +1521,40 @@ class Translate  { // not public.
 	    r[i] = new TransState(ns, nxt[i+1], q, i);
 	Util.assert(keys.length == nxt.length-1);
 	r[keys.length] = new TransState(ns, nxt[0], q, keys.length);
+	// record try info
+	ns.recordHandler(in, q, q);
 	return r;
     }
+
     /** Translate a single <code>InCti</code>. */
-    static final TransState[] transInCti(StaticState SS, 
-					 TransState ts, MergeMap handlers) {
-	QuadFactory qf = SS.qf;
+    static final TransState[] transInCti(TransState ts) {
+	QuadFactory qf = ts.initialState.qf();
 	InCti in = (InCti) ts.in;
 	State s = ts.initialState;
-	Quad q;
+	Quad q, last=null;
 	TransState[] r;
-	switch(in.getOpcode()) {
+
+	byte opcode = in.getOpcode();
+	switch(opcode) {
 	case Op.ARETURN:
 	case Op.DRETURN:
 	case Op.FRETURN:
 	case Op.IRETURN:
 	case Op.LRETURN:
-	case Op.RETURN: // RETURN returns no return value when it returns.
-	    q = new RETURN(qf, in, (in.getOpcode()==Op.RETURN)?null:s.stack(0));
+	case Op.RETURN: // RETURN has no return value.
+	    q = new RETURN(qf, in, (opcode==Op.RETURN)? null : s.stack(0));
 	    r = new TransState[0];
-	    SS.footer().attach(q, 0);
+	    s.footer().attach(q, 0);
 	    break;
 	case Op.ATHROW:
-	    r = transThrow(SS, ts, handlers, true);
-	    q = null;
+	    q = new THROW(qf, in, s.stack(0));
+	    r = new TransState[0];
+	    s.footer().attach(q, 0);
 	    break;
 	case Op.GOTO:
 	case Op.GOTO_W:
 	    q = null;
-	    r = new TransState[] { new TransState(s, in.next()[0], 
+	    r = new TransState[] { new TransState(s, in.next(0), 
 						  ts.header, ts.which_succ) };
 	    break;
 	case Op.IF_ACMPEQ:
@@ -1473,34 +1563,37 @@ class Translate  { // not public.
 		State ns = s.pop(2);
 		q = new OPER(qf, in, Qop.ACMPEQ, s.extra(0), 
 			     new Temp[] { s.stack(1), s.stack(0) });
-		Quad q2 = new CJMP(qf, in, q.def()[0], new Temp[0]);
+		Quad q2 = new CJMP(qf, in, s.extra(0), new Temp[0]);
 		Quad.addEdge(q, 0, q2, 0);
 		int iffalse=0, iftrue=1;
-		if (in.getOpcode()==Op.IF_ACMPNE) { // invert things for NE.
+		if (opcode == Op.IF_ACMPNE) { // invert things for NE.
 		    iffalse=1; iftrue=0;
 		}
 		r = new TransState[] {
-		    new TransState(ns, in.next()[0], q2, iffalse),
-		    new TransState(ns, in.next()[1], q2, iftrue)
+		    new TransState(ns, in.next(0), q2, iffalse),
+		    new TransState(ns, in.next(1), q2, iftrue)
 		};
+		last = q2;
 		break;
 	    }
 	case Op.IFNULL:
 	case Op.IFNONNULL:
 	    {
 		State ns = s.pop();
-		Quad q0 = new OPER(qf, in, Qop.ACMPEQ, s.extra(0), 
-				   new Temp[] { s.stack(0), SS.Tnull });
-		Quad q1 = new CJMP(qf, in, q0.def()[0], new Temp[0]);
-		Quad.addEdge(q0, 0, q1, 0);
+		Quad q0 = new CONST(qf, in, s.extra(0), null, HClass.Void);
+		Quad q1 = new OPER(qf, in, Qop.ACMPEQ, s.extra(0), 
+				   new Temp[] { s.stack(0), s.extra(0) });
+		Quad q2 = new CJMP(qf, in, s.extra(0), new Temp[0]);
+		Quad.addEdges(new Quad[] { q0, q1, q2 });
+
 		int iffalse=0, iftrue=1;
-		if (in.getOpcode()==Op.IFNONNULL) { // invert things
+		if (opcode == Op.IFNONNULL) { // invert things
 		    iffalse=1; iftrue=0;
 		}
-		q = q0;
+		q = q0; last = q2;
 		r = new TransState[] {
-		    new TransState(ns, in.next()[0], q1, iffalse),
-		    new TransState(ns, in.next()[1], q1, iftrue)
+		    new TransState(ns, in.next(0), q2, iffalse),
+		    new TransState(ns, in.next(1), q2, iftrue)
 		};
 		break;
 	    }
@@ -1517,11 +1610,11 @@ class Translate  { // not public.
 	case Op.IF_ICMPGT:
 	case Op.IF_ICMPLE:
 	    {
-		byte opcode = in.getOpcode();
 		State ns;
 
 		boolean invert = false;
-		int op=-1;
+		boolean swap   = false;
+		int op;
 		switch (opcode) {
 		case Op.IFNE:
 		case Op.IF_ICMPNE:
@@ -1530,12 +1623,13 @@ class Translate  { // not public.
 		case Op.IF_ICMPEQ:
 		    op = Qop.ICMPEQ;
 		    break;
-		case Op.IFLT:
-		case Op.IF_ICMPLT:
-		    invert = true;
 		case Op.IFGE:
 		case Op.IF_ICMPGE:
-		    op = Qop.ICMPGE;
+		    invert = true;
+		case Op.IFLT:
+		case Op.IF_ICMPLT:
+		    swap = true;
+		    op = Qop.ICMPGT;
 		    break;
 		case Op.IFLE:
 		case Op.IF_ICMPLE:
@@ -1544,236 +1638,162 @@ class Translate  { // not public.
 		case Op.IF_ICMPGT:
 		    op = Qop.ICMPGT;
 		    break;
-		default: Util.assert(false);
+		default: throw new Error("Impossible!");
 		}
 		if (opcode>=Op.IFEQ && opcode<=Op.IFLE) {
 		    ns = s.pop();
-		    q = new OPER(qf, in, op, ns.extra(0),
-				 new Temp[] { s.stack(0), SS.Tzero });
+		    q = new CONST(qf, in, s.extra(0),
+				  new Integer(0), HClass.Int);
+		    last = new OPER(qf, in, op, ns.extra(0),
+				    swap
+				    ?new Temp[] { s.extra(0), s.stack(0) }
+				    :new Temp[] { s.stack(0), s.extra(0) });
+		    Quad.addEdge(q, 0, last, 0);
 		} else {
 		    ns = s.pop(2);
 		    q = new OPER(qf, in, op, ns.extra(0),
-				 new Temp[] { s.stack(1), s.stack(0) } );
+				 swap
+				 ?new Temp[] { s.stack(0), s.stack(1) }
+				 :new Temp[] { s.stack(1), s.stack(0) } );
+		    last = q;
 		}
-		Quad Qc = new CJMP(qf, in, q.def()[0], new Temp[0]);
-		Quad.addEdge(q, 0, Qc, 0);
+		Quad Qc = new CJMP(qf, in, ns.extra(0), new Temp[0]);
+		Quad.addEdge(last, 0, Qc, 0);
 		r = new TransState[] {
-		    new TransState(ns, in.next()[0], Qc, invert?1:0),
-		    new TransState(ns, in.next()[1], Qc, invert?0:1)
+		    new TransState(ns, in.next(0), Qc, invert?1:0),
+		    new TransState(ns, in.next(1), Qc, invert?0:1)
 		};
+		last = Qc;
 		break;
 	    }
 	case Op.JSR:
 	case Op.JSR_W:
+	    {
+	    // reach jsr: assign number, make goto.
+	    //   for each known ret for target, translate from jsr.next(0).
+	    Instr target = in.next(1);
+	    State ns = s.pushRetAddr(target);
+	    ContInfo ci = s.contInfo();
+	    // encode the return address as an integer constant.
+	    int i = ci.recordJSR(in, target);
+	    q = new CONST(qf, in, ns.stack(0), new Integer(i), HClass.Int);
+	    // make transstates.
+	    Vector v = new Vector(2);
+	    // translate starting at jsr target.
+	    v.addElement(new TransState(ns, target, q, 0));
+	    // translate starting at return address.
+	    for (Enumeration e=ci.ret4target(target); e.hasMoreElements(); ) {
+		TransState ts0 = (TransState) e.nextElement();
+		NOP qq = new NOP(qf, in); // temporary header.
+		v.addElement(new TransState(ts0.initialState,in.next(0),qq,0));
+		ci.recordNOP(ts0, in, qq);
+	    }
+	    r = new TransState[v.size()]; v.copyInto(r);
+	    break;
+	    }
 	case Op.RET:
-	    Util.assert(false); // should be caught at higher level.
+	    {
+	    // in theory, only one possible subroutine. Find it.
+	    OpLocalVariable opd = ((InRet)in).getOperand();
+	    Instr target = s.getJSRtargetLV(opd.getIndex());
+	    Util.assert(target!=null, "Unable to determine RET subroutine.");
+	    // record ret, then translate from jsr.next for all jsrs to target
+	    ContInfo ci = s.contInfo();
+	    ci.recordRET(ts, target, s.lv(opd.getIndex()));
+	    // make transstates for previously unprocessed jsr returns.
+	    Vector v = new Vector(2);
+	    for (Enumeration e=ci.jsr4target(target); e.hasMoreElements(); ) {
+		Instr jsr = (Instr) e.nextElement();
+		NOP qq = new NOP(qf, in); // temporary header.
+		v.addElement(new TransState(ts.initialState,jsr.next(0),qq,0));
+		ci.recordNOP(ts, jsr, qq);
+	    }
+	    q = null; // defer translation.
+	    r = new TransState[v.size()]; v.copyInto(r);
+	    break;
+	    }
 	default:
 	    throw new Error("Unknown InCti: "+in.toString());
 	}
-	if (q!=null)
+	if (q!=null) {
 	    Quad.addEdge(ts.header, ts.which_succ, q, 0);
+	    s.recordHandler(in, q, last==null?q:last);
+	}
 	return r;
     }
 
-    /** Translate a throw instruction, taking the try context into account.*/
-    static final TransState[] transThrow(StaticState SS, TransState ts, 
-					 MergeMap handlers,
-					 boolean possiblyNull)
+    // Match array initializer
+    private static final TransState processArrayInitializers(TransState ts,
+							     HClass type)
     {
-	QuadFactory qf = SS.qf;
-	Vector rTS = new Vector();
-	State ns = ts.initialState.enterCatch();
-	Quad header = ts.header; int which_succ = ts.which_succ;
-	Temp Tex = ns.stack(0); // where the Exception is.
-	if (possiblyNull) {
-	    HClass hc = HClass.forClass(NullPointerException.class);
-	    // Handle 'throw null;':
-	    //   Exception Tex = stack.top();
-	    //   if (Tex == null) {
-	    //     try { Tex = new NullPointerException(); }
-	    //     catch (Throwable t) { Tex = t; }
-	    //   }
-	    Quad q2 = new OPER(qf, ts.in, Qop.ACMPEQ, ns.extra(0),
-			       new Temp[] { Tex, SS.Tnull } );
-	    Quad q3 = new CJMP(qf, ts.in, q2.def()[0], new Temp[0]);
-	    Quad q4 = new NEW(qf, ts.in, Tex, hc);
-	    Quad q5 = new CALL(qf, ts.in, hc.getConstructor(new HClass[0]),
-			       new Temp[] { Tex }, null /*retval*/,
-			       ns.extra(0)/*exception*/, false /*virtual*/);
-	    Quad q6 = new OPER(qf, ts.in, Qop.ACMPEQ, ns.extra(1),
-			       new Temp[] { q5.def()[0], SS.Tnull } );
-	    Quad q7 = new CJMP(qf, ts.in, q6.def()[0], new Temp[0]);
-	    Quad q8 = new MOVE(qf, ts.in, Tex, q5.def()[0]);
-	    Quad q9 = new PHI(qf, ts.in, new Temp[0], 3);
-	    // Link these:
-	    Quad.addEdge(header, which_succ, q2, 0);
-	    Quad.addEdge(q2, 0, q3, 0);
-	    Quad.addEdge(q3, 0, q9, 0);
-	    Quad.addEdge(q3, 1, q4, 0);
-	    Quad.addEdge(q4, 0, q5, 0);
-	    Quad.addEdge(q5, 0, q6, 0);
-	    Quad.addEdge(q6, 0, q7, 0);
-	    Quad.addEdge(q7, 0, q9, 1);
-	    Quad.addEdge(q7, 1, q8, 0);
-	    Quad.addEdge(q8, 0, q9, 2);
-	    // Update state.
-	    header = q9; which_succ = 0;
-	}
-	// Now look up through the try blocks for potential handlers.
-	int i; for (i=0; i<SS.allTries.length; i++) {
-	    if (SS.allTries[i].inTry(ts.in)) {
-		Instr hI = SS.allTries[i].handler();
-		// expand phi.
-		PHI phi = handlers.getPhi(hI);
-		State phiState = handlers.getState(hI);
-		if (phi==null) {
-		    phi=new PHI(qf, hI, new Temp[0], 0);
-		    phiState = ns;
-		    // make a new TransState
-		    rTS.addElement(new TransState(ns, hI, phi, 0));
-		}
-		phi.grow(new Temp[0]);
-		handlers.put(hI, phi, phi.prev.length, phiState);
-
-		if (SS.allTries[i].caughtException()==null) { // catch any.
-		    for (int j=0; j < phiState.stackSize ; j++) {
-			if (phiState.stack(j) == null ||
-			    phiState.stack(j) == ns.stack(j)) continue;
-			Quad q1 = new MOVE(qf, ts.in, 
-					   phiState.stack(j), ns.stack(j));
-			Quad.addEdge(header, which_succ, q1, 0);
-			header = q1; which_succ = 0;
-		    }
-		    Quad.addEdge(header, which_succ, phi, phi.prev.length-1);
-		    break; // no more try processing.
-		} else {
-		    Quad q1 = new INSTANCEOF(qf, ts.in, phiState.extra(0), Tex,
-					     SS.allTries[i].caughtException());
-		    Quad q2 = new CJMP(qf, ts.in, q1.def()[0], new Temp[0]);
-		    // link quads.
-		    Quad.addEdge(header, which_succ, q1, 0);
-		    Quad.addEdge(q1, 0, q2, 0);
-		    // make renaming move statements.
-		    Quad Q = q2; int W = 1;
-		    for (int j=0; j < phiState.stackSize; j++) {
-			if (phiState.stack(j) == null ||
-			    phiState.stack(j) == ns.stack(j)) continue;
-			Quad q3 = new MOVE(qf, ts.in,
-					   phiState.stack(j), ns.stack(j));
-			Quad.addEdge(Q, W, q3, 0);
-			Q = q3; W = 0;
-		    }
-		    Quad.addEdge(Q, W, phi, phi.prev.length-1);
-		    header = q2; which_succ = 0;
-		}
-	    }
-	}
-	if (i==SS.allTries.length) { // didn't break early on 'catch any'
-	    // exception not caught in any try.  Throw it.
-	    Quad q = new THROW(qf, ts.in, Tex);
-	    Quad.addEdge(header, which_succ, q, 0);
-	    SS.footer().attach(q, 0);
-	}
-	// grok rTS into TransState[]
-	TransState[] r = new TransState[rTS.size()];
-	rTS.copyInto(r);
-	return r;
-    }
-    // takes a state to append to and returns the final quad.
-    static final Quad transNewException(StaticState SS, HClass exClass,
-					Temp Tex, TransState ts) {
-	QuadFactory qf = SS.qf;
+	Instr in = ts.in; // instruction after array creation.
 	State s = ts.initialState;
-	Instr in = ts.in;
-	Quad  header = ts.header;
-	int   which_succ = ts.which_succ;
+	HandlerSet hs = s.handlers(in);
+	Vector v = new Vector(); // array initializers.
+	int offset = 0;
+	// BASTORE takes integer args, stores in byte/boolean array.
+	if (type==HClass.Byte || type==HClass.Boolean) type=HClass.Int;
 
-	Quad q0 = new NEW(qf, in, Tex, exClass);
-	Quad q1 = new CALL(qf, in, exClass.getConstructor(new HClass[0]),
-			   new Temp[] { q0.def()[0] }, null /*retval*/,
-			   s.extra(0) /*ex*/, false /*virtual*/);
-	// check whether the constructor threw an exception.
-	Quad q2 = new OPER(qf, in, Qop.ACMPEQ, s.extra(1),
-			   new Temp[] { q1.def()[0], SS.Tnull } );
-	Quad q3 = new CJMP(qf, in, q2.def()[0], new Temp[0]);
-	Quad q4 = new MOVE(qf, in, Tex, q1.def()[0]);
-	Quad q5 = new PHI(qf, in, new Temp[0], 2);
-
-	Quad.addEdge(header, which_succ, q0, 0);
-	Quad.addEdges(new Quad[] { q0, q1, q2, q3, q4, q5 } );
-	Quad.addEdge(q3, 1, q5, 1);
-	return q5;
+	do { // iterate over initialization instructions.
+	    if (in.getOpcode() != Op.DUP) break; // in should be dup.
+	    Instr in1 = in.next(0); // iconst, bipush, sipush, or ldc
+	    if (extractConstType(in1) != HClass.Int) break;
+	    Instr in2 = in1.next(0); // constant value of array init.
+	    if (extractConstType(in2) != type) break;
+	    Instr in3 = in2.next(0); // ?astore
+	    if (!isXASTORE(in3)) break;
+	    // finally, check that all handlers are the same.
+	    if (!HandlerSet.equals(hs, s.handlers(in ))) break;
+	    if (!HandlerSet.equals(hs, s.handlers(in1))) break;
+	    if (!HandlerSet.equals(hs, s.handlers(in2))) break;
+	    if (!HandlerSet.equals(hs, s.handlers(in3))) break;
+	    // allow only sequential initializers.
+	    Number index = (Number) extractConst(in1).getValue();
+	    if (v.size()==0) offset=index.intValue();
+	    else if (index.intValue()!=offset+v.size()) break;
+	    // okay, this is element N of array initializer.
+	    v.addElement(extractConst(in2).getValue());
+	    in = in3.next(0);
+	} while (true);
+	if (v.size()==0) return ts;
+	// else...
+	Object[] oa = new Object[v.size()]; v.copyInto(oa);
+	Quad q=new ARRAYINIT(ts.initialState.qf(), ts.in,
+			     ts.initialState.stack(0), offset, type, oa);
+	Quad.addEdge(ts.header, ts.which_succ, q, 0);
+	s.recordHandler(ts.in, q, q); // record the proper hanlder.
+	return new TransState(ts.initialState, in, q, 0);
     }
-    static final TransState[] transNullCheck(StaticState SS, Temp Tobj,
-					     Quad q, MergeMap handlers,
-					     TransState ts) {
-	QuadFactory qf = SS.qf;
-	HClass HCex = HClass.forClass(NullPointerException.class);
-	State s = ts.initialState;
-
-	Quad q0 = new OPER(qf, ts.in, Qop.ACMPEQ, s.extra(0),
-			   new Temp[] { Tobj, SS.Tnull } );
-	Quad q1 = new CJMP(qf, ts.in, q0.def()[0], new Temp[0]);
-	Quad q2 = transNewException(SS, HCex, SS.Tex, 
-				    new TransState(s, ts.in, q1, 1));
-	TransState[] r = 
-	    transThrow(SS, new TransState(ts.initialState.push(SS.Tex), 
-					  ts.in, q2, 0),
-		       handlers, false);
-	// actual operation is q.
-	// link quads.
-	Quad.addEdge(ts.header, ts.which_succ, q0, 0);
-	Quad.addEdges(new Quad[] { q0, q1, q } );
-
-	return r;
+    private static final boolean isXASTORE(Instr in) {
+	byte opcode = in.getOpcode();
+	switch(opcode) {
+	case Op.BASTORE:
+	case Op.CASTORE:
+	case Op.DASTORE:
+	case Op.FASTORE:
+	case Op.IASTORE:
+	case Op.LASTORE:
+	case Op.SASTORE:
+	    return true;
+	default:
+	    return false;
+	}
     }
-    static final TransState[] transBoundsCheck(StaticState SS,
-					       Temp Tobj, Temp Tindex,
-					       Quad q, MergeMap handlers,
-					       TransState ts) {
-	QuadFactory qf = SS.qf;
-	// if (obj==null) throw new NullPointerException();
-	// if (0<=index && index<obj.length) do(q); /* actual operation */
-	// else throw new ArrayIndexOutOfBoundsException();
-
-	HClass HCnull = HClass.forClass(NullPointerException.class);
-	HClass HCoob  = HClass.forClass(ArrayIndexOutOfBoundsException.class);
-
-	State s = ts.initialState;
-
-	Quad q0 = new OPER(qf, ts.in, Qop.ACMPEQ, s.extra(0),
-			  new Temp[] { Tobj, SS.Tnull });
-	Quad q1 = new CJMP(qf, ts.in, q0.def()[0], new Temp[0]);
-	Quad q2 = transNewException(SS, HCnull, SS.Tex, 
-				    new TransState(s, ts.in, q1, 1));
-	// array bounds check.
-	Quad q3 = new OPER(qf, ts.in, Qop.ICMPGE, s.extra(0),
-			   new Temp[] { Tindex, SS.Tzero });
-	Quad q4 = new CJMP(qf, ts.in, q3.def()[0], new Temp[0]);
-	Quad q5 = new ALENGTH(qf, ts.in, s.extra(1), Tobj);
-	Quad q6 = new OPER(qf, ts.in, Qop.ICMPGT, s.extra(0),
-			   new Temp[] { q5.def()[0], Tindex });
-	Quad q7 = new CJMP(qf, ts.in, q6.def()[0], new Temp[0]);
-	Quad q8 = new PHI(qf, ts.in, new Temp[0], 2);
-	Quad q9 = transNewException(SS, HCoob, SS.Tex,
-				    new TransState(s, ts.in, q8, 0));
-	// throw exception if necessary.
-	Quad q10= new PHI(qf, ts.in, new Temp[0], 2);
-	TransState[] r = 
-	    transThrow(SS, new TransState(ts.initialState.push(SS.Tex), 
-					  ts.in, q10, 0),
-		       handlers, false);
-	// link.
-	Quad.addEdge(ts.header, ts.which_succ, q0, 0);
-	Quad.addEdges(new Quad[] { q0, q1, q3, q4, q8 } );
-	Quad.addEdge(q2, 0, q10,0);
-	Quad.addEdge(q4, 1, q5, 0);
-	Quad.addEdges(new Quad[] { q5, q6, q7 } );
-	Quad.addEdge(q7, 0, q8, 1);
-	Quad.addEdge(q7, 1, q,  0); /* actual operation, after bounds check */
-	Quad.addEdge(q9, 0, q10,1);
-	// done.
-	return r;
+    private static final OpConstant extractConst(Instr in) {
+	if (in instanceof InGen && in.getOpcode()!=Op.NEWARRAY) {
+	    Operand[] op = ((InGen)in).getOperands();
+	    if (op.length==1 && op[0] instanceof OpConstant)
+		return (OpConstant) op[0];
+	}
+	return null;
+    }
+    // BIPUSH and SIPUSH return odd type info.
+    private static final HClass extractConstType(Instr in) {
+	OpConstant opc = extractConst(in);
+	if (opc==null) return null;
+	if (in.getOpcode()==Op.BIPUSH || in.getOpcode()==Op.SIPUSH)
+	    return HClass.Int;
+	return opc.getType();
     }
 
     // Miscellaneous utility functions. ///////////////////////////
@@ -1784,15 +1804,5 @@ class Translate  { // not public.
 	if (hc == HClass.Long || hc == HClass.Double)
 	    return true;
 	return false;
-    }
-
-    /** Merge two TransState arrays. */
-    private static final TransState[] mergeTS(TransState[] a, TransState[] b) {
-	if (a.length==0) return b;
-	if (b.length==0) return a;
-	TransState[] r = new TransState[a.length + b.length];
-	System.arraycopy(a, 0, r, 0, a.length);
-	System.arraycopy(b, 0, r, a.length, b.length);
-	return r;
     }
 }

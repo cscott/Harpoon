@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * (ie, the 1-edge) is the innermost nested try-block.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: METHOD.java,v 1.1.2.2 1998-12-24 03:23:09 cananian Exp $
+ * @version $Id: METHOD.java,v 1.1.2.3 1998-12-27 21:26:55 cananian Exp $
  * @see HEADER
  * @see HANDLER
  */
@@ -52,6 +52,10 @@ public class METHOD extends Quad {
     public Temp params(int i) { return params[i]; }
     /** Returns the length of the <code>params</code> array. */
     public int  paramsLength() { return params.length; }
+
+    /** Determines whether the parameters defined in this <code>METHOD</code>
+     *  belong to a static method. */
+    public boolean isStatic() { return qf.getParent().getMethod().isStatic(); }
     
     /** Returns the <code>Temp</code>s defined by this <code>Quad</code>. */
     public Temp[] def() {
@@ -68,13 +72,6 @@ public class METHOD extends Quad {
     void renameDefs(TempMap tm) {
 	for (int i=0; i<params.length; i++)
 	    params[i] = tm.tempMap(params[i]);
-    }
-
-    /** Properly clone <code>params[]</code> array. */
-    public Object clone() {
-	METHOD q = (METHOD) super.clone();
-	q.params = (Temp[]) params.clone();
-	return q;
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

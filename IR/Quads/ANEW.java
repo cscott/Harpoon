@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>ANEW</code> represents an array creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ANEW.java,v 1.1.2.5 1998-12-24 03:23:08 cananian Exp $
+ * @version $Id: ANEW.java,v 1.1.2.6 1998-12-27 21:26:54 cananian Exp $
  * @see NEW
  * @see AGET
  * @see ASET
@@ -95,13 +95,6 @@ public class ANEW extends Quad {
      * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	dst = tm.tempMap(dst);
-    }
-
-    /** Properly clone <code>dims[]</code> array. */
-    public Object clone() {
-	ANEW q = (ANEW) super.clone();
-	q.dims = (Temp[]) dims.clone();
-	return q;
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

@@ -14,11 +14,13 @@ package harpoon.IR;
  * typically when the <code>Registration</code> class is loaded.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Registration.java,v 1.2.2.1 1998-12-01 12:36:38 cananian Exp $
+ * @version $Id: Registration.java,v 1.2.2.2 1998-12-27 21:26:54 cananian Exp $
  */
 
 public class Registration  {
     static {
+	harpoon.IR.Quads.QuadWithTry.register();
+	harpoon.IR.Quads.QuadNoSSA.register();
 	harpoon.IR.Quads.QuadSSA.register();
     }
 }

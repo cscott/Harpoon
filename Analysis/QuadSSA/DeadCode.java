@@ -20,7 +20,7 @@ import java.util.Hashtable;
  * unused and seeks to prove otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.11.2.5 1998-12-11 23:04:56 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.11.2.6 1998-12-27 21:26:53 cananian Exp $
  */
 
 public abstract class DeadCode  {
@@ -65,10 +65,8 @@ public abstract class DeadCode  {
 	// Finally, do all the necessary renaming
 	Quad[] hce = (Quad[]) hc.getElements(); // put them all in an array.
 	// evil: can't replace the header node. [ack]
-	// even more evil: replacing the footer means that the header points
-	//       to the wrong footer.  So skip both of them. [grumble]
 	for (int i=0; i<hce.length; i++)
-	    if (!(hce[i] instanceof FOOTER) && !(hce[i] instanceof HEADER))
+	    if (!(hce[i] instanceof HEADER))
 		Quad.replace(hce[i], hce[i].rename(nm));
 
     } // end OPTIMIZE METHOD.
@@ -228,6 +226,9 @@ public abstract class DeadCode  {
 	    if (usefound)
 		markUseful(q);
 	}
+	public void visit(ARRAYINIT q) { // always useful.
+	    markUseful(q);
+	}
 	public void visit(CALL q) {
 	    // CALLs may have side-effects, thus they are always useful (conservative)
 	    markUseful(q);
@@ -240,16 +241,16 @@ public abstract class DeadCode  {
 	    // process sigmas normally.
 	    visit((SIGMA)q);
 	}
-	public void visit(SIGMA q) {
-	    // Sigmas are useful iff one of the definitions is useful.
-	    for (int i=0; i<q.numSigmas(); i++) {
-		if (useful.contains(q.src(i))) continue; //skip already useful sigs.
-		for (int j=0; j<q.arity(); j++)
-		    if (useful.contains(q.dst(i,j))) // this one's (newly) useful.
-			markUseful(q.src(i));
-	    }
+	public void visit(FOOTER q) { // always useful.
+	    markUseful(q);
+	}
+	public void visit(HANDLER q) { // ACK! never should find.
+	    Util.assert(false, "DeadCode doesn't work with HANDLERs.");
 	}
 	public void visit(HEADER q) { // always useful.
+	    markUseful(q);
+	}
+	public void visit(METHOD q) { // always useful.
 	    markUseful(q);
 	}
 	public void visit(MONITORENTER q) { // always useful.
@@ -280,6 +281,15 @@ public abstract class DeadCode  {
 	}
 	public void visit(SET q) { // always useful.
 	    markUseful(q);
+	}
+	public void visit(SIGMA q) {
+	    // Sigmas are useful iff one of the definitions is useful.
+	    for (int i=0; i<q.numSigmas(); i++) {
+		if (useful.contains(q.src(i))) continue; //skip already useful sigs.
+		for (int j=0; j<q.arity(); j++)
+		    if (useful.contains(q.dst(i,j))) // this one's (newly) useful.
+			markUseful(q.src(i));
+	    }
 	}
 	public void visit(SWITCH q) {
 	    // I'm too lazy to see if the switch actually does anything, so assume

@@ -8,7 +8,7 @@ package harpoon.IR.Quads;
  * <code>OPER</code> opcodes.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Qop.java,v 1.1.2.3 1998-12-11 12:18:20 cananian Exp $
+ * @version $Id: Qop.java,v 1.1.2.4 1998-12-27 21:26:55 cananian Exp $
  */
 public abstract class Qop  {
     public final static int ACMPEQ = 0;
@@ -45,7 +45,6 @@ public abstract class Qop  {
     public final static int IADD = 31;
     public final static int IAND = 32;
     public final static int ICMPEQ = 33;
-    public final static int ICMPGE = 34;
     public final static int ICMPGT = 35;
     public final static int IDIV = 36;
     public final static int IMUL = 37;
@@ -63,7 +62,6 @@ public abstract class Qop  {
     public final static int LADD = 49;
     public final static int LAND = 50;
     public final static int LCMPEQ = 51;
-    public final static int LCMPGE = 52;
     public final static int LCMPGT = 53;
     public final static int LDIV = 54;
     public final static int LMUL = 55;
@@ -116,7 +114,6 @@ public abstract class Qop  {
         case IADD:	return "iadd";
         case IAND:	return "iand";
         case ICMPEQ:	return "icmpeq";
-        case ICMPGE:	return "icmpge";
         case ICMPGT:	return "icmpgt";
         case IDIV:	return "idiv";
         case IMUL:	return "imul";
@@ -134,7 +131,6 @@ public abstract class Qop  {
         case LADD:	return "ladd";
         case LAND:	return "land";
         case LCMPEQ:	return "lcmpeq";
-        case LCMPGE:	return "lcmpge";
         case LCMPGT:	return "lcmpgt";
         case LDIV:	return "ldiv";
         case LMUL:	return "lmul";
@@ -190,7 +186,6 @@ public abstract class Qop  {
         h.put("iadd", new Integer(IADD));
         h.put("iand", new Integer(IAND));
         h.put("icmpeq", new Integer(ICMPEQ));
-        h.put("icmpge", new Integer(ICMPGE));
         h.put("icmpgt", new Integer(ICMPGT));
         h.put("idiv", new Integer(IDIV));
         h.put("imul", new Integer(IMUL));
@@ -208,7 +203,6 @@ public abstract class Qop  {
         h.put("ladd", new Integer(LADD));
         h.put("land", new Integer(LAND));
         h.put("lcmpeq", new Integer(LCMPEQ));
-        h.put("lcmpge", new Integer(LCMPGE));
         h.put("lcmpgt", new Integer(LCMPGT));
         h.put("ldiv", new Integer(LDIV));
         h.put("lmul", new Integer(LMUL));

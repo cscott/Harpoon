@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * is the first parameter in the <code>params</code> array.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.6 1998-12-24 03:23:09 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.7 1998-12-27 21:26:54 cananian Exp $ 
  */
 public class CALL extends Quad {
     /** The method to invoke. */
@@ -168,13 +168,6 @@ public class CALL extends Quad {
 	    retval = tm.tempMap(retval);
 	if (retex!=null)
 	    retex  = tm.tempMap(retex);
-    }
-
-    /** Properly clone <code>params[]</code> array. */
-    public Object clone() {
-	CALL q = (CALL) super.clone();
-	q.params = (Temp[]) params.clone();
-	return q;
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

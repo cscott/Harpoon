@@ -1,4 +1,4 @@
-// Code.java, created Fri Aug  7 13:45:29 1998 by cananian
+// QuadSSA.java, created Fri Aug  7 13:45:29 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
@@ -16,44 +16,34 @@ import harpoon.Util.Util;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSA.java,v 1.1.2.3 1998-12-17 21:38:37 cananian Exp $
+ * @version $Id: QuadSSA.java,v 1.1.2.4 1998-12-27 21:26:55 cananian Exp $
  */
 public class QuadSSA extends Code /* which extends HCode */ {
     /** The name of this code view. */
     public static final String codename = "quad-ssa";
 
     /** Creates a <code>Code</code> object from a bytecode object. */
-    QuadSSA(harpoon.IR.Bytecode.Code bytecode) 
+    QuadSSA(QuadNoSSA qns) 
     {
-	super(bytecode.getMethod(), null);
-	quads = Translate.trans(bytecode, this);
-	CleanUp.cleanup(this); // cleanup null predecessors of phis.
-	//Peephole.optimize(this); // peephole optimizations.
+	super(qns.getMethod(), null);
+	quads = Quad.clone(qf, qns.quads);
 	FixupFunc.fixup(this); // add phi/sigma functions.
 	DeadCode.optimize(this); // get rid of unused phi/sigmas.
     }
     /** 
      * Create a new code object given a quadruple representation
-     * of the method instructions.  If <code>addPhi</code> is true,
-     * adds phi and sigma functions to the <code>PHI</code> and
-     * <code>SIGMA</code> quads in the representations.
+     * of the method instructions.
      */
-    public QuadSSA(HMethod parent, Quad quads, boolean addPhi) {
+    private QuadSSA(HMethod parent, Quad quads) {
 	super(parent, quads);
-	// if addPhi, check that phis and sigmas are empty?
-	if (addPhi)
-	    FixupFunc.fixup(this);
-	DeadCode.optimize(this);
-    }
-    /** Same as above; with <code>addPhi==false</code>. */
-    public QuadSSA(HMethod parent, Quad quads) {
-	this(parent, quads, false);
     }
 
     /** Clone this code representation. The clone has its own
      *  copy of the quad graph. */
     public HCode clone(HMethod newMethod) {
-	return new QuadSSA(newMethod, Quad.clone(quads));
+	QuadSSA qs = new QuadSSA(newMethod, null);
+	qs.quads = Quad.clone(qs.qf, quads);
+	return qs;
     }
 
     /**
@@ -65,8 +55,8 @@ public class QuadSSA extends Code /* which extends HCode */ {
     public static void register() {
 	HCodeFactory f = new HCodeFactory() {
 	    public HCode convert(HMethod m) {
-		HCode c = m.getCode("bytecode");
-		return (c==null)?null:new QuadSSA((harpoon.IR.Bytecode.Code)c);
+		HCode c = m.getCode(QuadNoSSA.codename);
+		return (c==null)?null:new QuadSSA((QuadNoSSA)c);
 	    }
 	    public String getCodeName() {
 		return codename;

@@ -4,6 +4,8 @@
 package harpoon.IR.Quads;
 
 import harpoon.ClassFile.*;
+import harpoon.Temp.Temp;
+import harpoon.Temp.TempFactory;
 import harpoon.Util.Set;
 import harpoon.Util.Util;
 import harpoon.Util.ArrayFactory;
@@ -19,16 +21,27 @@ import java.util.Vector;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.3 1998-12-18 04:49:59 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.4 1998-12-27 21:26:54 cananian Exp $
  */
 abstract class Code extends HCode {
     /** The method that this code view represents. */
-    HMethod parent;
+    final HMethod parent;
     /** The quadruples composing this code view. */
     Quad quads;
+    /** Quad factory. */
+    final QuadFactory qf;
 
-    Code(HMethod parent, Quad quads) {
+    Code(final HMethod parent, final Quad quads) {
 	this.parent = parent; this.quads = quads;
+	final String scope = parent.getDeclaringClass().getName() + "." +
+	    parent.getName() + parent.getDescriptor() + "/" + getName();
+	this.qf = new QuadFactory() {
+	    private final TempFactory tf = Temp.tempFactory(scope);
+	    private int id=0;
+	    public TempFactory tempFactory() { return tf; }
+	    public Code getParent() { return Code.this; }
+	    synchronized int getUniqueID() { return id++; }
+	};
     }
     
     /** Clone this code representation. The clone has its own
