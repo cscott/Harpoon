@@ -216,8 +216,8 @@ class Color implements TempMap {
       /** Degree(v) should be >> K for precolored nodes, but we don't
        *  actually keep the adjacency info for precolored nodes around,
        *  so opt out of the test instead. [CSA] */
-      if ( (NodeMoves(v)==null) && (Degree(v) < K)
-	   && !sets.precolored.contains(v)) {
+      if (!sets.precolored.contains(v) &&
+	  (NodeMoves(v)==null) && (Degree(v) < K) ) {
 	Util.assert(sets.worklist.freeze.contains(v));
 	sets.worklist.freeze.remove(v);
 	sets.worklist.simplify.add(v);
