@@ -10,19 +10,32 @@ import java.util.Set;
 
 /**
  * <code>CALL</code> objects are statements which stand for 
- * non-native method calls.
+ * java method invocations, using our runtime's calling convention.
+ * <p>
+ * The <code>retex</code> expression should typically be a
+ * <code>Tree.NAME</code> specifying the label to which we should return
+ * from this call if an exception occurs.  It is possible that 
+ * <code>retex</code> specify an arbitrary expression instead, but the
+ * usefulness of this is questionable and so this is strongly
+ * discouraged.
+ * <p>
+ * Upon an exception in the callee, execution is returned at the
+ * location specified by <code>retex</code> with the exception object
+ * thrown placed in the location specified by <code>retval</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.15 1999-08-03 22:32:27 cananian Exp $
+ * @version $Id: CALL.java,v 1.1.2.16 1999-08-03 22:53:48 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
  */
 public class CALL extends INVOCATION {
-    /** Expression indicating the destination of the exception value. */
+    /** Expression indicating the destination to which we should return
+     *  if our caller throws an exception. */
     public Exp retex;
 
+    /** Create a <code>CALL</code> object. */
     public CALL(TreeFactory tf, HCodeElement source,
 		Exp retval, Exp retex, Exp func, ExpList args) {
 	super(tf, source, retval, func, args);
