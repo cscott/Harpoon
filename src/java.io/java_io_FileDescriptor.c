@@ -13,7 +13,7 @@ static int inited = 0;
 static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
-int initializeFD(JNIEnv *env) {
+static int initializeFD(JNIEnv *env) {
 #ifdef WITH_HEAVY_THREADS
     pthread_mutex_lock(&init_mutex);
     // other thread may win race to lock and init before we do.

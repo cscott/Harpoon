@@ -17,7 +17,7 @@ static int inited = 0; /* whether the above variables have been initialized */
 static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
-int initializeFOS(JNIEnv *env) {
+static int initializeFOS(JNIEnv *env) {
     jclass FOSCls, FDCls;
 
 #ifdef WITH_HEAVY_THREADS
