@@ -99,10 +99,10 @@ public class Timer extends Node {
 
 	    // The time since the last image passed through this node
 	    if(lastTimeCalled != 0){
-		rateStats.add(System.currentTimeMillis() - lastTimeCalled);
+		rateStats.add(time - lastTimeCalled);
 	    }
 	}
-	lastTimeCalled = System.currentTimeMillis();
+	lastTimeCalled = time;
 	super.process(id);
     }
 }
