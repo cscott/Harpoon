@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.26 2002-07-24 23:59:33 cananian Exp $
+% $Id: ptran.tex,v 1.27 2002-07-25 00:08:45 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.26 $ $}
+\date{\today \\ $ $Revision: 1.27 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -359,7 +359,7 @@ analysis scope.
 unanalyzed method invocation sites that a node escapes down into.
 \item $s:(O\cup I)\to 2^S_\bot$ labels companion edges with an
   associated set of mutually-singular store statements.  A
-  non-companion edge $e\in O\cup I$ has $s(e)=\bot$.
+  non-companion edge $x\in O\cup I$ has $s(x)=\bot$.
 \item $r \subseteq N$ is a return set representing the set of objects
 that may be returned by the currently analyzed method.
 \end{itemize}
