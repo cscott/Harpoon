@@ -1,9 +1,12 @@
 package harpoon.IR.Tree;
 
+import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
+import harpoon.IR.Properties.Derivation;
 import harpoon.Util.ArrayFactory;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
@@ -13,10 +16,13 @@ import java.util.NoSuchElementException;
 import java.util.Stack;
 import java.util.Vector;
 
-public abstract class Code extends HCode
+public abstract class Code extends HCode 
+  implements Derivation, TypeMap
 {
   /** The Tree Objects composing this code view. */
   protected Tree tree;
+  /** The Frame containing machine-specific information*/
+  protected final Frame frame;
   /** Tree factory. */
   protected final TreeFactory tf;
   /** The method that this code view represents. */
@@ -28,28 +34,31 @@ public abstract class Code extends HCode
       final String scope = parent.getDeclaringClass().getName() + "." +
 	parent.getName() + parent.getDescriptor() + "/" + getName();
       return new TreeFactory() {
-	/* NEEDS TO BE FIXED */
 	private final TempFactory tFact = Temp.tempFactory(scope);
 	private int id=0;
-	public TempFactory tempFactory() { return tFact; }
-	public Frame getFrame() { return null; }
+	// Everyone uses same TempFactory now.
+	public TempFactory tempFactory() { return frame.tempFactory(); }
+	public Frame getFrame()  { return frame; }
 	public HCode getParent() { return Code.this; }
 	public synchronized int getUniqueID() { return id++; }
-	public String toString() { return null; }
+	public String toString() { 
+	  return "TreeFactory["+getParent().toString()+"]"; 
+	}
       };
     }
 
   /** constructor. */
-  protected Code(final HMethod parent, final Tree tree)
+  protected Code(final HMethod parent, final Tree tree, final Frame frame)
     {
       this.parent = parent;
       this.tree   = tree;
+      this.frame  = frame;
       this.tf     = newTF(parent);
     }
   
   /** Clone this code representation. The clone has its own copy
    *  of the Tree */
-  public abstract HCode  clone(HMethod newMethod);
+  public abstract HCode  clone(HMethod newMethod, Frame frame);
 
   /** Return the name of this code view. */
   public abstract String getName();
@@ -170,4 +179,7 @@ public abstract class Code extends HCode
     {
       throw new Error("Tree printing is not yet implemented");
     }
+
+  public abstract DList derivation(HCodeElement hce, Temp t);
+  public abstract HClass typeMap(HCode hc, Temp t);
 }
