@@ -19,7 +19,7 @@ import harpoon.ClassFile.HClass;
  * steps to be deemed worthwhile.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Qop.java,v 1.1.2.12 2000-01-30 23:27:13 cananian Exp $
+ * @version $Id: Qop.java,v 1.1.2.13 2000-11-12 01:27:26 cananian Exp $
  */
 public abstract class Qop  {
     /** Compares references for equality. */
@@ -58,7 +58,7 @@ public abstract class Qop  {
     public final static int F2L = 15;
     /** Computes the sum of two float values. */
     public final static int FADD = 16;
-    /** Evaluates to true if the float values are equal and neither in NaN,
+    /** Evaluates to true if the float values are equal and neither is NaN,
      *  or false otherwise. */
     public final static int FCMPEQ = 17;
     /** Evaluates to true if the first float value is greater than or equal
