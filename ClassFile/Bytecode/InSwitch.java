@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>key</code> method.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InSwitch.java,v 1.2 1998-08-05 00:52:24 cananian Exp $
+ * @version $Id: InSwitch.java,v 1.3 1998-09-02 23:33:34 cananian Exp $
  * @see Instr
  */
 public class InSwitch extends InCti {
@@ -45,21 +45,18 @@ public class InSwitch extends InCti {
 	keys[i+1]=low+i;
     } else throw new Error("InSwitch constructor given invalid opcode.");
   }
-  int key(int index) {
+  /** 
+   * Returns the case key corresponding to the given branch target index.<p>
+   * <code>InSwitch.key(n)</code> corresponds to 
+   * <code>InSwitch.next()[n]</code> for 
+   * <code>0<n<InSwitch.next().length</code>.
+   * @exception Error if the default target or
+   *                  an instruction not corresponding to a target is given.
+   */
+  public int key(int index) {
     if (index<0) throw new Error("Invalid key lookup index.");
     if (index==0) throw new Error("No key for default target.");
     return keys[index];
-  }
-  /** Returns the case key corresponding to the given branch target.
-   *  @exception Error if the default target or
-   *                   an instruction not corresponding to a target is given.
-   */
-  public int key(Instr target) {
-    Instr[] targets = next();
-    for (int i=0; i<targets.length; i++)
-      if (target==targets[i])
-	return key(i);
-    throw new Error("Invalid key lookup instruction.");
   }
   /** Return human-readable instruction string. */
   public String toString() {
@@ -84,3 +81,8 @@ public class InSwitch extends InCti {
   /** Make integer from <i>unsigned</i> byte. */
   int u1(byte[] code, int pc) { return ((int)code[pc])&0xFF; }
 }
+
+// set emacs indentation style.
+// Local Variables:
+// c-basic-offset:2
+// End:
