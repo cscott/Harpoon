@@ -132,8 +132,15 @@ public class Command extends Node {
     public static final int FRAME_RATE_UP = 306;
     public static final int FRAME_RATE_DOWN = 307;
 
+    public static final int SET_CONTRAST = 310;
+    public static final int SET_GAIN = 311;
+    public static final int SET_BRIGHTNESS = 312;
+    public static final int SET_FRAME_RATE = 313;
+
     public static final int TIME_UP = 330;
     public static final int TIME_DOWN = 331;
+
+    public static final int SET_TIME = 332;
 
     public static final int BACKWARD_SPEED_UP = 340;
     public static final int BACKWARD_SPEED_DOWN = 341;
@@ -141,7 +148,14 @@ public class Command extends Node {
     public static final int FORWARD_SPEED_DOWN = 343;
     public static final int INTERRUPT_TIME_UP = 350;
     public static final int INTERRUPT_TIME_DOWN = 351;
- 
+    public static final int TURN_AMOUNT_UP = 352;
+    public static final int TURN_AMOUNT_DOWN = 353;
+    
+    public static final int SET_BACKWARD_SPEED = 360;
+    public static final int SET_FORWARD_SPEED = 361;
+    public static final int SET_INTERRUPT_TIME = 362;
+    public static final int SET_TURN_AMOUNT = 363;
+
     public static final int IS_TANK = 400;
     public static final int IS_NOT_TANK = 401;
 
