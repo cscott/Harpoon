@@ -8,6 +8,8 @@ import java.util.Enumeration;
 import java.util.Set;
 import java.util.HashSet;
 
+import java.lang.reflect.Modifier;
+
 import harpoon.IR.Quads.CALL;
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Temp.Temp;
@@ -25,7 +27,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.21 2000-03-30 05:14:07 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.22 2000-03-30 10:31:02 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -59,6 +61,17 @@ abstract class InterProcPA {
 					       CALL q,
 					       ParIntGraph pig_before,
 					       PointerAnalysis pa){
+
+	if(DEBUG){
+	    System.out.println("Inter-procedural analysis");
+	    System.out.println(" " + q + "\n");
+	}
+
+	// treat specially some native methods
+	ParIntGraphPair pair = treatNatives(pa, q, pig_before);
+	if(pair != null)
+	    return pair;
+
 	MetaCallGraph mcg = pa.getMetaCallGraph();
 	NodeRepository node_rep = pa.getNodeRepository(); 
 	MetaMethod[] mms = mcg.getCallees(current_mmethod,q);
@@ -66,10 +79,11 @@ abstract class InterProcPA {
 
 	if(nb_callees == 0){
 	    if(WARNINGS){
-		System.out.print("Error: CALL site with no callee! ");
-		System.out.print(current_mmethod);
-		System.out.println(" " + q);
+		System.out.println("Warning: CALL site with no callee! ");
+		System.out.println("Warning:  " + current_mmethod);
+		System.out.println("Warning:  " + q);
 	    }
+
 	    // I count on the fact that if a call site has 0 callees, it 
 	    // means that it doesn't occur in practice (some classes are not
 	    // instantiated, not because the call graph is buggy!
@@ -78,18 +92,13 @@ abstract class InterProcPA {
 	    //return skip_call(q,pig_before,node_rep);
 	}
 
-	if(DEBUG){
-	    System.out.println("Inter-procedural analysis");
-	    System.out.println(" " + q + "\n");
-	}
-
 	ParIntGraph pigs[] = new ParIntGraph[nb_callees];
 	for(int i = 0; i < nb_callees; i++){
 	    HMethod hm = mms[i].getHMethod();
 	    // TODO: the second part of the test is for debug only
 	    if(!PointerAnalysis.analyzable(hm) ||
 	       hm.getName().equals("unanalyzed"))
-		return skip_call(q,pig_before,node_rep);
+		return skip_call(q, pig_before, node_rep);
 	    else
 		pigs[i] = pa.getExtParIntGraph(mms[i], false);
 	}
@@ -177,9 +186,11 @@ abstract class InterProcPA {
 	for(int i = 0; i < params.length; i++)
 	    S_M.addAll(pig_caller.G.I.pointedNodes(params[i]));
 	// Update the escape information
+	//  1. all the parameters are directly escaping into the method hole
 	for(Iterator it = S_M.iterator(); it.hasNext(); )
-	    pig_caller.G.e.addMethodHole((PANode)it.next(),q);
-	// propagate the new escape information
+	    pig_caller.G.e.addMethodHole((PANode)it.next());
+	    //pig_caller.G.e.addMethodHole((PANode)it.next(),q);
+	//  2. propagate the new escape information
 	pig_caller.G.propagate(S_M);
 
 	// clone the graph: we will have two distinct versions of it:
@@ -197,6 +208,7 @@ abstract class InterProcPA {
 	    pig_caller.G.I.removeEdges(l_R);
 	    PANode n_R = node_rep.getCodeNode(q, PANode.RETURN);
 	    pig_caller.G.I.addEdge(l_R, n_R);
+	    pig_caller.G.e.addMethodHole(n_R);
 	}
 
 	// Set the edges for the exception node in graph 1.
@@ -205,6 +217,7 @@ abstract class InterProcPA {
 	    pig_caller1.G.I.removeEdges(l_E);
 	    PANode n_E = node_rep.getCodeNode(q, PANode.EXCEPT);
 	    pig_caller1.G.I.addEdge(l_E, n_E);
+	    pig_caller1.G.e.addMethodHole(n_E);
 	}
 
 	return new ParIntGraphPair(pig_caller, pig_caller1);
@@ -548,14 +561,127 @@ abstract class InterProcPA {
 	    });
     }
 
+    // Treats some native methods in a special way. Returns a pair of
+    // ParIntGraphs or null if it cannot handle this call.
+    private static ParIntGraphPair treatNatives(PointerAnalysis pa, CALL q,
+						ParIntGraph pig_before){
+
+	HMethod hm = q.method();
+	if(hm != null) return null;
+	
+	int mod = hm.getModifiers();
+	if(!Modifier.isNative(hm.getModifiers())) return null;
+
+	ParIntGraphPair pair = treat_arraycopy(pa, q, pig_before);
+	if(pair != null) return pair;
+
+	pair = treat_fillInStackTrace(pa, q, pig_before);
+	if(pair != null) return pair;
+
+	pair = treat_setPriority0(pa, q, pig_before);
+	return pair;
+    }
+
+    // treat specially "public static native void java.lang.System.arraycopy
+    // (Object src, int, Object dst, int, int);
+    // We hope that we really know what arraycopy does ...
+    private static ParIntGraphPair treat_arraycopy(PointerAnalysis pa, CALL q,
+						   ParIntGraph pig_before){
+	HMethod hm = q.method();
+	if(!hm.getName().equals("arraycopy") ||
+	   !hm.getDeclaringClass().getName().equals("java.lang.System"))
+	    return null;
+
+	//if(DEBUG)
+	    System.out.println(q + "is treated specially (arraycopy)");
+
+	// the conventional field name used for the array's entries
+	final String f = PointerAnalysis.ARRAY_CONTENT;
+
+	Temp l_src = q.params(0);
+	Temp l_dst = q.params(2);
+
+	Set dst_set = pig_before.G.I.pointedNodes(l_dst);
+
+	Set src_set = pig_before.G.I.pointedNodes(l_src);
+	Set set_S = 
+	    pig_before.G.I.pointedNodes(src_set, f);
+
+	Set set_E = new HashSet();
+	for(Iterator it = src_set.iterator(); it.hasNext(); ){
+	    PANode node = (PANode) it.next();
+	    if(pig_before.G.e.hasEscaped(node))
+		set_E.add(node);
+	}
+
+	NodeRepository node_rep = pa.getNodeRepository();
+
+	if(set_E.isEmpty())
+	    pig_before.G.I.addEdges(dst_set, f, set_S);
+	else{
+	    PANode load_node = node_rep.getCodeNode(q, PANode.LOAD);
+
+	    pig_before.G.O.addEdges(set_E, f, load_node);
+	    pig_before.eo.add(set_E, f, load_node, pig_before.G.I);
+
+	    set_S.add(load_node);
+	    pig_before.G.I.addEdges(dst_set, f, set_S);
+
+	    pig_before.G.propagate(set_E);
+
+	    // update the action repository
+	    Set active_threads = pig_before.tau.activeThreadSet();
+	    for(Iterator it_E = set_E.iterator(); it_E.hasNext(); )
+		pig_before.ar.add_ld((PANode) it_E.next(), f, load_node,
+				     ActionRepository.THIS_THREAD,
+				     active_threads);
+	}
+
+	ParIntGraph pig_after1 = (ParIntGraph) pig_before.clone();
+	// Set the edges for the exception node in graph 1.
+	Temp l_E = q.retex();
+	if(l_E != null){
+	    pig_after1.G.I.removeEdges(l_E);
+	    PANode n_E = node_rep.getCodeNode(q, PANode.EXCEPT);
+	    pig_after1.G.I.addEdge(l_E, n_E);
+	    pig_after1.G.e.addMethodHole(n_E);
+	}
+	return new ParIntGraphPair(pig_before, pig_after1);	
+    }
+
+
+    // special treatment for
+    // "public native Throwable java.lang.Throwable.fillInStackTrace()"
+    private static ParIntGraphPair 
+	treat_fillInStackTrace(PointerAnalysis pa, CALL q, 
+			       ParIntGraph pig_before){
+	HMethod hm = q.method();
+	if(!hm.getName().equals("fillInStackTrace") ||
+	   !hm.getDeclaringClass().getName().equals("java.lang.Throwable"))
+	    return null;
+
+	//if(DEBUG)
+	    System.out.println(q + "is treated specially (fillInStackTrace)");
+	
+	return new ParIntGraphPair(pig_before, pig_before);
+    }
+
+    // special treatment for 
+    // "private native void java.lang.Thread.setPriority0(int)"
+    private static ParIntGraphPair
+	treat_setPriority0(PointerAnalysis pa, CALL q,
+			   ParIntGraph pig_before){
+
+	HMethod hm = q.method();
+	if(!hm.getName().equals("setPriority0") ||
+	   !hm.getDeclaringClass().getName().equals("java.lang.Thread"))
+	    return null;
+
+	//	if(DEBUG)
+	    System.out.println(q + "is treated specially (setPriority0)"); 
+
+	return new ParIntGraphPair(pig_before, pig_before);
+    }
+
 }// end of the class
-
-
-
-
-
-
-
-
-
 

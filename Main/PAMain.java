@@ -62,7 +62,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.30 2000-03-30 05:14:11 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.31 2000-03-30 10:31:19 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -72,6 +72,10 @@ public abstract class PAMain {
     private static boolean SMART_CALL_GRAPH = false;
     // debug the class hierarchy
     private static boolean SHOW_CH = false;
+
+    // load the meta call graph from a file.
+    private static boolean LOAD_MCG = false;
+    private static String MCG_FILE_NAME = "";
 
     // show the call graph
     private static boolean SHOW_CG = false;
@@ -105,6 +109,7 @@ public abstract class PAMain {
 	"-s, --smart    uses the SmartCallGrapph",
 	"-d, --dumb     uses the simplest CallGraph (default)",
 	"-c, --showch   shows debug info about ClassHierrachy",
+	"-l file        load a precomputed MetaCallGraph from a file",
 	"--showcg       shows the (meta) call graph",
 	"--showsplit    shows the split relation",
 	"--shownodes    shows details about the nodes",
@@ -330,7 +335,7 @@ public abstract class PAMain {
     
 	pa.print_stats();
 
-	if(HOLE_STATS) hole_stats(pa);
+	// if(HOLE_STATS) hole_stats(pa);
     }
     
     private static void display_method(Method method){
@@ -414,7 +419,7 @@ public abstract class PAMain {
 	longopts[11] = new LongOpt("holestats", LongOpt.NO_ARGUMENT, null, 13);
 	
 
-	Getopt g = new Getopt("PAMain", argv, "mscoa:i", longopts);
+	Getopt g = new Getopt("PAMain", argv, "l:mscoa:i", longopts);
 
 	while((c = g.getopt()) != -1)
 	    switch(c){
@@ -435,6 +440,11 @@ public abstract class PAMain {
 		break;
 	    case 'i':
 		DO_INTERACTIVE_ANALYSIS = true;
+		break;
+	    case 'l':
+		LOAD_MCG = true;
+		SMART_CALL_GRAPH = false;
+		METAMETHODS = false;
 		break;
 	    case 5:
 		arg = g.getOptarg();
@@ -479,6 +489,8 @@ public abstract class PAMain {
 	}
 	System.out.print("Execution options:");
 
+	if(LOAD_MCG)
+	    System.out.print(" Unsupported yet! LOAD_MCG");
 	if(METAMETHODS)
 	    System.out.print(" METAMETHODS");
 	if(SMART_CALL_GRAPH)
@@ -509,6 +521,12 @@ public abstract class PAMain {
 
 	if(HOLE_STATS)
 	    System.out.print(" HOLE_STATS");
+
+	if(DO_ANALYSIS)
+	    System.out.print(" DO_ANALYSIS");
+
+	if(DO_INTERACTIVE_ANALYSIS)
+	    System.out.print(" DO_INTERACTIVE_ANALYSIS");
 
 	System.out.println();
     }
@@ -604,9 +622,10 @@ public abstract class PAMain {
 	System.out.println("===================================");
     }
 
+    /*
     // displays the set of method holes from the analyzed program
     private static void hole_stats(PointerAnalysis pa){
-
+	 
 	System.out.println("HOLE STARTISTICS STARTED:");
 
 	MetaCallGraph mcg = pa.getMetaCallGraph();
@@ -656,6 +675,7 @@ public abstract class PAMain {
 	    System.out.println("  " + (HMethod) it.next());
 	System.out.println("==========================================");
     }
+    */
 
     // extract the method roots from the set of all the roots
     // (methods and classes)
@@ -670,4 +690,5 @@ public abstract class PAMain {
     }
 
 }
+
 
