@@ -5,6 +5,7 @@ package harpoon.IR.LowQuad;
 
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Maps.FinalMap;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
@@ -21,14 +22,11 @@ import java.util.Hashtable;
  * <code>Code</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.7 1999-02-07 10:33:31 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.8 1999-02-08 17:25:09 duncan Exp $
  */
 public abstract class Code extends harpoon.IR.Quads.Code 
     implements harpoon.IR.Properties.Derivation
 {
-    /** Hashtable to implement derivation map. */
-    protected final Hashtable hD = new Hashtable();
-
     /** Make the quad factory. */
     protected harpoon.IR.Quads.QuadFactory newQF(final HMethod parent) {
 	final String scope = parent.getDeclaringClass().getName() + "." +
@@ -48,4 +46,6 @@ public abstract class Code extends harpoon.IR.Quads.Code
 
     /** Implement derivation interface. */
     public abstract DList derivation(HCodeElement hce, Temp t);
+
+    public abstract HClass typeMap(Temp t);
 }

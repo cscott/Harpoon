@@ -1,5 +1,7 @@
 package harpoon.IR.LowQuad;
 
+import harpoon.Analysis.Maps.TypeMap;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
@@ -7,7 +9,9 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.ToNoSSA;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 
 import java.util.Enumeration;
@@ -16,10 +20,13 @@ import java.util.Hashtable;
 /**
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.7 1999-02-07 10:52:54 cananian Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.8 1999-02-08 17:25:09 duncan Exp $
  */
 public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
 {
+  private Derivation m_derivation;
+  private TypeMap    m_typeMap;
+
   /** The name of this code view. */
   public static final String codename  = "low-quad-no-ssa";
 
@@ -27,13 +34,15 @@ public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
   LowQuadNoSSA(LowQuadSSA code)
     {
       super(code.getMethod(), null);
-      for (Enumeration e = code.hD.keys(); e.hasMoreElements();) {
-	Object next = e.nextElement();
-	hD.put(e.nextElement(), code.hD.get(next));
-      }
-      quads    = ToNoSSA.translate(qf, hD, code); 
+      
+      ToNoSSA translator;
+      
+      translator   = new ToNoSSA(qf, code, code);
+      quads        = translator.getQuads();
+      m_derivation = translator;
+      m_typeMap    = translator;
     }
-
+  
   /**
    * Create a new code object given a quadruple representation of the
    * method instructions.
@@ -101,6 +110,11 @@ public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
 
   public DList derivation(HCodeElement hce, Temp t)
     {
-      throw new Error("Not yet implemented.");
+      return m_derivation.derivation(hce, t);
+    }
+
+  public HClass typeMap(Temp t)
+    {
+      return m_typeMap.typeMap(this, t);
     }
 }
