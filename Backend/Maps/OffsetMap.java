@@ -4,13 +4,15 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HClass;
 
+import harpoon.Temp.Label;
+
 /**
  * An <code>OffsetMap</code> maps an <code>HField</code> or an 
  * <code>HMethod</code> to an offset in bytes.  It also reports the
  * total size of an <code>HClass</code> object.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: OffsetMap.java,v 1.1.2.5 1999-01-23 08:25:29 cananian Exp $
+ * @version $Id: OffsetMap.java,v 1.1.2.6 1999-01-23 08:28:15 cananian Exp $
  */
 public abstract class OffsetMap // use an abstract class, if we can.
 {
