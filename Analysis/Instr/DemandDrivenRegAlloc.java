@@ -25,7 +25,7 @@ import java.util.HashMap;
     <code>Instr</code>s in a <code>Code</code>.
 
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.4 1999-06-03 01:46:45 pnkfelix Exp $ 
+    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.5 1999-06-11 04:23:54 pnkfelix Exp $ 
 */
 public class DemandDrivenRegAlloc extends RegAlloc {
 
@@ -124,7 +124,7 @@ public class DemandDrivenRegAlloc extends RegAlloc {
 	*/
 
 
-	return null;
+	return code;
     }
     
 
