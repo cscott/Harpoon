@@ -36,11 +36,13 @@ CoercePredicate::CoercePredicate(bool b, Predicate *p) {
   rule=true;
   coercebool=b;
   predicate=p;
+#ifdef REPAIR
   if((p->gettype()==PREDICATE_EQ1||
       p->gettype()==PREDICATE_GTE1)&&coercebool==false) {
     printf("Possible forcing size predicate to be false.  Error!\n");
     exit(-1);
   }
+#endif
 }
 
 Predicate * CoercePredicate::getpredicate() {

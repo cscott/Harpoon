@@ -453,6 +453,8 @@ Element * evaluatevalueexpr(Valueexpr *ve, Hashtable *env, model *m) {
     e=(Element *) env->get(ve->getlabel()->label());
   } else
     e=evaluatevalueexpr(ve->getvalueexpr(),env,m);
+  if (e==NULL)
+    return e;
   if (ve->getinverted())
     return (Element *)m->getdomainrelation()->getrelation(ve->getrelation()->getname())->getrelation()->invgetobj(e);
   else
