@@ -53,16 +53,16 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.25 2000-08-21 22:56:58 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.26 2000-08-22 01:08:42 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
-    private static final boolean TIME = true;
+    private static final boolean TIME = false;
 
     private static final boolean RESULTS = false;
 
     private static final boolean STATS = false;
-    
+
     public static RegAlloc.Factory FACTORY =
 	new RegAlloc.Factory() {
 	    public RegAlloc makeRegAlloc(Code c) {
@@ -121,6 +121,19 @@ public class GraphColoringRegAlloc extends RegAlloc {
     List regWebRecords; // List<RegWebRecord>
     
     GraphColorer colorer;
+
+    private WebRecord getWR(Instr i, Temp t) {
+	if (isRegister(t)) {
+	    for(Iterator ri=regWebRecords.iterator();ri.hasNext();){ 
+		WebRecord r = (WebRecord)ri.next();
+		if (r.temp().equals(t)) 
+		    return r;
+	    }
+	    return null;
+	} else {
+	    return (WebRecord) ixtToWeb.get(Default.pair(i,t)); 
+	}
+    }
 
     /** Creates a <code>GraphColoringRegAlloc</code>, assigning `gc'
 	as its graph coloring strategy. 
@@ -198,13 +211,12 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	if (TIME) System.out.println();
 
 	do {
-	    buildRegAssigns();
-	    rdefs = new ReachingDefsAltImpl(code);
-	    liveTemps = LiveTemps.make(code, rfi.liveOnExit());
-	    ixtToWeb = new HashMap();
-	    ixtToWebPreCombine = new HashMap();
-
 	    do {
+		buildRegAssigns();
+		rdefs = new ReachingDefsAltImpl(code);
+		liveTemps = LiveTemps.make(code, rfi.liveOnExit());
+		ixtToWeb = new HashMap();
+		ixtToWebPreCombine = new HashMap();
 
 		if (TIME) System.out.println("Making Webs");
 
@@ -217,6 +229,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		}
 		for(Iterator is=code.getElementsI(); is.hasNext();){
 		    Instr i = (Instr) is.next();
+		    
 		    for(Iterator ts=i.defC().iterator(); ts.hasNext();) {
 			Temp t = (Temp) ts.next();
 			if (! isRegister(t) ) {
@@ -644,9 +657,59 @@ public class GraphColoringRegAlloc extends RegAlloc {
     // indicating the definition type and doing the necessary
     // replacement... temp remapping should look cleaner...
     private boolean coalesceRegs(AdjMtx adjMtx) { 
+	HashSet willRemove = new HashSet();
 	
+	// ANALYZE
+	EqTempSets remap = EqTempSets.make(this, false);
+	for(Iterator is=code.getElementsI(); is.hasNext();) {
+	    Instr i = (Instr) is.next();
+	    if (i instanceof harpoon.IR.Assem.InstrMOVE) {
+		WebRecord w1 = getWR(i, i.use()[0]);
+		WebRecord w2 = getWR(i, i.def()[0]);
+		if (!w1.conflictsWith(w2)) {
+		    
+		    // System.out.println("Removed " + i);
+		    if (i.def()[0].equals(i.use()[0])) {
+			// skip (nothing special to update)
+			willRemove.add(i);
+		    } else if (isRegister(i.def()[0])) {
+			// remap.associate(i.use()[0], i.def()[0]);
+		    } else if (isRegister(i.use()[0])) {
+			// remap.associate(i.def()[0], i.use()[0]);
+		    } else {
+			remap.union(i.def()[0], i.use()[0]);
+			willRemove.add(i);
+		    }
+		}
+	    }
+	}
 
-	return false;
+	// TRANSFORM
+	for(Iterator is=code.getElementsI(); is.hasNext();) {
+	    Instr i= (Instr) is.next();
+	    if (willRemove.contains(i)) {
+		i.remove();
+	    } else {
+		boolean replace = false;
+		Iterator itr = new
+		    CombineIterator(i.useC().iterator(),
+				    i.defC().iterator());
+		while(itr.hasNext()) {
+		    Temp t = (Temp) itr.next();
+		    if (!remap.tempMap(t).equals(t)) {
+			replace = true;
+			break;
+		    }
+		}
+		
+		if (replace) 
+		    Instr.replace(i, i.rename(remap));
+	    }
+	}
+
+	if (!willRemove.isEmpty()) 
+	    System.out.print("R:"+willRemove.size());
+	return !willRemove.isEmpty();
 	/*
 	int i, j, k, l, p, q;
 	Instr inst, pqinst;

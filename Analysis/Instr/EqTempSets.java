@@ -29,9 +29,9 @@ import java.util.HashSet;
  *  called the Representative (or Rep for short).
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: EqTempSets.java,v 1.1.2.6 2000-07-19 11:18:00 pnkfelix Exp $
+ * @version $Id: EqTempSets.java,v 1.1.2.7 2000-08-22 01:08:42 pnkfelix Exp $
  */
-public abstract class EqTempSets {
+public abstract class EqTempSets implements harpoon.Temp.TempMap {
     
     /** Constructs and returns a new <code>EqTempSets</code>.  The
 	returned <code>EqTempSets</code> will have a usable toString()
@@ -81,6 +81,12 @@ public abstract class EqTempSets {
 	}
     }
     
+    public Temp tempMap(Temp t) {
+	Temp r = getReg(t);
+	if (r == null) r = getRep(t);
+	return r;
+    }
+
     // optional operation that makes the sets in this immutable.
     void lock() { return; }
     

@@ -69,7 +69,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.113 2000-08-09 20:39:47 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.114 2000-08-22 01:08:42 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -1674,18 +1674,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 
     }
 
-    class HTempMap 
-	extends harpoon.Util.Collections.GenericInvertibleMap 
-	implements harpoon.Temp.TempMap {
-	public Temp tempMap(Temp t) {
-	    return (Temp) this.get(t);
-	}
-	public Object get(Object key) {
-	    Object o = super.get(key);
-	    return (o == null) ? key : o;
-	}
-    }
-	
     public List list(Temp t) {
 	return Arrays.asList( new Temp[]{ t } );
     }
