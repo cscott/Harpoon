@@ -8,8 +8,7 @@ cd $HERE
 source ./sourceme
 cd $HERE/../Code
 rm -rf as*
-JAVA="java -server" PRECISEC_CFLAGS="-O9" bin/build-precisec -F -Dharpoon.inline.arraycopy=true $@
-cd $HERE/../Runtime
+JAVA="java -server" PRECISEC_CFLAGS="-O9" CLASSPATH=.:$CLASSPATH FLEXPATH=$HERE:$FLEXPATH bin/build-precisec -F -Dharpoon.inline.arraycopy=true $@
 strip run*
 mv run* $HERE
 
