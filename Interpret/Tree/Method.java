@@ -20,6 +20,7 @@ import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.CONST;
+import harpoon.IR.Tree.DATA;
 import harpoon.IR.Tree.Edge;
 import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.EXP;
@@ -35,6 +36,7 @@ import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.NATIVECALL;
 import harpoon.IR.Tree.OPER;
 import harpoon.IR.Tree.RETURN;
+import harpoon.IR.Tree.SEGMENT;
 import harpoon.IR.Tree.SEQ;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TEMP;
@@ -61,7 +63,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.8 1999-08-09 22:00:22 duncan Exp $
+ * @version $Id: Method.java,v 1.1.2.9 1999-08-09 22:38:32 duncan Exp $
  */
 public final class Method extends HCLibrary {
     static PrintWriter out = new java.io.PrintWriter(System.out);
@@ -409,6 +411,10 @@ public final class Method extends HCLibrary {
 	    if (DEBUG) db("Visiting: " + e);
 	    sf.update(e, e.value);
 	}
+
+	public void visit(DATA e) { 
+	    throw new Error("Should not have encountered a DATA node");
+	}
 	
 	public void visit(EXP e)  { 
 	    if (DEBUG) db("Visiting: " + e);
@@ -565,6 +571,10 @@ public final class Method extends HCLibrary {
 	    q.retval.visit(this);
 	    Tret = sf.get(q.retval);
 	    done = true;
+	}
+
+	public void visit(SEGMENT s) { 
+	    advance(0);  // Don't use SEGMENT nodes in the interpreter
 	}
 
         public void visit(SEQ e) { 
