@@ -759,6 +759,44 @@ sub rcs_pathname_and_revision {
             $checked_out_revision);
 }
 
+sub update_with_local_mods {
+    my ($pathname, @text) = @_;
+    my @diffs;
+    return @text if !open(CVSDIFF, "cvs -flnq diff -n $pathname |");
+    @diffs = <CVSDIFF>;
+    close(CVSDIFF);
+    # stolen from parse_cvs_file and tweaked for my nefarious purposes [CSA].
+    my $adjust = 0;  my $i = 0;
+    $i++ until $i > $#diffs || $diffs[$i] =~ /^diff\s/; # skip header info.
+    for ($i++; $i <= $#diffs; $i++) {
+        my $command = $diffs[$i];
+        if ($command =~ /^d(\d+)\s(\d+)$/) { # Delete command
+            my ($start_line, $count) = ($1, $2);
+            splice(@revision_map, $start_line + $adjust - 1, $count);
+            splice(@text, $start_line + $adjust - 1, $count);
+            $adjust -= $count;
+        } elsif ($command =~ /^a(\d+)\s(\d+)$/) { # Add command
+            my ($start_line, $count) = ($1, $2);
+            $skip = $count;
+            my @temp1; my @temp2; $#temp1 = -1; $#temp2 = -1;
+            while ($count--) {
+                push(@temp1, "LOCAL");
+                push(@temp2, $diffs[++$i]);
+            }
+            splice(@revision_map, $start_line + $adjust, 0, @temp1);
+            splice(@text,         $start_line + $adjust, 0, @temp2);
+            $adjust += $skip;
+        } else {
+            die "Error parsing diff commands";
+        }
+    }
+    # annotate 'author' of this revision...
+    my $whoami = `whoami`; chomp($whoami);
+    $revision_author{"LOCAL"} = $whoami;
+    # ok, done.
+    return @text;
+}
+
 sub show_annotated_cvs_file {
     my ($pathname) = @_;
     my (@output) = ();
@@ -767,6 +805,12 @@ sub show_annotated_cvs_file {
 
     @text = &extract_revision($revision);
     die "$progname: Internal consistency error" if ($#text != $#revision_map);
+
+    # update with local modifications unless a) a (presumably non-local)
+    # revision was explicitly specified on the command-line, or b) the user
+    # asked us not to (with the -n option)
+    @text = &update_with_local_mods($pathname, @text)
+        unless (defined($opt_r) || $opt_n);
 
     # Set total width of line annotation.
     # Warning: field widths here must match format strings below.
@@ -835,12 +879,13 @@ sub usage {
 "      -w                 Don't annotate all-whitespace lines\n",
 "      -m <# days>        Only annotate lines modified within last <# days>\n",
 "      -q                 Suppress original text (just print annotation)\n",
+"      -n                 Don't show local modifications\n",
 "      -h                 Print help (this message)\n\n",
 "   (-a -v assumed, if none of -a, -v, -A, -d supplied)\n"
 ;
 }
 
-&usage if (!&getopts('r:m:Aadhlvwq'));
+&usage if (!&getopts('r:m:Aadhlvwqn'));
 &usage if ($opt_h);             # help option
 
 $multiple_files_on_command_line = 1 if ($#ARGV != 0);
