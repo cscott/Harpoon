@@ -1,5 +1,7 @@
 #!/bin/bash
-g++ -c SimpleHash.cc
-g++ -c tmap.cc
-g++ -c instrument.cc
-gcc -c libredblack/redblack.c
+g++ -g -c SimpleHash.cc
+g++ -g -c tmap.cc
+g++ -g -c instrument.cc
+gcc -g -c libredblack/redblack.c
+gcc -g -c stack.c
+g++ -g -c size.cc

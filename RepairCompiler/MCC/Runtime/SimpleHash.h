@@ -135,11 +135,11 @@ class SimpleIterator {
       if (cur->nextarray==0 &&
 	  index==table->tailindex)
 	return 0;
-      index++;
       if (index==ARRAYSIZE) {
 	index=0;
 	cur=cur->nextarray;
-      }
+      } else
+	index++;
     }
     if (cur->nodes[index].inuse)
       return 1;

@@ -74,6 +74,7 @@ int SimpleList::contains(int data) {
 WorkList::WorkList() {
   head=(struct ListNode *) malloc(sizeof(struct ListNode));
   tail=head;
+  head->next=0;
   headoffset=0;
   tailoffset=0;
 }
@@ -126,6 +127,7 @@ void WorkList::add(int id,int type, int lvalue, int rvalue) {
     head->next=(struct ListNode *)malloc(sizeof(struct ListNode));
     headoffset=0;
     head=head->next;
+    head->next=0;
   }
   head->data[headoffset++]=id;
   head->data[headoffset++]=type;
