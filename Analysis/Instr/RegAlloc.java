@@ -81,7 +81,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.128 2001-07-07 19:14:41 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.129 2001-08-03 01:19:50 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -510,6 +510,7 @@ public abstract class RegAlloc  {
 				    false?LOCAL:GLOBAL);
     }
     public static final Factory GLOBAL = GraphColoringRegAlloc.FACTORY;
+    // public static final Factory GLOBAL = AppelRegAlloc.FACTORY;
     public static final Factory LOCAL = LocalCffRegAlloc.FACTORY;
 
     static  class MyCode extends Code 

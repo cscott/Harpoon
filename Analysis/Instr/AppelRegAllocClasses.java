@@ -24,7 +24,7 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.13 2001-07-24 15:13:41 pnkfelix Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.14 2001-08-03 01:19:50 pnkfelix Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public static final boolean CHECK_INV = false;
@@ -104,7 +104,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
     String interferenceGraphString() {
 	StringBuffer sb = new StringBuffer();
 	sb.append("** BEGIN GRAPH **\n");
-	for(Iterator nodes = allNodes.iterator(); nodes.hasNext(); ){
+	for(Iterator nodes = allNodes(); nodes.hasNext(); ){
 	    Node n = (Node) nodes.next();
 	    sb.append(n);
 	    sb.append(", neighbors:[");
@@ -201,8 +201,11 @@ abstract class AppelRegAllocClasses extends RegAlloc {
     }
 
 
-    // these sets collectively partition the space of Nodes
     void initializeNodeSets() {
+	nextId = 1;	
+	allNodes = new ArrayList();
+
+	// these sets collectively partition the space of Nodes
 	precolored        = new NodeSet("precolored");
 	initial           = new NodeSet("initial");
 	simplify_worklist = new NodeSet("simplify_worklist");
@@ -387,6 +390,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 
 	void remove(Node n) {
 	    checkRep();
+	    Util.assert(this != precolored, "can't remove regs from precolored");
 	    Util.assert(n.s_rep == this, 
 			this.name + 
 			" tried to remove a node that is in "+
@@ -407,11 +411,12 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	    // If select_stack is going to be implemented as a
 	    // NodeSet, .add(..) needs to "push" Nodes on FRONT of
 	    // set, not the end.
-
+	    
 	    checkRep();
 	    Util.assert(n.s_prev == n);
 	    Util.assert(n.s_next == n);	    
 	    Util.assert(n.s_rep == null);
+	    Util.assert(n.s_rep != precolored, "can't add regs from precolored");
 
 	    Util.assert(! n.locked, "node "+n+" should not be locked" );
 
@@ -549,12 +554,12 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	}
 	public HashSet pairs() {
 	    HashSet prs = new HashSet();
-	    for(int i=0; i<off; i++) {
-		for(int j=0; j<off; j++) {
+	    for(int i=1; i<off; i++) {
+		for(int j=1; j<off; j++) {
 		    if (bs.get(off*i+j)) {
 			prs.add(Default.pair
-				( allNodes.get(i),
-				  allNodes.get(j) ));
+				( getNode(i),
+				  getNode(j) ));
 		    }
 		}
 	    }
@@ -638,9 +643,14 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	}
     }
 
-    int nextId = 1;
-    ArrayList allNodes = new ArrayList();
-    final class Node {
+    // these are setup in initializeNodeSets()
+    private int nextId;
+    private ArrayList allNodes;
+    protected Node getNode(int i) { return (Node) allNodes.get(i-1); }
+    private void addNode(Node n) { allNodes.add(n); }
+    protected Iterator allNodes() { return allNodes.iterator(); }
+
+    protected final class Node {
 	final int id;
 
 	// prev and next pointers for this node's set
@@ -677,8 +687,10 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	// special case for dummy nodes (for which 'w == null')
 	public Node(Web w) { 
 	    id = nextId; nextId++; s_prev = s_next = this; web = w;
-	    allNodes.add(this);
-	} 
+
+	    addNode(this); 
+	    Util.assert(getNode(this.id) == this, this);
+	}
 
 	public Node(NodeSet which, Web w) { 
 	    this(w); 

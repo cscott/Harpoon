@@ -46,7 +46,9 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
     }
 
     protected Node makePrecolored(Temp t) {
+	Util.assert( rfi().isRegister(t) );
 	Node n = super.makePrecolored(t);
+	Util.assert( n.isPrecolored() );
 	webToNode.put(n.web, n );
 	return n;
     }
@@ -56,6 +58,8 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
 	return a;
     }
     protected void makeInitial(Temp t)    { 
+	Util.assert( ! rfi().isRegister(t) );
+
 	int slots = rfi().occupancy( t );
 	for(Iterator webs=tempToWebs.getValues(t).iterator(); webs.hasNext();){
 	    Web web = (Web) webs.next();
@@ -99,6 +103,20 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
 	    
 	}
 
+	// introduce interferences due to RegFileInfo.illegal(Temp)
+	// (this code is unnecessarily ugly though)
+	for(Iterator nodes=allNodes(); nodes.hasNext(); ){
+	    Node n = (Node) nodes.next();
+	    if (n.web != null) {
+		Collection badRegsC = rfi().illegal(n.web.temp);
+		Iterator badRegs = badRegsC.iterator();
+		while(badRegs.hasNext()) {
+		    Temp badReg = (Temp) badRegs.next();
+		    Node regNode = (Node) webToNode.get(tempToWebs.get(badReg));
+		    addEdge( n, regNode );
+		}
+	    }
+	}
     }
     
     protected void addEdge( Node u, Node v ) {
@@ -113,11 +131,13 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
 	    adjSet.add(v,u);
 	    
 	    if( ! u.isPrecolored() ){
+		Util.assert(!rfi().isRegister(u.web.temp), u.web.temp);
 		u.neighbors.add(v);
 		u.degree += rfi().pressure( u.web.temp, v.web.temp );
 		checkNBRs(u);
 	    }
 	    if( ! v.isPrecolored() ){
+		Util.assert(!rfi().isRegister(v.web.temp), v.web.temp);
 		v.neighbors.add(u);
 		v.degree += rfi().pressure( v.web.temp, u.web.temp );
 		checkNBRs(v);
@@ -234,7 +254,9 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
 	    } else {
 		colored_nodes.add(n);
 		for(int i=0; i<n.color.length; i++) {
-		    n.color[i] = colorFor( (Temp) regL.get(i) );
+		    Temp reg = (Temp) regL.get(i);
+		    Util.assert( ! rfi().illegal(n.web.temp).contains(reg) );
+		    n.color[i] = colorFor( reg );
 		}
 	    }
 	}

@@ -52,7 +52,7 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.1.2.15 2001-07-24 09:29:35 pnkfelix Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.1.2.16 2001-08-03 01:19:49 pnkfelix Exp $
  */
 public abstract class AppelRegAlloc extends AppelRegAllocClasses {
     public static final boolean PRINT_DEPTH_TO_SPILL_INFO = true;
@@ -227,16 +227,24 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
     }
 
     void buildWebToNodes() { 
+checkPrecolored();
 	for(Iterator regs=rfi().getAllRegistersC().iterator();regs.hasNext();){
 	    Temp reg = (Temp) regs.next();
 	    makePrecolored(reg);
 	}
+checkPrecolored();
 	for(Iterator temps=tempToWebs.keySet().iterator(); temps.hasNext();){
 	    Temp temp = (Temp) temps.next();
 	    if( ! isRegister(temp) ) {
 		makeInitial( temp );
+	    } else {
+    Util.assert( nodesFor( (Web) tempToWebs.get( temp ) ).size() == 1);
+    Util.assert( ((Node)nodesFor
+		  ( (Web) tempToWebs.get( temp ) ).get(0)).isPrecolored() );
 	    }
+checkPrecolored();
 	}
+checkPrecolored();
     }
     
     
@@ -246,9 +254,9 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 
     // Invariants that hold post Build, see Appel pg 254
     public void checkInv() {
-	if( ! CHECK_INV ) {
-	    return; 
-	}
+	if( ! CHECK_INV ) return; 
+
+	checkPrecolored();
 	checkMoveSets();
 	checkDisjointInv();
 	checkDegreeInv();
@@ -256,8 +264,19 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 	checkFreezeWorklistInv();
 	checkSpillWorklistInv();
 
+    }
+
+    public void checkPrecolored() {
+	if (!CHECK_INV) return;
+
 	for(NodeIter ni=precolored.iter(); ni.hasNext();){
 	    Util.assert(ni.next().isPrecolored());
+	}
+	for(Iterator nodes=allNodes(); nodes.hasNext(); ){
+	    Node n = (Node) nodes.next();
+	    if (n.web == null) continue;
+	    Util.assert(n.isPrecolored() || !rfi().isRegister( n.web.temp ) , n );
+	    Util.assert(!n.isPrecolored() || rfi().isRegister( n.web.temp ) , n );
 	}
     }
 
@@ -468,6 +487,16 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 	    preAnalysis();
 	    buildTempToWebs();
 	    buildWebToNodes();
+	
+// Tracking down MIPS failure
+for(Iterator regs=rfi().getAllRegistersC().iterator();regs.hasNext();){
+    Temp reg = (Temp) regs.next();
+    Util.assert( nodesFor( (Web) tempToWebs.get( reg ) ).size() == 1);
+    Util.assert( ((Node)nodesFor
+		  ( (Web) tempToWebs.get( reg ) ).get(0)).isPrecolored() );
+}
+checkPrecolored();
+	    
 	    adjSet = makeNodePairSet();
 	    
 	    // Appel's real code begins here
@@ -607,7 +636,7 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 	if (CHECK_INV) 
 	    Check.liveSetsAreConsistent
 		( code, bbFact, grapher, usedefer, liveTemps, rfi().liveOnExit() );
-	if (CHECK_INV) // TODO need to fix that r0 def at outset thing
+	if (false && CHECK_INV) // TODO need to fix that r0 def at outset thing
 	    Check.allLiveVarsHaveDefs
 		( code, bbFact, grapher, usedefer, rdefs, liveTemps );
 
@@ -1026,7 +1055,7 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 	if (try_to_clean && 
 	    rewriteCalledNumTimes == NUM_CLEANINGS_TO_TRY) {
 	    stopTryingToClean();
-	    initializeSets();
+	    // initializeSets();
 	    bbFact = computeBasicBlocks();
 	    return;
 	} 
@@ -1068,7 +1097,7 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 	    System.out.println();
 	}
 
-	initializeSets();
+	// initializeSets();
 	bbFact = computeBasicBlocks();
     }
 
@@ -1208,7 +1237,9 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 
     int precolor;
     protected Node makePrecolored(Temp reg) { 
-	Web w = addWeb(reg, Collections.EMPTY_SET, Collections.EMPTY_SET);
+	Util.assert( rfi().isRegister(reg) );
+	Web w = new Web(reg, Collections.EMPTY_SET, Collections.EMPTY_SET);
+	tempToWebs.put(reg,w);
 	Node n = new Node(precolored, w); 
 	n.color[0] = precolor;
 	n.degree = Integer.MAX_VALUE;
@@ -1225,7 +1256,6 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
     // resets the state in preparation for a coloring attempt
     protected void initializeSets() {
 	precolor = 0;
-	nextId = 0;	
 	initializeNodeSets();
 	initializeMoveSets();
 	sh.reset();

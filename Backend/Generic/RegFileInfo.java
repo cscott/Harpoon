@@ -9,6 +9,7 @@ import harpoon.Temp.TempFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,7 @@ import java.util.Iterator;
     together before mapping them to Physical Register Temps.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.37 2001-07-08 20:15:24 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.38 2001-08-03 01:20:12 pnkfelix Exp $ */
 public abstract class RegFileInfo {
 
     /** Defines function from 
@@ -214,7 +215,9 @@ public abstract class RegFileInfo {
 	will return a <code>Collection</code> containing all of the
 	registers in the other register banks.
     */
-    public Collection illegal(Temp t) { return null; }
+    public Collection illegal(Temp t) { 
+	return Collections.EMPTY_SET;
+    }
     
     /** Returns all of the available registers on this architecture. */
     public Collection allRegs() { return getAllRegistersC(); }
