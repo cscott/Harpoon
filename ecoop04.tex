@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: ecoop04.tex,v 1.4 2003-12-02 10:46:31 cananian Exp $
+% $Id: ecoop04.tex,v 1.5 2003-12-08 09:08:04 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[runningheads]{csallncs}
 %\usepackage{times}
@@ -37,7 +37,7 @@ Cambridge, MA 02139 \\
 }
 \special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.4 $ $}
+%\date{\today \\ $ $Revision: 1.5 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -472,7 +472,7 @@ synchronized block, while such updates will never be visible to an
 
 Despite the differences in semantics, the automatic substitution of
 {\tt atomic} for {\tt synchronized} does, in fact, preserve the
-correctness of the SPECjvm98 benchmarks we've examined.  Moreover, as
+correctness of the benchmarks we've examined.  Moreover, as
 mentioned in \secref{stringbuffer}, it
 fixes the synchronization issue with {\tt java.lang.StringBuffer}.
 
@@ -486,66 +486,65 @@ it.  Imagine unsynchronized code directly altering the length field of
 {\tt StringBuffer.append()} method appear non-atomic.
 
 \subsecput{properties}{Properties of Transactions}
-\epsfigput{tr-w-all}{Transactional writes to large objects.}
-\epsfigput{tr-w-ten}{Transactional writes to large objects. Note that
-  the scale as been changed; full scale on the y-axis is 10\% of the writes.}
-\epsfigput{tr-sz-all}{Transaction size distribution.}
-See \figref{tr-w-all} and \figref{tr-w-ten}.
-See also \figref{tr-sz-all}.
-\note{Write me!}
-
 This section examines the implications of exposing the transaction
-mechanism to user-level code through a compiler.  We implemented
-standard Java monitor synchronization with transactions and found that
-the applications in the SPECjvm98 benchmark suite performed both large
-transactions (touching up to 8.9 million cache lines) and frequent
-transactions (up to 45 million of them).
-
-\punt{
-We compiled the SPECjvm98 benchmark suite with a modified Java
-compiler \note{Cite the FLEX java compiler [Flex] in the final
-paper.} which translates standard Java \texttt{synchronized} blocks
-into \texttt{atomic} blocks \cite{FlanaganQa03,HarrisFr03}.%
-\footnote{Although the semantics of the program change slightly with
-this transformation, the effect tends to be consistent with the
-programmer's original intent~\cite{FlanaganQa03}.}  Nested, or
+mechanism to user-level code through a compiler.
+We compiled the SPECjvm98 benchmark suite with the FLEX Java compiler
+\cite{Flex},
+modified to turn synchronized blocks and methods into transactions,
+in order to investigate the properties of the transactions in such
+``automatically converted'' code.
+Nested, or
 possibly nested, \texttt{atomic} blocks were implemented with a single
 transaction around the shallowest-nested \texttt{atomic} region.  We
-then instrumented this transformed program to produce a trace of
-memory references and transaction boundaries, and ran those traces
-through the simulator described in \secref{method}.
-}
+instrumented this transformed program to produce a trace of
+memory references and transaction boundaries for analysis.
+We found both large
+transactions (touching up to 8.9 million cache lines) and frequent
+transactions (up to 45 million of them).
 
 The SPECjvm98 benchmark suite represents a variety of typical Java
 applications which use the capabilities of the Java standard library.
 Although the SPECjvm98 benchmarks are largely single-threaded, since
 they use the thread-safe Java standard libraries they contain
-synchronized code which is transformed into transactions.
-\punt{  Unlike the
-Linux kernel, these applications have not been tuned to reduce lock
-granularity or contention.
+synchronized code which is transformed into transactions.  Because in
+this evaluation we are looking at transaction properties only, the
+multithreaded \texttt{227\_mtrt} benchmark is identical to its
+serialization, \texttt{205\_raytrace}.  For consistency, we present
+only the latter.
 
-Two SPECjvm98 benchmarks were omitted from our investigation:
-\texttt{227\_mtrt} and \texttt{228\_jack}.  The \texttt{227\_mtrt}
-benchmark is a multithreaded run of \texttt{205\_raytrace}; and thus
-we expect \texttt{227\_mtrt} to have transaction properties similar to
-\texttt{205\_raytrace}. (We did not benchmark multithreaded
-applications.)  The \texttt{228\_jack} parser generator was omitted,
-because it tickled a bug in the IRIX assembler that we could not fix.
-}
-
+\begin{figure}
+\begin{center}
+\begin{tabular}{lrrrr}
+        & total      &              & transactional & biggest\\
+program & memory ops & transactions & memory ops    & transaction \\\hline
+{\tt 201\_compress} & 2,981,777,890 & 2,272 & $<$0.1\% & 1,352 \\
+{\tt 202\_jess} & 405,153,255 & 4,892,829 & 9.1\% & 4,826 \\
+{\tt 205\_raytrace} & 420,005,763 & 4,177 & 1.7\% & 875,925 \\
+{\tt 209\_db} & 848,082,597 & 45,222,742 & 23.0\% & 148,374 \\
+{\tt 213\_javac} & 472,416,129 & 668 & 99.9\% & 8,928,356 \\
+{\tt 222\_mpegaudio} & 282,263,132 & 1,675 & $<$0.1\% & 1,339 \\
+\end{tabular}
+\end{center}
+\caption{Transactification of SPECjvm98 benchmark suite: resulting
+  transaction counts and sizes, compared to total number of memory
+  operations (loads and stores).  These are full input size runs.
+}\label{fig:perfnums}
+\end{figure}
+\note{mpegaudio number is for -s10 run; missing 228jack}
 \figput{tr-quad}{Classification of SPECjvm98 benchmarks into quadrants
 based on transaction properties.}
 
-\punt{Traces from the remaining SPECjvm98 applications were used to
-determine the effectiveness of the hardware boundless transactions.
-\note{We're missing the 100\% 222\_mpegaudio run.}  Results are
-presented in \figref{perfnums}.}  \figref{tr-quad} groups the Java
+\figref{perfnums} shows the raw sizes and frequency of transactions in
+the transactified SPECjvm98 suite.
+\figref{tr-quad} proposes a
+taxonomy for Java applications with transactions, grouping the SPECjvm98
 applications into quadrants based on the number and size of the
 transactions which they perform.  Applications in Quads II and IV
-need HTM support, because they contain many transactional operations.
-Quads III and IV need support for boundless transactions, because
-they contain at least some very large transactions.  We now
+require an efficient transaction implementation, because they contain
+many transactional operations.
+Quads III and IV contain at least some very large transactions, which
+pose difficulties for currently-proposed hardware transactional memory
+schemes.  We now
 examine the benchmarks in each quadrant to determine why its program
 logic caused it to be classified in that quadrant.
 
@@ -554,27 +553,28 @@ transactions.  These applications include \texttt{201\_compress}, an
 implementation of gzip compression, and \texttt{222\_mpegaudio}, an
 MP3 decoder.  Both of these applications perform inherently serial
 tasks.  They perform quite well with locks, and would likely execute
-with acceptable performance even with STM\@.
+with acceptable performance even with a na\"\i{}ve software
+implementation of transactions, as long as the impact on
+non-transactional operations was minimal.
 
 Quad II applications perform a large number of small transactions.
 The expert system \texttt{202\_jess} falls in this category, as do
 small input sizes of \texttt{209\_db}, a database.  These benchmarks
 perform at least an order of magnitude more transactions than Quad
-I applications, but all of the transactions are small enough to fit
-comfortably in cache.  A hardware transaction mechanism is required
-for applications in this quadrant, due to the frequency of
-transactions.
+I applications, and all of the transactions are small enough to 
+comfortably fit the known hardware transactional memory schemes, if
+one were to be implemented.
 
 Quad III includes \texttt{205\_raytrace}, a ray-tracing renderer.  A
 small number of transactions are performed, but they may grow very
-large.  Bounded hardware transactions will not suffice, although some
-software transaction systems may be appropriate.  The large
+large.  Existing bounded hardware transactional schemes will not
+suffice.  The large
 transactions may account for a large percentage of total memory
 operations, which may make software schemes impractical.
 
 Finally, Quad IV applications such as \texttt{209\_db} and the
 \texttt{213\_javac} Java compiler application perform a large number
-of xops with at least a few large transactions.  
+of transactional memory operations with at least a few large transactions.  
 
 The \texttt{213\_javac} Java compiler application and the large input
 size of the \texttt{209\_db} benchmark illustrate that some programs
@@ -587,25 +587,57 @@ implements the entire compilation process, is marked as synchronized:
 the programmer has explicitly requested that the entire compilation
 occur atomically.
 
-%We have transformed a correctness problem into a performance problem,
-%which is a good trade-off.
-
 The \texttt{209\_db} benchmark suffers from a similar problem: at one
 point the benchmark atomically scans an index vector and removes an
 element, creating a potentially large transaction if the index is
 large.  The size of this index is correlated in these benchmarks with
 the input size, but it need not be: a large input could still result
-in a small index.
+in a small index, and (to some degree) vice-versa.
 
-%% Our boundless scheme allows programmers to specify region atomicity
-%% without concern for hardware implementation limits, and ensures
-%% correct execution even in cases where excessively large transactions
-%% are called for.  Our implementation turns a correctness problem into a
-%% performance problem, allowing the programmer to refine transactions to
-%% achieve acceptable speed.
+A similar situation arises in the {\tt java.lang.StringBuffer} code
+shown in \secref{stringbuffer}:  a call to the synchronized
+\texttt{sb.getChars()} method means that
+the size of the transaction for this method will grow like the length
+of the parameter~\texttt{sb}.  In other words, the transaction can be
+made arbitrarily large by increasing the length of \texttt{sb}; or,
+equivalently, there is no bound on transaction size without a bound on
+the size of the string~\texttt{sb}.
 
-% Java has no lock contention, so we didn't measure the Cache contention
-% either because we wanted to compare.
+\epsfigput{tr-sz-all}{Distribution of transaction size in the
+  SPECjvm98 benchmark suite.  Note that the x-axis uses a logarithmic
+  scale.}
+
+Any scheme which allows the programmer free reign over specifying
+desired transaction and/or atomicity properties will inevitably result
+in some applications in each of these categories.  As existing
+hardware transactional memory schemes only handle applications in Quad
+I or II, they are not a good implementation technique for a general
+language mechanism.  \figref{tr-sz-all} restates this problem, by
+illustrating the distribution of transaction sizes in these
+applications on a semi-log scale.
+
+\punt{
+\vspace*{2mm}
+\begin{figure}
+\begin{center}
+\includegraphics[width=2.25in,clip=true]{Figures/tr-w-all.eps}%
+~~~~~%
+\includegraphics[width=2.25in,clip=true]{Figures/tr-w-ten.eps}%
+\end{center}%
+\caption{Proportion of transactional writes to objects equal to or
+  smaller than a given size.  The right-hand graph zooms in on a
+  portion of the relation shown in the left; note in particular that
+  y-axis full-scale is only 10\% in the right-hand graph.}%
+\label{fig:tr-w}%
+\end{figure}%
+Our software transactions implementation clones objects on
+transactional writes, so that the previous state of the object can be
+restored if the transaction aborts.  With this in mind, we were
+interested in the number of writes to \emph{large} objects, or,
+equivalently, on the object size distribution of transactional
+writes.  \figref{tr-w} shows this distribution for the SPECjvm98
+applications. 
+}
 
 \vspace*{5mm}
 
@@ -617,29 +649,44 @@ by doing nothing more than converting locks to transactions.  Since
 the transactified applications may contain large transactions,
 proposed hardware support for transactions is inadequate.
 
-Further, if the synchronization in {\tt java.lang.StringBuffer} is
-implemented with
-transactions, note that the call to \texttt{sb.getChars()} means that
-the size of the transaction for this method will grow like the length
-of the parameter~\texttt{sb}.  In other words, the transaction can be
-made arbitrarily large by increasing the length of \texttt{sb}; or,
-equivalently, there is no bound on transaction size without a bound on
-the size of the string~\texttt{sb}.  This means that boundless
-transactions must be supported if this method is operate on arbitrary
-inputs.
-
 
 \secput{efficient}{Designing Efficient Transactions}
+In this section we briefly describe some desired properties of our
+software transaction system.
+
 \subsection{Field Flags}
 \note{Missing: performance numbers for adding check.  Use ``no trans''
-  version of transaction app and add check into the access functions.}
+version of transaction app and add check into the access functions.}
+We would like non-transactional code to execute with minimal overhead,
+however, transactions should still appear atomic to non-transactional
+code.  Our basic mechanism here will be loosely based on the
+distributed shared memory implementation of Scales and Gharachorloo
+\cite{ScalesGh97}.  We will pick a special ``flag'' value, and
+``cross-out'' locations currently involved in a transaction by
+overwriting them with the flag value.  Reading or attempting to
+overwrite a flagged value will indicate to non-transactional code
+that exceptional processing is necessary; all other non-transactional
+operations proceed as usual.
+
+\punt{
+Ensuring that transactional updates remain atomic to non-transactional
+code eases ``transactification'' and 
 Key idea is to allow safe access by non-transactional code, so as to
 allow transactification.
+}
 
-\subsection{Object expansion}
 \epsfigput{bloat}{Application slowdown with increasing object bloat
 for the SPECjvm98 benchmark applications.}
-See \figref{bloat}.
+\subsection{Object expansion}
+We will need to add some additional information to each object to
+track transaction state.  We measured the slowdown caused by various
+amounts of object ``bloat'' to determine reasonable bounds on the
+size of this extra information.  \figref{bloat} presents these
+results for the SPECjvm98 applications; we determined that two words
+(eight bytes) of additional storage per object would not impact
+performance unreasonably.  This amount of bloat causes a geometric
+mean of 2\% slowdown on these benchmarks.
+
 \subsection{Reads vs. Writes}
 See \secref{properties}.
 \subsection{Large objects}
@@ -1186,7 +1233,12 @@ Charles E. Leiserson suggested the ``network flow'' example in
 \secref{flow}.  Sean Lie adapted the hardware simulator which
 provided the timings in \figref{hw-timings}.
 
-\renewcommand{\baselinestretch}{1}
+\section*{Spin model for Software Transactions}
+The complete Spin 4.1.0 model for the FLEX software transaction system is
+available for download at
+\url{http://flex-compiler.csail.mit.edu/Harpoon/swx.pml}.
+
+%\renewcommand{\baselinestretch}{1}
 \bibliographystyle{plain}
 \bibliography{xaction}
 
@@ -1949,4 +2001,4 @@ problem. [although starvation may still occur.]
 \end{document}
 
 % LocalWords:  csail mit edu AFRL LaMarca Alemany Felten Luchango Shavit JVM
-% LocalWords:  Touitou Okasaki Qadeer Promela backoff transactified
+% LocalWords:  Touitou Okasaki Qadeer Promela backoff transactified SPECjvm
