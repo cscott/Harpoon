@@ -50,7 +50,7 @@ public class Termination {
 	predtoabstractmap=new Hashtable();
 	if (!Compiler.REPAIR)
 	    return;
-	
+
 
 	for(int i=0;i<state.vRules.size();i++)
 	    System.out.println(state.vRules.get(i));
@@ -129,14 +129,14 @@ public class Termination {
 	    DebugItem di=(DebugItem) Compiler.debuggraphs.get(i);
 	    HashSet superset=new HashSet();
 	    Constraint constr=(Constraint)state.vConstraints.get(di.constraintnum);
-	    
+
 	    if (di.conjunctionnum==-1) {
 		superset.addAll((Set)conjunctionmap.get(constr));
 	    } else {
 		DNFConstraint dnf=constr.dnfconstraint;
 		superset.add(conjtonodemap.get(dnf.get(di.conjunctionnum)));
 	    }
-	    
+
 	    GraphNode.boundedcomputeclosure(superset,null,di.depth);
 	    try {
 		GraphNode.DOTVisitor.visit(new FileOutputStream("graph"+di.constraintnum+"-"+di.depth+(di.conjunctionnum==-1?"":"-"+di.conjunctionnum)+".dot"),superset);
@@ -251,7 +251,7 @@ public class Termination {
 	    }
 	    /* Cycle through the rules to look for possible conflicts */
 	    for(int i=0;i<state.vRules.size();i++) {
-		Rule r=(Rule) state.vRules.get(i);  
+		Rule r=(Rule) state.vRules.get(i);
 		if (concreteinterferes.interferes(mun,r,true)) {
 		    GraphNode scopenode=(GraphNode)scopesatisfy.get(r);
 		    GraphNode.Edge e=new GraphNode.Edge("interferes",scopenode);
@@ -271,7 +271,7 @@ public class Termination {
 	    GraphNode gn=(GraphNode)absiterator.next();
 	    TermNode tn=(TermNode)gn.getOwner();
 	    AbstractRepair ar=(AbstractRepair)tn.getAbstract();
-	
+
 	    for(Iterator conjiterator=conjunctions.iterator();conjiterator.hasNext();) {
 		GraphNode gn2=(GraphNode)conjiterator.next();
 		TermNode tn2=(TermNode)gn2.getOwner();
@@ -279,19 +279,25 @@ public class Termination {
 		Constraint cons=tn2.getConstraint();
 		/* See if this is a relation wellformedness constraint
                    that is trivially satisfied. */
-		System.out.println(gn.getTextLabel()+"---"+gn2.getTextLabel());
 		if (abstractinterferes.checkrelationconstraint(ar, cons))
 		    continue;
+                if (AbstractInterferes.interferesquantifier(ar,cons)) {
+                    GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
+                    gn.addEdge(e);
+                } else {
+                    for(int i=0;i<conj.size();i++) {
+                        DNFPredicate dp=conj.get(i);
+                        if (getConstraint(gn)!=null&&
+                            abstractinterferes.interferemodifies(ar,getConstraint(gn),dp,cons))
+                            continue;
 
-		for(int i=0;i<conj.size();i++) {
-		    DNFPredicate dp=conj.get(i);
-		    if (AbstractInterferes.interferesquantifier(ar,cons)||
-			abstractinterferes.interfereswithpredicate(ar,dp)) {
-			GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
-			gn.addEdge(e);
-			break;
-		    }
-		}
+                        if (abstractinterferes.interfereswithpredicate(ar,dp)) {
+                            GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
+                            gn.addEdge(e);
+                            break;
+                        }
+                    }
+                }
 	    }
 	    for(Iterator scopeiterator=scopenodes.iterator();scopeiterator.hasNext();) {
 		GraphNode gn2=(GraphNode)scopeiterator.next();
@@ -303,6 +309,18 @@ public class Termination {
 		}
 	    }
 	}
+    }
+
+    Constraint getConstraint(GraphNode gn) {
+        for(Iterator it=gn.inedges();it.hasNext();) {
+            GraphNode.Edge e=(GraphNode.Edge)it.next();
+            GraphNode gnsource=e.getSource();
+            TermNode tnsource=(TermNode)gnsource.getOwner();
+            if (tnsource.getType()==TermNode.CONJUNCTION) {
+                return tnsource.getConstraint();
+            }
+        }
+        return null;
     }
 
     void generatescopenodes() {
@@ -335,13 +353,13 @@ public class Termination {
 	    scopenodes.add(gnfalsify);
 	}
     }
-    
+
     void generatescopeedges() {
 	for(Iterator scopeiterator=scopenodes.iterator();scopeiterator.hasNext();) {
 	    GraphNode gn=(GraphNode)scopeiterator.next();
 	    TermNode tn=(TermNode)gn.getOwner();
 	    ScopeNode sn=tn.getScope();
-	    
+
 	    /* Interference edges with conjunctions */
 	    for(Iterator conjiterator=conjunctions.iterator();conjiterator.hasNext();) {
 		GraphNode gn2=(GraphNode)conjiterator.next();
@@ -445,7 +463,7 @@ public class Termination {
 	    abstractrepair.add(gn);
 	    abstractrepairadd.add(gn);
 	    abstractadd.put(sd,gn);
-	    
+
 	    DNFPredicate tp2=new DNFPredicate(true,ip);
 	    AbstractRepair ar2=new AbstractRepair(tp2, AbstractRepair.REMOVEFROMSET, sd,sources);
 	    TermNode tn2=new TermNode(ar2);
@@ -465,7 +483,7 @@ public class Termination {
 	    VarExpr ve2=new VarExpr("DUMMY2");
 
 	    InclusionPredicate ip=new InclusionPredicate(ve2,new ImageSetExpr(vd1, rd));
-	    
+
 	    DNFPredicate tp=new DNFPredicate(false,ip);
 	    AbstractRepair ar=new AbstractRepair(tp, AbstractRepair.ADDTORELATION, rd,sources);
 	    TermNode tn=new TermNode(ar);
@@ -476,7 +494,7 @@ public class Termination {
 	    abstractrepair.add(gn);
 	    abstractrepairadd.add(gn);
 	    abstractadd.put(rd,gn);
-	    
+
 	    DNFPredicate tp2=new DNFPredicate(true,ip);
 	    AbstractRepair ar2=new AbstractRepair(tp2, AbstractRepair.REMOVEFROMRELATION, rd,sources);
 	    TermNode tn2=new TermNode(ar2);
@@ -546,7 +564,7 @@ public class Termination {
 		}
 		if (!un.checkupdates()) /* Make sure we have a good update */
 		    continue;
-		
+
 		mun.addUpdate(un);
 		GraphNode.Edge e=new GraphNode.Edge("abstract"+compensationcount,gn2);
 		compensationcount++;
@@ -601,7 +619,7 @@ public class Termination {
 	}
 	if (possiblerules.size()==0)
 	    return;
-	
+
 	/* Loop through different ways of falsifying each of these rules */
 	int[] count=new int[possiblerules.size()];
 	while(remains(count,possiblerules,true)) {
@@ -657,8 +675,7 @@ public class Termination {
 		mun.addUpdate(un);
 	    }
 	    if (goodflag) {
-		GraphNode.Edge e=new GraphNode.Edge("abstract"+removefromcount,gn2);
-		removefromcount++;
+		GraphNode.Edge e=new GraphNode.Edge("abstract"+(removefromcount++),gn2);
 		gn.addEdge(e);
 		updatenodes.add(gn2);
 	    }
@@ -704,7 +721,7 @@ public class Termination {
 	int rightindex=1;
 	if (inverted)
 	    leftindex=2;
-	else 
+	else
 	    rightindex=2;
 
 	// construct set of possible rules
@@ -723,13 +740,13 @@ public class Termination {
 	while(remains(count,possiblerules,false)) {
 	    MultUpdateNode mun=new MultUpdateNode(ar,MultUpdateNode.MODIFY);
 	    TermNode tn=new TermNode(mun);
-	    GraphNode gn2=new GraphNode("UpdateMod"+removefromcount,tn);
+	    GraphNode gn2=new GraphNode("UpdateMod"+modifycount,tn);
 
 	    boolean goodflag=true;
 	    for(int i=0;i<possiblerules.size();i++) {
 		Rule r=(Rule)possiblerules.get(i);
 		UpdateNode un=new UpdateNode(r);
-		
+
 		int c=count[i];
 		if (!processconjunction(un,r.getDNFGuardExpr().get(c),null)) {
 		    goodflag=false;break;
@@ -767,10 +784,10 @@ public class Termination {
 		    if (vd.isGlobal()) {
 			Updates up=new Updates(ri.getRightExpr(),rightindex,null);
 			un.addUpdate(up);
-		    } else if (!inverted) 
+		    } else if (!inverted)
 			goodflag=false;
 		}
-				
+
 		if (!un.checkupdates()) {
 		    goodflag=false;
 		    break;
@@ -801,7 +818,7 @@ public class Termination {
 		 ar.getDescriptor()==((SetInclusion)r.getInclusion()).getSet())||
 		(r.getInclusion() instanceof RelationInclusion&&
 		 ar.getDescriptor()==((RelationInclusion)r.getInclusion()).getRelation())) {
-		
+
 		/* First solve for quantifiers */
 		Vector bindings=new Vector();
 		/* Construct bindings */
@@ -823,7 +840,7 @@ public class Termination {
 		    if(inc instanceof SetInclusion) {
 			SetInclusion si=(SetInclusion)inc;
 			Expr e=si.elementexpr;
-			
+
 			while(e instanceof CastExpr) {
 			    CastExpr ce=(CastExpr)e;
 			    if (ce.getType()!=si.getSet().getType())
@@ -861,7 +878,7 @@ public class Termination {
 			RelationInclusion ri=(RelationInclusion)inc;
 
 			Expr e=ri.getLeftExpr();
-			
+
 			while(e instanceof CastExpr) {
 			    CastExpr ce=(CastExpr)e;
 			    if (ce.getType()!=ri.getRelation().getDomain().getType())
@@ -902,9 +919,9 @@ public class Termination {
 				un.addUpdate(up);
 			    }
      			}
-			
+
 			e=ri.getRightExpr();
-			
+
 			while(e instanceof CastExpr) {
 			    CastExpr ce=(CastExpr)e;
 			    if (ce.getType()!=ri.getRelation().getRange().getType())
@@ -926,7 +943,7 @@ public class Termination {
 				if (set==null)
 				    continue;
 				ArrayAnalysis.AccessPath ap=arrayanalysis.getSet(set);
-				
+
 				if (rap==ArrayAnalysis.AccessPath.NONE||
 				    !rap.equal(ap)||
 				    !constructarrayupdate(un, e, rap, 1))
@@ -982,7 +999,7 @@ public class Termination {
 	for (int i=ap.numFields()-1;i>=0;i--) {
 	    if (e==null)
 		e=lexpr;
-	    else 
+	    else
 		e=((DotExpr)e).getExpr();
 
 	    while (e instanceof CastExpr)
@@ -1035,7 +1052,7 @@ public class Termination {
 			    return false;
 			e=ce.getExpr();
 		    }
-		    
+
 		    if ((e instanceof VarExpr)&&
 			(((VarExpr)e).getVar()==vd)) {
 			/* Can solve for v */
@@ -1059,7 +1076,7 @@ public class Termination {
 			    return false;
 			e=ce.getExpr();
 		    }
-		    
+
 		    if ((e instanceof VarExpr)&&
 			(((VarExpr)e).getVar()==vd)) {
 				/* Can solve for v */
@@ -1080,7 +1097,7 @@ public class Termination {
 			    return false;
 			e=ce.getExpr();
 		    }
-		    
+
 		    if ((e instanceof VarExpr)&&
 			(((VarExpr)e).getVar()==vd)) {
 				/* Can solve for v */
@@ -1118,7 +1135,7 @@ public class Termination {
 			SetInclusion si=(SetInclusion)inc;
 
 			Expr e=si.elementexpr;
-			
+
 			while(e instanceof CastExpr) {
 			    CastExpr ce=(CastExpr)e;
 			    if (ce.getType()!=td)
@@ -1143,7 +1160,7 @@ public class Termination {
 
 
 			Expr e=ri.getLeftExpr();
-			
+
 			while(e instanceof CastExpr) {
 			    CastExpr ce=(CastExpr)e;
 			    if (ce.getType()!=ri.getRelation().getDomain().getType())
@@ -1163,7 +1180,7 @@ public class Termination {
 
 
 			e=ri.getRightExpr();
-			
+
 			while(e instanceof CastExpr) {
 			    CastExpr ce=(CastExpr)e;
 			    if (ce.getType()!=ri.getRelation().getRange().getType())
@@ -1198,10 +1215,10 @@ public class Termination {
 	}
 	return goodupdate;
     }
-    
+
     /** Adds updates that add an item to the appropriate set or
      * relation quantified over by the model definition rule.. */
-    
+
     boolean processquantifiers(GraphNode gn,UpdateNode un, Rule r,Hashtable setmapping) {
 	Inclusion inc=r.getInclusion();
 	for(Iterator iterator=r.quantifiers();iterator.hasNext();) {
@@ -1284,7 +1301,7 @@ public class Termination {
 	    } else if (e instanceof TupleOfExpr) {
 		Updates up=new Updates(e,de.getNegation());
 		un.addUpdate(up);
-	    } else if (e instanceof BooleanLiteralExpr) { 
+	    } else if (e instanceof BooleanLiteralExpr) {
 		boolean truth=((BooleanLiteralExpr)e).getValue();
 		if (de.getNegation())
 		    truth=!truth;

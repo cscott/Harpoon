@@ -8,6 +8,7 @@ class AbstractInterferes {
 	termination=t;
     }
 
+
     /** Does performing the AbstractRepair ar satisfy (or falsify if satisfy=false)
      * Rule r. */
 
@@ -43,7 +44,7 @@ class AbstractInterferes {
 	    drule=r.getDNFGuardExpr();
 	else
 	    drule=r.getDNFNegGuardExpr();
-	
+
 	for(int i=0;i<drule.size();i++) {
 	    RuleConjunction rconj=drule.get(i);
 	    for(int j=0;j<rconj.size();j++) {
@@ -58,6 +59,10 @@ class AbstractInterferes {
 	}
 	return false;
     }
+
+    /** This method is designed to check that modifying a relation
+     * doesn't violate a relation well-formedness constraint
+     * (ie. [forall <a,b> in R], a in S1 and b in S2; */
 
     public boolean checkrelationconstraint(AbstractRepair ar, Constraint c) {
 	if (c.numQuantifiers()==1&&
@@ -99,6 +104,137 @@ class AbstractInterferes {
 	return false;
     }
 
+
+    /** Check to see if performing the repair ar on repair_c does not
+     *  inferere with interfere_c.  Returns true if there is no
+     *  interference.  */
+
+    public boolean interferemodifies(AbstractRepair ar, Constraint repair_c, DNFPredicate interfere_pred, Constraint interfere_c) {
+        DNFConstraint precondition=repair_c.getDNFConstraint().not();
+        if (repair_c.numQuantifiers()!=1||
+            interfere_c.numQuantifiers()!=1||
+            !(repair_c.getQuantifier(0) instanceof SetQuantifier)||
+            !(interfere_c.getQuantifier(0) instanceof SetQuantifier)||
+            ((SetQuantifier)repair_c.getQuantifier(0)).getSet()!=((SetQuantifier)interfere_c.getQuantifier(0)).getSet())
+            return false;
+
+        Hashtable mapping=new Hashtable();
+        mapping.put(((SetQuantifier)repair_c.getQuantifier(0)).getVar(),
+                    ((SetQuantifier)interfere_c.getQuantifier(0)).getVar());
+
+        if (ar.getType()!=AbstractRepair.MODIFYRELATION||
+            !(ar.getPredicate().getPredicate() instanceof ExprPredicate)||
+            !(interfere_pred.getPredicate() instanceof ExprPredicate))
+            return false;
+        Expr e=((ExprPredicate)interfere_pred.getPredicate()).expr;
+        Expr leftside=((OpExpr)((ExprPredicate)ar.getPredicate().getPredicate()).expr).left;
+        Set relationset=e.useDescriptor(ar.getDescriptor());
+        for(Iterator relit=relationset.iterator();relit.hasNext();) {
+            Expr e2=(Expr)relit.next();
+            if (!leftside.equals(mapping,e2))
+                return false;
+        }
+        /* Prune precondition using any ar's in the same conjunction */
+        adjustcondition(precondition, ar);
+        Conjunction conj=findConjunction(repair_c.getDNFConstraint(),ar.getPredicate());
+        for(int i=0;i<conj.size();i++) {
+            DNFPredicate dp=conj.get(i);
+            Set s=(Set)termination.predtoabstractmap.get(dp);
+            for(Iterator it=s.iterator();it.hasNext();) {
+                GraphNode gn=(GraphNode)it.next();
+                TermNode tn=(TermNode)gn.getOwner();
+                AbstractRepair dp_ar=tn.getAbstract();
+                adjustcondition(precondition, dp_ar);
+            }
+        }
+        /* We now have precondition after interference */
+        if (precondition.size()==0)
+            return false;
+        DNFConstraint infr_const=interfere_c.getDNFConstraint();
+
+    next_conj:
+        for(int i=0;i<infr_const.size();i++) {
+            Conjunction infr_conj=infr_const.get(i);
+            for(int j=0;j<infr_conj.size();j++) {
+                DNFPredicate infr_dp=infr_conj.get(j);
+            next_pre_conj:
+                for(int i2=0;i2<precondition.size();i2++) {
+                    Conjunction pre_conj=precondition.get(i2);
+                    for(int j2=0;j2<pre_conj.size();j2++) {
+                        DNFPredicate pre_dp=pre_conj.get(j2);
+                        if (checkPreEnsures(pre_dp,infr_dp,mapping))
+                            continue next_pre_conj;
+
+                    }
+                    continue next_conj; /* The precondition doesn't ensure this conjunction is true */
+                }
+            }
+            return true; /*Found a conjunction that must be
+                           true...therefore the precondition
+                           guarantees that the second constraint is
+                           always true after repair*/
+        }
+        return false;
+    }
+
+    static private Conjunction findConjunction(DNFConstraint cons, DNFPredicate dp) {
+        for(int i=0;i<cons.size();i++) {
+            Conjunction conj=cons.get(i);
+            for(int j=0;j<conj.size();j++) {
+                DNFPredicate curr_dp=conj.get(j);
+                if (curr_dp==dp)
+                    return conj;
+            }
+        }
+        throw new Error("Not found");
+    }
+
+    /** This method removes predicates that the abstract repair may
+     *  violate. */
+
+    private void adjustcondition(DNFConstraint precond, AbstractRepair ar) {
+        HashSet conjremove=new HashSet();
+        for(int i=0;i<precond.size();i++) {
+            Conjunction conj=precond.get(i);
+            HashSet toremove=new HashSet();
+            for(int j=0;j<conj.size();j++) {
+                DNFPredicate dp=conj.get(j);
+                if (interfereswithpredicate(ar,dp)) {
+                    /* Remove dp from precond */
+                    toremove.add(dp);
+                }
+            }
+            conj.predicates.removeAll(toremove);
+            if (conj.size()==0)
+                conjremove.add(conj);
+        }
+        precond.conjunctions.removeAll(conjremove);
+    }
+
+    private boolean checkPreEnsures(DNFPredicate pre_dp,  DNFPredicate infr_dp, Hashtable mapping) {
+        if (pre_dp.isNegated()==infr_dp.isNegated()&&(pre_dp.getPredicate() instanceof ExprPredicate)&&
+            (infr_dp.getPredicate() instanceof ExprPredicate)) {
+            if (((ExprPredicate)pre_dp.getPredicate()).expr.equals(mapping, ((ExprPredicate)infr_dp.getPredicate()).expr))
+                return true;
+        }
+        if ((!pre_dp.isNegated())&&infr_dp.isNegated()&&(pre_dp.getPredicate() instanceof ExprPredicate)&&
+            (infr_dp.getPredicate() instanceof ExprPredicate)) {
+            ExprPredicate pre_ep=(ExprPredicate)pre_dp.getPredicate();
+            ExprPredicate infr_ep=(ExprPredicate)infr_dp.getPredicate();
+            if (pre_ep.getType()==ExprPredicate.COMPARISON&&
+                infr_ep.getType()==ExprPredicate.COMPARISON&&
+                pre_ep.isRightInt()&&
+                infr_ep.isRightInt()&&
+                pre_ep.rightSize()!=infr_ep.rightSize()&&
+                pre_ep.getOp()==Opcode.EQ&&
+                infr_ep.getOp()==Opcode.EQ) {
+                if (((OpExpr)pre_ep.expr).left.equals(mapping,((OpExpr)infr_ep.expr).left))
+                    return true;
+            }
+        }
+        return false;
+    }
+
     /** This method checks whether a modify relation abstract repair
      * to satisfy ar may violate dp.  It returns true if there is no
      * interference. */
@@ -106,19 +242,19 @@ class AbstractInterferes {
     private boolean interferemodifies(DNFPredicate ar,DNFPredicate dp) {
 	boolean neg1=ar.isNegated();
 	Opcode op1=((ExprPredicate)ar.getPredicate()).getOp();
-	Expr rexpr1=((OpExpr)((ExprPredicate)ar.getPredicate()).expr).right;	
+	Expr rexpr1=((OpExpr)((ExprPredicate)ar.getPredicate()).expr).right;
 	Expr lexpr1=((OpExpr)((ExprPredicate)ar.getPredicate()).expr).left;
 	RelationDescriptor updated_des=(RelationDescriptor)((ExprPredicate)ar.getPredicate()).getDescriptor();
-	
+
 	boolean neg2=dp.isNegated();
 	Opcode op2=((ExprPredicate)dp.getPredicate()).getOp();
 	Expr rexpr2=((OpExpr)((ExprPredicate)dp.getPredicate()).expr).right;
 	Expr lexpr2=((OpExpr)((ExprPredicate)dp.getPredicate()).expr).left;
-	
+
 	/* Translate the opcodes */
 	op1=Opcode.translateOpcode(neg1,op1);
 	op2=Opcode.translateOpcode(neg2,op2);
-	
+
 	if (((op1==Opcode.EQ)||(op1==Opcode.GE)||(op1==Opcode.LE))&&
 	    ((op2==Opcode.EQ)||(op2==Opcode.GE)||(op2==Opcode.LE))&&
 	    !rexpr2.usesDescriptor(updated_des)) {
@@ -171,7 +307,8 @@ class AbstractInterferes {
 	return false;
     }
 
-    /** Does performing the AbstractRepair ar falsify the predicate dp */
+    /** Returns true if performing the AbstractRepair ar may falsify
+        the predicate dp. */
 
     public boolean interfereswithpredicate(AbstractRepair ar, DNFPredicate dp) {
 	if ((ar.getDescriptor()!=dp.getPredicate().getDescriptor()) &&
@@ -269,7 +406,7 @@ class AbstractInterferes {
 	    int size2=((ExprPredicate)dp.getPredicate()).rightSize();
 
 	    op2=Opcode.translateOpcode(neg2,op2);
-	    
+
 	    if (((op2==Opcode.EQ)&&(size1==size2))||
 		((op2==Opcode.NE)&&(size1!=size2))||
 		((op2==Opcode.GE)&&(size1>=size2))||
@@ -309,7 +446,7 @@ class AbstractInterferes {
 	    (dp.getPredicate() instanceof ExprPredicate)&&
 	    (dp.getPredicate().inverted()==ar.getPredicate().getPredicate().inverted())&&
 	    (((ExprPredicate)dp.getPredicate()).getType()==ExprPredicate.COMPARISON)) {
-	    
+
 	    boolean neg1=ar.getPredicate().isNegated();
 	    Opcode op1=((ExprPredicate)ar.getPredicate().getPredicate()).getOp();
 	    boolean isInt1=((ExprPredicate)ar.getPredicate().getPredicate()).isRightInt();
@@ -323,7 +460,7 @@ class AbstractInterferes {
 	    int size2=isInt2?((ExprPredicate)dp.getPredicate()).rightSize():0;
 	    Expr expr2=((OpExpr)((ExprPredicate)dp.getPredicate()).expr).right;
 
-	    
+
 	    /* If the left sides of the comparisons are both from
                different sets, the update is orthogonal to the expr dp */
 	    {
@@ -338,7 +475,7 @@ class AbstractInterferes {
 	    /* Translate the opcodes */
 	    op1=Opcode.translateOpcode(neg1,op1);
 	    op2=Opcode.translateOpcode(neg2,op2);
-	    
+
 	    /* Obvious cases which can't interfere */
 	    if (((op1==Opcode.GT)||
 		(op1==Opcode.GE))&&
@@ -367,7 +504,7 @@ class AbstractInterferes {
 		    size1a--;
 		if (op1==Opcode.NE)
 		    size1a++; /*FLAGNE this is current behavior for NE repairs */
-		
+
 		if (op2==Opcode.GT)
 		    size2a++;
 		if (op2==Opcode.LT)
@@ -584,7 +721,7 @@ class AbstractInterferes {
 		    (op2==Opcode.LE)||
 		    (op2==Opcode.LT))
 		    return false;
-	    } 
+	    }
 	}
 	if ((des==dp.getPredicate().getDescriptor())&&
 	    satisfy&&

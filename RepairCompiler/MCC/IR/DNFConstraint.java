@@ -47,6 +47,16 @@ public class DNFConstraint {
 	return new DNFConstraint(vector);
     }
 
+    public DNFConstraint copyminus(Conjunction c) {
+	Vector vector=new Vector();
+	for (int i=0;i<size();i++) {
+           Conjunction cur_conj=get(i);
+           if (c!=cur_conj)
+              vector.add(cur_conj.copy());
+	}
+	return new DNFConstraint(vector);
+    }
+
     public DNFConstraint and(DNFConstraint c) {
 	DNFConstraint newdnf=new DNFConstraint();
 	for(int i=0;i<size();i++) {

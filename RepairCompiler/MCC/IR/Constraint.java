@@ -3,13 +3,13 @@ package MCC.IR;
 import java.util.*;
 
 public class Constraint implements Quantifiers {
-    
+
     private static int count = 1;
 
     String label = null;
     boolean crash = false;
     SymbolTable st = new SymbolTable();
-    Vector quantifiers = new Vector(); 
+    Vector quantifiers = new Vector();
     LogicStatement logicstatement = null;
     DNFConstraint dnfconstraint;
     int num;
@@ -17,6 +17,10 @@ public class Constraint implements Quantifiers {
     public Constraint() {
         num = count;
         label = new String("c" + count++);
+    }
+
+    public DNFConstraint getDNFConstraint() {
+        return dnfconstraint;
     }
 
     public String toString() {
@@ -61,7 +65,7 @@ public class Constraint implements Quantifiers {
     public LogicStatement getLogicStatement() {
         return logicstatement;
     }
-    
+
     public void setCrash(boolean crash) {
         this.crash = crash;
     }
@@ -74,7 +78,7 @@ public class Constraint implements Quantifiers {
 
         HashSet topdescriptors = new HashSet();
 
-        for (int i = 0; i < quantifiers.size(); i++) {            
+        for (int i = 0; i < quantifiers.size(); i++) {
             Quantifier q = (Quantifier) quantifiers.elementAt(i);
             topdescriptors.addAll(q.getRequiredDescriptors());
         }
@@ -83,18 +87,17 @@ public class Constraint implements Quantifiers {
     }
 
     public Set getRequiredDescriptorsFromLogicStatement() {
-        
+
         HashSet topdescriptors = new HashSet();
 
         topdescriptors.addAll(logicstatement.getRequiredDescriptors());
 
         return SetDescriptor.expand(topdescriptors);
     }
-   
+
     public Set getRequiredDescriptors() {
         Set set = getRequiredDescriptorsFromQuantifiers();
         set.addAll(getRequiredDescriptorsFromLogicStatement());
         return set;
     }
 }
-
