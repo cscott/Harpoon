@@ -8,7 +8,7 @@ import java.util.Hashtable;
  * contiguous comment within the original source code.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_Comment.java,v 1.2 1998-10-11 00:32:17 cananian Exp $
+ * @version $Id: IIR_Comment.java,v 1.3 1998-10-11 00:58:56 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -40,6 +40,7 @@ public class IIR_Comment extends IIR
  
     public char get_element( int subscript )
     { return _comment.charAt(subscript); }
+    // FIXME: set_element changes entry in _h
     public void set_element( int subscript, char value)
     { _comment.setCharAt(subscript, value); }
  

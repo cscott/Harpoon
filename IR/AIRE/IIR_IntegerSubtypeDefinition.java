@@ -8,7 +8,7 @@ import java.util.Hashtable;
  * represents a subset of an existing integer base type definition.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_IntegerSubtypeDefinition.java,v 1.3 1998-10-11 00:32:21 cananian Exp $
+ * @version $Id: IIR_IntegerSubtypeDefinition.java,v 1.4 1998-10-11 00:58:56 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -32,6 +32,7 @@ public class IIR_IntegerSubtypeDefinition extends IIR_IntegerTypeDefinition
         return ret;
     }
  
+    // FIXME: set_base_type modifies entry in _h
     public void set_base_type(IIR_IntegerTypeDefinition base_type)
     { super.set_base_type(base_type); }
     /*

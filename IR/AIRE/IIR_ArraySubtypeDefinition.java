@@ -10,7 +10,7 @@ import java.util.Hashtable;
  * is a subset of the base type's domain.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ArraySubtypeDefinition.java,v 1.3 1998-10-11 00:32:16 cananian Exp $
+ * @version $Id: IIR_ArraySubtypeDefinition.java,v 1.4 1998-10-11 00:58:55 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -34,6 +34,7 @@ public class IIR_ArraySubtypeDefinition extends IIR_ArrayTypeDefinition
         return ret;
     }
  
+    // FIXME: changing resolution function changes entry in _h.
     public void set_resolution_function(IIR_FunctionDeclaration 
 					resolution_function) {
 	_resolution_function = resolution_function;

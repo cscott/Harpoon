@@ -8,7 +8,7 @@ import java.util.Hashtable;
  * zero or more literals having either character literal value '0' or '1'.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_BitStringLiteral.java,v 1.2 1998-10-11 00:32:16 cananian Exp $
+ * @version $Id: IIR_BitStringLiteral.java,v 1.3 1998-10-11 00:58:55 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -35,6 +35,7 @@ public class IIR_BitStringLiteral extends IIR_TextLiteral
     public int  get_element(int subscript)
     { return _bits[subscript]?1:0; }
  
+    // FIXME: set_element changes entry in _h
     public void set_element(int subscript, int value)
     { _bits[subscript] = (value!=0)?true:false; }
  

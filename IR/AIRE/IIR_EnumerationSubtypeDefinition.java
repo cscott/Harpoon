@@ -9,7 +9,7 @@ import java.util.Hashtable;
  * <code>IIR_EnumerationTypeDefinition</code> base type.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_EnumerationSubtypeDefinition.java,v 1.4 1998-10-11 00:32:19 cananian Exp $
+ * @version $Id: IIR_EnumerationSubtypeDefinition.java,v 1.5 1998-10-11 00:58:56 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -33,6 +33,7 @@ public class IIR_EnumerationSubtypeDefinition extends IIR_EnumerationTypeDefinit
         return ret;
     }
  
+    // FIXME: set_resolution_function changes entry in _h
     public void set_resolution_function(IIR_FunctionDeclaration resolution_function)
     { _resolution_function = resolution_function; }
  
