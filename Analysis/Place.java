@@ -19,7 +19,7 @@ import java.util.Enumeration;
  * <code>Place</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.10.2.2 1999-02-03 23:10:40 pnkfelix Exp $
+ * @version $Id: Place.java,v 1.10.2.3 1999-02-25 21:11:35 cananian Exp $
  */
 
 public class Place  {
@@ -51,6 +51,7 @@ public class Place  {
     public Enumeration sigNeededE(HCode hc, HCodeElement n) {
 	analyze(hc); return Asig.getSetE(n);
     }
+    public String toString() { return "PHI"+Aphi+"/SIG"+Asig; }
 
     Hashtable analyzed = new Hashtable();
     HCode lastHCode = null;
