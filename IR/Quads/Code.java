@@ -8,15 +8,14 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 import harpoon.Util.ArrayFactory;
 
-import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.Stack;
-import java.util.Vector;
 
 /**
  * <code>Quads.Code</code> is an abstract superclass of codeviews
@@ -24,7 +23,7 @@ import java.util.Vector;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.8 1999-02-03 23:11:00 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.9 1999-02-23 11:50:45 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -79,28 +78,22 @@ public abstract class Code extends HCode {
      * making up this code view.  The root of the graph
      * is in element 0 of the array.
      */
-    public HCodeElement[] getElements() { 
-	Vector v = new Vector();
-	for (Enumeration e = getElementsE(); e.hasMoreElements(); )
-	    v.addElement(e.nextElement());
-	HCodeElement[] elements = new Quad[v.size()];
-	v.copyInto(elements);
-	return (HCodeElement[]) elements;
-    }
+    public HCodeElement[] getElements() { return super.getElements(); }
 
-    /** Returns an enumeration of the <code>Quad</code>s making up
+    /** Returns an iterator over the <code>Quad</code>s making up
      *  this code view.  The root of the graph is the first element
-     *  enumerated. */
-    public Enumeration getElementsE() {
-	return new Enumeration() {
+     *  in the iteration. */
+    public Iterator getElementsI() {
+	return new Iterator() {
 	    Set visited = new HashSet();
 	    Stack s = new Stack();
 	    { // initialize stack/set.
-		s.push(getLeafElements()[0]); visited.union(s.peek());
-		s.push(getRootElement());     visited.union(s.peek());
+		s.push(getLeafElements()[0]); visited.add(s.peek());
+		s.push(getRootElement());     visited.add(s.peek());
 	    } 
-	    public boolean hasMoreElements() { return !s.isEmpty(); }
-	    public Object nextElement() {
+	    public void remove() { throw new UnsupportedOperationException(); }
+	    public boolean hasNext() { return !s.isEmpty(); }
+	    public Object next() {
 		if (s.empty()) throw new NoSuchElementException();
 		Quad q = (Quad) s.pop();
 		// push successors on stack before returning.
@@ -108,9 +101,9 @@ public abstract class Code extends HCode {
 		for (int i=next.length-1; i>=0; i--)
 		    if (!visited.contains(next[i])) {
 			s.push(next[i]);
-			visited.union(next[i]);
+			visited.add(next[i]);
 		    }
-		// check that temps belong to q.
+		// check that temps belong to q. // XX really belongs separate
 		for (int j=0; j<2; j++) {
 		    Temp[] ta = (j==0)?q.use():q.def();
 		    for (int i=0; i<ta.length; i++)
