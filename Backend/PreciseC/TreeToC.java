@@ -64,7 +64,7 @@ import java.util.TreeSet;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.17 2003-10-06 16:42:46 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.18 2003-10-08 17:46:17 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     // Support losing platforms (like, say, AIX) where multiple segments
@@ -549,6 +549,14 @@ public class TreeToC extends java.io.PrintWriter {
 	    // 'portably' define constants.
 	    if (e.type()==Type.FLOAT) val+="F";
 	    if (e.type()==Type.LONG) val+="LL";
+	    /* make strings slightly more readable */
+	    if (e.type()==Type.INT &&
+		e.value().intValue()>=' ' &&
+		e.value().intValue()<='~' &&
+		e.value().intValue()!='\'' &&
+		e.value().intValue()!='\"' &&
+		e.value().intValue()!='\\')
+		val+="/*'"+((char)e.value().intValue())+"'*/";
 	    pw.print(val);
 	}
 	public void visit(DATUM e) {
@@ -643,6 +651,9 @@ public class TreeToC extends java.io.PrintWriter {
 	    if (this.align!=null)
 		pwa[DI].print(" __attribute__ ((aligned (" +
 			      this.align.alignment + ")))");
+	    else /* this works around a gcc/MIPS bug, where structures */
+		/* are 8-byte aligned unless you ask them not to be. */
+		pwa[DI].print(" __attribute__ ((aligned (4)))");
 	    this.align=null; // clear alignment.
 	    // older versions of gcc won't allow segment attrs on local vars:
 	    if (segment!=null && mode!=CODETABLE && !NO_SECTION_SUPPORT)
