@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.54 1998-10-13 09:44:16 cananian Exp $
+# $Id: GNUmakefile,v 1.55 1998-10-14 20:25:38 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -16,14 +16,15 @@ INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 
 ALLPKGS = $(shell find . -type d | grep -v CVS | \
-		egrep -v "^[.]/(harpoon|silicon|doc|NOTES|bin|jdb)" | \
+		egrep -v "^[.]/(harpoon|silicon|gnu|doc|NOTES|bin|jdb)" | \
 		sed -e "s|^[.]/*||")
 ALLSOURCE = $(filter-out .%.java, \
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java)))
 TARSOURCE = $(filter-out JavaChip%, \
 	        $(filter-out Test%,$(ALLSOURCE))) GNUmakefile
-JARPKGS = $(filter-out JavaChip%, \
-		$(filter-out Test%,$(ALLPKGS)))
+JARPKGS = $(subst harpoon/Contrib,gnu, \
+		$(foreach pkg, $(filter-out JavaChip%, \
+			$(filter-out Test%,$(ALLPKGS))), harpoon/$(pkg)))
 
 all:	java
 
@@ -48,7 +49,7 @@ first:
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
 	${JAR} c0f Harpoon.jar COPYING VERSIONS \
-		$(foreach pkg,$(JARPKGS),harpoon/$(pkg)/*.class)
+		$(foreach pkg,$(JARPKGS),$(pkg)/*.class)
 	date '+%-d-%b-%Y at %r %Z.' > Harpoon.jar.TIMESTAMP
 
 jar:	Harpoon.jar Harpoon.jar.TIMESTAMP
@@ -97,11 +98,12 @@ doc:	doc/TIMESTAMP
 doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	make doc-clean
 	mkdir doc
-	cd doc; ln -s .. harpoon ; ln -s .. silicon
+	cd doc; ln -s .. harpoon ; ln -s .. silicon ; ln -s ../Contrib gnu
 	cd doc; ${JDOC} ${JDOCFLAGS} -d . \
+		$(subst harpoon.Contrib,gnu, \
 		$(foreach dir, $(filter-out Test, \
 			  $(filter-out JavaChip,$(ALLPKGS))), \
-			  harpoon.$(subst /,.,$(dir))) silicon.JavaChip | \
+			  harpoon.$(subst /,.,$(dir))) silicon.JavaChip) | \
 		grep -v "^@see warning:"
 	$(RM) doc/harpoon doc/silicon
 	$(MUNGE) doc | \
