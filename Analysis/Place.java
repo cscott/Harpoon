@@ -12,18 +12,19 @@ import java.util.Hashtable;
  * <code>Place</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.2 1998-09-15 04:54:16 cananian Exp $
+ * @version $Id: Place.java,v 1.3 1998-09-15 21:38:07 cananian Exp $
  */
 
 public class Place  {
     boolean isPost;
-    UseDef usedef;
-    DomFrontier df;
+    UseDef usedef; // null indicates create-on-demand and release asap.
+    DomFrontier df; // null indicates create-on-demand and release asap.
 
     /** Creates a <code>Place</code>. */
-    public Place() { this(false); }
     public Place(boolean isPost) {
-	this(new UseDef(), new DomFrontier(isPost));
+	this.usedef = null;
+	this.df = null;
+	this.isPost = isPost;
     }
     public Place(UseDef usedef, DomFrontier df) {
 	this.usedef = usedef;
@@ -37,10 +38,20 @@ public class Place  {
     }
 
     Hashtable analyzed = new Hashtable();
+    HCode lastHCode = null;
     void analyze(HCode hc) {
+	if (hc == lastHCode) return; // quick exit for common case.
 	if (analyzed.get(hc)==null) {
+	    boolean tempObjects = (usedef==null && df==null);
+	    if (tempObjects) { // allocate analysis objects.
+		usedef = new UseDef(); df = new DomFrontier(isPost);
+	    }
 	    placePhi(hc);
+	    if (tempObjects) { // free analysis objects.
+		usedef = null; df = null;
+	    }
 	    analyzed.put(hc, hc);
+	    lastHCode = hc;
 	}
     }
 

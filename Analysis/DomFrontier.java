@@ -12,28 +12,30 @@ import java.util.Hashtable;
  * the <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.2 1998-09-15 03:40:05 cananian Exp $
+ * @version $Id: DomFrontier.java,v 1.3 1998-09-15 21:38:07 cananian Exp $
  */
 
 public class DomFrontier  {
-    DomTree dt;
+    DomTree dt; // a dom tree to use, or null
     boolean isPost;
 
     /** Creates a <code>DomFrontier</code>, using a pre-existing
-     *  <code>DomTree</code>.*/
+     *  <code>DomTree</code>. <p>
+     *  This version of the constructor keeps the dominator tree 
+     *  structure around after analysis is completed and reuses it. */
     public DomFrontier(DomTree dt) {
         this.dt = dt;
 	this.isPost = dt.isPost;
     }
     /** Creates a <code>DomFrontier</code>; if <code>isPost</code> is
      *  <code>false</code> creates the dominance frontier; otherwise
-     *  creates the postdominance frontier. */
+     *  creates the postdominance frontier. <p>
+     *  This version of the constructor frees the dominator tree after the
+     *  frontier has been created. */
     public DomFrontier(boolean isPost) {
-	this(new DomTree(isPost));
+	this.dt = null;
+	this.isPost = isPost;
     }
-    /** Creates a <code>DomFrontier</code> representing the 
-     *  dominance frontier. */
-    public DomFrontier() { this(false); }
 
     Hashtable DF = new Hashtable();
     Hashtable analyzed = new Hashtable();
@@ -49,19 +51,27 @@ public class DomFrontier  {
 	else return r;
     }
 
+    HCode lastHCode = null;
     void analyze(HCode hc) {
-	if (analyzed.get(hc) == null) {
-	    analyzed.put(hc, hc);
+	if (hc == lastHCode) return ; // just did this one.
+	if (analyzed.get(hc) != null); // hashtable sez we've done it already.
+	analyzed.put(hc, hc);
+	lastHCode = hc;
 
-	    HCodeElement[] roots;
-	    if (!isPost)
-		roots = new HCodeElement[] { hc.getRootElement() };
-	    else
-		roots = hc.getLeafElements();
-	    
-	    for (int i=0; i < roots.length; i++)
-		computeDF(hc, roots[i]);
-	}
+	// maybe we don't want to keep the dominator tree around.
+	boolean tempDT = (dt==null);
+	if (tempDT) dt = new DomTree(isPost);
+
+	HCodeElement[] roots;
+	if (!isPost)
+	    roots = new HCodeElement[] { hc.getRootElement() };
+	else
+	    roots = hc.getLeafElements();
+	
+	for (int i=0; i < roots.length; i++)
+	    computeDF(hc, roots[i]);
+
+	if (tempDT) dt = null; // free the dominator tree.
     }
     void computeDF(HCode hc, HCodeElement n) {
 	UniqueVector S = new UniqueVector();
