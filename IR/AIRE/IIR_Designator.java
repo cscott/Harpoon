@@ -4,11 +4,11 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_Designator</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_Designator.java,v 1.2 1998-10-10 09:21:38 cananian Exp $
+ * @version $Id: IIR_Designator.java,v 1.3 1998-10-10 09:58:35 cananian Exp $
  */
 
 //-----------------------------------------------------------
-public class IIR_Designator extends IIR_Tuple
+public abstract class IIR_Designator extends IIR_Tuple
 {
 
 // PUBLIC:

@@ -2,13 +2,15 @@
 package harpoon.IR.AIRE;
 
 /**
- * <code>IIR_ScalarNatureDefinition</code> 
+ * The <code>IIR_ScalarNatureDefinition</code> class represents predefined
+ * methods, subprograms, and public data elements describing scalar natures.
+ *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ScalarNatureDefinition.java,v 1.1 1998-10-10 07:53:42 cananian Exp $
+ * @version $Id: IIR_ScalarNatureDefinition.java,v 1.2 1998-10-10 09:58:35 cananian Exp $
  */
 
 //-----------------------------------------------------------
-public class IIR_ScalarNatureDefinition extends IIR_NatureDefinition
+public abstract class IIR_ScalarNatureDefinition extends IIR_NatureDefinition
 {
 
 // PUBLIC:

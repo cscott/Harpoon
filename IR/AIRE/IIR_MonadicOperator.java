@@ -4,11 +4,11 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_MonadicOperator</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_MonadicOperator.java,v 1.1 1998-10-10 07:53:38 cananian Exp $
+ * @version $Id: IIR_MonadicOperator.java,v 1.2 1998-10-10 09:58:35 cananian Exp $
  */
 
 //-----------------------------------------------------------
-public class IIR_MonadicOperator extends IIR_Expression
+public abstract class IIR_MonadicOperator extends IIR_Expression
 {
 
 // PUBLIC:

@@ -4,11 +4,11 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_ConcurrentStatement</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ConcurrentStatement.java,v 1.1 1998-10-10 07:53:34 cananian Exp $
+ * @version $Id: IIR_ConcurrentStatement.java,v 1.2 1998-10-10 09:58:34 cananian Exp $
  */
 
 //-----------------------------------------------------------
-public class IIR_ConcurrentStatement extends IIR_Statement
+public abstract class IIR_ConcurrentStatement extends IIR_Statement
 {
 
 // PUBLIC:

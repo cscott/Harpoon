@@ -4,11 +4,11 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_Expression</code> %
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_Expression.java,v 1.1 1998-10-10 07:53:36 cananian Exp $
+ * @version $Id: IIR_Expression.java,v 1.2 1998-10-10 09:58:35 cananian Exp $
  */
 
 //-----------------------------------------------------------
-public class IIR_Expression extends IIR
+public abstract class IIR_Expression extends IIR
 {
 
 // PUBLIC:

@@ -10,11 +10,11 @@ package harpoon.IR.AIRE;
  * which is itself an array.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ArrayNatureDefinition.java,v 1.2 1998-10-10 09:21:37 cananian Exp $
+ * @version $Id: IIR_ArrayNatureDefinition.java,v 1.3 1998-10-10 09:58:34 cananian Exp $
  */
 
 //-----------------------------------------------------------
-public class IIR_ArrayNatureDefinition extends IIR_CompositeNatureDefinition
+public abstract class IIR_ArrayNatureDefinition extends IIR_CompositeNatureDefinition
 {
 
 // PUBLIC:

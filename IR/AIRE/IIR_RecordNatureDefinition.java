@@ -4,11 +4,11 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_RecordNatureDefinition</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_RecordNatureDefinition.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
+ * @version $Id: IIR_RecordNatureDefinition.java,v 1.3 1998-10-10 09:58:35 cananian Exp $
  */
 
 //-----------------------------------------------------------
-public class IIR_RecordNatureDefinition extends IIR_CompositeNatureDefinition
+public abstract class IIR_RecordNatureDefinition extends IIR_CompositeNatureDefinition
 {
 
 // PUBLIC:
