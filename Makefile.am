@@ -32,7 +32,7 @@ update: needs-cvs
 
 ChangeLog: needs-cvs
 	-$(RM) $@
-	rcs2log > $@
+	rcs2log | sed -e 's:/[^,]*/CVSROOT/Runtime/::g' > $@
 dist: ChangeLog
 
 flexrun-config: scripts/flexrun-config
