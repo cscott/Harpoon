@@ -3282,11 +3282,10 @@ GC_bool is_ptrfree;
       3. macosx-nat.c from Apple's GDB source code.
 */
    
-/* There seem to be numerous problems with darwin's mach exception handling.
-   I'm pretty sure they are not problems in my code. Search for 
-   BROKEN_EXCEPTION_HANDLING for more information. */
-#define BROKEN_EXCEPTION_HANDLING
-   
+/* The bug that caused all this trouble should now be fixed. This should
+   eventually be removed if all goes well. */
+/* define BROKEN_EXCEPTION_HANDLING */
+    
 #include <mach/mach.h>
 #include <mach/mach_error.h>
 #include <mach/thread_status.h>

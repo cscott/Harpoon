@@ -1914,7 +1914,13 @@ void GC_err_puts GC_PROTO((GC_CONST char *s));
 
 /* Check a compile time assertion at compile time.  The error	*/
 /* message for failure is a bit baroque, but ...		*/
+#if defined(mips) && !defined(__GNUC__)
+/* DOB: MIPSPro C gets an internal error taking the sizeof an array type. 
+   This code works correctly (ugliness is to avoid "unused var" warnings) */
+# define GC_STATIC_ASSERT(expr) do { if (0) { char j[(expr)? 1 : -1]; j[0]='\0'; j[0]=j[0]; } } while(0)
+#else
 # define GC_STATIC_ASSERT(expr) sizeof(char[(expr)? 1 : -1])
+#endif
 
 # if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
     /* We need additional synchronization facilities from the thread	*/
