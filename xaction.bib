@@ -340,6 +340,56 @@ reduced network accesses and increased processor idle time.
  }
 
 
+@InProceedings{BlackHuJuLe86,
+ bibnote = {was 28706},
+ author = {Andrew Black and Norman Hutchinson and Eric Jul and Henry Levy},
+ title = {Object structure in the {E}merald system},
+ booktitle = {Conference Proceedings on Object-Oriented Programming
+                  Systems, Languages and Applications (OOPSLA)},
+ month = sep,
+ year = 1986,
+ isbn = {0-89791-204-7},
+ pages = {78--86},
+ location = {Portland, OR},
+ doi = {http://doi.acm.org/10.1145/28697.28706},
+ publisher = {ACM Press},
+ local = {p78-black.pdf},
+ summary = {``This paper discusses the structure, programming, and
+                  implementation of Emerald object, and Emerald's use
+                  of abstract types.''  ``We believe that objects are
+                  an excellent way to structure a distributed system
+                  because they encapsulate the concepts of process,
+                  procedure, data, and location.''  Statically typed
+                  system, but some type checking done at run-time.
+                  ``An object can be manipulated only through
+                  invocation; no external access to an object's data
+                  is permitted.'' Each object has an optional
+                  \emph{process}, which runs in parallel with
+                  invocations of the object's operations.  Object can
+                  be tagged as immutable, although this is not
+                  checked.  Objects can have static initializers,
+                  too.  ``An abstract type defines a collection of
+                  operation signatures'', and types conform if the
+                  operations are exist and are compatible (covariant args,
+                  contravariant return types).  Many-to-many mapping
+                  between abstract types and object types.  Runtime
+                  type checking sometimes necessary.  Three types of
+                  objects: global (can be referenced remotely), local
+                  (all references are contained within another
+                  object), and direct (same, but allocated inline with
+                  other object).  Location primitives to locate, fix,
+                  unfix, or move an object.  In addition to
+                  call-by-reference, allows also \emph{call-by-move},
+                  which packages up the parameter objects and moves
+                  them to the location of the target object.  Method
+                  dispatch table like C++/Java, except ``when an
+                  assignment is made, the vector may have to be
+                  changed if the new object is implemented by a
+                  different concrete type'' and ``an Abstract-Concrete
+                  vector must exist for every pair'' of abstract and
+                  concrete types.},
+ }
+
 @article{BlellochLeMa98,
     author = "Guy E. Blelloch and Charles E. Leiserson and Bruce M. Maggs and C. Greg Plaxton and Stephen J. Smith and M. Zagha",
     title = "An Experimental Analysis of Parallel Sorting Algorithms",
@@ -1396,6 +1446,40 @@ pages = "II70-II77"
                   resets during the Mars Pathfinder mission.}
 }
 
+@InProceedings{JulSt91,
+  bibnote = 	 {jul91:emerald},
+  author = 	 {Eric Jul and Bjarne Steensgaard},
+  title = 	 {Implementation of Distributed Objects in {E}merald},
+  booktitle = 	 {Proceedings of the International Workshop on Object
+                  Orientation in Operating Systems},
+  pages =	 {130--132},
+  year =	 1991,
+  address =	 {Palo Alto, CA},
+  month =	 oct,
+  organization = {IEEE},
+  url = {http://ieeexplore.ieee.org/xpl/abs_free.jsp?arNumber=183037},
+  local = {00183037.pdf},
+  summary = {Distributed OO system using single address space and
+                  compiler protection.  Remote procedure call done
+                  using a faulting mechanism to keep local procedure
+                  calls fast.  Immutable objects can be tagged and
+                  replicated, although tag is not checked.  Compiler
+                  determines ``local-only'' objects (as well as
+                  stack-allocatable objects?) for efficiency.  Some
+                  minimal details on distributed garbage collector:
+                  ``[T]he emphasis is not on a fast, efficient
+                  collector but rather on a `once-a-day' collector
+                  that takes a lot of wall-clock time but which
+                  collects all garbage.''  Single UNIX process with
+                  lightweight user threads, interruptible at safe
+                  points only.  Monitored objects for synchronization,
+                  ala Java; objects split into ``monitored'' and
+                  ``non-monitored'' code, with non-monitored code not
+                  allowed to access shared (read, all?) variables.
+                  Incorrectly claims that this is sufficient to
+                  prevent races.},
+}
+
 @InProceedings{KarpLuhe92,
   bibnote = {STOC::KarpLH1992},
   title =        "Efficient {PRAM} Simulation on a Distributed Memory Machine",
@@ -2419,6 +2503,27 @@ month = oct
                   context of garbage collection.  Transactions may
             make destructive traversals more robust to interruptions.},
 }
+
+@InProceedings{SchultzBuChKn03,
+ bibnote = {was 780739},
+ author = {Ulrik Pagh Schultz and Kim Burgaard and Flemming Gram
+                  Christensen and J{\o}rgen Lindskov Knudsen},
+ title = {Compiling {Java} for Low-End Embedded Systems},
+ booktitle = {Proceedings of the 2003 ACM SIGPLAN Conference on
+                  Language, Compiler, and Tool Support for Embedded
+                  Systems (LCTES)},
+ month = jun,
+ year = {2003},
+ isbn = {1-58113-647-1},
+ pages = {42--50},
+ location = {San Diego, California, USA},
+ doi = {http://doi.acm.org/10.1145/780732.780739},
+ publisher = {ACM Press},
+ local = {p42-schultz.pdf},
+ summary = {JEPES. Explicit stack and ``ghost'' allocation.  Mechanism for
+                  inline asm.  Mechanism for interrupt handlers.
+                  Mechanism to specify analysis holes.},
+ }
 
 % Todo: Nir Shavit, Software Transactional Memory, PDOC 1995 204-213
 %  Distributed Comptuing 10(2): 99--116 1997
