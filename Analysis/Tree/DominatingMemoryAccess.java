@@ -70,7 +70,7 @@ import java.util.Collection;
  used since it needs to invalidate them on a function return.
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.1.2.9 2001-06-12 01:19:17 witchel Exp $
+ * @version $Id: DominatingMemoryAccess.java,v 1.1.2.10 2001-06-12 04:17:46 cananian Exp $
  */
 public class DominatingMemoryAccess {
 
@@ -809,20 +809,14 @@ public class DominatingMemoryAccess {
          HCodeElement hce = elts[i];
          if(((Tree)hce).kind() == TreeKind.MEM) {
             MEM mem = (MEM)hce;
-            // XXX Someday soon this restriction will go away as large
-            // objects will  be split into different eq classes at
-            // this boundary.
-            if(mem.getExp().kind() == TreeKind.TEMP
-               && getSize(mem, (TEMP)mem.getExp()) <= 32) {
-               if(eqClasses.needs_tag_check(mem)) {
-                  if(eqClasses.num_using_this_tag(mem) > 1) {
-                     // Then this is a def that is used
-                     defUseMap.put(mem, eqClasses.ops_using_this_tag(mem));
-                  }
-               } else {
-                  useDefMap.put(mem, eqClasses.whose_tag_check(mem));
-               }
-            }
+	    if(eqClasses.needs_tag_check(mem)) {
+		if(eqClasses.num_using_this_tag(mem) > 1) {
+		    // Then this is a def that is used
+		    defUseMap.put(mem, eqClasses.ops_using_this_tag(mem));
+		}
+	    } else {
+		useDefMap.put(mem, eqClasses.whose_tag_check(mem));
+	    }
          }
       }
    }
