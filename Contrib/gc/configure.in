@@ -122,7 +122,7 @@ case "$THREADS" in
     THREADS=posix
     THREADLIBS=-lpthread
     case "$host" in
-     x86-*-linux* | ia64-*-linux* | i586-*-linux* | i686-*-linux*)
+     x86-*-linux* | ia64-*-linux* | i586-*-linux* | i686-*-linux* | x86_64-*-linux* | alpha-*-linux*)
 	AC_DEFINE(GC_LINUX_THREADS)
 	AC_DEFINE(_REENTRANT)
         if test "${enable_parallel_mark}" = yes; then
@@ -159,6 +159,17 @@ case "$THREADS" in
 	;;
      *-*-cygwin*)
 	AC_DEFINE(GC_WIN32_THREADS)
+	;;
+     *-*-osf*)
+	AC_DEFINE(GC_OSF1_THREADS)
+        if test "${enable_parallel_mark}" = yes; then
+	  AC_DEFINE(PARALLEL_MARK)
+	  AC_DEFINE(THREAD_LOCAL_ALLOC)
+	  # May want to enable it in other cases, too.
+	  # Measurements havent yet been done.
+	fi
+	INCLUDES="$INCLUDES -pthread"
+	THREADLIBS="-lpthread -lrt"
 	;;
     esac
     ;;
@@ -239,7 +250,7 @@ case "$host" in
        AC_MSG_WARN(OpenBSD/Alpha without dlopen(). Shared library support is disabled)
     fi
     ;;
- alpha*-*-*)
+ alpha*-*-linux*)
     machdep="alpha_mach_dep.lo"
     ;;
  i?86-*-solaris2.[[89]]*)
@@ -255,6 +266,8 @@ case "$host" in
     ;;
  mips-nec-sysv*|mips-unknown-sysv*)
     ;;
+ mips*-*-linux*) 
+    ;; 
  mips-*-*)
     machdep="mips_sgi_mach_dep.lo"
     AC_DEFINE(NO_EXECUTE_PERMISSION)
@@ -376,7 +389,7 @@ AC_ARG_ENABLE(full-debug,
       ia64-*-linux* )
 	AC_DEFINE(MAKE_BACK_GRAPH)
       ;;
-      x86-*-linux* | i586-*-linux* | i686-*-linux* )
+      x86-*-linux* | i586-*-linux* | i686-*-linux* | x86_64-*-linux* )
 	AC_DEFINE(MAKE_BACK_GRAPH)
 	AC_MSG_WARN("Client must not use -fomit-frame-pointer.")
 	AC_DEFINE(SAVE_CALL_COUNT, 8)
@@ -394,6 +407,7 @@ if test "${enable_redirect_malloc}" = yes; then
     if test "${enable_full_debug}" = yes; then
 	AC_DEFINE(REDIRECT_MALLOC, GC_debug_malloc_replacement)
 	AC_DEFINE(REDIRECT_REALLOC, GC_debug_realloc_replacement)
+	AC_DEFINE(REDIRECT_FREE, GC_debug_free)
     else
 	AC_DEFINE(REDIRECT_MALLOC, GC_malloc)
     fi
