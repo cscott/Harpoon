@@ -35,7 +35,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.6 1999-10-20 20:26:41 cananian Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.7 1999-11-04 00:01:44 cananian Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -108,18 +108,20 @@ public class RegFileInfo
         liveOnExitRegs.add(SP);
         liveOnExitRegs.add(PC);
 
+	// callee clobbers r0,r1,r2,r3,ip,lr
 	for(int i=0; i<4; i++) {
 	    callerSaveRegs.add(reg[i]);
 	}
+	callerSaveRegs.add(reg[12]);
+	callerSaveRegs.add(reg[14]);
 	
-	for(int i=4; i<=12; i++) {
+	// callee saves r4-r11,sp
+	for(int i=4; i<12; i++) {
 	    calleeSaveRegs.add(reg[i]);
 	}
-	calleeSaveRegs.add(reg[14]);
+	calleeSaveRegs.add(reg[13]);
     }
     
-    //    public Temp FP() { return reg[11]; }
-
     public Temp[] getAllRegisters() { 
 	return (Temp[]) Util.safeCopy(Temp.arrayFactory, reg); 
     }
