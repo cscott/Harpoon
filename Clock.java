@@ -33,8 +33,7 @@ public abstract class Clock {
     private RelativeTime resolution;
     private static RealtimeClock rtc = null;
     
-    public Clock() {
-    }
+    public Clock() {}
     
     /** There is always one clock object available: a realtime clock that
      *  advances in sync with the external world. This is the default Clock.

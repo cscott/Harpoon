@@ -77,20 +77,20 @@ public class AsyncEventHandler implements Schedulable {
 	this.nonheap = nonheap;
     }
 
-    /** Create a handler whose parameters are inherited from the current thread,
-     *  if it is a <code>RealtimeThread</code>, or null otherwise.
-     */
-    public AsyncEventHandler(boolean nonheap, Runnable logic) {
-	this(nonheap);
-	this.logic = logic;
-    }
-
     /** Create a handler whose <code>SchedulingParameters</code> are inherited
      *  from the current thread and does not have either
      *  <code>ReleaseParameters</code> or <code>MemoryParameters</code>.
      */
     public AsyncEventHandler(Runnable logic) {
 	this();
+	this.logic = logic;
+    }
+
+    /** Create a handler whose parameters are inherited from the current thread,
+     *  if it is a <code>RealtimeThread</code>, or null otherwise.
+     */
+    public AsyncEventHandler(Runnable logic, boolean nonheap) {
+	this(nonheap);
 	this.logic = logic;
     }
 
@@ -130,8 +130,7 @@ public class AsyncEventHandler implements Schedulable {
 			     MemoryParameters memory,
 			     MemoryArea area,
 			     ProcessingGroupParameters group,
-			     boolean nonheap, 
-			     Runnable logic) {
+			     boolean nonheap, Runnable logic) {
 	this(scheduling, release, memory, area, group, logic);
 	this.nonheap = nonheap;
 	
@@ -188,6 +187,7 @@ public class AsyncEventHandler implements Schedulable {
      *  from before the decrement. This can be used in the
      *  <code>handleAsyncEvent()</code> method in this form to
      *  handle multiple firings:
+     *  <p>
      *  <code>
      *  public void handleAsyncEvent() {
      *      <setup>
