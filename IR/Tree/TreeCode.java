@@ -10,13 +10,30 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.LowQuad.LowQuadNoSSA;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 
+/*
+ * The <code>TreeCode</code> codeview exposes a tree-based representation.
+ * This codeview serves primarily as an intermediate translation phase between 
+ * <code>LowQuadNoSSA</code> and <code>CanonicalTreeCode</code>.  
+ * In general, most analyses will be simpler in <code>CanonicalTreeCode</code>
+ * because it has no <code>ESEQ</code>s.  
+ * 
+ * The tree form is based around Andrew Appel's tree form.  
+ *
+ * @author  Duncan Bryce <duncan@lcs.mit.edu> 
+ * @version $Id: TreeCode.java,v 1.1.2.7 1999-07-07 09:08:28 duncan Exp $
+ * 
+ */
 public class TreeCode extends Code {
-    public static final String codename = "tree";
-    private Derivation derivation;
-    private TypeMap    typeMap;
+    public  static   final   String     codename = "tree";
+    private        /*final*/ Derivation derivation;
+    private        /*final*/ TypeMap    typeMap;
   
+    /** Create a new <code>TreeCode</code> from a
+     *  <code>LowQuadNoSSA</code> object, and a <code>Frame</code>.
+     */
     TreeCode(LowQuadNoSSA code, Frame topframe) {
 	super(code.getMethod(), null, topframe);
 
@@ -32,19 +49,58 @@ public class TreeCode extends Code {
 	super(newMethod, tree, topframe);
     }
 
+    /** 
+     * Clone this code representation. The clone has its own
+     * copy of the tree structure. 
+     */
     public HCode clone(HMethod newMethod, Frame frame) {
-	/*
-	  TreeCode tc = new TreeCode(newMethod, null, frame); 
-	  tc.tree = (Tree)(Tree.clone(tc.tf, tree));
-	*/
-	return null; //tc;
+	TreeCode             tc  = new TreeCode(newMethod, null, frame); 
+	final CloningTempMap ctm = new CloningTempMap
+	    (this.tf.tempFactory(), tc.tf.tempFactory());
+
+	tc.tree = (Tree)(Tree.clone(tc.tf, ctm, tree));
+	// Must update the temps in your frame when you clone the tree form
+	// Failure to do this causes an inconsistency between the new temps
+	// created for the new frame, and the frame's registers mapped
+	// using ctm in Tree.clone(). 
+	Temp[] oldTemps = this.tf.getFrame().getAllRegisters();
+	Temp[] newTemps = tc.tf.getFrame().getAllRegisters();
+	for (int i=0; i<oldTemps.length; i++) 
+	    newTemps[i] = oldTemps[i]==null?null:ctm.tempMap(oldTemps[i]);
+
+	tc.derivation = new Derivation() { 
+	    public DList derivation(HCodeElement hce, Temp t) { 
+		return this.derivation(hce, t==null?null:ctm.tempMap(t));
+	    }
+	};
+
+	tc.typeMap    = new TypeMap() { 
+	    public HClass typeMap(HCode hc, Temp t) { 
+		return this.typeMap(hc, t==null?null:ctm.tempMap(t));
+	    }
+	};
+
+	return tc;
     }
 
+    /**
+     * Return the name of this code view.
+     * @return the string <code>"tree"</code>.
+     */
     public String getName() { return codename; }
+
+    /** @return false */
+    public boolean isCanonical() { return false; } 
+
+    /** 
+     * This operation is not supported in non-canonical tree forms.
+     * @exception UnsupportedOperationException always.
+     */
+    public void recomputeEdges() { throw new UnsupportedOperationException(); }
 
     /**
      * Return a code factory for <code>TreeCode</code>, given a 
-     * code factory for either <code>LowQuadNoSSA</code>
+     * code factory for <code>LowQuadNoSSA</code>
      */
     public static HCodeFactory codeFactory(final HCodeFactory hcf, 
 					   final Frame frame) {
@@ -78,10 +134,16 @@ public class TreeCode extends Code {
 	    (codeFactory(new harpoon.Backend.StrongARM.SAFrame())); 
     }
 
+    /**
+     * Implementation of the <code>Derivation</code> interface.
+     */
     public DList derivation(HCodeElement hce, Temp t) {
 	return derivation.derivation(hce, t);
     }
 
+    /**
+     * Implementation of the <code>TypeMap</code> interface.
+     */
     public HClass typeMap(HCode hc, Temp t) {
 	// Ignores hc parameter
 	return typeMap.typeMap(this, t);
