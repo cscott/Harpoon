@@ -27,15 +27,15 @@ int initializeFOS(JNIEnv *env) {
 #endif
 
     FOSCls  = (*env)->FindClass(env, "java/io/FileOutputStream");
-    if ((*env)->ExceptionOccurred(env)) return 0;
+    if ((*env)->ExceptionOccurred(env)) goto done;
     fdObjID = (*env)->GetFieldID(env, FOSCls, "fd","Ljava/io/FileDescriptor;");
-    if ((*env)->ExceptionOccurred(env)) return 0;
+    if ((*env)->ExceptionOccurred(env)) goto done;
     FDCls   = (*env)->FindClass(env, "java/io/FileDescriptor");
-    if ((*env)->ExceptionOccurred(env)) return 0;
+    if ((*env)->ExceptionOccurred(env)) goto done;
     fdID    = (*env)->GetFieldID(env, FDCls, "fd", "I");
-    if ((*env)->ExceptionOccurred(env)) return 0;
+    if ((*env)->ExceptionOccurred(env)) goto done;
     IOExcCls = (*env)->FindClass(env, "java/io/IOException");
-    if ((*env)->ExceptionOccurred(env)) return 0;
+    if ((*env)->ExceptionOccurred(env)) goto done;
     /* make IOExcCls into a global reference for future use */
     IOExcCls = (*env)->NewGlobalRef(env, IOExcCls);
     /* done. */
@@ -44,7 +44,7 @@ int initializeFOS(JNIEnv *env) {
 #ifdef WITH_HEAVY_THREADS
     pthread_mutex_unlock(&init_mutex);
 #endif
-    return 1;
+    return inited;
 }
 
 /*
