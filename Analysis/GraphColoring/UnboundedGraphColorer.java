@@ -12,7 +12,7 @@ import java.util.List;
  * using a <code>ColorFactory</code>.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: UnboundedGraphColorer.java,v 1.1.2.2 2000-07-25 23:25:03 pnkfelix Exp $
+ * @version $Id: UnboundedGraphColorer.java,v 1.1.2.3 2000-07-27 21:34:13 pnkfelix Exp $
  */
 public class UnboundedGraphColorer extends GraphColorer {
 
@@ -97,11 +97,6 @@ public class UnboundedGraphColorer extends GraphColorer {
 	} catch ( UnableToColorGraph e ) {
 	    return false;
 	}
-    }
-
-    public final void color(ColorableGraphImpl graph, List colors) 
-	throws UnableToColorGraph {
-	colorer.color(graph, colors);
     }
 
     public final void color(ColorableGraph graph, List colors) 

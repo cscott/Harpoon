@@ -13,9 +13,9 @@ import java.util.NoSuchElementException;
  *
  * @deprecated replaced by <code>ColorableGraph</code> interface.
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableGraphImpl.java,v 1.1.2.2 2000-07-21 21:54:40 pnkfelix Exp $ */
+ * @version $Id: ColorableGraphImpl.java,v 1.1.2.3 2000-07-27 21:34:13 pnkfelix Exp $ */
 
-public abstract class ColorableGraphImpl extends GraphImpl {
+abstract class ColorableGraphImpl extends GraphImpl {
 
     private boolean mutable;
 

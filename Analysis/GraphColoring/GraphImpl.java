@@ -13,10 +13,10 @@ import java.util.Enumeration;
  * 
  * @deprecated replaced by <code>Graph</code> interface.
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: GraphImpl.java,v 1.1.2.3 2000-07-21 21:54:40 pnkfelix Exp $
+ * @version $Id: GraphImpl.java,v 1.1.2.4 2000-07-27 21:34:13 pnkfelix Exp $
  */
 
-public abstract class GraphImpl {
+abstract class GraphImpl extends AbstractGraph {
     
     protected UniqueVector nodes;
 

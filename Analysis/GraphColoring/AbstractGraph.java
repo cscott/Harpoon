@@ -29,7 +29,7 @@ import java.util.List;
  * methods  (which otherwise throws UnsupportedOperationException).
  *
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: AbstractGraph.java,v 1.1.2.1 2000-07-25 23:25:03 pnkfelix Exp $
+ * @version $Id: AbstractGraph.java,v 1.1.2.2 2000-07-27 21:34:12 pnkfelix Exp $
  */
 public abstract class AbstractGraph implements Graph {
     
@@ -74,14 +74,13 @@ public abstract class AbstractGraph implements Graph {
 	    public Iterator iterator() {
 		final Iterator nodes = nodeSet().iterator();
 
-		// visited holds current and all previous values for
-		// curr in returned Iterator
+		// visited holds all previous values for curr in
+		// returned Iterator
 		final Set visited = new HashSet();
 		
 		final Object first;
 		if (nodes.hasNext()) {
 		    first = nodes.next();
-		    visited.add(first);
 		} else {
 		    first = null;
 		}
@@ -120,8 +119,8 @@ public abstract class AbstractGraph implements Graph {
 				nbor = null;
 				
 				if(nodes.hasNext()) {
-				    curr = nodes.next();
 				    visited.add(curr);
+				    curr = nodes.next();
 				    niter = neighborsOf(curr).iterator();
 				} else {
 				    return false;
