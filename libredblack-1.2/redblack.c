@@ -1,4 +1,4 @@
-static char rcsid[]="$Id: redblack.c,v 1.2 2003-03-19 22:18:44 bdemsky Exp $";
+static char rcsid[]="$Id: redblack.c,v 1.3 2003-06-18 06:06:18 bdemsky Exp $";
 
 /*
    Redblack balanced tree algorithm
@@ -73,7 +73,7 @@ static void rb_free(struct rbnode *);
 
 static struct rbnode *rb_traverse(const void *, struct rbtree *);
 static struct rbnode *rb_lookup(const void *low,const void *high, struct rbtree *);
-static void rb_destroy(struct rbnode *);
+static void rb_destroy(struct rbnode *,void (*)(void *));
 static void rb_left_rotate(struct rbnode **, struct rbnode *);
 static void rb_right_rotate(struct rbnode **, struct rbnode *);
 static void rb_delete(struct rbnode **, struct rbnode *);
@@ -122,12 +122,12 @@ struct rbtree * rbinit() {
   return(retval);
 }
 	
-void rbdestroy(struct rbtree *rbinfo) {
+void rbdestroy(struct rbtree *rbinfo, void (*free_function)(void *)) {
   if (rbinfo==NULL)
     return;
   
   if (rbinfo->rb_root!=RBNULL)
-    rb_destroy(rbinfo->rb_root);
+    rb_destroy(rbinfo->rb_root,free_function);
   
   free(rbinfo);
 }
@@ -141,7 +141,7 @@ const void * rbdelete(const void *key, struct rbtree *rbinfo) {
   
   x=rb_traverse(key, rbinfo);
   
-  if (x==NULL) {
+  if (x==RBNULL) {
     return(NULL);
   } else {
     y=x->key;
@@ -419,12 +419,14 @@ int rbsearch(const void *low, const void *high, struct rbtree *rbinfo) {
  * Destroy all the elements blow us in the tree
  * only useful as part of a complete tree destroy.
  */
-static void rb_destroy(struct rbnode *x) {
+static void rb_destroy(struct rbnode *x,void (*free_function)(void *)) {
   if (x!=RBNULL) {
     if (x->left!=RBNULL)
-      rb_destroy(x->left);
+      rb_destroy(x->left,free_function);
     if (x->right!=RBNULL)
-      rb_destroy(x->right);
+      rb_destroy(x->right,free_function);
+    if (free_function!=NULL)
+      free_function(x->object);
     rb_free(x);
   }
 }
@@ -921,13 +923,10 @@ dumptree(struct rbnode *x, int n)
 
 /*
  * $Log: redblack.c,v $
- * Revision 1.2  2003-03-19 22:18:44  bdemsky
+ * Revision 1.3  2003-06-18 06:06:18  bdemsky
  *
  *
- * Bug...
- *
- * Revision 1.1  2003/02/21 16:11:56  bdemsky
- * Modified red-black tree - it implements a balanced interval tree...
+ * Added option to pass in function to free items in the redblack interval tree.
  *
  * Revision 1.5  2002/01/30 07:54:53  damo
  * Fixed up the libtool versioning stuff (finally)

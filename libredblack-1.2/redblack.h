@@ -1,5 +1,5 @@
 /*
- * RCS $Id: redblack.h,v 1.1 2003-02-21 16:11:56 bdemsky Exp $
+ * RCS $Id: redblack.h,v 1.2 2003-06-18 06:06:18 bdemsky Exp $
  */
 
 /*
@@ -58,7 +58,7 @@ struct pair rbfind(const void *low,const void *high, struct rbtree *rbinfo);
 const void *rbdelete(const void *, struct rbtree *);
 void *rblookup(const void *, const void *,struct rbtree *);
 int rbsearch(const void *low, const void *high, struct rbtree *rbinfo);
-void rbdestroy(struct rbtree *);
+void rbdestroy(struct rbtree *,void (*free_function)(void *));
 void rbwalk(const struct rbtree *,
 		void (*)(const void *, const VISIT, const int, void *),
 		void *); 
@@ -76,8 +76,10 @@ void rbcloselist(RBLIST *);
 /*
  *
  * $Log: redblack.h,v $
- * Revision 1.1  2003-02-21 16:11:56  bdemsky
- * Modified red-black tree - it implements a balanced interval tree...
+ * Revision 1.2  2003-06-18 06:06:18  bdemsky
+ *
+ *
+ * Added option to pass in function to free items in the redblack interval tree.
  *
  * Revision 1.5  2002/01/30 07:54:53  damo
  * Fixed up the libtool versioning stuff (finally)
