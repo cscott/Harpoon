@@ -24,7 +24,7 @@ Make superclass 'Register' or 'Initialize' or 'Harpoon' or something
  to return instance of registration object.
 ---- Sep-11-98
 Optimize INSTANCEOF and COMPONENTOF in SCC.
-Update xLass to hold 'canbeNull' boolean.
+Update xClass to hold 'canbeNull' boolean.
 Update OPER(acmpeq) to check canbeNull boolean.
 Write optimization pass based on SCC analysis.
 Rewrite SCC to use *edges* instead of *blocks* for executable analysis.
