@@ -1,0 +1,28 @@
+#!/bin/sh
+name=$2
+cls=$1
+dir=as$name
+# check java version
+if if java -version 2>&1 | grep -q 'version "1.1'; then
+  echo "WARNING: YOU ARE USING JAVA 1.1. (JDK1.2 or above is preferred)"
+fi
+# ok.
+echo "Building $cls in $dir; result will be ${name}-Java.a"
+if [ -d $dir ]; then
+    /bin/rm -rf $dir
+fi
+if [ ! -d $dir ]; then
+    mkdir $dir
+fi
+# you can set FLEXPATH to assign additional components to the harpoon classpath
+#flexc $cls -o $dir
+java -mx64m -oss2m -Dharpoon.class.path=${FLEXPATH}${FLEXPATH:+:}.:../Benchmarks:Support/Lex.jar:SupportNP/sunthunk.jar:SupportNP/collections.jar:SupportNP/classes.zip $flexc_options harpoon.Main.SAMain -bprecisec -c $cls -o $dir && \
+if [ -d ../Runtime/include ]; then
+    make -C $dir CC="gcc -I../../Runtime/include -g -O9" && \
+    mv -f $dir/Java.a ../Runtime/${name}-Java.a && \
+    make -C ../Runtime run${name} && \
+    echo "EXECUTABLE left in ../Runtime/run${name}."
+else
+    echo "ASSEMBLY FILES left in $dir; see $dir/Makefile to build."
+fi
+exit $?
