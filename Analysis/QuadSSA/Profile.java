@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@@ai.mit.edu> 
 // Version: 
 // Created: <Tue Oct  6 12:41:25 1998> 
-// Time-stamp: <1998-12-03 00:48:25 mfoltz> 
+// Time-stamp: <1998-12-08 13:30:37 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.QuadSSA;
@@ -21,11 +21,12 @@ import java.io.FileOutputStream;
 import java.io.FileInputStream;
 import java.util.Properties;
 import java.util.Enumeration;
+import java.util.Hashtable;
 
 /** A visitor that inserts profiling Quads into the CFG after <code>CALL</code> and <code>NEW</code> quads. 
  * 
- * @@author  Mark A. Foltz <mfoltz@@ai.mit.edu>
- * @@version 
+ * @author  Mark A. Foltz <mfoltz@@ai.mit.edu>
+ * @version 
  */
 
 public class Profile {
@@ -39,18 +40,10 @@ public class Profile {
 
     HMethod _method = hc.getMethod();
     HClass _class = _method.getDeclaringClass();
-    Set W = new Set();
 
-    Visitor v = new Visitor(W, _method, _class);
+    Visitor v = new Visitor(_method, _class);
 
     Enumeration e;
-
-    // put CALLs and NEWs on worklist
-    for (e = hc.getElementsE(); e.hasMoreElements();) {
-      Quad q = (Quad) e.nextElement();
-      if (q instanceof CALL || q instanceof NEW) 
-	W.push(q);
-    }
 
     // Make sure METHODHEADER visited first 
     for (e = hc.getElementsE(); e.hasMoreElements();) {
@@ -59,18 +52,24 @@ public class Profile {
 	q.visit(v);
     }
     
-    // Grovel over worklist until empty
-    while (!W.isEmpty()) {
-      Quad q = (Quad) W.pull();
-      q.visit(v);
+    // then CALLs
+    for (e = hc.getElementsE(); e.hasMoreElements();) {
+      Quad q = (Quad) e.nextElement();
+      if (q instanceof CALL) 
+	q.visit(v);
     }
+
+    //  NEWs last
+    for (e = hc.getElementsE(); e.hasMoreElements();) {
+      Quad q = (Quad) e.nextElement();
+      if (q instanceof NEW) 
+	q.visit(v);
+    }
+
   }
 
   /** This class implements the <code>Visitor</code> for <code>optimize()</code> */
   static class Visitor extends QuadVisitor {
-
-    /** the worklist */
-    Set _W;
 
     /** calling method, class, and <code>this</code> for this quad graph */
     HMethod _method;
@@ -92,13 +91,17 @@ public class Profile {
     /** A static class that logs compile-time information about who might call whom. */
     StaticMonitor _static_monitor;
 
-    Visitor(Set W, HMethod M, HClass C) {
+    /** A hashtable mapping Temps of NEW quads to the CALL <init> quads that initialize them. */
+    Hashtable _temp_init_map;
 
-      this._W = W;
+    Visitor(HMethod M, HClass C) {
+
       this._method = M;
       this._class = C;
 
       _static_monitor = new StaticMonitor();
+
+      _temp_init_map = new Hashtable();
 
       _java_lang_string = HClass.forName("java.lang.String");
       //      _java_lang_integer = HClass.forName("java.lang.Integer");
@@ -140,6 +143,7 @@ public class Profile {
      * Insert a <code>CONST</code> quad with a <code>String</code>
      * naming the method in <code>q<code>, then a <code>CALL</code> quad invoking 
      * <code>_call_profile_method</code>.<p>
+     * If this is a <code>Special &lt;init&gt;</code> call, add it to <code>_temp_init_map</code>.<p>
      * Also, log the fact in <code>_static_monitor</code>that this method may invoke the method in 
      * <code>q</code>. */
     public void visit(CALL q) {
@@ -176,6 +180,12 @@ public class Profile {
       // splice new quads into CFG
       splice(q, c1, profiling_call);
 
+      // if this is an <init> call then we put in _temp_init_map
+      if (q.isSpecial && q.method.getName().equals("<init>")) {
+	_temp_init_map.put(q.objectref, q);
+	System.err.println("_TEMP_INIT_MAP: "+q.objectref+" --> "+q.toString());
+      }
+
     }
 
     /** Visit the <code>NEW</code> quad <code>q</code>.<p>
@@ -210,39 +220,51 @@ public class Profile {
 
       Quad.addEdge(c1,0,profiling_call,0);
 
-      try {
+      // look for init in _temp_init_map
 
-	// look for init
-      
-	search_quad = q.next(0);
-	while (!(search_quad instanceof CALL)) {
-	  if (search_quad instanceof SIGMA || 
-	      search_quad instanceof PHI ||
-	      search_quad instanceof FOOTER) {
-	    System.err.println("sigma/phi bogosity on quads:");
-	    System.err.println(q.toString());
-	    System.err.println(search_quad.toString());
-	  }
-	  Util.assert(!(search_quad instanceof SIGMA) && 
-		      !(search_quad instanceof PHI) &&
-		      !(search_quad instanceof FOOTER));
-	  System.err.print(".");
-	  search_quad = search_quad.next(0);
-	}
-	call_quad = (CALL) search_quad;
-	if (!call_quad.method.getName().equals("<init>")) {
-	  System.err.println("<init> bogosity on quads: ");
-	  System.err.println(q.toString());
-	  System.err.println(call_quad.toString());
-	}
-	Util.assert(call_quad.method.getName().equals("<init>"));
-	
+      call_quad = (CALL) _temp_init_map.get(q.dst);
+      if (call_quad == null) {
+	System.err.println("No <init> for NEW "+q.dst+":");
+	System.err.println(q.toString());
+	splice(q, c1, profiling_call);
+      } else {
 	// splice new quad into CFG
 	splice(call_quad, c1, profiling_call);
-      } catch (Throwable e) {
-	System.err.println("caught exception here in NEW");
-	e.printStackTrace();
       }
+
+//       try {
+
+// 	// look for init
+      
+// 	search_quad = q.next(0);
+// 	while (!(search_quad instanceof CALL)) {
+// 	  if (search_quad instanceof SIGMA || 
+// 	      search_quad instanceof PHI ||
+// 	      search_quad instanceof FOOTER) {
+// 	    System.err.println("sigma/phi bogosity on quads:");
+// 	    System.err.println(q.toString());
+// 	    System.err.println(search_quad.toString());
+// 	  }
+// 	  Util.assert(!(search_quad instanceof SIGMA) && 
+// 		      !(search_quad instanceof PHI) &&
+// 		      !(search_quad instanceof FOOTER));
+// 	  System.err.print(".");
+// 	  search_quad = search_quad.next(0);
+// 	}
+// 	call_quad = (CALL) search_quad;
+// 	if (!call_quad.method.getName().equals("<init>")) {
+// 	  System.err.println("<init> bogosity on quads: ");
+// 	  System.err.println(q.toString());
+// 	  System.err.println(call_quad.toString());
+// 	}
+// 	Util.assert(call_quad.method.getName().equals("<init>"));
+	
+// 	// splice new quad into CFG
+// 	splice(call_quad, c1, profiling_call);
+//       } catch (Throwable e) {
+// 	System.err.println("caught exception here in NEW");
+// 	e.printStackTrace();
+//       }
 
     }
 
