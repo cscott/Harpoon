@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.13 2000-09-28 23:08:48 cananian Exp $
+% $Id: transact.tex,v 1.14 2000-09-28 23:37:24 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,7 +8,7 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.13 $ $}
+\date{\today \\ $ $Revision: 1.14 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
@@ -223,13 +223,8 @@ $\text{Write}(\code{struct oobj *} o, \code{int } n,
 \begin{myalgorithmic}
 \IF{$o\ptr\code{field}[n] = \code{FLAG\_VALUE}$}
   \STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
-  \WHILE{$\text{StateP}(v \ptr \code{transid}) \neq \code{COMMITTED}$}
-    \STATE $\text{AbortTransaction}(v \ptr \code{transid})$
-% defer this work until next read:
-%    \STATE \COMMENT{XXX: potential race here --- v could be already removed}
-%    \STATE remove $v$ from version list atomically
-%    \STATE $v \gets v\text{'s replacement}$
-    \STATE $v \gets v\ptr\code{next}$ \COMMENT{watch for races}
+  \WHILE{$\text{AbortTransaction}(v\ptr\code{transid}) \neq \code{COMMITTED}$}
+    \STATE $v \gets v\ptr\code{next}$
   \ENDWHILE
 \ELSIF{$x = \code{FLAG\_VALUE}$}
   \STATE \COMMENT{XXX: define CreateNewVersion (watch those races)}
@@ -290,6 +285,24 @@ $\text{StateP}(\code{struct commitrec *} c)$ =
 \end{myalgorithmic}
 \caption{Algorithm for determining transaction status.}
 \label{fig:statep}
+\end{figure}
+
+\begin{figure}
+$\text{AbortTransaction}(\code{struct commitrec *} c)$ =
+\begin{myalgorithmic}
+\IF{$c = \code{null}$}
+  \RETURN \code{COMMITTED}
+\ENDIF
+\LOOP
+  \STATE $s \gets c\ptr\code{state}$
+  \IF{$s \neq \code{WAITING}$}
+    \RETURN $s$
+  \ENDIF
+  \STATE $\code{compare\_and\_swap}(\&c\ptr\code{state}, s, \code{ABORTED})$
+\ENDLOOP*
+\end{myalgorithmic}
+\caption{Algorithm for (possibly) aborting a transaction.}
+\label{fig:aborttrans}
 \end{figure}
 
 %% XXX: separate transactions?  parallel subtransactions?
