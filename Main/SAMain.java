@@ -84,7 +84,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.123 2000-12-06 18:15:57 bdemsky Exp $
+ * @version $Id: SAMain.java,v 1.1.2.124 2000-12-06 21:45:43 witchel Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -116,6 +116,7 @@ public class SAMain extends harpoon.IR.Registration {
     static final int MIPS_BACKEND = 1;
     static final int SPARC_BACKEND = 2;
     static final int PRECISEC_BACKEND = 3;
+    static final int MIPSYP_BACKEND = 4;
     static int     BACKEND = STRONGARM_BACKEND;
     
     static Linker linker = null; // can specify on the command-line.
@@ -310,6 +311,10 @@ public class SAMain extends harpoon.IR.Registration {
 	    frame = new harpoon.Backend.MIPS.Frame
 		(mainM, classHierarchy, callGraph);
 	    break;
+	case MIPSYP_BACKEND:
+	    frame = new harpoon.Backend.MIPS.Frame
+		(mainM, classHierarchy, callGraph, "yp");
+	    break;
 	case PRECISEC_BACKEND:
 	    frame = new harpoon.Backend.PreciseC.Frame
 		(mainM, classHierarchy, callGraph);
@@ -336,6 +341,10 @@ public class SAMain extends harpoon.IR.Registration {
 	//hcf = harpoon.Analysis.Tree.DeadCodeElimination.codeFactory(hcf);
 	hcf = harpoon.Analysis.Tree.JumpOptimization.codeFactory(hcf);
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+    if(BACKEND == MIPSYP_BACKEND) {
+       hcf = new harpoon.Analysis.Tree.DominatingMemoryAccess(hcf, frame).codeFactory();
+    }
+    
     
 	HCodeFactory sahcf = frame.getCodeFactory(hcf);
 	if (sahcf!=null)
@@ -482,6 +491,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    HCodeFactory regAllocCF = 
 		RegAlloc.abstractSpillFactory(sahcf, frame, regAllocFactory);
 	    HCode rhc = regAllocCF.convert(hmethod);
+
 	    if (rhc != null) {
 		info("Codeview \""+rhc.getName()+"\" for "+
 		     rhc.getMethod()+":");
@@ -502,6 +512,11 @@ public class SAMain extends harpoon.IR.Registration {
 	    regAllocCF = RegAlloc.codeFactory(sahcf,frame,regAllocFactory);
 
 	    HCode rhc = regAllocCF.convert(hmethod);
+        if(BACKEND == MIPSYP_BACKEND && rhc != null) {
+           harpoon.Backend.Generic.Code cd = (harpoon.Backend.Generic.Code)rhc;
+           harpoon.Backend.MIPS.BypassLatchSchedule b = 
+              new harpoon.Backend.MIPS.BypassLatchSchedule(cd, frame);
+        }
 	    if (rhc != null) {
 		info("Codeview \""+rhc.getName()+"\" for "+
 		     rhc.getMethod()+":");
@@ -702,6 +717,9 @@ public class SAMain extends harpoon.IR.Registration {
 		    BACKEND = SPARC_BACKEND;
 		if (backendName == "mips")
 		    BACKEND = MIPS_BACKEND;
+		if (backendName == "mipsyp") {
+		    BACKEND = MIPSYP_BACKEND;
+        }
 		if (backendName == "precisec")
 		    BACKEND = PRECISEC_BACKEND;
 		break;
