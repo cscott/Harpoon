@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
+import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge; 
 import harpoon.ClassFile.HCodeElement; 
 import harpoon.IR.Properties.CFGrapher; 
@@ -24,7 +25,7 @@ import java.util.Stack;
  * control-flow graph information with elements of an canonical tree. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeGrapher.java,v 1.1.2.7 2000-02-14 13:05:37 cananian Exp $
+ * @version $Id: TreeGrapher.java,v 1.1.2.8 2000-02-16 22:33:23 cananian Exp $
  */
 class TreeGrapher extends CFGrapher { 
     private Map predecessors = new HashMap(); 
@@ -41,6 +42,10 @@ class TreeGrapher extends CFGrapher {
 	    (code, this.predecessors, this.successors); 
     }
 
+    /** Returns the first element in the control flow graph. */
+    public HCodeElement getFirstElement(HCode hcode) {
+	return RS((Stm)hcode.getRootElement());
+    }
     /** Returns an array of all the edges to and from the specified
      *  <code>HCodeElement</code>. */
     public HCodeEdge[] edges(HCodeElement hc) { 
@@ -199,11 +204,10 @@ class TreeGrapher extends CFGrapher {
 	    pred.add(te);
 	    succ.add(te);
 	}	    
-
-	private Stm RS(Stm seq) { 
-	    while (seq.kind()==TreeKind.SEQ) seq = ((SEQ)seq).getLeft();  
-	    return seq;
-	}
+    }
+    private static Stm RS(Stm seq) { 
+	while (seq.kind()==TreeKind.SEQ) seq = ((SEQ)seq).getLeft();  
+	return seq;
     }
     static class TreeEdge implements HCodeEdge {
 	private final Tree from;

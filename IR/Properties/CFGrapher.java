@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Properties;
 
+import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 
@@ -13,9 +14,13 @@ import java.util.Collection;
  * representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGrapher.java,v 1.1.2.2 2000-01-31 16:02:36 pnkfelix Exp $
+ * @version $Id: CFGrapher.java,v 1.1.2.3 2000-02-16 22:33:12 cananian Exp $
  */
 public abstract class CFGrapher {
+    /** Returns the first <code>HCodeElement</code> to be executed; that is,
+     *  the root of the control-flow graph. */
+    public abstract HCodeElement getFirstElement(HCode hcode);
+
     /** Returns an array of all the edges to and from the specified
      *  <code>HCodeElement</code>. */
     public HCodeEdge[] edges(HCodeElement hc) {
@@ -61,12 +66,17 @@ public abstract class CFGrapher {
      *  but cast the supplied <code>HCodeElement</code> to a
      *  <code>CFGraphable</code> and invoke the appropriate
      *  corresponding method in the <code>CFGraphable</code>
-     *  interface.
+     *  interface.  The root of the control flow graph is
+     *  assumed to be whatever <code>HCode.getRootElement</code>
+     *  returns.
      * @see java.util.Comparator
      * @see java.lang.Comparable
      * @see harpoon.Util.Default.comparator
      */
     public static final CFGrapher DEFAULT = new CFGrapher() {
+	public HCodeElement getFirstElement(HCode hcode) {
+	    return hcode.getRootElement();
+	}
 	public HCodeEdge[] edges(HCodeElement hc) {
 	    return ((CFGraphable)hc).edges();
 	}
