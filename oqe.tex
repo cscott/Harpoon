@@ -1,4 +1,4 @@
-% CVSId: $Id: oqe.tex,v 1.2 2002-04-29 21:03:00 cananian Exp $
+% CVSId: $Id: oqe.tex,v 1.3 2002-04-29 23:07:50 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -218,9 +218,11 @@ void foo() \{\\
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{A signed integer lattice}
-\centering\renewcommand{\figscale}{0.6}%
+\begin{center}
+\renewcommand{\figscale}{0.6}%
 \newcommand{\color}[2][rgb]{}%ignore color commands
 \input{Figures/THlat6b}
+\end{center}
 
 \small
 An integer lattice for signed integers. A classification into
@@ -255,7 +257,7 @@ element indicating whether zero is a possible value has been omitted.
 \end{center}
 \end{slide}
 
-% %---------------------------------------------------------------------- SLIDE -
+%---------------------------------------------------------------------- SLIDE -
 % \begin{slide}{Field packing}
 % \centering\small
 % \begin{tabular}{|l|}
@@ -285,12 +287,13 @@ element indicating whether zero is a possible value has been omitted.
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Field packing}
 % converted with pngtopnm Figures/alignment.png | pnmtops -equalpixels -noturn > Figures/alignment.eps
-\centering
+\begin{center}
 \vspace{0.75cm}
 %\includegraphics[scale=1.3]{Figures/alignment.eps}
 \includegraphics[scale=0.35]{Figures/alignment2.eps}
 
 \small Object header omitted.
+\end{center}
 \end{slide}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -360,7 +363,6 @@ Three broad techniques:
 \overlays{2}{
 \begin{slide}{Specialization example:\\\small java.lang.String}
 \fontsize{9}{9}%
-%\small\setlength{\baselineskip}{8pt}
 \newcommand{\myOffset}{\onlySlide*{1}{\makebox[0pt][l]{offset}}\onlySlide{2}{{\yellow getOffset()}}}%
 \begin{samplecode}%
 public final class String \{\\
@@ -385,8 +387,129 @@ public final class String \{\\
 }
 
 %---------------------------------------------------------------------- SLIDE -
-%\begin{slide}{Title here}
-%\end{slide}
+\begin{slide}{Specialization example:\\\small java.lang.String}
+\fontsize{9}{9}%
+\begin{samplecode}%
+public final class {\yellow SmallString} \{\\
+\>private final char value[];\\
+\>\\  
+\>private final int count;\\
+\>protected int getOffset() \{ return 0; \}\\
+\>\ldots\\
+\>public char charAt(int i) \{\\
+\>\>return value[getOffset()+i];\\
+\>\}\\
+\>\ldots\\
+\}\\
+public final class {\yellow String extends SmallString} \{\\
+\>private final int {\yellow offset};\\
+\>protected int {\yellow getOffset()} \{ return offset; \}\\
+\}\\
+\end{samplecode}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\newcommand{\myString}{\onlySlide*{1}{\makebox[0pt][l]{String}}\onlySlide{2}{{\yellow SmallString}}}%
+\overlays{2}{
+\begin{slide}{Transforming allocation sites}
+Case 1: field is constant in constructor.
+
+\fontsize{10}{10}%
+\begin{samplecode}
+String s = new \myString(new char[] \{'a', 'b', 'c'\});\\
+\\
+\myString(char[] val) \{\\
+\>this.value = (char[]) val.clone();\\
+\onlySlide*{2}{\pnode{offl2}}%
+\>this.offset = 0;%
+\onlySlide*{2}{\pnode{offr2}}\\
+\>this.count = val.length;\\
+\}\\
+\end{samplecode}
+\onlySlide*{2}{\ncline[linecolor=red,linewidth=2pt]{offl2}{offr2}}%
+\end{slide}
+}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{2}{
+\begin{slide}{Transforming allocation sites}
+Case 2: field is simple function of constructor parameter.
+
+\fontsize{10}{10}%
+\begin{samplecode}%
+\onlySlide*{1}{%
+String s = new String(new char[] \{'a', 'b', 'c'\},\\
+~~~~~~~~~~~~~~~~~~~~~~x, 1);\\
+\\
+String(char[] val, int offset, int length) \{\\
+\>this.value = (char[]) val.clone();\\
+\>this.offset = offset;\\
+\>this.count = length;\\
+\}\\
+}%
+\onlySlide*{2}{%
+String s;\\
+\\
+if (x==0)\\
+\>s = new {\yellow SmallString}(new char[] \{'a', 'b', 'c'\}, x, 1);\\
+else\\
+\>s = new {\yellow String}(new char[] \{'a', 'b', 'c'\}, x, 1);\\
+}%
+\end{samplecode}
+\end{slide}
+}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Creating external fields}
+\vspace{1cm}
+\begin{itemize}
+ \item Sometimes fields are {\yellow run-time} constants (or nearly so)
+      but not {\yellow compile-time} constants.
+ \begin{itemize}
+  \item Examples: sparse matrices, ``two-input nodes'' in Jess expert
+        system, the ``next'' field in short linked lists.
+ \end{itemize}
+ \item \bp{\yellow Exploit field$\rightarrow$map duality} to reduce memory
+       overhead in the common case.
+\end{itemize}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Fields and Maps}
+\begin{itemstep}
+\item Accessing an object field {\tt a.b} (where {\tt a} is the object
+  reference and {\tt b} is the field name) is equivalent to evaluating
+  a map from \tuple{a, b} to the value type.
+\item The mapping we will implement will be {\yellow incomplete}.  We
+  define the result of accessing a non-existing mapping to be $\bot$.
+\item To achieve our storage savings, we map $\bot$ to the frequent
+  ``mostly-constant'' value.
+\end{itemstep}
+\end{slide}
+}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{External map implementation}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{We can do better!}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Other details}
+\begin{itemstep}
+\item Use value profiling to identify classes where field
+  externalization will be worthwhile.
+\item In our experiments, looked for integer ``mostly-constant''
+  values in the range $[-5,5]$ for numeric types.  Only looked at {\tt
+    null} as a candidate for pointer types.
+\item 0 and 1 by far the most common.
+\end{itemstep}
+\end{slide}
+}
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{How to compress objects} % just the third one
@@ -410,8 +533,47 @@ Three broad techniques:
 \end{slide}
 
 %---------------------------------------------------------------------- SLIDE -
-%\begin{slide}{Title here}
-%\end{slide}
+\begin{slide}{Header optimizations:\\\small Hashcode/Lock compression}
+\begin{center}
+\vspace{.5cm}
+\includegraphics[scale=0.6]{oqedraw/hashcomp-bbox.eps}
+\end{center}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Header optimizations:\\\small Hashcode/Lock compression}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Header optimizations:\\\small claz compression}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Header optimizations:\\\small claz compression}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Class statistics}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{How well does it work?}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Limitations \\ \small (read, ``future work'')}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Conclusions}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\part{The Graveyard Of Unused Slides follows this point.}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Opportunities}
+\end{slide}
 
 %---------------------------------------------------------------------- SLIDE -
 %\begin{slide}{Title here}
