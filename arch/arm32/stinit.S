@@ -1,4 +1,5 @@
 /* execute static initializers. */
+#include <config.h>
 #include "segments.h"
 
 	CODE_SEGMENT
@@ -21,6 +22,12 @@ _FNI_do_static_init:
 	bl _printf
 	ldmfd sp!, {r0, r1}
 #endif
+#ifdef WITH_DMALLOC
+	stmfd sp!, {r0, r1}
+	mov r0, #0
+	bl _dmalloc_verify
+	ldmfd sp!, {r0, r1}
+#endif /* WITH_DMALLOC */
 	cmp r0, r1				@ if (*r4++ != NULL) ....
 	adrne lr, 2b				@    r4() /* call *r4 */
 	movne pc, r1
