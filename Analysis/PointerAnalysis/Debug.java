@@ -12,11 +12,15 @@ import harpoon.Util.UComp;
 import harpoon.ClassFile.HMethod;
 import harpoon.Analysis.MetaMethods.MetaMethod;
 
+import harpoon.Util.LightBasicBlocks.LightBasicBlock;
+import harpoon.Util.Graphs.SCComponent;
+import harpoon.ClassFile.HCodeElement;
+
 /**
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.1.2.6 2000-03-23 21:29:02 salcianu Exp $
+ * @version $Id: Debug.java,v 1.1.2.7 2000-04-02 03:27:55 salcianu Exp $
  */
 public abstract class Debug {
 
@@ -76,6 +80,41 @@ public abstract class Debug {
 	}
     }
 
+
+    public static void show_lbb(LightBasicBlock lbb){
+	System.out.println("  " + lbb + "{");
+	HCodeElement[] hces = lbb.getElements();
+	for(int i = 0; i < hces.length; i++)
+	    System.out.println("    " + hces[i].getSourceFile() + ":" +
+			       hces[i].getLineNumber() + " " + hces[i]);
+
+	LightBasicBlock[] prev = lbb.getPrevLBBs();
+	if(prev.length != 0){
+	    System.out.print("   Prev: ");
+	    for(int i = 0; i < prev.length; i++)
+		System.out.print(prev[i] + " ");
+	    System.out.println();
+	}
+
+	LightBasicBlock[] next = lbb.getNextLBBs();
+	if(next.length != 0){
+	    System.out.print("   Next: ");
+	    for(int i = 0; i < next.length; i++)
+		System.out.print(next[i] + " ");
+	    System.out.println();
+	}
+	
+	System.out.println("  }");
+    }
+
+    public static void show_lbb_scc(SCComponent scc){
+	for(; scc != null; scc = scc.nextTopSort()){
+	    System.out.println("SCC" + scc.getId() + "{");
+	    for(Iterator it = scc.nodes(); it.hasNext(); )
+		show_lbb((LightBasicBlock) it.next());
+	    System.out.println("}");
+	}
+    }
 
     // the powers of 10!!
     private static double[] fact = 

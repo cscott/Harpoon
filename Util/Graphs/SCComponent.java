@@ -39,7 +39,7 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCComponent.java,v 1.1.2.1 2000-03-23 21:29:13 salcianu Exp $
+ * @version $Id: SCComponent.java,v 1.1.2.2 2000-04-02 03:28:16 salcianu Exp $
  */
 public final class SCComponent implements Comparable{
 
@@ -456,6 +456,3 @@ public final class SCComponent implements Comparable{
     }
 
 }
-
-
-

@@ -45,6 +45,7 @@ import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.MONITORENTER;
 import harpoon.IR.Quads.MONITOREXIT;
 import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.TYPECAST;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
@@ -65,12 +66,12 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.43 2000-03-30 05:14:07 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.44 2000-04-02 03:27:55 salcianu Exp $
  */
 public class PointerAnalysis {
 
-    public static final boolean DEBUG = false;
-    public static final boolean DEBUG2 = false;
+    public static final boolean DEBUG     = false;
+    public static final boolean DEBUG2    = false;
     public static final boolean DEBUG_SCC = true;
 
     /** Makes the pointer analysis deterministic to make the debug easier.
@@ -83,11 +84,11 @@ public class PointerAnalysis {
     public static boolean TIMING = true;
     public static final boolean STATS = true;
     public static boolean SHOW_NODES = false;
-    public static final boolean DETAILS2 = false;
+    public static final boolean DETAILS2 = true;
 
     /** Controls the recording of data about the thread nodes that are
 	touched after being started. */
-    public static final boolean TOUCHED_THREAD_SUPPORT = true;
+    public static final boolean TOUCHED_THREAD_SUPPORT= false;
 
     // TODO: Most of the following flags should be final (which will
     // help somehow the compiler to perform some dead code elimination
@@ -393,7 +394,7 @@ public class PointerAnalysis {
     // inter-procedural analysis of a group of mutually recursive methods
     private void analyze_inter_proc_scc(SCComponent scc){
 
-	if(TIMING){
+	if(TIMING || DEBUG){
 	    System.out.print("SCC" + scc.getId() + 
 			       "\t (" + scc.size() + " meta-method(s)){");
 	    for(Iterator it = scc.nodes(); it.hasNext(); )
@@ -427,11 +428,7 @@ public class PointerAnalysis {
 	}
 	W_inter_proc.add(mmethod);
 
-	Set mmethods = scc.nodeSet();
 	boolean must_check = scc.isLoop();
-
-	if(DEBUG)
-	    System.out.print(scc.toString(mcg));
 
 	while(!W_inter_proc.isEmpty()){
 	    // grab a method from the worklist
@@ -451,12 +448,14 @@ public class PointerAnalysis {
 
 	    ParIntGraph new_info = (ParIntGraph) hash_proc_ext.get(mm_work);
 
+	    ParIntGraph.DEBUG2 = true;
+
 	    // new info?
 	    if(must_check && !new_info.equals(old_info)){
 
-		//System.out.println("----- The information has changed:");
-		//System.out.println("Old graph: " + old_info);
-		//System.out.println("New graph: " + new_info);
+		// System.out.println("----- The information has changed:");
+		// System.out.println("Old graph: " + old_info);
+		// System.out.println("New graph: " + new_info);
 
 		// since the original graph associated with hm_work changed,
 		// the old specializations for it are no longer actual;
@@ -470,10 +469,12 @@ public class PointerAnalysis {
 		}
 		for(int i = 0; i < mms.length ; i++){
 		    MetaMethod mm_caller = (MetaMethod) mms[i];
-		    if(mmethods.contains(mm_caller))
+		    if(scc.contains(mm_caller))
 			W_inter_proc.add(mm_caller);
 		}
 	    }
+
+	    ParIntGraph.DEBUG2 = false;
 	}
 
 	// enable some GC:
@@ -495,12 +496,12 @@ public class PointerAnalysis {
 	    System.out.println(total_time + "ms");
     }
 
-    MetaMethod current_intra_mmethod = null;
-    ParIntGraph initial_pig = null;
+    private MetaMethod current_intra_mmethod = null;
+    private ParIntGraph initial_pig = null;
 
     // Performs the intra-procedural pointer analysis.
     private void analyze_intra_proc(MetaMethod mm){
-	if(DEBUG2)
+	//if(DEBUG2)
 	    System.out.println("META METHOD: " + mm);
 
 	if(STATS) Stats.record_mmethod_pass(mm);
@@ -510,6 +511,11 @@ public class PointerAnalysis {
 	// cut the method into SCCs of basic blocks
 	SCComponent scc = 
 	    scc_lbb_factory.computeSCCLBB(mm.getHMethod()).getFirst();
+
+	if(DEBUG){
+	    System.out.println("THE CODE FOR :" + mm.getHMethod());
+	    Debug.show_lbb_scc(scc);
+	}
 
 	if(STATS) Stats.record_mmethod(mm,scc);
 
@@ -533,10 +539,10 @@ public class PointerAnalysis {
 	if(DEBUG2)
 	    System.out.println("\nSCC" + scc.getId());
 
-	// add ALL the BB from this SCC to the worklist.
+	// add ALL the BBs from this SCC to the worklist.
 	if(DETERMINISTIC){
 	    Object[] obj = Debug.sortedSet(scc.nodeSet());
-	    for(int i = 0 ; i < obj.length ; i++)
+	    for(int i = 0; i < obj.length; i++)
 		W_intra_proc.add(obj[i]);
 	}
 	else
@@ -585,10 +591,28 @@ public class PointerAnalysis {
     /** QuadVisitor for the <code>analyze_basic_block</code> */
     private class PAVisitor extends QuadVisitor{
 
+	/** Visit a general quad, other than those explicitly
+	 processed by the other <code>visit</code> methods. */
 	public void visit(Quad q){
-	    // do nothing
+	    // remove all the edges from the temps that are defined
+	    // by this quad.
+	    Temp[] defs = q.def();
+	    for(int i = 0; i < defs.length; i++)
+		lbbpig.G.I.removeEdges(defs[i]);
 	}
 		
+
+	public void visit(HEADER q){
+	    // do nothing
+	}
+
+	public void visit(METHOD q){
+	    // do nothing
+	}
+
+	public void visit(TYPECAST q){
+	    // do nothing
+	}
 
 	/** Copy statements **/
 	public void visit(MOVE q){
@@ -620,8 +644,8 @@ public class PointerAnalysis {
 	/** Load statement; special case - arrays. */
 	public void visit(AGET q){
 	    // All the elements of an array are collapsed in a single
-	    // node, ////// so AGET is NOT a load (it is not PA-relevant)
-	    process_load(q,q.dst(),q.objectref(),ARRAY_CONTENT);
+	    // node, referenced through a conventional named field
+	    //process_load(q,q.dst(),q.objectref(),ARRAY_CONTENT);
 	}
 	
 	/** Does the real processing of a load statement. */
@@ -732,8 +756,7 @@ public class PointerAnalysis {
 	public void visit(ASET q){
 	    // All the elements of an array are collapsed in a single
 	    // node
-	    /////// , so ASET is NOT a store (it is not PA-relevant)
-	    process_store(q.objectref(),ARRAY_CONTENT,q.src());
+	    // process_store(q.objectref(),ARRAY_CONTENT,q.src());
 	}
 	
 	/** Does the real processing of a store statement */
@@ -769,8 +792,7 @@ public class PointerAnalysis {
 		lbbpig.G.propagate(Collections.singleton(nt));
 	    }
 
-	    call_pp = new ParIntGraphPair(lbbpig, lbbpig_no_thread);
-	    
+	    call_pp = new ParIntGraphPair(lbbpig, lbbpig_no_thread);	    
 	}
 
 	public void visit(CALL q){
@@ -860,6 +882,18 @@ public class PointerAnalysis {
 	    boolean is_main = 
 		current_intra_mmethod.getHMethod().getName().equals("main");
 	    ParIntGraph shrinked_graph =lbbpig.keepTheEssential(nodes,is_main);
+
+	    // We try to correct some imprecisions in the analysis:
+	    //  1. if the meta-method is not returning an Object, clear
+	    // the return set of the shrinked_graph
+	    HMethod hm = current_intra_mmethod.getHMethod();
+	    if(hm.getReturnType().isPrimitive())
+		shrinked_graph.G.r.clear();
+	    //  2. if the meta-method doesn't throw any exception,
+	    // clear the exception set of the shrinked_graph.
+	    if(hm.getExceptionTypes().length == 0)
+		shrinked_graph.G.excp.clear();
+
 	    // The external view of the graph is stored in the
 	    // hash_proc_ext hashtable;
 	    hash_proc_ext.put(current_intra_mmethod,shrinked_graph);
@@ -887,7 +921,7 @@ public class PointerAnalysis {
 	}
 
 	// lbbpig is the graph at the *bb point; it will be 
-	// updated till it become the graph at the bb* point
+	// updated till it becomes the graph at the bb* point
 	lbbpig = get_initial_bb_pig(lbb);
 
 	if(DEBUG2){
@@ -902,15 +936,16 @@ public class PointerAnalysis {
 	    Quad q = (Quad) instrs[i];
 
 	    if(DEBUG2)
-		System.out.println("INSTR: " + q);
+		System.out.println("INSTR: " + q.getSourceFile() + ":" +
+				   q.getLineNumber() + " " + q);
 	    
 	    // update the Parallel Interaction Graph according
 	    // to the current instruction
 	    q.accept(pa_visitor);
 	}
 
-	// if it was a pair, store the pair computed by the inter proc module,
-	// otherwise, only the first element of the pair is essential.
+	// if there was a pair, store the pair computed by the inter proc
+	// module, otherwise, only the first element of the pair is essential.
 	if(call_pp != null){
 	    lbb.user_info = call_pp;
 	    call_pp = null;
@@ -938,7 +973,7 @@ public class PointerAnalysis {
 					 LightBasicBlock lbb_son){
 
 	ParIntGraphPair pp = (ParIntGraphPair) lbb.user_info;
-	if(pp==null)
+	if(pp == null)
 	    return ParIntGraph.EMPTY_GRAPH;
 
 	int k = 0;

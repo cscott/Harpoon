@@ -85,14 +85,14 @@ public class JhttpWorker extends Thread{
 	//	System.out.println(fileName + " is going to finish"); // debug 
     }
   
-//*******************************************************************************
+//*****************************************************************************
 // Function: method()
 // Purpose:  Open an InputStream and parse the request made.  
 // Note:     Regardless of what method is requested, right now it performs a
 //           GET operation.
 // Calls:    
 // Returns:  Boolean value for success or failure
-//*******************************************************************************
+//*****************************************************************************
 
   private int method(BufferedReader in){
       int ret = -1;
@@ -102,7 +102,8 @@ public class JhttpWorker extends Thread{
 	  
 	  // read just the first line
 	  line = in.readLine();
-	  StringTokenizer tok = new StringTokenizer(line, " ");  // only spaces used
+	  // only spaces used
+	  StringTokenizer tok = new StringTokenizer(line, " ");  
 	  if (tok.hasMoreTokens())  // make sure there is a request
 	      {
 		  String str = tok.nextToken();

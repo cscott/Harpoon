@@ -22,10 +22,12 @@ import harpoon.Util.Util;
  information.
  Look into one of Martin and John Whaley papers for the complete definition.
  *
- * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.19 2000-03-30 10:31:02 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
+ * @version $Id: PointsToGraph.java,v 1.1.2.20 2000-04-02 03:27:56 salcianu Exp $
  */
 public class PointsToGraph {
+
+    public static boolean DEBUG = true;
     
     /** The set of the outside edges. */
     public PAEdgeSet O;
@@ -272,31 +274,28 @@ public class PointsToGraph {
     public boolean equals(Object o){
 	if(o==null) return false;
 	PointsToGraph G2 = (PointsToGraph)o;
-	//return 
-	//  O.equals(G2.O) && I.equals(G2.I) &&
-	//  e.equals(G2.e) && r.equals(G2.r);
 	if(!O.equals(G2.O)){
-	    if(PointerAnalysis.DEBUG2)
+	    if(ParIntGraph.DEBUG2)
 		System.out.println("different O's");
 	    return false;
 	}
 	if(!I.equals(G2.I)){
-	    if(PointerAnalysis.DEBUG2)
+	    if(ParIntGraph.DEBUG2)
 		System.out.println("different I's");
 	    return false;
 	}
 	if(!e.equals(G2.e)){
-	    if(PointerAnalysis.DEBUG2)
+	    if(ParIntGraph.DEBUG2)
 		System.out.println("different e's");
 	    return false;
 	}
 	if(!r.equals(G2.r)){
-	    if(PointerAnalysis.DEBUG2)
+	    if(ParIntGraph.DEBUG2)
 		System.out.println("different r's");
 	    return false;
 	}
 	if(!excp.equals(G2.excp)){
-	    if(PointerAnalysis.DEBUG2)
+	    if(ParIntGraph.DEBUG2)
 		System.out.println("different excp's");
 	    return false;
 	}

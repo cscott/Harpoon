@@ -17,15 +17,17 @@ import harpoon.IR.Quads.CALL;
 import harpoon.Analysis.MetaMethods.MetaMethod;
 
 /**
- * <code>ParIntGraph</code> Parallel Interaction Graph
+ * <code>ParIntGraph</code> models a Parallel Interaction Graph data
+ structure. Most of its fields retain the original name from the paper
+ of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.23 2000-03-30 03:05:14 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.24 2000-04-02 03:27:55 salcianu Exp $
  */
 public class ParIntGraph {
 
-    private final static boolean DEBUG = false;
-    private final static boolean DEBUG2 = false;
+    public static boolean DEBUG = false;
+    public static boolean DEBUG2 = false;
 
     /** Default (empty) graph. It doesn't contain any information.  */
     public static final ParIntGraph EMPTY_GRAPH = new ParIntGraph();
@@ -34,7 +36,7 @@ public class ParIntGraph {
 	information for the current thread. */
     public PointsToGraph G;
     
-    /** The parralel thread map; it attaches to each thread node nT, an 
+    /** The paralel thread map; it attaches to each thread node nT, an 
 	integer from the set {0,1,2} where 2 signifies the possibility
 	that multiple instances of nT execute in parallel with the current
 	thread. */
@@ -48,7 +50,7 @@ public class ParIntGraph {
 	(it is not carried over in the inter-procedural phase). */
     public Set touched_threads;
 
-    /** Maintains the actions executed by the analysed code and the parallel\
+    /** Maintains the actions executed by the analysed code and the parallel
 	action relation. <code>alpha</code> and <code>pi</code> from the 
 	original paper have been merged into this single field for efficiency
 	reasons. */
@@ -56,8 +58,7 @@ public class ParIntGraph {
 
     /** Maintains the (conservative) ordering relations between the inside
 	and the outside edges. <code>before(ei,eo)</code> is true if the
-	inside edge ei might be created before the ouside edge eo was read.<br>
-    */
+	inside edge ei might be created before the ouside edge eo was read. */
     public EdgeOrdering eo;
     
     /** Creates a <code>ParIntGraph</code>. */
@@ -103,10 +104,10 @@ public class ParIntGraph {
 
 
     /** Check the equality of two <code>ParIntGraph</code>s. */
-    public boolean equals(Object o){
-	if(o==null) return false;
-	ParIntGraph pig2 = (ParIntGraph)o;
-	// return G.equals(pig2.G) && tau.equals(pig2.tau);
+    public boolean equals(Object obj){
+	if(obj == null) return false;
+
+	ParIntGraph pig2 = (ParIntGraph) obj;
 	if(!G.equals(pig2.G)){
 	    if(DEBUG2)
 		System.out.println("The graphs are different");
@@ -153,7 +154,7 @@ public class ParIntGraph {
     }
 
     /** <code>clone</code> produces a copy of the <code>this</code>
-     * Parallel Interaction Graph. */
+	Parallel Interaction Graph. */
     public Object clone(){
 	return new ParIntGraph((PointsToGraph)G.clone(),
 			       (PAThreadMap)tau.clone(),
@@ -163,7 +164,7 @@ public class ParIntGraph {
     }
 
     
-    /** Produces a <code>ParIntGraph</code> containing only the \
+    /** Produces a <code>ParIntGraph</code> containing only the
 	nodes that could be reached from the outside.
 	(i.e. via parameters,
 	class nodes, normally or exceptionally returned nodes or the
@@ -258,15 +259,14 @@ public class ParIntGraph {
     }
 
     /* Specializes <code>this</code> <code>ActionRepository</code> for the
-       thread whose run method is <code>run</code>, according
-       to <code>map</code>, a mapping from <code>PANode<code> to
-       <code>PANode</code>. Each node which is not explicitly mapped is
-       considered to be mapped to itself. */
+       thread whose run method is <code>run</code>. */
     final ParIntGraph tSpecialize(final MetaMethod run){
+	// contains mappings old node -> speciaized node; each unmapped
+	// node is supposed to be mapped to itself.
 	final Map map = new HashMap();
 	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
 	    PANode node  = (PANode) itn.next();
-	    if(node.type != PANode.PARAM){
+	    if((node.type != PANode.PARAM) && (node.type != PANode.STATIC)){
 		PANode node2 = node.tSpecialize(run);
 		map.put(node, node2);
 	    }
@@ -280,10 +280,12 @@ public class ParIntGraph {
 
     // weak thread specialization
     final ParIntGraph wtSpecialize(final MetaMethod run){
+	// contains mappings old node -> speciaized node; each unmapped
+	// node is supposed to be mapped to itself.
 	final Map map = new HashMap();
 	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
 	    PANode node  = (PANode) itn.next();
-	    if(node.type != PANode.PARAM){
+	    if((node.type != PANode.PARAM) && (node.type != PANode.STATIC)){
 		PANode node2 = node.wtSpecialize();
 		map.put(node, node2);
 	    }
@@ -349,7 +351,7 @@ public class ParIntGraph {
 	return
 	    "\nParIntGraph{\n" + G + " " + tau + 
 	    " Touched threads: " + touchedToString() + "\n" +
-	    ar + eo + "}"; 
+	    ar /* + eo */ + "}"; 
     }
 
     // Produces a string representation of the
@@ -376,10 +378,3 @@ public class ParIntGraph {
 	return pig1.equals(pig2);
     }
 }
-
-
-
-
-
-
-

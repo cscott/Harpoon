@@ -27,7 +27,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.23 2000-03-30 10:58:22 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.24 2000-04-02 03:27:55 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -68,9 +68,9 @@ abstract class InterProcPA {
 	}
 
 	// treat specially some native methods
-	ParIntGraphPair pair = treatNatives(pa, q, pig_before);
-	if(pair != null)
-	    return pair;
+	//	ParIntGraphPair pair = treatNatives(pa, q, pig_before);
+	//if(pair != null)
+	//   return pair;
 
 	MetaCallGraph mcg = pa.getMetaCallGraph();
 	NodeRepository node_rep = pa.getNodeRepository(); 
@@ -146,7 +146,8 @@ abstract class InterProcPA {
 
 	// special case: only one callee; no ParIntGraph is cloned
 	if(nb_callees == 1){
-	    /// System.out.println(hms[0]);
+	    if(DEBUG)
+		System.out.println("CALLEE: " + mms[0]);
 	    return mapUp(q,pig_before,pigs[0],pa.getParamNodes(mms[0]));
 	}
 
@@ -154,19 +155,27 @@ abstract class InterProcPA {
 	// the graphs obtained by combining, for each callee hms[i], the graph
 	// before the CALL with the graph at the end of hms[i]. The
 	// implementation is complicated by the need of doing only the
-	// clone() (cloning a ParIntGraph is very expensive)
+	// minmum number of clone() (cloning a ParIntGraph is very expensive)
 
 	// compute the first term of the join operation
+
+	if(DEBUG)
+	    System.out.println("CALLEE0: " + mms[0]);
 	ParIntGraphPair pp_after = mapUp(q, (ParIntGraph)pig_before.clone(),
 					 pigs[0], pa.getParamNodes(mms[0]));
 
 	// join to it all the others, except the last one
-	for(int i = 1; i < nb_callees - 1; i++)
+	for(int i = 1; i < nb_callees - 1; i++){
+	    if(DEBUG)
+		System.out.println("CALLEEi: " + mms[i]);
 	    pp_after.join(mapUp(q, (ParIntGraph)pig_before.clone(),
 				pigs[i], pa.getParamNodes(mms[i])));
+	}
 
 	// finally, join with the graph modeling the interaction with
 	// the last callee
+	if(DEBUG)
+	    System.out.println("CALLEElast: " + mms[nb_callees - 1]);
 	pp_after.join(mapUp(q, pig_before, pigs[nb_callees-1],
 			    pa.getParamNodes(mms[nb_callees-1])));
 
@@ -179,6 +188,10 @@ abstract class InterProcPA {
 	one for a return due to an exception. */
     private static ParIntGraphPair skip_call(CALL q, ParIntGraph pig_caller,
 					     NodeRepository node_rep){
+
+	if(DEBUG)
+	    System.out.println("SKIP: " + q);
+
 	// Construct the set S_M of the objects escaped through this unanalyzed
 	// method invocation site.
 	Set S_M = new HashSet();
@@ -207,11 +220,13 @@ abstract class InterProcPA {
 	// Set the edges for the result node in graph 0.
 	// avoid generating useless nodes
 	Temp l_R = q.retval();
-	if((l_R != null) && !hm.getReturnType().isPrimitive()){
+	if(l_R != null){
 	    pig_caller.G.I.removeEdges(l_R);
-	    PANode n_R = node_rep.getCodeNode(q, PANode.RETURN);
-	    pig_caller.G.I.addEdge(l_R, n_R);
-	    pig_caller.G.e.addMethodHole(n_R);
+	    if(!hm.getReturnType().isPrimitive()){
+		PANode n_R = node_rep.getCodeNode(q, PANode.RETURN);
+		pig_caller.G.I.addEdge(l_R, n_R);
+		pig_caller.G.e.addMethodHole(n_R);
+	    }
 	}
 
 	// Set the edges for the exception node in graph 1.
@@ -450,7 +465,7 @@ abstract class InterProcPA {
      * Remember the syntax of a method invocation: 
      * <code>&lt;retval,retexc&gt; = CALL (...)</code>. */
     private static void set_edges_res_ex(Temp l, Relation mu,
-					  ParIntGraph pig_caller, Set nodes){
+					 ParIntGraph pig_caller, Set nodes){
 	if(l == null) return;
 	/// System.out.println("Setting the edges for " + l);
 	pig_caller.G.I.removeEdges(l);

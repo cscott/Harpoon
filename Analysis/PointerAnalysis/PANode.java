@@ -20,7 +20,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.15 2000-03-27 16:32:21 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.16 2000-04-02 03:27:55 salcianu Exp $
  */
 final public class PANode {
     // activates some safety tests
@@ -84,6 +84,9 @@ final public class PANode {
     public PANode(final int type) {
         this.type = type;
 	number = count++;
+
+	if((number % 100) == 0)
+	    System.out.println("PANODE " + this);
 
 	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
 	    cs_specs = new LightMap();
