@@ -1,4 +1,4 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.6 2003-05-22 08:34:40 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.7 2003-05-22 18:03:53 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -1140,14 +1140,14 @@ fairly neutral (no cost, no gain) fallback in the worst case.
   ``field-ful'' versions.
 \item Use virtual accessor functions to hide this split from users of
   the class.
+\item Can be done recursively on multiple fields.
+\begin{itemize}
+\item Profiling guides splitting order if there are multiple candidates.
+\end{itemize}
 \item Done at compile time, on fields which can be shown to be
   compile-time constants, thus ``static.''
 \begin{itemize}
 \item Fields can not be mutated after the constructor completes.
-\end{itemize}
-\item Can be done recursively on multiple fields.
-\begin{itemize}
-\item Profiling guides splitting order if there are multiple candidates.
 \end{itemize}
 \end{itemize}
 \end{slide}
@@ -1156,11 +1156,12 @@ fairly neutral (no cost, no gain) fallback in the worst case.
 Let's review the static specialization transformation:  we split the
 target class into two parts, one of which has the field and one which
 doesn't, and use virtual accessor functions to hide this split from
-users of the class.  We have two constraints: the fields must be
-``mostly-constant'', and then cannot be modified after the completion
-of the constructor.
+users of the class.  
 We can do this recursively on multiple fields; we use profiling to
 determine the best splitting order in that case.
+We have two constraints: @ the fields must be
+``mostly-constant'', and then cannot be modified after the completion
+of the constructor.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1181,9 +1182,7 @@ To use static specialization we need:
 }
 
 \begin{talknotes}
-Let's look again at the constraints on the static specialization
-technique.
-What if the first of these conditions hold, @ but the second doesn't?
+But what if the first of these conditions hold, @ but the second doesn't?
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1537,7 +1536,8 @@ generator.
 
 But if you're paying attention, you'll realize that these aren't
 actually the \emph{really} interesting numbers.  A reduction in total
-allocated bytes is great, it reduces the amount of allocation work the
+allocated bytes is great, it reduces the amount of allocation and
+collection work the
 garbage collector has to do, but what you'd really like to see is a
 reduction in the maximum \emph{live data} in the program.  This would
 mean that the program would run in a smaller memory environment.
@@ -1660,6 +1660,7 @@ Static techniques for lock-removal will mitigate this cost greatly.
  \fromSlide{5}{
  \begin{itemize} \yellow\small
   \item Investigate region-based/enumerated approaches.
+  \item Zhang, Gupta (ICCC '02)
  \end{itemize}
  \fromSlide{6}{
  \item The mostly-constant analysis requires profiling.
@@ -1698,7 +1699,9 @@ On a related note, we don't attempt to compress fields with pointer
 values at all.
 @
 We have a region-based approach to limiting pointer sizes which we
-feel is worth exploring in this regard.
+feel is worth exploring in this regard, and Zhang and Gupta have
+described an orthogonal technique which it may be useful to
+incorporate.
 @
 Our ``mostly-constant'' transformations are dependent on profiling.
 @
@@ -1710,6 +1713,68 @@ or embrace run-time profiling, which would allow us to avoid transforming
 @ it's worth exploring
 whether fields can more space-efficiently implement some \textit{maps} in
 the program.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Related Work}
+\begin{itemize}
+\item Reducing lock overhead.
+\begin{itemize} \yellow\small % 7 15 1
+\item Bacon, Sweeney (OOPSLA '96)
+\item Onodera, Kawachiya (OOPSLA '99)
+\item Agesen, Detlefs, Garthwaite, Knippel, Ramakrishna, White (OOPSLA '99)
+\end{itemize}
+\item Escape analysis.
+\begin{itemize} \yellow\small % 3 9 23 11 16 20
+\item Aldrich, Chambers, Sirer, Eggers (SAS '99)
+\item Bogda, H\"ozle (OOPSLA '99)
+\item Whaley, Rinard (OOPSLA '99)
+\item Choi, Gupta, Serrano, Sreedhar, Midkiff (OOPSLA '99)
+\item Ruf (PLDI '00)
+\item S\u{a}lcianu, Rinard (PPoPP '01)
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{talknotes}
+The has been related work on reducing lock overhead, and in escape
+analyses to statically remove locking operations.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Related Work II}
+\begin{itemize}
+\item Space and time usage of Java programs.
+\begin{itemize} \yellow\small% 6 12
+\item Dieckmann, H\"olzle (ECOOP '99)
+\item Bacon, Fink, Grove (ECOOP '02)
+\end{itemize}
+\item Bitwidth Analyses
+\begin{itemize} \yellow\small% 4 5 17 19 10
+\item Ananian (MIT '99)
+\item Rugin\u{a}, Rinard (PLDI '00)
+\item Stephenson, Babb, Amarasinghe (PLDI '00)
+\item Budiu, Sakr, Walker, Goldstein (Europar '00)
+\end{itemize}
+\item Dead members in C++
+\begin{itemize} \yellow\small% 21
+\item Sweeney, Tip (PLDI '98)
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{talknotes}
+We've also seen some surveys to attempt to quantify the space and time
+usage of Java programs, and devise efficient runtime representations.
+
+Bitwidth analyses have been investigated, starting with my Master's
+thesis in 99.  An early focus was reducing the size of generated
+circuits in hardware compilers; the Europar paper also investigates
+applying the technique to MMX-like SIMD instruction sets.
+
+Sweeney and Tip investigated a dead member analysis in C++ which
+is a subset of the constant field elimination technique I discussed at
+the beginning of this talk.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1744,7 +1809,8 @@ It's worth mentioning the ``memory wall'' in this regard.  We've
 already seen a decent improvement in performance in many cases for
 some of these transformations, caused simply by reducing memory costs
 (including GC) and improving caching.  This is despite adding extra
-instructions in the form of indirections and virtualization.  One can
+instructions in the form of indirections, unaligned accesses, and
+virtualization.  One can
 expect that the memory wall will continue to get steeper and the
 benefits of increasing the effective cache size will get greater, even
 as the ALU cost of unpacking operations becomes releatively cheaper.
