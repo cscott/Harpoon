@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Vector;
+import java.util.Collections;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
@@ -73,7 +74,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.53 2001-04-19 17:15:35 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.54 2001-04-24 15:02:37 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -90,7 +91,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	public int STACK_ALLOCATION_POLICY = STACK_ALLOCATE_NOT_IN_LOOPS;
 
 	/** Stack allocate everything that's captured. */
-	public static int STACK_ALLOCATE_ALWAYS       = 0;
+	public static int STACK_ALLOCATE_ALWAYS       = 2;
 	/** Returns true if the stack allocation policy is
 	    <code>STACK_ALLOCATE_ALWAYS</code>. */
 	public final boolean stack_allocate_always() {
@@ -110,12 +111,21 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    Default <code>false</code>. */
 	public boolean DO_THREAD_ALLOCATION = false;
 
-	/** Enables the application of some method inlining to increase the
-	    effectiveness of the stack allocation. Only inlinings that
-	    increase the effectiveness of the stack allocation are done.
-	    For the time being, only 1-level inlining is done.
-	    Default <code>false</code>. */
-	public boolean DO_METHOD_INLINING   = false;
+	/** Enables the application of some method inlining to
+	    increase the effectiveness of the stack allocation. Only
+	    inlinings that increase the effectiveness of the stack
+	    allocation are done. Default <code>false</code>. */
+	public boolean DO_INLINING_FOR_SA = false;
+
+	/** Enables the application of some method inlining to
+	    increase the effectiveness of the thread local heap
+	    allocation. Default <code>false</code>. */
+	public boolean DO_INLINING_FOR_TA = false;
+
+	/** Checks whether any inlining is requested. */
+	public boolean do_inlining() {
+	    return DO_INLINING_FOR_SA || DO_INLINING_FOR_TA;
+	}
 
 	/** Enables the use of preallocation: if an object will be
 	    accessed only by a thread (<i>ie</i> it is created just to
@@ -151,8 +161,12 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	/** The maximal size to which we can inflate the size of a method
 	    through inlining.
-	    Default is <code>600</code> quads. */
+	    Default is <code>1000</code> quads. */
 	public int MAX_METHOD_SIZE      = 1000;
+
+	/** The maximal size of a method that can be inlined.
+	    Default is <code>100</code> quads. */
+	public int MAX_INLINABLE_METHOD_SIZE = 100;
 
 	/** Pretty printer. */
 	public void print(String prefix) {
@@ -174,8 +188,9 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    print_opt(prefix, "DO_PREALLOCATION", DO_PREALLOCATION);
 	    print_opt(prefix, "GEN_SYNC_FLAG", GEN_SYNC_FLAG);
 	    print_opt(prefix, "USE_INTER_THREAD", USE_INTER_THREAD);
-	    print_opt(prefix, "DO_METHOD_INLINING", DO_METHOD_INLINING);
-	    if(DO_METHOD_INLINING) {
+	    if(DO_INLINING_FOR_SA || DO_INLINING_FOR_TA) {
+		print_opt(prefix, "DO_INLINING_FOR_SA", DO_INLINING_FOR_SA);
+		print_opt(prefix, "DO_INLINING_FOR_TA", DO_INLINING_FOR_TA);
 		if(USE_OLD_INLINING)
 		    System.out.println
 			(prefix + "\tUSE_OLD_INLINING (1-level)");
@@ -336,11 +351,11 @@ public class MAInfo implements AllocationInformation, Serializable {
 
     // analyze all the methods
     public void analyze() {
-	if(opt.DO_METHOD_INLINING ||
+	if(opt.do_inlining() ||
 	   (opt.DO_STACK_ALLOCATION && opt.stack_allocate_not_in_loops()))
 	    build_quad2scc();
 
-	if(opt.DO_METHOD_INLINING) {
+	if(opt.do_inlining()) {
 	    if(opt.USE_OLD_INLINING)
 		ih = new HashMap();
 	    else {
@@ -355,7 +370,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 		analyze_mm(mm);
 	}
 	
-	if(opt.DO_METHOD_INLINING) {
+	if(opt.do_inlining()) {
 	    if(opt.USE_OLD_INLINING) {
 		do_the_inlining(hcf, ih);
 		ih = null;
@@ -473,7 +488,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	handle_tg_stuff(pig);
 
-	if(opt.DO_METHOD_INLINING) {
+	if(opt.do_inlining()) {
 	    if(opt.USE_OLD_INLINING)
 		generate_inlining_hints(mm, pig);
 	    else
@@ -963,7 +978,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	// if the appropriate options is turned on in opt,
 	// refuse to do stack allocation in a loop
 	if(opt.stack_allocate_not_in_loops() && in_a_loop(q)) {
-	    System.out.println(Debug.code2str(q) +
+	    System.out.println("stack_alloc_extra_cond: " + Debug.code2str(q) +
 			       " is in a LOOP -> don't sa");
 	    return false;
 	}
@@ -1005,8 +1020,6 @@ public class MAInfo implements AllocationInformation, Serializable {
     }
 
     private void extend_quad2scc(HMethod hm) {
-	System.out.println("extend_quad2scc " + hm);
-
 	SCCTopSortedGraph graph = 
 	    caching_scc_lbb_factory.computeSCCLBB(hm);
 	for(SCComponent scc = graph.getFirst(); scc != null;
@@ -1244,7 +1257,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	if(hcode.getElementsL().size() > MAX_INLINING_SIZE) return;
 
 	// obtain in A the set of nodes that might be captured after inlining 
-	Set A = getInterestingLevel0InsideNodes(mm.getHMethod());
+	Set A = getInterestingLevel0InsideNodes(mm.getHMethod(), pig);
 	if(A.isEmpty()) return;
 
 	// very dummy 1-level inlining
@@ -1266,7 +1279,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	// refuse to stack allocate stuff in a loop
 	// TODO: this stuff can still be allocated in the thread local heap
 	if(opt.stack_allocate_not_in_loops() && in_a_loop(cs)) {
-	    System.out.println(Debug.code2str(cs) +
+	    System.out.println("try_inlining: " + Debug.code2str(cs) +
 			       " is in a loop -> don't sa");
 	    return;
 	}
@@ -1295,7 +1308,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    if(!(opt.stack_allocate_not_in_loops() && in_a_loop(q)))
 		news.add(q);
 	    else
-		System.out.println(Debug.code2str(q) + 
+		System.out.println("try_inlining: " + Debug.code2str(q) + 
 				   " is in a loop -> don't sa");
 	}
 
@@ -1408,14 +1421,21 @@ public class MAInfo implements AllocationInformation, Serializable {
 	return A;
     }
 
-    private Set getInterestingLevel0InsideNodes(HMethod hm) {
+    private Set getInterestingLevel0InsideNodes(HMethod hm, ParIntGraph pig) {
 	Set A = new HashSet();
 	HCode hcode = hcf.convert(hm);
 	for(Iterator it = hcode.getElementsI(); it.hasNext(); ) {
 	    Quad q = (Quad) it.next();
 	    if((q instanceof NEW) || (q instanceof ANEW)) {
 		PANode node = node_rep.getCodeNode(q, PANode.INSIDE);
-		A.add(node);
+		if(!pig.G.captured(node) && lostOnlyInCaller(node, pig)) {
+		    // we are not interested in stack allocating the exceptions
+		    // since they  don't appear in normal case and so, they
+		    // are not critical for the memory management
+		    HClass hclass = getAllocatedType(q);
+		    if(!java_lang_Throwable.isSuperclassOf(hclass))
+			A.add(node);
+		}
 	    }
 	}
 	return A;
@@ -1472,9 +1492,29 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	    System.out.println("STKALLOC " + Debug.code2str(q));
 
-	    MyAP ap = new MyAP(getAllocatedType(q));
-	    // ap.sa = false; //// MAD DEBUG
+	    MyAP ap = getAPObj(q);
+	    // new MyAP(getAllocatedType(q));
 	    ap.sa = true;
+	    ap.ns = true; // SYNC
+	    setAPObj(q, ap);
+	}
+    }
+
+
+    private void extra_thread_allocation(Quad[] news, Map old2new) {
+	for(int i = 0; i < news.length; i++) {
+	    Quad q  = (Quad) old2new.get(news[i]);
+
+	    Util.assert(q != null, 
+			"Warning: no new Quad for " + 
+			Debug.code2str(news[i]) + " in [ " +
+			quad2method(news[i]) + " ]");
+
+	    System.out.println("THRALLOC " + Debug.code2str(q));
+
+	    MyAP ap = getAPObj(q);
+	    // new MyAP(getAllocatedType(q));
+	    if(!ap.sa) ap.ta = true;
 	    ap.ns = true; // SYNC
 	    setAPObj(q, ap);
 	}
@@ -1713,19 +1753,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	    HCode hcode = hcf.convert(hcaller);
 
-	    Set old_quads = null;
-	    if(isThisMethod(hcaller, "java.text.DecimalFormat", "<init>"))
-		old_quads = new HashSet(hcode.getElementsL());
-
 	    HMethod hcallee = ic.getLastCallee();
 	    Map old2new = inline_call_site(cs, hcaller, hcallee, hcf);
-
-	    if(isThisMethod(hcaller, "java.text.DecimalFormat", "<init>")) {
-		Set new_quads =
-		    new HashSet(hcf.convert(hcaller).getElementsL());
-		new_quads.removeAll(old_quads);
-		print_modified_hcode(hcaller, new_quads);
-	    }
 
 	    // update all the Inlining Chains
 	    for(Iterator it = chains.iterator(); it.hasNext(); )
@@ -1785,34 +1814,34 @@ public class MAInfo implements AllocationInformation, Serializable {
     private void generate_inlining_chains(MetaMethod mm) {
 	ParIntGraph pig = pa.getExtParIntGraph(mm);
 
-	Set nodes = getInterestingLevel0InsideNodes(mm.getHMethod());
-	trim_nodes(nodes);
+	Set nodes = getInterestingLevel0InsideNodes(mm.getHMethod(), pig);
+	Set sa_nodes = new HashSet();
+	Set ta_nodes = new HashSet();
+	split_nodes(nodes, sa_nodes, ta_nodes);
 	if(nodes.isEmpty()) return;
 
 	current_chain_cs = new LinkedList();
 	current_chain_callees = new LinkedList();
 
-	discover_inlining_chains(mm, nodes, 0);
+	discover_inlining_chains(mm, sa_nodes, ta_nodes, 0);
 	
 	current_chain_cs = null;
 	current_chain_callees = null;
     }
     private LinkedList current_chain_cs;
     private LinkedList current_chain_callees;
-
-
-    private void trim_nodes(Set nodes) {
-	if(!opt.stack_allocate_not_in_loops())
-	    return;
+    
+    private void split_nodes(Set nodes, Set sa_nodes, Set ta_nodes) {
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
 	    Quad q = (Quad) node_rep.node2Code(node);
-	    // refuse to stack allocate stuff in a loop
-	    if(in_a_loop(q)) {
-		System.out.println(Debug.code2str(q) +
-				   " is in a loop -> don't sa");
-		it.remove();
+	    if(opt.stack_allocate_not_in_loops() && in_a_loop(q)) {
+		System.out.println("split_nodes: " + Debug.code2str(q) + 
+				   " in a loop -> no sa, try to ta");
+		ta_nodes.add(node);
 	    }
+	    else
+		sa_nodes.add(node);
 	}
     }
 
@@ -1833,7 +1862,8 @@ public class MAInfo implements AllocationInformation, Serializable {
     //  level - nodes originate in a callee at distance level in the call
     //    graph; to be able to stack allocate them, an inlining chain of length
     //    at least level is necessary.
-    private void discover_inlining_chains(MetaMethod mm, Set nodes,
+    private void discover_inlining_chains(MetaMethod mm,
+					  Set sa_nodes, Set ta_nodes,
 					  int level) {
 	// iterate through all the call sites where mm is called
 	MetaMethod[] callers = mac.getCallers(mm);
@@ -1844,65 +1874,93 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    for(Iterator it = call_sites.iterator(); it.hasNext(); ) {
 		CALL cs = (CALL) it.next();
 
-		// refuse to stack allocate stuff in a loop
-		// TODO: this stuff can be allocated in the thread local heap
-		if(opt.stack_allocate_not_in_loops() && in_a_loop(cs)) {
-		    System.out.println(Debug.code2str(cs) +
-				       " is in a loop -> don't sa");
-		    continue;
-		}
-
 		MetaMethod[] callees = mcg.getCallees(mcaller, cs);
-
-		// we can inline call sites that are only to mm
+		
+		// we can only inline call sites that are only to mm
 		if(! ( (callees.length == 1) &&
 		       (callees[0] == mm) && good_cs(cs)
 		       && good_cs2(cs) ) ) continue;
+		
+		// refuse to stack allocate stuff in a loop
+		if(opt.stack_allocate_not_in_loops() && in_a_loop(cs)) {
+		    System.out.println("discover_inlining_chains: " +
+				       Debug.code2str(cs) +
+				       " is in a loop -> don't sa");
+		    ta_nodes = new HashSet(ta_nodes);
+		    for(Iterator itn = sa_nodes.iterator(); itn.hasNext(); ) {
+			PANode node = (PANode) itn.next();
+			MyAP ap = getAP_special(node);
+			if(!ap.ta)
+			    ta_nodes.add(node);
+		    }
+		    sa_nodes = Collections.EMPTY_SET;
+		}
 
 		current_chain_cs.addLast(cs);
 		current_chain_callees.addLast(mm.getHMethod());
-
+		
 		// compute specializations of nodes for cs
-		Set specs = specializeNodes(nodes, cs);
-
+		Set sa_specs = specializeNodes(sa_nodes, cs);
+		Set ta_specs = specializeNodes(ta_nodes, cs);
+		
 		ParIntGraph pig_caller = pa.getIntParIntGraph(mcaller);
-
+		
 		// B = specs that are captured in mcaller
-		Set B = captured_subset(specs, pig_caller);
+		Set sa_B = captured_subset(sa_specs, pig_caller);
+		Set ta_B = captured_subset(ta_specs, pig_caller);
 		
 		// here we have some good inlining chain; mark it
-		if(!B.isEmpty()) {
-		    // avoid inlining the class initializers: past experience
-		    // showed this might lead to circular dependencies in the
-		    // static initializer code
-		    if(!mcaller.getHMethod().getName().equals("<clinit>")) {
+		if((opt.DO_STACK_ALLOCATION &&
+		    opt.DO_INLINING_FOR_SA && !sa_B.isEmpty()) ||
+		   (opt.DO_THREAD_ALLOCATION &&
+		    opt.DO_INLINING_FOR_TA && !ta_B.isEmpty())) {
+		    // avoid inlining the class initializers: past
+		    // experience showed this might lead to circular
+		    // dependencies in the static initializer code
+		    if(!mcaller.getHMethod().getName().equals("<clinit>")){
 			InliningChain new_ic =
 			    new InliningChain(current_chain_cs,
 					      current_chain_callees,
-					      get_news(B));
+					      get_news(sa_B),
+					      get_news(ta_B));
 			if(DEBUG_IC)
-			    System.out.println("Discovered chain: " + new_ic);
+			    System.out.println("Discovered chain: "
+					       + new_ic);
 			if(new_ic.isAcceptable())
 			    chains.add(new_ic);
-			else
-			    System.out.println("TOO big to be considered!");
 		    }
 		}
 		
 		// the length of current_chain_cs is level + 1
 		if(level + 1 < opt.MAX_INLINING_LEVEL) {
 		    // C = specs that escape only in caller 
-		    Set C = only_in_caller_subset(specs, pig_caller);
+		    Set sa_C = only_in_caller_subset(sa_specs, pig_caller);
+		    Set ta_C = only_in_caller_subset(ta_specs, pig_caller);
 		    
-		    if(!C.isEmpty())
-			discover_inlining_chains(mcaller, C, level + 1);
+		    if((opt.DO_STACK_ALLOCATION &&
+			opt.DO_INLINING_FOR_SA && !sa_C.isEmpty()) ||
+		       (opt.DO_THREAD_ALLOCATION &&
+			opt.DO_INLINING_FOR_TA && !ta_C.isEmpty()))
+			discover_inlining_chains
+			    (mcaller, sa_C, ta_C,level + 1);
 		}
-
+		
 		current_chain_cs.removeLast();
 		current_chain_callees.removeLast();
 	    }
 	}
     }
+
+    
+    // get the allocation policy object associated with the object creation
+    // site for node. node might be a specialization so we have to go first
+    // to its root node and take the AP of this one.
+    private MyAP getAP_special(PANode node) {
+	PANode root = node.getRoot();
+	Quad q = (Quad) node_rep.node2Code(root);
+	return getAPObj(q);
+    }
+
 
     private LinkedList chains = null;
 
@@ -1965,9 +2023,24 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	    System.out.println("STKALLOC " + Debug.code2str(q));
 
-	    MyAP ap = new MyAP(getAllocatedType(q));
-	    // ap.sa = false; 
-	    ap.sa = true; // MAD DEBUG
+	    MyAP ap = getAPObj(q);
+	    // new MyAP(getAllocatedType(q));
+	    ap.sa = true;
+	    ap.ns = true; // SYNC
+	    setAPObj(q, ap);
+	}
+    }
+
+
+    private void extra_thread_allocation(Set news) {
+	for(Iterator it = news.iterator(); it.hasNext(); ) {
+	    Quad q  = (Quad) it.next();
+
+	    System.out.println("THRALLOC " + Debug.code2str(q));
+
+	    MyAP ap = getAPObj(q);
+	    // new MyAP(getAllocatedType(q));
+	    ap.ta = true;
 	    ap.ns = true; // SYNC
 	    setAPObj(q, ap);
 	}
@@ -1977,16 +2050,21 @@ public class MAInfo implements AllocationInformation, Serializable {
     private class InliningChain {
 	private LinkedList calls;
 	private LinkedList callees;
-	private Set news;
+	private Set sa_news;
+	private Set ta_news;
 
 	InliningChain(final LinkedList calls,
-		      final LinkedList callees, final Set news) {
+		      final LinkedList callees,
+		      final Set sa_news,
+		      final Set ta_news) {
 	    this.calls = (LinkedList) calls.clone();
 	    this.callees = (LinkedList) callees.clone();
-	    this.news  = new HashSet(news);
+	    this.sa_news = new HashSet(sa_news);
+	    this.ta_news = new HashSet(ta_news);
 	}
 
-	Set get_news() { return news; }
+	Set get_sa_news() { return sa_news; }
+	Set get_ta_news() { return ta_news; }
 
 	public String toString() {
 	    StringBuffer buff = new StringBuffer();
@@ -2001,14 +2079,23 @@ public class MAInfo implements AllocationInformation, Serializable {
 		buff.append(extract_callee(cs));
 		buff.append(" }\n");
 	    }
-	    buff.append(" STACK ALLOCATABLE STUFF:\n");
+	    present_news(buff, " STACK  ALLOCATABLE STUFF:", get_sa_news());
+	    present_news(buff, " THREAD ALLOCATABLE STUFF:", get_ta_news());
+	    buff.append("}\n");
+	    return buff.toString();
+	}
+
+	// aux method for pretty printing of sa/ta news
+	private void present_news(StringBuffer buff, String message,
+				  Set news) {
+	    if(news.isEmpty()) return;
+	    buff.append(message);
+	    buff.append("\n");
 	    for(Iterator it = news.iterator(); it.hasNext(); ) {
 		buff.append("  ");
 		buff.append(Debug.code2str((Quad) it.next()));
 		buff.append("\n");
 	    }
-	    buff.append("}\n");
-	    return buff.toString();
 	}
 
 
@@ -2020,8 +2107,10 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    for(Iterator it = calls.iterator(); it.hasNext(); ) {
 		CALL cs = (CALL) it.next();
 		HMethod hm = extract_callee(cs);
-		if(hm != null)
-		    size += get_method_size(hm);
+		if(get_method_size(hm) > opt.MAX_INLINABLE_METHOD_SIZE)
+		    return false;
+		//if(hm != null)
+		size += get_method_size(hm);
 	    }
 	    return size < opt.MAX_METHOD_SIZE;
 	}
@@ -2047,7 +2136,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    if(first_cs == cs) {
 		if(DEBUG_IC)
 		    System.out.println("The news are modified");
-		news = project_set(news, old2new);
+		sa_news = project_set(sa_news, old2new);
+		ta_news = project_set(ta_news, old2new);
 	    }
 
 	    ListIterator ithm = callees.listIterator(0);
@@ -2073,8 +2163,10 @@ public class MAInfo implements AllocationInformation, Serializable {
 		    if(DEBUG_IC)
 			System.out.println("After " + this);
 
-		    if(isDone())
-			extra_stack_allocation(news);
+		    if(isDone()) {
+			extra_stack_allocation(sa_news);
+			extra_thread_allocation(ta_news);
+		    }
 		}
 	    }
 	}

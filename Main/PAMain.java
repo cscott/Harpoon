@@ -94,7 +94,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.99 2001-04-19 17:17:01 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.100 2001-04-24 15:03:06 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -749,7 +749,7 @@ public abstract class PAMain {
 	    new LongOpt("details",       LongOpt.NO_ARGUMENT,       null, 11),
 	    new LongOpt("mamaps",        LongOpt.REQUIRED_ARGUMENT, null, 14),
 	    new LongOpt("wit",           LongOpt.NO_ARGUMENT,       null, 15),
-	    new LongOpt("inline",        LongOpt.REQUIRED_ARGUMENT, null, 16),
+	    new LongOpt("inline_depth",  LongOpt.REQUIRED_ARGUMENT, null, 16),
 	    new LongOpt("sat",           LongOpt.REQUIRED_ARGUMENT, null, 17),
 	    new LongOpt("notg",          LongOpt.NO_ARGUMENT,       null, 18),
 	    new LongOpt("loadpre",       LongOpt.REQUIRED_ARGUMENT, null, 19),
@@ -770,7 +770,9 @@ public abstract class PAMain {
 	    new LongOpt("prealloc",      LongOpt.NO_ARGUMENT,       null, 32),
 	    new LongOpt("rtjchecks",     LongOpt.NO_ARGUMENT,       null, 33),
 	    new LongOpt("rtj",           LongOpt.REQUIRED_ARGUMENT, null, 34),
-	    new LongOpt("old_inlining",  LongOpt.NO_ARGUMENT,       null, 35)
+	    new LongOpt("old_inlining",  LongOpt.NO_ARGUMENT,       null, 35),
+	    new LongOpt("inline_for_sa", LongOpt.REQUIRED_ARGUMENT, null, 36),
+	    new LongOpt("inline_for_ta", LongOpt.REQUIRED_ARGUMENT, null, 37)
 	};
 
 	Getopt g = new Getopt("PAMain", argv, "mscor:a:iIN:P:", longopts);
@@ -873,8 +875,19 @@ public abstract class PAMain {
 		mainfo_opts.DO_THREAD_ALLOCATION = true;
 		break;
 	    case 26:
-		mainfo_opts.DO_STACK_ALLOCATION =
-		    (Integer.parseInt(g.getOptarg()) == 1);
+		int sap = Integer.parseInt(g.getOptarg());
+		if(sap == 0)
+		    mainfo_opts.DO_STACK_ALLOCATION = false;
+		else {
+		    if((sap != MAInfo.MAInfoOptions.STACK_ALLOCATE_ALWAYS) &&
+		       (sap !=
+			MAInfo.MAInfoOptions.STACK_ALLOCATE_NOT_IN_LOOPS)) {
+			System.err.println("Unknown option for sa!");
+			System.exit(1);
+		    }
+		    mainfo_opts.DO_STACK_ALLOCATION     = true;
+		    mainfo_opts.STACK_ALLOCATION_POLICY = sap;
+		}
 		break;
 	    case 27:
 		mainfo_opts.DO_THREAD_ALLOCATION =
@@ -885,10 +898,9 @@ public abstract class PAMain {
 		    (Integer.parseInt(g.getOptarg()) == 1);
 		break;
 	    case 15:
-		mainfo_opts.USE_INTER_THREAD   = true;
+		mainfo_opts.USE_INTER_THREAD = true;
 		break;
 	    case 16:
-		mainfo_opts.DO_METHOD_INLINING = true;
 		mainfo_opts.MAX_INLINING_LEVEL =
 		    Integer.parseInt(g.getOptarg());
 		break;
@@ -984,8 +996,15 @@ public abstract class PAMain {
 		}
 		break;
 	    case 35:
-		mainfo_opts.DO_METHOD_INLINING = true;
-		mainfo_opts.USE_OLD_INLINING   = true;
+		mainfo_opts.USE_OLD_INLINING = true;
+		break;
+	    case 36:
+		mainfo_opts.DO_INLINING_FOR_SA =
+		    (Integer.parseInt(g.getOptarg()) == 1);
+		break;
+	    case 37:
+		mainfo_opts.DO_INLINING_FOR_TA =
+		    (Integer.parseInt(g.getOptarg()) == 1);
 		break;
 	    }
 
@@ -1643,7 +1662,10 @@ public abstract class PAMain {
 	"                 the CachingCodeFactory (and implicitly the",
 	"                 allocation map) and the linker to disk.",
 	"                 It turns on the stack and thread alloc.",
-	"--sa 0|1        Turns on/off the stack allocation.",
+	"--sa 0|1|2      Sets the stack allocation policy:",
+	"                 0 - no stack allocation",
+	"                 1 - do stack allocation, but not in loops (default)",
+	"                 2 - do stack allocation, wherever it's possible",
 	"--ta 0|1        Turns on/off the thread allocation.",
 	"--ns 0|1        Turns on/off the generation of \"no sync\" hints.",
 	"--prealloc      Activates the pre-allocation (default off).",
