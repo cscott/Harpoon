@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: quads.tex,v 1.10 1998-09-09 16:35:37 cananian Exp $
+% $Id: quads.tex,v 1.11 1998-09-09 17:43:36 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn,twoside]{article}
 
@@ -9,7 +9,7 @@
 
 \author{C.~Scott~Ananian}
 \title{\Harpoon\ Project Compiler Intermediate Representation}
-\date{\today \\ $ $Revision: 1.10 $ $}
+\date{\today \\ $ $Revision: 1.11 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -161,13 +161,8 @@ intended to be targeted by agressive optimizations designed to
 removed those cases with are redundant, impossible, or otherwise
 unnecessary.  The design goal of the IR is that \textit{no} IR
 statement should throw an implicit exception under any 
-circumstance.\footnote{This goal is actually impossible for the java
-bytecode opcode \texttt{aastore}, which throws an
-\texttt{ArrayStoreException} under circumstances which cannot be
-otherwise tested for in java code.  Thus array stores are
-currently the single exception to our design goals; the lack of exception
-handling for this one case is not likely to cause difficulties for most
-applications.}  Pursuing that goal involves changing the semantics of method
+circumstance.
+Pursuing that goal involves changing the semantics of method
 invocation slightly: so that the \texttt{call} statement not throw an
 implicit exception, the IR \texttt{call} has been defined to return
 \textit{two} values.  In addition to the conventional (and optional)
@@ -188,10 +183,7 @@ The IR described in these notes is defined in the Java package
 \texttt{harpoon.IR.QuadSSA}.  Source code and binaries are available
 at {\tt\small http://\bp lm.lcs.mit.edu/\bp \~{}cananian/\bp Harpoon}.
 
-The \texttt{harpoon.IR.QuadSSA.Code}
-class provides a means to access the QuadSSA form of a given method;
-see the definition of superclass \texttt{harpoon.ClassFile.HCode} and
-the example code in \texttt{harpoon.Main.Main} for details.  The
+The
 QuadSSA statements are called \texttt{Quad}s and are subclasses of
 \texttt{harpoon.IR.QuadSSA.Quad}; they are graph-structured and
 doubly-linked to enable both forward and reverse traversal of the
@@ -294,6 +286,10 @@ method containing the \texttt{CALL}: $e$ must be explicitly tested and
 its exception rethrown if that behaviour is desired. $t$ is not needed
 for static methods.
 %
+\item[COMPONENTOF($t_1$, $t_2$, $t_3$)] Puts the boolean value
+\texttt{true} (1) in $t_1$ if object $t_3$ is an instance of the component
+type of array $t_2$, or \texttt{false} (0) otherwise.
+%
 \item[CONST($t$, $c$, $y$)] Assigns numeric or string constant $c$ of 
 type $y$ to variable $t$.
 %
@@ -325,7 +321,11 @@ details.
 \item[SET($f$, $t_1$, $t_2$)] Sets field $f$ of optional object $t_1$ to the
 value of $t_2$.  $t_1$ is not necessary for static fields.
 \end{description}
-
+%
+The \texttt{harpoon.IR.QuadSSA.Code}
+class provides a means to access the QuadSSA form of a given method;
+see the definition of superclass \texttt{harpoon.ClassFile.HCode} and
+the example code in \texttt{harpoon.Main.Main} for details.  
 
 \newcommand{\cls}[1]{{\normalfont\bf #1}}
 \newcommand{\expn}[1]{{\normalfont\it #1}}
@@ -348,6 +348,8 @@ value of $t_2$.  $t_1$ is not necessary for static fields.
                   Temp params[], \\ Temp retval, Temp retex) 
                   \expn{// objectref, retval may be null}
 \item[\cls{CJMP}](HCodeElement source, Temp test)
+\item[\cls{COMPONENTOF}](HCodeElement source, Temp dst, Temp arrayref,
+                         Temp objectref)
 \item[\cls{CONST}](HCodeElement source, Temp dst, Object value, HClass type)
 \item[\cls{FOOTER}](HCodeElement source)
 \item[\cls{GET}](HCodeElement source, Temp dst, HField field, \\ 
@@ -405,6 +407,9 @@ exactly to the names of the constructor arguments.}
 \tt ASET & Assign a value to an indexed array element. \\
 \tt CALL & Invoke an object method. \\
 \tt CJMP & Conditional jump based on a boolean value. \\
+\tt COMPONENTOF & Determine whether an object reference is an instance
+          of the component type of an array reference; result is a boolean
+          value. \\
 \tt CONST & Assign numeric or string constants to 
             compiler temporary variables. \\
 \tt GET & Fetch the value of an object field. \\
@@ -412,7 +417,7 @@ exactly to the names of the constructor arguments.}
                  given class; result is a boolean value. \\
 %MONITOR 
 \tt MOVE & Assign one compiler temporary to another. \\
-\tt NEW  & Create a new class object (uninitialized). \\
+\tt NEW  & Create a new uninitialized class object. \\
 \tt NOP  & Do nothing. \\
 \tt OPER & Perform a $n$-ary operation on set of compiler temporaries.\\
 \tt PHI  & \phifunction{} representation.\\
