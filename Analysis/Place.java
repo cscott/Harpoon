@@ -20,10 +20,10 @@ import java.util.Set;
  * functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.10.2.4 1999-03-03 01:17:46 cananian Exp $
+ * @version $Id: Place.java,v 1.10.2.5 1999-04-03 18:02:09 cananian Exp $
  */
 public class Place  {
-    final SESE sese;
+    /*final*/ SESE sese;
     final Map info = new HashMap();
     
     /** Creates a <code>Place</code>. */

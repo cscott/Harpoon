@@ -14,11 +14,11 @@ import java.util.Set;
  * <code>PersistentTree</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentTree.java,v 1.1.2.1 1999-04-01 02:48:14 cananian Exp $
+ * @version $Id: PersistentTree.java,v 1.1.2.2 1999-04-03 18:02:10 cananian Exp $
  */
 public class PersistentTree  {
-    final Node root;
-    final Comparator c;
+    /*final*/ Node root;
+    /*final*/ Comparator c;
 
     /** Creates an empty <code>PersistentTree</code>. 
      *  Key objects must implement <code>java.lang.Comparable</code>. 
