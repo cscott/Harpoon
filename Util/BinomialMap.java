@@ -19,7 +19,7 @@ import java.util.Set;
  * permitted.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinomialMap.java,v 1.1.2.2 1999-06-20 05:48:02 cananian Exp $
+ * @version $Id: BinomialMap.java,v 1.1.2.3 1999-06-20 22:03:43 cananian Exp $
  */
 public class BinomialMap extends AbstractMap implements Cloneable {
     private static final boolean debug=false;
@@ -97,12 +97,12 @@ public class BinomialMap extends AbstractMap implements Cloneable {
 	    putAll((BinomialMap) ((BinomialMap) m).clone());
 	else super.putAll(m);
     }
-    /** Copies all of the mappings from the specified map to this
+    /** Merges all of the mappings from the specified map to this
      *  map. Note that duplicates <b>are</b> permitted. This operation
      *  takes O(lg n), where n is the number of entries in the resulting
      *  map. The comparator for m <b>must be identical</b> to the comparator
-     *  for <code>this</code>. After calling putAll(), the specified map
-     *  will be empty. */
+     *  for <code>this</code>. After calling <code>putAll()</code>, the
+     *  specified map will be empty. */
     public void putAllAndClear(BinomialMap m) {
 	Util.assert(m.c.equals(this.c));
 	putAll(m.head);
@@ -147,7 +147,7 @@ public class BinomialMap extends AbstractMap implements Cloneable {
 	Util.assert(isHeapOrdered(head, c));
 	return null;
     }
-    /** Remove an return the map entry with minimal key. O(lg n) time. */
+    /** Remove and return the map entry with minimal key. O(lg n) time. */
     public Map.Entry extractMinimum() {
 	Util.assert(isHeapOrdered(head, c));
 	Node x=(Node)minimum(); // find min node...
@@ -207,7 +207,7 @@ public class BinomialMap extends AbstractMap implements Cloneable {
 	}
 	return y;
     }
-    /** Remove the specied map entry from the mapping. O(lg n) time. */
+    /** Remove the specified map entry from the mapping. O(lg n) time. */
     public void removeEntry(Map.Entry me) {
 	Util.assert(isHeapOrdered(head, c));
 	Node x = (Node) me;
@@ -282,17 +282,18 @@ public class BinomialMap extends AbstractMap implements Cloneable {
     }
 
     /** Test whether the specified key is contained in this mapping.
-     *  O(n). */
+     *  O(n) time. */
     public boolean containsKey(Object key) {
 	return find(head, key)!=null;
     }
     /** Returns the value to which this map maps the specified key, or
-     * <code>null</code> if there is no mapping for this key. O(n). */
+     * <code>null</code> if there is no mapping for this key. O(n) time. */
     public Object get(Object key) {
 	Node n = find(head, key);
 	return (n==null)?null:n.key;
     }
-    /** Removes the mapping for this key from this map if present. O(n) */
+    /** Removes the mapping for this key from this map if present. 
+     *  O(n) time. */
     public Object remove(Object key) {
 	Node n = find(head, key); // O(n)
 	if (n==null) return null;
