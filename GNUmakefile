@@ -1,3 +1,4 @@
+# $Version$
 JFLAGS=-g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JCC=javac -d .
@@ -33,6 +34,8 @@ first:
 Harpoon.jar:	java
 	${JAR} c0f Harpoon.jar harpoon silicon
 jar:	Harpoon.jar
+jar-install: jar
+	$(SCP) Harpoon.jar miris.lcs.mit.edu:public_html/Projects/Harpoon
 
 cvs-add:
 	-for dir in $(filter-out Test,$(ALLPKGS)); do \
@@ -47,6 +50,11 @@ update: # it's so easy to forget...
 	cvs update 
 	@echo ""
 	@-$(FORTUNE)
+
+tar:
+	@tar czvf harpoon.tgz $(filter-out JavaChip%,$(filter-out Test%,$(ALLSOURCE))) GNUmakefile
+tar-install: tar
+	$(SCP) harpoon.tgz miris.lcs.mit.edu:public_html/Projects/Harpoon
 
 doc:	doc/TIMESTAMP
 
@@ -104,3 +112,5 @@ backup: # DOESN'T WORK ON NON-LOCAL MACHINES
 		miris.lcs.mit.edu:public_html/Projects/Harpoon ; \
 	  $(RM) ../harpoon-backup.tar.gz ; \
 	fi
+
+install: doc-install tar-install jar-install
