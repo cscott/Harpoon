@@ -33,7 +33,7 @@ import java.util.List;
  * flagged as possibly incorrect.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Lint.java,v 1.1.2.5 2000-01-13 23:48:17 cananian Exp $
+ * @version $Id: Lint.java,v 1.1.2.6 2000-04-04 01:49:53 cananian Exp $
  */
 public abstract class Lint extends harpoon.IR.Registration {
     public final static Linker linker = Loader.systemLinker;
@@ -214,7 +214,7 @@ public abstract class Lint extends harpoon.IR.Registration {
 		    tm.typeMap(q,r)==HClass.Void) continue;
 		if (refunique.isSuperinterfaceOf(tm.typeMap(q,l)) ||
 		    refunique.isSuperinterfaceOf(tm.typeMap(q,r))) continue;
-		Lint.printError("Possibly incorrect use of ==", hm, q);
+		Lint.printError("Possibly incorrect use of == ("+tm.typeMap(q,l)+" / "+tm.typeMap(q,r)+")", hm, q);
 	    }
 	    return c;
 	}
