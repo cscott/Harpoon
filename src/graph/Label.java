@@ -1,9 +1,14 @@
 // Label.java, created by wbeebee
+//             modified by benster
 // Copyright (C) 2003 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package imagerec.graph;
 
 import imagerec.util.ImageDataManip;
+import imagerec.util.CommonMemory;
+import imagerec.util.ObjectTracker;
+import imagerec.util.ObjectInfo;
+import imagerec.util.ObjectDataPoint;
 
 /**
  * {@link Label} labels objects in an image, given outlined edges.
@@ -126,6 +131,12 @@ public class Label extends Node {
 	this.maxratio = maxratio;
     }
 
+    /**
+     * Added for backwards compatibility with Wes' original pipeline.
+     * If <code>true</code>, then <code>process()</code> only labels
+     * a single object. If <code>false</code>, then <code>process()</code> labels
+     *  multiple objects.
+     */
     protected boolean findOneObject = false;
     
     /**
@@ -134,6 +145,48 @@ public class Label extends Node {
     */
     public void findOneObject(boolean b) {
 	findOneObject = b;
+    }
+
+    /**
+     * The {@link ObjectTracker} variable in {@link CommonMemory}
+     * that <code>process()</code> should update. If this field is <code>null</code>,
+     * then <code>process()</code> will not update any {@link CommonMemory} variable.
+     *
+     * @see ObjectTracker
+     * @see CommonMemory
+     */
+    protected ObjectTracker objectTracker = null;
+    
+    /**
+     * Specify the {@link ObjectTracker} variable in {@link CommonMemory}
+     * that <code>process()</code> should update with information about labeled objects.<br><br>
+     *
+     * If no {@link ObjectTracker} with the specified name has been instantianted
+     * when this method is called, then one is created.
+     *
+     * You may disable object tracking by passing <code>null</code>.
+     *
+     * @param name The name of the {@link ObjectTracker} variable in {@link CommonMemory}.
+     *
+     * @throws RuntimeException Thrown if the specified name is already bound in
+     * {@link CommonMemory} to an object that is NOT an {@link ObjectTracker}.
+     *
+     * @see ObjectTracker
+     * @see CommonMemory
+     */
+    public void setObjectTracker(String name) {
+	if (CommonMemory.valueExists(name)) {
+	    Object o = CommonMemory.getValue(name);
+	    if (!(o instanceof ObjectTracker)) {
+		throw new RuntimeException("An object named '"+name+"' that is NOT an ObjectTracker already "+
+					   "exists in CommonMemory.");
+	    }
+	    this.objectTracker = (ObjectTracker)o;
+	}
+	else {
+	    this.objectTracker = new ObjectTracker();
+	    CommonMemory.setValue(name, this.objectTracker);
+	}
     }
 
     private int x1, x2, y1, y2;
@@ -181,19 +234,30 @@ public class Label extends Node {
 		//of how many objects we've found,
 		//crop around the object, and pass it on to the next node
 		else {
-		    //System.out.println("width: "+width);
+		    //System.out.println("Label: found a valid object");
+		    //System.out.println("  width: "+width);
 		    Node right = getRight();
+		    //System.out.println("Label: right: "+right);
 		    if (right!=null) {
 			ImageData newImage = ImageDataManip.crop(id, x1, y1, x2-x1+1, y2-y1+1);
 			newImage.labelID = num;
+			//System.out.println("About to handleTracking");
+			if (this.objectTracker != null) {
+			    handleTracking(newImage);
+			}
 			//System.out.println("label: calling right");
+			//System.out.println("Label: ");
+			//System.out.println("  width: "+newImage.width);
+			//System.out.println("  height: "+newImage.height);
+			//System.out.println("  x: "+newImage.x);
+			//System.out.println("  y: "+newImage.y);
 			right.process(newImage);
 		    }
 		    if ((--num)==0) {
 			throw new Error("Too many objects!");
 		    }
 		    //To process only one object.
-		    //This line should be below '--num'
+		    //This line must be below '--num'
 		    if (findOneObject)
 			break;
 		}
@@ -266,6 +330,56 @@ public class Label extends Node {
 	    label(id, num, pos+id.width*2+0);
 	    label(id, num, pos+id.width*2+1);
 	    label(id, num, pos+id.width*2+2);
+	}
+    }
+
+    private void handleTracking(ImageData croppedImageData) {
+	//System.out.println("Label: Handling tracking");
+	//System.out.println("       id.target# = "+croppedImageData.trackedObjectUniqueID);
+	int trackingID = croppedImageData.trackedObjectUniqueID;
+	//If trackingID == -1, then we know that Label was not
+	//searching for a known object.
+	if (trackingID == -1) {
+	    ObjectInfo info =
+		this.objectTracker.getClosestObject(croppedImageData.x,
+						    croppedImageData.y,
+						    croppedImageData.width,
+						    croppedImageData.height);
+	    if (info != null) {
+		//System.out.println("     Closest object found.");
+		ObjectDataPoint data = info.getLastDataPoint();
+		int curXLoc = data.getX() + data.getWidth()/2;
+		int curYLoc = data.getY() + data.getHeight()/2;
+		int xLoc = croppedImageData.x + croppedImageData.width/2;
+		int yLoc = croppedImageData.y + croppedImageData.height/2;
+		if ((Math.abs(xLoc-curXLoc) < 30) &&
+		    (Math.abs(yLoc-curYLoc) < 30)) {
+		    croppedImageData.trackedObjectUniqueID = 
+			info.getUniqueID();
+		    info.addDataPoint(croppedImageData);
+		}
+		else {
+		    System.out.println("   Object not determined to be close enough");
+		    System.out.println("      ImageData #: "+croppedImageData.id);
+		    System.out.println("      xLoc-curXLoc: "+Math.abs(xLoc-curXLoc));
+		    System.out.println("      yLoc-curYLoc: "+Math.abs(yLoc-curYLoc));
+		    ObjectInfo newInfo = new ObjectInfo();
+		    newInfo.addDataPoint(croppedImageData);
+		    croppedImageData.trackedObjectUniqueID =
+			newInfo.getUniqueID();
+		    this.objectTracker.addObjectInfo(newInfo);
+		    
+		}
+	    }
+	    else {
+		//System.out.println("   No closest objet found");
+		ObjectInfo newInfo = new ObjectInfo();
+		newInfo.addDataPoint(croppedImageData);
+		croppedImageData.trackedObjectUniqueID =
+		    newInfo.getUniqueID();
+		this.objectTracker.addObjectInfo(newInfo);
+	    }
+	    
 	}
     }
 }
