@@ -191,8 +191,10 @@ IR/Quads/QuadSSI.java
 IR/Quads/QuadWithTry.java
 IR/Quads/QuadValueVisitor.java
 IR/Quads/ResilientNoSSA.java
+IR/Tree/CanonicalTreeCode.java
 IR/Tree/Code.java
 IR/Tree/Data.java
+IR/Tree/OptimizedTreeCode.java
 IR/Tree/Tree.java
 IR/Tree/TreeCode.java
 IR/Tree/TreeGrapher.java
