@@ -365,10 +365,13 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_getPrimitiveClass
 
 /* decision helper method */
 enum memberType { FIELDS, METHODS, CONSTRUCTORS };
-static jboolean isAptMember(jclass cls, union _jmemberID *mptr,
-			    jint which, enum memberType type) {
-  /* filter out methods/fields */
-  if (XOR(mptr->m.desc[0]=='(', type!=FIELDS)) return JNI_FALSE;
+static jboolean isAptMember(JNIEnv *env, jclass cls, union _jmemberID *mptr,
+			    jint which, jboolean membersAreMethods,
+			    jclass memberClass) {
+  /*filter out methods/fields/constructors which don't agree with memberClass*/
+  if (!(*env)->IsInstanceOf(env, FNI_WRAP(mptr->m.reflectinfo->method_object),
+			    memberClass))
+    return JNI_FALSE;
   /* filter out non-public if which==0 */
   if (which == java_lang_reflect_Member_PUBLIC &&
       !(mptr->m.reflectinfo->modifiers & java_lang_reflect_Modifier_PUBLIC))
@@ -378,10 +381,7 @@ static jboolean isAptMember(jclass cls, union _jmemberID *mptr,
       mptr->m.reflectinfo->declaring_class_object != FNI_UNWRAP(cls))
     return JNI_FALSE;
   /* filter out <clinit> if type!=FIELDS */
-  if (type!=FIELDS && strcmp(mptr->m.name, "<clinit>")==0)
-    return JNI_FALSE;
-  /* if type==CONSTRUCTORS, filter out all but constructors */
-  if (type==CONSTRUCTORS && strcmp(mptr->m.name, "<init>")!=0)
+  if (membersAreMethods && strcmp(mptr->m.name, "<clinit>")==0)
     return JNI_FALSE;
   /* congratulations! you've run the gauntlet! */
   return JNI_TRUE;
@@ -396,20 +396,21 @@ static jobjectArray JNICALL Java_java_lang_Class_getMembers
   union _jmemberID *ptr;
   jclass memberClass; jobjectArray result;
   jsize count=0;
-  /* count matching members */
-  for (ptr=info->memberinfo; ptr < info->memberend; ptr++)
-    if (isAptMember(cls, ptr, which, type))
-      count++;
-  /* create properly-sized and -typed array */
+  /* find class corresponing to the type of member we're interested in */
   memberClass = (*env)->FindClass(env,
 				  (type==FIELDS)?"java/lang/reflect/Field":
 				  (type==METHODS)?"java/lang/reflect/Method":
 				  "java/lang/reflect/Constructor");
+  /* count matching members */
+  for (ptr=info->memberinfo; ptr < info->memberend; ptr++)
+    if (isAptMember(env, cls, ptr, which, (type!=FIELDS), memberClass))
+      count++;
+  /* create properly-sized and -typed array */
   result = (*env)->NewObjectArray(env, count, memberClass, NULL);
   /* now put matching members in array */
   count=0;
   for (ptr=info->memberinfo; ptr < info->memberend; ptr++)
-    if (isAptMember(cls, ptr, which, type))
+    if (isAptMember(env, cls, ptr, which, (type!=FIELDS), memberClass))
       (*env)->SetObjectArrayElement
 	  (env, result, count++, FNI_WRAP(ptr->m.reflectinfo->method_object));
   /* done */
