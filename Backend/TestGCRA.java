@@ -12,7 +12,7 @@ import java.io.*;
  * <code>TestGCRA</code>
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: TestGCRA.java,v 1.1 2000-07-26 21:33:11 pnkfelix Exp $
+ * @version $Id: TestGCRA.java,v 1.2 2000-07-28 21:52:42 pnkfelix Exp $
  */
 public class TestGCRA {
     
@@ -22,11 +22,16 @@ public class TestGCRA {
     }
 
     public static void main(String[] args) {
-	if (args.length != 1) {
+	if (args.length > 2 || args.length < 1) {
 	    System.out.println("Usage: TestGCRA <input-file>");
 	    System.exit(-1);
 	}
 	final String infile = args[0];
+
+
+	if (args.length > 1) {
+	    AbsAssem.NUM_REGISTERS = Integer.parseInt(args[1]);
+	}
 
 	try {
 	    Reader r = new FileReader(args[0]);

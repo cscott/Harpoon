@@ -43,10 +43,12 @@ public class AbsAssem  {
     private AbsAssem() {
 
     }
-        
+    
     static TempFactory tf;
     static Frame frm;
     static AbsHClass declClass;
+
+    static int NUM_REGISTERS = 4;
 
     static { 
 	tf = new AbsTempFactory();
@@ -56,11 +58,15 @@ public class AbsAssem  {
     }
 
     public static void main(final String[] args) {
-	if (args.length != 1) {
-	    System.out.println("Usage: AbsAssem <input-file>");
+	if (args.length > 2 || args.length < 1) {
+	    System.out.println("Usage: AbsAssem input-file [num-regs]");
 	    System.exit(-1);
 	}
 	final String infile = args[0];
+
+	if (args.length > 1) {
+	    NUM_REGISTERS = Integer.parseInt(args[1]);
+	}
 
 	try {
 	    Reader r = new FileReader(args[0]);
@@ -90,6 +96,7 @@ public class AbsAssem  {
     }
 
     public static TCode makeCode(Reader r, String name) {
+	rfi = new AbsRegFileInfo(NUM_REGISTERS);
 	BufferedReader br = new BufferedReader(r);
 	TCode tc = new TCode(declClass.hm, frm, br);
 	return tc;
@@ -150,25 +157,30 @@ public class AbsAssem  {
 		return null;
 	    } else {
 		StringTokenizer st = new StringTokenizer(s1, "():,", true);
-		while(st.hasMoreTokens()) {
-		    String s = st.nextToken();
-		    // System.out.print(s + " ");
-		    
-		    if (s.equalsIgnoreCase("def")) {
-			defs.addAll(defs(st));
-		    } else if (s.equalsIgnoreCase("use")) {
-			uses.addAll(uses(st));
-		    } else if (s.equalsIgnoreCase("mov")) {
-			return addMove(s1.trim(), st, inf);
-		    } else if (s.equalsIgnoreCase("jump")) {
-			jumps.addAll(jumps(st));
-		    } else {
-			Util.assert(defs.isEmpty() &&
-				    uses.isEmpty() &&
-				    jumps.isEmpty(), "line:"+line+" token:"+s);
-			return addLabel(s, inf);
+		try {
+		    while(st.hasMoreTokens()) {
+			String s = st.nextToken();
+			// System.out.print(s + " ");
+			
+			if (s.equalsIgnoreCase("def")) {
+			    defs.addAll(defs(st));
+			} else if (s.equalsIgnoreCase("use")) {
+			    uses.addAll(uses(st));
+			} else if (s.equalsIgnoreCase("mov")) {
+			    return addMove(s1.trim(), st, inf);
+			} else if (s.equalsIgnoreCase("jump")) {
+			    jumps.addAll(jumps(st));
+			} else {
+			    Util.assert(defs.isEmpty() &&
+					uses.isEmpty() &&
+					jumps.isEmpty(), "line:"+line+" token:"+s);
+			    return addLabel(s, inf);
+			}
 		    }
-		    
+		} catch (RuntimeException e) {
+		    System.out.println("line:"+line+" word: "+s1);
+		    e.printStackTrace();
+		    System.exit(-1);
 		}
 	    }
 	}
@@ -262,17 +274,18 @@ public class AbsAssem  {
 				 InstrFactory inf) {
 	String s = st.nextToken();
 	Util.assert(s.equals("("));
+	
 	s = st.nextToken();
 	Temp d = (Temp) idToTemp.get(s);
-	Util.assert(d != null, s);
+	Util.assert(d != null, s+" needs explicit declaration");
 	s = st.nextToken();
 	Util.assert(s.equals(","));
 	s = st.nextToken();
 	Temp u = (Temp) idToTemp.get(s);
-	Util.assert(u != null, s);
+	Util.assert(u != null, s+" needs explicit declaration");
 	s = st.nextToken();
 	Util.assert(s.equals(")"));
-	return new InstrMOVE(inf, null, s1, 
+	return new InstrMOVE(inf, null, "mov `d0, `s0", 
 			     new Temp[]{ d }, 
 			     new Temp[]{ u });
     }
@@ -288,7 +301,7 @@ public class AbsAssem  {
 		break;
 	    } else {
 		Temp t = (Temp) idToTemp.get(s);
-		Util.assert(t != null, s);
+		Util.assert(t != null, s+" needs explicit declaration");
 		ds.add(t);
 	    }
 	}
@@ -305,7 +318,7 @@ public class AbsAssem  {
 		break;
 	    } else {
 		Temp t = (Temp) idToTemp.get(s);
-		Util.assert(t != null, s);
+		Util.assert(t != null, s+" needs explicit declaration");
 		us.add(t);
 	    }
 	}	
@@ -357,7 +370,7 @@ public class AbsAssem  {
 	}
     }
     
-    public static RegFileInfo rfi = new AbsRegFileInfo(4);
+    public static RegFileInfo rfi;
     public static class AbsRegFileInfo extends RegFileInfo {
 	private Temp[] regs;
 	private Set swAssigns;
@@ -366,8 +379,12 @@ public class AbsAssem  {
 	    regs = new Temp[numRegs];
 	    swAssigns = new LinearSet(numRegs);
 	    dwAssigns = new LinearSet(numRegs/2);
-	    for(int i=0; i<numRegs; i++) 
-		regs[i] = new RegTemp(tf, "r"+i);
+	    for(int i=0; i<numRegs; i++) {
+		String name = "r"+i;
+		regs[i] = new RegTemp(tf, name);
+		// System.out.println("adding "+regs[i]);
+		idToTemp.put(name, regs[i]);
+	    }
 	    for(int i=0; i<numRegs; i++) 
 		swAssigns.add(Collections.nCopies(1,regs[i]));
 	    for(int i=0; i<numRegs-1; i+=2) 
