@@ -402,12 +402,26 @@ public class ImageDataManip {
 	}
     }
 
+    /** Factory to create an {@link ImageData} given partial information.
+     *
+     *  @param c1 The target x coordinate.
+     *  @param c2 The target y coordinate.
+     *  @param c3 The target z coordinate.
+     */
+    public static ImageData create(float c1, float c2, float c3) {
+	return new ImageData(null, null, null,
+			     0, 0, 0, 0, 0, 0, 0, 0,
+			     c1, c2, c3);
+    }
+
     /**
-       Hack by Benji to try to speed up pipeline by reusing memory.
-       If useSameArrays is called with TRUE
-       Then all images loaded by ImageDataManip
-       will use the same 3 arrays for their rgb values.
-       Use only if you know that you will not need more than one image at a time.
+     *  Hack by Benji to try to speed up pipeline by reusing memory.
+     *  If useSameArrays is called with TRUE
+     *  Then all images loaded by ImageDataManip
+     *  will use the same 3 arrays for their rgb values.
+     *  Use only if you know that you will not need more than one image at a time.
+     *
+     *  @param val Whether to reuse memory for rgb value arrays. 
      */
     public static void useSameArrays(boolean val) {
 	useSameArrays = val;
