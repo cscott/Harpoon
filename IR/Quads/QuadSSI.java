@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.1.2.5 2000-01-31 14:55:37 cananian Exp $
+ * @version $Id: QuadSSI.java,v 1.1.2.6 2000-02-08 07:52:36 bdemsky Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -37,7 +37,7 @@ public class QuadSSI extends Code /* which extends HCode */ {
      * Create a new code object given a quadruple representation
      * of the method instructions.
      */
-    private QuadSSI(HMethod parent, Quad quads) {
+    protected QuadSSI(HMethod parent, Quad quads) {
 	super(parent, quads);
     }
 
