@@ -1,6 +1,6 @@
-[], true => headobject in HEAD
-[], true => headobject in ELEMS
+[], true => head in ELEMS
 [forall h in ELEMS], !h.next = NULL => h.next in ELEMS
+[forall h in ELEMS], h.prev = NULL => h in HEAD
 [forall h in ELEMS], h.next = NULL => h in TAIL
 [forall h in ELEMS], !h.next = NULL => <h, h.next> in NEXT
 [forall h in ELEMS], !h.prev = NULL => <h, h.prev> in PREV

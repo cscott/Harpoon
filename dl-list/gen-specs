@@ -1,4 +1,4 @@
-cpp struct.work -P -o dl-list.struct
-cpp space.work -P -o dl-list.space
-cpp model.work -P -o dl-list.model
-cpp constraints.work -P -o dl-list.constraints
+cpp struct.work -P -o dll.struct
+cpp space.work -P -o dll.space
+cpp model.work -P -o dll.model
+cpp constraints.work -P -o dll.constraints
