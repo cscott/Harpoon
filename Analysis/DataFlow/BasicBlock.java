@@ -1,11 +1,24 @@
 package harpoon.Analysis.DataFlow;
 
 /**
- * BasicBlock
+   BasicBlock collects a serial list of operations.  It is designed to
+   abstract away specific operation and allow the compiler to focus on
+   control flow at a higher level.  (It also allows for some analysis to
+   operate more efficiently by taking advantage of the fact that the
+   elements of a BasicBlock have a total ordering of execution).
+
+   <BR> <B>TODO:</B> right now <code>BasicBlock</code> only guarantees
+   that it preserves the Maximal Basic Block property (where the first
+   element is the entry point and the last element is the exit point)
+   if the graph of operations is not modified while the basic block is
+   in use.  However, other pieces of code WILL modify the Beginning
+   and End of a basic block (for example, the register allocator will
+   add LOADs to the beginning and STOREs to the end).  Perhaps we can
+   allow for some modification of the Control-Flow-Graph; check with
+   group. 
  *
  * @author  John Whaley
- * @author  Felix Klock (pnkfelix@mit.edu)
- */
+ * @author Felix Klock (pnkfelix@mit.edu) */
 
 import harpoon.Util.*;
 import harpoon.ClassFile.*;
@@ -24,6 +37,8 @@ public class BasicBlock {
     static final boolean DEBUG = false;
     static void db(String s) { System.out.println(s); }
 
+    static private boolean CHECK_REP = true;
+
     static int BBnum = 0;
     
     HasEdges first;
@@ -38,7 +53,7 @@ public class BasicBlock {
 	                      the basic block and <code>l</code> is
 			      the last element of the BasicBlock.
     */
-    public BasicBlock (HasEdges f, HasEdges l) {
+    protected BasicBlock (HasEdges f, HasEdges l) {
 	first = f; last = l; pred_bb = new HashSet(); succ_bb = new HashSet();
 	num = BBnum++;
     }
@@ -73,18 +88,24 @@ public class BasicBlock {
 
     
     /** BasicBlock generator.
-	<BR> <B>requires:</B> All <code>HCodeEdge</code>s linked to by
-	     the set of <code>HasEdges</code> in the code body have
-	     <code>HasEdges</code> objects in their <code>to</code> and
-	     <code>from</code> fields.  <B>NOTE:</B> this really
-	     should be an implicit invariant of <code>HasEdges</code>.
-	     Convince Scott to change it or let us change it.
+	<BR> <B>requires:</B> 
+	     <BR> 1. <code>head</code> is an appropriate entry point
+	             for a basic block (I'm working on eliminating
+		     this requirement, but for now its safer to keep
+		     it) 
+	     <BR> 2. All <code>HCodeEdge</code>s linked to by the set
+	             of <code>HasEdges</code> in the code body have
+		     <code>HasEdges</code> objects in their
+		     <code>to</code> and <code>from</code> fields.
+		     <B>NOTE:</B> this really should be an implicit
+		     invariant of <code>HasEdges</code>.  Convince 
+		     Scott to change it or let us change it. 
 	<BR> <B>effects:</B>  Creates a set of BasicBlocks
 	     corresponding to the blocks implicitly contained in
 	     <code>head</code> and the <code>HasEdges</code> objects that
 	     <code>head</code> points to, and returns the
-	     <code>BasicBlock</code> that <code>head</code> is the
-	     first instruction in. 
+	     <code>BasicBlock</code> that <code>head</code> is an
+	     instruction in.  
     */
     public static BasicBlock computeBasicBlocks(HasEdges head) {
 	// maps HasEdges 'e' -> BasicBlock 'b' starting with 'e'
@@ -92,6 +113,10 @@ public class BasicBlock {
 	// stores BasicBlocks to be processed
 	Worklist w = new WorkSet();
 
+	while (head.pred().length == 1) {
+	    head = (HasEdges) head.pred()[0].from();
+	}
+	
 	BasicBlock first = new BasicBlock(head);
 	h.put(head, first);
 	w.push(first);
@@ -107,7 +132,7 @@ public class BasicBlock {
 		int n = last.succ().length;
 		if (n == 0) 
 		    foundEnd = true;
-
+		
 		else if (n > 1) { // control flow split
 		    for (int i=0; i<n; i++) {
 			HasEdges e_n = (HasEdges) last.succ()[i].to();
@@ -119,7 +144,7 @@ public class BasicBlock {
 			addEdge(current, bb);
 		    }
 		    foundEnd = true;
-
+		    
 		} else { // one successor
 		    HasEdges next = (HasEdges) last.succ()[0].to();
 		    int m = next.pred().length;
@@ -160,7 +185,7 @@ public class BasicBlock {
     public Enumeration elements() {
 	return new IteratorEnumerator(listIterator());
     }
-    
+
     /** Returns an immutable <code>ListIterator</code> for the
 	<code>HasEdges</code> within <code>this</code>. 
 	The ListIterator returned will iterate through the
@@ -177,8 +202,16 @@ public class BasicBlock {
 	    public int previousIndex() { return index - 1; } 
 	    public Object next() {
 		if (next == null) throw new NoSuchElementException();
-		Util.assert((next == first) || (next.pred().length == 1));
-		Util.assert((next == last) || (next.succ().length == 1));
+		if (CHECK_REP) {
+		    Util.assert((next == first) ||
+				(next.pred().length == 1), 
+				"BasicBlock REP error; non-first elem has only " + 
+				"one predecessor\n" + BasicBlock.this.dumpElems());
+		    Util.assert((next == last) ||
+				(next.succ().length == 1),
+				"BasicBlock REP error; non-last elem has only " + 
+				"one successor\n" + BasicBlock.this.dumpElems());
+		}
 		prev = next; 
 		if (next == last) next = null;
 		else next = (HasEdges) next.succ()[0].to();
@@ -225,6 +258,10 @@ public class BasicBlock {
     }
 
     public String dumpElems() {
+	CHECK_REP = false; // a hack; this method uses listIterator(),
+	                   // which now calls dumpElems() (-->infinite
+	                   // loop).  So we make the call to dumpElems
+	                   // conditional 
 	StringBuffer s = new StringBuffer();
 	Iterator iter = listIterator();
 	while(iter.hasNext()) {	    
