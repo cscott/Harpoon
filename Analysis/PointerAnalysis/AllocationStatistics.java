@@ -9,6 +9,7 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.Code;
 import harpoon.Analysis.PointerAnalysis.Debug;
 
@@ -30,7 +31,7 @@ import java.io.PrintWriter;
  * <code>AllocationStatistics</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationStatistics.java,v 1.1 2002-12-01 06:29:30 salcianu Exp $
+ * @version $Id: AllocationStatistics.java,v 1.2 2002-12-02 17:08:47 salcianu Exp $
  */
 public class AllocationStatistics {
     
@@ -170,8 +171,9 @@ public class AllocationStatistics {
     }
 
 
-    public void printStatistics(HCodeFactory ccf,
-				Set methods, PrintWriter pw) {
+    public void printStatistics(Collection allocs, QuadVisitor visitor) {
+
+	PrintWriter pw = new PrintWriter(System.out, true);
 
 	class SiteStat implements Comparable {
 	    public final Quad alloc_site;
@@ -189,8 +191,6 @@ public class AllocationStatistics {
 	    }
 	};
 
-	Collection allocs = getAllocs(methods, ccf);
-
 	int ss_size = 0;
 	for(Iterator it = allocs.iterator(); it.hasNext(); ) {
 	    Quad alloc_site = (Quad) it.next();
@@ -198,7 +198,7 @@ public class AllocationStatistics {
 	}
 	SiteStat[] ss = new SiteStat[ss_size];
 
-	int total_count = 0;
+	long total_count = 0;
 	int i = 0;
 	for(Iterator it = allocs.iterator(); it.hasNext();) {
 	    Quad alloc_site  = (Quad) it.next();
@@ -210,33 +210,36 @@ public class AllocationStatistics {
 	}
 	Arrays.sort(ss);
 
-	int partial_count = 0;
+	long partial_count = 0;
 	pw.println("Allocation Statistics BEGIN");
 	for(i = 0; i < ss.length; i++) {
 	    Quad site  = ss[i].alloc_site;
 	    int count  = ss[i].alloc_count;
 	    double frac = (count*100.0) / total_count;
-	    if(frac < 5) break;
 	    partial_count += count;
 	    pw.println
 		(Debug.code2str(site) + "\n\t" + count +
 		 " object(s) \n\t" + Debug.doubleRep(frac, 5, 2) + "%\n\t" +
 		 site.getFactory().getMethod());
+	    if(visitor != null)
+		site.accept(visitor);
+	    if((frac < 0.01) || 
+	       (((double) partial_count / (double) total_count) > 0.90)) {
+		i++;
+		break;
+	    }
 	}
 	pw.println
-	    (i + ((i==1) ? " site allocates " : " sites allocate") +
+	    (i + ((i==1) ? " site allocates " : " sites allocate ") +
 	     Debug.doubleRep((partial_count*100.0) / total_count, 5, 2) +
 	     "% of all objects");
-	pw.println
-	    ("None of the other allocation sites allocates more than 5%");
 	pw.println("Allocation Statistics END");
-	pw.flush();
+	//pw.flush();
     }
 
-    public void printStatistics(HCodeFactory ccf, Set methods) {
-	printStatistics(ccf, methods, new PrintWriter(System.out));
-    } 
-
+    public void printStatistics(Collection allocs) {
+	printStatistics(allocs, null);
+    }
 
     /** Return a collection of all the allocation sites (quads) from
 	the methods from the set <code>methods</code>.
