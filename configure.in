@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.86 $)dnl
+AC_REVISION($Revision: 1.87 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -133,23 +133,6 @@ yes)	AC_MSG_RESULT([yes])
 esac
 AM_CONDITIONAL(PRECISE_C_BACKEND, test $with_precise_c = yes)
 
-dnl process option for Realtime Java support.
-AC_MSG_CHECKING([for realtime java support])
-AC_ARG_WITH(realtime-java,
-[  --with-realtime-java    incorporate Realtime Java support],
-with_realtime_java="$withval", with_realtime_java="no")
-case "$with_realtime_java" in
-yes)	AC_MSG_RESULT([yes])
-	AC_DEFINE(WITH_REALTIME_JAVA, 1,
-	[Define if you want Realtime Java support])
-	dnl Objects get an extra field in the realtime java transformation
-	object_padding=$(($object_padding + 4))
-	;;
-*)	AC_MSG_RESULT([no])
-	;;
-esac
-AM_CONDITIONAL(REALTIME_JAVA, test $with_realtime_java = yes)
-
 dnl process option for Role Inference support
 AC_MSG_CHECKING([for role inference support])
 AC_ARG_WITH(role-infer,
@@ -167,22 +150,27 @@ yes)	AC_MSG_RESULT([yes])
 esac
 AM_CONDITIONAL(ROLE_INFER, test $with_role_infer = yes)
 
-dnl process option for RTJ stubs.
-AC_MSG_CHECKING([for RTJ stubs])
-AC_ARG_WITH(rtj-stubs,
-[  --with-rtj-stubs        incorporate stubs for RTJ support, but no real support],
-with_rtj_stubs="$withval", with_rtj_stubs="no")
-case "$with_rtj_stubs" in
-yes)    AC_MSG_RESULT([yes])
-	AC_DEFINE(WITH_RTJ_STUBS, 1,
+dnl process option for Realtime Java support.
+AC_MSG_CHECKING([for realtime java support])
+AC_ARG_WITH(realtime-java,
+[  --with-realtime-java={full,stubs} incorporate Realtime Java support],
+with_realtime_java="$withval", with_realtime_java="no")
+case "$with_realtime_java" in
+yes | full) AC_MSG_RESULT([yes])
+	AC_DEFINE(WITH_REALTIME_JAVA, 1,
+	[Define if you want Realtime Java support])
+	dnl Objects get an extra field in the realtime java transformation
+	object_padding=$(($object_padding + 4))
+	;;
+stubs)	AC_MSG_RESULT([stubs])
+	AC_DEFINE(WITH_REALTIME_JAVA_STUBS, 1,
 	[Define if you want to incorporate stubs for RTJ support, but no real support])
 	;;
 *)	AC_MSG_RESULT([no])
-;;	
+	;;
 esac
-AM_CONDITIONAL(RTJ_STUBS, test $with_rtj_stubs = yes)
-AM_CONDITIONAL(RTJ_COMPILE, test $with_realtime_java = yes -o $with_rtj_stubs = yes)
-AM_CONDITIONAL(RTJ_STUBS_ONLY, test $with_realtime_java = no -a $with_rtj_stubs = yes)
+AM_CONDITIONAL(REALTIME_JAVA, test $with_realtime_java = yes -o $with_realtime_java = stubs)
+AM_CONDITIONAL(REALTIME_JAVA_STUBS, test $with_realtime_java = yes)
 
 dnl process option to select full stack trace on exceptions.
 AC_MSG_CHECKING([stack trace verbosity])

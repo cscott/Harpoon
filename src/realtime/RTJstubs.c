@@ -7,12 +7,6 @@
 
 #include <jni.h>
 
-#ifndef _Included_RTJstubs
-#define _Included_RTJstubs
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 /*
  * Class:     javax_realtime_MemoryArea
  * Method:    enterMemBlock
@@ -241,9 +235,3 @@ void* RTJ_malloc(size_t size) {
   printf("Did you forget to compile --with-realtime-java?\n");
   return NULL;
 }
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-

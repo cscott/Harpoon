@@ -55,9 +55,8 @@ if ROLE_INFER
 ROLEINFERDIR=roles
 ROLEINFERLIB=roles/libroleinfer.la
 endif
-
 # for realtime java support, add realtime to SUBDIRS
-if RTJ_COMPILE
+if REALTIME_JAVA
 REALTIMEDIR=realtime
 REALTIMELIB=realtime/librealtime.la
 endif

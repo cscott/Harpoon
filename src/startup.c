@@ -6,11 +6,6 @@
 #ifdef WITH_PRECISE_GC
 #include "jni-gc.h"
 #endif
-#ifdef WITH_RTJ_STUBS
-#ifndef WITH_REALTIME_JAVA     /* Include a stub when NOT compiling with RTJ */
-#include "realtime/RTJstubs.h" /* to prevent link errors when compiling user */
-#endif                         /* Java code which references native methods  */
-#endif                         /* but does not call them during runtime. */
 
 /* these functions are defined in src/java.lang/java_lang_Thread.c but only
  * used here. */
