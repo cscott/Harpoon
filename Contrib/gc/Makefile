@@ -18,8 +18,8 @@ AS=as $(ABI_FLAG)
 #  Under Irix 6, you will have to specify the ABI (-o32, -n32, or -64)
 #  if you use something other than the default ABI on your machine.
 
-CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS \
-	-DGC_GCJ_SUPPORT -g -DGC_USER_THREADS -D_REENTRANT -I../../src/user/
+CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS -DSILENT \
+	-DGC_GCJ_SUPPORT -g -DGC_LINUX_THREADS -D_REENTRANT
 # -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK -DGC_LINUX_THREADS
 
 # For dynamic library builds, it may be necessary to add flags to generate
@@ -175,7 +175,7 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INT
 #
 
 
-LIBGC_CFLAGS= -O -DNO_SIGNALS \
+LIBGC_CFLAGS= -O -DNO_SIGNALS -DSILENT \
     -DREDIRECT_MALLOC=GC_malloc_uncollectable \
     -DDONT_ADD_BYTE_AT_END -DALL_INTERIOR_POINTERS
 #   Flags for building libgc.a -- the last two are required.
