@@ -58,6 +58,7 @@ static struct vinfo *CreateNewVersion(struct inflated_oobj *infl,
 	 * and we assert that subtransactions are not simultaneously
 	 * active. XXX: upgrade to parallel subtrans? */
 	nv->wnext = (nv->anext = infl->first_version)->wnext;
+	if (!nv->wnext) nv->wnext=nv->anext;
 	infl->first_version = nv;
     }
     return nv;
