@@ -1,6 +1,6 @@
 ---- Oct-21-98
-Implement clone() method for IR.Bytecode.Code so that we don't die if we
-clone a method before doing getCode("quad-ssa") on it.
+X Implement clone() method for IR.Bytecode.Code so that we don't die if we
+X clone a method before doing getCode("quad-ssa") on it.
 ---- Oct-13-98
 X Add gnu.getopt and gnu.bytecode to the Harpoon package.
 O Rewrite Bytecode IR and Nate's stuff to use the gnu.bytecode package.
