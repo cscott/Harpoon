@@ -13,7 +13,7 @@
 #define DMALLOC_PADDING 0
 #endif
 
-JNIEXPORT jboolean JNICALL Java_java_lang_Class_isPrimitive(JNIEnv *, jobject);
+#include "../java.lang/class.h" /* for fni_class_isPrimitive */
 
 /* Returns the number of elements in the array.
  */
@@ -36,7 +36,7 @@ jarray FNI_NewObjectArray(JNIEnv *env, jsize length,
   jclass arrayclazz;
   jobject result;
   assert(FNI_NO_EXCEPTIONS(env) && length>=0 && elementClass!=NULL);
-  assert(Java_java_lang_Class_isPrimitive(env, elementClass)==JNI_FALSE);
+  assert(fni_class_isPrimitive(env, elementClass)==JNI_FALSE);
   info = FNI_GetClassInfo(elementClass);
   {
     char arraydesc[strlen(info->name)+4];

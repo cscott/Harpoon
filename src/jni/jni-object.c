@@ -5,9 +5,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-/* this prototype is only used in an assert */
-JNIEXPORT jboolean JNICALL Java_java_lang_Class_isInterface
-  (JNIEnv *, jobject);
+#include "../java.lang/class.h" /* for fni_class_isInterface */
 
 /* Allocates a new Java object without invoking any of the constructors
  * for the object. Returns a reference to the object. 
@@ -155,7 +153,7 @@ jboolean FNI_IsAssignableFrom(JNIEnv *env, jclass clazz1, jclass clazz2) {
   struct claz *claz2 = FNI_GetClassInfo((jclass)clazz2)->claz;
   struct claz **ilist;
   int depth;
-  assert(Java_java_lang_Class_isInterface(env, clazz1)==JNI_FALSE);
+  assert(fni_class_isInterface(env, clazz1)==JNI_FALSE);
   /* first and second class arguments refer to the same java class? */
   if (claz1==claz2) return JNI_TRUE;
   /* the first class is a subclass of the second class? */

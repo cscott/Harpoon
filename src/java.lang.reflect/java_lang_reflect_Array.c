@@ -2,8 +2,7 @@
 #include <stdio.h>
 #include <jni.h>
 #include "jni-private.h"
-// XXX this is a dependency on the SunJDK implementation of java.lang.Class
-#include "../sunjdk/java.lang/java_lang_Class.h" // for Java_java_lang_Class_isArray
+#include "../java.lang/class.h" /* for fni_class_isArray */
 #include "java_lang_reflect_Array.h"
 #include "reflect-util.h"
 
@@ -19,7 +18,7 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Array_getLength
     (*env)->ThrowNew(env, excls, "null argument to Array.getLength()");
     return 0;
   }
-  if (!Java_java_lang_Class_isArray
+  if (!fni_class_isArray
       (env, (*env)->GetObjectClass(env, arrayobj))) {
     jclass excls = (*env)->FindClass(env,
 				     "java/lang/IllegalArgumentException");
