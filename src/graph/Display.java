@@ -211,8 +211,7 @@ public class Display extends Node {
     }
 
     /** Display the image represented by <code>id</code>, usually called by the in-node. */
-    //public synchronized void process(ImageData id) {
-    public void process(ImageData id) {
+    public synchronized void process(ImageData id) {
 	//System.out.println("DISPLAY: displaying "+title);
 	if (frame.isVisible()) {
 	    BufferedImage newImage;
