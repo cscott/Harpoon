@@ -19,11 +19,9 @@
 	 * successfully, or sets it to the (unwrapped) exception object
 	 * caught if an exception is thrown.
 	 * [this is a thunk from C code to Java code]
+     * There is an extra argument, so if narg_words = 0, there are no
+     * args.  But if it is 1 there are 2 args
 	 */
-#define methptr	a0
-#define nargs	a1
-#define argend	a1
-#define argptr	a2
 #define excptr  a3
 
 /* declarations of FNI_Dispatch_<type> for different return types. */
@@ -42,17 +40,17 @@ DECLARE_FNI_Dispatch(Long)
 /* need to use a different calling convention for float unless -msoft-float */
 DECLARE_FNI_Dispatch(Float)
 DECLARE_FNI_Dispatch(Double)
-    addiu sp, sp, -16   # set up a frame
-    sw    ra, 12(sp)
-    sw    fp, 8(sp)
+    addiu sp, -16       # set up a frame
+    sw    ra,  12(sp)
+    sw    fp,   8(sp)
     sw    excptr, 4(sp) # Put the exception pointer on the stack for
                         # possible later use 
     move  fp, sp
     move  t9, a0        # jump via t9 as that is shared object convention
                         # (we are not an so, but we need to free up a0)
     # Now copy arguments onto the stack
-    sll   t0, a1, 2     /* t0 = endptr  */
-    add   t0, a2
+    sll   a1, 2        /* a1 = narg*4 */
+    add   t0, a2, a1   /* t0 = endptr  */
     sub   t0, 4        /* make endptr valid and start pushing with it*/
     /* Copy args onto stack.  Unroll the first four iterations */
     /* and add code to copy args into argument registers */
@@ -61,47 +59,40 @@ DECLARE_FNI_Dispatch(Double)
     /*    *stack = *t1;                                    */
 
 1:  
-    ble   a1, 4, 2f   #  iterations that also need to load arg regs
+    ble   a1, 16, 2f   #  iterations that also need to load arg regs
     lw    t1, 0(t0)
     sw    t1, 0(sp)
-    sub   sp, 4
-    sub   t0, 4
-    sub   a1, 1
+    subu  sp, 4
+    subu  t0, 4
+    subu  a1, 4
     b     1b
 2:
-    sll   a1, a1, 2   # Jump table to go to one of 3f-7f based on
-    la    t1, 8f      # how many more args we have to push
-    add   a1, t1      
+    la    t1, 8f      # Jump table to go to one of 3f-7f based on
+                      # how many more args we have to push
+    subu  sp, 16      # leave space on the stack in case caller wants
+    addu  a1, t1      # to save args
     lw    t1, 0(a1)
     jr    t1
+    /* Store arguments 0-3 */
 
 3:      
     lw    a3, 0(t0)
-    sw    a3, 0(sp)
-    sub   sp, 4
-    sub   t0, 4
+    subu  t0, 4
 4:  
     lw    a2, 0(t0)
-    sw    a2, 0(sp)
-    sub   sp, 4
-    sub   t0, 4    
+    subu  t0, 4    
 5:  
     lw    a1, 0(t0)
-    sw    a1, 0(sp)
-    sub   sp, 4
-    sub   t0, 4
+    subu  t0, 4
 6:  
     lw    a0, 0(t0)
-    sw    a0, 0(sp)
-    sub   sp, 4
-    sub   t0, 4
 7:      
     jalr  t9       # invoke the method
 return_point:
     move  sp, fp   # restore the stack pointer to the allocated frame
     lw    fp, 8(sp)
     lw    ra, 12(sp)
-    addiu sp, sp, 16   # takedown frame
+    addu sp, sp, 16   # takedown frame
     j     ra    
 
 	FIXUP_SEGMENT
