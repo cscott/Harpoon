@@ -11,7 +11,7 @@ public class RelationDescriptor extends Descriptor {
     SetDescriptor domain;
     SetDescriptor range;
     boolean bStatic;
-
+    public static String prefix="";
     public static final Usage NONE = new Usage("NONE");
     public static final Usage IMAGE = new Usage("IMAGE");
     public static final Usage INVIMAGE = new Usage("INVIMAGE");
@@ -71,7 +71,7 @@ public class RelationDescriptor extends Descriptor {
             usage = BOTH;
         } else {
             usage = newusage;
-        }             
+        }
 
         //System.out.println(getSymbol() + " usage: " + oldusage + " + " + newusage + " => " + usage);
     }
@@ -80,13 +80,11 @@ public class RelationDescriptor extends Descriptor {
         return (usage == BOTH) || (testusage == usage);
     }
 
+    public String getSafeSymbol() {
+	return prefix+safename;
+    }
+
+    public String getJustSafeSymbol() {
+	return safename;
+    }
 }
-
-
-
-
-
-
-
-
-

@@ -55,11 +55,11 @@ public class Compiler {
 	    success = semantics(state) || error(state, "Semantic analysis failed, not attempting variable initialization.");
 
 
-
+	    Termination termination=null;
 	    if (REPAIR) {
 		/* Check partition constraints */
 		(new ImplicitSchema(state)).update();
-		Termination t=new Termination(state);
+		termination=new Termination(state);
 	    }
             state.printall();
             (new DependencyBuilder(state)).calculate();
@@ -85,16 +85,23 @@ public class Compiler {
             
             try {
                 FileOutputStream gcode = new FileOutputStream(cli.infile + ".cc");
-                FileOutputStream gcode2 = new FileOutputStream(cli.infile + "_aux.cc");
-                FileOutputStream gcode3 = new FileOutputStream(cli.infile + "_aux.h");
+
 
                 // do model optimizations
                 //(new Optimizer(state)).optimize();
 
-                //NaiveGenerator ng = new NaiveGenerator(state);
-                //ng.generate(gcode);
-                RepairGenerator wg = new RepairGenerator(state);
-                wg.generate(gcode,gcode2,gcode3, cli.infile + "_aux.h");
+
+		if(REPAIR) {
+		    FileOutputStream gcode2 = new FileOutputStream(cli.infile + "_aux.cc");
+		    FileOutputStream gcode3 = new FileOutputStream(cli.infile + "_aux.h");
+		    RepairGenerator wg = new RepairGenerator(state,termination);
+		    wg.generate(gcode,gcode2,gcode3, cli.infile + "_aux.h");
+		    gcode2.close();
+		    gcode3.close();
+		} else {
+		    WorklistGenerator ng = new WorklistGenerator(state);
+		    ng.generate(gcode);
+		}
                 gcode.close();
             } catch (Exception e) {
                 e.printStackTrace();

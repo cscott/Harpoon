@@ -12,6 +12,7 @@ public class SetDescriptor extends Descriptor {
     TypeDescriptor type;
     boolean partition;
     Vector subsets;       
+    public static String prefix="";
 
     public SetDescriptor(String name) {
         super(name);
@@ -22,7 +23,7 @@ public class SetDescriptor extends Descriptor {
     public static Set expand(Set descriptors) {
         HashSet expanded = new HashSet();
         Iterator d = descriptors.iterator();
-        
+
         while (d.hasNext()) {
             Descriptor descriptor = (Descriptor) d.next();
             
@@ -91,4 +92,10 @@ public class SetDescriptor extends Descriptor {
         return v;
     }        
 
+    public String getSafeSymbol() {
+	return prefix+safename;
+    }
+    public String getJustSafeSymbol() {
+	return safename;
+    }
 }

@@ -18,6 +18,8 @@ public class Termination {
     Hashtable abstractadd;
     Hashtable abstractremove;
 
+    Set removedset;
+
     State state;
 
     public Termination(State state) {
@@ -66,9 +68,9 @@ public class Termination {
 	    System.out.println(mun.toString());
 	}
 	GraphAnalysis ga=new GraphAnalysis(this);
-	Set toremove=ga.doAnalysis();
+	removedset=ga.doAnalysis();
 	System.out.println("Removing:");
-	for(Iterator it=toremove.iterator();it.hasNext();) {
+	for(Iterator it=removedset.iterator();it.hasNext();) {
 	    GraphNode gn=(GraphNode)it.next();
 	    System.out.println(gn.getTextLabel());
 	}

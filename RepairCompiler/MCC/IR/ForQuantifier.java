@@ -45,6 +45,11 @@ public class ForQuantifier extends Quantifier {
         writer.startblock();
     }
 
+    public void generate_open(CodeWriter writer, String type,int number, String
+left,String right) {
+	generate_open(writer);
+    }
+
     public int generate_worklistload(CodeWriter writer, int offset) {        
         String varname = var.getSafeSymbol();
         writer.outputline("int " + varname + " = wi->word" + offset + ";"); 

@@ -71,7 +71,7 @@ public class RelationInclusion extends Inclusion {
 
         if (!typesafe) {
             String check = "int " + typesafecheck + " = " ;
-            
+
             if (!(relation.getDomain() instanceof ReservedSetDescriptor)) {
                 check += relation.getDomain().getSafeSymbol() + "_hash->contains(" + ld.getSafeSymbol() + ") && ";
             }
@@ -79,7 +79,7 @@ public class RelationInclusion extends Inclusion {
             if (!(relation.getRange() instanceof ReservedSetDescriptor)) {
                 check += relation.getRange().getSafeSymbol() + "_hash->contains(" + rd.getSafeSymbol() + ") && ";
             }
-        
+
             check += "1;"; // terminate boolean expression
 
             writer.outputline(check);
@@ -88,35 +88,30 @@ public class RelationInclusion extends Inclusion {
         }
 
         String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
-        writer.outputline("int " + addeditem + ";");
-
-        if (relation.testUsage(RelationDescriptor.IMAGE)) {
-            writer.outputline(addeditem + " = " + relation.getSafeSymbol() + "_hash->add((int)" + ld.getSafeSymbol() + ", (int)" + rd.getSafeSymbol() + ");");
-        } 
-        
-        if (relation.testUsage(RelationDescriptor.INVIMAGE)) {
-            writer.outputline(addeditem + " = " + relation.getSafeSymbol() + "_hashinv->add((int)" + rd.getSafeSymbol() + ", (int)" + ld.getSafeSymbol() + ");");
-        }
-        
+	if (!Compiler.REPAIR) {
+	    writer.outputline("int " + addeditem + ";");
+	    if (relation.testUsage(RelationDescriptor.IMAGE)) {
+		writer.outputline(addeditem + " = " + relation.getSafeSymbol() + "_hash->add((int)" + ld.getSafeSymbol() + ", (int)" + rd.getSafeSymbol() + ");");
+	    }
+	    
+	    if (relation.testUsage(RelationDescriptor.INVIMAGE)) {
+		writer.outputline(addeditem + " = " + relation.getSafeSymbol() + "_hashinv->add((int)" + rd.getSafeSymbol() + ", (int)" + ld.getSafeSymbol() + ");");
+	    }
+	} else {
+	    Repair.generate_dispatch(writer, relation, ld.getSafeSymbol(), rd.getSafeSymbol());
+	}
+	
         if (RelationInclusion.worklist) {
             writer.outputline("if (" + addeditem + ")");
-            writer.startblock(); {                
+            writer.startblock(); {
                 WorkList.generate_dispatch(writer, relation, rd.getSafeSymbol(), ld.getSafeSymbol());
-            }
-            writer.endblock();
-        }
-
-        if (Compiler.REPAIR) {
-            writer.outputline("if (" + addeditem + ")");
-            writer.startblock(); {                
-                Repair.generate_dispatch(writer, relation, rd.getSafeSymbol(), ld.getSafeSymbol());
             }
             writer.endblock();
         }
 
         if (!typesafe) {
             writer.endblock();
-        }            
+        }
 
         //writer.outputline("printf(\"" + relation.getSafeSymbol() + " (add): <%d, %d>\\n\", " + ld.getSafeSymbol() + ", " + rd.getSafeSymbol() + ");");
     }

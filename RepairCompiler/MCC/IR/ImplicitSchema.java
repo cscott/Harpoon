@@ -1,5 +1,7 @@
 package MCC.IR;
 import MCC.State;
+import MCC.Compiler;
+
 import java.util.*;
 
 public class ImplicitSchema {
@@ -11,7 +13,9 @@ public class ImplicitSchema {
     }
 
     public void update() {
-	updaterules();
+	if (Compiler.REPAIR) {
+	    updaterules();
+	}
 	updateconstraints();
 	updaterelationconstraints();
     }

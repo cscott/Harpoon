@@ -40,6 +40,30 @@ public class RelationQuantifier extends Quantifier {
         writer.outputline(x.getType().getGenerateType() + " " + x.getSafeSymbol() + " = (" + x.getType().getGenerateType() + ") " + x.getSafeSymbol() + "_iterator->key();");
     }
 
+    public void generate_open(CodeWriter writer, String type,int number, String left,String right) {
+	VarDescriptor tmp=VarDescriptor.makeNew("flag");
+        writer.outputline("SimpleIterator* " + x.getSafeSymbol() + "_iterator = " + relation.getSafeSymbol() + "_hash->iterator();");
+	writer.outputline("int "+tmp.getSafeSymbol()+"=0;");
+	writer.outputline("if ("+type+"=="+number+")");
+	writer.outputline(tmp.getSafeSymbol()+"=1;");
+	
+	writer.outputline("while("+tmp.getSafeSymbol()+"||(("+type+"!="+number+")&&"+x.getSafeSymbol() + "_iterator->hasNext()))");
+        writer.startblock();
+        writer.outputline(x.getType().getGenerateType() + " " + x.getSafeSymbol() + ";");
+        writer.outputline(y.getType().getGenerateType() + " " + y.getSafeSymbol() + ";");
+	writer.outputline("if ("+type+"=="+number+")");
+	writer.startblock();
+	writer.outputline(tmp.getSafeSymbol()+"=0;");
+        writer.outputline(x.getSafeSymbol() + " = (" + x.getType().getGenerateType() + ") " + left + ";");
+        writer.outputline(y.getSafeSymbol() + " = (" + y.getType().getGenerateType() + ") " + right + ";");
+	writer.endblock();
+	writer.outputline("else");
+	writer.startblock();
+        writer.outputline(y.getSafeSymbol() + " = (" + y.getType().getGenerateType() + ") " + x.getSafeSymbol() + "_iterator->next();");        
+        writer.outputline(x.getSafeSymbol() + " = (" + x.getType().getGenerateType() + ") " + x.getSafeSymbol() + "_iterator->key();");
+	writer.endblock();
+    }
+
     public int generate_worklistload(CodeWriter writer, int offset) {        
         String varx = x.getSafeSymbol();
         String vary = y.getSafeSymbol();

@@ -61,11 +61,16 @@ public class SetInclusion extends Inclusion {
 
         // we set equal to one so that if dostore == false the guard in teh 
         // metainclusion generation for the subrules and sub quantifiers will go on        
-        writer.outputline("int " + addeditem + " = 1;");
+
 
         if (dostore) {
-	    writer.outputline(addeditem + " = " + set.getSafeSymbol() + "_hash->add((int)" + vd.getSafeSymbol() 
-                              +  ", (int)" + vd.getSafeSymbol() + ");");
+	    if (!Compiler.REPAIR) {
+		writer.outputline("int " + addeditem + " = 1;");
+		writer.outputline(addeditem + " = " + set.getSafeSymbol() + "_hash->add((int)" + vd.getSafeSymbol() 
+				  +  ", (int)" + vd.getSafeSymbol() + ");");
+	    } else {
+		Repair.generate_dispatch(writer, set, vd.getSafeSymbol());
+	    }
 	    
             if (SetInclusion.worklist) {
                 writer.outputline("if (" + addeditem + ")");
@@ -74,16 +79,7 @@ public class SetInclusion extends Inclusion {
                 }
                 writer.endblock();
             }
-            if (Compiler.REPAIR) {
-                writer.outputline("if (" + addeditem + ")");
-                writer.startblock(); {                
-                    Repair.generate_dispatch(writer, set, vd.getSafeSymbol());
-                }
-                writer.endblock();
-            }
-	    
-        }
-        
+	}
     }
 
     public boolean typecheck(SemanticAnalyzer sa) {
