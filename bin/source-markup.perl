@@ -83,23 +83,13 @@ for ($i=0; $i<=$#lines; $i++) {
 
 # go through and substitute for special characters
 for ($i=0; $i<=$#lines; $i++) {
-    # substitute for &
-    for ($j=index($lines[$i],"&"); $j>=0; $j=index($lines[$i],"&",$j+1)) {
-	my $l = $lines[$i];
-	$lines[$i] = substr($l,0,$j).";".substr($l,$j+1);
-        &insertBefore($i,$j,"&amp");
-    }
-    # substitute for <
-    for ($j=index($lines[$i],"<"); $j>=0; $j=index($lines[$i],"<",$j+1)) {
-	my $l = $lines[$i];
-	$lines[$i] = substr($l,0,$j) . ";" . substr($l,1+$j);
-	&insertBefore($i,$j,"&lt");
-    }
-    # substitute for >
-    for ($j=index($lines[$i],">"); $j>=0; $j=index($lines[$i],">",$j+1)) {
-	my $l = $lines[$i];
-	$lines[$i] = substr($l,0,$j).";".substr($l,$j+1);
-        &insertBefore($i,$j,"&gt");
+    while ($lines[$i] =~ m/(&)|(<)|(>)/g) {
+	my $loc = -1 + pos $lines[$i];
+	$lines[$i] = substr($lines[$i],0,$loc).";".substr($lines[$i],$loc+1);
+        &insertBefore($i,$loc,"&amp") if defined $1;
+	&insertBefore($i,$loc,"&lt")  if defined $2;
+        &insertBefore($i,$loc,"&gt")  if defined $3;
+        pos($lines[$i]) = 1 + $loc; # make things perfectly clear to perl
     }
 }
 
@@ -113,6 +103,18 @@ for ($i=0; $i<=$#markdata; $i+=3) {
     my($rline,$rpos,$lline,$lpos)=split(/\s+/, $markdata[$i], 4);
     &insertBefore($rline-1,$rpos, $markdata[$i+1]);
     &insertAfter($lline-1,$lpos, $markdata[$i+2]);
+}
+
+# some URL and email address hackery
+for ($i=0; $i<=$#lines; $i++) {
+    while ($lines[$i] =~
+	   m"(http://[/A-Za-z0-9_#,.?&=%:;+-]+)|(\w+@[A-Za-z0-9._]+)"g){
+	my $endloc = pos $lines[$i];
+	my $startloc=$endloc - (defined($1)?length($1):length($2));
+        &insertBefore($i,$startloc,"<A HREF=\"$1\">") if defined $1;
+        &insertBefore($i,$startloc,"<A HREF=\"mailto:$2\">") if defined $2;
+        &insertAfter($i,$endloc-1,"</A>");
+    }
 }
 
 # insert line numbers
