@@ -1,4 +1,4 @@
-// Exp.java, created Wed Jan 13 21:14:57 1999 by cananian
+// CJUMP.java, created Wed Jan 13 21:14:57 1999 by cananian
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
@@ -7,12 +7,12 @@ import harpoon.Temp.Label;
 import harpoon.Util.Util;
 
 /**
- * <code>Exp</code> objects are expressions which stand for the computation
- * of some value (possibly with side effects).
+ * <code>CJUMP</code> objects are statements which stand for conditional
+ * branches.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CJUMP.java,v 1.1.2.4 1999-02-09 21:54:22 duncan Exp $
+ * @version $Id: CJUMP.java,v 1.1.2.5 1999-02-17 21:29:41 cananian Exp $
  */
 public class CJUMP extends Stm {
     /** An expression that evaluates into a boolean result. */
