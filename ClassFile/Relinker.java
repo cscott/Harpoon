@@ -13,7 +13,7 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.4.4 2000-04-02 02:15:34 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.4.5 2000-10-20 22:50:46 cananian Exp $
  */
 public class Relinker extends Linker implements java.io.Serializable {
     protected final Linker linker;
@@ -24,6 +24,9 @@ public class Relinker extends Linker implements java.io.Serializable {
     }
     protected HClass forDescriptor0(String descriptor) {
 	return new HClassProxy(this, linker.forDescriptor(descriptor));
+    }
+    protected HClass makeArray(HClass baseType, int dims) {
+	return new HClassArraySyn(this, baseType, dims);
     }
     
     /** Creates a mutable class with the given name which is based on

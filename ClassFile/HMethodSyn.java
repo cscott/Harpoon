@@ -16,7 +16,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.6.2.10 2000-01-27 08:24:11 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.6.2.11 2000-10-20 22:50:45 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -26,6 +26,13 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
    *  <code>name</code>.
    *  The new method will be added to class <code>parent</code>. */
   HMethodSyn(HClassSyn parent, String name, HMethod template) {
+    this ((HClass)parent, name, template);
+  }
+  HMethodSyn(HClassArraySyn parent, String name, HMethod template) {
+    this ((HClass)parent, name, template);
+  }
+  // private, not-as-type-safe implementation.
+  private HMethodSyn(HClass parent, String name, HMethod template) {
     this.parent = parent;
     this.name = name;
     this.modifiers = template.getModifiers();
@@ -50,12 +57,23 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
 		    HClass[] paramTypes, HClass returnType) {
     this(parent, name, makeDescriptor (paramTypes, returnType));
   }
+  HMethodSyn(HClassArraySyn parent, String name, 
+		    HClass[] paramTypes, HClass returnType) {
+    this(parent, name, makeDescriptor (paramTypes, returnType));
+  }
   
   /** Create a new empty method in the specified class
    *  with the specified descriptor
    *  that throws no checked exceptions.
    */
   HMethodSyn(HClassSyn parent, String name, String descriptor) {
+    this((HClass)parent, name, descriptor);
+  }
+  HMethodSyn(HClassArraySyn parent, String name, String descriptor) {
+    this((HClass)parent, name, descriptor);
+  }
+  // private, not-as-type-safe implementation.
+  private HMethodSyn(HClass parent, String name, String descriptor) {
     this.parent = parent;
     this.name = name;
     this.modifiers = 0;

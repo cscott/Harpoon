@@ -13,7 +13,7 @@ import java.util.Map;
  * to code/data/object descriptions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Linker.java,v 1.1.4.3 2000-02-14 00:35:10 cananian Exp $
+ * @version $Id: Linker.java,v 1.1.4.4 2000-10-20 22:50:46 cananian Exp $
  */
 public abstract class Linker implements ReferenceUnique {
   protected Linker() { }
@@ -96,7 +96,9 @@ public abstract class Linker implements ReferenceUnique {
 	// recurse to fetch base type.
 	HClass basetype = forDescriptor(descriptor.substring(d));
 	// make it.
-	return new HClassArray(this, basetype, d);
+	HClass arraytype = makeArray(basetype, d);
+	Util.assert(arraytype.getDescriptor().equals(descriptor));
+	return arraytype;
       }
     case 'L': // object type.
       return forDescriptor0(descriptor);
@@ -122,6 +124,11 @@ public abstract class Linker implements ReferenceUnique {
       break;
     }
     throw new Error("Bad Descriptor: "+descriptor);
+  }
+  /** Allow Linker subclass to substitute a different (mutable?)
+   *  array class type. */
+  protected HClass makeArray(HClass baseType, int dims) {
+    return new HClassArray(this, baseType, dims);
   }
 
  /** 
