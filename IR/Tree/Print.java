@@ -17,7 +17,7 @@ import java.io.StringWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.35 2000-02-17 01:26:18 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.36 2000-02-17 02:57:50 cananian Exp $
  */
 public class Print {
     public final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -103,7 +103,7 @@ public class Print {
 	}
 
 	public void visit(ALIGN s) { 
-	    indent(indlevel++);
+	    indent(indlevel);
 	    pw.print(s.toString());
 	}
 
@@ -183,13 +183,13 @@ public class Print {
 	}
 
         public void visit(ESEQ e) {
-            indent(--indlevel);
-            indlevel++;
+            indent(indlevel++);
             pw.print("ESEQ(");
             e.getStm().accept(this);
             pw.print(",");
             e.getExp().accept(this);
             pw.print(")");
+            indlevel--;
         }
 
         public void visit(EXP s) {
@@ -292,7 +292,7 @@ public class Print {
         }
 
 	public void visit(SEGMENT s) { 
-	    indent(indlevel++);
+	    indent(indlevel);
 	    pw.print(s.toString());
 	}
 
@@ -303,6 +303,7 @@ public class Print {
             pw.print(",");
             s.getRight().accept(this);
             pw.print(")");
+            indlevel--;
         }
 
         public void visit(TEMP e) {
