@@ -59,7 +59,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.8 2001-06-14 19:00:23 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.9 2001-06-14 20:13:16 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
@@ -379,10 +379,6 @@ public class CacheEquivalence {
 		if (v instanceof UnknownConstant) return Value.UNKNOWN;
 		return Value.BOTTOM;
 	    }
-	    //XXXXXXXXXXXXXXXXxXXXXXXXXXXXXXXXXXXXXXX
-	    // UNKNOWN*c = 0 mod c!
-	    // UNKNOWN*(0 mod b) = 0 mod b.
-	    // UNKNOWN*(a mod b) = 0 mod gcd(a, b)
 	    protected Value _mul(Value v) {
 		// must handle v=BOTTOM, v=UNKNOWN
 		if (v instanceof UnknownConstant) return Value.UNKNOWN;
@@ -458,8 +454,18 @@ public class CacheEquivalence {
 	    protected Value _mul(Value v) {
 		// handles v=BOTTOM, v=UNKNOWN, v=CONSTANTMODULON
 		if (v==Value.BOTTOM) return v;
-		if (v==Value.UNKNOWN) return Value.UNKNOWN;
+		if (v==Value.UNKNOWN) {
+		    // UNKNOWN*(0 mod b) = 0 mod b
+		    // UNKNOWN*(a mod b) = 0 mod gcd(a,b)
+		    if (this.offset==0)
+			return new ConstantModuloN(0, this.modulus);
+		    long mod = Util.gcd(this.offset, this.modulus);
+		    if (mod>1)
+			return new ConstantModuloN(0, mod);
+		    return Value.UNKNOWN;
+		}
 		ConstantModuloN cmn = (ConstantModuloN) v;
+		// (a mod b) * (c mod d) = (ac) mod gdb(b, d)
 		Util.assert(cmn.modulus>1 && this.modulus>1);
 		long mod = Util.gcd(this.modulus, cmn.modulus);
 		if (mod>1)
@@ -501,7 +507,14 @@ public class CacheEquivalence {
 	    protected Value _mul(Value v) {
 		// must handle BOTTOM, UNKNOWN, CONSTANTMODULON, CONSTANT
 		if (v==Value.BOTTOM) return v;
-		if (v==Value.UNKNOWN) return Value.UNKNOWN;
+		if (v==Value.UNKNOWN) {
+		    // UNKNOWN * c = 0 mod c
+		    if (this.offset>0)
+			return new ConstantModuloN(0, this.offset);
+		    if (this.offset<0)
+			return new ConstantModuloN(0, -this.offset).negate();
+		    return Value.UNKNOWN;
+		}
 		ConstantModuloN cmn = (ConstantModuloN) v;
 		if (cmn.modulus>1) {
 		    long mult = Math.abs(this.offset);
