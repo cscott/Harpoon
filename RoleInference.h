@@ -31,7 +31,8 @@ struct heap_object {
    *               4th bit 0 if suitable as container, 1 if not suitable
    *               We include heap objects that have state 3rd=1, 4th=0 for output*/
 };
-
+#define REACHABLEMASK 0x03
+#define OTHERMASK 0x0C
 #define FIRSTREF 0x04
 #define NOTCONTAINER 0x08
 
@@ -138,16 +139,20 @@ struct heap_state {
   FILE *container;
   struct hashtable *containedobjects;
 
+  struct genhashtable *policytable;
+
   char *prefix;
   FILE *rolefile, *methodfile, *dotfile,*rolediagramfile, *rolediagramfilemerge;
 };
 
 #define OPTION_FCONTAINERS 0x1
+#define OPTION_DEFAULTONEATTIME 0x40
 #define OPTION_UCONTAINERS 0x2
 #define OPTION_NORCEXPR 0x4
 #define OPTION_NOEFFECTS 0x8
 #define OPTION_LIMITFIELDS 0x10
 #define OPTION_LIMITARRAYS 0x20
+
 
 struct identity_relation {
   struct fieldname * fieldname1;

@@ -16,16 +16,16 @@
 #include <dmalloc.h>
 #endif
 
-void doincrementalreachability(struct heap_state *hs, struct hashtable *ht, int enterexit) {
+void doincrementalreachability(struct heap_state *heap, struct hashtable *ht, int enterexit) {
   struct objectset * changedset;
 
-  changedset=dokills(hs,ht);
-  donews(hs, changedset,ht);
+  changedset=dokills(heap,ht);
+  donews(heap, changedset,ht);
 
   {
     /* Kill dead reference structures*/
-    struct referencelist * rl=hs->freelist;
-    hs->freelist=NULL;
+    struct referencelist * rl=heap->freelist;
+    heap->freelist=NULL;
     while (rl!=NULL) {
       struct referencelist * nxtrl=rl->next;
       if (rl->lv!=NULL)
@@ -43,19 +43,39 @@ void doincrementalreachability(struct heap_state *hs, struct hashtable *ht, int 
     struct heap_object * possiblegarbage=removeobject(changedset,NULL);
     if (possiblegarbage==NULL)
       break;
-    if ((possiblegarbage->rl==NULL)&&(possiblegarbage->reachable==0)) {
+    if ((possiblegarbage->rl==NULL)&&((possiblegarbage->reachable&REACHABLEMASK)==0)) {
       /*We've got real garbage!!!*/
       struct fieldlist *fl;
       struct arraylist *al;
       /* Record role change to garbage role */
-      rolechange(hs,NULL, possiblegarbage,"GARB",2+enterexit);
-      removeobject(hs->changedset, possiblegarbage);
+      rolechange(heap,NULL, possiblegarbage,"GARB",2+enterexit);
+      removeobject(heap->changedset, possiblegarbage);
 
-      if ((hs->options&OPTION_FCONTAINERS)&&
-	  (possiblegarbage->reachable&FIRSTREF)&&
-	  !(possiblegarbage->reachable&NOTCONTAINER))
-	recordcontainer(hs, possiblegarbage);
-	
+      
+      if (heap->options&OPTION_FCONTAINERS) {
+	int policy=1;
+	if(gencontains(heap->policytable, possiblegarbage->class)) {
+	  struct policyobject *po=(struct policyobject *) gengettable(heap->policytable, possiblegarbage->class);
+	  policy=po->policy;
+	} else if (heap->options&OPTION_DEFAULTONEATTIME)
+	  policy=2;
+	switch(policy) {
+	case 0:
+	  break;
+	case 1:
+	case 2:
+	  if ((possiblegarbage->reachable&FIRSTREF)&&
+	      !(possiblegarbage->reachable&NOTCONTAINER))
+	    recordcontainer(heap,possiblegarbage);
+	  break;
+	case 3:
+	  recordcontainer(heap,possiblegarbage);
+	  break;
+	}
+      }
+
+      
+
       /* Have to remove references to ourself first*/
       fl=possiblegarbage->reversefield;
       al=possiblegarbage->reversearray;
@@ -93,18 +113,18 @@ void doincrementalreachability(struct heap_state *hs, struct hashtable *ht, int 
       free(possiblegarbage);
     } else {
       /* Possible role change due to reachability*/
-      addobject(hs->changedset,possiblegarbage);
+      addobject(heap->changedset,possiblegarbage);
     }
   }
 
   freeobjectset(changedset);
 }
 
-struct objectset * dokills(struct heap_state *hs, struct hashtable *ht) {
+struct objectset * dokills(struct heap_state *heap, struct hashtable *ht) {
   /* Flush out old reachability information */
   /* Remove K set */
   struct killtuplelist * kptr=NULL;
-  struct objectpair * op=hs->K;
+  struct objectpair * op=heap->K;
   struct objectset *os=createobjectset();
   
   while(!isEmptyOP(op)) {
@@ -136,7 +156,7 @@ struct objectset * dokills(struct heap_state *hs, struct hashtable *ht) {
       struct referencelist *rtmp=srcobj->rl;
       if (rtmp!=NULL) {
 	ktpl->ho=dst;
-	if (srcobj->reachable!=0)
+	if ((srcobj->reachable&REACHABLEMASK)!=0)
 	  ktpl->reachable=1;
 	ktpl->next=kptr;
 	kptr=ktpl;
@@ -186,14 +206,14 @@ struct objectset * dokills(struct heap_state *hs, struct hashtable *ht) {
     /*adding only if R(t) intersect S!={}*/
     while(fl!=NULL) {
 #ifdef EFFECTS
-      if (!(hs->options&OPTION_NOEFFECTS)) {
-	addpath(hs, ho->uid, fl->fieldname, fl->object->uid);
+      if (!(heap->options&OPTION_NOEFFECTS)) {
+	addpath(heap, ho->uid, fl->fieldname, fl->object->uid);
       }
 #endif
-      if (matchlist(fl->object->rl, tuple->rl)||((fl->object->reachable==1)&&(tuple->reachable==1))) {
+      if (matchlist(fl->object->rl, tuple->rl)||(((fl->object->reachable&REACHABLEMASK)==1)&&(tuple->reachable==1))) {
 	struct killtuplelist *ktpl=(struct killtuplelist *) calloc(1,sizeof(struct killtuplelist));
 	struct referencelist *rtmp=tuple->rl;
-	if (fl->object->reachable==1)
+	if ((fl->object->reachable&REACHABLEMASK)==1)
 	  ktpl->reachable=tuple->reachable;
 	if (rtmp!=NULL) {
 	  ktpl->ho=fl->object;
@@ -221,18 +241,18 @@ struct objectset * dokills(struct heap_state *hs, struct hashtable *ht) {
     /*adding only if R(t) intersect S!={}*/
     while(al!=NULL) {
 #ifdef EFFECTS
-      if (!(hs->options&OPTION_NOEFFECTS)) {
-	addarraypath(hs, ht, ho->uid, al->object->uid);
+      if (!(heap->options&OPTION_NOEFFECTS)) {
+	addarraypath(heap, ht, ho->uid, al->object->uid);
       }
 #endif
-      if (matchlist(al->object->rl, tuple->rl)||((al->object->reachable==1)&&(tuple->reachable==1))) {
+      if (matchlist(al->object->rl, tuple->rl)||(((al->object->reachable&REACHABLEMASK)==1)&&(tuple->reachable==1))) {
 	struct killtuplelist *ktpl=(struct killtuplelist *) calloc(1,sizeof(struct killtuplelist));
 	struct referencelist *rtmp=tuple->rl;
 	if (rtmp!=NULL) {
 	  ktpl->ho=al->object;
 	  ktpl->next=kptr;
 	  kptr=ktpl;
-	  if (al->object->reachable==1)
+	  if ((al->object->reachable&REACHABLEMASK)==1)
 	    ktpl->reachable=tuple->reachable;
 	  /*loop through src*/
 	  while(rtmp!=NULL) {
@@ -254,8 +274,8 @@ struct objectset * dokills(struct heap_state *hs, struct hashtable *ht) {
     
     /*fix our object*/
     
-    if ((ho->reachable==1)&&(tuple->reachable==1))
-      ho->reachable=0;
+    if (((ho->reachable&REACHABLEMASK)==1)&&(tuple->reachable==1))
+      ho->reachable&=OTHERMASK;
     
     while((orl!=NULL)&&(matchrl(orl,tuple->rl))) {
       ho->rl=orl->next;
@@ -281,9 +301,9 @@ struct objectset * dokills(struct heap_state *hs, struct hashtable *ht) {
 
 
 
-void donews(struct heap_state *hs, struct objectset * os, struct hashtable *ht) {
+void donews(struct heap_state *heap, struct objectset * os, struct hashtable *ht) {
   struct ositerator *it=getIterator(os);
-  struct objectset *N=hs->N;
+  struct objectset *N=heap->N;
   while(hasNext(it)) {
     struct heap_object* ho=nextobject(it);
     addobject(N, ho);
@@ -292,10 +312,10 @@ void donews(struct heap_state *hs, struct objectset * os, struct hashtable *ht) 
   /*N set now has all elements of interest*/
 
   /* Add root edges in reachability info*/
-  while(hs->newreferences!=NULL) {
-    struct referencelist *rl=hs->newreferences;
+  while(heap->newreferences!=NULL) {
+    struct referencelist *rl=heap->newreferences;
     struct heap_object *ho=NULL;
-    hs->newreferences=rl->next;
+    heap->newreferences=rl->next;
 
     if(rl->lv!=NULL) {
       /* handle lv*/
@@ -327,8 +347,8 @@ void donews(struct heap_state *hs, struct objectset * os, struct hashtable *ht) 
       /* Cycle through all fields/array indexes*/
       while(al!=NULL) {
 #ifdef EFFECTS
-	if (!(hs->options&OPTION_NOEFFECTS)) {
-	  addarraypath(hs, ht, object->uid, al->object->uid);
+	if (!(heap->options&OPTION_NOEFFECTS)) {
+	  addarraypath(heap, ht, object->uid, al->object->uid);
 	}
 #endif
 	propagaterinfo(N, object, al->object);
@@ -336,8 +356,8 @@ void donews(struct heap_state *hs, struct objectset * os, struct hashtable *ht) 
       }
       while(fl!=NULL) {
 #ifdef EFFECTS
-	if (!(hs->options&OPTION_NOEFFECTS)) {
-	  addpath(hs, object->uid, fl->fieldname, fl->object->uid);
+	if (!(heap->options&OPTION_NOEFFECTS)) {
+	  addpath(heap, object->uid, fl->fieldname, fl->object->uid);
 	}
 #endif
 	propagaterinfo(N, object, fl->object);
@@ -351,8 +371,8 @@ void propagaterinfo(struct objectset * set, struct heap_object *src, struct heap
   int addedsomething=0;
   struct referencelist *srclist=src->rl;
   struct referencelist *dstlist=dst->rl;
-  if ((src->reachable!=0)&&(dst->reachable==0)) {
-    dst->reachable=1;
+  if (((src->reachable&REACHABLEMASK)!=0)&&((dst->reachable&REACHABLEMASK)==0)) {
+    dst->reachable|=1;
     addedsomething=1;
   }
 

@@ -113,6 +113,14 @@ struct intlist * remap(struct hashtable *h, int origrole) {
   return retval;
 }
 
+struct classname * getroleclass(struct heap_state *heap, int role) {
+  char rolestring[40];
+  struct role *r;
+  sprintf(rolestring,"R%d",role);
+  r=(struct role *) gengettable(heap->reverseroletable, rolestring);
+  return r->class;
+}
+
 void outputrolerelations(struct heap_state *heap) {
   struct geniterator *it=gengetiterator(heap->rolereferencetable);
   /* FREEME*/
@@ -130,16 +138,24 @@ void outputrolerelations(struct heap_state *heap) {
     {
       struct role *srcrole=(struct role *)gengettable(heap->reverseroletable,srcname);
       struct rolefieldlist *rfl=srcrole->nonnullfields;
+      struct rolearraylist *ral=srcrole->nonnullarrays;
+      
       while(rfl!=NULL) {
 	if ((rfl->field==rr->field)&&
 	    (rfl->role==rr->dstrole))
 	  break;
 	rfl=rfl->next;
       }
-      if (rfl==NULL) {
-	fprintf(heap->rolediagramfile,"R%d -> R%d [label=\"%s\"]\n",rr->srcrole, rr->dstrole,rr->field->fieldname);
+      while(ral!=NULL) {
+	if (ral->role==rr->dstrole)
+	  break;
+	ral=ral->next;
+      }
+
+      if (rfl==NULL&&ral==NULL) {
+	fprintf(heap->rolediagramfile,"\"R%d\\n%s\" -> \"R%d\\n%s\" [label=\"%s\"]\n",rr->srcrole, getroleclass(heap,rr->srcrole)->classname,rr->dstrole,getroleclass(heap,rr->dstrole)->classname,rr->field->fieldname);
       } else {
-	fprintf(heap->rolediagramfile,"R%d -> R%d [style=dotted,label=\"%s\"]\n",rr->srcrole, rr->dstrole,rr->field->fieldname);
+	fprintf(heap->rolediagramfile,"\"R%d\\n%s\" -> \"R%d\\n%s\" [style=dotted,label=\"%s\"]\n",rr->srcrole, getroleclass(heap,rr->srcrole)->classname,rr->dstrole,getroleclass(heap,rr->dstrole)->classname,rr->field->fieldname);
 	addentry(roletable, rr->dstrole, rr->srcrole);
       }
     }
@@ -161,13 +177,23 @@ void outputrolerelations(struct heap_state *heap) {
     {
       struct role *srcrole=(struct role *)gengettable(heap->reverseroletable,srcname);
       struct rolefieldlist *rfl=srcrole->nonnullfields;
+      struct rolearraylist *ral=srcrole->nonnullarrays;
+
       while(rfl!=NULL) {
 	if ((rfl->field==rr->field)&&
 	    (rfl->role==rr->dstrole))
 	  break;
 	rfl=rfl->next;
       }
-      if (rfl==NULL) {
+      while(ral!=NULL) {
+	if (ral->role==rr->dstrole)
+	  break;
+	ral=ral->next;
+      }
+
+
+
+      if (rfl==NULL&&ral==NULL) {
 	struct intlist * isrc=remap(roletable, rr->srcrole);
 	struct intlist * idst=remap(roletable, rr->dstrole);
 	while (isrc!=NULL) {
@@ -182,7 +208,7 @@ void outputrolerelations(struct heap_state *heap) {
 	      nrr->dstrole=dst;
 	      nrr->field=rr->field;
 	      genputtable(rrtable, nrr,nrr);
-	      fprintf(heap->rolediagramfilemerge,"R%d -> R%d [label=\"%s\"]\n",src, dst,rr->field->fieldname);
+	      fprintf(heap->rolediagramfilemerge,"\"R%d\\n%s\" -> \"R%d\\n%s\" [label=\"%s\"]\n",src,getroleclass(heap,src)->classname, dst,getroleclass(heap,dst)->classname,rr->field->fieldname);
 	    }
 	    idst2=idst2->next;
    	  }

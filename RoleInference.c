@@ -46,7 +46,7 @@ void parseoptions(int argc, char **argv, struct heap_state *heap) {
       switch(argv[param][1]) {
       case 'h':
 	printf("-h help\n");
-	printf("-c output containers\n");
+	printf("-cpolicyfile output containers\n");
 	printf("-u use containers\n");
 	printf("-n no effects\n");
 	printf("-f use only fields specified in fields file\n");
@@ -73,6 +73,7 @@ void parseoptions(int argc, char **argv, struct heap_state *heap) {
 	break;
       case 'c':
 	heap->options|=OPTION_FCONTAINERS;
+	readpolicyfile(heap,&argv[param][2]);
 	opencontainerfile(heap);
 	break;
       case 'u':
@@ -97,6 +98,7 @@ void doanalysis(int argc, char **argv) {
   int currentparam=0;
   heap.options=0;
   heap.prefix=NULL;
+  heap.namer=allocatenamer();
 
   parseoptions(argc, argv,&heap);
   openoutputfiles(&heap);
@@ -110,7 +112,7 @@ void doanalysis(int argc, char **argv) {
   heap.newreferences=NULL;
   heap.freelist=NULL;
   heap.freemethodlist=NULL;
-  heap.namer=allocatenamer();
+
   heap.roletable=genallocatehashtable((int (*)(void *)) &rolehashcode, (int (*)(void *,void *)) &equivalentroles);
   heap.rolereferencetable=genallocatehashtable((int (*)(void *)) &rolerelationhashcode, (int (*)(void *,void *)) &equivalentrolerelations);
   heap.reverseroletable=genallocatehashtable((int (*)(void *)) &hashstring, (int (*)(void *,void *)) &equivalentstrings);
@@ -614,11 +616,25 @@ void doarrayassignment(struct heap_state *heap, struct heap_object * src, int in
   if (dst!=NULL) {
     /* is dst contained object ?*/
     if (heap->options&OPTION_FCONTAINERS) {
-      if (dst->reachable&FIRSTREF)
-	dst->reachable|=NOTCONTAINER;
-      else {
+      int policy=1;
+      if(gencontains(heap->policytable, dst->class)) {
+	struct policyobject *po=(struct policyobject *) gengettable(heap->policytable, dst->class);
+	policy=po->policy;
+      } else if (heap->options&OPTION_DEFAULTONEATTIME)
+        policy=2;
+      switch(policy) {
+      case 1:
+	if (dst->reachable&FIRSTREF)
+	  dst->reachable|=NOTCONTAINER;
+	else {
+	  dst->reachable|=FIRSTREF;
+	  checksafety(src,dst);
+	}
+	break;
+      case 2:
 	dst->reachable|=FIRSTREF;
-	checksafety(src,dst);
+	if (dst->reversefield!=NULL)
+	  dst->reachable|=NOTCONTAINER;
       }
     } else if (heap->options&OPTION_UCONTAINERS) {
       if (contains(heap->containedobjects, dst->uid))
@@ -824,7 +840,7 @@ void dodelglbfield(struct heap_state *hs, struct globallist *src, struct heap_ob
   addobjectpair(hs->K, NULL, NULL,src,dst);
 }
 
-void dofieldassignment(struct heap_state *hs, struct heap_object * src, struct fieldname * field, struct heap_object * dst) {
+void dofieldassignment(struct heap_state *heap, struct heap_object * src, struct fieldname * field, struct heap_object * dst) {
   struct fieldlist *fldptr=src->fl;
   struct fieldlist *newfld=(struct fieldlist *)calloc(1,sizeof(struct fieldlist));
 
@@ -833,24 +849,38 @@ void dofieldassignment(struct heap_state *hs, struct heap_object * src, struct f
   newfld->fieldname=field;
   newfld->object=dst;
   newfld->src=src;
-  addobject(hs->changedset, src);
+  addobject(heap->changedset, src);
 
   if (dst!=NULL) {
     /* is dst contained object ?*/
-    if (hs->options&OPTION_FCONTAINERS) {
-      if (dst->reachable&FIRSTREF)
-	dst->reachable|=NOTCONTAINER;
-      else {
+    if (heap->options&OPTION_FCONTAINERS) {
+      int policy=1;
+      if(gencontains(heap->policytable, dst->class)) {
+	struct policyobject *po=(struct policyobject *) gengettable(heap->policytable, dst->class);
+	policy=po->policy;
+      } else if (heap->options&OPTION_DEFAULTONEATTIME)
+        policy=2;
+      switch(policy) {
+      case 1:
+	if (dst->reachable&FIRSTREF)
+	  dst->reachable|=NOTCONTAINER;
+	else {
+	  dst->reachable|=FIRSTREF;
+	  checksafety(src,dst);
+	}
+	break;
+      case 2:
 	dst->reachable|=FIRSTREF;
-	checksafety(src,dst);
+	if (dst->reversefield!=NULL)
+	  dst->reachable|=NOTCONTAINER;
       }
-    } else if (hs->options&OPTION_UCONTAINERS) {
-      if (contains(hs->containedobjects, dst->uid))
+    } else if (heap->options&OPTION_UCONTAINERS) {
+      if (contains(heap->containedobjects, dst->uid))
 	newfld->propagaterole=1;
     }
 
-    addobject(hs->changedset, dst);
-    doaddfield(hs, src);
+    addobject(heap->changedset, dst);
+    doaddfield(heap, src);
     newfld->dstnext=dst->reversefield;
     dst->reversefield=newfld;
   }
@@ -875,7 +905,7 @@ void dofieldassignment(struct heap_state *hs, struct heap_object * src, struct f
       free(newfld);
     }
     removereversefieldreference(fldptr);
-    dodelfield(hs, src, fldptr->object);
+    dodelfield(heap, src, fldptr->object);
     free(fldptr);
     return;
   }
@@ -892,7 +922,7 @@ void dofieldassignment(struct heap_state *hs, struct heap_object * src, struct f
 	free(newfld);
       }
       removereversefieldreference(tmpptr);
-      dodelfield(hs, src, tmpptr->object);
+      dodelfield(heap, src, tmpptr->object);
       free(tmpptr);
       return;
     }
