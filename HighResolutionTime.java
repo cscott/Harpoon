@@ -110,7 +110,6 @@ public abstract class HighResolutionTime implements Comparable {
     
     /** Sets the millisecond and nanosecond compenonets of this. */
     public void set(long millisecs, int nanosecs) {
-	debug("In HighResolutionTime.set(long millisecs, int nanosecs)... ");
 	// Do we have negative nanos? Java cannot take negative moduli properly
 	if (nanosecs < 0) {
 	    nanos = Math.abs(nanosecs);
@@ -125,7 +124,6 @@ public abstract class HighResolutionTime implements Comparable {
 	    millis = millisecs + nanosecs/1000000;
 	    nanos = nanosecs%1000000;
 	}
-	debug("Exiting HighResolutionTime.set(long millisecs, int nanosecs)...");
     }
 
     /** Behaves exactly like <code>target.wait()</code> but with the enhacement
@@ -140,9 +138,5 @@ public abstract class HighResolutionTime implements Comparable {
     public long time() {
 	return (millis * 1000000 + nanos);
     }
-
-    // For debugging
-    public void debug(String msg) {
-	System.out.println(msg);
-    }
 }
+

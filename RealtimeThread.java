@@ -25,7 +25,7 @@ package javax.realtime;
  */
 public class RealtimeThread extends Thread implements Schedulable {
 
-    public static Scheduler currentScheduler = null;
+    public Scheduler currentScheduler = null;
 
     /** Contains the cactus stack of previous memoryAreas... */
     MemAreaStack memAreaStack;

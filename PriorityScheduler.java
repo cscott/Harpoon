@@ -175,9 +175,9 @@ public class PriorityScheduler extends Scheduler {
 	return l;
     }
 
-    /** Returns ture if and only if the system is able to satisfy the
-     *  constraints expressed in the release parameteres of the existing
-     *  schdulable objects.
+    /** Returns true if and only if the system is able to satisfy the
+     *  constraints expressed in the release parameters of the existing
+     *  schedulable objects.
      */
     public boolean isFeasible() {
 	return isFeasible(null, null);
@@ -195,7 +195,9 @@ public class PriorityScheduler extends Scheduler {
 		    params.add(new ReleaseParameters(rp));
 		    found = true;
 		}
-		else params.add(new ReleaseParameters(sch.getReleaseParameters()));
+		else if (sch.getReleaseParameters() != null) {
+		    params.add(new ReleaseParameters(sch.getReleaseParameters()));
+		}
 	    }
 	}
 	if ((!found) && (s != null) && (rp != null)) params.add(new ReleaseParameters(rp));

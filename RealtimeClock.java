@@ -17,9 +17,7 @@ public class RealtimeClock extends Clock {
     /** Create an instance of <code>RealtimeClock</code> using given parameters. */
     public RealtimeClock(long millis, int nanos) {
 	super();
-	debug("Entering the constructor of RealtimeClock... (after calling super())");
 	resolution = new RelativeTime(millis, nanos);
-	debug("Exiting the constructor of RealtimeClock...");
     }
 
     /** Return the resolution of this <code>RealtimeClock</code> instance. */
@@ -38,10 +36,5 @@ public class RealtimeClock extends Clock {
     public void getTime(AbsoluteTime time) {
 	long micros  = getTimeInC();
 	time.set(micros / 1000, (int)((micros % 1000) * 1000));
-    }
-
-    // For debugging
-    public static void debug(String msg) {
-	System.out.println(msg);
     }
 }

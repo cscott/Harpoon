@@ -32,22 +32,15 @@ public abstract class Clock {
     
     private RelativeTime resolution;
     private static RealtimeClock rtc = null;
-    private static long entered = 0;   // debugging flag...
     
     public Clock() {
-	debug("Entering and leaving Clock()");
     }
     
     /** There is always one clock object available: a realtime clock that
      *  advances in sync with the external world. This is the default Clock.
      */
     public static Clock getRealtimeClock() {
-	debug("Entered Clock.getRealtimeClock()... ");
-	// This should never be printed (unless there's a bug).
-	if (entered++ > 0) debug("Where is that ... loop?");
 	if (rtc == null) rtc = new RealtimeClock();
-	entered--;
-	debug("Leaving Clock.getRealtimeClock()...");
 	return rtc;
     }
 
@@ -71,9 +64,4 @@ public abstract class Clock {
      *  setting resolution impossible and if called on those nothing happens.
      */
     public abstract void setResolution(RelativeTime resolution);
-
-    // For debugging
-    public static void debug(String msg) {
-	System.out.println(msg);
-    }
 }

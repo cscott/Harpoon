@@ -27,9 +27,7 @@ public class RelativeTime extends HighResolutionTime {
      *  Notice: the time is normalized by converting every 10^6 ns to 1 ms.
      */
     public RelativeTime(long millis, int nanos) {
-	debug("In RelativeTime(long millis, int nanos)...");
 	set(millis, nanos);
-	debug("Leaving RelativeTime(long millis, int nanos)...");
     }
     
     /** Make a new <code>RelativeTime</code> object from the given
@@ -188,10 +186,5 @@ public class RelativeTime extends HighResolutionTime {
     public String toString() {
 	return "RelativeTime: millis: " + getMilliseconds() +
 	    " nanos: " + getNanoseconds();
-    }
-
-    // For debugging
-    public void debug(String msg) {
-	System.out.println(msg);
     }
 }

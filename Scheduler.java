@@ -18,7 +18,7 @@ import java.util.HashSet;
  *  <code>getDefaultScheduler()</code>.
  */
 public abstract class Scheduler {
-    protected static Scheduler defaultScheduler;
+    protected static Scheduler defaultScheduler = null;
     
     
     protected Scheduler() {}
@@ -40,6 +40,10 @@ public abstract class Scheduler {
 
     /** Return a reference to the default scheduler. */
     public static Scheduler getDefaultScheduler() {
+	if (defaultScheduler == null) {
+	    setDefaultScheduler(PriorityScheduler.getScheduler());
+	    return getDefaultScheduler();
+	}
 	return defaultScheduler;
     }
 
@@ -95,4 +99,5 @@ public abstract class Scheduler {
 				 ProcessingGroupParameters group) {
 	return false;
     }
+
 }
