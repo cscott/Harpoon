@@ -46,7 +46,7 @@ public final class BitString implements Cloneable, java.io.Serializable {
   public void setAll() {
     int i = bits.length;
     while (i-- > 0) {
-      bits[i] = MASK;
+      bits[i] = ~0;
     }
   }
 
@@ -58,7 +58,7 @@ public final class BitString implements Cloneable, java.io.Serializable {
     int where = subscript(bit);
     bits[where] |= ((1 << ((bit+1) & MASK)) - 1);
     while (where-- > 0) {
-      bits[where] = MASK;
+      bits[where] = ~0;
     }
   }
 
