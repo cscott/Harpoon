@@ -14,7 +14,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.1 1998-08-01 02:02:43 cananian Exp $
+ * @version $Id: HMethod.java,v 1.2 1998-08-01 05:08:33 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -104,7 +104,7 @@ public class HMethod implements HMember {
       parameterTypes = new HClass[v.size()];
       v.copyInto(parameterTypes);
     }
-    return copy(parameterTypes);
+    return HClass.copy(parameterTypes);
   }
   /**
    * Returns an array of <code>HClass</code> objects that represent the
@@ -128,7 +128,7 @@ public class HMethod implements HMember {
 	v.copyInto(exceptionTypes);
       }
     }
-    return copy(exceptionTypes);
+    return HClass.copy(exceptionTypes);
   }
 
   /**
@@ -216,12 +216,10 @@ public class HMethod implements HMember {
     return HField.getTypeName(hc);
   }
 
-  static HClass[] copy(HClass[] src) {
+  static HMethod[] copy(HMethod[] src) {
     if (src.length==0) return src;
-    HClass[] dst = new HClass[src.length];
+    HMethod[] dst = new HMethod[src.length];
     System.arraycopy(src,0,dst,0,src.length);
     return dst;
   }
 }
-
-				      

@@ -1,7 +1,11 @@
 package harpoon.ClassFile;
 
+import java.lang.reflect.Modifier;
 import java.io.InputStream;
 import java.util.Hashtable;
+import java.util.Vector;
+
+import harpoon.Util.UniqueVector;
 
 /**
  * Instances of the class <code>HClass</code> represent classes and 
@@ -20,7 +24,7 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.4 1998-08-01 02:02:13 cananian Exp $
+ * @version $Id: HClass.java,v 1.5 1998-08-01 05:08:32 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -260,21 +264,22 @@ public class HClass {
    * desired field. <p>
    * The field to be reflected is located by searching all member fields
    * of the class or interface represented by this <code>HClass</code>
-   * object for a public field with the specified name.
+   * object for a non-private field with the specified name.
    * @see "The Java Language Specification, sections 8.2 and 8.3"
    * @exception NoSuchFieldException
    *            if a field with the specified name is not found.
    * @see HField
-   */ // XXX MAY NOT WORK RIGHT FOR INTERFACES.
+   */
   public HField getField(String name) throws NoSuchFieldException {
-    try {
-      return getDeclaredField(name);
-    } catch (NoSuchFieldException e) { }
-    HClass sup = getSuperclass();
-    if (sup!=null)
-      return sup.getField(name);
-    else
-      throw new NoSuchFieldException(name);
+    // construct master field list, if we haven't already.
+    if (fields==null) getFields();
+    // look for field name in master field list.
+    // look backwards to be sure we find local fields first (scoping)
+    for (int i=fields.length-1; i>=0; i--)
+      if (fields[i].getName().equals(name))
+	return fields[i];
+    // can't find it.
+    throw new NoSuchFieldException(name);
   }
   /**
    * Returns an array containing <code>HField</code> objects reflecting
@@ -283,8 +288,9 @@ public class HClass {
    * class or interface has no fields, or if it represents an array type
    * or a primitive type. <p>
    * Specifically, if this <code>HClass</code> object represents a class,
-   * returns the fields of this class and of all its superclasses.  If this
-   * <code>HClass</code> object represents an interface, returns the fields
+   * returns the non-private fields of this class and of all its superclasses.
+   * If this <code>HClass</code> object represents an interface, returns 
+   * the non-private fields
    * of this interface and of all its superinterfaces.  If this 
    * <code>HClass</code> object represents an array type or a primitive
    * type, returns an array of length 0. <p>
@@ -292,16 +298,75 @@ public class HClass {
    * method.
    * @see "The Java Language Specification, sections 8.2 and 8.3"
    * @see HField
-   */ // XXX NOT SURE THIS WORKS FOR INTERFACES
+   */
+  private HField[] fields=null;
   public HField[] getFields() {
-    if (isPrimitive() || isArray()) return new HField[0];
-    HClass sup = getSuperclass();
-    HField sf[] = (sup==null)?new HField[0]:sup.getFields();
-    HField lf[] = getDeclaredFields();
-    HField hf[] = new HField[lf.length + sf.length];
-    System.arraycopy(lf, 0, hf, 0, lf.length);
-    System.arraycopy(sf, 0, hf, lf.length, sf.length);
-    return hf;
+    if (fields==null) {
+      if (isPrimitive() || isArray()) {
+	fields = new HField[0];
+      } else {
+	UniqueVector v = new UniqueVector();
+	// add fields from interfaces.
+	HClass[] in = getInterfaces();
+	for (int i=0; i<in.length; i++) {
+	  HField[] inf = in[i].getFields();
+	  for (int j=0; j<inf.length; j++)
+	    v.addElement(inf[j]);
+	}
+	// now fields from superclasses, subject to access mode constraints.
+	HClass sup = getSuperclass();
+	HField supf[] = (sup==null)?new HField[0]:sup.getFields();
+	for (int i=0; i<supf.length; i++) {
+	  if (Modifier.isPrivate(supf[i].getModifiers()))
+	    continue; // skip this field.
+	  // XXX we skip the package identity check for package variables.
+	  v.addElement(supf[i]);
+	}
+	// now fields from our local class.
+	HField locf[] = getDeclaredFields();
+	for (int i=0; i<locf.length; i++)
+	  v.addElement(locf[i]);
+
+	// Merge into one array.
+	fields = new HField[v.size()];
+	v.copyInto(fields);
+      }
+    }
+    return HField.copy(fields);
+  }
+
+  /**
+   * Returns a <code>HMethod</code> object that reflects the specified 
+   * declared method of the class or interface represented by this 
+   * <code>HClass</code> object.  The <code>name</code> parameter is a
+   * <code>String</code> that specifies the simple name of the desired
+   * method, and the <code>parameterTypes</code> parameter is an array
+   * of <code>HClass</code> objects that identify the method's formal
+   * parameter types, in declared order.
+   * @exception NoSuchMethodException
+   *            if a matching method is not found.
+   * @see HMethod
+   */
+  public HMethod getDeclaredMethod(String name, HClass parameterTypes[])
+    throws NoSuchMethodException {
+    // XXX WRITE ME XXX
+    return null;
+  }
+  /**
+   * Returns an array of <code>HMethod</code> objects reflecting all the
+   * methods declared by the class or interface represented by this
+   * <code>HClass</code> object.  This includes <code>public</code>,
+   * <code>protected</code>, default (<code>package</code>) access, and
+   * <code>private</code> methods, but excludes inherited methods.
+   * Returns an array of length 0 if the class or interface declares no
+   * methods, or if this <code>HClass</code> object represents a primitive
+   * type.
+   * @see "The Java Language Specification, section 8.2"
+   * @see HMethod
+   */
+  public HMethod[] getDeclaredMethods() {
+    // XXX WRITE ME XXX
+    return null;
   }
 
   /**
@@ -524,4 +589,11 @@ public class HClass {
   /** The <code>HClass</code> object representing the primitive type void.*/
   public static final HClass Void=forClass((new Object() { }).getClass());
   // Dig *that*, Ken Arnold!
+
+  static HClass[] copy(HClass[] src) {
+    if (src.length==0) return src;
+    HClass[] dst = new HClass[src.length];
+    System.arraycopy(src,0,dst,0,src.length);
+    return dst;
+  }
 }

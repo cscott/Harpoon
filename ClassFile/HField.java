@@ -9,7 +9,7 @@ import harpoon.ClassFile.Raw.Attribute.AttributeConstantValue;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.3 1998-08-01 02:02:14 cananian Exp $
+ * @version $Id: HField.java,v 1.4 1998-08-01 05:08:32 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -138,5 +138,12 @@ public class HField implements HMember {
       return r.toString();
     }
     return hc.getName();
+  }
+  
+  static HField[] copy(HField[] src) {
+    if (src.length==0) return src;
+    HField[] dst = new HField[src.length];
+    System.arraycopy(src,0,dst,0,src.length);
+    return dst;
   }
 }
