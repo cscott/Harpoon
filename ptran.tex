@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.53 2003-05-08 19:57:55 cananian Exp $
+% $Id: ptran.tex,v 1.54 2003-05-08 20:09:37 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.53 $ $}
+\date{\today \\ $ $Revision: 1.54 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -286,13 +286,13 @@ corresponding actual variables at a callsite.
 Now, instead of initializing $\forall s :
 \func{RD}^*_\text{in}[s]=\lambda v.\emptyset$, we let
 \begin{displaymath}
-\func{RD}^*_\text{in}[s]=\lambda v.\begin{cases}
+\forall s: \func{RD}^*_\text{in}[s]=\lambda v.\begin{cases}
 p & \text{if }v=formal(p)\text{ and }s=s_0\\
 \emptyset & \text{otherwise} \\
 \end{cases}
 \end{displaymath}
 where $s_0$ is the unique header statement for the method.
-The remainder of the $\func{RD}$ analysis is identical.
+The remainder of the $\func{RD}^*$ analysis is identical.
 
 We also extend the type of the function $\func{RU}[s]$ from
 $\mathcal{S}\to 2^\mathcal{V\times S}$ to
@@ -344,9 +344,9 @@ U =
 then the set of static values $U$ is mutually-singular conditional on $P$.
 \end{itemize}
 
-So we can throw away all information internal to the callee except
-mutually-singular sets of statements and their sets of dependent
-formal parameters.
+%So we can throw away all information internal to the callee except
+%mutually-singular sets of statements and their sets of dependent
+%formal parameters.
 
 %A compositional
 %analysis is presented to compute interprocedural singularity.
