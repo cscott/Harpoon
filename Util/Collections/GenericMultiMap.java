@@ -31,7 +31,7 @@ import java.util.HashSet;
  *	 are passed on to 'mm'.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.1.2.12 2001-11-08 20:34:58 cananian Exp $ */
+ * @version $Id: GenericMultiMap.java,v 1.1.2.13 2001-11-08 20:47:16 cananian Exp $ */
 public class GenericMultiMap implements MultiMap {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
@@ -43,9 +43,6 @@ public class GenericMultiMap implements MultiMap {
     // used by identity constructor
     private MapFactory mf;
 
-    // for efficiency, we keep track of the number of mappings separately.
-    private int size=0;
-    
     /** Creates a <code>MultiMap</code> using a <code>HashMap</code> for
 	the map and <code>HashSet</code>s for the value collections.
 	To gain more control over the specific sets/map used in
@@ -85,7 +82,6 @@ public class GenericMultiMap implements MultiMap {
 	this.mf = mm.mf;
 	this.cf = mm.cf;
 	this.internMap = this.mf.makeMap(mm.internMap);
-	this.size = mm.size();
     }
 	
     /** Makes a new <code>MultiMap</code> initialized with all of the
@@ -100,16 +96,11 @@ public class GenericMultiMap implements MultiMap {
 	}
     }
 
+    // note: we'd like to maintain a separate 'size' field, but
+    // we can't intercept direct modification to the sets returned
+    // by getValues(key), which we'd need to do.  So size() and
+    // isEmpty() are slower than they might otherwise be.
     public int size() {
-	// XXX: this class contains code to calculate the size and update
-	// it on modifications, but it contains a critical hole: the caller
-	// can take the Collection returned by getValues(key) and modify
-	// it.  There's no way for us to intercept that modification
-	// and update the size field without wrapping the returned Collection
-	// -- but we can't do that without changing the actual type of the
-	// object returned (ie, if CollectionFactory returned Sets, we want
-	// getValues(key) to return Sets, as well).  So the size() method
-	// is now correct, but very slow.
 	int count=0;
 	for (Iterator it=internMap.values().iterator(); it.hasNext(); )
 	    count += ((Collection)it.next()).size();
@@ -117,7 +108,11 @@ public class GenericMultiMap implements MultiMap {
     }
 
     public boolean isEmpty() {
-	return size==0;
+	// we could return 'size()==0' but that's slow.
+	for (Iterator it=internMap.values().iterator(); it.hasNext(); )
+	    if (((Collection)it.next()).size()>0)
+		return false;
+	return true;
     }
     
     public boolean containsKey(Object key) {
@@ -169,10 +164,8 @@ public class GenericMultiMap implements MultiMap {
 		      Object value) {
 	Collection c = getValues(key);
 	Object prev = c.size()==0 ? null : c.iterator().next();
-	size -= c.size();
 	c.clear();
 	c.add(value);
-	size += c.size();
 	return prev;
     }
 
@@ -182,7 +175,6 @@ public class GenericMultiMap implements MultiMap {
      */
     public Object remove(Object key) {
 	Collection c = (Collection) internMap.get(key);
-	if (c!=null) size -= c.size();
 	internMap.remove(key);
 	return (c==null || c.size()==0) ? null : c.iterator().next();
     }
@@ -196,7 +188,6 @@ public class GenericMultiMap implements MultiMap {
     public boolean remove(Object key, Object value) {
 	Collection c = (Collection) internMap.get(key);
 	boolean result = (c!=null) ? c.remove(value) : false;
-	if (result) size--;
 	if (c!=null && c.size()==0) internMap.remove(key);
 	return result;
     }
@@ -221,7 +212,6 @@ public class GenericMultiMap implements MultiMap {
     
     public void clear() {
 	internMap.clear();
-	size=0;
     }
 
     public boolean equals(Object o) {
@@ -252,7 +242,6 @@ public class GenericMultiMap implements MultiMap {
     */
     public boolean add(Object key, Object value) {
 	boolean changed = getValues(key).add(value);
-	if (changed) size++;
 	return changed;
     }
     
@@ -296,7 +285,6 @@ public class GenericMultiMap implements MultiMap {
 	    if (!values.contains(it.next())) {
 		it.remove();
 		changed = true;
-		size--;
 	    }
 	if (getValues(key).isEmpty()) internMap.remove(key);
 	return changed;
@@ -399,7 +387,6 @@ public class GenericMultiMap implements MultiMap {
 		    public void remove() {
 			Collection c = (Collection) internMap.get(lastKey);
 			it.remove();
-			if (c!=null) size-=c.size();
 		    }
 		};
 	}
@@ -497,7 +484,6 @@ public class GenericMultiMap implements MultiMap {
 		    }
 		    public void remove() {
 			lastit.remove();
-			size--;
 		    }
 		};
 	}
