@@ -65,7 +65,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.37 2000-03-28 23:51:50 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.38 2000-03-29 03:32:17 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -130,7 +130,12 @@ public class PointerAnalysis {
 	some strong optimizations but requires more time and memory. */
     public static boolean LOOP_SENSITIVE = false;
 
-    public static final String ARRAY_CONTENT = "array_elements";
+    // array elements are modeled as fields of the array object, all of them
+    // with the same name since the analysis is not able to make the
+    // distinction between the fields. 
+    // this name is supposed to be "as impossible as possible", so that we
+    // don't have any conflict with real fields.
+    public static final String ARRAY_CONTENT = "+ae+";
 
     // The HCodeFactory providing the actual code of the analyzed methods
     private final MetaCallGraph  mcg;
@@ -611,8 +616,8 @@ public class PointerAnalysis {
 	/** Load statement; special case - arrays. */
 	public void visit(AGET q){
 	    // All the elements of an array are collapsed in a single
-	    // node, so AGET is NOT a load (it is not PA-relevant)
-	    // process_load(q,q.dst(),q.objectref(),ARRAY_CONTENT);
+	    // node, ////// so AGET is NOT a load (it is not PA-relevant)
+	    process_load(q,q.dst(),q.objectref(),ARRAY_CONTENT);
 	}
 	
 	/** Does the real processing of a load statement. */
@@ -722,8 +727,9 @@ public class PointerAnalysis {
 	/** Store statement; special case - array */
 	public void visit(ASET q){
 	    // All the elements of an array are collapsed in a single
-	    // node, so ASET is NOT a store (it is not PA-relevant)
-	    // process_store(q.objectref(),ARRAY_CONTENT,q.src());
+	    // node
+	    /////// , so ASET is NOT a store (it is not PA-relevant)
+	    process_store(q.objectref(),ARRAY_CONTENT,q.src());
 	}
 	
 	/** Does the real processing of a store statement */
@@ -737,31 +743,42 @@ public class PointerAnalysis {
 	    if(TOUCHED_THREAD_SUPPORT) touch_threads(set1);
 	}
 	
+	public void process_thread_start_site(CALL q){
+	    if(DEBUG2)
+		System.out.println("THREAD START SITE: " + 
+				   q.getSourceFile() + ":" +
+				   q.getLineNumber());
+
+	    // the parallel interaction graph in the case no thread
+	    // is started due to some error and an exception is returned
+	    // back from the "start()"
+	    ParIntGraph lbbpig_no_thread = (ParIntGraph) (lbbpig.clone());
+
+	    Temp l = q.params(0);
+	    Set set = lbbpig.G.I.pointedNodes(l);
+	    lbbpig.tau.incAll(set);
+	    
+	    Iterator it_nt = set.iterator();
+	    while(it_nt.hasNext()){
+		PANode nt = (PANode) it_nt.next();
+		lbbpig.G.e.addNodeHole(nt,nt);
+		lbbpig.G.propagate(Collections.singleton(nt));
+	    }
+
+	    call_pp = new ParIntGraphPair(lbbpig, lbbpig_no_thread);
+	    
+	}
 
 	public void visit(CALL q){
-
+	    // treat the thread start sites specially
 	    if(thread_start_site(q)){
-		if(DEBUG2)
-		    System.out.println("THREAD START SITE: " + 
-				       q.getSourceFile() + ":" +
-				       q.getLineNumber());
-		Temp l = q.params(0);
-		Set set = lbbpig.G.I.pointedNodes(l);
-		lbbpig.tau.incAll(set);
-
-		Iterator it_nt = set.iterator();
-		while(it_nt.hasNext()){
-		    PANode nt = (PANode) it_nt.next();
-		    lbbpig.G.e.addNodeHole(nt,nt);
-		    lbbpig.G.propagate(Collections.singleton(nt));
-		}
-
+		process_thread_start_site(q);
 		return;
 	    }
 
 	    call_pp = 
 		InterProcPA.analyze_call(current_intra_mmethod,
-					 q,     // the CALL site
+					 q,      // the CALL site
 					 lbbpig, // the graph before the call
 					 PointerAnalysis.this);
 	}
