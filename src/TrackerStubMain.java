@@ -21,14 +21,24 @@ public class TrackerStubMain {
      */
     public static void main(String args[]) {
 	if (args.length<2) {
-	    System.out.println("Usage: java -jar trackerStub.jar <CORBA name> [CORBA options]");
+	    System.out.println("Usage: java -jar trackerStub.jar [timer] <CORBA name> [CORBA options]");
 	    System.exit(-1);
 	}
 
-	AlertServer alertServer = new AlertServer(new CORBA(args), args[0], null);
+	Node timer;
+	AlertServer alertServer;
 	Node alertDisp = new AlertDisplay();
+	boolean useTimer = args[0].equalsIgnoreCase("timer");
 
-	alertServer.linkL(alertDisp);
+	if(useTimer){
+	    timer = new Timer(false, true, "Tracker", null);
+	    alertServer = new AlertServer(new CORBA(args), args[1], null);
+	} else {
+	    timer = new Node();
+	    alertServer = new AlertServer(new CORBA(args), args[0], null);
+	}
+
+	alertServer.linkL(timer.linkL(alertDisp));
 	alertServer.run();
     }
 }

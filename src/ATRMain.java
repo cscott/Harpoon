@@ -67,6 +67,7 @@ public class ATRMain {
 	    Node timer1;
 	    Node timer2;
 	    Node receivingTimer;
+	    Node trackingTimer;
 	    //if timer is requested, then timer1/timer2 are made to be Timer nodes,
 	    //otherwise, they become dummy Nodes, and ImageDatas will just be passed through
 	    //with minimal performance impact
@@ -74,11 +75,13 @@ public class ATRMain {
 		timer1 = new Timer(true, false, null);
 		timer2 = new Timer(false, true, "Processing", null);
 		receivingTimer = new Timer(false, true, "Receiving Frame", null);
+		trackingTimer = new Timer(true, false, "Tracking", null);
 	    }
 	    else {
 		timer1 = new Node();
 		timer2 = new Node();
 		receivingTimer = new Node();
+		trackingTimer = new Node();
 	    }
 	    Node pipe = null;
 	    Node alert = null;
@@ -96,15 +99,15 @@ public class ATRMain {
 		Label label = new Label(Label.DEFAULT1, null, null);
 		label.findOneObject(true);
 		Node range = new RangeFind(null);
-		pipe = timer1.linkL(robCross.linkL(thresh.linkL(label.link(null,
-									   range.linkL(timer2.linkL(alert))))));
+		pipe = receivingTimer.linkL(timer1.linkL(robCross.linkL(thresh.linkL(label.link(null,
+									   range.linkL(timer2.linkL(trackingTimer.linkL(alert))))))));
 		(new ATR(new CORBA(args), args[2], pipe)).run();
 	    }
 	    else if (pipelineNumber == 2) {
 		Node labelBlue = new LabelBlue(null, null);
 		Node range = new RangeFind(null);
-		pipe = timer1.linkL(labelBlue.link(null,
-						   range.linkL(timer2.linkL(alert))));
+		pipe = receivingTimer.linkL(timer1.linkL(labelBlue.link(null,
+						   range.linkL(timer2.linkL(trackingTimer.linkL(alert))))));
 		(new ATR(new CORBA(args), args[2], pipe)).run();
 	    }
 	    else if (pipelineNumber == 3) {
@@ -132,7 +135,7 @@ public class ATRMain {
 														 label.link(null,
 															    labelSmCache.link(getCropCmd.linkL(cleanCache),
 																	      thin.link(null,
-																			range.linkL(timer2.linkL(alert))))))))))),
+																			range.linkL(timer2.linkL(trackingTimer.linkL(alert)))))))))))),
 					    
 					     labelBlue.link(null,
 							    getLabelSmCmd.linkL(labelSmCache)))));
@@ -165,7 +168,7 @@ public class ATRMain {
 														 label.link(null,
 															    labelSmCache.link(getCropCmd.linkL(cleanCache),
 																	      thin.link(null,
-																			range.linkL(timer2.linkL(alert))))))))))),
+																			range.linkL(timer2.linkL(trackingTimer.linkL(alert)))))))))))),
 					    
 					     labelBlue.link(null,
 							    getLabelSmCmd.linkL(labelSmCache)))));
