@@ -1,5 +1,5 @@
 % -*-bibtex-*- This is a BibTeX document.
-% $Id: harpoon.bib,v 1.33 1998-10-12 20:41:17 cananian Exp $
+% $Id: harpoon.bib,v 1.34 1999-03-20 05:22:32 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
@@ -32,13 +32,15 @@
 @string{POPL98 = "Proceedings of the 25th {ACM} Symposium on Principles
                   of Programming Languages ({POPL})"}
 @string{TOPLAS = "{ACM} Transactions on Programming Languages and Systems"}
-@string{ASIAN97 = "Advances in Computing Science --- ASIAN '97.  Third
+@string{ASIAN97 = "Advances in Computing Science --- {ASIAN} '97.  Third
                   Asian Computing Conference.  Proceedings"}
 @string{TACAS97 = "Tools and Algorithms for the Construction and
                   Analysis of Systems.  Third International Workshop,
-                  TACAS '97.  Proceedings"}
-@string{CRYPTO97 = "Proc.\ CRYPTO 97"}
-@string{EUROCRYPT97 = {Proc.\ EUROCRYPT 97}}
+                  {TACAS} '97.  Proceedings"}
+@string{CRYPTO97 = "Proc.\ {CRYPTO} 97"}
+@string{EUROCRYPT97 = "Proc.\ {EUROCRYPT} 97"}
+@string{MICRO30 = "{MICRO} 30. Proceedings of the thirtieth annual {IEEE/ACM}
+                   international symposium on Microarchitecture"}
 
 % papers read.
 
@@ -412,7 +414,46 @@
   address =	 {Albuquerque, New Mexico},
   month =	 jun,
   url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/155090/p78-johnson/},
-  annote =	 {An $O(EV)$ algorithm for merge+switch placement}
+  annote =	 {An $O(EV)$ algorithm for merge and switch placement}
+}
+
+@InProceedings{johnson94:pst,
+  author = 	 {Richard Johnson and David Pearson and Keshav Pingali},
+  title = 	 {The Program Structure Tree: 
+                  Computing Control Regions in Linear Time},
+  booktitle = 	 PLDI94,
+  pages =	 {171-185},
+  year =	 1994,
+  address =	 {Orlando, Florida},
+  month =	 jun,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/178243/p171-johnson/},
+  annote =	 {An $O(EV)$ algorithm for computing SESE regions}
+}
+
+@TechReport{johnson93:sese,
+  author = 	 {Richard Johnson and David Pearson and Keshav Pingali},
+  title = 	 {Finding Regions Fast: Single Entry Single Exit and Control
+                  Regions in Linear Time},
+  institution =  {Cornell University},
+  year = 	 1993,
+  number =	 {TR 93-1365},
+  address =	 {Ithaca, NY 14853-7501},
+  month =	 jul,
+  annote =	 {SESE regions through cycle equivalence.  Most complete 
+                  algorithm description},
+  url =		 {http://cs-tr.cs.cornell.edu:80/Dienst/UI/1.0/Display/ncstrl.cornell/TR93-1365}
+}
+
+@TechReport{pingali90:dfg,
+  author = 	 {Keshav Pingali and Micah Beck and Richard C. Johnson and Mayan Moudgill and Paul Stodghill},
+  title = 	 {Dependence Flow Graphs: An Algebraic Approach to Program Dependencies},
+  institution =  {Cornell University},
+  year = 	 1990,
+  number =	 {TR 90-1152},
+  address =	 {Ithaca, NY 14853-7501},
+  month =	 sep,
+  annote =	 {expanded version of `dependence-based program analysis'?},
+  url = 	 {http://cs-tr.cs.cornell.edu:80/Dienst/UI/1.0/Display/ncstrl.cornell/TR90-1152}
 }
 
 @Article{rinard97:commute,
@@ -956,4 +997,18 @@
                   avoiding such behavior necessitates placing
                   $\phi$-functions without computing or using
                   dominance frontiers.''}
+}
+
+%% newer stuff
+
+@InProceedings{august97:pred,
+  author = 	 {David I. August and Wen-mei W. Hwu and Scott A. Mahlke},
+  title = 	 {A Framework for Balancing Control Flow and Predication},
+  booktitle = 	 MICRO30,
+  pages =	 {92-103},
+  year =	 1997,
+  address =	 {Research Triangle Park, North Carolina},
+  month =	 dec,
+  annote =	 {Interesting IR with predication bits},
+  url =          {http://www.acm.org/pubs/citations/proceedings/micro/266800/p92-august/}
 }
