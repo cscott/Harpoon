@@ -26,10 +26,10 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.9 1999-08-09 22:11:13 duncan Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.10 1999-08-09 22:39:17 duncan Exp $
  */
 public class OptimizedTreeCode extends Code {
-    public static final String codename = "optimized-tree";
+    public static final String codename = CanonicalTreeCode.codename;
     private static final TreeOptimizer[] standard_opts = {
 	// Add all standard optimization passes here
 	new TreeOptimizer() { 
