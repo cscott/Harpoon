@@ -5,8 +5,6 @@
 $ENTRIES       = "CVS/Entries";
 # parse command line arguments
 #
-print STDERR "testing, testing.\n";
-
 while (@ARGV) {
     $arg = shift @ARGV;
 
@@ -14,9 +12,6 @@ while (@ARGV) {
 }
 
 $directory = shift @files;
-
-print STDERR "dir: $directory\n";
-print STDERR "files: ".join(' ',@files)."\n";
 
 # Suck in the CVS/Entries file
 #
@@ -26,13 +21,11 @@ while (<ENTRIES>) {
     chomp $tag;
     $cvsversion{$filename} = $version;
     $cvstag{$filename} = $tag;
-    print STDERR "$filename, $version, $date, $unk, $tag\n";
 }
 close(ENTRIES);
 
 # Now check each file name passed in.
 foreach $arg (@files) {
-    print STDERR "Checking $arg: ".$cvstag{$arg}."\n";
     if ($cvstag{$arg} eq "Tmagic-2-0") {
 	print STDERR "The magic-2-0 branch of FLEX has been closed.\n".
 	    "Please update to the tip of the magic-2-0 branch with\n".
@@ -46,12 +39,9 @@ foreach $arg (@files) {
     }
 }
 
-print STDERR "Hunky-dory.\n";
-
 # okay, I guess things were okay.  Fall back to std commit_prep script.
-print STDERR "0: $0\n";
-print STDERR "dirname 0: ".`dirname $0`."\n";
-$cp_path=`dirname $0`."/commit_prep";
-print STDERR "cp_path: $cp_path\n";
+$cp_path=`dirname $0`;
+chomp $cp_path;
+$cp_path.="/commit_prep";
 exec { $cp_path } 'commit_prep','-u','-r',$directory,@files;
 
