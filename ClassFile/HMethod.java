@@ -5,6 +5,7 @@ import harpoon.ClassFile.Raw.Attribute.AttributeCode;
 import harpoon.ClassFile.Raw.Attribute.AttributeExceptions;
 import harpoon.ClassFile.Raw.Constant.ConstantClass;
 import java.lang.reflect.Modifier;
+import java.util.Hashtable;
 import java.util.Vector;
 
 /**
@@ -14,7 +15,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.4 1998-08-01 22:55:13 cananian Exp $
+ * @version $Id: HMethod.java,v 1.5 1998-08-01 23:28:54 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -43,7 +44,37 @@ public class HMethod implements HMember {
       if (methodinfo.attributes[i] instanceof AttributeExceptions)
 	this.exceptions = (AttributeExceptions) methodinfo.attributes[i];
     }
+    // Add the default code representation.
+    if (this.code != null)
+      putCode("bytecode", this.code.code);
   }
+
+  /**
+   * Returns an object representing the executable code of this method.
+   * The only <code>codetype</code> defined by default is "bytecode",
+   * which returns a byte[] array object containing the bytecode
+   * for the method.
+   * @param codetype a string representing the code representation
+   *                 you would like.
+   * @return the code representation you requested, or <code>null</code>
+   *         if the given <code>codetype</code> cannot be found.
+   * @see putCode
+   */
+  public Object getCode(String codetype) {
+    return codetable.get(codetype);
+  }
+  /**
+   * Add a new code representation for this method, or replace
+   * a previously existing one.
+   * @param codetype a string describing this code representation.
+   * @param codeobj  an object representing the code, or <code>null</code>
+   *                 to delete a previously existing representation.
+   * @see getCode
+   */
+  public void putCode(String codetype, Object codeobj) {
+    codetable.put(codetype, codeobj);
+  }
+  private Hashtable codetable = new Hashtable();
 
   /**
    * Returns the <code>HClass</code> object representing the class or 
