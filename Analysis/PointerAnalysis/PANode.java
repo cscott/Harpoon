@@ -20,7 +20,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.13 2000-03-23 21:29:02 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.14 2000-03-25 06:51:06 salcianu Exp $
  */
 final public class PANode {
     // activates some safety tests
@@ -113,6 +113,9 @@ final public class PANode {
 	This method makes sense iff
 	<code>PointerAnalysis.CALL_CONTEXT_SENSITIVE</code> is on. */
     public final PANode csSpecialize(final CALL call_site){
+
+	Util.assert(call_site != null, "call_site == null");
+
 	if(CAUTION)
 	    Util.assert(PointerAnalysis.CALL_CONTEXT_SENSITIVE,
 			"Turn on CALL_CONTEXT_SENSITIVE!");

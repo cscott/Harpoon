@@ -56,7 +56,7 @@ import harpoon.Analysis.MetaMethods.SmartCallGraph;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.21 2000-03-25 05:17:35 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.22 2000-03-25 06:51:22 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -91,6 +91,7 @@ public abstract class PAMain {
 	"-o, --onlych   shows debug info about ClassHierarchy and stop",
 	"--showcg       shows the (meta) call graph",
 	"--showsplit    shows the split relation",
+	"--shownodes    shows details about the nodes",
 	"--ccs=depth    activate call context sensitivity with a maximum",
 	"              call chain depth of depth",
 	"--ts           activates full thread sensitivity",
@@ -366,17 +367,18 @@ public abstract class PAMain {
     private static int get_options(String[] argv){
 	int c, c2;
 	String arg;
-	LongOpt[] longopts = new LongOpt[10];
-	longopts[0] = new LongOpt("meta", LongOpt.NO_ARGUMENT, null, 'm');
-	longopts[1] = new LongOpt("smartcg", LongOpt.NO_ARGUMENT, null, 's');
-	longopts[2] = new LongOpt("showch", LongOpt.NO_ARGUMENT, null, 'c');
-	longopts[3] = new LongOpt("onlych", LongOpt.NO_ARGUMENT, null, 'o');
-	longopts[4] = new LongOpt("ccs", LongOpt.REQUIRED_ARGUMENT, null, 5);
-	longopts[5] = new LongOpt("ts", LongOpt.NO_ARGUMENT, null, 6);
-	longopts[6] = new LongOpt("wts", LongOpt.NO_ARGUMENT, null, 7);
-	longopts[7] = new LongOpt("ls", LongOpt.NO_ARGUMENT, null, 8);
-	longopts[8] = new LongOpt("showcg", LongOpt.NO_ARGUMENT, null, 9);
-	longopts[9] = new LongOpt("showsplit", LongOpt.NO_ARGUMENT, null, 10);
+	LongOpt[] longopts = new LongOpt[11];
+	longopts[0]  = new LongOpt("meta", LongOpt.NO_ARGUMENT, null, 'm');
+	longopts[1]  = new LongOpt("smartcg", LongOpt.NO_ARGUMENT, null, 's');
+	longopts[2]  = new LongOpt("showch", LongOpt.NO_ARGUMENT, null, 'c');
+	longopts[3]  = new LongOpt("onlych", LongOpt.NO_ARGUMENT, null, 'o');
+	longopts[4]  = new LongOpt("ccs", LongOpt.REQUIRED_ARGUMENT, null, 5);
+	longopts[5]  = new LongOpt("ts", LongOpt.NO_ARGUMENT, null, 6);
+	longopts[6]  = new LongOpt("wts", LongOpt.NO_ARGUMENT, null, 7);
+	longopts[7]  = new LongOpt("ls", LongOpt.NO_ARGUMENT, null, 8);
+	longopts[8]  = new LongOpt("showcg", LongOpt.NO_ARGUMENT, null, 9);
+	longopts[9]  = new LongOpt("showsplit", LongOpt.NO_ARGUMENT, null, 10);
+	longopts[10] = new LongOpt("shownodes", LongOpt.NO_ARGUMENT, null, 11);
 
 
 	Getopt g = new Getopt("PAMain", argv, "msco", longopts);
@@ -420,6 +422,9 @@ public abstract class PAMain {
 	    case 10:
 		SHOW_SPLIT = true;
 		break;
+	    case 11:
+		PointerAnalysis.SHOW_NODES = true;
+		break;
 	    }
 
 	return g.getOptind();
@@ -431,11 +436,6 @@ public abstract class PAMain {
 	    System.exit(1);
 	}
 	System.out.print("Execution options:");
-	if(SHOW_CH_ONLY) 
-	    System.out.print(" SHOW_CH_ONLY");
-	else 
-	    if(SHOW_CH)
-		System.out.print(" SHOW_CH");
 
 	if(METAMETHODS)
 	    System.out.print(" METAMETHODS");
@@ -455,6 +455,15 @@ public abstract class PAMain {
 
 	if(PointerAnalysis.LOOP_SENSITIVE)
 	    System.out.println(" LOOP_SENSITIVE");
+
+	if(SHOW_CH_ONLY) 
+	    System.out.print(" SHOW_CH_ONLY");
+	else 
+	    if(SHOW_CH)
+		System.out.print(" SHOW_CH");
+
+	if(PointerAnalysis.SHOW_NODES)
+	    System.out.print(" SHOW_NODES");
 
 	System.out.println();
     }

@@ -19,7 +19,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1.2.15 2000-03-20 01:10:49 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.16 2000-03-25 06:51:06 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -249,8 +249,8 @@ public class NodeRepository {
 	    if(node.type == PANode.INSIDE){
 		System.out.print(node);
 		HCodeElement hce = node2Code(node);
-		System.out.println(" created at line " + hce.getSourceFile() + 
-				 ":" + hce.getLineNumber());
+		System.out.println(" created at " + hce.getSourceFile() + 
+				 ":" + hce.getLineNumber() + " " + hce);
 		show_node_specs(node, 1);
 	    }
 	}
@@ -270,21 +270,20 @@ public class NodeRepository {
 		System.out.print(snode);
 		
 		System.out.print(" CallS from " + node +
-				 " at line " + q.getSourceFile() +
+				 " at " + q.getSourceFile() +
 				 ":" + q.getLineNumber());	    
-		if(PointerAnalysis.DETAILS2){
+		//if(PointerAnalysis.DETAILS2){
 		    HMethod method = q.method();
 		    System.out.print(" (CALL " + 
 				     method.getDeclaringClass().getName()+"."+
 				     method.getName() + ") ");
-		}
+		    //}
 		System.out.println();
 		show_node_specs(snode, ident+1);
 	    }
-	
 
 	if(PointerAnalysis.THREAD_SENSITIVE)
-	    for(Iterator it=node.getAllTSpecs().iterator();it.hasNext();){
+	    for(Iterator it = node.getAllTSpecs().iterator(); it.hasNext(); ){
 		Map.Entry entry = (Map.Entry) it.next();
 		MetaMethod  run = (MetaMethod) entry.getKey();
 		PANode    snode = (PANode) entry.getValue();

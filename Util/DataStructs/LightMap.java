@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  the <code>java.util.Map</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightMap.java,v 1.1.2.1 2000-03-23 21:29:10 salcianu Exp $
+ * @version $Id: LightMap.java,v 1.1.2.2 2000-03-25 06:51:25 salcianu Exp $
  */
 public class LightMap implements Map {
 
@@ -79,6 +79,7 @@ public class LightMap implements Map {
 	BinTreeNode prev = null;
 	BinTreeNode p = root;
 	int key_hash_code = key.hashCode();
+
 	while(p != null){
 	    // put CAUTION false for maximal performance
 	    if(CAUTION)
@@ -94,11 +95,11 @@ public class LightMap implements Map {
 
 	BinTreeNode node = new BinTreeNode(key,value);
 	if(prev == null){
-	    root = prev;
+	    root = node;
 	    return null;
 	}
 
-	if(key_hash_code < p.keyHashCode)
+	if(key_hash_code < prev.keyHashCode)
 	    prev.left = node;
 	else prev.right = node;
 	return null;
@@ -136,10 +137,11 @@ public class LightMap implements Map {
 	get_values(node.right, vset);
     }
 
-    /** Unsupported. */
+    /** Returns the set of entries of this map. The result is a 
+	<code>Set</code> of <code>Map.Entry</code>. */
     public final Set entrySet() throws UnsupportedOperationException{
 	final Set eset = new HashSet();
-	get_entries(root,eset);
+	get_entries(root, eset);
 	return eset;
     }
 

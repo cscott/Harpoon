@@ -65,7 +65,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.34 2000-03-25 05:17:25 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.35 2000-03-25 06:51:06 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -82,7 +82,7 @@ public class PointerAnalysis {
     /** Turns on the priniting of some timing info. */
     public static final boolean TIMING = true;
     public static final boolean STATS = true;
-    public static final boolean DETAILS = false;
+    public static boolean SHOW_NODES = false;
     public static final boolean DETAILS2 = false;
 
     /** Controls the recording of data about the thread nodes that are
@@ -1015,7 +1015,7 @@ public class PointerAnalysis {
 	Stats.print_stats();
 	nodes.print_stats();
 	System.out.println("==========================================");
-	if(DETAILS) nodes.show_specializations();
+	if(SHOW_NODES) nodes.show_specializations();
     }
 
     /** Returns the parallel interaction graph valid at the program point
