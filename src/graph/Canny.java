@@ -1,65 +1,65 @@
 /** Canny.java, created by Reuben Sterling (benster@mit.edu)
-   Licensed under the terms of the GNU GPL;
-   see COPYING for details.
-*/
+ *  Licensed under the terms of the GNU GPL; see COPYING for details.
+ */
 package imagerec.graph;
 
 /**
-   The {@link Canny} class implements the Canny edge operator.
-   First, a 2-D first-derivative operator (similar to Robert's
-   Cross) is applied in order to emphasize edges.  The edges
-   are then tracked in order to thin and threshold them.
-
-   <br><br>An image passed to a {@link Canny} node should be
-   run through a {@link GaussianSmoothing} node first.
-
-   <br><br>The image passed to this node through the process() method
-   will be mutated.
-
-   <br><br>For more information on the Canny edge detection operator, see
-   <<a href="http://www.dai.ed.ac.uk/HIPR2/canny.htm">http://www.dai.ed.ac.uk/HIPR2/canny.htm</a>>
-
-   <br><br><b>This operator is not fully implemented! Currently it only performs Gaussian Smoothing and Robert's Cross on the image</b>
-
-   @author Reuben Sterling <<a href="mailto:benster@mit.edu">benster@mit.edu</a>>
-*/
+ * The {@link Canny} class implements the Canny edge operator.
+ * First, a 2-D first-derivative operator (similar to Robert's
+ * Cross) is applied in order to emphasize edges.  The edges
+ * are then tracked in order to thin and threshold them.
+ *
+ * <br><br>An image passed to a {@link Canny} node should be
+ * run through a {@link GaussianSmoothing} node first.
+ *
+ * <br><br>The image passed to this node through the process() method
+ * will be mutated.
+ *
+ * <br><br>For more information on the Canny edge detection operator, see
+ * <<a href="http://www.dai.ed.ac.uk/HIPR2/canny.htm">http://www.dai.ed.ac.uk/HIPR2/canny.htm</a>>
+ *
+ * <br><br><b>This operator is not fully implemented! 
+ * Currently it only performs Gaussian Smoothing and Robert's Cross on the image</b>
+ *
+ * @author Reuben Sterling <<a href="mailto:benster@mit.edu">benster@mit.edu</a>>
+ */
 
 public class Canny extends Node {
     
     /**
-      The kernel used to calculate the image gradient values.
-      Calculations assume it to be a 2x2 matrix.
+     * The kernel used to calculate the image gradient values.
+     * Calculations assume it to be a 2x2 matrix.
      */
     protected static final int[][] kernel =
     {{1, 1},
      {-1, -1}};
 
     /**
-       If no threshold maximum is supplied, this
-       default value is used when tracking edges.
-    */
+     * If no threshold maximum is supplied, this
+     * default value is used when tracking edges.
+     */
     public static final int defaultThresholdMax = 250;
     /**
-      If no threshold minimum is supplied, this
-       default value is used when tracking edges.
-    */
+     * If no threshold minimum is supplied, this
+     * default value is used when tracking edges.
+     */
     public static final int defaultThresholdMin = 10;
 
     /**
-      The threshold maximum used when edge tracking.
-    */
+     * The threshold maximum used when edge tracking.
+     */
     protected int thresholdMax;
     /**
-      The threshold minimum used when edge tracking.
-    */
+     * The threshold minimum used when edge tracking.
+     */
     protected int thresholdMin;
 
     /**
-      Construct a new {@link Canny} node that will apply the
-      Canny edge detection operator to a given image and then pass
-      the image to the specified {@link Node}.
-
-      Default threshold values will be used for edge tracing.
+     * Construct a new {@link Canny} node that will apply the
+     * Canny edge detection operator to a given image and then pass
+     * the image to the specified {@link Node}.
+     *
+     * Default threshold values will be used for edge tracing.
      */
     public Canny(Node out) {
 	super(out);
@@ -67,12 +67,12 @@ public class Canny extends Node {
     }
 
     /**
-      Construct a new {@link Canny} node that will apply the
-      Canny edge detection operator to a given image and then pass
-      the image to the specified {@link Node}.
-
-      The specified threshold values will be used for edge tracing.
-    */
+     * Construct a new {@link Canny} node that will apply the
+     * Canny edge detection operator to a given image and then pass
+     * the image to the specified {@link Node}.
+     *
+     * The specified threshold values will be used for edge tracing.
+     */
     public Canny(int thresholdMax, int thresholdMin, Node out) {
 	super(out);
 	init(thresholdMax, thresholdMin);
@@ -84,13 +84,13 @@ public class Canny extends Node {
     }
 
     /**
-       Apply the Canny edge detection algorithm to the specified
-       {@link ImageData} and pass the resulting image to the
-       {@link Node} specified in the constructor.
-
-       @param imageData The {@link ImageData} to be processed. <code>imageData</code>
-       will be mutated by this method.
-    */
+     * Apply the Canny edge detection algorithm to the specified
+     * {@link ImageData} and pass the resulting image to the
+     * {@link Node} specified in the constructor.
+     *
+     * @param imageData The {@link ImageData} to be processed. <code>imageData</code>
+     * will be mutated by this method.
+     */
     public void process(ImageData imageData) {
 	//First perform Gaussian Smoothing on this image.
 	//This step relies on the fact that GaussianSmoothing's process()

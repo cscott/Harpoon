@@ -26,22 +26,22 @@ public class Command extends Node {
     public static final int RETRIEVED_IMAGE = 3;
 
     /** Tag an image with this command if the image is only intended for calibration of a
-	particular node, and should not be passed along to subsequent nodes.
-	Created initially for use by LabelBlue.java
-	--Benji
-    */
+     *	particular node, and should not be passed along to subsequent nodes.
+     *	Created initially for use by LabelBlue.java
+     *	--Benji
+     */
     public static final int CALIBRATION_IMAGE = 100;
 
     /**
-       This command created for use by LabelBlue.java
-       Tag an image with this command if you want the LabelBlue
-       node to only check to see if a sufficient amount of
-       blue exists in the image instead of performing an exhastive search.
-       In this case, the entire image will be passed on to the next
-       node rather than an image cropped around where the blue was
-       found.
-       --Benji
-    */
+     * This command created for use by LabelBlue.java
+     * Tag an image with this command if you want the LabelBlue
+     * node to only check to see if a sufficient amount of
+     * blue exists in the image instead of performing an exhastive search.
+     * In this case, the entire image will be passed on to the next
+     * node rather than an image cropped around where the blue was
+     * found.
+     * --Benji
+     */
     public static final int CHECK_FOR_BLUE = 110;
 
     private int tag;
