@@ -20,6 +20,9 @@
 #ifdef WITH_REALTIME_JAVA
 #include "realtime/RTJmalloc.h"
 #endif
+#ifdef WITH_REALTIME_THREADS_TIMESYS
+#include "realtime/timesys.h"
+#endif
 
 #define CHECK_EXCEPTIONS(env) \
 if ((*env)->ExceptionOccurred(env)){ (*env)->ExceptionDescribe(env); exit(1); }
@@ -364,10 +367,15 @@ int main(int argc, char *argv[]) {
   destroyEnv();
 #endif
 
+#ifdef WITH_REALTIME_THREADS_TIMESYS
+  destroyRES();
+#endif
+
 #ifdef WITH_STATISTICS
   /* print out collected statistics */
   { void print_statistics(void); print_statistics(); }
 #endif
+
   return st;
 }
 
