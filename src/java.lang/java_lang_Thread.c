@@ -323,6 +323,9 @@ static void * thread_startup_routine(void *closure) {
   assert(!((*env)->ExceptionOccurred(env)));
   /* This thread is dead now. */
   ((struct FNI_Thread_State *)(env))->is_alive = JNI_FALSE;
+  /** Get rid of the JNIEnv in the JNIData for the thread, since it is going
+   *  to be destroyed by the thread clean-up code [see isAlive() ] */
+  FNI_SetJNIData(env, thread, NULL, NULL);
   /* Notify others that it's dead (before we deallocate the thread object!). */
   FNI_MonitorEnter(env, thread);
   FNI_MonitorNotify(env, thread, JNI_TRUE);
@@ -399,7 +402,18 @@ JNIEXPORT jboolean JNICALL Java_java_lang_Thread_isInterrupted
  */
 JNIEXPORT jboolean JNICALL Java_java_lang_Thread_isAlive
   (JNIEnv *env, jobject _this) {
-  return EXTRACT_OTHER_ENV(env, _this)->is_alive;
+  /* Some comments on this code: first, the is_alive field is perhaps
+   * completely unnecessary: EXTRACT_OTHER_ENV(env, somethread) will
+   * return non-NULL iff the thread is alive.   But perhaps we'd rather
+   * free() the env when the thread object is *garbage collected* (as
+   * opposed to when it dies)... this would mean that
+   * FNI_DestroyThreadState should be given as an arg to FNI_SetJNIData()
+   * instead of as an arg to pthread_key_create().  But would this mean
+   * that our thread's LocalRefs stay live until the thread object is
+   * collected?  That could be a Bad Thing.  Leaving it as is, for now.
+   *  -- CSA [6-jun-00] */
+  struct FNI_Thread_State *ts = EXTRACT_OTHER_ENV(env, _this);
+  return (ts==NULL) ? JNI_FALSE : ts->is_alive;
 }
 #endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS */
 

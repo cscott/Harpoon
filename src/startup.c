@@ -143,6 +143,7 @@ int main(int argc, char *argv[]) {
   (*env)->DeleteLocalRef(env, thrCls);
   /* main thread is dead now. */
   ((struct FNI_Thread_State *)(env))->is_alive = JNI_FALSE;
+  FNI_SetJNIData(env, mainthread, NULL, NULL); /* clear the env from the obj */
   /* Notify others that it's dead (before we deallocate the thread object!). */
   FNI_MonitorEnter(env, mainthread);
   FNI_MonitorNotify(env, mainthread, JNI_TRUE);
