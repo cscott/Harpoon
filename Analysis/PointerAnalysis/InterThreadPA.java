@@ -4,6 +4,7 @@
 package harpoon.Analysis.PointerAnalysis;
 
 import java.util.Set;
+import java.util.HashSet;
 import java.util.Enumeration;
 
 
@@ -15,11 +16,48 @@ import harpoon.Temp.Temp;
  * <code>InterThreadPA</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.1 2000-02-07 02:08:25 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.2 2000-02-08 05:27:28 salcianu Exp $
  */
 abstract class InterThreadPA {
     
     public static void resolve_threads(ParIntGraph pig, PointerAnalysis pa){
+
+	HashSet analyzed_threads = new HashSet();
+
+	while(true){
+	    PANode nt = pick_an_unanalyzed_thread(pig,analyzed_threads);
+	    if(nt==null) break;
+
+	    HMethod[] ops = get_run_methods(nt,pig,pa);
+	    
+	    analyzed_threads.add(nt);
+	    ParIntGraph old_pig = (ParIntGraph) pig.clone();
+	    ParIntGraph new_pig = interaction_nt(pig,nt,ops,pa);
+
+	    if(!new_pig.equals(old_pig))
+		analyzed_threads.clear();
+	}
+    }
+
+
+    // Finds an active thread node (i.e. tau(nt) != 0) whose interactions
+    // with the Starter haven't been analyzed yet.
+    private static PANode pick_an_unanalyzed_thread(ParIntGraph pig,
+						    Set analyzed_threads){
+	Enumeration enum = pig.tau.activeThreads();
+	while(enum.hasMoreElements()){
+	    PANode nt = (PANode) enum.nextElement();
+	    if(!analyzed_threads.contains(nt))
+		return nt;
+	}
+	return null;
+    }
+
+    // Returns a vector containing all the run() methods that could be
+    // the body of the threads abstracted by nt.
+    private static HMethod[] get_run_methods(PANode nt, ParIntGraph pig,
+					     PointerAnalysis pa){
+	return new HMethod[0];
     }
 
 
