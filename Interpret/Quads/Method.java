@@ -55,7 +55,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.10 1999-06-24 01:57:04 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.11 1999-07-17 11:46:52 cananian Exp $
  */
 public final class Method extends HCLibrary {
 
@@ -613,7 +613,8 @@ public final class Method extends HCLibrary {
 	}
 	public void visit(THROW q) {
 	    nullCheck(q.throwable());
-	    super.visit(q);
+	    ObjectRef obj = (ObjectRef) sf.get(q.throwable());
+	    throw new InterpretedThrowable(obj, ss); // transfer to handler.
 	}
 	public void visit(TYPECAST q) {
 	    typeCheck(q.objectref(), q.hclass());
