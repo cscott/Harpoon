@@ -8,6 +8,7 @@ import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HMethod;
 import harpoon.Util.ArraySet;
 import harpoon.Util.HClassUtil;
+import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 
 import java.lang.reflect.Modifier;
@@ -19,7 +20,7 @@ import java.util.Set;
  * and methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.1.2.4 2000-10-21 22:47:43 cananian Exp $
+ * @version $Id: ClassHierarchy.java,v 1.1.2.5 2000-12-17 20:01:58 cananian Exp $
  */
 public abstract class ClassHierarchy {
     // tree of callable classes
@@ -39,23 +40,38 @@ public abstract class ClassHierarchy {
      *  by <code>children(cc)</code> should include <code>cc</code>.
      */
     public final Set parents(HClass c) {
-	HClass su = c.getSuperclass();
-	if (c.isArray()) { // deal with odd inheritance of array types.
-	    // Integer[][]->Number[][]->Object[][]->Object[]->Object
-	    HClass base = HClassUtil.baseClass(c);
-	    int dims = HClassUtil.dims(c);
-	    if (base.getSuperclass()!=null)
-		su = HClassUtil.arrayClass(c.getLinker(),//safe:c not primitive
-					   base.getSuperclass(), dims);
-	    else
-		su = HClassUtil.arrayClass(c.getLinker(), base, dims-1);
-	}
-	HClass[] interfaces = c.getInterfaces();
-	if (su==null) return new ArraySet(interfaces); // efficiency.
-	if (interfaces.length==0) return Collections.singleton(su);//effic.
-	HClass[] parents = new HClass[interfaces.length+1];
-	parents[0] = su;
-	System.arraycopy(interfaces, 0, parents, 1, interfaces.length);
+	// odd inheritance properties:
+	//  interfaces: all instances of an interface are also instances of
+	//              java.lang.Object, so root all interfaces there.
+	//  arrays: Integer[][]->Number[][]->Object[][]->Object[]->Object
+	//      but also Set[][]->Collection[][]->Object[][]->Object[]->Object
+	//      (i.e. interfaces are just as rooted here)
+	// note every use of c.getLinker() below is safe because c is
+	// guaranteed non-primitive in every context.
+	HClass base = HClassUtil.baseClass(c); int dims=HClassUtil.dims(c);
+	HClass su = base.getSuperclass();
+	HClass[] interfaces = base.getInterfaces();
+	boolean isObjArray = c.getDescriptor().endsWith("[Ljava/lang/Object;");
+	// root interface inheritance hierarchy at Object.
+	if (interfaces.length==0 && base.isInterface())
+	    su = c.getLinker().forName("java.lang.Object");// c not prim.
+	// create return value array.
+	HClass[] parents = new HClass[interfaces.length +
+				      ((su!=null || isObjArray) ? 1 : 0)];
+	int n=0;
+	if (su!=null)
+	    parents[n++] = HClassUtil.arrayClass(c.getLinker(),//c not prim.
+						 su, dims);
+	for (int i=0; i<interfaces.length; i++)
+	    parents[n++] = HClassUtil.arrayClass(c.getLinker(),//c not prim.
+						 interfaces[i], dims);
+	// don't forget Object[][]->Object[]->Object
+	// (but remember also Object[][]->Cloneable->Object)
+	if (isObjArray)
+	    parents[n++] = HClassUtil.arrayClass(c.getLinker(), base, dims-1);
+	// okay, done.  Did we size the array correctly?
+	Util.assert(n==parents.length);
+	// okay, return as Set.
 	return new ArraySet(parents);
     }
     /** Returns a set of methods in the hierarchy (not necessary reachable
