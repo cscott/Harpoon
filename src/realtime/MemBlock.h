@@ -18,23 +18,30 @@ typedef void* Allocator;
 struct MemBlock;
 
 struct BlockInfo {
-  long refCount;
   jobject memoryArea;
   jobject realtimeThread;
-  void* (*alloc) ( struct MemBlock* mem,  size_t size);
+  void* (*alloc) (struct MemBlock* mem, size_t size);
   void  (*free)  (struct MemBlock* mem);
-  struct MemBlock* superBlock;
   Allocator allocator;
+  struct MemBlock* superBlock;
+};
+
+struct RefInfo {
+  long refCount;
+  int reuse;
 };
 
 struct MemBlock {
   struct BlockInfo* block_info;
-  struct Block* block;
+  struct RefInfo* ref_info;
+  struct Block* block;  
 };
 
+struct RefInfo* RefInfo_new(int reuse);
+
 struct MemBlock* MemBlock_new(JNIEnv* env,
-			       jobject memoryArea, 
-			       jobject realtimeThread,
+			      jobject memoryArea, 
+			      jobject realtimeThread,
 			      struct MemBlock* superBlock);
 inline struct MemBlock* HeapMemory_RThread_MemBlock_new();
 inline void* MemBlock_alloc( struct MemBlock* memBlock, 

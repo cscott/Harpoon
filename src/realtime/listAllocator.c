@@ -5,18 +5,8 @@
 #include "listAllocator.h"
 
 inline struct ListAllocator* ListAllocator_new(int noHeap) {
-  struct ListAllocator* ls = 
-    (struct ListAllocator*)
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_stats
-#else
-    GC_malloc
-#endif
-#else
-    malloc
-#endif
-    (sizeof(struct ListAllocator));
+  struct ListAllocator* ls = (struct ListAllocator*)
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct ListAllocator));
   ListAllocator_init(ls, noHeap);
   return ls;
 }
@@ -40,17 +30,7 @@ inline int ListAllocator_heapCheck(struct ListAllocator* ls,
 
 inline void* ListAllocator_alloc(struct ListAllocator* ls, 
 				 size_t size) {
-  void* obj = 
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
-#else
-    GC_malloc_uncollectable
-#endif
-#else
-    malloc
-#endif
-    (size);
+  void* obj = RTJ_MALLOC_UNCOLLECTABLE(size);
   ObjectList_insert(ls->objects, obj);
   return obj;
 }
@@ -71,14 +51,5 @@ inline void ListAllocator_free(struct ListAllocator* ls) {
 #ifdef RTJ_DEBUG
   printf("free(ls)\n");
 #endif
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-  GC_free_stats
-#else
-  GC_free
-#endif
-#else
-    free
-#endif
-    (ls);
+  RTJ_FREE(ls);
 }

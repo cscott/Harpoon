@@ -4,32 +4,22 @@
 
 #include "MemBlock.h"
 
+struct RefInfo* RefInfo_new(int reuse) {
+  struct RefInfo* ri = (struct RefInfo*)
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct RefInfo));
+  ri->refCount = 0;
+  ri->reuse = reuse;
+  return ri;
+}
+
 struct MemBlock* MemBlock_new(JNIEnv* env, 
 			      jobject memoryArea, 
 			      jobject realtimeThread,
 			      struct MemBlock* superBlock) {
   struct BlockInfo* bi = (struct BlockInfo*)
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
-#else
-    GC_malloc_uncollectable
-#endif
-#else    
-    malloc
-#endif
-    (sizeof(struct BlockInfo));
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct BlockInfo));
   struct MemBlock* mb = (struct MemBlock*)
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable
-#else
-    GC_malloc_uncollectable
-#endif
-#else
-    malloc
-#endif
-    (sizeof(struct MemBlock));
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct MemBlock));
   jclass memoryAreaClass = 
     (*env)->GetObjectClass(env, 
 			   (mb->block_info = bi)->memoryArea = memoryArea);
@@ -39,19 +29,25 @@ struct MemBlock* MemBlock_new(JNIEnv* env,
 					   "newMemBlock",
 					   "(Ljavax/realtime/RealtimeThread;)V");
 #ifdef RTJ_DEBUG
-  printf("MemBlock_new(%s, %s)\n", 
+  printf("MemBlock_new(%s, %s, %08x)\n", 
 	 FNI_GetClassInfo(memoryAreaClass)->name, 
-	 FNI_GetClassInfo(realtimeThreadClass)->name);
+	 FNI_GetClassInfo(realtimeThreadClass)->name,
+	 superBlock);
   printf("  methodID: %08x\n", methodID);
   checkException(env);
 #endif
 
-  MemBlock_INCREF(bi->superBlock = superBlock);
-  bi->refCount = 1;
+  bi->superBlock = superBlock;
+  while (superBlock != NULL) {
+    MemBlock_INCREF(superBlock);
+    assert(superBlock != superBlock->block_info->superBlock);
+    superBlock = superBlock->block_info->superBlock;
+  }
   getInflatedObject(env, realtimeThread)->temp = mb;
   (*env)->CallVoidMethod(env, memoryArea, methodID, realtimeThread);
   (*env)->DeleteLocalRef(env, memoryAreaClass);
   (*env)->DeleteLocalRef(env, realtimeThreadClass);
+  MemBlock_INCREF(mb);
   return mb;
 }
 
@@ -92,27 +88,9 @@ inline struct MemBlock* HeapMemory_RThread_MemBlock_new() {
   /* This function is called to create the initial MemBlock. */
   struct MemBlock* memBlock = 
     (struct MemBlock*)
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
-#else
-    GC_malloc_uncollectable
-#endif
-#else
-    malloc
-#endif
-    (sizeof(struct MemBlock));
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct MemBlock));
   struct BlockInfo* bi = (struct BlockInfo*)
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
-#else
-    GC_malloc_uncollectable
-#endif
-#else
-    malloc
-#endif
-    (sizeof(struct BlockInfo));
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct BlockInfo));
 #ifdef RTJ_DEBUG
   printf("HeapMemory_RThread_MemBlock_new()\n");
 #endif
@@ -123,19 +101,32 @@ inline struct MemBlock* HeapMemory_RThread_MemBlock_new() {
   bi->free = Heap_RThread_MemBlock_free;
   bi->superBlock = NULL;
   bi->allocator = NULL;
-  bi->refCount = 1;
+  memBlock->ref_info = RefInfo_new(0);
+  MemBlock_INCREF(memBlock);
   return memBlock;
 }
 
 inline long MemBlock_INCREF(struct MemBlock* memBlock) {
-  long* refcount = &(memBlock->block_info->refCount);
+  long* refcount = &(memBlock->ref_info->refCount);
+#ifdef RTJ_DEBUG
+  printf("MemBlock_INCREF(%08x): %d -> ", memBlock, *refcount); 
+#endif
   atomic_add((uint32_t*)refcount, 1);
+#ifdef RTJ_DEBUG
+  printf("%d \n", *refcount);
+#endif
   return *refcount;
 }
 
 inline long MemBlock_DECREF(struct MemBlock* memBlock) {
-  long* refcount = &(memBlock->block_info->refCount);
+  long* refcount = &(memBlock->ref_info->refCount);
+#ifdef RTJ_DEBUG
+  printf("MemBlock_DECREF(%08x): %d -> ", memBlock, *refcount);
+#endif
   atomic_add((uint32_t*)refcount, -1);
+#ifdef RTJ_DEBUG
+  printf("%d \n", *refcount);
+#endif
   return *refcount;
 }
 
@@ -162,7 +153,7 @@ inline void MemBlock_free(struct MemBlock* memBlock) {
       if (MemBlock_DECREF(memBlock)) {
 #ifdef RTJ_DEBUG
 	  printf("  decrementing reference count: %d\n", 
-		 memBlock->block_info->refCount);
+		 memBlock->ref_info->refCount);
 #endif
       } else {
 #ifdef RTJ_DEBUG
@@ -301,24 +292,19 @@ void  CTScope_RThread_MemBlock_free(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   printf("CTScope_RThread_MemBlock_free(%08x)\n", mem);
 #endif
-#ifdef ALLOW_SCOPE_REENTRY
+
+  if (mem->ref_info->reuse) {
 #ifdef RTJ_DEBUG
-  printf("  resetting block... \n");
+    printf("  resetting block... \n");
 #endif
-  Block_reset(mem->block);
-#else
-  Block_free(mem->block);
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-  GC_free_stats
-#else
-    GC_free
+    Block_reset(mem->block);
+  } else {
+#ifdef RTJ_DEBUG
+    printf("  freeing block... \n");
 #endif
-#else
-    free
-#endif
-    (mem);
-#endif
+    Block_free(mem->block);
+    RTJ_FREE(mem->block_info);
+  }
 }
 
 inline Allocator CTScope_RThread_MemBlock_allocator(jobject memoryArea) {
@@ -345,12 +331,7 @@ void  VTScope_RThread_MemBlock_free(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   printf("  free(%08x)\n", (int)mem);
 #endif
-#ifdef BDW_CONSERVATIVE_GC
-  GC_free
-#else
-    free
-#endif
-    (mem); 
+  RTJ_FREE(mem); 
 }
 
 inline Allocator VTScope_RThread_MemBlock_allocator(jobject memoryArea) {

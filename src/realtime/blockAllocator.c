@@ -9,40 +9,12 @@ inline void BlockAllocator_init() {
 }
 
 static struct BlockAllocator* BlockAllocator_new(size_t size) {
-  struct BlockAllocator* ba = 
-    (struct BlockAllocator*)
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
-#else
-    GC_malloc_uncollectable
-#endif
-#else
-    malloc
-#endif
-    (sizeof(struct BlockAllocator));
+  struct BlockAllocator* ba = (struct BlockAllocator*)
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct BlockAllocator));
   struct Block* block = (struct Block*)
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
-#else
-    GC_malloc_uncollectable
-#endif
-#else
-    malloc
-#endif
-    (sizeof(struct Block));
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct Block));
   block->end = (block->free = block->begin = 
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
-#else
-    GC_malloc_uncollectable
-#endif
-#else
-    malloc
-#endif	 
-(size)) + size;
+		RTJ_MALLOC_UNCOLLECTABLE(size)) + size;
   block->next = block->prev = ba->inUse = NULL;
   ba->freeList = block;
   return ba;
@@ -52,16 +24,7 @@ static struct Block* BlockAllocator_splitBlock(struct Block* block,
 					       size_t size_left) {
   /* left - block - b2 - right */
   struct Block* b2 = (struct Block*)
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
-#else
-    GC_malloc_uncollectable
-#endif
-#else
-    malloc
-#endif
-    (sizeof(struct Block*));
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct Block*));
   b2->begin = block->begin + size_left + 1;
   b2->end = block->end;
   block->end = block->begin + size_left;
@@ -85,16 +48,7 @@ static struct Block* BlockAllocator_mergeBlocks(struct Block* left,
   left->end = right->end;
   left->next = right->next;
   right->next->prev = left;
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-  GC_free_stats
-#else
-  GC_free
-#endif
-#else
-    free
-#endif
-    (right);
+  RTJ_FREE(right);
   return left;
 }
 

@@ -15,28 +15,10 @@ inline Object* ObjectList_next(struct ObjectList* ol, Object object,
 
 inline struct ObjectList* ObjectList_new(size_t initSize) {
   struct ObjectList* ol = (struct ObjectList*)
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
-#else
-    GC_malloc_uncollectable
-#endif
-#else
-    malloc
-#endif
-    (sizeof(struct ObjectList));
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct ObjectList));
   ol->used = 0;
   ol->objects =
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
-#else
-    GC_malloc_uncollectable
-#endif
-#else
-    malloc
-#endif
-    ((ol->size = initSize) * sizeof(Object));
+    RTJ_MALLOC_UNCOLLECTABLE((ol->size = initSize) * sizeof(Object));
   memset(ol->objects, 0, initSize * sizeof(Object));
   flex_mutex_init(&(ol->lock));
   return ol;
@@ -51,17 +33,7 @@ void ObjectList_insert(struct ObjectList* ol, Object object) {
   if (ol->used > (ol->size >> 1)) { 
     Object* oldObjects = ol->objects;
     ol->objects =
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-      GC_malloc_uncollectable_stats
-#else
-      GC_malloc_uncollectable  
-#endif
-#else      
-      malloc
-#endif
-      ((ol->size <<= 1) * sizeof(Object)); /* Resize */
-
+      RTJ_MALLOC_UNCOLLECTABLE((ol->size <<= 1) * sizeof(Object)); /* Resize */
     for (i = 0; i < (ol->size >> 1); i++) { /* Rehash */
       Object oldObject = oldObjects[i];
       if (oldObject == Object_null) {
@@ -74,16 +46,7 @@ void ObjectList_insert(struct ObjectList* ol, Object object) {
       }
       *index = oldObject;
     }
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_free_stats
-#else
-    GC_free
-#endif
-#else
-      free
-#endif
-      (oldObjects);
+    RTJ_FREE(oldObjects);
   }
 
   index = ObjectList_first(ol, object);
@@ -132,16 +95,7 @@ inline int ObjectList_contains(struct ObjectList* ol, Object object) {
 
 inline Object* ObjectList_packedContents(struct ObjectList* ol) {
   Object* newContents = (Object*)
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
-#else
-    GC_malloc_uncollectable
-#endif
-#else
-    malloc
-#endif
-    (ol->used * sizeof(Object));
+    RTJ_MALLOC_UNCOLLECTABLE(ol->used * sizeof(Object));
   int index = 0;
   int i;
   flex_mutex_lock(&(ol->lock));
@@ -168,27 +122,9 @@ inline void ObjectList_visit(struct ObjectList* ol,
 
 inline void ObjectList_clear(struct ObjectList* ol, size_t newSize) {
   flex_mutex_lock(&(ol->lock));
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-  GC_free_stats
-#else
-  GC_free
-#endif
-#else
-    free
-#endif
-    (ol->objects);
+  RTJ_FREE(ol->objects);
   ol->objects = 
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
-#else
-    GC_malloc_uncollectable
-#endif
-#else
-    malloc
-#endif
-    ((ol->size = newSize) * sizeof(Object));
+    RTJ_MALLOC_UNCOLLECTABLE((ol->size = newSize) * sizeof(Object));
   memset(ol->objects, 0, newSize * sizeof(Object));
   ol->used = 0;
   flex_mutex_unlock(&(ol->lock));
@@ -205,16 +141,7 @@ inline void ObjectList_freeRefs(struct ObjectList* ol) {
 #ifdef RTJ_DEBUG
       printf("%08x ", ol->objects[i]);
 #endif
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-      GC_free_stats
-#else
-      GC_free
-#endif
-#else
-	free
-#endif
-	(ol->objects[i]);
+      RTJ_FREE(ol->objects[i]);
       ol->objects[i] = Object_null;
     }
   }
@@ -230,27 +157,9 @@ inline void ObjectList_free(struct ObjectList* ol) {
 #ifdef RTJ_DEBUG
   printf("  ol->objects = %08x\n", ol->objects);
 #endif
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-  GC_free_stats
-#else
-  GC_free
-#endif
-#else
-    free
-#endif
-    (ol->objects);
+  RTJ_FREE(ol->objects);
 #ifdef RTJ_DEBUG
   printf("  ol = %08x\n", ol);
 #endif
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-  GC_free_stats
-#else
-  GC_free
-#endif
-#else
-    free
-#endif
-    (ol);
+  RTJ_FREE(ol);
 }

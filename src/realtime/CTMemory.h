@@ -16,7 +16,7 @@ extern "C" {
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_initNative
-  (JNIEnv *, jobject, jlong);
+(JNIEnv* env, jobject memoryArea, jlong size, jboolean reuse);
 
 /*
  * Class:     CTMemory
@@ -24,7 +24,15 @@ JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_initNative
  * Signature: (Ljavax/realtime/RealtimeThread;)V
  */
 JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_newMemBlock
-  (JNIEnv *, jobject, jobject);
+(JNIEnv* env, jobject memoryArea, jobject realtimeThread);
+
+/*
+ * Class:     CTMemory
+ * Method:    doneNative
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_doneNative
+(JNIEnv* env, jobject memoryArea);
 
 #ifdef __cplusplus
 }

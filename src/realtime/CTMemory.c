@@ -10,23 +10,15 @@
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_initNative
-(JNIEnv* env, jobject memoryArea, jlong size) {
+(JNIEnv* env, jobject memoryArea, jlong size, jboolean reuse) {
   struct MemBlock* mb = (struct MemBlock*)
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
-#else
-    GC_malloc_uncollectable
-#endif
-#else
-    malloc
-#endif
-    (sizeof(struct MemBlock));
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct MemBlock));
 #ifdef RTJ_DEBUG
   printf("CTMemory.initNative(%d)\n", (size_t)size);
 #endif
   getInflatedObject(env, memoryArea)->memBlock = mb;
   mb->block = Block_new(memoryArea, (size_t)size);
+  mb->ref_info = RefInfo_new(reuse == JNI_TRUE);
 #ifdef RTJ_DEBUG
   printf("  storing MemBlock in %08x\n", mb->block); 
 #endif RTJ_DEBUG
@@ -39,8 +31,9 @@ JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_initNative
  */
 JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_newMemBlock
 (JNIEnv* env, jobject memoryArea, jobject realtimeThread) {
-  struct MemBlock* mb = getInflatedObject(env, realtimeThread)->temp;
-  struct BlockInfo* bi = mb->block_info;
+  struct MemBlock* rtmb = getInflatedObject(env, realtimeThread)->temp;
+  struct MemBlock* mamb = getInflatedObject(env, memoryArea)->memBlock;
+  struct BlockInfo* bi = rtmb->block_info;
 #ifdef RTJ_DEBUG
   printf("CTMemory.newMemBlock(%08x, %08x, %08x)\n", env, memoryArea, 
 	 realtimeThread);
@@ -54,10 +47,29 @@ JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_newMemBlock
     bi->free      = CTScope_RThread_MemBlock_free;
     bi->allocator = CTScope_RThread_MemBlock_allocator(memoryArea);
   }
-  mb->block = getInflatedObject(env, memoryArea)->memBlock->block;
+  rtmb->block = mamb->block;
+  rtmb->ref_info = mamb->ref_info;
 #ifdef RTJ_DEBUG
-  printf("  retrieving memBlock from %08x\n", mb->block);
+  printf("  retrieving memBlock from %08x\n", mamb->block);
 #endif
 }
 
+/*
+ * Class:     CTMemory
+ * Method:    doneNative
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_doneNative
+(JNIEnv* env, jobject memoryArea) {
+  struct MemBlock* mb = getInflatedObject(env, memoryArea)->memBlock;
+#ifdef RTJ_DEBUG
+  printf("CTMemory.doneNative()\n");
+#endif
+  if (!mb->ref_info->refCount) {
+    Block_free(mb->block);
+    RTJ_FREE(mb->block_info);
+  } else {
+    mb->ref_info->reuse = 0;
+  }
+}
 

@@ -9,11 +9,22 @@
 /* Same info, except for RTJ internal calls */
 /*  #define RTJ_TIMER 1 */
 
-/* When re-running a scope, reuse the same memory - this requires 
- * explicit deallocation by explicit calling of the "finally" method. */
-
-/*  #define ALLOW_SCOPE_REENTRY */
-
 #ifdef WITH_GC_STATS
 #include "GCstats.h"
 #endif
+
+#ifdef BDW_CONSERVATIVE_GC 
+#ifdef WITH_GC_STATS 
+#define RTJ_MALLOC GC_malloc_stats
+#define RTJ_MALLOC_UNCOLLECTABLE GC_malloc_uncollectable_stats
+#define RTJ_FREE GC_free_stats
+#else 
+#define RTJ_MALLOC GC_malloc
+#define RTJ_MALLOC_UNCOLLECTABLE GC_malloc_uncollectable
+#define RTJ_FREE GC_free 
+#endif 
+#else 
+#define RTJ_MALLOC_UNCOLLECTABLE malloc
+#define RTJ_FREE free 
+#endif
+

@@ -12,34 +12,16 @@ inline struct Block* Block_new(void* superBlockTag,
   struct timeval end;
   gettimeofday(&begin, NULL);
 #endif 
-  bl = (struct Block*)
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
-#else
-    GC_malloc_uncollectable
-#endif
-#else
-    malloc
-#endif
-    (sizeof(struct Block));
+  bl = (struct Block*)RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct Block));
 #ifdef RTJ_DEBUG
   printf("Block_new(%08x, %d)\n", superBlockTag, size);
 #endif
-  (bl->free) = ((bl->begin) = 
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_uncollectable_stats
-#else
-    GC_malloc_uncollectable
-#endif
-#else
-    malloc
-#endif
-  (size)); 
+  (bl->free) = ((bl->begin) = RTJ_MALLOC_UNCOLLECTABLE(size));
 #ifdef RTJ_TIMER
   gettimeofday(&end, NULL);
-  printf("Block_new: %ds %dus\n", end.tv_sec-begin.tv_sec, end.tv_usec-begin.tv_usec);
+  printf("Block_new: %ds %dus\n", 
+	 end.tv_sec-begin.tv_sec, 
+	 end.tv_usec-begin.tv_usec);
 #endif
 #ifdef RTJ_DEBUG
   printf("  block: %08x, block->begin: %08x\n", bl, bl->begin);
@@ -78,18 +60,8 @@ inline void Block_free(struct Block* block) {
 #ifdef RTJ_DEBUG
   printf("Block_free(%08x)\n", block);
 #endif
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-  GC_free_stats(block->begin);
-  GC_free_stats(block);
-#else
-  GC_free(block->begin);
-  GC_free(block);
-#endif
-#else
-  free(block->begin);
-  free(block);
-#endif
+  RTJ_FREE(block->begin);
+  RTJ_FREE(block);
 #ifdef RTJ_TIMER
   gettimeofday(&end, NULL);
   printf("Block_free: %ds %dus\n", end.tv_sec-begin.tv_sec, end.tv_usec-begin.tv_usec);

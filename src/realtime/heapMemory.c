@@ -10,17 +10,7 @@ inline void HeapMemory_init() {
 }
 
 inline void* HeapMemory_alloc(size_t size) {
-  void* result =
-#ifdef BDW_CONSERVATIVE_GC
-#ifdef WITH_GC_STATS
-    GC_malloc_stats
-#else
-    GC_malloc
-#endif
-#else
-    malloc
-#endif
-    (size);
+  void* result = RTJ_MALLOC(size);
 /*    HeapMemory_register(result); */
   return result;
 }
@@ -44,12 +34,7 @@ inline int HeapMemory_contains(void* ptr) {
 }
 
 inline void HeapMemory_freeAll() {
-#ifdef BDW_CONSERVATIVE_GC
-/*    GC_free(heapPtrs); */
-/*    GC_free(heapRefs); */
-#else
-/*    free(heapPtrs); */
-/*    free(heapRefs); */
-#endif
+/*    RTJ_FREE(heapPtrs); */
+/*    RTJ_FREE(heapRefs); */
   /* At end of program - register w/pthreads... */
 }
