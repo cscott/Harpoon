@@ -46,7 +46,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.12 1999-07-28 20:45:11 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.13 1999-07-29 01:49:14 pnkfelix Exp $
  */
 %%
 
@@ -66,14 +66,15 @@ import java.util.HashMap;
     Map blMap;
     Map liMap;
 
-    public CodeGen(SACode code) {
+    public CodeGen(SAFrame frame) {
 	last = null;
-	this.frame = (SAFrame) code.getFrame();
+	//	this.frame = (SAFrame) code.getFrame();
+	this.frame = frame;
 	r0 = frame.getAllRegisters()[0];
 	r1 = frame.getAllRegisters()[1];
 	r2 = frame.getAllRegisters()[2];
 	r3 = frame.getAllRegisters()[3];
-	inf = code.getInstrFactory();
+	//inf = code.getInstrFactory();
 	blMap = new HashMap();
 	liMap = new HashMap();
     }
@@ -115,8 +116,14 @@ import java.util.HashMap;
     private TwoWordTemp makeTwoWordTemp() {
 	    return new TwoWordTemp(frame.tempFactory());
     }
-
 %%
+%start with %{
+       // *** METHOD PROLOGUE *** 
+}%
+%end with %{
+       // *** METHOD EPILOGUE *** 
+     return null;
+}%
     /* this comment will be eaten by the .spec processor (unlike comments above) */
 	
 /* EXPRESSIONS */ 
@@ -672,13 +679,13 @@ MEM<d,l>(NAME(id)) = i %{
 
 
 TEMP<p,i,f>(id) = i %{
-    i = ((TEMP)ROOT).temp;
+    Temp i = ((TEMP)ROOT).temp;
 
 }%
 TEMP<l,d>(id) = i %{
     // Will need to modify these to do something like mapping from
     // TEMP's Temp to the necessary TwoWordTemp
-    i = ((TEMP)ROOT).temp;
+    Temp i = ((TEMP)ROOT).temp;
     // TwoWordTemp i = makeTwoWordTemp();		
 
 }%

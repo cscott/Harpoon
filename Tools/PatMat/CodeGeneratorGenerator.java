@@ -16,7 +16,7 @@ import java.io.PrintWriter;
  * <code>TreeCode</code>.  In short, a CGG generates a Code Generator.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.11 1999-07-29 00:38:36 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.12 1999-07-29 01:49:15 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
@@ -94,9 +94,13 @@ public abstract class CodeGeneratorGenerator {
 	out.println("\t    @param tree Set of abstract <code>Tree</code> instructions ");
 	out.println("\t                that form the body of the procedure being compiled.");
 	out.println("\t*/");
-	out.println("\tpublic final "+GENERIC_Code+" gen(" + TREE_Code +" tree) {"); // method start
+	out.println("\tpublic final "+GENERIC_Code+" gen(" + TREE_Code +" code) {"); // method start
+
+	out.println(spec.method_prologue_stms);
 
 	outputSelectionMethod(out);
+
+	out.println(spec.method_epilogue_stms);
 
 	out.println("\t}"); // end method
 	out.println("}"); // end class

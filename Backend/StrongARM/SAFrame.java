@@ -43,7 +43,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.19 1999-07-29 01:13:05 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.20 1999-07-29 01:49:14 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -113,7 +113,7 @@ public class SAFrame extends Frame implements AllocationInfo {
 
     public SAFrame() { 
         mas = new DefaultAllocationStrategy(this);
-	codegen = new CodeGen();
+	codegen = new CodeGen(this);
     }
 
     /* "method" constructor, use for per-method initializations */
@@ -234,10 +234,12 @@ public class SAFrame extends Frame implements AllocationInfo {
 
     }
 
-    /** Not implemented. */
+    /** Returns a <code>StrongArm.CodeGen</code>. 
+	Since no state is maintained in the returned
+	<code>StrongArm.CodeGen</code>, the same one is returned on
+	every call to this method.
+     */
     public GenericCodeGen codegen() { 
-	
-	Util.assert(false, "DefaultFrame.codegen() Not implemented");
-	return null;
+	return codegen;
     }
 }

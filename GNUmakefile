@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.49 1999-07-23 06:51:46 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.50 1999-07-29 01:49:06 pnkfelix Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -60,6 +60,7 @@ MACHINE_GEN := Tools/PatMat/Lexer.java Tools/PatMat/Parser.java \
 
 CGSPECS:=$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.spec))
 MACHINE_SRC+=$(CGSPECS)
+MACHINE_GEN+= Backend/StrongARM/CodeGen.java
 
 ALLSOURCE :=  $(MACHINE_GEN) $(filter-out $(MACHINE_GEN), \
 		$(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
@@ -182,6 +183,10 @@ commit: cvs-commit # convenient abbreviation
 update: needs-cvs
 	cvs -q update -Pd $(CVS_REVISION)
 	@-if [ -x $(FORTUNE) ]; then echo ""; $(FORTUNE); fi
+
+# CodeGeneratorGenerator
+%.java : %.spec
+	java harpoon.Tools.PatMat.Main $< > $@
 
 # JLex
 %.java : %.jlex
