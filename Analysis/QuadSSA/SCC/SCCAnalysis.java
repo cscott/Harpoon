@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.2 1998-09-23 04:00:22 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.3 1998-09-23 04:08:22 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -578,17 +578,8 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	if (! (v instanceof xClass) )
 	    throw new Error("Something's seriously screwed up.");
 	xClass xc = (xClass) v;
-	if (xc.type() == HClass.Long)
-	    return new xBitWidth(HClass.Long, 64, 63);
-	else if (xc.type() == HClass.Int)
-	    return new xBitWidth(HClass.Int, 32, 31);
-	else if (xc.type() == HClass.Short)
-	    return new xBitWidth(HClass.Short, 16, 15);
-	else if (xc.type() == HClass.Byte)
-	    return new xBitWidth(HClass.Byte, 8, 7);
-	else if (xc.type() == HClass.Char)
-	    return new xBitWidth(HClass.Char, 0, 16);
-	else throw new Error("Unknown integer type for bitwidth.");
+	// trust xBitWidth to properly limit.
+	return new xBitWidth(xc.type(), 1000, 1000);
     }
 
     // Class merge functino.
@@ -695,8 +686,23 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	/** Constructor. */
 	public xBitWidth(HClass type, int minusWidth, int plusWidth) {
 	    super(type);
-	    this.minusWidth = minusWidth;
-	    this.plusWidth  = plusWidth;
+	    // limit.
+	    if (type == HClass.Long) {
+		this.minusWidth = Math.min(64, minusWidth);
+		this.plusWidth  = Math.min(63, plusWidth);
+	    } else if (type == HClass.Int) {
+		this.minusWidth = Math.min(32, minusWidth);
+		this.plusWidth  = Math.min(31, plusWidth);
+	    } else if (type == HClass.Short) {
+		this.minusWidth = Math.min(16, minusWidth);
+		this.plusWidth  = Math.min(15, plusWidth);
+	    } else if (type == HClass.Byte) {
+		this.minusWidth = Math.min( 8, minusWidth);
+		this.plusWidth  = Math.min( 7, plusWidth);
+	    } else if (type == HClass.Char) {
+		this.minusWidth = Math.min( 0, minusWidth);
+		this.plusWidth  = Math.min(16, plusWidth);
+	    } else throw new Error("Unknown type for xBitWidth.");
 	}
 	public int minusWidth() { return minusWidth; }
 	public int plusWidth () { return plusWidth;  }
