@@ -27,7 +27,7 @@ import java.util.Set;
  * the code is bloated by the specified amount.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SmallMethodInliner.java,v 1.2 2002-02-25 20:59:23 cananian Exp $
+ * @version $Id: SmallMethodInliner.java,v 1.3 2002-09-13 18:22:41 wbeebee Exp $
  */
 public class SmallMethodInliner extends MethodInliningCodeFactory {
     static final int NPERCENT= // default to 10 percent bloat.
@@ -106,7 +106,11 @@ public class SmallMethodInliner extends MethodInliningCodeFactory {
 	System.out.println("ACTUAL INLINING BLOAT: " +
 			   ((1+2*100*bloat)/(2*totalsize)) + "%");
     }
-    private static int score(HMethod hm, IntMap methodSize, MultiMap callSites)
+
+    /** Override this if you want to define your own scoring function
+     *  for inlining methods.
+     */
+    protected int score(HMethod hm, IntMap methodSize, MultiMap callSites)
     {
 	return methodSize.getInt(hm) * callSites.getValues(hm).size();
     }
