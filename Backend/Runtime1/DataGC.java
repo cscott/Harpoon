@@ -40,7 +40,7 @@ import java.util.TreeSet;
  * <code>DataGC</code> outputs the tables needed by the garbage collector.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: DataGC.java,v 1.1.2.6 2000-02-10 23:54:03 kkz Exp $
+ * @version $Id: DataGC.java,v 1.1.2.7 2000-02-12 03:46:46 kkz Exp $
  */
 public class DataGC extends Data {
     final GCInfo m_gc;
@@ -66,13 +66,15 @@ public class DataGC extends Data {
 
     private HDataElement build() {
 	List stmlist = new ArrayList();
+	// handle only methods that we've had to generate
+	// GCInfo for and do so in the order saved by GCInfo
+	List methods = m_gc.getOrderedMethods(hc);
+	if (methods == null) return null;
 	// switch to the GC segment
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.GC));
 	// align on word-boundary
 	stmlist.add(new ALIGN(tf, null, 4));
-	// handle only methods that we've had to generate
-	// GCInfo for and do so in the order saved by GCInfo
-	for (Iterator it=m_gc.getOrderedMethods(hc).iterator(); it.hasNext(); )
+	for (Iterator it=methods.iterator(); it.hasNext(); )
 	    stmlist.add(outputGCData((HMethod)it.next()));
 	return (HDataElement) Stm.toStm(stmlist);
     }
@@ -162,31 +164,31 @@ public class DataGC extends Data {
 	boolean needRegs = true;
 	Set regs = curr.liveMachineRegLocs();
 	if (regs.isEmpty()) {
-	    output |= 1 << (REGS_ARE_ZERO - 1);
+	    output |= 1 << REGS_ARE_ZERO;
 	    needRegs = false;
 	} else if (prev != null && 
 		   regs.equals(prev.liveMachineRegLocs())) {
-	    output |= 1 << (REGS_SAME_AS_PREV - 1);
+	    output |= 1 << REGS_SAME_AS_PREV;
 	    needRegs = false;
 	}
 	boolean needStack = true;
 	Set stack = curr.liveStackOffsetLocs();
 	if (stack.isEmpty()) {
-	    output |= 1 << (STACKLOCS_ARE_ZERO - 1);
+	    output |= 1 << STACKLOCS_ARE_ZERO;
 	    needStack = false;
 	} else if (prev != null &&
 		   stack.equals(prev.liveStackOffsetLocs())) {
-	    output |= 1 << (STACK_SAME_AS_PREV - 1);
+	    output |= 1 << STACK_SAME_AS_PREV;
 		needStack = false;
 	    }   
 	boolean needDerivs = true;
 	Map derivs = curr.liveDerivations();
 	if (derivs.isEmpty()) {
-	    output |= 1 << (DERIVS_ARE_ZERO - 1);
+	    output |= 1 << DERIVS_ARE_ZERO;
 	    needDerivs = false;
 	} else if (prev != null && 
 		   derivs.equals(prev.liveDerivations())) {
-	    output |= 1 << (DERIVS_SAME_AS_PREV - 1);
+	    output |= 1 << DERIVS_SAME_AS_PREV;
 	    needDerivs = false;
 	}
 	List stmlist = new ArrayList();
@@ -258,20 +260,45 @@ public class DataGC extends Data {
 	    Set key = (Set)keys.next();
 	    // number of locations of the derived pointer (int)
 	    stmlist.add(_DATUM(new CONST(tf, null, key.size())));
+	    int numRegLocs = 0;
 	    for(Iterator it=key.iterator(); it.hasNext(); ) {
 		CommonLoc cl = (CommonLoc)it.next();
-		int loc = 0;
 		switch(cl.kind()) {
-		case StackOffsetLoc.KIND: 
-		    loc = ((StackOffsetLoc)cl).stackOffset(); break;
+		case StackOffsetLoc.KIND: break;
+		case MachineRegLoc.KIND: numRegLocs++; break;
+		default: break;
+		}
+	    }
+	    // number of locations that are registers (int)
+	    stmlist.add(_DATUM(new CONST(tf, null, numRegLocs)));
+	    for(Iterator it=key.iterator(); it.hasNext(); ) {
+		CommonLoc cl = (CommonLoc)it.next();
+		switch(cl.kind()) {
+		case StackOffsetLoc.KIND: break;
 		case MachineRegLoc.KIND:
-		    loc = ((MachineRegLoc)cl).regIndex(); break;
+		    // location of derived pointer in register
+		    int loc = ((MachineRegLoc)cl).regIndex();
+		    stmlist.add(_DATUM(new CONST(tf, null, loc)));
+		    break;
 		default: Util.assert(false);
 		}
-		// location of derived pointer
-		stmlist.add(_DATUM(new CONST(tf, null, loc)));
+	    }
+	    for(Iterator it=key.iterator(); it.hasNext(); ) {
+		CommonLoc cl = (CommonLoc)it.next();
+		switch(cl.kind()) {
+		case StackOffsetLoc.KIND: 
+		    // location of derived pointer in stack
+		    int loc = ((StackOffsetLoc)cl).stackOffset();
+		    stmlist.add(_DATUM(new CONST(tf, null, loc)));
+		    break;
+		case MachineRegLoc.KIND: break;
+		default: Util.assert(false);
+		}
 	    }
 	    GCInfo.DLoc dl = (GCInfo.DLoc)derivs.get(key);
+	    // number of base pointers total
+	    stmlist.add(_DATUM(new CONST(tf, null, dl.stackLocs.length + 
+					 dl.regLocs.length)));
 	    // register bits are laid out in (data, sign) pairs
 	    {
 		final int numInts = (2 * numRegs + INT_BITS - 1) / INT_BITS;
@@ -287,8 +314,6 @@ public class DataGC extends Data {
 		for(int k=0; k < numInts; k++)
 		    stmlist.add(_DATUM(new CONST(tf, null, data[k])));
 	    }
-	    // number of entries
-	    stmlist.add(_DATUM(new CONST(tf, null, dl.stackLocs.length)));
 	    // only output if we have non-zero entries
 	    if (dl.stackLocs.length != 0) {
 		final int numInts = (dl.stackLocs.length+INT_BITS-1)/INT_BITS;
