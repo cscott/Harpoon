@@ -82,6 +82,13 @@ public abstract class Expr {
 	return null; /* unknown value */
     }
 
+    public Expr stripCastExpr() {
+	Expr ptr=this;
+	while (ptr instanceof CastExpr)
+	    ptr=((CastExpr)ptr).getExpr();
+	return ptr;
+    }
+
     public boolean isSafe() {
 	return true;
     }

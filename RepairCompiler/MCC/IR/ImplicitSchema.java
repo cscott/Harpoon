@@ -338,6 +338,8 @@ public class ImplicitSchema {
     void updaterules() {
 	Vector oldrules=state.vRules;
 	Vector newrules=new Vector();
+	Vector allrules=new Vector();
+	allrules.addAll(oldrules);
 	for(int i=0;i<oldrules.size();i++) {
 	    Rule r=(Rule)oldrules.get(i);
 	    if (r.inclusion instanceof SetInclusion) {
@@ -366,7 +368,9 @@ public class ImplicitSchema {
 					     this set, as item is already
 					     in this set. */
 			}
-			
+			if (isRedundant(allrules,r,sd1))
+			    continue;
+
 			Rule nr=new Rule();
 			nr.setGuardExpr(r.getGuardExpr());
 			nr.quantifiers=r.quantifiers;
@@ -377,6 +381,7 @@ public class ImplicitSchema {
 			nr.setnogenerate();
 			nr.num=r.num;
 			newrules.add(nr);
+			allrules.add(nr);
 			state.implicitrule.put(nr,r);
 			if (!state.implicitruleinv.containsKey(r))
 			    state.implicitruleinv.put(r,new HashSet());
@@ -386,4 +391,98 @@ public class ImplicitSchema {
 	}
 	oldrules.addAll(newrules);
     }
+
+    private boolean isRedundant(Vector allrules,Rule r,SetDescriptor sd) {
+    outerloop:
+	for(int i=0;i<allrules.size();i++) {
+	    Rule r2=(Rule)allrules.get(i);
+	    if (!(r2.getInclusion() instanceof SetInclusion))
+		continue;
+	    //old rule to the same set as the new rule's inclusion condition
+	    if (sd!=((SetInclusion)r2.getInclusion()).getSet())
+		continue;
+	    //old rule quantifiers over superset of new rule's quantification
+	    Hashtable varmap=buildvarmap(state,r2,r,true);
+	    if (varmap==null)
+		continue;
+	    Expr ei1=((SetInclusion)r.getInclusion()).getExpr();
+	    Expr ei2=((SetInclusion)r2.getInclusion()).getExpr();
+	    if (!ei2.stripCastExpr().equals(varmap,ei1.stripCastExpr())) //adds same expression
+		continue;
+	    DNFRule dr1=r.getDNFGuardExpr();
+	    DNFRule dr2=r2.getDNFGuardExpr();
+
+	    //need to show that whenever the guard in r is satisfied, some guard in r2 is satisfied
+	innerloop1:
+	    for(int j=0;j<dr1.size();j++) {
+		RuleConjunction rc1=dr1.get(j);
+	    innerloop2:
+		for(int k=0;k<dr2.size();k++) {
+		    RuleConjunction rc2=dr2.get(k);
+		    //if rc1 being true implies rc2 being true continue to innerloop1
+		innerloop3:
+		    for(int l=0;l<rc2.size();l++) {
+			DNFExpr de2=rc2.get(l);
+			for(int m=0;m<rc1.size();m++) {
+			    DNFExpr de1=rc1.get(m);
+			    if (de1.getNegation()==de2.getNegation()&&
+				de2.getExpr().equals(varmap,de1.getExpr()))
+				continue innerloop3;
+			}
+			continue innerloop2; //see if we can satisfy some other conjunction
+		    }
+		    continue innerloop1; //all of the expr's in this conjunction are satisfied
+		}
+		continue outerloop;
+	    }
+	    return true;
+	}
+	return false;
+    }
+
+    public static Hashtable buildvarmap(State state,Rule r1,Rule r2,boolean subsetting) {
+	// Building a map between quantifier variables
+	Hashtable varmap=new Hashtable();
+	if (r1.numQuantifiers()!=r2.numQuantifiers())
+	    return null;
+	Set usedQuantifiers=new HashSet();
+    outerloop:
+	for(int i=0;i<r1.numQuantifiers();i++) {
+	    Quantifier q1=r1.getQuantifier(i);
+
+	    if (q1 instanceof SetQuantifier) {
+		for(int j=0;j<r2.numQuantifiers();j++) {
+		    Quantifier q2=r2.getQuantifier(j);
+		    if (!(q2 instanceof SetQuantifier))
+			continue;;
+		    if (usedQuantifiers.contains(q2))
+			continue;
+		    if (((SetQuantifier)q1).getSet()==((SetQuantifier)q2).getSet()||
+			(subsetting&&((SetQuantifier)q1).getSet().isSubset(((SetQuantifier)q2).getSet()))) {
+			varmap.put(((SetQuantifier)q1).getVar(),((SetQuantifier)q2).getVar());
+			usedQuantifiers.add(q2);
+			continue outerloop;
+		    }
+		}
+		return null;
+	    } else if (q1 instanceof RelationQuantifier) {
+		for(int j=0;j<r2.numQuantifiers();j++) {
+		    Quantifier q2=r2.getQuantifier(j);
+		    if (!(q2 instanceof RelationQuantifier))
+			continue;
+		    if (usedQuantifiers.contains(q2))
+			continue;
+		    if (((RelationQuantifier)q1).getRelation()==((RelationQuantifier)q2).getRelation()) {
+			varmap.put(((RelationQuantifier)q1).x,((RelationQuantifier)q2).x);
+			varmap.put(((RelationQuantifier)q1).y,((RelationQuantifier)q2).y);
+			usedQuantifiers.add(q2);
+			continue outerloop;
+		    }
+		}
+		return null;
+	    }
+	}
+	return varmap;
+    }
+
 }
