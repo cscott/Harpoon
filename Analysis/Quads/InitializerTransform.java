@@ -3,19 +3,47 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HClassMutator;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HFieldMutator;
+import harpoon.ClassFile.HInitializer;
+import harpoon.ClassFile.HMethod;
+import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.Code;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadFactory;
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.QuadWithTry;
+import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.SET;
 import harpoon.Temp.Temp;
-import harpoon.Util.*;
+import harpoon.Util.Environment;
+import harpoon.Util.HashEnvironment;
+import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
+import java.util.HashSet;
+import java.util.Set;
 /**
  * <code>InitializerTransform</code> transforms class initializers so
  * that they are idempotent and so that they perform all needed
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.3 2000-10-19 21:34:15 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.4 2000-10-19 23:56:35 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -70,9 +98,13 @@ public class InitializerTransform
 	// done.
 	return hc;
     }
+    /** Determine if this method is 'safe' (will never need initializers
+     *  inserted) or not. */
+    private boolean isSafe(HMethod hm) { return false; /*conservative*/ }
     /** Add initialization checks to every static use of a class. */
     private Code addChecks(Code hc) {
 	final HEADER qH = (HEADER) hc.getRootElement();
+	final Set phisSeen = new HashSet();
 	// static references are found in GET/SET/ANEW/NEW/CALL
 	QuadVisitor qv = new QuadVisitor() {
 	    /** classes already initialized in this method. */
@@ -80,16 +112,19 @@ public class InitializerTransform
 	    /* constructor */ { traverse((METHOD)qH.next(1)); }
 	    // recursive traversal.
 	    private void traverse(Quad q) {
+		Quad[] nxt = q.next(); // cache before q is (possibly) replaced
 		q.accept(this);
 		Environment.Mark m = seenSet.getMark();
-		for (int i=0; i<q.nextLength(); i++) {
-		    traverse(q.next(i));
+		for (int i=0; i<nxt.length; i++) {
+		    if (!phisSeen.contains(nxt[i]))
+			traverse(nxt[i]);
 		    if (i+1<q.nextLength())
 			seenSet.undoToMark(m);
 		}
 	    }
 	    public void visit(Quad q) { /* default, do nothing. */ }
 	    public void visit(PHI q) {
+		phisSeen.add(q);
 		// XXX: merging at phis (instead of throwing away
 		// seenset) would lead to less unnecessary
 		// initializations.  cost may be prohibitive?
@@ -101,7 +136,14 @@ public class InitializerTransform
 	    public void visit(CALL q) {
 		if (q.isStatic())
 		    addCheckBefore(q, q.method().getDeclaringClass(), seenSet);
-		// XXX: non-virtual methods need to use special checking vrsns.
+		if (!isSafe(q.method())) {
+		    // use a 'checking' version of this method.
+		    Quad ncall = new CALL
+			(q.getFactory(), q, select(q.method(), CHECKED),
+			 q.params(), q.retval(), q.retex(), q.isVirtual(),
+			 q.isTailCall(), q.dst(), q.src());
+		    Quad.replace(q, ncall);
+		}
 	    }
 	    public void visit(GET q) {
 		if (q.isStatic())
