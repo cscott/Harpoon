@@ -21,7 +21,7 @@ import java.util.Iterator;
  * <code>MyLowQuadSSI</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadSSI.java,v 1.1.2.2 1999-07-13 20:53:06 bdemsky Exp $
+ * @version $Id: MyLowQuadSSI.java,v 1.1.2.3 1999-07-17 11:53:39 cananian Exp $
  */
 
 public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSA {
@@ -53,9 +53,9 @@ public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSA {
 	    Quad q=(Quad)iterate.next();
 	    Temp[] defs=q.def();
 	    for(int i=0;i<defs.length;i++) {
-		DList parents=parent.derivation(q, defs[i]);
+		Derivation.DList parents=parent.derivation(q, defs[i]);
 		if (parents!=null) {
-		    dT.put(tempMap.tempMap(defs[i]),DList.rename(parents,tempMap));
+		    dT.put(tempMap.tempMap(defs[i]),Derivation.DList.rename(parents,tempMap));
 		    tT.put(tempMap.tempMap(defs[i]), 
 			   new Error("Cant type derived pointer: "+tempMap.tempMap(defs[i])));
 		} else
@@ -90,11 +90,11 @@ public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSA {
 	dT.put(t, dlist);
     }
     
-    public DList derivation(HCodeElement hce, Temp t) {
+    public Derivation.DList derivation(HCodeElement hce, Temp t) {
 	if ((hce==null)||(t==null))
 	    return null;
 	else
-	    return (DList)dT.get(t);
+	    return (Derivation.DList)dT.get(t);
     }
     
 
