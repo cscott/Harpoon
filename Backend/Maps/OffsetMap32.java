@@ -68,7 +68,7 @@ import java.util.StringTokenizer;
  * 
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.20 1999-08-18 19:22:42 duncan Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.21 1999-08-18 19:49:03 duncan Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
@@ -171,7 +171,7 @@ public class OffsetMap32 extends OffsetMap
 
     /** Returns the offset of the class pointer */
     public int clazzPtrOffset(HClass hc)   { 
-	Util.assert((!hc.isPrimitive()) && (!hc.isInterface())); 
+	Util.assert(!hc.isPrimitive());
 	return -1 * WORDSIZE;
     }
 
@@ -204,7 +204,7 @@ public class OffsetMap32 extends OffsetMap
 
     /** Returns the offset of the hashcode of the specified object */
     public int hashCodeOffset(HClass hc) { 
-	Util.assert((!hc.isPrimitive()) && (!hc.isInterface()));
+	Util.assert(!hc.isPrimitive());
 	return -2 * WORDSIZE; 
     }
 
@@ -217,7 +217,7 @@ public class OffsetMap32 extends OffsetMap
 
     /** If hc is an array type, returns the offset of its length field */
     public int lengthOffset(HClass hc) { 
-	Util.assert(hc.isArray());
+	Util.assert(hc.isArray() || hc.isInterface());
 	return 0;
     }
 
