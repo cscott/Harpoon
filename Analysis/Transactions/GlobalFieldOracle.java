@@ -38,7 +38,7 @@ import java.util.Set;
  * synchronized contexts.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GlobalFieldOracle.java,v 1.1.2.2 2001-01-14 08:55:27 cananian Exp $
+ * @version $Id: GlobalFieldOracle.java,v 1.1.2.3 2001-03-04 00:02:13 cananian Exp $
  */
 class GlobalFieldOracle extends FieldOracle {
     Set syncRead = new HashSet(); Set syncWrite = new HashSet();
@@ -51,15 +51,31 @@ class GlobalFieldOracle extends FieldOracle {
     /** Creates a <code>GlobalFieldOracle</code>. */
     public GlobalFieldOracle(ClassHierarchy ch, HMethod mainM, Set roots,
 			     HCodeFactory hcf) {
+	/* Add callable static initializers to the root set */
+	Set myroots = new HashSet(roots);
+	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    if (hm instanceof HInitializer)
+		myroots.add(hm);
+	}
         /* for every method, compile lists of methods and fields which
 	 * are accessed in synchronized and unsynchronized contexts. */
 	MethodInfo mi = analyzeMethods(ch, hcf);
 	/* now determine which methods can possibly ever be called in
 	 * syncronized and unsynchronized contexts. */
-	CallContextInfo cci = new CallContextInfo(mi, mainM, roots);
+	CallContextInfo cci = new CallContextInfo(mi, mainM, myroots);
 	/* and finally, determine "possibly ever accessed" info for
 	 * fields from the above. */
 	transCloseFields(mi, cci);
+	{
+	    Set sync = new HashSet(syncRead); sync.addAll(syncWrite);
+	    Set unsync = new HashSet(unsyncRead); unsync.addAll(unsyncWrite);
+	    Set common = new HashSet(sync); common.retainAll(unsync);
+	    sync.removeAll(common); unsync.removeAll(common);
+	    System.out.println("GLOBAL FIELD ORACLE: "+
+			       sync.size()+" fields exclusively sync, "+
+			       unsync.size()+" fields exclusively unsync");
+	}
     }
 
     //----------------------------------------------------------------
