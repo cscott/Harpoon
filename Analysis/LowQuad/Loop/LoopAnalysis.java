@@ -33,7 +33,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.14 1999-09-23 19:01:51 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.15 1999-09-23 19:52:25 bdemsky Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -351,11 +351,20 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	}
     }
 
-    void forloop(HCode hc, Loops lp) {
+    Object[] forloop(HCode hc, Loops lp) {
 	analyze(hc);
 	Util.assert(lp.loopEntrances().size()==1,"Loop must have one entrance");	
 	Quad header=(Quad)(lp.loopEntrances()).toArray()[0];;
 	Set testsopers=doLooptest(hc,lp);
+	ForLoopVisitor flv=new ForLoopVisitor(testsopers, hc, ud, lp, tm);
+	for (Quad ptr=header.next(0);!(flv.sideEffects()||flv.done());ptr=ptr.next(0)) {
+	    ptr.accept(flv);
+	}
+	if (flv.forLoop()) {
+	    return new Object[] {flv.inductionVar(), flv.testCondition()};
+	}
+	else 
+	    return null;
     }
 
     /*  NOTE:  Assumption is made that no quad can go wrong, otherwise
@@ -368,6 +377,9 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	private HCode hc;
 	private Loops lp;
 	private TempMap ssitossamap;
+	private boolean analysisdone;
+	private Temp inductionvar;
+	private OPER testcondition;
 
 	ForLoopVisitor(Set testsopers, HCode hc, UseDef ud, Loops lp, TempMap ssitossamap) {
 	    this.track=new WorkSet();
@@ -377,11 +389,30 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    this.hc=hc;
 	    this.lp=lp;
 	    this.ssitossamap=ssitossamap;
+	    this.analysisdone=false;
+	    this.inductionvar=null;
+	    this.testcondition=null;
+	}
+
+	boolean done() {
+	    return analysisdone;
 	}
 
 	boolean sideEffects() {
 	    return sideeffects;
 	}
+
+	boolean forLoop() {
+	    return (analysisdone&&(inductionvar!=null));
+	}
+
+	OPER testCondition() {
+	    return testcondition;
+	}
+	
+	Temp inductionVar() {
+	    return inductionvar;
+	} 
 
 	public void visit(Quad q) {
 	    System.out.println("Error in ForLoopVisitor");
@@ -405,6 +436,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    Temp test=q.test();
 	    Quad[] defs=(Quad[])ud.defMap(hc, test);
 	    Util.assert(defs.length==1, "We work only with SSA/SSI");
+	    Temp binvar=null;
 	    if (testsopers.contains(defs[0])) {
 		//Need to see if it:
 		//1) Is on a basic induction variable!
@@ -418,20 +450,48 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 		    //See if we have a basic induction varible...
 		    OPER testoper=(OPER)defs[0];
 		    Map bamap=(Map)bimap.get(lp.loopEntrances().toArray()[0]);
-		    int binvarnum=0;
 		    for (int i=0;i<testoper.operandsLength();i++) {
 			if (bamap.containsKey(ssitossamap.tempMap(testoper.operands(i))))
-			    binvarnum++;
+			    binvar=ssitossamap.tempMap(testoper.operands(i));
 			    //have a basic induction variable [#1 finished]
 		    }
-		    if (binvarnum==1) {
+		    if (binvar!=null) {
 			//Still need to verify track set [#3, #4]
 			//Still need to check uses of increment [#5]
-
+			PHI header=(PHI)(lp.loopEntrances()).toArray()[0];
+			OPER addquad=(OPER)addQuad(hc, header,binvar, lp.loopIncelements());			
+			Temp nextinc=addquad.dst();
+			HCodeElement[] niuses=ud.useMap(hc, nextinc);
+			if ((niuses.length==1)&&(niuses[0]==header))
+			    //condition #5 satisfied
+			    if (checktracks()) {
+				inductionvar=binvar;
+				testcondition=testoper;
+			    }
+			//conditions 3&4 satisfied
 		    }
 		}
 	    }
+	    analysisdone=true;
 	}
+
+	boolean checktracks() {
+	    Iterator trackiterate=track.iterator();
+	    boolean go=true;
+	    Set loopset=lp.loopIncelements();
+	    while (trackiterate.hasNext()&&go) {
+		Temp temptocheck=(Temp)trackiterate.next();
+		HCodeElement[] uses=ud.useMap(hc, temptocheck);
+		for (int i=0;i<uses.length;i++) {
+		    if (!loopset.contains(uses[i])) {
+			go=false;
+			break;
+		    }
+		}
+	    }
+	    return go;
+	}
+
 	boolean analyzecjmp(CJMP q) {
 	    boolean exit=false;
 	    for (int i=0;i<q.nextLength();i++)
@@ -439,7 +499,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 		    //we've found the way out...
 		    //we only add things in if
 		    //they were not generated in front of us...
-		    //might create confusing semantic,
+		    //might create confusing semantics,
 		    //but gotta do it to find any for loops at all that
 		    //allow lv to escape
 		    for(int j=0;j<q.numSigmas();j++)
