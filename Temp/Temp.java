@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.14.2.14 1999-09-13 00:34:32 cananian Exp $
+ * @version $Id: Temp.java,v 1.14.2.15 2000-01-29 12:40:37 cananian Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
@@ -85,9 +85,12 @@ public class Temp implements Cloneable, Comparable, ReferenceUnique {
       public String getScope() { return scope; }
       protected synchronized String getUniqueID(String suggestion) {
 	// strip digits from the end of the suggestion.
-	while (suggestion.charAt(suggestion.length()-1)>='0' &&
-	       suggestion.charAt(suggestion.length()-1)<='9')
-	  suggestion = suggestion.substring(0, suggestion.length()-1);
+	int lastchar = suggestion.length();
+	char c;
+	do {
+	  c = suggestion.charAt(--lastchar);
+	} while (c >= '0' && c <= '9');
+	suggestion = suggestion.substring(0, 1+lastchar);
 	// look up appropriate suffix.
 	Integer i = (Integer) table.get(suggestion);
 	if (i==null) i = new Integer(0);
