@@ -33,8 +33,8 @@
 
 # if defined(GC_USER_THREADS) || defined(USER_THREADS)
 
-# include "gc_priv.h"
-# include "specific.h"
+# include "private/gc_priv.h"
+# include "private/specific.h"
 # include <stdlib.h>
 # include <threads.h>
 # include <sched.h>
