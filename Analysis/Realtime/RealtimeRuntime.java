@@ -38,7 +38,7 @@ import java.util.List;
  * for debugging purposes when Realtime.DEBUG_REF is turned on.
  * 
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: RealtimeRuntime.java,v 1.1.2.10 2001-07-12 15:34:01 wbeebee Exp $
+ * @version $Id: RealtimeRuntime.java,v 1.1.2.11 2001-07-17 19:24:41 wbeebee Exp $
  */
 
 public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
@@ -118,7 +118,8 @@ public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
 			    }
 			}
 
-			final HClass memoryArea = hc.getLinker()
+			final HClass memoryArea =
+			    RealtimeRuntime.this.frame.getLinker()
 			    .forName("javax.realtime.ImmortalMemory");
 			final Label label = 
 			    getNameMap().label(hc, "constantMemoryArea");
