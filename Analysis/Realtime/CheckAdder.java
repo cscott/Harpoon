@@ -214,7 +214,7 @@ class CheckAdder extends MethodMutator {
 	    HMethod hm = qf.getMethod();
 	    Temp objArea = new Temp(tf, "objMemArea");
 	    Quad q0 = null;
-	    HClass memoryArea = linker.forName("javax.realtime.memoryArea");
+	    HClass memoryArea = linker.forName("javax.realtime.MemoryArea");
 	    if (object != null) {
 		q0 = new CALL(qf, inst, memoryArea
 			      .getMethod("getMemoryArea", new HClass[] {
