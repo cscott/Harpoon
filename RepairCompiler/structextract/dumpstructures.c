@@ -14,6 +14,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "dumpstructures.h"
 #include "typedata.h"
@@ -22,12 +25,17 @@
 
 #define GETTYPE 1
 #define POSTNAME 2
+#define GETJUSTTYPE 3
 
 int process_elf_binary_data(char* filename);
+
+char *rootfile=NULL;
 
 int main(int argc, char **argv) {
   if (argc<2)
     return 0;
+  if (argc==3)
+    rootfile=argv[2];
   process_elf_binary_data(argv[1]);
   daikon_preprocess_entry_array();
 }
@@ -79,6 +87,30 @@ void initializeTypeArray()
   int i;
   dwarf_entry * cur_entry;
   struct genhashtable * ght=genallocatehashtable((unsigned int (*)(void *)) & hashstring,(int (*)(void *,void *)) &equivalentstrings);
+  struct genhashtable * sht=NULL;
+
+  if (rootfile!=NULL) {
+    char buf[512];
+    char a;
+    int fd=open(rootfile,O_RDONLY);
+    int offset=0;
+    sht=genallocatehashtable((unsigned int (*)(void *)) & hashstring,(int (*)(void *,void *)) &equivalentstrings);
+    while(1) {
+      if (read(fd,&a,1)>0) {
+	if (a!=13&&a!=10)
+	  buf[offset++]=a;
+      } else
+	  break;
+      if (offset>0&&(a==13||a==10)) {
+	buf[offset++]=0;
+	{
+	  char *str=copystr(buf);
+	  genputtable(sht,str,str);
+	}
+	offset=0;
+      }
+    }
+  }
   
   for (i = 0; i < dwarf_entry_array_size; i++)
     {
@@ -93,9 +125,7 @@ void initializeTypeArray()
 	    dwarf_entry *entry=collection_ptr->members[j];
 	    if (entry->tag_name==DW_TAG_inheritance) {
 	      value++;
-	      continue;
-	    }
-	    {
+	    } else {
 	      member * member_ptr=(member *)entry->entry_ptr;
 	      char *name=member_ptr->name;
 	      dwarf_entry *type=member_ptr->type_ptr;
@@ -123,6 +153,53 @@ void initializeTypeArray()
     }
 
   assigntype=1;
+  if (sht!=NULL) {
+    int repeat=1;
+    while(repeat) {
+      repeat=0;
+      for (i = 0; i < dwarf_entry_array_size; i++) {
+	cur_entry = &dwarf_entry_array[i];
+	if (entry_is_type(cur_entry)) {
+	  collection_type* collection_ptr = (collection_type*)(cur_entry->entry_ptr);
+	  int j=0;
+	  int offset=0;
+	  int value=0;
+
+	  if (!gencontains(sht,collection_ptr->name))
+	    continue;
+	  if (gencontains(ght,collection_ptr->name)) {
+	    struct valuepair *vp=(struct valuepair*)gengettable(ght,collection_ptr->name);
+	    if (vp->index!=i)
+	      continue;
+	  }	  
+	  
+	  for(j=0;j<collection_ptr->num_members;j++) {
+	    dwarf_entry *entry=collection_ptr->members[j];
+	    if (entry->tag_name==DW_TAG_inheritance) {
+	      inherit *in_ptr=(inherit*)collection_ptr->members[j]->entry_ptr;
+	      dwarf_entry *typeptr=in_ptr->target_ptr;
+	      collection_type* sub_ptr = (collection_type*)(typeptr->entry_ptr);
+	      if (!gencontains(sht,sub_ptr->name)) {
+		repeat=1;
+		genputtable(sht,sub_ptr->name,sub_ptr->name);
+	      }
+	    } else {
+	      member * member_ptr=(member *)entry->entry_ptr;
+	      char *name=member_ptr->name;
+	      dwarf_entry *type=member_ptr->type_ptr;
+	      char *typestr=printname(type,GETJUSTTYPE);
+	      if (typestr!=NULL&&!gencontains(sht,typestr)) {
+		repeat=1;
+		genputtable(sht,typestr,typestr);
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+
   for (i = 0; i < dwarf_entry_array_size; i++)
     {
       cur_entry = &dwarf_entry_array[i];
@@ -132,6 +209,8 @@ void initializeTypeArray()
 	  int j=0;
 	  int offset=0;
 	  if (collection_ptr->name==NULL)
+	    continue;
+	  if (sht!=NULL&&!gencontains(sht,collection_ptr->name))
 	    continue;
 	  if (gencontains(ght,collection_ptr->name)) {
 	    struct valuepair *vp=(struct valuepair*)gengettable(ght,collection_ptr->name);
@@ -286,7 +365,7 @@ int getsize(dwarf_entry *type) {
 
 char * printname(dwarf_entry * type,int op) {
   if (type==NULL) {
-    if (op==GETTYPE)
+    if (op==GETTYPE||op==GETJUSTTYPE)
       return NULL;
   }
 
@@ -297,7 +376,7 @@ char * printname(dwarf_entry * type,int op) {
     break;
   case DW_TAG_array_type: {
     modifier_type * modifier_ptr=(modifier_type*)type->entry_ptr;
-    if (op==GETTYPE) {
+    if (op==GETTYPE||op==GETJUSTTYPE) {
 	char *typename=printname(modifier_ptr->target_ptr,op);
 	return typename;
     } else if (op==POSTNAME) {
@@ -316,7 +395,7 @@ char * printname(dwarf_entry * type,int op) {
   case DW_TAG_const_type:
     {
       consttype * ctype_ptr=(consttype*)type->entry_ptr;
-      if (op==GETTYPE) {
+      if (op==GETTYPE||op==GETJUSTTYPE) {
 	char *typename=printname(ctype_ptr->target_ptr,op);
 	return typename;
       }
@@ -328,7 +407,7 @@ char * printname(dwarf_entry * type,int op) {
   case DW_TAG_typedef: 
     {
       tdef * tdef_ptr=(tdef*)type->entry_ptr;
-      if (op==GETTYPE) {
+      if (op==GETTYPE||op==GETJUSTTYPE) {
 	char *typename=printname(tdef_ptr->target_ptr,op);
 	return typename;
       }
@@ -364,6 +443,13 @@ char * printname(dwarf_entry * type,int op) {
 	sprintf(newptr,"%s *",typename);
 	return newptr;
       }
+    } else if (op==GETJUSTTYPE) {
+      if (modifier_ptr->target_ptr==NULL)
+	return NULL;
+      {
+	char *typename=printname(modifier_ptr->target_ptr,op);
+	return typename;
+      }
     }
   }
     break;
@@ -376,6 +462,13 @@ char * printname(dwarf_entry * type,int op) {
     }
     if (op==GETTYPE)
       return ctype->name;
+    if (op==GETJUSTTYPE&&ctype->name==NULL&&assigntype) {
+      ctype->name=(char*)malloc(100);
+      sprintf(ctype->name,"TYPE%ld",typecount++);
+    }
+    if (op==GETJUSTTYPE)
+      return ctype->name;
+
   }
     break;
   default:
@@ -391,6 +484,8 @@ char * printname(dwarf_entry * type,int op) {
   }
   if (op==POSTNAME)
     return "";
+  if (op==GETJUSTTYPE)
+    return NULL;
   return "ERROR";
 }
 
