@@ -3,11 +3,12 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.AbstractCollection;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * <code>BinHeapPriorityQueue</code> is an implementation of the
@@ -21,174 +22,239 @@ import java.util.List;
  * speed becomes an issue. 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BinHeapPriorityQueue.java,v 1.4 2002-04-10 03:07:03 cananian Exp $
+ * @version $Id: BinHeapPriorityQueue.java,v 1.5 2002-04-23 22:29:05 ovy Exp $
  */
 public class BinHeapPriorityQueue extends AbstractCollection implements MaxPriorityQueue {
+    private HashMap item2entry;
+    private Entry[] heap;
+    private int size;
 
-    // heap: List of Objects, maintaining the invariants: 
-    // 1. for each element 'o' at index 'i', the parent of 'o' is
-    //    located at index ( (i+1)/2 - 1)
-    // 2. for each element 'o', the parent of 'o' has a priority
-    //    greater than or equal to the priority of 'o'.
-    private List heap;
-
-    // Priorities of Objects in 'heap' are stored in Integer objects
-    // here. 
-    private List priorities;
-
+    private final static int DEFAULT_SIZE=16;
     
-    /** Creates a <code>BinHeapPriorityQueue</code>. */
     public BinHeapPriorityQueue() {
-        heap = new ArrayList();
-	priorities = new ArrayList();
+        this(DEFAULT_SIZE);
+    }
+
+    public BinHeapPriorityQueue(int size) {
+        item2entry = new HashMap(size);
+        heap = new Entry[size];
+        size = 0;
+    }
+
+
+    public boolean insert(Object item, int priority) {
+
+        // already exists? then simply set priority
+        if (item2entry.containsKey(item)) {
+            return setPriority(item, priority) != priority;
+        }
+
+        ensureCapacity(size+1);
+        
+        Entry entry = new Entry();
+        entry.item = item;
+        entry.priority = priority;
+
+        // insert at last position in heap
+        entry.heapIndex = size;
+        heap[size] = entry;
+        size++;
+        
+        // now percolate to go up the hierarchy
+        percolate(entry);
+
+        // the collection has changed
+        return true;
+    }
+
+    public int getPriority(Object item) {
+        Entry entry = (Entry) item2entry.get(item);
+
+        if (entry == null) {
+            throw new NoSuchElementException(item.toString());
+        }
+
+        return entry.priority;
     }
     
-    private int _parent(int i) { return (i+1)/2 - 1; }
-    private int _left(int i) { return 2*(i+1) - 1; }
-    private int _right(int i) { return 2*(i+1) ; }
 
-    private void _add(Object item, Integer priority) {
-	heap.add(item);
-	priorities.add(priority);
+    public int setPriority(Object item, int priority) {
+        Entry entry = (Entry) item2entry.get(item);
+
+        if (entry == null) {
+            throw new NoSuchElementException(item.toString());
+        }
+
+        int oldPriority = entry.priority;
+        entry.priority = priority;
+        
+        priorityChanged(entry, priority - oldPriority);
+
+        return oldPriority;
     }
 
-    private void _swap(int index1, int index2) {
-	Object one = heap.get(index1);
-	Object two = heap.get(index2);
-	Integer p1 = (Integer) priorities.get(index1);
-	Integer p2 = (Integer) priorities.get(index2);
-	heap.set(index1, two);
-	priorities.set(index1, p2);
-	heap.set(index2, one);
-	priorities.set(index2, p1);
-    }
+    public void changePriority(Object item, int delta) {
+        Entry entry = (Entry) item2entry.get(item);
 
-    private void _set(int index, Object item, Integer priority) {
-	heap.set(index, item);
-	priorities.set(index, priority);
-    }
+        if (entry == null) {
+            throw new NoSuchElementException(item.toString());
+        }
 
-    private void _heapify(int i) {
-	assert i < heap.size() : "heapify param "+i+" out of bounds "+heap.size();
-	int l = _left(i);
-	int r = _right(i);
-	int largest;
-	if (l < priorities.size() && 
-	    ((Integer)priorities.get(l)).intValue() >
-	    ((Integer)priorities.get(i)).intValue()) {
-	    largest = l;
-	} else {
-	    largest = i;
-	}
-	if (r < priorities.size() && 
-	    ((Integer)priorities.get(r)).intValue() >
-	    ((Integer)priorities.get(largest)).intValue()) {
-	    largest = r;
-	}
-	if (largest != i) {
-	    _swap(i, largest);
-	    _heapify(largest);
-	}
-    }
-    private void _remove(int index) {
-	// replace element to remove with smallest element.
-	int sizem1 = size()-1;
-	heap.set(index, heap.get(sizem1));
-	priorities.set(index, priorities.get(sizem1));
-	heap.remove(sizem1);
-	priorities.remove(sizem1);
-	// now heapify to restore heap condition.
-	if (index<sizem1) _heapify(index); //FSK:not sure if this is correct
-    }
-
-    public void insert(Object item, int priority) {
-	heap.add(null); priorities.add(null);
-	int i = heap.size()-1;
-	while(i > 0 && ((Integer)priorities.get(_parent(i))).intValue() < priority) {
-	    _set(i, heap.get(_parent(i)), (Integer)priorities.get(_parent(i)));
-	    i = _parent(i);
-	}
-	_set(i, item, new Integer(priority));
+        entry.priority += delta;
+        priorityChanged(entry, delta);
     }
 
     public Object peekMax() {
-	return heap.get(0);
+        return heap[0].item;
+    }
+    
+    public Object deleteMax() {
+        if (size == 0) {
+            throw new NoSuchElementException("Heap is empty");
+        }
+        
+        Object item = heap[0].item;
+
+        removeEntry(heap[0]);
+
+        return item;
+    }
+    
+    
+    public boolean remove(Object item) {
+        Entry entry = (Entry) item2entry.get(item);
+
+        if (entry == null) return false;
+
+        removeEntry(entry);
+
+        return true;
     }
 
-    public Object deleteMax() {
-	assert heap.size() > 0 : "Heap Underflow";
-	Object rtrn = heap.get(0);
+    public boolean contains(Object item) {
+        return item2entry.containsKey(item);
+    }
 
-	Object mov = heap.remove(heap.size() - 1);
-	Integer pri = (Integer) priorities.remove(priorities.size() - 1);
-	
-	if (heap.size() == 0) {
-	    // we just deleted last element
-	} else {
-	    assert heap.size() == priorities.size() : "Why are the two Lists' sizes in the BinHeap unequal?";
-	    _set(0, mov, pri);
-	    _heapify(0);
-	}
-	return rtrn;
+    public Iterator iterator() {
+        return new HeapIterator();
     }
 
     public void clear() {
-	heap.clear();
-	priorities.clear();
+        item2entry.clear();
+        Arrays.fill(heap, null);
+        size = 0;
     }
-    
-    /** This is slow. */
-    public boolean contains(Object o) {
-	return heap.contains(o);
-    }
-
-    public boolean equals(Object o) {
-	BinHeapPriorityQueue bhpq;
-	if (this==o) return true;  // common case
-	if (null==o) return false; // uncommon case
-	try {
-	    bhpq = (BinHeapPriorityQueue) o;
-	} catch (ClassCastException e) {
-	    return false;
-	}
-	return 
-	    bhpq.heap.equals(this.heap) &&
-	    bhpq.priorities.equals(this.priorities);
-    }
-
-    public int hashCode() {
-	return heap.hashCode() ^ priorities.hashCode();
-    }
-
-    public boolean isEmpty() {
-	return heap.isEmpty();
-    }
-
-    /** Returns the elements of <code>this</code> in no specific
-	order. 
-	<BR> <B>effects:</B> Creates a new <code>Iterator</code> which
-	     returns the elements of <code>this</code>
-	<BR> <B>requires:</B> <code>this</code> is not modified while
-	     the returned <code>Iterator</code> is in use.
-    */
-    public Iterator iterator() {
-	// return a wrapping iterator, to ensure that the state of
-	// 'priorities' is kept consistent
-	return Default.unmodifiableIterator(heap.iterator());
-    }
-
-    /** This is slow. */
-    public boolean remove(Object o) {
-	int index = heap.indexOf(o); // this is the slow bit.
-	if (index<0) return false;
-	_remove(index);
-	return true;
-    }
-
-    /* Use default implementation from AbstractCollection for
-     * containsAll(), removeAll() and retainAll() */
 
     public int size() {
-	return heap.size();
+        return size;
+    }
+
+    private void removeEntry(Entry entry) {
+        Entry last = heap[size - 1];
+        
+        swap(entry, last);
+        priorityChanged(last, last.priority - entry.priority);
+        
+        heap[size - 1] = null;
+        size--;
+
+        item2entry.remove(entry.item);
+    }
+
+    private void ensureCapacity(int size) {
+        if (heap.length >= size) return;
+
+        Entry[] newHeap = new Entry[ Math.max(size, heap.length*2) ];
+        
+        System.arraycopy(heap, 0, newHeap, 0, heap.length);
+
+        heap = newHeap;
+    }
+        
+    private void priorityChanged(Entry entry, int delta) {
+        if (delta > 0) {
+            // priority has grown, move up
+            percolate(entry);
+        } else if (delta < 0) {
+            // priority has decreased, move down
+            siftDown(entry);
+        }
+    }
+
+    private void percolate(Entry entry) {
+        while (entry.heapIndex > 0) {
+            Entry parent = heap[ (entry.heapIndex-1) / 2 ];
+
+            // are we better than parent? if not, we're in the right place
+            if (entry.priority <=  parent.priority) {
+                break;
+            }
+
+            swap(parent, entry);
+        }
+    }
+
+    private void siftDown(Entry entry) {
+        while (entry.heapIndex*2 + 1 < size) {
+            Entry leftSon = heap[entry.heapIndex*2 + 1];
+            Entry rightSon = entry.heapIndex*2 + 2 < size ?
+                heap[entry.heapIndex*2 + 2] : null;
+
+            Entry maxSon =
+                (rightSon == null || leftSon.priority > rightSon.priority) ?
+                leftSon : rightSon;
+
+            // are we better than our best son? if so, we're in the right place
+            if (entry.priority >= maxSon.priority) {
+                break;
+            }
+
+            swap(entry, maxSon);
+        }
+    }
+
+    
+    private void swap(Entry e1, Entry e2) {
+        int e1_index = e1.heapIndex;
+        int e2_index = e2.heapIndex;
+                    
+        e1.heapIndex = e2_index;
+        heap[e2_index] = e1;
+
+        e2.heapIndex = e1_index;
+        heap[e1_index] = e2;
+    }
+
+    
+
+    class Entry {
+        int priority;
+        int heapIndex;
+        Object item;
+    }
+
+    // wrapper around the hashMap's entry iterator
+    class HeapIterator implements Iterator {
+        Iterator hashIterator;
+        Entry current;
+        
+        HeapIterator() {
+            hashIterator = item2entry.entrySet().iterator();
+        }
+
+        public boolean hasNext() {
+            return hashIterator.hasNext();
+        }
+
+        public Object next() {
+            Map.Entry hashEntry = ((Map.Entry) hashIterator.next());
+            current = (Entry) hashEntry.getValue();
+            return hashEntry.getKey();
+        }
+
+        public void remove() {
+            hashIterator.remove();
+            removeEntry(current);
+        }
     }
 }

@@ -15,7 +15,7 @@ import java.util.Collection;
  * added <code>Object</code> with a priority.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaxPriorityQueue.java,v 1.2 2002-02-25 21:08:45 cananian Exp $
+ * @version $Id: MaxPriorityQueue.java,v 1.3 2002-04-23 22:29:05 ovy Exp $
  */
 public interface MaxPriorityQueue extends Collection {
 
@@ -24,7 +24,7 @@ public interface MaxPriorityQueue extends Collection {
 	@param item <code>Object</code> being inserted
 	@param priority Priority of <code>item</code>
     */
-    void insert(Object item, int priority);
+    boolean insert(Object item, int priority);
 
     /** Returns the <code>Object</code> in <code>this</code> with the
 	highest priority.
@@ -35,5 +35,21 @@ public interface MaxPriorityQueue extends Collection {
 	<code>this</code> with the highest priority.
     */
     Object deleteMax();
+
+
+    /** Returns the priority currently associated with this item.
+     */
+    int getPriority(Object item);
+
+    /** Changes the priority of this <code>Object</code>
+        to the new, specified value, and returns the old value
+    */
+    int setPriority(Object item, int newPriority);
+
+    /** Change the priority of this element by the specified delta.
+        This is equivalent to <code>setPriority(item, getPriority(item)+delta).
+        It might save time in some implementations.
+    */
+    void changePriority(Object item, int delta);
     
 }
