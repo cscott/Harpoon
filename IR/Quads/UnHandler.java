@@ -21,7 +21,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.23 2000-01-13 23:48:04 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.24 2000-01-28 05:38:06 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -214,7 +214,7 @@ final class UnHandler {
 	    for (Iterator e=Hhs.keySet().iterator(); e.hasNext(); ) {
 		HandlerSet hs = (HandlerSet)e.next();
 		List v = get(Hhs, hs);
-		Util.assert(hs!=null && v.size()>0); // should be!
+		Util.assert(v.size()>0); // should be!
 		PHI phi = new PHI(qf, (Quad)v.get(0),
 				  new Temp[0], v.size() /*arity*/);
 		// link all to in of phi
@@ -224,7 +224,11 @@ final class UnHandler {
 		}
 		// now build instanceof tree. exception in Tex.
 		Quad head = phi; int which_succ = 0;
-		for (Iterator ee=hs.iterator(); ee.hasNext(); ) {
+		if (hs==null) { // this is common THROW for no-handler case
+		    THROW q0 = new THROW(qf, head, Tex);
+		    Quad.addEdge(head, which_succ, q0, 0);
+		    register(q0);
+		} else for (Iterator ee=hs.iterator(); ee.hasNext(); ) {
 		    HANDLER h = (HANDLER)ee.next();
 		    HClass HCex = h.caughtException();
 		    if (HCex==null) {
@@ -806,7 +810,8 @@ final class UnHandler {
 	}
 	private Quad _throwException_(QuadFactory qf, Quad old, Temp Tex) {
 	    HandlerSet hs = ss.hm.handlers(old);
-	    if (hs==null) {
+	    // if ss.coalesce==true, we coalesce even the no-handler case.
+	    if (hs==null && !ss.coalesce) {
 		THROW q0 = new THROW(qf, old, Tex);
 		ss.hm.register(q0);
 		return q0;
