@@ -20,13 +20,31 @@ JNIEXPORT jobject JNICALL Java_java_lang_VMObject_clone
     if (claz->component_claz==NULL) {
       /* not an array */
       u_int32_t size = claz->size;
-      return cloneHelper(env, obj, size);
+      return fni_object_cloneHelper(env, obj, size);
     } else { 
       /* an array of some primitive type */
       assert(0/*unimplemented*/);
       return NULL;
     }
 }
+
+/* slightly out-of-place, but here are the array-clone implementations */
+#define PRIMITIVEARRAYCLONE(name, type, sig)\
+JNIEXPORT jobject JNICALL Java__3##sig##_clone\
+  (JNIEnv *env, jobject obj) {\
+    jsize len = (*env)->GetArrayLength(env, (jarray) obj);\
+    return fni_object_cloneHelper(env, obj, sizeof(struct aarray) + sizeof(type)*len);\
+}
+PRIMITIVEARRAYCLONE(Boolean, jboolean, Z);
+PRIMITIVEARRAYCLONE(Byte, jbyte, B);
+PRIMITIVEARRAYCLONE(Char, jchar, C);
+PRIMITIVEARRAYCLONE(Short, jshort, S);
+PRIMITIVEARRAYCLONE(Int, jint, I);
+PRIMITIVEARRAYCLONE(Long, jlong, J);
+PRIMITIVEARRAYCLONE(Float, jfloat, F);
+PRIMITIVEARRAYCLONE(Double, jdouble, D);
+/* not really a primitive =) */
+PRIMITIVEARRAYCLONE(Object, struct oobj *, Ljava_lang_Object_2);
 #endif /* !WITH_TRANSACTIONS */
 
 /*

@@ -41,14 +41,14 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_clone
     struct claz *claz = FNI_CLAZ(FNI_UNWRAP_MASKED(obj));
     u_int32_t size = claz->size;
     assert(claz->component_claz==NULL/* not an array*/);
-    return cloneHelper(env, obj, size);
+    return fni_object_cloneHelper(env, obj, size);
 }
 
 #define PRIMITIVEARRAYCLONE(name, type, sig)\
 JNIEXPORT jobject JNICALL Java__3##sig##_clone\
   (JNIEnv *env, jobject obj) {\
     jsize len = (*env)->GetArrayLength(env, (jarray) obj);\
-    return cloneHelper(env, obj, sizeof(struct aarray) + sizeof(type)*len);\
+    return fni_object_cloneHelper(env, obj, sizeof(struct aarray) + sizeof(type)*len);\
 }
 PRIMITIVEARRAYCLONE(Boolean, jboolean, Z);
 PRIMITIVEARRAYCLONE(Byte, jbyte, B);
@@ -69,7 +69,7 @@ PRIMITIVEARRAYCLONE(Object, struct oobj *, Ljava_lang_Object_2);
  */
 JNIEXPORT void JNICALL Java_java_lang_Object_notify
   (JNIEnv *env, jobject _this) {
-  fni_object_notify(env, obj);
+  fni_object_notify(env, _this);
 }
 
 /*
@@ -79,7 +79,7 @@ JNIEXPORT void JNICALL Java_java_lang_Object_notify
  */
 JNIEXPORT void JNICALL Java_java_lang_Object_notifyAll
   (JNIEnv *env, jobject _this) {
-  fni_object_notifyAll(env, obj);
+  fni_object_notifyAll(env, _this);
 }
 /*
  * Class:     java_lang_Object
@@ -88,7 +88,7 @@ JNIEXPORT void JNICALL Java_java_lang_Object_notifyAll
  */
 JNIEXPORT void JNICALL Java_java_lang_Object_wait
   (JNIEnv *env, jobject _this, jlong millis) {
-  fni_object_wait(env, obj, millis, 0);
+  fni_object_wait(env, _this, millis, 0);
 }
 
 #ifdef WITH_TRANSACTIONS

@@ -89,7 +89,7 @@ JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
   (JNIEnv *env, jclass syscls,
    jobject src, jint srcpos, jobject dst, jint dstpos,
    jint length) {
-  fni_system_arraycopy(env, syscls, src, srcpos, dst, dstpos, length
+  fni_system_arraycopy(env, syscls, src, srcpos, dst, dstpos, length);
 }
 #endif /* !WITH_TRANSACTIONS */
 
