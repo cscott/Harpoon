@@ -10,6 +10,8 @@ package javax.realtime;
  */
 
 public class NativeScheduler extends Scheduler {
+    private static NativeScheduler instance = null;
+
     protected NativeScheduler() {
 	super();
     } 
@@ -22,9 +24,10 @@ public class NativeScheduler extends Scheduler {
 		}
 	    });
 	}
+	return instance;
     }
 
-    protected void addToFeasibility() {}
+    protected void addToFeasibility(Schedulable schedulable) {}
 
     public void fireSchedulable(Schedulable schedulable) {
 	schedulable.run();
@@ -42,7 +45,7 @@ public class NativeScheduler extends Scheduler {
 	return true;
     }
 
-    protected void removeFromFeasiblity(Schedulable schedulable) {}
+    protected void removeFromFeasibility(Schedulable schedulable) {}
 
     public boolean setIfFeasible(Schedulable schedulable,
 				 ReleaseParameters release,
@@ -57,7 +60,7 @@ public class NativeScheduler extends Scheduler {
 	return true;
     }
 
-    protected void chooseThread(long currentTime) {
+    protected long chooseThread(long currentTime) {
 	throw new Error("chooseThread should never be called!");
     }
 
