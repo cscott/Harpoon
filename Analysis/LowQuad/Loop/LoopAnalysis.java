@@ -70,7 +70,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.16 1999-09-23 21:22:43 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.17 1999-09-24 04:37:05 bdemsky Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -338,6 +338,8 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    switch (q.opcode()) {
 	    case Qop.ICMPEQ:
 	    case Qop.ICMPGT:
+	    case Qop.LCMPEQ:
+	    case Qop.LCMPGT:
 		//look at the POPER
 		//return new POPER if we can do stuff
 		if (lookat(q)) tests.add(q);
@@ -350,6 +352,8 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    switch (q.opcode()) {
 	    case Qop.ICMPEQ:
 	    case Qop.ICMPGT:
+	    case Qop.LCMPEQ:
+	    case Qop.LCMPGT:
 		//look at the OPER
 		//return new OPER if we can do stuff
 		if (lookat(q)) tests.add(q);
@@ -388,7 +392,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	}
     }
 
-    public Object[] forloop(HCode hc, Loops lp) {
+    public ForLoopInfo forloop(HCode hc, Loops lp) {
 	analyze(hc);
 	Util.assert(lp.loopEntrances().size()==1,"Loop must have one entrance");	
 	Quad header=(Quad)(lp.loopEntrances()).toArray()[0];;
@@ -398,11 +402,113 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    ptr.accept(flv);
 	}
 	if (flv.forLoop()) {
-	    return new Object[] {flv.inductionVar(), flv.testCondition()};
+	    ForLoopInfo retval=null;
+	    OPER test=flv.testCondition();
+	    CJMP cjmp=flv.cjmpExit();
+	    Temp ivar=flv.inductionVar();
+	    Temp increment=findIncrement(hc, ivar, lp);
+	    int bindex=flv.bindex();
+	    int cjmpedge=flv.cjmpedge();
+	    switch (test.opcode()) {
+	    case Qop.LCMPEQ:
+	    case Qop.ICMPEQ:
+		if (cjmpedge==1)
+		    retval=new ForLoopInfo(ForLoopInfo.NEQ,ivar,increment,
+					   initialTemp(hc, ivar, lp),
+					   test.operands(1-bindex),test,cjmp);
+		break;
+	    case Qop.LCMPGT:
+	    case Qop.ICMPGT:
+		int cond=0;
+		if ((bindex==0)&&(cjmpedge==1))
+		    cond=ForLoopInfo.GT;
+		if ((bindex==1)&&(cjmpedge==1))
+		    cond=ForLoopInfo.LT;
+		if ((bindex==0)&&(cjmpedge==0))
+		    cond=ForLoopInfo.LTE;
+		if ((bindex==1)&&(cjmpedge==0))
+		    cond=ForLoopInfo.GTE;
+		retval=new ForLoopInfo(cond,ivar,increment,
+				       initialTemp(hc, ivar, lp),
+				       test.operands(1-bindex),test,cjmp);
+		break;
+	    default:
+	    }
+	    return retval;
 	}
 	else 
 	    return null;
     }
+
+    class ForLoopInfo {
+	private int testtype;
+	private Temp induction;
+	private Temp increment;
+	private Temp indinitial;
+	private Temp indfinal;
+	private OPER testquad;
+	private CJMP loopexit;
+	ForLoopInfo(int testtype,Temp induction, Temp increment,Temp indinitial, Temp indfinal, OPER testoper, CJMP loopexit) {
+	    this.testtype=testtype;
+	    this.induction=induction;
+	    this.indinitial=indinitial;
+	    this.indfinal=indfinal;
+	    this.testquad=testquad;
+	    this.loopexit=loopexit;
+	    this.increment=increment;
+  	}
+	public int testtype() {
+	    return testtype;
+	}
+	public Temp increment() {
+	    return increment;
+	}
+	public Temp induction() {
+	    return induction;
+	}
+	public Temp indInitial() {
+	    return indinitial;
+	}
+	public Temp indFinal() {
+	    return indfinal;
+	}
+	public OPER testOPER() {
+	    return testquad;
+	}
+	public CJMP loopExit() {
+	    return loopexit;
+	}
+	public final static int NEQ = 0;
+	public final static int LT = 1;
+	public final static int LTE = 2;
+	public final static int GT = 3;
+	public final static int GTE = 4;
+	public String toString() {
+	    String ttype=null;
+	    switch(testtype) {
+	    case NEQ:
+		ttype="!=";
+		break;
+	    case LT:
+		ttype="<";
+		break;
+	    case LTE:
+		ttype="<=";
+		break;
+	    case GT:
+		ttype=">";
+		break;
+	    case GTE:
+		ttype=">=";
+		break;
+	    default:
+	    }
+	    return new String(induction+"="+indinitial+
+			      ";"+induction+ttype+indfinal+";"
+			      +induction+"+="+increment);
+	}
+    }
+
 
     /*  NOTE:  Assumption is made that no quad can go wrong, otherwise
 	 there would have been an explicity test before it...*/
@@ -417,6 +523,9 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	private boolean analysisdone;
 	private Temp inductionvar;
 	private OPER testcondition;
+	private int bindex;
+	private int cjmpedge;
+	private CJMP cjmp;
 
 	ForLoopVisitor(Set testsopers, HCode hc, UseDef ud, Loops lp, TempMap ssitossamap) {
 	    this.track=new WorkSet();
@@ -429,6 +538,11 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    this.analysisdone=false;
 	    this.inductionvar=null;
 	    this.testcondition=null;
+	    this.cjmpedge=-1;
+	}
+
+	int cjmpedge() {
+	    return cjmpedge;
 	}
 
 	boolean done() {
@@ -443,6 +557,10 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    return (analysisdone&&(inductionvar!=null));
 	}
 
+	CJMP cjmpExit() {
+	    return cjmp;
+	}
+
 	OPER testCondition() {
 	    return testcondition;
 	}
@@ -450,6 +568,10 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	Temp inductionVar() {
 	    return inductionvar;
 	} 
+
+	int bindex() {
+	    return bindex;
+	}
 
 	public void visit(Quad q) {
 	    System.out.println("Error in ForLoopVisitor");
@@ -482,14 +604,17 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 		//4) None of the sigma defines gets used outside of the loop
 		//5) That the increment of the basic induction variable doesn't
 		//get used at any point other than the phi function...
-		if (analyzecjmp(q)) {
+		int exit=analyzecjmp(q);
+		if (exit!=-1) {
 		    //finished #2, setup track for #3, 4...
 		    //See if we have a basic induction varible...
 		    OPER testoper=(OPER)defs[0];
 		    Map bamap=(Map)bimap.get(lp.loopEntrances().toArray()[0]);
 		    for (int i=0;i<testoper.operandsLength();i++) {
-			if (bamap.containsKey(ssitossamap.tempMap(testoper.operands(i))))
+			if (bamap.containsKey(ssitossamap.tempMap(testoper.operands(i)))) {
 			    binvar=ssitossamap.tempMap(testoper.operands(i));
+			    bindex=i;
+			}
 			    //have a basic induction variable [#1 finished]
 		    }
 		    if (binvar!=null) {
@@ -503,7 +628,9 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 			    //condition #5 satisfied
 			    if (checktracks()) {
 				inductionvar=binvar;
+				cjmpedge=exit;
 				testcondition=testoper;
+				cjmp=q;
 			    }
 			//conditions 3&4 satisfied
 		    }
@@ -529,8 +656,8 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    return go;
 	}
 
-	boolean analyzecjmp(CJMP q) {
-	    boolean exit=false;
+	int analyzecjmp(CJMP q) {
+	    int exit=-1;
 	    for (int i=0;i<q.nextLength();i++)
 		if (!lp.loopIncelements().contains(q.next(i))) {
 		    //we've found the way out...
@@ -542,7 +669,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 		    for(int j=0;j<q.numSigmas();j++)
 			if (track.contains(q.src(j)))
 			    track.add(q.dst(j,i));
-		    exit=true;
+		    exit=i;
 		}
 	    return exit;
 	}

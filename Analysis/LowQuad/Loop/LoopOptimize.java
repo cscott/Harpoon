@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.22 1999-09-22 19:23:16 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.23 1999-09-24 04:37:05 bdemsky Exp $
  */
 public final class LoopOptimize {
     
@@ -196,6 +196,9 @@ public final class LoopOptimize {
 	//Only look at ICMPEQ, and ICMPGT
 
 	public void consider(POPER q) {
+	    switch (q.opcode()) {
+	    case Qop.ICMPGT:
+	    case Qop.ICMPEQ:
 		POPER replace=lookat(q);
 		if (replace!=null) {
 		    //Put the new POPER in its place
@@ -203,6 +206,9 @@ public final class LoopOptimize {
 		    Quad.addEdge(qnew.prev(0), qnew.prevEdge(0).which_succ(), replace,0);
 		    Quad.addEdge(replace, 0, qnew.next(0), qnew.nextEdge(0).which_pred());
 		}
+		break;
+	    default:
+	    }
 	}
 
 	/**<code>lookat</code> examines a test condition, to see how we should replace it.*/
