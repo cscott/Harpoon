@@ -76,7 +76,7 @@ import harpoon.Util.Util;
  * based on the results of pointer analysis.
  * 
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: SyncElimination.java,v 1.1.2.1 2000-07-03 02:27:09 jwhaley Exp $
+ * @version $Id: SyncElimination.java,v 1.1.2.2 2000-07-15 14:42:38 jwhaley Exp $
  */
 public class SyncElimination {
 
@@ -91,9 +91,27 @@ public class SyncElimination {
 	this.necessarySyncs = new HashSet();
     }
     
-    public void addRoot(MetaMethod mm) {
+    public void addRoot_intrathread(MetaMethod mm) {
+	
+	final ParIntGraph pig = pa.getExtParIntGraph(mm);
+	final ActionRepository ar = pig.ar;
+	// add to the set of necessary sync ops.
+	ActionVisitor act_visitor = new ActionVisitor() {
+		public void visit_ld(PALoad load){
+		}
+		public void visit_sync(PASync sync){
+		    // this sync exists in the action repository, so it operates
+		    // on an escaped node, therefore it is necessary.
+		    necessarySyncs.add(sync);
+		}
+	    };
+	ar.forAllActions(act_visitor);
+	
+    }
+    
+    public void addRoot_interthread(MetaMethod mm) {
 
-	System.out.println("Adding root method "+mm);
+	System.out.println("Adding interthread info from root method "+mm);
 
 	final ParIntGraph pig = pa.threadInteraction(mm);
 	final ActionRepository ar = pig.ar;
@@ -107,6 +125,11 @@ public class SyncElimination {
 		    PANode n = sync.n;
 		    PANode nt = sync.nt;
 		    // Sync on node n is performed by nt in || with nt2.
+		    
+		    // If node n escapes through an unanalyzed call, this sync is necessary.
+		    //if (pig.G.escaped(n))
+		    // ... PUNT on this for now because we have no unanalyzed calls in our benchmarks.
+		    
 		    // If nt2 has syncs on node n, this sync is necessary.
 		    Iterator i = ar.syncsOn(n, nt2);
 		    if (!i.hasNext()) return;
