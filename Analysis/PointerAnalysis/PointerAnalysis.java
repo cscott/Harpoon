@@ -10,6 +10,7 @@ import java.util.Enumeration;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Date;
+import java.util.Collections;
 
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HClass;
@@ -50,7 +51,7 @@ import harpoon.IR.Quads.FOOTER;
  * computed results from the caches.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.10 2000-01-31 20:49:23 pnkfelix Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.11 2000-02-07 02:11:46 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -61,6 +62,7 @@ public class PointerAnalysis {
 
     // The HCodeFactory providing the actual code of the analyzed methods
     private CallGraph cg;
+    final CallGraph getCallGraph() { return cg; }
     private AllCallers ac;
     private CachingSCCBBFactory scc_bb_factory;
 
@@ -131,8 +133,9 @@ public class PointerAnalysis {
     private PAWorkList  W_intra_proc = new PAWorkList();
 
     /** Repository for node management. */
-    // TODO: Must be private, publci just for debug purposes
+    // TODO: Must be private, it is public just for debug purposes
     public NodeRepository nodes = new NodeRepository(); 
+    final NodeRepository getNodeRepository() { return nodes; }
 
     // Top-level procedure for the analysis. Receives the main method as
     // parameter. For the moment, it is not doing the inter-thread analysis
@@ -194,7 +197,7 @@ public class PointerAnalysis {
 	HMethod method = (HMethod)scc.nodes().next();
 	// if SCC composed of a native or abstract method, return immediately!
 	if(!analyzable(method)){
-	    System.out.println("SCC" + scc.getId() + " is unanalyzable");
+	    System.out.println(scc.toString(cg) + " is unanalyzable");
 	    return;
 	}
 	W_inter_proc.add(method);
@@ -204,6 +207,8 @@ public class PointerAnalysis {
 
 	System.out.print(scc.toString(cg));
 	System.out.println("must_check = " + must_check);
+
+	long begin_time = new Date().getTime();
 
 	while(!W_inter_proc.isEmpty()){
 	    // grab a method from the worklist
@@ -233,6 +238,12 @@ public class PointerAnalysis {
 	    }
 	}
 
+	scc_bb_factory.clear();
+
+	long total_time = new Date().getTime() - begin_time;
+	System.out.println("SCC" + scc.getId() + " analyzed in " + 
+			   total_time + " ms");
+
 	// System.out.println("SCC"+scc.getId() + " analysis finished.");
     }
 
@@ -257,7 +268,7 @@ public class PointerAnalysis {
 	METHOD m  = (METHOD) first_hce.next(1); 
 	initial_pig = get_method_initial_pig(hm,m);
 
-	// analyze the SCCs in decreasing topolofgical order
+	// analyze the SCCs in decreasing topological order
 	while(scc != null){
 	    analyze_intra_proc_scc(scc);
 	    scc = scc.nextTopSort();
@@ -460,18 +471,50 @@ public class PointerAnalysis {
 	    /// System.out.println("Before CALL");
 	    /// System.out.println(bbpig);
 
+	    if(thread_start_site(q)){
+		System.out.println("THREAD START SITE: " + 
+				   q.getSourceFile() + ":" +
+				   q.getLineNumber());
+		Temp l = q.params(0);
+		Set set = bbpig.G.I.pointedNodes(l);
+		bbpig.tau.incAll(set);
+
+		Iterator it_nt = set.iterator();
+		while(it_nt.hasNext()){
+		    PANode nt = (PANode) it_nt.next();
+		    bbpig.G.e.addNodeHole(nt,nt);
+		    bbpig.G.propagate(Collections.singleton(nt));
+		}
+
+		return;
+	    }
+
 	    InterProcPA.analyze_call(current_intra_method,
 				     q,     // the CALL site
 				     bbpig, // the graph before the call
-				     cg,    // the CallGraph
-				     PointerAnalysis.this,
-				     nodes);// the node repository 
+				     PointerAnalysis.this);
 
 	    /// System.out.println("After CALL");
 	    /// System.out.println(bbpig);
 
 	}
-	
+
+	// We are sure that the call site q corresponds to a thread start
+	// site if only java.lang.Thread.start can be called there. (If
+	// some other methods can be called, it is possible that some of
+	// them do not start a thread.)
+	private boolean thread_start_site(CALL q){
+	    HMethod hms[] = cg.calls(current_intra_method,q);
+	    if(hms.length!=1) return false;
+
+	    HMethod hm = hms[0];
+	    String name = hm.getName();
+	    if((name==null) || !name.equals("start")) return false;
+
+	    if(hm.isStatic()) return false;
+	    HClass hclass = hm.getDeclaringClass();
+	    return hclass.getName().equals("java.lang.Thread");
+	}
 
 	/** End of the currently analyzed method; trim the graph
 	 *  of unnecessary edges, store it in the hash tables etc. */
@@ -628,9 +671,9 @@ public class PointerAnalysis {
 	    (java.lang.reflect.Modifier.isNative(modifier)) ||
 	    (java.lang.reflect.Modifier.isAbstract(modifier))
 	    );
-	    
     }
 
 }
+
 
 

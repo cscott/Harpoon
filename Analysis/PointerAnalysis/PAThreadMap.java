@@ -23,7 +23,7 @@ import java.util.Set;
  * substraction.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAThreadMap.java,v 1.1.2.4 2000-01-18 04:49:40 salcianu Exp $
+ * @version $Id: PAThreadMap.java,v 1.1.2.5 2000-02-07 02:11:46 salcianu Exp $
  */
 public class PAThreadMap{
 
@@ -55,6 +55,17 @@ public class PAThreadMap{
 	if(v == null) hash.put(n,ONE);
 	if(v == ONE) hash.put(n,TWO);
     }
+
+
+    /** Convenient function that calls <code>inc</code> for all the
+	nodes from <code>set</code> */
+    public void incAll(Set nodes){
+	Iterator it = nodes.iterator();
+	while(it.hasNext()){
+	    PANode node = (PANode) it.next();
+	    inc(node);
+	}
+    }
     
     /** Decrements the value attached to <code>n</code> */
     public void dec(PANode n){
@@ -71,6 +82,11 @@ public class PAThreadMap{
 	// and ZERO) and decrease the number of keys from the map.
 	if(v==ONE) hash.remove(n);
 	if(v==TWO) hash.put(n,TWO);
+    }
+
+    /** Set to zero the value attached to the node <code>n</code>. */
+    public void setToZero(PANode n){
+	hash.remove(n);
     }
 
     /** Returns all the thread nodes <code>nT</code> that have assigned
@@ -134,9 +150,9 @@ public class PAThreadMap{
 	Set set2 = tau2.activeThreadSet();
 	// two PAThreadMap's are equal if they contain the same keys
 	if(!set1.equals(set2)){
-	    //System.out.println("PAThreadMap: different keySet's");
-	    //System.out.println("set1: " + set1);
-	    //System.out.println("set2: " + set2);
+	    ///System.out.println("PAThreadMap.equals(): different keySet's");
+	    ///System.out.print("Old " + tau2);
+	    ///System.out.print("New " + this);
 	    return false;
 	}
 	Iterator it = set1.iterator();
@@ -144,9 +160,10 @@ public class PAThreadMap{
 	    PANode node = (PANode) it.next();
 	    // and assign the same values to them
 	    if(getValue(node)!=tau2.getValue(node)){
-		System.out.println("different values assigned to " + node);
-		System.out.println("value 1:" + getValue(node) + 
-				   "value 2:" + getValue(node));
+		///System.out.println("PAThreadMap.equals(): " + 
+		///		   "different values assigned to " + node +
+		///		   " v1=" + tau2.getValue(node) + 
+		///		   " v2=" + getValue(node));
 		return false;
 	    }
 	}

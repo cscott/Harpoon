@@ -17,7 +17,7 @@ import harpoon.ClassFile.HCodeElement;
  * <code>EscapeFunc</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.4 2000-01-17 23:49:03 cananian Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.5 2000-02-07 02:11:46 salcianu Exp $
  */
 public class PAEscapeFunc {
 
@@ -71,6 +71,16 @@ public class PAEscapeFunc {
     /** The dual of <code>addMethodHole</code> */
     public void removeMethodHole(PANode n, HCodeElement m_hole){
 	rel_m.remove(n,m_hole);
+    }
+
+    /** Remove a node hole from all the nodes:\
+	<code>esc(n) = esc(n) - {n_hole}</code> for all n. */
+    public void removeNodeHoleFromAll(PANode n_hole){
+	Enumeration it = rel_n.keys();
+	while(it.hasMoreElements()){
+	    PANode n = (PANode) it.nextElement();
+	    rel_n.remove(n,n_hole);
+	}
     }
 
     // Check if n has escaped in some "hole" - node accessed
@@ -127,11 +137,21 @@ public class PAEscapeFunc {
 	return set;
     }
 
-    /** Private constructor used only by <code>clone</code> */
+    /** Private constructor used only by <code>select</code> and
+	<code>clone</code> */
     private PAEscapeFunc(Relation _rel_n,Relation _rel_m){
 	rel_n = _rel_n;
 	rel_m = _rel_m;
     }
+
+    /** Returns a <code>PAEscapeFunc</code> containing escape information
+	only about the nodes from the set <code>remaining_nodes</code>. */
+    public PAEscapeFunc select(Set remaining_nodes){
+	Relation _rel_n = rel_n.select(remaining_nodes);
+	Relation _rel_m = rel_m.select(remaining_nodes);
+	return new PAEscapeFunc(_rel_n, _rel_m);
+    }
+
 
     /** <code>clone</clone> does a deep copy of <code>this</code> object. */
     public Object clone(){

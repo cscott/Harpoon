@@ -15,15 +15,15 @@ import java.util.Enumeration;
 import harpoon.Temp.Temp;
 
 /**
- * <code>PAEdgesSet</code> models the concept of a set of edges. It tries
- * to optimize the frequent operations on such a set. It is designed to
- * handle the different types of edges (i.e. <code>var --> node</code> and
- * <code>node1 --f-> node2</code>) in a convenient and type safe manner.
- * It is also intended to be more performant in terms of space and time
- * than the straightforward solution of a <code>HashSet</code> of edges.
+ * <code>PAEdgeSet</code> models the concept of a set of edges.
+ It tries to optimize the frequent operations on such a set. It is designed
+ to handle the different types of edges (i.e. <code>var --> node</code> and
+ <code>node1 --f-> node2</code>) in a convenient and type safe manner.
+ It is also intended to be more performant in terms of space and time
+ than the straightforward solution of a <code>HashSet</code> of edges.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdgeSet.java,v 1.1.2.7 2000-01-23 00:42:11 salcianu Exp $
+ * @version $Id: PAEdgeSet.java,v 1.1.2.8 2000-02-07 02:11:46 salcianu Exp $
  */
 public class PAEdgeSet {
 
@@ -38,7 +38,7 @@ public class PAEdgeSet {
     private Hashtable nodes;
 
 
-    /** Creates a <code>PTEdgesSet</code>. */
+    /** Creates a <code>PAEdgesSet</code>. */
     public PAEdgeSet() {
 	vars  = new Relation();
 	nodes = new Hashtable();
@@ -151,11 +151,11 @@ public class PAEdgeSet {
 	return vars.keys();
     }
 
-    /** Returns an <code>Enumeration</code> of the set of all the
-     * source nodes that are mentioned in <code>this</code> set of edges
-     * (i.e. <code>n</code> such that we have at least one 
-     * <code>&lt;&lt;n,f&gt;,n1&gt;</code> edge) */
-    public Enumeration allNodes(){
+    /** Returns an <code>Enumeration</code> of the set of all the \
+	source nodes that are mentioned in <code>this</code> set of edges.
+	That is, the set of all <code>n</code> such that there is at least one 
+	<code>&lt;&lt;n,f&gt;,n1&gt;</code> edge. */
+    public Enumeration allSourceNodes(){
 	return nodes.keys();
     }
 
@@ -179,9 +179,9 @@ public class PAEdgeSet {
 	// Go through all the fields attached to n;
 	Enumeration enum = allFlagsForNode(n);
 	while(enum.hasMoreElements()){
-	    String str = (String)enum.nextElement();
+	    String field = (String)enum.nextElement();
 	    // for each such field, visit all the pointed nodes.
-	    Iterator it = pointedNodes(n,str).iterator();
+	    Iterator it = pointedNodes(n,field).iterator();
 	    while(it.hasNext()){
 		PANode node = (PANode) it.next();
 		visitor.visit(node);
@@ -189,6 +189,64 @@ public class PAEdgeSet {
 	}
     }
     
+    /** Visits all the nodes pointed by the variable <code>v</code>. */
+    public final void forAllPointedNodes(Temp var, PANodeVisitor visitor){
+	Iterator it = pointedNodes(var).iterator();
+	while(it.hasNext()){
+	    PANode n = (PANode) it.next();
+	    visitor.visit(n);
+	}
+    }
+
+    /** Visits each node that appears in <code>this</code> collection of edges.
+	Each node is visited at least once; if the visit function is not 
+	idempotent it is its reponsibility to check and return immediately
+	from nodes that have already been visited. */
+    public void forAllNodes(PANodeVisitor visitor){
+	Enumeration enum_vars = allVariables();
+	while(enum_vars.hasMoreElements())
+	    forAllPointedNodes((Temp) enum_vars.nextElement(),visitor);
+
+	Enumeration enum_nodes = allSourceNodes();
+	while(enum_nodes.hasMoreElements())
+	    forAllPointedNodes((PANode)enum_nodes.nextElement(),visitor);
+    }
+
+    /** Visits all the edges starting from the variable <code>v</code>. */
+    private void forAllEdges(Temp var, PAEdgeVisitor visitor){
+	Iterator it = pointedNodes(var).iterator();
+	while(it.hasNext()){
+	    PANode node = (PANode) it.next();
+	    visitor.visit(var,node);
+	}
+    }
+
+    /** Visits all the edges starting from the node <code>node</code>. */
+    private void forAllEdges(PANode node, PAEdgeVisitor visitor){
+	// Go through all the fields attached to n;
+	Enumeration enum = allFlagsForNode(node);
+	while(enum.hasMoreElements()){
+	    String field = (String)enum.nextElement();
+	    // for each such field, visit all the pointed nodes.
+	    Iterator it = pointedNodes(node,field).iterator();
+	    while(it.hasNext()){
+		PANode node2 = (PANode) it.next();
+		visitor.visit(node,field,node2);
+	    }
+	}
+    }
+
+    /** Visits all the edges from <code>this</code> set of edges. */ 
+    public void forAllEdges(PAEdgeVisitor visitor){
+	Enumeration enum_vars = allVariables();
+	while(enum_vars.hasMoreElements())
+	    forAllEdges((Temp)enum_vars.nextElement(),visitor);
+
+	Enumeration enum_nodes = allSourceNodes();
+	while(enum_nodes.hasMoreElements())
+	    forAllEdges((PANode)enum_nodes.nextElement(),visitor);
+    }
+
 
     /** <code>union</code> computes the union of two sets of edges
      * (in a control-flow join point, for example). */
@@ -197,7 +255,7 @@ public class PAEdgeSet {
 	vars.union(edges2.vars);
 
 	// union of the edges from the nodes
-	Enumeration en = edges2.allNodes();
+	Enumeration en = edges2.allSourceNodes();
 	while(en.hasMoreElements()){
 	    PANode n = (PANode)en.nextElement();
 	    Relation rel = (Relation)nodes.get(n);

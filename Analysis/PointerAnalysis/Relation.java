@@ -19,7 +19,7 @@ import java.util.Map;
  * algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Relation.java,v 1.1.2.7 2000-01-23 00:42:12 salcianu Exp $
+ * @version $Id: Relation.java,v 1.1.2.8 2000-02-07 02:11:46 salcianu Exp $
  */
 public class Relation{
     
@@ -133,10 +133,25 @@ public class Relation{
 	return true;
     }
 
-    /** Private constrcutor for the <code>clone</code> method only. */
+    /** Private constrcutor for <code>select</code> and <code>clone</code>. */
     private Relation(Hashtable _hash){
 	hash = _hash;
     }
+
+
+    /** Returns the subrelation of <code>this</code> relation that contains
+	only the keys that appear in <code>set</code>. */
+    public Relation select(Set set){
+	Relation rel2 = new Relation();
+	Enumeration enum = keys();
+	while(enum.hasMoreElements()){
+	    Object ob = enum.nextElement();
+	    rel2.addAll(ob,getValuesSet(ob));
+	}
+	return rel2;
+    }
+
+
 
     /** Creates a new, independent relation (i.e. the operation on 
      *  the new relation won't affect the old one). */

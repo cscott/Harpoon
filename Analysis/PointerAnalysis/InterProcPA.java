@@ -24,16 +24,33 @@ import harpoon.Temp.Temp;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.3 2000-01-24 03:11:11 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.4 2000-02-07 02:11:46 salcianu Exp $
  */
 abstract class InterProcPA {
- 
+
+    /** Analyzes the call site <code>q</code> inside 
+	<code>current_method</code>. If analyzing the call is not possible
+	(e.g. one of the callees is native, hence unanalyzable), the call
+	site is skipped and all the parameters are marked as escaping down
+	through that call site.<br>
+	Parameters:<br>
+	<ul>
+	<li><code>pig_before</code> is the parallel interaction graph at
+	the program point just before the call site; this graph will be 
+	mutated, it is the responsability of the caller to clone it if it
+	is necessary somewhere else.
+	<li><code>pa</code> is the <code>PointerAnalysis</code> object that
+	calls this method. <code>pa</code> is used to extract the external
+	parallel interaction graphs of the callees.
+	</ul> */
     public static ParIntGraph analyze_call(HMethod current_method, CALL q,
-				      ParIntGraph pig_before, CallGraph cg,
-				      PointerAnalysis pa,
-				      NodeRepository node_rep){
+					   ParIntGraph pig_before,
+					   PointerAnalysis pa){
+	CallGraph cg = pa.getCallGraph();
+	NodeRepository node_rep = pa.getNodeRepository(); 
 	HMethod[] hms = cg.calls(current_method,q);
 	int nb_callees = hms.length;
+
 
 	// This test seems to be a bit paranoic but it helped me to find
 	// an obscure bug in CallGraph. TRUST NO ONE!
@@ -51,7 +68,7 @@ abstract class InterProcPA {
 	for(int i=0;i<nb_callees;i++){
 	    pigs[i] = pa.getExtParIntGraph(hms[i]);
 	    if(pigs[i] == null){
-		// at least one of the callee do not have a graph
+		// one of the callee doesn't have a // interaction graph
 		return skip_call(q,pig_before,node_rep);
 	    }
 	}
@@ -204,20 +221,20 @@ abstract class InterProcPA {
 	}
 
 	// map the static nodes to themselves
-	Enumeration enum = pig_callee.G.O.allNodes();
+	Enumeration enum = pig_callee.G.O.allSourceNodes();
 	while(enum.hasMoreElements()){
 	    PANode node = (PANode) enum.nextElement();
 	    if(node.type == PANode.STATIC)
 		mu.add(node,node);
 	}
-	enum = pig_callee.G.I.allNodes();
+	enum = pig_callee.G.I.allSourceNodes();
 	while(enum.hasMoreElements()){
 	    PANode node = (PANode) enum.nextElement();
 	    if(node.type == PANode.STATIC)
 		mu.add(node,node);
 	}
 
-	// map the return objects that are INSIDE, RETURN or EXCEPT
+	// map the return objects that are INSIDE, RETURN or EXCEPT to
 	// themselves (the return nodes should appear in the combined graph)
 	Iterator it_ret = pig_callee.G.r.iterator();
 	while(it_ret.hasNext()){
@@ -231,7 +248,7 @@ abstract class InterProcPA {
 	}
 
 
-	// map the exception objects that are INSIDE, RETURN or EXCEPT
+	// map the exception objects that are INSIDE, RETURN or EXCEPT to
 	// themselves (the exception nodes should appear in the combined graph)
 	Iterator it_excp = pig_callee.G.excp.iterator();
 	while(it_excp.hasNext()){
@@ -249,18 +266,25 @@ abstract class InterProcPA {
 
 
     /** Matches outside edges from the graph of (used by ) the callee 
-     * against inside edges from the graph of (created by) the caller */
+	against inside edges from the graph of (created by) the caller.
+	(repeated application of constraint 2) */
     private static void match_edges(Relation mu,
 				    ParIntGraph pig_caller,
 				    ParIntGraph pig_callee){
 	PAWorkList W = new PAWorkList();
-	// here are the new stuff; only nodes with new stuff are
+	// here is the new stuff; only nodes with new stuff are
 	// put in the worklist W.
 	Relation new_info = (Relation) mu.clone();
 
 	W.addAll(mu.keySet());
 	while(!W.isEmpty()){
 	    PANode node1 = (PANode) W.remove();
+
+	    // nodes3 stands for all the new instances of n3
+	    // from the inference rule
+	    HashSet nodes3 = new HashSet(new_info.getValuesSet(node1));
+	    new_info.removeAll(node1);
+
 	    Enumeration flags = pig_callee.G.O.allFlagsForNode(node1);
 	    while(flags.hasMoreElements()){
 		String f = (String) flags.nextElement();
@@ -272,9 +296,7 @@ abstract class InterProcPA {
 
 		// nodes4 stands for all the nodes that could play
 		// the role of n4 from the inference rule
-		Set nodes4 = pig_caller.G.I.pointedNodes(
-		      new_info.getValuesSet(node1),f);
-		new_info.removeAll(node1);
+		Set nodes4 = pig_caller.G.I.pointedNodes(nodes3,f);
 		if(nodes4.isEmpty()) continue;
 
 		// set up the relation from any node from nodes2
@@ -303,15 +325,27 @@ abstract class InterProcPA {
     private static void compute_the_final_mapping(Relation mu,
 						  ParIntGraph pig_caller,
 						  ParIntGraph pig_callee){
-	// TODO: what about exceptions
-	// the return nodes must be in the final graph
+	// the nodes that could be returned as normal results 
+	// must be in the final graph. Only the nodes produced in this 
+	// scope (INSIDE, RETURN and EXCEPT) are considered.
 	Iterator it = pig_callee.G.r.iterator();
+	while(it.hasNext()){
+	    PANode node = (PANode) it.next();
+	    int type = node.type();
+	    // "artificial" nodes (PARAM and LOAD) will be mapped 
+	    // by get_initial_mapping and map_edges
+	    if( (type != PANode.PARAM) && (type != PANode.LOAD))
+		mu.add(node,node);
+	}
+	// the nodes that could be returned as exceptions
+	// must be in the final graph
+	it = pig_callee.G.excp.iterator();
 	while(it.hasNext()){
 	    PANode node = (PANode) it.next();
 	    int type = node.type();
 	    if( (type != PANode.PARAM) && (type != PANode.LOAD))
 		mu.add(node,node);
-	}
+	}	
 	
 	Relation new_info = (Relation)mu.clone();
 	PAWorkList W = new PAWorkList();
@@ -319,11 +353,7 @@ abstract class InterProcPA {
 	while(!W.isEmpty()){
 	    PANode node1 = (PANode) W.remove();
 
-	    /// System.out.println("BAU:" + new_info.getValuesSet(node1));
-
 	    Set new_mappings = new HashSet(new_info.getValuesSet(node1));
-
-	    /// System.out.println("New-mappings:" + new_mappings);
 
 	    new_info.removeAll(node1);
 
@@ -336,8 +366,9 @@ abstract class InterProcPA {
 		while(it2.hasNext()){
 		    PANode node2 = (PANode) it2.next();
 		    int type = node2.type();
-		    // n2 should be an inside or a return node
-		    if((type!=PANode.INSIDE) && (type!=PANode.RETURN))
+		    // n2 should be an inside or a return/exception node
+		    if((type!=PANode.INSIDE) && (type!=PANode.RETURN)
+		       && (type!=PANode.EXCEPT))
 			continue;
 		    if(mu.add(node2,node2)){
 			new_info.add(node2,node2);
@@ -347,7 +378,7 @@ abstract class InterProcPA {
 	    }
 	    
 	    // taking care of constraint (6)
-	    enumf = pig_callee.G.I.allFlagsForNode(node1);
+	    enumf = pig_callee.G.O.allFlagsForNode(node1);
 	    while(enumf.hasMoreElements()){
 		String f = (String) enumf.nextElement();
 		// we construct in nodesn the set of all the nodes to which
@@ -363,10 +394,10 @@ abstract class InterProcPA {
 
 		// navigate through the nodes which are pointed by n1 (the
 		// possible n2's from the rule (6)
-		Iterator it2 = pig_callee.G.I.pointedNodes(node1,f).iterator();
+		Iterator it2 = pig_callee.G.O.pointedNodes(node1,f).iterator();
 		while(it2.hasNext()){
 		    PANode node2 = (PANode) it2.next();
-		    if(node2.type == PANode.INSIDE) continue;
+		    if(node2.type != PANode.LOAD) continue;
 		    if(mu.add(node2,node2)){
 			new_info.add(node2,node2);
 			W.add(node2);

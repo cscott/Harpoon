@@ -12,7 +12,7 @@ import java.util.HashSet;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.1.2.5 2000-01-18 04:49:40 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.6 2000-02-07 02:11:46 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -88,13 +88,18 @@ public class ParIntGraph {
     }
 
     
-    /** Produces a <code>ParIntGraph</code> containing only the 
-     *  nodes that could be reached from <code>root_set</code>. */
-    public ParIntGraph keepTheEssential(PANode[] params,boolean is_main){
+    /** Produces a <code>ParIntGraph</code> containing only the \
+	nodes that could be reached from the outside.
+	(i.e. via parameters,
+	class nodes, normally or exceptionally returned nodes or the
+	started thread nodes) */
+    public ParIntGraph keepTheEssential(PANode[] params, boolean is_main){
 	HashSet remaining_nodes = new HashSet();
+	remaining_nodes.addAll(tau.activeThreadSet());
 	PointsToGraph _G = 
 	    G.keepTheEssential(params, remaining_nodes, is_main);
-	PAThreadMap _tau = tau.keepTheEssential(remaining_nodes); 
+	PAThreadMap _tau = (PAThreadMap) tau.clone(); 
+	//keepTheEssential(remaining_nodes); 
 	return new ParIntGraph(_G,_tau);
     }
 

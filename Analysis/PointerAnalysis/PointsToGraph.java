@@ -12,7 +12,7 @@ import java.util.Iterator;
  * <code>PointsToGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.6 2000-01-23 00:42:11 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.7 2000-02-07 02:11:46 salcianu Exp $
  */
 public class PointsToGraph {
     
@@ -57,18 +57,16 @@ public class PointsToGraph {
     private PAWorkList W_prop = new PAWorkList();
     private PANode current_node = null;
 
-    class PropagateVisitor implements PANodeVisitor{
-	public final void visit(PANode node){
-	    // take care "|" and NOT "||"
-	    boolean changed = 
-		e.addNodeHoles(node,e.nodeHolesSet(current_node)) |
-		e.addMethodHoles(node,e.methodHolesSet(current_node));
-	    if(changed) W_prop.add(node);
-	}
-    }
-
-    /** an instance of PropagateVisitor */
-    private PropagateVisitor p_visitor = new PropagateVisitor();
+    // PANodeVisitor for the propagate algorithm
+    private PANodeVisitor p_visitor = new PANodeVisitor(){
+	    public final void visit(PANode node){
+		// take care "|" and NOT "||"
+		boolean changed = 
+		    e.addNodeHoles(node,e.nodeHolesSet(current_node)) |
+		    e.addMethodHoles(node,e.methodHolesSet(current_node));
+		if(changed) W_prop.add(node);
+	    }
+	};
 
     /** Propagates the escape information along the edges. */
     public void propagate(Set set){
@@ -79,6 +77,16 @@ public class PointsToGraph {
 	    O.forAllPointedNodes(current_node,p_visitor);
 	}
     }
+
+    /** Visits each node that appears in <code>this</code> graph.
+	Each node is visited at least once; if the visit function is not 
+	idempotent it is its reponsibility to check and return immediately
+	from nodes that have already been visited. */
+    public void forAllNodes(PANodeVisitor visitor){
+	O.forAllNodes(visitor);
+	I.forAllNodes(visitor);
+    }
+
 
     /** Checks the equality of two <code>PointsToGraph</code>s. */
     public boolean equals(Object o){
@@ -132,66 +140,58 @@ public class PointsToGraph {
 
 
     /** Finds the static nodes that appear as source nodes in the set of
-     * edges <code>E</code> and put them in <code>static_nodes</code> */
-    private void grab_static_roots(PAEdgeSet E, Set static_nodes){
-	Enumeration enum = E.allNodes();
+	edges <code>E</code> and add them to <code>set</code> */
+    private void grab_static_roots(PAEdgeSet E, Set set){
+	Enumeration enum = E.allSourceNodes();
 	while(enum.hasMoreElements()){
 	    PANode node = (PANode)enum.nextElement();
 	    if(node.type == PANode.STATIC)
-		static_nodes.add(node);
+		set.add(node);
 	}
     }
 
     /** Produces a <code>PointsToGraph</code> containing just the nodes
-     * that are reachable from <i>root node</i>: the nodes that could be 
-     * reached from outside
-     * code (e.g. the caller): the parameter nodes (received in
-     * the parameter <code>params</code>) and the returned nodes (found 
-     * in <code>this.r</code>).
-     * The static nodes are implicitly considered roots
-     * for all the methods except &quot;main&quot; 
-     * (<code>is_main=true</code>).<br>
-     * In addition to returning the new, reduced graph, this method builds
-     * the set of nodes that are in the new graph. This set is put in 
-     * <code>remaining_nodes</code> */
+	that are reachable from <i>root node</i>: the nodes that could be 
+	reached from outside
+	code (e.g. the caller): the parameter nodes (received in
+	the <code>params</code>) and the returned nodes (found 
+	in <code>this.r</code>).
+	The static nodes are implicitly considered roots
+	for all the methods except &quot;main&quot; 
+	(<code>is_main=true</code>).<br>
+	In addition to returning the new, reduced graph, this method builds
+	the set of nodes that are in the new graph. This set is put in 
+	<code>remaining_nodes</code> */
     public PointsToGraph keepTheEssential(PANode[] params,
 					  final Set remaining_nodes,
 					  boolean is_main){
 	PAEdgeSet _O = new PAEdgeSet();
 	PAEdgeSet _I = new PAEdgeSet();
-	PAEscapeFunc _e = new PAEscapeFunc();
 	// the same sets of return nodes and exceptions
 	HashSet _r = (HashSet) r.clone();
 	HashSet _excp = (HashSet) excp.clone();
 
-	// worklist of "to be explored" nodes
-	final PAWorkList worklist = new PAWorkList();
-	// set of the static nodes
-	Set static_nodes = new HashSet();
-	
 	// Put the parameter nodes in the root set
-	for(int i=0;i<params.length;i++){
-	    worklist.add(params[i]);
+	for(int i=0;i<params.length;i++)
 	    remaining_nodes.add(params[i]);
-	}
-	
+
 	// In the case of the main method, the static nodes are no longer
 	// considered to be roots; for all the other methods they must be,
 	// because they can be accessed by code outside the analyzed
 	// procedure (e.g. the caller)
 	if(!is_main){
-	    grab_static_roots(O, static_nodes);
-	    grab_static_roots(I, static_nodes);
-	    worklist.addAll(static_nodes);
-	    remaining_nodes.addAll(static_nodes);
+	    grab_static_roots(O, remaining_nodes);
+	    grab_static_roots(I, remaining_nodes);
 	}
 
-	// Add the normal return nodes to the set of roots
-	worklist.addAll(r);
+	// Add the normal return & exception nodes to the set of roots
 	remaining_nodes.addAll(r);
-	// Add the exception nodes too
-	worklist.addAll(excp);
 	remaining_nodes.addAll(excp);
+
+	// worklist of "to be explored" nodes
+	final PAWorkList worklist = new PAWorkList();
+	// put all the roots in the worklist
+	worklist.addAll(remaining_nodes);
 
 	// copy the relevant edges and build the set of essential_nodes
 	PANodeVisitor visitor = new PANodeVisitor(){
@@ -208,22 +208,10 @@ public class PointsToGraph {
 	    I.forAllPointedNodes(node,visitor);
 	}
 
-	// build the reduced graph
-	PointsToGraph ptg = new PointsToGraph(_O,_I,_e,_r,_excp);
+	// retain only the escape information for the remaining nodes
+	PAEscapeFunc _e = e.select(remaining_nodes);
 
-	// Build the new escape info: initial data + propagation
-	Iterator it_static = remaining_nodes.iterator();
-	while(it_static.hasNext()){
-	    PANode node = (PANode) it_static.next();
-	    // Each static node escapes through itself
-	    if(node.type == PANode.STATIC)
-		_e.addNodeHole(node,node);
-	    // the method holes are preserved
-	    _e.addMethodHoles(node,e.methodHolesSet(node));
-	}
-	ptg.propagate(static_nodes);
-
-	return ptg;
+	return new PointsToGraph(_O,_I,_e,_r,_excp);
     }
     
 
