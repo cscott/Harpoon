@@ -12,7 +12,7 @@ import harpoon.Temp.TempFactory;
  * <code>HCode</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadFactory.java,v 1.1.2.2 1998-12-20 12:49:27 cananian Exp $
+ * @version $Id: QuadFactory.java,v 1.1.2.3 1998-12-21 01:35:46 cananian Exp $
  */
 public abstract class QuadFactory  {
     /** Returns the <code>TempFactory</code> to use for <code>Temp</code>
@@ -101,9 +101,11 @@ public abstract class QuadFactory  {
     public LABEL newLABEL(PHI phi, String label) {
 	return new LABEL(this, phi, label);
     }
-    public HANDLER newHANDLER(HCodeElement source, HClass caughtException,
+    public HANDLER newHANDLER(HCodeElement source, 
+			      Temp exceptionTemp, HClass caughtException,
 			      HANDLER.ProtectedSet protectedSet) {
-	return new HANDLER(this, source, caughtException, protectedSet);
+	return new HANDLER(this, source,
+			   exceptionTemp, caughtException, protectedSet);
     }
     public METHOD newMETHOD(HCodeElement source, Temp[] params, int arity) {
 	return new METHOD(this, source, params, arity);

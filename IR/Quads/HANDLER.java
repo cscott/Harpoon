@@ -14,28 +14,38 @@ import java.util.Enumeration;
  * A <code>HANDLER</code> quad marks an entry to an exception handler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HANDLER.java,v 1.1.2.1 1998-12-17 21:38:36 cananian Exp $
+ * @version $Id: HANDLER.java,v 1.1.2.2 1998-12-21 01:35:46 cananian Exp $
  * @see METHOD
  */
 public class HANDLER extends Quad {
+    /** The <code>Temp</code> holding the caught exception on invocation of
+     *  this <code>HANDLER</code>. */
+    protected Temp exceptionTemp;
     /** The exception caught by this <code>HANDLER</code>. */
     protected HClass caughtException;
     /** The set of <code>Quad</code>s protected by this <code>HANDLER</code>.*/
     protected ProtectedSet protectedSet;
 
     /** Creates a <code>HANDLER</code>.
+     * @param exceptionTemp
+     *        the <code>Temp</code> holding the caught exception on
+     *        invocation of this <code>HANDLER</code>.
      * @param caughtException
      *        the exception type caught by this <code>HANDLER</code>.
      * @param protectedSet
      *        the set of <code>Quad</code>s protected by this
      *        <code>HANDLER</code>.
      */
-    public HANDLER(QuadFactory qf, HCodeElement source,
+    public HANDLER(QuadFactory qf, HCodeElement source, Temp exceptionTemp,
 		   HClass caughtException, ProtectedSet protectedSet) {
         super(qf, source);
+	this.exceptionTemp = exceptionTemp;
 	this.caughtException = caughtException;
 	this.protectedSet = protectedSet;
     }
+    /** Returns the <code>Temp</code> which will hold the exception on
+     *  the invocation of this <code>HANDLER</code>. */
+    public Temp exceptionTemp() { return exceptionTemp; }
     /** Returns the superclass of the exceptions caught by this
      *  <code>HANDLER</code>. */
     public HClass caughtException() { return caughtException; }
@@ -55,16 +65,24 @@ public class HANDLER extends Quad {
 	return protectedSet.elements();
     }
 
+    public Temp[] def() { return new Temp[] { exceptionTemp }; }
+
     public int kind() { return QuadKind.HANDLER; }
 
     public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new HANDLER(qqf, this, caughtException, protectedSet);
+	return new HANDLER(qqf, this, map(tm, exceptionTemp),
+			   caughtException, protectedSet);
+    }
+    void renameDefs(TempMap tm) {
+	exceptionTemp = tm.tempMap(exceptionTemp);
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 
     /** Returns human-readable representation of this <Code>Quad</code>. */
-    public String toString() { return "HANDLER for "+caughtException; }
+    public String toString() {
+	return exceptionTemp.toString() + " = HANDLER for "+caughtException;
+    }
 
     public interface ProtectedSet {
 	public boolean isProtected(Quad q);
