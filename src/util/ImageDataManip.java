@@ -6,6 +6,7 @@ package imagerec.util;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
@@ -396,6 +397,73 @@ public class ImageDataManip {
 		   (id.bvals!=null)?(byte[])id.bvals.clone():null,
 		   id.width, id.height);
 	return newID;
+    }
+
+    public static ImageData readSerial(DataInputStream is) {
+	ImageData id = new ImageData();
+	try {
+	    id.rvals = new byte[is.readInt()];
+	    is.readFully(id.rvals);
+	    id.gvals = new byte[is.readInt()];
+	    is.readFully(id.gvals);
+	    id.bvals = new byte[is.readInt()];
+	    is.readFully(id.bvals);
+	    id.x = is.readInt();
+	    id.y = is.readInt();
+	    id.width = is.readInt();
+	    id.height = is.readInt();
+	    id.time = is.readLong();
+	    id.id = is.readInt();
+	    id.command = is.readInt();
+	    id.receiverID = is.readInt();
+	    id.c1 = is.readFloat();
+	    id.c2 = is.readFloat();
+	    id.c3 = is.readFloat();
+	    id.lastImage = is.readBoolean();
+	    id.labelID = is.readByte();
+	    id.conditional = is.readBoolean();
+	    id.angle = is.readFloat();
+	    id.blueThreshold1 = is.readInt();
+	    id.blueThreshold2 = is.readInt();
+	    id.scaleFactor = is.readFloat();
+	    id.trackedObjectUniqueID = is.readInt();
+	} catch (IOException e) {
+	    throw new Error(e.toString());
+	}
+	return id;
+    }
+
+    public static void writeSerial(ImageData id, DataOutputStream out) {
+	try {
+	    out.writeInt(id.rvals.length);
+	    out.write(id.rvals, 0, id.rvals.length);
+	    out.writeInt(id.gvals.length);
+	    out.write(id.gvals, 0, id.gvals.length);
+	    out.writeInt(id.bvals.length);
+	    out.write(id.bvals, 0, id.bvals.length);
+	    out.writeInt(id.x);
+	    out.writeInt(id.y);
+	    out.writeInt(id.width);
+	    out.writeInt(id.height);
+	    out.writeLong(id.time);
+	    out.writeInt(id.id);
+	    out.writeInt(id.command);
+	    out.writeInt(id.receiverID);
+	    out.writeFloat(id.c1);
+	    out.writeFloat(id.c2);
+	    out.writeFloat(id.c3);
+	    out.writeBoolean(id.lastImage);
+	    out.writeByte(id.labelID);
+	    out.writeBoolean(id.conditional);
+	    out.writeFloat(id.angle);
+	    out.writeInt(id.blueThreshold1);
+	    out.writeInt(id.blueThreshold2);
+	    out.writeFloat(id.scaleFactor);
+	    out.writeInt(id.trackedObjectUniqueID);
+	    out.flush();
+	} catch (IOException e) {
+	    throw new Error(e.toString());
+	}
     }
 
     /** Factory to create an {@link ImageData} given partial information.
