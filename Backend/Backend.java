@@ -8,11 +8,11 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HMethod;
 
 /**
- * <code>Backend</code>
+ * <code>Backend</code> is a convenient, top-level class for our many
+ * backends.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Backend.java,v 1.1 2003-03-28 20:19:54 salcianu Exp $
- */
+ * @version $Id: Backend.java,v 1.2 2003-03-28 20:26:22 salcianu Exp $ */
 public abstract class Backend {
 
     /** StrongARM backend */
@@ -45,6 +45,8 @@ public abstract class Backend {
 				 AllocationStrategyFactory asFact)
     {
 	backendName = backendName.intern();
+
+	// TODO: use reflection
 	if (backendName == STRONGARM)
 	    return new harpoon.Backend.StrongARM.Frame(mainMethod);
 	if (backendName == SPARC)
