@@ -12,7 +12,7 @@ import java.util.Properties;
  * <code>java.lang.System</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSystem.java,v 1.1.2.3 1999-01-22 23:53:19 cananian Exp $
+ * @version $Id: INSystem.java,v 1.1.2.4 1999-02-07 21:45:53 cananian Exp $
  */
 final class INSystem extends HCLibrary {
     static final void register(StaticState ss) {
@@ -96,8 +96,8 @@ final class INSystem extends HCLibrary {
 		    throw aie(ss); // array index out of bounds
 		for (int i=0; i<length; i++) {
 		    Object o = src.get(i+src_position);
-		    if (o instanceof ObjectRef &&
-			!((ObjectRef)o).type.isInstanceOf(dstCT))
+		    if (o instanceof Ref &&
+			!((Ref)o).type.isInstanceOf(dstCT))
 			throw ase(ss);
 		    else dst.update(i+dst_position, o);
 		}

@@ -53,7 +53,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code given a static state.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.5 1999-01-22 23:53:19 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.6 1999-02-07 21:45:53 cananian Exp $
  */
 public final class Method extends HCLibrary {
 
@@ -277,7 +277,7 @@ public final class Method extends HCLibrary {
 		params[i] = toExternal(sf.get(q.params(i)),q.paramType(i));
 	    HMethod hm = q.method();
 	    if (!q.isStatic() && q.isVirtual()) { // do virtual dispatch
-		ObjectRef obj = (ObjectRef) params[0];
+		Ref obj = (Ref) params[0];
 		hm = obj.type.getMethod(hm.getName(), hm.getDescriptor());
 	    }
 	    try {
@@ -303,7 +303,7 @@ public final class Method extends HCLibrary {
 	    if (arr.type.getComponentType().isPrimitive()) // must be true.
 		sf.update(q.dst(), new Boolean(true));
 	    else { // not a primitive array.  perform the test for real.
-		ObjectRef obj = (ObjectRef) sf.get(q.objectref());
+		Ref obj = (Ref) sf.get(q.objectref());
 		if (obj==null ||
 		    obj.type.isInstanceOf(arr.type.getComponentType()))
 		    sf.update(q.dst(), new Boolean(true));
@@ -332,7 +332,7 @@ public final class Method extends HCLibrary {
 	    if (q.objectref()==null) { // static
 		sf.update(q.dst(), toInternal(ss.get(q.field())));
 	    } else { // non-static
-		ObjectRef obj = (ObjectRef) sf.get(q.objectref());
+		Ref obj = (Ref) sf.get(q.objectref());//arrays have fields too
 		sf.update(q.dst(), toInternal(obj.get(q.field())));
 	    }
 	    advance(0);
@@ -341,7 +341,7 @@ public final class Method extends HCLibrary {
 	    advance(1); // towards METHOD.
 	}
 	public void visit(INSTANCEOF q) {
-	    ObjectRef obj = (ObjectRef) sf.get(q.src());
+	    Ref obj = (Ref) sf.get(q.src());
 	    if (obj==null || obj.type.isInstanceOf(q.hclass())) // true.
 		sf.update(q.dst(), new Boolean(true));
 	    else
@@ -360,12 +360,12 @@ public final class Method extends HCLibrary {
 	    advance(0); // towards code, not handlers.
 	}
 	public void visit(MONITORENTER q) {
-	    ObjectRef obj = (ObjectRef) sf.get(q.lock());
+	    Ref obj = (Ref) sf.get(q.lock());
 	    obj.lock();
 	    advance(0);
 	}
 	public void visit(MONITOREXIT q) {
-	    ObjectRef obj = (ObjectRef) sf.get(q.lock());
+	    Ref obj = (Ref) sf.get(q.lock());
 	    obj.unlock();
 	    advance(0);
 	}	    
@@ -438,7 +438,7 @@ public final class Method extends HCLibrary {
 	}
 	
 	void typeCheck(Temp src, HClass cls) throws InterpretedThrowable {
-	    ObjectRef of = (ObjectRef) sf.get(src);
+	    Ref of = (Ref) sf.get(src);
 	    if (of==null || of.type.isInstanceOf(cls))
 		return; // no problems.
 	    ObjectRef obj = ss.makeThrowable(HCclasscastE, of.type.toString());
@@ -448,7 +448,7 @@ public final class Method extends HCLibrary {
 	    ArrayRef af = (ArrayRef) sf.get(array);
 	    HClass afCT = af.type.getComponentType();
 	    if (afCT.isPrimitive()) return; // statically typed.
-	    ObjectRef of = (ObjectRef) sf.get(src);
+	    Ref of = (Ref) sf.get(src);
 	    if (of == null || of.type.isInstanceOf(afCT))
 		return; // yay, no problemos.
 	    ObjectRef obj = ss.makeThrowable(HCarraystoreE,

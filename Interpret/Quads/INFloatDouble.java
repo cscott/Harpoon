@@ -9,7 +9,7 @@ import harpoon.ClassFile.HMethod;
  * in <code>java.lang.Float</code> and <code>java.lang.Double</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFloatDouble.java,v 1.1.2.2 1999-01-22 23:53:19 cananian Exp $
+ * @version $Id: INFloatDouble.java,v 1.1.2.3 1999-02-07 21:45:53 cananian Exp $
  */
 public class INFloatDouble extends HCLibrary {
     static final void register(StaticState ss) {
@@ -67,7 +67,7 @@ public class INFloatDouble extends HCLibrary {
 	    }
 	};
     }
-    // convert string to a doube
+    // convert string to a double
     private static final NativeMethod valueOf0() {
 	final HMethod hm =
 	    HCdouble.getMethod("valueOf0",new HClass[]{ HCstring });

@@ -2,16 +2,20 @@
 package harpoon.Interpret.Quads;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HField;
 import harpoon.Util.Util;
 
 /**
- * <code>ArrayRef</code>
+ * <code>ArrayRef</code> is a representation of an array reference for use
+ * by the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayRef.java,v 1.1.2.3 1999-01-22 23:53:18 cananian Exp $
+ * @version $Id: ArrayRef.java,v 1.1.2.4 1999-02-07 21:45:53 cananian Exp $
  */
-final class ArrayRef extends ObjectRef {
+final class ArrayRef extends Ref {
+    /** Elements of the array (primitives or Refs) */
     final Object[] elements;
+
     ArrayRef(StaticState ss, HClass type, int dims[]) 
 	throws InterpretedThrowable {
 	super(ss, type);
@@ -37,6 +41,12 @@ final class ArrayRef extends ObjectRef {
     public Object clone() { // arrays can always be cloned.
        return new ArrayRef(ss, type, (Object[]) elements.clone());
     }
+    /** Arrays have phantom 'length' field. (public final int) */
+    Object get(HField f) {
+	if (f.getName().equals("length")) return new Integer(length());
+	else throw new Error("Field not found: "+f);
+    }
+
     int length() { return this.elements.length; }
     Object get(int i) { return this.elements[i]; }
     void update(int i, Object value) { this.elements[i] = value; }

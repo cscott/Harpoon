@@ -9,7 +9,7 @@ import harpoon.ClassFile.HMethod;
  * <code>java.lang.Object</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INObject.java,v 1.1.2.2 1999-01-22 23:53:19 cananian Exp $
+ * @version $Id: INObject.java,v 1.1.2.3 1999-02-07 21:45:53 cananian Exp $
  */
 public class INObject extends HCLibrary {
     static final void register(StaticState ss) {
@@ -23,7 +23,7 @@ public class INObject extends HCLibrary {
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
-		ObjectRef obj = (ObjectRef) params[0];
+		Ref obj = (Ref) params[0];
 		return INClass.forClass(ss, obj.type);
 	    }
 	};
@@ -34,7 +34,7 @@ public class INObject extends HCLibrary {
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
-	       ObjectRef obj = (ObjectRef) params[0];
+		Ref obj = (Ref) params[0];
 		return new Integer(obj.hashCode());
 	    }
 	};
@@ -45,12 +45,12 @@ public class INObject extends HCLibrary {
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
-		ObjectRef obj = (ObjectRef) params[0];
+		Ref obj = (Ref) params[0];
 		// throw exception if doesn't implement Cloneable
 	        if (!obj.type.isInstanceOf(HCcloneable)) {
 		    obj = ss.makeThrowable(HCclonenotsupportedE,
 					 obj.type.toString());
-		  throw new InterpretedThrowable(obj, ss);
+		    throw new InterpretedThrowable((ObjectRef)obj, ss);
 		}
 		return obj.clone();
 	    }
