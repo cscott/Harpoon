@@ -287,6 +287,8 @@ static void * thread_startup_routine(void *closure) {
   struct closure_struct *cls = (struct closure_struct *)closure;
   JNIEnv *env = FNI_CreateJNIEnv();
   jobject thread, threadgroup; jthrowable threadexc;
+  /* set up the top of the stack for this thread for exception stack trace */
+  ((struct FNI_Thread_State *)(env))->stack_top = FNI_STACK_TOP();
   /* make sure creating thread is in cond_wait before proceeding. */
   pthread_mutex_lock(&(cls->parampass_mutex));
   /* copy thread wrapper to local stack */

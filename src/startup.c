@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) {
   /* set up JNIEnv structures. */
   FNI_InitJNIEnv();
   env = FNI_CreateJNIEnv();
+  ((struct FNI_Thread_State *)(env))->stack_top = FNI_STACK_TOP();
   /* setup main thread info. */
   FNI_java_lang_Thread_setupMain(env);
 

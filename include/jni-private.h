@@ -148,6 +148,7 @@ struct FNI_Thread_State {
   jthrowable exception; /* outstanding exception, or NULL if no exception. */
   struct _jobject localrefs; /* header node in a local refs list. */
   jobject thread; /* thread object corresponding to this thread state. */
+  void *stack_top; /* top of stack */
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   pthread_t pthread; /* the pthread corresponding to this thread state. */
   pthread_cond_t sleep_cond; /* condition variable for sleep/suspend. */
@@ -158,6 +159,11 @@ extern struct _jobject FNI_globalrefs; /* header node in global refs list. */
 
 #define FNI_NO_EXCEPTIONS(env) \
 	(((struct FNI_Thread_State *)(env))->exception==NULL)
+
+#define FNI_STACK_TOP() \
+({ void *__top; \
+   asm("mov %0, fp" : "=r" (__top)); \
+   __top; })
 
 /* -------------- internal function prototypes. ------------- */
 
