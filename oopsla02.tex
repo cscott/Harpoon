@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.13 2002-03-22 23:49:34 cananian Exp $
+% $Id: oopsla02.tex,v 1.14 2002-03-22 23:50:51 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -29,7 +29,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.13 $ $}{$ $Revision: 1.13 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.14 $ $}{$ $Revision: 1.14 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -361,6 +361,57 @@ that field. In our example, the analysis identifies the
 on that field. We can apply this idea recursively to the 
 new program to obtain the benefits of splitting on multiple
 fields. 
+
+\subsection{Field Externalization}
+
+In the string example discussed above, it was possible to determine
+which version of the specialized class to use at object allocation
+time. In some cases, however, a given field may almost always have
+a given value, even though it is not possible to statically determine
+what the value is or which objects will contain fields of that 
+value. In such cases we apply another optimization, 
+{\em field externalization}. This optimization removes the field
+from the class, replacing fields whose values differ from the default 
+value with hash table entries that map objects to values. If an object/value
+mapping is present in the hash table, that entry provides the 
+value of the removed field. If there is no mapping for a given object,
+the field is assumed to have the default value. 
+In our current implementation, we use profiling 
+to identify the default value. 
+
+In this scheme, writes to the field are converted into a check to see
+if the new value of the field is the default value. If so, the 
+generated code simply removes any old mappings for that 
+object from the hash table.
+If not, the generated code removes any old mapping and inserts a new
+mapping to record the new value. 
+
+\subsection{Hashlock Externalization}
+
+Our currently implemented system applies field externalization
+in a general way to any field in the object. We would, however,
+like to highlight an especially useful extension of the basic
+technique. Java implementations typically store an object
+hash code and lock information in the object header. For many
+objects, however, the program never actually uses the hash code
+or lock information. Our implemented system therefore uses
+a variant of field externalization called {\em hashlock 
+externalization}. This variant allocates all objects 
+without the hash code and lock information fields in the header,
+then lazily reconstructs the values when necessary. 
+Specifically, if the program ever uses the hash code or lock information, 
+the generated code generates the hash code or lock information
+for the object, then stores this information in a hash table
+that maps objects to their hash code or lock information. 
+
+Note that, in general, this transformation (as well as field
+externalization) may actually increase space usage. But in
+practice, we have found that our set of benchmark programs
+rarely uses these fields. The overall result is a substantial
+space savings. Note that the combination of claz compression 
+and hashlock elimination produces a common-case object header
+size of one byte --- one byte for the claz offset and no
+space at all for hash code or lock information. 
 
 \subsection{Required Analysis Information}
 
