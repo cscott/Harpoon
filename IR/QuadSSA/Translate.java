@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.22 1998-09-02 20:36:47 cananian Exp $
+ * @version $Id: Translate.java,v 1.23 1998-09-02 20:50:43 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -67,8 +67,10 @@ class Translate  { // not public.
 		this(new NOP(), new Temp(), new Vector(), ty);
 	    }
 	}
+	/** A stack of try/monitor context information. */
 	BlockContext nest[];
 
+	/** Constructor. */
 	private State(Temp stack[], Temp lv[], ExceptionEntry tryBlock[],
 		      int monitorDepth, BlockContext nest[]) {
 	    this.stack = stack; this.lv = lv; this.tryBlock = tryBlock;
@@ -157,7 +159,7 @@ class Translate  { // not public.
 	// Utility functions... ///////////////////////////////
 
 	/** Makes a new array by popping first 'n' elements off. */
-	static private Object[] shrink(Object[] src, int n) {
+	private static final Object[] shrink(Object[] src, int n) {
 	    Util.assert(src.length>0);
 	    Object[] dst = (Object[]) Array.newInstance(src.getClass()
 							.getComponentType(),
@@ -165,24 +167,36 @@ class Translate  { // not public.
 	    System.arraycopy(src, n, dst, 0, dst.length);
 	    return dst;
 	}
-	static private Object[] shrink(Object[] src) { return shrink(src,1); }
+	/** Makes a new array by popping the first element off. */
+	private static final Object[] shrink(Object[] src) 
+	{ return shrink(src,1); }
 
 	/** Make a new array by pushing on 'n' elements to front. */
-	static private Object[] grow(Object[] src, int n) {
+	private static final Object[] grow(Object[] src, int n) {
 	    Object[] dst = (Object[]) Array.newInstance(src.getClass()
 							.getComponentType(),
 							src.length+n);
 	    System.arraycopy(src, 0, dst, n, src.length);
 	    return dst;
 	}
-	static private Object[] grow(Object[] src) { return grow(src,1); }
+	/** Make a new array by pushing a new element onto front. */
+	private static final Object[] grow(Object[] src) 
+	{ return grow(src,1); }
     }
+
     /** Extended state to keep track of translation process. */
     static class TransState {
+	/** State to use when translating <code>Instr</code> <Code>in</code> */
 	State initialState;
+	/** Next <code>Instr</code> to translate. */
 	Instr in;
+	/** <code>Quad</code> to append translation of 
+	    <code>in</code> to. */
 	Quad  header; 
+	/** Which exit edge of <code>header</code> to append the translation
+	 * of <code>in</code> to. */
 	int which_succ;
+	/** Constructor. */
 	TransState(State initialState, Instr in, Quad header, int which_succ) {
 	    this.initialState = initialState;
 	    this.in = in;
@@ -192,12 +206,14 @@ class Translate  { // not public.
     }
     /** Keep track of MERGE instrs and the PHI quads that they correspond to.*/
     static class MergeMap {
-	Hashtable map;
+	private Hashtable map;
 	MergeMap() { map = new Hashtable(); }
 	void put(InMerge in, PHI phi) { map.put(in, phi); }
 	PHI get(InMerge in) { return (PHI) map.get(in); }
     }
 
+    /** Return a <code>Quad</code> representation of the method code in
+     *  <code>bytecode</code>. */
     static final Quad trans(harpoon.ClassFile.Bytecode.Code bytecode) {
 	// set up initial state.
 	String[] paramNames = bytecode.getMethod().getParameterNames();
@@ -229,11 +245,14 @@ class Translate  { // not public.
 	return quads;
     }
 
+    /** Translate a block starting at <code>blockTop</code> using
+     *  <code>initialState</code>. */
     static final void trans(State initialState, ExceptionEntry allTries[],
 			    Instr blockTop, Quad header, int which_succ) {
 	trans(new TransState(initialState, blockTop, 
 				    header, which_succ), allTries);
     }
+    /** Translate a block starting with a given <code>TransState</code>. */
     static final void trans(TransState ts0, ExceptionEntry allTries[]){
 	Stack todo = new Stack(); todo.push(ts0);
 	MergeMap mm = new MergeMap();
@@ -361,7 +380,11 @@ class Translate  { // not public.
 	return;
     }
 
+    /** Translate a single instruction, using a <code>MergeMap</code>.
+     * @return the <code>TransState</code>s of the following instructions.
+     */
     static final TransState[] transInstr(MergeMap mm, TransState ts) {
+	// Dispatch to correct specific function.
 	if (ts.in instanceof InGen) return transInGen(ts);
 	if (ts.in instanceof InCti) return transInCti(ts);
 	if (ts.in instanceof InMerge) return transInMerge(mm, ts);
@@ -413,6 +436,8 @@ class Translate  { // not public.
 		      new HClass[] {HClass.Int, HClass.forClass(short.class)});
     }
 
+    /** Translate an <code>InGen</code>. 
+     *  @return a <Code>TransState[]</code> of length zero or one. */
     static final TransState[] transInGen(TransState ts) {
 	InGen in = (InGen) ts.in;
 	State s = ts.initialState;;
@@ -515,8 +540,10 @@ class Translate  { // not public.
 	    // translate as:
 	    //  if (!(obj instanceof class))
 	    //     throw new ClassCastException();
-	    // XXX FIXME XXX
-	    throw new Error("CHECKCAST unimplemented as of yet.");
+	    {
+		// FIXME
+		throw new Error("CHECKCAST unimplemented as of yet.");
+	    }
 	case Op.D2F:
 	case Op.D2I:
 	case Op.L2F:
@@ -931,9 +958,13 @@ class Translate  { // not public.
 		new TransState(ns, in.next()[0], ts.header, ts.which_succ) };
 	}
     }
+    /** 
+     * Translate a single <Code>InMerge</code> using a <code>MergeMap</code>.
+     */
     static final TransState[] transInMerge(MergeMap mm, TransState ts) {
 	return null;
     }
+    /** Translate a single <code>InCti</code>. */
     static final TransState[] transInCti(TransState ts) {
 	/*
 	if (in instanceof InSwitch) {
