@@ -64,7 +64,7 @@ import java.util.TreeSet;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.10 2002-08-30 22:38:49 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.11 2003-03-13 21:07:08 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -81,6 +81,16 @@ public class TreeToC extends java.io.PrintWriter {
     // type with every temp, but that's too much work for me at the
     // moment.  Remember: laziness is one of a good programmer's
     // cardinal virtues. --CSA 9-jul-2001
+
+    // XXX: another buglet here:  the ToTree transformation can
+    // create dead code by converting CJUMP(0, iffalse, iftrue) to
+    // JUMP(iffalse) (similarly with non-zero constants).  If this
+    // happens, then eventually we'll try to translate the dead
+    // code.  If there is a CALL in the dead code, then we'll ask
+    // the LiveVars about it, and the LiveVars will assert because
+    // the CALL is not found in its basic block set.  We should
+    // probably attempt to skip translation of executable (ie non-data)
+    // Trees which are not live. --CSA 13-mar-2003
     public void translate(HCode hc) {
 	harpoon.IR.Tree.Code c = (harpoon.IR.Tree.Code) hc;
 	Tree root = (Tree)c.getRootElement();
