@@ -83,7 +83,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.13 2003-06-05 22:14:03 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.14 2003-10-26 19:21:44 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -124,6 +124,8 @@ public class PointerAnalysis implements java.io.Serializable {
         parallel interaction graphs, after the end of the fixed point
         computation for a SCC of methods. */
     public static boolean COMPRESS_LOST_NODES = true;
+
+    public static boolean TOPLAS_PAPER = true;
 
     /** Same as <code>COMPRESS_LOST_NODES</code>, but done at the end
         of the analysis of each method. BREAKS MONOTONICITY! */
@@ -618,13 +620,8 @@ public class PointerAnalysis implements java.io.Serializable {
 
 	long b_time = TIMING ? System.currentTimeMillis() : 0;
 
-	// start by analyzing one of the methods from the group of mutually
-	// recursive methods (the others will be transitively introduced into
-	// the worklist)
-	MetaMethod mmethod = (MetaMethod) scc.nodes()[0];
-
 	// if SCC composed of a native or abstract method, return immediately!
-	if(!analyzable(mmethod.getHMethod())){
+	if(!analyzable(((MetaMethod) scc.nodes()[0]).getHMethod())) {
 	    if(TIMING)
 		System.out.println((System.currentTimeMillis() - b_time) + 
 				   "ms + (unanalyzable)");
@@ -633,16 +630,14 @@ public class PointerAnalysis implements java.io.Serializable {
 
 	boolean must_check = scc.isLoop();
 
-	// add all methods here; supposedly better than just the 1st one
-	Object allmms[] = scc.nodes();
-	for(int i = 0; i < allmms.length; i++)
-	    W_inter_proc.add(allmms[i]);
-
-	// Initially, the worklist (actually a workstack) contains only one
-	// of the methods from the actual group of mutually recursive
-	// methods. The others will be added later (because they are reachable
-	// in the AllCaller graph from this initial node). 
-	// W_inter_proc.add(mmethod);
+	// add only the "exit" methods to the worklist (methods that
+	// call methods from outside their SCC); the other methods
+	// will be eventually added by the fixed point alg.
+	Object[] exits = scc.exits();
+	if(exits.length == 0) // leaf SCCs don't have an exit
+	    exits = scc.nodes();
+	for(int i = 0; i < exits.length; i++)
+	    W_inter_proc.add(exits[i]);
 
 	while(!W_inter_proc.isEmpty()) {
 	    // grab a method from the worklist
@@ -857,11 +852,11 @@ public class PointerAnalysis implements java.io.Serializable {
 
 	// add only the entry nodes to the worklist; the other basic
 	// blocks will be eventually added too by the fixed point alg.
-	Object[] objs = scc.entries();
-	if(objs.length == 0) // first SCC does not have an entry
-	    objs = scc.nodes();
-	for(int i = 0; i < objs.length; i++)
-	    W_intra_proc.add(objs[i]);
+	Object[] entries = scc.entries();
+	if(entries.length == 0) // first SCC does not have an entry
+	    entries = scc.nodes();
+	for(int i = 0; i < entries.length; i++)
+	    W_intra_proc.add(entries[i]);
 
 
 	boolean must_check = scc.isLoop();
@@ -972,6 +967,12 @@ public class PointerAnalysis implements java.io.Serializable {
 	    HField hf = q.field();
 	    String f = getFieldName(hf);
 	    Temp l = q.dst();
+
+	    if(TOPLAS_PAPER) {
+		lbbpig.G.I.removeEdges(l);
+		lbbpig.G.I.addEdge(l, NodeRepository.LOST_SUMMARY);
+		return;
+	    }
 
 	    PANode static_node =
 		nodes.getStaticNode(hf.getDeclaringClass().getName());
@@ -1178,21 +1179,35 @@ public class PointerAnalysis implements java.io.Serializable {
 	    // do not analyze stores into non-pointer fields
 	    if(hf.getType().isPrimitive()) return;
 
-	    // static field -> get the corresponding artificial node
-	    if(l1 == null) {
-		// special treatement of the static fields
-		PANode static_node =
-		    nodes.getStaticNode(hf.getDeclaringClass().getName());
-		lbbpig.G.I.addEdges(static_node, f,
-				    lbbpig.G.I.pointedNodes(l2));
-		lbbpig.G.e.addNodeHole(static_node, static_node);
-		lbbpig.G.propagate(Collections.singleton(static_node));
+	    if(l1 == null) // special treatement of the static fields
+		process_static_store(hf, l2);
+	    else
+		process_store(l1, f, q.src());
+	}
+	
+
+	private void process_static_store(HField hf, Temp l2) {
+	    if(TOPLAS_PAPER) {
+		for(Iterator it = lbbpig.G.I.pointedNodes(l2).iterator();
+		    it.hasNext(); ) {
+		    PANode node = (PANode) it.next();
+		    lbbpig.G.e.addNodeHole(node,
+					   NodeRepository.LOST_SUMMARY);
+		}
+		lbbpig.G.propagate(lbbpig.G.I.pointedNodes(l2));
 		return;
 	    }
 	    
-	    process_store(l1, f, q.src());
+	    // get the corresponding artificial node
+	    PANode static_node =
+		nodes.getStaticNode(hf.getDeclaringClass().getName());
+	    lbbpig.G.I.addEdges(static_node, getFieldName(hf),
+				lbbpig.G.I.pointedNodes(l2));
+	    lbbpig.G.e.addNodeHole(static_node, static_node);
+	    lbbpig.G.propagate(Collections.singleton(static_node));
 	}
-	
+
+
 	/** Store statement; special case - array */
 	public void visit(ASET q){
 	    // ignore the ASETs on arrays of primitives
@@ -1257,7 +1272,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	// site if only java.lang.Thread.start can be called there. (If
 	// some other methods can be called, it is possible that some of
 	// them do not start a thread.)
-	private boolean thread_start_site(CALL q){
+	private boolean thread_start_site(CALL q) {
 	    MetaMethod mms[] = mcg.getCallees(current_intra_mmethod,q);
 	    if(mms.length!=1) return false;
 
@@ -1271,13 +1286,13 @@ public class PointerAnalysis implements java.io.Serializable {
 	}
 
 	/** Process an acquire statement. */
-	public void visit(MONITORENTER q){
+	public void visit(MONITORENTER q) {
 	    if(RECORD_ACTIONS)
 		process_acquire_release(q, q.lock());
 	}
 
 	/** Process a release statement. */
-	public void visit(MONITOREXIT q){
+	public void visit(MONITOREXIT q) {
 	    if(RECORD_ACTIONS)
 		process_acquire_release(q, q.lock());
 	}
@@ -1510,7 +1525,7 @@ public class PointerAnalysis implements java.io.Serializable {
      *  for the object formal parameter (i.e. primitive type parameters
      *  such as <code>int</code>, <code>float</code> do not have associated
      *  nodes */
-    private ParIntGraph get_mmethod_initial_pig(MetaMethod mm, METHOD m){
+    private ParIntGraph get_mmethod_initial_pig(MetaMethod mm, METHOD m) {
 	Temp[]  params = m.params();
 	HMethod     hm = mm.getHMethod();
 	HClass[] types = hm.getParameterTypes();
@@ -1554,6 +1569,10 @@ public class PointerAnalysis implements java.io.Serializable {
 		count++;
 	    }
 
+	if(TOPLAS_PAPER)
+	    pig.G.e.addNodeHole(NodeRepository.LOST_SUMMARY,
+				NodeRepository.LOST_SUMMARY);
+
 	return pig;
     }
 
@@ -1590,7 +1609,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	Stats.print_stats();
 	nodes.print_stats();
 	System.out.println("==========================================");
-	if(SHOW_NODES){
+	if(SHOW_NODES) {
 	    System.out.println("BASIC NODES");
 	    System.out.println(nodes);
 	    System.out.println("NODE SPECIALIZATIONS:");
@@ -1868,15 +1887,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	    if(gt.isPOLY()) {
 		if(gt.getHClass().getName().equals("java.lang.Object"))
 		    return true;
-		Set/*<HClass>*/ allClasses = 
-		    DiGraph.reachableVertices
-		    (Collections.singleton(gt.getHClass()),
-		     new ForwardNavigator() {
-			 public Object[] next(Object node) {
-			     Set sons = ch.children((HClass) node);
-			     return sons.toArray(new HClass[sons.size()]);
-			 }
-		     });
+		Set/*<HClass>*/ allClasses = getAllConcreteClasses(gt);
 		for(Iterator it = allClasses.iterator(); it.hasNext(); ) {
 		    HClass hclass = (HClass) it.next();
 		    if(classHasField(hclass, f))
@@ -1894,7 +1905,28 @@ public class PointerAnalysis implements java.io.Serializable {
 	
 	return false;
     }
+    
+    static Set/*<HClass>*/ getAllConcreteClasses(GenType gt) {
+	if(gt.isPOLY())
+	    return
+		DiGraph.reachableVertices
+		(Collections.singleton(gt.getHClass()),
+		 new ForwardNavigator() {
+		    public Object[] next(Object node) {
+			Set sons = ch.children((HClass) node);
+			return sons.toArray(new HClass[sons.size()]);
+		    }
+		});
+	else
+	    return Collections.singleton(gt.getHClass());
+    }
 
+    static Set/*<HClass>*/ getAllConcreteClasses(GenType[] gts) {
+	Set result = new HashSet();
+	for(int i = 0; i < gts.length; i++)
+	    result.addAll(getAllConcreteClasses(gts[i]));
+	return result;			  
+    }
 
     private static boolean classHasField(HClass hclass, String f) {
 	if(hclass == null) return false;
