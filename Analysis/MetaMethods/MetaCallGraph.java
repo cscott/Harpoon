@@ -15,7 +15,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
 
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.Navigator;
-import harpoon.Util.Graphs.ReverseNavigator;
+import harpoon.Util.Graphs.DiGraph;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 
 /**
@@ -24,10 +24,11 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  methods are called by a given meta method [at a specific call site].
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraph.java,v 1.4 2003-04-30 21:24:44 salcianu Exp $
+ * @version $Id: MetaCallGraph.java,v 1.5 2003-05-06 15:00:41 salcianu Exp $
  */
 
-public abstract class MetaCallGraph implements java.io.Serializable {
+public abstract class MetaCallGraph extends DiGraph/*<MetaMethod>*/
+    implements java.io.Serializable {
     
     /** Returns the meta methods that can be called by <code>mm</code>. */
     public abstract MetaMethod[] getCallees(MetaMethod mm);
@@ -62,13 +63,17 @@ public abstract class MetaCallGraph implements java.io.Serializable {
     public abstract void print(PrintStream ps, boolean detailed_view,
 			       MetaMethod root);
 
-
+    public Set/*<MetaMethod>*/ getDiGraphRoots() {
+	// we conservatively return all meta-methods
+	return getAllMetaMethods();
+    }
+    
     /** Returns a bi-directional top-down graph navigator through
         <code>this</code> meta-callgraph. */
-    private Navigator getTopDownNavigator() {
+    public Navigator/*<MetaMethod>*/ getDiGraphNavigator() {
 	final MetaAllCallers mac = new MetaAllCallers(this);
 	
-	return new Navigator() {
+	return new Navigator/*<MetaMethod>*/() {
 	    public Object[] next(Object node) {
 		return getCallees((MetaMethod) node);
 	    }  
@@ -76,32 +81,5 @@ public abstract class MetaCallGraph implements java.io.Serializable {
 		return mac.getCallers((MetaMethod) node);
 	    }
 	};
-    }
-
-
-    /** Constructs a top-down topologically sorted view of
-	<code>this</code> meta-callgraph.  It starts with the strongly
-	connected component for the main method and ends with the
-	strongly connected components for the leaf methods. */
-    public SCCTopSortedGraph getTopDownSortedView() {
-	Set/*<MetaMethod>*/ allmms = getAllMetaMethods();
-	return
-	    SCCTopSortedGraph.topSort
-	    (SCComponent.buildSCC
-	     (allmms.toArray(new Object[allmms.size()]),
-	      getTopDownNavigator()));
-    }
-
-    /** Constructs a bottom-up topologically sorted view of
-	<code>this</code> meta-callgraph.  It starts with the strongly
-	connected components for the leaf methods and ends with the
-	strongly connected components for the main methods. */
-    public SCCTopSortedGraph getBottomUpSortedView() {
-	Set/*<MetaMethod>*/ allmms = getAllMetaMethods();
-	return
-	    SCCTopSortedGraph.topSort
-	    (SCComponent.buildSCC
-	     (allmms.toArray(new Object[allmms.size()]),
-	      new ReverseNavigator(getTopDownNavigator())));
     }
 }

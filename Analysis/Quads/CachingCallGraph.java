@@ -18,8 +18,8 @@ import harpoon.IR.Quads.CALL;
     some way that might invalidate the old call graph.
 
     @author  Alexandru SALCIANU <salcianu@MIT.EDU>
-    @version $Id: CachingCallGraph.java,v 1.3 2002-11-29 20:30:20 salcianu Exp $ */
-public class CachingCallGraph implements CallGraph {
+    @version $Id: CachingCallGraph.java,v 1.4 2003-05-06 15:00:39 salcianu Exp $ */
+public class CachingCallGraph extends CallGraph {
     
     /** Creates a <code>CachingCallGraph</code> that caches the results
         of <code>cg</code>.

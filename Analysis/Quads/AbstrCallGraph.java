@@ -20,9 +20,9 @@ import harpoon.IR.Quads.CALL;
  * implementations of <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AbstrCallGraph.java,v 1.4 2002-11-29 20:30:20 salcianu Exp $
+ * @version $Id: AbstrCallGraph.java,v 1.5 2003-05-06 15:00:39 salcianu Exp $
  */
-abstract class AbstrCallGraph implements CallGraph {
+abstract class AbstrCallGraph extends CallGraph {
 
     // the code factory that produces the code of the methods
     protected HCodeFactory hcf;

@@ -36,9 +36,9 @@ import harpoon.Util.DataStructs.RelationImpl;
     connected component in the call graph) decreased from 53 to 8.
 
     @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
-    @version $Id: SmartCallGraph.java,v 1.7 2003-04-18 16:25:00 salcianu Exp $
+    @version $Id: SmartCallGraph.java,v 1.8 2003-05-06 15:00:41 salcianu Exp $
 */
-public class SmartCallGraph implements CallGraph {
+public class SmartCallGraph extends CallGraph {
     
     /** Creates a <code>SmartCallGraph</code>.
 	@param mcg Meta call graph

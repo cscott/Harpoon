@@ -37,9 +37,9 @@ import java.util.Vector;
  * <code>CallGraphImpl2</code> only works on SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl2.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
+ * @version $Id: CallGraphImpl2.java,v 1.5 2003-05-06 15:00:39 salcianu Exp $
  */
-public class CallGraphImpl2 implements harpoon.Analysis.CallGraph  {
+public class CallGraphImpl2 extends harpoon.Analysis.CallGraph  {
     final HCodeFactory hcf;
     final ClassHierarchy ch;
     /** Creates a <code>CallGraph</code> using the specified 

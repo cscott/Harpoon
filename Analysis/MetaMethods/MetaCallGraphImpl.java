@@ -56,6 +56,7 @@ import harpoon.IR.Quads.Qop;
 import harpoon.Temp.Temp;
 
 import harpoon.Util.Graphs.SCComponent;
+import harpoon.Util.Graphs.Navigator;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
 import harpoon.Analysis.PointerAnalysis.Debug;
@@ -80,7 +81,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.10 2003-02-12 19:03:20 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.11 2003-05-06 15:00:41 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -1733,16 +1734,15 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// Navigator into the graph of ExactTemps. prev returns the ExactTemps
 	// whose types influence the type of "node" ExactTemp; next returns
 	// the ExactTemps whose types are affected by the type of node.  
-	SCComponent.Navigator et_navigator =
-	    new SCComponent.Navigator() {
-		    public Object[] next(Object node){
-			return ((ExactTemp) node).next;
-		    }
-		    public Object[] prev(Object node){
-			return ((ExactTemp) node).prev;
-		    }
-		};
-
+	Navigator et_navigator = new Navigator() {
+	    public Object[] next(Object node){
+		return ((ExactTemp) node).next;
+	    }
+	    public Object[] prev(Object node){
+		return ((ExactTemp) node).prev;
+	    }
+	};
+	
 	Object[] roots_for_scc =
 	    already_visited.toArray(new Object[already_visited.size()]);
 	Set scc_set = SCComponent.buildSCC(roots_for_scc, et_navigator);

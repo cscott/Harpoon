@@ -12,9 +12,9 @@ import harpoon.IR.Quads.CALL;
  implemented by a call graph.
  * 
  * @author  Alexandru SALCIANU <salcianu@mit.edu>
- * @version $Id: CallGraph.java,v 1.4 2002-11-29 20:30:20 salcianu Exp $
+ * @version $Id: CallGraph.java,v 1.5 2003-05-06 15:00:39 salcianu Exp $
  */
-public interface CallGraph extends harpoon.Analysis.CallGraph {
+public abstract class CallGraph extends harpoon.Analysis.CallGraph {
     // XXX: to talk about a CALL quad, you really need to have the HCode
     //      for context.  An HCode should be a parameter in these methods;
     //      the only reason implementations of this interface generally work
@@ -26,19 +26,9 @@ public interface CallGraph extends harpoon.Analysis.CallGraph {
 	If there is no known callee for the call site <code>cs</code>, or if 
 	<code>cs</code> doesn't belong to the code of <code>hm</code>,
 	return an array of length <code>0</code>. */
-    public HMethod[] calls(final HMethod hm, final CALL cs);
+    public abstract HMethod[] calls(final HMethod hm, final CALL cs);
 
     /** Returns a list of all the <code>CALL</code>s quads in the code 
 	of <code>hm</code>. */
-    public CALL[] getCallSites(final HMethod hm);
-
-    /** Returns the set of all the methods that can be called in the 
-	execution of the program. */
-    public Set callableMethods();
-
-    /** @return set of all <code>run()</code> methods that may
-	be the bodies of a thread started by the program (optional operation).
-	@throws UnsupportedOperationException if <code>getRunMethods</code>
-	is not implemented by <code>this</code>. */
-    public Set getRunMethods();
+    public abstract CALL[] getCallSites(final HMethod hm);
 }
