@@ -27,7 +27,7 @@ import java.util.Set;
  * the code is bloated by the specified amount.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SmallMethodInliner.java,v 1.3 2002-09-13 18:22:41 wbeebee Exp $
+ * @version $Id: SmallMethodInliner.java,v 1.4 2002-09-13 19:14:50 wbeebee Exp $
  */
 public class SmallMethodInliner extends MethodInliningCodeFactory {
     static final int NPERCENT= // default to 10 percent bloat.
@@ -115,7 +115,7 @@ public class SmallMethodInliner extends MethodInliningCodeFactory {
 	return methodSize.getInt(hm) * callSites.getValues(hm).size();
     }
 
-    private static class IntMap extends HashMap {
+    protected static class IntMap extends HashMap {
 	IntMap() { super(); }
 	int getInt(Object key) {
 	    Integer i = (Integer) get(key);

@@ -6,7 +6,6 @@ package harpoon.Analysis.Quads;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
-import harpoon.Util.Collections.IntMap;
 import harpoon.Util.Collections.MultiMap;
 
 /**
