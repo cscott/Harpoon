@@ -41,7 +41,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.15 1999-08-04 17:57:13 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.16 1999-08-04 18:41:41 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -51,7 +51,13 @@ public abstract class RegAlloc  {
     protected class FskLoad extends InstrMEM {
 	FskLoad(InstrFactory inf, HCodeElement hce, 
 		String assem, Temp dst, Temp src) {
-	    super(inf, hce, assem, new Temp[]{dst}, new Temp[]{src});
+	    super(inf, hce, assem, 
+		  new Temp[]{dst}, new Temp[]{src});
+	}
+	FskLoad(InstrFactory inf, HCodeElement hce, 
+		String assem, List dsts, Temp src) {
+	    super(inf, hce, assem, 
+		  (Temp[])dsts.toArray(new Temp[0]), new Temp[]{src});
 	}
 	
 	public void visit(RegInstrVisitor v) { v.visit(this); }
@@ -60,7 +66,13 @@ public abstract class RegAlloc  {
     protected class FskStore extends InstrMEM {
 	FskStore(InstrFactory inf, HCodeElement hce, 
 		String assem, Temp dst, Temp src) {
-	    super(inf, hce, assem, new Temp[]{dst}, new Temp[]{src});
+	    super(inf, hce, assem, 
+		  new Temp[]{dst}, new Temp[]{src});
+	}
+	FskStore(InstrFactory inf, HCodeElement hce, 
+		String assem, Temp dst, List srcs) {
+	    super(inf, hce, assem, 
+		  new Temp[]{dst}, (Temp[])srcs.toArray(new Temp[0]));
 	}
 
 	public void visit(RegInstrVisitor v) { v.visit(this); }
@@ -335,11 +347,67 @@ public abstract class RegAlloc  {
 	return yes;
     }
 
-    class BrainDeadLocalAlloc extends RegAlloc {
+    static class BrainDeadLocalAlloc extends RegAlloc {
 	BrainDeadLocalAlloc(Code code) {
 	    super(code);
 	}
 	
+	class BrainDeadInstrVisitor extends InstrVisitor {
+	    Temp[] regs = frame.getGeneralRegisters();
+		
+	    public void visit(Instr instr) {
+		InstrFactory inf = instr.getFactory();
+		    
+		try {
+		    // in this (dumb) model, each instruction will
+		    // load all uses and store all defs, so we can
+		    // treat the register file as being empty for each
+		    // instruction
+
+		    Map regFile = new LinearMap();
+
+		    // load srcs
+		    for(int i=0; i<instr.use().length; i++) {
+			Temp preg = instr.use()[i];
+			Iterator iter =
+			    frame.suggestRegAssignment(preg, regFile); 
+			List regList = (List) iter.next();
+			String dests = ""; 
+			for(int j=0; j<regList.size(); j++) {
+			    regFile.put(regList.get(j), preg);
+			    dests += ("`d"+j+", ");
+			}
+			InstrMEM loadSrcs = 
+			    new FskLoad(inf, null, "FSK-LOAD " + dests
+					+ "`s0", regList, preg); 
+			Instr.insertInstrBefore(instr, loadSrcs);
+			code.assignRegister(instr, preg, regList);
+		    }
+		    // store dsts
+		    for(int i=0; i<instr.def().length; i++) {
+			Temp preg = instr.def()[i];
+			Iterator iter =
+			    frame.suggestRegAssignment(preg, regFile); 
+			List regList = (List) iter.next();
+			String srcs = "";
+			for (int j=0; j<regList.size(); j++) {
+			    regFile.put(regList.get(j), preg);
+			    srcs += (", `s"+j);
+			}
+			InstrMEM storeDsts = 
+			    new FskStore(inf, null, "FSK-STORE `d0"+srcs,
+					 preg, regList);
+			Instr.insertInstrAfter(instr, storeDsts);
+			code.assignRegister(instr, preg, regList);
+		    }
+		} catch (Frame.SpillException e) {
+		    Util.assert(false, "One Instr uses/defines more "+
+				"registers than "+frame+" can accomidate "+
+				"in Register File!"); 
+		}
+	    }
+
+	}
 	/** For each instruction:
 	        1. Load every use from memory into the register file.
 		2. Execute the instruction
@@ -348,42 +416,14 @@ public abstract class RegAlloc  {
 	    (very dumb) allocation strategy. 
 	*/
 	protected Code generateRegAssignment() {
-	    Instr root = (Instr) code.getRootElement();
+	    Iterator instrs = code.getElementsI();
+	    InstrVisitor memVisitor = new BrainDeadInstrVisitor();
 
-	    InstrVisitor memVisitor = new InstrVisitor(){
-		Temp[] regs = frame.getGeneralRegisters();
+	    while(instrs.hasNext()) {
+		((Instr)instrs.next()).visit(memVisitor);
+	    }
 
-		public void visit(Instr instr) {
-		    try {
-			Map regFile = new LinearMap();
-
-			// load srcs
-			for(int i=0; i<instr.use().length; i++) {
-			    Temp preg = instr.use()[i];
-			    Iterator iter = 
-			        frame.suggestRegAssignment(preg,
-							   regFile);
-			    List regList = (List) iter.next();
-			    for(int j=0; j<regList.size(); j++) {
-				regFile.put(regList.get(j), preg);
-				
-			    }
-			    code.assignRegister(instr, preg, regList);
-			    
-			}
-			
-		    } catch (Frame.SpillException e) {
-			Util.assert(false, "One Instr uses more registers "+
-				    "than we have in RegFile!");
-		    }
-		}
-		
-	    };
-	    // InstrMEM loadSrc1 = new FskLoad(inf, null, "FSK-LOAD `d0, `s0", reg, src1);
-	    // InstrMEM loadSrc2 = new FskLoad(inf, null, "FSK-LOAD `d0, `s0", reg, src2);
-	    //InstrMEM storeDst = new FskStore(inf, null, "FSK-STORE `d0, `s0",  dst, reg ); 
-
-	    return null;
+	    return code;
 	}
     }
    
