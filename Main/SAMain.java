@@ -22,7 +22,6 @@ import harpoon.Temp.TempFactory;
 import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.DataFlow.InstrSolver;
 import harpoon.Analysis.Instr.RegAlloc;
-import harpoon.Backend.Generic.Code;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.ClassHierarchy;
@@ -67,7 +66,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.81 2000-06-26 18:37:21 witchel Exp $
+ * @version $Id: SAMain.java,v 1.1.2.82 2000-06-29 02:22:07 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -87,6 +86,8 @@ public class SAMain extends harpoon.IR.Registration {
     private static HClass  singleClass = null; // for testing single classes
     private static final int STRONGARM_BACKEND = 0;
     private static final int MIPS_BACKEND = 1;
+    private static final int SPARC_BACKEND = 2;
+    private static final int PRECISEC_BACKEND = 3;
     private static int     BACKEND = STRONGARM_BACKEND;
     
     private static Linker linker = Loader.systemLinker;
@@ -158,11 +159,27 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 	callGraph = new CallGraphImpl(classHierarchy, hcf);
 
-    if(BACKEND == MIPS_BACKEND) {
-       frame =	new harpoon.Backend.MIPS.Frame(mainM, classHierarchy, callGraph);
-    } else {
-       frame =	new harpoon.Backend.StrongARM.Frame(mainM, classHierarchy, callGraph);
-    }
+	switch(BACKEND) {
+	case STRONGARM_BACKEND:
+	    frame = new harpoon.Backend.StrongARM.Frame
+		(mainM, classHierarchy, callGraph);
+	    break;
+	case SPARC_BACKEND:
+	    frame = new harpoon.Backend.Sparc.Frame
+		(mainM, classHierarchy, callGraph);
+	    break;
+	case MIPS_BACKEND:
+	    frame = new harpoon.Backend.MIPS.Frame
+		(mainM, classHierarchy, callGraph);
+	    break;
+	    /*
+	case PRECISEC_BACKEND:
+	    frame = new harpoon.Backend.PreciseC.Frame
+		(mainM, classHierarchy, callGraph);
+	    break;
+	    */
+	default: throw new Error("Unknown Backend: "+BACKEND);
+	}
  
 	if (LOOPOPTIMIZE) {
 	    hcf=harpoon.IR.LowQuad.LowQuadSSI.codeFactory(hcf);
@@ -177,14 +194,9 @@ public class SAMain extends harpoon.IR.Registration {
 	hcf = harpoon.Analysis.Tree.JumpOptimization.codeFactory(hcf);
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
     
-	HCodeFactory sahcf;
-    if(BACKEND == MIPS_BACKEND) {
-       sahcf = harpoon.Backend.MIPS.Code.codeFactory(hcf, frame);
-    } else {
-       sahcf = harpoon.Backend.StrongARM.Code.codeFactory(hcf, frame);
-    }
-
-	sahcf = new harpoon.ClassFile.CachingCodeFactory(sahcf);
+	HCodeFactory sahcf = frame.getCodeFactory(hcf);
+	if (sahcf!=null)
+	    sahcf = new harpoon.ClassFile.CachingCodeFactory(sahcf);
 
 	if (classHierarchyFilename != null) {
 	    try {
@@ -551,14 +563,17 @@ public class SAMain extends harpoon.IR.Registration {
 		Util.assert(ASSEM_DIR.isDirectory(), ""+ASSEM_DIR+" must be a directory");
 		break;
 	    case 'b': {
-           String backendName = g.getOptarg();
-           if(backendName.equals("MIPS") || backendName.equals("mips")) {
-              BACKEND = MIPS_BACKEND;
-           } else {
-              BACKEND = STRONGARM_BACKEND;
-           }
-        }
+		String backendName = g.getOptarg().toLowerCase().intern();
+		if (backendName == "strongarm")
+		    BACKEND = STRONGARM_BACKEND;
+		if (backendName == "sparc")
+		    BACKEND = SPARC_BACKEND;
+		if (backendName == "mips")
+		    BACKEND = MIPS_BACKEND;
+		if (backendName == "precisec")
+		    BACKEND = PRECISEC_BACKEND;
 		break;
+	    }
 	    case 'c':
 		className = g.getOptarg();
 		break;
@@ -637,7 +652,8 @@ public class SAMain extends harpoon.IR.Registration {
 	out.println("Read CodeFactory in from FileName");
 
 	out.println("-b <backend name>");
-	out.println("\t Supported backends are StrongARM (default) or MIPS");
+	out.println("\t Supported backends are StrongARM (default), MIPS, " +
+		    "Sparc, or PreciseC");
 
 	out.println("-l");
 	out.println("Turn on Loop Optimizations");
