@@ -15,11 +15,12 @@ foreach my $run (keys %runsize) {
     while (<FH>) {
         my ($sz, $op, $freq) = split;
 	$count{$run}{$sz}{$op} = $freq;
-	$total{$run}{$op} += $freq;
+	$total{$run}{$op} += $freq*$sz;
 	$allsizes{$sz} = 1; # keep track of all sizes seen.
     }
     close FH;
 }
+$allsizes{1 + (sort {$b <=> $a} keys %allsizes)[0]} = 1;
 @allops = ( "r", "w", "T" );
 # now accumulate in reverse size order
 # (so we get "number of accesses to objects larger than X")
@@ -34,7 +35,7 @@ foreach my $sz (sort {$b <=> $a} keys %allsizes) {
     print "$sz";
     foreach my $run (sort keys %runsize) {
 	foreach my $op ( @allops ) {
-	    $acc{$run}{$op} += $count{$run}{$sz}{$op};
+	    $acc{$run}{$op} += $count{$run}{$sz}{$op}*$sz;
 	    print " ".(100.0*$acc{$run}{$op}/$total{$run}{$op});
 	}
     }

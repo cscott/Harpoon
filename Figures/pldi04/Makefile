@@ -1,6 +1,7 @@
-all: tr-w-ten.eps tr-w-all.eps
+PLOTS=tr-w-ten.eps tr-w-all.eps tr-sz-all.eps
+all: $(PLOTS) 
 
-copy: tr-w-ten.eps tr-w-all.eps
+copy: $(PLOTS)
 	cp $^ ..
 
 update:
@@ -11,3 +12,4 @@ update:
 
 tr-w-all.eps: acc-freq-all.pl
 tr-w-ten.eps: acc-freq-ten.pl
+tr-sz-all.eps: acc-trsize-all.pl
