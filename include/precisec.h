@@ -12,7 +12,8 @@ typedef void * jptr;
 
 /* thread-state optimization for single-threaded case */
 #ifndef WITH_THREADS
-#define FNI_GetJNIEnv() FNI_JNIEnv
+extern JNIEnv *FNI_JNIEnv; /* single, global, JNIEnv */
+extern inline JNIEnv *FNI_GetJNIEnv(void) { return FNI_JNIEnv; }
 #endif
 
 /* support for precise-gc stack */

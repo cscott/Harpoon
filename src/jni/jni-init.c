@@ -62,7 +62,7 @@ static void FNI_DestroyThreadState(void *cl) {
 
 #ifndef WITH_THREADS
 /** single-threaded implementation. Single, global, JNIEnv. */
-static JNIEnv *FNI_JNIEnv = NULL;
+JNIEnv *FNI_JNIEnv = NULL;
 void FNI_InitJNIEnv(void) { /* do nothing */ }
 JNIEnv *FNI_CreateJNIEnv(void) { return FNI_JNIEnv = FNI_CreateThreadState(); }
 JNIEnv *FNI_GetJNIEnv(void) { return FNI_JNIEnv; }
