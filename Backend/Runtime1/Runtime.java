@@ -28,7 +28,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.23 2000-03-27 20:37:34 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.24 2000-03-28 05:26:25 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -151,8 +151,16 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 		.getConstructor(new HClass[] { HCstring }),
 	    linker.forName("java.lang.ArrayStoreException")
 		.getConstructor(new HClass[] { HCstring }),
+	    linker.forName("java.lang.InstantiationException") // by Class
+		.getConstructor(new HClass[] { HCstring }), // .newInstance()
 	    linker.forName("java.util.Properties")
 		.getMethod("setProperty", new HClass[] { HCstring, HCstring }),
+
+	    // in java.net implementations
+		// in static initializer of java.net.InetAddress:
+	    linker.forName("java.net.InetAddressImpl")
+		.getConstructor(new HClass[0]),
+
 	    // referenced by name in static initializers for primitive type
 	    // wrappers (java.lang.Integer, java.lang.Character, etc)
 	    HClass.Boolean, HClass.Byte, HClass.Short, HClass.Int,
