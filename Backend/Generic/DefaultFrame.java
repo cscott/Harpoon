@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.9 1999-04-05 21:54:56 duncan Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.10 1999-05-25 16:45:58 andyb Exp $
  */
 public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 
@@ -115,23 +115,29 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
         return prologue;
     }
 
-    public Instr[] procLiveOnExit(Instr[] body) {
+    public Instr procLiveOnExit(Instr body) {
         return body;
     }
 
-    public Instr[] procAssemDirectives(Instr[] body) {
-        Util.assert((body != null) && (body.length > 0));
-        Instr[] newbody = new Instr[body.length + 4];
-        HCodeElement src = body[0];
+    public Instr procAssemDirectives(Instr body) {
+	Util.assert(body != null);
+
+        HCodeElement src = body;
         InstrFactory inf = ((Instr)src).getFactory();
-        newbody[0] = new Instr(inf, src, ".text", null, null);
-        newbody[1] = new Instr(inf, src, ".align 0", null, null);
-        newbody[2] = new Instr(inf, src, ".global " + 
+	Instr dir1, dir2, dir3, dir4;
+
+        dir1 = new Instr(inf, src, ".text", null, null);
+        dir2 = new Instr(inf, src, ".align 0", null, null);
+        dir3 = new Instr(inf, src, ".global " + 
                         inf.getMethod().getName() + ":", null, null);
-        newbody[3] = new Instr(inf, src, inf.getMethod().getName() + ":",
+        dir4 = new Instr(inf, src, inf.getMethod().getName() + ":",
                         null, null);
-        System.arraycopy(body, 0, newbody, 4, body.length);
-        return newbody;
+
+	Instr.insertInstrBefore(body, dir1);
+	Instr.insertInstrAfter(dir1, dir2);
+	Instr.insertInstrAfter(dir2, dir3);
+	Instr.insertInstrAfter(dir3, dir4);
+	return dir1;
     }
 
     /* Implementation of the DefaultAllocationInfo interface.

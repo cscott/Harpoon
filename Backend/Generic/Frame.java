@@ -18,7 +18,7 @@ import harpoon.Temp.TempFactory;
  * needed for compilation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.11 1999-03-08 09:01:55 andyb Exp $
+ * @version $Id: Frame.java,v 1.1.2.12 1999-05-25 16:45:58 andyb Exp $
  */
 public abstract class Frame {
 
@@ -48,14 +48,14 @@ public abstract class Frame {
     public abstract Stm procPrologue(TreeFactory tf, HCodeElement src, 
                                      Temp[] paramdsts);
 
-    /** Returns an array of <code>Instr</code>s which adds a "sink" 
+    /** Returns a block of <code>Instr</code>s which adds a "sink" 
      *  instruction to specify registers that are live on procedure exit. */
-    public abstract Instr[] procLiveOnExit(Instr[] body);
+    public abstract Instr procLiveOnExit(Instr body);
 
-    /** Returns an array of <code>Instr</code>s which wraps the 
+    /** Returns a block of <code>Instr</code>s which wraps the 
      *  method body in assembler directives and other instructions
      *  needed to initialize stack space. */
-    public abstract Instr[] procAssemDirectives(Instr[] body);
+    public abstract Instr procAssemDirectives(Instr body);
 
     /** Returns the appropriate offset map for this frame */
     public abstract OffsetMap getOffsetMap();

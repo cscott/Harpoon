@@ -7,6 +7,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeEdge;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.ArrayFactory;
@@ -15,22 +16,22 @@ import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrDIRECTIVE;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.Backend.Generic.Frame;
+import harpoon.Util.ArrayEnumerator;
 
-import java.util.List;
-import java.util.Enumeration;
+import java.util.*;
 
 /**
  * <code>Generic.Code</code> is an abstract superclass of codeviews
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.5 1999-05-24 19:02:05 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.6 1999-05-25 16:45:58 andyb Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
     protected HMethod parent;
-    /** The Instrs composing this code view. */
-    protected List instrs; // FSK: was Instr[]
+    /** The root Instr of the Instrs composing this code view. */
+    protected Instr instrs;
     /** Instruction factory. */
     protected final InstrFactory inf;
     /** The Frame associated with this codeview. */
@@ -55,7 +56,7 @@ public abstract class Code extends HCode {
         };
     }
 
-    protected Code(final HMethod parent, final List instrs, 
+    protected Code(final HMethod parent, final Instr instrs, 
                    final Frame frame) {
         this.parent = parent; this.instrs = instrs; this.frame = frame;
         this.inf = newINF(parent);
@@ -68,29 +69,39 @@ public abstract class Code extends HCode {
 
     public HMethod getMethod() { return parent; }
 
-    public HCodeElement getRootElement() { return null; }
+    public HCodeElement getRootElement() { return instrs; }
 
     public HCodeElement[] getLeafElements() { return null; }
    
     /** Returns an array of the instructions in this codeview. 
      *
-     *  @return         An array of HCodeElements containing the Instrs
-     *                  from this codeview.
-     */
-    public HCodeElement[] getElements() { 
-	return (Instr[]) instrs.toArray(new Instr[instrs.size()]); 
+     *  @return         An iterator over the <code>Instr</code>s
+     *                  making up this code view.  The root Instr is
+     *                  the first element in the iteration. */
+    public Iterator getElementsI() { 
+	return new Iterator() {
+	    Set visited = new HashSet();
+	    Stack s = new Stack();
+	    {
+		s.push(getRootElement());
+		visited.add(s.peek());
+	    }
+	    public void remove() { throw new UnsupportedOperationException(); }
+	    public boolean hasNext() { return !s.isEmpty(); }
+	    public Object next() {
+		if (s.empty()) throw new NoSuchElementException();
+		Instr instr = (Instr) s.pop();
+		HCodeEdge[] next = instr.succ();
+		for (int i = next.length - 1; i >= 0; i--)
+		    if (!visited.contains(next[i].to())) {
+			s.push(next[i].to());
+			visited.add(next[i].to());
+		    }
+		return instr;
+	    }
+	};
     }
   
-    /** Returns an enumeration of the instructions in this codeview. <BR>
-     *
-     *  @return         An Enumeration containing the Instrs from this
-     *                  codeview.
-     */
-    public Enumeration getElementsE() {
-        // return null;
-	return new harpoon.Util.IteratorEnumerator(instrs.iterator());
-    }
-
     /** Returns an array factory to create the instruction elements
      *  of this codeview.
      *
@@ -120,11 +131,12 @@ public abstract class Code extends HCode {
      */
     public void print(java.io.PrintWriter pw) {
         pw.println();
-        for (int i = 0; i < instrs.size(); i++) {
-            if (instrs.get(i) instanceof InstrLABEL) {
-                pw.println(instrs.get(i));
+	Instr[] instrarr = (Instr[]) getElements();
+        for (int i = 0; i < instrarr.length; i++) {
+            if (instrarr[i] instanceof InstrLABEL) {
+                pw.println(instrarr[i]);
             } else {
-                pw.println("\t"+instrs.get(i));
+                pw.println("\t"+instrarr[i]);
             }
         }
     }
