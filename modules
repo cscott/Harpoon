@@ -52,3 +52,8 @@ FLEX    -a Code Runtime
 #pldi99 -d pldi99.sigma Design harpoon.bib acmconf.sty acmconfbig.sty \
 #	pldi99-abstract.tex pldi99-intro.tex pldi99-tech.tex \
 #	pldi99.tex .cvsignore
+#oopsla '02 paper
+oopsla Design oopsla02.tex GNUmakefile comdef.sty acmconf.sty harpoon.bib \
+	Figures/ptrsize.tex Figures/THlat6.tex Figures/standardAlignment.eps \
+	Figures/byteAlignment.eps Figures/bitAlignment.eps \
+	Figures/spec-space.eps Figures/spaceopt.eps
