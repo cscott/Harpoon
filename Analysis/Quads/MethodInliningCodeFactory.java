@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
+import harpoon.Analysis.Maps.UseDefMap;
+import harpoon.Analysis.UseDef;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HMethod;
@@ -22,7 +24,6 @@ import harpoon.Util.Util;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.CloningTempMap;
-import harpoon.Analysis.UseMap;
 
 
 import java.util.Set;
@@ -41,7 +42,7 @@ import harpoon.ClassFile.HCodeElement;
  * facilities for specifying number of recursive inlinings.
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.4 2000-10-06 21:19:07 cananian Exp $ */
+ * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.5 2001-01-13 21:08:10 cananian Exp $ */
 public class MethodInliningCodeFactory implements HCodeFactory {
 
     static PrintWriter pw = new PrintWriter(System.out);
@@ -158,7 +159,7 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 		Quad[] newElems;
 		QuadArrayBuilder build = new QuadArrayBuilder((HEADER) newQ);
 		newElems = build.getElements();
-		UseMap map = new UseMap( Quad.arrayFactory, newElems );
+		UseDefMap map = new UseDef( /*Quad.arrayFactory, newElems*/ );
 
 		qv = new InliningVisitor( map, call );
 		for(int j=0; j<newElems.length; j++) {
@@ -195,12 +196,12 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 
     static class InliningVisitor extends QuadVisitor {
 	
-	UseMap uses;
+	UseDefMap uses;
 	Temp[] passedParams;
 	CALL site;
 	
 	
-	InliningVisitor( UseMap uses, CALL site ) {
+	InliningVisitor( UseDefMap uses, CALL site ) {
 	    this.uses = uses;
 	    this.site = site;
 	    passedParams = site.params();
@@ -228,11 +229,12 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	    Quad.addEdges( qArray );
 	    
 	    // METHOD has temp var parameters for this sequence of
-	    // quads...use the UseMap to find their corresponding
+	    // quads...use the UseDefMap to find their corresponding
 	    // uses, and then substitute in the passed arguments.
 	    Temp[] params = q.params();
 	    for (int i=0; i<params.length; i++) {
-		Quad[] useArray = (Quad[]) uses.useMap( params[i] );
+		HCode hc = q.getFactory().getParent();
+		Quad[] useArray = (Quad[]) uses.useMap(hc, params[i] );
 		TempMap useMap = new SingleTempMap(params[i], passedParams[i]);
 		
 		for (int j=0; j<useArray.length; j++) {

@@ -4,7 +4,6 @@
 package harpoon.IR.Tree;
 
 import harpoon.Analysis.AllocationInformationMap.AllocationPropertiesImpl;
-import harpoon.Analysis.DefMap;
 import harpoon.Analysis.ReachingDefs;
 import harpoon.Analysis.ReachingDefsImpl;
 import harpoon.Analysis.SSxReachingDefsImpl;
@@ -78,7 +77,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.89 2000-11-14 22:21:21 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.90 2001-01-13 21:08:15 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;

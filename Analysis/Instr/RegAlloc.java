@@ -20,7 +20,6 @@ import harpoon.Backend.Generic.RegFileInfo.TempLocator;
 import harpoon.Backend.Generic.RegFileInfo.MachineRegLoc;
 import harpoon.Backend.Generic.RegFileInfo.StackOffsetLoc;
 import harpoon.Backend.Generic.InstrBuilder;
-import harpoon.Analysis.UseMap;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Backend.Maps.BackendDerivation;
@@ -78,7 +77,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.122 2000-11-10 19:54:46 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.123 2001-01-13 21:08:05 cananian Exp $ 
  */
 public abstract class RegAlloc  {
 

@@ -9,7 +9,7 @@ import harpoon.IR.Properties.UseDef;
 import harpoon.Backend.Generic.RegFileInfo;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Code;
-import harpoon.Analysis.UseMap;
+import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.Maps.Derivation;
 
@@ -27,11 +27,11 @@ import java.util.HashMap;
     <code>Instr</code>s in a <code>Code</code>.
 
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.13 2000-07-11 22:50:01 pnkfelix Exp $ 
+    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.14 2001-01-13 21:08:05 cananian Exp $ 
 */
 public class DemandDrivenRegAlloc extends RegAlloc {
 
-    UseMap uses;
+    UseDefMap uses;
 
     // maps basicblocks to the variables allocated to registers
     // entering the block
@@ -57,7 +57,7 @@ public class DemandDrivenRegAlloc extends RegAlloc {
     */
     protected DemandDrivenRegAlloc(Code code) {
         super(code);
-	uses = new UseMap( code );
+	uses = new harpoon.Analysis.UseDef( /*code*/ );
 
 	bbToAllocatedMap = new HashMap(); // built during allocation 
 
@@ -244,7 +244,7 @@ public class DemandDrivenRegAlloc extends RegAlloc {
     }	    
 
     private Map findLiveVars(Code code) {
-	UseMap useMap = new UseMap(code);
+	UseDefMap useMap = new harpoon.Analysis.UseDef(/*code*/);
 	return null;
     }
 
