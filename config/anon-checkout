@@ -1,0 +1,7 @@
+cd 
+test -d Harpoon || mkdir Harpoon
+cd Harpoon
+cvs -d :pserver:cvsguest@lm.lcs.mit.edu:/home/cananian/Harpoon/CVSROOT \
+    login
+cvs -d :pserver:cvsguest@lm.lcs.mit.edu:/home/cananian/Harpoon/CVSROOT \
+    checkout -r magic-2-0 Code

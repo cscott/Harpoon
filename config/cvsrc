@@ -1,0 +1,5 @@
+diff -up
+update -Pd
+co -P
+release -d
+cvs -z2
