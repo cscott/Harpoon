@@ -2,6 +2,7 @@ package MCC.IR;
 import java.util.*;
 import java.io.*;
 import MCC.State;
+import MCC.Compiler;
 
 public class GraphAnalysis {
     Termination termination;
@@ -13,6 +14,37 @@ public class GraphAnalysis {
 
     public GraphAnalysis(Termination t) {
 	termination=t;
+    }
+
+    private boolean safetransclosure(GraphNode gn, Set removed, Set cantremove, Set couldremove) {
+	Stack workset=new Stack();
+	HashSet closureset=new HashSet();
+	workset.push(gn);
+	while(!workset.empty()) {
+	    GraphNode gn2=(GraphNode)workset.pop();
+	    if (!closureset.contains(gn2)) {
+		closureset.add(gn2);
+		boolean goodoption=false;
+		for(Iterator edgeit=gn2.edges();edgeit.hasNext();) {
+		    GraphNode gn3=((GraphNode.Edge)edgeit.next()).getTarget();
+		    if (removed.contains(gn3))
+			continue;
+		    if (termination.abstractrepair.contains(gn3)||
+			termination.conjunctions.contains(gn3)||
+			termination.updatenodes.contains(gn3))
+			return false;
+		    if (!removed.contains(gn3)&&
+			((!couldremove.contains(gn3))||cantremove.contains(gn3)))
+			goodoption=true;
+		    workset.push(gn3);
+		}
+		if (!goodoption) {
+		    if (termination.scopenodes.contains(gn2))
+			return false;
+		}		    
+	    }
+	}
+	return true;
     }
 
     public Set doAnalysis() {
@@ -34,6 +66,25 @@ public class GraphAnalysis {
 	    couldremove.addAll(termination.updatenodes);
 	    couldremove.addAll(termination.consequencenodes);
 	    couldremove.retainAll(nodes);
+
+
+	    /* Check for consequence nodes which are fine */
+
+	    for(Iterator it=termination.consequencenodes.iterator();it.hasNext();) {
+		GraphNode gn=(GraphNode) it.next();
+		if (safetransclosure(gn, mustremove,cantremove, couldremove)) {
+			    couldremove.remove(gn);
+		}
+	    }
+
+	    /* Check for update nodes which are fine */
+
+	    for(Iterator it=termination.updatenodes.iterator();it.hasNext();) {
+		GraphNode gn=(GraphNode) it.next();
+		if (safetransclosure(gn, mustremove,cantremove, cantremove)) {
+			couldremove.remove(gn);
+		}
+	    }
 
 	    /* Look for constraints which can only be satisfied one way */
 	    
@@ -110,6 +161,28 @@ public class GraphAnalysis {
 		}
 	    }
 	    
+	    if (Compiler.AGGRESSIVESEARCH) {
+		/* Aggressively remove compensation nodes */
+		for(Iterator scopeit=termination.scopenodes.iterator();scopeit.hasNext();) {
+		    GraphNode gn=(GraphNode)scopeit.next();
+		    HashSet tmpset=new HashSet();
+		    boolean doremove=false;
+		    for(Iterator edgeit=gn.edges();edgeit.hasNext();) {
+			GraphNode.Edge e=(GraphNode.Edge)edgeit.next();
+			GraphNode gn2=e.getTarget();
+			if (termination.consequencenodes.contains(gn2)) {
+			    if (((!couldremove.contains(gn2))||cantremove.contains(gn2))&&
+				!mustremove.contains(gn2)) {
+				doremove=true;
+			    } else
+				break;
+			} else tmpset.add(gn2);
+		    }
+		    if (doremove)
+			mustremove.addAll(tmpset);
+		}
+	    }
+
 	    Set cycles2=GraphNode.findcycles(cantremove);
 	    for(Iterator it=cycles2.iterator();it.hasNext();) {
 		GraphNode gn=(GraphNode)it.next();
@@ -299,7 +372,7 @@ public class GraphAnalysis {
 		continue; //recalculate
 
 	    try {
-		GraphNode.DOTVisitor.visit(new FileOutputStream("graphsearch.dot"),nodes);
+		GraphNode.DOTVisitor.visit(new FileOutputStream("graphsearch.dot"),nodes,couldremove);
 	    } catch (Exception e) {
 		e.printStackTrace();
 		System.exit(-1);
@@ -435,7 +508,7 @@ public class GraphAnalysis {
 	}
 	if (incremented==false) /* Increase length */ {
 	    combination.add(new Integer(0));
-	    System.out.println("Expanding to :"+combination.size());
+	    System.out.println("Expanding to: "+combination.size());
 	}
     }
 

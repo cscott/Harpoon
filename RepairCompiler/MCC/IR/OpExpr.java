@@ -8,6 +8,34 @@ public class OpExpr extends Expr {
     Expr right;
     Opcode opcode;
 
+    public Expr getUpper() {
+	Expr lupper=left.getUpper();
+	if (lupper==null)
+	    return null;
+	if (right!=null) {
+	    Expr rupper=right.getUpper();
+	    if (rupper==null)
+		return null;
+	    OpExpr oe=new OpExpr(this.opcode,lupper,rupper);
+	    oe.td = ReservedTypeDescriptor.INT;
+	    return oe;
+	} else return lupper;
+    }
+
+    public Expr getLower() {
+	Expr llower=left.getLower();
+	if (llower==null)
+	    return null;
+	if (right!=null) {
+	    Expr rlower=right.getLower();
+	    if (rlower==null)
+		return null;
+	    OpExpr oe=new OpExpr(this.opcode,llower,rlower);
+	    oe.td = ReservedTypeDescriptor.INT;
+	    return oe;
+	} else return llower;
+    }
+
     public boolean isSafe() {
 	if (right==null)
 	    return left.isSafe();

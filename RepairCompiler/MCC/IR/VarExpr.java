@@ -17,6 +17,14 @@ public class VarExpr extends Expr {
 	return hs;
     }
 
+    public Expr getLower() {
+	return vd.getLower();
+    }
+
+    public Expr getUpper() {
+	return vd.getUpper();
+    }
+
     public SetDescriptor getSet() {
 	return vd.getSet();
     }

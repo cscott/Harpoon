@@ -7,9 +7,31 @@ public class ImageSetExpr extends SetExpr {
     VarDescriptor vd;
     RelationDescriptor rd;
     boolean inverse;
+    ImageSetExpr ise;
+    boolean isimageset=false;
+
+    public ImageSetExpr(boolean inverse, VarDescriptor vd, RelationDescriptor rd) {
+        this.vd = vd;
+        this.rd = rd;
+        this.inverse = inverse;
+    }
 
     public ImageSetExpr(VarDescriptor vd, RelationDescriptor rd) {
         this.vd = vd;
+        this.rd = rd;
+        this.inverse = false;
+    }
+
+    public ImageSetExpr(boolean inverse, ImageSetExpr ise, RelationDescriptor rd) {
+        this.ise = ise;
+	this.isimageset=true;
+        this.rd = rd;
+        this.inverse = inverse;
+    }
+
+    public ImageSetExpr(ImageSetExpr ise, RelationDescriptor rd) {
+	this.ise = ise;
+	this.isimageset=true;
         this.rd = rd;
         this.inverse = false;
     }
@@ -21,33 +43,38 @@ public class ImageSetExpr extends SetExpr {
     }
 
     public String name() {
-	String name=vd.toString()+".";
+	String name="";
+	if (isimageset)
+	    name+=ise.name();
+	else
+	    name+=vd.toString()+".";
 	if (inverse)
 	    name+="~";
 	name+=rd.toString();
 	return name;
     }
 
-    public ImageSetExpr(boolean inverse, VarDescriptor vd, RelationDescriptor rd) {
-        this.vd = vd;
-        this.rd = rd;
-        this.inverse = inverse;
-    }
-
     public boolean equals(Map remap, Expr e) {
 	if (e==null||!(e instanceof ImageSetExpr))
 	    return false;
-	ImageSetExpr ise=(ImageSetExpr)e;
-	if (ise.inverse!=inverse)
+	ImageSetExpr ise2=(ImageSetExpr)e;
+	if (ise2.isimageset!=isimageset)
 	    return false;
-	if (ise.rd!=rd)
+	if (ise2.inverse!=inverse)
 	    return false;
-	VarDescriptor nvde=vd;
-	if (remap.containsKey(nvde))
-	    nvde=(VarDescriptor)remap.get(nvde);
-	if (nvde!=ise.vd)
+	if (ise2.rd!=rd)
 	    return false;
-	return true;
+
+	if (isimageset) {
+	    return ise.equals(remap,ise2.ise);
+	} else {
+	    VarDescriptor nvde=vd;
+	    if (remap.containsKey(nvde))
+		nvde=(VarDescriptor)remap.get(nvde);
+	    if (nvde!=ise2.vd)
+		return false;
+	    return true;
+	}
     }
 
     public boolean inverted() {
@@ -56,6 +83,10 @@ public class ImageSetExpr extends SetExpr {
 
     public VarDescriptor getVar() {
         return vd;
+    }
+
+    public ImageSetExpr getImageSetExpr() {
+	return ise;
     }
 
     public RelationDescriptor getRelation() {
@@ -67,6 +98,8 @@ public class ImageSetExpr extends SetExpr {
     }
 
     public boolean usesDescriptor(Descriptor d) {
+	if (isimageset)
+	    return d==rd||ise.usesDescriptor(d);
 	return (d==rd)||(d==vd);
     }
 
@@ -91,7 +124,7 @@ public class ImageSetExpr extends SetExpr {
     public void generate_inclusion(CodeWriter writer, VarDescriptor dest, VarDescriptor element) {
         String hash = inverse ? "_hashinv->contains(" : "_hash->contains(" ;
         writer.outputline("int " + dest.getSafeSymbol() + " = " + rd.getSafeSymbol() + hash + vd.getSafeSymbol() + ", " + element.getSafeSymbol() + ");");
-    }    
+    }
 
     public void generate_size(CodeWriter writer, VarDescriptor dest) {
         assert dest != null;

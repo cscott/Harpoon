@@ -23,7 +23,7 @@
 // C4
 // for all free blocks, verify that the blockstatus (built from the
 // block bitmap is marked 'free'
-[forall f in FreeBlock], f.blockstatus=false;
+//[forall f in FreeBlock], f.blockstatus=false;
 
 // C5
 // for all used inodes, verify that the reference count is equal to
@@ -34,12 +34,12 @@
 // C6
 // for all used inodes, verify that the filesize is consistent with
 // the number of blocks used (those in i.contents)
-//[forall i in UsedInode], i.filesize <= sizeof(i.contents)*literal(8192);
+//[forall i in UsedInode], i.filesize <= sizeof(i.contents)*8192;
 
 // C7
 // ??? for all files and directory blocks check that
 // only one inode references this block
-//[forall b in FileDirectoryBlock],sizeof(b.~contents)=literal(1);
+//[forall b in FileDirectoryBlock],sizeof(b.~contents)=1;
 
 // C8
 // verify that there is one superblock
@@ -51,11 +51,11 @@
 
 // C10
 // verify that there is one inodetableblock
-/*[],sizeof(InodeTableBlock)=1;*/
+[],sizeof(InodeTableBlock)=1;
 
 // C11
 // verify that there is one inodebitmapblock 
-/*[],sizeof(InodeBitmapBlock)=1;*/
+[],sizeof(InodeBitmapBlock)=1;
 
 // C12
 // verify that there is one blockbitmapblock
@@ -63,4 +63,4 @@
 
 // C13
 // verify that there is one rootdirectoryinode
-/*[],sizeof(RootDirectoryInode)=1;*/
+//[],sizeof(RootDirectoryInode)=1;

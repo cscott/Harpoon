@@ -1,40 +1,37 @@
 // sEXT2 - Simple FileSystem Example -  MODEL DEFINITION FILE
 // rule 1 - adds the block number of the superblock to the superblock set
-/*[], true => d.s in SuperBlock;*/
+[], true => d.s in SuperBlock;
 
 // rule 2 - adds the block number of the groupblock to the groupblock set
-/*[], true => d.g in GroupBlock;*/
+[], true => d.g in GroupBlock;
 
-/*[], true => cast(InodeTable,d.b[d.g.InodeTableBlock]) in InodeTableBlock;*/
+[], true => cast(InodeTable,d.b[d.g.InodeTableBlock]) in InodeTableBlock;
 
 // rule 4 - adds the inodebitmapblock block number to the inodebitmapblock set
-/*[], true => cast(InodeBitmap,d.b[d.g.InodeBitmapBlock]) in InodeBitmapBlock;*/
+[], true => cast(InodeBitmap,d.b[d.g.InodeBitmapBlock]) in InodeBitmapBlock;
 
 // rule 5 - adds the blockbitmapblock number to the blockbitmapblock set
 [], true => cast(BlockBitmap,d.b[d.g.BlockBitmapBlock]) in BlockBitmapBlock;
 
 // rule 6 - adds the rootdirectoryinode number to the set
-/*[forall itb in InodeTableBlock], true => itb.itable[d.s.RootDirectoryInode] in RootDirectoryInode;*/
+[forall itb in InodeTableBlock], true => itb.itable[d.s.RootDirectoryInode] in RootDirectoryInode;
 
-/*[forall itb in InodeTableBlock, for j=0 to d.s.NumberofInodes-1], !(itb.itable[j] in? UsedInode) => itb.itable[j] in FreeInode;*/
+//r7
+[forall itb in InodeTableBlock, for j=0 to d.s.NumberofInodes-1], !(itb.itable[j] in? UsedInode) => itb.itable[j] in FreeInode;
 
+//r8
 [for j=0 to d.s.NumberofBlocks-1], !(d.b[j] in? UsedBlock) => d.b[j] in FreeBlock;
 
 // rule 9
 // for all directoryinodes, loop through there blockptr's and then add
 // all their directoryentries to DirectoryEntry set
 
-/*[forall di in DirectoryInode, for j=0 to ((d.s.blocksize/128)-1), for k=0 to 11],  true => cast(DirectoryBlock,d.b[di.Blockptr[k]]).de[j] in DirectoryEntry;*/
+[forall di in DirectoryInode, for j=0 to ((d.s.blocksize/128)-1), for k=0 to 11],  true => cast(DirectoryBlock,d.b[di.Blockptr[k]]).de[j] in DirectoryEntry;
 
 // rule 10
 // all non-zero blocks in an used inodes blockptr list should be 
 // added to the contents relation 
-//[forall i in UsedInode, 
-// forall itb in InodeTableBlock, 
-// for j=literal(0) to literal(11)],
-//     !(cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]=literal(0)) =>
-//     <i,cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]> in contents;
-
+[forall i in UsedInode, for j=0 to 11], !(i.Blockptr[j]=0) => <i,d.b[i.Blockptr[j]]> in contents;
 
 // rule 11 seems to be imperfect because it is adding directories and files
 // to the filedirectoryblock but these automatically get funneled into
@@ -45,36 +42,31 @@
 // rule 11 
 // for each inode in use, add non-zero, valid blocks mentioned in the 
 // inode's blockptr list in the inodetableblock to fileblock
-//[forall i in UsedInode, forall itb in InodeTableBlock, for j=literal(0) to literal(11)],
-//cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]<d.s.NumberofBlocks and
-//!(cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]=literal(0)) =>
-//cast(InodeTable,d.b[itb]).itable[i].Blockptr[j] in FileBlock;
-// was FileDirectoryBlock
+
+[forall i in UsedInode, for j=0 to 11], !(i.Blockptr[j]=0) => d.b[i.Blockptr[j]] in FileBlock;
 
 // rule 13
 // same as rule 12/19, but instead with used inodes.
 
-/*[for j=0 to d.s.NumberofInodes-1, forall itb in InodeTableBlock, forall ibb in InodeBitmapBlock], true => <itb.itable[j], ibb.inodebitmap[j]> in inodestatus;*/
+[for j=0 to d.s.NumberofInodes-1, forall itb in InodeTableBlock, forall ibb in InodeBitmapBlock], true => <itb.itable[j], ibb.inodebitmap[j]> in inodestatus;
 
 // rule 14
 // adds all non-zero inodenumbers of directory entries to the set
 // FileInode
-//[forall de in DirectoryEntry], de.inodenumber<d.s.NumberofInodes and
-//!(de.inodenumber = literal(0)) => de.inodenumber in FileInode;
+[forall de in DirectoryEntry,forall itb in InodeTableBlock], !(de.inodenumber = 0) => itb.itable[de.inodenumber] in FileInode;
 
 // rule 15
 // builds up relation 'inodeof' such that <x,y> means x is a
 // directory entry with inode numbered y
-//[forall de in DirectoryEntry], de.inodenumber<d.s.NumberofInodes => 
-//<de, de.inodenumber> in inodeof;
+[forall de in DirectoryEntry,forall itb in InodeTableBlock], !(de.inodenumber = 0 ) => <de, itb.itable[de.inodenumber]> in inodeof;
 
 // rule 16
 // populating the referencecount relation with the referencecount 
 // values for every usedinode
-/*[forall j in UsedInode], true => <j,j.referencecount> in referencecount;*/
+[forall j in UsedInode], true => <j,j.referencecount> in referencecount;
 
 // rule 17 - populate the filesize relation with the sizes inodes' files
-/*[forall j in UsedInode], true => <j,j.filesize> in filesize;*/
+[forall j in UsedInode], true => <j,j.filesize> in filesize;
 
 // rule - similar to rule 19, if the bit in the block bitmap is 0 the that
 // block is marked as free in the blockstatus relation

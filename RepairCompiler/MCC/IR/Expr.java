@@ -85,4 +85,12 @@ public abstract class Expr {
     public boolean isSafe() {
 	return true;
     }
+
+    public Expr getLower() {
+	return null;
+    }
+
+    public Expr getUpper() {
+	return null;
+    }
 }

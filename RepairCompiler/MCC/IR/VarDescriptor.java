@@ -9,6 +9,22 @@ public class VarDescriptor extends Descriptor {
 
     SetDescriptor sd=null;
 
+    Expr lower=null;
+    Expr upper=null;
+
+    public void setBounds(Expr l,Expr u) {
+	lower=l;
+	upper=u;
+    }
+
+    public Expr getLower() {
+	return lower;
+    }
+
+    public Expr getUpper() {
+	return upper;
+    }
+
     public SetDescriptor getSet() {
 	return sd;
     }

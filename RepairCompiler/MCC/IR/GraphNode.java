@@ -204,12 +204,17 @@ public class GraphNode {
         }
 
         Collection nodes;
+	Collection special;
         
         public static void visit(java.io.OutputStream output, Collection nodes) {
+	    visit(output,nodes,null);
+	}
+
+        public static void visit(java.io.OutputStream output, Collection nodes, Collection special) {
             DOTVisitor visitor = new DOTVisitor(output);
+	    visitor.special=special;
             visitor.nodes = nodes;
             visitor.make();
-
         }
         
         private void make() {
@@ -237,6 +242,8 @@ public class GraphNode {
 		String option="";
 		if (cycleset.contains(gn))
 		    option=",style=bold";
+		if (special!=null&&special.contains(gn))
+		    option+=",shape=box";
                 output.println("\t" + gn.getLabel() + " [label=\"" + label + "\"" + gn.dotnodeparams + option+"];");
 
                 while (edges.hasNext()) {

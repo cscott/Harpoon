@@ -13,7 +13,7 @@ public class RelationExpr extends Expr {
 	Set exprfunctions=expr.getfunctions();
 	if (exprfunctions!=null)
 	    functions.addAll(exprfunctions);
-	functions.add(new ConstraintDependence.Function(relation,expr.getSet(),inverse));
+	functions.add(new ConstraintDependence.Function(relation,expr.getSet(),inverse,this));
 	
 	return functions;
     }

@@ -529,7 +529,7 @@ public class SemanticChecker {
             
             /* grab var */
             VarDescriptor vd = reserveName(pn.getChild("var"));
-
+	    
             if (vd == null) {
                 return null;
             }
@@ -542,10 +542,11 @@ public class SemanticChecker {
             Expr lower = parse_expr(pn.getChild("lower").getChild("expr"));
             Expr upper = parse_expr(pn.getChild("upper").getChild("expr"));
 
+
             if ((lower == null) || (upper == null)) {
                 return null;
             }
-
+	    vd.setBounds(lower,upper);
             fq.setBounds(lower, upper);
 
             return fq;

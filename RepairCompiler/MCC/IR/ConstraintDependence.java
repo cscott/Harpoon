@@ -161,8 +161,8 @@ public class ConstraintDependence {
 
 		    Set s=providesfunction(f);
 		    if (s.size()==0) {
-			System.out.println("Error: No constraint ensures that [forall v in "+f.getSet()+"], size(v."+(f.isInverse()?"~":"")+f.getRelation()+")=1");
-			System.exit(-1);
+			System.out.println("Warning: No constraint ensures that [forall v in "+f.getSet()+"], size(v."+(f.isInverse()?"~":"")+f.getRelation()+")=1");
+			continue;
 		    }
 		    Constraint c=(Constraint)s.iterator().next(); //Take the first one
 		    requiresConstraint(conjnode,c);
@@ -180,7 +180,7 @@ public class ConstraintDependence {
 		Expr e=f.isInverse()?ri.getRightExpr():ri.getLeftExpr();
 		SetDescriptor sd=e.getSet();
 		if (sd==null)
-		    sd=f.isInverse()?ri.getRelation().getRange():ri.getRelation().getDomain();
+		    return false;
 		if (!(sd.isSubset(f.getSet())||f.getSet().isSubset(sd)))
 		    continue; /* This rule doesn't effect the function */
 		if (foundrule) /* two different rules are a problem */
@@ -261,11 +261,17 @@ public class ConstraintDependence {
 	private RelationDescriptor rd;
 	private SetDescriptor sd;
 	private boolean inverse;
+	private Expr expr;
 
-	public Function(RelationDescriptor r, SetDescriptor sd, boolean inverse) {
+	public Function(RelationDescriptor r, SetDescriptor sd, boolean inverse,Expr e) {
 	    this.inverse=inverse;
 	    this.sd=sd;
 	    this.rd=r;
+	    this.expr=e;
+	}
+
+	public Expr getExpr() {
+	    return expr;
 	}
 
 	public SetDescriptor getSet() {
