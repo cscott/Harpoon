@@ -26,7 +26,7 @@ fi
 # ok.
 
 # you can set OPT_FLEX_SUPPORT_FILES to add additional support files: .jar/.zip
-FLEX_SUPPORT_FILES="${OPT_FLEX_SUPPORT_FILES} ${FLEX_DIR}/Support/reflect-thunk.jar ${FLEX_DIR}/SupportNP/sunthunk.jar ${FLEX_DIR}/SupportNP/collections.jar ${FLEX_DIR}/SupportNP/classes.zip ${FLEX_DIR}/Support/realtime.jar"
+FLEX_SUPPORT_FILES="${OPT_FLEX_SUPPORT_FILES} ${FLEX_DIR}/Support/cpzip.jar ${FLEX_DIR}/Support/reflect-thunk.jar ${FLEX_DIR}/SupportNP/sunthunk.jar ${FLEX_DIR}/SupportNP/collections.jar ${FLEX_DIR}/SupportNP/classes.zip ${FLEX_DIR}/Support/realtime.jar"
 
 for supp_file in ${FLEX_SUPPORT_FILES}; do
     if [ ! -f $supp_file ]; then
