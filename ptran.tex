@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.9 2002-07-24 03:44:29 cananian Exp $
+% $Id: ptran.tex,v 1.10 2002-07-24 03:53:59 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -7,7 +7,7 @@
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.9 $ $}
+\date{\today \\ $ $Revision: 1.10 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -77,7 +77,7 @@ dataflow framework:
 \end{eqnarray*}
 
 We will perform the analysis simultaneously on two relations
-$\text{Ru}$ and $\text{Ns}$.
+$\text{Ru}$ and $\text{Nd}$.
 The relations are represented as
 sets of pairs \tuple{v, X} where
 $\mathcal{R}(v)=X$ iff $\tuple{v,X} \in R$.
@@ -87,7 +87,7 @@ progresses.
 We let
 $\text{Ru}(v)$ be the set of reaching \textbf{uses} of $v$ at $n$,
  and
-$\text{Ns}$ be the set of \textbf{non-}singular reaching definitions
+$\text{Nd}$ be the set of \textbf{non-}singular reaching definitions
 of $v$ at $n$.
 An auxilliary predicate $\text{Bad}(n)$ is true for all statements
 which are not allocation sites, move operations, or binary or unary
@@ -108,23 +108,26 @@ The appropriate Gen and Kill rules are:
                           v \in \text{def}(n) \} \\
 %
 % non-singular reaching defs of n.
-\text{Gen}_\text{Ns}(n) &=&
+\text{Gen}_\text{Nd}(n) &=&
 	\left\{ \tuple{v, n} | v \in \text{def}(n) \wedge
-\left( \text{Bad}(n) \vee \exists u,n':u\in\text{use}(n) \wedge
-	\tuple{u,n'}\in \text{In}_\text{Ns}(n) \right) \right\}
+\left( \text{Bad}(n) \vee
+\exists u\in\text{use}(n):\text{Ns}(u,n)
+ \right) \right\}
 \\
-\text{Kill}_\text{Ns}(n) &=&
-	\{ \tuple{v, s} | \tuple{v,s} \in \text{In}_\text{Ns}(n) \wedge
-                          v \in \text{def}(n) \} \\
+\text{Kill}_\text{Nd}(n) &=&
+	\{ \tuple{v, s} | \tuple{v,s} \in \text{In}_\text{Nd}(n) \wedge
+                          v \in \text{def}(n) \} %\\
 \end{eqnarray*}
-
-After the analysis is complete, $v$ is (conservatively) nonsingular at $n$ iff
+where
 \begin{displaymath}
+\text{Ns}(v,n) =
 v\in\text{use}(n) \wedge \left(
 \tuple{v,n} \in \text{In}_\text{Ru}(n) \vee
-\exists n': \tuple{v,n'}\in\text{In}_\text{Ns}(n)
+\exists n': \tuple{v,n'}\in\text{In}_\text{Nd}(n)
 \right)
 \end{displaymath}
+After the analysis is complete, $v$ is (conservatively) singular at
+$n$ if $\neg\text{Ns}(v,n)$.
 
 %\textbf{XXX: Extend to compute GenSite(v,n)?}
 
