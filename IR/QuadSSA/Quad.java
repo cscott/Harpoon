@@ -8,7 +8,7 @@ import harpoon.Temp.Temp;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.13 1998-09-10 01:52:18 cananian Exp $
+ * @version $Id: Quad.java,v 1.14 1998-09-11 17:13:57 cananian Exp $
  */
 public abstract class Quad implements HCodeElement {
     String sourcefile;
@@ -42,6 +42,8 @@ public abstract class Quad implements HCodeElement {
     public int getID() { return id; }
     /** Force everyone to reimplement toString() */
     public abstract String toString();
+    /** Accept a visitor. */
+    public abstract void accept(Visitor v);
 
     /*----------------------------------------------------------*/
     /** Return all the Temps used by this Quad. */

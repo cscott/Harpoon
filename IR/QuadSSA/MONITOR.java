@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * <code>MONITOR</code> represents a synchronization block.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MONITOR.java,v 1.6 1998-09-08 14:38:38 cananian Exp $
+ * @version $Id: MONITOR.java,v 1.7 1998-09-11 17:13:57 cananian Exp $
  */
 
 public class MONITOR extends Quad {
@@ -28,6 +28,9 @@ public class MONITOR extends Quad {
     /** Returns the Temp used by this Quad.
      * @return the <code>lock</code> field. */
     public Temp[] use() { return new Temp[] { lock }; }
+
+    public void accept(Visitor v) { v.visit(this); }
+
     /** Returns a human-readable representation. */
     public String toString() {
 	return "MONITOR " + lock + ":";

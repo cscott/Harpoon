@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * <code>ANEW</code> represents an array creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ANEW.java,v 1.4 1998-09-08 14:38:38 cananian Exp $
+ * @version $Id: ANEW.java,v 1.5 1998-09-11 17:13:57 cananian Exp $
  * @see NEW
  * @see AGET
  * @see ASET
@@ -47,6 +47,8 @@ public class ANEW extends Quad {
     /** Returns the Temps used by this Quad.
      * @return the <code>dims</code> field. */
     public Temp[] use() { return (Temp[]) Util.copy(dims); }
+
+    public void accept(Visitor v) { v.visit(this); }
 
     /** Returns a human-readable representation of this quad. */
     public String toString() {

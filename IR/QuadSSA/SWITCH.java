@@ -8,7 +8,7 @@ import harpoon.Temp.Temp;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.4 1998-09-10 01:38:22 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.5 1998-09-11 17:13:57 cananian Exp $
  */
 
 public class SWITCH extends Quad {
@@ -34,6 +34,9 @@ public class SWITCH extends Quad {
     /** Returns the Temp used by this quad.
      * @return the <code>index</code> field. */
     public Temp[] use() { return new Temp[] { index }; }
+
+    public void accept(Visitor v) { v.visit(this); }
+
     /** Returns human-readable representation of this quad. */
     public String toString() {
 	StringBuffer sb = new StringBuffer("SWITCH "+index+": ");

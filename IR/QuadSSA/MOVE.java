@@ -9,7 +9,7 @@ import harpoon.Temp.Temp;
  * The source of the assignment must be another temporary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MOVE.java,v 1.4 1998-09-09 23:39:31 cananian Exp $
+ * @version $Id: MOVE.java,v 1.5 1998-09-11 17:13:57 cananian Exp $
  */
 
 public class MOVE extends Quad {
@@ -29,6 +29,8 @@ public class MOVE extends Quad {
     public Temp[] use() { return new Temp[] { src }; }
     /** Returns the Temps defined by this Quad. */
     public Temp[] def() { return new Temp[] { dst }; }
+
+    public void accept(Visitor v) { v.visit(this); }
 
     /** Returns a human-readable representation of this Quad. */
     public String toString() { 

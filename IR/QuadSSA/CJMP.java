@@ -11,7 +11,7 @@ import harpoon.Temp.Temp;
  *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.10 1998-09-10 01:38:22 cananian Exp $
+ * @version $Id: CJMP.java,v 1.11 1998-09-11 17:13:57 cananian Exp $
  */
 
 public class CJMP extends Quad {
@@ -35,6 +35,9 @@ public class CJMP extends Quad {
      * @return the <code>test</code> field.
      */
     public Temp[] use() { return new Temp[] { test }; }
+
+    public void accept(Visitor v) { v.visit(this); }
+
     /** Returns human-readable representation. */
     public String toString() {
 	return "CJMP: if " + test + 

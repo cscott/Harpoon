@@ -10,7 +10,7 @@ import harpoon.Temp.Temp;
  * class type.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSTANCEOF.java,v 1.2 1998-09-08 14:38:38 cananian Exp $
+ * @version $Id: INSTANCEOF.java,v 1.3 1998-09-11 17:13:57 cananian Exp $
  */
 
 public class INSTANCEOF extends Quad {
@@ -34,6 +34,9 @@ public class INSTANCEOF extends Quad {
     public Temp[] use() { return new Temp[] { src }; }
     /** Returns the <code>Temp</code>s defined by this quad. */
     public Temp[] def() { return new Temp[] { dst }; }
+
+    public void accept(Visitor v) { v.visit(this); }
+
     /** Returns a human-readable representation of this Quad. */
     public String toString() {
 	return dst.toString() + " = " + 

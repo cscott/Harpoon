@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>CALL</code> objects represent method invocations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.14 1998-09-10 20:48:16 cananian Exp $
+ * @version $Id: CALL.java,v 1.15 1998-09-11 17:13:57 cananian Exp $
  */
 
 public class CALL extends Quad {
@@ -82,6 +82,9 @@ public class CALL extends Quad {
 	if (retval==null) return new Temp[] { retex };
 	else return new Temp[] { retval, retex };
     }
+
+    public void accept(Visitor v) { v.visit(this); }
+
     /** Returns human-readable representation. */
     public String toString() {
 	StringBuffer sb = new StringBuffer();
