@@ -57,7 +57,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -68,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.39 2001-06-07 06:29:34 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.40 2001-06-08 00:47:09 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -455,7 +454,7 @@ import java.util.Iterator;
     }
 private String makeDAFlushBitmask() {
    harpoon.Backend.MIPS.Frame mframe = (harpoon.Backend.MIPS.Frame) frame;
-   HashSet usedda = mframe.getUsedDANum();
+   Set usedda = mframe.getUsedDANum();
    int bitmask = 0;
    for(Iterator it = usedda.iterator(); it.hasNext(); ) {
       int i = ((Integer)it.next()).intValue();

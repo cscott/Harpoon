@@ -11,8 +11,8 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.Util.Util;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <code>Frame</code> contains the machine-dependant
@@ -20,7 +20,7 @@ import java.util.HashSet;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.10 2001-06-05 07:50:09 witchel Exp $
+ * @version $Id: Frame.java,v 1.1.2.11 2001-06-08 00:47:09 witchel Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
    private final harpoon.Backend.Generic.Runtime   runtime;
@@ -31,8 +31,8 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     private final Linker linker;
     private GCInfo gcInfo; // should really be final
    private String type = "";
-   private HashMap noTagCheck;
-   private HashSet usedDANum;
+   private Map noTagCheck;
+   private Set usedDANum;
 
     // HACK: this should really be a command-line parameter.
     private final static String alloc_strategy =
@@ -111,13 +111,13 @@ public class Frame extends harpoon.Backend.Generic.Frame {
    
     public boolean pointersAreLong() { return false; }
 
-   public void setNoTagCheckHashMap(HashMap hm) {
+   public void setNoTagCheckMap(Map hm) {
       noTagCheck = hm;
    }
-   public void setUsedDANum(HashSet hs) {
+   public void setUsedDANum(Set hs) {
       usedDANum = hs;
    }
-   public HashSet getUsedDANum() {
+   public Set getUsedDANum() {
       return usedDANum;
    }
    public boolean memAccessNoTagCheck(HCodeElement hce) {
