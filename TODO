@@ -26,8 +26,19 @@ FLEX native backend TODO:
     that takes the InlineMap into account (not that hard).
 - write garbage-collector in C.  Don't forget finalization and weak references.
   Use the semi-depth-first copying algorithm from appel.
+  - write native method interface for garbage collector, so we can write
+    a more-or-less portable runtime library.  Either disallow all memory
+    allocation or method invocation in native code (so we don't have to
+    deal with garbage collection) or provide some not-terribly-inefficient
+    way for the C function to package up all its object references for the
+    garbage collector before dangerous activities.
 X write Quad-to-LowQuad translator [done]
 - extend TypeInfo analysis to work with LowQuads.
+- write Quad-with-explicit-initialization analysis/optimization.
+  the translation from Quad to LowQuad will create a corresponding
+  LowQuad-with-explicit-initialization form.  Maybe we can optimize
+  initialization of LowQuads different from Quads?  Probably not.  Probably
+  ARRAYINIT is all we need.
 - (highly optional) extend Interpret.Quads.Method to work with LowQuads.
 - write LowQuad-to-Tree translator.  Remember to preserve Derivation.
   (see harpoon.IR.Properties.Deriviation)
