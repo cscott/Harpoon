@@ -54,7 +54,7 @@ import java.util.Iterator;
  * the counters' actual name on output will be "foo_bar" and "foo_baz".
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CounterFactory.java,v 1.1.2.6 2001-07-11 20:14:08 cananian Exp $
+ * @version $Id: CounterFactory.java,v 1.1.2.7 2001-10-29 16:16:44 cananian Exp $
  */
 public final class CounterFactory {
     /** default status for all counters. */
@@ -125,7 +125,7 @@ public final class CounterFactory {
     public static Edge spliceIncrement(QuadFactory qf,
 				       Edge e, String counter_name,
 				       Temp Tvalue, boolean isLong) {
-	Quad CJMP, PHI;
+	Quad CJMP1, CJMP2, PHI1, PHI2;
 	if (!isEnabled(counter_name)) return e;
 	if (!isLong) {
 	    Temp t = new Temp(qf.tempFactory());
@@ -137,15 +137,17 @@ public final class CounterFactory {
 	// first fetch the lock
 	Temp Tlck = new Temp(qf.tempFactory());
 	e = addAt(e, new GET(qf, null, Tlck, HFlockobj, null));
-	// if package not initialized, than don't count yet.
+	// if package not initialized, then we're still single-threaded.
+	// (i.e., we can safely skip the monitorenter)
 	Temp Tnul = new Temp(qf.tempFactory());
 	e = addAt(e, new CONST(qf, null, Tnul, null, HClass.Void));
 	Temp Tcmp = new Temp(qf.tempFactory());
 	e = addAt(e, new OPER(qf, null, Qop.ACMPEQ, Tcmp,
 			      new Temp[] { Tlck, Tnul }));
-	e = addAt(e, CJMP=new CJMP(qf, null, Tcmp, new Temp[0]));
-	// and lock on it
+	e = addAt(e, CJMP1=new CJMP(qf, null, Tcmp, new Temp[0]));
+	// lock if we can.
 	e = addAt(e, new MONITORENTER(qf, null, Tlck));
+	e = addAt(e, PHI1=new PHI(qf, null, new Temp[0], 2));
 	// then fetch the old counter value
 	Temp Tcnt = new Temp(qf.tempFactory());
 	e = addAt(e, new GET(qf, null, Tcnt, HFcounter, null));
@@ -155,11 +157,13 @@ public final class CounterFactory {
 			      new Temp[] { Tcnt, Tvalue}));
 	// and store it back.
 	e = addAt(e, new SET(qf, null, HFcounter, null, Tcnt2));
-	// now release the lock.
+	// now release the lock (if we need to)
+	e = addAt(e, CJMP2=new CJMP(qf, null, Tcmp, new Temp[0]));
 	e = addAt(e, new MONITOREXIT(qf, null, Tlck));
 	// merge from bypass.
-	e = addAt(e, PHI=new PHI(qf, null, new Temp[0], 2));
-	Quad.addEdge(CJMP, 1, PHI, 1);
+	e = addAt(e, PHI2=new PHI(qf, null, new Temp[0], 2));
+	Quad.addEdge(CJMP1, 1, PHI1, 1);
+	Quad.addEdge(CJMP2, 1, PHI2, 1);
 	// done!
 	return e;
     }
@@ -174,6 +178,7 @@ public final class CounterFactory {
     private static HField getField(Linker l, String name, String descriptor) {
 	HClass hc = l.forName("harpoon.Runtime.Counters");
 	name = name.replace('.','_'); // allow '.' in name, but strip.
+	name = name.replace('-','_'); // likewise for '-'
 	try {
 	  HField hf = hc.getDeclaredField(name);
 	  Util.assert(hf.getDescriptor().equals(descriptor));
