@@ -37,7 +37,7 @@ import java.util.Set;
  interation of the loop. 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Matching.java,v 1.1.2.5 2000-04-02 19:47:59 salcianu Exp $
+ * @version $Id: Matching.java,v 1.1.2.6 2000-05-10 14:48:05 salcianu Exp $
  */
 abstract class Matching {
 
@@ -213,7 +213,7 @@ abstract class Matching {
 		Iterator it_edges = null;
 
 		if(PointerAnalysis.IGNORE_EO)
-		    it_edges = pig[i].G.I.getEdgesFrom(out_edge.n1, out_edge.f);
+		    it_edges = pig[i].G.I.getEdgesFrom(out_edge.n1,out_edge.f);
 		else
 		    it_edges = pig[i].eo.getBeforeEdges(out_edge);
 

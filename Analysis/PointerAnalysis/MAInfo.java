@@ -39,7 +39,7 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.6 2000-04-16 18:43:48 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.7 2000-05-10 14:48:05 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
     
@@ -143,7 +143,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		    DefaultAllocationInformation.hasInteriorPointers(hclass);
 	    }
 	}
-	
+
 	Set nodes = pig.allNodes();
 	
 	for(Iterator it = nodes.iterator(); it.hasNext(); ){

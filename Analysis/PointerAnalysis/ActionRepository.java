@@ -36,7 +36,7 @@ import harpoon.ClassFile.HCodeElement;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.18 2000-04-02 09:42:46 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.19 2000-05-10 14:48:05 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -66,7 +66,6 @@ public class ActionRepository {
     // Hashtable<PANode,Relation<PANode,PANode>>
     // nt2 -> n -> syncs on n in // with nt2
     Hashtable pi_sync;
-
 
     // A. The most primitive operations on the action repository, they are
     // designed to be used internally; the usage pattern of the user has
