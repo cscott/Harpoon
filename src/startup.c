@@ -232,7 +232,15 @@ int main(int argc, char *argv[]) {
      initializers. */
   for (i=0; firstclasses[i]!=NULL; i++) {
     cls = (*env)->FindClass(env, firstclasses[i]);
+#ifdef CLASSPATH_VERSION /* really, WITH_MINILIB */
+    if ((*env)->ExceptionOccurred(env)) {
+      /* minilib doesn't have all of these; just ignore the missing ones. */
+      (*env)->ExceptionClear(env);
+      continue;
+    }
+#else
     CHECK_EXCEPTIONS(env);
+#endif /* WITH_MINILIB */
     mid = (*env)->GetStaticMethodID(env, cls, "<clinit>","()V");
     CHECK_EXCEPTIONS(env);
     (*env)->CallStaticVoidMethod(env, cls, mid);
