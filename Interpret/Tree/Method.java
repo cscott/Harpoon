@@ -56,7 +56,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.3 1999-06-28 19:32:25 duncan Exp $
+ * @version $Id: Method.java,v 1.1.2.4 1999-07-12 22:57:53 bdemsky Exp $
  */
 public final class Method extends HCLibrary {
     static PrintWriter out = new java.io.PrintWriter(System.out);
@@ -348,6 +348,19 @@ public final class Method extends HCLibrary {
 				  new Integer(0));
 		    }
 		    else {
+			sf.update(e, new Integer(0));
+		    }
+		}
+		else if (e.op==Bop.CMPGT) { 
+		    if (left instanceof Pointer) { 
+			Pointer leftPtr = (Pointer)left, rightPtr = (Pointer)right;
+			Util.assert(leftPtr.getBase()==rightPtr.getBase());
+			sf.update(e, 
+				  (leftPtr.getOffset()>rightPtr.getOffset())?
+				  new Integer(1):
+				  new Integer(0));
+		    }
+		    else { 
 			sf.update(e, new Integer(0));
 		    }
 		}
