@@ -41,7 +41,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.7 2000-11-12 01:27:05 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.8 2000-11-12 04:05:18 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -52,11 +52,6 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     private final static boolean pointersAreLong =
 	System.getProperty("harpoon.frame.pointers", "short")
 	.equalsIgnoreCase("long");
-    // in order to get accurate stack statistics, we need to
-    // disable stack allocation, and vice-versa.
-    private final static boolean stack_stats =
-	System.getProperty("harpoon.precisec.stackstats", "no")
-	.equalsIgnoreCase("yes");
     private final static boolean is_elf = true;
 
     /** Creates a <code>Frame</code>. */
@@ -66,11 +61,11 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	System.out.println("AllocationStrategy: "+alloc_strategy);
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
 	    alloc_strategy.equalsIgnoreCase("nifty") ?
-	    (stack_stats ?// stack alloc statistics disables actual stack alloc
-	       (harpoon.Backend.Runtime1.AllocationStrategy)
-	       new harpoon.Backend.Runtime1.NiftyAllocationStrategy(this) :
-	       (harpoon.Backend.Runtime1.AllocationStrategy)
-	       new PGCNiftyAllocationStrategy(this) ) :
+	    (harpoon.Backend.Runtime1.AllocationStrategy)
+	    new PGCNiftyAllocationStrategy(this) :
+	    alloc_strategy.equalsIgnoreCase("niftystats") ?
+	    (harpoon.Backend.Runtime1.AllocationStrategy)
+	    new PGCNiftyAllocationStrategyWithStats(this) :
 	    alloc_strategy.equalsIgnoreCase("bdw") ?
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Backend.Runtime1.BDWAllocationStrategy(this) :
