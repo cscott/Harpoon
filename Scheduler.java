@@ -62,7 +62,7 @@ public abstract class Scheduler {
      */
     public static Scheduler getDefaultScheduler() {
 	if (defaultScheduler == null) {
-	    setDefaultScheduler(RoundRobinScheduler.instance());
+	    setDefaultScheduler(DebugScheduler.instance());
 	    return getDefaultScheduler();
 	}
 	return defaultScheduler;
