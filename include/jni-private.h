@@ -93,6 +93,7 @@ struct inflated_oobj {
   struct MemBlock* memBlock;
   struct MemBlock* temp;
   void (*RTJ_finalizer)(void* obj, void* client_data);
+  jobject portalObj;
 #endif
   /* locking information */
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
