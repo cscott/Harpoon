@@ -17,57 +17,61 @@ import java.net.Socket;
  * <code>PhoneWorker</code> process requests to the phone server.
  *
  * @author P.Govereau govereau@mit.edu
- * @version $Id: PhoneWorker.java,v 1.3.2.1 2000-04-03 01:36:07 govereau Exp $
+ * @version $Id: PhoneWorker.java,v 1.3.2.2 2000-04-03 20:22:56 salcianu Exp $
  */
 public class PhoneWorker extends Thread {
-	private Str2StrMap theMap;
-	private Socket client;
-	private String name;
-	private String number;
-
+    private Str2StrMap theMap;
+    private Socket client;
+    private String name;
+    private String number;
+    
     public PhoneWorker(Str2StrMap theMap, Socket client){
-		this.theMap = theMap;
-		this.client = client;
+	this.theMap = theMap;
+	this.client = client;
     }
-	
+    
     public void run() {
-		BufferedReader in = null;
-		BufferedWriter out = null;
-		try {
-			in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-			out = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
-
-			String request = in.readLine();
-			PhoneProtocol req = new PhoneProtocol(request);
-				//System.out.println("recieved request: " + req.name + " -- " + req.number);			
-			if (request != null) {
-				if (req.type == PhoneProtocol.PUT) {
-					theMap.put(req.name, req.number);
-				} else if (req.type == PhoneProtocol.GET) {
-					req.setNumber(theMap.get(req.name));
-				} else {
-					req.setError();
-				}
-			} else {
-				req.setError();
-			}
-				// send the response back to the client
-			out.write(req.request, 0, req.request.length());
-			out.newLine();
+	BufferedReader in = null;
+	BufferedWriter out = null;
+	try {
+	    in  = new BufferedReader(
+			new InputStreamReader(client.getInputStream()));
+	    out = new BufferedWriter(
+		        new OutputStreamWriter(client.getOutputStream()));
+	    
+	    String request = in.readLine();
+	    PhoneProtocol req = new PhoneProtocol(request);
+	    // System.out.println("recieved request: " + req.name + " -- " + 
+	    //	       req.number);			
+	    if (request != null) {
+		if (req.type == PhoneProtocol.PUT) {
+		    theMap.put(req.name, req.number);
+		} else if (req.type == PhoneProtocol.GET) {
+		    req.setNumber(theMap.get(req.name));
+		} else {
+		    req.setError();
 		}
-		catch(IOException e) {
-			System.err.println(e);
-			return;
-		}
-		finally {
-			try {
-				out.flush();
-				out.close();
-				in.close();
-				client.close();
-			} catch (IOException ex) {
-				System.err.println(ex);
-			}
-		}
+	    } else {
+		req.setError();
+	    }
+	    // send the response back to the client
+	    out.write(req.request, 0, req.request.length());
+	    out.newLine();
 	}
+	catch(IOException e) {
+	    System.err.println(e);
+	    return;
+	}
+	finally {
+	    try {
+		out.flush();
+		out.close();
+		in.close();
+		client.close();
+	    } catch (IOException ex) {
+		System.err.println(ex);
+	    }
+	}
+    }
 }
+

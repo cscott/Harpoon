@@ -58,7 +58,7 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.14 2000-04-03 10:49:24 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.15 2000-04-03 20:22:37 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
@@ -449,12 +449,12 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	// for native methods, specialization doesn't make any sense
 	// because we cannot analyze their body.
 	if(Modifier.isNative(hm.getModifiers())){
+	    check_thread_start_site(cs);
 	    param_types[0] = new GenType(hm.getDeclaringClass(),GenType.POLY);
 	    HClass[] types = hm.getParameterTypes();
 	    for(int i = 0; i < types.length; i++)
 		param_types[i+1] = new GenType(types[i],GenType.POLY);
-	    if(!check_thread_start_site(cs))
-		specialize_the_call(hm, cs);
+	    specialize_the_call(hm, cs);
 	    return;
 	}
 

@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.26 2000-04-02 19:48:00 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.27 2000-04-03 20:22:52 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -31,8 +31,9 @@ public class ParIntGraph {
 
     /** Debug for the aggressive shrinking. */
     public static boolean DEBUG_AS = false;
-    /** Activates the aggressive shrinking. */
-    public static boolean AGGRESSIVE_SHRINKING = true;
+
+    /** Activates the aggressive shrinking. Buggy for the moment ... */
+    public static boolean AGGRESSIVE_SHRINKING = false;
 
     /** Default (empty) graph. It doesn't contain any information.  */
     public static final ParIntGraph EMPTY_GRAPH = new ParIntGraph();

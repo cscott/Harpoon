@@ -27,7 +27,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.28 2000-04-03 03:03:28 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.29 2000-04-03 20:22:51 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -142,6 +142,8 @@ abstract class InterProcPA {
 	    mms  = mms2;
 	    nb_callees = counter;
 	}
+
+	System.out.println("CALL: " + q + " " + counter + " callees!");
 
 	// specialize the graphs of the callees for the context sensitive PA
 	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)

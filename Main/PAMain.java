@@ -62,7 +62,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.35 2000-04-03 10:07:46 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.36 2000-04-03 20:22:53 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -267,8 +267,6 @@ public abstract class PAMain {
 	    if(SMART_CALL_GRAPH){ // smart call graph!
 		System.out.print("MetaCallGraph ... ");
 		tstart = System.currentTimeMillis();
-
-		System.out.println("UU!");
 
 		MetaCallGraph fmcg = 
 		    new MetaCallGraphImpl(bbconv, ch,
