@@ -13,26 +13,10 @@
 <body bgcolor="white">
 
 This package has first-class composable nodes that contain stages of
-the image recognition process.  The design idea is to deemphasize the
-amount of processing at each node to increase the ability to 
-combinatorially explore the space of image recognition pipelines 
-through top-level directed graph construction (in src/Main.java).
-
-<p>Through dataflow, precise callgraph construction, method specialization,
-and inlining, the overhead of using this design technique becomes zero.
+the image recognition process. 
 
 <p>Using the Display, Copy, and Node nodes, the output of each stage can be 
-examined without disturbing the pipeline.  Thus, problems in the
-pipeline can be easily addressed.
-
-<p>Furthermore, Client and Server nodes allow splitting the pipeline at
-arbitrary points (even dynamically!) to adjust load at different
-places in the network.  Sending nodes across the network permits
-dynamic reconfiguration through changing pipeline topography.
-That is why all Nodes are Serializable.
-
-<p>Also, nodes can be changed depending on the type of object tracked,
-permitting dynamic specialization of the pipeline during tracking.
+examined. 
 
 </body>
 </html>
