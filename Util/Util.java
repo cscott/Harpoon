@@ -7,20 +7,26 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Vector;
 
 import java.io.PrintWriter;
 
 import java.lang.reflect.Array;
 
 import harpoon.ClassFile.HCode;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadKind;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.CALL;
 
 
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.16 2002-04-10 03:07:05 cananian Exp $
+ * @version $Id: Util.java,v 1.17 2002-04-10 23:55:00 salcianu Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -429,6 +435,47 @@ public abstract class Util {
     return diff;
   }
 
+  /** Returns the unique <code>METHOD</code> quad from <code>hcode</code>. */
+  public static final METHOD getMETHOD(HCode hcode) {
+    HEADER header = (HEADER) hcode.getRootElement();
+    return (METHOD) header.next(1); // 0 is the FOOTER node
+  }
+
+  /** Returns the unique <code>FOOTER</code> quad from <code>hcode</code>. */
+  public static final FOOTER getFOOTER(HCode hcode) {
+    HEADER header = (HEADER) hcode.getRootElement();
+    return (FOOTER) header.next(0);
+  }
+
+  /** Returns the <code>HCode</code> of which <code>quad</code> is
+      part of. */
+  public static final HCode quad2code(Quad quad) {
+    return quad.getFactory().getParent();
+  }
+
+  /** Selects all quads of a given type from <code>hcode</code>.
+      @param hcode code view of a method
+      @param kind  kind of desired quad; valid kinds are defined in
+      <code>harpoon.IR.Quads.QuadKind</code>
+      @return vector of quads of desired kind from <code>hcode</code>.  */
+  public static final Vector selectQuads(final HCode hcode, int kind) {
+    final Vector v = new Vector();
+    // TODO: better thing - exception?
+    if (hcode == null)
+      return new Vector();
+    
+    for(Iterator it = hcode.getElementsI(); it.hasNext(); ) {
+      Quad q = (Quad) it.next();
+      if (q.kind() == kind) v.add(q);
+    }
+    return v;
+  }
+
+  public static final CALL[] selectCALLs(final HCode hcode) {
+    Vector v = selectQuads(hcode, QuadKind.CALL);
+    return (CALL[]) v.toArray(new CALL[v.size()]);
+  }
+
   /** Returns a string that is identical to <code>str</code>, except
       that every <code>&quot;</code> character has been replaced with
       the sequence <code>\&quot;</code>.
@@ -447,6 +494,18 @@ public abstract class Util {
     }
     return buff.toString();
   }
+
+  /** Converts an objects using the reflexive closure of a map.
+      @param obj object to be converted
+      @param map conversion map
+      @return if <code>obj</code> is in the key set of
+      <code>map</code>, returns <code>map.get(obj)</code>. Otherwise,
+      the method simply returns <code>obj</code>. */
+  public static Object convert(Object obj, Map map) {
+    Object image = map.get(obj);
+    return (image == null) ? obj : image;
+  }
+
 
 }
 
