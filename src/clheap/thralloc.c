@@ -47,6 +47,9 @@ FLEX_MUTEX_DECLARE_STATIC(pool_mutex);
 static clheap_t next_clheap() {
   clheap_t result;
   FLEX_MUTEX_LOCK(&pool_mutex);
+#ifdef MAKE_STATS
+  threads_created++;
+#endif /* MAKE_STATS */
   if (pool_pos==0 || last_pool==NULL)
     last_pool = clheap_create();
   pool_pos = (pool_pos+1)%POOLSIZE;
@@ -101,7 +104,9 @@ void *NTHR_malloc_other(size_t size, struct oobj *oobj) {
   clh = CLHEAP_FROM_OOBJ(oobj);
   result = clheap_alloc(clh, size);
   if (result!=NULL) return result;
-  //printf("OVERFLOW FROM THREAD HEAP %p: %d bytes\n", clh, size);
+#ifdef MAKE_STATS
+  thr_bytes_overflow+=size; /* record overflow from thread heap */
+#endif
   return NGBL_malloc_noupdate(size);
 #else
   return NGBL_malloc_noupdate(size);

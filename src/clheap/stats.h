@@ -46,6 +46,8 @@
 DECLARE_STATS_EXTERN(stk)
 DECLARE_STATS_EXTERN(gbl)
 DECLARE_STATS_EXTERN(thr)
+extern size_t thr_bytes_overflow;
+extern int threads_created;
 
 void print_statistics(void);
 
