@@ -48,7 +48,7 @@ import harpoon.Temp.Label;
  * chunks of memory that are used by the unitary sites.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AddMemoryPreallocation.java,v 1.4 2003-01-07 15:05:02 salcianu Exp $ */
+ * @version $Id: AddMemoryPreallocation.java,v 1.5 2003-02-08 21:27:36 salcianu Exp $ */
 class AddMemoryPreallocation implements HCodeFactory {
 
     /** Creates a <code>AddMemoryPreallocation</code> code factory: it
@@ -61,11 +61,14 @@ class AddMemoryPreallocation implements HCodeFactory {
 
 	@param parent_hcf parent code factory; this factory provides
 	the code for all methods, except <code>init_method</code>
+
 	@param init_method handle of the method that does all pre-allocation
+
 	@param field2classes maps a field to the set of unitary
 	allocation sites that reuse the preallocated memory chunk
 	pointed to by that field.
-	@param frame frame containing all the backend details*/
+
+	@param frame frame containing all the backend details */
     public AddMemoryPreallocation
 	(HCodeFactory parent_hcf, HMethod init_method, 
 	 Map field2classes, Frame frame) {
@@ -186,17 +189,5 @@ class AddMemoryPreallocation implements HCodeFactory {
 	while((size % 4) != 0)
 	    size++;
 	return size;
-    }
-
-    // debug only  // TODO: remove
-    private void print(HCode hcode) {
-	System.out.println("Instructions in " + hcode.getMethod());
-
-	int k = 0;
-	for(Iterator it = hcode.getElementsL().iterator(); it.hasNext(); ) {
-	    HCodeElement hce = (HCodeElement) it.next();
-	    System.out.println(">: " + hce.getID() + " " + hce);
-	    k++;
-	}
     }
 }
