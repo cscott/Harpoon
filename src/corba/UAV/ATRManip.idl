@@ -2,7 +2,7 @@
 /**
  *  @file    ATRManip.idl
  *
- *  $Id: ATRManip.idl,v 1.3 2003-02-06 17:14:49 wbeebee Exp $
+ *  $Id: ATRManip.idl,v 1.4 2003-05-29 23:15:11 wbeebee Exp $
  *
  *  @author  Craig Rodrigues <crodrigu@bbn.com>
  */
@@ -21,16 +21,11 @@
 module ATRManip
 {
 
-   typedef sequence<octet>         FrameData;
-
-   struct Frame {
-       FrameData data;
-   };
-
    struct Coordinate {
        float c1;
        float c2;
        float c3;
+       unsigned long long timestamp;
    };
 
    /**
@@ -45,22 +40,6 @@ module ATRManip
          * @param c  coordinate data
          */
        void send_coordinate(in Coordinate c); 
-   };
-
-   /**
-     * @interface Processor
-     * @brief Send data to ATR for processing.
-     */       
-   interface Processor
-   {
-       /// Calibration interface (not used currently )
-       void calibrate(in Frame f);
-
-       /**
-         * Send data to ATR to be processed
-         * @param f  Frame data
-         */
-       void process(in Frame f);
    };
 
 };
