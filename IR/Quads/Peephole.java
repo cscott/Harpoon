@@ -20,7 +20,7 @@ import java.util.Set;
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.15 2000-10-19 23:53:43 cananian Exp $
+ * @version $Id: Peephole.java,v 1.1.2.16 2001-06-25 18:26:57 bdemsky Exp $
  */
 
 final class Peephole  {
@@ -93,7 +93,7 @@ final class Peephole  {
 	    Quad[] ql=q.next();
 	    // very specific case for swaparoo.
 	    if (ql.length==1 && ql[0] instanceof MOVE &&
-		q.def().length==1 &&
+		!(q instaceof METHOD) && q.def().length==1 &&
 		q.def()[0]==((MOVE)ql[0]).src()) {
 		MOVE Qm = (MOVE)ql[0];
 		TempMap tm0 = new OneToOneMap(Qm.src(), Qm.dst());
