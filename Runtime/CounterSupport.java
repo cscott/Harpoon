@@ -10,7 +10,7 @@ import java.io.PrintStream;
  * using counters identified by integers.
  * 
  * @author  bdemsky <bdemsky@lm.lcs.mit.edu>
- * @version $Id: CounterSupport.java,v 1.1.2.7 2000-11-14 16:50:46 bdemsky Exp $
+ * @version $Id: CounterSupport.java,v 1.1.2.8 2000-11-14 17:22:33 bdemsky Exp $
  */
 public class CounterSupport {
     static int size,sizesync;
@@ -29,6 +29,7 @@ public class CounterSupport {
     static int[][] alloccall;
     static int size1,size2;
     static Thread[] threadarray;
+    static int depthoverflow, threadoverflow;
 
     static {
 	//redefine these
@@ -42,6 +43,8 @@ public class CounterSupport {
 	depth=new int[tsize];
 	threadarray=new Thread[tsize];
 
+	depthoverflow=0;
+	threadoverflow=0;
 	overflow=0;
 	error=0;
 	size=10;
@@ -110,7 +113,7 @@ public class CounterSupport {
 	synchronized(lock) {
 	    if (counton) {
 		counton=false;
-		int hash=obj.hashCode();
+		int hash=java.lang.System.identityHashCode(obj);
 		counton=true;
 		int hashmod=hash % numbins;
 		int bin=-1;
@@ -146,7 +149,7 @@ public class CounterSupport {
 	synchronized(lock) {
 	    if (counton) {
 		counton=false;
-		int hash=obj.hashCode();
+		int hash=java.lang.System.identityHashCode(obj);
 		counton=true;
 		int hashmod=hash % numbins;
 		if (boundedkey[hashmod][bincap-1]!=null)
@@ -181,11 +184,14 @@ public class CounterSupport {
 			    threadarray[firstnull]=t;
 			    depth[firstnull]=0;
 			    thisthread=firstnull;
-			}
+			} else
+			    threadoverflow++;
 		    }
 		    if (thisthread!=-1) {
 			if (depth[thisthread]<csize)
 			    callchain[depth[thisthread]][thisthread]=callsite+1;
+			else
+			    depthoverflow++;
 			depth[thisthread]++;
 		    }
 		}
@@ -218,7 +224,10 @@ public class CounterSupport {
 	//Show to the screen for the curious
 	System.out.println("Error count[no mapping]="+error);
 	System.out.println("# overflowed="+overflow);
+	System.out.println("Call stack depth overflow="+depthoverflow);
+	System.out.println("Call stack thread overflow="+threadoverflow);
 	System.out.println("Allocation array");
+
 
 	for(int i=0;i<size;i++)
 	    if (array[i]!=0)
