@@ -21,7 +21,7 @@ import java.io.InputStream;
  * GJ signatures.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Javap.java,v 1.3 2003-04-09 22:21:59 cananian Exp $
+ * @version $Id: Javap.java,v 1.4 2003-04-11 00:31:08 cananian Exp $
  */
 public abstract class Javap /*extends harpoon.IR.Registration*/ {
     public static final void main(String args[]) {
@@ -251,6 +251,9 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 		}
 		OffsetAndString oas = munchTypeSig(psig.substring(off));
 		off += oas.offset;
+		// suppress 'extends java.lang.Object' with no other bounds.
+		if (oas.string.equals("java.lang.Object") &&
+		    psig.charAt(off)!=':') continue;
 		if (firstbound) { sb.append(" extends "); firstbound=false; }
 		else sb.append(" & ");
 		sb.append(oas.string);
