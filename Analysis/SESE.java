@@ -27,7 +27,7 @@ import java.util.Stack;
  * from a cycle-equivalency set.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SESE.java,v 1.1.2.4 1999-03-02 19:39:10 cananian Exp $
+ * @version $Id: SESE.java,v 1.1.2.5 1999-04-03 18:03:29 cananian Exp $
  */
 public class SESE  {
     /** Root of <code>Region</code> tree. */
@@ -36,7 +36,7 @@ public class SESE  {
      *  <code>Region</code>. */
     public /*final*/ Map smallestSESE;
 
-    /** Creates a <code>SESE</code> from a <code>CycleEq</code>. */
+    /** Creates a <code>SESE</code> using a <code>CycleEq</code>. */
     public SESE(HCode hc, boolean edgegraph) {
 	// compute cycle equivalence.
 	CycleEq ceq = new CycleEq(hc, edgegraph);
