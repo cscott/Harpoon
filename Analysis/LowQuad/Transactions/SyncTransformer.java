@@ -18,7 +18,7 @@ import java.util.*;
  * atomic transactions.  Works on <code>LowQuadNoSSA</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.10 2000-11-15 18:04:37 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.11 2000-11-15 19:47:12 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -352,7 +352,7 @@ public class SyncTransformer
 	}
 	public void visit(AGET q) {
 	    addChecks(q);
-	    if (currtrans==null) { // non-transactional read
+	    if (handlers==null) { // non-transactional read
 		Edge e = readNonTrans(q.nextEdge(0), q,
 				      q.dst(), q.objectref(), q.type());
 		addAt(e, new AGET(qf, q, q.dst(),
@@ -367,12 +367,12 @@ public class SyncTransformer
 	public void visit(GET q) {
 	    addChecks(q);
 	    if (q.isStatic()) {
-		if (currtrans==null) return;
+		if (handlers==null) return;
 		System.err.println("WARNING: read of "+q.field()+" in "+
 				   qf.getMethod());
 		return;
 	    }
-	    if (currtrans==null) { // non-transactional read
+	    if (handlers==null) { // non-transactional read
 		Edge e = readNonTrans(q.nextEdge(0), q,
 				      q.dst(), q.objectref(),
 				      q.field().getType());
@@ -422,7 +422,7 @@ public class SyncTransformer
 	}
 	public void visit(ASET q) {
 	    addChecks(q);
-	    if (currtrans==null) { // non-transactional write
+	    if (handlers==null) { // non-transactional write
 		Temp t0 = new Temp(tf, "oldval");
 		Edge in = q.prevEdge(0);
 		in = addAt(in, new AGET(qf, q, t0, q.objectref(),
@@ -437,12 +437,12 @@ public class SyncTransformer
 	public void visit(SET q) {
 	    addChecks(q);
 	    if (q.isStatic()) {
-		if (currtrans==null) return;
+		if (handlers==null) return;
 		System.err.println("WARNING: write of "+q.field()+" in "+
 				   qf.getMethod());
 		return;
 	    }
-	    if (currtrans==null) { // non-transactional write
+	    if (handlers==null) { // non-transactional write
 		Temp t0 = new Temp(tf, "oldval");
 		Edge in = q.prevEdge(0);
 		in = addAt(in, new GET(qf, q, t0, q.field(), q.objectref()));
@@ -484,7 +484,7 @@ public class SyncTransformer
 		    THROW q1= new THROW(qf, q, retex);
 		    in = addAt(in, q0);
 		    Quad.addEdge(q0, 1, q1, 0);
-		    footer.attach(q1, 0);
+		    footer = footer.attach(q1, 0);
 		    checkForAbort(q0.nextEdge(1), q, retex);
 		}
 	    }
@@ -514,7 +514,7 @@ public class SyncTransformer
 		Quad.addEdges(new Quad[] { q3, q5, q6, q7 });
 		Quad.addEdge(q7, 0, q4, 1);
 		Quad.addEdge(q7, 1, q8, 0);
-		footer.attach(q8, 0);
+		footer = footer.attach(q8, 0);
 		checkForAbort(q7.nextEdge(1), q, retex);
 	    }
 	    // do array index checks where necessary.
@@ -543,7 +543,7 @@ public class SyncTransformer
 		Quad.addEdges(new Quad[] { q3, q6, q7 });
 		Quad.addEdge(q7, 0, q4, 1);
 		Quad.addEdge(q7, 1, q8, 0);
-		footer.attach(q8, 0);
+		footer = footer.attach(q8, 0);
 		checkForAbort(q7.nextEdge(1), q, retex);
 	    }
 	}
