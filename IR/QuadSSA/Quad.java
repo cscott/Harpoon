@@ -14,7 +14,7 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.26 1998-10-22 04:45:44 cananian Exp $
+ * @version $Id: Quad.java,v 1.27 1998-10-22 17:07:10 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -156,7 +156,7 @@ public abstract class Quad
 	old2new.put(q, r);
 	// fixup the footer for HEADER quads.
 	if (q instanceof HEADER) {
-	    ((HEADER)q).footer = (FOOTER) copyone(((HEADER)q).footer, old2new);
+	    ((HEADER)r).footer = (FOOTER) copyone(((HEADER)q).footer, old2new);
 	}
 	// fixup the edges.
 	for (int i=0; i<q.next.length; i++) {
