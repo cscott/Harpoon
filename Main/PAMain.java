@@ -96,9 +96,12 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.6 2002-04-12 21:49:45 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.7 2002-04-17 04:49:22 salcianu Exp $
  */
 public abstract class PAMain {
+
+    // use SSI format
+    private static boolean USE_SSI = false;
 
     // use the real meta call graph
     private static boolean METAMETHODS = false;
@@ -345,7 +348,7 @@ public abstract class PAMain {
 
     // For debug purposes,
     // we sometimes use the old static initializers strategy
-    private static final boolean USE_OLD_STYLE = false;
+    private static final boolean USE_OLD_STYLE = true;
     
     // Constructs some data structures used by the analysis: the code factory
     // providing the code of the methods, the class hierarchy, call graph etc.
@@ -356,7 +359,16 @@ public abstract class PAMain {
 	if (hcf==null) {
 	    if(USE_OLD_STYLE) {
 		System.out.println("Use old style class initializers!");
-		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory();
+
+		if(USE_SSI) {
+		    System.out.println("\n\tUse QuadSSI!\n");
+		    hcf = harpoon.IR.Quads.QuadSSI.codeFactory();
+		}
+		else {
+		    System.out.println("\n\tUse QuadNoSSA!\n");
+		    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory();
+		}
+
 		construct_class_hierarchy();
 	    }
 	    else {
@@ -782,7 +794,8 @@ public abstract class PAMain {
 	    new LongOpt("inline_for_ta", LongOpt.REQUIRED_ARGUMENT, null, 37),
 	    new LongOpt("rtj_debug",     LongOpt.NO_ARGUMENT,       null, 38),
 	    new LongOpt("rtjri",         LongOpt.REQUIRED_ARGUMENT, null, 39),
-	    new LongOpt("rtjstats",      LongOpt.NO_ARGUMENT,       null, 40)
+	    new LongOpt("rtjstats",      LongOpt.NO_ARGUMENT,       null, 40),
+	    new LongOpt("ssi",           LongOpt.NO_ARGUMENT,       null, 41)
 	};
 
 	String option;
@@ -1009,6 +1022,9 @@ public abstract class PAMain {
 		break;
 	    case 40:
 		RTJ_COLLECT_RUNTIME_STATS = true;
+		break;
+	    case 41:
+		USE_SSI = true;
 		break;
 	    }
 

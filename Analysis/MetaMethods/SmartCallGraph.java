@@ -35,7 +35,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
     connected component in the call graph) decreased from 53 to 8.
 
     @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
-    @version $Id: SmartCallGraph.java,v 1.3 2002-04-12 21:48:05 salcianu Exp $ */
+    @version $Id: SmartCallGraph.java,v 1.4 2002-04-17 04:49:03 salcianu Exp $ */
 public class SmartCallGraph implements CallGraph {
     
     /** Creates a <code>SmartCallGraph</code>.
@@ -59,8 +59,10 @@ public class SmartCallGraph implements CallGraph {
     public SmartCallGraph(CachingCodeFactory hcf,
 			  ClassHierarchy ch, Set mroots) {
 	assert
-	    hcf.getCodeName().equals(harpoon.IR.Quads.QuadNoSSA.codename) :
-	    "SmartCallGraph works only with QuadNoSSA";
+	    hcf.getCodeName().equals(harpoon.IR.Quads.QuadNoSSA.codename) ||
+	    hcf.getCodeName().equals(harpoon.IR.Quads.QuadSSA.codename) ||
+	    hcf.getCodeName().equals(harpoon.IR.Quads.QuadSSI.codename) :
+	    "unsupported quad factory " + hcf;
 	// can't call this(...) because this is not the first statement ...
 	construct(new MetaCallGraphImpl(hcf, ch, mroots));
     }
