@@ -22,7 +22,7 @@ import java.util.Iterator;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.9 1999-08-05 23:53:55 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.10 1999-08-06 00:03:51 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -50,6 +50,9 @@ public class Jasmin {
 	for (int i=0;i<hfields.length;i++) {
 	    String value="";
 	    if (hfields[i].isConstant())
+		if (hfields[i].getType()==HClass.forName("java.lang.String"))
+		    value=" = "+'"'+hfields[i].getConstant().toString()+'"';
+		else
 		value=" = "+hfields[i].getConstant().toString();
 	    out.println(".field "+Modifier.toString(hfields[i].getModifiers())+" "+hfields[i].getName() +" "+hfields[i].getDescriptor()+value);
 	}
