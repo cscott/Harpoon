@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.59 1999-10-14 06:13:20 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.60 1999-10-14 06:21:52 cananian Exp $
  */
 %%
 
@@ -288,7 +288,9 @@ BINOP<l>(AND, j, k) = i %{
     emit( ROOT, "and `d0h, `s0h, `s1h", i, j, k );
 }%
 
-BINOP<p,i>(CMPEQ, j, k) = i %{
+BINOP(CMPEQ, j, k) = i
+%pred %( ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT )%
+%{
     Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
@@ -298,8 +300,8 @@ BINOP<p,i>(CMPEQ, j, k) = i %{
 		"movne `d0, #0", i, j, k );
 }%
 
-BINOP<l>(CMPEQ, j, k) = i %{
-    Temp i = makeTwoWordTemp();		
+BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
+    Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
@@ -309,7 +311,7 @@ BINOP<l>(CMPEQ, j, k) = i %{
 		"movne `d0, #0", i, j, k );
 }%
   
-BINOP<f>(CMPEQ, j, k) = i %{
+BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
@@ -325,8 +327,8 @@ BINOP<f>(CMPEQ, j, k) = i %{
 		   new Temp[]{ j, k, r0 }));
 }%
 
-BINOP<d>(CMPEQ, j, k) = i %{
-    Temp i = makeTwoWordTemp();		
+BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
+    Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
@@ -349,7 +351,9 @@ BINOP<d>(CMPEQ, j, k) = i %{
 		   new Temp[]{ j, k, r0 }));
 }%
 
-BINOP<p,i>(CMPGT, j, k) = i %{
+BINOP<p,i>(CMPGT, j, k) = i
+%pred %( ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT )%
+%{
     Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
@@ -359,8 +363,8 @@ BINOP<p,i>(CMPGT, j, k) = i %{
 	       "movne `d0, #0", i, j, k );
 }%
 
-BINOP<l>(CMPGT, j, k) = i %{
-    Temp i = makeTwoWordTemp();		
+BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
+    Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
@@ -370,7 +374,7 @@ BINOP<l>(CMPGT, j, k) = i %{
 		"movle `d0, #0", i, j, k );
 }%
 
-BINOP<f>(CMPGT, j, k) = i %{
+BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
@@ -386,8 +390,8 @@ BINOP<f>(CMPGT, j, k) = i %{
 		   new Temp[]{ j, k, r0 }));
 }%
 
-BINOP<d>(CMPGT, j, k) = i %{
-    Temp i = makeTwoWordTemp();		
+BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
+    Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
@@ -405,7 +409,9 @@ BINOP<d>(CMPGT, j, k) = i %{
 }%
 
 
-BINOP<p,i>(CMPGE, j, k) = i %{
+BINOP(CMPGE, j, k) = i
+%pred %( ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT )%
+%{
     Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
@@ -415,8 +421,8 @@ BINOP<p,i>(CMPGE, j, k) = i %{
 		"movlt `d0, #0", i, j, k );
 }%
 
-BINOP<l>(CMPGE, j, k) = i %{
-    Temp i = makeTwoWordTemp();		
+BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
+    Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
@@ -426,7 +432,7 @@ BINOP<l>(CMPGE, j, k) = i %{
 		"movlt `d0, #0", i, j, k );
 }%
 
-BINOP<f>(CMPGE, j, k) = i %{
+BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
@@ -442,8 +448,8 @@ BINOP<f>(CMPGE, j, k) = i %{
 		   new Temp[]{ j, k, r0 }));
 }%
 
-BINOP<d>(CMPGE, j, k) = i %{
-    Temp i = makeTwoWordTemp();		
+BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
+    Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
@@ -461,7 +467,9 @@ BINOP<d>(CMPGE, j, k) = i %{
 }%
 
 
-BINOP<p,i>(CMPLE, j, k) = i %{
+BINOP(CMPLE, j, k) = i
+%pred %( ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT )%
+%{
     Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
@@ -471,8 +479,8 @@ BINOP<p,i>(CMPLE, j, k) = i %{
 		"movgt `d0, #0", i, j, k );
 }%
 
-BINOP<l>(CMPLE, j, k) = i %{
-    Temp i = makeTwoWordTemp();		
+BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
+    Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
@@ -482,7 +490,7 @@ BINOP<l>(CMPLE, j, k) = i %{
 		"movgt `d0, #0", i, j, k );
 }%
 
-BINOP<f>(CMPLE, j, k) = i %{
+BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
@@ -498,8 +506,8 @@ BINOP<f>(CMPLE, j, k) = i %{
 		   new Temp[]{ j, k, r0 }));
 }%
 
-BINOP<d>(CMPLE, j, k) = i %{
-    Temp i = makeTwoWordTemp();		
+BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
+    Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
@@ -516,7 +524,9 @@ BINOP<d>(CMPLE, j, k) = i %{
 		   new Temp[]{ j, k, r0 }));
 }%
 
-BINOP<p,i>(CMPLT, j, k) = i %{
+BINOP(CMPLT, j, k) = i
+%pred %( ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT )%
+%{
     Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
@@ -526,8 +536,8 @@ BINOP<p,i>(CMPLT, j, k) = i %{
 		"movge `d0, #0", i, j, k );
 }%
 
-BINOP<l>(CMPLT, j, k) = i %{
-    Temp i = makeTwoWordTemp();		
+BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
+    Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
@@ -537,7 +547,7 @@ BINOP<l>(CMPLT, j, k) = i %{
 		"movge `d0, #0", i, j, k );
 }%
 
-BINOP<f>(CMPLT, j, k) = i %{
+BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
@@ -553,8 +563,8 @@ BINOP<f>(CMPLT, j, k) = i %{
 		   new Temp[]{ j, k, r0 }));
 }%
 
-BINOP<d>(CMPLT, j, k) = i %{
-    Temp i = makeTwoWordTemp();		
+BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
+    Temp i = makeTemp();		
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
@@ -939,70 +949,62 @@ TEMP<l,d>(id) = i %{
 
 }%
 
-UNOP<l>(_2B, arg) = i %{
+UNOP(_2B, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle long-to-byte conversion directly");
 }%
-UNOP<f>(_2B, arg) = i %{
+UNOP(_2B, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle float-to-byte conversion directly");
 }%
-UNOP<d>(_2B, arg) = i %{
+UNOP(_2B, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle double-to-byte conversion directly");
 }%
-UNOP<l>(_2C, arg) = i %{
+UNOP(_2C, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle long-to-char conversion directly");
 }%
-UNOP<f>(_2C, arg) = i %{
+UNOP(_2C, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle float-to-char conversion directly");
 }%
-UNOP<d>(_2C, arg) = i %{
+UNOP(_2C, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle double-to-char conversion directly");
 }%
-UNOP<l>(_2S, arg) = i %{
+UNOP(_2S, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle long-to-short conversion directly");
 }%
-UNOP<f>(_2S, arg) = i %{
+UNOP(_2S, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle float-to-short conversion directly");
 }%
-UNOP<d>(_2S, arg) = i %{
+UNOP(_2S, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     Temp i = makeTemp();		
     Util.assert(false, "Spec file doesn't handle double-to-short conversion directly");
 }%
 
 
-UNOP<p,i>(_2B, arg) = i %{
+UNOP(_2B, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     Temp i = makeTemp();		
-    emit( ROOT, "and `d0, `s0, #0x000000ff", i, arg );
-    // there may be cleverer ways to do this so that we don't have to
-    // do three orrs
-    emit( ROOT, "tst `s0, #0x00000080\n"+
-		"orrne `d0, `s0, #0xff000000\n"+
-		"orrne `d0, `s0, #0x00ff0000\n"+
-		"orrne `d0, `s0, #0x0000ff00", i, i );
+    emit( ROOT, "mov `d0, `s0, asl #24", i, arg);
+    emit( ROOT, "mov `d0, `s0, asr #24", i, i);
 }%
-UNOP<p,i>(_2C, arg) = i %{
+UNOP(_2C, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     Temp i = makeTemp();		
-    emit( ROOT, "and `d0, `s0, #0x000000ff", i, arg );
-    emit( ROOT, "and `d0, `s0, #0x0000ff00", i, arg );
+    emit( ROOT, "mov `d0, `s0, asl #16", i, arg);
+    emit( ROOT, "mov `d0, `s0, lsr #16", i, i);
 }%
-UNOP<p,i>(_2S, arg) = i %{
+UNOP(_2S, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     Temp i = makeTemp();		
-    emit( ROOT, "and `d0, `s0, #0x000000ff", i, arg );
-    emit( ROOT, "and `d0, `s0, #0x0000ff00", i, arg );
-    emit( ROOT, "tst `s0, #0x00008000\n"+
-		"orrne `d0, `s0, #0xff000000\n"+
-		"orrne `d0, `s0, #0x00ff0000", i, i );
+    emit( ROOT, "mov `d0, `s0, asl #16", i, arg);
+    emit( ROOT, "mov `d0, `s0, asr #16", i, i);
 }%
 
 
-UNOP<l>(_2D, arg) = i %{
+UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     TwoWordTemp i = makeTwoWordTemp();
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
@@ -1010,14 +1012,14 @@ UNOP<l>(_2D, arg) = i %{
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
-UNOP<p,i>(_2D, arg) = i %{
+UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     TwoWordTemp i = makeTwoWordTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     emit( ROOT, "bl ___floatsidf" );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
-UNOP<f>(_2D, arg) = i %{
+UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTwoWordTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     emit( ROOT, "bl ___extendsfdf2" );
@@ -1025,30 +1027,35 @@ UNOP<f>(_2D, arg) = i %{
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 
 }%
-UNOP<d>(_2D, arg) = i %{
+/* this is useless.  Should never really be in Tree form.
+UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
+	// a move, basically.
     Temp i = makeTwoWordTemp();		
-    emit( ROOT, "mov `d0l, `s0l", i, arg );
-    emit( ROOT, "mov `d0h, `s0h", i, arg );
+    emit( ROOT, "mov `d0l, `s0l @ unop d2d", i, arg );
+    emit( ROOT, "mov `d0h, `s0h @ unop d2d", i, arg );
 }%
+*/
 
-UNOP<l>(_2F, arg) = i %{
+UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
     emit( ROOT, "bl ___floatdisf" );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
-UNOP<p,i>(_2F, arg) = i %{
+UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     emit( ROOT, "bl ___floatsisf" );   
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
-UNOP<f>(_2F, arg) = i %{
+/* useless.  should never really be in tree form.
+UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", i, arg );
 }%
-UNOP<d>(_2F, arg) = i %{
+*/
+UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
@@ -1056,21 +1063,21 @@ UNOP<d>(_2F, arg) = i %{
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
-UNOP<l>(_2I, arg) = i %{
+UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0l", i, arg );
 }%
-UNOP<p,i>(_2I, arg) = i %{
+UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.POINTER )% %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", i, arg );
 }%
-UNOP<f>(_2I, arg) = i %{
+UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     emit( ROOT, "bl ___fixsfsi" );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
-UNOP<d>(_2I, arg) = i %{
+UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
@@ -1078,24 +1085,26 @@ UNOP<d>(_2I, arg) = i %{
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
-UNOP<l>(_2L, arg) = i %{
+/* useless.  should never really be in tree form.
+UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     Temp i = makeTwoWordTemp();		
-    emit( ROOT, "mov `d0l, `s0l", i, arg );
+    emit( ROOT, "mov `d0l, `s0l @ unop l2l", i, arg );
     emit( ROOT, "mov `d0h, `s0h", i, arg );
 }%
-UNOP<p,i>(_2L, arg) = i %{
+*/
+UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     Temp i = makeTwoWordTemp();		
     emit( ROOT, "mov `d0l, `s0", i, arg );
     emit( ROOT, "mov `d0h, `s0l asr #31", i, i );
 }%
-UNOP<f>(_2L, arg) = i %{
+UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTwoWordTemp();	
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
     emit( ROOT, "bl ___fixsfdi" );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
-UNOP<d>(_2L, arg) = i %{
+UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     Temp i = makeTwoWordTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
@@ -1105,12 +1114,14 @@ UNOP<d>(_2L, arg) = i %{
 }%
 
 
-UNOP<p,i>(NEG, arg) = i %{
+UNOP(NEG, arg) = i
+%pred %( ROOT.operandType()==Type.INT || ROOT.operandType()==Type.POINTER )%
+%{
     Temp i = makeTemp();		
     emit( ROOT, "rsb `d0, `s0, #0", i, arg );
 }% 
 
-UNOP<p,i>(NOT, arg) = i %{
+UNOP(NOT, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     Temp i = makeTemp();		
     emit( ROOT, "mvn `d0, `s0", i, arg );
 }% 
