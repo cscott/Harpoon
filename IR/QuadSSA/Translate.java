@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.14 1998-08-26 22:01:40 cananian Exp $
+ * @version $Id: Translate.java,v 1.15 1998-08-26 22:07:32 cananian Exp $
  */
 
 /*
@@ -362,7 +362,7 @@ class Translate  { // not public.
 		q = null;
 		// Alternate implementation:
 		//ns = s.push(new Temp());
-		//q = new LET(in, ns.stack[0], 
+		//q = new MOVE(in, ns.stack[0], 
 		//	    s.lv[opd.getIndex()]);
 		break;
 	    }
@@ -394,7 +394,7 @@ class Translate  { // not public.
 	    OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
 	    ns = s.pop().assignLV(opd.getIndex(), 
 				  new Temp(s.lv[opd.getIndex()]));
-	    q = new LET(in, ns.lv[opd.getIndex()], s.stack[0]);
+	    q = new MOVE(in, ns.lv[opd.getIndex()], s.stack[0]);
 	    break;
 	    }
 	case Op.BALOAD:
@@ -526,7 +526,7 @@ class Translate  { // not public.
 	    OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
 	    ns = s.pop(2).assignLV(opd.getIndex(), 
 				  new Temp(s.lv[opd.getIndex()]));
-	    q = new LET(in, ns.lv[opd.getIndex()], s.stack[0]);
+	    q = new MOVE(in, ns.lv[opd.getIndex()], s.stack[0]);
 	    break;
 	    }
 	case Op.DUP:
@@ -661,7 +661,7 @@ class Translate  { // not public.
 	    OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
 	    ns = s.pop().assignLV(opd.getIndex(), 
 				  new Temp(s.lv[opd.getIndex()]));
-	    q = new LET(in, ns.lv[opd.getIndex()], s.stack[0]);
+	    q = new MOVE(in, ns.lv[opd.getIndex()], s.stack[0]);
 	    break;
 	    }
 	case Op.GETFIELD:
