@@ -64,12 +64,12 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.75 2000-05-23 17:19:16 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.76 2000-05-23 22:06:08 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
-    private static boolean TIME = true;
-    private static boolean VERIFY = false;
+    private static boolean TIME = false;
+    private static boolean VERIFY = true;
     
     /** Creates a <code>LocalCffRegAlloc</code>. */
     public LocalCffRegAlloc(Code code) {
@@ -669,6 +669,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	// have a future reference; otherwise null)  
 	final Map nextRef;
 
+	// tracks sets of equivalent temps (eq. temps are ones that
+	// are used in InstrMOVEs)
 	final EqTempSets tempSets;
 
 	// maps Temp:t -> Set of Regs 
@@ -833,7 +835,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	class LocalAllocVisitor extends harpoon.IR.Assem.InstrVisitor {
 	    // last Instr that was visited that still remains in the
-	    // code (thus, not a removed InstrMOVE)
+	    // code (thus, not a removed InstrMOVE).  Used when
+	    // emptying the register file post-allocation
 	    Instr last;
 
 	    public void visit(Instr i) {
@@ -1099,7 +1102,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 				"\nneed at least one spill of \n"+
 				trackSpills+"\n from "+evictables+
 				"\nRegFile:"+regfile+"\n"+
+				tempSets + "\n"+
 				printInfo(block, i, t, code));
+
 		    WeightedSet spill = (WeightedSet) weightedSpills.first();
 		    if (false) System.out.println("for "+t+" in "+i+
 				       " choosing to spill "+spill+

@@ -17,7 +17,7 @@ import java.util.Collection;
     <code>Collection</code> interface.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CollectionFactory.java,v 1.1.2.1 1999-10-20 06:00:26 pnkfelix Exp $
+ * @version $Id: CollectionFactory.java,v 1.1.2.2 2000-05-23 22:06:13 pnkfelix Exp $
  */
 public abstract class CollectionFactory {
     
@@ -33,7 +33,10 @@ public abstract class CollectionFactory {
 
     /** Generates a new, mutable <code>Collection</code>, using the
 	elements of <code>c</code> as a template for its initial
-	contents.  
+	contents.  Note that the <code>Collection</code> returned is
+	not a <i>view</i> of <code>c</code>, but rather a snapshot;
+	changes to <code>c</code> are not reflected in the returned
+	<code>Collection</code>. 
     */  
     public abstract Collection makeCollection(Collection c);
 

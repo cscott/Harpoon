@@ -67,7 +67,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.73 2000-04-07 19:23:13 bdemsky Exp $
+ * @version $Id: SAMain.java,v 1.1.2.74 2000-05-23 22:06:10 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -572,8 +572,9 @@ public class SAMain extends harpoon.IR.Registration {
 	out.println("-q");
 	out.println("\tTurns on quiet mode (status messages are not output)");
 
-	out.println("-1 <optional class name>"); 
-	out.println("\tCompiles only a single method or class.  Without a classname, only compiles main()");
+	out.println("-1<optional class name>"); 
+	out.println("\tCompiles only a single method or class.  Without a classname, only compiles <class>.main()");
+	out.println("\tNote that you may not have whitespace between the '-1' and the classname");
 
 	out.println("-h");
 	out.println("\tPrints out this help message");

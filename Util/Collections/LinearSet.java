@@ -12,10 +12,10 @@ import java.util.Iterator;
 /**
  * <code>LinearSet</code> is a simplistic light-weight
  * <code>Set</code> designed for use when the number of entries is
- * small.  It is backed by an <code>List</code>.
+ * small.  It is backed by a <code>List</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LinearSet.java,v 1.1.2.1 2000-05-23 17:12:49 pnkfelix Exp $
+ * @version $Id: LinearSet.java,v 1.1.2.2 2000-05-23 22:06:13 pnkfelix Exp $
  */
 public class LinearSet extends AbstractSet {
     private List list;

@@ -16,7 +16,7 @@ import java.util.Arrays;
 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ListFactory.java,v 1.1.2.3 2000-05-23 17:15:38 pnkfelix Exp $
+ * @version $Id: ListFactory.java,v 1.1.2.4 2000-05-23 22:06:13 pnkfelix Exp $
  */
 public abstract class ListFactory extends CollectionFactory {
     
@@ -44,8 +44,9 @@ public abstract class ListFactory extends CollectionFactory {
     public abstract List makeList(Collection c); 
 
 
-    /** Creates and returns a <code>List</code> made up from
-	connecting <code>lists</code> together in order.
+    /** Creates and returns an unmodifiable <code>List</code> view of
+	the list made from connecting <code>lists</code> together in
+	order. 
 	<BR> <B>requires:</B> <code>lists</code> is a
 	     <code>List</code> of <code>List</code>s.
 	<BR> <B>effects:</B> 
@@ -60,7 +61,7 @@ public abstract class ListFactory extends CollectionFactory {
 		   ln.get(0) , ln.get(1), ... , ln.get(ln.size()-1) ]
 	</pre>
 	Note that not only changes to the elements of
-	<code>lists</code> reflected in the returned
+	<code>lists</code> are reflected in the returned
 	<code>List</code>, but even changes to <code>lists</code>
 	itself (adding or removing lists) are also reflected.
     */
@@ -102,8 +103,9 @@ public abstract class ListFactory extends CollectionFactory {
 	
     }
 
-    /** Creates and returns a <code>List</code> made up from
-	connecting <code>lists</code> together in order.
+    /** Creates and returns an unmodifiable <code>List</code> view of
+	the list made from connecting <code>lists</code> together in
+	order. 
 	<BR> <B>effects:</B> 
 	<pre>let l0 = lists[0]
 	         l1 = lists[1]
@@ -123,7 +125,7 @@ public abstract class ListFactory extends CollectionFactory {
 	return concatenate(Arrays.asList(lists));
     }
 
-    /** Creates and returns a <code>List</code> of one element. 
+    /** Creates and returns an immutable <code>List</code> of one element. 
 	<BR> <B>effects:</B> returns the list [ o ]
      */
     public static List singleton(final Object o) {

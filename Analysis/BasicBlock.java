@@ -59,7 +59,7 @@ import java.util.Collection;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.27 2000-05-23 17:25:42 pnkfelix Exp $ */
+ * @version $Id: BasicBlock.java,v 1.1.2.28 2000-05-23 22:06:00 pnkfelix Exp $ */
 public class BasicBlock {
     
     static final boolean DEBUG = false;
@@ -371,6 +371,11 @@ public class BasicBlock {
 	// generated basic block
 	private int BBnum = 0;
 
+
+	// FSK: the following method is of dubious usefulness, now
+	// that i have identified a "better" way to handle updates to
+	// a mutable IR.  Thus, I have made it private.  After I
+	// confirm my approach with Scott, I will eliminate it.
 	/** Modifies the set of basic blocks for <code>this</code> to
 	    account for modifications that have been made to the
 	    underlying IR.  Most <code>HCode</code>s will not require
@@ -396,7 +401,7 @@ public class BasicBlock {
 		   and last element accordingly
 	    </PRE> 
 	*/
-	public void updateBasicBlocks() {
+	private void updateBasicBlocks() { 
 	    Iterator biter = blocks.iterator();
 	    while(biter.hasNext()) {
 		BasicBlock b = (BasicBlock) biter.next();
