@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.67 2000-07-17 17:01:22 rinard Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.68 2000-11-06 23:55:40 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -1164,7 +1164,7 @@ public class PointerAnalysis {
 	// the following code is quite messy ... The problem is that I 
 	// create param nodes only for the parameter with object types;
 	// unfortunately, the types could be found only in HMethod (and
-	// do not include the evetual this parameter for non-static nodes)
+	// do not include the possible this parameter for non-static nodes)
 	// while the actual Temps associated with all the formal parameters
 	// could be found only in METHOD. So, we have to coordinate
 	// information from two different places and, even more, we have

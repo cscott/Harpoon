@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: NodeRepository.java,v 1.1.2.26 2000-11-06 17:50:11 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.27 2000-11-06 23:55:40 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -68,14 +68,24 @@ public class NodeRepository {
      *  <code>param_number</code> must contain the number of formal
      *  parameters of the meta-method. */
     public final void addParamNodes(MetaMethod mmethod, int param_number){
-	Util.assert(mmethod.nbParams() == param_number,
-		    "Strange number of params for " + mmethod);
 	// do not create the parameter nodes twice for the same procedure
 	if(param_nodes.containsKey(mmethod)) return;
+	// grab the types for the method's object parameters
+	GenType[] gts = new GenType[param_number];
+	int count = 0;
+	for(int i = 0; i < mmethod.nbParams(); i++) {
+	    GenType gt = mmethod.getType(i);
+	    if(!gt.getHClass().isPrimitive()) {
+		Util.assert(count < param_number,
+			    "Strange number of params for " + mmethod);
+		gts[count] = gt;
+		count++;
+	    }
+	}
+	// do the essential thing: create the nodes
 	PANode nodes[] = new PANode[param_number];
 	for(int i = 0; i < param_number; i++)
-	    nodes[i] = getNewNode(PANode.PARAM,
-				  new GenType[]{mmethod.getType(i)});
+	    nodes[i] = getNewNode(PANode.PARAM, new GenType[]{gts[i]});
 	param_nodes.put(mmethod,nodes);
     }
 
