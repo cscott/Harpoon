@@ -26,14 +26,18 @@ Util/Collections/BinomialHeap.java
 Util/Collections/BitSetFactory.java
 Util/Collections/CollectionFactory.java
 Util/Collections/CollectionWrapper.java
+Util/Collections/DisjointSet.java
+Util/Collections/Environment.java
 Util/Collections/Factories.java
 Util/Collections/FibonacciHeap.java
 Util/Collections/GenericInvertibleMap.java
 Util/Collections/GenericInvertibleMultiMap.java
 Util/Collections/GenericMultiMap.java
+Util/Collections/HashEnvironment.java
 Util/Collections/Heap.java
 Util/Collections/InvertibleMap.java
 Util/Collections/InvertibleMultiMap.java
+Util/Collections/LinearMap.java
 Util/Collections/LinearSet.java
 Util/Collections/ListFactory.java
 Util/Collections/ListWrapper.java
@@ -44,11 +48,15 @@ Util/Collections/MultiMap.java
 Util/Collections/MultiMapFactory.java
 Util/Collections/MultiMapSet.java
 Util/Collections/PairMapEntry.java
+Util/Collections/PersistentEnvironment.java
+Util/Collections/PersistentMap.java
+Util/Collections/PersistentSet.java
+Util/Collections/PersistentTreeNode.java
 Util/Collections/SetFactory.java
 Util/Collections/SetWrapper.java
-Util/Collections/UnmodifiableMultiMap.java
 Util/Collections/UniqueStack.java
 Util/Collections/UniqueVector.java
+Util/Collections/UnmodifiableMultiMap.java
 Util/Collections/WorkSet.java
 
 # these have hairy dependencies.

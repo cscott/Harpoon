@@ -9,22 +9,23 @@ import java.util.Comparator;
  * search tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentTreeNode.java,v 1.2 2002-02-25 21:09:15 cananian Exp $
+ * @version $Id: PersistentTreeNode.java,v 1.2.2.1 2002-04-09 21:38:18 cananian Exp $
  */
-class PersistentTreeNode extends AbstractMapEntry {
-    public final Object key;
-    public final Object value;
-    public final PersistentTreeNode left;
-    public final PersistentTreeNode right;
+class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V> {
+    public final K key;
+    public final V value;
+    public final PersistentTreeNode<K,V> left;
+    public final PersistentTreeNode<K,V> right;
 
-    PersistentTreeNode(Object key, Object value,
-		       PersistentTreeNode left, PersistentTreeNode right) {
+    PersistentTreeNode(K key, V value,
+		       PersistentTreeNode<K,V> left,
+		       PersistentTreeNode<K,V> right) {
 	this.key = key;  this.value = value;
 	this.left= left; this.right = right;
     }
     // ACCESSOR FUNCTIONS for Map.Entry.
-    public Object getKey() { return key; }
-    public Object getValue() { return value; }
+    public K getKey() { return key; }
+    public V getValue() { return value; }
 
     /** equals() merely checks that key and value are equivalent;
      *  isSame() checks that left and right branches are equivalent, too.
@@ -41,36 +42,50 @@ class PersistentTreeNode extends AbstractMapEntry {
     // TREE UTILITY FUNCTIONS.
     /** Creates a new node iff the created node would not be identical
      *  to the given <code>n</code>. */
-    private static PersistentTreeNode newNode(PersistentTreeNode n,
-					      Object key, Object value,
-					      PersistentTreeNode left,
-					      PersistentTreeNode right) {
+    private static <K,V> 
+	PersistentTreeNode<K,V> newNode(PersistentTreeNode<K,V> n,
+					K key, V value,
+					PersistentTreeNode<K,V> left,
+					PersistentTreeNode<K,V> right) {
 	if (n != null && n.key.equals(key) && n.value.equals(value) &&
 	    n.left == left && n.right == right)
 	    return n;
-	return new PersistentTreeNode(key, value, left, right);
+	return new PersistentTreeNode<K,V>(key, value, left, right);
     }
     /** Returns the number of nodes in the tree rooted at <code>n</code>.
      * @return 0 if <code>n==null</code>, else 1+size(n.left)+size(n.right)
      */
-    static int size(PersistentTreeNode n) {
-	return (n==null) ? 0 : (1 + size(n.left) + size(n.right));
+    static <K,V> int size(PersistentTreeNode<K,V> n) {
+	return (n==null) ? 0 : (1 + size2(n.left) + size2(n.right));
+    }
+    // XXX BUG IN JAVAC!  inference on recursive methods seems to be broken.
+    private static <K,V> int size2(PersistentTreeNode<K,V> n) {
+	return size(n);
     }
     /** Returns the <code>PersistentTreeNode</code> matching <code>key</code>
      *  if any, else <code>null</code>. */
-    static PersistentTreeNode get(PersistentTreeNode n, Comparator c,
-				  Object key) {
+    static <K,V> PersistentTreeNode<K,V> get(PersistentTreeNode<K,V> n,
+					     Comparator<K> c,
+					     K key) {
 	if (n==null) return null; /* no node with this key. */
 	int r = c.compare(key, n.key);
 	return
 	    (r ==0) ? n :
-	    (r < 0) ? get(n.left, c, key) : get(n.right, c, key);
+	    (r < 0) ? get2(n.left, c, key) : get2(n.right, c, key);
     }
+    // XXX BUG IN JAVAC!  inference on recursive methods seems to be broken.
+    private static <K,V>
+	PersistentTreeNode<K,V> get2(PersistentTreeNode<K,V> n,
+				     Comparator<K> c, K key) {
+	return get(n,c,key);
+    }
+
     /** Returns a node rooting a tree containing all the mappings in
      *  the tree rooted at the given <code>n</code>, plus a mapping from
      *  <code>key</code> to <code>value</code>. */
-    static PersistentTreeNode put(PersistentTreeNode n, Comparator c,
-				  Object key, Object value) {
+    static <K,V> PersistentTreeNode<K,V> put(PersistentTreeNode<K,V> n,
+					     Comparator<K> c,
+					     K key, V value) {
 	if (n==null) return newNode(null, key, value, null, null);
 	
 	int r = c.compare(key, n.key);
@@ -87,8 +102,9 @@ class PersistentTreeNode extends AbstractMapEntry {
     /** Returns a node rooting a tree containing all the mappings in
      *  the tree rooted at the given <code>n</code> except that it does
      *  not contain a mapping for <code>key</code>. */
-    static PersistentTreeNode remove(PersistentTreeNode n, Comparator c,
-				     Object key) {
+    static <K,V> PersistentTreeNode<K,V> remove(PersistentTreeNode<K,V> n,
+						Comparator<K> c,
+						K key) {
 	if (n==null) return null; // key not found.
 
 	int r = c.compare(key, n.key);
@@ -103,9 +119,10 @@ class PersistentTreeNode extends AbstractMapEntry {
 	throw new Error("Impossible!");
     }
     /** Merge two nodes into one. */
-    private static PersistentTreeNode merge(PersistentTreeNode left,
-					    PersistentTreeNode right,
-					    boolean toggle) {
+    private static <K,V>
+	PersistentTreeNode<K,V> merge(PersistentTreeNode<K,V> left,
+				      PersistentTreeNode<K,V> right,
+				      boolean toggle) {
 	if (left==null) return right;
 	if (right==null) return left;
 	if (toggle) // try not to pile everything on one side.

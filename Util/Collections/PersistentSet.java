@@ -18,26 +18,27 @@ import java.util.Stack;
  * binary search tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentSet.java,v 1.2 2002-02-25 21:09:15 cananian Exp $
+ * @version $Id: PersistentSet.java,v 1.2.2.1 2002-04-09 21:38:18 cananian Exp $
  */
-public class PersistentSet  {
-    final PersistentTreeNode root;
-    final Comparator c;
+public class PersistentSet<T>  {
+    final PersistentTreeNode<T,T> root;
+    final Comparator<T> c;
 
     /** Creates an empty <code>PersistentSet</code> whose member objects
      *  will all implement <code>java.lang.Comparable</code>. */
     public PersistentSet() {
-	this.root = null; this.c = Default.comparator;
+	// cast below is safe iff T implements Comparable.
+	this((Comparator)Default.comparator);
     }
     /** Creates an empty <code>PersistentSet</code> whose member objects
      *  are ordered by the given <code>Comparator</code>.
      */
-    public PersistentSet(Comparator c) {
-	this.root = null; this.c = c;
+    public PersistentSet(Comparator<T> c) {
+	this(null, c);
     }
     /** Creates a <code>PersistentSet</code> from a root <code>Node</code>
      *  and a <code>Comparator</code>.*/
-    private PersistentSet(PersistentTreeNode root, Comparator c) {
+    private PersistentSet(PersistentTreeNode<T,T> root, Comparator<T> c) {
 	this.root = root; this.c = c;
     }
 
@@ -49,24 +50,24 @@ public class PersistentSet  {
 
     /** Creates and returns a new <code>PersistantSet</code> identical to
      *  this one, except it contains <code>element</code>. */
-    public PersistentSet add(Object element) {
-	PersistentTreeNode new_root =
+    public PersistentSet<T> add(T element) {
+	PersistentTreeNode<T,T> new_root =
 	    PersistentTreeNode.put(this.root, this.c, element, element);
 	return (this.root == new_root) ? this :
-	    new PersistentSet(new_root, c);
+	    new PersistentSet<T>(new_root, c);
     }
     /** Determines if the given element belongs to this set. */
-    public boolean contains(Object element) {
+    public boolean contains(T element) {
 	return (PersistentTreeNode.get(this.root, this.c, element)!=null);
     }
 
     /** Make a new <code>PersistentSet</code> identical to this one,
      *  except that it does not contain <code>element</code>. */
-    public PersistentSet remove(Object element) {
-	PersistentTreeNode new_root = 
+    public PersistentSet<T> remove(T element) {
+	PersistentTreeNode<T,T> new_root = 
 	    PersistentTreeNode.remove(this.root, this.c, element);
 	return (this.root == new_root) ? this :
-	    new PersistentSet(new_root, c);
+	    new PersistentSet<T>(new_root, c);
     }
     
     /** Human-readable representation of the set. */
@@ -74,10 +75,11 @@ public class PersistentSet  {
 
     /*---------------------------------------------------------------*/
     /** <code>java.util.Collection</code>s view of the set. */
-    public Set asSet() {
-	return new AbstractSet() {
+    public Set<T> asSet() {
+	return new AbstractSet<T>() {
 	    public boolean contains(Object o) {
-		return PersistentSet.this.contains(o);
+		// oops, not safe if we pass a non-T o in here!
+		return PersistentSet.this.contains((T)o);
 	    }
 	    public boolean isEmpty() {
 		return PersistentSet.this.isEmpty();
@@ -85,19 +87,19 @@ public class PersistentSet  {
 	    public int size() {
 		return PersistentSet.this.size();
 	    }
-	    public Iterator iterator() {
-		final Stack s = new Stack();
+	    public Iterator<T> iterator() {
+		final Stack<PersistentTreeNode<T,T>> s =
+		    new Stack<PersistentTreeNode<T,T>>();
 		if (root!=null) s.push(root);
 
-		return new UnmodifiableIterator() {
+		return new UnmodifiableIterator<T>() {
 		    public boolean hasNext() {
 			return !s.isEmpty();
 		    }
-		    public Object next() {
+		    public T next() {
 			if (s.isEmpty())
 			    throw new NoSuchElementException();
-			final PersistentTreeNode n =
-			    (PersistentTreeNode) s.pop();
+			final PersistentTreeNode<T,T> n = s.pop();
 			if (n.right!=null) s.push(n.right);
 			if (n.left!=null)  s.push(n.left);
 			return n.key; /* element */

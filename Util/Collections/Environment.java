@@ -9,9 +9,9 @@ package harpoon.Util.Collections;
  * since a mark.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Environment.java,v 1.2 2002-02-25 21:09:04 cananian Exp $
+ * @version $Id: Environment.java,v 1.2.2.1 2002-04-09 21:38:18 cananian Exp $
  */
-public interface Environment extends java.util.Map {
+public interface Environment<K,V> extends java.util.Map<K,V> {
     /** A abstract property for marks into an environment. */
     public interface Mark { }
 
