@@ -1,7 +1,7 @@
 // SCCTopSortedGraph.java, created Wed Jan 26 11:39:40 2000 by salcianu
 // Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis.PointerAnalysis;
+package harpoon.Tools.Graphs;
 
 import java.util.Set;
 import java.util.HashSet;
@@ -17,9 +17,9 @@ import harpoon.Util.Util;
  order. 
  * To obtain such a graph, use the <code>topSort</code> static method.
  * It uses a Depth First Search to do the sortting in linear time (see
- * Section 23.4 in Cormen and co for the exact algorithm).
+ * <code>Section 23.4</code> in Cormen and co for the exact algorithm).
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCTopSortedGraph.java,v 1.1.2.2 2000-03-09 07:28:51 salcianu Exp $
+ * @version $Id: SCCTopSortedGraph.java,v 1.1.2.1 2000-03-18 05:27:07 salcianu Exp $
  */
 public class SCCTopSortedGraph {
     
@@ -60,6 +60,9 @@ public class SCCTopSortedGraph {
 	<b>Note:</b> This is just a convenient function, for more than one
 	root, please use the more general <code>topSort(Set)</code>. */
     public static SCCTopSortedGraph topSort(SCComponent root){
+	// sorting an empty component graph is realy easy!
+	if(root == null)
+	    return new SCCTopSortedGraph(null,null);
 	return topSort(Collections.singleton(root));
     }
 
@@ -76,6 +79,10 @@ public class SCCTopSortedGraph {
 	root <code>Sccomponent</code>s (ie <code>SCComponent</code>s without
 	any entering edge. */
     public static SCCTopSortedGraph topSort(Set roots){
+	// sorting an empty component graph is realy easy!
+	if(roots.isEmpty())
+	    return new SCCTopSortedGraph(null,null);
+
 	reached_sccs = new HashSet();
 	// to facilitate insertions into the double linked list of SCCs,
 	// a dummy node is created (now, we don't worry about

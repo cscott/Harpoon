@@ -6,8 +6,6 @@ package harpoon.Analysis.PointerAnalysis;
 import java.util.Set;
 import java.util.HashSet;
 
-import harpoon.ClassFile.HMethod;
-
 import harpoon.IR.Quads.CALL;
 
 
@@ -15,7 +13,7 @@ import harpoon.IR.Quads.CALL;
  * <code>PANodeCS</code> 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANodeCS.java,v 1.1.2.2 2000-03-05 03:12:38 salcianu Exp $
+ * @version $Id: PANodeCS.java,v 1.1.2.3 2000-03-18 05:24:31 salcianu Exp $
  */
 public class PANodeCS extends PANode {
     // a node is a specialization of its parent for a specific call_site

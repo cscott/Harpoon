@@ -12,11 +12,13 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.CALL;
 
+import harpoon.Analysis.MetaMethods.MetaMethod;
+
 /**
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1.2.11 2000-03-05 03:12:37 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.12 2000-03-18 05:24:31 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -46,40 +48,40 @@ public class NodeRepository {
 	return node;
     }
 
-    /** Creates all the parameter nodes associated with <code>method</code>.
+    /** Creates all the parameter nodes associated with <code>mmethod</code>.
      *  <code>param_number</code> must contain the number of formal
-     *  parameters of the method. */
-    public final void addParamNodes(HMethod method, int param_number){
+     *  parameters of the meta-method. */
+    public final void addParamNodes(MetaMethod mmethod, int param_number){
 	// do not create the parameter nodes twice for the same procedure
-	if(param_nodes.containsKey(method)) return;
+	if(param_nodes.containsKey(mmethod)) return;
 	PANode nodes[] = new PANode[param_number];
-	for(int i=0;i<param_number;i++){
+	for(int i = 0; i < param_number; i++){
 	    nodes[i] = getNewNode(PANode.PARAM);
 	}
-	param_nodes.put(method,nodes);
+	param_nodes.put(mmethod,nodes);
     }
 
     /** Returns the parameter node associated with the <code>count</code>th
-     * formal parameter of <code>hm</code>. The parameter nodes should for
-     * <code>hm</code> should be created in advance, using
+     * formal parameter of <code>mmethod</code>. The parameter nodes for
+     * <code>mmethod</code> should be created in advance, using
      * <code>addParamNodes</code>. */
-    public final PANode getParamNode(HMethod method, int count){
+    public final PANode getParamNode(MetaMethod mmethod, int count){
 	// The runtime system will take care of all the debug messages ...
-	return getAllParams(method)[count];
+	return getAllParams(mmethod)[count];
     }
 
     /** Returns all the parameter nodes associated with the
-     * formal parameters of <code>hm</code>. The parameter nodes for
-     * <code>hm</code> should be
+     * formal parameters of <code>mmethod</code>. The parameter nodes for
+     * <code>mmethod</code> should be
      * created in advance, using <code>addParamNodes</code>. */
-    public final PANode[] getAllParams(HMethod method){
+    public final PANode[] getAllParams(MetaMethod mmethod){
 	if(PointerAnalysis.DEBUG){
-	    if(!param_nodes.containsKey(method)){
+	    if(!param_nodes.containsKey(mmethod)){
 		System.out.println("getAllParams: inexistent nodes");
 		System.exit(1);
 	    }
 	}
-	return (PANode[])param_nodes.get(method);
+	return (PANode[]) param_nodes.get(mmethod);
     }
 
     // Returns the EXCEPT node associated with a CALL instruction
@@ -130,14 +132,15 @@ public class NodeRepository {
 	StringBuffer buffer = new StringBuffer();
 
 	buffer.append("PARAMETER NODES:\n");
-	Object[] methods = Debug.sortedSet(param_nodes.keySet());
-	for(int i = 0 ; i < methods.length ; i++){
-	    HMethod method = (HMethod) methods[i];
-	    buffer.append(method.getDeclaringClass().getName());
-	    buffer.append(".");
-	    buffer.append(method.getName());
+	Object[] mmethods = Debug.sortedSet(param_nodes.keySet());
+	for(int i = 0 ; i < mmethods.length ; i++){
+	    MetaMethod mmethod = (MetaMethod) mmethods[i];
+	    buffer.append(mmethod);
+	    // buffer.append(method.getDeclaringClass().getName());
+	    // buffer.append(".");
+	    // buffer.append(method.getName());
 	    buffer.append(":\t");
-	    PANode[] nodes = getAllParams(method);
+	    PANode[] nodes = getAllParams(mmethod);
 	    for(int j = 0 ; j < nodes.length ; j++){
 		buffer.append(nodes[j]);
 		buffer.append(" ");
@@ -265,8 +268,8 @@ public class NodeRepository {
 			     ":" + q.getLineNumber() + " ");
 	    if(PointerAnalysis.DETAILS2)
 		System.out.print("(CALL " + 
-			     method.getDeclaringClass().getName() + "." +
-			     method.getName() + ") ");
+				 method.getDeclaringClass().getName() + "." +
+				 method.getName() + ") ");
 	}
 
 	Set specs = node.getAllSpecializations();

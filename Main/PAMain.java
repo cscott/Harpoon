@@ -5,6 +5,7 @@ package harpoon.Main;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.Set;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -26,15 +27,27 @@ import harpoon.Analysis.PointerAnalysis.PointerAnalysis;
 import harpoon.Analysis.PointerAnalysis.PANode;
 import harpoon.Analysis.PointerAnalysis.ParIntGraph;
 
+import harpoon.Analysis.MetaMethods.MetaMethod;
+import harpoon.Analysis.MetaMethods.MetaCallGraph;
+import harpoon.Analysis.MetaMethods.FakeMetaCallGraph;
+import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
+import harpoon.Analysis.MetaMethods.MetaAllCallers;
+
+import harpoon.Tools.BasicBlocks.BBConverter;
+import harpoon.Tools.BasicBlocks.CachingBBConverter;
+import harpoon.Tools.Graphs.SCComponent;
+import harpoon.Tools.Graphs.SCCTopSortedGraph;
 
 /**
  * <code>PAMain</code> is a simple Pointer Analysis top-level class.
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.7 2000-03-02 22:55:44 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.8 2000-03-18 05:25:57 salcianu Exp $
  */
 public abstract class PAMain {
+
+    private static boolean METAMETHODS = true;
 
     private static String[] example ={
 	"java harpoon.Main.PAMain harpoon.Test.PA.Test1.complex multiplyAdd",
@@ -78,7 +91,10 @@ public abstract class PAMain {
 	    System.exit(1);
 	}
 
-	System.out.print("Pre-PointerAnalysis stuff ... ");
+	// variables for the timing stuff.
+	long tstart = 0;
+	long tstop  = 0;
+
 	long start_pre_time = System.currentTimeMillis();
 	Linker linker = Loader.systemLinker;
 	root_method.name = "main";
@@ -98,27 +114,51 @@ public abstract class PAMain {
 
 	HCodeFactory hcf  = 
 	    new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
+
+	System.out.print("ClassHierarchy ... ");
+	tstart = System.currentTimeMillis();
 	ClassHierarchy ch = 
-	    new QuadClassHierarchy(linker,Collections.singleton(hroot),hcf); 
+	    new QuadClassHierarchy(linker,Collections.singleton(hroot),hcf);
+	tstop  = System.currentTimeMillis();
+	System.out.println((tstop - tstart) + "ms");
 
-	long total_pre_time = System.currentTimeMillis() - start_pre_time;
-	System.out.println(total_pre_time + "ms");
+	BBConverter bbconv = new BBConverter(hcf);
 
-	System.out.print("Constructing CallGraph + AllCallers ... ");
-	long begin_time = System.currentTimeMillis();
-	CallGraph  cg   = new CallGraph(ch,hcf);
-	AllCallers ac   = new AllCallers(ch,hcf);
-	long total_time = System.currentTimeMillis() - begin_time;
+	MetaCallGraph  mcg = null;
+	MetaAllCallers mac = null;
+	
+	if(METAMETHODS){ // real meta-methods
+	    System.out.print("MetaCallGraph ... ");
+	    tstart = System.currentTimeMillis();
+	    mcg = new MetaCallGraphImpl(bbconv, ch, hroot);
+	    tstop  = System.currentTimeMillis();
+	    System.out.println((tstop - tstart) + "ms");
 
-	if(PointerAnalysis.DETERMINISTIC && !PointerAnalysis.TIMING)
-	    total_time = -1;
+	    System.out.print("MetaAllCallers ... ");
+	    tstart = System.currentTimeMillis();
+	    mac = new MetaAllCallers(mcg);
+	    tstop = System.currentTimeMillis();
+	    System.out.println((tstop - tstart) + "ms");
+	}
+	else{ // fake meta-methods
+	    System.out.print("FakeMetaCallGraph ... ");
+	    tstart = System.currentTimeMillis();
+	    CallGraph  cg = new CallGraph(ch, hcf);
+	    mcg = new FakeMetaCallGraph(cg, ch.callableMethods());
+	    tstop  = System.currentTimeMillis();
+	    System.out.println((tstop - tstart) + "ms");
 
-	System.out.println(total_time + "ms");
+	    System.out.print("(Fake)MetaAllCallers ... ");
+	    tstart = System.currentTimeMillis();
+	    mac = new MetaAllCallers(mcg);
+	    tstop  = System.currentTimeMillis();
+	    System.out.println((tstop - tstart) + "ms");
+	}
 
-	pa = new PointerAnalysis(cg,ac,hcf);
+	pa = new PointerAnalysis(mcg, mac, bbconv);
 
-	if(params.length>1){
-	    for(int i=1;i<params.length;i++){
+	if(params.length > 1){
+	    for(int i = 1; i < params.length; i++){
 		getMethodName(params[i],analyzed_method);
 		if(analyzed_method.declClass == null)
 		    analyzed_method.declClass = root_method.declClass;
@@ -162,14 +202,21 @@ public abstract class PAMain {
 	    return;
 	}
 
-	ParIntGraph int_pig = pa.getIntParIntGraph(hmethod);
-	ParIntGraph ext_pig = pa.getExtParIntGraph(hmethod);
-	ParIntGraph pig_inter_thread = pa.threadInteraction(hmethod);
-	PANode[] nodes = pa.getParamNodes(hmethod);
-	System.out.println("METHOD " + hmethod);
+	MetaMethod mm;
+
+	if(METAMETHODS)
+	    mm = new MetaMethod(hmethod,false);
+	else
+	    mm = new MetaMethod(hmethod,true);
+
+	ParIntGraph int_pig = pa.getIntParIntGraph(mm);
+	ParIntGraph ext_pig = pa.getExtParIntGraph(mm);
+	ParIntGraph pig_inter_thread = pa.threadInteraction(mm);
+	PANode[] nodes = pa.getParamNodes(mm);
+	System.out.println("META-METHOD " + mm);
 	System.out.print("POINTER PARAMETERS: ");
 	System.out.print("[ ");
-	for(int i=0;i<nodes.length;i++)
+	for(int i = 0; i < nodes.length; i++)
 	    System.out.print(nodes[i] + " ");
 	System.out.println("]");
 	System.out.print("INTERNAL GRAPH AT THE END OF THE METHOD:");

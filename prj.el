@@ -59,6 +59,7 @@
 (jde-set-project-name "harpoon")
 (jde-set-variables 
  '(jde-run-option-properties nil)
+ '(user-mail-address "salcianu@MIT.EDU")
  '(jde-run-option-stack-size (quote ((128 . "kilobytes") (400 . "kilobytes"))))
  '(jde-gen-buffer-templates (quote (("Class" . jde-gen-class) ("Console" . jde-gen-console) ("Swing App" . jde-gen-jfc-app))))
  '(jde-compile-option-command-line-args "")

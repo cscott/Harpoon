@@ -19,13 +19,14 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.Vector;
+
 /**
  * <code>CallGraph</code> constructs a simple directed call graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.1.2.3 1999-10-14 20:25:04 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.1.2.4 2000-03-18 05:25:12 salcianu Exp $
  */
-
 public class CallGraph  {
     final HCodeFactory hcf;
     final ClassHierarchy ch;
@@ -64,6 +65,28 @@ public class CallGraph  {
 	return retval;
     }
     final private Map cache = new HashMap();
+
+    /** Returns a list of all the <code>CALL</code>s quads in the code 
+	of <code>hm</code>. */
+    public CALL[] getCallSites(final HMethod hm){
+	CALL[] retval = (CALL[]) cache_cs.get(hm);
+	if(retval != null)
+	    return retval;
+	final Vector v = new Vector();
+
+	final HCode hc = hcf.convert(hm);
+	if (hc==null)
+	    retval = new CALL[0];
+	else{
+	    for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
+		Quad q = (Quad) it.next();
+		if (q instanceof CALL) v.add(q);
+	    }	    
+	    retval = (CALL[]) v.toArray(new CALL[v.size()]);
+	}
+	return retval;
+    }
+    final private Map cache_cs = new HashMap();
 
     /** Return a list of all possible methods called by this method at
      *  a particular call site. */

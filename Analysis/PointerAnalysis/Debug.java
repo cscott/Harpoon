@@ -6,11 +6,13 @@ package harpoon.Analysis.PointerAnalysis;
 import java.util.Set;
 import java.util.Arrays;
 
+import harpoon.Tools.UComp;
+
 /**
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.1.2.2 2000-02-12 01:41:32 salcianu Exp $
+ * @version $Id: Debug.java,v 1.1.2.3 2000-03-18 05:24:30 salcianu Exp $
  */
 public abstract class Debug {
 

@@ -17,6 +17,9 @@ import harpoon.Temp.Temp;
 
 import harpoon.IR.Quads.NEW;
 
+import harpoon.Analysis.MetaMethods.MetaMethod;
+import harpoon.Analysis.MetaMethods.GenType;
+
 
 /**
  * <code>InterThreadPA</code> groups together the functions related to the
@@ -25,7 +28,7 @@ import harpoon.IR.Quads.NEW;
  * too big and some code segmentation is always good! 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.15 2000-03-05 03:49:56 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.16 2000-03-18 05:24:31 salcianu Exp $
  */
 abstract class InterThreadPA {
     
@@ -55,13 +58,13 @@ abstract class InterThreadPA {
 	    if(DEBUG)
 		System.out.println(nt + " was chosen");
 
-	    HMethod[] ops = get_run_methods(nt,pa);
+	    MetaMethod[] ops = get_run_mmethods(nt,pa);
 	    analyzed_threads.add(nt);
 	    if((ops == null) || (ops.length==0) ||
-	       !analyzable_run_methods(ops,pa)) continue;	    
+	       !analyzable_run_mmethods(ops,pa)) continue;	    
 
 	    ParIntGraph old_pig = pig;
-	    pig = interaction_nt(pig,nt,ops,pa);
+	    pig = interaction_nt(pig, nt, ops, pa);
 
 	    processed_threads.add(nt);
 
@@ -82,12 +85,12 @@ abstract class InterThreadPA {
     // See if the run method(s) that could be the body of a thread are 
     // analyzable with regard to <code>pa</code> (i.e. <code>pa</code>
     // can satisfy queries about these methods.)
-    private static boolean analyzable_run_methods(HMethod[] ops,
-						  PointerAnalysis pa){
+    private static boolean analyzable_run_mmethods(MetaMethod[] ops,
+						   PointerAnalysis pa){
 	for(int i = 0 ; i < ops.length ; i++)
 	    if((ops[i] == null) || (pa.getExtParIntGraph(ops[i]) == null))
 		return false;
-	return true;			    
+	return true;
     }
 
 
@@ -106,7 +109,8 @@ abstract class InterThreadPA {
 
     // Returns a vector containing all the run() methods that could be
     // the body of the threads abstracted by nt.
-    private static HMethod[] get_run_methods(PANode nt, PointerAnalysis pa){
+    private static MetaMethod[] get_run_mmethods(PANode nt,
+						 PointerAnalysis pa){
 	// TODO: think about the LOAD && PARAM thread nodes (not only INSIDE) 
 	NEW q = (NEW) pa.getNodeRepository().node2Code(nt);
 	HClass hclass = q.hclass();
@@ -126,7 +130,10 @@ abstract class InterThreadPA {
 	if(DEBUG)
 	    System.out.println("Run method: " + hm);
 
-	return new HMethod[]{hm};
+	MetaMethod mm_run = 
+	    new MetaMethod(hm,new GenType[]{new GenType(hclass,GenType.MONO)});
+
+	return new MetaMethod[]{mm_run};
     }
 
 
@@ -137,7 +144,7 @@ abstract class InterThreadPA {
     // anything between 0 and infinity); a fixed-point algorithm is necessary
     // in this case.
     private static ParIntGraph interaction_nt(ParIntGraph pig, PANode nt,
-					HMethod[] ops, PointerAnalysis pa){
+				      MetaMethod[] ops, PointerAnalysis pa){
 	boolean only_once = (pig.tau.getValue(nt)==1);
 
 	if(DEBUG)
@@ -154,12 +161,12 @@ abstract class InterThreadPA {
 
 	if(only_once)
 	    // a single interaction takes place
-	    pig = interact_once(pig,nt,ops,pa);
+	    pig = interact_once(pig, nt, ops, pa);
 	else{
 	    // a fixed-point algorithm is necessary in this case
 	    while(true){
 		ParIntGraph previous_pig = pig;
-		pig = interact_once(pig,nt,ops,pa);
+		pig = interact_once(pig, nt, ops, pa);
 		if(pig.equals(previous_pig)) break;
 	    }
 	}
@@ -196,13 +203,13 @@ abstract class InterThreadPA {
     // with all the possible run() methods (the body of the thread) and
     // joining the results.
     private static ParIntGraph interact_once(ParIntGraph pig, PANode nt,
-				      HMethod[] ops, PointerAnalysis pa){
+				      MetaMethod[] ops, PointerAnalysis pa){
 	int nb_ops = ops.length;
 	Util.assert(nb_ops > 0, "No run method for the thread" + nt);
 
 	// special, optimized case: only one run method to analyze
 	if(nb_ops == 1)
-	    return interact_once_op(pig,nt,ops[0],pa);
+	    return interact_once_op(pig, nt, ops[0], pa);
 
 	// general case: many possible run() method. The following code could
 	// seem too complicate but everything has been done to reduce the
@@ -211,12 +218,12 @@ abstract class InterThreadPA {
 	// compute the first term of the join operation:
 	// the interaction with the first run() method
 	ParIntGraph pig_after = 
-	    interact_once_op(pig,nt,ops[0],pa);
+	    interact_once_op(pig, nt, ops[0], pa);
 	
 	// join to it all the other terms (interactions with all the
 	// other run() methods).
 	for(int i = 1 ; i < nb_ops ; i++)
-	    pig_after.join(interact_once_op(pig,nt,ops[i],pa)); 
+	    pig_after.join(interact_once_op(pig, nt, ops[i], pa)); 
 
 	return pig_after;
     }
@@ -225,7 +232,7 @@ abstract class InterThreadPA {
     // Computes the interaction between the Starter and a SINGLE thread having
     // the node nt as a receiver and op as the run() body function.
     private static ParIntGraph interact_once_op(ParIntGraph pig_starter,
-			       PANode nt,HMethod op, PointerAnalysis pa){
+			       PANode nt, MetaMethod op, PointerAnalysis pa){
 	ParIntGraph pig[] = new ParIntGraph[2];
 	pig[0] = pig_starter;
 	pig[1] = pa.getExtParIntGraph(op);
@@ -451,9 +458,9 @@ abstract class InterThreadPA {
 
 	while(!W.isEmpty()){
 	    PANode nt1 = (PANode) W.remove();
-	    HMethod[] ops = get_run_methods(nt1,pa);
-	    if(!analyzable_run_methods(ops,pa)) continue;
-	    for(int i=0;i<ops.length;i++){
+	    MetaMethod[] ops = get_run_mmethods(nt1,pa);
+	    if(!analyzable_run_mmethods(ops,pa)) continue;
+	    for(int i = 0; i < ops.length; i++){
 		PAThreadMap tau_nt1 = pa.getExtParIntGraph(ops[i]).tau;
 		Enumeration enum = tau_nt1.activeThreads();
 		while(enum.hasMoreElements()){

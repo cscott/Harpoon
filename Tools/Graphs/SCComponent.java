@@ -1,7 +1,7 @@
 // SCComponent.java, created Mon Jan 24 19:26:30 2000 by salcianu
 // Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis.PointerAnalysis;
+package harpoon.Tools.Graphs;
 
 import java.util.Vector;
 import java.util.HashSet;
@@ -11,8 +11,16 @@ import java.util.Hashtable;
 import java.util.Arrays;
 import java.util.Collections;
 
+
+// TODO: These things allow me to obtain some nice debug messages for
+// my Pointer Analysis stuff. Remove them when the PointerAnalysis is
+// finished.
 import harpoon.Analysis.Quads.CallGraph;
-import harpoon.ClassFile.HMethod;
+import harpoon.Analysis.MetaMethods.MetaMethod;
+import harpoon.Analysis.MetaMethods.MetaCallGraph;
+
+import harpoon.Tools.UComp;
+
 import harpoon.Util.Util;
 
 /**
@@ -31,7 +39,7 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCComponent.java,v 1.1.2.5 2000-03-09 07:28:50 salcianu Exp $
+ * @version $Id: SCComponent.java,v 1.1.2.1 2000-03-18 05:27:07 salcianu Exp $
  */
 public final class SCComponent implements Comparable{
 
@@ -265,7 +273,7 @@ public final class SCComponent implements Comparable{
 	    if(DETERMINISTIC) Arrays.sort(comp.next);
 	    comp.prev  = (SCComponent[]) compInt.prev.toArray(
 			      new SCComponent[compInt.prev.size()]);
-	    if(DETERMINISTIC) Arrays.sort(comp.next);
+	    if(DETERMINISTIC) Arrays.sort(comp.prev);
 	}
     }
 
@@ -332,6 +340,12 @@ public final class SCComponent implements Comparable{
 	return nodes;
     }
 
+    /** Returns the number of nodes in <code>this</code> strongly connected
+	component. */
+    public final int size(){
+	return nodes.size();
+    }
+
     /** Return the minimum element of this SCC 
 	(according to the default UComp.uc comparator). */
     public final Object min(){
@@ -372,7 +386,51 @@ public final class SCComponent implements Comparable{
     }
 
     /** Pretty print debug function. */
-    public final String toString(CallGraph cg){
+    public final String toString(){
+	StringBuffer buffer = new StringBuffer();
+
+	buffer.append("SCC" + id + " (size " + nodes.size() + ") {\n");
+	for(Iterator it = nodes.iterator(); it.hasNext(); ){
+	    Object o = it.next();
+	    buffer.append(o);
+	    buffer.append("\n");
+	}
+	buffer.append("}\n");
+	buffer.append(prevStringRepr());
+	buffer.append(nextStringRepr());
+	return buffer.toString();
+    }
+
+    // Returns a string representation of the "prev" links.
+    private String prevStringRepr(){
+	StringBuffer buffer = new StringBuffer();
+	int nb_prev = prevLength();
+	if(nb_prev > 0){
+	    buffer.append("Prev:");
+	    for(int i = 0; i < nb_prev ; i++){
+		buffer.append(" SCC" + prev(i).id);
+	    }
+	    buffer.append("\n");
+	}
+	return buffer.toString();
+    }
+
+    // Returns a string representation of the "next" links.
+    private String nextStringRepr(){
+	StringBuffer buffer = new StringBuffer();
+	int nb_next = nextLength();
+	if(nb_next > 0){
+	    buffer.append("Next:");
+	    for(int i = 0; i < nb_next ; i++){
+		buffer.append(" SCC" + next(i).id);
+	    }
+	    buffer.append("\n");
+	}
+	return buffer.toString();
+    }
+
+    /** Pretty print debug function for SCC's of <code>MetaMethod</code>s. */
+    public final String toString(MetaCallGraph mcg){
 	StringBuffer buffer = new StringBuffer();
 
 	boolean extended = nodes.size() > 1;
@@ -384,7 +442,7 @@ public final class SCComponent implements Comparable{
 	    buffer.append(o);
 	    buffer.append("\n");
 	    if(extended){
-		Object[] next = cg.calls((HMethod)o);
+		Object[] next = mcg.getCallees((MetaMethod)o);
 		for(int i = 0; i<next.length; i++)
 		    if(nodes.contains(next[i]))
 		       buffer.append("  " + next[i] + "\n");
@@ -392,22 +450,8 @@ public final class SCComponent implements Comparable{
 	    }
 	}
 	buffer.append("}\n");
-	int nb_prev = prevLength();
-	if(nb_prev > 0){
-	    buffer.append("Prev:");
-	    for(int i = 0; i < nb_prev ; i++){
-		buffer.append(" SCC" + prev(i).id);
-	    }
-	    buffer.append("\n");
-	}
-	int nb_next = nextLength();
-	if(nb_next > 0){
-	    buffer.append("Next:");
-	    for(int i = 0; i < nb_next ; i++){
-		buffer.append(" SCC" + next(i).id);
-	    }
-	    buffer.append("\n");
-	}
+	buffer.append(prevStringRepr());
+	buffer.append(nextStringRepr());
 	return buffer.toString();
     }
 

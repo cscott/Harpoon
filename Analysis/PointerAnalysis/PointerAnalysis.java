@@ -46,6 +46,15 @@ import harpoon.IR.Quads.MONITORENTER;
 import harpoon.IR.Quads.MONITOREXIT;
 import harpoon.IR.Quads.FOOTER;
 
+import harpoon.Analysis.MetaMethods.MetaMethod;
+import harpoon.Analysis.MetaMethods.MetaCallGraph;
+import harpoon.Analysis.MetaMethods.MetaAllCallers;
+
+import harpoon.Tools.BasicBlocks.BBConverter;
+import harpoon.Tools.BasicBlocks.CachingSCCBBFactory;
+import harpoon.Tools.Graphs.SCComponent;
+import harpoon.Tools.Graphs.SCCTopSortedGraph;
+import harpoon.Tools.UComp;
 
 /**
  * <code>PointerAnalysis</code> is the main class of the Pointer Analysis
@@ -54,19 +63,28 @@ import harpoon.IR.Quads.FOOTER;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.24 2000-03-08 00:36:02 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.25 2000-03-18 05:24:31 salcianu Exp $
  */
 public class PointerAnalysis {
 
     public static final boolean DEBUG = false;
     public static final boolean DEBUG2 = false;
     public static final boolean DEBUG_SCC = true;
+
+    /** Makes the pointer analysis deterministic to make the debug easier.
+	The main source of undeterminism in our code is the intensive use of
+	<code>Set</code>s which doesn't offer any guarantee about the order
+	in which they iterates over their elements. */
     public static final boolean DETERMINISTIC = true;
+
+    /** Turns on the priniting of some timing info. */
     public static final boolean TIMING = true;
     public static final boolean STATS = true;
-    public static final boolean DETAILS = true;
+    public static final boolean DETAILS = false;
     public static final boolean DETAILS2 = false;
 
+    /** Controls the recording of data about the thread nodes that are
+	touched after being started. */
     public static final boolean TOUCHED_THREAD_SUPPORT = true;
 
     /** Activates the context sensitivity. When this flag is turned on, 
@@ -82,21 +100,21 @@ public class PointerAnalysis {
     public static final String ARRAY_CONTENT = "array_elements";
 
     // The HCodeFactory providing the actual code of the analyzed methods
-    private CallGraph cg;
-    public final CallGraph getCallGraph() { return cg; }
-    private AllCallers ac;
+    private MetaCallGraph  mcg;
+    public final MetaCallGraph getMetaCallGraph() { return mcg; }
+    private MetaAllCallers mac;
     private CachingSCCBBFactory scc_bb_factory;
 
     // Maintains the partial points-to and escape information for the
     // analyzed methods. This info is successively refined by the fixed
     // point algorithm until no further change is possible
-    // mapping HMethod -> ParIntGraph.
+    // mapping MetaMethod -> ParIntGraph.
     private Hashtable hash_proc_int = new Hashtable();
 
     // Maintains the external view of the parallel interaction graphs
     // attached with the analyzed methods. These "bricks" are used
     // for the processing of the CALL nodes.
-    // Mapping HMethod -> ParIntGraph.
+    // Mapping MetaMethod -> ParIntGraph.
     private Hashtable hash_proc_ext = new Hashtable();
 
     /** Creates a <code>PointerAnalysis</code>.
@@ -104,23 +122,24 @@ public class PointerAnalysis {
      *<ul>
      *<li>The <code>CallGraph</code> and the <code>AllCallers</code> that
      * models the relations between the different methods;
-     *<li>A <code>HCodefactory</code> that is used to generate the actual
+     *<li>A <code>BBConverter</code> that is used to generate the actual
      * code of the methods and
      *</ul> */
-    public PointerAnalysis(CallGraph _cg, AllCallers _ac, HCodeFactory _hcf){
-	cg  = _cg;
-	ac  = _ac;
-	scc_bb_factory = new CachingSCCBBFactory(_hcf);
+    public PointerAnalysis(MetaCallGraph _mcg, MetaAllCallers _mac,
+			   BBConverter bbconv){
+	mcg  = _mcg;
+	mac  = _mac;
+	scc_bb_factory = new CachingSCCBBFactory(bbconv);
     }
 
     /** Returns the full (internal) <code>ParIntGraph</code> attached to
      * the method <code>hm</code> i.e. the graph at the end of the method.
      * Returns <code>null</code> if no such graph is available. */
-    public ParIntGraph getIntParIntGraph(HMethod hm){
-	ParIntGraph pig = (ParIntGraph)hash_proc_int.get(hm);
+    public ParIntGraph getIntParIntGraph(MetaMethod mm){
+	ParIntGraph pig = (ParIntGraph)hash_proc_int.get(mm);
 	if(pig == null){
-	    analyze(hm);
-	    pig = (ParIntGraph)hash_proc_int.get(hm);
+	    analyze(mm);
+	    pig = (ParIntGraph)hash_proc_int.get(mm);
 	}
 	return pig;
     }
@@ -133,44 +152,44 @@ public class PointerAnalysis {
      * graph is supposed to be inlined into the graph of the caller, so the 
      * parameters will disappear anyway).
      * Returns <code>null</code> if no such graph is available. */
-    public ParIntGraph getExtParIntGraph(HMethod hm){
-	return getExtParIntGraph(hm,true);
+    public ParIntGraph getExtParIntGraph(MetaMethod mm){
+	return getExtParIntGraph(mm,true);
     }
 
 
-    // Map<HMethod, Map<CALL,ParIntGraph>>
+    // Map<MetaMethod, Map<CALL,ParIntGraph>>
     private Map specs = new Hashtable();
 
     // Returns a version of the external graph for method hm that is
     // specialized for the call site q
-    ParIntGraph getSpecializedExtParIntGraph(HMethod hm, CALL q){
+    ParIntGraph getSpecializedExtParIntGraph(MetaMethod mm, CALL q){
 	// first, search in the cache
-	Map map_hm = (Map) specs.get(hm);
-	if(map_hm == null){
-	    map_hm = new Hashtable();
-	    specs.put(hm,map_hm);
+	Map map_mm = (Map) specs.get(mm);
+	if(map_mm == null){
+	    map_mm = new Hashtable();
+	    specs.put(mm,map_mm);
 	}
-	if(map_hm.containsKey(q))
-	    return (ParIntGraph) map_hm.get(q);
+	if(map_mm.containsKey(q))
+	    return (ParIntGraph) map_mm.get(q);
 
 	// if the specialization was not already in the cache,
 	// try to recover the original ParIntGraph (if it exists) and
 	// specialize it
 
-	ParIntGraph original_pig = getExtParIntGraph(hm);
+	ParIntGraph original_pig = getExtParIntGraph(mm);
 	if(original_pig == null) return null;
 
 	ParIntGraph new_pig = original_pig.specialize(q);
-	map_hm.put(q,new_pig);
+	map_mm.put(q,new_pig);
 
 	return new_pig;	
     }
 
-    ParIntGraph getExtParIntGraph(HMethod hm, boolean compute_it){
-	ParIntGraph pig = (ParIntGraph)hash_proc_ext.get(hm);
+    ParIntGraph getExtParIntGraph(MetaMethod mm, boolean compute_it){
+	ParIntGraph pig = (ParIntGraph)hash_proc_ext.get(mm);
 	if((pig == null) && compute_it){
-	    analyze(hm);
-	    pig = (ParIntGraph)hash_proc_ext.get(hm);
+	    analyze(mm);
+	    pig = (ParIntGraph)hash_proc_ext.get(mm);
 	}
 	return pig;
     }
@@ -178,8 +197,8 @@ public class PointerAnalysis {
     /** Returns the parameter nodes of the method <code>hm</code>. This is
      * useful for the understanding of the <code>ParIntGraph</code> attached
      * to <code>hm</code> */
-    public PANode[] getParamNodes(HMethod hm){
-	return nodes.getAllParams(hm);
+    public PANode[] getParamNodes(MetaMethod mm){
+	return nodes.getAllParams(mm);
     }
 
     /** Returns the parallel interaction graph for the end of the method 
@@ -188,14 +207,13 @@ public class PointerAnalysis {
 	&quot;recover&quot; some of the escaped nodes.<br>
 	See Section 10 <i>Inter-thread Analysis</i> in the original paper of
 	Martin and John Whaley for more details. */
-    public ParIntGraph threadInteraction(HMethod hm){
-	ParIntGraph pig = (ParIntGraph) getIntParIntGraph(hm);
+    public ParIntGraph threadInteraction(MetaMethod mm){
+	ParIntGraph pig = (ParIntGraph) getIntParIntGraph(mm);
 	return InterThreadPA.resolve_threads(pig,this);
     }
 
 
-    // Worklist for the inter-procedural analysis: only <code>HMethod</code>s
-    // will be put here.
+    // Worklist of <code>MetaMethod</code>s for the inter-procedural analysis
     private PAWorkStack W_inter_proc = new PAWorkStack();
 
     // Worklist for the intra-procedural analysis; at any moment, it
@@ -208,7 +226,7 @@ public class PointerAnalysis {
 
     // Top-level procedure for the analysis. Receives the main method as
     // parameter. For the moment, it is not doing the inter-thread analysis
-    private void analyze(HMethod hm){
+    private void analyze(MetaMethod mm){
 
 	// Navigator for the SCC building phase. The code is complicated
 	// by the fact that we are interested only in yet unexplored methods
@@ -216,35 +234,36 @@ public class PointerAnalysis {
 	SCComponent.Navigator navigator =
 	    new SCComponent.Navigator(){
 		    public Object[] next(Object node){
-			HMethod[] hms  = cg.calls((HMethod)node);
-			HMethod[] hms2 = get_new_methods(hms);
+			MetaMethod[] mms  = mcg.getCallees((MetaMethod)node);
+			MetaMethod[] mms2 = get_new_mmethods(mms);
 
 			if(DETERMINISTIC)
-			    Arrays.sort(hms2, UComp.uc);
-			return hms2;
+			    Arrays.sort(mms2, UComp.uc);
+
+			return mms2;
 		    }
 
 		    public Object[] prev(Object node){
-			HMethod[] hms = ac.directCallers((HMethod)node);
-			HMethod[] hms2 = get_new_methods(hms);
+			MetaMethod[] mms  = mac.getCallers((MetaMethod)node);
+			MetaMethod[] mms2 = get_new_mmethods(mms);
 
 			if(DETERMINISTIC)
-			    Arrays.sort(hms2, UComp.uc);
-			return hms2;
+			    Arrays.sort(mms2, UComp.uc);
+			return mms2;
 		    }
 
 		    // selects only the (yet) unanalyzed methods
-		    private HMethod[] get_new_methods(HMethod[] hms){
+		    private MetaMethod[] get_new_mmethods(MetaMethod[] mms){
 			int count = 0;
-			for(int i = 0 ; i < hms.length ; i++)
-			    if(!hash_proc_ext.containsKey(hms[i]))
+			for(int i = 0 ; i < mms.length ; i++)
+			    if(!hash_proc_ext.containsKey(mms[i]))
 				count++;
-			HMethod[] new_hms = new HMethod[count];
+			MetaMethod[] new_mms = new MetaMethod[count];
 			int j = 0;
-			for(int i = 0 ; i < hms.length ; i++)
-			    if(!hash_proc_ext.containsKey(hms[i]))
-				new_hms[j++]=hms[i];
-			return new_hms;
+			for(int i = 0 ; i < mms.length ; i++)
+			    if(!hash_proc_ext.containsKey(mms[i]))
+				new_mms[j++] = mms[i];
+			return new_mms;
 		    }
 		};
 
@@ -255,30 +274,30 @@ public class PointerAnalysis {
 	  System.out.println("Creating the strongly connected components " +
 			     "of methods ...");
 
-	SCComponent.DETERMINISTIC = DETERMINISTIC;
+	// SCComponent.DETERMINISTIC = DETERMINISTIC;
 
 	// the topologically sorted graph of strongly connected components
 	// composed of mutually recursive methods (the edges model the
 	// caller-callee interaction).
-	SCCTopSortedGraph method_sccs = 
-	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(hm,navigator));
+	SCCTopSortedGraph mmethod_sccs = 
+	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(mm,navigator));
 
 
 	if(DEBUG_SCC || TIMING){
 	    long total_time = System.currentTimeMillis() - begin_time;
 	    int counter = 0;
-	    int methods = 0;
-	    SCComponent scc = method_sccs.getFirst();
+	    int mmethods = 0;
+	    SCComponent scc = mmethod_sccs.getFirst();
 
 	    if(DEBUG_SCC)
 		System.out.println("===== SCCs of methods =====");
 
 	    while(scc != null){
 		if(DEBUG_SCC){
-		    System.out.print(scc.toString(cg));
+		    System.out.print(scc.toString(mcg));
 		}
 		counter++;
-		methods += scc.nodeSet().size();
+		mmethods += scc.nodeSet().size();
 		scc = scc.nextTopSort();
 	    }
 
@@ -287,18 +306,18 @@ public class PointerAnalysis {
 
 	    if(TIMING)
 		System.out.println(counter + " component(s); " +
-				   methods + " method(s); " +
+				   mmethods + " meta-method(s); " +
 				   total_time + "ms processing time");
 	}
 
-	SCComponent scc = method_sccs.getLast();
+	SCComponent scc = mmethod_sccs.getLast();
 	while(scc != null){
 	    analyze_inter_proc_scc(scc);
 	    scc = scc.prevTopSort();
 	}
 
 	if(TIMING)
-	    System.out.println("analyze(" + hm + ") finished in " +
+	    System.out.println("analyze(" + mm + ") finished in " +
 			  (System.currentTimeMillis() - begin_time) + "ms");
     }
 
@@ -310,39 +329,38 @@ public class PointerAnalysis {
 	// methods. The others will be added later (because they are reachable
 	// in the AllCaller graph from this initial node). 
 
-	HMethod method = null;
+	MetaMethod mmethod = null;
 	if(DETERMINISTIC)
-	    method = (HMethod) scc.min();
+	    mmethod = (MetaMethod) scc.min();
 	else
-	    method = (HMethod) scc.nodes().next();
+	    mmethod = (MetaMethod) scc.nodes().next();
 
 	// if SCC composed of a native or abstract method, return immediately!
-	if(!analyzable(method)){
+	if(!analyzable(mmethod.getHMethod())){
 	    if(DEBUG)
-		System.out.println(scc.toString(cg) + " is unanalyzable");
+		System.out.println(scc.toString(mcg) + " is unanalyzable");
 	    return;
 	}
-	W_inter_proc.add(method);
+	W_inter_proc.add(mmethod);
 
-	Set methods = scc.nodeSet();
+	Set mmethods = scc.nodeSet();
 	boolean must_check = scc.isLoop();
 
 	if(DEBUG)
-	    System.out.print(scc.toString(cg));
+	    System.out.print(scc.toString(mcg));
 
 	long begin_time = 0;
 	if(TIMING) begin_time = System.currentTimeMillis();
 
 	while(!W_inter_proc.isEmpty()){
 	    // grab a method from the worklist
-	    HMethod hm_work = (HMethod)W_inter_proc.remove();
+	    MetaMethod mm_work = (MetaMethod) W_inter_proc.remove();
 
-	    ParIntGraph old_info = (ParIntGraph) hash_proc_ext.get(hm_work);
-	    analyze_intra_proc(hm_work);
-	    ParIntGraph new_info = (ParIntGraph) hash_proc_ext.get(hm_work);
+	    ParIntGraph old_info = (ParIntGraph) hash_proc_ext.get(mm_work);
+	    analyze_intra_proc(mm_work);
+	    ParIntGraph new_info = (ParIntGraph) hash_proc_ext.get(mm_work);
 
 	    // new info?
-	    // TODO: this test is overkill! think about it!
 	    if(must_check && !new_info.equals(old_info)){
 
 		//System.out.println("----- The information has changed:");
@@ -352,60 +370,63 @@ public class PointerAnalysis {
 		// since the original graph associated with hm_work changed,
 		// the old specializations for it are no longer actual;
 		if(CONTEXT_SENSITIVE)
-		    specs.remove(hm_work);
+		    specs.remove(mm_work);
+
+		Object[] mms = mac.getCallers(mm_work);    
 
 		if(DETERMINISTIC){
-		    Object[] hms = ac.directCallers(hm_work);
-		    Arrays.sort(hms,UComp.uc);
-		    for(int i = 0; i < hms.length ; i++){
-			HMethod hm_caller = (HMethod) hms[i];
-			if(methods.contains(hm_caller))
-			    W_inter_proc.add(hm_caller);
-		    }
+		    Arrays.sort(mms,UComp.uc);
 		}
-		else{
-		    Iterator it = ac.directCallerSet(hm_work).iterator();
-		    while(it.hasNext()){
-			HMethod hm_caller = (HMethod) it.next();
-			if(methods.contains(hm_caller))
-			    W_inter_proc.add(hm_caller);
-		    }
+		for(int i = 0; i < mms.length ; i++){
+		    MetaMethod mm_caller = (MetaMethod) mms[i];
+		    if(mmethods.contains(mm_caller))
+			W_inter_proc.add(mm_caller);
 		}
 	    }
 	}
 
 	scc_bb_factory.clear();
 
+	// the meta methods of this SCC will never be revisited, so the
+	// specializations generated for the call sites inside them are not
+	// usefull any more
+	if(CONTEXT_SENSITIVE)
+	    specs.clear();
+
 	long total_time = System.currentTimeMillis() - begin_time;
 
 	if(TIMING)
-	    System.out.println("SCC" + scc.getId() + " analyzed in " + 
+	    System.out.println("SCC" + scc.getId() + 
+			       "\t (" + scc.size() + " meta-method(s))\t" + 
 			       total_time + " ms");
     }
 
     // Mapping BB -> ParIntGraph.
     Hashtable bb2pig = new Hashtable();
 
-    HMethod current_intra_method = null;
+    MetaMethod current_intra_mmethod = null;
     ParIntGraph initial_pig = null;
 
     // Performs the intra-procedural pointer analysis.
-    private void analyze_intra_proc(HMethod hm){
+    private void analyze_intra_proc(MetaMethod mm){
 	if(DEBUG2)
-	    System.out.println("METHOD: " + hm);
+	    System.out.println("META METHOD: " + mm);
 
-	if(STATS) Stats.record_method_pass(hm);
+	if(STATS) Stats.record_mmethod_pass(mm);
 
-	current_intra_method = hm;
+	current_intra_mmethod = mm;
 
 	// cut the method into SCCs of basic blocks
-	SCComponent scc = scc_bb_factory.computeSCCBB(hm).getFirst();
+	SCComponent scc = 
+	    scc_bb_factory.computeSCCBB(mm.getHMethod()).getFirst();
+
+	if(STATS) Stats.record_mmethod(mm,scc);
 
 	// construct the ParIntGraph at the beginning of the method 
 	BasicBlock first_bb = (BasicBlock)scc.nodes().next();
 	HEADER first_hce = (HEADER) first_bb.getFirst();
 	METHOD m  = (METHOD) first_hce.next(1); 
-	initial_pig = get_method_initial_pig(hm,m);
+	initial_pig = get_mmethod_initial_pig(mm,m);
 
 	// analyze the SCCs in decreasing topological order
 	while(scc != null){
@@ -473,12 +494,10 @@ public class PointerAnalysis {
 	    }
 	}
 
-	if(CONTEXT_SENSITIVE)
-	    specs.clear();
     }
 
 
-    /** The Parallel Interference Graph which is updated by the
+    /** The Parallel Interaction Graph which is updated by the
      *  <code>analyze_basic_block</code>. This should normally be a
      *  local variable of that function but it must be also accessible
      *  to the <code>PAVisitor</code> class */
@@ -550,13 +569,9 @@ public class PointerAnalysis {
 	    else{
 		PANode load_node = nodes.getCodeNode(q,PANode.LOAD); 
 		set_S.add(load_node);
-
 		bbpig.G.O.addEdges(set_E,f,load_node);
-
 		bbpig.eo.add(set_E,f,load_node,bbpig.G.I);
-
 		bbpig.G.I.addEdges(l1,set_S);
-
 		bbpig.G.propagate(set_E);
 
 		// update the action repository
@@ -609,7 +624,7 @@ public class PointerAnalysis {
 	public void visit(THROW q){
 	    Temp tmp = q.throwable();
 	    Set set = bbpig.G.I.pointedNodes(tmp);
-	    // TAKE CARE: r_excp is assumed to be empty before!
+	    // TAKE CARE: excp is assumed to be empty before!
 	    bbpig.G.excp.addAll(set);
 	}
 	
@@ -674,7 +689,7 @@ public class PointerAnalysis {
 		return;
 	    }
 
-	    InterProcPA.analyze_call(current_intra_method,
+	    InterProcPA.analyze_call(current_intra_mmethod,
 				     q,     // the CALL site
 				     bbpig, // the graph before the call
 				     PointerAnalysis.this);
@@ -686,10 +701,10 @@ public class PointerAnalysis {
 	// some other methods can be called, it is possible that some of
 	// them do not start a thread.)
 	private boolean thread_start_site(CALL q){
-	    HMethod hms[] = cg.calls(current_intra_method,q);
-	    if(hms.length!=1) return false;
+	    MetaMethod mms[] = mcg.getCallees(current_intra_mmethod,q);
+	    if(mms.length!=1) return false;
 
-	    HMethod hm = hms[0];
+	    HMethod hm = mms[0].getHMethod();
 	    String name = hm.getName();
 	    if((name==null) || !name.equals("start")) return false;
 
@@ -725,11 +740,10 @@ public class PointerAnalysis {
 		touch_threads(bbpig.G.I.pointedNodes(l));
 	}
 
-	// Record the fact that the started thread from the set that it
-	// iterates over have been touched.
+	// Records the fact that the started thread from the set 
+	// "set_touched_nodes" have been touched.
 	private void touch_threads(Set set_touched_nodes){
-	    Iterator it = set_touched_nodes.iterator();
-	    while(it.hasNext()){
+	    for(Iterator it = set_touched_nodes.iterator(); it.hasNext();){
 		PANode touched_node = (PANode)it.next();
 		if((touched_node.type == PANode.INSIDE) &&
 		   bbpig.tau.isStarted(touched_node))
@@ -742,7 +756,7 @@ public class PointerAnalysis {
 	    in the hash table. */
 	public void visit(FOOTER q){
 	    // The full graph is stored in the hash_proc_int hashtable;
-	    hash_proc_int.put(current_intra_method,bbpig);
+	    hash_proc_int.put(current_intra_mmethod,bbpig);
 	    // To obtain the external view of the method, the graph must be
 	    // shrinked to the really necessary parts: only the stuff
 	    // that is accessible from the "root" nodes (i.e. the nodes
@@ -751,12 +765,13 @@ public class PointerAnalysis {
 	    // The set of root nodes consists of the param and return
 	    // nodes, and (for the non-"main" methods) the static nodes.
 	    // TODO: think about the static nodes vs. "main"
-	    PANode[] nodes = getParamNodes(current_intra_method);
-	    boolean is_main = current_intra_method.getName().equals("main");
+	    PANode[] nodes = getParamNodes(current_intra_mmethod);
+	    boolean is_main = 
+		current_intra_mmethod.getHMethod().getName().equals("main");
 	    ParIntGraph shrinked_graph = bbpig.keepTheEssential(nodes,is_main);
 	    // The external view of the graph is stored in the
 	    // hash_proc_ext hashtable;
-	    hash_proc_ext.put(current_intra_method,shrinked_graph);
+	    hash_proc_ext.put(current_intra_mmethod,shrinked_graph);
 	}
 	
     };
@@ -860,8 +875,9 @@ public class PointerAnalysis {
      *  for the object formal parameter (i.e. primitive type parameters
      *  such as <code>int</code>, <code>float</code> do not have associated
      *  nodes */
-    private ParIntGraph get_method_initial_pig(HMethod hm, METHOD m){
-	Temp[] params = m.params();
+    private ParIntGraph get_mmethod_initial_pig(MetaMethod mm, METHOD m){
+	Temp[]  params = m.params();
+	HMethod     hm = mm.getHMethod();
 	HClass[] types = hm.getParameterTypes();
 
 	ParIntGraph pig = new ParIntGraph();
@@ -882,11 +898,11 @@ public class PointerAnalysis {
 	int skew = isStatic?0:1;
 	// number of object formal parameters = the number of param nodes
 	int count = skew;
-	for(int i=0;i<types.length;i++)
+	for(int i = 0; i < types.length; i++)
 	    if(!types[i].isPrimitive()) count++;
 	
-	nodes.addParamNodes(hm,count);
-	Stats.record_method_params(hm,count);
+	nodes.addParamNodes(mm,count);
+	Stats.record_mmethod_params(mm,count);
 
 	// add all the edges of type <p,np> (i.e. parameter to 
 	// parameter node) - just for the non-primitive types (e.g. int params
@@ -894,9 +910,9 @@ public class PointerAnalysis {
 	// the edges for the static fields will
 	// be added later.
 	count = 0;
-	for(int i=0;i<params.length;i++)
+	for(int i = 0; i < params.length; i++)
 	    if((i<skew) || ((i>=skew) && !types[i-skew].isPrimitive())){
-		PANode param_node = nodes.getParamNode(hm,count);
+		PANode param_node = nodes.getParamNode(mm,count);
 		pig.G.I.addEdge(params[i],param_node);
 		// The param nodes are escaping through themselves */
 		pig.G.e.addNodeHole(param_node,param_node);

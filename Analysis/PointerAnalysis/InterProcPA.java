@@ -3,18 +3,17 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
-
 import java.util.Iterator;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.HashSet;
 
-
 import harpoon.IR.Quads.CALL;
-import harpoon.ClassFile.HMethod;
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Temp.Temp;
 
+import harpoon.Analysis.MetaMethods.MetaMethod;
+import harpoon.Analysis.MetaMethods.MetaCallGraph;
 
 /**
  * <code>InterProcPA</code> is a &quot;functional&quot; class (i.e. it 
@@ -24,7 +23,7 @@ import harpoon.Temp.Temp;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.15 2000-03-05 05:30:43 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.16 2000-03-18 05:24:30 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -45,23 +44,20 @@ abstract class InterProcPA {
 	calls this method. <code>pa</code> is used to extract the external
 	parallel interaction graphs of the callees.
 	</ul> */
-    public static ParIntGraph analyze_call(HMethod current_method, CALL q,
+    public static ParIntGraph analyze_call(MetaMethod current_mmethod, CALL q,
 					   ParIntGraph pig_before,
 					   PointerAnalysis pa){
-	CallGraph cg = pa.getCallGraph();
+	MetaCallGraph mcg = pa.getMetaCallGraph();
 	NodeRepository node_rep = pa.getNodeRepository(); 
-	HMethod[] hms = cg.calls(current_method,q);
-	int nb_callees = hms.length;
-
+	MetaMethod[] mms = mcg.getCallees(current_mmethod,q);
+	int nb_callees = mms.length;
 
 	// This test seems to be a bit paranoic but it helped me to find
 	// an obscure bug in CallGraph. TRUST NO ONE!
 	if(nb_callees < 1){
-	    /// System.out.println("Callees: " + hms);
-	    /// System.out.println("nb_callees = " + nb_callees);
 	    if(PointerAnalysis.DEBUG){
 		System.out.print("Error: CALL site with no callee! ");
-		System.out.print(current_method);
+		System.out.print(current_mmethod);
 		System.out.println(" " + q);
 	    }
 	    //System.exit(1);
@@ -74,10 +70,11 @@ abstract class InterProcPA {
 	}
 
 	ParIntGraph pigs[] = new ParIntGraph[nb_callees];
-	for(int i=0;i<nb_callees;i++){
-	    pigs[i] = pa.getExtParIntGraph(hms[i],false);
+	for(int i = 0; i < nb_callees; i++){
+	    pigs[i] = pa.getExtParIntGraph(mms[i], false);
 	    // TODO: the second part of the test is for debug only
-	    if((pigs[i] == null) || hms[i].getName().equals("unanalyzed")){
+	    if((pigs[i] == null) ||
+	       mms[i].getHMethod().getName().equals("unanalyzed")){
 		// one of the callee doesn't have a // interaction graph
 		return skip_call(q,pig_before,node_rep);
 	    }
@@ -85,12 +82,11 @@ abstract class InterProcPA {
 
 	// specialize the graphs of the callees for the context sensitive PA
 	if(PointerAnalysis.CONTEXT_SENSITIVE)
-	    for(int i=0;i<pigs.length;i++){
+	    for(int i = 0; i < pigs.length; i++){
 		if(DEBUG)
 		    System.out.println("Pig_callee before specialization:" +
 				       pigs[i]);
-		pigs[i] = pa.getSpecializedExtParIntGraph(hms[i],q);
-		// pigs[i] = pigs[i].specialize(q);
+		pigs[i] = pa.getSpecializedExtParIntGraph(mms[i],q);
 		if(DEBUG)
 		    System.out.println("Pig_callee after  specialization:" +
 				       pigs[i]);
@@ -99,7 +95,7 @@ abstract class InterProcPA {
 	// special case: only one callee; no ParIntGraph is cloned
 	if(nb_callees == 1){
 	    /// System.out.println(hms[0]);
-	    return mapUp(q,pig_before,pigs[0],pa.getParamNodes(hms[0]));
+	    return mapUp(q,pig_before,pigs[0],pa.getParamNodes(mms[0]));
 	}
 
 	// more than one callee: the graph after the CALL is a join of all
@@ -109,22 +105,18 @@ abstract class InterProcPA {
 	// clone() (cloning a ParIntGraph is very expensive)
 
 	// compute the first term of the join operation
-	ParIntGraph pig_after = 
-	    mapUp(q,(ParIntGraph)pig_before.clone(),
-		  pa.getExtParIntGraph(hms[0],false),
-		  pa.getParamNodes(hms[0]));
+	ParIntGraph pig_after = mapUp(q, (ParIntGraph)pig_before.clone(),
+				      pigs[0], pa.getParamNodes(mms[0]));
 
 	// join to it all the others, except the last one
-	for(int i=1; i< nb_callees - 1 ; i++)
-	    pig_after.join(mapUp(q,(ParIntGraph)pig_before.clone(),
-				 pigs[i],
-				 pa.getParamNodes(hms[i])));
+	for(int i = 1; i < nb_callees - 1; i++)
+	    pig_after.join(mapUp(q, (ParIntGraph)pig_before.clone(),
+				 pigs[i], pa.getParamNodes(mms[i])));
 
 	// finally, join with the graph modeling the interaction with
 	// the last callee
-	pig_after.join(mapUp(q,pig_before,
-			     pigs[nb_callees-1],
-			     pa.getParamNodes(hms[nb_callees-1])));
+	pig_after.join(mapUp(q, pig_before, pigs[nb_callees-1],
+			     pa.getParamNodes(mms[nb_callees-1])));
 
 	return pig_after;
     }

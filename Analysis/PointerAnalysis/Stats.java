@@ -14,19 +14,22 @@ import java.util.Comparator;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
+import harpoon.Analysis.BasicBlock;
 
+import harpoon.Analysis.MetaMethods.MetaMethod;
+import harpoon.Tools.Graphs.SCComponent;
 
 /**
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Stats.java,v 1.1.2.3 2000-03-08 00:36:02 salcianu Exp $
+ * @version $Id: Stats.java,v 1.1.2.4 2000-03-18 05:24:31 salcianu Exp $
  */
 abstract class Stats {
 
     private static HashMap info = new HashMap();
     
-    static class MethodInfo{
+    static class MetaMethodInfo{
 	int nb_instrs = 0;
 	int nb_bbs = 0;
 	int nb_sccs = 0;
@@ -34,38 +37,59 @@ abstract class Stats {
 	int nb_params = 0;
     };
 
-    private static MethodInfo getMethodInfo(HMethod hm){
-	MethodInfo mi = (MethodInfo) info.get(hm);
-	if(mi == null){
-	    mi = new MethodInfo();
-	    info.put(hm,mi);
+    private static MetaMethodInfo getMetaMethodInfo(MetaMethod mm){
+	MetaMethodInfo mmi = (MetaMethodInfo) info.get(mm);
+	if(mmi == null){
+	    mmi = new MetaMethodInfo();
+	    info.put(mm,mmi);
 	}
-	return mi;
+	return mmi;
     }
 
-    public static void record_method_hcode(HMethod hm, HCode hcode){
-	MethodInfo mi = getMethodInfo(hm);
-	mi.nb_instrs = hcode.getElementsL().size();
+    public static void record_mmethod(MetaMethod mm, SCComponent scc){
+	MetaMethodInfo mmi = getMetaMethodInfo(mm);
+
+	// grab statistics about the number of SCC and BB
+	int nb_sccs = 0;
+	int nb_bbs  = 0;
+	int nb_instrs = 0;
+	while(scc != null){
+	    nb_sccs++;
+	    nb_bbs += scc.nodeSet().size(); 
+	    for(Iterator it_bbs = scc.nodes(); it_bbs.hasNext();){
+		BasicBlock bbk = (BasicBlock) it_bbs.next();
+		nb_instrs += bbk.statements().size();
+	    }
+	    scc = scc.nextTopSort();
+	}
+	Stats.record_mmethod_instrs(mm, nb_instrs);
+	Stats.record_mmethod_bbs(mm, nb_bbs);
+	Stats.record_mmethod_sccs(mm, nb_sccs);
     }
 
-    public static void record_method_bbs(HMethod hm, int nb_bbs){
-	MethodInfo mi = getMethodInfo(hm);
-	mi.nb_bbs = nb_bbs;
+    public static void record_mmethod_instrs(MetaMethod mm, int nb_instrs){
+	MetaMethodInfo mmi = getMetaMethodInfo(mm);
+	mmi.nb_instrs = nb_instrs;
     }
 
-    public static void record_method_sccs(HMethod hm, int nb_sccs){
-	MethodInfo mi = getMethodInfo(hm);
-	mi.nb_sccs = nb_sccs;
+    public static void record_mmethod_bbs(MetaMethod mm, int nb_bbs){
+	MetaMethodInfo mmi = getMetaMethodInfo(mm);
+	mmi.nb_bbs = nb_bbs;
+    }
+
+    public static void record_mmethod_sccs(MetaMethod mm, int nb_sccs){
+	MetaMethodInfo mmi = getMetaMethodInfo(mm);
+	mmi.nb_sccs = nb_sccs;
     }
     
-    public static void record_method_pass(HMethod hm){
-	MethodInfo mi = getMethodInfo(hm);
-	mi.nb_passes++;
+    public static void record_mmethod_pass(MetaMethod mm){
+	MetaMethodInfo mmi = getMetaMethodInfo(mm);
+	mmi.nb_passes++;
     }
 
-    public static void record_method_params(HMethod hm, int nb_params){
-	MethodInfo mi = getMethodInfo(hm);
-	mi.nb_params = nb_params;
+    public static void record_mmethod_params(MetaMethod mm, int nb_params){
+	MetaMethodInfo mmi = getMetaMethodInfo(mm);
+	mmi.nb_params = nb_params;
     }
 
     private static int maxim_nb_instrs = -1;
@@ -75,8 +99,8 @@ abstract class Stats {
     public static void print_stats(){
 	System.out.println("STATISTICS:");
 
-	int nb_methods = info.size();
-	System.out.println(nb_methods + " method(s)");
+	int nb_mmethods = info.size();
+	System.out.println(nb_mmethods + " meta-method(s)");
 
 	int total_instrs = 0;
 	int total_bbs = 0;
@@ -88,57 +112,56 @@ abstract class Stats {
 	maxim_nb_passes = -1;
 	maxim_nb_params = -1;
 
-	Iterator it = info.keySet().iterator();
-	while(it.hasNext()){
-	    HMethod hm = (HMethod) it.next();
-	    MethodInfo mi = (MethodInfo) info.get(hm);
+	for(Iterator it = info.keySet().iterator(); it.hasNext(); ){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    MetaMethodInfo mmi = (MetaMethodInfo) info.get(mm);
 
-	    mi.nb_params = compute_nb_params(hm);
+	    mmi.nb_params = compute_nb_params(mm.getHMethod());
 
-	    System.out.println(hm);
-	    System.out.println(" " + mi.nb_instrs + " instrs\t" +
-			       mi.nb_params + " obj param(s)\t" +
-			       mi.nb_passes + " pass(es)\t" + 
-			       mi.nb_bbs + " BBs\t" + mi.nb_sccs + " SCCs\t"); 
+	    System.out.println(mm);
+	    System.out.println(" " + mmi.nb_instrs + " instrs\t" +
+			       mmi.nb_params + " obj param(s)\t" +
+			       mmi.nb_passes + " pass(es)\t" + 
+			       mmi.nb_bbs + " BBs\t" +
+			       mmi.nb_sccs + " SCCs\t"); 
 
-	    total_params += mi.nb_params;
-	    total_instrs += mi.nb_instrs;
-	    total_bbs    += mi.nb_bbs;
-	    total_sccs   += mi.nb_sccs;
-	    total_passes += mi.nb_passes;
+	    total_params += mmi.nb_params;
+	    total_instrs += mmi.nb_instrs;
+	    total_bbs    += mmi.nb_bbs;
+	    total_sccs   += mmi.nb_sccs;
+	    total_passes += mmi.nb_passes;
 
-	    if(mi.nb_instrs > maxim_nb_instrs)
-		maxim_nb_instrs = mi.nb_instrs;
-	    if(mi.nb_passes > maxim_nb_passes)
-		maxim_nb_passes = mi.nb_passes;
-	    if(mi.nb_params > maxim_nb_params)
-		maxim_nb_params = mi.nb_params;
+	    if(mmi.nb_instrs > maxim_nb_instrs)
+		maxim_nb_instrs = mmi.nb_instrs;
+	    if(mmi.nb_passes > maxim_nb_passes)
+		maxim_nb_passes = mmi.nb_passes;
+	    if(mmi.nb_params > maxim_nb_params)
+		maxim_nb_params = mmi.nb_params;
 	}
 
 	System.out.println("--TOTALS----------------------------------");
-	System.out.println("Nb. of analyzed methods    : " + nb_methods);
-	System.out.println("Total nb. of instructions  : " + total_instrs);
-	System.out.println("Total nb. of BBs           : " + total_bbs);
-	System.out.println("Total nb. of SCCs          : " + total_sccs);
+	System.out.println("Nb. of analyzed meta-methods : " + nb_mmethods);
+	System.out.println("Total nb. of instructions    : " + total_instrs);
+	System.out.println("Total nb. of BBs             : " + total_bbs);
+	System.out.println("Total nb. of SCCs            : " + total_sccs);
 
 	System.out.println("--AVERAGES--------------------------------");
-	System.out.println("Average Passes/Method      : " +
-			   (double)total_passes/(double)nb_methods);
-	System.out.println("Average Instrs/Method      : " +
-			   (double)total_instrs/(double)nb_methods);
-	System.out.println("Average BB(s)/SCC          : " + 
+	System.out.println("Average Passes/Meta-Method      : " +
+			   (double)total_passes/(double)nb_mmethods);
+	System.out.println("Average Instrs/Meta-Method      : " +
+			   (double)total_instrs/(double)nb_mmethods);
+	System.out.println("Average BB(s)/SCC               : " + 
 			   (double)total_bbs/(double)total_sccs);
-	System.out.println("Average Instrs/BB          : " + 
+	System.out.println("Average Instrs/BB               : " + 
 			   (double)total_instrs/(double)total_bbs);
-	System.out.println("Average Obj. Params/Method : " + 
-			   (double)total_params/(double)nb_methods);
+	System.out.println("Average Obj. Params/Meta-Method : " + 
+			   (double)total_params/(double)nb_mmethods);
 
 	System.out.println("--EXTREMES--------------------------------");
-	System.out.println("Biggest nb of obj. params : " +
-			   maxim_nb_params);
-	System.out.println("Maximum method size       : " + maxim_nb_instrs +
+	System.out.println("Biggest nb of obj. params : " + maxim_nb_params);
+	System.out.println("Maximum meta-method size  : " + maxim_nb_instrs +
 			   " quad(s)");
-	System.out.println("Maximum nb of pass(es) over a method : " + 
+	System.out.println("Maximum nb of pass(es) over a meta-method : " + 
 			   maxim_nb_passes);
 
 	print_extremes_examples();
@@ -146,20 +169,17 @@ abstract class Stats {
 	System.out.println("--PARAMS----------------------------------");
 
 	int[] mwp = new int[maxim_nb_params + 1];
-	for(int i=0;i<maxim_nb_params;i++) mwp[i]=0;
+	for(int i = 0; i < maxim_nb_params; i++) mwp[i] = 0;
 
-	it = info.keySet().iterator();
-	while(it.hasNext()){
-	    HMethod hm = (HMethod) it.next();
-	    MethodInfo mi = (MethodInfo) info.get(hm);
-	    mwp[mi.nb_params]++;
+	for(Iterator it = info.keySet().iterator(); it.hasNext(); ){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    MetaMethodInfo mmi = (MetaMethodInfo) info.get(mm);
+	    mwp[mmi.nb_params]++;
 	}
 
-	for(int i=0;i<mwp.length;i++)
-	    if(mwp[i]!=0)
-		System.out.println("Methods with " + i + " param(s): " +
-				   mwp[i]);
-
+	for(int i=0;i<mwp.length;i++) 
+	    if(mwp[i]!=0) System.out.println("Meta-Methods with " + i + 
+					     " param(s): " + mwp[i]);
     }
 
     // computes the total number of parameters of the method hm;
@@ -168,28 +188,42 @@ abstract class Stats {
 	return hm.getParameterTypes().length + (hm.isStatic()?0:1);
     }
 
+    private static class MethodInfo{
+	HMethod hm;
+	int nbi;
+	MethodInfo(HMethod hm, int nbi){
+	    this.hm  = hm;
+	    this.nbi = nbi;
+	}
+	public boolean equals(Object o){
+	    MethodInfo mi2 = (MethodInfo) o;
+	    return hm.equals(mi2.hm) && (nbi == mi2.nbi);
+	}
+	public int hashCode(){
+	    return hm.hashCode() + nbi;
+	}
+    };
 
     private static final void print_extremes_examples(){
 	System.out.println("--EXTREMES-2-(EXAMPLES)-------------------");
-	System.out.println("Biggest procedure(s) :");
-	// 1. select the biggest procs
+	System.out.println("Biggest method(s) :");
+	// 1. select the biggest method(s)
 	Set big_procs = new HashSet();
-	Iterator it = info.keySet().iterator();
-	while(it.hasNext()){
-	    HMethod hm = (HMethod) it.next();
-	    MethodInfo mi = (MethodInfo) info.get(hm);
-	    if(mi.nb_instrs >= (int) (0.5 * maxim_nb_instrs))
-		big_procs.add(hm);
+	for(Iterator it = info.keySet().iterator(); it.hasNext(); ){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    MetaMethodInfo mmi = (MetaMethodInfo) info.get(mm);
+	    if(mmi.nb_instrs >= (int) (0.5 * maxim_nb_instrs))
+		big_procs.add(new MethodInfo(mm.getHMethod(),mmi.nb_instrs));
 	}
 	// 2. sort them
-	HMethod[] big_procs_array = 
-	    (HMethod[])big_procs.toArray(new HMethod[big_procs.size()]);
+	MethodInfo[] big_procs_array = (MethodInfo[])
+	    big_procs.toArray(new MethodInfo[big_procs.size()]);
 	Arrays.sort(big_procs_array,new Comparator(){
 		public int compare(Object o1,Object o2){
-		    MethodInfo mi1 = (MethodInfo) info.get((HMethod) o1);
-		    MethodInfo mi2 = (MethodInfo) info.get((HMethod) o2);
-		    if(mi1.nb_instrs < mi2.nb_instrs) return -1;
-		    if(mi1.nb_instrs > mi2.nb_instrs) return -1;
+		    MethodInfo mi1 = (MethodInfo) o1;
+		    MethodInfo mi2 = (MethodInfo) o2;
+		    if(mi1.nbi < mi2.nbi) return +1;
+		    if(mi1.nbi > mi2.nbi) return -1;
 		    return 0;
 		}
 		public boolean equals(Object obj){
@@ -197,32 +231,31 @@ abstract class Stats {
 		}
 	    });
 	// 3. print them
-	for(int i=0;i<big_procs_array.length;i++){
-	    HMethod hm = big_procs_array[i];
-	    MethodInfo mi = (MethodInfo) info.get(hm);
-	    System.out.println("  " + hm + " (" + mi.nb_instrs + ")");
+	for(int i = 0; i < big_procs_array.length; i++){
+	    MethodInfo mi = big_procs_array[i];
+	    System.out.println("  " + mi.hm + " (" + mi.nbi + ")");
 	}
-	big_procs = null;
 	
-	System.out.println("Most visited method(s) :");
+	System.out.println("Most visited meta-method(s) :");
 	// 1. select the most visited methods
 	Set most_visited = new HashSet();
-	it = info.keySet().iterator();
-	while(it.hasNext()){
-	    HMethod hm = (HMethod) it.next();
-	    MethodInfo mi = (MethodInfo) info.get(hm);
-	    if(mi.nb_passes >= (int) (0.5 * maxim_nb_passes))
-		most_visited.add(hm);
+	for(Iterator it = info.keySet().iterator(); it.hasNext(); ){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    MetaMethodInfo mmi = (MetaMethodInfo) info.get(mm);
+	    if(mmi.nb_passes >= (int) (0.5 * maxim_nb_passes))
+		most_visited.add(mm);
 	}
 	// 2. sort them
-	HMethod[] most_visited_array = 
-	    (HMethod[])most_visited.toArray(new HMethod[most_visited.size()]);
+	MetaMethod[] most_visited_array = (MetaMethod[])
+	    most_visited.toArray(new MetaMethod[most_visited.size()]);
 	Arrays.sort(most_visited_array,new Comparator(){
 		public int compare(Object o1,Object o2){
-		    MethodInfo mi1 = (MethodInfo) info.get((HMethod) o1);
-		    MethodInfo mi2 = (MethodInfo) info.get((HMethod) o2);
-		    if(mi1.nb_passes < mi2.nb_passes) return -1;
-		    if(mi1.nb_passes > mi2.nb_passes) return -1;
+		    MetaMethodInfo mmi1 = 
+			(MetaMethodInfo) info.get((MetaMethod) o1);
+		    MetaMethodInfo mmi2 = 
+			(MetaMethodInfo) info.get((MetaMethod) o2);
+		    if(mmi1.nb_passes < mmi2.nb_passes) return +1;
+		    if(mmi1.nb_passes > mmi2.nb_passes) return -1;
 		    return 0;
 		}
 		public boolean equals(Object obj){
@@ -230,10 +263,10 @@ abstract class Stats {
 		}
 	    });
 	// 3. print them
-	for(int i=0;i<most_visited_array.length;i++){
-	    HMethod hm = most_visited_array[i];
-	    MethodInfo mi = (MethodInfo) info.get(hm);
-	    System.out.println("  " + hm + " (" + mi.nb_passes + ")");
+	for(int i = 0; i < most_visited_array.length; i++){
+	    MetaMethod mm = most_visited_array[i];
+	    MetaMethodInfo mmi = (MetaMethodInfo) info.get(mm);
+	    System.out.println("  " + mm + " (" + mmi.nb_passes + ")");
 	}
     }
 
