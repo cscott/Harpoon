@@ -179,6 +179,7 @@ type * FNI_Get##name##ArrayElements(JNIEnv *env,\
 				    type##Array array, jboolean *isCopy) {\
   struct aarray *a = (struct aarray *) FNI_UNWRAP(array);\
   jsize length = a->length;\
+  /* safe to use malloc; no pointers to garbage collected objects in array */\
   type * result = malloc(sizeof(type) * length + DMALLOC_PADDING);\
   FNI_Get##name##ArrayRegion(env,array,0,length,result);\
   if (isCopy!=NULL) *isCopy=JNI_TRUE;\

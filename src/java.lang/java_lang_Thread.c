@@ -32,6 +32,7 @@ static pthread_mutex_t running_threads_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t running_threads_cond = PTHREAD_COND_INITIALIZER;
 
 static void add_running_thread(const pthread_t thr) {
+  /* safe to use malloc -- no pointers to garbage collected memory in here */
   struct thread_list *nlist = malloc(sizeof(struct thread_list));
   nlist->prev = &running_threads;
   nlist->pthread = thr;

@@ -16,6 +16,7 @@ struct _jobject FNI_globalrefs = { NULL, NULL };
 /** constructor/destructor for thread state information structure */
 
 static JNIEnv * FNI_CreateThreadState(void) {
+  /* safe to use malloc -- no pointers to garbage collected memory in here */
   struct FNI_Thread_State * env = malloc(sizeof(*env));
   env->vtable = &FLEX_JNI_vtable;
   env->exception = NULL;

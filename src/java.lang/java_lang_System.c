@@ -205,6 +205,8 @@ JNIEXPORT jobject JNICALL Java_java_lang_System_initProperties
     cvalue = getenv("HOME");
     _putProperty(env, propobj, methodID, ckey, cvalue);
     {
+      /* note, as this is a (temporary) char array, it is safe to use
+       * malloc instead of GC_malloc. (ie, there are no pointers in here) */
       int size=10;
       char *buf = malloc(size), *cwd;
       while ((cwd=getcwd(buf, size))==NULL) {

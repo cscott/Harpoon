@@ -53,6 +53,7 @@ const jchar * FNI_GetStringChars(JNIEnv *env, jstring string, jboolean *isCopy)
   jmethodID mid = (*env)->GetMethodID(env, strcls, "toCharArray", "()[C");
   jcharArray ca = (jcharArray) (*env)->CallObjectMethod(env, string, mid);
   jsize     len = (*env)->GetArrayLength(env, ca);
+  /* safe to use malloc -- no pointers to gc memory inside jchar[] */
   jchar *result = malloc(len * sizeof(jchar));
   (*env)->GetCharArrayRegion(env, ca, 0, len, result);
   if (isCopy!=NULL) *isCopy=JNI_TRUE;
@@ -77,6 +78,7 @@ jstring FNI_NewStringUTF(JNIEnv *env, const char *bytes) {
   jclass strcls = (*env)->FindClass(env, "java/lang/String");
   jmethodID cid = (*env)->GetMethodID(env, strcls, "<init>", "([C)V");
   int       len = strlen(bytes);
+  /* safe to use malloc -- no pointers to gc objects inside jchar[] */
 #ifdef WITH_DMALLOC /* dmalloc doesn't like zero-length allocations */
   jchar *   buf = malloc(1+sizeof(jchar)*len);
 #else
@@ -122,6 +124,7 @@ const char* FNI_GetStringUTFChars(JNIEnv *env, jstring string,
   jchar *   buf = (*env)->GetCharArrayElements(env, ca, NULL);
   jsize     len = (*env)->GetArrayLength(env, ca);
   jsize  newlen = utf8length(buf, len);
+  /* safe to use malloc -- no pointers to gc objects inside char[] */
   char * result = malloc(sizeof(char)*(newlen+1));
   toUTF8(buf, len, result);
   result[newlen]='\0';
