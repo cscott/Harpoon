@@ -29,4 +29,4 @@
 asm("bl _lookup" \
     : /* no outputs */ \
     : /* no inputs */ \
-    : "r1", "r2", "r3", "r4", "r5", "r6", "lr", "cc", "memory");
+    : "r1", "r2", "r3", "lr", "cc", "memory");
