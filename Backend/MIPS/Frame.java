@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.5 2000-08-26 04:54:41 witchel Exp $
+ * @version $Id: Frame.java,v 1.1.2.6 2000-10-31 01:54:32 pnkfelix Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
    private final harpoon.Backend.Generic.Runtime   runtime;
@@ -28,6 +28,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     private final TempBuilder tempBuilder;
     private final Linker linker;
     private GCInfo gcInfo; // should really be final
+   private String type = "";
 
     // HACK: this should really be a command-line parameter.
     private final static String alloc_strategy =
@@ -36,7 +37,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	System.getProperty("harpoon.target.elf", "yes")
 	.equalsIgnoreCase("yes");
 
-    public Frame(HMethod main, ClassHierarchy ch, CallGraph cg) { 
+   public Frame(HMethod main, ClassHierarchy ch, CallGraph cg) {
 	super();
 	linker = main.getDeclaringClass().getLinker();
 	regFileInfo = new RegFileInfo();
@@ -68,9 +69,15 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	this(main, ch, cg);
 	this.gcInfo = gcInfo;
     }
+   public Frame(HMethod main, ClassHierarchy ch, CallGraph cg, String type) {
+	this(main, ch, cg);
+	this.type = type;
+   }
+
+    public String getType() { return type; }
 
     public Linker getLinker() { return linker; }
-
+   
     public boolean pointersAreLong() { return false; }
 
     /** Returns a <code>MIPS.CodeGen</code>. 

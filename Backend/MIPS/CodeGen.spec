@@ -69,7 +69,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.26 2000-10-21 03:26:41 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.27 2000-10-31 01:54:32 pnkfelix Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -147,7 +147,7 @@ import java.util.Iterator;
     // whether to use soft-float or hard-float calling convention.
     private final boolean soft_float = false; // skiffs use hard-float
     // Add yellow pekoe register usage suffixes to long instr patterns
-    private final boolean yellow_pekoe = false;
+    private boolean yellow_pekoe = false;
 
     public CodeGen(Frame frame, boolean is_elf) {
        super(frame);
@@ -155,6 +155,7 @@ import java.util.Iterator;
 	this.regfile = (RegFileInfo) frame.getRegFileInfo();
 	this.nameMap = frame.getRuntime().nameMap;
 	this.is_elf = is_elf;
+    this.yellow_pekoe = frame.getType().equalsIgnoreCase("yp");
     v0 = regfile.V0;
     v1 = regfile.V1;
     a0 = regfile.A0;
@@ -315,11 +316,11 @@ import java.util.Iterator;
 // allocated to the same registers 
     private Instr emitRegAllocDef( HCodeElement root, Temp t) {
        Util.assert(t != null, t);
-       return emit2( root, "# Reg alloc def " + t, new Temp[]{t}, null);
+       return emitDUMMY( root, "# Reg alloc def " + t, new Temp[]{t}, null);
     }
     private Instr emitRegAllocUse( HCodeElement root, Temp t) {
        Util.assert(t != null, t);
-       return emit2( root, "# Reg alloc use " + t, null, new Temp[]{t});
+       return emitDUMMY( root, "# Reg alloc use " + t, null, new Temp[]{t});
     }
 
     /* Branching instruction emit helper. 
@@ -358,6 +359,17 @@ import java.util.Iterator;
                                   dst, src, canFall, tlist));
     }
 
+    private static class InstrDUMMY extends Instr {
+	InstrDUMMY(InstrFactory inf, HCodeElement root,
+		   String assem, Temp[] dst, Temp[] src) {
+	    super(inf, root, assem, dst, src, true, null);
+	}
+	public boolean isDummy() { return true; }
+    }
+    private Instr emitDUMMY( HCodeElement root, String assem,
+			     Temp[] dst, Temp[] src ) {
+	return emit(new InstrDUMMY( instrFactory, root, assem, dst, src));
+    }
     /* InstrJUMP emit helper; automatically adds entry to
        label->branches map. */ 
     private Instr emitJUMP( HCodeElement root, String assem, Label l ) {
@@ -541,10 +553,10 @@ import java.util.Iterator;
        // an emitMOVE is not legal with the l/h modifiers
        Util.assert(j instanceof TwoWordTemp);
        Util.assert(k instanceof TwoWordTemp);
-       emit( root, "move `d0, `s0h", a0, j );
-       emit( root, "move `d0, `s0l", a1, j );
-       emit( root, "move `d0, `s0h", a2, k );
-       emit( root, "move `d0, `s0l", a3, k );
+       emit2( root, "move `d0, `s0h\n"
+              + "move `d1, `s0l", new Temp[]{a0, a1}, new Temp[] {j});
+       emit2( root, "move `d0, `s0h\n"
+              + "move `d1, `s0l", new Temp[]{a2, a3}, new Temp[] {k});
        declareCALLDefFull();
        emit2(root, "jal "+nameMap.c_function_name(func_name),
              call_def_full, call_use);
@@ -552,6 +564,8 @@ import java.util.Iterator;
        emitRegAllocDef(root, i);
        emit( root, "move `d0h, `s0\n"
              + "move `d0l, `s1", i, v0, v1 ); 
+       emitRegAllocUse( root, v0);
+       emitRegAllocUse( root, v1);
     }
     /** Source for long long arithmetic routines is in Flex_MIPS.S */
     private void DoLLShiftCall(HCodeElement root,
@@ -562,8 +576,8 @@ import java.util.Iterator;
        declareCALLDefBuiltin();
        // an emitMOVE is not legal with the l/h modifiers
        Util.assert(j instanceof TwoWordTemp);
-       emit( root, "move `d0, `s0h", a0, j );
-       emit( root, "move `d0, `s0l", a1, j );
+       emit2( root, "move `d0, `s0h\n"
+              + "move `d1, `s0l", new Temp[]{a0, a1}, new Temp[] {j});
        Util.assert((k instanceof TwoWordTemp) == false);
        emitMOVE( root, "move `d0, `s0", a2, k );
        declareCALLDefFull();
@@ -574,6 +588,8 @@ import java.util.Iterator;
        emitRegAllocDef(root, i);
        emit( root, "move `d0h, `s0\n"
              + "move `d0l, `s1", i, v0, v1 ); 
+       emitRegAllocUse( root, v0);
+       emitRegAllocUse( root, v1);
     }
     /** For now all float and double operations are in software.  Each
      routine has an assembly jacket function which now calls a C
@@ -611,10 +627,10 @@ import java.util.Iterator;
        // not certain an emitMOVE is legal with the l/h modifiers
        Util.assert(j instanceof TwoWordTemp);
        Util.assert(k instanceof TwoWordTemp);
-       emit( root, "move `d0, `s0h", a2, k );
-       emit( root, "move `d0, `s0l", a3, k );
-       emit( root, "move `d0, `s0h", a0, j );
-       emit( root, "move `d0, `s0l", a1, j );
+       emit2( root, "move `d0, `s0h\n"
+              + "move `d1, `s0l", new Temp[]{a0, a1}, new Temp[] {j});
+       emit2( root, "move `d0, `s0h\n"
+              + "move `d1, `s0l", new Temp[]{a2, a3}, new Temp[] {k});
        declareCALLDefFull();
        emit2(root, "jal "+nameMap.c_function_name(func_name),
              // uses & stomps on these registers:
@@ -623,6 +639,8 @@ import java.util.Iterator;
           emitRegAllocDef(root, i);
           emit( root, "move `d0h, `s0\n"
                 + "move `d0l, `s1", i, v0, v1 ); 
+          emitRegAllocUse( root, v0);
+          emitRegAllocUse( root, v1);
        } else {
           emitMOVE( root, "move `d0, `s0", i, v0 );
        }
@@ -634,8 +652,8 @@ import java.util.Iterator;
        if(j instanceof TwoWordTemp) {
           declare( a1, HClass.Void );
           // not certain an emitMOVE is legal with the l/h modifiers
-          emit( root, "move `d0, `s0h", a0, j );
-          emit( root, "move `d0, `s0l", a1, j );
+          emit2( root, "move `d0, `s0h\n"
+                 + "move `d1, `s0l", new Temp[]{a0, a1}, new Temp[] {j});
        } else {
           emitMOVE( root, "move `d0, `s0", a0, j );
        }
@@ -647,6 +665,8 @@ import java.util.Iterator;
           emitRegAllocDef(root, i);
           emit( root, "move `d0h, `s0\n"
                 + "move `d0l, `s1", i, v0, v1 ); 
+          emitRegAllocUse( root, v0);
+          emitRegAllocUse( root, v1);
        } else {
           emitMOVE( root, "move `d0, `s0", i, v0 );
        }
@@ -683,8 +703,9 @@ import java.util.Iterator;
                 declare( reg1, HClass.Void);
                 declare( reg2, HClass.Void);
                 Util.assert(tl.head instanceof TwoWordTemp);
-                emit( ROOT, "move `d0, `s0h", reg1, tl.head );
-                emit( ROOT, "move `d0, `s0l", reg2, tl.head );
+                emit2( ROOT, "move `d0, `s0h\n"
+                       + "move `d1, `s0l", 
+                       new Temp[]{reg1, reg2}, new Temp[] {tl.head});
              } else {
                 Temp reg = stack.argReg( ROOT, index); 
                 declare( reg, td, elist.head );
@@ -789,6 +810,8 @@ import java.util.Iterator;
           emitRegAllocDef(ROOT, retval);
           emit( ROOT, "move `d0h, `s0\n"
                 + "move `d0l, `s1", retval, v0, v1 ); 
+          emitRegAllocUse( ROOT, v0);
+          emitRegAllocUse( ROOT, v1);
        } else {
           declare(retval, type);
           emitMOVE( ROOT, "move `d0, `s0", retval, v0 );
