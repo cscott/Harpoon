@@ -27,7 +27,7 @@ import java.util.Iterator;
  * <code>LoopAnalysis</code> implements 
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.2 1999-06-28 22:55:08 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.3 1999-06-29 17:24:24 bdemsky Exp $
  */
 
 public class LoopAnalysis {
@@ -98,13 +98,19 @@ public class LoopAnalysis {
 
 	System.out.println(st+"Basic induction variables:");
 	while (iterate.hasNext()) {
-	    System.out.println(st+((Temp)iterate.next()).toString());
+	    Temp tmp=(Temp) iterate.next();
+	    System.out.println(st+tmp.toString());
+	    System.out.println(st+((Induction)basicinduction.get(tmp)).toString());
 	}
 	iterate=(allInductions.keySet()).iterator();
 
 	System.out.println(st+"All induction variables:");
 	while (iterate.hasNext()) {
-	    System.out.println(st+((Temp)iterate.next()).toString());
+	    Temp tmp=(Temp) iterate.next();
+	    System.out.println(st+tmp.toString());
+	    System.out.println(st+((Induction)allInductions.get(tmp)).toString());
 	}
     }
 }
+
+

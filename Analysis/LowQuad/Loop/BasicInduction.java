@@ -24,18 +24,23 @@ import java.util.Iterator;
  * <code>BasicInduction</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: BasicInduction.java,v 1.1.2.1 1999-06-28 22:55:08 bdemsky Exp $
+ * @version $Id: BasicInduction.java,v 1.1.2.2 1999-06-29 17:24:24 bdemsky Exp $
  */
 public class BasicInduction {
     HCode hc;
     TempMap tm;
 
+    /**  Creates a <code>BasicInduction</code> object. */
     public BasicInduction(TempMap tm, HCode hc) {
 	this.hc=hc;
 	this.tm=tm;
     }
 
-    public HashMap doInduction(Loops lp, WorkSet invariants) {
+    /** Creates a <code>HashMap</code> mapping <code>Temp</code>s to 
+     *  <code>Induction</code> classes describing the induction variable. 
+     *  This code only finds basic induction variables. */
+
+    Public HashMap doInduction(Loops lp, WorkSet invariants) {
 	HashMap basicinductions=new HashMap();
 	
 	/*Get the loop header and
@@ -163,7 +168,8 @@ public class BasicInduction {
 	return basicinductions;
     }
 
-
+    /** BasicVisitor finds ADD and <code>PHI</code> quads.  These
+     *  are used to find basic induction variables.*/
 
     class BasicVisitor extends LowQuadVisitor {
 	WorkSet adds,addp;

@@ -13,8 +13,10 @@ import java.util.ArrayList;
  * <code>Induction</code>
  * 
  * @author  root <root@kikashi.lcs.mit.edu>
- * @version $Id: Induction.java,v 1.1.2.2 1999-06-29 15:45:19 bdemsky Exp $
+ * @version $Id: Induction.java,v 1.1.2.3 1999-06-29 17:24:24 bdemsky Exp $
+ * This class allows us to store information on Basic/Derived Induction variables.
  */
+
 public class Induction {
     
     /*  Want to be able to store structures of the form:
@@ -27,6 +29,7 @@ public class Induction {
     
     /* pi+pb */
     
+    /** Creates basic pointer induction variable.*/
     Induction(Temp variable, ArrayList pointeroffset, int intmultiplier) {
 	this.pointerindex=true;
 	this.variable=variable;
@@ -36,7 +39,7 @@ public class Induction {
 	this.offset=0;
     }
     
-    /* (i*a+b) */
+    /* Creates basic integer induction variable.*/
     Induction(Temp variable, int offset, int intmultiplier) {
 	this.pointerindex=false;
 	this.variable=variable;
@@ -46,7 +49,7 @@ public class Induction {
 	this.pointeroffset=new ArrayList();
     }
     
-    /* (i*a+b)*pa+pb */
+    /* Creates derived generalized induction variable.*/
     Induction(Temp variable, int offset, int intmultiplier, HClass objectsize, ArrayList pointeroffset) {
 	this.pointerindex=false;
 	this.variable=variable;
@@ -56,6 +59,7 @@ public class Induction {
 	this.pointeroffset=new ArrayList(pointeroffset);
     }
 
+    /** Copy Constructor*/
     Induction(Induction x) {
 	this.pointerindex=x.pointerindex;
 	this.variable=x.variable;
@@ -65,6 +69,7 @@ public class Induction {
 	this.pointeroffset=new ArrayList(x.pointeroffset);
     }
 
+    /** toString method returns string describing contents of the class.*/
     public String toString() {
 	String temp;
 	temp="pi: "+(new Boolean(pointerindex)).toString();
@@ -78,23 +83,21 @@ public class Induction {
 	return temp;
     }
     
+    /** The <code>pointerindex</code> <code>boolean</code> describes whether
+     *  the Temp induction variable is a pointer [true] or an integer [false].*/
     public boolean pointerindex;
+
+    /** The <code>variable</code> <code>Temp</code> stores the basic induction variable.*/ 
     public Temp variable;
+    
+    /** The <code>offset</code> int saves an integer offset.*/
     public int offset;
+    /** The <code>intmultiplier</code> int saves an integer multiplier, or in the case of derived
+     *  pointer induction variables, the relative sign.*/
     public int intmultiplier;
+    /** The <code>objectsize</code> <code>HClass</code> saves the array type.*/
     public HClass objectsize;
+    /** The <code>ArrayList</code> saves pointer <code>Temp</code>s that are added in.*/
     public ArrayList pointeroffset;
 
 }
-
-
-
-
-
-
-
-
-
-
-
-

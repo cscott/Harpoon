@@ -21,7 +21,7 @@ import java.util.Iterator;
  * <code>AllInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: AllInductions.java,v 1.1.2.1 1999-06-28 22:55:08 bdemsky Exp $
+ * @version $Id: AllInductions.java,v 1.1.2.2 1999-06-29 17:24:24 bdemsky Exp $
  */
 public class AllInductions {
     TempMap tm;
@@ -33,6 +33,10 @@ public class AllInductions {
 	this.hc=hc;
     }
     
+    /** Returns a Hashmap mapping induction <code>Temp</code>s
+     *  to <code>Induction</code> objects containing information
+     *  on their derivation.*/
+
     HashMap doAllInductions(Loops lp, WorkSet invariants, HashMap basicinductions) {
 	HashMap allInductions=new HashMap(basicinductions);
 	CompleteVisitor visitor=new CompleteVisitor(allInductions,invariants);
@@ -58,7 +62,9 @@ public class AllInductions {
     }
 
 
-
+    /** CompleteVisitor extends <code>LowQuadVisitor</code>
+     *  and is used to find derived induction variables. */
+     
     class CompleteVisitor extends LowQuadVisitor {
 	HashMap inductions;
 	WorkSet invariants;
@@ -213,6 +219,9 @@ public class AllInductions {
 	    }
 	}
     }
+
+    /** InstanceofCONSTVisitor allows <code>CompleteVisitor</code> to do its
+     *  work without using an INSTANCEOF.  */
 
     class InstanceofCONSTVisitor extends LowQuadVisitor {
 	boolean reset;

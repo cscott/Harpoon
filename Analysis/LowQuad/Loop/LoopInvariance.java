@@ -16,19 +16,23 @@ import java.util.Iterator;
  * <code>LoopInvariance</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopInvariance.java,v 1.1.2.1 1999-06-28 22:55:08 bdemsky Exp $
+ * @version $Id: LoopInvariance.java,v 1.1.2.2 1999-06-29 17:24:24 bdemsky Exp $
  */
 public class LoopInvariance {
     
-    /** Creates a <code>LoopInvariance</code>. */
 
     TempMap tm;
     HCode hc;
 
+    /** Creates a <code>LoopInvariance</code>. */
     public LoopInvariance(TempMap tm,HCode hc) {
         this.tm=tm;
 	this.hc=hc;
     }
+
+    /** Creates a <code>WorkSet</code> containing <code>Quad</code>s that
+     *  are loop invariant.  Takes in a <code>WorkSet</code> of 
+     *  <code>Quad</code>s that are in the loop. */
 
     public WorkSet invariants(WorkSet elements) {
 	WorkSet invariants=new WorkSet();
@@ -49,6 +53,9 @@ public class LoopInvariance {
 	}
 	return invariants;
     }
+
+    /** <code>InvariantVisitor</code> visits Quads and determines if they are
+     *  loop invariant.*/
 
     class InvariantVisitor extends LowQuadVisitor {
 	UseDef ud;
