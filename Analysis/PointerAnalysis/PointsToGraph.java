@@ -26,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.35 2000-12-07 00:43:57 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.36 2000-12-11 23:18:46 vivien Exp $
  */
 public class PointsToGraph implements Cloneable {
 
@@ -55,7 +55,7 @@ public class PointsToGraph implements Cloneable {
     // set of nodes reachable from nodes from r (r included)
     private Set reachable_from_r = null;
     // set of nodes reachable from nodes from excp (excp included)
-    private Set reachable_from_excp = null;
+    public Set reachable_from_excp = null;
 
     /** Flushes the internal caches in this <code>PointsToGraph</code>. */
     public void flushCaches(){
@@ -158,11 +158,13 @@ public class PointsToGraph implements Cloneable {
 	e.union(G2.e);
 	r.addAll(G2.r);
 	excp.addAll(G2.excp);
+	flushCaches();
     }
 
     /** Remove all the <code>PANode</code>s that appear in <code>set</code>
 	from <code>this</code> points-to graph. */
     public void remove(Set set){
+	//tbu
 	O.remove(set);
 	I.remove(set);
 	e.remove(set);
@@ -180,17 +182,48 @@ public class PointsToGraph implements Cloneable {
         are inserted. */
     public void insert(PointsToGraph G2, Relation mu,
 		       boolean principal, Set noholes){
-	insert_edges( G2.O , G2.I , mu );
-	e.insert( G2.e , mu , noholes );
+	insert_edges(G2.O , G2.I , mu );
+	e.insert(G2.e , mu , noholes );
 	if(principal){
-	    insert_set( G2.r    , mu , r );
-	    insert_set( G2.excp , mu , excp );
+	    insert_set(G2.r    , mu , r );
+	    insert_set(G2.excp , mu , excp );
 	}
+    }
+
+
+    public void insert(PointsToGraph G2,
+		       Relation mu,
+		       Set noholes,
+		       ODInformation odi_org,
+		       Set holes_b4_callee,
+		       ODInformation odi_new){
+
+	insert_edges(G2.O, G2.I, 
+		     mu, 
+		     odi_org,
+		     holes_b4_callee,
+		     odi_new);
+
+	e.insert(G2.e, mu, noholes);
+    }
+
+    public void insert(PAEdgeSet O_org,
+		       PAEdgeSet I_org,
+		       Relation mu,
+		       ODInformation odi_tmp,
+		       ODParIntGraph pig){
+
+	insert_edges(O_org,
+		     I_org,
+		     mu, 
+		     odi_tmp,
+		     pig);
     }
 
     // Insert the outside edges O2 and the inside edges I2 into this graph,
     // transforming them through the mu mapping.
-    private void insert_edges(PAEdgeSet O2, PAEdgeSet I2, final Relation mu){
+    // FV changed from private to public 
+    public void insert_edges(PAEdgeSet O2, PAEdgeSet I2, final Relation mu){
 
 	// visitor for the outside edges
 	PAEdgeVisitor visitor_O = new PAEdgeVisitor(){
@@ -223,6 +256,114 @@ public class PointsToGraph implements Cloneable {
 	I2.forAllEdges(visitor_I);
     }
 
+
+    public void insert_edges(PAEdgeSet O2, PAEdgeSet I2, 
+			     final Relation mu,
+			     final ODInformation odi_org,
+			     final Set holes_b4_callee,
+			     final ODInformation odi_new)
+    {
+	// visitor for the outside edges
+	PAEdgeVisitor visitor_O = new PAEdgeVisitor(){
+		public void visit(Temp var, PANode node){
+		    Util.assert(false," var2node edge in O: " + 
+				var + "->" + node);
+		}
+		public void visit(PANode node1,String f, PANode node2){
+		    if(!mu.contains(node2,node2)) return;
+		    Set mu_node1 = mu.getValues(node1);
+		    O.addEdges(mu_node1, f, node2);
+		    odi_new.addOutsideEdges(node1, f, node2,
+					    odi_org,
+					    mu_node1, holes_b4_callee);
+		}
+	    };
+	
+	O2.forAllEdges(visitor_O);
+
+	// visitor for the inside edges
+	PAEdgeVisitor visitor_I = new PAEdgeVisitor(){
+		public void visit(Temp var, PANode node){
+		    Set mu_node = mu.getValues(node);
+		    I.addEdges(var,mu_node);
+		}
+		public void visit(PANode node1,String f, PANode node2){
+		    Set mu_node1 = mu.getValues(node1);
+		    Set mu_node2 = mu.getValues(node2);
+		    I.addEdges(mu_node1,f,mu_node2);
+		    odi_new.addInsideEdges(node1, f, node2,
+					   odi_org,
+					   mu_node1, mu_node2,
+					   holes_b4_callee);
+		}
+	    };
+	
+	I2.forAllEdges(visitor_I);
+    }
+
+    public void insert_edges(final PAEdgeSet O_org,
+			     final PAEdgeSet I_org,
+			     final Relation mu,
+			     final ODInformation odi_tmp,
+			     final ODParIntGraph pig)
+    {
+	final ODInformation odi_org = pig.odi;
+
+	// visitor for the outside edges
+	PAEdgeVisitor visitor_O = new PAEdgeVisitor(){
+	    public void visit(Temp var, PANode node){
+		Util.assert(false," var2node edge in O: " + 
+			    var + "->" + node);
+	    }
+	    public void visit(PANode node1,String f, PANode node2){
+		Set mu_node1 = mu.getValues(node1);
+		if ((mu_node1==null) || (mu_node1.isEmpty())) return; 
+		
+		O.addEdges(mu_node1, f, node2);
+		odi_tmp.addOutsideEdges(node1, f, node2,
+					odi_org,
+					mu_node1);
+	    }
+	};
+	
+	O_org.forAllEdges(visitor_O);
+
+	// visitor for the inside edges
+	PAEdgeVisitor visitor_I = new PAEdgeVisitor(){
+	    public void visit(Temp var, PANode node){
+		Set mu_node = mu.getValues(node);
+		I.addEdges(var,mu_node);
+	    }
+	    public void visit(PANode node1,String f, PANode node2){
+		int n_projected = 2;
+
+		Set mu_node1 = mu.getValues(node1);
+		if ((mu_node1==null) || (mu_node1.isEmpty())) {
+		    mu_node1 = new HashSet();
+		    n_projected--;
+		}
+		mu_node1.add(node1);
+
+		Set mu_node2 = mu.getValues(node2);
+		if ((mu_node2==null) || (mu_node2.isEmpty())) {
+		    mu_node2 = new HashSet();
+		    n_projected--;
+		}
+		mu_node2.add(node2);
+
+		// node of the two nodes are projected, there is
+		// nothing to do here.
+		if (n_projected==0) return;
+
+		I.addEdges(mu_node1,f,mu_node2);
+		odi_tmp.addInsideEdges(node1, f, node2,
+				       odi_org,
+				       mu_node1, mu_node2);
+	    }
+	};
+	
+	I_org.forAllEdges(visitor_I);
+    }
     /* Specializes <code>this</code> <code>PointsToGraph</code> according to
        <code>map</code>, a mapping from <code>PANode<code> to
        <code>PANode</code>. Each node which is not explicitly mapped is
@@ -264,14 +405,22 @@ public class PointsToGraph implements Cloneable {
 		    public final void visit(PANode node){
 			boolean was_escaped = e.hasEscaped(node);
 			boolean changed = false;
-			if(e.addNodeHoles(node,e.nodeHolesSet(current_node)))
+			if(e.addNodeHoles(node,e.nodeHolesSet(current_node))){
 			    changed = true;
+// 			    System.out.println(node + " because of node " +
+// 					       current_node + 
+// 					       e.nodeHolesSet(current_node));
+			}
 			///// if(e.getEscapedIntoMH().contains(current_node) &&
 			/////   e.addMethodHole(node, null))
 			/////    changed = true;
 			if(e.addMethodHoles(node,
-					    e.methodHolesSet(current_node)))
+					    e.methodHolesSet(current_node))){
 			    changed = true;
+// 			    System.out.println(node + " because of node " +
+// 					       current_node + 
+// 					       e.methodHolesSet(current_node));
+			}
 			/////
 			if(changed){
 			    W_prop.add(node);
