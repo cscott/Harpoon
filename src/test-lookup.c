@@ -1,5 +1,5 @@
 #include "constants.h"
-#include "stack.h"
+#include "asm/stack.h"
 
 /* value to be thrown is in r0, so be careful with that.
  * return address is in [fp, #-4] */

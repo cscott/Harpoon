@@ -1,0 +1,7 @@
+#!/bin/sh
+#  build the automake/autoconf magic needed to build the rest of the runtime.
+test -f stamp-h.in || touch stamp-h.in
+aclocal
+autoheader
+automake --add-missing
+autoconf
