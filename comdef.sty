@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.33 2002-04-29 20:59:58 cananian Exp $
+% $Id: comdef.sty,v 1.34 2002-05-02 21:45:38 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -51,11 +51,11 @@
 \newenvironment{samplecode}[1][1]%
   {\setlength{\tabcolsep}{2\tabcolsep}%
 \renewcommand{\>}{~~~~}%
-\newcommand{\comment}[1]{\rm\it // ##1}%
+\newcommand{\comment}[1]{\rmfamily\itshape // ##1}%
 \newcommand{\com}[1]{\comment{##1}}%
 \newcommand{\ells}[1]{\ifcase#1\or l\or l|l\or l|l|l\or l|l|l|l\or
 l|l|l|l|l\or l|l|l|l|l|l\fi}%
-\begin{center}\tt\begin{tabular}{\ells{#1}}}
+\begin{center}\ttfamily\begin{tabular}{\ells{#1}}}
   {\end{tabular}\end{center}}
 }
 % math abbreviations
