@@ -12,12 +12,13 @@ import java.util.zip.ZipEntry;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 
-/** Quick and dirty class file loader.
- *  Looks through CLASSPATH to find the class.  Understands .jar and .zip
- *  files.
+/** 
+ * Quick and dirty class file loader.
+ * Looks through CLASSPATH to find the class.  Understands .jar and .zip
+ * files.
  *
- *  @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- *  @version $Id: Loader.java,v 1.5 1998-10-11 03:01:01 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: Loader.java,v 1.6 1998-10-11 21:41:33 cananian Exp $
  */
 class Loader {
   public static String classToResource(String classname) {
