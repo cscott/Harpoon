@@ -42,12 +42,12 @@ import harpoon.IR.Quads.CONST;
  (mainly determining is a temp could point to an array of non-primitive
  objects (ie not <code>int[]</code>). However, it is very general and can be
  used to compute the types of some arbitrary set of <code>ExactTemp</code>s
- (not necessarily all the <code>Temp</code>s from teh body of a method).<br>
+ (not necessarily all the <code>Temp</code>s from the body of a method).<br>
  Works for <code>quad-no-ssa</code> only (anyway, it is trivial to write the
  extensions for the other quads).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: TypeInference.java,v 1.1.2.4 2000-07-02 08:37:55 salcianu Exp $
+ * @version $Id: TypeInference.java,v 1.1.2.5 2001-02-14 21:11:33 salcianu Exp $
  */
 public class TypeInference {
     // switch on the debug messages
@@ -95,11 +95,6 @@ public class TypeInference {
 	}
 
 	return false;
-    }
-
-    /** Convenient version of the other method with the same name. */
-    public boolean isArrayofNonPrimitives(HCodeElement hce, Temp t){
-	return isArrayofNonPrimitives(hce, t);
     }
     ///////////////// QUERY METHODS END //////////////////////////
     
