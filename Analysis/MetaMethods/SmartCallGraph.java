@@ -10,10 +10,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.IR.Quads.CALL;
-import harpoon.Analysis.MetaMethods.MetaMethod;
-import harpoon.Analysis.MetaMethods.MetaCallGraph;
 
 import harpoon.Util.Util;
 
@@ -21,17 +21,48 @@ import harpoon.Util.DataStructs.Relation;
 import harpoon.Util.DataStructs.LightRelation;
 import harpoon.Util.DataStructs.RelationEntryVisitor;
 
-/**
- * <code>SmartCallGraph</code>
- * 
- * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SmartCallGraph.java,v 1.2 2002-02-25 20:58:21 cananian Exp $
- */
+/** <code>SmartCallGraph</code> is an improved call graph produced by
+    compressing a meta call graph, ie, all metamethods are shrinked
+    down to their originating method).  Constructing the call graph at
+    the level of meta methods and shrinking it later to method level
+    is more precise than constructing the call graph for methods
+    directly using some RTA-like algorithm.
+
+    <p>
+    For a simple program that does just a
+    <code>System.out.println()</code>, the size of the largest group
+    of mutually recursive methods (which corresponds to a strongly
+    connected component in the call graph) decreased from 53 to 8.
+
+    @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+    @version $Id: SmartCallGraph.java,v 1.3 2002-04-12 21:48:05 salcianu Exp $ */
 public class SmartCallGraph implements CallGraph {
     
-    /** Creates a <code>SmartCallGraph</code>. */
+    /** Creates a <code>SmartCallGraph</code>.
+	@param mcg Meta call graph
+    */
     public SmartCallGraph(MetaCallGraph mcg) {
-	compute(mcg);
+	construct(mcg);
+    }
+
+
+    /** Convenient constructor for use in cases when a meta call graph
+	does not already exist.
+
+	@param hcf Caching code factory used to produce the code of the methods
+	@param ch  Class hierarchy 
+	@param mroots Set of method roots (entry points into the program: usually the main method, static initializers and methods called by the JVM before main. 
+	
+	The parameters of this constructor are used to construct a
+	meta call graph that is used to create <code>this</code> smart
+	call graph. */
+    public SmartCallGraph(CachingCodeFactory hcf,
+			  ClassHierarchy ch, Set mroots) {
+	assert
+	    hcf.getCodeName().equals(harpoon.IR.Quads.QuadNoSSA.codename) :
+	    "SmartCallGraph works only with QuadNoSSA";
+	// can't call this(...) because this is not the first statement ...
+	construct(new MetaCallGraphImpl(hcf, ch, mroots));
     }
 
     // empty array to return in case of no callee
@@ -86,7 +117,7 @@ public class SmartCallGraph implements CallGraph {
 
     // Does the main computation: fill the hm2callees and hm2cs2callees
     // structures using the info from mcg.
-    private final void compute(final MetaCallGraph mcg){
+    private final void construct(final MetaCallGraph mcg){
 	final Relation split = mcg.getSplitRelation();
 
 	for(Iterator ithm = split.keys().iterator(); ithm.hasNext(); ){
