@@ -39,7 +39,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Simplification.java,v 1.1.2.3 2000-02-15 20:15:09 cananian Exp $
+ * @version $Id: Simplification.java,v 1.1.2.4 2000-02-16 06:10:30 cananian Exp $
  */
 public abstract class Simplification { 
     private static final boolean debug = false;
@@ -157,14 +157,14 @@ public abstract class Simplification {
     private static class SimplificationVisitor extends TreeVisitor { 
 	private final TreeFactory tf;
 	private final DerivationGenerator dg;
-	private final List  rules; 
+	private final Rule[] rules; 
 	private boolean changed = false;
 
 	public SimplificationVisitor(Tree root, DerivationGenerator dg,
 				     List rules) { 
 	    this.tf = root.getFactory();
 	    this.dg = dg;
-	    this.rules = rules; 
+	    this.rules = (Rule[]) rules.toArray(new Rule[rules.size()]); 
 	    // evaluate each subtree from leaves up to root.
 	    postorder(root);
 	}
@@ -186,8 +186,8 @@ public abstract class Simplification {
 
 	public void visit(Exp e) { 
 	RESTART: do {
-	    for (Iterator i = this.rules.iterator(); i.hasNext();) { 
-		Rule rule = (Rule)i.next();
+	    for (int i=0; i<rules.length; i++) {
+		Rule rule = rules[i];
 		if (rule.match(e)) {
 		    Exp simpleE = rule.apply(tf, e, dg); 
 		    if (debug)
@@ -205,8 +205,8 @@ public abstract class Simplification {
 
 	public void visit(Stm s) { 
 	RESTART: do {
-	    for (Iterator i = this.rules.iterator(); i.hasNext();) { 
-		Rule rule = (Rule)i.next();
+	    for (int i=0; i<rules.length; i++) {
+		Rule rule = rules[i];
 		if (rule.match(s)) {
 		    Stm simpleS = rule.apply(tf, s, dg); 
 		    if (debug)
