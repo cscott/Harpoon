@@ -38,7 +38,7 @@ import java.util.Stack;
  * information about the bitfield-numbering of fields.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeDataFilter.java,v 1.2 2003-07-21 21:21:49 cananian Exp $
+ * @version $Id: TreeDataFilter.java,v 1.2.2.1 2003-11-14 20:12:29 cananian Exp $
  */
 public class TreeDataFilter extends FilterIterator.Filter<HData,HData> {
     final Frame f;
@@ -85,7 +85,7 @@ public class TreeDataFilter extends FilterIterator.Filter<HData,HData> {
 			    tb.fieldOffset(tf, null, null, bft.field).unEx(tf);
 			int data = 1 /* indicate data is valid */ +
 			    2 * bft.bit /* bit # in bitfield */ +
-			    64 * ((CONST)fldoffE).value.intValue();
+			    128 * ((CONST)fldoffE).value.intValue();
 			CONST c;
 			if (pointersAreLong)
 			    c = new CONST(tf, null, (long) data);
