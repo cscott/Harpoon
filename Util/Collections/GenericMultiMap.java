@@ -31,7 +31,7 @@ import java.util.HashSet;
  *	 are passed on to 'mm'.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.3.2.3 2002-03-18 23:01:42 cananian Exp $ */
+ * @version $Id: GenericMultiMap.java,v 1.3.2.4 2002-04-07 21:12:56 cananian Exp $ */
 public class GenericMultiMap<K,V> implements MultiMap<K,V> {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
@@ -88,13 +88,9 @@ public class GenericMultiMap<K,V> implements MultiMap<K,V> {
     /** Makes a new <code>MultiMap</code> initialized with all of the
 	<code>Map.Entry</code>s in <code>m</code>.
     */
-    GenericMultiMap(Map<K,V> m) { 
+    <K2 extends K, V2 extends V> GenericMultiMap(Map<K2,V2> m) { 
 	this();
-	Iterator<Map.Entry<K,V>> entries = m.entrySet().iterator();
-	while(entries.hasNext()) {
-	    Map.Entry<K,V> entry= entries.next();
-	    this.put(entry.getKey(), entry.getValue());
-	}
+	putAll(m);
     }
 
     // note: we'd like to maintain a separate 'size' field, but
@@ -196,10 +192,10 @@ public class GenericMultiMap<K,V> implements MultiMap<K,V> {
 	mapped to in <code>mm</code>.  To add all of the mappings from
 	another <code>MultiMap</code>, use
 	<code>addAll(MultiMap)</code>.  */
-    public void putAll(Map<K,V> t) {
-	Iterator<Map.Entry<K,V>> entries = t.entrySet().iterator();
+    public <K2 extends K, V2 extends V> void putAll(Map<K2,V2> t) {
+	Iterator<Map.Entry<K2,V2>> entries = t.entrySet().iterator();
 	while(entries.hasNext()) {
-	    Map.Entry<K,V> e = entries.next();
+	    Map.Entry<K2,V2> e = entries.next();
 	    this.put( e.getKey(), e.getValue() );
 	}
     }
@@ -249,14 +245,14 @@ public class GenericMultiMap<K,V> implements MultiMap<K,V> {
 	@return <code>true</code> if this mapping changed as a result
 	        of the call
     */
-    public boolean addAll(K key, Collection<V> values) {
+    public <V2 extends V> boolean addAll(K key, Collection<V2> values) {
 	return getValues(key).addAll(values);
     }
     /** Add all mappings in the given multimap to this multimap. */
-    public boolean addAll(MultiMap<K,V> mm) {
+    public <K2 extends K, V2 extends V> boolean addAll(MultiMap<K2,V2> mm) {
 	boolean changed = false;
-	for (Iterator<K> it=mm.keySet().iterator(); it.hasNext(); ) {
-	    K key = it.next();
+	for (Iterator<K2> it=mm.keySet().iterator(); it.hasNext(); ) {
+	    K2 key = it.next();
 	    if (addAll(key, mm.getValues(key)))
 		changed = true;
 	}
@@ -271,7 +267,7 @@ public class GenericMultiMap<K,V> implements MultiMap<K,V> {
 	@return <code>true</code> if this mapping changed as a result
 	        of the call
     */
-    public boolean retainAll(K key, Collection<V> values) {
+    public <T> boolean retainAll(K key, Collection<T> values) {
 	return getValues(key).retainAll(values);
     }
 
@@ -283,7 +279,7 @@ public class GenericMultiMap<K,V> implements MultiMap<K,V> {
 	@return <code>true</code> if this mapping changed as a result
 	        of the call
     */
-    public boolean removeAll(K key, Collection<V> values) {
+    public <T> boolean removeAll(K key, Collection<T> values) {
 	return getValues(key).removeAll(values);
     }
 

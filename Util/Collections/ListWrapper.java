@@ -9,7 +9,7 @@ import java.util.List;
  * <code>ListWrapper</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ListWrapper.java,v 1.2.2.1 2002-03-10 08:05:02 cananian Exp $
+ * @version $Id: ListWrapper.java,v 1.2.2.2 2002-04-07 21:12:57 cananian Exp $
  */
 public class ListWrapper<E> extends CollectionWrapper<E>
     implements List<E> {
@@ -53,7 +53,7 @@ public class ListWrapper<E> extends CollectionWrapper<E>
 	return b.indexOf(o);
     }
 
-    public boolean addAll(int i, java.util.Collection<E> c) {
+    public <T extends E> boolean addAll(int i, java.util.Collection<T> c) {
 	return b.addAll(i, c);
     }
 

@@ -11,7 +11,7 @@ import java.util.Iterator;
     views of the mappings it maintains.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: GenericInvertibleMap.java,v 1.2.2.1 2002-02-27 22:24:13 cananian Exp $
+    @version $Id: GenericInvertibleMap.java,v 1.2.2.2 2002-04-07 21:12:56 cananian Exp $
 */
 public class GenericInvertibleMap<K,V>
     extends MapWrapper<K,V> implements InvertibleMap<K,V> {
@@ -51,18 +51,18 @@ public class GenericInvertibleMap<K,V>
 	return old;
     }
 
-    public void putAll(Map<K,V> m) {
+    public <K2 extends K, V2 extends V> void putAll(Map<K2,V2> m) {
 	super.putAll(m);
-	Iterator<Map.Entry<K,V>> entries = m.entrySet().iterator();
+	Iterator<Map.Entry<K2,V2>> entries = m.entrySet().iterator();
 	while(entries.hasNext()) {
-	    Map.Entry<K,V> e = entries.next();
+	    Map.Entry<K2,V2> e = entries.next();
 	    imap.add(e.getValue(), e.getKey());
 	}
     }
     
     public V remove(Object key) {
 	V r = super.remove(key);
-	imap.remove(r, (K) key);
+	imap.remove(r, key);
 	return r;
     }
 }

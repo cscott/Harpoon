@@ -83,12 +83,12 @@ import java.util.Map;
 	 </OL> 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.2.2.2 2002-03-18 23:01:42 cananian Exp $
+    @version $Id: MultiMap.java,v 1.2.2.3 2002-04-07 21:12:57 cananian Exp $
  */
-public interface MultiMap<K,V> extends Map<K,V>
-				       // XXX unfortunately no covariant
+public interface MultiMap<K,V> extends Map<K,V>,
+				       // unfortunately no covariant
 				       //   subtyping on contains().
-				       //, harpoon.Util.BinaryRelation<K,V>
+				       harpoon.Util.BinaryRelation<Object,Object>
 {
     /** Returns some arbitrary value from the collection of values to
 	which this map maps the specified key.  Returns
@@ -120,7 +120,7 @@ public interface MultiMap<K,V> extends Map<K,V>
 	another <code>MultiMap</code>, use
 	<code>addAll(MultiMap)</code>.
     */
-    public void putAll(Map<K,V> t);
+    public <K2 extends K, V2 extends V> void putAll(Map<K2,V2> t);
 
     /** Removes mappings from key to all associated values from this map.
      *  This is consistent with the <code>Map</code> definition of
@@ -164,10 +164,10 @@ public interface MultiMap<K,V> extends Map<K,V>
 	@return <code>true</code> if this mapping changed as a result
 	        of the call
     */
-    boolean addAll(K key, Collection<V> values);
+    <V2 extends V> boolean addAll(K key, Collection<V2> values);
 
     /** Adds all mappings in the given multimap to this multimap. */
-    boolean addAll(MultiMap<K,V> mm);
+    <K2 extends K, V2 extends V> boolean addAll(MultiMap<K2,V2> mm);
 
     /** Removes from the current mappings: associations for
 	<code>key</code> to any value not in <code>values</code>. 
@@ -177,7 +177,7 @@ public interface MultiMap<K,V> extends Map<K,V>
 	@return <code>true</code> if this mapping changed as a result
 	        of the call
     */
-    boolean retainAll(K key, Collection<V> values);
+    <T> boolean retainAll(K key, Collection<T> values);
 
     /** Removes from the current mappings: associations for
 	<code>key</code> to any value in <code>values</code>.
@@ -187,7 +187,7 @@ public interface MultiMap<K,V> extends Map<K,V>
 	@return <code>true</code> if this mapping changed as a result
 	        of the call
     */
-    boolean removeAll(K key, Collection<V> values);
+    <T> boolean removeAll(K key, Collection<T> values);
 
     /** Returns the collection of Values associated with
 	<code>key</code>.  Modifications to the returned
@@ -211,7 +211,7 @@ public interface MultiMap<K,V> extends Map<K,V>
 
     /** Returns a <code>Set</code> view that allows you to recapture
      *  the <code>MultiMap</code> view. */
-    //public MultiMapSet<K,V> entrySet();
+    public MultiMapSet<K,V> entrySet();
 } 
 
 

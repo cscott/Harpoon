@@ -13,7 +13,7 @@ import java.util.AbstractMap;
     methds of the <code>MultiMap</code> interface.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: UnmodifiableMultiMap.java,v 1.2.2.2 2002-03-18 23:01:42 cananian Exp $
+    @version $Id: UnmodifiableMultiMap.java,v 1.2.2.3 2002-04-07 21:12:57 cananian Exp $
 */
 public abstract class UnmodifiableMultiMap<K,V> 
     extends AbstractMap<K,V> implements MultiMap<K,V> {
@@ -32,9 +32,12 @@ public abstract class UnmodifiableMultiMap<K,V>
 		public boolean contains(Object a, Object b) { 
 		    return mmap.contains(a, b);
 		}
-		public Set<Map.Entry<K,V>> entrySet() { return mmap.entrySet(); }
+		public MultiMapSet<K,V> entrySet() { return mmap.entrySet(); }
 	    };
     }
+    /** Returns a <code>Set</code> view that allows you to recapture
+     *  the <code>MultiMap</code> view. */
+    public abstract MultiMapSet<K,V> entrySet();
 
     /** Throws UnsupportedOperationException. */
     public V put(K key, V value) { die(); return null; }
@@ -43,19 +46,19 @@ public abstract class UnmodifiableMultiMap<K,V>
     /** Throws UnsupportedOperationException. */
     public boolean remove(Object key, Object value) { return die(); }
     /** Throws UnsupportedOperationException. */
-    public void putAll(Map<K,V> t) { die(); }
+    public <K2 extends K, V2 extends V> void putAll(Map<K2,V2> t) { die(); }
     /** Throws UnsupportedOperationException. */
     public void clear() { die(); }
     /** Throws UnsupportedOperationException. */
     public boolean add(K key, V value) { return die(); }
     /** Throws UnsupportedOperationException. */
-    public boolean addAll(K key, Collection<V> values) { return die(); }
+    public <V2 extends V> boolean addAll(K key, Collection<V2> values) { return die(); }
     /** Throws UnsupportedOperationException. */
-    public boolean addAll(MultiMap<K,V> mm) { return die(); }
+    public <K2 extends K, V2 extends V> boolean addAll(MultiMap<K2,V2> mm) { return die(); }
     /** Throws UnsupportedOperationException. */
-    public boolean retainAll(K key, Collection<V> values) { return die(); }
+    public <T> boolean retainAll(K key, Collection<T> values) { return die(); }
     /** Throws UnsupportedOperationException. */
-    public boolean removeAll(K key, Collection<V> values) { return die(); }
+    public <T> boolean removeAll(K key, Collection<T> values) { return die(); }
     private boolean die() {
 	if (true) throw new UnsupportedOperationException();
 	return false;

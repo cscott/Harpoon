@@ -19,7 +19,7 @@ import java.util.Set;
  * correctly extends <code>Map</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GenericInvertibleMultiMap.java,v 1.2.2.2 2002-03-18 23:01:41 cananian Exp $
+ * @version $Id: GenericInvertibleMultiMap.java,v 1.2.2.3 2002-04-07 21:12:56 cananian Exp $
  */
 public class GenericInvertibleMultiMap<K,V> implements InvertibleMultiMap<K,V> {
     private final MultiMap<K,V> map;
@@ -50,11 +50,11 @@ public class GenericInvertibleMultiMap<K,V> implements InvertibleMultiMap<K,V> {
     }
 
     /* Collections API */
-    public GenericInvertibleMultiMap(Map<K,V> m) {
+    public <K2 extends K, V2 extends V> GenericInvertibleMultiMap(Map<K2,V2> m) {
 	this();
 	putAll(m);
     }
-    public GenericInvertibleMultiMap(MultiMap<K,V> mm) {
+    public <K2 extends K, V2 extends V> GenericInvertibleMultiMap(MultiMap<K2,V2> mm) {
 	this();
 	addAll(mm);
     }
@@ -67,17 +67,17 @@ public class GenericInvertibleMultiMap<K,V> implements InvertibleMultiMap<K,V> {
 	imap.add(value, key);
 	return map.add(key, value);
     }
-    public boolean addAll(K key, Collection<V> values) {
+    public <T extends V> boolean addAll(K key, Collection<T> values) {
 	boolean changed = false;
-	for (Iterator<V> it=values.iterator(); it.hasNext(); )
+	for (Iterator<T> it=values.iterator(); it.hasNext(); )
 	    if (this.add(key, it.next()))
 		changed = true;
 	return changed;
     }
-    public boolean addAll(MultiMap<K,V> mm) {
+    public <K2 extends K, V2 extends V> boolean addAll(MultiMap<K2,V2> mm) {
 	boolean changed = false;
-	for (Iterator<Map.Entry<K,V>> it=mm.entrySet().iterator(); it.hasNext(); ) {
-	    Map.Entry<K,V> me = it.next();
+	for (Iterator<Map.Entry<K2,V2>> it=mm.entrySet().iterator(); it.hasNext(); ) {
+	    Map.Entry<K2,V2> me = it.next();
 	    if (add(me.getKey(), me.getValue()))
 		changed = true;
 	}
@@ -168,10 +168,10 @@ public class GenericInvertibleMultiMap<K,V> implements InvertibleMultiMap<K,V> {
 	    }
 	    public void clear() { map.remove(key); }
 	    public boolean contains(Object o) {
-		return GenericInvertibleMultiMap.this.contains(key, (V)o);
+		return GenericInvertibleMultiMap.this.contains(key, o);
 	    }
 	    public boolean remove(Object o) {
-		return GenericInvertibleMultiMap.this.remove(key, (V)o);
+		return GenericInvertibleMultiMap.this.remove(key, o);
 	    }
 	    public int size() { return map.getValues(key).size(); }
 	};
@@ -215,9 +215,9 @@ public class GenericInvertibleMultiMap<K,V> implements InvertibleMultiMap<K,V> {
 	this.add(key, value);
 	return old;
     }
-    public void putAll(Map<K,V> t) {
-	for (Iterator<K> it=t.keySet().iterator(); it.hasNext(); ) {
-	    K key = it.next();
+    public <K2 extends K, V2 extends V> void putAll(Map<K2,V2> t) {
+	for (Iterator<K2> it=t.keySet().iterator(); it.hasNext(); ) {
+	    K2 key = it.next();
 	    this.put(key, t.get(key));
 	}
     }
@@ -233,14 +233,14 @@ public class GenericInvertibleMultiMap<K,V> implements InvertibleMultiMap<K,V> {
 	imap.remove(value, key);
 	return map.remove(key, value);
     }
-    public boolean removeAll(K key, Collection<V> values) {
+    public <T> boolean removeAll(K key, Collection<T> values) {
 	boolean changed = false;
-	for (Iterator<V> it=values.iterator(); it.hasNext(); )
+	for (Iterator<T> it=values.iterator(); it.hasNext(); )
 	    if (this.remove(key, it.next()))
 		changed = true;
 	return changed;
     }
-    public boolean retainAll(K key, Collection<V> values) {
+    public <T> boolean retainAll(K key, Collection<T> values) {
 	boolean changed = false;
 	for (Iterator<V> it=this.getValues(key).iterator(); it.hasNext(); )
 	    if (!values.contains(it.next())) {

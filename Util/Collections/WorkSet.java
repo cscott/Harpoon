@@ -15,7 +15,7 @@ import java.util.Iterator;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WorkSet.java,v 1.3.2.3 2002-03-14 01:58:47 cananian Exp $
+ * @version $Id: WorkSet.java,v 1.3.2.4 2002-04-07 21:12:57 cananian Exp $
  */
 public class WorkSet<E> extends java.util.AbstractSet<E> implements Worklist<E>
 {
@@ -41,7 +41,7 @@ public class WorkSet<E> extends java.util.AbstractSet<E> implements Worklist<E>
     }
     /** Constructs a new <code>WorkSet</code> with the contents of the
      *  specified <code>Collection</code>. */
-    public WorkSet(java.util.Collection<E> c) {
+    public <T extends E> WorkSet(java.util.Collection<T> c) {
 	// make hash map about twice as big as the collection.
 	hm = new HashMap<E,EntryList<E>>(Math.max(2*c.size(),11));
 	addAll(c);

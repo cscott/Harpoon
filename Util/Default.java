@@ -5,8 +5,11 @@ package harpoon.Util;
 
 import harpoon.Util.Collections.AbstractMapEntry;
 import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.Collections.MultiMapSet;
 
+import java.util.AbstractCollection;
 import java.util.AbstractList;
+import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -25,7 +28,7 @@ import java.util.SortedSet;
  * <code>Collection</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.2.2.3 2002-03-14 02:29:10 cananian Exp $
+ * @version $Id: Default.java,v 1.2.2.4 2002-04-07 21:12:51 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
@@ -81,7 +84,7 @@ public abstract class Default  {
 	    public <T> boolean containsAll(Collection<T> c) {
 		return c.isEmpty();
 	    }
-	    public boolean addAll(Collection<E> c) {
+	    public <T extends E> boolean addAll(Collection<T> c) {
 		if (c.isEmpty()) return false;
 		throw new UnsupportedOperationException();
 	    }
@@ -152,10 +155,20 @@ public abstract class Default  {
     };
     /** An empty multi-map. */
     public static final MultiMap EMPTY_MULTIMAP = new SerializableMultiMap() {
+	private MultiMap _this_ = this;
 	public void clear() { }
 	public boolean containsKey(Object key) { return false; }
 	public boolean containsValue(Object value) { return false; }
-	public Set entrySet() { return Collections.EMPTY_SET; }
+	public MultiMapSet entrySet() {
+	    return new AbstractMultiMapSet() {
+		    public Iterator iterator() { return nullIterator; }
+		    public int size() { return 0; }
+		    public MultiMap asMap() { return _this_; }
+		    public MultiMap asMultiMap() { return _this_; }
+	    };
+	}
+	abstract class AbstractMultiMapSet
+	    extends AbstractSet implements MultiMapSet { }
 	public boolean equals(Object o) {
 	    if (!(o instanceof Map)) return false;
 	    return ((Map)o).size()==0;
@@ -205,34 +218,63 @@ public abstract class Default  {
 	    return false;
 	}
     };
+    /**
+     * Improved <code>unmodifiableCollection()</code> class that
+     * helps w/ covariant subtyping. */
+    public static <A,B extends A> Collection<A> unmodifiableCollection(final Collection<B> cc,
+								       Collection<A> _ignore_ // XXX BUG IN JAVAC: this parameter should not be necessary.
+								       ) {
+	return new AbstractCollection<A>() {
+	    public <T> boolean containsAll(Collection<T> c) {
+		return cc.containsAll(c);
+	    }
+	    public <T> boolean removeAll(Collection<T> c) {
+		return cc.removeAll(c);
+	    }
+	    public <T> boolean retainAll(Collection<T> c) {
+		return cc.retainAll(c);
+	    }
+	    public boolean contains(Object o) { return cc.contains(o); }
+	    public boolean isEmpty() { return cc.isEmpty(); }
+	    public Iterator<A> iterator() {
+		final Iterator<B> it = cc.iterator();
+		return new UnmodifiableIterator<A>() {
+		    public boolean hasNext() { return it.hasNext(); }
+		    public A next() { return it.next(); }
+		};
+	    }
+	    public int size() { return cc.size(); }
+	};
+    }
     /** A pair constructor method.  Pairs implement <code>hashCode()</code>
      *  and <code>equals()</code> "properly" so they can be used as keys
      *  in hashtables and etc.  They are implemented as mutable lists of
      *  fixed size 2. */
-    public static <E> List<E> pair(final E left, final E right) {
+    public static <A,B> PairList<A,B> pair(final A left, final B right) {
 	// this can't be an anonymous class because we want to make it
 	// serializable.
-	return new PairList<E>(left, right);
+	return new PairList<A,B>(left, right);
     }
-    private static class PairList<E> extends AbstractList<E>
+    private static class PairList<A,B> extends AbstractList
 	implements java.io.Serializable {
-	private E left, right;
-	PairList(E left, E right) {
+	private A left;
+	private B right;
+	PairList(A left, B right) {
 	    this.left = left; this.right = right;
 	}
 	public int size() { return 2; }
-	public E get(int index) {
+	public Object get(int index) {
 	    switch(index) {
 	    case 0: return this.left;
 	    case 1: return this.right;
 	    default: throw new IndexOutOfBoundsException();
 	    }
 	}
-	public E set(int index, E element) {
-	    E prev;
+	public Object set(int index, Object element) {
+	    Object prev;
 	    switch(index) {
-	    case 0: prev=this.left; this.left=element; return prev;
-	    case 1: prev=this.right; this.right=element; return prev;
+	    case 0: prev=this.left; this.left=(A)element; return prev;
+	    case 1: prev=this.right; this.right=(B)element; return prev;
 	    default: throw new IndexOutOfBoundsException();
 	    }
 	}
