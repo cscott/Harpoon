@@ -84,6 +84,7 @@ lctes03-talk.dvi lctes03-talk-notes.tex lctes03-talk-adobe.tex:	\
 	 Figures/oopsla-speed-color.eps		\
 	 Figures/spec-space-2.eps		\
 	 Figures/Kontour/classcomp-bbox.eps	\
+	 Figures/THlat1b.tex			\
 	 Figures/THlat6c.tex			\
 	 Figures/THlat6c2.tex			\
 	 Figures/Images/model-t-black.eps	\
