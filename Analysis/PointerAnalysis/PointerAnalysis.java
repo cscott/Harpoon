@@ -49,7 +49,7 @@ import harpoon.IR.Quads.FOOTER;
  * computed results from the caches.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.6 2000-01-22 20:56:24 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.7 2000-01-23 00:42:11 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -103,7 +103,10 @@ public class PointerAnalysis {
     /** Returns the simplified (external) <code>ParIntGraph</code> attached to
      * the method <code>hm</code> i.e. the graph at the end of the method.
      * of which only the parts reachable from the exterior (via parameters,
-     * returned objects or static classes) have been preserved.
+     * returned objects or static classes) have been preserved. The escape
+     * function do not consider the parameters of the function (anyway, this
+     * graph is supposed to be inlined into the graph of the caller, so the 
+     * parameters will disappear anyway).
      * Returns <code>null</code> if no such graph is available. */
     public ParIntGraph getExtParIntGraph(HMethod hm){
 	return (ParIntGraph)hash_proc_ext.get(hm);
@@ -146,6 +149,7 @@ public class PointerAnalysis {
 	    if(!new_info.equals(old_info)){
 		// yes! The callers of hm_work should be added to
 		// the inter-procedural worklist
+		// TODO: remove the comments for the inter-procedural analysis
 		Iterator it = ac.getDirectCallers(hm_work);
 		while(it.hasNext())
 		    W_inter_proc.add(it.next());

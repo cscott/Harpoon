@@ -12,7 +12,7 @@ import java.util.Iterator;
  * <code>PointsToGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.5 2000-01-18 04:49:41 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.6 2000-01-23 00:42:11 salcianu Exp $
  */
 public class PointsToGraph {
     
@@ -131,31 +131,14 @@ public class PointsToGraph {
     }
 
 
-    // Private data for the keepTheEssential algorithm:
-    //  "essential" nodes - the nodes that must be in the graph
-    //  at the end of a method (nodes that are reachable from the outside); 
-    private Set kte_essential_nodes = null;
-    // worklist of "to be explored" nodes
-    private PAWorkList kte_worklist = null;
-
-    private class KTENodeVisitor implements PANodeVisitor{
-	public final void visit(PANode node){
-	    if(kte_essential_nodes.add(node))
-		kte_worklist.add(node);
-	}
-    }
-
     /** Finds the static nodes that appear as source nodes in the set of
-     * edges <code>E</code> and put them in <code>kte_worklist</code> and
-     * in <code>essential_nodes</code> */
-    private void grab_static_roots(PAEdgeSet E){
+     * edges <code>E</code> and put them in <code>static_nodes</code> */
+    private void grab_static_roots(PAEdgeSet E, Set static_nodes){
 	Enumeration enum = E.allNodes();
 	while(enum.hasMoreElements()){
 	    PANode node = (PANode)enum.nextElement();
-	    if(node.type == PANode.STATIC){
-		kte_worklist.add(node);
-		kte_essential_nodes.add(node);
-	    }
+	    if(node.type == PANode.STATIC)
+		static_nodes.add(node);
 	}
     }
 
@@ -171,7 +154,8 @@ public class PointsToGraph {
      * In addition to returning the new, reduced graph, this method builds
      * the set of nodes that are in the new graph. This set is put in 
      * <code>remaining_nodes</code> */
-    public PointsToGraph keepTheEssential(PANode[] params, Set remaining_nodes,
+    public PointsToGraph keepTheEssential(PANode[] params,
+					  final Set remaining_nodes,
 					  boolean is_main){
 	PAEdgeSet _O = new PAEdgeSet();
 	PAEdgeSet _I = new PAEdgeSet();
@@ -179,13 +163,16 @@ public class PointsToGraph {
 	// the same sets of return nodes and exceptions
 	HashSet _r = (HashSet) r.clone();
 	HashSet _excp = (HashSet) excp.clone();
+
+	// worklist of "to be explored" nodes
+	final PAWorkList worklist = new PAWorkList();
+	// set of the static nodes
+	Set static_nodes = new HashSet();
 	
 	// Put the parameter nodes in the root set
-	kte_worklist = new PAWorkList();
-	kte_essential_nodes = remaining_nodes;
 	for(int i=0;i<params.length;i++){
-	    kte_worklist.add(params[i]);
-	    kte_essential_nodes.add(params[i]);
+	    worklist.add(params[i]);
+	    remaining_nodes.add(params[i]);
 	}
 	
 	// In the case of the main method, the static nodes are no longer
@@ -193,43 +180,49 @@ public class PointsToGraph {
 	// because they can be accessed by code outside the analyzed
 	// procedure (e.g. the caller)
 	if(!is_main){
-	    grab_static_roots(O);
-	    grab_static_roots(I);
-	}
-
-	// Now, essential_nodes contains all the parameter and static
-	// nodes; each of these nodes is marked as escaping through itself. 
-	HashSet params_and_statics = new HashSet(kte_essential_nodes);
-	Iterator it = params_and_statics.iterator();
-	while(it.hasNext()){
-	    PANode node = (PANode)it.next();
-	    _e.addNodeHole(node,node);
+	    grab_static_roots(O, static_nodes);
+	    grab_static_roots(I, static_nodes);
+	    worklist.addAll(static_nodes);
+	    remaining_nodes.addAll(static_nodes);
 	}
 
 	// Add the normal return nodes to the set of roots
-	kte_worklist.addAll(r);
-	kte_essential_nodes.addAll(r);
+	worklist.addAll(r);
+	remaining_nodes.addAll(r);
 	// Add the exception nodes too
-	kte_worklist.addAll(excp);
-	kte_essential_nodes.addAll(excp);
+	worklist.addAll(excp);
+	remaining_nodes.addAll(excp);
 
 	// copy the relevant edges and build the set of essential_nodes
-	KTENodeVisitor visitor = new KTENodeVisitor();
-	while(!kte_worklist.isEmpty()){
-	    PANode node = (PANode)kte_worklist.remove();
+	PANodeVisitor visitor = new PANodeVisitor(){
+		public final void visit(PANode node){
+		    if(remaining_nodes.add(node))
+			worklist.add(node);
+		}		
+	    };
+	while(!worklist.isEmpty()){
+	    PANode node = (PANode)worklist.remove();
 	    O.copyEdges(node,_O);
 	    I.copyEdges(node,_I);
 	    O.forAllPointedNodes(node,visitor);
 	    I.forAllPointedNodes(node,visitor);
 	}
 
-	// enable the GC
-	kte_worklist = null; 
-	kte_essential_nodes = null;
 	// build the reduced graph
 	PointsToGraph ptg = new PointsToGraph(_O,_I,_e,_r,_excp);
-	// propagation from the parameters and statics
-	ptg.propagate(params_and_statics);
+
+	// Build the new escape info: initial data + propagation
+	Iterator it_static = remaining_nodes.iterator();
+	while(it_static.hasNext()){
+	    PANode node = (PANode) it_static.next();
+	    // Each static node escapes through itself
+	    if(node.type == PANode.STATIC)
+		_e.addNodeHole(node,node);
+	    // the method holes are preserved
+	    _e.addMethodHoles(node,e.methodHolesSet(node));
+	}
+	ptg.propagate(static_nodes);
+
 	return ptg;
     }
     

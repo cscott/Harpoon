@@ -24,7 +24,7 @@ import harpoon.Temp.Temp;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.1 2000-01-22 20:56:24 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.2 2000-01-23 00:42:11 salcianu Exp $
  */
 abstract class InterProcPA {
  
@@ -35,13 +35,16 @@ abstract class InterProcPA {
 	HMethod[] hms = cg.calls(current_method,q);
 	int nb_callees = hms.length;
 
+	// This test seems to be a bit paranoic but it helped me to find
+	// an obscure bug in CallGraph. TRUST NO ONE!
 	if(nb_callees < 1){
 	    System.out.println("Callees: " + hms);
 	    System.out.println("nb_callees = " + nb_callees);
 	    System.out.println("Error: CALL site with no callee!");
 	    System.out.println(current_method);
 	    System.out.println(q);
-	    System.exit(1);
+	    //System.exit(1);
+	    return skip_call(q,pig_before,node_rep);
 	}
 
 	ParIntGraph pigs[] = new ParIntGraph[nb_callees];
@@ -55,8 +58,8 @@ abstract class InterProcPA {
 
 	// special case: only one callee; no ParIntGraph is cloned
 	if(nb_callees == 1){
-	    PANode[] callee_formals = pa.getParamNodes(hms[0]);
-	    return mapUp(q,pig_before,pigs[0],callee_formals);
+	    System.out.println(hms[0]);
+	    return mapUp(q,pig_before,pigs[0],pa.getParamNodes(hms[0]));
 	}
 
 	// more than one callee: the graph after the CALL is a join of all
@@ -180,13 +183,26 @@ abstract class InterProcPA {
 						PANode[] callee_params){
 	Relation mu = new Relation();
 	Temp[] args = q.params();
-	if(args.length != callee_params.length){
+	int object_params_count = 0;
+
+	// map the object formal parameter nodes to the actual arguments
+	for(int i = 0; i < args.length; i++)
+	    if(!q.paramType(i).isPrimitive()){
+		mu.addAll(callee_params[object_params_count],
+			  pig_caller.G.I.pointedNodes(args[i]));
+		object_params_count++;
+	    }
+
+	if(object_params_count != callee_params.length){
 	    System.err.println("Fatal error in get_initial_mapping");
+	    System.out.println("\tDifferent numbers of object formal " +
+			       "parameters (" + callee_params.length + 
+			       ") and object arguments (" +
+			       object_params_count + ")");
+	    System.out.println(q);
 	    System.exit(1);
 	}
-	// map the parameter nodes to the actual arguments
-	for(int i=0;i<callee_params.length;i++)
-	    mu.addAll(callee_params[i],pig_caller.G.I.pointedNodes(args[i]));
+
 	// map the static nodes to themselves
 	Enumeration enum = pig_callee.G.O.allNodes();
 	while(enum.hasMoreElements()){
@@ -259,6 +275,7 @@ abstract class InterProcPA {
     private static void compute_the_final_mapping(Relation mu,
 						  ParIntGraph pig_caller,
 						  ParIntGraph pig_callee){
+	// TODO: what about exceptions
 	// the return nodes must be in the final graph
 	Iterator it = pig_callee.G.r.iterator();
 	while(it.hasNext()){

@@ -19,7 +19,7 @@ import java.util.Map;
  * algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Relation.java,v 1.1.2.6 2000-01-22 20:56:24 salcianu Exp $
+ * @version $Id: Relation.java,v 1.1.2.7 2000-01-23 00:42:12 salcianu Exp $
  */
 public class Relation{
     
@@ -162,7 +162,7 @@ public class Relation{
 	    buffer.append(" -> ");
 	    buffer.append(getValuesSet(o));
 	}
-	buffer.append("\n  }");
+	buffer.append("\n  }\n");
 	return buffer.toString();
     }
 

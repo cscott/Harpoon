@@ -23,7 +23,7 @@ import harpoon.Temp.Temp;
  * than the straightforward solution of a <code>HashSet</code> of edges.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdgeSet.java,v 1.1.2.6 2000-01-22 20:56:24 salcianu Exp $
+ * @version $Id: PAEdgeSet.java,v 1.1.2.7 2000-01-23 00:42:11 salcianu Exp $
  */
 public class PAEdgeSet {
 
@@ -275,7 +275,6 @@ public class PAEdgeSet {
 
 	buffer.append("{\n");
 	buffer.append(vars);
-	buffer.append("\n");
 
 	Iterator it = nodes.entrySet().iterator();
 
@@ -287,7 +286,7 @@ public class PAEdgeSet {
 	    buffer.append((Relation)entry.getValue());
 	}
 
-	buffer.append("\n }");
+	buffer.append("}");
 	
 	return buffer.toString();
     }
