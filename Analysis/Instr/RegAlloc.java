@@ -74,7 +74,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.87 2000-06-09 23:21:07 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.88 2000-06-21 07:22:28 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -270,31 +270,27 @@ public abstract class RegAlloc  {
 	     <code>concreteSpillFactory()</code> to produce a code
 	     factory suitable for generating runnable assembly code. 
     */
-    public static 
-	IntermediateCodeFactory abstractSpillFactory(final HCodeFactory parent,
-						     final Frame frame) {
+    public static IntermediateCodeFactory 
+	abstractSpillFactory(final HCodeFactory parent,
+			     final Frame frame) {
 	return new IntermediateCodeFactory() {
-	    HCodeFactory p = parent;
+		HCodeFactory p = parent;
 
-	    
-
-	    public HCode convert(HMethod m) { 
-		Code preAllocCode = (Code) p.convert(m);
-		if (preAllocCode == null) {
-		    return null;
+		public HCode convert(HMethod m) { 
+		    Code preAllocCode = (Code) p.convert(m);
+		    if (preAllocCode == null) {
+			return null;
 		}
 		
 		RegAlloc localCode, globalCode;
 
 		localCode = new LocalCffRegAlloc(preAllocCode);
-		
 		globalCode = localCode; // no global reg alloc yet
-		
 		globalCode.generateRegAssignment();
-		
 		List pair = globalCode.resolveOutstandingTemps();
 		final Instr instr = (Instr) pair.get(0);
-		final RegFileInfo.TempLocator tl = (RegFileInfo.TempLocator) pair.get(1);
+		final RegFileInfo.TempLocator tl = 
+		    (RegFileInfo.TempLocator) pair.get(1);
 		final Code mycode = globalCode.code;
 
 		Util.assert(mycode != null);
@@ -460,7 +456,7 @@ public abstract class RegAlloc  {
 		// look for non-Register Temps in use, adding
 		// them to internal map
 		Temp use = m.use()[0];
-		if(!isTempRegister(use)) {
+		if(!isRegister(use)) {
 		    if (tempsToOffsets.get(use)==null){
 			tempsToOffsets.put(use, new Integer(nextOffset));
 			nextOffset += frame.getInstrBuilder().getSize(use);
@@ -484,7 +480,7 @@ public abstract class RegAlloc  {
 		// look for non-Register Temps in def, adding
 		// them to internal map
 		Temp def = m.def()[0];
-		if(!isTempRegister(def)) {
+		if(!isRegister(def)) {
 		    if (tempsToOffsets.get(def)==null){
 			tempsToOffsets.put(def, new Integer(nextOffset)); 
 			nextOffset += frame.getInstrBuilder().getSize(def);
@@ -514,7 +510,7 @@ public abstract class RegAlloc  {
 		while(defs.hasNext()) {
 		    Temp def = (Temp) defs.next();
 		    List dxi = Default.pair(def, i);
-		    if (isTempRegister(def)) {
+		    if (isRegister(def)) {
 			tempXinstrToCommonLoc.add(dxi, def);
 		    } else {
 			Collection regs = code.getRegisters(i, def);
@@ -568,7 +564,7 @@ public abstract class RegAlloc  {
 	    if (il instanceof SpillStore) continue;
 	    Temp[] d = il.def();
 	    for (int i=0; i<d.length; i++) {
-		if (isTempRegister(d[i])) {
+		if (isRegister(d[i])) {
 		    s.add(d[i]); 
 		} else {
 		    Collection c = code.getRegisters(il, d[i]);
@@ -585,7 +581,7 @@ public abstract class RegAlloc  {
 	     <code>frame</code> associated with <code>this</code>,
 	     then returns true.  Else returns false.   
     */ 
-    protected boolean isTempRegister(Temp t) {
+    protected boolean isRegister(Temp t) {
 	return frame.getRegFileInfo().isRegister(t);
         
 	// Temp[] allRegs = frame.getAllRegisters();
@@ -644,115 +640,6 @@ public abstract class RegAlloc  {
 	return yes;
     }
     
-}
-
-// note that this doesn't even work any more because it does not
-// support garbage collection.
-class BrainDeadLocalAlloc extends RegAlloc {
-    BrainDeadLocalAlloc(Code code) {
-	super(code);
-    }
-	
-    class BrainDeadInstrVisitor extends InstrVisitor {
-	public void visit(Instr instr) {
-	    InstrFactory inf = instr.getFactory();
-	    
-	    try {
-		// in this (dumb) model, each instruction will
-		// load all uses and store all defs, so we can
-		// treat the register file as being empty for each
-		// instruction
-		
-		Map regFile = new LinearMap();
-
-		// load srcs
-		for(int i=0; i<instr.use().length; i++) {
-		    Temp preg = instr.use()[i];
-		    if (!isTempRegister(preg)) {
-			Iterator iter =
-			    frame.getRegFileInfo().suggestRegAssignment(preg, regFile); 
-			List regList = (List) iter.next();
-			InstrMEM loadSrcs = 
-			    new SpillLoad(inf, null, "FSK-LOAD", regList, preg); 
-			loadSrcs.insertAt(new InstrEdge(instr.getPrev(), instr));
-			code.assignRegister(instr, preg, regList);
-			Iterator regIter = regList.iterator();
-			while(regIter.hasNext()) {
-			    Temp r = (Temp) regIter.next();
-			    regFile.put(r, preg);
-			}
-		    }
-		}
-		// store dsts
-		for(int i=0; i<instr.def().length; i++) {
-		    Temp preg = instr.def()[i];
-		    if(!isTempRegister(preg)) {
-			Iterator iter =
-			    frame.getRegFileInfo().suggestRegAssignment(preg, regFile); 
-			List regList = (List) iter.next();
-			InstrMEM storeDsts = 
-			    new SpillStore(inf, null, "FSK-STORE",
-					 preg, regList);
-
-			// NOTE: if this assertion fails, we can write
-			// code to work around this requirement.  But
-			// for now this implementation is simple and
-			// seems to work.  
-			Util.assert(instr.succC().size() == 1, 
-				    "Instr: "+instr+" should have only"+
-				    " one control flow successor");
-
-			storeDsts.insertAt
-			    (new InstrEdge
-			     (instr, (Instr)instr.succ()[0].to()));
-
-			// I'm not certain this code will handle 
-			// "add t0, t0, t1" properly 
-			code.assignRegister(instr, preg, regList);
-			Iterator regIter = regList.iterator();
-			while(regIter.hasNext()) {
-			    Temp r = (Temp) regIter.next();
-			    regFile.put(r, preg);
-			}
-		    }
-		}
-	    } catch (SpillException e) {
-		// actually...this doesn't necessarily imply that we
-		// have to fail; if a TwoWordTemp can't be fitted, we
-		// could potentially shift the register files contents
-		// around to make room for it.   While we STILL
-		// shouldn't ever encounter this problem (after all,
-		// we have an empty register file and usually at most
-		// three pseudo registers to assign (potentially six
-		// though, with double worded operands)) I should give
-		// some thought on how to handle this case 
-		
-		Util.assert(false, "Either a TwoWordTemp screwed us, or "+
-			    "One Instr uses/defines more "+
-			    "registers than "+frame+" can accomidate "+
-			    "in Register File!"); 
-	    }
-	}
-	
-    }
-    
-    /** For each instruction:
-	1. Load every use from memory into the register file.
-	2. Execute the instruction
-	3. Store every dest from the register file
-	regFile will be clean in between each instruction in this
-	(very dumb) allocation strategy. 
-    */
-    protected void generateRegAssignment() {
-	Iterator instrs = code.getElementsI();
-	InstrVisitor memVisitor = new BrainDeadInstrVisitor();
-	
-	while(instrs.hasNext()) {
-	    ((Instr)instrs.next()).accept(memVisitor);
-	}
-
-    }
-
 }
 
 /** Visits <code>BasicBlock</code>s of <code>Instr</code>s and

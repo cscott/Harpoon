@@ -23,7 +23,7 @@ import java.util.HashSet;
  * <code>MultiMap</code>.  
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.1.2.4 2000-05-23 17:25:55 pnkfelix Exp $ */
+ * @version $Id: GenericMultiMap.java,v 1.1.2.5 2000-06-21 07:22:34 pnkfelix Exp $ */
 public class GenericMultiMap implements MultiMap {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
@@ -160,6 +160,20 @@ public class GenericMultiMap implements MultiMap {
 	return prev;
     }
 
+    /** Removes a mapping from key to value from this map if present.
+	Note that if multiple mappings from key to value are permitted
+	by this map, then only one is guaranteed to be removed.
+	Returns true if <code>this</code> was modified as a result of
+	this operation, else returns false.
+    */
+    public boolean remove(Object key, Object value) {
+	Collection c = (Collection) internMap.get(key);
+	if (c != null) 
+	    return c.remove(value);
+	else 
+	    return false;
+    }
+
     /** Copies the mappings from the specified map to this
 	map.  These mappings will replace any mappings that this map
 	had for any of the keys currently in the specified map.  Note
@@ -169,8 +183,7 @@ public class GenericMultiMap implements MultiMap {
 	<code>mm</code>, mapping each Key to one of the Values it
 	mapped to in <code>mm</code>.  To add all of the mappings from
 	another <code>MultiMap</code>, use
-	<code>addAll(MultiMap)</code>.
-    */
+	<code>addAll(MultiMap)</code>.  */
     public void putAll(Map t) {
 	Iterator entries = t.entrySet().iterator();
 	while(entries.hasNext()) {

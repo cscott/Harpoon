@@ -3,20 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
-import harpoon.Util.Util;
-import harpoon.Util.PairMapEntry;
-import harpoon.Util.UnmodifiableIterator;
-import harpoon.Util.CombineIterator;
-import harpoon.Util.FilterIterator;
-
-import java.util.Map;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.AbstractCollection;
-import java.util.AbstractSet;
-import java.util.HashSet;
+import java.util.Map;
 
 /** <code>MultiMap</code> maps a key to a collection of values.  These
     collections are created as needed using a
@@ -102,7 +90,7 @@ import java.util.HashSet;
 	 </OL> 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.14 2000-05-31 18:04:59 pnkfelix Exp $
+    @version $Id: MultiMap.java,v 1.1.2.15 2000-06-21 07:22:34 pnkfelix Exp $
  */
 public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 
@@ -112,6 +100,10 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
     public static class Factory extends MapFactory {
 	public Map makeMap(Map map) {
 	    return makeMultiMap(map);
+	}
+
+	public MultiMap makeMultiMap() {
+	    return new GenericMultiMap();
 	}
 	
 	/** Creates a new <code>MultiMap</code> initialized with all 
@@ -159,6 +151,17 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 	<code>addAll(MultiMap)</code>.
     */
     public void putAll(Map t);
+
+    /** Removes a mapping from key to value from this map if present.
+
+	(<code>MultiMap</code> specific operation).
+
+	Note that if multiple mappings from key to value are permitted
+	by this map, then only one is guaranteed to be removed.
+	Returns true if <code>this</code> was modified as a result of
+	this operation, else returns false.
+    */
+    boolean remove(Object key, Object value);
     
     /** Ensures that <code>this</code> contains an association from
 	<code>key</code> to <code>value</code>.

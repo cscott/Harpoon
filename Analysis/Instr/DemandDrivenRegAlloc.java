@@ -26,7 +26,7 @@ import java.util.HashMap;
     <code>Instr</code>s in a <code>Code</code>.
 
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.11 2000-02-18 22:53:26 pnkfelix Exp $ 
+    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.12 2000-06-21 07:22:27 pnkfelix Exp $ 
 */
 public class DemandDrivenRegAlloc extends RegAlloc {
 
@@ -173,7 +173,7 @@ public class DemandDrivenRegAlloc extends RegAlloc {
 	    { // BELOW: Last use of a register frees it
 		Vector regsFreedByInstr = new Vector(); 
 		for (int i=0; i<instr.use().length; i++) {
-		    if (isTempRegister(instr.use()[i]) &&  
+		    if (isRegister(instr.use()[i]) &&  
 			lastUse( instr.use()[i], instr, instrs)){ 
 			regsFreedByInstr.addElement(instr.use()[i]);
 		    }

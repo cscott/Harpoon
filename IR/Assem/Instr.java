@@ -42,7 +42,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.75 2000-06-09 23:21:28 pnkfelix Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.76 2000-06-21 07:22:32 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
@@ -567,8 +567,33 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 
     /** Create a new <code>Instr</code> identical to the receiver, but
      *  with all <code>Temp</code>s renamed according to the given
-     *  mappings.   The new <code>Instr</code> will have no edges, and
-     *  will come from the specified <code>InstrFactory</code>. */
+     *  mappings.  The new <code>Instr</code> will have no edges, and
+     *  will come from the <code>InstrFactory</code> for
+     *  <code>this</code>. 
+     */
+    public Instr rename(TempMap tempmap) {
+	return this.rename(tempmap, tempmap);
+    }
+
+    /** Create a new <code>Instr</code> identical to the receiver, but
+     *  with all <code>Temp</code>s renamed according to the given
+     *  mappings.  The new <code>Instr</code> will have no edges, and
+     *  will come from the <code>InstrFactory</code> for
+     *  <code>this</code>. 
+     */
+    public Instr rename(TempMap defMap, TempMap useMap) {
+	return this.rename(this.inf, defMap, useMap);
+    }
+
+    /** Create a new <code>Instr</code> identical to the receiver, but
+     *  with all <code>Temp</code>s renamed according to the given
+     *  mappings.  The new <code>Instr</code> will have no edges, and
+     *  will come from the specified <code>InstrFactory</code>. 
+     *
+     * FSK: I don't think this "no edges" part of the specification
+     * holds anymore (it was written before we revised the
+     * control-flow representation in the Instrs...  
+     */
     public Instr rename(InstrFactory inf, TempMap defMap, TempMap useMap) {
 	return new Instr(inf, this, getAssem(),
 			 map(defMap,dst), map(useMap,src),

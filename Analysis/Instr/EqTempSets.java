@@ -29,7 +29,7 @@ import java.util.HashSet;
  *  called the Representative (or Rep for short).
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: EqTempSets.java,v 1.1.2.2 2000-06-08 06:25:01 pnkfelix Exp $
+ * @version $Id: EqTempSets.java,v 1.1.2.3 2000-06-21 07:22:27 pnkfelix Exp $
  */
 public abstract class EqTempSets {
     
@@ -49,7 +49,7 @@ public abstract class EqTempSets {
 	return eqt;
     }
 
-    protected RegAlloc ra; // needed for isTempRegister operation
+    protected RegAlloc ra; // needed for isRegister operation
 
     // maps set-representatives to the register associated with that
     // set.  Undefined for sets not associated with a register.
@@ -69,7 +69,7 @@ public abstract class EqTempSets {
 		 else returns null
     */
     public Temp getReg(Temp t) {
-	if (ra.isTempRegister(t)) 
+	if (ra.isRegister(t)) 
 	    return t;
 	else {
 	    Temp rep = getRep(t);
@@ -97,20 +97,20 @@ public abstract class EqTempSets {
 		   => no modification to this
     */
     public void add(Temp t1, Temp t2) {
-	Util.assert( (!ra.isTempRegister(t1)) ||
-		     (!ra.isTempRegister(t2)) , 
+	Util.assert( (!ra.isRegister(t1)) ||
+		     (!ra.isRegister(t2)) , 
 		     t1 + " or " + t2 + " must be non-register");
 	
 	Temp rep1 = getRep(t1);
 	Temp rep2 = getRep(t2);
 	
-	if (ra.isTempRegister(t1)) {
+	if (ra.isRegister(t1)) {
 	    if ( repToReg.containsKey(rep2) ) { 
 		return;
 	    } else { 
 		repToReg.put(rep2, t1); 
 	    }
-	} else if (ra.isTempRegister(t2)) {
+	} else if (ra.isRegister(t2)) {
 	    if (repToReg.containsKey(rep1) ) { 
 		return;
 	    } else { 
@@ -168,11 +168,11 @@ class EqTempSets1 extends EqTempSets {
     }
     
     public Temp getRep(Temp t) {
-	if (ra.isTempRegister(t)) return t;
+	if (ra.isRegister(t)) return t;
 	Set s = (Set) tempToSet.get(t);
 	if (s == null) {
 	    if (locked) {
-		if (setToRep.containsKey(t))
+		if (setToRep.containsKey(t)) //FSK:won't work!
 		    return (Temp) setToRep.get(t);
 		else 
 		    return t;
@@ -229,7 +229,7 @@ class EqTempSets2 extends EqTempSets {
     private DisjointSet dss = new DisjointSet();
     
     public Temp getRep(Temp t) {
-	if (ra.isTempRegister(t))
+	if (ra.isRegister(t))
 	    return t;
 	else 
 	    return (Temp) dss.find(t);
