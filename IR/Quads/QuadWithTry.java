@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.10 1999-08-10 21:58:21 bdemsky Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.11 1999-08-19 04:06:57 bdemsky Exp $
  * @see QuadNoSSA
  * @see QuadSSA
  */
@@ -34,7 +34,7 @@ public class QuadWithTry extends Code /* which extends HCode */ {
 	// exceptions?
     }
 
-    QuadWithTry(harpoon.IR.Quads.Code quad) {
+    QuadWithTry(harpoon.IR.Quads.QuadSSA quad) {
         super(quad.getMethod(), null);
 	quads = ReHandler.rehandler(this.qf, quad);
     }
@@ -75,7 +75,7 @@ public class QuadWithTry extends Code /* which extends HCode */ {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
-			new QuadWithTry((harpoon.IR.Quads.Code)c);
+			new QuadWithTry((harpoon.IR.Quads.QuadSSA)c);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }

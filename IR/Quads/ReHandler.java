@@ -14,8 +14,10 @@ import harpoon.IR.Quads.HANDLER.ProtectedSet;
 import harpoon.Analysis.SSITOSSAMap;
 import harpoon.Analysis.ToSSA;
 import harpoon.Analysis.UseDef;
+import harpoon.Analysis.QuadSSA.TypeInfo;
 import harpoon.Util.Tuple;
 import harpoon.Util.WorkSet;
+import harpoon.Analysis.Maps.TypeMap;
 
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -30,14 +32,17 @@ import java.util.Set;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.11 1999-08-17 20:49:41 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.12 1999-08-19 04:06:57 bdemsky Exp $
  */
 final class ReHandler {
     // entry point.
-    public static final Quad rehandler(final QuadFactory qf, final Code code) {
-	Code ncode=(Code)code.clone(code.getMethod());
+    public static final Quad rehandler(final QuadFactory qf, final QuadSSA code) {
+	QuadSSA ncode=(QuadSSA)code.clone(code.getMethod());
 	(new ToSSA(new SSITOSSAMap(ncode))).optimize(ncode);
-	
+	UseDef nd=new UseDef();
+	TypeInfo ti=new TypeInfo(ncode, nd);
+	analyzeTypes(ncode, ti);
+
 	WorkSet callset=new WorkSet();
 	WorkSet throwset=new WorkSet();
 	WorkSet instanceset=new WorkSet();
@@ -104,19 +109,19 @@ final class ReHandler {
 	}
 
 	//Add in TYPECAST
-	UseDef ud=new UseDef();
+//  	UseDef ud=new UseDef();
 
-	for (Iterator e = cjmpset.iterator(); e.hasNext(); ) {
-	    CJMP cjmp = (CJMP) e.next();
-	    HCodeElement[] hce=ud.defMap(ncode, cjmp.test());
-	    Util.assert(hce.length==1);
-	    INSTANCEOF iof=(INSTANCEOF) hce[0];
-	    HClass hclass=iof.hclass();
-	    CJMP cjmp2=(CJMP)qm.getFoot(cjmp);
-	    TYPECAST tc=new TYPECAST(cjmp2.getFactory(), cjmp2, Quad.map(ss.ctm, iof.src()),hclass);
-	    Quad.addEdge(tc, 0, cjmp2.next(1), cjmp2.nextEdge(1).which_pred());
-	    Quad.addEdge(cjmp2, 1, tc, 0);
-	}
+//  	for (Iterator e = cjmpset.iterator(); e.hasNext(); ) {
+//  	    CJMP cjmp = (CJMP) e.next();
+//  	    HCodeElement[] hce=ud.defMap(ncode, cjmp.test());
+//  	    Util.assert(hce.length==1);
+//  	    INSTANCEOF iof=(INSTANCEOF) hce[0];
+//  	    HClass hclass=iof.hclass();
+//  	    CJMP cjmp2=(CJMP)qm.getFoot(cjmp);
+//  	    TYPECAST tc=new TYPECAST(cjmp2.getFactory(), cjmp2, Quad.map(ss.ctm, iof.src()),hclass);
+//  	    Quad.addEdge(tc, 0, cjmp2.next(1), cjmp2.nextEdge(1).which_pred());
+//  	    Quad.addEdge(cjmp2, 1, tc, 0);
+//  	}
 
 
 	//--------------------
@@ -225,12 +230,59 @@ final class ReHandler {
 	}
     }
 
-    private static HashMapList analyze(final Code code, Set callset, Set throwset, Set instanceset) {
+    static void analyzeTypes(final QuadSSA code, TypeMap ti) {
+	HCodeElement start=code.getRootElement();
+	WorkSet todo=new WorkSet();
+	todo.add(start);
+	TypeVisitor visitor=new TypeVisitor(ti, todo);
+	visitanalyze(todo, visitor);
+	Quad ql[]=(Quad[]) code.getElements();
+	Map typecast=visitor.typecast();
+	for (int i=0; i<ql.length; i++)
+	    for (int j=0;j<ql[i].nextLength(); j++) {
+		//Need to check to see if ql[i].next(j)
+		//has more types than ql[i]
+		//if so, add in the necessary typecasts...
+		Set oldcasts=(Set)typecast.get(ql[i]);
+		Set newcasts=(Set)typecast.get(ql[i].next(j));
+		Iterator iterate=newcasts.iterator();
+		while (iterate.hasNext()) {
+		    Tuple cast=(Tuple)iterate.next();
+		    if (!oldcasts.contains(cast)) {
+			//gotta see if we have cast or not
+			Temp t=(Temp)cast.asList().get(0);
+			Iterator iterate2=oldcasts.iterator();
+			boolean found=false;
+			while (iterate2.hasNext()) {
+			    Tuple tple=(Tuple)iterate2.next();
+			    if ((tple.asList().get(0))==t)
+				if (((HClass)cast.asList().get(1)).isAssignableFrom((HClass)tple.asList().get(1))) {
+				    found=true;
+				    break;
+			    }
+			}
+			if (!found) {
+			    //Gotta add TYPECAST 'cast' quad
+			    TYPECAST tc=new TYPECAST(ql[i].getFactory(), ql[i], (Temp) cast.asList().get(0),(HClass) cast.asList().get(1));
+			    Quad.addEdge(tc,0, ql[i].next(j),ql[i].nextEdge(j).which_pred());
+			    Quad.addEdge(ql[i], j, tc, 0);
+			}
+		    }
+		}
+	    }
+    }
 
+    static void visitanalyze(WorkSet todo, TypeVisitor visitor) {
+	while(!todo.isEmpty()) {
+		Quad next=(Quad)todo.pop();
+		next.visit(visitor);
+	}
+    }
+   
+    private static HashMapList analyze(final Code code, Set callset, Set throwset, Set instanceset) {
 	CALLVisitor cv=new CALLVisitor(callset, throwset, instanceset);
 	for (Iterator e =  code.getElementsI(); e.hasNext(); )
 	    ((Quad)e.next()).visit(cv);
-
 	HashMapList callhand=new HashMapList();
 	AnalysingVisitor avisitor=new AnalysingVisitor(callhand,code);
     	analyzevisit(avisitor, callset);
@@ -265,8 +317,7 @@ final class ReHandler {
 		System.out.println(v.more());
 	    }
 	}
-    }   
-	
+    }
 
     /** mapping from old quads to new quads. */
     private static class QuadMap {
@@ -498,8 +549,7 @@ final class ReHandler {
 		    if ((nulls==1)&&(exceptions==1)) {
 			callmap.put(q.dst(),null);
 			standard(q);
-		    }
-		    else weird(q);
+		    } else weird(q);
 		} else weird(q);
 	    } else weird(q);
 	}
@@ -554,6 +604,7 @@ final class ReHandler {
 		} else weird(q);
 	}
     }
+
     static final private class ReProtection extends HashSet
         implements ProtectedSet {
         ReProtection() { super(); }
@@ -564,7 +615,6 @@ final class ReHandler {
             return new harpoon.Util.IteratorEnumerator( iterator() );
         }
     }
-
 }
 
 /**
@@ -672,4 +722,335 @@ class PHVisitor extends QuadVisitor
 	    Quad.addEdge(m, 0, q, from.which_pred());
 	}
     }
+}
+
+class TypeVisitor extends QuadVisitor {
+    TypeMap ti;
+    HashMap typecast;
+    Set visited;
+    Set todo;
+    
+    TypeVisitor(TypeMap ti, Set todo) {
+	this.ti=ti;
+	this.todo=todo;
+	this.typecast=new HashMap();
+	this.visited=new WorkSet();
+    }
+
+    public Map typecast() {
+	return typecast;
+    }
+    
+    public void visit(Quad q) {
+	boolean changed=false;
+	if (visited.contains(q)) {
+	    Quad pred=q.prev(0);
+	    Set casts=(Set)typecast.get(pred);
+	    Set ourcasts=(Set)typecast.get(q);
+	    Iterator iterate=casts.iterator();
+	    while (iterate.hasNext()) {
+		Tuple cast=(Tuple)iterate.next();
+		if (!ourcasts.contains(cast)) {
+		    changed=true;
+		    ourcasts.add(cast);
+		}
+	    }
+	    if (changed) {
+		//push our descendants
+		for (int i=0;i<q.nextLength();i++) {
+		    todo.add(q.next(i));
+		}
+	    }
+	}
+	else {
+	    //never seen yet...
+	    Set parentcast=(Set)typecast.get(q.prev(0));
+	    WorkSet ourcasts=new WorkSet(parentcast);
+	    typecast.put(q, ourcasts);
+	    visited.add(q);
+	    for (int i=0;i<q.nextLength();i++)
+		todo.add(q.next(i));
+	}
+    }
+    
+    public void visit(SET q) {
+	//q.objectref() is the object to use
+	//q.src() is the temp to put in the q.field() of this object
+	//need to make sure that:
+	//1) q.field().getDeclaringClass() is assignable from q.objectref()
+	//2) q.field().getType() is assignable from q.src()
+	
+	boolean changed=false;
+	if (visited.contains(q)) {
+	    Quad pred=q.prev(0);
+	    Set casts=(Set)typecast.get(pred);
+	    Set ourcasts=(Set)typecast.get(q);
+	    Iterator iterate=casts.iterator();
+	    while (iterate.hasNext()) {
+		Tuple cast=(Tuple)iterate.next();
+		if (!ourcasts.contains(cast)) {
+		    changed=true;
+		    ourcasts.add(cast);
+		}
+	    }
+	    if (changed) {
+		//push our descendants
+		for (int i=0;i<q.nextLength();i++) {
+		    todo.add(q.next(i));
+		}
+	    }
+	}
+	else {
+	    //never seen yet...
+	    Set parentcast=(Set)typecast.get(q.prev(0));
+	    WorkSet ourcasts=new WorkSet(parentcast);
+	    if (!q.field().getDeclaringClass().isAssignableFrom(ti.typeMap(null,q.objectref()))) {
+		//Need typecast??
+		Iterator iterate=ourcasts.iterator();
+		boolean foundcast=false;
+		while (iterate.hasNext()) {
+		    Tuple cast=(Tuple)iterate.next();
+		    List list=cast.asList();
+		    if (list.get(0)==q.objectref()) {
+			HClass hc=(HClass)list.get(1);
+			if (q.field().getDeclaringClass().isAssignableFrom(hc)) {
+			    foundcast=true;
+			    break;
+			}
+		    }
+		}
+		if (!foundcast) {
+		    //Add typecast
+		    ourcasts.add(new Tuple(new Object[]{q.objectref(),q.field().getDeclaringClass() }));
+		}
+	    }
+	    if (!q.field().getType().isAssignableFrom(ti.typeMap(null, q.src()))) {
+		//Need typecast??
+		Iterator iterate=ourcasts.iterator();
+		boolean foundcast=false;
+		while (iterate.hasNext()) {
+		    Tuple cast=(Tuple)iterate.next();
+		    List list=cast.asList();
+		    if (list.get(0)==q.src()) {
+			HClass hc=(HClass)list.get(1);
+			if (q.field().getType().isAssignableFrom(hc)) {
+			    foundcast=true;
+			    break;
+			}
+		    }
+		}
+		if (!foundcast) {
+		    //Add typecast
+		    ourcasts.add(new Tuple(new Object[]{q.src(),q.field().getType() }));
+		}
+	    }
+	    typecast.put(q, ourcasts);
+	    visited.add(q);
+	    for (int i=0;i<q.nextLength();i++)
+		todo.add(q.next(i));
+	}
+    }
+    
+    public void visit(GET q) {
+	//q.objectref() is the object to use
+	//q.dst() is the temp to get from the q.field() of this object
+	//need to make sure that:
+	//1) q.field().getDeclaringClass() is assignable from q.objectref()
+	boolean changed=false;
+	if (visited.contains(q)) {
+	    Quad pred=q.prev(0);
+	    Set casts=(Set)typecast.get(pred);
+	    Set ourcasts=(Set)typecast.get(q);
+	    Iterator iterate=casts.iterator();
+	    while (iterate.hasNext()) {
+		Tuple cast=(Tuple)iterate.next();
+		if (!ourcasts.contains(cast)) {
+		    changed=true;
+		    ourcasts.add(cast);
+		}
+	    }
+	    if (changed) {
+		//push our descendants
+		for (int i=0;i<q.nextLength();i++) {
+		    todo.add(q.next(i));
+		}
+	    }
+	}
+	else {
+	    //never seen yet...
+	    Set parentcast=(Set)typecast.get(q.prev(0));
+	    WorkSet ourcasts=new WorkSet(parentcast);
+	    if (!q.field().getDeclaringClass().isAssignableFrom(ti.typeMap(null,q.objectref()))) {
+		//Need typecast??
+		Iterator iterate=ourcasts.iterator();
+		boolean foundcast=false;
+		while (iterate.hasNext()) {
+		    Tuple cast=(Tuple)iterate.next();
+		    List list=cast.asList();
+		    if (list.get(0)==q.objectref()) {
+			HClass hc=(HClass)list.get(1);
+			if (q.field().getDeclaringClass().isAssignableFrom(hc)) {
+			    foundcast=true;
+			    break;
+			}
+		    }
+		}
+		if (!foundcast) {
+		    //Add typecast
+		    ourcasts.add(new Tuple(new Object[]{q.objectref(),q.field().getDeclaringClass() }));
+		}
+	    }
+	    typecast.put(q, ourcasts);
+	    visited.add(q);
+	    for (int i=0;i<q.nextLength();i++)
+		todo.add(q.next(i));
+	}
+    }
+    
+    public void visit(CALL q) {
+	boolean changed=false;
+	if (visited.contains(q)) {
+	    Quad pred=q.prev(0);
+	    Set casts=(Set)typecast.get(pred);
+	    Set ourcasts=(Set)typecast.get(q);
+	    Iterator iterate=casts.iterator();
+	    while (iterate.hasNext()) {
+		Tuple cast=(Tuple)iterate.next();
+		if (!ourcasts.contains(cast)) {
+		    changed=true;
+		    ourcasts.add(cast);
+		}
+	    }
+	    if (changed) {
+		//push our descendants
+		for (int i=0;i<q.nextLength();i++) {
+		    todo.add(q.next(i));
+		}
+	    }
+	}
+	else {
+	    //never seen yet...
+	    Set parentcast=(Set)typecast.get(q.prev(0));
+	    WorkSet ourcasts=new WorkSet(parentcast);
+	    
+	    for (int i=0; i<q.paramsLength();i++) {
+		Temp param=q.params(i);
+		HClass type=typeOf(q, param);
+		HClass neededclass=q.paramType(i);
+		if (!neededclass.isAssignableFrom(type)) {
+		    //Need typecast??
+		    Iterator iterate=ourcasts.iterator();
+		    boolean foundcast=false;
+		    while (iterate.hasNext()) {
+			Tuple cast=(Tuple)iterate.next();
+			List list=cast.asList();
+			if (list.get(0)==q.params(i)) {
+			    HClass hc=(HClass)list.get(1);
+			    if (neededclass.isAssignableFrom(hc)) {
+				foundcast=true;
+				break;
+			    }
+			}
+		    }
+		    if (!foundcast) {
+			//Add typecast
+			ourcasts.add(new Tuple(new Object[]{q.params(i),neededclass }));
+		    }
+		}
+	    }
+	    typecast.put(q, ourcasts);
+	    visited.add(q);
+	    for (int i=0;i<q.nextLength();i++)
+		todo.add(q.next(i));
+	}
+    }
+    
+    public void visit(PHI q) {
+	WorkSet casts=new WorkSet();
+	int firstv;
+	Quad first=q.prev(0);
+	if (visited.contains(first)) {
+	    Set firstcast=(Set)typecast.get(first);
+	    Iterator iterate=firstcast.iterator();
+	    while (iterate.hasNext()) {
+		List cast=((Tuple)iterate.next()).asList();
+		Temp t=(Temp)cast.get(0);
+		HClass hclass=(HClass)cast.get(1);
+		checkphi(q, null, t, casts, hclass);
+	    }
+	    for (int i=0;i<q.numPhis(); i++) {
+		iterate=firstcast.iterator();
+		while (iterate.hasNext()) {
+		    List cast=((Tuple)iterate.next()).asList();
+		    if (q.dst(i)==(Temp)cast.get(0))
+			checkphi(q, q.src(i), q.dst(i), casts, (HClass) cast.get(1));
+		}
+	    }
+	}
+	if (visited.contains(q)) {
+	    boolean changed=false;
+	    Set ourcasts=(Set)typecast.get(q);
+	    Iterator iterate=casts.iterator();
+	    while (iterate.hasNext()) {
+		Tuple cast=(Tuple)iterate.next();
+		if (!ourcasts.contains(cast)) {
+		    changed=true;
+		    ourcasts.add(cast);
+		}
+	    }
+	    if (changed) {
+		//push our descendants
+		for (int i=0;i<q.nextLength();i++) {
+		    todo.add(q.next(i));
+		}
+	    }
+	}
+	else {
+	    //never seen yet...
+	    typecast.put(q, casts);
+	    visited.add(q);
+	    for (int i=0;i<q.nextLength();i++)
+		todo.add(q.next(i));
+	}
+    }
+
+    private void checkphi(PHI q, Temp[] map, Temp tf,Set casts, HClass hclass) {
+	boolean good=true;
+	for (int i=1;i<q.arity();i++) {
+	    if (typecast.containsKey(q.prev(i))) {
+		Set prevcasts=(Set)typecast.get(q.prev(i));
+		Iterator previter=prevcasts.iterator();
+		HClass best=null;
+		while (previter.hasNext()) {
+		    List ctuple=((Tuple)previter.next()).asList();
+		    Temp t=null;
+		    if (map!=null)
+			t=map[i];
+		    else
+			t=tf;
+		    if (((Temp)ctuple.get(0))==t) {
+			HClass tclass=(HClass)ctuple.get(1);
+			HClass tc=hclass;
+			while(!tc.isAssignableFrom(tclass))
+			    tc=tc.getSuperclass();
+			if (best.isAssignableFrom(tc))
+			    best=tc;
+		    }
+		}
+		hclass=best;
+	    } else
+		good=false;
+	}
+	if (good) {
+	    //Add in typecast (t, hclass)
+	    Tuple tple=new Tuple(new Object[] {tf, hclass});
+	    if (!casts.contains(tple))
+		casts.add(tple);
+	}
+    }
+
+    private HClass typeOf(Quad q, Temp t) {
+	return ti.typeMap(q, t);
+    }
+
 }
