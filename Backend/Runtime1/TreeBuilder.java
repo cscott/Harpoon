@@ -61,7 +61,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.3.2.4 2002-03-11 21:17:48 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.3.2.5 2002-03-15 23:03:39 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -131,20 +131,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	this.linker = linker;
 	this.as  = as;
 	this.cmm = new harpoon.Backend.Analysis.ClassMethodMap();
-	this.cfm = new harpoon.Backend.Analysis.PackedClassFieldMap() {
-	    public int fieldSize(HField hf) {
-		HClass type = hf.getType();
-		return (!type.isPrimitive()) ? POINTER_SIZE :
-		    (type==HClass.Double||type==HClass.Long) ? LONG_WORD_SIZE :
-		    (type==HClass.Int||type==HClass.Float) ? WORD_SIZE :
-		    (type==HClass.Short||type==HClass.Char) ? 2 : 1;
-	    }
-	    // on some archs we only need to align to WORD_SIZE
-	    public int fieldAlignment(HField hf) {
-		int align = super.fieldAlignment(hf);
-		return singleWordAlign ? Math.min(WORD_SIZE, align) : align;
-	    }
-	};
+	this.cfm = initClassFieldMap();
 	// ----------    INITIALIZE SIZES AND OFFSETS    -----------
 	WORD_SIZE = 4; // at least 32 bits.
 	LONG_WORD_SIZE = 8; // at least 64 bits.
@@ -173,6 +160,23 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	CLAZ_DEPTH_OFF   = CLAZ_EXTRAINFO_OFF +
 	    runtime.getExtraClazInfo().fields_size();
 	CLAZ_DISPLAY_OFF = CLAZ_DEPTH_OFF + 1 * WORD_SIZE;
+    }
+    // hook to let our subclasses use a different classfieldmap
+    protected FieldMap initClassFieldMap() {
+	return new harpoon.Backend.Analysis.PackedClassFieldMap() {
+	    public int fieldSize(HField hf) {
+		HClass type = hf.getType();
+		return (!type.isPrimitive()) ? POINTER_SIZE :
+		    (type==HClass.Double||type==HClass.Long) ? LONG_WORD_SIZE :
+		    (type==HClass.Int||type==HClass.Float) ? WORD_SIZE :
+		    (type==HClass.Short||type==HClass.Char) ? 2 : 1;
+	    }
+	    // on some archs we only need to align to WORD_SIZE
+	    public int fieldAlignment(HField hf) {
+		int align = super.fieldAlignment(hf);
+		return singleWordAlign ? Math.min(WORD_SIZE, align) : align;
+	    }
+       };
     }
     // this method must be called to complete initialization before
     // the tree builder is used.

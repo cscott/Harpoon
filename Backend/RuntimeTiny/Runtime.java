@@ -40,7 +40,7 @@ import java.util.Set;
  * fields in object layouts.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.2 2002-03-11 21:18:02 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.3 2002-03-15 23:03:46 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Runtime1.Runtime {
     // options.
@@ -48,7 +48,12 @@ public class Runtime extends harpoon.Backend.Runtime1.Runtime {
      * index) at the expense of an extra dereference every time the claz is
      * used. */
     protected static final boolean clazShrink =
-	!Boolean.getBoolean("harpoon.runtime1.no-claz-shrink");
+	!Boolean.getBoolean("harpoon.runtime.tiny.no-claz-shrink");
+    protected static final boolean byteAlign =
+	System.getProperty("harpoon.runtime.tiny.field-align","byte")
+	.equalsIgnoreCase("byte");
+    protected final static boolean fixAlign =
+	Boolean.getBoolean("harpoon.runtime.tiny.fix-align");
 
     // local fields
     protected ClazNumbering cn;
@@ -79,6 +84,16 @@ public class Runtime extends harpoon.Backend.Runtime1.Runtime {
 	// do class numbering w/ this classhierarchy
 	this.cn = new CompleteClazNumbering(ch);
     }
+    // we're going to hack in our own codefactory in w/ the
+    // nativetreecodefactory.  beware: tree is not yet canonicalized!
+    public HCodeFactory nativeTreeCodeFactory(final HCodeFactory hcf) {
+	HCodeFactory parent = super.nativeTreeCodeFactory(hcf);
+	if (!byteAlign) return parent;
+	if (!fixAlign) return parent;
+	return FixUnaligned.codeFactory
+	    (harpoon.IR.Tree.CanonicalTreeCode.codeFactory(parent, frame));
+    }
+
     public List<HData> classData(HClass hc) {
 	List<HData> r = new ArrayList<HData>(super.classData(hc));
 	r.add(new DataClazTable(frame,hc,ch,cn));
