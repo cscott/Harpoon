@@ -136,7 +136,7 @@
                   extensions to specify real-time constraints.  Also
                   contains the interesting claim that the real-time 
                   compilation problem has been solved, and references 
-                  an unpublished paper to prove it.}
+                  an unpublished `paper to prove it.}
 }
 
 %%%%%%% Other language issues.
@@ -153,7 +153,7 @@
   address =	 {Portland, Oregon},
   month =	 Jan,
   pages =	 {297-310},
-  annote =	 {dataflow representation useful; also resursive/loop
+  annote =	 {Dataflow representation useful; also resursive/loop
                   structure useful},
   url = 	{ftp://research.microsoft.com/pub/papers/vdg.ps}
 }
@@ -167,7 +167,7 @@
   month =	 jun,
   pages =	 {166-176},
   url = 	 {http://www.acm.org/pubs/articles/proceedings/pldi/},
-  annote =	 {code motion for timing optimization.  Are all
+  annote =	 {Code motion for timing optimization.  Are all
                   real-time schedulers iterative?}
 }
 
@@ -181,7 +181,7 @@
   month =	 jun,
   pages =	 {68-77},
   url = 	 {http://www.acm.org/pubs/articles/proceedings/pldi/},
-  annote =	 {not terribly useful.  REREAD LATER.}
+  annote =	 {Not terribly useful.  REREAD LATER.}
 }
 
 @InProceedings{click95:IR,
@@ -193,9 +193,9 @@
   month =        jan,
   year =         "1995",
   url =          {http://www.cs.rice.edu/~mpal/IR95.ps},
-  annote =	 {interesting examples of C++ code, but light on
+  annote =	 {Interesting examples of C++ code, but light on
                   optimization results.  We really want to peek at
-                  Cliff Click's PhD thesis.}
+                  Cliff Click's PhD thesis. [Ed note: I found it!]}
 }
 
 @InProceedings{sreedhar96:dj,
@@ -265,7 +265,12 @@
                   implementing our type inference engine. [theory
                   practice conflict: the idea I've got in my head
                   doesn't seem as slow as the fastest algorithm
-                  presented here.  Reconcile this.]}
+                  presented here.  Reconcile this.] [Further thought:
+                  these algorithms look like they should be integrated with
+                  an (SSA?) constant-propagation/dead-code analysis to come
+                  up with the most precise class information possible.  Will
+                  be slow, but worth it.  This paper's optimizations result
+                  in less class/type precision, which is unacceptable to us.]}
 }
 
 @InProceedings{click95:gcm_gvn,
@@ -427,7 +432,9 @@
                   variety of implementation methodologies using
                   various types of PLAs and FSMs.  The infamous
                   traffic light example.  Basic idea: implement
-                  statecharts as multi-level Mealy/Moore machines.}
+                  statecharts as multi-level Mealy/Moore machines.
+                  [See Esterel 'latch optimization' paper for how to
+                  best create hardware from state machines.]}
 }
 
 @Article{harel97:execobj,
