@@ -31,6 +31,7 @@ pldi99.dvi pldi99-outline.dvi: comdef.sty
 pldi02.dvi: comdef.sty
 pldi03.dvi: comdef.sty
 lctes03.dvi: comdef.sty
+p072-ananian.dvi: comdef.sty
 
 # bibtex dependencies
 exec.dvi quads.dvi design.dvi thesis.dvi: harpoon.bib
@@ -38,6 +39,7 @@ pldi99.dvi pldi99-outline.dvi: harpoon.bib
 pldi02.dvi: harpoon.bib
 pldi03.dvi: harpoon.bib
 lctes03.dvi: harpoon.bib
+p072-ananian.dvi: harpoon.bib
 bibnote.dvi: harpoon_.bib
 readnote.dvi: unread_.bib
 
@@ -144,7 +146,7 @@ always:
 		$< > $@
 # dvi-to-postscript-to-acrobat chain.
 %.ps : %.dvi
-	dvips -t letter -e 0 -o $@ $<
+	dvips -P cmz -t letter -e 0 -o $@ $<
 %.pdf : %.dvi
 	dvipdf -dCompatibilityLevel=1.3 -dDoThumbnails=true $< $@
 %.pdf : %.ps
@@ -155,6 +157,10 @@ always:
 	else \
 		(xdvi $< &) ; \
 	fi
+
+# rules for LCTES camera-ready copy.
+p072-ananian.tex: lctes03.tex
+	cp $< $@
 
 # progress graphs.
 %.stats: %.tex
