@@ -43,7 +43,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.17 2000-02-16 06:15:04 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.18 2000-02-17 03:03:47 cananian Exp $
  */
 // XXX missing -K1 --> K2  and ~K1 --> K2 rules.
 public abstract class AlgebraicSimplification extends Simplification { 
@@ -282,6 +282,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 		else { 
 		    UNOP u = (UNOP)e; 
 		    if (u.isFloatingPoint()) return false;
+		    if (u.op != Uop.NEG) return false;
 		    return contains(_KIND(u.getOperand()), _CONST0);
 		}
 	    }
