@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: lctes03.tex,v 1.3 2003-02-08 01:49:48 cananian Exp $
+% $Id: lctes03.tex,v 1.4 2003-02-08 02:36:56 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{acmconf}
 %\documentclass[12pt,notitlepage,twoside]{article}
@@ -112,8 +112,8 @@ default value) or a removal from the hash table (if the written value
 is the default value). It replaces reads with hash table lookups; 
 if the object is not present in the hash table, the lookup simply
 returns the default value. 
-\item {\bf Class Pointer Compression:} Our rapid type analysis
-computes an upper bound on the number of classes that the
+\item {\bf Class Pointer Compression:} We use rapid type analysis
+to compute an upper bound on the number of classes that the
 program may instantiate. Objects in standard 
 Java implementations have a header field, commonly called {\tt claz},
 which contains a pointer
@@ -425,53 +425,13 @@ mapping objects to their hash code or lock information.%
   the new address.}
 
 Note that, in general, this transformation (as well as field
-externalization) may actually increase space usage. But 
-as Table~\ref{tab:hashlock-opt} shows, 
+externalization) may actually increase space usage. But in practice,
 we have found that our set of benchmark programs
 rarely uses these fields. The overall result is a substantial
 space savings. The combination of class pointer compression 
 and hash/lock elimination can produce a common-case object header
 size of one byte --- one byte for a class index and no
 space at all for hash code or lock.
-
-\begin{table}[t]
-\begin{tabular}{lcc}
-\bf Benchmark &\bf \# classes & \bf \% alloc'ed space saved \\ \hline
-%200\_check      & 253 &  3.8\% \\
-201\_compress   & 216 &  0.0\% \\
-202\_jess       & 379 &  6.0\% \\
-205\_raytrace   & 239 & 14.4\% \\
-209\_db         & 213 & 12.6\% \\
-213\_javac      & 399 &  6.8\% \\
-222\_mpegaudio  & 213 &  3.7\% \\
-227\_mtrt       & 239 & 14.4\% \\
-228\_jack       & 265 &  7.3\% \\
-\end{tabular}
-\caption{Number of classes statically referenced in SPEC benchmarks,
-  and the savings (in \% of total allocated bytes) of {\tt claz} field
-  compression using byte packing.}
-\label{tab:claz-space}
-\end{table}
-\begin{table}[t]
-\begin{tabular}{lccr@{.}l}
-&\multicolumn{2}{c}{\bf\# classes requiring:}&\multicolumn{2}{c}{\bf\% alloc'ed}\\
-\bf Benchmark &\bf hashcodes&\bf locks&\multicolumn{2}{c}{\bf space saved}\\\hline
-%200\_check      &   0 &   ~0   &  5&1\% \\
-201\_compress   &   0 &   ~0   &  0&1\% \\
-202\_jess       &   0 &   ~0   & 12&0\% \\
-205\_raytrace   &   0 &   ~0   & 19&2\% \\
-209\_db         &   0 &   ~0   & 16&8\% \\
-213\_javac      &   8 &   ~0   & 13&6\% \\
-222\_mpegaudio  &   0 &   ~0   &  5&0\% \\
-227\_mtrt       &   0 &   17   & 19&0\% \\
-228\_jack       &   0 &   ~0   & 14&7\% \\
-\end{tabular}
-\caption{Number of classes in SPEC benchmarks which dynamically use
-  the hashcode and lock features of the second header word,
-  and the savings (in \% of total allocated bytes) of hash/lock
-  externalization.}
-\label{tab:hashlock-opt}
-\end{table}
 
 \section{Analysis Algorithms}
 %
@@ -499,14 +459,13 @@ invoked on abstract, interface, or otherwise uninstantiated classes,
 every object
 in the heap must belong to one of the instantiated class types.
 The size of the set of instantiated classes is quite small for a
-typical Java program, and Table~\ref{tab:claz-space} shows that
-all but two of the benchmarks in SPECjvm98
+typical Java program, and over half of the benchmarks in SPECjvm98
 have less than 256 instantiated class types.%
 \footnote{note that \emph{all} have more than 256 \emph{total} class types.}
 We use this information
 to replace the class pointer in the object header, which
 identifies the type of the object, with a one-byte {\it index} into a
-small lookup table.  The {\tt jess} and {\tt javac}
+small lookup table.  The {\tt jess}, {\tt javac}, and {\tt jack}
 benchmarks require more than one byte of index, but a two byte index
 amply suffices in these two cases.
 %
@@ -544,6 +503,26 @@ such as multiplication by
 a one-bit quantity, division by a constant, and (as the figure shows)
 bitwise operations on positive numbers.
 
+\begin{figure}[tp]
+\begin{eqnarray*}
+-\tuple{m,p} &=& \tuple{p,m}\\
+\tuple{m_l,p_l} + \tuple{m_r,p_r} &=& \tuple{1+\max(m_l,m_r),1+\max(p_l,p_r)}\\
+%\tuple{m_l,p_l} \times \tuple{m_r,p_r} &=& \langle\max(m_l+p_r,p_l+m_r),\\
+%                                       &&  \max(m_l+m_r,p_l+p_r)\rangle\\
+\tuple{m_l,p_l} \times \tuple{m_r,p_r} &=&
+\tuple{\begin{array}{l}\max(m_l+p_r,p_l+m_r),\\
+                       \max(m_l+m_r,p_l+p_r)\end{array}}\\
+\tuple{0,p_l} \wedge \tuple{0,p_r} &=& \tuple{0,\min(p_l,p_r)}\\
+\tuple{m_l,p_l}\wedge \tuple{m_r,p_r} &=& \tuple{\max(m_l,m_r),\max(p_l,p_r)}
+\end{eqnarray*}%
+\caption{Some combination rules for bitwidth analysis of arithmetic
+  and bitwise-logical operators.
+  Note that the penultimate entry is a
+  special-case rule that only applies if the neither of the
+  arguments can be negative.
+}\label{fig:bitrules}
+\end{figure}
+
 \subsubsection{Treatment of Fields}
 Dataflow on this bitwidth lattice is performed on the entire Java
 program interprocedurally.  The analysis is what Heintze and Tardieu
@@ -558,7 +537,9 @@ specification for each variable and field in the program.  As the
 analysis is based on SCC, we also identify constant variables and
 fields; we replace reads of constant fields with their constant
 value and the field is eliminated.  Fields for which no reads are
-found (even if writes are present) are also eliminated.
+found (even if writes are present) are also eliminated.%
+\footnote{Note that checks which may throw exceptions on reads and
+  writes are preserved.}
 
 \subsubsection{Other Details}
 Our analysis handles method calls by merging the lattice values of the
@@ -574,7 +555,7 @@ exception is thrown from the method.
 Our implementation of this analysis is actually context-sensitive,
 with a user-defined context length.  All results presented here were
 obtained with the context set to zero; we saw no clear benefit from 1-
-or 2-deep calling contexts, and the increase in analysis execution
+or 2-deep calling contexts, and the increase in analysis
 time was considerable.
 
 Space does not permit us to describe the remaining details of the full
@@ -582,10 +563,10 @@ analysis, including the extension of the value
 lattice to handle the full range of Java types, the class hierarchy,
 {\tt null} and {\tt String} constants, and fixed-length arrays.
 We refer the interested reader to \cite{ananian99:tech} for an
-exhaustive description.
+exhaustive description of the intraprocedural analysis.
 
 The number of unread and constant fields found by this analysis in our
-benchmark set is show in Table~\ref{tab:const-unused}.
+benchmark set is shown in Table~\ref{tab:const-unused}.
 The space reductions due to bitwidth analysis and field reduction
 using our byte packing strategy are shown in Table~\ref{tab:bitwidth-results}.
 \begin{table}[t]
@@ -633,27 +614,6 @@ using our byte packing strategy are shown in Table~\ref{tab:bitwidth-results}.
 \label{tab:bitwidth-results}
 \end{table}
 
-% this figure looks better after the two tables.
-\begin{figure}[tp]
-\begin{eqnarray*}
--\tuple{m,p} &=& \tuple{p,m}\\
-\tuple{m_l,p_l} + \tuple{m_r,p_r} &=& \tuple{1+\max(m_l,m_r),1+\max(p_l,p_r)}\\
-%\tuple{m_l,p_l} \times \tuple{m_r,p_r} &=& \langle\max(m_l+p_r,p_l+m_r),\\
-%                                       &&  \max(m_l+m_r,p_l+p_r)\rangle\\
-\tuple{m_l,p_l} \times \tuple{m_r,p_r} &=&
-\tuple{\begin{array}{l}\max(m_l+p_r,p_l+m_r),\\
-                       \max(m_l+m_r,p_l+p_r)\end{array}}\\
-\tuple{0,p_l} \wedge \tuple{0,p_r} &=& \tuple{0,\min(p_l,p_r)}\\
-\tuple{m_l,p_l}\wedge \tuple{m_r,p_r} &=& \tuple{\max(m_l,m_r),\max(p_l,p_r)}
-\end{eqnarray*}%
-\caption{Some combination rules for bitwidth analysis of arithmetic
-  and bitwise-logical operators.
-  Note that the penultimate entry is a
-  special-case rule that only applies if the neither of the
-  arguments can be negative.
-}\label{fig:bitrules}
-\end{figure}
-
 \subsection{Definite Initialization Analysis}
 Java field semantics dictate that uninitialized fields must have
 the value zero (or {\tt null}, for pointer fields).  It may seem,
@@ -685,7 +645,7 @@ Adding constructor {\tt A$_2$} allows the
 default $\mathbf{0}$ value of {\tt f} to be seen; {\tt f} is then no longer
 definitely-initialized.
 
-We actually allow the constructor great flexibility in regard to
+We actually allow the constructor great flexibility with regard to
 definite initialization; it is free to call any method which does not
 read {\tt A.f} before finally executing a definite initializer.
 We construct a mapping from methods to all
@@ -816,32 +776,6 @@ Further, we rule out specialization on any otherwise-suitable
 fields for which there is not at least one callable constructor
 amenable to static specialization.
 %
-\begin{table*}[t]
-\centering
-\begin{tabular}{llrc}
-\bf Benchmark &\bf Field &\bf saved bytes &\bf \% zero \\ \hline
-201\_compress   & Hashtable\$Entry.next & 3,552 & 49.7\% \\
-                & String.offset & 3,180 & 90.9\% \\
-202\_jess       & jess.Token.negcnt & 7,573,616 & 100.0\% \\
-                & jess.Value.floatval & 5,688,080 & 55.9\% \\
-205\_raytrace   & Point.z & 4,101,328 & 23.5\% \\
-                & Point.x & 3,291,076 & 18.8\% \\
-209\_db         & String.offset & 508,204 & 99.9\% \\
-                & Vector.capacityIncrement & 62,548 & 100.0\% \\
-213\_javac      & String.offset & 3,735,388 & 97.1\% \\
-% missing one here
-                & Statement.labels & 578,608 & 100.0\% \\
-222\_mpegaudio  & Hashtable\$Entry.next & 3,616 & 49.3\% \\
-                & String.offset & 2,352 & 88.0\% \\
-227\_mtrt       & Point.z & 4,106,728 & 23.5\% \\
-                & Point.x & 3,296,476 & 18.8\% \\
-228\_jack       & String.offset & 7,442,956 & 100.0 \% \\
-                & Hashtable\$Enumerator.type & 5,288,364 & 100.0\% \\
-\end{tabular}
-\caption{Representative ``mostly-zero'' fields found in SPEC benchmarks.}
-\label{tab:mostly-zero}
-\end{table*}
-
 \section{Implementation Issues}
 %
 In this section we will talk briefly about some of the practical
@@ -959,7 +893,7 @@ entries from the hashtable.
 This research was conducted using the MIT FLEX compiler infrastructure,%
 \footnote{Available from {\tt http://flexc.lcs.mit.edu/}.} which is a
 whole-program static compiler.  Although the analyses as described reflect
-this, it would be straightforward to use \emph{extent analysis}
+this, it would be straightforward to use \emph{extant analysis}
 \cite{sreedhar00} to apply transformations to only the closed-world
 portions of a program which used dynamic class loading.  The space
 allocated to the class index could be updated during garbage collection
@@ -977,7 +911,8 @@ We measure the effectiveness
 of our optimizations by using FLEX to analyze the SPECjvm98 benchmarks
 and apply our transformations,
 then measuring the resulting space savings and
-performance.   All benchmarks were run on a dual-processor 900 MHz
+performance.   All benchmarks were run with the full input size
+on a dual-processor 900 MHz
 Pentium III running Debian Linux.
 %
 \subsection{Memory Savings}
@@ -991,7 +926,9 @@ heap at any point during the execution.
 We then ran an instrumented version of our program after each stage of
 optimization.
 These versions enabled us to calculate the amount by which each 
-technique reduced the size of the live heap data.
+technique reduced the size of the live heap data.%
+\footnote{The instrumented versions collect all non-live data before
+each allocation, so that our computed maximum heap sizes are accurate.}
 
 \begin{figure*}
 \begin{center}%
@@ -1022,7 +959,7 @@ with allocations attributable to fields of pointer type split out.}%
 \label{fig:results}
 \end{figure*}
 %
-Figure~\ref{fig:results}a presents the total space savings numbers. This
+Figure~\ref{fig:results}a presents the total space savings. This
 figure contains a bar for each application, with the bar broken
 down into categories that indicate the percentage of live data from 
 the original unoptimized execution that we were able to eliminate
@@ -1111,7 +1048,7 @@ reducing space; however, many of the algorithms also eliminate the
 need to store the complicated locking objects required to support the
 most general lock usage pattern possible in a Java program. These
 techniques typically reduce the lock space overhead to 24 header bits
-\cite{bacon98}; Bacon in \cite{bacon02:efficient} shows speed
+\cite{bacon98}; Bacon et al. in \cite{bacon02:efficient} show speed
 improvements from header-size reduction, in agreement with the results
 presented here.
 
@@ -1139,13 +1076,13 @@ measurements.
 Sweeney and Tip \cite{SweeneyTip98DeadDataMembers} did a study of dead
 members of C++ programs, which is similar to the unread field
 elimination done by our bitwidth analysis.  However, they
-fail to identify {\it constant} members, which our SCC-based algorithm
-does easily.  Further, our results show that unread and constant field
+fail to identify constant members, which our SCC-based algorithm
+does.  Further, our results show that unread and constant field
 elimination is very dependent on the coding style of a particular
 application.  The collection of techniques we have presented here
 gives much more consistent savings over a wide range of benchmarks.
 
-Aggarwal and Randall \cite{aggarwal01} described a array bounds check
+Aggarwal and Randall \cite{aggarwal01} described an array bounds check
 removal method using {\it related fields}.  This work attempted to
 discover fields, such as {\tt Vector.size}, which are guaranteed to be
 less than or equal to the length of some array, for example, the
