@@ -24,10 +24,6 @@ extern jmp_buf main_return_jump;
 
 #endif
 
-#ifdef GLIBC_COMPAT5
-#include <ctype.h>
-#endif
-
 #ifdef GLIBC_COMPAT4
 #include <string.h> /* for memset prototype */
 #include <fni-ptroff.h>
@@ -78,6 +74,22 @@ void free(void* ptr) {
 #endif
 
 #ifdef GLIBC_COMPAT5
+#include <ctype.h>
+
+#ifndef __ctype_b_loc
+unsigned short int** __ctype_b_loc() {
+  return (unsigned short int**)(&__ctype_b);
+}
+
+__int32_t** __ctype_tolower_loc() {
+  return (__int32_t**)(&__ctype_tolower);
+}
+__int32_t** __ctype_toupper_loc() {
+  return (__int32_t**)(&__ctype_toupper);
+}
+
+void glibc_compat5() {}
+#else
 unsigned short int *__ctype_b;
 __int32_t *__ctype_tolower;
 __int32_t *__ctype_toupper;
@@ -87,6 +99,7 @@ void glibc_compat5() {
   __ctype_tolower = *(__int32_t**)__ctype_tolower_loc();
   __ctype_toupper = *(__int32_t**)__ctype_toupper_loc();
 }
+#endif
 #endif
 
 void startnext();
