@@ -70,12 +70,14 @@ public class Client extends Node {
     public void process(final ImageData id) {
 	//System.out.println("Client #"+getUniqueID()+" sending image #"+id.id);
 	final CommunicationsAdapter finalCS = cs;
-	(new Thread() {
-	    public void run() {
-		finalCS.process(id);
-		//System.out.println("Client #"+getUniqueID()+" sent image #"+id.id);
-	    }
-	}).start();
+// 	(new Thread() {
+// 	    public void run() {
+// 		synchronized (Client.this) {
+		    finalCS.process(id);
+		    //System.out.println("Client #"+getUniqueID()+" sent image #"+id.id);
+// 		}
+// 	    }
+// 	}).start();
 
 	if (getLeft() != null)
 	    getLeft().process(id);
