@@ -58,7 +58,7 @@ import java.util.Iterator;
     maintained by the hardcoded references.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.18 2000-01-26 05:22:05 cananian Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.19 2000-01-28 02:38:52 pnkfelix Exp $ */
 public abstract class RegFileInfo {
     
     /** Common super class for <code>StackOffsetLoc</code> and 
@@ -66,7 +66,7 @@ public abstract class RegFileInfo {
 	<code>Temp</code> objects (is an interface to get around
 	multiple inheritance problmes).
     */
-    static interface CommonLoc {
+    public interface CommonLoc {
 	/** Returns the <code>KIND</code> of Loc <code>this</code> is.
 	    <BR> <B>effects:</B> 
 	         If <code>this</code> is a
@@ -80,7 +80,7 @@ public abstract class RegFileInfo {
     }
     
     /** Represents Stack Offset <code>Temp</code>s. */
-    static interface StackOffsetLoc extends CommonLoc {
+    public interface StackOffsetLoc extends CommonLoc {
 	public static int KIND = 1;
 	int stackOffset();
     }
@@ -91,7 +91,7 @@ public abstract class RegFileInfo {
     public int maxRegIndex() { throw new Error("Unimplemented."); }
 
     /** Represents Machine Register <code>Temp</code>s. */
-    static interface MachineRegLoc extends CommonLoc {
+    public interface MachineRegLoc extends CommonLoc {
 	public static int KIND = 2;
 	
 	/** Returns the index of <code>this</code> in the register file.
