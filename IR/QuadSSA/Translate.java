@@ -29,11 +29,12 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.21 1998-09-02 06:16:26 cananian Exp $
+ * @version $Id: Translate.java,v 1.22 1998-09-02 20:36:47 cananian Exp $
  */
 
-/* State holds state *after* execution of corresponding instr. */
 class Translate  { // not public.
+    /** <code>State</code> represents the stack, local variable, and block
+     *  context (for try and monitor quads) of a given bytecode Instr. */
     static class State { // inner class
 	/** Current temps used for each position of stack.
 	 *  <code>null</code>s are valid placeholders for empty spaces
@@ -358,40 +359,6 @@ class Translate  { // not public.
 	}
 	// done.
 	return;
-    }
-    private static boolean phiFromTry(ExceptionEntry theTry,
-				      Instr theMerge) {
-	Instr pr[] = theMerge.prev();
-	for (int i=0; i<pr.length; i++)
-	    if (theTry.inTry(pr[i]))
-		return true;
-	return false;
-    }
-    private static int countTry(Instr in, ExceptionEntry[] tb) {
-	int n=0;
-	for (int i=0; i<tb.length; i++)
-	    if (tb[i].inTry(in))
-		n++;
-	return n;
-    }
-    private static ExceptionEntry whichTry(Instr in, State s,
-					   ExceptionEntry[] allTries)
-    {
-	// determine which try block we're entering
-	ExceptionEntry newTry = null;
-	for (int i=0; i<allTries.length; i++) {
-	    if (allTries[i].inTry(in)) {
-		int j;
-		for (j=0; j<s.tryBlock.length; j++)
-		    if (s.tryBlock[j]==allTries[i])
-			break;
-		if (j==s.tryBlock.length) { // try not in current state.
-		    newTry = allTries[i];
-		    break;
-		}
-	    }
-	}
-	return newTry; // null if can't find.
     }
 
     static final TransState[] transInstr(MergeMap mm, TransState ts) {
@@ -964,6 +931,9 @@ class Translate  { // not public.
 		new TransState(ns, in.next()[0], ts.header, ts.which_succ) };
 	}
     }
+    static final TransState[] transInMerge(MergeMap mm, TransState ts) {
+	return null;
+    }
     static final TransState[] transInCti(TransState ts) {
 	/*
 	if (in instanceof InSwitch) {
@@ -997,13 +967,53 @@ class Translate  { // not public.
 	*/
 	return null;
     }
-    static final TransState[] transInMerge(MergeMap mm, TransState ts) {
-	return null;
-    }
 
-    static private boolean isLongDouble(HClass hc) {
+    // Miscellaneous utility functions. ///////////////////////////
+
+    /** Determine if an HClass needs to be represented by one or two bytecode
+     *  stack entries. */
+    private static final boolean isLongDouble(HClass hc) {
 	if (hc == HClass.Long || hc == HClass.Double)
 	    return true;
 	return false;
+    }
+    /** Determine if some entry to a MERGE node is from an Instr inside
+     *  a given try. */
+    private static final boolean phiFromTry(ExceptionEntry theTry,
+					    Instr theMerge) {
+	Instr pr[] = theMerge.prev();
+	for (int i=0; i<pr.length; i++)
+	    if (theTry.inTry(pr[i]))
+		return true;
+	return false;
+    }
+    /** Count the number of try blocks containing the given Instr. */
+    private static final int countTry(Instr in, ExceptionEntry[] tb) {
+	int n=0;
+	for (int i=0; i<tb.length; i++)
+	    if (tb[i].inTry(in))
+		n++;
+	return n;
+    }
+    /** Find a try block containing the given Instr which is not already
+     *  present in the State's tryBlock list. */
+    private static final ExceptionEntry whichTry(Instr in, State s,
+						 ExceptionEntry[] allTries)
+    {
+	// determine which try block we're entering
+	ExceptionEntry newTry = null;
+	for (int i=0; i<allTries.length; i++) {
+	    if (allTries[i].inTry(in)) {
+		int j;
+		for (j=0; j<s.tryBlock.length; j++)
+		    if (s.tryBlock[j]==allTries[i])
+			break;
+		if (j==s.tryBlock.length) { // try not in current state.
+		    newTry = allTries[i];
+		    break;
+		}
+	    }
+	}
+	return newTry; // null if can't find.
     }
 }
