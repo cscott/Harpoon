@@ -4,6 +4,8 @@
 package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.LowQuad.PCALL;
+import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
 import java.io.PrintWriter;
@@ -15,7 +17,7 @@ import java.util.Hashtable;
  * inserting labels to make the control flow clear.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Print.java,v 1.1.2.7.2.1 1999-09-16 16:37:04 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.7.2.2 1999-09-17 06:53:02 cananian Exp $
  */
 abstract class Print  {
     /** Print <code>Quad</code> code representation <code>c</code> to
@@ -95,14 +97,16 @@ abstract class Print  {
 		sb.append("]");
 		indent(pw, ql[i], l, sb.toString());
 		indent(pw, Q);
-	    } else if (ql[i] instanceof CALL) {
-		CALL Q = (CALL) ql[i];
+	    } else if (ql[i] instanceof CALL || ql[i] instanceof PCALL) {
+		SIGMA Q = (SIGMA) ql[i];
 		// reformat stuff after 'exceptions'
 		int j = s.indexOf(" exceptions ");
-		Util.assert(j>=0,"CALL.toString() changed, oops.");
+		Util.assert(j>=0,"(P)CALL.toString() changed, oops.");
 		indent(pw, Q, l, s.substring(0, j));
-		if (Q.retex()!=null) // suppress exc info if not applicable
-		    indent(pw, null, null, " exception in "+Q.retex()+"; "+
+		Temp retex = (Q instanceof CALL)
+		    ? ((CALL)Q).retex() : ((PCALL)Q).retex();
+		if (retex!=null) // suppress exc info if not applicable
+		    indent(pw, null, null, " exception in "+retex+"; "+
 			   "handler at "+labels.get(Q.next(1)));
 		indent(pw, Q); // print sigma functions.
 	    } else if (ql[i] instanceof METHOD) {
