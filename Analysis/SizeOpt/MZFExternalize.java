@@ -27,6 +27,7 @@ import harpoon.IR.Quads.QuadRSSx;
 import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.THROW;
 import harpoon.Temp.Temp;
+import harpoon.Util.Collections.SnapshotIterator;
 import harpoon.Util.Util;
 
 import java.util.HashMap;
@@ -44,7 +45,7 @@ import java.util.Set;
  * really *are* mostly-zero, then the net will be a space savings.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFExternalize.java,v 1.5 2002-09-03 14:43:06 cananian Exp $
+ * @version $Id: MZFExternalize.java,v 1.6 2002-09-03 16:58:15 cananian Exp $
  */
 class MZFExternalize {
     public static final double THRESHOLD =
@@ -136,10 +137,11 @@ class MZFExternalize {
 	// would be better to make this from scratch.
 	HCode<Quad> hc = hcf.convert(getter);
 	assert hc.getName().equals(QuadRSSx.codename) : hc;
-	Quad[] qa = hc.getElements();
-	for (int i=0; i<qa.length; i++) {
-	    if (qa[i] instanceof GET) {
-		GET q = (GET) qa[i];
+	for (Iterator<Quad> it=new SnapshotIterator<Quad>
+		 (hc.getElementsI()); it.hasNext(); ) {
+	    Quad aquad = it.next();
+	    if (aquad instanceof GET) {
+		GET q = (GET) aquad;
 		assert q.field().equals(hf);
 		// mu-ha-ha-ha-ha-ha!
 		QuadFactory qf = q.getFactory();
@@ -167,7 +169,7 @@ class MZFExternalize {
 		Quad.addEdges(new Quad[] { q0, q1, q2 });
 		Quad.addEdge(q2, 0, (Quad)out.to(), out.which_pred());
 		Quad.addEdge(q2, 1, q3, 0);
-		FOOTER f = ((HEADER)qa[0]).footer();
+		FOOTER f = ((HEADER)hc.getRootElement()).footer();
 		f=f.attach(q3, 0);
 		// insert type check for non-primitive types.
 		if (!ty.isPrimitive()) {
@@ -202,10 +204,11 @@ class MZFExternalize {
 	// would be better to make this from scratch.
 	HCode<Quad> hc = hcf.convert(setter);
 	assert hc.getName().equals(QuadRSSx.codename) : hc;
-	Quad[] qa = hc.getElements();
-	for (int i=0; i<qa.length; i++) {
-	    if (qa[i] instanceof SET) {
-		SET q = (SET) qa[i];
+	for (Iterator<Quad> it=new SnapshotIterator<Quad>
+		 (hc.getElementsI()); it.hasNext(); ) {
+	    Quad aquad = it.next();
+	    if (aquad instanceof SET) {
+		SET q = (SET) aquad;
 		assert q.field().equals(hf);
 		// mu-ha-ha-ha-ha-ha!
 		QuadFactory qf = q.getFactory();
@@ -233,7 +236,7 @@ class MZFExternalize {
 		Quad.addEdges(new Quad[] { q0, q1, q2 });
 		Quad.addEdge(q2, 0, (Quad)out.to(), out.which_pred());
 		Quad.addEdge(q2, 1, q3, 0);
-		FOOTER f = ((HEADER)qa[0]).footer();
+		FOOTER f = ((HEADER)hc.getRootElement()).footer();
 		f=f.attach(q3, 0);
 	    }
 	}
