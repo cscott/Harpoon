@@ -1,7 +1,7 @@
 # Grace project file
 #
 @version 50107
-@page size 789, 609
+@page size 787, 607
 @page scroll 5%
 @page inout 5%
 @link page off
@@ -54,7 +54,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Fri Mar 22 20:23:13 2002"
+@timestamp def "Fri Mar 22 22:24:05 2002"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -211,7 +211,7 @@
 @    yaxis  label place normal
 @    yaxis  tick on
 @    yaxis  tick major 1
-@    yaxis  tick minor ticks 4
+@    yaxis  tick minor ticks 3
 @    yaxis  tick default 3
 @    yaxis  tick place rounded true
 @    yaxis  tick in
@@ -667,9 +667,9 @@
                1          88.9649
                2           1.0219
                3           1.1886
-               4           1.2686
+               4           0.9953
                5           1.0213
-               6           1.1253
+               6           1.0829
                7           0.9523
                8           1.1211
                9           1.2575
@@ -679,9 +679,9 @@
                1                0
                2           1.0433
                3           1.4633
-               4           2.0043
+               4           1.0357
                5           1.4197
-               6           1.3715
+               6             1.42
                7           0.9862
                8           1.1626
                9           1.5952
