@@ -1,10 +1,11 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.56 1999-07-10 08:20:02 cananian Exp $
+% $Id: thesis.tex,v 1.57 1999-07-14 12:44:28 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage]{article}
+\usepackage[light,first,bottomafter]{draftcopy}
 % fonts
-%\usepackage{beton}
-%\usepackage{euler}
+%\usepackage{beton}\usepackage{euler}
+\usepackage{pdffonts}\usepackage{euler}
 % useful stuff
 \usepackage{algorithm} % algorithm environment, \listofalgorithms
 \usepackage{amsthm} % proof environment
@@ -25,14 +26,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.56 $ $}
+\date{\today \\ $ $Revision: 1.57 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.56 $ $}{$ $Revision: 1.56 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.57 $ $}{$ $Revision: 1.57 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
