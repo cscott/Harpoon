@@ -48,7 +48,7 @@ import harpoon.Util.Util;
  * It takes QuadsNoSSA form code as input. 
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: CheckAdderNoSSA.java,v 1.1.2.4 2001-06-17 23:07:32 cananian Exp $
+ * @version $Id: CheckAdderNoSSA.java,v 1.1.2.5 2001-07-16 13:05:00 wbeebee Exp $
  */
 
 
@@ -329,7 +329,7 @@ class CheckAdderNoSSA extends CheckAdder {
 			      false, false, new Temp[0]);
 	    } else {
 		q0 = new CALL(qf, inst,
-			      linker.forName("javax.realtime.HeapMemory")
+			      linker.forName("javax.realtime.ImmortalMemory")
 			      .getMethod("instance", new HClass[0]),
 			      new Temp[0], objArea, retex, 
 			      false, false, new Temp[0]);

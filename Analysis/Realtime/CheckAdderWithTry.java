@@ -44,7 +44,7 @@ import harpoon.Util.Util;
  * It takes QuadsWithTry form code as input. 
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: CheckAdderWithTry.java,v 1.1.2.4 2001-06-17 23:07:32 cananian Exp $
+ * @version $Id: CheckAdderWithTry.java,v 1.1.2.5 2001-07-16 13:05:00 wbeebee Exp $
  */
 
 // Fix to be non-static...
@@ -326,7 +326,7 @@ class CheckAdderWithTry extends CheckAdder {
 			      false, false, new Temp[0]);
 	    } else {
 		q0 = new CALL(qf, inst,
-			      linker.forName("javax.realtime.HeapMemory")
+			      linker.forName("javax.realtime.ImmortalMemory")
 			      .getMethod("instance", new HClass[0]),
 			      new Temp[0], objArea, null, 
 			      false, false, new Temp[0]);

@@ -10,6 +10,8 @@ import harpoon.Analysis.Tree.Simplification;
 import harpoon.Analysis.Tree.Simplification.Rule;
 
 import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Generic.Runtime.TreeBuilder;
+
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -37,6 +39,7 @@ import harpoon.IR.Tree.NATIVECALL;
 import harpoon.IR.Tree.SEQ;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TEMP;
+import harpoon.IR.Tree.Translation;
 import harpoon.IR.Tree.TreeFactory;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.Uop;
@@ -80,56 +83,128 @@ public class HeapCheckAdder extends Simplification {
      *      *foo = bar;
      *
      *  =>  heapRef1 = *foo;
+     *      [env = FNI_GetJNIEnv();]
+     *      [FNI_MonitorEnter(env, javax.realtime.Stats.class);]
+     *      [if (javax.realtime.Stats.COLLECT_HEAP_STATS) goto CollectChecks0;
+     *                                                    else goto NoCollectChecks0;]
+     *    [CollectChecks0:]
      *      [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapChecks + 1;]
+     *      [*javax.realtime.Stats.WRITE_CHECKS = *javax.realtime.Stats.WRITE_CHECKS + 1;]
+     *    [NoCollectChecks0:]
      *      if (heapRef1&1) goto NoHeap0; else goto TouchedHeap0;
      *    TouchedHeap0:
+     *      [if (javax.realtime.Stats.COLLECT_HEAP_STATS) goto CollectRefs0;
+     *                                                    else goto NoCollectRefs0;]
+     *    [CollectRefs0:]
      *      [*javax.realtime.Stats.heapRefs = *javax.realtime.Stats.heapRefs + 1;]
+     *      [*javax.realtime.Stats.WRITE_REFS = *javax.realtime.Stats.WRITE_REFS + 1;]
+     *    [NoCollectRefs0:]
      *      heapCheck(heapRef1);
      *    NoHeap0:
+     *      [env = FNI_GetJNIEnv();]
+     *      [FNI_MonitorExit(env, javax.realtime.Stats.class);]
      *      *foo = bar;
      *
      *      bar = *foo; 
      *  
      *  =>  heapRef1 = *foo;
+     *      [env = FNI_GetJNIEnv();]
+     *      [FNI_MonitorEnter(env, javax.realtime.Stats.class);]
+     *      [if (javax.realtime.Stats.COLLECT_HEAP_STATS) goto CollectChecks0;
+     *                                                    else goto NoCollectChecks0;]
+     *    [CollectChecks0:]
      *      [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapChecks + 1;]
-     *      if (heapRef2&1) goto NoHeap1; else goto TouchedHeap1;
+     *      [*javax.realtime.Stats.READ_CHECKS = *javax.realtime.Stats.READ_CHECKS + 1;]
+     *    [NoCollectChecks0:]
+     *      if (heapRef1&1) goto NoHeap1; else goto TouchedHeap1;
      *    TouchedHeap1:
+     *      [if (javax.realtime.Stats.COLLECT_HEAP_STATS) goto CollectRefs0;
+     *                                                    else goto NoCollectRefs0;]
+     *    [CollectRefs0:]
      *      [*javax.realtime.Stats.heapRefs = *javax.realtime.Stats.heapRefs + 1;]
+     *      [*javax.realtime.Stats.READ_REFS = *javax.realtime.Stats.READ_REFS + 1;]
+     *    [NoCollectRefs0:]
      *      heapCheck(heapRef1);
      *    NoHeap1:
+     *      [env = FNI_GetJNIEnv();]
+     *      [FNI_MonitorExit(env, javax.realtime.Stats.class);]
      *      bar = heapRef1;
      *
      *      foo = NATIVECALL(....);
      *
      *  =>  heapRef1 = NATIVECALL(....);
+     *      [env = FNI_GetJNIEnv();]
+     *      [FNI_MonitorEnter(env, javax.realtime.Stats.class);]
+     *      [if (javax.realtime.Stats.COLLECT_HEAP_STATS) goto CollectChecks0;
+     *                                                    else goto NoCollectChecks0;]
+     *    [CollectChecks0:]
      *      [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapChecks + 1;]
+     *      [*javax.realtime.Stats.NATIVECALL_CHECKS = 
+     *                                   *javax.realtime.Stats.NATIVECALL_CHECKS + 1;]
+     *    [NoCollectChecks0:]
      *      if (heapRef1&1) goto NoHeap0; else goto TouchedHeap0;
      *    TouchedHeap0:
-     *      [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapRefs + 1;]      
+     *      [if (javax.realtime.Stats.COLLECT_HEAP_STATS) goto CollectRefs0;
+     *                                                    else goto NoCollectRefs0;]
+     *    [CollectRefs0:]
+     *      [*javax.realtime.Stats.heapRefs = *javax.realtime.Stats.heapRefs + 1;]      
+     *      [*javax.realtime.Stats.NATIVECALL_REFS = 
+     *                                     *javax.realtime.Stats.NATIVECALL_REFS + 1;]
+     *    [NoCollectRefs0:]
      *      heapCheck(heapRef1);
      *    NoHeap0:
+     *      [env = FNI_GetJNIEnv();]
+     *      [FNI_MonitorExit(env, javax.realtime.Stats.class);]
      *      foo = heapRef1;
      *
      *      foo = CALL(....);
      *
      *      heapRef1 = CALL(....);
+     *      [env = FNI_GetJNIEnv();]
+     *      [FNI_MonitorEnter(env, javax.realtime.Stats.class);]
+     *      [if (javax.realtime.Stats.COLLECT_HEAP_STATS) goto CollectChecks0;
+     *                                                    else goto NoCollectChecks0;]
+     *    [CollectChecks0:]
      *      [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapChecks + 1;]
+     *      [*javax.realtime.Stats.CALL_CHECKS = *javax.realtime.Stats.CALL_CHECKS + 1;]
+     *    [NoCollectChecks0:]
      *      if (heapRef1&1) goto NoHeap0; else goto TouchedHeap0;
      *    TouchedHeap0:
-     *      [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapRefs + 1;]
+     *      [if (javax.realtime.Stats.COLLECT_HEAP_STATS) goto CollectRefs0;
+     *                                                    else goto NoCollectRefs0;]
+     *    [CollectRefs0:]
+     *      [*javax.realtime.Stats.heapRefs = *javax.realtime.Stats.heapRefs + 1;]
+     *      [*javax.realtime.Stats.CALL_REFS = *javax.realtime.Stats.CALL_REFS + 1;]
+     *    [NoCollectRefs0:]
      *      heapCheck(heapRef1);
      *    NoHeap0:
+     *      [env = FNI_GetJNIEnv();]
+     *      [FNI_MonitorExit(env, javax.realtime.Stats.class);]
      *      foo = heapRef1;
      *
      *      METHOD(params[]);
      *
      *  =>  foreach params st. params[i] is of type POINTER:
+     *          [env = FNI_GetJNIEnv();]
+     *          [FNI_MonitorEnter(env, javax.realtime.Stats.class);]
+     *          [if (javax.realtime.Stats.COLLECT_HEAP_STATS) goto CollectChecksi;
+     *                                                        else goto NoCollectChecksi;]
+     *        [CollectChecksi:]
      *          [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapChecks + 1;]
-     *          if (heapRef1&1) goto NoHeapi; else goto TouchedHeapi;
+     *          [*javax.realtime.Stats.METHOD_CHECKS = *javax.realtime.Stats.METHOD_CHECKS + 1;]
+     *        [NoCollectChecksi:]
+     *          if (params[i]&1) goto NoHeapi; else goto TouchedHeapi;
      *        TouchedHeapi:
+     *          [if (javax.realtime.Stats.COLLECT_HEAP_STATS) goto CollectRefsi;
+     *                                                        else goto NoCollectRefsi;]
+     *        [CollectRefsi:]
      *          [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapRefs + 1;]
+     *          [*javax.realtime.Stats.METHOD_REFS = *javax.realtime.Stats.METHOD_REFS + 1;]
+     *        [NoCollectRefsi:]
      *          heapCheck(params[i]);
      *        NoHeapi:
+     *          [env = FNI_GetJNIEnv();]
+     *          [FNI_MonitorExit(env, javax.realtime.Stats.class);]
      *          
      *  Isn't that awful?
      *
@@ -161,13 +236,15 @@ public class HeapCheckAdder extends Simplification {
 		    Exp result = UPDATE(dg, e, mem.build(tf, mem.kids()));
 		    seenList.add(result);
 		    seenList.add(mem);
-		    Temp t = new Temp(tf.tempFactory(), "heapRef");
-		    result = 
+		    if (dg.typeMap(mem) != HClass.Void) {
+		      Temp t = new Temp(tf.tempFactory(), "heapRef");
+		      result = 
 			new ESEQ(tf, e, 
 				 new MOVE(tf, e, tempRef(dg, tf, mem, t), result),
-				 new ESEQ(tf, e, addCheck(tf, mem, dg, t),
+				 new ESEQ(tf, e, addCheck(tf, mem, dg, t, "READ"),
 					  tempRef(dg, tf, mem, t)));
-		    UPDATE(dg, e, result);
+		      UPDATE(dg, e, result);
+		    }
 		    return result;
 		}
 	    });
@@ -186,12 +263,16 @@ public class HeapCheckAdder extends Simplification {
 		public Stm apply(TreeFactory tf, Stm e, DerivationGenerator dg) {
 		    MEM mem = (MEM)(((MOVE)e).getDst());
 		    seenList.add(mem);
-		    Temp t = new Temp(tf.tempFactory(), "heapRef");
-		    List stmList = new ArrayList();
-		    stmList.add(new MOVE(tf, e, tempRef(dg, tf, mem, t), mem));
-		    stmList.add(addCheck(tf, mem, dg, t));
-		    stmList.add(new MOVE(tf, mem, mem, ((MOVE)e).getSrc()));
-		    return Stm.toStm(stmList);
+		    if (dg.typeMap(mem) != HClass.Void) {
+		      Temp t = new Temp(tf.tempFactory(), "heapRef");
+		      List stmList = new ArrayList();
+		      stmList.add(new MOVE(tf, e, tempRef(dg, tf, mem, t), mem));
+		      stmList.add(addCheck(tf, mem, dg, t, "WRITE"));
+		      stmList.add(new MOVE(tf, mem, mem, ((MOVE)e).getSrc()));
+		      return Stm.toStm(stmList);
+		    } else {
+		      return new MOVE(tf, mem, mem, ((MOVE)e).getSrc());
+		    }
 		}
 	    });
 
@@ -212,7 +293,9 @@ public class HeapCheckAdder extends Simplification {
 		    stmList.add(nc = new NATIVECALL(nc.getFactory(), nc, ret, 
 						    nc.getFunc(), nc.getArgs()));
 		    seenList.add(nc);
-		    stmList.add(addCheck(tf, ret, dg, ret.temp));
+		    if (dg.typeMap(ret) != HClass.Void) {
+		      stmList.add(addCheck(tf, ret, dg, ret.temp, "NATIVECALL"));
+		    }
 		    return Stm.toStm(stmList);
 		}
 
@@ -235,7 +318,9 @@ public class HeapCheckAdder extends Simplification {
 					     c.getArgs(), c.getHandler(), 
 					     c.isTailCall));
 		    seenList.add(c);
-		    stmList.add(addCheck(tf, ret, dg, ret.temp));
+		    if (dg.typeMap(ret) != HClass.Void) {
+		      stmList.add(addCheck(tf, ret, dg, ret.temp, "CALL"));
+		    }
 		    return Stm.toStm(stmList);
 		}
 
@@ -256,8 +341,9 @@ public class HeapCheckAdder extends Simplification {
 					       m.getReturnType(), params));
 		    seenList.add(m);
 		    for (int i=1; i<params.length; i++) { 
-			if (params[i].type == Type.POINTER) {
-			    stmList.add(addCheck(tf, params[i], dg, params[i].temp));
+			if ((params[i].type == Type.POINTER)&&
+			    (dg.typeMap(params[i]) != HClass.Void)) {
+			    stmList.add(addCheck(tf, params[i], dg, params[i].temp, "METHOD"));
 			}
 		    }		     
 		    return Stm.toStm(stmList);
@@ -267,21 +353,44 @@ public class HeapCheckAdder extends Simplification {
 		
     }
 
-    /**  [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapChecks + 1;]
+    /**  [env = FNI_GetJNIEnv();]
+     *   [FNI_MonitorEnter(env, javax.realtime.Stats.class);]
+     *   [if (javax.realtime.Stats.COLLECT_HEAP_STATS) goto CollectChecks; 
+     *                                                 else goto NoCollectChecks;]
+     * [CollectChecks:]
+     *   [*javax.realtime.Stats.heapChecks = *javax.realtime.Stats.heapChecks + 1;]
+     *   [*javax.realtime.Stats.##type##Checks = *javax.realtime.Stats.##type##Checks + 1;]
+     * [NoCollectChecks:]
      *   if (t&1) goto NoHeap; else goto TouchedHeap;
      * TouchedHeap:
+     *   [if (javax.realtime.Stats.COLLECT_HEAP_STATS) goto CollectRefs;
+     *                                                 else goto NoCollectRefs;]
+     * [CollectRefs:] 
      *   [*javax.realtime.Stats.heapRefs = *javax.realtime.Stats.heapRefs + 1;]
+     *   [*javax.realtime.Stats.##type##Refs = *javax.realtime.Stats.##type##Refs + 1;]
+     * [NoCollectRefs:]
      *   heapCheck(t);
      * NoHeap:  
+     *   [env = FNI_GetJNIEnv();]
+     *   [FNI_MonitorExit(env, javax.realtime.Stats.class);]
      */
     protected static Stm addCheck(TreeFactory tf, Exp e, 
-				  DerivationGenerator dg, Temp t) {
+				  DerivationGenerator dg, Temp t, String type) {
 	Label ex = new Label("TouchedHeap"+(++count));
 	Label ord = new Label("NoHeap"+count);
 	List stmList = new ArrayList();
 	if (Realtime.COLLECT_RUNTIME_STATS) {
 	    Frame f = tf.getFrame();
+	    Label collect = new Label("CollectChecks"+count);
+	    Label nocollect = new Label("NoCollectChecks"+count);
+	    stmList.add(callStatsMonitor(tf, e, dg, true));
+	    stmList.add(new CJUMP(tf, e, fieldRef(tf, e, dg, HClass.Long, Type.LONG,
+						  "javax.realtime.Stats", "COLLECT_HEAP_STATS"),
+				  collect, nocollect));
+	    stmList.add(new LABEL(tf, e, collect, false));
 	    stmList.add(incLongField(tf, e, dg, "javax.realtime.Stats", "heapChecks"));
+	    stmList.add(incLongField(tf, e, dg, "javax.realtime.Stats", type+"_CHECKS"));
+	    stmList.add(new LABEL(tf, e, nocollect, false));
 	}
 	stmList.add(new CJUMP(tf, e, 
 			      DECLARE(dg, new DList(t, true, null), 
@@ -290,14 +399,39 @@ public class HeapCheckAdder extends Simplification {
 						new CONST(tf, e, USE_LOW_BIT?1:2))), ex, ord));
 	stmList.add(new LABEL(tf, e, ex, false));
 	if (Realtime.COLLECT_RUNTIME_STATS) {
+	    Label collect = new Label("CollectRefs"+count);
+	    Label nocollect = new Label("NoCollectRefs"+count);
+	    stmList.add(new CJUMP(tf, e, fieldRef(tf, e, dg, HClass.Long, Type.LONG,
+						  "javax.realtime.Stats", "COLLECT_HEAP_STATS"),
+				  collect, nocollect));
+	    stmList.add(new LABEL(tf, e, collect, false));
 	    stmList.add(incLongField(tf, e, dg, "javax.realtime.Stats", "heapRefs"));
+	    stmList.add(incLongField(tf, e, dg, "javax.realtime.Stats", type+"_REFS"));
+	    stmList.add(new LABEL(tf, e, nocollect, false));
 	}
 	stmList.add(nativeCall(tf, e, dg, t,
-			       Realtime.DEBUG_REF?"heapCheckRef":"heapCheckJava"));
+			       Realtime.DEBUG_REF?"heapCheckRef":"heapCheckJava", type));
 	stmList.add(new LABEL(tf, e, ord, false));
+	if (Realtime.COLLECT_RUNTIME_STATS) {
+	    stmList.add(callStatsMonitor(tf, e, dg, false));
+	}
 	return Stm.toStm(stmList);
     }
     
+    protected static Stm callStatsMonitor(TreeFactory tf, HCodeElement src, 
+					  DerivationGenerator dg, boolean isEnter) {
+	List stmList = new ArrayList();
+	TreeBuilder tb = tf.getFrame().getRuntime().getTreeBuilder();
+	Translation.Exp stats = tb.classConst(tf, src, dg, 
+					      tf.getFrame().getLinker()
+					      .forName("javax.realtime.Stats"));
+	if (isEnter) {
+	    return tb.monitorEnter(tf, src, dg, stats).unNx(tf);
+	} else {
+	    return tb.monitorExit(tf, src, dg, stats).unNx(tf);
+	}
+    }
+
     /** *foo.bar = *foo.bar + 1; */
     protected static Stm incLongField(TreeFactory tf, HCodeElement e,
 				    DerivationGenerator dg, 
@@ -336,16 +470,20 @@ public class HeapCheckAdder extends Simplification {
     /** func_name(t) */
     protected static NATIVECALL nativeCall(TreeFactory tf, Exp e, 
 					   DerivationGenerator dg, Temp t,
-					   String func_name) {
+					   String func_name, String type) {
 	Label func = new Label(tf.getFrame().getRuntime().getNameMap()
 			       .c_function_name(func_name));
 	ExpList extraArgs = null;
 	if (Realtime.DEBUG_REF) {
-	    extraArgs = new ExpList(new CONST(tf, e, e.getLineNumber()),
-				    new ExpList(new NAME(tf, e, 
-							 RealtimeAllocationStrategy
-							 .fileLabel(e)),
-						null));
+	    extraArgs = 
+		new ExpList(new CONST(tf, e, e.getLineNumber()),
+			    new ExpList(new NAME(tf, e, 
+						 RealtimeAllocationStrategy
+						 .stringLabel(e.getSourceFile())),
+					new ExpList(new NAME(tf, e,
+							     RealtimeAllocationStrategy
+							     .stringLabel(type)),
+						    null)));
 	}
 	return new NATIVECALL(tf, e, null,
 			      (NAME)DECLARE(dg, HClass.Void, new NAME(tf, e, func)),
@@ -386,7 +524,7 @@ public class HeapCheckAdder extends Simplification {
 		public String getCodeName() { return parent.getCodeName(); }
 		public void clear(HMethod m) { parent.clear(m); }
 	    };
-//  	return new PrintFactory(Canonicalize.codeFactory(codeFactory(new PrintFactory(hcf, "BEFORE"), 
+//  	final HCodeFactory hcf2 = new PrintFactory(Canonicalize.codeFactory(codeFactory(new PrintFactory(hcf, "BEFORE"), 
 //  								     RULES)), "AFTER");
 	return Canonicalize.codeFactory(codeFactory(hcf, RULES));
 //  	return parent;

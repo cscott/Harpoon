@@ -31,7 +31,7 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.1.2.29 2001-07-10 19:26:41 wbeebee Exp $
+ * @version $Id: Realtime.java,v 1.1.2.30 2001-07-16 13:05:00 wbeebee Exp $
  */
 
 public class Realtime {
@@ -68,12 +68,12 @@ public class Realtime {
     /** Add checks to determine if a <code>NoHeapRealtimeThread</code> is
      *  touching the heap.
      */
-    public static boolean NOHEAP_CHECKS = true;
+    public static boolean NOHEAP_CHECKS = false;
 
     /** Add additional information on calls to RTJ_malloc to store information
      *  about the def. points of all objects which are allocated.
      */
-    public static boolean DEBUG_REF = true;
+    public static boolean DEBUG_REF = false;
 
     /** Configure Realtime Java based on the following command-line options. 
      */
@@ -81,12 +81,23 @@ public class Realtime {
 	String opts = options.toLowerCase();
 	System.out.print("RTJ: on, Real Scopes: ");
 	REALTIME_JAVA = true;
-	if (opts.indexOf("fakescopes")!=-1) {
+	if (opts.indexOf("fake_scopes")!=-1) {
 	    System.out.print("no");
 	    REAL_SCOPES = false;
-	    Util.assert(false, "Fake scopes is broken... sorry!  Will fix.");
 	} else {
-	    System.out.print("yes");
+	    System.out.print("yes, NOHEAP_CHECKS: ");
+	    if (opts.indexOf("noheap_checks")!=-1) {
+		NOHEAP_CHECKS = true;
+		System.out.print("yes, DEBUG_REF: ");
+		if (opts.indexOf("debug_ref")!=-1) {
+		    DEBUG_REF = true;
+		    System.out.print("yes");
+		} else {
+		    System.out.print("no");
+		}
+	    } else {
+		System.out.print("no");
+	    }
 	}
 	System.out.print(", Collect Statistics: ");
 	if (opts.indexOf("stats")!=-1) {
@@ -199,10 +210,6 @@ public class Realtime {
 				      new HClass[] { memoryArea }));
 	    roots.add(stats.getMethod("addNewArrayObject",
 				      new HClass[] { memoryArea }));
-	    if (NOHEAP_CHECKS) {
-		roots.add(stats.getDeclaredField("heapRefs"));
-		roots.add(stats.getDeclaredField("heapCheck"));
-	    }
 	}
 
 	if (REAL_SCOPES) {
@@ -223,6 +230,8 @@ public class Realtime {
 	    roots.add(linker.forName("javax.realtime.VTMemory")
 		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
 	}
+	roots.add(linker.forName("javax.realtime.ImmortalMemory")
+		  .getMethod("instance", new HClass[] { }));
 	roots.add(linker.forName("javax.realtime.CTMemory")
 		  .getMethod("checkAccess", new HClass[] { object }));
 	roots.add(linker.forName("javax.realtime.HeapMemory")
@@ -241,6 +250,7 @@ public class Realtime {
 	roots.add(linker.forName("javax.realtime.LTMemory")
 		  .getMethod("checkAccess", new HClass[] { object }));
 	roots.add(linker.forName("javax.realtime.NoHeapRealtimeThread"));
+	roots.add(linker.forName("java.lang.IllegalAccessException"));
 
 	if(REALTIME_THREADS)
 	    {
