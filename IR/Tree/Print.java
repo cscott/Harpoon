@@ -10,7 +10,7 @@ import java.io.PrintStream;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.6 1999-02-05 12:02:46 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.7 1999-02-21 22:03:21 duncan Exp $
  */
 public class Print 
 {
@@ -106,6 +106,7 @@ public class Print
 
     public void visit(CJUMP s)
       {
+	sayln("");
 	indent(m_indent++);
 	say("CJUMP("); s.test.visit(this); sayln(",");
 	indent(m_indent--);
@@ -171,17 +172,43 @@ public class Print
 	indent(m_indent); say("NAME "); say(e.label.toString());
       }
 
+    public void visit(NATIVECALL s)
+      {
+	indent(m_indent++); sayln("NATIVECALL(");
+	indent(m_indent++); sayln("Return value in: "); 
+	s.retval.visit(this); sayln("");
+	indent(m_indent-1); sayln("Exceptional value in: ");
+	s.retex.visit(this); sayln("");
+	indent(m_indent-1); sayln("Function: ");
+	s.func.visit(this);
+        for(ExpList a = s.args; a!=null; a=a.tail) 
+	  {
+	    sayln(","); a.head.visit(this);
+	  }
+        say(")");
+	m_indent -= 2;
+      }
+
+    public void visit(RETURN s) {
+        indent(m_indent); say("RETURN (");
+	m_indent++;
+	s.retval.visit(this);
+	say (")");
+	m_indent--;
+    }
+
     public void visit(SEQ s)
       {
+	sayln("");
 	indent(m_indent++);
-	sayln("SEQ("); 
+	say("SEQ("); 
 	s.left.visit(this); s.right.visit(this); say(")");
 	m_indent--;
       }
 
     public void visit(Stm s)
       {
-	throw new Error("Print.visit(Stm s)");
+	throw new Error("Print.visit(Stm s): NO DEFAULTS ALLOWED");
       }
 
     public void visit(TEMP e)  {
@@ -190,6 +217,14 @@ public class Print
 	say(") ");
 	Temp t = (m_tMap==null)?e.temp:m_tMap.tempMap(e.temp);
 	say(t.toString());
+    }
+    
+    public void visit(THROW s) {
+        indent(m_indent); say("THROW (");
+	m_indent++;
+	s.retex.visit(this);
+	say (")");
+	m_indent--;
     }
 
     public void visit(UNOP e)
