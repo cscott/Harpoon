@@ -48,10 +48,10 @@ import java.util.Iterator;
  * <code>UseDefer</code>s 
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.27 2001-01-21 18:01:25 pnkfelix Exp $ */
+ * @version $Id: LiveVars.java,v 1.1.2.28 2001-05-15 05:32:20 pnkfelix Exp $ */
 public class LiveVars extends Liveness {
     
-    private static final boolean DEBUG = false; 
+    protected static final boolean DEBUG = false; 
 
     LiveTemps lv;
 
@@ -186,12 +186,12 @@ public class LiveVars extends Liveness {
     public boolean merge(BasicBlock child, BasicBlock parent) {
 	LiveVarInfo finfo = (LiveVarInfo) bbToLvi.get(child);
 	LiveVarInfo tinfo = (LiveVarInfo) bbToLvi.get(parent);
-	boolean rtn = tinfo.lvOUT.addAll(finfo.lvIN);
 	if (DEBUG) 
 	    System.out.println
 		("merge( succ: "+child+" pred: "+parent+" ) \n"+
 		 "pred.LiveOut: " + tinfo.lvOUT + "\n" +
 		 "succ.LiveIn: " + finfo.lvIN + "\n");
+	boolean rtn = tinfo.lvOUT.addAll(finfo.lvIN);
 	return rtn;
     }
 
@@ -200,11 +200,11 @@ public class LiveVars extends Liveness {
     */
     public void visit(BasicBlock b) {
 	LiveVarInfo info = (LiveVarInfo) bbToLvi.get(b);
-
-	info.lvIN = new HashSet();
-	info.lvIN.addAll(info.lvOUT);
-	info.lvIN.removeAll(info.def);
-	info.lvIN.addAll(info.use);
+	
+	info.lvIN = new HashSet();     if (DEBUG) System.out.print("visit("+b+")");
+	info.lvIN.addAll(info.lvOUT);  if (DEBUG) System.out.print(" add:"+info.lvOUT);
+	info.lvIN.removeAll(info.def); if (DEBUG) System.out.print(" rem:"+info.def);
+	info.lvIN.addAll(info.use);    if (DEBUG) System.out.print(" add:"+info.use);
     }
 
     /** Initializes the USE/DEF information for bb and stores it in
@@ -246,6 +246,7 @@ public class LiveVars extends Liveness {
 	while (e.hasNext()) {
 	    BasicBlock bb = (BasicBlock)e.next();
 	    s.append("BasicBlock " + bb);
+	    s.append(" pred:"+bb.prevSet()+" succ:"+bb.nextSet());
 	    LiveVarInfo lvi = (LiveVarInfo) bbToLvi.get(bb);
 	    s.append("\n" + lvi);
 	    if (dumpInstrs)
