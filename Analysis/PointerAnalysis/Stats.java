@@ -14,7 +14,7 @@ import java.util.Comparator;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
-import harpoon.Analysis.BasicBlock;
+import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Util.Graphs.SCComponent;
@@ -23,7 +23,7 @@ import harpoon.Util.Graphs.SCComponent;
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Stats.java,v 1.1.2.6 2000-03-23 21:29:02 salcianu Exp $
+ * @version $Id: Stats.java,v 1.1.2.7 2000-03-24 22:32:43 salcianu Exp $
  */
 abstract class Stats {
 
@@ -57,8 +57,8 @@ abstract class Stats {
 	    nb_sccs++;
 	    nb_bbs += scc.nodeSet().size(); 
 	    for(Iterator it_bbs = scc.nodes(); it_bbs.hasNext();){
-		BasicBlock bbk = (BasicBlock) it_bbs.next();
-		nb_instrs += bbk.statements().size();
+		LightBasicBlock bbk = (LightBasicBlock) it_bbs.next();
+		nb_instrs += bbk.getElements().length;
 	    }
 	    scc = scc.nextTopSort();
 	}

@@ -14,7 +14,7 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  <code>SCCLBBFactory</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CachingSCCLBBFactory.java,v 1.1.2.1 2000-03-24 01:05:05 salcianu Exp $
+ * @version $Id: CachingSCCLBBFactory.java,v 1.1.2.2 2000-03-24 22:33:02 salcianu Exp $
  */
 public class CachingSCCLBBFactory extends SCCLBBFactory{
     
@@ -32,10 +32,10 @@ public class CachingSCCLBBFactory extends SCCLBBFactory{
 	of the <code>hm</code> method. All the results are cached so that the
         computation occurs only once for each method (of course, unless 
         <code>clear</code> is called). */
-    public SCCTopSortedGraph computeSCCBB(HMethod hm){
+    public SCCTopSortedGraph computeSCCLBB(HMethod hm){
         if(cache.containsKey(hm))
             return (SCCTopSortedGraph) cache.get(hm);
-        SCCTopSortedGraph sccg = super.computeSCCBB(hm);
+        SCCTopSortedGraph sccg = super.computeSCCLBB(hm);
         cache.put(hm,sccg);
         return sccg;
     }

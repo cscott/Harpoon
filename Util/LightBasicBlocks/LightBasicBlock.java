@@ -8,10 +8,13 @@ import java.util.Enumeration;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Arrays;
+import java.util.List;
 
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Analysis.BasicBlock;
+import harpoon.Util.UComp;
 
 /**
  * <code>LightBasicBlock</code> is designed as a compact version of a
@@ -31,14 +34,28 @@ import harpoon.Analysis.BasicBlock;
  (one method call per iteration!).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightBasicBlock.java,v 1.1.2.1 2000-03-24 01:05:05 salcianu Exp $
+ * @version $Id: LightBasicBlock.java,v 1.1.2.2 2000-03-24 22:33:02 salcianu Exp $
  */
 public class LightBasicBlock {
+
+    /** The user can place its annotations here. */
+    public Object user_info = null;
+
+    /** Personal numeric ID */
+    private int id;
+
+    // See the TODO notice about Arrays.sort(...)
+    public String str;
 
     /** The only way to produce <code>LightBasicBlock</code> is via 
 	a <code>LightBasicBlock.Factory</code>. Outside this package, you
 	cannot manufacture them. */
-    LightBasicBlock() {}
+    LightBasicBlock(BasicBlock bb) {
+	// See the TODO notice about Arrays.sort(...)
+	this.str = bb.toString();
+	//LightBasicBlock(int id) {
+	//this.id = id;
+    }
 
     /** The successor basic blocks. */
     LightBasicBlock[] next = null;
@@ -48,12 +65,12 @@ public class LightBasicBlock {
     HCodeElement[] elements = null;
 
     /** Returns the successor basic blocks. */
-    public final LightBasicBlock[] getNextBBs(){
+    public final LightBasicBlock[] getNextLBBs(){
 	return next;
     }
 
     /** Returns the predecessor basic blocks. */
-    public final LightBasicBlock[] getPrevBBs(){
+    public final LightBasicBlock[] getPrevLBBs(){
 	return prev;
     }
 
@@ -62,11 +79,20 @@ public class LightBasicBlock {
 	return elements;
     }
 
+    /** String representation. */
+    public final String toString(){
+	// See the TODO notice about Arrays.sort(...)
+	//return "LBB" + id;
+	return str;
+    }
+
     /** Converts the large, set based, basic blocks produced
 	by a <code>BasicBlock.Factory</code> into smaller, array based,
 	light basic blocks. */
     public static class Factory{
 	
+	private int count = 0;
+
 	/** Creates a <code>LighBasicBlock.Factory</code> object.
 	    It simply converts the large, set based, basic blocks produced
 	    by <code>bbfact</code> into smaller, array based, light basic
@@ -135,20 +161,15 @@ public class LightBasicBlock {
 	    for(int i = 0; i < nb_bbs; i++){
 		BasicBlock bb = (BasicBlock) it.next();
 
-		LightBasicBlock lbb = new LightBasicBlock();
-		lbb.next = new LightBasicBlock[bb.nextLength()];
-		lbb.prev = new LightBasicBlock[bb.prevLength()];
+		//LightBasicBlock lbb = new LightBasicBlock(count++);
+		LightBasicBlock lbb = new LightBasicBlock(bb);
 
-		// fill the "elements" array of the new LightBasicBlock
-		HCodeElement[] elements = 
-		    new HCodeElement[bb.statements().size()];
-		Iterator its = bb.statements().iterator();
-		for(int k = 0; k < lbb.elements.length; k++)
-		    elements[k] = (HCodeElement) its.next();
+		// store the instructions of the basic block
+		List instrs = bb.statements();
+		lbb.elements = (HCodeElement[])
+		    instrs.toArray(new HCodeElement[instrs.size()]);
 
-		lbb.elements = elements;
 		lbbs[i] = lbb;
-
 		// record the mapping Light Basic Block <-> Basic Block
 		l2b[i]  = bb;
 		b2l.put(bb, lbb);
@@ -157,19 +178,30 @@ public class LightBasicBlock {
 	    // setting the links between the LightBasicBlocks
 	    for(int i = 0; i < nb_bbs; i++){
 		LightBasicBlock lbb = lbbs[i];
-		LightBasicBlock[] lnext = lbb.next;
-		LightBasicBlock[] lprev = lbb.prev;
-
 		BasicBlock bb = l2b[i];
 
+		LightBasicBlock[] lnext = new LightBasicBlock[bb.nextLength()];
 		int k = 0;
 		for(Enumeration en = bb.next(); en.hasMoreElements(); k++)
 		    lnext[k] = (LightBasicBlock) b2l.get(
 				    (BasicBlock)en.nextElement());
+
+		LightBasicBlock[] lprev = new LightBasicBlock[bb.prevLength()];
 		k = 0;
 		for(Enumeration ep = bb.prev(); ep.hasMoreElements(); k++)
 		    lprev[k] = (LightBasicBlock) b2l.get(
 				    (BasicBlock)ep.nextElement());
+
+		// Because there is no explicit loop view for the moment, it
+		// helps the dataflow analysis to have "next" sorted (the
+		// basic blocks closer to the header of the method (loop
+		// header) will be in the first positions.
+		// TODO: this should be eliminated once a decent loop view
+		//  of the code is implemented.
+		Arrays.sort(lnext, UComp.uc);
+
+		lbb.next = lnext;
+		lbb.prev = lprev;
 	    }
 
 	    // recording the root of the basic block structure

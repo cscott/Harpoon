@@ -43,6 +43,8 @@ import harpoon.Analysis.MetaMethods.MetaAllCallers;
 
 import harpoon.Util.BasicBlocks.BBConverter;
 import harpoon.Util.BasicBlocks.CachingBBConverter;
+import harpoon.Util.LightBasicBlocks.LBBConverter;
+import harpoon.Util.LightBasicBlocks.CachingLBBConverter;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 
@@ -54,7 +56,7 @@ import harpoon.Analysis.MetaMethods.SmartCallGraph;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.19 2000-03-23 21:29:04 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.20 2000-03-24 22:33:00 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -203,6 +205,7 @@ public abstract class PAMain {
 	}
 
 	CachingBBConverter bbconv = new CachingBBConverter(hcf);
+	LBBConverter lbbconv = new CachingLBBConverter(bbconv);
 
 	if(METAMETHODS){ // real meta-methods
 	    System.out.print("MetaCallGraph ... ");
@@ -265,7 +268,7 @@ public abstract class PAMain {
 	    Debug.show_split(mcg.getSplitRelation());
 	}
 
-	pa = new PointerAnalysis(mcg, mac, bbconv);
+	pa = new PointerAnalysis(mcg, mac, lbbconv);
 
 	if(optind < params.length){
 	    for(; optind < params.length; optind++ ){
