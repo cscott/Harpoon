@@ -63,7 +63,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.14 2001-01-16 22:15:54 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.15 2001-01-24 21:18:13 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -491,9 +491,8 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		// special case when q.objectref is null
 		if (hcO == HClass.Void) // always true.
 		    raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),1));
-		else if (hcO.isInstanceOf(hcA)) // always true
-		    raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),1));
-		else if (hcA.isInstanceOf(hcO)) // unknowable.
+		else if (hcO.isInstanceOf(hcA) ||
+			 hcA.isInstanceOf(hcO)) // unknowable.
 		    raiseV(V, Wv, q.dst(), new xBitWidth(toInternal(HClass.Boolean),0,1));
 		else // always false.
 		    raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),0));
