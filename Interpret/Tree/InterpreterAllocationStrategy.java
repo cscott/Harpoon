@@ -4,11 +4,11 @@
 package harpoon.Interpret.Tree;
 
 import harpoon.Backend.Allocation.AllocationStrategy;
-import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.ExpList;
 import harpoon.IR.Tree.NAME;
+import harpoon.IR.Tree.NATIVECALL;
 import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.TreeFactory;
@@ -20,7 +20,7 @@ import harpoon.Temp.Temp;
  * interpreter.  Probably shouldn't be used for anything else.  
  *
  * @author Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterpreterAllocationStrategy.java,v 1.1.2.5 1999-08-05 05:03:10 duncan Exp $
+ * @version $Id: InterpreterAllocationStrategy.java,v 1.1.2.6 1999-08-09 22:00:22 duncan Exp $
  */
 class InterpreterAllocationStrategy implements AllocationStrategy {
 
@@ -30,13 +30,12 @@ class InterpreterAllocationStrategy implements AllocationStrategy {
 	TreeFactory tf = size.getFactory();
 
 	TEMP rv = new TEMP(tf, size, Type.POINTER, new Temp(tf.tempFactory()));
-	TEMP rx = new TEMP(tf, size, Type.POINTER, new Temp(tf.tempFactory()));
 
 	return 
 	    new ESEQ
 	    (tf, size, 
-	     new CALL
-	     (tf, size, rv, rx, 
+	     new NATIVECALL
+	     (tf, size, rv,  
 	      new NAME(tf, size, new Label("RUNTIME_MALLOC")),
 	      new ExpList(size, null)),
 	     rv);

@@ -27,7 +27,7 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TestRun.java,v 1.1.2.6 1999-08-04 05:52:35 cananian Exp $
+ * @version $Id: TestRun.java,v 1.1.2.7 1999-08-09 22:00:22 duncan Exp $
  */
 public abstract class TestRun extends HCLibrary {
     public static void main(String args[]) {
@@ -61,7 +61,7 @@ public abstract class TestRun extends HCLibrary {
 	System.arraycopy(args, 1, params, 0, params.length);
 	harpoon.Interpret.Tree.Method.run(prof, hcf, cls, params);
 	
-	if (prof!=null) prof.close();
+	if (prof!=null) prof.close(); 
     }
 }
 

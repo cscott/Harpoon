@@ -15,7 +15,9 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Tree.BINOP;
+import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.CALL;
+import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.Edge;
@@ -27,6 +29,7 @@ import harpoon.IR.Tree.INVOCATION;
 import harpoon.IR.Tree.JUMP;
 import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.MEM;
+import harpoon.IR.Tree.METHOD;
 import harpoon.IR.Tree.MOVE;
 import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.NATIVECALL;
@@ -37,11 +40,10 @@ import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.THROW;
 import harpoon.IR.Tree.Tree;
-import harpoon.IR.Tree.Code;
+import harpoon.IR.Tree.TreeKind;
 import harpoon.IR.Tree.TreeVisitor;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.UNOP;
-import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.Uop;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
@@ -59,7 +61,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.7 1999-08-04 06:31:01 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.8 1999-08-09 22:00:22 duncan Exp $
  */
 public final class Method extends HCLibrary {
     static PrintWriter out = new java.io.PrintWriter(System.out);
@@ -123,8 +125,6 @@ public final class Method extends HCLibrary {
      *  of the <code>obj</code> parameter.  
      */
     static final Object toNativeFormat(Object obj, HClass type) { 
-	Util.assert(type!=null);
-
 	Object  retval = null;
 	Pointer ptr    = null;
 
@@ -132,7 +132,9 @@ public final class Method extends HCLibrary {
 
 	try { ptr = (Pointer)obj; }
 	catch (ClassCastException e) { 
-	    // obj is not a pointer type
+	    // obj is not a pointer type.  In that case, we _must_ have
+	    // specified its type through the "type" parameter.
+	    Util.assert(type!=null);
 	    if (type == HClass.Byte)
 		retval = new Byte((byte)((Integer)obj).intValue());
 	    else if (type == HClass.Short)
@@ -249,13 +251,7 @@ public final class Method extends HCLibrary {
 	    TreeStackFrame sf = new TreeStackFrame((Stm)c.getRootElement());
 	    ss.pushStack(sf);
 
-	    for (int i=0; i<params.length; i++) {
-		sf.update(f.getGeneralRegisters()[i], 
-			  toNonNativeFormat(params[i]));
-	    }
-
-	    Interpreter i = new TreeInterpreter(ss, sf);
-	    
+	    Interpreter i = new TreeInterpreter(ss, sf, params);
 	    
 	    // Run interpreter on the generated tree code
 	    while (!i.done) { sf.pc.visit(i); }
@@ -318,8 +314,10 @@ public final class Method extends HCLibrary {
 
     // The Tree interpreter
     static private class TreeInterpreter extends Interpreter {
-	TreeInterpreter(StaticState ss, TreeStackFrame sf) {
+	private Object[] params;
+	TreeInterpreter(StaticState ss, TreeStackFrame sf, Object[] params) {
   	    super(ss, sf);
+	    this.params = params;
 	}
 
 	public void visit(Tree q) {
@@ -420,7 +418,12 @@ public final class Method extends HCLibrary {
 	}
 
 	public void visit(NATIVECALL s) { 
-	    throw new Error("Not implemented");
+	    Util.assert(isAllocation(s));  // Only native call we know about
+
+	    // Can't resolve ptr type yet
+	    UndefinedPointer ptr=new UndefinedPointer(new UndefinedRef(ss), 0);
+	    sf.update(((TEMP)s.retval).temp, ptr);
+	    advance(0);
 	}
 
 	/* Let Method.invoke() distinguish between native and
@@ -428,73 +431,52 @@ public final class Method extends HCLibrary {
 	public void visit(CALL s) { 
 	    if (DEBUG) db("Visiting: " + s);
 
+	    // FIXME: may want to allow other expressions than TEMPs
+	    Util.assert(s.retval.kind()==TreeKind.TEMP);
+	    Util.assert(s.retex.kind()==TreeKind.NAME);
+
 	    s.func.visit(this);
-	    if (isAllocation(s)) {
-		// Can't resolve ptr type yet
-		UndefinedPointer ptr = 
-		    new UndefinedPointer(new UndefinedRef(ss), 0);
-		sf.update(s.retval, ptr);
-		sf.update(s.retex, TREE_NULL);
-		sf.update(((TEMP)s.retval).temp, ptr);
-		sf.update(((TEMP)s.retex).temp, TREE_NULL);
+
+	    // Dereference function ptr
+	    HMethod method = 
+		(HMethod)(((Pointer)sf.get(s.func)).getValue());
+	    ExpList  params    = s.args; 
+	    Object[] oParams;
+	    HClass[] paramTypes;
+	    HClass[] pTypesTmp = method.getParameterTypes();
+	    
+	    if (!method.isStatic()) {
+		// Add the extra "this" parameter
+		paramTypes    = new HClass[pTypesTmp.length+1];
+		paramTypes[0] = method.getDeclaringClass();
+		System.arraycopy(pTypesTmp, 0, 
+				 paramTypes, 1, pTypesTmp.length);
 	    }
-	    else {
-		// FIX: may want to allow other expressions than TEMPs
-		// in future
-	        Util.assert((s.retval instanceof TEMP) &&
-			    (s.retex  instanceof TEMP));
+	    else { paramTypes = pTypesTmp; }
 
-		// Dereference function ptr
-		HMethod method = 
-		    (HMethod)(((Pointer)sf.get(s.func)).getValue());
-		ExpList  params    = s.args; 
-		Object[] oParams;
-		HClass[] paramTypes;
-		HClass[] pTypesTmp = method.getParameterTypes();
-		    
-		if (!method.isStatic()) {
-		    // Add the extra "this" parameter
-		    paramTypes    = new HClass[pTypesTmp.length+1];
-		    paramTypes[0] = method.getDeclaringClass();
-		    System.arraycopy(pTypesTmp, 0, 
-				     paramTypes, 1, pTypesTmp.length);
-		}
-		else {
-		    paramTypes = pTypesTmp;
-		}
-
-		oParams = new Object[paramTypes.length];
-		for (int i=0; params!=null; i++) {
-		    // Convert all parameters to native format, and store
-		    // in an array of objects
-		    params.head.visit(this);
-		    oParams[i] = 
-			toNativeFormat(sf.get(params.head), paramTypes[i]);
-		    params = params.tail;
-		}
+	    oParams = new Object[paramTypes.length];
+	    for (int i=0; params!=null; i++) {
+		// Convert all parameters to native format, and store
+		// in an array of objects
+		params.head.visit(this);
+		oParams[i] = 
+		    toNativeFormat(sf.get(params.head), paramTypes[i]);
+		params = params.tail;
+	    }
 		
-		try {
-		    Object retval = invoke(ss, method, oParams);
-		    retval = retval==null?null:toNonNativeFormat(retval);
-		    sf.update(s.retval, retval);
-		    sf.update(s.retex, null);
-		    
-		    // Will s.retval always be a TEMP?
-		    sf.update(((TEMP)s.retval).temp, retval);
-		    sf.update(((TEMP)s.retex).temp, TREE_NULL);
-		}
-		catch (InterpretedThrowable it) {
-		    sf.update(s.retval, null);
-		    sf.update(s.retex, it); 
-
-		    // Will s.retval always be a TEMP?
-		    sf.update(((TEMP)s.retval).temp, TREE_NULL);
-		    sf.update(((TEMP)s.retex).temp, 
-			      new FieldPointer(it.ex, 0));
-		}
+	    try {
+		Object retval = invoke(ss, method, oParams);
+		retval = retval==null?null:toNonNativeFormat(retval);
+		sf.update(s.retval, retval);
+		sf.update(((TEMP)s.retval).temp, retval);
+		advance(0);  // Advance PC to normal branch
 	    }
-	    // Advance the PC
-	    advance(0);  
+	    catch (InterpretedThrowable it) {
+		// ignore retex param
+		sf.update(s.retval, new FieldPointer(it.ex, 0));
+		sf.update(((TEMP)s.retval).temp, sf.get(s.retval));
+		advance(1);  // Advance PC to exceptional branch
+	    }
 	}
 
 	public void visit(JUMP e) { 
@@ -520,6 +502,17 @@ public final class Method extends HCLibrary {
 
 	    sf.update(e, ptr.getValue());
 	}
+
+	public void visit(METHOD s) { 
+	    if (DEBUG) db("Visiting: " + s);
+
+	    TEMP[] tParams = s.params;
+	    for (int i=1; i<tParams.length; i++) {
+		sf.update(tParams[i].temp, toNonNativeFormat(params[i-1]));
+	    }
+	    advance(0);
+	}
+
 
         public void visit(MOVE s) {
 	    if (DEBUG) db("Visiting: " + s);
@@ -643,4 +636,3 @@ public final class Method extends HCLibrary {
 	}
     }
 }
-

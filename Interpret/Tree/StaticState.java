@@ -21,7 +21,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.6 1999-08-04 05:52:35 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.7 1999-08-09 22:00:22 duncan Exp $
  */
 final class StaticState extends HCLibrary {
     
@@ -259,7 +259,6 @@ final class StaticState extends HCLibrary {
     void updateFieldValue(ConstPointer ptr, Object value) {
 	update((HField)classInfo.get(ptr.getBase()), value);
     }
-
 
     /************************************************************
      *                                                          *
