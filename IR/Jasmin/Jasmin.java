@@ -22,7 +22,7 @@ import java.util.Iterator;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.2 1999-08-09 22:19:10 duncan Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.3 1999-08-11 20:30:39 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -69,7 +69,7 @@ public class Jasmin {
     }
 
     public void outputQuads(PrintStream out,HMethod hm, HCode hc) {
-        TypeInfo tp=new TypeInfo();
+        TypeInfo tp=new TypeInfo(hc);
 	Object[] tuple=buildmap(hc,tp);
 	Map map=(Map) tuple[0];
 	out.println("    .limit locals "+((Integer)tuple[1]).toString());
@@ -130,6 +130,7 @@ public class Jasmin {
 	}
 
 	public void visit(AGET q) {
+	    System.out.println(q.toString());
 	    String operand="***AGET error";
 
 	    HClass ty = tm.typeMap(q, q.objectref());
@@ -340,9 +341,8 @@ public class Jasmin {
 
 	public void visit(CJMP q) {
 	    String target=labeler(q);
-	    TempInfo tempinfo=(TempInfo)tempmap.get(q.test());
 	    out.println(iflabel(q));
-	    iload(tempinfo);
+	    load(q.test());
 	    out.println("    ifne "+labeler(q.next(1)));
 	}
 
