@@ -349,4 +349,27 @@ JNIEXPORT jboolean JNICALL Java_java_io_File_isAbsolute(JNIEnv *env, jobject thi
   return jbool;
 }
 
+#ifdef WITH_TRANSACTIONS
+#include "../transact/transact.h" /* for FNI_StrTrans2Str */
+JNIEXPORT jlong JNICALL Java_java_io_File_length0_00024_00024withtrans
+	(JNIEnv * env, jobject this, jobject commitrec)
+{
+  struct stat buf;
+  int r;
+  jobject jstr;
+  const char * cstr;    
+  
+  if (!inited && !initializeFI(env)) return 0; /* exception occurred; bail */
+  
+  jstr=(*env)->GetObjectField(env, this, pathID);
+  cstr=(*env)->GetStringUTFChars(env,FNI_StrTrans2Str(env, commitrec, jstr),0);
+  r = stat(cstr, &buf);	
+  (*env)->ReleaseStringUTFChars(env,jstr,cstr);
+	
 
+  if (r != 0) {
+    return ((jlong)0);
+  }
+  return ((jlong)buf.st_size);
+}
+#endif /* WITH_TRANSACTIONS */
