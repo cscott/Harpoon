@@ -21,7 +21,7 @@ Visit($n$:node) =
 \ENDFOR
                \EMPTYLINE
 \FOREACH{branch ``if $x=y$ goto $e_1$ else $e_2$'' in $n$}
- \IF{$\text{Typed}\sqsubseteq L[x]$ or $\text{Typed}\sqsubseteq L[y]$}
+ \IF{$\text{Typed}\latleq L[x]$ or $\text{Typed}\latleq L[y]$}
   \STATE RaiseE($e_1$)
   \STATE RaiseE($e_2$)
  \ELSIF[if $x$ and $y$ are constants\ldots]{$L[x]=c$ and $L[y]=d$}

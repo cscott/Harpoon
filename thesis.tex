@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.70 1999-08-21 03:57:28 cananian Exp $
+% $Id: thesis.tex,v 1.71 1999-08-21 04:05:38 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -17,6 +17,9 @@
 
 % Meet symbol
 \newcommand{\meet}{\ensuremath{\sqcap}}
+% lattice inequalities
+\newcommand{\latlt}{\ensuremath{\sqsubset}}
+\newcommand{\latleq}{\ensuremath{\sqsubseteq}}
 
 % number tables and figures according to section
 \let\oldsection\section
@@ -30,14 +33,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.70 $ $}
+\date{\today \\ $ $Revision: 1.71 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.70 $ $}{$ $Revision: 1.70 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.71 $ $}{$ $Revision: 1.71 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -1035,13 +1038,13 @@ satisfactory treatment.
 \begin{myfigure}
 \[\begin{array}{l}
 \forall C \in \text{Class},\:
-  C_{\text{non-null}} \sqsubset C_{\text{possibly-null}}\\
+  C_{\text{non-null}} \latlt C_{\text{possibly-null}}\\
 \forall C \in \text{Class}_{\text{non-null}},\:
   \bigsqcup_L \{\code{void},C\} \in \text{Class}_{\text{possibly-null}}\\
 \forall C \in \text{Class}_{\text{possibly-null}},\:
-  \code{void} \sqsubset C\\
+  \code{void} \latlt C\\
 \forall C \in \text{Class}_{\text{non-null}},\:
-  \tuple{\code{void},C}\notin\:\sqsubseteq\\
+  \tuple{\code{void},C}\notin\:\latleq\\
 \end{array}\]%
 Let $A(C, n)$ be a
 function to turn a lattice entry representing a non-null array class
@@ -1049,8 +1052,8 @@ type $C$ into the lattice entry representing a said array class with
 known integer constant length $n$.  Then for any non-null array class
 $C$ and integers $i$ and $j$,
 \[\begin{array}{l}
-A(C, i) \sqsubset C\\
-\tuple{A(C, i), A(C, j)} \in\:\sqsubseteq \text{ if and only if } i=j\\
+A(C, i) \latlt C\\
+\tuple{A(C, i), A(C, j)} \in\:\latleq \text{ if and only if } i=j\\
 \end{array}\]%
 \caption{SPTC value lattice inequalities.}\label{fig:sptc_rules}
 \end{myfigure}

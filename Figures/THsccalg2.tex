@@ -11,7 +11,7 @@ RaiseE($e$:edge) =
 ~\\
 RaiseV($v$:variable, $L$:lattice value) =
 \begin{myalgorithmic}
-\IF{$V[v] \sqsubset L$}
+\IF{$V[v] \latlt L$}
 \STATE $V[v] \gets L$
 \STATE $W_v \gets W_v \cup \{ v \}$
 \ENDIF
