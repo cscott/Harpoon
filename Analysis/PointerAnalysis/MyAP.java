@@ -6,6 +6,7 @@ package harpoon.Analysis.PointerAnalysis;
 import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.DefaultAllocationInformation;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HField;
 import harpoon.Temp.Temp;
 
 import harpoon.Util.Util;
@@ -15,7 +16,7 @@ import harpoon.Util.Util;
  <code>AllocationProperties</code>. 
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MyAP.java,v 1.3 2002-06-25 18:09:49 kkz Exp $
+ * @version $Id: MyAP.java,v 1.4 2002-11-29 20:37:53 salcianu Exp $
  */
 public class MyAP implements AllocationInformation.AllocationProperties,
 			     java.io.Serializable,
@@ -80,6 +81,8 @@ public class MyAP implements AllocationInformation.AllocationProperties,
     public boolean setDynamicWBFlag() {
 	return false;
     }
+
+    public HField getMemoryChunkField() { return null; }
 
     public Object clone() {
 	try{
