@@ -32,6 +32,8 @@
 #	-M modulename	- use this as the module name (necessary for sub-dirs)
 #	-m mailto	- send mail to "mailto" (multiple -m's permitted) [optional]
 #	-f logfile	- save messages to logfile [optional]
+#       -u              - add diff info to commit email [optional]
+#                         (you must also specify '-u' to commit_prep)
 #	%s		- must follow other options at the end of the line
 #-------------------------------------------------------------------
 ALL	chgrp -R -f java-dev $CVSROOT/.

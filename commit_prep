@@ -1,7 +1,7 @@
 #! /usr/bin/perl
 # -*-Perl-*-
 #
-#ident	"@(#)cvs/contrib:$Name:  $:$Id: commit_prep,v 1.1 1998-10-18 08:16:24 cananian Exp $"
+#ident	"@(#)cvs/contrib:$Name:  $:$Id: commit_prep,v 1.2 1998-10-18 09:21:43 cananian Exp $"
 #
 # Perl filter to handle pre-commit checking of files.  This program
 # records the last directory where commits will be taking place for
@@ -49,7 +49,7 @@ $NoId = "
 
 # pattern to match an RCS Id keyword line for a new file (i.e. un-expanded)
 #
-$NewId = "\"@(#)[^:]*:.*\\$\Id\\$\"";
+$NewId = "\"@(#)[^:]*:.*\\$\Id\\$\""; # emacs-fontify gets confused by the "
 
 $NoName = "
 %s - The ID line should contain only \"@(#)module/path:\$Name\$:\$\Id\$\"
@@ -152,9 +152,13 @@ $id = getpgrp();		# You *must* use a shell that does setpgrp()!
 #
 $check_id = 0;
 
-# Record the directory for later use by the log_accumulate stript.
+# Record the directory for later use by the log_accumulate script.
 #
 $record_directory = 0;
+
+# Keep track of diffs for later use by the log_accumulate script.
+#
+$track_diffs = 0;
 
 # parse command line arguments
 #
@@ -168,6 +172,8 @@ while (@ARGV) {
 	$check_id = 1;
     } elsif ($arg eq '-r') {
 	$record_directory = 1;
+    } elsif ($arg eq '-u') {
+	$track_diffs = 1;
     } else {
 	push(@files, $arg);
     }

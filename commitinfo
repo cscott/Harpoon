@@ -16,6 +16,7 @@
 #---------------------------------------------------------------------
 # NOTE:  contrib/commit_prep usage:
 # -r    - record directories affected by commit for use with contrib/log_accum
+# -u    - keep track of diff of all changes (for contrib/log_accum)
 # -c    - check for things like "$Id" near head of file, no "$Log", etc.
 #---------------------------------------------------------------------
-DEFAULT $CVSROOT/CVSROOT/commit_prep -r
+DEFAULT $CVSROOT/CVSROOT/commit_prep -d -u -r
