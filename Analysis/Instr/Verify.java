@@ -61,7 +61,7 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 	curr = i;
 	visit(i, false);
     }
-
+    /*
     public void visit(final InstrMOVE i) {
 	curr = i;
 	if (lra.instrsToRemove.contains(i) && 
@@ -75,7 +75,7 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 	    visit((Instr)i);
 	}
     }
-
+    */
     public void visit(final Instr i, boolean multAssignAllowed) {
 	Iterator uses = i.useC().iterator();
 	while(uses.hasNext()) {

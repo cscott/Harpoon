@@ -58,7 +58,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.85 2000-06-23 07:04:02 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.86 2000-06-23 08:17:46 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -78,8 +78,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	allRegisters = frame.getRegFileInfo().getAllRegistersC();
     }
     
-    // final List instrsToRemove = new java.util.LinkedList();
-    final Collection instrsToRemove = new java.util.HashSet();
+    final Collection instrsToRemove = new java.util.LinkedList();
+    // final Collection instrsToRemove = new java.util.HashSet();
 
     // alternating sequence of an Instr followed by its replacement
     // (due to temp remapping...) eg [ i0 r0 i1 r1 ... iN rN ]
@@ -169,17 +169,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 	while(remove.hasNext()) {
 	    Instr ir = (Instr) remove.next();
 
-	    // FSK: can't handle verification (or other general
-	    // analyses) for this case: "t4 <- r0" (removed) followed
-	    // by a use of t4, because the system thinks that t4 is
-	    // undefined.  
-
-	    // old way: leave the move in there for a post-pass (must
-	    // be after *ALL* Instr-analyses, not just reg-alloc)
-
-	    // new way: replace "t4 <- r0" with a virtual InstrMOVE
-	    // (with an empty assembly string) that represents the
-	    // inherent allocation of r0 to t4...
+	    // FSK: can't handle directly remove this case: "t4 <- r0"
+	    // followed by a use of t4, because the system thinks that
+	    // t4 is undefined.  (This is instead handled by a
+	    // replacement of the Instr with an InstrMOVEproxy)
 	    
 	    Util.assert(!isRegister(ir.use()[0]));
 	    Util.assert(!isRegister(ir.def()[0]));
@@ -209,8 +202,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	Iterator blocks = bbFact.blockSet().iterator();
 
-	StringBuffer debugging = new StringBuffer();
-	
 	Set spillUses = new HashSet();
 	Set spillDefs = new HashSet();
 	while(blocks.hasNext()) {
@@ -218,8 +209,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    Set liveOnExit = liveTemps.getLiveOnExit(b);
 	    // System.out.println();
 	    verify(b, liveOnExit, spillUses, spillDefs);
-
-	    debugging.append(printInfo(b, null, null, code, false));
 
 	}	
 	
@@ -231,11 +220,11 @@ public class LocalCffRegAlloc extends RegAlloc {
 	vDefs.removeAll(spillUses);
 	
 	Util.assert(vUses.isEmpty(),
-		    debugging.append("\n\nSpill Load of undefined Temps: "+vUses));
+		    ("Spill Load of undefined Temps: "+vUses));
 
 	Util.assert(vDefs.isEmpty(),
-		    debugging.append("\n\noverconservative assertion: "+
-				     "Spill Store of unused Temps: "+vDefs));
+		    ("overconservative assertion: "+
+		     "Spill Store of unused Temps: "+vDefs));
     }
     
     private void alloc(BasicBlock block, Set liveOnExit) {
@@ -1364,11 +1353,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 	return Arrays.asList( new Temp[]{ t1, t2 });
     }
 
-    class InstrMOVEproxy extends InstrMOVE {
+    class InstrMOVEproxy extends Instr {
 	public InstrMOVEproxy(Instr src, Temp def, Temp use) {
 	    super(src.getFactory(), src, 
 		  "", //" @proxy "+def+" <- "+use,
-		  
 		  new Temp[]{ def }, new Temp[]{ use });
 	}
     }
