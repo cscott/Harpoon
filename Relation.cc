@@ -156,5 +156,13 @@ void WorkRelation::destroyer(struct genhashtable *d) {
 
 void WorkRelation::print()
 {
-  
+  Tuple tuple = firstelement();
+  while (!tuple.isnull())
+    {
+      Element *l = (Element *) tuple.left;
+      Element *r = (Element *) tuple.right;
+      printf("("); l->print(); printf(", "); r->print(); printf(")\n");
+
+      tuple = getnextelement(tuple.left, tuple.right);
+    }
 }

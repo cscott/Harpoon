@@ -43,7 +43,8 @@ Guidance * model::getguidance() {
   return guidance;
 }
 
-model::model(char *abstractfile, char *modelfile, char *spacefile, char *structfile, char *concretefile, char *rangefile) {
+model::model(char *abstractfile, char *modelfile, char *spacefile, char *structfile, char *concretefile, char *rangefile) 
+{
   parsestructfile(structfile);
 
   //Hashtable first for lookups
@@ -246,9 +247,9 @@ void model::parsespacefile(char *spacefile) {
   Dparser *p=new Dparser(r);
   domainrelation=p->parsesetrelation(); 
 
-  //#ifdef DEBUGMANYMESSAGES  
+#ifdef DEBUGMANYMESSAGES  
   domainrelation->print();
-  //#endif
+#endif
 
   ifs->close();
   delete(ifs);

@@ -63,6 +63,7 @@ int main(int argc, char **argv)
     }
 
     printdirectory(ptr);
+    printinodeblock(ptr);
 
     unmountdisk(ptr);
     break;
@@ -82,6 +83,7 @@ int main(int argc, char **argv)
 
     // check the DSs
     doanalysis();
+
     dealloc(ptr);
     unmountdisk(ptr);
     break;
@@ -501,11 +503,13 @@ void createfile(struct block *ptr,char *filename, char *buf,int buflen) {
 }
 
 
-void addtode(struct block *ptr, int inode, char * filename) {
+
+// adds a file to the directory entry
+void addtode(struct block *ptr, int inode, char *filename) {
   struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
   for(int i=0;i<12;i++) {
     struct DirectoryBlock *db=(struct DirectoryBlock *) &ptr[itb->entries[rdiptr].Blockptr[i]];
-    for(int j=0;j<BLOCKSIZE/128;j++) {
+    for(int j=0;j<BLOCKSIZE/DIRECTORYENTRYSIZE;j++) {
       if (db->entries[j].name[0]==0) {
 	/* lets finish */
 	strncpy(db->entries[j].name,filename,124);
@@ -518,6 +522,7 @@ void addtode(struct block *ptr, int inode, char * filename) {
 }
 
 
+// return the first free node in the InodeTable.  Marks that inode as used.
 int getinode(struct block *ptr) {
   for(int i=0;i<NUMINODES;i++) {
     if (!(ib.inode[i/8]&(1<<(i%8)))) {

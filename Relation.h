@@ -21,10 +21,10 @@ class WorkRelation {
  public:
   WorkRelation();
   WorkRelation(bool);
-  bool contains(void *key, void*object);
+  bool contains(void *key, void *object);
   Tuple firstelement();
-  Tuple getnextelement(void *left,void *right);
-  void put(void *key, void*object);
+  Tuple getnextelement(void *left, void *right);
+  void put(void *key, void *object);
   void remove(void *key, void *object);
   WorkSet* getset(void *key);
   void* getobj(void *key);

@@ -32,6 +32,8 @@ void doanalysis() {
   gettimeofday(&end,NULL);
   t=(end.tv_sec-begin.tv_sec)*1000000+end.tv_usec-begin.tv_usec;
 
+  exportmodel->getdomainrelation()->print();
+
   printf("Time used for analysis(us): %ld\n",t);
 }
 

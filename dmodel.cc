@@ -134,6 +134,7 @@ void DRelation::print() {
   printf(")");
 
   WorkRelation *wr = getrelation();
+  wr->print();
 
 }
 
