@@ -1,19 +1,20 @@
 #!/bin/bash
 
-# This is the script that does all the dirty work. Since it is supposed to run everything through FLEX, don't get mad if it never finishes unexceptionally.
+# This is the script that does all the dirty work on the remote machine.
 
 # Script variables
 
 GOT_ERRORS=0   # No errors up to now
 COMMAND_LINE_PARAMETERS=   # Keeps the command-line parameters for this benchmark
 
-COMPILE=yes
-COMPILE_STATS=yes
-LONG_COMPILE_STATS=no
-RUN=yes
-RUN_STATS=yes
-LONG_RUN_STATS=no
-ERRORS=yes
+CONF_EACH_TEST=yes   # configure for every test?
+COMPILE=yes   # compile the benchmark?
+COMPILE_STATS=yes   # generate compiling statistics?
+LONG_COMPILE_STATS=no   # should the compiling statistics be long?
+RUN=yes   # run the benchmark?
+RUN_STATS=yes   # generate runtime statistics?
+LONG_RUN_STATS=no   # should the runtime statistics be long?
+ERRORS=yes   # log errors?
 
 # Beginning of script
 
@@ -21,6 +22,10 @@ echo "1" > $RUNNING_TASK_FILE
 
 while [ "$1" != "" ]; do   # parsing the command-line parameters
     case "$1" in
+	-conf-each-test=yes)
+	    CONF_EACH_TEST=yes;;   # Reconfigure the machine with each test's specific options; Default option
+	-conf-each-test=no)
+	    CONF_EACH_TEST=no;;   # Use machine's default options for all tests
 	-compile=yes)
 	    COMPILE=yes;;   # Compile the task; Default option
 	-compile=no)
@@ -76,7 +81,9 @@ fi
 
 # Reconfiguring FLEX for this task
 
-./remake-everything -clean -task=$BENCHMARK > /dev/null 2>&1
+if [ "$CONF_EACH_TEST" == "yes" ]; then   # use specific configuration options for each test?
+    ./remake-everything -clean -task=$BENCHMARK > /dev/null 2>&1
+fi
 
 # Trying to compile and run the benchmark
 

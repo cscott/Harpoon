@@ -4,4 +4,4 @@
 
 rm -f *error*
 rm -f *diffs*
-rm -rf `\ls -Ad temp/* | grep -v CVS`
+rm -rf `\ls -Ad temp/* 2>/dev/null | grep -v CVS`

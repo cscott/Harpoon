@@ -20,6 +20,10 @@ function printOptions() {
     echo -e "  -all-machines=[yes|no]       -- if set to yes, runs the task set on all machines in \"machines-all\" (default),"
     echo -e "                                  if set to no, runs the task set only on machines included in \"machines-selected\"."
     echo -e "  -machines-file=<file>        -- explicitly specifies the name of the file containing the machines set (no default value)."
+    echo -e "  -update=[yes|no]             -- if set to yes, all machines are updated before starting running tasks on them (default),"
+    echo -e "                                  if set to no, no machine is updated before starting running the tasks."
+    echo -e "  -conf-each-test=[yes|no]     -- if set to yes, the remote machines are reconfigured for every test (default),"
+    echo -e "                                  if set to no, all tests use the remote machines' default configuration."
     echo -e "  -compile=[yes|no]            -- if set to yes, the task is compiled (default),"
     echo -e "                                  if set to no, the task is not compiled."
     echo -e "  -compile-stats=[yes|no]      -- if set to yes, generates compiling statistics (default),"
@@ -59,25 +63,28 @@ else
     TASKS_LIST=   # The list of the tasks to be done from tasks-all/tasks-selected
     MAILING_LIST=   # The list of the people whom the results should be mailed to
     ERROR_FILE=errors_$DATE   # The name of the error file for this session
-    DIFFS_FILE=diffs_$DATE   # The name of the diffs file for this session
+    ERROR_FILE_SHORT=$ERROR_FILE"_short"   # The name of the short error file (the contents of which will be mailed)
+    DIFFS_SOURCES_FILE=diffs_sources_$DATE   # The name of the sources diffs file for this session
+    DIFFS_RESULTS_FILE=diffs_results_$DATE   # The name of the results diffs file for this session
     
     TEMP_DIR=temp
-    ARCHIVE_DIR=archive
-    ARCHIVE_SOURCES_FILE=$ARCHIVE_DIR/sources.tar.gz
-    ARCHIVE_EXECUTABLES_FILE=$ARCHIVE_DIR/executables.tar.gz
-    ARCHIVE_ERRORS_FILE=$ARCHIVE_DIR/errors.tar.gz
-    ARCHIVE_DIFFS_FILE=$ARCHIVE_DIR/diffs.tar.gz
-    ARCHIVE_MOST_RECENT_VERSIONS_DIR=$ARCHIVE_DIR/current
-    DIFFS_DIR=$ARCHIVE_DIR/diffs
+    DIFFS_DIR=$TEMP_DIR/diffs
     DIFFS_YESTERDAY_DIR=$DIFFS_DIR/yesterday
     DIFFS_TODAY_DIR=$DIFFS_DIR/today
+    ARCHIVE_DIR=archive
+    ARCHIVE_SOURCES_FILE=$ARCHIVE_DIR/sources.tar.gz   # sources archive
+    ARCHIVE_EXECUTABLES_FILE=$ARCHIVE_DIR/executables.tar.gz   # executables archive
+    ARCHIVE_ERRORS_FILE=$ARCHIVE_DIR/errors.tar.gz   # errors archive
+    ARCHIVE_ERRORS_SHORT_FILE=$ARCHIVE_DIR/errors_short.tar.gz   # short errors archive
+    ARCHIVE_DIFFS_SOURCES_FILE=$ARCHIVE_DIR/diffs_sources.tar.gz   # sources diffs archive
+    ARCHIVE_DIFFS_RESULTS_FILE=$ARCHIVE_DIR/diffs_results.tar.gz   # results diffs archive
 
   # Default values for script options that can be changed from command-line
     
-    RUN_ALL_TASKS=yes
     TASKS_FILE=tasks-all
-    USE_ALL_MACHINES=yes
     MACHINES_FILE=machines-all
+    UPDATE=yes
+    CONF_EACH_TEST=yes
     COMPILE=yes
     COMPILE_STATS=yes
     LONG_COMPILE_STATS=no
@@ -87,7 +94,6 @@ else
     ERRORS=yes
     DIFFS=yes
     MAIL_RESULTS=yes
-    MAIL_TO_ALL=yes
     MAILING_FILE=mailto-all
     
     DEBUG=no   # this variable is defined ONLY for debugging the script
@@ -95,21 +101,25 @@ else
     while [ "$1" != "" ]; do   # parsing the command-line parameters
 	case "$1" in
 	    -all-tasks=yes)
-		RUN_ALL_TASKS=yes   # Run all tasks from "tasks-all"; Default option
-		TASKS_FILE=tasks-all;;
+		TASKS_FILE=tasks-all;;   # Run all tasks from "tasks-all"; Default option
 	    -all-tasks=no)
-		RUN_ALL_TASKS=no    # Run only tasks included in "tasks-selected"
-		TASKS_FILE=tasks-selected;;
+		TASKS_FILE=tasks-selected;;   # Run only tasks included in "tasks-selected"
 	    -tasks-file=*)
 		TASKS_FILE=`echo $1 | sed s/^.*=//`;;   # Explicitly sets the file containing the tasks to be run
 	    -all-machines=yes)
-		USE_ALL_MACHINES=yes   # Distribute tasks to all machines included in "machines-all"; Default option
-		MACHINES_FILE=machines-all;;
+		MACHINES_FILE=machines-all;;   # Distribute tasks to all machines included in "machines-all"; Default option
 	    -all-machines=no)
-		USE_ALL_MACHINES=no   # Distribute tasks only to machines included in "machines-selected"
-		MACHINES_FILE=machines-selected;;
+		MACHINES_FILE=machines-selected;;   # Distribute tasks only to machines included in "machines-selected"
 	    -machines-file=*)
 		MACHINES_FILE=`echo $1 | sed s/^.*=//`;;   # Explicitly sets the file containing the machines to be used
+	    -update=yes)
+		UPDATE=yes;;   # Update all machines before starting running tasks on them; Default option
+	    -update=no)
+		UPDATE=no;;   # Do not update any machine before starting running the tasks
+	    -conf-each-test=yes)
+		CONF_EACH_TEST=yes;;   # Reconfigure remote machines for every test run on them; Default option
+	    -conf-each-test=no)
+		CONF_EACH_TEST=no;;   # Use remote machines' default configuration for all tests
 	    -compile=yes)
 		COMPILE=yes;;   # Compile the task; Default option
 	    -compile=no)
@@ -147,11 +157,9 @@ else
 	    -mail-results=no)
 		MAIL_RESULTS=no;;   # Do not mail any results to anybody
 	    -mail-to-all=yes)
-		MAIL_TO_ALL=yes   # Mail results to all people in "mail-all"; Default option
-		MAILING_FILE=mailto-all;;
+		MAILING_FILE=mailto-all;;   # Mail results to all people in "mail-all"; Default option
 	    -mail-to-all=no)
-		MAIL_TO_ALL=no   # Mail results only to people included in "mail-selected"
-		MAILING_FILE=mailto-selected;;
+		MAILING_FILE=mailto-selected;;   # Mail results only to people included in "mail-selected"
 	    -mailto-file=*)
 		MAILING_FILE=`echo $1 | sed s/^.*=//`;;   # Explicitly sets the file containing the list of people to be mailed.
 	    -debug)
@@ -177,10 +185,14 @@ else
 	echo >> $ERROR_FILE
     fi
     
-    if [ "$DIFFS" == "yes" ]; then   # we want to log errors
-	echo >> $DIFFS_FILE
-	echo "Diffs file: $DATE" >> $DIFFS_FILE
-	echo >> $DIFFS_FILE
+    if [ "$DIFFS" == "yes" ]; then   # we want diffs
+	echo >> $DIFFS_SOURCES_FILE
+	echo "Diffs file: $DATE" >> $DIFFS_SOURCES_FILE
+	echo >> $DIFFS_SOURCES_FILE
+
+	echo >> $DIFFS_RESULTS_FILE
+	echo "Diffs file: $DATE" >> $DIFFS_RESULTS_FILE
+	echo >> $DIFFS_RESULTS_FILE
     fi
     
   # Getting the list of machines in $MACHINES_LIST
@@ -228,59 +240,66 @@ else
     
   # Updating and remaking the stuff on all machines where the task set will be run.
     
-    for machine in $MACHINES_LIST; do
-	if [ "`ssh $machine 'echo $MAIN_TESTING_DIR'`" == "" ]; then   # $MAIN_TESTING_DIR should point to the main testing directory
-	    GOT_ERRORS=1
-	    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
-		echo >> $ERROR_FILE
-		echo -e "Machine $machine is not configured properly (file ~/.regtestrc probably missing) and will not be used in this session." >> $ERROR_FILE
-		echo -e "If you want to use it in the next session (or even if you don\'t want to use it), correct the \"machines-all\"/\"machines-selected\" file(s)." >> $ERROR_FILE
-	    fi
-	else
-	    GOT_ALL_NECESSARY_SCRIPTS=1   # in $MAIN_TESTING_DIR there should be 3 scripts for updating; searching for them...
-	    if [ "`ssh $machine 'ls $MAIN_TESTING_DIR | grep cvs-update-all'`" == "" ]; then   # cvs-update-all not found
-		GOT_ALL_NECESSARY_SCRIPTS=0
-		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
-		    echo >> $ERROR_FILE
-		    echo -e "Script \"cvs-update-all\" not found in directory \$MAIN_TESTING_DIR on machine $machine." >> $ERROR_FILE
-		fi
-	    fi
-	    if [ "`ssh $machine 'ls $MAIN_TESTING_DIR | grep remake-everything'`" == "" ]; then   # remake-everything not found
-		GOT_ALL_NECESSARY_SCRIPTS=0
-		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
-		    echo >> $ERROR_FILE
-		    echo -e "Script \"remake-everything\" not found in directory \$MAIN_TESTING_DIR on machine $machine." >> $ERROR_FILE
-		fi
-	    fi
-	    if [ "`ssh $machine 'ls $MAIN_TESTING_DIR | grep update-and-make'`" == "" ]; then   # update-and-make not found
-		GOT_ALL_NECESSARY_SCRIPTS=0
-		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
-		echo >> $ERROR_FILE
-		    echo -e "Script \"update-and-make\" not found in directory \$MAIN_TESTING_DIR on machine $machine." >> $ERROR_FILE
-		fi
-	    fi
-	    
-	    if [ $GOT_ALL_NECESSARY_SCRIPTS -eq 0 ]; then   # any of those 3 scripts missing?
+    if [ "$UPDATE" == "yes" ]; then
+	for machine in $MACHINES_LIST; do
+	    if [ "`ssh $machine 'echo $MAIN_TESTING_DIR'`" == "" ]; then   # $MAIN_TESTING_DIR should point to the main testing directory
 		GOT_ERRORS=1
 		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 		    echo >> $ERROR_FILE
-		    echo -e "Machine $machine is not configured properly and will not be used in this session." >> $ERROR_FILE
-		    echo -e "If you want to use in in the next session, correct the issues stated above." >> $ERROR_FILE
+		    echo -e "Machine $machine is not configured properly (file ~/.regtestrc probably missing) and will not be used in this session." >> $ERROR_FILE
+		    echo -e "If you want to use it in the next session (or even if you don\'t want to use it), correct the \"machines-all\"/\"machines-selected\" file(s)." >> $ERROR_FILE
 		fi
-	    else   # no one missing
-		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
-		    echo >> $ERROR_FILE
-		    echo -e "          Machine $machine has all necessary scripts." >> $ERROR_FILE
+	    else
+		GOT_ALL_NECESSARY_SCRIPTS=1   # in $MAIN_TESTING_DIR there should be 3 scripts for updating; searching for them...
+		if [ "`ssh $machine 'ls $MAIN_TESTING_DIR | grep cvs-update-all'`" == "" ]; then   # cvs-update-all not found
+		    GOT_ALL_NECESSARY_SCRIPTS=0
+		    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+			echo >> $ERROR_FILE
+			echo -e "Script \"cvs-update-all\" not found in directory \$MAIN_TESTING_DIR on machine $machine." >> $ERROR_FILE
+		    fi
 		fi
-
-		# Probably you want to run one and only one of the following two lines
+		if [ "`ssh $machine 'ls $MAIN_TESTING_DIR | grep remake-everything'`" == "" ]; then   # remake-everything not found
+		    GOT_ALL_NECESSARY_SCRIPTS=0
+		    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+			echo >> $ERROR_FILE
+			echo -e "Script \"remake-everything\" not found in directory \$MAIN_TESTING_DIR on machine $machine." >> $ERROR_FILE
+		    fi
+		fi
+		if [ "`ssh $machine 'ls $MAIN_TESTING_DIR | grep update-and-make'`" == "" ]; then   # update-and-make not found
+		    GOT_ALL_NECESSARY_SCRIPTS=0
+		    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+			echo >> $ERROR_FILE
+			echo -e "Script \"update-and-make\" not found in directory \$MAIN_TESTING_DIR on machine $machine." >> $ERROR_FILE
+		    fi
+		fi
 		
-#		ssh -f $machine 'cd $MAIN_TESTING_DIR; ./update-and-make' # cvs updating the entire FLEX and remaking everything in Code, Runtime and Realtime (all this is done in background)
-		ssh -f $machine 'cd $MAIN_TESTING_DIR; ./update-and-make -clean' # cvs updating the entire FLEX and remaking everything in Code, Runtime and Realtime (all this is done in background); -clean parameter makes the scripts do "make clean" in each directory before doing "make"; it also forces the scripts to run ./setup and ./configure in Runtime before running "make clean; make"; should be used if and only if some configuration files were changed
-		sleep 5   # waiting 5 seconds for the remote machine to set up all necessary parameters
+		if [ $GOT_ALL_NECESSARY_SCRIPTS -eq 0 ]; then   # any of those 3 scripts missing?
+		    GOT_ERRORS=1
+		    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+			echo >> $ERROR_FILE
+			echo -e "Machine $machine is not configured properly and will not be used in this session." >> $ERROR_FILE
+			echo -e "If you want to use in in the next session, correct the issues stated above." >> $ERROR_FILE
+		    fi
+		else   # no one missing
+		    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+			echo >> $ERROR_FILE
+			echo -e "          Machine $machine has all necessary scripts." >> $ERROR_FILE
+		    fi
+
+		    # Probably you want to run one and only one of the following two lines
+		    
+#		    ssh -f $machine 'cd $MAIN_TESTING_DIR; ./update-and-make' # cvs updating the entire FLEX and remaking everything in Code, Runtime and Realtime (all this is done in background)
+		    ssh -f $machine 'cd $MAIN_TESTING_DIR; ./update-and-make -clean' # cvs updating the entire FLEX and remaking everything in Code, Runtime and Realtime (all this is done in background); -clean parameter makes the scripts do "make clean" in each directory before doing "make"; it also forces the scripts to run ./setup and ./configure in Runtime before running "make clean; make"; should be used if and only if some configuration files were changed
+		    sleep 5   # waiting 5 seconds for the remote machine to set up all necessary parameters
+		fi
 	    fi
+	done
+    else
+	if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+	    echo >> $ERROR_FILE
+	    echo "The server was given the -update=no option -- no machines updated."
 	fi
-    done
+    fi
 
     # Now we have to wait for all machines to finish updating and remaking the FLEX stuff
     
@@ -355,7 +374,7 @@ else
 		fi
 		for machine in $WORKING_MACHINES_LIST; do
 		    if [ "`ssh $machine 'if [ -e $RUNNING_TASK_FILE ]; then cat $RUNNING_TASK_FILE; else echo 0; fi'`" != "1" ]; then   # this machine is not running anything, so the current task can be run on it
-			ssh -f $machine "cd \$MAIN_TESTING_DIR; ./run-benchmark $task -compile=$COMPILE -compile-stats=$COMPILE_STATS -long-compile-stats=$LONG_COMPILE_STATS -run=$RUN -run-stats=$RUN_STATS -long-run-stats=$LONG_RUN_STATS -errors=$ERRORS"   # running the task in background
+			ssh -f $machine "cd \$MAIN_TESTING_DIR; ./run-benchmark $task -conf-each-test=$CONF_EACH_TEST -compile=$COMPILE -compile-stats=$COMPILE_STATS -long-compile-stats=$LONG_COMPILE_STATS -run=$RUN -run-stats=$RUN_STATS -long-run-stats=$LONG_RUN_STATS -errors=$ERRORS > /dev/null 2>&1"   # running the task in background
 			sleep 5   # waiting 5 seconds for the remote machine to set up it's parameters
 			
 			MACHINE_ALREADY_USED=0   # this machine was not used before
@@ -468,7 +487,7 @@ else
 
 	# Copying all executables from all machines and adding them to the $ARCHIVE_EXECUTABLES_FILE archive
 
-	mkdir -p $DATE
+	mkdir -p $TEMP_DIR/$DATE
 	for machine in $USED_MACHINES_LIST; do   # iterating through all machines that were used in this session
 	    REMOTE_MACHINE_FLEX_DIR=`ssh $machine 'echo $FLEX_DIR'`   # getting remote machine's $FLEX_DIR
 	    REMOTE_MACHINE_TASKS_RUN_FILE=`ssh $machine 'echo $TASKS_RUN_ON_THIS_MACHINE_FILE'`   # getting the file containing all tasks that were run on that machine
@@ -479,32 +498,31 @@ else
 		scp $machine:$REMOTE_MACHINE_TASKS_RUN_FILE $TEMP_DIR/tasks-run > /dev/null 2>&1   # copying the $TASKS_RUN_ON_THIS_MACHINE_FILE from $machine
 	    fi
 
-	    NUMBER_LINES=`wc -l $TEMP_DIR/tasks-run | sed "s|$TEMP_DIR/tasks-run||g"`   # getting the number of lines in $MAILING_FILE
+	    NUMBER_LINES=`wc -l $TEMP_DIR/tasks-run | sed "s|$TEMP_DIR/tasks-run||g"`   # getting the number of lines in tasks-run
 	    n_line=1
-	    while [ $n_line -le $NUMBER_LINES ]; do   # getting the list of people who will receive the email
+	    while [ $n_line -le $NUMBER_LINES ]; do   # getting the list or tasks run on this machine
 		file=`head -n $n_line $TEMP_DIR/tasks-run | tail -n 1`
 
 		if [ "$DEBUG" == "yes" ]; then
-		    scp $machine:$REMOTE_MACHINE_FLEX_DIR/../Runtime/$file $DATE   # copying all executed programs from $machine
+		    scp $machine:$REMOTE_MACHINE_FLEX_DIR/../Runtime/$file $TEMP_DIR/$DATE   # copying all executed programs from $machine
 		else
-		    scp $machine:$REMOTE_MACHINE_FLEX_DIR/../Runtime/$file $DATE > /dev/null 2>&1  # copying all executed programs from $machine
+		    scp $machine:$REMOTE_MACHINE_FLEX_DIR/../Runtime/$file $TEMP_DIR/$DATE > /dev/null 2>&1  # copying all executed programs from $machine
 		fi
 		
 		n_line=$[$n_line+1]
 	    done
+	    rm -f $TEMP_DIR/tasks-run   # removing tasks-run file
 	done
 	
 	if [ -f $ARCHIVE_EXECUTABLES_FILE ]; then   # does the $ARCHIVE_EXECUTABLES_FILE exist?
 	    if [ "$DEBUG" == "yes" ]; then
 		tar zxvf $ARCHIVE_EXECUTABLES_FILE -C $TEMP_DIR   # extracting executables in $ARCHIVE_EXECUTABLES_FILE to $TEMP_DIR
-		mv $DATE $TEMP_DIR   # moving current executables to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
 		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_EXECUTABLES_FILE   # adding new executable files to the $ARCHIVE_EXECUTABLES_FILE archive
 		rm -r `\ls -A | grep -v CVS`   # removing all files from $TEMP_DIR directory
 		cd -   # changing the directory back
 	    else
 		tar zxvf $ARCHIVE_EXECUTABLES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting executables in $ARCHIVE_EXECUTABLES_FILE to $TEMP_DIR
-		mv -f $DATE $TEMP_DIR   # moving current executables to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
 		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_EXECUTABLES_FILE 2>/dev/null   # adding new executable files to the $ARCHIVE_EXECUTABLES_FILE archive
 		rm -rf `\ls -A | grep -v CVS`   # removing all files from $TEMP_DIR directory
@@ -512,11 +530,15 @@ else
 	    fi
 	else
 	    if [ "$DEBUG" == "yes" ]; then
-		tar cz $DATE > $ARCHIVE_EXECUTABLES_FILE   # creating the $ARCHIVE_EXECUTABLES_FILE archive
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz $DATE > `cd -; pwd`/$ARCHIVE_EXECUTABLES_FILE   # creating the $ARCHIVE_EXECUTABLES_FILE archive
 		rm -r $DATE   # removing the $DATE directory
+		cd -   # changing the directory back
 	    else
-		tar cz $DATE > $ARCHIVE_EXECUTABLES_FILE 2>/dev/null   # creating the $ARCHIVE_EXECUTABLES_FILE archive
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		tar cz $DATE > `cd -; pwd`/$ARCHIVE_EXECUTABLES_FILE 2>/dev/null   # creating the $ARCHIVE_EXECUTABLES_FILE archive
 		rm -rf $DATE   # removing the $DATE directory
+		cd -   # changing the directory back
 	    fi
 	fi
 
@@ -528,7 +550,29 @@ else
 	    break
 	done
 
-	REST_TASKS=$TASKS_LIST   # the list of the tasks that were not executed yet
+	# Extracting the last version of sources from $ARCHIVE_SOURCES_FILE
+
+	mkdir -p $DIFFS_DIR
+	mkdir -p $DIFFS_YESTERDAY_DIR
+	mkdir -p $DIFFS_TODAY_DIR
+	DIFFS_DIR_ALIAS=`echo $DIFFS_DIR | sed "s|$TEMP_DIR/||g"`
+	if [ -f $ARCHIVE_SOURCES_FILE ]; then   # do we have an $ARCHIVE_SOURCES_FILE?
+	    if [ "$DEBUG" == "yes" ]; then
+		tar zxvf $ARCHIVE_SOURCES_FILE -C $TEMP_DIR   # extracting previous sources
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		mv last/* `cd -; pwd`/$DIFFS_YESTERDAY_DIR   # moving all files from "last" to $DIFFS_YESTERDAY_DIR
+		rm -r `\ls -A | grep -v CVS | grep -v -E $DIFFS_DIR_ALIAS"$"`   # removing everything in $TEMP_DIR except $DIFFS_DIR
+		cd -   # changing directory back
+	    else
+		tar zxvf $ARCHIVE_SOURCES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracti previous sources
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		mv -f last/* `cd -; pwd`/$DIFFS_YESTERDAY_DIR   # moving all files from "last" to $DIFFS_YESTERDAY_DIR
+		rm -rf `\ls -A | grep -v CVS | grep -v -E $DIFFS_DIR_ALIAS"$"`   # removing everything in $TEMP_DIR except $DIFFS_DIR
+		cd -   # changing directory back
+	    fi
+	fi
+
+	REST_TASKS=$TASKS_LIST   # the list of sources that were not copied yet
 	while [ "$REST_TASKS" != "" ]; do
 	    task=`echo $REST_TASKS | sed s/:.*$//`   # get the next task
 	    if [ "$task" == "$REST_TASKS" ]; then   # is it the last task?
@@ -543,78 +587,87 @@ else
 		echo "\$REST_TASKS = $REST_TASKS"
 		echo "\$COPY_FROM_MACHINE = $COPY_FROM_MACHINE"
 		echo "\$REMOTE_MACHINE_FLEX_DIR = $REMOTE_MACHINE_FLEX_DIR"
+		echo "CWD = "`pwd`
 		scp $COPY_FROM_MACHINE:$REMOTE_MACHINE_FLEX_DIR/$task.java $DIFFS_TODAY_DIR || scp $COPY_FROM_MACHINE:$REMOTE_MACHINE_FLEX_DIR/$task $DIFFS_TODAY_DIR   # copy the sources for all tasks from $COPY_FROM_MACHINE
 	    else
 		scp $COPY_FROM_MACHINE:$REMOTE_MACHINE_FLEX_DIR/$task.java $DIFFS_TODAY_DIR > /dev/null 2>&1 || scp $COPY_FROM_MACHINE:$REMOTE_MACHINE_FLEX_DIR/$task $DIFFS_TODAY_DIR > /dev/null 2>&1   # copy the sources for all tasks from $COPY_FROM_MACHINE
 	    fi
 	done
 	
-	# Generating the diffs, merging them into one big file, and adding this file to the $ARCHIVE_DIFFS_FILE
+	# Generating the sources diffs, merging them into one big file, and adding this file to the $ARCHIVE_DIFFS_SOURCES_FILE
 
 	if [ "$DIFFS" == "yes" ]; then   # we want to generate diffs
-	    diff $DIFFS_TODAY_DIR $DIFFS_YESTERDAY_DIR >> $DIFFS_FILE
-	    rm -f `\ls -Ad $DIFFS_YESTERDAY_DIR/* | grep -v CVS`   # remove source's from the last session
-	    cp -f `\ls -Ad $DIFFS_TODAY_DIR/* | grep -v CVS` $DIFFS_YESTERDAY_DIR   # copy today's sources
-
-	    echo >> $DIFFS_FILE
-	    echo "End of diffs file." >> $DIFFS_FILE
-	    echo >> $DIFFS_FILE
+	    diff $DIFFS_TODAY_DIR $DIFFS_YESTERDAY_DIR >> $DIFFS_SOURCES_FILE
+	    echo >> $DIFFS_SOURCES_FILE
+	    echo "End of diffs file." >> $DIFFS_SOURCES_FILE
+	    echo >> $DIFFS_SOURCES_FILE
 	fi
 
-	if [ -f $ARCHIVE_DIFFS_FILE ]; then   # do we have already an $ARCHIVE_DIFFS_FILE?
+	if [ -f $ARCHIVE_DIFFS_SOURCES_FILE ]; then   # do we have already an $ARCHIVE_DIFFS_SOURCES_FILE?
 	    if [ "$DEBUG" == "yes" ]; then
-		tar zxvf $ARCHIVE_DIFFS_FILE -C $TEMP_DIR   # extracting existing diffs files to $TEMP_DIR
-		cp $DIFFS_FILE $TEMP_DIR   # moving $DIFFS_FILE to $TEMP_DIR
+		tar zxvf $ARCHIVE_DIFFS_SOURCES_FILE -C $TEMP_DIR   # extracting existing diffs files to $TEMP_DIR
+		cp $DIFFS_SOURCES_FILE $TEMP_DIR   # moving $DIFFS_SOURCES_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_DIFFS_FILE   # adding this diffs file to the $ARCHIVE_DIFFS_FILE archive
-		rm -r `\ls -A | grep -v CVS`   # removing everything in $TEMP_DIR directory
+		tar cz `\ls -A | grep -v CVS | grep -v -E $DIFFS_DIR_ALIAS"$"` > `cd -; pwd`/$ARCHIVE_DIFFS_SOURCES_FILE   # adding this diffs file to the $ARCHIVE_DIFFS_SOURCES_FILE archive
+		rm -r `\ls -A | grep -v CVS | grep -v -E $DIFFS_DIR_ALIAS"$"`   # removing everything in $TEMP_DIR directory except $DIFFS_DIR
 		cd -   # changing the directory back
 	    else
-		tar zxvf $ARCHIVE_DIFFS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting existing diffs files to $TEMP_DIR
-		cp -f $DIFFS_FILE $TEMP_DIR   # moving $DIFFS_FILE to $TEMP_DIR
+		tar zxvf $ARCHIVE_DIFFS_SOURCES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting existing diffs files to $TEMP_DIR
+		cp -f $DIFFS_SOURCES_FILE $TEMP_DIR   # moving $DIFFS_SOURCES_FILE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
-		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_DIFFS_FILE 2>/dev/null   # adding this diffs file to the $ARCHIVE_ERRORS_FILE archive
-		rm -rf `\ls -A | grep -v CVS`   # removing everything in $TEMP_DIR directory
+		tar cz `\ls -A | grep -v CVS | grep -v -E $DIFFS_DIR_ALIAS"$"` > `cd -; pwd`/$ARCHIVE_DIFFS_SOURCES_FILE 2>/dev/null   # adding this diffs file to the $ARCHIVE_DIFFS_SOURCES_FILE archive
+		rm -rf `\ls -A | grep -v CVS | grep -v -E $DIFFS_DIR_ALIAS"$"`   # removing everything in $TEMP_DIR directory except $DIFFS_DIR
 		cd -   # changing the directory back
 	    fi
 	else
 	    if [ "$DEBUG" == "yes" ]; then
-		tar cz $DIFFS_FILE > $ARCHIVE_DIFFS_FILE   # creating the $ARCHIVE_ERRORS_FILE archive
+		tar cz $DIFFS_SOURCES_FILE > $ARCHIVE_DIFFS_SOURCES_FILE   # creating the $ARCHIVE_DIFFS_SOURCES_FILE archive
 	    else	
-		tar cz $DIFFS_FILE > $ARCHIVE_DIFFS_FILE 2>/dev/null   # creating the $ARCHIVE_ERRORS_FILE archive
+		tar cz $DIFFS_SOURCES_FILE > $ARCHIVE_DIFFS_SOURCES_FILE 2>/dev/null   # creating the $ARCHIVE_DIFFS_SOURCES_FILE archive
 	    fi
 	fi
 
 	# Adding bechmark sources to the $ARCHIVE_SOURCES_FILE archive
 
-	mkdir -p $DATE
-	for file in `\ls -Ad $DIFFS_TODAY_DIR | grep -v CVS`; do   # looping through all files with "java" extension
-	    mv -f $file $DATE   # move today's sources to $DATE directory
+	mkdir -p $TEMP_DIR/$DATE   # creating directory $TEMP_DIR/$DATE
+	cd $DIFFS_TODAY_DIR   # changing directory to $DIFFS_TODAY_DIR
+	for file in `\ls -A 2>/dev/null`; do   # looping through all files
+	    mv -f $file `cd -; pwd`/$TEMP_DIR/$DATE   # move today's sources to $DATE directory
 	done
+	cd -   # changing directory back
+	rm -rf $DIFFS_DIR   # removing $DIFFS_DIR, which is not needed any more
 
 	if [ -e $ARCHIVE_SOURCES_FILE ]; then   # does the $ARCHIVE_SOURCES_FILE exist?
 	    if [ "$DEBUG" == "yes" ]; then
 		tar zxvf $ARCHIVE_SOURCES_FILE -C $TEMP_DIR   # extracting all sources from $ARCHIVE_SOURCES_FILE to $TEMP_DIR
-		mv $DATE $TEMP_DIR   # moving $DATE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		cp -r $DATE/* last   # making a copy of $DATE in "last"
 		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_SOURCES_FILE   # adding today's sources to the $ARCHIVE_SOURCES_FILE archive
 		rm -r `\ls -A | grep -v CVS`   # removing all files in $TEMP_DIR directory
 		cd -   # changing directory back
 	    else
 		tar zxvf $ARCHIVE_SOURCES_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting all sources from $ARCHIVE_SOURCES_FILE to $TEMP_DIR
-		mv -f $DATE $TEMP_DIR   # moving $DATE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		cp -rf $DATE/* last   # making a copy of $DATE in "last"
 		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_SOURCES_FILE 2>/dev/null   # adding today's sources to the $ARCHIVE_SOURCES_FILE archive
 		rm -rf `\ls -A | grep -v CVS`   # removing all files in $TEMP_DIR directory
 		cd -   # changing directory back
 	    fi
 	else
 	    if [ "$DEBUG" == "yes" ]; then
-		tar cz $DATE > $ARCHIVE_SOURCES_FILE   # creating the $ARCHIVE_SOURCES_FILE archive
-		rm -r $DATE   # removing $DATE directory
+		mkdir -p $TEMP_DIR/last   # creating the directory "last"
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		cp -r $DATE/* last   # making a copy of $DATE in "last"
+		tar cz $DATE last > `cd -; pwd`/$ARCHIVE_SOURCES_FILE   # creating the $ARCHIVE_SOURCES_FILE archive
+		rm -r $DATE last   # removing $DATE directory
+		cd -   # changing directory back
 	    else
-		tar cz $DATE > $ARCHIVE_SOURCES_FILE 2>/dev/null   # creating the $ARCHIVE_SOURCES_FILE archive
-		rm -rf $DATE   # removing $DATE directory
+		mkdir -p $TEMP_DIR/last   # creating the directory "last"
+		cd $TEMP_DIR   # changing directory to $TEMP_DIR
+		cp -rf $DATE/* last   # making a copy of $DATE in "last"
+		tar cz $DATE last > `cd -; pwd`/$ARCHIVE_SOURCES_FILE 2>/dev/null   # creating the $ARCHIVE_SOURCES_FILE archive
+		rm -rf $DATE last   # removing $DATE directory
+		cd -   # changing directory back
 	    fi
 	fi
     fi
@@ -623,7 +676,7 @@ else
     
     if [ "$MAIL_RESULTS" == "yes" ]; then   # do we have to mail the results?
 	if [ "$ERRORS" == "yes" -a "$DIFFS" == "yes" ]; then   # we want both errors and diffs to be mailed
-	    cat $ERROR_FILE $DIFFS_FILE | mail -s "Regression Testing: Results for $DATE" $MAILING_LIST
+	    cat $ERROR_FILE $DIFFS_SOURCES_FILE | mail -s "Regression Testing: Results for $DATE" $MAILING_LIST
 	elif [ "$ERRORS" == "yes" -a "$DIFFS" == "no" ]; then   # we want errors, but not diffs
 	    cp $ERROR_FILE mail_temp
 	    echo >> mail_temp
@@ -632,7 +685,7 @@ else
 	    cat mail_temp | mail -s "Regression Testing: Results for $DATE" $MAILING_LIST
 	    rm mail_temp
 	elif [ "$ERRORS" == "no" -a "$DIFFS" == "yes" ]; then   # we want diffs, but not errors
-	    cp $DIFFS_FILE mail_temp
+	    cp $DIFFS_SOURCES_FILE mail_temp
 	    echo >> mail_temp
 	    echo >> mail_temp
 	    echo "Collecting errors option has been turned off." >> mail_temp
