@@ -34,5 +34,6 @@ B) remove old object files
 C) ./buildruntime
 D) build checking object: 
    g++ -g -c ex_aux.cc
-E) g++ -g ex_test.cc *.o -o ex
-F) ./ex
+E) If ex_test.c is the application under testing, run:
+   g++ -g ex_test.cc *.o -o ex_test
+F) ./ex_test
