@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.24.2.1 2000-01-11 09:51:13 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.24.2.2 2000-01-11 15:34:39 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -583,7 +583,8 @@ final class Translate { // not public.
 		lock = new Temp(s.tf(), "lock");
 		Temp Tex = s.extra(0);
 		HClass strC = qf.getLinker().forClass(String.class);
-		HClass exC = qf.getLinker().forClass(NoClassDefFoundError.class);
+		// XXX: exC is not currently used.
+		//HClass exC = qf.getLinker().forClass(NoClassDefFoundError.class);
 		HMethod cfnM = qf.getLinker().forClass(Class.class)
 				    .getMethod("forName", 
 					       new HClass[] { strC } );
