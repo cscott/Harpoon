@@ -17,7 +17,7 @@ import java.io.PrintStream;
  * <code>Option</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Option.java,v 1.1 2003-04-16 23:48:48 salcianu Exp $
+ * @version $Id: Option.java,v 1.2 2003-04-17 00:04:02 salcianu Exp $
  */
 public abstract class Option {
 
@@ -85,7 +85,9 @@ public abstract class Option {
 					   StringTokenizer optArgTok) {
 	StringBuffer sb = new StringBuffer();
 
-	sb.append("--");
+	sb.append("-");
+	if(optionName.length() > 1)
+	    sb.append("-");
 	sb.append(optionName);
 
 	if(argTok.countTokens() > 0) {
