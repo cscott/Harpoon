@@ -17,7 +17,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * source lines.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeLineNumberTable.java,v 1.7 1998-08-01 22:55:16 cananian Exp $
+ * @version $Id: AttributeLineNumberTable.java,v 1.8 1998-08-02 07:59:46 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.6"
  * @see AttributeCode
  * @see Attribute
@@ -66,41 +66,16 @@ public class AttributeLineNumberTable extends Attribute {
     for (int i=0; i< line_number_table.length; i++)
       line_number_table[i].write(out);
   }
-  
-  /**************************************************************/
-  // INNER CLASS: LineNumberTable
-  /**************************************************************/
 
-  /** Each object indicates that the line number in the original Java
-      source file changes at a given point in the <code>code</code>
-      array. */ 
-  public class LineNumberTable {
-    /** The value of the <code>start_pc</code> item must indicate the
-	index into the <code>code</code> array at which the code for a
-	new line in the original Java source file begins.  The value
-	of <code>start_pc</code> must be less than the value of the
-	<code>code_length</code> item of the <code>Code</code>
-	attribute of which this <code>LineNumberTable</code> is an
-	attribute. */
-    public int start_pc;
-    /** The value of the <code>line_number</code> item must give the
-	corresponding line number in the original Java source file. */
-    public int line_number;
-
-    /** Constructor. */
-    LineNumberTable(ClassDataInputStream in) throws java.io.IOException {
-      start_pc = in.read_u2();
-      line_number = in.read_u2();
-    }
-    /** Constructor. */
-    public LineNumberTable(int start_pc, int line_number) {
-      this.start_pc = start_pc;
-      this.line_number = line_number;
-    }
-    /** Writes to bytecode stream. */
-    public void write(ClassDataOutputStream out) throws java.io.IOException {
-      out.write_u2(start_pc);
-      out.write_u2(line_number);
-    }
+  /** Pretty-print this attribute.
+   *  @param indent the indentation level to use.
+   */
+  public void print(java.io.PrintWriter pw, int indent) {
+    int in=indent;
+    indent(pw, in, 
+	   "LineNumberTable attribute ["+line_number_table_length()+"]:");
+    for (int i=0; i<line_number_table.length; i++)
+      indent(pw, in+1, 
+	     "#"+i+": " + line_number_table[i].toString());
   }
 }

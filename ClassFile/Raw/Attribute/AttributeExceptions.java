@@ -11,7 +11,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>method_info</code> structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeExceptions.java,v 1.8 1998-08-01 22:55:16 cananian Exp $
+ * @version $Id: AttributeExceptions.java,v 1.9 1998-08-02 07:59:46 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.5"
  * @see Attribute
  * @see MethodInfo
@@ -72,5 +72,18 @@ public class AttributeExceptions extends Attribute {
     out.write_u2(number_of_exceptions());
     for (int i=0; i<exception_index_table.length; i++)
       out.write_u2(exception_index_table[i]);
+  }
+
+  /** Pretty-print the contents of this attribute.
+   *  @param indent the indentation level to use.
+   */
+  public void print(java.io.PrintWriter pw, int indent) {
+    int in=indent;
+    indent(pw, in, "Exceptions attribute ["+number_of_exceptions()+"]:");
+    for (int i=0; i<exception_index_table.length; i++)
+      indent(pw, in+1, "#"+i+": " +
+	     (exception_index_table(i)==null?"<nothing>":
+	      exception_index_table(i).name()) +
+	     " {"+exception_index_table[i]+"}");
   }
 }
