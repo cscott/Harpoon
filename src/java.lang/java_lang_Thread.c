@@ -214,7 +214,9 @@ JNIEXPORT jobject JNICALL Java_java_lang_Thread_currentThread
  */
 JNIEXPORT void JNICALL Java_java_lang_Thread_yield
   (JNIEnv *env, jclass cls) {
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   pthread_yield_np();
+#endif
 }
 
 /*
