@@ -54,7 +54,7 @@ import java.util.Iterator;
  * the counters' actual name on output will be "foo_bar" and "foo_baz".
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CounterFactory.java,v 1.1.2.8 2001-11-01 22:46:40 cananian Exp $
+ * @version $Id: CounterFactory.java,v 1.1.2.9 2001-11-02 04:53:59 cananian Exp $
  */
 public final class CounterFactory {
     /** default status for all counters. */
@@ -99,7 +99,7 @@ public final class CounterFactory {
 	// if nothing is enabled, don't bother splicing in our code factory.
 	if (!enabled) return parent;
 	// else do it!
-	//parent = new RuntimeInliner(parent, linker).codeFactory();
+	parent = new RuntimeMethodCloner(parent, linker).codeFactory();
 	return new EpilogMutator(parent, linker, main).codeFactory();
     }
 
