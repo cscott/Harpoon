@@ -26,7 +26,7 @@ import java.util.Vector;
  This is the most conservative implementation of <code>CallGraph</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl.java,v 1.1.2.2 2000-03-22 05:23:09 salcianu Exp $
+ * @version $Id: CallGraphImpl.java,v 1.1.2.3 2001-06-18 04:09:14 cananian Exp $
  */
 public class CallGraphImpl implements CallGraph  {
     final HCodeFactory hcf;
@@ -38,6 +38,8 @@ public class CallGraphImpl implements CallGraph  {
 	// this is maybe a little too draconian
 	Util.assert(hcf.getCodeName()
 		    .equals(harpoon.IR.Quads.QuadSSI.codename) ||
+		    hcf.getCodeName()
+		    .equals(harpoon.IR.Quads.QuadSSA.codename) ||
 		    hcf.getCodeName()
 		    .equals(harpoon.IR.Quads.QuadNoSSA.codename));
 	this.ch = ch;

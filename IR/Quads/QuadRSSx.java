@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * leading to/coming from the <code>PHI</code>/<code>SIGMA</code> nodes.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: QuadRSSx.java,v 1.1.2.3 2001-06-17 22:33:36 cananian Exp $
+ * @version $Id: QuadRSSx.java,v 1.1.2.4 2001-06-18 04:09:41 cananian Exp $
  */
 public class QuadRSSx extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -58,11 +58,13 @@ public class QuadRSSx extends Code /* which extends HCode */ {
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
 	if (hcf.getCodeName().equals(codename)) return hcf;
 	if (hcf.getCodeName().equals(QuadNoSSA.codename) ||
+	    hcf.getCodeName().equals(QuadSSA.codename) ||
 	    hcf.getCodeName().equals(QuadSSI.codename)) {
 	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
 		    Code c = (Code) hcf.convert(m);
-		    return c.cloneHelper(new QuadRSSx(m, null)).hcode();
+		    return (c==null) ? null :
+			c.cloneHelper(new QuadRSSx(m, null)).hcode();
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
