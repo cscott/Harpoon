@@ -2,6 +2,7 @@
 #define INCLUDED_PRECISEC_H
 
 #include "jni.h"
+#include "config.h"
 
 typedef void * jptr;
 #define SHR(x,y) (((int32_t)(x))>>((y)&0x1f))
@@ -9,17 +10,23 @@ typedef void * jptr;
 #define LSHR(x,y) (((int64_t)(x))>>((y)&0x3f))
 #define LUSHR(x,y) (((u_int64_t)(x))>>((y)&0x3f))
 
+/* thread-state optimization for single-threaded case */
+#ifndef WITH_THREADS
+#define FNI_GetJNIEnv() FNI_JNIEnv
+#endif
+
+/* support for precise-gc stack */
 #ifdef WITH_PRECISE_GC
-# error WITH_PRECISE_GC not yet implemented.
 # define IFPRECISE(x) x
+# define FTS() ((struct FNI_Thread_State *)FNI_GetJNIEnv())
   /* push an object onto the live vars stack */
-# define PUSHOBJ(t)
+# define PUSHOBJ(t) ((FTS()->localrefs_next++)->obj=t)
   /* pop and return an object from the live vars stack */
-# define POPOBJ()
+# define POPOBJ() ((--(FTS()->localrefs_next))->obj)
   /* return the current top-of-stack pointer for the live vars stack */
-# define STACKTOP()
+# define STACKTOP() (FTS()->localrefs_next)
   /* set the current top-of-stack for the live vars stack to x */
-# define SETSTACKTOP(x)
+# define SETSTACKTOP(x) (FTS()->localrefs_next=x)
 #else /* !WITH_PRECISE_GC */
   /* not doing precise garbage collection, just ignore all the precise stuff */
 # define IFPRECISE(x) /*no-op*/0

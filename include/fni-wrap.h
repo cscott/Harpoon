@@ -12,8 +12,14 @@ typedef struct oobj * jobject_unwrapped;
 /* a wrapped object is a struct _jobject *...*/
 struct _jobject {
   struct oobj * obj;
-  struct _jobject * next;
 };
+/* a global ref has additional 'next' and 'prev' fields */
+typedef struct _jobject_globalref {
+  struct _jobject jobject;
+  struct _jobject_globalref * prev;
+  struct _jobject_globalref * next;
+} *jobject_globalref;
+
 /* define handy (un)wrapper macros */
 #define FNI_WRAP(x) (FNI_NewLocalRef(env, x))
 #define FNI_UNWRAP(_x) ({jobject x=_x; (x==NULL)?NULL:x->obj; })

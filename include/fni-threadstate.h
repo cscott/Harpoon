@@ -23,7 +23,8 @@
 struct FNI_Thread_State {
   JNIEnv vtable;
   jthrowable exception; /* outstanding exception, or NULL if no exception. */
-  struct _jobject localrefs; /* header node in a local refs list. */
+  struct _jobject *localrefs_stack; /* bottom of local refs stack */
+  struct _jobject *localrefs_next; /* points to next empty slot on lr stack */
   jobject thread; /* thread object corresponding to this thread state. */
   void *stack_top; /* top of stack */
   jboolean is_alive; /* true while the thread is running */
@@ -36,7 +37,8 @@ struct FNI_Thread_State {
   jmp_buf handler;
 #endif
 };
-extern struct _jobject FNI_globalrefs; /* header node in global refs list. */
+/* header node in doubly-linked global refs list. */
+extern struct _jobject_globalref FNI_globalrefs;
 
 #define FNI_NO_EXCEPTIONS(env) \
 	(((struct FNI_Thread_State *)(env))->exception==NULL)

@@ -11,8 +11,12 @@ extern struct JNINativeInterface FLEX_JNI_vtable;
 #endif
 #include "flexthread.h"
 
+#ifndef LOCALREF_STACK_SIZE
+#define LOCALREF_STACK_SIZE (64*1024) /* 64k word stack */
+#endif
+
 /* no global refs, initially. */
-struct _jobject FNI_globalrefs = { NULL, NULL };
+struct _jobject_globalref FNI_globalrefs = { {NULL}, NULL, NULL };
 
 /** constructor/destructor for thread state information structure */
 
@@ -21,8 +25,14 @@ static JNIEnv * FNI_CreateThreadState(void) {
   struct FNI_Thread_State * env = malloc(sizeof(*env));
   env->vtable = &FLEX_JNI_vtable;
   env->exception = NULL;
-  env->localrefs.obj = NULL;
-  env->localrefs.next= NULL;
+  env->localrefs_stack =
+  env->localrefs_next =
+#ifdef BDW_CONSERVATIVE_GC
+    GC_malloc_uncollectable /* local ref stack has heap pointers */
+#else /* okay, use system-default malloc */
+    malloc
+#endif
+    (sizeof(*(env->localrefs_stack))*LOCALREF_STACK_SIZE);
   env->thread = NULL;
   env->stack_top = NULL;
   env->is_alive = JNI_FALSE;
