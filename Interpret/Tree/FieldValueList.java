@@ -7,7 +7,7 @@ import harpoon.ClassFile.HField;
  * <code>FieldValueList</code> holds field values.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldValueList.java,v 1.1.2.1 1999-03-07 07:33:38 duncan Exp $
+ * @version $Id: FieldValueList.java,v 1.1.2.2 1999-03-27 22:05:07 duncan Exp $
  */
 final class FieldValueList {
     /** which field this value is for. */
@@ -34,5 +34,21 @@ final class FieldValueList {
     static FieldValueList clone(FieldValueList fvl) {
        return (fvl==null)?fvl:
        new FieldValueList(fvl.which, fvl.value, clone(fvl.next));
+    }
+  
+    public String toString() {
+	StringBuffer sb = new StringBuffer("");
+	if (which != null) {
+	    sb.append("< ");
+	    sb.append(which);
+	    sb.append(", ");
+	    sb.append(value);
+	    sb.append(" >");
+	}
+	if (next != null) {
+	    sb.append(next.toString());
+	}
+
+	return sb.toString();
     }
 }
