@@ -22,12 +22,12 @@ import java.util.Set;
  * the standard <code>Factories.hashSetFactory</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AggregateSetFactory.java,v 1.4 2003-05-06 15:30:54 cananian Exp $
+ * @version $Id: AggregateSetFactory.java,v 1.5 2003-05-06 17:51:18 cananian Exp $
  */
 public class AggregateSetFactory<V> extends SetFactory<V>
     implements java.io.Serializable {
-    private final Map<Map.Entry<EntryList<V>,V>,EntryList<V>> m =
-	new HashMap<Map.Entry<EntryList<V>,V>,EntryList<V>>();
+    private final Map<EntryList<V>,EntryList<V>> m =
+	new HashMap<EntryList<V>,EntryList<V>>();
 
     /** Creates an <code>AggregateSetFactory</code>. */
     public AggregateSetFactory() { /* nothing to do here */ }
@@ -45,23 +45,22 @@ public class AggregateSetFactory<V> extends SetFactory<V>
     private class AggregateSet extends AbstractSet<V> {
 	// list header is the IDENTITY object for the set.
 	// this is also the backing store for efficient iteration.
-	final EntryList<V> IDENTITY = new EntryList<V>(null);
+	final ID<V> IDENTITY = new ID<V>();
 	int size=0;
 
 	<T extends V> AggregateSet(Collection<T> c) {
 	    addAll(c);
 	}
 	public boolean add(V o) {
-	    Map.Entry<EntryList<V>,V> key = Default.entry(IDENTITY, o);
-	    if (m.containsKey(key)) return false;
-	    EntryList<V> entry = new EntryList<V>(o);
+	    EntryList<V> entry = new EntryList<V>(IDENTITY, o);
+	    if (m.containsKey(entry)) return false;
 	    IDENTITY.add(entry);
-	    m.put(key, entry);
+	    m.put(entry, entry);
 	    size++;
 	    return true;
 	}
 	public boolean contains(Object o) {
-	    return m.containsKey(Default.entry(IDENTITY, o));
+	    return m.containsKey(new EntryList(IDENTITY, o));
 	}
 	public boolean isEmpty() {
 	    assert (size==0)==(IDENTITY.next==null);
@@ -69,18 +68,19 @@ public class AggregateSetFactory<V> extends SetFactory<V>
 	}
 	public Iterator<V> iterator() {
 	    return new Iterator<V>() {
-		EntryList<V> entry = IDENTITY;
+		Header<V> entry = IDENTITY;
 		public boolean hasNext() { return entry.next!=null; }
 		public V next() {
 		    if (!hasNext()) throw new NoSuchElementException();
 		    removeValid = true;
-		    entry = entry.next;
-		    return entry.value;
+		    EntryList<V> nentry = entry.next;
+		    entry = nentry;
+		    return nentry.value;
 		}
 		public void remove() {
 		    if (!removeValid) throw new IllegalStateException();
-		    EntryList<V> oentry = entry;
-		    entry = entry.prev;
+		    EntryList<V> oentry = (EntryList<V>) entry;
+		    entry = oentry.prev;
 		    AggregateSet.this.remove(oentry);
 		    removeValid = false;
 		}
@@ -88,13 +88,13 @@ public class AggregateSetFactory<V> extends SetFactory<V>
 	    };
 	}
 	private void remove(EntryList<V> entry) {
-	    EntryList<V> e = m.remove(Default.entry(IDENTITY, entry.value));
+	    EntryList<V> e = m.remove(entry);
 	    assert e == entry;
-	    entry.remove();
+	    e.remove();
 	    size--;
 	}
 	public boolean remove(Object o) {
-	    EntryList<V> entry = m.get(Default.entry(IDENTITY, o));
+	    EntryList<V> entry = m.get(new EntryList(IDENTITY, o));
 	    if (entry==null) return false;
 	    remove(entry);
 	    return true;
@@ -105,11 +105,27 @@ public class AggregateSetFactory<V> extends SetFactory<V>
 	    clear();
 	}
     }
+    /** Header for linked list of set elements. */
+    private static abstract class Header<E>
+	implements java.io.Serializable {
+	EntryList<E> next=null;
+	Header() { }
+	/** Link in the supplied entry after this one. */
+	void add(EntryList<E> nel) {
+	    nel.next = this.next;
+	    nel.prev = this;
+	    if (nel.next!=null) nel.next.prev = nel;
+	    this.next = nel;
+	}
+	/** Return the set identifier which this list belongs to. */
+	abstract ID<E> identity();
+    }
     /** Linked list of set elements. */
-    private static final class EntryList<E> implements java.io.Serializable {
+    private static final class EntryList<E> extends Header<E> {
+	final ID<E> id;
 	final E value;
-	EntryList<E> prev=null, next=null;
-	EntryList(E value) { this.value = value; }
+	Header<E> prev=null;
+	EntryList(ID<E> id, E value) { this.id = id; this.value = value; }
 
 	// utility.
 	/** Remove this entry from the list. */
@@ -117,13 +133,23 @@ public class AggregateSetFactory<V> extends SetFactory<V>
 	    // always a predecessor; maybe no successor.
 	    this.prev.next = this.next;
 	    if (this.next!=null) this.next.prev = this.prev;
-	    this.next = this.prev = null; // safety.
+	    this.prev = this.next = null; // safety.
 	}
-	/** Link in the supplied entry after this one. */
-	void add(EntryList<E> nel) {
-	    nel.next = this.next;
-	    nel.prev = this;
-	    this.next = nel.next.prev = nel;
+	ID<E> identity() { return id; }
+
+	public boolean equals(Object o) {
+	    if (!(o instanceof EntryList)) return false;
+	    EntryList e = (EntryList) o;
+	    return this.id==e.id &&
+		(this.value==null? e.value==null : this.value.equals(e.value));
 	}
+	public int hashCode() {
+	    return this.id.hashCode() +
+		((this.value==null) ? 0 : this.value.hashCode());
+	}
+    }
+    /** Type for 'set identity' object. */
+    private static final class ID<E> extends Header<E> {
+	ID<E> identity() { return this; }
     }
 }
