@@ -48,6 +48,11 @@ public class CORBA implements CommunicationsModel {
      */
     public CORBA(String[] args) {
 	this.args=args;
+
+	/* Use JacORB 1.3.30 */
+	System.setProperty("org.omg.CORBA.ORBClass", "org.jacorb.orb.ORB");
+	System.setProperty("org.omg.CORBA.ORBSingletonClass", 
+			   "org.jacorb.orb.ORBSingleton");
     }
     
     /** Return the naming context associated with an {@link ORB}.
