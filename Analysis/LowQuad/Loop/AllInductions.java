@@ -21,7 +21,7 @@ import java.util.Iterator;
  * <code>AllInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: AllInductions.java,v 1.1.2.7 1999-09-22 06:05:21 bdemsky Exp $
+ * @version $Id: AllInductions.java,v 1.1.2.8 1999-09-22 06:10:20 bdemsky Exp $
  */
 public class AllInductions {
     TempMap tm;
@@ -96,8 +96,6 @@ public class AllInductions {
 	public void visit(harpoon.IR.Quads.GET q)     {}
 
 	public void visit(harpoon.IR.Quads.HANDLER q) {}
-
-	public void visit(harpoon.IR.Quads.OPER q)    {}
 
 	public void visit(harpoon.IR.Quads.SET q)     {}
 

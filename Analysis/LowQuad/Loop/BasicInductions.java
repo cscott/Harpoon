@@ -24,7 +24,7 @@ import java.util.Iterator;
  * <code>BasicInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: BasicInductions.java,v 1.1.2.4 1999-09-22 06:07:45 bdemsky Exp $
+ * @version $Id: BasicInductions.java,v 1.1.2.5 1999-09-22 06:10:20 bdemsky Exp $
  */
 public class BasicInductions {
     HCode hc;
@@ -195,8 +195,6 @@ public class BasicInductions {
 	public void visit(harpoon.IR.Quads.GET q)     {}
 
 	public void visit(harpoon.IR.Quads.HANDLER q) {}
-
-	public void visit(harpoon.IR.Quads.OPER q)    {}
 
 	public void visit(harpoon.IR.Quads.SET q)     {}
 
