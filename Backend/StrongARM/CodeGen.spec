@@ -52,7 +52,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.28 1999-08-18 21:30:52 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.29 1999-08-23 23:29:24 pnkfelix Exp $
  */
 %%
 
@@ -533,6 +533,11 @@ CONST<l>(c) = i %{
 CONST<i>(c) = i %{
     Temp i = makeTemp();		
     int val = ((CONST)ROOT).value.intValue();
+    emit(new Instr( instrFactory, ROOT,
+		    "mov `d0, #"+val,
+		    new Temp[]{ i }, null));
+
+    /*
     boolean b0, b1, b2, b3;
     b0 = ((val & 0x000000FF) != 0);
     b1 = ((val & 0x0000FF00) != 0);
@@ -573,6 +578,7 @@ CONST<i>(c) = i %{
     if(b3) emit(new Instr( instrFactory, ROOT, 
 			   "orr `d0, #"+(val & 0x000000FF), 
 			   new Temp[]{ i }, null));
+*/
 }%
 
 /*
@@ -694,15 +700,23 @@ MEM<l,d>(e) = i %{
 		     new Temp[]{ i }, new Temp[]{ e }));
 }%
 
-
+// can use adr for 8 bit offsets to variables close by,
+// but need to use ldr for far away symbolic variables
 NAME(id) = i %{
     // produces a pointer
     Temp i = makeTemp();		
     emit(new Instr( instrFactory, ROOT,
-		    "mov `d0, #" + id, 
-		    new Temp[]{ i }, null ));
+		    "ldr `d0, 1f\n" +
+		    "b 2f", new Temp[]{ i }, null ));
+    // these may need to be included in the previous instr to preserve
+    // ordering semantics, but for now this way they indent properly
+    emitLABEL( ROOT, "1:", new Label("1"));
+    emitDIRECTIVE( ROOT, "\t.word " + id);
+    emitLABEL( ROOT, "2:", new Label("2"));
+
 }%
 
+/* Not sure yet how to handle this 
 MEM<f,i,p>(NAME(id)) = i %{
     Temp i = makeTemp();		
     emit(new Instr( instrFactory, ROOT,
@@ -718,7 +732,7 @@ MEM<d,l>(NAME(id)) = i %{
 		    "ldr `d0h, " + id + "+4", 
 		    new Temp[]{ i }, null ));
 }%
-
+*/
 
 TEMP<p,i,f>(id) = i %{
     Temp i = makeTemp();
@@ -940,7 +954,9 @@ EXP(e) %{
 }%
 
 JUMP(e) %{
-    Instr i = new Instr(instrFactory, ROOT,"b `s0", null, new Temp[]{e});
+    Instr i = new InstrMOVE( instrFactory, ROOT,"mov `d0, `s0", 
+			     new Temp[]{ SAFrame.PC }, 
+			     new Temp[]{e});
     emit(i);
     LabelList targets = ((JUMP)ROOT).targets;
     while(targets!=null) {
@@ -1018,9 +1034,9 @@ RETURN(val) %{
 
 THROW(val, handler) %{
     emitMOVE( ROOT, "mov `d0, `s0", r0, val );
-    emit( ROOT, "bl _lookup ; only r0, lr (& ip?) "+
+    emit( ROOT, "bl _lookup @ only r0, lr (& ip?) "+
 		"need to be preserved during lookup" ); 
-    emit( ROOT, "jmp stdexit");
+    emit( ROOT, "b stdexit");
     
    
 }%
@@ -1096,11 +1112,17 @@ CALL(retval, NAME(retex), func, arglist) %{
     // this '1f' and '1:' business is taking advantage of a GNU
     // Assembly feature to avoid polluting the global name space with
     // local labels
-    //    emit( ROOT, "bl " + func );
-    emit(new Instr( instrFactory, ROOT, "bl `s0", null, new Temp[]{ func }));
-    emitDIRECTIVE( ROOT, ".section fixup");
-    emitDIRECTIVE( ROOT, "\t.word 1f, "+retex+"; (retaddr, handler)");
-    emitDIRECTIVE( ROOT, ".section code");
+    // emit(new Instr( instrFactory, ROOT, "bl `s0", null, new Temp[]{ func }));
+    emit(new Instr( instrFactory, ROOT, "mov `d0, `s0", 
+		    new Temp[]{ SAFrame.LR }, new Temp[]{ SAFrame.PC }));
+    emit(new Instr( instrFactory, ROOT, "mov `d0, `s0",
+		    new Temp[]{ SAFrame.PC }, new Temp[]{ func }));
+
+    // these may need to be included in the previous instr to preserve
+    // ordering semantics, but for now this way they indent properly
+    emitDIRECTIVE( ROOT, ".text 10\t@.section fixup");
+    emitDIRECTIVE( ROOT, "\t.word 1f, "+retex+"@ (retaddr, handler)");
+    emitDIRECTIVE( ROOT, ".text 0\t@.section code");
     emitLABEL( ROOT, "1:", new Label("1")); 
     
 
@@ -1184,11 +1206,12 @@ NATIVECALL(retval, func, arglist) %{
     }
 
 
-    // this '1f' and '1:' business is taking advantage of a GNU
-    // Assembly feature to avoid polluting the global name space with
-    // local labels
-    //    emit( ROOT, "bl " + func );
-    emit(new Instr( instrFactory, ROOT, "bl `s0", null, new Temp[]{ func }));
+    emit(new Instr( instrFactory, ROOT, "mov `d0, `s0", 
+		    new Temp[]{ SAFrame.LR }, new Temp[]{ SAFrame.PC }));
+    emit(new Instr( instrFactory, ROOT, "mov `d0, `s0",
+		    new Temp[]{ SAFrame.PC }, new Temp[]{ func }));
+    
+
 
     // this will break if stackOffset > 255 (ie >63 args)
     emit( ROOT, "add `d0, `s0, #" + stackOffset, SAFrame.SP, SAFrame.SP );
@@ -1210,33 +1233,39 @@ DATA(NAME(l)) %{
 }%
  
 SEGMENT(CLASS) %{
-    emitDIRECTIVE( ROOT, ".section class");
+    emitDIRECTIVE( ROOT, ".data 1\t@.section class");
+
 }%
 
 SEGMENT(CODE) %{
-    emitDIRECTIVE( ROOT, ".section code");
+    // gas 2.7 does not support naming the code section...not
+    // sure what to do about this yet...
+    // emitDIRECTIVE( ROOT, ".code 32\t@.section code");
+    emitDIRECTIVE( ROOT, ".text 0\t@.section code");
 }%
 
 SEGMENT(GC) %{
-    emitDIRECTIVE( ROOT, ".section gc");
+    emitDIRECTIVE( ROOT, ".data 2\t@.section gc");
 }%
 
 SEGMENT(INIT_DATA) %{
-    emitDIRECTIVE( ROOT, ".section init_data");
+    emitDIRECTIVE( ROOT, ".data 3\t@.section init_data");
 }%
 
 SEGMENT(STATIC_OBJECTS) %{
-    emitDIRECTIVE( ROOT, ".section static_objects");
+    emitDIRECTIVE( ROOT, ".data 4\t@.section static_objects");
 }%
 
 SEGMENT(STATIC_PRIMITIVES) %{
-    emitDIRECTIVE( ROOT, ".section static_primitives");
+    emitDIRECTIVE( ROOT, ".data 5\t@.section static_primitives");
 }%
 
 SEGMENT(TEXT) %{
-    emitDIRECTIVE( ROOT, ".section text");
+    emitDIRECTIVE( ROOT, ".text  \t@.section text");
 }%
 
 SEGMENT(ZERO_DATA) %{
-    emitDIRECTIVE( ROOT, ".section zero");
+   // gas 2.7 does not allow BSS subsections...use .comm and .lcomm
+   // for the variables to be initialized to zero
+   // emitDIRECTIVE( ROOT, ".bss   \t@.section zero");
 }%

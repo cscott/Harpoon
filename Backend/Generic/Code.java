@@ -32,7 +32,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.17 1999-08-10 17:51:15 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.18 1999-08-23 23:29:24 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -137,10 +137,7 @@ public abstract class Code extends HCode {
      *  @param  pw      A PrintWriter to send the formatted output to.
      */
     public void print(java.io.PrintWriter pw) {
-	
-	pw.print("Codeview \""+getName()+"\" for "+getMethod()+":");
-	
-        pw.println();
+
 	Instr[] instrarr = (Instr[]) getElements();
         for (int i = 0; i < instrarr.length; i++) {
             if (instrarr[i] instanceof InstrLABEL ||

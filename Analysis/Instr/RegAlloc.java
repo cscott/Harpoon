@@ -43,7 +43,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.27 1999-08-19 19:23:02 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.28 1999-08-23 23:29:20 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -316,7 +316,15 @@ public abstract class RegAlloc  {
 		Integer i = (Integer) tempsToOffsets.get(m.def()[0]);
 		Util.assert(i != null, "tempsToOffsets should have a value for "+m.def()[0]);
 		List instrs = frame.makeStore(Arrays.asList(m.use()), i.intValue(), m);
-		Instr.replaceInstrList(m, instrs);
+
+		// add a comment saying which temp is being stored
+		Instr first = (Instr) instrs.get(0);
+		Instr.replaceInstrList(m, instrs);		
+		Instr.insertInstrBefore(first, 
+					new Instr(first.getFactory(),
+						  first,
+						  "\t@storing " + m.def(),
+						  null, null));
 	    }
 	    
 	    public void visitLoad(FskLoad m) {
@@ -325,7 +333,15 @@ public abstract class RegAlloc  {
 		Integer i = (Integer) tempsToOffsets.get(m.use()[0]);
 		Util.assert(i != null, "tempsToOffsets should have a value for "+m.use()[0]);
 		List instrs = frame.makeLoad(Arrays.asList(m.def()), i.intValue(), m);
+
+		// add a comment saying which temp is being loaded
+		Instr first = (Instr) instrs.get(0);
 		Instr.replaceInstrList(m, instrs);
+		Instr.insertInstrBefore(first, 
+					new Instr(first.getFactory(),
+						  first,
+						  "\t@loading" + m.use(),
+						  null, null));
 	    }
 	    
 	    public void visit(Instr i) {

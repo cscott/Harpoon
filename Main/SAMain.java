@@ -54,7 +54,7 @@ import java.io.FileInputStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.12 1999-08-19 19:23:03 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.13 1999-08-23 23:29:25 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -63,7 +63,8 @@ public class SAMain extends harpoon.IR.Registration {
     private static boolean PRE_REG_ALLOC = false;
     private static boolean REG_ALLOC = false;
     private static boolean LIVENESS_TEST = false;
-
+    private static boolean OUTPUT_INFO = false;
+    
     private static java.io.PrintWriter out = 
 	new java.io.PrintWriter(System.out, true);;
         
@@ -82,7 +83,7 @@ public class SAMain extends harpoon.IR.Registration {
 	parseOpts(args);
 	Util.assert(className!= null, "must pass a class to be compiled");
 
-	System.out.println("Compiling: " + className);
+	info("Compiling: " + className);
 
 	HClass hclass = HClass.forName(className);
 	HMethod hm[] = hclass.getDeclaredMethods();
@@ -131,11 +132,11 @@ public class SAMain extends harpoon.IR.Registration {
 	    if (PRINT_ORIG) {
 		HCode hc = hcf.convert(hmethod);
 
-		out.println("\t--- TREE FORM ---");
+		info("\t--- TREE FORM ---");
 		if (hc!=null) hc.print(out); 
 		else 
-		    out.println("null returned for " + hmethod);
-		out.println("\t--- end TREE FORM ---");
+		    info("null returned for " + hmethod);
+		info("\t--- end TREE FORM ---");
 		out.println();
 	    }
 	    
@@ -144,11 +145,15 @@ public class SAMain extends harpoon.IR.Registration {
 	    if (PRE_REG_ALLOC) {
 		HCode hc = sahcf.convert(hmethod);
 		
-		out.println("\t--- INSTR FORM (no register allocation)  ---");
-		if (hc!= null) hc.print(out);
-		else 
-		    out.println("null returned for " + hmethod);
-		out.println("\t--- end INSTR FORM (no register allocation)  ---");
+		info("\t--- INSTR FORM (no register allocation)  ---");
+		if (hc!=null) {
+		    info("Codeview \""+hc.getName()+"\" for "+
+			 hc.getMethod()+":");
+		    hc.print(out);
+		} else {
+		    info("null returned for " + hmethod);
+		} 
+		info("\t--- end INSTR FORM (no register allocation)  ---");
 		out.println();
 	    }
 		
@@ -157,7 +162,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    if (LIVENESS_TEST) {
 		HCode hc = sahcf.convert(hmethod);
 		
-		out.println("\t--- INSTR FORM (basic block check)  ---");
+		info("\t--- INSTR FORM (basic block check)  ---");
 		if (hc != null) {
 		    HCodeElement root = hc.getRootElement();
 		    BasicBlock block = 
@@ -168,9 +173,9 @@ public class SAMain extends harpoon.IR.Registration {
 			(BasicBlock.basicBlockIterator(block), livevars);
 		    out.println(livevars.dump());
 		} else {
-		    out.println("null returned for " + hmethod);
+		    info("null returned for " + hmethod);
 		}
-		out.println("\t--- end INSTR FORM (basic block check)  ---");
+		info("\t--- end INSTR FORM (basic block check)  ---");
 	    }
 	    
 	    out.flush();
@@ -178,13 +183,17 @@ public class SAMain extends harpoon.IR.Registration {
 	    if (REG_ALLOC) {
 		HCode hc = sahcf.convert(hmethod);
 			
-		out.println("\t--- INSTR FORM (register allocation)  ---");
+		info("\t--- INSTR FORM (register allocation)  ---");
 		HCodeFactory regAllocCF = RegAlloc.codeFactory(sahcf, frame);
 		HCode rhc = regAllocCF.convert(hmethod);
-		if (rhc != null) rhc.print(out);
-		else 
-		    out.println("null returned for " + hmethod);
-		out.println("\t--- end INSTR FORM (register allocation)  ---");
+		if (rhc != null) {
+		    info("Codeview \""+rhc.getName()+"\" for "+
+			 rhc.getMethod()+":");
+		    rhc.print(out);
+		} else {
+		    info("null returned for " + hmethod);
+		}
+		info("\t--- end INSTR FORM (register allocation)  ---");
 		out.println();
 	    }
 
@@ -192,9 +201,9 @@ public class SAMain extends harpoon.IR.Registration {
 		final Data data = new Data(hclass, frame);
 		
 		if (PRINT_ORIG) {
-		    out.println("\t--- TREE FORM (for DATA)---");
+		    info("\t--- TREE FORM (for DATA)---");
 		    data.print(out);
-		    out.println("\t--- end TREE FORM (for DATA)---");
+		    info("\t--- end TREE FORM (for DATA)---");
 		}		
 
 		final String scope = data.getName();
@@ -228,9 +237,9 @@ public class SAMain extends harpoon.IR.Registration {
 			return instr2;
 		    }
 		};
-		out.println("\t--- INSTR FORM (for DATA)---");
+		info("\t--- INSTR FORM (for DATA)---");
 		while(iter.hasNext()) { out.println( iter.next() ); }
-		out.println("\t--- end INSTR FORM (for DATA)---");
+		info("\t--- end INSTR FORM (for DATA)---");
 		
 	    }
 
@@ -264,22 +273,22 @@ public class SAMain extends harpoon.IR.Registration {
 		}
 		break;
 	    case 'D':
-		PRINT_DATA = true;
+		OUTPUT_INFO = PRINT_DATA = true;
 		break;
 	    case 'O': 
-		PRINT_ORIG = true;
+		OUTPUT_INFO = PRINT_ORIG = true;
 		break; 
 	    case 'P':
-		PRE_REG_ALLOC = true;
+		OUTPUT_INFO = PRE_REG_ALLOC = true;
 		break;
 	    case 'R':
 		REG_ALLOC = true;
 		break;
 	    case 'L':
-		LIVENESS_TEST = true;
+		OUTPUT_INFO = LIVENESS_TEST = true;
 		break;
 	    case 'A':
-		PRE_REG_ALLOC = PRINT_ORIG = 
+		OUTPUT_INFO = PRE_REG_ALLOC = PRINT_ORIG = 
 		    REG_ALLOC = LIVENESS_TEST = true;
 		break;
 	    case 'c':
@@ -331,5 +340,9 @@ public class SAMain extends harpoon.IR.Registration {
 	out.println("-A");
 	out.println("\tSame as -OPLR");
 	
+    }
+
+    private static void info(String str) {
+	if(OUTPUT_INFO) out.println(str);
     }
 }
