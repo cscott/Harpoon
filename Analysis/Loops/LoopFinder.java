@@ -11,13 +11,9 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.HasEdges;
-import harpoon.Temp.Temp;
-import harpoon.Util.HClassUtil;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 
-
+import java.util.Set;
 import java.util.Hashtable;
 import java.util.Iterator;
 /**
@@ -39,7 +35,9 @@ public class LoopFinder implements Loops {
     /** Creates a new LoopFinder object. 
       * This call takes an HCode and returns a LoopFinder object
       * at the root level.  Only use with Objects implementing the
-      * HasEdges interface!*/
+      * HasEdges interface!
+      *<BR> <B> Requires: </B> <code> hc </code> is a <code> HCode</code> implementing
+      *        the <code> HasEdges </code> interface.*/
 
     public LoopFinder(HCode hc) {
        this.hc=hc;
@@ -47,7 +45,7 @@ public class LoopFinder implements Loops {
        this.ptr=root;    
     }
 
-    /**This call is for internal use only.
+    /**This method is for internal use only.
       *It returns a Loopfinder object at any level,
       *but it doesn't regenerate the internal tree
       *so any external calls would result in garbage.*/
@@ -61,7 +59,7 @@ public class LoopFinder implements Loops {
 
     /*-----------------------------*/
 
-    /**  This call returns the Root level loop for a given HCode.
+    /**  This method returns the Root level loop for a given <code>HCode</code>.
       *  Does the same thing as the constructor call, but for an existing
       *  LoopFinder object.*/
 
@@ -71,22 +69,23 @@ public class LoopFinder implements Loops {
       return new LoopFinder(hc,root,root);
     }
         
-    /**  This call returns the entry point of the loop.
+    /**  This method returns the entry point of the loop.
      *   For the natural loops we consider, that is simply the header. 
-     *   It returns a WorkSet of HCodeElements.*/
+     *   It returns a <code>Set</code> of <code>HCodeElements</code>.*/
 
-    public WorkSet Loopentrances() {
+    public Set Loopentrances() {
       analyze();
       WorkSet entries=new WorkSet();
       entries.push(ptr.header);
       return entries;
     }
 
-    /**  This call finds all of the backedges of the loop.
+    /**  This method finds all of the backedges of the loop.
      *   Since we combine natural loops with the same header, this
-     *   can be >1. This call returns a WorkSet of HCodeElements.*/
+     *   can be greater than one. This method returns a <code>Set</code> of
+     *   <code>HCodeElements</code>.*/
 
-    public WorkSet Loopbackedges() {
+    public Set Loopbackedges() {
       analyze();
       WorkSet A=new WorkSet();
       Iterator iterate=ptr.entries.iterator();
@@ -102,10 +101,10 @@ public class LoopFinder implements Loops {
       return A;
     }
 
-    /**  This call returns all of the exits from a loop in the form
-      *  of a WorkSet of HCodeElements.*/
+    /**  This metho returns all of the exits from a loop.
+     *   It returns them in the form <code>Set</code> of <code>HCodeElements</code>.*/
 
-    public WorkSet Loopexits() {
+    public Set Loopexits() {
       analyze();
       WorkSet A=new WorkSet();
       Iterator iterate=ptr.entries.iterator();
@@ -121,19 +120,19 @@ public class LoopFinder implements Loops {
       return A;
     }
 
-    /**Returns a WorkSet with all of the Elements of the loops and
+    /**Returns a <code>Set</code> with all of the <code>HCodeElement</code>s of the loop and
       *loops included entirely within this loop. */
 
-    public WorkSet LoopincElements() {
+    public Set LoopincElements() {
       analyze();
       WorkSet A=new WorkSet(ptr.entries);
       return A;
     }
 
-    /** Returns all of the elements of this loop that aren't in a nested
-     *  loop. This returns a WorkSet of HCodeElements.*/
+    /** Returns all of the <code>HCodeElement</code>s of this loop that aren't in a nested
+     *  loop. This returns a <code>Set</code> of <code>HCodeElement</code>s.*/
 
-    public WorkSet LoopexcElements() {
+    public Set LoopexcElements() {
       analyze();
       WorkSet A=new WorkSet(ptr.entries);
       WorkSet todo=new WorkSet();
@@ -155,9 +154,9 @@ public class LoopFinder implements Loops {
       return A;
     }
 
-    /** Returns a WorkSet of loops that are nested inside of this loop.*/
+    /** Returns a <code>Set</code> of loops that are nested inside of this loop.*/
 
-    public WorkSet NestedLoops() {
+    public Set NestedLoops() {
       analyze();
       WorkSet L=new WorkSet();
       Iterator iterate=ptr.children.iterator();
@@ -166,8 +165,7 @@ public class LoopFinder implements Loops {
       return L;
     }
 
-    /** Returns the loop that contains this loop.
-     *  Be warned:
+    /** Returns the <code>Loops</code> that contains this loop.
      *  If this is the top level loop, this call returns a null pointer.*/
 
     public Loops ParentLoop() {
@@ -183,7 +181,6 @@ public class LoopFinder implements Loops {
     /*---------------------------*/
     // Analysis code.
 
-    /** Set of analyzed methods. */
 
     /** Main analysis method. */
 
@@ -195,9 +192,7 @@ public class LoopFinder implements Loops {
          //Did the caller hand us a bogus object?
          //If so, throw it something
 
-         if (! (hc.getRootElement() instanceof HasEdges) )
-           throw new Error(hc.getName() + " does not implement HasEdges");
-         else lasthc=hc;
+         lasthc=hc;
 
          //Set up the top level loop, so we can fill it with HCodeElements
 	 //as we go along
@@ -373,9 +368,11 @@ public class LoopFinder implements Loops {
 
       //Structure for building internal trees...
 
-      public class Loop {
+      class Loop {
          public WorkSet entries=new WorkSet();
          public HCodeElement header;
+         //Elements of the WorkSet of children are
+         //of the type Loop
          public WorkSet children=new WorkSet();
          public Loop parent;
       }

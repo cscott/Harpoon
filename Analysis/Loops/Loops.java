@@ -5,33 +5,33 @@ package harpoon.Analysis.Loops;
 
 import harpoon.Util.WorkSet;
 import harpoon.ClassFile.HCode;
+import java.util.Set;
 
-/**     Loop interface defined here*/
 
 public interface Loops {
 
-        /** Returns entrances to the Loop
-         *  This is a WorkSet of HCodeElements.*/
-	public WorkSet Loopentrances();
+        /** Returns entrances to the Loop.
+         *  This is a <code>Set</code> of <code>HCodeElements</code>.*/
+	public Set Loopentrances();
 
-        /** Returns backedges in the Loop
-         *  This is a WorkSet of HCodeElements.*/
-	public WorkSet Loopbackedges();
+        /** Returns backedges in the Loop.
+         *  This is a <code>Set</code> of <code>HCodeElements</code>.*/
+	public Set Loopbackedges();
 
-        /** Returns nodes that have edges exiting the loop
-         *  This is a WorkSet of HCodeElements.*/
-	public WorkSet Loopexits();
+        /** Returns nodes that have edges exiting the loop.
+         *  This is a <code>Set</code> of <code>HCodeElements</code>.*/
+	public Set Loopexits();
 
         /** Returns elements of this loops and all nested loop.
-         *  This is a WorkSet of HCodeElements.*/
-	public WorkSet LoopincElements();
+         *  This is a <code>Set</code> of <code>HCodeElements</code>.*/
+	public Set LoopincElements();
 
         /** Returns elements of this loop not in any nested loop.
-         *  This is a WorkSet of HCodeElements.*/
-	public WorkSet LoopexcElements();
+         *  This is a <code>Set</code> of <code>HCodeElements</code>.*/
+	public Set LoopexcElements();
 
-        /** Returns a WorkSet containing Loops that are nested.*/
-	public WorkSet NestedLoops();
+        /** Returns a <code>Set</code> containing <code>Loops</code> that are nested.*/
+	public Set NestedLoops();
 
         /** Returns the loop immediately nesting this loop.
          *  If this is the highest level loop, returns a null pointer.*/
