@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.46 2002-08-01 17:31:06 cananian Exp $
+% $Id: ptran.tex,v 1.47 2002-08-01 17:35:32 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.46 $ $}
+\date{\today \\ $ $Revision: 1.47 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -678,9 +678,11 @@ Rules for $\mu$ and
    r_M = r % is this right?  *equals*?
 \]
 \[\dfrac
-{\tuple{\tuple{n_1,f},n2}\in I_R}
-{\left(\mu(n_1)\times\{f\}\right)\times\mu(n_2)\subseteq I_M}
+{\tuple{\tuple{n_1,f},n2}\in I_R, n_3\in\mu(n_1),n_4\in\mu(n_2)}
+{\tuple{\tuple{n_3,f},n_4}\in I_M}
 \]
+\textbf{XXX: NEED TO UPDATE $c_\text{from}$ and $c_\text{to}$ in the
+  rule above.}
 \[\dfrac
 {\tuple{\tuple{n_1,f},n_2}\in I_R,
   n\in\mu(n_1),
