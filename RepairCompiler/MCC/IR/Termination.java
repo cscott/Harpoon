@@ -78,14 +78,12 @@ public class Termination {
 		if (ConcreteInterferes.interferes(mun,r,true)) {
 		    GraphNode scopenode=(GraphNode)scopesatisfy.get(r);
 		    GraphNode.Edge e=new GraphNode.Edge("interferes",scopenode);
-		    GraphNode gnconseq=(GraphNode)consequence.get(sn);
-		    gnconseq.addEdge(e);
+		    gn.addEdge(e);
 		}
 		if (ConcreteInterferes.interferes(mun,r,false)) {
 		    GraphNode scopenode=(GraphNode)scopefalsify.get(r);
 		    GraphNode.Edge e=new GraphNode.Edge("interferes",scopenode);
-		    GraphNode gnconseq=(GraphNode)consequence.get(sn);
-		    gnconseq.addEdge(e);
+		    gn.addEdge(e);
 		}
 	    }
 	}

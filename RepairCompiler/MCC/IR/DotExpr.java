@@ -28,9 +28,9 @@ public class DotExpr extends Expr {
         this.left = left;
         this.field = field;
         this.index = index;
-
+        StructureTypeDescriptor struct = (StructureTypeDescriptor) left.getType();        
         FieldDescriptor fd = struct.getField(field);
-        LabelDescriptor ld = struct.getLabel(field);        
+        LabelDescriptor ld = struct.getLabel(field);
        if (ld != null) { /* label */
             assert fd == null;
             fieldtype = ld.getType(); // d.s ==> Superblock, while,  d.b ==> Block

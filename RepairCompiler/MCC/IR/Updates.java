@@ -42,7 +42,7 @@ class Updates {
 	    return ((VarExpr)leftexpr).getVar();
 	} else if (isField()) {
 	    return ((DotExpr)leftexpr).getField();
-	} else throw New Error("Unrecognized Update");
+	} else throw new Error("Unrecognized Update");
     }
 
     boolean isField() {
