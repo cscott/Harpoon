@@ -240,9 +240,8 @@ class ServerSocket {
 	//System.out.println("Calling canAccept...");
 	if (NativeIO.canAcceptJNI(impl.fd.fd)) {
 	    //System.out.println("Calling accept 1... ");
-	    ObjectContinuation.result= accept(); 
+	    return new ObjectContinuationOpt(accept()); 
 	    //System.out.println("Accept done.");
-	    return null;
 	}
 	//System.out.println("doing continuations");
 	return new acceptAsyncC();

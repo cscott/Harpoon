@@ -65,8 +65,7 @@ public abstract class InputStream {
     public IntContinuation _readAsync() throws IOException
     // default version: blocks
     {
-	IntContinuation.result= read();
-	return null;
+	return new IntContinuationOpt(read());
     }
 
     // pesimistic versions are guarranteed not to return null;
@@ -228,16 +227,14 @@ public abstract class InputStream {
 		   ((off + len) > b.length) || ((off + len) < 0)) {
 	    throw new IndexOutOfBoundsException();
 	} else if (len == 0) {
-	    IntContinuation.result= 0;
-	    return null;
+	    return new IntContinuationOpt(0);
 	}
 	  	
 
 	IntContinuation c = readAsync();
-	if (c == null) {
-	    b[off]= (byte) IntContinuation.result;
-	    IntContinuation.result= 1;
-	    return null;
+	if (!c.done) {
+	    b[off]= (byte) c.result;
+	    return new IntContinuationOpt(1);
 	}
 		
 	// I don't need the length     :)
@@ -325,19 +322,18 @@ public abstract class InputStream {
 	    skipBuffer = new byte[SKIP_BUFFER_SIZE];
 		
 	if (n <= 0) {
-	    LongContinuation.result= 0;
-	    return null;
+	    return new LongContinuationOpt(0);
 	}
 
 	while (remaining > 0) {
 	    IntContinuation c= readAsync(skipBuffer, 0, (int) Math.min(SKIP_BUFFER_SIZE, remaining));
-	    if (c!=null)
+	    if (!c.done)
 		{
 		    skipAsyncC thisC= new skipAsyncC(n, remaining);
 		    c.setNext(thisC);
 		    return thisC;
 		}
-	    else nr= IntContinuation.result;
+	    else nr= c.result;
 	    if (nr < 0) {
 		break;
 	    }
@@ -345,8 +341,7 @@ public abstract class InputStream {
 	}
 	
 	// got away with no contns.
-	LongContinuation.result= (int) (n - remaining);    	
-	return null;
+	return new LongContinuationOpt((int) (n - remaining));    	
     }
     
     // note: the current instance of InputStream is implicitly stored by java.
@@ -374,12 +369,12 @@ public abstract class InputStream {
      		
      		while (remaining>0) {
 		    IntContinuation c= readAsync(skipBuffer, 0, (int) Math.min(SKIP_BUFFER_SIZE, remaining));
-		    if (c!=null)
+		    if (!c.done)
 			{
 			    c.setNext(this);
 			    return;
 			}
-		    else nr= IntContinuation.result;
+		    else nr= c.result;
 	    		
 		    if (nr < 0) {
 			break;

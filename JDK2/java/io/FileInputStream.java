@@ -159,9 +159,9 @@ class FileInputStream extends InputStream
 	switch(b)
 	    {
 	    case NativeIO.ERROR: throw new IOException();
-	    case NativeIO.EOF: IntContinuation.result= -1; return null;
+	    case NativeIO.EOF: return new IntContinuationOpt(-1);
 	    case NativeIO.TRYAGAIN: return new readAsyncC();
-	    default: IntContinuation.result= b; return null;
+	    default: return new IntContinuationOpt( b);
 	    }
     }
 
@@ -243,17 +243,16 @@ class FileInputStream extends InputStream
 		   		((ofs + len) > b.length) || ((ofs + len) < 0)) {
 	    				throw new IndexOutOfBoundsException();
 		} else if (len == 0) {
-		    IntContinuation.result= 0;
-	    		return null;
+		    return new IntContinuationOpt(0);
 		}
 		
     		int n= NativeIO.readJNI(fd.fd, b, ofs, len);
     		switch(n)
     		{
     			case NativeIO.ERROR: throw new IOException();
-    			case NativeIO.EOF: IntContinuation.result= -1; return null;
+    			case NativeIO.EOF: return new IntContinuationOpt(-1);
     			case NativeIO.TRYAGAIN: return new readAsync2C(b, ofs, len);
-    			default: IntContinuation.result= n; return null;
+    			default: return new IntContinuationOpt(n);
     		}
     }
     // Reuses the continuation passed to it if it's not null
@@ -262,24 +261,23 @@ class FileInputStream extends InputStream
 		if (b == null) {
 	    		throw new NullPointerException();
 		} else if ((ofs < 0) || (ofs > b.length) || (len < 0) ||
-		   		((ofs + len) > b.length) || ((ofs + len) < 0)) {
-	    				throw new IndexOutOfBoundsException();
+			   ((ofs + len) > b.length) || ((ofs + len) < 0)) {
+		    throw new IndexOutOfBoundsException();
 		} else if (len == 0) {
-		    IntContinuation.result= 0;
-	    		return null;
+		    return new IntContinuationOpt(0);
 		}
 		
     		int n= NativeIO.readJNI(fd.fd, b, ofs, len);
     		switch(n)
     		{
     			case NativeIO.ERROR: throw new IOException();
-    			case NativeIO.EOF: IntContinuation.result= -1; return null;
+    			case NativeIO.EOF: return new IntContinuationOpt(-1);
     			case NativeIO.TRYAGAIN:
 			    if (prev!=null) {
 				((readAsync2C) prev) .init (b, ofs, len);
 				return prev;
 			    } else return new readAsync2C(b, ofs, len);
-    			default: IntContinuation.result= n; return null;
+    			default: return new IntContinuationOpt(n);
     		}
     }
 
