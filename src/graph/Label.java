@@ -144,8 +144,10 @@ public class Label extends Node {
      *
      *  @param id The image to label.
      */
-    public synchronized void process(ImageData id) {
+    //public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	byte num=127;
+	//System.out.println("inside label");
 	for (int pos=0; pos<id.gvals.length; pos++) {
 	    if ((id.bvals[pos]==0)&&(id.gvals[pos]==127)) {
 		//x1, x2 range from 0 to width
@@ -184,6 +186,7 @@ public class Label extends Node {
 		    if (right!=null) {
 			ImageData newImage = ImageDataManip.crop(id, x1, y1, x2-x1+1, y2-y1+1);
 			newImage.labelID = num;
+			//System.out.println("label: calling right");
 			right.process(newImage);
 		    }
 		    if ((--num)==0) {
@@ -205,6 +208,7 @@ public class Label extends Node {
 	//System.out.println("found "+(127-num)+" objects");
 	Node left = getLeft();
 	if (left!=null) {
+	    //System.out.println("label: calling left");
 	    left.process(id);
 	}
     }
