@@ -12,7 +12,9 @@ public class Inheritance extends NoHeapRealtimeThread {
     }
 
     public void run() {
-	obj.f = vt.newInstance(Object.class);
+	try { 
+	    obj.f = vt.newInstance(Object.class);
+	} catch (Exception e) {}
     }
 
     public static void main(String args[]) {
