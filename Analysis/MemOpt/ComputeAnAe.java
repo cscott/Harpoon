@@ -23,8 +23,7 @@ import harpoon.Util.Constraints.ConstraintSolver;
 import harpoon.Util.Constraints.Var;
 //import harpoon.Util.Constraints.Unfeasible;
 import harpoon.Util.Graphs.Navigator;
-import harpoon.Util.Graphs.Reachability;
-//import harpoon.Util.Graphs.Reachability.Action;
+import harpoon.Util.Graphs.DiGraph;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 import harpoon.Util.Collections.WorkSet;
@@ -40,10 +39,11 @@ import harpoon.IR.Quads.ANEW;
 import harpoon.IR.Quads.FOOTER;
 
 /**
- * <code>ComputeAnAe</code>
+ * <code>ComputeAnAe</code> is an example of using the set constraint solver.
+ * Otherwise, it is unnececessary and it will be removed at some point).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ComputeAnAe.java,v 1.4 2002-04-11 18:53:45 salcianu Exp $
+ * @version $Id: ComputeAnAe.java,v 1.5 2003-05-12 23:56:23 salcianu Exp $
  */
 public class ComputeAnAe {
     
