@@ -1,0 +1,405 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<!-- SCCS @(#)launch.html	1.10 00/11/29 -->
+<HTML>
+<HEAD>
+     <TITLE>Starting CVM</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000FF" VLINK="#000077" ALINK="#FF0000">
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR>
+<TD>
+&nbsp;
+<br>
+<font size=-1> 
+<a href="index.html">Contents</a> | <a href="build.html">Prev</a> | <a href="porting.html">Next</a>
+</font></TD>
+
+<TD align="right">
+J2ME CDC 1.0
+<br>Porting Guide
+</TD>
+</TR>
+</TABLE>
+
+<HR SIZE=2 NOSHADE>
+
+<!-- ====================== Body text begins here ====================== -->
+<h1>Starting CVM</h1>
+<h2>Contents</h2>
+<a href="#InvokingCVM">Invoking CVM</a>
+<br>
+<a href="#TimeDate">Time/Date Operations</a>
+<br>
+<a href="#RunTimeOptions">Runtime Options</a>
+
+<hr>
+<a name=InvokingCVM></a>
+<h2>Invoking CVM</h2>
+<blockquote>
+    <p>The method of starting CVM depends on the target platform environment
+    which it is run on.  The following are examples which outline several
+    commonly used methods of starting CVM on the various target platforms.
+    The examples demonstrate the execution of a <code>HelloWorld</code> Java
+    class located in the <code>testclasses.zip</code> which is built in the
+    CVM/CDC build process.
+
+    <p>The examples assumes that you have already built the CVM executable. 
+		If not, see 
+    <a href="build.html">Building CVM and CDC/Foundation</a> for details on building the
+    CVM executable.
+</blockquote>
+    <ol>
+        <!-- Example 1: Invoking CVM on Linux from a shell command line -->
+        <h3><li>Invoking CVM on Linux from a shell command line</h3>
+        For Linux, CVM is an executable located in the <code>build/linux/bin</code>
+        relative to the top directory where you unzipped the CDC
+        distribution. To start CVM, type in the following at the command
+        prompt:
+<pre>
+> cd <i>topdir</i>/build/linux/bin
+> cvm -Djava.class.path=../testclasses HelloWorld
+</pre>
+
+        <!-- Example 2: Invoking CVM on VxWorks from C code -->
+        <h3><li>Invoking CVM on VxWorks from C code</h3>
+
+        For VxWorks, the entry point to CVM is either the <code>runJava</code>
+        function or the <code>runJavaArgs</code> function.
+        <a name="VxWorksrunJava"></a>The <code>runJava</code> function takes a
+        single string as an argument as follows:
+<pre>
+int runJava(const char *options);
+</pre>
+        <code>options</code> is a string which consist of <a href="#RuntimeOptions">
+        CVM runtime options</a> delimited by blank spaces followed by the name of the
+        main Java class to be executed.  For example, 
+<pre>
+void yourFunction(void) {
+    extern int runJava(const char *options);
+    runJava("-Djava.class.path=../testclasses HelloWorld");
+}
+</pre>
+        <a name="VxWorksrunJavaArgs"></a>
+        <p>The <code>runJavaArgs</code> function takes up to ten individual
+        string arguments as follows:
+<pre>
+int runJavaArgs(const char *a0, const char *a1, const char *a2, const char *a3,
+                const char *a4, const char *a5, const char *a6, const char *a7,
+                const char *a8, const char *a9);
+</pre>
+        Each of the string is to hold a single <a href="#RuntimeOptions">CVM runtime
+        option</a> and one main Java class to be executed.  Unused arguments can be
+        passed NULL strings.  For example,
+<pre>
+#undef NULL
+#define NULL ((void *)0)
+void yourFunction(void) {
+    extern int runJavaArgs(const char *a0, const char *a1,
+                const char *a2, const char *a3, const char *a4, const char *a5,
+                const char *a6, const char *a7, const char *a8, const char *a9);
+
+    runJavaArgs("-Djava.class.path=../testclasses", "HelloWorld",
+                NULL, NULL, NULL,
+                NULL, NULL, NULL, NULL, NULL);
+}
+</pre>
+
+        <a name="runJavaDiff"></a>
+        <p><b>Note: </b>The two functions behave identically, with the
+        following exception:
+        the string arguments of the <code>runJavaArgs</code> function can
+        contain blank spaces which are not construed as delimiters between
+        <a href="#RuntimeOptions">CVM runtime options</a>, but all blank spaces
+        in the string argument of the <code>runJava</code> function will be
+        construed as delimiters between CVM runtime options.  Hence, when
+        starting CVM using the <code>runJavaArgs</code> function, a CVM runtime
+        option may contain blank spaces.  This is not true for the
+        <code>runJava</code> function.
+
+        <a name="VxWorksVMlimitation"></a>
+        <p><b>Note: </b>On VxWorks, starting a second virtual machine instance
+        while another is already running is not currently supported. Instead,
+        to run multiple Java applications on the same VM instance, use a
+        wrapper main Java program to invoke each of the Java applications.
+
+        <!-- Example 3: Invoking CVM on VxWorks from a shell command line -->
+        <h3><li>Invoking CVM on VxWorks from a shell command line</h3>
+
+        From a VxWorks shell command prompt, CVM can be started using the
+        <a href="#VxWorksrunJava"><code>runJava</code></a> function as follows:
+<pre>
+-> runJava "-Djava.class.path=../testclasses HelloWorld"
+</pre>
+        From a VxWorks shell command prompt, CVM can also be started using the
+        <a href="#VxWorksrunJavaArgs"><code>runJavaArgs</code></a> function with
+        up to ten individual string arguments as follows:
+<pre>
+-> runJava "-Djava.class.path=../testclasses","HelloWorld"
+</pre>
+        See notes above on <a href="#runJavaDiff">the difference between
+        <code>runJava</code> and <code>runJavaArgs</code></a> and
+        <a href="#VxWorksVMlimitation">the limitation on the number of CVM
+        instances</a> running on VxWorks at the same time.
+
+    </ol>
+</blockquote>
+<hr>
+<a name=TimeDate></a>
+<h2>Time/Date Operations</h2>
+<blockquote>
+For the CVM to perform time/date oriented operations on VxWorks, the internal 
+time-of-day clock of VxWorks must be set to the correct time in GMT. 
+The CVM can then be told which time zone it is operating in via the 
+<tt>user.timezone</tt> property. Refer to the target's Board Support Package 
+documentation and the timeLib module of VxWorks for ways to set the OS 
+time-of-day clock.
+</blockquote>
+
+
+<hr>
+<a name=RunTimeOptions></a>
+<h2>Runtime Options</h2>
+<blockquote>
+    The following are CVM runtime options that can be specified at the point
+    where CVM is started:
+
+<dl>
+<dt><b>-D</b><i>property=value</i>
+    <dd>Set a system property value.
+
+<p><dt><b>-fullversion</b>
+    <dd>Display build version information, then exit.
+
+<p><dt><b>-showversion</b>
+    <dd>Display product version information and continue.
+
+<p><dt><b>-version</b>
+    <dd>Display product version information, then exit.
+
+<p><dt><b>-Xbootclasspath=</b><i>bootclasspath</i>
+    <dd>Specify a colon-separated (Linux) or semicolon-separated (VxWorks) list of directories, JAR
+        archives, and ZIP archives to search for boot class files.
+        These are used in place of the boot class files included in the CDC. 
+				If CVM is started from the <tt>bin</tt> directory that contains the CVM 
+				executable, the default <tt>bootclasspath</tt> is the <tt>../lib</tt> 
+				directory.
+
+<p><dt><b>-Xbootclasspath/a=</b></b><i>path</i>
+    <dd>Specify a colon-separated (Linux) or semicolon-separated (VxWorks) path of directories, JAR 
+        archives, and ZIP archives to append to the default boot 
+        class path.
+
+<p><dt><b>-Xbootclasspath/p=</b></b><i>path</i>
+    <dd>Specify a colon-separated (Linux) or semicolon-separated (VxWorks) path of directories, JAR 
+        archives, and ZIP archives to prepend in front of the default 
+        boot class path.
+
+<p><dt><b>-Xdebug</b>
+    <dd>Enables debugging support in the VM.  Refer to 
+        <a href="http://java.sun.com/j2se/1.3/docs/tooldocs/win32/jdb.html#description">
+        jdb description</a> for more details and an example.
+    <br><b>Note:</b> This runtime option is only supported if CVM was built
+    with the <code>CVM_JVMDI=true</code> option.
+
+<p><dt><b>-Xgc:</b><i>gc_specific_options</i>
+    <dd>Specifies garbage collector (GC) specific options.  For the default
+    generational garbage collector that is bundled with CVM, the GC specific
+    option is
+    <tt>youngGen=<em>nnn</em></tt> to specify the size of the young object
+    generation, in bytes.
+    Append the 
+    letter <tt>k</tt> or <tt>K</tt> to indicate kilobytes, or <tt>m</tt> 
+    or <tt>M</tt> to indicate megabytes. The default value is 1M.  
+    <br><b>Note:</b> If a licensee implements a custom garbage collector, the
+    accepted GC specific options will depend on that custom implementation.
+
+<p><dt><b>-Xms</b><i>size</i>
+    <dd>Specify the size, in bytes, of the memory allocation pool. 
+        (This value may be rounded up by the GC implementation). Append the 
+        letter <tt>k</tt> or <tt>K</tt> to indicate kilobytes, or <tt>m</tt> 
+        or <tt>M</tt> to indicate megabytes. The default value is 4M.  
+       Examples: 
+<blockquote>
+<pre>
+-Xms6291456
+-Xms6144k
+-Xms6m
+</pre>
+</blockquote>
+
+<p><dt><b>-Xrun</b><i>lib</i>
+    <dd>Load a dynamic library.
+
+<p><dt><b>-XsafeExit</b>
+    <dd>Make sure all resources are freed and the VM destroyed upon exit.
+    This is the default for non-process-model operating systems, such as
+    VxWorks, but is not usually done for process-model operating systems,
+    such as Linux.
+
+<p><dt><b>-Xss</b><i>size</i>
+    <dd>Set thread stack size in bytes. As for the -Xms option, the value
+    can use the letters <tt>k</tt>, <tt>K</tt>, <tt>m</tt>, or <tt>M</tt> 
+    to indicate kilobytes or megabytes.
+
+<p><dt><b>-Xtrace:</b><i>value</i>
+    <dd>Turn on trace flags. The following list shows the hexadecimal values to 
+    turn on each trace flag.  To turn on multiple flags, bitwise-OR the values 
+    of all the flags you wish to turn on, and provide that result as the 
+    <tt>-Xtrace</tt> value.
+    <br><b>Note:</b> This runtime option is only supported if CVM was built
+    with the <code>CVM_DEBUG=true</code> option.
+
+    <p>
+        <table cellspacing=5>
+        <tr>
+        <td><b>Value</b></td>
+        <td><b>What Is Traced</b></td>
+        </tr>
+        <tr>
+        <td valign=top>0x00000001
+        <td>Opcode execution
+        </tr>
+        <tr>
+        <td valign=top>0x00000002
+        <td>Method execution
+        </tr>
+        <tr>
+        <td valign=top>0x00000004
+        <td>Internal state of the interpreter loop on method calls and returns
+        </tr>
+        <tr>
+        <td valign=top>0x00000008
+        <td>Fast common-case path of Java synchronization
+        </tr>
+        <tr>
+        <td valign=top>0x00000010
+        <td>Slow rare-case path of Java synchronization
+        </tr>
+        <tr>
+        <td valign=top>0x00000020
+        <td>Mutex locking and unlocking operations
+        </tr>
+        <tr>
+        <td valign=top>0x00000040
+        <td>Consistent state transitions. Garbage Collection (GC)-safety state 
+            only.
+        </tr>
+        <tr>
+        <td valign=top>0x00000080
+        <td>GC start and stop notifications
+        </tr>
+        <tr>
+        <td valign=top>0x00000100
+        <td>GC root scans
+        </tr>
+        <tr>
+        <td valign=top>0x00000200
+        <td>GC heap object scans
+        </tr>
+        <tr>
+        <td valign=top>0x00000400
+        <td>GC object allocation
+        </tr>
+        <tr>
+        <td valign=top>0x00000800
+        <td>GC algorithm internals
+        </tr>
+        <tr>
+        <td valign=top>0x00001000
+        <td>Transitions between GC-safe and GC-unsafe states
+        </tr>
+        <tr>
+        <td valign=top>0x00002000
+        <td>Class static initializers
+        </tr>
+        <tr>
+        <td valign=top>0x00004000
+        <td>Java exception handling
+        </tr>
+        <tr>
+        <td valign=top>0x00008000
+        <td>Heap initialization and destruction, global state initialization, 
+        and the safe exit feature
+        </tr>
+        <tr>
+        <td valign=top>0x00010000
+        <td>Read and write barriers for GC
+        </tr>
+        <tr>
+        <td valign=top>0x00020000
+        <td>Generation of GC maps for Java stacks
+        </tr>
+        <tr>
+        <td valign=top>0x00040000
+        <td>Class loading
+        </tr>
+        <tr>
+        <td valign=top>0x00080000
+        <td>Class lookup in VM-internal tables
+        </tr>
+        <tr>
+        <td valign=top>0x00100000
+        <td>Type system operations
+        </tr>
+        <tr>
+        <td valign=top>0x00200000
+        <td>Java code verifier operations
+        </tr>
+        <tr>
+        <td valign=top>0x00400000
+        <td>Weak reference handling
+        </tr>
+        <tr>
+        <td valign=top>0x00800000
+        <td>Class unloading
+        </tr>
+        <tr>
+        <td valign=top>0x01000000
+        <td>Class linking
+        </tr>
+        </table>
+
+<p><dt><b>-Xverify:</b>[all | remote | none]
+    <dd>Verify classes according to the suboption. <tt>-Xverify:all</tt> verifies 
+    all classes. <tt>-Xverify:remote</tt> verifies remote classes only. 
+    <tt>-Xverify:none</tt> turns off class verification.
+
+</dl>
+</blockquote>
+
+<!-- Body text ends here -->
+<!-- ============================================================== -->
+<HR size="2" noshade>
+<font size=-1> 
+<a href="index.html">Contents</a> | <a href="build.html">Prev</a> | <a href="porting.html">Next</a>
+</font>
+<HR SIZE=2 NOSHADE>
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR VALIGN=TOP>
+
+<TD>
+<FONT SIZE="-2">
+   <A HREF="../legal/SMICopyright.html">Copyright</A> &#169; 2000
+   <A HREF="http://www.sun.com/">Sun Microsystems, Inc.</A>
+    All Rights Reserved.</FONT>
+   <br>
+   <br>
+
+   <FONT SIZE="-1">
+   Please send comments to: <a href="mailto:jcp-cdc-comments@eng.sun.com">jcp-cdc-comments@eng.sun.com</a> 
+   </FONT>
+</TD>
+
+<TD ALIGN=RIGHT>
+   <IMG SRC="../images/sunlogo64x30.gif" ALT="Sun" BORDER=0 WIDTH=64 HEIGHT=30>
+</TD>
+
+</TR>
+</TABLE>
+
+</BODY>
+</HTML>
+

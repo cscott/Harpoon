@@ -1,0 +1,262 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<!-- SCCS @(#)datatypes.html	1.4 00/11/22 -->
+<HTML>
+<HEAD>
+<TITLE>CVM Data Types</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000077" ALINK="#ff0000">
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR>
+<TD>
+&nbsp;
+<br>
+<font size=-1> 
+<A href="index.html">Contents</A> | <A href="porting.html">Prev</A> | <A href="gc.html">Next</A>
+</font></TD>
+
+<TD align="right">
+J2ME CDC 1.0 Beta
+<br>Porting Guide
+</TD>
+</TR>
+</TABLE>
+<HR size="2" noshade>
+<!-- ====================== Body text begins here ====================== -->
+<h1>Data Types</h1>
+<blockquote>
+<p>
+This chapter describes the system data types used by the porting system.
+</p>
+<p><b>Note:</b> The basic data types and VM basic data types are described in 
+the HPI Reference chapter.
+</p>
+
+<ul>
+<li>The <a href="hpiref.html#defs">defs.h</a> section describes the data types 
+defined by the platform.
+<li>The <a href="hpiref.html#vm-defs">vm-defs.h</a> section describes data 
+types that are exported to the porting layer.
+</ul>
+
+
+<h4>Basic Type Definitions</h4>
+<pre>
+typedef char      CVMUtf8;
+#define CVMoffsetof(T, f)    (CVMUint32)(&(((T *)0)->f))
+</pre>
+<h4>Object Format</h4>
+<pre>
+CVM_STRUCT_TYPEDEF(CVMObjectHeader);
+CVM_UNION_TYPEDEF (CVMVariousBits);
+CVM_UNION_TYPEDEF (CVMJavaVal8);
+CVM_UNION_TYPEDEF (CVMJavaVal16);
+CVM_UNION_TYPEDEF (CVMJavaVal32);
+CVM_UNION_TYPEDEF (CVMJavaVal64);
+CVM_STRUCT_TYPEDEF(CVMjava_lang_Object);
+CVM_STRUCT_TYPEDEF(CVMSyncVector);
+
+typedef CVMjava_lang_Object CVMObject;  /* Short-hand for CVMjava_lang_Object */
+</pre>
+<h4>Array Types</h4>
+<pre>
+CVM_STRUCT_TYPEDEF(CVMArrayOfByte);	/* CVMArrayOfByte    */
+CVM_STRUCT_TYPEDEF(CVMArrayOfShort);	/* CVMArrayOfShort   */
+CVM_STRUCT_TYPEDEF(CVMArrayOfChar);	/* CVMArrayOfChar    */
+CVM_STRUCT_TYPEDEF(CVMArrayOfBoolean);	/* CVMArrayOfBoolean */
+CVM_STRUCT_TYPEDEF(CVMArrayOfInt);	/* CVMArrayOfInt     */
+CVM_STRUCT_TYPEDEF(CVMArrayOfRef);	/* CVMArrayOfRef     */
+CVM_STRUCT_TYPEDEF(CVMArrayOfFloat);	/* CVMArrayOfFloat   */
+CVM_STRUCT_TYPEDEF(CVMArrayOfLong);	/* CVMArrayOfLong    */
+CVM_STRUCT_TYPEDEF(CVMArrayOfDouble);	/* CVMArrayOfDouble  */
+CVM_STRUCT_TYPEDEF(CVMArrayOfAnyType);	/* CVMArrayOfAnyType */
+
+<h4>ICell Types</h4>       
+<pre>
+CVM_STRUCT_TYPEDEF(CVMjava_lang_ObjectICell);	/* CVMjava_lang_ObjectICell */
+CVM_STRUCT_TYPEDEF(CVMObjectICell);		/* ObjectICell         */
+
+CVM_STRUCT_TYPEDEF(CVMArrayOfByteICell);	/* CVMArrayOfByteICell    */
+CVM_STRUCT_TYPEDEF(CVMArrayOfShortICell);	/* CVMArrayOfShortICell   */
+CVM_STRUCT_TYPEDEF(CVMArrayOfCharICell);	/* CVMArrayOfCharICell    */
+CVM_STRUCT_TYPEDEF(CVMArrayOfBooleanICell);	/* CVMArrayOfBooleanICell */
+CVM_STRUCT_TYPEDEF(CVMArrayOfIntICell);		/* CVMArrayOfIntICell     */
+CVM_STRUCT_TYPEDEF(CVMArrayOfRefICell);		/* CVMArrayOfRefICell     */
+CVM_STRUCT_TYPEDEF(CVMArrayOfFloatICell);	/* CVMArrayOfFloatICell   */
+CVM_STRUCT_TYPEDEF(CVMArrayOfLongICell);	/* CVMArrayOfLongICell    */
+CVM_STRUCT_TYPEDEF(CVMArrayOfDoubleICell);	/* CVMArrayOfDoubleICell  */
+CVM_STRUCT_TYPEDEF(CVMArrayOfAnyTypeICell);	/* CVMArrayOfAnyTypeICell */
+
+<h4>Class Data Structures</h4>
+<pre>
+CVM_STRUCT_TYPEDEF(CVMClassBlock);
+CVM_UNION_TYPEDEF (CVMGCBitMap);
+CVM_STRUCT_TYPEDEF(CVMBigGCBitMap);
+CVM_STRUCT_TYPEDEF(CVMArrayInfo);
+CVM_STRUCT_TYPEDEF(CVMInterfaces);
+CVM_STRUCT_TYPEDEF(CVMInterfaceTable);
+CVM_STRUCT_TYPEDEF(CVMMethodBlock);
+CVM_STRUCT_TYPEDEF(CVMMethodRange);
+CVM_STRUCT_TYPEDEF(CVMMethodArray);
+CVM_STRUCT_TYPEDEF(CVMCheckedExceptions);
+CVM_STRUCT_TYPEDEF(CVMJavaMethodDescriptor);
+CVM_STRUCT_TYPEDEF(CVMExceptionHandler);
+CVM_STRUCT_TYPEDEF(CVMLineNumberEntry);
+CVM_STRUCT_TYPEDEF(CVMLocalVariableEntry);
+CVM_STRUCT_TYPEDEF(CVMFieldBlock);
+CVM_STRUCT_TYPEDEF(CVMFieldRange);
+CVM_STRUCT_TYPEDEF(CVMFieldArray);
+CVM_STRUCT_TYPEDEF(CVMInnerClassInfo);
+CVM_STRUCT_TYPEDEF(CVMInnerClassesInfo);
+CVM_UNION_TYPEDEF(CVMConstantPool);
+CVM_STRUCT_TYPEDEF(CVMTransitionConstantPool);
+CVM_UNION_TYPEDEF (CVMConstantPoolEntry);
+CVM_STRUCT_TYPEDEF (CVMStackMapEntry);
+CVM_STRUCT_TYPEDEF(CVMStackMaps);
+
+<h4>VM Classes</h4>
+<pre>
+typedef CVMObjectICell CVMThreadICell;		/* java.lang.Thread */
+typedef CVMObjectICell CVMThrowableICell;	/* java.lang.Throwable */
+typedef CVMObjectICell CVMStringICell;		/* java.lang.String */
+typedef CVMObjectICell CVMClassICell;		/* java.lang.Class */
+typedef CVMObjectICell CVMClassLoaderICell;	/* java.lang.ClassLoader */
+
+<h4>Interpreter Data Structures</h4>
+<pre>
+CVM_STRUCT_TYPEDEF(CVMExecEnv);
+
+<h4>Synchronization-related Types</h4>
+<pre>
+typedef CVMBool CVMTryLockFunc(CVMExecEnv* ee, CVMObject* obj);
+typedef CVMBool CVMLockFunc (CVMExecEnv* ee, CVMObjectICell* indirectObj);
+typedef CVMBool CVMNotifyFunc (CVMExecEnv* ee, CVMObjectICell* indirectObj);
+typedef CVMBool CVMNotifyAllFunc (CVMExecEnv* ee, CVMObjectICell* indirectObj);
+typedef CVMBool CVMWaitFunc (CVMExecEnv* ee, CVMObjectICell* indirectObj, CVMJavaLong     millis);
+
+CVM_STRUCT_TYPEDEF(CVMReentrantMutex);
+CVM_STRUCT_TYPEDEF(CVMSysMutex);
+CVM_STRUCT_TYPEDEF(CVMSysMonitor);
+CVM_STRUCT_TYPEDEF(CVMNamedSysMonitor);
+CVM_STRUCT_TYPEDEF(CVMObjMonitor);
+CVM_STRUCT_TYPEDEF(CVMOwnedMonitor);
+
+<h4>Consistent States Types</h4>
+<pre>
+CVM_STRUCT_TYPEDEF(CVMCState);
+CVM_STRUCT_TYPEDEF(CVMTCState);
+
+<h4>Class Loading Data Structures</h4>
+<pre>
+CVM_STRUCT_TYPEDEF(CVMLoaderCacheEntry);
+#ifdef CVM_CLASSLOADING
+CVM_STRUCT_TYPEDEF(CVMLoaderConstraint);
+CVM_STRUCT_TYPEDEF(CVMSeenClass);
+CVM_STRUCT_TYPEDEF(CVMClassPathEntry);
+#endif
+
+<h4>Stack Data Structures</h4>
+<pre>
+CVM_UNION_TYPEDEF (CVMStackVal32);
+CVM_STRUCT_TYPEDEF(CVMStack);
+CVM_STRUCT_TYPEDEF(CVMStackChunk);
+CVM_STRUCT_TYPEDEF(CVMFrame);
+CVM_STRUCT_TYPEDEF(CVMLocalRootsFrame);
+CVM_STRUCT_TYPEDEF(CVMFreelistFrame);
+CVM_STRUCT_TYPEDEF(CVMInterpreterFrame);
+CVM_STRUCT_TYPEDEF(CVMJavaFrame);
+CVM_STRUCT_TYPEDEF(CVMTransitionFrame);
+CVM_STRUCT_TYPEDEF(CVMStackWalkContext);
+
+<h4>VM Global State</h4>
+<pre>
+CVM_STRUCT_TYPEDEF(CVMGlobalState);
+CVM_STRUCT_TYPEDEF(CVMGCGlobalState);
+
+<h4>VM Initialization Options</h4>
+<pre>
+CVM_STRUCT_TYPEDEF(CVMOptions);
+
+<h4>GC-related Types</h4>
+<pre>
+CVM_STRUCT_TYPEDEF(CVMGCOptions);
+</pre>
+<h4>Callbacks</h4>
+
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Function</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+  <td valign=top><tt>typedef void (*CVMRefCallbackFun) (CVMObject **refAddr, void* data);</tt>
+  </td>
+  <td valign=top>A 'ref callback' called on each discovered root.
+  </td>
+</tr>
+<tr>
+  <td valign=top><tt>typedef CVMBool (*CVMRefLivenessQueryFunc)(CVMObject **refAddr, void* data);</tt>
+  </td>
+  <td valign=top>A predicate to test livenessof a given reference. 
+  </td>
+</tr>
+<tr>
+  <td valign=top><tt>typedef void (*CVMObjectCallbackFunc)(CVMObject *obj, CVMClassBlock *cb, CVMUint32 objSize, void *data);</tt>
+  </td>
+  <td valign=top>A per-object callback function, to be called during heap dumps.
+  </td>
+</tr>
+<tr>
+  <td valign=top><tt>typedef void CVMFrameGCScannerFunc(CVMExecEnv* ee, CVMFrame *thisFrame, CVMStackChunk* thisChunk, CVMRefCallbackFunc refCallback, void *data, CVMGCOptions *gcOpts);</tt>
+  </td>
+  <td valign=top>An object to scan all GC references in a frame. 
+	Each frame carries a pointer to one of these.
+  </td>
+</tr>
+</table>
+
+
+
+
+<h4>JNI Types</h4>
+<pre>
+struct JNINativeInterface;
+
+typedef const struct JNINativeInterface * JNIEnv;
+</pre>
+</blockquote>
+
+<!-- Body text ends here -->
+<!-- ============================================================== -->
+<HR size="2" noshade>
+<font size=-1> 
+<a href="index.html">Contents</a> | <a href="porting.html">Prev</a> | <a href="gc.html">Next</a>
+</font>
+<HR size="2" noshade>
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR VALIGN=TOP>
+
+<TD>
+<FONT SIZE="-2">
+   <A HREF="../legal/SMICopyright.html">Copyright</A> &#169; 2000
+   <A HREF="http://www.sun.com/">Sun Microsystems, Inc.</A>
+    All Rights Reserved.</FONT>
+   <br>
+   <br>
+
+   <FONT SIZE="-1">
+   Please send comments to: <a href="mailto:jcp-cdc-comments@eng.sun.com">jcp-cdc-comments@eng.sun.com</a> 
+   </FONT>
+</TD>
+
+<TD ALIGN=RIGHT>
+   <IMG SRC="../images/sunlogo64x30.gif" ALT="Sun" BORDER=0 WIDTH=64 HEIGHT=30>
+</TD>
+
+</TR>
+</TABLE>
+
+</BODY>
+</HTML>

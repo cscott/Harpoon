@@ -1,0 +1,1022 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<!-- SCCS @(#)using-gdb.html	1.2 00/11/29 -->
+<HTML>
+<HEAD>
+     <TITLE>C Debugging with GDB</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000FF" VLINK="#000077" ALINK="#FF0000">
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR>
+<TD>
+&nbsp;
+<br>
+<font size=-1> 
+<a href="index.html">Contents</a> | <a href="port_pj.html">Prev</a> | <a href="jdbwithcvm.html">Next</a>
+</font></TD>
+
+<TD align="right">
+J2ME CDC 1.0
+<br>Porting Guide
+</TD>
+</TR>
+</TABLE>
+
+<HR SIZE=2 NOSHADE>
+
+<!-- ====================== Body text begins here ====================== -->
+
+<h1>C Debugging with GDB</h1>
+<blockquote>
+    This documents describes some tips for debugging CVM under GDB.  It does
+    not attempt to explain any general GDB debugging techniques.  The reader
+    is expected to be familiar with GDB already. 
+</blockquote>
+
+<h2>Contents</h2>
+<blockquote>
+<a href="#SignalHandlers">Signal Handlers</a><br>
+<a href="#CVMconsolePrintf">Using CVMconsolePrintf()</a><br>
+<a href="#DumpingTheJavaStack">Dumping The Java Stack</a><br>
+<a href="#CVMExecEnv">The CVMExecEnv structure</a><br>
+<a href="#ConvertingCVMExecEnv2JNIEnv">Converting between CVMExecEnv* and JNIEnv*</a><br>
+<a href="#Threads">Threads</a><br>
+<a href="#DisplayingOpcodeInformation">Displaying Opcode Information</a><br>
+<a href="#DisplayPCOffset">Displaying the PC Offset</a><br>
+<a href="#TurningOnTraceOutput">Turning on Trace Output</a><br>
+<a href="#DumpingTheLoadedClasses">Dumping the Loaded Classes</a><br>
+<a href="#DumpingTheJavaHeap">Dumping the Java Heap</a><br>
+<a href="#DisplayingObjectInformation">Displaying Object Information</a><br>
+<a href="#JNI2CVMtypes">Converting from JNI types to CVM types</a><br>
+<a href="#java_lang_Class2CVMClassBlock">Converting from java.lang.Class to CVMClassBlock*</a><br>
+<a href="#GDBandGCSafety">GDB and GC Safety</a><br>
+<a href="#DebuggingCrashesOnLinux">Debugging Crashes on Linux</a><br>
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="SignalHandlers"></a>
+<h2>Signal Handlers</h2>
+<blockquote>
+    There are a number of signals that are raised by CVM that GDB must be made
+    aware of so it can pass them on.  You need to execute the following 3
+    <code>handle</code> commands to avoid having GDB stop execution
+    unnecessarily.
+<pre>
+handle SIGUSR1 nostop noprint pass
+handle SIGUSR2 nostop noprint pass
+handle SIGSTOP nostop noprint pass
+</pre>
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="CVMconsolePrintf"></a>
+<h2>Using CVMconsolePrintf()</h2>
+<blockquote>
+    <code>CVMconsolePrintf()</code> can be called from GDB to help provide
+    information about classes, methods, fields, objects, and java stack
+    frames.  <code>CVMconsolePrintf()</code> supports 6 special conversion
+    characters in addition to those normally supported by
+    <code>printf()</code>, plus the meaning of 3 of the characters can be
+    modified with the '<code>!</code>' character.  The conversion characters
+    include:
+
+    <blockquote>
+<pre>
+%C and %!C - prints a class name
+%M and %!M - prints a method name
+%F and %!F - prints a field name
+%O and %I  - prints out an object's class name and hash
+%P         - prints out java stack frame information
+</pre>
+    </blockquote>
+
+    The argument required for each of the above conversion characters is as
+    follows:
+
+    <blockquote>
+<pre>
+%C  - CVMClassBlock*
+%M  - CVMMethodBlock*
+%F  - CVMFieldBlock*
+%!C - CVMClassTypeID
+%!M - CVMMethodTypeID
+%!F - CVMFieldTypeID
+%O  - CVMObject*
+%I  - CVMObjectICell*
+%P  - CVMInterpreterFrame* (only supported in CVM_DEBUG=true builds)
+</pre>
+    </blockquote>
+
+    You must be GC safe when using <code>%I</code>. See
+    <a href="#GDBandGCSafety">GDB and GC Safety</a> below. <code>%O</code> will
+    not print the object hash if it has not been calculated yet.<br>
+    <p>
+    Some examples follow:
+<pre>
+(gdb) call CVMconsolePrintf("%C.%M\n", cb, mb)
+java.lang.Class.runStaticInitializers()V
+
+(gdb) call CVMconsolePrintf("%O\n", directObj)
+java.lang.Class@0
+
+(gdb) call CVMconsolePrintf("%P\n", frame)
+java.lang.Class.runStaticInitializers()V(Class.java:1446)
+</pre>
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="DumpingTheJavaStack"></a>
+<h2>Dumping The Java Stack</h2>
+<blockquote>
+    There are two functions that you can call from GDB to dump out Java stack
+    information.  They are only included if you build with
+    <code>CVM_DEBUG_DUMPSTACK=true</code>, which is the default if you build
+    with <code>CVM_DEBUG=true</code>.  If you also want source file and line
+    number information included in the stack dump, then you need to also build
+    with <code>CVM_DEBUG_CLASSINFO=true</code> and
+    <code>CVM_JAVAC_DEBUG=true</code>, both of which also default to true if
+    <code>CVM_DEBUG=true</code>.
+
+<pre>
+extern void
+CVMdumpStack(CVMStack* s, CVMBool verbose, CVMBool includeData,
+             CVMInt32 frameLimit);
+
+extern CVMStackChunk*
+CVMdumpFrame(CVMFrame* frame, CVMStackChunk* startChunk,
+             CVMBool verbose, CVMBool includeData);
+
+(gdb) call CVMdumpStack(&ee->interpreterStack,0,0,0)
+  Java Frame        Test.testSunMiscGC()V(Test.java:158)
+  Java Frame        Test.main([Ljava/lang/String;)V(Test.java:123)
+  Transition Frame  Test.main([Ljava/lang/String;)V(Transition Method)
+  Free List Frame   (JNI Local Frame)
+</pre>
+
+    If you pass 1 for <code>verbose</code>, you will see more details for each
+    frame.  If you also pass 1 for <code>includeData</code>, then the stack
+    contents for each frame are also displayed.  Alternatively, you can use
+    the special combination of <code>verbose==0</code> and
+    <code>includeData==1</code> to get the minimal information for each frame
+    plus the arguments needed to call <code>CVMdumpFrame()</code> for more
+    information on each of the respective frames.  For example:
+<pre>
+(gdb) call CVMdumpStack(&ee->interpreterStack,0,1,0)
+  Java Frame        Test.testSunMiscGC()V(Test.java:158)
+call CVMdumpFrame(0x387878, 0x3877d8, 1, 1)
+  Java Frame        Test.main([Ljava/lang/String;)V(Test.java:123)
+call CVMdumpFrame(0x38784c, 0x3877d8, 1, 1)
+  Transition Frame  Test.main([Ljava/lang/String;)V(Transition Method)
+call CVMdumpFrame(0x38781c, 0x3877d8, 1, 1)
+  Free List Frame   (JNI Local Frame)
+call CVMdumpFrame(0x3877e4, 0x3877d8, 1, 1)
+</pre>
+
+    The advantage of this output is that arguments needed to call
+    <code>CVMdumpFrame()</code> are automatically included for you, so you
+    don't need to look at the verbose output of <code>CVMdumpStack()</code> to
+    figure out which arguments to pass to <code>CVMdumpFrame()</code>, and you
+    don't need to deal with a stack dump that include the stack data for every
+    frame.  For example:
+
+<pre>
+(gdb) call CVMdumpFrame(0x387878, 0x3877d8, 1, 1)
+        Frame:   0x387878
+        prev:    0x38784c
+        Scanner: 0xaf70c
+        Tos:     0x387898
+        Type:    Java Frame
+        Name:    Test.testSunMiscGC()V(Test.java:158)
+        NextPC:  0x8be023
+        special: 0
+        Contents:
+            Chunk 0x3877d8 (0x3877e4-0x3887e4)
+</pre>
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="CVMExecEnv"></a>
+<h2>The CVMExecEnv structure</h2>
+<blockquote>
+    All java threads in CVM are represented by a <code>CVMExecEnv</code>
+    structure.  If you look at the C backtrace for almost any running thread,
+    you will probably see a <code>CVMExecEnv*</code> passed as an argument to
+    just about every function in the backtrace.  You can use the
+    <code>CVMExecEnv*</code> to locate information about the thread, such as
+    the java stack being used by the interpreter loop.  For example, if your C
+    backtrace is as follows:
+
+<pre>
+#0  CVMgcUnsafeExecuteJavaMethod (ee=0x37d2c0, mb=0x267590, isStatic=0, 
+    isVirtual=0) at ../../src/share/javavm/runtime/executejava.c:1636
+#1  0xe4b2c in CVMjniInvoke (env=0x37d2e8, obj=0x387810, methodID=0x8bd124, 
+    pushArguments=0xe3638 &lt;CVMjniPushArgumentsVararg&gt;, args=0xffbef5b4, 
+    info=770, retValue=0x0) at ../../src/share/javavm/runtime/jni_impl.c:2412
+#2  0xe727c in CVMjniCallStaticVoidMethod (env=0x37d2e8, clazz=0x387810, 
+    methodID=0x8bd124) at ../../src/share/javavm/runtime/jni_impl.c:2587
+#3  0x19a644 in ansiJavaMain (argc=3, argv=0xffbef754)
+    at ../../src/porting/ansi_c/ansi_java_md.c:223
+#4  0x199cc4 in main (argc=3, argv=0xffbef754)
+    at ../../src/solaris/bin/java_md.c:16
+</pre>
+
+    The <code>ee</code> argument passed to
+    <code>CVMgcUnsafeExecuteJavaMethod()</code> can be used to dump the java
+    stack:
+
+<pre>
+(gdb) call CVMdumpStack(&ee->interpreterStack,0,0,0)
+</pre>
+
+    You can also always get the <code>CVMExecEnv*</code> for the current
+    thread by calling <code>CVMgetEE()</code>.
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="ConvertingCVMExecEnv2JNIEnv"></a>
+<h2>Converting between CVMExecEnv* and JNIEnv*</h2>
+<blockquote>
+    Every <code>CVMExecEnv</code> has a corresponding <code>JNIEnv</code>.
+    You can manually convert between the two, but usually you can avoid having
+    to do this conversion by looking elsewhere on the C stack.  For example,
+    if you are in <code>CVMgcUnsafeExecuteJavaMethod()</code> and need a
+    <code>JNIEnv*</code>, going up one or two C frames will usually put you in
+    one of the JNI API's, and you can get the <code>JNIEnv*</code> there.
+    <p>
+    Converting from <code>CVMExecEnv*</code> to <code>JNIEnv*</code>:
+<pre>
+(gdb) p &(&(ee)->jniEnv)->vector
+$86 = (JNIEnv *) 0x37d2e8
+</pre>
+
+    Converting from <code>JNIEnv*</code> to <code>CVMExecEnv*</code>:
+<pre>
+(gdb) p (CVMExecEnv*)((char*)env - (CVMUint32)&(((CVMExecEnv*)0)->jniEnv)->vector)
+$87 = (CVMExecEnv *) 0x37d2c0
+</pre>
+
+    Yes, now would be a good time to define some macros:
+<pre>
+define ee2env
+    p &(($arg0)->jniEnv)->vector
+end 
+
+define env2ee
+    ee2env((CVMExecEnv*)0)
+    p (CVMExecEnv*)((char*)$arg0 - (CVMUint32)($))
+end
+</pre>
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="Threads"></a>
+<h2>Threads</h2>
+<blockquote>
+    Information about one or all of the Java threads can be dumped by using
+    the following functions, which are only available when CVM is built using
+    <code>CVM_DEBUG=true</code>:
+
+<pre>
+extern void
+CVMdumpThread(JNIEnv* env)
+
+extern void
+CVMdumpAllThreads()
+
+extern void
+CVMprintThreadName(JNIEnv* env, CVMObjectICell* threadICell)
+</pre>
+
+    You must be GC safe when calling these functions.  See
+    <a href="#GDBandGCSafety">GDB and GC Safety</a> below.
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="DisplayingOpcodeInformation"></a>
+<h2>Displaying Opcode Information</h2>
+<blockquote>
+    There are three ways to locate the current PC for a frame:
+    <ol>
+        <!-- Method 1: -->
+        <li>Use <code>CVMdumpStack()</code> or <code>CVMdumpFrame()</code> and
+            pass <code>verbose==1</code>.  The address of the current program
+            counter (pc) will be included in the output in the
+            <code>NextPC</code> field.
+<pre>
+(gdb) call CVMdumpFrame(0x387878, 0x3877d8, 1, 1)
+        Frame:   0x387878
+        prev:    0x38784c
+        Scanner: 0xaf70c
+        Tos:     0x387898
+        Type:    Java Frame
+        Name:    Test.testSunMiscGC()V(Test.java:158)
+        NextPC:  0x8be023
+        special: 0
+        Contents:
+            Chunk 0x3877d8 (0x3877e4-0x3887e4)
+</pre>
+        </li>
+
+        <!-- Method 2: -->
+        <p>
+        <li>Locate the <code>CVMFrame*</code> for the frame and display its
+        contents. The current pc will be in the <code>pcX</code> field.
+<pre>
+(gdb) p *(CVMInterpreterFrame*) frame
+$46 = {
+  frameX = {
+    prevX = 0x38797c, 
+    scanner = 0xaf70c &lt;CVMjavaFrameScanner&gt;, 
+    topOfStack = 0x38798c, 
+    mb = 0x2bbb6c
+  }, 
+  pcX = 0x3879c8 "", 
+  cpX = 0x2bbc58, 
+  localsX = 0x38799c
+}
+</pre>
+        You can do this with any java frame, but not for JNI frames, which
+        don't have a pc.
+        <p>
+        <b>NOTE</b>: if the <code>scanner</code> field is not set to
+        <code>&lt;CVMjavaFrameScanner&gt;</code>, then you are not looking at
+        a java frame.
+        <p>
+        <b>NOTE</b>: <code>frame->pcX</code> may not be correct for the
+        topmost frame on the stack, since it may be cached in a local variable.
+        Use the <code>pc</code> local variable in
+        <code>CVMgcUnsafeExecuteJavaMethod()</code> instead.
+        </li>
+
+        <!-- Method 3: -->
+        <p>
+        <li>Go to the <code>CVMgcUnsafeExecuteJavaMethod()</code> C frame and
+        display the <code>pc</code> variable:
+<pre>
+(gdb) p pc
+$47 = (CVMUint8 *) 0x2bb74e "±"
+</pre>
+        </li>
+    </ol>
+
+    Once you have a pc, you can display the opcode at the pc:
+<pre>
+(gdb) p (CVMOpcode)*(CVMUint8*)0x2bb74e
+$48 = opc_return
+</pre>
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="DisplayPCOffset"></a>
+<h2>Displaying the PC Offset</h2>
+<blockquote>
+
+    Given a bytecode address (such as the <code>pc</code> local variable)
+    you can find the offset from the start of the method. You will also
+    need the <code>CVMMethodBlock*</code> (which can be retrieved from the
+    frame) of the method in order to do this:
+<pre>
+(gdb) p *(CVMInterpreterFrame*)frame
+$61 = {
+  frameX = {
+    prevX = 0x387950, 
+    scanner = 0xaf70c &lt;CVMjavaFrameScanner&gt;, 
+    topOfStack = 0x38799c, 
+    mb = 0x2bbb5c
+  }, 
+  pcX = 0x2bb6fb "ß\013\003±", 
+  cpX = 0x2bbc58, 
+  localsX = 0x387970
+}
+(gdb) p $61->pcX - (CVMUint8*)($61->frameX.mb->codeX.jmd+1)
+$62 = 7
+</pre>
+
+    You can define a macro <code>pcOffset(frame)</code> to print out the
+    current offset of the pc from the start of the method:
+<pre>
+define pcOffset
+    p ((CVMInterpreterFrame*)$arg0)->pcX - (CVMUint8*)(((CVMInterpreterFrame*)$arg0)->frameX.mb->codeX.jmd+1)
+end
+</pre>
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="TurningOnTraceOutput"></a>
+<h2>Turning on Trace Output</h2>
+<blockquote>
+    If CVM is built with <code>CVM_DEBUG=true</code>, then the support for
+    debug tracing will be compiled in.  There are three ways to turn on trace
+    flags.
+
+    <ol>
+        <!-- Method 1: -->
+        <li>Use the <code>-Xtrace</code> command line argument:
+<pre>
+cvm -Xtrace:0xc40000 -Djava.class.path=../testclasses HelloWorld
+</pre>
+        </li>
+
+        <!-- Method 2: -->
+        <li>Turn the flags on or off manually in GDB:
+<pre>
+(gdb) set var CVMglobals.debugFlags = 0xc40000
+</pre>
+        </li>
+
+        <!-- Method 3: -->
+        <li>Turn flags on and off from java source code:
+        <p>
+        You must first import <code>sun.misc.CVM</code>.  You can then use the
+        following APIs:
+<pre>
+    /*
+     * Methods for checking, setting, and clearing the state of debug
+     * flags.  All of the following methods return the previous state of 
+     * the flags.
+     *
+     * You can pass in more than one flag at a time to any of the methods.
+     */
+    public native static int checkDebugFlags(int flags);
+    public native static int setDebugFlags(int flags);
+    public native static int clearDebugFlags(int flags);
+    public native static int restoreDebugFlags(int flags, int oldvalue);
+</pre>
+        </li>
+    </ol>
+
+    See <code>src/share/javavm/test/Test.java</code> for an example on
+    using the above APIs.
+
+    <p>
+    The supported trace flags can be found in
+    <code>src/share/classes/sun/misc/CVM.java</code> or see
+    <a href="launch.html#trace">Starting CVM</a> for a documented list.  To
+    turn on more than one flag at the same time, use a logical OR of their
+    values:
+<pre>
+    public static final int DEBUGFLAG_TRACE_OPCODE      = 0x00000001;
+    public static final int DEBUGFLAG_TRACE_METHOD      = 0x00000002;
+    public static final int DEBUGFLAG_TRACE_STATUS      = 0x00000004;
+    public static final int DEBUGFLAG_TRACE_FASTLOCK    = 0x00000008;
+    public static final int DEBUGFLAG_TRACE_DETLOCK     = 0x00000010;
+    public static final int DEBUGFLAG_TRACE_MUTEX       = 0x00000020;
+    public static final int DEBUGFLAG_TRACE_CS          = 0x00000040;
+    public static final int DEBUGFLAG_TRACE_GCSTARTSTOP = 0x00000080;
+    public static final int DEBUGFLAG_TRACE_GCSCAN      = 0x00000100;
+    public static final int DEBUGFLAG_TRACE_GCSCANOBJ   = 0x00000200;
+    public static final int DEBUGFLAG_TRACE_GCALLOC     = 0x00000400;
+    public static final int DEBUGFLAG_TRACE_GCCOLLECT   = 0x00000800;
+    public static final int DEBUGFLAG_TRACE_GCSAFETY    = 0x00001000;
+    public static final int DEBUGFLAG_TRACE_CLINIT      = 0x00002000;
+    public static final int DEBUGFLAG_TRACE_EXCEPTIONS  = 0x00004000;
+    public static final int DEBUGFLAG_TRACE_MISC        = 0x00008000;
+    public static final int DEBUGFLAG_TRACE_BARRIERS    = 0x00010000;
+    public static final int DEBUGFLAG_TRACE_STACKMAPS   = 0x00020000;
+    public static final int DEBUGFLAG_TRACE_CLASSLOADING= 0x00040000;
+    public static final int DEBUGFLAG_TRACE_CLASSLOOKUP = 0x00080000;
+    public static final int DEBUGFLAG_TRACE_TYPEID      = 0x00100000;
+    public static final int DEBUGFLAG_TRACE_VERIFIER    = 0x00200000;
+    public static final int DEBUGFLAG_TRACE_WEAKREFS    = 0x00400000;
+    public static final int DEBUGFLAG_TRACE_CLASSUNLOAD = 0x00800000;
+    public static final int DEBUGFLAG_TRACE_CLASSLINK   = 0x01000000;
+</pre>
+
+    <code>OPCODE</code> will trace each opcode being execute.<br>
+    <code>METHOD</code> will trace each method as it is entered, exited, and
+    returned to.<br>
+    <code>GCSTARTSTOP</code> will provide information each time GC starts and
+    completes.<br>
+    <code>EXCEPTIONS</code> will do a full backtrace of the java thread
+    whenever an exception is thrown, and also provide information when an
+    exception is caught.<br>
+    <code>CLASSLOADING</code> will provide information about classes being
+    loaded.<br>
+    <code>CLASSLOOKUP</code> will provide information about class lookups
+    (mostly loader cache related information).<br>
+    <code>CLASSUNLOAD</code> will provide information each time a class is
+    unloaded.<br>
+    <code>CLASSLINK</code> will provide information when a class is linked.<br>
+    <p>
+    The rest of the flags are less commonly used.
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="DumpingTheLoadedClasses"></a>
+<h2>Dumping the Loaded Classes</h2>
+<blockquote>
+    You can dump the set of loaded classes using the
+    <code>CVMclassTableDump()</code> function.  You must first enable
+    <code>CLASSLOOKUP</code> tracing or no output will be displayed.  You must
+    also compile with <code>CVM_DEBUG=true</code>.
+<pre>
+(gdb) set var CVMglobals.debugFlags = 0x80000
+(gdb) call CVMclassTableDump(ee)
+CT: 0x8d5db8: sun.misc.GC$1
+CT: 0x8d53a8: sun.misc.GC$Daemon
+CT: 0x8d4900: java.util.TreeMap$Entry
+CT: 0x8d3f18: java.util.TreeMap$1
+CT: 0x8d7b40: java.util.TreeMap
+CT: 0x8d3190: java.util.TreeSet
+CT: 0x8d0ed8: sun.misc.GC$LatencyRequest
+CT: 0x8cfa18: sun.misc.GC$LatencyLock
+CT: 0x8ce568: sun.misc.GC
+</pre>
+
+    The addresses listed are for the <code>CVMClassBlock*</code> of each
+    class.  You can use a <code>CVMClassBlock*</code> address as
+    follows to get more information for any
+    individual class:
+<pre>
+(gdb) p *(CVMClassBlock*)0x8d5db8
+$64 = {
+  gcMapX = {
+    map = 0, 
+    bigmap = 0x0
+  }, 
+  classNameX = 978, 
+  superclassX = {
+    superclassCb = 0x244b2c, 
+    superclassTypeID = 2378540, 
+    mirandaMethodCountX = 0 '\000'
+  }, 
+  cpX = {
+    constantpoolX = 0x8d5e20, 
+    arrayInfoX = 0x8d5e20
+  }, 
+  ...
+}
+</pre>
+
+    You can also dump out the loader cache using
+    <code>CVMloaderCacheDump()</code>.  Once again, <code>CLASSLOOKUP</code>
+    tracing must be turned on and you must compile with
+    <code>CVM_DEBUG=true</code>.
+<pre>
+(gdb) call CVMloaderCacheDump(ee)
+LC: #887 0x8a8fc0: <0x38a0a4,[LTest;>
+LC: #890 0x8a8e00: <0x38a0a4,[LC;>
+LC: #895 0x8ccb88: <0x38a0a4,[Lcvmtest.TypeidRefcountHelper;>
+LC: #978 0x8d5db8: <0x0,sun.misc.GC$1>
+LC: #979 0x8cfa18: <0x0,sun.misc.GC$LatencyLock>
+LC: #980 0x8d53a8: <0x0,sun.misc.GC$Daemon>
+LC: #981 0x8d3190: <0x0,java.util.TreeSet>
+LC: #982 0x8d7b40: <0x0,java.util.TreeMap>
+LC: #983 0x8d4900: <0x0,java.util.TreeMap$Entry>
+LC: #984 0x8d3f18: <0x0,java.util.TreeMap$1>
+LC: #1007 0x8a2cf0: <0x38a0a4,[[LTest;>
+</pre>
+
+    The first address given is the <code>CVMClassBlock*</code>.  The 2nd is
+    the <code>CVMObjectICell*</code> of the ClassLoader instance.
+    <code>0x0</code> represents the NULL class loader (a.k.a. the
+    bootclasspath loader or bootstrap loader).
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="DumpingTheJavaHeap"></a>
+<h2>Dumping the Java Heap</h2>
+<blockquote>
+    There are three functions that can be used for dumping out the contents of
+    the Java heap.  All of these functions can be useful in detecting leaks in
+    the Java heap.  They are only available if you build CVM with
+    <code>CVM_DEBUG=true</code>.
+<pre>
+extern void
+CVMgcDumpHeapSimple()
+
+extern void
+CVMgcDumpHeapStats()
+
+extern void
+CVMgcDumpHeapVerbose()
+</pre>
+
+    <code>CVMgcDumpHeapSimple()</code> dumps the total number of objects in
+    the heap.  For example:
+<pre>
+(gdb) call CVMgcDumpHeapSimple()
+Counted 3702 objects
+</pre>
+
+    <code>CVMgcDumpHeapStats()</code> displays the number of instances
+    (<code>NI</code>) allocated for each class and the total space
+    (<code>TS</code>) in bytes that the instances occupy in the heap.  For
+    example:
+<pre>
+(gdb) call CVMgcDumpHeapStats()
+TS=89396    NI=986      CL=[C
+TS=47172    NI=167      CL=[B
+TS=14292    NI=397      CL=[Ljava.lang.Object;
+TS=14020    NI=701      CL=java.lang.String
+TS=9056     NI=126      CL=[I
+TS=8096     NI=2        CL=[S
+TS=3700     NI=185      CL=java.lang.Class
+TS=3480     NI=174      CL=java.lang.StringBuffer
+TS=2256     NI=94       CL=java.util.Hashtable$Entry
+TS=2040     NI=18       CL=[Ljava.util.Hashtable$Entry;
+TS=1400     NI=116      CL=[Ljava.lang.Class;
+...
+TS=8        NI=1        CL=java.util.Hashtable$EmptyEnumerator
+TS=8        NI=1        CL=java.net.UnknownContentHandler
+TS=8        NI=1        CL=java.security.Security$1
+TS=8        NI=1        CL=java.util.Hashtable$EmptyIterator
+</pre>
+
+    <code>CVMgcDumpHeapVerbose()</code> dumps out the address and size of
+    every object in the heap.  For example:
+<pre>
+(gdb) call CVMgcDumpHeapVerbose()
+...
+Addr: 0x3bd0a8 Size: 44     Class: CloneableObject
+Addr: 0x3bd0d4 Size: 8      Class: java.lang.Object
+Addr: 0x3bd0dc Size: 44     Class: CloneableObject
+Addr: 0x3bd108 Size: 24     Class: [Ljava.lang.Object;
+Addr: 0x3bd120 Size: 24     Class: [Ljava.lang.Object;
+Addr: 0x3bd138 Size: 12     Class: NonCloneableObject
+Addr: 0x3bd144 Size: 16     Class: java.lang.CloneNotSupportedException
+...
+</pre>
+
+    The next section describes how you can dump the contents of these objects.
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="DisplayingObjectInformation"></a>
+<h2>Displaying Object Information</h2>
+<blockquote>
+    Objects have an 8 byte header, followed by the contents of the object.
+<pre>
+(gdb) x /4wx 0x3bd144
+0x3bd144:   0x002ebffc  0x00000002  0x003bd1a0  0x003bd154
+(gdb) p *(CVMObject*) 0x3bd144
+$74 = {
+  hdr = {
+    clas = 0x2ebffc, 
+    various32 = 2
+  }, 
+  ...
+}
+</pre>
+
+    The <code>clas</code> field contains the <code>CVMClassBlock*</code> that
+    the object is an instance of.  The lower two bits of this field have
+    special meaning and should be masked off if set before attempting to
+    use it as a <code>CVMClassBlock*</code>.
+<pre>
+(gdb) p ((CVMObject*)0x3bd144)->hdr.clas
+$76 = (CVMClassBlock *) 0x2ebffc
+(gdb) call CVMconsolePrintf("%C\n", $76)
+java.lang.CloneNotSupportedException
+</pre>
+
+    Array objects have the same header as above, with the addition of a length
+    field. Below is an array of length one.
+<pre>
+(gdb) x /4wx 0x3bd7d8
+0x3bd7d8:   0x008a8ce0  0x00000002  0x00000001  0x00000000
+(gdb) p *((CVMArrayOfAnyType*)0x3bd7d8)
+$77 = {
+  hdr = {
+    clas = 0x8a8ce0, 
+    various32 = 2
+  }, 
+  length = 1, 
+  ...
+}
+</pre>
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="JNI2CVMtypes"></a>
+<h2>Converting from JNI types to CVM types</h2>
+<blockquote>
+The following are mappings of JNI types to internal CVM types:
+<pre>
+jclass == CVMClassICell* == java.lang.Class instance
+jmethodID == CVMMethodBlock*
+jfieldID == CVMFieldBlock*
+jobject == CVMObject*
+</pre>
+
+    You can pass a variable of type <code>jmethodID</code> as the
+    <code>%M</code> argument to <code>CVMconsolePrintf()</code>.  Likewise for
+    <code>jfieldID</code> and <code>%F</code>.  Even though these types have
+    "<code>ID</code>" in their names, they are not the same as
+    <code>CVMMethodTypeID</code> and <code>CVMFieldTypeID</code>.
+
+    <p>
+    To print the type that a <code>jclass</code> represent, see the next
+    section on converting from a <code>java.lang.Class</code> to
+    <code>CVMClassBlock*</code>.
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="java_lang_Class2CVMClassBlock"></a>
+<h2>Converting from java.lang.Class to CVMClassBlock*</h2>
+<blockquote>
+    All <code>java.lang.Class</code> instances contain a pointer to the
+    <code>CVMClassBlock*</code> that they represent, and all
+    <code>CVMClassBlock</code>s have an indirect pointer to their
+    <code>java.lang.Class</code> instance.  This makes it possible to convert
+    between the two by using the following two APIs:
+<pre>
+extern CVMClassBlock*
+CVMgcSafeClassRef2ClassBlock(CVMExecEnv* ee, CVMClassICell *clazz)
+
+extern CVMClassBlock *
+CVMgcUnsafeClassRef2ClassBlock(CVMExecEnv *ee, CVMClassICell *clazz)
+
+(gdb) call CVMgcSafeClassRef2ClassBlock(ee, clazz)
+$80 = (CVMClassBlock *) 0x26d4d4
+</pre>
+
+    If <code>clas</code> is a <code>jclass</code> or
+    <code>CVMClassICell*</code>, then you can do the following to print the
+    class name:
+<pre>
+(gdb) call CVMconsolePrintf("%C\n", CVMgcSafeClassRef2ClassBlock(ee, clas))
+java.lang.Runtime
+</pre>
+
+    If you are not GC safe then you can use
+    <code>CVMgcUnsafeClassRef2ClassBlock()</code> instead.
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="GDBandGCSafety"></a>
+<h2>GDB and GC Safety</h2>
+<blockquote>
+    There are some things you can't do in the debugger while GC unsafe, such
+    as calling <code>CVMdumpThread()</code>.  Examine
+    <code>ee->tcstate.isConsistent</code>.  It must be <code>1</code>.  If it
+    is not, then you can try switching to a thread that is.  If this isn't
+    possible, you can always try the following:
+<pre>
+(gdb) set var ee->tcstate.isConsistent = 1
+(gdb) call CVMdumpAllThreads()
+</pre>
+
+    However, there is a very small risk of a deadlock or a crash if you do
+    this.  Don't forget to set the <code>isConsistent</code> flag back to
+    <code>0</code> if you wish to continue execution.
+
+    You are always GC safe when executing in a JNI method and are usually GC
+    safe when executing in a JNI api or any class loading or unloading related
+    code.  You are usually always GC unsafe when executing in the interpreter
+    loop (<code>CVMgcUnsafeExecuteJavaMethod()</code>).
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="DebuggingCrashesOnLinux"></a>
+<h2>Debugging Crashes on Linux</h2>
+<blockquote>
+    Linux unfortunately implements threads on top of processes. When there
+    is a crash, the core file produced is almost never for the thread
+    (process) that actually crashed.  CVM installs a signal handler on linux
+    that will catch the signal raised because of a crash, and suspends the
+    process.  This allows you to then attach GDB to the process, rather than
+    having to deal with a useless core file.
+    <p>
+    When CVM crashes on linux, you will see the following:
+<pre>
+   Process received signal 11, suspending
+</pre>
+
+    When you see this, <code>ctrl-z</code> the process to temporarily stop it.
+    You can then use <code>ps</code> to see a list of all the current CVM
+    processes:
+<pre>
+[bin]$ ps
+
+31576 ttyp3    00:00:00 bash
+21912 ttyp3    00:00:00 cvm
+21913 ttyp3    00:00:00 cvm
+21914 ttyp3    00:00:00 cvm
+21915 ttyp3    00:00:00 cvm
+22447 ttyp3    00:00:00 cvm
+22448 ttyp3    00:00:00 cvm
+22449 ttyp3    00:00:00 cvm
+22450 ttyp3    00:00:00 cvm
+22451 ttyp3    00:00:00 cvm
+22452 ttyp3    00:00:00 cvm
+22453 ttyp3    00:00:00 cvm
+22454 ttyp3    00:00:00 cvm
+22455 ttyp3    00:00:00 cvm
+22456 ttyp3    00:00:00 cvm
+22457 ttyp3    00:00:23 cvm
+24310 ttyp3    00:00:00 ps
+</pre>
+
+    The first process in the list is the main process and is the one you want
+    to attach to in GDB.  After executing <code>ps</code>, type
+    <code>bg</code> to continue execution in the background.  Otherwise GDB
+    will hang waiting for the process to be started again.  Next launch GDB
+    and specify the CVM binary that was running when the crash occurred.
+<pre>
+[bin]$ gdb cvm
+Current directory is /home/cjp/spir/ws/cvm/build/linux/bin/
+GNU gdb 19991004
+Copyright 1998 Free Software Foundation, Inc.
+GDB is free software, covered by the GNU General Public License, and you are
+welcome to change it and/or distribute copies of it under certain conditions.
+Type "show copying" to see the conditions.
+There is absolutely no warranty for GDB.  Type "show warranty" for details.
+This GDB was configured as "i386-redhat-linux"...
+Starting up GDB configuration file
+Done interpreting GDB configuration file
+</pre>
+
+    Attach to the first cvm process in the <code>ps</code> list:
+<pre>
+(gdb) attach 21912
+Attaching to program: /home/cjp/spir/ws/cvm/build/linux/bin/cvm, Pid 21912
+Reading symbols from /lib/libpthread.so.0...done.
+Reading symbols from /lib/libm.so.6...done.
+Reading symbols from /lib/libnsl.so.1...done.
+Reading symbols from /lib/libdl.so.2...done.
+Reading symbols from /lib/libc.so.6...done.
+Reading symbols from /lib/ld-linux.so.2...done.
+Reading symbols from /lib/libnss_files.so.2...done.
+Reading symbols from /usr/lib/gconv/ISO8859-1.so...done.
+0x40083e0b in __sigsuspend (set=0xbffff50c)
+    at ../sysdeps/unix/sysv/linux/sigsuspend.c:48
+48  ../sysdeps/unix/sysv/linux/sigsuspend.c: No such file or directory.
+</pre>
+
+    <code>info threads</code> will give you a list of all the threads:
+<pre>
+(gdb) info threads
+  15 Thread 22457  0x40083e0b in __sigsuspend (set=0xbdfff008)
+    at ../sysdeps/unix/sysv/linux/sigsuspend.c:48
+  14 Thread 22456  0x40083e0b in __sigsuspend (set=0xbe1ff62c)
+    at ../sysdeps/unix/sysv/linux/sigsuspend.c:48
+  13 Thread 22455  0x40083e0b in __sigsuspend (set=0xbe3ff498)
+    at ../sysdeps/unix/sysv/linux/sigsuspend.c:48
+  12 Thread 22454  0x40083e0b in __sigsuspend (set=0xbe5ff498)
+    at ../sysdeps/unix/sysv/linux/sigsuspend.c:48
+  11 Thread 22453  0x40083e0b in __sigsuspend (set=0xbe7ff62c)
+    at ../sysdeps/unix/sysv/linux/sigsuspend.c:48
+  10 Thread 22452  0x40083d61 in __kill () from /lib/libc.so.6
+  9 Thread 22451  0x40083e0b in __sigsuspend (set=0xbebff62c)
+    at ../sysdeps/unix/sysv/linux/sigsuspend.c:48
+  8 Thread 22450  0x40083e0b in __sigsuspend (set=0xbedff62c)
+    at ../sysdeps/unix/sysv/linux/sigsuspend.c:48
+  7 Thread 22449  0x40083e0b in __sigsuspend (set=0xbefff62c)
+    at ../sysdeps/unix/sysv/linux/sigsuspend.c:48
+  6 Thread 22447  0x40083e0b in __sigsuspend (set=0xbf1ff62c)
+    at ../sysdeps/unix/sysv/linux/sigsuspend.c:48
+  5 Thread 22448  0x40083e0b in __sigsuspend (set=0xbf3ff62c)
+    at ../sysdeps/unix/sysv/linux/sigsuspend.c:48
+  4 Thread 21915  0x40083e0b in __sigsuspend (set=0xbf5ff52c)
+    at ../sysdeps/unix/sysv/linux/sigsuspend.c:48
+  3 Thread 21914  0x40083e0b in __sigsuspend (set=0xbf7ff52c)
+    at ../sysdeps/unix/sysv/linux/sigsuspend.c:48
+* 2 Thread 21912 (initial thread)  0x40083e0b in __sigsuspend (set=0xbffff50c)
+    at ../sysdeps/unix/sysv/linux/sigsuspend.c:48
+  1 Thread 21913 (manager thread)  0x40110fe0 in __poll (fds=0x8386d08, 
+    nfds=1, timeout=2000) at ../sysdeps/unix/sysv/linux/poll.c:45
+</pre>
+
+    The thread that crashed will be in the <code>__kill()</code> function.
+    Switch to it to debug the crash:
+<pre>
+(gdb) thread 10
+[Switching to thread 10 (Thread 22452)]
+#0  0x40083d61 in __kill () from /lib/libc.so.6
+(gdb) bt
+#0  0x40083d61 in __kill () from /lib/libc.so.6
+#1  0x817543d in crash (sig=11) at ../../src/linux/javavm/runtime/sync_md.c:388
+#2  0x40022582 in pthread_sighandler (signo=11, ctx={gs = 0, __gsh = 0, 
+      fs = 0, __fsh = 0, es = 43, __esh = 0, ds = 43, __dsh = 0, edi = 25, 
+      esi = 1081082928, ebp = 3198154408, esp = 3198154336, ebx = 1075139692, 
+      edx = 32, ecx = 1081081904, eax = 1081081912, trapno = 14, err = 6, 
+      eip = 1074521900, cs = 35, __csh = 0, eflags = 66118, 
+      esp_at_signal = 3198154336, ss = 43, __ssh = 0, fpstate = 0xbe9ff5e0, 
+      oldmask = 2147483648, cr2 = 33}) at signals.c:96
+#3  0x40083c88 in __restore ()
+    at ../sysdeps/unix/sysv/linux/i386/sigaction.c:127
+#4  0x400bfec4 in __libc_calloc (n=1, elem_size=28) at malloc.c:3707
+#5  0x8147bb4 in CVMCcallocStub (nelem=1, elsize=28)
+    at ../../src/share/javavm/runtime/porting_debug.c:127
+#6  0x8114951 in CVMreplenishLockRecordUnsafe (ee=0xbe9ffc40)
+    at ../../src/share/javavm/runtime/objsync.c:366
+#7  0x8116f59 in CVMdetLock (ee=0xbe9ffc40, indirectObj=0x83d2aec)
+    at ../../src/share/javavm/runtime/objsync.c:1116
+#8  0x80cc668 in CVMgcUnsafeExecuteJavaMethod (ee=0xbe9ffc40, mb=0x836a8e4, 
+    isStatic=0, isVirtual=1)
+    at ../../src/share/javavm/runtime/executejava.c:2932
+#9  0x80fad05 in CVMjniInvoke (env=0xbe9ffc68, obj=0x83d2954, 
+    methodID=0x83696e4, pushArguments=0x80fa0d8 &lt;CVMjniPushArgumentsVararg&gt;, 
+    args=0xbe9ffbdc, info=258, retValue=0x0)
+    at ../../src/share/javavm/runtime/jni_impl.c:2412
+#10 0x80fc3e1 in CVMjniCallVoidMethod (env=0xbe9ffc68, obj=0x83d2954, 
+    methodID=0x83696e4) at ../../src/share/javavm/runtime/jni_impl.c:2587
+#11 0x8108830 in start_func (arg=0x409cfc80)
+    at ../../src/share/javavm/runtime/jvm.c:1505
+#12 0x8173183 in start_func (a=0x409cfc98)
+    at ../../src/porting/posix/posix_threads_md.c:30
+#13 0x4001fbb5 in pthread_start_thread (arg=0xbe9ffe40) at manager.c:241
+</pre>
+
+    The frame that actually crashed is not included in the backtrace.
+    However, all the registers, including the pc (<code>eip</code> register)
+    are passed as arguments to the signal handler,
+    <code>pthread_sighandler()</code>.  You can disassemble the value passed
+    in <code>eip</code> to find out where the crash actually occurred.
+    <p>
+    In the above backtrace, frames #0 through #3 are all part of the signal
+    handling.  The crash actually occurred in a function called from
+    <code>__libc_calloc()</code>.  If you disassemble the value passed in the
+    <code>eip</code> argument to <code>pthread_sighandler()</code>, you can
+    see that <code>__libc_calloc()</code> called <code>chunk_alloc()</code>,
+    and that is where the crash occured.  (This crash was the result of a
+    memory corruption that caused a call to <code>calloc()</code> to crash).
+<pre>
+(gdb) x /4i 1074521900
+0x400be72c &lt;chunk_alloc+84&gt;:  mov    %ecx,0x8(%edi)
+0x400be72f &lt;chunk_alloc+87&gt;:  mov    0xfffffff4(%ebp),%edi
+0x400be732 &lt;chunk_alloc+90&gt;:  orb    $0x1,0x4(%edi,%esi,1)
+0x400be737 &lt;chunk_alloc+95&gt;:  jmp    0x400bef93 &lt;chunk_alloc+2235&gt;
+</pre>
+</blockquote>
+
+<!-- Body text ends here -->
+<!-- ============================================================== -->
+<HR size="2" noshade>
+<font size=-1> 
+<a href="index.html">Contents</a> | <a href="port_pj.html">Prev</a> | <a href="jdbwithcvm.html">Next</a>
+</font>
+<HR SIZE=2 NOSHADE>
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR VALIGN=TOP>
+
+<TD>
+<FONT SIZE="-2">
+   <A HREF="../legal/SMICopyright.html">Copyright</A> &#169; 2000
+   <A HREF="http://www.sun.com/">Sun Microsystems, Inc.</A>
+    All Rights Reserved.</FONT>
+   <br>
+   <br>
+
+   <FONT SIZE="-1">
+   Please send comments to: <a href="mailto:jcp-cdc-comments@eng.sun.com">jcp-cdc-comments@eng.sun.com</a> 
+   </FONT>
+</TD>
+
+<TD ALIGN=RIGHT>
+   <IMG SRC="../images/sunlogo64x30.gif" ALT="Sun" BORDER=0 WIDTH=64 HEIGHT=30>
+</TD>
+
+</TR>
+</TABLE>
+
+</BODY>
+</HTML>
+

@@ -1,0 +1,132 @@
+                                README
+
+=======================================================================================
+
+ Real-Time Specification for Java (RTSJ) Reference Implementation
+
+The entire contents of this distribution are Copyright (C) 2001 TimeSys Corporation 
+under several licenses.  All files  containing Class Library source code (in the jar file 
+<homedir>/realtime.jar) are distributed under the terms of the Common Public License,
+which can be found in the file "CPLicense" in the root directory of this distribution.
+All other files are distributed under the terms of the TimeSys Software License, 
+which can be found in the file "License" in the root directory of this distribution.
+Your  use  of this software indicates your acceptance of the terms of each of these
+respective licenses. Any source code not covered by the CPLicense is covered by 
+the TimeSys Community Source License, which can be found in the file "TCSL".
+
+TimeSys and TimeSys Linux are trademarks of TimeSys Corporation.
+
+=========================================================================================
+
+Things To Remember :
+--------------------
+
+1)  The target platform for this RTSJ-compliant JVM is TimeSys Linux
+     However, it will also run on RedHat Linux with some minor loss of functionality,
+     e.g. Priority Inheritance.
+
+2)  Your java programs should be compiled by jdk 1.2 compiler.
+
+3)  You will have to install the pthreatrt library supplied.
+
+
+What is Where ?
+---------------
+
+1) The Realtime JVM executable (tjvm) is in <homedir>/bin
+
+2) The core classes are in <homedir>/lib/foundation.jar
+
+3) The pthreadrt library is in <homedir>/pthreadrt
+
+4) The java source code for the javax.realtime.* classes is in 
+   <homedir>/realtime.jar.
+
+* Note: <homedir> is directory where you've copied/mounted the content of this CD.
+
+
+Installing pthreadrt
+--------------------
+
+You will need to install the pthreadrt library if running on TimeSys Linux. You
+can do this by simply copying libpthreadrt.so.2.0 to /usr/lib or by typing
+make in <homedir>/pthreadrt directory which will do this for you.
+
+  
+HowTo Run ?
+------------
+
+1. cd <homedir>/bin
+2. ./tjvm -Djava.class.path=<yourclasspath>  -Xbootclasspath=<bootclasspath> <mainclass>
+
+You can run directly from <homedir>/bin without specifying a bootclass path, but you
+need to specify the path for all classes which are used by your java application.
+
+Note: the default value for -Xbootclasspath is ../lib
+
+Example:
+--------
+Lets run HelloWorld.class example..
+
+$ cd <homedir>/bin
+$ ./tjvm -Djava.class.path=<dir-where-your-HelloWorld-class-is-located> HelloWorld
+
+If you wanted to run this from a directory other than bin and you had 
+your PATH variable set to include bin, then you would have to specify
+the -Xbootclasspath option. Here's how you would do it.
+
+$ tjvm -Djava.class.path=<classpath> -Xbootclasspath=<homedir>/lib/foundation.jar HelloWorld
+
+
+Setting Memory Sizes
+--------------------
+The default values for Heap memory and Immortal memory in the tjvm are 4MB and 2MB 
+respectively. You can change these values in the following way
+
+To change initial heap memory size, pass '-Xms<size>' as one of teh parameters to
+tjvm. e.g. usage
+    -Xms20000 // heap is of 20,000 bytes
+    -Xms20K   // heap is 20Kbytes
+    -Xms20M   // heap is 20Mbytes
+
+To change the size of immortal memory, you would have to set the 'IMMORTAL_SIZE' 
+environment variable. tjvm will read this variable and take the size from there. 
+e.g.
+
+$ export IMMORTAL_SIZE=6000000
+
+The number has to be the size in bytes. You cannot specify it as 6000K or 6M.
+
+Using the PhysicalMemory classes
+--------------------------------
+
+The RTSJ defines a PhysicalMemoryTypeFilter interface. Objects immplementing
+this interface are to be used with the PhysicalMemoryManager class to access
+physical memory. For convinence a simple implementation of this interface is
+provided in the com.timesys.DefaultPhysicalMemoryFilter class. It has one
+public constructor declared as
+
+    public DefaultPhysicalMemoryFilter(long base, long size);
+
+To use it you'd need to write code like the following
+
+    DefaultPhysicalMemoryFilter filter = new DefaultPhysicalMemoryFilter(myBase, mySize);
+    PhysicalMemoryManager.registerFilter(myType, filter);
+    ImmortalPhysicalMemory im = new ImmortalPhysicalMemory(type, 1024*16);
+
+
+-------------------
+TimeSys Corporation
+4516 Henry Street
+Pittsburgh, PA 15213
+(412) 681-6899
+
+-----------------------------------------------------------------------------------------------
+
+                                                          
+
+
+
+
+
+

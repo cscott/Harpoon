@@ -1,0 +1,285 @@
+<!-- SCCS @(#)directmem.html	1.4 00/11/29 -->
+
+<BODY BGCOLOR=white>
+
+<title>The direct memory interface</title>
+<font color=blue><h1>The direct memory interface reference</h1></font>
+
+<font color=blue><h2>Introduction</h2></font>
+
+This document is the reference manual for the direct memory layer
+functions. These functions are used for accessing object and array
+fields, and also deal with GC-safe points. Please refer to <a
+href=gcsafety.html><i>How to be GC-safe in CVM</i></a> for context
+and examples.
+
+<p><b>WARNING</b>: The use of the direct heap access operations is
+<i>GC-unsafe</i>. Therefore, these operations should be used with
+extreme care in a few select places, and only within GC-unsafe
+regions. VM code should use <a href=indirectmem.html>the indirect
+memory layer</a> almost all the time when outside the interpreter.
+
+<p>
+<font color=blue><h2>Table of Contents</h2></font>
+<ul>
+    <li><A HREF=#object>Object operations</A>
+    <ul>
+        <li><A HREF=#rw32>Accessing fields of 32-bit width</A>
+	<li><A HREF=#rw64>Accessing fields of 64-bit width</A>
+    </ul>
+    <li><A HREF=#array>Array operations</A>
+    <ul>
+        <li><A HREF=#rw32arr>Accessing elements of 32-bit width and below</A>
+	<li><A HREF=#rw64arr>Accessing elements of 64-bit width</A>
+	<li><A HREF=#arrmisc>Miscellaneous array operations</a>
+    </ul>
+    <li><A HREF=#threads>GC-safety of threads</A>
+    <ul>
+        <li><A HREF=#gcunsafeexec>GC-unsafe blocks</A>
+        <li><A HREF=#gcsafeexec>GC-safe blocks: Requesting a GC-safe point</A>
+    </ul>
+</ul>
+
+
+<a name=object>
+<font color=blue><h2>Object field accesses</h2></font>
+
+The following macros access object fields. The result-producing ones
+take an l-value as the last argument, and assign to it.
+
+<A name=rw32>
+<font color=blue><h3>Accessing fields of 32-bit width</h3></font>
+
+In these macros, the first parameter is a direct object reference, the
+second is an offset in number of words from the beginning of the
+object, <i>counting the first header word as 0</i>, and the third is
+an l-value to read into or a value to write.
+
+<p>Note that the implementation of GC read and write barriers are
+hidden beneath the <tt>Ref</tt> typed accessors.
+
+<p>Weakly-typed 32-bit read and write:
+
+<pre>
+    <i>macro</i> void <b>CVMD_fieldRead32</b>( CVMObject* o, CVMUint32 off, CVMJavaVal32 res)
+    <i>macro</i> void <b>CVMD_fieldWrite32</b>(CVMObject* o, CVMUint32 off, CVMJavaVal32 res)
+</pre>
+
+<p>Strongly-typed 32-bit read and write:
+
+<pre>
+    <i>macro</i> void <b>CVMD_fieldReadRef</b>(    CVMObject* o, CVMUint32 off, CVMObject* item)
+    <i>macro</i> void <b>CVMD_fieldWriteRef</b>(   CVMObject* o, CVMUint32 off, CVMObject* item)
+
+    <i>macro</i> void <b>CVMD_fieldReadInt</b>(    CVMObject* o, CVMUint32 off, CVMJavaInt item)
+    <i>macro</i> void <b>CVMD_fieldWriteInt</b>(   CVMObject* o, CVMUint32 off, CVMJavaInt item)
+
+    <i>macro</i> void <b>CVMD_fieldReadFloat</b>(  CVMObject* o, CVMUint32 off, CVMJavaFloat item)
+    <i>macro</i> void <b>CVMD_fieldWriteFloat</b>( CVMObject* o, CVMUint32 off, CVMJavaFloat item)
+
+</pre>
+
+<A name=rw64>
+<font color=blue><h3>Accessing fields of 64-bit width</h3></font>
+
+In these macros, the first parameter is a direct object reference,
+the second is an offset in number of words from the beginning of the
+object, <i>counting the first header word as 0</i>, and the third is
+an l-value of type <tt>CVMJavaVal64</tt> to read into or a value to
+write.
+
+<p>The weakly-typed versions read from and write into a word-aligned
+two-word area pointed to by <tt>location</tt>.
+
+<p>Weakly-typed 64-bit read and write:
+
+<pre>
+    <i>macro</i> void <b>CVMD_fieldRead64</b>(   CVMObject* o, CVMUint32 off, CVMJavaVal32* location)
+    <i>macro</i> void <b>CVMD_fieldWrite64</b>(  CVMObject* o, CVMUint32 off, CVMJavaVal32* location)
+</pre>
+
+<p>Strongly-typed 64-bit read and write:
+
+<pre>
+    <i>macro</i> void <b>CVMD_fieldReadLong</b>(   CVMObject* o, CVMUint32 off, CVMJavaVal64 val64)
+    <i>macro</i> void <b>CVMD_fieldWriteLong</b>(  CVMObject* o, CVMUint32 off, CVMJavaVal64 val64)
+
+    <i>macro</i> void <b>CVMD_fieldReadDouble</b>( CVMObject* o, CVMUint32 off, CVMJavaVal64 val64)
+    <i>macro</i> void <b>CVMD_fieldWriteDouble</b>(CVMObject* o, CVMUint32 off, CVMJavaVal64 val64)
+</pre>
+
+<a name=array>
+<font color=blue><h2>Array accesses</h2></font>
+
+The following macros access object fields. The result-producing ones
+take an l-value as the last argument, and assign to it.
+
+<A name=rw32arr>
+<font color=blue><h3>Accessing elements of 32-bit width and below</h3></font>
+
+<p>In these macros, the first parameter is a direct array reference, the
+second is the array index <i>where the first array element is at index
+0</i>, and the third is an l-value to read into, or a value to write.
+
+<p>These macros are all strongly typed. All the Java basic types are
+represented.
+
+<p>Note that the implementation of GC read and write barriers are
+hidden beneath the <tt>Ref</tt> typed accessors.
+
+<pre>
+    <i>macro</i> void <b>CVMD_arrayReadRef</b>(    CVMArrayOfRef* arr,   CVMUint32 index, CVMObject* item)
+    <i>macro</i> void <b>CVMD_arrayWriteRef</b>(   CVMArrayOfRef* arr,   CVMUint32 index, CVMObject* item)
+
+    <i>macro</i> void <b>CVMD_arrayReadInt</b>(    CVMArrayOfInt* arr,   CVMUint32 index, CVMJavaInt item)
+    <i>macro</i> void <b>CVMD_arrayWriteInt</b>(   CVMArrayOfInt* arr,   CVMUint32 index, CVMJavaInt item)
+
+    <i>macro</i> void <b>CVMD_arrayReadByte</b>(   CVMArrayOfByte* arr,  CVMUint32 index, CVMJavaByte item)
+    <i>macro</i> void <b>CVMD_arrayWriteByte</b>(  CVMArrayOfByte* arr,  CVMUint32 index, CVMJavaByte item)
+
+    <i>macro</i> void <b>CVMD_arrayReadBool</b>(   CVMArrayOfBool* arr,  CVMUint32 index, CVMJavaBool item)
+    <i>macro</i> void <b>CVMD_arrayWriteBool</b>(  CVMArrayOfBool* arr,  CVMUint32 index, CVMJavaBool item)
+
+    <i>macro</i> void <b>CVMD_arrayReadShort</b>(  CVMArrayOfShort* arr, CVMUint32 index, CVMJavaShort item)
+    <i>macro</i> void <b>CVMD_arrayWriteShort</b>( CVMArrayOfShort* arr, CVMUint32 index, CVMJavaShort item)
+
+    <i>macro</i> void <b>CVMD_arrayReadChar</b>(   CVMArrayOfChar*  arr, CVMUint32 index, CVMJavaChar item)
+    <i>macro</i> void <b>CVMD_arrayWriteChar</b>(  CVMArrayOfChar*  arr, CVMUint32 index, CVMJavaChar item)
+
+    <i>macro</i> void <b>CVMD_arrayReadFloat</b>(  CVMArrayOfFloat* arr, CVMUint32 index, CVMJavaFloat item)
+    <i>macro</i> void <b>CVMD_arrayWriteFloat</b>( CVMArrayOfFloat* arr, CVMUint32 index, CVMJavaFloat item)
+
+</pre>
+
+<A name=rw64arr>
+<font color=blue><h3>Accessing elements of 64-bit width</h3></font>
+
+<p>In these macros, the first parameter is a direct array reference,
+the second is the array index <i>where the first array element is at
+index 0</i>, and the third is an l-value of type <tt>CVMJavaVal64</tt>
+to read into or a value to write.
+
+<p>The weakly-typed versions read from and write to a word-aligned
+two-word area pointed to by <tt>location</tt>:
+
+<pre>
+    <i>macro</i> void <b>CVMD_arrayRead64</b>(   &lt;CVMArrayOf64&gt;* o, CVMUint32 off, CVMJavaVal32* location)
+    <i>macro</i> void <b>CVMD_arrayWrite64</b>(  &lt;CVMArrayOf64&gt;* o, CVMUint32 off, CVMJavaVal32* location)
+</pre>
+
+where <tt>&lt;CVMArrayOf64&gt;</tt> is either <tt>CVMArrayOfLong</tt> or
+<tt>CVMArrayOfDouble</tt>. 
+
+<p>Strongly-typed versions:
+
+<pre>
+    <i>macro</i> void <b>CVMD_arrayReadLong</b>(   &lt;CVMArrayOf64&gt;* o, CVMUint32 index, CVMJavaVal64 val64)
+    <i>macro</i> void <b>CVMD_arrayWriteLong</b>(  &lt;CVMArrayOf64&gt;* o, CVMUint32 index, CVMJavaVal64 val64)
+
+    <i>macro</i> void <b>CVMD_arrayReadDouble</b>( &lt;CVMArrayOf64&gt;* o, CVMUint32 index, CVMJavaVal64 val64)
+    <i>macro</i> void <b>CVMD_arrayWriteDouble</b>(&lt;CVMArrayOf64&gt;* o, CVMUint32 index, CVMJavaVal64 val64)
+</pre>
+
+where <tt>&lt;CVMArrayOf64&gt;</tt> is either <tt>CVMArrayOfLong</tt> or
+<tt>CVMArrayOfDouble</tt>. 
+
+<A name=arrmisc>
+<font color=blue><h3>Miscellaneous array operations</h3></font>
+
+<p>All generic object operations apply to arrays as well. In
+particular, the header of an array object starts out with an object
+header, with an additional length entry, so any operation on the
+header of an object may be performed on an array header.
+
+<p>Below are array-specific operations.
+
+<p>Getting the length of an array:
+<pre>
+    <i>macro</i> CVMJavaInt32 <b>CVMD_arrayGetLength</b>(&lt;CVMArrayOfAny&gt;* o)
+</pre>
+
+where <tt>&lt;CVMArrayOfAny&gt;</tt> is any direct array reference.
+
+<A name=threads>
+<font color=blue><h2>GC-safety of threads</h2></font>
+
+Each thread has a GC-safety state associated with it. Threads that
+cannot <i>tolerate</i> GC are marked as GC-unsafe. A thread whose state
+can be scanned by GC is marked GC-safe. GC can occur only when all
+threads in the system are GC-safe. When a thread requests GC, all
+threads that are currently GC-unsafe are rolled forward to their next
+GC-safe point.
+
+<p>
+Here are a couple of operations to create GC-unsafe windows of
+operation, and to request GC-safe points.
+
+<A name=gcunsafeexec>
+<font color=blue><h2>GC-unsafe blocks</h2></font> 
+
+When a GC-safe thread wants to perform a GC-unsafe operation, it marks
+itself as unable to tolerate GC, performs the GC-unsafe operation, and
+then marks itself again as GC-safe.
+<tt>CVMD_gc<font color=#CC0000>U</font>nsafeExec()</tt> is
+the way to create such a window of GC-unsafety. At the end of the
+GC-unsafe window, the thread calling
+<tt>CVMD_gc<font color=#CC0000>U</font>nsafeExec()</tt>
+polls for a GC request. If there is one, the thread suspends itself to
+rendezvous with all the other threads rolling forward to their GC
+points. Execution continues after GC.
+
+<pre>
+    <i>macro</i> void <b>CVMD_gc<font color=#CC0000>U</font>nsafeExec</b>(CVMExecEnv* ee, <i>code</i> gcUnsafeAction)
+</pre>
+
+where <tt>ee</tt> is a pointer to the current thread's execution
+environment, and <tt>gcUnsafeAction</tt> is a segment of GC-unsafe code.
+
+<A name=gcsafeexec>
+<font color=blue><h2>GC-safe blocks: Requesting a GC-safe point</h2></font>
+
+GC-unsafe code must occasionally <i>offer</i> to become GC-safe to
+bound the time from a GC request to the beginning of
+GC. <tt>CVMD_gcSafeExec</tt> and
+<tt><font color=#CC0000>CVMD_gcSafeCheckPoint</font></tt> are
+the two macros that allow that.
+
+<p>The first macro is used for code that will not block. The
+assumption here is that there is some cached state in the GC-unsafe
+code which needs to be saved if GC is needed.
+
+<pre>
+    <i>macro</i> void <b><font color=#CC0000>CVMD_gcSafeCheckPoint</font></b>(CVMExecEnv* ee, <i>code</i> saveAction, <i>code</i> restoreAction)
+</pre>
+
+The thread calling <tt><font color=#CC0000>CVMD_gcSafeCheckPoint</font>()</tt>
+checks whether there is a GC request. If there is, the thread executes
+<tt>saveAction</tt> to save state necessary for GC, marks itself as
+GC-safe, and suspends itself to rendezvous with all the other threads
+rolling forward to their GC points. After GC completes, the thread is
+resumed, marks itself as GC-unsafe again, and executes
+<tt>restoreAction</tt> to do any caching operations necessary to
+continue execution.
+
+<p>The second macro is used for code that may potentially block. In
+this case, whatever cached state the GC-unsafe code has must be saved
+<font color=#CC0000>before calling the macro</font>.
+
+<pre>
+    <i>macro</i> void <b><font color=#CC0000>CVMD_gcSafeExec</font></b>(CVMExecEnv* ee,
+                               <font color=#CC0000><s><i>code</i> saveAction,</s></font>
+                               <i>code</i> <font color=#CC0000>safeAction<s>,
+                               <i>code</i> restoreAction</s></font>)
+</pre>
+
+The thread calling <font color=#CC0000><tt>CVMD_gcSafeExec()</tt>
+<s>executes <tt>saveAction</tt> unconditionally,</s></font>
+marks itself GC-safe, and checks
+to see if there is a GC-request. If there is one, the thread suspends
+itself to rendezvous with all the other threads rolling forward to
+their GC points. After GC is over, the thread is resumed, still in a
+GC-safe state. It executes <tt><font color=#CC0000>safeAction</font></tt>,
+potentially blocking. After waking up from the blocking action, the thread marks
+itself as GC-unsafe<font color=#CC0000><s>, and finally executes
+<tt>restoreAction</tt> to cache state</s></font>
+and continue<font color=#CC0000>s</font> with GC-unsafe execution.

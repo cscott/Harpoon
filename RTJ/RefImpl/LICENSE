@@ -1,0 +1,50 @@
+IMPORTANT NOTICE
+TIMESYS CORPORATION
+SOFTWARE RESEARCH LICENSE AGREEMENT
+
+THIS SOFTWARE RESEARCH LICENSE AGREEMENT ("SRLA") IS A LEGAL AGREEMENT BETWEEN TIMESYS CORPORATION ("TimeSys") AND YOU CONCERNING THE SOFTWARE.  YOUR USE OF THE SOFTWARE CONSITUTES YOUR AGREEMENT WITH AND ACCEPTANCE OF ALL OF THE TERMS AND CONDITIONS CONTAINED IN THIS SRLA.  IF YOU DO NOT AGREE WITH ALL OF THE TERMS AND CONDITIONS IN THIS SRLA, YOU WILL NOT BE AUTHORIZED TO USE THE SOFTWARE AND MUST RETURN ALL COPIES OF THE SOFTWARE TO TIMESYS.
+
+THE SOFTWARE IS PROTECTED BY UNITED STATES OF AMERICA AND INTERNATIONAL INTELLECTUAL PROPERTY LAWS.  UNAUTHORIZED USE OF THIS SOFTWARE IS STICTLY PROHIBITED. 
+
+I.  DEFINITIONS
+
+"Research Purposes" means research, evaluation, development, educational or personal and individual use, excluding use or distribution for direct or indirect commercial (including strategic) gain or advantage.
+
+"Software" means the software program TimeSys Reference Implementation for Java 2 in object code form only and related documentation. Software does not include source code.   
+		
+II.  LICENSE GRANT
+
+TimeSys hereby grants to you the limited, non-exclusive, non-transferable right and license to install and use the Software solely for the Research Purposes. All rights not expressly granted herein are expressly reserved. 
+
+III.  RESTRICTIONS
+
+A.You shall not disclose or distribute Software or related source code to any third party. 
+B.You shall not decompile, disassemble or reverse engineer the Software, or use or copy the Software for any purpose other than Research Purposes. 
+C.The Software licensed hereunder contains certain software code owned by Sun Microsystems ("Sun Code") and subject to the terms and conditions of the Sun Community Source License Version 2.8 for Java 2 Platform, Micro Edition, Connected Device Configuration and Foundation Profile ("SCSL") applicable to "Covered Code" and "Modifications" as those terms are defined in the SCSL ("Sun Terms"). In the event of a conflict between the terms of this Agreement and the Sun Terms, the Sun Terms shall prevail only as applied to Sun Code. Any terms in this Agreement that are additional or supplemental to the Sun Terms are provided by TimeSys alone, and are not the responsibility of any third party.
+
+IV.  INTELLECTUAL PROPERTY RIGHTS
+
+A.TimeSys retains all right, title and interest in and to the Software, the related source code, and any and all associated patents, copyrights, and other intellectual property rights. 
+B.Certain portions of the Software may be subject to the ownership rights of TimeSys' licensors and incorporated under license to TimeSys.
+C.The Software is a "commercial item" as defined in 48 C.F.R. 2.101 (Oct. 1995), consisting of  "commercial computer software" and "commercial computer software documentation" as such terms are used in 48 C.F.C. 12.212 (Sept. 1995). U.S. government users of the Software acquire only the limited rights to the Software expressly set forth in this Agreement, consistent with 48 C.F.R. 12.212 and 48 C.F.R. 227.7202-1 through 227.7202-4.
+D.You shall provide to TimeSys any modifications, error corrections, or derivatives of the Software developed by you ("Your Modifications"). You hereby grant TimeSys a perpetual, irrevocable, unrestricted, transferable, royalty-free right and license to use, copy, modify, and perform, display and distribute Your Modifications. 
+
+
+V.  DISCLAIMER OF WARRANTY AND LIABLITY
+
+A.The Software is provided "AS IS" without warranty of any kind, express or implied, including without limitation any implied warranties of merchantability and fitness for a particular purpose. 
+B.in no event shall timesys be liable to you or any other party for any loss or damages in connection with this agreement or the software, howsoever arising, and notwithstanding the failure of any remedy to fulfill its essential purpose. in no event shall timesys be liable for any indirect, special, or consequential damages howsoever arising. 
+
+VI.  TERMINATION AND SURVIVAL 
+
+A.You may terminate this Agreement at any time by notifying TimeSys and returning to TimeSys all Software and related documentation and media.
+B.This Agreement shall automatically terminate in the event of a breach of this Agreement by you. 
+C.Sections I, III, IV, V, VI, and VII shall survive any expiration or termination of this Agreement.
+
+VII.  GENERAL 
+
+A.Dispute Resolution: In the event of a dispute between you and TimeSys arising in connection with this SRLA, such dispute shall be resolved, at TimeSys' sole option, by binding arbitration under the rules and auspices of the American Arbitration Association. Arbitration shall take place in the Commonwealth of Pennsylvania, U.S.A. The foregoing shall not prevent TimeSys from seeking applicable injunctive relief in a court of competent jurisdiction.
+B.Choice of Law and Forum: This SRLA shall be governed for all purposes by the laws of the Commonwealth of Pennsylvania, excluding choice of law provisions. Any action or proceeding seeking to enforce any provision of, or based on any right arising out of, this SRLA may be brought against you or TimeSys in any of the courts of the Commonwealth of Pennsylvania, including United States District Courts, if it has or can acquire jurisdiction. You consent to the jurisdiction of such courts (and of the appropriate appellate courts) in any such action or proceeding and waive any objection to venue laid therein. Process in any action or proceeding referred to in the preceding sentence may be served on either party to this SRLA anywhere in the world. You expressly agree that the United Nations Convention on Contracts for the International Sale of Goods will not apply to this SRLA.  You further agree that the Uniform Computer Information Transactions Act, or any state statute substantially implementing such act, will not apply to this SRLA. 
+C.Incorporation: This SRLA contains the entire agreement and understanding between you and TimeSys.  This SRLA may not be modified or appended except by an agreement in writing signed by the party against whom enforcement is sought. No waiver by either party of any rights under this SRLA will be effective unless such waiver is in a writing signed by the party against whom enforcement is sought.
+
+

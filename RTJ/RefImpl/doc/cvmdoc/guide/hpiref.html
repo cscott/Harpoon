@@ -1,0 +1,2257 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<!-- SCCS @(#)hpiref.html	1.14 00/11/30 -->
+<HTML>
+<HEAD>
+<TITLE>HPI Reference</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000077" ALINK="#ff0000">
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR>
+<TD>
+&nbsp;
+<br>
+<font size=-1> 
+<A href="index.html">Contents</A> | <A href="cstackcheck.html">Prev</A> | <A href="port_pj.html">Next</A>
+</font></TD>
+
+<TD align="right">
+J2ME CDC 1.0
+<br>Porting Guide
+</TD>
+</TR>
+</TABLE>
+<HR size="2" noshade>
+<!-- ====================== Body text begins here ====================== -->
+<h1>Host Programming Interface (HPI) Reference</h1>
+<blockquote>
+<p>This chapter describes the definitions required by the Host Programming 
+Interface (HPI). The HPI defines the set of APIs that must be implemented 
+when porting CVM.</p>
+
+
+<p>The HPI connects the CVM to its target operating system.  The HPI is defined in 
+the header files in <tt>src/share/javavm/include/porting/</tt>.  These shared 
+header files "include" machine-dependent header files that reside 
+in <tt>src/&lt;platform&gt;/javavm/include/</tt>. 
+</p>
+
+<p><b>Note:</b> Some parts of the HPI are implemented as functions and other 
+parts as macros. The macros are defined in header files that are included by 
+the HPI header files.</p>
+
+<p>The following table summarizes the header files that define the HPI. Additional 
+information for each header file follows this table.
+<br>&nbsp;
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Header File</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><A href="#defs">defs.h</A></td>
+<td valign=top>Lists CVM primitive types, macros for ANSI header file locations, macros for 
+HPI included header file locations, and macros indicating whether the implementation 
+supports certain advanced features. Explicitly includes a machine-dependent 
+definitions header file. The reference implementation of the included file resides in 
+<tt>src/&lt;platform&gt;/javavm/include/defs_md.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><A href="#double">doubleword.h</A></td>
+<td valign=top>Declares 64-bit conversion functions, and functions related to the long and 
+double data types.
+</td>
+</tr>
+<tr>
+<td valign=top><A href="#endian">endianness.h</A></td>
+<td valign=top>Lists macros that indicate endianness (big endian or little endian).</td>
+</tr>
+<tr>
+<td valign=top><A href="#float">float.h</A></td>
+<td valign=top>Declares functions related to the float data types.</td>
+</tr>
+<tr>
+<td valign=top><A href="#globals">globals.h</A></td>
+<td valign=top>Lists functions related to the per-VM global state and the per-address-space 
+static state.</td>
+</tr>
+<tr>
+<td valign=top><A href="#int">int.h</A></td>
+<td valign=top>Lists functions related to the integer (int) data types.</td>
+</tr>
+<tr>
+<td valign=top><A href="#io">io.h</A></td>
+<td valign=top>Lists I/O-related macros and functions.</td>
+</tr>
+<tr>
+<td valign=top><A href="#jni">jni.h</A></td>
+<td valign=top>Lists functions and other information related to the Java Native Interface (JNI).</td>
+</tr>
+<tr>
+<td valign=top><A href="#linker">linker.h</A></td>
+<td valign=top>Lists functions and other information related to dynamic linking.</td>
+</tr>
+<tr>
+<td valign=top><A href="#net">net.h</A></td>
+<td valign=top>Lists functions related to networking.</td>
+</tr>
+<tr>
+<td valign=top><A href="#path">path.h</A></td>
+<td valign=top>Lists macros and a function related to paths.</td>
+</tr>
+<tr>
+<td valign=top><A href="#sync">sync.h</A></td>
+<td valign=top>Lists functions used to facilitate thread synchronization and 
+mutual exclusion locks.</td>
+</tr>
+<tr>
+<td valign=top><A href="#system">system.h</A></td>
+<td valign=top>Lists functions and other information related to system functions.</td>
+</tr>
+<tr>
+<td valign=top><A href="#threads">threads.h</A></td>
+<td valign=top>Lists functions and other information related to threads.</td>
+</tr>
+<tr>
+<td valign=top><A href="#time">time.h</A></td>
+<td valign=top>Lists time functions.</td>
+</tr>
+<tr>
+<td valign=top><A href="#vm-defs">vm-defs.h</A></td>
+<td valign=top>Declares CVM data structure names and data types. The data types 
+are exported to the HPI implementation.</td>
+</tr>
+
+</table></p>
+
+</blockquote>
+<a name=defs>
+<h3>defs.h</h3>
+<blockquote>
+The file <tt>src/share/javavm/include/porting/defs.h</tt> specifies the following 
+definition requirements.
+<h4>Type Definitions</h4>
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Type</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>CVMfloat32</tt>
+</td>
+<td valign=top>Single-precision IEEE floating point type.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMfloat64</tt>
+</td>
+<td valign=top>Double-precision IEEE floating point type.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt8</tt>
+</td>
+<td valign=top>Signed 8-bit integer type.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt16</tt>
+</td>
+<td valign=top>Signed 16-bit integer type.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt32</tt>
+</td>
+<td valign=top>Signed 32-bit integer type.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt64</tt>
+</td>
+<td valign=top>Signed 64-bit integer type.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMSize</tt>
+</td>
+<td valign=top>Size in bytes of a data type. Equivalent to ANSI C <tt>size_t</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMUint8</tt>
+</td>
+<td valign=top>Unsigned 8-bit integer type.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMUint16</tt>
+</td>
+<td valign=top>Unsigned 16-bit integer type.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMUint32</tt>
+</td>
+<td valign=top>Unsigned 32-bit integer type.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMUint64</tt>
+</td>
+<td valign=top>Unsigned 64-bit integer type.
+</td>
+</tr>
+</table>
+
+<h4>ANSI Header File Locations</h4>
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Macro</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_ANSI_ASSERT_H</tt>
+</td>
+<td valign=top>Provides the location of the ANSI header file <tt>assert.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_ANSI_CTYPE_H</tt>
+</td>
+<td valign=top>Provides the location of the ANSI header file <tt>ctype.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_ANSI_ERRNO_H</tt>
+</td>
+<td valign=top>Provides the location of the ANSI header file <tt>errno.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_ANSI_LIMITS_H</tt>
+</td>
+<td valign=top>Provides the location of the ANSI header file <tt>limits.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_ANSI_SETJMP_H</tt>
+</td>
+<td valign=top>Provides the location of the ANSI header file <tt>setjmp.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_ANSI_STDARG_H</tt>
+</td>
+<td valign=top>Provides the location of the ANSI header file <tt>stdarg.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_ANSI_STDDEF_H</tt>
+</td>
+<td valign=top>Provides the location of the ANSI header file <tt>stddef.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_ANSI_STDIO_H</tt>
+</td>
+<td valign=top>Provides the location of the ANSI header file <tt>stdio.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_ANSI_STDLIB_H</tt>
+</td>
+<td valign=top>Provides the location of the ANSI header file <tt>stdlib.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_ANSI_STRING_H</tt>
+</td>
+<td valign=top>Provides the location of the ANSI header file <tt>string.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_ANSI_TIME_H</tt>
+</td>
+<td valign=top>Provides the location of the ANSI header file <tt>time.h</tt>.
+</td>
+</tr>
+</table>
+
+<h4>HPI Included Header File Locations</h4>
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Macro</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_DOUBLEWORD_H</tt>
+</td>
+<td valign=top>Provides the location of the HPI header file included by <tt>porting/doubleword.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_ENDIANNESS_H</tt>
+</td>
+<td valign=top>Provides the location of the HPI header file included by <tt>porting/endianness.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_FLOAT_H</tt>
+</td>
+<td valign=top>Provides the location of the HPI header file included by <tt>porting/float.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_GLOBALS_H</tt>
+</td>
+<td valign=top>Provides the location of the HPI header file included by <tt>porting/globals.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_INT_H</tt>
+</td>
+<td valign=top>Provides the location of the HPI header file included by <tt>porting/int.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_IO_H</tt>
+</td>
+<td valign=top>Provides the location of the HPI header file included by <tt>porting/io.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_JNI_H</tt>
+</td>
+<td valign=top>Provides the location of the HPI header file included by <tt>porting/jni.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_LINKER_H</tt>
+</td>
+<td valign=top>Provides the location of the HPI header file included by <tt>porting/linker.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_NET_H</tt>
+</td>
+<td valign=top>Provides the location of the HPI header file included by <tt>porting/net.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_PATH_H</tt>
+</td>
+<td valign=top>Provides the location of the HPI header file included by <tt>porting/path.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_SYNC_H</tt>
+</td>
+<td valign=top>Provides the location of the HPI header file included by <tt>porting/sync.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_THREADS_H</tt>
+</td>
+<td valign=top>Provides the location of the HPI header file included by <tt>porting/threads.h</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_HDR_TIME_H</tt>
+</td>
+<td valign=top>Provides the location of the HPI header file included by <tt>porting/time.h</tt>.
+</td>
+</tr>
+</table>
+<h4>Advanced Platform Features</h4>
+The following macros represent advanced features. These features are not required, 
+but they support VM optimization such as fast locking. If the macros are not 
+defined, a default implementation is used.
+<p>For information about the functions referenced in the descriptions below, see 
+the section on the <A href="#sync">sync.h</A> header file.
+<br>&nbsp;
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Macro</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_ADV_ATOMIC_CMPANDSWAP</tt>
+</td>
+<td valign=top>Define this if atomic compare-and-swap (<tt>CVMatomicCompareAndSwap</tt>) is supported.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_ADV_ATOMIC_INCDEC</tt>
+</td>
+<td valign=top>Define this if atomic increment (<tt>CVMatomicIncrement</tt>) and atomic decrement 
+(<tt>CVMatomicDecrement</tt>) are supported.</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_ADV_ATOMIC_SWAP</tt>
+</td>
+<td valign=top>Define this if atomic swap (<tt>CVMatomicSwap</tt>) is supported.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_ADV_MUTEX_SET_OWNER</tt>
+</td>
+<td valign=top>Define this if setting the owner of a mutex (<tt>CVMmutexSetOwner</tt>) is supported.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_ADV_SCHEDLOCK</tt>
+</td>
+<td valign=top>Define this if a scheduler lock (<tt>CVMschedLock</tt>) is supported.
+</td>
+</tr>
+</table></p>
+</blockquote>
+
+<a name=double>
+<h3>doubleword.h</h3>
+<blockquote>
+The file <tt>src/share/javavm/include/porting/doubleword.h</tt> specifies the following 
+definition requirements.
+<h4>64-bit Conversion Functions</h4>
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>void <b>CVMdouble2Jvm</b>(CVMUint32 location[2], CVMJavaDouble val);</tt>
+</td>
+<td valign=top>Reads a 64-bit Java double in native representation from <tt>val</tt> and 
+writes the result in two-word JVM representation to <tt>location</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaDouble <b>CVMjvm2Double</b>(const CVMUint32 location[2]);</tt>
+</td>
+<td valign=top>Reads a 64-bit Java double in two-word JVM representation from <tt>location</tt> 
+and returns the result in native representation.  There is no restriction on the 
+JVM representation, except that a value written using <tt>CVMdouble2Jvm()</tt> must 
+return the same value when <tt>CVMjvm2Double()</tt> is called (The operation is 
+reversible).
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMjvm2Long</b>(const CVMUint32 location[2]);</tt>
+</td>
+<td valign=top>Reads a 64-bit Java long in two-word JVM representation from <tt>location</tt> 
+and returns the result in native representation.  There is no restriction on the 
+JVM representation, except that a value written using <tt>CVMlong2Jvm()</tt> must 
+return the same value when <tt>CVMjvm2Long()</tt> is called (The operation is 
+reversible).
+</td>
+</tr>
+<tr>
+<td valign=top><tt>void <b>CVMlong2Jvm</b>(CVMUint32 location[2], CVMJavaLong val);</tt>
+</td>
+<td valign=top>Reads a 64-bit Java long in native representation from <tt>val</tt> and writes 
+the result in two-word JVM representation to <tt>location</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>void <b>CVMmemCopy64</b>(CVMUint32 to[2], const CVMUint32 from[2]);</tt>
+</td>
+<td valign=top>Copies two typeless 32-bit words from one location to another. This is 
+semantically equivalent to:
+<blockquote>
+<pre>
+to[0] = from[0];
+to[1] = from[1];
+</pre>
+</blockquote>
+but this interface is provided for those platforms that could optimize this 
+into a single 64-bit transfer.
+</td>
+</tr>
+</table>
+
+
+<h4>Long Conversion Functions</h4>
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>extern CVMJavaLong <b>CVMdouble2Long</b>(CVMJavaDouble val);</tt>
+</td>
+<td valign=top>Converts double to long, according to <tt>d2l</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>extern CVMJavaLong <b>CVMdouble2LongBits</b>(CVMJavaDouble val);</tt>
+</td>
+<td valign=top>Converts double bits to long bits, according to <tt>Double.doubleToRawLongBits()</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>extern CVMJavaLong <b>CVMint2Long</b>(CVMJavaInt val);</tt>
+</td>
+<td valign=top>Converts int to long, according to <tt>i2l</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>extern CVMJavaDouble <b>CVMlong2Double</b>(CVMJavaLong val);</tt>
+</td>
+<td valign=top>Converts long to double, according to <tt>l2d</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>extern CVMJavaFloat <b>CVMlong2Float</b>(CVMJavaLong val);</tt>
+</td>
+<td valign=top>Converts long to float, according to <tt>l2f</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>extern CVMJavaInt <b>CVMlong2Int</b>(CVMJavaLong val);</tt>
+</td>
+<td valign=top>Converts long to int, according to <tt>l2i</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>extern void * <b>CVMlong2VoidPtr</b>(CVMJavaLong val);</tt>
+</td>
+<td valign=top>Converts long to void *.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>extern CVMJavaDouble <b>CVMlongBits2Double</b>(CVMJavaLong val);</tt>
+</td>
+<td valign=top>Converts long bits to double bits, according to <tt>Double.longBitsToDouble()</tt>.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>extern CVMJavaLong <b>CVMvoidPtr2Long</b>(void * val);</tt>
+</td>
+<td valign=top>Converts void * to long.
+</td>
+</tr>
+</table>
+
+<h4>Long Arithmetic Functions</h4>
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMlongAdd</b>(CVMJavaLong op1, CVMJavaLong op2);</tt>
+</td>
+<td valign=top>Follows the <tt>ladd</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMlongAnd</b>(CVMJavaLong op1, CVMJavaLong op2);</tt>
+</td>
+<td valign=top>Follows the <tt>land</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMlongDiv</b>(CVMJavaLong op1, CVMJavaLong op2);</tt>
+</td>
+<td valign=top>Follows the <tt>ldiv</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMlongMul</b>(CVMJavaLong op1, CVMJavaLong op2);</tt>
+</td>
+<td valign=top>Follows the <tt>lmul</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMlongOr</b>(CVMJavaLong op1, CVMJavaLong op2);</tt>
+</td>
+<td valign=top>Follows the <tt>lor</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMlongRem</b>(CVMJavaLong op1, CVMJavaLong op2);</tt>
+</td>
+<td valign=top>Follows the <tt>lrem</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMlongSub</b>(CVMJavaLong op1, CVMJavaLong op2);</tt>
+</td>
+<td valign=top>Follows the <tt>lsub</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMlongXor</b>(CVMJavaLong op1, CVMJavaLong op2);</tt>
+</td>
+<td valign=top>Follows the <tt>lxor</tt> bytecode semantics.
+</td>
+</tr>
+</table>
+
+<h4>More Long Functions</h4>
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMlongCompare</b>(CVMJavaLong op1, CVMJavaLong op2);</tt>
+</td>
+<td valign=top>Compares <tt>op1</tt> and <tt>op2</tt> according to the <tt>lcmp</tt> 
+bytecode semantics. Return type is <tt>CVMInt32</tt> (value is 0, 1, or -1).
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMlongConstZero</b>();</tt>
+</td>
+<td valign=top>Follows the <tt>lconst_0</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMlongConstOne</b>();</tt>
+</td>
+<td valign=top>Follows the <tt>lconst_1</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMlongEq</b>(CVMJavaLong op1, CVMJavaLong op2);</tt>
+</td>
+<td valign=top>Evaluates whether <tt>op1</tt> is equal to <tt>op2</tt>. Return type is 
+<tt>CVMBool</tt> (value is <tt>CVM_TRUE</tt> or <tt>CVM_FALSE</tt>).
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMlongEqz</b>(CVMJavaLong op);</tt>
+</td>
+<td valign=top>Evaluates whether <tt>op</tt> is equal to zero. Return type is 
+<tt>CVMBool</tt> (value is <tt>CVM_TRUE</tt> or <tt>CVM_FALSE</tt>).
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMlongGe</b>(CVMJavaLong op1, CVMJavaLong op2);</tt>
+</td>
+<td valign=top>Evaluates whether <tt>op1</tt> is greater than or equal to <tt>op2</tt>. 
+Return type is <tt>CVMBool</tt> (value is <tt>CVM_TRUE</tt> or <tt>CVM_FALSE</tt>).
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMlongGez</b>(CVMJavaLong op);</tt>
+</td>
+<td valign=top>Evaluates whether <tt>op</tt> is greater than or equal to zero. Return type is 
+<tt>CVMBool</tt> (value is <tt>CVM_TRUE</tt> or <tt>CVM_FALSE</tt>).
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMlongGt</b>(CVMJavaLong op1, CVMJavaLong op2);</tt>
+</td>
+<td valign=top>Evaluates whether <tt>op1</tt> is greater than <tt>op2</tt>. Return type is 
+<tt>CVMBool</tt> (value is <tt>CVM_TRUE</tt> or <tt>CVM_FALSE</tt>).
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMlongLe</b>(CVMJavaLong op1, CVMJavaLong op2);</tt>
+</td>
+<td valign=top>Evaluates whether <tt>op1</tt> is less than or equal to <tt>op2</tt>. 
+Return type is <tt>CVMBool</tt> (value is <tt>CVM_TRUE</tt> or <tt>CVM_FALSE</tt>).
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMlongLt</b>(CVMJavaLong op1, CVMJavaLong op2);</tt>
+</td>
+<td valign=top>Evaluates whether <tt>op1</tt> is less than <tt>op2</tt>. Return type is 
+<tt>CVMBool</tt> (value is <tt>CVM_TRUE</tt> or <tt>CVM_FALSE</tt>).
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMlongLtz</b>(CVMJavaLong op);</tt>
+</td>
+<td valign=top>Evaluates whether <tt>op</tt> is less than zero. Return type is 
+<tt>CVMBool</tt> (value is <tt>CVM_TRUE</tt> or <tt>CVM_FALSE</tt>).
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMlongNe</b>(CVMJavaLong op1, CVMJavaLong op2);</tt>
+</td>
+<td valign=top>Evaluates whether <tt>op1</tt> is not equal to <tt>op2</tt>. Return type is 
+<tt>CVMBool</tt> (value is <tt>CVM_TRUE</tt> or <tt>CVM_FALSE</tt>).
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMlongNeg</b>(CVMJavaLong op);</tt>
+</td>
+<td valign=top>Returns the negation of <tt>op</tt>, according to the <tt>lneg</tt> bytecode 
+semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMlongNot</b>(CVMJavaLong op);</tt>
+</td>
+<td valign=top>Returns the complement of <tt>op</tt> according to the 
+<tt>lnot</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMlongShl</b>(CVMJavaLong op1, CVMJavaInt op2);</tt>
+</td>
+<td valign=top>Returns the signed shift left of <tt>op</tt>, 
+according to the <tt>lshl</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMlongShr</b>(CVMJavaLong op1, CVMJavaInt op2);</tt>
+</td>
+<td valign=top>Returns the signed shift right of <tt>op</tt>, 
+according to the <tt>lshr</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaLong <b>CVMlongUshr</b>(CVMJavaLong op1, CVMJavaInt op2);</tt>
+</td>
+<td valign=top>Returns the unsigned shift right of <tt>op</tt>,
+according to the <tt>lushr</tt> bytecode semantics.
+</td>
+</tr>
+</table>
+
+<h4>Double Functions</h4>
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaFloat <b>CVMdouble2Float</b>(CVMJavaDouble val);</tt>
+</td>
+<td valign=top>Converts the double <tt>val</tt> to a float, 
+according to the <tt>d2f</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaInt <b>CVMdouble2Int</b>(CVMJavaDouble val);</tt>
+</td>
+<td valign=top>Converts the double <tt>val</tt> to an int, 
+according to the <tt>d2i</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaDouble <b>CVMdoubleAdd</b>(CVMJavaDouble op1, CVMJavaDouble op2);</tt>
+</td>
+<td valign=top>Adds <tt>op1</tt> to <tt>op2</tt> according to 
+the <tt>dadd</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMdoubleCompare</b>(CVMJavaDouble op1, CVMJavaDouble op2, 
+CVMInt32 direction);</tt>
+</td>
+<td valign=top>Compares <tt>op1</tt> and <tt>op2</tt>, according to the <tt>dcmpl</tt> 
+(<tt>direction</tt> is -1) or <tt>dcmpg</tt> (<tt>direction</tt> is 1) bytecode 
+semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaDouble <b>CVMdoubleConstOne</b>();</tt>
+</td>
+<td valign=top>Follows the <tt>dconst_1</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaDouble <b>CVMdoubleConstZero</b>();</tt>
+</td>
+<td valign=top>Follows the <tt>dconst_0</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaDouble <b>CVMdoubleDiv</b>(CVMJavaDouble op1, CVMJavaDouble op2);</tt>
+</td>
+<td valign=top>Follows the <tt>ddiv</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaDouble <b>CVMdoubleMul</b>(CVMJavaDouble op1, CVMJavaDouble op2);</tt>
+</td>
+<td valign=top>Follows the <tt>dmul</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaDouble <b>CVMdoubleNeg</b>(CVMJavaDouble op);</tt>
+</td>
+<td valign=top>Returns the negation of <tt>op</tt>, according to the <tt>dneg</tt> bytecode 
+semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaDouble <b>CVMdoubleRem</b>(CVMJavaDouble op1, CVMJavaDouble op2);</tt>
+</td>
+<td valign=top>Follows the <tt>drem</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaDouble <b>CVMdoubleSub</b>(CVMJavaDouble op1, CVMJavaDouble op2);</tt>
+</td>
+<td valign=top>Follows the <tt>dsub</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaDouble <b>CVMint2Double</b>(CVMJavaInt val);</tt>
+</td>
+<td valign=top>Converts int to double, according to the <tt>i2d</tt> bytecode semantics.
+</td>
+</tr>
+</table>
+
+</blockquote>
+
+<a name=endian>
+<h3>endianness.h</h3>
+<blockquote>
+The file <tt>src/share/javavm/include/porting/endianness.h</tt> specifies the following 
+definition requirements.
+<br>&nbsp;
+
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_DOUBLE_ENDIANNESS</tt>
+</td>
+<td valign=top>Indicates whether the platform uses the big endian convention or the little 
+endian convention for the double data types. Set this to <tt>CVM_LITTLE_ENDIAN</tt> 
+or <tt>CVM_BIG_ENDIAN</tt> as appropriate for your platform.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_ENDIANNESS</tt>
+</td>
+<td valign=top>Indicates whether the platform uses the big endian convention or the little 
+endian convention. Set this to <tt>CVM_LITTLE_ENDIAN</tt> or <tt>CVM_BIG_ENDIAN</tt> 
+as appropriate for your platform.
+</td>
+</tr>
+</table>
+</blockquote>
+
+<a name=float>
+<h3>float.h</h3>
+<blockquote>
+The file <tt>src/share/javavm/include/porting/float.h</tt> specifies the following 
+definition requirements.
+<br>&nbsp;
+
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaDouble <b>CVMfloat2Double</b>(CVMJavaFloat op);</tt>
+</td>
+<td valign=top>Converts float to double, according to the <tt>f2d</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaInt <b>CVMfloat2Int</b>(CVMJavaFloat op);</tt>
+</td>
+<td valign=top>Converts float to int, according to the <tt>f2i</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>extern CVMJavaLong <b>CVMfloat2Long</b>(CVMJavaFloat op);</tt>
+</td>
+<td valign=top>Converts float to long, according to the <tt>f2l</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaFloat <b>CVMfloatAdd</b>(CVMJavaFloat op1, CVMJavaFloat op2);</tt>
+</td>
+<td valign=top>Follows the <tt>fadd</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMfloatCompare</b>(CVMJavaFloat op1, CVMJavaFloat op2,
+			 CVMInt32 direction);</tt>
+</td>
+<td valign=top>Compares <tt>op1</tt> and <tt>op2</tt>, according to the <tt>fcmpl</tt> 
+(<tt>direction</tt> is -1) or <tt>fcmpg</tt> (<tt>direction</tt> is 1) bytecode 
+semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaFloat <b>CVMfloatDiv</b>(CVMJavaFloat op1, CVMJavaFloat op2);</tt>
+</td>
+<td valign=top>Follows the <tt>fdiv</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaFloat <b>CVMfloatMul</b>(CVMJavaFloat op1, CVMJavaFloat op2);</tt>
+</td>
+<td valign=top>Follows the <tt>fmul</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaFloat <b>CVMfloatNeg</b>(CVMJavaFloat op1, CVMJavaFloat op2);</tt>
+</td>
+<td valign=top>Follows the <tt>fneg</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaFloat <b>CVMfloatRem</b>(CVMJavaFloat op1, CVMJavaFloat op2);</tt>
+</td>
+<td valign=top>Follows the <tt>frem</tt> bytecode semantics.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMJavaFloat <b>CVMfloatSub</b>(CVMJavaFloat op1, CVMJavaFloat op2);</tt>
+</td>
+<td valign=top>Follows the <tt>fsub</tt> bytecode semantics.
+</td>
+</tr>
+</table>
+</blockquote>
+
+<a name=globals>
+<h3>globals.h</h3>
+<blockquote>
+The file <tt>src/share/javavm/include/porting/globals.h</tt> specifies the following 
+definition requirements.
+<br>&nbsp;
+
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>extern void <b>CVMdestroyStaticState</b>();</tt>
+</td>
+<td valign=top>Destroys platform-specific per-address-space static state.</td>
+</tr>
+<tr>
+<td valign=top><tt>extern void <b>CVMdestroyVMTargetGlobalState</b>(CVMTargetGlobalState *);</tt>
+</td>
+<td valign=top>Destroys platform-specific per-VM global state.</td>
+</tr>
+<tr>
+<td valign=top><tt>extern void <b>CVMinitStaticState</b>();</tt>
+</td>
+<td valign=top>Initializes platform-specific per-address-space static state.</td>
+</tr>
+<tr>
+<td valign=top><tt>extern void <b>CVMinitVMTargetGlobalState</b>(CVMTargetGlobalState *);</tt>
+</td>
+<td valign=top>Initializes platform-specific per-VM global state.</td>
+</tr>
+<tr>
+<td valign=top><tt>struct <b>CVMTargetGlobalState</b> {};</tt>
+</td>
+<td valign=top>Defines the platform-specific global state.</td>
+</tr>
+</table>
+
+</blockquote>
+
+<a name=int>
+<h3>int.h</h3>
+<blockquote>
+<p>
+The file <tt>src/share/javavm/include/porting/int.h</tt> specifies the following 
+definition requirements.
+<br>&nbsp;
+
+<!-- Begin INT Table -->
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+
+
+<tr>
+<td valign=top><tt>CVMJavaInt <b>CVMintAdd</b>(CVMJavaInt op1, CVMJavaInt op2);</tt>
+</td>
+<td valign=top>Adds two integers according to the <tt>iadd</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaInt <b>CVMintSub</b>(CVMJavaInt op1, CVMJavaInt op2);</tt>
+</td>
+<td valign=top>Subtracts two integers according to the <tt>isub</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaInt <b>CVMintMul</b>(CVMJavaInt op1, CVMJavaInt op2);</tt>
+</td>
+<td valign=top>Multiplies two integers according to the <tt>imul</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaInt <b>CVMintDiv</b>(CVMJavaInt op1, CVMJavaInt op2);</tt>
+</td>
+<td valign=top>Divides two integers according to the <tt>idiv</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaInt <b>CVMintRem</b>(CVMJavaInt op1, CVMJavaInt op2);</tt>
+</td>
+<td valign=top>Returns the remainder of the division of 
+two integers according to the <tt>irem</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaInt <b>CVMintAND</b>(CVMJavaInt op1, CVMJavaInt op2);</tt>
+</td>
+<td valign=top>ANDs two integers according to the <tt>iand</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaInt <b>CVMintOr</b>(CVMJavaInt op1, CVMJavaInt op2);</tt>
+</td>
+<td valign=top>ORs two integers according to the <tt>ior</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaInt <b>CVMintXor</b>(CVMJavaInt op1, CVMJavaInt op2);</tt>
+</td>
+<td valign=top>XORs two integers according to the <tt>ixor</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaInt <b>CVMintNeg</b>(CVMJavaInt op);</tt>
+</td>
+<td valign=top>Negates the specified integer according to the <tt>ineg</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaInt <b>CVMintUshr</b>(CVMJavaInt op1, CVMJavaInt num);</tt>
+</td>
+<td valign=top>Performs an unsigned right shift according to the <tt>iushr</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaInt <b>CVMintShl</b>(CVMJavaInt op1, CVMJavaInt num);</tt>
+</td>
+<td valign=top>Performs an left shift according to the <tt>ishl</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaInt <b>CVMintShr</b>(CVMJavaInt op1, CVMJavaInt num);</tt>
+</td>
+<td valign=top>Performs an right shift according to the <tt>iushr</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaInt <b>CVMintNeg</b>(CVMJavaInt op);</tt>
+</td>
+<td valign=top>Performs a negation operation according to the <tt>ineg</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaFloat <b>CVMint2Float</b>(CVMJavaInt val);</tt>
+</td>
+<td valign=top>Converts an integer to a float according to the <tt>i2f</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaByte <b>CVMint2Byte</b>(CVMJavaInt val);</tt>
+</td>
+<td valign=top>Converts an integer to a byte according to the <tt>i2b</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaChar <b>CVMint2Char</b>(CVMJavaInt val);</tt>
+</td>
+<td valign=top>Converts an integer to a char according to the <tt>i2c</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMJavaShort <b>CVMint2Short</b>(CVMJavaInt val);</tt>
+</td>
+<td valign=top>Converts an integer to a short according to the <tt>i2s</tt> bytecode semantics.
+</td>
+
+<tr>
+<td valign=top><tt>CVMUint16 <b>CVMgetUint16</b>(CVMconst CVMUint8 *ptr);</tt>
+</td>
+<td valign=top>Returns an 8 bit unsigned integer as a 16 bit unsigned integer.
+</td>
+
+<tr>
+<td valign=top><tt>CVMUint32 <b>CVMgetUint32</b>(CVMconst CVMUint8 *ptr);</tt>
+</td>
+<td valign=top>Returns an 8 bit unsigned integer as a 32 bit unsigned integer.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt16 <b>CVMgetInt16</b>(CVMconst CVMUint8 *ptr);</tt>
+</td>
+<td valign=top>Returns an 8 bit unsigned integer as a 16 bit signed integer.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMgetInt32</b>(CVMconst CVMUint8 *ptr);</tt>
+</td>
+<td valign=top>Returns an 8 bit unsigned integer as a 32 bit signed integer.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMgetAlignedInt32</b>(ptr_) (constCVMUint8 *ptr);</tt>
+</td>
+<td valign=top>Macro for accessing word aligned big-endian integers. 
+A little-endian platform like x86 would need to make sure the bytes get reversed.
+</td>
+
+</table>
+<!--END INT TABLE -->
+</p>
+
+</blockquote>
+
+<a name=io>
+<h3>io.h</h3>
+<blockquote>
+<p>
+The file <tt>src/share/javavm/include/porting/io.h</tt> specifies the following 
+definition requirements.
+<br>&nbsp;
+
+<!-- BEGIN IO TABLE -->
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+                 
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMioGetLastErrorString</b>(char *buf, int len);</tt>
+</td>
+<td valign=top>Gets the last error string using a caller supplied buffer.
+</td>
+
+<tr>
+<td valign=top><tt>char* <b>CVMioReturnLastErrorString</b>();</tt>
+</td>
+<td valign=top>Returns the last error string without any caller buffers.
+</td>
+
+<tr>
+<td valign=top><tt>char * <b>CVMioNativePath</b>(char *path);</tt>
+</td>
+<td valign=top>Converts a pathname into native format. This function does 
+syntactic cleanup, such as removing redundant separator characters. 
+It modifies the specified pathname string in place.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMioFileType</b>(const char *path);</tt>
+</td>
+<td valign=top>Returns the file type of the specified file path. 
+Valid values are:<br>
+CVM_IO_FILETYPE_REGULAR (0)<br>
+CVM_IO_FILETYPE_DIRECTORY (1)<br>
+CVM_IO_FILETYPE_OTHER (2)<br>
+CVM_IO_FILETYPE_EEXIST (-100)<br>
+CVM_IO_FILETYPE_ERR (-1)
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMioOpen</b>(const char *name, CVMInt32 openMode, CVMInt32 filePerm);</tt>
+</td>
+<td valign=top>Opens a file descriptor. This function returns a negative error 
+code on error, or if the file opened is a directory. 
+The return value is a non-negative integer that is the file descriptor on success.
+Valid values are:<br>
+CVM_IO_FILETYPE_REGULAR (0)<br>
+CVM_IO_FILETYPE_DIRECTORY (1)<br>
+CVM_IO_FILETYPE_OTHER (2)<br>
+CVM_IO_FILETYPE_EEXIST (-100)<br>
+CVM_IO_FILETYPE_ERR (-1)
+
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMioClose</b>(CVMInt32 fd);</tt>
+</td>
+<td valign=top>Closes a file descriptor <tt>fd</tt>. 
+This function returns -1 on error, and 0 on success.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt64 <b>CVMioSeek</b>(CVMInt32 fd, CVMInt64 offset, CVMInt32 whence);</tt>
+</td>
+<td valign=top>
+Moves the file pointer to where the next read from the file will come from.<br>
+<tt>fd</tt> -- the file pointer to move.<br>
+<tt>offset</tt> -- the number of bytes to move the file pointer by.<br>
+<tt>whence</tt> -- the start from where to move the file pointer.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMioSetLength</b>(CVMInt32 fd, CVMInt64 length);</tt>
+</td>
+<td valign=top>Sets the length of the file associated with the given descriptor to the given length.
+If the new length is longer than the current length, then the file is extended; 
+the contents of the extended portion are not defined.
+<br>
+<tt>fd</tt> -- the file descriptor.<br>
+<tt>length</tt> -- the new file length.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMioSync</b>(CVMInt32 fd);</tt>
+</td>
+<td valign=top>Synchronizes the file descriptor's in memory state with that of 
+the physical device.
+Returns -1 on error, 0 for success.<br>
+<tt>fd</tt> - the file descriptor.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMioAvailable</b>(CVMInt32 fd, CVMInt64 *bytes);</tt>
+</td>
+<td valign=top>Returns the number of bytes available for reading from a given file descriptor.<br>
+<tt>fd</tt> -- the file descriptor.<br>
+<tt>bytes</tt> -- the number of bytes to read.
+</td>
+
+<tr>
+<td valign=top><tt>size_t <b>CVMioRead</b>(CVMInt32 fd, void *buf, CVMUint32 nBytes);</tt>
+</td>
+<td valign=top>Reads data from a file descriptor into an untyped buffer.
+This function returns -1 on error, 0 on success.<br>
+fd -- the file descriptor to read from.<br>
+buf -- the buffer to put the data into.<br>
+nbytes -- the number of bytes to read.
+</td>
+
+<tr>
+<td valign=top><tt>size_t <b>CVMioWrite</b>(CVMInt32 fd, const void *buf, CVMUint32 nBytes);</tt>
+</td>
+<td valign=top>Writes data from the specified buffer to a file descriptor.
+This function returns -1 on error, 0 on success.<br>
+fd -- the file descriptor to write to.<br>
+buf -- the buffer to fetch the data.<br>
+nbytes -- the number of bytes to write.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMioFileSizeFD</b>(CVMInt32 fd, CVMInt64 *size);</tt>
+</td>
+<td valign=top>Returns the file size in bytes.<br>
+fd -- the file descriptor.<br>
+bytes -- the number of bytes.
+</td>
+
+</tr>
+</table>
+<!-- END IO TABLE -->
+</p>
+
+</blockquote>
+
+<a name=jni>
+<h3>jni.h</h3>
+<blockquote>
+<p>
+The file <tt>src/share/javavm/include/porting/jni.h</tt> specifies the following 
+definition requirements.
+<br>&nbsp;
+
+<!-- BEGIN JNI -->
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+
+<tr>
+<td valign=top><tt></tt>
+</td>
+<td valign=top></td>
+</tr>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMjniInvokeNative</b>(void *env, void *nativeCode, CVMUint32 *args, CVMUint32 *terseSig, CVMInt32 argsSize, void *classObject, CVMJNIReturnValue *returnValue);</tt>
+</td>
+<td valign=top>Translates the "Java" calling convention into the "C" calling convention used in native methods. The Java VM passes all the arguments in the Java stack, and places the results there as well.
+Arguments are copied into the C stack (or registers), and return values are placed into the CVMJNIReturnValue structure pointed to by "returnValue". Upon return, the Java VM copies the result from there to the Java stack.
+</td>
+
+</table></p>
+<!-- END JNI -->
+<h4>Arguments</h4>
+<p>The following table describes the <b>CVMjniInvokeNative</b> arguments.
+
+<!-- BEGIN JNI -->
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Argument</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+
+<tr>
+<td valign=top><tt></tt>
+</td>
+<td valign=top></td>
+</tr>
+
+<tr>
+<td valign=top><tt>env</tt>
+</td>
+<td valign=top>Pointer to the JNI environment, which should be passed unmodified as the first argument to the native method.
+</td>
+
+<tr>
+<td valign=top><tt>nativeCode</tt>
+</td>
+<td valign=top>Pointer to the "real" native method function.
+</td>
+
+<tr>
+<td valign=top><tt>args</tt>
+</td>
+<td valign=top>Pointer to the Java stack, where all the arguments are stored (as args[0], args[1], etc.).
+The Java stack slot for a single-word integer and float arguments can be read as a jint and jfloat, respectively, and passed to the native method unchanged.
+For double-word arguments, a jlong or jdouble value should be read from the current two stack slots using the same method as CVMjvm2Lond and CVMjvm2Double, respectively.
+For an object argument, a NULL (0) value should be passed if the stack slot contains 0, otherwise the address of the stack slot should be passed as a jobject to the native method.
+</td>
+
+<tr>
+<td valign=top><tt>terseSig</tt>
+</td>
+<td valign=top>The encoded "terse" signature of the native method.
+It contains 32-bit words containing 8 4-bit nibbles each.
+Each nibble contains a signature parsing code or the type code of an argument in the native method signature:<br>
+<br>
+0x00 RELOAD<br>
+0x01 END<br>
+0x02 void ("V") (never seen in an argument, only in a return value)<br>
+0x03 int ("I")<br>
+0x04 short ("S")<br>
+0x05 char ("C")<br>
+0x06 long ("J")<br>
+0x07 byte ("B")<br>
+0x08 float ("F")<br>
+0x09 double ("D")<br>
+0x0A boolean ("Z")<br>
+0x0B object ("Z")<br>
+<br>
+The return type comes first, then the arguments, followed by an END code. 
+Nibbles are read from the least-significant bits of the word first.
+Most signatures fit in a single word. For longer signatures, multiple words are used.
+A RELOAD nibble is used as an escape code to signal that the next word is a 
+pointer to a new terse signature word, which allows chaining of words for longer signatures.
+</td>
+
+<tr>
+<td valign=top><tt>argsSize</tt>
+</td>
+<td valign=top>The total size (in 32-bit words) of the arguments on the Java stack.
+Note that the Java stack does not have any alignment requirement, and stores all arguments consecutively in words and double words.
+The argument size includes the "this" pointer for non-static methods.
+</td>
+
+<tr>
+<td valign=top><tt>classObject</tt>
+</td>
+<td valign=top>NULL (0) for non-static methods, or a jclass for static methods.
+Non-static native methods receive an object reference as the second argument (which is simply the address of args[0]).
+The "real" method arguments to non-static methods begin at args[1].
+Static native methods receive a class reference ("classObject") as the second argument.
+</td>
+
+<tr>
+<td valign=top><tt>returnValue</tt>
+</td>
+<td valign=top>The return value of the native method is placed in <i>returnValue->i</i> for word-sized results, or <i>returnValue->64</i> for double-word-sized results, according to the following values:<br>
+<br>
+jdouble - CVMdouble2Jvm to <i>returnValue->64</i><br>
+jlong - CVMlong2Jvm to <i>returnValue->64</i><br>
+jint - copy to <i>returnValue->i</i><br>
+jbyte - CVMbyte2Int to <i>returnValue->i</i><br>
+jchar - CVMchar2Int to <i>returnValue->i</i><br>
+jshort - CVMshort2Int to <i>returnValue->i</i><br>
+jfloat - CVMfloat2Int to <i>returnValue->f</i><br>
+jobject - CVMobject2Int to <i>returnValue->o</i><br>
+</td>
+
+</table></p>
+<!-- END JNI -->
+<h4>Return Value</h4>
+<p>The <i>CVMJNIReturnValue</i> union is used to return the jni method result. 
+It is passed to CVMjniInvokeNative, which stores the result in the union 
+after the java method returns to CVMjniInvokeNative.
+
+<pre>
+typedef union {
+    CVMInt32 i;
+    CVMJavaFloat f;
+    CVMUint32 v64[2];
+    void *o;
+} CVMJNIReturnValue;
+</pre>
+
+<h4>Function return value</h4>
+<p>
+The return value of CVMjniInvokeNative is:<br>
+<ul>
+<li>0 if the native method returns void<br>
+<li>1 if the native method returns a word<br>
+<li>2 if the native method returns a double word<br>
+<li>-1 if the native method returns an object.
+</ul>
+
+</blockquote>
+
+<!--BEGIN LINKER -->
+<a name=linker>
+<h3>linker.h</h3>
+<blockquote>
+<p>
+The file <tt>src/share/javavm/include/porting/linker.h</tt> specifies the following 
+definition requirements.
+</P>
+<p>
+These routines look very similar to the dynamic linking facilities on Solaris.
+However, on VxWorks, there is currently no notion of a local symbol table.
+Therefore, symbol lookup is slow on VxWorks as we have to iterate through the entire system symbol table every time.
+It is required by the Java libraries that sit above these routines that a notion of local symbol namespaces be maintained.
+</p>
+<p>
+On VxWorks, these routines require three libraries to be built into your project if they are not already:
+</p>
+<ul>
+<li>loadLib
+<li>moduleLib
+<li>symLib
+</ul>
+
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+
+<tr>
+<td valign=top><tt>void * <b>CVMdynlinkOpen</b>(const void *absolutePathName);</tt>
+</td>
+<td valign=top>Dynamically links in a shared object. This takes a 
+platform-dependent, absolute pathname to the shared object.
+Calling code is responsible for constructing this name.<br>
+<br>
+Returns an abstract "handle" to the shared object which must be used for later symbol queries, or NULL if an error occurred.
+</td>
+
+<tr>
+<td valign=top><tt>void * <b>CVMdynlinkSym</b>(void *dsoHandle, const void *name);</tt>
+</td>
+<td valign=top>Finds a function or data pointer in an already-opened shared object.
+Takes the dynamic shared object handle and a platform-dependent symbol as an argument (typically, but not always, a char*).
+On systems that support it, this can be a global symbol table lookup; otherwise an internal list of shared objects will have to be searched for the symbol.
+This function is also responsible for adding any necessary "decorations" to the symbol name before doing the lookup.
+</td>
+
+<tr>
+<td valign=top><tt>void * <b>CVMdynlinkClose</b>(void *dsoHandle);</tt>
+</td>
+<td valign=top>Closes a dynamic shared object. This should probably have the semantics that its symbols are unloaded, but VxWorks, at least, doesn't currently appear to have a module unloading facility.
+This function takes the dynamic shared object handle from CVMdynlinkOpen.
+</td>
+
+<tr>
+<td valign=top><tt>CVMBool <b>CVMdynlinkBuildLibName</b>(void *holder, int holderlen, void *pname, void *fname);</tt>
+</td>
+<td valign=top>This is a Java-specific function that creates a string for the 
+dynamic lib open call by adding the appropriate prefixs and extensions to a 
+filename and the path.<br>
+<tt>holder</tt> - the destination buffer<br>
+<tt>holderlen</tt> - the buffer size in bytes<br>
+<tt>pname</tt> - the directory prefix or NULL<br>
+<tt>fname</tt> - the "base name" of the library.<br>
+<br>
+For example, CVMdynlinkBuildLibName(buf, bufLen, "foo", "bar") might result in a library name of "foo/libbar.so".<br>
+<br>
+All buffers are of a platform-specific data type, but are typically char*. Returns CVM_FALSE if the holder buffer is not big enough.
+</td>
+
+</table></p>
+
+</blockquote>
+
+<!-- END LINKER -->
+<!-- BEGIN NET -->
+<a name=net>
+<h3>net.h</h3>
+<blockquote>
+<p>
+The file <tt>src/share/javavm/include/porting/net.h</tt> specifies the following 
+definition requirements.
+
+<h4>Data types</h4>
+<pre>struct sockaddr;
+struct protoent *CVMnetGetProtoByName(char *protoName);
+</pre>
+<h4>Functions</h4>
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt></tt>
+</td>
+<td valign=top></td>
+</tr>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetSocketClose</b>(CVMInt32 fd);</tt>
+</td>
+<td valign=top>Closes the socket associated with the file descriptor. Corresponds to X/Open "close".
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetSocketShutdown</b>(CVMInt32 fd, CVMInt32 howto);</tt>
+</td>
+<td valign=top>Shuts down either the send, receive, or both sides of a socket, 
+based on the value of <i>howto</i>. Corresponds to X/Open "shutdown".
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetSocketAvailable</b>(CVMInt32 fd, CVMInt32 *pbytes);</tt>
+</td>
+<td valign=top>Gets the number of bytes available for the given socket for
+reading and stores the result into the value pointed to by the second
+argument. The result should satisfy the requirements of
+java.net.SocketInputStream.available().
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetConnect</b>(CVMInt32 fd, struct sockaddr *him, CVMInt32 len);</tt>
+</td>
+<td valign=top>Corresponds to X/Open "connect" in &lt;sys/socket.h&gt;.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetAccept</b>(CVMInt32 fd, struct sockaddr *him, CVMInt32 *len);</tt>
+</td>
+<td valign=top>Corresponds to X/Open "accept" in &lt;sys/socket.h&gt;.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetSendTo</b>(CVMInt32 fd, char *buf, CVMInt32 len, CVMInt32 flags, struct sockaddr *to, CVMInt32 tolen);</tt>
+</td>
+<td valign=top>Corresponds to X/Open "sendto" in &lt;sys/socket.h&gt;.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetRecvFrom</b>(CVMInt32 fd, char *buf, CVMInt32 nBytes, CVMInt32 flags, struct sockaddr *from, CVMInt32 *fromlen);</tt>
+</td>
+<td valign=top>Corresponds to X/Open "recvfrom" in &lt;sys/socket.h&gt;.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetListen</b>(CVMInt32 fd, CVMInt32 count);</tt>
+</td>
+<td valign=top>Corresponds to X/Open "listen" in &lt;sys/socket.h&gt;.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetRecv</b>(CVMInt32 fd, char *buf, CVMInt32 nBytes, CVMInt32 flags);</tt>
+</td>
+<td valign=top>Corresponds to X/Open "recv" in &lt;sys/socket.h&gt;.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetSend</b>(CVMInt32 fd, char *buf, CVMInt32 nBytes, CVMInt32 flags);</tt>
+</td>
+<td valign=top>Corresponds to X/Open "send" in &lt;sys/socket.h&gt;.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetTimeout</b>(CVMInt32 fd, CVMInt32 timeout);</tt>
+</td>
+<td valign=top>Used to timeout blocking operations, as defined by java.net.SocketOptions.SO_TIMEOUT. Returns immediately if an "accept", "recv", or "recvfrom" operation would succeed without blocking. Otherwise blocks for up to "timeout" milliseconds.<br>
+<br>
+Corresponds to X/Open "poll" in &lt;sys/socket.h&gt; with the "POLLIN" flag set.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetSocket</b>(CVMInt32 domain, CVMInt32 type, CVMInt32 protocol);</tt>
+</td>
+<td valign=top>Corresponds to X/Open "socket" in &lt;sys/socket.h&gt;.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetSetSockOpt</b>(CVMInt32 fd, CVMInt32 type, CVMInt32 dir, const void *arg, CVMInt32 argSize);</tt>
+</td>
+<td valign=top>Corresponds to X/Open "setsockopt" in &lt;sys/socket.h&gt;.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetGetSockOpt</b>(CVMInt32 fd, CVMInt32 proto, CVMInt32 flag, void *in_addr, CVMInt32 *inSize);</tt>
+</td>
+<td valign=top>Corresponds to X/Open "getsockopt" in &lt;sys/socket.h&gt;.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetGetSockName</b>(CVMInt32 fd, struct sockaddr *lclAddr, CVMInt32 *lclSize);</tt>
+</td>
+<td valign=top>Corresponds to X/Open "getsockname" in &lt;sys/socket.h&gt;.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetGetHostName</b>(char *hostname, CVMInt32 maxlen);</tt>
+</td>
+<td valign=top>Corresponds to X/Open "gethostname" in &lt;sys/socket.h&gt;.
+</td>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMnetBind</b>(CVMInt32 fd, struct sockaddr *bindAddr, CVMInt32 size);</tt>
+</td>
+<td valign=top>Corresponds to X/Open "bind" in &lt;sys/socket.h&gt;.
+</td>
+
+</table></p>
+
+</blockquote>
+<!-- END NET -->
+
+<a name=path>
+<h3>path.h</h3>
+<blockquote>
+The file <tt>src/share/javavm/include/porting/path.h</tt> specifies the following 
+definition requirements.
+<h4>Macros</h4>
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_PATH_CLASSFILEEXT</tt>
+</td>
+<td valign=top>Usually "class".
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_PATH_CLASSPATH_SEPARATOR</tt>
+</td>
+<td valign=top>Usually ":".
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_PATH_CURDIR</tt>
+</td>
+<td valign=top>Usually ".".
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_PATH_LOCAL_DIR_SEPARATOR</tt>
+</td>
+<td valign=top>Usually "/".
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVM_PATH_MAXLEN</tt>
+</td>
+<td valign=top>Usually the same as PATH_MAX.
+</td>
+</tr>
+</table>
+
+<h4>Function</h4>
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>extern int <b>CVMcanonicalize</b>(char* path, 
+<br>const char* out, int len);</tt>
+</td>
+<td valign=top>Changes <tt>path</tt> to its canonical or simplest explicit form, 
+and places the result in <tt>out</tt>. For example, this function replaces 
+notation such as "../" in the path name with the explicit path. You can use 
+this function to standardize two paths before comparing them.
+</td>
+</tr>
+</table>
+</blockquote>
+
+<!-- BEGIN SYNC -->
+<a name=sync>
+<h3>sync.h</h3>
+<blockquote>
+<p>
+The file <tt>src/share/javavm/include/porting/sync.h</tt> specifies the following 
+definition requirements.
+
+<h4>Defines
+</h4>
+<p>The platform defines the CVM_MICROLOCK_TYPE variable to be one of the following values:
+<ul>
+<li>CVM_MICROLOCK_DEFAULT = -1
+<li>CVM_MICROLOCK_SCHEDLOCK = 1
+</ul>
+
+<p>The platform defines the CVM_FASTLOCK_TYPE variable to be one of the following:
+<ul>
+<li>CVM_FASTLOCK_NONE = -1
+<li>CVM_FASTLOCK_ATOMICOPS = 1
+<li>CVM_FASTLOCK_MICROLOCK = 3
+</ul>
+
+<p>The platform must provide definitions for the following opaque structures:
+<ul>
+<li>struct CVMMutex
+<li>struct CVMCondVar
+</ul>
+
+<h4>Functions</h4>
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>extern void <b>CVMmutexSetOwner</b>(CVMThreadID *self, 
+<br>CVMMutex* m, CVMThreadID *ti);</tt>
+</td>
+<td valign=top>Locks and unlockes the mutex on behalf of another thread. 
+The result is identical to the thread having called <tt>CVMmutexLock</tt> 
+itself.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>extern void <b>CVMschedLock</b>(void);</tt>
+</td>
+<td valign=top>Locks the scheduler. The current thread will remain running 
+and no other threads in this VM instance can become runnable 
+until the scheduler lock is released.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>extern void <b>CVMschedUnlock</b>(void);</tt>
+</td>
+<td valign=top>Releases the scheduler lock acquired by <tt>CVMschedLock</tt>. 
+Normal thread scheduling will resume.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>CVMBool <b>CVMmutexInit</b>(CVMMutex *m);</tt>
+</td>
+<td valign=top>Initializes the given CVMMutex, allocating additional resources if necessary.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMmutexDestroy</b>(CVMMutex *m);</tt>
+</td>
+<td valign=top>Destroys the given CVMMutex, releasing any resources that were previously allocated by <i>CVMMutexInit</i>.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>CVMBool <b>CVMmutexTryLock</b>(CVMMutex *m);</tt>
+</td>
+<td valign=top>Attempts to acquire a lock for the given mutex. This call must return immediately and never block. CVM_TRUE is returned if the lock was acquired, Otherwise CVM_FALSE is returned.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMmutLock</b>(CVMMutex *m);</tt>
+</td>
+<td valign=top>Acquires a lock for the given mutex. This call may block.
+A thread will never attempt to acquire the same mutex more than once, so a counter to keep track of recursive entry is not required.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMmutexUnlock</b>(CVMMutex *m);</tt>
+</td>
+<td valign=top>Releases a lock previously acquired by <i>CVMMutexLock</i>.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMmutexSetOwner</b>(CVMThreadId *self, CVMMutex *m, CVMThreadID *ti);</tt>
+</td>
+<td valign=top>Locks an unlocked mutex on behalf of another thread. The result will be identical to the thread having called <i>CVMMutexLock</i> itself.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>CVMBool <b>CVMcondvarInit</b>(CVMCondVar *c, CVMMutex *m);</tt>
+</td>
+<td valign=top>Initializes the given CVMCondVar, allocating additional resources if necessary. The CVMMutex that will be used by any future calls to CVMcondvarWait is also provided, for those platforms that require the mutex for proper condition variable initialization.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMcondvarDestroy</b>(CVMCondVar *c);</tt>
+</td>
+<td valign=top>Destroys the given CVMCondVar, releasing any resources that were previously allocated by CVMcondvarInit.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>CVMBool <b>CVMcondvarWait</b>(CVMCondVar* c, CVMMutex *m, CVMJavaLong millis);</tt>
+</td>
+<td valign=top>Performs a timed wait on a condition variable. The mutex is 
+unlocked while the thread blocks and locked again when it wakes up. 
+CVM_FALSE is returned if the operation is interrupted by CVMthreadInterruptWait.
+This function is used to implement Object.wait, therefore the atomicity of 
+unlocking the lock and checking for notification or an interrupt must follow 
+the rules described by <tt>Object.wait</tt>.
+A timeout of 0 ms is treated as infinity, or "wait forever".
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMcondvarNotify</b>(CVMCondVar *c);</tt>
+</td>
+<td valign=top>Wakes up a thread waiting on the given CVMCondVar, as defined by the semantics of Object.notify.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMcondvarNotifyAll</b>(CVMCondVar *c);</tt>
+</td>
+<td valign=top>Wakes up all threads waiting on the given CVMCondVar, as defined by the semantics of Object.notifyAll.
+</td>
+</tr>
+
+</table></p>
+
+<h4>
+Advanced Functions
+</h4>
+<p>See "Advanced Platform Features" for information on when it is necessary 
+to implement the following functions.</p>
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMschedLock</b>(void);</tt>
+</td>
+<td valign=top>Locks the scheduler. The current thread will remain running and 
+no other threads in this VM instance can become runnable until the scheduler 
+lock is released.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMschedUnlock</b>(void);</tt>
+</td>
+<td valign=top>Releases the scheduler lock acquired by <i>CVMschedLock</i>. Normal thread scheduling will resume.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>CVMint32 <b>CVMatomicCompareAndSwap</b>(volatile CVMUint32 *addr, CVMUint32 new, CVMUint32 old);</tt>
+</td>
+<td valign=top>Sets a word (conditionally) in memory, returning the previous value. The new value "new" is written to address "addr" only if the current value matches the value given by "old".
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>CVMint32 <b>CVMatomicSwap</b>(volatile CVMUint32 *addr, CVMUint32 new);</tt>
+</td>
+<td valign=top>Atomically sets a word in memory, returning the previous value.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>CVMUint32 <b>CVMatomicIncrement</b>(CVMUint32 *addr);</tt>
+</td>
+<td valign=top>Atomically increments a word in memory, returning the new value.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>CVMUint32 <b>CVMatomicDecrement</b>(CVMUint32 *addr);</tt>
+</td>
+<td valign=top>Atomically decrements a word in memory, returning the new value.
+</td>
+</tr>
+
+</table>
+</blockquote>
+</table></p>
+</blockquote>
+<!-- END SYNCH -->
+
+<a name=system>
+<h3>system.h</h3>
+<blockquote>
+The file <tt>src/share/javavm/include/porting/system.h</tt> specifies the following 
+definition requirement.
+<br>&nbsp;
+
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>void <b>CVMhalt</b>(CVMInt32 status);</tt>
+</td>
+<td valign=top>Forcibly terminate the VM with the given status, as defined by 
+<tt>java.lang.Runtime.halt()</tt>. The function should never return.</td>
+</tr>
+<tr>
+<td valign=top><tt>void <b>CVMSystemPanic</b>(const char *msg);</tt>
+</td>
+<td valign=top>Something bad has happened, even in a non-debug VM. 
+Prints the specified <tt>msg</tt> on an appropriate console and halts the 
+computation in a system-dependent manner.
+It may cause either a core dump or a suspended thread. If CVM_DEBUG is defined, 
+then call <tt>CVMassertHook</tt> first for ease of debuging.
+</td>                                                                                     
+</tr>
+</table>
+
+</blockquote>
+
+<!-- BEGIN THREADS  -->
+<a name=threads>
+<h3>threads.h</h3>
+<blockquote>
+A reference implementation of thread functions, based on the POSIX threads 
+library, is provided in <tt>src/porting/posix/posix_threads_md.c</tt>.
+<p>
+The file <tt>src/share/javavm/include/porting/threads.h</tt> specifies the following 
+definition requirements.
+<br>&nbsp;
+
+<h4>Macros</h4>
+<p>The platform must provide definitions for the following opaque structure:
+<ul>
+<tt>struct CVMThreadID</tt> -- Uniquely identifies a thread.
+</ul>
+<p>
+The following macros are used in C stack check codes for various recursive functions.
+</p>
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+
+<tr>
+<td valign=top><tt><b>CVM_REDZONE_ILOOP</b></tt>
+</td>
+<td valign=top>Stack space required for interpreter loop in <tt>CVMgcUnsafeExecuteJavaMethod()</tt>.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt><b>CVM_REDZONE_CVMclassLookupFromClassLoader</b></tt>
+</td>
+<td valign=top>Stack space required for class loading in a deep class lookup 
+hierarchy in <tt>CVMclassLookupFromClassLoader()</tt>.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt><b>CVM_REDZONE_CVMclassLink</b></tt>
+</td>
+<td valign=top>Stack space required for class linking in <tt>CVMclassLink()</tt>.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt><b>CVM_REDZONE_CVMclassScan</b></tt>
+</td>
+<td valign=top>Stack space required for traversing the scannable stateof one class by the garbage collector in <tt>CVMclassScan()</tt>.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt><b>CVM_REDZONE_CVMimplementsInterface</b></tt>
+</td>
+<td valign=top>Stack space required for checking whether a non-array class is an interface type class in <tt>CVMimplementsInterface()</tt>.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt><b>CVM_REDZONE_CVMCstackCVMpc2string</b></tt>
+</td>
+<td valign=top>Stack space required for building a formatted string %P format of PC information for console I/O in <tt>CVMformatStringVaList()</tt>.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt><b>CVM_REDZONE_CVMCstackCVMID_objectGetClassAndHashSafe</b></tt>
+</td>
+<td valign=top>Stack space required for building a formatted string %I format of class name information for console I/O in <tt>CVMformatStringVaList()</tt>.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt><b>CVM_REDZONE_CVMCstackmerge_fullinfo_to_types</b></tt>
+</td>
+<td valign=top>Stack space required for class verifier to do type merging 
+between two object types or two arrays of object types in <tt>merge_fullinfo_types()</tt>.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt><b><FONT color=red>CVM_REDZONE_CVMsignalErrorVaList</FONT></b></tt>
+</td>
+<td valign=top><FONT color=red>Stack space required for signaling an exception in <tt>CVMsignalErrorVaList()</tt>.</FONT></tt>.
+</td>
+</tr>
+
+</table></p>
+
+<h4>Recursive functions</h4>
+<p>
+Recursive functions that have a C stack check are listed below:
+</p>
+<ul>
+<tt>
+<li>CVMgcUnsafeExecuteJavaMethod
+<li>CVMclassLookupFromClassLoader
+<li>CVMclassLink
+<li>CVMclassScan
+<li>CVMimplementsInterface
+<li>CVMformatStringVaList
+<li><FONT color=red>CVMsignalErrorVaList</FONT>
+<li>merge_fullinfo_types
+</tt>
+</ul>
+
+<p>
+C stack redzones used in the recursive functions are defined as:
+<ul>
+<tt>
+<li>CVM_REDZONE_ILOOP                                <FONT color=red>11592</FONT>
+<li>CVM_REDZONE_CVMImplementsInterface                <FONT color=red>4752</FONT>
+<li>CVM_REDZONE_CVMCstackCVMpc2string                 <FONT color=red>4752</FONT>
+<li>CVM_REDZONE_stackCVMID_objectGetClassAndHashSafe  <FONT color=red>5392</FONT>
+<li>CVM_REDZONE_classLookupFromClassLoader           <FONT color=red>13500</FONT>
+<li>CVM_REDZONE_classLink                             <FONT color=red>7456</FONT>
+<li>CVM_REDZONE_CVMCstackmerge_fullinfo_to_types      <FONT color=red>5800</FONT>
+<li><FONT color=red>CVM_REDZONE_CVMsignalErrorVaList  8400</FONT>
+</tt>
+</ul>
+</p>
+
+<h4>Functions</h4>
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+
+<tr>
+<td valign=top><tt>CVMInt32 <b>CVMthreadCreate</b>(CVMSize stackSize, CVMInt16 priority, void (*func)(void *), void *arg);</tt>
+</td>
+<td valign=top>Creates a new, runnable thread with the given Java priority and C stacksize.
+The new thread must call <i>func(arg)</i> upon creation and clean up after itself and exit when <i>func()</i> returns.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMthreadYield</b>(void);</tt>
+</td>
+<td valign=top>Yields to other threads, as defined by <tt>Thread.yield()</tt>.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMthreadSetPriority</b>(CVMThreadID *thread, CVMInt32 prio);</tt>
+</td>
+<td valign=top>Sets the priority of a thread to the given value, mapping the Java priority to an appropriate value.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMthreadSuspend</b>(CVMThreadID *thread);</tt>
+</td>
+<td valign=top>Suspends a thread, according to the semantics of <tt>Thread.suspend()</tt> (which has been deprecated) or JVMDI <tt>SuspendThread()</tt>.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMthreadResume</b>(CVMThreadID *thread);</tt>
+</td>
+<td valign=top>Resumes a suspended thread, according to the semantics of <tt>Thread.resume()</tt> (which has been deprecated) or JVMDI <tt>SuspendThread()</tt>.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMthreadAttach</b>(CVMThreadID *self);</tt>
+</td>
+<td valign=top>Associates a CVMThreadID pointer with the current thread.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMthreadDetach</b>(CVMThreadID *self);</tt>
+</td>
+<td valign=top>Removes the CVMThreadID pointer from the current thread.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>CVMThreadID * <b>CVMthreadSelf</b>(void);</tt>
+</td>
+<td valign=top>Returns the CVMThreadID pointer previously associated with the current thread by <tt>CVMthreadAttach</tt>, or NULL if <tt>CVMthreadAttach</tt> has not been called yet or <tt>CVMthreadDetach</tt> has been called.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>void <b>CVMthreadInterruptWait</b>(CVMThreadID *thread);</tt>
+</td>
+<td valign=top>Breaks the given thread out of a <tt>CVMcondvarWait</tt> call, causing that call to return CVM_FALSE, signaling that the wait was interrupted.
+If the given thread is not currently in <tt>CVMcondvarWait</tt>, the request is remembered until <tt>CVMcondvarWait</tt> is called, which immediately return CVM_FALSE.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>CVMBool <b>CVMthreadIsInterrupted</b>(CVMThreadID *thread, CVMBool clearInterrupted);</tt>
+</td>
+<td valign=top>Returns the current interrupted state for the thread. If <tt>clearInterrupted</tt> is true, cancel any previous interrupt requests made by <tt>CVMthreadInterruptWait</tt>.<br>
+Note: Currently, we only set <tt>clearInterrupted</tt> when <tt>thread</tt> is the current thread.
+</td>
+</tr>
+
+<tr>
+<td valign=top><tt>CVMBool <b>CVMthreadStackCheck</b>(CVMThreadID *self, CVMUint32 redZone);</tt>
+</td>
+<td valign=top>Checks for a stack overflow. Returns CVM_TRUE if the stack of the current thread has at least <tt>redZone</tt> bytes free, CVM_FALSE otherwise.
+</td>
+</tr>
+
+
+
+
+
+</table></p>
+
+</blockquote>
+<!-- END THREADS -->
+
+<a name=time>
+<h3>time.h</h3>
+<blockquote>
+The file <tt>src/share/javavm/include/porting/time.h</tt> specifies the following 
+definition requirement.
+<br>&nbsp;
+
+<table border =1 cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td valign=top><b><font color="white">Declaration</font></b></td>
+<td valign=top><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td valign=top><tt>CVMInt64 <b>CVMtimeMillis</b>(void);</tt>
+</td>
+<td valign=top>Returns the current time in milliseconds, as defined by 
+<tt>System.currentTimeMillis</tt>.
+</td>
+</tr>
+</table>
+</blockquote>
+
+<a name=vm-defs>
+<h3>vm-defs.h</h3>
+<blockquote>
+<p>
+The file <tt>src/share/javavm/include/porting/vm-defs.h</tt> specifies the following 
+definition requirements.
+</p>
+
+<p>
+The following macros are defined for convenience:
+</p>
+<pre>
+  #define CVM_STRUCT_TYPEDEF(structName) typedef struct structName structName
+  #define CVM_UNION_TYPEDEF(structName)  typedef union structName structName
+  #define CVM_ENUM_TYPEDEF(structName)   typedef enum structName structName
+</pre>
+<p>
+The following are C types corresponding to Java types:
+</P>
+<pre>
+  typedef CVMInt8    CVMJavaByte;
+  typedef CVMInt16   CVMJavaShort;
+  typedef CVMUint16  CVMJavaChar;
+  typedef CVMUint8   CVMJavaBoolean;
+  typedef CVMInt32   CVMJavaInt;
+  typedef CVMfloat32 CVMJavaFloat;
+  typedef CVMInt64   CVMJavaLong;
+  typedef CVMfloat64 CVMJavaDouble;
+</pre>
+<p>
+Forward declarations defined by the porting layer:
+</p>
+<pre>
+  CVM_STRUCT_TYPEDEF(CVMMutex);
+  CVM_STRUCT_TYPEDEF(CVMCondVar);
+  CVM_STRUCT_TYPEDEF(CVMThreadID);
+  CVM_STRUCT_TYPEDEF(CVMTargetGlobalState);
+</pre>
+</blockquote>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Body text ends here -->
+<!-- ============================================================== -->
+<HR size="2" noshade>
+<font size=-1> 
+<A href="index.html">Contents</A> | <A href="cstackcheck.html">Prev</A> | <A href="port_pj.html">Next</A>
+</font>
+<HR size="2" noshade>
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR VALIGN=top>
+
+<TD>
+<FONT SIZE="-2">
+   <A href="../legal/SMICopyright.html">Copyright</A> ) 2000
+   <A HREF="http://www.sun.com/">Sun Microsystems, Inc.</A>
+    All Rights Reserved.</FONT>
+   <br>
+   <br>
+
+   <FONT SIZE="-1">
+   Please send comments to: <A href="mailto:jcp-cdc-comments@eng.sun.com">jcp-cdc-comments@eng.sun.com</A> 
+   </FONT>
+</TD>
+
+<TD ALIGN=right>
+   <IMG height=30 alt=Sun src="../images/sunlogo64x30.gif" width=64 border=0> 
+</TD>
+
+</TR>
+</TABLE>
+</BODY>
+</HTML>

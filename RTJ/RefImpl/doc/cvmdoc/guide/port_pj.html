@@ -1,0 +1,313 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<!-- SCCS @(#)port_pj.html	1.6 00/11/22 -->
+<HTML>
+<HEAD>
+     <TITLE>Porting Notes for PersonalJava Technology Users</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000FF" VLINK="#000077" ALINK="#FF0000">
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR>
+<TD>
+&nbsp;
+<br>
+<font size=-1> 
+<a href="index.html">Contents</a> | <a href="hpiref.html">Prev</a> |
+    <a href="using-gdb.html">Next</a>
+</font></TD>
+
+<TD align="right">
+J2ME CDC 1.0
+<br>Porting Guide
+</TD>
+</TR>
+</TABLE>
+<HR size="2" noshade>
+
+<!-- ====================== Body text begins here ====================== -->
+<h1>Porting Notes for PersonalJava Technology Users</h1>
+<blockquote>
+The CDC differs from the PersonalJava platform in the following areas:
+<ul>
+<li>makefile structure
+<p>See <a href="porting.html#port_build">Porting the Build Environment</a>.
+<br>&nbsp;
+<li>Host Programming Interface, or HPI (VM porting layer)
+<p>See <a href="#hpi_diffs">HPI Differences</a>.
+<br>&nbsp;
+<li>Java 2 SDK v1.3-based
+<p>Classes and native methods should not require much change from the reference 
+implementation. See <a href="porting.html#port_classes">Porting the 
+Platform-Dependent Class Library Support</a>.
+<br>&nbsp;
+<li>Debugger support
+<p>The debugger support requires some porting of the networking and dynamic 
+linking code.
+</ul>
+
+<p>Converting an existing port of the PersonalJava platform to a CDC port will 
+require the most effort in the makefile and HPI areas.
+</blockquote>
+
+<a name=hpi_diffs>
+<h3>HPI Differences</h3>
+<blockquote>
+The most significant HPI differences are in the following areas:
+<ul>
+<li>JNI native method invocation
+<li>Threads
+<li>Monitors
+</ul>
+<h4>JNI Native Method Invocation</h4>
+The <tt>CVMjniInvokeNative()</tt> function replaces the <tt>sysInvokeNative()</tt> 
+function from the PersonalJava platform. This function translates the Java 
+language calling convention into the C convention used in native methods. The CVM 
+passes all the arguments in the Java stack, and expects the results to be placed 
+there as well.
+<p>The <tt>CVMjniInvokeNative()</tt> function differs from the <tt>sysInvokeNative()</tt> 
+function in the following ways:
+<ul>
+<li><tt>CVMjniInvokeNative()</tt> uses terse signatures that take up less space 
+and allow faster parsing.
+<p>Because the signature codes were ASCII characters, the <tt>sysInvokeNative()</tt> 
+reference implementation had to perform multiple compares to find a match.  For 
+<tt>CVMjniInvokeNative()</tt>, the signature code is a 4-bit integer, allowing a 
+fast table lookup or computed branch or jump.
+<br>&nbsp;
+<li>The return value is stored into a structure, a pointer to which is passed as 
+an argument.
+<p>For <tt>sysInvokeNative()</tt>, the return value was stored onto the Java stack.
+<br>&nbsp;
+<li><tt>CVMjniInvokeNative()</tt> returns the number of words taken up by the 
+result value, or -1 if the result is an object.
+<p><tt>sysInvokeNative()</tt> returned the new top-of-stack pointer.
+</ul>
+
+<h4>Threads</h4>
+
+<p>Because CVM does more work above the porting layer than the PersonalJava VM 
+did, the porting layer has been simplified significantly.</p>
+
+<p>The following table compares CVM thread functions to PersonalJava thread 
+functions. It does not include the full method signatures and descriptions. For 
+full signatures and descriptions of the CVM thread functions, see the 
+<a href="hpiref.html#threads">threads.h</a> section of the HPI reference chapter.
+<br>&nbsp;
+<table border cellpadding=5 cellspacing=5>
+<tr bgcolor="gray">
+<td><b><font color="white">CVM Function</font></b>
+</td>
+<td><b><font color="white">Comparison to PersonalJava VM Functions</font></b>
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMthreadAttach()</tt>
+</td>
+<td>Replaces <tt>sysThreadAlloc()</tt> and the parts of <tt>sysThreadCreate()</tt> 
+that fill in the <tt>sys_thread_t</tt> pointer. 
+<p>Associates a <tt>CVMthreadID</tt> pointer with the current thread. <tt>CVMthreadAttach()</tt> 
+is called for threads created by <tt>CVMthreadCreate()</tt> as well as for existing 
+threads that are attached using the JNI <tt>AttachCurrentThread()</tt> function.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMthreadCreate()</tt>
+</td>
+<td><tt>CVMthreadCreate()</tt> is simpler than <tt>sysThreadCreate()</tt>, because 
+CVM does more work above the porting layer than the PersonalJava VM did. A 
+<tt>CVMThreadID</tt> is allocated by the CVM and associated with the thread 
+using <tt>CVMthreadAttach()</tt>. There is no need to allocate and return a 
+thread-private structure (<tt>sys_thread_t</tt>), and there are no flags and 
+no thread cookie. The CVM maintains the list of threads, so the HPI doesn't 
+have to do it. (There is no equivalent to <tt>sysThreadEnumerate()</tt>.) The 
+thread is not started in the suspended state.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMthreadDetach()</tt>
+</td>
+<td>Replaces <tt>sysThreadFree()</tt> and <tt>sysThreadExit()</tt>.
+<p>Disassociates the <tt>CVMthreadID</tt> pointer from the current thread. 
+<tt>CVMthreadDetach()</tt> is called for threads that have been detached using 
+the JNI <tt>DetachCurrentThread()</tt> function, as well as for threads created 
+by <tt>CVMthreadCreate()</tt>, when the start function is ready to return.
+<p>Unlike the PersonalJava threads implementation, <tt>CVMthreadDetach()</tt> 
+does not need to zero out Thread fields such as <tt>eetop</tt> and <tt>PrivateInfo</tt>. 
+Nor does it need to make any calls into the VM to perform further cleanup, as 
+was needed for monitors in the PersonalJava implementation.
+<p><tt>CVMthreadDetach()</tt> only needs to deallocate any resources that were 
+allocated by <tt>CVMthreadAttach()</tt>. The CDC reference implementation uses 
+the <tt>POSIXthreadDetach()</tt> function, which simply makes sure that future 
+calls to <tt>CVMthreadGetSelf()</tt> return NULL.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMthreadInterruptWait()</tt>
+</td>
+<td>Equivalent to <tt>sysThreadInterrupt()</tt> in the PersonalJava platform.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMthreadIsInterrupted()</tt>
+</td>
+<td>Equivalent to <tt>sysThreadIsInterrupted()</tt> in the PersonalJava platform.</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMthreadResume()</tt>
+</td>
+<td>Equivalent to <tt>sysThreadResume()</tt> in the PersonalJava platform.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMthreadSelf()</tt>
+</td>
+<td>Equivalent to <tt>sysThreadSelf()</tt> in the PersonalJava platform. If a 
+<tt>CVMThreadID</tt> pointer is associated with the current thread, then 
+<tt>CVMthreadSelf()</tt> returns the pointer. Otherwise, it returns NULL.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMthreadSetPriority()</tt>
+</td>
+<td>Equivalent to <tt>sysThreadSetPriority()</tt> in the PersonalJava platform.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMthreadStackCheck()</tt>
+</td>
+<td>Equivalent to <tt>sysThreadCheckStack()</tt> in the PersonalJava platform.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMthreadSuspend()</tt>
+</td>
+<td>Equivalent to <tt>sysThreadSuspend()</tt> in the PersonalJava platform.
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMthreadYield()</tt>
+</td>
+<td>Equivalent to <tt>sysThreadYield()</tt> in the PersonalJava platform.
+</td>
+</tr>
+</table>
+
+
+<h4>Monitors</h4>
+<p>For the PersonalJava platform, the VM porting layer had to implement a 
+monitor abstraction. For the CDC, the monitor implementation has moved into 
+the CVM, and the VM porting layer instead needs to implement mutex and 
+condition variable abstractions.
+
+<p>The CDC reference implementation uses POSIX thread functions. The mutex and 
+condition variables implementation is in <tt>src/porting/posix/posix_sync_md.c</tt>. 
+If your platform provides the POSIX threads library, you may be able to use this 
+file with no changes.
+
+<p>If you ported the PersonalJava VM and based the monitor implementation on a 
+private mutex and condition variable layer, as is the case for the PersonalJava 
+reference implementations that used Solaris native threads, you can reuse your 
+implementation with simple changes. Examples of these simple changes are shown 
+in the following table. The <tt>sys_mon_t</tt> structure from the PersonalJava 
+platform is replaced by the combination of the <tt>CVMMutex</tt> and 
+<tt>CVMCondVar</tt> structures in the CDC.
+<br>&nbsp;
+
+<table border cellpadding=5 cellspacing=5>
+<tr bgcolor="gray">
+<td><b><font color="white">CDC Functions</font></b>
+</td>
+<td><b><font color="white">Corresponding Personal Java VM Functions</font></b>
+</td>
+</tr>
+<tr>
+<td valign=top><tt>CVMBool CVMmutexInit(CVMMutex* m);<br>
+	void CVMmutexDestroy(CVMMutex* m);<br>
+	CVMBool CVMcondvarInit(CVMCondVar *c, CVMMutex* m);<br>
+	void CVMcondvarDestroy(CVMCondVar *c);
+</tt></td>
+<td valign=top><tt>int sysMonitorInit(sys_mon_t *mid);<br>
+	int sysMonitorDestroy(sys_mon_t *mid);
+</tt></td>
+</tr>
+<tr>
+<td valign=top><tt>void CVMmutexLock(CVMMutex* m);<br>
+	void CVMmutexUnlock(CVMMutex* m);
+</tt></td>
+<td valign=top><tt>int sysMonitorEnter(sys_mon_t *mid);<br>
+	bool_t sysMonitorEntered(sys_mon_t *mid);<br>
+	int sysMonitorExit(sys_mon_t *mid);
+</tt></td>
+</tr>
+<tr>
+<td valign=top><tt>void CVMcondvarNotify(CVMCondVar* c);<br>
+	void CVMcondvarNotifyAll(CVMCondVar* c);<br>
+	CVMBool CVMcondvarWait(CVMCondVar* c, CVMMutex* m,<br> CVMJavaLong millis);
+</tt></td>
+<td valign=top><tt>int sysMonitorNotify(sys_mon_t *mid);<br>
+	int sysMonitorNotifyAll(sys_mon_t *mid);<br>
+	int sysMonitorWait(sys_mon_t *mid, int millis, bool_t clear);
+</tt></td>
+</tr>
+</table>
+
+
+<p>Additional notes on monitors are organized by topic below:
+<ul>
+<li>Mutex locking
+<p>In the CDC, a thread never attempts to lock the same mutex more than once. This 
+differs from the behavior of <tt>sysMonitorEnter</tt> and <tt>sysMonitorExit</tt> 
+in the PersonalJava platform, which required a recursive entry count.
+<br>&nbsp;
+<li>Monitor waiting
+<p>You can modify your <tt>sysMonitorWait</tt> implementation so that the "clear" 
+flag is always true (the interrupted state should always be cleared). A recursive 
+entry count is not needed, nor is a check of the monitor ownership (or in this 
+case, the condition variable mutex).
+<br>&nbsp;
+<li>Monitor notification
+<p>You can modify your <tt>sysMonitorNotify</tt> and <tt>sysMonitorNotifyAll</tt> 
+implementation so that it no longer checks that the current thread owns the 
+monitor. This check is unnecessary in the CDC.
+</ul>
+<p>For a description of the definitions required to support mutexes and condition 
+variables for the CVM, see the <a href="hpiref.html#sync">sync.h</a> section of 
+the HPI reference chapter.
+</blockquote>
+
+<!-- Body text ends here -->
+<!-- ============================================================== -->
+<HR size="2" noshade>
+<font size=-1> 
+<a href="index.html">Contents</a> | <a href="hpiref.html">Prev</a> |
+    <a href="using-gdb.html">Next</a>
+</font>
+<HR size="2" noshade>
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR VALIGN=TOP>
+
+<TD>
+<FONT SIZE="-2">
+   <A HREF="../legal/SMICopyright.html">Copyright</A> &#169; 2000
+   <A HREF="http://www.sun.com/">Sun Microsystems, Inc.</A>
+    All Rights Reserved.</FONT>
+   <br>
+   <br>
+
+   <FONT SIZE="-1">
+   Please send comments to: <a href="mailto:jcp-cdc-comments@eng.sun.com">jcp-cdc-comments@eng.sun.com</a> 
+   </FONT>
+</TD>
+
+<TD ALIGN=RIGHT>
+   <IMG SRC="../images/sunlogo64x30.gif" ALT="Sun" BORDER=0 WIDTH=64 HEIGHT=30>
+</TD>
+
+</TR>
+</TABLE>
+
+</BODY>
+</HTML>
+

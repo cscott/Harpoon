@@ -1,0 +1,445 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<!-- SCCS @(#)porting.html	1.21 00/11/22 -->
+<HTML>
+<HEAD>
+     <TITLE>Porting CVM and CDC</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000FF" VLINK="#000077" ALINK="#FF0000">
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR>
+<TD>
+&nbsp;
+<br>
+<font size=-1> 
+<a href="index.html">Contents</a> | <a href="launch.html">Prev</a> | <a href="datatypes.html">Next</a>
+</font></TD>
+
+<TD align="right">
+J2ME CDC 1.0
+<br>Porting Guide
+</TD>
+</TR>
+</TABLE>
+<HR size="2" noshade>
+
+<!-- ====================== Body text begins here ====================== -->
+<h1>Porting CVM, CDC and Foundation</h1>
+<blockquote>
+This information is for developers who want to port the CDC to another build
+or target platform.
+</blockquote>
+
+<h2>Contents</h2>
+<blockquote>
+<a href="Reference">Reference Information Files</a>
+<br>
+<a href="#port_build">Porting the Build Environment</a>
+<br>
+<a href="#port_HPI">Porting the HPI</a>
+<br>
+<a href="#port_classes">Porting the Platform-Dependent Class Library Support</a>
+<br>
+<a href="#port_debugger">Porting the Java Debugger Support</a>
+</blockquote>
+
+<hr>
+<a name=Reference></a>
+<h2>Reference Information Files</h2>
+<blockquote><p>If the target system provides POSIX and ANSI C libraries, you can 
+use the reference implementation files in <tt>src/porting/posix</tt> and 
+<tt>src/porting/ansi_c</tt>, thus reducing the amount of porting work needed.
+</blockquote>
+
+<hr>
+<a name=port_build>
+<h2>Porting the Build Environment</h2>
+<blockquote>
+<p>This section is for developers who want to build the system on another operating 
+system.
+<p>The <tt>build/share</tt> and <tt>build/<em>target_name</em></tt> directories together form 
+the reference build environment.
+The reference build process stores build-generated 
+files under <tt>build/<em>target_name</em></tt>.
+To set up your own build tree,
+make a new directory, <tt>build/<em>your_target</em></tt>,
+and populate it with <tt>make</tt> directive files.
+You can start by copying and renaming the corresponding
+files from <tt>build/vxworks</tt> or <tt>build/linux</tt>,
+then editing the <tt>make</tt> variables as appropriate.
+
+<h4>What Happens During the Reference Build?</h4>
+When you run <tt>make</tt>, the following steps occur as part of the 
+build process.
+
+<br>&nbsp;
+<table border cellspacing=5 cellpadding=5>
+<tr bgcolor="gray">
+<td><b><font color="white">Step</font></b></td>
+<td><b><font color="white">Utility</font></b></td>
+<td><b><font color="white">Input</font></b></td>
+<td><b><font color="white">Output</font></b></td>
+</tr>
+<tr>
+<td align=center>1</td>
+<td><tt>javac</tt><br>(Java language compiler)</td>
+<td>Must-preload <tt>.java</tt> files under <tt>src/share/classes</tt></td>
+<td><tt>build/<em>target_name</em>/btclasses/*.class</tt></td>
+</tr>
+
+<tr>
+<td align=center>2</td>
+<td><tt>JavaMemberDepend</tt><br>(Class member dependency checker)</td>
+<td><tt>build/<em>target_name</em>/btclasses/*.class</tt></td>
+<td>List of classes required for transitive closure. The list is in 
+<tt>build/<em>target_name</em>/generated/javavm/runtime/tranlist</tt>.</td>
+</tr>
+
+<tr>
+<td align=center>3</td>
+<td><tt>zip</tt><br>(compression utility)</td>
+<td>Classes listed in <tt>build/<em>target_name</em>/generated/javavm/runtime/tranlist</tt></td>
+<td><tt>build/<em>target_name</em>/btclasses.zip</tt></td>
+</tr>
+
+<tr>
+<td align=center>4</td>
+<td><tt>javac</tt><br>(Java language compiler)</td>
+<td>
+<ul><li>Runtime classes
+<li>CVM test files in <tt>src/share/javavm/test/*.java</tt>
+</ul></td>
+<td><tt>build/<em>target_name</em>/lib/cdc.jar</tt>
+<br><tt>build/<em>target_name</em>/testclasses/*.class</tt></td>
+</tr>
+
+<tr>
+<td align=center>5</td>
+<td><tt>zip</tt><br>(compression utility)</td>
+<td>CVM test classes in <tt>build/<em>target_name</em>/testclasses/*.class</tt></td>
+<td><tt>build/<em>target_name</em>/testclasses.zip</tt></td>
+</tr>
+
+<tr>
+<td align=center>6</td>
+<td><tt>javah</tt><br>(Native method function prototype generator)</td>
+<td>Runtime classes</td>
+<td>JNI header files in <tt>build/<em>target_name</em>/generated/jni/*.h</tt></td>
+</tr>
+
+<tr>
+<td align=center>7</td>
+<td><tt>JavaCodeCompact</tt><br>(Class preloader)</td>
+<td><tt>build/<em>target_name</em>/btclasses.zip</tt></td>
+<td>
+    <ul>
+    <li>JNI header files in <tt>build/<em>target_name</em>/generated/jni/*.h</tt>
+    <li>Preloaded class data structures in 
+    <tt>build/<em>target_name</em>/generated/javavm/runtime/romjava*.c</tt> and <tt>romjava.h</tt>
+    <li>Additional C file interfaces
+    </ul></td>
+</tr>
+
+<tr>
+<td align=center>8</td>
+<td>C compiler</td>
+<td>Native methods and CVM source (.c) files</td>
+<td>Object files in <tt>build/<em>target_name</em>/obj/*.o</tt></td>
+</tr>
+<tr>
+<td align=center>9</td>
+<td>C compiler</td>
+<td>Preloaded classes in <tt>build/<em>target_name</em>/generated/javavm/runtime/romjava*.c</tt></td>
+<td>Object files in <tt>build/<em>target_name</em>/obj/romjava*.o</tt></td>
+</tr>
+<tr>
+<td align=center>10</td>
+<td>archive utility</td>
+<td>Object files in <tt>build/<em>target_name</em>/obj/romjava*.o</tt></td>
+<td>Object archive file in <tt>build/<em>target_name</em>/obj/libromjava.a</tt></td>
+</tr>
+<tr>
+<td align=center>11</td>
+<td>linker</td>
+<td><ul>
+    <li>Object files in <tt>build/<em>target_name</em>/obj/*.o</tt> from step 7
+    <li>Object archive file in <tt>build/<em>target_name</em>/obj/libromjava.a</tt> from step 9</td>
+<td>Linkable CDC file in <tt>build/<em>target_name</em>/bin/cvm.o</tt></td>
+</tr>
+</table>
+
+<h4>Build Variables</h4>
+The following table describes the build variables that you may want to change if 
+you port the build environment. These variables appear in the file 
+<tt>build/<em>target_name</em>/defs_<em>target_name</em>.mk</tt>.
+<br>&nbsp;
+<table border cellpadding="5", cellspacing="5">
+<tr bgcolor="gray">
+<td><b><font color="white">Option</font></b></td>
+<td><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td><tt>AR_CREATE_FLAGS</tt>
+</td>
+<td>Specifies flags for the <tt>$(AR)</tt> tool to use when creating an archive.
+</td>
+</tr>
+<tr>
+<td><tt>AR_UPDATE_FLAGS</tt>
+</td>
+<td>Specifies flags for the <tt>$(AR)</tt> tool to use when updating an archive.
+</td>
+</tr>
+<tr>
+<td><tt>ASM_RULE</tt>
+</td>
+<td>Specifies the command to compile assembly language (<tt>.s</tt>) files.
+</td>
+</tr>
+<tr>
+<td><tt>AT</tt>
+</td>
+<td>Specifies the prefix for build commands, allowing control over whether the 
+command is echoed. This option is set automatically to <tt>@</tt>, unless 
+<tt>CVM_TERSEOUTPUT=true</tt>. <tt>$(AT)</tt> is usually used to prefix the 
+commands given in other macros, such as <tt>CC_RULE</tt>.
+</td>
+</tr>
+<td><tt>CCDEPEND</tt>
+</td>
+<td>Specifies the flag to pass to the C compiler to produce header file 
+dependency makefiles for each C file. Use <tt>-M</tt> for <tt>gcc</tt>. <b>Note: </b>
+If your C compiler does not support this feature, you must edit 
+<tt>defs_$(CVM_TARGET).mk</tt> to set <tt>GENERATEMAKEFILES=false</tt>.
+</td>
+</tr>
+<tr>
+<td><tt>CC_RULE</tt>
+</td>
+<td>Command to compile C files.
+</td>
+</tr>
+<tr>
+<td><tt>CFLAGS</tt>
+</td>
+<td>Specifies the flags to pass to the C compiler.  <b>Note: </b>
+Use the <tt>CPPFLAGS</tt> option to specify preprocessor flags.
+</td>
+</tr>
+<tr>
+<td><tt>CPPFLAGS</tt>
+</td>
+<td>Specifies the flags to pass to the C preprocessor. This must include 
+<tt>$(CVM_DEFINES)</tt>.
+</td>
+</tr>
+<tr>
+<td><tt>CVM</tt>
+</td>
+<td>The name of the CVM executable created by <tt>$LINK_RULE</tt>.
+</td>
+</tr>
+<tr>
+<td><tt>CVM_DEFINES</tt>
+</td>
+<td>A list of all C macro defines to add to the <tt>CPPFLAGS</tt> setting. 
+The list is created automatically by processing the <tt>make</tt> command line 
+arguments. For example, passing in <tt>CVM_DEBUG=true</tt> automatically adds 
+<tt>-DCVM_DEBUG</tt> to <tt>CVM_DEFINES</tt>.
+</td>
+</tr>
+<tr>
+<td><tt>CVM_INCLUDES</tt>
+</td>
+<td>A list of all directories that contain included files. 
+</td>
+</tr>
+<tr>
+<td><tt>CVM_JAVABIN</tt>
+</td>
+<td>The directory where the <tt>java</tt>, <tt>javac</tt>, <tt>javah</tt>, 
+<tt>javadoc</tt>, and <tt>jar</tt> tools can be found.
+</td>
+</tr>
+<tr>
+<td><tt>CVMLIB</tt>
+</td>
+<td>The name of the CVM object file created by <tt>$LIB_RULE</tt>. This file 
+contains all of the CVM executable code, but no preloaded classes. Use this 
+option to get size information on the CVM executable.
+</td>
+</tr>
+<tr>
+<td><tt>CVM_RUNTIME_CLASSES</tt>
+</td>
+<td>A list of all classes that are part of your platform, but are not required 
+to be preloaded. Most of the classes on this list are set up in <tt>defs.mk</tt>. 
+<b>Note: </b>You need to add your platform-specific classes (if any) to this 
+list in <tt>defs.mk</tt>.
+</td>
+</tr>
+<tr>
+<td><tt>CVM_SRCDIRS</tt>
+</td>
+<td>A list of all C and assembly language source directories. Most of the 
+directories in the list are set up in <tt>defs.mk</tt>, including 
+platform-specific directories that contain native method implemetations. 
+<b>Note: </b>You need to add to this list the platform-specific directories 
+that implement the porting layer for your platform.
+</td>
+</tr>
+<tr>
+<td><tt>CVM_TARGET</tt>
+</td>
+<td>The name of the target operating system, such as <tt>vxworks</tt>,
+<tt>linux</tt> or <tt><em>your_target</em></tt> for the 
+reference implementation. This value locates directories specific to the target. 
+For example, <tt>build/$(CVM_TARGET)</tt> is where the target build is done, 
+and is also the location of any target-specific makefile, such as 
+<tt>build/$(CVM_TARGET)/defs_$(CVM_TARGET).mk</tt>. Also, target-specific 
+source files are in <tt>src/$(CVM_TARGET)</tt>.
+</td>
+</tr>
+<tr>
+<td><tt>CVM_TARGETOBJS</tt>
+</td>
+<td>A list of all platform-specific object files. Any file in
+<tt>src/$(CVM_TARGET)</tt> should go in this list.
+</td>
+</tr>
+<tr>
+<td><tt>FILESEP</tt>
+</td>
+<td>The file separator character on the host operating system. For example, if 
+your host system is a Unix or Unix-like operating environment, this should be set to the 
+slash character (/).
+</td>
+</tr>
+<tr>
+<td><tt>LIB_FLAGS</tt>
+</td>
+<td>Flags to pass to the tool used to combine multiple object files into one 
+object file.
+</td>
+</tr>
+<tr>
+<td><tt>LIB_RULE</tt>
+</td>
+<td>Command to combine multiple object files into one object file.
+</td>
+</tr>
+<tr>
+<td><tt>LINKFLAGS</tt>
+</td>
+<td>Flags to pass to the tool used to link multiple object files into an executable. 
+On some platforms, such as VxWorks, the result is not actually an executable. 
+Instead, the result is an object file that is linked to the VxWorks kernel later.
+</td>
+</tr>
+<tr>
+<td><tt>LINK_RULE</tt>
+</td>
+<td>Command to link object files into an executable.
+</td>
+</tr>
+<tr>
+<td><tt>ZIP</tt>
+</td>
+<td>Name of the zip tool to use. Use the full path name if it is not in the 
+default execution path.
+</td>
+</tr>
+</table>
+
+</blockquote>
+
+<hr>
+<a name=PortingHPI></a>
+<h2>Porting the HPI</h2>
+<blockquote>
+The CVM expects certain functionality to be available. The required functionality 
+may be provided by the target OS or by implementation-specific code between the 
+OS and the CVM.  Required functionality includes:
+<ul>
+<li>Threads
+<li>Synchronization (mutexes and condition variables)
+<li>Dynamic linking
+<li>malloc (POSIX memory allocation utility) or equivalent
+<li>Input/output (I/O) functions
+<li>Berkeley Standard Distribution (BSD) sockets
+<li>File system support
+<li>Function libraries must be thread-safe. A thread blocking in a library should 
+not block any other VM threads.
+</ul>
+The HPI header files show everything that must be defined or implemented to 
+port the VM, providing the required functionality.
+
+<p>To port the HPI, you need to look at the following files:
+<ul><li>HPI header files that define the porting interface are in 
+        <tt>src/share/javavm/include/porting/</tt>.
+    <li>Platform-dependent HPI header files to include for VxWorks are in 
+        <tt>src/vxworks/javavm/include/</tt>, and those for
+	Linux are in <tt>src/linux/javavm/include/</tt>.
+    <li>Platform-dependent HPI functions for VxWorks are in 
+        <tt>src/vxworks/javavm/runtime/</tt>, and those for Linux
+	are in <tt>src/linux/javavm/runtime/</tt>.
+</ul>
+Much more detail on the HPI is available in the 
+<a href="hpiref.html">Host Programming Interface Reference</a>.
+
+</blockquote>
+
+<hr>
+<a name=port_classes></a>
+<h2>Porting the Platform-Dependent Class Library Support</h2>
+<blockquote>
+<p>The reference implementations of the platform-dependent classes and native 
+methods are in <tt>src/<em>target_name</em>/classes</tt> and <tt>src/<em>target_name</em>/native</tt>.
+
+</blockquote>
+
+<hr>
+<a name=port_debugger></a>
+<h2>Porting the Java Debugger Support</h2>
+<blockquote>
+<p>The debugger support requires some porting of the networking and dynamic 
+linking code. The reference implementation is in <tt>ext/jpda</tt>.
+More detail on this facility is available in the section on
+<a href="jdbwithcvm.html">Using JDB with CVM</a>.
+</blockquote>
+
+<!-- Body text ends here -->
+<!-- ============================================================== -->
+<HR size="2" noshade>
+<font size=-1> 
+<a href="index.html">Contents</a> | <a href="launch.html">Prev</a> | <a href="datatypes.html">Next</a>
+</font>
+<HR size="2" noshade>
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR VALIGN=TOP>
+
+<TD>
+<FONT SIZE="-2">
+   <A HREF="../legal/SMICopyright.html">Copyright</A> &#169; 2000
+   <A HREF="http://www.sun.com/">Sun Microsystems, Inc.</A>
+    All Rights Reserved.</FONT>
+   <br>
+   <br>
+
+   <FONT SIZE="-1">
+   Please send comments to: <a href="mailto:jcp-cdc-comments@eng.sun.com">jcp-cdc-comments@eng.sun.com</a> 
+   </FONT>
+</TD>
+
+<TD ALIGN=RIGHT>
+   <IMG SRC="../images/sunlogo64x30.gif" ALT="Sun" BORDER=0 WIDTH=64 HEIGHT=30>
+</TD>
+
+</TR>
+</TABLE>
+
+</BODY>
+</HTML>
+

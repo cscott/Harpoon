@@ -1,0 +1,471 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<!-- SCCS @(#)build.html	1.25 00/11/22 -->
+<HTML>
+<HEAD>
+     <TITLE>Building CVM and CDC/Foundation</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000FF" VLINK="#000077" ALINK="#FF0000">
+<TABLE BORDER="0" WIDTH="100%">
+<TR>
+<TD>
+&nbsp;
+<br>
+<font size=-1> 
+<a href="index.html">Contents</a> | <a href="overview.html">Prev</a> | <a href="launch.html">Next</a>
+</font></TD>
+
+<TD align="right">
+J2ME CDC 1.0
+<br>Porting Guide
+</TD>
+</TR>
+</TABLE>
+
+<HR SIZE=2 NOSHADE>
+
+<!-- ====================== Body text begins here ====================== -->
+<h1>Building CVM and CDC/Foundation</h1>
+<hr>
+<h2>Contents</h2>
+<a href="#TargetEnvironments">Target Environments</a>
+<br>
+<a href="#SystemRequirements">System Requirements</a>
+<br>
+<a href="#LinuxBuild">Linux Build Information</a>
+<br>
+<a href="#VxWorksBuild">VxWorks Build Information</a>
+<br>
+<a href="#CompilerWarnings">Compiler Warnings</a>
+<br>
+<a href="#BuildOptions">Build Options</a>
+<br>
+<a href="#CompilingApplications">Compiling Applications for CDC/Foundation</a>
+
+<hr>
+<a name=TargetEnvironments></a>
+<h2>Target Environments</h2>
+<blockquote><p>
+This release of CVM and CDC/Foundation supports two different target environments: 
+<ul>
+<li>VxWorks<sup><font size="-2">&reg;</font></sup> 
+real-time operating system on Intel<sup><font size="-2">&reg;</font></sup> 
+Pentium hardware</li>
+<li>Linux operating system, also operating on Pentium hardware.</li>
+</ul>
+</blockquote>
+<A name=SystemRequirements>
+<hr>
+
+<a name=SystemRequirements></a>
+<h2>System Requirements</h2>
+<h3>Linux System Requirements</h3>
+<blockquote>
+The Linux configuration can be built and executed on the same
+system. Its requirements are:
+<ul>
+<li>Red Hat Linux 6.2 or greater
+<li>x86-compatable hardware capable of running this platform. This information
+is available from the
+<a href="http://www.redhat.com/support/hardware">
+hardware support page
+</a>
+of the
+<a href="http://www.redhat.com">
+Red Hat</a>
+web site.
+<li>Java 2 SDK, Standard Edition, v1.3 or later
+<li>Configured for multicast (required for execution)
+<li>80 - 100 Mbytes of disk space to build CVM plus CDC or Foundation
+</ul>
+
+</blockquote>
+<h3>VxWorks Build Requirements</h3>
+<blockquote>
+The build environment for the VxWorks target is
+the Tornado<sup><font size="-2">TM</font></sup> 
+development system, running in the Solaris<sup><font size="-2">TM</font></sup> 
+Operating Environment.
+It requires:
+<ul>
+<li>Java 2 SDK, Standard Edition, v1.3 or later
+<li>Tornado 2.0 development system
+<li>Solaris 7 Operating Environment or later
+<li>SPARC hardware
+<li>128 MB of RAM (256 MB recommended)
+</ul>
+</blockquote>
+<h3>VxWorks Target System Requirements</h3>
+<blockquote>
+<ul>
+<li>Pentium hardware
+<li>VxWorks 5.4 operating system
+<li>32 MB of RAM
+<li>Must be on the same network as the host system
+</ul>
+For information about Tornado and 
+VxWorks, see the <a href="http://www.wrs.com/">Wind River Systems</a> Web site. 
+For information about Pentium hardware, see the <a href="http://www.intel.com/">Intel</a> 
+Web site.
+
+</blockquote>
+<hr>
+<a name=LinuxBuild>
+<h2>Linux Build Information</h2>
+<p>
+<h3>Before You Build</h3>
+<blockquote>
+The instructions in <a href="#linux_build_proc">Linux Build Procedure</a> assume that you 
+have already downloaded and unzipped the CDC or Foundation distribution. The directories in 
+the instructions are relative to the directory in which you unzipped the CDC 
+or Foundation distribution.
+<p>
+The Red Hat Linux system includes GNU development tools to use in building 
+the CDC/Foundation reference implementation.
+The C compiler should be version egcs-2.91.66
+or later, and make version 3.78 or later.
+<p> To run CVM plus CDC/Foundation requires configuring the system for multicast.
+This can be done each time Linux boots, or can be added to the 
+<tt>/etc/sysconfig/init</tt> file. The commands, which must be executed
+by the <b>root</b> user are:
+<ul>
+<li><tt>/sbin/ifconfig eth0 allmulti</tt>
+<li><tt>/sbin/ifconfig lo allmulti</tt>
+<li><tt>/sbin/route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0</tt>
+<li><tt>/sbin/route add -net 224.0.0.0 netmask 240.0.0.0 dev lo</tt>
+</ul>
+</blockquote>
+
+<a name=linux_build_proc>
+<h3>Linux Build Procedure</h3>
+<blockquote>
+To build CVM plus CDC, complete the following step(s):
+<ol>
+<li>On the host system, change directories to <tt>build/linux</tt>, and enter the following command:
+<p><tt>make CVM_DEBUG=true</tt>
+<p>
+This produces
+the file <tt>build/linux/bin/cvm</tt>, which is an executable image,
+as well as 
+<tt>build/linux/lib/cdc.jar</tt>,
+which is a JAR archive to be used for the CVM's boot classpath.
+The default boot classpath is <tt>../lib/cdc.jar</tt>.
+The build also produces <tt>build/linux/testclasses.jar</tt>,
+a collection of simple tests.
+<p>
+<li>
+Change directory into the <tt>bin</tt> directory using:
+<p><tt>cd bin</tt>
+<br>
+<li>
+Test for rudimentary operation of the system using:
+<p><tt>./cvm -Djava.class.path=../testclasses.jar HelloWorld</tt>
+<p>
+This step should print <tt>Hello world.</tt> to your screen, 
+indicating a successful build.
+</ol>
+<p>
+To build the Foundation implementation, modify the first step above to
+use the <tt>J2ME_CLASSLIB</tt> build option:
+<p><tt>make CVM_DEBUG=true J2ME_CLASSLIB=foundation</tt>
+<p> This will produce <tt>build/linux/bin/cvm</tt> and
+<tt>build/linux/lib/foundation.jar</tt>, and set the
+default boot classpath accordingly.
+</blockquote>
+
+
+<hr>
+<a name=VxWorksBuild></a>
+<h2>Tornado/VxWorks Build Information</h2>
+<p>
+<h3>Before You Build</h3>
+<blockquote>
+The instructions in <a href="#tornado_build_proc">Tornado/VxWorks Build Procedure</a> assume that you 
+have already downloaded and unzipped the CDC or Foundation distribution. The directories in 
+the instructions are relative to the directory in which you unzipped the CDC or Foundation
+distribution.
+<p>
+The Tornado development system includes GNU development tools to use in building 
+the reference implementation. If you already have GNU <tt>make</tt> installed on your 
+system, it must be GNU version 3.74 or later to build the reference implementation. 
+Or you can use the copy under your Tornado directory, in 
+<tt>tornado2/host/$(WIND_HOST)/bin/make</tt>. Type <tt>make -version</tt> to 
+verify that GNU <tt>make</tt> is in your command path.
+<p>
+If you do not have Tornado installed on your host system, you can download the 
+Tornado/VxWorks evaluation bundle for the CDC at the following URL: 
+<a href="http://www.wrs.com/j2me-cdc/">www.wrs.com/j2me-cdc/</a>.
+<p>
+Before building the reference implementation, complete the following steps:
+<ol>
+<li>On the host system, edit <tt>build/vxworks/config_vxworks.mk</tt> to provide 
+the following:
+<br>&nbsp;
+<ul><li>Target IP address
+    <li>Host IP address
+    <li>Host name
+    <li>Base directory for Tornado software (<tt>wind_base</tt>)
+</ul>
+<p>You may need to change additional values.
+<br>
+<br>
+<li>Create or edit the <tt>.rhosts</tt> file in your home directory, and add 
+the target system name to the file.
+<br>&nbsp;
+</ol>
+</blockquote>
+
+<a name=tornado_build_proc>
+<h3>Tornado/VxWorks Build Procedure</h3>
+<blockquote>
+To build the reference implementation, complete the following steps:
+<ol>
+<li>On the host system, change directories to <tt>build/vxworks</tt>, and enter the following command:
+<p><tt>make CVM_DEBUG=true</tt>
+<br>&nbsp;
+<p> This may produce some compiler warnings about incompatabilities of
+argument lists for some system library functions. These may be ignored.
+<p>
+The products of this step are 
+the files <tt>build/linux/bin/cvm.o</tt>, which is a relocatable file
+to be bound into the vxWorks kernel,
+and <tt>build/linux/lib/cdc.jar</tt>,
+which is a JAR archive to be used for the CVM's boot classpath.
+The default boot classpath is <tt>../lib/cdc.jar</tt>.
+The build also produces <tt>build/linux/testclasses.jar</tt>,
+a collection of simple tests.
+<li>In <tt>build/vxworks</tt>, enter the following command:
+<p><tt>gnumake download_image</tt>
+<p><b>Note: </b>Steps 3 through 5 assume the presence of a floppy drive on your 
+Solaris system. If your system does not have a floppy drive, you need to review 
+the steps involved in the <tt>make</tt> targets "boot_disk" and "boot_rom" in 
+the file <tt>build/vxworks/rules_vxworks.mk</tt>, and adapt them to your host 
+system. Once you have created the boot disk, proceed with step 6.
+<br>&nbsp;
+<li>Insert a diskette into the floppy drive of your host system. Format 
+the diskette using <tt>fdformat</tt>. The diskette is automatically ejected 
+when formatting is done. Reinsert the diskette.
+<br>&nbsp;
+<li>In <tt>build/vxworks</tt>, enter the following command:
+<p><tt>gnumake boot_disk</tt>
+<p>The diskette is automatically ejected after the command is carried out. Reinsert 
+the diskette.
+<br>&nbsp;
+<li>In <tt>build/vxworks</tt>, enter the following command:
+<p><tt>gnumake boot_rom</tt>
+<br>&nbsp;
+<li>Insert the diskette into a floppy drive on the target system, and boot the 
+target system.
+<br>&nbsp;
+<li>On the target console, enter the following command:
+<p><tt>cd "<i>top_dir</i>/build/vxworks/bin"</tt>
+<p>where <tt><i>top_dir</i></tt> is the network directory in which you unzipped 
+the CDC distribution.
+<br>&nbsp;
+<li>On the target console, enter the following command:
+<p><tt>runJava "-Djava.class.path=<i>top_dir</i>/build/vxworks/testclasses.zip 
+HelloWorld"</tt>
+<p>where <tt><i>top_dir</i></tt> is the network directory in which you unzipped 
+the CDC distribution. This step should print <tt>Hello world.</tt> to your screen, 
+indicating a successful build.
+</ol>
+<p>
+To build the Foundation implementation, modify the first step above to
+use the <tt>J2ME_CLASSLIB</tt> build option:
+<p><tt>make CVM_DEBUG=true J2ME_CLASSLIB=foundation</tt>
+<p> This will produce <tt>build/vxworks/bin/cvm.o</tt> and
+<tt>build/vxworks/lib/foundation.jar</tt>, and set the
+default boot classpath accordingly.
+<p>
+<b>Note: </b>For convenience, you may want to edit your <tt><i>home</i>/.wind/startup</tt> 
+file (where <tt><i>home</i></tt> is your home directory) on the host system to 
+add the commands in steps 7 and 8.
+</blockquote>
+<hr>
+<a name=CompilerWarnings></a>
+<h2>Compiler Warnings</h2>
+<blockquote>
+
+<p>When compiling CVM, a certain number of warning messages are produced 
+by the C compiler. This is especially noticeable when the target is VxWorks. 
+All such compiler warnings produced by all supported tool sets have been 
+investigated and found to be benign. There are similar "notes" produced by 
+javac concerning deprecated methods that are also benign.</p>
+</blockquote>
+<hr>
+<a name=BuildOptions></a>
+<h2>Build Options</h2>
+<p>[[[Add JwME_LIB??]]]</p>
+<blockquote>The following tables describe the CVM configuration options that developers may 
+want to use with the <tt>make</tt> utility. Use of any other CVM configuration options 
+is not supported. The default values are set in <tt>build/share/defs.mk</tt>.
+<br>&nbsp;
+<table border cellpadding="5", cellspacing="5">
+<tr bgcolor="gray">
+<td><b><font color="white">Option</font></b></td>
+<td><b><font color="white">Default</font></b></td>
+<td><b><font color="white">Description</font></b></td>
+</tr>
+<tr>
+<td><tt>CPU</tt></td>
+<td><tt>PENTIUM</tt></td>
+<td>The target CPU. This option is specific to VxWorks targets.</td>
+</tr>
+<!--
+<tr>
+<td><tt>CVM_CLASSLOADING</tt></td>
+<td><tt>true</tt></td>
+<td>If <tt>true</tt>, builds the CVM with classloading capability, and preloads only those 
+classes needed to bootstrap the CVM. If <tt>false</tt>, builds the CVM 
+without classloading capability, and preloads all of the CDC classes.</td>
+</tr>
+-->
+<tr>
+<td><tt>CVM_DEBUG</tt></td>
+<td><tt>false</tt></td>
+<td>If <tt>true</tt>, builds the debug version of the CVM. If <tt>false</tt>, 
+builds the non-debug CVM.</td>
+</tr>
+<tr>
+<td><tt>CVM_DEBUG_ASSERTS</tt></td>
+<td><tt>$(CVM_DEBUG)</tt></td>
+<td>If <tt>true</tt>, then enable asserts.</td>
+</tr>
+<tr>
+<td><tt>CVM_DEBUG_CLASSINFO</tt></td>
+<td><tt>$(CVM_DEBUG)</tt></td>
+<td>If <tt>true</tt>, builds the CVM with the ability to interpret class debugging 
+information in the class files. Also causes preloaded classes to include 
+debugging information if they were compiled with it. Note that the build 
+must also have <tt>CVM_JAVAC_DEBUG</tt> set to <tt>true</tt>, for this option 
+to have any effect.</td>
+</tr>
+<tr>
+<td><tt>CVM_DEBUG_DUMPSTACK</tt></td>
+<td><tt>$(CVM_DEBUG)</tt></td>
+<td>If <tt>true</tt>, then include support for the <tt>CVMdumpStack</tt> 
+and <tt>CVMdumpFrame</tt> functions. The <tt>CVMdumpStack</tt> function 
+is useful for dumping a stack if CVM has crashed.</td>
+</tr>
+<tr>
+<td><tt>CVM_DEBUG_STACKTRACES</tt></td>
+<td><tt>true</tt></td>
+<td>If <tt>true</tt>, then include code for doing <tt>Throwable.printStackTrace</tt> 
+and <tt>Throwable.fillInStackTrace</tt>. If <tt>false</tt>, then the 
+<tt>printStackTrace</tt> function prints only a "not supported" message. This 
+function can be used in both debug and non-debug builds. To reduce the footprint 
+of non-debug builds, set this option to <tt>false</tt>.</td>
+</tr>
+<tr>
+<td><tt>CVM_GCCHOICE</tt></td>
+<td><tt>generational</tt></td>
+<td>Sets the garbage collector type to use. Valid values include: <tt>generational</tt>, 
+<tt>marksweep</tt>, <tt>semispace</tt>.</td>
+</tr>
+<tr>
+<td><tt>CVM_JAVAC_DEBUG</tt></td>
+<td><tt>true</tt></td>
+<td>If <tt>true</tt>, runs <tt>javac</tt> with the <tt>-g</tt> option to compile 
+classes with debugging information such as line numbers. If <tt>false</tt>, runs 
+<tt>javac</tt> with the <tt>-g:none</tt> option</td>
+</tr>
+<tr>
+<td><tt>CVM_JVMDI</tt></td>
+<td><tt>false</tt></td>
+<td>If <tt>true</tt>, builds the CVM with JVMDI support. If <tt>false</tt>, 
+builds the CVM without JVMDI support.</td>
+</tr>
+<tr>
+<td><tt>CVM_NO_LOSSY_OPCODES</tt></td>
+<td><tt>$(CVM_JVMDI)</tt></td>
+<td>If <tt>true</tt>, field-related opcodes whose arguments would ordinarily be quickened 
+into offsets instead have their arguments quickened into constant pool references, 
+to ensure that the fieldblock for the field is available. This is required to 
+allow the debugger to set field watchpoints. Note that this works either with or 
+without classloading enabled, and affects both <tt>JavaCodeCompact</tt> and 
+<tt>quicken.c.</tt></td>
+</tr>
+<tr>
+<td><tt>CVM_OPTIMIZED</tt></td>
+<td><tt>!$(CVM_DEBUG)</tt></td>
+<td>If <tt>true</tt>, turns on C compiler optimizations.</td>
+</tr>
+<tr>
+<td><tt>CVM_PRELOAD_LIB</tt></td>
+<td><tt>false</tt></td>
+<td>If <tt>true</tt>, preloads the CDC class library.</td>
+</tr>
+<tr>
+<td><tt>CVM_SYMBOLS</tt></td>
+<td><tt>true</tt></td>
+<td>If <tt>true</tt>, includes debugging and symbol information for C (the
+-g option), even if the build is optimized.</td>
+</tr>
+<tr>
+<td><tt>CVM_TERSEOUTPUT</tt></td>
+<td><tt>true</tt></td>
+<td>If <tt>true</tt>, avoids printing messages that show each build step. If 
+<tt>false</tt>, prints messages that show each build step.</td>
+</tr>
+<tr>
+<td><tt>J2ME_CLASSLIB</tt></td>
+<td><tt>cdc</tt></td>
+<td>Controls the class library produced by the build. Choices are
+<tt>cdc</tt> and <tt>foundation</tt>.
+</td>
+</tr>
+</table>
+<br>&nbsp;
+
+</blockquote>
+<hr>
+<a name=CompilingApplications></a>
+<H1>Compiling Applications for CDC or Foundation</H1>
+<blockquote>
+It is important the applications to be run on CDC or Foundation
+be compiled against the appropriate library. By default, the
+SDK1.3 compiler will compile against the SDK1.3 libraries.
+This would allow compilation of applications using library elements
+not part of CDC or Foundation, and would prevent compilation of applications
+using any of the CLDC components of CDC.
+<p>
+This problem can be avoided using the <tt>javac -bootclasspath</tt>
+compiler option. For example, to compile the source file <tt>MyApp.java</tt>
+against the CDC platform for the VxWorks build, this command could be used:
+<p><tt>javac -bootclasspath <em>top_dir</em>/build/vxworks/lib/cdc.jar MyApp.java</tt>
+
+</blockquote>
+<!-- Body text ends here -->
+<!-- ============================================================== -->
+<HR SIZE=2 NOSHADE>
+<font size=-1> 
+<a href="index.html">Contents</a> | <a href="overview.html">Prev</a> | <a href="launch.html">Next</a>
+</font>
+<HR SIZE=2 NOSHADE>
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR VALIGN=TOP>
+
+<TD>
+<FONT SIZE="-2">
+   <A HREF="../legal/SMICopyright.html">Copyright</A> &#169; 2000
+   <A HREF="http://www.sun.com/">Sun Microsystems, Inc.</A>
+    All Rights Reserved.</FONT>
+   <br>
+   <br>
+
+   <FONT SIZE="-1">
+   Please send comments to: <a href="mailto:jcp-cdc-comments@eng.sun.com">jcp-cdc-comments@eng.sun.com</a> 
+   </FONT>
+</TD>
+
+<TD ALIGN=RIGHT>
+   <IMG SRC="../images/sunlogo64x30.gif" ALT="Sun" BORDER=0 WIDTH=64 HEIGHT=30>
+</TD>
+
+</TR>
+</TABLE>
+
+</BODY>
+</HTML>
+

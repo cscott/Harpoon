@@ -1,0 +1,1175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- SCCS @(#)gc.html	1.11 00/11/22 --><!-- 
+--><HTML><HEAD><TITLE>The Memory System in CVM</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=iso-8859-1">
+<META content="MSHTML 5.50.4134.600" name=GENERATOR></HEAD>
+
+
+
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000077" ALINK="#ff0000">
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR>
+<TD>
+&nbsp;
+<br>
+<font size=-1> 
+<A href="index.html">Contents</A> | <A href="datatypes.html">Prev</A> | <A href="cstackcheck.html">Next</A>
+</font></TD>
+
+<TD align="right">
+J2ME CDC 1.0
+<br>Porting Guide
+</TD>
+</TR>
+</TABLE>
+<HR size="2" noshade>
+<!-- ====================== Body text begins here ====================== -->
+
+<FONT color=blue>
+<H1>The Memory System in CVM</H1></font>
+<P><FONT color=blue>
+<H2>Table of Contents</H2></FONT>
+<UL>
+  <LI><A href="#exactness">Exactness</A> 
+  <LI><A href="#org">Memory System Organization</A> 
+  <UL>
+    <LI><A href="#separation">Separating Memory System from VM</A> 
+    <LI><A href="#shared">Shared Memory System Code</A> 
+    <LI><A href="#specific">GC-specific Memory System Code</A> 
+    <LI><A href="#flow">GC Execution Flow</A> </LI></UL>
+  <LI><A href="#newgc">Writing a new GC</A> 
+  <UL>
+    <LI><A href="#source">Source Organization</A> 
+    <LI><A href="#types">Data Types</A> 
+    <LI><A href="#implement">What to Implement?</A> 
+    <UL>
+      <LI><A href="#exec">Basic Execution</A> 
+      <LI><A href="#barriers">Barriers</A> 
+      <LI><A href="#datamove">Moving Array Data</A> </LI></UL>
+    <LI><A href="#call">What to Call?</A> 
+    <UL>
+      <LI><A href="#gcstart">Initiating a GC</A> 
+      <LI><A href="#rootscan">Root Scans</A> 
+      <LI><A href="#special">Special Root Scans</A> 
+      <LI><A href="#objwalk">Object Walking</A> 
+      <LI><A href="#perobject">Per-object Data</A> </LI></UL>
+    <LI><A href="#example">Example Collector</A> </LI></UL></LI></UL>
+<FONT color=blue>
+<H2>Introduction</H2></FONT>
+<p>
+This document outlines the memory system architecture of CVM.
+It also provides a reference for its APIs and acts as a guide to a GC
+(garbage collector) author to assist in writing a new memory allocator
+and GC for CVM.
+</p>
+<p>
+<b>Note:</b> This document assumes basic knowledge of tracing GC algorithms
+such as mark-and-sweep and copying collection, and related GC concepts
+such as read and write barriers.
+</p>
+
+<P>CVM greatly improves on its predecessor PersonalJava Java Virtual Machines
+(JVM's) in the memory system area. The CVM memory system posesses the following 
+new features: 
+<UL>
+  <LI><B>Exactness:</B> CVM ensures that its garbage collector (GC) knows about 
+  all pointers at GC time; there is no need for conservative scans of the heap.
+  <P></P>
+  <LI><B>Better collector:</B> CVM has a generational garbage collector as its 
+  default, resulting in much reduced average GC pause times, and much reduced 
+  total time spent on GC.
+  <P></P>
+  <LI><B>Pluggable GC:</B> CVM has a memory interface that allows a GC author to 
+  write a new GC for CVM without changing the VM source at all.
+  <P></P></LI></UL>
+
+<A name=exactness><FONT color=blue>
+<H2>Exactness</H2></FONT>
+<P>CVM is built with the goal of <I>exactness</I> in mind. An exact VM knows 
+about all pointers to the Java heap, both from the VM code and native methods. 
+Exactness has numerous advantages: 
+<UL>
+  <LI>Allows for lower per-object overhead through the elimination of handles 
+  <LI>Makes full heap compaction possible on every GC 
+  <LI>Eliminates unnecessary object retention due to <I>conservative</I> 
+  guesses. 
+  <LI>Allows the implementation of the widest range of GC algorithms. </LI></UL>
+<P>CVM implements exactness by using <I>GC-safe points</I> (or <I>GC points</I>, 
+for short). The idea is that GC cannot occur at arbitrary points in the 
+execution of a program, but only when all threads can tolerate GC. In other 
+words, threads only make their GC state explicit at well-known intervals, but 
+not all the time. 
+<P>Each thread in CVM can be in a GC-unsafe state or a GC-safe state. Threads in 
+a GC-unsafe state are free to point to heap objects directly, and can do any 
+GC-unsafe pointer manipulations they like. However, they cannot tolerate GC, as 
+the collector cannot obtain their precise set of pointers. Threads in a GC-safe 
+state must make all their pointers known to GC. In order to prevent pointers 
+from becoming invisible to GC through C compiler optimizations on VM code, they 
+are not allowed to point to objects directly, but only through an extra level of 
+indirection. Also, they register with GC any pointers that GC needs to scan. 
+Therefore they can tolerate GC. 
+<P>GC can only proceed if all threads are GC-safe. CVM makes precise pointer 
+information available to GC when all threads are GC-safe. 
+<P>For a guide to writing GC-safe code in CVM, and a detail of CVM internal APIs 
+with regards to GC-safe and GC-unsafe modes, please refer to the document <A 
+href="gcsafety.html">How to be GC-safe in CVM</A>. 
+<P>A typical exact GC cycle in CVM is initiated by a thread requesting a GC. At 
+this point, CVM must bring all other threads to GC points before GC can proceed: 
+
+<OL>
+  <LI>Each thread polls for a global GC request at GC points. 
+  <LI>Upon detecting a global GC request, a thread at a GC point saves its 
+  GC-observable state, and suspends itself. 
+  <LI>The GC requester waits for all GC-unsafe threads to become GC-safe and 
+  suspend themselves. 
+  <LI>When all threads are GC-safe, GC can proceed, and scan the exact state of 
+  each thread. </LI></OL>
+<P>The byte-code interpreter in CVM runs GC-unsafe most of the time for maximum 
+efficiency, and offers GC points on certain byte-codes to ensure that each 
+thread can suspend itself in bounded time on a global GC request. 
+<P>GC points in the CVM interpreter are: 
+<UL>
+  <LI>Method invocation points 
+  <LI>Backwards branches. 
+  <LI>Memory allocation points. 
+  <LI>Class loading and constant resolution points. </LI></UL>
+<P>The choice of method invocation points as GC points is due to the state of 
+the interpreter stack when a GC occurs. Since each frame on the stack refers to 
+a method that has stopped, naturally, at a method invocation point, it makes 
+sense to make invocation sites GC points. So when GC walks the interpreter stack 
+frames looking for roots, it can readily find frame pointers into the heap. 
+<P>The choice of backwards branches as additional GC points in the interpreter 
+ensures that the currently executing method of each thread is guaranteed to 
+become GC-safe within a bounded amount of time: each method will either loop by 
+a backwards branch, or hit a method invocation within a bounded amount of time. 
+<P>CVM code outside of the interpreter such as the system class loader and 
+verifier runs mostly GC-safe, as opposed to the byte-code interpreter. So GC can 
+occur alongside classloading, for example. 
+<P>And finally, CVM's implementation of the Java Native Interface (JNI) allows 
+all native methods to run GC-safe, except when they access the Java heap. So 
+native methods can tolerate GC until they call JNI functions that access the 
+heap. At such heap access points the CVM JNI implementation makes the caller 
+thread temporarily GC-unsafe while it accesses the heap. <A name=org><FONT 
+color=blue>
+<H2>Pluggable GC</H2></FONT>
+<P>CVM is designed to allow a GC author to write a new GC without changing a 
+line of the VM code itself. This is achieved by careful engineering of the VM 
+code to separate memory system related functions from the rest of the VM, and to 
+identify clear interfaces between the memory system and the VM. 
+<P>Entry points to the memory system from the VM are clearly defined. Also, 
+GC-algorithm-independent code is separated from the GC-algorithm-dependent code 
+very carefully. The former abstracts away the details of many common GC tasks 
+from the GC author, and is available as a set of routines for the GC author to 
+use. The latter is designed to be an interface that needs to be implemented by a 
+GC author to provide GC functionality. <A name=separation><FONT color=blue>
+<H3>Separating Memory System from VM</H3></FONT>
+<P>The separation of the VM from the memory interface is achieved by extensive 
+use of internal interfaces that are built hiearchically. 
+<P>The VM needs to access the heap: 
+<OL>
+  <LI>Directly for GC-unsafe code 
+  <LI>Indirectly for GC-safe code 
+  <LI>Indirectly for native method code </LI></OL>
+<P>Direct heap access is achieved by using the <A href="directmem.html">direct 
+memory interface</A>. Indirect heap access is achieved using the <A 
+href="indirectmem.html">indirect memory interface</A>, built on top of the 
+direct memory interface. And native method heap access is achieved through a JNI 
+implementation built on top of the indirect memory interface. Therefore all heap 
+access in the system is guaranteed to eventually go through the direct memory 
+interface. 
+<P>In order to achieve a memory interface that can accommodate as many GC 
+algorithms as possible, it is necessary to allow the implementation of <I>read- 
+and write-barriers</I>. A read or write barrier of a certain data type 
+<TT>&lt;T&gt;</TT> is a GC-supplied callback to be invoked on every read or 
+write of a heap location of type <TT>&lt;T&gt;</TT>. Barrier use varies widely 
+between GC algorithms; the main idea is that barriers are used to ensure 
+consistency between a running program and the garbage collector, especially when 
+the collector does not handle the whole heap on every GC call. Examples of such 
+GC's are generational, incremental and concurrent collectors. 
+<P>CVM implements support for read and write barriers below the direct memory 
+interface implementation, so that they are not visible to the VM author. 
+They are called implicitly and automatically by the implementation of the direct 
+memory interface, and are therefore incurred on all heap access in the system. 
+
+<P>The VM also needs to: 
+<OL>
+  <LI>Initialize the heap on VM startup 
+  <LI>Call the object allocator 
+  <LI>Destroy the heap on VM teardown </LI></OL>
+<P>Heap initialization/teardown and object allocation are the main entry points 
+to GC code from the VM. All allocation and GC activity in the system is 
+triggered by a call from the VM or a native method into the object allocator. 
+The object allocator encapsulates GC policy, and is responsible for initiating 
+GC when it is required. 
+<P>There are other entry points that the VM uses to cross over to the GC side. 
+However, these are usually triggered by a matching native call to request GC 
+action: 
+<OL>
+  <LI>The <TT>sun.misc.GC</TT> class (responsible for asynchronous, background 
+  GC) calls into GC to figure out the timestamp of the last major GC in the 
+  system. 
+  <LI>The library method <TT>Runtime.gc()</TT> causes a GC to occur. 
+  <LI>The library methods <TT>Runtime.freeMemory()</TT> and 
+  <TT>Runtime.totalMemory()</TT> obtain information from the GC regarding free 
+  and total memory sizes in the heap. </LI></OL><A name=shared><FONT color=blue>
+<H3>Shared Memory System Code</H3></FONT>
+<P>There are certain activities that all GC's will have to perform, regardless 
+of algorithm. CVM separates those routines into a shared GC interface called 
+<I>gc_common</I>. Such common GC activities include: 
+<UL>
+  <LI>Making threads stop at GC-safe points 
+  <LI>Finding and scanning exact roots of the system 
+  <LI>Finding and scanning references in heap objects and arrays 
+  <LI>Handling special scans for 
+  <UL>
+    <LI>Weak references and finalization 
+    <LI>String interning 
+    <LI>Java synchronization data structures 
+    <LI>Class unloading </LI></UL></LI></UL>The details of such activities are 
+abstracted in the implementation of the <I>gc_common</I> interface, and are 
+available as GC services for the GC author to use. These routines and 
+macros will be outlined in detail below, in section <A href="#newgc">Writing 
+a New GC</A>. <A name=specific><FONT color=blue>
+<H3>GC-specific Memory System Code</H3></FONT>
+<P>
+<P>There are certain activities that are GC-algorithm specific. CVM separates 
+those routines into a GC-implementation specific GC interface called 
+<tt>gcimpl</tt>. The routines and macros in this interface need to be implemented 
+by the GC author. Such GC calls are responsible for: 
+<UL>
+  <LI>Allocating and initializing the heap and its associated data structures. 
+  <LI>Allocating new objects 
+  <LI>Performing the object reclamation functions of GC. 
+  <LI>Implementing read and write barriers. </LI></UL>The <tt>gcimpl</tt> routines 
+will be called by the VM at appropriate points to ensure the correct GC 
+execution flow. These routines and macros will be outlined in great detail 
+below, in section <A href="#newgc">Writing a New GC</A>. <A name=flow><FONT 
+color=blue>
+<H3>GC Execution Flow</H3></FONT>
+<P>Object allocation, and subsequent possible GC action is initiated by the VM 
+by calling into the <I>gcimpl</I> object allocation routine, and is performed by 
+going back and forth between shared and GC-implementation specific code. 
+<OL>
+  <LI>CVM allocates memory using the shared routine 
+  <TT>CVMgcAllocNewInstance()</TT>. 
+  <LI><TT>CVMgcAllocNewInstance()</TT> does some processing, and calls the 
+  GC-specific <TT>CVMgcimplAllocObject()</TT> to allocate the actual space for 
+  the object. 
+  <LI><TT>CVMgcimplAllocObject()</TT> performs the GC, and calls the shared 
+  routine <TT>CVMgcStopTheWorldAndGC()</TT> to stop all threads at GC-safe 
+  points. 
+  <LI><TT>CVMgcStopTheWorldAndGC()</TT> ensures that all threads rendezvous at 
+  GC-safe points. When that is done, it calls the GC implementation 
+  <TT>CVMgcimplDoGC()</TT> to perform the GC action. 
+  <LI><TT>CVMgcimplDoGC()</TT> may call shared GC service routines to scan GC 
+  state: For example, <TT>CVMgcScanRoots()</TT> to scan all roots, or 
+  <TT>CVMobjectWalkRefs()</TT> to scan the pointers in a given object or array. 
+  <LI>When <TT>CVMgcimplDoGC()</TT> returns, all threads that were stopped at GC 
+  points resume execution. Eventually, <TT>CVMgcAllocNewInstance()</TT> returns, 
+  and the thread that originally initiated GC resumes execution. </LI></OL>
+<P>So a GC cycle is initiated by a call into <TT>CVMgcimplAllocObject()</TT>, 
+and is completed through calls back and forth between the shared and 
+algorithm-specific interfaces. <A name=newgc><FONT color=blue>
+<H2>Writing a new GC</H2></FONT>
+<P>Writing a new GC for CVM is accomplished by implementing the <I>gcimpl</I> 
+interface. This section outlines GC and relevant CVM source organization, talks 
+about the CVM data types that the GC author needs to know about, and outlines in 
+detail the <I>gcimpl</I> routines that need to be implemented. It also talks 
+about shared GC routines available to the GC author to make a CVM GC possible. 
+<A name=source><FONT color=blue>
+<H3>Source Organization</H3></FONT>
+<P><FONT color=red>TBD</FONT> <A name=types><FONT 
+color=blue>
+<H3>Data Types</H3></FONT>
+<P>GC code has direct access to all objects on the heap. It can also assume that 
+it is single-threaded if it is being executed as part of a 
+<TT>CVMgcimplDoGC()</TT> which guarantees that no GC-unsafe threads exist. 
+<P>Therefore, GC code can refer to an object directly using the type 
+<TT>CVMObject*</TT>. A CVMObject is defined as: 
+<BLOCKQUOTE><PRE>struct CVMjava_lang_Object {
+    CVMObjectHeader         hdr;
+    CVMJavaVal32            fields[1];
+};
+...
+typedef CVMjava_lang_Object CVMObject;
+</PRE></BLOCKQUOTE>where the object header <TT>CVMObjectHeader</TT> is defined 
+as: 
+<BLOCKQUOTE><PRE>struct CVMObjectHeader {
+    CVMClassBlock    *clas;
+    volatile CVMUint32	various32; /* A multi-purpose field */
+};
+</PRE></BLOCKQUOTE>
+<P>Array types are a <I>subclass</I> of object types, in the sense that an array 
+reference in CVM can be cast to a <TT>CVMObject*</TT>. The header of a Java 
+array contains the same structure, with an additional 32-bit length field. 
+<P>Array types differ for each element type. Array elements are <I>tightly 
+packed</I> in that individual sub-word elements of an array like 
+<TT>short</TT>'s are not widened to <TT>int</TT> width. A sample array 
+declaration with name <TT>&lt;arrName&gt;</TT> and element type 
+<TT>&lt;elem_type&gt;</TT> looks like: 
+<BLOCKQUOTE><PRE>struct CVMArrayOf&lt;arrName&gt; {
+    CVMObjectHeader hdr;
+    CVMJavaInt      length;
+    &lt;elem_type&gt;     elems[1];
+};
+typedef struct CVMArrayOf&lt;arrName&gt; CVMArrayOf&lt;arrName&gt;;
+</PRE></BLOCKQUOTE>
+<P>The CVM array types are: 
+<P>
+<TABLE cellPadding=3 border=1>
+  <TBODY>
+  <TR bgColor=gray>
+    <TD><B><FONT color=white>Array type</FONT></B></TD>
+    <TD><B><FONT color=white>Element type</FONT></B></TD></TR>
+  <TR>
+    <TD align=left><TT>CVMArrayOfByte</TT></TD>
+    <TD><TT>CVMJavaByte</TT></TD></TR>
+  <TR>
+    <TD align=left><TT>CVMArrayOfShort</TT></TD>
+    <TD><TT>CVMJavaShort</TT></TD></TR>
+  <TR>
+    <TD align=left><TT>CVMArrayOfChar</TT></TD>
+    <TD><TT>CVMJavaChar</TT></TD></TR>
+  <TR>
+    <TD align=left><TT>CVMArrayOfBoolean</TT></TD>
+    <TD><TT>CVMJavaBoolean</TT></TD></TR>
+  <TR>
+    <TD align=left><TT>CVMArrayOfInt</TT></TD>
+    <TD><TT>CVMJavaInt</TT></TD></TR>
+  <TR>
+    <TD align=left><TT>CVMArrayOfRef</TT></TD>
+    <TD><TT>CVMObjectICell</TT></TD></TR>
+  <TR>
+    <TD align=left><TT>CVMArrayOfFloat</TT></TD>
+    <TD><TT>CVMJavaFloat</TT></TD></TR>
+  <TR>
+    <TD align=left><TT>CVMArrayOfLong</TT></TD>
+    <TD><TT>CVMTwoJavaWords</TT></TD></TR>
+  <TR>
+    <TD align=left><TT>CVMArrayOfDouble</TT></TD>
+    <TD><TT>CVMTwoJavaWords</TT></TD></TR></TBODY></TABLE>
+<P>The element type of <TT>CVMTwoJavaWords</TT> for the <TT>long</TT> and 
+<TT>double</TT> cases is defined as: 
+<BLOCKQUOTE><PRE>typedef CVMJavaVal32 CVMTwoJavaWords[2];
+</PRE></BLOCKQUOTE>
+<P>Any array can be cast to <TT>CVMArrayOfAnyType</TT> if the aim is to access 
+array header elements only. 
+<P>Since GC can assume single-threaded execution, it is free to override the 
+second word of an object header, assuming that it reconstructs it before threads 
+are resumed. The second header word frequently has a <I>trivial</I>, well known 
+default value -- it can be tested for triviality to determine if an overriding 
+GC routine needs to save away the original contents of the word: 
+<P><PRE>    /* The default trivial contents of the various32 word */
+    <I>constant</I> CVMUint32 <B>CVM_OBJECT_DEFAULT_VARIOUS_WORD</B>
+
+    /* Is a various32 word trivial?
+     * (i.e. can just be set to CVM_OBJECT_DEFAULT_VARIOUS_WORD after
+     * GC)
+    CVMBool CVMobjectTrivialClassWord(CVMUint32 word) 
+</PRE>
+</p>
+<P>The complete set of operations on an object the GC author can call are given 
+below in section <A href="#perobject">3.4.4</A>. 
+</p>
+
+<h4>Data Type Definitions</h4>
+
+<ul>
+<li>The basic data types are given in <a href="hpiref.html#defs">HPI Reference</a>.
+<li>The VM basic data types are given in <a href="hpiref.html#vm-defs">VM Basic Defs</a>.
+<li>The system data types are given in <A href="datatypes.html">CVM Data Types</A>
+</ul>
+
+<FONT color=blue>
+<H3>What to Implement?</H3></FONT>
+<P>A CVM garbage collector is written by implementing a set of <I>gcimpl</I> 
+functions. This section outlines in detail the functions and macros that 
+must be implemented, and also the set of barriers, any subset of 
+which may be implemented. <A name=exec><FONT color=blue>
+<H4>Basic Execution</H4></FONT>
+<P>For basic GC execution, and for interfacing with the VM, the GC 
+implementation must implement the following data types and functions. 
+<P>To start out with, define in 
+<TT>src/share/javavm/include/gc/&lt;gcname&gt;/gc_config.h</TT>: <PRE>    struct CVMGCGlobalState {
+        ....
+    };
+</PRE>
+<P>This should include any global state the GC would like to maintain which 
+non-GC code might wish to access. In the current state of CVM, there are no such 
+details that may be communicated through <TT>CVMGCGlobalState</TT>. This may 
+change in the future. 
+<P>Now the GC author should implement the following functions. 
+<OL>
+  <LI>For heap initialization: <PRE>    /* Initialize GC global state if required */
+    CVMUint32 <B>CVMgcimplInitGlobalState</B>(CVMGCGlobalState* globalState)
+
+    /* Initialize the heap, with a given minimum and maximum heap size
+       in bytes. Return CVM_TRUE on success, CVM_FALSE otherwise. */
+    CVMBool <B>CVMgcimplInitHeap</B>(CVMGCGlobalState* globalState,
+		              CVMUint32 minBytes, 
+		              CVMUint32 maxBytes)
+</PRE>
+  <LI>For allocation and GC: <PRE>    /*
+     * Allocate uninitialized heap object of size numBytes
+     * This is called by the VM code on every allocation.
+     */
+    CVMObject* <B>CVMgcimplAllocObject</B>(CVMExecEnv* ee, CVMUint32 numBytes)
+
+    /*
+     * Perform GC.
+     *
+     * This routine is called by the common GC code after all locks are
+     * obtained, and threads are stopped at GC-safe points. It's the GC
+     * routine that needs a snapshot of the world while all threads are
+     * stopped (typically at least a root scan).
+     *
+     * The goal to free is 'numBytes' bytes.
+     */
+    void <B>CVMgcimplDoGC</B>(CVMExecEnv* ee, CVMUint32 numBytes)
+</PRE>
+  <LI>For teardown and VM exit: <PRE>    /* Teardown routines */
+
+    /*
+     * Destroy GC global state
+     */
+    void <B>CVMgcimplDestroyGlobalState</B>(CVMGCGlobalState* globalState);
+
+    /*
+     * Destroy heap. CVM_TRUE on success, CVM_FALSE otherwise.
+     */
+    CVMBool <B>CVMgcimplDestroyHeap</B>(CVMGCGlobalState* globalState);
+</PRE>
+  <LI>Miscellaneous routines: <PRE>    /*
+     * Return the number of bytes free in the heap. 
+     */
+    CVMUint32 <B>CVMgcimplFreeMemory</B>(CVMExecEnv* ee)
+
+    /*
+     * Return the amount of total memory in the heap, in bytes.
+     */
+    CVMUint32 <B>CVMgcimplTotalMemory</B>(CVMExecEnv* ee)
+
+    /* The time-stamp of the last full GC of the heap, in order to
+     * support the implementation of sun.misc.GC.maxObjectInspectionAge(). 
+     * This should return the value of CVMtimeMillis() obtained on the last
+     * GC performed.
+     */
+    CVMInt64 <B>CVMgcimplTimeOfLastMajorGC</B>();
+</PRE>
+  <LI>Debug-only routines (when <TT>CVM_DEBUG=true</TT> at 
+  build-time) <PRE>    /* Heap iteration support */
+
+    /*
+     * Per-object callback to call during iteration
+     */
+    typedef void (*CVMObjectCallbackFunc)(CVMObject* obj, CVMClassBlock* cb, 
+					  CVMUint32  objSize, void* data);
+
+    /*
+     * CVMgcimplIterateHeap should traverse all objects on the heap and
+     * call 'cback' on each object, with its class, size and generic
+     * 'data'.
+     *
+     * If the heap consists of contiguous range(s), use CVMgcScanObjectRange()
+     */
+    void <B>CVMgcimplIterateHeap</B>(CVMExecEnv* ee,
+                              CVMObjectCallbackFunc cback, void* data)
+
+    /*
+     * A per-object callback function, to be called during heap dumps
+     */
+    typedef void (*CVMObjectCallbackFunc)(CVMObject* obj, CVMClassBlock* cb, 
+					  CVMUint32  objSize, void* data);
+
+     /*
+      * Heap dump support: Iterate over a contiguous-allocated 
+      * range of objects.
+      */
+    void <B>CVMgcScanObjectRange</B>(CVMExecEnv* ee, 
+                              CVMUint32* base, CVMUint32* top,
+		              CVMObjectCallbackFunc callback, 
+                              void* callbackData);
+</PRE></LI></OL><A name=barriers><FONT color=blue>
+<H4>Barriers</H4></FONT>
+<P>CVM allows a GC author to define read and write barriers as required by a 
+given GC algorithm. This is done by including a series of <TT>#define</TT>'s in 
+<TT>src/share/javavm/include/gc/&lt;gcname&gt;/gc_config.h</TT>. The 
+implementation of the barrier for a data type <TT>&lt;T&gt;</TT> is called 
+implicitly by the appropriate direct memory layer macro corresponding to 
+<TT>&lt;T&gt;</TT>; the barriers are not visible to VM authors. 
+<P>Note that in all the barriers listed below, the type <TT>Ref</TT> refers to 
+<I>any</I> reference type, including objects of all classes and arrays. 
+Appropriate type checking of assigments is done by the rest of the VM; all 
+reference types are equal by the time they trickle down to the barrier layer. 
+<P>The default implementation of a barrier is empty. Therefore, the GC 
+author should only <TT>#define</TT> the barriers that he/she needs. 
+<P>The read and write barriers are separated according to data type. The names 
+are self explanatory. The code for a read or write barrier is executed right 
+before the actual read or write takes place. 
+<P>All barriers take as argument a pointer to the head of the object being 
+written, as well as the address of the slot being written to. Write barriers 
+take an additional argument that is the value that is being written. 
+<P>The read barrier for reference typed array or object slots: 
+<PRE>    void <B>CVMgcimplReadBarrierRef</B>(
+      CVMObject* objRef, CVMJavaObject** fieldLoc)
+</PRE>
+<P>The list of read barriers for non-reference types, size 32-bits or less: <PRE>    void <B>CVMgcimplReadBarrierByte</B>(
+      CVMObject* objRef, CVMJavaByte* fieldLoc)
+    void <B>CVMgcimplReadBarrierBoolean</B>(
+      CVMObject* objRef, CVMJavaBoolean* fieldLoc)
+    void <B>CVMgcimplReadBarrierShort</B>(
+      CVMObject* objRef, CVMJavaShort* fieldLoc)
+    void <B>CVMgcimplReadBarrierChar</B>(
+      CVMObject* objRef, CVMJavaChar* fieldLoc)
+    void <B>CVMgcimplReadBarrierInt</B>(
+      CVMObject* objRef, CVMJavaInt* fieldLoc)
+    void <B>CVMgcimplReadBarrierFloat</B>(
+      CVMObject* objRef, CVMJavaFloat* fieldLoc)
+</PRE>
+<P>The read barrier for 64-bit slots, for Java <TT>long</TT> and 
+<TT>double</TT>. <PRE>    void <B>CVMgcimplReadBarrier64</B>(
+      CVMObject* objRef, CVMJava32* fieldLoc)
+</PRE>
+<P>The write barrier for reference typed array or object slots: <PRE>    void <B>CVMgcimplWriteBarrierRef</B>(
+      CVMObject* objRef, CVMObject** fieldLoc, CVMObject* rhs)
+</PRE>
+<P>The list of write barriers for non-reference types, size 32-bits or less: <PRE>    void <B>CVMgcimplWriteBarrierByte</B>(
+      CVMObject* objRef, CVMJavaByte* fieldLoc, CVMJavaByte rhs)
+    void <B>CVMgcimplWriteBarrierBoolean</B>(
+      CVMObject* objRef, CVMJavaBoolean* fieldLoc, CVMJavaBoolean rhs)
+    void <B>CVMgcimplWriteBarrierShort</B>(
+      CVMObject* objRef, CVMJavaShort* fieldLoc, CVMJavaShort rhs)
+    void <B>CVMgcimplWriteBarrierChar</B>(
+      CVMObject* objRef, CVMJavaChar* fieldLoc, CVMJavaChar rhs)
+    void <B>CVMgcimplWriteBarrierInt</B>(
+      CVMObject* objRef, CVMJavaInt* fieldLoc, CVMJavaInt rhs)
+    void <B>CVMgcimplWriteBarrierFloat</B>(
+      CVMObject* objRef, CVMJavaFloat* fieldLoc, CVMJavaFloat rhs)
+</PRE>
+<P>The read barrier for 64-bit slots, for Java <TT>long</TT> and 
+<TT>double</TT>. <PRE>    void <B>CVMgcimplWriteBarrier64</B>(
+      CVMObject* objRef, CVMJava64* fieldLoc, CVMJava64 rhsPtr)
+</PRE>
+<P>Important notes: 
+<OL>
+  <LI>In the 64-bit cases of read and write barriers, the <TT>fieldLoc</TT> 
+  argument of a read or write barrier is a pointer to a <TT>CVMJavaVal32</TT> 
+  corresponding to the first 32-bit word of a 64-bit value. Likewise, in the 
+  64-bit write barrier, <TT>rhsPtr</TT> is a pointer to a <TT>CVMJavaVal32</TT> 
+  corresponding to the first 32-bit word of the 64-bit value being written. 
+  <LI>The <TT>byte</TT>, <TT>char</TT> and <TT>short</TT> data types are widened 
+  to <TT>int</TT> width in regular Java objects (not in arrays), so barriers for 
+  those data types are <TT>CVMgcimpReadBarrierInt()</TT> and 
+  <TT>CVMgcimplWriteBarrierInt()</TT>, and not the shorter variants. </LI></OL><A 
+name=datamove><FONT color=blue>
+<H4>Moving Array Data</H4></FONT>
+<P>The barriers above are defined on a slot by slot basis. On some GC's, this 
+may prove to be inefficient when large blocks of data need to be moved at once. 
+For block moves, optional <I>block readers</I> and <I>block writers</I> may be 
+defined. These would have to perform the read or write, and batch the barriers. 
+If a GC chooses not to override these, the memory system invokes the 
+element-wise barriers for each element of the array move. 
+<P>Here's a list of various block operations, any subset of which may be 
+overridden. 
+<OL>
+  <LI>To read from a Java array into a C array: Each of these will read 
+  <TT>len</TT> elements of the appropriate type from Java array <TT>arr</TT>, 
+  starting from index <TT>start</TT>. The elements will be written into the C 
+  buffer <TT>buf</TT>. The action performed below should include any block 
+  barrier action required, and also the block copy itself, which is the 
+  equivalent of 
+  <P><PRE>    memmove(&amp;buf[0], arr-&gt;elems[start], 
+            len * sizeof(<I>&lt;jType&gt;</I>))</TT> 
+</PRE>
+  <P>where <TT>jType</TT> is the appropriate Java type (e.g. <TT>CVMJavaInt</TT> 
+  or <TT>CVMJavaLong</TT>). <PRE>    void <B>CVMgcimplArrayReadBodyByte</B>(
+       CVMJavaByte* buf, CVMArrayOfByte* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayReadBodyBoolean</B>(
+       CVMJavaBoolean* buf, CVMArrayOfBoolean* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayReadBodyShort</B>(
+       CVMJavaShort* buf, CVMArrayOfShort* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayReadBodyChar</B>(
+       CVMJavaChar* buf, CVMArrayOfChar* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayReadBodyInt</B>(
+       CVMJavaInt* buf, CVMArrayOfInt* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayReadBodyFloat</B>(
+       CVMJavaFloat* buf, CVMArrayOfFloat* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayReadBodyRef</B>(
+       CVMJavaObject** buf, CVMArrayOfRef* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayReadBodyLong</B>(
+       CVMJavaVal32* buf, CVMArrayOfLong* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayReadBodyDouble</B>(
+       CVMJavaVal32* buf, CVMArrayOfDouble* arr, 
+       CVMUint32 start, CVMUint32 len)
+</PRE>
+  <LI>To write to a Java array from a C array: Each of these will write 
+  <TT>len</TT> elements of the appropriate type to a Java array <TT>arr</TT>, 
+  starting from index <TT>start</TT>. The elements will be read from the C 
+  buffer <TT>buf</TT>. The action performed below should include any block 
+  barrier action required, and also the block copy itself, which is the 
+  equivalent of 
+  <P><PRE>    memmove(arr-&gt;elems[start], &amp;buf[0], len * sizeof(<I>&lt;jType&gt;</I>))</TT> 
+</PRE>
+  <P>where <TT>jType</TT> is the appropriate Java type (e.g. <TT>CVMJavaInt</TT> 
+  or <TT>CVMJavaLong</TT>). <PRE>    void <B>CVMgcimplArrayWriteBodyByte</B>(
+       CVMJavaByte* buf, CVMArrayOfByte* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayWriteBodyBoolean</B>(
+       CVMJavaBoolean* buf, CVMArrayOfBoolean* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayWriteBodyShort</B>(
+       CVMJavaShort* buf, CVMArrayOfShort* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayWriteBodyChar</B>(
+       CVMJavaChar* buf, CVMArrayOfChar* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayWriteBodyInt</B>(
+       CVMJavaInt* buf, CVMArrayOfInt* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayWriteBodyFloat</B>(
+       CVMJavaFloat* buf, CVMArrayOfFloat* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayWriteBodyRef</B>(
+       CVMJavaObject** buf, CVMArrayOfRef* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayWriteBodyLong</B>(
+       CVMJavaVal32* buf, CVMArrayOfLong* arr, 
+       CVMUint32 start, CVMUint32 len)
+    void <B>CVMgcimplArrayWriteBodyDouble</B>(
+       CVMJavaVal32* buf, CVMArrayOfDouble* arr, 
+       CVMUint32 start, CVMUint32 len)
+</PRE>
+  <LI>To copy the contents of one Java array to another Java array of the same 
+  type: Each of these will copy <TT>len</TT> elements of the aprropriate type 
+  from <TT>srcArr[srcIdx, srcIdx+len)</TT> to <TT>dstArr[dstIdx, 
+  dstIdx+len)</TT>. The action performed below should include any block barrier 
+  action required, and also the block copy between the arrays itself, which is 
+  the equivalent of 
+  <P><PRE>    memmove(dstArr-&gt;elems[dstIdx], srcArr-&gt;elems[srcIdx], 
+            len * sizeof(<I>&lt;jType&gt;</I>))</TT> 
+</PRE>
+  <P>where <TT>jType</TT> is the appropriate Java type (e.g. <TT>CVMJavaInt</TT> 
+  or <TT>CVMJavaLong</TT>). <PRE>    void <B>CVMgcimplArrayCopyByte</B>(
+       CVMArrayOfByte* srcArr, CVMUint32 srcIdx, 
+       CVMArrayOfByte* dstArr, CVMUint32 dstIdx, CVMUint32 len)
+    void <B>CVMgcimplArrayCopyBoolean</B>(
+       CVMArrayOfBoolean* srcArr, CVMUint32 srcIdx, 
+       CVMArrayOfBoolean* dstArr, CVMUint32 dstIdx, CVMUint32 len)
+    void <B>CVMgcimplArrayCopyShort</B>(
+       CVMArrayOfShort* srcArr, CVMUint32 srcIdx, 
+       CVMArrayOfShort* dstArr, CVMUint32 dstIdx, CVMUint32 len)
+    void <B>CVMgcimplArrayCopyChar</B>(
+       CVMArrayOfChar* srcArr, CVMUint32 srcIdx, 
+       CVMArrayOfChar* dstArr, CVMUint32 dstIdx, CVMUint32 len)
+    void <B>CVMgcimplArrayCopyInt</B>(
+       CVMArrayOfInt* srcArr, CVMUint32 srcIdx, 
+       CVMArrayOfInt* dstArr, CVMUint32 dstIdx, CVMUint32 len)
+    void <B>CVMgcimplArrayCopyFloat</B>(
+       CVMArrayOfFloat* srcArr, CVMUint32 srcIdx, 
+       CVMArrayOfFloat* dstArr, CVMUint32 dstIdx, CVMUint32 len)
+    void <B>CVMgcimplArrayCopyRef</B>(
+       CVMArrayOfRef* srcArr, CVMUint32 srcIdx, 
+       CVMArrayOfRef* dstArr, CVMUint32 dstIdx, CVMUint32 len)
+    void <B>CVMgcimplArrayCopyLong</B>(
+       CVMArrayOfLong* srcArr, CVMUint32 srcIdx, 
+       CVMArrayOfLong* dstArr, CVMUint32 dstIdx, CVMUint32 len)
+    void <B>CVMgcimplArrayCopyDouble</B>(
+       CVMArrayOfDouble* srcArr, CVMUint32 srcIdx, 
+       CVMArrayOfDouble* dstArr, CVMUint32 dstIdx, CVMUint32 len)
+</PRE></LI></OL><A name=call><FONT color=blue>
+<H3>What to Call?</H3></FONT>
+<P>In the section <A href="#shared">2.2 Shared Memory System Code</A> we have 
+mentioned the <I>gc_common</I> interface. This section outlines the various 
+components of that interface available to the GC author. You can find the 
+interface in <TT>src/share/javavm/include/gc_common.h</TT>. <A 
+name=gcstart><FONT color=blue>
+<H4>Initiating a GC</H4></FONT>
+<P>When an object allocator decides to GC (most probably due to an allocation 
+failure), it has to make sure that the system is stopped in a GC-safe way. In 
+CVM, this is accomplished by using <TT>CVMgcStopTheWorldAndGC()</TT>: <PRE>    /*
+     * Initiate a GC. Acquire all GC locks, stop all threads, and then
+     * call back to the particular GC to do the work. When the particular
+     * GC is done, resume.
+     *
+     * Returns CVM_TRUE on success, CVM_FALSE if GC could not be run.
+     */
+    CVMBool <B>CVMgcStopTheWorldAndGC</B>(CVMExecEnv* ee, CVMUint32 numBytes)
+</PRE>This function stops the system in a GC-consistent way by acquiring all 
+system locks, and bringing all threads to GC-safe points. Then it calls the 
+entry point to the GC implementation, <TT>CVMgcimplDoGC()</TT> to do the actual 
+work. If GC work could not be performed, for example due to an out of memory 
+situation, <TT>CVMgcStopTheWorldAndGC()</TT> returns <TT>CVM_FALSE</TT>. <A 
+name=rootscan><FONT color=blue>
+<H4>Root Scans</H4></FONT>
+<P>When all threads are stopped at GC-safe points, the GC will need to scan all 
+GC roots. This is accomplished by using <TT>CVMgcScanRoots()</TT>, and a 
+GC-specific callback function: <PRE>    /*
+     * Scan the root set of collection
+     */
+    void <B>CVMgcScanRoots</B>(CVMExecEnv* ee, CVMGCOptions* gcOpts,
+		        CVMRefCallbackFunc callback, void* data)
+</PRE>where the callback function type is defined as: <PRE>    /*
+     * A 'ref callback' called on each *non-NULL* discovered root
+     */
+    typedef void (*<B>CVMRefCallbackFunc</B>)(CVMObject** refAddr, void* data)
+</PRE><A name=guarantee>
+<P>So the GC author defines a callback function that takes the address of a 
+reference containing slot as argument, along with an opaque <TT>data</TT> 
+argument. <TT>CVMgcScanRoots(ee, gcOpts, refCallback, refCallbackData)</TT> 
+calls <TT>(*refCallback)(refPtr, refCallbackData)</TT> on every discovered root 
+address <TT>refPtr</TT>. 
+<P>The memory system <I>guarantees</I> that both the following conditions hold 
+when the callback routine is called: <PRE>    refPtr  != NULL
+    *refPtr != NULL
+</PRE>
+<P>The roots scanned are JNI local and global references, Java stack locations, 
+Java local variables, Java static variables, and CVM-internal data structures. 
+The details are abstracted from the GC author. 
+<P>Weak references are only discovered and queued up if 
+<TT>gcOpts.discoverWeakReferences is CVM_TRUE</TT> before a call to 
+<TT>CVMgcScanRoots()</TT>. So the GC author typically calls the first root scan 
+with weak references discovery enabled, and then disable weak references 
+discovery by setting <TT>gcOpts.discoverWeakReferences</TT> to 
+<TT>CVM_FALSE</TT>. 
+<P>The root scanning operation may be performed multiple times on each GC cycle. 
+However, note that each root scan cycle including the first one should be 
+preceded by a call to <TT>CVMgcClearClassMarks()</TT>: <PRE>    /*
+     * Clear the class marks for dynamically loaded classes.
+     */
+    void <B>CVMgcClearClassMarks</B>(CVMExecEnv* ee, CVMGCOptions* gcOpts);
+</PRE>
+<P>This function is responsible for clearing the mark bits on dynamically loaded 
+classes. The mark bits are used to prevent infinite recursion and redundant work 
+on class scanning. If they are not cleared between successive root scans, the GC 
+might end up skipping important class roots like Java statics. 
+<P>Note that <TT>CVMgcClearClassMarks()</TT> is a separate function since a root 
+scan cycle may include more than just calling <TT>CVMgcScanRoots()</TT>. For 
+example, a generational GC may call <TT>CVMgcScanRoots()</TT> to discover system 
+roots, <TT>CVMgcScanSpecial()</TT> to discover special object roots, and then 
+scan pointers recorded by a write barrier. So <TT>CVMgcClearClassMarks()</TT> 
+should be called before each such list of root scans, during which class 
+scanning state should be kept. <A name=special><FONT color=blue>
+<H4>Special Root Scans</H4></FONT>
+<P>Java 2 language and libraries have features that require special scanning 
+support from CVM. In particular, the following requires special handling: 
+<OL>
+  <LI><B>Weak references and finalization:</B> Java 2 has three flavors of 
+  public weak reference classes in the <TT>java.lang.ref</TT> package, a fourth 
+  package-private <TT>java.lang.ref</TT> weak reference flavor for implementing 
+  finalization, and a JNI weak reference flavor for native method use. GC needs 
+  to be aware of all these. 
+  <LI><B>String interning:</B> The CVM classloader interns Java strings that it 
+  finds in newly loaded class files. Also, an application can intern strings 
+  using <TT>String.intern()</TT>. Some special treatment is necessary to enable 
+  unloading of these strings when they are not in application use. 
+  <LI><B>Java synchronization data structures:</B> The CVM runtime uses various 
+  data structures to support Java synchronization, which contain embedded 
+  pointers to objects. These data structures should be collectible when the 
+  objects they refer to become garbage. 
+  <LI><B>Class unloading:</B> According to Java 2 semantics, a class <I>C</I> 
+  can be unloaded if and only if its classloader <I>CL</I> is garbage-collected. 
+  The CVM memory system should implement this behavior. </LI></OL>
+<P>The CVM memory system hides the GC-scanning details of these special features 
+from the GC author by the use of a narrow interface consisting of two functions. 
+If the GC author calls these two functions at the right points in GC code, 
+all special scanning is performed automatically. 
+<P>The idea with special scanning is to garbage collect entries from out-of-heap 
+tables pointing into the heap. If we declared the tables as GC roots, they would 
+automatically be kept alive and their entries would never be collected. Instead, 
+we do the special objects scanning in conjunction with information from the 
+garbage collector to figure out which entries of the special objects may be 
+discarded, and which entries need to be kept. 
+<P>So from the CVM point of view, GC involves two conceptual points where 
+special scan APIs should be inserted: 
+<OL>
+  <LI>A point at which object liveness detection is possible. For a 
+  mark-sweep-compact type collector, this would be right after a recursive mark 
+  has been performed, but before the addresses of any objects have changed. So 
+  to detect liveness, the mark-sweep collector would simply inspect the mark of 
+  an object. For a copying collector, this would be right after all live data 
+  has been copied. So to detect liveness, the copying collector would check 
+  whether an object reference is to a forwarded old-space object, or a new-space 
+  object. 
+  <P>For this point, the appropriate special scan routine is 
+  <TT>CVMgcProcessSpecialWithLivenessInfo()</TT>. 
+  <P></P>
+  <LI>A point at which object pointer update is possible, from a pre-GC pointer 
+  to a post-GC pointer. This varies widely for each algorithm. For a copying 
+  type algorithm, objects typically include their forwarding addresses. So 
+  pointer updating for an old space pointer is simply obtaining its forwarding 
+  address. Pointer updating for a new space pointer is not necessary. 
+  <P>For this point, the appropriate special scan routine is 
+  <TT>CVMgcScanSpecial()</TT>. </P></LI></OL>
+<P>The full API for point #1: <PRE>    /*
+     * Process special objects with liveness info from a particular GC
+     * implementation. This covers special scans like string intern table,
+     * weak references and monitor structures.
+     *
+     * isLive - a predicate that returns true if an object is strongly
+     * referenced 
+     *
+     * transitiveScanner - a callback that marks an object
+     * and all its children 
+     */
+    void <B>CVMgcProcessSpecialWithLivenessInfo</B>(CVMExecEnv* ee, 
+                                    CVMGCOptions* gcOpts,
+				    CVMRefLivenessQueryFunc isLive,
+				    void* isLiveData,
+                                    CVMRefCallbackFunc transitiveScanner,
+				    void* transitiveScannerData);
+</PRE>The <TT>transitiveScanner</TT> callback function type 
+<TT>CVMRefCallbackFunc</TT> is defined in <A href="#rootscan">3.4.2 Root 
+Scans</A>. The <TT>transitiveScanner</TT> should mark its parameter object 
+reference and all its children. The non-NULL <TT>CVMRefCallbackFunc</TT> 
+argument semantics hold for <TT>transitiveScanner</TT> (see <A 
+href="#guarantee">guarantee</A>) 
+<P>The liveness test is done using a predicate <TT>isLive</TT> of type: <PRE>    /*
+     * A predicate to test liveness of a given reference
+     */
+    typedef CVMBool (*<B>CVMRefLivenessQueryFunc</B>)(CVMObject** refAddr, void* data)
+</PRE>Here also, the non-NULL argument semantics hold for <TT>isLive</TT> (see 
+<A href="#guarantee">guarantee</A>) 
+<P>The full API for point #2: <PRE>    /*
+     * Scan and optionally update special objects. This covers special
+     * scans like string intern table, weak references and monitor
+     * structures.  
+     */
+    void <B>CVMgcScanSpecial</B>(CVMExecEnv* ee, CVMGCOptions* gcOpts,
+		     CVMRefCallbackFunc updateRefCallback, void* data);
+</PRE>The <TT>updateRefCallback</TT> function type <TT>CVMRefCallbackFunc</TT> 
+is defined in <A href="#rootscan">3.4.2 Root Scans</A>. It's called for each 
+location that needs to be updated to a new address. The non-NULL 
+<TT>CVMRefCallbackFunc</TT> argument semantics hold for 
+<TT>updateRefCallback</TT> (see <A href="#guarantee">guarantee</A>) 
+<P>In summary, when GC calls <TT>CVMgcProcessSpecialWithLivenessInfo()</TT>, 
+each special object slot will be checked by <TT>(*isLive)()</TT> to see if GC 
+determined it to be live in the preceding reachability scan. Dead entries will 
+automatically be removed from the special object tables. Later on, GC will call 
+<TT>CVMgcScanSpecial()</TT>, which will cause all remaining live entries in the 
+special object tables to be updated with new pointers. <A name=objwalk><FONT 
+color=blue>
+<H4>Object Walking</H4></FONT>
+<P>Given an object reference, GC must be able to find all pointers embedded in 
+the object, and perform an action on each pointer. This operation is very common 
+in all tracing GC's. 
+<P>In CVM, object walking is performed using a macro, for maximum efficiency. 
+The object walker uniformly and automatically handles arrays of references and 
+objects. When it encounters an object of class <I>C</I>, it scans class <I>C</I> 
+as well. It also discovers weak references, and acts accordingly. <PRE>    void <B>CVMobjectWalkRefsWithSpecialHandling</B>(
+                           CVMExecEnv* ee, 
+			   CVMGCOptions* gcOpts, 
+			   CVMObject* obj,
+                           CVMUint32 firstHeaderWord,
+			   <I>C-statement</I> refAction,
+                           CVMRefCallbackFunc callback,
+			   void* data)
+</PRE>So given an <TT>ee</TT> and a <TT>gcOpts</TT>, 
+<TT>CVMobjectWalkRefsWithSpecialHandling()</TT> scans object <TT>obj</TT> with 
+the first header word <TT>firstHeaderWord</TT>. It <I>executes</I> (more like 
+"substitutes", given that this is a macro) the statement <TT>refAction</TT> on 
+every embedded object reference. <TT>refPtr</TT> is a special variable within 
+the body of <TT>refAction</TT>, pointing to the object slot being scanned. The 
+object slot may contain <TT>NULL</TT>, so <TT>refAction</TT> must be prepared to 
+deal with that. 
+<P><TT>CVMobjectWalkRefsWithSpecialHandling()</TT> also calls 
+<TT>(*callback)(refPtr, data)</TT> on the address <TT>refPtr</TT> of every 
+reference-typed slot in the class data. The non-NULL <TT>CVMRefCallbackFunc</TT> 
+argument semantics hold for <TT>callback</TT> (see <A 
+href="#guarantee">guarantee</A>) 
+<P>Note that <TT>refAction</TT> is a macro, whereas <TT>callback</TT> is a 
+function. This asymmetry is intentional for efficiency reasons: 
+<TT>refAction</TT> is going to be called for each slot of each object, whereas 
+<TT>callback</TT> is going to be called for each slot of each class. The former 
+is typically orders of magnitude more frequent than the latter. <A 
+name=perobject><FONT color=blue>
+<H4>Per-object data</H4></FONT>
+<P>This set of macros is responsible for accessing the information on an object 
+given a direct object reference. The set of operations are separated into a few 
+distinct categories. Arrays and objects automatically receive separate 
+treatment. 
+<OL>
+  <LI>Object size support, given an object or array reference: <PRE>    /* Get the size of an object or array instance */
+    CVMUint32 <B>CVMobjectSize</B>(CVMObject* obj)
+    /* Get the size of an object or array instance given its class*/
+    CVMUint32 <B>CVMobjectSizeGivenClass</B>(CVMObject* obj, CVMClassBlock* cb)
+</PRE>
+  <LI>Object class support: <PRE>    /* Get the first word of the object header as integer */
+    CVMUint32 <B>CVMobjectGetClassWord</B>(CVMObject* obj)
+    /* Set the first word of the object header as integer */
+    void <B>CVMobjectSetClassWord</B>(CVMObject* obj, CVMUint32 word)
+    /* Get the class of a given object */
+    void <B>CVMobjectGetClass</B>(CVMObject* obj)
+</PRE>
+  <LI>ROMized object support: <PRE>    /* CVM_TRUE iff an object is read-only and not on the heap */
+    CVMBool <B>CVMobjectIsInROM</B>(CVMObject* obj)
+</PRE>
+  <LI>Object marking support <PRE>    /* CVM_TRUE iff an object is "marked". */
+    CVMBool <B>CVMobjectMarked</B>(CVMObject* obj)
+    /* Clear mark on an object */
+    void <B>CVMobjectClearMarked</B>(CVMObject* obj)
+    /* Set mark on an object */
+    void <B>CVMobjectSetMarked</B>(CVMObject* obj)
+</PRE></LI></OL><A name=example><FONT color=blue>
+<H3>Example Collector</H3></FONT>
+<P>This section outlines a very simple allocator and collector written for CVM. 
+Let's call it <TT>markcompact</TT>, for a mark-sweep-compact collector. The 
+outline here only pertains to implementation for the GC interface, so there is 
+no detail about the actual compaction process. 
+<P>First off, there should be a <TT>gc_config.h</TT> file describing the GC: 
+<P><TT>src/share/javavm/include/gc/markcompact/gc_config.h</TT>: <PRE><BLOCKQUOTE>
+#ifndef _INCLUDED_MARKCOMPACT_GC_CONFIG_H
+#define _INCLUDED_MARKCOMPACT_GC_CONFIG_H
+
+#include "javavm/include/gc/gc_impl.h"
+/*
+ * The following header could include any mark-compact specific
+ * declarations.
+ */
+#include "javavm/include/gc/markcompact/markcompact.h"
+
+/*
+ * Barriers in this implementation
+ */
+
+#define CVMgcimplWriteBarrierRef(directObj, slotAddr, rhsValue)		  \
+    /*									  \
+     * Do nothing. Just an example.					  \
+     */									  \
+
+/* 
+ * Global state specific to GC 
+ */
+struct CVMGCGlobalState {
+    /* Nothing here */
+};
+
+#endif /* _INCLUDED_MARKCOMPACT_GC_CONFIG_H */
+</BLOCKQUOTE>
+</PRE>
+<P>And then, there should be a <TT>gc_impl.c</TT> file implementing the GC. Note 
+that setting the build option <TT>CVM_GCCHOICE=markcompact</TT> would build this 
+GC automatically. 
+<P><TT>src/share/javavm/runtime/gc/markcompact/gc_impl.c</TT>: <PRE><BLOCKQUOTE>
+#include "javavm/include/defs.h"
+#include "javavm/include/objects.h"
+#include "javavm/include/classes.h"
+#include "javavm/include/directmem.h"
+
+/*
+ * This file is generated from the GC choice given at build time.
+ */
+#include "generated/javavm/include/gc_config.h"
+
+/* The shared GC interface */
+#include "javavm/include/gc_common.h"
+/* And the specific GC interface */
+#include "javavm/include/gc/gc_impl.h"
+
+/*
+ * The main allocation entry point
+ */
+
+/*
+ * Allocate uninitialized heap object of size numBytes.
+ * GC "policy" encapsulated here.
+ */
+CVMObject*
+CVMgcimplAllocObject(CVMExecEnv* ee, CVMUint32 numBytes)
+{
+    CVMObject* allocatedObj;
+    /* Actual allocation detail hidden here */
+    allocatedObj = tryAlloc(numBytes);
+    if (allocatedObj == NULL) {
+	/* GC and re-try allocation */
+	if (CVMgcStopTheWorldAndGC(ee, numBytes)) {
+	    /* re-try if GC occurred */
+	    allocatedObj = tryAlloc(numBytes);
+	}
+    }
+    return allocatedObj;
+}
+
+/*
+ * The main GC point, which CVM calls after ensuring GC-safety of all
+ * threads.
+ *
+ * This is a mark-sweep-compact GC, with most details of the sweep and
+ * compaction hidden.
+ *
+ * The GC uses three callback functions. These are detailed below,
+ * after CVMgcimplDoGC().
+ */
+void
+CVMgcimplDoGC(CVMExecEnv* ee, CVMUint32 numBytes)
+{
+    CVMGCOptions gcOpts;
+
+    /* Set default GC options */
+    gcOpts.fullGC = CVM_TRUE;
+    gcOpts.allClassesAreRoots = CVM_FALSE;
+
+    /* The mark phase includes discovering weak references */
+    gcOpts.discoverWeakReferences = CVM_TRUE;
+
+    /*
+     * Scan all roots. markTransitively will mark a root and all its 
+     * "children". Its 'data' argument is the GC options. A more
+     * complicated callback could pass a pointer to a struct into
+     * the callback function.
+     */
+    CVMgcScanRoots(ee, &amp;gcOpts, markTransitively, &amp;gcOpts);
+
+    /*
+     * Don't discover any more weak references.
+     */
+    gcOpts.discoverWeakReferences = CVM_FALSE;
+
+    /*
+     * At this point, we know which objects are live and which are not.
+     * Do the special objects processing.
+     */
+    CVMgcProcessSpecialWithLivenessInfo(ee, &amp;gcOpts, isLive, NULL,
+                                        markTransitively, &amp;gcOpts);
+
+    /*
+     * Now that all the unreferenced special objects have been deleted,
+     * add the rest to our root set.
+     */
+    CVMgcScanSpecial(ee, &amp;gcOpts, markTransitively, &amp;gcOpts);
+
+    /* The sweep phase. This phase computes the new addresses of each
+       object and writes them on the side. Details hidden. */
+    sweep();
+
+    /* Update the roots again, by writing out looking up old -&gt; new
+       address translations. */
+    CVMgcScanRoots(ee, &amp;gcOpts, updateRoot, NULL);
+    CVMgcScanSpecial(ee, gcOpts, updateRoot, NULL);
+
+    /* And update all interior pointers. Details hidden */
+    scanObjectsInHeap(ee, gcOpts, updateRoot, NULL);
+    
+    /* Finally we can move objects, and reset object marks. Compaction 
+       details hidden. */
+    compact();
+}
+
+/*
+ * The liveness predicate, for use in special objects scanning.
+ */
+static CVMBool
+isLive(CVMObject** refPtr, void* data)
+{
+    CVMObject* ref;
+
+    CVMassert(refPtr != NULL);
+
+    ref = *refPtr;
+    CVMassert(ref != NULL);
+
+    /*
+     * ROM objects are always live
+     */
+    if (CVMobjectIsInROM(ref)) {
+	return CVM_TRUE;
+    }
+
+    /* Is object marked? It's live then. */
+    return CVMobjectMarked(ref);
+}
+
+/*
+ * The transitive object marker. Marks a given object and all its
+ * "children".
+ * This is recursive, for simplicity. A production GC should really
+ * not be recursive.
+ */
+static void
+markTransitively(CVMObject** refPointer, void* data)
+{
+    CVMGCOptions* gcOpts = (CVMGCOptions*)data;
+    CVMObject* ref = *refPointer;
+    CVMClassBlock* refCb = CVMobjectGetClass(ref);
+
+    /*
+     * ROM objects are always live
+     */
+    if (CVMobjectIsInROM(ref)) {
+	return;
+    }
+
+    CVMobjectSetMarked(ref);
+
+    /*
+     * Now handle all the "children".
+     */
+    CVMobjectWalkRefsWithSpecialHandling(CVMgetEE(), gcOpts, ref, refCb, {
+    	CVMObject* thisRef = *refPtr;
+	if (thisRef != NULL) {
+            if (!CVMobjectMarked(thisRef)) {
+		markTransitively(refPtr);
+	    }
+	}
+    }, markTransitively, data);
+}
+
+/*
+ * Update a root with the new address of an object
+ */
+static void
+CVMgenMarkCompactFilteredUpdateRoot(CVMObject** refPtr, void* data)
+{
+    CVMObject* ref = *refPtr;
+    /*
+     * ROM objects are not on the heap
+     */
+    if (CVMobjectIsInROM(ref)) {
+	return;
+    }
+    *refPtr = lookupNewAddress(ref); /* Details hidden. Update root. */
+}
+
+</BLOCKQUOTE>
+</PRE>
+
+<!-- Body text ends here -->
+<!-- ============================================================== -->
+<HR size="2" noshade>
+<font size=-1> 
+<A href="index.html">Contents</A> | <A href="datatypes.html">Prev</A> | <A href="cstackcheck.html">Next</A>
+</font>
+<HR size="2" noshade>
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR VALIGN=TOP>
+
+<TD>
+<FONT SIZE="-2">
+   <A HREF="../legal/SMICopyright.html">Copyright</A> &#169; 2000
+   <A HREF="http://www.sun.com/">Sun Microsystems, Inc.</A>
+    All Rights Reserved.</FONT>
+   <br>
+   <br>
+
+   <FONT SIZE="-1">
+   Please send comments to: <a href="mailto:jcp-cdc-comments@eng.sun.com">jcp-cdc-comments@eng.sun.com</a> 
+   </FONT>
+</TD>
+
+<TD ALIGN=RIGHT>
+   <IMG SRC="../images/sunlogo64x30.gif" ALT="Sun" BORDER=0 WIDTH=64 HEIGHT=30>
+</TD>
+
+</TR>
+</TABLE>
+
+</BODY></HTML>
