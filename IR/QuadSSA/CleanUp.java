@@ -22,7 +22,7 @@ import harpoon.Util.Worklist;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CleanUp.java,v 1.4 1998-09-16 15:23:44 cananian Exp $
+ * @version $Id: CleanUp.java,v 1.5 1998-09-16 15:57:19 cananian Exp $
  * @see Translate
  */
 
@@ -38,7 +38,7 @@ class CleanUp  {
 	for (int i=0; i<ql.length; i++) {
 	    if (! (ql[i] instanceof PHI) ) continue;
 	    PHI phi = (PHI) ql[i];
-	    // shrink phi functions with unused limbs.
+	    // shrink phi functions with null limbs.
 	    for (int j=0; j<phi.prev.length; )
 		if (phi.prev[j]==null)
 		    phi.remove(j);
