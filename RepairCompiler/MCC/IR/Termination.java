@@ -346,7 +346,8 @@ public class Termination {
 	    TermNode tnsatisfy=new TermNode(satisfy);
 	    GraphNode gnsatisfy=new GraphNode("SatisfyRule"+i,tnsatisfy);
 	    gnsatisfy.setOption(scopeoption);
-	    gnsatisfy.setMerge();
+            if (Compiler.MERGENODES)
+                gnsatisfy.setMerge();
 	    ConsequenceNode cnsatisfy=new ConsequenceNode();
 	    TermNode ctnsatisfy=new TermNode(cnsatisfy);
 	    GraphNode cgnsatisfy=new GraphNode("ConseqSatisfyRule"+i,ctnsatisfy);
@@ -362,7 +363,8 @@ public class Termination {
 	    TermNode tnfalsify=new TermNode(falsify);
 	    GraphNode gnfalsify=new GraphNode("FalsifyRule"+i,tnfalsify);
 	    gnfalsify.setOption(scopeoption);
-	    gnfalsify.setMerge();
+            if (Compiler.MERGENODES)
+                gnfalsify.setMerge();
 	    ConsequenceNode cnfalsify=new ConsequenceNode();
 	    TermNode ctnfalsify=new TermNode(cnfalsify);
 	    GraphNode cgnfalsify=new GraphNode("ConseqFalsifyRule"+i,ctnfalsify);
