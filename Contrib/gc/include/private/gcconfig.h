@@ -592,11 +592,6 @@
 #     define DATASTART ((ptr_t) get_etext())
 #     define STACKBOTTOM ((ptr_t) 0xc0000000)
 #     define DATAEND	/* not needed */
-#     ifdef POWERPC
-#        define MPROTECT_VDB
-#     endif
-#  	include <unistd.h>
-#	   define GETPAGESIZE() getpagesize()
 #   endif
 # endif
 
@@ -695,7 +690,6 @@
           Linux Sparc/a.out not supported
 #     endif
       extern int _end;
-      extern int _etext;
 #     define DATAEND (&_end)
 #     define SVR4
 #     ifdef __arch64__
@@ -776,7 +770,7 @@
 	  /* with 2GB physical memory will usually move the user	*/
 	  /* address space limit, and hence initial SP to 0x80000000.	*/
 #       endif
-#       if !(defined(LINUX_THREADS) || defined(USER_THREADS)) || !defined(REDIRECT_MALLOC)
+#       if !(defined(LINUX_THREADS)||defined(USER_THREADS)) || !defined(REDIRECT_MALLOC)
 #	    define MPROTECT_VDB
 #	else
 	    /* We seem to get random errors in incremental mode,	*/
@@ -1387,9 +1381,6 @@
 #if defined(GC_USER_THREADS) && !defined(USER_THREADS)
 #   define USER_THREADS
 #endif
-#if defined(GC_WIN32_THREADS) && !defined(WIN32_THREADS)
-#   define WIN32_THREADS
-#endif
 #if defined(GC_HPUX_THREADS) && !defined(HPUX_THREADS)
 #   define HPUX_THREADS
 #endif
@@ -1419,12 +1410,12 @@
 # if defined(PCR) || defined(SRC_M3) || \
 	defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || \
 	defined(IRIX_THREADS) || defined(LINUX_THREADS) || \
-	defined(IRIX_JDK_THREADS) || defined(HPUX_THREADS) || \
-        defined(USER_THREADS)
+        defined(USER_THREADS) \
+	defined(IRIX_JDK_THREADS) || defined(HPUX_THREADS)
 #   define THREADS
 # endif
 
-# if defined(HP_PA) || defined(M88K) || defined(POWERPC) && !defined(MACOSX) \
+# if defined(HP_PA) || defined(M88K) || defined(POWERPC) \
      || (defined(I386) && defined(OS2)) || defined(UTS4) || defined(LINT) \
      || defined(MSWINCE)
 	/* Use setjmp based hack to mark from callee-save registers. */

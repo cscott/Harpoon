@@ -163,6 +163,7 @@ JNIEXPORT jbooleanArray JNICALL Java_java_io_NativeIO_selectJNI
 JNIEXPORT jint JNICALL Java_java_io_NativeIO_writeJNI
   (JNIEnv *, jclass, jint, jbyteArray, jint, jint);
 
+int * getFDsintSEL(int blockMode);
 #ifdef __cplusplus
 }
 #endif

@@ -29,7 +29,7 @@ void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall) {
 }
 #endif /* !WITH_THREADS */
 
-#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
 
 jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
   pthread_t self = pthread_self();

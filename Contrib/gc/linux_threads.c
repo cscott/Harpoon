@@ -843,8 +843,8 @@ void GC_thr_init()
 	}
       }
 #   ifdef PRINTSTATS
-      GC_printf2("Number of processors = %ld, "
-		 "number of marker threads = %ld\n", GC_nprocs, GC_markers);
+      //      GC_printf2("Number of processors = %ld, "
+      //		 "number of marker threads = %ld\n", GC_nprocs, GC_markers);
 #   endif
 #   ifdef PARALLEL_MARK
       if (GC_nprocs == 1) {

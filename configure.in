@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.69 $)dnl
+AC_REVISION($Revision: 1.70 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -145,9 +145,16 @@ esac
 dnl process option to select threading model.
 AC_MSG_CHECKING([threading model])
 AC_ARG_WITH(thread-model,
-[  --with-thread-model={[none],pth,heavy}       select threading model to use],
+[  --with-thread-model={[none],pth,heavy,user}       select threading model to use],
 thread_model="$withval", thread_model="none")
 case "$thread_model" in
+user)  AC_MSG_RESULT([user space threads])
+	AM_CONDITIONAL(USER_THREADS, test "$thread_model" = "user")	
+	AC_DEFINE(WITH_USER_THREADS, 1,
+		  [Define if you want to use user thread support])
+	CFLAGS="-DGC_USER_THREADS $CFLAGS"
+	BDWFLAGS="-DGC_USER_THREADS -D_REENTRANT -I../../src/user/"
+	;;
 heavy)  AC_MSG_RESULT([heavy-weight threads])
 	AC_DEFINE(WITH_HEAVY_THREADS, 1,
 		  [Define if you want to use heavyweight thread support])
@@ -382,5 +389,6 @@ AC_OUTPUT(Makefile arch/Makefile
 	  src/java.lang.reflect/Makefile src/java.net/Makefile
 	  src/java.util/Makefile src/java.util.zip/Makefile
 	  src/clheap/Makefile src/nativeio/Makefile src/gc/Makefile
-	  src/transact/Makefile src/stats/Makefile
+	  src/stats/Makefile src/user/Makefile
+	  src/transact/Makefile
 	  scripts/flexrun-config)

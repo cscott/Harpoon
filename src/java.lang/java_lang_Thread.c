@@ -20,6 +20,13 @@
 #include "../clheap/alloc.h" /* for NTHR_malloc_first/NTHR_free */
 #endif
 
+#ifdef WITH_USER_THREADS
+
+#include "../user/engine-i386-linux-1.0.h"
+#include "../user/threads.h"
+
+#endif /*WITH_USER_THREADS*/
+
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
 #define EXTRACT_OTHER_ENV(env, thread) \
   ( (struct FNI_Thread_State *) FNI_GetJNIData(env, thread) )
@@ -67,6 +74,29 @@ static void wait_on_running_thread() {
 
 #endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS */
 
+#if WITH_USER_THREADS
+#define EXTRACT_OTHER_ENV(env, thread) \
+  ( (struct FNI_Thread_State *) FNI_GetJNIData(env, thread) )
+#define EXTRACT_PTHREAD_T(env, thread) \
+  ( EXTRACT_OTHER_ENV(env, thread)->pthread )
+
+
+static void add_running_thread(const pthread_t thr) {
+}
+static void remove_running_thread(void *cl) {
+}  
+static void wait_on_running_thread() {
+  while(gtl!=gtl->next) {
+    context_switch();
+  }
+}
+
+#endif /* WITH_USER_THREADS */
+
+
+
+
+
 static jclass thrCls; /* clazz for java/lang/Thread. */
 static jfieldID priorityID; /* "priority" field in Thread object. */
 static jfieldID daemonID; /* "daemon" field in Thread object. */
@@ -111,7 +141,7 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   /* put thread in env structure as 'current thread' */
   assert(((struct FNI_Thread_State *)env)->thread == NULL);
   ((struct FNI_Thread_State *)env)->thread = mainThr;
-#ifdef WITH_EVENT_DRIVEN
+#if defined(WITH_EVENT_DRIVEN) && !defined(WITH_USER_THREADS)
   {
     extern struct oobj *
       _Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread;
@@ -193,6 +223,7 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   /* make pthread_key_t before the fat lady sings */
   pthread_key_create(&running_threads_key, remove_running_thread);
 #endif /* WITH_HEAVY_THREADS */
+
   /* done! */
 }
 
@@ -285,6 +316,204 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_sleep
   /* don't sleep at all */
 #endif
 }
+
+
+#ifdef WITH_USER_THREADS
+struct closure_struct {
+  jobject thread;
+  pthread_cond_t parampass_cond;
+  pthread_mutex_t parampass_mutex;
+};
+
+static void * thread_startup_routine(void *closure) {
+  int top_of_stack; /* special variable holding top-of-stack position */
+  struct closure_struct *cls = (struct closure_struct *)closure;
+  JNIEnv *env = FNI_CreateJNIEnv();
+  jobject thread, threadgroup; jthrowable threadexc;
+  /* set up the top of the stack for this thread for exception stack trace */
+  ((struct FNI_Thread_State *)(env))->stack_top = &top_of_stack;
+  /* This thread is alive! */
+  ((struct FNI_Thread_State *)(env))->is_alive = JNI_TRUE;
+  /* make sure creating thread is in cond_wait before proceeding. */
+  pthread_mutex_lock(&(cls->parampass_mutex));
+  /* copy thread wrapper to local stack */
+  thread = FNI_NewLocalRef(env, FNI_UNWRAP(cls->thread));
+  /* fill in the blanks in env */
+  ((struct FNI_Thread_State *)env)->thread = thread;
+#ifndef WITH_USER_THREADS
+  ((struct FNI_Thread_State *)env)->pthread = pthread_self();
+#endif
+  FNI_SetJNIData(env, thread, env, NULL);
+  /* add this to the running_threads list, unless its a daemon thread */
+  if ((*env)->GetBooleanField(env, thread, daemonID) == JNI_FALSE)
+    add_running_thread(pthread_self());
+  /* okay, parameter passing is done. we can unblock the creating thread now.
+   * (note that we're careful to make sure we're on the 'running threads'
+   *  list before letting the parent --- who may decide to exit -- continue.)
+   */
+  pthread_mutex_unlock(&(cls->parampass_mutex));
+  pthread_cond_signal(&(cls->parampass_cond));
+  /* okay, now start run() method */
+  (*env)->CallVoidMethod(env, thread, runID);
+  if ( (threadexc = (*env)->ExceptionOccurred(env)) != NULL) {
+    // call thread.getThreadGroup().uncaughtException(thread, exception)
+    (*env)->ExceptionClear(env); /* clear the thread's exception */
+    threadgroup = (*env)->CallObjectMethod(env, thread, gettgID);
+    (*env)->CallVoidMethod(env, threadgroup, uncaughtID, thread, threadexc);
+  }
+  /* this thread is dead now.  give it a chance to clean up. */
+  /* (this also removes the thread from the ThreadGroup) */
+  /* (see also Thread.EDexit() -- keep these in sync) */
+  (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
+  assert(!((*env)->ExceptionOccurred(env)));
+  /* This thread is dead now. */
+  ((struct FNI_Thread_State *)(env))->is_alive = JNI_FALSE;
+  /** Get rid of the JNIEnv in the JNIData for the thread, since it is going
+   *  to be destroyed by the thread clean-up code [see isAlive() ] */
+  FNI_SetJNIData(env, thread, NULL, NULL);
+  /* Notify others that it's dead (before we deallocate the thread object!). */
+  FNI_MonitorEnter(env, thread);
+  FNI_MonitorNotify(env, thread, JNI_TRUE);
+  FNI_MonitorExit(env, thread);
+  assert(!((*env)->ExceptionOccurred(env)));
+#ifdef WITH_CLUSTERED_HEAPS
+  /* give us a chance to deallocate the thread-clustered heap */
+  NTHR_free(thread);
+#endif
+  /* ta-da, done! */
+}
+
+/*
+ * Class:     java_lang_Thread
+ * Method:    start
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_java_lang_Thread_start
+  (JNIEnv *env, jobject _this) {
+  jint pri;
+
+  struct closure_struct cls =
+    { _this , PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
+  int status;
+  void * stackptr;
+  struct machdep_pthread *mp;
+  struct thread_list *tl;
+  assert(runID!=NULL/* run() is certainly callable! */);
+  /* first of all, see if this thread has already been started. */
+
+  if (FNI_GetJNIData(env, _this)!=NULL) {
+    // throw IllegalThreadStateException.
+    jclass ex = (*env)->FindClass(env,"java/lang/IllegalThreadStateException");
+    if ((*env)->ExceptionOccurred(env)) return;
+    (*env)->ThrowNew(env, ex, "Thread.start() called more than once.");
+    return;
+  }
+  /* fetch some attribute fields from the Thread */
+  pri = (*env)->GetIntField(env, _this, priorityID);
+  assert(!((*env)->ExceptionOccurred(env)));
+
+  
+  //build stack and stash it
+  tl=malloc(sizeof(struct thread_list));
+
+  stackptr = __machdep_stack_alloc(STACKSIZE);
+  __machdep_stack_set(&(tl->mthread), stackptr);
+
+
+  __machdep_pthread_create(&(tl->mthread), &thread_startup_routine, &cls,STACKSIZE, 0,0);
+
+
+
+  //LOCK ON GTL
+  tl->next=gtl->next;
+  tl->prev=gtl;
+  gtl->next=tl;
+  tl->next->prev=tl;
+  
+
+  pthread_mutex_lock(&(cls.parampass_mutex));
+  /* wait for new thread to copy _this before proceeding */
+  pthread_cond_wait(&(cls.parampass_cond), &(cls.parampass_mutex));
+  /* okay, we're done, man. Release our resources. */
+  pthread_cond_destroy(&(cls.parampass_cond));
+  pthread_mutex_unlock(&(cls.parampass_mutex));
+  pthread_mutex_destroy(&(cls.parampass_mutex));
+
+  /*  while (cls.parampass_cond==0)
+      swapthreads();*/
+  /* done! */
+}
+
+/*
+ * Class:     java_lang_Thread
+ * Method:    isInterrupted
+ * Signature: (Z)Z
+ */
+JNIEXPORT jboolean JNICALL Java_java_lang_Thread_isInterrupted
+  (JNIEnv *env, jobject _this, jboolean clearInterrupted) {
+  return JNI_FALSE; /* XXX: no thread is ever interrupted. */
+}
+
+/*
+ * Class:     java_lang_Thread
+ * Method:    isAlive
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_java_lang_Thread_isAlive
+  (JNIEnv *env, jobject _this) {
+  /* Some comments on this code: first, the is_alive field is perhaps
+   * completely unnecessary: EXTRACT_OTHER_ENV(env, somethread) will
+   * return non-NULL iff the thread is alive.   But perhaps we'd rather
+   * free() the env when the thread object is *garbage collected* (as
+   * opposed to when it dies)... this would mean that
+   * FNI_DestroyThreadState should be given as an arg to FNI_SetJNIData()
+   * instead of as an arg to pthread_key_create().  But would this mean
+   * that our thread's LocalRefs stay live until the thread object is
+   * collected?  That could be a Bad Thing.  Leaving it as is, for now.
+   *  -- CSA [6-jun-00] */
+  struct FNI_Thread_State *ts = EXTRACT_OTHER_ENV(env, _this);
+  return (ts==NULL) ? JNI_FALSE : ts->is_alive;
+}
+#endif /* WITH_USER_THREADS */
+
+#if 0
+/*
+ * Class:     java_lang_Thread
+ * Method:    countStackFrames
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_java_lang_Thread_countStackFrames
+  (JNIEnv *, jobject);
+#endif
+
+
+#if 0
+/*
+ * Class:     java_lang_Thread
+ * Method:    stop0
+ * Signature: (Ljava/lang/Object;)V
+ */
+JNIEXPORT void JNICALL Java_java_lang_Thread_stop0
+  (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     java_lang_Thread
+ * Method:    suspend0
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_java_lang_Thread_suspend0
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     java_lang_Thread
+ * Method:    resume0
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_java_lang_Thread_resume0
+  (JNIEnv *, jobject);
+
+#endif
+
 
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
 struct closure_struct {
@@ -507,7 +736,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_newThreadEvent0
   fprintf(stderr, "WARNING: IBM JDK may not be fully supported.\n");
 }
 
-#ifdef WITH_EVENT_DRIVEN
+#if defined(WITH_EVENT_DRIVEN) && !defined(WITH_USER_THREADS)
 /* for use by event-driven code. */
 JNIEXPORT void JNICALL Java_java_lang_Thread_EDexit
 (JNIEnv *env, jobject _this) {
@@ -516,8 +745,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_EDexit
   (*env)->CallNonvirtualVoidMethod(env, _this, thrCls, exitID);
 #ifdef WITH_CLUSTERED_HEAPS
   /* give us a chance to deallocate the thread-clustered heap */
-  NTHR_free(_this
-);
+  NTHR_free(_this);
 #endif
 }
 #endif /* WITH_EVENT_DRIVEN */

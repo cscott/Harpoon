@@ -38,7 +38,9 @@ int main(int argc, char *argv[]) {
 #ifdef WITH_PTH_THREADS
   pth_init();
 #endif
-
+#ifdef WITH_USER_THREADS
+  inituser(&top_of_stack);
+#endif
   /* ignore SIGPIPE; we look at errno to handle this condition */
   signal(SIGPIPE, SIG_IGN);
 

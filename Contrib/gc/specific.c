@@ -11,7 +11,7 @@
  * modified is included with the above copyright notice.
  */
 
-#if defined(LINUX_THREADS) || defined(GC_LINUX_THREADS)
+#if defined(LINUX_THREADS) || defined(USER_THREADS) || defined(GC_LINUX_THREADS) || defined(GC_USER_THREADS)
 
 #include "gc_priv.h" /* For GC_compare_and_exchange, GC_memory_barrier */
 #include "specific.h"

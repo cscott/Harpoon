@@ -159,3 +159,52 @@ jint getFDsSEL(JNIEnv *env, jint blockMode, jintArray result)
     return (jint)size;
 }
 
+int * getFDsintSEL(int blockMode) {
+    int *cresult, *buf;
+    int size=0, j;
+    fd_set newReadSet=readStruct.Interest, newWriteSet=writeStruct.Interest;
+    int nFD=(readStruct.maxFD>writeStruct.maxFD)?
+      readStruct.maxFD:writeStruct.maxFD;
+    int rc;
+    size=nFD+2;
+
+    /** buffer has ints inside it; safe to use malloc instead of GC_malloc */
+    buf=(int*)malloc(sizeof(int)*size);
+    do {  /* repeat if interruptted */
+      rc = select(nFD+1, &newReadSet, &newWriteSet, NULL,
+                  blockMode? NULL: &timeout);
+    } while (blockMode && rc < 0 && errno == EINTR);
+    /* XXX should really throw exception on rc<0 here.
+     * all descriptor sets are undefined in this case and should not be
+     * tested. */
+    for (j=0; j<=readStruct.maxFD; j++)
+      if (FD_ISSET(j, &newReadSet))
+        {
+          FD_CLR(j, &readStruct.Interest);
+          buf[j]=1;
+        } else
+	  buf[j]=0;
+
+    for(;j<=writeStruct.maxFD;j++)
+      buf[j]=0; //Zero out remaining entries
+    buf[size-1]=-1; //Put end flag up
+
+    for (j=0; j<=writeStruct.maxFD; j++)
+      if (FD_ISSET(j, &newWriteSet))
+        {
+          FD_CLR(j, &writeStruct.Interest);
+          buf[j]=buf[j]+2;
+        }
+
+    while (!FD_ISSET(readStruct.maxFD, &readStruct.Interest) 
+           && readStruct.maxFD>0)
+      readStruct.maxFD--;
+    while (!FD_ISSET(writeStruct.maxFD, &writeStruct.Interest) 
+           && writeStruct.maxFD>0)
+      writeStruct.maxFD--;
+    
+    return buf;
+}
+
+
+

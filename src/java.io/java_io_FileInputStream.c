@@ -17,6 +17,10 @@
 
 #include "javaio.h" /* for getfd/setfd */
 
+#if defined(WITH_USER_THREADS) && defined (WITH_EVENT_DRIVEN)
+#define USERIO
+#endif
+
 static jfieldID fdObjID = 0; /* The field ID of fd in class FileInputStream */
 static jclass IOExcCls  = 0; /* The java/io/IOException class object */
 static int inited = 0; /* whether the above variables have been initialized */
@@ -61,6 +65,11 @@ JNIEXPORT void JNICALL Java_java_io_FileInputStream_open
     cstr  = (*env)->GetStringUTFChars(env, jstr, 0);
     fd    = open(cstr, O_RDONLY|O_BINARY);
     (*env)->ReleaseStringUTFChars(env, jstr, cstr);
+
+#ifdef USERIO
+    Java_java_io_NativeIO_makeNonBlockJNI(env, NULL, fd);
+#endif
+
     fdObj = (*env)->GetObjectField(env, obj, fdObjID);
     Java_java_io_FileDescriptor_setfd(env, fdObj, fd);
 
@@ -87,10 +96,20 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_read
     fdObj    = (*env)->GetObjectField(env, obj, fdObjID);
     fd       = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
+#ifdef USERIO
+    /*Should be okay with just this*/
+    do {
+	result = read(fd, (void*)buf, 1);
+	if (result<0 && errno == EAGAIN) 
+	  SchedulerAddRead(fd);
+	/* if we're interrupted by a signal, just retry. */
+    } while (result<0 && (errno == EINTR || errno==EAGAIN));
+#else
     do {
 	result = read(fd, (void*)buf, 1);
 	/* if we're interrupted by a signal, just retry. */
     } while (result<0 && errno == EINTR);
+#endif
 
     if (result==-1) {
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
@@ -121,11 +140,24 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_readBytes
 
     fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
     fd     = Java_java_io_FileDescriptor_getfd(env, fdObj);
-    
+
+
+
+
+#ifdef USERIO
+    do {
+      result = read(fd, (void*)buf, bufsize);
+      if (result<0 && errno==EAGAIN)
+	SchedulerAddRead(fd);
+    } while (result<0 && (errno == EINTR||errno==EAGAIN));
+#else
     do {
 	result = read(fd, (void*)buf, bufsize);
 	/* if we're interrupted by a signal, just retry. */
     } while (result<0 && errno == EINTR);
+#endif
+
+
 
     if (result==-1) {
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));

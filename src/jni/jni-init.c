@@ -95,3 +95,18 @@ JNIEnv *FNI_GetJNIEnv(void) {
   return (JNIEnv *) pthread_getspecific(FNI_JNIEnv_key);
 }
 #endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS */
+
+#if WITH_USER_THREADS
+/** threaded implementation: JNIEnv is stored in per-thread memory. */
+static pthread_key_t FNI_JNIEnv_key;
+void FNI_InitJNIEnv(void) {
+}
+
+JNIEnv *FNI_CreateJNIEnv(void) {
+  gtl->jnienv = FNI_CreateThreadState();
+  return FNI_GetJNIEnv();
+}
+JNIEnv *FNI_GetJNIEnv(void) {
+  return gtl->jnienv;
+}
+#endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS */

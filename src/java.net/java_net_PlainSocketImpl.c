@@ -21,6 +21,10 @@
 #include "flexthread.h" /* for mutex ops */
 #include "../java.io/javaio.h" /* for getfd/setfd */
 
+#if defined(WITH_USER_THREADS) && defined (WITH_EVENT_DRIVEN)
+#define USERIO
+#endif
+
 static jfieldID SI_fdObjID = 0; /* The field ID of SocketImpl.fd */
 static jfieldID SI_addrID  = 0; /* The field ID of SocketImpl.address */
 static jfieldID SI_portID  = 0; /* The field ID of SocketImpl.port */
@@ -182,6 +186,11 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketListen
 
     rc = listen(fd, backlog);
 
+#ifdef USERIO
+    /* Switch to NonBlocking mode */
+    Java_java_io_NativeIO_makeNonBlockJNI(env,NULL,fd);
+#endif
+
     /* Check for error condition */
     if (rc<0)
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
@@ -203,14 +212,27 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketAccept
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
     fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
+#ifdef USERIO
+    /* Call Into Scheduler to wait for select on this socket*/
+    do {
+      rc = accept(fd, (struct sockaddr *) &sa, &sa_size);
+      if (rc<0 && errno==EAGAIN)
+	SchedulerAddRead(fd);
+    } while (rc<0 && (errno==EINTR || errno==EAGAIN)); /* repeat if interrupted */
+#else
     do {
       rc = accept(fd, (struct sockaddr *) &sa, &sa_size);
     } while (rc<0 && errno==EINTR); /* repeat if interrupted */
+#endif
     /* Check for error condition */
     if (rc<0) {
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
 	return;
     }
+
+#ifdef USERIO
+    Java_java_io_NativeIO_makeNonBlockJNI(env,NULL,rc);
+#endif
 
     /* fill in SocketImpl */
     fdObj = (*env)->GetObjectField(env, s, SI_fdObjID);

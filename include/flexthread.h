@@ -8,6 +8,7 @@
 #include <sched.h>	/* for sched_yield */
 #define pthread_yield_np	sched_yield
 
+
 #ifndef HAVE_PTHREAD_RWLOCK_T
 /* work-around for missing read/write lock. */
 /* a mutex is a conservative approximation to a read/write lock. */
@@ -120,6 +121,46 @@ extern pth_key_t flex_timedwait_key; /* defined in java_lang_Thread.c */
 
 #endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS */
 
+/* define flex_mutex_t ops. */
+#if WITH_USER_THREADS
+#include "../src/user/threads.h"
+
+/* work-around for missing read/write lock. */
+/* a mutex is a conservative approximation to a read/write lock. */
+#define pthread_rwlock_t	pthread_mutex_t
+#define pthread_rwlock_init	pthread_mutex_init
+#define pthread_rwlock_rdlock	pthread_mutex_lock
+#define pthread_rwlock_wrlock	pthread_mutex_lock
+#define pthread_rwlock_unlock	pthread_mutex_unlock
+#define pthread_rwlock_destroy	pthread_mutex_destroy
+
+#define FLEX_MUTEX_INITIALIZER	USER_MUTEX_INITIALIZER
+#define flex_mutex_t		user_mutex_t
+#define flex_mutex_init(x)	user_mutex_init((x), NULL)
+#define flex_mutex_lock		user_mutex_lock
+#define flex_mutex_unlock	user_mutex_unlock
+#define flex_mutex_destroy	user_mutex_destroy
+
+
+#define PTHREAD_MUTEX_INITIALIZER  USER_MUTEX_INITIALIZER
+#define pthread_mutex_t		user_mutex_t
+#define pthread_mutex_init(x)	user_mutex_init((x), NULL)
+#define pthread_mutex_lock		user_mutex_lock
+#define pthread_mutex_unlock	user_mutex_unlock
+#define pthread_mutex_destroy	user_mutex_destroy
+#define pthread_mutex_trylock   user_mutex_trylock
+
+#define PTHREAD_COND_INITIALIZER	USER_COND_INIT
+#define pthread_cond_t			user_cond_t
+#define pthread_cond_init		user_cond_init
+#define pthread_cond_broadcast	        user_cond_broadcast
+#define pthread_cond_signal		user_cond_signal
+#define pthread_cond_wait		user_cond_wait
+#define pthread_cond_destroy		user_cond_destroy
+#define pthread_cond_timedwait          user_cond_timedwait
+
+
+#endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS */
 
 /* simply declarations to avoid lots of tedious #ifdef WITH_THREAD'ing. */
 /* declare nop-variants of mutex ops if WITH_THREADS not defined */
@@ -135,3 +176,5 @@ extern pth_key_t flex_timedwait_key; /* defined in java_lang_Thread.c */
 #endif /* WITH_THREADS */
 
 #endif /* INCLUDED_FLEXTHREAD_H */
+
+

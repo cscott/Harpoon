@@ -86,7 +86,7 @@ struct inflated_oobj {
   struct vinfo *first_version; /* linked list of object versions */
 #endif
   /* locking information */
-#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
   pthread_t tid; /* can be zero, if no one has this lock */
   jint nesting_depth; /* recursive lock nesting depth */
   pthread_mutex_t mutex; /* simple (not recursive) lock */
