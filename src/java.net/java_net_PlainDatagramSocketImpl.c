@@ -162,7 +162,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_bind
   (JNIEnv *env, jobject _this, jint lport, jobject laddr/*InetAddress*/) {
     struct sockaddr_in sa;
     jobject fdObj;
-    int fd, rc;
+    int fd, rc, sa_size;
 
     assert(inited && _this && laddr);
     memset(&sa, 0, sizeof(sa));
@@ -174,10 +174,21 @@ JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_bind
     fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
     rc = bind(fd, (struct sockaddr *) &sa, sizeof(sa));
-
     /* Check for error condition */
-    if (rc<0)
-	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
+    if (rc<0) goto error;
+
+    /* update instance variables */
+    sa_size = sizeof(sa);
+    rc = getsockname(fd, (struct sockaddr *) &sa, &sa_size);
+    if (rc<0) goto error;
+    (*env)->SetIntField(env, _this, DSI_localPortID, (int)ntohs(sa.sin_port));
+
+    /* done! */
+    return;
+
+  error:
+    (*env)->ThrowNew(env, IOExcCls, strerror(errno));
+    return;
 }
 
 #if 0

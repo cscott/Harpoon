@@ -117,13 +117,14 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketConnect
   (JNIEnv *env, jobject _this, jobject/*InetAddress*/ address, jint port) {
     struct sockaddr_in sa;
     jobject fdObj;
-    int fd, rc;
+    int fd, rc, sa_size;
 
     assert(inited && address);
     memset(&sa, 0, sizeof(sa));
     sa.sin_family      = (*env)->GetIntField(env, address, IA_familyID);
     sa.sin_addr.s_addr = htonl((*env)->GetIntField(env, address, IA_addrID));
     sa.sin_port        = htons(port);
+    assert(sa.sin_family==AF_INET);
 
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
     fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
@@ -133,8 +134,28 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketConnect
     } while (rc<0 && errno==EINTR); /* repeat if interrupted */
 
     /* Check for error condition */
-    if (rc<0)
-	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
+    if (rc<0) goto error;
+    /* Populate instance variables (code inspired by classpath) */
+    sa_size = sizeof(sa);
+    rc = getsockname(fd, (struct sockaddr *) &sa, &sa_size);
+    if (rc<0) goto error;
+    (*env)->SetIntField(env, _this, SI_localportID, (int)ntohs(sa.sin_port));
+
+    sa_size = sizeof(sa);
+    rc = getpeername(fd, (struct sockaddr *) &sa, &sa_size);
+    if (rc<0) goto error;
+    (*env)->SetIntField(env, _this, SI_portID, (int)ntohs(sa.sin_port));
+    address = (*env)->GetObjectField(env, _this, SI_addrID);
+    assert(address);
+    (*env)->SetIntField(env, address, IA_familyID, sa.sin_family);
+    (*env)->SetIntField(env, address, IA_addrID, ntohl(sa.sin_addr.s_addr));
+    assert(sa.sin_family==AF_INET);
+    /* done! */
+    return;
+
+  error:
+    (*env)->ThrowNew(env, IOExcCls, strerror(errno));
+    return;
 }
 
 /*
@@ -150,22 +171,34 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketBind
   (JNIEnv *env, jobject _this, jobject/*InetAddress*/ address, jint lport) {
     struct sockaddr_in sa;
     jobject fdObj;
-    int fd, rc;
+    int fd, rc, sa_size;
 
     assert(inited && address);
     memset(&sa, 0, sizeof(sa));
     sa.sin_family      = (*env)->GetIntField(env, address, IA_familyID);
     sa.sin_addr.s_addr = htonl((*env)->GetIntField(env, address, IA_addrID));
     sa.sin_port        = htons(lport);
+    assert(sa.sin_family==AF_INET);
 
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
     fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
     rc = bind(fd, (struct sockaddr *) &sa, sizeof(sa));
-
     /* Check for error condition */
-    if (rc<0)
-	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
+    if (rc<0) goto error;
+
+    /* update instance variables */
+    sa_size = sizeof(sa);
+    rc = getsockname(fd, (struct sockaddr *) &sa, &sa_size);
+    if (rc<0) goto error;
+    (*env)->SetIntField(env, _this, SI_localportID, (int)ntohs(sa.sin_port));
+
+    /* done! */
+    return;
+
+  error:
+    (*env)->ThrowNew(env, IOExcCls, strerror(errno));
+    return;
 }
 /*
  * Class:     java_net_PlainSocketImpl
@@ -225,10 +258,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketAccept
     } while (rc<0 && errno==EINTR); /* repeat if interrupted */
 #endif
     /* Check for error condition */
-    if (rc<0) {
-	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
-	return;
-    }
+    if (rc<0) goto error;
 
 #ifdef USERIO
     Java_java_io_NativeIO_makeNonBlockJNI(env,NULL,rc);
@@ -237,11 +267,26 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketAccept
     /* fill in SocketImpl */
     fdObj = (*env)->GetObjectField(env, s, SI_fdObjID);
     Java_java_io_FileDescriptor_setfd(env, fdObj, rc);
+    fd=rc; /* this is the file descriptor we are interested in now */
+    /* Populate instance variables (code inspired by classpath) */
+    sa_size = sizeof(sa);
+    rc = getsockname(fd, (struct sockaddr *) &sa, &sa_size);
+    if (rc<0) goto error;
+    (*env)->SetIntField(env, s, SI_localportID, (int)ntohs(sa.sin_port));
+
+    sa_size = sizeof(sa);
+    rc = getpeername(fd, (struct sockaddr *) &sa, &sa_size);
+    if (rc<0) goto error;
+    (*env)->SetIntField(env, s, SI_portID, (int)ntohs(sa.sin_port));
     address = (*env)->GetObjectField(env, s, SI_addrID);
     (*env)->SetIntField(env, address, IA_familyID, sa.sin_family);
     (*env)->SetIntField(env, address, IA_addrID, ntohl(sa.sin_addr.s_addr));
-    (*env)->SetIntField(env, s, SI_portID, ntohs(sa.sin_port));
-    /* done */
+    /* done! */
+    return;
+
+  error:
+    (*env)->ThrowNew(env, IOExcCls, strerror(errno));
+    return;
 }
 
 /*
