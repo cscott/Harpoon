@@ -1,4 +1,4 @@
-package harpoon.IR.LowQuad;
+ package harpoon.IR.LowQuad;
 
 import harpoon.Backend.Maps.FinalMap;
 import harpoon.Analysis.Maps.TypeMap;
@@ -12,10 +12,10 @@ import harpoon.IR.Quads.ToNoSSA;
 import java.util.Hashtable;
 
 /**
- * <b>FILL ME IN</b>
+ *
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.3 1999-02-04 22:56:15 cananian Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.4 1999-02-06 21:54:41 duncan Exp $
  */
 public class LowQuadSSA extends Code
 {
@@ -25,17 +25,12 @@ public class LowQuadSSA extends Code
   /** Creates a <code>LowQuadNoSSA</code> object from a LowQuad object */
   LowQuadSSA(QuadSSA code)
     {
-      this(code,
-	   new harpoon.Analysis.QuadSSA.TypeInfo(),
-	   new harpoon.Backend.Maps.DefaultFinalMap());
+      super(code.getMethod(), null);
+      TypeMap tym = new harpoon.Analysis.QuadSSA.TypeInfo();
+      FinalMap fm = new harpoon.Backend.Maps.DefaultFinalMap();
+      quads = Translate.translate((LowQuadFactory)this.qf, code, tym, fm, hD);
     }
-  /** generally this constructor is not good because the TypeMap is forced
-   *  to cache (and keep live) data for lots of QuadSSA objects, and thus
-   *  wastes memory. */
-  private LowQuadSSA(QuadSSA code, TypeMap tym, FinalMap fm) {
-    super(code.getMethod(), null);
-    quads = Translate.translate((LowQuadFactory)this.qf, code, tym, fm, hD);
-  }
+
   /**
    * Create a new code object given a quadruple representation of the
    * method instructions.
@@ -79,11 +74,6 @@ public class LowQuadSSA extends Code
 	    public void clear(HMethod m) { hcf.clear(m); }
 	    public String getCodeName() { return codename; }
 	  };
-	}
-      else if (hcf.getCodeName().equals(LowQuadNoSSA.codename)) 
-	{
-	  throw new Error("When I get around to rewriting the SSA conversion"+
-			  " algorithms, this will work.");
 	}
       else 
 	throw new Error("don't know how to make " + codename +
