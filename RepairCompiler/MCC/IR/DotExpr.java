@@ -380,6 +380,9 @@ public class DotExpr extends Expr {
 		assert intindex == null;
 		intindex = ld.getIndex();
 	    } else {
+                if (fd==null) {
+                    throw new Error("Null fd for: "+field);
+                }
 		fieldtype = fd.getType();
 		intindex=index;
 	    }

@@ -61,15 +61,33 @@ public class SumExpr extends Expr {
         VarDescriptor itvd=VarDescriptor.makeNew("iterator");
         writer.addDeclaration("struct SimpleIterator",itvd.getSafeSymbol());
         writer.outputline("SimpleHashiterator("+sd.getSafeSymbol()+"_hash , &"+itvd.getSafeSymbol()+");");
-        writer.outputline("while (hasNext(&"+itvd.getSafeSymbol()+")) {");
-        VarDescriptor keyvd=VarDescriptor.makeNew("key");
-        writer.addDeclaration("int",keyvd.getSafeSymbol());
-        writer.outputline(keyvd.getSafeSymbol()+"=next(&"+itvd.getSafeSymbol()+");");
-        VarDescriptor tmpvar=VarDescriptor.makeNew("tmp");
-        writer.addDeclaration("int",tmpvar.getSafeSymbol());
-        writer.outputline("SimpleHashget("+rd.getSafeSymbol()+"_hash, "+keyvd.getSafeSymbol()+", &"+tmpvar.getSafeSymbol()+");");
-        writer.outputline(dest.getSafeSymbol()+"+="+tmpvar.getSafeSymbol()+";");
-        writer.outputline("}");
+        writer.outputline("while (hasNext(&"+itvd.getSafeSymbol()+"))");
+        writer.startblock();
+        {
+            VarDescriptor keyvd=VarDescriptor.makeNew("key");
+            writer.addDeclaration("int",keyvd.getSafeSymbol());
+            writer.outputline(keyvd.getSafeSymbol()+"=next(&"+itvd.getSafeSymbol()+");");
+            VarDescriptor tmpvar=VarDescriptor.makeNew("tmp");
+            writer.addDeclaration("int",tmpvar.getSafeSymbol());
+
+            VarDescriptor newset=VarDescriptor.makeNew("newset");
+            writer.addDeclaration("struct SimpleHash *",newset.getSafeSymbol());
+            writer.outputline(newset.getSafeSymbol()+"=SimpleHashimageSet("+rd.getSafeSymbol()+"_hash, "+keyvd.getSafeSymbol()+", &"+tmpvar.getSafeSymbol()+");");
+
+            VarDescriptor itvd2=VarDescriptor.makeNew("iterator");
+            writer.addDeclaration("struct SimpleIterator",itvd2.getSafeSymbol());
+            writer.outputline("SimpleHashiterator("+newset.getSafeSymbol()+", &"+itvd2.getSafeSymbol()+");");
+
+            writer.outputline("while (hasNext(&"+itvd2.getSafeSymbol()+"))");
+            writer.startblock();
+            {
+                VarDescriptor keyvd2=VarDescriptor.makeNew("keyinner");
+                writer.outputline(dest.getSafeSymbol()+"+=next(&"+itvd2.getSafeSymbol()+");");
+                writer.endblock();
+            }
+            writer.outputline("freeSimpleHash("+newset.getSafeSymbol()+");");
+            writer.endblock();
+        }
     }
 
     public void prettyPrint(PrettyPrinter pp) {
