@@ -42,6 +42,7 @@ import harpoon.Analysis.MemOpt.IncompatibilityAnalysis;
 
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.QuadWithTry;
 import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.NEW;
@@ -51,15 +52,15 @@ import harpoon.IR.Quads.ANEW;
  * <code>IAStatistics</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: IAStatistics.java,v 1.2 2002-12-02 17:07:51 salcianu Exp $
+ * @version $Id: IAStatistics.java,v 1.3 2002-12-05 00:04:16 salcianu Exp $
  */
 public abstract class IAStatistics {
     
-    private static class TypeStat implements Comparable {
-	HClass hclass;
+    private static class TypeStat implements Comparable, Cloneable {
+	public HClass hclass;
 	public long[][] count = new long[2][2];
 
-	TypeStat(HClass hclass) { this.hclass = hclass; }
+	public TypeStat(HClass hclass) { this.hclass = hclass; }
 
 	public String toString() {
 	    return
@@ -78,6 +79,40 @@ public abstract class IAStatistics {
 	    return 
 		new Long(totalAlloc(OBJECT))
 		.compareTo(new Long(ts2.totalAlloc(OBJECT)));
+	}
+
+	public TypeStat add(TypeStat ts) {
+	    for(int i = 0; i < 2; i++)
+		for(int j = 0; j < 2; j++)
+		    this.count[i][j] += ts.count[i][j];
+	    return this;
+	}
+
+	public TypeStat diff(TypeStat ts) {
+	    for(int i = 0; i < 2; i++)
+		for(int j = 0; j < 2; j++)
+		    this.count[i][j] -= ts.count[i][j];
+	    return this;
+	}
+
+	public Object clone() {
+	    try {
+		TypeStat copy = (TypeStat) super.clone();
+		copy.count = new long[2][2];
+		for(int i = 0; i < 2; i++)
+		    for(int j = 0; j < 2; j++)
+			copy.count[i][j] = this.count[i][j];
+		return copy;
+	    }
+	    catch(CloneNotSupportedException e) {
+		e.printStackTrace();
+		System.exit(1);
+		return null; // never executed; makes compiler happy
+	    }
+	}
+
+	public static TypeStat diff(TypeStat a, TypeStat b) {
+	    return ((TypeStat) a.clone()).diff(b);
 	}
     }
 
@@ -111,13 +146,29 @@ public abstract class IAStatistics {
        <code>ia</code>  */
     public static void printStatistics(IncompatibilityAnalysis ia,
 				       AllocationStatistics as,
-				       Collection allocs) {
+				       Set methods,
+				       HCodeFactory hcf_nossa,
+				       Linker linker) {
+
+	Collection allocs = AllocationStatistics.getAllocs(methods, hcf_nossa);
+	Collection initial_allocs = 
+	    AllocationStatistics.getAllocs(methods, QuadWithTry.codeFactory());
+	
+	long delta_sites = allocs.size() - initial_allocs.size();
+
+	System.out.println
+	    (proportion(delta_sites, initial_allocs.size(), 5, 2) +  
+	     " allocations introduced by QuadWithTry -> QuadNoSSA");
+
+	HClass hThrowable = linker.forName("java.lang.Throwable");
 
 	buildStatistics(ia, as, allocs);
 
 	as.printStatistics(allocs, new MyVisitor(ia));
 
 	TypeStat total = new TypeStat(null);
+	TypeStat total_arrays = new TypeStat(null);
+	TypeStat total_throwables = new TypeStat(null);
 
 	Collection tss_coll = hclass2stat.values();
 	TypeStat[] tss = 
@@ -131,22 +182,32 @@ public abstract class IAStatistics {
 	for(int index_ts = 0; index_ts < tss.length; index_ts++) {
 	    TypeStat ts = tss[index_ts];
 	    System.out.println(ts);
-	    for(int i = 0; i < 2; i++)
-		for(int j = 0; j < 2; j++)
-		    total.count[i][j] += ts.count[i][j];
+	    total.add(ts);
+	    if(ts.hclass.isArray())
+		total_arrays.add(ts);
+	    if(ts.hclass.isInstanceOf(hThrowable))
+		total_throwables.add(ts);
 	}
 
 	System.out.println
 	    ("------------------------------------------------------------");
 	System.out.println(total);
 
-	System.out.println("TOTALS:");
+	printTotal("OVERALL",        total);
+	printTotal("ARRAYS",         total_arrays);
+	printTotal("NON-ARRAYS",     TypeStat.diff(total, total_arrays));
+	printTotal("THROWABLES",     total_throwables);
+	printTotal("NON_THROWABLES", TypeStat.diff(total, total_throwables));
+    }
+
+
+    private static void printTotal(String label, TypeStat total) {
 	System.out.println
-	    ("PREALLOCATED SITES:   " +
+	    (label + " PREALLOCATED SITES:   " +
 	     proportion(total.count[SITE][PREALLOC],
 			total.count[SITE][HEAP], 5, 2));
 	System.out.println
-	    ("PREALLOCATED OBJECTS: " +
+	    (label + " PREALLOCATED OBJECTS: " +
 	     proportion(total.count[OBJECT][PREALLOC],
 			total.count[OBJECT][HEAP], 5, 2));
     }
@@ -175,19 +236,22 @@ public abstract class IAStatistics {
     private static void buildStatistics(IncompatibilityAnalysis ia,
 					AllocationStatistics as,
 					Collection allocs) {
-	Set notInCache = new HashSet();
+	//Set notInCache = new HashSet();
 
 	for(Iterator it = allocs.iterator(); it.hasNext(); ) {
 	    Quad q = (Quad) it.next();
 	    HMethod hm = q.getFactory().getMethod();
 
+	    /*
 	    if(!ia.allMethods().contains(hm)) {
 		notInCache.add(hm);
 		continue;
 	    }
+	    */
 
 	    TypeStat ts = get_type_stat(allocatedClass(q));
-	    if(selfIncompatible(q, ia)) {
+	    // unanalyzed allocation sites are not preallocated
+	    if(!ia.allMethods().contains(hm) || selfIncompatible(q, ia)) {
 		ts.count[OBJECT][HEAP] += as.getCount(q);
 		ts.count[SITE][HEAP]++;
 	    }
@@ -197,8 +261,10 @@ public abstract class IAStatistics {
 	    }
 	}
 
+	/*
 	Util.print_collection
 	    (notInCache, "Warning: some methods were not in the SSI cache");
+	*/
     }
 
     private static HClass allocatedClass(Quad q) {

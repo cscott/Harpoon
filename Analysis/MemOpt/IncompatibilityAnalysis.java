@@ -32,28 +32,32 @@ public class IncompatibilityAnalysis {
     /**
      * If true, the analysis will not descend into classes other than
      * the class of the entry method. Useful for debugging.
-     * 
-     */
+     * */
     public static final boolean STAY_IN_DECLARING_CLASS = false;
     
     /**
-     * If true, the analysis will show progress dots and other progress.
-     * indicators.
-     *
-     */
-    public static final boolean SHOW_PROGRESS = true;
+     * If true, the analysis will show progress dots and other
+     * progress indicators.
+     * */
+    public static final boolean SHOW_PROGRESS = false;
 
     
     /**
-     * If true, the analysis will show some statistics when it finishes.
-     *
-     */
+     * If true, the analysis will show some statistics when it
+     * finishes.
+     * */
     public static final boolean SHOW_STATISTICS = true;
+
+    
+    /**
+     * If true, and <code>SHOW_STATISTICS</code> is also true, the
+     * analysis will show A LOT OF statistics when it finishes.
+     * */
+    public static final boolean VERBOSE_STATISTICS = true;
     
     /**
      * If true, the analysis will show timings for all of its stages.
-     *
-     */
+     * */
     public static final boolean SHOW_TIMINGS = true;
 
     // add this many fields as estimated overhead. only used in statistics
@@ -996,7 +1000,8 @@ public class IncompatibilityAnalysis {
 
         I = new GenericMultiMap();
 
-        System.out.print("Computing initial Is");
+	if(SHOW_PROGRESS)
+	    System.out.print("Computing initial Is");
         
         for (Iterator it = allMethods.iterator(); it.hasNext(); ) {
             HMethod method = (HMethod) it.next();
@@ -1030,7 +1035,7 @@ public class IncompatibilityAnalysis {
     }
 
     private void computeInitialI(HMethod method) {
-        System.out.print(".");
+	if(SHOW_PROGRESS) System.out.print(".");
         MethodData md = (MethodData) mdCache.get(method);
         if (md == null || md.isNative) return;
 
@@ -1295,72 +1300,75 @@ public class IncompatibilityAnalysis {
 
     // This prints the statistics. Comment in/out what you want
     private void printStatistics() {
-        // show off some end-results
-        MethodData md = (MethodData) mdCache.get(entry);
 
-        //  System.out.println("An for entry: " + md.An);        
-        // System.out.println("Ae for entry: " + md.Ae);
+	if(VERBOSE_STATISTICS) {
+	    // show off some end-results
+	    MethodData md = (MethodData) mdCache.get(entry);
+	    
+	    // System.out.println("An for entry: " + md.An);        
+	    // System.out.println("Ae for entry: " + md.Ae);
+	    
+	    HashSet allocs = new HashSet(md.An);
+	    allocs.add(md.Ae);
 
-        HashSet allocs = new HashSet(md.An);
-        allocs.add(md.Ae);
+	    // System.out.println("Rn for entry: " + md.Rn);        
+	    // System.out.println("Re for entry: " + md.Re);
+	    
+	    // System.out.println("E for entry: " + md.E);
+	    
+	    // System.out.println("Liveness for entry: " + md.liveness);
+	    // System.out.println("aliases for entry: " + md.aliasedValues);
+	    
+	    // System.out.println("Incompatibility: " + I);
+	    
+	    
+	    // System.out.println("Classes: ");
+	    // System.out.println(classes);
+	    
+	    // System.out.println("selfIncompatible: " + selfIncompatible);
+	    
+	    // System.out.println("Legend: ");
+	    // printTempCollection(I.keySet());
+	    
+	    System.out.println("escape detail: ");
+	    printTempCollection(md.E);
+	    
+	    System.out.println("Self-incompatible detail: ");
+	    printTempCollection(selfIncompatible);
+	    
+	    
+	    System.out.println("Global type statistics: ");
+	    printTypeStatistics(globalAllocMap.keySet());
+	    
+	    System.out.println("Totally compatible type statistics: ");
+	    Collection totally = new HashSet(globalAllocMap.keySet());
+	    totally.removeAll(I.keySet());
+	    printTypeStatistics(totally);
+	    
+	    System.out.println("Class type statistics: ");
+	    int nclass = 0;
+	    for (Iterator it = classes.iterator(); it.hasNext(); ) {
+		Collection thisClass = (Collection) it.next();
+		nclass++;
+		
+		System.out.println(" *Class " + nclass);
+		
+		assert MultiMapUtils.intersect(thisClass,
+					       selfIncompatible).isEmpty();
 
-        // System.out.println("Rn for entry: " + md.Rn);        
-        // System.out.println("Re for entry: " + md.Re);
+		printTypeStatistics(thisClass);
+	    }
+
         
-        // System.out.println("E for entry: " + md.E);
+	    System.out.println("Self-incompatible type statistics: ");
+	    printTypeStatistics(selfIncompatible, globalAllocMap.keySet());
+	    
+	    System.out.println("Statics type statics: ");
+	    printTypeStatistics(selfCompatible, globalAllocMap.keySet());
+	}
 
-        // System.out.println("Liveness for entry: " + md.liveness);
-        // System.out.println("aliases for entry: " + md.aliasedValues);
-
-        // System.out.println("Incompatibility: " + I);
-
-
-        // System.out.println("Classes: ");
-        // System.out.println(classes);
-
-        // System.out.println("selfIncompatible: " + selfIncompatible);
-
-        // System.out.println("Legend: ");
-        // printTempCollection(I.keySet());
-        
-        System.out.println("escape detail: ");
-        printTempCollection(md.E);
-        
-        System.out.println("Self-incompatible detail: ");
-        printTempCollection(selfIncompatible);
-
-
-        System.out.println("Global type statistics: ");
-        printTypeStatistics(globalAllocMap.keySet());
-
-        System.out.println("Totally compatible type statistics: ");
-        Collection totally = new HashSet(globalAllocMap.keySet());
-        totally.removeAll(I.keySet());
-        printTypeStatistics(totally);
-
-        System.out.println("Class type statistics: ");
-        int nclass = 0;
-        for (Iterator it = classes.iterator(); it.hasNext(); ) {
-            Collection thisClass = (Collection) it.next();
-            nclass++;
-
-            System.out.println(" *Class " + nclass);
-
-            assert
-                MultiMapUtils.intersect(thisClass, selfIncompatible).isEmpty();
-
-            printTypeStatistics(thisClass);
-        }
-
-        
-        System.out.println("Self-incompatible type statistics: ");
-        printTypeStatistics(selfIncompatible, globalAllocMap.keySet());
-
-        System.out.println("Statics type statics: ");
-        printTypeStatistics(selfCompatible, globalAllocMap.keySet());
-
-
-        System.out.println("Statistics: ");
+	    
+	System.out.println("Statistics: ");
         System.out.println("   "+allMethods.size() + " methods analyzed;" +
                            sizeStatistics(allMethods, codeFactory) + " SSI; " +
                            sizeStatistics(allMethods, harpoon.IR.Bytecode.Code.codeFactory()) + " bytecodes");
@@ -1401,7 +1409,6 @@ public class IncompatibilityAnalysis {
 
 //         System.out.println("Iterators: ");
 //         printSubTypeStatistics(iterator);
-        
     }
 
     private void printSubTypeStatistics(HClass hclass) {

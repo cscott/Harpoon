@@ -46,7 +46,7 @@ import harpoon.Temp.Temp;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.8 2002-12-03 04:04:13 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.9 2002-12-05 00:04:16 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -144,8 +144,13 @@ public abstract class PreallocOpt {
 	if(as != null) {
 	    IAStatistics.printStatistics
 		(ia, as,
+		 cg.callableMethods(),
+		 hcf_nossa,
+		 /*
 		 AllocationStatistics.getAllocs(cg.callableMethods(),
-						hcf_nossa));
+						hcf_nossa),
+		 */
+		 linker);
 	}
 
 	// restore flag (the backend crashes without this ...)

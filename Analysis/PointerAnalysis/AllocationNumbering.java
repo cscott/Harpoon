@@ -25,7 +25,6 @@ import java.io.PrintWriter;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
 /**
  * An <code>AllocationNumbering</code> object assigns unique numbers
@@ -34,7 +33,7 @@ import java.io.UnsupportedEncodingException;
  * (e.g. <code>InstrumentAllocs</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationNumbering.java,v 1.8 2002-12-03 04:04:24 salcianu Exp $ */
+ * @version $Id: AllocationNumbering.java,v 1.9 2002-12-05 00:04:47 salcianu Exp $ */
 public class AllocationNumbering implements java.io.Serializable {
     private final CachingCodeFactory ccf;
     public  final Map alloc2int;
@@ -146,16 +145,11 @@ public class AllocationNumbering implements java.io.Serializable {
     }
 
     private static void writeString(PrintWriter pw, String str) {
-	try {
-	    pw.println("// " + str); // added for comment
-	    byte[] bytes = str.getBytes("UTF8");
-	    writeInt(pw, bytes.length);
-	    for(int i = 0; i < bytes.length; i++)
-		writeInt(pw, bytes[i]);
-	} catch (UnsupportedEncodingException e) {
-	    e.printStackTrace();
-	    System.exit(1);
-	}
+	pw.println("// " + str); // added as a comment for debugging
+	int length = str.length();
+	writeInt(pw, length);
+	for(int i = 0; i < length; i++)
+	    writeInt(pw, (int) str.charAt(i));
     }
 
     private static void writeInt(PrintWriter pw, int i) {

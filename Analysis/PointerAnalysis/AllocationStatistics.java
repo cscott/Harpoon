@@ -21,18 +21,18 @@ import java.util.Collection;
 import java.util.Arrays;
 import java.util.List;
 import java.util.LinkedList;
+import java.util.Collection;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 
 /**
  * <code>AllocationStatistics</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationStatistics.java,v 1.5 2002-12-03 04:04:24 salcianu Exp $
+ * @version $Id: AllocationStatistics.java,v 1.6 2002-12-05 00:04:47 salcianu Exp $
  */
 public class AllocationStatistics {
     
@@ -181,20 +181,13 @@ public class AllocationStatistics {
     }
 
     private static String readString(BufferedReader br) throws IOException {
-	try {
-	    br.readLine(); // eat the line added as comment
-	    int size = readInt(br);
-	    byte[] bytes = new byte[size];
-	    for(int i = 0; i < size; i++)
-		bytes[i] = (byte) readInt(br);
-	    String str = new String(bytes, "UTF8");
-	    System.out.println("READSTRING: " + str);
-	    return str;
-	} catch (UnsupportedEncodingException e) {
-	    e.printStackTrace();
-	    System.exit(1);
-	    return null; // never executed
-	}
+	br.readLine(); // eat the line added as comment
+	int size = readInt(br);
+	char[] chars = new char[size];
+	for(int i = 0; i < size; i++)
+	    chars[i] = (char) readInt(br);
+	String str = new String(chars);
+	return str;
     }
 
 
@@ -271,8 +264,7 @@ public class AllocationStatistics {
     /** Return a collection of all the allocation sites (quads) from
 	the methods from the set <code>methods</code>.
 
-	@param methods set of methods where we look for allocation
-	sites
+	@param methods methods where we look for allocation sites
 	@param hcf code factory that provides the code of the methods
 
 	@return collection of all allocation sites (quads) from
