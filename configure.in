@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.89 $)dnl
+AC_REVISION($Revision: 1.90 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -136,7 +136,7 @@ AM_CONDITIONAL(PRECISE_C_BACKEND, test $with_precise_c = yes)
 dnl process option for Role Inference support
 AC_MSG_CHECKING([for role inference support])
 AC_ARG_WITH(role-infer,
-[  --with-role-infer    incorporate Role Inference support],
+[  --with-role-infer       incorporate Role Inference support],
 with_role_infer="$withval", with_role_infer="no")
 case "$with_role_infer" in
 yes)	AC_MSG_RESULT([yes])
@@ -323,7 +323,7 @@ AM_CONDITIONAL(CLUSTERED_HEAPS, test $with_clustered_heaps = yes)
 dnl experimental support for event-driven code.
 AC_MSG_CHECKING([for experimental event-driven support])
 AC_ARG_WITH(event-driven,
-[  --with-event-driven	  build experimental event-driven support],
+[  --with-event-driven     build experimental event-driven support],
 with_event_driven=yes
 AC_DEFINE(WITH_EVENT_DRIVEN, 1,
     [Define if you want to build the experimental event-driven code support]),
@@ -334,7 +334,7 @@ AM_CONDITIONAL(EVENT_DRIVEN, test $with_event_driven = yes)
 dnl experimental support for camera code.
 AC_MSG_CHECKING([for experimental camera support])
 AC_ARG_WITH(camera,
-[  --with-camera	  build experimental camera support(see src/cam/README for licensing terms)], with_camera=yes, with_camera=no)
+[  --with-camera           build experimental camera support (see src/cam/README for licensing terms)], with_camera=yes, with_camera=no)
 AC_MSG_RESULT($with_camera)
 AM_CONDITIONAL(CAMERA, test "$with_camera" = "yes")
 if test "$with_camera" = "yes"; then
@@ -353,8 +353,8 @@ if test "$with_camera" = "yes"; then
 			AC_MSG_ERROR([Can't find a definition for ulong.])))
 fi
 
-dnl experimental support for initialization-check rewrite.
-AC_MSG_CHECKING([for experimental initialization transformation support])
+dnl support for initialization-check rewrite.
+AC_MSG_CHECKING([for initialization transformation support])
 AC_ARG_WITH(init-check,
 [  --without-init-check	  don't build experimental initializer trans. support],
 with_init_check=$withval, with_init_check=yes) # default is 'yes'
