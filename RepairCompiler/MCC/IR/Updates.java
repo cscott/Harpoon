@@ -3,23 +3,26 @@ package MCC.IR;
 class Updates {
     static public final int EXPR=0;
     static public final int POSITION=1;
-    static public final int ABSTRACT=2;
+    static public final int ACCESSPATH=2;
+    static public final int ABSTRACT=3;
+
     int type=-1;
     int rightposition;
     Expr rightexpr;
     Expr leftexpr;
     Opcode opcode;
     boolean negate=false;
+    ArrayAnalysis.AccessPath ap;
+    int fieldnum;
 
-    public String toString() {
-	if (type==EXPR)
-	    return leftexpr.name()+opcode.toString()+rightexpr.name();
-	else if (type==POSITION)
-	    return leftexpr.name()+opcode.toString()+"Position("+String.valueOf(rightposition)+")";
-	else if (type==ABSTRACT) {
-	    if (negate) return "!"+leftexpr.name();
-	    else return leftexpr.name();
-	} else throw new Error("Unrecognized type");
+    public Updates(Expr lexpr, int fieldnum, ArrayAnalysis.AccessPath ap, int slot) {
+	this.leftexpr=lexpr;
+	this.fieldnum=fieldnum;
+	this.ap=ap;
+	this.rightposition=slot;
+
+	this.type=Updates.ACCESSPATH;
+	this.opcode=Opcode.EQ;
     }
 
     public Updates(Expr lexpr, Expr rexpr, Opcode op, boolean negate) {
@@ -34,10 +37,29 @@ class Updates {
 	rightexpr=rexpr;
     }
 
-    boolean isGlobal() {
-	if (leftexpr instanceof VarExpr)
-	    return true;
-	else return false;
+    public Updates(Expr lexpr, Expr rexpr) {
+	if (!lexpr.isValue())
+	    System.out.println("Building invalid update");
+	leftexpr=lexpr;
+	rightexpr=rexpr;
+	type=Updates.EXPR;
+	opcode=Opcode.EQ;
+    }
+
+    public Updates(Expr lexpr, int rpos) {
+	if (!lexpr.isValue())
+	    System.out.println("Building invalid update");
+	leftexpr=lexpr;
+	rightposition=rpos;
+	type=Updates.POSITION;
+	opcode=Opcode.EQ;
+    }
+
+    public Updates(Expr lexpr,boolean negates) {
+	leftexpr=lexpr;
+	type=Updates.ABSTRACT;
+	negate=negates;
+	opcode=null;
     }
 
     VarDescriptor getVar() {
@@ -71,6 +93,12 @@ class Updates {
 	}
     }
 
+    boolean isGlobal() {
+	if (leftexpr instanceof VarExpr)
+	    return true;
+	else return false;
+    }
+
     boolean isField() {
 	if (leftexpr instanceof DotExpr) {
 	    assert ((DotExpr)leftexpr).getIndex()==null;
@@ -88,47 +116,48 @@ class Updates {
 	return opcode;
     }
 
-    public Updates(Expr lexpr, Expr rexpr) {
-	if (!lexpr.isValue())
-	    System.out.println("Building invalid update");
-	leftexpr=lexpr;
-	rightexpr=rexpr;
-	type=Updates.EXPR;
-	opcode=Opcode.EQ;
-    }
-
-    public Updates(Expr lexpr, int rpos) {
-	if (!lexpr.isValue())
-	    System.out.println("Building invalid update");
-	leftexpr=lexpr;
-	rightposition=rpos;
-	type=Updates.POSITION;
-	opcode=Opcode.EQ;
-    }
-
     boolean isAbstract() {
 	return type==Updates.ABSTRACT;
-    }
-
-    public Updates(Expr lexpr,boolean negates) {
-	leftexpr=lexpr;
-	type=Updates.ABSTRACT;
-	negate=negates;
-	opcode=null;
     }
 
     public int getType() {
 	return type;
     }
+
     public Expr getLeftExpr() {
 	return leftexpr;
     }
+
     public int getRightPos() {
-	assert type==Updates.POSITION;
+	assert type==Updates.POSITION||type==Updates.ACCESSPATH;
 	return rightposition;
     }
+
     public Expr getRightExpr() {
 	assert type==Updates.EXPR;
 	return rightexpr;
+    }
+
+    public int getFieldNum() {
+	assert type==Updates.ACCESSPATH;
+	return fieldnum;
+    }
+
+    public ArrayAnalysis.AccessPath getAccessPath() {
+	assert type==Updates.ACCESSPATH;
+	return ap;
+    }
+
+    public String toString() {
+	if (type==EXPR)
+	    return leftexpr.name()+opcode.toString()+rightexpr.name();
+	else if (type==POSITION)
+	    return leftexpr.name()+opcode.toString()+"Position("+String.valueOf(rightposition)+")";
+	else if (type==ACCESSPATH) {
+	    return leftexpr.name()+opcode.toString()+"Field("+fieldnum+","+ap+") of Position("+String.valueOf(rightposition)+")";
+	} else if (type==ABSTRACT) {
+	    if (negate) return "!"+leftexpr.name();
+	    else return leftexpr.name();
+	} else throw new Error("Unrecognized type");
     }
 }

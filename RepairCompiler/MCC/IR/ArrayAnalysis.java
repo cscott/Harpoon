@@ -53,7 +53,7 @@ public class ArrayAnalysis {
 		if (oldap==null) {
 		    set.put(si.getSet(),newap);
 		} else {
-		    if (!oldap.equals(newap))
+		    if (!oldap.equal(newap))
 			set.put(si.getSet(),AccessPath.NONE);
 		}
 	    } else if (inc instanceof RelationInclusion) {
@@ -64,7 +64,7 @@ public class ArrayAnalysis {
 		if (oldapl==null) {
 		    leftrelation.put(ri.getRelation(),newapl);
 		} else {
-		    if (!oldapl.equals(newapl))
+		    if (!oldapl.equal(newapl))
 			leftrelation.put(ri.getRelation(),AccessPath.NONE);
 		}
 
@@ -73,7 +73,7 @@ public class ArrayAnalysis {
 		if (oldapr==null) {
 		    rightrelation.put(ri.getRelation(),newapr);
 		} else {
-		    if (!oldapr.equals(newapr))
+		    if (!oldapr.equal(newapr))
 			rightrelation.put(ri.getRelation(),AccessPath.NONE);
 		}
 	    } else throw new Error();
@@ -83,12 +83,22 @@ public class ArrayAnalysis {
     public AccessPath analyzeExpr(Rule r,Expr e) {
 	Vector dotvector=new Vector();
 	Expr ptr=e;
+	while (ptr instanceof CastExpr)
+	    ptr=((CastExpr)ptr).getExpr();
+
 	while(true) {
-	    if (!(ptr instanceof DotExpr))
-		return AccessPath.NONE; /* Does something other than a dereference */
+	    /* Does something other than a dereference? */
+
+	    if (!(ptr instanceof DotExpr)) {
+		return AccessPath.NONE; 
+	    }
+
 	    DotExpr de=(DotExpr)ptr;
 	    dotvector.add(de);
 	    ptr=de.left;
+	    while (ptr instanceof CastExpr)
+		ptr=((CastExpr)ptr).getExpr();
+
 	    if (ptr instanceof VarExpr) {
 		VarExpr ve=(VarExpr)ptr;
 		VarDescriptor vd=ve.getVar();
@@ -105,13 +115,14 @@ public class ArrayAnalysis {
 			    if (size==1) {
 				ap.startSet(sd);
 				break;
-			    } else
+			    } else {
 				return AccessPath.NONE;
-			    
+			    }
 			}
 		    }
-		    if (!ap.setStart)
+		    if (!ap.setStart) {
 			return AccessPath.NONE;
+		    }
 		}
 		/* Starting point finished - parse dereferences */
 		boolean foundarray=false;
@@ -120,11 +131,13 @@ public class ArrayAnalysis {
 		    FieldDescriptor fd=de2.getField();
 		    if (fd instanceof ArrayDescriptor) {
 			foundarray=true;
-			if (((ArrayDescriptor)fd).getField().getPtr())
+			if (((ArrayDescriptor)fd).getField().getPtr()) {
 			    return AccessPath.NONE;
+			}
 		    } else {
-			if (foundarray&&fd.getPtr())
+			if (foundarray&&fd.getPtr()) {
 			    return AccessPath.NONE;
+			}
 		    }
 		    ap.addField(fd);
 		}
@@ -143,6 +156,7 @@ public class ArrayAnalysis {
 	SetDescriptor startset;
 	VarDescriptor startvar;
 
+
 	public void startSet(SetDescriptor sd) {
 	    this.startset=sd;
 	    setStart=true;
@@ -158,6 +172,28 @@ public class ArrayAnalysis {
 	public void addField(FieldDescriptor fd) {
 	    path.add(fd);
 	}
+
+	public int numFields() {
+	    return path.size();
+	}
+
+	public FieldDescriptor getField(int i) {
+	    return (FieldDescriptor)path.get(i);
+	}
+
+	public String toString() {
+	    String st="";
+	    if (setStart)
+		st+=this.startset;
+	    else
+		st+=this.startvar;
+
+	    for(int i=0;i<numFields();i++) {
+		st+="."+getField(i);
+	    }
+	    return st;
+	}
+
 	public boolean equal(AccessPath ap) {
 	    if (this==ap)
 		return true;

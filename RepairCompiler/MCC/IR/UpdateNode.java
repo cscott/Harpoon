@@ -340,6 +340,7 @@ class UpdateNode {
 		u.getRightExpr().generate(cr,right);
 		break;
 	    case Updates.POSITION:
+	    case Updates.ACCESSPATH:
 		if (u.getRightPos()==0)
 		    cr.outputline("int "+right.getSafeSymbol()+"="+slot0+";");
 		else if (u.getRightPos()==1)
@@ -350,6 +351,12 @@ class UpdateNode {
 		break;
 	    default:
 		throw new Error();
+	    }
+
+	    if (u.getType()==Updates.ACCESSPATH) {
+		VarDescriptor newright=VarDescriptor.makeNew("right");
+		/* Need to do the modulo computation here...FIXME */
+		right=newright;
 	    }
 	    VarDescriptor left=VarDescriptor.makeNew("left");
 	    u.getLeftExpr().generate(cr,left);

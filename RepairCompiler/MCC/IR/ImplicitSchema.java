@@ -118,14 +118,12 @@ public class ImplicitSchema {
 	SetInclusion sinc2=(SetInclusion)inc2;
 	if (sinc2.getSet()!=sd)
 	    return false;
-	if (r1.numQuantifiers()!=r2.numQuantifiers())
-	    return false; 
+
 	/* Construct a mapping between quantifiers */
 	int[] mapping=new int[r2.numQuantifiers()];
 	HashMap map=new HashMap();
 	for(int i=0;i<r1.numQuantifiers();i++) {
 	    Quantifier q1=r1.getQuantifier(i);
-	    boolean foundmapping=false;
 	    for (int j=0;j<r2.numQuantifiers();j++) {
 		if (mapping[j]==1)
 		    continue; /* Its already used */
@@ -134,7 +132,6 @@ public class ImplicitSchema {
 		    ((SetQuantifier)q1).getSet()==((SetQuantifier)q2).getSet()) {
 		    mapping[j]=1;
 		    map.put(((SetQuantifier)q1).getVar(),((SetQuantifier)q2).getVar());
-		    foundmapping=true;
 		    break;
 		}
 		if (q1 instanceof RelationQuantifier && q2 instanceof RelationQuantifier &&
@@ -142,17 +139,28 @@ public class ImplicitSchema {
 		    mapping[j]=1;
 		    map.put(((RelationQuantifier)q1).x,((RelationQuantifier)q2).x);
 		    map.put(((RelationQuantifier)q1).y,((RelationQuantifier)q2).y);
-		    foundmapping=true;
 		    break;
 		}
+		if (q1 instanceof ForQuantifier && q2 instanceof ForQuantifier &&
+		    ((ForQuantifier)q1).lower.equals(map,((ForQuantifier)q2).lower)&&
+		    ((ForQuantifier)q1).upper.equals(map,((ForQuantifier)q2).upper)) {
+		    mapping[j]=1;
+		    map.put(((ForQuantifier)q1).getVar(),((ForQuantifier)q2).getVar());
+		}
 	    }
-	    if (!foundmapping)
+	}
+
+	/* Make sure all bindings in the set rule are bound */
+	for (int i=0;i<r2.numQuantifiers();i++) {
+	    if (mapping[i]!=1)
 		return false;
 	}
+
 	/* Built mapping */
 	Expr sexpr=sinc2.getExpr();
 	if (!expr.equals(map,sexpr))
 	    return false;  /* This rule doesn't add the right thing */
+
 	DNFRule drule1=r1.getDNFGuardExpr();
 	DNFRule drule2=r2.getDNFGuardExpr();
 	for (int i=0;i<drule1.size();i++) {
@@ -161,7 +169,7 @@ public class ImplicitSchema {
 	    for (int j=0;j<drule2.size();j++) {
 		RuleConjunction rconj2=drule2.get(j);
 		/* Need to show than rconj2 is true if rconj1 is true */
-		if (implication(map,rconj1,rconj2)) {
+		if (implication(map,rconj1,rconj2,sinc2)) {
 		    foundmatch=true;
 		    break;
 		}
@@ -172,10 +180,18 @@ public class ImplicitSchema {
 	return true;
     }
 
-    boolean implication(HashMap map, RuleConjunction rc1, RuleConjunction rc2) {
+    boolean implication(HashMap map, RuleConjunction rc1, RuleConjunction rc2,SetInclusion si) {
 	for(int i=0;i<rc2.size();i++) {
 	    /* Check that rc1 has all predicates that rc2 has */
 	    DNFExpr de2=rc2.get(i);
+	    /* Predicates for objects that aren't in set */
+	    if (de2.getNegation()&&
+		(de2.getExpr() instanceof ElementOfExpr)) {
+		ElementOfExpr eoe=(ElementOfExpr)de2.getExpr();
+		if (si.getSet().isSubset(eoe.set)&&
+		    si.getExpr().equals(null,eoe.element))
+		    continue; /* This predicate isn't a problem */
+	    }
 	    boolean havematch=false;
 	    for(int j=0;j<rc1.size();j++) {
 		DNFExpr de1=rc1.get(i);

@@ -29,6 +29,7 @@ public class Termination {
     ConstraintDependence constraintdependence;
     ExactSize exactsize;
     ArrayAnalysis arrayanalysis;
+    Sources sources;
 
     public Termination(State state) {
 	this.state=state;
@@ -48,13 +49,14 @@ public class Termination {
 	predtoabstractmap=new Hashtable();
 	if (!Compiler.REPAIR)
 	    return;
-
+	
 
 	for(int i=0;i<state.vRules.size();i++)
 	    System.out.println(state.vRules.get(i));
 	for(int i=0;i<state.vConstraints.size();i++)
 	    System.out.println(state.vConstraints.get(i));
 
+	sources=new Sources(state);
 	maxsize=new ComputeMaxSize(state);
 	exactsize=new ExactSize(state);
 	arrayanalysis=new ArrayAnalysis(state,this);
@@ -119,9 +121,11 @@ public class Termination {
     }
 
 
-    /** This method generates a node for each conjunction in the DNF form of each constraint. 
-     * It also converts the quantifiers into conjunctions also - constraints can be satisfied by
-     * removing items from the sets and relations they are quantified over */
+    /** This method generates a node for each conjunction in the DNF
+     * form of each constraint.  It also converts the quantifiers into
+     * conjunctions also - constraints can be satisfied by removing
+     * items from the sets and relations they are quantified over */
+
     void generateconjunctionnodes() {
 	Vector constraints=state.vConstraints;
 	// Constructs conjunction nodes
@@ -186,6 +190,40 @@ public class Termination {
 	    GraphNode gn=(GraphNode)updateiterator.next();
 	    TermNode tn=(TermNode)gn.getOwner();
 	    MultUpdateNode mun=tn.getUpdate();
+	    for(int i=0;i<mun.numUpdates();i++) {
+		UpdateNode un=mun.getUpdate(i);
+		for(int j=0;j<mun.numUpdates();j++) {
+		    Updates u=un.getUpdate(j);
+		    if (u.getType()==Updates.ABSTRACT) {
+			Expr e=u.getLeftExpr();
+			boolean negated=u.negate;
+			if (e instanceof TupleOfExpr) {
+			    TupleOfExpr toe=(TupleOfExpr)e;
+			    if (negated) {
+				GraphNode agn=(GraphNode)abstractremove.get(toe.relation);
+				GraphNode.Edge edge=new GraphNode.Edge("requires",agn);
+				gn.addEdge(edge);
+			    } else {
+				GraphNode agn=(GraphNode)abstractadd.get(toe.relation);
+				GraphNode.Edge edge=new GraphNode.Edge("requires",agn);
+				gn.addEdge(edge);
+			    }
+			} else if (e instanceof ElementOfExpr) {
+			    ElementOfExpr eoe=(ElementOfExpr)e;
+			    if (negated) {
+				GraphNode agn=(GraphNode)abstractremove.get(eoe.set);
+				GraphNode.Edge edge=new GraphNode.Edge("requires",agn);
+				gn.addEdge(edge);
+			    } else {
+				GraphNode agn=(GraphNode)abstractadd.get(eoe.set);
+				GraphNode.Edge edge=new GraphNode.Edge("requires",agn);
+				gn.addEdge(edge);
+			    }
+			} else throw new Error("Unrecognized Abstract Update");
+		    }
+		}
+	    }
+
 	    /* Cycle through the rules to look for possible conflicts */
 	    for(int i=0;i<state.vRules.size();i++) {
 		Rule r=(Rule) state.vRules.get(i);  
@@ -235,6 +273,37 @@ public class Termination {
 		    gn.addEdge(e);
 		}
 	    }
+	}
+    }
+
+    void generatescopenodes() {
+	for(int i=0;i<state.vRules.size();i++) {
+	    Rule r=(Rule) state.vRules.get(i);
+	    ScopeNode satisfy=new ScopeNode(r,true);
+	    TermNode tnsatisfy=new TermNode(satisfy);
+	    GraphNode gnsatisfy=new GraphNode("SatisfyRule"+i,tnsatisfy);
+	    ConsequenceNode cnsatisfy=new ConsequenceNode();
+	    TermNode ctnsatisfy=new TermNode(cnsatisfy);
+	    GraphNode cgnsatisfy=new GraphNode("ConseqSatisfyRule"+i,ctnsatisfy);
+	    consequence.put(satisfy,cgnsatisfy);
+	    GraphNode.Edge esat=new GraphNode.Edge("consequencesatisfy"+i,cgnsatisfy);
+	    gnsatisfy.addEdge(esat);
+	    consequencenodes.add(cgnsatisfy);
+	    scopesatisfy.put(r,gnsatisfy);
+	    scopenodes.add(gnsatisfy);
+
+	    ScopeNode falsify=new ScopeNode(r,false);
+	    TermNode tnfalsify=new TermNode(falsify);
+	    GraphNode gnfalsify=new GraphNode("FalsifyRule"+i,tnfalsify);
+	    ConsequenceNode cnfalsify=new ConsequenceNode();
+	    TermNode ctnfalsify=new TermNode(cnfalsify);
+	    GraphNode cgnfalsify=new GraphNode("ConseqFalsifyRule"+i,ctnfalsify);
+	    consequence.put(falsify,cgnfalsify);
+	    GraphNode.Edge efals=new GraphNode.Edge("consequencefalsify"+i,cgnfalsify);
+	    gnfalsify.addEdge(efals);
+	    consequencenodes.add(cgnfalsify);
+	    scopefalsify.put(r,gnfalsify);
+	    scopenodes.add(gnfalsify);
 	}
     }
     
@@ -310,10 +379,8 @@ public class Termination {
 	for(int i=0;i<setdescriptors.size();i++) {
 	    SetDescriptor sd=(SetDescriptor)setdescriptors.get(i);
 
-	    /* XXXXXXX: Not sure what to do here */
 	    VarExpr ve=new VarExpr("DUMMY");
 	    InclusionPredicate ip=new InclusionPredicate(ve,new SetExpr(sd));
-	    
 	    DNFPredicate tp=new DNFPredicate(false,ip);
 	    AbstractRepair ar=new AbstractRepair(tp, AbstractRepair.ADDTOSET, sd);
 	    TermNode tn=new TermNode(ar);
@@ -340,8 +407,6 @@ public class Termination {
 	Vector relationdescriptors=state.stRelations.getAllDescriptors();
 	for(int i=0;i<relationdescriptors.size();i++) {
 	    RelationDescriptor rd=(RelationDescriptor)relationdescriptors.get(i);
-
-	    /* XXXXXXX: Not sure what to do here */
 	    VarDescriptor vd1=new VarDescriptor("DUMMY1");
 	    VarExpr ve2=new VarExpr("DUMMY2");
 
@@ -369,7 +434,6 @@ public class Termination {
 	    abstractrepairadd.add(gn2);
 	    abstractremove.put(rd,gn2);
 	}
-	
     }
 
     int compensationcount=0;
@@ -377,11 +441,7 @@ public class Termination {
 	for(int i=0;i<state.vRules.size();i++) {
 	    Rule r=(Rule) state.vRules.get(i);
 	    Vector possiblerules=new Vector();
-	    /* Construct bindings */
-	    /* No need to construct bindings on remove
-	       Vector bindings=new Vector();
-	       constructbindings(bindings, r,true);
-	    */
+
 	    for(int j=0;j<(r.numQuantifiers()+r.getDNFNegGuardExpr().size());j++) {
 		GraphNode gn=(GraphNode)scopesatisfy.get(r);
 		TermNode tn=(TermNode) gn.getOwner();
@@ -390,8 +450,7 @@ public class Termination {
 		TermNode tn2=new TermNode(mun);
 		GraphNode gn2=new GraphNode("CompRem"+compensationcount,tn2);
 		UpdateNode un=new UpdateNode(r);
-		//		un.addBindings(bindings);
-		// Not necessary
+
 		if (j<r.numQuantifiers()) {
 		    /* Remove quantifier */
 		    Quantifier q=r.getQuantifier(j);
@@ -425,6 +484,7 @@ public class Termination {
 			continue;
 		    }
 		} else {
+		    /* Negate conjunction */
 		    int c=j-r.numQuantifiers();
 		    if (!processconjunction(un,r.getDNFNegGuardExpr().get(c))) {
 			continue;
@@ -434,7 +494,6 @@ public class Termination {
 		    continue;
 		
 		mun.addUpdate(un);
-
 		GraphNode.Edge e=new GraphNode.Edge("abstract"+compensationcount,gn2);
 		compensationcount++;
 		gn.addEdge(e);
@@ -466,8 +525,14 @@ public class Termination {
 	}
     }
 
+
+    /** This method generates concrete data structure updates which
+     * remove an object (or tuple) from a set (or relation).*/
+
     int removefromcount=0;
     void generateremovefromsetrelation(GraphNode gn,AbstractRepair ar) {
+	/* Construct the set of all rules which could add something to the given set or relation */
+
 	Vector possiblerules=new Vector();
 	for(int i=0;i<state.vRules.size();i++) {
 	    Rule r=(Rule) state.vRules.get(i);
@@ -480,6 +545,8 @@ public class Termination {
 	}
 	if (possiblerules.size()==0)
 	    return;
+	
+	/* Loop through different ways of falsifying each of these rules */
 	int[] count=new int[possiblerules.size()];
 	while(remains(count,possiblerules,true)) {
 	    MultUpdateNode mun=new MultUpdateNode(ar,MultUpdateNode.REMOVE);
@@ -490,11 +557,7 @@ public class Termination {
 	    for(int i=0;i<possiblerules.size();i++) {
 		Rule r=(Rule)possiblerules.get(i);
 		UpdateNode un=new UpdateNode(r);
-		/* Construct bindings */
-		/* No Need to construct bindings on remove
-		   Vector bindings=new Vector();
-		   constructbindings(bindings, r,true);
-		  un.addBindings(bindings);*/
+
 		if (count[i]<r.numQuantifiers()) {
 		    /* Remove quantifier */
 		    Quantifier q=r.getQuantifier(count[i]);
@@ -547,6 +610,8 @@ public class Termination {
 	}
     }
 
+    /** This method increments to the next possibility. */
+
     static private void increment(int count[], Vector rules,boolean isremove) {
 	count[0]++;
 	for(int i=0;i<(rules.size()-1);i++) {
@@ -558,6 +623,9 @@ public class Termination {
 	}
     }
 
+
+    /** This method test if there remain any possibilities to loop
+     * through. */
     static private boolean remains(int count[], Vector rules, boolean isremove) {
 	for(int i=0;i<rules.size();i++) {
 	    int num=isremove?(((Rule)rules.get(i)).numQuantifiers()+(((Rule)rules.get(i)).getDNFNegGuardExpr().size())):((Rule)rules.get(i)).getDNFGuardExpr().size();
@@ -570,6 +638,7 @@ public class Termination {
 
     /** This method generates data structure updates to implement the
      * 	abstract atomic modification specified by ar. */
+
     int modifycount=0;
     void generatemodifyrelation(GraphNode gn, AbstractRepair ar) {
 	RelationDescriptor rd=(RelationDescriptor)ar.getDescriptor();
@@ -582,7 +651,7 @@ public class Termination {
 	else 
 	    rightindex=2;
 
-
+	// construct set of possible rules
 	Vector possiblerules=new Vector();
 	for(int i=0;i<state.vRules.size();i++) {
 	    Rule r=(Rule) state.vRules.get(i);
@@ -592,6 +661,8 @@ public class Termination {
 	}
 	if (possiblerules.size()==0)
 	    return;
+
+	// increment through this set
 	int[] count=new int[possiblerules.size()];
 	while(remains(count,possiblerules,false)) {
 	    MultUpdateNode mun=new MultUpdateNode(ar,MultUpdateNode.MODIFY);
@@ -602,7 +673,6 @@ public class Termination {
 	    for(int i=0;i<possiblerules.size();i++) {
 		Rule r=(Rule)possiblerules.get(i);
 		UpdateNode un=new UpdateNode(r);
-		/* No Need to construct bindings on modify */
 		
 		int c=count[i];
 		if (!processconjunction(un,r.getDNFGuardExpr().get(c))) {
@@ -653,6 +723,175 @@ public class Termination {
 	    increment(count,possiblerules,false);
 	}
     }
+
+    /** Generate concrete data structure update to add an object(or
+     * tuple) to a set (or relation). */
+
+    static int addtocount=0;
+    void generateaddtosetrelation(GraphNode gn, AbstractRepair ar) {
+	for(int i=0;i<state.vRules.size();i++) {
+	    Rule r=(Rule) state.vRules.get(i);
+	    /* See if this is a good rule*/
+	    if ((r.getInclusion() instanceof SetInclusion&&
+		 ar.getDescriptor()==((SetInclusion)r.getInclusion()).getSet())||
+		(r.getInclusion() instanceof RelationInclusion&&
+		 ar.getDescriptor()==((RelationInclusion)r.getInclusion()).getRelation())) {
+		
+		/* First solve for quantifiers */
+		Vector bindings=new Vector();
+		/* Construct bindings */
+		if (!constructbindings(bindings,r,false))
+		    continue;
+		//Generate add instruction
+		DNFRule dnfrule=r.getDNFGuardExpr();
+		for(int j=0;j<dnfrule.size();j++) {
+		    Inclusion inc=r.getInclusion();
+		    UpdateNode un=new UpdateNode(r);
+		    un.addBindings(bindings);
+		    /* Now build update for tuple/set inclusion condition */
+		    if(inc instanceof SetInclusion) {
+			SetInclusion si=(SetInclusion)inc;
+			if (!(si.elementexpr instanceof VarExpr)) {
+			    if (si.elementexpr.isValue()) {
+				Updates up=new Updates(si.elementexpr,0);
+				un.addUpdate(up);
+			    } else {
+				/* We're an add to set*/
+				System.out.println("Rule: "+r);
+				ArrayAnalysis.AccessPath rap=arrayanalysis.analyzeExpr(r,si.elementexpr);
+				System.out.println("Attempting perform array add");
+				SetDescriptor set=sources.setSource(si.getSet())?
+				    sources.getSourceSet(si.getSet()):null;
+				if (set==null)
+				    continue;
+				System.out.println("Non-null source set");
+				ArrayAnalysis.AccessPath ap=arrayanalysis.getSet(set);
+				if (rap==ArrayAnalysis.AccessPath.NONE)
+				    continue;
+				System.out.println("A");
+				if (!rap.equal(ap))
+				    continue;
+				System.out.println("B");
+				if (!constructarrayupdate(un, si.elementexpr, rap, 0))
+				    continue;
+				System.out.println("C");
+			    }
+			} else {
+			    VarDescriptor vd=((VarExpr)si.elementexpr).getVar();
+			    if (vd.isGlobal()) {
+				Updates up=new Updates(si.elementexpr,0);
+				un.addUpdate(up);
+			    }
+			}
+		    } else if (inc instanceof RelationInclusion) {
+			RelationInclusion ri=(RelationInclusion)inc;
+			if (!(ri.getLeftExpr() instanceof VarExpr)) {
+			    if (ri.getLeftExpr().isValue()) {
+				Updates up=new Updates(ri.getLeftExpr(),0);
+				un.addUpdate(up);
+			    } else {
+				/* We don't handly relation modifies */
+				if (ar.getType()==AbstractRepair.MODIFYRELATION)
+				    continue;
+				/* We're an add to relation*/
+				ArrayAnalysis.AccessPath rap=arrayanalysis.analyzeExpr(r,ri.getLeftExpr());
+				SetDescriptor set=sources.relsetSource(ri.getRelation(),true /* Domain*/)?
+				    sources.relgetSourceSet(ri.getRelation(),true):null;
+				if (set==null)
+				    continue;
+				ArrayAnalysis.AccessPath ap=arrayanalysis.getSet(set);
+				
+				if (rap==ArrayAnalysis.AccessPath.NONE||
+				    !rap.equal(ap)||
+				    !constructarrayupdate(un, ri.getLeftExpr(), rap, 0))
+				    continue;
+			    }
+			} else {
+			    VarDescriptor vd=((VarExpr)ri.getLeftExpr()).getVar();
+			    if (vd.isGlobal()) {
+				Updates up=new Updates(ri.getLeftExpr(),0);
+				un.addUpdate(up);
+			    }
+     			}
+			if (!(ri.getRightExpr() instanceof VarExpr)) {
+			    if (ri.getRightExpr().isValue()) {
+				Updates up=new Updates(ri.getRightExpr(),1);
+				un.addUpdate(up);
+			    } else {
+				/* We don't handly relation modifies */
+				if (ar.getType()==AbstractRepair.MODIFYRELATION)
+				    continue;
+				/* We're an add to relation*/
+				ArrayAnalysis.AccessPath rap=arrayanalysis.analyzeExpr(r,ri.getRightExpr());
+				SetDescriptor set=sources.relsetSource(ri.getRelation(),false /* Range*/)?
+				    sources.relgetSourceSet(ri.getRelation(),false):null;
+				if (set==null)
+				    continue;
+				ArrayAnalysis.AccessPath ap=arrayanalysis.getSet(set);
+				
+				if (rap==ArrayAnalysis.AccessPath.NONE||
+				    !rap.equal(ap)||
+				    !constructarrayupdate(un, ri.getRightExpr(), rap, 1))
+				    continue;
+			    }
+			} else {
+			    VarDescriptor vd=((VarExpr)ri.getRightExpr()).getVar();
+			    if (vd.isGlobal()) {
+				Updates up=new Updates(ri.getRightExpr(),1);
+				un.addUpdate(up);
+			    }
+			}
+		    }
+		    //Finally build necessary updates to satisfy conjunction
+		    RuleConjunction ruleconj=dnfrule.get(j);
+
+		    /* Add in updates for quantifiers */
+		    MultUpdateNode mun=new MultUpdateNode(ar,MultUpdateNode.ADD);
+		    TermNode tn=new TermNode(mun);
+		    GraphNode gn2=new GraphNode("UpdateAdd"+addtocount,tn);
+
+		    if (processquantifiers(gn2,un, r)&&
+			processconjunction(un,ruleconj)&&
+			un.checkupdates()) {
+			mun.addUpdate(un);
+			GraphNode.Edge e=new GraphNode.Edge("abstract"+addtocount,gn2);
+			addtocount++;
+			gn.addEdge(e);
+			updatenodes.add(gn2);
+		    }
+		}
+	    }
+	}
+    }
+
+    boolean constructarrayupdate(UpdateNode un, Expr lexpr, ArrayAnalysis.AccessPath ap, int slotnumber) {
+	System.out.println("Constructing array update");
+	Expr e=null;
+	for (int i=ap.numFields()-1;i>=0;i--) {
+	    if (e==null)
+		e=lexpr;
+	    else 
+		e=((DotExpr)e).getExpr();
+
+	    while (e instanceof CastExpr)
+		e=((CastExpr)e).getExpr();
+
+	    DotExpr de=(DotExpr)e;
+	    FieldDescriptor fd=ap.getField(i);
+	    if (fd instanceof ArrayDescriptor) {
+		// We have an ArrayDescriptor!
+		Expr index=de.getIndex();
+		if (!index.isValue()) {/* Not assignable */
+		    System.out.println("ERROR:Index is assignable");
+		    return false;
+		}
+		Updates updates=new Updates(index,i,ap,slotnumber);
+		un.addUpdate(updates);
+	    }
+	}
+	return true;
+    }
+
     /** This method constructs bindings for an update using rule
      * r. The boolean flag isremoval indicates that the update
      * performs a removal.  The function returns true if it is able to
@@ -763,94 +1002,6 @@ public class Termination {
 	}
 	return goodupdate;
     }
-
-    static int addtocount=0;
-    void generateaddtosetrelation(GraphNode gn, AbstractRepair ar) {
-	for(int i=0;i<state.vRules.size();i++) {
-	    Rule r=(Rule) state.vRules.get(i);
-	    /* See if this is a good rule*/
-	    if ((r.getInclusion() instanceof SetInclusion&&
-		 ar.getDescriptor()==((SetInclusion)r.getInclusion()).getSet())||
-		(r.getInclusion() instanceof RelationInclusion&&
-		 ar.getDescriptor()==((RelationInclusion)r.getInclusion()).getRelation())) {
-		
-		/* First solve for quantifiers */
-		Vector bindings=new Vector();
-		/* Construct bindings */
-		if (!constructbindings(bindings,r,false))
-		    continue;
-		//Generate add instruction
-		DNFRule dnfrule=r.getDNFGuardExpr();
-		for(int j=0;j<dnfrule.size();j++) {
-		    Inclusion inc=r.getInclusion();
-		    UpdateNode un=new UpdateNode(r);
-		    un.addBindings(bindings);
-		    /* Now build update for tuple/set inclusion condition */
-		    if(inc instanceof SetInclusion) {
-			SetInclusion si=(SetInclusion)inc;
-			if (!(si.elementexpr instanceof VarExpr)) {
-			    if (si.elementexpr.isValue()) {
-				Updates up=new Updates(si.elementexpr,0);
-				un.addUpdate(up);
-			    } else
-				continue;
-			} else {
-			    VarDescriptor vd=((VarExpr)si.elementexpr).getVar();
-			    if (vd.isGlobal()) {
-				Updates up=new Updates(si.elementexpr,0);
-				un.addUpdate(up);
-			    }
-			}
-		    } else if (inc instanceof RelationInclusion) {
-			RelationInclusion ri=(RelationInclusion)inc;
-			if (!(ri.getLeftExpr() instanceof VarExpr)) {
-			    if (ri.getLeftExpr().isValue()) {
-				Updates up=new Updates(ri.getLeftExpr(),0);
-				un.addUpdate(up);
-			    } else
-				continue;
-			} else {
-			    VarDescriptor vd=((VarExpr)ri.getLeftExpr()).getVar();
-			    if (vd.isGlobal()) {
-				Updates up=new Updates(ri.getLeftExpr(),0);
-				un.addUpdate(up);
-			    }
-     			}
-			if (!(ri.getRightExpr() instanceof VarExpr)) {
-			    if (ri.getRightExpr().isValue()) {
-				Updates up=new Updates(ri.getRightExpr(),1);
-				un.addUpdate(up);
-			    } else
-				continue;
-			} else {
-			    VarDescriptor vd=((VarExpr)ri.getRightExpr()).getVar();
-			    if (vd.isGlobal()) {
-				Updates up=new Updates(ri.getRightExpr(),1);
-				un.addUpdate(up);
-			    }
-			}
-		    }
-		    //Finally build necessary updates to satisfy conjunction
-		    RuleConjunction ruleconj=dnfrule.get(j);
-
-		    /* Add in updates for quantifiers */
-		    MultUpdateNode mun=new MultUpdateNode(ar,MultUpdateNode.ADD);
-		    TermNode tn=new TermNode(mun);
-		    GraphNode gn2=new GraphNode("UpdateAdd"+addtocount,tn);
-
-		    if (processquantifiers(gn2,un, r)&&
-			processconjunction(un,ruleconj)&&
-			un.checkupdates()) {
-			mun.addUpdate(un);
-			GraphNode.Edge e=new GraphNode.Edge("abstract"+addtocount,gn2);
-			addtocount++;
-			gn.addEdge(e);
-			updatenodes.add(gn2);
-		    }
-		}
-	    }
-	}
-    }
     
     /** Adds updates that add an item to the appropriate set or
      * relation quantified over by the model definition rule.. */
@@ -900,6 +1051,9 @@ public class Termination {
 	return true;
     }
 
+    /** This method generates the necessary updates to satisfy the
+     * conjunction ruleconj. */
+
     boolean  processconjunction(UpdateNode un,RuleConjunction ruleconj){
 	boolean okay=true;
 	for(int k=0;k<ruleconj.size();k++) {
@@ -930,36 +1084,5 @@ public class Termination {
 	    }
 	}
 	return okay;
-    }
-
-    void generatescopenodes() {
-	for(int i=0;i<state.vRules.size();i++) {
-	    Rule r=(Rule) state.vRules.get(i);
-	    ScopeNode satisfy=new ScopeNode(r,true);
-	    TermNode tnsatisfy=new TermNode(satisfy);
-	    GraphNode gnsatisfy=new GraphNode("SatisfyRule"+i,tnsatisfy);
-	    ConsequenceNode cnsatisfy=new ConsequenceNode();
-	    TermNode ctnsatisfy=new TermNode(cnsatisfy);
-	    GraphNode cgnsatisfy=new GraphNode("ConseqSatisfyRule"+i,ctnsatisfy);
-	    consequence.put(satisfy,cgnsatisfy);
-	    GraphNode.Edge esat=new GraphNode.Edge("consequencesatisfy"+i,cgnsatisfy);
-	    gnsatisfy.addEdge(esat);
-	    consequencenodes.add(cgnsatisfy);
-	    scopesatisfy.put(r,gnsatisfy);
-	    scopenodes.add(gnsatisfy);
-
-	    ScopeNode falsify=new ScopeNode(r,false);
-	    TermNode tnfalsify=new TermNode(falsify);
-	    GraphNode gnfalsify=new GraphNode("FalsifyRule"+i,tnfalsify);
-	    ConsequenceNode cnfalsify=new ConsequenceNode();
-	    TermNode ctnfalsify=new TermNode(cnfalsify);
-	    GraphNode cgnfalsify=new GraphNode("ConseqFalsifyRule"+i,ctnfalsify);
-	    consequence.put(falsify,cgnfalsify);
-	    GraphNode.Edge efals=new GraphNode.Edge("consequencefalsify"+i,cgnfalsify);
-	    gnfalsify.addEdge(efals);
-	    consequencenodes.add(cgnfalsify);
-	    scopefalsify.put(r,gnfalsify);
-	    scopenodes.add(gnfalsify);
-	}
     }
 }

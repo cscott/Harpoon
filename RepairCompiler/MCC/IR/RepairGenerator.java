@@ -25,7 +25,6 @@ public class RepairGenerator {
     HashSet togenerate;
     static boolean DEBUG=false;
     Cost cost;
-    Sources sources;
     ModelRuleDependence mrd;
 
     public RepairGenerator(State state, Termination t) {
@@ -40,7 +39,6 @@ public class RepairGenerator {
 	    togenerate.removeAll(removed);
         GraphNode.computeclosure(togenerate,removed);
 	cost=new Cost();
-	sources=new Sources(state);
 	mrd=ModelRuleDependence.doAnalysis(state);
 	Repair.repairgenerator=this;
     }
@@ -1103,9 +1101,9 @@ public class RepairGenerator {
 	    if (d instanceof RelationDescriptor) {
 		VarDescriptor otherside=((ImageSetExpr)((SizeofExpr)((OpExpr)ep.expr).left).setexpr).vd;
 		RelationDescriptor rd=(RelationDescriptor)d;
-		if (sources.relsetSource(rd,!ep.inverted())) {
+		if (termination.sources.relsetSource(rd,!ep.inverted())) {
 		    /* Set Source */
-		    SetDescriptor sd=sources.relgetSourceSet(rd,!ep.inverted());
+		    SetDescriptor sd=termination.sources.relgetSourceSet(rd,!ep.inverted());
 		    VarDescriptor iterator=VarDescriptor.makeNew("iterator");
 		    cr.outputline(sd.getType().getGenerateType().getSafeSymbol() +" "+newobject.getSafeSymbol()+";");
 		    cr.outputline("for("+iterator.getSafeSymbol()+"="+sd.getSafeSymbol()+"_hash->iterator();"+iterator.getSafeSymbol()+".hasNext();)");
@@ -1118,9 +1116,9 @@ public class RepairGenerator {
 		    cr.outputline(newobject.getSafeSymbol()+"="+iterator.getSafeSymbol()+".key();");
 		    cr.outputline(iterator.getSafeSymbol()+"->next();");
 		    cr.endblock();
-		} else if (sources.relallocSource(rd,!ep.inverted())) {
+		} else if (termination.sources.relallocSource(rd,!ep.inverted())) {
 		    /* Allocation Source*/
-		    sources.relgenerateSourceAlloc(cr,newobject,rd,!ep.inverted());
+		    termination.sources.relgenerateSourceAlloc(cr,newobject,rd,!ep.inverted());
 		} else throw new Error("No source for adding to Relation");
 		if (ep.inverted()) {
 		    boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
@@ -1146,10 +1144,10 @@ public class RepairGenerator {
 		}
 	    } else {
 		SetDescriptor sd=(SetDescriptor)d;
-		if (sources.setSource(sd)) {
+		if (termination.sources.setSource(sd)) {
 		    /* Set Source */
 		    /* Set Source */
-		    SetDescriptor sourcesd=sources.getSourceSet(sd);
+		    SetDescriptor sourcesd=termination.sources.getSourceSet(sd);
 		    VarDescriptor iterator=VarDescriptor.makeNew("iterator");
 		    cr.outputline(sourcesd.getType().getGenerateType().getSafeSymbol() +" "+newobject.getSafeSymbol()+";");
 		    cr.outputline("for("+iterator.getSafeSymbol()+"="+sourcesd.getSafeSymbol()+"_hash->iterator();"+iterator.getSafeSymbol()+".hasNext();)");
@@ -1158,9 +1156,9 @@ public class RepairGenerator {
 		    cr.outputline(newobject.getSafeSymbol()+"="+iterator.getSafeSymbol()+".key();");
 		    cr.outputline(iterator.getSafeSymbol()+"->next();");
 		    cr.endblock();
-		} else if (sources.allocSource(sd)) {
+		} else if (termination.sources.allocSource(sd)) {
 		    /* Allocation Source*/
-		    sources.generateSourceAlloc(cr,newobject,sd);
+		    termination.sources.generateSourceAlloc(cr,newobject,sd);
 		} else throw new Error("No source for adding to Set");
 		cr.outputline(sd.getSafeSymbol()+"_hash->add("+newobject.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
 		UpdateNode un=munadd.getUpdate(0);

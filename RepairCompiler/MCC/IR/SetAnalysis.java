@@ -21,11 +21,11 @@ public class SetAnalysis {
     }
 
     public boolean isSubset(SetDescriptor set1, SetDescriptor set2) {
-	return subset.contains(set1)&&((Set)subset.get(set1)).contains(set2);
+	return subset.containsKey(set1)&&((Set)subset.get(set1)).contains(set2);
     }
 
     public boolean noIntersection(SetDescriptor set1, SetDescriptor set2) {
-	return intersection.contains(set1)&&((Set)intersection.get(set1)).contains(set2);
+	return intersection.containsKey(set1)&&((Set)intersection.get(set1)).contains(set2);
     }
     
     void doanalysis() {
@@ -35,17 +35,27 @@ public class SetAnalysis {
 	    SetDescriptor sd=(SetDescriptor)descriptors.get(i);
 	    Stack st=new Stack();
 	    st.addAll(sd.getSubsets());
+
+	    if (!subset.containsKey(sd))
+		subset.put(sd,new HashSet());
+	    ((HashSet)subset.get(sd)).addAll(sd.getSubsets());
+	    for(Iterator it=sd.getSubsets().iterator();it.hasNext();) {
+		SetDescriptor sd2=(SetDescriptor)it.next();
+		if (!superset.containsKey(sd2))
+		    superset.put(sd2,new HashSet());
+		((HashSet)superset.get(sd2)).add(sd);
+	    }
+
 	    while(!st.empty()) {
 		SetDescriptor subsetsd=(SetDescriptor)st.pop();
-		System.out.print(subsetsd.toString());
 
 		st.addAll(subsetsd.getSubsets());
-		if (!subset.contains(sd))
+		if (!subset.containsKey(sd))
 		    subset.put(sd,new HashSet());
 		((HashSet)subset.get(sd)).addAll(subsetsd.getSubsets());
 		for(Iterator it=subsetsd.getSubsets().iterator();it.hasNext();) {
 		    SetDescriptor sd2=(SetDescriptor)it.next();
-		    if (!superset.contains(sd2))
+		    if (!superset.containsKey(sd2))
 			superset.put(sd2,new HashSet());
 		    ((HashSet)superset.get(sd2)).add(sd);
 		}
@@ -63,7 +73,7 @@ public class SetAnalysis {
 			    for(Iterator it3=sd1.allSubsets().iterator();it3.hasNext();) {
 				SetDescriptor sd3=(SetDescriptor)it3.next();
 				
-				if (!intersection.contains(sd3))
+				if (!intersection.containsKey(sd3))
 				    intersection.put(sd3,new HashSet());
 				((HashSet)intersection.get(sd3)).addAll(sd2.allSubsets());
 			    }
