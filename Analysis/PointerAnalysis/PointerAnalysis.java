@@ -72,12 +72,12 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.54 2000-05-17 15:15:58 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.55 2000-05-17 20:24:17 salcianu Exp $
  */
 public class PointerAnalysis {
 
-    public static final boolean DEBUG     = true;
-    public static final boolean DEBUG2    = true;
+    public static final boolean DEBUG     = false;
+    public static final boolean DEBUG2    = false;
     public static final boolean DEBUG_SCC = true;
 
     /** Makes the pointer analysis deterministic to make the debug easier.
@@ -544,7 +544,7 @@ public class PointerAnalysis {
 	SCComponent scc = 
 	    scc_lbb_factory.computeSCCLBB(mm.getHMethod()).getFirst();
 
-	if(DEBUG){
+	if(DEBUG2){
 	    System.out.println("THE CODE FOR :" + mm.getHMethod());
 	    Debug.show_lbb_scc(scc);
 	}
@@ -679,7 +679,7 @@ public class PointerAnalysis {
 	
 	/** Load statement; special case - arrays. */
 	public void visit(AGET q){
-	    if(DEBUG){
+	    if(DEBUG2){
 		System.out.println("AGET: " + q);
 		System.out.println("good_agets: " + good_agets);
 	    }

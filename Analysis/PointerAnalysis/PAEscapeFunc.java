@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.Iterator;
 import java.util.Map;
 
+import harpoon.ClassFile.HMethod;
 
 /**
  * <code>PAEscapeFunc</code> models the escape information.
@@ -16,7 +17,7 @@ import java.util.Map;
  Also, it records whether <code>node</code> escapes into a method hole or not.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.19 2000-04-04 04:29:31 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.20 2000-05-17 20:24:17 salcianu Exp $
  */
 public class PAEscapeFunc {
 
@@ -24,13 +25,20 @@ public class PAEscapeFunc {
     // that it can escape through.
     Relation rel_n;
 
+    ////////////////
     // set of nodes that escaped into an unanalyzed method
-    Set escaped_into_mh;
+    // Set escaped_into_mh;
+    ////////////////
+
+    // rel_m attaches to each node the set of all the methods
+    // that it can escape into.
+    Relation rel_m;
 
     /** Creates a <code>EscapeFunc</code>. */
     public PAEscapeFunc() {
-        rel_n           = new Relation();
-	escaped_into_mh = new HashSet();
+        rel_n  = new Relation();
+	///////// escaped_into_mh = new HashSet();
+	rel_m  = new Relation();
     }
     
     /** Records the fact that <code>node</code> can escape through
@@ -62,38 +70,72 @@ public class PAEscapeFunc {
     	    rel_n.remove((PANode) it.next(), n_hole);
     }
 
+    /** Returns the set of all the node &quot;holes&quot; <code>node</code>
+	escapes through. */
+    public Set nodeHolesSet(PANode node){
+	return rel_n.getValuesSet(node);
+    }
+
+    /** Checks whether <code>node</code> escapes through a node or not. */
+    public boolean hasEscapedIntoANode(PANode node){
+	return !rel_n.getValuesSet(node).isEmpty();
+    }
+
     /** Records the fact that <code>node</code> escaped into a method hole.
 	Returns <code>true</code> if this was a new information. */
-    public boolean addMethodHole(PANode node){
+    public boolean addMethodHole(PANode node, HMethod hm){
 	// System.out.println("addMethodHole " + node);
-	// Hack: we suppose no native method can modify an object
-	// (arraycopy is specially treated)
-	//	if(true) return false;
-	return escaped_into_mh.add(node);
+	////// return escaped_into_mh.add(node);
+	return rel_m.add(node, hm);
+    }
+
+    /** Records the fact that <code>node</code> escaped into a set of
+	method holes.
+	Returns <code>true</code> if this was a new information. */
+    public boolean addMethodHoles(PANode node, Set mholes){
+	boolean changed = false;	
+	for(Iterator it = mholes.iterator(); it.hasNext(); ){
+	    boolean changed_last = addMethodHole(node, (HMethod) it.next());
+	    changed = changed || changed_last;
+	}
+	return changed;
+    }
+
+
+    /** The methods from the set <code>good_holes</code> are unharmful
+	to the specific application that uses the pointer analysis. So, they
+	can be erased from the set of method holes into which a specific node
+	escapes. */
+    public void removeMethodHoles(final Set good_holes) {
+	rel_m.removeValues(new PredicateWrapper(){
+		public boolean check(Object obj) {
+		    return good_holes.contains(obj);
+		}
+	    });
+    }
+
+    /** Returns the set of methods that <code>node</code> escapes into. */
+    public Set methodHolesSet(PANode node){
+	return rel_m.getValuesSet(node);
     }
 
     /** Returns the set of nodes which escape into a method hole. */
     public Set getEscapedIntoMH(){
-	return escaped_into_mh;
+	////// return escaped_into_mh;
+	return rel_m.keySet();
+    }
+
+    /** Checks whether <code>node</code> escapes into a method hole or not. */
+    public boolean hasEscapedIntoAMethod(PANode node){
+	///// return escaped_into_mh.contains(node);
+	return !rel_m.getValuesSet(node).isEmpty();
     }
 
     /** Checks if <code>node</code> has escaped in some hole, ie if
 	<code>node</code> could be accessed by unanalyzed code. */
     public boolean hasEscaped(PANode node){
 	return
-	    !rel_n.getValuesSet(node).isEmpty() || 
-	    escaped_into_mh.contains(node);
-    }
-
-    /** Checks whether <code>node</code> escapes into a method hole or not. */
-    public boolean hasEscapedIntoAMethod(PANode node){
-	return escaped_into_mh.contains(node);
-    }
-
-    /** Returns the set of all the node &quot;holes&quot; <code>node</code>
-	escapes through. */
-    public Set nodeHolesSet(PANode node){
-	return rel_n.getValuesSet(node);
+	    hasEscapedIntoANode(node) || hasEscapedIntoAMethod(node);
     }
 
     /** Remove all the <code>PANode</code>s that appear in <code>set</code>
@@ -102,7 +144,8 @@ public class PAEscapeFunc {
 	for(Iterator it_nodes = set.iterator(); it_nodes.hasNext(); ){
 	    PANode node = (PANode) it_nodes.next();
 	    rel_n.removeAll(node);
-	    escaped_into_mh.remove(node);
+	    //////// escaped_into_mh.remove(node);
+	    rel_m.removeAll(node);
 	}
     }
 
@@ -111,7 +154,8 @@ public class PAEscapeFunc {
 	<i>join</i> points. */
     public void union(PAEscapeFunc e2){
 	rel_n.union(e2.rel_n);
-	escaped_into_mh.addAll(e2.escaped_into_mh);
+	//////// escaped_into_mh.addAll(e2.escaped_into_mh);
+	rel_m.union(e2.rel_m);
     }
 
     /** Inserts the image of <code>e2</code> through the <code>mu</code>
@@ -133,10 +177,18 @@ public class PAEscapeFunc {
 
 	e2.rel_n.forAllEntries(nvisitor);
 
-	for(Iterator it = e2.escaped_into_mh.iterator(); it.hasNext(); ){
+	///// for(Iterator it = e2.escaped_into_mh.iterator(); it.hasNext(); ){
+	/////    PANode node = (PANode) it.next();
+	/////    escaped_into_mh.addAll(mu.getValuesSet(node));
+	///// }
+	for(Iterator it = e2.getEscapedIntoMH().iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
-	    escaped_into_mh.addAll(mu.getValuesSet(node));
+	    for(Iterator it_img = mu.getValues(node); it_img.hasNext(); ) {
+		PANode node_img = (PANode) it_img.next();
+		addMethodHoles(node_img, e2.methodHolesSet(node_img));
+	    }
 	}
+	/////
     }
 
     /* Specializes <code>this</code> according to <code>map</code>. */
@@ -151,10 +203,16 @@ public class PAEscapeFunc {
 			       PANode.translate((PANode)itnh.next(),map));
 	}
 	
-	for(Iterator it = escaped_into_mh.iterator(); it.hasNext(); ){
+	///// for(Iterator it = escaped_into_mh.iterator(); it.hasNext(); ){
+	/////    PANode node = (PANode) it.next();
+	/////    e2.escaped_into_mh.add(PANode.translate(node, map));
+	///// }
+	for(Iterator it = getEscapedIntoMH().iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
-	    e2.escaped_into_mh.add(PANode.translate(node, map));
-	}
+	    PANode node2 = PANode.translate(node, map);
+	    e2.addMethodHoles(node2, methodHolesSet(node));
+	}	
+	/////
 
 	return e2;
     }
@@ -164,23 +222,31 @@ public class PAEscapeFunc {
 	if(obj == null) return false;
 	PAEscapeFunc e2 = (PAEscapeFunc) obj;
 
-	return 
-	    rel_n.equals(e2.rel_n) &&
-	    escaped_into_mh.equals(e2.escaped_into_mh);
+	///// return 
+	/////    rel_n.equals(e2.rel_n) &&
+	/////    escaped_into_mh.equals(e2.escaped_into_mh);
+	return
+	    rel_n.equals(e2.rel_n) && rel_m.equals(e2.rel_m);
     }
 
     /** Returns the set of escaped nodes. */
     public Set escapedNodes(){
 	HashSet set = new HashSet(rel_n.keySet());
-	set.addAll(escaped_into_mh);
+	////// set.addAll(escaped_into_mh);
+	set.addAll(rel_m.keySet());
+	//////
 	return set;
     }
 
     /** Private constructor used only by <code>select</code> and
 	<code>clone</code> */
-    private PAEscapeFunc(Relation rel_n, Set escaped_into_mh){
-	this.rel_n           = rel_n;
-	this.escaped_into_mh = escaped_into_mh;
+    ///// private PAEscapeFunc(Relation rel_n, Set escaped_into_mh){
+    /////	this.rel_n           = rel_n;
+    /////	this.escaped_into_mh = escaped_into_mh;
+    ///// }
+    private PAEscapeFunc(Relation rel_n, Relation rel_m){
+	this.rel_n = rel_n;
+	this.rel_m = rel_m;
     }
 
     /** Returns a <code>PAEscapeFunc</code> containing escape information
@@ -188,22 +254,27 @@ public class PAEscapeFunc {
     public PAEscapeFunc select(Set remaining_nodes){
 	Relation _rel_n = rel_n.select(remaining_nodes);
 
-	Set set = new HashSet();
-	for(Iterator it = escaped_into_mh.iterator(); it.hasNext(); ){
-	    PANode node = (PANode) it.next();
-	    if(remaining_nodes.contains(node))
-		set.add(node);
-	}
+	///// Set set = new HashSet();
+	///// for(Iterator it = escaped_into_mh.iterator(); it.hasNext(); ){
+	/////    PANode node = (PANode) it.next();
+	/////    if(remaining_nodes.contains(node))
+	/////	set.add(node);
+	///// }
+	Relation _rel_m = rel_m.select(remaining_nodes);
 	
-	return new PAEscapeFunc(_rel_n, set);
+	//// return new PAEscapeFunc(_rel_n, set);
+	return new PAEscapeFunc(_rel_n, _rel_m);
     }
 
 
     /** <code>clone</clone> does a deep copy of <code>this</code> object. */
     public Object clone(){
+	/////	return
+	/////    new PAEscapeFunc((Relation)(rel_n.clone()),
+	/////		     (Set) ((HashSet) escaped_into_mh).clone());
 	return
 	    new PAEscapeFunc((Relation)(rel_n.clone()),
-			     (Set) ((HashSet) escaped_into_mh).clone());
+			     (Relation)(rel_m.clone()));
     }
 
     /** Pretty-print debug function.
@@ -213,7 +284,8 @@ public class PAEscapeFunc {
 	StringBuffer buffer = new StringBuffer(" Escape function:\n");
 
         Set set = new HashSet(rel_n.keySet());
-	set.addAll(escaped_into_mh);
+	////// set.addAll(escaped_into_mh);
+	set.addAll(rel_m.keySet());
 
 	Object[] nodes = Debug.sortedSet(set);
 	for(int i = 0; i < nodes.length ; i++){
@@ -226,9 +298,14 @@ public class PAEscapeFunc {
 		buffer.append((PANode)nholes[j]);
 	    }
 
-	    if(escaped_into_mh.contains(n))
-		buffer.append(" M");
+	    Object[] mholes = Debug.sortedSet(methodHolesSet(n));
+	    for(int j = 0 ; j < mholes.length ; j++){
+		buffer.append(" ");
+		buffer.append((HMethod)mholes[j]);
+	    }
 
+	    ///// if(escaped_into_mh.contains(n))
+	    /////	buffer.append(" M");
 	    buffer.append("\n");
 	}
 	

@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.26 2000-05-15 22:49:35 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.27 2000-05-17 20:24:18 salcianu Exp $
  */
 public class PointsToGraph {
 
@@ -256,11 +256,13 @@ public class PointsToGraph {
 			boolean changed = false;
 			if(e.addNodeHoles(node,e.nodeHolesSet(current_node)))
 			    changed = true;
-			if(e.getEscapedIntoMH().contains(current_node) &&
-			   e.addMethodHole(node))
+			///// if(e.getEscapedIntoMH().contains(current_node) &&
+			/////   e.addMethodHole(node, null))
+			/////    changed = true;
+			if(e.addMethodHoles(node,
+					    e.methodHolesSet(current_node)))
 			    changed = true;
-			// e.addMethodHoles(node,
-			//     e.methodHolesSet(current_node));
+			/////
 			if(changed){
 			    W_prop.add(node);
 			    if(!was_escaped) newly_escaped.add(node);

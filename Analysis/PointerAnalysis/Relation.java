@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Relation.java,v 1.1.2.16 2000-03-22 00:26:15 salcianu Exp $
+ * @version $Id: Relation.java,v 1.1.2.17 2000-05-17 20:24:18 salcianu Exp $
  */
 public class Relation{
     
@@ -88,10 +88,10 @@ public class Relation{
 	}
     }
 
-    // Removes all the relations between key and values that
-    // satisfy the predicate.check() predicate.
-    // Returns true if there is no value attached to key at the end of this
-    // method so that the caller can erase key from the hash. 
+    /** Removes all the relations between key and values that
+	satisfy the predicate.check() predicate.
+	Returns true if there is no value attached to key at the end of this
+	method so that the caller can erase key from the hash. */
     private boolean removeValues(Object key, PredicateWrapper predicate){
 	Set values = (Set) hash.get(key);
 	Iterator it_values = values.iterator();

@@ -21,7 +21,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: NodeRepository.java,v 1.1.2.21 2000-05-17 15:15:58 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.22 2000-05-17 20:24:17 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -179,6 +179,13 @@ public class NodeRepository {
     public final HCodeElement node2Code(PANode n){
 	if(n==null) return null;
 	return (HCodeElement) node2code.get(n);
+    }
+
+    /** Modify the node2code mapping such that now node is associated
+	with hce. */
+    public final void updateNode2Code(PANode node, HCodeElement hce){
+	// put the new one
+	node2code.put(node, hce);
     }
 
     /** Pretty-printer for debug purposes. */

@@ -37,7 +37,7 @@ import harpoon.Util.Util;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.34 2000-05-17 15:15:58 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.35 2000-05-17 20:24:17 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -45,7 +45,7 @@ abstract class InterProcPA {
 	considered to be holes. */ 
     public static final int MAX_CALLEES = 5;
 
-    public static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
 
     /** Displays some warnings for the call sites with 0 callees etc. 
 	This is not necessarily an error! For example, if an application
@@ -80,8 +80,6 @@ abstract class InterProcPA {
 	if(DEBUG)
 	    System.out.println("Inter-procedural analysis " + q);
 
-	System.out.println("CALL-SITE " + q);
-
 	// specially treat some native methods
 	ParIntGraphPair pair = treatNatives(pa, q, pig_before);
 	if(pair != null)
@@ -97,24 +95,24 @@ abstract class InterProcPA {
 	// are not instantiated), not because the call graph is buggy!
 	// So, the CALL is simply ignored.
 	if(nb_callees == 0){
-	    //	    if(WARNINGS){
+	    if(WARNINGS){
 		System.out.println("Warning: CALL site with no callee! ");
 		System.out.println("Warning:  " + current_mmethod);
 		System.out.println("Warning:  " + q);
-		//	    }
-	    return new ParIntGraphPair(pig_before, pig_before);
+	    }
+ 	    return new ParIntGraphPair(pig_before, pig_before);
 	}
 
 	// Due to the imprecisions in the call graph, most of them due to
 	// dynamic dispatches, several call sites have a huge number of callees
 	// These CALLs are not analyzed (i.e. they are treated as method holes)
 	if(nb_callees > MAX_CALLEES){
-	    /////// if(DEBUG)
+	    if(DEBUG)
 		System.out.println("TOO MANY CALLEES (" + nb_callees + ") "+q);
-	    return skip_call(q, pig_before, node_rep);
+	    return skip_call(q, pig_before, node_rep, q.method());
 	}
 
-	// For each analyzable callee mm, we store it in mms and its associated
+ 	// For each analyzable callee mm, we store it in mms and its associated
 	// parallel interaction graph in pigs. By "analyzable", we mean
 	// (meta)-methods that are analyzable by the the Pointer Analysis PLUS
 	// the so-called unharmful native methods - native method that we can't
@@ -137,7 +135,7 @@ abstract class InterProcPA {
 
 	    if(Modifier.isNative(hm.getModifiers()) && 
 	       !pa.harmful_native(hm)){
-		/////////		if(DEBUG)
+		if(DEBUG)
 		    System.out.println("NATIVE: " + hm);
 		pigs[nb_callees_with_pig] = null;
 		mms[nb_callees_with_pig]  = mms[i];
@@ -146,9 +144,9 @@ abstract class InterProcPA {
 	    }
 
 	    if(!(PointerAnalysis.analyzable(hm))){
-		///////// if(DEBUG)
+		if(DEBUG)
 		    System.out.println("NEED TO SKIP: " + hm);
-		return skip_call(q, pig_before, node_rep);
+		return skip_call(q, pig_before, node_rep, hm);
 	    }
 	    
 	    ParIntGraph pig = pa.getExtParIntGraph(mms[i], false);
@@ -164,7 +162,7 @@ abstract class InterProcPA {
 	// mutually recursive methods).
 	if(nb_callees_with_pig == 0)
 	    return new ParIntGraphPair(pig_before, pig_before);
-	
+
 	// Specialize the graphs of the callees for the context sensitive PA
 	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
 	    for(int i = 0; i < nb_callees_with_pig; i++)
@@ -175,7 +173,6 @@ abstract class InterProcPA {
 		    if(DEBUG)
 			System.out.println("AFTER  SPEC: " + pigs[i]);
 		}
-
 
 	// The graph after the CALL is a join of all the graphs obtained
 	// by combining, for each callee mms[i], the graph before the CALL
@@ -201,7 +198,7 @@ abstract class InterProcPA {
 	for(int i = 1; i < nb_callees_with_pig - 1; i++)
 	    pp_after.join(mapUp(mms[i], q, (ParIntGraph)pig_before.clone(),
 				pigs[i], pa.getParamNodes(mms[i])));
-	
+
 	// 2.3. Finally, join the graph for the last callee.
 	MetaMethod last_mm = mms[nb_callees_with_pig - 1];
 	pp_after.join
@@ -392,7 +389,8 @@ abstract class InterProcPA {
 	returned: one for the normal return from the procedure, the other
 	one for a return due to an exception. */
     private static ParIntGraphPair skip_call(CALL q, ParIntGraph pig_caller,
-					     NodeRepository node_rep){
+					     NodeRepository node_rep,
+					     HMethod hm) {
 
 	if(DEBUG)
 	    System.out.println("SKIP: " + q);
@@ -407,8 +405,7 @@ abstract class InterProcPA {
 	// Update the escape information
 	//  1. all the parameters are directly escaping into the method hole
 	for(Iterator it = S_M.iterator(); it.hasNext(); )
-	    pig_caller.G.e.addMethodHole((PANode)it.next());
-	    //pig_caller.G.e.addMethodHole((PANode)it.next(),q);
+	    pig_caller.G.e.addMethodHole((PANode)it.next(), hm);
 	//  2. propagate the new escape information
 	pig_caller.G.propagate(S_M);
 
@@ -421,8 +418,6 @@ abstract class InterProcPA {
 	// The names of the variables closely match those used in the
 	// formal description of the algorithm (section 9.2)
 
-	HMethod hm = q.method();
-
 	// Set the edges for the result node in graph 0.
 	// avoid generating useless nodes
 	Temp l_R = q.retval();
@@ -431,7 +426,7 @@ abstract class InterProcPA {
 	    if(!hm.getReturnType().isPrimitive()){
 		PANode n_R = node_rep.getCodeNode(q, PANode.RETURN);
 		pig_caller.G.I.addEdge(l_R, n_R);
-		pig_caller.G.e.addMethodHole(n_R);
+		pig_caller.G.e.addMethodHole(n_R, hm);
 	    }
 	}
 
@@ -441,7 +436,7 @@ abstract class InterProcPA {
 	    pig_caller1.G.I.removeEdges(l_E);
 	    PANode n_E = node_rep.getCodeNode(q, PANode.EXCEPT);
 	    pig_caller1.G.I.addEdge(l_E, n_E);
-	    pig_caller1.G.e.addMethodHole(n_E);
+	    pig_caller1.G.e.addMethodHole(n_E, hm);
 	}
 
 	return new ParIntGraphPair(pig_caller, pig_caller1);
@@ -468,7 +463,7 @@ abstract class InterProcPA {
 	    pig0.G.I.addEdge(l_R, n_R);
 	    //////// we suppose that escaping into an unharmful method is
 	    //////// no big deal, so we comment next line
-	    pig0.G.e.addMethodHole(n_R);
+	    pig0.G.e.addMethodHole(n_R, hm);
 	    //////// TODO: THINK & FIX
 	}
 
@@ -480,7 +475,7 @@ abstract class InterProcPA {
 	    pig1.G.I.addEdge(l_E, n_E);
 	    //////// we suppose that escaping into an unharmful method is
 	    //////// no big deal, so we comment next line
-	    pig1.G.e.addMethodHole(n_E);
+	    pig1.G.e.addMethodHole(n_E, hm);
 	    //////// TODO: THINK & FIX
 	}
 
@@ -529,7 +524,7 @@ abstract class InterProcPA {
 	// update the node mapping by matching outside edges from the caller
 	// with inside edges from the callee
 	match_edges(mu,pig_caller,pig_callee);
-	
+
 	if(DEBUG) System.out.println("After matching edges:" + mu);
 
 	// all the nodes from the caller (except for PARAM) are
@@ -980,7 +975,7 @@ abstract class InterProcPA {
 	pig.G.I.removeEdges(l_E);
 	PANode n_E = node_rep.getCodeNode(q, PANode.EXCEPT);
 	pig.G.I.addEdge(l_E, n_E);
-	pig.G.e.addMethodHole(n_E);
+	pig.G.e.addMethodHole(n_E, hm);
 	// no pig.G.propagate is necessary since n_E cannot point to anything
 	// that is not escaped into that native method.
     }
@@ -1049,7 +1044,7 @@ abstract class InterProcPA {
 	    pig_after1.G.I.removeEdges(l_E);
 	    PANode n_E = node_rep.getCodeNode(q, PANode.EXCEPT);
 	    pig_after1.G.I.addEdge(l_E, n_E);
-	    pig_after1.G.e.addMethodHole(n_E);
+	    pig_after1.G.e.addMethodHole(n_E, hm);
 	}
 	return new ParIntGraphPair(pig_before, pig_after1);	
     }
@@ -1077,7 +1072,7 @@ abstract class InterProcPA {
 	    pig_before.G.I.removeEdges(l_R);
 	    PANode n_R = node_rep.getCodeNode(q, PANode.RETURN);
 	    pig_before.G.I.addEdge(l_R, n_R);
-	    pig_before.G.e.addMethodHole(n_R);
+	    pig_before.G.e.addMethodHole(n_R, hm);
 	}
 
 	return new ParIntGraphPair(pig_before, pig_after1);	

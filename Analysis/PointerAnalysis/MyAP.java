@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  <code>AllocationProperties</code>. 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MyAP.java,v 1.1.2.3 2000-05-17 17:29:18 cananian Exp $
+ * @version $Id: MyAP.java,v 1.1.2.4 2000-05-17 20:24:17 salcianu Exp $
  */
 public class MyAP implements AllocationInformation.AllocationProperties,
 			     java.io.Serializable {
@@ -24,10 +24,13 @@ public class MyAP implements AllocationInformation.AllocationProperties,
     public boolean sa  = false;
     // canBeThreadAllocated
     public boolean ta  = false;
-    // makeHeap
+    // useOwnHeap
     public boolean uoh = false;
+    // make heap (true at the thread object creation sites)
+    public boolean mh  = false;
+
     // the Temp pointing to the thread object on whose stack
-    // the NEW iquad ius going to allocate the object; "null"
+    // the NEW quad is going to allocate the object; "null"
     // to indicate the current thread.
     public Temp ah = null;
 
@@ -48,7 +51,7 @@ public class MyAP implements AllocationInformation.AllocationProperties,
     }
 
     public boolean makeHeap(){
-	return uoh;
+	return mh;
     }
 
     public Temp allocationHeap(){
@@ -57,18 +60,22 @@ public class MyAP implements AllocationInformation.AllocationProperties,
 
     /** Pretty printer for debug. */
     public String toString(){
-	String hipstr = hip? "interior ptrs; " : "no interior ptrs; ";
-	if(sa)
+	String hipstr = 
+	    hasInteriorPointers() ? "interior ptrs; " : "no interior ptrs; ";
+
+	if(makeHeap()) hipstr = hipstr + " [make heap] ";
+
+	if(canBeStackAllocated())
 	    return hipstr + "Stack allocation";
-	if(ta){
-	    if(uoh)
-		return hipstr + "Thread allocation: use own heap";
-	    if(ah != null)
+
+	if(canBeThreadAllocated())
+	    if(allocationHeap() != null)
 		return (hipstr + "Thread allocation on the heap of " +
-			ah.toString());
+			allocationHeap());
 	    else
-		return hipstr+"Thread allocation on the current thread's heap";
-	}
+		return
+		    hipstr + "Thread allocation on the current thread's heap";
+
 	return hipstr + "Global heap allocation";
     }
 }

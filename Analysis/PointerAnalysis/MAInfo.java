@@ -14,6 +14,8 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
 import harpoon.Analysis.Maps.AllocationInformation;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
@@ -39,11 +41,28 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.12 2000-05-17 17:29:17 cananian Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.13 2000-05-17 20:24:17 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
     private static boolean DEBUG = false;
+
+    private static Set good_holes = null;
+    static {
+	good_holes = new HashSet();
+	Linker linker = Loader.systemLinker;
+
+	// "java.lang.Thread.currentThread()" is not harmful with regard to
+	// the thread specific heaps stuff; add it to the set "good_holes"
+	HClass hclass = linker.forName("java.lang.Thread");
+	HMethod[] hms = hclass.getDeclaredMethods();
+	for(int i = 0; i < hms.length; i++)
+	    if("currentThread".equals(hms[i].getName()))
+		good_holes.add(hms[i]);
+
+	//if(DEBUG)
+	    System.out.println("GOOD HOLES: " + good_holes);
+    }
 
     PointerAnalysis pa;
     HCodeFactory    hcf;
@@ -54,7 +73,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     NodeRepository  node_rep;
 
     // use the inter-thread analysis
-    private boolean USE_INTER_THREAD = true;
+    private boolean USE_INTER_THREAD = false;
     
     /** Creates a <code>MAInfo</code>. */
     public MAInfo(PointerAnalysis pa, HCodeFactory hcf,
@@ -123,13 +142,18 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     public final void analyze_mm(MetaMethod mm){
 	HMethod hm  = mm.getHMethod();
 
-	if(DEBUG)
+	//if(DEBUG)
 	    System.out.println("MAInfo: Analyzed Meta-Method: " + mm);
 
 	HCode hcode = hcf.convert(hm);
-	ParIntGraph pig = 
-	    USE_INTER_THREAD ? pa.threadInteraction(mm): 
-	                       pa.getIntParIntGraph(mm);
+
+	ParIntGraph initial_pig = pa.getIntParIntGraph(mm);
+	////	    USE_INTER_THREAD ? pa.threadInteraction(mm): 
+	////                       pa.getIntParIntGraph(mm);
+	
+	ParIntGraph pig = (ParIntGraph) initial_pig.clone();
+	System.out.println("GOOD HOLES: " + good_holes); 
+	pig.G.e.removeMethodHoles(good_holes);
 
 	if(pig == null) return;
 
@@ -188,10 +212,31 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    }
 	}
 	
-	if(pig.tau.activeThreadSet().size() == 1)
-	    analyze_prealloc(mm, hcode, pig);
+	PAThreadMap tau = (PAThreadMap) (pa.getIntParIntGraph(mm).tau.clone());
 
+	if(tau.activeThreadSet().size() == 1)
+	    analyze_prealloc(mm, hcode, pig, tau);
+
+	set_make_heap(tau.activeThreadSet());
     }
+
+
+    /** Set the allocation policy info such that each of the threads allocated
+	and started into the currently analyzed method has a thread specific
+	heap associated with it. */
+    private void set_make_heap(Set threads){
+	for(Iterator it = threads.iterator(); it.hasNext(); ) {
+	    PANode nt = (PANode) it.next();
+	    if((nt.type != PANode.INSIDE) || 
+	       (nt.getCallChainDepth() != 0) ||
+	       (nt.isTSpec())) continue;
+
+	    NEW qnt = (NEW) node_rep.node2Code(nt);
+	    MyAP ap = getAPObj(qnt);
+	    ap.mh = true;
+	}
+    }
+
 
     // checks whether node escapes only in some method. We assume that
     // no method hole starts a new thread and so, we can allocate
@@ -214,29 +259,22 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
     // try to apply some aggressive preallocation into the thread specific
     // heap.
-    private void analyze_prealloc(MetaMethod mm, HCode hcode, ParIntGraph pig){
+    private void analyze_prealloc(MetaMethod mm, HCode hcode, ParIntGraph pig,
+				  PAThreadMap tau){
 
-	Set active_threads = pig.tau.activeThreadSet();
+	Set active_threads = tau.activeThreadSet();
 	PANode nt = (PANode) (active_threads.iterator().next());
 
 	// protect against some patological cases
 	if((nt.type != PANode.INSIDE) || 
 	   (nt.getCallChainDepth() != 0) ||
-	   (nt.isTSpec()))
+	   (nt.isTSpec()) ||
+	   (tau.getValue(nt) != 1))
 	    return;
 
 	// pray that no thread is allocated through an ANEW!
 	// (it seems quite a reasonable assumption)
 	NEW qnt = (NEW) node_rep.node2Code(nt);
-
-	// REMOVE WITH THE FIRST OCCASION!
-	// last hope hack for the event driven people!
-	if(true){
-	    MyAP ap = getAPObj(qnt);
-	    ap.ta  = true; // allocate on thread specific heap
-	    ap.uoh = true; // makeHeap
-	    return;
-	}
 
 	// compute the nodes pointed to by the thread node at the moment of 
 	// the "start()" call. Since we analyze only "good" programs (we
@@ -245,15 +283,23 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	// the graph at the end of the method.
 	Set pointed = pig.G.I.getPointedNodes(nt);
 
+	////////
+	System.out.println("Pointed = " + pointed);
+
 	// retain in "pointed" only the nodes allocated in this method, 
 	// and which escaped only through the thread nt.
 	for(Iterator it = pointed.iterator(); it.hasNext(); ){
 	    PANode node = (PANode) it.next();
 	    if( (node.type != PANode.INSIDE) ||
 		(node.getCallChainDepth() != 0) ||
-		!escapes_only_in_thread(node, nt, pig) )
+		!escapes_only_in_thread(node, nt, pig) ){
+		System.out.println(node + " escapes somewhere else too");
 		it.remove();
+	    }
  	}
+
+	////////
+	System.out.println("Good Pointed = " + pointed);
 
 	// grab into "news" the set of the NEW/ANEW quads allocating objects
 	// that should be put into the heap of "nt".
@@ -268,7 +314,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    // just allocate the thread node nt on its own heap
 	    MyAP ap = getAPObj(qnt);
 	    ap.ta  = true; // allocate on thread specific heap
-	    ap.uoh = true; // makeHeap
+	    ap.mh = true;  // makeHeap
+	    ap.ah = qnt.dst(); // use own heap
 	    return;
 	}
 	
@@ -280,7 +327,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	aps.remove(qnt);
 
 	Temp l2 = new Temp(temp_factory);
-	QuadFactory qf = (QuadFactory) hcf;
+	QuadFactory qf = qnt.getFactory();
 	MOVE moveq = new MOVE(qf, null, qnt.dst(), l2);
 	NEW  newq  = new  NEW(qf, null, l2, qnt.hclass());
 
@@ -290,12 +337,17 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	// (at the very top of the method)
 	insert_newq((METHOD) (((Quad)hcode.getRootElement()).next(1)), newq);
 
+	// since the object creation site for the thread node has been changed,
+	// we need to update the ndoe2code relation.
+	node_rep.updateNode2Code(nt, newq);
+
 	// the thread object should be allocated in its own
 	// thread specific heap.
 	MyAP newq_ap = getAPObj(newq);
 
-	newq_ap.ta  = true;
-	newq_ap.uoh = true; // makeHeap for the thread object
+	newq_ap.ta = true;       // thread allocation
+	newq_ap.mh = true;       // makeHeap for the thread object
+	newq_ap.ah = newq.dst(); // use own heap
 	HClass hclass = getAllocatedType(newq);
 	newq_ap.hip = 
 	    DefaultAllocationInformation.hasInteriorPointers(hclass);
@@ -327,7 +379,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	Util.assert(method.nextLength() == 1,
 		    "A METHOD quad should have exactly one successor!");
 	Edge nextedge = method.nextEdge(0);
-	Quad nextquad = method.next(1);
+	Quad nextquad = method.next(0);
 	Quad.addEdge(method, nextedge.which_succ(), newq, 0);
 	Quad.addEdge(newq, 0, nextquad, nextedge.which_pred());
     }
@@ -345,12 +397,18 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     private boolean escapes_only_in_thread(PANode node, PANode nt,
 					   ParIntGraph pig){
 
-	if(pig.G.e.hasEscapedIntoAMethod(node))
+	if(pig.G.e.hasEscapedIntoAMethod(node)){
+	    System.out.println(node + " escapes into a method");
 	    return false;
-	if(pig.G.getReachableFromR().contains(node))
+	}
+	if(pig.G.getReachableFromR().contains(node)) {
+	    System.out.println(node + " is reachable from R");
 	    return false;
-	if(pig.G.getReachableFromExcp().contains(node))
+	}
+	if(pig.G.getReachableFromExcp().contains(node)) {
+	    System.out.println(node + " is reachable from Excp");
 	    return false;
+	}
 	return true;
     }
 

@@ -66,7 +66,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.48 2000-05-17 15:16:10 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.49 2000-05-17 20:24:22 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -593,7 +593,7 @@ public abstract class PAMain {
 	if(DO_ANALYSIS){
 	    if(mm_to_analyze.size() == 1){
 		Method method = (Method) (mm_to_analyze.iterator().next());
-		System.out.println("DO_ANALYSIS (" +
+		System.out.println(" DO_ANALYSIS (" +
 				   method.declClass + "." + method.name);
 	    }
 	    else{

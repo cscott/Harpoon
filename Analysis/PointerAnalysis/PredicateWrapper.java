@@ -9,8 +9,8 @@ package harpoon.Analysis.PointerAnalysis;
  high-level functions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PredicateWrapper.java,v 1.1.2.1 2000-02-24 22:26:32 salcianu Exp $
+ * @version $Id: PredicateWrapper.java,v 1.1.2.2 2000-05-17 20:24:18 salcianu Exp $
  */
-interface PredicateWrapper {
+public interface PredicateWrapper {
     public boolean check(Object obj);
 }
