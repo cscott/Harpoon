@@ -5,6 +5,7 @@ package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlock;
 import harpoon.IR.Properties.UseDef;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Util.Collections.SetFactory;
 
@@ -20,7 +21,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.1 1999-11-09 06:28:25 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.2 1999-11-24 00:47:38 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars {
     
@@ -71,6 +72,55 @@ public class LiveTemps extends LiveVars {
 		     Set liveOnProcExit, 
 		     SetFactory tempSetFact) {
 	super( basicBlocks, tempSetFact );
+    }
+
+    /** Returns the <code>Set</code> of <code>Temp</code>s that are
+	live on on entry to <code>hce</code>.
+	<BR> <B>requires:</B> A DataFlow Equation Solver has been run
+	     to completion on the graph of <code>BasicBlock</code>s
+	     containing some block that contains <code>hce</code>,
+	     with <code>this</code> as the
+	     <code>DataFlowBasicBlockVisitor</code>. 
+	<BR> <B>effects:</B> Returns a <code>Set</code> of
+	     <code>Temp</code>s that are live on entry to
+	     <code>hce</code>. 
+    */
+    public Set getLiveBefore(HCodeElement hce) {
+	// Put implementation here!
+
+	// implementation hints for this and the next method:
+	// 1. Use BasicBlock.getHceToBB()... it seems right now that
+	//    there is no reference to the basicblocks associated with
+	//    'this' stored in the object; get around this by either
+	//    adding an extra field to this or LiveVars, either a
+	//    BasicBlock field named 'root' or just make a direct
+	//    reference to the Hce->BB Map returned by getHceToBB()
+	// 2. Once you have the Hce->BB Map, use LiveVars'
+	//    getLiveOnEntry/getLiveOnExit methods to extract coarse
+	//    grain information
+	// 3. With coarse grain information in hand, traverse across
+	//    the remaining span of the BasicBlock until you reach
+	//    'hce'...be SURE to update the information as you
+	//    traverse since the liveness properties may change across
+	//    the expanse of the instructions in the block
+
+	return null;
+    }
+
+    /** Returns the <code>Set</code> of <code>Temp</code>s that are
+	live on exit from <code>hce</code>.
+	<BR> <B>requires:</B> A DataFlow Equation Solver has been run
+	     to completion on the graph of <code>BasicBlock</code>s
+	     containing some block that contains <code>hce</code>,
+	     with <code>this</code> as the
+	     <code>DataFlowBasicBlockVisitor</code>.
+	<BR> <B>effects:</B> Returns a <code>Set</code> of
+	     <code>Temp</code>s that are live on exit from
+	     <code>hce</code>. 
+    */
+    public Set getLiveAfter(HCodeElement hce) {
+	// Put implementation here!
+	return null;
     }
 
     /** Constructs a <code>Set</code> of all of the <code>Temp</code>s
