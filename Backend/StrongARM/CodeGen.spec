@@ -47,6 +47,8 @@ import harpoon.IR.Tree.UNOP;
 import harpoon.IR.Tree.SEQ;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
@@ -58,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.81 1999-10-20 20:20:53 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.82 1999-10-21 00:15:39 cananian Exp $
  */
 %%
 
@@ -78,7 +80,7 @@ import java.util.Iterator;
 
     final RegFileInfo regfile;
     private Temp r0, r1, r2, r3, r4, r5, r6, FP, IP, SP, LR, PC;
-
+    Comparator regComp;
 
     public CodeGen(Frame frame) {
 	last = null;
@@ -96,6 +98,16 @@ import java.util.Iterator;
 	SP = regfile.SP; // reg 13
 	LR = regfile.LR; // reg 14
 	PC = regfile.PC; // reg 15
+	// allow sorting of registers so that stm and ldm work correctly.
+	final Map regToNum = new HashMap();
+	for (int i=0; i<regfile.reg.length; i++)
+	    regToNum.put(regfile.reg[i], new Integer(i));
+	regComp = new Comparator() {
+	    public int compare(Object o1, Object o2) {
+		return ((Integer)regToNum.get(o1)).intValue() -
+		       ((Integer)regToNum.get(o2)).intValue();
+	    }
+	};
     }
 
     /** Emits <code>i</code> as the next instruction in the
@@ -367,15 +379,19 @@ import java.util.Iterator;
 	InstrFactory inf = instrFactory; // convenient abbreviation.
 	Label methodlabel = frame.getRuntime().nameMap.label(hm);
 	// make list of callee-save registers we gotta save.
-	StringBuffer reglist = new StringBuffer(); int nreg=0;
-	for (Iterator it=usedRegisters.iterator(); it.hasNext(); ) {
-	    Temp rX = (Temp) it.next();
+	StringBuffer reglist = new StringBuffer();
+	Temp[] usedRegArray =
+	    (Temp[]) usedRegisters.toArray(new Temp[usedRegisters.size()]);
+	Collections.sort(Arrays.asList(usedRegArray), regComp);
+	for (int i=0; i<usedRegArray.length; i++) {
+	    Temp rX = usedRegArray[i];
 	    Util.assert(regfile.isRegister(rX));
 	    if (rX.equals(r0)||rX.equals(r1)||rX.equals(r2)||rX.equals(r3))
 		continue; // caller save registers.
 	    if (rX.equals(LR)||rX.equals(PC)||rX.equals(FP)||rX.equals(SP)||
 		rX.equals(IP)) continue; // always saved.
-	    reglist.append(", "); reglist.append(rX.toString()); nreg++;
+	    reglist.append(rX.toString());
+	    reglist.append(", "); 
 	}
 	// find method entry/exit stubs
 	for (Instr il = instr; il!=null; il=il.getNext()) {
@@ -387,7 +403,7 @@ import java.util.Iterator;
 					   methodlabel);
 		Instr in4 = new Instr(inf, il, "mov ip, sp", null, null);
 		Instr in5 = new Instr(inf, il,
-				      "stmfd sp!, {pc, lr, ip, fp"+reglist+"}",
+				      "stmfd sp!, {"+reglist+"fp,ip,lr,pc}",
 				      null, null);
 		Instr in6 = new Instr(inf, il, "sub fp, ip, #4", null, null);
 		Instr in7 = new Instr(inf, il, "sub sp, sp, #"+(stackspace*4),
@@ -400,11 +416,12 @@ import java.util.Iterator;
 		in2.layout(il, in3);
 		in1.layout(il, in2);
 		if (il==instr) instr=in1; // fixup root if necessary.
+		if (stackspace==0) in7.remove(); // optimize
 		il.remove(); il=in1;
 	    }
 	    if (il instanceof InstrEXIT) { // exit stub
 		Instr in1 = new Instr(inf, il,
-				"ldmea fp, {pc, sp, fp"+reglist+"}",
+				"ldmea fp, {"+reglist+"fp, sp, pc}",
 				 null, null);
 		in1.layout(il.getPrev(), il);
 		il.remove(); il=in1;
@@ -910,7 +927,33 @@ MOVE(TEMP(dst), CONST<p>(c)) %{
 
 BINOP<p,i>(MUL, j, k) = i %{
     Temp i = makeTemp();		
-    emit( ROOT, "mul `d0, `s0, `s1", i, j, k );
+    // ACK: evilness.  d0 and s0 can't be same register.
+    // at this point there isn't a good way to tell the register
+    // allocator this, so we hard-wire the d0 and s0 registers.
+    emitMOVE( ROOT, "mov `d0, `s0", r3, j );
+    emit( ROOT, "mul `d0, `s0, `s1", r2, r3, k );
+    emitMOVE( ROOT, "mov `d0, `s0", i, r2 );
+}%
+    // strong arm has funky multiply & accumulate instruction.
+BINOP<p,i>(ADD, BINOP<p,i>(MUL, j, k), l) = i %{
+    Temp i = makeTemp();		
+    // ACK: evilness.  d0 and s0 can't be same register for mul
+    // at this point there isn't a good way to tell the register
+    // allocator this, so we hard-wire the d0 and s0 registers.
+    emitMOVE( ROOT, "mov `d0, `s0", r3, j );
+    emit(new Instr( instrFactory, ROOT, "mla `d0, `s0, `s1, `s2",
+		    new Temp[] {r2}, new Temp[] { r3, k, l } ));
+    emitMOVE( ROOT, "mov `d0, `s0", i, r2 );
+}%
+BINOP<p,i>(ADD, l, BINOP<p,i>(MUL, j, k)) = i %{
+    Temp i = makeTemp();		
+    // ACK: evilness.  d0 and s0 can't be same register for mul
+    // at this point there isn't a good way to tell the register
+    // allocator this, so we hard-wire the d0 and s0 registers.
+    emitMOVE( ROOT, "mov `d0, `s0", r3, j );
+    emit(new Instr( instrFactory, ROOT, "mla `d0, `s0, `s1, `s2",
+		    new Temp[] {r2}, new Temp[] { r3, k, l } ));
+    emitMOVE( ROOT, "mov `d0, `s0", i, r2 );
 }%
 
 BINOP<l>(MUL, j, k) = i %{
@@ -1496,7 +1539,7 @@ THROW(val, handler) %{
     // ignore handler, as our runtime does clever things instead.
     emitMOVE( ROOT, "mov `d0, `s0", r0, val );
     emit( ROOT, "bl _lookup @ (only r0 & fp are preserved during lookup)",
-	         new Temp[] { r1, r2, r3, r4, r5, r6, LR }, // clobbers
+	         new Temp[] { r1, r2, r3, LR }, // clobbers
 		 new Temp[] { FP }, true, null); 
     // mark exit point.
     emit(new InstrEXIT( instrFactory, ROOT ));
