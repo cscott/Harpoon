@@ -37,13 +37,13 @@ Visit($n$:node) =
  \ENDFOR
 \ENDFOR
                \EMPTYLINE
-\FOREACH{branch ``if $v$ goto $L_1$ else $L_2$'' in $n$}
+\FOREACH{branch ``if $v$ goto $e_1$ else $e_2$'' in $n$}
  \STATE $L \gets V[v]$
  \IF{$L=\top$ or $L=c$ where $c$ signifies ``true''}
-  \STATE RaiseE($L_1$)
+  \STATE RaiseE($e_1$)
  \ENDIF
  \IF{$L=\top$ or $L=c$ where $c$ signifies ``false''}
-  \STATE RaiseE($L_2$)
+  \STATE RaiseE($e_2$)
  \ENDIF
 \ENDFOR
 \end{algorithmic}
