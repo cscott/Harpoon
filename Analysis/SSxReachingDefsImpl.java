@@ -21,7 +21,7 @@ import java.util.Set;
  * standard <code>ReachingDefsImpl</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSxReachingDefsImpl.java,v 1.1.2.1 2000-06-07 02:41:11 cananian Exp $
+ * @version $Id: SSxReachingDefsImpl.java,v 1.1.2.2 2000-11-15 19:45:30 cananian Exp $
  */
 public class SSxReachingDefsImpl extends ReachingDefs {
     private final Map m = new HashMap();
@@ -42,6 +42,7 @@ public class SSxReachingDefsImpl extends ReachingDefs {
 	}
     }
     public Set reachingDefs(HCodeElement hce, Temp t) {
+	if (!m.containsKey(t)) return Collections.EMPTY_SET;
 	return Collections.singleton(m.get(t));
     }
 }
