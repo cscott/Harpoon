@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.5 1998-12-03 04:55:45 marinov Exp $
+ * @version $Id: Util.java,v 1.12.2.6 1999-02-24 02:27:38 cananian Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -20,7 +20,7 @@ public abstract class Util {
    *  <code>src</code> parameter (which should be an array of some
    *  object type).  This method uses run-time type information and
    *  thus <b>should not be used</b>.
-   *  @deprecated
+   *  @deprecated requires java language reflection.
    */
   public static final ArrayFactory genericFactory(final Object[] src) {
     final Class type = src.getClass().getComponentType();

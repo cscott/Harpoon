@@ -11,13 +11,18 @@ import java.util.Map;
  * implementation throws an <code>UnsupportedOperationException</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractMapEntry.java,v 1.1.2.1 1999-02-23 23:03:07 cananian Exp $
+ * @version $Id: AbstractMapEntry.java,v 1.1.2.2 1999-02-24 02:27:38 cananian Exp $
  */
 public abstract class AbstractMapEntry implements Map.Entry {
     public abstract Object getKey();
     public abstract Object getValue();
     public Object setValue(Object value) {
 	throw new UnsupportedOperationException();
+    }
+    public String toString() {
+	return 
+	    ((getKey()  ==null)?"null":getKey()  .toString()) + "=" +
+	    ((getValue()==null)?"null":getValue().toString());
     }
     public boolean equals(Object o) {
 	if (!(o instanceof Map.Entry)) return false;
