@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.95 1999-11-02 19:36:34 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.96 1999-11-02 19:47:25 cananian Exp $
  */
 %%
 
@@ -610,6 +610,10 @@ BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
   
 BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 
+    /* NOTE: the ___eqsf2 routine seems to be broken, as it returns
+     * the exact same values as ___nesf2.  The return value makes sense
+     * for ___nesf2, but are reversed from what you'd expect for
+     * ___eqsf2.  So we use the ___nesf2 routine here. */
     emitMOVE( ROOT, "mov `d0, `s0", r0, j);
     emitMOVE( ROOT, "mov `d0, `s0", r1, k);
     emit2( ROOT, "bl ___nesf2",
@@ -624,6 +628,10 @@ BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 
 BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 
+    /* NOTE: the ___eqdf2 routine seems to be broken, as it returns
+     * the exact same values as ___nedf2.  The return value makes sense
+     * for ___nedf2, but are reversed from what you'd expect for
+     * ___eqdf2.  So we use the ___nedf2 routine here. */
     emit ( ROOT, "mov `d0, `s0l", r0, j);
     emit ( ROOT, "mov `d1, `s0h", r1, j);
     emit ( ROOT, "mov `d2, `s0l", r2, k);
