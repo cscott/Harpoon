@@ -12,7 +12,7 @@ import harpoon.Util.Tuple;
  * type.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: UndefinedPointer.java,v 1.1.2.1 1999-03-27 22:05:10 duncan Exp $
+ * @version $Id: UndefinedPointer.java,v 1.1.2.2 1999-06-28 18:57:35 duncan Exp $
  */
 public class UndefinedPointer extends Pointer {
 
@@ -53,6 +53,11 @@ public class UndefinedPointer extends Pointer {
 
     /** Always returns false. */
     public boolean isDerived()        { return false; }
+
+    /** Returns an integer enumeration of the kind of this Pointer.  The 
+	enumerated values are public fields of the Pointer class.
+    */
+    public int kind() { return Pointer.UNDEF_PTR; }
 
     /** Returns a human-readable representation of this 
      *  <code>UndefinedPointer</code>. */

@@ -10,7 +10,7 @@ import harpoon.Util.Tuple;
  * modified with <code>updateValue()</code>.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ArrayPointer.java,v 1.1.2.3 1999-06-18 01:48:09 cananian Exp $
+ * @version $Id: ArrayPointer.java,v 1.1.2.4 1999-06-28 18:57:35 duncan Exp $
  */
 class ArrayPointer extends Pointer {
     private boolean isDerived;
@@ -63,7 +63,12 @@ class ArrayPointer extends Pointer {
     Object getValue() {
         return Method.toNonNativeFormat(ArrayRef.get(this));
     }
-    
+
+    /** Returns an integer enumeration of the kind of this Pointer.  The 
+	enumerated values are public fields of the <code>Pointer</code> class.
+    */
+    public int kind() { return Pointer.ARRAY_PTR; }
+
     /** Sets the value at the memory location specified by this 
      *  <code>ArrayPointer</code> to the specified parameter. 
      *  This value should be in non-native format.

@@ -12,10 +12,13 @@ import harpoon.Temp.Label;
  * is simply a <code>Label</code> object.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ConstPointer.java,v 1.1.2.3 1999-06-18 01:48:09 cananian Exp $
+ * @version $Id: ConstPointer.java,v 1.1.2.4 1999-06-28 18:57:35 duncan Exp $
  */
 class ConstPointer extends Pointer {
     private final StaticState ss;
+    
+    public static final ConstPointer NULL_POINTER = 
+	new ConstPointer(null, null);
 
     /** Class constructor. */
     ConstPointer(Label label, StaticState ss) {
@@ -36,6 +39,7 @@ class ConstPointer extends Pointer {
 	ConstPointer ptr;
 	if (this==obj) return true;
 	if (null==obj) return false;
+	if (this==NULL_POINTER || obj==NULL_POINTER) return false;
 	try { ptr = (ConstPointer)obj; }
 	catch (ClassCastException e) { return false; }
 	return ((Label)getBase()).toString().
@@ -66,6 +70,11 @@ class ConstPointer extends Pointer {
 
     /** Always returns false. */
     public boolean isDerived()       { return false; }
+
+    /** Returns an integer enumeration of the kind of this Pointer.  The 
+	enumerated values are public fields of the Pointer class.
+    */
+    public int kind() { return Pointer.CONST_PTR; }
    
     /** If this <code>ConstPointer</code> points to a static field, then
      *  returns the type of this static field.  Otherwise throws an 
@@ -88,7 +97,10 @@ class ConstPointer extends Pointer {
      */
     public String toString() { 
 	StringBuffer sb = new StringBuffer("ConstPtr: < ");
-	sb.append(getBase().toString());
+	if (this==NULL_POINTER) 
+	    sb.append("null");
+	else
+	    sb.append(getBase().toString());
 	sb.append(" >");
 	return sb.toString();
     }

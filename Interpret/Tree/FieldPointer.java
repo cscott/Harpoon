@@ -10,7 +10,7 @@ import harpoon.Util.Tuple;
  * modified with <code>updateValue()</code>.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: FieldPointer.java,v 1.1.2.3 1999-06-18 01:48:09 cananian Exp $
+ * @version $Id: FieldPointer.java,v 1.1.2.4 1999-06-28 18:57:35 duncan Exp $
  */
 class FieldPointer extends Pointer {
     private boolean isDerived;
@@ -64,7 +64,12 @@ class FieldPointer extends Pointer {
 	//return Method.toNonNativeFormat(((ObjectRef)getBase()).get(this));
 	return Method.toNonNativeFormat(ObjectRef.get(this));
     }
-    
+
+    /** Returns an integer enumeration of the kind of this Pointer.  The 
+	enumerated values are public fields of the Pointer class.
+    */
+    public int kind() { return Pointer.FIELD_PTR; }
+
     /** Sets the value at the memory location specified by this 
      *  <code>FieldPointer</code> to the specified parameter.  
      *  This value should be in non-native format.
@@ -72,8 +77,8 @@ class FieldPointer extends Pointer {
     void updateValue(Object value) {
 	ObjectRef objref = (ObjectRef)getBase();
 	HClass type = objref.ss.getField(this).getType();
-	System.out.println("Calling FieldValue.update: " + 
-			   value + ", " + type);
+	if (HCLibrary.DEBUG) 
+	    HCLibrary.db("Calling FieldValue.update: " + value + ", " + type);
 	ObjectRef.update(this, Method.toNativeFormat(value, type));
     }
 

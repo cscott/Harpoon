@@ -8,7 +8,7 @@ import harpoon.Util.Tuple;
  * the blocks of class data allocated by the class loader.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterfaceListPointer.java,v 1.1.2.3 1999-06-18 01:48:09 cananian Exp $
+ * @version $Id: InterfaceListPointer.java,v 1.1.2.4 1999-06-28 18:57:35 duncan Exp $
  */
 public class InterfaceListPointer extends Pointer {
   
@@ -65,6 +65,11 @@ public class InterfaceListPointer extends Pointer {
 
     /** Always returns false. */
     public boolean isDerived() { return false; }
+
+    /** Returns an integer enumeration of the kind of this Pointer.  The 
+	enumerated values are public fields of the Pointer class.
+    */
+    public int kind() { return Pointer.IFACE_PTR; }
 
     /** Throws an error, as the program is not supposed to
      *  modify static class data */

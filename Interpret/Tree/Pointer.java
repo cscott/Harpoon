@@ -10,9 +10,17 @@ import harpoon.Util.Tuple;
  * <code>ObjectRef</code>. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Pointer.java,v 1.1.2.1 1999-03-27 22:05:09 duncan Exp $
+ * @version $Id: Pointer.java,v 1.1.2.2 1999-06-28 18:57:35 duncan Exp $
  */
 abstract class Pointer extends Tuple {
+    public static final int  ARRAY_PTR = 0;
+    public static final int   CLAZ_PTR = 1;
+    public static final int  CONST_PTR = 2;
+    public static final int  FIELD_PTR = 3;
+    public static final int  IFACE_PTR = 4;
+    public static final int STRING_PTR = 5;
+    public static final int  UNDEF_PTR = 6;
+    
 
     protected Pointer(Object[] tuple) {
 	super(tuple);
@@ -37,6 +45,11 @@ abstract class Pointer extends Tuple {
 
     /** Returns true if this <code>Pointer</code> is a derived pointer. */
     abstract public boolean isDerived();
+
+    /** Returns an integer enumeration of the kind of this Pointer.  The 
+	enumerated values are public fields of the <code>Pointer</code> class.
+    */
+    abstract public int kind();
 
     /** Updates the value at the location pointed to by this 
      *  <code>Pointer</code>. */

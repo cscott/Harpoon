@@ -8,7 +8,7 @@ import harpoon.Temp.Label;
  * to static class data.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ClazPointer.java,v 1.1.2.3 1999-06-18 01:48:09 cananian Exp $
+ * @version $Id: ClazPointer.java,v 1.1.2.4 1999-06-28 18:57:35 duncan Exp $
  */
 class ClazPointer extends Pointer {
     private boolean isDerived;
@@ -70,6 +70,11 @@ class ClazPointer extends Pointer {
     /** Returns true if this <code>ClazPointer</code> has been derived from 
      *  another <code>ClazPointer</code> */
     public boolean isDerived()       { return isDerived; }
+
+    /** Returns an integer enumeration of the kind of this Pointer.  The 
+	enumerated values are public fields of the Pointer class.
+    */
+    public int kind() { return Pointer.CLAZ_PTR; }
 
     /** Throws an error, as the program is not supposed to
      *  modify static class data */

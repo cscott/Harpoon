@@ -9,7 +9,7 @@ import harpoon.Util.Tuple;
  * with <code>getValue()</code>.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: StringPointer.java,v 1.1.2.3 1999-06-18 01:48:09 cananian Exp $
+ * @version $Id: StringPointer.java,v 1.1.2.4 1999-06-28 18:57:35 duncan Exp $
  */
 public class StringPointer extends Pointer {
     private StaticState ss;
@@ -64,6 +64,11 @@ public class StringPointer extends Pointer {
 
     /** Always returns false. */
     public boolean isDerived() { return false; }
+
+    /** Returns an integer enumeration of the kind of this Pointer.  The 
+	enumerated values are public fields of the Pointer class.
+    */
+    public int kind() { return Pointer.STRING_PTR; }
 
     /** Throws an error, as <code>StringPointer</code>s are constant. */
     public void updateValue(Object value) { 
