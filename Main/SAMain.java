@@ -22,6 +22,7 @@ import harpoon.Temp.TempFactory;
 import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.DataFlow.InstrSolver;
 import harpoon.Analysis.Instr.RegAlloc;
+import harpoon.Analysis.Instr.RegAllocOpts;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.ClassHierarchy;
@@ -69,7 +70,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.98 2000-10-17 17:51:30 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.99 2000-10-20 08:53:56 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -102,6 +103,12 @@ public class SAMain extends harpoon.IR.Registration {
     static String classHierarchyFilename;
 
     static String rootSetFilename;
+
+    // FSK: contains specialization options to be used during
+    // RegAlloc.  Take out when no longer necessary.  
+    // May be null (in which case no options are being passed).
+    static String regAllocOptionsFilename; 
+    static RegAlloc.Factory regAllocFactory;
 
     static String methodName;
 
@@ -235,6 +242,13 @@ public class SAMain extends harpoon.IR.Registration {
 				   classHierarchyFilename);
 	    }
 	}
+
+	if (LOCAL_REG_ALLOC) 
+	    regAllocFactory = RegAlloc.LOCAL;
+	else 
+	    regAllocFactory = RegAlloc.GLOBAL;
+	regAllocFactory = (new RegAllocOpts
+			   (regAllocOptionsFilename)).factory(regAllocFactory);
 
 	Set methods = classHierarchy.callableMethods();
 	Iterator classes = new TreeSet(classHierarchy.classes()).iterator();
@@ -420,12 +434,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    HCode hc = sahcf.convert(hmethod);
 	    info("\t--- INSTR FORM (register allocation)  ---");
 	    HCodeFactory regAllocCF;
-	    if (LOCAL_REG_ALLOC) {
-		regAllocCF = 
-		    RegAlloc.codeFactory(sahcf,frame,RegAlloc.LOCAL);
-	    } else {
-		regAllocCF = RegAlloc.codeFactory(sahcf, frame);
-	    }
+	    
+	    regAllocCF = RegAlloc.codeFactory(sahcf,frame,regAllocFactory);
+
 	    HCode rhc = regAllocCF.convert(hmethod);
 	    if (rhc != null) {
 		info("Codeview \""+rhc.getName()+"\" for "+
@@ -531,7 +542,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     protected static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "m:i:s:b:c:o:DOPFHRLlABhq1::C:r:");
+	Getopt g = new Getopt("SAMain", args, "m:i:s:b:c:o:DOPFHR::LlABhq1::C:r:");
 	
 	int c;
 	String arg;
@@ -605,6 +616,7 @@ public class SAMain extends harpoon.IR.Registration {
 		OUTPUT_INFO = ABSTRACT_REG_ALLOC = true;
 		break;
 	    case 'R':
+		regAllocOptionsFilename = g.getOptarg();
 		REG_ALLOC = true;
 		break;
 	    case 'L':
