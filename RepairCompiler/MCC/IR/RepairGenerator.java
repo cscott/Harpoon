@@ -1343,7 +1343,7 @@ public class RepairGenerator {
 		cr.outputline("if ("+mdfyptr.getSafeSymbol()+")");
 		{
 		    cr.startblock();
-		    cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+"int,int,int)="+"(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+"int,int,int)) "+tmpptr.getSafeSymbol());
+		    cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+",int,int,int)="+"(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+",int,int,int)) "+tmpptr.getSafeSymbol());
 		    cr.outputline(methodcall+leftvar+", "+rightvar+", "+mdfyptr.getSafeSymbol() +");");
 		    cr.endblock();
 		}
