@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.58 1999-10-14 04:29:48 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.59 1999-10-14 06:13:20 cananian Exp $
  */
 %%
 
@@ -594,7 +594,7 @@ BINOP<l>(SHL, j, k) = i %{
     emit( ROOT, "mov `d0, `s0 ", r2, k );
     emit( ROOT, "bl ___ashldi3");
     emit( ROOT, "mov `d0l, `s0", i, r0 );
-    emit( ROOT, "mov `d0h, `s1", i, r1 );
+    emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 
 BINOP<p,i>(SHR, j, k) = i %{
@@ -609,7 +609,7 @@ BINOP<l>(SHR, j, k) = i %{
     emit( ROOT, "mov `d0, `s0 ", r2, k );
     emit( ROOT, "bl ___ashrdi3");
     emit( ROOT, "mov `d0l, `s0", i, r0 );
-    emit( ROOT, "mov `d0h, `s1", i, r1 );
+    emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 
 BINOP<p,i>(USHR, j, k) = i %{
@@ -624,7 +624,7 @@ BINOP<l>(USHR, j, k) = i %{
     emit( ROOT, "mov `d0, `s0 ", r2, k );
     emit( ROOT, "bl ___lshrdi3");
     emit( ROOT, "mov `d0l, `s0", i, r0 );
-    emit( ROOT, "mov `d0h, `s1", i, r1 );
+    emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 
 BINOP<p,i>(XOR, j, k) = i %{
