@@ -3,7 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DynamicSyncRemoval;
 
-import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
+import harpoon.Analysis.AllocationInformationMap;
+import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
@@ -12,14 +13,16 @@ import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
-import harpoon.IR.Quads.Code;
+import harpoon.IR.Quads.ANEW;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.MONITORENTER;
 import harpoon.IR.Quads.MONITOREXIT;
+import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
@@ -51,7 +54,7 @@ import java.util.Set;
  * transformation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncRemover.java,v 1.3 2003-07-10 02:49:05 cananian Exp $
+ * @version $Id: SyncRemover.java,v 1.4 2003-07-10 04:11:16 cananian Exp $
  */
 public class SyncRemover
     extends harpoon.Analysis.Transformation.MethodMutator<Quad> {
@@ -79,8 +82,10 @@ public class SyncRemover
     protected HCode<Quad> mutateHCode(HCodeAndMaps<Quad> input) {
 	Code hc = (Code) input.hcode();
 	METHOD qM = hc.getRootElement().method();
+	AllocationInformationMap aim = (AllocationInformationMap)//heh heh
+	    hc.getAllocationInformation();
 	// recursively traverse graph, rewriting as we go.
-	munge(new Munger(qM.getFactory()), qM);
+	munge(new Munger(qM.getFactory(), aim), qM);
 	return hc;
     }
     private void munge(Munger munger, Quad start) {
@@ -100,11 +105,13 @@ public class SyncRemover
 
     private class Munger extends QuadValueVisitor<Collection<Edge>> {
 	final Collection<Edge> NO_EDGES = Arrays.asList(new Edge[0]);
+	final AllocationInformationMap aim;
 	final QuadFactory qf;
 	final TempFactory tf;
-	Munger(QuadFactory qf) {
+	Munger(QuadFactory qf, AllocationInformationMap aim) {
 	    this.qf = qf;
 	    this.tf = qf.tempFactory();
+	    this.aim = aim;
 	}
 
 	public Collection<Edge> visit(Quad q) {
@@ -122,7 +129,7 @@ public class SyncRemover
 	    // rewrite contents.
 	    munge(this, q.next(0));
 	    // now copy contents
-	    CopyInfo ci = copyGraph(q);
+	    CopyInfo ci = copyGraph(q, aim);
 	    // now rewrite as follows:
 	    
 	    // MONITORENTER(lock)
@@ -198,7 +205,8 @@ public class SyncRemover
 	    this.start = new CopyPair<MONITORENTER>(origStart, copyStart);
 	}
     }
-    private static CopyInfo copyGraph(MONITORENTER start) {
+    private static CopyInfo copyGraph(MONITORENTER start,
+				      AllocationInformationMap aim) {
 	WorkSet<Quad> frontier = new WorkSet<Quad>();
 	List<Edge> toLink = new ArrayList<Edge>();
 	Map<Quad,Quad> copyMap = new LinkedHashMap<Quad,Quad>();
@@ -217,7 +225,7 @@ public class SyncRemover
 	    // handle subgraphs first.
 	    if (q instanceof MONITORENTER) {
 		// this is a subgraph: recurse.
-		CopyInfo ci = copyGraph((MONITORENTER)q);
+		CopyInfo ci = copyGraph((MONITORENTER)q, aim);
 		// now merge the info, including the mapping for q
 		copyMap.put(ci.start.orig, ci.start.copy);
 		// continue from the subgraph's exit points.
@@ -234,6 +242,9 @@ public class SyncRemover
 	    Quad qq = q.rename(identityTempMap, identityTempMap);
 	    // add to the mapping.
 	    copyMap.put(q, qq);
+	    // clone allocation properties
+	    if (q instanceof ANEW || q instanceof NEW)
+		if (aim!=null) aim.transfer(qq, q, identityTempMap, aim);
 	    // find connected quads.
 	    if (q instanceof MONITOREXIT) {
 		// don't go past MONITOREXIT, but add it to the endList
