@@ -59,10 +59,11 @@ import java.util.Collection;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.29 2000-05-24 18:48:11 pnkfelix Exp $ */
+ * @version $Id: BasicBlock.java,v 1.1.2.30 2000-05-26 00:26:12 pnkfelix Exp $ */
 public class BasicBlock {
     
     static final boolean DEBUG = false;
+    static final boolean TIME = false;
 
     private HCodeElement first;
     private HCodeElement last;
@@ -508,6 +509,8 @@ public class BasicBlock {
 		 of <code>BasicBlock</code>s created.   
 	*/
 	public Factory(HCode hcode, final CFGrapher grapher) {
+	    if (TIME) System.out.print("bldBB");
+
 	    // maps HCodeElement 'e' -> BasicBlock 'b' starting with 'e'
 	    HashMap h = new HashMap(); 
 	    // stores BasicBlocks to be processed
@@ -622,7 +625,8 @@ public class BasicBlock {
 
 		// FSK: debug checkBlock(bb);
 	    }
-	    
+
+	    if (TIME) System.out.print("#");	    
 	}
 
 	private void checkBlock(BasicBlock block) {

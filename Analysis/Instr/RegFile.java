@@ -22,20 +22,20 @@ import java.util.Iterator;
  * most processor architectures for storing working sets of data.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFile.java,v 1.1.2.7 2000-05-24 18:48:27 pnkfelix Exp $
+ * @version $Id: RegFile.java,v 1.1.2.8 2000-05-26 00:26:26 pnkfelix Exp $
  */
 class RegFile {
 
     public static final boolean PRINT_USAGE = false;
 
-    private GenericMultiMap regToTmp; // MultiMap[ Reg -> Temp ]
+    private Map regToTmp; // Map[ Reg -> Temp ]
     private Map tmpToRegLst; // Map[ Temp -> List<Reg> ]
 
     private Set dirtyTemps; // Set of all Temps that have been written
 
     /** Creates a <code>RegFile</code>. */
     public RegFile() {
-        regToTmp = new GenericMultiMap();
+        regToTmp = new HashMap();
 	tmpToRegLst = new HashMap();
 	dirtyTemps = new HashSet();
     } 
@@ -111,6 +111,13 @@ class RegFile {
 	return Collections.unmodifiableMap(new HashMap(regToTmp));
     }
 
+    /** Generates a set-view of the pseudo-register <code>Temp</code>s
+	in <code>this</code>. 
+    */
+    public Set tempSet() {
+	return tmpToRegLst.keySet();
+    }
+
     /** Returns some pseudo-register associated with <code>reg</code>.
 	If there is no pseudo-register associated with
 	<code>reg</code>, returns <code>null</code>.
@@ -121,10 +128,8 @@ class RegFile {
     
     /** Assigns <code>pseudoReg</code> to <code>regs</code>.
 	<BR> <B>requires:</B> <OL>
-
 	     <LI> <code>pseudoReg</code> does not currently have an
 	          assignment in <code>this</code>.
-
 	     </OL>
 	<BR> <B>modifies:</B> <code>this</code>
 	<BR> <B>effects:</B> Creates an association between
@@ -143,12 +148,12 @@ class RegFile {
 	while (regIter.hasNext()) {
 	    Temp reg = (Temp) regIter.next();
 
-	    //FSK: multiple associations now 
-	    // Util.assert(!regToTmp.containsKey(reg), 
-	    //             "non-empty reg: "+reg);  
-	    // regToTmp.put(reg, pseudoReg);
+	    
+	    Util.assert(!regToTmp.containsKey(reg), 
+	                 "non-empty reg: "+reg);  
 
-	    regToTmp.add(reg, pseudoReg); // multiple associations
+	    regToTmp.put(reg, pseudoReg);
+	    // regToTmp.add(reg, pseudoReg); // use if mult. assoc. 
 	}
 
 	if (tmpToRegLst.containsKey(pseudoReg)) {
@@ -162,6 +167,14 @@ class RegFile {
 
 	if (PRINT_USAGE) System.out.println(this+".assign: "+regs+" <- "+pseudoReg);
     } 
+
+    /** Checks if <code>reg</code> is currently holding a value in
+	<code>this</code>.  (Meant mainly for debugging, not for
+	utility) 
+    */
+    public boolean isEmpty(final Temp reg) {
+	return !regToTmp.containsKey(reg);
+    }
 
     /** Checks if <code>pseudoReg</code> has an register assignment in
 	<code>this</code>.
@@ -198,10 +211,13 @@ class RegFile {
 	final Iterator regIter = regs.iterator();
 	while(regIter.hasNext()) {
 	    Temp reg = (Temp) regIter.next();
-	    boolean mapped = regToTmp.removeAll
+	    /*
+	      boolean mapped = regToTmp.removeAll
 		(reg, Collections.singleton(pseudoReg));
 	    Util.assert(mapped, "reg: "+reg+
 			" should have mapped to "+pseudoReg);
+	    */
+	    regToTmp.remove(reg);
 	}
 	dirtyTemps.remove(pseudoReg);
 
