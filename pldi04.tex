@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.12 2003-11-10 14:51:32 cananian Exp $
+% $Id: pldi04.tex,v 1.13 2003-11-10 17:06:50 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -810,7 +810,7 @@ To that end, we propose some slight modifications to the Java
 language to better support its use for writing operating systems.
 We concentrate on synchronization in the language, eliding as
 orthogonal issues related to direct access to hardware.  We expect
-that slight extensions similar to those in Lisaac \cite{564099} and
+that slight extensions similar to those in Lisaac \cite{SonntagCo02} and
 JEPES \cite{SchultzBuChKn03} will be sufficient to support interrupt handlers
 and memory-mapped I/O.  We then present an efficient implementation
 technique for the synchronization primitives in the language, showing
@@ -823,7 +823,7 @@ Our implementation will use the same DCAS primitive used in the Cache
 Kernel and in Synthesis.  This primitive can be emulated using
 architecture extensions to the popular LL/SC operations,
 or in software with OS support using Bershad's technique
-\cite{GreenwaldCh96,bershad93:practical}.
+\cite{GreenwaldCh96,Bershad93}.
 
 \subsection{Synchronization in the language}
 The Emerald system \cite{BlackHuJuLe86,JulSt91} introduced
