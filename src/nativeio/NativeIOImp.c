@@ -41,6 +41,7 @@ static jfieldID SI_localportID = 0; /* The field ID of SocketImpl.localport */
 static jfieldID IA_addrID  = 0; /* The field ID of InetAddress.address */
 static jfieldID IA_familyID= 0; /* The field ID of InetAddress.family */
 static jclass IOExcCls  = 0; /* The java/io/IOException class object */
+static jclass ArrExcCls = 0; /* The java/lang/ArrayIndexOutOfBoundsException */
 static int inited = 0; /* whether the above variables have been initialized */
 FLEX_MUTEX_DECLARE_STATIC(init_mutex);
 
@@ -73,7 +74,10 @@ static int initializePSI(JNIEnv *env) {
     if ((*env)->ExceptionOccurred(env)) goto done;
     /* make IOExcCls into a global reference for future use */
     IOExcCls = (*env)->NewGlobalRef(env, IOExcCls);
-
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    ArrExcCls = (*env)->FindClass(env, "java/lang/ArrayIndexOutOfBoundsExceptions");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    ArrExcCls = (*env)->NewGlobalRef(env, ArrExcCls);
     /* done. */
     inited = 1;
  done:
@@ -116,6 +120,10 @@ JNIEXPORT jint JNICALL Java_java_io_NativeIO_readJNI
   jbyte *_cbuf=(*env)->GetByteArrayElements(env, buf, 0);
   int tmp_errno;
 /*      puts("read start..."); */
+  if ((size+ofs)>len) {
+    (*env)->ThrowNew(env, ArrExcCls, "array out of bounds");
+    return ERROR;
+  }
   do {
   x=read(handle, _cbuf + ofs, size);
   tmp_errno= errno;
@@ -134,7 +142,12 @@ JNIEXPORT jint JNICALL Java_java_io_NativeIO_writeJNI
 { 
   jsize len=(*env)->GetArrayLength(env, buf);
   jbyte *_cbuf=(*env)->GetByteArrayElements(env, buf, 0);
-  jint x=write(handle, _cbuf + ofs, size);
+  jint x;
+  if ((size+ofs)>len) {
+    (*env)->ThrowNew(env, ArrExcCls, "array out of bounds");
+    return ERROR;
+  } 
+  x=write(handle, _cbuf + ofs, size);
   // printf("writeJNI wrote %d bytes\n", (int)x);
   (*env)->ReleaseByteArrayElements(env, buf, _cbuf, 0);
   if (x>=0) return x;
@@ -254,7 +267,7 @@ JNIEXPORT jint JNICALL Java_java_io_NativeIO_socketAccept
     struct sockaddr_in sa;
     jobject fdObj, address;
     int rc, sa_size = sizeof(sa);
-    if (!inited && !initializePSI(env)) return;
+    if (!inited && !initializePSI(env)) return ERROR;
     do {
       rc = accept(fd, (struct sockaddr *) &sa, &sa_size);
     } while (rc<0 && errno==EINTR); /* repeat if interrupted */
@@ -285,10 +298,12 @@ JNIEXPORT jint JNICALL Java_java_io_NativeIO_acceptJNI
   struct sockaddr_in sin;
   int sinlen=sizeof(sin);
   int fd=accept(handle, (struct sockaddr *)&sin, &sinlen);
-  char *guest;
   jsize len=(*env)->GetArrayLength(env, IP);
   jbyte *cIP=(*env)->GetByteArrayElements(env, IP, 0);
-
+  if (len<4) {
+    (*env)->ThrowNew(env, ArrExcCls, "array out of bounds");
+    return ERROR;
+  }
   if (fd<0 && errno==EWOULDBLOCK) return TRYAGAIN;
   if (fd<0)
     { fputs("Accept: Error", stderr);
@@ -327,8 +342,6 @@ JNIEXPORT jintArray JNICALL Java_java_io_NativeIO_selectJNI
         writeNo=(*env)->GetArrayLength(env, writeFD);
   jintArray result=(jintArray)((*env)->NewIntArray(env,
 						   readNo+writeNo+2));
-  jsize len3=(*env)->GetArrayLength(env, result);
-  
   jint *creadFD=(*env)->GetIntArrayElements(env, readFD, 0),
        *cwriteFD=(*env)->GetIntArrayElements(env, writeFD, 0);
   jint *cresult=(*env)->GetIntArrayElements(env, result, 0);
