@@ -161,6 +161,9 @@ Backend/RuntimeTiny/TinyPackedClassFieldMap.java
 Backend/RuntimeTiny/TreeBuilder.java
 ClassFile/Factories.java
 ClassFile/HClass.java
+ClassFile/HClassArray.java
+ClassFile/HClassPrimitive.java
+ClassFile/HClassProxy.java
 ClassFile/HClassSyn.java
 ClassFile/HCode.java
 ClassFile/HCodeAndMaps.java

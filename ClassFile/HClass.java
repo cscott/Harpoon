@@ -9,8 +9,10 @@ import harpoon.Util.Collections.UniqueVector;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Instances of the class <code>HClass</code> represent classes and 
@@ -29,12 +31,12 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.44 2002-04-10 03:04:12 cananian Exp $
+ * @version $Id: HClass.java,v 1.45 2003-03-11 23:20:03 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
 public abstract class HClass extends HPointer
-  implements java.lang.Comparable, ReferenceUnique {
+  implements java.lang.Comparable<HClass>, ReferenceUnique {
   /** The linker responsible for the resolution of this <code>HClass</code>
    *  object. */
   private final Linker _linker;
@@ -168,13 +170,13 @@ public abstract class HClass extends HPointer
     if (isPrimitive() || isArray())
       return new HField[0];
     // do the actual work.
-    UniqueVector v = new UniqueVector();
+    UniqueVector<HField> v = new UniqueVector<HField>();
     // add fields from interfaces.
     HClass[] in = getInterfaces();
     for (int i=0; i<in.length; i++) {
       HField[] inf = in[i].getFields();
       for (int j=0; j<inf.length; j++)
-	v.addElement(inf[j]);
+	v.add(inf[j]);
     }
     // now fields from superclasses, subject to access mode constraints.
     HClass sup = getSuperclass();
@@ -192,15 +194,15 @@ public abstract class HClass extends HPointer
 	  continue;
       */
       // all's good. Add this one.
-      v.addElement(supf[i]);
+      v.add(supf[i]);
     }
     // now fields from our local class.
     HField locf[] = getDeclaredFields();
     for (int i=0; i<locf.length; i++)
-      v.addElement(locf[i]);
+      v.add(locf[i]);
     
     // Merge into one array.
-    return (HField[]) v.toArray(new HField[v.size()]);
+    return v.toArray(new HField[v.size()]);
   }
 
   /**
@@ -327,14 +329,14 @@ public abstract class HClass extends HPointer
     if (isPrimitive())
       return new HMethod[0];
     // do the actual work.
-    Hashtable h = new Hashtable(); // keep track of overriding
-    Vector v = new Vector(); // accumulate results.
+    Map<String,HMethod> h = new HashMap<String,HMethod>(); // keep track of overriding
+    List<HMethod> v = new ArrayList<HMethod>();
 
     // first methods we declare locally.
     HMethod[] locm = getDeclaredMethods();
     for (int i=0; i<locm.length; i++) {
       h.put(locm[i].getName()+locm[i].getDescriptor(), locm[i]);
-      v.addElement(locm[i]);
+      v.add(locm[i]);
     }
     locm=null; // free memory
 
@@ -370,7 +372,7 @@ public abstract class HClass extends HPointer
 	continue;
       // all's good.  Add this one.
       h.put(supm[i].getName()+supm[i].getDescriptor(), supm[i]);
-      v.addElement(supm[i]);
+      v.add(supm[i]);
     }
     sup=null; supm=null; // free memory.
 
@@ -385,13 +387,13 @@ public abstract class HClass extends HPointer
 	// don't add methods which are overridden by locally declared methods
 	if (h.containsKey(intm[j].getName()+intm[j].getDescriptor()))
 	  continue;
-	v.addElement(intm[j]);
+	v.add(intm[j]);
       }
     }
     intc = null; // free memory.
 
     // Merge into a single array.
-    return (HMethod[]) v.toArray(new HMethod[v.size()]);
+    return v.toArray(new HMethod[v.size()]);
   }
 
   /**
@@ -597,16 +599,17 @@ public abstract class HClass extends HPointer
   public final boolean isSuperinterfaceOf(HClass hc) {
     assert _linker == hc._linker || isPrimitive() || hc.isPrimitive();
     assert this.isInterface();
-    UniqueVector uv = new UniqueVector();//unique in case of circularity 
+    UniqueVector<HClass> uv =
+      new UniqueVector<HClass>();//unique in case of circularity 
     for ( ; hc!=null; hc = hc.getSuperclass())
-      uv.addElement(hc);
+      uv.add(hc);
 
     for (int i=0; i<uv.size(); i++)
-      if (uv.elementAt(i) == this) return true;
+      if (uv.get(i) == this) return true;
       else {
-	HClass in[] = ((HClass)uv.elementAt(i)).getInterfaces();
+	HClass in[] = uv.get(i).getInterfaces();
 	for (int j=0; j<in.length; j++)
-	  uv.addElement(in[j]);
+	  uv.add(in[j]);
       }
     // ran out of possibilities.
     return false;
@@ -789,8 +792,8 @@ public abstract class HClass extends HPointer
   // Comparable interface.
   /** Compares two <code>HClass</code>es by lexicographic order of their
    *  descriptors. */
-  public final int compareTo(Object o) {
-    return getDescriptor().compareTo(((HClass)o).getDescriptor());
+  public final int compareTo(HClass o) {
+    return getDescriptor().compareTo(o.getDescriptor());
   }
 
   // UTILITY CLASSES (used in toString methods all over the place)
