@@ -9,7 +9,7 @@ import java.util.EmptyStackException;
  * stack of <b>unique</b> objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueStack.java,v 1.3 1998-10-11 02:37:59 cananian Exp $
+ * @version $Id: UniqueStack.java,v 1.3.2.1 1999-02-03 23:13:09 pnkfelix Exp $
  */
 
 public class UniqueStack extends UniqueVector implements Worklist {
@@ -17,11 +17,9 @@ public class UniqueStack extends UniqueVector implements Worklist {
      * Pushes an item onto the top of this stack, if it is unique.
      * Otherwise, does nothing.
      * @param item the item to be pushed onto this stack.
-     * @return the <code>item</code> argument.
      */
-    public Object push(Object item) {
+    public void push(Object item) {
 	addElement(item);
-	return item;
     }
     /**
      * Removes the object at the top of this stack and returns that

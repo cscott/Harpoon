@@ -6,75 +6,63 @@ package harpoon.Util;
 import java.util.Hashtable;
 import java.util.Enumeration;
 /**
- * <code>Set</code> is a set representation with constant-time
- * membership test, union element, and remove element operations.
+ * <code>Set</code> is an abstract set representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Set.java,v 1.3.2.3 1998-12-28 23:28:11 cananian Exp $
+ * @version $Id: Set.java,v 1.3.2.4 1999-02-03 23:13:09 pnkfelix Exp $
  */
 
-public class Set implements Worklist {
-    protected Hashtable h;
+public abstract class Set implements Worklist {
+    
     /** Creates an empty <code>Set</code>. */
-    public Set() {
-        h = new Hashtable();
-    }
-    /** Clear this set. */
-    public void clear() {
-	h.clear();
-    }
-    /** Remove a member from the <code>Set</code>. */
-    public void remove(Object o) {
-	h.remove(o);
-    }
-    /** Ensure that an object is a member of the <code>Set</code>. */
-    public void union(Object o) {
-	h.put(o, o);
-    }
+    public Set() {    }
+
+    /** Clears <code>this</code>.
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> Removes all elements of
+	                     <code>this</code>
+    */
+    public abstract void clear();
+    
+    /** Remove a member from the <code>Set</code>. 
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> Removes <code>o</code> from
+	                     <code>this</code>, if it is present.
+			     Else does nothing. 
+     */
+    public abstract void remove(Object o);
+
+    /** Ensure that an object is a member of the <code>Set</code>. 
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> Adds <code>o</code> to <code>this</code>,
+	                     if it is present.  Else does nothing. 
+     */
+    public abstract void union(Object o);
+
     /** Worklist interface: an alias for <code>union</code>. */
-    public Object push(Object o) {
-	return h.put(o, o);
-    }
+    public abstract void push(Object o);
+    
     /** Determines if an object is a member of the <code>Set</code>. */
-    public boolean contains(Object o) {
-	return h.containsKey(o);
-    }
+    public abstract boolean contains(Object o);
+
     /** Determines if there are any elements in the <code>Set</code>. */
-    public boolean isEmpty() {
-	return h.isEmpty();
-    }
+    public abstract boolean isEmpty();
+    
     /** Returns the number of elements in the <code>Set</code>. */
-    public int size() { 
-	return h.size(); 
-    }
+    public abstract int size();
+
     /** Worklist interface: removes an arbitrary element from the
      *  <code>Set</code> and returns the removed element. */
-    public Object pull() {
-	Object o = h.keys().nextElement();
-	h.remove(o);
-	return o;
-    }
+    public abstract Object pull();
+    
     /** Copies the elements of the <code>Set</code> into an array. */
-    public void copyInto(Object[] oa) {
-	int i=0;
-	for(Enumeration e = h.keys(); e.hasMoreElements(); )
-	    oa[i++] = e.nextElement();
-    }
+    public abstract void copyInto(Object[] oa);
+
     /** Returns an <code>Enumeration</code> of the elements of the
      *  <code>Set</code>. */
-    public Enumeration elements() {
-	return h.keys();
-    }
+    public abstract Enumeration elements();
+
     /** Returns a rather long string representation of the <code>Set</code>.
      *  @return a string representation of this <code>Set</code>. */
-    public String toString() {
-	StringBuffer sb = new StringBuffer("{");
-	for (Enumeration e = elements(); e.hasMoreElements(); ) {
-	    sb.append(e.nextElement().toString());
-	    if (e.hasMoreElements())
-		sb.append(", ");
-	}
-	sb.append("}");
-	return sb.toString();
-    }
+    public abstract String toString();
 }

@@ -10,7 +10,7 @@ import java.util.EmptyStackException;
  * list of objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FIFO.java,v 1.4 1998-10-11 03:01:18 cananian Exp $
+ * @version $Id: FIFO.java,v 1.4.2.1 1999-02-03 23:13:08 pnkfelix Exp $
  */
 
 public class FIFO {
@@ -29,16 +29,14 @@ public class FIFO {
     /** 
      * Pushes an item onto the front of this fifo.
      * @param item the item to be pushed onto this stack.
-     * @return the <code>item</code> argument.
      */
-    public synchronized Object push(Object item) {
+    public synchronized void push(Object item) {
 	if (tail==null) { // empty.
 	    tail = head = new List(item, null);
 	} else {
 	    tail.next = new List(item, null);
 	    tail = tail.next;
 	}
-	return item;
     }
     /**
      * Removes the object at the back of this fifo and returns that

@@ -10,7 +10,7 @@ import java.util.EmptyStackException;
  * list of <b>unique</b> objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueFIFO.java,v 1.4 1998-10-11 03:01:18 cananian Exp $
+ * @version $Id: UniqueFIFO.java,v 1.4.2.1 1999-02-03 23:13:09 pnkfelix Exp $
  */
 
 public class UniqueFIFO extends FIFO implements Worklist {
@@ -30,14 +30,12 @@ public class UniqueFIFO extends FIFO implements Worklist {
      * Pushes an item onto the front of this fifo, if it is unique.
      * Otherwise, does nothing.
      * @param item the item to be pushed onto this stack.
-     * @return the <code>item</code> argument.
      */
-    public synchronized Object push(Object item) {
+    public synchronized void push(Object item) {
 	if (!uniq.containsKey(item)) {
 	    uniq.put(item, item);
 	    super.push(item);
 	}
-	return item;
     }
     /**
      * Removes the object at the back of this fifo and returns that
