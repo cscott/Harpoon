@@ -24,7 +24,7 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Run.java,v 1.1.2.10.6.1 2000-01-11 18:59:13 cananian Exp $
+ * @version $Id: Run.java,v 1.1.2.10.6.2 2000-01-12 00:43:13 cananian Exp $
  */
 public abstract class Run extends harpoon.IR.Registration {
     public static void main(String args[]) throws IOException {
@@ -86,7 +86,7 @@ public abstract class Run extends harpoon.IR.Registration {
 	    } else break; // no more command-line options.
 	}
 	if (dump!=null) { // make quick-startup dump.
-	    harpoon.Interpret.Quads.Method.makeStartup(hf, dump);
+	    harpoon.Interpret.Quads.Method.makeStartup(linker, hf, dump);
 	    return;
 	}
 	// arg[i] is class name.  Load its main method.
