@@ -1,4 +1,8 @@
 #!/usr/bin/perl
+# Source-markup.perl --- (c) 1999 C. Scott Ananian
+# Licensed under the terms of the GNU GPL; see COPYING for details.
+# $Id: source-markup.perl,v 1.1.2.11 1999-09-24 06:22:01 cananian Exp $
+
 use English;
 use Getopt::Std;
 
@@ -148,6 +152,12 @@ for ($i=0; $i<=$#lines; $i++) {
         &insertBefore($i,$startloc,"<A HREF=\"$match\">") if defined $1;
         &insertBefore($i,$startloc,"<A HREF=\"mailto:$match\">") if defined $2;
         &insertAfter($i,$endloc-1,"</A>");
+    }
+    while (defined($opt_u) && $lines[$i] =~ m/([\$]Id[^\$]*[\$])/g) {
+	my $endloc = pos $lines[$i];
+	my $startloc = $endloc - length($1);
+	&insertBefore($i, $startloc, "<A HREF=\"$opt_u/Code/$filename\">");
+	&insertAfter ($i, $endloc-1, "</A>");
     }
 }
 
