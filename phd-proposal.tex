@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-proposal.tex,v 1.6 2004-09-03 19:00:09 cananian Exp $
+% $Id: phd-proposal.tex,v 1.7 2004-09-03 21:11:01 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt]{article}
 %\usepackage{pdffonts}
@@ -84,13 +84,14 @@ Laboratory where thesis will be done: \=Computer Science and Artificial\tighter
 \end{tabbing}
 Brief Statement of the Problem:
 
-An investigation into software and hardware transaction mechanisms
-is presented in the context of a sophisticated compiler for the Java
-programming language.  Transactions will be presented as an organizing
+
+I propose an investigation into software and hardware transaction mechanisms
+in the context of a sophisticated compiler for the Java
+programming language.  Transactions are presented as an organizing
 principle for concurrent and fault-tolerant programming which can be
 gracefully integrated with a modern object-oriented language.
-Efficient software and hardware implementations of these new language
-constructs will then be presented, with compiler optimizations and
+I will present efficient software and hardware implementations of
+these new language constructs, with compiler optimizations and
 microarchitectural modifications described and benchmarked.
 %The goal is near-zero-cost transaction implementations that will enable
 %``transactions-everywhere'' programming.
@@ -108,6 +109,8 @@ to supervise the research and evaluate the thesis report.
 \end{tabbing}
 
 \end{titlepage}
+
+\clearpage
 
 Although strong typing, garbage collection, and other modern
 programming language constructs have enabled automatic enforcement of
@@ -135,9 +138,9 @@ software-hardware approach will give the best trade-off.
 
 As part of my thesis research, I will implement transactions as part
 of the FLEX research compiler for Java, which I wrote as part of my
-Master's research.  I will benchmark both typical general-purpose Java
-applications, as well as code specially-written to take advantage of
-the transaction system, to show that it is possible to achieve good
+Master's research.  I will benchmark typical general-purpose Java
+applications as well as code specially-written to take advantage of
+the transaction system, in order to show that it is possible to achieve good
 performance.  I will also argue that transactions can significantly
 reduce the time and effort required to develop concurrent and
 fault-tolerant programs.
@@ -669,8 +672,8 @@ never held across context switches or I/O operations.  Transactions
 provide a complete solution for this limited synchronization.
 One of the goals of this thesis is to investigate better integration
 of transactional with inherently non-transactional operations.
-One promising approach is the addition of explicit 'recovery' blocks
-to 'undo' the effects of non-transactional regions embedded within
+One promising approach is the addition of explicit ``recovery'' blocks
+to undo the effects of non-transactional regions embedded within
 an aborting transaction.
 
 \secput{auto}{Creating transactions}
