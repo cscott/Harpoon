@@ -22,7 +22,7 @@ import java.util.Arrays;
     without the JUMP in place.
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrJUMP.java,v 1.2 2002-02-25 21:04:13 cananian Exp $ */
+    @version $Id: InstrJUMP.java,v 1.3 2003-06-19 21:01:03 cananian Exp $ */
 public class InstrJUMP extends Instr {
     
     /** Creates a <code>InstrJUMP</code>. */
@@ -33,12 +33,10 @@ public class InstrJUMP extends Instr {
     }
 
     public Instr cloneMutateAssem(InstrFactory inf, String newAssem) {
-	return new InstrJUMP(inf, this, newAssem, 
-			     (Label)getTargets().get(0));
+	return new InstrJUMP(inf, this, newAssem, getTargets().get(0));
     }
     public Instr rename(InstrFactory inf, TempMap defMap, TempMap useMap) {
-	return new InstrJUMP(inf, this, getAssem(),
-			     (Label)getTargets().get(0));
+	return new InstrJUMP(inf, this, getAssem(), getTargets().get(0));
     }
     public void accept(InstrVisitor v) { v.visit(this); }
 
