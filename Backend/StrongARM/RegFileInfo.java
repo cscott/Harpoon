@@ -35,7 +35,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.5 1999-10-15 02:14:01 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.6 1999-10-20 20:26:41 cananian Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -103,7 +103,7 @@ public class RegFileInfo
 	PC = reg[15];
 	
         liveOnExitRegs.add(reg[0]);  // return value
-        liveOnExitRegs.add(reg[1]); // return exceptional value
+        liveOnExitRegs.add(reg[1]); // (possible) long word return value
         liveOnExitRegs.add(FP);
         liveOnExitRegs.add(SP);
         liveOnExitRegs.add(PC);
