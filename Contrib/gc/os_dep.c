@@ -14,7 +14,7 @@
  * modified is included with the above copyright notice.
  */
 
-# include "gc_priv.h"
+# include "private/gc_priv.h"
 
 # if defined(LINUX) && !defined(POWERPC)
 #   include <linux/version.h>
@@ -163,6 +163,19 @@
     extern ptr_t GC_find_limit();
 
     GC_data_start = GC_find_limit((ptr_t)GC_copyright, FALSE);
+  }
+#endif
+
+#if defined(NETBSD) && defined(__ELF__)
+  ptr_t GC_data_start;
+
+  void GC_init_netbsd_elf()
+  {
+    extern ptr_t GC_find_limit();
+    extern char **environ;
+	/* This may need to be environ, without the underscore, for	*/
+	/* some versions.						*/
+    GC_data_start = GC_find_limit((ptr_t)&environ, FALSE);
   }
 #endif
 
@@ -420,7 +433,17 @@ ptr_t GC_get_stack_base()
 }
 
 
-# else
+# endif /* MS Windows */
+
+# ifdef BEOS
+# include <kernel/OS.h>
+ptr_t GC_get_stack_base(){
+	thread_info th;
+	get_thread_info(find_thread(NULL),&th);
+	return th.stack_end;
+}
+# endif /* BEOS */
+
 
 # ifdef OS2
 
@@ -436,7 +459,7 @@ ptr_t GC_get_stack_base()
     return((ptr_t)(ptib -> tib_pstacklimit));
 }
 
-# else
+# endif /* OS2 */
 
 # ifdef AMIGA
 
@@ -484,7 +507,7 @@ ptr_t GC_get_stack_base()
 }
 #endif /* 0 */
 
-# else /* !AMIGA, !OS2, ... */
+# endif /* AMIGA */
 
 # ifdef NEED_FIND_LIMIT
   /* Some tools to implement HEURISTIC2	*/
@@ -615,7 +638,7 @@ ptr_t GC_get_stack_base()
     /* using direct I/O system calls in order to avoid calling malloc   */
     /* in case REDIRECT_MALLOC is defined.				*/ 
 #   define STAT_BUF_SIZE 4096
-#   if defined(GC_USE_LD_WRAP) && defined(MPROTECT_VDB)
+#   if defined(GC_USE_LD_WRAP)
 #	define STAT_READ __real_read
 #   else
 #	define STAT_READ read
@@ -649,6 +672,9 @@ ptr_t GC_get_stack_base()
   }
 
 #endif /* LINUX_STACKBOTTOM */
+
+#if !defined(BEOS) && !defined(AMIGA) && !defined(MSWIN32) \
+    && !defined(MSWINCE) && !defined(OS2)
 
 ptr_t GC_get_stack_base()
 {
@@ -700,9 +726,7 @@ ptr_t GC_get_stack_base()
 #   endif /* STACKBOTTOM */
 }
 
-# endif /* ! AMIGA */
-# endif /* ! OS2 */
-# endif /* ! MSWIN32 && !MSWINCE */
+# endif /* ! AMIGA, !OS 2, ! MS Windows, !BEOS */
 
 /*
  * Register static data segment(s) as roots.
@@ -1639,7 +1663,7 @@ void GC_default_push_other_roots GC_PROTO((void))
 # if defined(SOLARIS_THREADS) || defined(WIN32_THREADS) \
      || defined(IRIX_THREADS) || defined(LINUX_THREADS) \
      || defined(USER_THREADS) \
-     || defined(IRIX_JDK_THREADS) || defined(HPUX_THREADS)
+     || defined(HPUX_THREADS)
 
 extern void GC_push_all_stacks();
 
@@ -2089,7 +2113,7 @@ static char *get_fault_addr(struct sigcontext *scp)
 #	if defined(M68K)
           char * addr = NULL;
 
-	  struct sigcontext *scp = (struct sigcontext *)(&sc);
+	  struct sigcontext *scp = (struct sigcontext *)(sc);
 
 	  int format = (scp->sc_formatvec >> 12) & 0xf;
 	  unsigned long *framedata = (unsigned long *)(scp + 1); 
@@ -2101,6 +2125,10 @@ static char *get_fault_addr(struct sigcontext *scp)
 	  } else if (format == 7) {
 	  	/* 68040 */
 	  	ea = framedata[3];
+	  	if (framedata[1] & 0x08000000) {
+	  		/* correct addr on misaligned access */
+	  		ea = (ea+4095)&(~4095);
+		}
 	  } else if (format == 4) {
 	  	/* 68060 */
 	  	ea = framedata[0];
@@ -2310,7 +2338,7 @@ void GC_dirty_init()
       }
 #   endif
 #   if defined(SUNOS5SIGS) || defined(IRIX5)
-#     if defined(IRIX_THREADS) || defined(IRIX_JDK_THREADS)
+#     if defined(IRIX_THREADS)
       	sigaction(SIGSEGV, 0, &oldact);
       	sigaction(SIGSEGV, &act, 0);
 #     else
@@ -2531,6 +2559,13 @@ struct hblk *h;
 word n;
 {
 }
+
+# else /* !MPROTECT_VDB */
+
+#   ifdef GC_USE_LD_WRAP
+      ssize_t __wrap_read(int fd, void *buf, size_t nbyte)
+      { return __real_read(fd, buf, nbyte); }
+#   endif
 
 # endif /* MPROTECT_VDB */
 
@@ -2851,6 +2886,17 @@ struct hblk *h;
  * Should probably be in mach_dep.c, but that requires reorganization.
  */
 
+/* I suspect the following works for most X86 *nix variants, so 	*/
+/* long as the frame pointer is explicitly stored.  In the case of gcc,	*/
+/* compiler flags (e.g. -fomit-frame-pointer) determine whether it is.	*/
+#if defined(I386) && defined(LINUX) && defined(SAVE_CALL_CHAIN)
+    struct frame {
+	struct frame *fr_savfp;
+	long	fr_savpc;
+        long	fr_arg[NARGS];  /* All the arguments go here.	*/
+    };
+#endif
+
 #if defined(SPARC)
 #  if defined(LINUX)
      struct frame {
@@ -2871,7 +2917,7 @@ struct hblk *h;
 #      if defined (DRSNX)
 #	 include <sys/sparc/frame.h>
 #      else
-#	 if defined(OPENBSD)
+#	 if defined(OPENBSD) || defined(NETBSD)
 #	   include <frame.h>
 #	 else
 #	   include <sys/frame.h>
@@ -2882,12 +2928,13 @@ struct hblk *h;
 #  if NARGS > 6
 	--> We only know how to to get the first 6 arguments
 #  endif
+#endif /* SPARC */
 
 #ifdef SAVE_CALL_CHAIN
 /* Fill in the pc and argument information for up to NFRAMES of my	*/
 /* callers.  Ignore my frame and my callers frame.			*/
 
-#ifdef OPENBSD
+#if (defined(OPENBSD) || defined(NETBSD)) && defined(SPARC)
 #  define FR_SAVFP fr_fp
 #  define FR_SAVPC fr_pc
 #else
@@ -2907,12 +2954,18 @@ struct callinfo info[NFRAMES];
   struct frame *frame;
   struct frame *fp;
   int nframes = 0;
-  word GC_save_regs_in_stack();
+# ifdef I386
+    /* We assume this is turned on only with gcc as the compiler. */
+    asm("movl %%ebp,%0" : "=r"(frame));
+    fp = frame;
+# else
+    word GC_save_regs_in_stack();
 
-  frame = (struct frame *) GC_save_regs_in_stack ();
+    frame = (struct frame *) GC_save_regs_in_stack ();
+    fp = (struct frame *)((long) frame -> FR_SAVFP + BIAS);
+#endif
   
-  for (fp = (struct frame *)((long) frame -> FR_SAVFP + BIAS);
-       fp != 0 && nframes < NFRAMES;
+  for (; fp != 0 && nframes < NFRAMES;
        fp = (struct frame *)((long) fp -> FR_SAVFP + BIAS), nframes++) {
       register int i;
       
@@ -2925,7 +2978,6 @@ struct callinfo info[NFRAMES];
 }
 
 #endif /* SAVE_CALL_CHAIN */
-#endif /* SPARC */
 
 
 

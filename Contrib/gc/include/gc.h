@@ -29,6 +29,52 @@
 #ifndef _GC_H
 
 # define _GC_H
+
+#if defined(_SOLARIS_PTHREADS) && !defined(SOLARIS_THREADS)
+#   define SOLARIS_THREADS
+#endif
+
+/*
+ * Some tests for old macros.  These violate our namespace rules and will
+ * disappear shortly.
+ */
+#if defined(SOLARIS_THREADS) || defined(_SOLARIS_THREADS)
+# define GC_SOLARIS_THREADS
+#endif
+#if defined(_SOLARIS_PTHREADS)
+# define GC_SOLARIS_PTHREADS
+#endif
+#if defined(IRIX_THREADS)
+# define GC_IRIX_THREADS
+#endif
+#if defined(HPUX_THREADS)
+# define GC_HPUX_THREADS
+#endif
+#if defined(OSF1_THREADS)
+# define GC_OSF1_THREADS
+#endif
+#if defined(LINUX_THREADS)
+# define GC_LINUX_THREADS
+#endif
+#if defined(USER_THREADS)
+# define GC_USER_THREADS
+#endif
+#if defined(WIN32_THREADS)
+# define GC_WIN32_THREADS
+#endif
+#if defined(USE_LD_WRAP)
+# define GC_USE_LD_WRAP
+#endif
+
+#if !defined(_REENTRANT) && (defined(GC_SOLARIS_THREADS) \
+		             || defined(GC_SOLARIS_PTHREADS) \
+			     || defined(GC_HPUX_THREADS) \
+			     || defined(GC_LINUX_THREADS))
+# define _REENTRANT
+	/* Better late than never.  This fails if system headers that	*/
+	/* depend on this were previously included.			*/
+#endif
+
 # define __GC
 # include <stddef.h>
 # ifdef _WIN32_WCE
@@ -99,6 +145,16 @@ typedef long GC_signed_word;
 
 GC_API GC_word GC_gc_no;/* Counter incremented per collection.  	*/
 			/* Includes empty GCs at startup.		*/
+
+GC_API int GC_parallel;	/* GC is parallelized for performance on	*/
+			/* multiprocessors.  Currently set only		*/
+			/* implicitly if collector is built with	*/
+			/* -DPARALLEL_MARK and if either:		*/
+			/*  Env variable GC_NPROC is set to > 1, or	*/
+			/*  GC_NPROC is not set and this is an MP.	*/
+			/* If GC_parallel is set, incremental		*/
+			/* collection is aonly partially functional,	*/
+			/* and may not be desirable.			*/
 			
 
 /* Public R/W variables */
@@ -209,7 +265,8 @@ GC_API char *GC_stackbottom;	/* Cool end of user stack.		*/
  * will occur after GC_end_stubborn_change has been called on the
  * result of GC_malloc_stubborn. GC_malloc_uncollectable allocates an object
  * that is scanned for pointers to collectable objects, but is not itself
- * collectable.  GC_malloc_uncollectable and GC_free called on the resulting
+ * collectable.  The object is scanned even if it does not appear to
+ * be reachable.  GC_malloc_uncollectable and GC_free called on the resulting
  * object implicitly update GC_non_gc_bytes appropriately.
  */
 GC_API GC_PTR GC_malloc GC_PROTO((size_t size_in_bytes));
@@ -336,12 +393,18 @@ GC_API size_t GC_get_free_bytes GC_PROTO((void));
 /* Return the number of bytes allocated since the last collection.	*/
 GC_API size_t GC_get_bytes_since_gc GC_PROTO((void));
 
+/* Return the total number of bytes allocated in this process.		*/
+/* Never decreases.							*/
+GC_API size_t GC_get_total_bytes GC_PROTO((void));
+
 /* Enable incremental/generational collection.	*/
 /* Not advisable unless dirty bits are 		*/
 /* available or most heap objects are		*/
 /* pointerfree(atomic) or immutable.		*/
 /* Don't use in leak finding mode.		*/
 /* Ignored if GC_dont_gc is true.		*/
+/* Only the generational piece of this is	*/
+/* functional if GC_parallel is TRUE.		*/
 GC_API void GC_enable_incremental GC_PROTO((void));
 
 /* Perform some garbage collection work, if appropriate.	*/
@@ -698,47 +761,15 @@ GC_API void (*GC_is_valid_displacement_print_proc)
 GC_API void (*GC_is_visible_print_proc)
 	GC_PROTO((GC_PTR p));
 
-#if defined(_SOLARIS_PTHREADS) && !defined(SOLARIS_THREADS)
-#   define SOLARIS_THREADS
-#endif
-
-/*
- * Some tests for old macros.  These violate our namespace rules and will
- * disappear shortly.
- */
-#if defined(SOLARIS_THREADS) || defined(_SOLARIS_THREADS)
-# define GC_SOLARIS_THREADS
-#endif
-#if defined(_SOLARIS_PTHREADS)
-# define GC_SOLARIS_PTHREADS
-#endif
-#if defined(IRIX_THREADS)
-# define GC_IRIX_THREADS
-#endif
-#if defined(HPUX_THREADS)
-  --> Please use GC_HPUX_THREADS.
-	  Unfortunately that doesnt work reliably, yet.
-#endif
-#if defined(LINUX_THREADS)
-# define GC_LINUX_THREADS
-#endif
-#if defined(USER_THREADS)
-# define GC_USER_THREADS
-#endif
-#if defined(WIN32_THREADS)
-# define GC_WIN32_THREADS
-#endif
-#if defined(USE_LD_WRAP)
-# define GC_USE_LD_WRAP
-#endif
-
 #if defined(GC_SOLARIS_THREADS)
 /* We need to intercept calls to many of the threads primitives, so 	*/
 /* that we can locate thread stacks and stop the world.			*/
 /* Note also that the collector cannot see thread specific data.	*/
 /* Thread specific data should generally consist of pointers to		*/
-/* uncollectable objects, which are deallocated using the destructor	*/
-/* facility in thr_keycreate.						*/
+/* uncollectable objects (allocated with GC_malloc_uncollectable,	*/
+/* not the system malloc), which are deallocated using the destructor	*/
+/* facility in thr_keycreate.  Alternatively, keep a redundant pointer	*/
+/* to thread specific data on the thread stack.			        */
 # include <thread.h>
   int GC_thr_create(void *stack_base, size_t stack_size,
                     void *(*start_routine)(void *), void *arg, long flags,

@@ -16,7 +16,7 @@
  */
 
 
-# include "gc_priv.h"
+# include "private/gc_priv.h"
 
 # include <stdio.h>
 # if !defined(MACOS) && !defined(MSWINCE)
@@ -60,8 +60,10 @@ word GC_non_gc_bytes = 0;  /* Number of bytes not intended to be collected */
 word GC_gc_no = 0;
 
 #ifndef SMALL_CONFIG
-  int GC_incremental = 0;    /* By default, stop the world.	*/
+  int GC_incremental = 0;  /* By default, stop the world.	*/
 #endif
+
+int GC_parallel = FALSE;   /* By default, parallel GC is off.	*/
 
 int GC_full_freq = 19;	   /* Every 20th collection is a full	*/
 			   /* collection, whether we need it 	*/
@@ -319,10 +321,12 @@ GC_stop_func stop_func;
     /* Make sure all blocks have been reclaimed, so sweep routines	*/
     /* don't see cleared mark bits.					*/
     /* If we're guaranteed to finish, then this is unnecessary.		*/
+    /* In the find_leak case, we have to finish to guarantee that 	*/
+    /* previously unmarked objects are not reported as leaks.		*/
 #       ifdef PARALLEL_MARK
 	    GC_wait_for_reclaim();
 #       endif
-	if (stop_func != GC_never_stop_func
+ 	if ((GC_find_leak || stop_func != GC_never_stop_func)
 	    && !GC_reclaim_all(stop_func, FALSE)) {
 	    /* Aborted.  So far everything is still consistent.	*/
 	    return(FALSE);

@@ -20,7 +20,7 @@
 #endif
 
 #define I_HIDE_POINTERS	/* To make GC_call_with_alloc_lock visible */
-#include "gc_priv.h"
+#include "private/gc_priv.h"
 
 #ifdef SOLARIS_THREADS
 # include <sys/syscall.h>
@@ -51,7 +51,7 @@
 		 CRITICAL_SECTION GC_allocate_ml;
 #	      endif
 #          else
-#             if defined(IRIX_THREADS) || defined(IRIX_JDK_THREADS) \
+#             if defined(IRIX_THREADS) \
 		 || ((defined(LINUX_THREADS)||defined(USER_THREADS)) \
                  && defined(USE_SPIN_LOCK))
 	        pthread_t GC_lock_holder = NO_THREAD;
@@ -427,6 +427,11 @@ size_t GC_get_bytes_since_gc GC_PROTO(())
     return ((size_t) WORDS_TO_BYTES(GC_words_allocd));
 }
 
+size_t GC_get_total_bytes GC_PROTO(())
+{
+    return ((size_t) WORDS_TO_BYTES(GC_words_allocd+GC_words_allocd_before_gc));
+}
+
 GC_bool GC_is_initialized = FALSE;
 
 void GC_init()
@@ -475,9 +480,11 @@ void GC_init_inner()
 	/* This doesn't really work if the collector is in a shared library. */
 	GC_init_linux_data_start();
 #   endif
+#   if defined(NETBSD) && defined(__ELF__)
+	GC_init_netbsd_elf();
+#   endif
 #   if defined(IRIX_THREADS) || defined(LINUX_THREADS) \
-       || defined(IRIX_JDK_THREADS) || defined(HPUX_THREADS) \
-       || defined(SOLARIS_THREADS)
+       || defined(HPUX_THREADS) || defined(SOLARIS_THREADS)
         GC_thr_init();
 #   endif
 #   ifdef SOLARIS_THREADS
@@ -547,12 +554,9 @@ void GC_init_inner()
 #   endif
     /* Get black list set up */
       GC_gcollect_inner();
+    GC_is_initialized = TRUE;
 #   ifdef STUBBORN_ALLOC
     	GC_stubborn_init();
-#   endif
-    GC_is_initialized = TRUE;
-#   ifdef LINUX_THREADS
-      GC_thr_late_init();
 #   endif
     /* Convince lint that some things are used */
 #   ifdef LINT
@@ -723,7 +727,7 @@ size_t len;
 /* same size as long, and that the format conversions expect something	  */
 /* of that size.							  */
 void GC_printf(format, a, b, c, d, e, f)
-CONST char * format;
+GC_CONST char * format;
 long a, b, c, d, e, f;
 {
     char buf[1025];
@@ -736,7 +740,7 @@ long a, b, c, d, e, f;
 }
 
 void GC_err_printf(format, a, b, c, d, e, f)
-CONST char * format;
+GC_CONST char * format;
 long a, b, c, d, e, f;
 {
     char buf[1025];
@@ -785,7 +789,7 @@ GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
 
 #ifndef PCR
 void GC_abort(msg)
-CONST char * msg;
+GC_CONST char * msg;
 {
 #   if defined(MSWIN32)
       (void) MessageBoxA(NULL, msg, "Fatal error in gc", MB_ICONERROR|MB_OK);

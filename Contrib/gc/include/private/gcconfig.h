@@ -28,6 +28,11 @@
 #    define LINUX
 # endif
 
+/* And one for NetBSD: */
+# if defined(__NetBSD__)
+#    define NETBSD
+# endif
+
 /* Determine the machine type: */
 # if defined(sun) && defined(mc68000)
 #    define M68K
@@ -51,12 +56,14 @@
 # endif
 # if defined(__NetBSD__) && defined(m68k)
 #    define M68K
-#    define NETBSD
 #    define mach_type_known
 # endif
-# if defined(__NetBSD__) && defined(arm32)
+# if defined(__NetBSD__) && defined(__powerpc__)
+#    define POWERPC
+#    define mach_type_known
+# endif
+# if defined(__NetBSD__) && defined(__arm32__)
 #    define ARM32
-#    define NETBSD
 #    define mach_type_known
 # endif
 # if defined(vax)
@@ -82,6 +89,9 @@
 #	 endif
 #      endif
 #    endif /* !LINUX */
+#    if defined(__NetBSD__) && defined(__MIPSEL__)
+#      undef ULTRIX
+#    endif
 #    define mach_type_known
 # endif
 # if defined(sequent) && defined(i386)
@@ -115,13 +125,17 @@
 #   define mach_type_known
 # endif
 # if defined(sparc) && defined(unix) && !defined(sun) && !defined(linux) \
-     && !defined(__OpenBSD__)
+     && !defined(__OpenBSD__) && !(__NetBSD__)
 #   define SPARC
 #   define DRSNX
 #   define mach_type_known
 # endif
 # if defined(_IBMR2)
 #   define RS6000
+#   define mach_type_known
+# endif
+# if defined(__NetBSD__) && defined(__sparc__)
+#   define SPARC
 #   define mach_type_known
 # endif
 # if defined(_M_XENIX) && defined(_M_SYSV) && defined(_M_I386)
@@ -146,6 +160,11 @@
 #     define HPUX
 #   endif
 #   define mach_type_known
+# endif
+# if defined(__BEOS__) && defined(_X86_)
+#    define I386
+#    define BEOS
+#    define mach_type_known
 # endif
 # if defined(LINUX) && (defined(i386) || defined(__i386__))
 #    define I386
@@ -173,7 +192,7 @@
 # endif
 # if defined(__alpha) || defined(__alpha__)
 #   define ALPHA
-#   if !defined(LINUX)
+#   if !defined(LINUX) && !defined(NETBSD)
 #     define OSF1	/* a.k.a Digital Unix */
 #   endif
 #   define mach_type_known
@@ -228,7 +247,6 @@
 # endif
 # if defined(__NetBSD__) && defined(i386)
 #   define I386
-#   define NETBSD
 #   define mach_type_known
 # endif
 # if defined(bsdi) && defined(i386)
@@ -481,8 +499,12 @@
 #       define MPROTECT_VDB
 #       ifdef __ELF__
 #            define DYNAMIC_LOADING
-             extern char **__environ;
-#            define DATASTART ((ptr_t)(&__environ))
+#	     include <features.h>
+#	     if defined(__GLIBC__)&& __GLIBC__>=2
+#              define LINUX_DATA_START
+#	     else /* !GLIBC2 */
+               extern char **__environ;
+#              define DATASTART ((ptr_t)(&__environ))
                              /* hideous kludge: __environ is the first */
                              /* word in crt0.o, and delimits the start */
                              /* of the data segment, no matter which   */
@@ -491,6 +513,7 @@
                              /* would include .rodata, which may       */
                              /* contain large read-only data tables    */
                              /* that we'd rather not scan.             */
+#	     endif /* !GLIBC2 */
              extern int _end;
 #            define DATAEND (&_end)
 #       else
@@ -592,6 +615,19 @@
 #     define DATASTART ((ptr_t) get_etext())
 #     define STACKBOTTOM ((ptr_t) 0xc0000000)
 #     define DATAEND	/* not needed */
+#     ifdef POWERPC
+#        define MPROTECT_VDB
+#     endif
+#  	include <unistd.h>
+#	   define GETPAGESIZE() getpagesize()
+#   endif
+#   ifdef NETBSD
+#     define ALIGNMENT 4
+#     define OS_TYPE "NETBSD"
+#     define HEURISTIC2
+      extern char etext;
+#     define DATASTART GC_data_start
+#     define DYNAMIC_LOADING
 #   endif
 # endif
 
@@ -626,7 +662,6 @@
 #     define ALIGNMENT 4	/* Required by hardware	*/
 #   endif
 #   define ALIGN_DOUBLE
-    extern int etext;
 #   ifdef SUNOS5
 #	define OS_TYPE "SUNOS5"
 	extern int _etext;
@@ -690,6 +725,7 @@
           Linux Sparc/a.out not supported
 #     endif
       extern int _end;
+      extern int _etext;
 #     define DATAEND (&_end)
 #     define SVR4
 #     ifdef __arch64__
@@ -704,7 +740,19 @@
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     define STACKBOTTOM ((ptr_t) 0xf8000000)
+      extern int etext;
 #     define DATASTART ((ptr_t)(&etext))
+#   endif
+#   ifdef NETBSD
+#     define OS_TYPE "NETBSD"
+#     define HEURISTIC2
+#     ifdef __ELF__
+#	define DATASTART GC_data_start
+#	define DYNAMIC_LOADING
+#     else
+	extern char etext;
+#	define DATASTART ((ptr_t)(&etext))
+#     endif
 #   endif
 # endif
 
@@ -723,6 +771,13 @@
 	extern int etext;
 #       define DATASTART ((ptr_t)((((word) (&etext)) + 0xfff) & ~0xfff))
 #       define STACKBOTTOM ((ptr_t) 0x3ffff000) 
+#   endif
+#   ifdef BEOS
+#     define OS_TYPE "BEOS"
+#     include <OS.h>
+#     define GETPAGESIZE() B_PAGE_SIZE
+      extern int etext;
+#     define DATASTART ((ptr_t)((((word) (&etext)) + 0xfff) & ~0xfff))
 #   endif
 #   ifdef SUNOS5
 #	define OS_TYPE "SUNOS5"
@@ -821,7 +876,7 @@
 #	ifdef USE_3DNOW_PREFETCH
 #	  define PREFETCH(x) \
 	    __asm__ __volatile__ ("	prefetch	%0": : "m"(*(char *)(x)))
-#	  define PREFETCH_FOR_WRITE(x) 
+#	  define PREFETCH_FOR_WRITE(x) \
 	    __asm__ __volatile__ ("	prefetchw	%0": : "m"(*(char *)(x)))
 #	endif
 #   endif
@@ -999,6 +1054,23 @@
 #       define ALIGNMENT 4
 #       define DATAEND /* not needed */
 #   endif
+#   if defined(NETBSD)
+      /* This also checked for __MIPSEL__ .  Why?  NETBSD recognition	*/
+      /* should be handled at the top of the file.			*/
+#     define ALIGNMENT 4
+#     define OS_TYPE "NETBSD"
+#     define HEURISTIC2
+#     define USE_GENERIC_PUSH_REGS 1
+#     ifdef __ELF__
+        extern int etext;
+#       define DATASTART GC_data_start
+#       define NEED_FIND_LIMIT
+#       define DYNAMIC_LOADING
+#     else
+#       define DATASTART ((ptr_t) 0x10000000)
+#       define STACKBOTTOM ((ptr_t) 0x7ffff000)
+#     endif /* _ELF_ */
+#  endif
 # endif
 
 # ifdef RS6000
@@ -1043,7 +1115,7 @@
 #   endif
 #   define STACK_GROWS_UP
 #   define DYNAMIC_LOADING
-#   ifndef HPUX_THREADS
+#   if !defined(GC_HPUX_THREADS) && !defined(HPUX_THREADS)
 #     define MPROTECT_VDB
 #   endif
 #   include <unistd.h>
@@ -1060,19 +1132,33 @@
 #   define MACH_TYPE "ALPHA"
 #   define ALIGNMENT 8
 #   define USE_GENERIC_PUSH_REGS
-	/* Gcc and probably the DEC/Compaq compiler spill pointers to preserved	*/
-	/* fp registers in some cases when the target is a 21264.  The assembly	*/
-	/* code doesn't handle that yet, and version dependencies make that a	*/
-	/* bit tricky.  Do the easy thing for now.				*/
+    /* Gcc and probably the DEC/Compaq compiler spill pointers to preserved */
+    /* fp registers in some cases when the target is a 21264.  The assembly */
+    /* code doesn't handle that yet, and version dependencies make that a   */
+    /* bit tricky.  Do the easy thing for now.				    */
+#   ifdef NETBSD
+#	define OS_TYPE "NETBSD"
+#	define HEURISTIC2
+#	define DATASTART GC_data_start
+#	define ELFCLASS32 32
+#	define ELFCLASS64 64
+#	define ELF_CLASS ELFCLASS64
+#   	define CPP_WORDSZ 64
+#       define DYNAMIC_LOADING
+#   endif
 #   ifdef OSF1
 #	define OS_TYPE "OSF1"
 #   	define DATASTART ((ptr_t) 0x140000000)
-	extern _end;
+	extern int _end;
 #   	define DATAEND ((ptr_t) &_end)
-#   	define HEURISTIC2
+ 	extern char ** environ;
+	/* round up from the value of environ to the nearest page boundary */
+#	define STACKBOTTOM ((ptr_t)(((word)(environ) | (getpagesize()-1))+1))
+/* #   	define HEURISTIC2 */
 	/* Normally HEURISTIC2 is too conervative, since		*/
 	/* the text segment immediately follows the stack.		*/
 	/* Hence we give an upper pound.				*/
+	/* This is currently unused, since we disabled HEURISTIC2	*/
     	extern int __start;
 #   	define HEURISTIC2_LIMIT ((ptr_t)((word)(&__start) & ~(getpagesize()-1)))
 #   	define CPP_WORDSZ 64
@@ -1104,8 +1190,13 @@
 	/* Requires 16 byte alignment for malloc */
 #   define ALIGNMENT 8
 #   define USE_GENERIC_PUSH_REGS
-	/* We need to get preserved registers in addition to register windows.	*/
-	/* That's easiest to do with setjmp.					*/
+	/* We need to get preserved registers in addition to register   */
+	/* windows.   That's easiest to do with setjmp.			*/
+#   ifdef PARALLEL_MARK
+#	define USE_MARK_BYTES
+	    /* Compare-and-exchange is too expensive to use for 	*/
+	    /* setting mark bits.					*/
+#   endif
 #   ifdef HPUX
 	--> needs work
 #   endif
@@ -1251,8 +1342,8 @@
 #   define DATASTART ((ptr_t)(&__data_start != 0? &__data_start : &data_start))
 #endif
 
-#if defined(LINUX) && defined(REDIRECT_MALLOC) && !(defined(LINUX_THREADS)||defined(USER_THREADS))
-    /* Rld appears to allocate some meory with its own allocator, and	*/
+#if defined(LINUX) && defined(REDIRECT_MALLOC)
+    /* Rld appears to allocate some memory with its own allocator, and	*/
     /* some through malloc, which might be redirected.  To make this	*/
     /* work with collectable memory, we have to scan memory allocated	*/
     /* by rld's internal malloc.					*/
@@ -1381,8 +1472,14 @@
 #if defined(GC_USER_THREADS) && !defined(USER_THREADS)
 #   define USER_THREADS
 #endif
+#if defined(GC_WIN32_THREADS) && !defined(WIN32_THREADS)
+#   define WIN32_THREADS
+#endif
 #if defined(GC_HPUX_THREADS) && !defined(HPUX_THREADS)
 #   define HPUX_THREADS
+#endif
+#if defined(GC_OSF1_THREADS) && !defined(OSF1_THREADS)
+#   define OSF1_THREADS
 #endif
 
 /* Internally we use SOLARIS_THREADS to test for either old or pthreads. */
@@ -1390,9 +1487,6 @@
 #   define SOLARIS_THREADS
 # endif
 # if defined(IRIX_THREADS) && !defined(IRIX5)
---> inconsistent configuration
-# endif
-# if defined(IRIX_JDK_THREADS) && !defined(IRIX5)
 --> inconsistent configuration
 # endif
 # if defined(LINUX_THREADS) && !defined(LINUX)
@@ -1411,15 +1505,20 @@
 	defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || \
 	defined(IRIX_THREADS) || defined(LINUX_THREADS) || \
         defined(USER_THREADS) \
-	defined(IRIX_JDK_THREADS) || defined(HPUX_THREADS)
+	defined(HPUX_THREADS)
 #   define THREADS
 # endif
 
-# if defined(HP_PA) || defined(M88K) || defined(POWERPC) \
+# if defined(HP_PA) || defined(M88K) || defined(POWERPC) && !defined(MACOSX) \
      || (defined(I386) && defined(OS2)) || defined(UTS4) || defined(LINT) \
      || defined(MSWINCE)
 	/* Use setjmp based hack to mark from callee-save registers. */
 #	define USE_GENERIC_PUSH_REGS
+# endif
+# if defined(I386) && defined(LINUX)
+    /* SAVE_CALL_CHAIN is supported if the code is compiled to save	*/
+    /* frame pointers by default, i.e. no -fomit-frame-pointer flag.	*/
+/* #   define SAVE_CALL_CHAIN */
 # endif
 # if defined(SPARC)
 #   define SAVE_CALL_CHAIN

@@ -82,11 +82,15 @@
 #    define LOCK() mutex_lock(&GC_allocate_ml);
 #    define UNLOCK() mutex_unlock(&GC_allocate_ml);
 #  endif
-#  if defined(LINUX_THREADS) || defined(GC_OSF1_THREADS)
+#  if defined(LINUX_THREADS)||defined(USER_THREADS) || defined(GC_OSF1_THREADS)
 #   define NO_THREAD (pthread_t)(-1)
 #   if defined(I386)|| defined(POWERPC) || defined(ALPHA) || defined(IA64) \
     || defined(M68K) || defined(SPARC)
+#ifdef USER_THREADS
+#    include <threads.h>
+#else
 #    include <pthread.h>
+#endif
 #    if defined(PARALLEL_MARK) 
       /* We need compare-and-swap to update mark bits, where it's	*/
       /* performance critical.  If USE_MARK_BYTES is defined, it is	*/
@@ -241,7 +245,7 @@
 #       define GC_CLEAR_DEFINED
 #     endif
 #     if defined(ALPHA) 
-#      if defined(LINUX_THREADS) || defined(__GNUC__)
+#      if defined(LINUX_THREADS)||defined(USER_THREADS) || defined(__GNUC__)
         inline static int GC_test_and_set(volatile unsigned int * addr)
         {
           unsigned long oldvalue;

@@ -22,7 +22,7 @@
  */
 
 #include <stdio.h>
-#include "gc_priv.h"
+#include "private/gc_priv.h"
 
 extern ptr_t GC_clear_stack();  /* in misc.c, behaves like identity */
 void GC_extend_size_map();      /* in misc.c. */
@@ -31,11 +31,11 @@ GC_bool GC_alloc_reclaim_list();	/* in malloc.c */
 /* Some externally visible but unadvertised variables to allow access to */
 /* free lists from inlined allocators without including gc_priv.h	 */
 /* or introducing dependencies on internal data structure layouts.	 */
-ptr_t * CONST GC_objfreelist_ptr = GC_objfreelist;
-ptr_t * CONST GC_aobjfreelist_ptr = GC_aobjfreelist;
-ptr_t * CONST GC_uobjfreelist_ptr = GC_uobjfreelist;
+ptr_t * GC_CONST GC_objfreelist_ptr = GC_objfreelist;
+ptr_t * GC_CONST GC_aobjfreelist_ptr = GC_aobjfreelist;
+ptr_t * GC_CONST GC_uobjfreelist_ptr = GC_uobjfreelist;
 # ifdef ATOMIC_UNCOLLECTABLE
-    ptr_t * CONST GC_auobjfreelist_ptr = GC_auobjfreelist;
+    ptr_t * GC_CONST GC_auobjfreelist_ptr = GC_auobjfreelist;
 # endif
 
 
@@ -238,6 +238,7 @@ DCL_LOCK_STATE;
     GC_INVOKE_FINALIZERS();
     DISABLE_SIGNALS();
     LOCK();
+    if (!GC_is_initialized) GC_init_inner();
     /* First see if we can reclaim a page of objects waiting to be */
     /* reclaimed.						   */
     {
@@ -245,7 +246,6 @@ DCL_LOCK_STATE;
 	struct hblk * hbp;
 	hdr * hhdr;
 
-  	if (rlh == 0) return;	/* No blocks of this kind.	*/
 	rlh += lw;
     	while ((hbp = *rlh) != 0) {
             hhdr = HDR(hbp);
@@ -313,6 +313,24 @@ DCL_LOCK_STATE;
 #	    endif
     	}
     }
+    /* Next try to use prefix of global free list if there is one.	*/
+    /* We don't refill it, but we need to use it up before allocating	*/
+    /* a new block ourselves.						*/
+      opp = &(GC_obj_kinds[k].ok_freelist[lw]);
+      if ( (op = *opp) != 0 ) {
+	*opp = 0;
+        my_words_allocd = 0;
+        for (p = op; p != 0; p = obj_link(p)) {
+          my_words_allocd += lw;
+          if (my_words_allocd >= BODY_SZ) {
+            *opp = obj_link(p);
+            obj_link(p) = 0;
+            break;
+	  }
+        }
+	GC_words_allocd += my_words_allocd;
+	goto out;
+      }
     /* Next try to allocate a new block worth of objects of this size.	*/
     {
 	struct hblk *h = GC_allochblk(lw, k, 0);
@@ -341,16 +359,18 @@ DCL_LOCK_STATE;
 	}
     }
     
-    op = GC_generic_malloc_inner(lb, k);
-    obj_link(op) = 0;
+    /* As a last attempt, try allocating a single object.  Note that	*/
+    /* this may trigger a collection or expand the heap.		*/
+      op = GC_generic_malloc_inner(lb, k);
+      if (0 != op) obj_link(op) = 0;
     
-out:
+  out:
     UNLOCK();
     ENABLE_SIGNALS();
     return(op);
 }
 
-void * GC_malloc_many(size_t lb)
+GC_PTR GC_malloc_many(size_t lb)
 {
     return(GC_generic_malloc_many(lb, NORMAL));
 }

@@ -13,8 +13,8 @@
 
 #if defined(LINUX_THREADS) || defined(USER_THREADS) || defined(GC_LINUX_THREADS) || defined(GC_USER_THREADS)
 
-#include "gc_priv.h" /* For GC_compare_and_exchange, GC_memory_barrier */
-#include "specific.h"
+#include "private/gc_priv.h" /* For GC_compare_and_exchange, GC_memory_barrier */
+#include "private/specific.h"
 
 static tse invalid_tse; 	/* 0 qtid is guaranteed to be invalid	*/
 
@@ -34,7 +34,7 @@ int PREFIXED(key_create) (tsd ** key_ptr, void (* destructor)(void *)) {
 int PREFIXED(setspecific) (tsd * key, void * value) {
     pthread_t self = pthread_self();
     int hash_val = HASH(self);
-    tse * entry = (tse *)MALLOC_CLEAR(sizeof (tse));
+    volatile tse * entry = (volatile tse *)MALLOC_CLEAR(sizeof (tse));
     
     if (0 == entry) return ENOMEM;
     pthread_mutex_lock(&(key -> lock));
@@ -42,14 +42,16 @@ int PREFIXED(setspecific) (tsd * key, void * value) {
     entry -> next = key -> hash[hash_val];
     entry -> thread = self;
     entry -> value = value;
-    key -> hash[hash_val] = entry;
+    /* There can only be one writer at a time, but this needs to be	*/
+    /* atomic with respect to concurrent readers.			*/ 
+    *(volatile tse **)(key -> hash + hash_val) = entry;
     pthread_mutex_unlock(&(key -> lock));
     return 0;
 }
 
 /* Remove thread-specific data for this thread.  Should be called on	*/
 /* thread exit.								*/
-int PREFIXED(remove_specific) (tsd * key) {
+void PREFIXED(remove_specific) (tsd * key) {
     pthread_t self = pthread_self();
     unsigned hash_val = HASH(self);
     tse *entry;
@@ -61,6 +63,9 @@ int PREFIXED(remove_specific) (tsd * key) {
 	link = &(entry -> next);
         entry = *link;
     }
+    /* Invalidate qtid field, since qtids may be reused, and a later 	*/
+    /* cache lookup could otherwise find this entry.			*/
+        entry -> qtid = INVALID_QTID;
     if (entry != NULL) {
 	*link = entry -> next;
 	/* Atomic! concurrent accesses still work.	*/
@@ -79,6 +84,7 @@ int PREFIXED(remove_specific) (tsd * key) {
     pthread_mutex_unlock(&(key -> lock));
 }
 
+/* Note that even the slow path doesn't lock.	*/
 void *  PREFIXED(slow_getspecific) (tsd * key, unsigned long qtid,
 				    tse * volatile * cache_ptr) {
     pthread_t self = pthread_self();
