@@ -173,8 +173,11 @@ public class Round {
 	return endTime;
     }
 
-    public long getTotalTime() {
-	return endTime-startTime;
+    // if only_correct is true, then we ignore the incorrect solutions
+    public long getTotalTime(boolean only_correct) {
+	if ((only_correct) && (!correct()))
+	    return 0;
+	else return endTime-startTime;
     }
 
 
@@ -207,7 +210,7 @@ public class Round {
  	    "Program received: "+getProgram()+"\n"+
 	    "Start time: "+getStartTime()+"\n"+
 	    "End time: "+getEndTime()+"\n"+
-	    "Total time: "+getTotalTime();
+	    "Total time: "+getTotalTime(false);
     }
 
 }

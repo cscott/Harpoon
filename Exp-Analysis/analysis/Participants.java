@@ -84,25 +84,27 @@ public class Participants {
     }
 
 
-    public long getTotalTime(String population) {	
+    // if only_correct is true, then we ignore the incorrect solutions
+    public long getTotalTime(String population, boolean only_correct) {
 	long t = 0;
 	Iterator it = participants.iterator();
 	while (it.hasNext()) {
 	    Participant p = (Participant) it.next();
 	    if (p.getPopulation().equals(population))
-		t += p.getTotalTime();
+		t += p.getTotalTime(only_correct);
 	}
 	
 	return t;
     }
 
   
-    public long getTotalTime(String population, int program) {
+    // if only_correct is true, then we ignore the incorrect solutions
+    public long getTotalTime(String population, int program, boolean only_correct) {
 	long t = 0;
 	Iterator it = participants.iterator();
 	while (it.hasNext()) {
 	    Participant p = (Participant) it.next();
-	    t += p.getTotalTime(population, program);
+	    t += p.getTotalTime(population, program, only_correct);
 	}
 	
 	return t;
@@ -128,6 +130,18 @@ public class Participants {
 	while (it.hasNext()) {
 	    Participant p = (Participant) it.next();
 	    n += p.numberRounds(population, program);
+	}
+	
+	return n;
+    }
+
+
+    public int numberCorrectRounds(String population, int program) {
+	int n = 0;
+	Iterator it = participants.iterator();
+	while (it.hasNext()) {
+	    Participant p = (Participant) it.next();
+	    n += p.numberCorrectRounds(population, program);
 	}
 	
 	return n;

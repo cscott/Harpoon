@@ -144,7 +144,19 @@ public static String printTime(long time) {
     time = time - h*3600;
     long m = time/60;
     long s = time - m*60;
-    return h+":"+m+":"+s;
+
+    String hours, minutes, seconds;
+    hours = ""+h;
+
+    if (m>=10)
+	minutes = ""+m;
+    else minutes = "0"+m;
+    
+    if (s>=10)
+	seconds = ""+s;
+    else seconds = "0"+s;
+    
+    return hours+":"+minutes+":"+seconds;
 }
 
 
@@ -167,6 +179,7 @@ public static void main(String args[]) {
     participants.removeParticipant("bdemsky");
 
     // people who didn't use the tool
+    /*
     participants.changePopulation("nigham", "notool");
     participants.changePopulation("daipeng", "notool");
     participants.changePopulation("chenhui", "notool");
@@ -174,8 +187,10 @@ public static void main(String args[]) {
     participants.changePopulation("sajindra", "notool");
     participants.changePopulation("neelu", "notool");
     participants.changePopulation("joey6", "notool");
+    */
     
     // people who didn't use the tool in some rounds
+    /*
     Participant pp = participants.getParticipant("hamailan");
     pp.setPopulation("notool");
     participants.changePopulation("hamailan", 1, "notool");
@@ -195,81 +210,58 @@ public static void main(String args[]) {
     participants.changePopulation("xieyong", 4, "notool");
 
     //participants.changePopulation("catqueen", 3, "notool");    
-
+    */
 
     participants.fixSubmissions(); //System.out.println("\n");        
     //participants.checkCalltoolsInNotool(); System.out.println("\n");
     //participants.checkNoCalltoolsInTool(); System.out.println("\n");
     participants.setCorrect();
 
+    /*
     System.out.println("Participants TOOL:   "+participants.numberParticipants("tool"));
     System.out.println("Participants NOTOOL:   "+participants.numberParticipants("notool"));
     System.out.println("\n");
+    */
 
     participants.printPopulation("tool"); System.out.println("\n");
     
-    System.out.println("Rounds TOOL, program 1:   "+participants.numberRounds("tool", 1));
-    System.out.println("Rounds NOTOOL, program 1: "+participants.numberRounds("notool", 1));
-    System.out.println("\n");
 
-    System.out.println("Rounds TOOL, program 2:   "+participants.numberRounds("tool", 2));
-    System.out.println("Rounds NOTOOL, program 2: "+participants.numberRounds("notool", 2));
-    System.out.println("\n");
+    int noTotal, noCorrect, percentage;
+    long totalTime, avTime;
+    for (int prg=1; prg<=4; prg++) {	   
+	System.out.println("Program "+prg);
+	if (prg<=2)
+	    System.out.println("========= (DS corruption)");
+	else System.out.println("=========");
 
-    System.out.println("Rounds TOOL, program 3:   "+participants.numberRounds("tool", 3));
-    System.out.println("Rounds NOTOOL, program 3: "+participants.numberRounds("notool", 3));
-    System.out.println("\n");
+	System.out.println("Correct solutions:"); 
 
-    System.out.println("Rounds TOOL, program 4:   "+participants.numberRounds("tool", 4));
-    System.out.println("Rounds NOTOOL, program 4: "+participants.numberRounds("notool", 4));
-    System.out.println("\n");
-    System.out.println("\n");
-		       
+	noTotal = participants.numberRounds("tool", prg);
+	noCorrect = participants.numberCorrect("tool", prg);
+	percentage = (100*noCorrect)/noTotal;
+	System.out.println("   TOOL:   "+noCorrect+"/"+noTotal+" ("+percentage+"%)");
+	
+	noTotal = participants.numberRounds("notool", prg);
+	noCorrect = participants.numberCorrect("notool", prg);
+	percentage = (100*noCorrect)/noTotal;
+	System.out.println("   NOTOOL: "+noCorrect+"/"+noTotal+" ("+percentage+"%)");
+	
 
-    System.out.println("Correct TOOL, program 1:   "+participants.numberCorrect("tool", 1)+"/"+participants.numberRounds("tool", 1));
-    System.out.println("Correct NOTOOL, program 1: "+participants.numberCorrect("notool", 1)+"/"+participants.numberRounds("notool", 1));
-    System.out.println("\n");
-    
-    System.out.println("Correct TOOL, program 2:   "+participants.numberCorrect("tool", 2)+"/"+participants.numberRounds("tool", 2));
-    System.out.println("Correct NOTOOL, program 2: "+participants.numberCorrect("notool", 2)+"/"+participants.numberRounds("notool", 2));
-    System.out.println("\n");
-    
-    System.out.println("Correct TOOL, program 3:   "+participants.numberCorrect("tool", 3)+"/"+participants.numberRounds("tool", 3));
-    System.out.println("Correct NOTOOL, program 3: "+participants.numberCorrect("notool", 3)+"/"+participants.numberRounds("notool", 3));
-    System.out.println("\n");
+	System.out.println("\nTotal time/participant:");	
+	noTotal = participants.numberCorrectRounds("tool", prg);
+	totalTime = participants.getTotalTime("tool", prg, true);
+	avTime = totalTime/noTotal;
+	System.out.println("   TOOL:   "+printTime(avTime));
 
-    System.out.println("Correct TOOL, program 4:   "+participants.numberCorrect("tool", 4)+"/"+participants.numberRounds("tool", 4));
-    System.out.println("Correct NOTOOL, program 4: "+participants.numberCorrect("notool", 4)+"/"+participants.numberRounds("notool", 4));
-    System.out.println("\n");
+	noTotal = participants.numberCorrectRounds("notool", prg);
+	totalTime = participants.getTotalTime("notool", prg, true);
+	avTime = totalTime/noTotal;
+	System.out.println("   NOTOOL: "+printTime(avTime));
 
-    
-    
-
-    //System.out.println("Total time TOOL:   "+participants.getTotalTime("tool"));
-    //System.out.println("Total time NOTOOL: "+participants.getTotalTime("notool"));
-
-    /*
-    System.out.println("Total time/participant TOOL:   "+ printTime(participants.getTotalTime("tool")/participants.numberParticipants("tool")));
-    System.out.println("Total time/participant NOTOOL: "+printTime(participants.getTotalTime("notool")/participants.numberParticipants("notool")));
-    System.out.println("\n");
-    */
-    
-    System.out.println("Program 1 - Total time/participant TOOL:   "+printTime(participants.getTotalTime("tool", 1)/participants.numberRounds("tool", 1)));
-    System.out.println("Program 1 - Total time/participant NOTOOL: "+printTime(participants.getTotalTime("notool", 1)/participants.numberRounds("notool", 1)));
-    System.out.println("\n");
-
-    System.out.println("Program 2 - Total time/participant TOOL:   "+printTime(participants.getTotalTime("tool", 2)/participants.numberRounds("tool", 2)));
-    System.out.println("Program 2 - Total time/participant NOTOOL: "+printTime(participants.getTotalTime("notool", 2)/participants.numberRounds("notool", 2)));
-    System.out.println("\n");
-
-    System.out.println("Program 3 - Total time/participant TOOL:   "+printTime(participants.getTotalTime("tool", 3)/participants.numberRounds("tool", 3)));
-    System.out.println("Program 3 - Total time/participant NOTOOL: "+printTime(participants.getTotalTime("notool", 3)/participants.numberRounds("notool", 3)));
-    System.out.println("\n");
-
-    System.out.println("Program 4 - Total time/participant TOOL:   "+printTime(participants.getTotalTime("tool", 4)/participants.numberRounds("tool", 4)));
-    System.out.println("Program 4 - Total time/participant NOTOOL: "+printTime(participants.getTotalTime("notool", 4)/participants.numberRounds("notool", 4)));
-    System.out.println("\n");
-
+	if (prg !=4)
+	    System.out.println("\n");
+    }
+	
     
     /*
     Iterator it = participants.iterator();

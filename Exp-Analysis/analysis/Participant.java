@@ -80,38 +80,41 @@ public class Participant {
 	return null; // not found
     }
 
-    public long getTotalTime() {
+
+    // if only_correct is true, then we ignore the incorrect solutions
+    public long getTotalTime(boolean only_correct) {
 	long t = 0;
 	Iterator it = rounds.iterator();
 	while (it.hasNext()) {
 	    Round r = (Round) it.next();
-	    t += r.getTotalTime();
+	    t += r.getTotalTime(only_correct);
 	}
 
 	return t; // not found
     }
 
 
-    public long getTotalTime(int program) {
+    // if only_correct is true, then we ignore the incorrect solutions
+    public long getTotalTime(int program, boolean only_correct) {
 	long t = 0;
 	Iterator it = rounds.iterator();
 	while (it.hasNext()) {
 	    Round r = (Round) it.next();
 	    if (r.getProgram() == program)
-		t += r.getTotalTime();
+		t += r.getTotalTime(only_correct);
 	}
 
 	return t; // not found
     }
 
 
-    public long getTotalTime(String population, int program) {
+    public long getTotalTime(String population, int program, boolean only_correct) {
 	long t = 0;
 	Iterator it = rounds.iterator();
 	while (it.hasNext()) {
 	    Round r = (Round) it.next();
 	    if ((r.getPopulation().equals(population)) && ((r.getProgram() == program)))
-		t += r.getTotalTime();
+		t += r.getTotalTime(only_correct);
 	}
 
 	return t; // not found
@@ -128,6 +131,19 @@ public class Participant {
 	}
 
 	//System.out.println(getUserName()+" "+getPopulation()+" "+n);
+	return n; 
+    }
+
+
+    public int numberCorrectRounds(String population, int program) {
+	int n = 0;
+	Iterator it = rounds.iterator();
+	while (it.hasNext()) {
+	    Round r = (Round) it.next();
+	    if ((r.getPopulation().equals(population)) && ((r.getProgram() == program)) && (r.correct()))
+		n++;
+	}
+
 	return n; 
     }
 
