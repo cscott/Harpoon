@@ -3,18 +3,20 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
+import java.util.AbstractSet;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 
+import harpoon.Util.FilterIterator;
 import harpoon.Util.WorkSet;
 /**
  * <code>Liveness</code> is a local-variable liveness analysis on Bytecode
  * form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Liveness.java,v 1.1.2.2 1999-02-23 12:01:02 cananian Exp $
+ * @version $Id: Liveness.java,v 1.1.2.3 1999-02-23 22:22:29 cananian Exp $
  */
 public class Liveness  {
     /** internal data structure is a hashtable of boolean arrays */
@@ -23,6 +25,11 @@ public class Liveness  {
      *  instruction <code>where</code>. */
     public boolean isLive(Instr where, int lv_index) {
 	return live.get(where).isLive(lv_index);
+    }
+    /** Return a <code>Collection</code> of live local variables at the
+     *  given instruction <code>where</code>. */
+    public Set liveSet(Instr where) {
+	return live.get(where).asCollection();
     }
     
     /** Creates a <code>Liveness</code>. */
@@ -166,6 +173,35 @@ public class Liveness  {
 	public void markLive(int which_lv) {
 	    set(2*which_lv); // defined
 	    set(2*which_lv+1); // and live.
+	}
+	// collection view.
+	public Set asCollection() {
+	    final int lvsize = size()/2;
+	    return new AbstractSet() {
+		public int size() {
+		    int size=0;
+		    for (int i=0; i < lvsize; i++)
+			if (isLive(i)) size++;
+		    return size;
+		}
+		public Iterator iterator() {
+		    // simple integer iterator
+		    Iterator i = new Iterator() {
+			int i=0;
+			public boolean hasNext() { return (i < lvsize); }
+			public Object next() { return new Integer(i++); }
+			public void remove() {
+			    throw new UnsupportedOperationException();
+			}
+		    };
+		    // filtered by liveness method.
+		    return new FilterIterator(i, new FilterIterator.Filter() {
+			public boolean isElement(Object o) {
+			    return isLive(((Integer)o).intValue());
+			}
+		    });
+		}
+	    };
 	}
     }
 
