@@ -727,13 +727,18 @@ sub read_cvs_entries
     close(REPOSITORY);
     $repository{$directory} = $repository;
 
-    # CSA: deal with remote repository.
+    # CSA: deal with remote repository and partial Repository paths.
     return if !open(CVSROOT, "< $cvsdir/Root");
     $cvsroot = <CVSROOT>;
     chomp($cvsroot);
     close(CVSROOT);
-    if ($cvsroot =~ m/^(:[^:]*:[^:]*:)/) { # remote repository?
-        $repository{$directory} = $1 . $repository;
+    if ($repository =~ m|^/|) { # repository path is absolute
+        if ($cvsroot =~ m/^(:[^:]*:[^:]*:)/) { # remote repository?
+            # prepend just the access method to the repository.
+            $repository{$directory} = $1 . $repository;
+        }
+    } else { # if the repository path is relative, prepend the CVSROOT.
+        $repository{$directory} = "$cvsroot/$repository";
     }
 }
 
