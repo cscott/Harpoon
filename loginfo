@@ -36,4 +36,4 @@
 #-------------------------------------------------------------------
 ALL	chgrp -R -f java-dev $CVSROOT/.
 ALL	chmod -R g+r $CVSROOT/.
-DEFAULT $CVSROOT/CVSROOT/log_accum -d -m java-dev@lesser-magoo.lcs.mit.edu
+DEFAULT $CVSROOT/CVSROOT/log_accum -d -m java-dev@lesser-magoo.lcs.mit.edu |& mail cananian
