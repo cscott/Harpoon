@@ -11,12 +11,17 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Tree.TreeCode;
 
+import harpoon.Util.Util;
+
+import java.util.List;
+import java.util.Arrays;
+
 /**
  * <code>SACode</code> is a code-view for StrongARM
  * assembly-like syntax (currently without register allocation).
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: SACode.java,v 1.1.2.2 1999-03-08 09:03:51 andyb Exp $
+ * @version $Id: SACode.java,v 1.1.2.3 1999-05-24 19:07:13 pnkfelix Exp $
  */
 public class SACode extends Code {
     /** The name of this code view. */
@@ -25,11 +30,14 @@ public class SACode extends Code {
     SACode(TreeCode tree) {
         super(tree.getMethod(), null, tree.getFrame());
         instrs = CodeGen.codegen(tree, this);
-        instrs = frame.procLiveOnExit(instrs);
-        instrs = frame.procAssemDirectives(instrs);
+        Util.assert(instrs != null, "Code generation failed for SACode");
+        instrs = Arrays.asList(frame.procLiveOnExit
+			       ((Instr[]) instrs.toArray(new Instr[instrs.size()])));
+	instrs = Arrays.asList(frame.procAssemDirectives
+			       ((Instr[]) instrs.toArray(new Instr[instrs.size()])));
     }
 
-    private SACode(HMethod parent, Instr[] instrs, Frame frame) {
+    private SACode(HMethod parent, List instrs, Frame frame) {
         super(parent, instrs, frame);
     }
 

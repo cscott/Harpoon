@@ -42,24 +42,30 @@ import harpoon.Temp.TempFactory;
 import harpoon.Util.Util;
 import java.util.Enumeration;
 import java.util.Vector;
+import java.util.List;
+import java.util.Arrays;
 
 /**
  * <code>CodeGen</code> is a utility class which implements instruction
  * selection of <code>Instr</code>s from an input <code>Tree</code>.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.7 1999-05-17 20:02:07 andyb Exp $
+ * @version $Id: CodeGen.java,v 1.1.2.8 1999-05-24 19:07:13 pnkfelix Exp $
  */
 final class CodeGen {
 
     /** Generates StrongARM assembly from the internal Tree representation.
      *  <BR> XXX - NOT YET FULLY IMPLEMENTED.
+        <BR> <B>requires:</B> TODO: Fill in.
+	<BR> <B>effects:</B> TODO: Fill in.
      *
      *  @param  tree    The Tree codeview to generate code from.
      *  @param  code    The StrongARM codeview to generate code for.
-     *  @return         The newly generated StrongARM instructions.
+     *  @return         A <code>List</code> of <code>Instr</code>s
+                        representing the newly generated StrongARM
+			instructions.   
      */
-    public static final Instr[] codegen(TreeCode tree, SACode code) {
+    public static final List codegen(TreeCode tree, SACode code) {
                                       
         InstrFactory inf = code.getInstrFactory();
         Frame f = code.getFrame();
@@ -83,12 +89,12 @@ final class CodeGen {
                 instrs[i] = new InstrDIRECTIVE(inf, null, ".word "+l);
             }
         }
-        return instrs;
+        return Arrays.asList(instrs);
     }
 
     static final class Visitor extends TreeVisitor {
         final Frame f;
-		final TempFactory tf;
+	final TempFactory tf;
         final InstrFactory inf; 
        	ExpValue visitRet;
         Vector instrList;
@@ -133,24 +139,29 @@ final class CodeGen {
             
         public void visit(Tree e) {
             // Error! Error!
+	    Util.assert(false, "Should not be visiting Tree in CodeGen");
 	}
 
         public void visit(Exp e) {
             // Error! Error!
+	    Util.assert(false, "Should not be visiting Exp in CodeGen");
         }
 
         public void visit(Stm e) {
             // Error! Error!
+	    Util.assert(false, "Should not be visiting Stm in CodeGen");
         }
 
         public void visit(OPER e) {
             // Error! Error!
+	    Util.assert(false, "Should not be visiting OPER in CodeGen");
         }
 
         /* Statements */
         public void visit(CJUMP s) {
             s.test.visit(this);
-            ExpValue test = visitRet;
+            Util.assert(visitRet!=null, "visitRet was null after visiting " + s.test);
+	    ExpValue test = visitRet;
             emit(new Instr(inf, s, "cmp `s0, #0", 
                            new Temp[] { test.temp() },
                            null));
@@ -241,6 +252,17 @@ final class CodeGen {
                                new Temp[] { retval.temp() }));
                 visitRet = retval;
                 break;
+	    case Bop.AND: // FSK added, not andyb
+		e.left.visit(this);
+		left = visitRet;
+		e.right.visit(this);
+		right = visitRet;
+		retval = new ExpValue(new Temp(tf));
+		emit(new Instr(inf, e, "and `d0, `s0, `s1",
+			       new Temp[] { left.temp(), right.temp() },
+			       new Temp[] { retval.temp() }));
+		visitRet = retval;
+		break;
             case Bop.CMPEQ:
                 e.left.visit(this);
                 left = visitRet;
@@ -258,6 +280,123 @@ final class CodeGen {
                                new Temp[] { retval.temp() }));
                 visitRet = retval;
                 break;
+	    case Bop.CMPGT: // FSK added, not andyb
+                e.left.visit(this);
+                left = visitRet;
+                e.right.visit(this);
+                right = visitRet;
+                retval = new ExpValue(new Temp(tf));
+                emit(new Instr(inf, e, "mov `d0, #0",
+                               null,
+                               new Temp[] { retval.temp() }));
+                emit(new Instr(inf, e, "cmp `s0, `s1",
+                               new Temp[] { left.temp(), right.temp() },
+                               null));
+                emit(new Instr(inf, e, "movgt `d0, #1",
+                               null,
+                               new Temp[] { retval.temp() }));
+                visitRet = retval;
+		break;
+	    case Bop.CMPLE: // FSK added, not andyb
+                e.left.visit(this);
+                left = visitRet;
+                e.right.visit(this);
+                right = visitRet;
+                retval = new ExpValue(new Temp(tf));
+                emit(new Instr(inf, e, "mov `d0, #0",
+                               null,
+                               new Temp[] { retval.temp() }));
+                emit(new Instr(inf, e, "cmp `s0, `s1",
+                               new Temp[] { left.temp(), right.temp() },
+                               null));
+                emit(new Instr(inf, e, "movle `d0, #1",
+                               null,
+                               new Temp[] { retval.temp() }));
+                visitRet = retval;
+		break;
+	    case Bop.CMPLT: // FSK added, not andyb
+                e.left.visit(this);
+                left = visitRet;
+                e.right.visit(this);
+                right = visitRet;
+                retval = new ExpValue(new Temp(tf));
+                emit(new Instr(inf, e, "mov `d0, #0",
+                               null,
+                               new Temp[] { retval.temp() }));
+                emit(new Instr(inf, e, "cmp `s0, `s1",
+                               new Temp[] { left.temp(), right.temp() },
+                               null));
+                emit(new Instr(inf, e, "movlt `d0, #1",
+                               null,
+                               new Temp[] { retval.temp() }));
+                visitRet = retval;
+		break;
+	    case Bop.DIV: // FSK added, not andyb
+		Util.assert(false, "Don't know how to handle Bop.DIV");
+		break;
+	    case Bop.MUL: // FSK added, not andyb
+		e.left.visit(this);
+                left = visitRet;
+                e.right.visit(this);
+                right = visitRet;
+                retval = new ExpValue(new Temp(tf));
+                emit(new Instr(inf, e, "mul `d0, `s0, `s1",
+                               new Temp[] { left.temp(), right.temp() },
+                               new Temp[] { retval.temp() }));
+                visitRet = retval;
+		break;
+	    case Bop.OR: // FSK added, not andyb
+		e.left.visit(this);
+		left = visitRet;
+		e.right.visit(this);
+		right = visitRet;
+		retval = new ExpValue(new Temp(tf));
+		emit(new Instr(inf, e, "orr `d0, `s0, `s1",
+			       new Temp[] { left.temp(), right.temp() },
+			       new Temp[] { retval.temp() }));
+		visitRet = retval;
+		break;
+	    case Bop.REM: // FSK added, not andyb
+		Util.assert(false, "Don't know how to handle Bop.REM");
+		break;
+	    case Bop.SHL: // FSK added, not andyb
+		e.left.visit(this);
+		left = visitRet;
+		e.right.visit(this);
+		right = visitRet;
+		retval = new ExpValue(new Temp(tf));
+		emit(new Instr(inf, e, "mov `d0, `s0 LSL `s1",
+			       new Temp[] { left.temp(), right.temp() },
+			       new Temp[] { retval.temp() } ));
+		visitRet = retval;
+		break;
+	    case Bop.SHR: // FSK added, not andyb
+		e.left.visit(this);
+		left = visitRet;
+		e.right.visit(this);
+		right = visitRet;
+		retval = new ExpValue(new Temp(tf));
+		emit(new Instr(inf, e, "mov `d0, `s0 LSR `s1",
+			       new Temp[] { left.temp(), right.temp() },
+			       new Temp[] { retval.temp() } ));
+		visitRet = retval;
+		break;
+	    case Bop.USHR: // FSK added, not andyb
+		Util.assert(false, "Don't know how to handle Bop.USHR");
+		break;
+	    case Bop.XOR: // FSK added, not andyb
+		e.left.visit(this);
+		left = visitRet;
+		e.right.visit(this);
+		right = visitRet;
+		retval = new ExpValue(new Temp(tf));
+		emit(new Instr(inf, e, "eor `d0, `s0, `s1",
+			       new Temp[] { left.temp(), right.temp() },
+			       new Temp[] { retval.temp() }));
+		visitRet = retval;
+		break;
+	    default:
+		Util.assert(false, "Failed to match operation " + e);
             }
         }
 
