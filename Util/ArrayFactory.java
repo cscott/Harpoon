@@ -9,10 +9,10 @@ package harpoon.Util;
  * the object's type.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayFactory.java,v 1.2 2002-02-25 21:08:44 cananian Exp $
+ * @version $Id: ArrayFactory.java,v 1.2.2.1 2002-03-04 19:10:56 cananian Exp $
  */
 
-public interface ArrayFactory  {
+public interface ArrayFactory<E>  {
     /** Create and return a new array of the specified length.
      *  The type is determined by the specific <code>ArrayFactory</code>
      *  that you are using.
@@ -21,5 +21,5 @@ public interface ArrayFactory  {
      * @see harpoon.IR.Quads.Quad#arrayFactory
      * @see harpoon.ClassFile.HCode#elementArrayFactory
      */
-    public Object[] newArray(int len);
+    public E[] newArray(int len);
 }

@@ -20,7 +20,7 @@ import harpoon.IR.Quads.HEADER;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.14.2.1 2002-02-27 08:37:47 cananian Exp $
+ * @version $Id: Util.java,v 1.14.2.2 2002-03-04 19:10:56 cananian Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -50,10 +50,10 @@ public abstract class Util {
    * After code has been debugged, this method can skip the copy for
    * efficiency.
    */
-  public static final Object[] safeCopy(ArrayFactory factory, Object[] src) {
+  public static final <T> T[] safeCopy(ArrayFactory<T> factory, T[] src) {
     if (!debug) return src;
     if (src.length==0) return src;
-    Object[] dst = factory.newArray(src.length);
+    T[] dst = factory.newArray(src.length);
     System.arraycopy(src,0,dst,0,src.length);
     return dst;
   }
@@ -63,27 +63,27 @@ public abstract class Util {
    * @deprecated The <code>clone()</code> method on arrays works 
    * much better, and should be used instead of this method.
    */
-  public static final Object[] copy(ArrayFactory factory, Object[] src) {
-    Object[] dst = factory.newArray(src.length);
+  public static final <T> T[] copy(ArrayFactory<T> factory, T[] src) {
+    T[] dst = factory.newArray(src.length);
     System.arraycopy(src,0,dst,0,src.length);
     return dst;
   }
   /** Remove element 'n' from array 'src'. */
-  public static final Object[] shrink(ArrayFactory factory, 
-				      Object[] src, int n) {
+  public static final <T> T[] shrink(ArrayFactory<T> factory, 
+				      T[] src, int n) {
     assert src.length>0;
     assert n<src.length;
-    Object[] dst = factory.newArray(src.length-1);
+    T[] dst = factory.newArray(src.length-1);
     System.arraycopy(src,   0, dst, 0, n);
     System.arraycopy(src, n+1, dst, n, src.length-(n+1));
     return dst;
   }
   /** Insert element <code>o</code> before <code>src[n]</code>. <p>
    *  After return, <code>src[n]==o</code>.  */
-  public static final Object[] grow(ArrayFactory factory,
-				    Object[] src, Object o, int n) {
+  public static final <T> T[] grow(ArrayFactory<T> factory,
+				    T[] src, T o, int n) {
     assert n>=0;
-    Object[] dst = factory.newArray(src.length+1);
+    T[] dst = factory.newArray(src.length+1);
     System.arraycopy(src, 0, dst, 0, n);
     System.arraycopy(src, n, dst, n+1, src.length-n);
     dst[n] = o;

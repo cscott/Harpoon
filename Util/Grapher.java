@@ -10,10 +10,10 @@ import java.util.Set;
  * may be applied.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Grapher.java,v 1.2 2002-02-25 21:08:45 cananian Exp $
+ * @version $Id: Grapher.java,v 1.2.2.1 2002-03-04 19:10:56 cananian Exp $
  */
-public interface Grapher {
-    boolean isEdge(Object from, Object to);
-    Set succSet(Object node);
-    Set predSet(Object node);
+public interface Grapher<N> {
+    boolean isEdge(N from, N to);
+    Set<N> succSet(N node);
+    Set<N> predSet(N node);
 }

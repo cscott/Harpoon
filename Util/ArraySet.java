@@ -9,17 +9,17 @@ import java.util.Iterator;
  * array.  The idea is similar to <code>java.util.Arrays.asList()</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArraySet.java,v 1.2 2002-02-25 21:08:44 cananian Exp $
+ * @version $Id: ArraySet.java,v 1.2.2.1 2002-03-04 19:10:56 cananian Exp $
  */
-public class ArraySet extends java.util.AbstractSet {
-    final Object[] oa;
+public class ArraySet<E> extends java.util.AbstractSet<E> {
+    final E[] oa;
     
     /** Creates a <code>ArraySet</code> from an object array.
      *  All objects must be unique.
      */
-    public ArraySet(Object[] oa) {
+    public ArraySet(E[] oa) {
 	this.oa = oa;
     }
-    public Iterator iterator() { return new ArrayIterator(oa); }
+    public Iterator<E> iterator() { return new ArrayIterator<E>(oa); }
     public int size() { return oa.length; }
 }

@@ -10,12 +10,12 @@ import java.util.Iterator;
  * into an <code>Enumeration</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IteratorEnumerator.java,v 1.2 2002-02-25 21:08:45 cananian Exp $
+ * @version $Id: IteratorEnumerator.java,v 1.2.2.1 2002-03-04 19:10:56 cananian Exp $
  */
-public class IteratorEnumerator implements Enumeration {
-    private final Iterator i;
+public class IteratorEnumerator<E> implements Enumeration<E> {
+    private final Iterator<E> i;
     /** Creates a <code>IteratorEnumerator</code>. */
-    public IteratorEnumerator(Iterator i) { this.i = i; }
+    public IteratorEnumerator(Iterator<E> i) { this.i = i; }
     public boolean hasMoreElements() { return i.hasNext(); }
-    public Object nextElement() { return i.next(); }
+    public E nextElement() { return i.next(); }
 }
