@@ -1,7 +1,8 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: lctes03.tex,v 1.1 2003-02-07 21:52:35 cananian Exp $
+% $Id: lctes03.tex,v 1.2 2003-02-08 01:34:48 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{acmconf}
+%\documentclass[12pt,notitlepage,twoside]{article}
 %\usepackage[section,plain]{algorithm}
 %\usepackage{amsthm} % proof environment
 %\usepackage{amstext} % the \text command for math mode (replaces \mbox)
@@ -52,7 +53,8 @@ Cambridge, MA 02139 \\
 % abstract
 \begin{abstract}
 We present a set of techniques for reducing the memory consumption of
-object-oriented programs. These techniques 
+object-oriented programs which are particularly applicable to
+memory-limited embedded systems. These techniques 
 include optimizations that eliminate fields with
 constant values, reduce the sizes of fields based on the range
 of values that can appear in each field, and 
@@ -129,8 +131,10 @@ All of these transformations reduce the space required to store
 objects, but some potentially increase the running time of the program.
 Our experimental results show that, for our set of benchmark
 programs, all of our techniques combined can reduce the peak amount of memory
-required to run the program by as much as 40\% and never increase the
-running time by more than 60\%.  In many scenarios, a 10\% speedup occurs.
+required to run the program by as much as 40\%, although the running
+time may increase.  In a memory-limited embedded system where
+performance is not critical, cost savings may directly result from the
+reduced minimum heap size.
 
 \subsection{Contributions}
 
@@ -1036,6 +1040,14 @@ Marinov and O'Callahan have submitted a paper for publication
 object may be safely represented by a single representative instance.
 This is an additional and orthogonal memory-saving technique which
 could be used in addition to the ones described here.
+
+Zhang and Gupta describe a runtime technique that recognizes two
+special cases when an integer or a pointer field in a designated C
+data structure may be compressed \cite{zhang02}.  For all but two of
+their benchmarks, their heap savings (on these benchmarks, an average
+of 27\%) are entirely due to a pointer compression techique which is
+orthogonal to the transformations described in this paper.  The
+techniques could be combined for greater savings.
 
 \section{Conclusions}
 %
