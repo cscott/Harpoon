@@ -30,6 +30,8 @@ cvs-commit: cvs-add
 	cvs -q commit
 	$(RM) cvs-tmp
 commit: cvs-commit # convenient abbreviation
+update:
+	cvs update # it's so easy to forget...
 
 doc:	doc/TIMESTAMP
 
