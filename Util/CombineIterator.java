@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
  * <code>Iterator</code>s into one.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CombineIterator.java,v 1.1.2.1 1999-03-02 06:42:45 cananian Exp $
+ * @version $Id: CombineIterator.java,v 1.1.2.2 1999-06-15 20:25:56 sportbilly Exp $
  */
 
 public class CombineIterator implements Iterator {
@@ -20,19 +20,19 @@ public class CombineIterator implements Iterator {
     public CombineIterator(Iterator[] ita) {
         this.ita = ita;
     }
-    private void adv() {
+    public Object next() {
 	while (i < ita.length && !ita[i].hasNext() )
 	    i++;
-    }
-    public Object next() {
-	if (hasNext())
+	if (i < ita.length && ita[i].hasNext())
 	    return ita[i].next();
 	else
 	    throw new NoSuchElementException();
     }
     public boolean hasNext() {
-	adv();
-	return (i<ita.length);
+	for (int j=i; j<ita.length; j++)
+	    if (ita[j].hasNext())
+		return true;
+	return false;
     }
     public void remove() {
 	ita[i].remove();
