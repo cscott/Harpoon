@@ -1,4 +1,4 @@
-% CVSId: $Id: oqe.tex,v 1.15 2002-05-09 15:31:56 cananian Exp $
+% CVSId: $Id: oqe.tex,v 1.16 2002-05-09 16:02:53 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -1500,6 +1500,27 @@ So how well does all this work?
 \end{slide}
 
 \begin{talknotes}
+This is the reduction in \emph{total number of bytes allocated} during
+the run of the programs.  The programs at the bottom are from the
+SPECjvm98 benchmark suite, and represent real, complete, Java
+applications.  Let me quickly step through them: here on the left is
+{\tt compress}, a gzip-compression program.  {\tt jess} in an expert
+system, {\tt raytrace} is a graphics rendering program --- {\tt mtrt}
+is actually the same program, but run in multi-threaded mode; the
+numbers are slightly different because (in theory) we can't do as much
+hash/lock externalization, because the locking capability of Java is
+being used.  In practice, you can see it doesn't have much effect.
+{\tt db} is a simple database, {\tt javac} is the Sun java compiler,
+{\tt mpegaudio} is an MP3 decoder, and {\tt jack} is a parser
+generator.
+
+But if you're paying attention, you'll realize that these aren't
+actually the \emph{really} interesting numbers.  A reduction in total
+allocated bytes is great, it reduces the amount of allocation work the
+garbage collector has to do, but what you'd really like to see is a
+reduction in the maximum \emph{live data} in the program.
+
+~%
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1510,6 +1531,13 @@ So how well does all this work?
 \end{slide}
 
 \begin{talknotes}
+And that is what we see here.  You'll notice the numbers look roughly
+the same, but they improve a lot for javac; what this shows you is
+that the objects we target in javac are precisely the ones which are
+live the longest and stress the system the most.
+
+OK.  You no doubt have noticed by now that compress is getting no help
+at all by anything we are doing.  Why is that?
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1520,7 +1548,23 @@ So how well does all this work?
 \end{slide}
 
 \begin{talknotes}
-It would be nice if this graph were directly in percent.
+This graph shows the percent of total allocated bytes which consist of
+arrays (as opposed to objects), and pointer fields in objects.
+Our transformations are all object-oriented, and none of them
+currently target arrays.  In addition, the field compression
+techniques I've been describing are fundamentally integer-based;
+apart from sometimes being able to remove mostly-null fields,
+they are not terribly effective on fields of pointer type.  So the
+yellow bars show you how much of the program is \emph{left} for our
+stuff to optimize, after you take away the pointers and the arrays.
+Compress is \emph{all} array allocations; hence our poor performance
+should make sense now.  The thing to notice here is that we do a
+fantastic job with the portion of the program allocation that we're
+targetting.
+
+Indeed, if you want us to look good, you might consider how we do
+solely on the \emph{object} allocations in the program; discounting
+all array allocations.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1531,6 +1575,10 @@ It would be nice if this graph were directly in percent.
 \end{slide}
 
 \begin{talknotes}
+And that's what we show here.  There are very sizable reductions now.
+But they have to be taken with a grain of salt: we know already that
+compress has almost no object allocations, so even though we do well
+on those that are present, it doesn't ``really'' matter.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1541,6 +1589,37 @@ It would be nice if this graph were directly in percent.
 \end{slide}
 
 \begin{talknotes}
+We've talked about some transformations that impact performance;
+this graph shows you what that performance impact really is.
+One represents the speed of the program before we touch it.
+You'll notice that the first three transformations, which are
+claz/field compression and byte-packing, offer a moderate speed
+\emph{improvement} over the original code.  This is wholly due to
+better performance in the garbage collector as we shrink the
+objects.  The potential performance penalty for the claz indirection
+and the unaligned memory accesses are overwhelmed by the GC
+improvement.
+
+Static specialization, the white bar, gives back some of that
+performance gain.  This is due to the fact that we've virtualized
+field accesses, so where you previously had a simple memory access,
+you know have a method call and the overhead that goes with that.
+There are various techniques we could use to mitigate this.
+
+Field externalization costs a little more, because it's a more
+expensive form of field virtualization.  In mtrt and jack it seems we
+are probably externalizing too many fields, and we're getting
+significant performance penalties.  In jack, if you look at our live
+data numbers, you'll see that the space gain this is giving us is
+minimal; so our heuristics for choosing fields definitely need further
+tweaking.
+
+In four cases, the final step, hash/lock externalization, costs about
+30\% of our performance.  These are programs which lock extensively,
+although none of them strictly need to do \emph{any} locking.
+Static techniques for lock-removal will mitigate this cost greatly.
+
+~%
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
