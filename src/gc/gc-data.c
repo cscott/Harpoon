@@ -1,19 +1,34 @@
+#include "config.h"
+#ifdef BDW_CONSERVATIVE_GC
+#include "gc.h"
+#include "../../Contrib/gc/gc_typed.h"
+#include "../../Contrib/gc/gcconfig.h"
+#endif
+#include <jni.h>
+#include "jni-private.h"
 #include "jni-gc.h"
 
 #define DESC_SIZE 6  /* number of bits needed for descriptor */
 #define JINT_SIZE 32 /* number of bits in a jint */
+#define DEBUG 0      /* 1 turns on status reporting; 0 turns off */
 
-enum offsets { REGS_ZERO = 31, 
-	       REGS_PREV = 30,
-	       STACK_ZERO = 29,
-	       STACK_PREV = 28,
-	       DERIVS_ZERO = 27,
-	       DERIVS_PREV = 26 };
+/* --------- garbage collection data types --------- */
 
-extern JNIEnv *FNI_JNIEnv;
+/* kludge for boolean in C */
+enum boolean { FALSE, TRUE }; /* FALSE = 0, TRUE = 1 */
 
-/* GC data entries are kept as a doubly-linked list */
-struct _gc_data *gc_data_head = NULL; /* head of list */
+enum loctype { REG, STACK };
+
+enum sign { PLUS, MINUS, NONE };
+
+enum masks { REGS_ZERO   = 0x80000000U, 
+	     REGS_PREV   = 0x40000000U,
+	     STACK_ZERO  = 0x20000000U,
+	     STACK_PREV  = 0x10000000U,
+	     DERIVS_ZERO = 0x08000000U,
+	     DERIVS_PREV = 0x04000000U,
+	     CSAVED_ZERO = 0x02000000U,
+	     CSAVED_PREV = 0x01000000U };
 
 /* index entry */
 struct _gc_index_entry {
@@ -21,6 +36,39 @@ struct _gc_index_entry {
     struct _gc_data *gc_data;  /* address of GC data in GC segment */
     struct _basetable *gc_bt;  /* address of base table for that GC point */
 };
+typedef struct _gc_index_entry *gc_index_ptr;
+
+struct _gc_regs {
+    int num_regs;        /* number of registers */
+    enum boolean *regs;  /* array of booleans: TRUE => live */
+};
+typedef struct _gc_regs *gc_regs_ptr;
+
+struct _gc_stack {
+    int num_stack;    /* number of live stack offsets */
+    jint *stack;      /* array of live stack offsets */
+};
+typedef struct _gc_stack *gc_stack_ptr;
+
+struct _gc_derivs {
+    jint num_derivs;              /* number of live derived pointers */ 
+    struct _gc_derived *derived;  /* array of derivations */
+};
+typedef struct _gc_derivs *gc_derivs_ptr;    /* derivations */
+
+struct _gc_loc {
+    enum loctype _loctype;  /* type of location: REG or STACK */
+    jint offset_or_index;   /* offset if STACK, index if REG */
+    enum sign _sign;        /* sign of base pointer, NONE if derived pointer */
+};
+typedef struct _gc_loc *gc_loc_ptr;
+
+struct _gc_derived {
+    struct _gc_loc loc;      /* location of derived pointer */
+    jint num_base;           /* number of base pointers in the derivation */
+    struct _gc_loc *base;    /* array of base pointers */
+};
+typedef struct _gc_derived *gc_derived_ptr;  /* derived pointers */
 
 /* gc data */
 struct _gc_data {
@@ -33,50 +81,149 @@ struct _basetable {
     jint offsets[0];     /* first of entries */
 };
 
-struct _gc_regs {
-    int num_regs;        /* number of registers */
-    enum boolean *regs;  /* array of booleans: TRUE => live */
-};
+/* -------------- externally-defined --------------- */
 
-struct _gc_stack {
-    int num_stack;    /* number of live stack offsets */
-    jint *stack;      /* array of live stack offsets */
-};
+extern JNIEnv *FNI_JNIEnv;
 
-struct _gc_derivs {
-    jint num_derivs;              /* number of live derived pointers */ 
-    struct _gc_derived *derived;  /* array of derivations */
-};
+/* --------- garbage collection functions ---------- */
 
-struct _gc_loc {
-    enum loctype _loctype;  /* type of location: REG or STACK */
-    jint offset_or_index;   /* offset if STACK, index if REG */
-    enum sign _sign;        /* sign of base pointer, NONE if derived pointer */
-};
+/* effects: finds static fields that are objects and
+            adds each to root set using find_root_set */
+void find_static_fields();
 
-struct _gc_derived {
-    struct _gc_loc loc;      /* location of derived pointer */
-    jint num_base;           /* number of base pointers in the derivation */
-    struct _gc_loc *base;    /* array of base pointers */
-};
+/* given the address (PC) of the GC point, returns a gc_index_ptr
+   which can be used to obtain information about live pointers
+   at the particular GC point */
+gc_index_ptr find_gc_data(ptroff_t);
 
-/* beginning and end of index */
-extern gc_index_ptr gc_index_start, gc_index_end;
+/* given a gc_data_ptr and the number of registers in the
+   given architecture, returns a regs object, which contains
+   information about which registers contain live base pointers */
+gc_regs_ptr get_live_in_regs(gc_index_ptr, int);
+
+/* given a gc_data_ptr and the number of registers in the
+   given architecture, returns a stack object, which contains
+   information about which offsets on the stack contain live
+   base pointers */
+gc_stack_ptr get_live_in_stack(gc_index_ptr, int);
+
+/* given a gc_data_ptr and the number of registers in the
+   given architecture, returns a derivs object, which contains
+   information about the derivations that are live */
+gc_derivs_ptr get_live_derivs(gc_index_ptr, int);
+
+/* given a gc_regs_ptr and a register index, returns whether
+   that register contains a live base pointer */
+enum boolean is_live_reg(gc_regs_ptr, int);
+
+/* given a gc_stack_ptr, returns how many stack offsets
+   contain a live base pointer */
+int num_live_stack_offsets(gc_stack_ptr);
+
+/* given a gc_stack_ptr and an index n, returns the nth
+   live stack offset */
+jint live_stack_offset_at(gc_stack_ptr, int);
+
+/* given a gc_derivs_ptr, returns the number of live derived 
+   pointers */
+jint num_live_derivs(gc_derivs_ptr);
+
+/* given a gc_derivs_ptr and an index n, returns the nth
+   derived pointer */
+gc_derived_ptr live_derived_ptr_at(gc_derivs_ptr, int);
+
+/* given a gc_derived_ptr, returns the location where the
+   derived pointer is stored */
+gc_loc_ptr location_at(gc_derived_ptr);
+
+/* given a gc_derived_ptr, returns the number of base pointers
+   making up this derived pointer */
+jint num_base_ptrs(gc_derived_ptr);
+
+/* given a gc_derived_ptr, returns the location where the nth   
+   base pointer is stored */
+gc_loc_ptr base_ptr_at(gc_derived_ptr, int);
+
+/* given a gc_loc_ptr, returns whether the location is a
+   stack offset or a register index */
+enum loctype get_loc_type(gc_loc_ptr);
+
+/* given a gc_loc_ptr, returns either the stack offset or the 
+   register index, depending on which type of location it is */
+jint get_loc(gc_loc_ptr);
+
+/* given a gc_loc_ptr, returns the sign (PLUS or MINUS) if the
+   location is a base pointer, or NONE if the location is the
+   derived pointer */
+enum sign get_sign(gc_loc_ptr);
+
+/* use free when done with all the data associated with this
+   gc_index_ptr */
+void free(gc_index_ptr);
+
+/* cleanup should be invoked at the end of a garbage collection
+   to make sure that all the memory that was allocated to
+   store information about various GC points have been freed */
+void cleanup();
 
 void report(char *);
 
+/* effects: adds global references to root set using find_root_set */
+void find_global_refs() {
+  struct _jobject *jobj =  &FNI_globalrefs;
+  /* printf("\nAdding global refs: "); */
+  while(jobj != NULL) {
+    if (jobj->obj != NULL) {
+      /* printf("%p ", jobj->obj); */
+      add_to_root_set(&(jobj->obj));
+    }
+    jobj = jobj->next;
+  }
+  /* printf("\n"); */
+}
+
+/* effects: adds thread-local references to root set using find_root_set */
+void find_thread_local_refs() {
+  struct FNI_Thread_State *thread_state_ptr =
+    (struct FNI_Thread_State *)FNI_GetJNIEnv();
+  struct _jobject *jobj =  &(thread_state_ptr->localrefs);
+  /* printf("\nAdding local refs: "); */
+  while(jobj != NULL) {
+    if (jobj->obj != NULL) {
+      /* printf("%p ", jobj->obj); */
+      add_to_root_set(&(jobj->obj));
+    }
+    jobj = jobj->next;
+  }
+  /* printf("\n"); */
+}
+
 /* effects: finds root set and adds each element using find_root_set */
 void find_root_set() {
-  jobject_unwrapped *obj;
-  printf("Entering find_root_set.\n");
-  printf("STATIC OBJECTS START: %p\n", static_objects_start);
-  printf("STATIC OBJECTS END: %p\n", static_objects_end);
-  for(obj = static_objects_start; obj < static_objects_end; obj++) {
-    printf("Adding object to root set: %p\n", *obj);
-    add_to_root_set(*obj);
-  }
-  printf("Leaving find_root_set.\n");
+  report("Entering find_root_set.");
+  find_static_fields();
+  find_global_refs();
+  find_thread_local_refs();
+  report("Leaving find_root_set.");
 }
+
+/* effects: finds static fields that are objects and
+            adds each to root set using find_root_set */
+void find_static_fields() {
+  jobject_unwrapped *obj;
+  report("Entering find_static_fields.");
+  /* printf("STATIC OBJECTS START: %p\n", static_objects_start);
+     printf("STATIC OBJECTS END: %p\n", static_objects_end); */
+  /* adds static objects to root set */
+  for(obj = static_objects_start; obj < static_objects_end; obj++) {
+    if ((*obj) != NULL) {
+      /*printf("Adding object to root set: %p\n", (*obj)); */
+      add_to_root_set(obj);
+    }
+  }
+  report("Leaving find_static_fields.");
+}
+
 
 /* given the address of an instruction that is a GC point,
    returns a gc_data_ptr to the corresponding GC data */
@@ -99,8 +246,7 @@ gc_regs_ptr get_live_in_regs(gc_index_ptr ptr, int num) {
 
   /* handle case of no live base pointers in registers */
   {
-      jint mask = 1 << REGS_ZERO;
-      jint no_live_ptrs = desc & mask;
+      jint no_live_ptrs = desc & REGS_ZERO;
       if (no_live_ptrs) {
 	  int index;
 	  gc_regs_ptr result = (gc_regs_ptr)malloc(sizeof(struct _gc_regs));
@@ -118,8 +264,7 @@ gc_regs_ptr get_live_in_regs(gc_index_ptr ptr, int num) {
   /* handle case of live base pointers in registers same
      as at previous GC point */
   {
-      jint mask = 1 << REGS_PREV;
-      jint same_as_prev = desc & mask;
+      jint same_as_prev = desc & REGS_PREV;
       if (same_as_prev)
 	  return get_live_in_regs(ptr-1, num);
   }
@@ -152,8 +297,7 @@ gc_stack_ptr get_live_in_stack(gc_index_ptr ptr, int num) {
   
   /* handle case of no live base pointers in stack */
   {
-      jint mask = 1 << STACK_ZERO;
-      jint no_live_ptrs = desc & mask;
+      jint no_live_ptrs = desc & STACK_ZERO;
       if (no_live_ptrs) {
 	  gc_stack_ptr result = (gc_stack_ptr)malloc(sizeof(struct _gc_stack));
 	  if (result == NULL) report("ERROR: Out of memory");
@@ -166,8 +310,7 @@ gc_stack_ptr get_live_in_stack(gc_index_ptr ptr, int num) {
   /* handle case of live base pointers in stack same
      as at previous GC point */
   {
-      jint mask = 1 << STACK_PREV;
-      jint same_as_prev = desc & mask;
+      jint same_as_prev = desc & STACK_PREV;
       if (same_as_prev)
 	  return get_live_in_stack(ptr-1, num);
   }
@@ -176,9 +319,7 @@ gc_stack_ptr get_live_in_stack(gc_index_ptr ptr, int num) {
   {
       jint *data = &desc;
       struct _basetable *bt = ptr->gc_bt; 
-      jint mask_zero = 1 << REGS_ZERO;
-      jint mask_prev = 1 << REGS_PREV;
-      jint no_reg_data = desc & (mask_zero | mask_prev);
+      jint no_reg_data = desc & (REGS_ZERO | REGS_PREV);
       int index, live_count = 0, offset = no_reg_data ? 0 : num;
       jint num_offsets = bt->num_entries;
       jint tmp_store[num_offsets];
@@ -210,8 +351,7 @@ gc_derivs_ptr get_live_derivs(gc_index_ptr ptr, int num) {
   
   /* handle case of no live derived pointers */
   {
-      jint mask = 1 << DERIVS_ZERO;
-      jint no_live_ptrs = desc & mask;
+      jint no_live_ptrs = desc & DERIVS_ZERO;
       if (no_live_ptrs) {
 	  gc_derivs_ptr result = 
 	      (gc_derivs_ptr)malloc(sizeof(struct _gc_derivs));
@@ -224,8 +364,7 @@ gc_derivs_ptr get_live_derivs(gc_index_ptr ptr, int num) {
 
   /* handle case of live derived pointers same as at previous GC point */
   {
-      jint mask = 1 << DERIVS_PREV;
-      jint same_as_prev = desc & mask;
+      jint same_as_prev = desc & DERIVS_PREV;
       if (same_as_prev)
 	  return get_live_derivs(ptr-1, num);
   }
@@ -240,17 +379,13 @@ gc_derivs_ptr get_live_derivs(gc_index_ptr ptr, int num) {
 
       {  
 	  /* offset due to register data */
-	  jint regs_zero = 1 << REGS_ZERO;
-	  jint regs_prev = 1 << REGS_PREV;
-	  jint no_reg_data = desc & (regs_zero | regs_prev);
+	  jint no_reg_data = desc & (REGS_ZERO | REGS_PREV);
 	  offset_in_bits += (no_reg_data ? 0 : num);
       }
       {
 	  /* offset due to stack data */
 	  struct _basetable *bt = ptr->gc_bt;
-	  jint stack_zero = 1 << STACK_ZERO;
-	  jint stack_prev = 1 << STACK_PREV;
-	  jint no_stack_data = desc & (stack_zero | stack_prev);
+	  jint no_stack_data = desc & (STACK_ZERO | STACK_PREV);
 	  offset_in_bits += (no_stack_data ? 0 : bt->num_entries);
       }
       /* ceiling trick, get data to point to derivations */
@@ -396,7 +531,7 @@ enum sign get_sign(gc_loc_ptr ptr) {
 
 /* debugging utility */
 void report(char *errmsg) {
-    printf("%s\n", errmsg);
+    if (DEBUG) printf("%s\n", errmsg);
 }
 
 

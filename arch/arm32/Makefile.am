@@ -8,4 +8,9 @@ LIBS =
 noinst_LTLIBRARIES = libheader.la libfooter.la
 
 libheader_la_SOURCES = header.S
+
+if PRECISE_GC
 libfooter_la_SOURCES = precise_malloc.S lookup.S dispatch.S footer.S
+else
+libfooter_la_SOURCES = lookup.S dispatch.S footer.S
+endif

@@ -29,7 +29,6 @@
 struct clustered_heap; /* defined in src/clheap/clheap.h */
 #endif
 
-
 /* --------------------- data structure internals --------------------- */
 
 struct _jmethodID {
@@ -58,14 +57,18 @@ struct claz {
   u_int32_t size;		/* object size, including header */
   union {
     void *_ignore;		/* just to set the size of the union.  */
-#ifdef BDW_CONSERVATIVE_GC
-    GC_word bitmap;		/* garbage collection field bitmap, or */
-#endif
 #ifdef WITH_SEMI_PRECISE_GC
+    GC_word bitmap;		/* garbage collection field bitmap, or */
     GC_bitmap ptr;	        /* pointer to larger gc bitmap. */
 	/* The least significant bit of the first word is one if	*/
 	/* the first word in the object may be a pointer.		*/
+#elif WITH_PRECISE_GC
+    ptroff_t bitmap;		/* garbage collection field bitmap, or */
+    ptroff_t *ptr;	        /* pointer to larger gc bitmap. */
+	/* The least significant bit of the first word is one if	*/
+	/* the first word in the object may be a pointer.		*/
 #endif
+
   } gc_info;
   u_int32_t scaled_class_depth; /* sizeof(struct claz *) * class_depth */
   struct claz *display[0];	/* sized by FLEX */

@@ -5,13 +5,12 @@
 #endif
 #include <jni.h>
 #include "jni-private.h"
+#include "jni-gc.h"
 
 #ifdef WITH_SEMI_PRECISE_GC
 
 /* Only set GC_EVERY_TIME for debugging, since this is VERY slow. */
 #define GC_EVERY_TIME            0
-#define WORDSZ          (SIZEOF_VOID_P*8)
-#define WORDSZ_IN_BYTES  SIZEOF_VOID_P
 
 /* Use create_GC_bitmap to make bitmaps for arrays of objects. */
 GC_bitmap create_GC_bitmap(size_t size_in_bytes, struct claz* c)
