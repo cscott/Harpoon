@@ -69,9 +69,16 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.111 2000-07-25 03:07:48 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.112 2000-07-25 23:37:23 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
+    
+    public static RegAlloc.Factory FACTORY =
+	new RegAlloc.Factory() {
+	    public RegAlloc makeRegAlloc(Code c) {
+		return new LocalCffRegAlloc(c);
+	    }
+	};
 
     private static final boolean VERIFY = false;
 

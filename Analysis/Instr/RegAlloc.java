@@ -78,9 +78,13 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.108 2000-07-25 03:07:48 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.109 2000-07-25 23:37:24 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
+
+    public static abstract class Factory {
+	public abstract RegAlloc makeRegAlloc(Code c);
+    }
     
     /** Flags whether debugging information should be printed to
 	System.out. */
@@ -257,6 +261,17 @@ public abstract class RegAlloc  {
     */
     protected abstract void generateRegAssignment();
 
+    public static HCodeFactory codeFactory(final HCodeFactory pFact,
+					   final Frame frame,
+					   final RegAlloc.Factory raFact) {
+	return (frame.getGCInfo() == null) ?
+	    concreteSpillFactory
+	    (abstractSpillFactory(pFact, frame, raFact), frame) :
+	    concreteSpillFactory
+	    (frame.getGCInfo().codeFactory
+	     (abstractSpillFactory(pFact, frame, raFact), frame), frame);
+    }
+
     /** Creates a register-allocating <code>HCodeFactory</code> for
 	"instr" form.
 	<BR> <B>requires:</B> <code>parentFactory</code> produces code
@@ -333,6 +348,14 @@ public abstract class RegAlloc  {
     public static IntermediateCodeFactory
 	abstractSpillFactory(final HCodeFactory parent,
 			     final Frame frame) {
+	return abstractSpillFactory(parent, frame,
+				    LocalCffRegAlloc.FACTORY); 
+    }
+	
+    public static IntermediateCodeFactory
+	abstractSpillFactory(final HCodeFactory parent,
+			     final Frame frame,
+			     final RegAlloc.Factory raFact) {
 	return new IntermediateCodeFactory() {
 	    HCodeFactory p = parent;
 	    
@@ -342,12 +365,10 @@ public abstract class RegAlloc  {
 		    return null;
 		}
 		
-		RegAlloc localCode, globalCode;
+		RegAlloc globalCode;
 
 		if (TIME) System.out.print("C");
-		localCode = new LocalCffRegAlloc(preAllocCode);
-		globalCode = localCode; // no global reg alloc yet
-
+		globalCode = raFact.makeRegAlloc(preAllocCode);
 		if (TIME) System.out.print("G");
 		globalCode.generateRegAssignment();
 		if (TIME) System.out.print("R");
@@ -628,7 +649,8 @@ public abstract class RegAlloc  {
 		    if (isRegister(def)) {
 			tempXinstrToCommonLoc.add(dxi, def);
 		    } else {
-			Util.assert(checked.contains(i),/* i+ */" not checked");
+			// Util.assert(checked.contains(i),i+" not checked");
+			Util.assert(code.registerAssigned(i,def));
 			Collection regs = code.getRegisters(i, def);
 			tempXinstrToCommonLoc.addAll(dxi, regs);
 		    }
