@@ -8,7 +8,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>AttributeCode</code>. 
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ExceptionTable.java,v 1.9 1998-08-02 07:36:52 cananian Exp $
+ * @version $Id: ExceptionTable.java,v 1.10 1998-09-04 19:26:16 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.4"
  * @see AttributeCode
  */
@@ -48,7 +48,7 @@ public class ExceptionTable {
       class of exceptions that this exception handler is designated to
       catch.  This class must be the class <code>Throwable</code> of
       one of its subclasses.  The exception handler will be called
-      only is the thrown exception is an instance of the given class
+      only if the thrown exception is an instance of the given class
       or one of its subclasses.
       <p>
       If the value of the <code>catch_type</code> item is zero, this
