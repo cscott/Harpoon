@@ -1,59 +1,63 @@
 % algorithm for computing nested single-entry single-exit regions.
-\begin{verbatim}
-Procedure nested_sese (G: CFG)
-{
-  /* initialize */
-  for all nodes n of G, do
-    Mark(n) := false
-  for all edges e of G, do {
-    EntryRegion(e) := nil
-    ExitRegion(e) := nil
-  }
-
-  /* order edges within cycle-equivalency classes by dominance */
-  for each edge e of G, in depth first order, do
-    CQList(EQClass(e)) := append(CQList(EQClass(e)), e)
-
-  /* get all canonical SESE regions */
-  for all equivalency classes q, do {
-    l := CQList(q)
-    while ( size (l) > 1), do {
-      r := NewRegion( head(l), head(tail(l)) )
-      EntryRegion(Entry(r)) := ExitRegion(Exit(r)) := r
-    }
-  }
-
-  /* determine proper nesting of SESE regions */
-  visit_node(START, top-region)
-}
-
-Procedure visit_node(n:node, r:Region) {
-  if Mark(n) = false, then {
-    Mark(n) := true
-
-    /* record mapping from n to r */
-    SESE(n) := r
-    Nodes(r):= append(Nodes(r), n)
-
-    for each edge <n, n'> from n to n', do {
-      r1 := EntryRegion(<n, n'>)
-      r2 := ExitRegion(<n, n'>)
-
-      if r = r1 or r = r2, then
-        rN := Parent(r) /* exiting current region */
-      else
-        rN := r
-
-      if r1 != nil and r1 != r, then {
-        LinkRegion(rN, r1) /* entering new region */
-        rN := r1
-      }
-      if r2 != nil and r2 != r, then {
-        LinkRegion(rN, r2) /* entering new region */
-        rN := r2
-      }
-      visit_node(n', rN)
-    }
-  }
-}
-\end{verbatim}
+NestedSESE($G$:~CFG) =
+\begin{myalgorithmic}\setlength{\baselineskip}{0.9\baselineskip}
+\STATE\COMMENT{initialize}
+\FORALL{nodes $n$ of $G$}
+ \STATE $\text{Mark}(n) \gets \code{false}$
+\ENDFOR
+\FORALL{edges $e$ of $G$}
+ \STATE $\text{EntryRegion}(e) \gets \code{nil}$
+ \STATE $\text{ExitRegion}(e) \gets \code{nil}$
+\ENDFOR
+         \EMPTYLINE
+\STATE\COMMENT{order edges within cycle-equivalency classes by dominance}
+\FOREACH{edge $e$ of $G$ in depth first order}
+ \STATE $\text{CQList}\left(\text{EQClass}(e)\right) \gets
+	 \text{append}\left(\text{CQList}(\text{EQClass}(e)), e\right)$
+\ENDFOR
+%         \EMPTYLINE
+\STATE\COMMENT{get all canonical SESE regions}
+\FORALL{equivalency classes $q$}
+ \STATE $l \gets \text{CQList}(q)$
+ \WHILE{$\text{size}(l)>1$}
+  \STATE $r \gets \text{NewRegion}\left(\text{head}(l),\text{head}(\text{tail}(l))\right)$
+  \STATE $\text{EntryRegion}(\text{Entry}(r)) \gets r$
+  \STATE $\text{ExitRegion}(\text{Exit}(r)) \gets r$
+ \ENDWHILE
+\ENDFOR
+%         \EMPTYLINE
+\STATE\COMMENT{determine proper nesting of SESE regions}
+\STATE $\text{VisitNode}(\code{START}, \code{top-region})$
+\end{myalgorithmic}
+~\\
+VisitNode($n$:~node, $r$:~Region) =
+\begin{myalgorithmic}\setlength{\baselineskip}{0.9\baselineskip}
+\IF{$\text{Mark}(n)=\code{false}$}
+ \STATE $\text{Mark}(n) \gets \code{true}$
+%         \EMPTYLINE
+ \STATE\COMMENT{record mapping from $n$ to $r$}
+ \STATE $\text{SESE}(n) \gets r$
+ \STATE $\text{Nodes}(r) \gets \text{append}(\text{Nodes}(r), n)$
+         \EMPTYLINE
+ \FOREACH{edge $\tuple{n, n'}$ from $n$ to $n'$}
+  \STATE $r_1 \gets \text{EntryRegion}(\tuple{n, n'})$
+  \STATE $r_2 \gets \text{ExitRegion}(\tuple{n, n'})$
+%         \EMPTYLINE
+  \IF{$r=r_1$ or $r=r_2$}
+   \STATE $r_N \gets \text{Parent}(r)$ \COMMENT{exiting current region}
+  \ELSE
+   \STATE $r_N \gets r$
+  \ENDIF
+%         \EMPTYLINE
+  \IF{$r_1 \not= \code{nil}$ and $r_1 \not= r$}
+   \STATE $\text{LinkRegion}(r_N, r_1)$ \COMMENT{entering new region}
+   \STATE $r_N \gets r_1$
+  \ENDIF
+  \IF{$r_2 \not= \code{nil}$ and $r_2 \not= r$}
+   \STATE $\text{LinkRegion}(r_N, r_2)$ \COMMENT{entering new region}
+   \STATE $r_N \gets r_2$
+  \ENDIF
+  \STATE $\text{VisitNode}(n', r_N)$
+ \ENDFOR
+\ENDIF
+\end{myalgorithmic}
