@@ -6,3 +6,6 @@ SUBDIRS = src
 
 list:
 	@find . -path './Contrib' -prune -o -name "*.[ch]" -print
+
+## automake version 1.4 is required.
+AUTOMAKE_OPTIONS = 1.4
