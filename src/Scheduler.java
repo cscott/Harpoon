@@ -260,24 +260,24 @@ public abstract class Scheduler {
 
     final void addThreadToLists(final RealtimeThread thread) {
 	totalThreads++;
-	MemoryArea.startMem(vt);
+//	MemoryArea.startMem(vt);
 	int state = beginAtomic();
 	addToFeasibility(thread);
 	addThreadInC(thread, thread.getUID());
 	addThread(thread);
 	endAtomic(state);
-	MemoryArea.stopMem();
+//	MemoryArea.stopMem();
     }
 
     final void removeThreadFromLists(final RealtimeThread thread) {
 	totalThreads--;
-	MemoryArea.startMem(vt);
+//	MemoryArea.startMem(vt);
 	int state = beginAtomic();
 	removeThread(thread);
 	removeThreadInC(thread);
 	removeFromFeasibility(thread);
 	endAtomic(state);
-	MemoryArea.stopMem();
+//	MemoryArea.stopMem();
     }
 
     private final native void addThreadInC(Schedulable t, long threadID);
@@ -288,7 +288,7 @@ public abstract class Scheduler {
     final static void jDisableThread(final RealtimeThread rt, 
 				     final long threadID) {
 	disabledThreads++;
-	MemoryArea.startMem(vt);
+//	MemoryArea.startMem(vt);
 	Scheduler sched;
 	if (rt != null) { 
 	    sched = rt.getScheduler();
@@ -298,15 +298,16 @@ public abstract class Scheduler {
 	if (sched != null) {
 	    sched.disableThread(threadID);
 	} else {
+	    //	MemoryArea.stopMem();
 	    throw new RuntimeException("\nNo scheduler!!!");
 	}
-	MemoryArea.stopMem();
+//	MemoryArea.stopMem();
     }
     
     final static void jEnableThread(final RealtimeThread rt, 
 				    final long threadID) {
 	disabledThreads--;
-	MemoryArea.startMem(vt);
+	// MemoryArea.startMem(vt);
 	Scheduler sched;
 	if (rt != null) { 
 	    sched = rt.getScheduler();
@@ -316,9 +317,10 @@ public abstract class Scheduler {
 	if (sched != null) {
 	    sched.enableThread(threadID);
 	} else {
+	    // MemoryArea.stopMem();
 	    throw new RuntimeException("\nNo scheduler!!!");
 	}
-	MemoryArea.stopMem();
+	// MemoryArea.stopMem();
     }
 
     final static void jAddCThread(final long threadID) {
@@ -340,9 +342,9 @@ public abstract class Scheduler {
     }
 
     final protected long jChooseThread(final long currentTime) {
-	MemoryArea.startMem(vt);
+	// MemoryArea.startMem(vt);
 	long temp = chooseThread(currentTime);
-	MemoryArea.stopMem();
+	// MemoryArea.stopMem();
 	return temp;
     }
   

@@ -12,22 +12,21 @@ import java.util.Iterator;
  *  scheduler that actually switches between threads.
  *  It's great for getting an idea of what's required in a scheduler.
  */
-public class RoundRobinScheduler extends Scheduler {
-    static RoundRobinScheduler instance = null;
-    RefList threadList = new RefList();
-    Iterator iterator = threadList.roundIterator();
+public class PreAllocRoundRobinScheduler extends Scheduler {
+    static PreAllocRoundRobinScheduler instance = null;
+    
 
-    protected RoundRobinScheduler() {
+    protected PreAllocRoundRobinScheduler() {
 	super();
 	setQuanta(0); // Start switching after a specified number of microseconds
     }
 
     /** Return an instance of a RoundRobinScheduler */
-    public static RoundRobinScheduler instance() {
+    public static PreAllocRoundRobinScheduler instance() {
 	if (instance == null) {
 	    ImmortalMemory.instance().enter(new Runnable() {
 		public void run() {
-		    instance = new RoundRobinScheduler();
+		    instance = new PreAllocRoundRobinScheduler();
 		}
 	    });
 	}
@@ -44,7 +43,7 @@ public class RoundRobinScheduler extends Scheduler {
 
     /** Used to determine the policy of the <code>Scheduler</code>. */
     public String getPolicyName() {
-	return "Round robin";
+	return "Pre-alloc round robin";
     }
 
     /** It is always feasible to add another thread to a RoundRobinScheduler. */
@@ -76,15 +75,12 @@ public class RoundRobinScheduler extends Scheduler {
     }
 
     protected long chooseThread(long currentTime) {
-	setQuanta(10); // Switch again after a specified number of microseconds.
-	try {
-	    return ((Long)iterator.next()).longValue();
-	} catch (NoSuchElementException e) {
-	    return 0;
-	}
+	setQuanta(1000); // Switch again after a specified number of microseconds.
+	
     }
 
     protected void addThread(RealtimeThread thread) {
+	
 	threadList.add(thread.getUID());
     }
 
@@ -113,7 +109,7 @@ public class RoundRobinScheduler extends Scheduler {
     }
 
     public String toString() {
-	return "["+threadList+"]";
+	return "";
     }
 
     public void printNoAlloc() {
