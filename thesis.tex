@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.29 1999-06-12 18:01:57 cananian Exp $
+% $Id: thesis.tex,v 1.30 1999-06-12 19:01:26 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.29 $ $}
+\date{\today \\ $ $Revision: 1.30 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.29 $ $}{$ $Revision: 1.29 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.30 $ $}{$ $Revision: 1.30 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -336,6 +336,7 @@ A SESE region $\tuple{a,b}$ is \term{canonical} provided
 \end{definition}
 
 \subsubsection{Cycle Equivalency}
+\newcommand{\cyceq}{\equiv_{cq}}%{\equiv_{CYC}}
 The identification of SESE regions begins by computing the cycle
 equivalency of the edges in the program control flow graph.  The cycle
 equivalency algorithm works on undirected graphs, so we prepare the
@@ -395,24 +396,10 @@ and representations.%
 equivalency as well as \emph{node} equivalency.  Merge algorithms from
 \cite{johnson93:sese} and \cite{johnson94:pst}.}
 Figure~\ref{fig:CQex} shows cycle-equivalent regions in a simple
-control-flow graph.
-
-\begin{myfigure}
-\centering
-\vertcenter{\input{Figures/THcqex}}
-\newcommand{\cyceq}{\equiv}%{\equiv_{CYC}}
-$\begin{array}[c]{cc}
-\tuple{\mbox{START},1}\cyceq\tuple{16,\mbox{END}}\\
-\tuple{1,2}\cyceq\tuple{8,16}\\
-\tuple{2,3}\cyceq\tuple{3,4}\cyceq\tuple{7,8}\\
-\tuple{4,5}\cyceq\tuple{5,7}\\
-\tuple{4,6}\cyceq\tuple{6,7}\\
-\tuple{1,9}\cyceq\tuple{9,10}\cyceq\tuple{14,15}\cyceq\tuple{15,16}\\
-\tuple{10,11}\cyceq\tuple{11,13}\\
-\end{array}$
-\caption{Control flow graph and cycle-equivalent edges.}
-\label{fig:CQex}
-\end{myfigure}
+control-flow graph.  We use the notation
+$\tuple{a,b}\cyceq\tuple{c,d}$ to indicate that the CFG edge from node
+$a$ to node $b$ is edge cycle-equivalent to the edge from node $c$ to
+node $d$.
 
 \begin{myfigure}\small
 \input{Figures/THcqdata}
@@ -427,7 +414,38 @@ $\begin{array}[c]{cc}
 \label{fig:CQalg}
 \end{myfigure}
 
-\subsubsection{Single-Entry Single-Exit Regions}
+\begin{myfigure}
+\centering
+\vertcenter{\input{Figures/THcqex}}
+$\begin{array}[c]{cc}
+\tuple{\mbox{START},1}\cyceq\tuple{16,\mbox{END}}\\
+\tuple{1,2}\cyceq\tuple{8,16}\\
+\tuple{2,3}\cyceq\tuple{3,4}\cyceq\tuple{7,8}\\
+\tuple{4,5}\cyceq\tuple{5,7}\\
+\tuple{4,6}\cyceq\tuple{6,7}\\
+\tuple{1,9}\cyceq\tuple{9,10}\cyceq\tuple{14,15}\cyceq\tuple{15,16}\\
+\tuple{10,11}\cyceq\tuple{11,13}\\
+\end{array}$
+\caption{Control flow graph and cycle-equivalent edges.}
+\label{fig:CQex}
+\end{myfigure}
+
+\subsubsection{Single-Entry Single-Exit Regions and the Program Structure Tree}
+Johnson, Pearson, and Pingali show how to construct a tree structure
+of nested SESE regions from the cycle-equivalency information in
+\cite{johnson94:pst}.  The cycle-equivalent regions are sorted by
+dominance using a simple depth-first traversal of the graph, and then
+canonical SESE regions are found by taking adjacent pairs of
+edges from the cycle-equivalence classes.  Another depth-first search
+of the CFG suffices to obtain to nesting of these regions,
+which is represented in a data structure called the 
+\emph{program structure tree}.
+The algorithm and data structures required are presented in figures
+\ref{fig:SESEdata} and \ref{fig:SESEalg}.  Figure~\ref{fig:SESEex}
+shows the SESE regions on the left and program structure tree on
+the right for the example of figure~\ref{fig:CQex}.
+% note that node f,g  and nodes c,d,e are 'sequentially composed'?
+% does this matter?
 
 \begin{myfigure}\small
 \input{Figures/THsesedata}
@@ -451,8 +469,10 @@ $\begin{array}[c]{cc}
 \label{fig:SESEex}
 \end{myfigure}
 
-\subsubsection{Program Structure Tree}
-\textbf{Rest of algorithm: construct PST, then compute variable
+\subsubsection{Computing liveness}
+
+\subsubsection{Placing $\phi$- and \sigfunction{s}}
+\textbf{Compute variable
 liveness.  Traverse the tree from bottom up, adding phi/sigmas if:
 the variable is used or defined inside the PST block, and the variable
 is live.}
