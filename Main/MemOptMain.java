@@ -40,7 +40,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>MemTestMain</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: MemOptMain.java,v 1.2 2002-04-24 23:04:09 salcianu Exp $
+ * @version $Id: MemOptMain.java,v 1.3 2002-04-24 23:48:26 salcianu Exp $
  */
 public abstract class MemOptMain {
     
@@ -63,14 +63,6 @@ public abstract class MemOptMain {
 	
 	read_data(args);
 
-	/*
-	parent = hcf_no_ssa;
-	while(parent instanceof CachingCodeFactory) {
-	    System.out.println("caching code factory <-");
-	    parent = ((CachingCodeFactory) parent).parent;
-	}
-	*/
-
 	IncompatibilityAnalysis ia = get_ia();
 
 	// debug messages
@@ -85,9 +77,12 @@ public abstract class MemOptMain {
     private static IncompatibilityAnalysis get_ia() {
 	CallGraph cg = build_call_graph();
 
+	SafeCachingCodeFactory sccf =
+	    new SafeCachingCodeFactory(hcf_no_ssa);
+
         QuadSSI.KEEP_QUAD_MAP_HACK = true;
         hcf_ssi =
-	    new CachingCodeFactory(QuadSSI.codeFactory(hcf_no_ssa), true);
+	    new CachingCodeFactory(QuadSSI.codeFactory(sccf), true);
 
 	System.out.println("hcf_ssi = " + hcf_ssi.hashCode());
 	
@@ -130,6 +125,30 @@ public abstract class MemOptMain {
 	}
     }	
 
+    // essentially a CachingCodeFactory that ignores all calls to clear()
+    private static class SafeCachingCodeFactory
+	implements SerializableCodeFactory {
+	
+	private final HCodeFactory ccf;
+
+	public SafeCachingCodeFactory(CachingCodeFactory ccf) {
+	    this.ccf = ccf;
+	}
+	
+	public HCode convert(HMethod m) {
+	    return ccf.convert(m);
+	}
+	
+	public String getCodeName() {
+	    return ccf.getCodeName();
+	}
+
+	public void clear(HMethod m) {
+	    // ignore
+	}
+    }
+
+
 
     private static void read_an(String filename) throws Exception {
 	ObjectInputStream ois = 
@@ -141,8 +160,6 @@ public abstract class MemOptMain {
 	ois.close();
 
 	hcf_no_ssa = (CachingCodeFactory) an.codeFactory();
-
-	System.out.println("hcf_no_ssa = " + hcf_no_ssa.hashCode());
 
 	assert
 	    hcf_no_ssa.getCodeName().equals(QuadNoSSA.codename) :

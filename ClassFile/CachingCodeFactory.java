@@ -12,7 +12,7 @@ import java.util.Map;
  * modified in order to add or replace method implementations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CachingCodeFactory.java,v 1.3 2002-04-24 23:03:57 salcianu Exp $
+ * @version $Id: CachingCodeFactory.java,v 1.4 2002-04-24 23:48:22 salcianu Exp $
  */
 public class CachingCodeFactory implements SerializableCodeFactory {
     /** Parent code factory. Creates the representations this
@@ -73,7 +73,7 @@ public class CachingCodeFactory implements SerializableCodeFactory {
      *  of <code>m</code> from <code>parent</code>. */
     public void put(HMethod m, HCode hc) {
 	h.put(m, hc); // works even if hc==null
-	// ASK SCOTT!
-	//parent.clear(m);
+	// [AS] do we really need this?
+	parent.clear(m);
     }
 }
