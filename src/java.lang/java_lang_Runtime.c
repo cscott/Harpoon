@@ -14,6 +14,10 @@
  */
 JNIEXPORT void JNICALL Java_java_lang_Runtime_exitInternal
   (JNIEnv *env, jobject objRuntime, jint status) {
+#ifdef WITH_STATISTICS
+  /* print out collected statistics */
+  { void print_statistics(void); print_statistics(); }
+#endif
     exit(status);
 }
 
