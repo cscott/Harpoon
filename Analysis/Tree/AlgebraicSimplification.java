@@ -43,7 +43,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.5 2002-06-06 17:44:12 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.6 2003-10-20 04:26:35 cananian Exp $
  */
 public abstract class AlgebraicSimplification extends Simplification { 
     // hide constructor
@@ -143,10 +143,10 @@ public abstract class AlgebraicSimplification extends Simplification {
 		Object k1pk2 = harpoon.IR.Tree.BINOP.evalValue
 		    (tf, b.op, b.optype, k1.value, k2.value);
 
-
-		switch (b.type()) { 
-		    case Type.POINTER:
-		    assert k1.type()==Type.INT && k2.type()==Type.INT;
+		int ty = b.type();
+		if (ty==Type.POINTER)
+		  ty = e.isDoubleWord() ? Type.LONG : Type.INT;
+		switch (ty) { 
 		    case Type.INT: 
 		        return new CONST(tf,b,((Integer)k1pk2).intValue());
 		    case Type.LONG: 

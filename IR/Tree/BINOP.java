@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: BINOP.java,v 1.4 2002-04-10 03:05:36 cananian Exp $
+ * @version $Id: BINOP.java,v 1.5 2003-10-20 04:26:37 cananian Exp $
  * @see Bop
  */
 public class BINOP extends OPER {
@@ -151,8 +151,15 @@ public class BINOP extends OPER {
 	    case Type.FLOAT:    return _f(_f(left)+_f(right));
 	    case Type.DOUBLE:   return _d(_d(left)+_d(right));
 	    case Type.POINTER:  
+	      // note that we allow silent coercion of ints to longs
+	      // on 64-bit platforms.  If you try to make the offsets
+	      // match the pointer size, then you have to deal with
+	      // the array indexing issue: java only allows 32-bit
+	      // array indexes.  At the moment, we're going to do
+	      // only integer multiplication on offsets, so we're
+	      // going to end up with integers are pointer offsets.
 	      return Type.isDoubleWord(tf, optype) ?
-		    (Object)_l(_l(left)+_l(right)) :
+		    (Object)_l(_lp(left)+_lp(right)) :
 			(Object)_i(_i(left)+_i(right));
 	    }
 	case Bop.MUL:	
@@ -252,6 +259,7 @@ public class BINOP extends OPER {
     // unwrapper functions.
     private static int    _i(Object o) { return ((Integer)o).intValue(); }
     private static long   _l(Object o) { return ((Long)o)   .longValue(); }
+    private static long   _lp(Object o){ return ((Number)o) .longValue(); }
     private static float  _f(Object o) { return ((Float)o)  .floatValue(); }
     private static double _d(Object o) { return ((Double)o) .doubleValue(); }
 
