@@ -20,7 +20,7 @@ import java.util.Iterator;
  * speed becomes an issue. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.4 1999-06-16 02:35:02 cananian Exp $
+ * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.5 1999-06-16 22:21:00 pnkfelix Exp $
  */
 public class BinHeapPriorityQueue extends AbstractCollection implements MaxPriorityQueue {
 
@@ -136,14 +136,15 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
     }
 
     public boolean equals(Object o) {
-	if (o instanceof BinHeapPriorityQueue) {
-	    BinHeapPriorityQueue bhpq = (BinHeapPriorityQueue) o;
-	    return 
-		bhpq.heap.equals(this.heap) &&
-		bhpq.priorities.equals(this.priorities);
-	} else {
+	BinHeapPriorityQueue bhpq = null;
+	try {
+	    bhpq = (BinHeapPriorityQueue) o;
+	} catch (ClassCastException e) {
 	    return false;
 	}
+	return 
+	    bhpq.heap.equals(this.heap) &&
+	    bhpq.priorities.equals(this.priorities);
     }
 
     public int hashCode() {
