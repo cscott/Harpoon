@@ -42,7 +42,9 @@ public class BypassLatchSchedule {
       Temp[] tmp_use = instr.use();
       // Omit branches, calls, and remnants of move coalescing
       if(instr.getTargets().isEmpty() 
+         && tmp_use.length > 0
          && tmp_use.length <= 2
+         && instr.def().length <= 1 /* excludes jal _lookup_handler */
          && instr.getAssem().length() > 0
          ) {
          Util.assert(tmp_use.length <= 2, " tmp_use.len=" + tmp_use.length 
@@ -52,22 +54,20 @@ public class BypassLatchSchedule {
          boolean oneLast = false;
          if(tmp_use.length > 0) {
             reg_use0 = code.getRegisters(instr, tmp_use[0]);
-            oneLast = lb.containsAll(reg_use0) 
-               && la.containsAll(reg_use0) == false;
+            // XXX Exclude longs for the time being
+            if(reg_use0.size() == 1) {
+               oneLast = lb.containsAll(reg_use0) 
+                  && la.containsAll(reg_use0) == false;
+            }
          }
          boolean twoLast = false;
          if(tmp_use.length > 1) {
             reg_use1 = code.getRegisters(instr, tmp_use[1]);
-            twoLast = lb.containsAll(reg_use1) 
-               && la.containsAll(reg_use1) == false;
-         }
-         String suffix = "";
-         if( oneLast && twoLast ) {
-            suffix = ".l12";
-         } else if( oneLast ) {
-            suffix = ".l1";
-         } else if( twoLast ) {
-            suffix = ".l2";
+            // XXX Exclude longs for the time being
+            if(reg_use1.size() == 1) {
+               twoLast = lb.containsAll(reg_use1) 
+                  && la.containsAll(reg_use1) == false;
+            }
          }
          if(trace) {
             System.out.println(instr + "\n\tlb=" + lb + "\n\tla=" + la);
@@ -82,17 +82,60 @@ public class BypassLatchSchedule {
                                   + " " + reg_use0);
             }
          }
-         if(suffix.length() > 0) {
+         if( oneLast || twoLast ) {
             String assem = instr.getAssem();
             int space = assem.indexOf(' ');
-            String new_assem = assem.substring(0, space)
-               + suffix + assem.substring(space);
+            String opcode = assem.substring(0, space);
+            boolean reverse = false;
+            if(opcode.equalsIgnoreCase("sw")
+               || opcode.equalsIgnoreCase("sh")
+               || opcode.equalsIgnoreCase("sb")
+               || opcode.equalsIgnoreCase("sc")
+               || opcode.equalsIgnoreCase("sdc1")
+               || opcode.equalsIgnoreCase("sllv")
+               || opcode.equalsIgnoreCase("sll")
+               || opcode.equalsIgnoreCase("sra")
+               || opcode.equalsIgnoreCase("srav")
+               || opcode.equalsIgnoreCase("srl")
+               || opcode.equalsIgnoreCase("srlv")
+               || opcode.equalsIgnoreCase("negu")
+               ) {
+               reverse = true;
+            }
+            String suffix = "";
+            if( oneLast && twoLast ) {
+               suffix = ".l12";
+            } else if( oneLast ) {
+               if(reverse)
+                  suffix = ".l2";
+               else
+                  suffix = ".l1";
+            } else if( twoLast ) {
+               if(reverse)
+                  suffix = ".l1";
+               else
+                  suffix = ".l2";
+            }
+            String new_assem = opcode + suffix + assem.substring(space);
 
             if(trace)
                System.out.println("  " + instr.getAssem() + " ==> "+ new_assem);
             Instr new_i = new Instr( instr.getFactory(), instr, new_assem,
                                      instr.def(), instr.use(), true,/*XXX*/
                                      instr.getTargets() );
+            // XXX This is a gross hack to manually copy register
+            // assignment information because the instr interface
+            // doesn't have a good copy method.
+            Temp[] refs = new_i.use();
+            for(int i = 0; i < refs.length; ++i) {
+               code.assignRegister(new_i, refs[i], 
+                                   code.getRegisters(instr, refs[i]));
+            }
+            refs = new_i.def();
+            for(int i = 0; i < refs.length; ++i) {
+               code.assignRegister(new_i, refs[i], 
+                                   code.getRegisters(instr, refs[i]));
+            }
             return new_i;
          }
       }
@@ -116,21 +159,11 @@ public class BypassLatchSchedule {
                Instr.replace(instr, new_instr);
             }
          }
-         if(false) {
-            for(Iterator ci = code.getElementsI(); ci.hasNext(); ) {
-               Instr instr = (Instr)ci.next();
-               Instr new_instr = lastUseInstr(instr);
-               if(new_instr != null) {
-                  Instr.replace(instr, new_instr);
-               }
-            }
-         }
       }
    }
-   
    
    private final Code code;
    private final Frame frame;
    private LiveTemps lt;
-   private boolean trace = true;
+   private boolean trace = false;
 }
