@@ -18,7 +18,7 @@ package harpoon.Analysis.PointerAnalysis;
 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraphPair.java,v 1.1.2.1 2000-03-28 23:53:43 salcianu Exp $
+ * @version $Id: ParIntGraphPair.java,v 1.1.2.2 2000-11-15 21:48:38 salcianu Exp $
  */
 class ParIntGraphPair {
 
@@ -46,8 +46,19 @@ class ParIntGraphPair {
 	The operation is done pairwise. This method is called only by
 	the <code>InterProcPA</code> module. */
     void join(ParIntGraphPair pp2){
-	pig[0].join(pp2.pig[0]);
-	pig[1].join(pp2.pig[1]);
+	if(pp2 == null) return;
+	partial_join(0, pp2.pig[0]);
+	partial_join(1, pp2.pig[1]);
+    }
+
+    private void partial_join(int k, ParIntGraph pig2) {
+	if(pig2 == null)
+	    return;
+
+	if(pig[k] == null)
+	    pig[k] = (ParIntGraph) pig2.clone();
+
+	pig[k].join(pig2);
     }
 
 }

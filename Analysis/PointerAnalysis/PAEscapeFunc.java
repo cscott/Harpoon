@@ -23,7 +23,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  Also, it records whether <code>node</code> escapes into a method hole or not.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.22 2000-09-05 20:06:51 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.23 2000-11-15 21:48:38 salcianu Exp $
  */
 public class PAEscapeFunc {
 
@@ -143,6 +143,22 @@ public class PAEscapeFunc {
 	return
 	    hasEscapedIntoANode(node) || hasEscapedIntoAMethod(node);
     }
+
+
+    /** Checks whether <code>node</code> escapes at most in the caller.
+	ie it doesn't escape in an unanalyzed method, a thread or a static
+	field. */
+    public boolean escapesOnlyInCaller(PANode node) {
+	if(hasEscapedIntoAMethod(node))
+	    return false; // escapes into an unanalyzed method
+	for(Iterator it = nodeHolesSet(node).iterator(); it.hasNext(); ) {
+	    PANode hole_node = (PANode) it.next();
+	    if(hole_node.type() != PANode.PARAM)
+		return false; // escapes into a thread or a static
+	}
+	return true;
+    }
+
 
     /** Remove all the <code>PANode</code>s that appear in <code>set</code>
 	from <code>this</code> object. */

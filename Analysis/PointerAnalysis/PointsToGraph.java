@@ -26,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.32 2000-07-02 08:37:44 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.33 2000-11-15 21:48:39 salcianu Exp $
  */
 public class PointsToGraph implements Cloneable {
 
@@ -168,6 +168,7 @@ public class PointsToGraph implements Cloneable {
 	e.remove(set);
 	r.removeAll(set);
 	excp.removeAll(set);
+	flushCaches();
     }
 
     /** Inserts the image of <code>G2</code> points-to graph

@@ -67,7 +67,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.41 2000-11-13 20:55:24 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.42 2000-11-15 21:48:38 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -395,7 +395,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     // Set the allocation policy info such that each of the threads allocated
     // and started into the currently analyzed method has a thread specific
     // heap associated with it.
-    private void set_make_heap(Set threads){
+    private void set_make_heap(Set threads) {
 	for(Iterator it = threads.iterator(); it.hasNext(); ) {
 	    PANode nt = (PANode) it.next();
 	    if((nt.type != PANode.INSIDE) || 

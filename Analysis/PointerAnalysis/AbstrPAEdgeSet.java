@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.RelationImpl;
+
 import harpoon.Temp.Temp;
 
 
@@ -17,7 +20,7 @@ import harpoon.Temp.Temp;
  * <code>AbstrPAEdgeSet</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AbstrPAEdgeSet.java,v 1.1.2.1 2000-07-01 23:11:39 salcianu Exp $
+ * @version $Id: AbstrPAEdgeSet.java,v 1.1.2.2 2000-11-15 21:48:38 salcianu Exp $
  */
 public abstract class AbstrPAEdgeSet implements PAEdgeSet, Cloneable {
     
@@ -194,6 +197,18 @@ public abstract class AbstrPAEdgeSet implements PAEdgeSet, Cloneable {
 
     public void union(PAEdgeSet edges2) {
 	throw new UnsupportedOperationException();
+    }
+
+
+    public Relation getPrecedenceRelation() {
+	final Relation rel = new RelationImpl();
+	forAllEdges(new PAEdgeVisitor() {
+		public void visit(Temp var, PANode node) {}
+		public void visit(PANode node1, String f, PANode node2) {
+		    rel.add(node2, node1);
+		}
+	    });
+	return rel;
     }
 
 

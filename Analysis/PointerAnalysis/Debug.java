@@ -11,6 +11,7 @@ import java.util.Collection;
 import harpoon.Util.UComp;
 
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Analysis.MetaMethods.MetaMethod;
 
@@ -25,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.1.2.12 2000-11-09 01:05:04 salcianu Exp $
+ * @version $Id: Debug.java,v 1.1.2.13 2000-11-15 21:48:38 salcianu Exp $
  */
 public abstract class Debug {
 
@@ -179,5 +180,12 @@ public abstract class Debug {
 	    getLine(q)  + " " + q;
     }
 
+    /** Checks whether the method <code>hm</code> is the method named
+	<code>mthd</code> from the class named <code>cls</code>. */
+    public static boolean isThatOne(HMethod hm, String cls, String mthd) {
+	return
+	    hm.getName().equals(mthd) &&
+	    hm.getDeclaringClass().getName().equals(cls);
+    }
 
 }

@@ -72,13 +72,16 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.70 2000-11-13 20:55:24 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.71 2000-11-15 21:48:38 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
     public static final boolean DEBUG2    = false;
     public static final boolean DEBUG_SCC = true;
     public static final boolean DEBUG_INTRA = true;
+
+    /** crazy, isn't it? */
+    public static boolean MEGA_DEBUG = false;
 
     /** Turns on the save memory mode. In this mode, some of the speed is
 	sacrified for the sake of the memory consumption. More specifically,
@@ -611,6 +614,9 @@ public class PointerAnalysis {
 	if(DEBUG_INTRA)
 	    System.out.println("META METHOD: " + mm);
 
+	//MEGA_DEBUG = Debug.isThatOne(mm.getHMethod(),
+	//			     "JLex.CEmit", "emit_actions"))
+
 	if(STATS) Stats.record_mmethod_pass(mm);
 
 	LBBConverter lbbconv = scc_lbb_factory.getLBBConverter();
@@ -674,7 +680,14 @@ public class PointerAnalysis {
 	    analyze_basic_block(lbb_work);
 	    ParIntGraphPair new_info = (ParIntGraphPair) lbb_work.user_info;
 
-	    if(must_check && !ParIntGraphPair.identical(old_info, new_info)){
+	    // Normally this should be unnecessary - just a desperate debugging
+	    // TODO: debug the error and remove this
+	    // Make sure we maintain the monotonicity of the pa info.
+	    if(new_info != null)
+		new_info.join(old_info);
+
+	    ParIntGraph.DEBUG2 = MEGA_DEBUG;
+	    if(must_check && !ParIntGraphPair.identical(old_info, new_info)) {
 		// yes! The succesors of the analyzed basic block
 		// are potentially "interesting", so they should be added
 		// to the intra-procedural worklist
@@ -687,6 +700,7 @@ public class PointerAnalysis {
 			W_intra_proc.add(lbb_next);
 		}
 	    }
+	    ParIntGraph.DEBUG2 = MEGA_DEBUG;
 	}
 
     }
@@ -1041,7 +1055,7 @@ public class PointerAnalysis {
      *  instructions appearing in the basic block (in the order they appear
      *  in the original program). */
     private void analyze_basic_block(LightBasicBlock lbb){
-	if(DEBUG2){
+	if(DEBUG2 || MEGA_DEBUG){
 	    System.out.println("BEGIN: Analyze_basic_block " + lbb);
 	    System.out.print("Prev BBs: ");
 	    Object[] prev_lbbs = lbb.getPrevLBBs();
@@ -1055,7 +1069,7 @@ public class PointerAnalysis {
 	// updated till it becomes the graph at the bb* point
 	lbbpig = get_initial_bb_pig(lbb);
 
-	if(DEBUG2){
+	if(DEBUG2 || MEGA_DEBUG){
 	    System.out.println("Before:");
 	    System.out.println(lbbpig);
 	}
@@ -1066,9 +1080,8 @@ public class PointerAnalysis {
 	for(int i = 0; i < len; i++){
 	    Quad q = (Quad) instrs[i];
 
-	    if(DEBUG2)
-		System.out.println("INSTR: " + q.getSourceFile() + ":" +
-				   q.getLineNumber() + " " + q);
+	    if(DEBUG2 || MEGA_DEBUG)
+		System.out.println("INSTR: " + Debug.code2str(q));
 	    
 	    // update the Parallel Interaction Graph according
 	    // to the current instruction
@@ -1084,7 +1097,7 @@ public class PointerAnalysis {
 	else
 	    lbb.user_info = new ParIntGraphPair(lbbpig, null);
 
-	if(DEBUG2){
+	if(DEBUG2 || MEGA_DEBUG){
 	    System.out.println("After:");
 	    System.out.println(lbbpig);
 	    System.out.print("Next BBs: ");

@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Collections;
+import java.util.LinkedList;
+
 
 import harpoon.Temp.Temp;
 import harpoon.IR.Quads.CALL;
@@ -27,7 +29,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.35 2000-07-02 08:37:44 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.36 2000-11-15 21:48:38 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -38,7 +40,7 @@ public class ParIntGraph {
     public static boolean DEBUG_AS = false;
 
     /** Activates the aggressive shrinking. Buggy for the moment ... */
-    public static boolean AGGRESSIVE_SHRINKING = false;
+    public static boolean AGGRESSIVE_SHRINKING = true;
 
     /** Default (empty) graph. It doesn't contain any information.  */
     public static final ParIntGraph EMPTY_GRAPH = new ParIntGraph();
@@ -87,6 +89,8 @@ public class ParIntGraph {
     /** <code>join</code> combines two <code>ParIntGraph</code>s in \
 	a control-flow join point. */
     public void join(ParIntGraph pig2){
+	if(pig2 == null) return;
+
 	G.join(pig2.G);
 	tau.join(pig2.tau);
 	ar.join(pig2.ar);
@@ -198,7 +202,7 @@ public class ParIntGraph {
 	ParIntGraph pig2 = retain_essential(params, is_main);
 
 	if(AGGRESSIVE_SHRINKING){
-	    pig2.aggressiveShrinking();
+	    pig2.shrinking();
 	    pig2 = retain_essential(params, is_main);
 	}
 
@@ -226,80 +230,81 @@ public class ParIntGraph {
 	return new ParIntGraph(_G, _tau, _ar, _eo, Collections.EMPTY_SET);
     }
 
-    /** Remove the load nodes that don't lead to anything interesting.
-	This nodes are useless for our analysis (although they could
-	be interesting for other analysis, such as determining the
-	memory area which is read by an application, etc.) and so,
-	we decide not to carry it over the entire call graph. */
-    private final void aggressiveShrinking(){
 
-	final Set unuseful_loads = new HashSet();
-	forAllNodes(new PANodeVisitor(){
-		public void visit(PANode node){
-		    if(node.type != PANode.LOAD) return;
-		    if(!ParIntGraph.this.interesting(node))
-			unuseful_loads.add(node);
-		}
-	    });
+    /** Aggressive shrinking: get rid of some unnecessary information.
+	TODO: write some better comments. */
+    private void shrinking() {
+	final Set nodes = new HashSet(allNodes());
+	final Set useful_nodes = new HashSet();
+	final LinkedList Q = new LinkedList();
 	
-	if(!unuseful_loads.isEmpty()){
-	    if(DEBUG_AS){
-		System.out.println("Unuseful loads: " + unuseful_loads);
-		System.out.println("Before aggressive shrinking : " + this);
+	init_queue(Q, useful_nodes, nodes);
+	final Relation pred_rel = G.O.getPrecedenceRelation();
+
+	while(!Q.isEmpty()) {
+	    PANode node = (PANode) Q.removeFirst();
+	    
+	    for(Iterator it = pred_rel.getValues(node).iterator();
+		it.hasNext(); ) {
+		PANode pred = (PANode) it.next();
+		if(useful_nodes.add(pred))
+		    Q.addLast(pred);
 	    }
-	    remove(unuseful_loads);
-	    if(DEBUG_AS)
-		System.out.println("After aggressive shrinking  : " + this);
 	}
+
+	System.out.println("as: " + nodes.size() + " -> " +
+			   useful_nodes.size() + " delta=" +
+			   (nodes.size() - useful_nodes.size()) +
+			   nodes);
+
+	// unuseful_nodes = nodes - useful_nodes
+	nodes.removeAll(useful_nodes);
+
+	remove(nodes);
     }
     
-    /** A node is directly interesting if there is a sync action executed
-	on him or it coudl be returned (normally or exceptionally) from
-	the method. (Normally, we should also analyze the case when the
-	node is a started thread node but anyway, our analysis deal only
-	with INSIDE thread nodes). */
-    private final boolean directlyInteresting(PANode node){
-	if(ar.isSyncOn(node)) return true;
-	if(G.r.contains(node) || G.excp.contains(node)) return true;
-	return false;
+
+    private void init_queue(final LinkedList Q, final Set useful_nodes,
+			    final Set nodes) {
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(relevant_node(node))
+		if(useful_nodes.add(node))
+		    Q.addLast(node);
+	}
+	G.I.forAllEdges(new PAEdgeVisitor(){
+		public void visit(Temp var, PANode node) {}
+		public void visit(PANode node1, String f, PANode node2) {
+		    if(useful_nodes.add(node1))
+			Q.addLast(node1);
+		    if(useful_nodes.add(node2))
+			Q.addLast(node2);
+		}
+	    });
     }
 
-    private boolean important = false;
-    private final boolean interesting(PANode node){
-	Util.assert(node.type == PANode.LOAD, "not a LOAD node");
 
-	if(directlyInteresting(node)) return true;
-	
-	important = false;
-
-	final Set set = new HashSet();
-	final PAWorkList W = new PAWorkList();
-	set.add(node);
-	W.add(node);
-	while(!W.isEmpty()){
-	    PANode n = (PANode) W.remove();
-	    G.I.forAllPointedNodes(n, new PANodeVisitor(){
-		    public void visit(PANode n2){
-			important = true;
-		    }
-		});
-	    if(important) return true;
-	    G.O.forAllPointedNodes(n, new PANodeVisitor(){
-		    public void visit(PANode n2){
-			// add to the worklist newly discovered nodes
-			if(set.add(n2)){
-			    if(directlyInteresting(n2))
-				important = true;
-			    W.add(n2);
-			}
-		    }
-		});
-	    if(important) return true;
+    private boolean relevant_node(PANode node) {
+	switch(node.type()){
+	case PANode.INSIDE:
+	    return true;
+	case PANode.PARAM:
+	    return true;
+	case PANode.STATIC:
+	    return true;
+	case PANode.LOAD:
+	    if(!G.e.escapesOnlyInCaller(node) ||
+	       ar.isSyncOn(node) ||
+	       G.r.contains(node) || G.excp.contains(node))
+		return true;
+	default:
+	    if(G.willEscape(node))
+		return true;
 	}
 
 	return false;
     }
-
+    
 
     // Visits all the nodes from set_nodes.
     private void forSet(Set set_nodes, PANodeVisitor visitor){
