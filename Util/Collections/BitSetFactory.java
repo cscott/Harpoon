@@ -31,7 +31,7 @@ import java.util.HashMap;
     cause an assertion failure.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.14 2000-07-13 10:08:38 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.15 2000-07-13 10:15:39 pnkfelix Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -52,7 +52,7 @@ public class BitSetFactory extends SetFactory {
 
     /** Universe of values for this, represented as a BitSet.  (Used
 	for makeFullSet). */
-    private BitStringSet bitUniverse;
+    private BitStringSet bitUniverse = null;
     
     /** Creates a <code>BitSetFactory</code>, given a
 	<code>universe</code> of values and an <code>Indexer</code>
@@ -68,7 +68,6 @@ public class BitSetFactory extends SetFactory {
 	    if (i > max) max = i;
 	}
 	this.bitStringSize = max+1;
-	this.bitUniverse = (BitStringSet) makeSet(universe);
     }
 
     /** Creates a <code>BitSetFactory</code>, given a
@@ -120,6 +119,9 @@ public class BitSetFactory extends SetFactory {
 	of the universe for <code>this</code> as its initial contents.
     */
     public Set makeFullSet() {
+	if (bitUniverse == null) 
+	    bitUniverse = (BitStringSet) makeSet(universe);
+
 	return (Set) bitUniverse.clone();
     }
 
