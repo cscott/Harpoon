@@ -14,7 +14,7 @@ import harpoon.Temp.Temp;
 
 public class TreeCode extends Code
 {
-  private static final String codename = "tree";
+  public static final String codename = "tree";
   private Derivation m_derivation;
   private TypeMap    m_typeMap;
   
