@@ -287,6 +287,14 @@ void GC_maybe_gc()
 GC_bool GC_try_to_collect_inner(stop_func)
 GC_stop_func stop_func;
 {
+  CLOCK_TYPE start_time, end_time;
+  GET_TIME(start_time);
+#define return(rv) ({\
+  extern double ttl_gc_time;\
+  GET_TIME(end_time);\
+  ttl_gc_time+=MS_TIME_DIFF(end_time,start_time);\
+  return (rv);\
+  })
     if (GC_incremental && GC_collection_in_progress()) {
 #   ifdef PRINTSTATS
 	GC_printf0(
@@ -333,7 +341,7 @@ GC_stop_func stop_func;
     GC_finish_collection();
     return(TRUE);
 }
-
+#undef return
 
 
 /*
