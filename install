@@ -6,6 +6,8 @@ echo any questions.
 echo Checking system requirements...
 echo
 
+export FLEX_ROOT=`pwd`/..
+
 if [ ! -d /usr/java/j2sdk* ]; then 
    echo Please install the Sun JDK 1.4 before installing FLEX.; 
    echo;
@@ -23,7 +25,7 @@ if test $TEST == 0; then
    exit 1;
 fi
 
-if [ -d `pwd`/../Code ]; then
+if [ -d $FLEX_ROOT/Code ]; then
    echo A previous install of FLEX exists.;
    export prmpt=;
    while [ x$prmpt = x ]; do
@@ -199,8 +201,8 @@ if [ -f /etc/redhat-release ]; then
 	esac;
      done;
      cd ..
-     rm -rf RPMS
    fi;
+   rm -rf RPMS
 fi
 
 if [ -f /etc/debian_version ]; then 
@@ -209,7 +211,7 @@ if [ -f /etc/debian_version ]; then
    fi;
 fi
 
-cd ..
+cd $FLEX_ROOT
 export CVS_RSH=ssh
 export CVSEDITOR=emacs
 
