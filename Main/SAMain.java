@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.128 2001-01-14 08:55:42 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.129 2001-01-15 21:11:59 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -208,6 +208,7 @@ public class SAMain extends harpoon.IR.Registration {
 		System.exit(1);
 	    }
 	    // okay, we've got the roots, make a rough class hierarchy.
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	    
