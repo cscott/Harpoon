@@ -37,8 +37,9 @@ public class IncompatibilityAnalysis {
     public static final boolean TO_STRING_SUCKS = false;
     public static final boolean AN_EQUALS_AE_HACK = false;
 
-    public static HClass exception;
-    public static HClass iterator;
+    // static objects used for statistics only
+    private static HClass exception;
+    private static HClass iterator;
 
     // test case
     public static void main(String args[]) {
@@ -129,7 +130,7 @@ public class IncompatibilityAnalysis {
         
    }
 
-    public static Set createRoots(HMethod entry) {
+    private static Set createRoots(HMethod entry) {
         // for thorough example see SAMain.java
         Set roots = new HashSet();
         // ask the runtime which roots it requires.
@@ -180,7 +181,8 @@ public class IncompatibilityAnalysis {
     private MultiMap I;
     private Collection classes;
     private Set selfIncompatible;
-    
+
+    // interface to the outside world
 
     public IncompatibilityAnalysis(HMethod entry, HCodeFactory codeFactory, CallGraph callGraph) {
 
@@ -203,7 +205,72 @@ public class IncompatibilityAnalysis {
 
         // stage 3: do compatible classes
         computeClasses();
+
+        // FIXME: destroy unneeded data here (mainly mdCache)
     }
+
+    // returns true if the given SSI NEW quad is self-incompatible
+    //    i.e. it cannot be statically allocated
+    public boolean isSelfIncompatible(HCodeElement e) {
+        assert e instanceof NEW : "allocations are NEW quads";
+
+        NEW qNew = (NEW) e;
+        Temp alloc = qNew.dst();
+
+        return I.contains(alloc, alloc);
+    }
+
+    // returns true if the given SSI NEW quads are incompatible
+    public boolean isIncompatible(HCodeElement e1, HCodeElement e2) {
+        assert e1 instanceof NEW && e2 instanceof NEW :
+            "allocations are NEW quads";
+
+        NEW qNew1 = (NEW) e1; NEW qNew2 = (NEW) e2;
+        Temp alloc1 = qNew1.dst(); Temp alloc2 = qNew2.dst();
+
+        return I.contains(alloc1, alloc2);
+    }
+
+    // returns a collection whose members are collections of compatible
+    //    NEW quads, which can then be statically allocated in the same slot
+    // all NEW quads in the methods analyzed are in one of these collections,
+    //    unless they are self-incompatible
+    // these are all in SSI form
+    public Collection getCompatibleClasses() {
+        LinkedList allocClasses = new LinkedList();
+        for (Iterator it = classes.iterator(); it.hasNext(); ) {
+            Collection thisClass = (Collection) it.next();
+            Collection newClass = new LinkedList();
+            
+            for (Iterator it2 = thisClass.iterator(); it2.hasNext(); ) {
+                newClass.add(globalAllocMap.get(it2.next()));
+            }
+
+            allocClasses.add(newClass);
+        }
+
+        return allocClasses;
+    }
+
+    // takes a Quad in QuadNoSSA, returns the equivalent quad in QuadSSI
+    //   or null if one doesn't exist
+    // the result is compatible with the quads the method above
+    //   operate on, provided that the CodeFactory we were passed is caching
+    // this will only work if the SSI CodeFactory we were passed is based
+    //   on the caching QuadNoSSA factory which generated this code, otherwise
+    //   it will almost always return null
+    public Quad getSSIQuad(Quad q) {
+        HMethod method  = q.getFactory().getMethod();
+        QuadSSI quadssi = (QuadSSI) codeFactory.convert(method);
+
+        Quad retval = (Quad) quadssi.getQuadMap().get(q);
+
+        // debug, remove me pls
+        assert retval != null : "didn't find a quad ssi for " + q;
+
+        return retval;
+    }
+    
 
     private void intraproceduralAnalysis() {
         WorkSet workset = new WorkSet();
