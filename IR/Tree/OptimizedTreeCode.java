@@ -1,6 +1,6 @@
 package harpoon.IR.Tree;
 
-import harpoon.Analysis.DataFlow.TreeFolding;
+import harpoon.Analysis.Tree.TreeFolding;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.3 1999-07-27 18:48:58 duncan Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.4 1999-07-27 21:45:12 duncan Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = "optimized-tree";
