@@ -12,8 +12,10 @@
 ./buildone FibPaper
 
 ./buildone Water/Water_RTJ
+./buildone Water/Water_RTJ/groups
 
 ./buildone Barnes/Barnes_RTJ
+./buildone Barnes/Barnes_RTJ/groups
 
 ./buildone HTTP/HTTP_RTJ
 
