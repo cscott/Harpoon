@@ -28,7 +28,7 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.38 1998-10-16 11:42:57 cananian Exp $
+ * @version $Id: HClass.java,v 1.39 1998-10-21 17:20:03 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public abstract class HClass {
@@ -141,6 +141,8 @@ public abstract class HClass {
 	  return /*ImplGNU*/ImplMagic.forStream(new BufferedInputStream(is));
 	} catch (java.io.IOException e) {
 	  throw new NoClassDefFoundError(className);
+	} finally {
+	  try { is.close(); } catch(java.io.IOException e) { }
 	}
       }
     default:
