@@ -33,7 +33,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.24 1999-09-11 05:43:18 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.25 1999-10-20 20:22:56 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -246,13 +246,10 @@ public abstract class Code extends HCode {
 		    boolean more = true;
 		    while(more && i<(assem.length()-1)) {
 			i++; c = assem.charAt(i);
-			switch(c) {
-			case ',':
-			case ' ':
+			if (!Character.isLetterOrDigit(c)) {
 			    lastChar = c;
 			    more = false;
-			    break;
-			default:
+			} else {
 			    var.append(c);
 			}
 		    }
