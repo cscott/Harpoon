@@ -64,6 +64,18 @@ public class AsyncEventHandler implements Schedulable {
 	this.group = group;
     }
 
+    public AsyncEventHandler(SchedulingParameters scheduling,
+			     ReleaseParameters release,
+			     MemoryParameters memory,
+			     MemoryArea area,
+			     ProcessingGroupParameters group,
+			     boolean nonheap, 
+			     Runnable logic) {
+	this(scheduling, release, memory, area, group, logic);
+	this.nonheap = nonheap;
+	
+    }
+
     // NOT IN SPECS
     //    public AsyncEventHandler(SchedulingParameters sp, ReleaseParameters rp) {
     //	super(sp, rp);

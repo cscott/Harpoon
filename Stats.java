@@ -234,8 +234,8 @@ public final class Stats {
 	}
 	if ((heapChecks!=0)||(heapRefs!=0)) {
 	    touched = true;
-	    NoHeapRealtimeThread.print("-------------------------------------\n");
-	    NoHeapRealtimeThread.print("\n\nHeap checks: ");
+	    NoHeapRealtimeThread.print("\n-------------------------------------");
+	    NoHeapRealtimeThread.print("\nHeap checks: ");
 	    NoHeapRealtimeThread.print(heapChecks);
 	    NoHeapRealtimeThread.print(" refs: ");
 	    NoHeapRealtimeThread.print(heapRefs);
