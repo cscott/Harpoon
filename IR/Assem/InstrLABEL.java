@@ -20,7 +20,7 @@ import java.util.Set;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.1.2.13 1999-11-05 01:10:30 cananian Exp $
+ * @version $Id: InstrLABEL.java,v 1.1.2.14 2000-01-05 23:22:05 pnkfelix Exp $
  */
 public class InstrLABEL extends Instr {
     private Label label;
@@ -30,10 +30,20 @@ public class InstrLABEL extends Instr {
 	assembly-language representation of the given
 	<code>Label</code> <code>l</code>. */
     public InstrLABEL(InstrFactory inf, HCodeElement src, String a, Label l) {
-        super(inf, src, a, null, null);
-        label = l;
-	inf.labelToInstrLABELmap.put(l, this);
+        this(inf, src, a, l, true);
     } 
+
+    private InstrLABEL(InstrFactory inf, HCodeElement src, 
+		       String a, Label l, boolean falls) {
+	super(inf, src, a, null, null, falls, null);
+        label = l;
+	inf.labelToInstrLABELmap.put(l, this);	
+    }
+
+    public static InstrLABEL makeNoFall
+	(InstrFactory inf, HCodeElement src, String a, Label l) {
+	return new InstrLABEL(inf, src, a, l, false);
+    }
 
     /** Return the code label specified in the constructor. */
     public Label getLabel() { return label; }

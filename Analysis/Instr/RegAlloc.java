@@ -56,7 +56,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.58 1999-12-20 17:22:20 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.59 2000-01-05 23:22:02 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = false;
@@ -247,8 +247,12 @@ public abstract class RegAlloc  {
 
 		// System.out.print("Rot");
 
-		return globalCode.resolveOutstandingTemps( currentCode );
-
+		currentCode = 
+		    (Code) globalCode.
+		            resolveOutstandingTemps( currentCode );
+		
+		
+		return currentCode;
 	    }
 	    public String getCodeName() {
 		return parent.getCodeName();
@@ -258,107 +262,6 @@ public abstract class RegAlloc  {
 	    }
 	};
     }
-
-    /** Transforms Temp references in 'in' into appropriate offsets
-	from the Stack Pointer in the Memory. 
-        <BR> <B>modifies:</B> in
-	<BR> <B>effects:</B> Replaces the <code>FskLoad</code> and
-	     <code>FskStore</code>s with memory instructions for the
-	     appropriate <code>Frame</code>.
-    */
-    protected static final HCode resolveOutstandingTemps_old2(final HCode in) {
-	CFGraphable first = (CFGraphable) in.getRootElement();
-	BasicBlock block = BasicBlock.computeBasicBlocks(first);
-	
-	final MakeWebsDumb makeWebs = 
-	    new MakeWebsDumb(BasicBlock.basicBlockIterator(block));
-	InstrSolver.worklistSolver(BasicBlock.basicBlockIterator(block), makeWebs);
-	
-
-	Iterator bbIter = BasicBlock.basicBlockIterator(block);
-	while(bbIter.hasNext()) {
-	    BasicBlock bb = (BasicBlock) bbIter.next();
-	    (new Debug((Code)in, 10)).print(bb, makeWebs);
-
-	    System.out.println();
-	    
-	}
-
-	return in;
-
-    }
-
-    private static class Debug {
-	private int indent;
-	private Code in;
-	Debug(Code in, int indent) {
-	    this.in = in;
-	    this.indent = indent;
-	}
-	
-	void indent() {
-	    for(int i=0; i<indent; i++)
-		System.out.print(" ");
-	}
-	
-	void print(BasicBlock bb, MakeWebsDumb mW) {
-	    System.out.println();
-	    MakeWebsDumb.WebInfo webInfo = 
-		(MakeWebsDumb.WebInfo) mW.bbInfoMap.get(bb);
-	    /* focusing on IN/OUT info now...
-	       indent(); System.out.println("--"+ bb + " USE Map[Temp, Set[Instr]] start");  
-	       printEntries(webInfo.use);
-	       indent(); System.out.println("--"+ bb + " USE Map[Temp, Set[Instr]] end");  
-	       
-	       indent(); System.out.println("--"+ bb + " DEF Map[Temp, Set[Instr]] start");  
-	       printEntries(webInfo.def);
-	       indent(); System.out.println("--"+ bb + " DEF Map[Temp, Set[Instr]] end");  
-	    */
-	    
-	    indent(); System.out.println("--"+ bb + " IN Map[Temp, Web] start");
-	    printEntries(webInfo.in);
-	    indent(); System.out.println("--"+ bb + " IN Map[Temp, Web] end");
-	    
-	    printInstrs(bb);
-	    
-	    indent(); System.out.println("--"+ bb + " OUT Map[Temp, Web] start");
-	    printEntries(webInfo.out);
-	    indent(); System.out.println("--"+ bb + " OUT Map[Temp, Web] end");
-	}
-	
-	void printEntries(Map map) {
-	    Iterator entries = map.entrySet().iterator();
-	    while(entries.hasNext()) {
-		Map.Entry entry = (Map.Entry) entries.next();
-		indent(); indent(); System.out.println("[ "+ entry.getKey() + ", " + entry.getValue() + " ]");
-	    }
-	}
-	void printInstrs(BasicBlock bb) {
-	    Iterator instrs = bb.listIterator();
-	    while(instrs.hasNext()) {
-		Instr instr = (Instr) instrs.next();
-		if (! (instr instanceof FskLoad || 
-		       instr instanceof FskStore)) {
-		    System.out.println("(" + instr.getID() +
-				       ")\t"+ indentCR("\t", in.toAssem(instr)));
-		} else {
-		    System.out.println("(" + instr.getID() +
-				       ")\t"+ indentCR("\t", instr.toString()));
-		}
-	    }
-	}
-	
-	private static String indentCR(String pref, String s) {
-	    StringBuffer sb = new StringBuffer(s.length());
-	    for(int i=0; i<s.length(); i++) {
-		sb.append(s.charAt(i));
-		if (s.charAt(i) == '\n') sb.append(pref); 
-	    }
-	    return sb.toString();
-	}
-	
-    }
-    
 
     /** Transforms Temp references in 'in' into appropriate offsets
 	from the Stack Pointer in the Memory. 
@@ -521,10 +424,14 @@ public abstract class RegAlloc  {
 	// might be off by one here (trying to be conservative)
 	final int locals = tf.nextOffset; 
 
-	// TODO: need to get this value into 'in' somehow...
-	frame.getCodeGen().procFixup(in.getMethod(), (Code) in,
-				     locals,
-				     computeUsedRegs(instr)); 
+	Code currentCode = (Code) in;
+
+	frame.getCodeGen().procFixup(currentCode.getMethod(),
+				     currentCode,
+				     locals, 
+				     computeUsedRegs(instr));
+
+
 
 	return in;
     }

@@ -12,13 +12,23 @@ import harpoon.Temp.TempMap;
  * directives.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrDIRECTIVE.java,v 1.1.2.4 1999-11-05 01:10:30 cananian Exp $
+ * @version $Id: InstrDIRECTIVE.java,v 1.1.2.5 2000-01-05 23:22:05 pnkfelix Exp $
  */
 public class InstrDIRECTIVE extends Instr {
 
     public InstrDIRECTIVE(InstrFactory inf, HCodeElement src, String a) {
-        super(inf, src, a, null, null);
+        this(inf, src, a, true);
     } 
+
+    private InstrDIRECTIVE(InstrFactory inf, HCodeElement src,
+			   String a, boolean falls) {
+	super(inf, src, a, null, null, falls, null);
+    }
+
+    public static InstrDIRECTIVE makeNoFall
+	(InstrFactory inf, HCodeElement src, String a) {
+	return new InstrDIRECTIVE(inf, src, a, false);
+    }
 
     public Instr rename(InstrFactory inf, TempMap defMap, TempMap useMap) {
 	return new InstrDIRECTIVE(inf, this, getAssem());

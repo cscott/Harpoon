@@ -19,11 +19,11 @@ import java.util.Arrays;
     StrongARM architecture.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.6 1999-12-20 17:22:23 pnkfelix Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.7 2000-01-05 23:22:04 pnkfelix Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
-    private static final int OFFSET_LIMIT = 1024;
+    private static final int OFFSET_LIMIT = 1023;
 
     RegFileInfo rfInfo;
 
@@ -92,8 +92,12 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 	    // safe since StrongARM does not seem to have normal
 	    // interrupts 
 
+	    int newOffset = offset;
+	    while (newOffset >= OFFSET_LIMIT) {
+		newOffset -= OFFSET_LIMIT;
+	    }
 	    String assem = 
-		getWrappedAssem(getLdrAssemStrs(r, offset), offset); 
+		getWrappedAssem(getLdrAssemStrs(r, newOffset), offset); 
 
 	    return Arrays.asList
 		(new InstrMEM[] 
@@ -104,33 +108,23 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 	}
     }
 
-    private String[] getLoadAssemStrs(Temp r, int offset) {
-	if (r instanceof TwoWordTemp) {
-	    return new String[] {
-		"ldr `d0l, [`s0, #" +(-4*offset) + "] " ,
-		    "ldr `d0h, [`s0, #" +(-4*(offset+1)) + "] " };
-	} else {
-	    return new String[] { "ldr `d0, [`s0, #" +(-4*offset) + "] " };
-	}
-    }
-
     private String[] getLdrAssemStrs(Temp r, int offset) {
 	if (r instanceof TwoWordTemp) {
 	    return new String[] {
-		"ldr `d0l, [`s0, #" +(-4*offset) + "] " ,
-		    "ldr `d0h, [`s0, #" +(-4*(offset+1)) + "] " };
+		"ldr `d0l, [`s0, #" +(4*offset) + "] " ,
+		    "ldr `d0h, [`s0, #" +(4*(offset+1)) + "] " };
 	} else {
-	    return new String[] { "ldr `d0, [`s0, #" +(-4*offset) + "] " };
+	    return new String[] { "ldr `d0, [`s0, #" +(4*offset) + "] " };
 	}
     }
 
     private String[] getStrAssemStrs(Temp r, int offset) {
 	if (r instanceof TwoWordTemp) {
 	    return new String[] {
-		"str `s0l, [`s1, #" +(-4*offset) + "] " ,
-		    "str `s0h, [`s1, #" +(-4*(offset+1)) + "] " };
+		"str `s0l, [`s1, #" +(4*offset) + "] " ,
+		    "str `s0h, [`s1, #" +(4*(offset+1)) + "] " };
 	} else {
-	    return new String[] { "str `s0, [`s1, #" +(-4*offset) + "] " };
+	    return new String[] { "str `s0, [`s1, #" +(4*offset) + "] " };
 	}
     }
 
@@ -141,7 +135,7 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 	if (offset < OFFSET_LIMIT) { // common case
 	    // Util.assert(harpoon.Backend.StrongARM.
 	    //             Code.isValidConst( 4*offset ),
-	    //		   "invalid offset: "+(-4*offset));
+	    //		   "invalid offset: "+(4*offset));
 	    String[] strs = getStrAssemStrs(r, offset);
 	    Util.assert(strs.length == 1 || 
 			strs.length == 2);
@@ -176,8 +170,12 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 	    // need to wrap store with instructions to shift SP down
 	    // and up again, and need to make it *ONE* Instr
 	    
+	    int newOffset = offset;
+	    while (newOffset >= OFFSET_LIMIT) {
+		newOffset -= OFFSET_LIMIT;
+	    }
 	    String assem = 
-		getWrappedAssem(getStrAssemStrs(r, offset), offset);
+		getWrappedAssem(getStrAssemStrs(r, newOffset), offset);
 
 	    return Arrays.asList
 		(new InstrMEM[]

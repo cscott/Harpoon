@@ -45,7 +45,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.7 1999-12-20 08:33:13 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.8 2000-01-05 23:22:01 pnkfelix Exp $
 */
 public class BasicBlock {
     
@@ -183,7 +183,7 @@ public class BasicBlock {
 	    CFGraphable last = (CFGraphable) current.getFirst();
 	    boolean foundEnd = false;
 	    while(!foundEnd) {
-		int n = last.succ().length;
+		int n = last.succC().size();
 		if (n == 0) {
 		    foundEnd = true;
 		    first.leaves.add(current); 
@@ -204,8 +204,9 @@ public class BasicBlock {
 		    foundEnd = true;
 		    
 		} else { // one successor
+		    Util.assert(n == 1, "must have one successor");
 		    CFGraphable next = (CFGraphable) last.succ()[0].to();
-		    int m = next.pred().length;
+		    int m = next.predC().size();
 		    if (m > 1) { // control flow join
 			BasicBlock bb = (BasicBlock) h.get(next);
 			if (bb == null) {

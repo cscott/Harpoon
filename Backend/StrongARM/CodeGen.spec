@@ -64,7 +64,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.114 1999-12-20 18:22:38 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.115 2000-01-05 23:22:04 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -214,10 +214,18 @@ import java.util.Iterator;
     private Instr emitLABEL( HCodeElement root, String assem, Label l ) {
 	return emit( new InstrLABEL( instrFactory, root, assem, l ));
     }	
+    /* InstrLABEL emit helper. */
+    private Instr emitNoFallLABEL( HCodeElement root, String assem, Label l ) {
+	return emit( InstrLABEL.makeNoFall( instrFactory, root, assem, l ));
+    }	
 
     /* InstrDIRECTIVE emit helper. */
     private Instr emitDIRECTIVE( HCodeElement root, String assem ) {
 	return emit( new InstrDIRECTIVE( instrFactory, root, assem ));
+    }
+    /* InstrDIRECTIVE emit helper. */
+    private Instr emitNoFallDIRECTIVE( HCodeElement root, String assem ) {
+	return emit( InstrDIRECTIVE.makeNoFall( instrFactory, root, assem ));
     }
 
     private Temp makeTemp() {
@@ -1394,15 +1402,29 @@ MEM<l,d>(e) = i %{
 NAME(id) = i %{
     // produces a pointer
 
-    Label target = new Label("2");
-    emit( ROOT, "ldr `d0, 1f\n" +
-		"b 2f", new Temp[]{ i }, null, false,
-		Arrays.asList(new Label[]{ target }));
+    Label target = new Label("2"+id);
+    Instr i2 = new Instr(instrFactory, ROOT,
+			 "ldr `d0, 1f\n" + "b 2f", 
+			 new Temp[]{ i }, null, false, 
+			 Arrays.asList(new Label[]{ target })) {
+			     public boolean hasModifiableTargets() {
+				 return false; 
+			     }};
+    
+    emit(i2);
+    
+    Util.assert(i2.succC().size() == 1, "linear control flow");
+
     // these may need to be included in the previous instr to preserve
     // ordering semantics, but for now this way they indent properly
-    emitLABEL( ROOT, "1:", new Label("1"));
-    emitDIRECTIVE( ROOT, "\t.word " + id);
-    emitLABEL( ROOT, "2:", target);
+    emitNoFallLABEL( ROOT, "1:", new Label("1"));
+    emitNoFallDIRECTIVE( ROOT, "\t.word " + id);
+    // FSK: changed above to NoFall emits so that this is not treated
+    // as the start of a new basic block.
+    i2 = emitLABEL( ROOT, "2:", target);
+    
+    Util.assert(i2.predC().size() == 1, 
+		"> one predecessor "+ i2.predC());
 
 }%
 
