@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.43 $)dnl
+AC_REVISION($Revision: 1.44 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -238,6 +238,8 @@ arm*) archdir=arm32
       AC_DEFINE(LONG_AND_DOUBLE_ARE_REVERSED, 1,
       [Define if your system stores doubles in reverse endianness])
       dnl StrongARM requires a software floating-point library.
+      AC_DEFINE(HAVE_STACK_TRACE_FUNCTIONS, 1,
+      [Define iff your target has stack tracing code in arch/<foo>/stack.h])
       LIBS="-lfloat $LIBS"
 	;;
 sparc) archdir=sparc32 ;;
