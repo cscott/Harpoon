@@ -18,10 +18,6 @@
 #include "../clheap/alloc.h" /* for NTHR_malloc_first/NTHR_free */
 #endif
 
-#ifdef WITH_EVENT_DRIVEN
-extern struct oobj *_Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread;
-#endif
-
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
 #define EXTRACT_OTHER_ENV(env, thread) \
   ( (struct FNI_Thread_State *) FNI_GetJNIData(env, thread) )
@@ -114,8 +110,12 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   assert(((struct FNI_Thread_State *)env)->thread == NULL);
   ((struct FNI_Thread_State *)env)->thread = mainThr;
 #ifdef WITH_EVENT_DRIVEN
-  _Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread =
-    FNI_UNWRAP(mainThr);
+  {
+    extern struct oobj *
+      _Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread;
+    _Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread =
+      FNI_UNWRAP(mainThr);
+  }
 #endif
 
   /* okay, now that we've got an object in env, setup this thread properly: */
@@ -222,12 +222,8 @@ static int java_priority_to_sched_priority(jint pr) {
  */
 JNIEXPORT jobject JNICALL Java_java_lang_Thread_currentThread
   (JNIEnv *env, jclass cls) {
-#ifdef WITH_EVENT_DRIVEN
-  return FNI_WRAP(_Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread);
-#else
   assert(((struct FNI_Thread_State *)env)->thread != NULL);
   return ((struct FNI_Thread_State *)env)->thread;
-#endif
 }
 
 /*
