@@ -21,7 +21,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.13 1999-10-23 14:19:52 cananian Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.14 1999-11-29 02:24:41 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL
@@ -55,7 +55,8 @@ public abstract class INVOCATION extends Stm {
 
     protected Set defSet() { 
 	Set def = new HashSet();
-	if (retval.kind()==TreeKind.TEMP) def.add(((TEMP)retval).temp);
+	if (retval != null && retval.kind() == TreeKind.TEMP) 
+	    { def.add(((TEMP)retval).temp); }
 	return def;
     }
 
@@ -63,7 +64,8 @@ public abstract class INVOCATION extends Stm {
 	Set uses = new HashSet();
 	uses.addAll(ExpList.useSet(args));
 	uses.addAll(func.useSet());
-	if (!(retval.kind()==TreeKind.TEMP)) uses.addAll(retval.useSet());
+	if (retval != null && !(retval.kind()==TreeKind.TEMP))
+	    { uses.addAll(retval.useSet()); } 
  	return uses;
     }
     
