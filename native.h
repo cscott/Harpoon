@@ -38,3 +38,13 @@ typedef void *(*gc_t)();
 static struct oobj *to_be_finalized; // list of objects that need finalization
 static struct oobj *all_objects[2]; // one for from space, one for to space
 // objects that don't define a finalizer don't need to be added to all_objects
+
+/** Garbage collectors for weak references add themselves to this list, which
+ * we traverse *last*.  Broken hearts in the fields of weak references then
+ * correspond to live objects; uncopied objects are not live except through
+ * the weak reference, and should be deleted. */
+static struct oobj *weak_references;
+
+/* objects that have fields whose type can be determined exactly at
+ * compile time can hard-code the garbage-collection routine to avoid
+ * the double-indirection. */
