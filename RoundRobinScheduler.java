@@ -21,7 +21,7 @@ public class RoundRobinScheduler extends Scheduler {
 
     protected RoundRobinScheduler() {
 	super();
-	setQuanta(1); // Start switching after 1 milliseconds
+	setQuanta(1); // Start switching after a specified number of milliseconds
     }
 
     /** Return an instance of a RoundRobinScheduler */
@@ -78,7 +78,7 @@ public class RoundRobinScheduler extends Scheduler {
     }
 
     protected long chooseThread(long currentTime) {
-	setQuanta(1); // Switch every 100 milliseconds
+	setQuanta(1); // Switch again after a specified number of milliseconds.
 	try {
 	    return ((Long)iterator.next()).longValue();
 	} catch (NoSuchElementException e) {
