@@ -86,11 +86,11 @@ void checkException() {
 }
 
 const char* className(jobject obj) {
-  return FNI_GetClassInfo((jclass)(FNI_UNWRAP_MASKED(obj)->claz))->name;
+  return FNI_GetClassInfo(FNI_GetObjectClass(obj))->name;
 }
 
 const char* classNameUnwrap(struct oobj* obj) {
-  return FNI_GetClassInfo((jclass)(obj->claz))->name;
+  return className(FNI_WRAP(obj));
 }
 
 inline long MemBlock_INCREF(struct MemBlock* memBlock) {
