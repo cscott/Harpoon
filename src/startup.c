@@ -19,9 +19,6 @@ int main(int argc, char *argv[]) {
 
   /* Execute static initializers, in proper order. */
   for (namep=FNI_static_inits; *namep!=NULL; namep++) {
-    printf("INITIALIZING: %s\n", *namep);
-    if (strcmp(*namep, "java/io/File")==0)
-      continue;
     cls = (*env)->FindClass(env, *namep);
     CHECK_EXCEPTIONS(env);
     mid = (*env)->GetStaticMethodID(env, cls, "<clinit>","()V");
@@ -35,15 +32,6 @@ int main(int argc, char *argv[]) {
   cls = (*env)->FindClass(env, "java/lang/System");
   CHECK_EXCEPTIONS(env);
   mid = (*env)->GetStaticMethodID(env, cls, "initializeSystemClass","()V");
-  CHECK_EXCEPTIONS(env);
-  (*env)->CallStaticVoidMethod(env, cls, mid);
-  CHECK_EXCEPTIONS(env);
-  (*env)->DeleteLocalRef(env, cls);
-
-  /* Execute java.io.File initializer. */
-  cls = (*env)->FindClass(env, "java/io/File");
-  CHECK_EXCEPTIONS(env);
-  mid = (*env)->GetStaticMethodID(env, cls, "<clinit>","()V");
   CHECK_EXCEPTIONS(env);
   (*env)->CallStaticVoidMethod(env, cls, mid);
   CHECK_EXCEPTIONS(env);
