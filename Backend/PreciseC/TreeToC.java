@@ -39,13 +39,19 @@ import harpoon.Temp.Label;
 import harpoon.Temp.LabelList;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.Writer;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 /**
  * <code>TreeToC</code> converts Tree form to C code (used as a
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.2 2000-06-24 21:19:21 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.3 2000-06-24 23:01:49 cananian Exp $
  */
 public class TreeToC {
     
@@ -60,8 +66,8 @@ public class TreeToC {
 	test(out, (Tree)hd.getRootElement(), false);
     }
     private static void test(PrintWriter out, Tree t, boolean isCode) {
-	TranslationVisitor tv = new TranslationVisitor(out);
-	if (t!=null) tv.translate(t, isCode);
+	if (t!=null)
+	    out.print(new TranslationVisitor().translate(t, isCode));
     }
 
     /** Tree Visitor does the real work. */
@@ -70,15 +76,37 @@ public class TreeToC {
 	public void visit(Tree e) {
 	    throw new Error("Unmatched Tree: "+e);
 	}
-	// PrintWriter for the translation.
+	// StringWriters and PrintWriters for the translation.
+	// four output sections: gbl_decls, meth_decls, meth_body, gbl_data
+	private final int GS=0, MD=1, MB=2, GD=3, SECTIONS=4;
+	private StringWriter[] swa = new StringWriter[SECTIONS];
+	private PrintWriter[] pwa = new PrintWriter[SECTIONS];
 	private PrintWriter pw;
-	TranslationVisitor(PrintWriter pw) { this.pw = pw; }
-	TranslationVisitor(Writer w) { this(new PrintWriter(w)); }
-	TranslationVisitor(OutputStream w) { this(new PrintWriter(w)); }
-	void translate(Tree t, boolean isCode) {
+	TranslationVisitor() {
+	    for (int i=0; i<SECTIONS; i++) {
+		swa[i] = new StringWriter();
+		pwa[i] = new PrintWriter(swa[i]);
+	    }
+	    pw = pwa[GD];
+	}
+	/** these are the symbols referenced (and declarations for them) */
+	Map sym2decl = new HashMap();
+	/** these are the *local* labels which are defined in this file. */
+	Set local_labels = new HashSet();
+	String translate(Tree t, boolean isCode) {
+	    StringBuffer sb=new StringBuffer();
 	    trans(t);
-	    if (isCode) pw.println("}");
-	    pw.flush();
+	    if (isCode) pwa[MB].println("}");
+	    for (Iterator it=sym2decl.keySet().iterator(); it.hasNext(); ) {
+		Label l = (Label) it.next();
+		if (!local_labels.contains(l))
+		    pwa[GS].println(sym2decl.get(l));
+	    }
+	    for (int i=0; i<SECTIONS; i++) {
+		pwa[i].close();
+		sb.append(swa[i].getBuffer());
+	    }
+	    return sb.toString();
 	}
 	// useful line number update function.
 	private boolean EMIT_LINE_DIRECTIVES=false;
@@ -131,7 +159,7 @@ public class TreeToC {
 	    pw.print("(");
 	    if (e.op==Bop.SHR) pw.print("SHR("); // use macro
 	    if (e.op==Bop.USHR) pw.print("USHR("); // use macro
-	    if (e.type()==e.POINTER) pw.print("(void*)");
+	    //if (e.type()==e.POINTER) pw.print("(void*)");
 	    trans(e.getLeft());
 	    switch(e.op) {
 	    case Bop.CMPLT: pw.print("<"); break;
@@ -151,7 +179,7 @@ public class TreeToC {
 	    case Bop.XOR: pw.print("^"); break;
 	    default: throw new Error("unknown Bop: "+e);
 	    }
-	    if (e.type()==e.POINTER) pw.print("(void*)");
+	    //if (e.type()==e.POINTER) pw.print("(void*)");
 	    trans(e.getRight());
 	    if (e.op==Bop.SHR||e.op==Bop.USHR) pw.print(")"); // close macro
 	    pw.print(")");
@@ -181,11 +209,12 @@ public class TreeToC {
 	    pw.print("\tgoto ");
 	    Exp exp = e.getExp();
 	    if (exp instanceof NAME)
-		pw.print(label(((NAME)exp).label));
+		visit(((NAME)exp), false/*don't take address*/);
 	    else { pw.print("*("); trans(exp); pw.print(")"); }
 	    pw.println("; /* targets: "+LabelList.toList(e.targets)+" */");
 	}
 	public void visit(LABEL e) {
+	    if (!e.exported) local_labels.add(e.label);
 	    pw.println(label(e.label)+":");
 	}
 	public void visit(MEM e) {
@@ -198,31 +227,39 @@ public class TreeToC {
 	private boolean isVoidMethod = false;
 	public void visit(METHOD e) {
 	    // emit declaration.
+	    pw = pwa[MD];
 	    if (e.getReturnType() < 0) {
 		isVoidMethod = true; pw.print("void");
 	    } else pw.print(ctype(e.getReturnType()));
 	    pw.print(" "+label(e.getMethod())+"(");
 	    for (int i=0; i<e.getParamsLength(); i++) {
 		pw.print(ctype(e.getParams(i))+" ");
+		temps_seen.add(e.getParams(i).temp);//suppress declaration
 		trans(e.getParams(i));
 		if (i+1 < e.getParamsLength()) pw.print(", ");
 	    }
 	    pw.println(") {");
+	    pw = pwa[MB];
 	}
 	public void visit(MOVE e) {
 	    pw.print("\t");
 	    trans(e.getDst()); pw.print(" = "); trans(e.getSrc());
 	    pw.println(";");
 	}
-	public void visit(NAME e) {
-	    pw.print("(&"+label(e.label)+")");
+	public void visit(NAME e) { visit(e, true); }
+	public void visit(NAME e, boolean take_address) {
+	    /* add entry in symbol declaration table */
+	    sym2decl.put(e.label, "extern "+ctype(e)+" "+label(e.label)+";");
+	    if (take_address) pw.print("(&");
+	    pw.print(label(e.label));
+	    if (take_address) pw.print(")");
 	}
 	public void visit(NATIVECALL e) {
 	    pw.print("\t");
 	    if (e.getRetval()!=null) {
 		trans(e.getRetval()); pw.print(" = ");
 	    }
-	    pw.print("*"); /* insert function type cast */
+	    pw.print("(");
 	    /* function type cast */
 	    pw.print("(");
 	    pw.print(e.getRetval()==null?"void":ctype(e.getRetval()));
@@ -234,7 +271,7 @@ public class TreeToC {
 	    pw.print("))");
 	    /* function expression */
 	    trans(e.getFunc());
-	    pw.print("(");
+	    pw.print(")(");
 	    for (ExpList el=e.getArgs(); el!=null; el=el.tail) {
 		trans(el.head);
 		if (el.tail!=null) pw.print(", ");
@@ -253,7 +290,13 @@ public class TreeToC {
 	    trans(e.getLeft());
 	    trans(e.getRight());
 	}
+	private Set temps_seen = new HashSet();
 	public void visit(TEMP e) {
+	    // declare the temp, if it hasn't already been seen.
+	    if (!temps_seen.contains(e.temp)) {
+		temps_seen.add(e.temp);
+		pwa[MD].println("\tregister "+ctype(e)+" "+e.temp+";");
+	    }
 	    pw.print(e.temp);
 	}
 	public void visit(THROW e) {
