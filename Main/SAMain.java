@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.145 2001-06-07 06:33:37 witchel Exp $
+ * @version $Id: SAMain.java,v 1.1.2.146 2001-06-08 00:51:19 witchel Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -411,7 +411,9 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
     if(BACKEND == MIPSDA_BACKEND || BACKEND == MIPSYP_BACKEND) {
+       //hcf = harpoon.Analysis.Tree.MemHoisting.codeFactory(hcf);
        hcf = new harpoon.Analysis.Tree.DominatingMemoryAccess(hcf, frame).codeFactory();
+       
     }
     
     
@@ -653,6 +655,7 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
     if(BACKEND == MIPSDA_BACKEND || BACKEND == MIPSYP_BACKEND) {
+       //hcf = harpoon.Analysis.Tree.MemHoisting.codeFactory(hcf);
        hcf = new harpoon.Analysis.Tree.DominatingMemoryAccess(hcf, frame).codeFactory();
     }
     
