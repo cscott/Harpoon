@@ -40,7 +40,9 @@ jthrowable FNI_ExceptionOccurred(JNIEnv *env) {
 void FNI_ExceptionDescribe(JNIEnv *env) {
   struct FNI_Thread_State *fts = (struct FNI_Thread_State *) env;
   jclass exclz;
-  struct FNI_classinfo *info;
+  jmethodID methodID;
+  jstring jstr;
+  const char *cstr;
   jthrowable saved_exception;
 
   assert(fts->exception != NULL);
@@ -48,8 +50,11 @@ void FNI_ExceptionDescribe(JNIEnv *env) {
   saved_exception = fts->exception; fts->exception = NULL;
   /* okay, get info about this here exception. */
   exclz = FNI_GetObjectClass(env, saved_exception);
-  info = FNI_GetClassInfo(exclz);
-  fprintf(stderr, "JNI ExceptionDescribe: %s\n", info->name);
+  methodID = FNI_GetMethodID(env, exclz, "toString", "()Ljava/lang/String;");
+  jstr = FNI_CallObjectMethod(env, saved_exception, methodID);
+  cstr = FNI_GetStringUTFChars(env, jstr, NULL);
+  fprintf(stderr, "JNI ExceptionDescribe: %s\n", cstr);
+  FNI_ReleaseStringUTFChars(env, jstr, cstr);
   /* okay, reset exception. */
   fts->exception = saved_exception;
 }
