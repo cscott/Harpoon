@@ -35,7 +35,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.18 2000-03-15 20:18:29 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.19 2000-03-15 20:33:05 bdemsky Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -128,8 +128,8 @@ public class ToAsync {
 		    retval=fd.getMethod("syncAsync", new HClass[0]);
 		    cache.put(m,retval);
 		} else if (m.equals(is.getMethod("skip",
-						 new HClass[0]))) {
-		    retval=is.getMethod("skipAsync", new HClass[0]);
+						 new HClass[]{HClass.Long}))) {
+		    retval=is.getMethod("skipAsync", new HClass[]{HClass.Long});
 		    cache.put(m,retval);
 		} else if (m.equals(HCthrd.getMethod("join",
 						new HClass[0]))) {
