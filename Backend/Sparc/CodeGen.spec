@@ -29,7 +29,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.9 1999-11-02 08:13:25 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.10 1999-11-02 08:23:13 andyb Exp $
  */
 %%
     Map origTempToNewTemp;
@@ -234,11 +234,9 @@ LABEL(l) %{
 }%
 
 // expressions
-/*
 CONST<i,l,p>(0)=r %{
  emit(new Instr(instrFactory, ROOT, "\t mov %g0, `d0\n", new Temp[] {r}, null));
 }%
-*/
 CONST<i,p>(c)=r %{
  if (is13bit(c))
    emit(new Instr(instrFactory, ROOT, "\t set "+c+", `d0\n", new Temp[] {r}, null));

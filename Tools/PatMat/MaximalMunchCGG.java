@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.47 1999-10-26 01:47:57 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.48 1999-11-02 08:23:14 andyb Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -561,8 +561,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		public void visit(Spec.LeafNumber l) {
 		    append(exp, "// check that constant value matches");
 		    append(exp, "&& ( " + expPrefix + ".isFloatingPoint()?");
-		    append(exp, expPrefix + ".doubleValue() == " + l.number.doubleValue() + ":");
-		    append(exp, expPrefix + ".longValue() == " + l.number.longValue() + ")");
+		    append(exp, "((" + TREE_CONST + ")" + expPrefix + ").value.doubleValue() == " + l.number.doubleValue() + ":");
+		    append(exp, "((" + TREE_CONST + ")" + expPrefix + ").value.longValue() == " + l.number.longValue() + ")");
 		}
 		public void visit(Spec.LeafNull l) {
 		    append(exp, "&& " + expPrefix + ".type() == Type.POINTER ");
