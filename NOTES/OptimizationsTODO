@@ -1,3 +1,10 @@
+---- Feb-01-99
+- Induction Variable Elimination
+
+- Explicit Initialization
+
+- Copy all possible hacks from source for gcc (make Flex have decent benchmarks)
+
 ---- Dec-31-98
 Reclaim INSTANCEOF optimization opportunities by adding NULL check ahead of it.
 
