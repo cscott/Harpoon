@@ -13,6 +13,7 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadSSA;
 import harpoon.IR.Quads.ToNoSSA;
 import harpoon.Temp.Temp;
+import harpoon.Util.Util;
 
 import java.util.Hashtable;
 
@@ -20,7 +21,7 @@ import java.util.Hashtable;
  *
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.8 1999-02-16 21:20:06 duncan Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.9 1999-02-17 00:45:17 duncan Exp $
  */
 public class LowQuadSSA extends Code
 {
@@ -39,7 +40,7 @@ public class LowQuadSSA extends Code
       final TypeMap tym = new harpoon.Analysis.QuadSSA.TypeInfo();
       FinalMap fm = new harpoon.Backend.Maps.DefaultFinalMap();
       quads = Translate.translate((LowQuadFactory)qf, code, tym, fm, dT, tT);
-
+      
       m_derivation = new Derivation() {
 	public DList derivation(HCodeElement hce, Temp t) {
 	  return (DList)dT.get(t);
@@ -47,8 +48,12 @@ public class LowQuadSSA extends Code
       };
       m_typeMap = new TypeMap() { 
 	public HClass typeMap(HCode hc, Temp t) { 
-	  // Ignores hc parameter
-	  return (HClass)tT.get(t);
+	  Util.assert(qf.tempFactory()==t.tempFactory());
+	  Object type = tT.get(t);   // Ignores hc parameter
+	  if (type instanceof Error) 
+	    throw (Error)((Error)type).fillInStackTrace();
+	  else
+	    return (HClass)type;
 	}
       };
     }

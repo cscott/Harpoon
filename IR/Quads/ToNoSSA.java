@@ -22,7 +22,7 @@ import java.util.Vector;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.7 1999-02-16 21:14:14 duncan Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.8 1999-02-17 00:45:08 duncan Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -67,7 +67,11 @@ public class ToNoSSA implements Derivation, TypeMap
       m_typeMap = new TypeMap() {
 	  public HClass typeMap(HCode hc, Temp t) {
 	      Util.assert(t.tempFactory()==newQF.tempFactory());
-	      return (HClass)dT.get(t);
+	      Object type = dT.get(t);   // Ignores hc parameter
+	      if (type instanceof Error) 
+		throw (Error)((Error)type).fillInStackTrace();
+	      else                       
+		return (HClass)type;
 	  }
       };
   }
@@ -401,11 +405,17 @@ class QuadMap
 	tmps = (j==0)?qOld.def():qOld.use();
 	for (int i=0; i<tmps.length; i++) {
 	  dl = DList.clone(m_derivation.derivation(qOld, tmps[i]), m_ctm);
-	  if (dl!=null) 
+	  if (dl!=null) { // If tmps[i] is a derived ptr, update deriv info.
 	    m_dT.put(new Tuple(new Object[] {qNew,map(tmps[i])}),dl);
-	  hc = m_typeMap.typeMap(m_code, tmps[i]);
-	  if (hc!=null) {
-	    m_dT.put(map(tmps[i]), hc);
+	    m_dT.put(map(tmps[i]), 
+		     new Error("*** Can't type a derived pointer: " + 
+			       map(tmps[i])));
+	  }
+	  else { // If the tmps[i] is NOT a derived pointer, assign its type
+	    hc = m_typeMap.typeMap(m_code, tmps[i]);
+	    if (hc!=null) {
+	      m_dT.put(map(tmps[i]), hc);
+	    }
 	  }
 	}
       }
