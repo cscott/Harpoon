@@ -1,4 +1,0 @@
-set Nodes(Node);
-nextnodes : Nodes -> Nodes (1->1);
-prevnodes : Nodes -> Nodes (1->1);
-  
