@@ -9,15 +9,15 @@ import harpoon.Analysis.EnvBuilder.Environment;
  * <code>ContTemplate</code> is a template for continuations.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContTemplate.java,v 1.1 2000-03-17 18:49:06 bdemsky Exp $
+ * @version $Id: ContTemplate.java,v 1.2 2000-03-22 08:51:28 bdemsky Exp $
  */
 public class ContTemplate {
-    protected Environment e;
+    //    protected Environment e;
     
     /** Creates a <code>ContTemplate</code>. */
-    public ContTemplate(Environment e) {
-	this.e = e;
-    }
+    //    public ContTemplate(Environment e) {
+    //	this.e = e;
+    // }
     
     public void resume() {
     }
