@@ -8,7 +8,6 @@
 #include "RTJconfig.h"
 #include "asm/atomicity.h"
 #include "MemBlock.h"
-#include "../gc/trace.h"
 
 struct refCountAllocator;
 

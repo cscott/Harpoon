@@ -1,10 +1,14 @@
 #ifndef INCLUDED_JNI_GC_H
 #define INCLUDED_JNI_GC_H
 
-//#define DEBUG_GC
-//#define WITH_STATS_GC
+#include "config.h"
+#include "jni-types.h"
+#include "jni-private.h"
 
 #ifdef WITH_PRECISE_GC
+
+//#define DEBUG_GC
+//#define WITH_STATS_GC
 
 #ifdef DEBUG_GC
 # define error_gc(fs,a) ({ printf(fs, a); fflush(stdout); })

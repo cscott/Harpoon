@@ -36,7 +36,7 @@ void deflate_freed_objs (struct copying_heap *h)
 	  // moved to the old generation
 	  struct obj_list *to_free = unit;
 
-	  printf("?");
+	  //printf("?");
 
 	  // invoke deflate fcn only if the object has really been GC'd
 	  if (CLAZ_OKAY(infl_obj))

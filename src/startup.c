@@ -3,6 +3,7 @@
 #include <jni-private.h>
 #include "java.lang/java_lang_Thread.h"
 #include "flexthread.h"
+#include "gc/omit_gc_timer.h"
 #ifdef WITH_PRECISE_GC
 #include "jni-gc.h"
 #endif
@@ -37,6 +38,8 @@ int main(int argc, char *argv[]) {
   int st=0;
   int i;
   
+  init_timer();
+
   /* set up for bfd */
   name_of_binary = argv[0];
 

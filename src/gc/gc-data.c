@@ -378,10 +378,14 @@ void handle_local_refs_for_thread(struct FNI_Thread_State *thread_state_ptr) {
 
 /* effects: finds root set and adds each element using add_to_root_set */
 #ifdef WITH_PRECISE_C_BACKEND
-void find_root_set() {
+void find_root_set()
+{
   find_static_fields();
   find_global_refs();
   find_thread_local_refs();
+#ifdef WITH_GENERATIONAL_GC
+  find_generational_refs();
+#endif
 }
 #else
 void find_root_set(void *saved_registers[])

@@ -40,7 +40,6 @@ static struct marksweep_heap heap;
 
 static int fd = 0;
 
-
 /* returns: 1 if we can afford to garbage-collect, 0 otherwise */
 int collection_makes_sense(size_t bytes_since_last_GC)
 {
@@ -96,6 +95,8 @@ void marksweep_gc_init()
 		      INITIAL_PAGES_IN_HEAP*SYSTEM_PAGE_SIZE,
 		      bytes_to_map,
 		      &heap);
+
+  init_statistics();
 }
 
 
@@ -127,8 +128,10 @@ void marksweep_handle_reference(jobject_unwrapped *ref)
 	  trace(obj);
 	}
       else
-	// if already marked, done
-	assert(MARKED_AS_REACHABLE(bl));
+	{
+	  // if already marked, done
+	  assert(MARKED_AS_REACHABLE(bl));
+	}
     }
 }
 
@@ -136,6 +139,9 @@ void marksweep_handle_reference(jobject_unwrapped *ref)
 /* returns: a block of allocated memory of the specified size */
 void* marksweep_malloc(size_t size_in_bytes)
 {
+#ifdef WITH_STATS_GC
+  static jint time = 0;
+#endif
   static size_t bytes_allocated = 0;
   size_t aligned_size_in_bytes = 0;
   void *result = NULL;
@@ -187,6 +193,13 @@ void* marksweep_malloc(size_t size_in_bytes)
 
   // if no memory at this point, just fail
   assert(result != NULL);
+
+#ifdef WITH_STATS_GC
+  {
+    struct block *bl = result - BLOCK_HEADER_SIZE;
+    bl->time = time++;
+  }
+#endif
 
   bytes_allocated += aligned_size_in_bytes;
 

@@ -17,10 +17,10 @@ struct block
 };
 
 #define BLOCK_HEADER_SIZE     (sizeof(struct block))
-#define SMALL_OBJ_SIZE        72
-#define SMALL_BLOCK_SIZE      (BLOCK_HEADER_SIZE + SMALL_OBJ_SIZE)
+#define SMALL_BLOCK_SIZE      256
+#define SMALL_OBJ_SIZE        (SMALL_BLOCK_SIZE - BLOCK_HEADER_SIZE)
 #define MIN_BLOCK_SIZE        (BLOCK_HEADER_SIZE + sizeof(struct oobj))
-#define NUM_SMALL_BLOCK_SIZES ((SMALL_BLOCK_SIZE - MIN_BLOCK_SIZE)/ALIGN_TO + 1)
+#define NUM_SMALL_BLOCK_SIZES (SMALL_BLOCK_SIZE/ALIGN_TO + 1)
 
 #define UNREACHABLE 1
 #define REACHABLE   2

@@ -240,7 +240,11 @@ inline void RefCountAllocator_register_finalizer(void* obj,
 
 #define traceFunc(obj) RefCountAllocator_oobj_trace(RefCountAllocator rc, obj)
 #define handleFunc(obj) RefCountAllocator_oobj_handle_reference(rc, obj)
-TRACE_MACRO(traceFunc, handleFunc)
+#define func_proto traceFunc
+#define handle_ref handleFunc
+#include "trace.c"
+#undef func_proto
+#undef handle_ref
 #undef traceFunc
 #undef handleFunc
 

@@ -51,7 +51,7 @@ void add_to_free_blocks(struct block *new_block,
   if (new_block->size <= SMALL_BLOCK_SIZE)
     {
       // calculate the array index
-      int index = (new_block->size - MIN_BLOCK_SIZE)/ALIGN_TO;
+      int index = new_block->size/ALIGN_TO;
 
       // check that the array index is in-bounds
       assert(index >= 0 && index < NUM_SMALL_BLOCK_SIZES);
@@ -84,7 +84,7 @@ struct block *find_free_block(size_t size,
 {
   if (size <= SMALL_BLOCK_SIZE)
     {
-      int index = (size - MIN_BLOCK_SIZE)/ALIGN_TO;
+      int index = size/ALIGN_TO;
       struct block *result;
 
       // make sure array index is not out of bounds

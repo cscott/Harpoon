@@ -15,7 +15,6 @@
 # include "flexthread.h"
 # include "jni-gcthreads.h"
 #endif
-#include "trace.h"
 
 #ifdef WITH_PRECISE_GC
 
@@ -54,6 +53,11 @@ void precise_gc_init()
 
   // do initialization for the specific collector
   internal_gc_init();
+
+#ifdef WITH_STATS_GC
+  // register exit function
+  atexit(precise_gc_print_stats);
+#endif
 }
 
 
@@ -244,7 +248,11 @@ void print_bitmap(ptroff_t bitmap)
 }
 #endif
 
-TRACE_MACRO(trace, handle_reference)
+#define func_proto trace
+#define handle_ref handle_reference
+#include "trace.c"
+#undef func_proto
+#undef handle_ref
 
 #ifdef WITH_POINTER_REVERSAL
 /* requires: that obj be an aligned pointer to an object, and next_index

@@ -14,7 +14,7 @@
 #  define add_to_root_set        marksweep_handle_reference
 #  define handle_reference       marksweep_handle_reference
 # endif
-# define internal_print_stats()
+# define internal_print_stats   print_write_barrier_stats
 # define internal_register_inflated_obj(obj)
 # define internal_gc_init       marksweep_gc_init
 # define internal_collect       marksweep_collect
@@ -36,10 +36,11 @@
 
 #elif defined(WITH_GENERATIONAL_GC)
 # include "generational.h"
+void print_write_barrier_stats(); // harpoon_Runtime_PreciseGC_WriteBarrier.c 
 # define internal_malloc        generational_malloc
 # define add_to_root_set        generational_handle_reference
 # define internal_gc_init       generational_gc_init
-# define internal_print_stats()
+# define internal_print_stats   print_write_barrier_stats
 # define internal_register_inflated_obj generational_register_inflated_obj
 # define handle_reference       generational_handle_reference
 # define internal_collect       generational_collect

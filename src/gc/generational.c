@@ -8,9 +8,12 @@
 #include "cp_heap.h"
 #include "free_list.h"
 #include "ms_heap.h"
+#include "obj_list.h"
+#include "omit_gc_timer.h"
 #include "system_page_size.h"
 
 //#define GC_EVERY_TIME
+#define WITH_WRITE_BARRIER_REMOVAL
 #define INITIAL_PAGES_TO_MAP_PER_SPACE 16384
 #define INITIAL_PAGES_TO_MAP_TOTAL     (3*INITIAL_PAGES_TO_MAP_PER_SPACE)
 #define INITIAL_PAGES_PER_HEAP  16
@@ -18,6 +21,7 @@
 #define MAJOR                 1
 
 FLEX_MUTEX_DECLARE_STATIC(generational_gc_mutex);
+FLEX_MUTEX_DECLARE_STATIC(intergenerational_roots_mutex);
 
 #ifndef WITH_THREADED_GC
 # define ENTER_GENERATIONAL_GC()
@@ -31,18 +35,79 @@ if (halt_for_GC_flag) halt_for_GC(); })
 
 #define EXIT_GENERATIONAL_GC() FLEX_MUTEX_UNLOCK(&generational_gc_mutex)
 
+struct ref_list {
+  jobject_unwrapped *ref;
+  struct ref_list *next;
+};
+
+static struct ref_list *roots = NULL;
+static struct obj_list *objs_curr = NULL;
+static struct obj_list *objs_next = NULL;
+
 static struct copying_heap young_gen;
 static struct marksweep_heap old_gen;
 
 static int fd = 0;
 
-static collection_type = MAJOR;
+static collection_type = MINOR;
 
 /* function declarations */
 
 int major_collection_makes_sense(size_t bytes_since_last_GC);
 
 int minor_collection_makes_sense(size_t bytes_since_last_GC);
+
+void generational_print_heap();
+
+/* effects: adds inter-generational pointers to the root set
+   for minor collections.
+*/
+void find_generational_refs()
+{
+  if (collection_type == MINOR)
+    {
+      struct ref_list *ref = roots, *prev = NULL;
+      struct obj_list *obj = objs_curr;
+
+      FLEX_MUTEX_LOCK(&intergenerational_roots_mutex);
+
+      while (ref != NULL)
+	{
+	  if (IN_MARKSWEEP_HEAP(ref->ref, old_gen) &&
+	      (IN_FROM_SPACE(*(ref->ref), young_gen) ||
+	       IN_TO_SPACE(*(ref->ref), young_gen)))
+	    {
+	      add_to_root_set(ref->ref);
+	      prev = ref;
+	      ref = ref->next;
+	    }
+	  else
+	    {
+	      // remove from list
+	      if (prev != NULL)
+		{
+		  prev->next = ref->next;
+		  free(ref);
+		  ref = prev->next;
+		}
+	      else
+		{
+		  roots = ref->next;
+		  free(ref);
+		  ref = roots;
+		}
+	    }
+	}
+
+      FLEX_MUTEX_UNLOCK(&intergenerational_roots_mutex);
+
+      while (obj != NULL)
+	{
+	  trace(obj->obj);
+	  obj = obj->next;
+	}
+    }
+}
 
 
 /* effects: garbage collects either just the young generation
@@ -54,7 +119,11 @@ void generational_collect()
   float young_occupancy;
   void *scan;
 
+  pause_timer();
+  
   setup_for_threaded_GC();
+
+  //generational_print_heap();
 
   scan = young_gen.to_begin;
 
@@ -84,6 +153,10 @@ void generational_collect()
   // flip semi-spaces
   flip_semispaces(&young_gen);
 
+  // add the new inter-generational pointers
+  objs_curr = objs_next;
+  objs_next = objs_curr;
+
   // calculate heap occupancy
   young_occupancy = ((float) (young_gen.from_free - 
 			      young_gen.from_begin))/((float) young_gen.heap_size);
@@ -92,9 +165,11 @@ void generational_collect()
 			     young_occupancy)/(num_collections + 1);
   num_collections++;
 
-  //printf("Minor GC number %d\n", num_collections);
+  //fprintf(stderr, "Minor GC number %d\n", num_collections);
 
   cleanup_after_threaded_GC();
+
+  start_timer();
 }
 
 
@@ -182,9 +257,21 @@ void generational_handle_reference(jobject_unwrapped *ref)
 
 	      retval = move_to_marksweep_heap(ref, &old_gen);
 
+	      if (collection_type == MAJOR)
+		// mark block as reachable
+		MARK_AS_REACHABLE((struct block *)(ref - BLOCK_HEADER_SIZE));
+
 	      // if success, done
 	      if (retval == 0)
 		{
+		  struct obj_list *obj;
+		  obj = (struct obj_list *)malloc(sizeof(struct obj_list));
+		
+		  obj->obj = PTRMASK(*ref);
+		  obj->next = objs_next;
+		  objs_next = obj;
+
+		  //printf("Adding %p to roots\n", *ref);
 		  trace(PTRMASK(*ref));
 		  return;
 		}
@@ -219,8 +306,10 @@ void *generational_malloc(size_t size)
   static size_t bytes_since_last_GC = 0;
   size_t aligned_size;
   void *result = NULL;
-  int collected = 0;
+  int collected_minor = 0;
+  int collected_major = 0;
   int grew_young_gen = 0;
+  int grew_old_gen = 0;
 
   ENTER_GENERATIONAL_GC();
 
@@ -230,17 +319,20 @@ void *generational_malloc(size_t size)
 
   // for large objects, try to allocate in the old
   // generation so we don't have to move them around
-  if (size > SMALL_OBJ_SIZE)
+  
+#ifndef WITH_WRITE_BARRIER_REMOVAL
+  if (!size > SMALL_OBJ_SIZE)
     {
       result = allocate_in_marksweep_heap(size, &old_gen);
 
       if (result != NULL)
 	{
-	  //printf(":");
+	  //fprintf(stderr, ":");
 	  EXIT_GENERATIONAL_GC();
 	  return result;
 	}
     }
+#endif
 
   aligned_size = align(size);
   
@@ -254,9 +346,73 @@ void *generational_malloc(size_t size)
     grow_copying_heap(aligned_size, &young_gen);
   */
 
-
   while (young_gen.from_free + aligned_size > young_gen.from_end)
     {
+      if (!(collected_minor || collected_major) &&
+	  minor_collection_makes_sense(bytes_since_last_GC))
+	{
+	  // run a minor collection and clear statistics
+	  generational_collect();
+	  collected_minor = 1;
+	  bytes_since_last_GC = 0;
+	} 
+      else if (!(collected_minor || collected_major) &&
+	       major_collection_makes_sense(bytes_since_last_GC))
+	{
+	  // run a major collection and clear statistics
+	  collection_type = MAJOR;
+	  generational_collect();
+	  collected_major = 1;
+	  bytes_since_last_GC = 0;
+	  // re-set collection_type
+	  collection_type = MINOR;
+	} 
+      else if (!grew_young_gen)
+	{
+	  // doesn't make sense to collect, expand the heap
+	  grow_copying_heap(aligned_size, &young_gen);
+	  grew_young_gen = 1;
+	} 
+#ifndef WITH_WRITE_BARRIER_REMOVAL
+      else if (!grew_old_gen)
+	{
+	  // already grew the young generation, and may
+	  // have collected, but still no space
+	  expand_marksweep_heap(size, &old_gen);
+	  grew_old_gen = 1;
+	  result = allocate_in_marksweep_heap(size, &old_gen);
+
+	  if (result != NULL)
+	    {
+	      EXIT_GENERATIONAL_GC();
+	      return result;
+	    }
+	}
+#endif
+      else if (!collected_minor)
+	{
+	  // already tried to expand both heaps
+	  generational_collect();
+	  collected_minor = 1;
+	  bytes_since_last_GC = 0;
+	}
+      else if (!collected_major)
+	{
+	  // already tried to expand both heaps
+	  // and run a minor collection
+	  collection_type = MAJOR;
+	  generational_collect();
+	  collected_major = 1;
+	  bytes_since_last_GC = 0;
+	  collection_type = MINOR;
+	}
+      else
+	{
+	  fprintf(stderr, "OUT OF MEMORY ERROR\n");
+	  return (void *)malloc(aligned_size);
+	}
+
+      /*
       if ((!collected && major_collection_makes_sense(bytes_since_last_GC)) ||
 	  grew_young_gen)
 	{
@@ -274,16 +430,94 @@ void *generational_malloc(size_t size)
 	  //printf("- HELP -");
 	  return (void *)malloc(aligned_size);
 	}
+	*/
     }
 
   result = young_gen.from_free;
   young_gen.from_free += aligned_size;
   bytes_since_last_GC += aligned_size;
-  //printf(".");
+  //fprintf(stderr, ".");
 
   EXIT_GENERATIONAL_GC();
 
   return result;
+}
+
+#define NCOLUMNS 4
+
+/* effects: prints the contents of the heap to stdout */
+void generational_print_heap()
+{
+  char c;
+  size_t nentries = (young_gen.from_free - 
+		     young_gen.from_begin)/sizeof(ptroff_t);
+  size_t nrows = (nentries + NCOLUMNS - 1)/NCOLUMNS;
+  int j;
+  struct block *bl;
+
+  nrows = (nrows < 16) ? 16 : nrows;
+
+  printf("FROM SPACE %p -> %p\n", young_gen.from_begin, young_gen.from_free);
+
+  for(j = 0; j < nrows; j++) 
+    {
+      ptroff_t *row_begin = (ptroff_t *)young_gen.from_begin + j;
+      int i;
+
+      if ((void *)row_begin >= young_gen.from_free)
+	break;
+      if ((void *)row_begin == young_gen.from_begin)
+	{
+	  printf("          | ");
+
+	  for(i = 0; i < NCOLUMNS; i++)
+	    printf("%10p ", (ptroff_t *)row_begin + i*nrows);
+
+	  printf("\n-----------");
+	  for(i = 0; i < NCOLUMNS; i++)
+	    printf("-----------");
+	  printf("\n");
+	}
+
+      printf("%10p| ", row_begin);
+
+      for(i = 0; i < NCOLUMNS; i++)
+	{
+	  ptroff_t *w = row_begin + i*nrows;
+	  
+	  if ((void *)w < young_gen.from_free)
+	    printf("%10p ", *w);
+	  else
+	    break;
+	}
+      printf("\n");
+    }
+
+  printf("\n");
+  printf("OLD GENERATION %p -> %p\n", old_gen.heap_begin, old_gen.heap_end);
+
+  for(bl = (struct block *)old_gen.heap_begin; (void *)bl < old_gen.heap_end; )
+    {
+      size_t size = bl->size;
+
+      printf("BLOCK @ %p of size %d mark %d:\n", bl, size, bl->markunion.mark);
+
+      if (NOT_MARKED(bl) || MARKED_AS_REACHABLE(bl))
+	{
+	  ptroff_t *word = (ptroff_t *)bl->object;
+	  bl = (void *)bl + size;
+	  while(word < (ptroff_t *)bl)
+	    {
+	      printf("%10p: %10p\n", word, *word);
+	      word++;
+	    }
+	}
+      else
+	bl = (void *)bl + size;
+    }
+
+  fflush(stdout);
+  //scanf("%c", &c);
 }
 
 
@@ -294,6 +528,22 @@ void *generational_malloc(size_t size)
 void generational_register_inflated_obj(jobject_unwrapped obj)
 {
   register_inflated_obj(obj, &young_gen);
+}
+
+
+void generational_write_barrier(jobject_unwrapped *ref)
+{
+  struct ref_list *root;
+
+  //fprintf(stderr, "WRITE BARRIER %p\n", ref);
+
+  root = (struct ref_list *)malloc(sizeof(struct ref_list));
+  root->ref = ref;
+  
+  FLEX_MUTEX_LOCK(&intergenerational_roots_mutex);
+  root->next = roots;
+  roots = root;
+  FLEX_MUTEX_UNLOCK(&intergenerational_roots_mutex);
 }
 
 
@@ -310,6 +560,5 @@ int major_collection_makes_sense(size_t bytes_since_last_GC)
 int minor_collection_makes_sense(size_t bytes_since_last_GC)
 {
   size_t cost = young_gen.avg_occupancy * young_gen.heap_size;
-  //printf("bytes %d vs cost %d\n", bytes_since_last_GC, cost);
   return (bytes_since_last_GC > cost);
 }
