@@ -27,7 +27,7 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.14 1999-12-20 02:41:47 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.15 1999-12-20 08:33:17 pnkfelix Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -225,7 +225,8 @@ public class Code extends harpoon.Backend.Generic.Code {
 			    "const form err of "+v+" in "+
 			    instr+"("+begin+","+end+")");
 	    }
-	}
+	} // end if(DEBUG)
+
 	return super.toAssem(instr, mustGetRegs);
     }
 

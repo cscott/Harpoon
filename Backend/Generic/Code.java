@@ -21,7 +21,17 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.Util.ArrayEnumerator;
 import harpoon.Util.UnmodifiableIterator;
 
-import java.util.*;
+import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.Collections.DefaultMultiMap;
+
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -33,9 +43,12 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.33 1999-12-20 02:41:43 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.34 1999-12-20 08:33:16 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
+
+    private static boolean DEBUG = true;
+
     /** The method that this code view represents. */
     protected HMethod parent;
     /** The root Instr of the Instrs composing this code view. */
@@ -137,6 +150,9 @@ public abstract class Code extends HCode {
     public Frame getFrame() {
         return frame;
     }
+
+    HashSet outputLabels = new HashSet();
+    MultiMap labelsNeeded = new DefaultMultiMap();
     
     /** Displays the assembly instructions of this codeview. Attempts
      *  to do so in a well-formatted, easy to read way. <BR>
@@ -153,6 +169,13 @@ public abstract class Code extends HCode {
             if (instr instanceof InstrLABEL ||
 		instr instanceof InstrDIRECTIVE) {
                 str = instr.toString();
+
+		if (DEBUG && (instr instanceof InstrLABEL)) {
+		    InstrLABEL il = (InstrLABEL) instr;
+		    Label l = il.getLabel();
+		    outputLabels.add(l);
+		}
+
             } else {
 		try {
 		    BufferedReader reader = 
@@ -176,8 +199,27 @@ public abstract class Code extends HCode {
 		// System.out.println("Contained RETURN; hasNext():" + iter.hasNext());
 	    } 
 
+	    if (DEBUG) {
+		Iterator targets = instr.getTargets().iterator();
+		while(targets.hasNext()) {
+		    labelsNeeded.add(targets.next(), instr);
+		}
+	    }
+
 	    // System.out.println("InstrStr:"+str+" Next:"+instr.getNext()); 
         }
+	
+	pw.flush();
+
+	if (DEBUG) { // check that all needed labels have been output
+ 	    Iterator needed = labelsNeeded.keySet().iterator();
+	    while(needed.hasNext()) {
+		Label l = (Label) needed.next();
+		Util.assert(outputLabels.contains(l), "label "+l+" , "+
+			    "needed by "+labelsNeeded.getValues(l)+" , "+
+			    "was not output");
+	    }
+	}
     }
 
     /** Produces an assembly code string for <code>i</code>, with

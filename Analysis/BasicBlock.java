@@ -8,6 +8,7 @@ import harpoon.Util.IteratorEnumerator;
 import harpoon.Util.WorkSet;
 import harpoon.Util.Worklist;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeEdge;
 import harpoon.IR.Properties.CFGraphable;
 
 import harpoon.Analysis.DataFlow.ReversePostOrderEnumerator;
@@ -44,7 +45,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.6 1999-12-06 14:45:33 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.7 1999-12-20 08:33:13 pnkfelix Exp $
 */
 public class BasicBlock {
     
@@ -225,6 +226,44 @@ public class BasicBlock {
 		} 
 	    }
 	    current.setLast(last);
+	}
+
+	if (false) { // check that all reachables are included in our BasicBlocks somewhere.
+	    HashSet checked = new HashSet();
+
+	    ArrayList todo = new ArrayList();
+	    todo.add(head);
+
+	    while(!todo.isEmpty()) {
+		CFGraphable hce = (CFGraphable) todo.remove(0);
+ 		BasicBlock bb = (BasicBlock) hceToBB.get(hce);
+		Util.assert(bb != null, "hce "+hce+" should map to some BB");
+		boolean missing = true;
+		for(Iterator elems = bb.iterator(); missing && elems.hasNext(); ) {
+		    CFGraphable o = (CFGraphable) elems.next();
+		    if (hce.equals(o)) missing = false;
+		}
+		Util.assert(!missing, 
+			    "hce "+hce+" should be somewhere in "+
+			    "BB "+bb);
+		checked.add(hce);
+		Iterator predEdges = hce.predC().iterator();
+		while(predEdges.hasNext()) {
+		    HCodeEdge edge = (HCodeEdge) predEdges.next();
+		    if (!checked.contains(edge.from()) &&
+			!todo.contains(edge.from())) {
+			todo.add(edge.from());
+		    } 
+		}
+		Iterator succEdges = hce.succC().iterator();
+		while(succEdges.hasNext()) {
+		    HCodeEdge edge = (HCodeEdge) succEdges.next();
+		    if (!checked.contains(edge.to()) &&
+			!todo.contains(edge.to())) {
+			todo.add(edge.to());
+		    } 
+		}
+	    }
 	}
 
 	return (BasicBlock) h.get(head);
