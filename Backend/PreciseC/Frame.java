@@ -41,7 +41,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.6 2000-11-11 18:16:38 bdemsky Exp $
+ * @version $Id: Frame.java,v 1.1.2.7 2000-11-12 01:27:05 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -52,6 +52,11 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     private final static boolean pointersAreLong =
 	System.getProperty("harpoon.frame.pointers", "short")
 	.equalsIgnoreCase("long");
+    // in order to get accurate stack statistics, we need to
+    // disable stack allocation, and vice-versa.
+    private final static boolean stack_stats =
+	System.getProperty("harpoon.precisec.stackstats", "no")
+	.equalsIgnoreCase("yes");
     private final static boolean is_elf = true;
 
     /** Creates a <code>Frame</code>. */
@@ -61,11 +66,11 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	System.out.println("AllocationStrategy: "+alloc_strategy);
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
 	    alloc_strategy.equalsIgnoreCase("nifty") ?
-	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new PGCNiftyAllocationStrategy(this,false) :
-	    alloc_strategy.equalsIgnoreCase("niftystats") ?
-	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new PGCNiftyAllocationStrategy(this,true) :
+	    (stack_stats ?// stack alloc statistics disables actual stack alloc
+	       (harpoon.Backend.Runtime1.AllocationStrategy)
+	       new harpoon.Backend.Runtime1.NiftyAllocationStrategy(this) :
+	       (harpoon.Backend.Runtime1.AllocationStrategy)
+	       new PGCNiftyAllocationStrategy(this) ) :
 	    alloc_strategy.equalsIgnoreCase("bdw") ?
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Backend.Runtime1.BDWAllocationStrategy(this) :
@@ -80,9 +85,11 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy(this,
 								  "malloc");
-	runtime = new harpoon.Backend.Runtime2.Runtime(this, as, main, ch, cg,
-						       !is_elf);
-
+	runtime = System.getProperty("harpoon.runtime", "1").equals("2") ?
+	    new harpoon.Backend.Runtime2.Runtime(this, as, main, ch, cg,
+						 !is_elf) :
+	    new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg,
+						 !is_elf);
     }
     public Linker getLinker() { return linker; }
     public boolean pointersAreLong() { return pointersAreLong; }
