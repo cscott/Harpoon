@@ -10,7 +10,15 @@
 JNIEXPORT jclass JNICALL Java_java_lang_Class_forName
   (JNIEnv *env, jclass cls, jstring str) {
     const char *name = (*env)->GetStringUTFChars(env, str, NULL);
-    jclass result = (*env)->FindClass(env, name);
+    jclass result;
+    char buf[strlen(name)+1], *cp;
+    /* change . to / */
+    strcpy(buf, name);
+    for (cp=buf; *cp != '\0'; cp++)
+      if (*cp == '.') *cp = '/';
+    /* now look up translated name */
+    result = (*env)->FindClass(env, buf);
+    /* release memory and we're done! */
     (*env)->ReleaseStringUTFChars(env, str, name);
     return result;
 }
