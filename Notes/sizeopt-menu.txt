@@ -11,7 +11,7 @@ pointer analysis
     now be final *at a particular allocation site*.
 
 timing numbers
-  claz compression:  not hard.  just add code to create table, use
+X claz compression:  not hard.  just add code to create table, use
    table.  easiest *not* to layout properly.  strategy: table or
    computed index (very hard packing problem if computed index)
   hash/lock compression: done in the static case.  eliminating this
@@ -19,15 +19,15 @@ timing numbers
    layout).  dynamic case: need to write code, integrate it w/
    gc?  probably just use a hashtable of inflated objects.  very
    messy.
-  field compression (bitwidth): done (but see 'bit/byte packing')
-  static specialization: done.
+X field compression (bitwidth): done (but see 'bit/byte packing')
+X static specialization: done.
   field externalization: done for the 'two word key'.  should have
    comparable timing.  'one word key' requires a field-numbering
    scheme; i think that's really it.  maybe some tombstone issues
    to think through?
 
 actual layout.
- probably no big deal to allow 'java' packing of objects into
+Xprobably no big deal to allow 'java' packing of objects into
   free space next to claz pointer.
  hash/lock compression (elimination): requires making the hashcode
   a first-class field of java.lang.Object?  optimization is tricky
@@ -37,18 +37,33 @@ actual layout.
   (this means that you can decide to put the hashcode in at allocation
   time (and thus per-alloc site) and not per class or have subclass
   issues)
-field compression.  done (but see 'bit/byte packing').  may have
+Xfield compression.  done (but see 'bit/byte packing').  may have
   to break abstraction a bit to allow packing into claz?
 
 bit/byte field packing.
- byte packing: need to refine field packing algorithm.  need to
+X byte packing: need to refine field packing algorithm.  need to
   rewrite field accessor code to emit appropriate unaligned
   reads/writes.  maybe represent these in tree form?
   (also must export this to JNI so that JNI can properly access
    unaligned fields)
+ -- translation of PGET is done in ToTree w/ no knowledge of field
+    info (could also be array access).  somehow restructure this
+   (maybe expose PGET translation to TreeBuilder and allow a pre-pass
+    dataflow opt to associate the PGET w/ the PFOFFSET calculation?)
+ -- unaligned accesses not represented well in Tree form.  There is no
+   'take a integer, treat it now as a float' operation (_2F does a
+   *conversion* which is not what we want).  so it is hard to build
+   up a float piece-wise.  pushing it to the backend, we can represent
+   a 1-32 bit-wide load in the MEM, but can't specify known alignment.
+   storing unaligned pointers will break the gc.
+
  bit packing: need to extend all field access/packing code to
   support bit-level alignment.  also JNI.  Same 'unaligned access'
   considerations as above, same 'new field packing algorithm' constraint.
+ bitpacking w/ destroy the conservative gc if we add bit offset to
+  the pointer type, or store pointers at non-aligned addresses.
+
+object code expansion, estimates.
 
 benchmarks.
  java generics benchmark may show promise
