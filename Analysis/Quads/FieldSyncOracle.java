@@ -38,7 +38,7 @@ import java.util.Set;
  * memory optimizations are safe across a given method call.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldSyncOracle.java,v 1.1.2.2 2001-06-17 22:31:27 cananian Exp $
+ * @version $Id: FieldSyncOracle.java,v 1.1.2.3 2001-06-18 14:12:55 cananian Exp $
  */
 class FieldSyncOracle {
     final MultiMap fieldsRead, fieldsWritten;
@@ -80,6 +80,18 @@ class FieldSyncOracle {
 	/* compute transitive closure */
 	transClose(ch, callGraphMap(ch, cg));
 	/* done! */
+	int sum=0, n=0;
+	for (Iterator it=fieldsRead.keySet().iterator(); it.hasNext(); n++)
+	    sum+=fieldsRead.getValues(it.next()).size();
+	System.out.println("FIELDS read: (avg) "+((float)sum/n)+
+			   " of "+s.size());
+	sum=0; n=0;
+	for (Iterator it=fieldsWritten.keySet().iterator(); it.hasNext(); n++)
+	    sum+=fieldsWritten.getValues(it.next()).size();
+	System.out.println("FIELDS written: (avg) "+((float)sum/n)+
+			   " of "+s.size());
+	System.out.println("SYNC methods: "+syncMethods.size()+
+			   " of "+ch.callableMethods().size());
     }
 
     //----------------------------------------------------------------
