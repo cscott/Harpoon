@@ -1,0 +1,61 @@
+Opcode classification:
+
+ARRAY OPERATIONS:
+  aaload,aastore,anewarray,arraylength,baload,bastore,caload,castore,
+  daload,dastore,faload,fastore,iaload,iastore,laload,lastore,
+  multianewarray,newarray,saload,sastore,
+PUSH CONSTANT:
+  aconst_null,bipush,dconst_<d>,fconst_<f>,iconst_<i>,lconst_<l>,
+  ldc,ldc_w,ldc2_w,sipush,
+RETURN (optional value):
+  areturn,dreturn,freturn,ireturn,lreturn,return,
+LOAD:
+  aload,aload_<n>,dload,dload_<n>,fload,fload_<n>,iload,iload_<n>,
+  lload,lload_<n>,
+STORE:
+  astore,astore_<n>,dstore,dstore_<n>,fstore,fstore_<n>,istore,istore_<n>,
+  lstore,lstore_<n>,
+EXPANDED:
+  checkcast -- if (!(obj instanceof class)) then throw ClassCastException
+  comparisons should be made canonical.
+  iinc - expand to iload,bipush,iadd,istore
+  lookupswitch,tableswitch -- if() expressions.
+  nop - discard.
+  pop,pop2,swap - no effect other than on internal stack representation.
+UNSUPPORTED:
+  athrow,jsr,jsr_w,ret - exception-using code should be rewritten.
+  wide - should never show up.
+OP_CONVERT:
+  d2f,d2i,d2l,f2d,f2i,f2l,i2b,i2c,i2d,i2f,i2l,i2s,l2d,l2f,l2i,
+OP_MATH:
+  dadd,ddiv,dmul,dneg,drem,dsub,fadd,fdiv,fmul,fneg,frem,fsub,
+  iadd,iand,idiv,imul,ineg,ior,irem,ishl,ishr,isub,iushr,ixor,
+  ladd,land,ldiv,lmul,lneg,lor,lrem,lshl,lshr,lsub,lushr,lxor,
+OP_CMP:
+  dcmp<op>,fcmp<op>,lcmp,
+FUNKY STACK OPS: (treat as mov,but disentangle from long variable brokenness)
+  dup,dup_x1,dup_x2,dup2,dup2_x1,dup2_x2,
+REFERENCE_COMPARISONS:
+  if_acmp<cond>,ifnonnull,ifnull,instanceof,
+FIELD_ACCESS:
+  getfield,getstatic,putfield,putstatic,
+METHOD_ACCESS:
+  invokeinterface,invokespecial,invokestatic,invokevirtual,
+UNCONDITIONAL BRANCH:
+  goto,goto_w,
+CONDITIONAL BRANCH: (canonicalize)
+  if_icmp<cond>,if<cond>
+MONITOR: -- make explicit for synchronized methods, too?
+  monitorenter,monitorexit
+NEW:
+  new,
+
+--- it will be useful to have mov instructions, too,
+    although they can be special case OPs.
+-----------
+Goals: flexible type system, so that all ops can be treated uniformly.
+arrays and objects are the exception.
+Arrays are problematic.  We would eventually like to unroll
+  constant-size arrays, although we may never support dynamically-sized
+  arrays.
+-----------
