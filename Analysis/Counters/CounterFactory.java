@@ -10,12 +10,14 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HFieldMutator;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
+import harpoon.IR.Quads.CJMP;
 import harpoon.IR.Quads.CONST;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.MONITORENTER;
 import harpoon.IR.Quads.MONITOREXIT;
 import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Qop;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
@@ -52,7 +54,7 @@ import java.util.Iterator;
  * the counters' actual name on output will be "foo_bar" and "foo_baz".
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CounterFactory.java,v 1.1.2.3 2001-02-26 23:39:26 cananian Exp $
+ * @version $Id: CounterFactory.java,v 1.1.2.4 2001-03-02 04:04:07 cananian Exp $
  */
 public final class CounterFactory {
     /** default status for all counters. */
@@ -118,12 +120,20 @@ public final class CounterFactory {
     public static Edge spliceIncrement(QuadFactory qf,
 				       Edge e, String counter_name,
 				       Temp Tvalue) {
+	Quad CJMP, PHI;
 	if (!isEnabled(counter_name)) return e;
 	HField HFcounter = getCounterField(qf.getLinker(), counter_name);
 	HField HFlockobj = getLockField(qf.getLinker(), counter_name);
 	// first fetch the lock
 	Temp Tlck = new Temp(qf.tempFactory());
 	e = addAt(e, new GET(qf, null, Tlck, HFlockobj, null));
+	// if package not initialized, than don't count yet.
+	Temp Tnul = new Temp(qf.tempFactory());
+	e = addAt(e, new CONST(qf, null, Tnul, null, HClass.Void));
+	Temp Tcmp = new Temp(qf.tempFactory());
+	e = addAt(e, new OPER(qf, null, Qop.ACMPEQ, Tcmp,
+			      new Temp[] { Tlck, Tnul }));
+	e = addAt(e, CJMP=new CJMP(qf, null, Tcmp, new Temp[0]));
 	// and lock on it
 	e = addAt(e, new MONITORENTER(qf, null, Tlck));
 	// then fetch the old counter value
@@ -137,6 +147,9 @@ public final class CounterFactory {
 	e = addAt(e, new SET(qf, null, HFcounter, null, Tcnt2));
 	// now release the lock.
 	e = addAt(e, new MONITOREXIT(qf, null, Tlck));
+	// merge from bypass.
+	e = addAt(e, PHI=new PHI(qf, null, new Temp[0], 2));
+	Quad.addEdge(CJMP, 1, PHI, 1);
 	// done!
 	return e;
     }
