@@ -21,7 +21,7 @@ import java.util.Vector;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.30 1998-11-10 01:09:00 cananian Exp $
+ * @version $Id: Code.java,v 1.31 1998-11-10 03:35:09 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -66,7 +66,7 @@ public class Code extends HCode {
 
     /** Clone this code representation. The clone has its own
      *  copy of the quad graph. */
-    public HCode clone(HMethod newMethod) throws CloneNotSupportedException {
+    public HCode clone(HMethod newMethod) {
 	return new Code(newMethod, Quad.clone(quads));
     }
 
