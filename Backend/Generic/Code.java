@@ -5,6 +5,7 @@ package harpoon.Backend.Generic;
 
 import harpoon.IR.Assem.Instr;
 import harpoon.Temp.Temp;
+import harpoon.Temp.Label;
 import harpoon.Util.Util;
 import harpoon.Analysis.Maps.Derivation;
 
@@ -16,9 +17,11 @@ import java.util.List;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.50 2000-10-03 21:11:26 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.51 2000-11-02 11:37:34 pnkfelix Exp $
  */
 public abstract class Code extends harpoon.IR.Assem.Code {
+
+    public static boolean PEEPHOLE_OPTIMIZATIONS = true;
 
     private Derivation derivation;
     
@@ -49,6 +52,56 @@ public abstract class Code extends harpoon.IR.Assem.Code {
 
     public Derivation getDerivation() {
 	return derivation;
+    }
+
+    /** Returns false if <code>instr</code> cannot be safely deleted.
+	<BR> <B>effects:</B> If it is safe to remove
+	     <code>instr</code> from <code>this</code> stream of
+	     instructions without changing the semantic meaning of the
+	     program, then this <b>might</b> return true.  
+	     Otherwise, returns false. 
+    */
+    public boolean isSafeToRemove(Instr instr) {
+	
+	if (instr.isMove()) { 
+	    
+	    // Eliminate MOVEs where [src] = [dst]
+	    Util.assert(instr.use().length == 1, "moves have single use!");
+	    Util.assert(instr.def().length == 1, "moves have single def!");
+	    if (getRegisters(instr, instr.use()[0]). equals (getRegisters(instr, instr.def()[0]))) {
+		return true;
+	    }
+
+
+	} else if (instr.isJump()) { 
+	    
+	    // Eliminate JUMPs to immediate successor in layout
+	    Util.assert(!instr.canFallThrough);
+	    Util.assert(instr.getTargets().size() == 1);
+	    Label l = (Label) instr.getTargets().get(0);
+	    if (instr.getInstrFor(l).equals( instr.getNext() )) {
+		return true;
+	    }
+	    
+	}
+
+
+	return false;
+    }
+
+    /** Overrides superclass implementation of toAssem to return an empty string if <code>instr</code> 
+	can be safely eliminated from output.  */
+    public String toAssem(Instr instr) {
+	if (PEEPHOLE_OPTIMIZATIONS && 
+	    isSafeToRemove(instr)) {
+	    
+	    return "";
+
+	} else {
+	    
+	    return super.toAssem(instr);
+
+	}
     }
 
     public abstract String getName();
