@@ -15,7 +15,7 @@ import java.util.Iterator;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.12.2.9 2001-01-24 19:33:45 cananian Exp $
+ * @version $Id: HCode.java,v 1.12.2.10 2001-09-25 20:51:34 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code
@@ -161,6 +161,8 @@ public abstract class HCode {
 		 hce.toString());
       callback.printAfter(pw, hce);
     }
+    pw.println();
+    pw.flush();
   }
 
   /** Returns a human-readable representation of this <code>HCode</code>. */
