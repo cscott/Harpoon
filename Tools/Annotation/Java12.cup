@@ -17,6 +17,7 @@ import harpoon.Util.Util;
 import java_cup.runtime.Symbol;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -185,6 +186,17 @@ action code {:
 	  qn = className(combineWithDot((String)env.get("#import-"+lhs),rhs));
 	  if (qn!=null) return qn;
       }
+      // FIXME: try name "in scope of visible local class declaration"
+      // try name 'in scope of exactly one visible member type'
+      qn = className((String)env.get("#qualified"));
+      if (qn!=null) {
+	  for (Iterator it=allParents(qn.toClass()).iterator(); it.hasNext();){
+	      HClass hc = (HClass) it.next();
+	      String dots = hc.getName().replace('$','.');
+	      qn = className(combineWithDot(dots, ty));
+	      if (qn!=null) return qn;
+	  }
+      }
       // try name 'in current compilation units', then in current package.
       for (String s=(String)env.get("#qualified");
 	   this_package==null || s.startsWith(this_package);
@@ -349,6 +361,18 @@ action code {:
       innerindex=new Integer(1+(innerindex==null?0:innerindex.intValue()));
       env.put("#inner", innerindex);
       return innerindex;
+  }
+
+  private List allParents(HClass hc) {
+      List l = new ArrayList();
+      l.add(hc);
+      for (int i=0; i<l.size(); i++) {
+	  HClass hcc = (HClass) l.get(i);
+	  HClass sc = hcc.getSuperclass();
+	  if (sc!=null) l.add(sc);
+	  l.addAll(Arrays.asList(hcc.getInterfaces()));
+      }
+      return l;
   }
 :};
 
