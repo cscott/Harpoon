@@ -19,11 +19,13 @@ import java.util.Arrays;
     StrongARM architecture.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.11 2000-10-11 04:38:53 pnkfelix Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.12 2000-11-14 23:08:16 pnkfelix Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
-    private static final int OFFSET_LIMIT = 1023;
+    // making offset limit a bit smaller than 1023 to allow for
+    // .fpoffset margin
+    private static final int OFFSET_LIMIT = 1000;
 
     RegFileInfo rfInfo;
 
