@@ -10,7 +10,7 @@ import harpoon.Temp.Temp;
  * pseudo-instruction.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LET.java,v 1.4 1998-08-20 22:43:21 cananian Exp $
+ * @version $Id: LET.java,v 1.5 1998-08-24 19:30:01 cananian Exp $
  */
 
 public class LET extends Quad {
@@ -22,6 +22,9 @@ public class LET extends Quad {
 	super(sourcefile, linenumber);
 	this.dst = dst;
 	this.src = src;
+    }
+    LET(HCodeElement hce, Temp dst, Leaf src) {
+	this(hce.getSourceFile(), hce.getLineNumber(), dst, src);
     }
     /** Returns a human-readable representation. */
     public String toString() { 

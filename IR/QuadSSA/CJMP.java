@@ -9,7 +9,7 @@ import harpoon.Temp.Temp;
  * op is canonical.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.4 1998-08-20 22:43:19 cananian Exp $
+ * @version $Id: CJMP.java,v 1.5 1998-08-24 19:30:00 cananian Exp $
  */
 
 public abstract class CJMP extends Quad {
@@ -29,6 +29,9 @@ public abstract class CJMP extends Quad {
 	this.op = op;
 	this.left = left;
 	this.right= right;
+    }
+    CJMP(HCodeElement hce, int op, Temp left, Temp right) {
+	this(hce.getSourceFile(), hce.getLineNumber(), op, left, right);
     }
     /** Swaps if-true and if-false targets. */
     public void invert() {

@@ -10,7 +10,7 @@ import harpoon.Temp.Temp;
  * operators such as greater than and equals.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.4 1998-08-22 05:45:58 cananian Exp $
+ * @version $Id: OPER.java,v 1.5 1998-08-24 19:30:02 cananian Exp $
  */
 
 public class OPER extends Quad {
@@ -27,6 +27,9 @@ public class OPER extends Quad {
 	this.opcode = opcode;
 	this.dst = dst;
 	this.operands = operands;;
+    }
+    OPER(HCodeElement hce, String opcode, Temp dst, Temp[] operands) {
+	this(hce.getSourceFile(), hce.getLineNumber(), opcode, dst, operands);
     }
     /** Returns a human-readable representation of this Quad. */
     public String toString() {

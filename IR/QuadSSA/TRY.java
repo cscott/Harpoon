@@ -6,7 +6,7 @@ import harpoon.ClassFile.*;
  * <code>TRY</code> objects represent <code>try-catch-finally</code> blocks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TRY.java,v 1.3 1998-08-20 22:43:25 cananian Exp $
+ * @version $Id: TRY.java,v 1.4 1998-08-24 19:30:03 cananian Exp $
  */
 
 public class TRY extends Quad {
@@ -28,6 +28,12 @@ public class TRY extends Quad {
 	this.catchBlocks = catchBlocks;
 	this.catchExceptions = catchExceptions;
 	this.finallyBlock = finallyBlock;
+    }
+    TRY(HCodeElement hce, Quad tryBlock, 
+	Quad[] catchBlocks, HClass[] catchExceptions,
+	Quad finallyBlock) {
+	this(hce.getSourceFile(), hce.getLineNumber(),
+	     tryBlock, catchBlocks, catchExceptions, finallyBlock);
     }
     /** Returns human-readable representation of this Quad. */
     public String toString() { return "TRY"; }

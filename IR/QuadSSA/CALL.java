@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * <code>CALL</code> objects represent method invocations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.5 1998-08-22 05:45:57 cananian Exp $
+ * @version $Id: CALL.java,v 1.6 1998-08-24 19:30:00 cananian Exp $
  */
 
 public class CALL extends Quad {
@@ -46,13 +46,13 @@ public class CALL extends Quad {
 		HMethod method, Temp objectref, Temp[] params) {
 	this(sourcefile, linenumber, method, objectref, params, null);
     }
-    public CALL(HCodeElement hce,
-		HMethod method, Temp objectref, Temp[] params, Temp retval) {
+    CALL(HCodeElement hce,
+	 HMethod method, Temp objectref, Temp[] params, Temp retval) {
 	this(hce.getSourceFile(), hce.getLineNumber(), 
 	     method, objectref, params, retval);
     }
-    public CALL(HCodeElement hce,
-		HMethod method, Temp objectref, Temp[] params) {
+    CALL(HCodeElement hce,
+	 HMethod method, Temp objectref, Temp[] params) {
 	this(hce.getSourceFile(), hce.getLineNumber(), 
 	     method, objectref, params);
     }
