@@ -43,7 +43,7 @@ import harpoon.IR.Quads.FOOTER;
  * <code>ComputeAnAe</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ComputeAnAe.java,v 1.1 2002-04-03 00:10:28 salcianu Exp $
+ * @version $Id: ComputeAnAe.java,v 1.2 2002-04-03 17:02:03 salcianu Exp $
  */
 public class ComputeAnAe {
     
@@ -167,7 +167,7 @@ public class ComputeAnAe {
 
 	    Var v_callee = on_return ? getVn(callee) : getVe(callee);
 	    ic.addConstraint(v_callee, v);
-	    if(STATS) nb_av_cons++;
+	    if(STATS) nb_vv_cons++;
 	}
     }
 	
@@ -180,8 +180,8 @@ public class ComputeAnAe {
 	if(STATS)
 	    System.out.println("ComputeAnAe " +
 			       nb_var + " variable(s) " +
-			       nb_vv_cons + " v->v constraints" +
-			       nb_av_cons + " a->v constraints");
+			       nb_vv_cons + " v->v constraint(s) " +
+			       nb_av_cons + " a->v constraint(s) ");
 
 	try {
 	    sol = ic.solve();

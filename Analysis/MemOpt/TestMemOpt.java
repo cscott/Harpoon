@@ -21,6 +21,7 @@ import harpoon.ClassFile.CachingCodeFactory;
 
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.Quads.CallGraphImpl;
+import harpoon.Analysis.Quads.CachingCallGraph;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Analysis.ClassHierarchy;
 
@@ -34,28 +35,13 @@ import harpoon.IR.Quads.CALL;
     soon.
  
  @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- @version $Id: TestMemOpt.java,v 1.1 2002-04-03 00:19:21 salcianu Exp $ */
+ @version $Id: TestMemOpt.java,v 1.2 2002-04-03 17:02:03 salcianu Exp $ */
 public abstract class TestMemOpt {
     
     private static Linker linker = new Relinker(Loader.systemLinker);
 
     private static long time() {
 	return System.currentTimeMillis();
-    }
-
-    private static class CachingCallGraph extends CallGraphImpl {
-	public CachingCallGraph(ClassHierarchy ch, HCodeFactory hcf) {
-	    super(ch, hcf);
-	}
-	public HMethod[] calls(final HMethod m, final CALL cs) {
-	    HMethod[] result = (HMethod[]) cs2callees.get(cs);
-	    if(result == null) {
-		result = super.calls(m, cs);
-		cs2callees.put(cs, result);
-	    }
-	    return result;
-	}
-	private Map cs2callees = new HashMap();
     }
 
     public static void main(String[] args) {
@@ -77,7 +63,7 @@ public abstract class TestMemOpt {
 			   (time() - start) + "ms");
 
 	start = time();
-	CallGraph cg = new CachingCallGraph(ch, hcf);
+	CallGraph cg = new CachingCallGraph(new CallGraphImpl(ch, hcf));
 	System.out.println("CallGraph done in " + (time() - start) + "ms");
 
 	start = time();
@@ -89,6 +75,8 @@ public abstract class TestMemOpt {
 	anae = new ComputeAnAe(hcf, cg);
 	System.out.println("\n\n\n2nd ComputeAnAe done in " +
 			   + (time() - start) + "ms\n\n\n");
+
+	System.exit(0);
 
 	for(Iterator it = cg.callableMethods().iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
