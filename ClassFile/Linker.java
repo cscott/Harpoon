@@ -13,7 +13,7 @@ import java.util.Map;
  * to code/data/object descriptions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Linker.java,v 1.5 2002-07-08 20:43:29 cananian Exp $
+ * @version $Id: Linker.java,v 1.6 2002-09-06 22:24:21 cananian Exp $
  */
 public abstract class Linker implements ReferenceUnique {
   protected Linker() { }
@@ -151,7 +151,7 @@ public abstract class Linker implements ReferenceUnique {
       assert className.indexOf('.')==-1 : "Class name " + className; // should be desc, not name.
       return forDescriptor(className);
     } else {
-      assert className.indexOf('/')==-1; // should be name, not desc.
+      assert className.indexOf('/')==-1:className; // should be name, not desc.
       return forDescriptor("L"+className.replace('.','/')+";");
     }
   }
