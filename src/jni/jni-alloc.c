@@ -32,8 +32,7 @@ jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info,
 		  void *(*allocfunc)(jsize length), jsize length) {
   struct oobj *newobj;
 
-  if (allocfunc==NULL) allocfunc=FNI_RawAlloc;
-  newobj = (*allocfunc)(length);
+  newobj = (allocfunc==NULL) ? FNI_RawAlloc(env,length) : (*allocfunc)(length);
   if (newobj==NULL) {
     FNI_ThrowNew(env, FNI_FindClass(env, "java/lang/OutOfMemoryError"),
 		 "JNI: allocation failed");
