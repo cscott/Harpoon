@@ -318,7 +318,7 @@ void trace(jobject_unwrapped unaligned_ptr)
 }
 
 
-
+#ifdef WITH_MARKSWEEP_GC
 /* requires: that obj be an aligned pointer to an object, and next_index
              be the next index in the object that may need to be examined.
    returns:  NO_POINTERS if there are no more pointers in the object, 
@@ -413,4 +413,5 @@ ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t next_index)
   // if we got this far, then we didn't find a pointer
   return NO_POINTERS;
 }
+#endif
 #endif /* WITH_PRECISE_GC */
