@@ -68,7 +68,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.5 2002-07-22 18:48:11 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.6 2002-08-02 17:13:40 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -553,7 +553,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		else if (vO instanceof xClassExact &&
 			 !hcO.isInstanceOf(hcA)) // always false
 		    raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),0));
-		else if (hcO.isInstanceOf(hcA) ||
+		else if (hcA.isInterface() ||
+			 hcO.isInterface() ||
+			 hcO.isInstanceOf(hcA) ||
 			 hcA.isInstanceOf(hcO)) // unknowable.
 		    raiseV(V, Wv, q.dst(), new xBitWidth(toInternal(HClass.Boolean),0,1));
 		else // always false.
@@ -606,18 +608,26 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    LatticeVal v = get( q.src() );
 	    if (v instanceof xNullConstant) // always false.
 		raiseV(V, Wv, q.dst(), new xInstanceofResultKnown(q,false));
+	    else if (v instanceof xClassExact) { // always known.
+		HClass hcO = ((xClassNonNull)v).type();
+		assert !hcO.isInterface();//but can be an array type.
+		boolean result = hcO.isInstanceOf(q.hclass());
+		raiseV(V,Wv, q.dst(), new xInstanceofResultKnown(q,result));
+	    }
 	    else if (v instanceof xClassNonNull) { // analyzable
 		HClass hcO = ((xClassNonNull)v).type();
 		if (hcO.isInstanceOf(q.hclass())) // always true
 		    raiseV(V,Wv, q.dst(), new xInstanceofResultKnown(q,true));
-		else if (q.hclass().isInstanceOf(hcO)) // unknowable.
+		else if (q.hclass().isInterface() || hcO.isInterface() ||
+			 q.hclass().isInstanceOf(hcO)) // unknowable.
 		    raiseV(V,Wv, q.dst(), new xInstanceofResultUnknown(q));
 		else // always false.
 		    raiseV(V,Wv, q.dst(), new xInstanceofResultKnown(q,false));
 	    }
 	    else if (v instanceof xClass) { // could be null.
 		HClass hcO = ((xClass)v).type();
-		if (q.hclass().isInstanceOf(hcO) || 
+		if (q.hclass().isInterface() || hcO.isInterface() ||
+		    q.hclass().isInstanceOf(hcO) || 
 		    hcO.isInstanceOf(q.hclass()) ) // unknowable.
 		    raiseV(V,Wv, q.dst(), new xInstanceofResultUnknown(q));
 		else // always false (even if src==null)
@@ -816,13 +826,14 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		HClass type = ((xClass)v).type();
 		boolean catchAll = false;
 		for (int i=0; i<q.keysLength(); i++) {
-		    if (q.keys(i).isInstanceOf(type)) // executable
-			raiseE(Ee, Eq, Wq, q.nextEdge(i) );
 		    if (type.isInstanceOf(q.keys(i))) {// catches all remaining
 			raiseE(Ee, Eq, Wq, q.nextEdge(i) );
 			catchAll = true;
 			break;
 		    }
+		    if (q.keys(i).isInterface() || type.isInterface() ||
+			q.keys(i).isInstanceOf(type)) // executable
+			raiseE(Ee, Eq, Wq, q.nextEdge(i) );
 		}
 		if ((!q.hasDefault()) ||
 		    (catchAll && v instanceof xClassNonNull))
@@ -1351,6 +1362,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     static class xClassExact extends xClassNonNull {
 	public xClassExact(HClass type) {
 	    super(type);
+	    assert !type.isInterface(); // interface types can't be exact.
 	}
 	public String toString() { 
 	    return "xClassExact: { " + type + " }";
