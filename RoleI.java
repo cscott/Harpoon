@@ -10,7 +10,8 @@ class RoleI {
     Set atomic;
     HashMap policymap;
     boolean containers;
-
+    Set diagram;
+    HashMap containedmapping;
 
     static final Integer P_NEVER=new Integer(0);
     static final Integer P_ONCEEVER=new Integer(1);
@@ -669,10 +670,55 @@ class RoleI {
 	}
     }
 
+    static class Roleedge {
+	int srcrole;
+	int dstrole;
+	boolean contained;
+	String fieldname;
+	public Roleedge(int srcrole, int dstrole, boolean contained, String fieldname) {
+	    this.srcrole=srcrole;
+	    this.dstrole=dstrole;
+	    this.contained=contained;
+	    this.fieldname=fieldname;
+	}
+    }
+
+    synchronized void readdiagram() {
+	diagram=new HashSet();
+	containedmapping=new HashMap();
+
+	try {
+	    FileReader fr=new FileReader("webdiagram");
+	    while(true) {
+		String srcrole=nexttoken(fr);
+		if (srcrole==null) {
+		    fr.close();
+		    return;
+		}
+		String dstrole=nexttoken(fr);
+		String contained=nexttoken(fr);
+		String fieldname=nexttoken(fr);
+		diagram.add(new Roleedge(Integer.parseInt(srcrole),
+					 Integer.parseInt(dstrole), contained.equals("1"), fieldname));
+		if (contained.equals("0")) {
+		    if (containedmapping.containsKey(Integer.valueOf(dstrole))) {
+			((Set)containedmapping.get(Integer.valueOf(dstrole))).add(Integer.valueOf(srcrole));
+		    } else {
+			Set set=new HashSet();
+			set.add(Integer.valueOf(srcrole));
+			containedmapping.put(Integer.valueOf(dstrole), set);
+		    }
+		}
+	    }
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+    }
+
     synchronized void readtransitions() {
 	FileReader fr=null;
 	transitiontable=new HashMap();
-
 	try {
 	    fr=new FileReader("webtransitions");
 	} catch (FileNotFoundException e) {

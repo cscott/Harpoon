@@ -79,7 +79,7 @@ void outputwebrolerelations(struct heap_state *heap) {
       if (rfl==NULL&&ral==NULL) {
 	fprintf(rolediagramfile,"%d %d 0 %s ",rr->srcrole, rr->dstrole,rr->field->fieldname);
       } else {
-	fprintf(rolediagramfile,"%d %d 1 %s",rr->srcrole, rr->dstrole, rr->field->fieldname);
+	fprintf(rolediagramfile,"%d %d 1 %s ",rr->srcrole, rr->dstrole, rr->field->fieldname);
       }
     }
   }
