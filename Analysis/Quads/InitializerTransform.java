@@ -6,7 +6,7 @@ package harpoon.Analysis.Quads;
 import harpoon.ClassFile.*;
 import harpoon.IR.Quads.*;
 import harpoon.Temp.Temp;
-import harpoon.Util.Util;
+import harpoon.Util.*;
 
 import java.lang.reflect.Modifier;
 /**
@@ -15,7 +15,7 @@ import java.lang.reflect.Modifier;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.2 2000-10-19 20:41:18 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.3 2000-10-19 21:34:15 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -72,36 +72,59 @@ public class InitializerTransform
     }
     /** Add initialization checks to every static use of a class. */
     private Code addChecks(Code hc) {
+	final HEADER qH = (HEADER) hc.getRootElement();
 	// static references are found in GET/SET/ANEW/NEW/CALL
 	QuadVisitor qv = new QuadVisitor() {
+	    /** classes already initialized in this method. */
+	    Environment seenSet = new HashEnvironment();
+	    /* constructor */ { traverse((METHOD)qH.next(1)); }
+	    // recursive traversal.
+	    private void traverse(Quad q) {
+		q.accept(this);
+		Environment.Mark m = seenSet.getMark();
+		for (int i=0; i<q.nextLength(); i++) {
+		    traverse(q.next(i));
+		    if (i+1<q.nextLength())
+			seenSet.undoToMark(m);
+		}
+	    }
 	    public void visit(Quad q) { /* default, do nothing. */ }
-	    public void visit(ANEW q) { addCheckBefore(q, q.hclass()); }
+	    public void visit(PHI q) {
+		// XXX: merging at phis (instead of throwing away
+		// seenset) would lead to less unnecessary
+		// initializations.  cost may be prohibitive?
+		seenSet.clear();
+	    }
+	    public void visit(ANEW q) {
+		addCheckBefore(q, q.hclass(), seenSet);
+	    }
 	    public void visit(CALL q) {
 		if (q.isStatic())
-		    addCheckBefore(q, q.method().getDeclaringClass());
+		    addCheckBefore(q, q.method().getDeclaringClass(), seenSet);
 		// XXX: non-virtual methods need to use special checking vrsns.
 	    }
 	    public void visit(GET q) {
 		if (q.isStatic())
-		    addCheckBefore(q, q.field().getDeclaringClass());
+		    addCheckBefore(q, q.field().getDeclaringClass(), seenSet);
 	    }
-	    public void visit(NEW q) { addCheckBefore(q, q.hclass()); }
+	    public void visit(NEW q) {
+		addCheckBefore(q, q.hclass(), seenSet);
+	    }
 	    public void visit(SET q) {
 		if (q.isStatic())
-		    addCheckBefore(q, q.field().getDeclaringClass());
+		    addCheckBefore(q, q.field().getDeclaringClass(), seenSet);
 	    }
 	};
-	// XXX: would be more efficient if we kept track of what had been
-	// initialized.
-	Quad[] quads = (Quad[]) hc.getElements();
-	for (int i=0; i<quads.length; i++)
-	    quads[i].accept(qv);
 	return hc;
     }
-    private static void addCheckBefore(Quad q, HClass class2check) {
+    private static void addCheckBefore(Quad q, HClass class2check,
+				       Environment seenSet) {
 	QuadFactory qf = q.getFactory();
 	if (qf.getMethod().getDeclaringClass().equals(class2check))
 	    return; // we've already initialized (or are initializing) this.
+	if (seenSet.containsKey(class2check))
+	    return; // already checked on this execution path.
+	else seenSet.put(class2check, class2check); // don't double check.
 	HMethod clinit = class2check.getClassInitializer();
 	if (clinit==null) return; // no class initializer for this class.
 	Util.assert(q.prevLength()==1); // otherwise don't know where to link
