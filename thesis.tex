@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.112 1999-09-02 21:44:50 cananian Exp $
+% $Id: thesis.tex,v 1.113 1999-09-03 07:48:03 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -43,14 +43,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.112 $ $}
+\date{\today \\ $ $Revision: 1.113 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.112 $ $}{$ $Revision: 1.112 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.113 $ $}{$ $Revision: 1.113 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -303,9 +303,20 @@ The presence of unique \code{START} and \code{END} nodes
 ensures that both the dominance and post-dominance relation define
 trees rooted at \code{START} and \code{END}, respectively.
 
+For simplicity, we will assume that every node in the control-flow
+graph with one successor and one predecessor contains exactly one
+statement.  A node with no predecessors and a node with no successors
+(\code{START} and \code{END}) are empty; they contain no statements.
+Nodes with multiple successors or multiple predecessors are also empty
+for conventional program representations, but may contain multiple
+\phisigfunction[or]{} assignment statements in the SSA and SSI forms
+we will discuss.  No node may contain both multiple predecessors and
+multiple successors.
+
 The symbol $\meet$ will be used for the dataflow ``meet'' operator.
 The operator $\latleq$ is the %reflexive, transitive, and anti-symmetric
-partial ordering relation for a lattice.
+partial ordering relation for a lattice, and $x \latlt y$ iff $x
+\latleq y$ and $x \not= y$.
 
 \section{Static Single Assignment form}\label{sec:ssa}
 Static Single Information (SSI) form derives many features from Static
@@ -464,9 +475,11 @@ is assumed to contain a definition and the \code{END} node a use for every
 variable in the original program.
 [Boundary conditions.] \label{crit_boundary}
 
-\item Along any control-flow path, consider any use of a variable $V$
-in the original program and the corresponding use of $V_i$ in the new
-program.  Then $V$ and $V_i$ have the same value.
+\item Along any possible control-flow path in a program being executed
+consider any use of a variable $V$ in the original program and the
+corresponding use of $V_i$ in the new program.  Then, at every
+occurance of the use on the path, $V$ and $V_i$ have the same value.
+The path need not be cycle-free.
 [Correctness.] \label{crit_correct}
 \end{enumerate}
 
@@ -1060,9 +1073,17 @@ ends with; therefore the paths can be combined.  By so doing from the
 bottom of the call stack to the top we construct a unique path from
 \code{START}.
 \end{proof}
+
+For brevity, we will hereafter refer to the canonical path constructed
+in the manner of lemma~\ref{lem:path_construct} corresponding to the
+stack of calls to \code{Search} when an edge $e$ is first
+encountered as $CP(e)$.  Every edge in the CFG is encountered exactly
+once by \code{Search}, so $CP(e)$ exists and is unique for every edge
+$e$ in the CFG.
+
 \begin{lemma}\label{lem:renamephi}
-SSI form condition~\ref{crit_phiname} holds for variables renamed
-according to Algorithm~\ref{alg:SSIrename1}.
+SSI form condition~\ref{crit_phiname} (\phifunction{} naming) holds
+for variables renamed according to Algorithm~\ref{alg:SSIrename1}.
 \end{lemma}
 \begin{proof}
 We restate SSI form condition~\ref{crit_phiname} for reference:
@@ -1072,28 +1093,36 @@ the new program and node $Y$ containing a use of that variable, there
 exists at least one path $X \pathplus Y$ and no such path contains a
 definition of $V$ other than at $X$.
 \end{quote}
-We consider the path $\code{START}\pathplus Y$ terminating in edge $e$
-for some use of a
-variable $v$, constructed according to lemma~\ref{lem:path_construct}
-from a stack trace of calls to \code{Search} at the point at which $e$
-is encountered.  Every edge is encountered exactly once, ensuring that
-the path exists and is unique.  The termination node $Y$ may not be
-unique, as more than one edge enters a node with a \phifunction.
-We identify each operand of a \phifunction{} with the appropriate
-incoming edge $e$ to ensure that the path we will refer to as 
-$\code{START}\pathplus Y$ terminating in $e$ is well-defined and
-unique for the variable $v$ use under consideration.
+We consider the canonical path 
+$CP(\tuple{Y',Y})=\code{START}\pathstar Y' \path Y$
+for some use of a variable $v$ at $Y$, constructed according to
+lemma~\ref{lem:path_construct} 
+from a stack trace of calls to \code{Search}.
+is encountered.  This path is unique, although more than one canonical
+path may terminate at $Y$ at nodes with more than one predecessor.
+These paths are distinguished by the incoming edge to
+$Y$.\footnote{Note that the notation \tuple{N,N'} for denoting edges
+does not always denote an edge unambigiously; imagine a conditional
+branch where both the \code{true} and \code{false} case lead to the
+same label.  In such cases an additional identifier is necessary to
+distinguish the edges.  Alternatively, one may split such edges to
+remove the ambiguity.  We treat edges as uniquely identifiable and
+leave the implementation to the reader.}  We identify each operand
+$v_i$ of a \phifunction{} with the appropriate incoming edge $e$ to
+ensure that $CP(e)$ is well defined and unique in the context of a
+use of $v_i$.
 
-The path $\code{START}\pathplus Y$ must contain $X$, a definition of
+The canonical path $\code{START}\pathplus Y$ must contain $X$, a definition of
 $v$, if $Y$ uses a variable defined in $X$, as \code{Search} renames
 all definitions (in lines \ref{line:rendef1}, \ref{line:rendef2}, and
 \ref{line:rendef3}) and destroys the name mapping in $\mathcal{E}$
 just before it returns.  The call to \code{Search} which creates the
 definition of $v$ must therefore always be on the stack, and thus in
-the path, for any use to receive a the name $v$.  Note that this is
+the path $CP(\tuple{Y',Y})$, for any use to receive a the name $v$.
+Note that this is
 true for \phifunction{s} as well, which receive names when the
-appropriate incoming edge is traversed, not necessarily when the node
-$Y$ containing the \phifunction{} is first encountered.
+appropriate incoming edge $\tuple{Y',Y}$ is traversed, not necessarily
+when the node $Y$ containing the \phifunction{} is first encountered.
 
 We have proved that $\code{START}\pathplus X\pathplus Y$ exists; now
 we must prove that no other path from $X$ to $Y$ contains a definition
@@ -1145,8 +1174,8 @@ path may exist, completing the proof of the lemma.
 \end{proof}
 
 \begin{lemma}\label{lem:renamesig}
-SSI form condition~\ref{crit_signame} holds for variables renamed
-according to Algorithm~\ref{alg:SSIrename1}.
+SSI form condition~\ref{crit_signame} (\sigfunction{} naming) holds for
+variables renamed according to Algorithm~\ref{alg:SSIrename1}.
 \end{lemma}
 \begin{proof}
 We restate SSI form condition~\ref{crit_signame} for reference:
@@ -1161,8 +1190,9 @@ violating this condition; that is, let us chose nodes $X$ and $Y$
 which use $V$ and $Z$ defining $V$ such that there exists a path $P_1$
 from $Z$ to $X$ not containing $Y$ and a path $P_2$ from $Z$ to $Y$ not
 containing $X$.  By the argument of the previous lemma, there exists
-a path $P_3$ from \code{START} to $X$ through $Z$ corresponding to a stack
-trace of \code{Search}; note that $P_3$ need not contains $P_1$.
+a canonical path $P_3=CP(e)$ from \code{START} to $X$ through $Z$
+corresponding to a stack
+trace of \code{Search}; note that $P_3$ need not contain $P_1$.
 There are two cases:
 \begin{description}
 \item[Case I:] $P_3$ does not contains $Y$.  Then there is some last
@@ -1183,12 +1213,101 @@ Any assumed violation of condition~\ref{crit_signame} leads to
 contradiction, proving the lemma.
 \end{proof}
 
+Every path $CP(e)$ corresponds to a execution state in a call to
+\code{Search} at the point where $e$ is first encountered.  The value
+of the environment mapping $\mathcal{E}$ at this point in the
+execution of Algorithm~\ref{alg:SSIrename1} we will denote as
+$\mathcal{E}^e$.  For a node $N$ having a single predecessor $N_p$ and
+single successor $N_s$, we will denote
+$\mathcal{E}^{\tuple{N_p,N}}$ as $\mathcal{E}_{\text{before}}^N$ and 
+$\mathcal{E}^{\tuple{N,N_s}}$ as $\mathcal{E}_{\text{after}}^N$.
+It is obvious that 
+$\mathcal{E}_{\text{after}}^{N_p} = \mathcal{E}_{\text{before}}^{N  }$ and
+$\mathcal{E}_{\text{after}}^{N  } = \mathcal{E}_{\text{before}}^{N_s}$
+when $N_p$ and $N_s$, respectively, are also single-predecessor
+single-successor nodes.
+
+\begin{lemma}\label{lem:correctness}
+SSI form condition~\ref{crit_correct} (correctness) holds for
+variables renamed according to Algorithm~\ref{alg:SSIrename1}.  That
+is, along any possible control-flow path in a program being executed a
+use of a variable $V_i$ in the new program will always have the same
+value as a use of the corresponding variable $V$ in the original
+program.
+\end{lemma}
+\begin{proof}
+We will use induction along the path $N_0\path N_1\path\ldots\path N_n$.
+We consider $e_k=\tuple{N_{k},N_{k+1}}$, the $(k+1)$th edge in the path,
+and assume that, for all $j<k$, each variable $V$ in the original
+program agrees with the value of $\mathcal{E}^{e_j}[V]=V_i$ in the new
+program.  We show that $\mathcal{E}^{e_k}[V]$ agrees with $V$ at edge
+$e_k$ in the path.
+\begin{description}
+\item[Case I:] $k=0$. The base case is trivial: the \code{START} node
+($N_0$) contains no statements, and along each edge $e$ leaving start
+$\mathcal{E}^e[V]=V_0$.  By definition $V_0$ agrees with $V$ at the
+entry to the procedure.
+\item[Case II:] $k>0$ and $N_k$ has exactly one predecessor and one successor.
+If $N_k$ is single-entry single-exit, then it is not a \phisigfunction[or].
+As an ordinary assignment, it will be handled by
+lines~\ref{line:rename_ordinary1} to \ref{line:rename_ordinary2} of
+Algorithm~\vref{alg:SSIrename2}.  By the induction hypothesis (which
+tells us that the uses at $N_k$ correspond to the same values as the
+uses in the original program) and the semantics of
+assignment, the mapping $\mathcal{E}_{\text{after}}^{N_k}$ is easily
+verified to be valid when $\mathcal{E}_{\text{before}}^{N_k}$ is
+valid.  Thus the value of every original variable $V$ corresponds to
+the value of the new variable 
+$\mathcal{E}_{\text{after}}^{N_k}[V]=\mathcal{E}^{e_k}[V]$ on $e_k$.
+\item[Case III:] $k>0$ and $N_k$ has multiple predecessors and one
+successor.  In this case $N_k$ may have multiple \phifunction{s} in
+the new program, and by the definition in section~\ref{sec:defs} $N_k$
+has no statements in the original program.  Thus the value of any
+variable $V$ in the original program along edge $e_k$ is identical to
+its value along edge $e_{k-1}$.  We need only show that the value of
+the variable $\mathcal{E}^{e_{k-1}}[V]$ is the same as the value of
+the variable $\mathcal{E}^{e_k}[V]$ in the new program.  For any
+variable $V$ not mentioned in a \phifunction{} at $N_k$ this is
+obvious.  Each variable defined in a \phifunction{} will get the value
+of the operand corresponding to the incoming control-flow path edge.
+The relevant lines in Algorithm~\ref{alg:SSIrename2} start with
+\ref{line:phisrc1} and \ref{line:phisrc2}, where we see that the
+operand corresponding to edge $e_{k-1}$ of a \phifunction{} for $V$
+correctly gets $\mathcal{E}^{e_{k-1}}[V]$.  At
+line~\ref{line:rendef1}, we see that the destination of the
+\phifunction{} is correctly $\mathcal{E}^{e_k}[V]$.  Thus the value of
+every original variable $V$ correctly correponds to
+$\mathcal{E}^{e_k}[V]$ by the induction hyptothesis and the semantics
+of the \phifunction{s}.
+\item[Case IV:] $k>0$ and $N_k$ has one predecessor and multiple
+successors.  Here $N_k$ may have multiple \sigfunction{s} in the new
+program, and is empty in the original program.  The argument goes as
+for the previous case.  It is obvious that variables not mentioned in
+the \sigfunction{s} correspond at $e_k$ if they did at $e_{k-1}$.  For
+variables mentioned in \sigfunction{s}, line~\ref{line:sigsrc} shows
+that operands correctly get $\mathcal{E}^{e_{k-1}}[V]$ and
+line~\ref{line:rendef2} shows that the destination corresponding to
+$e_k$ correctly gets $\mathcal{E}^{e_k}[V]$.  Therefore the values of
+original variables $V$ correspond to the value of
+$\mathcal{E}^{e_k}[V]$ by the induction hypothesis and the semantics
+of the \sigfunction{s}.
+\item[Case V:] $N_k$ has multiple predecessors and multiple
+successors.  Forbidden by the CFG definition in section~\ref{sec:defs}.
+\end{description}
+Therefore, on every edge of the chosen path, the values of the
+original variables correspond to the values of the renamed SSI form
+variables. The value correspondence at the path endpoint (a use of
+some variable $V$) follows.
+\end{proof}
+
 \begin{theorem}\label{thm:renameproof}
 Algorithm~\ref{alg:SSIrename1} renames variables such that SSI form
-conditions \ref{crit_phiname} and \ref{crit_signame} hold.
+conditions \ref{crit_phiname}, \ref{crit_signame}, and
+\ref{crit_correct} hold.
 \end{theorem}
 \begin{proof}
-Direct from lemmas~\ref{lem:renamephi} and \ref{lem:renamesig}.
+Direct from lemmas~\ref{lem:renamephi}, \ref{lem:renamesig}, and
+\ref{lem:correctness}.
 \end{proof}
 
 \begin{theorem}
@@ -1200,8 +1319,8 @@ Theorem~\ref{thm:placeproof} proves that \phisigfunction{s} are placed
 correctly to satisfy conditions~\ref{crit_phiplace},
 \ref{crit_sigplace} and \ref{crit_boundary} of the SSI form
 definition, and theorem~\ref{thm:renameproof} proves that variables
-are renamed correctly to satisfy conditions~\ref{crit_phiname}
-and~\ref{crit_signame}.\dontfixme{Ideally we'd prove condition 6 here, too.}
+are renamed correctly to satisfy conditions~\ref{crit_phiname},
+\ref{crit_signame} and~\ref{crit_correct}.
 \end{proof}
 
 \subsubsection{Pruning SSI form}\label{sec:unusedcode}
