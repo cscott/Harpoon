@@ -35,10 +35,13 @@ clheap_t clheap_create() {
 #ifdef WITH_THREADS
   flex_mutex_init(&(clh->heap_lock));
 #endif
+  return clh;
 }
 
 /* race condition here if someone detaches before we attach */
 clheap_t clheap_attach(clheap_t clh) {
+  // XXX we should really be able to turn around and retry if someone
+  // frees the heap before we get the lock.
 #ifdef WITH_THREADS
   flex_mutex_lock(&(clh->heap_lock));
 #endif
@@ -46,6 +49,7 @@ clheap_t clheap_attach(clheap_t clh) {
 #ifdef WITH_THREADS
   flex_mutex_unlock(&(clh->heap_lock));
 #endif
+  return clh;
 }
 
 void clheap_detach(clheap_t clh) {
