@@ -114,6 +114,8 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_read
  * Method:    readBytes
  * Signature: ([BII)I
  */
+// note that this function is mirrored at 
+// src/java.net/java_net_SocketInputStream.c.  Keep changes in sync.
 JNIEXPORT jint JNICALL Java_java_io_FileInputStream_readBytes
 (JNIEnv * env, jobject obj, jbyteArray ba, jint start, jint len) { 
     int              fd, result;

@@ -128,6 +128,8 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_write
  * Method:    writeBytes
  * Signature: ([BII)V
  */
+// note that this function is mirrored at 
+// src/java.net/java_net_SocketOutputStream.c.  Keep changes in sync.
 JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes
 (JNIEnv * env, jobject obj, jbyteArray ba, jint start, jint len) { 
     int              fd, result;
