@@ -1,10 +1,12 @@
 % -*-bibtex-*- This is a BibTeX document.
-% $Id: harpoon.bib,v 1.76 2002-11-15 21:12:17 cananian Exp $
+% $Id: harpoon.bib,v 1.77 2002-11-16 08:43:59 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
 @string{ACM =  {ACM}}
 @string{IEEE = {IEEE}}
+@string {ECOOP99 = "Proceedings of the 13th European Conference on Object-Oriented Programming"} 
+@string {ECOOP02 = "Proceedings of the 16th European Conference on Object-Oriented Programming"} 
 @string{ICCAD  = "Proceedings of the {IEEE}/{ACM} International Conference on
                   Computer Aided Design ({ICCAD})"}
 @string{ICS98  = "ICS '98.  Conference proceedings of the 1998
@@ -1715,9 +1717,38 @@
  publisher = {ACM Press},
  }
 
+@InProceedings{marinov03,
+  author = 	 {Darko Marinov and Robert O'Callahan},
+  title = 	 {Object Equality Profiling},
+  booktitle =	 {{Submitted to PLDI '03}},
+  year =	 2003
+}
+
+@InProceedings{bacon02:efficient,
+  author = 	 {David F. Bacon and Stephen J. Fink and David Grove},
+  title = 	 {Space- and Time-Efficient Implementation of the
+                  Java Object Model},
+  booktitle =	 ECOOP02,
+  pages =	 {111--132},
+  year =	 2002,
+  editor =	 {B. Magnusson},
+  volume =	 2374,
+  series =	 {Lecture Notes in Computer Science},
+  address =	 {M\'alaga, Spain},
+  month =	 jun
+}
+
+@Article{bacon02:kava,
+  author = 	 {David F. Bacon},
+  title = 	 {Kava: A Java Dialect with a Uniform Object Model for
+                  Lightweight Classes},
+  journal = 	 {Concurrency---Practice and Experience},
+  year = 	 2002,
+  volume =	 14
+}
+
 %%%%%%%%%%%%% From Martin's p.bib
 
-@string {ECOOP99 = "Proceedings of the 13th European Conference on Object-Oriented Programming"} 
 @string {EUROPAR2000 = "Proceedings of the EuroPar 2000 European Conference on Parallel Computing"} 
 
 
