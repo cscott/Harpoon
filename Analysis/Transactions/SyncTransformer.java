@@ -6,6 +6,7 @@ package harpoon.Analysis.Transactions;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.DomTree;
 import harpoon.Backend.Generic.Frame;
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HClassMutator;
 import harpoon.ClassFile.HCode;
@@ -17,6 +18,7 @@ import harpoon.ClassFile.HFieldMutator;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HMethodMutator;
 import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.SerializableCodeFactory;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.AGET;
 import harpoon.IR.Quads.ARRAYINIT;
@@ -42,7 +44,9 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadRSSx;
 import harpoon.IR.Quads.QuadSSA;
+import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPESWITCH;
@@ -68,7 +72,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.9 2001-01-23 22:02:43 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.10 2001-01-25 23:57:24 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -125,10 +129,10 @@ public class SyncTransformer
     private final HMethod HMmkVersion;
     private final HMethod HMwriteFlag;
     private final HMethod HMwriteFlagA;
-    /* flag value */
+    /** flag value */
     private final HField HFflagvalue;
-    /** Set of safe methods. */
-    private final Set safeMethods;
+    /** Our version of the codefactory. */
+    private final HCodeFactory hcf;
 
     /** Creates a <code>SyncTransformer</code> with no safe methods. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
@@ -146,15 +150,14 @@ public class SyncTransformer
      *  method set. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
 			   HMethod mainM, Set roots,
-			   Set safeMethods) {
+			   final Set safeMethods) {
 	// hcf should be SSI. our input is SSA...
         super(harpoon.IR.Quads.QuadSSA.codeFactory(hcf), ch, false);
 	// and output is NoSSA
 	Util.assert(hcf.getCodeName()
 		    .equals(harpoon.IR.Quads.QuadSSI.codename));
-	Util.assert(codeFactory().getCodeName()
+	Util.assert(super.codeFactory().getCodeName()
 		    .equals(harpoon.IR.Quads.QuadRSSx.codename));
-	this.safeMethods = safeMethods;
 	this.HCclass = l.forName("java.lang.Class");
 	this.HCfield = l.forName("java.lang.reflect.Field");
 	String pkg = "harpoon.Runtime.Transactions.";
@@ -211,7 +214,26 @@ public class SyncTransformer
 	    // create fieldoracle
 	    this.fieldOracle = new GlobalFieldOracle(ch, mainM, myroots, hcf);
 	}
+
+	// fixup code factory for 'known safe' methods.
+	final HCodeFactory superfactory = super.codeFactory();
+	Util.assert(superfactory.getCodeName().equals(QuadRSSx.codename));
+	this.hcf = new CachingCodeFactory(new SerializableCodeFactory() {
+	    public String getCodeName() { return superfactory.getCodeName(); }
+	    public void clear(HMethod m) { superfactory.clear(m); }
+	    public HCode convert(HMethod m) {
+		if (Modifier.isNative(m.getModifiers()) &&
+		    safeMethods.contains(select(m, ORIGINAL)) &&
+		    select(select(m, ORIGINAL), WITH_TRANSACTION).equals(m))
+		    // call the original, 'safe' method.
+		    return redirectCode(m);
+		else return superfactory.convert(m);
+	    }
+	});
     }
+    // override parent's codefactory with ours! (which uses theirs)
+    public HCodeFactory codeFactory() { return hcf; }
+
     protected String mutateDescriptor(HMethod hm, Token which) {
 	if (which==WITH_TRANSACTION)
 	    // add CommitRecord as first arg.
@@ -378,7 +400,6 @@ public class SyncTransformer
 	    // if in a transaction, call the transaction version &
 	    // deal with possible abort.
 	    if (handlers==null) return;
-	    if (safeMethods.contains(q.method())) return; // it's safe.
 	    Temp[] nparams = new Temp[q.paramsLength()+1];
 	    int i=0;
 	    if (!q.isStatic())
@@ -783,6 +804,46 @@ public class SyncTransformer
      *  which can't be represented in quad form. */
     public HCodeFactory treeCodeFactory(Frame f, HCodeFactory hcf) {
 	return new TreePostPass(f, FLAG_VALUE, HFflagvalue).codeFactory(hcf);
+    }
+    /** Create a redirection method for native methods we "know" are safe. */
+    // parts borrowed from InitializerTransform.java
+    private QuadRSSx redirectCode(final HMethod hm) {
+	final HMethod orig = select(hm, ORIGINAL);
+	// make the Code for this method (note how we work around the
+	// protected fields).
+	return new QuadRSSx(hm, null) { /* constructor */ {
+	    // figure out how many temps we need, then make them.
+	    int nargs = hm.getParameterTypes().length + (hm.isStatic()? 0: 1);
+	    Temp[] params = new Temp[nargs];
+	    for (int i=0; i<params.length; i++)
+		params[i] = new Temp(qf.tempFactory(), "param"+i);
+	    Temp[] nparams = new Temp[nargs-1];
+	    int i=0;
+	    if (!hm.isStatic())
+		nparams[i++] = params[0];
+	    for (i++ ; i<params.length; i++)
+		nparams[i-1] = params[i];
+	    Temp retex = new Temp(qf.tempFactory(), "retex");
+	    Temp retval = (hm.getReturnType()==HClass.Void) ? null :
+		new Temp(qf.tempFactory(), "retval");
+	    // okay, make the dispatch core.
+	    Quad q0 = new HEADER(qf, null);
+	    Quad q1 = new METHOD(qf, null, params, 1);
+	    Quad q2 = new CALL(qf, null, orig, nparams,
+	    		       retval, retex, false, true, new Temp[0]);
+	    Quad q3 = new RETURN(qf, null, retval);
+	    Quad q4 = new THROW(qf, null, retex);
+	    Quad q5 = new FOOTER(qf, null, 3);
+	    Quad.addEdge(q0, 0, q5, 0);
+	    Quad.addEdge(q0, 1, q1, 0);
+	    Quad.addEdge(q1, 0, q2, 0);
+	    Quad.addEdge(q2, 0, q3, 0);
+	    Quad.addEdge(q2, 1, q4, 0);
+	    Quad.addEdge(q3, 0, q5, 1);
+	    Quad.addEdge(q4, 0, q5, 2);
+	    this.quads = q0;
+	    // done!
+	} };
     }
     
     private class TempSplitter {
