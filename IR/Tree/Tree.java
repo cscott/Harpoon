@@ -25,7 +25,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.17 1999-11-30 05:25:06 cananian Exp $
+ * @version $Id: Tree.java,v 1.1.2.18 1999-12-20 09:02:12 duncan Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 
@@ -128,7 +128,7 @@ public abstract class Tree
      *        temp factory will be cloned by this method.  All other temps
      *        will be cloned using <code>ctm</code>.  
      */
-    static Tree clone(TreeFactory tf, CloningTempMap ctm, Tree root) { 
+    public static Tree clone(TreeFactory tf, CloningTempMap ctm, Tree root) { 
 	if (root==null) return null;
 	else return root.rename(tf, ctm);
     }
