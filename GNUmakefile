@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.92 2001-06-12 05:34:55 witchel Exp $
+# $Id: GNUmakefile,v 1.61.2.93 2001-06-15 05:16:32 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -10,7 +10,7 @@ JIKES:=jikes $(JIKES_OPT)
 JCC=javac -J-mx64m
 JDOC=javadoc
 JAR=jar
-JDOCFLAGS=-J-mx64m -version -author # -package
+JDOCFLAGS=-J-mx128m -version -author # -package
 JDOCIMAGES=/usr/local/jdk/docs/api/images
 SSH=ssh
 SCP=scp -q
@@ -382,7 +382,7 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	$(MUNGE) doc | \
 	  sed -e 's/<\([a-z]\+\)@\([a-z.]\+\).edu>/\&lt;\1@\2.edu\&gt;/g' \
 	      -e 's/<dd> "The,/<dd> /g' -e 's/<body>/<body bgcolor=white>/' | \
-		bin/annotate.perl -link $(JDKDOCLINK) | \
+		bin/annotate.perl -link $(JDKDOCLINK) -u $(CVSWEBLINK) | \
 		$(UNMUNGE)
 	cd doc; if [ -e $(JDOCIMAGES) ]; then ln -s $(JDOCIMAGES) images; fi
 	cd doc; if [ ! -f index.html ]; then ln -s packages.html index.html; fi

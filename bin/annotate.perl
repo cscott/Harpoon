@@ -80,6 +80,8 @@ while ($ARGV[0] =~ /^-/) {
     $_ = shift;
     if (/^-link$/) {
 	%all = ( %all, jdk12classes(shift));
+    } elsif (/^-u$/) {
+	$cvsweb = shift;
     } else {
 	die "Unrecognized switch: $_\n";
     }
@@ -107,11 +109,21 @@ sub srcdoc {
     $url =~ s|^./|$currentbase."../srcdoc/"|e;
     return "<A HREF=\"" . $url . "\">" . $phrase . ".java</A>";
 }
+sub cvslog {
+    my $file = shift(@_);
+    my $version = shift(@_);
+    return $version unless defined $cvsweb and exists $cls2url{$file};
+    my $url = $cls2url{$file};
+    return $version unless $url =~ m|^./harpoon/(.*)\.html$|;
+    $url = "$cvsweb/Code/$1.java#rev$version";
+    return "<A HREF=\"" . $url . "\">" . $version . "</A>";
+}
 
 $currentbase="./";
 while (<>) {
     if (m|\"([./]*)stylesheet.css\"|) { $currentbase=$1; }
     s|<code>([A-Za-z0-9_.]*)</code>|annotate($1)|egi;
-    s|(\$Id: annotate.perl,v 1.1.2.4 2001-06-15 03:48:08 cananian Exp $)|$1.srcdoc($2).$3|egi;
+    s|(\$[I][d][:] )([A-Za-z0-9_]+).java(,v )([0-9.]+)( .*?\$)|
+	$1.&srcdoc($2).$3.&cvslog($2,$4).$5|egi;
     print;
 }
