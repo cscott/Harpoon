@@ -32,6 +32,8 @@ import harpoon.IR.Tree.THROW;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 
+import java.lang.reflect.Modifier;
+
 import java.util.ArrayList;
 import java.util.List;
 /**
@@ -47,7 +49,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.1 1999-10-25 22:18:09 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.2 1999-10-26 16:07:12 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;
@@ -251,7 +253,70 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
     }
 
     private static String jniMangle(HMethod m) {
-	//XXX implement me!
-	return "dude";
+	// jni sez use short name unless two native methods would use the
+	// same short name.  So, let's check that, shall we?
+	boolean useShort = true;
+	HMethod[] allm = m.getDeclaringClass().getMethods();
+	for (int i=0; i<allm.length; i++)
+	    if (Modifier.isNative(allm[i].getModifiers()) &&
+		allm[i].getName().equals(m.getName()) &&
+		!allm[i].equals(m))
+		useShort = false;
+	String mangled = "Java_" +
+	    encode(m.getDeclaringClass().getName()) +
+	    "_" +
+	    encode(m.getName());
+	if (!useShort) {
+	    String desc = m.getDescriptor();
+	    mangled += "__" +
+		encode(desc.substring(1, desc.lastIndexOf(')')));
+	}
+	return mangled;
+    }
+
+    //-------- CODE BELOW THIS LINE WAS COPIED FROM DefaultNameMap.java ----
+    // (so if you find a bug here, fix it there, too!)
+
+    /** Apply the JNI-standard unicode-to-C encoding. */
+    private static String encode(String s) {
+	StringBuffer sb = new StringBuffer();
+	for(int i=0; i<s.length(); i++) {
+	    switch(s.charAt(i)) {
+	    case '.':
+	    case '/':
+		sb.append("_");
+		break;
+	    case '_':
+		sb.append("_1");
+		break;
+	    case ';':
+		sb.append("_2");
+		break;
+	    case '[':
+		sb.append("_3");
+		break;
+	    default:
+		if ((s.charAt(i) >= 'a' &&
+		     s.charAt(i) <= 'z') ||
+		    (s.charAt(i) >= 'A' &&
+		     s.charAt(i) <= 'Z') ||
+		    (s.charAt(i) >= '0' &&
+		     s.charAt(i) <= '9')) {
+		    sb.append(s.charAt(i));
+		} else {
+		    sb.append("_0" + toHex(s.charAt(i), 4));
+		}
+		break;
+	    }
+	}
+	return sb.toString();
+    }
+    /** Convert the integer <code>value</code> into a hexadecimal 
+     *  string with at least <code>num_digits</code> digits. */
+    private static String toHex(int value, int num_digits) {
+	String hexval= // javah puts all hex vals in lowercase.
+	    Integer.toHexString(value).toLowerCase();
+	while(hexval.length()<num_digits) hexval="0"+hexval;
+	return hexval;
     }
 }
