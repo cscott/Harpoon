@@ -3,9 +3,17 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
-import harpoon.Util.*;
+import harpoon.Util.Default;
+import harpoon.Util.PairMapEntry;
+import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Util;
 
-import java.util.*;
+import java.util.AbstractCollection;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.Map;
 /**
  * A <code>BinomialHeap</code> allows
  * O(lg n) time bounds for insert, minimum, extract-min, union,
@@ -14,7 +22,7 @@ import java.util.*;
  * Leiserson, and Rivest, on page 400 and following.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinomialHeap.java,v 1.1.2.2 2000-02-12 21:15:38 cananian Exp $
+ * @version $Id: BinomialHeap.java,v 1.1.2.3 2000-02-12 21:52:09 cananian Exp $
  */
 public class BinomialHeap extends AbstractHeap implements Cloneable {
     private static final boolean debug=false;
@@ -29,7 +37,7 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
     /** Constructs a new, empty <code>BinomialHeap</code>, sorted according
      *  to the given comparator. O(1) time. */
     public BinomialHeap(Comparator c) { this(Collections.EMPTY_SET, c); }
-    /** Constructs a new map with the same mappings as the specified
+    /** Constructs a new binomial heap with the same entries as the specified
      *  <code>Heap</code>. O(n) time. */
     public BinomialHeap(Heap h) { this(h.entries(), h.comparator()); }
     /** Constructs a binomial heap from a collection of
