@@ -65,7 +65,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.55 2000-01-11 06:36:22 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.56 2000-01-13 04:22:47 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -624,7 +624,7 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    params = new ExpList(_TEMP(qParams[i], q), params);      
 	    updateDT(qParams[i], q, ((TEMP)params.head).temp, params.head);
 	}
-	    
+
 	// both out edges should be LABELs, right?
 	harpoon.IR.Quads.LABEL Lrv = ((harpoon.IR.Quads.LABEL)q.next(0));
 	harpoon.IR.Quads.LABEL Lex = ((harpoon.IR.Quads.LABEL)q.next(1));
@@ -1140,56 +1140,40 @@ static class CloningVisitor extends LowQuadWithDerivationVisitor { //inner
 // transformation clones the graph prior to using this visitor.    
 //
 static class LabelingVisitor extends LowQuadWithDerivationVisitor {//inner
-    private Map m_QToL;
+    private Set labeled = new HashSet(); 
     public LabelingVisitor(Derivation d, TypeMap t) { 
 	super(d, t);
-	m_QToL = new HashMap(); 
     }
     public void visit(Quad q) { } 
     public void visit(harpoon.IR.Quads.SIGMA q) {
 	Quad[] successors = q.next();
 	for (int i=0; i < successors.length; i++)
-	    toLabel(successors[i]);
+	    this.toLabel(successors[i]);
     }
     
     public void visit(harpoon.IR.Quads.PHI q) {
-	toLabel(q);
+	this.toLabel(q);
     }
 
     private void toLabel(Quad q) {
 	Util.assert(q != null, "quad q should not equal null");
 
-	harpoon.IR.Quads.LABEL label;
-    
-	label  = (harpoon.IR.Quads.LABEL)m_QToL.get(q);
-	if (label==null) {
+	if (this.labeled.add(q)) { 
 	    if (q instanceof harpoon.IR.Quads.PHI) {
-		label = new harpoon.IR.Quads.LABEL
+		harpoon.IR.Quads.LABEL label = new harpoon.IR.Quads.LABEL
 		    (q.getFactory(), 
 		     (harpoon.IR.Quads.PHI)q, 
 		     new Label().name);
 		Quad.replace(q, label);
-		m_QToL.put(q, label);  // Don't replace same quad twice!
-		m_QToL.put(label, label);
 	    } else {
 		Util.assert(q.prevEdge().length == 1, "q:"+q+" should have arity 1");
-		Quad newQ = (Quad)q.clone();  // IS THIS CORRECT????
-		updateDT(q, newQ);
-
-		label = new harpoon.IR.Quads.LABEL
+		harpoon.IR.Quads.LABEL label = new harpoon.IR.Quads.LABEL
 		    (q.getFactory(), q, new Label().name, 
-		     new Temp[] {}, q.prevEdge().length);
+		     new Temp[0], q.prevEdge().length);
 	        Edge prevEdge  = q.prevEdge(0);
 		Quad.addEdge((Quad)prevEdge.from(), prevEdge.which_succ(),
-				 label, prevEdge.which_pred());
-		Quad.addEdge(label, 0, newQ, 0);
-		Edge[] el = q.nextEdge();
-		for (int i=0; i<el.length; i++) 
-		    Quad.addEdge(newQ, el[i].which_succ(),
-				 (Quad)el[i].to(), el[i].which_pred());
-		m_QToL.put(q, label); // Don't replace same quad twice!
-		m_QToL.put(newQ, label);
-		m_QToL.put(label, label);
+			     label, prevEdge.which_pred());
+		Quad.addEdge(label, 0, q, 0);
 	    }
 	}
     }
