@@ -564,7 +564,6 @@ void State::print(model *m)
       relset[i]->print(env, m); 
       printf(" ");
     }
-  printf("\n");
 }
 
 
