@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.25 1999-05-22 09:57:03 marinov Exp $
+# $Id: GNUmakefile,v 1.61.2.26 1999-05-25 16:51:29 andyb Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -90,6 +90,7 @@ first:
 	-${JCC} ${JFLAGS} Util/Util.java Util/ArrayFactory.java \
 		Util/UniqueVector.java Util/ArrayEnumerator.java \
 		Util/Set.java Util/Worklist.java \
+		Util/FilterIterator.java Util/WorkSet.java \
 		Temp/Temp*.java
 	-${JCC} ${JFLAGS} IR/RawClass/*.java
 	-${JCC} ${JFLAGS} IR/Bytecode/*.java ClassFile/*.java \
