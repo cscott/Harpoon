@@ -21,12 +21,14 @@ import java.util.Set;
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: ReachingHCodeElements.java,v 1.1.2.2 1999-12-20 07:06:54 duncan Exp $ 
+ * @version $Id: ReachingHCodeElements.java,v 1.1.2.3 1999-12-20 09:25:33 duncan Exp $ 
  */
 public class ReachingHCodeElements extends ReachingDefs { 
     private Map hceToBB;
     private Map tempsToPrsvs;
     private Set universe; 
+    private Map rdCache = new HashMap(); 
+
     
     /** 
      * Constructs a new <code>ReachingHCodeElements</code> for 
@@ -144,7 +146,7 @@ public class ReachingHCodeElements extends ReachingDefs {
      *        <code>setFact</code>. 
      */ 
     protected void initializeGenPrsv(Iterator blocks, SetFactory sf) { 
-	tempsToPrsvs = new HashMap();
+	this.tempsToPrsvs = new HashMap();
 
 	// Update the universe to use a compatible set factory. 
 	// This is usually much more efficient. 
@@ -159,8 +161,7 @@ public class ReachingHCodeElements extends ReachingDefs {
 		    Temp t    = defs[i];
 		    Set  prsv = (Set)tempsToPrsvs.get(t); 
 		    if (prsv == null) { 
-			tempsToPrsvs.put(t, prsv = sf.makeSet()); 
-			prsv.addAll(this.universe); 
+			tempsToPrsvs.put(t, prsv = sf.makeSet(this.universe));
 		    }
 		    prsv.remove(udNext); 
 		}
@@ -235,26 +236,29 @@ public class ReachingHCodeElements extends ReachingDefs {
      */
     public Set getReachingBefore(HCodeElement hce) {
 	Util.assert(this.hceToBB.containsKey(hce)); 
-	
-	BasicBlock  bb          = (BasicBlock)this.hceToBB.get(hce); 
-	Set         reachBefore = new HashSet(); 
-	CFGraphable current     = bb.getFirst(); 
 
-	reachBefore.addAll(this.getReachingOnEntry(bb)); 
+	if (!this.rdCache.containsKey(hce)) { 
+	    BasicBlock  bb          = (BasicBlock)this.hceToBB.get(hce); 
+	    Set         reachBefore = new HashSet(); 
 
-	// Starting from the first element in hce's basic block, traverse
-	// the block until hce is reached.  Each step updates the
-	// reaching def information.
-	for (; current != hce; current = (CFGraphable)current.succ()[0].to()) {
-	    UseDef udCurrent = (UseDef)current;
-	    Temp[] defs = udCurrent.def(); 
-	    for (int i=0; i<defs.length; i++) { 
-		reachBefore.retainAll((Set)this.tempsToPrsvs.get(defs[i])); 
-		reachBefore.add((HCodeElement)udCurrent); 
+	    reachBefore.addAll(this.getReachingOnEntry(bb)); 
+
+	    // Starting from the first element in hce's basic block, traverse
+	    // the block until hce is reached.  Each step updates the
+	    // reaching def information.
+	    for (Iterator i = bb.iterator(); i.hasNext(); ) { 
+		UseDef udCurrent = (UseDef)i.next();
+		this.rdCache.put(udCurrent, reachBefore);
+		Temp[] defs = udCurrent.def(); 
+		for (int n=0; n<defs.length; n++) { 
+		    reachBefore.retainAll
+			((Set)this.tempsToPrsvs.get(defs[n])); 
+		    reachBefore.add((HCodeElement)udCurrent); 
+		}
 	    }
 	}
 
-	return reachBefore; 
+	return (Set)this.rdCache.get(hce); 
     }
 
     /** 

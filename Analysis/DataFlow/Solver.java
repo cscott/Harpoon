@@ -4,8 +4,11 @@
 package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlock;
+import harpoon.Analysis.DataFlow.ReversePostOrderEnumerator; 
 import harpoon.Util.WorkSet;
 
+
+import java.util.Enumeration; 
 import java.util.Iterator;
 
 /**
@@ -16,7 +19,7 @@ import java.util.Iterator;
  * is amicable to data-flow analysis. 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Solver.java,v 1.1.2.4 1999-11-09 06:28:25 pnkfelix Exp $
+ * @version $Id: Solver.java,v 1.1.2.5 1999-12-20 09:25:33 duncan Exp $
  */
 public class Solver {
 
@@ -66,7 +69,28 @@ public class Solver {
 	    b.visit(v);
 	    v.addSuccessors(w, b);
 	}
+    }
 
+    public static void forwardRPOSolve(BasicBlock root,
+				       DataFlowBasicBlockVisitor v) { 
+	ReversePostOrderEnumerator rpo = new ReversePostOrderEnumerator(root);
+	boolean changed = false;
+	do {
+	    changed = false;
+
+	    ReversePostOrderEnumerator iter = rpo.copy();
+	    while (iter.hasMoreElements()) {
+		BasicBlock q = (BasicBlock)iter.next();
+		if (DEBUG) db("visiting: "+q);
+		q.visit(v);
+		for (Enumeration e=q.next(); e.hasMoreElements(); ) {
+		    BasicBlock qn = (BasicBlock)e.nextElement();
+		    if (DEBUG) db("doing edge "+q+" -> "+qn);
+		    changed = v.merge(q, qn); 
+		}
+	    }
+
+	} while (changed);
     }
     
 }
