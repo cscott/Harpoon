@@ -40,20 +40,20 @@ import java.util.Set;
  * MZF-compressed version of a class at run-time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFChooser.java,v 1.5 2002-09-03 14:43:04 cananian Exp $
+ * @version $Id: MZFChooser.java,v 1.6 2002-09-03 16:40:23 cananian Exp $
  */
 class MZFChooser extends MethodMutator<Quad> {
     /** an oracle to determine the properties of constructors. */
     final ConstructorClassifier cc;
     /** a map from HClasses to a list of sorted fields; the splitting has
      *  been done in the order of the list. */
-    final Map<HClass,List<PairList<HField,Integer>>> listmap;
+    final Map<HClass,List<PairList<HField,Number>>> listmap;
     /** a map from <code>HField</code>s to the <code>HClass</code> which
      *  eliminates that field. */
     final Map<HField,HClass> field2class;
     /** Creates a <code>MZFChooser</code>. */
     public MZFChooser(HCodeFactory hcf, ConstructorClassifier cc,
-		      Map<HClass,List<PairList<HField,Integer>>> listmap,
+		      Map<HClass,List<PairList<HField,Number>>> listmap,
 		      Map<HField,HClass> field2class) {
         super(QuadSSA.codeFactory(hcf));
 	this.cc = cc;
@@ -95,7 +95,7 @@ class MZFChooser extends MethodMutator<Quad> {
 	    if (!cc.isGood(qC.method())) continue;
 	    assert qN.hclass().equals(qC.method().getDeclaringClass()) : qN+" / "+qC;
 	    // fetch field list for this class.
-	    List<PairList<HField,Integer>> sortedFields =
+	    List<PairList<HField,Number>> sortedFields =
 		listmap.get(qN.hclass());
 	    if (sortedFields==null) continue; // nothing known about this class
 	    // delete the NEW.
@@ -138,7 +138,7 @@ class MZFChooser extends MethodMutator<Quad> {
 	}
     }
     void refactor(HMethod constructor, CALL qC,
-		  List<PairList<HField,Integer>> sortedFields) {
+		  List<PairList<HField,Number>> sortedFields) {
 	QuadFactory qf = qC.getFactory();
 	if (sortedFields.size()==0) { // base case.
 	    Quad qN = new NEW(qf, qC, qC.params(0),
@@ -146,7 +146,7 @@ class MZFChooser extends MethodMutator<Quad> {
 	    addAt(qC.prevEdge(0), qN);
 	    return;
 	}
-	PairList<HField,Integer> pair = sortedFields.get(0);
+	PairList<HField,Number> pair = sortedFields.get(0);
 	HField hf = (HField) pair.get(0); // field
 	Number num = (Number) pair.get(1); // 'mostly-what?'
 	// lookup 'spiffy constructor'

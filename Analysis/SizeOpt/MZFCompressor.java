@@ -51,7 +51,7 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.6 2002-09-03 15:17:52 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.7 2002-09-03 16:40:23 cananian Exp $
  */
 public class MZFCompressor {
     final HCodeFactory parent;
@@ -73,15 +73,15 @@ public class MZFCompressor {
 	// process the profile data.
 	// collect all good fields; sort them (within class) by savedbytes.
 	Set<HField> flds = new HashSet<HField>();
-	Map<HClass,List<PairList<HField,Integer>>> listmap =
-	    new HashMap<HClass,List<PairList<HField,Integer>>>();
+	Map<HClass,List<PairList<HField,Number>>> listmap =
+	    new HashMap<HClass,List<PairList<HField,Number>>>();
 	for (Iterator<HClass> it=ch.instantiatedClasses().iterator();
 	     it.hasNext(); ){
 	    HClass hc = it.next();
 	    if (stoplist.contains(hc)) continue; // skip this class.
-	    List<PairList<HField,Integer>> sorted = sortFields(hc, pp, cc);
+	    List<PairList<HField,Number>> sorted = sortFields(hc, pp, cc);
 	    if (sorted.size()>0) listmap.put(hc, sorted);
-	    for (Iterator<PairList<HField,Integer>> it2=sorted.iterator();
+	    for (Iterator<PairList<HField,Number>> it2=sorted.iterator();
 		 it2.hasNext(); )
 		flds.add( (HField) it2.next().get(0) );
 	}
@@ -139,7 +139,7 @@ public class MZFCompressor {
     /** Return a list.  element 0 of the list is the field most likely
      *  to save the most bytes. Elements are pairs; first element is
      *  the field; second element is the 'mostly value'. */
-    List<PairList<HField,Integer>> sortFields(HClass hc, ProfileParser pp,
+    List<PairList<HField,Number>> sortFields(HClass hc, ProfileParser pp,
 					      ConstructorClassifier cc) {
 	// make a comparator that operates on Map.Entries contained in the
 	// ProfileParser's savedBytesMap map, which sorts on 'saved bytes'.
@@ -181,13 +181,13 @@ public class MZFCompressor {
 	    });
 	// finally, create a final list by stripping the 'saved bytes' info
 	// (which we no longer need) and keeping only the field/mostlyN info.
-	List<PairList<HField,Integer>> nl =
-	    new ArrayList<PairList<HField,Integer>>(l.size());
+	List<PairList<HField,Number>> nl =
+	    new ArrayList<PairList<HField,Number>>(l.size());
 	for (Iterator it=l.iterator(); it.hasNext(); ) {
 	    List pair = (List) it.next();
 	    HField hf = (HField) pair.get(0);
 	    Map.Entry me = (Map.Entry) pair.get(1);
-	    Integer mostlyN = (Integer) me.getKey();
+	    Number mostlyN = (Number) me.getKey();
 	    nl.add(Default.pair(hf, mostlyN));
 	}
 	nl = Collections.unmodifiableList(nl);
@@ -197,11 +197,11 @@ public class MZFCompressor {
 
     // splits one class.
     void splitOne(Relinker relinker, CachingCodeFactory hcf,
-		  HClass hc, List<PairList<HField,Integer>> sortedFields,
+		  HClass hc, List<PairList<HField,Number>> sortedFields,
 		  Field2Method f2m, Map<HField,HClass> field2class) {
 	assert sortedFields.size()>0;
 	// for each entry in the sorted fields list, make a split.
-	for (Iterator<PairList<HField,Integer>> it=sortedFields.iterator();
+	for (Iterator<PairList<HField,Number>> it=sortedFields.iterator();
 	     it.hasNext(); ) {
 	    List pair = it.next();
 	    hc = moveOne(relinker, hcf, hc,

@@ -37,21 +37,21 @@ import java.util.Set;
  * field and method signatures.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFWidenType.java,v 1.6 2002-09-03 15:17:52 cananian Exp $
+ * @version $Id: MZFWidenType.java,v 1.7 2002-09-03 16:40:23 cananian Exp $
  */
 class MZFWidenType extends MethodMutator<Quad> {
     /** the linker to use */
     final Linker linker;
     /** a map from HClasses to a list of sorted fields; the splitting has
      *  been done in the order of the list. */
-    final Map<HClass,List<PairList<HField,Integer>>> listmap;
+    final Map<HClass,List<PairList<HField,Number>>> listmap;
     /** a map from <code>HField</code>s to the <code>HClass</code> which
      *  eliminates that field. */
     final Map<HField,HClass> field2class;
     /** Creates a <code>MZFWidenType</code>. */
     public MZFWidenType(HCodeFactory hcf,
 			Linker linker,
-			Map<HClass,List<PairList<HField,Integer>>> listmap,
+			Map<HClass,List<PairList<HField,Number>>> listmap,
 			Map<HField,HClass> field2class,
 			Set<HMethod> callableMethods, Set<HClass> allClasses) {
         super(hcf);
@@ -123,9 +123,9 @@ class MZFWidenType extends MethodMutator<Quad> {
 	if (hc.isArray())
 	    return HClassUtil.arrayClass
 		(linker, widen(HClassUtil.baseClass(hc)), HClassUtil.dims(hc));
-	List<PairList<HField,Integer>> sortedFields = listmap.get(hc);
+	List<PairList<HField,Number>> sortedFields = listmap.get(hc);
 	if (sortedFields==null) return hc; // not a split class.
-	PairList<HField,Integer> lastpair =
+	PairList<HField,Number> lastpair =
 	    sortedFields.get(sortedFields.size()-1);
 	HField lastF = (HField) lastpair.get(0);
 	HClass broadest = field2class.get(lastF);
