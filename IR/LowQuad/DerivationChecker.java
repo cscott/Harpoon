@@ -3,29 +3,45 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.LowQuad;
 
-import harpoon.Analysis.Maps.*;
-import harpoon.ClassFile.*;
+import harpoon.Analysis.Maps.Derivation;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
 import harpoon.Temp.Temp;
 
-import java.util.*;
+import java.util.Iterator;
 /**
  * A <code>DerivationChecker</code> checks that all temps
  * defined in a <code>LowQuad.Code</code> have proper
  * derivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationChecker.java,v 1.1.2.1 2000-10-16 22:19:01 cananian Exp $
+ * @version $Id: DerivationChecker.java,v 1.1.2.2 2000-10-16 22:36:54 cananian Exp $
  */
-public class DerivationChecker
-    extends harpoon.Analysis.Transformation.MethodMutator {
+public class DerivationChecker {
     
-    /** Creates a <code>DerivationChecker</code>. */
-    public DerivationChecker(HCodeFactory parent) { super(parent); }
+    /** No one can create a <code>DerivationChecker</code> object. */
+    private DerivationChecker() { }
 
-    /** No mutation is done (we only check the <code>HCode</code>). */
-    protected HCode mutateHCode(HCodeAndMaps input) {
-	harpoon.IR.Quads.Code c = (harpoon.IR.Quads.Code) input.hcode();
+    /** Create an <code>HCodeFactory</code> that will check the
+     *  derivation of every "converted" <code>HCode</code>. */
+    public static HCodeFactory codeFactory(final HCodeFactory hcf) {
+	return new HCodeFactory() {
+	    public String getCodeName() { return hcf.getCodeName(); }
+	    public void clear(HMethod m) { hcf.clear(m); }
+	    public HCode convert(HMethod m) {
+		HCode hc = hcf.convert(m);
+		if (hc!=null) check(hc);
+		return hc;
+	    }
+	};
+    }
+    /** Check the given <code>HCode</code> for <code>Derivation</code>
+     *  errors. */
+    public static void check(HCode hcode) {
+	harpoon.IR.Quads.Code c = (harpoon.IR.Quads.Code) hcode;
 	// look at the derivation for every lowquad.
 	Derivation d = c.getDerivation();
 	ASSERT(d!=null, "Checker found no derivation!");
@@ -42,9 +58,11 @@ public class DerivationChecker
 		}
 	    }
 	}
-	return c;
     }
-    private void ASSERT(boolean cond, Object errmsg) {
+    /** Simple assertion facility -- this is not intended to be
+     *  "compiled away" or turned off for speed like the standard
+     *  harpoon.Util.Util assertion facility. */
+    private static void ASSERT(boolean cond, Object errmsg) {
 	if (!cond) throw new Error(errmsg.toString());
     }
 }
