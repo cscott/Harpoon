@@ -166,7 +166,7 @@ public class AccessibleObject
    * @throws SecurityException if flag is true and this is one of the
    *         forbidden members mentioned in {@link setAccessible(boolean)}.
    */
-  private final void secureSetAccessible(boolean flag)
+  final void secureSetAccessible(boolean flag)
   {
     if (flag &&
         ((this instanceof Constructor
