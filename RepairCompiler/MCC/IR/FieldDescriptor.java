@@ -40,5 +40,4 @@ public class FieldDescriptor extends Descriptor {
             return type.getSizeExpr();
         }
     }
-
 }

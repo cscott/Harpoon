@@ -16,7 +16,7 @@ public class OpExpr extends Expr {
 
     public static boolean isInt(Expr e) {
 	if ((e instanceof IntegerLiteralExpr)||
-	    ((e instanceof OpExpr)&&(((OpExpr)e).getLeftExpr() instanceof IntegerLiteralExpr)))
+	    ((e instanceof OpExpr)&&(((OpExpr)e).opcode==Opcode.NOP)&&(((OpExpr)e).getLeftExpr() instanceof IntegerLiteralExpr)))
 	    return true;
 	return false;
     }
@@ -83,7 +83,13 @@ public class OpExpr extends Expr {
 		    value+=8;
 	    } else throw new Error("Unrecognized Opcode");
 	    this.left=new IntegerLiteralExpr(value);
-	    } else {
+	} else if ((opcode==Opcode.MULT)&&
+		   ((isInt(left)&&(getInt(left)==0))
+		    ||(isInt(right)&&(getInt(right)==0)))) {
+	    this.opcode=Opcode.NOP;
+	    this.right=null;
+	    this.left=new IntegerLiteralExpr(0);
+	} else {
 	    this.opcode = opcode;
 	    this.left = left;
 	    this.right = right;
@@ -279,10 +285,6 @@ public class OpExpr extends Expr {
 	} else if (opcode == Opcode.NOP) {
 	    writer.outputline("int " +dest.getSafeSymbol() + " = " +
 			      ld.getSafeSymbol() +"; ");
-	} else if (opcode != Opcode.NOT) { /* two operands */
-            assert rd != null;
-            writer.outputline("int " + dest.getSafeSymbol() + " = " + 
-                              ld.getSafeSymbol() + " " + opcode.toString() + " " + rd.getSafeSymbol() + ";");
         } else if (opcode == Opcode.AND) {
 	    writer.outputline("int "+rm.getSafeSymbol()+"=maybe;");
 	    writer.outputline("maybe = (" + ld.getSafeSymbol() + " && " + rm.getSafeSymbol() + ") || (" + rd.getSafeSymbol() + " && " + lm.getSafeSymbol() + ") || (" + lm.getSafeSymbol() + " && " + rm.getSafeSymbol() + ");");
@@ -293,7 +295,11 @@ public class OpExpr extends Expr {
 			      " && " + lm.getSafeSymbol() + ") || (" + lm.getSafeSymbol() + " && " + rm.getSafeSymbol() + ");");
 	    writer.outputline(dest.getSafeSymbol() + " = " + ld.getSafeSymbol() + " || " + rd.getSafeSymbol() +
 			      ";");
-	} else {
+	} else if (opcode != Opcode.NOT) { /* two operands */
+            assert rd != null;
+            writer.outputline("int " + dest.getSafeSymbol() + " = " + 
+                              ld.getSafeSymbol() + " " + opcode.toString() + " " + rd.getSafeSymbol() + ";");
+        } else if (opcode == Opcode.NOT) {
             writer.outputline("int " + dest.getSafeSymbol() + " = !" + ld.getSafeSymbol() + ";");
         }
     }
@@ -355,8 +361,3 @@ public class OpExpr extends Expr {
     }
 
 }
-
-
-
-
-

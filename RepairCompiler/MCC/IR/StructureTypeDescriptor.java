@@ -49,7 +49,6 @@ public class StructureTypeDescriptor extends TypeDescriptor {
             boolean ptr = fd.getPtr();
             Expr basesize; 
             if (ptr) { /* ptrs are 32bits */
-		
 		basesize = new IntegerLiteralExpr(32);
             } else {
 		basesize = td.getSizeExpr();
@@ -79,7 +78,7 @@ public class StructureTypeDescriptor extends TypeDescriptor {
 	    }
 
             if (fd == field) { /* stop, reached target field */
-                break; 
+                break;
             }
 
             size = new OpExpr(Opcode.ADD, fieldsize, size);

@@ -122,37 +122,38 @@ public class DotExpr extends Expr {
         Expr intindex = index;
         Expr offsetbits;
 
-        // #ATTN#: getOffsetExpr needs to be called with the fielddescriptor obect that is in teh vector list
+        // #ATTN#: getOffsetExpr needs to be called with the fielddescriptor object that is in the vector list
         // this means that if the field is an arraydescriptor you have to call getOffsetExpr with the array 
         // descriptor not the underlying field descriptor
 
         /* we calculate the offset in bits */
+        
         offsetbits = struct.getOffsetExpr(fd);
 
-        if (fd instanceof ArrayDescriptor) {
-            fd = ((ArrayDescriptor) fd).getField();
-        } 
-        
+	FieldDescriptor fd=this.fd;
+	if (fd instanceof ArrayDescriptor)
+	    fd=((ArrayDescriptor)fd).getField();
+
         if (intindex != null) {
             if (intindex instanceof IntegerLiteralExpr && ((IntegerLiteralExpr) intindex).getValue() == 0) {
-                /* short circuit for constant 0 */                
+                /* short circuit for constant 0 */
             } else {
                 Expr basesize = fd.getBaseSizeExpr();
                 offsetbits = new OpExpr(Opcode.ADD, offsetbits, new OpExpr(Opcode.MULT, basesize, intindex));
             }
         }
-        
-        final SymbolTable st = writer.getSymbolTable();
-        TypeDescriptor td = offsetbits.typecheck(new SemanticAnalyzer() {
-                public IRErrorReporter getErrorReporter() { throw new IRException("badness"); }
-                public SymbolTable getSymbolTable() { return st; }
-            });
 
-        if (td == null) {
-            throw new IRException();
-        } else if (td != ReservedTypeDescriptor.INT) {
-            throw new IRException();
-        }
+	final SymbolTable st = writer.getSymbolTable();
+        TypeDescriptor td2 = offsetbits.typecheck(new SemanticAnalyzer() {
+		public IRErrorReporter getErrorReporter() { throw new IRException("badness"); }
+		public SymbolTable getSymbolTable() { return st; }
+	    });
+	
+        if (td2 == null) {
+	    throw new IRException();
+        } else if (td2 != ReservedTypeDescriptor.INT) {
+	    throw new IRException();
+	}
                
         boolean dotypecheck = false;
 
@@ -281,7 +282,11 @@ public class DotExpr extends Expr {
         }
     }
 
+    boolean typechecked=false;
     public TypeDescriptor typecheck(SemanticAnalyzer sa) {
+	if (typechecked)
+	    return this.td;
+	else typechecked=true;
         TypeDescriptor lefttype = left.typecheck(sa);
         TypeDescriptor indextype = index == null ? null : index.typecheck(sa);
 	
@@ -358,9 +363,6 @@ public class DotExpr extends Expr {
             sa.getErrorReporter().report(null, "Left hand side of . expression must be a structure type, not '" + lefttype.getSymbol() + "'");
             return null;
         }
-        
-        
     }
-
 }
         

@@ -282,7 +282,11 @@ public class RepairGenerator {
 	    TypeDescriptor ttd=(TypeDescriptor)it.next();
 	    tdarray[ttd.getId()]=ttd;
 	}
-	CodeWriter cr=new StandardCodeWriter(outputaux);
+	final SymbolTable st = state.stGlobals;
+	CodeWriter cr = new StandardCodeWriter(outputaux) {
+		public SymbolTable getSymbolTable() { return st; }
+	    };
+
 	cr.outputline("void "+name+"_state::computesizes(int *sizearray,int **numele) {");
 	for(int i=0;i<max;i++) {
 	    TypeDescriptor td=tdarray[i];
@@ -317,7 +321,10 @@ public class RepairGenerator {
 	    TypeDescriptor ttd=(TypeDescriptor)it.next();
 	    tdarray[ttd.getId()]=ttd;
 	}
-	CodeWriter cr=new StandardCodeWriter(outputaux);
+	final SymbolTable st = state.stGlobals;
+	CodeWriter cr = new StandardCodeWriter(outputaux) {
+		public SymbolTable getSymbolTable() { return st; }
+	    };
 	cr.outputline("void "+name+"_state::recomputesizes() {");
 	for(int i=0;i<max;i++) {
 	    TypeDescriptor td=tdarray[i];

@@ -290,7 +290,7 @@ public class SemanticChecker {
                 } else {
                     rule.addQuantifier(quantifier);
                 }
-            }             
+            }
         }
         
         /* get guard expr */
