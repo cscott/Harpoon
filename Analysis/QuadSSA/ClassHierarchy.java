@@ -17,7 +17,7 @@ import java.util.Enumeration;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.4.2.1 1998-12-01 12:36:27 cananian Exp $
+ * @version $Id: ClassHierarchy.java,v 1.4.2.2 1998-12-03 04:47:43 marinov Exp $
  */
 
 public class ClassHierarchy  {
@@ -39,7 +39,7 @@ public class ClassHierarchy  {
 	    _classes = new Set();
 	    for (Enumeration e = children.keys(); e.hasMoreElements(); )
 		_classes.union(e.nextElement());
-	    for (Enumeration e = children.elements(); e.hasMoreElements(); ){
+	    for (Enumeration e = children.elements(); e.hasMoreElements(); ) {
 		HClass[] ch = (HClass[]) e.nextElement();
 		for (int i=0; i<ch.length; i++)
 		    _classes.union(ch[i]);
@@ -140,6 +140,9 @@ public class ClassHierarchy  {
     private void discoverClass(HClass c, 
 		       Worklist W, Set done, Hashtable ckc, Hashtable cmu) {
 	if (ckc.containsKey(c)) return; // not a new class.
+	// add class initializer (if it exists) to "called" methods.
+	HMethod ci = c.getClassInitializer();
+	if ((ci!=null) && (!done.contains(ci))) methodPush(ci, W, cmu);
 	// add to known-children lists.
 	ckc.put(c, new Set());
 	// new worklist.
