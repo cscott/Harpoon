@@ -22,6 +22,7 @@ struct effectlist {
 };
 
 struct effectregexpr {
+  char flag; /* 0=Normal, 1=NEW, 2=Native reached object*/
   int paramnum;
   char *classname;
   char *globalname;
@@ -60,4 +61,9 @@ void initloopstructures();
 void freeregexprlist(struct regexprlist *tofree);
 struct effectregexpr * mergeeffectregexpr(struct effectregexpr * ere1, struct effectregexpr * ere2);
 struct regexprlist * mergeregexprlist(struct regexprlist * rel1, struct regexprlist *rel2);
+void printregexprlist(struct regexprlist *rel);
+void printeffectregexpr(struct effectregexpr *ere);
+void printeffectlist(struct effectlist *el);
+void addnewobjpath(struct heap_state *hs, long long obj);
+
 #endif

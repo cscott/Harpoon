@@ -15,7 +15,7 @@
 
 static int programfd;
 #define bufsize 1000
-#undef DEBUG
+#define DEBUG
 long long pointerage=0;
 
 
@@ -71,6 +71,7 @@ void doanalysis() {
 	ho->class=copystr(buf);
 	ho->reachable=2;
 	puttable(ht, ho->uid, ho);
+	addnewobjpath(&heap, ho->uid);
       }
       break;
     case 'U':
@@ -80,6 +81,7 @@ void doanalysis() {
 	sscanf(line,"UI: %s %lld",buf, &ho->uid);
 	ho->class=copystr(buf);
 	puttable(ht, ho->uid, ho);
+	addnewobjpath(&heap, ho->uid);
       }
       break;
     case 'K':
@@ -113,7 +115,7 @@ void doanalysis() {
 
 #ifdef EFFECTS
 	if ((uid!=-1)&&(objuid!=-1)) {
-	  addpath(&heap, uid, classname, fieldname, fielddesc, objuid);
+	  addpath(&heap, objuid, classname, fieldname, fielddesc, uid);
 	}
 #endif
 	
@@ -564,6 +566,7 @@ void freemethodlist(struct heap_state *hs) {
     struct method *tmp=hs->freemethodlist->caller;
 #ifdef EFFECTS
     freedatahashtable(hs->freemethodlist->pathtable,(void (*) (void*)) &freeeffects);
+    freeeffectlist(hs->freemethodlist->effects);
 #endif
     free(hs->freemethodlist->params);
     free(hs->freemethodlist);

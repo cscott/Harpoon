@@ -27,6 +27,18 @@ void addpath(struct heap_state *hs, long long obj, char * class, char * field, c
   }
 }
 
+void addnewobjpath(struct heap_state *hs, long long obj) {
+  struct method *method=hs->methodlist;
+  while(method!=NULL) {
+    struct path * path=(struct path *) calloc(1,sizeof(struct path));
+    struct hashtable * pathtable=method->pathtable;
+    path->paramnum=-1;
+    path->prev_obj=-1;
+    puttable(pathtable, obj, path);
+    method=method->caller;
+  }
+}
+
 void freeeffects(struct path * pth) {
   free(pth->fieldname);
   free(pth->fielddesc);
@@ -59,11 +71,17 @@ void addeffect(struct heap_state *heap, long long suid, char * fieldname, long l
   while(method!=NULL) {
     struct hashtable *pathtable=method->pathtable;
     struct effectregexpr* srcexpr=buildregexpr(pathtable, suid);
-    struct effectregexpr* dstexpr=buildregexpr(pathtable, duid);
-    struct effectlist * efflist=(struct effectlist *) calloc(1,sizeof(struct effectlist));
-    efflist->fieldname=copystr(fieldname);
-    efflist->src=srcexpr;
-    efflist->dst=dstexpr;
+    if (srcexpr!=NULL) {
+      struct effectregexpr* dstexpr=buildregexpr(pathtable, duid);
+      struct effectlist * efflist=(struct effectlist *) calloc(1,sizeof(struct effectlist));
+      efflist->fieldname=copystr(fieldname);
+      efflist->src=srcexpr;
+      efflist->dst=dstexpr;
+      printf("Effect List Entry:\n");
+      printeffectlist(efflist);
+      efflist->next=method->effects;
+      method->effects=efflist;
+    }
     method=method->caller;
   }
 }
@@ -285,8 +303,17 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
   int lastloopsize=0;
   int lastloopindex=0;
   int i,index=0;
+  if (uid==-1) return NULL;
 
   while(1) {
+    if (!contains(pathtable, uid)) {
+      struct effectregexpr *src=(struct effectregexpr *) calloc(1, sizeof(struct effectregexpr));
+      printf("Didn't find uid %lld\n",uid);
+      src->paramnum=-1;
+      src->flag=2;
+      src->expr=rel;
+      return src;
+    }
     path=gettable(pathtable, uid);
     if (path->prev_obj!=-1) {
       if ((rel==NULL)||((strcmp(rel->classname, path->classname)!=0)&&(strcmp(rel->fielddesc, path->fielddesc)!=0))) {
@@ -390,6 +417,13 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
 	  rel->fields=newfield;
 	}
       }
+    } else if(path->paramnum==-1&&path->classname==NULL&&path->fieldname==NULL&&path->fielddesc==NULL&&path->globalname==NULL) {
+      struct effectregexpr * ere=(struct effectregexpr *)calloc(1, sizeof(struct effectregexpr));
+      ere->flag=1;
+      ere->paramnum=-1;
+      if(rel!=NULL)
+	printf("ERROR:  New object part of path\n");
+      return ere; /* object created after procedure call...not in original heap*/
     } else {
       /* At top level...*/
       struct effectregexpr *src=(struct effectregexpr *) calloc(1, sizeof(struct effectregexpr));
@@ -402,3 +436,68 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
     uid=path->prev_obj;
   }
 }
+
+void printeffectlist(struct effectlist *el) {
+  while (el!=NULL) {
+    printeffectregexpr(el->src);
+    printf(".%s=", el->fieldname);
+    if (el->dst!=NULL)
+      printeffectregexpr(el->dst);
+    else printf("NULL");
+    printf("\n");
+    el=el->next;
+  }
+}
+
+void printeffectregexpr(struct effectregexpr *ere) {
+  if (ere->paramnum==-1&&ere->flag==0)
+    printf("[%s.%s]", ere->classname, ere->globalname);
+  else if (ere->flag==1)
+    printf("NEW");
+  else if (ere->flag==2)
+    printf("NATIVEREACH");
+  else
+    printf("[Param %d]",ere->paramnum);
+  printregexprlist(ere->expr);
+}
+
+void printregexprlist(struct regexprlist *rel) {
+  while(rel!=NULL) {
+    printf(".");
+    if (rel->fields!=NULL) {
+      struct regfieldlist * flptr=rel->fields;
+      if (flptr->nextfld!=NULL)
+	printf("(");
+      while(flptr!=NULL) {
+	printf("[%s.%s]",flptr->classname,flptr->fieldname);
+	if (flptr->nextfld!=NULL)
+	  printf("|");
+	flptr=flptr->nextfld;
+      }
+      if (rel->fields->nextfld!=NULL)
+	printf(")");
+      if (rel->multiplicity==1)
+	printf("*");
+    } else {
+      struct listofregexprlist * flptr=rel->subtree;
+      if (flptr->nextlist!=NULL)
+	printf("(");
+      while(flptr!=NULL) {
+	printregexprlist(flptr->expr);
+	if (flptr->nextlist!=NULL)
+	  printf("|");
+	flptr=flptr->nextlist;
+      }
+      if (rel->subtree->nextlist!=NULL)
+	printf(")");
+      if (rel->multiplicity==1)
+	printf("*");
+    }
+    rel=rel->nextreg;
+  }  
+}
+
+
+
+
+
