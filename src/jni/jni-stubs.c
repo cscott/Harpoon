@@ -10,14 +10,6 @@ jint FNI_GetVersion(JNIEnv *env) {
 }
 
 /* do-nothing stubs */
-jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
-  assert(FNI_NO_EXCEPTIONS(env));
-  return 0;
-}
-jint FNI_MonitorExit(JNIEnv *env, jobject obj) {
-  assert(FNI_NO_EXCEPTIONS(env));
-  return 0;
-}
 jint FNI_UnregisterNatives(JNIEnv *env, jclass clazz) {
   assert(FNI_NO_EXCEPTIONS(env));
   return 0;

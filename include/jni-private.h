@@ -9,6 +9,7 @@
 #ifdef WITH_HEAVY_THREADS
 #include <pthread.h>
 #endif
+#include <time.h>
 
 #if SIZEOF_VOID_P==4
   typedef u_int32_t ptroff_t;
@@ -141,6 +142,10 @@ struct FNI_classinfo *FNI_GetClassInfo(jclass clazz);
 void *FNI_RawAlloc(JNIEnv *env, jsize length);
 /* allocate and zero memory for the specified object type */
 jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, jsize length);
+
+/* auxilliary thread synchronization operations */
+void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime);
+void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall);
 
 /* ----- miscellaneous information embedded in the compiler output ----- */
 

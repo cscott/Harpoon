@@ -3,6 +3,8 @@
 #include "java_lang_Object.h"
 
 #include <assert.h>
+#include <sys/time.h> /* for struct timeval */
+#include <time.h> /* for struct timespec */
 
 /*
  * Class:     java_lang_Object
@@ -71,7 +73,7 @@ PRIMITIVEARRAYCLONE(Double, jdouble, D);
  */
 JNIEXPORT void JNICALL Java_java_lang_Object_notify
   (JNIEnv *env, jobject _this) {
-  assert(0/*unimplemented*/);
+  FNI_MonitorNotify(env, _this, JNI_FALSE);
 }
 
 /*
@@ -81,7 +83,7 @@ JNIEXPORT void JNICALL Java_java_lang_Object_notify
  */
 JNIEXPORT void JNICALL Java_java_lang_Object_notifyAll
   (JNIEnv *env, jobject _this) {
-  assert(0/*unimplemented*/);
+  FNI_MonitorNotify(env, _this, JNI_TRUE);
 }
 /*
  * Class:     java_lang_Object
@@ -89,6 +91,19 @@ JNIEXPORT void JNICALL Java_java_lang_Object_notifyAll
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_java_lang_Object_wait
-  (JNIEnv *env, jobject _this, jlong val) {
-  assert(0/*unimplemented*/);
+  (JNIEnv *env, jobject _this, jlong millis) {
+  struct timeval tp; struct timespec ts;
+  int rc;
+
+  /* make val into an absolute timespec */
+  rc =  gettimeofday(&tp, NULL); assert(rc==0);
+  /* Convert from timeval to timespec */
+  ts.tv_sec  = tp.tv_sec;
+  ts.tv_nsec = tp.tv_usec * 1000;
+  ts.tv_sec += millis/1000;
+  ts.tv_nsec+= 1000*(millis%1000);
+  if (ts.tv_nsec > 1000000000) { ts.tv_nsec-=1000000000; ts.tv_sec++; }
+
+  /* okay, do the wait */
+  FNI_MonitorWait(env, _this, (millis==0)?NULL:&ts);
 }
