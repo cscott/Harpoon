@@ -5,7 +5,7 @@ import harpoon.ClassFile.Raw.*;
  * The <code>CONSTANT_Methodref</code> structure represents a method.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantMethodref.java,v 1.10 1998-08-02 03:47:35 cananian Exp $
+ * @version $Id: ConstantMethodref.java,v 1.11 1998-08-02 03:57:36 cananian Exp $
  * @see "The Java Virtual Machine Specifications, section 4.4.2"
  * @see Constant
  * @see ConstantFieldref
@@ -67,8 +67,11 @@ public class ConstantMethodref extends Constant {
 
   /** Create a human-readable representation of this constant. */
   public String toString() {
-    return "CONSTANT_Methodref: Parent class "+
-      class_index().name() + " {" + class_index+"} / " +
-      "Name and type at {"+name_and_type_index+"}";
+    ConstantNameAndType cnt = name_and_type_index();
+    return "CONSTANT_Methodref: " +
+      class_index().name() + " {" + class_index+"} " + "(" +
+      cnt.name() + " {"+cnt.name_index+"} " +
+      cnt.descriptor() + " {"+cnt.descriptor_index+"}" + ")" + 
+      " {"+name_and_type_index+"}";
   }
 }

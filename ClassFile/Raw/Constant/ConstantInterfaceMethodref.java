@@ -66,8 +66,11 @@ public class ConstantInterfaceMethodref extends Constant {
 
   /** Create a human-readable representation of this constant. */
   public String toString() {
-    return "CONSTANT_InterfaceMethodref: Parent class "+
-      class_index().name() + " {" + class_index+"} / " +
-      "Name and type at {"+name_and_type_index+"}";
+    ConstantNameAndType cnt = name_and_type_index();
+    return "CONSTANT_InterfaceMethodref: " +
+      class_index().name() + " {" + class_index+"} " + "(" +
+      cnt.name() + " {"+cnt.name_index+"} " +
+      cnt.descriptor() + " {"+cnt.descriptor_index+"}" + ")" + 
+      " {"+name_and_type_index+"}";
   }
 }
