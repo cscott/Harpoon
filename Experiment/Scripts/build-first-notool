@@ -1,7 +1,7 @@
 cd $HOME
 #send email
 echo "To: cristic@mit.edu" >email.txt
-echo "From: Experiment <"$USER"@MIT.EDU>"
+echo "From: Experiment <"$USER"@MIT.EDU>" >>email.txt
 echo "Subject: " $NAME "(no tool) built program 1" >>email.txt
 
 echo >>email.txt

@@ -5,7 +5,7 @@ cp /mit/cristic/Public/Repair/Debug4/Tool/* Experiment/Fourth
 
 #send email
 echo "To: cristic@mit.edu" >email.txt
-echo "From: Experiment <"$USER"@MIT.EDU>"
+echo "From: Experiment <"$USER"@MIT.EDU>" >>email.txt
 echo "Subject: " $NAME "(tool) copied program 4" >>email.txt
 
 echo >>email.txt
