@@ -9,7 +9,14 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
-import harpoon.IR.Quads.*;
+import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.Code;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.INSTANCEOF;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadFactory;
+import harpoon.IR.Quads.SIGMA;
+import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.IR.LowQuad.DerivationMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
@@ -24,7 +31,7 @@ import java.util.List;
  * into chains of <code>INSTANCEOF</code> and <code>CJMP</code> quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeSwitchRemover.java,v 1.1.2.1 2000-10-17 17:49:33 cananian Exp $
+ * @version $Id: TypeSwitchRemover.java,v 1.1.2.2 2000-10-17 17:53:32 cananian Exp $
  */
 public final class TypeSwitchRemover
     extends harpoon.Analysis.Transformation.MethodMutator {
