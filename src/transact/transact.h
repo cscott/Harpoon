@@ -5,6 +5,7 @@
 
 #include "jni-private.h"
 #include "asm/atomicity.h" /* for compare_and_swap */
+#include "asm/llsc.h" /* for load-linked */
 #include "config.h" /* for OBJECT_PADDING */
 
 /* package name for CommitRecord & etc */
