@@ -30,7 +30,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.11 1999-07-02 21:25:05 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.12 1999-07-07 01:27:31 bdemsky Exp $
  */
 public final class LoopOptimize {
     
@@ -92,10 +92,12 @@ public final class LoopOptimize {
 
     void recursetree(HCode hc, Loops lp, WorkSet usedinvariants) {
 	if (lp.loopEntrances().size()==1) {
-	    HCodeElement hce=(HCodeElement)(lp.loopEntrances()).toArray()[0];
-	    if (((HasEdges)hce).pred().length==2) {
-		doLoopinv(hc, lp,(Quad)hce, usedinvariants);
-		doLoopind(hc, lp,(Quad)hce, usedinvariants);
+	    Quad header=(Quad)(lp.loopEntrances()).toArray()[0];
+	    if (header.prev().length==2) {
+		doLoopinv(hc, lp,header, usedinvariants);
+		WorkSet newinds=new WorkSet();
+		header=doLoopind(hc, lp,header, usedinvariants, newinds);
+		doLooptest(hc, lp, header, newinds, usedinvariants);
 	    }
 	    else System.out.println("More than one entrance.");
 	} else
@@ -106,11 +108,297 @@ public final class LoopOptimize {
 	    recursetree(hc, (Loops)iterate.next(),usedinvariants);
     }
 
-    void doLoopind(HCode hc, Loops lp,Quad header,WorkSet usedinvariants) {
+    void doLooptest(HCode hc, Loops lp,Quad header, Set newinds, Set usedinvariants) {
+	Set elements=lp.loopIncelements();
+	Iterator iterate=elements.iterator();
+	Set loopinvars=invmap.invariantsMap(hc,lp);
+	Map allinductions=aimap.allInductionsMap(hc,lp);
+
+	TestVisitor visitor=new TestVisitor(newinds, loopinvars, allinductions, header, ssitossamap,hc, lp);
+	while (iterate.hasNext()) {
+	    Quad q=(Quad) iterate.next();
+	    if (!usedinvariants.contains(q))
+		q.visit(visitor);
+	}
+    }
+
+    class TestVisitor extends LowQuadVisitor {
+	Set inductvars;
+	Set newinductvars;
+	Set loopinvars;
+	Map allinductions;
+	Quad header;
+	TempMap ssitossamap;
+	Loops lp;
+	HCode hc;
+
+	TestVisitor(Set newinductvars, Set loopinvars, Map allinductions, Quad header, TempMap ssitossamap, HCode hc, Loops lp) {
+	    this.newinductvars=newinductvars;
+	    this.loopinvars=loopinvars;
+	    this.allinductions=allinductions;
+	    this.inductvars=allinductions.keySet();
+	    this.header=header;
+	    this.ssitossamap=ssitossamap;
+	    this.hc=hc;
+	    this.lp=lp;
+	}
+
+	public void visit(Quad q) {/* Do nothing*/}
+
+	public void visit(POPER q) {
+	    switch (q.opcode()) {
+	    case Qop.ICMPEQ:
+	    case Qop.ICMPGT:
+		System.out.println("visited:"+q.toString());
+		POPER replace=lookat(q);
+		if (replace!=null) {
+		    System.out.println("replacing with:"+replace.toString());
+		    System.out.println(q.prev().length);
+		    Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), replace,0);
+		    Quad.addEdge(replace, 0, q.next(0), q.nextEdge(0).which_pred());
+		}
+		break;
+	    default:
+	    }
+	}
+
+	POPER lookat(POPER q) {
+	    Temp[] operands=q.operands();
+	    Util.assert (operands.length==2);
+	    boolean good=true;
+	    int flag=-1;
+	    POPER newpoper=null;
+	    for (int i=0;i<operands.length;i++) {
+		if (inductvars.contains(ssitossamap.tempMap(operands[i]))) {
+		    if (flag==-1)
+			flag=i;
+		    else
+			good=false;
+		}
+		else {
+		    HCodeElement[] sources=ud.defMap(hc,ssitossamap.tempMap(operands[i]));
+		    Util.assert(sources.length==1);
+		    if (!loopinvars.contains(sources[0]))
+			good=false;
+		}
+	    }
+	    if (good&&(flag!=-1)) {
+		//good to go ahead
+		Induction induction=(Induction)allinductions.get(ssitossamap.tempMap(operands[flag]));
+		Iterator iterate=newinductvars.iterator();
+		while (iterate.hasNext()) {
+		    Temp indvar=(Temp) iterate.next();
+		    Induction t=(Induction) allinductions.get(indvar);
+		    //policy for moving
+		    if (t.variable!=induction.variable) 
+			continue;
+		    System.out.println("1");
+		    if (t.copied)
+			continue;    
+		    System.out.println("2");
+		    if ((induction.intmultiplier!=1)&&(induction.intmultiplier!=-1))
+			if ((t.intmultiplier!=induction.intmultiplier)&&(t.intmultiplier!=-induction.intmultiplier))
+			    continue;
+		    System.out.println("3");
+		    if (induction.objectsize!=null) {
+			if ((t.objectsize!=induction.objectsize)||(t.intmultiplier!=induction.intmultiplier))
+			    continue;
+		    }
+		    
+		    //Need to copy
+		    Temp initial=operands[1-flag];
+
+		    System.out.println("generating new compare");
+		    //method for moving
+		    newpoper=movecompare(header, initial, induction, indvar,t,q, flag, new LoopMap(hc,lp,ssitossamap));
+		    System.out.println(newpoper.toString());
+     		    break;
+		}
+	    }
+	    return newpoper;
+	}
+    }
+
+
+    POPER movecompare(Quad header, Temp initial, Induction induction, Temp indvar, Induction t, POPER q, int flag, TempMap loopmap) {
+	Quad loopcaller=header.prev(0);
+	int which_succ=header.prevEdge(0).which_succ();
+	Quad successor=header;
+	int which_pred=0;
+	if (induction.offset!=0) {
+	    //Add -bc term
+	    Quad newquad;
+	    Temp newtemp=new Temp(initial.tempFactory(),initial.name());
+	    if (induction.objectsize!=null) {
+		Temp newtempx=new Temp(initial.tempFactory(),initial.name());
+		newquad=new CONST(loopcaller.getFactory(),loopcaller, newtempx, new Integer(-induction.offset), HClass.Int);
+		Quad.addEdge(loopcaller, which_succ,newquad,0);
+		loopcaller=newquad; which_succ=0;
+		newquad=new PAOFFSET(((LowQuadFactory)loopcaller.getFactory()),loopcaller,newtemp,induction.objectsize, newtempx);
+	    }
+	    else
+		newquad=new CONST(loopcaller.getFactory(),loopcaller, newtemp, new Integer(-induction.offset), HClass.Int);
+
+	    Temp newtemp2=new Temp(initial.tempFactory(),initial.name());
+	    Temp[] sources=new Temp[2];
+	    sources[0]=newtemp;
+	    sources[1]=initial;
+	    Quad.addEdge(loopcaller, which_succ,newquad,0);
+	    loopcaller=newquad; which_succ=0;
+	    if (induction.objectsize==null)
+		newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,Qop.IADD,newtemp2, sources);
+	    else
+		newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,LQop.PADD,newtemp2, sources); 
+	    Quad.addEdge(loopcaller, which_succ, newquad,0);
+	    loopcaller=newquad; which_succ=0;
+	    Quad.addEdge(loopcaller, which_succ, successor, which_pred);
+	    initial=newtemp2;
+	}
+	
+	
+	if (!induction.pointeroffset.isEmpty()) {
+	    Iterator pointers=induction.pointeroffset.iterator();
+	    while (pointers.hasNext()) {
+		Temp term=loopmap.tempMap((Temp) pointers.next());
+		Temp newtemp=new Temp(initial.tempFactory(),initial.name());
+		Temp newtemp2=new Temp(initial.tempFactory(),initial.name());
+		Temp[] sources=new Temp[1];
+		sources[0]=term;
+		Quad newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,LQop.PNEG,newtemp, sources);
+		Quad.addEdge(loopcaller, which_succ,newquad,0);
+		loopcaller=newquad; which_succ=0;
+		sources=new Temp[2];
+		sources[0]=newtemp2;
+		sources[1]=initial;
+		newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,LQop.PADD,newtemp, sources);
+		Quad.addEdge(loopcaller, which_succ,newquad,0);
+		loopcaller=newquad; which_succ=0;
+		Quad.addEdge(loopcaller, which_succ, successor, which_pred);
+		initial=newtemp;
+	    }
+	}
+	
+
+	if ((t.intmultiplier/induction.intmultiplier)!=1) {
+	    if (induction.objectsize==null) {
+		Temp newtemp=new Temp(initial.tempFactory(),initial.name());
+		Temp newtemp2=new Temp(initial.tempFactory(),initial.name());
+		Quad newquad=new CONST(loopcaller.getFactory(),loopcaller, newtemp, new Integer(t.intmultiplier/induction.intmultiplier), HClass.Int);
+		Quad.addEdge(loopcaller, which_succ,newquad,0);
+		loopcaller=newquad; which_succ=0;
+		Temp[] sources=new Temp[2];
+		sources[0]=newtemp;
+		sources[1]=initial;
+		newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,Qop.IMUL,newtemp2, sources);
+		Quad.addEdge(loopcaller, which_succ,newquad,0);
+		loopcaller=newquad; which_succ=0;
+		Quad.addEdge(loopcaller, which_succ, successor, which_pred);
+		initial=newtemp2;
+	    } else {
+		//flip the sign
+		Util.assert((t.intmultiplier/induction.intmultiplier)==-1);
+		Temp newtemp=new Temp(initial.tempFactory(),initial.name());
+		Temp[] sources=new Temp[1];
+		sources[0]=initial;
+		Quad newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,LQop.PNEG,newtemp, sources);
+		Quad.addEdge(loopcaller, which_succ,newquad,0);
+		loopcaller=newquad; which_succ=0;
+		Quad.addEdge(loopcaller, which_succ, successor, which_pred);
+		initial=newtemp;
+	    }
+	}
+
+		    
+	if ((t.objectsize!=null)&&(induction.objectsize==null)) {
+	    //Calculate pointer if necessary
+	    Temp newtemp=new Temp(initial.tempFactory(),initial.name());
+	    Quad newquad=new PAOFFSET(((LowQuadFactory)loopcaller.getFactory()),loopcaller,newtemp,t.objectsize, initial);
+	    Quad.addEdge(loopcaller, which_succ,newquad,0);
+	    loopcaller=newquad; which_succ=0;
+	    Quad.addEdge(loopcaller, which_succ, successor, which_pred);
+	    initial=newtemp;
+	}
+
+	if (t.offset!=0) {
+	    //add array dereference
+	    if (t.objectsize==null) {
+		Temp newtemp=new Temp(initial.tempFactory(),initial.name());
+		Temp newtemp2=new Temp(initial.tempFactory(),initial.name());
+		Temp[] sources=new Temp[2];
+		Quad newquad=new CONST(loopcaller.getFactory(),loopcaller, newtemp, new Integer(t.offset), HClass.Int);
+		Quad.addEdge(loopcaller, which_succ,newquad,0);
+		loopcaller=newquad; which_succ=0;
+		sources[0]=newtemp;
+		sources[1]=initial;
+		newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,Qop.IADD,newtemp2, sources);
+		Quad.addEdge(loopcaller, which_succ,newquad,0);
+		loopcaller=newquad; which_succ=0;
+		Quad.addEdge(loopcaller, which_succ, successor, which_pred);
+		initial=newtemp2;
+	    } else {
+		Temp newtemp=new Temp(initial.tempFactory(),initial.name());
+		Temp newtemp2=new Temp(initial.tempFactory(),initial.name());
+		Temp newtemp3=new Temp(initial.tempFactory(),initial.name());
+		Temp[] sources=new Temp[2];
+		Quad newquad=new CONST(loopcaller.getFactory(),loopcaller, newtemp, new Integer(t.offset), HClass.Int);
+		Quad.addEdge(loopcaller, which_succ,newquad,0);
+		loopcaller=newquad; which_succ=0;
+		newquad=new PAOFFSET(((LowQuadFactory)loopcaller.getFactory()),loopcaller,newtemp2,t.objectsize, newtemp);
+		Quad.addEdge(loopcaller, which_succ,newquad,0);
+		loopcaller=newquad; which_succ=0;
+		sources[0]=newtemp2;
+		sources[1]=initial;
+		newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,LQop.PADD,newtemp3, sources);
+		Quad.addEdge(loopcaller, which_succ,newquad,0);
+		loopcaller=newquad; which_succ=0;
+		Quad.addEdge(loopcaller, which_succ, successor, which_pred);
+		initial=newtemp3; 
+	    }
+	}
+
+	if (!t.pointeroffset.isEmpty()) {
+	    Iterator pointers=t.pointeroffset.iterator();
+	    while (pointers.hasNext()) {
+		Temp term=loopmap.tempMap((Temp) pointers.next());
+		Temp newtemp=new Temp(initial.tempFactory(),initial.name());
+		Temp[] sources=new Temp[2];
+		sources[0]=term;
+		sources[1]=initial;
+		Quad newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,LQop.PADD,newtemp, sources);
+		Quad.addEdge(loopcaller, which_succ,newquad,0);
+		loopcaller=newquad; which_succ=0;
+		Quad.addEdge(loopcaller, which_succ, successor, which_pred);
+		initial=newtemp;
+	    }
+	}
+	int opcode=q.opcode();
+	if (t.objectsize!=null) {
+	    if (q.opcode()==Qop.ICMPGT) 
+		opcode=LQop.PCMPGT;
+	    if (q.opcode()==Qop.ICMPEQ)
+		opcode=LQop.PCMPEQ;
+	}
+	Temp[] sources=new Temp[2];
+	if ((t.intmultiplier/induction.intmultiplier)>0) {
+	    //Keep same order
+	    sources[flag]=indvar;
+	    sources[1-flag]=initial;
+	} else {
+	    //Flip order
+	    sources[flag]=initial;
+	    sources[1-flag]=indvar;
+	}
+	return new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,opcode,q.dst(), sources);
+    }
+
+    Quad doLoopind(HCode hc, Loops lp,Quad header,WorkSet usedinvariants, WorkSet complete) {
 	Map basmap=bimap.basicInductionsMap(hc,lp);
 	Map allmap=aimap.allInductionsMap(hc,lp);
 	WorkSet basic=new WorkSet(basmap.keySet());
-	WorkSet complete=new WorkSet(allmap.keySet());
+	Iterator iterat=allmap.keySet().iterator();
+	//Copy allmap
+	while(iterat.hasNext())
+	    complete.add(iterat.next());
 	LoopMap loopmap=new LoopMap(hc,lp,ssitossamap);
 
 	Iterator iterate=complete.iterator();
@@ -123,10 +411,7 @@ public final class LoopOptimize {
 	    linkin=1;
 	else
 	    linkin=0;
-	Quad loopcaller=header.prev(linkin);
-	int which_succ=header.prevEdge(linkin).which_succ();
-	Quad successor=header;
-	int which_pred=linkin;
+
 
 
 	while (iterate.hasNext()) {
@@ -139,8 +424,8 @@ public final class LoopOptimize {
 		    skip=true;
 		    break;
 		}
-		    
-	    
+	    if (indvariable==induction.variable)
+		skip=true;
 
 	    if (induction.pointerindex||skip) {
 		iterate.remove();
@@ -149,6 +434,11 @@ public final class LoopOptimize {
 		//We have a derived induction variable...
 		Temp consttemp=null;
 		Temp initial=initialTemp(hc,(PHI)header, induction.variable, lp.loopIncelements());
+		Quad loopcaller=header.prev(linkin);
+		int which_succ=header.prevEdge(linkin).which_succ();
+		Quad successor=header;
+		int which_pred=linkin;
+
 		if (induction.intmultiplier!=1) {
 		    //Add multiplication
 		    consttemp=new Temp(initial.tempFactory(),initial.name());
@@ -165,7 +455,7 @@ public final class LoopOptimize {
 		    Quad.addEdge(loopcaller, which_succ, successor, which_pred);
 		    initial=newtemp2;
 		}
-
+		
 		if (induction.offset!=0) {
 		    //Add addition
 		    Temp newtemp=new Temp(initial.tempFactory(),initial.name());
@@ -209,6 +499,7 @@ public final class LoopOptimize {
 		    }
 		}
 
+
 		//and calculate the increment size.. [done]
 
 		Temp increment=loopmap.tempMap(findIncrement(hc, induction.variable, lp.loopIncelements(),header));
@@ -224,7 +515,7 @@ public final class LoopOptimize {
 		    loopcaller=newquad; which_succ=0;
 		    Quad.addEdge(loopcaller, which_succ, successor, which_pred);
 		    increment=newtemp2;
-		}		    
+		}
 		
 		if (induction.objectsize!=null) {
 		    //Integer induction variable		    
@@ -253,7 +544,10 @@ public final class LoopOptimize {
 		makeADD(induction, addresult,indvariable,increment,hc,lp,header);
 	    }
 	}
+	return header;
     }
+
+
 
     Quad handlePHI(PHI phi, Temp indvariable, Temp initial, Temp addresult, HCode hc,Loops lp) {
 	//Add phi to PHI that looks like
