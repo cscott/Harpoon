@@ -78,7 +78,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.111 2000-07-29 00:26:59 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.112 2000-07-30 01:44:33 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -349,7 +349,7 @@ public abstract class RegAlloc  {
 	abstractSpillFactory(final HCodeFactory parent,
 			     final Frame frame) {
 	return abstractSpillFactory(parent, frame, 
-				    (true)?GraphColoringRegAlloc.FACTORY
+				    (false)?GraphColoringRegAlloc.FACTORY
 				    :LocalCffRegAlloc.FACTORY);
 	         
 
@@ -653,7 +653,9 @@ public abstract class RegAlloc  {
 			tempXinstrToCommonLoc.add(dxi, def);
 		    } else {
 			// Util.assert(checked.contains(i),i+" not checked");
-			Util.assert(code.registerAssigned(i,def));
+			Util.assert(code.registerAssigned(i,def),
+				    "def:"+def+" not assigned in "+
+				    i.getID()+" : "+i);
 			Collection regs = code.getRegisters(i, def);
 			tempXinstrToCommonLoc.addAll(dxi, regs);
 		    }

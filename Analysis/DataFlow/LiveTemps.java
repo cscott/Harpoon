@@ -26,16 +26,16 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.18 2000-07-28 03:08:57 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.19 2000-07-30 01:44:12 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
     // may be null; code using this should check
     private Set liveOnProcExit;
 
-    private SetFactory mySetFactory;
+    protected SetFactory mySetFactory;
 
     // calculates use/def information for the IR passed in.
-    private UseDefer ud;
+    protected UseDefer ud;
 
     /** Produces a default live variable analysis object and solves
 	it.  elements in <code>code</code> must implement
@@ -45,7 +45,7 @@ public class LiveTemps extends LiveVars.BBVisitor {
      */
     public static LiveTemps make(HCode code, Set liveOnExit) {
 	BasicBlock.Factory bbf = new BasicBlock.Factory(code);
-	LiveTemps lt = new LiveTemps(bbf, liveOnExit);
+	LiveTemps lt = new CachingLiveTemps(bbf, liveOnExit);
 	Solver.worklistSolve
 	    // (bbFact.preorderBlocksIter(),
 	    (new harpoon.Util.ReverseIterator(bbf.postorderBlocksIter()),
@@ -146,12 +146,6 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	return liveBefore; 
     }
     
-
-    // a cache of results for the getLiveAfter(HCodeElement) method
-    // (cleared every time a different basic block is accessed)
-    private HashMap hce2liveAfter = new HashMap();
-    private BasicBlock lastBB;
-
     /** Returns the <code>Set</code> of <code>Temp</code>s that are
 	live on exit from <code>hce</code>.
 	<BR> <B>requires:</B> A DataFlow Equation Solver has been run
@@ -167,10 +161,7 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	// System.out.println("FSK: getLiveAfter called");
 
 	BasicBlock bb = bbFact.getBlock(hce);
-	
-	if (lastBB != bb) {
-	    hce2liveAfter.clear();
-	    lastBB = bb;
+
 	    Set liveAfter = 
 		mySetFactory.makeSet(this.getLiveOnExit(bb));
 
@@ -187,18 +178,17 @@ public class LiveTemps extends LiveVars.BBVisitor {
 		
 		// System.out.println("doing live after for "+current);
 
-		hce2liveAfter.put
-		    (current, mySetFactory.makeSet(liveAfter));
+		if (hce == current) {
+		    return mySetFactory.makeSet(liveAfter);
+		}
 
 		// update set for before 'current'
 		liveAfter.removeAll(ud.defC(current)); 
 		liveAfter.addAll(ud.useC(current)); 
 	    }
-	} else {
-	    // System.out.print(" _"+bb.statements().size());
-	}
-
-	return (Set) hce2liveAfter.get(hce);
+	
+	    throw new RuntimeException("while loop reached end!!!");
+   
 
     }
 
