@@ -1,6 +1,6 @@
 package harpoon.Analysis.ContBuilder;
 
-import java.io.NativeIO;
+//import java.io.NativeIO;
 
 public final class Scheduler
 {
@@ -73,7 +73,7 @@ public final class Scheduler
     private static void doSelect()
     {
 	// selectJNI returns an array of 1's and 0's of length nReadConts+nWriteConts
-	boolean available[]= NativeIO.selectJNI( toFDArray(readConts, nReadConts), toFDArray(writeConts, nWriteConts) );
+	boolean available[]= new boolean[0];//NativeIO.selectJNI( toFDArray(readConts, nReadConts), toFDArray(writeConts, nWriteConts) );
 	int i, j;
 	Continuation c, prev, tmp;
 
