@@ -37,7 +37,7 @@ import harpoon.Instrumentation.AllocationStatistics.AllocationInstrCompStage;
 import harpoon.Analysis.Realtime.Realtime;
 import harpoon.Analysis.MemOpt.PreallocOpt;
 import harpoon.Analysis.PointerAnalysis.PointerAnalysisCompStage;
-import harpoon.Analysis.PointerAnalysis.PAAllocSyncCompStage;
+import harpoon.Analysis.PointerAnalysis.AllocSyncOptCompStage;
 
 import harpoon.Util.Options.Option;
 
@@ -67,7 +67,7 @@ import java.io.PrintStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.53 2003-04-22 00:09:57 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.54 2003-04-30 20:04:40 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -121,8 +121,12 @@ public class SAMain extends harpoon.IR.Registration {
     private static void buildCompilerPipeline() {
 	stages = new LinkedList/*<CompilerStage>*/();
 
+	// build a "nascent" compiler state: 
+	// main method, root set, linker and frame
 	addStage(new BuildInitialCompState());
 
+	// add code factory, i.e., parse the code into QuadWithTry IR;
+	// also build class hierarchy
 	addStage(new BuildQuadForm());
 	// At this point in the pipeline, we have a full compiler
 	// state (including class hierarchy). Let it roll!
@@ -130,7 +134,7 @@ public class SAMain extends harpoon.IR.Registration {
 	// quad-form analyses
 	buildQuadFormPipeline();
 
-	// quad->tree
+	// convert quad IR -> tree IR
 	addStage(new LowQuadToTree()); 
 
 	// tree-form analyses
@@ -142,10 +146,15 @@ public class SAMain extends harpoon.IR.Registration {
 
 
     private static void buildQuadFormPipeline() {
-	addStage(new PAAllocSyncCompStage());
+	// adds a stage that does pointer analysis and uses its
+	// results for memory allocation, sync removal, and/or RTJ
+	// programs debug and optimization
+	addStage(PointerAnalysisCompStage.getPAAndAppsStage());
 
+	// allocation instrumentation stage
 	AllocationInstrCompStage aics = new AllocationInstrCompStage();
 	addStage(aics);
+	// memory preallocation via incopmaptibility analysis
 	addStage(new PreallocOpt.QuadPass(aics));
 
 	addStage(new EventDrivenTransformation.QuadPass1());
@@ -154,11 +163,15 @@ public class SAMain extends harpoon.IR.Registration {
 	addStage(new Realtime.QuadPass());
 	addStage(new MZFCompilerStage());
 	addStage(new MIPSOptimizations.QuadPass());
+
+	// general quad optimizations (disabled by default)
         addStage(new GeneralQuadOptimizations());
+
 	addStage(new EventDrivenTransformation.QuadPass2());
 	addStage(new WriteBarriers.WBQuadPass());
 	addStage(new WriteBarriers.DynamicWBQuadPass());
 
+	// common processing and small optimizations
 	addStage(new RegularQuadPass());
     }
 
@@ -179,6 +192,7 @@ public class SAMain extends harpoon.IR.Registration {
 	// fragile!  [CSA 08-apr-2003]
 	addStage(new MIPSOptimizations.TreePass());
 
+	// perform basic sanity checks on the produced tree form
 	addStage(new RegularCompilerStageEZ("sanity-check-tree") {
 	    protected void real_action() {
 		hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);
@@ -276,7 +290,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    public void action() { USE_OLD_CLINIT_STRATEGY = true; }
 	});
 
-	opts.add(new Option("F", "Enable optimizations") {
+	opts.add(new Option("F", "Enable standard optimizations") {
 	    public void action() { OPTIMIZE = true; }
 	});
 
@@ -494,10 +508,8 @@ public class SAMain extends harpoon.IR.Registration {
 		    return new harpoon.Backend.Runtime1.
 			HeapStatsAllocationStrategy(frame);
 
-		if(!alloc_strategy.equalsIgnoreCase("malloc"))
-		    System.out.println
-			("AllocationStrategy " + alloc_strategy +
-			 " unknown; use default \"malloc\" strategy instead");
+		assert alloc_strategy.equalsIgnoreCase("malloc") :
+		    "unknown allocation strategy " + alloc_strategy;
 
 		// default, "malloc" strategy.
 		return

@@ -41,7 +41,7 @@ import java.util.LinkedList;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.14 2003-04-22 00:09:55 salcianu Exp $
+ * @version $Id: Realtime.java,v 1.15 2003-04-30 20:04:38 salcianu Exp $
  */
 
 public class Realtime {
@@ -385,8 +385,8 @@ public class Realtime {
 	public List/*<Option>*/ getOptions() {
 	    List/*<Option>*/ opts = new LinkedList/*<Option>*/();
 
-	    opts.add(new Option("t", "", "<analysisMethod>",
-				"Turns on Realtime Java extensions with the optional analysis method: NONE, CHEESY, REAL") {
+	    opts.add(new Option("t", "", "<RTJOptions>",
+				"Turns on Realtime Java extensions with the options given in the optional argument <RTJOptions>") {
 		public void action() {
 		    Realtime.configure(getOptionalArg(0));
 		}

@@ -30,7 +30,9 @@ import harpoon.Util.LightBasicBlocks.CachingLBBConverter;
 import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 import harpoon.Util.BasicBlocks.CachingBBConverter;
 
+import harpoon.Main.CompilerStage;
 import harpoon.Main.CompilerStageEZ;
+import harpoon.Main.CompStagePipeline;
 import harpoon.Main.CompilerState;
 import harpoon.Util.Options.Option;
 import harpoon.Util.Util;
@@ -55,9 +57,38 @@ import java.io.InputStreamReader;
  * <code>PointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysisCompStage.java,v 1.3 2003-04-22 00:09:54 salcianu Exp $
+ * @version $Id: PointerAnalysisCompStage.java,v 1.4 2003-04-30 20:04:37 salcianu Exp $
  */
 public class PointerAnalysisCompStage extends CompilerStageEZ {
+
+    /** Returns a compiler stage that is the sequential composition of
+        a Pointer Analysis Construction stage
+        (<code>PointerAnalysisCompStage</code>), a stage that uese
+        pointer analysis information for allocation optimizations and
+        synchronization removal (<code>AllocSyncOptCompStage</code>,
+        and a stage that offers support for debugging and optimizing
+        RTJ programs (<code>PARTJSupportCompStage</code>).
+
+	@see PointerAnalysisCompStage
+	@see AllocSyncOptCompStage
+	@see PARTJSupportCompStage. */
+    public static CompilerStage getPAAndAppsStage() {
+	List/*<CompilerStage>*/ paStages = new LinkedList/*<CompilerStage>*/();
+
+	paStages.add(new PointerAnalysisCompStage(true));
+
+	final CompilerStage allocSyncOpt = new AllocSyncOptCompStage();
+	paStages.add(allocSyncOpt);
+
+	final CompilerStage rtjSupport = new PARTJSupportCompStage();
+	paStages.add(rtjSupport);
+
+	return new CompStagePipeline(paStages, "pa-and-applications") {
+	    public boolean enabled() {
+		return allocSyncOpt.enabled() || rtjSupport.enabled();
+	    }
+	};
+    }
 
     /** Creates a <code>PointerAnalysisCompStage</code> object. 
 
@@ -79,8 +110,8 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
     public List/*<Option>*/ getOptions() {
 	List/*<Option>*/ opts = new LinkedList/*<Option>*/();
 	
-	opts.add(new Option("pa:s", "Use Smart CallGraph") {
-	    public void action() { SMART_CALL_GRAPH = true; }
+	opts.add(new Option("pa:d", "Do not use the SmartCallGraph") {
+	    public void action() { SMART_CALL_GRAPH = false; }
 	});
 	
 	opts.add(new Option("pa:load-pre-analysis", "<fileName>",
@@ -119,7 +150,8 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
     
     
     private void add_debug_options(List opts) {
-	opts.add(new Option("pa:timing", "Time Pointer Analysis") {
+	opts.add(new Option("pa:timing", 
+			    "Time pre-analysis for Pointer Analysis") {
 	    public void action() { TIMING = true; }
 	});
 	
@@ -159,7 +191,8 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
     private boolean SAVE_PRE_ANALYSIS = false;
     private String preAnalysisFileName = null;
     
-    private boolean SMART_CALL_GRAPH  = false;
+    // by defult, use the SmartCallGraph
+    private boolean SMART_CALL_GRAPH  = true;
     
     private boolean TIMING = false;
     private boolean SHOW_CG = false;
@@ -219,7 +252,7 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
 	    ois.close();
 	    return pre_analysis;
 	} catch (Exception e) {
-	    handle_fatal_error(e,"Error while deserializing PA pre-analysis");
+	    handle_fatal_error(e, "Error while deserializing PA pre-analysis");
 	    return null;
 	}
     }
@@ -249,7 +282,7 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
     
     private PreAnalysisRes do_pre_analysis() {
 	
-	hcf = new CachingCodeFactory(QuadNoSSA.codeFactory(), true);
+	hcf = new CachingCodeFactory(QuadNoSSA.codeFactory(hcf), true);
 	
 	if(TIMING)
 	    time_ir_generation();
@@ -363,7 +396,7 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
 	    method.substring(0, point_pos) :
 	    // by default, same class as root method
 	    mainM.getDeclaringClass().getName();
-	String methodName    = method.substring(point_pos + 1);
+	String methodName = method.substring(point_pos + 1);
 	
 	HClass hclass = null;
 	try {

@@ -52,6 +52,7 @@ import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.NOP;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.QuadFactory;
+import harpoon.IR.Quads.Code;
 
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
@@ -74,7 +75,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.8 2003-04-22 00:09:54 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.9 2003-04-30 20:04:37 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -449,7 +450,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    System.out.println("\n\nMAInfo: Analyzed Meta-Method: " + mm);
 
 	HCode hcode = hcf.convert(mm.getHMethod());
-	((harpoon.IR.Quads.Code) hcode).setAllocationInformation(this);
+	((Code) hcode).setAllocationInformation(this);
 
 	Set nodes = new HashSet();
 	for(Iterator it = hcode.getElementsI(); it.hasNext(); ) {
@@ -524,8 +525,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    MyAP ap = getAPObj(q);
 	    
 	    if(pig.G.captured(node) && stack_alloc_extra_cond(node, q)) {
-		// ap.sa = false;
-		ap.sa = true; // MAD DEBUG
+		ap.sa = true;
 		if(DEBUG)
 		    System.out.println("STACK: " + node + 
 				       " was stack allocated " +
@@ -533,6 +533,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    }
 	}
     }
+
     // aux method for generate_aps: generate thread allocation hints
     private void generate_aps_ta(MetaMethod mm, ParIntGraph pig, Set nodes) {
 	HMethod hm = mm.getHMethod();	
@@ -556,6 +557,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    }
 	}
     }
+
     // aux method for generate_aps: generate "no syncs" hints
     private void generate_aps_ns(MetaMethod mm, ParIntGraph pig, Set nodes) {
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
@@ -860,8 +862,10 @@ public class MAInfo implements AllocationInformation, Serializable {
 	// Catch some strange case when a node is reported as escaping in
 	// the graph of the callee but it's absent from the caller's graph
 	// (which means it's not really escaping)
-	// if(node == null) return true;
-	assert node != null;
+
+	// TODO: DEBUG THIS!
+	if(node == null) return true;
+	// assert node != null;
 
 	if(level > MAInfo.MAX_LEVEL_NO_CONCURRENT_SYNCS)
 	    return false;
@@ -1053,14 +1057,18 @@ public class MAInfo implements AllocationInformation, Serializable {
 
     /** Pretty printer for debug. */
     public void print() {
-	System.out.println("\nALLOCATION POLLICIES:");
+	System.out.println("\n(INTERESTING) ALLOCATION PROPERTIES:");
 	for(Iterator it = aps.keySet().iterator(); it.hasNext(); ){
 	    Quad newq = (Quad) it.next();
 	    MyAP ap   = (MyAP) aps.get(newq);
 	    HMethod hm = newq.getFactory().getMethod();
 	    HClass hclass = hm.getDeclaringClass();
 	    PANode node = node_rep.getCodeNode(newq, PANode.INSIDE, false);
-	    
+
+	    // don't print uninteresting allocation properties
+	    if(!(ap.canBeStackAllocated() || ap.canBeThreadAllocated() ||
+		 ap.noSync())) continue;
+
 	    System.out.println(hclass.getPackage() + "." + 
 			       newq.getSourceFile() + ":" +
 			       newq.getLineNumber() + " " +
@@ -1355,7 +1363,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    scc = scc.prevTopSort();
 	}
 	for(Iterator pit = toPrune.iterator(); pit.hasNext(); )
-	    Unreachable.prune((harpoon.IR.Quads.Code) pit.next());
+	    Unreachable.prune((Code) pit.next());
     }
 
 
@@ -1457,6 +1465,12 @@ public class MAInfo implements AllocationInformation, Serializable {
     }
 
 
+    /** Replace call site cs from hmethod with a clone of hcallee's
+	code.
+	
+	@return map from the quads of the original hcallee to the
+ 	quads of its clone (these are the quads that are inserted in
+ 	hcaller's code). */
     private Map inline_call_site(CALL cs, HMethod hcaller, HMethod hcallee,
 				 HCodeFactory hcf) {
 	System.out.println("INLINING " + call2str(cs));
@@ -1550,7 +1564,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	move_pred_edges(cs, replace_cs);
 
-	assert cs.paramsLength() == qm.paramsLength() : " different nb. of parameters between CALL and METHOD";
+	assert cs.paramsLength() == qm.paramsLength() : 
+	    " different nb. of parameters between CALL and METHOD";
 	
 	Quad previous = replace_cs;
 
@@ -1739,28 +1754,6 @@ public class MAInfo implements AllocationInformation, Serializable {
     }
 
 
-    private void process_chain(InliningChain ic) {
-	if(ic.isDone()) return;
-	//	if(DEBUG)
-	    System.out.println("\n\nPROCESSING " + ic);
-
-	while(!ic.isDone()) {
-	    CALL cs = ic.getLastCall();
-	    HMethod hcaller = extract_caller(cs);
-	    System.out.println("hcaller = " + hcaller);
-
-	    HCode hcode = hcf.convert(hcaller);
-
-	    HMethod hcallee = ic.getLastCallee();
-	    Map old2new = inline_call_site(cs, hcaller, hcallee, hcf);
-
-	    // update all the Inlining Chains
-	    for(Iterator it = chains.iterator(); it.hasNext(); )
-		((InliningChain) it.next()).update_ic(cs, old2new);
-	}
-    }
-
-
     private void print_modified_hcode(HMethod hm,
 				      final Collection  new_quads) {
 	print_modified_hcode(hcf.convert(hm), new_quads);
@@ -1940,7 +1933,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 		       (opt.DO_THREAD_ALLOCATION &&
 			opt.DO_INLINING_FOR_TA && !ta_C.isEmpty()))
 			discover_inlining_chains
-			    (mcaller, sa_C, ta_C,level + 1);
+			    (mcaller, sa_C, ta_C, level + 1);
 		}
 		
 		current_chain_cs.removeLast();
@@ -2069,14 +2062,15 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    buff.append("INLINING CHAIN (" + calls.size() + "): {\n CALLS:\n");
 	    for(Iterator it = calls.iterator(); it.hasNext(); ) {
 		CALL cs = (CALL) it.next();
-		buff.append("  ");
-		buff.append(Util.code2str(cs));
-		buff.append(" [ ");
-		buff.append(extract_caller(cs));
-		buff.append(" ]  { ");
-		buff.append(extract_callee(cs));
-		buff.append(" }\n");
+		buff.append("  ")
+		    .append(Util.code2str(cs))
+		    .append(" [ ")
+		    .append(extract_caller(cs))
+		    .append(" ]  { ")
+		    .append(extract_callee(cs))
+		    .append(" }\n");
 	    }
+
 	    present_news(buff, " STACK  ALLOCATABLE STUFF:", get_sa_news());
 	    present_news(buff, " THREAD ALLOCATABLE STUFF:", get_ta_news());
 	    buff.append("}\n");
@@ -2087,12 +2081,11 @@ public class MAInfo implements AllocationInformation, Serializable {
 	private void present_news(StringBuffer buff, String message,
 				  Set news) {
 	    if(news.isEmpty()) return;
-	    buff.append(message);
-	    buff.append("\n");
+	    buff.append(message).append("\n");
 	    for(Iterator it = news.iterator(); it.hasNext(); ) {
-		buff.append("  ");
-		buff.append(Util.code2str((Quad) it.next()));
-		buff.append("\n");
+		buff.append("  ")
+		    .append(Util.code2str((Quad) it.next()))
+		    .append("\n");
 	    }
 	}
 
@@ -2205,16 +2198,36 @@ public class MAInfo implements AllocationInformation, Serializable {
 	int get_rang() {
 	    return MAInfo.this.get_rang(extract_caller(getLastCall()));
 	}
-
-	void clear() {
-	    calls.clear();
-	}
     };
+
+
+    private void process_chain(InliningChain ic) {
+	if(ic.isDone()) return;
+	//	if(DEBUG)
+	    System.out.println("\n\nPROCESSING " + ic);
+
+	while(!ic.isDone()) {
+	    CALL cs = ic.getLastCall();
+	    HMethod hcaller = extract_caller(cs);
+	    System.out.println("hcaller = " + hcaller);
+
+	    HCode hcode = hcf.convert(hcaller);
+
+	    HMethod hcallee = ic.getLastCallee();
+	    Map old2new = inline_call_site(cs, hcaller, hcallee, hcf);
+
+	    // update all the Inlining Chains
+	    for(Iterator it = chains.iterator(); it.hasNext(); )
+		((InliningChain) it.next()).update_ic(cs, old2new);
+	}
+    }
 
 
     private void sort_chains() {
 	Object[] ics = chains.toArray(new Object[chains.size()]);
-	Arrays.sort(ics, new Comparator() {
+	Arrays.sort
+	    (ics, 
+	     new Comparator() {
 		public int compare(Object obj1, Object obj2) {
 		    int rang1 = ((InliningChain) obj1).get_rang();
 		    int rang2 = ((InliningChain) obj2).get_rang();
@@ -2238,37 +2251,37 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    System.out.println("=======================");
       }
 
-	// db debug
+      // db debug
       System.out.println("Chains that influence Main.run"); 
-	for(Iterator it = chains.iterator(); it.hasNext(); ) {
+      for(Iterator it = chains.iterator(); it.hasNext(); ) {
 	  InliningChain ic = (InliningChain) it.next();
 	  HMethod hm = ic.getLastCallee();
 	  if(hm.getName().equals("run") &&
 	     hm.getClass().getName().equals("Main"))
-	    System.out.println(ic);
-	}
-	System.out.println("============================");
-
-	sort_chains();
-
-	Set toPrune = new HashSet();
-	for(Iterator it = chains.iterator(); it.hasNext(); ) {
-	    CALL cs = ((InliningChain) it.next()).getLastCall();
-	    toPrune.add(cs.getFactory().getParent());
-	}
-
-	for(Iterator it = chains.iterator(); it.hasNext(); )
-	    process_chain((InliningChain) it.next());
-
-	// remove the newly introduced unreachable code
-	for(Iterator pit = toPrune.iterator(); pit.hasNext(); ) {
-	    harpoon.IR.Quads.Code hcode = (harpoon.IR.Quads.Code) pit.next();
-	    if(DEBUG_IC)
-		System.out.print("Pruning " + hcode.getMethod());
-	    Unreachable.prune(hcode);
-	}
+	      System.out.println(ic);
+      }
+      System.out.println("============================");
+      
+      sort_chains();
+      
+      Set toPrune = new HashSet();
+      for(Iterator it = chains.iterator(); it.hasNext(); ) {
+	  CALL cs = ((InliningChain) it.next()).getLastCall();
+	  toPrune.add(cs.getFactory().getParent());
+      }
+      
+      for(Iterator it = chains.iterator(); it.hasNext(); )
+	  process_chain((InliningChain) it.next());
+      
+      // remove the newly introduced unreachable code
+      for(Iterator pit = toPrune.iterator(); pit.hasNext(); ) {
+	  Code hcode = (Code) pit.next();
+	  if(DEBUG_IC)
+	      System.out.print("Pruning " + hcode.getMethod());
+	  Unreachable.prune(hcode);
+      }
     }
-
+    
     //////////// INLINING STUFF END /////////////////////////////////////
     /////////////////////////////////////////////////////////////////////
 }

@@ -18,8 +18,8 @@ import java.util.Arrays;
  * list of <code>CompilerStage</code>s.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompStagePipeline.java,v 1.2 2003-04-22 00:09:57 salcianu Exp $ */
-public abstract class CompStagePipeline extends CompilerStage {
+ * @version $Id: CompStagePipeline.java,v 1.3 2003-04-30 20:04:40 salcianu Exp $ */
+public class CompStagePipeline extends CompilerStage {
     
     /** Creates a <code>CompStagePipeline</code>. */
     public CompStagePipeline(List/*<CompilerStage*/ stages, String name) {
@@ -69,6 +69,8 @@ public abstract class CompStagePipeline extends CompilerStage {
 	}
 	return opts;
     }
+
+    public boolean enabled() { return true; }
 
     public final CompilerState action(CompilerState cs) {
 	for(Iterator/*<CompilerStage>*/ it=stages.iterator(); it.hasNext(); ) {
