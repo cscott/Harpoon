@@ -1,5 +1,5 @@
 // Matching.java, created Fri Feb  4 16:16:27 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -26,8 +26,8 @@ import java.util.Set;
  <code>new_info</code> so that they can be used in the new interation of
  the loop. 
  * 
- * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Matching.java,v 1.1.2.2 2000-02-12 01:41:32 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
+ * @version $Id: Matching.java,v 1.1.2.3 2000-02-21 04:47:59 salcianu Exp $
  */
 abstract class Matching {
 

@@ -22,7 +22,7 @@ import harpoon.IR.Quads.NEW;
  * <code>InterThreadPA</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.7 2000-02-15 04:37:39 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.8 2000-02-21 04:47:59 salcianu Exp $
  */
 abstract class InterThreadPA {
     
@@ -156,6 +156,10 @@ abstract class InterThreadPA {
 
 	// add the old, unconsidered outside edges
 	pig.G.O.union(old_O);
+
+	// TODO: is this correct? (here)
+	pig.G.propagate();
+	pig.removeEmptyLoads();
 
 	return pig;
     }
@@ -382,30 +386,11 @@ abstract class InterThreadPA {
 
 	ParIntGraph new_pig = new ParIntGraph();
 
-	new_pig.insertAllButAr(pig[0],mu[0]);
-	new_pig.insertAllButAr(pig[1],mu[1], Collections.singleton(nparam));
+	new_pig.insertAllButAr(pig[0],mu[0], true);
+	new_pig.insertAllButAr(pig[1],mu[1], false, Collections.singleton(nparam));
 
 	// compute the escape function for the new graph
-	new_pig.G.propagate(new_pig.G.e.escapedNodes());
-
-	// the empty LOAD nodes (the LOADs that are not escaping anywhere)
-	// are removed to simplify the graph
-	Set empty_loads = find_empty_loads(new_pig);
-
-	if(DEBUG)
-	    System.out.println("Empty LOADs: " + empty_loads);
-
-	new_pig.G.remove(empty_loads);
-	new_pig.tau.remove(empty_loads);
-
-	// remove the mappings of the empty load nodes to themselves so that
-	// they don't appear in the new graph
-	Iterator it_loads = empty_loads.iterator();
-	while(it_loads.hasNext()){
-	    PANode node = (PANode) it_loads.next();
-	    mu[0].remove(node,node);
-	    mu[1].remove(node,node);
-	}
+	new_pig.G.propagate();
 
 	bring_starter_actions(pig[0], new_pig, mu[0],
 			      pig[1].tau.activeThreadSet(), nt);
@@ -554,26 +539,4 @@ abstract class InterThreadPA {
 	pig.G.I.forAllEdges(visitor_I);
     }
 
-
-    // Find the load nodes that don't escape anywhere; as a load nodes nl
-    // abstracts all the objects that could
-    // are reachable from the holes e(nl), a load node with e(nl) empty doesn't
-    // represent anything and can be removed.
-    private static Set find_empty_loads(final ParIntGraph pig){
-	final Set empty_loads = new HashSet();
-
-	PAEdgeVisitor visitor_O = new PAEdgeVisitor(){
-		public void visit(Temp var, PANode node){}
-		public void visit(PANode node1, String f, PANode node2){
-		    Util.assert(node2.type() == PANode.LOAD,
-				"Outside edges must end in a LOAD node");
-		    if(!pig.G.e.hasEscaped(node2))
-			empty_loads.add(node2);
-		}
-	    };
-
-	pig.G.O.forAllEdges(visitor_O);
-
-	return empty_loads;
-    }
 }

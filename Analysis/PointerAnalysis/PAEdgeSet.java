@@ -25,7 +25,7 @@ import harpoon.Temp.Temp;
  than the straightforward solution of a <code>HashSet</code> of edges.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdgeSet.java,v 1.1.2.10 2000-02-15 04:37:39 salcianu Exp $
+ * @version $Id: PAEdgeSet.java,v 1.1.2.11 2000-02-21 04:47:59 salcianu Exp $
  */
 public class PAEdgeSet {
 
@@ -33,17 +33,17 @@ public class PAEdgeSet {
     // node --f--> node where f is a field. This is reflected in
     // the two different structures we use to store the edges.
 
-    // mapping variable -> set of pointed nodes
-    private Relation vars;
+    // mapping variable -> set of pointed node_edges
+    private Relation var_edges;
 
-    // mapping node -> a <code>Relation</code> flag -> set of pointed nodes
-    private Hashtable nodes;
-
+    // mapping node -> a <code>Relation</code> flag -> 
+    // set of pointed node_edges
+    private Hashtable node_edges;
 
     /** Creates a <code>PAEdgesSet</code>. */
     public PAEdgeSet() {
-	vars  = new Relation();
-	nodes = new Hashtable();
+	var_edges  = new Relation();
+	node_edges = new Hashtable();
     }
 
     // OPERATIONS ON THE SET OF EDGES
@@ -51,11 +51,11 @@ public class PAEdgeSet {
 
     // A. Operations on edges starting from variables.
 
-    /** Returns the set of all the nodes pointed to by the variable
-     * <code>v</code>, i.e. all the nodes <code>n</code> such that 
+    /** Returns the set of all the node_edges pointed to by the variable
+     * <code>v</code>, i.e. all the node_edges <code>n</code> such that 
      * <code>&lt;v,n&gt;</code> exists. */
     public Set pointedNodes(Temp v){
-	return vars.getValuesSet(v);
+	return var_edges.getValuesSet(v);
     }
 
     /** Adds the edges <code>&lt;v,n&gt;</code> where <code>n</code> ranges
@@ -63,17 +63,17 @@ public class PAEdgeSet {
      * efficient than just iterating over the set and calling 
      * <code>addEdge</code> for each element. */
     public void addEdges(Temp v, Set pointed_nodes){
-	vars.addAll(v,pointed_nodes);
+	var_edges.addAll(v,pointed_nodes);
     }
     
     /** Adds the edge <code>&lt;v,n&gt;</code>. */
     public void addEdge(Temp v,PANode n){
-	vars.add(v,n);
+	var_edges.add(v,n);
     }
 
     /** Removes all the edges from the variable <code>v</code>. */
     public void removeEdges(Temp v){
-	vars.removeAll(v);
+	var_edges.removeAll(v);
     }
 
 
@@ -83,7 +83,7 @@ public class PAEdgeSet {
      *  the field <code>f</code>; <i>i.e.</i> all the nodes <code>n1</code>
      *  such that &lt;&lt;n,f&gt;,n1&gt; exists. */
     public Set pointedNodes(PANode n, String f){
-	Relation rel = (Relation) nodes.get(n);
+	Relation rel = (Relation) node_edges.get(n);
 	if(rel==null) return Collections.EMPTY_SET;
 	return rel.getValuesSet(f);
     }
@@ -103,9 +103,9 @@ public class PAEdgeSet {
      *  ranges over the set <code>dests</code>. */
     public void addEdges(PANode n, String f, Set dests){
 	if(dests.isEmpty()) return;
-	Relation rel = (Relation)nodes.get(n);
+	Relation rel = (Relation)node_edges.get(n);
 	if(rel==null) 
-	    nodes.put(n,rel=new Relation());
+	    node_edges.put(n,rel=new Relation());
 	rel.addAll(f,dests);
     }
 
@@ -130,17 +130,25 @@ public class PAEdgeSet {
      * add many edges, consider using <code>addEdges</code> (repeatedly
      * calling <code>addEdge</code> over all the edges of  a set is
      * <b>very</b> expensive. */
-    public void addEdge(PANode n, String f, PANode n1){
-	Relation rel = (Relation)nodes.get(n);
+    public boolean addEdge(PANode n, String f, PANode n1){
+	Relation rel = (Relation)node_edges.get(n);
 	if(rel==null) 
-	    nodes.put(n,rel=new Relation());
-	rel.add(f,n1);
+	    node_edges.put(n,rel=new Relation());
+	return rel.add(f,n1);
+    }
+
+    /** Removes the edge <code>&lt;&lt;n,f&gt;,n1&gt;</code>. */
+    public void removeEdge(PANode n, String f, PANode n1){
+	Relation rel = (Relation) node_edges.get(n);
+	if(rel == null) return;
+	rel.remove(f,n1);
+	if(rel.isEmpty()) node_edges.remove(n);
     }
 
     /** Deletes all the edges of the type 
 	<code>&lt;&lt;n,f&gt;,n1&gt;</code>. */
     public void removeEdges(PANode n, String f){
-	Relation rel = (Relation)nodes.get(n);
+	Relation rel = (Relation)node_edges.get(n);
 	if(rel==null) return;
 	rel.removeAll(f);
     }
@@ -159,7 +167,7 @@ public class PAEdgeSet {
      * (<i>ie</i> <code>v</code> such that there is at least one 
      * <code>&lt;v,n&gt;</code> edge). */
     public Enumeration allVariables(){
-	return vars.keys();
+	return var_edges.keys();
     }
 
     /** Returns an <code>Enumeration</code> of the set of all the \
@@ -167,7 +175,7 @@ public class PAEdgeSet {
 	That is, the set of all <code>n</code> such that there is at least one 
 	<code>&lt;&lt;n,f&gt;,n1&gt;</code> edge. */
     public Enumeration allSourceNodes(){
-	return nodes.keys();
+	return node_edges.keys();
     }
 
     // Enumeration over an empty set; ugly, let me know if you know
@@ -178,7 +186,7 @@ public class PAEdgeSet {
      * specific node n, i.e. <code>f</code> such that we have at least one 
      * &lt;&lt;n,f&gt;,n1&gt; edge */
     public Enumeration allFlagsForNode(PANode n){
-	Relation rel = (Relation)nodes.get(n);
+	Relation rel = (Relation)node_edges.get(n);
 	if(rel==null)
 	    return EMPTY_ENUM;
 	return rel.keys();
@@ -214,9 +222,9 @@ public class PAEdgeSet {
 	idempotent it is its reponsibility to check and return immediately
 	from nodes that have already been visited. */
     public void forAllNodes(PANodeVisitor visitor){
-	Enumeration enum_vars = allVariables();
-	while(enum_vars.hasMoreElements())
-	    forAllPointedNodes((Temp) enum_vars.nextElement(),visitor);
+	Enumeration enum_var_edges = allVariables();
+	while(enum_var_edges.hasMoreElements())
+	    forAllPointedNodes((Temp) enum_var_edges.nextElement(),visitor);
 
 	Enumeration enum_nodes = allSourceNodes();
 	while(enum_nodes.hasMoreElements())
@@ -233,7 +241,7 @@ public class PAEdgeSet {
     }
 
     /** Visits all the edges starting from the node <code>node</code>. */
-    private void forAllEdges(PANode node, PAEdgeVisitor visitor){
+    public void forAllEdges(PANode node, PAEdgeVisitor visitor){
 	// Go through all the fields attached to n;
 	Enumeration enum = allFlagsForNode(node);
 	while(enum.hasMoreElements()){
@@ -249,13 +257,13 @@ public class PAEdgeSet {
 
     /** Visits all the edges from <code>this</code> set of edges. */ 
     public void forAllEdges(PAEdgeVisitor visitor){
-	Enumeration enum_vars = allVariables();
-	while(enum_vars.hasMoreElements())
-	    forAllEdges((Temp)enum_vars.nextElement(),visitor);
+	Enumeration enum_var_edges = allVariables();
+	while(enum_var_edges.hasMoreElements())
+	    forAllEdges((Temp)enum_var_edges.nextElement(),visitor);
 
-	Enumeration enum_nodes = allSourceNodes();
-	while(enum_nodes.hasMoreElements())
-	    forAllEdges((PANode)enum_nodes.nextElement(),visitor);
+	Enumeration enum_node_edges = allSourceNodes();
+	while(enum_node_edges.hasMoreElements())
+	    forAllEdges((PANode)enum_node_edges.nextElement(),visitor);
     }
 
 
@@ -269,10 +277,10 @@ public class PAEdgeSet {
 	    removeEdges(node);
 	}
 	// remove the edges ending into these nodes
-	Enumeration enum_nodes = nodes.keys();
-	while(enum_nodes.hasMoreElements()){
-	    PANode node  = (PANode) enum_nodes.nextElement();
-	    Relation rel = (Relation) nodes.get(node);
+	Enumeration enum_node_edges = node_edges.keys();
+	while(enum_node_edges.hasMoreElements()){
+	    PANode node  = (PANode) enum_node_edges.nextElement();
+	    Relation rel = (Relation) node_edges.get(node);
 	    
 	    Enumeration enum_flags = rel.keys();
 	    while(enum_flags.hasMoreElements()){
@@ -281,7 +289,7 @@ public class PAEdgeSet {
 	    }
 
 	    if(rel.isEmpty())
-		nodes.remove(node);
+		node_edges.remove(node);
 	}
     }
 
@@ -290,18 +298,18 @@ public class PAEdgeSet {
      * (in a control-flow join point, for example). */
     public void union(PAEdgeSet edges2){
 	// union of the edges from the variables
-	vars.union(edges2.vars);
+	var_edges.union(edges2.var_edges);
 
 	// union of the edges from the nodes
 	Enumeration en = edges2.allSourceNodes();
 	while(en.hasMoreElements()){
 	    PANode n = (PANode)en.nextElement();
-	    Relation rel = (Relation)nodes.get(n);
+	    Relation rel = (Relation)node_edges.get(n);
 	    if(rel==null){
 		rel = new Relation();
-		nodes.put(n,rel);
+		node_edges.put(n,rel);
 	    }
-	    rel.union((Relation)edges2.nodes.get(n));
+	    rel.union((Relation)edges2.node_edges.get(n));
 	}
     }
 
@@ -310,19 +318,19 @@ public class PAEdgeSet {
     public boolean equals(Object o){
 	if(o==null) return false;
 	PAEdgeSet es2 = (PAEdgeSet) o;
-	if(!vars.equals(es2.vars)){
-	    //System.out.println("different vars");
+	if(!var_edges.equals(es2.var_edges)){
+	    //System.out.println("different var_edges");
 	    return false;
 	}
-	if(!nodes.keySet().equals(es2.nodes.keySet())){
+	if(!node_edges.keySet().equals(es2.node_edges.keySet())){
 	    //System.out.println("different keySet's");
 	    return false;
 	}
-	Enumeration enum = nodes.keys();
+	Enumeration enum = node_edges.keys();
 	while(enum.hasMoreElements()){
 	    PANode node = (PANode)enum.nextElement();
-	    Relation rel1 = (Relation)nodes.get(node);
-	    Relation rel2 = (Relation)es2.nodes.get(node);
+	    Relation rel1 = (Relation)node_edges.get(node);
+	    Relation rel2 = (Relation)es2.node_edges.get(node);
 	    if(!rel1.equals(rel2)){
 		//System.out.println("different relations");
 		return false;
@@ -336,33 +344,33 @@ public class PAEdgeSet {
      * implicitly assumed that there is no edge from <code>node</code>
      * in <code>es2</code> (otherwise, those edges are lost) */
     public void copyEdges(PANode node,PAEdgeSet es2){
-	if(nodes.containsKey(node)){
-	    Relation rel = (Relation) nodes.get(node);
-	    es2.nodes.put(node,rel);
+	if(node_edges.containsKey(node)){
+	    Relation rel = (Relation) node_edges.get(node);
+	    es2.node_edges.put(node,rel);
 	}
     }
 
     /** Private constructor, used only by <code>clone()</code>. */
-    private PAEdgeSet(Relation _vars, Hashtable _nodes) {
-	vars  = _vars;
-	nodes = _nodes;
+    private PAEdgeSet(Relation _var_edges, Hashtable _node_edges) {
+	var_edges  = _var_edges;
+	node_edges = _node_edges;
     }
 
     /** <code>clone</code> clones <code>this</code> collection of
      * edges. */	
     public Object clone(){
-	Relation new_vars = (Relation) vars.clone();
+	Relation new_var_edges = (Relation) var_edges.clone();
 
-	Hashtable map_nodes = new Hashtable();
-	Iterator it_nodes = nodes.entrySet().iterator();
+	Hashtable map_node_edges = new Hashtable();
+	Iterator it_node_edges = node_edges.entrySet().iterator();
 
-	while(it_nodes.hasNext()){
-	    Map.Entry entry = (Map.Entry) it_nodes.next();
+	while(it_node_edges.hasNext()){
+	    Map.Entry entry = (Map.Entry) it_node_edges.next();
 	    Relation rel = (Relation)((Relation)entry.getValue()).clone();
-	    map_nodes.put(entry.getKey(),rel);
+	    map_node_edges.put(entry.getKey(),rel);
 	}
 
-	return new PAEdgeSet(new_vars, map_nodes);
+	return new PAEdgeSet(new_var_edges, map_node_edges);
     }
 
     /** Pretty-print function for debug purposes.
@@ -371,13 +379,13 @@ public class PAEdgeSet {
 	StringBuffer buffer = new StringBuffer();
 
 	buffer.append("{\n");
-	buffer.append(vars);
+	buffer.append(var_edges);
 	buffer.append("\n");
 
-	Object[] keys = Debug.sortedSet(nodes.keySet());	
+	Object[] keys = Debug.sortedSet(node_edges.keySet());	
 	for(int i = 0 ; i < keys.length ; i++){
 	    Object key = keys[i];
-	    Relation rel = (Relation) nodes.get(key);
+	    Relation rel = (Relation) node_edges.get(key);
 	    buffer.append(" ");
 	    buffer.append(key);
 	    buffer.append(" -> ");

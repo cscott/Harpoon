@@ -24,9 +24,11 @@ import harpoon.Temp.Temp;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.9 2000-02-12 01:41:32 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.10 2000-02-21 04:47:59 salcianu Exp $
  */
 abstract class InterProcPA {
+
+    private static final boolean DEBUG = true;
 
     /** Analyzes the call site <code>q</code> inside 
 	<code>current_method</code>. If analyzing the call is not possible
@@ -57,7 +59,7 @@ abstract class InterProcPA {
 	if(nb_callees < 1){
 	    /// System.out.println("Callees: " + hms);
 	    /// System.out.println("nb_callees = " + nb_callees);
-	    if(PointerAnalysis.DEBUG2){
+	    if(PointerAnalysis.DEBUG){
 		System.out.print("Error: CALL site with no callee! ");
 		System.out.print(current_method);
 		System.out.println(" " + q);
@@ -66,16 +68,15 @@ abstract class InterProcPA {
 	    return skip_call(q,pig_before,node_rep);
 	}
 
-	if(PointerAnalysis.DEBUG2){
-	    System.out.print("Normal: CALL site with callee(s)! ");
-	    System.out.print(current_method);
-	    System.out.println(" " + q);
+	if(DEBUG){
+	    System.out.println("Inter-procedural analysis");
+	    System.out.println(" " + q + "\n");
 	}
 
 	ParIntGraph pigs[] = new ParIntGraph[nb_callees];
 	for(int i=0;i<nb_callees;i++){
 	    pigs[i] = pa.getExtParIntGraph(hms[i],false);
-	    if(pigs[i] == null){
+	    if((pigs[i] == null) || hms[i].getName().equals("unanalyzed")){
 		// one of the callee doesn't have a // interaction graph
 		return skip_call(q,pig_before,node_rep);
 	    }
@@ -170,36 +171,70 @@ abstract class InterProcPA {
 				     ParIntGraph pig_caller,
 				     ParIntGraph pig_callee,
 				     PANode[] callee_params){
+	if(DEBUG){
+	    System.out.println("Pig_caller:" + pig_caller);
+	    System.out.println("Pig_callee:" + pig_callee);
+	}
+
 	// get the initial mapping: formal param -> actual parameter,
 	// and class node -> class node
 	Relation mu = 
 	    get_initial_mapping(q,pig_caller,pig_callee,callee_params);
 
-	// update the node map by matching outside edges from the caller
+	if(DEBUG) System.out.println("Initial mapping:" + mu);
+
+	// update the node mapping by matching outside edges from the caller
 	// with inside edges from the callee
 	match_edges(mu,pig_caller,pig_callee);
 	
-	// For each node n from the callee's graph, if n is going to 
-	// stay, add n to mu(n).
+	if(DEBUG) System.out.println("After matching edges:" + mu);
+
+	// all the nodes from the caller (except for PARAM) are
+	// initially inserted into the caller's graph
 	compute_the_final_mapping(mu,pig_caller,pig_callee);
 
-	// get the set of the insertion points:
-	Set roots = new HashSet(mu.keySet());
-	roots.addAll(pig_callee.G.r);
+	if(DEBUG) System.out.println("Final mapping:" + mu);
 
-	// translate edges from pig_callee to pig_caller
-	bring_edges(mu,pig_caller, pig_callee, roots);
 
-	// bring the thread map from pig_callee to pig_caller
-	bring_threads(pig_caller.tau, pig_callee.tau, mu);
+	PAEdgeSet old_caller_I = (PAEdgeSet) pig_caller.G.I.clone();
 
-	// bring the actions of the callee into the caller
+	// Inserts the image of the callee's graph into the caller's graph.
+	Set params = new HashSet();
+	for(int i=0;i<callee_params.length;i++)
+	    params.add(callee_params[i]);
+	pig_caller.insertAllButAr(pig_callee,mu,false,params);
+
+	// bring the actions of the callee into the caller's graph
 	bring_actions(pig_caller.ar, pig_callee.ar,
 		      pig_caller.tau.activeThreadSet(), mu);
+
+	// bring the edge ordering relation into the caller's graph
+	bring_eo(pig_caller.eo, old_caller_I, pig_callee.eo, pig_callee.G.O, mu);
+
+	// recompute the escape info
+	pig_caller.G.propagate();
+
+	if(DEBUG){
+	    System.out.println("Unsimplified graph:");
+	    System.out.println(pig_caller);
+	}
+
+	// simplify the graph by removing the empty loads
+	pig_caller.removeEmptyLoads();
+
+	if(DEBUG){
+	    System.out.println("Simplified graph:");
+	    System.out.println(pig_caller);
+	}
 
 	// set the edges for the result and for the exception variables
 	set_edges_res_ex(q.retval(),mu,pig_caller,pig_callee.G.r);
 	set_edges_res_ex(q.retex() ,mu,pig_caller,pig_callee.G.excp);
+
+	if(DEBUG){
+	    System.out.println("Final graph:");
+	    System.out.println(pig_caller);
+	}
 
 	return pig_caller;
     }
@@ -243,12 +278,8 @@ abstract class InterProcPA {
 	    if(node.type == PANode.STATIC)
 		mu.add(node,node);
 	}
-	enum = pig_callee.G.I.allSourceNodes();
-	while(enum.hasMoreElements()){
-	    PANode node = (PANode) enum.nextElement();
-	    if(node.type == PANode.STATIC)
-		mu.add(node,node);
-	}
+	// only the static nodes that appear as sources of the outside edges
+	// must be initially mapped
 
 	return mu;
     }
@@ -256,10 +287,13 @@ abstract class InterProcPA {
 
     /** Matches outside edges from the graph of (used by ) the callee 
 	against inside edges from the graph of (created by) the caller.
-	(repeated application of constraint 2) */
+	(repeated application of constraint 2). The goal of this method is
+	to resove the load nodes from the callee, i.e. to detect the
+	nodes from the caller that each load node might represent. */
     private static void match_edges(Relation mu,
 				    ParIntGraph pig_caller,
 				    ParIntGraph pig_callee){
+
 	PAWorkList W = new PAWorkList();
 	// here is the new stuff; only nodes with new stuff are
 	// put in the worklist W.
@@ -309,135 +343,20 @@ abstract class InterProcPA {
 	}
     }
 
-    /** For each node n from the callee's graph, if n is going to 
-     * stay in the new graph, add n to mu(n). */
-    private static void compute_the_final_mapping(Relation mu,
-						  ParIntGraph pig_caller,
-						  ParIntGraph pig_callee){
-	// the normally returned nodes MUST be into the new graph!
-	Iterator it_ret = pig_callee.G.r.iterator();
-	while(it_ret.hasNext()){
-	    PANode node = (PANode) it_ret.next();
-	    if(!mu.containsKey(node)){
-		/// System.out.println("Added to mu: " + node + " -> " + node);
-		mu.add(node,node);
-	    }
-	}
-
-	// the exceptionally returned nodes MUST be into the new graph!
-	Iterator it_excp = pig_callee.G.excp.iterator();
-	while(it_excp.hasNext()){
-	    PANode node = (PANode) it_excp.next();
-	    if(!mu.containsKey(node)){
-		/// System.out.println("Added to mu: " + node + " -> " + node);
-		mu.add(node,node);
-	    }
-	}
-
-	// the thread nodes MUST be into the new graph!
-	Enumeration enum_threads = pig_callee.tau.activeThreads();
-	while(enum_threads.hasMoreElements()){
-	    PANode node = (PANode) enum_threads.nextElement();
-	    if(!mu.containsKey(node)){
-		/// System.out.println("Added to mu: " + node + " -> " + node);
-		mu.add(node,node);
-	    }
-	}
-	
-	Relation new_info = (Relation)mu.clone();
-	PAWorkList W = new PAWorkList();
-	W.addAll(mu.keySet());
-	while(!W.isEmpty()){
-	    PANode node1 = (PANode) W.remove();
-
-	    Set new_mappings = new HashSet(new_info.getValuesSet(node1));
-
-	    new_info.removeAll(node1);
-
-	    // taking care of constraint (5)
-	    Enumeration enumf = pig_callee.G.I.allFlagsForNode(node1);
-	    while(enumf.hasMoreElements()){
-		String f = (String) enumf.nextElement();
-
-		Iterator it2 = pig_callee.G.I.pointedNodes(node1,f).iterator();
-		while(it2.hasNext()){
-		    PANode node2 = (PANode) it2.next();
-		    int type = node2.type();
-		    // n2 should be an inside or a return/exception node
-		    if((type!=PANode.INSIDE) && (type!=PANode.RETURN)
-		       && (type!=PANode.EXCEPT))
-			continue;
-		    if(mu.add(node2,node2)){
-			new_info.add(node2,node2);
-			W.add(node2);
-		    }
+    // Initially, all the nodes from the callee are put into the caller's
+    // graph except for the PARAM nodes. Later, after recomputing the
+    // escape info, the empy load nodes will be removed (together with
+    // the related information)
+    private static void compute_the_final_mapping(final Relation mu,
+						final ParIntGraph pig_caller,
+						final ParIntGraph pig_callee){
+	pig_callee.forAllNodes(new PANodeVisitor(){
+		public void visit(PANode node){
+		    if(node.type() != PANode.PARAM)
+			mu.add(node,node);
 		}
-	    }
-	    
-	    // taking care of constraint (6)
-	    enumf = pig_callee.G.O.allFlagsForNode(node1);
-	    while(enumf.hasMoreElements()){
-		String f = (String) enumf.nextElement();
-		// we construct in nodesn the set of all the nodes to which
-		// node is mapped and which are escaping in the caller's graph
-		Set nodesn = new HashSet();
-		Iterator itn = new_mappings.iterator();
-		while(itn.hasNext()){
-		    PANode noden = (PANode)itn.next();
-		    if(pig_caller.G.e.hasEscaped(noden))
-			nodesn.add(noden);
-		}
-		if(nodesn.isEmpty()) continue;
-
-		// navigate through the nodes which are pointed by n1 (the
-		// possible n2's from the rule (6)
-		Iterator it2 = pig_callee.G.O.pointedNodes(node1,f).iterator();
-		while(it2.hasNext()){
-		    PANode node2 = (PANode) it2.next();
-		    if(node2.type != PANode.LOAD) continue;
-		    if(mu.add(node2,node2)){
-			new_info.add(node2,node2);
-			W.add(node2);
-		    }
-		    pig_caller.G.O.addEdges(nodesn,f,node2);
-		}
-	    }
-	    
-	}
+	    });
     }
-
-    /** Use the node mapping mu to bring edges from the graph of the
-     * callee into the graph of the caller */
-    private static void bring_edges(Relation mu,
-				    ParIntGraph pig_caller,
-				    ParIntGraph pig_callee,
-				    Set roots){
-
-	PAWorkList W = new PAWorkList();
-	W.addAll(roots);
-	// the set of already analyzed nodes; they must not be put in the
-	// worklist again
-	Set analyzed = new HashSet(roots);
-	
-	while(!W.isEmpty()){
-	    PANode node1 = (PANode)W.remove();
-	    Enumeration enumf = pig_callee.G.I.allFlagsForNode(node1);
-	    Set set_from = mu.getValuesSet(node1);
-	    while(enumf.hasMoreElements()){
-		String f = (String) enumf.nextElement();
-		Iterator it2 = pig_callee.G.I.pointedNodes(node1,f).iterator();
-		while(it2.hasNext()){
-		    PANode node2 = (PANode)it2.next();
-		    if(!analyzed.contains(node2))
-			W.add(node2);
-		    // apply constraint (7)
-		    Set set_to = mu.getValuesSet(node2);
-		    pig_caller.G.I.addEdges(set_from,f,set_to);
-		}
-	    }
-	}
-    } // end of bring_edges
-
 
     /** Sets the edges for the result or the exception returned by the callee.
      * Remember the syntax of a method invocation: 
@@ -506,31 +425,49 @@ abstract class InterProcPA {
 	ar_callee.forAllParActions(par_act_visitor);
     }
 
-    /** Maps the thread map of the callee into the thread map of the caller.
-	If <code>tau(nt)=delta</code>, we will increase <code>tau(n)</code>
-	with <code>delta</code> in the thread map of the caller for each
-	<code>n</code> in <code>mu(nt)</code>.<br>
-	In practice, we expect the
-	programmer to launch the threads in the same method where they are 
-	created, i.e. to launch almost only internal nodes for which the
-	mapping contains just one element <code>tau(n) = n</code>. */ 
-    private static void bring_threads(PAThreadMap tau_caller,
-				      PAThreadMap tau_callee,
-				      Relation mu){
-	Enumeration enum_threads = tau_callee.activeThreads();
-	while(enum_threads.hasMoreElements()){
-	    PANode nt = (PANode) enum_threads.nextElement();
-	    int delta = tau_callee.getValue(nt);
-	    Iterator it_new_nt = mu.getValues(nt);
-	    while(it_new_nt.hasNext()){
-		PANode new_nt = (PANode) it_new_nt.next();
-		tau_caller.add(new_nt,delta);
-	    }
-	}
+    // Inserts the edge ordering relation of the callee into the graph of
+    // the caller. In addition, records the fact that all the outside edges
+    // from the callee appear after all the inside edges of the caller.
+    private static void bring_eo(final EdgeOrdering eo_caller,
+				 final PAEdgeSet callerI,
+				 final EdgeOrdering eo_callee,
+				 final PAEdgeSet calleeO,
+				 final Relation mu){
+
+	eo_callee.forAllEntries(new RelationEntryVisitor(){
+		public void visit(Object key, Object value){
+		    PAEdge ei = (PAEdge) key;
+		    PAEdge eo = (PAEdge) value;
+		    if(!mu.contains(eo.n2,eo.n2)) return;
+		    Iterator it_ei_n1 = mu.getValues(ei.n1);
+		    while(it_ei_n1.hasNext()){
+			PANode ei_n1 = (PANode) it_ei_n1.next();
+			Iterator it_ei_n2 = mu.getValues(ei.n2);
+			while(it_ei_n2.hasNext()){
+			    PANode ei_n2 = (PANode) it_ei_n2.next();
+			    PAEdge new_ei = new PAEdge(ei_n1,ei.f,ei_n2);
+			    Iterator it_eo_n1 = mu.getValues(eo.n1);
+			    while(it_eo_n1.hasNext()){
+				PANode eo_n1 = (PANode) it_eo_n1.next();
+				eo_caller.add(new PAEdge(eo_n1,ei.f,eo.n2),
+					      new_ei);
+			    }
+			}
+		    }
+		}
+	    });
+
+
+	// all the outside edges from the callee occur *after* all
+	// the inside edges that exist in the caller right before the CALL
+	calleeO.forAllEdges(new PAEdgeVisitor(){
+		public void visit(Temp var, PANode node){}
+		public void visit(PANode n1, String f, PANode n2){
+		    if(!mu.contains(n2,n2)) return;
+		    eo_caller.add(mu.getValuesSet(n1),f,n2,callerI);
+		}
+	    });
     }
-	
-
-
 
 }// end of the class
 

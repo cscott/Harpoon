@@ -29,7 +29,7 @@ import java.util.Map;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.7 2000-02-15 04:37:39 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.8 2000-02-21 04:47:59 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -261,6 +261,17 @@ public class ActionRepository {
 	return pi_ld.getValues(nt);
     }
 
+    /** Removes all the information related to edges containing nodes from
+	<code>nodes</code>. */
+    public void removeNodes(Set nodes){
+	// TODO: some decent implementation
+    }
+
+    /** Removes all the information related to <code>ld</code> actions
+	using the edges from <code>edges</code>.*/
+    public void removeEdges(Set edges){
+	// TODO: some decent implementation
+    }
 
     /** Checks if all the <code>sync</code> operation on <code>n</code>
 	are independent (temporarily speaking) or not. 

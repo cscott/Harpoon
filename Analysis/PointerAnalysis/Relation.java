@@ -21,7 +21,7 @@ import java.util.Arrays;
  * algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Relation.java,v 1.1.2.12 2000-02-15 04:37:39 salcianu Exp $
+ * @version $Id: Relation.java,v 1.1.2.13 2000-02-21 04:48:00 salcianu Exp $
  */
 public class Relation{
     
@@ -154,7 +154,7 @@ public class Relation{
     }
 
 
-    /** Private constructor for <code>select</code> and <code>clone</code>. */
+    /** Private constructor for <code>clone</code>. */
     private Relation(Hashtable _hash){
 	hash = _hash;
     }
@@ -166,8 +166,9 @@ public class Relation{
 	Relation rel2 = new Relation();
 	Enumeration enum = keys();
 	while(enum.hasMoreElements()){
-	    Object ob = enum.nextElement();
-	    rel2.addAll(ob,getValuesSet(ob));
+	    Object key = enum.nextElement();
+	    if(!set.contains(key)) continue;
+	    rel2.addAll(key,getValuesSet(key));
 	}
 	return rel2;
     }

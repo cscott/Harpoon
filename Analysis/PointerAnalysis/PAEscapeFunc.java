@@ -1,4 +1,4 @@
-// EscapeFunc.java, created Sun Jan  9 20:53:09 2000 by salcianu
+// PAEscapeFunc.java, created Sun Jan  9 20:53:09 2000 by salcianu
 // Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
@@ -19,7 +19,7 @@ import harpoon.ClassFile.HCodeElement;
  and unanalyzed call sites <code>n</code> escapes through.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.9 2000-02-15 04:37:39 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.10 2000-02-21 04:47:59 salcianu Exp $
  */
 public class PAEscapeFunc {
 

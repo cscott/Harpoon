@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * <code>PointsToGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.10 2000-02-15 04:37:39 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.11 2000-02-21 04:47:59 salcianu Exp $
  */
 public class PointsToGraph {
     
@@ -66,11 +66,14 @@ public class PointsToGraph {
 	excp.removeAll(set);
     }
 
-    public void insert(PointsToGraph G2, Relation mu, Set noholes){
+    public void insert(PointsToGraph G2, Relation mu,
+		       boolean principal,Set noholes){
 	insert_edges( G2.O , G2.I , mu );
 	e.insert( G2.e , mu , noholes );
-	insert_set( G2.r    , mu , r );
-	insert_set( G2.excp , mu , excp );
+	if(principal){
+	    insert_set( G2.r    , mu , r );
+	    insert_set( G2.excp , mu , excp );
+	}
     }
 
     // Insert the outside edges O2 and the inside edges I2 into this graph,
@@ -121,30 +124,43 @@ public class PointsToGraph {
 	}
     }
 
-    /** Private data for <code>propagate</code> algorithm: the worklist
-     *  and the currently processed node. */ 
-    private PAWorkList W_prop = new PAWorkList();
-    private PANode current_node = null;
-
-    // PANodeVisitor for the propagate algorithm
-    private PANodeVisitor p_visitor = new PANodeVisitor(){
-	    public final void visit(PANode node){
-		// take care "|" and NOT "||"
-		boolean changed = 
-		    e.addNodeHoles(node,e.nodeHolesSet(current_node)) |
-		    e.addMethodHoles(node,e.methodHolesSet(current_node));
-		if(changed) W_prop.add(node);
-	    }
-	};
-
-    /** Propagates the escape information along the edges. */
-    public void propagate(Set set){
+    // TODO: the return result is used in a single place in the program
+    // but the cost of its computation is quite big. We could make a
+    // lightweight version of this function with return type void.
+    /** Propagates the escape information along the edges.
+	Returns the set of the newly escaped nodes. */
+    public Set propagate(Set set){
+	final PAWorkList W_prop = new PAWorkList();
+	final Set newly_escaped = new HashSet();
 	W_prop.addAll(set);
 	while(!W_prop.isEmpty()){
-	    current_node = (PANode) W_prop.remove();
+	    final PANode current_node = (PANode) W_prop.remove();
+	    PANodeVisitor p_visitor = new PANodeVisitor(){
+		    public final void visit(PANode node){
+			boolean was_escaped = e.hasEscaped(node);
+			// take care "|" and NOT "||"
+			boolean changed = 
+			    e.addNodeHoles(node,
+					   e.nodeHolesSet(current_node)) |
+			    e.addMethodHoles(node,
+					     e.methodHolesSet(current_node));
+			if(changed){
+			    W_prop.add(node);
+			    if(!was_escaped) newly_escaped.add(node);
+			}
+		    }
+		};
 	    I.forAllPointedNodes(current_node,p_visitor);
 	    O.forAllPointedNodes(current_node,p_visitor);
 	}
+	return newly_escaped;
+    }
+
+    /** Convenient function equivalent that recomputes all the escape
+	information.
+	Equivalent to <code>propagate(e.escapedNodes())</code>. */
+    public Set propagate(){
+	return propagate(e.escapedNodes());
     }
 
     /** Visits each node that appears in <code>this</code> graph.
@@ -281,6 +297,8 @@ public class PointsToGraph {
 	    O.forAllPointedNodes(node,visitor);
 	    I.forAllPointedNodes(node,visitor);
 	}
+
+	System.out.println("REMAINING NODES: " + remaining_nodes);
 
 	// retain only the escape information for the remaining nodes
 	PAEscapeFunc _e = e.select(remaining_nodes);

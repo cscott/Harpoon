@@ -55,7 +55,7 @@ import harpoon.IR.Quads.FOOTER;
  computed results from the caches.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.17 2000-02-17 00:56:48 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.18 2000-02-21 04:47:59 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -350,8 +350,8 @@ public class PointerAnalysis {
 
     // Performs the intra-procedural pointer analysis.
     private void analyze_intra_proc(HMethod hm){
-	if(DEBUG2)
-	    System.out.println("Method: " + hm);
+	//	if(DEBUG2)
+	    System.out.println("METHOD: " + hm);
 
 	current_intra_method = hm;
 
@@ -675,6 +675,8 @@ public class PointerAnalysis {
 
 	    // The full graph is stored in the hash_proc_int hashtable;
 	    hash_proc_int.put(current_intra_method,bbpig);
+
+	    System.out.println("PIG at the end of the method:" + bbpig);
 
 	    // To obtain the external view of the method, the graph must be
 	    // shrinked to the really necessary parts: only the stuff
