@@ -63,7 +63,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.4 2003-06-04 15:46:18 salcianu Exp $
+ * @version $Id: TreeBuilder.java,v 1.5 2003-07-10 03:55:01 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
     protected TreeBuilder(harpoon.Backend.Runtime1.Runtime runtime,
@@ -72,6 +72,15 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 		int pointerAlignment) {
 	super(runtime, linker, as, pointersAreLong, pointerAlignment);
     }
+
+    public Exp fetchHash(TreeFactory tf, HCodeElement source,
+			 Exp object) {
+	return new MEM(tf, source, Type.INT,
+		       new BINOP(tf, source, Type.POINTER, Bop.ADD,
+				 object,
+				 new CONST(tf, source, OBJ_HASH_OFF)));
+    }
+
     // allocate 'length' bytes plus object header; fill in object header.
     // shift return pointer appropriately for an object reference.
     public Exp objAlloc(TreeFactory tf, HCodeElement source,
@@ -89,17 +98,13 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 		     DECLARE(dg,objectType,Tobj,
 		     new TEMP(tf,source,Type.POINTER,Tobj)), old),
 		   new MOVE(tf,source,
-		     new MEM(tf,source,Type.INT,
-		       new BINOP(tf, source,Type.POINTER,Bop.ADD,
-		         DECLARE(dg,objectType,Tobj,
-			 new TEMP(tf,source,Type.POINTER,Tobj)),
-		           new CONST(tf, source, OBJ_HASH_OFF))),
+		     fetchHash(tf, source, 
+			       DECLARE(dg,objectType,Tobj,
+			       new TEMP(tf,source,Type.POINTER,Tobj))),
 		   new BINOP(tf, source, Type.INT, Bop.ADD,
-		     new MEM(tf,source,Type.INT,
-	               new BINOP(tf, source,Type.POINTER,Bop.ADD,
-			 DECLARE(dg,objectType,Tobj,
-	                 new TEMP(tf,source,Type.POINTER,Tobj)),
-                         new CONST(tf, source, OBJ_HASH_OFF))),
+		     fetchHash(tf, source, 
+			       DECLARE(dg,objectType,Tobj,
+			       new TEMP(tf,source,Type.POINTER,Tobj))),
 		   new CONST(tf, source, 2)))),
 		 DECLARE(dg,objectType, Tobj,
 		 new TEMP(tf,source,Type.POINTER,Tobj)));
@@ -198,11 +203,10 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 
 	Label DLabel=new Label();
 	Label SLabel=new Label();
-	Exp lockvalue=new MEM(tf,source,Type.INT,
-		       new BINOP(tf, source,Type.POINTER,Bop.ADD,
-                         (DECLARE(dg, HClass.Void, object,
-			 new TEMP(tf,source,Type.POINTER,object))),
-		           new CONST(tf, source, OBJ_HASH_OFF)));
+	Exp lockvalue=fetchHash
+	    (tf, source, 
+	     DECLARE(dg, HClass.Void, object,
+		     new TEMP(tf,source,Type.POINTER,object)));
 	Exp testcond=new BINOP(tf, source, Type.INT, Bop.AND, lockvalue,
 		       new CONST(tf, source, 2));
 	Stm dotest=new CJUMP(tf,source,testcond,SLabel,DLabel);
