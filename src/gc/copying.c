@@ -211,8 +211,8 @@ void deflate_freed_objs ()
 	  ((void *)(infl_obj->claz) < top_of_to_space))
 	{
 	  // forward pointer appropriately
-	  unit->obj = (jobject_unwrapped)(infl_obj->claz);
-	  // printf("updating to %p\n", unit->obj);
+	  unit->obj = (jobject_unwrapped)PTRMASK(infl_obj->claz);
+	  printf("updating to %p\n", unit->obj);
 	  // go to next
 	  prev = unit;
 	  unit = unit->next;
