@@ -5,6 +5,7 @@
 
 #include "jni-private.h"
 #include "asm/atomicity.h" /* for compare_and_swap */
+#include "config.h" /* for OBJECT_PADDING */
 
 /* package name for CommitRecord & etc */
 #define TRANSPKG "harpoon/Runtime/Transactions/"
@@ -15,6 +16,7 @@
 #include "harpoon_Runtime_Transactions_CommitRecord.h"
 struct commitrec {
     struct oobj header;
+    char _padding_[OBJECT_PADDING]; /* by default, OBJECT_PADDING is zero */
     /* keep the order of these fields synchronized with CommitRecord.java */
     struct commitrec *parent;/* Transaction that this depends upon, if any. */
 #   define WAITING   /*0*/ harpoon_Runtime_Transactions_CommitRecord_WAITING

@@ -118,9 +118,7 @@ struct oobj {
 /** use this version of the oobj structure if you're looking at an array. */
 struct aarray {
   struct oobj obj;
-#ifdef WITH_REALTIME_JAVA
-  void* memoryArea; /* To take the place of the MemoryArea */
-#endif
+  char _padding_[OBJECT_PADDING]; /* by default, OBJECT_PADDING is zero */
   jsize length; /* first field in an array is the length */
   char element_start[0]; /* place holder for start of elements */
 };
