@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.8 2000-01-02 22:15:19 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.9 2000-01-03 04:55:48 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -210,11 +210,14 @@ public class AsyncCode {
 	QuadLiveness liveness;
 	UpdateCodeFactory ucf;
 	HCode hc;
+	WorkSet linkFooters;
+	Temp tthis;
 
 	public CloningVisitor(Set blockingcalls, Set cont_todo,
 			      Map cont_map, Map env_map, 
 			      QuadLiveness liveness, Set async_todo,
-			      Map old2new, Map classMap, HCode hc, UpdateCodeFactory ucf) {
+			      Map old2new, Map classMap, 
+			      HCode hc, UpdateCodeFactory ucf) {
 	    this.liveness=liveness;
 	    this.blockingcalls=blockingcalls;
 	    this.cont_todo=cont_todo;
@@ -233,6 +236,11 @@ public class AsyncCode {
 	    ctmap=new CloningTempMap(otf,hcode.getFactory().tempFactory());
 	    quadmap=new HashMap();
 	    this.isCont=isCont;
+	    this.linkFooters=new WorkSet();
+	    if (isCont)
+		tthis=new Temp(hcode.getFactory().tempFactory());
+	    else
+		tthis=null;
 	}
 
 	public HCode getCode() {
@@ -290,14 +298,16 @@ public class AsyncCode {
 		    params=new Temp[2];
 		    params[1]=newrtemp;
 		}
-		params[0]=new Temp(tf);
+		params[0]=tthis;
 		HEADER header=new HEADER(qf,first);
 		METHOD method=new METHOD(qf,first,params,1);
 		Quad.addEdge(header,1,method,0);
 		Temp tenv=new Temp(tf);
-		GET get=new GET(qf,first,tenv,hcode.getMethod().getDeclaringClass().getField("e"),method.params(0));
+		GET get=
+		    new GET(qf,first,tenv,
+			    hcode.getMethod().getDeclaringClass().getField("e"),
+			    method.params(0));
 		Quad.addEdge(method,0,get,0);
-		
 		// assign each field in the Environment to the appropriate Temp
 		// except for the assignment we want to suppress
 		Temp suppress =
@@ -351,6 +361,86 @@ public class AsyncCode {
 		}
 		hcode.quadSet((Quad)quadmap.get(q));
 	    }
+	}
+
+	public void visit(RETURN q) {
+	    if (isCont) {
+		HClass hclass=hcode.getMethod().getDeclaringClass();
+		HField hfield=hclass.getField("next");
+		HMethod resume=null;
+		if (hc.getMethod().getReturnType()!=HClass.Void)
+		    resume=
+			hfield.getType().getDeclaredMethod("resume",
+							   new HClass[] {hc.getMethod().getReturnType()});
+		else
+		    resume=hfield.getType().getDeclaredMethod("resume",
+							      new HClass[0]);
+		TempFactory tf=hcode.getFactory().tempFactory();
+		Temp tnext=new Temp(tf);
+		GET get=new GET(hcode.getFactory(),q,
+				tnext, hfield, tthis);
+		Temp nretval=null;
+		CALL call=null;
+		Temp retex=new Temp(tf);
+		if (q.retval()!=null) {
+		    nretval=ctmap.tempMap(q.retval());
+		    //***** Tailcall eventually
+		    //need to do get next first
+		    call=new CALL(hcode.getFactory(), q, resume,
+				  new Temp[] {tnext,nretval},null,retex,
+				  true,false,new Temp[0]);
+		} else {
+		    //***** Tailcall eventually
+		    call=new CALL(hcode.getFactory(), q, resume,
+				  new Temp[] {tnext}, null, retex,
+				  true, false, new Temp[0]);
+		}
+		Quad.addEdge(get,0,call,0);
+		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
+		Quad.addEdge(call,1,qthrow,0);
+		RETURN qreturn=new RETURN(hcode.getFactory(),q,null);
+		Quad.addEdge(call,0,qreturn,0);
+		linkFooters.add(qthrow);
+		linkFooters.add(qreturn);
+		quadmap.put(q, get);
+	    }
+	    else
+		;
+	    followchildren=false;
+	}
+
+	public void visit(THROW q) {
+	    if (isCont) {
+		HClass hclass=hcode.getMethod().getDeclaringClass();
+		HField hfield=hclass.getField("next");
+		HClass throwable=HClass.forName("java.lang.Throwable");
+		HMethod resume=
+		    hfield.getType().getDeclaredMethod("exception",
+						       new HClass[] {throwable});
+		TempFactory tf=hcode.getFactory().tempFactory();
+		Temp tnext=new Temp(tf);
+		GET get=new GET(hcode.getFactory(),q,
+				tnext, hfield, tthis);
+		Temp nretval=null;
+		CALL call=null;
+		Temp retex=new Temp(tf);
+		nretval=ctmap.tempMap(q.throwable());
+		//***** Tailcall eventually
+		//need to do get next first
+		call=new CALL(hcode.getFactory(), q, resume,
+			      new Temp[] {tnext,nretval},null,retex,
+			      true,false,new Temp[0]);
+		Quad.addEdge(get,0,call,0);
+		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
+		Quad.addEdge(call,1,qthrow,0);
+		RETURN qreturn=new RETURN(hcode.getFactory(),q,null);
+		Quad.addEdge(call,0,qreturn,0);
+		linkFooters.add(qthrow);
+		linkFooters.add(qreturn);
+		quadmap.put(q, get);
+	    } else
+		;
+	    followchildren=false;
 	}
 
 	public void visit(Quad q) {
