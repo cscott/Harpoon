@@ -33,7 +33,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.7 2000-01-16 03:54:28 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.8 2000-01-18 15:59:26 bdemsky Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
@@ -163,7 +163,7 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	    int andmask=
 		Modifier.ABSTRACT|Modifier.FINAL|Modifier.INTERFACE|
 		Modifier.NATIVE|
-		Modifier.STATIC|Modifier.SYNCHRONIZED|Modifier.TRANSIENT|
+		Modifier.STATIC|Modifier.TRANSIENT|
 		Modifier.VOLATILE;
 	    int ormask=Modifier.PUBLIC;
 	    Jasmin jasmin=new Jasmin(hca, hm,interfaceClasses[i],andmask, ormask);
