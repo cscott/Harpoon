@@ -3,7 +3,11 @@ package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
+import harpoon.Util.HashSet;
+import harpoon.Util.Set;
 import harpoon.Util.Util;
+
+import java.util.Enumeration;
 
 /**
  * <code>SEQ</code> evaluates the left statement followed by the right
@@ -11,7 +15,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.1.2.5 1999-02-24 01:18:54 andyb Exp $
+ * @version $Id: SEQ.java,v 1.1.2.6 1999-04-05 21:50:44 duncan Exp $
  */
 public class SEQ extends Stm {
     /** The statement to evaluate first. */
@@ -25,6 +29,15 @@ public class SEQ extends Stm {
 	this.left=left; this.right=right;
 	Util.assert(left!=null && right!=null);
     }
+
+    protected Set defSet() { 
+	return new HashSet();
+    }
+
+    protected Set useSet() { 
+	return new HashSet();
+    }
+    
     public ExpList kids() {throw new Error("kids() not applicable to SEQ");}
     public Stm build(ExpList kids) {throw new Error("build() not applicable to SEQ");}
     /** Accept a visitor */

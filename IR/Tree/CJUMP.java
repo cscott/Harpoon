@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CJUMP.java,v 1.1.2.6 1999-02-24 01:18:54 andyb Exp $
+ * @version $Id: CJUMP.java,v 1.1.2.7 1999-04-05 21:50:44 duncan Exp $
  */
 public class CJUMP extends Stm {
     /** An expression that evaluates into a boolean result. */
@@ -28,6 +28,7 @@ public class CJUMP extends Stm {
 	this.test = test; this.iftrue = iftrue; this.iffalse = iffalse;
 	Util.assert(test!=null && iftrue!=null && iffalse!=null);
     }
+    
     public ExpList kids() {return new ExpList(test, null); }
     public Stm build(ExpList kids) {
 	return new CJUMP(tf, this, kids.head, iftrue, iffalse);

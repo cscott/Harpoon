@@ -3,7 +3,12 @@ package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
+import harpoon.Util.HashSet;
+import harpoon.Util.Set;
 import harpoon.Util.Util;
+
+import java.util.Enumeration;
+
 
 /**
  * <code>MOVE</code> statements assign a value to a location.
@@ -15,7 +20,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.6 1999-02-24 01:18:54 andyb Exp $
+ * @version $Id: MOVE.java,v 1.1.2.7 1999-04-05 21:50:44 duncan Exp $
  */
 public class MOVE extends Stm {
     /** The expression giving the destination for the computed value. */
@@ -29,6 +34,30 @@ public class MOVE extends Stm {
 	this.dst=dst; this.src=src;
 	Util.assert(dst!=null && src!=null);
     }
+  
+    protected Set defSet() { 
+	HashSet def = new HashSet();
+	if (dst instanceof TEMP) {
+	    def.union(((TEMP)dst).temp);
+	}
+	return def;
+    }
+	
+    protected Set useSet() { 
+	HashSet use = new HashSet();
+	Set srcUse = src.useSet();
+	for (Enumeration e = srcUse.elements(); e.hasMoreElements();) {
+	    use.union(e.nextElement());
+	}
+	if (!(dst instanceof TEMP)) { 
+	    Set dstUse = dst.useSet();
+	    for (Enumeration e = dstUse.elements(); e.hasMoreElements();) {
+		use.union(e.nextElement());
+	    }
+	}
+	return use;
+    }
+
     public ExpList kids() {
         if (dst instanceof MEM)
 	   return new ExpList(((MEM)dst).exp, new ExpList(src,null));

@@ -2,7 +2,11 @@ package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
+import harpoon.Util.HashSet;
+import harpoon.Util.Set;
 import harpoon.Util.Util;
+
+import java.util.Enumeration;
 
 /**
  * <code>INVOCATION</code> objects are statements which stand for 
@@ -12,7 +16,7 @@ import harpoon.Util.Util;
  * 
  * @author  Duncan Bryce, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.1 1999-02-18 22:43:19 duncan Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.2 1999-04-05 21:50:44 duncan Exp $
  * @see harpoon.IR.Quads.CALL, CALL, NATIVECALL
  */
 public abstract class INVOCATION extends Stm {
@@ -34,7 +38,44 @@ public abstract class INVOCATION extends Stm {
 	this.retval=retval; this.retex=retex; this.func=func; this.args=args;
 	Util.assert(retval!=null && retex!=null && func!=null);
     }
-  
+
+    protected Set defSet() { 
+	HashSet def = new HashSet();
+	if (retval instanceof TEMP) { 
+	    def.union(((TEMP)retval).temp);
+	}
+	if (retex instanceof TEMP) { 
+	    def.union(((TEMP)retex).temp);
+	}
+	return def;
+    }
+
+    protected Set useSet() {
+	HashSet use = new HashSet();
+	Set argsUse = ExpList.useSet(args);
+	for (Enumeration e = argsUse.elements(); e.hasMoreElements();) { 
+	    use.union(e.nextElement());
+	}
+	Set funcUse = func.useSet();
+	for (Enumeration e = funcUse.elements(); e.hasMoreElements();) { 
+	    use.union(e.nextElement());
+	}
+
+	if (!(retval instanceof TEMP)) { 
+	    Set retvalUse = retval.useSet();
+	    for (Enumeration e = retvalUse.elements(); e.hasMoreElements();) {
+		use.union(e.nextElement());
+	    }
+	}
+	if (!(retex instanceof TEMP)) { 
+	    Set retexUse = retex.useSet();
+	    for (Enumeration e = retexUse.elements(); e.hasMoreElements();) { 
+		use.union(e.nextElement());
+	    }
+	}
+	return use;
+    }
+    
     abstract public boolean isNative();
     abstract public ExpList kids();
     abstract public Stm build(ExpList kids);

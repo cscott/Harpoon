@@ -3,6 +3,8 @@ package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
+import harpoon.Util.HashSet;
+import harpoon.Util.Set;
 import harpoon.Util.Util;
 
 /**
@@ -11,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: EXP.java,v 1.1.2.5 1999-02-24 01:18:54 andyb Exp $
+ * @version $Id: EXP.java,v 1.1.2.6 1999-04-05 21:50:44 duncan Exp $
  */
 public class EXP extends Stm {
     /** The expression to evaluate. */
@@ -23,6 +25,7 @@ public class EXP extends Stm {
 	this.exp=exp;
 	Util.assert(exp!=null);
     }
+
     public ExpList kids() {return new ExpList(exp,null);}
     public Stm build(ExpList kids) {
 	return new EXP(tf, this, kids.head);

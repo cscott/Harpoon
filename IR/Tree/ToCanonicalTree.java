@@ -15,10 +15,11 @@ import java.util.Hashtable;
 
 /**
  * The <code>ToCanonicalTree</code> class translates tree code to 
- * canonical tree code (no ESEQ).  
+ * canonical tree code (no ESEQ).  Based on the translator to canonical
+ * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.1 1999-03-29 05:08:40 duncan Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.2 1999-04-05 21:50:45 duncan Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;

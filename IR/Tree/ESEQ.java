@@ -3,6 +3,8 @@ package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
+import harpoon.Util.HashSet;
+import harpoon.Util.Set;
 import harpoon.Util.Util;
 
 /**
@@ -13,7 +15,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.5 1999-02-24 01:18:54 andyb Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.6 1999-04-05 21:50:44 duncan Exp $
  */
 public class ESEQ extends Exp {
     /** The statement to evaluate for side-effects. */
@@ -27,6 +29,17 @@ public class ESEQ extends Exp {
 	this.stm=stm; this.exp=exp;
 	Util.assert(stm!=null && exp!=null);
     }
+
+    protected Set defSet() { 
+	throw new Error
+	    ("DEF and USE can only be extracted from canonical trees");
+    }
+
+    protected Set useSet() { 
+	throw new Error
+	    ("DEF and USE can only be extracted from canonical trees");
+    }
+
     public ExpList kids() {throw new Error("kids() not applicable to ESEQ");}
     public Exp build(ExpList kids) {throw new Error("build() not applicable to ESEQ");}
     /** Accept a visitor */
