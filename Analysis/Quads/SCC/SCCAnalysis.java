@@ -65,7 +65,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.16 2001-01-24 21:34:57 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.17 2001-01-24 22:44:18 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -837,6 +837,64 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		else
 		    raiseV(V, Wv, q.dst(), new xClass( ty ) );
 	    }
+	    // comparisons
+	    void visit_cmpeq(OPER q) {
+		xBitWidth left = extractWidth( get( q.operands(0) ) );
+		xBitWidth right= extractWidth( get( q.operands(1) ) );
+		// comparisons against a constant.
+		if ((left instanceof xIntConstant &&// left a constant and
+		     ((left.minusWidth()==0 &&      // right smaller than left.
+		       right.plusWidth() < left.plusWidth()) ||
+		      (left.plusWidth()==0 &&
+		       right.minusWidth() < left.minusWidth()))) || // or...
+		    (right instanceof xIntConstant &&// right a constant and
+		     ((right.minusWidth()==0 &&     // left smaller than right.
+		       left.plusWidth() < right.plusWidth()) ||
+		      (right.plusWidth()==0 &&
+		       left.minusWidth() < right.minusWidth()))) )
+		    // okay, comparison can never be true.
+		    raiseV(V, Wv, q.dst(),
+			   new xIntConstant(HClass.Boolean, 0));
+		else // okay, nothing known.
+		    raiseV(V, Wv, q.dst(), new xOperBooleanResult(q));
+	    }
+	    public void visit_icmpeq(OPER q) { visit_cmpeq(q); }
+	    public void visit_lcmpeq(OPER q) { visit_cmpeq(q); }
+	    void visit_cmpgt(OPER q) {
+		xBitWidth left = extractWidth( get( q.operands(0) ) );
+		xBitWidth right= extractWidth( get( q.operands(1) ) );
+		// comparisons against a non-zero constant.
+		if ((left instanceof xIntConstant &&
+		     ((xIntConstant)left).value()!=0 &&
+		     left.plusWidth() > right.plusWidth()) ||
+		    (right instanceof xIntConstant &&
+		     ((xIntConstant)right).value()!=0 &&
+		     right.minusWidth() > left.minusWidth()))
+		    // comparison is always true
+		    raiseV(V,Wv, q.dst(), new xIntConstant(HClass.Boolean, 1));
+		else if ((left instanceof xIntConstant &&
+			  ((xIntConstant)left).value()!=0 &&
+			  left.minusWidth() > right.minusWidth()) ||
+			 (right instanceof xIntConstant &&
+			  ((xIntConstant)right).value()!=0 &&
+			  right.plusWidth() > left.plusWidth()))
+		    // comparison is always false
+		    raiseV(V,Wv, q.dst(), new xIntConstant(HClass.Boolean, 0));
+		// comparisons against zero.
+		else if ((left instanceof xIntConstant &&
+			  ((xIntConstant)left).value()==0 &&
+			  right.minusWidth()==0) ||
+			 (right instanceof xIntConstant &&
+			  ((xIntConstant)right).value()==0 &&
+			  left.plusWidth()==0))
+		    // comparison is always false. 0 > 0+ or 0- > 0
+		    raiseV(V,Wv, q.dst(), new xIntConstant(HClass.Boolean, 0));
+		else // okay, nothing known.
+		    raiseV(V, Wv, q.dst(), new xOperBooleanResult(q));
+	    }
+	    public void visit_icmpgt(OPER q) { visit_cmpgt(q); }
+	    public void visit_lcmpgt(OPER q) { visit_cmpgt(q); }
+	    // conversions
 	    public void visit_i2b(OPER q) {
 		xBitWidth bw = extractWidth( get( q.operands(0) ) );
 		raiseV(V, Wv, q.dst(), 
@@ -871,7 +929,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 				     Math.min(32, bw.minusWidth()),
 				     Math.min(31, bw.plusWidth()) ));
 	    }
-
+	    // binops
 	    void visit_add(OPER q) {
 		xBitWidth left = extractWidth( get( q.operands(0) ) );
 		xBitWidth right= extractWidth( get( q.operands(1) ) );
