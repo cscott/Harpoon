@@ -23,7 +23,7 @@ import java.util.HashSet;
  * <code>MultiMap</code>.  
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.1.2.2 2000-02-05 20:24:35 pnkfelix Exp $ */
+ * @version $Id: GenericMultiMap.java,v 1.1.2.3 2000-02-28 06:41:56 cananian Exp $ */
 public class GenericMultiMap implements MultiMap {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
@@ -35,9 +35,9 @@ public class GenericMultiMap implements MultiMap {
     // used by identity constructor
     private MapFactory mf;
     
-    /** Creates a <code>MultiMap</code> using a
-	<code>SetFactory</code> for its value collections.  
-	To gain more control over the specific factories used in
+    /** Creates a <code>MultiMap</code> using <code>HashSet</code>s
+	for its value collections and a <code>HashMap</code> for the map.
+	To gain more control over the specific sets/map used in
 	internal representation of <code>this</code>, use the more
 	specific {@link GenericMultiMap#GenericMultiMap(CollectionFactory,MapFactory) constructor }
 	that takes <code>CollectionFactory</code>s.

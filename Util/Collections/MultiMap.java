@@ -102,7 +102,7 @@ import java.util.HashSet;
 	 </OL> 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.11 2000-02-05 20:24:35 pnkfelix Exp $
+    @version $Id: MultiMap.java,v 1.1.2.12 2000-02-28 06:41:57 cananian Exp $
  */
 public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 
@@ -142,16 +142,14 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
     public Object get(Object key);
 
     /** Associates the specified value with the specified key in this
-	map.  If the map previously contained any mappings for this
-	key, all of the old values are replaced.  Returns some value
-	that was previous associated with the specified key, or
-	<code>null</code> if no values were associated previously. 
-    */
+	map, after removing all old values associated with the key.
+	Returns some value that was previously associated with the
+	specified key, or <code>null</code> if no values were
+	associated previously.  */
     public Object put(Object key, Object value);
 
     /** Copies the mappings from the specified map to this
-	map.  These mappings will replace any mappings that this map
-	had for any of the keys currently in the specified map.  Note
+	map, after removing all old values associated with the key.  Note
 	that <code>putAll(mm)</code> where <code>mm</code> is a
 	<code>MultiMap</code> will NOT add all of the mappings in
 	<code>mm</code>; it will only add all of the Keys in
