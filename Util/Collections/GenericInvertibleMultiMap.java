@@ -19,7 +19,7 @@ import java.util.Set;
  * correctly extends <code>Map</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GenericInvertibleMultiMap.java,v 1.1.2.4 2001-11-04 02:34:14 cananian Exp $
+ * @version $Id: GenericInvertibleMultiMap.java,v 1.1.2.5 2001-11-08 19:13:16 cananian Exp $
  */
 public class GenericInvertibleMultiMap implements InvertibleMultiMap {
     private final MultiMap map, imap;
@@ -218,8 +218,10 @@ public class GenericInvertibleMultiMap implements InvertibleMultiMap {
     }
     public Object remove(Object key) {
 	Object old = null;
-	for (Iterator it=this.getValues(key).iterator(); it.hasNext(); )
-	    this.remove(key, old = it.next());
+	for (Iterator it=this.getValues(key).iterator(); it.hasNext(); ) {
+	    old = it.next();
+	    it.remove();
+	}
 	return old;
     }
     public boolean remove(Object key, Object value) {
