@@ -93,10 +93,10 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
 #ifndef WITH_HASHLOCK_SHRINK
 #ifndef WITH_DYNAMIC_WB
     obj->hashunion.inflated = infl;
-#else
+#else /* WITH_DYNAMIC_WB */
     obj->hashunion.inflated = (ptroff_t) infl | (obj->hashunion.hashcode & 2);
-#endif
-#else
+#endif /* WITH_DYNAMIC_WB */
+#else /* WITH_HASHLOCK_SHRINK */
     infl_table_set(INFL_LOCK, obj, infl, NULL);
 #endif /* WITH_HASHLOCK_SHRINK */
     assert(FNI_IS_INFLATED(wrapped_obj));
@@ -118,6 +118,9 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     } 
 #endif
 #ifdef WITH_REALTIME_JAVA
+# ifdef BDW_CONSERVATIVE_GC /* XXX this test may be reversed? see v1.29 XXX */
+    if (GC_base(obj)!=NULL) /* skip if this is not a heap-allocated object */
+# endif /* BDW_CONSERVATIVE_GC */
     RTJ_register_finalizer(wrapped_obj, deflate_object); 
 #endif
   }
