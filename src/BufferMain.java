@@ -27,7 +27,7 @@ public class BufferMain {
 
 	ATR server = new ATR(new CORBA(args), args[1], null);
 	ATRClient client = new ATRClient(new CORBA(args), args[2]);
-	Buffer buffer = new Buffer(args[0], null);
+	Buffer buffer = new Buffer(Integer.parseInt(args[0]), null);
 
 	server.linkL(buffer.linkL(client)).run();
     }
