@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec.coarseInstrs,v 1.1.2.3 2000-12-03 20:14:53 cananian Exp $
+ * @version $Id: CodeGen.spec.coarseInstrs,v 1.1.2.4 2001-05-31 06:24:51 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -521,6 +521,7 @@ import java.util.Iterator;
 	    declare(rsecnd, HClass.Void);
 	    emit( ROOT, "mov `d0, `s0h\n"+"mov `d1, `s0l", 
 		  new Temp[] { rfirst, rsecnd }, temp );
+	    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{ temp });
 	    break;			     
 	  case 4: // spread between regs and stack
 	    stackOffset += 4; index--;
@@ -1035,8 +1036,9 @@ BINOP(cmpop, j, k) = i
     declare( r0, HClass.Void );
 
     emit ( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h",new Temp[]{ r0,r1 }, j);
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});    
     emit ( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h",new Temp[]{ r2,r3 }, k);
-    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{k});
     // --- some of these comparison functions are broken! --
     //     cmpOp2Func might return a non-broken but *inverted*
     //     comparison function; we'll fixup the inverted value below.
@@ -1214,11 +1216,8 @@ MOVE(TEMP(dst), CONST<l,d>(c)) %{
     declare( dst, code.getTreeDerivation(),  ROOT.getSrc() );
 
     emit(new Instr( instrFactory, ROOT,
-		    loadConst32("`d0"+lomod, (int)val, "lo("+cROOT.value+")"),
-		    new Temp[]{ dst }, null));
-    val>>>=32;
-    emit(new Instr( instrFactory, ROOT,
-		    loadConst32("`d0"+himod, (int)val, "hi("+cROOT.value+")"),
+		    loadConst32("`d0"+lomod, (int)val, "lo("+cROOT.value+")")+"\n"+
+		    loadConst32("`d0"+himod, (int)(val>>>32), "hi("+cROOT.value+")"),
 		    new Temp[]{ dst }, null));
 }% 
 
@@ -1264,8 +1263,9 @@ BINOP<l>(MUL, j, k) = i %{
     declare( r0, HClass.Void );
 
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r2,r3}, k );
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{k});
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, j );
-    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
@@ -1296,8 +1296,9 @@ BINOP<d>(MUL, j, k) = i %{
     declare( r0, HClass.Void );
 
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r2,r3}, k );
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{k});
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, j );
-    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
@@ -1328,8 +1329,9 @@ BINOP<l>(DIV, j, k) = i %{
     declare( r0, HClass.Void ); declare( r1, HClass.Void );
     declare( r2, HClass.Void ); declare( r3, HClass.Void );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r2,r3}, k );
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{k});
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, j );
-    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
@@ -1357,8 +1359,9 @@ BINOP<d>(DIV, j, k) = i %{
     declare( r0, HClass.Void ); declare( r1, HClass.Void );
     declare( r2, HClass.Void ); declare( r3, HClass.Void );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r2,r3}, k );
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{k});
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, j );
-    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
@@ -1387,14 +1390,16 @@ BINOP<l>(REM, j, k) = i %{
     declare( r0, HClass.Void ); declare( r1, HClass.Void );
     declare( r2, HClass.Void ); declare( r3, HClass.Void );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r2,r3}, k );
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{k});
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, j );
-    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
     emit2(ROOT, "bl "+nameMap.c_function_name("__moddi3"),
 	 new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[]{r0,r1} );
+    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[]{r1});
 }%
 
 BINOP<f>(REM, j, k) = i %{
@@ -1417,9 +1422,11 @@ BINOP<d>(REM, j, k) = i %{
     emit( ROOT, 
 	  "mov `d0, `s0l\n"+
 	  "mov `d1, `s0h", new Temp[]{r2,r3} , k );
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{k});
     emit( ROOT, 
 	  "mov `d0, `s0l\n"+
-	  "mov `d0, `s0h", new Temp[]{r0,r1} , j );
+	  "mov `d1, `s0h", new Temp[]{r0,r1} , j );
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
@@ -1810,6 +1817,7 @@ METHOD(params) %{
 		      "mov `d0h, `s1", 
 		      params[i],
 		      new Temp[]{ regfile.reg[loc], regfile.reg[loc+1] });
+		emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[]{regfile.reg[loc+1]});
 		loc+=2;
 	    } else if (loc==3) { // one half in register, one on stack
 		// ack.  emitMOVE isn't working with long/double types.
@@ -2040,6 +2048,7 @@ RETURN<l,d>(val) %{
     declare( r0, HClass.Void );
     declare( r1, HClass.Void );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, val);
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{val});
     // mark exit point.
     emit(new InstrEXIT( instrFactory, ROOT ));
 }%
