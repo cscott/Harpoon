@@ -5,7 +5,7 @@ sleep 5
 xterm -title "ALERT Server" -e java -jar trackerStub.jar -ORBInitRef NameService=file:/`pwd`/.jacorb &
 sleep 5
 
-xterm -title "ATR" -e java -jar ATR.jar timer 1 -ORBInitRef NameService=file:/`pwd`/.jacorb &
+xterm -title "ATR" -e java -jar ATR.jar timer 3 -ORBInitRef NameService=file:/`pwd`/.jacorb &
 sleep 5
 
 xterm -title "Sending to ATR" -e java -jar receiverStub.jar GUI.jar tank.gz 533 -ORBInitRef NameService=file:/`pwd`/.jacorb &

@@ -54,10 +54,10 @@ in the embedded version of the two-stage ATR.
 
 Example #1 (no CORBA):
 ~~~~~~~~~~~~~~~~~~~~~
-java -jar GUI.jar pause nocorba 1 
+java -jar GUI.jar pause nocorba 3 
 
 Locally, you can run this as:
-java -jar GUI.jar nopause nocorba 1
+java -jar GUI.jar nopause nocorba 3
 
 
 Example #2 (with CORBA):
@@ -73,7 +73,7 @@ Start the ALERT server:
   java -jar trackerStub.jar -ORBInitRef NameService=file://users/wbeebee/.jacorb
 
 Start the ATR:
-  java -jar ATR.jar timer 1 -ORBInitRef NameService=file://users/wbeebee/.jacorb
+  java -jar ATR.jar timer 3 -ORBInitRef NameService=file://users/wbeebee/.jacorb
  
 Send images to the ATR:
   java -jar receiverStub.jar GUI.jar tank.gz 533 -ORBInitRef NameService=file://users/wbeebee/.jacorb
