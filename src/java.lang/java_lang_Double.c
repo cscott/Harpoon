@@ -55,3 +55,11 @@ JNIEXPORT jdouble JNICALL Java_java_lang_Double_valueOf0
     }
     return d;
 }
+#ifdef WITH_TRANSACTIONS
+#include "../transact/transact.h"
+JNIEXPORT jdouble JNICALL Java_java_lang_Double_valueOf0_00024withtrans_00024withtrans
+  (JNIEnv *env, jclass clsDouble, jobject commitrec, jstring str) {
+  return Java_java_lang_Double_valueOf0(env, clsDouble,
+					FNI_StrTrans2Str(env, commitrec, str));
+}
+#endif /* WITH_TRANSACTIONS */
