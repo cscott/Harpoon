@@ -171,22 +171,19 @@ public class QuoteServer {
 	StockQuoteHandler newHandler = 
 	    new StockQuoteHandler(clientSocket,stockInfo);
 
-	Thread newHandlerThread = null;
 	switch (RTJ_alloc_method) {
 	case NO_RTJ: {
-	    newHandlerThread = new Thread(newHandler);
+	    (new NewHandlerThread(newHandler)).start();
 	    break;
 	}
 	case CT_MEMORY: {
-	    newHandlerThread = 
-		new javax.realtime.RealtimeThread(new javax.realtime.CTMemory(ctsize), 
-						  newHandler);
+	    (new NewHandlerRealtimeThread(new javax.realtime.CTMemory(ctsize),
+					  newHandler)).start();
 	    break;
 	}
 	case VT_MEMORY: {
-	    newHandlerThread = 
-		new javax.realtime.RealtimeThread(new javax.realtime.VTMemory(1000, 1000), 
-						  newHandler);
+	    (new NewHandlerRealtimeThread(new javax.realtime.VTMemory(1000, 1000), 
+					  newHandler)).start();
 	    break;
 	}
 	default: {
@@ -194,7 +191,6 @@ public class QuoteServer {
 	    System.exit(-1);
 	}
 	}
-	newHandlerThread.start(); 
     }
 
     /** 
@@ -206,6 +202,31 @@ public class QuoteServer {
 	} 
     } 
 } 
+
+class NewHandlerThread extends Thread {
+    private Runnable runMe;
+
+    NewHandlerThread(Runnable runMe) {
+	this.runMe = runMe;
+    }
+
+    public void run() {
+	runMe.run();
+    }
+}
+
+class NewHandlerRealtimeThread extends javax.realtime.RealtimeThread {
+    private Runnable runMe;
+    
+    NewHandlerRealtimeThread(javax.realtime.MemoryArea ma, Runnable runMe) {
+	super(ma);
+	this.runMe = runMe;
+    }
+
+    public void run() {
+	runMe.run();
+    }
+}
 
 /** 
  * This class use used to manage a connection to 
@@ -235,7 +256,7 @@ class StockQuoteHandler implements Runnable {
 
 
 
-    public void run() { 
+    public void run() {
 	PrintStream clientSend = null; 
 	BufferedReader clientReceive = null; 
 
