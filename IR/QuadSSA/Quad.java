@@ -12,7 +12,7 @@ import harpoon.Temp.TempMap;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.23 1998-10-11 03:01:17 cananian Exp $
+ * @version $Id: Quad.java,v 1.24 1998-10-12 01:14:11 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -125,5 +125,13 @@ public abstract class Quad
 	from.next[from_index] = e;
 	to.prev[to_index] = e;
 	return e;
+    }
+    /** Add edges between a string of Quads.  The first outgoing edge
+     *  is connected to the first incoming edge for all edges added.
+     *  The same as multiple <code>addEdge(q[i], 0, q[i+1], 0)</code>
+     *  calls. */
+    public static void addEdges(Quad[] quadlist) {
+	for (int i=0; i<quadlist.length-1; i++)
+	    addEdge(quadlist[i], 0, quadlist[i+1], 0);
     }
 }
