@@ -4,27 +4,37 @@
 package harpoon.Analysis.Quads;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.Maps.ConstMap;
 import harpoon.Analysis.Maps.ExactTypeMap;
+import harpoon.Analysis.Maps.ExecMap;
 import harpoon.Analysis.Quads.SCC.SCCAnalysis;
 import harpoon.Analysis.Quads.SCC.SCCOptimize;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeAndMaps;
+import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadRSSx;
+import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 /**
  * <code>DispatchTreeTransformation</code> replaces dynamic dispatch
@@ -33,7 +43,7 @@ import java.util.Set;
  * speed up dispatch.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DispatchTreeTransformation.java,v 1.1.2.3 2000-11-16 00:11:59 cananian Exp $
+ * @version $Id: DispatchTreeTransformation.java,v 1.1.2.4 2000-11-16 01:31:49 cananian Exp $
  */
 public class DispatchTreeTransformation
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -43,26 +53,84 @@ public class DispatchTreeTransformation
     
     /** Creates a <code>DispatchTreeTransformation</code>. */
     public DispatchTreeTransformation(HCodeFactory parent, ClassHierarchy ch) {
-	// convert the code factory to relaxed-quad-ssi form.
-        super(harpoon.IR.Quads.QuadRSSx.codeFactory(parent));
+	// we take in SSI, and output RSSx.
+        super(harpoon.IR.Quads.QuadSSI.codeFactory(parent));
 	this.ch = ch;
     }
     protected HCode mutateHCode(HCodeAndMaps input) {
+	HCode ahc = input.ancestorHCode();
 	HCode hc = input.hcode();
+	Util.assert(ahc.getName().equals(harpoon.IR.Quads.QuadSSI.codename));
+	Util.assert(hc.getName().equals(harpoon.IR.Quads.QuadRSSx.codename));
 	// do a type analysis of the method.
-	ExactTypeMap etm = new SCCAnalysis(hc);
-	new SCCOptimize((SCCAnalysis)etm).optimize(hc);
+	MyMaps etm = new MyMaps(input, new SCCAnalysis(ahc));
+	new SCCOptimize(etm, etm, etm).optimize(hc);
 	// now look for CALLs & devirtualize some of them.
 	for (Iterator it=hc.getElementsI(); it.hasNext(); ) {
 	    Quad q = (Quad) it.next();
 	    if (q instanceof CALL && examineCALL((CALL)q, etm))
 		devirtualizeCALL((CALL)q, etm);
 	}
-	// We *could* convert from RSSx to NoSSA or some such, but let's
-	// just stay in RSSx form.
-	Util.assert(hc.getName().equals(harpoon.IR.Quads.QuadRSSx.codename));
 	// done!
 	return hc;
+    }
+    private static class MyMaps implements ExactTypeMap, ConstMap, ExecMap {
+	private final Map new2oldE;
+	private final TempMap new2oldT;
+	private final SCCAnalysis scc;
+	MyMaps(HCodeAndMaps hcam, SCCAnalysis scc) {
+	    this.new2oldE = hcam.ancestorElementMap();
+	    this.new2oldT = hcam.ancestorTempMap();
+	    this.scc = scc;
+	}
+	// TypeMap
+	public HClass typeMap(HCodeElement hce, Temp t) {
+	    return scc.typeMap(n2o(hce), n2o(t));
+	}
+	// ExactTypeMap
+	public boolean isExactType(HCodeElement hce, Temp t) {
+	    return scc.isExactType(n2o(hce), n2o(t));
+	}
+	// ConstMap
+	public boolean isConst(HCodeElement hce, Temp t) {
+	    return scc.isConst(n2o(hce), n2o(t));
+	}
+	public Object constMap(HCodeElement hce, Temp t) {
+	    return scc.constMap(n2o(hce), n2o(t));
+	}
+	// ExecMap
+	public boolean execMap(HCodeElement hce) {
+	    return scc.execMap(n2o(hce));
+	}
+	public boolean execMap(HCodeEdge edge) {
+	    Quad from = (Quad) n2o(edge.from());
+	    int which_succ = ((Edge) edge).which_succ();
+	    return scc.execMap(from.nextEdge(which_succ));
+	}
+	// utility methods:
+	private HCodeElement n2o(HCodeElement hce) {
+	    return (HCodeElement) new2oldE.get(hce);
+	}
+	private Temp n2o(Temp t) {
+	    return new2oldT.tempMap(t);
+	}
+    }
+    protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod) {
+	// make SSI into RSSx.
+	Util.assert(hc.getName().equals(QuadSSI.codename));
+	return MyRSSx.cloneToRSSx((harpoon.IR.Quads.Code)hc, newmethod);
+    }
+    private static class MyRSSx extends QuadRSSx {
+	private MyRSSx(HMethod m) { super(m, null); }
+	public static HCodeAndMaps cloneToRSSx(harpoon.IR.Quads.Code c,
+					       HMethod m) {
+	    MyRSSx r = new MyRSSx(m);
+	    return r.cloneHelper(c, r);
+	}
+    }
+    protected String mutateCodeName(String codeName) {
+	Util.assert(codeName.equals(QuadSSI.codename));
+	return MyRSSx.codename;
     }
     private boolean examineCALL(CALL call, ExactTypeMap etm) {
 	// skip if !isVirtual
@@ -78,16 +146,21 @@ public class DispatchTreeTransformation
 	// exact types always have just one receiver.
 	if (etm.isExactType(null, recv)) return true;
 	HClass type = etm.typeMap(null, recv);
-	// now we have to count up possible receivers.
-	int n = 1 + numChildren(type);
+	// now we have to count up possible receivers (excl. abstract classes)
+	int n = numChildren(type);
+	if (!Modifier.isAbstract(type.getModifiers())) n++;
 	// okay, figure out if it's worth it.
 	return n < CUTOFF;
     }
     // separate method as it's recursive.
     private int numChildren(HClass hc) {
+	// note that we don't count abstract classes in the total.
 	int n=0;
-	for (Iterator it=ch.children(hc).iterator(); it.hasNext(); )
-	    n += 1 + numChildren((HClass)it.next());
+	for (Iterator it=ch.children(hc).iterator(); it.hasNext(); ) {
+	    HClass hcc = (HClass) it.next();
+	    if (!Modifier.isAbstract(hcc.getModifiers())) n += 1;
+	    n += numChildren(hcc);
+	}
 	return n;
     }
 
@@ -98,11 +171,30 @@ public class DispatchTreeTransformation
 
 	// find the set of relevant calls.
 	List methods = new ArrayList();
-	if (!etm.isExactType(null, recvr))
-	    collectMethods(etm.typeMap(null, recvr), call.method(),
-			   methods);
 	methods.add(call.method());
-	// okay, so methods are ordered most-specific to least-specific.
+	if (!etm.isExactType(null, recvr))
+	    methods.addAll(ch.overrides(etm.typeMap(null, recvr),
+					call.method(), true));
+	// remove uncallable methods.
+	methods.retainAll(ch.callableMethods());
+	// remove interface and abstract methods.
+	for (Iterator it=methods.iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    if (Modifier.isAbstract(hm.getModifiers()) ||
+		hm.getDeclaringClass().isInterface())
+		it.remove();
+	}
+	// could be that this method is completely uncallable.  SKIP IT.
+	if (methods.size()==0) return;
+	// now sort methods from most-specific to least-specific
+	Collections.sort(methods, new Comparator() {
+	    // ascending order.  smallest is most-specific
+	    public int compare(Object o1, Object o2) { // neg if o1 more sp.
+		HMethod hm1 = (HMethod)o1, hm2 = (HMethod)o2;
+		HClass hc1=hm1.getDeclaringClass(),hc2=hm2.getDeclaringClass();
+		return hc1.isInstanceOf(hc2)? -1: hc2.isInstanceOf(hc1)? 1: 0;
+	    }
+	});
 
 	// make devirtualized calls.
 	List spcalls = new ArrayList(methods.size());
@@ -146,15 +238,6 @@ public class DispatchTreeTransformation
 	    Quad.addEdge((Quad)toE.from(), toE.which_succ(), ts, 0);
 	    Quad.addEdge(rephi, 0, (Quad)reE.to(), reE.which_pred());
 	    Quad.addEdge(exphi, 0, (Quad)exE.to(), exE.which_pred());
-	}
-    }
-    void collectMethods(HClass hc, HMethod hm, List l) {
-	for (Iterator it=ch.children(hc).iterator(); it.hasNext(); ) {
-	    HClass hcc = (HClass) it.next();
-	    collectMethods(hcc, hm, l);// first added will be deepest.
-	    try {
-		l.add(hcc.getDeclaredMethod(hm.getName(), hm.getDescriptor()));
-	    } catch (NoSuchMethodError ex) { /* ignore */ }
 	}
     }
 }
