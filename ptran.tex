@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.38 2002-07-31 16:24:23 cananian Exp $
+% $Id: ptran.tex,v 1.39 2002-07-31 21:47:35 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.38 $ $}
+\date{\today \\ $ $Revision: 1.39 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -395,7 +395,7 @@ created outside the current analysis scope.%
 \item $I \subseteq (V\cup(N\times F))\times N$ is a set of inside
 edges.  Inside edges represent references created inside the current
 analysis scope.
-\item $\func{e}:N\to 2^M$ is an escape function that records the set of
+\item $\func{e}:N\to 2^S$ is an escape function that records the set of
 unanalyzed method invocation sites that a node escapes down into.
 \item $\func{c}:I\to 2^S$ collects store statements associated with
 inside edges.  This allows us to detect possible companion edges.
@@ -404,10 +404,13 @@ that may be returned by the currently analyzed method.
 \end{itemize}
 We define:
 \begin{eqnarray*}
+\func{unanalyzed}_\text{direct}(\tuple{O,I,\func{e},\func{c},r}, n) &=&
+\func{e}(n)\neq\emptyset
+\\
 \func{escaped}_\text{direct}(\tuple{O,I,\func{e},\func{c},r}, n) &=&
  n\in N_P \cup N_R \cup N_T \cup \bigvar{CL}
  \vee
- \func{e}(n)\neq\emptyset
+ \func{unanalyzed}(n)
 %\\
 %\func{escaped}_\text{v}(\tuple{O,I,\func{e},\func{c},r},v) &=&
 % \exists n\in N : \tuple{v,n}\in I
@@ -425,6 +428,17 @@ and then recursively:
  \func{escaped}%_\text{n}
                (\tuple{O,I,\func{e},\func{c},r},n')\right)
 \end{multline*}
+%\begin{multline*}
+%\func{unanalyzed}
+%              (\tuple{O,I,\func{e},\func{c},r},n) =
+% \func{unanalyzed}_\text{direct}(\tuple{O,I,\func{e},\func{c},r},n) \vee {}
+%\\
+% \exists n'\in N,f\in F : \left(\tuple{\tuple{n,f},n'}\in O\cup I
+% \wedge
+% \func{unanalyzed}
+%               (\tuple{O,I,\func{e},\func{c},r},n')\right)
+%\end{multline*}
+
 % INVARIANT: a node n never *un*escapes during the (intraproc?) analysis.
 
 We define the following auxilliary functions:
@@ -453,6 +467,11 @@ an edge $e_i=\tuple{\tuple{n_1,f},n_2} \in I$ is a:
  \func{condsing}\left(U\right)=\emptyset \wedge
  \neg\func{escaped}(n_1)
 \]
+
+Note that $\func{escaped}(n_1)\implies\func{escaped}(n_2)$.  
+We're only worried about the case where {\it both} $n_1$ and $n_2$
+escape; if only one or the other escapes it won't be possible to
+create any new $n_1.f=n_2$ references between them.
 % XXX some redundancy here?
 % note no outside edges to inside nodes.
 % if n_1 escapes, then n_2 escapes.
@@ -467,7 +486,11 @@ where
 $U=\bigcup_{s\in\func{c}(e_i)} \func{lhs}(s)$ for \newterm{from-companions} and
 $U=\bigcup_{s\in\func{c}(e_i)} \func{rhs}(s)$) for \newterm{to-companions}.
 We will say that an edge is a \newterm{companion edge} if it is a
-definite or possible companion.
+definite or possible companion.  Note that all remaining possible
+companions will become definite companions after we are done
+evaluating all the executable code in the program, as there will no
+longer be any ``outside'' code left which could do naughty
+companion-killing things. \textbf{XXX: unless we have unanalyzed methods!}
 
 \subsection{Inference rules}
 At the start of the analysis, we set $I=\emptyset$, $O=\emptyset$,
@@ -520,11 +543,11 @@ Given method $m$ with formals $p_0,\ldots,p_k$:
 
 \begin{displaymath}
 \dfrac
-{\text{\tt [l$_1$.f=l$_2$]}\in\mathcal{P} \wedge
+{s=\text{\tt [l$_1$.f=l$_2$]}\wedge s\in\mathcal{P} \wedge
  \tuple{l_1,n_1}\in I \wedge
  \tuple{l_2,n_2}\in I }
 {\tuple{\tuple{n_1,f},n_2}\in I \wedge
- \text{\tt [l$_1$.f=l$_2$]}\in \func{c}(\tuple{\tuple{n_1,f},n_2}) }
+ s\in \func{c}(\tuple{\tuple{n_1,f},n_2}) }
 \end{displaymath}
 
 \textbf{More unification here??}
@@ -566,6 +589,26 @@ Given method $m$ with formals $p_0,\ldots,p_k$:
 {n\in r}
 \end{displaymath}
 
+\subsection{Skipping a call-site}
+The inference rules for a skipped call-site are simple:
+\begin{displaymath}
+\dfrac
+{\text{\tt [l=l$_0$.op(l$_1$,\ldots,l$_k$)]}\in\mathcal{P} \wedge
+ n_R \text{ is new outside node for statement} }
+{\tuple{l,n_R}\in I}
+\end{displaymath}
+\begin{displaymath}
+\dfrac
+{s=\text{\tt [l=l$_0$.op(l$_1$,\ldots,l$_k$)]}\wedge s\in\mathcal{P} \wedge
+ 0\leq i\leq k \wedge
+ \tuple{l_i,n}\in I}
+{s \in \func{e}(n) }
+\end{displaymath}
+\textbf{XXX: again, this is post-transitive form.}
+
+\textbf{What happens to possible companions?  They can now never
+  become definite companions; do we continue to treat them as if
+  they could?}
 
 \subsection{Evaluating a call-site monomorphically}
 
