@@ -649,8 +649,10 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   struct closure_struct cls =
     { _this, PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
   int status;
+#if defined(WITH_REALTIME_JAVA) && defined(WITH_NOHEAP_SUPPORT)
   jclass noHeapThreadClass = 
     (*env)->FindClass(env, "javax/realtime/NoHeapRealtimeThread");
+#endif
   assert(runID!=NULL/* run() is certainly callable! */);
   /* first of all, see if this thread has already been started. */
   if (FNI_GetJNIData(env, _this)!=NULL) {
