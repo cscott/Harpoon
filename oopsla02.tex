@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.1 2002-03-22 00:46:44 cananian Exp $
+% $Id: oopsla02.tex,v 1.2 2002-03-22 01:07:47 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -27,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.1 $ $}{$ $Revision: 1.1 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.2 $ $}{$ $Revision: 1.2 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -35,6 +35,7 @@
 % abstract
 \begin{abstract}
 
+{\bf\Large FIX ME! }
 This paper presents a set of Java optimizations targetted at
 memory-constrained embedded devices.  Using the FLEX compiler system,
 we aggressively transform
@@ -58,6 +59,89 @@ memory-constrained embedded devices.
 
 \section{Introduction}
 
+This paper presents a set of techniques for reducing the
+amount of data space required to represent objects
+in object-oriented programs. Our techniques optimize
+the representation of both the programmer-defined fields
+within each object and the header information used by the
+run-time system:
+\begin{itemize}
+\item {\bf Field Reduction:} 
+Our a flow-sensitive, interprocedural value flow
+analysis computes the range of values that the program
+may assign to each field. The compiler then transforms the program
+to reduce the size of the field to the smallest size 
+capable of storing that range of values. 
+\item {\bf Constant Field Elimination:} 
+If the value flow analysis finds that field always holds
+the same constant value, the compiler eliminates the field. 
+It removes each write to the field, and replaces each read
+with the constant value.
+\item {\bf Static Specialization:} Our analysis finds 
+classes with fields whose values do not change after initialization,
+even though objects allocated at different allocation sites may
+have different values for these fields. It then generates 
+a specialized version of each class for each allocation site;
+this version omits the fields and instead provides accessor
+methods that return the corresponding values. 
+\item {\bf Field Externalization:} Our analysis uses profiling
+to find fields that almost always have the same default value. 
+It then removes these fields from their enclosing class, 
+using a hash table to store values of the field that differ
+from the default value. It replaces writes to the field with
+an insertion into the hash table (if the written value is not the
+default value) or a removal from the hash table (if the written value
+is the default value). It replaces reads with hash table lookups; 
+if the object is not present in the hash table, the lookup simply
+returns the default value. 
+\item {\bf Unused Field Analysis:} If the program does not
+use a field, the compiler eliminates the field. 
+\item {\bf Claz Compression:} Our class hierarchy analysis
+computes an upper bound on the number of classes that the
+program may instantiate. Objects in standard 
+Java implementations have a header that contains a pointer
+to the class data (such as the method dispatch table) for that object. 
+Our compiler uses the results of the class
+hierarchy analysis to replace the reference with a smaller
+offset into a table of pointers to the class data. 
+\item {\bf Byte Packing:} All of the above transformations may
+reduce or eliminate the amount of space required to store each
+field in the object or object header. Our byte packing algorithm
+arranges the fields in the object to minimize the amount of 
+storage. 
+\end{itemize}
+All of these transformations reduce the space required to store
+objects, but potentially increase the running time of the program.
+Our experimental results show that, for our set of benchmark
+programs, all of our combined techniques can reduce the peak amount of memory
+required to run the program by as much as XXX\% and never reduce the
+running time by more than YYY\%.
+
+\subsection{Contributions}
+
+This paper makes the following contributions:
+\begin{itemize}
+\item {\bf Space Reduction Transformations:} It presents a set
+of novel transformations for reducing the memory required to 
+represent objects in object-oriented programs.
+
+\item {\bf Analysis Algorithms:} It presents a set of 
+analysis algorithms that automatically extract the 
+information required to apply the space reduction 
+transformations.
+
+\item {\bf Implementation:} We have fully 
+implemented all of the analyses and techniques 
+presented in the paper. Our experience with this
+implementation enables us to discuss the pragmatic
+details of developing an effective implementation 
+of our techniques. 
+
+\item {\bf Experimental Results:} It presents a set
+of experimental results that characterize the impact
+of our transformations. 
+\end{itemize}
+
 \section{Example}
 Figure \ref{fig:jess-classes} presents an example that illustrates the
 kinds of application code where our transformations can optimize space
@@ -71,8 +155,10 @@ modifications have been made for clarity and ease of exposition.
 \begin{figure}
 \begin{samplecode}
 public final class Value \{\\
-\>private final int NUM\_TYPES = RU.INTEGER | RU.FLOAT;\\
-\>private int FACT\_TYPES = RU.FACT\_ID | NUM\_TYPES;\\
+\>private final int NUM\_TYPES =\\
+\>\>\>\>RU.INTEGER | RU.FLOAT;\\
+\>private int FACT\_TYPES =\\
+\>\>\>\>RU.FACT\_ID | NUM\_TYPES;\\
 \>\ldots\\
 \\
 \>private int            \_type;\\
@@ -80,14 +166,14 @@ public final class Value \{\\
 \>private double       floatval;\\
 \>private Object      Objectval;\\
 \\
-\>public Value(Object o, int type) throws ReteException \{\\
+\>public Value(Object o, int type) \{\\
 \>\>if (type != RU.EXTERNAL\_ADDRESS)\\
 \>\>\>throw new ReteException();\\
 \>\>\_type = type;\\
 \>\>Objectval = o;\\
 \>\}\\
 \\
-\>public int FactIDValue() throws ReteException \{\\
+\>public int FactIDValue() \{\\
 \>\>if ((\_type {\&} FACT\_TYPES) != 0)\\
 \>\>\>return intval;\\
 \>\>throw new ReteException();\\
@@ -140,9 +226,10 @@ infrequently-instantiated classes.
 
 \begin{table}
 \begin{tabular}{lcccr@{.}l}
-&\bf total&&&\multicolumn{2}{c}{\bf\% alloc'ed}\\
-\bf Benchmark &\bf fields &\bf unread &\bf constant &
-\multicolumn{2}{c}{\bf space saved} \\\hline
+&&&&\multicolumn{2}{c}{\bf Alloc'ed}\\
+&\bf Total&&&\multicolumn{2}{c}{\bf space}\\
+\bf Benchmark &\bf fields &\bf Unread &\bf Const. &
+\multicolumn{2}{c}{\bf saved} \\\hline
 200\_check      & 279 &   79   &   35   &  2&6\% \\
 201\_compress   & 298 &   75   &   31   &  2&5\% \\
 202\_jess       & 485 &   91   &   43   &  9&9\% \\
