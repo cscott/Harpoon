@@ -40,7 +40,7 @@ inline void* RTJ_malloc(size_t size) {
 #endif
 			  MemBlock_currentMemBlock(), size); 
 #ifdef RTJ_DEBUG
-  printf("= %p\n", (int)newPtr);
+  printf("= %p\n", newPtr);
 #endif
 #ifdef RTJ_DEBUG_REF
   if (memBlock) {
@@ -89,7 +89,7 @@ static jfieldID memoryAreaID = NULL;
 static jobject heapMem = NULL;
 #endif
 
-inline void RTJ_preinit() {
+void RTJ_preinit() {
   JNIEnv *env = FNI_GetJNIEnv();
   jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
   jclass clazz = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
@@ -132,7 +132,7 @@ inline void RTJ_preinit() {
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
 }
 
-inline void RTJ_init() {
+void RTJ_init() {
   JNIEnv* env = FNI_GetJNIEnv();
   jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
   jclass rtClazz = (*env)->FindClass(env, "javax/realtime/RealtimeThread");

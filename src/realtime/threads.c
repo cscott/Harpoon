@@ -1,6 +1,35 @@
-#include <jni.h>
-#include <jni-private.h>
+#include "config.h"
 #include <assert.h>
+#include <jni.h>
+
+#ifndef WITH_REALTIME_THREADS
+JNIEXPORT jint JNICALL Java_javax_realtime_Scheduler_beginAtomic
+  (JNIEnv *env, jobject scheduler) {
+  assert(0);
+}
+
+JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_endAtomic
+  (JNIEnv *env, jobject scheduler, jint state) {
+  assert(0);
+}
+
+JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_addThreadInC
+(JNIEnv* env, jobject _this, jobject thread, jlong threadID) {
+  assert(0);
+}
+
+JNIEXPORT jlong JNICALL Java_javax_realtime_Scheduler_removeThreadInC
+(JNIEnv* env, jobject _this, jobject thread) {
+  assert(0);
+}
+
+JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_setQuanta
+(JNIEnv* env, jobject _this, jlong microsecs) {
+  assert(0);
+}
+
+#else
+#include <jni-private.h>
 #include <signal.h>
 #include <sys/time.h>
 #include <string.h> /* for memset */
@@ -788,3 +817,4 @@ void printScheduler() {
   RestoreSwitching(switching_state);
 #endif
 }
+#endif

@@ -13,8 +13,8 @@ JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_initNative
 (JNIEnv* env, jobject memoryArea, jlong minimum, jlong maximum) {
   struct MemBlock* mb = MemBlock_new(env, memoryArea);
 #ifdef RTJ_DEBUG
-  printf("CTMemory.initNative(%p, %p, %d, %d)\n", 
-	 env, memoryArea, minimum, maximum);
+  printf("CTMemory.initNative(%p, %p, %lld, %lld)\n", 
+	 env, memoryArea, (long long int)minimum, (long long int)maximum);
   checkException();
 #endif
   mb->block = Block_new(minimum);
@@ -51,7 +51,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_doneNative
   } 
 #ifdef RTJ_DEBUG
   else {
-    printf("  Not freeing memory now because refCount = %d\n", mb->refCount);
+    printf("  Not freeing memory now because refCount = %ld\n", mb->refCount);
   }
 #endif
 }

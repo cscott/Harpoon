@@ -15,7 +15,7 @@ static jfieldID MemoryArea_shadow = NULL;
 #endif
 
 void MemoryArea_init(JNIEnv* env) {
-  jclass memAreaStackClaz = (*env)->FindClass(env, "javax/realtime/MemoryAreaStack");
+  jclass memAreaStackClaz = (*env)->FindClass(env, "javax/realtime/MemAreaStack");
   jclass constructorClaz;
   jclass memoryAreaClaz;
   checkException();
@@ -32,7 +32,7 @@ void MemoryArea_init(JNIEnv* env) {
   Array_newInstance_dims = (*env)->GetStaticMethodID(env, ArrayClaz, "newInstance",
 						     "(Ljava/lang/Class;[I)Ljava/lang/Object;");
   checkException();
-  constructorClaz = (*env)->FindClass(env, "java/lang/Constructor");
+  constructorClaz = (*env)->FindClass(env, "java/lang/reflect/Constructor");
   checkException();
   Constructor_newInstance = (*env)->GetMethodID(env, constructorClaz, "newInstance",
 						"([Ljava/lang/Object;)Ljava/lang/Object;");

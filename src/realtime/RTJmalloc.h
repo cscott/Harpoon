@@ -14,8 +14,8 @@
 #include "threads.h"
 #endif
 
-inline void RTJ_preinit();
-inline void RTJ_init();
+void RTJ_preinit();
+void RTJ_init();
 int RTJ_init_in_progress;
 
 #ifdef RTJ_DEBUG_REF

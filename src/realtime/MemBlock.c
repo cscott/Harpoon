@@ -40,8 +40,8 @@ struct MemBlock* MemBlock_new(JNIEnv* env,
 #endif
 #ifdef RTJ_DEBUG
   checkException();
-  printf("MemBlock_new(%s, %p)\n", 
-	 className((*env)->GetObjectClass(env, memoryArea)));
+  printf("MemBlock_new(%p, %s (%p))\n", env,
+	 className((*env)->GetObjectClass(env, memoryArea)), memoryArea);
   checkException();
 #endif
   pthread_mutex_init(&(mb->finalize_lock), NULL);
@@ -96,12 +96,12 @@ const char* classNameUnwrap(struct oobj* obj) {
 inline long MemBlock_INCREF(struct MemBlock* memBlock) {
   long* refcount = &(memBlock->refCount);
 #ifdef RTJ_DEBUG
-  printf("MemBlock_INCREF(%p): %d -> ", memBlock, *refcount); 
+  printf("MemBlock_INCREF(%p): %ld -> ", memBlock, *refcount); 
   checkException();
 #endif
   atomic_add((uint32_t*)refcount, 1);
 #ifdef RTJ_DEBUG
-  printf("%d \n", *refcount);
+  printf("%ld \n", *refcount);
 #endif
   return *refcount;
 }
@@ -109,12 +109,12 @@ inline long MemBlock_INCREF(struct MemBlock* memBlock) {
 inline long MemBlock_DECREF(struct MemBlock* memBlock) {
   long* refcount = &(memBlock->refCount);
 #ifdef RTJ_DEBUG
-  printf("MemBlock_DECREF(%p): %d -> ", memBlock, *refcount);
+  printf("MemBlock_DECREF(%p): %ld -> ", memBlock, *refcount);
   checkException();
 #endif
   atomic_add((uint32_t*)refcount, -1);
 #ifdef RTJ_DEBUG
-  printf("%d \n", *refcount);
+  printf("%ld \n", *refcount);
 #endif
   return *refcount;
 }
@@ -122,7 +122,7 @@ inline long MemBlock_DECREF(struct MemBlock* memBlock) {
 inline void* MemBlock_alloc(struct MemBlock* memBlock, 
 			    size_t size) {
 #ifdef RTJ_DEBUG
-  printf("MemBlock_alloc(%p, %d)\n", (int)memBlock, size);
+  printf("MemBlock_alloc(%p, %d)\n", memBlock, size);
   checkException();
 #endif
   if (!memBlock) { 
@@ -176,7 +176,7 @@ inline int MemBlock_free(struct MemBlock* memBlock) {
 #endif
   if (MemBlock_DECREF(memBlock)) {
 #ifdef RTJ_DEBUG
-    printf("  decrementing reference count: %d\n", 
+    printf("  decrementing reference count: %ld\n", 
 	   memBlock->refCount);
 #endif
     return 0;
@@ -231,10 +231,9 @@ inline void find_RTJ_roots() {
 
 #ifdef RTJ_DEBUG_REF
 void printPointerInfo(struct oobj* obj, int getClassInfo) {
-  struct MemBlock* memBlock;
+  struct MemBlock* memBlock = NULL;
   struct PTRinfo* topPtrInfo;
   struct PTRinfo* ptrInfo = NULL;
-  JNIEnv* env = FNI_GetJNIEnv();
   topPtrInfo = ptr_info;
   printf("pointer at %p ", obj);
   while ((topPtrInfo != NULL)&&(ptrInfo == NULL)) {

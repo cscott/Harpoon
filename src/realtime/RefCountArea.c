@@ -63,6 +63,15 @@ JNIEXPORT void JNICALL Java_javax_realtime_RefCountArea_INCREF
   RefCountAllocator_INCREF(FNI_UNWRAP_MASKED(obj));
 }
 
+extern int RTJ_init_in_progress;
+
+JNIEXPORT void JNICALL Java_javax_realtime_RefCountArea_INCREF_00024_00024initcheck
+(JNIEnv* env, jobject refCountArea, jobject obj) {
+  assert(!RTJ_init_in_progress);
+  return Java_javax_realtime_RefCountArea_INCREF(env, refCountArea, obj);
+}
+
+
 /*
  * Class:     javax_realtime_RefCountArea
  * Method:    DECREF

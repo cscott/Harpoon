@@ -4,7 +4,9 @@
 
 #include "block.h"
 
+#ifndef BDW_CONSERVATIVE_GC
 static int fd = -1;
+#endif
 
 inline struct Block* Block_new(size_t size) {
   struct Block* bl;
@@ -119,7 +121,9 @@ inline void Block_finalize(struct Block* block) {
 }
 
 inline void Block_free(struct Block* block) {
+#ifndef BDW_CONSERVATIVE_GC
   size_t size = (size_t)((block->end)-(block->begin));
+#endif
 #ifdef RTJ_TIMER
   struct timeval begin, end;
   gettimeofday(&begin, NULL);
@@ -140,7 +144,8 @@ inline void Block_free(struct Block* block) {
   RTJ_FREE(block);
 #ifdef RTJ_TIMER
   gettimeofday(&end, NULL);
-  printf("Block_free: %ds %dus\n", end.tv_sec-begin.tv_sec, end.tv_usec-begin.tv_usec);
+  printf("Block_free: %ds %dus\n", end.tv_sec-begin.tv_sec, 
+	 end.tv_usec-begin.tv_usec);
 #endif
 }
 

@@ -195,7 +195,7 @@ inline void* RefCountAllocator_accumulate(RefCountAllocator rc,
   struct refCons* old;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("  RefCountAllocator_accumulate(%08x, %08x)\n", rc, visitor);
+  printf("  RefCountAllocator_accumulate(%p, %p)\n", rc, visitor);
 #endif
   RefCountAllocator_INC(rc);
   current = rc->in_use;

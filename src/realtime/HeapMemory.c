@@ -12,7 +12,8 @@
 JNIEXPORT void JNICALL Java_javax_realtime_HeapMemory_initNative
 (JNIEnv* env, jobject memoryArea, jlong size) {
 #ifdef RTJ_DEBUG
-  printf("HeapMemory.initNative(%p, %p, %d)\n", env, memoryArea, size);
+  printf("HeapMemory.initNative(%p, %p, %lld)\n", env, memoryArea, 
+	 (long long int)size);
 #endif  
 }
 
