@@ -1,6 +1,7 @@
 package harpoon.ClassFile.Raw.Constant;
 
 import harpoon.ClassFile.Raw.*;
+import harpoon.Util.Util;
 /**
  * The <code>CONSTANT_Utf8_info</code> structure is used to represent
  * constant string values. <p> UTF-8 strings are encoded so that
@@ -9,7 +10,7 @@ import harpoon.ClassFile.Raw.*;
  * up to 16 bits can be represented.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantUtf8.java,v 1.10 1998-08-02 03:47:35 cananian Exp $
+ * @version $Id: ConstantUtf8.java,v 1.11 1998-08-07 09:53:04 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.7"
  * @see Constant
  */
@@ -37,20 +38,6 @@ public class ConstantUtf8 extends Constant {
 
   /** Create a human-readable representation of this constant. */
   public String toString() {
-    return "CONSTANT_Utf8: \"" + escape(val) + "\"";
-  }
-  static String escape(String str) {
-    StringBuffer sb = new StringBuffer();
-    for (int i=0; i<str.length(); i++) {
-      char c = str.charAt(i);
-      if (Character.isISOControl(c)) {
-	String hexval=Integer.toHexString((int)c);
-	while(hexval.length()<4) hexval="0"+hexval;
-	sb.append('\\'); sb.append('u');
-	sb.append(hexval);
-      }
-      else sb.append(c);
-    }
-    return sb.toString();
+    return "CONSTANT_Utf8: \"" + Util.escape(val) + "\"";
   }
 }

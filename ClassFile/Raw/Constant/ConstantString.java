@@ -1,13 +1,14 @@
 package harpoon.ClassFile.Raw.Constant;
 
 import harpoon.ClassFile.Raw.*;
+import harpoon.Util.Util;
 /**
  * The <code>CONSTANT_String_info</code> structure is used to
  * represent constant objects of the type
  * <code>java.lang.String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantString.java,v 1.11 1998-08-04 01:51:38 cananian Exp $
+ * @version $Id: ConstantString.java,v 1.12 1998-08-07 09:53:04 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.3"
  * @see Constant
  */
@@ -49,7 +50,7 @@ public class ConstantString extends ConstantValue {
   /** Create a human-readable representation of this constant. */
   public String toString() {
     return 
-      "CONSTANT_String: \"" + ConstantUtf8.escape(string()) + "\" " +
+      "CONSTANT_String: \"" + Util.escape(string()) + "\" " +
       "{" + string_index + "}";
   }
 }
