@@ -23,13 +23,14 @@ import java.util.Set;
  * <code>QuadLiveness</code> if you have changed the <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: QuadLiveness.java,v 1.1.2.4 2000-01-02 22:19:36 bdemsky Exp $
+ * @version $Id: QuadLiveness.java,v 1.1.2.4.2.1 2000-01-13 08:12:30 bdemsky Exp $
  */
 public class QuadLiveness extends Liveness {
     final Hashtable livein;
     final Hashtable liveout;
     final Hashtable tempin;
     final Hashtable tempout;
+    final Hashtable tempinout;
 
     /** Creates a <code>QuadLiveness</code>. Requires 
      *  that the <code>HCode</code> be quad-no-ssa.
@@ -41,6 +42,7 @@ public class QuadLiveness extends Liveness {
 	this.liveout = live[1];
 	this.tempin = new Hashtable();
 	this.tempout = new Hashtable();
+	this.tempinout = new Hashtable();
     }
 
     /** Returns the <code>Set</code> of <code>Temp</code>s 
@@ -85,6 +87,28 @@ public class QuadLiveness extends Liveness {
 	    Set set=(Set) this.liveout.get((Quad) hce);
 	    Temp[] retval=(Temp[]) set.toArray(new Temp[set.size()]);
 	    tempout.put(hce, retval);
+	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, retval);
+	}
+    }
+
+    public Temp[] getLiveInandOutArray(HCodeElement hce) {
+	if (tempinout.containsKey(hce))
+	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, (Temp[]) tempout.get(hce));
+	else {
+	    Set set=(Set) this.liveout.get((Quad) hce);
+	    Set setin=(Set) this.livein.get((Quad) hce);
+	    Iterator iter=set.iterator();
+	    int count=0;
+	    while (iter.hasNext())
+		if (setin.contains(iter.next()))
+		    count++;
+	    Temp[] retval=new Temp[count];
+	    iter=set.iterator();
+	    count=0;
+	    while (iter.hasNext())
+		if (setin.contains(iter.next()))
+		    retval[count++]=(Temp) iter.next();
+	    tempinout.put(hce, retval);
 	    return (Temp[]) Util.safeCopy(Temp.arrayFactory, retval);
 	}
     }
