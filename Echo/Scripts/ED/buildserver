@@ -1,0 +1,5 @@
+#!/bin/bash
+script=$1
+toplevel=$2
+shift 2
+$script Benchmark.Echo.Echo $toplevel $@

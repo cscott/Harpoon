@@ -1,0 +1,36 @@
+#!/bin/bash
+#Echo Test Server Script
+server=$1
+port=$2
+echo "#!/bin/bash" > runtest
+echo "echo ------------------------------------------->> results" >> runtest
+echo "echo ./mark2 nw1.lcs.mit.edu $port 50 100 10 >>results"  >> runtest
+echo "./mark2 nw1.lcs.mit.edu $port 50 100 10 >>results"  >> runtest
+echo "echo "$server $port " >> results" >>runtest
+echo "echo ------------------------------------------->> results" >> runtest
+chmod 755 runtest
+
+echo "#!/bin/bash" > runserv
+echo "echo ------------------------------------------->> results" >> runserv
+echo "echo LONG >>results">>runserv
+echo $server $port 100 " >> results"  >> runserv
+echo "echo ------------------------------------------->> results" >> runserv
+chmod 755 runserv
+
+echo "#!/bin/bash" > finserv
+echo killall -ALRM $server  >> finserv
+echo sleep 2 >>finserv
+echo killall -9 $server >>finserv
+chmod 755 finserv
+
+#run the server
+./runserv &
+
+#benchmark the server
+scp runtest st.lcs.mit.edu:/root/
+ssh st.lcs.mit.edu ./runtest
+
+#finish the server off
+./finserv
+
+

@@ -1,0 +1,8 @@
+#!/bin/bash
+dir=$1
+export CVSROOT=:ext:bdemsky@lm.lcs.mit.edu:/home/cananian/Harpoon/CVSROOT
+cvs co Runtime
+mv Runtime $1
+cd $1
+./configure --disable-shared --with-precise-c
+make

@@ -1,0 +1,8 @@
+#!/bin/bash
+compiledir=$1
+runtimedir=$2
+target=$3
+ln -sf $runtimedir/ $compilerdir/Java.a 
+cd $compiledir
+make run
+mv run $target

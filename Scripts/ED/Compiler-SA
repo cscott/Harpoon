@@ -1,0 +1,43 @@
+#!/bin/bash
+cls=$1
+classdir=$2
+dir1=$3
+dir2=$4
+
+echo "Building $cls in $dir1 and $dir2; result will be ${cls}-Java.a"
+if [ -d $dir1 ]; then
+    /bin/rm -rf $dir1
+fi
+if [ ! -d $dir1 ]; then
+    mkdir $dir1
+fi
+
+if [ -d $dir2 ]; then
+    /bin/rm -rf $dir2
+fi
+if [ ! -d $dir2 ]; then
+    mkdir $dir2
+fi
+export JAVA_COMPILER=
+
+time java -mx240m -oss100m -Dharpoon.class.path=./Support/EventDriven1.jar:./Support/sunthunk.jar:./Support/collections.jar:/d/Harpoon/classes.zip:$classdir harpoon.Main.PAMain -s --ccs=3 --wts --noit --mamaps=analyze-$cls --details $cls 
+echo "XXXXXXXXXX"
+export JAVA_COMPILER=sunwjit
+
+time java -mx240M -oss30M -Dharpoon.alloc.strategy=nifty -Dharpoon.target.elf=yes -Dharpoon.relinker.hack=yes -Dharpoon.class.path=./Support/EventDriven1.jar:./Support/sunthunk.jar:./Support/collections.jar:/d/Harpoon/classes.zip:$classdir harpoon.Main.EDXMain -p -r -H -c $cls -o $dir1 -i analyze-$cls
+
+echo "XXXXXXXXXX"
+
+time java -mx240M -oss30M -Dharpoon.alloc.strategy=nifty -Dharpoon.target.elf=yes -Dharpoon.class.path=./Support/EventDriven1.jar:./Support/sunthunk.jar:./Support/collections.jar:/d/Harpoon/classes.zip:$classdir harpoon.Main.SAMain -H -c $cls -o $dir2 -i analyze-$cls
+echo "XXXXXXXXXX"
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,2 @@
+#!/bin/bash
+jikes -d . -g */*/*.java
