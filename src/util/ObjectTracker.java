@@ -5,20 +5,54 @@ package imagerec.util;
 
 /**
  * Clas responsible for keep track of objects of interest.
+ * Keeps an array of {@link ObjectInfo}s,
+ * which, in turn, contain {@link ObjectDataPoint}s.
+ *
+ * This class is intended to be stored in {@link CommonMemory} so
+ * it may be accessed by any interested Nodes.
  * 
  * @see ObjectInfo
+ * @see ObjectDataPoint
  */
 public class ObjectTracker {
     
-    ObjectInfoWrapper[] objectInfoWrappers;
+    /**
+     * The array of {@link ObjectInfo}s. The size of this array
+     * is dynamically adjusted as {@link ObjectInfo}s are added
+     * and deleted.
+     */
+    private ObjectInfoWrapper[] objectInfoWrappers;
+    /**
+     * The garbage collector which
+     * periodically checks all contained {@link ObjectInfo}s
+     * to see if they have been modified/updated recently.
+     * If they have not, then the {@link ObjectInfo}s are
+     * thrown away.
+     *
+     * @see ObjectTracker.GarbageCollector
+     */
     private GarbageCollector gc;
 
+    /**
+     * Minimum guarenteed time (in ms) that 
+     * unmodified {@link ObjectInfo}s will be preserved. Before
+     * they are thrown out by the ObjectTracker's GarbageCollector.
+     *
+     * @see ObjectTracker.GarbageCollector
+     */
     private static final long timeToForget = 10000;
 
+    /**
+     * Constructor that creates an empty ObjectTracker.
+     */
     public ObjectTracker() {
 	init();
     }
 
+    /**
+     * This method should be called by all constructors
+     * to properly initialize the object.
+     */
     private void init() {
 	objectInfoWrappers = new ObjectInfoWrapper[0];
 	gc = new GarbageCollector();
@@ -33,8 +67,13 @@ public class ObjectTracker {
      * the same unique ID is already being tracked.
      */
     public synchronized void addObjectInfo(ObjectInfo info) {
+	//synchronized because of the garbage collector
 	int index;
 	int newUniqueID = info.getUniqueID();
+	//'for' loop is just an assertion check
+	//it can be removed. The exception
+	//should never be thrown since
+	//'newUniqueID' must be unique.
 	for (index = 0; index < objectInfoWrappers.length; index++) {
 	    if (objectInfoWrappers[index].objectInfo.getUniqueID() ==
 		newUniqueID) {
@@ -67,6 +106,7 @@ public class ObjectTracker {
      * the same unique ID is not being tracked.
      */
     public synchronized void remObjectInfo(int uniqueID) {
+	//synchronized because of the garbage collector
 	int index;
 	for (index = 0; index < objectInfoWrappers.length; index++) {
 	    if (objectInfoWrappers[index].objectInfo.getUniqueID() == 
@@ -88,9 +128,10 @@ public class ObjectTracker {
 			 newObjectInfoWrappers.length - index);
 	objectInfoWrappers = newObjectInfoWrappers;
 	return;	
-    }   
+    }
 
     private synchronized ObjectInfoWrapper getObjectInfoWrapper(int uniqueID) {
+	//synchronized because of the garbage collector
 	int index;
 	for (index = 0; index < objectInfoWrappers.length; index++) {
 	    if (objectInfoWrappers[index].objectInfo.getUniqueID() == 
@@ -106,16 +147,45 @@ public class ObjectTracker {
 	return objectInfoWrappers[index];
     }
 
+    /**
+     * Set whether the given tracked object is "interesting".
+     * The "interesting" property currently does not affect anything
+     * within the ObjectTracker code or its dependencies.
+     *
+     * @param uniqueID The unique tracking ID for the object
+     *        whose property will be set.
+     * @param interesting Specifies the new value of the property. 
+     */
     public void setInteresting(int uniqueID, boolean interesting) {
 	ObjectInfoWrapper oiw = getObjectInfoWrapper(uniqueID);
 	oiw.interesting = interesting;
     }
 
+    /**
+     * Returns the boolean value of the "interesting" property
+     * of the specified tracked object.
+     *
+     * @param uniqueID The unique tracking ID for the object
+     *                 whose "interesting" property value will
+     *                 be returned.
+     */
     public boolean isInteresting(int uniqueID) {	
 	ObjectInfoWrapper oiw = getObjectInfoWrapper(uniqueID);
 	return oiw.interesting;
     }
 
+    /**
+     * Returns the {@link ObjectInfo} whose last known x-y coordinate
+     * is closest to the specified coordinate.<br><br
+     * 
+     * The actual coordinate that is compared is calculated as follows:
+     *     <code>coordinate = (x+width/2,y+height/2)</code>
+     *
+     * @param x See above.
+     * @param y See above.
+     * @param width See above.
+     * @param height See above.
+     */
     public synchronized ObjectInfo getClosestObject(int x, int y,
 				       int width, int height) {
 	int size = objectInfoWrappers.length;
@@ -156,11 +226,28 @@ public class ObjectTracker {
 	}
     }
 
+    /**
+     * A private internal class which runs
+     * an independent thread that removes {@link ObjectInfo}s
+     * from the {@link ObjectTracker}'s array whose contents
+     * have not been mutated/updated for a while. The maximum
+     * amount of time an {@link ObjectInfo} may remain idle
+     * is defined as a field of the {@link ObjectTracker}.
+     */
     private class GarbageCollector implements Runnable {
+	/**
+	 * Constructor that initalizes and runs a new garbage
+	 * collecting thread that will clean-up the contents
+	 * of the {@link ObjectTracker} that instantiates it.
+	 */
 	GarbageCollector() {
 	    Thread t = new Thread(this);
 	    t.start();
 	}
+
+	/**
+	 * Periodically performs garbage collection.
+	 */
 	public void run() {
 	    boolean keepGoing = true;
 	    while (keepGoing) {
@@ -179,7 +266,8 @@ public class ObjectTracker {
 			    remove[count] = true;
 			}
 		    }
-		    //backwards so that when an object is removed,
+		    //backwards so that when an object is removed
+		    //from the array
 		    //remaining indexes don't need to change
 		    for(int count = size-1; count >= 0; count--) {
 			if (remove[count]) {
@@ -188,8 +276,8 @@ public class ObjectTracker {
 			    ObjectTracker.this.remObjectInfo(uniqueID);
 			}
 		    }
-		}
-	    }
-	}
-    }
-}
+		}//[synchronized(this)]
+	    }//[while (keepGoing)]
+	}//[public void run()]
+    }//[class GarbageCollector]
+}//[class ObjectTracker]
