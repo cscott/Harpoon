@@ -32,7 +32,7 @@ import java.util.Set;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.12 1999-08-19 04:06:57 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.13 1999-08-19 17:19:26 bdemsky Exp $
  */
 final class ReHandler {
     // entry point.
@@ -263,9 +263,14 @@ final class ReHandler {
 			}
 			if (!found) {
 			    //Gotta add TYPECAST 'cast' quad
-			    TYPECAST tc=new TYPECAST(ql[i].getFactory(), ql[i], (Temp) cast.asList().get(0),(HClass) cast.asList().get(1));
-			    Quad.addEdge(tc,0, ql[i].next(j),ql[i].nextEdge(j).which_pred());
-			    Quad.addEdge(ql[i], j, tc, 0);
+			    //No typecasting to primitives...
+			    if (!((HClass) cast.asList().get(1)).isPrimitive()) {
+				TYPECAST tc=new TYPECAST(ql[i].getFactory(),
+				      ql[i], (Temp) cast.asList().get(0),
+				      (HClass) cast.asList().get(1));
+				Quad.addEdge(tc,0, ql[i].next(j),ql[i].nextEdge(j).which_pred());
+				Quad.addEdge(ql[i], j, tc, 0);
+			    }
 			}
 		    }
 		}
@@ -275,6 +280,7 @@ final class ReHandler {
     static void visitanalyze(WorkSet todo, TypeVisitor visitor) {
 	while(!todo.isEmpty()) {
 		Quad next=(Quad)todo.pop();
+		System.out.println(next.toString());
 		next.visit(visitor);
 	}
     }
@@ -741,6 +747,16 @@ class TypeVisitor extends QuadVisitor {
 	return typecast;
     }
     
+    public void visit(HEADER q) {
+	if (!visited.contains(q)) {
+	    WorkSet ourcasts=new WorkSet();
+	    typecast.put(q, ourcasts);
+	    visited.add(q);
+	    for (int i=0;i<q.nextLength();i++)
+		todo.add(q.next(i));	
+	}
+    }
+
     public void visit(Quad q) {
 	boolean changed=false;
 	if (visited.contains(q)) {
@@ -773,6 +789,47 @@ class TypeVisitor extends QuadVisitor {
 	}
     }
     
+    public void visit(MOVE q) {
+	boolean changed=false;
+	if (visited.contains(q)) {
+	    Quad pred=q.prev(0);
+	    Set casts=(Set)typecast.get(pred);
+	    Set ourcasts=(Set)typecast.get(q);
+	    Iterator iterate=casts.iterator();
+	    while (iterate.hasNext()) {
+		Tuple cast=(Tuple)iterate.next();
+		if (!ourcasts.contains(cast)) {
+		    changed=true;
+		    ourcasts.add(cast);
+		    if (((Temp)cast.asList().get(0))==q.src())
+			ourcasts.add(new Tuple(new Object[] {q.dst(), (HClass) cast.asList().get(1)}));
+		}
+	    }
+	    if (changed) {
+		//push our descendants
+		for (int i=0;i<q.nextLength();i++) {
+		    todo.add(q.next(i));
+		}
+	    }
+	}
+	else {
+	    //never seen yet...
+	    Set parentcast=(Set)typecast.get(q.prev(0));
+	    WorkSet ourcasts=new WorkSet();
+	    typecast.put(q, ourcasts);
+	    Iterator iterate=parentcast.iterator();
+	    while (iterate.hasNext()) {
+		Tuple cast=(Tuple)iterate.next();
+		ourcasts.add(cast);
+		if (((Temp)cast.asList().get(0))==q.src())
+		    ourcasts.add(new Tuple(new Object[] {q.dst(), (HClass) cast.asList().get(1)}));
+	    }
+	    visited.add(q);
+	    for (int i=0;i<q.nextLength();i++)
+		todo.add(q.next(i));
+	}
+    }
+
     public void visit(SET q) {
 	//q.objectref() is the object to use
 	//q.src() is the temp to put in the q.field() of this object
@@ -804,46 +861,48 @@ class TypeVisitor extends QuadVisitor {
 	    //never seen yet...
 	    Set parentcast=(Set)typecast.get(q.prev(0));
 	    WorkSet ourcasts=new WorkSet(parentcast);
-	    if (!q.field().getDeclaringClass().isAssignableFrom(ti.typeMap(null,q.objectref()))) {
-		//Need typecast??
-		Iterator iterate=ourcasts.iterator();
-		boolean foundcast=false;
-		while (iterate.hasNext()) {
-		    Tuple cast=(Tuple)iterate.next();
-		    List list=cast.asList();
-		    if (list.get(0)==q.objectref()) {
-			HClass hc=(HClass)list.get(1);
-			if (q.field().getDeclaringClass().isAssignableFrom(hc)) {
-			    foundcast=true;
-			    break;
+	    if (q.objectref()!=null)
+		if (!q.field().getDeclaringClass().isAssignableFrom(ti.typeMap(null,q.objectref()))) {
+		    //Need typecast??
+		    Iterator iterate=ourcasts.iterator();
+		    boolean foundcast=false;
+		    while (iterate.hasNext()) {
+			Tuple cast=(Tuple)iterate.next();
+			List list=cast.asList();
+			if (list.get(0)==q.objectref()) {
+			    HClass hc=(HClass)list.get(1);
+			    if (q.field().getDeclaringClass().isAssignableFrom(hc)) {
+				foundcast=true;
+				break;
+			    }
 			}
 		    }
-		}
-		if (!foundcast) {
-		    //Add typecast
-		    ourcasts.add(new Tuple(new Object[]{q.objectref(),q.field().getDeclaringClass() }));
-		}
-	    }
-	    if (!q.field().getType().isAssignableFrom(ti.typeMap(null, q.src()))) {
-		//Need typecast??
-		Iterator iterate=ourcasts.iterator();
-		boolean foundcast=false;
-		while (iterate.hasNext()) {
-		    Tuple cast=(Tuple)iterate.next();
-		    List list=cast.asList();
-		    if (list.get(0)==q.src()) {
-			HClass hc=(HClass)list.get(1);
-			if (q.field().getType().isAssignableFrom(hc)) {
-			    foundcast=true;
-			    break;
-			}
+		    if (!foundcast) {
+			//Add typecast
+			ourcasts.add(new Tuple(new Object[]{q.objectref(),q.field().getDeclaringClass() }));
 		    }
 		}
-		if (!foundcast) {
-		    //Add typecast
-		    ourcasts.add(new Tuple(new Object[]{q.src(),q.field().getType() }));
+	    if (ti.typeMap(null, q.src())!=HClass.Void)
+		if (!q.field().getType().isAssignableFrom(ti.typeMap(null, q.src()))) {
+		    //Need typecast??
+		    Iterator iterate=ourcasts.iterator();
+		    boolean foundcast=false;
+		    while (iterate.hasNext()) {
+			Tuple cast=(Tuple)iterate.next();
+			List list=cast.asList();
+			if (list.get(0)==q.src()) {
+			    HClass hc=(HClass)list.get(1);
+			    if (q.field().getType().isAssignableFrom(hc)) {
+				foundcast=true;
+				break;
+			    }
+			}
+		    }
+		    if (!foundcast) {
+			//Add typecast
+			ourcasts.add(new Tuple(new Object[]{q.src(),q.field().getType() }));
+		    }
 		}
-	    }
 	    typecast.put(q, ourcasts);
 	    visited.add(q);
 	    for (int i=0;i<q.nextLength();i++)
@@ -880,26 +939,27 @@ class TypeVisitor extends QuadVisitor {
 	    //never seen yet...
 	    Set parentcast=(Set)typecast.get(q.prev(0));
 	    WorkSet ourcasts=new WorkSet(parentcast);
-	    if (!q.field().getDeclaringClass().isAssignableFrom(ti.typeMap(null,q.objectref()))) {
-		//Need typecast??
-		Iterator iterate=ourcasts.iterator();
-		boolean foundcast=false;
-		while (iterate.hasNext()) {
-		    Tuple cast=(Tuple)iterate.next();
-		    List list=cast.asList();
-		    if (list.get(0)==q.objectref()) {
-			HClass hc=(HClass)list.get(1);
-			if (q.field().getDeclaringClass().isAssignableFrom(hc)) {
-			    foundcast=true;
-			    break;
+	    if (q.objectref()!=null)
+		if (!q.field().getDeclaringClass().isAssignableFrom(ti.typeMap(q,q.objectref()))) {
+		    //Need typecast??
+		    Iterator iterate=ourcasts.iterator();
+		    boolean foundcast=false;
+		    while (iterate.hasNext()) {
+			Tuple cast=(Tuple)iterate.next();
+			List list=cast.asList();
+			if (list.get(0)==q.objectref()) {
+			    HClass hc=(HClass)list.get(1);
+			    if (q.field().getDeclaringClass().isAssignableFrom(hc)) {
+				foundcast=true;
+				break;
+			    }
 			}
 		    }
+		    if (!foundcast) {
+			//Add typecast
+			ourcasts.add(new Tuple(new Object[]{q.objectref(),q.field().getDeclaringClass() }));
+		    }
 		}
-		if (!foundcast) {
-		    //Add typecast
-		    ourcasts.add(new Tuple(new Object[]{q.objectref(),q.field().getDeclaringClass() }));
-		}
-	    }
 	    typecast.put(q, ourcasts);
 	    visited.add(q);
 	    for (int i=0;i<q.nextLength();i++)
@@ -937,26 +997,27 @@ class TypeVisitor extends QuadVisitor {
 		Temp param=q.params(i);
 		HClass type=typeOf(q, param);
 		HClass neededclass=q.paramType(i);
-		if (!neededclass.isAssignableFrom(type)) {
-		    //Need typecast??
-		    Iterator iterate=ourcasts.iterator();
-		    boolean foundcast=false;
-		    while (iterate.hasNext()) {
-			Tuple cast=(Tuple)iterate.next();
-			List list=cast.asList();
-			if (list.get(0)==q.params(i)) {
-			    HClass hc=(HClass)list.get(1);
-			    if (neededclass.isAssignableFrom(hc)) {
-				foundcast=true;
-				break;
+		if (type!=HClass.Void)
+		    if (!neededclass.isAssignableFrom(type)) {
+			//Need typecast??
+			Iterator iterate=ourcasts.iterator();
+			boolean foundcast=false;
+			while (iterate.hasNext()) {
+			    Tuple cast=(Tuple)iterate.next();
+			    List list=cast.asList();
+			    if (list.get(0)==q.params(i)) {
+				HClass hc=(HClass)list.get(1);
+				if (neededclass.isAssignableFrom(hc)) {
+				    foundcast=true;
+				    break;
+				}
 			    }
 			}
+			if (!foundcast) {
+			    //Add typecast
+			    ourcasts.add(new Tuple(new Object[]{q.params(i),neededclass }));
+			}
 		    }
-		    if (!foundcast) {
-			//Add typecast
-			ourcasts.add(new Tuple(new Object[]{q.params(i),neededclass }));
-		    }
-		}
 	    }
 	    typecast.put(q, ourcasts);
 	    visited.add(q);
@@ -1033,11 +1094,17 @@ class TypeVisitor extends QuadVisitor {
 			HClass tc=hclass;
 			while(!tc.isAssignableFrom(tclass))
 			    tc=tc.getSuperclass();
-			if (best.isAssignableFrom(tc))
+			if (best==null)
+			    best=tc;
+			else if (best.isAssignableFrom(tc))
 			    best=tc;
 		    }
 		}
-		hclass=best;
+		if (best==null) {
+		    good=false;
+		    break;
+		} else
+		    hclass=best;
 	    } else
 		good=false;
 	}
