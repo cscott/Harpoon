@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
+import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -23,7 +24,7 @@ import java.util.HashSet;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.24 2000-02-08 23:31:02 cananian Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.25 2000-02-13 15:49:26 cananian Exp $
  */
 public class ToCanonicalTree {
     private Tree m_tree;
@@ -44,7 +45,11 @@ public class ToCanonicalTree {
     
     /** Returns a <code>TreeDerivation</code> object for the
      *  generated <code>Tree</code> form. */
-    public TreeDerivation getTreeDerivation() { return m_dg; }
+    public TreeDerivation getTreeDerivation() { return new TreeDerivation() {
+	public HClass typeMap(Exp exp) { return HClass.Void; }
+	public DList derivation(Exp exp) { return null; }
+    };
+    }
 
     /** Returns the root of the generated tree code */
     public Tree getTree() {
