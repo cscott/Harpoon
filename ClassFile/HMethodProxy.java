@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodProxy.java,v 1.1.4.4 2000-11-12 03:22:34 cananian Exp $
+ * @version $Id: HMethodProxy.java,v 1.1.4.5 2001-11-12 17:55:27 cananian Exp $
  * @see HMethod
  */
 class HMethodProxy extends HMemberProxy
@@ -18,7 +18,7 @@ class HMethodProxy extends HMemberProxy
     
     /** Creates a <code>HMethodProxy</code>. */
     HMethodProxy(Relinker relinker, HMethod proxy) {
-	super(relinker, proxy);
+	super(relinker, proxy, proxy.hashCode());
 	relink(proxy);
     }
     void relink(HMethod proxy) {
@@ -44,7 +44,6 @@ class HMethodProxy extends HMemberProxy
     public boolean isInterfaceMethod() { return proxy.isInterfaceMethod(); }
     public boolean isStatic() { return proxy.isStatic(); }
     public String toString() { return HMethodImpl.toString(this); }
-    public int hashCode() { return HMethodImpl.hashCode(this); }
     public boolean equals(Object obj) { return HMethodImpl.equals(this, obj); }
     // HMethodMutator interface
     public void addModifiers(int m) { proxyMutator.addModifiers(m); }

@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * <code>HInitializer</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HInitializerProxy.java,v 1.1.4.3 2000-11-12 03:22:34 cananian Exp $
+ * @version $Id: HInitializerProxy.java,v 1.1.4.4 2001-11-12 17:55:27 cananian Exp $
  * @see HInitializer
  */
 class HInitializerProxy extends HMethodProxy implements HInitializer {
@@ -20,5 +20,4 @@ class HInitializerProxy extends HMethodProxy implements HInitializer {
 	super.relink(proxy);
     }
     public String toString() { return HInitializerImpl.toString(this); }
-    public int hashCode() { return HInitializerImpl.hashCode(this); }
 }

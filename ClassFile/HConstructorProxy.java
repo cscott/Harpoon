@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * <code>HConstructor</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructorProxy.java,v 1.1.4.3 2000-11-12 03:22:34 cananian Exp $
+ * @version $Id: HConstructorProxy.java,v 1.1.4.4 2001-11-12 17:55:26 cananian Exp $
  * @see HConstructor
  */
 class HConstructorProxy extends HMethodProxy implements HConstructor {
@@ -20,5 +20,4 @@ class HConstructorProxy extends HMethodProxy implements HConstructor {
 	super.relink(proxy);
     }
     public String toString() { return HConstructorImpl.toString(this); }
-    public int hashCode() { return HConstructorImpl.hashCode(this); }
 }

@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * <code>HMember</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMemberProxy.java,v 1.1.4.7 2000-11-12 03:22:34 cananian Exp $
+ * @version $Id: HMemberProxy.java,v 1.1.4.8 2001-11-12 17:55:27 cananian Exp $
  * @see HFieldProxy
  * @see HMethodProxy
  */
@@ -20,11 +20,10 @@ abstract class HMemberProxy implements HMember {
     private final int hashcode;
 
     /** Creates a <code>HMemberProxy</code>. */
-    HMemberProxy(Relinker relinker, HMember proxy) {
+    HMemberProxy(Relinker relinker, HMember proxy, int hashcode) {
         this.relinker = relinker;
 	// one hash code forever.
-	hashcode = proxy.getDeclaringClass().hashCode() ^
-	    proxy.getName().hashCode() ^ proxy.getDescriptor().hashCode();
+	this.hashcode = hashcode;
     }
     protected void relink(HMember proxy) {
 	Util.assert(!(proxy instanceof HMemberProxy &&
@@ -40,7 +39,7 @@ abstract class HMemberProxy implements HMember {
     public String getName() { return proxy.getName(); }
     public int getModifiers() { return proxy.getModifiers(); }
     public boolean isSynthetic() { return proxy.isSynthetic(); }
-    public int hashCode() { return hashcode; }
+    public final int hashCode() { return hashcode; }
     public abstract String toString();
     public abstract boolean equals(Object obj);
 
