@@ -16,12 +16,13 @@ import java.util.Map;
 import java.util.HashMap;
 import java.lang.reflect.Modifier;
 import java.util.Enumeration;
+import java.util.Iterator;
 
 /**
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.7 1999-08-05 21:06:02 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.8 1999-08-05 23:38:06 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -323,7 +324,10 @@ public class Jasmin {
 	    else {
 		out.println(iflabel(q));
 		load(q.objectref());
-		out.println("    getfield "+q.field());
+		out.println("    getfield "
+			    +q.field().getDeclaringClass().getName().replace('.','/')
+			    +"/"+q.field().getName().replace('.','/')
+			    +" "+q.field().getDescriptor().replace('.','/'));
 	    }
 	    store(q.dst());
 	}
@@ -438,7 +442,10 @@ public class Jasmin {
 		out.println(iflabel(q));
 		load(q.objectref());
 		load(q.src());
-		out.println("    putfield "+q.field());
+		out.println("    putfield "
+			    +q.field().getDeclaringClass().getName().replace('.','/')
+			    +"/"+q.field().getName().replace('.','/')
+			    +" "+q.field().getDescriptor().replace('.','/'));
 	    }
 	}
 
@@ -727,6 +734,47 @@ public class Jasmin {
 		}
 	    }
 	}
+	Iterator iterate=stacktemps.keySet().iterator();
+	while (iterate.hasNext()) {
+	    Temp next=(Temp)iterate.next();
+	    if (((TempInfo)stacktemps.get(next)).stack) {
+		HCodeElement[] huses=ud.useMap(code,next);
+		HCodeElement[] hdefs=ud.defMap(code,next);
+		Quad use=(Quad)huses[0];
+		Quad def=(Quad)hdefs[0];
+		Temp[] uses=use.use();
+		Temp[] defs=def.def();
+		boolean flag=true;
+		boolean broken=false;
+		for (int i=0;i<uses.length;i++) {
+		    if (!stacktemps.containsKey(uses[i]))
+			flag=false;
+		    else
+			if (((TempInfo)stacktemps.get(uses[i])).stack)
+			    flag=false;
+		    if ((flag==false)&&(uses[i]==next)) {
+			broken=true;
+			break;
+		    }
+		}
+		flag=true;
+		for (int i=0;i<defs.length;i++) {
+		    if (!stacktemps.containsKey(defs[i]))
+			flag=false;
+		    if ((flag==false)&&(uses[i]==next)) {
+			broken=true;
+			break;
+		    }
+		}
+		if (broken) {
+		    HClass hclass=tp.typeMap(code,next);
+		    stacktemps.put(next,new TempInfo(j++));
+		    if ((hclass==HClass.Double)||(hclass==HClass.Long))
+			j++;
+		}
+	    }
+	}
+
 	for (int i=0;i<alltemp.length;i++) {
 	    if (!stacktemps.containsKey(alltemp[i])) {
 		HClass hclass=tp.typeMap(code,alltemp[i]);
