@@ -24,7 +24,10 @@ public class RobertsCross extends Node {
 	int width = id.width;
 	int height = id.height;
 	byte[] outs = new byte[width*height];
+	
+	//does not duplicate image data's arrays
 	byte[][] vals = new byte[][] {id.rvals, id.gvals, id.bvals};
+
 	for (int i=0; i<(width*(height-1)-1); i++) {
 	    int out = 0;
 	    //Cycle through image data colors (R, G, then B)

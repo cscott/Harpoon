@@ -16,6 +16,8 @@ public class Timer extends Node {
     private boolean announce;
     private long total = 0;
     private long frames = 0;
+    private long max = 0;
+    private long min = Long.MAX_VALUE;
 
     /** Create a new {@link Timer} node which can either stamp or read out 
      *  the difference between the current time and the time stamp.
@@ -43,13 +45,24 @@ public class Timer extends Node {
 	if (start) {
 	    id.time = time;
 	} else {
-	    total += id.time = time-id.time;
+	    long diff = time-id.time;
+	    total += id.time = diff;
+	    if (diff > max)
+		max = diff;
+	    if (diff < min)
+		min = diff;
 	    if (announce) {
-		System.out.print("Time (ms): "+id.time);
+		System.out.print("Time (ms): "+diff);
 		//line below added by Benji 
-		System.out.println(" Avg (ms) : "+(int)(getLatency()*1000));
+		System.out.println(" ** Avg (ms) : "+(int)(getLatency()*1000));
 	    }
 	}
+	if (id.lastImage) {
+	    System.out.println("Timer: Max = "+max);
+	    System.out.println("Timer: Min = "+min);
+	    System.out.println("Timer: Avg = "+(int)(getLatency()*1000));
+	}
+	
 	super.process(id);
     }
 

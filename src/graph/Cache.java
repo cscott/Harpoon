@@ -66,7 +66,6 @@ public class Cache extends Node {
 			if (Command.read(id)==Command.GET_CROPPED_IMAGE) {
 			    retID = ImageDataManip.crop(retID, id.x, id.y, id.width, id.height);
 			}
-			
 			right.process(retID);
 			break;
 		    }

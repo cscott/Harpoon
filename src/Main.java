@@ -23,7 +23,167 @@ public class Main {
 	boolean headless = true;  /* Configure to run without display */
 	boolean timer = false;     /* Time the processing rate */
 
+
+
+
+	//CreateHistogram2D test
+	//way way way too slow
+	//almost a 1/4 second just to calculate a histogram from a whole image
+	if (false) {
+	    Node n1 = new Load("/share/tank.jar", "tank.gz", 1,
+			  new Node (new Display("Original"),
+				    new Timer(true, false, new CreateHistogram2D("H", new Timer(false, true, null)))));
+	    //while (true) {
+		n1.run();
+		//}
+	}
+
+
+	//test pipeline using LabelBlue
 	if (true) {
+	    //added by benji, hack for improved memory usage and speed
+	    //Unclear whether this helps.  It depends on whether it is running
+	    //headless or not.
+	    //ImageDataManip.useSameArrays(true);
+
+	    //set the window size for the Diplay node windows
+	    //that pop up
+	    Display.setDefaultSize(260, 200);
+	   						      
+	    //Node load = new Load ("/share/tank3.jar", "tank3.gz", 74, null);
+	    //Node load = new Load ("/share/tank2.jar", "tank2.gz", 77, null);
+	    //Node load = new Load("/share/tank1.jar", "tank1.gz", 125, null);
+	    //Node load = new Load("/share/tank.jar", "tank.gz", 554, null);
+	    Node load = new Load("/share/woodgrain.jar", "tank.gz", 533, null);
+	    Node circle = new Circle(null, null);
+	    Node copy = new Copy(null);
+	    Node copy2 = new Copy(null);
+	    Node circleCache = new Cache(1, null, null);
+	    Node cleanCache = new Cache(1, null, null);
+	    Node labelSmCache = new Cache(1, null, null);
+	    Node timer1 = new Timer(true, false, null);
+	    Node timer2 = new Timer(false, true, null);
+	    Node robCross = new RobertsCross(null);
+	    Node thresh = new Thresholding(null);
+	    Node hyst = new Hysteresis(null);
+	    //Node hyst = new Node();
+	    Label label = new Label(null, null);
+	    Node thin = new Thinning(Thinning.BLUE, null);
+	    Node range = new RangeFind(null);
+
+	    /*
+	    Node origDisp = new Display("Original");
+	    Node robDisp = new Display("RobCross");
+	    Node threshDisp = new Display("Thresh");
+	    Node hystDisp = new Display("Hyst");
+	    Node labelSmDisp = new Display("Label Small", false, false, true);
+	    Node labelDisp = new Display("Labeled", false, false, true);
+	    Node labelBlueDisp = new Display("Label Blue");
+	    Node thinDisp = new Display("Thinned", false, false, true);
+	    Node endDisp = new Display("Final");
+	    */
+
+	    ///*
+	    //Node thinDisp = new Node();
+	    Node thinDisp = new Display("Thinned", false, false, true);
+	    Node endDisp = new Display("final");;
+	    //Node endDisp = new Node();
+	    Node origDisp = new Node();
+	    Node robDisp = new Node();
+	    Node labelBlueDisp = new Node();
+	    Node labelDisp = new Node();
+	    Node labelSmDisp = new Node();
+	    Node threshDisp = new Node();
+	    Node hystDisp = new Node();
+	    //*/
+
+	    Node pause = new Pause(-1.0, 1, null);
+	    Node pause2 = new Pause(-1.0, 0, null);
+	    //Node pause = new Node();
+	    //Node pause2 = new Node();
+	    LabelBlue labelBlue = new LabelBlue(null, null);
+	    labelBlue.calibrateAndProcessSeparately(true);
+	    Node calibCmd = new Command(Command.CALIBRATION_IMAGE, null);
+	    Node checkBlueCmd = new Command(Command.CHECK_FOR_BLUE, null);
+	    Node noneCmd = new Command(Command.NONE, null);
+	    Node noneCmd2 = new Command(Command.NONE, null);
+	    Node retrCmd = new Command(Command.RETRIEVED_IMAGE, null);
+	    Node getCmd = new Command(Command.GET_IMAGE, null);
+	    Node getCropCmd = new Command(Command.GET_CROPPED_IMAGE, null);
+	    Node getLabelSmCmd = new Command(Command.GET_IMAGE, null);
+	    Node n = new Node();
+	    Node n2 = new Node();
+	    Node n3 = new Node();
+	    /*
+	    //Finds a single blue object in the loaded frames. Circles it.
+	    load.link(origDisp,
+		      pause.linkL(circleCache.link(copy.linkL(timer1.linkL(n.link(calibCmd.linkL(labelBlue),
+									    noneCmd.linkL((labelBlue.link(labelBlueDisp,
+													  timer2.linkL(circle.link(endDisp,
+																   getCmd.linkL(circleCache))))))))),
+					     retrCmd.linkL(circle))));
+	    */
+	    ///*
+	    load.link(pause,
+		      origDisp.linkL(circleCache.link(timer1.linkL(cleanCache.link(n.link(calibCmd.linkL(labelBlue),
+											  noneCmd.linkL(copy.linkL(robCross.link(robDisp,
+																 thresh.link(threshDisp,
+																	     hyst.link(hystDisp,
+																		       label.link(labelDisp,
+																				  labelSmDisp.linkL(labelSmCache.link(getCropCmd.linkL(cleanCache),
+																								      thin.link(thinDisp,
+																										range.linkL(timer2))))))))))),
+										   n2.link(null,
+											   labelBlue.link(labelBlueDisp,
+													  getLabelSmCmd.link(labelSmCache,
+															     noneCmd2.linkL(circle.linkR(getCmd.linkL(circleCache)))))))),
+						      retrCmd.linkL(circle.linkL(endDisp.linkL(pause2))))));
+	    //*/
+	    /*
+	      //implements Wes's simple single-object tank finder
+	    label.findOneObject(true);
+	    load.link(origDisp,
+		      timer1.linkL(circleCache.link(copy.linkL(robCross.linkL(thresh.linkL(label.linkR(timer2.linkL(circle.link(endDisp,
+																getCmd.linkL(circleCache))))))),
+					     retrCmd.linkL(circle))));
+	    */
+	    load.run();
+	    System.out.println("Done running pipeline.");
+	}
+
+
+
+	//toGrayscale test
+	//MAXIMUM_VALUE seems to work better
+	if (false) {
+	    /*
+	    Node n1 = (new Load(null, "movie/tank.nozip", 11,
+				new Pause(new Node(new Display("Original"),
+						   new Node(new ToGrayscale(new Display("Average")),
+							    new ToGrayscale(ToGrayscale.MAXIMUM_VALUE,new Display("Maximum")))))));
+	    */
+	    Node n1 = (new Load(null, "movie/tank.nozip", 11,
+				new Pause(new Node(new Display("Original"),
+						   new ToGrayscale(ToGrayscale.GREEN,
+								   ToGrayscale.MAXIMUM_VALUE,
+								   new Display("Max"))))));
+	    while (true) {
+		n1.run();
+	    }
+	}
+
+	//GaussianSmoothing test
+	if (false) {
+	    Node n1 = new Load(null, "movie/tank.nozip", 35,
+			       new Pause(new Node(new Display("Original"),
+						  new Timer(true, false, new GaussianSmoothing(true, true, true, new Timer(false, true, new Display("Smooth")))))));
+	    while (true) {
+		n1.run();
+	    }
+	}
+
+	//Wes' original pipeline
+	if (false) {
 	    Node n1 = (new Load("movie/tank-test.jar", "tank.gz", 35, new Display("tank-test")));
 	    while (true) {
 		n1.run();
@@ -45,19 +205,38 @@ public class Main {
 		Node n7 = new Command(Command.GET_IMAGE, null);
 		Node n6 = new Circle(new Display("identified"), n7);
 		Node n5 = new Node(new RangeFind(alert), n6);
-		Node n4 = new RobertsCross(new Thresholding(new Label(null, n5)));
+
+		///*		
+		Node n4 = new RobertsCross(new Node(new Display("Robert's Cross"),
+						    new Thresholding(new Node(new Display("Thresholding"),
+									      new Label(new Display("Labeled"),
+											n5)))));
+		//*/
+		/*
+		Node n4 = new Canny(new Node(new Display("Canny"),
+						    new Thresholding(new Node(new Display("Thresholding"),
+									      new Label(new Display("Labeled"),
+											n5)))));
+		*/
 		Node n3 = new Cache(2, new Copy(n4), new Command(Command.RETRIEVED_IMAGE, n6));
 		n2 = new Node(new Display("original"), n3);
 		n7.setLeft(n3);
 	    }
+
 //  	    Node n1 = new Load("movie/tank.jar", "tank.gz", 533, n2);
 	    Node n1 = (args.length>1)?(Node)(new ATR(args, n2)):
-		(Node)(new Load("movie/tank.jar", "tank.gz", 533, n2));
+		//(new Load("movie/tank-test.jar", "tank.gz", 35, new Pause(n2)));
+		(new Load(null, "movie/tank.nozip", 35, new Pause(n2)));
+		//(new Load("movie/tank-test.jar", "tank.gz", 35, new Node(new Save("myTank", true),
+		//							 new Pause(n2))));
+		//		(Node)(new Load("movie/tank.jar", "tank.gz", 533, n2));
+		//(new Load(null, "tank", 1, new Node(new Save("myTankFromUnZipped", true, false), new Pause(n2))));
 	    while (true) {
 	       n1.run();
 	    }
 	}
 
+	//Stephen's original pipeline
 	if (false) {
 	    Node n27 = new Display("possible");
 	    Node n26 = new Circle(n27, null);
@@ -98,7 +277,9 @@ public class Main {
 		}
 	    }
 	}
+ 
 
+	//not sure what this is
 	if (false) {
 	    Node n4 = new RangeFind(new Alert(args));
 	    Node n3 = new Thinning(new Pruning(new Label(null, n4 /* new Match(n4) */)));
@@ -108,16 +289,35 @@ public class Main {
 	    n1.run();
 	}
 
-//  	(new Load("dbase/db.gz", 237, 
-//  	   new RobertsCross(new RangeThreshold(new Node(new Display("orig"),
-//  	    new Hysteresis(new Thinning(new Pruning(new Display("threshold"))))))))).run();
-//  	(new Load("dbase/db.gz", 237,
-//  	  new RobertsCross(new Node(new Hough(new Node(new Display("r vs. t"),
-//  	   new HoughThreshold(new Node(new Display("thresh"),
-//  		new HoughThin(new Node(new Display("thin"),
-//  		 new DeHough(new Display("mapped")))))))),
-//  				  new Display("original"))))).run();
 
-
-    }
-}
+	//Wes' hough transform test
+	if (false) {
+	    /*
+	    (new Load("dbase/plane/db.gz", 237,
+		      new Node(
+			  new RobertsCross(
+			      new RangeThreshold(
+				  new Node(new Display("orig"),
+					   new Hysteresis(new Thinning(new Pruning(new Display("threshold"))))))),
+			  new Copy(new Display("True original"))))).run();
+	    */
+	    
+	    (new Load("dbase/plane/plane.jar", "db.gz", 236,
+		      new Node(
+			       new Display("Original Image"),
+			       new RobertsCross(
+						new Node(
+							 new Display("Robert's Cross"),
+							 new Thresholding(
+									  new Node(new Hough(
+											     new Node(new Display("r vs. theta"),
+												      new HoughThreshold(
+															 new Node(new Display("Hough Threshold"),
+																  new HoughThin(
+																		 new Node(new Display("thin"),
+																			 new DeHough(new Display("mapped"))))))))))))))).run();
+	    
+	}//if (false)
+	
+    }//public static void main()
+} //class Main

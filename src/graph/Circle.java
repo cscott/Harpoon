@@ -49,13 +49,17 @@ public class Circle extends Node {
 	    for (WorkList w = work; w != null; w = (last = w).next) {
 		if (w.id.id == id.id) {
 		    ImageData wid = w.id;
-		    ImageDataManip.ellipse(id, wid.x, wid.y, wid.width, wid.height);
+		    if ((wid.width != 0) && (wid.height != 0)) {
+			
+			ImageDataManip.ellipse(id, wid.x, wid.y, wid.width, wid.height);
+		    }
 		    if (w == work) {
 			work = work.next;
 		    } else {
 			last.next = work.next;
 		    }
-		    getLeft().process(id);
+		    if (getLeft() != null)
+			getLeft().process(id);
 		    break;
 		}
 	    }
@@ -71,6 +75,6 @@ public class Circle extends Node {
 	    // Block other images.
 	}
 	}
-
+	
     }
 }

@@ -35,6 +35,9 @@ module imagerec
       float c1;
       float c2;
       float c3;
+      boolean lastImage;
+      octet labelID;
+      boolean conditional;
     };
   };
 };

@@ -34,7 +34,8 @@ public class Copy extends Node {
     public void process(ImageData id) {
 	Node n;
 	if ((n=getLeft()) != null) {
-	    n.process(ImageDataManip.clone(id));
+	    ImageData clone = ImageDataManip.clone(id);
+	    n.process(clone);
 	}
 	if ((n=getRight()) != null) {
 	    n.process(id);

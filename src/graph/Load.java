@@ -112,6 +112,8 @@ public class Load extends Node {
 		System.out.println("  ... missing file: "+fileName);
 	    } 
 	    if (id != null) {
+		if (i == num-1)
+		    id.lastImage = true;
 		super.process(id);
 	    }
 	    /* Continue even if a file isn't found or there are exceptions... */

@@ -96,6 +96,7 @@ public class GaussianSmoothing extends Node {
     }
 
     /*
+      Performs gaussian smoothing on the specified image, then passes it to the next {@link Node}.
     */
     public void process(ImageData imageData) {
 	int channelsUsed = 0;
