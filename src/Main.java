@@ -40,7 +40,7 @@ public class Main {
 	}
 
 	//Normalize.java test
-	if (true) {
+	if (false) {
 	    Node load = new Load("/share/woodgrain.jar", "tank.gz", 533, null);
 	    Node normMax = new Normalize(null, true);
 	    Node normHist = new Normalize(null, false);
@@ -58,8 +58,15 @@ public class Main {
 	}
 
 
+
+
+
+
+
+
+
 	//lots of different pipelines
-	if (false) {
+	if (true) {
 	    //added by benji, hack for improved memory usage and speed
 	    //Unclear whether this helps.  It depends on whether it is running
 	    //headless or not.
@@ -73,12 +80,15 @@ public class Main {
 	    //Node load = new Load ("/share/tank2.jar", "tank2.gz", 77, null);
 	    //Node load = new Load("/share/tank1.jar", "tank1.gz", 125, null);
 	    //Node load = new Load("/share/tank.jar", "tank.gz", 554, null);
-	    Node load = new Load("/share/woodgrain.jar", "tank.gz", 533, null);
+	    //Node load = new Load("/share/woodgrain.jar", "tank.gz", 533, null);
 	    //Node load = new Load("/share/woodgrain.jar", "tank.gz", 416, null);
 	    //Node load = new Load("/share/multitank-1.jar", "multitank-1.gz", 230, null);
 	    //Node load = new Load("/share/multitank-2.jar", "multitank-2.gz", 219, null);
 	    //Node load = new Load("/share/multitank-3.jar", "multitank-3.gz", 245, null);
 	    //Node load = new Load("/share/multitank-4.jar", "multitank-4.gz", 130, null);
+	    //Node load = new Load(null, "/home/benster/test", 2, null);
+	    Node load = new Load(null, "/home/benster/ImageRec/images/uav_ppm_norm/uav_ppm", 100, null);
+	    //Node load = new Load(null, "/home/benster/ImageRec/images/uav_ppm_low_contrast/uav_ppm", 100, null);
 	    
 	    Node circle = new Circle(null, null);
 	    Node arrow = new DrawArrow(null, null);
@@ -110,7 +120,7 @@ public class Main {
 	    Node thin = new Thinning(Thinning.BLUE, null);
 	    Node range = new RangeFind(null);
 
-	    /*
+	    ///*
 	    Node origDisp = new Display("Original");
 	    Node robDisp = new Display("RobCross");
 	    Node threshDisp = new Display("Thresh");
@@ -121,9 +131,9 @@ public class Main {
 	    Node labelBlueDisp = new Display("Label Blue");
 	    Node thinDisp = new Display("Thinned", false, false, true);
 	    Node endDisp = new Display("Final");
-	    */
+	    //*/
 
-	    ///*
+	    /*
 	    Node thinDisp = new Node();
 	    //Node thinDisp = new Display("Thinned", false, false, true);
 	    //Node origDisp = new Display("Original");
@@ -137,21 +147,36 @@ public class Main {
 	    Node threshDisp = new Node();
 	    Node hystDisp = new Node();
 	    Node cropDisp = new Node();
+	    */
+
+	    ///*
+	    Node thinDispSave = new SaveImage("/home/benster/ImageRec/images/thin.ppm", 1, true);
+	    Node endDispSave = new SaveImage("/home/benster/ImageRec/images/final.ppm", 1, true);
+	    Node origDispSave = new SaveImage("/home/benster/ImageRec/images/original.ppm", 1, true);
+	    Node robDispSave = new SaveImage("/home/benster/ImageRec/images/roberts_cross.ppm", 1, true);
+	    Node blueDispSave = new SaveImage("/home/benster/ImageRec/images/label_blue.ppm", 1, true);
+	    Node labelDispSave = new SaveImage("/home/benster/ImageRec/images/label_full.ppm", 1, true);
+	    Node labelSmDispSave = new SaveImage("/home/benster/ImageRec/images/label_small.ppm", 1, true);
+	    Node threshDispSave = new SaveImage("/home/benster/ImageRec/images/thresholding.ppm", 1, true);
+	    Node hystDispSave = new SaveImage("/home/benster/ImageRec/images/hysteresis.ppm", 1, true);
+	    Node cropDispSave = new SaveImage("/home/benster/ImageRec/images/cropped.ppm", 1, true);
 	    //*/
-
-	    Node thinDispSave = new SaveImage("/home/benster/ImageRec/images/thin.ppm", 2, true);
-	    Node endDispSave = new SaveImage("/home/benster/ImageRec/images/final.ppm", 2, true);
-	    Node origDispSave = new SaveImage("/home/benster/ImageRec/images/original.ppm", 2, true);
-	    Node robDispSave = new SaveImage("/home/benster/ImageRec/images/roberts_cross.ppm", 2, true);
-	    Node blueDispSave = new SaveImage("/home/benster/ImageRec/images/label_blue.ppm", 2, true);
-	    Node labelDispSave = new SaveImage("/home/benster/ImageRec/images/label_full.ppm", 2, true);
-	    Node labelSmDispSave = new SaveImage("/home/benster/ImageRec/images/label_small.ppm", 2, true);
-	    Node threshDispSave = new SaveImage("/home/benster/ImageRec/images/thresholding.ppm", 2, true);
-	    Node hystDispSave = new SaveImage("/home/benster/ImageRec/images/hysteresis.ppm", 2, true);
-	    Node cropDispSave = new SaveImage("/home/benster/ImageRec/images/cropped.ppm", 2, true);
 	    
+	    /*
+	    Node thinDispSave = new Node();
+	    Node endDispSave = new Node();
+	    Node origDispSave = new Node();
+	    Node robDispSave = new Node();
+	    Node blueDispSave = new Node();
+	    Node labelDispSave = new Node();
+	    Node labelSmDispSave = new Node();
+	    Node threshDispSave = new Node();
+	    Node hystDispSave = new Node();
+	    Node cropDispSave = new Node();
+	    
+	    */
 
-	    Node pause = new Pause(-1.0, 0, null);
+	    Node pause = new Pause(-1.0, 1, null);
 	    Node pause2 = new Pause(-1.0, 0, null);
 
 	    LabelBlue labelBlue = new LabelBlue(null, null);
@@ -199,17 +224,17 @@ public class Main {
 	    ///*
 	    int[] goodOnes = {0, 459};
 	    Node profile = new Profile(20, 30, goodOnes);
-	    pause = new Pause(-1, 470, null);
-
+	    //pause = new Pause(-1, 470, null);
+	    
 	    load.link(pause.linkL(origDispSave),
 		      origDisp.linkL(n.link(calibCmd.linkL(labelBlue),
 					    noneCmd.linkL(circleCache.link(arrowCache.link(timer1.linkL(cleanCache.link(copy.linkL(robCross.link(robDisp.linkL(robDispSave),
 																		 thresh.link(threshDisp.linkL(threshDispSave),
 																			     hyst.link(hystDisp.linkL(hystDispSave),
 																				       label.link(labelDisp.linkL(labelDispSave),
-																						  labelSmDisp.linkL(labelSmDispSave.linkL(labelSmCache.link(getCropCmd.linkL(cleanCache),
-																													    thin.link(thinDisp.linkL(thinDispSave),
-																														      range.linkL(timer2.linkL(profile.linkL(arrow.linkR(getCmd2.linkL(arrowCache)))))))))))))),
+																						  labelSmDisp.linkL(pause2.linkL(labelSmDispSave.linkL(labelSmCache.link(getCropCmd.linkL(cleanCache),
+																															 thin.link(thinDisp.linkL(thinDispSave),
+																																   range.linkL(timer2.linkL(profile.linkL(arrow.linkR(getCmd2.linkL(arrowCache))))))))))))))),
 															n2.link(cropDisp.linkL(cropDispSave),
 																labelBlue.link(labelBlueDisp.linkL(blueDispSave),
 																	       getLabelSmCmd.link(labelSmCache,
