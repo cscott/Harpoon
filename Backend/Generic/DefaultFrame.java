@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.8 1999-03-12 20:46:38 duncan Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.9 1999-04-05 21:54:56 duncan Exp $
  */
 public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 
@@ -41,15 +41,18 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
     private TempFactory         m_tempFactory;
   
     public DefaultFrame() {
-        m_allocator   = new DefaultAllocationStrategy(this);
-	m_nextPtr     = 0x0fff0000;  // completely arbitrary
-        m_offsetMap   = new OffsetMap32(null); 
+	throw new Error("Default constructor not impl");
     }
 
+    public DefaultFrame(OffsetMap map) {
+	this(map, null);
+    }
+	
     public DefaultFrame(OffsetMap map, AllocationStrategy st) {
-	m_allocator = st;
+	m_allocator = st==null?new DefaultAllocationStrategy(this):st;
 	m_nextPtr   = 0;
-	m_offsetMap = map;
+	if (map==null) throw new Error("Must specify OffsetMap");
+	else m_offsetMap = map;
     }
 	
     public Frame newFrame(String scope) {
