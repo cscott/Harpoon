@@ -1,7 +1,9 @@
 #include <jni.h>
 #include "java_lang_Math.h"
 
+#ifndef __USE_MISC
 #define __USE_MISC /* necessary to get 'drem' prototype w/ glibc */
+#endif
 #include <math.h>
 /*
  * Class:     java_lang_Math

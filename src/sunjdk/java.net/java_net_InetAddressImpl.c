@@ -7,7 +7,9 @@
 #include <netdb.h> /* for gethostbyaddr and struct hostent */
 #include <netinet/in.h> /* for INADDR_ANY */
 #include <sys/socket.h> /* for AF_INET */
+#ifndef __USE_BSD
 #define __USE_BSD /* required to get glibc to define gethostname */
+#endif
 #include <unistd.h> /* for gethostname */
 
 /** IMPLEMENTATION OF AF_INET internet addresses */
