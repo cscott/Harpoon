@@ -36,6 +36,8 @@ html: design.dvi bibnote.dvi
 	$(RM) -r html ; mkdir html
 	latex2html -local_icons -dir html/design design
 	latex2html -local_icons -dir html/biblio bibnote
+	date '+%-d-%b-%Y at %r %Z.' > html/design/TIMESTAMP
+	date '+%-d-%b-%Y at %r %Z.' > html/biblio/TIMESTAMP
 html-pdf: html design.pdf bibnote.pdf
 	$(RM) html/design/design.pdf html/biblio/bibnote.pdf
 	ln design.pdf html/design
