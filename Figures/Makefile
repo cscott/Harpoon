@@ -31,10 +31,10 @@ THex1base.tex: $(EX1FIG)
 	| sed -e 's/STMT[3789]//' $(SEDCMD) -e 's/\([PXYZ]\)_[01234]/\1/g'> $@
 
 # default fig->tex rule -- insert a snippet from head.tex
-%.tex: %.fig
-	fig2dev -L latex -m 1.0 $< $@.tmp
-	(head -1 $@.tmp ; cat head.tex ; sed -e '1d' -e '8,$$s/SetFigFont/MySetFigFont/g' $@.tmp) > $@
-	$(RM) -f $@.tmp
+%.tex: %.fig head.tex Makefile
+	fig2dev -L latex -m 1.0 $< \
+	| sed -e '/begin{picture}/,/end{picture}/s/SetFigFont/MySetFigFont/g' \
+	      -e '/setlength{.unitlength}/r head.tex' > $@
 
 # sed out dashed arc-boxes and left-justified special text from the
 # cycle-equivalency figure.
