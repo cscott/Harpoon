@@ -20,8 +20,9 @@ import harpoon.Util.Util;
 /**
  * <code>MethodInlining</code> inlines method bodys at particular call sites.
  * 
+ * @deprecated This will be replaced by MethodInliningCodeFactory.  Do not use.
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: MethodInlining.java,v 1.1.2.3 1999-02-01 19:13:47 pnkfelix Exp $
+ * @version $Id: MethodInlining.java,v 1.1.2.4 1999-02-08 10:04:31 pnkfelix Exp $
  */
 public abstract class MethodInlining {
 
