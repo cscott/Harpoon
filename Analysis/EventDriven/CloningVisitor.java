@@ -65,7 +65,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.19 2000-03-28 05:47:12 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.20 2000-04-01 05:58:17 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -1165,9 +1165,9 @@ public class CloningVisitor extends QuadVisitor {
 	if (old.equals(fis.getConstructor(new HClass[] {linker.forName("java.lang.String")}))||
 	    old.equals(fis.getConstructor(new HClass[] {linker.forName("java.io.FileDescriptor")})))
 	    return fis.getMethod("makeAsync", new HClass[0]);
-	//if (old.equals(fos.getConstructor(new HClass[] {linker.forName("java.lang.String"), HClass.Boolean}))||
-	    //old.equals(fos.getConstructor(new HClass[] {linker.forName("java.io.FileDescriptor")})))
-	    //return fos.getMethod("makeAsync", new HClass[0]);
+	if (old.equals(fos.getConstructor(new HClass[] {linker.forName("java.lang.String"), HClass.Boolean}))||
+	    old.equals(fos.getConstructor(new HClass[] {linker.forName("java.io.FileDescriptor")})))
+	    return fos.getMethod("makeAsync", new HClass[0]);
 	return null;
     }
     
