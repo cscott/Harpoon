@@ -551,7 +551,7 @@ void GC_init_inner()
     	GC_stubborn_init();
 #   endif
     GC_is_initialized = TRUE;
-#   if defined(LINUX_THREADS)
+#   ifdef LINUX_THREADS
       GC_thr_late_init();
 #   endif
     /* Convince lint that some things are used */
