@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.5 2003-06-20 01:21:37 cananian Exp $
+ * @version $Id: ToTree.java,v 1.6 2003-07-04 09:18:56 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -520,7 +520,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	    Label looptop=new Label(),looptst=new Label(),loopend=new Label();
 	    // create a pointer into our constant table...
 	    Temp constPtr = new Temp(m_tf.tempFactory(), "cnst");
-	    // for (constPtr=constTblStart; constPtr < constTblEnd; constPtr++)
+	    // for (constPtr=constTblStart; constPtr <=constTblEnd; constPtr++)
 	    // loop header:
 	    addStmt(new MOVE
 		    (m_tf, q,
@@ -575,8 +575,14 @@ static class TranslationVisitor extends LowQuadVisitor {
 			"the table to the .bss segment, separating it from "+
 			"the rest of the table.  Old versions of gcc didn't "+
 			"used to do this; new versions are too darn smart."
-			/* perhaps this has to do with the -O option to ld? */;
+			/* require -fno-zero-initialized-in-bss to gcc */;
 	    }
+	    /* workaround AIX gcc brokenness by realigning @ end of table */
+	    addStmt(new ALIGN(m_tf, q, 8/* big alignment */));
+	    addStmt(new LABEL(m_tf, q, new Label(), false));
+	    addStmt(new DATUM(m_tf, q, new CONST(m_tf, q, 1976L)));
+	    /* end workaround */
+	    
 	    // and jump back here when loop's done.
 	    addStmt(new ALIGN(m_tf, q, 8/* safe value for alignment */));
 	    addStmt(new LABEL(m_tf, q, loopend, false));
@@ -757,6 +763,12 @@ static class TranslationVisitor extends LowQuadVisitor {
 		    addStmt(new DATUM(m_tf, q, new NAME(m_tf, q, deflabel)));
 		addStmt(new DATUM(m_tf, q, new NAME(m_tf, q, thislabel)));
 	    }
+	    /* workaround AIX gcc brokenness by realigning @ end of table */
+	    addStmt(new ALIGN(m_tf, q, 8/* big alignment */));
+	    addStmt(new LABEL(m_tf, q, new Label(), false));
+	    addStmt(new DATUM(m_tf, q, new CONST(m_tf, q, 1976L)));
+	    /* end workaround */
+
 	    // align for code again.
 	    addStmt(new ALIGN(m_tf, q, 8/* safe alignment*/));
 	    // done
