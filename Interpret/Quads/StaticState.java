@@ -19,7 +19,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.10 2000-01-13 23:48:11 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.11 2000-01-21 08:57:13 cananian Exp $
  */
 final class StaticState extends HCLibrary implements java.io.Serializable {
     /** which linker to use. */
@@ -33,11 +33,17 @@ final class StaticState extends HCLibrary implements java.io.Serializable {
 	this.hcf = hcf; this.prof = prof;
 	Support.registerNative(this);
     }
+    private void writeObject(java.io.ObjectOutputStream out)
+	throws java.io.IOException {
+	out.writeObject(this.linker);
+	out.defaultWriteObject();
+    }
     private void readObject(java.io.ObjectInputStream in)
 	throws java.io.IOException, ClassNotFoundException {
 	this.nativeRegistry = new HashMap();
 	this.nativeClosure = new HashMap();
 	this.internTable = new HashMap();
+	this.linker = (Linker) in.readObject();
 	Support.registerNative(this);
 	in.defaultReadObject();
     }
