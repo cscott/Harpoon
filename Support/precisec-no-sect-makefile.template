@@ -8,6 +8,11 @@
 HOST_PREFIX=
 CC:=$(HOST_PREFIX)$(CC)
 LD:=$(HOST_PREFIX)$(LD)
+AR:=$(HOST_PREFIX)$(AR)
+# use the -fno-zero-initialized-in-bss option to CC if it is supported.
+# this is *vitally important* to ensure that all the data structure
+# pieces end up in the right place.
+CFLAGS=$(patsubst %,-fno-%,$(findstring zero-initialized-in-bss,$(shell $(CC) -v --help 2>&1)))
 
 SECTIONS=\
 	SECTION_FLEX_CODE SECTION_FLEX_CODE_RW \
@@ -27,26 +32,29 @@ OBJS=$(patsubst %.c,%.o,$(SRCS))
 # this is the name of the archive which will hold the native code for your
 # java proggie.  needs to be linked with a runtime implementation to make
 # a full executable.
-TARGET=Java.o
+TARGET=Java.a
+TARGETOBJ=$(patsubst %.a,%.o,$(TARGET))
 
 all: $(TARGET)
-$(TARGET): $(OBJS)
+$(TARGET): $(TARGETOBJ)
+	$(AR) r $@ $?
+$(TARGETOBJ): $(OBJS)
 	for f in $(PASSES) ; do \
 		$(MAKE) PASS=$$f $$f-$@ ; \
 	done
 	$(LD) -r -o $@ $^ $(patsubst %,%-$@,$(PASSES))
-$(PASS)-$(TARGET): $(patsubst %.o,$(PASS)-%.o,$(OBJS))
+$(PASS)-$(TARGETOBJ): $(patsubst %.o,$(PASS)-%.o,$(OBJS))
 	$(LD) -r -o $@ $^
 $(PASS)-%.o: %.c
-	$(CC) -c -o $@ -DNO_SECTION_SUPPORT -D$(PASS) $<
+	$(CC) $(CFLAGS) -c -o $@ -DNO_SECTION_SUPPORT -D$(PASS) $<
 %.o: %.c
-	$(CC) -c -o $@ -DNO_SECTION_SUPPORT \
+	$(CC) $(CFLAGS) -c -o $@ -DNO_SECTION_SUPPORT \
 		$(patsubst %,-D%,$(filter-out $(PASSES),$(SECTIONS))) $<
-
 clean:
-	$(RM) $(OBJS)
+	$(RM) *.o header.c footer.c
 wipe: clean
 	$(RM) $(TARGET)
+.INTERMEDIATE: $(TARGETOBJ)
 
 header.c: Makefile
 	echo "#ifdef SECTION_FLEX_CODE" > $@
