@@ -29,11 +29,10 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.31 2000-02-15 20:13:39 cananian Exp $
+ * @version $Id: Tree.java,v 1.1.2.32 2000-02-16 19:44:25 cananian Exp $
  */
 public abstract class Tree 
-    implements HCodeElement, 
-	       harpoon.IR.Properties.UseDef
+    implements HCodeElement
 {
     final TreeFactory tf;
     final String source_file;
@@ -55,33 +54,6 @@ public abstract class Tree
 	// cache hashcode for efficiency.
 	this.hashCode = this.id ^ tf.hashCode();
     }
-
-    /** Returns the Temps defined by this tree.  Can only be used in
-     *  codeviews which have been canonicalized.
-     */
-    public Temp[] def() { 
-	Util.assert(tf instanceof Code.TreeFactory);
-	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
-
-	Set defSet = defSet();
-	return (Temp[])defSet.toArray(new Temp[defSet.size()]); 
-    }
-
-    /** Returns the Temps used by this tree.  Can only be used in
-     *  codeviews which have been canonicalized.
-     */
-    public Temp[] use() { 
-	Util.assert(tf instanceof Code.TreeFactory);
-	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
-
-	Set useSet = useSet();
-	return (Temp[])useSet.toArray(new Temp[useSet.size()]); 
-    }
-    public Collection useC() { return Collections.unmodifiableSet(useSet()); }
-    public Collection defC() { return Collections.unmodifiableSet(defSet()); }
-
-    abstract protected Set defSet();
-    abstract protected Set useSet();   
 
     public final int hashCode() { return hashCode; }
 

@@ -16,7 +16,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.1.2.19 2000-02-15 17:19:04 cananian Exp $
+ * @version $Id: SEQ.java,v 1.1.2.20 2000-02-16 19:44:25 cananian Exp $
  */
 public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
     /** Constructor. */
@@ -43,10 +43,6 @@ public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
     /** Sets the statement to evaluate last. */
     public void setRight(Stm right) { setChild(1, right); }
 
-    protected Set defSet() { return Collections.EMPTY_SET; }
-
-    protected Set useSet() { return Collections.EMPTY_SET; }
-    
     public ExpList kids() {throw new Error("kids() not applicable to SEQ");}
     public int kind() { return TreeKind.SEQ; }
 

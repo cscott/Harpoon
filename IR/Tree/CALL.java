@@ -29,7 +29,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.34 2000-02-15 20:11:23 cananian Exp $
+ * @version $Id: CALL.java,v 1.1.2.35 2000-02-16 19:44:25 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
@@ -103,17 +103,6 @@ public class CALL extends INVOCATION {
 				    (NAME)getHandler().rename(tf, tm, cb),
 				    isTailCall),
 			   tm);
-    }
-
-    protected Set defSet() { 
-	Set def = super.defSet();
-	def.add(getRetex().temp);
-	return def;
-    }
-
-    protected Set useSet() { 
-	Set uses = super.useSet();
-	return uses;
     }
 
     public String toString() {

@@ -21,7 +21,7 @@ import java.util.Set;
  * links to the exception handlers for the method. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: METHOD.java,v 1.1.2.13 2000-02-15 17:19:04 cananian Exp $
+ * @version $Id: METHOD.java,v 1.1.2.14 2000-02-16 19:44:25 cananian Exp $
  */
 public class METHOD extends Stm {
     private final int paramsLength;
@@ -82,14 +82,6 @@ public class METHOD extends Stm {
 
     /** Accept a visitor. */
     public void accept(TreeVisitor v) { v.visit(this); }
-
-    protected Set defSet() { 
-	Set def = new HashSet();
-	def.addAll(Arrays.asList(getParams()));
-	return def;
-    }
-
-    protected Set useSet() { return Collections.EMPTY_SET; }
 
     /** Returns human-readable representation of this <code>Tree</code>. */
     public String toString() {

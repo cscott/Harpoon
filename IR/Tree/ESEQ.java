@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.21 2000-02-15 17:19:04 cananian Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.22 2000-02-16 19:44:25 cananian Exp $
  */
 public class ESEQ extends Exp implements PreciselyTyped {
     /** Constructor. */
@@ -46,17 +46,6 @@ public class ESEQ extends Exp implements PreciselyTyped {
     /** Sets the expression whose value is the the value of
      *  the <code>ESEQ</code>.*/
     public void setExp(Exp exp) { setChild(1, exp); }
-
-	
-    protected Set defSet() { 
-	throw new Error
-	    ("DEF and USE can only be extracted from canonical trees");
-    }
-
-    protected Set useSet() { 
-	throw new Error
-	    ("DEF and USE can only be extracted from canonical trees");
-    }
 
     public ExpList kids() {throw new Error("kids() not applicable to ESEQ");}
 

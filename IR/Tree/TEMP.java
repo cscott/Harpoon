@@ -17,7 +17,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.1.2.26 2000-02-15 18:54:15 cananian Exp $
+ * @version $Id: TEMP.java,v 1.1.2.27 2000-02-16 19:44:25 cananian Exp $
  */
 public class TEMP extends Exp {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -36,12 +36,6 @@ public class TEMP extends Exp {
 		    "Non-register factory") + " is not equal");
     }
 
-    public Set useSet() {
-	Set set = new HashSet();
-	set.add(temp);
-	return set;
-    }
-  
     public int kind() { return TreeKind.TEMP; }
 
     public Exp build(TreeFactory tf, ExpList kids) {

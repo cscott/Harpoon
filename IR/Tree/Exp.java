@@ -15,21 +15,13 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Exp.java,v 1.1.2.13 2000-02-15 15:08:28 cananian Exp $
+ * @version $Id: Exp.java,v 1.1.2.14 2000-02-16 19:44:25 cananian Exp $
  */
 abstract public class Exp extends Tree implements Typed {
     protected Exp(TreeFactory tf, HCodeElement source, int arity) {
 	super(tf, source, arity);
     }
   
-    // Only ESEQs can define anything, and they are not permitted in 
-    // canonical form. 
-    protected Set defSet() { return Collections.EMPTY_SET; }
-
-    protected Set useSet() {
-	return ExpList.useSet(kids());
-    }
-
     /** Build an <code>Exp</code> of this type from the given list of
      *  subexpressions. */
     public final Exp build(ExpList kids) { return build(this.tf, kids); }

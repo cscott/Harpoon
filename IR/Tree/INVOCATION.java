@@ -20,7 +20,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.18 2000-02-15 15:47:40 cananian Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.19 2000-02-16 19:44:25 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL
@@ -92,18 +92,6 @@ public abstract class INVOCATION extends Stm {
 	    setChild(i++, ep.head);
     }
 
-    protected Set defSet() { 
-	Set def = new HashSet();
-	if (!isVoid) def.add(getRetval().temp);
-	return def;
-    }
-
-    protected Set useSet() {
-	Set uses = new HashSet();
-	uses.addAll(ExpList.useSet(kids()));
- 	return uses;
-    }
-    
     abstract public boolean isNative();
     abstract public void accept(TreeVisitor v);
 }

@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.24 2000-02-15 17:19:04 cananian Exp $
+ * @version $Id: MOVE.java,v 1.1.2.25 2000-02-16 19:44:25 cananian Exp $
  */
 public class MOVE extends Stm implements Typed {
     /** Constructor. 
@@ -61,20 +61,6 @@ public class MOVE extends Stm implements Typed {
     }
     /** Sets the expression for the computed value. */
     public void setSrc(Exp src) { setChild(1, src); }
-
-    protected Set defSet() { 
-	Set def = new HashSet();
-	if (getDst().kind()==TreeKind.TEMP) def.add(((TEMP)getDst()).temp);
-	return def;
-    }
-	
-    protected Set useSet() { 
-	Set uses = new HashSet();
-	uses.addAll(getSrc().useSet());
-	if (!(getDst().kind()==TreeKind.TEMP)) uses.addAll(getDst().useSet());
-
-	return uses;
-    }
 
     public int kind() { return TreeKind.MOVE; }
 

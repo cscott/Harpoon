@@ -19,7 +19,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ExpList.java,v 1.1.2.17 2000-02-15 15:47:40 cananian Exp $
+ * @version $Id: ExpList.java,v 1.1.2.18 2000-02-16 19:44:25 cananian Exp $
  */
 public final class ExpList {
     /** The expression at this list entry. */
@@ -85,13 +85,6 @@ public final class ExpList {
 	       rename(e.tail, tf, tm, cb));
     }
     
-    public static Set useSet(ExpList expList) {
-	Set use = new HashSet();
-	for (;expList!=null; expList=expList.tail)
-	    use.addAll(expList.head.useSet());
-	return use;
-    }
-
     public String toString() { 
 	StringBuffer sb = new StringBuffer(); 
 	sb.append("EXPLIST<"); 
