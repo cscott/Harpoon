@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.71 1999-10-15 00:25:00 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.72 1999-11-02 07:18:38 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -73,7 +73,7 @@ MACHINE_GEN := Tools/PatMat/Lexer.java Tools/PatMat/Parser.java \
 CGSPECS:=$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.spec))
 CGJAVA :=$(patsubst %.spec,%.java,$(CGSPECS))
 MACHINE_SRC+=$(CGSPECS)
-MACHINE_GEN+=$(filter-out Backend/Sparc/% Tools/PatMat/% Backend/Jouette/%,$(CGJAVA))
+MACHINE_GEN+=$(filter-out Tools/PatMat/% Backend/Jouette/%,$(CGJAVA))
 
 ALLSOURCE :=  $(MACHINE_GEN) $(filter-out $(MACHINE_GEN), \
 		$(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
