@@ -20,11 +20,11 @@ import java.util.Vector;
  * in the Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FixupFunc.java,v 1.10 1998-09-21 02:31:26 cananian Exp $
+ * @version $Id: FixupFunc.java,v 1.11 1998-10-05 06:35:47 cananian Exp $
  * @see Translate
  */
 
-public class FixupFunc  {
+class FixupFunc  {
     static void fixup(Code c) {
 	DomTree  dt = new DomTree(false);// dominator tree
 	DomTree pdt = new DomTree(true); // post-dominator tree
