@@ -21,11 +21,11 @@ import java.util.Map;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.3.2.1 2002-02-27 08:36:47 cananian Exp $
+ * @version $Id: Print.java,v 1.3.2.2 2002-04-10 01:28:51 cananian Exp $
  */
 public class Print {
     public final static void print(PrintWriter pw, Code c, TempMap tm,
-                                   PrintCallback cb) {
+                                   PrintCallback<Tree> cb) {
         Tree tr = (Tree) c.getRootElement();
         PrintVisitor pv = new PrintVisitor(pw, tm, cb);
 
@@ -37,7 +37,7 @@ public class Print {
     }
 
     public final static void print(PrintWriter pw, Data d, TempMap tm,
-				   PrintCallback cb) { 
+				   PrintCallback<Tree> cb) { 
 	Tree tr = (Tree)d.getRootElement();
         PrintVisitor pv = new PrintVisitor(pw, tm, cb);
 
@@ -48,16 +48,16 @@ public class Print {
         pw.flush();
     }
 
-    public final static void print(PrintWriter pw, Code c, PrintCallback cb) {
+    public final static void print(PrintWriter pw, Code c, PrintCallback<Tree> cb) {
         print(pw, c, null, cb);
     }
-    public final static void print(PrintWriter pw, Data d, PrintCallback cb) {
+    public final static void print(PrintWriter pw, Data d, PrintCallback<Tree> cb) {
         print(pw, d, null, cb);
     }
 
     public final static void print(PrintWriter pw, Code c, final Map ht) {
-        print(pw, c, null, new PrintCallback() {
-	    public void printAfter(PrintWriter _pw_, HCodeElement hce) {
+        print(pw, c, null, new PrintCallback<Tree>() {
+	    public void printAfter(PrintWriter _pw_, Tree hce) {
 		if (ht.containsKey(hce)) _pw_.print(ht.get(hce));
 	    }
 	});
@@ -96,14 +96,14 @@ public class Print {
         private final static int TAB = 1;
         private PrintWriter pw;
         private TempMap tm;
-	private PrintCallback cb;
+	private PrintCallback<Tree> cb;
         private int indlevel;
 
-        PrintVisitor(PrintWriter pw, TempMap tm, PrintCallback cb) {
+        PrintVisitor(PrintWriter pw, TempMap tm, PrintCallback<Tree> cb) {
             indlevel = 1;
             this.pw = pw;
             this.tm = tm;
-	    this.cb = (cb==null) ? new PrintCallback() : cb;
+	    this.cb = (cb==null) ? new PrintCallback<Tree>() : cb;
 
 	    // assert false : "Printing Trees is *slow*";
         }
