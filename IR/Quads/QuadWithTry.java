@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.16 1999-09-09 21:12:19 cananian Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.17 1999-09-16 19:05:30 bdemsky Exp $
  * @see QuadNoSSA
  * @see QuadSSI
  */
@@ -37,7 +37,9 @@ public class QuadWithTry extends Code /* which extends HCode */ {
 
     QuadWithTry(harpoon.IR.Quads.QuadSSI quad) {
         super(quad.getMethod(), null);
-	quads = ReHandler.rehandler(this.qf, quad);
+	Object[] quadandmap=ReHandler.rehandler(this.qf, quad);
+	quads = (Quad)quadandmap[0];
+	Map map=(Map)quadandmap[1];
 	Peephole.normalize(quads);
 	Peephole.optimize(quads, false);
 	ReHandler.clean(this);
