@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.11 2002-07-24 04:09:22 cananian Exp $
+% $Id: ptran.tex,v 1.12 2002-07-24 15:34:57 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -7,7 +7,7 @@
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.11 $ $}
+\date{\today \\ $ $Revision: 1.12 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -55,7 +55,7 @@ use $s$ as:
 \text{ where }
 g(d) = \left\{ \begin{array}{cl}
                 \text{GenSite}(d,x) &\text{when } d \text{ is } v=x \\
-		\{d\}&\text{when } d \text{ is } v=\text{new } T(\ldots)
+                \{d\}&\text{when } d \text{ is } v=\text{new } T(\ldots)
                 \end{array}\right.
 \end{displaymath}
 
@@ -97,38 +97,44 @@ The appropriate Gen and Kill rules are:
 \begin{eqnarray*}
 % this is the standard reaching-def rule:
 %\text{Gen}_\text{Rd}(n) &=&
-%	\{ \tuple{v, n} | v \in \text{def}(n) \} \\
+%       \{ \tuple{v, n} | v \in \text{def}(n) \} \\
 %\text{Kill}_\text{Rd}(n) &=&
-%	\{ \tuple{v, s} | \tuple{v,s} \in \text{In}_\text{Rd}(n) \wedge
+%       \{ \tuple{v, s} | \tuple{v,s} \in \text{In}_\text{Rd}(n) \wedge
 %                          v \in \text{def}(n) \} \\
 %%%%%%%%%%%%%%%%%%%%%%%%
 \text{Gen}_\text{Ru}(n) &=&
-	\{ \tuple{v, n} | v \in \text{use}(n) \} \\
+        \left\{ \tuple{v, n} | v \in \text{use}(n) \right\} \\
 \text{Kill}_\text{Ru}(n) &=&
-	\{ \tuple{v, s} | \tuple{v,s} \in \text{In}_\text{Ru}(n) \wedge
-                          v \in \text{def}(n) \} \\
+        \left\{ \tuple{v, s} | v \in \text{def}(n) \wedge
+                          \tuple{v,s} \in \text{In}_\text{Ru}(n) \right\} \\
 %
 % non-singular reaching defs of n.
 \text{Gen}_\text{Nd}(n) &=&
-	\left\{ \tuple{v, n} | v \in \text{def}(n) \wedge
-\left( \text{Bad}(n) \vee
+        \left\{ \tuple{v, n} | v \in \text{def}(n) \wedge
+\left( \text{IsBad}(n) \vee
 \exists u\in\text{use}(n):\text{Ns}(u,n)
  \right) \right\}
 \\
 \text{Kill}_\text{Nd}(n) &=&
-	\{ \tuple{v, s} | \tuple{v,s} \in \text{In}_\text{Nd}(n) \wedge
-                          v \in \text{def}(n) \} %\\
+        \left\{ \tuple{v, s} | v \in \text{def}(n) \wedge
+                          \tuple{v,s} \in \text{In}_\text{Nd}(n) \right\} %\\
 \end{eqnarray*}
 where
-\begin{displaymath}
-\text{Ns}(v,n) =
+\begin{eqnarray*}
+\text{IsMove}(n) &=& \text{true iff }n\text{ is a move statement } v=x\\
+\text{IsNew}(n) &=& \text{true iff }n\text{ is a allocation statement } v=\text{new }T(\ldots)\\
+\text{IsBad}(n) &=& \neg\left(\text{IsMove}(n) \vee \text{IsNew}(n)\right) \\
+\text{Ns}(v,n) &=&
 %v\in\text{use}(n) \wedge \left(
 \tuple{v,n} \in \text{In}_\text{Ru}(n) \vee
 \exists n': \tuple{v,n'}\in\text{In}_\text{Nd}(n)
 %\right)
-\end{displaymath}
+\end{eqnarray*}
 After the analysis is complete, $v$ is (conservatively) singular at
 use $n$ if $\neg\text{Ns}(v,n)$.
+
+This analysis can be performed using a sparse representation, such as
+SSA or SSI, as well.
 
 \textbf{XXX: Extend to compute GenSite(v,n)?}
 
