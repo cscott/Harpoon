@@ -29,14 +29,16 @@ public class JhttpServer extends Thread{
 	}
     }
 
+    private void startWorker(Socket client) throws Exception {
+	(new JhttpWorker(client)).start();
+	System.out.println("accepted connection.");
+    }
 
     public void run(){
 	// infinite loop 
 	while (true){
 	    try{
-		Socket client = server.accept();
-		(new JhttpWorker(client)).start();
-		System.out.println("accepted connection.");
+		startWorker(server.accept());
 	    }
 	    catch (Exception e){
 		System.err.println(e);
