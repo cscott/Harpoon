@@ -5,6 +5,7 @@ package harpoon.Analysis.Quads;
 
 import harpoon.Analysis.InterferenceGraph;
 import harpoon.Analysis.Liveness;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Quad;
 import harpoon.Temp.Temp;
@@ -29,23 +30,24 @@ import java.util.Set;
  * for <code>Temp</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadInterferenceGraph.java,v 1.2 2002-02-25 20:59:23 cananian Exp $
+ * @version $Id: QuadInterferenceGraph.java,v 1.2.2.1 2002-04-07 21:17:07 cananian Exp $
  */
 public class QuadInterferenceGraph implements InterferenceGraph {
-    private final MultiMap mm;
+    private final MultiMap<Temp,Temp> mm;
     
     /** Creates a <code>QuadInterferenceGraph</code>. */
     public QuadInterferenceGraph(Code code) {
 	this(code, new QuadLiveness(code));
     }
-    public QuadInterferenceGraph(Code code, Liveness live) {
-        this.mm = new GenericMultiMap(new AggregateSetFactory());
-	for (Iterator it=code.getElementsI(); it.hasNext(); ) {
-	    Quad q = (Quad) it.next();
-	    for (Iterator it2=live.getLiveOut(q).iterator(); it2.hasNext(); ) {
-		Temp t = (Temp) it2.next();
-		for (Iterator it3=q.defC().iterator(); it3.hasNext(); ) {
-		    Temp d = (Temp) it3.next();
+    public QuadInterferenceGraph(Code code, Liveness<Quad> live) {
+        this.mm=new GenericMultiMap<Temp,Temp>(new AggregateSetFactory<Temp>());
+	for (Iterator<Quad> it=code.getElementsI(); it.hasNext(); ) {
+	    Quad q = it.next();
+	    for (Iterator<Temp> it2=live.getLiveOut(q).iterator();
+		 it2.hasNext(); ) {
+		Temp t = it2.next();
+		for (Iterator<Temp> it3=q.defC().iterator(); it3.hasNext(); ) {
+		    Temp d = it3.next();
 		    if (!t.equals(d)) {
 			mm.add(t, d);
 			mm.add(d, t);
@@ -57,11 +59,15 @@ public class QuadInterferenceGraph implements InterferenceGraph {
     /** unimplemented.  always returns 1. */
     public int spillCost(Temp t) { return 1; }
     /** unimplemented.  always returns 0-element list. */
-    public List moves() { return Collections.EMPTY_LIST; }
+    public List<HCodeElement> moves() { return Collections.EMPTY_LIST; }
 
-    public boolean isEdge(Object from, Object to) {
+    public boolean isEdge(Temp from, Temp to) {
 	return mm.contains(from, to);
     }
-    public Set succSet(Object node) { return (Set) mm.getValues(node); }
-    public Set predSet(Object node) { return (Set) mm.getValues(node); }
+    public Set<Temp> succSet(Temp node) {
+	return (Set<Temp>) mm.getValues(node);
+    }
+    public Set<Temp> predSet(Temp node) {
+	return (Set<Temp>) mm.getValues(node);
+    }
 }
