@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.2 1998-09-23 19:45:21 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.3 1998-10-08 00:21:19 cananian Exp $
  */
 public class SCCOptimize {
     TypeMap  ti;
@@ -44,6 +44,25 @@ public class SCCOptimize {
 	return false;
     }
     
+    // Utility class
+    private CONST newCONST(HCodeElement source, 
+			   Temp dst, Object val, HClass type) {
+	if (type==HClass.Boolean) {
+	    val = new Integer(((Boolean)val).booleanValue()?1:0);
+	    type= HClass.Int;
+	} else if (type==HClass.Short) {
+	    val = new Integer(((Short)val).intValue());
+	    type= HClass.Int;
+	} else if (type==HClass.Char) {
+	    val = new Integer((int)((Character)val).charValue());
+	    type= HClass.Int;
+	} else if (type==HClass.Byte) {
+	    val = new Integer(((Byte)val).intValue());
+	    type= HClass.Int;
+	}
+	return new CONST(source, dst, val, type);
+    }
+
     public void optimize(final HCode hc) {
     
 	QuadVisitor visitor = new QuadVisitor() {
@@ -66,9 +85,9 @@ public class SCCOptimize {
 		int which_pred = q.nextEdge(0).which_pred();
 
 		for (i=0; i<d.length; i++) {
-		    Quad qq = new CONST(q.getSourceElement(), d[i],
-					cm.constMap(hc, d[i]),
-					ti.typeMap(hc, d[i]) );
+		    Quad qq = newCONST(q.getSourceElement(), d[i],
+				       cm.constMap(hc, d[i]),
+				       ti.typeMap(hc, d[i]) );
 		    Quad.addEdge(header, which_succ, qq, 0);
 		    Ee.union(header.nextEdge(which_succ));
 		    header = qq; which_succ = 0;
@@ -128,9 +147,9 @@ public class SCCOptimize {
 		for (int i=0; i < q.dst.length; ) {
 		    if (cm.isConst(hc, q.dst[i])) {
 			// insert CONST.
-			Quad qq = new CONST(q.getSourceElement(), q.dst[i], 
-					    cm.constMap(hc, q.dst[i]),
-					    ti.typeMap(hc, q.dst[i]) );
+			Quad qq = newCONST(q.getSourceElement(), q.dst[i], 
+					   cm.constMap(hc, q.dst[i]),
+					   ti.typeMap(hc, q.dst[i]) );
 			Edge edge = q.nextEdge(0);
 			Quad.addEdge(qq, 0,(Quad)edge.to(), edge.which_pred());
 			Quad.addEdge(q, 0, qq, 0);
