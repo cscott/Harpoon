@@ -1,0 +1,35 @@
+#!/bin/sh
+# find a jsr-14 compiliant java compiler (compiles generic java)
+jsr14cc=not-found
+CLS=f$$
+echo "abstract class $CLS extends java.util.AbstractList<Integer> { }" \
+    > /tmp/$CLS.java
+if false ; then # disabling caching for non-intuitiveness.
+  # preload last successful result from cache.
+  if [ -f .find-gj-cache ]; then
+    cached=$(cat .find-gj-cache)
+    if $cached -d /tmp /tmp/$CLS.java 1>/dev/null 2>/dev/null; then
+      echo $cached
+      exit 0
+    fi
+  fi
+fi
+# okay, cached value didn't work.  look through all the possibilities.
+for jc in ${JIKES:-jikes} ${JAVAC:-javac} ${JCC} \
+          ${JSR14DISTR:+$JSR14DISTR/scripts/javac} \
+          ${HOME}/jsr14_adding_generics-1_{3,2,0}-ea/scripts/javac ; do
+    if $jc -d /tmp -source 1.5 /tmp/$CLS.java 1>/dev/null 2>/dev/null; then
+      jsr14cc="$jc -source 1.5"
+      break
+    fi
+    if $jc -d /tmp -source 1.4 -gj /tmp/$CLS.java 1>/dev/null 2>/dev/null; then
+      jsr14cc="$jc -source 1.4 -gj"
+      break
+    fi
+done
+/bin/rm -f /tmp/$CLS.java /tmp/$CLS.class
+# cache successful result from last run
+if [ "$jsr14cc" != "not-found" ]; then
+  echo $jsr14cc > .find-gj-cache
+fi
+echo $jsr14cc

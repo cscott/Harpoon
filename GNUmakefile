@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.84 2002-09-05 19:35:36 cananian Exp $
+# $Id: GNUmakefile,v 1.85 2003-03-10 18:34:13 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -9,8 +9,12 @@ JAVA:=java
 JFLAGS=-d . -g
 JFLAGSVERB=#-verbose -J-Djavac.pipe.output=true
 JIKES:=jikes $(JIKES_OPT)
-JCC5:=$(JSR14DISTR)/scripts/javac -source 1.4 -gj #-warnunchecked
 JCC:=javac -J-mx64m -source 1.4
+# find a gj compiler.  tries $JIKES first, then $JCC, then $JAVAC, then
+# $(JSR14DISTR)/scripts/javac, then some other paths.  Set JCC5
+# in your environment to skip the check.
+export JAVAC JIKES JCC
+JCC5?=$(shell chmod u+x bin/find-gj ; bin/find-gj) #-warnunchecked
 JDOC:=javadoc
 JAR=jar
 JDOCFLAGS:=-J-mx128m -version -author -breakiterator \
@@ -489,7 +493,7 @@ wc:
 clean:
 	-${RM} -r harpoon silicon gnu Harpoon.jar* harpoon.tgz* \
 		VERSIONS ChangeLog $(MACHINE_GEN) \
-		out-of-date "##out-of-date##"
+		out-of-date "##out-of-date##" .find-gj-cache
 	-${RM} java `find . -name "*.class"`
 
 polish: clean
