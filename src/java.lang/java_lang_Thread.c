@@ -320,10 +320,12 @@ static void * thread_startup_routine(void *closure) {
   /* (this also removes the thread from the ThreadGroup) */
   /* (see also Thread.EDexit() -- keep these in sync) */
   (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
+  assert(!((*env)->ExceptionOccurred(env)));
   /* This thread is dead now. */
   ((struct FNI_Thread_State *)(env))->is_alive = JNI_FALSE;
   /* Notify others that it's dead (before we deallocate the thread object!). */
   FNI_MonitorNotify(env, thread, JNI_TRUE);
+  assert(!((*env)->ExceptionOccurred(env)));
 #ifdef WITH_CLUSTERED_HEAPS
   /* give us a chance to deallocate the thread-clustered heap */
   NTHR_free(thread);
