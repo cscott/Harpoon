@@ -83,7 +83,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.5.2.6 2003-07-15 08:29:17 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.5.2.7 2003-07-15 08:58:09 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -1329,7 +1329,6 @@ public class SyncTransformer
 	    Quad.addEdge(q0, 1, q1, 0);
 	    Quad.addEdge(q1, 0, q2, 0);
 	    Quad.addEdge(q2, 0, q3, 0);
-	    Quad.addEdge(q2, 1, q4, 0);
 	    Quad.addEdge(q3, 0, q4, 1);
 	    this.quads = q0;
 	    // done!
