@@ -12,6 +12,7 @@ import harpoon.Util.CombineEnumerator;
 import harpoon.Util.FilterEnumerator;
 import harpoon.Util.SingletonEnumerator;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 
 import java.util.Enumeration;
@@ -23,7 +24,7 @@ import java.util.Vector;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.6 1999-01-22 23:33:27 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.7 1999-02-03 23:10:40 pnkfelix Exp $
  */
 
 public class CycleEq  {
@@ -36,7 +37,7 @@ public class CycleEq  {
 	for (Enumeration e = g.primes(); e.hasMoreElements(); ) {
 	    Node n = (Node) e.nextElement();
 	    Set s = (Set) equiv.get(n.cd_class);
-	    if (s==null) { s = new Set(); equiv.put(n.cd_class, s); }
+	    if (s==null) { s = new HashSet(); equiv.put(n.cd_class, s); }
 	    s.union(n.source());
 	}
 	// throw away all temp info now.
@@ -173,7 +174,7 @@ public class CycleEq  {
 
 	// DFS ORDERING.
 	protected void dfs_number() {
-	    dfs_number(start, new Set(), null);
+	    dfs_number(start, new HashSet(), null);
 	}
 	private void dfs_number(Node n, Set visited, Node parent) {
 	    Util.assert(!visited.contains(n));
@@ -362,8 +363,8 @@ public class CycleEq  {
 	    return (n!=null)?n:newNode(hce);
 	}
 	final Hashtable code2node = new Hashtable();
-	final Set start_code = new Set();
-	final Set end_code = new Set();
+	final Set start_code = new HashSet();
+	final Set end_code = new HashSet();
 	ElementGraph(HCode hc) {
 	    start_code.union(hc.getRootElement());
 	    HCodeElement[] leaves = hc.getLeafElements();
@@ -486,8 +487,8 @@ public class CycleEq  {
 	    return (n!=null)?n:newNode(hce);
 	}
 	final Hashtable code2node = new Hashtable();
-	final Set start_code = new Set();
-	final Set end_code = new Set();
+	final Set start_code = new HashSet();
+	final Set end_code = new HashSet();
 	EdgeGraph(HCode hc) {
 	    HCodeElement root = hc.getRootElement();
 	    HCodeEdge[] root_succ = ((Edges)root).succ();

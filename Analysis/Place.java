@@ -10,6 +10,7 @@ import harpoon.Temp.Temp;
 import harpoon.Util.Worklist;
 import harpoon.Util.NullEnumerator;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 
 import java.util.Hashtable;
@@ -18,7 +19,7 @@ import java.util.Enumeration;
  * <code>Place</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.10.2.1 1999-01-22 23:33:27 cananian Exp $
+ * @version $Id: Place.java,v 1.10.2.2 1999-02-03 23:10:40 pnkfelix Exp $
  */
 
 public class Place  {
@@ -75,8 +76,8 @@ public class Place  {
     }
 
     void place(HCode hc) {
-	Worklist Wphi = new Set();
-	Worklist Wsig = new Set();
+	Worklist Wphi = new HashSet();
+	Worklist Wsig = new HashSet();
 
 	// for each used/defined variable a
 	for (Enumeration aE = ud.allTempsE(hc); aE.hasMoreElements(); ) {
@@ -173,7 +174,7 @@ public class Place  {
 	void unionSet(HCodeElement hce, Temp Tnew) {
 	    Set s = (Set) get(hce);
 	    if (s == null) {
-		s = new Set();
+		s = new HashSet();
 		put(hce, s);
 	    }
 	    s.union(Tnew);

@@ -1,7 +1,7 @@
 // SetHClass.java, created Wed Nov  4 17:21:09 1998 by marinov
 package harpoon.Analysis.TypeInference;
 
-import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 
 import java.util.Enumeration;
 import harpoon.ClassFile.*;
@@ -12,10 +12,10 @@ import harpoon.ClassFile.*;
  * (i.e. class and all its subclasses) can be considered.
  *
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: SetHClass.java,v 1.1.2.1 1998-12-02 08:08:32 marinov Exp $
+ * @version $Id: SetHClass.java,v 1.1.2.2 1999-02-03 23:10:58 pnkfelix Exp $
  */
 
-public class SetHClass extends Set {
+public class SetHClass extends HashSet {
     public SetHClass() { }
     public SetHClass(HClass c) { h.put(c, c); }
     /** finds the union of this set and the parameter and returns true 

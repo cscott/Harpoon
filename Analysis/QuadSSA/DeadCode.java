@@ -8,6 +8,7 @@ import harpoon.IR.Quads.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 
@@ -20,14 +21,14 @@ import java.util.Hashtable;
  * unused and seeks to prove otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.11.2.7 1999-01-23 07:58:18 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.11.2.8 1999-02-03 23:10:52 pnkfelix Exp $
  */
 
 public abstract class DeadCode  {
 
     public static void optimize(HCode hc) {
 	// Assume everything's useless.
-	Set useful = new Set(); // empty set.
+	Set useful = new HashSet(); // empty set.
 	// make a renaming table
 	NameMap nm = new NameMap();
 	// keep track of defs.
@@ -36,7 +37,7 @@ public abstract class DeadCode  {
 	QuadVisitor v;
 	
 	// make a worklist (which everything's on, at the beginning)
-	Worklist W = new Set();
+	Worklist W = new HashSet();
 	Quad[] ql = (Quad[]) hc.getElements();
 	for (int i=0; i<ql.length; i++) {
 	    W.push(ql[i]);

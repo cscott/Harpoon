@@ -8,6 +8,7 @@ import harpoon.Analysis.UseDef;
 import harpoon.ClassFile.*;
 import harpoon.IR.Quads.*;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 import harpoon.Temp.*;
 import harpoon.Util.UniqueFIFO;
@@ -18,7 +19,7 @@ import java.util.Enumeration;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.11 1999-02-01 00:40:31 cananian Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.12 1999-02-03 23:10:57 pnkfelix Exp $
  */
 
 public class IntraProc {
@@ -44,7 +45,7 @@ public class IntraProc {
 	    parameterTypes[i] = new SetHClass();
 	returnType = new SetHClass();
 	exceptionType = new SetHClass();
-	callees = new Set();
+	callees = new HashSet();
     }
 
     SetHClass getReturnType() { return returnType.copy(); }
@@ -65,7 +66,7 @@ public class IntraProc {
     HMethod[] possibleMethods(HMethod m, SetHClass[] p) {
 	if (m.isStatic()) return new HMethod[]{ m };
 	if (p[0]==null) return new HMethod[0];
-	Set sm = new Set();
+	Set sm = new HashSet();
 	for (Enumeration e = p[0].elements(); e.hasMoreElements(); ) {
 	    HClass c = (HClass)e.nextElement();
 	    boolean notDone = true;
@@ -190,7 +191,7 @@ public class IntraProc {
 
     HMethod[] calls() {
 	if (map==null) { map = new Hashtable(); analyze(); }
-	Set r = new Set();
+	Set r = new HashSet();
 	for (Enumeration e = code.getElementsE(); e.hasMoreElements(); ) {
 	    Quad qq = (Quad) e.nextElement();
 	    if (!(qq instanceof CALL)) continue;
@@ -215,7 +216,7 @@ public class IntraProc {
 
     HMethod[] calls(CALL cs, boolean last) {
 	if (map==null) { map = new Hashtable(); analyze(); }
-	Set r = new Set();
+	Set r = new HashSet();
 	SetHClass[] paramTypes = new SetHClass[cs.paramsLength()];
 	for (int i=0; i<cs.paramsLength(); i++) {
 	    SetHClass s = (SetHClass)map.get(cs.params(i));

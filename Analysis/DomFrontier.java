@@ -9,6 +9,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.Edges;
 import harpoon.Util.Util;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.Util.NullEnumerator;
 import harpoon.Util.ArrayEnumerator;
 
@@ -20,7 +21,7 @@ import java.util.Enumeration;
  * the <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.6.2.3 1999-01-22 23:33:27 cananian Exp $
+ * @version $Id: DomFrontier.java,v 1.6.2.4 1999-02-03 23:10:40 pnkfelix Exp $
  */
 
 public class DomFrontier  {
@@ -97,7 +98,7 @@ public class DomFrontier  {
 	if (tempDT) dt = null; // free the dominator tree.
     }
     void computeDF(HCode hc, HCodeElement n) {
-	Set S = new Set();
+	Set S = new HashSet();
 	
 	// for every child y in succ[n]
 	HCodeEdge[] yl = (!isPost) ? ((Edges)n).succ() : ((Edges)n).pred();

@@ -12,6 +12,7 @@ import harpoon.ClassFile.*;
 import harpoon.IR.Quads.*;
 import harpoon.Temp.Temp;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 /**
  * <code>SCCOptimize</code> optimizes the code after <code>SCCAnalysis</code>.
@@ -19,7 +20,7 @@ import harpoon.Util.Util;
  * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.5.2.6 1999-02-01 00:40:30 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.5.2.7 1999-02-03 23:10:54 pnkfelix Exp $
  */
 public final class SCCOptimize {
     TypeMap  ti;
@@ -50,7 +51,7 @@ public final class SCCOptimize {
 	};
     }
 
-    Set Ee = new Set();
+    Set Ee = new HashSet();
     boolean execMap(HCode hc, HCodeEdge e) {
 	if (Ee.contains(e)) return true;
 	else return em.execMap(hc, e);

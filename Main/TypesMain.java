@@ -12,13 +12,14 @@ import java.util.Enumeration;
 import harpoon.Analysis.QuadSSA.ClassHierarchy;
 import harpoon.Analysis.TypeInference.InterProc;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.Util.Worklist;
 
 /**
  * <code>PrintTypes</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: TypesMain.java,v 1.1.2.3 1999-02-01 00:40:40 cananian Exp $
+ * @version $Id: TypesMain.java,v 1.1.2.4 1999-02-03 23:11:05 pnkfelix Exp $
  */
 public class TypesMain extends harpoon.IR.Registration {
     public static void main(String args[]) {
@@ -64,8 +65,8 @@ public class TypesMain extends harpoon.IR.Registration {
 		    for (int ana=0; ana<=1; ana++) {
 			if (ana==0) System.out.println("******** CHA-like");
 			else System.out.println("******** 0-CFA-like");
-			Set fi = new Set();
-			Worklist wl = new Set();
+			Set fi = new HashSet();
+			Worklist wl = new HashSet();
 			wl.push(hm[j]);
 			while (!wl.isEmpty()) {
 			    HMethod m = (HMethod)wl.pull();

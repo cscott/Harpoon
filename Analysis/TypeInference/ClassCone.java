@@ -6,12 +6,13 @@ import java.util.Hashtable;
 import harpoon.ClassFile.*;
 import harpoon.Util.Worklist;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.Util.HClassUtil;
 /**
  * <code>ClassCone</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: ClassCone.java,v 1.1.2.1 1998-12-02 08:08:32 marinov Exp $
+ * @version $Id: ClassCone.java,v 1.1.2.2 1999-02-03 23:10:57 pnkfelix Exp $
  */
 
 public class ClassCone  {
@@ -28,7 +29,7 @@ public class ClassCone  {
 	if (s==null) {
 	    s = new SetHClass();
 	    int dims = HClassUtil.dims(c);
-	    Worklist wl = new Set();
+	    Worklist wl = new HashSet();
 	    wl.push(HClassUtil.baseClass(c));
 	    while (!wl.isEmpty()) {
 		HClass cl = (HClass)wl.pull();

@@ -9,6 +9,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 import harpoon.Util.ArrayFactory;
 
@@ -23,7 +24,7 @@ import java.util.Vector;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.7 1999-01-23 07:58:19 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.8 1999-02-03 23:11:00 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -92,7 +93,7 @@ public abstract class Code extends HCode {
      *  enumerated. */
     public Enumeration getElementsE() {
 	return new Enumeration() {
-	    Set visited = new Set();
+	    Set visited = new HashSet();
 	    Stack s = new Stack();
 	    { // initialize stack/set.
 		s.push(getLeafElements()[0]); visited.union(s.peek());

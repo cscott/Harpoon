@@ -24,6 +24,7 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.FilterEnumerator;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 
@@ -39,7 +40,7 @@ import java.util.Vector;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.7 1999-01-22 23:06:01 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.8 1999-02-03 23:11:02 pnkfelix Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -351,7 +352,7 @@ final class Translate { // not public.
 	ContInfo contInfo() { return ss.contInfo; }
 
 	Enumeration targets() {
-	    final Set s = new Set();
+	    final Set s = new HashSet();
 	    targets2set(js, s);
 	    targets2set(jlv,s);
 	    return s.elements();
@@ -373,7 +374,8 @@ final class Translate { // not public.
 	}
 	void recordHandler(Instr orig, Quad start, Quad end) {
 	    for (HandlerSet hs=handlers(orig); hs!=null; hs=hs.next)
-		recordHandler(new Set(), start, end, (Set) hs.h.protectedSet);
+		recordHandler(new HashSet(), start, end, 
+			      (Set) hs.h.protectedSet);
 	}
 	private void recordHandler(Set done, Quad start, Quad end, Set s) {
 	    s.union(start); done.union(start);
@@ -407,7 +409,7 @@ final class Translate { // not public.
     }
 
     /** Our ProtectedSet. */
-    static final private class TransProtection extends Set
+    static final private class TransProtection extends HashSet
 	implements ProtectedSet {
 	TransProtection() { super(); }
 	public boolean isProtected(Quad q) { return contains(q); }

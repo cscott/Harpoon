@@ -6,6 +6,7 @@ package harpoon.Analysis.QuadSSA;
 import harpoon.ClassFile.*;
 import harpoon.IR.Quads.*;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 import java.util.Enumeration;
@@ -15,7 +16,7 @@ import java.util.Vector;
  * <code>CallGraph</code> constructs a simple directed call graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.4.2.5 1999-02-01 00:40:24 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.4.2.6 1999-02-03 23:10:51 pnkfelix Exp $
  */
 
 public class CallGraph  {
@@ -38,7 +39,7 @@ public class CallGraph  {
     public HMethod[] calls(final HMethod m) {
 	HMethod[] retval = (HMethod[]) cache.get(m);
 	if (retval==null) {
-	    final Set s = new Set();
+	    final Set s = new HashSet();
 	    final HCode hc = hcf.convert(m);
 	    if (hc==null) { cache.put(m,new HMethod[0]); return calls(m); }
 	    for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
@@ -52,7 +53,7 @@ public class CallGraph  {
 		    continue;
 		}
 		// all methods of children of this class are reachable.
-		Worklist W = new Set();
+		Worklist W = new HashSet();
 		W.push(cm.getDeclaringClass());
 		while (!W.isEmpty()) {
 		    HClass c = (HClass) W.pull();
@@ -84,9 +85,9 @@ public class CallGraph  {
 	HMethod cm = cs.method();
 	// for 'special' invocations, we know the method exactly.
 	if ((!cs.isVirtual()) || cs.isStatic()) return new HMethod[]{ cm };
-	final Set s = new Set();
+	final Set s = new HashSet();
 	// all methods of children of this class are reachable.
-	Worklist W = new Set();
+	Worklist W = new HashSet();
 	W.push(cm.getDeclaringClass());
 	while (!W.isEmpty()) {
 	    HClass c = (HClass) W.pull();

@@ -7,6 +7,7 @@ import harpoon.Temp.Temp;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCode;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 
 import java.util.Hashtable;
 
@@ -15,7 +16,7 @@ import java.util.Hashtable;
  * arrays of <code>HCodeElement</code>s
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: TempToHceArrayMap.java,v 1.1.2.2 1999-02-01 17:24:02 pnkfelix Exp $
+ * @version $Id: TempToHceArrayMap.java,v 1.1.2.3 1999-02-03 23:10:40 pnkfelix Exp $
  */
 abstract class TempToHceArrayMap {
     
@@ -115,7 +116,7 @@ abstract class TempToHceArrayMap {
 	for (int i=0; i<temps.length; i++) {
 	    Set s = (Set) tmpToHceSet.get(temps[i]);
 	    if (s == null) { 
-		s = new Set(); 
+		s = new HashSet(); 
 		tmpToHceSet.put(temps[i], s);
 	    }
 	    s.union(hce);

@@ -4,6 +4,7 @@ package harpoon.IR.Quads;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 
 import java.util.Stack;
@@ -13,7 +14,7 @@ import java.util.Stack;
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.5 1999-01-22 23:06:00 cananian Exp $
+ * @version $Id: Peephole.java,v 1.1.2.6 1999-02-03 23:11:00 pnkfelix Exp $
  */
 
 final class Peephole  {
@@ -37,7 +38,7 @@ final class Peephole  {
     }
     private abstract static class SuperVisitor extends QuadVisitor {
 	final Stack todo = new CheckStack();
-	final Set visited = new Set();
+	final Set visited = new HashSet();
 	boolean changed = false;
 
 	public boolean optimize(Quad head) {

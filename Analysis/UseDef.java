@@ -7,6 +7,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.Util.NullEnumerator;
 import harpoon.Util.ArrayEnumerator;
 import harpoon.Util.Util;
@@ -21,7 +22,7 @@ import java.util.Enumeration;
  * another one if you make modifications to the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.10.2.3 1999-01-22 23:33:27 cananian Exp $
+ * @version $Id: UseDef.java,v 1.10.2.4 1999-02-03 23:10:41 pnkfelix Exp $
  */
 
 public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
@@ -45,7 +46,7 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 		   Hashtable map, Set allTemps1, Set allTemps2) {
 	for (int i=0; i<tl.length; i++) {
 	    Set s = (Set) map.get(tl[i]);
-	    if (s==null) { s = new Set(); map.put(tl[i], s); }
+	    if (s==null) { s = new HashSet(); map.put(tl[i], s); }
 	    s.union(hce);
 	    allTemps1.union(tl[i]);
 	    allTemps2.union(tl[i]);
@@ -79,9 +80,9 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 
 	Hashtable workUse = new Hashtable();
 	Hashtable workDef = new Hashtable();
-	Set defined = new Set();
-	Set used    = new Set();
-	Set all     = new Set();
+	Set defined = new HashSet();
+	Set used    = new HashSet();
+	Set all     = new HashSet();
 
 	// Scan through and associate uses and defs with their HCodeElements
 	for (int i=0; i<el.length; i++) {

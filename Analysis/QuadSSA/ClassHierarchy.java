@@ -6,6 +6,7 @@ package harpoon.Analysis.QuadSSA;
 import harpoon.ClassFile.*;
 import harpoon.IR.Quads.*;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 
@@ -17,7 +18,7 @@ import java.util.Enumeration;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.4.2.5 1999-02-01 00:40:24 cananian Exp $
+ * @version $Id: ClassHierarchy.java,v 1.4.2.6 1999-02-03 23:10:51 pnkfelix Exp $
  */
 
 public class ClassHierarchy  {
@@ -36,7 +37,7 @@ public class ClassHierarchy  {
     /** Returns an enumeration of all reachable/usable classes. */ 
     public Enumeration classes() {
 	if (_classes == null) {
-	    _classes = new Set();
+	    _classes = new HashSet();
 	    for (Enumeration e = children.keys(); e.hasMoreElements(); )
 		_classes.union(e.nextElement());
 	    for (Enumeration e = children.elements(); e.hasMoreElements(); ) {
@@ -52,7 +53,7 @@ public class ClassHierarchy  {
 	(Actually only the list of classes for which an explicit NEW is found;
 	should include list of classes that are automatically created by JVM!) */ 
     public Enumeration instantiatedClasses() { return instedClasses.elements(); }
-    private Set instedClasses = new Set();
+    private Set instedClasses = new HashSet();
 
     /** Returns a human-readable representation of the hierarchy. */
     public String toString() {
@@ -83,10 +84,10 @@ public class ClassHierarchy  {
 	// state.
 	Hashtable classMethodsUsed = new Hashtable(); // hash of sets.
 	Hashtable classKnownChildren = new Hashtable(); // hash of sets
-	Set done = new Set(); // all methods done.
+	Set done = new HashSet(); // all methods done.
 
 	// worklist algorithm.
-	Worklist W = new Set();
+	Worklist W = new HashSet();
 	methodPush(root, W, classMethodsUsed);
 	discoverClass(root.getDeclaringClass(), W, done,
 		      classKnownChildren, classMethodsUsed);
@@ -151,9 +152,9 @@ public class ClassHierarchy  {
 	HMethod ci = c.getClassInitializer();
 	if ((ci!=null) && (!done.contains(ci))) methodPush(ci, W, cmu);
 	// add to known-children lists.
-	ckc.put(c, new Set());
+	ckc.put(c, new HashSet());
 	// new worklist.
-	Worklist sW = new Set();
+	Worklist sW = new HashSet();
 	// mark superclass.
 	HClass su = c.getSuperclass();
 	if (su!=null) { // maybe discover super class?
@@ -202,7 +203,7 @@ public class ClassHierarchy  {
     */
     private void discoverMethod(HMethod m, 
 			Worklist W, Set done, Hashtable ckc, Hashtable cmu) {
-	Worklist cW = new Set();
+	Worklist cW = new HashSet();
 	cW.push(m.getDeclaringClass());
 	while (!cW.isEmpty()) {
 	    // pull a class from the worklist
@@ -235,7 +236,7 @@ public class ClassHierarchy  {
 	// mark this method as usable.
 	Set s = (Set) cmu.get(m.getDeclaringClass());
 	if (s==null) { 
-	    s = new Set(); 
+	    s = new HashSet(); 
 	    cmu.put(m.getDeclaringClass(),s);
 	}
 	s.union(m);

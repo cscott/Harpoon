@@ -3,17 +3,18 @@ package harpoon.Analysis.TypeInference;
 
 import java.util.Enumeration;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.ClassFile.*;
 /**
  * <code>FieldType</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: FieldType.java,v 1.1.2.1 1998-12-02 08:08:32 marinov Exp $
+ * @version $Id: FieldType.java,v 1.1.2.2 1999-02-03 23:10:57 pnkfelix Exp $
  */
 
 public class FieldType  {
     SetHClass type = new SetHClass();
-    Set callees = new Set();
+    Set callees = new HashSet();
 
     /** Creates a <code>FieldType</code>. */
     public FieldType() { }

@@ -7,7 +7,7 @@ import java.util.Vector;
  * <code>GraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColorer.java,v 1.1.2.4 1999-02-01 17:24:11 pnkfelix Exp $
+ * @version $Id: GraphColorer.java,v 1.1.2.5 1999-02-03 23:10:46 pnkfelix Exp $
  */
 
 public abstract class GraphColorer  {
@@ -116,7 +116,7 @@ public abstract class GraphColorer  {
 	                     using the set of <code>Color</code>s
 			     given in <code>colors</code>.  If a
 			     coloring cannot be found for
-			     <code>graph<code>, throws
+			     <code>graph</code>, throws
 			     <code>UncolorableGraphException</code>. 
      */
     public abstract void color(ColorableGraph graph,

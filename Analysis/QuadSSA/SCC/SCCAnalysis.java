@@ -12,6 +12,7 @@ import harpoon.IR.Quads.*;
 import harpoon.Temp.Temp;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Set;
+import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 
@@ -22,7 +23,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.8 1999-01-03 03:01:41 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.9 1999-02-03 23:10:54 pnkfelix Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -36,9 +37,9 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     /*-----------------------------*/
     // Class state.
     /** Set of all executable edges. */
-    Set Ee = new Set();
+    Set Ee = new HashSet();
     /** Set of all executable quads. */
-    Set Eq = new Set();
+    Set Eq = new HashSet();
     /** Mapping from <code>Temp</code>s to lattice values. */
     Hashtable V = new Hashtable();
 
@@ -103,7 +104,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     // Analysis code.
 
     /** Set of analyzed methods. */
-    Set analyzed = new Set();
+    Set analyzed = new HashSet();
     HCode lastHCode = null;
     /** Main analysis method. */
     void analyze(HCode hc) {
@@ -114,8 +115,8 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	lastHCode = hc;
 
 	// Initialize worklists.
-	Worklist Wv = new Set(); // variable worklist.
-	Worklist Wq = new Set(); // block worklist.
+	Worklist Wv = new HashSet(); // variable worklist.
+	Worklist Wq = new HashSet(); // block worklist.
 
 	// Make instance of visitor class.
 	SCCVisitor visitor = new SCCVisitor(hc, Wv, Wq);
