@@ -50,9 +50,12 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.12 2000-07-30 01:44:33 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.13 2000-08-02 01:15:22 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
+    
+    private static final boolean TIME = false;
+    private static final boolean RESULTS = false;
     
     public static RegAlloc.Factory FACTORY =
 	new RegAlloc.Factory() {
@@ -68,8 +71,6 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
     private static final int INITIAL_DISPLACEMENT = 0;
 
-    /* ** Fields ** */
-    
     double defWt, useWt, copyWt;
     int baseReg;
     int disp = INITIAL_DISPLACEMENT, argReg;
@@ -80,21 +81,30 @@ public class GraphColoringRegAlloc extends RegAlloc {
     ReachingDefs rdefs;
     LiveTemps liveTemps;
 
-    MultiMap regToDefs;
-    MultiMap regToUses;
+    // TYPES IN COMMENTS
+    // Reg    : All r in Temp such that isRegister(r)
+    // VReg   : Temp - Reg
+    // AReg   : All r such that Exists some t in Temp such that
+    //                rfi.getRegAssignments(t) contains some
+    //                List<Reg>, l, such that r is in l. 
+    // Assign : List<AReg>
+    // SysReg : Reg - AReg
+
+    MultiMap regToDefs; // Reg -> Instr
+    MultiMap regToUses; // Reg -> Instr
     
+    Map implicitAssigns; // VReg -> AReg -> Assign
+    Map regToColor;  // AReg -> RegColor
 
-    List regAssigns; // List< List<Temp> >  
-    Map regToColor;  // Temp -> RegColor
-
-    Map ixtToWebPreCombine = new HashMap(); // Instr x Temp -> WebRecord    
-    Map ixtToWeb = new HashMap(); // Instr x Temp -> WebRecord
+    Map ixtToWebPreCombine = new HashMap(); // Instr x VReg -> WebRecord    
+    Map ixtToWeb = new HashMap(); // Instr x VReg -> WebRecord
     List webRecords; // List<WebRecord>
 
     List tempWebRecords; // List<TempWebRecord>
-    List assignWebRecords; // List<AssignWebRecord>
+    List regWebRecords; // List<RegWebRecord>
     
-    // Maps Temp:t -> Set of Regs whose live regions interfere with
+    // NOT BUILT YET
+    // Maps Temp:t -> Set of Reg whose live regions interfere with
     //                t's live region
     MultiMap preassignMap;
 
@@ -109,7 +119,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	buildRegAssigns();
 	rdefs = new ReachingDefsAltImpl(code);
 	liveTemps = LiveTemps.make(code, rfi.liveOnExit());
-	preassignMap = buildPreassignMap(code, rfi.liveOnExit());
+	// preassignMap = buildPreassignMap(code, rfi.liveOnExit());
         colorer = gc;
     }
 
@@ -163,10 +173,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	boolean success, coalesced;
 	AdjMtx adjMtx;
 
-	System.out.println();
+	if (TIME) System.out.println();
 	do {
 	    do {
-		System.out.println("Making Webs");
+		if (TIME) System.out.println("Making Webs");
 
 		makeWebs(rdefs); 
 		
@@ -199,11 +209,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		}
 		// System.out.println("webs: "+webRecords);
 
-		System.out.println("Building Matrix");
+		if (TIME) System.out.println("Building Matrix");
 
 		adjMtx = buildAdjMatrix();
 
-		System.out.println
+		if (TIME) System.out.println
 		    ( ((CachingLiveTemps)liveTemps).cachePerformance());
 		
 		// System.out.println("Adjacency Matrix");
@@ -211,7 +221,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		coalesced = coalesceRegs(adjMtx);
 	    } while (coalesced);
 
-	    System.out.println("Building Lists");
+	    if (TIME) System.out.println("Building Lists");
 
 	    WebRecord[] adjLsts = buildAdjLists(adjMtx); 
 	    adjMtx = null;
@@ -220,21 +230,21 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	    computeSpillCosts();
 
-	    System.out.println("Building Graph");
+	    if (TIME) System.out.println("Building Graph");
 
-	    final ColorableGraph graph = new Graph(adjLsts);
+	    final ColorableGraph graph = buildGraph(adjLsts);
 	    
 	    final Map nodeToNum = new HashMap(); 
-	    System.out.println("nodes of graph");
+	    if (RESULTS) System.out.println("nodes of graph");
 	    int i=0;
 	    for(Iterator nodes=graph.nodeSet().iterator();nodes.hasNext();){
 		i++;
 		Object n=nodes.next();
 		nodeToNum.put(n, new Integer(i));
-		System.out.println(i+"\t"+n);
+		if (RESULTS) System.out.println(i+"\t"+n);
 	    }
 	    Collection readEdges = readableEdges(graph.edges(), nodeToNum);
-	    System.out.println("edges of graph "+readEdges);
+	    if (RESULTS) System.out.println("edges of graph "+readEdges);
 
 	    try {
 		List colors = new ArrayList(regToColor.values());
@@ -248,9 +258,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		}
 		for(Iterator cs=c2n.keySet().iterator();cs.hasNext();){
 		    Object col=cs.next();
-		    System.out.println(col + " nodes: "+
-				       readableNodes(c2n.getValues(col),
-						     nodeToNum));
+		    if (RESULTS) 
+			System.out.println(col + " nodes: "+
+					   readableNodes(c2n.getValues(col),
+							 nodeToNum));
 		}
 
 		modifyCode();
@@ -276,14 +287,21 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	} while (!success);
     }
 
-    // sets regAssigns, regToColor, regToDefs, regToUses
+    // sets regToColor, regToDefs, regToUses, implicitAssigns
     private void buildRegAssigns() {
-	HashSet assigns = new HashSet();
-	regToColor = new HashMap();
+	HashSet assigns; // Set<Assign>
+	HashMap asnSetToImplc; // Set<Assign> -> Reg -> Assign
+	
+	// local vars
+	assigns = new HashSet();
+	asnSetToImplc = new HashMap();
 
+	// global vars
+	implicitAssigns = new HashMap();
+	regToColor = new HashMap();
 	regToDefs = new GenericMultiMap();
 	regToUses = new GenericMultiMap();
-
+	
 	for(Iterator instrs=code.getElementsI(); instrs.hasNext();){
 	    Instr i = (Instr) instrs.next();
 	    Iterator tmps = new CombineIterator(i.defC().iterator(),
@@ -293,21 +311,44 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		if (rfi.isRegister(t)) {
 		    if (i.defC().contains(t)) regToDefs.add(t, i);
 		    if (i.useC().contains(t)) regToUses.add(t, i);
-		    // regToColor(t); 
-		} else {
-		    Set suggRegs = rfi.getRegAssignments(t);
-		    assigns.addAll(suggRegs);
-		    for(Iterator s=suggRegs.iterator(); s.hasNext();){
-			List rL = (List) s.next();
-			for(Iterator rs=rL.iterator();rs.hasNext();){
-			    Temp reg = (Temp) rs.next();
-			    regToColor(reg); 
-			}
+		    
+		    // do not make a color for `t' here; otherwise
+		    // system registers (PC, SP, etc) get colors 
+		    continue;
+		} 
+		
+		Set suggRegs = rfi.getRegAssignments(t);
+		assigns.addAll(suggRegs);
+		
+		// incorporate into regToColor
+		for(Iterator s=suggRegs.iterator(); s.hasNext();){
+		    List rL = (List) s.next();
+		    for(Iterator rs=rL.iterator();rs.hasNext();){
+			Temp reg = (Temp) rs.next();
+			regToColor(reg); 
 		    }
+		}
+		
+		if (!implicitAssigns.keySet().contains(t)) {
+		    if (!asnSetToImplc.keySet().contains(suggRegs)) {
+			// build Reg -> Assign for suggRegs
+			Map r2a = new HashMap(suggRegs.size());
+			for(Iterator s=suggRegs.iterator();s.hasNext();){
+			    List asn = (List) s.next();
+			    Temp reg = (Temp) asn.iterator().next();
+			    if (!r2a.containsKey(reg)) {
+				r2a.put(reg, asn);
+			    }
+			}
+			asnSetToImplc.put(suggRegs, r2a);
+		    }
+
+		    // add to implicitAssigns
+		    Object r2a = asnSetToImplc.get(suggRegs);
+		    implicitAssigns.put(t, r2a);
 		}
 	    }
 	}
-	regAssigns = new ArrayList(assigns);
     }
     
     private Color regToColor(Temp reg) {
@@ -436,15 +477,15 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	// System.out.println("post-duchain-combination");
 	// System.out.println("webSet: "+webSet);
 	
-	// FSK: may need to switch the thinking here from "number of
-	// regs" to "number of possible assignments" which is a
-	// different beast altogether...
 	
-	assignWebRecords = new ArrayList(regAssigns.size());
-	for(i=0; i < regAssigns.size(); i++) {
-	    WebRecord w = new AssignWebRecord((List)regAssigns.get(i));
+	regWebRecords = new ArrayList(regToColor.keySet().size());
+	
+	Iterator rs = regToColor.keySet().iterator();
+	for(i=0; rs.hasNext(); i++) {
+	    Temp reg = (Temp) rs.next();
+	    WebRecord w = new RegWebRecord(reg);
 	    w.sreg(i);
-	    assignWebRecords.add(w);
+	    regWebRecords.add(w);
 	}
 	tempWebRecords = new ArrayList(webSet.size());
 	for(Iterator webs = webSet.iterator(); webs.hasNext(); i++) {
@@ -453,22 +494,20 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    tempWebRecords.add(w);
 	}
 	webRecords = ListFactory.concatenate
-	    (Default.pair(assignWebRecords, tempWebRecords));
+	    (Default.pair(regWebRecords, tempWebRecords));
 
 	for(Iterator webs = tempWebRecords.iterator(); webs.hasNext(); ){
 	    WebRecord wr = (WebRecord) webs.next();
-	    for(Iterator ts=wr.temps().iterator(); ts.hasNext(); ) {
-		Temp t = (Temp) ts.next();
-		Iterator is = new
-			CombineIterator(wr.defs().iterator(),
-					wr.uses().iterator()); 
-		while( is.hasNext() ) {
-		    Instr inst = (Instr) is.next();
-		    List ixt = Default.pair(inst,t);
-		    WebRecord prior = (WebRecord) ixtToWeb.get(ixt);
-		    Util.assert(prior == null || prior == wr);
-		    ixtToWeb.put(ixt, wr);
-		}
+	    Temp t = wr.temp();
+	    Iterator is = new
+		CombineIterator(wr.defs().iterator(),
+				wr.uses().iterator()); 
+	    while( is.hasNext() ) {
+		Instr inst = (Instr) is.next();
+		List ixt = Default.pair(inst,t);
+		WebRecord prior = (WebRecord) ixtToWeb.get(ixt);
+		Util.assert(prior == null || prior == wr);
+		ixtToWeb.put(ixt, wr);
 	    }
 	}
 	if(!ixtToWeb.keySet().equals(ixtToWebPreCombine.keySet())) {
@@ -489,7 +528,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	AdjMtx adjMtx = new AdjMtx(webRecords);
 	int i, j;
 	
-	Iterator assgn1 = assignWebRecords.iterator();
+	Iterator assgn1 = webRecords.iterator();
 	for(i=1; i<webRecords.size(); i++) {
 	    WebRecord wr1 = (WebRecord) webRecords.get(i);
 	    for(j=0; j<i; j++) {
@@ -550,11 +589,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	int i, j;
 	final int nwebs = webRecords.size();
 	final WebRecord[] adjLsts = new WebRecord[nwebs];
-	for(i=0; i<assignWebRecords.size(); i++) {
-	    adjLsts[i] = (WebRecord) assignWebRecords.get(i);
+	for(i=0; i<regWebRecords.size(); i++) {
+	    adjLsts[i] = (WebRecord) regWebRecords.get(i);
 	    adjLsts[i].spcost =  Double.POSITIVE_INFINITY;
 	}
-	int offset = assignWebRecords.size();
+	int offset = regWebRecords.size();
 	for(i=0; i<tempWebRecords.size(); i++) {
 	    adjLsts[offset+i]= (WebRecord) tempWebRecords.get(i);
 	}
@@ -575,35 +614,29 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	
     }
 
-    private void pruneGraph() { 
-    
-    }
-
-    private boolean assignRegs() { 
-	return true; 
+    private Graph buildGraph(WebRecord[] adjLsts) {
+	return new Graph(adjLsts);
     }
 
     private void modifyCode() { 
-	MultiMap colorToAssign; // RegColor -> List<Temp>
-	colorToAssign = new GenericMultiMap();
-	for(Iterator ars = assignWebRecords.iterator(); ars.hasNext();){
-	    AssignWebRecord wr = (AssignWebRecord) ars.next();
-	    colorToAssign.add(wr.regColor(), wr.regs);
+	HashMap colorToAssign; // RegColor -> AReg
+	colorToAssign = new HashMap();
+	for(Iterator ars = regWebRecords.iterator(); ars.hasNext();){
+	    RegWebRecord wr = (RegWebRecord) ars.next();
+	    colorToAssign.put(wr.regColor(), wr.reg);
 	}
 	for(Iterator wrs = tempWebRecords.iterator(); wrs.hasNext();){
 	    TempWebRecord wr = (TempWebRecord) wrs.next();
 	    Iterator instrs;
 	    for(instrs = wr.defs.iterator(); instrs.hasNext();) {
 		Instr i = (Instr) instrs.next();
-		Collection mappings = 
-		    (Collection)colorToAssign.getValues(wr.regColor());
-		List regs = null; 
-		for(Iterator m=mappings.iterator(); m.hasNext(); ){
-		    regs = (List) m.next();
-		    if (rfi.getRegAssignments(wr.sym).contains(regs)) 
-			break;
-		}
-		Util.assert(regs != null);
+		Temp reg = (Temp) colorToAssign.get(wr.regColor());
+
+		// FSK: BROKEN!  Need to change this to map multiple
+		// nodes (and associated colors) to single Temp and
+		// associated reg assignment
+		List regs = Arrays.asList(new Temp[]{ reg }); 
+
 		code.assignRegister(i, wr.sym, regs);
 	    }
 	    for(instrs = wr.uses.iterator(); instrs.hasNext();) {
@@ -620,8 +653,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
     }
     
     /** Graph is a graph view of the adjacency lists in this. 
-	Every element of a Graph is a WebRecord.
-     */
+	There is a many-to-one mapping from Nodes to WebRecords. 
+    */
     class Graph extends AbstractGraph implements ColorableGraph {
 	LinkedList adjLsts;
 	LinkedList hidden;
@@ -686,8 +719,6 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    }
 	}
 
-	// FSK: not implemented correctly; does not support node
-	// precoloring. 
 	public void resetColors() { 
 	    Iterator ns;
 	    for(ns = adjLsts.iterator(); ns.hasNext();) {
@@ -738,8 +769,17 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	RegColor regColor()  {
 	    return regColor;
 	}
-	
-	void regColor(RegColor rc)  {
+
+	/** Sets color of this.
+	    requires: (this can only be colored once and it has
+	               already been colored) ==> rc == null
+	    modifies: this
+	    effects: if this can only be colored once, has already
+	       been colored then no modification to this
+	       else if rc == null then deletes color for this
+	       else sets color for this to rc.
+	*/
+	void regColor(RegColor rc)  { 
 	    if (colorOnce && regColorYet) {
 		// attempts to erase color should do nothing 
 		Util.assert(rc == null);
@@ -762,34 +802,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    for(Iterator ins=this.defs().iterator();ins.hasNext();){
 		Instr d = (Instr) ins.next();
 		Set l= liveTemps.getLiveAfter(d);
-		l = new HashSet(l);
-		l.retainAll(wr.temps());
-		if (!l.isEmpty()) return true;
-	    }
-	    return false;
-	}
-	private boolean oldConflictsWith1D(WebRecord wr) {
-	    for(Iterator tmps=wr.temps().iterator();tmps.hasNext();){
-		Temp t = (Temp) tmps.next();
-		for(Iterator ins=this.uses().iterator();ins.hasNext();){
-		    Instr u = (Instr) ins.next();
-		    if (isRegister(t) &&
-			!regToDefs.keySet().contains(t)) {
-			// not all regs are explicitly defined; doing
-			// queries on them breaks rdefs.
-			continue;
-		    }
-		    Set reaches = rdefs.reachingDefs(u, t);
-		    reaches = new HashSet(reaches); // make mutable
-		    reaches.retainAll(wr.defs());
-		    if (!reaches.isEmpty()) {
-			System.out.println(this+" conflicts with\n"+wr+
-					   "\ndue to "+reaches+
-					   "\n reaching "+u);
-			System.out.println();
-			return true;
-		    }
-		}
+		if (l.contains(wr.temp())) 
+		    return true;
 	    }
 	    return false;
 	}
@@ -804,59 +818,31 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	// webs. 
 	abstract Set uses();
 
-	abstract List temps();
+	// returns the Temp that this WebRecord represents.
+	abstract Temp temp();
+
+	public String toString() { return "w:"+temp(); }
     }
 
-    class AssignWebRecord extends WebRecord {
-	List regs;
-	AssignWebRecord(List regs) {
-	    super(regs.size() == 1);
-	    this.regs = regs;
-	    if (regs.size() == 1) {
-		regColor( (RegColor)regToColor.get(regs.get(0)) );
-	    } else {
-		System.out.println("!!! Created record for "+regs);
-	    }
+    class RegWebRecord extends WebRecord {
+	final Temp reg;
+	RegWebRecord(Temp reg) {
+	    super(true);
+	    this.reg = reg;
+	    regColor( (RegColor) regToColor.get(reg) );
 	}
-	public List temps() { return regs; }
-	public Set defs() { 
-	    HashSet s = new HashSet();
-	    for(Iterator ts=regs.iterator(); ts.hasNext();){
-		Temp reg = (Temp) ts.next();
-		s.addAll(regToDefs.getValues(reg));
-	    }
-	    return s;
-	}
-
-	public Set uses() { 
-	    HashSet s = new HashSet();
-	    for(Iterator ts=regs.iterator(); ts.hasNext();){
-		Temp reg = (Temp) ts.next();
-		s.addAll(regToUses.getValues(reg));
-	    }
-	    return s;
-	}
+	public Set defs() { return (Set) regToDefs.getValues(reg); }
+	public Set uses() { return (Set) regToUses.getValues(reg); }
+	public Temp temp() { return reg; }
 
 	boolean conflictsWith(WebRecord wr) {
-	    if (wr instanceof AssignWebRecord) {
-		AssignWebRecord awr = (AssignWebRecord) wr;
-		if (this.regs.size() == 1 && 
-		    awr.regs.size() == 1) {
-		    return true;
-		} else {
-		    HashSet r = new HashSet(regs);
-		    r.retainAll(awr.regs);
-		    return !r.isEmpty();
-		}
+	    if (wr instanceof RegWebRecord) {
+		return true;
 	    } else {
 		return super.conflictsWith(wr);
 	    }
 	}
-	public String toString() {
-	    return "w:"+regs;
-	}
     }
-
 
     // converts a Set<Instr>:s1 into a Set<Integer>:s2 where the
     // elements in s2 correspond to the IDs of the instructions in s1
@@ -885,20 +871,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    spill = false; disp = -1;
 	}
 	
-	public List temps() { return Collections.nCopies(1, sym); }
+	public Temp temp() { return sym; }
 	public Set defs() { return Collections.unmodifiableSet(defs);}
 	public Set uses() { return Collections.unmodifiableSet(uses);}
-
-	boolean conflictsWith1D(WebRecord wr) {
-	    if (wr instanceof AssignWebRecord) {
-		AssignWebRecord awr = (AssignWebRecord) wr;
-		Set assigns = rfi.getRegAssignments(sym);
-		if (!assigns.contains(awr.regs)) {
-		    return true;
-		}
-	    }
-	    return super.conflictsWith1D(wr);
-	}
 
 	public String toString() {
 	    List a = (List) rfi.getRegAssignments(sym).iterator().next();
@@ -914,6 +889,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
     }
 
     class AdjMtx {
+	// a Lower Triangular Matrix backed by a BitString.  Note that
+	// for Lower Triangular Matrix, order of coordinate args is
+	// insignificant (from p.o.v. of user). 
+
 	final harpoon.Util.BitString bits;
 	final int side;
 	AdjMtx(List symReg) {
@@ -936,65 +915,4 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	private int offset(int x) { return (x * (x + 1)) / 2; }
     }
 
-    class AdjMtx2 {
-	// implement here: a Lower Triangular Matrix backed by a
-	// BitString.  Note that for Lower Triangular Matrix, order of
-	// coordinate args is insignificant (from p.o.v. of user).
-	
-	private class IntPairSet {
-	    final int x, y; // Invariant: x < y
-	    IntPairSet(int x, int y) {
-		Util.assert(x != y);
-		if (x < y) {
-		    this.x = x;
-		    this.y = y;
-		} else {
-		    this.x = y;
-		    this.y = x;
-		}
-	    }
-	    public int hashCode() {
-		return (x << 16) ^ y;
-	    }
-	    public boolean equals(Object o) {
-		IntPairSet p = (IntPairSet) o;
-		return (p.x == x) && (p.y == y);
-	    }
-	    public String toString() {
-		// return "<"+x+","+y+">";
-		return "<"+symReg.get(x)+","+symReg.get(y)+">";
-	    }
-	}
-
-	final List symReg;
-
-	final HashSet back;
-
-	/** Constructs a (symReg.size x symReg.size / 2) Lower
-	    Triangular Adjacency Matrix. 
-	    <BR> <B>requires:</B> symReg is a List<WebRecord>
-	    All values map to false at construction time.
-	*/ 
-	AdjMtx2(List symReg) { 
-	    back = new HashSet();
-	    this.symReg = symReg;
-	}
-
-	boolean get(int x, int y) { 
-	    return back.contains(new IntPairSet(x, y));
-	}
-	void set(int x, int y, boolean b) {
-	    if (b) {
-		back.add(new IntPairSet(x, y));
-	    } else {
-		back.remove(new IntPairSet(x, y));
-	    }
-	}
-
-	public String toString() {
-	    return back.toString();
-	}
-    }
-       
-    
 }

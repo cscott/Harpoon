@@ -25,7 +25,7 @@ import harpoon.Util.Util;
  * second stage, but this is parameterizable.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: OptimisticGraphColorer.java,v 1.1.2.2 2000-07-30 01:44:28 pnkfelix Exp $
+ * @version $Id: OptimisticGraphColorer.java,v 1.1.2.3 2000-08-02 01:15:15 pnkfelix Exp $
  */
 public class OptimisticGraphColorer extends GraphColorer {
 
@@ -100,38 +100,41 @@ public class OptimisticGraphColorer extends GraphColorer {
 		continue;
 	    }
 	}
-	
+	nextNode:
 	for(Object n=graph.replace(); n!=null; n=graph.replace()){
 	    // find color that none of n's neighbors is set to
 	    
 	    if (graph.getColor(n) != null) {
 		// precolored, skip
-		continue;
+		continue nextNode;
 	    }
 	    
 	    Collection nborsC = graph.neighborsOf(n);
 	    HashSet nColors = new HashSet(nborsC.size());
 	    for(Iterator nbors = nborsC.iterator(); nbors.hasNext();){
 		Object nb = nbors.next();
-		nColors.add(graph.getColor(nb));
+		Color col = graph.getColor(nb);
+		Util.assert(col != null);
+		nColors.add(col);
 	    }
 	    
-	    Color color = null;
 	    for(Iterator cIter = colors.iterator(); cIter.hasNext();){
 		Color col = (Color) cIter.next();
 		if (!nColors.contains(col)) {
-		    color = col;
-		    break;
+		    try {
+			graph.setColor(n, col);
+			continue nextNode;
+		    } catch (ColorableGraph.IllegalColor ic) {
+			// col was not legal for n
+			// try another color...  
+		    }
 		}
 	    }
-	    if (color == null) {
-		// UH OH!  Couldn't find a color for one of the nodes;
-		UnableToColorGraph u = new UnableToColorGraph();
-		u.rmvSuggs = spills;
-		throw u;
-	    } else {
-		graph.setColor(n, color);
-	    }
+	    
+	    // if we ever reach this point, we failed to color n
+	    UnableToColorGraph u = new UnableToColorGraph();
+	    u.rmvSuggs = spills;
+	    throw u;
 	}
     }
     

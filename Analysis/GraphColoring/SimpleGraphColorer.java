@@ -13,6 +13,7 @@ import java.util.Stack;
 import java.util.Enumeration;
 
 import harpoon.Util.Util;
+import harpoon.Util.Collections.LinearSet;
 
 /**
  * <code>SimpleGraphColorer</code> uses the simple but effective graph
@@ -26,7 +27,7 @@ import harpoon.Util.Util;
  * <A href="http://ceylon.lcs.mit.edu/6035/lecture18/sld064.htm">lecture</A>.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.16 2000-07-29 00:26:55 pnkfelix Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.17 2000-08-02 01:15:15 pnkfelix Exp $
  */
 
 public class SimpleGraphColorer extends GraphColorer {
@@ -67,9 +68,12 @@ public class SimpleGraphColorer extends GraphColorer {
 	// colors.size(), in which case this algorithm can't color
 	// it without more colors.
 	if (!graph.nodeSet().isEmpty()) {
-	    throw new UnableToColorGraph();
+	    UnableToColorGraph u = new UnableToColorGraph();
+	    u.rmvSuggs = new LinearSet(graph.nodeSet());
+	    throw u;
 	}
 	
+	nextNode:
 	for(Object n=graph.replace(); n!=null; n=graph.replace()){
 	    // find color that none of n's neighbors is set to
 
@@ -79,7 +83,7 @@ public class SimpleGraphColorer extends GraphColorer {
 		    System.out.println("skipping "+n+
 				       "b/c its precolored to "+
 				       graph.getColor(n));
-		continue;
+		continue nextNode;
 	    }
 
 	    Collection nborsC = graph.neighborsOf(n);
@@ -89,21 +93,23 @@ public class SimpleGraphColorer extends GraphColorer {
 		nColors.add(graph.getColor(nb));
 	    }
 	    
-	    Color color = null;
 	    for(Iterator cIter = colors.iterator(); cIter.hasNext();){
 		Color col = (Color) cIter.next();
 		if (!nColors.contains(col)) {
-		    color = col;
-		    break;
+		    try {
+			graph.setColor(n, col);
+			continue nextNode;
+		    } catch (ColorableGraph.IllegalColor ic) {
+			// col was not legal for n
+			// try another color...
+		    }
 		}
 	    }
 	    
-	    // color should be guaranteed to have been assigned at
-	    // this point
-	    Util.assert(color != null);
-
-	    graph.setColor(n, color);
-
+	    // if we ever reach this point, we failed to color n
+	    UnableToColorGraph u = new UnableToColorGraph();
+	    u.rmvSuggs = new LinearSet(graph.nodeSet()); 
+	    throw u;
 	}
     }
 

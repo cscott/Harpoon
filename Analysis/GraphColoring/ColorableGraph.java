@@ -26,7 +26,7 @@ import java.util.NoSuchElementException;
  * <code>addNode(Object)</code>.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableGraph.java,v 1.1.2.14 2000-07-26 21:30:34 pnkfelix Exp $ */
+ * @version $Id: ColorableGraph.java,v 1.1.2.15 2000-08-02 01:15:14 pnkfelix Exp $ */
 
 public interface ColorableGraph extends Graph {
 
@@ -78,6 +78,26 @@ public interface ColorableGraph extends Graph {
 	}
     }
 
+    /** IllegalColor will be thrown on an attempt to color a
+	node with a color that for some reason is not legal for that
+	node in this graph.
+    */
+    public static class IllegalColor extends Throwable {
+	/** Color intended for assignment. */
+	public final Color color;
+	/** Node intended to be assigned to <code>color</code>. */
+	public final Object node;
+
+	/** Constructs an IllegalColor with <code>node = n</code> and
+	    <code>color = c</code>.
+	*/
+	public IllegalColor(Object n, Color c) {
+	    super();
+	    node = n;
+	    color = c;
+	}
+    }
+
     /** Reverts the graph's color mapping to its initial state.
 	<BR> <B>modifies:</B> <code>this</code>
 	<BR> <B>effects:</B> undoes any modifications made to the
@@ -91,17 +111,21 @@ public interface ColorableGraph extends Graph {
     void resetColors();
 
     /** Sets the color of <code>n</code>.
+	<BR> <B>modifies:</B> <code>this</code>
 	<BR> <B>effects:</B> If <code>c</code> is null, then
 	     removes <code>n</code> from the Node -> Color mapping.
 	     Else puts (n, c) in the Node -> Color mapping.
         @throws IllegalArgumentException <code>n</code> is not
-	     present in the node set for <code>this</code> or
-	     <code>c</code> is not an appropriate Color for this
-	     graph. 
+	     present in the node set for <code>this</code>.  No
+	     modification to <code>this</code>.
 	@throws AlreadyColoredException <code>n</code> is already
-	     present in the Node -> Color mapping.
+	     present in the Node -> Color mapping.  No modification to
+	     <code>this</code>.
+	@throws IllegalColor <code>c</code> is not an appropriate
+	     <code>Color</code> for <code>n</code> in this graph.  No
+	     modification to <code>this</code>.
     */
-    void setColor(Object n, Color c);
+    void setColor(Object n, Color c) throws IllegalColor;
 
 
     /** Returns the color of <code>node</code>.

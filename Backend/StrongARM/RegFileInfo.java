@@ -39,22 +39,19 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.23 2000-07-25 03:08:21 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.24 2000-08-02 01:15:29 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
     implements harpoon.Backend.Generic.LocationFactory
 {
-    // FSK wants to relinquish author ship of the first half of this
-    // file, since it was just cut-and-pasted out of the
-    // hack-once-known-as-SAFrame
-
     final Temp[] reg;
     final Set callerSaveRegs;
     final Set calleeSaveRegs;
     final Set liveOnExitRegs;
     final Temp[] regGeneral; 
     final TempFactory regtf;
+    Set oneWordAssigns, twoWordAssigns;
     
     final Temp FP;  // Frame pointer
     final Temp IP;  // Scratch register 
@@ -273,7 +270,6 @@ public class RegFileInfo
 	return new MyVRegAllocator();
     }
 
-    Set oneWordAssigns, twoWordAssigns;
     public Set getRegAssignments(Temp t) {
 	if (t instanceof TwoWordTemp) {
 	    return twoWordAssigns;
