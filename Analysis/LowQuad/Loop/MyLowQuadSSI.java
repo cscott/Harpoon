@@ -3,11 +3,11 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.LowQuad.Loop;
 
+import harpoon.Analysis.Maps.Derivation;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
-import harpoon.IR.Properties.Derivation;
 import harpoon.IR.LowQuad.Code;
 import harpoon.IR.LowQuad.LowQuadSSA;
 import harpoon.IR.Quads.Quad;
@@ -23,7 +23,7 @@ import java.util.Iterator;
  * <code>MyLowQuadSSI</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadSSI.java,v 1.1.2.6 2000-01-14 12:32:50 cananian Exp $
+ * @version $Id: MyLowQuadSSI.java,v 1.1.2.7 2000-01-31 22:16:06 cananian Exp $
  */
 
 public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSA {

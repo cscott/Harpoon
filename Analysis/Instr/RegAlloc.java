@@ -11,7 +11,6 @@ import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrVisitor;
 import harpoon.IR.Properties.UseDef;
 import harpoon.IR.Properties.CFGrapher;
-import harpoon.IR.Properties.Derivation;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Code;
 import harpoon.Backend.Generic.RegFileInfo;
@@ -19,6 +18,7 @@ import harpoon.Backend.Generic.RegFileInfo.SpillException;
 import harpoon.Backend.Generic.InstrBuilder;
 import harpoon.Analysis.UseMap;
 import harpoon.Analysis.BasicBlock;
+import harpoon.Analysis.Maps.Derivation;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
@@ -70,7 +70,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.72 2000-01-31 21:53:56 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.73 2000-01-31 22:16:05 cananian Exp $ 
  */
 public abstract class RegAlloc  {
     

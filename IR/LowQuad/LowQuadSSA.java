@@ -3,15 +3,15 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.LowQuad;
 
-import harpoon.Backend.Maps.FinalMap;
+import harpoon.Analysis.Maps.Derivation;
+import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap;
+import harpoon.Backend.Maps.FinalMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
-import harpoon.IR.Properties.Derivation;
-import harpoon.IR.Properties.Derivation.DList;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.ToNoSSA;
@@ -26,7 +26,7 @@ import java.util.Map;
  * representation in SSA form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.24 2000-01-31 03:31:12 cananian Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.25 2000-01-31 22:16:10 cananian Exp $
  */
 public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
     private Derivation  m_derivation;

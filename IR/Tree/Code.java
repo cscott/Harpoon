@@ -3,14 +3,14 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
+import harpoon.Analysis.Maps.Derivation;
+import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
-import harpoon.IR.Properties.Derivation;
-import harpoon.IR.Properties.Derivation.DList;
 import harpoon.IR.Properties.CFGrapher; 
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.Util;
@@ -34,7 +34,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.40 2000-01-16 01:17:36 duncan Exp $
+ * @version $Id: Code.java,v 1.1.2.41 2000-01-31 22:16:14 cananian Exp $
  */
 public abstract class Code extends HCode 
     implements Derivation, TypeMap {

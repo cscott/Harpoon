@@ -3,11 +3,11 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.LowQuad;
 
+import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Maps.FinalMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Properties.Derivation.DList;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadVisitor;
@@ -26,7 +26,7 @@ import java.util.Map;
  * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.18 2000-01-31 03:31:12 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.19 2000-01-31 22:16:10 cananian Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,

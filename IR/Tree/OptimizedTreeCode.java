@@ -4,6 +4,8 @@
 package harpoon.IR.Tree;
 
 //import harpoon.Analysis.Tree.TreeFolding;
+import harpoon.Analysis.Maps.Derivation;
+import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
@@ -11,8 +13,6 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
-import harpoon.IR.Properties.Derivation;
-import harpoon.IR.Properties.Derivation.DList;
 import harpoon.IR.Tree.Stm;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.16 2000-01-31 03:31:15 cananian Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.17 2000-01-31 22:16:14 cananian Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = CanonicalTreeCode.codename;

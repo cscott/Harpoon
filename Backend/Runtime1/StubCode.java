@@ -3,13 +3,13 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Runtime1;
 
+import harpoon.Analysis.Maps.Derivation;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Maps.NameMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
-import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.ExpList;
@@ -49,7 +49,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.6 1999-11-13 08:33:29 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.7 2000-01-31 22:16:09 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;

@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
+import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.CachingCodeFactory;
@@ -13,7 +14,6 @@ import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
-import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.CALL;
@@ -63,7 +63,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.18 2000-01-17 12:53:39 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.19 2000-01-31 22:16:15 cananian Exp $
  */
 public final class Method extends Debug {
     static PrintWriter out = new java.io.PrintWriter(System.out);

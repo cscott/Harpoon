@@ -27,13 +27,13 @@ import harpoon.Analysis.SSITOSSAMap;
 import harpoon.Analysis.LowQuad.Loop.LoopMap;
 import harpoon.Analysis.Maps.AllInductionsMap;
 import harpoon.Analysis.Maps.BasicInductionsMap;
+import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Maps.InvariantsMap;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
 import harpoon.Analysis.Quads.DeadCode;
-import harpoon.IR.Properties.Derivation;
 import harpoon.Analysis.LowQuad.Loop.WorkTempMap;
 import harpoon.Analysis.LowQuad.Loop.MyLowQuadSSI;
 
@@ -45,7 +45,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.25 2000-01-14 12:32:50 cananian Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.26 2000-01-31 22:16:06 cananian Exp $
  */
 public final class LoopOptimize {
     

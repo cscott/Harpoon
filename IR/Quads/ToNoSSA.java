@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.Analysis.Maps.Derivation;
+import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -10,8 +12,6 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.LowQuad.PCALL;
 import harpoon.IR.LowQuad.LowQuadFactory;
 import harpoon.IR.LowQuad.LowQuadVisitor;
-import harpoon.IR.Properties.Derivation;
-import harpoon.IR.Properties.Derivation.DList;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
@@ -27,7 +27,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.26 2000-01-31 03:31:14 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.27 2000-01-31 22:16:11 cananian Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {

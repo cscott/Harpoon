@@ -38,7 +38,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.1 2000-01-28 02:51:05 kkz Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.2 2000-01-31 22:16:07 cananian Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     
@@ -131,14 +131,14 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		parent.clear(hm);
 		m.remove(hm); // remove from map
 	    }
-	    public harpoon.IR.Properties.Derivation getDerivation() {
+	    public harpoon.Analysis.Maps.Derivation getDerivation() {
 		return ((IntermediateCodeFactory)parent).getDerivation();
 	    }
 	    class GCPointFinder extends InstrVisitor {
 		protected final List results;
 		protected final LiveTemps lt;
 		protected final Set s;
-		protected final harpoon.IR.Properties.Derivation d;
+		protected final harpoon.Analysis.Maps.Derivation d;
 		protected final HMethod hm; 
 		protected int index = 0;
 		/** Creates a <code>GCPointFinder</code> object.
@@ -153,7 +153,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		*/
 		public GCPointFinder(HMethod hm, List results, LiveTemps lt, 
 				     Set s, 
-				     harpoon.IR.Properties.Derivation d) {
+				     harpoon.Analysis.Maps.Derivation d) {
 		    this.hm = hm;
 		    Util.assert(results != null && results.isEmpty());
 		    this.results = results;
@@ -188,7 +188,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    Worklist toProcess = new WorkSet(live);
 		    while(!toProcess.isEmpty()) {
 			Temp t = (Temp)toProcess.pull();
-			harpoon.IR.Properties.Derivation.DList ddl = 
+			harpoon.Analysis.Maps.Derivation.DList ddl = 
 			    d.derivation(i, t);
 			if (ddl == null) continue;
 			Util.assert(live.remove(t));

@@ -3,12 +3,12 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.LowQuad;
 
+import harpoon.Analysis.Maps.Derivation;
+import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
-import harpoon.IR.Properties.Derivation;
-import harpoon.IR.Properties.Derivation.DList;
 import harpoon.IR.Quads.Quad;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
@@ -20,7 +20,7 @@ import java.util.Hashtable;
  * shared methods for the various codeviews using <code>LowQuad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.11 1999-08-09 21:58:25 duncan Exp $
+ * @version $Id: Code.java,v 1.1.2.12 2000-01-31 22:16:10 cananian Exp $
  */
 public abstract class Code extends harpoon.IR.Quads.Code 
     implements Derivation, TypeMap

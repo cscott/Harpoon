@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
+import harpoon.Analysis.Maps.Derivation;
+import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Runtime;
@@ -30,8 +32,6 @@ import harpoon.IR.LowQuad.PMOFFSET;
 import harpoon.IR.LowQuad.POPER;
 import harpoon.IR.LowQuad.PPTR;
 import harpoon.IR.LowQuad.PSET;
-import harpoon.IR.Properties.Derivation;
-import harpoon.IR.Properties.Derivation.DList;
 import harpoon.IR.Properties.UseDef;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.Qop;
@@ -64,7 +64,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.59 2000-01-31 03:31:15 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.60 2000-01-31 22:16:14 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
