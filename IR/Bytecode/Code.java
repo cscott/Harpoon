@@ -28,7 +28,7 @@ import java.util.Set;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9.2.11 1999-08-04 06:30:57 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.11.6.1 2000-01-11 02:09:02 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -307,7 +307,7 @@ public class Code extends HCode {
 
   /** Return an HCodeFactory for Bytecode form. */
   public static HCodeFactory codeFactory() {
-    return harpoon.ClassFile.ImplMagic.codeFactory;
+    return harpoon.ClassFile.Loader.systemCodeFactory;
   }
 }
 

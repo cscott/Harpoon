@@ -32,7 +32,7 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.12.6.1 2000-01-10 22:04:16 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.12.6.2 2000-01-11 02:08:55 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
@@ -234,6 +234,10 @@ public abstract class Loader {
       public Object readResolve() { return Loader.systemLinker; }
     }
   }
+  /** System code factory: this code factory will return bytecode
+   *  representations for classes loaded via the system linker. */
+  public static final HCodeFactory systemCodeFactory =
+    /*ImplGNU*/ImplMagic.codeFactory;
 }
 // set emacs indentation style.
 // Local Variables:

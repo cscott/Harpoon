@@ -23,9 +23,9 @@ import java.util.Vector;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.5.2.8.6.1 2000-01-10 22:06:53 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5.2.8.6.2 2000-01-11 02:08:55 cananian Exp $
  */
-public abstract class ImplMagic  { // wrapper for the Real McCoy.
+abstract class ImplMagic  { // wrapper for the Real McCoy.
 
     static HClass forStream(Linker linker, java.io.InputStream is)
 				       throws java.io.IOException {
