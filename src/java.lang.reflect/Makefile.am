@@ -13,3 +13,9 @@ libjavalangreflect_la_SOURCES = \
 	java_lang_reflect_Method.c java_lang_reflect_Method.h \
 	java_lang_reflect_Modifier.h \
 	reflect-util.c reflect-util.h
+
+EXTRA_DIST = \
+AccessibleObject.java \
+Constructor.java \
+Field.java \
+Method.java
