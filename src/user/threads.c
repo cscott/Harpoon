@@ -5,15 +5,20 @@
 #include <errno.h>
 #include "memstats.h"
 
+#ifdef WITH_REALTIME_JAVA
+#include "../realtime/RTJconfig.h"
+#endif
 #ifdef WITH_REALTIME_THREADS
 #include <jni.h>
 #include <jni-private.h>
-#include "../realtime/RTJconfig.h"
 #include "../realtime/threads.h"
 #include "../realtime/qcheck.h"
 #include <setjmp.h>
 /* jump point for the final jump back to main - defined in startup.c */
 extern jmp_buf main_return_jump;
+#else
+#include <stdlib.h> /* for exit */
+
 #endif
 
 struct thread_list *gtl,*ioptr;
@@ -215,6 +220,8 @@ void doFDs() {
 #endif
 }
 #endif
+
+extern void FNI_DestroyThreadState(JNIEnv* env);
 
 void exitthread() {
 #ifndef WITH_REALTIME_THREADS
