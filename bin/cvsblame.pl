@@ -501,12 +501,13 @@ sub open_cvs_file {
         if ($method eq "ext") { # currently the only supported protocol.
             my $rsh = $ENV{'CVS_RSH'};
             $rsh = "rsh" unless defined $rsh;
+            my $saveattic = $atticname;
             $atticname =~ s/^:[^:]*:[^:]*://;
             my $cmd="if [ -r $path ]; then echo foo; cat $path; else echo Attic; cat $atticname; fi";
             $cmd = "$rsh $host -l $user \"sh -c '$cmd'\"";
             open(HANDLE, $cmd." |") or return undef;
             my $firstline = <HANDLE>;
-            $rcs_truename{$pathname}=$atticname if $firstname =~ m/Attic/;
+            $rcs_truename{$pathname}=$saveattic if $firstline =~ m/Attic/;
             return 1;
         }
         # remote access protocol not supported. <sigh>
