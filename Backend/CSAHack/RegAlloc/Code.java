@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.CSAHack.RegAlloc;
 
+import harpoon.Analysis.Maps.Derivation;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.StrongARM.TwoWordTemp;
 import harpoon.ClassFile.HCode;
@@ -22,21 +23,26 @@ import java.util.Set;
  * <code>Code</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.5 2000-01-29 00:13:23 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.6 2000-02-28 06:50:29 cananian Exp $
  */
 public class Code extends harpoon.IR.Assem.Code {
+    Derivation deriv;
     TempMap tm;
     
     /** Creates a <code>Code</code>. */
-    public Code(final HMethod parent, final Instr instrs, final Frame frame)
+    public Code(final HMethod parent, final Instr instrs,
+		final Derivation deriv, final Frame frame)
     {
         super(parent, frame);
-	// XXX: should clone instrs here.
+	// XXX: should clone instrs and deriv here.
+	this.instrs = instrs;
+	this.deriv = deriv;
 	RegAlloc ra = new RegAlloc(frame, this, instrs);
 	this.tm = ra;
 	this.instrs = frame.getCodeGen().procFixup(parent, instrs, locals,
 						   computeUsedRegs(instrs));
     }
+    public Derivation getDerivation() { return deriv; }
     private Set computeUsedRegs(Instr instrs) {
 	Set s = new HashSet();
 	for (Instr il = instrs; il!=null; il=il.getNext()) {
