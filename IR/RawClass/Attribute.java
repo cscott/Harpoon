@@ -11,7 +11,7 @@ package harpoon.IR.RawClass;
  * types of attribute information classes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Attribute.java,v 1.2 2002-02-25 21:05:23 cananian Exp $
+ * @version $Id: Attribute.java,v 1.2.2.1 2002-03-27 21:32:07 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7"
  * @see ClassFile
  * @see FieldInfo
@@ -63,6 +63,8 @@ public abstract class Attribute {
       return new AttributeInnerClasses(parent, in, attribute_name_index);
     if (attribute_name.equals("Synthetic"))
       return new AttributeSynthetic(parent, in, attribute_name_index);
+    if (attribute_name.equals("Signature"))
+	return new AttributeSignature(parent, in, attribute_name_index);
     // Unknown attribute type.
     return new AttributeUnknown(parent, in, attribute_name_index);
   }
