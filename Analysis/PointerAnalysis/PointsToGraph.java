@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * <code>PointsToGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.9 2000-02-12 23:16:14 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.10 2000-02-15 04:37:39 salcianu Exp $
  */
 public class PointsToGraph {
     
@@ -54,6 +54,16 @@ public class PointsToGraph {
 	e.union(G2.e);
 	r.addAll(G2.r);
 	excp.addAll(G2.excp);
+    }
+
+    /** Remove all the <code>PANode</code>s that appear in <code>set</code>
+	from <code>this</code> points-to graph. */
+    public void remove(Set set){
+	O.remove(set);
+	I.remove(set);
+	e.remove(set);
+	r.removeAll(set);
+	excp.removeAll(set);
     }
 
     public void insert(PointsToGraph G2, Relation mu, Set noholes){

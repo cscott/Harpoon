@@ -19,13 +19,13 @@ import harpoon.Temp.Temp;
 /**
  * <code>PAEdgeSet</code> models the concept of a set of edges.
  It tries to optimize the frequent operations on such a set. It is designed
- to handle the different types of edges (i.e. <code>var --> node</code> and
- <code>node1 --f-> node2</code>) in a convenient and type safe manner.
+ to handle the different types of edges (<i>i.e.</i> <code>var --> node</code>
+ and <code>node1 --f-> node2</code>) in a convenient and type safe manner.
  It is also intended to be more performant in terms of space and time
  than the straightforward solution of a <code>HashSet</code> of edges.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdgeSet.java,v 1.1.2.9 2000-02-11 06:12:07 salcianu Exp $
+ * @version $Id: PAEdgeSet.java,v 1.1.2.10 2000-02-15 04:37:39 salcianu Exp $
  */
 public class PAEdgeSet {
 
@@ -80,8 +80,8 @@ public class PAEdgeSet {
     // B. Operations on edges starting from nodes.
 
     /** Returns all the nodes pointed to by the node <code>n</code> through
-     *  the field <code>f</code>; i.e. all the nodes <code>n1</code> such
-     *  that &lt;&lt;n,f&gt;,n1&gt; exists. */
+     *  the field <code>f</code>; <i>i.e.</i> all the nodes <code>n1</code>
+     *  such that &lt;&lt;n,f&gt;,n1&gt; exists. */
     public Set pointedNodes(PANode n, String f){
 	Relation rel = (Relation) nodes.get(n);
 	if(rel==null) return Collections.EMPTY_SET;
@@ -138,16 +138,25 @@ public class PAEdgeSet {
     }
 
     /** Deletes all the edges of the type 
-     * <code>&lt;&lt;n,f&gt;,n1&gt;</code>. */
+	<code>&lt;&lt;n,f&gt;,n1&gt;</code>. */
     public void removeEdges(PANode n, String f){
 	Relation rel = (Relation)nodes.get(n);
 	if(rel==null) return;
 	rel.removeAll(f);
     }
 
+
+    /** Deletes all the edges leaving from <code>n</code>. */
+    public void removeEdges(PANode n){
+	Enumeration enum = allFlagsForNode(n);
+	while(enum.hasMoreElements())
+	    removeEdges( n , (String)enum.nextElement() );
+    }
+
+
     /** Returns an <code>Enumeration</code> of the set of all the
      * variables that are mentioned in <code>this</code> set of edges
-     * (i.e. <code>v</code> such that there is at least one 
+     * (<i>ie</i> <code>v</code> such that there is at least one 
      * <code>&lt;v,n&gt;</code> edge). */
     public Enumeration allVariables(){
 	return vars.keys();
@@ -247,6 +256,33 @@ public class PAEdgeSet {
 	Enumeration enum_nodes = allSourceNodes();
 	while(enum_nodes.hasMoreElements())
 	    forAllEdges((PANode)enum_nodes.nextElement(),visitor);
+    }
+
+
+    /** Remove all the <code>PANode</code>s that appear in <code>set</code>
+	from <code>this</code> edge set together with the related edges. */
+    public void remove(Set set){
+	// remove the edges starting from these nodes
+	Iterator it_nodes = set.iterator();
+	while(it_nodes.hasNext()){
+	    PANode node = (PANode) it_nodes.next();
+	    removeEdges(node);
+	}
+	// remove the edges ending into these nodes
+	Enumeration enum_nodes = nodes.keys();
+	while(enum_nodes.hasMoreElements()){
+	    PANode node  = (PANode) enum_nodes.nextElement();
+	    Relation rel = (Relation) nodes.get(node);
+	    
+	    Enumeration enum_flags = rel.keys();
+	    while(enum_flags.hasMoreElements()){
+		String f = (String) enum_flags.nextElement();
+		rel.remove(f,set);
+	    }
+
+	    if(rel.isEmpty())
+		nodes.remove(node);
+	}
     }
 
 

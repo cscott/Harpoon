@@ -19,7 +19,7 @@ import harpoon.ClassFile.HCodeElement;
  and unanalyzed call sites <code>n</code> escapes through.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.8 2000-02-12 23:16:14 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.9 2000-02-15 04:37:39 salcianu Exp $
  */
 public class PAEscapeFunc {
 
@@ -120,6 +120,18 @@ public class PAEscapeFunc {
 	escapes through. */
     public Iterator methodHoles(PANode n){
 	return rel_m.getValues(n);
+    }
+
+
+    /** Remove all the <code>PANode</code>s that appear in <code>set</code>
+	from <code>this</code> object. */
+    public void remove(Set set){
+	Iterator it_nodes = set.iterator();
+	while(it_nodes.hasNext()){
+	    PANode node = (PANode) it_nodes.next();
+	    rel_n.removeAll(node);
+	    rel_m.removeAll(node);
+	}
     }
 
 

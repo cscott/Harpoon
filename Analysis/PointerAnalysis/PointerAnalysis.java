@@ -47,15 +47,15 @@ import harpoon.IR.Quads.FOOTER;
 
 
 /**
- * <code>PointerAnalysis</code> is the biggest class of the Pointer Analysis
- * package. It is designed to act as a <i>query-object</i>: after being
- * initialized, it can be asked to provide the Parallel InteractionGraph
- * valid at the end of a specific method. All the computation is done at
- * the construction time; the queries are only retrieving the already
- * computed results from the caches.
+ * <code>PointerAnalysis</code> is the main class of the Pointer Analysis
+ package. It is designed to act as a <i>query-object</i>: after being
+ initialized, it can be asked to provide the Parallel InteractionGraph
+ valid at the end of a specific method. All the computation is done at
+ the construction time; the queries are only retrieving the already
+ computed results from the caches.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.15 2000-02-12 01:41:32 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.16 2000-02-15 04:37:39 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -210,7 +210,9 @@ public class PointerAnalysis {
 		    }
 		};
 
-	long begin_time = new Date().getTime();
+	long begin_time;
+	if(TIMING) begin_time = new Date().getTime();
+
 	if(DEBUG)
 	  System.out.println("Creating the strongly connected components " +
 			     "of methods ...");
@@ -256,6 +258,10 @@ public class PointerAnalysis {
 	    analyze_inter_proc_scc(scc);
 	    scc = scc.prevTopSort();
 	}
+
+	if(TIMING)
+	    System.out.println("analyze(" + hm + ") finished in " +
+			       (new Date().getTime() - begin_time) + "ms");
     }
 
     // inter-procedural analysis of a group of mutually recursive methods
@@ -283,10 +289,11 @@ public class PointerAnalysis {
 	Set methods = scc.nodeSet();
 	boolean must_check = scc.isLoop();
 
-	System.out.print(scc.toString(cg));
-	System.out.println("must_check = " + must_check);
+	if(DEBUG)
+	    System.out.print(scc.toString(cg));
 
-	long begin_time = new Date().getTime();
+	long begin_time;
+	if(TIMING) begin_time = new Date().getTime();
 
 	while(!W_inter_proc.isEmpty()){
 	    // grab a method from the worklist
@@ -330,7 +337,7 @@ public class PointerAnalysis {
 
 	long total_time = new Date().getTime() - begin_time;
 
-	if(TIMING)
+	if(DEBUG && TIMING)
 	    System.out.println("SCC" + scc.getId() + " analyzed in " + 
 			       total_time + " ms");
     }
@@ -589,22 +596,14 @@ public class PointerAnalysis {
 
 	public void visit(CALL q){
 
-	    //System.out.println(q);
-
-	    /// System.out.println("Before CALL");
-	    /// System.out.println(bbpig);
-
 	    if(thread_start_site(q)){
-		System.out.println("THREAD START SITE: " + 
-				   q.getSourceFile() + ":" +
-				   q.getLineNumber());
+		if(DEBUG2)
+		    System.out.println("THREAD START SITE: " + 
+				       q.getSourceFile() + ":" +
+				       q.getLineNumber());
 		Temp l = q.params(0);
 		Set set = bbpig.G.I.pointedNodes(l);
 		bbpig.tau.incAll(set);
-
-		System.out.println("START: " + set);
-		System.out.println(bbpig.tau);
-		System.out.println("-----");
 
 		Iterator it_nt = set.iterator();
 		while(it_nt.hasNext()){
@@ -620,9 +619,6 @@ public class PointerAnalysis {
 				     q,     // the CALL site
 				     bbpig, // the graph before the call
 				     PointerAnalysis.this);
-
-	    /// System.out.println("After CALL");
-	    /// System.out.println(bbpig);
 
 	}
 

@@ -27,7 +27,7 @@ import harpoon.Util.Util;
  * substraction.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAThreadMap.java,v 1.1.2.10 2000-02-12 23:16:14 salcianu Exp $
+ * @version $Id: PAThreadMap.java,v 1.1.2.11 2000-02-15 04:37:39 salcianu Exp $
  */
 public class PAThreadMap{
 
@@ -115,6 +115,18 @@ public class PAThreadMap{
     public Set activeThreadSet(){
 	return hash.keySet();
     }
+
+
+    /** Remove all the <code>PANode</code>s that appear in <code>set</code>
+	from <code>this</code> thread map. */
+    public void remove(Set set){
+	Iterator it_nodes = set.iterator();
+	while(it_nodes.hasNext()){
+	    PANode node = (PANode) it_nodes.next();
+	    hash.remove(node);
+	}
+    }
+
 
     /** <code>join</code> combines two <code>PAThreadMap</code>s in
      *  a control-flow join poin */

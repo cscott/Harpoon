@@ -13,7 +13,7 @@ import java.util.Collections;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.9 2000-02-12 23:16:14 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.10 2000-02-15 04:37:39 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -44,6 +44,7 @@ public class ParIntGraph {
 	ar  = new ActionRepository();
     }
     
+
     /** <code>join</code> combines two <code>ParIntGraph</code>s in \
 	a control-flow join point. */
     public void join(ParIntGraph pig2){
@@ -54,11 +55,11 @@ public class ParIntGraph {
 
 
     /** Inserts the image of <code>pig2</code> parallel interaction graph
-     through the <code>mu</code> node mapping into <code>this</code> object.
-     This method is designed to be called at the end of the caller/callee
-     or starter/startee interaction. It is *not* manipulating the action
-     repository; this manipulation is too complex and variate to be done
-     here. */ 
+	through the <code>mu</code> node mapping into <code>this</code> object.
+	This method is designed to be called at the end of the caller/callee
+	or starter/startee interaction. It is *not* manipulating the action
+	repository; this manipulation is too complex and variate to be done
+	here. */ 
     void insertAllButAr(ParIntGraph pig2, Relation mu, Set noholes){
 	G.insert(pig2.G,mu,noholes);
 	tau.insert(pig2.tau,mu);

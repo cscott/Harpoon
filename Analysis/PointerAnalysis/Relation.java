@@ -21,7 +21,7 @@ import java.util.Arrays;
  * algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Relation.java,v 1.1.2.11 2000-02-12 23:08:59 salcianu Exp $
+ * @version $Id: Relation.java,v 1.1.2.12 2000-02-15 04:37:39 salcianu Exp $
  */
 public class Relation{
     
@@ -52,7 +52,7 @@ public class Relation{
     }
 
     /** Removes the relation between <code>key</code> and 
-     *  <code>value</code>. */ 
+	<code>value</code>. */ 
     public void remove(Object key, Object value){
 	HashSet set = (HashSet)hash.get(key);
 	if(set==null) return;
@@ -60,18 +60,24 @@ public class Relation{
 	if(set.isEmpty())
 	    hash.remove(key);
     }
+
+    /** Removes the relation between <code>key</code> and 
+	any <code>value</code> element from <code>values</code> set. */ 
+    public void remove(Object key, Set values){
+	Iterator it_values = values.iterator();
+	while(it_values.hasNext())
+	    remove(key, it_values.next());
+    }
     
+
     /** Removes all the relations starting from <code>key</code> i.e.
-     *  all <code>key->value</code> pairs. */
+	all <code>key->value</code> pairs. */
     public void removeAll(Object key){
 	hash.remove(key);
-	//HashSet set = (HashSet)hash.get(key);
-	//if(set==null) return;
-	//set.clear();
     }
 
     /** Checks the existence of the relation <code>key</code> ->
-     *  <code>value</code>. */
+	<code>value</code>. */
     public boolean contains(Object key, Object value){
 	HashSet set = (HashSet)hash.get(key);
 	if(set==null) return false;
@@ -79,13 +85,20 @@ public class Relation{
     }
 
     /** Checks the existence of the <code>key</code> key in
-     * <code>this</code> relation. */
+	<code>this</code> relation. */
     public boolean containsKey(Object key){
 	return hash.containsKey(key);
     }
 
+
+    /** Tests if this relation contains no <code>&lt;key,value&gt;</code>
+	mapping. */
+    public boolean isEmpty(){
+	return hash.isEmpty();
+    }
+
     /** Returns the image of <code>key</code> through <code>this</code>
-     *  relation; set version. */
+	relation; set version. */
     public Set getValuesSet(Object key){
 	HashSet set = (HashSet)hash.get(key);
 	if(set==null) return Collections.EMPTY_SET;

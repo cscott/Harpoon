@@ -29,7 +29,7 @@ import java.util.Map;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.6 2000-02-14 18:36:16 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.7 2000-02-15 04:37:39 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -256,7 +256,7 @@ public class ActionRepository {
 
 
     /** Returns an iterator over the set of loads that are performed in 
-	parallel with an <code>nt</code> thread. */
+	parallel with an <code>nt</code> thread. <code>O(1)</code> time. */
     public Iterator parallelLoads(PANode nt){
 	return pi_ld.getValues(nt);
     }
