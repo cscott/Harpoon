@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>PHI</code> objects represent blocks of phi functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.1.2.6 1998-12-21 04:41:33 cananian Exp $
+ * @version $Id: PHI.java,v 1.1.2.7 1998-12-24 03:25:38 cananian Exp $
  */
 public class PHI extends Quad {
     /** dst[i] is the left-hand side of the i'th phi function in this block. */
@@ -124,17 +124,19 @@ public class PHI extends Quad {
     
     public int kind() { return QuadKind.PHI; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new PHI(qqf, this, map(tm,dst), map(tm,src), arity());
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	return new PHI(qqf, this, map(defMap,dst), map(useMap,src), arity());
     }
-    /** Rename all used variables in this Quad according to a mapping. */
+    /** Rename all used variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) {
 	for (int i=0; i<src.length; i++) {
 	    for (int j=0; j<src[i].length; j++)
 		src[i][j] = tm.tempMap(src[i][j]);
 	}
     }
-    /** Rename all defined variables in this Quad according to a mapping. */
+    /** Rename all defined variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	for (int i=0; i<dst.length; i++) {
 	    dst[i] = tm.tempMap(dst[i]);
