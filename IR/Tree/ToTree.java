@@ -69,7 +69,7 @@ import java.util.Stack;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.70 2000-02-14 00:31:26 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.71 2000-02-15 17:41:12 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -546,7 +546,6 @@ static class TranslationVisitor extends LowQuadVisitor {
      *                                                          *
      *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 		  
-    // FIXME THIS IS WHERE I'M AT.
     public void visit(PAOFFSET q) {
 	addMove
 	    (q, q.dst(),
