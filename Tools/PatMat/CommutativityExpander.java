@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Tools.PatMat;
 
-import java.util.*;
 /**
  * The <code>CommutativityExpander</code> tool expands a set of
  * <code>Spec.Rules</code> to include add'l valid patterns
@@ -11,7 +10,7 @@ import java.util.*;
  * <code>Spec.ExpBinop</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CommutativityExpander.java,v 1.1.2.3 2000-02-19 01:41:49 cananian Exp $
+ * @version $Id: CommutativityExpander.java,v 1.1.2.4 2000-02-23 22:38:35 cananian Exp $
  */
 public abstract class CommutativityExpander  {
     //hide constructor.
