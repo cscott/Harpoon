@@ -1,10 +1,10 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: design.tex,v 1.8 1998-07-15 23:36:39 cananian Exp $
+% $Id: design.tex,v 1.9 1998-07-15 23:48:15 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn]{article}
 \author{C.~Scott~Ananian}
 \title{Turning Java into Hardware: \\ Caffinated Compiler Construction}
-\date{\today \\ $ $Revision: 1.8 $ $}
+\date{\today \\ $ $Revision: 1.9 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -262,8 +262,8 @@ imagined as constant pointers to class instances.  Cliff Click's work
 on combining optimizations is instructive \cite{click95:combin}: the
 best extended type analysis is possible only in conjunction with
 standard constant-propagation and dead-code analysis.  The algorithm
-for this analysis pass will probably be an extension of Click's
-powerful optimistic analysis in \cite{click95:thesis}.
+for this analysis pass will probably be based on Click's
+optimistic analysis described in \cite{click95:thesis}.
 
 The extended type analysis pass should produce a call-graph and
 list of static object instances in addition to the per-variable type
