@@ -172,4 +172,10 @@ final class VMSystem
 	return new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.err)), true);
     }
 
+    /** CSA HACK: add encodings to the root set by naming them here. */
+    static {
+	// adds $$initcheck versions of the constructors.
+	new gnu.java.io.decode.Decoder8859_1(null);
+	new gnu.java.io.encode.Encoder8859_1(null);
+    }
 }
