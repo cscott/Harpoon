@@ -1,8 +1,0 @@
-The gnu.bytecode package contains classes to generate, read, write,
-and print Java bytecode (.class) files.
-
-The file overview.html gives some information about this class.
-It is the basis for the home page for this package:
-    http://www.cygnus.com/~bothner/gnu.bytecode/
-
-	--Per Bothner, Cygnus Solutions, bothner@cygnus.com.
