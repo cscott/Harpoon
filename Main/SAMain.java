@@ -91,7 +91,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.164 2001-09-20 19:04:38 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.165 2001-09-21 22:46:02 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -356,8 +356,6 @@ public class SAMain extends harpoon.IR.Registration {
 	    /* counter factory must be set up before field reducer,
 	     * or it will be optimized into nothingness. */
 	    if (Boolean.getBoolean("size.counters")) {
-		hcf = new harpoon.Analysis.SizeOpt.SizeCounters(hcf, frame)
-		    .codeFactory();
 		hcf = harpoon.Analysis.Counters.CounterFactory
 		    .codeFactory(hcf, linker, mainM);
 		// recompute the hierarchy after transformation.
