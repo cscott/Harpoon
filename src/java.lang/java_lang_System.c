@@ -179,7 +179,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_System_initProperties
     char *ckey, *cvalue;
     int i;
     /* do all the easy (constant) properties first */
-    for (i=0; properties[i]==NULL; i+=2)
+    for (i=0; properties[i]!=NULL; i+=2)
       _putProperty(env, propobj, methodID, properties[i], properties[i+1]);
     /* okay, now the tricky stuff... */
     ckey = "java.class.path";
