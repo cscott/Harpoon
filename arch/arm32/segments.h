@@ -9,6 +9,8 @@
 # define STATIC_PRIMITIVES_SEGMENT .data 5 @ .section static_primitives
 # define STRING_CONSTANTS_SEGMENT .data 6 @ .section string_constants
 # define STRING_DATA_SEGMENT	.data 7 @ .section string_data
+# define REFLECTION_OBJECTS_SEGMENT .data 8 @ .section reflection_data
+# define REFLECTION_DATA_SEGMENT .data 9 @ .section reflection_data
 # define TEXT_SEGMENT		.text   @ .section text
 # define ZERO_DATA_SEGMENT	.bss    @ .section zero
 # define FIXUP_SEGMENT		.text 10 @ .section fixup
