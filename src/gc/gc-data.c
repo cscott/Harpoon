@@ -4,13 +4,16 @@
 #include "../../Contrib/gc/gc_typed.h"
 #include "../../Contrib/gc/gcconfig.h"
 #endif
+#include <assert.h>
 #include <jni.h>
 #include "jni-private.h"
 #include "jni-gc.h"
+#include "fni-threadstate.h"
 
-#define DESC_SIZE 6  /* number of bits needed for descriptor */
-#define JINT_SIZE 32 /* number of bits in a jint */
-#define DEBUG 0      /* 1 turns on status reporting; 0 turns off */
+#define kDEBUG  0
+#define DESCSZ  8  /* number of bits needed for descriptor */
+#define JINTSZ (sizeof(jint)*8) /* number of bits in a jint */
+#define DEBUG   0  /* 1 turns on status reporting; 0 turns off */
 
 /* --------- garbage collection data types --------- */
 
@@ -21,14 +24,14 @@ enum loctype { REG, STACK };
 
 enum sign { PLUS, MINUS, NONE };
 
-enum masks { REGS_ZERO   = 0x80000000U, 
-	     REGS_PREV   = 0x40000000U,
-	     STACK_ZERO  = 0x20000000U,
-	     STACK_PREV  = 0x10000000U,
-	     DERIVS_ZERO = 0x08000000U,
-	     DERIVS_PREV = 0x04000000U,
-	     CSAVED_ZERO = 0x02000000U,
-	     CSAVED_PREV = 0x01000000U };
+enum masks { NO_LIVE_REGISTERS             =   01, 
+	     NO_CHANGE_IN_REGISTERS        =   02,
+	     NO_LIVE_STACK_LOCATIONS       =   04,
+	     NO_CHANGE_IN_STACK_LOCATIONS  =  010,
+	     NO_LIVE_DERIVED_POINTERS      =  020,
+	     NO_CHANGE_IN_DERIVED_POINTERS =  040,
+	     NO_CALLEE_SAVED_REGISTERS     = 0100,
+	     NO_CHANGE_IN_CALLEE_SAVED_REGISTERS = 0200 };
 
 /* index entry */
 struct _gc_index_entry {
@@ -168,60 +171,164 @@ void cleanup();
 
 void report(char *);
 
-/* effects: adds global references to root set using find_root_set */
-void find_global_refs() {
-  struct _jobject *jobj =  &FNI_globalrefs;
-  /* printf("\nAdding global refs: "); */
-  while(jobj != NULL) {
-    if (jobj->obj != NULL) {
-      /* printf("%p ", jobj->obj); */
-      add_to_root_set(&(jobj->obj));
-    }
-    jobj = jobj->next;
-  }
-  /* printf("\n"); */
+#ifndef WITH_PRECISE_C_BACKEND
+# ifdef HAVE_STACK_TRACE_FUNCTIONS
+# include "asm/stack.h" /* snarf in the stack trace functions. */
+
+/*
+  static jobject_unwrapped *callee_saved[NUM_REGS]; */
+static void *callee_saved[NUM_REGS];
+
+/* linked list unit for representing derived pointers */
+struct dlist {
+  int sign;
+  jobject_unwrapped *ptr_to_base; /* address of base pointer */
+  struct dlist *next;
+};
+
+struct derivation {
+  union {
+    jobject_unwrapped *ptr_to_deriv; /* address of derived pointer */
+    ptroff_t *ptr_to_constant;       /* address of calculated constant */
+  } derivunion;
+  struct dlist *head;
+};
+
+/* linked list unit for lists of derived pointers */
+struct derived_ptrs {
+  struct derivation deriv;
+  struct derived_ptrs *next;
+};
+
+/* returns negative if keyval is less than datum->retaddr,
+   zero if equal, and postive if greater */
+int gc_index_cmp(const void *keyval, const void *datum) {
+  void *entry = ((struct gc_index *)datum)->retaddr;
+  return (keyval < entry) ? -1 : (keyval > entry); 
 }
 
-/* effects: adds thread-local references to root set using find_root_set */
+void find_other_roots(void *saved_registers[]) {
+  void *retaddr = get_retaddr_from_saved_registers(saved_registers);
+  Frame fp = (Frame)(get_fp_from_saved_registers(saved_registers));
+  Frame top = (Frame)(((struct FNI_Thread_State *)FNI_GetJNIEnv())->stack_top);
+  
+  printf("\ntop: %p\n", top); 
+  do {
+    struct gc_index *found = 
+      (struct gc_index *)bsearch(retaddr, gc_index_start, 
+				 (gc_index_end - gc_index_start),
+				 sizeof(struct gc_index), gc_index_cmp); 
+
+    printf("lr: %p fp: %p\n", retaddr, fp);
+    if (found != NULL) {
+      jint *bitmap_ptr = &(found->gc_data->descriptor);
+      int offset = DESCSZ;
+      printf("gc_index: %p %p %p ", found, found->retaddr, found->gc_data);
+      if (found->gc_data->descriptor & NO_LIVE_REGISTERS)
+	printf("R: none ");
+      else if (found->gc_data->descriptor & NO_CHANGE_IN_REGISTERS)
+	printf("R: same ");
+      else printf("R: ? ");
+      if (found->gc_data->descriptor & NO_LIVE_STACK_LOCATIONS)
+	printf("S: none ");
+      else if (found->gc_data->descriptor & NO_CHANGE_IN_STACK_LOCATIONS)
+	printf("S: same ");
+      else printf("S: ? ");
+      if (found->gc_data->descriptor & NO_LIVE_DERIVED_POINTERS)
+	printf("D: none ");
+      else if (found->gc_data->descriptor & NO_CHANGE_IN_DERIVED_POINTERS)
+	printf("D: same ");
+      else printf("D: ? ");
+      if (found->gc_data->descriptor & NO_CALLEE_SAVED_REGISTERS)
+	printf("C: none ");
+      else if (found->gc_data->descriptor & NO_CHANGE_IN_CALLEE_SAVED_REGISTERS)
+	printf("C: same ");
+      else printf("C: ? ");
+      printf("\n");
+      
+      if (!(found->gc_data->descriptor & 
+	    (NO_LIVE_REGISTERS | NO_CHANGE_IN_REGISTERS))) {
+	int register_being_processed = 0;
+	while(register_being_processed < NUM_REGS) {
+	  if ((*bitmap_ptr) & (1 << offset))
+	    printf("%d ", register_being_processed);
+	  register_being_processed++; offset++;
+	  if (offset == JINTSZ) {
+	    offset = 0;
+	    bitmap_ptr++;
+	  }
+	}
+	printf("\n");
+      } /* if */
+    }
+    fp = get_parent_fp(fp);
+    retaddr = get_my_retaddr(fp);
+    } while (fp < top);
+}
+# endif /* HAVE_STACK_TRACE_FUNCTIONS */
+#endif /* WITH_PRECISE_C_BACKEND */
+
+/* effects: adds global references to root set using add_to_root_set */
+void find_global_refs() {
+  struct _jobject_globalref *jobj =  FNI_globalrefs.next;
+  if (kDEBUG) printf("Finding global refs:\n");
+  while(jobj != NULL) {
+    assert(jobj->jobject.obj != NULL);
+    if (kDEBUG) printf("  %p (%p)\n", jobj, jobj->jobject.obj);
+    add_to_root_set(&(jobj->jobject.obj));
+    if (kDEBUG) printf("%p\n", jobj->jobject.obj);
+    jobj = jobj->next;
+  }
+}
+
+/* effects: adds thread-local references to root set using add_to_root_set */
 void find_thread_local_refs() {
   struct FNI_Thread_State *thread_state_ptr =
     (struct FNI_Thread_State *)FNI_GetJNIEnv();
-  struct _jobject *jobj =  &(thread_state_ptr->localrefs);
-  /* printf("\nAdding local refs: "); */
-  while(jobj != NULL) {
+  struct _jobject *top = thread_state_ptr->localrefs_next;
+  struct _jobject *jobj = thread_state_ptr->localrefs_stack;
+  if (kDEBUG) printf("Finding local refs:\n");
+  while(jobj < top) {
+    if (kDEBUG) printf("  %p (%p)\n", jobj, jobj->obj);
     if (jobj->obj != NULL) {
-      /* printf("%p ", jobj->obj); */
       add_to_root_set(&(jobj->obj));
+      if (kDEBUG) printf("%p\n", jobj->obj);
     }
-    jobj = jobj->next;
+    jobj++;
   }
-  /* printf("\n"); */
 }
 
-/* effects: finds root set and adds each element using find_root_set */
-void find_root_set() {
-  report("Entering find_root_set.");
+/* effects: finds root set and adds each element using add_to_root_set */
+#ifdef WITH_PRECISE_C_BACKEND
+void find_root_set()
+#else
+void find_root_set(void *saved_registers[])
+#endif
+{
+  if (kDEBUG) printf("Entering find_root_set.\n"); fflush(0);
+#ifndef WITH_PRECISE_C_BACKEND
+  find_other_roots(saved_registers);
+#endif
   find_static_fields();
   find_global_refs();
   find_thread_local_refs();
-  report("Leaving find_root_set.");
 }
 
 /* effects: finds static fields that are objects and
             adds each to root set using find_root_set */
 void find_static_fields() {
   jobject_unwrapped *obj;
-  report("Entering find_static_fields.");
+  if (kDEBUG) printf("Finding static fields:\n");
   /* printf("STATIC OBJECTS START: %p\n", static_objects_start);
      printf("STATIC OBJECTS END: %p\n", static_objects_end); */
   /* adds static objects to root set */
   for(obj = static_objects_start; obj < static_objects_end; obj++) {
+    if (kDEBUG) printf("  %p (%p)\n", obj, (*obj));
     if ((*obj) != NULL) {
-      /*printf("Adding object to root set: %p\n", (*obj)); */
       add_to_root_set(obj);
+      if (kDEBUG) printf("%p\n", (*obj));
     }
   }
-  report("Leaving find_static_fields.");
 }
 
 
@@ -246,7 +353,7 @@ gc_regs_ptr get_live_in_regs(gc_index_ptr ptr, int num) {
 
   /* handle case of no live base pointers in registers */
   {
-      jint no_live_ptrs = desc & REGS_ZERO;
+    jint no_live_ptrs = desc /* & REGS_ZERO */;
       if (no_live_ptrs) {
 	  int index;
 	  gc_regs_ptr result = (gc_regs_ptr)malloc(sizeof(struct _gc_regs));
@@ -264,7 +371,7 @@ gc_regs_ptr get_live_in_regs(gc_index_ptr ptr, int num) {
   /* handle case of live base pointers in registers same
      as at previous GC point */
   {
-      jint same_as_prev = desc & REGS_PREV;
+    jint same_as_prev = desc/* & REGS_PREV*/;
       if (same_as_prev)
 	  return get_live_in_regs(ptr-1, num);
   }
@@ -278,9 +385,9 @@ gc_regs_ptr get_live_in_regs(gc_index_ptr ptr, int num) {
       result->regs = (enum boolean *)malloc(num * sizeof(enum boolean));
       if (result->regs == NULL) report("ERROR: Out of memory");
       for (index = 0; index < num; index++) {
-	  int i = (DESC_SIZE+index) / JINT_SIZE;
-	  int j = (DESC_SIZE+index) % JINT_SIZE;
-	  jint mask = 1 << (JINT_SIZE - j - 1);
+	  int i = (DESCSZ+index) / JINTSZ;
+	  int j = (DESCSZ+index) % JINTSZ;
+	  jint mask = 1 << (JINTSZ - j - 1);
 	  jint reg_live = *(&desc+i) & mask;
 	  *(result->regs+index) = reg_live ? TRUE : FALSE;
       }
@@ -297,7 +404,7 @@ gc_stack_ptr get_live_in_stack(gc_index_ptr ptr, int num) {
   
   /* handle case of no live base pointers in stack */
   {
-      jint no_live_ptrs = desc & STACK_ZERO;
+    jint no_live_ptrs = desc/* & STACK_ZERO*/;
       if (no_live_ptrs) {
 	  gc_stack_ptr result = (gc_stack_ptr)malloc(sizeof(struct _gc_stack));
 	  if (result == NULL) report("ERROR: Out of memory");
@@ -310,7 +417,7 @@ gc_stack_ptr get_live_in_stack(gc_index_ptr ptr, int num) {
   /* handle case of live base pointers in stack same
      as at previous GC point */
   {
-      jint same_as_prev = desc & STACK_PREV;
+    jint same_as_prev = desc/* & STACK_PREV*/;
       if (same_as_prev)
 	  return get_live_in_stack(ptr-1, num);
   }
@@ -319,16 +426,16 @@ gc_stack_ptr get_live_in_stack(gc_index_ptr ptr, int num) {
   {
       jint *data = &desc;
       struct _basetable *bt = ptr->gc_bt; 
-      jint no_reg_data = desc & (REGS_ZERO | REGS_PREV);
+      jint no_reg_data = desc /*& (REGS_ZERO | REGS_PREV)*/;
       int index, live_count = 0, offset = no_reg_data ? 0 : num;
       jint num_offsets = bt->num_entries;
       jint tmp_store[num_offsets];
       gc_stack_ptr result = (gc_stack_ptr)malloc(sizeof(struct _gc_stack));
       if (result == NULL) report("ERROR: Out of memory");
       for (index = 0; index < num_offsets; index++) {
-	  int i = (DESC_SIZE+offset+index) / JINT_SIZE;
-	  int j = (DESC_SIZE+offset+index) % JINT_SIZE;
-	  jint mask = 1 << (JINT_SIZE - j - 1);
+	  int i = (DESCSZ+offset+index) / JINTSZ;
+	  int j = (DESCSZ+offset+index) % JINTSZ;
+	  jint mask = 1 << (JINTSZ - j - 1);
 	  jint stack_live = *(data+i) & mask;
 	  if (stack_live)
 	      tmp_store[live_count++] = *(bt->offsets+index);
@@ -351,7 +458,7 @@ gc_derivs_ptr get_live_derivs(gc_index_ptr ptr, int num) {
   
   /* handle case of no live derived pointers */
   {
-      jint no_live_ptrs = desc & DERIVS_ZERO;
+    jint no_live_ptrs = desc /*& DERIVS_ZERO*/;
       if (no_live_ptrs) {
 	  gc_derivs_ptr result = 
 	      (gc_derivs_ptr)malloc(sizeof(struct _gc_derivs));
@@ -364,7 +471,7 @@ gc_derivs_ptr get_live_derivs(gc_index_ptr ptr, int num) {
 
   /* handle case of live derived pointers same as at previous GC point */
   {
-      jint same_as_prev = desc & DERIVS_PREV;
+    jint same_as_prev = desc /*& DERIVS_PREV*/;
       if (same_as_prev)
 	  return get_live_derivs(ptr-1, num);
   }
@@ -379,17 +486,17 @@ gc_derivs_ptr get_live_derivs(gc_index_ptr ptr, int num) {
 
       {  
 	  /* offset due to register data */
-	  jint no_reg_data = desc & (REGS_ZERO | REGS_PREV);
+	jint no_reg_data = desc/* & (REGS_ZERO | REGS_PREV)*/;
 	  offset_in_bits += (no_reg_data ? 0 : num);
       }
       {
 	  /* offset due to stack data */
 	  struct _basetable *bt = ptr->gc_bt;
-	  jint no_stack_data = desc & (STACK_ZERO | STACK_PREV);
+	  jint no_stack_data = desc/* & (STACK_ZERO | STACK_PREV)*/;
 	  offset_in_bits += (no_stack_data ? 0 : bt->num_entries);
       }
       /* ceiling trick, get data to point to derivations */
-      data += (offset_in_bits + JINT_SIZE - 1)/JINT_SIZE;
+      data += (offset_in_bits + JINTSZ - 1)/JINTSZ;
 
       /* number of derived pointers in registers */
       numRegDerivs = *(data++);
@@ -413,10 +520,10 @@ gc_derivs_ptr get_live_derivs(gc_index_ptr ptr, int num) {
 	  derived->base = (gc_loc_ptr)malloc(derived->num_base *
 					     sizeof(struct _gc_loc));
 	  for (regindex = 0; regindex < num; regindex++) {
-	      int i = (2 * regindex) / JINT_SIZE;
-	      int j = (2 * regindex) % JINT_SIZE;
-	      jint mask_live = 1 << (JINT_SIZE - j - 1);
-	      jint mask_sign = 1 << (JINT_SIZE - j - 2);
+	      int i = (2 * regindex) / JINTSZ;
+	      int j = (2 * regindex) % JINTSZ;
+	      jint mask_live = 1 << (JINTSZ - j - 1);
+	      jint mask_sign = 1 << (JINTSZ - j - 2);
 	      jint reg_live = *(data+i) & mask_live;
 	      jint reg_sign = *(data+i) & mask_sign;
 	      if (reg_live) {
@@ -427,7 +534,7 @@ gc_derivs_ptr get_live_derivs(gc_index_ptr ptr, int num) {
 	      }
 	  }
 	  /* increment data pointer */
-	  data += (num + JINT_SIZE - 1)/JINT_SIZE;
+	  data += (num + JINTSZ - 1)/JINTSZ;
 
 	  /* baseindex initially equals number of base pointers in registers */
 	  for (stackindex = baseindex; stackindex < derived->num_base; 
@@ -437,14 +544,14 @@ gc_derivs_ptr get_live_derivs(gc_index_ptr ptr, int num) {
 	  }
 	  for (stackindex = baseindex ; stackindex < derived->num_base; 
 	       stackindex++) {
-	      int i = stackindex / JINT_SIZE;
-	      int j = stackindex % JINT_SIZE;
-	      jint mask_sign = 1 << (JINT_SIZE - j - 2);
+	      int i = stackindex / JINTSZ;
+	      int j = stackindex % JINTSZ;
+	      jint mask_sign = 1 << (JINTSZ - j - 2);
 	      jint stack_sign = *(data+i) & mask_sign;
 	      (derived->base+stackindex)->_sign = stack_sign ? PLUS : MINUS;
 	  }
 	  /* increment data pointer */
-	  data += (derived->num_base + JINT_SIZE - 1)/JINT_SIZE;
+	  data += (derived->num_base + JINTSZ - 1)/JINTSZ;
       }
       return result;
   }

@@ -25,4 +25,4 @@ csymbol(precise_malloc):
 	mov	r2, r0
 	mov	r3, r2
 	mov	r0, r3
-	ldmea	fp, {fp, sp, pc}
+	ldmea	fp, {r1 - r10, fp, sp, pc}

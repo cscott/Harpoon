@@ -75,3 +75,24 @@ typedef struct _Frame *Frame;
 /* [fp, #-12] = parent's frame ptr (points to first value on parent's stack */
 #define get_parent_fp(__fp) \
   *(&(((Frame)__fp)->start_of_function)-3)
+
+/* saved_registers has the following format:
+   at index:   0   r0
+               1   r1
+             ...  ...
+              10  r10
+              11  r11 (fp)
+              12  r12 (ip)
+              13  r13 (sp)
+              14  r14 (lr)
+ */
+
+/* get the frame pointer from the registers saved using precise_malloc.S */
+#define get_fp_from_saved_registers(__saved) \
+  ((void **)__saved)[11]
+
+/* get the return address from the registers saved using precise_malloc.S */
+#define get_retaddr_from_saved_registers(__saved) \
+  ((void **)__saved)[13]
+
+#define NUM_REGS 10
