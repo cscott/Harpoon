@@ -8,9 +8,12 @@ import harpoon.Backend.Maps.FinalMap;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Quad;
+import harpoon.Util.Collections.SnapshotIterator;
 
+import java.util.Iterator;
 import java.util.Set;
 /**
  * <code>Nonvirtualize</code> uses a <code>FinalMap</code> to
@@ -19,16 +22,16 @@ import java.util.Set;
  * than non-virtual invocation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Nonvirtualize.java,v 1.2 2002-02-25 20:59:23 cananian Exp $
+ * @version $Id: Nonvirtualize.java,v 1.3 2002-09-03 15:08:04 cananian Exp $
  * @see harpoon.Backend.Maps.DefaultFinalMap
  * @see harpoon.Backend.Maps.CHFinalMap
  */
 public class Nonvirtualize
-    extends harpoon.Analysis.Transformation.MethodMutator {
+    extends harpoon.Analysis.Transformation.MethodMutator<Quad> {
     /** The <code>FinalMap</code> we will consult for our devirtualization. */
     private final FinalMap fm;
     /** An optional set of callable methods to limit our devirtualization. */
-    private final Set callable;
+    private final Set<HMethod> callable;
     
     /** Creates a <code>Nonvirtualize</code> using the given
      *  <code>FinalMap</code>.
@@ -51,12 +54,13 @@ public class Nonvirtualize
 	this.callable = (ch==null) ? null : ch.callableMethods();
     }
 
-    protected HCode mutateHCode(HCodeAndMaps input) {
-	HCode hc = input.hcode();
-	Quad[] quads = (Quad[]) hc.getElements();
-	for (int i=0; i<quads.length; i++) {
-	    if (!(quads[i] instanceof CALL)) continue;
-	    CALL q = (CALL) quads[i];
+    protected HCode<Quad> mutateHCode(HCodeAndMaps<Quad> input) {
+	HCode<Quad> hc = input.hcode();
+	for (Iterator<Quad> it = new SnapshotIterator<Quad>(hc.getElementsI());
+	     it.hasNext(); ) {
+	    Quad aquad = it.next();
+	    if (!(aquad instanceof CALL)) continue;
+	    CALL q = (CALL) aquad;
 	    if (!q.isVirtual()) continue;
 	    if (!fm.isFinal(q.method())) continue;
 	    // don't devirtualize uncallable methods, as the static reference

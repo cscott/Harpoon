@@ -24,10 +24,12 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.Temp.Temp;
+import harpoon.Util.Collections.SnapshotIterator;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 /**
  * The <code>ComponentOfReducer</code> pass attempts to transform
@@ -41,37 +43,37 @@ import java.util.Map;
  * final type information (a <code>Backend.Maps.FinalMap</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ComponentOfReducer.java,v 1.2 2002-02-25 20:59:22 cananian Exp $
+ * @version $Id: ComponentOfReducer.java,v 1.3 2002-09-03 15:08:03 cananian Exp $
  */
-public class ComponentOfReducer extends MethodMutator {
-    final ExactTypeMap etm;
+public class ComponentOfReducer extends MethodMutator<Quad> {
+    final ExactTypeMap<Quad> etm;
     
     /** Creates a <code>ComponentOfReducer</code>. */
     public ComponentOfReducer(HCodeFactory hcf,
-			      final ExactTypeMap tm, final FinalMap fm) {
+			      final ExactTypeMap<Quad> tm, final FinalMap fm) {
 	super(hcf);
-	this.etm = new ExactTypeMap() {
-		public boolean isExactType(HCodeElement hce, Temp t)
+	this.etm = new ExactTypeMap<Quad>() {
+		public boolean isExactType(Quad hce, Temp t)
 		    throws TypeMap.TypeNotKnownException {
 		    if (tm.isExactType(hce, t)) return true;
 		    HClass type = HClassUtil.baseClass(tm.typeMap(hce, t));
 		    if (fm.isFinal(type)) return true;
 		    return false;
 		}
-		public HClass typeMap(HCodeElement hce, Temp t)
+		public HClass typeMap(Quad hce, Temp t)
 		    throws TypeNotKnownException {
 		    return tm.typeMap(hce, t);
 		}
 	    };
     }
     public ComponentOfReducer(HCodeFactory hcf,
-			      final TypeMap tm, final FinalMap fm) {
+			      final TypeMap<Quad> tm, final FinalMap fm) {
 	this(hcf,
-	     tm instanceof ExactTypeMap? (ExactTypeMap)tm: new ExactTypeMap() {
-		public boolean isExactType(HCodeElement hce, Temp t) {
+	     tm instanceof ExactTypeMap<Quad>? (ExactTypeMap<Quad>)tm: new ExactTypeMap<Quad>() {
+		public boolean isExactType(Quad hce, Temp t) {
 		    return false;
 		}
-		public HClass typeMap(HCodeElement hce, Temp t)
+		public HClass typeMap(Quad hce, Temp t)
 		    throws TypeNotKnownException {
 		    return tm.typeMap(hce, t);
 		}
@@ -85,41 +87,43 @@ public class ComponentOfReducer extends MethodMutator {
 	// (ccf will also be quadssi!)
 	this(ccf, new CachingExactTypeMap(ccf), new CHFinalMap(ch));
     }
-    private static class CachingExactTypeMap implements ExactTypeMap {
+    private static class CachingExactTypeMap implements ExactTypeMap<Quad> {
 	final CachingCodeFactory ccf;
-	final Map etmMap = new HashMap();
+	final Map<HMethod,ExactTypeMap<Quad>> etmMap =
+	    new HashMap<HMethod,ExactTypeMap<Quad>>();
 	CachingExactTypeMap(CachingCodeFactory ccf) {
 	    this.ccf = ccf;
 	}
-	ExactTypeMap fetchCached(HCodeElement hce) {
+	ExactTypeMap<Quad> fetchCached(Quad hce) {
 	    // cached?
-	    HMethod hm = ((Quad)hce).getFactory().getMethod();
-	    ExactTypeMap etm = (ExactTypeMap) etmMap.get(hm);
+	    HMethod hm = hce.getFactory().getMethod();
+	    ExactTypeMap<Quad> etm = etmMap.get(hm);
 	    if (etm==null) {
 		// no. =(
-		etm = new SCCAnalysis(ccf.convert(hm));//could use factory here
+		etm = (ExactTypeMap/*XXX: cast won't be necessary after SCCAnalysis is GJ-ized*/) new SCCAnalysis(ccf.convert(hm));//could use factory here
 		etmMap.put(hm, etm);
 	    }
 	    return etm;
 	}
-	public boolean isExactType(HCodeElement hce, Temp t)
+	public boolean isExactType(Quad hce, Temp t)
 	    throws TypeNotKnownException {
 	    return fetchCached(hce).isExactType(hce, t);
 	}
-	public HClass typeMap(HCodeElement hce, Temp t)
+	public HClass typeMap(Quad hce, Temp t)
 	    throws TypeNotKnownException {
 	    return fetchCached(hce).typeMap(hce, t);
 	}
     }
 
     // okay, enough playing around.  let's mutate!
-    protected HCode mutateHCode(HCodeAndMaps input) {
+    protected HCode<Quad> mutateHCode(HCodeAndMaps<Quad> input) {
 	boolean changed = false;
 	// find COMPONENT OF.
-	Quad[] allquads = (Quad[]) input.hcode().getElements();
-	for (int i=0; i<allquads.length; i++)
-	    if (allquads[i] instanceof COMPONENTOF) {
-		COMPONENTOF q = (COMPONENTOF) allquads[i];
+	for (Iterator<Quad> it=new SnapshotIterator<Quad>
+		 (input.hcode().getElementsI()); it.hasNext(); ) {
+	    Quad thisq = it.next();
+	    if (thisq instanceof COMPONENTOF) {
+		COMPONENTOF q = (COMPONENTOF) thisq;
 		COMPONENTOF qq = (COMPONENTOF)
 		    input.ancestorElementMap().get(q);
 		// can we change this?
@@ -134,6 +138,7 @@ public class ComponentOfReducer extends MethodMutator {
 		    changed = true;
 		}
 	    }
+	}
 	// if anything's been changed...
 	if (changed) {
 	    // SCCOptimize this!

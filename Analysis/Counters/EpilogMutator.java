@@ -22,7 +22,10 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.THROW;
 import harpoon.Temp.Temp;
+import harpoon.Util.Collections.SnapshotIterator;
 import harpoon.Util.Util;
+
+import java.util.Iterator;
 
 /**
  * <code>EpilogMutator</code> adds the appropriate call to
@@ -32,9 +35,10 @@ import harpoon.Util.Util;
  * <code>CounterFactory</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: EpilogMutator.java,v 1.4 2002-04-10 02:59:01 cananian Exp $
+ * @version $Id: EpilogMutator.java,v 1.5 2002-09-03 15:07:57 cananian Exp $
  */
-class EpilogMutator extends harpoon.Analysis.Transformation.MethodMutator {
+class EpilogMutator
+    extends harpoon.Analysis.Transformation.MethodMutator<Quad> {
     private final HMethod HMmain, HMreport, HMexit;
     
     /** Creates a <code>EpilogMutator</code>. */
@@ -53,7 +57,7 @@ class EpilogMutator extends harpoon.Analysis.Transformation.MethodMutator {
 		    parent.getCodeName().equals(QuadSSA.codename) ||
 		    parent.getCodeName().equals(QuadSSI.codename);
     }
-    public HCode mutateHCode(HCodeAndMaps input) {
+    public HCode<Quad> mutateHCode(HCodeAndMaps<Quad> input) {
 	final boolean isMain = input.hcode().getMethod().equals(HMmain);
 	QuadVisitor qv = new QuadVisitor() {
 	    public void visit(Quad q) { /* do nothing */ }
@@ -80,9 +84,9 @@ class EpilogMutator extends harpoon.Analysis.Transformation.MethodMutator {
 		Quad.addEdge(q1, 0, (Quad)e.to(), e.which_pred());
 	    }
 	};
-	Quad[] qa = (Quad[]) input.hcode().getElements();
-	for (int i=0; i<qa.length; i++)
-	    qa[i].accept(qv);
+	for (Iterator<Quad> it=new SnapshotIterator<Quad>
+		 (input.hcode().getElementsI()); it.hasNext(); )
+	    it.next().accept(qv);
 	return input.hcode();
     }
 }

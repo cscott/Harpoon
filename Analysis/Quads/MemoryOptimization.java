@@ -29,12 +29,14 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.SET;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Default;
 import harpoon.Util.Collections.DisjointSet;
-import harpoon.Util.Util;
-import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.Collections.SnapshotIterator;
+import harpoon.Util.Collections.WorkSet;
+import harpoon.Util.Default;
+import harpoon.Util.Default.PairList;
+import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -49,10 +51,10 @@ import java.util.Set;
  * It should be safe with respect to the revised Java memory model.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MemoryOptimization.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
+ * @version $Id: MemoryOptimization.java,v 1.5 2002-09-03 15:08:04 cananian Exp $
  */
 public final class MemoryOptimization
-    extends harpoon.Analysis.Transformation.MethodMutator {
+    extends harpoon.Analysis.Transformation.MethodMutator<Quad> {
     final CallGraph cg; final FieldSyncOracle fso;
     
     /** Creates a <code>MemoryOptimization</code>. */
@@ -66,8 +68,8 @@ public final class MemoryOptimization
 			      ClassHierarchy ch, CallGraph cg) {
 	this(parent, cg, new FieldSyncOracle(parent, ch, cg));
     }
-    protected HCode mutateHCode(HCodeAndMaps input) {
-	HCode hc = input.hcode();
+    protected HCode<Quad> mutateHCode(HCodeAndMaps<Quad> input) {
+	HCode<Quad> hc = input.hcode();
 	/*
 	System.out.println("BEFORE: ");
 	hc.print(new java.io.PrintWriter(System.out));
@@ -75,24 +77,25 @@ public final class MemoryOptimization
 	// do the analysis.
 	Analysis a = new Analysis(hc);
 	// okay, rename quads and eliminate useless stuff.
-	Quad[] quads = (Quad[]) hc.getElements();
+	Iterator<Quad> qit = new SnapshotIterator<Quad>(hc.getElementsI());
 	// add moves to edges.
-	for (Iterator it=a.moves.keySet().iterator(); it.hasNext(); ) {
-	    Edge e = (Edge) it.next(); Quad q = (Quad) e.to();
-	    for (Iterator it2=a.moves.getValues(e).iterator(); it2.hasNext();){
-		List pair = (List) it2.next();
+	for (Iterator<Edge> it=a.moves.keySet().iterator(); it.hasNext(); ) {
+	    Edge e = it.next(); Quad q = e.to();
+	    for (Iterator<Temp[]> it2=a.moves.getValues(e).iterator(); it2.hasNext();){
+		Temp[] pair = it2.next();
 		e = addAt(e, new MOVE(q.getFactory(), q,
-				      (Temp)a.ds.find(pair.get(0)),
-				      (Temp)a.ds.find(pair.get(1))));
+				      a.ds.find(pair[0]),
+				      a.ds.find(pair[1])));
 	    }
 	}
-	for (int i=0; i<quads.length; i++) {
+	// note that we created the 'qit' snapshot before adding the MOVEs.
+	while (qit.hasNext()) {
+	    Quad q = qit.next();
 	    // delete useless.
-	    if (a.useless.contains(quads[i]))
-		quads[i].remove();
-	    else if (!(quads[i] instanceof HEADER)) // rename
-		Quad.replace(quads[i],
-			     quads[i].rename(a.tempMap, a.tempMap));
+	    if (a.useless.contains(q))
+		q.remove();
+	    else if (!(q instanceof HEADER)) // rename
+		Quad.replace(q, q.rename(a.tempMap, a.tempMap));
 	}
 	//DeadCode.optimize((harpoon.IR.Quads.Code)hc, null);
 	/*
@@ -102,14 +105,14 @@ public final class MemoryOptimization
 	// done!
 	return hc;
     }
-    protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod) {
+    protected HCodeAndMaps<Quad> cloneHCode(HCode<Quad> hc,HMethod newmethod) {
 	// make SSA into RSSx.
 	assert hc.getName().equals(QuadSSA.codename);
 	return MyRSSx.cloneToRSSx((harpoon.IR.Quads.Code)hc, newmethod);
     }
     private static class MyRSSx extends QuadRSSx {
 	private MyRSSx(HMethod m) { super(m, null); }
-	public static HCodeAndMaps cloneToRSSx(harpoon.IR.Quads.Code c,
+	public static HCodeAndMaps<Quad> cloneToRSSx(harpoon.IR.Quads.Code c,
 					       HMethod m) {
 	    MyRSSx r = new MyRSSx(m);
 	    return r.cloneHelper(c, r);
@@ -122,8 +125,8 @@ public final class MemoryOptimization
 	/** helper routine to add a quad on an edge. */
     private static Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
     private static Edge addAt(Edge e, int which_pred, Quad q, int which_succ) {
-	Quad frm = (Quad) e.from(); int frm_succ = e.which_succ();
-	Quad to  = (Quad) e.to();   int to_pred = e.which_pred();
+	Quad frm = e.from(); int frm_succ = e.which_succ();
+	Quad to  = e.to();   int to_pred = e.which_pred();
 	Quad.addEdge(frm, frm_succ, q, which_pred);
 	Quad.addEdge(q, which_succ, to, to_pred);
 	return to.prevEdge(to_pred);
@@ -132,35 +135,39 @@ public final class MemoryOptimization
 
     class Analysis {
 	/** <BasicBlock,temp,field> -> temp */
-	final Map out = new HashMap();
+	final Map<BasicBlock<Quad>,Map<Value,Temp>> out =
+	    new HashMap<BasicBlock<Quad>,Map<Value,Temp>>();
 	/** Discovered Temp identities. */
-	final DisjointSet ds = new DisjointSet();
+	final DisjointSet<Temp> ds = new DisjointSet<Temp>();
 	/** Set of useless stores */
-	final Set useless = new HashSet();
+	final Set<Quad> useless = new HashSet<Quad>();
 	/** tempmap view of ds. */
 	final TempMap tempMap = new TempMap() {
-	    public Temp tempMap(Temp t) { return (Temp) ds.find(t); }
+	    public Temp tempMap(Temp t) { return ds.find(t); }
 	};
 	/** <BasicBlock,Value>->Temp */
-	private final Map tempgen = new HashMap();
-	Temp tempgen(BasicBlock bb, Value v, Temp template) {
-	    List key = Default.pair(bb, v);
+	private final Map<PairList<BasicBlock<Quad>,Value>,Temp> tempgen =
+	    new HashMap<PairList<BasicBlock<Quad>,Value>,Temp>();
+	Temp tempgen(BasicBlock<Quad> bb, Value v, Temp template) {
+	    PairList<BasicBlock<Quad>,Value> key = Default.pair(bb, v);
 	    if (!tempgen.containsKey(key)) {
 		tempgen.put(key, new Temp(template));
 	    }
-	    return (Temp) tempgen.get(key);
+	    return tempgen.get(key);
 	}
 	/** Edge -> set of moves */
-	final MultiMap moves = new GenericMultiMap();
+	final MultiMap<Edge,Temp[]> moves = new GenericMultiMap<Edge,Temp[]>();
 	/* set of phis we're adding moves for */
-	final Set phiadded = new HashSet();
+	final Set<PairList<BasicBlock<Quad>,Value>> phiadded =
+	    new HashSet<PairList<BasicBlock<Quad>,Value>>();
 
-	Analysis(HCode hc) {
-	    BasicBlock.Factory bbF = new BasicBlock.Factory(hc);
-	    WorkSet w = new WorkSet(bbF.blockSet());
+	Analysis(HCode<Quad> hc) {
+	    BasicBlock.Factory<Quad> bbF = new BasicBlock.Factory<Quad>(hc);
+	    WorkSet<BasicBlock<Quad>> w =
+		new WorkSet<BasicBlock<Quad>>(bbF.blockSet());
 	    // forward dataflow for READ propagation.
 	    while (!w.isEmpty()) {
-		BasicBlock bb = (BasicBlock) w.pop();
+		BasicBlock<Quad> bb = w.pop();
 		if (doBlockGET(bbF, bb))  // if block out has changed...
 		    w.addAll(bb.nextSet()); // ... add successors to workset.
 	    }
@@ -168,42 +175,44 @@ public final class MemoryOptimization
 	    /*
 	    w.addAll(bbF.blockSet());
 	    while (!w.isEmpty()) {
-		BasicBlock bb = (BasicBlock) w.pop();
+		BasicBlock<Quad> bb = w.pop();
 		if (doBlockSET(bbF, bb))  // if block out has changed...
 		    w.addAll(bb.prevSet()); // ... add successors to workset.
 	    }
 	    */
 	    // done.
 	}
-	Map valuemaptempmap(Map m, Quad q, int which_pred) {
+	Map<Value,Temp[]> valuemaptempmap(Map<Value,Temp> m,
+					  Quad q, int which_pred) {
 	    if (m==null) return null;
-	    HashMap result = new HashMap();
-	    for (Iterator it=m.entrySet().iterator(); it.hasNext(); ) {
-		Map.Entry me = (Map.Entry) it.next();
-		Value v = ((Value)me.getKey()).map(ds, q, which_pred);
-		Temp t = (Temp) ds.find(me.getValue());// not phi-mapped
+	    HashMap<Value,Temp[]> result = new HashMap<Value,Temp[]>();
+	    for (Iterator<Map.Entry<Value,Temp>> it = m.entrySet().iterator();
+		 it.hasNext(); ) {
+		Map.Entry<Value,Temp> me = it.next();
+		Value v = me.getKey().map(ds, q, which_pred);
+		Temp t = ds.find(me.getValue());// not phi-mapped
 		Temp tt = Value.map(t, ds, q, which_pred);// phi-mapped.
 		result.put(v, new Temp[] { tt, t });
 	    }
 	    return result;
 	}
 
-	boolean doBlockGET(BasicBlock.Factory bbF, BasicBlock bb) {
-	    List quads = bb.statements();
+	boolean doBlockGET(BasicBlock.Factory<Quad> bbF, BasicBlock<Quad> bb) {
+	    List<Quad> quads = bb.statements();
 	    // compute in set by merging outs.
 	    // map <temp,field>->temp; only present if all inputs have it.
 	    // do renaming as per PHI.
-	    Map in = new HashMap();
-	    Quad first = (Quad) quads.get(0);
+	    Map<Value,Temp> in = new HashMap<Value,Temp>();
+	    Quad first = quads.get(0);
 	    Quad[] pred = first.prev();
 	    // collect maps from each pred.
-	    Map[] prin = new Map[pred.length];
+	    Map<Value,Temp[]>[] prin = new Map<Value,Temp[]>[pred.length];
 	    for (int i=0; i<pred.length; i++) {
-		BasicBlock prbb = bbF.getBlock(pred[i]);
-		prin[i] = valuemaptempmap((Map) out.get(prbb), first, i);
+		BasicBlock<Quad> prbb = bbF.getBlock(pred[i]);
+ 		prin[i] = valuemaptempmap(out.get(prbb), first, i);
 	    }
 	    // merge key sets
-	    Set merged=null; boolean allknown=true;
+	    Set<Value> merged=null; boolean allknown=true;
 	    for (int i=0; i<pred.length; i++) {
 		if (prin[i]==null) { allknown=false; continue; }// no info yet.
 		if (merged==null) merged = prin[i].keySet();
@@ -212,13 +221,13 @@ public final class MemoryOptimization
 	    }
 	    // handle merged inputs.
 	    if (merged!=null && allknown)
-		for (Iterator it=merged.iterator(); it.hasNext(); ) {
-		    Value v = (Value) it.next();
+		for (Iterator<Value> it=merged.iterator(); it.hasNext(); ) {
+		    Value v = it.next();
 		    Temp t=null; boolean same=true;
  		    for (int i=0; i<pred.length; i++) {
  			if (prin[i]==null) continue; // no info.
 			// tt is the phi-mapped version of the temp.
-			Temp tt = ((Temp[]) prin[i].get(v))[0];
+			Temp tt = prin[i].get(v)[0];
 			if (t==null) t=tt;
 			else if (!t.equals(tt)) same=false;
 		    }
@@ -226,12 +235,12 @@ public final class MemoryOptimization
 		    if (same && !phiadded.contains(Default.pair(bb, v)))
 			in.put(v, t);
 		    else {
-			Temp nt = (Temp) ds.find(tempgen(bb, v, t));
+			Temp nt = ds.find(tempgen(bb, v, t));
 			for (int i=0; i<pred.length; i++) {
 			    if (prin[i]==null) continue;
 			    // note that we use the un-phi-mapped temp here.
-			    Temp tt = ((Temp[]) prin[i].get(v))[1];
-			    moves.add(first.prevEdge(i), Default.pair(nt, tt));
+			    Temp tt = prin[i].get(v)[1];
+			    moves.add(first.prevEdge(i), new Temp[] {nt,tt});
 			}
 			in.put(v, nt);
 			phiadded.add(Default.pair(bb, v));
@@ -240,24 +249,24 @@ public final class MemoryOptimization
 		    
 
 	    ReadVisitor rv = new ReadVisitor(in);
-	    for (Iterator it=quads.iterator(); it.hasNext(); ) {
-		Quad q = (Quad) it.next();
+	    for (Iterator<Quad> it=quads.iterator(); it.hasNext(); ) {
+		Quad q = it.next();
 		if (!useless.contains(q))
 		    q.accept(rv);
 	    }
 	    // okay, now we have out map.
-	    Map oldout = (Map) out.put(bb, in);
+	    Map<Value,Temp> oldout = out.put(bb, in);
 	    return (oldout==null || !oldout.equals(in));
 	}
 	class ReadVisitor extends QuadVisitor {
-	    final Map map;
-	    ReadVisitor(Map map) { this.map = map; }
+	    final Map<Value,Temp> map;
+	    ReadVisitor(Map<Value,Temp> map) { this.map = map; }
 	    public void visit(Quad q) { /* do nothing */ }
 	    public void visit(GET q) {
 		Value v = new FieldValue
-		    (q.field(), q.isStatic()?null:(Temp)ds.find(q.objectref()));
+		    (q.field(), q.isStatic()?null:ds.find(q.objectref()));
 		if (map.containsKey(v)) {
-		    ds.union(q.dst(), (Temp) map.get(v));
+		    ds.union(q.dst(), map.get(v));
 		    useless.add(q);
 		} else {
 		    map.put(v, q.dst());
@@ -265,7 +274,7 @@ public final class MemoryOptimization
 	    }
 	    public void visit(SET q) {
 		Value v = new FieldValue
-		    (q.field(), q.isStatic()?null:(Temp)ds.find(q.objectref()));
+		    (q.field(), q.isStatic()?null:ds.find(q.objectref()));
 		map.put(v, ds.find(q.src()));
 	    }
 	    public void visit(MOVE q) {
@@ -273,18 +282,18 @@ public final class MemoryOptimization
 		useless.add(q);
 	    }
 	    public void visit(AGET q) {
-		Value v = new ArrayValue((Temp)ds.find(q.objectref()),
-					 (Temp)ds.find(q.index()));
+		Value v = new ArrayValue(ds.find(q.objectref()),
+					 ds.find(q.index()));
 		if (map.containsKey(v)) {
-		    ds.union(q.dst(), (Temp) map.get(v));
+		    ds.union(q.dst(), map.get(v));
 		    useless.add(q);
 		} else {
 		    map.put(v, q.dst());
 		}
 	    }
 	    public void visit(ASET q) {
-		Value v = new ArrayValue((Temp)ds.find(q.objectref()),
-					 (Temp)ds.find(q.index()));
+		Value v = new ArrayValue(ds.find(q.objectref()),
+					 ds.find(q.index()));
 		map.put(v, ds.find(q.src()));
 	    }
 	    public void visit(MONITORENTER q) { visitMONITOR(q); }
@@ -292,8 +301,8 @@ public final class MemoryOptimization
 	    public void visitMONITOR(Quad q) {
 		assert q instanceof MONITORENTER ||
 			    q instanceof MONITOREXIT;
-		for (Iterator it=map.keySet().iterator(); it.hasNext(); ) {
-		    Value v=(Value) it.next();
+		for (Iterator<Value> it=map.keySet().iterator(); it.hasNext(); ) {
+		    Value v = it.next();
 		    if (v.isArray()) continue;
 		    if (!Modifier.isFinal(v.field().getModifiers()))
 			it.remove();
@@ -302,8 +311,9 @@ public final class MemoryOptimization
 	    
 	    public void visit(CALL q) {
 		HMethod calls[] = cg.calls(q.getFactory().getMethod(), q);
-		for (Iterator it=map.keySet().iterator(); it.hasNext(); ) {
-		    Value v = (Value) it.next();
+		for (Iterator<Value> it=map.keySet().iterator();
+		     it.hasNext(); ) {
+		    Value v = it.next();
 		    if (v.isArray()) it.remove();
 		    else if (Modifier.isFinal(v.field().getModifiers()))
 			continue; // final fields can't be written during call
@@ -320,15 +330,15 @@ public final class MemoryOptimization
     abstract static class Value { 
 	boolean isArray() { return false; }
 	HField field() { throw new Error(); }
-	abstract Value map(DisjointSet ds, Quad q, int which_pred);
+	abstract Value map(DisjointSet<Temp> ds, Quad q, int which_pred);
 	static final Temp map(Temp t,
-			      DisjointSet ds, Quad q, int which_pred) {
-	    t = (Temp) ds.find(t);
+			      DisjointSet<Temp> ds, Quad q, int which_pred) {
+	    t = ds.find(t);
 	    if (q instanceof PHI) {
 		PHI phi = (PHI) q;
 		for (int i=0; i<phi.numPhis(); i++)
 		    if (phi.src(i, which_pred).equals(t))
-			return (Temp) ds.find(phi.dst(i));
+			return ds.find(phi.dst(i));
 	    }
 	    return t;
 	}
@@ -340,7 +350,7 @@ public final class MemoryOptimization
 	    this.hf = hf; this.receiver=receiver;
 	}
 	HField field() { return hf; }
-	Value map(DisjointSet ds, Quad q, int which_pred) {
+	Value map(DisjointSet<Temp> ds, Quad q, int which_pred) {
 	    if (receiver==null) return this;
 	    Temp r = map(receiver, ds, q, which_pred);
 	    if (receiver==r) return this;
@@ -363,7 +373,7 @@ public final class MemoryOptimization
 	    this.receiver=receiver; this.length=length;
 	}
 	boolean isArray() { return true; }
-	Value map(DisjointSet ds, Quad q, int which_pred) {
+	Value map(DisjointSet<Temp> ds, Quad q, int which_pred) {
 	    Temp r = map(receiver, ds, q, which_pred);
 	    Temp l = map(length, ds, q, which_pred);
 	    if (receiver==r && length==l) return this;

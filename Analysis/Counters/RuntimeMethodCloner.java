@@ -28,10 +28,12 @@ import harpoon.IR.Quads.QuadSSI;
 import harpoon.Temp.Temp;
 import harpoon.Util.Collections.GenericInvertibleMultiMap;
 import harpoon.Util.Collections.InvertibleMultiMap;
+import harpoon.Util.Collections.SnapshotIterator;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,27 +46,27 @@ import java.util.Set;
  * statistics as we're attempting to report them.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RuntimeMethodCloner.java,v 1.4 2002-04-10 02:59:01 cananian Exp $
+ * @version $Id: RuntimeMethodCloner.java,v 1.5 2002-09-03 15:07:57 cananian Exp $
  */
-public class RuntimeMethodCloner extends MethodMutator {
+public class RuntimeMethodCloner extends MethodMutator<Quad> {
     private static final String classname = "harpoon.Runtime.Counters";
     // map old method names to the new methods they now will be.
-    final Map old2new;
+    final Map<HMethod,HMethod> old2new;
     // methods we'd like to relocate but can't.
-    final Set badboys = new HashSet();
+    final Set<HMethod> badboys = new HashSet<HMethod>();
     // the linker.
     final Linker linker;
     // methods to add a null-check on 'this' to.
-    final Set needsNullCheck = new HashSet();
+    final Set<HMethod> needsNullCheck = new HashSet<HMethod>();
     
     /** Creates a <code>RuntimeMethodCloner</code>. */
     public RuntimeMethodCloner(final HCodeFactory parent, Linker linker) {
-	this(parent, linker, new GenericInvertibleMultiMap());
+	this(parent, linker, new GenericInvertibleMultiMap<HMethod,HMethod>());
     }
     private RuntimeMethodCloner(final HCodeFactory parent, Linker linker,
 				// i'd like new2old to be an InvertibleMap,
 				// but the type declarations aren't cooperating
-				final InvertibleMultiMap new2old) {
+				final InvertibleMultiMap<HMethod,HMethod> new2old) {
         super(new HCodeFactory() {
 		public void clear(HMethod m) { parent.clear(m); }
 		public String getCodeName() { return parent.getCodeName(); }
@@ -72,7 +74,7 @@ public class RuntimeMethodCloner extends MethodMutator {
 		    if (!new2old.containsKey(m))
 			return parent.convert(m);
 		    // this is a new one for us.
-		    HMethod old = (HMethod) new2old.get(m);
+		    HMethod old = new2old.get(m);
 		    HCode hc = convert(old);
 		    try {
 			return hc.clone(m).hcode();
@@ -85,16 +87,17 @@ public class RuntimeMethodCloner extends MethodMutator {
 	this.linker = linker;
 	this.old2new = new2old.invert();
     }
-    protected HCode mutateHCode(HCodeAndMaps input) {
-	HCode hc = input.hcode();
+    protected HCode<Quad> mutateHCode(HCodeAndMaps<Quad> input) {
+	HCode<Quad> hc = input.hcode();
 	// unless this belongs to harpoon.Runtime.Counters, we ignore it.
 	if (!hc.getMethod().getDeclaringClass().getName().equals(classname))
 	    return hc;
 	// otherwise, we look for appropriate calls and rewrite them.
-	HCodeElement[] el = hc.getElements();
-	for (int i=0; i<el.length; i++)
-	    if (el[i] instanceof CALL) {
-		CALL call = (CALL) el[i];
+	for (Iterator<Quad> it=new SnapshotIterator<Quad>(hc.getElementsI());
+	     it.hasNext(); ) {
+	    Quad q = it.next();
+	    if (q instanceof CALL) {
+		CALL call = (CALL) q;
 		// do we want to relocate calls to this method?
 		if (!shouldRelocate(call.method()))
 		    continue;
@@ -121,6 +124,7 @@ public class RuntimeMethodCloner extends MethodMutator {
 					    call.dst(), call.src()));
 		// whoo-hoo! on to the next!
 	    }
+	}
 	// when we relocate a method here, we make it static.  that
 	// means that analyses can't automatically determine that the
 	// 'this' pointer is non-null.  Insert an explicit test to
@@ -138,9 +142,9 @@ public class RuntimeMethodCloner extends MethodMutator {
 	    Quad q2 = new CJMP(qf, method, chkT, new Temp[0]);
 	    Quad q3 = new PHI(qf, method, new Temp[0], 2);
 	    Edge e = method.nextEdge(0);
-	    Quad.addEdge((Quad)e.from(), e.which_succ(), q0, 0);
+	    Quad.addEdge(e.from(), e.which_succ(), q0, 0);
 	    Quad.addEdges(new Quad[] { q0, q1, q2 });
-	    Quad.addEdge(q2, 0, (Quad)e.to(), e.which_pred());
+	    Quad.addEdge(q2, 0, e.to(), e.which_pred());
 	    Quad.addEdge(q2, 1, q3, 0);
 	    Quad.addEdge(q3, 0, q3, 1);
 	    // not in SSI form. (in valid SSA/RSSx/NoSSx form, though).
@@ -192,7 +196,7 @@ public class RuntimeMethodCloner extends MethodMutator {
 	    // done! add it to the cache.
 	    old2new.put(hm, newm);
 	}
-	return (HMethod) old2new.get(hm);
+	return old2new.get(hm);
     }
     private static String replace(String s, String oldstr, String newstr) {
 	StringBuffer sb = new StringBuffer();

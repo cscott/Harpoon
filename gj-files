@@ -66,6 +66,8 @@ Analysis/BasicBlock.java
 Analysis/BasicBlockFactoryInterf.java
 Analysis/BasicBlockInterf.java
 Analysis/ClassHierarchy.java
+Analysis/Counters/EpilogMutator.java
+Analysis/Counters/RuntimeMethodCloner.java
 Analysis/DomTree.java
 Analysis/Instr/RegAlloc.java
 Analysis/InterferenceGraph.java
@@ -87,6 +89,10 @@ Analysis/MemOpt/Util.java
 Analysis/PointsToAnalysis.java
 Analysis/Quads/AbstrCallGraph.java
 Analysis/Quads/CallGraphImpl.java
+Analysis/Quads/ComponentOfReducer.java
+Analysis/Quads/MemoryOptimization.java
+Analysis/Quads/MethodTraceFactory.java
+Analysis/Quads/Nonvirtualize.java
 Analysis/Quads/QuadClassHierarchy.java
 Analysis/Quads/QuadInterferenceGraph.java
 Analysis/Quads/QuadLiveness.java

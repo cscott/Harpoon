@@ -14,6 +14,9 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.THROW;
+import harpoon.Util.Collections.SnapshotIterator;
+
+import java.util.Iterator;
 
 /**
  * <code>MethodTraceFactory</code> adds <code>DEBUG</code> quads
@@ -23,16 +26,16 @@ import harpoon.IR.Quads.THROW;
  * isn't behaving as expected.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodTraceFactory.java,v 1.2 2002-02-25 20:59:23 cananian Exp $
+ * @version $Id: MethodTraceFactory.java,v 1.3 2002-09-03 15:08:04 cananian Exp $
  */
-public class MethodTraceFactory extends MethodMutator {
+public class MethodTraceFactory extends MethodMutator<Quad> {
     
     /** Creates a <code>MethodTraceFactory</code>. */
     public MethodTraceFactory(HCodeFactory parent) {
 	super(parent);
     }
-    public HCode mutateHCode(HCodeAndMaps input) {
-	final HCode hc = input.hcode();
+    public HCode<Quad> mutateHCode(HCodeAndMaps<Quad> input) {
+	final HCode<Quad> hc = input.hcode();
 	QuadVisitor qv = new QuadVisitor() {
 		public void visit(Quad q) { /* do nothing */ }
 		public void visit(METHOD q) {
@@ -51,16 +54,16 @@ public class MethodTraceFactory extends MethodMutator {
 				    ("THROW from "+hc.getMethod()).intern()));
 		}
 	    };
-	Quad[] qa = (Quad[]) hc.getElements();
-	for (int i=0; i<qa.length; i++)
-	    qa[i].accept(qv);
+	for (Iterator<Quad> it=new SnapshotIterator<Quad>(hc.getElementsI());
+	     it.hasNext(); )
+	    it.next().accept(qv);
 	return hc;
     }
     /** helper routine to add a quad on an edge. */
     private static Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
     private static Edge addAt(Edge e, int which_pred, Quad q, int which_succ) {
-	Quad frm = (Quad) e.from(); int frm_succ = e.which_succ();
-	Quad to  = (Quad) e.to();   int to_pred = e.which_pred();
+	Quad frm = e.from(); int frm_succ = e.which_succ();
+	Quad to  = e.to();   int to_pred = e.which_pred();
 	Quad.addEdge(frm, frm_succ, q, which_pred);
 	Quad.addEdge(q, which_succ, to, to_pred);
 	return to.prevEdge(to_pred);
