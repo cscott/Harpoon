@@ -28,6 +28,7 @@ public class Termination {
     AbstractInterferes abstractinterferes;
     ConstraintDependence constraintdependence;
     ExactSize exactsize;
+    ArrayAnalysis arrayanalysis;
 
     public Termination(State state) {
 	this.state=state;
@@ -56,6 +57,7 @@ public class Termination {
 
 	maxsize=new ComputeMaxSize(state);
 	exactsize=new ExactSize(state);
+	arrayanalysis=new ArrayAnalysis(state,this);
 
 	abstractinterferes=new AbstractInterferes(this);
 	generateconjunctionnodes();

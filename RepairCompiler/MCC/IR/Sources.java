@@ -10,12 +10,17 @@ public class Sources {
     }
 
     public boolean setSource(SetDescriptor sd) {
+	if (sd.getSymbol().equals("InodeBitmapBlock"))
+	    return true;
+
 	return false;
     }
     public boolean allocSource(SetDescriptor sd) {
-	return true;
+	return !setSource(sd);
     }
     public SetDescriptor getSourceSet(SetDescriptor sd) {
+	if (sd.getSymbol().equals("InodeBitmapBlock"))
+	    return (SetDescriptor)state.stSets.get("FreeBlock");
 	return null;
     }
     public void generateSourceAlloc(CodeWriter cr,VarDescriptor vd, SetDescriptor sd) {
@@ -29,13 +34,20 @@ public class Sources {
     }
 
     public boolean relsetSource(RelationDescriptor rd, boolean domain) {
-	return false;
+	if (domain)
+	    return setSource(rd.getDomain());
+	else return setSource(rd.getRange());
     }
     public boolean relallocSource(RelationDescriptor rd, boolean domain) {
-	return true;
+	if (domain)
+	    return allocSource(rd.getDomain());
+	else return allocSource(rd.getRange());
     }
+    
     public SetDescriptor relgetSourceSet(RelationDescriptor rd, boolean domain) {
-	return null;
+	if (domain)
+	    return getSourceSet(rd.getDomain());
+	else return getSourceSet(rd.getRange());
     }
     public void relgenerateSourceAlloc(CodeWriter cr,VarDescriptor vd, RelationDescriptor rd, boolean domain) {
 	SetDescriptor sd=null;

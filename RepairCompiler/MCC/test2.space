@@ -1,13 +1,13 @@
 // sEXT2 - Simple File System Example
 // Space Definition Language File
 
-set Block(int) : partition 
+set Block(int) :
     UsedBlock | 
     FreeBlock;
 
 set FreeBlock(int);
 
-set Inode(int) : partition 
+set Inode(int) :
     UsedInode | 
     FreeInode;
 
@@ -23,7 +23,7 @@ set DirectoryInode(int) : RootDirectoryInode;
 
 set RootDirectoryInode(int);
 
-set UsedBlock(int) : partition 
+set UsedBlock(int) :
     SuperBlock | 
     GroupBlock | 
     FileDirectoryBlock | 
@@ -57,17 +57,10 @@ inodeof: DirectoryEntry -> UsedInode (many->1);
 
 contents: UsedInode -> FileDirectoryBlock (1->many);
 
-inodestatus: Inode -> token (many->1);
+inodestatus: Inode -> int (many->1);
 
-blockstatus: Block -> token (many->1);
+blockstatus: Block -> int (many->1);
 
 referencecount: Inode -> int (many->1);
 
 filesize: Inode -> int (many->1);
-
-
-
-
-
-
-

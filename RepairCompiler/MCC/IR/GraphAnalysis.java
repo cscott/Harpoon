@@ -33,7 +33,7 @@ public class GraphAnalysis {
     	    couldremove.addAll(termination.conjunctions);
 	    couldremove.addAll(termination.updatenodes);
 	    couldremove.addAll(termination.consequencenodes);
-	    couldremove.retainAll(cycles);
+	    couldremove.retainAll(nodes);
 
 	    /* Look for constraints which can only be satisfied one way */
 	    

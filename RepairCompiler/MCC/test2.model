@@ -7,48 +7,46 @@
 [], literal(true) => literal(1) in GroupBlock;
 
 // rule 3 - adds the inodetableblock block number to the inodetableblock set
-[], d.g.InodeTableBlock < d.s.NumberofBlocks => 
-d.g.InodeTableBlock in InodeTableBlock; 
+//[], d.g.InodeTableBlock < d.s.NumberofBlocks => 
+//d.g.InodeTableBlock in InodeTableBlock;
 
 // rule 4 - adds the inodebitmapblock block number to the inodebitmapblock set
-[], d.g.InodeBitmapBlock < d.s.NumberofBlocks => 
-d.g.InodeBitmapBlock in InodeBitmapBlock; 
+[], literal(true) => d.g.InodeBitmapBlock in InodeBitmapBlock;
 
 // rule 5 - adds the blockbitmapblock number to the blockbitmapblock set
-[], d.g.BlockBitmapBlock < d.s.NumberofBlocks => 
-d.g.BlockBitmapBlock in BlockBitmapBlock; 
+//[], d.g.BlockBitmapBlock < d.s.NumberofBlocks => 
+//d.g.BlockBitmapBlock in BlockBitmapBlock;
 
 // rule 6 - adds the rootdirectoryinode number to the set
-[], d.s.RootDirectoryInode < d.s.NumberofInodes =>
-d.s.RootDirectoryInode in RootDirectoryInode; 
+//[], d.s.RootDirectoryInode < d.s.NumberofInodes =>
+//d.s.RootDirectoryInode in RootDirectoryInode;
 
 // rule 7 
 delay [for j=literal(0) to d.s.NumberofInodes-literal(1)], 
-!(j in? UsedInode) => j in FreeInode; 
+!(j in? UsedInode) => j in FreeInode;
 
 // rule 8
 delay [for j=literal(0) to d.s.NumberofBlocks-literal(1)], 
-!(j in? UsedBlock) => j in FreeBlock; 
+!(j in? UsedBlock) => j in FreeBlock;
 
 // rule 9
 // for all directoryinodes, loop through there blockptr's and then add
 // all their directoryentries to DirectoryEntry set
-[forall di in DirectoryInode, 
- forall itb in InodeTableBlock, 
- for j=literal(0) to (d.s.blocksize/literal(128))-literal(1), 
- for k=literal(0) to literal(11)], 
- cast(InodeTable,d.b[itb]).itable[di].Blockptr[k] < d.s.NumberofBlocks =>
- cast(DirectoryBlock,d.b[cast(InodeTable,d.b[itb]).itable[di].Blockptr[k]]).de[j]
- in DirectoryEntry;
+//[forall di in DirectoryInode, forall itb in InodeTableBlock, 
+// for j=literal(0) to (d.s.blocksize/literal(128))-literal(1), 
+// for k=literal(0) to literal(11)], 
+// cast(InodeTable,d.b[itb]).itable[di].Blockptr[k] < d.s.NumberofBlocks =>
+// cast(DirectoryBlock,d.b[cast(InodeTable,d.b[itb]).itable[di].Blockptr[k]]).de[j]
+// in DirectoryEntry;
 
 // rule 10
 // all non-zero blocks in an used inodes blockptr list should be 
 // added to the contents relation 
-[forall i in UsedInode, 
- forall itb in InodeTableBlock, 
- for j=literal(0) to literal(11)],
-     !(cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]=literal(0)) =>
-     <i,cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]> in contents; 
+//[forall i in UsedInode, 
+// forall itb in InodeTableBlock, 
+// for j=literal(0) to literal(11)],
+//     !(cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]=literal(0)) =>
+//     <i,cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]> in contents;
 
 
 // rule 11 seems to be imperfect because it is adding directories and files
@@ -60,55 +58,39 @@ delay [for j=literal(0) to d.s.NumberofBlocks-literal(1)],
 // rule 11 
 // for each inode in use, add non-zero, valid blocks mentioned in the 
 // inode's blockptr list in the inodetableblock to fileblock
-[forall i in UsedInode, forall itb in InodeTableBlock, for j=literal(0) to literal(11)],
-cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]<d.s.NumberofBlocks and
-!(cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]=literal(0)) =>
-cast(InodeTable,d.b[itb]).itable[i].Blockptr[j] in FileBlock; // was FileDirectoryBlock
-
-// rule 12
-// if the bit in the inodebitmap is 0 then that inode is marked as
-// free in the inodestatus relation
-[for j=literal(0) to d.s.NumberofInodes-literal(1), forall ibb in InodeBitmapBlock],
-cast(InodeBitmap,d.b[ibb]).inodebitmap[j]=literal(false) =>
-<j,literal(Free)> in inodestatus; 
+//[forall i in UsedInode, forall itb in InodeTableBlock, for j=literal(0) to literal(11)],
+//cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]<d.s.NumberofBlocks and
+//!(cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]=literal(0)) =>
+//cast(InodeTable,d.b[itb]).itable[i].Blockptr[j] in FileBlock;
+// was FileDirectoryBlock
 
 // rule 13
-// same as rule 12/19, but instead with used inodes. 
-[for j=literal(0) to d.s.NumberofInodes-literal(1), forall ibb in InodeBitmapBlock],
-cast(InodeBitmap,d.b[ibb]).inodebitmap[j]=literal(true) =>
-<j,literal(Used)> in inodestatus; 
+// same as rule 12/19, but instead with used inodes.
+[forall j in Inode, forall ibb in InodeBitmapBlock], literal(true) => <j, cast(InodeBitmap,d.b[ibb]).inodebitmap[j]> in inodestatus;
 
 // rule 14
 // adds all non-zero inodenumbers of directory entries to the set
 // FileInode
-[forall de in DirectoryEntry], de.inodenumber<d.s.NumberofInodes and
-!(de.inodenumber = literal(0)) => de.inodenumber in FileInode; 
+//[forall de in DirectoryEntry], de.inodenumber<d.s.NumberofInodes and
+//!(de.inodenumber = literal(0)) => de.inodenumber in FileInode;
 
 // rule 15
 // builds up relation 'inodeof' such that <x,y> means x is a
 // directory entry with inode numbered y
-[forall de in DirectoryEntry], de.inodenumber<d.s.NumberofInodes => 
-<de, de.inodenumber> in inodeof; 
+//[forall de in DirectoryEntry], de.inodenumber<d.s.NumberofInodes => 
+//<de, de.inodenumber> in inodeof;
 
 // rule 16
 // populating the referencecount relation with the referencecount 
 // values for every usedinode
-[forall j in UsedInode, forall itb in InodeTableBlock], literal(true) =>
-<j,cast(InodeTable,d.b[itb]).itable[j].referencecount> in referencecount; 
+//[forall j in UsedInode, forall itb in InodeTableBlock], literal(true) =>
+//<j,cast(InodeTable,d.b[itb]).itable[j].referencecount> in referencecount;
 
 // rule 17 - populate the filesize relation with the sizes inodes' files
-[forall j in UsedInode, forall itb in InodeTableBlock], literal(true) =>
-<j,cast(InodeTable,d.b[itb]).itable[j].filesize> in filesize; 
+//[forall j in UsedInode, forall itb in InodeTableBlock], literal(true) =>
+//<j,cast(InodeTable,d.b[itb]).itable[j].filesize> in filesize;
 
 // rule - similar to rule 19, if the bit in the block bitmap is 0 the that
 // block is marked as free in the blockstatus relation
-[for j=literal(0) to d.s.NumberofBlocks-literal(1), forall bbb in BlockBitmapBlock],
-cast(BlockBitmap,d.b[bbb]).blockbitmap[j]=literal(false) =>
-<j,literal(Free)> in blockstatus; 
+//[forall j in Block, forall bbb in BlockBitmapBlock], literal(true) => <j,cast(BlockBitmap,d.b[bbb]).blockbitmap[j]> in blockstatus;
 
-// rule 19
-// if the bit in the blockbitmap is 1 then that block is marked as 
-// used in the blockstatus relation
-[for j=literal(0) to d.s.NumberofBlocks-literal(1), forall bbb in BlockBitmapBlock],
-cast(BlockBitmap,d.b[bbb]).blockbitmap[j]=literal(true) =>
-<j,literal(Used)> in blockstatus; 
