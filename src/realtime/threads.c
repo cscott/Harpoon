@@ -348,8 +348,8 @@ void settimer() {
   gettimeofday(&time, NULL);
   microsecs = time.tv_sec * 1000000 + time.tv_usec;
   microsecs += quanta.it_value.tv_sec * 1000000 + quanta.it_value.tv_usec;
-  compareSwitch.it_value.tv_sec  = microsecs/1000000;
-  compareSwitch.it_value.tv_usec = microsecs%1000000;
+  compareSwitch.tv_sec  = microsecs/1000000;
+  compareSwitch.tv_usec = microsecs%1000000;
 }
 #endif
 

@@ -27,6 +27,10 @@ void EnableThreadList(struct thread_queue_struct* queue);
 
 void settimer();
 
+void setQuanta(jlong microsecs);
+
+void context_switch();
+
 #ifndef WITH_REALTIME_THREADS_PREEMPT
 void CheckTimeSwitch();
 #endif
