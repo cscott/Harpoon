@@ -30,12 +30,12 @@ import java.util.Map;
  * in an SSI-form codeview, yielding an SSA codeview.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIToSSA.java,v 1.1.2.4 2000-11-16 00:12:17 cananian Exp $
+ * @version $Id: SSIToSSA.java,v 1.1.2.5 2000-11-16 04:49:52 cananian Exp $
  */
 public class SSIToSSA {
     // Return values for the algorithm:
 
-    /** New root element (of the SSI-form graph) */
+    /** New root element (of the SSA-form graph) */
     public final Quad rootQuad;
     /** Map from old ssi temps to new ssa temps. */
     public final TempMap tempMap;
