@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.155 $)dnl
+AC_REVISION($Revision: 1.156 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -204,9 +204,17 @@ fi
 case "$with_classpath" in
 no|yes)  ;;
 *)   LDFLAGS="$LDFLAGS -L$with_classpath"
-     AC_CHECK_LIB(gdk, gdk_image_get)
-     AC_CHECK_LIB(gtk, gtk_object_newv)
+# THESE LIBRARIES SHOULD NOT BE NECESSARY: these dependencies of classpath
+# should be handled 'automagically' by libtool when it links in the
+# classpath libraries; further, including these explicitly breaks builds
+# on platforms on which gtk is not present (on these platforms classpath
+# is configured without gtk support as well).  -- CSA 23-Sep-2003
+#     AC_CHECK_LIB(gdk, gdk_image_get)
+#     AC_CHECK_LIB(gtk, gtk_object_newv)
      AC_CHECK_LIB(gtkpeer, Java_gnu_java_awt_peer_gtk_GtkWindowPeer_create)
+# (note that AC_CHECK_LIB will *not* find libgtkpeer on systems without
+#  gtk support, and will gracefully fail to add -lgtkpeer to LIBS on
+#  these platforms)
      AC_CHECK_LIB(javautil, Java_java_util_TimeZone_getDefaultTimeZoneId)
      AC_CHECK_LIB(javaio, Java_java_io_ObjectInputStream_allocateObject)
      AC_CHECK_LIB(javalangreflect, Java_java_lang_reflect_Array_getLength)
