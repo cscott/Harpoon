@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: quads.tex,v 1.6 1998-09-08 14:34:02 cananian Exp $
+% $Id: quads.tex,v 1.7 1998-09-09 04:36:05 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn,twoside]{article}
 
@@ -9,7 +9,7 @@
 
 \author{C.~Scott~Ananian}
 \title{\Harpoon\ Project Compiler Intermediate Representation}
-\date{\today \\ $ $Revision: 1.6 $ $}
+\date{\today \\ $ $Revision: 1.7 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -19,7 +19,7 @@
 \newcommand{\phifunction}{$\phi$-function}
 
 \begin{document}
-\bibliographystyle{abbrv}
+\bibliographystyle{alpha}
 \maketitle
 
 \section{Conceptual Overview}
@@ -55,7 +55,7 @@ expression.  The \textit{def-use chain} is a data structure that makes
 this efficient: for each statement in the flow graph, the compiler can
 keep a list of pointers to all the \textit{use} sites of variables
 defined there, and a list of pointers to all \textit{definition} sites
-of the variables used there.\ldots
+of the variables used there\ldots .
 
 An improvement on the idea of def-use chains is \textit{static
 single-assignment form}, or \textit{SSA form}, an intermediate
@@ -160,7 +160,7 @@ intended to be targeted by agressive optimizations designed to
 removed those cases with are redundant, impossible, or otherwise
 unnecessary.  The design goal of the IR is that \textit{no} IR
 statement should throw an implicit exception under any 
-circumstance.\footnote{This goal is actual impossible for the java
+circumstance.\footnote{This goal is actually impossible for the java
 bytecode opcode \texttt{aastore}, which throws an
 \texttt{ArrayStoreException} under circumstances which cannot be
 otherwise tested for in java code.  Thus array stores are
@@ -184,7 +184,10 @@ bytecode \texttt{athrow} is translated to an IR \texttt{THROW}.}
 \section{Implementation Details}
 
 The IR described in these notes is defined in the Java package
-\texttt{harpoon.IR.QuadSSA}.  The \texttt{harpoon.IR.QuadSSA.Code}
+\texttt{harpoon.IR.QuadSSA}.  Source code and binaries are available
+at {\tt\small http://lm.lcs.mit.edu/\~{}cananian/Harpoon}.
+
+The \texttt{harpoon.IR.QuadSSA.Code}
 class provides a means to access the QuadSSA form of a given method;
 see the definition of superclass \texttt{harpoon.ClassFile.HCode} and
 the example code in \texttt{harpoon.Main.Main} for details.  The
@@ -196,6 +199,7 @@ graph-oriented methods of the objects.  Its superinterface
 \texttt{harpoon.ClassFile.HCodeElement} defines standard methods to
 get object ID numbers and source file information which
 ought to be implemented for elements of any intermediate representation.
+
 An enumeration of
 \texttt{Quad} types and their uses is provided in figure
 \ref{fig:quads}.  It may be observed that the representation uses both
@@ -205,6 +209,11 @@ classes.  \texttt{HEADER} nodes contain a special link to the
 special subclass of \texttt{HEADER}, \texttt{METHODHEADER}, provides
 information on the assignment of method arguments to compiler
 temporary variables at the start of method code.
+
+With the exception of \texttt{CJMP}, \texttt{SWITCH}, \texttt{PHI},
+\texttt{HEADER}, \texttt{METHODHEADER}, and \texttt{FOOTER}, all
+\texttt{Quad}s have exactly one predecessor and one successor in the
+control flow graph.
 
 \begin{figure*}[!p]
 \begin{tabular}{p{1.25in}p{4.5in}} 
@@ -224,12 +233,11 @@ temporary variables at the start of method code.
 \tt GET & Fetch the value of an object field. \\
 \tt INSTANCEOF & Determine whether an object reference is an instance of a
                  given class; result is a boolean value. \\
-\tt JMP & Unconditional branch.  Unused. \\
 %MONITOR 
 \tt MOVE & Assign one compiler temporary to another. \\
 \tt NEW  & Create a new class object (uninitialized). \\
 \tt NOP  & Do nothing. \\
-\tt OPER & Perform a n-ary operation on set of compiler temporaries.\\
+\tt OPER & Perform a $n$-ary operation on set of compiler temporaries.\\
 \tt PHI  & \phifunction{} representation.\\
 \tt RETURN & Return a value for this method invocation.\\
 \tt SET  & Assign a value to an object field. \\
@@ -242,7 +250,7 @@ temporary variables at the start of method code.
 \label{fig:quads}
 \end{figure*}
 
-\newcommand{\cls}[1]{\item[\normalfont\bf #1]}
+\newcommand{\cls}[1]{{\normalfont\bf #1}}
 \newcommand{\expn}[1]{{\normalfont\it #1}}
 \begin{figure*}
 \texttt{\small%
@@ -255,33 +263,36 @@ temporary variables at the start of method code.
 \item[]
 \item[] \expn{Quadruple statements}
 \item[] abstract class Quad implements HCodeElement
-\cls{AGET}(HCodeElement source, Temp dst, Temp objectref, Temp index)
-\cls{ALENGTH}(HCodeElement source, Temp dst, Temp objectref)
-\cls{ANEW}(HCodeElement source, Temp dst, HClass hclass, Temp dims[])
-\cls{ASET}(HCodeElement source, Temp objectref, Temp index, Temp src)
-\cls{CALL}(HCodeElement source, HMethod method, Temp objectref, Temp
-params[], Temp retval, Temp retex) \expn{// objectref, retval may be null}
-\cls{CJMP}(HCodeElement source, Temp test)
-\cls{CONST}(HCodeElement source, Temp dst, Object value, HClass type)
-\cls{GET}(HCodeElement source, Temp dst, HField field, \\ Temp objectref)
-         \expn{// objectref may be null}
-\cls{HEADER}(HCodeElement source, FOOTER footer)
-\cls{INSTANCEOF}(HCodeElement source, Temp dst, Temp src, HClass hclass)
-\cls{JMP}(HCodeElement source)
-\cls{METHODHEADER}(HCodeElement source, FOOTER footer, Temp params[])
-\cls{MOVE}(HCodeElement source, Temp dst, Temp src)
-\cls{NEW}(HCodeElement source, Temp dst, HClass hclass)
-\cls{NOP}(HCodeElement source)
-\cls{OPER}(HCodeElement source, String opcode, Temp dst, Temp operands[])
-\cls{PHI}(HCodeElement source, Temp dst[], int arity)
-\cls{PHI}(HCodeElement source, Temp dst[], Temp src[][], int arity)
-\cls{RETURN}(HCodeElement source, Temp retval) \expn{// retval may be null}
-\cls{SET}(HCodeElement source, HField field, Temp objectref, \\ Temp src)
-      \expn{// objectref may be null}
-\cls{SWITCH}(HCodeElement source, Temp index, int keys[])
-\cls{THROW}(HCodeElement source, Temp throwable)
+\item[\cls{AGET}](HCodeElement source, Temp dst, Temp objectref, Temp index)
+\item[\cls{ALENGTH}](HCodeElement source, Temp dst, Temp objectref)
+\item[\cls{ANEW}](HCodeElement source, Temp dst, HClass hclass, Temp dims[])
+\item[\cls{ASET}](HCodeElement source, Temp objectref, Temp index, Temp src)
+\item[\cls{CALL}](HCodeElement source, HMethod method, Temp objectref, 
+                  Temp params[], \\ Temp retval, Temp retex) 
+                  \expn{// objectref, retval may be null}
+\item[\cls{CJMP}](HCodeElement source, Temp test)
+\item[\cls{CONST}](HCodeElement source, Temp dst, Object value, HClass type)
+\item[\cls{GET}](HCodeElement source, Temp dst, HField field, \\ 
+	         Temp objectref)  \expn{// objectref may be null}
+\item[\cls{HEADER}](HCodeElement source, FOOTER footer)
+\item[\cls{INSTANCEOF}](HCodeElement source, Temp dst, Temp src, HClass hclass)
+\item[\cls{JMP}](HCodeElement source)
+\item[\cls{METHODHEADER}](HCodeElement source, FOOTER footer, Temp params[])
+\item[\cls{MOVE}](HCodeElement source, Temp dst, Temp src)
+\item[\cls{NEW}](HCodeElement source, Temp dst, HClass hclass)
+\item[\cls{NOP}](HCodeElement source)
+\item[\cls{OPER}](HCodeElement source, String opcode, Temp dst, 
+                  Temp operands[])
+\item[\cls{PHI}](HCodeElement source, Temp dst[], int arity)
+\item[\cls{PHI}](HCodeElement source, Temp dst[], Temp src[][], int arity)
+\item[\cls{RETURN}](HCodeElement source, Temp retval) 
+                   \expn{// retval may be null}
+\item[\cls{SET}](HCodeElement source, HField field, Temp objectref, \\ 
+                 Temp src) \expn{// objectref may be null}
+\item[\cls{SWITCH}](HCodeElement source, Temp index, int keys[])
+\item[\cls{THROW}](HCodeElement source, Temp throwable)
 \item[]
-\item[] \expn{String constants for} opcode \expn{field of} OPER
+\item[] \expn{String constants for} opcode \expn{field of} \cls{OPER}
 \item[] \{  "acmpeq", "d2f", "d2i", "d2l", "dadd", "dcmpg",
 "dcmpl", "ddiv", "dmul", "dneg", "drem", "dsub", "f2d", "f2i", "f2l",
 "fadd", "fcmpg", "fcmpl", "fdiv", "fmul", "fneg", "frem", "fsub",
@@ -289,14 +300,14 @@ params[], Temp retval, Temp retex) \expn{// objectref, retval may be null}
 "icmpge", "icmpgt", "idiv", "imul", "ineg", "ior", "irem", "ishl",
 "ishr", "isub", "iushr", "ixor", "l2d", "l2f", "l2i", "ladd", "land",
 "lcmpeq", "lcmpge", "lcmpgt", "ldiv", "lmul", "lneg", "lor", "lrem",
-"lshl", "lshr", "lsub", "lushr", "lxor"
-\item[] \}
+"lshl", "lshr", "lsub", "lushr", "lxor", "move"
+\item[] \};
 \end{description}
 }
 
+\caption{Classes comprising the QuadSSA intermediate representation.
 Only the constructors are shown; the object field variables correspond
-exactly to the names of the constructor arguments.
-\caption{Classes comprising the QuadSSA intermediate representation}
+exactly to the names of the constructor arguments.}
 \label{fig:classes}
 \end{figure*}
 
