@@ -20,8 +20,9 @@ FILE: foreach $f (split(/\s+/,`make list`)) {
     $_ = <FH>;
     close FH;
 
-    # check for header string on first line.
-    if (! m|^// .*, created\s+|) {
+    # check for header string (with timestamp) on first line.
+    if (! m|^// .*, created\s+|
+	||m|^// .*, created\s+by\s+.*$|m) {
 	# basename of source file.
 	$basename=basename($f);
 	# get creation date from RCS log
@@ -32,10 +33,14 @@ FILE: foreach $f (split(/\s+/,`make list`)) {
 	$date=$1; $author=$2;
 	($year,$mon,$day,$hour,$min,$sec)=
 	    ($date=~m|(\d+)/(\d+)/(\d+)\D+(\d+):(\d+):(\d+)|);
-	$time=timegm($sec,$min,$hour,$day,$mon,$year);
+	$time=timegm($sec,$min,$hour,$day,$mon-1,$year-1900);
 	$date=ctime($time); $date=~s/$NL$//;
 	# add header string.
-	s|^|"// $basename, created $date by $author$NL"|e;
+	if (m|^// .*, created\s+by\s+.*$|m) {
+	    s|^(// .*, created\s+)(by\s+.*)$|$1.$date." ".$2|me;
+	} else {
+	    s|^|"// $basename, created $date by $author$NL"|e;
+	}
     }
     # insert copyright string if necessary.
     if (! /GNU GPL/m) {
