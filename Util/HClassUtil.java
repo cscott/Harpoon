@@ -11,7 +11,7 @@ import harpoon.ClassFile.Linker;
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.6.2.10 2000-03-30 22:17:14 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.6.2.11 2000-10-20 16:46:30 cananian Exp $
  */
 public abstract class HClassUtil  {
     // Only static methods.
@@ -99,10 +99,11 @@ public abstract class HClassUtil  {
 	// is primitive by this point.
 	Util.assert(a.getLinker()==b.getLinker());
 	if (a.isArray() && b.isArray()) {
+	    Linker linker = a.getLinker();
 	    int ad = dims(a), bd = dims(b), d = (ad<bd)?ad:bd;
 	    for (int i=0; i<d; i++)
 		{ a=a.getComponentType(); b=b.getComponentType(); }
-	    return arrayClass(a.getLinker(), commonParent(a, b), d);
+	    return arrayClass(linker, commonParent(a, b), d);
 	}
 	if (a.isInterface() && b.isInterface())
 	    return commonInterface(a, b);
