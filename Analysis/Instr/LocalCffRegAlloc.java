@@ -4,6 +4,7 @@
 package harpoon.Analysis.Instr;
 
 import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Generic.Frame.SpillException;
 import harpoon.Backend.Generic.Code;
 import harpoon.Analysis.DataFlow.BasicBlock;
 import harpoon.Analysis.DataFlow.DataFlowBasicBlockVisitor;
@@ -26,6 +27,7 @@ import harpoon.Util.BinHeapPriorityQueue;
 import harpoon.Util.UnmodifiableIterator;
 
 import java.util.Set;
+import java.util.List;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Arrays;
@@ -49,7 +51,7 @@ import java.util.Iterator;
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.29 1999-08-03 03:41:21 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.30 1999-08-03 05:10:54 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -110,13 +112,21 @@ public class LocalCffRegAlloc extends RegAlloc {
 	             memory with their final values (though
 		     intermediate values may not be propagated to
 		     memory)
-	     <B>NOTE:</B> Current BasicBlock implementation does not
-	                  support modification of the underlying
-			  instruction stream while the BasicBlock is
-			  in use.  Therefore, after calling this
-			  method the caller should throw away 'bb' and
-			  construct a new BasicBlock.
-
+	<B>NOTE:</B> Current BasicBlock implementation does not
+                     support modification of the underlying
+		     instruction stream while the BasicBlock is 
+		     in use.  Therefore, after calling this
+		     method the caller should throw away 'bb' and
+		     construct a new BasicBlock.
+	<B>TODO:</B> Make the system generic by 
+                     1. Getting SpillCandidates from Frame
+		     2. Moving from a PriorityQueue to a Tree
+		     3. Figure out a way to translate the
+		     SpillCandidates (which take the form of Sets of
+		     Registers) into Pseudo-Registers (necessary to
+		     track usage patterns within the basic blocks and
+		     use those patterns to make an 'informed' decision
+		     about which SpillCandidate to use)
     */
     private void localRegAlloc(BasicBlock bb, LiveVars lv) {
 	CloneableIterator instrs = 
@@ -294,11 +304,31 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 		} else { // regFile does NOT contain 'i'
 
-		    Temp reg = 
-			regFile.getFreeRegister
-			(i, (CloneableIterator)jnstrs.clone());
-		    if (reg == null) {
+		    Temp reg = null;
+
+		    try {
+			Iterator suggestions = 
+			    frame.suggestRegAssignment
+			    (i, regFile.toMap());
+
+			List regList = (List) suggestions.next();
+			
+			if (regList.size() == 1) { // common case
+			    reg = (Temp) regList.get(0);
+			} else {
+			    // crap.  won't be able to isolate this
+			    // change.   rearrange this code, moving
+			    // the List into the section after the
+			    // try-block 
+			}
+			/* REMEMBER: reimplement forward scan of instrs
+			  Temp reg = 
+			   regFile.getFreeRegister
+			   (i, (CloneableIterator)jnstrs.clone());
+			*/
+		    } catch (SpillException spill) {
 			// need to evict a value
+
 			Util.assert(pregPriQueue.size() > 0,
 				    "Can't evict a value if there are " +
 				    "no entries in the pseudo-register " +
@@ -322,12 +352,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 			if (DEBUG) 
 			    System.out.println
 				("EVICT: Instr " + j + " " + regFile);
-			
-			
 		    }
 
 		    regFile.put(reg, i);
-		    
+
 		    InstrMEM load =
 			new InstrMEM(inf, null, "FSK-LOAD `d0, `s0", 
 				     new Temp[] { reg },

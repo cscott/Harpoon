@@ -33,7 +33,7 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.21 1999-07-30 20:19:25 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.22 1999-08-03 05:10:57 pnkfelix Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -97,6 +97,9 @@ public abstract class Frame {
 
     /** Generates a new set of <code>Instr</code>s for memory traffic
 	from RAM to the register file.
+	@param <code>reg</code> The register <code>Temp</code> holding
+	       the value that will be loaded from <code>offset</code>
+	       in memory. 
 	@param <code>offset</code> The stack offset.  This is an
 	       ordinal number, it is NOT meant to be a multiple of
 	       some byte size.  This frame should perform the
@@ -112,6 +115,9 @@ public abstract class Frame {
 
     /** Generates a new set of <code>Instr</code>s for memory traffic
 	from the register file to RAM. 
+	@param <code>reg</code> The register <code>Temp</code> holding
+	       the value that will be stored at <code>offset</code> in
+	       memory. 
 	@param <code>offset</code> The stack offset.  This is an
 	       ordinal number, it is NOT meant to be a multiple of
 	       some byte size.  This frame should perform the
@@ -131,37 +137,61 @@ public abstract class Frame {
     /** Analyzes <code>regfile</code> to find free registers that
 	<code>t</code> can be assigned to.  
 	<BR> <B>effects:</B> Either returns an <code>Iterator</code>
-	     possible assignments (though this is not guaranteed to be
-	     a complete list of all possible choices, merely the ones 
-	     that this <code>Frame</code> chose to find), or throws a
-	     <code>Frame.SpillException</code> with a set of possible
-	     spills. 
+	     of possible assignments (though this is not guaranteed to
+	     be a complete list of all possible choices, merely the
+	     ones that this <code>Frame</code> chose to find), or
+	     throws a <code>Frame.SpillException</code> with a set of
+	     possible spills. 
 	@param t <code>Temp</code> that needs to be assigned to a set
    	         of Registers. 
 	@param regfile A mapping from Register <code>Temp</code>s to
 	               NonRegister <code>Temp</code>s representing the
-		       current state of the register file. 
+		       current state of the register file.  Empty
+		       Register <code>Temp</code>s should simply not
+		       have an entry in <code>regfile</code> (as
+		       opposed to the alternative of mapping to some
+		       NoValue object)
 	@return A <code>List</code> <code>Iterator</code> of Register
-                <code>Temp</code>s.  Each <code>List</code> represents
-		a safe place for the value in <code>t</code> to be
-		stored (safe with regard to the architecture targeted
-		and the type of <code>t</code>, <b>not</b> with regard
-		to the current contents of <code>regfile</code> or the
-		data-flow of the procedure being analyzed).  The
-		elements of the <code>List</code> in the
-		<code>Iterator</code> returned are ordered according
-		to proper placement of the Register-bitlength words of
-		the value in <code>t</code>, low-order words first.
-     */
-    public abstract Iterator suggestRegAssignment(Temp t, Map regfile) throws Frame.SpillException;
+	        <code>Temp</code>s.  The <code>Iterator</code> is
+	        guaranteed to have at least one element.  Each
+	        <code>List</code> represents a safe place for the
+	        value in <code>t</code> to be stored (safe with regard
+	        to the architecture targeted and the type of
+	        <code>t</code>, <b>not</b> with regard to the current
+	        contents of <code>regfile</code> or the data-flow of
+	        the procedure being analyzed).  The elements of each
+	        <code>List</code> in the <code>Iterator</code>
+	        returned are ordered according to proper placement of
+	        the Register-bitlength words of the value in
+	        <code>t</code>, low-order words first.  
+	@exception <code>Frame.SpillException</code> if the register
+	           file represented by <code>regfile</code> does not
+		   have any Register <code>Temp</code>s free to hold a
+		   new value of the type of <code>t</code>.  This
+		   exception will contain the necessary information to
+		   spill some set of registers.  After spilling, a 
+		   second call to <code>suggestRegAssignment()</code>
+		   can not throw an exception, as long as no new
+		   values have been loaded into the register file
+		   since the point of spilling.
+    */
+    public abstract Iterator suggestRegAssignment(Temp t, Map regfile) 
+	throws Frame.SpillException;
 
     /** SpillException tells a register allocator which
 	<code>Temp</code>s are appropriate for spilling in order to
-	allocate space for another <code>Temp</code>.  In the common
-	case, <code>this.getPotentialSpills()</code> will just return
-	an <code>Iterator</code> that iterates through singleton
-	<code>Set</code>s for all of the registers. 
-     */
+	allocate space for another <code>Temp</code>.  
+
+	In the common case, <code>this.getPotentialSpills()</code>
+	will just return an <code>Iterator</code> that iterates
+	through singleton <code>Set</code>s for all of the registers.  
+	
+	It is the responsibility of the register allocator to actually
+	decide which set of registers to spill, to generate the code
+	to save the values within said registers to their appropriate
+	memory locations, and to generate the code to put those values
+	back in the register file when they are needed next.
+    */
     public static abstract class SpillException extends Exception {
 	public SpillException() { super(); }
 	public SpillException(String s) { super(s); }
