@@ -28,7 +28,7 @@ import java.util.Collections;
  * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.13 1999-06-30 20:43:33 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.14 1999-07-17 11:59:25 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -649,7 +649,20 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
     }	    
 
-
+    /**javac 1.1 sez this class (which is only used inside the 
+     * outputSelectionMethod below) has to be out here, instead of
+     * inside the method.  Actually, it doesn't specifically, but I can't
+     * figure out how to properly qualify the references to PredicateBuilder
+     * below to make them work right with javac 1.1, which gets confused 
+     * over whose inner class PredicateBuilder is, actually.  
+     * jikes likes fine, either way. go figure. [CSA] */
+    static class PredicateBuilder extends Spec.DetailVisitor {
+	final StringBuffer predicate = new StringBuffer("true");
+	public void visit(Spec.Detail d) { /* do nothing */ }
+	public void visit(Spec.DetailPredicate d) { 
+	    predicate.append("&& ("+d.predicate_string+")");
+	}
+    }
     /** Writes the Instruction Selection Method to <code>out</code>.
 	<BR> <B>modifies:</B> <code>out</code>
 	<BR> <B>effects:</B>
@@ -667,14 +680,6 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	final String expArg = "expArg";
 	final String stmArg = "stmArg";
 	final String indent = "\t\t\t";
-
-	class PredicateBuilder extends Spec.DetailVisitor {
-	    StringBuffer predicate = new StringBuffer("true");
-	    public void visit(Spec.Detail d) { /* do nothing */ }
-	    public void visit(Spec.DetailPredicate d) { 
-		predicate.append("&& ("+d.predicate_string+")");
-	    }
-	}
 
 	Spec.RuleVisitor srv = new Spec.RuleVisitor() {
 	    public void visit(Spec.Rule r) {
