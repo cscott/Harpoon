@@ -87,12 +87,10 @@ public class ATRMain {
 		(pipelineNumber == 3)) {
 		alert = new Alert(new CORBA(args), args[3]);
 	    } else if (pipelineNumber == 4) {
-		alert = new Alert(new EventChannel(args), args[3]);
+		alert = new Alert(new EventChannel(args, args[3]), args[4]);
 		pipelineNumber = 3;
 	    }
 	    if (pipelineNumber == 1) {
-		alert = new Alert(new CORBA(args), args[3]);
-		
 		Node robCross = new RobertsCross(null);
 		Node thresh = new Thresholding(null);
 		Label label = new Label(Label.DEFAULT1, null, null);
@@ -110,7 +108,6 @@ public class ATRMain {
 		(new ATR(new CORBA(args), args[2], pipe)).run();
 	    }
 	    else if (pipelineNumber == 3) {
-		alert = new Alert(new CORBA(args), args[3]);
 		Node cleanCache = new Cache(1, null, null);
 		Node n = new Node();
 		LabelBlue labelBlue = new LabelBlue(null, null);
@@ -144,7 +141,6 @@ public class ATRMain {
 	    }
 	    else if (pipelineNumber == 4) {
 		// "contactService"
-		alert = new Alert(new EventChannel(args, args[2]), args[4]);
 		Node cleanCache = new Cache(1, null, null);
 		Node n = new Node();
 		LabelBlue labelBlue = new LabelBlue(null, null);
