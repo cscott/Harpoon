@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_AttributeSpecification</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_AttributeSpecification.java,v 1.1 1998-10-10 07:53:32 cananian Exp $
+ * @version $Id: IIR_AttributeSpecification.java,v 1.2 1998-10-10 11:05:35 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -30,7 +30,7 @@ public class IIR_AttributeSpecification extends IIR_Declaration
     { return _entity_class; }
  
     //MEMBERS:  
-    IIR_DesignatorList entity_name_list;
+    public IIR_DesignatorList entity_name_list;
 
 // PROTECTED:
     IIR _value;

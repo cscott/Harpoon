@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_TypeDeclaration</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_TypeDeclaration.java,v 1.1 1998-10-10 07:53:45 cananian Exp $
+ * @version $Id: IIR_TypeDeclaration.java,v 1.2 1998-10-10 11:05:36 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -24,7 +24,7 @@ public class IIR_TypeDeclaration extends IIR_Declaration
     { return _type; }
  
     //MEMBERS:  
-    IIR_AttributeSpecificationList attributes;
+    public IIR_AttributeSpecificationList attributes;
 
 // PROTECTED:
     IIR_TypeDefinition _type;

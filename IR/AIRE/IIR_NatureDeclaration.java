@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_NatureDeclaration</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_NatureDeclaration.java,v 1.2 1998-10-10 09:21:38 cananian Exp $
+ * @version $Id: IIR_NatureDeclaration.java,v 1.3 1998-10-10 11:05:36 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -24,7 +24,7 @@ public class IIR_NatureDeclaration extends IIR_Declaration
     { return _nature; }
  
     //MEMBERS:  
-    IIR_AttributeSpecificationList attributes;
+    public IIR_AttributeSpecificationList attributes;
 
 // PROTECTED:
     IIR_NatureDefinition _nature;

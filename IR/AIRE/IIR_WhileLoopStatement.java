@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_WhileLoopStatement</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_WhileLoopStatement.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
+ * @version $Id: IIR_WhileLoopStatement.java,v 1.3 1998-10-10 11:05:37 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -24,8 +24,8 @@ public class IIR_WhileLoopStatement extends IIR_SequentialStatement
     { return _while_condition; }
  
     //MEMBERS:  
-    IIR_SequentialStatementList sequence_of_statements;
-    IIR_DeclarationList loop_declarations;
+    public IIR_SequentialStatementList sequence_of_statements;
+    public IIR_DeclarationList loop_declarations;
 
 // PROTECTED:
     IIR _while_condition;

@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_DesignFile</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_DesignFile.java,v 1.1 1998-10-10 07:53:35 cananian Exp $
+ * @version $Id: IIR_DesignFile.java,v 1.2 1998-10-10 11:05:36 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -30,9 +30,9 @@ public class IIR_DesignFile extends IIR
     { return _source_language; }
  
     //MEMBERS:  
-    static IIR_DesignFileList design_files;
-    IIR_CommentList comments;
-    IIR_LibraryUnitList library_units;
+    public static IIR_DesignFileList design_files;
+    public IIR_CommentList comments;
+    public IIR_LibraryUnitList library_units;
 
 // PROTECTED:
     IIR_Identifier _name;

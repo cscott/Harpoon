@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_ConcurrentProcedureCallStatement</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ConcurrentProcedureCallStatement.java,v 1.1 1998-10-10 07:53:34 cananian Exp $
+ * @version $Id: IIR_ConcurrentProcedureCallStatement.java,v 1.2 1998-10-10 11:05:35 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -27,8 +27,8 @@ public class IIR_ConcurrentProcedureCallStatement extends IIR_ConcurrentStatemen
     { _procedure_name = procedure_name; }
  
     //MEMBERS:  
-    IIR_AssociationList actual_parameter_part;
-    IIR_SequentialStatementList process_statement_part;
+    public IIR_AssociationList actual_parameter_part;
+    public IIR_SequentialStatementList process_statement_part;
 
 // PROTECTED:
     boolean _postponed;

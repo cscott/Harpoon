@@ -9,7 +9,7 @@ import java.util.Hashtable;
  * <code>IIR_EnumerationTypeDefinition</code> base type.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_EnumerationSubtypeDefinition.java,v 1.2 1998-10-10 09:21:38 cananian Exp $
+ * @version $Id: IIR_EnumerationSubtypeDefinition.java,v 1.3 1998-10-10 11:05:36 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -41,7 +41,7 @@ public class IIR_EnumerationSubtypeDefinition extends IIR_EnumerationTypeDefinit
     public void release() { /* do nothing */ }
  
     //MEMBERS:  
-	// GETS ENUMERATION_LITERALS FROM PARENT_CLASS.
+	// GETS ENUMERATION_LITERALS FROM PARENT_CLASS. FIXME?
 	//public IIR_EnumerationLiteralList enumeration_literals;
 
 // PROTECTED:

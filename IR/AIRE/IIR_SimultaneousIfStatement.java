@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_SimultaneousIfStatement</code>
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_SimultaneousIfStatement.java,v 1.1 1998-10-10 07:53:44 cananian Exp $
+ * @version $Id: IIR_SimultaneousIfStatement.java,v 1.2 1998-10-10 11:05:36 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -30,8 +30,8 @@ public class IIR_SimultaneousIfStatement extends IIR_SimultaneousStatement
     public IIR_SimultaneousElsif get_elsif(){return _elsif;}
  
     //MEMBERS:  
-    IIR_SimultaneousStatementList then_statement_list;
-    IIR_SimultaneousStatementList else_statement_list;
+    public IIR_SimultaneousStatementList then_statement_list;
+    public IIR_SimultaneousStatementList else_statement_list;
 
 // PROTECTED:
     IIR _condition;

@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_BlockConfiguration</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_BlockConfiguration.java,v 1.1 1998-10-10 07:53:32 cananian Exp $
+ * @version $Id: IIR_BlockConfiguration.java,v 1.2 1998-10-10 11:05:35 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -24,8 +24,8 @@ public class IIR_BlockConfiguration extends IIR_ConfigurationItem
     { return _block_specification; }
  
     //MEMBERS:  
-    IIR_DeclarationList use_clause_list;
-    IIR_ConfigurationItemList configuration_item_list;
+    public IIR_DeclarationList use_clause_list;
+    public IIR_ConfigurationItemList configuration_item_list;
 
 // PROTECTED:
     IIR _block_specification;

@@ -6,7 +6,7 @@ package harpoon.IR.AIRE;
  * zero or more <code>IIR_BreakElement</code>s.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_BreakList.java,v 1.1 1998-10-10 07:53:32 cananian Exp $
+ * @version $Id: IIR_BreakList.java,v 1.2 1998-10-10 11:05:35 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -19,7 +19,6 @@ public class IIR_BreakList extends IIR_List
     //CONSTRUCTOR:
     public IIR_BreakList() { }
     //METHODS:  
-    //MEMBERS:  
     public void prepend_element(IIR_BreakElement element)
     { super._prepend_element(element); }
     public void append_element(IIR_BreakElement element)
@@ -48,6 +47,7 @@ public class IIR_BreakList extends IIR_List
     { return (IIR_BreakElement)super._get_last_element(); }
     public int get_element_position(IIR_BreakElement element)
     { return super._get_element_position(element); }
+    //MEMBERS:  
 
 // PROTECTED:
 } // END class

@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_SimultaneousProceduralStatement</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_SimultaneousProceduralStatement.java,v 1.1 1998-10-10 07:53:44 cananian Exp $
+ * @version $Id: IIR_SimultaneousProceduralStatement.java,v 1.2 1998-10-10 11:05:36 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -18,8 +18,8 @@ public class IIR_SimultaneousProceduralStatement extends IIR_SimultaneousStateme
     public IIR_SimultaneousProceduralStatement() { }
     //METHODS:  
     //MEMBERS:  
-    IIR_DeclarationList procedural_declarative_part;
-    IIR_SequentialStatementList procedural_statement_part;
+    public IIR_DeclarationList procedural_declarative_part;
+    public IIR_SequentialStatementList procedural_statement_part;
 
 // PROTECTED:
 } // END class

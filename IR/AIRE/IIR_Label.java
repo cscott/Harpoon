@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_Label</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_Label.java,v 1.1 1998-10-10 07:53:37 cananian Exp $
+ * @version $Id: IIR_Label.java,v 1.2 1998-10-10 11:05:36 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -24,7 +24,7 @@ public class IIR_Label extends IIR_Declaration
     { return _statement; }
  
     //MEMBERS:  
-    IIR_AttributeSpecificationList attributes;
+    public IIR_AttributeSpecificationList attributes;
 
 // PROTECTED:
     IIR_SequentialStatement _statement;

@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_SimultaneousAlternative</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_SimultaneousAlternative.java,v 1.1 1998-10-10 07:53:43 cananian Exp $
+ * @version $Id: IIR_SimultaneousAlternative.java,v 1.2 1998-10-10 11:05:36 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -18,7 +18,7 @@ public class IIR_SimultaneousAlternative extends IIR_Tuple
     
     //METHODS:  
     //MEMBERS:  
-    IIR_SimultaneousStatementList sequence_of_statements;
+    public IIR_SimultaneousStatementList sequence_of_statements;
 
 // PROTECTED:
 } // END class

@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_ComponentConfiguration</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ComponentConfiguration.java,v 1.1 1998-10-10 07:53:33 cananian Exp $
+ * @version $Id: IIR_ComponentConfiguration.java,v 1.2 1998-10-10 11:05:35 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -36,9 +36,9 @@ public class IIR_ComponentConfiguration extends IIR_ConfigurationItem
     { return _block_configuration; }
  
     //MEMBERS:  
-    IIR_DesignatorList instantiation_list;
-    IIR_AssociationList generic_map_aspect;
-    IIR_AssociationList port_map_aspect;
+    public IIR_DesignatorList instantiation_list;
+    public IIR_AssociationList generic_map_aspect;
+    public IIR_AssociationList port_map_aspect;
 
 // PROTECTED:
     IIR _component_name;

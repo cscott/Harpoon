@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_CaseStatementAlternative</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_CaseStatementAlternative.java,v 1.2 1998-10-10 09:58:34 cananian Exp $
+ * @version $Id: IIR_CaseStatementAlternative.java,v 1.3 1998-10-10 11:05:35 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -18,7 +18,7 @@ public abstract class IIR_CaseStatementAlternative extends IIR_Tuple
     
     //METHODS:  
     //MEMBERS:  
-    IIR_SequentialStatementList sequence_of_statements;
+    public IIR_SequentialStatementList sequence_of_statements;
 
 // PROTECTED:
 } // END class

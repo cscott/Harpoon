@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_DisconnectionSpecification</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_DisconnectionSpecification.java,v 1.1 1998-10-10 07:53:35 cananian Exp $
+ * @version $Id: IIR_DisconnectionSpecification.java,v 1.2 1998-10-10 11:05:36 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -30,7 +30,7 @@ public class IIR_DisconnectionSpecification extends IIR_Declaration
     { return _time_expression; }
  
     //MEMBERS:  
-    IIR_DesignatorList guarded_signal_list;
+    public IIR_DesignatorList guarded_signal_list;
 
 // PROTECTED:
     IIR_TypeDefinition _type_mark;

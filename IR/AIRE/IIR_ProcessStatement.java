@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_ProcessStatement</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ProcessStatement.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
+ * @version $Id: IIR_ProcessStatement.java,v 1.3 1998-10-10 11:05:36 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -24,8 +24,8 @@ public class IIR_ProcessStatement extends IIR_ConcurrentStatement
     { return _postponed; }
  
     //MEMBERS:  
-    IIR_DeclarationList process_declarative_part;
-    IIR_SequentialStatementList process_statement_part;
+    public IIR_DeclarationList process_declarative_part;
+    public IIR_SequentialStatementList process_statement_part;
 
 // PROTECTED:
     boolean _postponed;

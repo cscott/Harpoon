@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_ConcurrentGenerateForStatement</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ConcurrentGenerateForStatement.java,v 1.1 1998-10-10 07:53:33 cananian Exp $
+ * @version $Id: IIR_ConcurrentGenerateForStatement.java,v 1.2 1998-10-10 11:05:35 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -24,8 +24,8 @@ public class IIR_ConcurrentGenerateForStatement extends IIR_ConcurrentStatement
     { return _generate_parameter_specification; }
  
     //MEMBERS:  
-    IIR_DeclarationList block_declarative_part;
-    IIR_ConcurrentStatementList concurrent_statement_part;
+    public IIR_DeclarationList block_declarative_part;
+    public IIR_ConcurrentStatementList concurrent_statement_part;
 
 // PROTECTED:
     IIR_ConstantDeclaration _generate_parameter_specification;
