@@ -3,6 +3,7 @@
 #include <time.h>
 #include <fstream.h>
 #include <iostream.h>
+#include "classlist.h"
 #include "model.h"
 #include "token.h"
 #include "typeparser.h"
@@ -240,9 +241,10 @@ bool model::docheck()
       if (!po->processconstraint(constraintarray[i]))	
 	{
 	  found=true;
-#ifndef TOOL
-	  t=true; //Got to keep running
+#ifdef TOOL
+	  break;
 #endif
+	  t=true; //Got to keep running
 	}
     }
   } while(t);

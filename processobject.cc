@@ -195,11 +195,11 @@ bool processobject::processconstraint(Constraint *c) {
 	if (processstatement(c->getstatement(),st->env)!=PTRUE) {
 #ifdef TOOL
 	  printf("Constraint violation\n");
-	  printf("   Constraint: "); c->print();
-	  printf("   Statement: "); c->getstatement()->print(); printf("\n");
-	  printf("   Curr. state: "); st->print(globalmodel);
+	  printf("   Violated constraint: "); c->print();
+	  printf("   State for which it was violated: "); st->print(globalmodel);
+	  printf("  Current value(s):");
 	  c->getstatement()->print_sets(st->env, globalmodel);
-	  printf("\n");
+	  printf("\n\n");
 #endif
 
 #ifdef REPAIR

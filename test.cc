@@ -40,9 +40,8 @@ bool doanalysis()
 
 #ifdef DEBUGMESSAGES
   exportmodel->getdomainrelation()->print();
-#endif
-
   printf("Time used for analysis(us): %ld\n",t);
+#endif
 
   return found;
 }

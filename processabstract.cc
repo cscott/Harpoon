@@ -963,11 +963,11 @@ void RelationSet::print(Hashtable *env, model *m)
   case TYPE_SET: {
     if (set->gettype()==SET_label) 
       {
-	printf("(%s,", left);
+	printf("%s=", left);
 	DomainSet *ds=m->getdomainrelation()->getset(set->getname());
 	Element *ele = (Element *) env->get(left);
 	ele->print();
-	printf(")\n");
+	printf("\n");
       }
   }}
 }

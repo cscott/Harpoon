@@ -291,25 +291,25 @@ void Setexpr::print_size(Hashtable *stateenv, model *m)
 {
   switch(type) {
   case SETEXPR_LABEL:{
-    printf("   sizeof(");
+    printf("sizeof(");
     setlabel->print();
-    printf(") = ");  
+    printf(")=");  
 
     DomainRelation *dr = m->getdomainrelation();
     Hashtable *env = m->gethashtable();
     DomainSet *dset = dr->getset(setlabel->getname());
     WorkSet *ws = dset->getset();
 
-    printf("%d\n", ws->size());
+    printf("%d", ws->size());
     break;
   }
 
   case SETEXPR_REL:{
-    printf("   sizeof(");
+    printf("sizeof(");
     label->print();
     printf(".");
     relation->print();
-    printf(") = ");  
+    printf(")=");  
 
     Element *key = (Element *) stateenv->get(label->label());
 
@@ -320,16 +320,16 @@ void Setexpr::print_size(Hashtable *stateenv, model *m)
    
     WorkSet *ws = wr->getset(key);
 
-    printf("%d\n", ws->size());
+    printf("%d", ws->size());
     break;
   }
 
   case SETEXPR_INVREL:{
-    printf("   sizeof(");
+    printf("sizeof(");
     label->print();
     printf(".~");
     relation->print();
-    printf(") = ");  
+    printf(")=");  
 
     Element *key = (Element *) stateenv->get(label->label());
 
@@ -341,7 +341,7 @@ void Setexpr::print_size(Hashtable *stateenv, model *m)
    
     WorkSet *ws = wr->invgetset(key);
 
-    printf("%d\n", ws->size());
+    printf("%d", ws->size());
     break;
   }
   }
@@ -352,9 +352,9 @@ void Setexpr::print_value(Hashtable *stateenv, model *m)
 {
   switch(type) {
   case SETEXPR_LABEL:{
-    printf("   ");
+    //printf("   ");
     setlabel->print();
-    printf(" = ");  
+    printf("=");  
 
     DomainRelation *dr = m->getdomainrelation();
     Hashtable *env = m->gethashtable();
@@ -464,7 +464,7 @@ void Valueexpr::print_value(Hashtable *stateenv, model *m) {
   label->print();
   printf(".");
   relation->print();
-  printf(" = ");  
+  printf("=");
 
   Element *key = (Element *) stateenv->get(label->label());
 
@@ -476,7 +476,7 @@ void Valueexpr::print_value(Hashtable *stateenv, model *m) {
   Element *elem = (Element *) wr->getobj(key);
 
   elem->print();
-  printf("\n");
+  //printf("\n");
 }
 
 
@@ -776,6 +776,7 @@ void Predicate::print_sets(Hashtable *stateenv, model *m) {
   case PREDICATE_GTE:
   case PREDICATE_GT:
     valueexpr->print_value(stateenv, m);
+    printf("; ");
     elementexpr->print_value(stateenv, m);
     break;
   case PREDICATE_SET:    
@@ -860,6 +861,7 @@ void Statement::print_sets(Hashtable *stateenv, model *m) {
   case STATEMENT_OR:
   case STATEMENT_AND:
     left->print_sets(stateenv, m);
+    printf("; ");
     right->print_sets(stateenv, m);
     break;
   case STATEMENT_NOT:
@@ -869,6 +871,7 @@ void Statement::print_sets(Hashtable *stateenv, model *m) {
     pred->print_sets(stateenv, m);
     break;
   }
+  //printf("\n");
 }
 
 
@@ -938,7 +941,7 @@ void Constraint::print() {
       printf(",");
     quantifiers[i]->print();
   }
-  printf("],");
+  printf("], ");
   if (statement!=NULL) {
     statement->print();
   }

@@ -111,23 +111,52 @@ Element::Element(Element * o) {
 void Element::print() {
   switch(typevalue) {
   case ELEMENT_INT:
+#ifndef TOOL
     printf("Int(%d)",integervalue);
+#else 
+    printf("%d", integervalue);
+#endif
     break;
+
   case ELEMENT_SHORT:
+#ifndef TOOL
     printf("Short(%d)",shortvalue);
+#else
+    printf("%d", shortvalue);
+#endif
     break;
+
   case ELEMENT_BIT:
     if (bitvalue)
+#ifndef TOOL
       printf("Bit(true)");
+#else 
+    printf("true");
+#endif
     else
+#ifndef TOOL
       printf("Bit(false)");
+#else
+    printf("false");
+#endif
     break;
+
   case ELEMENT_BYTE:
+#ifndef TOOL
     printf("Int(%c)",bytevalue);
+#else 
+    printf("%c",bytevalue);
+#endif
     break;
+
   case ELEMENT_TOKEN:
+#ifndef TOOL
     printf("Token(%s)",token);
+#else
+    printf("%s",token);
+#endif
     break;
+
   case ELEMENT_OBJECT:
     printf("Object(%p)",object);
     break;
