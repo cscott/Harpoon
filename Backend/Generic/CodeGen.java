@@ -14,14 +14,14 @@ import harpoon.IR.Tree.Print;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.3 1999-10-26 01:47:54 pnkfelix Exp $ */
+ * @version $Id: CodeGen.java,v 1.1.2.4 1999-12-11 23:31:12 pnkfelix Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
 
     // Frame for instructions to access to get platform specific
     // variables (Register Temps, etc)   
-    protected final Frame frame;
+    public final Frame frame;
     
     /** Creates a <code>Generic.CodeGen</code>. */
     public CodeGen(Frame frame) {

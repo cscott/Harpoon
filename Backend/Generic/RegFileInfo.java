@@ -15,11 +15,11 @@ import java.util.Iterator;
     about the target machine's register file. 
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.10 1999-12-03 23:52:03 pnkfelix Exp $
+    @version $Id: RegFileInfo.java,v 1.1.2.11 1999-12-11 23:31:12 pnkfelix Exp $
  */
 public abstract class RegFileInfo {
     
-    private static TempFactory myTF = new TempFactory() {
+    private static TempFactory preassignTF = new TempFactory() {
 	public String getScope() { 
 	    return "private TF for RegFileInfo"; 
 	}
@@ -28,12 +28,16 @@ public abstract class RegFileInfo {
 	}
     };
 
-    public static Temp PREASSIGNED = new Temp(myTF) {
-	public String toString() {
-	    //return super.toString() + " (PREASSIGNED)";
-	    return "<preassigned>";
+    public static class PreassignTemp extends Temp {
+	private Temp reg;
+	public PreassignTemp(Temp reg) {
+	    super(preassignTF);
+	    this.reg = reg;
 	}
-    };
+	public String toString() {
+	    return reg+"<preassigned>";
+	}
+    }
     
     /** Creates a <code>RegFileInfo</code>. */
     public RegFileInfo() {
@@ -100,20 +104,25 @@ public abstract class RegFileInfo {
 	     possible spills. 
 	     
 	<P> Note to implementors: Resist the urge to generate an
-	Iterator that produces a series of all possible	assignments.
+	<code>Iterator</code> that produces <B>all</B> possible
+	assignments in series. 
 	In general, register allocation algorithms need to, at some
 	point, construct an interference graph to represent how the
 	registers should be assigned.  Such a graph would contain a
-	node for each register assignment, which means that even if
-	your Iterator did not keep all of the assignments in memory at
-	once, code that USES your Iterator may very well do so.  Thus,
-	while there may be many ways to assign registers to a Temp
-	that is multiple words in size, and it is possible to write an
-	Iterator that produces all such assignments, such an Iterator
-	would cause an time/space explosion when applied to a decently
-	sized register file.  
+	node for each register assignment (and put interference edges
+	between assignments that were not allowed for a given 
+	<code>Temp</code>), which means that even if your
+	<code>Iterator</code> did not keep all of the assignments 
+	in memory at once, code that USES your <code>Iterator</code>
+	may very well do so.  Thus, while there may be many
+	assignments for a <code>Temp</code> that occupies 
+	more than one register, and it is possible to write an 
+	<code>Iterator</code> that produces all such assignments, such
+	an <code>Iterator</code> would cause an time/space explosion
+	when applied to a decently sized register file.  
 	<BR> Also, realize that it is not enough to ensure that any
-	one of the set { of possible Iterators that may be returned }
+	one of the set 
+	{ of possible <code>Iterator</code>s that may be returned }
 	traverses a reasonably small subset of the assignment space;
 	you must ensure that the UNION of all possible traversals is
 	of a reasonable size.  This is because the interference graph
@@ -131,7 +140,7 @@ public abstract class RegFileInfo {
 		       opposed to the alternative of mapping to some
 		       NoValue object).  Registers that are
 		       pre-assigned and cannot be spilled should map
-		       to RegFileInfo.PREASSIGNED.
+		       to an instance of a RegFileInfo.PreassignTemp
 	@return A <code>List</code> <code>Iterator</code> of Register
 	        <code>Temp</code>s.  The <code>Iterator</code> is
 	        guaranteed to have at least one element.  Each
@@ -174,8 +183,8 @@ public abstract class RegFileInfo {
 	back in the register file when they are needed next.
 
 	Note to implementors: make <b>sure</b> that you do not return
-	Registers that map to <code>RegFileInfo.PREASSIGN</code> in
-	your 'potential spill' set; it could lead to preassigned
+	Registers that map to <code>RegFileInfo.PreassignTemp</code>s
+	in your 'potential spill' set; it could lead to preassigned 
 	registers being assigned for other variables, which defeats
 	the whole purpose of pre-assignment.
     */

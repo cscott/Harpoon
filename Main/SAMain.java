@@ -69,7 +69,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.50 1999-11-30 05:25:08 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.51 1999-12-11 23:31:18 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -192,9 +192,9 @@ public class SAMain extends harpoon.IR.Registration {
 		    while(!hclass.isInterface() && hms.hasNext()) {
 			HMethod m = (HMethod) hms.next();
 			message(m.getName());
-			if (hms.hasNext()) message(", ");
 			if (!Modifier.isAbstract(m.getModifiers()))
 			    outputMethod(m, hcf, sahcf, out);
+			if (hms.hasNext()) message(", ");
 		    }
 		    messageln("");
 		    

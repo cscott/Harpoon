@@ -43,14 +43,14 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.61 1999-11-30 05:24:58 cananian Exp $
+ * @version $Id: Instr.java,v 1.1.2.62 1999-12-11 23:31:17 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     public final String assem; // changed to public for debugging
     private InstrFactory inf;
 
-    private Temp[] dst;
-    private Temp[] src;
+    protected Temp[] dst; // FSK: had to make these protected due
+    protected Temp[] src; // to javac weirdness
 
     private int hashCode;
 

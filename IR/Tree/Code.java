@@ -33,7 +33,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.36 1999-12-06 14:45:35 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.37 1999-12-11 23:31:17 pnkfelix Exp $
  */
 public abstract class Code extends HCode 
     implements Derivation, TypeMap {
@@ -301,11 +301,9 @@ public abstract class Code extends HCode
 		Util.assert(RS(nextNode)!=(Stm)labels.get(s.handler.label),
 			    new Util.LazyString() {
 				public String eval() {
-				    return "both normal and exceptional return should"+
-				    " not target same location for "+
-				    Print.print(s);
-				}
-			    });
+				    return "both normal and exceptional"+
+				    " return should not target same location"+
+				    " for "+Print.print(s);}});
 
 		addEdge(s, RS(nextNode)); 
 		addEdge(s, (Stm)labels.get(s.handler.label));
@@ -316,12 +314,15 @@ public abstract class Code extends HCode
 		nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
 		if (successors.containsKey(s)) { 
 		    Stm ex   = (Stm)labels.get(s.handler.label);
-		    Set succ = (Set)successors.get(s);
+		    final Set succ = (Set)successors.get(s);
 		    Util.assert(succ.size()==2, 
-				"number of successors ("+succ.size()+
-				") should equal 2 for " + 
-				Print.print(s) + " " +
-				Print.print(nextNode));
+				new Util.LazyString() {
+				    public String eval() {
+					return 
+					"number of successors ("+succ.size()+
+					") should equal 2 for " + 
+					Print.print(s) + " " +
+					Print.print(nextNode);}});
 		    for (Iterator i = succ.iterator(); i.hasNext();) { 
 			Stm next     = (Stm)i.next();
 			Set nextPred = (Set)predecessors.get(next);

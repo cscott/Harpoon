@@ -55,15 +55,12 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.54 1999-12-04 23:54:26 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.55 1999-12-11 23:31:10 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = false;
     public static final boolean DEBUG = true;
     
-    // Set of Instrs, strictly for debugging purposes (FSK use only)
-    public static final Set ALLOC_SET = new HashSet();
-
     protected Frame frame;
     protected Code code;
     protected BasicBlock rootBlock;
@@ -217,10 +214,10 @@ public abstract class RegAlloc  {
 	    Frame f = frame;
 	    public HCode convert(HMethod m) {
 		HCode preAllocCode = parent.convert(m);
-		
 		if (preAllocCode == null) {
 		    return null;
 		}
+
 		
 		RegAlloc localCode, globalCode;
 		if (BRAIN_DEAD) {
@@ -229,7 +226,7 @@ public abstract class RegAlloc  {
 			new BrainDeadLocalAlloc((Code) preAllocCode);
 		} else {
 		    localCode = 
-			new LocalCffRegAlloc((Code) preAllocCode);
+			new LocalCffRegAlloc3((Code) preAllocCode);
 		}
 
 		if (true) {
@@ -243,8 +240,13 @@ public abstract class RegAlloc  {
 		    
 		}
 
-		return globalCode.resolveOutstandingTemps
-		    ( globalCode.generateRegAssignment() );
+		// System.out.print("Gra");
+
+		Code currentCode = globalCode.generateRegAssignment();
+
+		// System.out.print("Rot");
+
+		return globalCode.resolveOutstandingTemps( currentCode );
 
 	    }
 	    public String getCodeName() {
@@ -448,7 +450,6 @@ public abstract class RegAlloc  {
 		//newi.insertAt(new InstrEdge(first.getPrev(), first));
 
 
-		ALLOC_SET.addAll(instrs);
 	    }
 	    
 	    public void visitLoad(FskLoad m) {
@@ -462,7 +463,6 @@ public abstract class RegAlloc  {
 		Instr first = (Instr) instrs.get(0);
 		Instr.replaceInstrList(m, instrs);
 
-		ALLOC_SET.addAll(instrs);
 
 		// Instr newi = new Instr(first.getFactory(), first,
 		//		       "\t@loading " + m.use()[0], null, null);

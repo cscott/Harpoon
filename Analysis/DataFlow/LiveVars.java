@@ -20,7 +20,7 @@
   * in the <code>BasicBlock</code>s passed to it.
   *
   * @author  Felix S Klock <pnkfelix@mit.edu>
-  * @version $Id: LiveVars.java,v 1.1.2.16 1999-11-29 03:26:09 duncan Exp $
+  * @version $Id: LiveVars.java,v 1.1.2.17 1999-12-11 23:31:01 pnkfelix Exp $
   */
 public abstract class LiveVars extends BackwardDataFlowBasicBlockVisitor {
     private static final boolean DEBUG = false; 
@@ -214,7 +214,7 @@ public abstract class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 	public Set lvIN;
 	public Set lvOUT;
 
-	protected LiveVarInfo(SetFactory sf) { 
+	public LiveVarInfo(SetFactory sf) { 
 	    use = sf.makeSet();
 	    def = sf.makeSet();
 	    lvIN = sf.makeSet();

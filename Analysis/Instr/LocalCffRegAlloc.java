@@ -54,7 +54,7 @@ import java.util.AbstractSet;
     for the algorithm it uses to allocate and assign registers.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.55 1999-12-06 14:45:34 pnkfelix Exp $
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.56 1999-12-11 23:31:10 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -69,9 +69,14 @@ public class LocalCffRegAlloc extends RegAlloc {
 	LiveTemps liveTemps = 
 	    new LiveTemps(iter, frame.getRegFileInfo().liveOnExit());
 
+	System.out.print(" LVA");
+
 	harpoon.Analysis.DataFlow.Solver.worklistSolve
 	    (BasicBlock.basicBlockIterator(rootBlock),
 	     liveTemps);
+
+	System.out.print(" LocalAlloc");
+
 
 	iter = BasicBlock.basicBlockIterator(rootBlock);
 	while(iter.hasNext()) {
@@ -185,7 +190,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 				    "assignment for Ref: "+ref);
 				    
 		    }
-		    RegAlloc.ALLOC_SET.add(instr);
 		}
 	    }
 
@@ -481,7 +485,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    while(regsIter.hasNext()) {
 		Object reg = regsIter.next();
 		
-		Util.assert(regfile.get(reg) != RegFileInfo.PREASSIGNED,
+		Util.assert(! (regfile.get(reg) 
+			       instanceof RegFileInfo.PreassignTemp), 
 			    "RegFileInfo should not be suggesting to spill "+
 			    "precolored registers...");
 		
@@ -587,7 +592,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    while (refs.hasNext()) {
 		Temp preg = (Temp) refs.next();
 		if (isTempRegister(preg)) {
-		    potentials.put(preg, RegFileInfo.PREASSIGNED);
+		    potentials.put(preg, new RegFileInfo.PreassignTemp(preg));
 		}
 	    }
 	    if (i.useC().contains(ref)) {

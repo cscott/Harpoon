@@ -35,7 +35,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.11 1999-12-04 23:54:43 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.12 1999-12-11 23:31:15 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -149,10 +149,6 @@ public class RegFileInfo
 	final ArrayList suggests = new ArrayList();
 	final ArrayList spills = new ArrayList();
 	
-	// macro renaming for clean code
-	final Temp PRECOLORED = 
-	    harpoon.Backend.Generic.RegFileInfo.PREASSIGNED;
-
 	if (t instanceof TwoWordTemp) {
 	    // double word, find two registers ( the strongARM
 	    // doesn't require them to be in a row, but its 
@@ -166,8 +162,10 @@ public class RegFileInfo
 		} else {
 		    // don't add precolored registers to potential
 		    // spills. 
-		    if ( regFile.get(assign[0]) != PRECOLORED &&
-			 regFile.get(assign[1]) != PRECOLORED) {
+		    if ( !(regFile.get(assign[0]) 
+			   instanceof RegFileInfo.PreassignTemp) &&
+			 !(regFile.get(assign[1]) 
+			   instanceof RegFileInfo.PreassignTemp)) {
 
 			Set s = new LinearSet(2);
 			s.add(assign[0]);
@@ -187,7 +185,8 @@ public class RegFileInfo
 		    
 		    // don't add precolored registers to potential
 		    // spills. 
-		    if ( regFile.get(regGeneral[i]) != PRECOLORED ) {
+		    if (!( regFile.get(regGeneral[i]) 
+			   instanceof RegFileInfo.PreassignTemp )) {
 			s.add(regGeneral[i]);
 			spills.add(s);
 		    }
