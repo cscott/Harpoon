@@ -100,6 +100,8 @@ public class Compiler {
 		    gcode3.close();
 		} else {
 		    WorklistGenerator ng = new WorklistGenerator(state);
+		    SetInclusion.worklist=true;
+		    RelationInclusion.worklist=true;
 		    ng.generate(gcode);
 		}
                 gcode.close();

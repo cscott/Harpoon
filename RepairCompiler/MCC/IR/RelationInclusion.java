@@ -9,7 +9,7 @@ public class RelationInclusion extends Inclusion {
 
     // #TBD#: this flag needs to be set by some static analysis
     boolean typesafe = true;
-    static boolean worklist = false;
+    public static boolean worklist = false;
 
     public RelationInclusion(Expr leftelementexpr, Expr rightelementexpr, RelationDescriptor relation) {
         this.leftelementexpr = leftelementexpr;

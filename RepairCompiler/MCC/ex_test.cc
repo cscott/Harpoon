@@ -1,5 +1,4 @@
 #include "ex_aux.h"
-
 struct Node {
      int data;
      struct Node *next;
@@ -18,5 +17,5 @@ int main(int argc, char **argv) {
   for(int j=0;j<6000;j++) {
 #include "ex.cc"
   }
-  
+ 
 }

@@ -10,7 +10,7 @@ public class SetInclusion extends Inclusion {
     public String generatedresult = null;
     public String generatedaddeditem = null;
 
-    static boolean worklist = false;
+    public static boolean worklist = false;
     public boolean dostore = true;
 
     public String toString() {

@@ -134,39 +134,32 @@ void WorkList::add(int id,int type, int lvalue, int rvalue) {
 }
 
 /* SIMPLE HASH ********************************************************/
+SimpleIterator* SimpleHash::iterator() {
+  return new SimpleIterator(listhead,this);
+}
 
 SimpleHash::SimpleHash(int size) {
     if (size <= 0) {
         throw SimpleHashException();
     }
     this->size = size;
-    this->bucket = new LinkedHashNode* [size];
-    for (int i=0;i<size;i++)
-      bucket[i]=0;
-    this->nodelist=0;
+    this->bucket = (struct SimpleNode **) calloc(sizeof(struct SimpleNode *)*size,1);
+    /* Set allocation blocks*/
+    this->listhead=(struct ArraySimple *) calloc(sizeof(struct ArraySimple),1);
+    this->listtail=this->listhead;
+    this->tailindex=0;
+    /*Set data counts*/
     this->numparents = 0;
     this->numchildren = 0;
     this->numelements = 0;
 }
-
-SimpleHash::SimpleHash() {
-    this->size = 100;
-    this->bucket = new LinkedHashNode* [size];
-    for (int i=0;i<size;i++)
-      bucket[i]=0;
-    this->nodelist = 0;
-    this->numparents = 0;
-    this->numelements = 0;
-    this->numchildren = 0;
-}
-
 
 SimpleHash::~SimpleHash() {
-  delete [] this->bucket;
-  LinkedHashNode *ptr=nodelist;
+  free(bucket);
+  struct ArraySimple *ptr=listhead;
   while(ptr) {
-      LinkedHashNode *next=ptr->lnext;
-      delete ptr;
+      struct ArraySimple *next=ptr->nextarray;
+      free(ptr);
       ptr=next;
   }
 }
@@ -183,7 +176,7 @@ void SimpleHash::addChild(SimpleHash *child) {
 int SimpleHash::remove(int key, int data) {
     unsigned int hashkey = (unsigned int)key % size;
     
-    LinkedHashNode **ptr = &bucket[hashkey];
+    struct SimpleNode **ptr = &bucket[hashkey];
 
     for (int i = 0; i < numchildren; i++) {
       children[i]->remove(key, data);
@@ -191,13 +184,11 @@ int SimpleHash::remove(int key, int data) {
 
     while (*ptr) {
         if ((*ptr)->key == key && (*ptr)->data == data) {
-	  LinkedHashNode *toremove=*ptr;
+	  struct SimpleNode *toremove=*ptr;
 	  *ptr=(*ptr)->next;
-	  if (toremove->lprev)
-	    toremove->lprev->lnext=toremove->lnext;
-	  if (toremove->lnext)
-	    toremove->lnext->lprev=toremove->lprev;
-	  delete toremove;
+
+	  toremove->inuse=0; /* Marked as unused */
+
 	  numelements--;
 	  return 1;
         }
@@ -212,7 +203,7 @@ int SimpleHash::remove(int key, int data) {
 int SimpleHash::add(int key, int data) {
     unsigned int hashkey = (unsigned int)key % size;
     
-    LinkedHashNode **ptr = &bucket[hashkey];
+    struct SimpleNode **ptr = &bucket[hashkey];
 
     /* check that this key/object pair isn't already here */
     // TBD can be optimized for set v. relation */
@@ -222,12 +213,17 @@ int SimpleHash::add(int key, int data) {
         }
         ptr = &((*ptr)->next);
     }
+    if (tailindex==ARRAYSIZE) {
+      listtail->nextarray=(struct ArraySimple *) calloc(sizeof(struct ArraySimple),1);
+      tailindex=0;
+      listtail=listtail->nextarray;
+    }
     
-    *ptr = new LinkedHashNode(key, data, 0);
-    (*ptr)->lnext=nodelist;
-    if (nodelist!=0)
-      nodelist->lprev=*ptr;
-    nodelist=*ptr;
+    *ptr = &listtail->nodes[tailindex++];
+    (*ptr)->key=key;
+    (*ptr)->data=data;
+    (*ptr)->inuse=1;
+
     numelements++;
     
     for (int i = 0; i < numparents; i++) {
@@ -240,7 +236,7 @@ int SimpleHash::add(int key, int data) {
 bool SimpleHash::contains(int key) {
     unsigned int hashkey = (unsigned int)key % size;
     
-    LinkedHashNode *ptr = bucket[hashkey];
+    struct SimpleNode *ptr = bucket[hashkey];
     while (ptr) {
         if (ptr->key == key) {
             // we already have this object 
@@ -255,7 +251,7 @@ bool SimpleHash::contains(int key) {
 bool SimpleHash::contains(int key, int data) {
     unsigned int hashkey = (unsigned int)key % size;
     
-    LinkedHashNode *ptr = bucket[hashkey];
+    struct SimpleNode *ptr = bucket[hashkey];
     while (ptr) {
         if (ptr->key == key && ptr->data == data) {
             // we already have this object 
@@ -271,7 +267,7 @@ int SimpleHash::count(int key) {
     unsigned int hashkey = (unsigned int)key % size;
     int count = 0;
 
-    LinkedHashNode *ptr = bucket[hashkey];
+    struct SimpleNode *ptr = bucket[hashkey];
     while (ptr) {
         if (ptr->key == key) {
             count++;
@@ -284,7 +280,7 @@ int SimpleHash::count(int key) {
 int SimpleHash::get(int key, int&data) {
     unsigned int hashkey = (unsigned int)key % size;
     
-    LinkedHashNode *ptr = bucket[hashkey];
+    struct SimpleNode *ptr = bucket[hashkey];
     while (ptr) {
         if (ptr->key == key) {
             data = ptr->data;
@@ -298,12 +294,22 @@ int SimpleHash::get(int key, int&data) {
 
 int SimpleHash::countdata(int data) {
     int count = 0;
-    LinkedHashNode *ptr = nodelist;
+    struct ArraySimple *ptr = listhead;
     while(ptr) {
-      if (ptr->data == data) {
-	count++;
+      if (ptr->nextarray) {
+	for(int i=0;i<ARRAYSIZE;i++)
+	  if (ptr->nodes[i].data == data
+	      &&ptr->nodes[i].inuse) {
+	    count++;
+	  }
+      } else {
+	for(int i=0;i<tailindex;i++)
+	  if (ptr->nodes[i].data == data
+	      &&ptr->nodes[i].inuse) {
+	    count++;
+	  }
       }
-      ptr = ptr->next;
+      ptr = ptr->nextarray;
     }
     return count;
 }

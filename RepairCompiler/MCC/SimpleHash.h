@@ -59,62 +59,26 @@ struct ListNode {
   int data[WLISTSIZE];
   ListNode *next;
 };
-
-
-/* SimpleIterator *****************************************************/
-
-class SimpleIterator {
-
-private:
-
-    LinkedHashNode *cur;
-
-public:
-
-    inline SimpleIterator(LinkedHashNode *start) {
-        cur = start;
-    }
-
-    inline int hasNext() {
-        return (int)cur->next == 0 ? 0 : 1;
-    }
-
-    inline int next() {
-        cur = cur->next;
-        return cur->data;
-    }
-
-    inline int key() {
-        return cur->key;
-    }
-
-    inline int size() {
-        int temp = 0;
-        while (cur->next) {
-            temp++;
-            cur = cur->next;
-        }
-        return temp;
-    }
-
-};
-
 /* SimpleHash *********************************************************/
+class SimpleIterator;
 
 class SimpleHash {
 private:
     int numelements;
     int size;
-    LinkedHashNode **bucket;
-    LinkedHashNode *nodelist;
+    struct SimpleNode **bucket;
+    struct ArraySimple *listhead;
+    struct ArraySimple *listtail;
+
+
     int numparents;
     int numchildren;
     SimpleHash* parents[10];
     SimpleHash* children[10];
     void addChild(SimpleHash* child);
 public:
-    SimpleHash();
-    SimpleHash(int size);
+    int tailindex;
+    SimpleHash(int size=100);
     ~SimpleHash();
     int add(int key, int data);
     int remove(int key, int data);
@@ -123,17 +87,73 @@ public:
     int get(int key, int& data);
     int countdata(int data);
     void addParent(SimpleHash* parent);
-    inline int firstkey() {
-	return nodelist->key;
-    }
-    inline SimpleIterator* iterator() {
-        return new SimpleIterator(nodelist);
-    }
+    int firstkey();
+    SimpleIterator* iterator();
     inline int count() {
         return numelements;
     }
     int count(int key);
 
+};
+
+/* SimpleHashExcepion  *************************************************/
+
+
+/* SimpleIterator *****************************************************/
+#define ARRAYSIZE 100
+
+struct SimpleNode {
+  struct SimpleNode *next;
+  int data;
+  int key;  
+  int inuse;
+};
+
+struct ArraySimple {
+  struct SimpleNode nodes[ARRAYSIZE];
+  struct ArraySimple * nextarray;
+};
+
+
+class SimpleIterator {
+
+private:
+
+  struct ArraySimple *cur;
+  int index;
+  SimpleHash * table;
+public:
+
+  inline SimpleIterator(struct ArraySimple *start, SimpleHash *t) {
+    cur = start;
+    table=t;
+    index=0;
+  }
+
+  inline int hasNext() {
+    while((index==ARRAYSIZE)||!cur->nodes[index].inuse) {
+      if (cur->nextarray==0 &&
+	  index==table->tailindex)
+	return 0;
+      index++;
+      if (index==ARRAYSIZE) {
+	index=0;
+	cur=cur->nextarray;
+      }
+    }
+    if (cur->nodes[index].inuse)
+      return 1;
+    else
+      return 0;
+  }
+
+  inline int next() {
+    return cur->nodes[index++].data;
+  }
+  
+  inline int key() {
+    return cur->nodes[index].key;
+  }
 };
 
 /* SimpleHashExcepion  *************************************************/
