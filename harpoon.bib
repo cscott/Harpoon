@@ -119,7 +119,9 @@
   pages =	 {239-252},
   url =		 {http://www.acm.org/pubs/citations/journals/toplas/1997-19-2/p239-sreedhar/},
   annote =	 {Seems to work well, but I don't think we need
-                  incremental updates for Harpoon.  Maybe I'm wrong.}
+                  incremental updates for Harpoon.  Maybe I'm wrong.
+                  Very similar to their other papers on this
+                  topic. <wry grin>}
 }
 
 @InProceedings{granlund94:divopt,
@@ -243,7 +245,7 @@
   annote =	 {How to make any control flow graph reducible using a
                   minimum number of splits/duplicates.  VERY USEFUL if
                   we need reducible graphs.  (I suspect that the
-                  properties of Java give us this for free.)}
+                  properties of Java give us this for free.) Good results.}
 }
 
 @Article{gerlek95:inductssa,
@@ -265,7 +267,8 @@
                   worthwhile subclasses.  Min/max bounds can often be
                   computed.  Useful useful stuff.  Reference to paper
                   on 'loop distribution' and 'loop interchanging' that
-                  might be worthwhile to track down.}
+                  might be worthwhile to track down.  Implementable
+                  algorithms.}
 }
 
 % Statecharts.
@@ -343,7 +346,7 @@
   url = 	 {http://www.acm.org/pubs/citations/proceedings/dac/266388/p83-aggarwal/},
   annote =	 {Useful, but presupposes a basic optimizer.  Some
                   good references to basic optimizers, which may prove
-                  useful.}
+                  useful.  Presents a timing-driven partitioning technique.}
 }
 
 @InProceedings{bertacco97:disjunct,
@@ -361,7 +364,12 @@
                   Thing. "We found the final netlist to be often close
                   to the output of more complex dedicated optimization
                   tools."  Probably worth implementing, or at least
-                  researching further.}
+                  researching further. BIG DRAWBACK: "For the largest
+                  benchmarks, the limited set of BDD
+                  transformations... do not compensate for the
+                  exceptional growth of the BDD representation with
+                  respect to the original representation."  I wish I
+                  knew what the "original representation" was.}
 }
 
 @InProceedings{kukimoto97:xbd0,
@@ -406,7 +414,7 @@
                   level. Might be worthwhile referencing to prove that
                   logic synthesis folk spend a lot of effort
                   reconstructing the high-level patterns thrown away
-                  by the compiler.}
+                  by the compiler. Not otherwise useful.}
 }
 
 @InProceedings{enos97:reppart,
@@ -421,7 +429,8 @@
   annote =	 {We can create a better logic partition if we are
                   allowed to duplicate some logic.  Good idea and good
                   overview of partitioning methods.  VERY USEFUL if we
-                  need to partition.}
+                  need to partition.  We want to use the Strawman
+                  algorithm, apparently; we need to look up papers on it.}
 }
 
 
@@ -609,4 +618,42 @@
   annote =	 {Haven't fetched from the library yet.}
 }
 
+
+@InProceedings{fiduccia82:fm,
+  author = 	 {C. M. Fiduccia and R. M. Mattheyses},
+  title = 	 {A Linear-Time Heuristic for Improved Network Partitions},
+  booktitle = 	 {Design Automation Conference},
+  year =	 1982,
+  pages =	 {241-247},
+  annote =	 {Source for the FM partitioning algorithm, reference
+                  in the 'Replication for logic bipartitioning' paper.}
+}
+
+@InProceedings{hauck95:strawman,
+  author = 	 {S. Hauck and G. Borriello},
+  title = 	 {An Evaluation of Bipartitioning Techniques},
+  booktitle = 	 {Chapel Hill Conference on Advanced Research in VLSI},
+  year =	 1995,
+  month =	 mar,
+  pages =	 {383-402},
+  annote =	 {Source of the 'Strawman' partitioning algorithm,
+                  which (apparently) has the best published results.
+                  There is also a University of Washington PhD thesis
+                  by Hauck titled 'Multi-FPGA Systems' (Dept of CSE)
+                  that describes the algorithm.}
+}
+
+@Article{padua86:loop,
+  author = 	 {D. A. Padua and M. Wolfe},
+  title = 	 {Advanced Compiler Optimizations for Supercomputers},
+  journal = 	 {Communications of the {ACM}},
+  year = 	 1986,
+  volume =	 29,
+  number =	 12,
+  month =	 dec,
+  pages =	 {118-1201},
+  annote =	 {Haven't fetched.  Loop distribution and Loop
+                  interchanging.  Referenced in the 'beyond induction
+                  variables' paper.}
+}
 
