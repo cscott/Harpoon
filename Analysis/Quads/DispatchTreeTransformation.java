@@ -4,9 +4,10 @@
 package harpoon.Analysis.Quads;
 
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.Analysis.Maps.ConstMap;
+import harpoon.Analysis.Maps.ConstMapProxy;
 import harpoon.Analysis.Maps.ExactTypeMap;
-import harpoon.Analysis.Maps.ExecMap;
+import harpoon.Analysis.Maps.ExactTypeMapProxy;
+import harpoon.Analysis.Maps.ExecMapProxy;
 import harpoon.Analysis.Quads.SCC.SCCAnalysis;
 import harpoon.Analysis.Quads.SCC.SCCOptimize;
 import harpoon.ClassFile.HClass;
@@ -43,7 +44,7 @@ import java.util.Set;
  * speed up dispatch.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DispatchTreeTransformation.java,v 1.1.2.4 2000-11-16 01:31:49 cananian Exp $
+ * @version $Id: DispatchTreeTransformation.java,v 1.1.2.5 2000-11-16 04:54:59 cananian Exp $
  */
 public class DispatchTreeTransformation
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -63,8 +64,11 @@ public class DispatchTreeTransformation
 	Util.assert(ahc.getName().equals(harpoon.IR.Quads.QuadSSI.codename));
 	Util.assert(hc.getName().equals(harpoon.IR.Quads.QuadRSSx.codename));
 	// do a type analysis of the method.
-	MyMaps etm = new MyMaps(input, new SCCAnalysis(ahc));
-	new SCCOptimize(etm, etm, etm).optimize(hc);
+	SCCAnalysis scc = new SCCAnalysis(ahc);
+	ExactTypeMap etm = new ExactTypeMapProxy(input, scc);
+	new SCCOptimize(etm, 
+			new ConstMapProxy(input, scc),
+			new ExecMapProxy(input, scc)).optimize(hc);
 	// now look for CALLs & devirtualize some of them.
 	for (Iterator it=hc.getElementsI(); it.hasNext(); ) {
 	    Quad q = (Quad) it.next();
@@ -73,47 +77,6 @@ public class DispatchTreeTransformation
 	}
 	// done!
 	return hc;
-    }
-    private static class MyMaps implements ExactTypeMap, ConstMap, ExecMap {
-	private final Map new2oldE;
-	private final TempMap new2oldT;
-	private final SCCAnalysis scc;
-	MyMaps(HCodeAndMaps hcam, SCCAnalysis scc) {
-	    this.new2oldE = hcam.ancestorElementMap();
-	    this.new2oldT = hcam.ancestorTempMap();
-	    this.scc = scc;
-	}
-	// TypeMap
-	public HClass typeMap(HCodeElement hce, Temp t) {
-	    return scc.typeMap(n2o(hce), n2o(t));
-	}
-	// ExactTypeMap
-	public boolean isExactType(HCodeElement hce, Temp t) {
-	    return scc.isExactType(n2o(hce), n2o(t));
-	}
-	// ConstMap
-	public boolean isConst(HCodeElement hce, Temp t) {
-	    return scc.isConst(n2o(hce), n2o(t));
-	}
-	public Object constMap(HCodeElement hce, Temp t) {
-	    return scc.constMap(n2o(hce), n2o(t));
-	}
-	// ExecMap
-	public boolean execMap(HCodeElement hce) {
-	    return scc.execMap(n2o(hce));
-	}
-	public boolean execMap(HCodeEdge edge) {
-	    Quad from = (Quad) n2o(edge.from());
-	    int which_succ = ((Edge) edge).which_succ();
-	    return scc.execMap(from.nextEdge(which_succ));
-	}
-	// utility methods:
-	private HCodeElement n2o(HCodeElement hce) {
-	    return (HCodeElement) new2oldE.get(hce);
-	}
-	private Temp n2o(Temp t) {
-	    return new2oldT.tempMap(t);
-	}
     }
     protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod) {
 	// make SSI into RSSx.
