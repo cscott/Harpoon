@@ -1,12 +1,12 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.1 2002-07-22 16:45:05 cananian Exp $
+% $Id: ptran.tex,v 1.2 2002-07-22 16:47:38 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage{comdef} % common definitions
 \usepackage{pdffonts} % PDF-friendly fonts
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.1 $ $}
+\date{\today \\ $ $Revision: 1.2 $ $}
 
 \begin{document}
 %\bibliographystyle{abbrv}
@@ -121,7 +121,14 @@ to be mutually singular.
 
 \section{Compositional Pointer Analysis}
 
+\subsection{Evaluating a call-site monomorphically}
+\subsection{Evaluating a call-site polymorphically}
+
 \section{Allocating Polymorphism}
+
+We evaluate sites polymorphically if they are factory methods, or
+contain unbalanced companion objects.  Otherwise, the site is
+evaluated monomorphically.
 
 %\bibliography{harpoon}
 \end{document}
