@@ -31,6 +31,9 @@ void restorethread() {
   /* 
    * Restore the threads state.
    */
+#ifdef WITH_REALTIME_THREADS
+  settimer();
+#endif
   machdep_restore_float_state();
   machdep_restore_state();
 }
@@ -98,8 +101,8 @@ void transfer(struct thread_queue_struct * mthread)
 #endif
 }
 
-void context_switch() {
 #ifndef WITH_REALTIME_THREADS
+void context_switch() {
   machdep_save_float_state(&(gtl->mthread));
   if (_setjmp(gtl->mthread.machdep_state)) {
     return;
@@ -111,8 +114,8 @@ void context_switch() {
   gtl=gtl->next;
 
   startnext();
-#endif
 }
+#endif
 
 void startnext() {
 #ifndef WITH_REALTIME_THREADS
@@ -396,11 +399,7 @@ int user_mutex_trylock(user_mutex_t *x) {
   if (test==SEMAPHORE_CLEAR)
     return 0;
   else {
-#ifndef WITH_REALTIME_THREADS
     context_switch();
-#else
-    CheckQuanta(1, 1, 1);
-#endif
     return EBUSY;
   }
 }

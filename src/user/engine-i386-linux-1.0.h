@@ -1,7 +1,7 @@
 /* ==== machdep.h ============================================================
  * Copyright (c) 1993 Chris Provenzano, proven@athena.mit.edu
  *
- * $Id: engine-i386-linux-1.0.h,v 1.3 2002-06-25 20:18:15 dumi Exp $
+ * $Id: engine-i386-linux-1.0.h,v 1.4 2002-09-06 16:06:06 wbeebee Exp $
  */
 #ifndef MACHDEP
 #define MACHDEP
@@ -46,7 +46,11 @@ struct machdep_pthread {
   void        		*machdep_stack;
   void                  *hiptr;
   struct itimerval	machdep_timer;
+#ifdef WITH_REALTIME_THREADS
+  sigjmp_buf            machdep_state;
+#else
   jmp_buf     		machdep_state;
+#endif
   char 	    		machdep_float_state[108];
   int                   started;
 };

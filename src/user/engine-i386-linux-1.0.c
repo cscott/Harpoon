@@ -10,7 +10,7 @@
 #include "config.h"
 #ifdef WITH_USER_THREADS
 #ifndef lint
-static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.9 2002-08-28 18:21:21 wbeebee Exp $";
+static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.10 2002-09-06 16:06:06 wbeebee Exp $";
 #endif
 
 #include "config.h"
@@ -29,6 +29,9 @@ static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.9 2002-08-28 18:21
 #include "engine-i386-linux-1.0.h"
 #include "threads.h"
 #include "memstats.h"
+#ifdef WITH_REALTIME_THREADS
+#include <signal.h>
+#endif
 
 /* ==========================================================================
  * machdep_save_state()
@@ -38,9 +41,7 @@ int machdep_save_state(void)
 #ifndef WITH_REALTIME_THREADS
   return(_setjmp(gtl->mthread.machdep_state));
 #else
-  // puts(">>>>>>>>>>>>>>>>>>>>>>>>>>>>machdep_save_state");
-  return(_setjmp(currentThread->mthread->machdep_state));
-  //set jump in currentThread
+  return sigsetjmp(currentThread->mthread->machdep_state, 1);
 #endif
 }
 
@@ -49,14 +50,11 @@ int machdep_save_state(void)
  */
 void machdep_restore_state(void)
 {
-  //  puts(">>>>>>>>>>>>>>>>>>>>>>>>>>>>machdep_restore_state");
-  longjmp(
 #ifndef WITH_REALTIME_THREADS
-	  gtl->mthread.machdep_state,
+  longjmp(gtl->mthread.machdep_state, 1);
 #else
-	 currentThread->mthread->machdep_state, //jump to currentThread
+  siglongjmp(currentThread->mthread->machdep_state, 1); //jump to currentThread
 #endif
-	  1);
 }
 
 /* ==========================================================================
@@ -161,7 +159,11 @@ void __machdep_pthread_create(struct machdep_pthread *machdep_pthread,
     machdep_pthread->machdep_timer.it_interval.tv_usec = 0;
     machdep_pthread->machdep_timer.it_value.tv_usec = nsec / 1000;
 
+#ifdef WITH_REALTIME_THREADS
+    sigsetjmp(machdep_pthread->machdep_state, 1);
+#else
     setjmp(machdep_pthread->machdep_state);
+#endif
     machdep_save_float_state(machdep_pthread);
     /*
      * Set up new stact frame so that it looks like it
@@ -172,7 +174,7 @@ void __machdep_pthread_create(struct machdep_pthread *machdep_pthread,
     machdep_pthread->machdep_state->__jmpbuf[JB_PC] = 
                                         (int)machdep_pthread_start;
     machdep_pthread->machdep_state->__jmpbuf[JB_BP] = 0;/* So the backtrace
-                                                      * is sensible (mevans) *
+							 * is sensible (mevans) */
 
     /* Stack starts high and builds down. */
     machdep_pthread->machdep_state->__jmpbuf[JB_SP] =
@@ -182,13 +184,16 @@ void __machdep_pthread_create(struct machdep_pthread *machdep_pthread,
 #else
     machdep_pthread->machdep_state->__pc = (char *)machdep_pthread_start;
     machdep_pthread->machdep_state->__bp = (char *)0;/* So the backtrace
-                                                      * is sensible (mevans) *
+                                                      * is sensible (mevans) */
 
     /* Stack starts high and builds down. */
     machdep_pthread->machdep_state->__sp =
       (char *)machdep_pthread->machdep_stack + stack_size;
     machdep_pthread->hiptr=
       (char *)machdep_pthread->machdep_stack + stack_size;
+#endif
+#ifdef WITH_REALTIME_THREADS
+    sigdelset(&machdep_pthread->machdep_state->__saved_mask, SIGALRM);
 #endif
 }
 

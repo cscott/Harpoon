@@ -24,6 +24,8 @@ void EnableThread(struct thread_queue_struct* queue);
 
 void EnableThreadList(struct thread_queue_struct* queue);
 
+void settimer();
+
 #define IN_ACTIVE_QUEUE 0
 #define IN_MUTEX_QUEUE 1
 
@@ -71,6 +73,12 @@ void setupEnv(JNIEnv *env);
 void destroyEnv();
 
 void printScheduler();
+
+#ifdef WITH_NOHEAP_SUPPORT
+int BeginNoHeap(JNIEnv *env);
+void EndNoHeap(JNIEnv *env, int state);
+#endif
+
 
 #endif
 

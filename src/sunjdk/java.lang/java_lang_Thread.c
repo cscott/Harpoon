@@ -811,8 +811,10 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
 #endif
   pthread_mutex_lock(&(clsp->parampass_mutex));
   /* wait for new thread to copy _this before proceeding */
+#ifdef WITH_REALTIME_THREADS
   realtime_schedule_thread(env, _this);
   StartSwitching();
+#endif
   pthread_cond_wait(&(clsp->parampass_cond), &(clsp->parampass_mutex));
 #ifdef WITH_PRECISE_GC
   pthread_mutex_unlock(&gc_thread_mutex);
@@ -821,13 +823,8 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   pthread_cond_destroy(&(clsp->parampass_cond));
   pthread_mutex_unlock(&(clsp->parampass_mutex));
   pthread_mutex_destroy(&(clsp->parampass_mutex));
-#if !defined(WITH_REALTIME_THREADS)
   context_switch();
-#else
-  StopSwitching();
-  RestoreSwitching(switching_state);
-  CheckQuanta(1, 0, 1);
-#endif
+
   /*  while (clsp->parampass_cond==0)
       swapthreads();*/
   /* done! */
