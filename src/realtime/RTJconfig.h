@@ -40,8 +40,10 @@
 #endif
 #endif
 
+#ifdef WITH_REALTIME_JAVA
 #ifndef WITH_THREADS
 #error Realtime Java is turned on, but threads are not turned on
+#endif
 #endif
 
 #ifdef WITH_GC_STATS
