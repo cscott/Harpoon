@@ -1,0 +1,18 @@
+
+Data flow equation solver
+
+This is really easy to use.  It takes something with a graph
+structure, and iterates over it, applying transfer functions to the
+nodes, until it reaches a fixed point.
+
+It can iterate over the nodes in two ways: reverse-post-order or
+worklist.  Which is faster will depend on your application.  In
+general, the reverse-post-order has lower iteration overhead, but
+evaluates more transfer functions than the worklist.  So, if you have
+fast transfer functions, use reverse-post-order, otherwise use
+worklist.
+
+What to watch out for:
+- Make sure that your transfer functions will be monotonic, so that
+the solver will eventually terminate.
+
