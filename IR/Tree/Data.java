@@ -32,7 +32,7 @@ import java.util.List;
  * class.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Data.java,v 1.1.2.9 1999-08-11 13:26:09 cananian Exp $
+ * @version $Id: Data.java,v 1.1.2.10 1999-08-16 23:48:04 duncan Exp $
  */
 public class Data extends Code implements HData { 
     public static final String codename = "tree-data";
@@ -55,8 +55,6 @@ public class Data extends Code implements HData {
 	List      iList   = new ArrayList(); // interface list
 	List      soList  = new ArrayList(); // static objects
 	List      spList  = new ArrayList(); // static primitives
-	List      strList = new ArrayList(); // string constants 
-	List      caList  = new ArrayList(); // character arrays 
 	List      rList   = new ArrayList(); // tables for reflection
 	// Shouldn't get DefaultNameMap, could be different than what 
 	harpoon.Backend.Maps.NameMap nm = 
@@ -122,35 +120,12 @@ public class Data extends Code implements HData {
 	    }
 	}
 
-	// FIXME:  how to guarantee that all classes have been translated?
-	//
-	// Calculate string constants.  
-	HClass HCstring  = HClass.forName("java.lang.String");
-	Label  strClsPtr = offm.label(HCstring);
-	HField count     = HCstring.getField("count");
-	HField offset    = HCstring.getField("offset");
-	HField value     = HCstring.getField("value");
-	ArrayList u = new ArrayList(), d = new ArrayList();
-	for (Iterator i = offm.stringConstants(); i.hasNext();) { 
-	    u.clear(); d.clear();
-	    String str   = (String)i.next();
-	    Label  strCA = new Label(nm.mangle(str, "CA"));
-	    add(offm.hashCodeOffset(HCstring),
-		_DATA(new CONST(tf,null,str.hashCode())),u,d);
-	    add(offm.clazzPtrOffset(HCstring),
-		_DATA(new NAME(tf,null,strClsPtr)),u,d);
-	    add(offm.offset(count),_DATA(new CONST(tf,null,str.length())),u,d);
-	    add(offm.offset(offset),_DATA(new CONST(tf,null,0)),u,d);
-	    add(offm.offset(value),_DATA(new NAME(tf,null,strCA)),u,d);
-	}
-
 	// Assign segment types:
 	iList  .add(0, new SEGMENT(tf, null, SEGMENT.CLASS));
 	up     .add(0, new SEGMENT(tf, null, SEGMENT.CLASS));
 	soList .add(0, new SEGMENT(tf, null, SEGMENT.STATIC_OBJECTS));
 	spList .add(0, new SEGMENT(tf, null, SEGMENT.STATIC_PRIMITIVES));
-	strList.add(0, new SEGMENT(tf, null, SEGMENT.STRING_CONSTANTS));
-	caList .add(0, new SEGMENT(tf, null, SEGMENT.STRING_DATA));
+
 
 	// At last, assign the root element
 	this.tree = 

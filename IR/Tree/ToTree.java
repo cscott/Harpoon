@@ -9,6 +9,7 @@ import harpoon.Backend.Maps.OffsetMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.LowQuad.LowQuadFactory;
 import harpoon.IR.LowQuad.LowQuadNoSSA;
@@ -48,6 +49,7 @@ import harpoon.Util.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -61,7 +63,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.34 1999-08-11 10:48:39 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.35 1999-08-16 23:48:04 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -218,6 +220,8 @@ public class ToTree implements Derivation, TypeMap {
 // Translates the LowQuadNoSSA code into tree form. 
 //
 class TranslationVisitor extends LowQuadWithDerivationVisitor {
+    // Keep track of which strings we have allocated 
+    private static Set        m_strings = new HashSet();
 
     private CloningTempMap    m_ctm;          // Clones Temps to new tf
     private OffsetMap         m_offm;         // Machine-specific offset map
@@ -902,10 +906,14 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
     }
 
     // Used to correctly map local labels
+    private LABEL _LABEL(String label, HCodeElement src) { 
+	if (!m_labels.containsKey(label))
+	    m_labels.put(label, new Label());
+	return new LABEL(m_tf, src, (Label)m_labels.get(label));
+    }
+
     private LABEL _LABEL(harpoon.IR.Quads.LABEL label) { 
-	if (!m_labels.containsKey(label.label())) 
-	    m_labels.put(label.label(), new Label());
-	return new LABEL(m_tf, label, (Label)m_labels.get(label.label()));
+	return _LABEL(label.label(), label);
     }
 
     private LABEL _LABEL(LABEL label) { 
@@ -1013,13 +1021,109 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    constant = new CONST(m_tf, src, ((Float)value).floatValue()); 
 	else if (type==HClass.Double)
 	    constant = new CONST(m_tf, src, ((Double)value).doubleValue());
-	else if (type==HClass.forName("java.lang.String")) 
+	else if (type==HClass.forName("java.lang.String")) {
 	    constant = new MEM
 		(m_tf, src, Type.POINTER, 
 		 new NAME(m_tf, src, m_offm.label((String)value)));
+	    if (!m_strings.contains(value)) { allocString((String)value); } 
+	}
 	else 
 	    throw new Error("Bad type for CONST " + type); 
 	return constant;
+    }
+
+    // Allocates an instanceof of java.lang.String somewhere in 
+    // the string segments.  
+    private void allocString(String str) { 
+	HClass    HCstring  = HClass.forName("java.lang.String");
+	HClass    HCcharA   = HClass.forDescriptor("[C");
+	Label     strClsPtr = m_offm.label(HCstring);
+	Label     caClsPtr  = m_offm.label(HCcharA);
+	HField    count     = HCstring.getField("count");
+	HField    offset    = HCstring.getField("offset");
+	HField    value     = HCstring.getField("value");
+
+	ArrayList u         = new ArrayList();
+	ArrayList d         = new ArrayList();
+	List      stms      = new ArrayList();
+
+	//
+	// STEP 1: Construct the String object
+
+	// Assign the String a HashCode
+	add(m_offm.hashCodeOffset(HCstring),
+	    new DATA(m_tf,null,new CONST(m_tf,null,str.hashCode())),u,d);
+	// Assign the String a clazz ptr
+	add(m_offm.clazzPtrOffset(HCstring),
+	    new DATA(m_tf,null,new NAME(m_tf,null,strClsPtr)),u,d);
+	// Set the "count" field to the length of the string constant
+	add(m_offm.offset(count),
+	    new DATA(m_tf,null,new CONST(m_tf,null,str.length())),u,d);
+	// Set the "offset" field to 0
+	add(m_offm.offset(offset),
+	    new DATA(m_tf,null,new CONST(m_tf,null,0)),u,d);
+	// Set the "value" field to point to a char array (created below)
+	add(m_offm.offset(value),
+	    new DATA
+	    (m_tf,null,
+	     new NAME
+	     (m_tf,null,_LABEL(str+"CA",null).label)),u,d);
+	
+	Collections.reverse(u);
+	u.add(0, new LABEL(m_tf, null, m_offm.label(str)));
+	u.add(0, new SEGMENT(m_tf, null, SEGMENT.STRING_CONSTANTS));
+	stms.addAll(u);
+	stms.addAll(d);
+
+	u.clear(); d.clear();
+	//
+	// STEP 2: Construct the character array the string points to
+	// Assign the character array a HashCode
+	add(m_offm.lengthOffset(HCcharA),
+	    new DATA(m_tf,null, 
+		     new CONST(m_tf,null,str.length())),u,d);
+	add(m_offm.hashCodeOffset(HCcharA),
+	    new DATA(m_tf,null,
+		     new CONST(m_tf,null,str.toCharArray().hashCode())),u,d);
+	// Assign the character array a clazz ptr
+	add(m_offm.clazzPtrOffset(HCcharA),
+	    new DATA(m_tf,null,new NAME(m_tf,null,caClsPtr)),u,d);
+	for (int i=0; i<str.length(); i++) { 
+	    add(m_offm.elementsOffset(HCcharA)+i, 
+		new DATA
+		(m_tf, null, 
+		 new CONST(m_tf, null, 16, true, (int)str.charAt(i))),u,d);
+	}
+	Collections.reverse(u);
+	u.add(0, _LABEL(str+"CA", null));
+	u.add(0, new SEGMENT(m_tf, null, SEGMENT.STRING_DATA));
+	stms.addAll(u);
+	stms.addAll(d);
+	stms.add(new SEGMENT(m_tf, null, SEGMENT.CODE));
+	
+	addStmt(Stm.toStm(stms));
+    }
+    
+    private void add(int index, Tree elem, ArrayList up, ArrayList down) { 
+	int requiredSize;
+	if (index<0) { 
+	    requiredSize = (-index);
+	    if (requiredSize > up.size()) { 
+		up.ensureCapacity(requiredSize);
+		for (int i=up.size(); i<requiredSize; i++) 
+		    up.add(new DATA(elem.getFactory(), elem));
+	    }	    
+	    up.set(-index-1, elem);
+	}
+	else {
+	    requiredSize = index+1;
+	    if (requiredSize > down.size()) { 
+		down.ensureCapacity(requiredSize);
+		for (int i=down.size(); i<requiredSize; i++) 
+		    down.add(new DATA(elem.getFactory(), elem));
+	    }	    
+	    down.set(index, elem);
+	}
     }
 
     /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*
@@ -1028,14 +1132,14 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
      *                                                            *
      *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-
-    /** 
-     *  The isInstantceOf check uses the casting conversion algorithm
-     *  found in the Java Language Specification at 
-     *  http://java.sun.com/docs/books/jls/html/5.doc.html#176921.
-     *  Returns an Exp that evaluates to true if "q" can be cast to "type"
-     *  with this algorithm.
-     */
+    
+    // Returns an Exp that evaluates to true if "q" can be cast to "type"
+    // with this algorithm.  This algorithm is now substantially different
+    // than the recursive casting conversion algorithm
+    // found in the Java Language Specification at 
+    // http://java.sun.com/docs/books/jls/html/5.doc.html#176921.  
+    // 
+    // FIXME:  <insert description of algorithm here>
     private Exp isInstanceOf(Quad q, Temp src, HClass type) {
 
 	TEMP SRC1     = _TEMP(src, q);

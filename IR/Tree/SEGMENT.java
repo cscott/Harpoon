@@ -16,7 +16,7 @@ import java.util.Set;
  *  stored in the specified section.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: SEGMENT.java,v 1.1.2.8 1999-08-11 13:26:09 cananian Exp $
+ * @version $Id: SEGMENT.java,v 1.1.2.9 1999-08-16 23:48:04 duncan Exp $
  */
 public class SEGMENT extends Stm {
     /** R/O storage for static class data (display, vmtable, etc) */
@@ -45,19 +45,19 @@ public class SEGMENT extends Stm {
      */
     public static final String decode(int segtype) {
 	switch(segtype) {
-	case CLASS: return "CLASS";
-	case CODE: return "CODE";
-	case GC: return "GC";
-	case INIT_DATA: return "INIT_DATA";
-	case STATIC_OBJECTS: return "STATIC_OBJECTS";
-	case STATIC_PRIMITIVES: return "STATIC_PRIMITIVES";
-	case STRING_CONSTANTS: return "STRING_CONSTANTS";
-	case STRING_DATA: return "STRING_DATA";
-	case TEXT: return "TEXT";
-	case ZERO_DATA: return "ZERO_DATA";
-	default:
-	    Util.assert(false, "Unknown segment type "+segtype);
-	    return "UNKNOWN SEGMENT TYPE"; // if assertions disabled
+	case CLASS:               return "CLASS";
+	case CODE:                return "CODE";
+	case GC:                  return "GC";
+	case INIT_DATA:           return "INIT_DATA";
+	case STATIC_OBJECTS:      return "STATIC_OBJECTS";
+	case STATIC_PRIMITIVES:   return "STATIC_PRIMITIVES";
+	case STRING_CONSTANTS:    return "STRING_CONSTANTS";
+	case STRING_DATA:         return "STRING_DATA";
+	case TEXT:                return "TEXT";
+	case ZERO_DATA:           return "ZERO_DATA";
+	default: 
+	    Util.assert(false, "Unknown segment type "+segtype); 
+	    return null;
 	}
     }
 
@@ -92,9 +92,6 @@ public class SEGMENT extends Stm {
     }
 
     public String toString() {
-        StringBuffer sb = new StringBuffer("SEGMENT<");
-	sb.append(decode(segtype));
-	sb.append(">");
-	return sb.toString();
+	return "SEGMENT<" + decode(segtype) + ">";
     }
 }

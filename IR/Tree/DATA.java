@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * </PRE>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: DATA.java,v 1.1.2.5 1999-08-04 06:31:00 cananian Exp $
+ * @version $Id: DATA.java,v 1.1.2.6 1999-08-16 23:48:04 duncan Exp $
  */
 public class DATA extends Stm { 
     /** The expression to write to memory.  If null, this location in 
@@ -30,23 +30,29 @@ public class DATA extends Stm {
     public final Exp data;
     
     /** Class constructor. 
-     *  Reserves this location in memory without assigning it a value. 
+     *  Reserves a word of memory at the location of this <code>DATA</code>
+     *  without assigning it a value. 
      */
     public DATA(TreeFactory tf, HCodeElement source) { 
-	super(tf, source);
-	this.data = null;
+	this(tf, source, null);
     }
 
     /** Class constructor. 
      *  The parameter <br><code>data</code> must be an instance of either
      *  <code>harpoon.IR.Tree.CONST</code> or 
-     *  <code>harpoon.IR.Tree.NAME</code>.
+     *  <code>harpoon.IR.Tree.NAME</code>.  Passing <code>null</code> for
+     *  the parameter <code>data</code> reserves a word of memory at the
+     *  location of this <code>DATA</code> without assigning it a value.
      */
     public DATA(TreeFactory tf, HCodeElement source, Exp data) {
 	super(tf, source);
 	this.data = data; 
-	Util.assert(data.kind()==TreeKind.CONST || data.kind()==TreeKind.NAME);
-	Util.assert(tf == data.tf, "Dest and Src must have same tree factory");
+	if (data!=null) { 
+	    Util.assert(data.kind()==TreeKind.CONST || 
+			data.kind()==TreeKind.NAME);
+	    Util.assert(tf==data.tf,
+			"Dest and Src must have same tree factory");
+	}
     }
 
     public ExpList kids() { return new ExpList(data, null); } 
@@ -60,15 +66,6 @@ public class DATA extends Stm {
 	return new DATA(tf, this, kids.head);
     }
 
-    /** Implements the typed interface.  This throws an error if 
-     *  this <code>DATA</code> object reserves memory with an 
-     *  unspecifid value. */
-    public int type() { 
-	if (data==null) 
-	    throw new Error("Type of this DATA object is not specified");
-	else return data.type(); 
-    } 
-
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); } 
 
@@ -78,7 +75,7 @@ public class DATA extends Stm {
 
     public String toString() { 
 	StringBuffer sb = new StringBuffer("DATA<");
-	sb.append(data==null?"Unspecified type":(Type.toString(type())));
+	sb.append(data==null?"Unspecified type":(Type.toString(data.type())));
 	sb.append(">(#"); sb.append(getID()); sb.append(")");
 	return sb.toString();
     }

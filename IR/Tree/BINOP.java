@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: BINOP.java,v 1.1.2.17 1999-08-04 05:52:29 cananian Exp $
+ * @version $Id: BINOP.java,v 1.1.2.18 1999-08-16 23:48:03 duncan Exp $
  * @see Bop
  */
 public class BINOP extends OPER {
@@ -30,8 +30,8 @@ public class BINOP extends OPER {
 	  
 	this.left=left; this.right=right;
 	Util.assert(Bop.isValid(binop));
-	Util.assert(left.tf == right.tf, "Left and Right must have same tree factory");
-	Util.assert(tf == left.tf, "This and Left must have same tree factory");
+	Util.assert(tf==right.tf,"Left and Right must have same tree factory");
+	Util.assert(tf==left.tf,"This and Left must have same tree factory");
     }
     // binops defined in harpoon.IR.Tree.Bop.
     public int type() {
