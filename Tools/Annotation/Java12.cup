@@ -201,22 +201,27 @@ action code {:
 	  if (qn!=null) return qn;
       }
       // FIXME: try name "in scope of visible local class declaration"
-      // try name 'in scope of exactly one visible member type'
-      qn = className((String)env.get("#qualified"));
-      if (qn!=null) {
-	  for (Iterator it=allParents(qn.toClass()).iterator(); it.hasNext();){
-	      HClass hc = (HClass) it.next();
-	      String dots = hc.getName().replace('$','.');
-	      qn = className(combineWithDot(dots, ty));
-	      if (qn!=null) return qn;
-	  }
-      }
       // try name 'in current compilation units', then in current package.
+      // try name 'in scope of exactly one visible member type'
       for (String s=(String)env.get("#qualified");
 	   this_package==null || s.startsWith(this_package);
 	   s = s.substring(0, s.lastIndexOf('.')) ) {
-	  qn = className(combineWithDot(s, ty));
-	  if (qn!=null) return qn;
+	  if ((!s.equals(this_package)) &&
+	      (qn = className(s)) != null) {
+	      Iterator it=allParents(qn.toClass()).iterator();
+	      while (it.hasNext()) {
+		  HClass hc = (HClass) it.next();
+		  // first try replacing '$' with '.' to name inner class.
+		  String dots = hc.getName().replace('$','.');
+		  if (null!=(qn = className(combineWithDot(dots, ty))))
+		      return qn;
+		  // also try non-inner class version.
+		  if (null!=(qn = className(combineWithDot(hc.getName(), ty))))
+		      return qn;
+	      }
+	  } else if (null!=(qn = className(combineWithDot(s, ty))))
+	      return qn;
+
 	  if (s.indexOf('.')<0) break; // deal with this_package==null.
       }
       // try type-import-on-demand.
@@ -750,9 +755,12 @@ class_declaration ::=
 	     LinePos lp = parser.lexer.linepos(comment_start+1);
 	     LinePos rp = parser.lexer.linepos(comment_start+2);
 	     QualName qn = className((String)env.get("#qualified"));
-	     System.out.println(lp.line+" "+lp.pos+"\t"+rp.line+" "+rp.pos);
-	     System.out.println("<A HREF=\""+qn.toDocURL()+"\">");
-	     System.out.println("</A>");
+	     if (qn!=null) {
+		 System.out.println(lp.line+" "+lp.pos+"\t"+
+				    rp.line+" "+rp.pos);
+		 System.out.println("<A HREF=\""+qn.toDocURL()+"\">");
+		 System.out.println("</A>");
+	     }
 	   }
 	:} class_body {: popenv(); :}
 	;
