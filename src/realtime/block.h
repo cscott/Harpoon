@@ -41,6 +41,10 @@ inline void Block_free(struct Block* block);
 inline void Block_reset(struct Block* block);
 inline void Block_finalize(struct Block* block);
 
+#ifdef WITH_PRECISE_GC
+inline void Block_scan(struct Block* block);
+#endif
+
 #ifdef WITH_GC_STATS
 extern struct timespec total_finalize_time;
 #endif

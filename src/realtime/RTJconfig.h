@@ -29,6 +29,10 @@
 #error Realtime Java requires thread support.
 #endif
 
+#ifdef WITH_PRECISE_GC
+#include "jni-gc.h"
+#endif
+
 #ifdef WITH_GC_STATS
 #include "GCstats.h"
 #endif

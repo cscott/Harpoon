@@ -320,7 +320,6 @@ inline void heapCheckJava(struct oobj* ptr) {
 #endif 
   JNIEnv* env = FNI_GetJNIEnv();
   if (((struct FNI_Thread_State*)env)->noheap) {
-    char desc[400];
     jclass excls = (*env)->FindClass(env, "java/lang/IllegalAccessException");
 #ifdef RTJ_DEBUG
 #ifdef RTJ_DEBUG_REF

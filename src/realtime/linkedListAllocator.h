@@ -7,6 +7,9 @@
 #include "RTJfinalize.h"
 #include "RTJconfig.h"
 #include "asm/atomicity.h"
+#ifdef WITH_PRECISE_GC
+#include "../gc/precise_gc.h"
+#endif
 
 struct cons {
   struct oobj* car;

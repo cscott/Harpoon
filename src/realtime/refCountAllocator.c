@@ -241,7 +241,6 @@ inline void RefCountAllocator_register_finalizer(void* obj,
   REF_HEADER(obj)->finalize = finalize;
 }
 
-#define error_gc(str, foo) 0
 #define print_bitmap(str) 0
 #define COLLECT_NOPTR_STATS() {}
 #define COLLECT_LRGOBJ_STATS() {}

@@ -10,6 +10,10 @@
 #include <stdio.h>  /* for printf */
 #include <string.h> /* for memset */
 
+#ifdef WITH_PRECISE_GC
+#include "jni-gc.h"
+#endif
+
 #define WITH_REALTIME_CLOCK 1 
 
 #ifdef WITH_REALTIME_CLOCK

@@ -8,6 +8,7 @@
 #define _Included_MemoryArea
 #include "RTJmalloc.h"
 #include "jni-private.h"
+#include <string.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
