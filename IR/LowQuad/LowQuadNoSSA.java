@@ -4,6 +4,8 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.IR.Properties.Derivation;
+import harpoon.IR.Properties.Derivation.DList;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.ToNoSSA;
 import harpoon.Temp.Temp;
@@ -14,7 +16,7 @@ import java.util.Hashtable;
 /**
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.6 1999-02-07 10:33:32 cananian Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.7 1999-02-07 10:52:54 cananian Exp $
  */
 public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
 {
