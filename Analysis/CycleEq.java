@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,7 +29,7 @@ import java.util.Set;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.9 1999-03-02 06:44:08 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.10 1999-03-02 08:29:20 cananian Exp $
  */
 
 public class CycleEq  {
@@ -42,8 +43,8 @@ public class CycleEq  {
 	for (Iterator e = g.primes(); e.hasNext(); ) {
 	    Node n = (Node) e.next();
 	    List l = (List) equiv.get(n.cd_class);
-	    if (l==null) { l = new ArrayList(); equiv.put(n.cd_class, l); }
-	    l.add(n.source());
+	    if (l==null) { l = new LinkedList(); equiv.put(n.cd_class, l); }
+	    l.add(0, n.source());
 	    elements.add(n.source());
 	}
 	// make equiv and elements unmodifiable.
