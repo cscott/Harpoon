@@ -22,10 +22,11 @@ public class RelationExpr extends Expr {
 
     public void generate(CodeWriter writer, VarDescriptor dest) {
         VarDescriptor domain = VarDescriptor.makeNew("domain");
+        String strinverse = inverse ? "inv" : "";
         String found = (VarDescriptor.makeNew("found")).getSafeSymbol();
         expr.generate(writer, domain);
         writer.outputline(relation.getRange().getType().getGenerateType().getSafeSymbol() + " " + dest.getSafeSymbol() + ";");
-        writer.outputline("int " + found + " = " + relation.getSafeSymbol() + "_hash->get(" + domain.getSafeSymbol() + ", " + dest.getSafeSymbol() + ");");
+        writer.outputline("int " + found + " = " + relation.getSafeSymbol() + "_hash" + strinverse + "->get(" + domain.getSafeSymbol() + ", " + dest.getSafeSymbol() + ");");
         writer.outputline("if (!" + found + ") { maybe = 1; }");
     }
 

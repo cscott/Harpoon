@@ -37,6 +37,19 @@ public class ForQuantifier extends Quantifier {
         writer.startblock();
     }
 
+    public int generate_worklistload(CodeWriter writer, int offset) {        
+        String varname = var.getSafeSymbol();
+        writer.outputline("int " + varname + " = wi->word" + offset + ";"); 
+        return offset + 1;       
+    }
+
+    public int generate_workliststore(CodeWriter writer, int offset) {        
+        String varname = var.getSafeSymbol();
+        writer.outputline("wi->word" + offset + " = " + varname + ";");
+        return offset + 1;       
+    }
+
+
     public boolean typecheck(SemanticAnalyzer sa) {
         TypeDescriptor lt = lower.typecheck(sa);
         TypeDescriptor ut = upper.typecheck(sa);

@@ -14,9 +14,16 @@ public class Rule {
     SymbolTable st = new SymbolTable();
     
     String label;
+    
+    int num;
 
     public Rule () {
+        num = count;
         label = new String("rule" + count++);
+    }
+    
+    public int getNum() {
+        return num;
     }
 
     public String getLabel() {

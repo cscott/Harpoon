@@ -8,6 +8,18 @@ public class DotExpr extends Expr {
     String field;
     Expr index;
 
+    /*
+    static int memoryindents = 0;
+
+    public static void generate_memory_endblocks(CodeWriter cr) {
+        while (memoryindents > 0) {
+            memoryindents --;
+            cr.endblock();
+        }
+        memoryindents = 0;
+    }
+    */
+
     public DotExpr(Expr left, String field, Expr index) {
         this.left = left;
         this.field = field;
@@ -176,6 +188,14 @@ public class DotExpr extends Expr {
             String high = VarDescriptor.makeNew("high").getSafeSymbol();
             writer.outputline("int " + high + " = " + low + " + " + sizeof.getSafeSymbol() + ";");            
             writer.outputline("assertvalidmemory(" + low + ", " + high + ");");            
+
+            // we need to null value check and conditionalize the rest of the rule... we'll use a hack
+            // here where we store the number of indents in this class... and then provide a static 
+            // method to unwind...
+            //writer.outputline("// assertvalidmemory ");
+            //DotExpr.memoryindents++;
+            //writer.outputline("if (" + dest.getSafeSymbol() + " != NULL)");
+            //writer.startblock();           
         }
 
     }

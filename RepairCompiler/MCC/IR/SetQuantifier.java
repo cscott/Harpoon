@@ -25,6 +25,10 @@ public class SetQuantifier extends Quantifier {
         return v;
     }
 
+    public VarDescriptor getVar() {
+        return var;
+    }
+
     public SetDescriptor getSet() {
         return set;
     }
@@ -39,4 +43,17 @@ public class SetQuantifier extends Quantifier {
         writer.outputline(var.getType().getGenerateType() + " " + var.getSafeSymbol() + " = (" + var.getType().getGenerateType() + ") " + var.getSafeSymbol() + "_iterator->next();");
     }
   
+    public int generate_worklistload(CodeWriter writer, int offset) {        
+        String varname = var.getSafeSymbol();
+        writer.outputline("int " + varname + " = wi->word" + offset + ";"); 
+        return offset + 1;       
+    }
+
+    public int generate_workliststore(CodeWriter writer, int offset) {        
+        String varname = var.getSafeSymbol();
+        writer.outputline("wi->word" + offset + " = " + varname + ";");
+        return offset + 1;       
+    }
+
+
 }

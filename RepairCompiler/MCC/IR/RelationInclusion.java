@@ -9,6 +9,7 @@ public class RelationInclusion extends Inclusion {
 
     // #TBD#: this flag needs to be set by some static analysis
     boolean typesafe = true;
+    static boolean worklist = true;
 
     public RelationInclusion(Expr leftelementexpr, Expr rightelementexpr, RelationDescriptor relation) {
         this.leftelementexpr = leftelementexpr;
@@ -57,21 +58,31 @@ public class RelationInclusion extends Inclusion {
             check += "1;"; // terminate boolean expression
 
             writer.outputline(check);
-            writer.outputline("if (" + typesafecheck + ") {");
-            writer.indent();
+            writer.outputline("if (" + typesafecheck + ")");
+            writer.startblock();
         }
-        
+
+        String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
+        writer.outputline("int " + addeditem + ";");
+
         if (relation.testUsage(RelationDescriptor.IMAGE)) {
-            writer.outputline(relation.getSafeSymbol() + "_hash->add((int)" + ld.getSafeSymbol() + ", (int)" + rd.getSafeSymbol() + ");");
+            writer.outputline(addeditem + " = " + relation.getSafeSymbol() + "_hash->add((int)" + ld.getSafeSymbol() + ", (int)" + rd.getSafeSymbol() + ");");
         } 
         
         if (relation.testUsage(RelationDescriptor.INVIMAGE)) {
-            writer.outputline(relation.getSafeSymbol() + "_hashinv->add((int)" + rd.getSafeSymbol() + ", (int)" + ld.getSafeSymbol() + ");");
+            writer.outputline(addeditem + " = " + relation.getSafeSymbol() + "_hashinv->add((int)" + rd.getSafeSymbol() + ", (int)" + ld.getSafeSymbol() + ");");
         }
         
+        if (RelationInclusion.worklist) {
+            writer.outputline("if (" + addeditem + ")");
+            writer.startblock(); {                
+                WorkList.generate_dispatch(writer, relation, rd.getSafeSymbol(), ld.getSafeSymbol());
+            }
+            writer.endblock();
+        }
+
         if (!typesafe) {
-            writer.unindent();
-            writer.outputline("}");
+            writer.endblock();
         }            
 
         //writer.outputline("printf(\"" + relation.getSafeSymbol() + " (add): <%d, %d>\\n\", " + ld.getSafeSymbol() + ", " + rd.getSafeSymbol() + ");");

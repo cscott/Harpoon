@@ -33,6 +33,8 @@ public class DependencyBuilder {
             Iterator targets = inclusion.getTargetDescriptors().iterator();
             String additionallabel = new String();
 
+            /* #ATTN#: is this meant to be while, not if? */
+            /* perhaps there is only one descriptor for targets */
             if (targets.hasNext()) {
                 Descriptor d = (Descriptor)targets.next();
                 additionallabel = "\\n" + d.getSymbol();

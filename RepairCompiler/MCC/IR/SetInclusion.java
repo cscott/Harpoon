@@ -7,6 +7,8 @@ public class SetInclusion extends Inclusion {
     Expr elementexpr;
     SetDescriptor set;
 
+    static boolean worklist = true;
+
     public SetInclusion(Expr elementexpr, SetDescriptor set) {
         this.elementexpr = elementexpr;
         this.set = set;
@@ -25,8 +27,21 @@ public class SetInclusion extends Inclusion {
     public void generate(CodeWriter writer) {
         VarDescriptor vd = VarDescriptor.makeNew("element");
         elementexpr.generate(writer, vd);
-        writer.outputline(set.getSafeSymbol() + "_hash->add((int)" + vd.getSafeSymbol() +  ", (int)" + vd.getSafeSymbol() + ");");
-        //writer.outputline("printf(\"" + set.getSafeSymbol() + " (add): %d\\n\", " + vd.getSafeSymbol() + ");");
+
+        String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
+        writer.outputline("int " + addeditem + ";");
+        
+        writer.outputline(addeditem + " = " + set.getSafeSymbol() + "_hash->add((int)" + vd.getSafeSymbol() 
+                          +  ", (int)" + vd.getSafeSymbol() + ");");
+
+        if (SetInclusion.worklist) {
+            writer.outputline("if (" + addeditem + ")");
+            writer.startblock(); {                
+                WorkList.generate_dispatch(writer, set, vd.getSafeSymbol());
+            }
+            writer.endblock();
+        }
+        
     }
 
     public boolean typecheck(SemanticAnalyzer sa) {

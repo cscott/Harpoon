@@ -36,4 +36,21 @@ public class RelationQuantifier extends Quantifier {
         writer.outputline(x.getType().getSafeSymbol() + " " + x.getSafeSymbol() + " = (" + x.getType().getSafeSymbol() + ") " + x.getSafeSymbol() + "_iterator->key();");
     }
 
+    public int generate_worklistload(CodeWriter writer, int offset) {        
+        String varx = x.getSafeSymbol();
+        String vary = y.getSafeSymbol();
+        writer.outputline("int " + varx + " = wi->word" + offset + "; // r1"); 
+        writer.outputline("int " + vary + " = wi->word" + (offset + 1) + "; //r2"); 
+        return offset + 2;       
+    }
+
+    public int generate_workliststore(CodeWriter writer, int offset) {        
+        String varx = x.getSafeSymbol();
+        String vary = y.getSafeSymbol();
+        writer.outputline("wi->word" + offset + " = " + varx + "; // r1");
+        writer.outputline("wi->word" + (offset+1) + " = " + vary + "; // r2");
+        return offset + 2;       
+    }
+
+
 }
