@@ -69,7 +69,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.23 2000-10-13 21:08:36 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.24 2000-10-17 22:28:22 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -80,8 +80,13 @@ import java.util.Iterator;
 // v1) 
 %%
 
-    private void collectCallInfo(harpoon.IR.Tree.Data data) {}
+    private void collectCallInfo(harpoon.IR.Tree.Data data) {
+    }
     private void collectCallInfo(harpoon.IR.Tree.Code code) {
+       //System.out.println("CCCollectCallInfo " + code + " Name " 
+       //+ code.getName()
+       //+ " Meth " + code.getMethod());
+       
        final class CallVisitor extends harpoon.IR.Tree.TreeVisitor {
           public void visit(harpoon.IR.Tree.Tree treee){
              harpoon.Util.Util.assert(false, "Should never visit generic harpoon.IR.Tree.Treein CallVisitor");
@@ -141,6 +146,8 @@ import java.util.Iterator;
     private final boolean mipspro_assem = false;
     // whether to use soft-float or hard-float calling convention.
     private final boolean soft_float = false; // skiffs use hard-float
+    // Add yellow pekoe register usage suffixes to long instr patterns
+    private final boolean yellow_pekoe = false;
 
     public CodeGen(Frame frame, boolean is_elf) {
        super(frame);
@@ -1014,11 +1021,19 @@ BINOP<l>(ADD, j, k) = i %extra<i>{ extra }
    Util.assert(i instanceof TwoWordTemp);
    emitLineDebugInfo(ROOT);
    emitRegAllocDef(ROOT, i);
-   emit2( ROOT, "addu `d0l, `s0l, `s1l\n"
-          + "sltu `d1, `s2l, `s1l\n"
-          + "addu `d0h, `s3, `s0h\n"
-          + "addu `d0h, `s2h, `s1h",
+   if(yellow_pekoe) {
+      emit2( ROOT, "addu `d0l, `s0l, `s1l\n"
+             + "sltu `d1, `s2l, `s1l\n"
+             + "addu.l1 `d0h, `s3, `s0h\n"
+             + "addu `d0h, `s2h, `s1h",
           new Temp[] {i, extra}, new Temp[] {j, k, i, extra} );
+   } else {
+      emit2( ROOT, "addu `d0l, `s0l, `s1l\n"
+             + "sltu `d1, `s2l, `s1l\n"
+             + "addu `d0h, `s3, `s0h\n"
+             + "addu `d0h, `s2h, `s1h",
+             new Temp[] {i, extra}, new Temp[] {j, k, i, extra} );
+   }
 }%
 
 BINOP<f>(ADD, j, k) = i %{
@@ -1050,11 +1065,21 @@ BINOP<l>(ADD, j, UNOP<l>(NEG, k)) = i %extra<i>{ extra }
 %{
    emitLineDebugInfo(ROOT);
    emitRegAllocDef(ROOT, i);
-   emit2( ROOT, "sltu `d1, `s0l, `s1l\n"
-          + "subu `d0l, `s0l, `s1l\n"
+   if(yellow_pekoe) {
+   emit2( ROOT, 
+          "subu `d0l, `s0l, `s1l\n"
           + "subu `d0h, `s0h, `s1h\n"
-          + "subu `d0h, `s2h, `s3",
-         new Temp[]{i,extra}, new Temp[] {j, k, i, extra} );
+          + "sltu `d1, `s0l, `s1l\n"
+          + "subu.l2 `d0h, `s2h, `s3",
+          new Temp[]{i,extra}, new Temp[] {j, k, i, extra} );
+   } else {
+      emit2( ROOT, 
+             "subu `d0l, `s0l, `s1l\n"
+             + "subu `d0h, `s0h, `s1h\n"
+             + "sltu `d1, `s0l, `s1l\n"
+             + "subu `d0h, `s2h, `s3",
+             new Temp[]{i,extra}, new Temp[] {j, k, i, extra} );
+   }
 }%
 
 BINOP<f>(ADD, j, UNOP<f>(NEG, k)) = i %{
@@ -1137,6 +1162,11 @@ BINOP<l>(REM, j, k) = i %{
    // DoLLCall(ROOT, i, j, k, "__ll_rem");
 }%
 
+BINOP<d>(REM, j, k) = i %{
+   emitLineDebugInfo(ROOT);
+   DoDCall(ROOT, i, j, k, "__d_rem");
+}%
+
 UNOP<i,p>(NEG, arg) = i
 %{
    emitLineDebugInfo(ROOT);
@@ -1156,11 +1186,19 @@ UNOP<l>(NEG, arg) = i %extra<i>{ extra }
 %{
    emitLineDebugInfo(ROOT);
    emitRegAllocDef(ROOT, i);
-   emit2( ROOT, "subu `d0l, $0, `s0l\n"
-          + "subu `d0h, $0, `s0h\n"
-          + "sltu `d1, $0, `s0l\n"
-          + "subu `d0h, `s1h, `s2",
-          new Temp[] {i,extra}, new Temp[] {arg, i, extra} );
+   if(yellow_pekoe) {
+      emit2( ROOT, "subu `d0l, $0, `s0l\n"
+             + "subu `d0h, $0, `s0h\n"
+             + "sltu `d1, $0, `s0l\n"
+             + "subu.l2 `d0h, `s1h, `s2",
+             new Temp[] {i,extra}, new Temp[] {arg, i, extra} );
+   } else {
+      emit2( ROOT, "subu `d0l, $0, `s0l\n"
+             + "subu `d0h, $0, `s0h\n"
+             + "sltu `d1, $0, `s0l\n"
+             + "subu `d0h, `s1h, `s2",
+             new Temp[] {i,extra}, new Temp[] {arg, i, extra} );
+   }
 }% 
 
 /***********************************************************/
@@ -1248,8 +1286,8 @@ BINOP(CMPEQ, j, k) = i %extra<i>{ extra }
 %pred %( ROOT.operandType()==Type.LONG )%
 %{
    emitLineDebugInfo(ROOT);
-    emit( ROOT, "xor `d0, `s0h, `s1h", extra, j, k );
     emit( ROOT, "xor `d0, `s0l, `s1l", i, j, k );
+    emit( ROOT, "xor `d0, `s0h, `s1h", extra, j, k );
     emit( ROOT, "or  `d0, `s0,  `s1", i, i, extra );
     emit( ROOT, "sltiu `d0, `s0, 1", i, i );
 }%
@@ -1257,8 +1295,8 @@ BINOP(CMPNE, j, k) = i %extra<i>{ extra } /* void*/
 %pred %( ROOT.operandType()==Type.LONG )%
 %{
    emitLineDebugInfo(ROOT);
-    emit( ROOT, "xor `d0, `s0h, `s1h", extra, j, k );
     emit( ROOT, "xor `d0, `s0l, `s1l", i, j, k );
+    emit( ROOT, "xor `d0, `s0h, `s1h", extra, j, k );
     emit( ROOT, "or  `d0, `s0,  `s1", i, i, extra );
     emit( ROOT, "sltu `d0, $0, `s0", i, i );
 }%
@@ -1645,6 +1683,11 @@ UNOP(_2I, arg) = i %pred %( ROOT.operandType() == Type.DOUBLE )%
    emitLineDebugInfo(ROOT);
    DoDCall(ROOT, i, arg, "__d2i");
 }%
+UNOP(_2F, arg) = i %pred %( ROOT.operandType() == Type.DOUBLE )%
+%{
+   emitLineDebugInfo(ROOT);
+   DoDCall(ROOT, i, arg, "__d2f");
+}%
 UNOP(_2L, arg) = i %pred %( ROOT.operandType() == Type.DOUBLE )%
 %{
    emitLineDebugInfo(ROOT);
@@ -1739,6 +1782,22 @@ METHOD(params) %{
     declare(SP, HClass.Void);
     declare(FP, HClass.Void);
     emit(new InstrENTRY( instrFactory, ROOT ));
+    // Here is the deal.  By this point in code generation, we have
+    // not finished this routine, nor have we register allocated, so
+    // we don't know how big the frame is.  The arguments are on top
+    // of the frame, so that means we either
+    // 1. Use sp to address args, use psuedo ops now and replace
+    //      them in proc fixup when we know the correct offset
+    // 2. Use fp to address args, and use real instructions now
+    // 
+    // We choose option 2.  To figure out if an arg is going to be in
+    // a register or on the stack (and if its on the stack, where is
+    // it), we build a local stack object and pass it this routine (as
+    // if this were the stack frame for another routine that called
+    // this one and needed to pass it parameters).
+    // Create a new stack that believes this routine is what it is
+    // calling.  That will give us correct information about the
+    // location of the parameters for this routine.
     StackInfo param_stack = new StackInfo(regfile);
     param_stack.callInfo(ROOT);
     // move arguments to temporaries.
@@ -1767,7 +1826,7 @@ METHOD(params) %{
                                 + param_stack.argOffset(ROOT, i-1)
                                 + "(`s0)        # arg "
                                 + (i-1) + "h"
-                                + "lw `d0l, " 
+                                + "\nlw `d0l, " 
                                 + param_stack.argSecondOffset(ROOT, i-1)
                                 + "(`s0)        # arg "
                                 + (i-1) + "l",
