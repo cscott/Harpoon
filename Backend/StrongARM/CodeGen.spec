@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.150 2000-03-22 05:14:49 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.151 2000-03-24 19:42:18 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -92,11 +92,15 @@ import java.util.Iterator;
     // NameMap for calling C functions.
     NameMap nameMap;
 
-    public CodeGen(Frame frame) {
+    // whether to generate a.out-style or elf-style segment directives
+    private final boolean is_elf;
+
+    public CodeGen(Frame frame, boolean is_elf) {
 	super(frame);
 	last = null;
 	this.regfile = (RegFileInfo) frame.getRegFileInfo();
 	this.nameMap = frame.getRuntime().nameMap;
+	this.is_elf = is_elf;
 	r0 = regfile.reg[0];
 	r1 = regfile.reg[1];
 	r2 = regfile.reg[2];
@@ -492,9 +496,9 @@ import java.util.Iterator;
       // local labels
       // these may need to be included in the previous instr to preserve
       // ordering semantics, but for now this way they indent properly
-      emitDIRECTIVE( ROOT, ".text 10\t@.section fixup");
+      emitDIRECTIVE( ROOT, !is_elf?".text 10":".section .flex.fixup");
       emitDIRECTIVE( ROOT, "\t.word "+retaddr+", "+handler+" @ (retaddr, handler)");
-      emitDIRECTIVE( ROOT, ".text 0 \t@.section code");
+      emitDIRECTIVE( ROOT, !is_elf?".text 0":".section .flex.code");
     }
     /** Finish up a CALL or NATIVECALL. */
     private void emitCallEpilogue(INVOCATION ROOT,
@@ -2068,61 +2072,62 @@ ALIGN(n) %{
 }%
 
 SEGMENT(CLASS) %{
-    emitDIRECTIVE( ROOT, ".data 1\t@.section class");
+    emitDIRECTIVE( ROOT, !is_elf?".data 1":".section .flex.class");
 
 }%
 
 SEGMENT(CODE) %{
     // gas 2.7 does not support naming the code section...not
     // sure what to do about this yet...
-    // emitDIRECTIVE( ROOT, ".code 32\t@.section code");
-    emitDIRECTIVE( ROOT, ".text 0\t@.section code");
+    // emitDIRECTIVE( ROOT, !is_elf?".code 32":".section code");
+    emitDIRECTIVE( ROOT, !is_elf?".text 0":".section .flex.code");
 }%
 
 SEGMENT(GC) %{
-    emitDIRECTIVE( ROOT, ".data 2\t@.section gc");
+    emitDIRECTIVE( ROOT, !is_elf?".data 2":".section .flex.gc");
 }%
 
 SEGMENT(INIT_DATA) %{
-    emitDIRECTIVE( ROOT, ".data 3\t@.section init_data");
+    emitDIRECTIVE( ROOT, !is_elf?".data 3":".section .flex.init_data");
 }%
 
 SEGMENT(STATIC_OBJECTS) %{
-    emitDIRECTIVE( ROOT, ".data 4\t@.section static_objects");
+    emitDIRECTIVE( ROOT, !is_elf?".data 4":".section .flex.static_objects");
 }%
 
 SEGMENT(STATIC_PRIMITIVES) %{
-    emitDIRECTIVE( ROOT, ".data 5\t@.section static_primitives");
+    emitDIRECTIVE( ROOT, !is_elf?".data 5":".section .flex.static_primitives");
 }%
 
 SEGMENT(STRING_CONSTANTS) %{
-    emitDIRECTIVE( ROOT, ".data 6\t@.section string_constants");
+    emitDIRECTIVE( ROOT, !is_elf?".data 6":".section .flex.string_constants");
 }%
 
 SEGMENT(STRING_DATA) %{
-    emitDIRECTIVE( ROOT, ".data 7\t@.section string_data");
+    emitDIRECTIVE( ROOT, !is_elf?".data 7":".section .flex.string_data");
 }%
 
 SEGMENT(REFLECTION_OBJECTS) %{
-    emitDIRECTIVE( ROOT, ".data 8\t@.section reflection_objects");
+    emitDIRECTIVE( ROOT, !is_elf?".data 8":".section .flex.reflection_objects");
 }%
 
 SEGMENT(REFLECTION_DATA) %{
-    emitDIRECTIVE( ROOT, ".data 9\t@.section reflection_data");
+    emitDIRECTIVE( ROOT, !is_elf?".data 9":".section .flex.reflection_data");
 }%
 
 SEGMENT(GC_INDEX) %{
-    emitDIRECTIVE( ROOT, ".data 10\t@.section gc_index");
+    emitDIRECTIVE( ROOT, !is_elf?".data 10":".section .flex.gc_index");
 }%
 
 SEGMENT(TEXT) %{
-    emitDIRECTIVE( ROOT, ".text  \t@.section text");
+    emitDIRECTIVE( ROOT, !is_elf?".text":".section .text");
 }%
 
 SEGMENT(ZERO_DATA) %{
    // gas 2.7 does not allow BSS subsections...use .comm and .lcomm
    // for the variables to be initialized to zero
    // emitDIRECTIVE( ROOT, ".bss   \t@.section zero");
+    emitDIRECTIVE(ROOT, !is_elf?".bss":".section .flex.zero");
 }%
 // Local Variables:
 // mode:java

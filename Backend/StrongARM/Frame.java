@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.20 2000-03-22 05:14:03 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.21 2000-03-24 19:42:18 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -31,8 +31,9 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     // HACK: this should really be a command-line parameter.
     private final static String alloc_func =
 	System.getProperty("harpoon.alloc.func", "malloc");
-    private final static String is_elf =
-	System.getProperty("harpoon.target.elf", "yes");
+    private final static boolean is_elf =
+	System.getProperty("harpoon.target.elf", "yes")
+	.equalsIgnoreCase("yes");
 
     public Frame(HMethod main, ClassHierarchy ch, CallGraph cg) { 
 	super();
@@ -43,12 +44,11 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy(this,
 								  alloc_func);
 	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg,
-						       !is_elf.equalsIgnoreCase
-						       ("yes"));
+						       !is_elf);
 	// FSK: CodeGen ctor needs regFileInfo set in 'this' Frame
 	// [and it also needs nameMap out of Runtime --CSA], so
 	// be careful about ordering of constructions.
-	codegen = new CodeGen(this);
+	codegen = new CodeGen(this, is_elf);
 
 	instrBuilder = new InstrBuilder(regFileInfo);
 	tempBuilder = new TempBuilder();
