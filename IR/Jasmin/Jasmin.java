@@ -25,7 +25,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.22 1999-11-06 04:48:59 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.23 1999-11-07 09:05:02 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -266,7 +266,7 @@ public class Jasmin {
 		else if (q.type()==HClass.Char) {
 		    dup(i,q.value().length);
 		    out.println("    bipush "+(i+q.offset()));
-		    out.println("    sipush "+q.value()[i].toString());
+		    out.println("    sipush "+((int) (((Character)q.value()[i]).charValue())));
 		    out.println("    castore");
 		}
 		else if (q.type()==HClass.Short) {
