@@ -10,6 +10,14 @@
 #include <string.h> /* for strerror(3) */
 #include <unistd.h> /* for close(2) */
 
+/* NetBSD compatability. */
+#ifndef SOL_TCP
+#define SOL_TCP IPPROTO_TCP
+#endif
+#ifndef SOL_IP
+#define SOL_IP IPPROTO_IP
+#endif
+
 #ifdef WITH_HEAVY_THREADS
 #include <pthread.h>    /* for mutex ops */
 #endif
@@ -125,7 +133,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketConnect
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
     fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
-    rc = connect(fd, &sa, sizeof(sa));
+    rc = connect(fd, (struct sockaddr *) &sa, sizeof(sa));
 
     /* Check for error condition */
     if (rc<0)
@@ -156,7 +164,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketBind
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
     fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
-    rc = bind(fd, &sa, sizeof(sa));
+    rc = bind(fd, (struct sockaddr *) &sa, sizeof(sa));
 
     /* Check for error condition */
     if (rc<0)
@@ -202,7 +210,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketAccept
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
     fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
 
-    rc = accept(fd, &sa, &sa_size);
+    rc = accept(fd, (struct sockaddr *) &sa, &sa_size);
     /* Check for error condition */
     if (rc<0) {
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
