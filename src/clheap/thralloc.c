@@ -10,6 +10,7 @@
 #ifdef BDW_CONSERVATIVE_GC
 # include "gc.h"	/* for GC_base */
 #endif
+#include "flexthread.h" /* for mutex ops */
 
 struct oobj_with_clheap {
   clheap_t clheap;
@@ -39,6 +40,21 @@ extern struct oobj *_Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread;
 #endif
 #endif
 
+/* this function implements thread heap pooling. */
+static int pool_pos = POOLSIZE-1; /* startup thread gets its own heap */
+static clheap_t last_pool = NULL;
+FLEX_MUTEX_DECLARE_STATIC(pool_mutex);
+static clheap_t next_clheap() {
+  clheap_t result;
+  FLEX_MUTEX_LOCK(&pool_mutex);
+  if (pool_pos==0 || last_pool==NULL)
+    last_pool = clheap_create();
+  pool_pos = (pool_pos+1)%POOLSIZE;
+  result = last_pool;
+  FLEX_MUTEX_UNLOCK(&pool_mutex);
+  return result;
+}
+
 void *NTHR_malloc(size_t size) {
 #ifdef REALLY_DO_ALLOC
   return NTHR_malloc_other(size, FETCH_THIS_THREAD_UNWRAPPED());
@@ -47,14 +63,27 @@ void *NTHR_malloc(size_t size) {
   return NGBL_malloc_noupdate(size);
 #endif
 }
-void *NTHR_malloc_first(size_t size) {
+void *NTHR_malloc_with_heap(size_t size) {
   clheap_t clh;
   struct oobj_with_clheap *result;
   UPDATE_STATS(thr, size);
 #ifdef REALLY_DO_ALLOC
-  clh = clheap_create();
-  // the above line might be changed to pool clheaps.
+  clh = next_clheap();
   result = clheap_alloc(clh, size+sizeof(clheap_t));
+  result->clheap = clh;
+  return &(result->oobj);
+#else
+  return NGBL_malloc_noupdate(size);
+#endif
+}
+void *NGBL_malloc_with_heap(size_t size) {
+  clheap_t clh;
+  struct oobj_with_clheap *result;
+  UPDATE_STATS(gbl, size);
+#ifdef REALLY_DO_ALLOC
+  clh = next_clheap();
+  // the above line might be changed to pool clheaps.
+  result = NGBL_malloc_noupdate(size+sizeof(clheap_t));
   result->clheap = clh;
   return &(result->oobj);
 #else
@@ -86,7 +115,7 @@ void NTHR_free(jobject obj) {
   if (GC_base(oobj)!=oobj)
     clheap_detach(CLHEAP_FROM_OOBJ(oobj));
 #elif 1
-  /* risky assumptions! */
+  /* risky assumptions! */ /* FIXME: I don't think this even works. CSA */
   if (CLHEAP_FROM_OOBJ(oobj)==(((char*)oobj)-sizeof(clheap_t)))
     clheap_detach(CLHEAP_FROM_OOBJ(oobj));
 #else

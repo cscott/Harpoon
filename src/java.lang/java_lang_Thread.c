@@ -100,7 +100,7 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   mainThr = 
 #ifdef WITH_CLUSTERED_HEAPS
     /* associate with thread-clustered heap */
-    FNI_AllocObject_using(env, thrCls, NTHR_malloc_first);
+    FNI_AllocObject_using(env, thrCls, NGBL_malloc_with_heap);
 #else
     /* use default allocation strategy. */
     (*env)->AllocObject(env, thrCls);
