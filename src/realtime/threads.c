@@ -188,6 +188,10 @@ int context_switch_happened;
 void CheckQuanta(int signal)
 {
   struct timeval time; //the current time
+#ifdef WITH_REALTIME_THREADS_MEASURE_JITTER
+  struct timeval endSwitch; // the time at the end of the context switch
+  long long int longTime;
+#endif
   JNIEnv* env;         //a JNI environment
   jobject ref_marker;
   jlong threadID; //threadID returned by the scheduler
@@ -203,7 +207,7 @@ void CheckQuanta(int signal)
   gettimeofday(&time, NULL);
 #ifdef WITH_REALTIME_THREADS_MEASURE_JITTER
   printf("\nJitter = %lld\n", 
-	 (((long long int)time.tv_sec)*1000000+((long long int)time.tv_usec))-
+	 (longTime = (((long long int)time.tv_sec)*1000000+((long long int)time.tv_usec)))-
 	 (((long long int)compareSwitch.tv_sec)*1000000+((long long int)compareSwitch.tv_usec)));
 #endif
   setQuanta((jlong)0); /* Don't switch until setup for next period */
@@ -267,6 +271,11 @@ void CheckQuanta(int signal)
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
 #ifdef WITH_NOHEAP_SUPPORT
   EndNoHeap(env, noheap);
+#endif
+#ifdef WITH_REALTIME_THREADS_MEASURE_JITTER
+  gettimeofday(&endSwitch, NULL);
+  printf("\nContext switch time = %lld\n",
+	 (((long long int)endSwitch.tv_sec)*1000000+((long long int)endSwitch.tv_usec))-longTime);
 #endif
   transfer(threadq); //transfer to the new thread
 }
