@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>ObjectRef</code> is an object reference in the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectRef.java,v 1.1.2.6 1999-02-07 21:45:53 cananian Exp $
+ * @version $Id: ObjectRef.java,v 1.1.2.7 1999-02-25 16:59:01 cananian Exp $
  */
 class ObjectRef extends Ref {
     /** Fields in this instance of the object. */
@@ -55,6 +55,18 @@ class ObjectRef extends Ref {
        return new ObjectRef(ss, type, FieldValueList.clone(fields));
     }
    
+    /** For debugging (invokes the interpreted toString() method) */
+    public String toString() {
+	try {
+	    HMethod hm = type.getMethod("toString", new HClass[0]);
+	    ObjectRef istr =
+		(ObjectRef) Method.invoke(ss, hm, new Object[] { this } );
+	    return ss.ref2str(istr);
+	} catch (InterpretedThrowable e) {
+	    return super.toString(); // nasty ObjectRef@...
+	}
+    }
+
     protected void finalize() throws Throwable {
 	// finalize the referenced object by evaluating its finalize method.
 	try {

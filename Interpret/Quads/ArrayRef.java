@@ -3,6 +3,7 @@ package harpoon.Interpret.Quads;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HField;
+import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
 /**
@@ -10,7 +11,7 @@ import harpoon.Util.Util;
  * by the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayRef.java,v 1.1.2.4 1999-02-07 21:45:53 cananian Exp $
+ * @version $Id: ArrayRef.java,v 1.1.2.5 1999-02-25 16:59:01 cananian Exp $
  */
 final class ArrayRef extends Ref {
     /** Elements of the array (primitives or Refs) */
@@ -50,4 +51,16 @@ final class ArrayRef extends Ref {
     int length() { return this.elements.length; }
     Object get(int i) { return this.elements[i]; }
     void update(int i, Object value) { this.elements[i] = value; }
+
+    /** For debugging. */
+    public String toString() {
+	StringBuffer sb = new StringBuffer();
+	sb.append('<');
+	sb.append(HClassUtil.baseClass(type));
+	sb.append('['); sb.append(elements.length); sb.append(']');
+	for (int i=1; i<HClassUtil.dims(type); i++)
+	    sb.append("[]");
+	sb.append('>');
+	return sb.toString();
+    }
 }
