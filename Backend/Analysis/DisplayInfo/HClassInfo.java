@@ -7,17 +7,17 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMember;
 import harpoon.ClassFile.HMethod;
+import harpoon.Util.HClassUtil;
 
-import java.util.Hashtable;
-import java.util.Vector;
-import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The <code>HClassInfo</code> class provides various useful bits of 
  * information about an <code>HClass</code>. 
  *
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: HClassInfo.java,v 1.1.2.12 1999-08-04 06:30:52 cananian Exp $
+ * @version $Id: HClassInfo.java,v 1.1.2.13 1999-08-11 10:26:33 duncan Exp $
  * @see     harpoon.ClassFile.HClass
  */
 public class HClassInfo
@@ -60,8 +60,13 @@ public class HClassInfo
      */
     public String toString(HClass hc) { return m_hcim.get(hc).toString(); }
 
-    final class HCIMap  {
-	private Hashtable m_table = new Hashtable();
+    private interface HCIMapDefs { 
+	static final HClass HCobject = HClass.forName("java.lang.Object");
+	static final String HCobjD   = HCobject.getDescriptor();
+    }	    
+
+    final class HCIMap implements HCIMapDefs {
+	private Map m_table = new HashMap();
 
 	HCIUnit get(HClass hc) {
 	    HCIUnit     hciu;
@@ -70,7 +75,18 @@ public class HClassInfo
 	
 	    hciu = (HCIUnit)m_table.get(hc);
 	    if (hciu == null) {
-		superclass = hc.getSuperclass();
+		if (hc.isArray())  { // Treat arrays differently
+		    int    dims      = HClassUtil.dims(hc);
+		    HClass baseclass = HClassUtil.baseClass(hc);
+		    superclass = 
+			baseclass.isPrimitive() ? 
+			HCobject 
+			: (HCobjD.equals(baseclass.getDescriptor()) ? 
+			   (HClassUtil.arrayClass(HCobject, dims-1))
+			   : HClassUtil.arrayClass
+			     (baseclass.getSuperclass(), dims));
+		} 
+		else { superclass = hc.getSuperclass(); } 
 		if (superclass != null) {
 		    superclassInfo = get(superclass);
 		    hciu = new HCIUnit(hc, superclassInfo);
@@ -140,11 +156,11 @@ class HCIUnit {
 
     // Used to map HMethods and HFields to offsets
     final class HMemberMap {
-	private Hashtable m_table;
+	private Map m_table;
 
-	HMemberMap() { m_table = new Hashtable(); }
+	HMemberMap() { m_table = new HashMap(); }
 
-	HMemberMap(HMemberMap map) { m_table = (Hashtable)(map.m_table.clone()); }
+	HMemberMap(HMemberMap map) { m_table = new HashMap(map.m_table); } 
 
 	int map(HField hf, int next) {
 	    m_table.put(hf, new Integer(next++));
