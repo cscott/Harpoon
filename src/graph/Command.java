@@ -44,6 +44,22 @@ public class Command extends Node {
      */
     public static final int CHECK_FOR_BLUE = 110;
 
+    /**
+     * This command created for use with Switch.java
+     * and ConditionalBranch.java.
+     * @see Switch.java
+     * @see ConditionalBranch.java
+     */
+    public static final int GO_LEFT = 120;
+    
+    /**
+     * This command created for use with Switch.java
+     * and ConditionalBranch.java.
+     * @see Switch.java
+     * @see ConditionalBranch.java
+     */
+    public static final int GO_RIGHT = 121;
+
     private int tag;
 
     /** Construct a new {@link Command} node which will tag every image with a command. 
@@ -61,6 +77,8 @@ public class Command extends Node {
      *  @param id The {@link ImageData} for the image to be tagged.
      */
     public void process(ImageData id) {
+	//if (tag == GO_RIGHT)
+	//  System.out.println("Adding command: GO_RIGHT");
 	id.command = tag;
 	super.process(id);
     }
