@@ -63,7 +63,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.57 2000-03-24 06:15:34 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.58 2000-03-24 06:49:32 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -367,7 +367,7 @@ public class AsyncCode {
 	    isSuperinterfaceOf(originalClass)&&
 	    originalClass.getMethod("run",new HClass[0]).equals(original)) {
 	    try {
-		newMethodName = methodNamePrefix;
+		newMethodName = "run_Async";
 		originalClass.getDeclaredMethod(newMethodName, 
 					   original.getParameterTypes());
 		if (originalClass.getName().compareTo("java.lang.Thread")!=0)
@@ -378,7 +378,7 @@ public class AsyncCode {
 	    }
 	} else {
 	    try {
-		newMethodName = methodNamePrefix + "$$$"; 
+		newMethodName = methodNamePrefix; 
 		originalClass.getDeclaredMethod(newMethodName, 
 					original.getParameterTypes());
 		throw new RuntimeException("Name collision with "+newMethodName+ " method");
