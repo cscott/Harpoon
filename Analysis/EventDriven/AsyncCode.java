@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.13 2000-01-06 16:38:41 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.14 2000-01-06 16:59:39 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -179,8 +179,11 @@ public class AsyncCode {
 	    //1 exception
 	    WorkSet todo=new WorkSet();
 	    WorkSet done=new WorkSet();
-	    if (resumeexception==-1)
+	    if (resumeexception==-1) {
+		//Don't want to visit the footer
+		done.add(q.next(0));
 		todo.push(q);
+	    }
 	    else
 		todo.push(q.next(resumeexception));
 	    while (!todo.isEmpty()) {
@@ -379,7 +382,7 @@ public class AsyncCode {
 		    }
 		}
 		//swap in new footer
-		Quad.addEdge(q,0, footer,0);
+		Quad.addEdge((Quad) quadmap.get(q),0, footer,0);
 		hcode.quadSet((Quad)quadmap.get(q));
 	    }
 	}
