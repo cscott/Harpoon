@@ -1,28 +1,2 @@
 #!/bin/sh
-SPECPATH=${SPECPATH:-${HOME}/java/jvm98}
-export FLEXPATH=SupportNP/specthunk.jar:$SPECPATH
-start=${1:-"1"}
-end=${2:-"10"}
-errors=
-tmprootset=tmp-root-set
-for s in `ls $SPECPATH/spec/benchmarks | sort | sed -ne ${start},${end}p`; do
-    rm -f $tmprootset
-    echo "include Support/locale-root-set" > $tmprootset
-    echo "spec.benchmarks.$s.Main.<init>()V" >> $tmprootset
-    rootset=Support/${s}-root-set
-    if [ -f $rootset ]; then
-      echo "include $rootset" >> $tmprootset
-    fi
-    dir=`echo $s | tr "[:lower:]" "[:upper:]" | tr -d "[_]"`as$SPECSUFFIX
-    echo $dir $rootset
-    rm -rf as$dir as$dir.err as$dir.out
-    bin/build-mipsda $SPECBUILDOPTS -r $tmprootset SpecApplication $dir \
-	2> as$dir.err | tee as$dir.out
-    if [ $? -ne 0 ]; then
-	errors="$errors$dir "
-    fi
-done
-if [ "$errors" != "" ]; then
-    echo FAILED: $errors
-    exit 1
-fi
+`dirname $0`/build-spec mipsda $*
