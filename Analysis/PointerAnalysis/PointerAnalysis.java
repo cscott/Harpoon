@@ -74,7 +74,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.8 2003-02-12 19:03:34 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.9 2003-04-18 16:27:16 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -210,17 +210,15 @@ public class PointerAnalysis implements java.io.Serializable {
      *
      *  @param mcg The (meta) Call Graph that models the caller-callee
      *  relation between methods.
-     *  @param mac The dual of <code>_mcg</code> (<i>ie</i> the
-     *  callee-caller relation.
      *  @param lbbconv The producer of the (Light) Basic Block representation
      *  of a method body. 
      *
      *</ul> */
-    public PointerAnalysis(MetaCallGraph mcg, MetaAllCallers mac,
+    public PointerAnalysis(MetaCallGraph mcg,
 			   CachingSCCLBBFactory caching_scc_lbb_factory,
 			   Linker linker) {
 	this.mcg  = mcg;
-	this.mac  = mac;
+	this.mac  = new MetaAllCallers(mcg);
 	this.scc_lbb_factory = caching_scc_lbb_factory;
 	// OLD STUFF: new CachingSCCLBBFactory(lbbconv);
 	this.linker = linker;

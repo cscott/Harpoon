@@ -17,7 +17,7 @@ import java.util.List;
  * <code>CompilerStageEZ</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompilerStageEZ.java,v 1.1 2003-04-17 00:16:55 salcianu Exp $
+ * @version $Id: CompilerStageEZ.java,v 1.2 2003-04-18 16:27:14 salcianu Exp $
  */
 public abstract class CompilerStageEZ extends CompilerStage {
 
@@ -34,13 +34,14 @@ public abstract class CompilerStageEZ extends CompilerStage {
 
     public final CompilerState action(CompilerState cs) {
 	if(enabled()) {
-	    UNPACK(cs);
+	    _UNPACK_CS(cs);
 	    real_action();
-	    return PACK(cs);
+	    return _PACK_CS();
 	}
 	else return cs;
     }
 
+    protected CompilerState old_cs;
     protected HMethod mainM;
     protected Set roots;
     protected Linker linker;
@@ -48,7 +49,8 @@ public abstract class CompilerStageEZ extends CompilerStage {
     protected ClassHierarchy classHierarchy;
     protected Frame frame;
 
-    private final void UNPACK(CompilerState cs) {
+    protected final void _UNPACK_CS(CompilerState cs) {
+	this.old_cs = cs;
 	this.mainM = cs.getMain();
 	this.roots = cs.getRoots();
 	this.linker = cs.getLinker();
@@ -57,7 +59,7 @@ public abstract class CompilerStageEZ extends CompilerStage {
 	this.frame = cs.getFrame();
     }
 
-    private final CompilerState PACK(CompilerState old_cs) {
+    protected final CompilerState _PACK_CS() {
 	CompilerState new_cs = 
 	    old_cs
 	    .changeMain(mainM)
@@ -66,7 +68,7 @@ public abstract class CompilerStageEZ extends CompilerStage {
 	    .changeCodeFactory(hcf)
 	    .changeClassHierarchy(classHierarchy)
 	    .changeFrame(frame);
-
+	
 	mainM = null;
 	roots = null;
 	linker = null;

@@ -36,6 +36,7 @@ import harpoon.IR.Quads.Quad;
 import harpoon.Instrumentation.AllocationStatistics.AllocationInstrCompStage;
 import harpoon.Analysis.Realtime.Realtime;
 import harpoon.Analysis.MemOpt.PreallocOpt;
+import harpoon.Analysis.PointerAnalysis.PointerAnalysisCompStage;
 
 import harpoon.Util.Options.Option;
 
@@ -65,7 +66,7 @@ import java.io.PrintStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.50 2003-04-17 15:34:45 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.51 2003-04-18 16:27:14 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -144,9 +145,12 @@ public class SAMain extends harpoon.IR.Registration {
 
 
     private static void buildQuadFormPipeline() {
+	addStage(new PointerAnalysisCompStage());
+
 	AllocationInstrCompStage aics = new AllocationInstrCompStage();
 	addStage(aics);
 	addStage(new PreallocOpt.QuadPass(aics));
+
 	addStage(new EventDrivenTransformation.QuadPass1());
 	addStage(new RoleInference());
 	addStage(new Transactions.QuadPass());
@@ -567,8 +571,8 @@ public class SAMain extends harpoon.IR.Registration {
 	    // now we can finally set the (final?) classHierarchy and
 	    // callGraph which the frame will use (among other things,
 	    // for vtable numbering)
-	    
 	    frame.setClassHierarchy(classHierarchy);
+
 	    if (USE_OLD_CLINIT_STRATEGY) {
 		// construct a call graph and send it to the frame
 		hcf = new CachingCodeFactory(QuadSSI.codeFactory(hcf));
