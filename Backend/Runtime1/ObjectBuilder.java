@@ -46,7 +46,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.6 2003-10-21 02:11:02 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.7 2003-10-21 21:01:45 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -116,6 +116,9 @@ public class ObjectBuilder
 	assert l.size() > 0; // always at least the length field!
 	int endOffset =
 	   cfm.fieldOffset(l.get(l.size()-1))+cfm.fieldSize(l.get(l.size()-1));
+	// always pad to pointer-size.
+	while (0 != (endOffset % (pointersAreLong?8:4)))
+	    endOffset++; // not the most efficient calculation, but readable.
 	Stm s = makeFields(tf, info, l, startOffset, endOffset);
 	assert s!=null; // always the length!
 	stmlist.add(s);

@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.6 2003-07-04 09:18:56 cananian Exp $
+ * @version $Id: ToTree.java,v 1.7 2003-10-21 21:02:01 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -565,8 +565,12 @@ static class TranslationVisitor extends LowQuadVisitor {
 	    addStmt(new LABEL(m_tf, q, constTblStart, false));
 	    assert qvalue.length>0;
 	    for (int i=0; i<qvalue.length; i++) {
-		if (i==qvalue.length-1)
+		if (i==qvalue.length-1) {
+		    // explicit alignment here as a hint to preciseC backend,
+		    // so that the __aligned__ tag on the struct is correct.
+		    addStmt(new ALIGN(m_tf, q, sizeof(q.type())));
 		    addStmt(new LABEL(m_tf, q, constTblEnd, false));
+		}
 		addStmt(new DATUM(m_tf, q, _CONST(q, q.type(), qvalue[i])));
 		if (i==qvalue.length-1)
 		    assert ! _CONST(q, q.type(), qvalue[i]).value()
@@ -1251,7 +1255,7 @@ static class TranslationVisitor extends LowQuadVisitor {
     private final Map foldMap = new HashMap();
 
     private TypeBundle mergeTypes(Temp t, Set defSites) {
-	assert defSites.size() > 0;
+	assert defSites.size() > 0: "undefined temp "+t+" : "+defSites;
 	
 	TypeBundle tb = null;
 	for (Iterator it=defSites.iterator(); it.hasNext(); ) {
