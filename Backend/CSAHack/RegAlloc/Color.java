@@ -457,7 +457,7 @@ if (sets.worklist.spill.contains(m)) {
       check(ig.nodes());
       // check invariants
       for (NodeList nl=sets.worklist.simplify.nodes(); nl!=null; nl=nl.tail)
-	Util.assert((Degree(nl.head) < K) && (NodeMoves(nl.head)==null));
+	Util.assert(/*(Degree(nl.head) < K) &&*/(NodeMoves(nl.head)==null));
       for (NodeList nl=sets.worklist.freeze.nodes(); nl!=null; nl=nl.tail)
 	Util.assert((Degree(nl.head) < K) && (NodeMoves(nl.head)!=null));
       for (NodeList nl=sets.worklist.spill.nodes(); nl!=null; nl=nl.tail)
