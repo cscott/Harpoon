@@ -17,7 +17,7 @@ import java.util.Set;
  * before they are used.  It aids in debugging code transformations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDefChecker.java,v 1.1.2.1 2000-11-15 19:51:43 cananian Exp $
+ * @version $Id: UseDefChecker.java,v 1.1.2.2 2001-01-13 21:10:38 cananian Exp $
  */
 public class UseDefChecker implements HCodeFactory {
     HCodeFactory parent;
@@ -53,6 +53,9 @@ public class UseDefChecker implements HCodeFactory {
     }
 
     // inner classes.
+    /** The <code>UseDefChecker</code> constructor takes a
+     *  <code>ReachingDefsFactory</code> argument to specify which
+     *  <code>ReachingDefs</code> implementation it should use. */
     public static abstract class ReachingDefsFactory {
 	public abstract ReachingDefs makeReachingDefs(HCode hc);
     }

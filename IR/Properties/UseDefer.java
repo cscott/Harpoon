@@ -8,10 +8,11 @@ import harpoon.Temp.Temp;
 import java.util.Collection;
 
 /**
- * <code>UseDefer</code>
+ * <code>UseDefer</code> provides a means to externally associate use and
+ * def information with elements of an intermediate representation.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: UseDefer.java,v 1.1.2.2 2000-01-27 23:52:21 pnkfelix Exp $
+ * @version $Id: UseDefer.java,v 1.1.2.3 2001-01-13 21:12:11 cananian Exp $
  */
 public abstract class UseDefer {
     
