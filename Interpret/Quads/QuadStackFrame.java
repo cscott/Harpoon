@@ -11,7 +11,7 @@ import java.util.Hashtable;
  * <code>QuadStackFrame</code> is a stack frame for an interpreted method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadStackFrame.java,v 1.1.2.3 1999-01-22 23:53:19 cananian Exp $
+ * @version $Id: QuadStackFrame.java,v 1.1.2.4 1999-02-09 06:10:34 cananian Exp $
  */
 final class QuadStackFrame extends StackFrame {
     /** current location in the method. */
@@ -27,7 +27,10 @@ final class QuadStackFrame extends StackFrame {
     }
     Object get(Temp t) {
 	Object o = state.get(t);
-	if (o==null) throw new Error("Use before def.");
+	if (o==null)
+	    throw new Error("Use before def of "+t+" at " + getMethod() +
+			    "("+ getSourceFile() +":"+ getLineNumber() +")"+
+			    "::" + pc);
 	return (o==Onull)?null:o;
     }
 
