@@ -100,3 +100,29 @@ For normal CALLs:
 	We write the value we find back into [fp, #-4] and return
 	as usual... which will take us to the caller's exception
 	handler. [CSA]
+-----------------------------------------------------------------
+Alignment issues. [CSA]
+
+The StrongARM doesn't enforce any given pointer alignment.  However,
+the behavior on non-word aligned addresses may surprise you.
+
+LDR *rotates* the non-aligned address in order to put the address you
+requested in the LSB.  However, the high byte(s) will be the bytes
+*before* the address requested.  For example, if we store the string
+"Hello" starting at (word-aligned) address 0, like so:
+  0  1  2  3  4
+  H  e  l  l  o
+The a load from address 1 will return 'ellH', *not* 'ello' as you might
+expect.  [The official spec words it this way: "An address offset from a
+word boundary will cause the data to be rotated into the register so that
+the addressed byte occupies bits 0 to 7.]
+
+STR *ignores* the least-significant two bits of its address.  Storing
+'Jell' into address 1, 2, or 3 will produce 'Jello', just like a store
+into address 0 would.
+
+Byte loads and stores (ldrb, strb) do The Right Thing, as you'd expect
+them to.
+
+So -- be careful when reading/writing word-length data that your addresses
+are properly 4-byte aligned!
