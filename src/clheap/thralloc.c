@@ -57,6 +57,10 @@ static clheap_t next_clheap() {
 
 void *NTHR_malloc(size_t size) {
 #ifdef REALLY_DO_ALLOC
+#if 0
+  printf("THREAD ALLOCATING %ld bytes from %p\n",
+	 (long) size, __builtin_return_address(0));
+#endif
   return NTHR_malloc_other(size, FETCH_THIS_THREAD_UNWRAPPED());
 #else
   UPDATE_STATS(thr, size);

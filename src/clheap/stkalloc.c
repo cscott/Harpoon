@@ -11,6 +11,10 @@ void *NSTK_malloc(size_t size) {
   UPDATE_STATS(stk, size);
 #ifdef REALLY_DO_ALLOC
   result = get_stackptr()-ALIGN(size);
+#if 0
+  printf("STACK ALLOCATING %ld bytes from %p (at %p)\n",
+	 (long) size, __builtin_return_address(0), result);
+#endif
   set_stackptr(result);
   return result; /* stack pointer points to last full location */
 #else
