@@ -11,6 +11,7 @@ import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrJUMP;
 import harpoon.IR.Assem.InstrMOVE;
+import harpoon.IR.Assem.InstrCALL;
 import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrDIRECTIVE;
 import harpoon.IR.Assem.InstrFactory;
@@ -65,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.121 2000-01-25 15:16:13 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.122 2000-01-28 03:24:10 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -202,6 +203,24 @@ import java.util.Iterator;
 		       Temp[] dst, Temp[] src, Label[] targets ) {
         return emit(new Instr( instrFactory, root, assem,
 			dst, src, false, Arrays.asList(targets)));
+    }
+
+    /* Call instruction emit helper. 
+       Instructions emitted using this *cannot* fall through.
+    */
+    private Instr emitCallNoFall( HCodeElement root, String assem,
+		       Temp[] dst, Temp[] src, Label[] targets ) {
+	List tlist = (targets==null?null:Arrays.asList(targets));
+        return emit(new InstrCALL( instrFactory, root, assem,
+				   dst, src, false, tlist));
+    }
+
+    private Instr emitNativeCall( HCodeElement root, String assem,
+				  Temp[] dst, Temp[] src, 
+				  boolean canFall, Label[] targets) {
+	List tlist = (targets==null?null:Arrays.asList(targets));
+	return emit(new InstrCALL( instrFactory, root, assem,
+				   dst, src, canFall, tlist));
     }
 
     /* InstrJUMP emit helper; automatically adds entry to
@@ -1886,7 +1905,7 @@ CALL(retval, retex, func, arglist, handler)
     // we add a fake use of PC so that it remains live above the call.
     cs.callUses.add(PC); cs.callUses.add(0, func);
     // note that r0-r3, LR and IP are clobbered by the call.
-    emitNoFall( ROOT,cs.prependSPOffset("mov `d0, `s0 @ clobbers r0-r3,LR,IP"),
+    emitCallNoFall( ROOT,cs.prependSPOffset("mov `d0, `s0 @ clobbers r0-r3,LR,IP"),
 		new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
                 (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
                 new Label[] { rlabel, elabel } );
@@ -1909,7 +1928,7 @@ CALL(retval, retex, NAME(funcLabel), arglist, handler)
     // do the call.  bl has a 24-bit offset field, which should be plenty.
     // note that r0-r3, LR and IP are clobbered by the call.
     emit2( ROOT, "adr `d0, "+rlabel, new Temp[] { LR }, null );
-    emitNoFall( ROOT, cs.prependSPOffset("b "+funcLabel +
+    emitCallNoFall( ROOT, cs.prependSPOffset("b "+funcLabel +
 					 " @ clobbers r0-r3, LR, IP"),
 		new Temp[] { r0,r1,r2,r3,IP,LR },
                 (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
@@ -1932,9 +1951,10 @@ NATIVECALL(retval, func, arglist) %{
     // we add a fake use of PC so that it remains live above the call.
     cs.callUses.add(PC); cs.callUses.add(0, func);
     // note that r0-r3, LR and IP are clobbered by the call.
-    emit2( ROOT, cs.prependSPOffset("mov `d0, `s0 @ clobbers r0-r3, LR, IP"),
+    emitNativeCall( ROOT, cs.prependSPOffset("mov `d0, `s0 @ clobbers r0-r3, LR, IP"),
 	   new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
-	   (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]));
+	   (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
+	   true, null);
     // clean up.
     emitCallEpilogue(ROOT, retval, cs);
 }%
@@ -1943,7 +1963,7 @@ NATIVECALL(retval, NAME(funcLabel), arglist) %{
     CallState cs = emitCallPrologue(ROOT, arglist);
     // do the call.  bl has a 24-bit offset field, which should be plenty.
     // note that r0-r3, LR and IP are clobbered by the call.
-    emit( ROOT, cs.prependSPOffset("bl "+funcLabel +
+    emitNativeCall( ROOT, cs.prependSPOffset("bl "+funcLabel +
 				   " @clobbers r0-r3, LR, IP"),
 	  new Temp[] { r0,r1,r2,r3,IP,LR },
 	  (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),

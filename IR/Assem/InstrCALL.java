@@ -11,7 +11,7 @@ import java.util.List;
  * <code>InstrCALL</code>
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: InstrCALL.java,v 1.1.2.1 2000-01-26 21:03:22 pnkfelix Exp $
+ * @version $Id: InstrCALL.java,v 1.1.2.2 2000-01-28 03:24:12 pnkfelix Exp $
  */
 public class InstrCALL extends Instr {
     
@@ -21,5 +21,8 @@ public class InstrCALL extends Instr {
 		      boolean canFallThrough, List targets) {
         super(inf, source, assem, dst, src, canFallThrough, targets);
     }
+
+    /** Accept a visitor */
+    public void accept(InstrVisitor v) { v.visit(this); }
     
 }
