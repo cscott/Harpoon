@@ -12,13 +12,13 @@ import java.util.Collection;
  * def information with elements of an intermediate representation.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: UseDefer.java,v 1.4 2004-02-08 01:55:20 cananian Exp $
+ * @version $Id: UseDefer.java,v 1.5 2004-02-08 05:01:39 cananian Exp $
  */
 public abstract class UseDefer<HCE extends HCodeElement> {
     
     /** Return all the <code>Temp</code>s used by <code>hce</code>. */ 
     public Temp[] use(HCE hce) {
-	Collection c = useC(hce);
+	Collection<Temp> c = useC(hce);
 	return (Temp[]) c.toArray(new Temp[c.size()]);
     }
 
@@ -26,7 +26,7 @@ public abstract class UseDefer<HCE extends HCodeElement> {
 	<code>hce</code>. 
     */  
     public Temp[] def(HCE hce) {
-	Collection c = defC(hce);
+	Collection<Temp> c = defC(hce);
 	return (Temp[]) c.toArray(new Temp[c.size()]);
     }
 
