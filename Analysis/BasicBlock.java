@@ -59,7 +59,7 @@ import java.util.Collection;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.31 2000-06-26 22:35:55 pnkfelix Exp $ */
+ * @version $Id: BasicBlock.java,v 1.1.2.32 2000-06-27 17:52:28 pnkfelix Exp $ */
 public class BasicBlock {
     
     static final boolean DEBUG = false;
@@ -564,8 +564,31 @@ public class BasicBlock {
 		    HCodeElement hce = (HCodeElement) hceIter.next();
 		    if (!(hce instanceof harpoon.IR.Assem.InstrLABEL) &&
 			!(hce instanceof harpoon.IR.Assem.InstrDIRECTIVE)&&
-			!(hce instanceof harpoon.IR.Assem.InstrJUMP))
-			Util.assert(getBlock(hce) != null, "no BB for "+hce);
+			!(hce instanceof harpoon.IR.Assem.InstrJUMP) &&
+			
+		        (getBlock(hce) == null)) {
+			
+			HashSet s = new HashSet();
+			ArrayList t = new ArrayList();
+			t.addAll(grapher.predC(hce));
+			for(int i=0; i<t.size(); i++) {
+			    HCodeElement p=((HCodeEdge)t.get(i)).from();
+			    if(!s.contains(p)) {
+				// System.out.println("visiting "+p);
+				s.add(p);
+				t.addAll(grapher.predC(p));
+				if (grapher.predC(p).size() == 0) {
+				    System.out.println
+					("no preds for "+p);
+				}
+				if (getBlock(p) != null) {
+				    System.out.println
+					("there IS a BB for pred:"+p);
+				}
+			    }
+			}
+			System.out.println("no BB for "+hce+"\n");
+		    }
 		}
 	    }
 		
