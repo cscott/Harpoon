@@ -23,9 +23,10 @@ import java.util.Set;
  * our benchmarks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Sizer.java,v 1.3 2002-08-08 17:51:39 cananian Exp $
+ * @version $Id: Sizer.java,v 1.4 2002-11-27 18:34:24 salcianu Exp $
  */
 public class Sizer extends harpoon.IR.Registration {
+
     public static void main(String[] args) {
 	if (args.length!=1) {
 	    System.err.println("USAGE: java harpoon.Main.Sizer <classname>");

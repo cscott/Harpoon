@@ -68,6 +68,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Map;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -86,6 +87,8 @@ import java.io.OptionalDataException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
+import harpoon.Analysis.MemOpt.IncompatibilityAnalysis;
+import harpoon.Analysis.MemOpt.PreallocOpt;
 
 /**
  * <code>SAMain</code> is a program to compile java classes to some
@@ -93,7 +96,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.18 2002-10-09 15:46:10 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.19 2002-11-27 18:34:24 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -118,6 +121,9 @@ public class SAMain extends harpoon.IR.Registration {
     static InstrumentAllocs insta = null;
     static boolean ROLE_INFER= false;
 
+    // use Ovy's static preallocation optimization
+    static boolean OVY_PREALLOC_OPT = true;
+    static PreallocOpt ovy_prealloc_opt = null;
 
     static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
     static String  singleClassStr = null; 
@@ -180,6 +186,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    new harpoon.ClassFile.CachingCodeFactory(
 	    harpoon.IR.Quads.QuadWithTry.codeFactory()
 	    );
+
 	// the new mover will try to put NEWs closer to their constructors.
 	// in the words of a PLDI paper, this reduces "drag time".
 	// it also improves some analysis results. =)
@@ -262,27 +269,8 @@ public class SAMain extends harpoon.IR.Registration {
 	// needed for creating the class hierarchy
 	Set roots;
 	{
-	    // ask the runtime which roots it requires.
-	    roots = new java.util.HashSet
-		(frame.getRuntime().runtimeCallableMethods());
-	    // and our main method is a root, too...
-	    roots.add(mainM);
-	    // other realtime and event-driven-specific roots.
-	    if (EVENTDRIVEN) {
-		roots.add(linker.forName
-			  ("harpoon.Analysis.ContBuilder.Scheduler")
-			  .getMethod("loop",new HClass[0]));
-	    }
-	    if (Realtime.REALTIME_JAVA) {
-	      roots.addAll(Realtime.getRoots(linker));
-	    }
-	    if (rootSetFilename!=null) try {
-		addToRootSet(roots, rootSetFilename);
-	    } catch (IOException ex) {
-		System.err.println("Error reading "+rootSetFilename+": "+ex);
-		ex.printStackTrace();
-		System.exit(1);
-	    }
+	    roots = getRoots(mainM);
+
 	    // okay, we've got the roots, make a rough class hierarchy.
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
@@ -391,7 +379,12 @@ public class SAMain extends harpoon.IR.Registration {
 		hcf = Realtime.setupCode(linker, classHierarchy, hcf);
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 		hcf = Realtime.addChecks(linker, classHierarchy, hcf, roots);
-	    }                                           
+	    }
+
+	    if(OVY_PREALLOC_OPT)
+		ovy_prealloc_opt = 
+		    new PreallocOpt(linker, hcf, classHierarchy, mainM, roots);
+
 	    /* counter factory must be set up before field reducer,
 	     * or it will be optimized into nothingness. */
 	    if (Boolean.getBoolean("size.counters") ||
@@ -801,6 +794,38 @@ public class SAMain extends harpoon.IR.Registration {
 		System.exit(1);
 	    }
 	}
+    }
+
+
+    // construct the set of roots for the program we compile
+    static Set getRoots(HMethod mainM) {
+	// ask the runtime which roots it requires.
+	Set roots = new java.util.HashSet
+	    (frame.getRuntime().runtimeCallableMethods());
+	
+	if(OVY_PREALLOC_OPT)
+	    roots.add(linker.forName(PreallocOpt.PREALLOC_MEM_CLASS_NAME));
+	
+	// and our main method is a root, too...
+	roots.add(mainM);
+	// other realtime and event-driven-specific roots.
+	if (EVENTDRIVEN) {
+	    roots.add(linker.forName
+		      ("harpoon.Analysis.ContBuilder.Scheduler")
+		      .getMethod("loop",new HClass[0]));
+	}
+	if (Realtime.REALTIME_JAVA) {
+	    roots.addAll(Realtime.getRoots(linker));
+	}
+	if (rootSetFilename!=null) try {
+	    addToRootSet(roots, rootSetFilename);
+	} catch (IOException ex) {
+	    System.err.println("Error reading "+rootSetFilename+": "+ex);
+	    ex.printStackTrace();
+	    System.exit(1);
+	}
+	
+	return roots;
     }
 
     static void addToRootSet(final Set roots, String filename) 

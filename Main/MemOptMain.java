@@ -7,11 +7,16 @@ import java.util.Set;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Arrays;
+
+import java.lang.Comparable;
 
 import java.io.ObjectInputStream;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.BufferedReader;
+
+import gnu.getopt.Getopt;
 
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.HMethod;
@@ -41,7 +46,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>MemTestMain</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: MemOptMain.java,v 1.6 2002-10-04 19:56:07 salcianu Exp $
+ * @version $Id: MemOptMain.java,v 1.7 2002-11-27 18:34:24 salcianu Exp $
  */
 public abstract class MemOptMain {
     
@@ -55,18 +60,57 @@ public abstract class MemOptMain {
     //private static HCodeFactory parent;
 
     public static void main(String[] args) {
-	if(args.length != 2) {
-	    System.out.println
-		("Usage:\n\tMemTestMain " + 
-		 "<alloc_numbering_file> <instr_result_file>");
-	    System.exit(1);
-	}
-	
-	read_data(args);
+	parse_options(args);
+	read_data();
+
+	print_alloc_stats();
+	if(ALLOC_STAT_ONLY)
+	    return;
 
 	IncompatibilityAnalysis ia = get_ia();
-
 	statistics(ia);
+    }
+
+
+    // if true, then only memory allocation stats will be printed
+    private static boolean ALLOC_STAT_ONLY = false;
+    // the name of the file that contains the map allocation site -> int id
+    private static String ALLOC_NUMBERING_FILE;
+    // the name of the file that was dumped by the instrumentation
+    private static String INSTR_DUMPED_FILE;
+
+    private static void parse_options(String[] args) {
+	Getopt g = new Getopt("MemOptMain", args, "a", null);
+	int c;
+
+	while((c = g.getopt()) != -1)
+	    switch(c) {
+	    case 'a':
+		ALLOC_STAT_ONLY = true;
+		break;
+	    default:
+		System.err.println("Unknown options!");
+		System.exit(1);
+	    }
+
+	int optind = g.getOptind();
+
+	if(args.length - optind != 2) {
+
+	    System.out.println("Only " + (args.length - optind) + " args");
+
+	    System.out.println
+		("Usage:\n\tMemTestMain [<options>] " + 
+		 "<alloc_numbering_file> <instr_result_file>\n" +
+		 "<alloc_numbering_file> should be the serialization of " +
+		 "the AllocationNumbering used by the instrumentation\n" +
+		 "<instr_dumped_file> should be the file dumped out by " + 
+		 "the instrumentation");
+	    System.exit(1);
+	}
+
+	ALLOC_NUMBERING_FILE = args[optind];
+	INSTR_DUMPED_FILE    = args[optind+1];
     }
 
 
@@ -80,8 +124,6 @@ public abstract class MemOptMain {
         QuadSSI.KEEP_QUAD_MAP_HACK = true;
         hcf_ssi =
 	    new CachingCodeFactory(QuadSSI.codeFactory(sccf), true);
-
-	System.out.println("hcf_ssi = " + hcf_ssi.hashCode());
 	
 	return new IncompatibilityAnalysis(mainM, hcf_ssi, cg);
     }
@@ -113,10 +155,10 @@ public abstract class MemOptMain {
 
 
     // Read data from the disk
-    private static void read_data(String[] args) {
+    private static void read_data() {
 	try {
-	    read_an(args[0]);
-	    read_instr_result(args[1]);
+	    read_an(ALLOC_NUMBERING_FILE);
+	    read_instr_result(INSTR_DUMPED_FILE);
 	}
 	catch(Exception e) {
 	    System.out.println("Error reading data: " + e);
@@ -183,18 +225,73 @@ public abstract class MemOptMain {
 	    alloc2counter.put
 		(q, (Integer) id2counter.get(new Integer(an.allocID(q))));
 	}
+    }
 
-	System.out.println("alloc2counter BEGIN");
-	for(Iterator it = alloc2counter.entrySet().iterator();
-	    it.hasNext(); ) {
+    // print allocation statistics
+    private static void print_alloc_stats() {
+
+	class SiteStat implements Comparable {
+	    public final Quad alloc_site;
+	    public final int  alloc_count;
+	    public SiteStat(Quad alloc_site, int alloc_count) {
+		this.alloc_site  = alloc_site;
+		this.alloc_count = alloc_count;
+	    }
+	    public int compareTo(Object o) {
+		if(! (o instanceof SiteStat)) {
+		    System.out.println("o is " + o.getClass().getName());
+		}
+		SiteStat s2 = (SiteStat) o;
+		if (alloc_count < s2.alloc_count) return +1;
+		else if (alloc_count > s2.alloc_count) return -1;
+		else return 0;
+	    }
+	};
+
+	int ss_size = 0;
+	for(Iterator it = alloc2counter.entrySet().iterator(); it.hasNext();) {
 	    Map.Entry entry = (Map.Entry) it.next();
-	    Quad q = (Quad) entry.getKey();
-	    Integer count = (Integer) entry.getValue();
-	    if((count != null) && (count.intValue() != 0))
-		System.out.println(Debug.code2str(q) + " -> " + count +
-				   " | " + q.getFactory().getMethod());
+	    int alloc_count = ((Integer) entry.getValue()).intValue();
+	    if(alloc_count != 0) ss_size++;
 	}
-	System.out.println("alloc2counter END");
+	SiteStat ss[] = new SiteStat[ss_size];
+
+	int total_count = 0;
+
+	int i = 0;
+	for(Iterator it = alloc2counter.entrySet().iterator();
+	    it.hasNext();) {
+	    Map.Entry entry = (Map.Entry) it.next();
+	    int alloc_count = ((Integer) entry.getValue()).intValue();
+	    if(alloc_count != 0) {
+		total_count += alloc_count;
+		Quad alloc_site = (Quad) entry.getKey();
+		ss[i++] = new SiteStat(alloc_site, alloc_count);
+	    }
+	}
+
+	Arrays.sort(ss);
+
+	int partial_count = 0;
+	System.out.println("Allocation Statistics BEGIN");
+	for(i = 0; i < ss.length; i++) {
+	    Quad site  = ss[i].alloc_site;
+	    int count  = ss[i].alloc_count;
+	    double frac = (count*100.0) / total_count;
+	    if(frac < 5) break;
+	    partial_count += count;
+	    System.out.println
+		(Debug.code2str(site) + "\n\t" + count +
+		 " object(s) \n\t" + Debug.doubleRep(frac, 5, 2) + "%\n\t" +
+		 site.getFactory().getMethod());
+	}
+	System.out.println
+	    (i + ((i==1) ? " site allocates " : " sites allocate") +
+	     Debug.doubleRep((partial_count*100.0) / total_count, 5, 2) +
+	     "% of all objects");
+	System.out.println
+	    ("None of the other allocation sites allocates more than 5%");
+	System.out.println("Allocation Statistics END");
     }
     
     
@@ -279,16 +376,6 @@ public abstract class MemOptMain {
 		Quad qssi = ia.getSSIQuad(q);
 		
 		assert qssi != null : "null qssi";
-
-		/*
-		if(qssi == null) {
-		    System.out.println
-			("WARNING\n\t" + 
-			 Debug.code2str(q) + " | " + q.hashCode() + "\n\t" + 
-			 hm + "\n");
-		    continue;
-		}
-		*/
 
 		if(ia.isSelfIncompatible(qssi)) {
 		    ts.objects_heap += alloc2int(q);

@@ -45,6 +45,7 @@ import harpoon.IR.Quads.QuadWithTry;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.Quads.CallGraphImpl;
+import harpoon.Analysis.Quads.CachingCallGraph;
 import harpoon.Analysis.AllCallers;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.BasicBlock;
@@ -96,7 +97,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.12 2002-08-08 17:51:38 cananian Exp $
+ * @version $Id: PAMain.java,v 1.13 2002-11-27 18:34:24 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -333,10 +334,10 @@ public abstract class PAMain {
 	    // already been applied while performing the pre-analysis
 	    // (so that the analysis can see the modified/added code)
 	    SAMain.USE_OLD_CLINIT_STRATEGY = !USE_OLD_STYLE;
-	    SAMain.OPTIMIZE = true;
+	    //SAMain.OPTIMIZE = true;
 	    SAMain.linker = linker;
 	    SAMain.hcf    = hcf;
-	    SAMain.className = root_method.declClass; // params[optind];
+	    SAMain.className = root_method.declClass;
 	    SAMain.rootSetFilename = rootSetFilename;
 
 	    SAMain.do_it(hroot);
@@ -804,7 +805,7 @@ public abstract class PAMain {
 	};
 
 	String option;
-	Getopt g = new Getopt("PAMain", argv, "mscor:a:iIN:P:", longopts);
+	Getopt g = new Getopt("PAMain", argv, "msco:r:a:iIN:P:b:", longopts);
 
 	while((c = g.getopt()) != -1)
 	    switch(c) {
@@ -960,7 +961,8 @@ public abstract class PAMain {
 		break;
 	    case 'o':
 		SAMain.ASSEM_DIR = new java.io.File(g.getOptarg());
-		assert SAMain.ASSEM_DIR.isDirectory() : SAMain.ASSEM_DIR + " must be a directory";
+		assert SAMain.ASSEM_DIR.isDirectory() : 
+		    SAMain.ASSEM_DIR + " must be a directory";
 		break;
 	    case 'b':
 		COMPILE = true;
@@ -1122,7 +1124,7 @@ public abstract class PAMain {
 	    System.out.println("\tNO_TG");
 
 	if(COMPILE)
-	    System.out.println("\tCOMPILE");
+	    System.out.println("\tCOMPILE " + SAMain.BACKEND_NAME);
 
 	if(RTJ_SUPPORT) {
 	    System.out.println("\tRTJ_SUPPORT ");
@@ -1607,7 +1609,7 @@ public abstract class PAMain {
 	    Set run_mms = null;
 	    CallGraph cg = null;
 
-	    if(SMART_CALL_GRAPH){ // smart call graph!
+	    if(SMART_CALL_GRAPH) { // smart call graph!
 		System.out.print("MetaCallGraph ... ");
 		tstart = time();
 		MetaCallGraph fmcg = 
@@ -1622,8 +1624,13 @@ public abstract class PAMain {
 		cg = new SmartCallGraph(fmcg);
 		System.out.println((time() - tstart) + "ms");
 	    }
-	    else
-		cg = new CallGraphImpl(ch, hcf);
+	    else {
+		System.out.print("CallGraph generation ... ");
+		tstart = time();
+		cg = new CachingCallGraph(new CallGraphImpl(ch, hcf));
+		((CachingCallGraph) cg).load_caches();
+		System.out.println((time() - tstart) + "ms");
+	    }
 
 	    System.out.print("FakeMetaCallGraph ... ");
 	    tstart = time();
