@@ -117,5 +117,13 @@ inode corresponding to that file to point to $b$, and we have to mark $b$ as
 used in the block bitmap. Of course, the constraints should hold before and
 after these two operations, but it is ``normal'' not to hold  between them.
 
+
+\vspace{0.1in}
+Finally, note that there exists bugs that don't corrupt the data structures, 
+and which consequently don't violate the constraints.   Thus, the tool can
+be extremely helpful for some bugs, and totally useless for others. However,
+try to make as much use of the tool as possible.
+
+
 \end{flushleft}
 \end{document}
