@@ -1,0 +1,71 @@
+structure UT_Vector { 
+   void * m_pEntries;
+   int m_iCount;
+   int m_iSpace;
+   int m_iCutoffDouble;
+   int m_iPostCutoffIncrement;
+}
+
+structure pf_Fragments { 
+   pf_Frag * m_pFirst;
+   pf_Frag * m_pLast;
+   UT_Vector m_vecFrags;
+   byte m_bAreFragsClean;
+   reserved byte[3];
+   pf_Frag * m_pCache;
+}
+
+structure pf_Frag { 
+   void * _vptr_pf_Frag;
+   int m_type;
+   int m_length;
+   pf_Frag * m_next;
+   pf_Frag * m_prev;
+   fd_Field * m_pField;
+   pt_PieceTable * m_pPieceTable;
+   int m_docPos;
+}
+
+structure pf_Frag_Strux subclass of pf_Frag { 
+   void * _vptr_pf_Frag;
+   int m_type;
+   int m_length;
+   pf_Frag * m_next;
+   pf_Frag * m_prev;
+   fd_Field * m_pField;
+   pt_PieceTable * m_pPieceTable;
+   int m_docPos;
+   int m_struxType;
+   int m_indexAP;
+   UT_Vector m_vecFmtHandle;
+}
+
+structure pf_Frag_Strux_Block subclass of pf_Frag_Strux { 
+   void * _vptr_pf_Frag;
+   int m_type;
+   int m_length;
+   pf_Frag * m_next;
+   pf_Frag * m_prev;
+   fd_Field * m_pField;
+   pt_PieceTable * m_pPieceTable;
+   int m_docPos;
+   int m_struxType;
+   int m_indexAP;
+   UT_Vector m_vecFmtHandle;
+}
+
+structure pf_Frag_Strux_Section subclass of pf_Frag_Strux { 
+   void * _vptr_pf_Frag;
+   int m_type;
+   int m_length;
+   pf_Frag * m_next;
+   pf_Frag * m_prev;
+   fd_Field * m_pField;
+   pt_PieceTable * m_pPieceTable;
+   int m_docPos;
+   int m_struxType;
+   int m_indexAP;
+   UT_Vector m_vecFmtHandle;
+}
+
+pf_Fragments * fragments;

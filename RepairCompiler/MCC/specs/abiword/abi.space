@@ -1,0 +1,9 @@
+set Fragments(pf_Fragments);
+set Frags(pf_Frag): firstblock | secondblock | Last;
+set Last(pf_Frag);
+set firstblock(pf_Frag_Strux_Section);
+set secondblock(pf_Frag_Strux_Block);
+Next: Frags -> Frags;
+Prev: Frags -> Frags;
+set LFrag(pf_Frag);
+PLast: Fragments -> LFrag;

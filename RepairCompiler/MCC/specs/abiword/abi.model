@@ -1,0 +1,10 @@
+//empty file
+[], !(fragments=null) => fragments in Fragments;
+[forall f in Fragments], ((!(f.m_pFirst=null)) and (f.m_pFirst.m_type=2)) and cast(pf_Frag_Strux,f.m_pFirst).m_struxType=0 => cast(pf_Frag_Strux_Section,f.m_pFirst) in firstblock;
+[forall f in firstblock], ((!(f.m_next=null)) and (f.m_next.m_type=2)) and cast(pf_Frag_Strux,f.m_next).m_struxType=1 => cast(pf_Frag_Strux_Block,f.m_next) in secondblock;
+[forall f in Frags], !(f.m_next=null) => f.m_next in Frags;
+[forall f in Frags], !(f.m_next=null) => <f,f.m_next> in Next;
+[forall f in Frags], !(f.m_prev=null) => <f,f.m_prev> in Prev;
+[forall f in Frags], (f.m_next=null) => f in Last;
+[forall f in Fragments], !(f.m_pLast=null) => <f,f.m_pLast> in PLast;
+[forall f in Fragments], !(f.m_pLast=null) => f.m_pLast in LFrag;
