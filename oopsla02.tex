@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.9 2002-03-22 18:17:55 cananian Exp $
+% $Id: oopsla02.tex,v 1.10 2002-03-22 22:31:36 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -27,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.9 $ $}{$ $Revision: 1.9 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.10 $ $}{$ $Revision: 1.10 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -607,9 +607,16 @@ splitting is by magnitude of expected gain, from profiling.
 %\end{figure*}
 \begin{figure}
 \includegraphics[scale=0.32,clip=true]{Figures/spec-space.eps}
-\caption{Total allocation in spec benchmarks}
+\caption{Total allocation in spec benchmarks.}
 \label{fig:space}
 \end{figure}
+
+\begin{figure}
+\includegraphics[scale=0.32,clip=true]{Figures/oopsla-speed.eps}
+\caption{Runtime performance of space optimizations.}
+\label{fig:space}
+\end{figure}
+
 \begin{table}
 \begin{tabular}{lcccr@{.}l}
 &\bf total&&&\multicolumn{2}{c}{\bf\% alloc'ed}\\
