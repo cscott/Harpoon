@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: sas02.tex,v 1.5 2002-05-11 07:38:24 cananian Exp $
+% $Id: sas02.tex,v 1.6 2002-05-11 07:51:03 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[oribibl]{llncs}
 %\usepackage[section,plain]{algorithm}
@@ -43,10 +43,10 @@ include optimizations that eliminate fields with
 constant values, reduce the sizes of fields based on the range
 of values that can appear in each field, and use a variety of
 transformations to eliminate fields with common default values
-or usage patterns from the majority of objects that originally
-contained these fields. We can apply these optimizations both 
+or usage patterns from many objects.
+We can apply these optimizations both 
 to fields declared by the programmer and to implicit fields in
-the runtime object header. We use a variety of program analysis 
+the runtime object header. We describe analysis
 algorithms to extract the information required to apply these
 optimizations. 
 
@@ -74,19 +74,18 @@ analysis computes the range of values that the program
 may assign to each field. The compiler then transforms the program
 to reduce the size of the field to the smallest type
 capable of storing that range of values. 
-\item {\bf Constant Field Elimination:} 
+\item {\bf Unused, Unread, and Constant Field Elimination:} 
 If the bitwidth analysis finds that a field always holds
 the same constant value, the compiler eliminates the field. 
 It removes each write to the field, and replaces each read
-with the constant value.
+with the constant value.  Fields found to be unused or unread are
+also removed.
 \item {\bf Static Specialization:} Our analysis finds 
 classes with fields whose values do not change after initialization,
-even though objects allocated at different allocation sites
-or points in the execution may
+even though various instances of the object may
 have different values for these fields. It then generates 
-a specialized version of each class for each allocation site;
-this version omits the fields and instead provides accessor
-methods that return the corresponding values. 
+specialized versions of each class which omit these fields,
+substituting accessor methods which may return constant values.
 \item {\bf Field Externalization:} Our analysis uses profiling
 to find fields that almost always have the same default value. 
 It then removes these fields from their enclosing class, 
@@ -97,8 +96,6 @@ default value) or a removal from the hash table (if the written value
 is the default value). It replaces reads with hash table lookups; 
 if the object is not present in the hash table, the lookup simply
 returns the default value. 
-\item {\bf Unused Field Analysis:} If the program does not
-use a field, the compiler eliminates the field. 
 \item {\bf Claz Compression:} Our class hierarchy analysis
 computes an upper bound on the number of classes that the
 program may instantiate. Objects in standard 
@@ -112,11 +109,10 @@ offset into a table of pointers to the class data.
 \item {\bf Byte Packing:} All of the above transformations may
 reduce or eliminate the amount of space required to store each
 field in the object or object header. Our byte packing algorithm
-arranges the fields in the object to minimize the amount of 
-storage. 
+arranges the fields in the object to minimize the object size.
 \end{itemize}
 All of these transformations reduce the space required to store
-objects, but potentially increase the running time of the program.
+objects, but some potentially increase the running time of the program.
 Our experimental results show that, for our set of benchmark
 programs, all of our techniques combined can reduce the peak amount of memory
 required to run the program by as much as 40\% and never increase the
@@ -144,18 +140,18 @@ of our techniques.
 
 \item {\bf Experimental Results:} This paper presents a set
 of experimental results that characterize the impact
-of our transformations.
-% on running time and using various memory metrics?
+of our transformations, revealing the extent of the
+savings available and the performance cost of attaining them.
 \end{itemize}
 %
 \section{Example}
 %
-We next present several examples that illustrate the kinds of 
+We next present a pair of examples that illustrate the kinds of 
 analyses and transformations that our compiler performs.
 %
 \subsection{Field Reduction and Constant Field Elimination}
 %
-Figure~\ref{fig:value}a presents the {\tt NValue} class, which is 
+Figure~\ref{fig:value}a presents the {\tt JValue} class, which is 
 a wrapper around either an {\tt Integer} object or a {\tt Float}
 object. The {\tt type} field indicates which kind of object
 is stored in the {\tt value} field of the class, 
@@ -188,7 +184,7 @@ and d) the {\tt positive} field always has a value between
 \renewcommand{\baselinestretch}{0.5}%
 \begin{tabular}{p{5.6cm}p{6.4cm}}%
 \small\tt\renewcommand{\>}{~}\begin{tabular}[t]{l}%
-public class NValue \{ \\
+public class JValue \{ \\
 \>int integerType = 0;\\
 \>int floatType = 1;\\
 \>int type, positive;\\
@@ -227,7 +223,7 @@ public final class String \{\\
 \\%
 \centering (a)&\centering (b)
 \end{tabular}
-\caption{(a) The {\tt NValue} class.
+\caption{(a) The {\tt JValue} class.
          (b) Portions of the {\tt java.lang.String} class.}
 \label{fig:value}\label{fig:string}
 \end{figure}
@@ -251,7 +247,8 @@ object size by  the full six bytes.
 \subsection{Static Specialization} 
 
 Figure~\ref{fig:string}b presents portions of the implementation
-of the Java {\tt java.lang.String} class. The {\tt value} field in this
+of the {\tt java.lang.String} class from the Java standard class
+library. The {\tt value} field in this
 class refers to a character array that holds the characters
 in the string; the {\tt count} field holds the length of the
 string. In some cases, instances of the {\tt String} class
@@ -307,16 +304,16 @@ public SmallString substring(int start)\\
 \label{fig:split}
 \end{figure}
 
-In practice, most strings are not substrings of other strings. 
-The {\tt offset} field in most strings is therefore zero.
-Moreover, it is possible to tell at the object creation site
-whether the {\tt offset} will be zero or some other number.
+In practice, most strings are created as explicit substrings of other
+strings, so
+the {\tt offset} field in most strings is zero.
 In fact, all of the public {\tt String} constructors create
 strings with {\tt offset} zero; only the {\tt substring} method
 creates strings with a non-zero offset. And even at 
 calls to the private {\tt String(int, int, char[])} constructor
 inside the {\tt substring} method, it is possible to dynamically
-test the values of the parameters to determine if the newly
+test the values of the parameters at the allocation site to determine
+if the newly
 constructed string will have a zero or non-zero offset.
 
 Our analysis exploits this fact by splitting the 
@@ -324,18 +321,20 @@ Our analysis exploits this fact by splitting the
 that omits the {\tt offset} field, and a subclass {\tt BigString} that
 extends {\tt SmallString} and includes the {\tt offset} field. 
 Each of these two new classes implements a {\tt getOffset()} method
-that returns the value of the offset. The {\tt getOffset()} method
-in the {\tt SmallString} class simply returns zero; the {\tt
+to replace the field: the {\tt getOffset()} method
+in the {\tt SmallString} class simply returns zero; but the {\tt
 getOffset()} method in the {\tt BigString} class returns the 
-value of the offset field.  Figure~\ref{fig:split}a illustrates
-this transformation.
+value of the {\tt offset} field in {\tt BigString}.
+Figure~\ref{fig:split}a illustrates this transformation.
 
 At every allocation site except the one inside the {\tt substring}
 method, the transformed program allocates a {\tt SmallString} 
 object. Inside the {\tt substring} method, the program generates
 code that dynamically tests if the offset in the substring
 will be zero. If so, it allocates a {\tt SmallString} object;
-if not, it allocates a {\tt BigString} object. This transformation
+if not, it allocates a {\tt BigString} object.
+(See Figure~\ref{fig:split}b.)
+This transformation
 therefore eliminates the {\tt offset} field in the majority
 of strings. 
 
@@ -352,8 +351,8 @@ initialized it or if it is a simple function of the parameters
 of the constructor. In our example, the analysis determines
 that the {\tt offset} field is zero for all constructors
 except the private constructor invoked within the {\tt substring}
-method. It also determines that, for objects initialized by 
-this constructor, the value of the {\tt offset} field is simply
+method. It also determines that, for objects created within substring,
+the value of the {\tt offset} field is simply
 the value of the {\tt noff} parameter to this constructor. 
 
 This analysis identifies a set of candidate fields. 
@@ -390,8 +389,8 @@ In this scheme, writes to the field are converted into a check to see
 if the new value of the field is the default value. If so, the 
 generated code simply removes any old mappings for that 
 object from the hash table.
-If not, the generated code removes any old mapping and inserts a new
-mapping to record the new value. 
+If not, the generated code replaces any old mapping with a new
+mapping recording the new value. 
 
 \subsection{Hash/Lock Externalization}
 
@@ -597,7 +596,7 @@ constants in the program: a simple initialization statement like {\tt
   x=5} will assign {\tt x} the value $\mathbf{0}\meet\mathbf{5}$,
 which is not equal to $\mathbf{5}$!\footnote{On the lattice of
   Figure~\ref{fig:scclat6}, $\mathbf{0}\meet\mathbf{5}=\text{\tt
-    (-ZP)}$.}
+    (\_ZP)}$.}
 
 We perform a {\it definite initialization} analysis to remedy this
 problem and restore precision to our analysis.
