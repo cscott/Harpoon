@@ -7,6 +7,8 @@
 
 package harpoon.Backend.CSAHack.RegAlloc;
 
+import harpoon.Backend.StrongARM.TwoWordTemp;
+
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.Backend.CSAHack.RegAlloc.Code.Access;
@@ -14,6 +16,7 @@ import harpoon.IR.Assem.Instr;
 import harpoon.Backend.CSAHack.Graph.NodeList;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempList;
+import harpoon.Temp.TempMap;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,33 +45,77 @@ class Spiller {
   }
   // rewrite an instruction list.
   Instr rewrite(Instr instrs) { 
-    Set spillinstrs = new HashSet();
+    final Map usespill = new HashMap(), defspill=new HashMap();
+    Set instrsToSkip = new HashSet();
     for (Instr il=instrs; il!=null; il=il.getNext()) {
-      if (spillinstrs.contains(il)) continue; // skip over spill code
-      // see if there is a DEF of any spilltemps:
-      for (Iterator it=il.defC().iterator(); it.hasNext(); ) {
-	Temp def = (Temp) it.next();
-	if (spills.containsKey(def)) { /* insert a store after the def. */
-	  Access a = (Access) spills.get(def);
-	  for (Iterator it2=il.succC().iterator(); it2.hasNext(); ) {
-	    Instr storei = a.makeStore(il.getFactory(), il, def);
-	    storei.insertAt((HCodeEdge)it2.next());
-	    spillinstrs.add(storei);
-	  }
-	}    
+      if (instrsToSkip.contains(il)) continue;
+      // find USE and DEFs of spilltemps.
+      Temp d[] = il.def();
+      for (int i=0; i<d.length; i++) {
+	if (d[i] instanceof TwoWordTemp) {
+	  // can't rename twowordtemps so just insert the pieces as themselves.
+	  Temp low = ((TwoWordTemp)d[i]).getLow();
+	  Temp high= ((TwoWordTemp)d[i]).getHigh();
+	  if (spills.containsKey(low) &&
+	      il.getAssem().indexOf("`d"+i+"l")!=-1) defspill.put(low, low);
+	  if (spills.containsKey(high) &&
+	      il.getAssem().indexOf("`d"+i+"h")!=-1) defspill.put(high, high);
+	} else if (spills.containsKey(d[i]) && !defspill.containsKey(d[i]))
+	  defspill.put(d[i], new Temp(il.getFactory().tempFactory()));
       }
-      // see if there is a USE of any spilltemps
-      for (Iterator it=il.useC().iterator(); it.hasNext(); ) {
-	Temp use = (Temp) it.next();
-	if (spills.containsKey(use)) { /* insert a fetch before the use */
-	  Access a = (Access) spills.get(use);
+      Temp u[] = il.use();
+      for (int i=0; i<u.length; i++) {
+	if (u[i] instanceof TwoWordTemp) {
+	  Temp low = ((TwoWordTemp)u[i]).getLow();
+	  Temp high= ((TwoWordTemp)u[i]).getHigh();
+	  // can't rename twowordtemps so just insert the pieces as themselves.
+	  if (spills.containsKey(low) &&
+	      il.getAssem().indexOf("`s"+i+"l")!=-1)  usespill.put(low, low);
+	  if (spills.containsKey(high) &&
+	      il.getAssem().indexOf("`s"+i+"h")!=-1) usespill.put(high, high);
+	} else if (spills.containsKey(u[i]) && !usespill.containsKey(u[i]))
+	  usespill.put(u[i], new Temp(il.getFactory().tempFactory()));
+      }
+      // if no uses or defs of spilltemps, continue.
+      if (defspill.size()==0 && usespill.size()==0) continue;
+      // okay, rename the original instr with the new limited-lifespan temps.
+      Instr ni = il.rename(il.getFactory(), new TempMap() { // defmap
+	  public Temp tempMap(Temp t) {
+	      return defspill.containsKey(t) ? (Temp)defspill.get(t) : t;
+	  }
+      }, new TempMap() { // usemap
+	  public Temp tempMap(Temp t) {
+	      return usespill.containsKey(t) ? (Temp)usespill.get(t) : t;
+	  }
+      });
+      // replace old instr with new instr
+      Instr.replace(il, ni);  il=ni;
+      instrsToSkip.add(ni);
+      // insert loads before any usespills.
+      for (Iterator it=usespill.entrySet().iterator(); it.hasNext(); ) {
+	  Map.Entry e = (Map.Entry) it.next();
+	  Temp olduse = (Temp) e.getKey(), newuse = (Temp) e.getValue();
+	  Access a = (Access) spills.get(olduse);
 	  for (Iterator it2=il.predC().iterator(); it2.hasNext(); ) {
-	    Instr loadi = a.makeLoad(il.getFactory(), il, use);
+	    Instr loadi = a.makeLoad(il.getFactory(), il, newuse);
 	    loadi.insertAt((HCodeEdge)it2.next());
-	    spillinstrs.add(loadi);
+	    instrsToSkip.add(loadi);
 	  }
-	}
       }
+      // insert stores before any defspills.
+      for (Iterator it=defspill.entrySet().iterator(); it.hasNext(); ) {
+	  Map.Entry e = (Map.Entry) it.next();
+	  Temp olddef = (Temp) e.getKey(), newdef = (Temp) e.getValue();
+	  Access a = (Access) spills.get(olddef);
+	  for (Iterator it2=il.succC().iterator(); it2.hasNext(); ) {
+	    Instr storei = a.makeStore(il.getFactory(), il, newdef);
+	    storei.insertAt((HCodeEdge)it2.next());
+	    instrsToSkip.add(storei);
+	  }
+      }
+      // reset usespill and defspill for efficient re-use.
+      usespill.clear(); defspill.clear();
+      // done!
     }
     // fixup instrs
     while (instrs.getPrev()!=null) instrs = instrs.getPrev();
