@@ -19,7 +19,7 @@ import java.util.Collections;
  * <code>Graph</code> is a command-line graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.12.2.13 2000-01-13 23:48:17 cananian Exp $
+ * @version $Id: Graph.java,v 1.12.2.14 2000-06-30 23:12:22 cananian Exp $
  */
 
 public abstract class Graph extends harpoon.IR.Registration {
@@ -31,9 +31,9 @@ public abstract class Graph extends harpoon.IR.Registration {
 	    harpoon.IR.Bytecode.Code.codeFactory();
 	int n=0;  // count # of args/flags processed.
 	for (; n < args.length ; n++) {
-	    if (args[n].startsWith("-code")) {
+	    if (args[n].startsWith("-pass")) {
 		if (++n >= args.length)
-		    throw new Error("-code option needs codename");
+		    throw new Error("-pass option needs codename");
 		hcf = Options.cfFromString(args[n], hcf);
 	    } else break; // no more command-line options.
 	}
