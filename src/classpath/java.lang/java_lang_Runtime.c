@@ -7,7 +7,6 @@
 #include <stdio.h> /* for fprintf, stderr */
 #include "../../java.lang/runtime.h" /* useful library-indep implementations */
 #include "../../java.lang/properties.h" /* same, for setting up properties */
-#include "../../java.lang.reflect/reflect-util.h" /* for REFLECT_staticinit */
 
 /*
  * Class:     java_lang_Runtime
