@@ -60,7 +60,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.16 2000-07-12 01:32:54 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.17 2000-07-12 03:23:25 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -117,27 +117,36 @@ public class TreeToC extends java.io.PrintWriter {
     }
     /** LabelVisitor identifies the method-local labels. */
     private static class LabelVisitor extends TreeVisitor {
+	public final Set method_labels = new HashSet();
 	public final Set local_code_labels = new HashSet();
 	public final Set local_table_labels = new HashSet();
 	private boolean seenMethod = false;
-	Label last_label=null;
+	LabelList last_labels=null;
 	public LabelVisitor(Tree t) { t.accept(this); }
 	public void visit(Tree e) {
-	    if (last_label!=null) {
-		if (seenMethod) local_code_labels.add(last_label);
-		last_label=null;
+	    if (last_labels!=null) {
+		if (seenMethod)
+		    local_code_labels.addAll(LabelList.toList(last_labels));
+		last_labels=null;
 	    }
 	}
 	public void visit(SEQ e) {
 	    e.getLeft().accept(this);
 	    e.getRight().accept(this);
 	}
-	public void visit(METHOD e) { super.visit(e); seenMethod = true; }
-	public void visit(LABEL e) { super.visit(e); last_label=e.label; }
+	public void visit(METHOD e) {
+	    seenMethod = true;
+	    method_labels.addAll(LabelList.toList(last_labels));
+	    last_labels=null;
+	}
+	public void visit(LABEL e) {
+	    last_labels=new LabelList(e.label, last_labels);
+	}
 	public void visit(DATUM e) {
-	    if (last_label!=null) {
-		if (seenMethod) local_table_labels.add(last_label);
-		last_label=null;
+	    if (last_labels!=null) {
+		if (seenMethod)
+		    local_table_labels.addAll(LabelList.toList(last_labels));
+		last_labels=null;
 	    }
 	}
     }
@@ -242,10 +251,16 @@ public class TreeToC extends java.io.PrintWriter {
 	{ /* gcc complains if we don't declare certain symbols "properly". */
 	    sym2decl.put(new Label("memset"),
 			 "extern void *memset(void *,int,size_t);");
+	    sym2decl.put(new Label("alloca"),
+			 "extern void *alloca(size_t);");
 	  /* also, we need to use FNI_GetJNIEnv() at points. */
 	    sym2decl.put(new Label("FNI_GetJNIEnv"),
 			 "extern JNIEnv *FNI_GetJNIEnv(void);");
 	}
+	/** functions we have exact prototypes for */
+	static Set exactproto = new HashSet();
+	static { exactproto.add("memset"); exactproto.add("alloca"); }
+	
 	/** these are the *local* labels which are defined *inside functions*
 	 *  in this file. */
 	LabelVisitor lv=null;
@@ -486,7 +501,8 @@ public class TreeToC extends java.io.PrintWriter {
 		if (lv.local_code_labels.contains(e.label)) {
 		    pw.print(label(e.label)+":"); nl();
 		} else Util.assert(lv.local_table_labels.contains(e.label));
-	    } else startData(DATA, e.label, e.exported);
+	    } else if (!lv.method_labels.contains(e.label))
+		startData(DATA, e.label, e.exported);
 	    last_label=e.label;
 	}
 	private int struct_size;
@@ -524,16 +540,18 @@ public class TreeToC extends java.io.PrintWriter {
 	    // switch!
 	    switchto(CODE);
 	    // create common contents of declaration and definition
-	    StringWriter declw = new StringWriter();
-	    pw = new PrintWriter(declw);
+	    StringWriter protow = new StringWriter();
+	    pw = new PrintWriter(protow);
+	    String prologue;
 	    if (e.getReturnType() < 0) {
 		isVoidMethod = true;
-		pw.print("FUNCV(");
+		prologue="FUNCV(";
 	    } else {
 		isVoidMethod = false;
-		pw.print("FUNC("+ctype(e.getReturnType())+", ");
+		prologue="FUNC("+ctype(e.getReturnType())+", ";
 	    }
-	    pw.print(label(e.getMethod())+", (");
+	    // there's a space for the method name here.
+	    pw.print(", (");
 	    for (int i=0; i<e.getParamsLength(); i++) {
 		if (i==0) pw.print("FIRST_DECL_ARG(");
 		pw.print(ctype(e.getParams(i))+" ");
@@ -542,13 +560,23 @@ public class TreeToC extends java.io.PrintWriter {
 		if (i==0) pw.print(") ");
 		else if (i+1 < e.getParamsLength()) pw.print(", ");
 	    }
-	    pw.print("), \""+sectionname(this.segment)+"\")");
+	    pw.print("), \""+sectionname(this.segment)+"\",");
 	    pw.close();
-	    sym2decl.put(e.getMethod(), "DECLARE"+declw.getBuffer()+";");
-	    // emit declaration.
+	    String declstr=prologue+label(e.getMethod())+protow.getBuffer();
+	    // declare this method.
+	    sym2decl.put(e.getMethod(), "DECLARE"+declstr+");");
+	    // declare its aliases.
+	    String aliasdeclstr=protow.getBuffer()+
+		" __attribute__ ((alias (\""+label(e.getMethod())+"\"))));";
+	    for (Iterator it=lv.method_labels.iterator(); it.hasNext(); ) {
+		Label alias = (Label) it.next();
+		sym2decl.put(alias,
+			     "DECLARE"+prologue+label(alias)+aliasdeclstr);
+	    }
+	    // emit definition.
 	    pw = pwa[MD];
 	    last_file=null; last_line=0; updateLine(e);
-	    pw.print("DEFINE"+declw.getBuffer()); nl();
+	    pw.print("DEFINE"+declstr+")"); nl();
 	    pw.println("{");
 	    pw = pwa[MB];
 	    emitLineDirective(false);
@@ -584,10 +612,10 @@ public class TreeToC extends java.io.PrintWriter {
 		trans(e.getRetval()); pw.print(" = ");
 	    }
 	    pw.print("(");
-	    // hack to allow inlining calls to memset.
+	    // hack to allow inlining calls to memset/etc.
 	    if (e.getFunc() instanceof NAME &&
-		((NAME)e.getFunc()).label.name.equals("memset"))
-		pw.print("memset");
+		exactproto.contains(((NAME)e.getFunc()).label.name))
+		pw.print(((NAME)e.getFunc()).label.name);
 	    else {
 	    /* function type cast */
 	    pw.print("(");
