@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.28 2001-06-29 15:59:56 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.29 2001-07-05 20:34:17 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -777,7 +777,7 @@ public class TreeToC extends java.io.PrintWriter {
 		if (isSave) pw.print(K+" = "+t); else pw.print(t+" = "+K);
 		while (dl!=null) {
 		    pw.print((dl.sign^isSave)?"+":"-");
-		    pw.print(dl.base);
+		    pw.print("PTRMASK("+dl.base+")");
 		    dl=dl.next;
 		}
 		pw.print(",");
