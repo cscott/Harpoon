@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.24 1999-10-23 05:59:33 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.25 2000-01-12 20:59:10 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -536,8 +536,17 @@ final class Translate { // not public.
 	HEADER header = new HEADER(qf, firstInstr);
 	Quad.addEdge(header, 0, footer, 0);
 
+	// deterimine if this is a synchronized method.
+	boolean isSynchronized=Modifier.isSynchronized(method.getModifiers());
+
+	// find how much stack to allocate.  when translating a synchronized
+	// method, we need at least one stack space (for a constructed try
+	// block) even if the original method needed none.
+	int maxstack = bytecode.getMaxStack();
+	if (isSynchronized && maxstack < 1) maxstack=1;
+
 	// set up initial state.
-	State s=new State(qf, bytecode.getMaxStack(), bytecode.getMaxLocals(),
+	State s=new State(qf, maxstack, bytecode.getMaxLocals(),
 			  tb /* exception handling information */,
 			  header /* header quad for method. */,
 			  new Liveness(bytecode) /*local variable liveness*/);
@@ -553,9 +562,6 @@ final class Translate { // not public.
 	/** Make METHOD with arity 1; we'll fill in the proper arity later. */
 	METHOD qM = new METHOD(qf, firstInstr, params, 1);
 	Quad.addEdge(header, 1, qM, 0);
-
-	// deterimine if this is a synchronized method.
-	boolean isSynchronized=Modifier.isSynchronized(method.getModifiers());
 
 	/* From section 8.4.3.5 of the Java Language Specification: */
 	/* A synchronized method acquires a lock (17.1) before it
@@ -607,6 +613,7 @@ final class Translate { // not public.
 	trans(new TransState(s, firstInstr, q, 0));
 	// make new handler for MONITOREXIT if synchronized
 	HANDLER exithand = isSynchronized ?
+	    // creating this new handler requires one stack space.
 	    s.newHandler(s.enterCatch(), null, q, null) : null;
 	// fixup initial METHOD block to link to the proper # of HANDLERs.
 	qM = s.fixupHandlers();
