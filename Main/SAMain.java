@@ -12,6 +12,7 @@ import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
+import harpoon.ClassFile.NoSuchClassException;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Tree.Data;
 import harpoon.IR.Assem.Instr;
@@ -49,10 +50,12 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.LineNumberReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OptionalDataException;
@@ -66,7 +69,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.95 2000-10-12 22:32:37 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.96 2000-10-13 20:55:12 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -97,6 +100,8 @@ public class SAMain extends harpoon.IR.Registration {
         
     static String className;
     static String classHierarchyFilename;
+
+    static String rootSetFilename;
 
     static String methodName;
 
@@ -159,8 +164,12 @@ public class SAMain extends harpoon.IR.Registration {
 		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 	    // and our main method is a root, too...
 	    roots.add(mainM);
-	    roots.add(linker.forName("sun.rmi.registry.RegistryHandler").getMethod("<init>", new HClass[0]));
-	    roots.add(linker.forName("java.rmi.server.RemoteRef").getMethod("<clinit>", new HClass[0]));
+	    if (rootSetFilename!=null) try {
+		addToRootSet(roots, rootSetFilename);
+	    } catch (IOException ex) {
+		System.err.println("Error reading "+rootSetFilename+".");
+		System.exit(1);
+	    }
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
@@ -303,6 +312,55 @@ public class SAMain extends harpoon.IR.Registration {
 		System.exit(1);
 	    }
 	}
+    }
+
+    static void addToRootSet(Set roots, String filename) throws IOException {
+	LineNumberReader r = new LineNumberReader(new FileReader(filename));
+	String line;
+	while (null != (line=r.readLine())) {
+	    line = line.trim(); // remove white space from both sides.
+	    // check if this is an 'include' directive.
+	    if (line.startsWith("include ")) {
+		String nfile = line.substring(7).trim();
+		try {
+		    addToRootSet(roots, nfile);
+		    continue;
+		} catch (IOException ex) {
+		    System.err.println("Error reading "+nfile+" on line "+
+				       r.getLineNumber()+" of "+filename);
+		    System.exit(1);
+		}
+	    }
+	    int lparen = line.indexOf('(');
+	    if (lparen < 0 || line.indexOf(')', lparen) < 0) try {
+		// this is a class name.
+		roots.add(linker.forName(line));
+		continue;
+	    } catch (NoSuchClassException ex) {
+		System.err.println("Class "+line+" not found on line "+
+				   r.getLineNumber()+" of "+filename);
+		System.exit(1);
+	    }
+	    int dot = line.lastIndexOf('.', lparen);
+	    if (dot < 0) {
+		System.err.println("Illegal method name on line "+
+				   r.getLineNumber()+" of "+filename);
+		System.exit(1);
+	    }
+	    String desc = line.substring(lparen);
+	    String method = line.substring(dot+1, lparen);
+	    String classN = line.substring(0, dot);
+	    try {
+		roots.add(linker.forName(classN).getMethod(method, desc));
+		continue;
+	    } catch (NoSuchClassException ex) {
+	    } catch (NoSuchMethodError ex) {
+	    }
+	    System.err.println("Method "+line+" not found on line "+
+			       r.getLineNumber()+" of "+filename);
+	    System.exit(1);
+	}
+	r.close();
     }
 
     public static void outputMethod(final HMethod hmethod, 
@@ -471,7 +529,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     protected static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "m:i:s:b:c:o:DOPFHRLlABhq1::C:");
+	Getopt g = new Getopt("SAMain", args, "m:i:s:b:c:o:DOPFHRLlABhq1::C:r:");
 	
 	int c;
 	String arg;
@@ -591,6 +649,9 @@ public class SAMain extends harpoon.IR.Registration {
 		    ONLY_COMPILE_MAIN = true;
 		}
 		break;
+	    case 'r':
+		String rootSetFilename = g.getOptarg();
+		break;
 	    case '?':
 	    case 'h':
 		System.out.println(usage);
@@ -662,6 +723,9 @@ public class SAMain extends harpoon.IR.Registration {
 	out.println("-1<optional class name>"); 
 	out.println("\tCompiles only a single method or class.  Without a classname, only compiles <class>.main()");
 	out.println("\tNote that you may not have whitespace between the '-1' and the classname");
+
+	out.println("-r <root set file>");
+	out.println("\tAdds additional classes/methods to the root set as specified by <root set file>.");
 
 	out.println("-h");
 	out.println("\tPrints out this help message");
