@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * It does not have <code>HANDLER</code> quads, and is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadNoSSA.java,v 1.1.2.9 1999-02-08 17:24:30 duncan Exp $
+ * @version $Id: QuadNoSSA.java,v 1.1.2.10 1999-07-23 06:59:22 cananian Exp $
  * @see QuadWithTry
  * @see QuadSSA
  */
@@ -23,9 +23,9 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 
     /** Creates a <code>QuadNoSSA</code> object from a
      *  <code>QuadWithTry</code> object. */
-    QuadNoSSA(QuadWithTry qwt) {
+    QuadNoSSA(QuadWithTry qwt, boolean coalesce) {
         super(qwt.getMethod(), null);
-	this.quads = UnHandler.unhandler(this.qf, qwt);
+	this.quads = UnHandler.unhandler(this.qf, qwt, coalesce);
 	Peephole.optimize(this.quads, true);
     }
     QuadNoSSA(QuadSSA qsa) {
@@ -57,7 +57,7 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
-			new QuadNoSSA((QuadWithTry)c);
+			new QuadNoSSA((QuadWithTry)c, true);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }

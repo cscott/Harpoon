@@ -6,6 +6,7 @@ import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -16,18 +17,20 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.14 1999-07-17 12:47:38 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.15 1999-07-23 06:59:22 cananian Exp $
  */
 final class UnHandler {
     // entry point.
-    public static final Quad unhandler(final QuadFactory qf, final Code code) {
+    public static final Quad unhandler(final QuadFactory qf, final Code code,
+				       boolean coalesce_exceptions) {
 	final QuadMap qm = new QuadMap();
 	final HEADER old_header = (HEADER)code.getRootElement();
 	final METHOD old_method = (METHOD) old_header.next(1);
 	final HandlerMap hm = new HandlerMap(qf, old_method);
 	final CloningTempMap ctm = new CloningTempMap(code.qf.tempFactory(),
 						      qf.tempFactory());
-	final StaticState ss = new StaticState(qf, qm, hm, ctm);
+	final StaticState ss = new StaticState(qf, qm, hm, ctm,
+					       coalesce_exceptions);
 	visitAll(new Visitor(new TempInfo(), ss), old_header);
 	// now qm contains mappings from old to new, we just have to link them.
 	for (Iterator e = code.getElementsI(); e.hasNext(); ) {
@@ -153,6 +156,13 @@ final class UnHandler {
 		get(Hhandler, (HANDLER)ql[i]);
 	}
 
+	/** mapping <Exception, HandlerSet> -> fixup list for 
+	 *  exception construction code */
+	List registry(HClass HCex, HandlerSet hs) {
+	    return get(Hehs, Arrays.asList(new Object[] { HCex, hs }));
+	}
+	private final Map Hehs = new HashMap();
+
 	/** mapping HandlerSet -> test tree */
 	void register(NOP from, HandlerSet to) {
 	    get(Hhs, to).add(from);
@@ -187,6 +197,18 @@ final class UnHandler {
 	    FOOTER newQf = oldQf.resize(j + Vthrows.size());
 	    for (Iterator e=Vthrows.iterator(); e.hasNext(); )
 		Quad.addEdge((THROW)e.next(), 0, newQf, j++);
+	    // now share exception-generation code
+	    for (Iterator it=Hehs.values().iterator(); it.hasNext(); ) {
+		List l = (List) it.next();
+		if (l.size() < 2) continue; // no fixup necessary.
+		PHI phi = new PHI(qf, (Quad)l.get(0), new Temp[0], l.size());
+		Edge ed = ((NEW)l.get(0)).prevEdge(0);
+		Quad.addEdge(phi, 0, (Quad)ed.to(), ed.which_pred());
+		for (int i=0; i<l.size(); i++) {
+		    if (i>0) ed = ((NOP)l.get(i)).prevEdge(0);
+		    Quad.addEdge((Quad)ed.from(), ed.which_succ(), phi, i);
+		}
+	    }
 	    
 	    // next do HandlerSets
 	    for (Iterator e=Hhs.keySet().iterator(); e.hasNext(); ) {
@@ -264,10 +286,12 @@ final class UnHandler {
 	final QuadMap qm;
 	final HandlerMap hm;
 	final CloningTempMap ctm;
+	final boolean coalesce;
 	final List extra = new ArrayList(4);
 	StaticState(QuadFactory qf, QuadMap qm, HandlerMap hm,
-		    CloningTempMap ctm) {
+		    CloningTempMap ctm, boolean coalesce) {
 	    this.qf = qf; this.qm = qm; this.hm = hm; this.ctm = ctm;
+	    this.coalesce = coalesce;
 	}
 	Temp extra(int i) {
 	    while (extra.size() <= i)
@@ -708,6 +732,14 @@ final class UnHandler {
 	    return q0;
 	}
 	private Quad _throwException_(QuadFactory qf, Quad old, HClass HCex) {
+	    List l = ss.hm.registry(HCex, ss.hm.handlers(old));
+	    if (ss.coalesce && l.size()>0) {
+		// if we've already made an exception of this type, just
+		// save a trailer for the fixup.
+		Quad q = new NOP(qf, old);
+		l.add(q);
+		return q;
+	    }
 	    Temp Tex = ss.hm.Tex, Tex2 = ss.extra(0), Tnull = ss.extra(1);
 	    Quad q0 = new NEW(qf, old, Tex, HCex);
 	    Quad q1 = new CALL(qf, old, HCex.getConstructor(new HClass[0]),
@@ -721,7 +753,8 @@ final class UnHandler {
 	    Quad q7 = _throwException_(qf, old, Tex);
 	    Quad.addEdges(new Quad[] { q0, q1, q2, q3, q4, q5, q6, q7 });
 	    Quad.addEdge(q4, 1, q6, 1);
-
+	    // save the header so we can reuse this exception-generation code.
+	    if (ss.coalesce) l.add(q0);
 	    return q0;
 	}
 	private Quad _throwException_(QuadFactory qf, Quad old, Temp Tex) {
