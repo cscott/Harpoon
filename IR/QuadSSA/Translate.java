@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.48 1998-09-04 08:07:14 cananian Exp $
+ * @version $Id: Translate.java,v 1.49 1998-09-04 08:17:24 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -724,39 +724,56 @@ class Translate  { // not public.
 			 ns.stack[0], new Temp[] {s.stack[1], s.stack[0]});
 	    break;
 	case Op.IDIV:
-	case Op.LDIV:
 	    {
-	    // settle 32/64 bit issues.
-	    String op;
-	    Temp val1, val2, res;
-	    if (in.getOpcode()==Op.IDIV) {
-		op = "icmpeq";
-		ns = s.pop(2).push(new Temp());
-		val1 = s.stack[1]; val2 = s.stack[0]; res = ns.stack[0];
-	    } else {
-		op = "lcmpeq";
-		ns = s.pop(4).push(null).push(new Temp());
-		val1 = s.stack[2]; val2 = s.stack[0]; res = ns.stack[0];
-	    }
+	    ns = s.pop(2).push(new Temp());
 
 	    // if (divisor==0) throw new ArithmeticException();
 	    HClass HCex = HClass.forClass(ArithmeticException.class);
 	    Temp Tex = new Temp();
 
-	    Quad q0 = new OPER(in, op, new Temp(),
-			       new Temp[] { val2, Tzero } );
+	    Quad q0 = new OPER(in, "icmpeq", new Temp(),
+			       new Temp[] { s.stack[0], Tzero } );
 	    Quad q1 = new CJMP(in, q0.def()[0]);
 	    Quad q2 = transNewException(HCex, Tex, Tnull, in, q1, 1);
 	    r = transThrow(new TransState(s.push(Tex), in, q2, 0),
 			   handlers, Tnull, false);
 	    // actual division operation:
 	    Quad q3 = new OPER(in, Op.toString(in.getOpcode()), // idiv/ldiv
-			       res, new Temp[] {val1, val2});
+			       ns.stack[0],
+			       new Temp[] {s.stack[1], s.stack[0]});
 	    // link quads.
 	    Quad.addEdge(q0, 0, q1, 0);
 	    Quad.addEdge(q1, 0, q3, 0);
 	    // setup next state.
 	    q = q0; last = q3;
+	    break;
+	    }
+	case Op.LDIV:
+	    {
+	    ns = s.pop(4).push(null).push(new Temp());
+
+	    // if (divisor==0) throw new ArithmeticException();
+	    HClass HCex = HClass.forClass(ArithmeticException.class);
+	    Temp Tex = new Temp();
+
+	    Quad q0 = new CONST(in, new Temp("$zeroL"), 
+				new Long(0), HClass.Long);
+	    Quad q1 = new OPER(in, "lcmpeq", new Temp(),
+			       new Temp[] { s.stack[0], q0.def()[0] } );
+	    Quad q2 = new CJMP(in, q1.def()[0]);
+	    Quad q3 = transNewException(HCex, Tex, Tnull, in, q2, 1);
+	    r = transThrow(new TransState(s.push(Tex), in, q3, 0),
+			   handlers, Tnull, false);
+	    // actual division operation:
+	    Quad q4 = new OPER(in, Op.toString(in.getOpcode()), // idiv/ldiv
+			       ns.stack[0], 
+			       new Temp[] {s.stack[2], s.stack[0]});
+	    // link quads.
+	    Quad.addEdge(q0, 0, q1, 0);
+	    Quad.addEdge(q1, 0, q2, 0);
+	    Quad.addEdge(q2, 0, q4, 0);
+	    // setup next state.
+	    q = q0; last = q4;
 	    break;
 	    }
 	case Op.FCMPG:
