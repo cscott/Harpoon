@@ -78,13 +78,14 @@ import harpoon.Util.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDXMain.java,v 1.1.2.4 2000-06-29 02:24:03 cananian Exp $
+ * @version $Id: EDXMain.java,v 1.1.2.5 2000-07-03 20:01:31 bdemsky Exp $
  */
 public class EDXMain extends harpoon.IR.Registration {
  
     private static boolean PRINT_ORIG = false;
     private static boolean PRINT_DATA = false;
     private static boolean PRE_REG_ALLOC = false;
+    private static boolean ABSTRACT_REG_ALLOC = false;
     private static boolean REG_ALLOC = false;
     private static boolean HACKED_REG_ALLOC = false;
     private static boolean LIVENESS_TEST = false;
@@ -93,7 +94,7 @@ public class EDXMain extends harpoon.IR.Registration {
     private static boolean OPTIMIZE = false;
 
     private static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
-    private static String  singleClass = null; // for testing single classes
+    private static HClass  singleClass = null; // for testing single classes
     private static final int STRONGARM_BACKEND = 0;
     private static final int MIPS_BACKEND = 1;
     private static final int SPARC_BACKEND = 2;
@@ -326,6 +327,11 @@ public class EDXMain extends harpoon.IR.Registration {
 	    frame = new harpoon.Backend.MIPS.Frame
 		(mainM, classHierarchy, callGraph);
 	    break;
+	case PRECISEC_BACKEND:
+	    frame = new harpoon.Backend.PreciseC.Frame
+		(mainM, classHierarchy, callGraph);
+	    break;
+
 	default: throw new Error("Unknown Backend: "+BACKEND);
 	}
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
@@ -356,11 +362,16 @@ public class EDXMain extends harpoon.IR.Registration {
 	Set methods = classHierarchy.callableMethods();
 	Iterator classes = new TreeSet(classHierarchy.classes()).iterator();
 
+	String filesuffix = (BACKEND==PRECISEC_BACKEND) ? ".c" : ".s";
+	if (ONLY_COMPILE_MAIN) classes=Default.singletonIterator(hcl);
+	if (singleClass!=null) classes=Default.singletonIterator(singleClass);
 
-	if (singleClass!=null || !ONLY_COMPILE_MAIN) {
+
+	//	if (singleClass!=null || !ONLY_COMPILE_MAIN) {
+	if (true) {
 	    while(classes.hasNext()) {
 		HClass hclass = (HClass) classes.next();
-		if (singleClass!=null && singleClass.equals(hclass.getName()))
+		if (singleClass!=null && singleClass!=hclass)
 		    continue;
 		messageln("Compiling: " + hclass.getName());
 		
@@ -369,12 +380,16 @@ public class EDXMain extends harpoon.IR.Registration {
 		    out = new PrintWriter
 			(new BufferedWriter
 			 (new FileWriter
-			  (new File(ASSEM_DIR, filename + ".s"))));
+			  (new File(ASSEM_DIR, filename + filesuffix))));
+		    if (BACKEND==PRECISEC_BACKEND)
+			out = new harpoon.Backend.PreciseC.TreeToC(out);
 		    
 		    HMethod[] hmarray = hclass.getDeclaredMethods();
 		    Set hmset = new TreeSet(Arrays.asList(hmarray));
 		    hmset.retainAll(methods);
 		    Iterator hms = hmset.iterator();
+		    if (ONLY_COMPILE_MAIN)
+			hms = Default.singletonIterator(mainM);
 		    message("\t");
 		    while(!hclass.isInterface() && hms.hasNext()) {
 			HMethod m = (HMethod) hms.next();
@@ -399,11 +414,15 @@ public class EDXMain extends harpoon.IR.Registration {
 	    // put a proper makefile in the directory.
 	    File makefile = new File(ASSEM_DIR, "Makefile");
 	    InputStream templateStream;
+	    String resourceName="harpoon/Support/nativecode-makefile.template";
+	    if (BACKEND==PRECISEC_BACKEND)
+		resourceName="harpoon/Support/precisec-makefile.template";
+
 	    if (makefile.exists())
 		System.err.println("WARNING: not overwriting pre-existing "+
 				   "file "+makefile);
 	    else if ((templateStream=ClassLoader.getSystemResourceAsStream
-		      ("harpoon/Support/nativecode-makefile.template"))==null)
+		      (resourceName))==null)
 		System.err.println("WARNING: can't find Makefile template.");
 	    else try {
 		BufferedReader in = new BufferedReader
@@ -416,28 +435,6 @@ public class EDXMain extends harpoon.IR.Registration {
 		in.close(); out.close();
 	    } catch (IOException e) {
 		System.err.println("Error writing "+makefile+".");
-		System.exit(-1);
-	    }
-	} else { // ONLY_COMPILE_MAIN
-	    // hcl is our class
-	    // mainM is our method
-
-	    try {
-		String filename = frame.getRuntime().nameMap.mangle(hcl);
-		out = new PrintWriter
-		    (new BufferedWriter
-		     (new FileWriter
-		      (new File(ASSEM_DIR, filename + ".s"))));
-		message("\t");
-		message(mainM.getName());
-		outputMethod(mainM, hcf, sahcf, out);
-		messageln("");
-
-		out.println();
-		out.close();
-	    } catch (IOException e) {
-		System.err.println("Error outputting class "+
-				   hcl.getName());
 		System.exit(-1);
 	    }
 	}
@@ -495,7 +492,25 @@ public class EDXMain extends harpoon.IR.Registration {
 	    info("\t--- end INSTR FORM (basic block check)  ---");
 	    out.flush();
 	}
-	
+
+	if (ABSTRACT_REG_ALLOC) {
+	    HCode hc = sahcf.convert(hmethod);
+	    info("\t--- INSTR FORM (register allocation)  ---");
+	    HCodeFactory regAllocCF = RegAlloc.abstractSpillFactory(sahcf, frame
+								    );
+	    HCode rhc = regAllocCF.convert(hmethod);
+	    if (rhc != null) {
+		info("Codeview \""+rhc.getName()+"\" for "+
+		     rhc.getMethod()+":");
+		rhc.print(out);
+	    } else {
+		info("null returned for " + hmethod);
+	    }
+	    info("\t--- end INSTR FORM (register allocation)  ---");
+	    out.println();
+	    out.flush();
+	}
+
 	if (REG_ALLOC) {
 	    HCode hc = sahcf.convert(hmethod);
 	    
@@ -533,9 +548,15 @@ public class EDXMain extends harpoon.IR.Registration {
 	    out.flush();
 	}
 
+	if (BACKEND==PRECISEC_BACKEND) {
+	    HCode hc = hcf.convert(hmethod);
+	    if (hc!=null)
+		((harpoon.Backend.PreciseC.TreeToC)out).translate(hc);
+	}
+
 	// free memory associated with this method's IR:
 	hcf.clear(hmethod);
-	sahcf.clear(hmethod);
+	if (sahcf!=null) sahcf.clear(hmethod);
     }
     
     public static void outputClassData(Linker linker, HClass hclass, PrintWriter out) 
@@ -547,6 +568,7 @@ public class EDXMain extends harpoon.IR.Registration {
 	  it=new CombineIterator(new Iterator[]
 				 { it, Default.singletonIterator(data) });
       }
+
       while (it.hasNext() ) {
 	final Data data = (Data) it.next();
 	
@@ -555,6 +577,9 @@ public class EDXMain extends harpoon.IR.Registration {
 	    data.print(out);
 	    info("\t--- end TREE FORM (for DATA)---");
 	}		
+
+	if (BACKEND==PRECISEC_BACKEND)
+	    ((harpoon.Backend.PreciseC.TreeToC)out).translate(data);
 	
 	if (!PRE_REG_ALLOC && !LIVENESS_TEST && !REG_ALLOC && !HACKED_REG_ALLOC) continue;
 
@@ -597,12 +622,13 @@ public class EDXMain extends harpoon.IR.Registration {
     
     private static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("EDXMain", args, "m:i:c:o:DOPFHRLArphq1::C:s:");
+	Getopt g = new Getopt("EDXMain", args, "m:i:b:c:o:DOPFHRLABrphq1::C:s:");
 	
 	int c;
 	String arg;
 	while((c = g.getopt()) != -1) {
 	    switch(c) {
+
 	    case 'm': // serialized ClassHierarchy
 		arg = g.getOptarg();
 		classHierarchyFilename = arg;
@@ -623,7 +649,7 @@ public class EDXMain extends harpoon.IR.Registration {
 				       classHierarchyFilename);
 		}
 		break;
-		
+
 	    case 'r':
 		recycle=true;
 		break;
@@ -642,6 +668,9 @@ public class EDXMain extends harpoon.IR.Registration {
 	    case 'H':
 		HACKED_REG_ALLOC = true;
 		break;
+	    case 'B':
+		OUTPUT_INFO = ABSTRACT_REG_ALLOC = true;
+		break;
 	    case 'R':
 		REG_ALLOC = true;
 		break;
@@ -659,6 +688,18 @@ public class EDXMain extends harpoon.IR.Registration {
 		ASSEM_DIR = new File(g.getOptarg());
 		Util.assert(ASSEM_DIR.isDirectory(), ""+ASSEM_DIR+" must be a directory");
 		break;
+	    case 'b': {
+                String backendName = g.getOptarg().toLowerCase().intern();
+                if (backendName == "strongarm")
+                    BACKEND = STRONGARM_BACKEND;
+                if (backendName == "sparc")
+                    BACKEND = SPARC_BACKEND;
+                if (backendName == "mips")
+                    BACKEND = MIPS_BACKEND;
+                if (backendName == "precisec")
+                    BACKEND = PRECISEC_BACKEND;
+                break;
+            }
 	    case 'c':
 		className = g.getOptarg();
 		break;
@@ -700,7 +741,7 @@ public class EDXMain extends harpoon.IR.Registration {
 	    case '1':  
 		String optclassname = g.getOptarg();
 		if (optclassname!=null) {
-		    singleClass = optclassname;
+		    singleClass = linker.forName(optclassname);
 		} else {
 		    ONLY_COMPILE_MAIN = true;
 		}
@@ -723,7 +764,7 @@ public class EDXMain extends harpoon.IR.Registration {
 
     static final String usage = 
 	"usage is: [-m <mapfile>] -c <class>"+
-	" [-DOPRLAhq] [-o <assembly output directory>]";
+	" [-DOPRLABhq] [-o <assembly output directory>]";
 
     private static void printHelp() {
 	out.println("-c <class> (required)");
@@ -754,6 +795,9 @@ public class EDXMain extends harpoon.IR.Registration {
 	out.println("-P");
 	out.println("\tOutputs Pre-Register Allocated Instr IR for <class>");
 
+	out.println("-B");
+	out.println("\tOutputs Abstract Register Allocated Instr IR for <class>");
+
 	out.println("-L");
 	out.println("\tOutputs Liveness info for BasicBlocks of Instr IR");
 	out.println("\tfor <class>");
@@ -764,11 +808,19 @@ public class EDXMain extends harpoon.IR.Registration {
 	out.println("-A");
 	out.println("\tSame as -OPLR");
 
+	out.println("-i <filename>");
+	out.println("Read CodeFactory in from FileName");
+       
+	out.println("-b <backend name>");
+	out.println("\t Supported backends are StrongARM (default), MIPS, " +
+                   "Sparc, or PreciseC");
+
 	out.println("-q");
 	out.println("\tTurns on quiet mode (status messages are not output)");
 
-	out.println("-1 <optional class name>"); 
-	out.println("\tCompiles only a single method or class.  Without a classname, only compiles main()");
+	out.println("-1<optional class name>"); 
+	out.println("\tCompiles only a single method or class.  Without a classname, only compiles <class>.main()");
+	out.println("\tNote that you may not have whitespace between the '-1' and the classname");
 
 	out.println("-h");
 	out.println("\tPrints out this help message");
