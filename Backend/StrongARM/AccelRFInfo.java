@@ -18,7 +18,8 @@ import java.util.ArrayList;
 /**
  * <code>AccelRFInfo</code> is an optimized version of
  * <code>RegFileInfo</code> that is designed to allocate less
- * temporary storage during execution.
+ * temporary storage for the Iterators returned by
+ * suggestRegAssignment(..) methods.
  */
 class AccelRFInfo extends RegFileInfo {
     // rls stands for RegListSet
@@ -38,7 +39,9 @@ class AccelRFInfo extends RegFileInfo {
 	    class HIndexer extends Indexer {
 		public int getID(Object o) { return ((RegList)o).index(); }
 		public boolean implementsReverseMapping() { return true; }
-		public Object getByID(int index) { return l.get(index); }
+		public Object getByID(int i) { 
+		    return l.get(i); 
+		}
 	    }
 	    return new HIndexer();
 	}
@@ -75,6 +78,7 @@ class AccelRFInfo extends RegFileInfo {
 	    }
 	    
 	    // double reg lists
+	    i = 0;
 	    for(int j=0; j<regGeneral.length-1; j+=2, i++ ) {
 		RegList rl = new RegList(regGeneral[j], 
 					 regGeneral[j+1], i);
@@ -91,8 +95,8 @@ class AccelRFInfo extends RegFileInfo {
 	regToRLSconflictDW = new HashMap();
 
 	{ // build conflict sets
-	    for (int i=0; i<regGeneral.length; i++) {
-		Temp t = regGeneral[i];
+	    for (int i=0; i<reg.length; i++) {
+		Temp t = reg[i];
 
 		Set conflictSetSW = rlsFactSW.makeSet();
 		Iterator iterSW = uniSW.iterator();
@@ -116,24 +120,48 @@ class AccelRFInfo extends RegFileInfo {
 	}
     }
     
-    public Iterator suggestRegAssignment(Temp t, final Map regfile) 
+    public Iterator suggestRegAssignment(final Temp t, 
+					 final Map regfile) 
 	throws SpillException {
+	Set regListSet;
 	if (t instanceof TwoWordTemp) {
-	    Set regListSet = rlsFactDW.makeFullSet();
+	    regListSet = rlsFactDW.makeFullSet();
 	    Iterator regs = regfile.keySet().iterator();
 	    while(regs.hasNext()) {
 		Temp r = (Temp) regs.next();
 		regListSet.removeAll((Set)regToRLSconflictDW.get(r));
 	    }
-	    return regListSet.iterator();
 	} else {
-	    Set regListSet = rlsFactSW.makeFullSet();
+	    regListSet = rlsFactSW.makeFullSet();
 	    Iterator regs = regfile.keySet().iterator();
 	    while(regs.hasNext()) {
 		Temp r = (Temp) regs.next();
 		regListSet.removeAll((Set)regToRLSconflictSW.get(r));
 	    }
-	    return regListSet.iterator();
 	}
+
+	if (!regListSet.isEmpty())
+	    return regListSet.iterator();
+	else 
+	    throw new SpillException() {
+	    public Iterator getPotentialSpills() {
+		final Iterator regs;
+
+		if (t instanceof TwoWordTemp) {
+		    regs = rlsFactDW.makeFullSet().iterator();
+		} else {
+		    regs = rlsFactSW.makeFullSet().iterator();
+		}
+
+		return new harpoon.Util.UnmodifiableIterator() {
+		    public boolean hasNext() {
+			return regs.hasNext();
+		    }
+		    public Object next() {
+			return new LSet((List)regs.next());
+		    }
+		};
+	    }
+	};
     }
 }

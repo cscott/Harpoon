@@ -31,7 +31,7 @@ import java.util.HashMap;
     cause an assertion failure.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.13 2000-07-10 12:50:43 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.14 2000-07-13 10:08:38 pnkfelix Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -49,6 +49,10 @@ public class BitSetFactory extends SetFactory {
 
     /** Universe of values for this. */
     private Set universe; 
+
+    /** Universe of values for this, represented as a BitSet.  (Used
+	for makeFullSet). */
+    private BitStringSet bitUniverse;
     
     /** Creates a <code>BitSetFactory</code>, given a
 	<code>universe</code> of values and an <code>Indexer</code>
@@ -64,6 +68,7 @@ public class BitSetFactory extends SetFactory {
 	    if (i > max) max = i;
 	}
 	this.bitStringSize = max+1;
+	this.bitUniverse = (BitStringSet) makeSet(universe);
     }
 
     /** Creates a <code>BitSetFactory</code>, given a
@@ -115,9 +120,7 @@ public class BitSetFactory extends SetFactory {
 	of the universe for <code>this</code> as its initial contents.
     */
     public Set makeFullSet() {
-	BitStringSet bss = new BitStringSet(bitStringSize, this);
-	bss.bs.setAll();
-	return bss;
+	return (Set) bitUniverse.clone();
     }
 
     private static class BitStringSet extends AbstractSet 
@@ -140,7 +143,6 @@ public class BitSetFactory extends SetFactory {
 			"that was not part of the "+
 			"original universe of values.");
 	    int ind = fact.indexer.getID(o);
-	    Util.assert(ind < bs.size());
 	    boolean alreadySet = this.bs.get(ind);
 	    if (alreadySet) {
 		return false;
@@ -188,6 +190,17 @@ public class BitSetFactory extends SetFactory {
 	    } else return super.containsAll(c);
 	}
 	
+	public Object clone() {
+	    try {
+		BitStringSet bss = (BitStringSet) super.clone();
+		bss.bs = (BitString) this.bs.clone();
+		return bss;
+	    } catch (CloneNotSupportedException e) {
+		Util.assert(false);
+		return null;
+	    }
+	}
+
 	public boolean equals(Object o) {
 	    try {
 		BitStringSet bss = (BitStringSet) o;
