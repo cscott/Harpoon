@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.89 1999-08-27 21:34:55 cananian Exp $
+% $Id: thesis.tex,v 1.90 1999-08-28 01:57:46 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.89 $ $}
+\date{\today \\ $ $Revision: 1.90 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.89 $ $}{$ $Revision: 1.89 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.90 $ $}{$ $Revision: 1.90 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -876,6 +876,14 @@ us decent liveness info straight from the stack state during translation, so we
 don't need a fast liveness algorithm; we get what we need `for free'.}
 
 \subsubsection{Variable renaming}
+\begin{myalgorithm}\small
+\input{Figures/THssiren1}
+\caption{SSI renaming algorithm.}\label{alg:ssiren1}
+\end{myalgorithm}
+\begin{myalgorithm}\small
+\input{Figures/THssiren2}
+\caption{SSI renaming algorithm, cont.}\label{alg:ssiren2}
+\end{myalgorithm}
 Um, my current (SSA-inspired) algorithm requires dominance
 information, which we've done away with in general.  Need to rewrite
 to use the PST structure instead, which I'm pretty sure I can do.

@@ -1,0 +1,45 @@
+% SSI renaming algorithm, cont.
+Search($\tuple{s,d}$:~edge) =
+\begin{myalgorithmic}
+ \REQUIRE{$s$ to be a node containing \phisigfunction[or]{s}}
+ \IF{$s$ is a node containing \phifunction{s}}
+  \FOREACH{\phifunction $P$ in $s$}
+   \STATE replace the destination $V$ of $P$ by $Inc(V)$
+  \ENDFOR
+ \ELSIF{$s$ is a node containing \sigfunction{s}}
+  \FOREACH{\sigfunction $S$ in $s$}
+   \STATE $j \gets \text{WhichSucc}(\tuple{s,d})$
+   \STATE replace the $j$-th destination $V$ of $S$ by $Inc(V)$
+  \ENDFOR
+ \ENDIF
+ \STATE\COMMENT{now rename inside basic block}
+ \LOOP
+  \IF{$d$ is a node containing \phifunction{s}}
+   \FOREACH{\phifunction $P$ in $d$}
+    \STATE $j\gets \text{WhichPred}(\tuple{s,d})$
+    \STATE replace the $j$-th operand $V$ of $P$ by $Get(V)$
+   \ENDFOR
+   \STATE $\text{PushEdge}(\tuple{d,\text{Succ}[d]})$
+   \RETURN
+  \ELSIF{$s$ is a node containing \sigfunction{s}}
+   \FOREACH{\sigfunction $S$ in $d$}
+    \STATE replace the operand $V$ of $S$ by $Get(V)$
+   \ENDFOR
+   \STATE $\text{PushEdge}(\tuple{d,\text{Succ}[d]})$
+   \RETURN
+  \ENDIF
+  \STATE\COMMENT{ordinary assignment}
+  \FOREACH{variable $V$ in $LHS(d)$}
+   \STATE replace $V$ by $Get(V)$ in $LHS(d)$
+  \ENDFOR
+  \FOREACH{variable $V$ in $RHS(d)$}
+   \STATE replace $V$ by $Inc(V)$ in $RHS(d)$
+  \ENDFOR
+  \IF{$d$ has a successor}
+   \STATE $s \gets d$
+   \STATE $d \gets \text{Succ}[d]$
+  \ELSE
+   \RETURN
+  \ENDIF
+ \ENDLOOP
+\end{myalgorithmic}

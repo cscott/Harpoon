@@ -1,0 +1,46 @@
+% algorithm for phi/sigma renaming.
+
+Rename($G$:~CFG) =
+\begin{myalgorithmic}
+\STATE $\text{Init}(G)$
+\LET $Q$ be an empty FIFO queue
+      \EMPTYLINE
+\FOREACH{edge $e$ leaving \code{START}}
+ \STATE $\text{PushEdge}(e)$
+\ENDFOR
+\WHILE{$Q$ is not empty}
+ \STATE pop edge $e$ from the start of $Q$
+ \STATE $\text{Search}(e)$
+ \ENDWHILE
+\end{myalgorithmic}
+~\\
+Init($G$:~CFG) =
+\begin{myalgorithmic}
+\FOREACH{edge $e$ in $G$}
+ \STATE $\text{Marked}[e] \gets \code{false}$
+\ENDFOR
+\FOREACH{variable $V$ in $G$}
+ \STATE $C(V) \gets 0$
+\ENDFOR
+\end{myalgorithmic}
+~\\
+PushEdge($e$:~edge) =
+\begin{myalgorithmic}
+\IF{not $\text{Marked}[e]$}
+ \STATE $\text{Marked}[e] \gets \code{true}$
+ \STATE push edge $e$ onto the end of $Q$
+\ENDIF
+\end{myalgorithmic}
+~\\
+Get($V$:~variable):~variable =
+\begin{myalgorithmic}
+\STATE $i \gets C(V)$
+\RETURN $V_i$
+\end{myalgorithmic}
+~\\
+Inc($V$:~variable):~variable =
+\begin{myalgorithmic}
+\STATE $i \gets C(V) + 1$
+\STATE $C(v) \gets i$
+\RETURN $V_i$
+\end{myalgorithmic}
