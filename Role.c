@@ -447,6 +447,7 @@ void sortidentities(struct role *role) {
       while(tmpptr->next!=NULL) {
 	if (compareidentity(irptr, tmpptr->next)<0)
 	  break;
+	tmpptr=tmpptr->next;
       }
       irptr->next=tmpptr->next;
       tmpptr->next=irptr;

@@ -15,9 +15,18 @@
 
 void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, long long dstobj) {
   struct method *method=hs->methodlist;
-  int newpath=0;
+  int newpath=0,newpatho=0;
   while(method!=NULL) {
     struct hashtable * pathtable=method->pathtable;
+
+    if (!contains(pathtable, obj)) {
+      /*Magically got this object...mark it as soo...*/
+      struct path *path=(struct path *) calloc(1,sizeof(struct path));
+      path->prev_obj=-1;
+      path->paramnum=-2;
+      puttable(pathtable, obj, path);
+      newpatho=1;
+    }
 
     if (!contains(pathtable, dstobj)) {
       struct path * path=(struct path *) calloc(1,sizeof(struct path));
@@ -37,13 +46,25 @@ void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, l
   }
   if(newpath)
     addeffect(hs, -1, NULL, dstobj);
+  if(newpatho)
+    addeffect(hs, -1, NULL, obj);
+
 }
 
 void addpath(struct heap_state *hs, long long obj, char * class, char * field, char * fielddesc, long long dstobj) {
   struct method *method=hs->methodlist;
-  int newpath=0;
+  int newpath=0,newpatho=0;
   while(method!=NULL) {
     struct hashtable * pathtable=method->pathtable;
+
+    if (!contains(pathtable, obj)) {
+      /*Magically got this object...mark it as soo...*/
+      struct path *path=(struct path *) calloc(1,sizeof(struct path));
+      path->prev_obj=-1;
+      path->paramnum=-2;
+      puttable(pathtable, obj, path);
+      newpatho=1;
+    }
 
     if (!contains(pathtable, dstobj)) {
       struct path * path=(struct path *) calloc(1,sizeof(struct path));
@@ -60,6 +81,10 @@ void addpath(struct heap_state *hs, long long obj, char * class, char * field, c
   }
   if (newpath)
     addeffect(hs, -1, NULL, dstobj);
+
+  if (newpatho)
+    addeffect(hs, -1, NULL, obj);
+
 }
 
 void addnewobjpath(struct heap_state *hs, long long obj) {
@@ -653,6 +678,12 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
       if(rel!=NULL)
 	printf("ERROR:  New object part of path\n");
       return ere; /* object created after procedure call...not in original heap*/
+    } else if(path->paramnum==-2) {
+      struct effectregexpr *src=(struct effectregexpr *) calloc(1, sizeof(struct effectregexpr));
+      src->paramnum=-1;
+      src->flag=2;
+      src->expr=rel;
+      return src;
     } else {
       /* At top level...*/
       struct effectregexpr *src=(struct effectregexpr *) calloc(1, sizeof(struct effectregexpr));

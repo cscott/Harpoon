@@ -644,7 +644,7 @@ void doincrementalreachability(struct heap_state *hs, struct hashtable *ht) {
 	al=tmp;
       }
       free(possiblegarbage->class);
-      /*      printf("Freeing Key %lld\n",possiblegarbage->uid);*/
+      /* printf("Freeing Key %lld\n",possiblegarbage->uid);*/
       freekey(ht,possiblegarbage->uid);
       free(possiblegarbage);
     }
@@ -1037,9 +1037,11 @@ void doglobalassignment(struct heap_state *hs, char * class, char * field, struc
   newfld->fieldname=copystr(field);
   newfld->object=dst;
 
-  doaddglobal(hs, newfld);
-  if (dst!=NULL)
+
+  if (dst!=NULL) {
+    doaddglobal(hs, newfld);
     doaddfield(hs, dst);
+  }
 
   /* Handle empty field list */
   if (fldptr==NULL) {
