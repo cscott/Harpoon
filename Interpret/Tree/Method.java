@@ -21,7 +21,7 @@ import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.DATA;
-import harpoon.IR.Tree.Edge;
+//import harpoon.IR.Tree.Edge;
 import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.EXP;
 import harpoon.IR.Tree.Exp;
@@ -63,7 +63,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.13 1999-10-23 05:59:35 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.14 2000-01-09 00:25:17 duncan Exp $
  */
 public final class Method extends HCLibrary {
     static PrintWriter out = new java.io.PrintWriter(System.out);
@@ -304,12 +304,13 @@ public final class Method extends HCLibrary {
 	Interpreter(StaticState ss, TreeStackFrame sf) {
 	    this.ss = ss; this.sf = sf; 
 	    while (sf.pc instanceof SEQ)
-	        sf.pc = ((SEQ)sf.pc).left;
+	        sf.pc = ((SEQ)sf.pc).getLeft();
 	}
 
 	void advance(int which_succ) {
-	    Edge e = sf.pc.nextEdge(which_succ);
-	    sf.pc = (Stm)e.to();
+	    // FIXME:  this needs to use the grapher interface. 
+	    //Edge e = sf.pc.nextEdge(which_succ);
+	    //sf.pc = (Stm)e.to();
 	    ss.incrementInstructionCount();
 	}
     }
@@ -329,11 +330,11 @@ public final class Method extends HCLibrary {
 	public void visit(BINOP e) { 
 	    if (DEBUG) db("Visiting: " + e);
 
-	    e.left.accept(this);
-	    e.right.accept(this);
+	    e.getLeft().accept(this);
+	    e.getRight().accept(this);
 	    
-	    Object left  = sf.get(e.left);
-	    Object right = sf.get(e.right);
+	    Object left  = sf.get(e.getLeft());
+	    Object right = sf.get(e.getRight());
 
 	    // Case 1: neither operand is a Pointer object
 	    if ((!(left instanceof Pointer)) &&
@@ -401,8 +402,8 @@ public final class Method extends HCLibrary {
 	
 	public void visit(CJUMP e) {
 	    if (DEBUG) db("Visiting: " + e);
-	    e.test.accept(this);
-	    boolean b = (((Integer)sf.get(e.test)).intValue()!=0)?true:false;
+	    e.getTest().accept(this);
+	    boolean b = (((Integer)sf.get(e.getTest())).intValue()!=0)?true:false;
 	    if (b) advance(0);
 	    else advance(1);
 	}
@@ -419,7 +420,7 @@ public final class Method extends HCLibrary {
 	public void visit(EXP e)  { 
 	    if (DEBUG) db("Visiting: " + e);
 	    // Execute e for side effects
-	    e.exp.accept(this);
+	    e.getExp().accept(this);
 	    advance(0);
 	}
 
@@ -428,7 +429,7 @@ public final class Method extends HCLibrary {
 
 	    // Can't resolve ptr type yet
 	    UndefinedPointer ptr=new UndefinedPointer(new UndefinedRef(ss), 0);
-	    sf.update(((TEMP)s.retval).temp, ptr);
+	    sf.update(((TEMP)s.getRetval()).temp, ptr);
 	    advance(0);
 	}
 
@@ -438,16 +439,16 @@ public final class Method extends HCLibrary {
 	    if (DEBUG) db("Visiting: " + s);
 
 	    // FIXME: may want to allow other expressions than TEMPs
-	    Util.assert(s.retval.kind()==TreeKind.TEMP);
-	    Util.assert(s.retex.kind()==TreeKind.TEMP);
-	    Util.assert(s.handler.kind()==TreeKind.NAME);
+	    Util.assert(s.getRetval().kind()==TreeKind.TEMP);
+	    Util.assert(s.getRetex().kind()==TreeKind.TEMP);
+	    Util.assert(s.getHandler().kind()==TreeKind.NAME);
 
-	    s.func.accept(this);
+	    s.getFunc().accept(this);
 
 	    // Dereference function ptr
 	    HMethod method = 
-		(HMethod)(((Pointer)sf.get(s.func)).getValue());
-	    ExpList  params    = s.args; 
+		(HMethod)(((Pointer)sf.get(s.getFunc())).getValue());
+	    ExpList  params    = s.getArgs(); 
 	    Object[] oParams;
 	    HClass[] paramTypes;
 	    HClass[] pTypesTmp = method.getParameterTypes();
@@ -474,21 +475,21 @@ public final class Method extends HCLibrary {
 	    try {
 		Object retval = invoke(ss, method, oParams);
 		retval = retval==null?null:toNonNativeFormat(retval);
-		sf.update(s.retval, retval);
-		sf.update(((TEMP)s.retval).temp, retval);
+		sf.update(s.getRetval(), retval);
+		sf.update(((TEMP)s.getRetval()).temp, retval);
 		advance(0);  // Advance PC to normal branch
 	    }
 	    catch (InterpretedThrowable it) {
 		// ignore handler param
-		sf.update(s.retex, new FieldPointer(it.ex, 0));
-		sf.update(((TEMP)s.retex).temp, sf.get(s.retex));
+		sf.update(s.getRetex(), new FieldPointer(it.ex, 0));
+		sf.update(((TEMP)s.getRetex()).temp, sf.get(s.getRetex()));
 		advance(1);  // Advance PC to exceptional branch
 	    }
 	}
 
 	public void visit(JUMP e) { 
 	    if (DEBUG) db("Visiting: " + e);
-	    Util.assert(e.exp instanceof NAME);
+	    Util.assert(e.getExp() instanceof NAME);
 	    advance(0);
 	}
 	  
@@ -500,12 +501,12 @@ public final class Method extends HCLibrary {
 
 	public void visit(MEM e) { 
 	    if (DEBUG) db("Visiting: " + e);
-	    e.exp.accept(this);
+	    e.getExp().accept(this);
 	    Pointer ptr;
 
-	    if (DEBUG) db("Trying to derefence: " + e.exp);
+	    if (DEBUG) db("Trying to derefence: " + e.getExp());
 	    // Can only dereference Pointer types
-	    ptr = (Pointer)sf.get(e.exp);
+	    ptr = (Pointer)sf.get(e.getExp());
 
 	    sf.update(e, ptr.getValue());
 	}
@@ -523,16 +524,16 @@ public final class Method extends HCLibrary {
 
         public void visit(MOVE s) {
 	    if (DEBUG) db("Visiting: " + s);
-	    s.src.accept(this);
-	    Object srcValue = sf.get(s.src);
+	    s.getSrc().accept(this);
+	    Object srcValue = sf.get(s.getSrc());
 
-	    if (s.dst instanceof MEM) { 
-	        MEM location = (MEM)s.dst;
-		location.exp.accept(this);
-		Pointer ptr = (Pointer)sf.get(location.exp);
+	    if (s.getDst() instanceof MEM) { 
+	        MEM location = (MEM)s.getDst();
+		location.getExp().accept(this);
+		Pointer ptr = (Pointer)sf.get(location.getExp());
 
 		try {
-		    ptr.updateValue(sf.get(s.src));
+		    ptr.updateValue(sf.get(s.getSrc()));
 		}
 		catch (PointerTypeChangedException e) {
 		    if (DEBUG) db("PTYPE resolved: " + ptr + " --> " + e.ptr);
@@ -546,10 +547,10 @@ public final class Method extends HCLibrary {
 			sf.replace(ptr.add(-3), e.ptr.add(-3));
 		}
 	    }
-	    else if (s.dst instanceof TEMP) { 
-		TEMP dst = (TEMP)s.dst;
-		sf.update(dst.temp, sf.get(s.src));
-		sf.update(dst, sf.get(s.src));  // maybe not necessary
+	    else if (s.getDst() instanceof TEMP) { 
+		TEMP dst = (TEMP)s.getDst();
+		sf.update(dst.temp, sf.get(s.getSrc()));
+		sf.update(dst, sf.get(s.getSrc()));  // maybe not necessary
 	    }
 	    else
 		throw new Error("Bad type for destination in: " + s);
@@ -573,8 +574,8 @@ public final class Method extends HCLibrary {
 
         public void visit(RETURN q) {
 	    if (DEBUG) db("Visiting: " + q);
-	    q.retval.accept(this);
-	    Tret = sf.get(q.retval);
+	    q.getRetval().accept(this);
+	    Tret = sf.get(q.getRetval());
 	    done = true;
 	}
 
@@ -597,7 +598,7 @@ public final class Method extends HCLibrary {
         public void visit(THROW e) { 
 	    if (DEBUG) db("Visiting: " + e);
 	    HClass type;
-	    Pointer exc = (Pointer)sf.get(e.retex);
+	    Pointer exc = (Pointer)sf.get(e.getRetex());
 	    
 	    // Make getType() abstract method in Pointer?
 	    if (exc instanceof FieldPointer) {
@@ -610,16 +611,16 @@ public final class Method extends HCLibrary {
 		throw new Error("BAD pointer type for throw: " + exc);
 	    }
 
-	    e.retex.accept(this);
-	    Texc = toNativeFormat(sf.get(e.retex), type);
+	    e.getRetex().accept(this);
+	    Texc = toNativeFormat(sf.get(e.getRetex()), type);
 	    done = true;
 	}        
 	
 	public void visit(UNOP e) { 
 	    if (DEBUG) db("Visiting: " + e);
-	    e.operand.accept(this);
+	    e.getOperand().accept(this);
 
-	    Object operand  = sf.get(e.operand);
+	    Object operand  = sf.get(e.getOperand());
 
 	    if (operand instanceof Pointer) {
 	      if (operand instanceof UndefinedPointer) {
@@ -644,9 +645,9 @@ public final class Method extends HCLibrary {
 	// Hack to determine if "i" is an allocation.  See 
 	// InterpreterAllocationStrategy.
 	private static boolean isAllocation(INVOCATION i) {
-	    if (i.func instanceof NAME)
+	    if (i.getFunc() instanceof NAME)
 		return
-		    ((NAME)i.func).label.toString().equals("RUNTIME_MALLOC");
+		    ((NAME)i.getFunc()).label.toString().equals("RUNTIME_MALLOC");
 	    else return false; 
 	}
     }
