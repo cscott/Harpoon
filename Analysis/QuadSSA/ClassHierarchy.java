@@ -5,24 +5,27 @@ package harpoon.Analysis.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.IR.Quads.*;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
+import harpoon.Util.WorkSet;
 
-import java.util.Hashtable;
-import java.util.Enumeration;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 /**
  * <code>ClassHierarchy</code> computes the class hierarchy of *reachable*
  * classes; that is, classes possibly usable starting from some root method.
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.4.2.6 1999-02-03 23:10:51 pnkfelix Exp $
+ * @version $Id: ClassHierarchy.java,v 1.4.2.7 1999-08-07 02:13:42 cananian Exp $
  */
 
-public class ClassHierarchy  {
-    private Hashtable children = new Hashtable();
+public class ClassHierarchy implements java.io.Serializable {
+    private Map children = new HashMap();
 
     /** Returns all usable/reachable children of an HClass. */
     public HClass[] children(HClass c) {
@@ -34,33 +37,35 @@ public class ClassHierarchy  {
     public HClass parent(HClass c) {
 	return c.getSuperclass();
     }
-    /** Returns an enumeration of all reachable/usable classes. */ 
-    public Enumeration classes() {
+    /** Returns the set of all reachable/usable classes. */ 
+    public Set classes() {
 	if (_classes == null) {
 	    _classes = new HashSet();
-	    for (Enumeration e = children.keys(); e.hasMoreElements(); )
-		_classes.union(e.nextElement());
-	    for (Enumeration e = children.elements(); e.hasMoreElements(); ) {
-		HClass[] ch = (HClass[]) e.nextElement();
+	    for (Iterator it = children.keySet().iterator(); it.hasNext(); )
+		_classes.add(it.next());
+	    for (Iterator it = children.values().iterator(); it.hasNext();) {
+		HClass[] ch = (HClass[]) it.next();
 		for (int i=0; i<ch.length; i++)
-		    _classes.union(ch[i]);
+		    _classes.add(ch[i]);
 	    }
 	}
-	return _classes.elements();
+	return Collections.unmodifiableSet(_classes);
     }
-    private Set _classes = null;
-    /** Returns an enumeration of all classes instantiated.
+    private transient Set _classes = null;
+    /** Returns the set of all classes instantiated.
 	(Actually only the list of classes for which an explicit NEW is found;
 	should include list of classes that are automatically created by JVM!) */ 
-    public Enumeration instantiatedClasses() { return instedClasses.elements(); }
+    public Set instantiatedClasses() {
+	return Collections.unmodifiableSet(instedClasses);
+    }
     private Set instedClasses = new HashSet();
 
     /** Returns a human-readable representation of the hierarchy. */
     public String toString() {
 	// not the most intuitive representation...
 	StringBuffer sb = new StringBuffer("{");
-	for (Enumeration e = children.keys(); e.hasMoreElements(); ) {
-	    HClass c = (HClass) e.nextElement();
+	for (Iterator it = children.keySet().iterator(); it.hasNext(); ) {
+	    HClass c = (HClass) it.next();
 	    sb.append(c.toString());
 	    sb.append("={");
 	    HClass cc[] = children(c);
@@ -70,7 +75,7 @@ public class ClassHierarchy  {
 		    sb.append(',');
 	    }
 	    sb.append('}');
-	    if (e.hasMoreElements())
+	    if (it.hasNext())
 		sb.append(", ");
 	}
 	sb.append('}');
@@ -82,18 +87,18 @@ public class ClassHierarchy  {
      *  must be a code factory that generates quad form. */
     public ClassHierarchy(HMethod root, HCodeFactory hcf) {
 	// state.
-	Hashtable classMethodsUsed = new Hashtable(); // hash of sets.
-	Hashtable classKnownChildren = new Hashtable(); // hash of sets
+	Map classMethodsUsed = new HashMap(); // class->set map.
+	Map classKnownChildren = new HashMap(); // class->set map.
 	Set done = new HashSet(); // all methods done.
 
 	// worklist algorithm.
-	Worklist W = new HashSet();
+	Worklist W = new WorkSet();
 	methodPush(root, W, classMethodsUsed);
 	discoverClass(root.getDeclaringClass(), W, done,
 		      classKnownChildren, classMethodsUsed);
 	while (!W.isEmpty()) {
 	    HMethod m = (HMethod) W.pull();
-	    done.union(m); // mark us done with this method.
+	    done.add(m); // mark us done with this method.
 	    // This method should be marked as usable.
 	    {
 		Set s = (Set) classMethodsUsed.get(m.getDeclaringClass());
@@ -107,12 +112,11 @@ public class ClassHierarchy  {
 		    discoverClass(m.getReturnType(), W, done,
 				  classKnownChildren, classMethodsUsed);
 	    } else { // look for CALLs and NEWs
-		for (Enumeration e = hc.getElementsE();
-		     e.hasMoreElements(); ) {
-		    Quad Q = (Quad) e.nextElement();
+		for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
+		    Quad Q = (Quad) it.next();
 		    if (Q instanceof NEW) {
 			NEW q = (NEW) Q;
-			instedClasses.union(q.hclass());
+			instedClasses.add(q.hclass());
 			discoverClass(q.hclass(), W, done,
 				      classKnownChildren, classMethodsUsed);
 		    }
@@ -132,11 +136,11 @@ public class ClassHierarchy  {
 	} // END worklist.
 	
 	// now generate children set from classKnownChildren.
-	for (Enumeration e = classKnownChildren.keys(); e.hasMoreElements();) {
-	    HClass c = (HClass) e.nextElement();
+	for (Iterator it = classKnownChildren.keySet().iterator();
+	     it.hasNext(); ) {
+	    HClass c = (HClass) it.next();
 	    Set s = (Set) classKnownChildren.get(c);
-	    HClass ch[] = new HClass[s.size()];
-	    s.copyInto(ch);
+	    HClass ch[] = (HClass[]) s.toArray(new HClass[s.size()]);
 	    children.put(c, ch);
 	}
     }
@@ -146,7 +150,7 @@ public class ClassHierarchy  {
          add all called methods of c/i to worklist of nc, if nc implements.
     */
     private void discoverClass(HClass c, 
-		       Worklist W, Set done, Hashtable ckc, Hashtable cmu) {
+		       Worklist W, Set done, Map ckc, Map cmu) {
 	if (ckc.containsKey(c)) return; // not a new class.
 	// add class initializer (if it exists) to "called" methods.
 	HMethod ci = c.getClassInitializer();
@@ -154,14 +158,14 @@ public class ClassHierarchy  {
 	// add to known-children lists.
 	ckc.put(c, new HashSet());
 	// new worklist.
-	Worklist sW = new HashSet();
+	Worklist sW = new WorkSet();
 	// mark superclass.
 	HClass su = c.getSuperclass();
 	if (su!=null) { // maybe discover super class?
 	    discoverClass(su, W, done, ckc, cmu);
 	    sW.push(su);
 	    Set knownChildren = (Set) ckc.get(su);
-	    knownChildren.union(c); // kC non-null after discoverClass.
+	    knownChildren.add(c); // kC non-null after discoverClass.
 	}
 	// mark interfaces
 	HClass in[] = c.getInterfaces();
@@ -169,7 +173,7 @@ public class ClassHierarchy  {
 	    discoverClass(in[i], W, done, ckc, cmu); // discover interface?
 	    sW.push(in[i]);
 	    Set knownChildren = (Set) ckc.get(in[i]);
-	    knownChildren.union(c); // kC non-null after discoverClass.
+	    knownChildren.add(c); // kC non-null after discoverClass.
 	}
 
 	// add all called methods of superclasses/interfaces to worklist.
@@ -184,9 +188,8 @@ public class ClassHierarchy  {
 	    // now add called methods of s to top-level worklist.
 	    Set calledMethods = (Set) cmu.get(s);
 	    if (calledMethods==null) continue; // no called methods?!
-	    for (Enumeration e = calledMethods.elements();
-		 e.hasMoreElements(); ) {
-		HMethod m = (HMethod) e.nextElement();
+	    for (Iterator it = calledMethods.iterator(); it.hasNext(); ) {
+		HMethod m = (HMethod) it.next();
 		try {
 		    HMethod nm = c.getDeclaredMethod(m.getName(),
 						     m.getDescriptor());
@@ -202,8 +205,8 @@ public class ClassHierarchy  {
         add method of c and all implementations of c.
     */
     private void discoverMethod(HMethod m, 
-			Worklist W, Set done, Hashtable ckc, Hashtable cmu) {
-	Worklist cW = new HashSet();
+			Worklist W, Set done, Map ckc, Map cmu) {
+	Worklist cW = new WorkSet();
 	cW.push(m.getDeclaringClass());
 	while (!cW.isEmpty()) {
 	    // pull a class from the worklist
@@ -218,19 +221,18 @@ public class ClassHierarchy  {
 	    // add all children to the worklist.
 	    if (!ckc.containsKey(c)) discoverClass(c,W,done,ckc,cmu);
 	    Set knownChildren = (Set) ckc.get(c);
-	    for (Enumeration e = knownChildren.elements();
-		 e.hasMoreElements(); )
-		cW.push(e.nextElement());
+	    for (Iterator it = knownChildren.iterator(); it.hasNext(); ) 
+		cW.push(it.next());
 	}
 	// done.
     }
     /* methods invoked with INVOKESPECIAL or INVOKESTATIC... */
     private void discoverSpecial(HMethod m, 
-			 Worklist W, Set done, Hashtable ckc, Hashtable cmu) {
+			 Worklist W, Set done, Map ckc, Map cmu) {
 	if (!done.contains(m))
 	    methodPush(m, W, cmu);
     }
-    private void methodPush(HMethod m, Worklist W, Hashtable cmu) {
+    private void methodPush(HMethod m, Worklist W, Map cmu) {
 	// Add to worklist
 	W.push(m);
 	// mark this method as usable.
@@ -239,7 +241,7 @@ public class ClassHierarchy  {
 	    s = new HashSet(); 
 	    cmu.put(m.getDeclaringClass(),s);
 	}
-	s.union(m);
+	s.add(m);
     }
 
     /* ALGORITHM:
