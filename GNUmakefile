@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.60 1998-10-18 08:21:29 cananian Exp $
+# $Id: GNUmakefile,v 1.61 1998-11-18 05:58:24 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -119,8 +119,7 @@ doc/TIMESTAMP:	$(ALLSOURCE) ChangeLog mark-executable
 		grep -v "^@see warning:"
 	$(RM) doc/harpoon doc/silicon
 	$(MUNGE) doc | \
-	  sed -e 's/<cananian@/\&lt;cananian@/g' \
-	      -e 's/princeton.edu>/princeton.edu\&gt;/g' \
+	  sed -e 's/<\([a-z]\+\)@\([a-z.]\+\).edu>/\&lt;\1@\2.edu\&gt;/g' \
 	      -e 's/<dd> "The,/<dd> /g' | \
 		$(UNMUNGE)
 	cd doc; ln -s $(JDOCIMAGES) images
