@@ -24,7 +24,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.12 1998-08-02 01:53:00 cananian Exp $
+ * @version $Id: HClass.java,v 1.13 1998-08-02 03:19:12 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -46,7 +46,7 @@ public class HClass {
     if (className.charAt(0)=='[')
       return forDescriptor(className);
     else
-      return forDescriptor("L"+className+";");
+      return forDescriptor("L"+className.replace('.','/')+";");
   }
   
   /**
@@ -104,6 +104,7 @@ public class HClass {
     case 'L': // object type.
       {
 	String className = descriptor.substring(1, descriptor.indexOf(';'));
+	// classname in descriptor should be '/' delimited.
 	InputStream is = 
 	  Loader.getResourceAsStream(Loader.classToResource(className));
 	if (is == null) throw new NoClassDefFoundError(className);
@@ -775,6 +776,12 @@ public class HClass {
     return "class "+getName();
   }
 
+  /**
+   * Pretty-prints that raw classfile information.
+   */
+  public void printRaw(java.io.PrintWriter pw) {
+    classfile.print(pw);
+  }
   /**
    * Prints a formatted representation of this class.
    * Output is pseudo-Java source.
