@@ -50,6 +50,8 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,7 +63,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.7 2002-06-26 01:09:41 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.8 2002-07-26 21:10:36 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -285,8 +287,12 @@ public class TreeToC extends java.io.PrintWriter {
 	LabelVisitor lv=null;
 
 	void emitSymbols(PrintWriter pw) {
-	    for (Iterator it=sym2decl.values().iterator(); it.hasNext(); )
-		pw.println(it.next());
+	    // sort the symbols so that the output is stable across runs.
+	    Collection c = sym2decl.values();
+	    String[] syms = (String[]) c.toArray(new String[c.size()]);
+	    Arrays.sort(syms);
+	    for (int i=0; i<syms.length; i++)
+		pw.println(syms[i]);
 	}
 	void emitOutput(PrintWriter pw) {
 	    pw.print(output);
