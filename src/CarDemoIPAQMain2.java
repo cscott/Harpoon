@@ -10,8 +10,8 @@ public class CarDemoIPAQMain2 {
     public static void main(String args[]) {
 	if (args.length == 0) {
 	    System.out.println("Usage: java -jar carDemoEmbeddedATR.jar");
-	    System.out.println("       <CORBA name for Ground Server>");
-	    System.out.println("       <CORBA name for Ground Client (for each analyzed object)>");
+	    System.out.println("       <CORBA name for Results-from-Ground Server>");
+	    System.out.println("       <CORBA name for Send-to-Ground Client (for each analyzed object)>");
 	    System.out.println("       [CORBA options]");
 	    System.exit(-1);
 	}
@@ -90,7 +90,10 @@ public class CarDemoIPAQMain2 {
 	Node heartbeat = new Regulator("heartbeat");
 	Node imageSource;
 	Node atrClient = new Node();
-	imageSource = new Camera(null);
+	//imageSource = new Load(null, "/home/benster/ImageRec/images/uav_ppm_norm/uav_ppm", 100, null);
+	imageSource = new Load("/home/benster/woodgrain.jar", "tank.gz", 533, null);
+
+	//imageSource = new Camera(null);
 	imageSource.linkL(heartbeat.linkL(atrClient.linkL(atr)));
 
 	atr.link(pause.link(timer1,
