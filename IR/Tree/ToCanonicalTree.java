@@ -16,7 +16,9 @@ import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 
 import java.util.HashMap;
+import java.util.Iterator; 
 import java.util.Map;
+import java.util.HashSet;
 
 /**
  * The <code>ToCanonicalTree</code> class translates tree code to 
@@ -24,7 +26,7 @@ import java.util.Map;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.20 2000-01-10 05:08:41 cananian Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.21 2000-01-11 06:42:16 duncan Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
@@ -41,11 +43,8 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	Util.assert(tf instanceof Code.TreeFactory);
 	Util.assert(((Code.TreeFactory)tf).getParent().getName().equals("canonical-tree"));
 
-	code.print(new java.io.PrintWriter(System.out)); 
-	
     	final Map dT = new HashMap();
 	final Map tT = new HashMap();
-	System.err.println("Converting to canonical tree: " + code.getMethod()); 
 	long time = System.currentTimeMillis(); 
 	
 
@@ -68,7 +67,6 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	    }
 	};
 
-	System.err.println("Total conversion time: " + ((System.currentTimeMillis()-time))); 
     }
     
     /** Returns the updated derivation information for the 
@@ -105,10 +103,6 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	// This visitor recursively visits all relevant nodes on its own
 	root.accept(cv);
 
-	for (int i=0; i<6; i++) { 
-	    System.err.println("TIME, NUM: " + cv.times[i] + ", " +cv.nums[i]);
-	}
-
 	// Return the node which rootClone has been mapped to
 	return tm.get(root);
     }
@@ -123,9 +117,6 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	private TypeMap     typeMap;
 	private Map         dT, tT;
 	private java.util.Set visited = new java.util.HashSet();
-	public long times[] = new long[10]; 
-	public int nums[] = new int[10]; 
-	
 
 	public CanonicalizingVisitor(TreeFactory tf, TreeMap tm, 
 				     TreeCode code, Map dT, Map tT) {
@@ -141,13 +132,12 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 		 tf.tempFactory());
 	}
 
+
 	public void visit(Tree t) { 
 	    throw new Error("No defaults here");
 	}
 
 	public void visit(MOVE s) {
-	    long time = System.currentTimeMillis(); 
-	    
 	    if (!visited.add(s)) return;
 
 	    //s.getSrc().accept(this);
@@ -170,13 +160,9 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 		treeMap.map(s, reorderMove(s));
 	    }
 
-	    times[0] += (System.currentTimeMillis()-time); 
-	    nums[0]++; 
 	}
       
 	public void visit(SEQ s) {
-	    //long time = System.currentTimeMillis(); 
-
 	    if (!visited.add(s)) return;
 	    s.getLeft().accept(this);
 	    s.getRight().accept(this);
@@ -184,46 +170,29 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	}
 
 	public void visit(DATUM s) { 
-
-	    long time = System.currentTimeMillis(); 
-
 	    if (!visited.add(s)) return;
 	    treeMap.map(s, reorderData(s));
-	    times[1] += (System.currentTimeMillis()-time); 
-	    nums[1]++; 
 	}
 
 	public void visit(Stm s) {
-	    long time = System.currentTimeMillis(); 
 	    if (!visited.add(s)) return;
 	    treeMap.map(s, reorderStm(s));
-	    times[2] += (System.currentTimeMillis()-time); 
-	    nums[2]++; 
 	}
 
-	public void visit(Exp e) { 
-	    long time = System.currentTimeMillis(); 
+	public void visit(Exp e) {
 	    if (!visited.add(e)) { 
 		return;
 	    }
 	    treeMap.map(e, reorderExp(e));
-	    times[3] += (System.currentTimeMillis()-time); 
-	    nums[3]++; 
-
 	}
 
 	public void visit(TEMP e) { 
-	    long time = System.currentTimeMillis(); 
 	    if (!visited.add(e)) return;
 	    TEMP tNew = _MAP(e);
 	    treeMap.map(e, reorderExp(tNew));
-	    times[4] += (System.currentTimeMillis()-time); 
-	    nums[4]++; 
-
 	}
 
 	public void visit(ESEQ e) { 
-	    long time = System.currentTimeMillis(); 
 	    if (!visited.add(e)) return;
 	    e.getStm().accept(this);
 	    e.getExp().accept(this);
@@ -231,8 +200,6 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 				    seq(treeMap.get(e.getStm()), 
 					((ESEQ)treeMap.get(e.getExp())).getStm()),
 				    ((ESEQ)treeMap.get(e.getExp())).getExp()));
-	    times[5] += (System.currentTimeMillis()-time); 
-	    nums[5]++; 
 	}
 
 	private Stm reorderData(DATUM s) { 
@@ -280,7 +247,9 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	    else {
 		Exp a = exps.head; a.accept(this);
 		ESEQ aa = (ESEQ)treeMap.get(a);
+		
 		StmExpList bb = reorder(exps.tail);
+
 		if (commute(bb.stm, aa.getExp()))
 		    return new StmExpList(seq(aa.getStm(),bb.stm), 
 					  new ExpList(aa.getExp(),bb.exps));
