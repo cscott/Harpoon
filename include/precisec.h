@@ -33,13 +33,13 @@ typedef void * jptr;
 
 #ifdef USE_PAIR_RETURN /* ----------------------------------------------- */
 #define FIRST_DECL_ARG(x)
-#define DECLAREFUNC(rettype, funcname, args, segment) \
-rettype ## _and_ex funcname args __attribute__ ((section (segment)))
-#define DEFINEFUNC(rettype, funcname, args, segment) \
+#define DECLAREFUNC(rettype, funcname, args, segment, moreattrs) \
+rettype ## _and_ex funcname args __attribute__ ((section (segment))) moreattrs
+#define DEFINEFUNC(rettype, funcname, args, segment, moreattrs) \
 rettype ## _and_ex funcname args
-#define DECLAREFUNCV(funcname, args, segment) \
-void * funcname args __attribute__ ((section (segment)))
-#define DEFINEFUNCV(funcname, args, segment) \
+#define DECLAREFUNCV(funcname, args, segment, moreattrs) \
+void * funcname args __attribute__ ((section (segment))) moreattrs
+#define DEFINEFUNCV(funcname, args, segment, moreattrs) \
 void * funcname args
 #define RETURN(rettype, val)	return ((rettype ## _and_ex) { NULL, (val) })
 #define RETURNV()		return NULL
@@ -99,13 +99,13 @@ typedef struct {
 extern void *memcpy(void *dst, const void *src, size_t n);
 
 #define FIRST_DECL_ARG(x)
-#define DECLAREFUNC(rettype, funcname, args, segment) \
-rettype funcname args __attribute__ ((section (segment)))
-#define DEFINEFUNC(rettype, funcname, args, segment) \
+#define DECLAREFUNC(rettype, funcname, args, segment, moreattrs) \
+rettype funcname args __attribute__ ((section (segment))) moreattrs
+#define DEFINEFUNC(rettype, funcname, args, segment, moreattrs) \
 rettype funcname args
-#define DECLAREFUNCV(funcname, args, segment) \
-void funcname args __attribute__ ((section (segment)))
-#define DEFINEFUNCV(funcname, args, segment) \
+#define DECLAREFUNCV(funcname, args, segment, moreattrs) \
+void funcname args __attribute__ ((section (segment))) moreattrs
+#define DEFINEFUNCV(funcname, args, segment, moreattrs) \
 void funcname args
 #define RETURN(rettype, val)	return (val)
 #define RETURNV()		return
