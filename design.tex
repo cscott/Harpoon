@@ -1,10 +1,10 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: design.tex,v 1.5 1998-07-15 03:56:39 cananian Exp $
+% $Id: design.tex,v 1.6 1998-07-15 08:28:46 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[10pt,notitlepage,twocolumn]{article}
 \author{C.~Scott~Ananian}
 \title{Turning Java into Hardware: \\ Caffinated Compiler Construction}
-\date{\today \\ $ $Revision: 1.5 $ $}
+\date{\today \\ $ $Revision: 1.6 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -26,6 +26,7 @@
 %       3. Threads/Monitors model inherent parallelism.
 %       4. Method calls form hardware interfaces.
 %       5. Exceptions are?
+%          - just a means of transferring control.  An evil means.
 %    B. A grammar for Java--.
 %       (this is the implemented grammar, which might be more restrictive
 %        than absolutely necessary. We might implement floating-point, more
