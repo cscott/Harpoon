@@ -36,7 +36,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.5 1999-10-23 00:30:05 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.6 1999-10-28 04:43:38 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -179,6 +179,13 @@ public class DataClaz extends Data {
 	    String sig = hm.getName() + hm.getDescriptor();
 	    if (sigs.contains(sig)) it.remove();
 	    else sigs.add(sig);
+	}
+	// remove methods which are not actually callable in this class.
+	for (Iterator it=methods.iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    HMethod cm = hc.getMethod(hm.getName(), hm.getDescriptor());
+	    if (!ch.callableMethods().contains(cm))
+		it.remove();
 	}
 	// okay, now sort by InterfaceMethodMap ordering.
 	final MethodMap imm = m_tb.imm;
