@@ -24,7 +24,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.10 1998-08-01 22:55:13 cananian Exp $
+ * @version $Id: HClass.java,v 1.11 1998-08-02 00:45:40 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -773,6 +773,101 @@ public class HClass {
     if (isPrimitive()) return getName();
     if (isInterface()) return "interface "+getName();
     return "class "+getName();
+  }
+
+  /**
+   * Prints a formatted representation of this class, in Java source
+   * format.
+   */
+  public void print(java.io.PrintWriter pw) {
+    int m;
+    // package declaration.
+    pw.println("package " + getPackage() + ";");
+    // class declaration.
+    m = getModifiers() & (~32); // unset the ACC_SUPER flag.
+    pw.println(((m==0)?"":(Modifier.toString(m) + " ")) + 
+	       (isInterface()?"interface ":"class ") + 
+	       getSimpleTypeName(this));
+    // superclass
+    HClass sup = getSuperclass();
+    if ((sup != null) && (sup != forName("java.lang.Object")))
+      pw.println("    extends " + getSimpleTypeName(sup));
+    // interfaces
+    HClass in[] = getInterfaces();
+    if (in.length > 0) {
+      if (isInterface())
+	pw.print("    extends ");
+      else
+	pw.print("    implements ");
+      for (int i=0; i<in.length; i++) {
+	pw.print(getSimpleTypeName(in[i]));
+	if (i<in.length-1)
+	  pw.print(", ");
+      }
+      pw.println();
+    }
+    pw.println("{");
+    // declared fields.
+    HField hf[] = getDeclaredFields();
+    for (int i=0; i<hf.length; i++) {
+      m = hf[i].getModifiers();
+      pw.println("    " + 
+		 ((m==0)?"":(Modifier.toString(m)+" ")) + 
+		 getSimpleTypeName(hf[i].getType()) + " " +
+		 hf[i].getName() + ";");
+    }
+    // declared methods.
+    HMethod hm[] = getDeclaredMethods();
+    for (int i=0; i<hm.length; i++) {
+      if (hm[i].getName().equals("<clinit>")) continue;
+      StringBuffer mstr = new StringBuffer("    ");
+      m = hm[i].getModifiers();
+      if (m!=0) {
+	mstr.append(Modifier.toString(m));
+	mstr.append(' ');
+      }
+      if (hm[i] instanceof HConstructor) {
+	mstr.append(getSimpleTypeName(this));
+      } else {
+	mstr.append(getSimpleTypeName(hm[i].getReturnType()));
+	mstr.append(' ');
+	mstr.append(hm[i].getName());
+      }
+      mstr.append('(');
+      HClass[] mpt = hm[i].getParameterTypes();
+      for (int j=0; j<mpt.length; j++) {
+	mstr.append(getSimpleTypeName(mpt[j]));
+	mstr.append(' ');
+	mstr.append('p'); mstr.append(j);
+	if (j<mpt.length-1)
+	  mstr.append(", ");
+      }
+      mstr.append(')');
+      HClass[] met = hm[i].getExceptionTypes();
+      if (met.length>0)
+	mstr.append(" throws ");
+      for (int j=0; j<met.length; j++) {
+	mstr.append(getSimpleTypeName(met[j]));
+	if (j<met.length-1)
+	  mstr.append(", ");
+      }
+      mstr.append(';');
+      pw.println(mstr.toString());
+    }
+    // done.
+    pw.println("}");
+  }
+  private String getSimpleTypeName(HClass cls) {
+    String tn = HField.getTypeName(cls);
+    while (cls.isArray()) cls=cls.getComponentType();
+    if (cls.getPackage()!=null &&
+	(cls.getPackage().equals(getPackage()) ||
+	 cls.getPackage().equals("java.lang"))) {
+      int lastdot = tn.lastIndexOf('.');
+      if (lastdot < 0) return tn;
+      else return tn.substring(lastdot+1);
+    }
+    else return tn;
   }
 
   /*****************************************************************/
