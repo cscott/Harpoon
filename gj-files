@@ -139,6 +139,7 @@ Analysis/Transactions/CheckOracle.java
 Analysis/Transactions/MethodGenerator.java
 Analysis/Transactions/SimpleCheckOracle.java
 Analysis/Transactions/SyncTransformer.java
+Analysis/Transactions/TreePostPass.java
 Analysis/Transformation/MethodMutator.java
 Analysis/Tree/AlignmentAnalysis.java
 Analysis/Tree/CacheEquivalence.java
