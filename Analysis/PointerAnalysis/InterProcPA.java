@@ -24,7 +24,7 @@ import harpoon.Temp.Temp;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.6 2000-02-09 05:23:42 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.7 2000-02-10 00:43:58 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -180,13 +180,14 @@ abstract class InterProcPA {
 	roots.addAll(pig_callee.G.r);
 
 	// translate edges from pig_callee to pig_caller
-	bring_edges(mu,pig_caller,pig_callee,roots);
+	bring_edges(mu,pig_caller, pig_callee, roots);
 
-	// TODO: (Priority 0) map the thread map too!
+	// bring the thread map from pig_callee to pig_caller
+	bring_threads(pig_caller.tau, pig_callee.tau, mu);
 
-	// translate the actions too
-	pig_callee.ar.translateTheActions(pig_caller.ar, mu,
-					 pig_caller.tau.activeThreadSet());
+	// bring the actions of the callee into the caller
+	bring_actions(pig_caller.ar, pig_callee.ar,
+		      pig_caller.tau.activeThreadSet(), mu);
 
 	// set the edges for the result and for the exception variables
 	set_edges_res_ex(q.retval(),mu,pig_caller,pig_callee.G.r);
@@ -445,7 +446,87 @@ abstract class InterProcPA {
 	pig_caller.G.I.addEdges(l,mu_nodes);
     }
 
+
+    private static void bring_actions(final ActionRepository ar_caller,
+				      final ActionRepository ar_callee,
+				      final Set active_threads_in_caller,
+				      final Relation mu){
+	// Add this "common-sense" rule to the mapping: the inter-procedural
+	// analysis stays in the same thread.
+	mu.add(ActionRepository.THIS_THREAD,ActionRepository.THIS_THREAD);
+
+	// Step 1. Put all the actions from the callee as being executed
+	// in // with all the threads that are active in the caller.
+	ActionVisitor act_visitor = new ActionVisitor(){
+		public void visit_ld(PALoad load){
+		    if(!mu.contains(load.n2,load.n2)) return;
+		    ar_caller.add_ld(mu.getValuesSet(load.n1),
+				     load.f,
+				     load.n2,
+				     mu.getValuesSet(load.nt),
+				     active_threads_in_caller);
+		}
+		public void visit_sync(PANode n, PANode nt){
+		    ar_caller.add_sync(mu.getValuesSet(n),
+				       mu.getValuesSet(nt),
+				       active_threads_in_caller);
+		}
+	    };
+
+	ar_callee.forAllActions(act_visitor);
+
+	// Step 2. Translate the "parallel action" items of information from
+	// the callee, by applying the mu function on their components
+	// (except for the n2 componenent of a load action which is left
+	// unchanged if it's still present in the new graph.
+	ParActionVisitor par_act_visitor = new ParActionVisitor(){
+		public void visit_par_ld(PALoad load, PANode nt2){
+		    if(!mu.contains(load.n2,load.n2)) return;
+		    ar_caller.add_ld(mu.getValuesSet(load.n1),
+				     load.f,
+				     load.n2,
+				     mu.getValuesSet(load.nt),
+				     mu.getValuesSet(nt2));
+		}
+		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
+		    ar_caller.add_sync(mu.getValuesSet(n),
+				       mu.getValuesSet(nt1),
+				       mu.getValuesSet(nt2));
+		}
+	    };
+
+	ar_callee.forAllParActions(par_act_visitor);
+    }
+
+    /** Maps the thread map of the callee into the thread map of the caller.
+	If <code>tau(nt)=delta</code>, we will increase <code>tau(n)</code>
+	with <code>delta</code> in the thread map of the caller for each
+	<code>n</code> in <code>mu(nt)</code>.<br>
+	In practice, we expect the
+	programmer to launch the threads in the same method where they are 
+	created, i.e. to launch almost only internal nodes for which the
+	mapping contains just one element <code>tau(n) = n</code>. */ 
+    private static void bring_threads(PAThreadMap tau_caller,
+				      PAThreadMap tau_callee,
+				      Relation mu){
+	Enumeration enum_threads = tau_callee.activeThreads();
+	while(enum_threads.hasMoreElements()){
+	    PANode nt = (PANode) enum_threads.nextElement();
+	    int delta = tau_callee.getValue(nt);
+	    Iterator it_new_nt = mu.getValues(nt);
+	    while(it_new_nt.hasNext()){
+		PANode new_nt = (PANode) it_new_nt.next();
+		tau_caller.add(new_nt,delta);
+	    }
+	}
+    }
+	
+
+
+
 }// end of the class
+
+
 
 
 

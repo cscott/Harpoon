@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Iterator;
 import java.util.Set;
 
+import harpoon.Util.Util;
+
 /**
  * <code>PAThreadMap</code> implements the parallel thread map
  * (i.e. the "tau" function from the algorithm). For each thread node
@@ -23,7 +25,7 @@ import java.util.Set;
  * substraction.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAThreadMap.java,v 1.1.2.6 2000-02-09 05:23:42 salcianu Exp $
+ * @version $Id: PAThreadMap.java,v 1.1.2.7 2000-02-10 00:43:58 salcianu Exp $
  */
 public class PAThreadMap{
 
@@ -83,6 +85,17 @@ public class PAThreadMap{
 	if(v==ONE) hash.remove(n);
 	if(v==TWO) hash.put(n,TWO);
     }
+
+    /** Add a positive <code>delta</code> to the value attached to a node. */
+    public void add(PANode n, int delta){
+	Util.assert(delta>0, "PAThreadMap.add: delta should be > 0");
+	int new_tau = getValue(n) + delta;
+	if( new_tau > 1 )
+	    hash.put(n,TWO);
+	else
+	    hash.put(n,ONE);
+    }
+
 
     /** Set to zero the value attached to the node <code>n</code>. */
     public void setToZero(PANode n){

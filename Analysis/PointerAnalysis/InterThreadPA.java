@@ -16,7 +16,7 @@ import harpoon.Temp.Temp;
  * <code>InterThreadPA</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.2 2000-02-08 05:27:28 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.3 2000-02-10 00:43:58 salcianu Exp $
  */
 abstract class InterThreadPA {
     
@@ -57,6 +57,7 @@ abstract class InterThreadPA {
     // the body of the threads abstracted by nt.
     private static HMethod[] get_run_methods(PANode nt, ParIntGraph pig,
 					     PointerAnalysis pa){
+	// TODO: Some decent implementation
 	return new HMethod[0];
     }
 
@@ -128,7 +129,7 @@ abstract class InterThreadPA {
     // the node nt as a receiver and op as the run() body function.
     private static ParIntGraph interact_once_op(ParIntGraph pig_starter,
 						PANode nt,
-					 HMethod op, PointerAnalysis pa){
+					HMethod op, PointerAnalysis pa){
 	ParIntGraph pig[] = new ParIntGraph[2];
 	pig[0] = pig_starter;
 	pig[1] = pa.getExtParIntGraph(op);
@@ -150,7 +151,8 @@ abstract class InterThreadPA {
     // In Starter: e(n) = e(n) - {nt}, for all n and tau(nt) = 0
     private static void adjust_escape_and_tau(ParIntGraph pig, PANode nt){
 	pig.G.e.removeNodeHoleFromAll(nt);
-	pig.tau.setToZero(nt);
+	//pig.tau.setToZero(nt);
+	pig.tau.dec(nt);
     }
 
     /** Set the initial mappings: class nodes, parameter->thread node.

@@ -12,14 +12,31 @@ import java.util.Hashtable;
 import java.util.Map;
 
 /**
- * <code>ActionRepository</code>
+ * <code>ActionRepository</code> merges together the <code>alpha</code> and
+ <code>pi</code> sets from the original paper of Martin Rinard & John Whaley.
+ More specifically, an <code>ActionRepository</code> maintains information
+ about the actions executed by the analyzed part of the program and about the
+ ordering relation between these actions and the threads that are launched
+ by the analyzed part.<br>
+ Currently, only two kinds of actions are used:
+ <ul>
+ <li><code>ld</code> - loading of a node by reading an outside edges;
+ <li><code>sync</code> - synchronization (lock acquire/release) on a node. 
+ </ul>
+ The implementation has been specially optimized for these two types of actions
+ and for the queries that are done for synchronization removal.<br>
+ Of course, there is no problem in modifying it to support new types of
+ actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.2 2000-02-09 05:23:42 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.3 2000-02-10 00:43:58 salcianu Exp $
  */
 public class ActionRepository {
     
-    static PANode THIS_THREAD = new PANode(PANode.INSIDE);
+    /** Fake thread node used as the author thread for the actions done
+	by the main thread of the analyzed procedure, not by the one of
+	the threads it is starting. */
+    public static final PANode THIS_THREAD = new PANode(PANode.INSIDE);
 
     /** Creates a <code>ActionRepository</code>. */
     public ActionRepository() {
@@ -36,18 +53,12 @@ public class ActionRepository {
     Relation pi_ld;
 
 
-    // Adds a <code>ld</code> action done by the current thread with
-    // no active threads.
-    // public void add_ld(PANode n1, String f, PANode n2){
-    // add_ld(n1,f,n2,THIS_THREAD,null);
-    // }
-
-    // public void add_ld(PANode n1, String f, PANode n2, PANode nt){
-    // add_ld(n1,f,n2,nt,null);
-    // }
-
+    /** Adds a <code>ld</code> action.
+	The thread <code>nt</code> read the outside edge from <code>n1</code>
+	to <code>n2</code> through field <code>f</code>, in parallel with
+	all the threads from <code>active_threads</code>. */
     public void add_ld(PANode n1, String f, PANode n2, PANode nt,
-			 Set active_threads){
+		       Set active_threads){
 	PALoad load = new PALoad(n1,f,n2,nt);
 
 	alpha_ld.add(load);
@@ -59,8 +70,12 @@ public class ActionRepository {
 	    pi_ld.add((PANode)it.next(), load);
     }
 
-    private void add_ld(Set set_n1, String f, PANode n2, PANode nt,
-			 Set active_threads){
+    /** Convenient function.
+	It iterates over <code>set_n1</code>, repeatedly calling
+	<code>add_ld(n1,f,n2,nt,active_threads)</code> for each
+	<code>n1</code> in <code>set_n1</code>. */
+    public void add_ld(Set set_n1, String f, PANode n2, PANode nt,
+		       Set active_threads){
 	Iterator it_n1 = set_n1.iterator();
 	while(it_n1.hasNext()){
 	    PANode n1 = (PANode) it_n1.next();
@@ -68,8 +83,12 @@ public class ActionRepository {
 	}
     }
 
-    private void add_ld(Set set_n1, String f, PANode n2, Set set_nt,
-			 Set active_threads){
+    /** Convenient function.
+	It iterates over <code>set_nt</code>, repeatedly calling
+	<code>add_ld(set_n1,f,n2,nt,active_threads)</code> for each
+	<code>nt</code> in <code>set_nt</code>. */
+    public void add_ld(Set set_n1, String f, PANode n2, Set set_nt,
+			Set active_threads){
 
 	//System.out.println("set_n1 = " + set_n1);
 	//System.out.println("f      = " + f);
@@ -91,14 +110,9 @@ public class ActionRepository {
     // nt2 -> n -> nt1 (nt1 does a sync on n in // with the thread nt2)
     Hashtable pi_sync;
     
-    // public void add_sync(PANode n){
-    //	add_sync(n,THIS_THREAD,null);
-    // }
-
-    // public void add_sync(PANode n, PANode nt){
-    // add_sync(n,nt,null);
-    // }
-
+    /** Adds a <code>sync</code> action.
+	The thread <code>nt</code> synchronized on <code>n</code> in
+	parallel with all the threads from <code>active_threads</code>. */
     public void add_sync(PANode n, PANode nt, Set active_threads){
 	alpha_sync.add(n,nt);
 	
@@ -118,7 +132,12 @@ public class ActionRepository {
 	}
     }
 
-    private void add_sync(Set set_n, Set set_nt, Set active_threads){
+    /** Convenient function.
+	It iterates over <code>set_n</code> and <code>set_nt</code>,
+	repeatedly calling <code>add_sync(n,nt,active_threads)</code> for each
+	<code>n</code> in <code>set_n</code> and each 
+	<code>nt</code> in <code>set_nt</code>. */ 
+    public void add_sync(Set set_n, Set set_nt, Set active_threads){
 
 	//System.out.println("set_n  = " + set_n);
 	//System.out.println("set_nt = " + set_nt);
@@ -135,9 +154,10 @@ public class ActionRepository {
 	}
     }
 
-    /** Checks the equality of <code>ActionRepository</code>s. */
+    /** Checks the equality of two <code>ActionRepository</code>s. */
     public boolean equals(Object o){
 	ActionRepository ar2 = (ActionRepository)o;
+	if (this == o) return true;
 	return
 	    alpha_ld.equals(ar2.alpha_ld) &&
 	    alpha_sync.equals(ar2.alpha_sync) &&
@@ -145,7 +165,7 @@ public class ActionRepository {
 	    pi_sync.equals(ar2.pi_sync);
     }
 
-    /** Does the union of <code>this</code> action repository with \
+    /** Does the union of <code>this</code> action repository with
 	another one.
 	This method is called in the control-flow join points. */
     public void join(ActionRepository ar2){
@@ -167,75 +187,85 @@ public class ActionRepository {
 	}
     }
 
-    /** Translate all the actions and the parallel action relation
-	into <code>ar2</code> according to the node map <code>mu</code>. */
-    public void translateTheActions(ActionRepository ar2, Relation mu,
-				    Set active_threads){
-	// Add this "common-sense" rule to the mapping.
-	mu.add(THIS_THREAD,THIS_THREAD);
-
-	// Add the "ld" actions to ar2.
-	Iterator it_alpha_ld = alpha_ld.iterator();
-	while(it_alpha_ld.hasNext()){
-	    PALoad load = (PALoad) it_alpha_ld.next();
-	    if(mu.contains(load.n2,load.n2))
-		ar2.add_ld(mu.getValuesSet(load.n1), load.f, load.n2,
-			   mu.getValuesSet(load.nt), active_threads);
+    /** Visits all the actions from this repository.
+	It calls <code>visitor.visit_ld</code> on the <code>ld</code> actions
+	and <code>visitor.visit_sync</code> on the <code>sync</code>. */
+    public void forAllActions(ActionVisitor visitor){
+	// visit all the "ld" actions
+	Iterator it_ld = alpha_ld.iterator();
+	while(it_ld.hasNext()){
+	    PALoad load = (PALoad) it_ld.next();
+	    visitor.visit_ld(load);
 	}
-
-
-	// Add the "sync" actions to ar2.
+	// visit all the "sync" actions
 	Enumeration enum_n = alpha_sync.keys();
 	while(enum_n.hasMoreElements()){
 	    PANode n = (PANode) enum_n.nextElement();
-
-	    HashSet set_nt = new HashSet();
 	    Iterator it_nt = alpha_sync.getValues(n);
 	    while(it_nt.hasNext()){
 		PANode nt = (PANode) it_nt.next();
-		set_nt.addAll(mu.getValuesSet(nt));
+		visitor.visit_sync(n,nt);
 	    }
-
-	    ar2.add_sync(mu.getValuesSet(n),set_nt,active_threads);
 	}
+    }
 
-	// Map the ordering info for the "ld" actions.
+
+    /** Visits all the "parallel action" items of information from this
+	repository (i.e. all the <code> action || thread </code> elements.
+	It calls <code>visitor.visit_par_ld</code> or 
+	<code>visitor.visit_par_sync</code> according to the type of the
+	<code>action</code>. */
+    public void forAllParActions(ParActionVisitor visitor){
+	// visit all the "ld" || nt elements
 	Enumeration enum_nt2 = pi_ld.keys();
 	while(enum_nt2.hasMoreElements()){
-	    PANode nt2  = (PANode) enum_nt2.nextElement();
-	    Set set_nt2 = mu.getValuesSet(nt2);
-	    Iterator it_load = pi_ld.getValues(nt2);
-	    while(it_load.hasNext()){
-		PALoad load = (PALoad) it_load.next();
-		ar2.add_ld(mu.getValuesSet(load.n1),
-			   load.f,
-			   load.n2,
-			   mu.getValuesSet(load.nt),
-			   set_nt2);
+	    PANode nt2 = (PANode) enum_nt2.nextElement();
+	    Iterator it_loads = pi_ld.getValues(nt2);
+	    while(it_loads.hasNext()){
+		PALoad load = (PALoad) it_loads.next();
+		visitor.visit_par_ld(load,nt2);
 	    }
 	}
-
-	// Map the ordering info for the "sync" actions.
-	// For each <sync,n,nt1> || nt2 in this action repository,
-	// add <sync,mu(n),mu(nt1)> || mu(nt2) to ar2.
+	// visit all the "sync" || nt elements
 	enum_nt2 = pi_sync.keys();
 	while(enum_nt2.hasMoreElements()){
 	    PANode nt2 = (PANode) enum_nt2.nextElement();
-	    Set set_nt2 = mu.getValuesSet(nt2);
 	    Relation rel = (Relation) pi_sync.get(nt2);
-	    enum_n = rel.keys();
+	    Enumeration enum_n = rel.keys();
 	    while(enum_n.hasMoreElements()){
 		PANode n = (PANode) enum_n.nextElement();
-		Set set_n = mu.getValuesSet(n);
 		Iterator it_nt1 = rel.getValues(n);
 		while(it_nt1.hasNext()){
 		    PANode nt1 = (PANode) it_nt1.next();
-		    Set set_nt1 = mu.getValuesSet(nt1);
-		    ar2.add_sync(set_n,set_nt1,set_nt2);
+		    visitor.visit_par_sync(n,nt1,nt2);
 		}
 	    }
 	}
     }
+
+
+    /** Checks if all the <code>sync</code> operation on <code>n</code>
+	are independent (temporarily speaking) or not. 
+	If it returns <code>false</code>, two threads could synchonize
+	on it at the same time (i.e. they can simultaneously access it);
+	in this case, the synchonizations are really necessary and should
+	NOT be removed. */
+    public boolean independent(PANode n){
+	// Goes through all the threads nt2 that are synchronizing on n
+	Iterator it_threads = alpha_sync.getValues(n);
+	while(it_threads.hasNext()){
+	    PANode nt2 = (PANode) it_threads.next();
+	    if(nt2 == THIS_THREAD) continue;
+	    // Find the set of all the threads nt1 that synchronize 
+	    // on n in || with nt2
+	    Set concurent_syncs = ((Relation)pi_sync.get(nt2)).getValuesSet(n);
+	    // If there are such threads, we can have concurrent accesses.
+	    if(!concurent_syncs.isEmpty())
+		return false;
+	}
+	return true;
+    }
+
 
     /** Private constructor for <code>clone</code>. */
     private ActionRepository(HashSet alpha_ld, Relation pi_ld,
@@ -247,7 +277,7 @@ public class ActionRepository {
     }
 
 
-    /** Produce an identical copy of <code>this</code> object. 
+    /** Produce a copy of <code>this</code> object. 
 	The new object is totally independent from the old one: you can
 	add/remove actions to/from it without affecting the original. */ 
     public Object clone(){
@@ -271,57 +301,36 @@ public class ActionRepository {
 
     /** Pretty-printer for debug purposes. */
     public String toString(){
-	StringBuffer buffer = new StringBuffer();
+	final StringBuffer buffer = new StringBuffer();
+
+	ActionVisitor act_visitor = new ActionVisitor(){
+		public void visit_ld(PALoad load){
+		    buffer.append(" " + load + "\n");
+		}
+		public void visit_sync(PANode n, PANode nt){
+		    buffer.append(" < sync , " + n + 
+				  (nt!=THIS_THREAD?(" , " + nt):"") +
+				  " >\n");
+		}
+	    };
+
 	buffer.append(" Alpha:\n");
+	forAllActions(act_visitor);
 
-	// string representation of the "ld" actions
-	Iterator it_load = alpha_ld.iterator();
-	while(it_load.hasNext())
-	    buffer.append(" " + (PALoad) it_load.next() + "\n");
-
-	// string representation of the "sync" actions
-	Enumeration enum_keys = alpha_sync.keys();
-	while(enum_keys.hasMoreElements()){
-	    PANode n = (PANode) enum_keys.nextElement();
-	    Iterator it_nt = alpha_sync.getValues(n);
-	    while(it_nt.hasNext()){
-		PANode nt = (PANode) it_nt.next();
-		buffer.append(" < sync , " + n +
-			      (nt!=THIS_THREAD?(" , " + nt):"") + " >\n");
-	    }
-	}
-
-	buffer.append(" Pi:\n");
-
-	// parallel info about the "ld" actions
-	enum_keys = pi_ld.keys();
-	while(enum_keys.hasMoreElements()){
-	    PANode nt2 = (PANode) enum_keys.nextElement();
-	    it_load = pi_ld.getValues(nt2);
-	    while(it_load.hasNext()){
-		PALoad load = (PALoad) it_load.next();
-		buffer.append(" " + load + " || " + nt2 + "\n");
-	    }
-	}
-
-	// parallel info about the "sync" actions
-	enum_keys = pi_sync.keys();
-	while(enum_keys.hasMoreElements()){
-	    PANode nt2 = (PANode) enum_keys.nextElement();
-	    Relation rel = (Relation) pi_sync.get(nt2);
-	    Enumeration enum_n = rel.keys();
-	    while(enum_n.hasMoreElements()){
-		PANode n = (PANode) enum_n.nextElement();
-		Iterator it_nt1 = rel.getValues(n);
-		while(it_nt1.hasNext()){
-		    PANode nt1 = (PANode) it_nt1.next();
+	ParActionVisitor par_act_visitor = new ParActionVisitor(){
+		public void visit_par_ld(PALoad load, PANode nt2){
+		    buffer.append(" " + load + " || " + nt2 + "\n");
+		}
+		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
 		    buffer.append(" < sync , " + n + 
 				  (nt1!=THIS_THREAD?(" , " + nt1):"") +
-				  " > || " + nt2);
+				  " > || " + nt2 + "\n");		    
 		}
-	    }
-	}
-	
+	    };
+
+	buffer.append(" Pi:\n");
+	forAllParActions(par_act_visitor);
+
 	return buffer.toString();
     }
 }
