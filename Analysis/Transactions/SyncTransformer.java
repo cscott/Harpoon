@@ -76,7 +76,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.18 2001-03-03 17:43:25 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.19 2001-03-04 00:08:27 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -741,7 +741,7 @@ public class SyncTransformer
 	    // create read/write versions for objects that need it.
 	    Set rS = co.createReadVersions(q);
 	    Set wS = co.createWriteVersions(q);
-	    wS.removeAll(rS); // write really is read-write.
+	    rS.removeAll(wS); // write really is read-write.
 	    for (int i=0; i<2; i++) {
 		// iteration 0 for read; iteration 1 for write versions.
 		Iterator it = (i==0) ? rS.iterator() : wS.iterator();
