@@ -15,6 +15,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
 
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.Navigator;
+import harpoon.Util.Graphs.ForwardNavigator;
 import harpoon.Util.Graphs.DiGraph;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 
@@ -24,7 +25,7 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  methods are called by a given meta method [at a specific call site].
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraph.java,v 1.5 2003-05-06 15:00:41 salcianu Exp $
+ * @version $Id: MetaCallGraph.java,v 1.6 2003-06-04 16:15:21 salcianu Exp $
  */
 
 public abstract class MetaCallGraph extends DiGraph/*<MetaMethod>*/
@@ -69,17 +70,33 @@ public abstract class MetaCallGraph extends DiGraph/*<MetaMethod>*/
     }
     
     /** Returns a bi-directional top-down graph navigator through
-        <code>this</code> meta-callgraph. */
+	<code>this</code> meta-callgraph.  Complexity: BIG; at least
+	linear in the number of nodes and edges in the call graph.
+	Therefore, we cache its result internally. */
     public Navigator/*<MetaMethod>*/ getDiGraphNavigator() {
-	final MetaAllCallers mac = new MetaAllCallers(this);
-	
-	return new Navigator/*<MetaMethod>*/() {
+	if(navigator == null) {
+	    final MetaAllCallers mac = new MetaAllCallers(this);   
+	    navigator = new Navigator/*<MetaMethod>*/() {
+		public Object[] next(Object node) {
+		    return getCallees((MetaMethod) node);
+		}  
+		public Object[] prev(Object node) {
+		    return mac.getCallers((MetaMethod) node);
+		}
+	    };
+	}
+	return navigator;
+    }
+    protected Navigator navigator = null;
+
+
+    /** Returns a forward-only navigator through <code>this</code>
+        meta-callgraph.  Complexity: O(1).*/
+    public ForwardNavigator/*<MetaMethod>*/ getDiGraphForwardNavigator() {
+	return new ForwardNavigator/*<MetaMethod>*/() {
 	    public Object[] next(Object node) {
 		return getCallees((MetaMethod) node);
 	    }  
-	    public Object[] prev(Object node) {
-		return mac.getCallers((MetaMethod) node);
-	    }
 	};
     }
 }

@@ -25,7 +25,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  * <code>MetaCallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphAbstr.java,v 1.5 2003-04-30 21:24:44 salcianu Exp $ */
+ * @version $Id: MetaCallGraphAbstr.java,v 1.6 2003-06-04 16:15:21 salcianu Exp $ */
 public abstract class MetaCallGraphAbstr extends MetaCallGraph {
     // Map<MetaMethod,MetaMethod[]>
     protected final Map callees1_cmpct = new HashMap();
@@ -54,26 +54,16 @@ public abstract class MetaCallGraphAbstr extends MetaCallGraph {
 	return retval;
     }
  
-    /** Returns the set of all the meta methods that might be called, directly
-	or indirectly, by the meta method <code>mm</code>. */
-    public Set getTransCallees(MetaMethod mm){
-	Set set = new HashSet();
-	LinkedList W = new LinkedList();
-	W.add(mm);
-	while(!W.isEmpty()){
-	    MetaMethod mm_work = (MetaMethod) W.removeFirst();
-	    MetaMethod[] callees = getCallees(mm_work);
-	    for(int i = 0; i < callees.length; i++)
-		if(set.add(callees[i]))
-		    W.addLast(callees[i]);
-	}
-	return set;
+    /** Returns the set of all the meta methods that might be called,
+	directly or indirectly, by meta method <code>mm</code>. */
+    public Set getTransCallees(MetaMethod mm) {
+	return transitiveSucc(mm);
     }
    
 
     /** Returns the set of all the call sites in the code of the meta-method
 	<code>mm</code>. */
-    public Set getCallSites(MetaMethod mm){
+    public Set/*<CALL>*/ getCallSites(MetaMethod mm){
 	Map map = (Map) callees2_cmpct.get(mm);
 	if(map == null)
 	    return Collections.EMPTY_SET;
@@ -113,24 +103,7 @@ public abstract class MetaCallGraphAbstr extends MetaCallGraph {
 
     /** Nice pretty-printer for debug purposes. */
     public void print(PrintStream ps, boolean detailed_view, MetaMethod root) {
-
-	Set mms = new HashSet();
-	Set roots = new HashSet(getRunMetaMethods());
-	roots.add(root);
-
-	for(Iterator it = roots.iterator(); it.hasNext(); ) {
-	    MetaMethod mm = (MetaMethod) it.next();
-	    mms.add(mm);
-	    mms.addAll(getTransCallees(mm));
-	}
-
-	ps.println("MetaCallGraph rooted in " + root);
-	ps.println("Roots: ");
-	for(Iterator it = roots.iterator(); it.hasNext(); )
-	    System.out.println("  " + (MetaMethod) it.next());
-	ps.println("===========================================");
-	
-	for(Iterator itmm = mms.iterator(); itmm.hasNext();) {
+	for(Iterator itmm = getAllMetaMethods().iterator(); itmm.hasNext();) {
 	    MetaMethod mm = (MetaMethod) itmm.next();
 	    ps.println();
 	    ps.print(mm);
