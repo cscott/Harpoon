@@ -14,7 +14,7 @@ import java.util.Properties;
  * <code>java.lang.System</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSystem.java,v 1.1.2.8 2000-01-27 11:26:26 cananian Exp $
+ * @version $Id: INSystem.java,v 1.1.2.9 2000-01-28 03:17:42 cananian Exp $
  */
 final class INSystem {
     static final void register(StaticState ss) {
@@ -169,12 +169,25 @@ final class INSystem {
     // JDK 1.2 only: System.mapLibraryName()
     private static final NativeMethod mapLibraryName(StaticState ss0) {
 	final HMethod hm =
-	    ss0.HCsystem.getMethod("getLibraryName",
+	    ss0.HCsystem.getMethod("mapLibraryName",
 				   new HClass[] { ss0.HCstring } );
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
-		// the identity function
+		// try to use java language reflection to invoke this
+		// JDK1.2-only method.
+		String arg = ss.ref2str((ObjectRef) params[0]);
+		try {
+		    String result = (String)
+			System.class.getMethod("mapLibraryName",
+					       new Class[] { String.class })
+			.invoke(null, new Object[] { arg });
+		    return ss.makeString(result);
+		} catch (NoSuchMethodException e) { // ignore
+		} catch (Exception e) { // this shouldn't happen.
+		    throw new RuntimeException(e.toString());
+		}
+		// if reflection fails, implement the identity function
 		return (ObjectRef) params[0];
 	    }
 	};

@@ -22,18 +22,22 @@ import java.lang.reflect.InvocationTargetException;
  * synthetic class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFileSystem.java,v 1.1.2.2 2000-01-27 11:44:31 cananian Exp $
+ * @version $Id: INFileSystem.java,v 1.1.2.3 2000-01-28 03:17:42 cananian Exp $
  */
 public class INFileSystem {
     static final void register(StaticState ss) {
 	try { // JDK 1.2 only
 	    ss.register(getFileSystem(ss));
 	    ss.register(constructor(ss));
+	    ss.register(canonicalize(ss));
 	    ss.register(getBooleanAttributes(ss));
 	    ss.register(getPathSeparator(ss));
 	    ss.register(getSeparator(ss));
 	    ss.register(isAbsolute(ss));
 	    ss.register(normalize(ss));
+	    ss.register(prefixLength(ss));
+	    ss.register(resolve(ss));
+	    ss.register(resolve2(ss));
 	} catch (NoSuchMethodError e) { // ignore
 	} catch (NoSuchClassException e) { // ignore
 	}
@@ -123,6 +127,28 @@ public class INFileSystem {
 		    .getConstructor(new HClass[0]);
 		Method.invoke(ss, scM, new Object[] { _this } );
 		return null; // done.
+	    }
+	};
+    }
+    // canonicalize
+    private static final NativeMethod canonicalize(StaticState ss0) {
+	final HClass ifs = getInterpretedFileSystem(ss0);
+	final HMethod hm = ifs.getMethod
+	    ("canonicalize", new HClass[] { ss0.HCstring } );
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    Object invoke(StaticState ss, Object[] params) 
+		throws InterpretedThrowable {
+		ObjectRef _this = (ObjectRef) params[0];
+		ObjectRef _path = (ObjectRef) params[1];
+		String path = ss.ref2str(_path);
+		try {
+		    String canon = new java.io.File(path).getCanonicalPath();
+		    return ss.makeString(canon);
+		} catch (java.io.IOException e) {
+		    ObjectRef obj = ss.makeThrowable(ss.HCioE, e.toString());
+		    throw new InterpretedThrowable(obj, ss);
+		}
 	    }
 	};
     }
@@ -219,6 +245,60 @@ public class INFileSystem {
 		String path = ss.ref2str(_path);
 		String normal = new java.io.File(path).getPath();
 		return path.equals(normal) ? _path : ss.makeString(normal);
+	    }
+	};
+    }
+    // Compute the length of this pathname string's prefix.
+    private static final NativeMethod prefixLength(StaticState ss0) {
+	final HClass ifs = getInterpretedFileSystem(ss0);
+	final HMethod hm = ifs.getMethod("prefixLength",
+					 new HClass[] { ss0.HCstring } );
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    Object invoke(StaticState ss, Object[] params) {
+		// I hope this implementation is correct.
+		ObjectRef _this = (ObjectRef) params[0];
+		ObjectRef _path = (ObjectRef) params[1];
+		String path = ss.ref2str(_path);
+		String parent = new java.io.File(path).getParent();
+		if (parent==null) parent="";
+		int index = path.lastIndexOf(java.io.File.separatorChar);
+		int plen  = parent.length();
+		int prefixLength = (plen > index) ? plen : index;
+		return new Integer(prefixLength);
+	    }
+	};
+    }
+    // Resolve the child pathname string against the parent.
+    private static final NativeMethod resolve(StaticState ss0) {
+	final HClass ifs = getInterpretedFileSystem(ss0);
+	final HMethod hm = ifs.getMethod
+	    ("resolve", new HClass[] { ss0.HCstring, ss0.HCstring } );
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    Object invoke(StaticState ss, Object[] params) {
+		ObjectRef _this = (ObjectRef) params[0];
+		ObjectRef _parent = (ObjectRef) params[1];
+		ObjectRef _child = (ObjectRef) params[2];
+		String parent = ss.ref2str(_parent);
+		String child  = ss.ref2str(_child);
+		String resolved = new java.io.File(parent, child).getPath();
+		return ss.makeString(resolved);
+	    }
+	};
+    }
+    // Resolve the given abstract pathname into absolute form.
+    private static final NativeMethod resolve2(StaticState ss0) {
+	final HClass ifs = getInterpretedFileSystem(ss0);
+	final HMethod hm = ifs.getMethod
+	    ("resolve", new HClass[] { ss0.HCfile } );
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    Object invoke(StaticState ss, Object[] params) {
+		ObjectRef _this = (ObjectRef) params[0];
+		ObjectRef _file = (ObjectRef) params[1];
+		java.io.File f = resolveFile(ss, _file);
+		return ss.makeString(f.getAbsolutePath());
 	    }
 	};
     }
