@@ -37,6 +37,13 @@ extern inline JNIEnv *FNI_GetJNIEnv(void) { return FNI_JNIEnv; }
 # define IFPRECISE(x) /*no-op*/0
 #endif
 
+/* some architectures don't support section attributes */
+#ifdef NO_SECTION_SUPPORT
+# define SECTION(x)
+#else
+# define SECTION(x) __attribute__ ((section (x)))
+#endif /* NO_SECTION_SUPPORT */
+
 /* select which calling convention you'd like to use in the generated code */
 #if !defined(USE_PAIR_RETURN) && !defined(USE_GLOBAL_SETJMP)
   /* default is USE_PAIR_RETURN */
@@ -46,11 +53,11 @@ extern inline JNIEnv *FNI_GetJNIEnv(void) { return FNI_JNIEnv; }
 #ifdef USE_PAIR_RETURN /* ----------------------------------------------- */
 #define FIRST_DECL_ARG(x)
 #define DECLAREFUNC(rettype, funcname, args, segment, moreattrs) \
-rettype ## _and_ex funcname args __attribute__ ((section (segment))) moreattrs
+rettype ## _and_ex funcname args SECTION(segment) moreattrs
 #define DEFINEFUNC(rettype, funcname, args, segment, moreattrs) \
 rettype ## _and_ex funcname args
 #define DECLAREFUNCV(funcname, args, segment, moreattrs) \
-void * funcname args __attribute__ ((section (segment))) moreattrs
+void * funcname args SECTION(segment) moreattrs
 #define DEFINEFUNCV(funcname, args, segment, moreattrs) \
 void * funcname args
 #define RETURN(rettype, val)	return ((rettype ## _and_ex) { NULL, (val) })
@@ -111,11 +118,11 @@ extern void *memcpy(void *dst, const void *src, size_t n);
 
 #define FIRST_DECL_ARG(x)
 #define DECLAREFUNC(rettype, funcname, args, segment, moreattrs) \
-rettype funcname args __attribute__ ((section (segment))) moreattrs
+rettype funcname args SECTION(segment) moreattrs
 #define DEFINEFUNC(rettype, funcname, args, segment, moreattrs) \
 rettype funcname args
 #define DECLAREFUNCV(funcname, args, segment, moreattrs) \
-void funcname args __attribute__ ((section (segment))) moreattrs
+void funcname args SECTION(segment) moreattrs
 #define DEFINEFUNCV(funcname, args, segment, moreattrs) \
 void funcname args
 #define RETURN(rettype, val)	return (val)
