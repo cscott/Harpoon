@@ -18,7 +18,7 @@ import java.util.Hashtable;
  * It does not have <code>HANDLER</code> quads, and is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadNoSSA.java,v 1.1.2.30 2001-09-18 22:01:05 cananian Exp $
+ * @version $Id: QuadNoSSA.java,v 1.1.2.31 2001-11-14 08:12:05 cananian Exp $
  * @see QuadWithTry
  * @see QuadSSI
  */
@@ -33,28 +33,35 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 
     /** Creates a <code>QuadNoSSA</code> object from a
      *  <code>QuadWithTry</code> object. */
-    QuadNoSSA(QuadWithTry qwt, boolean coalesce) {
-        super(qwt.getMethod(), null);
-	this.quads = UnHandler.unhandler(this.qf, qwt, coalesce);
-	Peephole.optimize(this.quads);
-	Prune.prune(this);
-	this.typeMap = null;
+    QuadNoSSA(Code qwt, boolean coalesce) {
+	this(qwt, null, coalesce);
     }
-    QuadNoSSA(QuadSSI qsa) {
-	this(qsa, null);
+    /** Creates a <code>QuadNoSSA</code> object from a
+     *  <code>QuadSSI</code> object and a <code>TypeMap</code>. */
+    QuadNoSSA(Code qsa, TypeMap tm) {
+	this(qsa, tm, false);
     }
-    QuadNoSSA(QuadSSI qsa, TypeMap tm) {
-	super(qsa.getMethod(), null);
-	ToNoSSA translator = new ToNoSSA(this.qf, qsa, tm);
-	this.quads = translator.getQuads();
-	this.typeMap = (tm==null) ? null : translator.getDerivation();
-	setAllocationInformation(translator.getAllocationInformation());
+    QuadNoSSA(Code qsa) {
+	this(qsa, null, false);
     }
-    QuadNoSSA(QuadRSSx qsa) {
-	super(qsa.getMethod(),null);
-	RSSxToNoSSA translate = new RSSxToNoSSA(this.qf, qsa);
-	this.quads=translate.getQuads();
-	this.typeMap = null;
+    private QuadNoSSA(Code qcode, TypeMap tm, boolean coalesce) {
+        super(qcode.getMethod(), null);
+	if (qcode.getName().equals(QuadWithTry.codename)) {
+	    this.quads = UnHandler.unhandler(this.qf, qcode, coalesce);
+	    Peephole.optimize(this.quads);
+	    Prune.prune(this);
+	    this.typeMap = null;
+	} else if (qcode.getName().equals(QuadRSSx.codename)) {
+	    RSSxToNoSSA translate = new RSSxToNoSSA(this.qf, qcode);
+	    this.quads=translate.getQuads();
+	    this.typeMap = null;
+	} else if (qcode.getName().equals(QuadSSI.codename)) {
+	    ToNoSSA translator = new ToNoSSA(this.qf, qcode, tm);
+	    this.quads = translator.getQuads();
+	    this.typeMap = (tm==null) ? null : translator.getDerivation();
+	    setAllocationInformation(translator.getAllocationInformation());
+	} else throw new RuntimeException("can't make quad-no-ssa from "+
+					  qcode.getName());
     }
 
     protected QuadNoSSA(HMethod parent, Quad quads) {
@@ -83,7 +90,7 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
-			new QuadNoSSA((QuadWithTry)c,
+			new QuadNoSSA((Code)c, null,
 				      !Boolean.getBoolean
 				      ("harpoon.quads.nocoalesce"));
 		    // set harpoon.quads.nocoalesce to true to disable
@@ -98,7 +105,7 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
-			new QuadNoSSA((QuadSSI)c);
+			new QuadNoSSA((Code)c, null, false);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
@@ -108,7 +115,7 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
-			new QuadNoSSA((QuadRSSx)c);
+			new QuadNoSSA((Code)c, null, false);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
