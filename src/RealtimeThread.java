@@ -62,6 +62,11 @@ public class RealtimeThread extends Thread implements Schedulable {
     public long getUID() {
 	return threadID;
     }
+    
+    /** Run post initializer code. */
+    static void doneInit() {
+	Scheduler.getDefaultScheduler().start();
+    }
 
     static void checkInit() {
 	if (RTJ_init_in_progress) {
