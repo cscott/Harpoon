@@ -18,13 +18,11 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
 import harpoon.Util.UComp;
 
 /**
- * <code>SCCBBFactory</code> provides caching for the  
- * constructions of <code>BasicBlock</code>s and a convenient
- * method that is passing directly from <code>HMethod</code>
- * to <code>BasicBlock</code>s.
+ * <code>SCCBBFactory</code> converts the code of a method into the
+ topollogically sorted component graph of <code>BasicBlock</code>s.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCBBFactory.java,v 1.1.2.3 2000-03-24 01:14:05 salcianu Exp $
+ * @version $Id: SCCBBFactory.java,v 1.1.2.4 2000-03-24 01:17:48 salcianu Exp $
  */
 public class SCCBBFactory {
 
