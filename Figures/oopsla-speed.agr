@@ -1,7 +1,7 @@
 # Grace project file
 #
 @version 50107
-@page size 787, 607
+@page size 786, 606
 @page scroll 5%
 @page inout 5%
 @link page off
@@ -54,7 +54,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Fri Mar 22 22:24:05 2002"
+@timestamp def "Fri May 10 15:35:18 2002"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -327,7 +327,7 @@
 @    s1 symbol color 1
 @    s1 symbol pattern 1
 @    s1 symbol fill color 1
-@    s1 symbol fill pattern 1
+@    s1 symbol fill pattern 9
 @    s1 symbol linewidth 1.0
 @    s1 symbol linestyle 1
 @    s1 symbol char 65
