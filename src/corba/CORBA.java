@@ -95,7 +95,7 @@ public class CORBA implements CommunicationsModel {
 	throws Exception {
 	final ClientServer cs = ClientServerHelper.narrow(setupClient(name));
 	return new CommunicationsAdapter() {
-	    public synchronized void process(ImageData id) {
+	    public void process(ImageData id) {
 		cs.process(id);
 	    }
 	};
@@ -111,7 +111,7 @@ public class CORBA implements CommunicationsModel {
     public void runIDServer(final String name, final CommunicationsAdapter out) 
 	throws Exception {
 	runServer(name, new ClientServerPOA() {
-	    public synchronized void process(ImageData id) {
+	    public void process(ImageData id) {
 		out.process(id);
 	    }
 	});
@@ -129,7 +129,7 @@ public class CORBA implements CommunicationsModel {
 	throws Exception {
 	final ATRSysCond atr = ATRSysCondHelper.narrow(setupClient(name));
 	return new CommunicationsAdapter() {
-	    public synchronized void alert(float c1, float c2, float c3) {
+	    public void alert(float c1, float c2, float c3) {
 		atr.send_coordinate(new Coordinate(c1, c2, c3));
 	    }
 	};

@@ -25,7 +25,7 @@ public class CommunicationsAdapter {
      *
      *  @param id The {@link ImageData} to transport.
      */
-    public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	throw new Error("This should be overridden if callable.");
     }
 
@@ -41,7 +41,7 @@ public class CommunicationsAdapter {
      *  @param c2 The y coordinate relative to the current location in meters.
      *  @param c3 The z coordinate relative to the current location in meters.
      */
-    public synchronized void alert(float c1, float c2, float c3) {
+    public void alert(float c1, float c2, float c3) {
 	throw new Error("This should be overridden if callable.");
     }
 }
