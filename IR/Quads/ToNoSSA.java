@@ -27,7 +27,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.28 2000-02-08 23:20:46 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.29 2000-02-10 17:43:03 bdemsky Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -344,7 +344,8 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
 	    for (int j=0; j<arity; j++)
 		pushBack(q, i, j); // Adds moves & updates derivation table
 	    // remove unneeded derivation table entry for q.dst(i)
-	    m_dT.remove(new Tuple(new Object[] { q, q.dst(i) }));
+	    if (m_dT!=null)
+		m_dT.remove(new Tuple(new Object[] { q, q.dst(i) }));
 	}
 
 	Quad.replace(q, phi);
