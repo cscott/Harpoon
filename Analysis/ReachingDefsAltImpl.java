@@ -15,6 +15,9 @@ import harpoon.Util.WorkSet;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.TYPECAST;
 
+import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.Collections.GenericMultiMap;
+
 import java.util.Collections;
 import java.util.Collection;
 import java.util.HashMap;
@@ -22,13 +25,14 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 
 /**
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.3 2000-07-19 01:02:09 pnkfelix Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.4 2000-07-21 22:30:45 pnkfelix Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -45,6 +49,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
     final protected Map cache = new HashMap(); // maps BasicBlocks to in Sets 
     final protected boolean check_typecast; // demand the special treatment of TYPECAST
     final protected UseDefer ud;
+
 
     /** Creates a <code>ReachingDefsImpl</code> object for the
 	provided <code>HCode</code> using <code>CFGrapher.DEFAULT</code> and 
@@ -110,6 +115,41 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	BasicBlock b = bbf.getBlock(hce);
 	Util.assert(b != null, "no block" /* +" for "+hce */ );
 	// report("In BasicBlock: "+b.toString());
+
+	boolean sawIt = false;
+	List stms = b.statements();
+	ListIterator iter = stms.listIterator(stms.size());
+	while(iter.hasPrevious()) {
+	    HCodeElement curr = (HCodeElement)iter.previous();
+	    if (curr == hce) {
+		sawIt = true;
+		break;
+	    }
+	}
+	Util.assert(sawIt);
+	
+	// broke out of loop, so now we need to see if exists a
+	// definition in remaining hces
+	while(iter.hasPrevious()) {
+	    HCodeElement curr = (HCodeElement)iter.previous();
+	    
+	    Collection defC = null;
+	    
+	    // special treatment of TYPECAST
+	    if(check_typecast && (curr instanceof TYPECAST))
+		defC = Collections.singleton(((TYPECAST)curr).objectref());
+	    else
+		defC = ud.defC(curr);
+	    
+	    if (defC.contains(t)) {
+		System.out.print(" I");
+		return Collections.singleton(curr);
+	    }
+	}
+	
+	// if we got here, then there isn't a def in the remainder
+	// of the basic block... do a lookup
+
 	// get the map for the BasicBlock
 	Record r = (Record)cache.get(b);
 
@@ -123,25 +163,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	    results.add( ((List)pairs.next()).get(1) );
 	}
 
-	// propagate in Set through the HCodeElements 
-	// of the BasicBlock in correct order
-	// report("Propagating...");
-	for(Iterator it=b.statements().iterator(); it.hasNext(); ) {
-	    HCodeElement curr = (HCodeElement)it.next();
-	    if (curr == hce) return results;
-	    Collection defC = null;
-
-	    // special treatment of TYPECAST
-	    if(check_typecast && (curr instanceof TYPECAST))
-		defC = Collections.singleton(((TYPECAST)curr).objectref());
-	    else
-		defC = ud.defC(curr);
-
-	    if (defC.contains(t)) 
-		results = Collections.singleton(curr);
-	}
-	Util.assert(false);
-	return null; // should never happen
+	return results;
     }
 
     // do analysis
@@ -192,6 +214,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 		}
 		// add this definition point
 		defPts.add(Default.pair(t,hce));
+		
 	    }
 	    if (DEBUG) {
 		Collection col = ud.useC(hce);

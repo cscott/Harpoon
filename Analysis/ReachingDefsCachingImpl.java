@@ -10,13 +10,16 @@ import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.TYPECAST;
 import harpoon.Temp.Temp;
 
-
+import harpoon.Util.Util;
 import harpoon.Util.Collections.BitSetFactory;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.HashMap;
 
@@ -29,9 +32,9 @@ import java.util.HashMap;
  * over all the statements in the BasicBlock again.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsCachingImpl.java,v 1.1.2.1 2000-07-13 18:51:14 pnkfelix Exp $
+ * @version $Id: ReachingDefsCachingImpl.java,v 1.1.2.2 2000-07-21 22:30:45 pnkfelix Exp $
  */
-public class ReachingDefsCachingImpl extends ReachingDefsImpl {
+public class ReachingDefsCachingImpl extends ReachingDefsAltImpl {
 
     /** Tracks the last basic block a query was done on. */
     BasicBlock lastBlock = null;
@@ -64,23 +67,34 @@ public class ReachingDefsCachingImpl extends ReachingDefsImpl {
 	// find out which BasicBlock this HCodeElement is from
 	BasicBlock b = bbf.getBlock(hce);
 	if (b == lastBlock) {
+	    // System.out.print(" _"+b.statements().size());
 	    if (myCache.keySet().contains(t)) 
 		return (Set) ((Map)myCache.get(t)).get(hce);
 	} else {
+	    // System.out.print(" M"+b.statements().size());
 	    myCache = new HashMap();
+	    lastBlock = b;
 	}
 
 	HashMap hceToResults = new HashMap();
 	myCache.put(t, hceToResults);
 
 	// get the map for the BasicBlock
-	Map m = (Map)cache.get(b);
-	// get the BitSetFactory
-	BitSetFactory bsf = (BitSetFactory)Temp_to_BitSetFactories.get(t);
-	// make a copy of the in Set for the Temp
-	Set results = bsf.makeSet((Set)m.get(t));
+	Record r = (Record)cache.get(b);
+
+	// find HCodeElements associated with `t' in the IN Set
+	Set results = bsf.makeSet(r.IN);
+	results.retainAll( (Set) tempToAllDefs.get(t) );
+
+	Iterator pairs = results.iterator();
+	results = new HashSet();
+	while(pairs.hasNext()) {
+	    results.add( ((List)pairs.next()).get(1) );
+	}
+
 	// propagate in Set through the HCodeElements 
 	// of the BasicBlock in correct order
+	// report("Propagating...");
 	for(Iterator it=b.statements().iterator(); it.hasNext(); ) {
 	    HCodeElement curr = (HCodeElement)it.next();
 	    hceToResults.put(curr, results);
@@ -91,8 +105,9 @@ public class ReachingDefsCachingImpl extends ReachingDefsImpl {
 		defC = Collections.singleton(((TYPECAST)curr).objectref());
 	    else
 		defC = ud.defC(curr);
+
 	    if (defC.contains(t)) 
-		results = bsf.makeSet(Collections.singleton(curr));
+		results = Collections.singleton(curr);
 	}
 
 	return (Set) hceToResults.get(hce);
