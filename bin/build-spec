@@ -21,6 +21,10 @@
 SPECPATH=${SPECPATH:-${HOME}/Spec/jvm98}
 export FLEXPATH=SupportNP/specthunk.jar:$SPECPATH
 backend=${1:="precisec"}
+while [ -n "$4" ]; do
+   $SPECBUILDOPTS="$SPECBUILDOPTS $2"
+   shift
+done
 start=${2:-"1"}
 end=${3:-"10"}
 errors=
