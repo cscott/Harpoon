@@ -11,7 +11,7 @@
  */
 JNIEXPORT void JNICALL Java_javax_realtime_HeapMemory_initNative
 (JNIEnv* env, jobject memoryArea, jlong size) {
-
+  
 }
 
 /*
@@ -21,7 +21,8 @@ JNIEXPORT void JNICALL Java_javax_realtime_HeapMemory_initNative
  */
 JNIEXPORT void JNICALL Java_javax_realtime_HeapMemory_newMemBlock
 (JNIEnv* env, jobject memoryArea, jobject realtimeThread) {
-  struct BlockInfo* bi = getInflatedObject(env, realtimeThread)->temp->block_info;
+  struct MemBlock* mb = getInflatedObject(env, realtimeThread)->temp;
+  struct BlockInfo* bi = mb->block_info;
 #ifdef RTJ_DEBUG
   printf("HeapMemory.newMemBlock(%08x, %08x, %08x)\n", env, memoryArea,
 	 realtimeThread);
@@ -32,5 +33,6 @@ JNIEXPORT void JNICALL Java_javax_realtime_HeapMemory_newMemBlock
   bi->alloc     = Heap_RThread_MemBlock_alloc;
   bi->free      = Heap_RThread_MemBlock_free;
   bi->allocator = Heap_RThread_MemBlock_allocator(memoryArea);
+  mb->ref_info  = RefInfo_new(0);
 }
 

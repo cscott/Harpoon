@@ -20,7 +20,8 @@ JNIEXPORT void JNICALL Java_javax_realtime_VTMemory_initNative
  */
 JNIEXPORT void JNICALL Java_javax_realtime_VTMemory_newMemBlock
 (JNIEnv* env, jobject memoryArea, jobject realtimeThread) {
-  struct BlockInfo* bi = getInflatedObject(env, realtimeThread)->temp->block_info;
+  struct MemBlock* mb = getInflatedObject(env, realtimeThread)->temp;
+  struct BlockInfo* bi = mb->block_info;
 #ifdef RTJ_DEBUG
   printf("VTMemory.newMemBlock(%08x, %08x, %08x)\n", env, memoryArea, 
 	 realtimeThread);
@@ -35,5 +36,6 @@ JNIEXPORT void JNICALL Java_javax_realtime_VTMemory_newMemBlock
     bi->free      = VTScope_RThread_MemBlock_free;
     bi->allocator = VTScope_RThread_MemBlock_allocator(memoryArea);
   }
+  mb->ref_info = RefInfo_new(0);
 }
 
