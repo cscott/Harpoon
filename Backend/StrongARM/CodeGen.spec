@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.91 1999-10-28 06:30:48 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.92 1999-11-01 03:54:54 cananian Exp $
  */
 %%
 
@@ -79,6 +79,9 @@ import java.util.Iterator;
     final RegFileInfo regfile;
     private Temp r0, r1, r2, r3, r4, r5, r6, FP, IP, SP, LR, PC;
     Comparator regComp;
+
+    // whether to generate stabs debugging information in output (-g flag)
+    private static final boolean stabsDebugging=true;
 
     public CodeGen(Frame frame) {
 	super(frame);
@@ -405,6 +408,7 @@ import java.util.Iterator;
 	Temp[] usedRegArray =
 	    (Temp[]) usedRegisters.toArray(new Temp[usedRegisters.size()]);
 	Collections.sort(Arrays.asList(usedRegArray), regComp);
+	int nregs=0;
 	for (int i=0; i<usedRegArray.length; i++) {
 	    Temp rX = usedRegArray[i];
 	    Util.assert(regfile.isRegister(rX));
@@ -414,8 +418,10 @@ import java.util.Iterator;
 		rX.equals(IP)) continue; // always saved.
 	    reglist.append(rX.toString());
 	    reglist.append(", "); 
+	    nregs++;
 	}
 	// find method entry/exit stubs
+	Instr last=instr;
 	for (Instr il = instr; il!=null; il=il.getNext()) {
 	    if (il instanceof InstrENTRY) { // entry stub.
 		Instr in1 = new InstrDIRECTIVE(inf, il, ".align 4");
@@ -451,6 +457,50 @@ import java.util.Iterator;
 		in1.layout(il.getPrev(), il);
 		il.remove(); il=in1;
 	    }
+	    last=il;
+	}
+	// add a size directive to the end of the function to let gdb
+	// know how long it is.
+	if (last!=null) { // best be safe.
+	    Instr in1 = new InstrDIRECTIVE(inf, last, "\t.size " +
+					   methodlabel.name + ", . - " +
+					   methodlabel.name);
+	    in1.layout(last, last.getNext());
+	    last=in1;
+	}
+	// stabs debugging information:
+	if (stabsDebugging) {
+	    int lineno=-1;
+	    for (Instr il = instr; il!=null; il=il.getNext())
+		if (il.getLineNumber()!=lineno) {
+		    lineno = il.getLineNumber();
+		    Instr in1 = new InstrDIRECTIVE(inf, il, // line number
+						   "\t.stabd 68,0,"+lineno);
+		    in1.layout(il.getPrev(), il);
+		    if (il==instr) instr=in1;
+		}
+	    Instr in1 = new InstrDIRECTIVE(inf, instr, // source path
+					   "\t.stabs \""+
+					   hm.getDeclaringClass().getPackage()
+					   .replace('.','/')+"/"+
+					   "\",100,0,0,"+methodlabel.name);
+	    Instr in2 = new InstrDIRECTIVE(inf, instr, // source file name
+					   "\t.stabs \""+instr.getSourceFile()+
+					   "\",100,0,0,"+methodlabel.name);
+	    Instr in3 = new InstrDIRECTIVE(inf, instr, // define void type
+					   "\t.stabs \"void:t19=19\",128,0,0,0"
+					   );
+	    Instr in4 = new InstrDIRECTIVE(inf, instr, // mark as function
+					   "\t.stabs \""+
+					   methodlabel.name.substring(1)+":F19"
+					   +"\",36,0,"+(nregs*4)+","+
+					   methodlabel.name);
+	    in1.layout(instr.getPrev(), instr);
+	    in2.layout(in1, instr);
+	    in3.layout(in2, instr);
+	    instr = in1;
+	    in4.layout(last, last.getNext());
+	    last = in4;
 	}
 	return instr;
     }
