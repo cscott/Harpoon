@@ -61,7 +61,7 @@ import harpoon.Util.Util;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.18 2003-03-16 16:38:42 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.19 2003-04-08 19:17:52 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -481,27 +481,25 @@ public abstract class PreallocOpt {
 	memory preallocation code.  */
     public static HCodeFactory addMemoryPreallocation
 	(Linker linker, HCodeFactory hcf, Frame frame) {
-
-	assert initMethod != null : 
-	    "initMethod is null; forgot to call PreallocOpt.updateRoots?";
  
-	return
-	    Canonicalize.codeFactory
-	    (new AddMemoryPreallocation
-	     (hcf, initMethod, label2size, frame, beginLabel, endLabel));
-    }
+	if(PREALLOC_OPT) { // real stuff
+	    assert initMethod != null : 
+		"initMethod is null; forgot to call PreallocOpt.updateRoots?";
+	    return
+		Canonicalize.codeFactory
+		(new AddMemoryPreallocation
+		 (hcf, initMethod, label2size, frame, beginLabel, endLabel));
+	}
 
-    /** Returns a <code>CodeFactory</code> with the same structure as
-        the one returned by <code>addMemoryPreallocation</code>, but
-        without any actual memory preallocation.  Useful for timing
-        purposes, when we want to insulate ourselves against
-        differences due to different chains of code factories. */
-    public static HCodeFactory BOGUSaddMemoryPreallocation
-	(Linker linker, HCodeFactory hcf, Frame frame) {
-	return
-	    Canonicalize.codeFactory(hcf);
-    }
+	// return a code factory that is as close to the one returned
+	// in the previous case a s possible (to insulate ourselves
+	// against accidental variations of the runtime performances
+	// when measuring speedups)
+	if(ONLY_SYNC_REMOVAL)
+	    return Canonicalize.codeFactory(hcf);
 
+	return hcf; // will never happen
+    }
 
     /** Checks whether the class allocated by <code>site</code> has a
         finalizer. */
