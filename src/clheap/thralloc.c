@@ -134,7 +134,7 @@ void NTHR_free(jobject obj) {
 #ifdef BDW_CONSERVATIVE_GC
   /* we're going to be uber-tricky here and ask the GC where the start of
    * this object is.  If there's margin, then it's on a clustered heap. */
-  if (GC_base(oobj)!=oobj)
+  if (GC_base(oobj)!=NULL && GC_base(oobj)!=oobj)
     clheap_detach(CLHEAP_FROM_OOBJ(oobj));
 #elif 1
   /* risky assumption: assume every thread has an attached heap. */
