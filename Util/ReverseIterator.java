@@ -9,11 +9,11 @@ import java.util.NoSuchElementException;
 import java.util.List;
 
 /**
- * A <code>ReverseIterator</code> enumerates an <code>Enumeration</code>
+ * A <code>ReverseIterator</code> iterates through an <code>Iterator</code>
  * in reverse order.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ReverseIterator.java,v 1.1.2.3 1999-06-16 02:35:02 cananian Exp $
+ * @version $Id: ReverseIterator.java,v 1.1.2.4 2000-07-13 14:32:12 cananian Exp $
  */
 public class ReverseIterator extends UnmodifiableIterator implements Iterator {
     final List l = new ArrayList();
