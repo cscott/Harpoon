@@ -60,10 +60,6 @@ if type -t cygpath > /dev/null ; then
     harpoonpath=`cygpath -wp "$harpoonpath"`
 fi
 
-echo
-echo harpoonpath=$harpoonpath
-echo
-
 ${JAVA:=java} -${optprefix}mx${FLEXMEM:=1536m} -Dharpoon.class.path=$harpoonpath  harpoon.Main.SAMain $opts -Rspec.regalloc -bMIPS -c $cls -o $dir && \
 if [ -d ${RUNTIME_DIR}/include -a -f ${RUNTIME_DIR}/config.status ] && \
     grep -q "[-]-target=mips-unknown-linux" ${RUNTIME_DIR}/config.status ; then
