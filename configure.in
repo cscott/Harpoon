@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.31 $)dnl
+AC_REVISION($Revision: 1.32 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -113,6 +113,10 @@ heavy)  AC_MSG_RESULT([heavy-weight threads])
 		AC_DEFINE(HAVE_PTHREAD_RWLOCK_T, 1,
 		    [Define if your pthread library includes pthread_rwlock_t])
 	fi
+	# the BDW garbage collector needs to know which particular pthreads
+	# implementation we're using.  I don't know how to test this at the
+	# moment ... we'll just assume LinuxThreads.
+	CFLAGS="-DLINUX_THREADS $CFLAGS"
 	;;
 pth)	AC_MSG_RESULT([GNU pth])
 	AC_DEFINE(WITH_PTH_THREADS, 1,

@@ -19,12 +19,22 @@
 #define pthread_rwlock_destroy	pthread_mutex_destroy
 #endif /* !HAVE_PTHREAD_RWLOCK_T */
 
+/* Make sure the BDW collector has a chance to redefine 
+ * pthread_create/sigmask/join for its own nefarious purposes. */
+#ifdef BDW_CONSERVATIVE_GC
+#include "gc.h"
+#endif
+
 #endif /* WITH_HEAVY_THREADS */
 
 #ifdef WITH_PTH_THREADS
 #define PTH_SYSCALL_SOFT 1
 #include <pth.h>
 #include <errno.h>
+
+#ifdef BDW_CONSERVATIVE_GC
+# error GC wants to redefine pthread_create/pthread_sigmask/pthread_join
+#endif
 
 #define PTHERR(x) ((x)?0:errno)
 
