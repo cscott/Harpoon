@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.32 1998-09-03 02:09:18 cananian Exp $
+ * @version $Id: Translate.java,v 1.33 1998-09-03 04:19:14 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -794,8 +794,6 @@ class Translate  { // not public.
 	    q = new GET(in, ns.stack[0], opd.value(), s.stack[0]);
 	    break;
 	    }
-	case Op.IF_ACMPEQ:
-	case Op.IF_ACMPNE:
 	case Op.IF_ICMPEQ:
 	case Op.IF_ICMPNE:
 	case Op.IF_ICMPLT:
@@ -808,8 +806,6 @@ class Translate  { // not public.
 	case Op.IFGE:
 	case Op.IFGT:
 	case Op.IFLE:
-	case Op.IFNONNULL:
-	case Op.IFNULL:
 	    throw new Error("Ack!"); // FIXME
 
 	case Op.IINC:
@@ -1070,6 +1066,44 @@ class Translate  { // not public.
 	    r = new TransState[] { new TransState(s, in.next()[0], 
 						  ts.header, ts.which_succ) };
 	    break;
+	case Op.IF_ACMPEQ:
+	case Op.IF_ACMPNE:
+	    {
+		State ns = s.pop(2);
+		q = new OPER(in, "acmpeq", new Temp(), 
+			     new Temp[] { s.stack[1], s.stack[0] });
+		Quad q2 = new CJMP(in, q.def()[0]);
+		Quad.addEdge(q, 0, q2, 0);
+		int iffalse=0, iftrue=1;
+		if (in.getOpcode()==Op.IF_ACMPNE) { // invert things for NE.
+		    iffalse=1; iftrue=0;
+		}
+		r = new TransState[] {
+		    new TransState(ns, in.next()[0], q2, iffalse),
+		    new TransState(ns, in.next()[1], q2, iftrue)
+		};
+		break;
+	    }
+	case Op.IFNULL:
+	case Op.IFNONNULL:
+	    {
+		State ns = s.pop();
+		q = new CONST(in, new Temp("null"), null, HClass.Void);
+		Quad q0 = new OPER(in, "acmpeq", new Temp(), 
+				   new Temp[] { s.stack[0], q.def()[0] });
+		Quad q1 = new CJMP(in, q0.def()[0]);
+		Quad.addEdge(q,  0, q0, 0);
+		Quad.addEdge(q0, 0, q1, 0);
+		int iffalse=0, iftrue=1;
+		if (in.getOpcode()==Op.IFNONNULL) { // invert things
+		    iffalse=1; iftrue=0;
+		}
+		r = new TransState[] {
+		    new TransState(ns, in.next()[0], q1, iffalse),
+		    new TransState(ns, in.next()[1], q1, iftrue)
+		};
+		break;
+	    }
 	case Op.JSR:
 	case Op.JSR_W:
 	case Op.RET:
