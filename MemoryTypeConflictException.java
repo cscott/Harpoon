@@ -5,8 +5,7 @@ package javax.realtime;
  *  can be between types in an array of memory type specifiers,
  *  or between the specifiers and a specified base address.
  */
-public class MemoryTypeConflictException extends Exception
-    implements java.io.Serializable {
+public class MemoryTypeConflictException extends Exception {
 
     /** A constructor for <code>MemoryTypeConflictException</code>. */
     public MemoryTypeConflictException() {

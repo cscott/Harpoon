@@ -8,8 +8,7 @@ package javax.realtime;
  *  or would cause an accessor method to access an address outside of the
  *  memory area. 
  */
-public class SizeOutOfBoundsException extends Exception
-    implements java.io.Serializable {
+public class SizeOutOfBoundsException extends Exception {
     
     /** A constructor for <code>SizeOutOfBoundsException</code>. */
     public SizeOutOfBoundsException() {
@@ -20,4 +19,4 @@ public class SizeOutOfBoundsException extends Exception
     public SizeOutOfBoundsException(String s) {
 	super(s);
     }
-};
+}

@@ -12,8 +12,7 @@ package javax.realtime;
  *  reference to an object in <code>ScopedMemory</code> to a field in
  *  an object in <code>ImmortalMemory</code>.
  */
-public class IllegalAssignmentError extends Error
-    implements java.io.Serializable {
+public class IllegalAssignmentError extends Error {
 
     /** A constructor for <code>IllegalAssignmentError</code>. */
     public IllegalAssignmentError() {
@@ -24,4 +23,4 @@ public class IllegalAssignmentError extends Error
     public IllegalAssignmentError(String description) {
 	super(description);
     }
-};
+}

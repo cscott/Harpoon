@@ -3,8 +3,7 @@ package javax.realtime;
 /** The specified memory area is not above the current
  *  allocation context on the current thread scope stack.
  */
-public class InaccessibleAreaException extends Exception
-    implements java.io.Serializable {
+public class InaccessibleAreaException extends Exception {
 
     /** A constructor for <code>InaccessibleAreaException</code>. */
     public InaccessibleAreaException() {

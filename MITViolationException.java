@@ -7,8 +7,7 @@ package javax.realtime;
  *  <code>mitViolationExcept</code> behavior and the minimum
  *  interarrival time gets violated.
  */
-public class MITViolationException extends Exception
-    implements java.io.Serializable {
+public class MITViolationException extends Exception {
 
     /** A constructor for <code>MITViolationException</code>. */
     public MITViolationException() {

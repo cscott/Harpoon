@@ -7,8 +7,7 @@ package javax.realtime;
  *  in the offset parameter of a RawMemoryAccess method is either 
  *  negative or outside the memory area.
  */
-public class OffsetOutOfBoundsException extends Exception
-    implements java.io.Serializable {
+public class OffsetOutOfBoundsException extends Exception {
 
     /** A constructor for <code>OffsetOutOfBoundsException</code>. */
     public OffsetOutOfBoundsException() {
@@ -19,4 +18,4 @@ public class OffsetOutOfBoundsException extends Exception
     public OffsetOutOfBoundsException(String s) {
 	super(s);
     }
-};
+}

@@ -12,8 +12,7 @@ package javax.realtime;
  *  not usable in the surrounding scope tries to propagate out of the
  *  scope of the <code>enter(Runnable logic)</code.
  */
-public class ThrowBoundaryError extends Error
-    implements java.io.Serializable {
+public class ThrowBoundaryError extends Error {
 
     /** A constructor for <code>ThrowBoundaryError</code>. */
     public ThrowBoundaryError() {

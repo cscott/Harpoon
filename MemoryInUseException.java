@@ -3,8 +3,7 @@ package javax.realtime;
 /** Thrown when an attempt is made to allocate a range of
  *  physical or virtual memory that is already in use.
  */
-public class MemoryInUseException extends Exception
-    implements java.io.Serializable {
+public class MemoryInUseException extends Exception {
 
     /** A constructor for <code>MemoryInUseException</code>. */
     public MemoryInUseException() {

@@ -5,8 +5,7 @@ package javax.realtime;
  *  if an attempt is made to register more than one filter for a
  *  type of memory
  */
-public class DuplicateFilterException extends Exception
-    implements java.io.Serializable {
+public class DuplicateFilterException extends Exception {
 
     /** A constructor for <code>DuplicateFilterException</code>. */
     public DuplicateFilterException() {

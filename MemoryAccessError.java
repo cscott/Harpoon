@@ -13,8 +13,7 @@ package javax.realtime;
  *  if logic in a <code>NoHeapRealtimeThread</code> attempts to refer
  *  to an object in the traditional Java heap.
  */
-public class MemoryAccessError extends Error
-    implements java.io.Serializable {
+public class MemoryAccessError extends Error {
 
     /** A constructor for <code>MemoryAccessError</code>. */
     public MemoryAccessError() { 

@@ -10,8 +10,7 @@ package javax.realtime;
 /** Thrown when the underlying hardware does not support the type of physical
  *  memory given to the physical memory <code>create()</code> method.
  */
-public class UnsupportedPhysicalMemoryException extends Exception
-    implements java.io.Serializable {
+public class UnsupportedPhysicalMemoryException extends Exception {
     
     /** A constructor for <code>UnsupportedPhysicalMemoryException</code>. */
     public UnsupportedPhysicalMemoryException() {
@@ -22,4 +21,4 @@ public class UnsupportedPhysicalMemoryException extends Exception
     public UnsupportedPhysicalMemoryException(String s) {
 	super(s);
     }
-};
+}
