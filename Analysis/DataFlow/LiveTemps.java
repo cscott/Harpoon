@@ -5,6 +5,7 @@ package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlock;
 import harpoon.IR.Properties.UseDefer;
+import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Util.CloneableIterator; 
@@ -25,7 +26,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.17 2000-07-21 22:15:39 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.18 2000-07-28 03:08:57 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
     // may be null; code using this should check
@@ -35,6 +36,22 @@ public class LiveTemps extends LiveVars.BBVisitor {
 
     // calculates use/def information for the IR passed in.
     private UseDefer ud;
+
+    /** Produces a default live variable analysis object and solves
+	it.  elements in <code>code</code> must implement
+	<code>UseDef</code>, <code>CFGraphable</code>, etc, and
+	<code>liveOnExit</code> must be a Set of Temps that are live
+	on exit from <code>code</code>.
+     */
+    public static LiveTemps make(HCode code, Set liveOnExit) {
+	BasicBlock.Factory bbf = new BasicBlock.Factory(code);
+	LiveTemps lt = new LiveTemps(bbf, liveOnExit);
+	Solver.worklistSolve
+	    // (bbFact.preorderBlocksIter(),
+	    (new harpoon.Util.ReverseIterator(bbf.postorderBlocksIter()),
+	     lt);
+	return lt;
+    }
     
     /** Constructs a new <code>LiveTemps</code> for <code>basicblocks</code>.
 	<BR> <B>requires:</B> <OL>

@@ -63,7 +63,7 @@ import java.util.Collection;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.39 2000-07-19 11:17:57 pnkfelix Exp $ */
+ * @version $Id: BasicBlock.java,v 1.1.2.40 2000-07-28 03:08:53 pnkfelix Exp $ */
 public class BasicBlock implements java.io.Serializable {
     
     static final boolean DEBUG = false;
@@ -492,6 +492,18 @@ public class BasicBlock implements java.io.Serializable {
 	*/
 	public BasicBlock getBlock(HCodeElement hce) {
 	    return (BasicBlock) hceToBB.get(hce);
+	}
+	
+	/** Constructs a <code>BasicBlock.Factory</code> using the
+	    implicit control flow provided by <code>code</code>.
+	    <BR> <B>requires:</B> elements of <code>code</code>
+	         implement <code>CFGraphable</code>.
+	    <BR> <B>effects:</B> constructs a
+	         <code>BasicBlock.Factory</code> using
+		 <code>this(code, CFGrapher.DEFAULT);</code> 
+	*/
+	public Factory(HCode code) {
+	    this(code, CFGrapher.DEFAULT);
 	}
 
 	/** Constructs a <code>BasicBlock.Factory</code> and generates
