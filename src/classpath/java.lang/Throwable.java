@@ -381,8 +381,7 @@ public class Throwable extends Object implements Serializable
    */
   public void printStackTrace(PrintWriter w)
   {
-    //XXX - should be printStackTrace1(w);
-    printStackTrace0(w);
+      printStackTrace1(w);//CSA HACK
   }
 
   /**
@@ -390,7 +389,7 @@ public class Throwable extends Object implements Serializable
    *
    * @param stream the destination stream
    */
-  private native void printStackTrace0(PrintWriter stream);
+  //private native void printStackTrace0(PrintWriter stream);//CSA HACK
 
   /**
    * Alternative printStackTrace that uses <code>getStrackTrace0()</code>
@@ -483,7 +482,10 @@ public class Throwable extends Object implements Serializable
    * @return this same throwable
    * @see #printStackTrace()
    */
-  public native Throwable fillInStackTrace();
+    // CSA HACK.
+    public /*native*/ Throwable fillInStackTrace() {
+	return this; /* do nothing */
+    }
 
   /**
    * Provides access to the information printed in {@link #printStackTrace()}.
@@ -498,6 +500,8 @@ public class Throwable extends Object implements Serializable
    */
   public StackTraceElement[] getStackTrace()
   {
+      // XXX should really convert a gnu.vm.stack.StackFrame (linked list)
+      // to an array of StackTraceElements.
     return stackTrace;
   }
 
