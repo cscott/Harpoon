@@ -42,7 +42,7 @@ import java.util.TreeSet;
  * <code>DataGC</code> outputs the tables needed by the garbage collector.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: DataGC.java,v 1.1.2.11 2000-06-24 04:44:56 kkz Exp $
+ * @version $Id: DataGC.java,v 1.1.2.12 2000-07-12 15:35:09 kkz Exp $
  */
 public class DataGC extends Data {
     final GCInfo m_gc;
@@ -251,7 +251,7 @@ public class DataGC extends Data {
 	// do registers first
 	if (needRegs) {
 	    for(Iterator it=regs.iterator(); it.hasNext(); ) {
-		int regIndex = ((MachineRegLoc)it.next()).regIndex();
+		int regIndex = ((WrappedMachineRegLoc)it.next()).regIndex();
 		int i = (regIndex+offset) / INT_BITS;
 		int j = (regIndex+offset) % INT_BITS;
 		data[i] |= 1 << (INT_BITS - j - 1);
@@ -282,7 +282,7 @@ public class DataGC extends Data {
 	stmlist.add(_DATUM(new CONST(tf, null, stackDerivs.size())));
 	// handle derived pointers in registers
 	for(Iterator keys=regDerivs.keySet().iterator(); keys.hasNext(); ) {
-	    MachineRegLoc key = (MachineRegLoc)keys.next();
+	    WrappedMachineRegLoc key = (WrappedMachineRegLoc)keys.next();
 	    // location of derived pointer (int)
 	    stmlist.add(_DATUM(new CONST(tf, null, key.regIndex()))); 
 	    // derivation information
