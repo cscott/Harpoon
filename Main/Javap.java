@@ -21,7 +21,7 @@ import java.io.InputStream;
  * GJ signatures.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Javap.java,v 1.11 2003-08-28 19:27:15 cananian Exp $
+ * @version $Id: Javap.java,v 1.12 2003-08-28 21:30:49 cananian Exp $
  */
 public abstract class Javap /*extends harpoon.IR.Registration*/ {
     /** Print out disassembled code. */
@@ -92,12 +92,12 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 		 "   -help      Print this usage message\n"+
 		 /*
 		 "   -l         Print line number and local variable tables\n"+
+		 */
 		 "   -public    Show only public classes and members\n"+
 		 "   -protected Show protected/public classes and members\n"+
 		 "   -package   Show package/protected/public classes\n"+
 		 "              and members (default)\n"+
 		 "   -private   Show all classes and members\n"+
-		 */
 		 "   -s         Print internal type signatures\n"+
 		 /*
                  "   -verbose   Print stack size, number of locals and args\n"+
@@ -173,6 +173,7 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    FieldInfo fi = raw.fields[i];
 	    AttributeSignature fis = (AttributeSignature)
 		findAttribute(fi.attributes, "Signature");
+	    if (!access_flags_okay(fi.access_flags)) continue; // skip
 	    if (!SIGNATURES) System.out.print("    "); // indent.
 	    // access flags
 	    System.out.print(modString(fi.access_flags, false));
@@ -197,6 +198,7 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    MethodInfo mi = raw.methods[i];
 	    AttributeSignature mis = (AttributeSignature)
 		findAttribute(mi.attributes, "Signature");
+	    if (!access_flags_okay(mi.access_flags)) continue; // skip
 	    // assign descriptor.
 	    String md;
 	    if (mis!=null) md = mis.signature();
@@ -283,6 +285,16 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	return null;
     }
 
+    static boolean access_flags_okay(AccessFlags af) {
+	if (PUBLIC_ONLY)
+	    return af.isPublic();
+	else if (PUBLIC_PROTECTED_ONLY)
+	    return af.isPublic() || af.isProtected();
+	else if (PUBLIC_PROTECTED_PACKAGE_PRIVATE)
+	    return true;
+	else assert PUBLIC_PROTECTED_PACKAGE_ONLY;
+	return !af.isPrivate();
+    }
     static String modString(AccessFlags af, boolean isClass) {
 	StringBuffer sb = new StringBuffer();
 	if (af.isPrivate()) sb.append("private ");
