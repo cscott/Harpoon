@@ -24,14 +24,14 @@ import harpoon.IR.Quads.HANDLER.ProtectedSet;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.AbstractMapEntry;
-import harpoon.Util.FilterIterator;
-import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -47,7 +47,7 @@ import java.util.Stack;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.12 1999-02-23 22:54:33 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.13 1999-02-24 02:31:27 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -68,8 +68,6 @@ final class Translate { // not public.
 	/** Mapping from <code>InMerge</code>s to corresponding 
 	 *  <code>PHI</code>s. */
 	final MergeMap mergeMap;
-	/** Keep track of JSRs and RETs during translation. */
-	final ContInfo contInfo;
 	/** Liveness information from bytecode. */
 	final Liveness liveness;
 
@@ -89,7 +87,6 @@ final class Translate { // not public.
 	    this.tryBlocks = tryBlocks;
 	    this.header = header;
 	    this.mergeMap = new MergeMap();
-	    this.contInfo = new ContInfo();
 	    this.liveness = liveness;
 	}	
 	/** Get an "extra" <code>Temp</code>. */
@@ -103,18 +100,30 @@ final class Translate { // not public.
     /** Auxillary class to implement mergeMap. */
     static final private class MergeMap {
 	private final Map h = new HashMap();
-	private Object[] tuple(InMerge m)
-	{ return (Object[])h.get(m); }
-	PHI get(InMerge m)
-	{ Object[] oa=tuple(m); return (oa==null)?null:(PHI)oa[0]; }
-	int arity(InMerge m)
-	{ return ((Integer)(tuple(m)[1])).intValue(); }
-	void put(InMerge m, PHI p, int arity)
-	{ h.put(m, new Object[] { p, new Integer(arity) });}
+	private List getList(InMerge m, Map calls) {
+	    return (List) h.get(Arrays.asList(new Object[] {m, calls }));
+	}
+
+	boolean contains(InMerge m, Map calls) {
+	    return (getList(m, calls)!=null);
+	}
+	PHI get(InMerge m, Map calls) {
+	    return (PHI) getList(m, calls).get(0);
+	}
+	int arity(InMerge m, Map calls) {
+	    return ((Integer) getList(m, calls).get(1)).intValue();
+	}
+	void put(InMerge m, Map calls, PHI p, int arity) {
+	    h.put(Arrays.asList(new Object[] { m, calls }),
+		  Arrays.asList(new Object[] { p, new Integer(arity) }));
+	}
 	void fixupPhis(State s) { // eliminate null limbs
-	    for (Iterator i=h.keySet().iterator(); i.hasNext(); ) {
-		InMerge in = (InMerge) i.next();
-		PHI phi = get(in); int arity = arity(in);
+	    for (Iterator i=h.entrySet().iterator(); i.hasNext(); ) {
+		Map.Entry me = (Map.Entry) i.next();
+		InMerge in= (InMerge) ((List)me.getKey()).get(0);
+		PHI phi   = (PHI)     ((List)me.getValue()).get(0);
+		int arity =((Integer) ((List)me.getValue()).get(1)).intValue();
+
 		while (arity < phi.arity())
 		    phi = phi.shrink(phi.arity()-1); // null branch.
 		// might as well kill one-input phi functions while we're at it
@@ -123,91 +132,6 @@ final class Translate { // not public.
 				 phi.next(0), phi.nextEdge(0).which_pred());
 		else s.recordHandler(in, phi, phi);
 		    
-	    }
-	}
-    }
-    /** Static state tracking JSR/RETs */
-    static final private class ContInfo {
-	/*
-	target->list of <jsr, int>
-	list of <ret, target> (translate last)
-        target->ret state->list of ret
-	reach jsr, assign number, make goto
-         if ret(s) for target is known, translate from jsr.next
-        reach ret, translate from jsr.next for all current jsr to target.
-	*/
-
-	final private List t2j = new ArrayList(2);
-	/** Record and number <JSR, target> pairs. */
-	final int recordJSR(Instr jsr, Instr target) {
-	    t2j.add(new Instr[] { jsr, target } );
-	    return t2j.size()-1;
-	}
-	final private List t2r = new ArrayList(2);
-	/** Record RET, associated target, and temp. */
-	final void recordRET(TransState ret, Instr target, Temp t) {
-	    t2r.add(new Object[] { ret, target, t } );
-	}
-	final private Map r2c = new HashMap(2);
-	/** Record RET target for a given jsr. */
-	final void recordNOP(TransState ret, Instr jsr, NOP continuation) {
-	    r2c.put(new Tuple(new Object[]{ret,jsr}), continuation);
-	}
-	/** Return the NOP continuation for a given <jsr,ret> pair. */
-	private NOP cont(TransState ret, Instr jsr) {
-	    return (NOP) r2c.get(new Tuple(new Object[]{ret,jsr}));
-	}
-	/** Return all RETs associated with a given target. */
-	Iterator ret4target(final Instr target) {
-	    return new FilterIterator(t2r.iterator(), filter(target));
-	}
-	/** Return all JSRs associated with a given target. */
-	Iterator jsr4target(final Instr target) {
-	    return new FilterIterator(t2j.iterator(), filter(target));
-	}
-	/** Make an enumerator filter on target. */
-	private FilterIterator.Filter filter(final Instr target) {
-	    return new FilterIterator.Filter() {
-		public boolean isElement(Object o)
-		{ return (((Object[])o)[1]==target); }
-		public Object  map(Object o)
-		{ return ((Object[])o)[0]; }
-	    };
-	}
-
-	/** fixup RET instructions after all JSRs have been discovered. */
-	void fixupRets() {
-	    for (int i=0; i<t2r.size(); i++) { // for all RETs
-		Object[] oa = (Object[]) t2r.get(i);
-		TransState ret = (TransState) oa[0];
-		Instr target   = (Instr) oa[1];
-		Temp t         = (Temp) oa[2];
-
-		// for all jsrs to this target, record key val and continuation
-		List keys = new ArrayList(2);
-		List conts = new ArrayList(2);
-		for (int j=0; j<t2j.size(); j++) {
-		    Instr[] ia = (Instr[]) t2j.get(j);
-		    if (ia[1]!=target) continue;
-		    Instr jsr = ia[0];
-		    
-		    keys.add(new Integer(j));
-		    conts.add(cont(ret,jsr));
-		}
-		// then make & link switch.
-		int k[] = new int[keys.size()-1]; // last key is default.
-		for (int j=0; j<k.length; j++)
-		    k[j] = ((Integer)keys.get(j)).intValue();
-		Quad q = new SWITCH(ret.initialState.qf(), ret.in, t, k,
-				    new Temp[0]);
-		Quad.addEdge(ret.header, ret.which_succ, q, 0);
-		for (int j=0; j<conts.size(); j++) {
-		    // link cont to SWITCH, skipping NOP placeholder.
-		    Edge e = ((NOP)conts.get(j)).nextEdge(0);
-		    Quad.addEdge(q, j, (Quad)e.to(), e.which_pred());
-		}
-		// add SWITCH to handler scope.
-		ret.initialState.recordHandler(ret.in, q, q);
 	    }
 	}
     }
@@ -246,6 +170,8 @@ final class Translate { // not public.
 	    if (js.next == nnxt) return js;
 	    return new JSRStack(js.index, js.target, nnxt);
 	}
+	/** human-readable string for debugging. */
+	public String toString() { return asMap(this).toString(); }
 	/** Collection view of target <code>Instr</code>s in stack. */
 	static Map asMap(final JSRStack js) {
 	    return new AbstractMap () {
@@ -308,11 +234,16 @@ final class Translate { // not public.
 	private final JSRStack js;
 	/** JSRStack to track jsr targets in local variables. */
 	private final JSRStack jlv;
+	/** Keep track of JSR call stack during translation. */
+	private final Map calls; // unmodifiable.
+
 	/** private constructor */
 	private State(StaticState ss, int stackSize,
-		      LongStack ls, JSRStack js, JSRStack jlv) {
+		      LongStack ls, JSRStack js, JSRStack jlv,
+		      Map calls) {
 	    this.ss = ss; this.stackSize = stackSize;
 	    this.ls = ls; this.js = js; this.jlv = jlv;
+	    this.calls = calls;
 	}
 	/** public constructor */
 	State(QuadFactory qf, int max_stack, int max_locals, 
@@ -323,6 +254,7 @@ final class Translate { // not public.
 	    this.ls = null;
 	    this.js = null;
 	    this.jlv= null;
+	    this.calls = Collections.unmodifiableMap(new HashMap());
 	}
 
 	State pop()       { return pop(1); }
@@ -331,17 +263,19 @@ final class Translate { // not public.
 	    while (lsp!=null && lsp.index >= stackSize-n) lsp=lsp.next;
 	    JSRStack jsp = js;
 	    while (jsp!=null && jsp.index >= stackSize-n) jsp=jsp.next;
-	    return new State(ss, stackSize-n, lsp, jsp, jlv);
+	    return new State(ss, stackSize-n, lsp, jsp, jlv, calls);
 	}
 	State push()      { return push(1); }
-	State push(int n) { return new State(ss, stackSize+n, ls, js, jlv); }
+	State push(int n) {
+	    return new State(ss, stackSize+n, ls, js, jlv, calls);
+	}
 	State pushLong()  {
 	    return new State(ss, stackSize+2,
-			     new LongStack(stackSize+1, ls), js, jlv);
+			     new LongStack(stackSize+1, ls), js, jlv, calls);
 	}
-	State pushRetAddr(Instr target) {
+	private State pushRetAddr(Instr target) { // called from enterJSR
 	    return new State(ss, stackSize+1, ls,
-			     new JSRStack(stackSize, target, js), jlv);
+			     new JSRStack(stackSize, target, js), jlv, calls);
 	}
 	
 	Temp stack(int n) { return ss.stack[stackSize-n-1]; }
@@ -358,14 +292,15 @@ final class Translate { // not public.
 	/** mark a local variable as *not* containing a return address. */
 	State clearLV(int lvIndex) {
 	    JSRStack jlvp = JSRStack.remove(jlv, lvIndex);
-	    return (jlv==jlvp)?this:new State(ss, stackSize, ls, js, jlvp);
+	    return (jlv==jlvp) ? this :
+		new State(ss, stackSize, ls, js, jlvp, calls);
 	}
 	/** track a return address going from local variables to the stack */
 	State trackLV2S(int lvFrom, int stkTo) {
 	    if (!isRetAddrLV(lvFrom)) return this;
 	    JSRStack jsp=JSRStack.insert(js, stackSize-stkTo-1,
 					 getJSRtargetLV(lvFrom));
-	    return new State(ss, stackSize, ls, jsp, jlv);
+	    return new State(ss, stackSize, ls, jsp, jlv, calls);
 	}
 	/** track a return address going from the stack to a local variable */
 	State trackS2LV(int stkFrom, int lvTo) {
@@ -373,14 +308,15 @@ final class Translate { // not public.
 	    JSRStack jlvp = JSRStack.remove(jlv, lvTo);
 	    if (isRetAddrS(stkFrom))
 		jlvp = JSRStack.insert(jlv, lvTo, getJSRtargetS(stkFrom));
-	    return (jlv!=jlvp)?new State(ss, stackSize, ls, js, jlvp):this;
+	    return (jlv==jlvp) ? this :
+		new State(ss, stackSize, ls, js, jlvp, calls);
 	}
 	/** track a return address going from the stack to the stack. */
 	State trackS2S(State old, int oldFrom, int newTo) {
 	    if (!old.isRetAddrS(oldFrom)) return this;
 	    JSRStack jsp = JSRStack.insert(js, stackSize-newTo-1,
 					   old.getJSRtargetS(oldFrom));
-	    return new State(ss, stackSize, ls, jsp, jlv);
+	    return new State(ss, stackSize, ls, jsp, jlv, calls);
 	}
 	boolean isRetAddrS(int n)
 	{ return JSRStack.getTarget(js, stackSize-n-1)!=null; }
@@ -399,7 +335,6 @@ final class Translate { // not public.
 	FOOTER footer() { return (FOOTER) ss.header.next(0); }
 
 	MergeMap mergeMap() { return ss.mergeMap; }
-	ContInfo contInfo() { return ss.contInfo; }
 
 	Iterator targets() {
 	    final Set s = new HashSet();
@@ -412,7 +347,7 @@ final class Translate { // not public.
 		s.add(p.target);
 	}
 
-	State enterCatch() { return new State(ss, 1, null, null, null); }
+	State enterCatch() { return new State(ss, 1, null, null, jlv, calls); }
 	HandlerSet handlers(Instr orig) {
 	    HandlerSet hs = null;
 	    for (int i=0; i<ss.tryBlocks.length; i++)
@@ -427,7 +362,8 @@ final class Translate { // not public.
 		recordHandler(new HashSet(), start, end, 
 			      (TransProtection) hs.h.protectedSet);
 	}
-	private void recordHandler(Set done, Quad start, Quad end, TransProtection s) {
+	private void recordHandler(Set done, Quad start, Quad end,
+				   TransProtection s) {
 	    s.add(start); done.add(start);
 	    if (start!=end) {
 		Quad next[] = start.next();
@@ -435,6 +371,41 @@ final class Translate { // not public.
 		    if (!done.contains(next[i]))
 			recordHandler(done, next[i], end, s);
 	    }
+	}
+	/** update state when we reach a phi (remove dead return addresses) */
+	State purgeDead(Instr phi) {
+	    Map lv_targets = new HashMap(JSRStack.asMap(jlv));
+	    // remove any targets that are not live at this phi.
+	    lv_targets.keySet().retainAll(ss.liveness.liveSet(phi));
+	    // add in targets live in the stack.
+	    Set targets = new HashSet(JSRStack.asMap(js).values());
+	    targets.addAll(lv_targets.values());
+	    // now retain only those entries in the call stack
+	    // corresponding to live targets.
+	    Map ncalls = new HashMap(calls);
+	    ncalls.keySet().retainAll(targets);
+	    // debugging
+	    if (!calls.equals(ncalls))
+		System.out.println("Purging at #"+phi.getID()+":"+phi+": "+
+				   calls+"->"+ncalls);
+	    // for efficiency, don't create a new state if maps are identical.
+	    return (calls.equals(ncalls)) ? this :
+		new State(ss, stackSize, ls, js, jlv,
+			  Collections.unmodifiableMap(ncalls));
+	}
+	/** return (unmodifiable) call state map. */
+	Map calls() { return calls; }
+	/** create a new state when we enter a subroutine. */
+	State enterJSR(InCti jsr, Instr target) {
+	    Util.assert(!calls.containsKey(target)); // no recursiveness.
+	    Map ncalls = new HashMap(calls);
+	    ncalls.put(target, jsr);
+	    // debugging.
+	    System.out.println("Entering jsr from #"+jsr.getID()+":"+jsr+": "+
+			       calls+"->"+ncalls);
+	    return new State(ss, stackSize, ls, js, jlv,
+			     Collections.unmodifiableMap(ncalls))
+		.pushRetAddr(target);
 	}
     }
 
@@ -623,7 +594,9 @@ final class Translate { // not public.
     }
 
     /** Translate blocks starting with the given <code>TransState</code>s.<p>
-     *  Start at <code>ts.in</code> using <code>ts.initialState</code>. */
+     *  Start at <code>ts.in</code> using <code>ts.initialState</code>.<p>
+     * <b>MUST begin with ts0[0], and not move on to ts0[1] until all code
+     * reachable from ts0[0] has been translated.</b>. */
     static final void trans(TransState ts0[]) {
 	Stack todo = new Stack();
 	for (int i=ts0.length-1; i>=0; i--)
@@ -636,10 +609,7 @@ final class Translate { // not public.
 	    for (int i=nts.length-1; i>=0; i--)
 		todo.push(nts[i]);
 	}
-	// can't translate RETs until we know all possible JSRs to them.
-	ts0[0].initialState.contInfo().fixupRets();
-	// when a JSR never returns, it leaves null edges into PHIs
-	//  corresponding to the execution path following the JSR.
+	// JSR/RETs leave null edges into PHIs
 	ts0[0].initialState.mergeMap().fixupPhis(ts0[0].initialState);
 	// done.
 	return;
@@ -1537,26 +1507,36 @@ final class Translate { // not public.
     }
 
     /** 
-     * Translate a single <Code>InMerge</code>.
+     * Translate a single <code>InMerge</code>.
      */
     static final TransState[] transInMerge(TransState ts) {
-	State s = ts.initialState; // abbreviation.
+	State s0 = ts.initialState;
 	InMerge in = (InMerge) ts.in;
-	QuadFactory qf = s.qf();
+	QuadFactory qf = s0.qf();
 	TransState[] r;
 
-	PHI phi = s.mergeMap().get(in);
+	// purge dead return addresses.
+	State s = s0.purgeDead(in);
+	Map calls = s.calls();
+
+	PHI phi;
 	int arity = 0;
-	if (phi == null) { // no previous PHI
+	if (!s.mergeMap().contains(in, calls)) { // no previous PHI
 	    phi = new PHI(qf, in, new Temp[0], in.arity());
 	    r = new TransState[]{new TransState(s, in.next(0), phi, 0)};
 	    s.recordHandler(in, phi, phi);
 	} else {
-	    arity = s.mergeMap().arity(in);
+	    phi = s.mergeMap().get(in, calls);
+	    arity = s.mergeMap().arity(in, calls);
 	    r = new TransState[0];
 	}
-	s.mergeMap().put(in, phi, arity+1);
+	// code duplication while translating JSRs can cause more than the
+	// expected number of entries into a phi.
+	if (arity == phi.arity()) 
+	    phi = phi.grow(new Temp[0], arity); // increase capacity by 1.
+
 	Quad.addEdge(ts.header, ts.which_succ, phi, arity);
+	s.mergeMap().put(in, calls, phi, arity+1);
 	return r;
     }
 
@@ -1732,47 +1712,31 @@ final class Translate { // not public.
 	case Op.JSR:
 	case Op.JSR_W:
 	    {
-	    // reach jsr: assign number, make goto.
-	    //   for each known ret for target, translate from jsr.next(0).
+	    // futz with the state when we reach the JSR, and continue
+	    // at the merge. The new call state will ensure that the 
+	    // subroutine isn't merged with code outside the subroutine.
 	    Instr target = in.next(1);
-	    State ns = s.pushRetAddr(target);
-	    ContInfo ci = s.contInfo();
-	    // encode the return address as an integer constant.
-	    int i = ci.recordJSR(in, target);
-	    q = new CONST(qf, in, ns.stack(0), new Integer(i), HClass.Int);
-	    // make transstates.
-	    List v = new ArrayList(2);
+	    State ns = s.enterJSR(in, target);
+	    // put a null in the stack location where the return address
+	    // usually goes.
+	    q = new CONST(qf, in, ns.stack(0), null, HClass.Void);
 	    // translate starting at jsr target.
-	    v.add(new TransState(ns, target, q, 0));
-	    // translate starting at return address.
-	    for (Iterator it=ci.ret4target(target); it.hasNext(); ) {
-		TransState ts0 = (TransState) it.next();
-		NOP qq = new NOP(qf, in); // temporary header.
-		v.add(new TransState(ts0.initialState,in.next(0),qq,0));
-		ci.recordNOP(ts0, in, qq);
-	    }
-	    r = (TransState[]) v.toArray(new TransState[v.size()]);
+	    r = new TransState[] { new TransState(ns, target, q, 0) };
 	    break;
 	    }
 	case Op.RET:
 	    {
-	    // in theory, only one possible subroutine. Find it.
+	    // go back to the caller, purging now-dead ret-addr.
 	    OpLocalVariable opd = ((InRet)in).getOperand();
 	    Instr target = s.getJSRtargetLV(opd.getIndex());
 	    Util.assert(target!=null, "Unable to determine RET subroutine.");
-	    // record ret, then translate from jsr.next for all jsrs to target
-	    ContInfo ci = s.contInfo();
-	    ci.recordRET(ts, target, s.lv(opd.getIndex()));
-	    // make transstates for previously unprocessed jsr returns.
-	    List v = new ArrayList(2);
-	    for (Iterator it=ci.jsr4target(target); it.hasNext(); ) {
-		Instr jsr = (Instr) it.next();
-		NOP qq = new NOP(qf, in); // temporary header.
-		v.add(new TransState(ts.initialState,jsr.next(0),qq,0));
-		ci.recordNOP(ts, jsr, qq);
-	    }
-	    q = null; // defer translation.
-	    r = (TransState[]) v.toArray(new TransState[v.size()]);
+	    Instr jsr = (Instr) s.calls().get(target);
+	    Instr nxt = jsr.next(0);
+	    State ns = s.purgeDead(nxt);
+	    q = null; // no quad equivalent.
+	    // translate starting from instruction after jsr.
+	    r = new TransState[] { new TransState(ns, nxt,
+						  ts.header, ts.which_succ) };
 	    break;
 	    }
 	default:
