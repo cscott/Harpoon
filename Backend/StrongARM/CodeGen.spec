@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.142 2000-02-19 10:36:32 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.143 2000-02-19 10:49:43 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1222,6 +1222,8 @@ BINOP<p,i>(DIV, j, k) = i %{
 
 BINOP<l>(DIV, j, k) = i %{
 
+    declare( r0, HClass.Void ); declare( r1, HClass.Void );
+    declare( r2, HClass.Void ); declare( r3, HClass.Void );
     emit( ROOT, "mov `d0, `s0l", r2, k );
     emit( ROOT, "mov `d0, `s0h", r3, k );
     emit( ROOT, "mov `d0, `s0l", r0, j );
@@ -1237,6 +1239,7 @@ BINOP<l>(DIV, j, k) = i %{
 
 BINOP<f>(DIV, j, k) = i %{
 
+    declare( r0, HClass.Float ); declare( r1, HClass.Float );
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
     declareCALL();
@@ -1248,6 +1251,8 @@ BINOP<f>(DIV, j, k) = i %{
 
 BINOP<d>(DIV, j, k) = i %{
 
+    declare( r0, HClass.Void ); declare( r1, HClass.Void );
+    declare( r2, HClass.Void ); declare( r3, HClass.Void );
     emit( ROOT, "mov `d0, `s0l", r2, k );
     emit( ROOT, "mov `d0, `s0h", r3, k );
     emit( ROOT, "mov `d0, `s0l", r0, j );
@@ -1277,6 +1282,8 @@ BINOP<i>(REM, j, k) = i %{
 
 BINOP<l>(REM, j, k) = i %{
     // ___mod has been verified to be consistent w/ the def of % in the JLS
+    declare( r0, HClass.Void ); declare( r1, HClass.Void );
+    declare( r2, HClass.Void ); declare( r3, HClass.Void );
     emit( ROOT, "mov `d0, `s0l", r2, k );
     emit( ROOT, "mov `d0, `s0h", r3, k );
     emit( ROOT, "mov `d0, `s0l", r0, j );
