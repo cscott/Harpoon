@@ -43,7 +43,7 @@ public class StructureTypeDescriptor extends TypeDescriptor {
     public Expr getOffsetExpr(FieldDescriptor field) {
 	/* Fix sizeof calculations */
 	if ((field==null)&&(subtype!=null))
-	    return subtype.getOFfsetExpr(field);
+	    return subtype.getSizeExpr();
 
 	boolean aligned=true;
         Expr size = new IntegerLiteralExpr(0);
