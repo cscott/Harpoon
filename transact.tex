@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.14 2000-09-28 23:37:24 cananian Exp $
+% $Id: transact.tex,v 1.15 2000-09-29 17:06:19 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,7 +8,7 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.14 $ $}
+\date{\today \\ $ $Revision: 1.15 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
@@ -190,6 +190,8 @@ $\text{Read}(\code{struct oobj *} o, \code{int } n)$ =
     \STATE \COMMENT{this store should be atomic (but no one will read it)}
     \STATE $v\ptr\code{next} \gets \code{null}$
            \COMMENT{allow gc of other transactions}
+    \STATE \COMMENT{XXX: should check v\ptr\code{next}\ptr\code{transid}
+                    for identical transid, in which case we'd need to prune.}
     \BREAK \textbf{loop}
    \ENDCASE
    \CASE{\code{ABORTED}}
@@ -224,8 +226,12 @@ $\text{Write}(\code{struct oobj *} o, \code{int } n,
 \IF{$o\ptr\code{field}[n] = \code{FLAG\_VALUE}$}
   \STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
   \WHILE{$\text{AbortTransaction}(v\ptr\code{transid}) \neq \code{COMMITTED}$}
-    \STATE $v \gets v\ptr\code{next}$
+    \STATE \COMMENT{prune list for the sake of writes w/o intervening reads}
+    \STATE \COMMENT{XXX: potential race here --- v could be already removed}
+    \STATE remove $v$ from version list atomically
+    \STATE $v \gets v\text{'s replacement}$
   \ENDWHILE
+  \STATE $v\ptr\code{next} \gets \code{null}$ \COMMENT{atomic}
 \ELSIF{$x = \code{FLAG\_VALUE}$}
   \STATE \COMMENT{XXX: define CreateNewVersion (watch those races)}
   \STATE $v = \text{CreateNewVersion}(o, o, o\ptr\code{claz}\ptr\code{size})$
@@ -283,8 +289,32 @@ $\text{StateP}(\code{struct commitrec *} c)$ =
   \STATE $c \gets c \ptr \code{parent}$
 \ENDLOOP*
 \end{myalgorithmic}
-\caption{Algorithm for determining transaction status.}
+\caption{Simple algorithm for determining transaction status.}
 \label{fig:statep}
+\end{figure}
+
+\begin{figure}
+$\text{StateP}'(\code{struct commitrec **} c_p)$ =
+\begin{myalgorithmic}
+\STATE $c \gets \code{*}c_p$
+\STATE $s \gets \code{COMMITTED}$
+\STATE $l \gets \code{false}$
+\WHILE{$c \neq \code{null}$}
+  \STATE $s \gets c\ptr\code{state}$ \COMMENT{atomic}
+  \IF{$s \neq \code{COMMITTED}$}
+    \BREAK
+  \ENDIF
+  \STATE $c \gets c \ptr \code{parent}$
+  \STATE $l \gets \code{true}$
+\ENDWHILE
+\IF[$l$ indicates a change has been made]{$l$}
+  \STATE $\code{*}c_p \gets c$ \COMMENT{atomic}
+\ENDIF
+\RETURN $\tuple{s,l}$
+\end{myalgorithmic}
+\caption{Improved algorithm for determining transaction status ---
+         does pruning.}
+\label{fig:statepprime}
 \end{figure}
 
 \begin{figure}
@@ -299,9 +329,12 @@ $\text{AbortTransaction}(\code{struct commitrec *} c)$ =
     \RETURN $s$
   \ENDIF
   \STATE $\code{compare\_and\_swap}(\&c\ptr\code{state}, s, \code{ABORTED})$
+         \label{line:abort}
 \ENDLOOP*
 \end{myalgorithmic}
-\caption{Algorithm for (possibly) aborting a transaction.}
+\caption{Algorithm for (possibly) aborting a transaction.
+         Change the constant \code{ABORTED} in line \ref{line:abort}
+         to \code{COMMITTED} to obtain the commit algorithm.}
 \label{fig:aborttrans}
 \end{figure}
 
