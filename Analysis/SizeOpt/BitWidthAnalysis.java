@@ -3,15 +3,16 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.SizeOpt;
 
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Maps.ConstMap;
 import harpoon.Analysis.Maps.ExactTypeMap;
 import harpoon.Analysis.Maps.ExecMap;
-import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
@@ -39,6 +40,7 @@ import harpoon.IR.Quads.OperVisitor;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Qop;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.RETURN;
@@ -51,12 +53,18 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
-import harpoon.Util.Worklist;
 import harpoon.Util.WorkSet;
+import harpoon.Util.Worklist;
+import harpoon.Util.Collections.AggregateSetFactory;
+import harpoon.Util.Collections.Factories;
+import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.MultiMap;
 
-import java.util.Enumeration;
+import java.lang.reflect.Modifier;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 /**
@@ -67,34 +75,41 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.1 2001-07-16 17:56:47 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.2 2001-07-17 16:51:38 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     final Linker linker;
-    UseDefMap udm;
+    final HCodeFactory hcf;
+    final ClassHierarchy ch;
 
     /** Creates a <code>BitWidthAnalysis</code>. */
-    public BitWidthAnalysis(HCode hc, UseDefMap usedef) {
-	Util.assert(hc.getName().equals(QuadSSI.codename));
-	this.linker = hc.getMethod().getDeclaringClass().getLinker();
-	this.udm = usedef;
-	analyze(hc);
-    }
-    /** Creates a <code>BitWidthAnalysis</code>, and uses
-     *  <code>UseDef</code> for the <code>UseDefMap</code>. */
-    public BitWidthAnalysis(HCode hc) {
-	this(hc, new harpoon.Analysis.UseDef());
+    public BitWidthAnalysis(Linker linker, HCodeFactory hcf,
+			    ClassHierarchy ch, HMethod main) {
+	Util.assert(hcf.getCodeName().equals(QuadSSI.codename));
+	this.linker = linker;
+	this.hcf = hcf;
+	this.ch = ch;
+	analyze(main);
     }
 
     /*-----------------------------*/
     // Class state.
     /** Set of all executable edges. */
-    Set Ee = new HashSet();
+    final Set Ee = new HashSet();
     /** Set of all executable quads. */
-    Set Eq = new HashSet();
+    final Set Eq = new HashSet();
     /** Mapping from <code>Temp</code>s to lattice values. */
-    Map V = new HashMap();
+    final Map V = new HashMap();
+    /** Mapping from <code>HField</code>s to lattice values. */
+    final Map Vf = new HashMap();
+    /** Mapping from <code>HMethod</code> x parameter number to lattice val. */
+    final Map Vp = new HashMap();
+    /** Mapping from <code>Temp</code>s to <code>Quad</code>s which use them.*/
+    final MultiMap useMap = new GenericMultiMap(Factories.arrayListFactory);
+    /** Mapping from <code>HField</code>s to <code>Quad</code>s which read
+	them. */
+    final MultiMap fieldMap = new GenericMultiMap(new AggregateSetFactory());
 
     /*---------------------------*/
     // public information accessor methods.
@@ -166,27 +181,41 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	return bw.minusWidth();
     }
 
+    /* Temp-to-uses code. */
+    private void scanone(HMethod hm) {
+	HCode hc = hcf.convert(hm);
+	if (hc==null) return; // abstract method.
+	for (Iterator it=hc.getElementsI(); it.hasNext(); ) {
+	    Quad q = (Quad) it.next();
+	    // add entries to useMap.
+	    Temp[] used = q.use();
+	    for (int i=0; i<used.length; i++)
+		useMap.add(used[i], q);
+	}
+    }
+
     /*---------------------------*/
     // Analysis code.
 
     /** Main analysis method. */
-    private void analyze(HCode hc) {
+    private void analyze(HMethod main) {
 	// Initialize worklists.
 	Worklist Wv = new WorkSet(); // variable worklist.
 	Worklist Wq = new WorkSet(); // block worklist.
+	Worklist Wf = new WorkSet(); // field worklist.
 
 	// Make instance of visitor class.
-	SCCVisitor visitor = new SCCVisitor(hc, Wv, Wq);
+	SCCVisitor visitor = new SCCVisitor(Wv, Wq, Wf);
 
 	// put the root entry on the worklist and mark it executable.
-	HCodeElement root = hc.getRootElement();
+	HCodeElement root = hcf.convert(main).getRootElement();
 	Util.assert(root instanceof Quad,
 		    "SCC analysis works only on QuadSSI form.");
 	Wq.push(root);
 	Eq.add(root);
 
-	// Iterate.
-	while (! (Wq.isEmpty() && Wv.isEmpty()) ) { // until both are empty.
+	// Iterate until worklists are empty.
+	while (! (Wq.isEmpty() && Wv.isEmpty() && Wf.isEmpty()) ) {
 
 	    if (!Wq.isEmpty()) { // grab statement from We if we can.
 		Quad q = (Quad) Wq.pull();
@@ -199,12 +228,21 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		q.accept(visitor);
 	    } 
 
-	    if (!Wv.isEmpty()) { // grab temp from Wv is possible.
+	    if (!Wv.isEmpty()) { // grab temp from Wv if possible.
 		Temp t = (Temp) Wv.pull();
 		// for every use of t...
-		for (Enumeration e=udm.useMapE(hc, t); e.hasMoreElements(); )
+		for (Iterator it=useMap.getValues(t).iterator(); it.hasNext();)
 		    // check conditions 3-8
-		    ((Quad) e.nextElement()).accept(visitor);
+		    ((Quad) it.next()).accept(visitor);
+	    }
+
+	    if (!Wf.isEmpty()) { // grab field from Wf if possible.
+		HField hf = (HField) Wf.pull();
+		// for every read of hf...
+		for (Iterator it=fieldMap.getValues(hf).iterator();
+		     it.hasNext(); )
+		    // check conditions 3-8
+		    ((Quad) it.next()).accept(visitor);
 	    }
 	} // end while loop.
     } // end analysis.
@@ -222,7 +260,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     }
     /** Raise element t to a in V, adding t to Wv if necessary. */
     void raiseV(Map V, Worklist Wv, Temp t, LatticeVal a) {
-	LatticeVal old = (LatticeVal) V.get(t);
+	LatticeVal old = get( t );
 	if (corruptor!=null) a=corruptor.corrupt(a); // support incrementalism
 	// only allow raising value in lattice.
 	if (old != null && old.equals(a)) return;
@@ -230,22 +268,59 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	V.put(t, a);
 	Wv.push(t);
     }
+    /** Raise field hf to a in Vf, adding reads of hf to Wf if necessary. */
+    void raiseV(Map V, Worklist Wf, HField hf, LatticeVal a) {
+	LatticeVal old = get( hf );
+	if (corruptor!=null) a=corruptor.corrupt(a); // support incrementalism
+	// only allow raising value in lattice.
+	if (old != null && old.equals(a)) return;
+	if (old != null && !a.higherThan(old)) return;
+	Vf.put(hf, a);
+	Wf.push(hf);
+    }
+
+    // utility functions.
+    LatticeVal get(Temp t) { return (LatticeVal) V.get(t); }
+    LatticeVal get(HField hf) {
+	// if value in cache, use it.
+	if (Vf.containsKey(hf)) return (LatticeVal) Vf.get(hf);
+	HClass type = toInternal(hf.getType());
+	// deal with constant fields.
+	if (hf.isConstant()) {
+	    Object val = hf.getConstant();
+	    if (type == linker.forName("java.lang.String"))
+		return new xStringConstant(type, val);
+	    else if (type == HClass.Float || type == HClass.Double )
+		return new xFloatConstant(type, val);
+	    else if (type == HClass.Int || type == HClass.Long)
+		return new xIntConstant(type,((Number)val).longValue() );
+	    else throw new Error("Unknown constant field type: "+type);
+	    }
+	// final fields will be explicitly initialized.
+	if (Modifier.isFinal(hf.getModifiers()))
+	    return null; // bottom
+	// else assume that field is set to zero upon object creation.
+	if (!type.isPrimitive()) return new xNullConstant();
+	if (type==HClass.Float)
+	    return new xFloatConstant(type, new Float(0.0));
+	if (type == HClass.Double)
+	    return new xFloatConstant(type, new Double(0.0));
+	if (type == HClass.Int || type==HClass.Long)
+	    return new xIntConstant(type, 0 );
+	else throw new Error("Unknown field type: "+type);
+    }
+
     /*------------------------------------------------------------*/
     // VISITOR CLASS (the real guts of the routine)
     class SCCVisitor extends QuadVisitor {
-	// local reference to HCode.
-	HCode hc;
 	// local references to worklists.
-	Worklist Wv, Wq;
+	final Worklist Wv, Wq, Wf;
 	// give us an OperVisitor class to go along with this.
-	OperVisitor opVisitor = new SCCOpVisitor();
+	final OperVisitor opVisitor = new SCCOpVisitor();
 
-	SCCVisitor(HCode hc, Worklist Wv, Worklist Wq) {
-	    this.hc = hc;  this.Wv = Wv;  this.Wq = Wq;
+	SCCVisitor(Worklist Wv, Worklist Wq, Worklist Wf) {
+	    this.Wv = Wv;  this.Wq = Wq; this.Wf = Wf;
 	}
-
-	// utility functions.
-	LatticeVal get(Temp t) { return (LatticeVal) V.get(t); }
 
 	void handleSigmas(CJMP q, xInstanceofResult io) {
 	    // for every sigma source:
@@ -406,6 +481,15 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	public void visit(ASET q) { /* do nothing. */ }
 	public void visit(CALL q) {
+	    // find callable methods.
+	    //  raise Vparam of all callable methods.
+	    //  analysis of callable method RETURN/THROW will in turn
+	    //   raiseE on appropriate outgoing edge and raiseV on
+	    //   retval/retex -- don't forget sigmas when raiseE'ing.
+	    //  if *native* method in callable methods set, then
+	    //   must use conservative retval, edge assumptions,
+	    //   (which are the ones below)
+	    // XXXXXXXXXXXXXXXXXXXXXXXX
 	    if (q.retval() != null) {
 		// in the bytecode world, everything's an int.
 		HClass ty = q.method().getReturnType();
@@ -530,18 +614,10 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	public void visit(FOOTER q) { /* do nothing. */ }
 	public void visit(GET q) {
-	    HClass type = toInternal(q.field().getType());
-	    if (q.field().isConstant()) {
-		Object val = q.field().getConstant();
-		if (type == linker.forName("java.lang.String"))
-		    raiseV(V, Wv, q.dst(), new xStringConstant(type, val) );
-		else if (type == HClass.Float || type == HClass.Double )
-		    raiseV(V, Wv, q.dst(), new xFloatConstant(type, val) );
-		else if (type == HClass.Int || type == HClass.Long)
-		    raiseV(V, Wv, q.dst(), 
-			   new xIntConstant(type,((Number)val).longValue() ) );
-		else throw new Error("Unknown constant field type: "+type);
-	    } else raiseV(V, Wv, q.dst(), new xClass( type ) );
+	    // variable gets current lattice val of field.
+	    raiseV(V, Wv, q.dst(), get( q.field() ) );
+	    // add to list of reading quads.
+	    fieldMap.add(q.field(), q);
 	}
 	public void visit(HEADER q) {
 	    // mark both edges executable.
@@ -572,7 +648,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    }
 	}
 	public void visit(METHOD q) {
-	    HMethod m = hc.getMethod();
+	    HMethod m = q.getFactory().getMethod();
 	    HClass[] pt = m.getParameterTypes();
 	    int j=0;
 	    if (!m.isStatic() ) // raise 'this' variable (non-null!)
@@ -750,7 +826,12 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    } // for each phi function.
 	}
 	public void visit(RETURN q) { /* do nothing. */ }
-	public void visit(SET q) { /* do nothing. */ }
+	public void visit(SET q) {
+	    /* widen type of field */
+	    LatticeVal v = get( q.src() );
+	    if (v != null)
+		raiseV(V, Wf, q.field(), v);
+	}
 	public void visit(SWITCH q) {
 	    LatticeVal v = get( q.index() );
 	    if (v instanceof xIntConstant) {
