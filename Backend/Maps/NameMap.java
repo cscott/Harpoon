@@ -12,9 +12,13 @@ import harpoon.Util.Util;
  * our methods into C-legal methods. 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: NameMap.java,v 1.1.2.1 1999-08-06 22:30:47 pnkfelix Exp $
+ * @version $Id: NameMap.java,v 1.1.2.2 1999-08-06 22:41:40 pnkfelix Exp $
  */
 public class NameMap {
+
+    public String munge(HMethod hm) {
+	NameMap.munge(hm);
+    }
     
     public static String munge(HMethod hm) {
 	return "_" + "Java_" +
@@ -46,7 +50,7 @@ public class NameMap {
 		     s.charAt(i) <= 'Z') ||
 		    (s.charAt(i) >= '0' &&
 		     s.charAt(i) <= '9')) {
-
+		    sb.append(s.charAt(i));
 		} else {
 		    //Util.assert(false, "Ack, "+s.charAt(i)+" is
 		    // probably Unicode!  " + s);
