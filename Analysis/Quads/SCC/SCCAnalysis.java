@@ -23,7 +23,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.4 1999-10-13 07:37:11 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.5 1999-11-11 22:10:44 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -854,14 +854,26 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    }
 	    public void visit_ineg(OPER q) { visit_neg(q); }
 	    public void visit_lneg(OPER q) { visit_neg(q); }
+
+	    void visit_or(OPER q) {
+		xBitWidth left = extractWidth( get( q.operands(0) ) );
+		xBitWidth right= extractWidth( get( q.operands(1) ) );
+		// if there are zero crossings, we have worst-case performance.
+		// XXX: check this "worst-case" computation; might be overly
+		// conservative.  If definitely correct for the 
+		// positive-number-only case.
+		int m = Math.max( left.minusWidth(), right.minusWidth() );
+		int p = Math.max( left.plusWidth(),  right.plusWidth() );
+		raiseV(V, Wv, q.dst(), new xBitWidth(q.evalType(), m, p) );
+	    }
+	    public void visit_ior(OPER q) { visit_or(q); }
+	    public void visit_lor(OPER q) { visit_or(q); }
 	    /*
-    public void visit_ior(OPER q) { visit_default(q); }
     public void visit_irem(OPER q) { visit_default(q); }
     public void visit_ishl(OPER q) { visit_default(q); }
     public void visit_ishr(OPER q) { visit_default(q); }
     public void visit_iushr(OPER q) { visit_default(q); }
     public void visit_ixor(OPER q) { visit_default(q); }
-    public void visit_lor(OPER q) { visit_default(q); }
     public void visit_lrem(OPER q) { visit_default(q); }
     public void visit_lshl(OPER q) { visit_default(q); }
     public void visit_lshr(OPER q) { visit_default(q); }
@@ -892,7 +904,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	return c;
     }
 
-    // Class merge functino.
+    // Class merge function.
 
     static HClass merge(HClass a, HClass b) {
 	Util.assert(a!=null && b!=null);
