@@ -14,7 +14,7 @@ import java.io.IOException;
 /* Main entry point for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.1.2.8 1999-08-12 16:53:30 cananian Exp $
+ * @version $Id: Main.java,v 1.1.2.9 1999-09-11 17:53:53 cananian Exp $
  */
 public class Main {
     private static boolean DEBUG_parser = false;
@@ -23,6 +23,14 @@ public class Main {
 
 
     public static void main(String args[]) throws Exception {
+	/* check command-line options */
+	if (args.length<1) {
+	    System.err.println("Usage: java "+Main.class.getName()+" "+
+                               "[spec file] {class name}");
+	    System.err.println("If class name is not specified, it defaults "+
+                               "to 'CodeGen'.");
+	    System.exit(2);
+	}
 	Reader r = new BufferedReader(new FileReader(args[0]));
 	ErrorMsg e = new ErrorMsg(args[0]);
 	Lexer l = new Lexer(r, e);
@@ -36,8 +44,9 @@ public class Main {
 	    TestCGG t = new TestCGG(s);
 	    t.outputJavaFile(pw);
 	} else if (DEBUG_maxMunch) {
+	    String classname = (args.length>1)?args[1]:"CodeGen";
 	    PrintWriter pw = new PrintWriter(System.out);
-	    MaximalMunchCGG t = new MaximalMunchCGG(s, "CodeGen");
+	    MaximalMunchCGG t = new MaximalMunchCGG(s, classname);
 	    t.outputJavaFile(pw); 
 	}
 	// exit with appropriate status code.

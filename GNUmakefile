@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.63 1999-09-09 21:12:07 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.64 1999-09-11 17:54:01 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -226,7 +226,7 @@ update: needs-cvs
 	  touch stubbed-out; echo $@ >> stubbed-out; \
 	else \
 	  echo PASS $(PASS): generating $@ from $<; \
-	  $(JAVA) harpoon.Tools.PatMat.Main $< > $@; \
+	  $(JAVA) harpoon.Tools.PatMat.Main $< $(notdir $*) > $@; \
 	fi
 
 # JLex
