@@ -24,7 +24,7 @@ import harpoon.Util.UComp;
  * to <code>BasicBlock</code>s.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCBBFactory.java,v 1.1.2.2 2000-03-24 01:05:02 salcianu Exp $
+ * @version $Id: SCCBBFactory.java,v 1.1.2.3 2000-03-24 01:14:05 salcianu Exp $
  */
 public class SCCBBFactory {
 
@@ -44,27 +44,29 @@ public class SCCBBFactory {
 	return bbconv;
     }
 
+    // Navigator through the control flow graph of Basic Blocks.
+    private static final SCComponent.Navigator navigator = 
+	new SCComponent.Navigator(){
+		public Object[] next(Object node){
+		    Object[] obj = ((BasicBlock)node).getNext();
+		    Arrays.sort(obj, UComp.uc);
+		    return obj;
+		}
+		public Object[] prev(Object node){
+		    Object[] obj =  ((BasicBlock)node).getPrev();
+		    Arrays.sort(obj, UComp.uc);
+		    return obj;
+		}
+	    };
+    
     /** Generates the code of the method <code>hm</code> using the 
-     * <code>HCodeFactory</code> passed to the constructor of
-     * <code>this</code> object and cut it into pieces (i.e. 
-     * <code>BasicBlock</code>s). */
+	<code>HCodeFactory</code> passed to the constructor of
+	<code>this</code> object, cuts it into pieces (i.e. 
+	<code>BasicBlock</code>s) and topologically sorts the
+	component graph. Returns the sorted graph. */
     public SCCTopSortedGraph computeSCCBB(HMethod hm){
 	BasicBlock.Factory bbf = bbconv.convert2bb(hm);
 	BasicBlock bb = bbf.getRoot();
-
-	SCComponent.Navigator navigator = 
-	    new SCComponent.Navigator(){
-		    public Object[] next(Object node){
-			Object[] obj = ((BasicBlock)node).getNext();
-			Arrays.sort(obj, UComp.uc);
-			return obj;
-		    }
-		    public Object[] prev(Object node){
-			Object[] obj =  ((BasicBlock)node).getPrev();
-			Arrays.sort(obj, UComp.uc);
-			return obj;
-		    }
-		};
 
 	SCComponent scc = SCComponent.buildSCC(bb,navigator);
 	SCCTopSortedGraph bb_scc = SCCTopSortedGraph.topSort(scc);
