@@ -4,7 +4,15 @@
 #ifdef WITH_GENERATIONAL_GC
 void add_to_curr_obj_list(jobject_unwrapped aligned);
 
+void find_generational_refs();
+
+void generational_collect();
+
+jlong generational_free_memory();
+
 void generational_gc_init();
+
+jlong generational_get_heap_size();
 
 void generational_handle_reference(jobject_unwrapped *ref, int wbtype);
 

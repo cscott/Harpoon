@@ -9,6 +9,7 @@
 
 #if defined(WITH_MARKSWEEP_GC)
 #include "marksweep.h"
+void print_write_barrier_stats(); // harpoon_Runtime_PreciseGC_WriteBarrier.c 
 # ifdef WITH_POINTER_REVERSAL 
 #  define add_to_root_set        pointerreversed_handle_reference
 #  define handle_reference       pointerreversed_handle_reference

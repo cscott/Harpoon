@@ -2,6 +2,7 @@
 #include "jni-private.h"
 #include "jni-gc.h"
 #include "config.h"
+#include <stdlib.h>
 #include <assert.h>
 #ifdef WITH_MARKSWEEP_GC
 # include "free_list.h"
@@ -13,9 +14,9 @@
 #endif
 #include "write_barrier.h"
 
+#ifdef WITH_PRECISE_GC_STATISTICS
 FLEX_MUTEX_DECLARE_STATIC(times_called_mutex);
 
-#ifdef WITH_STATS_GC
 #ifdef WITH_MARKSWEEP_GC
 extern int num_write_barriers;
 static int *times_called_array;
@@ -37,8 +38,10 @@ static int *young_to_any_1_array;
 void collect_stats(jobject obj, jobject val, jint id);
 #else // !WITH_MARKSWEEP_GC && !WITH_DYNAMIC_WB
 static int times_called = 0;
-#endif
-#endif // WITH_STATS_GC
+#endif /* !WITH_MARKSWEEP_GC && !WITH_DYNAMIC_WB */
+
+#endif /* WITH_PRECISE_GC_STATISTICS */
+
 
 /*
  * Class:     harpoon_Runtime_PreciseGC_WriteBarrier
@@ -47,7 +50,7 @@ static int times_called = 0;
  */
 JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_storeCheck
   (JNIEnv *env, jclass cls, jobject obj) {
-#ifdef WITH_STATS_GC
+#ifdef WITH_PRECISE_GC_STATISTICS
   FLEX_MUTEX_LOCK(&times_called_mutex);
 # if defined(WITH_MARKSWEEP_GC) || defined(WITH_DYNAMIC_WB)
   assert(0 /* should not get here */);
@@ -55,11 +58,11 @@ JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_storeCheck
   times_called++;
 # endif
   FLEX_MUTEX_UNLOCK(&times_called_mutex);
-#endif // WITH_STATS_GC
+#endif /* WITH_PRECISE_GC_STATISTICS */
 #ifdef WITH_GENERATIONAL_GC
   assert(0);
   //generational_write_barrier(obj);
-#endif
+#endif /* WITH_GENERATIONAL_GC */
 }
 
 
@@ -71,13 +74,15 @@ JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_storeCheck
 JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_fsc
   (JNIEnv *env, jclass cls, jobject obj, jobject field, jobject val, jint id)
 {
+#ifdef WITH_GENERATIONAL_GC
     void *ptr = (void *)((ptroff_t) FNI_UNWRAP_MASKED(obj) + 
 	FNI_GetFieldInfo(field)->fieldID->offset);
-#ifdef WITH_STATS_GC
+#endif
+#ifdef WITH_PRECISE_GC_STATISTICS
   FLEX_MUTEX_LOCK(&times_called_mutex);
   collect_stats(obj, val, id);
   FLEX_MUTEX_UNLOCK(&times_called_mutex);
-#endif // WITH_STATS_GC
+#endif /* WITH_PRECISE_GC_STATISTICS */
 #ifdef WITH_GENERATIONAL_GC
   generational_write_barrier(ptr);
 #endif // WITH_GENERATIONAL_GC
@@ -91,13 +96,11 @@ JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_fsc
 JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_rfsc
   (JNIEnv *env, jclass cls, jobject obj, jobject field, jobject val, jint id)
 {
-    void *ptr = (void *)((ptroff_t) FNI_UNWRAP_MASKED(obj) + 
-			 FNI_GetFieldInfo(field)->fieldID->offset);
-#ifdef WITH_STATS_GC
+#ifdef WITH_PRECISE_GC_STATISTICS
     FLEX_MUTEX_LOCK(&times_called_mutex);
     collect_stats(obj, val, id);
     FLEX_MUTEX_UNLOCK(&times_called_mutex);
-#endif // WITH_STATS_GC
+#endif /* WITH_PRECISE_GC_STATISTICS */
 }
 
 /*
@@ -108,14 +111,16 @@ JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_rfsc
 JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_asc 
   (JNIEnv *env, jclass cls, jobject obj, jint index, jobject val, jint id) 
 {
+#ifdef WITH_GENERATIONAL_GC
   void *ptr = 
       ((char *) &((struct aarray *)FNI_UNWRAP_MASKED(obj))->element_start) + 
       index*SIZEOF_VOID_P;
-#ifdef WITH_STATS_GC
+#endif
+#ifdef WITH_PRECISE_GC_STATISTICS
   FLEX_MUTEX_LOCK(&times_called_mutex);
   collect_stats(obj, val, id);
   FLEX_MUTEX_UNLOCK(&times_called_mutex);
-#endif // WITH_STATS_GC
+#endif /* WITH_PRECISE_GC_STATISTICS */
 #ifdef WITH_GENERATIONAL_GC
   generational_write_barrier(ptr);
 #endif // WITH_GENERATIONAL_GC
@@ -129,14 +134,11 @@ JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_asc
 JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_rasc
   (JNIEnv *env, jclass cls, jobject obj, jint index, jobject val, jint id)
 {
-  void *ptr = 
-      ((char *) &((struct aarray *)FNI_UNWRAP_MASKED(obj))->element_start) + 
-      index*SIZEOF_VOID_P;
-#ifdef WITH_STATS_GC
+#ifdef WITH_PRECISE_GC_STATISTICS
   FLEX_MUTEX_LOCK(&times_called_mutex);
   collect_stats(obj, val, id);
   FLEX_MUTEX_UNLOCK(&times_called_mutex);
-#endif // WITH_STATS_GC
+#endif /* WITH_PRECISE_GC_STATISTICS */
 }
 
 #ifdef WITH_DYNAMIC_WB
@@ -155,14 +157,14 @@ JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_clearBit
 {
   assert(DYNAMIC_WB_ON(FNI_UNWRAP_MASKED(obj)));
   DYNAMIC_WB_CLEAR(FNI_UNWRAP_MASKED(obj));
-#ifdef WITH_STATS_GC
+#ifdef WITH_PRECISE_GC_STATISTICS
   num_clears++;
-#endif
+#endif /* WITH_PRECISE_GC_STATISTICS */
 }
 #endif
 
 
-#ifdef WITH_STATS_GC
+#ifdef WITH_PRECISE_GC_STATISTICS
 void collect_stats(jobject obj, jobject val, jint id)
 #ifdef WITH_MARKSWEEP_GC
 {
@@ -492,4 +494,4 @@ void print_write_barrier_stats()
 }
 #endif
 
-#endif // WITH_STATS_GC
+#endif /* WITH_PRECISE_GC_STATISTICS */

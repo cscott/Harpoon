@@ -139,7 +139,7 @@ void marksweep_handle_reference(jobject_unwrapped *ref)
 /* returns: a block of allocated memory of the specified size */
 void* marksweep_malloc(size_t size_in_bytes)
 {
-#ifdef WITH_STATS_GC
+#ifdef WITH_PRECISE_GC_STATISTICS
   static jint time = 0;
 #endif
   static size_t bytes_allocated = 0;
@@ -194,7 +194,7 @@ void* marksweep_malloc(size_t size_in_bytes)
   // if no memory at this point, just fail
   assert(result != NULL);
 
-#ifdef WITH_STATS_GC
+#ifdef WITH_PRECISE_GC_STATISTICS
   {
     struct block *bl = result - BLOCK_HEADER_SIZE;
     bl->time = time++;

@@ -15,19 +15,28 @@ void marksweep_add_to_root_set(jobject_unwrapped *obj);
 
 void marksweep_collect();
 
+jlong marksweep_free_memory();
+
 void marksweep_gc_init();
+
+jlong marksweep_get_heap_size();
+
+#ifndef WITH_POINTER_REVERSAL
+void marksweep_handle_reference(jobject_unwrapped *ref);
+#else /* WITH_POINTER_REVERSAL */
+void pointerreversed_handle_reference(jobject_unwrapped *ref);
+#endif /* WITH_POINTER_REVERSAL */
 
 void *marksweep_malloc (size_t size_in_bytes);
 
 void marksweep_handle_nonroot(jobject_unwrapped *nonroot);
 
-#ifdef WITH_STATS_GC
+#ifdef WITH_PRECISE_GC_STATISTICS
 // from harpoon_Runtime_PreciseGC_WriteBarrier.c
 void init_statistics();
-#else
-#define init_statistics()
-#endif
+#else /* !WITH_PRECISE_GC_STATISTICS */
+#define init_statistics() ((void)0)
+#endif /* !WITH_PRECISE_GC_STATISTICS */
 
-#endif
-
-#endif
+#endif /* WITH_PRECISE_C_BACKEND */
+#endif /* !INCLUDED_MARKSWEEP_H */

@@ -5,6 +5,7 @@
 #include <sys/time.h> /* for struct timeval */
 #include <time.h> /* for struct timespec */
 #include <string.h> /* for memcpy */
+#include "../gc/generational.h" /* for add_to_curr_obj_list */
 
 /* helper for clone functions. */
 static inline

@@ -32,7 +32,7 @@ void *FNI_RawAlloc(JNIEnv *env, jsize length) {
 #elif defined(WITH_REALTIME_JAVA)
   return RTJ_malloc(length);
 #elif defined(WITH_PRECISE_GC)
-  return precise_malloc(length);
+  return (void *) precise_malloc(length);
 #elif defined(BDW_CONSERVATIVE_GC)
 #ifdef WITH_GC_STATS
   return GC_malloc_stats(length);

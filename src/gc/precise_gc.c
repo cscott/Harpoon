@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdlib.h> /* for atexit() */
 #include <unistd.h>
 #include "config.h"
 #ifdef BDW_CONSERVATIVE_GC
@@ -17,9 +18,10 @@
 #endif
 
 #ifdef WITH_PRECISE_GC
-
+#ifndef WITH_PRECISE_C_BACKEND
 static int print_gc_index = 0;
 static int check_gc_index = 1;
+#endif
 
 size_t SYSTEM_PAGE_SIZE = 0;
 size_t PAGE_MASK = 0;
@@ -54,7 +56,7 @@ void precise_gc_init()
   // do initialization for the specific collector
   internal_gc_init();
 
-#ifdef WITH_STATS_GC
+#ifdef WITH_PRECISE_GC_STATISTICS
   // register exit function
   atexit(precise_gc_print_stats);
 #endif
@@ -90,9 +92,9 @@ inline jlong precise_get_heap_size()
   return internal_get_heap_size();
 }
 
-#ifndef WITH_STATS_GC
-# define COLLECT_NOPTR_STATS()
-# define COLLECT_LRGOBJ_STATS() 
+#ifndef WITH_PRECISE_GC_STATISTICS
+# define COLLECT_NOPTR_STATS() ((void)0)
+# define COLLECT_LRGOBJ_STATS() ((void)0)
 #else
 /* object statistics */
 static int no_pointers = 0;

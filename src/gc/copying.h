@@ -10,11 +10,17 @@ void copying_add_to_root_set(jobject_unwrapped *obj);
 
 void copying_collect();
 
+jlong copying_free_memory();
+
+void copying_gc_init();
+
 jlong copying_get_heap_size();
+
+void copying_handle_reference(jobject_unwrapped *ref);
 
 void *copying_malloc (size_t size_in_bytes);
 
-void copying_handle_nonroot(jobject_unwrapped *nonroot);
+void copying_register_inflated_obj(jobject_unwrapped obj);
 
 #else
 

@@ -6,10 +6,12 @@
 #endif
 #include <assert.h>
 #include <jni.h>
+#include <stdlib.h> /* for malloc */
 #include "jni-private.h"
 #include "jni-gc.h"
 #include "fni-threadstate.h"
 #include "gc-data.h"
+#include "generational.h" /* for find_generational_refs */
 #include "precise_gc.h"
 #ifdef WITH_THREADED_GC
 #include "jni-gcthreads.h"
@@ -164,10 +166,6 @@ jint get_loc(gc_loc_ptr);
    location is a base pointer, or NONE if the location is the
    derived pointer */
 enum sign get_sign(gc_loc_ptr);
-
-/* use free when done with all the data associated with this
-   gc_index_ptr */
-void free(gc_index_ptr);
 
 /* cleanup should be invoked at the end of a garbage collection
    to make sure that all the memory that was allocated to
@@ -574,9 +572,9 @@ gc_derivs_ptr get_live_derivs(gc_index_ptr ptr, int num) {
 
   /* handle remaining case */
   {
-      jint numRegDerivs = 0, numStackDerivs = 0;
+      jint numRegDerivs = 0;
       jint *data = &desc; 
-      int index, offset = 0, offset_in_bits = 0;
+      int index, offset_in_bits = 0;
       gc_derivs_ptr result = (gc_derivs_ptr)malloc(sizeof(struct _gc_derivs));
       if (result == NULL) report("ERROR: Out of memory");
 

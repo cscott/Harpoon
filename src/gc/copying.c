@@ -199,7 +199,7 @@ void *copying_malloc (size_t size_in_bytes)
   aligned_size_in_bytes = align(size_in_bytes);
 
   // if not enough memory, need to expand heap or run GC
-  if (heap.from_free + aligned_size_in_bytes > heap.from_end)
+  if (heap.from_free + aligned_size_in_bytes > heap.from_end) {
     // if we can afford the cost of a collection, go ahead; else expand heap
     if (collection_makes_sense(bytes_allocated))
       {
@@ -224,6 +224,7 @@ void *copying_malloc (size_t size_in_bytes)
 	    bytes_allocated = 0;
 	  }
       }
+  }
 
   // if still no space, then just fail
   assert(heap.from_free + aligned_size_in_bytes <= heap.from_end);

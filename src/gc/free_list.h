@@ -8,9 +8,9 @@
 /* data structure for a block of memory */
 struct block
 {
-#ifdef WITH_STATS_GC
-  jint time
-#endif /* WITH_STATS_GC */
+#ifdef WITH_PRECISE_GC_STATISTICS
+  jint time;
+#endif /* WITH_PRECISE_GC_STATISTICS */
   size_t size;
   union { ptroff_t mark; struct block *next; } markunion;
   struct oobj object[0];

@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <fcntl.h>
+#include <stdlib.h> /* for malloc */
 #include <sys/mman.h>
+#include <unistd.h> /* for getpagesize */
 #include "jni-types.h"
 #include "jni-private.h"
 #include "precise_gc.h"
@@ -13,7 +15,7 @@
 #include "system_page_size.h"
 #include "write_barrier.h"
 
-#ifdef WITH_STATS_GC
+#ifdef WITH_PRECISE_GC_STATISTICS
 extern int num_promoted;
 #endif
 
@@ -77,7 +79,7 @@ static struct copying_heap young_gen;
 
 static int fd = 0;
 
-static collection_type = MINOR;
+static int collection_type = MINOR;
 
 /* function declarations */
 
@@ -288,7 +290,6 @@ void find_roots_in_obj_list()
     {
       jobject_unwrapped aligned = obj->obj;
       
-      //#if defined(WITH_DYNAMIC_WB) && !defined(WITH_STATS_GC)
 #ifdef WITH_DYNAMIC_WB
       if ((DYNAMIC_WB_ON((jobject_unwrapped) PTRMASK(aligned))))
 	{
@@ -443,8 +444,6 @@ void generational_gc_init()
 {
   size_t bytes_to_map, heap_size, mapped_per_space;
   void *mapped;
-  int i;
-  struct block *new_block;
 
   // find out the system page size and pre-calculate some constants
   SYSTEM_PAGE_SIZE = getpagesize();
@@ -475,7 +474,7 @@ void generational_gc_init()
   mapped += 2*bytes_to_map/3;
   init_marksweep_heap(mapped, heap_size, mapped_per_space, &old_gen);
 
-#if defined(WITH_DYNAMIC_WB) && defined(WITH_STATS_GC)
+#if defined(WITH_DYNAMIC_WB) && defined(WITH_PRECISE_GC_STATISTICS)
   init_statistics();
 #endif
 
@@ -565,7 +564,7 @@ void generational_handle_reference(jobject_unwrapped *ref, int wbtype)
 #ifdef WITH_DYNAMIC_WB
 		  if (DYNAMIC_WB_ON(aligned))
 		    {
-#ifdef WITH_STATS_GC
+#ifdef WITH_PRECISE_GC_STATISTICS
 		      num_promoted++;
 #endif
 		      add_to_next_obj_list(aligned);
@@ -633,7 +632,9 @@ void *generational_malloc(size_t size)
   int collected_minor = 0;
   int collected_major = 0;
   int grew_young_gen = 0;
+#ifndef WITH_WRITE_BARRIER_REMOVAL
   int grew_old_gen = 0;
+#endif
 
   ENTER_GENERATIONAL_GC();
 
@@ -772,7 +773,7 @@ void *generational_malloc(size_t size)
 /* effects: prints the contents of the heap to stdout */
 void generational_print_heap()
 {
-  char c;
+  //char c;
   size_t nentries = (young_gen.from_free - 
 		     young_gen.from_begin)/sizeof(ptroff_t);
   size_t nrows = (nentries + NCOLUMNS - 1)/NCOLUMNS;
@@ -810,7 +811,7 @@ void generational_print_heap()
 	  ptroff_t *w = row_begin + i*nrows;
 	  
 	  if ((void *)w < young_gen.from_free)
-	    printf("%10p ", *w);
+	    printf("%10x ", *w);
 	  else
 	    break;
 	}
@@ -832,7 +833,7 @@ void generational_print_heap()
 	  bl = (void *)bl + size;
 	  while(word < (ptroff_t *)bl)
 	    {
-	      printf("%10p: %10p\n", word, *word);
+	      printf("%10p: %10x\n", word, *word);
 	      word++;
 	    }
 	}

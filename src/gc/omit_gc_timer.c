@@ -1,4 +1,6 @@
 #include <assert.h>
+#include <stdio.h> /* for printf */
+#include <stdlib.h> /* for atexit */
 #include <sys/time.h>
 #include <unistd.h>
 #include "omit_gc_timer.h"
@@ -38,7 +40,7 @@ void pause_timer()
 
 void print_timer_output()
 {
-  printf("Time without gc is %lf seconds.\n", get_total_time());
+  printf("Time without gc is %f seconds.\n", get_total_time());
 }
 
 void start_timer()
