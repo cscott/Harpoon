@@ -16,18 +16,22 @@ extern "C" {
 
 model * exportmodel;
 
-void initializeanalysis() {
+void initializeanalysis() 
+{
   exportmodel=new model("testabstract", "testmodel", "testspace", "teststruct", "testconcrete", "testrange");
 }
 
 
-void doanalysis() {
+
+// returns true if a violated constraint was found
+bool doanalysis() 
+{
   struct timeval begin,end;
   unsigned long t;
   gettimeofday(&begin,NULL);
   exportmodel->doabstraction();
   exportmodel->getdomainrelation()->fixstuff();  
-  exportmodel->docheck();
+  bool found = exportmodel->docheck();
   exportmodel->doconcrete();
   gettimeofday(&end,NULL);
   t=(end.tv_sec-begin.tv_sec)*1000000+end.tv_usec-begin.tv_usec;
@@ -35,11 +39,14 @@ void doanalysis() {
   exportmodel->getdomainrelation()->print();
 
   printf("Time used for analysis(us): %ld\n",t);
+
+  return found;
 }
 
 
-  // insert errors that break the specs
-void doanalysis2() {
+// insert errors that break the specs
+void doanalysis2() 
+{
   struct timeval begin,end;
   unsigned long t;
   gettimeofday(&begin,NULL);
@@ -63,7 +70,8 @@ void doanalysis2() {
 
 
 // insert errors that do not break the specs
-void doanalysis3() {
+void doanalysis3() 
+{
   struct timeval begin,end;
   unsigned long t;
   gettimeofday(&begin,NULL);

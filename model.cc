@@ -217,18 +217,25 @@ void model::inserterrors()
 
 
 // processes the internal constraints
-void model::docheck() {
+// returns true only if no violated constraints were found
+bool model::docheck() 
+{
+  bool found=false;
   processobject *po=new processobject(this);
   bool t=false;
   do {
     t=false;
     /* Process rules until we reach a fixpoint*/
     for(int i=0;i<numconstraint;i++) {
-      if (!po->processconstraint(constraintarray[i]))
-	t=true; //Got to keep running
+      if (!po->processconstraint(constraintarray[i]))	
+	{
+	  found=true;
+	  t=true; //Got to keep running
+	}
     }
   } while(t);
   delete(po);
+  return found;
 }
 
 

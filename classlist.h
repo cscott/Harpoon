@@ -1,6 +1,7 @@
 #ifndef classlist_h
 #define classlist_h
 
+#define REPAIR
 #define DEBUGMESSAGES
 //#define DEBUGMANYMESSAGES
 
