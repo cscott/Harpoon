@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.74 1998-09-18 21:37:15 cananian Exp $
+ * @version $Id: Translate.java,v 1.75 1998-09-19 06:25:25 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -1012,11 +1012,17 @@ class Translate  { // not public.
 	    break;
 	case Op.MONITORENTER:
 	    ns = s.pop();
-	    q = new MONITORENTER(in, s.stack(0));
+	    last = new MONITORENTER(in, s.stack(0));
+	    // null dereference check.
+	    r = transNullCheck(SS, s.stack(0), last, handlers, ts);
+	    q = ts.header.next()[ts.which_succ];
 	    break;
 	case Op.MONITOREXIT:
 	    ns = s.pop();
-	    q = new MONITOREXIT(in, s.stack(0));
+	    last = new MONITOREXIT(in, s.stack(0));
+	    // null dereference check.
+	    r = transNullCheck(SS, s.stack(0), last, handlers, ts);
+	    q = ts.header.next()[ts.which_succ];
 	    break;
 	case Op.MULTIANEWARRAY:
 	    {

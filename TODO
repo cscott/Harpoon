@@ -119,7 +119,7 @@ Make list of exception handling statements in translate phase so we can
  statements must stay.
 X Make monitor blocks work.
 X Enclose synchronized methods in monitor blocks.
-Runtime exception check on MONITOREXIT.
+X Runtime exception check on MONITOREXIT.
 ---- Aug-25-98
 X Figure out if we really need JMP/NOP/LET quads.
 
