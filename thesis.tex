@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.83 1999-08-22 18:15:14 cananian Exp $
+% $Id: thesis.tex,v 1.84 1999-08-22 18:24:14 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.83 $ $}
+\date{\today \\ $ $Revision: 1.84 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.83 $ $}{$ $Revision: 1.83 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.84 $ $}{$ $Revision: 1.84 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -861,7 +861,8 @@ form, which we will describe in section \ref{sec:sccssi}. Section
 \subsubsection{Wegman and Zadeck's SCC/SSA algorithm}
 \begin{myfigure}
 \centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat1}
-\caption{Three-level value lattice and two-level executability lattice for SCC.}
+\caption[Value and executability lattices for SCC.]
+{Three-level value lattice and two-level executability lattice for SCC.}
 \label{fig:scclat1}
 \end{myfigure}
 \begin{mytable}\centering
@@ -1124,7 +1125,7 @@ satisfactory treatment.
 \subsubsection{Addressing array-bounds and null-pointer checks}
 \begin{myfigure}
 \centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat5}
-\caption{The SPTC value lattice.}
+\caption{Value lattice extended with array and null information.}
 \label{fig:scclat5}
 \end{myfigure}
 \begin{myfigure}
@@ -1147,12 +1148,12 @@ $C$ and integers $i$ and $j$,
 A(C, i) \latlt C\\
 \tuple{A(C, i), A(C, j)} \in\:\latleq \text{ if and only if } i=j\\
 \end{array}\]%
-\caption{SPTC value lattice inequalities.}\label{fig:sptc_rules}
+\caption{Extended value lattice inequalities.}\label{fig:arraynull_rules}
 \end{myfigure}
 \begin{myalgorithm}\small
 \input{Figures/THsptc}
-\caption{\code{Visit} procedure outline for SPTC.}
-\label{alg:sptc}
+\caption{\code{Visit} procedure outline with array and null information.}
+\label{alg:arraynull_scc}
 \end{myalgorithm}
 \begin{myfigure}
 \begin{samplecode}
@@ -1178,9 +1179,9 @@ values,\footnote{Values which are always-null were discussed in the
 previous section; they are identified as having primitive type \code{void}.}
 and added a lattice level for arrays of known constant length.  
 Some formal definition of the new value lattice can be found in
-figure \ref{fig:sptc_rules}; the meet rule is still the least upper
+figure \ref{fig:arraynull_rules}; the meet rule is still the least upper
 bound on the lattice.  Modifications to the \code{Visit} procedure are
-outlined in algorithm~\ref{alg:sptc}.
+outlined in algorithm~\ref{alg:arraynull_scc}.
 Notice that we exploit the pre-existing integer-constant propagation to
 identify constant-length arrays, and that our integrated approach
 allows one-pass optimization of the program in figure \ref{fig:combined}.
@@ -1199,7 +1200,9 @@ for (int i=1; i < 10; i++) \{\\
 \>A[i] = 0;\\
 \}\\
 \end{samplecode}
-\caption{Implicit bounds checks on Java array references.}\label{fig:induction}
+\caption[Implicit bounds checks on Java array references.]
+{Implicit bounds checks (underlined) on Java array references.}
+\label{fig:induction}
 \end{myfigure}
 Note that the variable renaming performed by the SSI form at
 control-flow splits is essential in allowing the algorithm to do 
