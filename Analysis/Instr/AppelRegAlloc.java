@@ -54,11 +54,15 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.1.2.9 2001-06-20 18:20:12 pnkfelix Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.1.2.10 2001-06-21 05:13:11 pnkfelix Exp $
  */
 public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     // FSK: super class really SHOULD be RegAlloc, but am doing this
     // for now to inherit fields from ARAClasses (refactoring)
+    
+    public static final boolean PRINT_HEURISTIC_INFO = false;
+    public static final boolean PRINT_CLEANING_INFO = false;
+
 
     private static final int NUM_CLEANINGS_TO_TRY = 3;
     private boolean try_to_clean = true;
@@ -90,9 +94,6 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	bbFact = computeBasicBlocks();
     }
 
-    // Set of <Node, Node> pairs
-    NodePairSet adjSet;
-    
     int K; // size of register set
     
     ReachingDefs rdefs;
@@ -481,33 +482,95 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    buildInterferenceGraph();
 	    
 	    checkInv();
-	    // saveNodeSets();
-	    // resetMoveSets();
-
+	    checkpointState();
+	    final boolean USE_CHAITIN_ALONE = false;
+	    final boolean INCREMENTAL_OUTPUT = false;
 	    try {
+		SpillHeuristic h_min = null;
 		SpillHeuristic[] h = spillHeuristics();
-		if (false) { // if (h.length > 1) {
+		if ( ! USE_CHAITIN_ALONE ) {
 		    for(int i = 0; i < h.length; i++) {
+			// FSK: look into breaking out of this loop if
+			// we color without any spilling at all.
 			appelLoopBody( h[i] );
+			
 			checkMoveSets();
-			restoreNodeSets();
-			resetMoveSets();
+			
+			assignColors();
+			
+			checkInv();
+			
+			if (h[i].maxExpSpills == 0)
+			    Util.assert( spilled_nodes.isEmpty() );
+			
+			if ( spilled_nodes.isEmpty() ) {
+			    h_min = h[i];
+			    
+			    // FSK: break here later for better speed
+			    // (disabled to gather data on whether alt
+			    // spill heuristics have any benefit)
+			} else {
+			    h[i].reallySpill(spilled_nodes.iter());
+			}
+			
+			resetState();
+			
+			if (INCREMENTAL_OUTPUT && PRINT_HEURISTIC_INFO ) 
+			    System.out.print
+				    ("\nAPPLY SPILL HEURISTIC "+i+" \t=> "+h[i]);
 		    }
-		    SpillHeuristic h_min = h[0];
-		    int minIndex = 0;
+		    
+		    
+		    h_min = h[0];
+		    int minIndex = -1; // negative represents "any will do"
+		    
 		    
 		    for(int i=1; i < h.length; i++) {
-			if (h[i].accumCost < h_min.accumCost) {
+			// if (h[i].accumExpCost < h_min.accumExpCost) {
+			if (h[i].actualCost < h_min.actualCost) {
 			    h_min = h[i];
 			    minIndex = i;
+			} else if (minIndex == -1 && 
+				   h_min.actualCost < h[i].actualCost) {
+			    // need this special case so that our data
+			    // properly states when using h[0] *is*
+			    // significant.
+			    minIndex = 0;
 			}
 		    }
-		    appelLoopBody( h_min );
-		} else {
-		    appelLoopBody( h[0] );
-		}
-		assignColors(); checkInv();
+		    if (minIndex == -1 && (h_min.actualCost < 0.001)) {
+			minIndex = -2; // -2 means "any will do && no spilling"
+		    } 
 
+		    if( PRINT_HEURISTIC_INFO 
+			
+			// (leave -2 results out of output when not incremental)
+			&& (INCREMENTAL_OUTPUT || minIndex != -2) 
+			
+			) {
+
+			if(!INCREMENTAL_OUTPUT)
+			    for(int i=0;i<h.length;i++)
+				System.out.print
+				    ("\nAPPLY SPILL HEURISTIC "+i+" \t=> "+h[i]);
+			
+			
+			System.out.println
+			    ("\nCHOOSING SPILL HEURISTIC "+minIndex+" \t=> "+h_min);
+		    }
+		    h_min.reset();
+		    appelLoopBody( h_min );
+		    
+		} else {
+		    appelLoopBody( h[2] );
+		}
+		
+		assignColors(); 
+		// h_min.reallySpill(spilled_nodes.iter());
+		// System.out.println("\nFINAL SPILL HEURISTIC   \t=> "+h_min);
+		
+		checkInv();
+		
 		if( ! spilled_nodes.isEmpty()) {
 		    System.out.print(" R"+rewriteCalledNumTimes+", S!"+spilled_nodes.asSet().size());
 		    rewriteProgram();  checkInv();
@@ -516,7 +579,9 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 		    break;
 		}
 	    } catch (CouldntFindSpillExn e) {
-		System.out.println("COULDN'T FIND A SPILL!  TURNING OFF CLEANING!");
+		if (PRINT_CLEANING_INFO)
+		    System.out.println
+			("COULDN'T FIND A SPILL!  TURNING OFF CLEANING!");
 		stopTryingToClean();
 		bbFact = computeBasicBlocks();
 	    }
@@ -727,6 +792,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    Set/*Node*/ live = liveOut(bb);
 	    
 	    for(Instr i = lastStm(bb); !i.equals( firstStm(bb) ); i = pred(i)){
+		// FSK: *DUDE* , find out if this is still necessary !!!!
 		// 5/12/01: temporarily disabling move coalescing (debug segfault)
 		if( false && i.isMove() ){
 		    live.removeAll( useCN( i ) );
@@ -851,6 +917,10 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     }
 
 
+    /** Moves Nodes from initial to appropriate set in 
+	{ spill, freeze, simplify }_worklist.  
+	MODIFIES: initial, { spill, freeze, simplify }_worklist
+    */
     public void makeWorklist() { 
 	while( ! initial.isEmpty()) {
 	    Node n = initial.pop();
@@ -1208,21 +1278,52 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     // compilers", Bernstein et. al
     private abstract class SpillHeuristic {
 	public String toString() { 
-	    return "SpillHeuristic<cost:"+accumCost
-		+" spills:"+numSpills
+	    return "SpillHeuristic<"
+		+"accumExpCost:"+accumExpCost 
+		+" maxExpSpills:"+maxExpSpills
+		+" actualCost:"+actualCost
+		+" actualSpills:"+actualSpills
 		+">";
 	}
-	double accumCost = 0.0;
-	int numSpills = 0;
-	void spill( Node m ) { 
-	    // IMPORTANT: don't confuse "cost" here (which is called
+
+	double accumExpCost = 0.0;
+	int maxExpSpills = 0;
+
+	double actualCost = 0.0;
+	int actualSpills = 0;
+
+	HashMap instrToAreaCache = new HashMap();
+	HashMap nodeToAreaCache = new HashMap();    
+
+	private void reset() { 
+	    accumExpCost = 0.0; 
+	    maxExpSpills = 0;
+	    actualCost = 0.0; 
+	    actualSpills = 0; 
+	    instrToAreaCache.clear();
+	    nodeToAreaCache.clear();
+	}
+	void expectSpill( Node m ) { 
+	    // IMPORTANT: don't confuse "accumExpCost" here (which is called
 	    // "h_i" in the paper) with "cost" in the paper (which is
 	    // called chaitinCost here)
-	    accumCost += chaitinCost( m ); 
-	    numSpills++;
+	    accumExpCost += chaitinCost( m ); 
+	    maxExpSpills++;
 	}
-	abstract double cost( Node m );
 
+	
+	/** called when spill code is added for n . */
+	void reallySpill( NodeIter ni ){
+	    while(ni.hasNext()) 
+		reallySpill(ni.next());
+	}
+	void reallySpill( Node n ){
+	    actualCost += chaitinCost(n);
+	    actualSpills++;
+	}
+
+	abstract double cost( Node m );
+	
 	double chaitinCost( Node m ) {
 	    double sum = 0.0;
 	    for(Iterator ds = m.web.defs.iterator(); ds.hasNext(); ){
@@ -1262,35 +1363,48 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    }
 	}
 
-	HashMap instrToAreaCache = new HashMap();
-	HashMap nodeToAreaCache = new HashMap();    
     }
 
 
     private SpillHeuristic[] spillHeuristics() {
-	return new SpillHeuristic[] { 
+	SpillHeuristic[] hs = new SpillHeuristic[] { 
+
+	    // ** CHAITIN'S SPILL HEURISTIC **
 	    new SpillHeuristic() { double cost( Node m ) {  
 		return chaitinCost(m) / m.degree; }}
 
-	    // TODO: the reason that the spills were worse is that the
-	    // data-structures were not being reset "enough", making
-	    // the interference graphs more dense, and thus leading to
-	    // excess spilling.  FIX FIX FIX!!!
-
-	    /* // FSK: initial experiments indicate that combo is slow
-	       // and produces WORSE actual spills than the above alone.  C:( 
-
-	    ,
+	    // FSK: new experiments show that the reason results were
+	    // worse is that the expected-costs predicted by the
+	    // alternate heuristics have much greater error (when
+	    // compared to the actual cost after optimistically
+	    // coloring) than the original Chaitin heuristic's error.
+	    // I am leaving this in for now, but it may be worthwhile
+	    // to just use the standard Chaitin heurstic in general.
+	    , 
+	    new SpillHeuristic() { double cost( Node m ) {  
+		return chaitinCost(m) / (m.degree * m.degree); }} 
+	    , 
 	    new SpillHeuristic() { double cost( Node m ) { 
-		return chaitinCost(m) / (m.degree * m.degree); }}
-	    ,
-	    new SpillHeuristic() { double cost( Node m ) {
-		return chaitinCost(m) / ( area(m) * m.degree ); }}
-	    ,
-	    new SpillHeuristic() { double cost( Node m ) {
-		return chaitinCost(m) / ( area(m) * m.degree * m.degree ); }},
-	    */
+		return chaitinCost(m) / ( area(m) * m.degree ); }} 
+	    , 
+	    new SpillHeuristic() { double cost( Node m ) { 
+		return chaitinCost(m) / ( area(m) * m.degree * m.degree ); }}, 
+	    
 	};
+	
+
+	// reordering heuristics to ensure that the fact that
+	// Chaitin is always chosen is not a stagnant data fluke. 
+
+	// this ordering may seem odd, but its intended to more easily
+	// expose the cases where Chaitin's method is beaten.  
+	SpillHeuristic[] hs_r = new SpillHeuristic[ 4 ];
+	Util.assert(hs_r.length == hs.length);
+	hs_r[0] = hs[3];
+	hs_r[1] = hs[2];
+	hs_r[2] = hs[0]; // ** CHAITIN'S SPILL HEURISTIC **
+	hs_r[3] = hs[1]; 
+	return hs_r;
     }
     static class CouldntFindSpillExn extends Exception {}
     private void selectSpill(SpillHeuristic sh) throws CouldntFindSpillExn {
@@ -1327,7 +1441,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 
 	// System.out.println("spilling node with cost : "+minCost);
 
-	sh.spill( minNode );
+	sh.expectSpill( minNode );
 	spill_worklist.remove( minNode );
 	simplify_worklist.add( minNode );
 	freezeMoves( minNode );
@@ -1445,7 +1559,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 		    }
 		}
 	    }
-	    if (cleanedNum != 0)
+	    if (PRINT_CLEANING_INFO && cleanedNum != 0)
 		System.out.println("Def cleaning removed "+cleanedNum);
 	}
 
@@ -1498,14 +1612,14 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 			    cleanedNum++;
 			}
 		    }
-		    if ( !seenOne && w.defs.contains(i) ){
-			System.out.println("FSK saw a def before a use: "+i);
+		    if ( PRINT_CLEANING_INFO && !seenOne && w.defs.contains(i) ){
+			System.out.print("\nFSK saw a def before a use: "+i);
 			seenOne = true;
 		    }
 		}
 	    }
-	    if (cleanedNum != 0) 
-		System.out.println("Use cleaning removed "+cleanedNum);
+	    if (PRINT_CLEANING_INFO && cleanedNum != 0) 
+		System.out.println("\nUse cleaning removed "+cleanedNum);
 	}
 
 	return addUses( w, groupUses );
