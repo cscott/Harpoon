@@ -18,7 +18,7 @@ import java.util.Hashtable;
  * It does not have <code>HANDLER</code> quads, and is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadNoSSA.java,v 1.1.2.27 2000-11-13 21:06:44 cananian Exp $
+ * @version $Id: QuadNoSSA.java,v 1.1.2.28 2001-06-15 17:51:35 cananian Exp $
  * @see QuadWithTry
  * @see QuadSSI
  */
@@ -83,7 +83,12 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
-			new QuadNoSSA((QuadWithTry)c, true);
+			new QuadNoSSA((QuadWithTry)c,
+				      !Boolean.getBoolean
+				      ("harpoon.quads.nocoalesce"));
+		    // set harpoon.quads.nocoalesce to true to disable
+		    // coalescing exception handling.  disabling this
+		    // will result in shorter branches, on average.
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
