@@ -29,7 +29,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.33 2000-03-30 09:58:26 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.34 2000-11-30 19:17:28 vivien Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -636,6 +636,7 @@ public abstract class HClass extends HPointer
     }
   }
 
+  public int hashCode() { return getDescriptor().hashCode(); }
   /**
    * Converts the object to a string.  The string representation is the
    * string <code>"class"</code> or <code>"interface"</code> followed by
