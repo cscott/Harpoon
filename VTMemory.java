@@ -16,6 +16,11 @@ public class VTMemory extends ScopedMemory {
 	super(maximum);
     }
 
+    /** Alternate constructor, with no limits */
+    public VTMemory() {
+	super(0);
+    }
+
     /** Initialize the native component of this VTMemory. 
      */
     protected native void initNative(long sizeInBytes);
