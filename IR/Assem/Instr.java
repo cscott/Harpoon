@@ -42,7 +42,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.81 2000-10-19 22:39:06 pnkfelix Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.82 2000-10-31 01:18:03 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
@@ -559,8 +559,8 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
     /* Replaces <code>inOld</code> with <code>inNew</code> in the
      * instruction layout. */
     public static void replace(Instr inOld, Instr inNew) {
-	Util.assert(inNew.next==null && inNew.prev==null);
-	Util.assert(inOld.next!=null || inOld.prev!=null);
+	Util.assert(inNew.next==null && inNew.prev==null, "newI has a spot");
+	Util.assert(inOld.next!=null || inOld.prev!=null, "oldI has no loc");
 
 	if (PRINT_REPLACES) System.out.println("replacing Instr:"+inOld+" with Instr:"+inNew);
 	inNew.layout(inOld, inOld.getNext());
@@ -929,4 +929,14 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
     */
     public boolean isJump() { return false; }
     
+    
+    /** Returns true if this is a dummy instruction to express
+	register allocation constraints.
+	<BR> <B>effects:</B> Returns true if this instruction has no
+	     effect in itself, but instead is an artificial use of
+	     some <code>Temp</code>(s) inserted as a note to the
+	     register allocator not to insert a <em>Spill-Load</em>
+	     before this instruction.
+    */
+    public boolean isDummy() { return false; }
 }
