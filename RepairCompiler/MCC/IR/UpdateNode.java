@@ -464,6 +464,7 @@ class UpdateNode {
 	for(int i=dotvector.size()-1;i>=0;i--) {
 	    Expr e=(Expr)dotvector.get(i);
 	    if (e instanceof CastExpr) {
+		newexpr.td=e.td;
 		newexpr=new CastExpr(((CastExpr)e).getType(),newexpr);
 	    } else if (e instanceof DotExpr) {
 		DotExpr de=(DotExpr)e;
@@ -471,6 +472,7 @@ class UpdateNode {
 		    DotExpr de2=new DotExpr(newexpr,de.field,new IntegerLiteralExpr(0));
 		    de2.fd=de.fd;
 		    de2.fieldtype=de.fieldtype;
+		    de2.td=de.td;
 		    OpExpr offset=new OpExpr(Opcode.SUB,rightve,de2);
 		    OpExpr index=new OpExpr(Opcode.DIV,offset,de.fieldtype.getSizeExpr());
 		    if (u.getRightPos()==apindex) {
@@ -479,6 +481,7 @@ class UpdateNode {
 		    } else {
 			DotExpr de3=new DotExpr(newexpr,de.field,index);
 			de3.fd=de.fd;
+			de3.td=de.td;
 			de3.fieldtype=de.fieldtype;
 			newexpr=de3;
 		    }
@@ -486,6 +489,7 @@ class UpdateNode {
 		    DotExpr de2=new DotExpr(newexpr,de.field,null);
 		    de2.fd=de.fd;
 		    de2.fieldtype=de.fieldtype;
+		    de2.td=de.td;
 		    newexpr=de2;
 		}
 		apindex++;

@@ -1,6 +1,7 @@
 package MCC.IR;
 
 import java.util.*;
+import MCC.Compiler;
 
 public class DotExpr extends Expr {
     
@@ -144,13 +145,42 @@ public class DotExpr extends Expr {
 	FieldDescriptor fd=this.fd;
 	if (fd instanceof ArrayDescriptor)
 	    fd=((ArrayDescriptor)fd).getField();
+	boolean doboundscheck=true;
+	boolean performedboundscheck=false;
+
+	writer.outputline(getType().getGenerateType() + " " + dest.getSafeSymbol()+"=0;");
 
         if (intindex != null) {
             if (intindex instanceof IntegerLiteralExpr && ((IntegerLiteralExpr) intindex).getValue() == 0) {
                 /* short circuit for constant 0 */
             } else {
                 Expr basesize = fd.getBaseSizeExpr();
-                offsetbits = new OpExpr(Opcode.ADD, offsetbits, new OpExpr(Opcode.MULT, basesize, intindex));
+		if (doboundscheck) {
+		    VarDescriptor indexvd=VarDescriptor.makeNew("index");
+		    indexvd.setType(ReservedTypeDescriptor.INT);
+		    writer.getSymbolTable().add(indexvd);
+
+		    writer.output("// " + indexvd.getSafeSymbol() + " <-- ");
+
+		    intindex.prettyPrint(writer);
+		    writer.outputline("");
+		    intindex.generate(writer, indexvd);
+		    writer.output("// " + indexvd.getSafeSymbol() + " = ");
+		    intindex.prettyPrint(writer);
+		    writer.outputline("");
+		    Expr indexbound=((ArrayDescriptor)this.fd).getIndexBound();
+		    VarDescriptor indexboundvd=VarDescriptor.makeNew("indexbound");
+
+		    indexbound.generate(writer,indexboundvd);
+		    
+		    writer.outputline("if ("+indexvd.getSafeSymbol()+">=0 &&"+indexvd.getSafeSymbol()+"<"+indexboundvd.getSafeSymbol()+")");
+		    writer.startblock();
+		    VarExpr indexve=new VarExpr(indexvd);
+		    offsetbits = new OpExpr(Opcode.ADD, offsetbits, new OpExpr(Opcode.MULT, basesize, indexve));
+		    
+		    performedboundscheck=true;
+		} else
+		    offsetbits = new OpExpr(Opcode.ADD, offsetbits, new OpExpr(Opcode.MULT, basesize, intindex));
             }
         }
 
@@ -168,108 +198,69 @@ public class DotExpr extends Expr {
                
         boolean dotypecheck = false;
 
-        if (offsetbits instanceof IntegerLiteralExpr) {
-            int offsetinbits = ((IntegerLiteralExpr) offsetbits).getValue();
-            int offset = offsetinbits >> 3; /* offset in bytes */
-
-            if (fd.getType() instanceof ReservedTypeDescriptor && !fd.getPtr()) {
-                int shift = offsetinbits - (offset << 3);            
-                int mask = bitmask(((IntegerLiteralExpr)fd.getType().getSizeExpr()).getValue());
-                               
-                /* type var = ((*(int *) (base + offset)) >> shift) & mask */
-		writer.outputline(getType().getGenerateType() + " "+dest.getSafeSymbol()+"=0;");
-		writer.outputline("if ("+leftd.getSafeSymbol()+")");
-		writer.outputline(dest.getSafeSymbol() + " = ((*(int *)" + 
-                                  "(" + leftd.getSafeSymbol() + " + " + offset + ")) " + 
-                                  " >> " + shift + ") & 0x" + Integer.toHexString(mask) + ";");
-		writer.outputline("else maybe=1;");
-            } else { /* a structure address or a ptr! */
-                String ptr = fd.getPtr() ? "*(int *)" : "";
-                /* type var = [*(int *)] (base + offset) */
-                writer.outputline("int " + dest.getSafeSymbol()+"=0;");
-		writer.outputline("if ("+leftd.getSafeSymbol()+")");
+	VarDescriptor ob = VarDescriptor.makeNew("offsetinbits");
+	writer.output("// " + ob.getSafeSymbol() + " <-- ");
+	offsetbits.prettyPrint(writer);
+	writer.outputline("");
+	offsetbits.generate(writer, ob);
+	writer.output("// " + ob.getSafeSymbol() + " = ");
+	offsetbits.prettyPrint(writer);
+	writer.outputline("");
+	
+	/* derive offset in bytes */
+	VarDescriptor offset = VarDescriptor.makeNew("offset");
+	writer.outputline("int " + offset.getSafeSymbol() + " = " + ob.getSafeSymbol() + " >> 3;");
+	
+	if (fd.getType() instanceof ReservedTypeDescriptor && !fd.getPtr()) {
+	    VarDescriptor shift = VarDescriptor.makeNew("shift");
+	    writer.outputline("int " + shift.getSafeSymbol() + " = " + ob.getSafeSymbol() + 
+			      " - (" + offset.getSafeSymbol() + " << 3);");
+	    int mask = bitmask(((IntegerLiteralExpr)fd.getType().getSizeExpr()).getValue());
+	    
+	    /* type var = ((*(int *) (base + offset)) >> shift) & mask */
+	    writer.outputline("if ("+leftd.getSafeSymbol()+")");
+	    writer.outputline(dest.getSafeSymbol() + " = ((*(int *)" + 
+			      "(" + leftd.getSafeSymbol() + " + " + offset.getSafeSymbol() + ")) " + 
+			      " >> " + shift.getSafeSymbol() + ") & 0x" + Integer.toHexString(mask) + ";");  
+	    writer.outputline("else maybe=1;");
+	} else { /* a structure address or a ptr */
+	    String ptr = fd.getPtr() ? "*(int *)" : "";
+	    /* type var = [*(int *)] (base + offset) */
+	    writer.outputline("if ("+leftd.getSafeSymbol()+")");
+	    writer.startblock();
+	    writer.outputline(dest.getSafeSymbol() + 
+			      " = " + ptr + "(" + leftd.getSafeSymbol() + " + " + offset.getSafeSymbol() + ");");  
+	    if (fd.getPtr()) {
+		writer.outputline("if ("+dest.getSafeSymbol()+")");
 		writer.startblock();
-                writer.outputline(dest.getSafeSymbol() + 
-                                  " = " + ptr + "(" + leftd.getSafeSymbol() + " + " + offset + ");");  
-		if (fd.getPtr()) {
-		    writer.outputline("if ("+dest.getSafeSymbol()+")");
-		    writer.startblock();
-		    VarDescriptor typevar=VarDescriptor.makeNew("typechecks");
-		    if (DOMEMCHECKS&&(!DOTYPECHECKS)) {
-			writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
-			dotypecheck = true;
-		    } else if (DOTYPECHECKS) {
-			writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
-		    }
-		    writer.outputline("if (!"+typevar.getSafeSymbol()+")");
-		    writer.startblock();
-		    writer.outputline(dest.getSafeSymbol()+"=0;");
-		    if (DONULL)
-			writer.outputline(ptr + "(" + leftd.getSafeSymbol() + " + " + offset + ")=0;");
-		    writer.endblock();
-		    writer.endblock();
+		VarDescriptor typevar=VarDescriptor.makeNew("typechecks");
+		if (DOMEMCHECKS&&(!DOTYPECHECKS)) {
+		    writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
+		    dotypecheck = true;
+		} else if (DOTYPECHECKS) {
+		    writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
 		}
-		writer.endblock();
-		writer.outputline("else maybe=1;");
-            }
-        } else { /* offset in bits is an expression that must be generated */                        
-            VarDescriptor ob = VarDescriptor.makeNew("offsetinbits");
-            writer.output("// " + ob.getSafeSymbol() + " <-- ");
-            offsetbits.prettyPrint(writer);
-            writer.outputline("");
-            offsetbits.generate(writer, ob);
-            writer.output("// " + ob.getSafeSymbol() + " = ");
-            offsetbits.prettyPrint(writer);
-            writer.outputline("");
-
-            /* derive offset in bytes */
-            VarDescriptor offset = VarDescriptor.makeNew("offset");
-            writer.outputline("int " + offset.getSafeSymbol() + " = " + ob.getSafeSymbol() + " >> 3;");
-            
-            if (fd.getType() instanceof ReservedTypeDescriptor && !fd.getPtr()) {
-                VarDescriptor shift = VarDescriptor.makeNew("shift");
-                writer.outputline("int " + shift.getSafeSymbol() + " = " + ob.getSafeSymbol() + 
-                                  " - (" + offset.getSafeSymbol() + " << 3);");
-                int mask = bitmask(((IntegerLiteralExpr)fd.getType().getSizeExpr()).getValue());
-                
-                /* type var = ((*(int *) (base + offset)) >> shift) & mask */
-		writer.outputline(getType().getGenerateType() + " " + dest.getSafeSymbol()+"=0;");
-		writer.outputline("if ("+leftd.getSafeSymbol()+")");
-                writer.outputline(dest.getSafeSymbol() + 
-                                  " = ((*(int *)" + 
-                                  "(" + leftd.getSafeSymbol() + " + " + offset.getSafeSymbol() + ")) " + 
-                                  " >> " + shift.getSafeSymbol() + ") & 0x" + Integer.toHexString(mask) + ";");  
-		writer.outputline("else maybe=1;");
-            } else { /* a structure address or a ptr */
-                String ptr = fd.getPtr() ? "*(int *)" : "";
-                /* type var = [*(int *)] (base + offset) */
-                writer.outputline("int " + dest.getSafeSymbol() +"=0;"); 
-		writer.outputline("if ("+leftd.getSafeSymbol()+")");
+		writer.outputline("if (!"+typevar.getSafeSymbol()+")");
 		writer.startblock();
-                writer.outputline(dest.getSafeSymbol() + 
-                                  " = " + ptr + "(" + leftd.getSafeSymbol() + " + " + offset.getSafeSymbol() + ");");  
-		if (fd.getPtr()) {
-		    writer.outputline("if ("+dest.getSafeSymbol()+")");
-		    writer.startblock();
-		    VarDescriptor typevar=VarDescriptor.makeNew("typechecks");
-		    if (DOMEMCHECKS&&(!DOTYPECHECKS)) {
-			writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
-			dotypecheck = true;
-		    } else if (DOTYPECHECKS) {
-			writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
-		    }
-		    writer.outputline("if (!"+typevar.getSafeSymbol()+")");
-		    writer.startblock();
-		    writer.outputline(dest.getSafeSymbol()+"=0;");
-		    if (DONULL)
-			writer.outputline(ptr + "(" + leftd.getSafeSymbol() + " + " + offset.getSafeSymbol() + ")=0;");
-		    writer.endblock();
-		    writer.endblock();
-		}
+		writer.outputline(dest.getSafeSymbol()+"=0;");
+		if (DONULL)
+		    writer.outputline(ptr + "(" + leftd.getSafeSymbol() + " + " + offset.getSafeSymbol() + ")=0;");
 		writer.endblock();
-		writer.outputline("else maybe=1;");
-            }
+		writer.endblock();
+	    }
+	    writer.endblock();
+	    writer.outputline("else maybe=1;");
         }
+	if (performedboundscheck) {
+	    writer.endblock();
+	    writer.outputline(" else ");
+	    writer.startblock();
+	    writer.outputline(dest.getSafeSymbol()+"=0;");
+	    writer.outputline("maybe=1;");
+	    if (!Compiler.REPAIR)
+		writer.outputline("printf(\"Array Index Out of Bounds\");");
+	    writer.endblock();
+	}
     }
 
     private int bitmask(int bits) {
