@@ -36,7 +36,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.47 2000-02-16 22:40:19 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.48 2000-07-16 23:39:05 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The Tree Objects composing this code view. */
@@ -143,14 +143,14 @@ public abstract class Code extends HCode {
     /** 
      * Returns an <code>Iterator</code> of the <code>Tree</code> Objects 
      * making up this code view.  The root of the tree is the first element
-     * of the Iterator. 
+     * of the Iterator.  Returns the elements of the tree in depth-first
+     * pre-order.
      */
     public Iterator getElementsI() { 
 	return new UnmodifiableIterator() {
-	    Set visited = new HashSet();
-	    Stack stack = new Stack(); 
+	    Stack stack = new Stack(), aux = new Stack(); 
 	    {   // initialize stack/set
-		stack.push(getRootElement()); visited.add(stack.peek());
+		stack.push(getRootElement());
 	    }
 	    public boolean hasNext() { return !stack.isEmpty(); }
 	    public Object next() {
@@ -158,12 +158,8 @@ public abstract class Code extends HCode {
 		Tree t = (Tree) stack.pop();
 		// Push successors on stack before returning
 		// (reverse the order twice to get things right)
-		Stack aux = new Stack();
 		for (Tree tp = t.getFirstChild(); tp!=null; tp=tp.getSibling())
-		    if (!visited.contains(tp)) {
-			aux.push(tp);
-			visited.add(tp);
-		    }
+		    aux.push(tp);
 		while (!aux.isEmpty())
 		    stack.push(aux.pop()); //LIFO twice.
 		return t;
