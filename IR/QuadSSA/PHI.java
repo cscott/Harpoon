@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * <code>PHI</code> objects represent blocks of PHI functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.9 1998-09-08 14:38:39 cananian Exp $
+ * @version $Id: PHI.java,v 1.10 1998-09-10 01:38:22 cananian Exp $
  */
 
 public class PHI extends Quad {
@@ -32,7 +32,7 @@ public class PHI extends Quad {
     /** Grow the arity of a PHI by one. */
     public void grow(Temp args[]) {
 	// increase number of prev links by one.
-	Quad[] nprev = new Quad[prev.length+1];
+	Edge[] nprev = new Edge[prev.length+1];
 	System.arraycopy(prev, 0, nprev, 0, prev.length);
 	nprev[prev.length] = null;
 	prev = nprev;

@@ -8,16 +8,16 @@ import harpoon.Temp.Temp;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.3 1998-09-08 14:38:39 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.4 1998-09-10 01:38:22 cananian Exp $
  */
 
 public class SWITCH extends Quad {
     /** The discriminant, compared against each value in <code>keys</code>.*/
     public Temp index;
     /** Integer keys for switch cases. <p>
-     *  <code>next[n]</code> is the jump target corresponding to
+     *  <code>next(n)</code> is the jump target corresponding to
      *  <code>keys[n]</code> for <code>0 <= n < keys.length</code>. <p>
-     *  <code>next[keys.length]</code> is the default target. */
+     *  <code>next(keys.length)</code> is the default target. */
     public int keys[];
     /** Creates a <code>SWITCH</code> operation. <p>
      *  <code>next[n]</code> is the jump target corresponding to
@@ -38,8 +38,8 @@ public class SWITCH extends Quad {
     public String toString() {
 	StringBuffer sb = new StringBuffer("SWITCH "+index+": ");
 	for (int i=0; i<keys.length; i++)
-	    sb.append("case "+keys[i]+" => "+next[i].getID()+"; ");
-	sb.append("default => "+next[keys.length].getID());
+	    sb.append("case "+keys[i]+" => "+next(i).getID()+"; ");
+	sb.append("default => "+next(keys.length).getID());
 	return sb.toString();
     }
 }

@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.60 1998-09-09 23:31:40 cananian Exp $
+ * @version $Id: Translate.java,v 1.61 1998-09-10 01:38:23 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -952,7 +952,7 @@ class Translate  { // not public.
 				      new Temp[] { s.lv[opd0.getIndex()], 
 						       constant})
 			     );
-		last = q.next[0];
+		last = q.next(0);
 		break;
 	    }
 	case Op.INSTANCEOF:
@@ -1018,7 +1018,7 @@ class Translate  { // not public.
 		Quad.addEdge(q3, 0, q4, 0);
 		Quad.addEdge(q4, 0, q,  0);
 		Quad.addEdge(q5, 0, q6, 0);
-		Quad.addEdge(q6, 0, q2.next()[0], 0);
+		Quad.addEdge(q6, 0, q2.next(0), 0);
 		Quad.addEdge(q2, 0, q6, 1);
 		((CALL)q).retex = ((OPER)q1).operands[0] = Tex2;
 		q = q3;

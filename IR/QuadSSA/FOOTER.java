@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>FOOTER</code> node as their only successor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FOOTER.java,v 1.2 1998-09-09 23:02:49 cananian Exp $
+ * @version $Id: FOOTER.java,v 1.3 1998-09-10 01:38:22 cananian Exp $
  * @see HEADER
  * @see RETURN
  * @see THROW
@@ -25,14 +25,15 @@ public class FOOTER extends Quad {
 
     /** Grow the arity of a FOOTER by one. */
     void grow() {
-	Quad[] nprev = new Quad[prev.length + 1];
+	Edge[] nprev = new Edge[prev.length + 1];
 	System.arraycopy(prev, 0, nprev, 0, prev.length);
 	nprev[prev.length] = null;
 	prev = nprev;
     }
     /** Attach a new Quad to this FOOTER. */
     public void attach(Quad q, int which_succ) {
-	grow(); prev[prev.length-1] = q; q.next[which_succ] = this;
+	grow(); 
+	addEdge(q, which_succ, this, prev.length-1);
     }
 
     /** Returns human-readable representation of this Quad. */

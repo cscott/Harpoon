@@ -8,7 +8,7 @@ import harpoon.Temp.Temp;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.11 1998-09-08 14:38:39 cananian Exp $
+ * @version $Id: Quad.java,v 1.12 1998-09-10 01:38:22 cananian Exp $
  */
 public abstract class Quad implements HCodeElement {
     String sourcefile;
@@ -22,8 +22,8 @@ public abstract class Quad implements HCodeElement {
 	synchronized(lock) {
 	    this.id = next_id++;
 	}
-	this.prev = new Quad[prev_arity];
-	this.next = new Quad[next_arity];
+	this.prev = new Edge[prev_arity];
+	this.next = new Edge[next_arity];
     }
     protected Quad(HCodeElement source) {
 	this(source, 1, 1);
@@ -52,30 +52,55 @@ public abstract class Quad implements HCodeElement {
     /*----------------------------------------------------------*/
     // Graph structure.
     // Can modify links, but not *number of links*.
-    public Quad[] next() { return next; }
-    public Quad[] prev() { return prev; }
-    Quad next[], prev[];
-    
-    /*
-    public void append(Quad q) {
-	Util.assert(next.length==1 && q.prev.length==1);
-	next[0]=q; q.prev[0]=this;
+    Edge next[], prev[];
+
+    /** Returns the <code>i</code>th successor of this quad. */
+    public Quad next(int i) { return next[i].to(); }
+    /** Returns the <code>i</code>th predecessor of this quad. */
+    public Quad prev(int i) { return prev[i].from(); }
+
+    /** Returns an array containing all the successors of this quad,
+     *  in order. */
+    public Quad[] next() { 
+	Quad[] r = new Quad[next.length];
+	for (int i=0; i<r.length; i++)
+	    r[i] = next[i].to();
+	return r;
     }
-    */
+    /** Returns an array containing all the predecessors of this quad,
+     *  in order. */
+    public Quad[] prev() {
+	Quad[] r = new Quad[prev.length];
+	for (int i=0; i<r.length; i++)
+	    r[i] = next[i].from();
+	return r;
+    }
+    
+    /** Returns an array containing all the outgoing edges from this quad. */
+    public Edge[] nextEdge() { return (Edge[]) Util.copy(next); }
+    /** Returns an array containing all the incoming edges of this quad. */
+    public Edge[] prevEdge() { return (Edge[]) Util.copy(prev); }
+    /** Returns the <code>i</code>th outgoing edge for this quad. */
+    public Edge nextEdge(int i) { return next[i]; }
+    /** Returns the <code>i</code>th incoming edge of this quad. */
+    public Edge prevEdge(int i) { return prev[i]; }
+
+    /** Adds an edge between two Quads.  The <code>from_index</code>ed
+     *  outgoing edge of <code>from</code> is connected to the 
+     *  <code>to_index</code>ed incoming edge of <code>to</code>. */
     public static void addEdge(Quad from, int from_index,
 			       Quad to, int to_index) {
-	from.next[from_index] = to;
-	to.prev[to_index] = from;
+	Edge e = new Edge(from, from_index, to, to_index);
+	from.next[from_index] = e;
+	to.prev[to_index] = e;
     }
+    /** Adds an edge between two Quads.  <code>from</code> must have
+     *  exactly one successor, and <code>to</code> must require exactly
+     *  one predecessor. Equivalent to <code>addEdge(from, 0, to, 0)</code>.
+     */
     public static void addEdge(Quad from, Quad to) {
 	Util.assert(from.next.length==1);
 	Util.assert(to.prev.length==1);
 	addEdge(from, 0, to, 0);
     }
 }
-
-
-
-
-
-

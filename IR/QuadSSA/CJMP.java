@@ -11,7 +11,7 @@ import harpoon.Temp.Temp;
  *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.9 1998-09-08 14:38:38 cananian Exp $
+ * @version $Id: CJMP.java,v 1.10 1998-09-10 01:38:22 cananian Exp $
  */
 
 public class CJMP extends Quad {
@@ -25,9 +25,11 @@ public class CJMP extends Quad {
 
     /** Swaps if-true and if-false targets. */
     public void invert() {
-	Quad q = next[0];
-	next[0] = next[1];
-	next[1] = q;
+	Edge iftrue = nextEdge(0);
+	Edge iffalse= nextEdge(1);
+
+	Quad.addEdge(this, 0, iffalse.to(), iffalse.which_pred());
+	Quad.addEdge(this, 1, iftrue.to(), iftrue.which_pred());
     }
     /** Returns all the Temps used by this Quad.
      * @return the <code>test</code> field.
@@ -36,7 +38,7 @@ public class CJMP extends Quad {
     /** Returns human-readable representation. */
     public String toString() {
 	return "CJMP: if " + test + 
-	    " then " + next[1].getID() + 
-	    " else " + next[0].getID();
+	    " then " + next(1).getID() + 
+	    " else " + next(0).getID();
     }
 }
