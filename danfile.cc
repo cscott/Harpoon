@@ -6,6 +6,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/mman.h>
+#include <sys/time.h>
+#include <assert.h>
+
+#include <errno.h>
+extern int errno;
+
 #include "file.h"
 extern "C" {
 #include "test.h"
@@ -13,7 +19,6 @@ extern "C" {
 #include "Hashtable.h"
 #include "model.h"
 #include "element.h"
-#include "classlist.h"
 
 char *dstring="d\0";
 struct filedesc files[MAXFILES];
@@ -25,6 +30,315 @@ int ibbptr;  // pointer to the InodeBlock block
 int itbptr;  // pointer to the InodeTable block
 int rdiptr;  // pointer to the RootDirectoryInode block
 
+struct InodeBitmap* sc_ib;
+struct BlockBitmap* sc_bb;
+struct InodeBlock* sc_it;
+int sc_bbbptr;
+int sc_ibbptr;
+int sc_itbptr;
+int sc_rdiptr;
+
+#include "SimpleHash.h"
+
+int testinode(int i) {
+    char temp;
+    assert(sc_ib);
+    temp = sc_ib->inode[i/8]&(1<<(i%8));
+    return temp == 0 ? 0 : 1;
+}
+
+int testblock(int i) {
+    char temp;
+    assert(sc_bb);
+    temp = sc_bb->blocks[i/8]&(1<<(i%8));
+    return temp == 0 ? 0 : 1;
+}
+
+void selfcheck2(struct block* d) {
+
+    struct timeval begin,end;
+    unsigned long t;
+    gettimeofday(&begin,NULL);
+
+#include "RepairCompiler/MCC/test2.cc"
+
+    gettimeofday(&end,NULL);
+    t=(end.tv_sec-begin.tv_sec)*1000000+end.tv_usec-begin.tv_usec;
+    printf("\ncodegen in %ld u-seconds!\n", t);
+}
+
+void selfcheck(struct block* diskptr) {
+
+    /* get time information for statistics */
+    struct timeval begin,end;
+    unsigned long t;
+    gettimeofday(&begin,NULL);
+
+    
+    /* hand written data structure consistency */
+
+    struct SuperBlock* sb = (struct SuperBlock*)&diskptr[0];
+    struct GroupBlock* gb = (struct GroupBlock*)&diskptr[1];
+    
+    int numblocks = sb->NumberofBlocks;
+    int numinodes = sb->NumberofInodes;
+
+    SimpleHash* hash_inodeof = new SimpleHash(1000); // estimation of the number of files!
+    SimpleHash* hash_contents = new SimpleHash(1000); // contents
+    SimpleList* list_inodes = new SimpleList();
+    SimpleList* list_blocks = new SimpleList();
+
+    // simple test
+
+    // check bitmap consistency with superblock, groupblock, inotetableblock
+    // inodebitmapblock, blockbitmapblock, rootidrectoryinode
+
+    sc_bbbptr = gb->BlockBitmapBlock;
+    sc_ibbptr = gb->InodeBitmapBlock;
+    sc_itbptr = gb->InodeTableBlock;
+    sc_rdiptr = sb->RootDirectoryInode;
+
+    // constraint 8: automatic...
+    // constraint 9: automatic...
+
+    // constraint 10:
+    if (sc_itbptr < numblocks) {
+        sc_it = (InodeBlock*)&diskptr[sc_itbptr];        
+    } else {
+        sc_it = NULL;
+    }
+
+    // constraint 11:
+    if (sc_ibbptr < numblocks) {
+        sc_ib = (InodeBitmap*)&diskptr[sc_ibbptr];
+    } else {
+        sc_ib = NULL;
+    }
+
+    // constraint 12:
+    if (sc_bbbptr < numblocks) {
+        sc_bb = (BlockBitmap*)&diskptr[sc_bbbptr];
+    } else {
+        sc_bb = NULL;
+    }
+
+    // rule 1
+    if (sc_bb) {
+        // constraint 3
+        assert(testblock(0)); // superblock
+        
+        // building blocks
+        list_blocks->add(0);
+    }
+
+    // rule 2
+    if (sc_bb) {
+        // constraint 3
+        assert(testblock(1)); // groupblock
+
+        // building list_blocks
+        list_blocks->add(1);
+    }
+
+    // rule 3
+    if (sc_bb) {
+        // constraint 3
+        assert(testblock(sc_itbptr));
+
+        // building list_blocks
+        list_blocks->add(sc_itbptr);
+    }
+
+    // rule 4
+    if (sc_bb) {
+        // constraint 3
+        assert(testblock(sc_ibbptr));
+
+        // building list_blocks
+        list_blocks->add(sc_ibbptr);
+    }
+
+    // rule 5
+    if (sc_bb) {
+        // constraint 3
+        assert(testblock(sc_bbbptr));
+
+        // building list_blocks
+        list_blocks->add(sc_bbbptr);
+    }
+
+    // build inodeof and contents
+    if (sb->RootDirectoryInode < numinodes) {
+        int dinode = sb->RootDirectoryInode;
+
+        // building list_inodes
+        list_inodes->add(dinode);
+
+        for (int k = 0 ; k <= 11 ; k++) {
+
+            int block = sc_it->entries[dinode].Blockptr[k];
+
+            if (block != 0) {
+                hash_contents->add(dinode, block);
+                list_blocks->add(block);
+            }
+            
+            if (block < numblocks) {
+
+                DirectoryBlock* db = (DirectoryBlock*)&diskptr[block];
+
+                for (int j = 0; j < sb->blocksize/128 ; j++) {
+
+                    DirectoryEntry* de = (DirectoryEntry*)&db->entries[j];
+
+                    if (de->inodenumber < numinodes) {
+                        // add <de, de.inodenumber> to inodeof                    
+                        hash_inodeof->add((int)de, de->inodenumber);
+                    }
+                    
+                    if (de->inodenumber < numinodes && de->inodenumber != 0) {
+                        
+                        // build list_inodes
+                        list_inodes->add(de->inodenumber);                        
+                        
+                        for (int j2 = 0 ; j2 <= 11 ; j2++) {
+                            int block2 = sc_it->entries[de->inodenumber].Blockptr[j2];
+                            if (block2 != 0) {
+                                hash_contents->add(de->inodenumber, block2);
+                                if (block2 < numblocks) {
+                                    list_blocks->add(block2);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //printf("\n");
+
+    // rule 6 and rule 11: rootdirectoryinode
+    if (sb->RootDirectoryInode < numinodes) {
+        int inode = sb->RootDirectoryInode;
+
+        // constraint 1
+        assert(testinode(inode));
+
+        int filesize = sc_it->entries[inode].filesize;
+        int contents = 0;
+        for (int j = 0; j <= 11; j++) {
+            int block2 = sc_it->entries[inode].Blockptr[j];
+            if (block2 != 0) {
+                // TBD: needs to actual store state because
+                // there could be duplicate numbers and they
+                // shouldn't be double counted
+                contents++;
+
+                // rule 11
+                if (block2 < numblocks) {
+                    // constraint 3
+                    assert(testblock(block2));
+                    
+                    // constraint 7
+                    //printf("%d - %d %d %d\n", inode, j, block2, hash_contents->countdata(block2));
+                    assert(hash_contents->countdata(block2)==1);
+                }
+            }
+        }
+
+        // constraint 6
+        assert(filesize <= (contents*8192));
+
+        // constraint 5:
+        assert(sc_it->entries[inode].referencecount == hash_inodeof->countdata(inode));
+    }
+
+    // rule 14
+    if (sb->RootDirectoryInode < numinodes) {
+        int dinode = sb->RootDirectoryInode;
+
+        for (int j = 0; j < sb->blocksize/128 ; j++) {
+            for (int k = 0 ; k <= 11 ; k++) {
+                int block = sc_it->entries[dinode].Blockptr[k];
+                if (block < numblocks) {
+                    DirectoryBlock* db = (DirectoryBlock*)&diskptr[block];
+                    DirectoryEntry* de = (DirectoryEntry*)&db->entries[j];
+                    
+                    int inode = de->inodenumber;
+                    if (inode < numinodes && inode != 0) {
+
+                        // constraint 1
+                        assert(testinode(inode));
+                        
+                        // constraint 6
+                        int filesize = sc_it->entries[inode].filesize;
+                        int contents = 0;
+                        for (int j2 = 0; j2 <= 11; j2++) {
+                            int block2 = sc_it->entries[inode].Blockptr[j2];
+                            if (block2 != 0) {
+                                // TBD 
+                                contents++;
+
+                                // rule 11
+                                if (block2 < numblocks) {
+                                    // constraint 3
+                                    assert(testblock(block2));
+                                    
+                                    // constraint 7
+                                    assert(hash_contents->countdata(block2)==1);
+                                }
+                            }
+                        }
+                        assert(filesize <= (contents*8192));
+
+                        // constraint 5:
+                        assert(sc_it->entries[inode].referencecount == hash_inodeof->countdata(inode));                                                
+                    }
+                }
+            }
+        }
+    }
+
+    // to go, [7, 8 ]
+    // interesting question is going to be how to deal with 7 and 8
+    // actually it turns out that the constraints bound to rules 7 and 8 are
+    // easy... its just that creating the lists for 7 and 8 is a little tricky...
+    // 7 can easily piggyback on the creation of inodeof/contents... it fits quite 
+    // nicely into that traversal... same goes for 8
+
+    // rule 7
+    for (int i = 0 ; i < numinodes ; i++) {    
+        if (!list_inodes->contains(i)) {
+            // constraint 2
+            if (testinode(i)) {
+                printf("<bad inode,%d>", i);
+                assert(testinode(i)==0);
+            } 
+        } 
+    } 
+
+    // rule 8
+    for (int i = 0 ; i < numblocks ; i++) {    
+        if (!list_blocks->contains(i)) {
+            // constraint 4
+            if (testblock(i)) {
+                printf("<bad block,%d>", i);
+                assert(testblock(i)==0);
+            }
+
+        }
+    } 
+
+
+    gettimeofday(&end,NULL);
+    t=(end.tv_sec-begin.tv_sec)*1000000+end.tv_usec-begin.tv_usec;
+
+    printf("\npassed tests in %ld u-seconds!\n", t);
+
+
+}
+
 
 int main(int argc, char **argv) 
 {
@@ -32,6 +346,21 @@ int main(int argc, char **argv)
   for(int i=0;i<MAXFILES;i++)
     files[i].used=false;
 
+
+  if (argc <= 1) {
+      printf("Filesystem Repair:\n\tusage: main [0..9]\n\n");
+      printf("\t 0 : creates disk\n");
+      printf("\t 1 : mount disk, creates files and writes test data\n");
+      printf("\t 2 : \n");
+      printf("\t 3 : inserts errors to break specs\n");
+      printf("\t 4 : \n");
+      printf("\t 5 : \n");
+      printf("\t 6 : \n");
+      printf("\t 7 : \n");
+      printf("\t 8 : \n");
+      printf("\t 9 : \n");
+      exit(-1);
+  }
 
   switch(argv[1][0]) {
 
@@ -71,21 +400,61 @@ int main(int argc, char **argv)
   }
 
 
-  case '2': {
+  case 'r': {
     struct block * ptr=mountdisk("disk");
+
     initializeanalysis();
-    Hashtable *env=exportmodel->gethashtable();
+
     alloc(ptr,LENGTH);
     addmapping(dstring,ptr,"Disk");
-    //    env->put(dstring,new Element(ptr,exportmodel->getstructure("Disk")));//should be of badstruct
 
     printdirectory(ptr);
     printinodeblock(ptr);
 
-    printf(".");
     // check the DSs
     doanalysis();
-    printf(".");
+    
+
+    dealloc(ptr);
+    unmountdisk(ptr);
+    break;
+  }
+
+
+  case 's': {
+    struct block * ptr=mountdisk("disk");
+
+    initializeanalysis();
+
+    alloc(ptr,LENGTH);
+    addmapping(dstring,ptr,"Disk");
+
+    printdirectory(ptr);
+    printinodeblock(ptr);
+
+    // check the DSs
+    selfcheck(ptr);
+    
+
+    dealloc(ptr);
+    unmountdisk(ptr);
+    break;
+  }
+
+  case 'x': {
+    struct block * ptr=mountdisk("disk");
+
+    initializeanalysis();
+
+    alloc(ptr,LENGTH);
+    addmapping(dstring,ptr,"Disk");
+
+    printdirectory(ptr);
+    printinodeblock(ptr);
+
+    // check the DSs
+    selfcheck2(ptr);
+    
 
     dealloc(ptr);
     unmountdisk(ptr);
@@ -319,6 +688,14 @@ void chunmountdisk(struct block *vptr) {
 struct block * mountdisk(char *filename) {
   int fd=open(filename,O_CREAT|O_RDWR);
   struct block *ptr=(struct block *) mmap(NULL,LENGTH,PROT_READ|PROT_WRITE|PROT_EXEC,MAP_SHARED,fd,0);
+
+  // droy: debugging
+  if ((int)ptr == -1) {
+      perror("mountdisk\0");
+      exit(-1);
+  }
+
+
   struct SuperBlock *sb=(struct SuperBlock *) &ptr[0];
   struct GroupBlock *gb=(struct GroupBlock *) &ptr[1];
   bbbptr=gb->BlockBitmapBlock;
@@ -610,6 +987,14 @@ void createdisk()
 
   // maps the file 'disk' into memory
   void *vptr=mmap(NULL,LENGTH,PROT_READ|PROT_WRITE|PROT_EXEC,MAP_SHARED,fd,0);
+
+  // added by dan roy for debugging
+  if ((int)vptr == -1) {
+      perror("createdisk()\0");
+      exit(-1);
+  }
+  // end dan roy
+
   struct block *ptr=(struct block *)vptr;
   {
     struct SuperBlock * sb=(struct SuperBlock*) &ptr[0];
@@ -630,11 +1015,14 @@ void createdisk()
   }
   {
     struct BlockBitmap * bb=(struct BlockBitmap *) &ptr[2];
-    for(int i=0;i<(5+12);i++)
-      bb->blocks[i/8]=bb->blocks[i/8]|(1<<(i%8));
+    //memset(bb, 0, sizeof(BlockBitmap));
+    for(int i=0;i<(5+12);i++) {
+        bb->blocks[i/8]=bb->blocks[i/8]|(1<<(i%8));
+    }
   }
   {
     struct InodeBitmap * ib=(struct InodeBitmap *) &ptr[3];
+    //memset(ib, 0, sizeof(InodeBitmap));
     ib->inode[0]=1;
   }
   {

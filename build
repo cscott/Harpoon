@@ -2,6 +2,8 @@
 g++ -Wno-deprecated -g -O0 -c *.cc
 gcc -Wno-deprecated -g -O0 -c *.c
 
+rm danfile.o
+
 g++ -Wno-deprecated -O0 -g *.o -o main
 
 rm file.o

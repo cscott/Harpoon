@@ -1,4 +1,55 @@
 
+MARTIN's IDEA ************************************************* 7/9/03
+use type safe language and check only on reads (when data is accessed)
+check consistency properties only when the porperty needs to be
+consistent... only when it needs the property to be true 
+**********************************************************************
+
+issue: what if you are building the model and you are adding elements to
+a relation and the sets that compose those relations don't exist yet?
+hmm... maybe the question boils down to a question of whether the items
+being added to a relation are implied in the addition... that is if we
+have:
+
+R: S->S
+condition(a) => <a, f(a)> in R
+
+then if condition(a) => b in S then we never need to check for that
+relations (R)'s type... we only need to check if condition(a) => b in S
+hold ups (statically). 
+
+if not, in this case the question is whether its better to do
+a post exhaustive step or a per addition check ... in the per addition
+step we will obviously need to ensure that the sets that compose the
+domain and range of a relation are built prior to the rules that add
+elements to relations (i'm thinking that its better to do a per addition
+check because the post exhaustive step seems just as expensive and
+messier!) 
+
+question still remains though: do we need to build the sets prior?
+well... of course we do unless we want the worklist to also trigger
+rules based upon the additions to the sets of the respective
+relations... of course we would only be interested if a particular
+relation addition was blocked because of such a check... 
+
+what do we do now? well we don't even properly include required
+constraints in the required symbol list... that is being changed right
+now ... we'll have to compare this with the older graph
+
+ok... the answer is that the graph changes once we make this change
+... i'm checking out if cycles appear... i'm also going to consider the
+problem of not having a well defined relation domain/range
+(i.e. integers rather than a strictly typed set)
+
+------------------------------------------------------------------------
+
+1. check at compile time how relations are used. if they are used in
+   both directions (meaning inverse and otherwise) generate both
+   simultaneously so that checks are fast .... otherwise only generate
+   one of them that is used... code for generation should automatically
+   handle the necessary switches and double-adding... 
+
+
 new issues - it is not always possible to precalculate (or even
 calculate) an offset for a particular field... this would be the case if
 a field relied on a particular structure's fields and that fields'
