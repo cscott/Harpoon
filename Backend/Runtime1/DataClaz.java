@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.3.2.3 2002-03-11 21:17:48 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.3.2.4 2002-03-20 03:40:42 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -262,6 +262,9 @@ public class DataClaz extends Data {
 	// weed out non-virtual methods.
 	for (Iterator<HMethod> it=methods.iterator(); it.hasNext(); ) {
 	    HMethod hm = it.next();
+	    assert !hm.isInterfaceMethod() :
+		"getMethods() on "+hc+" returned an *interface* method: "+hm+
+		" / method list: "+methods;
 	    if (hm.isStatic() || hm instanceof HConstructor ||
 		Modifier.isPrivate(hm.getModifiers()))
 		it.remove();
