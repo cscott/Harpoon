@@ -56,7 +56,9 @@ jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
 #ifdef WITH_PRECISE_GC
     increment_running_thread_count();
 #endif /* WITH_PRECISE_GC */
+#ifdef WITH_STATISTICS
   gotlock:
+#endif /* WITH_STATISTICS */
     assert(st==0 /* no mutex errors */);
     li->tid = self;
     li->nesting_depth=1;
