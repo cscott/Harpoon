@@ -10,11 +10,11 @@ import java.util.Map;
  * <code>Heap</code>s support create, insert, minimum, extract-min,
  * union, decrease-key, and delete operations.  There are three primary
  * implementations, each with different expected run-times:<br>
- * <TABLE BORDER=2>
+ * <TABLE BORDER=2 ALIGN=CENTER>
  * 
  * <TR BGCOLOR="cornsilk"><TH>Procedure</TH>
- *     <TH>Binary heap<BR>(worst-case)</TH>
- *     <TH>Binomial heap<BR>(worst-case)</TH>
+ *     <TH><code>BinaryHeap</code><BR>(worst-case)</TH>
+ *     <TH><code>BinomialHeap</code><BR>(worst-case)</TH>
  *     <TH>Fibonacci heap<BR>(amortized)</TH></TR>
  * 
  * <TR>
@@ -89,7 +89,9 @@ import java.util.Map;
  * <code>Heap</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Heap.java,v 1.1.2.2 2000-02-12 18:11:13 cananian Exp $
+ * @version $Id: Heap.java,v 1.1.2.3 2000-02-12 20:58:00 cananian Exp $
+ * @see BinaryHeap
+ * @see BinomialHeap
  */
 public interface Heap {
     /** Inserts a node with the specified key and value into the
