@@ -78,7 +78,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.113 2000-08-09 04:14:46 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.114 2000-08-09 20:39:48 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -108,13 +108,39 @@ public abstract class RegAlloc  {
 	debugging purposes. */
     protected HashSet checked = new HashSet();
 
+
     /** Map[ Instr:i -> Instr:b ], where `i' was added to `code'
 	because of `b'.  The `b' is used when queries are performed on
 	`i', so it is important that all of the <code>Temp</code>s
 	referenced by `i' are also referenced by `b' (so that
 	Derivation lookups will succeed).
     */
-    protected Map backingInstrs = new HashMap();
+    private Map backedInstrs = new HashMap();
+
+    /** adds a mapping <code>instr</code> to <code>back</code> in
+	to the BackedInstrs.
+     */
+    protected void back(Instr instr, Instr back) { 
+	if (backedInstrs.keySet().contains(back)) {
+	    backedInstrs.put(instr, backedInstrs.get(back));
+	} else {
+	    backedInstrs.put(instr, back);
+	}
+    }
+    
+    /** returns the root backing <code>i</code>.  Instrs not
+	present in BackedInstrs are their own root.
+    */
+    protected Instr getBack(Instr i) { 
+	if (!backedInstrs.keySet().contains(i))
+	    return i;
+
+	Instr b = (Instr) backedInstrs.get(i);
+	while(backedInstrs.keySet().contains(b)) {
+	    b = (Instr) backedInstrs.get(b);
+	}
+	return b;
+    }
 
     /** Class for <code>RegAlloc</code> usage in loading registers. 
 	

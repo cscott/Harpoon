@@ -4,6 +4,7 @@
 package harpoon.Analysis.Instr;
 
 import harpoon.Analysis.Maps.Derivation;
+import harpoon.Backend.Maps.BackendDerivation;
 import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.DataFlow.CachingLiveTemps;
 import harpoon.Analysis.ReachingDefs;
@@ -17,6 +18,8 @@ import harpoon.Analysis.GraphColoring.SimpleGraphColorer;
 import harpoon.Analysis.GraphColoring.UnableToColorGraph;
 import harpoon.Backend.Generic.Code;
 import harpoon.Backend.Generic.RegFileInfo;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -50,11 +53,11 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.19 2000-08-09 05:44:49 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.20 2000-08-09 20:39:47 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
-    private static final boolean TIME = true;
+    private static final boolean TIME = false;
     private static final boolean RESULTS = false;
     
     public static RegAlloc.Factory FACTORY =
@@ -126,8 +129,25 @@ public class GraphColoringRegAlloc extends RegAlloc {
     }
 
     protected Derivation getDerivation() {
-	Derivation oldD = code.getDerivation();
-	return oldD;
+	final Derivation oldD = code.getDerivation();
+	return new BackendDerivation() {
+	    private HCodeElement orig(HCodeElement h){
+		return getBack((Instr)h);
+	    }
+	    public HClass typeMap(HCodeElement hce, Temp t) {
+		HCodeElement hce2 = orig(hce); 
+		return oldD.typeMap(hce2, t);
+	    }
+	    public Derivation.DList derivation(HCodeElement hce, Temp t) {
+		HCodeElement hce2 = orig(hce); 
+		return oldD.derivation(hce2, t);
+	    }
+	    public BackendDerivation.Register
+		calleeSaveRegister(HCodeElement hce, Temp t) { 
+		hce = orig(hce);
+		return ((BackendDerivation)oldD).calleeSaveRegister(hce, t);
+	    }
+	};
     }
 
     /** Returns a new Collection cr, where
@@ -674,11 +694,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
     class SpillProxy extends Instr {
 	Instr instr;
 	Temp tmp;
- 	SpillProxy(Instr i, Temp t) {
-	    super(i.getFactory(), i, "SPILL "+t, 
+ 	SpillProxy(Instr def, Temp t) {
+	    super(def.getFactory(), def, "SPILL "+t, 
 		  new Temp[]{ }, new Temp[]{ t }, 
 		  true, Collections.EMPTY_LIST);
-	    instr = i; 
+	    instr = def; 
 	    tmp = t;
 	}
 	
@@ -687,11 +707,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
     class RestoreProxy extends Instr {
 	Instr instr;
 	Temp tmp;
- 	RestoreProxy(Instr i, Temp t) {
-	    super(i.getFactory(), i, "RESTORE "+t,
+ 	RestoreProxy(Instr use, Temp t) {
+	    super(use.getFactory(), use, "RESTORE "+t,
 		  new Temp[]{ t }, new Temp[]{},
 		  true, Collections.EMPTY_LIST);
-	    instr = i; 
+	    instr = use; 
 	    tmp = t;
 	}
     }
@@ -730,7 +750,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	Util.assert(spilled.size() > oldSpilledSize);
 
-	System.out.println("*** SPILLED ("+spilled.size()+"): " + spilled);
+	System.out.println("*** SPILLED ("+spilled.size()+")"+
+			   (true?"":(": " + spilled)));
     }
 
     private void fixupSpillCode() {
@@ -738,14 +759,18 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    Instr i = (Instr) is.next();
 	    if (i instanceof SpillProxy) {
 		SpillProxy sp = (SpillProxy) i;
-		Instr.replace
-		    (sp, SpillStore.makeST(sp.instr, "FSK-ST", 
-					   sp.tmp, code.getRegisters(sp,sp.tmp)));
+		Instr spillInstr = 
+		    SpillStore.makeST(sp.instr, "FSK-ST", sp.tmp,
+				      code.getRegisters(sp,sp.tmp));
+		Instr.replace(sp, spillInstr);
+		back(spillInstr, sp.instr);
 	    } else if (i instanceof RestoreProxy) {
 		RestoreProxy rp = (RestoreProxy) i;
-		Instr.replace
-		    (rp, SpillLoad.makeLD(rp.instr, "FSK-ST", 
-					  code.getRegisters(rp,rp.tmp), rp.tmp));
+		Instr loadInstr = 
+		    SpillLoad.makeLD(rp.instr, "FSK-ST",
+				     code.getRegisters(rp,rp.tmp),
+				     rp.tmp); 
+		Instr.replace(rp, loadInstr);
 	    } 
 	}
     }

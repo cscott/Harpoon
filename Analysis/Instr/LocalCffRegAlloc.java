@@ -69,7 +69,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.112 2000-07-25 23:37:23 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.113 2000-08-09 20:39:47 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -103,35 +103,6 @@ public class LocalCffRegAlloc extends RegAlloc {
     // references to `o'  
     private Map instrToHTempMap;
 
-    // maps Instr:n -> Instr:b where `n' is backed by `b' with respect
-    // to Derivation information.
-    private Map backedInstrs;
-
-    private void back(Instr i, Instr back) {
-	if (backedInstrs.keySet().contains(back)) {
-	    backedInstrs.put(i, backedInstrs.get(back));
-	} else {
-	    backedInstrs.put(i, back);
-	}
-    }
-
-    private Instr getBack(Instr i) {
-	if (!backedInstrs.keySet().contains(i)) {
-	    return i;
-	}
-	// unforutnately, back(..) alone can't keep transitive
-	// relations (A -> B -> C) out of backedInstrs on its own,
-	// because A -> B could be added first and then followed by 
-	// B -> C.  Am thinking that maintaining the A -> C mapping
-	// all the time is too expensive...
-	
-	Instr b = (Instr) backedInstrs.get(i);
-	while(backedInstrs.keySet().contains(b)) {
-	    b = (Instr) backedInstrs.get(b);
-	}
-	return b;
-    }
-
     // Used for supporting Derivation information
     private ReachingDefs reachingDefs;
 
@@ -145,7 +116,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 	genRegC = frame.getRegFileInfo().getGeneralRegistersC();
 	allRegisters = allRegC;
 	instrToHTempMap = new HashMap();
-	backedInstrs = new HashMap();
 	tempToRemovedInstrs = new HashMap();
 	if (TIME) System.out.print("D");
 	// reachingDefs = new ReachingDefsCachingImpl(code);
