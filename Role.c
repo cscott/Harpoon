@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "Role.h"
+#include "Fields.h"
 #ifdef MDEBUG
 #include <dmalloc.h>
 #endif
@@ -492,9 +493,11 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
     struct fieldlist *fl=ho->reversefield;
     struct arraylist *al=ho->reversearray;
     while(fl!=NULL) {
-      struct rolefieldlist *rfl=(struct rolefieldlist *) calloc(1,sizeof(struct rolefieldlist));
-      rfl->field=fl->fieldname;
-      insertrfl(objrole,rfl);
+      if (!(heap->options&OPTION_LIMITFIELDS)||fieldcontained(heap,fl->fieldname)) {
+	struct rolefieldlist *rfl=(struct rolefieldlist *) calloc(1,sizeof(struct rolefieldlist));
+	rfl->field=fl->fieldname;
+	insertrfl(objrole,rfl);
+      }
       fl=fl->dstnext;
     }
     while(al!=NULL) {
@@ -506,7 +509,7 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
   }
 
   {
-    struct identity_relation *ir=find_identities(ho);
+    struct identity_relation *ir=find_identities(heap,ho);
     objrole->identities=ir;
     sortidentities(objrole);
   }
@@ -514,14 +517,16 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
   {
     struct fieldlist *fl=ho->fl;
     while(fl!=NULL) {
-      struct rolefieldlist *rfl=(struct rolefieldlist *) calloc(1,sizeof(struct rolefieldlist));
-      rfl->field=fl->fieldname;
-      if (fl->propagaterole) {
-	char *tmp=findrolestring(heap, dommapping, fl->object, enterexit);
-	rfl->role=parserolestring(tmp);
-	free(tmp);
+      if (!(heap->options&OPTION_LIMITFIELDS)||fieldcontained(heap,fl->fieldname)) {
+	struct rolefieldlist *rfl=(struct rolefieldlist *) calloc(1,sizeof(struct rolefieldlist));
+	rfl->field=fl->fieldname;
+	if (fl->propagaterole) {
+	  char *tmp=findrolestring(heap, dommapping, fl->object, enterexit);
+	  rfl->role=parserolestring(tmp);
+	  free(tmp);
+	}
+	insertnonfl(objrole,rfl);
       }
-      insertnonfl(objrole,rfl);
       fl=fl->next;
     }
   }
@@ -722,21 +727,23 @@ void insertral(struct role * role, struct rolearraylist * ral) {
   return;
 }
 
-struct identity_relation * find_identities(struct heap_object *ho) {
+struct identity_relation * find_identities(struct heap_state *heap, struct heap_object *ho) {
   struct fieldlist *fl1=ho->fl, *fl2=NULL;
   struct identity_relation * irptr=NULL;
   
   while(fl1!=NULL) {
-    fl2=fl1->object->fl;
-    while(fl2!=NULL) {
-      if (fl2->object==ho) {
-	struct identity_relation *newidentity=(struct identity_relation *) calloc(1,sizeof(struct identity_relation));
-	newidentity->fieldname1=fl1->fieldname;
-	newidentity->fieldname2=fl2->fieldname;	
-	newidentity->next=irptr;
-	irptr=newidentity;
+    if (!(heap->options&OPTION_LIMITFIELDS)||fieldcontained(heap,fl1->fieldname)) {
+      fl2=fl1->object->fl;
+      while(fl2!=NULL) {
+	if ((!(heap->options&OPTION_LIMITFIELDS)||fieldcontained(heap,fl2->fieldname))&&fl2->object==ho) {
+	  struct identity_relation *newidentity=(struct identity_relation *) calloc(1,sizeof(struct identity_relation));
+	  newidentity->fieldname1=fl1->fieldname;
+	  newidentity->fieldname2=fl2->fieldname;	
+	  newidentity->next=irptr;
+	  irptr=newidentity;
+	}
+	fl2=fl2->next;
       }
-      fl2=fl2->next;
     }
     fl1=fl1->next;
   }

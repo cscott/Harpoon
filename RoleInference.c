@@ -10,6 +10,7 @@
 #include "Role.h"
 #include "Method.h"
 #include "Effects.h"
+#include "Fields.h"
 #include "dot.h"
 #include "Container.h"
 #ifdef MDEBUG
@@ -46,8 +47,13 @@ void parseoptions(int argc, char **argv, struct heap_state *heap) {
 	printf("-c output containers\n");
 	printf("-u use containers\n");
 	printf("-n no effects\n");
+	printf("-f use only fields specified in fields file\n");
 	printf("-r no rolechange regular expressions calculated\n");
 	exitstate=1;
+	break;
+      case 'f':
+	heap->options|=OPTION_LIMITFIELDS;
+	loadfields(heap);
 	break;
       case 'r':
 	heap->options|=OPTION_NORCEXPR;
