@@ -424,6 +424,45 @@
                   need to partition.}
 }
 
+
+@InProceedings{leiserson83:retiming,
+  author = 	 {Charles E. Leiserson and Flavio M. Rose and James B. Saxe},
+  title = 	 {Optimizing Synchronous Circuitry by Retiming},
+  booktitle = 	 {Third Caltech Conference on Very Large Scale Integration},
+  editor =	 {R. Bryant},
+  year =	 1983,
+  address =	 {Pasadena, California},
+  month =	 mar,
+  pages =	 {87-116},
+  annote =	 {Three good references on other optimization types.
+                  This paper describes how to optimize register
+                  placement to obtain the smallest possible clock
+                  cycle time. *DON'T HAVE COMPLETE PAPER*.
+                  Useful. Includes algorithms to compute the clock
+                  period of a circuit, among other things.}
+}
+
+@Article{malik91:retiming,
+  author = 	 {Sharad Malik and Ellen M. Sentovich and Robert
+                  K. Brayton and Alberto Sangiovanni-Vincentelli},
+  title = 	 {Retiming and Resynthesis: Optimizing Sequential
+                  Networks with Combinational Techniques},
+  journal = 	 {{IEEE} Transactions on Computer-Aided Design},
+  year = 	 1991,
+  volume =	 10,
+  number =	 1,
+  month =	 jan,
+  pages =	 {74--84},
+  annote =	 {Useful extension of Leiserson's Retiming paper.
+                  Perhaps more information can be found in malik93?
+                  Basic idea is that we can push registers to the
+                  periphery and disconnect cycles, optimize the
+                  resulting circuit, and then push all the registers
+                  back in and reconnect the feedback loops.  Makes
+                  sense.  We still have to find a valid combinational
+                  optimization technique to plug in the middle, though.}
+}
+
 % papers to read.
 
 @InProceedings{knobe98:arrayssa,
@@ -554,4 +593,20 @@
   pages =	 {189-199},
   annote =	 {Same as above.}
 }
+
+@Article{malik93:retiming,
+  author = 	 {Sharad Malik and K. J. Singh and Robert K. Brayton and
+                  Alberto Sangiovanni-Vincentelli},
+  title = 	 {Performance Optimization of Pipelined Logic Circuits
+                  Using Peripheral Retiming and Resynthesis},
+  journal = 	 {{IEEE} Transactions on Computer-Aided
+                  Design of Integrated Circuits and Systems},
+  year = 	 1993,
+  volume =	 12,
+  number =	 5,
+  month =	 may,
+  pages =	 {568-578},
+  annote =	 {Haven't fetched from the library yet.}
+}
+
 
