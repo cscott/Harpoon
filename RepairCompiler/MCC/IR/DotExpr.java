@@ -20,6 +20,40 @@ public class DotExpr extends Expr {
         this.index = index;
     }
 
+    public boolean isInvariant(Set vars) {
+	if (!left.isInvariant(vars))
+	    return false;
+	if (intindex!=null)
+	    return intindex.isInvariant(vars);
+	else
+	    return true;
+    }
+
+    public Set findInvariants(Set vars) {
+	if (isInvariant(vars)) {
+	    Set s=new HashSet();
+	    s.add(this);
+	    return s;
+	} else {
+	    Set ls=left.findInvariants(vars);
+	    if (intindex!=null) {
+		ls.addAll(intindex.findInvariants(vars));
+		Expr indexbound=((ArrayDescriptor)this.fd).getIndexBound();
+		ls.addAll(indexbound.findInvariants(vars));
+		if ((!(intindex instanceof IntegerLiteralExpr))||
+		    ((IntegerLiteralExpr) intindex).getValue() != 0) {
+		    FieldDescriptor fd=this.fd;
+		    if (fd instanceof ArrayDescriptor)
+			fd=((ArrayDescriptor)fd).getField();
+		    Expr basesize = fd.getBaseSizeExpr();
+		    ls.addAll(basesize.findInvariants(vars));
+		}
+	    }
+	    return ls;
+	}
+    }
+
+
     public boolean isSafe() {
 	if (!left.isSafe())
 	    return false;
@@ -130,6 +164,14 @@ public class DotExpr extends Expr {
 
     public void generate(CodeWriter writer, VarDescriptor dest) {
         VarDescriptor leftd = VarDescriptor.makeNew("left");
+
+	if (writer.getInvariantValue()!=null&&
+	    writer.getInvariantValue().isInvariant(this)) {
+	    writer.outputline("maybe="+writer.getInvariantValue().getMaybe(this).getSafeSymbol()+";");
+	    writer.outputline(getType().getGenerateType().getSafeSymbol()+
+			      " "+dest.getSafeSymbol()+"="+writer.getInvariantValue().getValue(this).getSafeSymbol()+";");
+	    return;
+	}
 
         writer.output("// " +  leftd.getSafeSymbol() + " <-- ");
         left.prettyPrint(writer);

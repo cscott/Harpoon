@@ -92,12 +92,32 @@ public class VarExpr extends Expr {
 	return vd.isGlobal();
     }
 
-    public void generate(CodeWriter writer, VarDescriptor dest) {        
+    public boolean isInvariant(Set vars) {
+	return vd.isGlobal()||vars.contains(vd);
+    }
+
+    public Set findInvariants(Set vars) {
+	if (isInvariant(vars)) {
+	    Set s=new HashSet();
+	    s.add(this);
+	    return s;
+	} else 
+	    return new HashSet();
+    }
+
+    public void generate(CodeWriter writer, VarDescriptor dest) {
         // #TBD#: bit of a hack, really should have been type checked properly 
         assert vd != null;
         assert vd.getType() != null;
 	this.td = vd.getType();
 
+	if (writer.getInvariantValue()!=null&&
+	    writer.getInvariantValue().isInvariant(this)) {
+	    writer.outputline("maybe="+writer.getInvariantValue().getMaybe(this).getSafeSymbol()+";");
+	    writer.outputline(vd.getType().getGenerateType().getSafeSymbol()+
+			      " "+dest.getSafeSymbol()+"="+writer.getInvariantValue().getValue(this).getSafeSymbol()+";");
+	    return;
+	}
 
         writer.outputline(vd.getType().getGenerateType().getSafeSymbol() + " " + dest.getSafeSymbol() + 
                           " = (" + vd.getType().getGenerateType().getSafeSymbol() + ") " + vd.getSafeSymbol() + "; //varexpr");

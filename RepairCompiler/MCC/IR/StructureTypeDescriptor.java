@@ -28,13 +28,31 @@ public class StructureTypeDescriptor extends TypeDescriptor {
     public Enumeration getFieldKeys() {
         return fields.keys();
     }
-   
     
-    public Expr getSizeExpr() {        
+    public Expr getSizeExpr() {
         return getOffsetExpr(null);
     }
 
+    Expr sizeexpr=null;
+    Hashtable oexpr=new Hashtable();
+
     public Expr getOffsetExpr(FieldDescriptor field) {
+	if (field==null) {
+	    if (sizeexpr==null) {
+		sizeexpr=internalgetOffsetExpr(field);
+	    } 
+	    return sizeexpr;
+	} else if (oexpr.containsKey(field)) {
+	    return (Expr)oexpr.get(field);
+	} else {
+	    Expr tmp=internalgetOffsetExpr(field);
+	    oexpr.put(field,tmp);
+	    return tmp;
+	}
+    }
+
+
+    private Expr internalgetOffsetExpr(FieldDescriptor field) {
 	/* Fix sizeof calculations */
 	if ((field==null)&&(subtype!=null))
 	    return subtype.getSizeExpr();

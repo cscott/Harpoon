@@ -34,6 +34,7 @@ public class State {
     public Hashtable rulenodes;
     public Hashtable constraintnodes;    
     public Hashtable implicitrule;
+    public Hashtable implicitruleinv;
     State() {
         vConstraints = null;
         vRules = null;
@@ -48,6 +49,7 @@ public class State {
         ptConstraints = null;
         ptSpace = null;
 	implicitrule=new Hashtable();
+	implicitruleinv=new Hashtable();
     }
 
     void printall() {

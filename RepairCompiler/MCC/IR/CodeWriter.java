@@ -11,5 +11,6 @@ public interface CodeWriter extends PrettyPrinter{
     public void pushSymbolTable(SymbolTable st);
     public SymbolTable popSymbolTable();
     public SymbolTable getSymbolTable();
-    
+    public InvariantValue getInvariantValue();
+    public void setInvariantValue(InvariantValue iv);
 }

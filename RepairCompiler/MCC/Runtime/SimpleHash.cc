@@ -232,36 +232,53 @@ int SimpleHash::remove(int key, int data) {
 
 
 int SimpleHash::add(int key, int data) {
-    unsigned int hashkey = (unsigned int)key % size;
-    
-    struct SimpleNode **ptr = &bucket[hashkey];
-
-    /* check that this key/object pair isn't already here */
-    // TBD can be optimized for set v. relation */
-    while (*ptr) {
-        if ((*ptr)->key == key && (*ptr)->data == data) {
-            return 0;
-        }
-        ptr = &((*ptr)->next);
+  /* Rehash code */
+  if (numelements>=size) {
+    int newsize=2*size+1;
+    struct SimpleNode ** newbucket = (struct SimpleNode **) calloc(sizeof(struct SimpleNode *)*newsize,1);
+    for(int i=size-1;i>=0;i--) {
+      for(struct SimpleNode *ptr=bucket[i];ptr!=NULL;) {
+	struct SimpleNode * nextptr=ptr->next;
+	unsigned int newhashkey=(unsigned int)ptr->key % newsize;
+	ptr->next=newbucket[newhashkey];
+	newbucket[newhashkey]=ptr;
+	ptr=nextptr;
+      }
     }
-    if (tailindex==ARRAYSIZE) {
-      listtail->nextarray=(struct ArraySimple *) calloc(sizeof(struct ArraySimple),1);
-      tailindex=0;
-      listtail=listtail->nextarray;
-    }
-    
-    *ptr = &listtail->nodes[tailindex++];
-    (*ptr)->key=key;
-    (*ptr)->data=data;
-    (*ptr)->inuse=1;
+    size=newsize;
+    free(bucket);
+    bucket=newbucket;
+  }
 
-    numelements++;
-    
-    for (int i = 0; i < numparents; i++) {
-        parents[i]->add(key, data);
-    }
+  unsigned int hashkey = (unsigned int)key % size;
+  struct SimpleNode **ptr = &bucket[hashkey];
+  
+  /* check that this key/object pair isn't already here */
+  /* TBD can be optimized for set v. relation */
 
-    return 1;
+  while (*ptr) {
+    if ((*ptr)->key == key && (*ptr)->data == data) {
+      return 0;
+    }
+    ptr = &((*ptr)->next);
+  }
+  if (tailindex==ARRAYSIZE) {
+    listtail->nextarray=(struct ArraySimple *) calloc(sizeof(struct ArraySimple),1);
+    tailindex=0;
+    listtail=listtail->nextarray;
+  }
+  
+  *ptr = &listtail->nodes[tailindex++];
+  (*ptr)->key=key;
+  (*ptr)->data=data;
+  (*ptr)->inuse=1;
+  
+  numelements++;
+  
+  for (int i = 0; i < numparents; i++) {
+    parents[i]->add(key, data);
+  }
+  return 1;
 }
 
 bool SimpleHash::contains(int key) {

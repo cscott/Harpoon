@@ -322,8 +322,12 @@ public class ImplicitSchema {
 			nr.inclusion=new SetInclusion(((SetInclusion)r.inclusion).elementexpr,sd1);
 			nr.st=r.st;
 			nr.setnogenerate();
+			nr.num=r.num;
 			newrules.add(nr);
 			state.implicitrule.put(nr,r);
+			if (!state.implicitruleinv.containsKey(r))
+			    state.implicitruleinv.put(r,new HashSet());
+			((Set)state.implicitruleinv.get(r)).add(nr);
 		    }
 	    }
 	}

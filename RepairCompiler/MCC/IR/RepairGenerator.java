@@ -153,6 +153,9 @@ public class RepairGenerator {
 		    }
 		    craux.startblock();
 		    craux.outputline("int maybe=0;");
+		    if (Compiler.GENERATEINSTRUMENT)
+			craux.outputline("updatecount++;");
+
 		    final SymbolTable st = un.getRule().getSymbolTable();                
 		    CodeWriter cr = new StandardCodeWriter(outputaux) {
                         public SymbolTable getSymbolTable() { return st; }
@@ -184,6 +187,8 @@ public class RepairGenerator {
 		    craux.outputline(methodcall);
 		    craux.startblock();
 		    craux.outputline("int maybe=0;");
+		    if (Compiler.GENERATEINSTRUMENT)
+			craux.outputline("updatecount++;");
 		    final SymbolTable st2 = un.getRule().getSymbolTable();
 		    CodeWriter cr2 = new StandardCodeWriter(outputaux) {
                         public SymbolTable getSymbolTable() { return st2; }
@@ -217,6 +222,8 @@ public class RepairGenerator {
 		    craux.outputline(methodcall);
 		    craux.startblock();
 		    craux.outputline("int maybe=0;");
+		    if (Compiler.GENERATEINSTRUMENT)
+			craux.outputline("updatecount++;");
 		    final SymbolTable st2 = un.getRule().getSymbolTable();
 		    CodeWriter cr2 = new StandardCodeWriter(outputaux) {
                         public SymbolTable getSymbolTable() { return st2; }
@@ -465,9 +472,21 @@ public class RepairGenerator {
 	worklist=VarDescriptor.makeNew("worklist");
 	goodflag=VarDescriptor.makeNew("goodflag");
 	repairtable=VarDescriptor.makeNew("repairtable");
+
+	if (Compiler.GENERATEINSTRUMENT) {
+	    craux.outputline("int updatecount;");
+	    craux.outputline("int rebuildcount;");
+	    craux.outputline("int abstractcount;");
+	}
+	
 	crhead.outputline("void doanalysis();");
 	craux.outputline("void "+name +"_state::doanalysis()");
   	craux.startblock();
+	if (Compiler.GENERATEINSTRUMENT) {
+	    craux.outputline("updatecount=0;");
+	    craux.outputline("rebuildcount=0;");
+	    craux.outputline("abstractcount=0;");
+	}
 	craux.outputline("int highmark;");
 	craux.outputline("initializestack(&highmark);");
 	craux.outputline("typeobject *typeobject1=gettypeobject();");
@@ -480,11 +499,19 @@ public class RepairGenerator {
 	craux.startblock();
 	craux.outputline(name+ " * "+newmodel.getSafeSymbol()+"=new "+name+"();");
 	craux.outputline(worklist.getSafeSymbol()+"->reset();");
+	if (Compiler.GENERATEINSTRUMENT)
+	    craux.outputline("rebuildcount++;");
     }
     
     private void generate_teardown() {
 	CodeWriter cr = new StandardCodeWriter(outputaux);        
 	cr.endblock();
+	if (Compiler.GENERATEINSTRUMENT) {
+	    cr.outputline("printf(\"updatecount=%d\\n\",updatecount);");
+	    cr.outputline("printf(\"rebuildcount=%d\\n\",rebuildcount);");
+	    cr.outputline("printf(\"abstractcount=%d\\n\",abstractcount);");
+	}
+
     }
 
     private void generate_print() {
@@ -547,15 +574,54 @@ public class RepairGenerator {
 		Iterator iterator_rs = ruleset.iterator();
 		while (iterator_rs.hasNext()) {
 		    Rule rule = (Rule) iterator_rs.next();
+		    if (rule.getnogenerate())
+			continue;
 		    {
 			final SymbolTable st = rule.getSymbolTable();
 			CodeWriter cr = new StandardCodeWriter(outputaux) {
 				public SymbolTable getSymbolTable() { return st; }
 			    };
+			InvariantValue ivalue=new InvariantValue();
+			cr.setInvariantValue(ivalue);
+
 			cr.outputline("// build " +escape(rule.toString()));
 			cr.startblock();
 			cr.outputline("int maybe=0;");
-			ListIterator quantifiers = rule.quantifiers();
+
+			Expr ruleexpr=rule.getGuardExpr();
+			HashSet invariantvars=new HashSet();
+			Set invariants=ruleexpr.findInvariants(invariantvars);
+
+			if ((ruleexpr instanceof BooleanLiteralExpr)&&
+			    ((BooleanLiteralExpr)ruleexpr).getValue()) {
+			    if (rule.getInclusion() instanceof SetInclusion) {
+				invariants.addAll(((SetInclusion)rule.getInclusion()).getExpr().findInvariants(invariantvars));
+			    } else if (rule.getInclusion() instanceof RelationInclusion) {
+				invariants.addAll(((RelationInclusion)rule.getInclusion()).getLeftExpr().findInvariants(invariantvars));
+				invariants.addAll(((RelationInclusion)rule.getInclusion()).getRightExpr().findInvariants(invariantvars));
+			    }
+			}
+			ListIterator quantifiers = rule.quantifiers();			
+			while (quantifiers.hasNext()) {
+			    Quantifier quantifier = (Quantifier) quantifiers.next();
+			    if (quantifier instanceof ForQuantifier) {
+				ForQuantifier fq=(ForQuantifier)quantifier;
+				invariants.addAll(fq.lower.findInvariants(invariantvars));
+				invariants.addAll(fq.upper.findInvariants(invariantvars));
+			    }
+			}
+
+			for(Iterator invit=invariants.iterator();invit.hasNext();) {
+			    Expr invexpr=(Expr)invit.next();
+			    VarDescriptor tmpvd=VarDescriptor.makeNew("tmpvar");
+			    VarDescriptor maybevd=VarDescriptor.makeNew("maybevar");
+			    invexpr.generate(cr,tmpvd);
+			    cr.outputline("int "+maybevd.getSafeSymbol()+"=maybe;");
+			    cr.outputline("maybe=0;");
+			    ivalue.assignPair(invexpr,tmpvd,maybevd);
+			}
+
+			quantifiers = rule.quantifiers();
 			while (quantifiers.hasNext()) {
 			    Quantifier quantifier = (Quantifier) quantifiers.next();
 			    quantifier.generate_open(cr);
@@ -809,6 +875,8 @@ public class RepairGenerator {
 			else
 			    cr.outputline("if (maybe||!"+predvalue.getSafeSymbol()+")");
 			cr.startblock();
+			if (Compiler.GENERATEINSTRUMENT)
+			    cr.outputline("abstractcount++;");
 			if (p instanceof InclusionPredicate)
 			    generateinclusionrepair(conj,dpred, cr);
 			else if (p instanceof ExprPredicate) {
@@ -1524,14 +1592,13 @@ public class RepairGenerator {
 
 
     public void generate_dispatch(CodeWriter cr, SetDescriptor sd, String setvar) {
-               
-        cr.outputline("// SET DISPATCH ");
+	cr.outputline("// SET DISPATCH ");
 	if (Compiler.REPAIR) {
 	    cr.outputline("if ("+oldmodel.getSafeSymbol()+"&&");
 	    cr.outputline("!"+oldmodel.getSafeSymbol() +"->"+sd.getJustSafeSymbol()+"_hash->contains("+setvar+"))");
 	    cr.startblock(); {
 		/* Adding new item */
-		/* Perform safety checks */
+		/* See if there is an outstanding update in the repairtable */
 		cr.outputline("if ("+repairtable.getSafeSymbol()+"&&");
 		cr.outputline(repairtable.getSafeSymbol()+"->containsset("+sd.getNum()+","+currentrule.getNum()+","+setvar+"))");
 		cr.startblock(); {
@@ -1569,34 +1636,50 @@ public class RepairGenerator {
 		}
 		cr.endblock();
 		/* Build standard compensation actions */
-		if (need_compensation(currentrule)) {
-		    UpdateNode un=find_compensation(currentrule);
-		    String name=(String)updatenames.get(un);
-		    usedupdates.add(un); /* Mark as used */
+		Vector ruleset=new Vector();
+		ruleset.add(currentrule);
+		if (state.implicitruleinv.containsKey(currentrule))
+		    ruleset.addAll((Set)state.implicitruleinv.get(currentrule));
+		for(int i=0;i<ruleset.size();i++) {
+		    Rule itrule=(Rule)ruleset.get(i);
 		    
-		    String methodcall=name+"(this,"+oldmodel.getSafeSymbol()+","+
-			repairtable.getSafeSymbol();
-		    for(int i=0;i<currentrule.numQuantifiers();i++) {
-			Quantifier q=currentrule.getQuantifier(i);
-			if (q instanceof SetQuantifier) {
-			    SetQuantifier sq=(SetQuantifier) q;
-			    methodcall+=","+sq.getVar().getSafeSymbol();
-			} else if (q instanceof RelationQuantifier) {
-			    RelationQuantifier rq=(RelationQuantifier) q;
-			    methodcall+=","+rq.x.getSafeSymbol();
-			    methodcall+=","+rq.y.getSafeSymbol();
-			} else if (q instanceof ForQuantifier) {
-			    ForQuantifier fq=(ForQuantifier) q;
-			    methodcall+=","+fq.getVar().getSafeSymbol();
+		    if (need_compensation(itrule)) {
+			UpdateNode un=find_compensation(itrule);
+			String name=(String)updatenames.get(un);
+			usedupdates.add(un); /* Mark as used */
+			
+			String methodcall=name+"(this,"+oldmodel.getSafeSymbol()+","+
+			    repairtable.getSafeSymbol();
+			for(int j=0;j<currentrule.numQuantifiers();j++) {
+			    Quantifier q=currentrule.getQuantifier(j);
+			    if (q instanceof SetQuantifier) {
+				SetQuantifier sq=(SetQuantifier) q;
+				methodcall+=","+sq.getVar().getSafeSymbol();
+			    } else if (q instanceof RelationQuantifier) {
+				RelationQuantifier rq=(RelationQuantifier) q;
+				methodcall+=","+rq.x.getSafeSymbol();
+				methodcall+=","+rq.y.getSafeSymbol();
+			    } else if (q instanceof ForQuantifier) {
+				ForQuantifier fq=(ForQuantifier) q;
+				methodcall+=","+fq.getVar().getSafeSymbol();
+			    }
 			}
+			methodcall+=");";
+			if (currentrule!=itrule) {
+			    SetDescriptor sdrule=((SetInclusion)itrule.getInclusion()).getSet();
+			    cr.outputline("if ("+oldmodel.getSafeSymbol()+"&&");
+			    cr.outputline("!"+oldmodel.getSafeSymbol() +"->"+sdrule.getJustSafeSymbol()+"_hash->contains("+setvar+"))");
+			    cr.startblock();
+			}
+			cr.outputline(methodcall);
+			cr.outputline("delete "+newmodel.getSafeSymbol()+";");
+			cr.outputline("goto rebuild;");
+			cr.endblock();
 		    }
-		    methodcall+=");";
-		    cr.outputline(methodcall);
-		    cr.outputline("delete "+newmodel.getSafeSymbol()+";");
-		    cr.outputline("goto rebuild;");
+		    if (currentrule==itrule)
+			cr.endblock();
 		}
 	    }
-	    cr.endblock();
 	}
 
         String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
@@ -1622,6 +1705,7 @@ public class RepairGenerator {
 	    cr.endblock();
             return;
         }
+	/* Add item to worklist if new */
 	cr.outputline("if ("+addeditem+")");
 	cr.startblock();
         for(int i = 0; i < dispatchrules.size(); i++) {

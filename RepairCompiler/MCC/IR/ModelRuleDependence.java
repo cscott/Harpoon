@@ -129,10 +129,12 @@ class ModelRuleDependence {
 	boolean dependency=false;
 	for(int i=0;i<drule.size();i++) {
 	    RuleConjunction rconj=drule.get(i);
-	    for(int j=0;j<rconj.size();j++){ 
+	    for(int j=0;j<rconj.size();j++) { 
 		DNFExpr dexpr=rconj.get(j);
 		Expr e=dexpr.getExpr();
-		if (e.usesDescriptor(d)) {
+		Set descset=e.getRequiredDescriptors();
+		descset=SetDescriptor.expand(descset);
+		if (descset.contains(d)) {
 		    boolean negated=dexpr.getNegation();
 		    if (negated)
 			return NEGDEPENDENCY;

@@ -93,4 +93,10 @@ public abstract class Expr {
     public Expr getUpper() {
 	return null;
     }
+    public boolean isInvariant(Set vars) {
+	return false;
+    }
+    public Set findInvariants(Set vars) {
+	return new HashSet();
+    }
 }

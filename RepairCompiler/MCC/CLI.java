@@ -11,7 +11,7 @@ import java.util.StringTokenizer;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.7 2004-05-18 16:46:47 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.8 2004-05-31 14:19:10 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -106,6 +106,8 @@ public class CLI {
                 Compiler.REPAIR=false;
 	    } else if (args[i].equals("-debug")) {
                 Compiler.GENERATEDEBUGHOOKS=true;
+	    } else if (args[i].equals("-instrument")) {
+                Compiler.GENERATEINSTRUMENT=true;
 	    } else if (args[i].equals("-aggressivesearch")) {
                 Compiler.AGGRESSIVESEARCH=true;
 	    } else if (args[i].equals("-prunequantifiernodes")) {

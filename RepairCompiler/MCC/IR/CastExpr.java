@@ -15,6 +15,14 @@ public class CastExpr extends Expr {
 	return expr;
     }
 
+    public boolean isInvariant(Set vars) {
+	return false;
+    }
+
+    public Set findInvariants(Set vars) {
+	return expr.findInvariants(vars);
+    }
+
     public void findmatch(Descriptor d, Set s) {
 	expr.findmatch(d,s);
     }
@@ -77,17 +85,7 @@ public class CastExpr extends Expr {
             sa.getErrorReporter().report(null, "Expression type '" + td.getSymbol() + "' is not a parent of the cast type '" + type.getSymbol() + "'");
             return null;
         }
-
         this.td = type;
         return type;
     }
-
 }
-
-
-
-
-
-
-
-

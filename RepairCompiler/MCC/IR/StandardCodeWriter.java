@@ -8,6 +8,7 @@ public class StandardCodeWriter implements CodeWriter {
     int indent = 0;
     java.io.PrintWriter output;
     Stack symboltables = new Stack();
+    InvariantValue ivalue;
 
     public StandardCodeWriter(java.io.PrintWriter output) { this.output = output; }
 
@@ -67,5 +68,12 @@ public class StandardCodeWriter implements CodeWriter {
         }
         return (SymbolTable) symboltables.peek();
     }
-    
+
+    public InvariantValue getInvariantValue() {
+	return ivalue;
+    }
+
+    public void setInvariantValue(InvariantValue iv) {
+	ivalue=iv;
+    }
 }

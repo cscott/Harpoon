@@ -1,7 +1,8 @@
 #!/bin/bash
-g++ -g -c SimpleHash.cc
-g++ -g -c tmap.cc
-g++ -g -c instrument.cc
-gcc -g -c libredblack/redblack.c
-gcc -g -c stack.c
-g++ -g -c size.cc
+FLAG='-O9'
+g++ $FLAG -c SimpleHash.cc
+g++ $FLAG -c tmap.cc
+g++ $FLAG -c instrument.cc
+gcc $FLAG -c libredblack/redblack.c
+gcc $FLAG -c stack.c
+g++ $FLAG -c size.cc

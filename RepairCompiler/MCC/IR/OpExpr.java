@@ -36,10 +36,31 @@ public class OpExpr extends Expr {
 	} else return llower;
     }
 
+
     public boolean isSafe() {
 	if (right==null)
 	    return left.isSafe();
 	return left.isSafe()&&right.isSafe();
+    }
+
+    public boolean isInvariant(Set vars) {
+	return left.isInvariant(vars)&&((right==null)||right.isInvariant(vars));
+    }
+
+    public Set findInvariants(Set vars) {
+	if (isInt(this)) {
+	    /* Don't hoist ints */
+	    return new HashSet();
+	} else if (isInvariant(vars)) {
+	    Set s=new HashSet();
+	    s.add(this);
+	    return s;
+	} else {
+	    Set ls=left.findInvariants(vars);
+	    if (right!=null)
+		ls.addAll(right.findInvariants(vars));
+	    return ls;
+	}
     }
 
     public Set getfunctions() {
@@ -327,7 +348,14 @@ public class OpExpr extends Expr {
 
     public void generate(CodeWriter writer, VarDescriptor dest) {
         VarDescriptor ld = VarDescriptor.makeNew("leftop");
-        left.generate(writer, ld);        
+	if (writer.getInvariantValue()!=null&&
+	    writer.getInvariantValue().isInvariant(this)) {
+	    writer.outputline("maybe="+writer.getInvariantValue().getMaybe(this).getSafeSymbol()+";");
+	    writer.outputline("int "+dest.getSafeSymbol()+"="+writer.getInvariantValue().getValue(this).getSafeSymbol()+";");
+	    return;
+	}
+
+        left.generate(writer, ld);
         VarDescriptor rd = null;
 	VarDescriptor lm=VarDescriptor.makeNew("lm");
 	VarDescriptor rm=VarDescriptor.makeNew("rm");
@@ -359,8 +387,7 @@ public class OpExpr extends Expr {
 	    writer.outputline("int "+rm.getSafeSymbol()+"=maybe;");
 	    writer.outputline("maybe = (!" + ld.getSafeSymbol() + " && " + rm.getSafeSymbol() + ") || (!" + rd.getSafeSymbol() +
 			      " && " + lm.getSafeSymbol() + ") || (" + lm.getSafeSymbol() + " && " + rm.getSafeSymbol() + ");");
-	    writer.outputline("int "+dest.getSafeSymbol() + " = " + ld.getSafeSymbol() + " || " + rd.getSafeSymbol() +
-			      ";");
+	    writer.outputline("int "+dest.getSafeSymbol() + " = " + ld.getSafeSymbol() + " || " + rd.getSafeSymbol() + ";");
 	} else if (opcode != Opcode.NOT) { /* two operands */
             assert rd != null;
             writer.outputline("int " + dest.getSafeSymbol() + " = " + 
@@ -400,23 +427,6 @@ public class OpExpr extends Expr {
         }
 
         boolean ok = true;
-
-        // #ATTN#: if we want node.next != literal(0) to represent a null check than we need to allow ptr arithmetic
-        // either that or we use a isvalid clause to check for null
-
-        /*
-        if (lt != ReservedTypeDescriptor.INT) {
-            sa.getErrorReporter().report(null, "Left hand side of expression is of type '" + lt.getSymbol() + "' but must be type 'int'");
-            ok = false;
-        }
-
-        if (right != null) {
-            if (rt != ReservedTypeDescriptor.INT) {
-                sa.getErrorReporter().report(null, "Right hand side of expression is of type '" + rt.getSymbol() + "' but must be type 'int'");
-                ok = false;
-            }
-        }
-        */
 
         if (!ok) {
             return null;

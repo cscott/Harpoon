@@ -440,7 +440,7 @@ int main(int argc, char **argv)
 
     time += selfcheck2(ptr);
     
-    printf("\ncompiled: %u us\n", (time/50));    
+    printf("\ncompiled: %u us\n", (time));    
 
     break;
   }
@@ -529,6 +529,8 @@ int main(int argc, char **argv)
   case '8': {
     {
       struct block * ptr=chmountdisk("disk");
+      int t=selfcheck2(ptr);
+      printf("\ncompiled: %u us\n", (t));    
       chunmountdisk(ptr);
     }
     struct block * ptr=mountdisk("disk");
@@ -569,7 +571,7 @@ int main(int argc, char **argv)
     }
     unmountdisk(ptr);
   }
-
+  break;
   case '9': {
     for(int i=0;i<MAXFILES;i++)
       files[i].used=false;
