@@ -10,7 +10,7 @@ import java.io.PrintStream;
  * using counters identified by integers.
  * 
  * @author  bdemsky <bdemsky@lm.lcs.mit.edu>
- * @version $Id: CounterSupport.java,v 1.1.2.3 2000-11-10 18:55:47 bdemsky Exp $
+ * @version $Id: CounterSupport.java,v 1.1.2.4 2000-11-13 20:12:30 bdemsky Exp $
  */
 public class CounterSupport {
     static int size,sizesync;
@@ -23,12 +23,20 @@ public class CounterSupport {
     static boolean counton;
     static int error;
     static int overflow;
+    static int[] callchain;
+    static int csize, depth;
+    static int[][] alloccall;
+    static int size1,size2;
+
     static {
 	//redefine these
 	numbins=211;
 	bincap=30;
+	csize=100;
+	depth=0;
 	boundedkey=new Object[numbins][bincap];
 	boundedvalue=new int[numbins][bincap];
+	callchain=new int[csize];
 
 	overflow=0;
 	error=0;
@@ -36,13 +44,40 @@ public class CounterSupport {
 	array=new long[size];
 	sizesync=10;
 	arraysync=new long[sizesync];
+	size1=10;
+	size2=10;
+	alloccall=new int[size1][size2];
 	counton=true;
     }
     
     static void count(int value) {
 	synchronized(lock) {
 	    if (counton) {
-		if (value>size) {
+		boolean resize=false;
+		int nsize1=size1,nsize2=size2;
+		if (value>=size1) {
+		    nsize1=value*2;
+		    resize=true;
+		}
+		if ((depth!=0)&&((depth-1)<csize))
+		    if (callchain[depth-1]>=size2) {
+			nsize2=callchain[depth-1]*2;
+			resize=true;
+		    }
+		if (resize) {
+		    int[][] newarray=new int[nsize1][nsize2];
+		    for(int i=0;i<size1;i++) {
+			System.arraycopy(alloccall[i],0,newarray[i],0,size2);
+		    }
+		    size1=nsize1;
+		    size2=nsize2;
+		    alloccall=newarray;
+		}
+		if ((depth!=0)&&((depth-1)<csize))
+		    alloccall[value][callchain[depth-1]]++;
+		else alloccall[value][0]++;
+
+		if (value>=size) {
 		    long[] newarray=new long[value*2];
 		    System.arraycopy(array,0,newarray,0,size);
 		    array=newarray;
@@ -75,7 +110,7 @@ public class CounterSupport {
 		    }
 		    boundedkey[hashmod][0]=obj;
 		    boundedvalue[hashmod][0]=value;
-		    if (value>sizesync) {
+		    if (value>=sizesync) {
 			long[] newarray=new long[value*2];
 			System.arraycopy(arraysync,0,newarray,0,sizesync);
 			arraysync=newarray;
@@ -98,12 +133,26 @@ public class CounterSupport {
 	    //	boundedkey[hashmod][i]=boundedkey[hashmod][i-1];
 	    //}
 	    System.arraycopy(boundedkey[hashmod],0,boundedkey[hashmod],1,bincap-1);
-	    for (int i=bincap-1;i>0;i--) {
-		boundedvalue[hashmod][i]=boundedvalue[hashmod][i-1];
-	    }
+	    System.arraycopy(boundedvalue[hashmod],0,boundedvalue[hashmod],1,bincap-1);
 	    boundedkey[hashmod][0]=obj;
 	    boundedvalue[hashmod][0]=value;
 	}
+    }
+
+    static void callenter(int callsite) {
+	if (counton)
+	    synchronized(lock) {
+		if (depth<csize)
+		    callchain[depth]=callsite+1;
+		depth++;
+	    }
+    }
+
+    static void callexit() {
+	if (counton)
+	    synchronized(lock) {
+		depth--;
+	    }
     }
 
     static void exit() {
@@ -112,11 +161,30 @@ public class CounterSupport {
 	System.out.println("Error count[no mapping]="+error);
 	System.out.println("# overflowed="+overflow);
 	System.out.println("Allocation array");
+
 	for(int i=0;i<size;i++)
-	    System.out.println(i+"  "+array[i]);
+	    if (array[i]!=0)
+		System.out.println(i+"  "+array[i]);
+
 	System.out.println("Sync array");
 	for(int i=0;i<sizesync;i++)
-	    System.out.println(i+"  "+arraysync[i]);
+	    if (arraysync[i]!=0)
+		System.out.println(i+"  "+arraysync[i]);
+
+
+	int tripletcount=0;
+	System.out.println("Call Chain Allocation array");
+	for(int i=0;i<size1;i++) {
+	    if (alloccall[i][0]!=0) {
+		System.out.println(i+" Unknown or main caller callsite = "+alloccall[i][0]);
+		tripletcount++;
+	    }
+	    for(int j=1;j<size2;j++)
+		if (alloccall[i][j]!=0) {
+		    System.out.println(i+"  "+" "+(j-1)+" = "+alloccall[i][j]);
+		    tripletcount++;
+		}
+	}
 
 	try {
 	    PrintStream fos=new java.io.PrintStream(new FileOutputStream("profile"));
@@ -126,9 +194,26 @@ public class CounterSupport {
 	    fos.println(sizesync);
 	    for(int i=0;i<sizesync;i++)
 		fos.println(arraysync[i]);
+	    fos.println(tripletcount);
+	    for(int i=0;i<size1;i++)
+		for(int j=0;j<size2;j++)
+		    if (alloccall[i][j]!=0) {
+			fos.println(i);
+			fos.println(j);
+			fos.println(alloccall[i][j]);
+		    }
 	    fos.close();
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
     }
+    static class LinkedList {
+	public LinkedList(LinkedList next, int callsite) {
+	    this.next=next;
+	    this.callsite=callsite;
+	}
+	LinkedList next;
+	int callsite;
+    }
+
 }

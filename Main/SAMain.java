@@ -75,7 +75,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.114 2000-11-13 00:55:42 wbeebee Exp $
+ * @version $Id: SAMain.java,v 1.1.2.115 2000-11-13 20:12:19 bdemsky Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -217,7 +217,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    if (INSTRUMENT_ALLOCS) {
 		hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
 		AllocationNumbering an =
-		    new AllocationNumbering(hcf, classHierarchy);
+		    new AllocationNumbering(hcf, classHierarchy, true);
 		try {
 		ObjectOutputStream ois =
 		    new ObjectOutputStream(new FileOutputStream(IFILE));
@@ -229,7 +229,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    e.printStackTrace(System.out);
 		}
 		hcf=an.codeFactory();
-		insta=new InstrumentAllocs(hcf, mainM, linker, an, true);
+		insta=new InstrumentAllocs(hcf, mainM, linker, an, true,true);
  		hcf=insta.codeFactory();
 	 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }

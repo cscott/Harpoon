@@ -32,7 +32,7 @@ import java.util.Map;
  * <code>InstrumentAllocs</code> adds counters to each allocation site.
  * 
  * @author  root <root@BDEMSKY.MIT.EDU>
- * @version $Id: InstrumentAllocs.java,v 1.1.2.6 2000-11-10 06:46:26 bdemsky Exp $
+ * @version $Id: InstrumentAllocs.java,v 1.1.2.7 2000-11-13 20:12:38 bdemsky Exp $
  */
 public class InstrumentAllocs extends MethodMutator implements java.io.Serializable {
     int count;
@@ -41,9 +41,10 @@ public class InstrumentAllocs extends MethodMutator implements java.io.Serializa
     HCodeFactory parenthcf;
     AllocationNumbering an;
     boolean syncs;
+    boolean callchains;
 
     /** Creates a <code>InstrumentAllocs</code>. */
-    public InstrumentAllocs(HCodeFactory parent, HMethod main, Linker linker,AllocationNumbering an,boolean syncs) {
+    public InstrumentAllocs(HCodeFactory parent, HMethod main, Linker linker,AllocationNumbering an,boolean syncs, boolean callchains) {
         super(parent);
 	parenthcf=parent;
 	count=0;
@@ -51,6 +52,7 @@ public class InstrumentAllocs extends MethodMutator implements java.io.Serializa
 	this.linker=linker;
 	this.an=an;
 	this.syncs=syncs;
+	this.callchains=callchains;
     }
 
     public HCodeFactory parent() {
@@ -65,16 +67,17 @@ public class InstrumentAllocs extends MethodMutator implements java.io.Serializa
 	    Iterator it=hc.getElementsI();
 	    while(it.hasNext()) {
 		Quad q=(Quad)it.next();
-		if ((q instanceof NEW)||(q instanceof ANEW)||(syncs&&(q instanceof MONITORENTER)))
+		if ((q instanceof NEW)||(q instanceof ANEW)||(syncs&&(q instanceof MONITORENTER))||(callchains&(q instanceof CALL)))
 		    newset.add(q);
 	    }
 	    Iterator setit=newset.iterator();
 	    HMethod method=linker.forName("harpoon.Runtime.CounterSupport").getMethod("count",new HClass[]{HClass.Int});
-	    HMethod method2=null, method3=null;
-	    if (syncs) {
-		method2=linker.forName("harpoon.Runtime.CounterSupport").getMethod("countm",new HClass[]{linker.forName("java.lang.Object")});
-		method3=linker.forName("harpoon.Runtime.CounterSupport").getMethod("label",new HClass[]{linker.forName("java.lang.Object"),HClass.Int});
-	    }
+	    HMethod method2=linker.forName("harpoon.Runtime.CounterSupport").getMethod("countm",new HClass[]{linker.forName("java.lang.Object")});
+	    HMethod method3=linker.forName("harpoon.Runtime.CounterSupport").getMethod("label",new HClass[]{linker.forName("java.lang.Object"),HClass.Int});
+	    HMethod method4=linker.forName("harpoon.Runtime.CounterSupport").getMethod("callenter",new HClass[]{HClass.Int});
+	    HMethod method5=linker.forName("harpoon.Runtime.CounterSupport").getMethod("callexit",new HClass[0]);
+
+
 
 	    while(setit.hasNext()) {
 		Quad q=(Quad)setit.next();
@@ -89,6 +92,35 @@ public class InstrumentAllocs extends MethodMutator implements java.io.Serializa
 		    Quad.addEdge(qcall,1,qphi,1);
 		    Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),qcall,0);
 		    Quad.addEdge(qphi,0,q,0);
+		} else if (q instanceof CALL) {
+		    try {
+			CONST qconst=new CONST(qf,q,tconst,new Integer(an.callID((Quad)ancestor.get(q))),HClass.Int);
+			CALL qcall=new CALL(qf, q, method4,new Temp[] {tconst}, null, texcept,false,false,new Temp[0][2],new Temp[0]);
+			PHI qphi=new PHI(qf,q,new Temp[0],new Temp[0][2],2);
+			Quad.addEdge(qconst,0,qcall,0);
+			Quad.addEdge(qcall,0,qphi,0);
+			Quad.addEdge(qcall,1,qphi,1);
+			Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),qconst,0);
+			Quad.addEdge(qphi,0,q,0);
+
+			
+			CALL qcall2=new CALL(qf, q, method5,new Temp[] {}, null, texcept,false,false,new Temp[0][2],new Temp[0]);
+			PHI qphi2=new PHI(qf,q,new Temp[0],new Temp[0][2],2);
+			Quad.addEdge(qcall2,0,qphi2,0);
+			Quad.addEdge(qcall2,1,qphi2,1);
+			Quad.addEdge(qphi2,0,q.next(0),q.nextEdge(0).which_pred());
+			Quad.addEdge(q,0,qcall2,0);
+
+			
+			CALL qcall3=new CALL(qf, q, method5,new Temp[] {}, null, texcept,false,false,new Temp[0][2],new Temp[0]);
+			PHI qphi3=new PHI(qf,q,new Temp[0],new Temp[0][2],2);
+			Quad.addEdge(qcall3,0,qphi3,0);
+			Quad.addEdge(qcall3,1,qphi3,1);
+			Quad.addEdge(qphi3,0,q.next(1),q.nextEdge(1).which_pred());
+			Quad.addEdge(q,1,qcall3,0);
+		    } catch (Error e) {
+			//ignore
+		    }
 		} else {
 		    try {
 			CONST qconst=new CONST(qf,q,tconst,new Integer(an.allocID((Quad)ancestor.get(q))),HClass.Int);
