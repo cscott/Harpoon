@@ -25,9 +25,9 @@ import harpoon.Temp.TempFactory;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.3 1999-02-17 07:15:11 andyb Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.4 1999-02-17 21:14:08 andyb Exp $
  */
-public class DefaultFrame implements Frame, DefaultAllocationInfo {
+public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 
     private AllocationStrategy  m_allocator;
     private int                 m_nextPtr;

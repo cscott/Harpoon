@@ -12,7 +12,7 @@ import harpoon.Util.ArrayFactory;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.14.2.7 1999-02-17 07:15:12 andyb Exp $
+ * @version $Id: Temp.java,v 1.14.2.8 1999-02-17 21:14:10 andyb Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
@@ -75,7 +75,7 @@ public class Temp implements Cloneable {
     return new TempFactory() {
       private Hashtable table = new Hashtable();
       public String getScope() { return scope; }
-      public synchronized String getUniqueID(String suggestion) {
+      protected synchronized String getUniqueID(String suggestion) {
 	// strip digits from the end of the suggestion.
 	while (suggestion.charAt(suggestion.length()-1)>='0' &&
 	       suggestion.charAt(suggestion.length()-1)<='9')

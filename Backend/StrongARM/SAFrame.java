@@ -22,9 +22,9 @@ import harpoon.Util.Util;
  * information necessary to compile for the StrongARM processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.2 1999-02-17 07:15:12 andyb Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.3 1999-02-17 21:14:09 andyb Exp $
  */
-public class SAFrame implements Frame, DefaultAllocationInfo {
+public class SAFrame extends Frame implements DefaultAllocationInfo {
     private static Temp[] reg = new Temp[16];
     /** TempFactory used to create register temps */
     private static TempFactory regtf;
@@ -42,7 +42,7 @@ public class SAFrame implements Frame, DefaultAllocationInfo {
                                             "r11", "r12", "r13", "r14", "pc"};
 
             public String getScope() { return scope; }
-            public synchronized String getUniqueID(String suggestion) {
+            protected synchronized String getUniqueID(String suggestion) {
                 Util.assert(i <= names.length);
                 return names[i++];
             }
