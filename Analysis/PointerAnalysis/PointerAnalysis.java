@@ -68,11 +68,11 @@ import harpoon.Util.Util;
 /**
  * <code>PointerAnalysis</code> is the main class of the Pointer Analysis
  package. It is designed to act as a <i>query-object</i>: after being
- initialized, it can be asked to provide the Parallel InteractionGraph
+ initialized, it can be asked to provide the Parallel Interaction Graph
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.63 2000-06-27 04:36:17 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.64 2000-06-28 15:57:49 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -88,7 +88,7 @@ public class PointerAnalysis {
     /** Makes the pointer analysis deterministic to make the debug easier.
 	The main source of undeterminism in our code is the intensive use of
 	<code>Set</code>s which doesn't offer any guarantee about the order
-	in which they iterates over their elements. */
+	in which they iterate over their elements. */
     public static final boolean DETERMINISTIC = true;
 
     /** Turns on the priniting of some timing info. */
@@ -274,6 +274,7 @@ public class PointerAnalysis {
     // Returns a specialized version of the external graph for meta-method mm;
     // mm is supposed to be the run method (the body) of a thread.
     ParIntGraph getSpecializedExtParIntGraph(MetaMethod mm){
+
 	ParIntGraph pig = (ParIntGraph) t_specs.get(mm);
 	if(pig != null) return pig;
 
@@ -331,59 +332,60 @@ public class PointerAnalysis {
     NodeRepository nodes = new NodeRepository(); 
     final NodeRepository getNodeRepository() { return nodes; }
 
+
+    // Navigator for the mmethod SCC building phase. The code is complicated
+    // by the fact that we are interested only in yet unexplored methods
+    // (i.e. whose parallel interaction graphs are not yet in the cache).
+    private SCComponent.Navigator mm_navigator =
+	new SCComponent.Navigator(){
+		public Object[] next(Object node){
+		    MetaMethod[] mms  = mcg.getCallees((MetaMethod)node);
+		    MetaMethod[] mms2 = get_new_mmethods(mms);
+		    
+		    if(DETERMINISTIC)
+			Arrays.sort(mms2, UComp.uc);
+		    
+		    return mms2;
+		}
+		
+		public Object[] prev(Object node){
+		    MetaMethod[] mms  = mac.getCallers((MetaMethod)node);
+		    MetaMethod[] mms2 = get_new_mmethods(mms);
+		    
+		    if(DETERMINISTIC)
+			Arrays.sort(mms2, UComp.uc);
+		    return mms2;
+		}
+		
+		// selects only the (yet) unanalyzed methods
+		private MetaMethod[] get_new_mmethods(MetaMethod[] mms){
+		    int count = 0;
+		    boolean good[] = new boolean[mms.length];
+		    for(int i = 0 ; i < mms.length ; i++)
+			if(!hash_proc_ext.containsKey(mms[i])){
+			    good[i] = true;
+			    count++;
+			}
+			else
+			    good[i] = false;
+		    
+		    MetaMethod[] new_mms = new MetaMethod[count];
+		    int j = 0;
+		    for(int i = 0 ; i < mms.length ; i++)
+			if(good[i])
+			    new_mms[j++] = mms[i];
+		    return new_mms;
+		}
+	    };
+    
+
     // Top-level procedure for the analysis. Receives the main method as
     // parameter. For the moment, it is not doing the inter-thread analysis
     private void analyze(MetaMethod mm){
 	if(DEBUG)
 	    System.out.println("ANALYZE: " + mm);
 
-	// Navigator for the SCC building phase. The code is complicated
-	// by the fact that we are interested only in yet unexplored methods
-	// (i.e. whose parallel interaction graphs are not yet in the cache).
-	SCComponent.Navigator navigator =
-	    new SCComponent.Navigator(){
-		    public Object[] next(Object node){
-			MetaMethod[] mms  = mcg.getCallees((MetaMethod)node);
-			MetaMethod[] mms2 = get_new_mmethods(mms);
-
-			if(DETERMINISTIC)
-			    Arrays.sort(mms2, UComp.uc);
-
-			return mms2;
-		    }
-
-		    public Object[] prev(Object node){
-			MetaMethod[] mms  = mac.getCallers((MetaMethod)node);
-			MetaMethod[] mms2 = get_new_mmethods(mms);
-
-			if(DETERMINISTIC)
-			    Arrays.sort(mms2, UComp.uc);
-			return mms2;
-		    }
-
-		    // selects only the (yet) unanalyzed methods
-		    private MetaMethod[] get_new_mmethods(MetaMethod[] mms){
-			int count = 0;
-			boolean good[] = new boolean[mms.length];
-			for(int i = 0 ; i < mms.length ; i++)
-			    if(!hash_proc_ext.containsKey(mms[i])){
-				good[i] = true;
-				count++;
-			    }
-			    else
-				good[i] = false;
-			
-			MetaMethod[] new_mms = new MetaMethod[count];
-			int j = 0;
-			for(int i = 0 ; i < mms.length ; i++)
-			    if(good[i])
-				new_mms[j++] = mms[i];
-			return new_mms;
-		    }
-		};
-
-	long begin_time = 0;
-	begin_time = System.currentTimeMillis();
+	long begin_time = TIMING ? System.currentTimeMillis() : 0;
 
 	if(DEBUG)
 	  System.out.println("Creating the strongly connected components " +
@@ -395,35 +397,11 @@ public class PointerAnalysis {
 	// composed of mutually recursive methods (the edges model the
 	// caller-callee interaction).
 	SCCTopSortedGraph mmethod_sccs = 
-	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(mm,navigator));
+	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(mm, mm_navigator));
 
-
-	if(DEBUG_SCC || TIMING){
-	    long total_time = System.currentTimeMillis() - begin_time;
-	    int counter = 0;
-	    int mmethods = 0;
-	    SCComponent scc = mmethod_sccs.getFirst();
-
-	    if(DEBUG_SCC)
-		System.out.println("===== SCCs of methods =====");
-
-	    while(scc != null){
-		if(DEBUG_SCC){
-		    System.out.print(scc.toString(mcg));
-		}
-		counter++;
-		mmethods += scc.nodeSet().size();
-		scc = scc.nextTopSort();
-	    }
-
-	    if(DEBUG_SCC)
-		System.out.println("===== END SCCs ============");
-
-	    if(TIMING)
-		System.out.println(counter + " component(s); " +
-				   mmethods + " meta-method(s); " +
-				   total_time + "ms processing time");
-	}
+	if(DEBUG_SCC || TIMING)
+	    display_mm_sccs(mmethod_sccs,
+			    System.currentTimeMillis() - begin_time);
 
 	SCComponent scc = mmethod_sccs.getLast();
 	while(scc != null){
@@ -441,27 +419,49 @@ public class PointerAnalysis {
 			  (System.currentTimeMillis() - begin_time) + "ms");
     }
 
+
+    // Nice method for debug purposes
+    private void display_mm_sccs(SCCTopSortedGraph mmethod_sccs, long time) {
+	int counter  = 0;
+	int mmethods = 0;
+	SCComponent scc = mmethod_sccs.getFirst();
+	
+	if(DEBUG_SCC)
+	    System.out.println("===== SCCs of methods =====");
+	
+	while(scc != null){
+	    if(DEBUG_SCC){
+		System.out.print(scc.toString(mcg));
+	    }
+	    counter++;
+	    mmethods += scc.nodeSet().size();
+	    scc = scc.nextTopSort();
+	}
+	
+	if(DEBUG_SCC)
+	    System.out.println("===== END SCCs ============");
+	
+	if(TIMING)
+	    System.out.println(counter + " component(s); " +
+			       mmethods + " meta-method(s); " +
+			       time + "ms processing time");
+    }
+    
+
     // information about the interesting AGET quads
     CachingArrayInfo cai = new CachingArrayInfo();
 
     // inter-procedural analysis of a group of mutually recursive methods
     private void analyze_inter_proc_scc(SCComponent scc){
-
 	if(TIMING || DEBUG){
 	    System.out.print("SCC" + scc.getId() + 
-			       "\t (" + scc.size() + " meta-method(s)){");
+			     "\t (" + scc.size() + " meta-method(s)){");
 	    for(Iterator it = scc.nodes(); it.hasNext(); )
 		System.out.print("\n " + it.next());
 	    System.out.print("} ... ");
 	}
 
-	// Initially, the worklist (actually a workstack) contains only one
-	// of the methods from the actual group of mutually recursive
-	// methods. The others will be added later (because they are reachable
-	// in the AllCaller graph from this initial node). 
-
-	long begin_time = 0;
-	if(TIMING) begin_time = System.currentTimeMillis();
+	long b_time = TIMING ? System.currentTimeMillis() : 0;
 
 	MetaMethod mmethod = null;
 	if(DETERMINISTIC)
@@ -471,14 +471,17 @@ public class PointerAnalysis {
 
 	// if SCC composed of a native or abstract method, return immediately!
 	if(!analyzable(mmethod.getHMethod())){
-	    if(TIMING){
-		long total_time = System.currentTimeMillis() - begin_time;
-		System.out.println(total_time + "ms");
-	    }
+	    if(TIMING)
+		System.out.println(System.currentTimeMillis() - b_time + "ms");
 	    if(DEBUG)
 		System.out.println(scc.toString(mcg) + " is unanalyzable");
 	    return;
 	}
+
+	// Initially, the worklist (actually a workstack) contains only one
+	// of the methods from the actual group of mutually recursive
+	// methods. The others will be added later (because they are reachable
+	// in the AllCaller graph from this initial node). 
 	W_inter_proc.add(mmethod);
 
 	boolean must_check = scc.isLoop();
@@ -501,13 +504,7 @@ public class PointerAnalysis {
 
 	    ParIntGraph new_info = (ParIntGraph) hash_proc_ext.get(mm_work);
 
-	    // new info?
-	    if(must_check && !new_info.equals(old_info)){
-
-		// System.out.println("----- The information has changed:");
-		// System.out.println("Old graph: " + old_info);
-		// System.out.println("New graph: " + new_info);
-
+	    if(must_check && !new_info.equals(old_info)) { // new info?
 		// since the original graph associated with hm_work changed,
 		// the old specializations for it are no longer actual;
 		if(CALL_CONTEXT_SENSITIVE)
@@ -545,7 +542,7 @@ public class PointerAnalysis {
 	}
 
 	if(TIMING)
-	    System.out.println((System.currentTimeMillis()-begin_time) + "ms");
+	    System.out.println((System.currentTimeMillis() - b_time) + "ms");
     }
 
     private MetaMethod current_intra_mmethod = null;

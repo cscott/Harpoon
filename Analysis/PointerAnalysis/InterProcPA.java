@@ -41,7 +41,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.42 2000-05-26 22:29:18 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.43 2000-06-28 15:57:49 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -139,7 +139,7 @@ abstract class InterProcPA {
 
 	    if(Modifier.isNative(hm.getModifiers()) && 
 	       !pa.harmful_native(hm)){
-		if(DEBUG)
+		//if(DEBUG)
 		    System.out.println("NATIVE: " + hm);
 		pigs[nb_callees_with_pig] = null;
 		mms[nb_callees_with_pig]  = mms[i];
