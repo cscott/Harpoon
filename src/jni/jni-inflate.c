@@ -60,7 +60,7 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
 static void deflate_object(GC_PTR obj, GC_PTR client_data) {
     struct oobj *oobj = (struct oobj *) obj;
     struct inflated_oobj *infl = oobj->hashunion.inflated;
-    printf("Deflating object %p (clazz %p)\n", oobj, oobj->claz);
+    /*printf("Deflating object %p (clazz %p)\n", oobj, oobj->claz);*/
     /* okay, first invoke java finalizer.  afterwards this object
      * *should* be dead, but the java finalizer might resurrect it.
      * we don't behave well in this case. */
