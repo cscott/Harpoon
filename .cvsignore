@@ -13,3 +13,4 @@ INSTALL
 COPYING
 ChangeLog
 flexrun-config
+.libs

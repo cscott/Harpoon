@@ -5,3 +5,9 @@ threadlibs
 base_lib
 gctest
 setjmp_test
+.libs
+*.lo
+config.log
+config.status
+libgc.la
+libtool

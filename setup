@@ -9,6 +9,15 @@ automake --add-missing
 autoconf
 test -f config.cache && rm -f config.cache
 set +x
+
+# now set up BDW.
+cd Contrib/gc
+autoconf
+test -f config.cache && rm -f config.cache
+set +x
+cd ../..
+
+# reconfigure.
 if test -f config.status; then
     `sed -ne '7,7s/^#//p'  config.status`
 fi

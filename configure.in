@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.102 $)dnl
+AC_REVISION($Revision: 1.103 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -20,6 +20,8 @@ AC_SUBST(HOSTCC) HOSTCC=${HOSTCC:=$CC} # for local helper executables.
 AC_PROG_AWK
 AC_PROG_RANLIB
 AM_PROG_LIBTOOL
+AC_PROG_MAKE_SET
+AM_MAINTAINER_MODE
 AC_PATH_PROG(FORTUNE, fortune, /usr/games/fortune)
 AC_SUBST(FORTUNE)
 AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
@@ -385,7 +387,8 @@ if test $gc_type = semi -o $gc_type = conservative; then
     	[Define if you are using the B-D-W conservative garbage collector])
 	dnl BDW collector at some point between 5.0a4 and 6.0a1 decided to
 	dnl require you to link in the library (libdl) containing dlopen().
-	GC_LIB="Contrib/gc/gc.a -ldl"
+	GC_LIB="Contrib/gc/libgc.la"
+	AC_CONFIG_SUBDIRS(Contrib/gc)
 fi	
 if test $gc_type = copying -o $gc_type = marksweep -o $gc_type = generational; then
 	AC_DEFINE(WITH_PRECISE_GC, 1,
@@ -614,7 +617,7 @@ AC_LINK_FILES(arch/${archdir}, include/asm)
 AC_OUTPUT(Makefile arch/Makefile
 	  arch/arm32/Makefile arch/sparc32/Makefile arch/sparc64/Makefile
 	  arch/ix86/Makefile arch/mips/Makefile
-	  Contrib/Makefile Contrib/gc/Makefile
+	  Contrib/Makefile
 	  src/Makefile src/jni/Makefile src/cam/Makefile
 	  src/java.io/Makefile src/java.lang/Makefile
 	  src/java.lang.reflect/Makefile src/java.net/Makefile
