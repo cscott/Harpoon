@@ -69,7 +69,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.52 2000-01-09 09:12:27 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.53 2000-01-10 16:49:36 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -173,6 +173,7 @@ public class SAMain extends harpoon.IR.Registration {
 
 	Set methods = classHierarchy.callableMethods();
 	Iterator classes = new TreeSet(classHierarchy.classes()).iterator();
+
 
 	if (singleClass!=null || !ONLY_COMPILE_MAIN) {
 	    while(classes.hasNext()) {
@@ -393,7 +394,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     private static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "m:c:o:DOPFHRLAhq1::");
+	Getopt g = new Getopt("SAMain", args, "m:c:o:DOPFHRLAhq1::C:");
 	
 	int c;
 	String arg;
@@ -457,6 +458,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 'q':
 		QUIET = true;
 		break;
+	    case 'C':
 	    case '1':  
 		String optclassname = g.getOptarg();
 		if (optclassname!=null) {
