@@ -1,115 +1,103 @@
 #ifndef SIMPLEHASH_H
 #define SIMPLEHASH_H
 
-#ifndef bool
-#define bool int
-#endif
-
-#ifndef true
-#define true 1
-#endif
-
-#ifndef false
-#define false 0
-#endif
-
-
-#include <stdarg.h>
-#include <stdlib.h>
-
 /* LinkedHashNode *****************************************************/
 
-struct LinkedHashNode * allocateLinkedHashNode(int key, int data, struct LinkedHashNode *next);
-struct LinkedHashNode * noargallocateLinkedHashNode();
-
-struct LinkedHashNode {
-    struct LinkedHashNode *next;
-    struct LinkedHashNode *lnext,*lprev;
+class LinkedHashNode {
+    
+public:
+    LinkedHashNode *next;
+    LinkedHashNode *lnext,*lprev;
     int data;
-    int key;
+    int key;  
+
+
+    LinkedHashNode(int key, int data, LinkedHashNode *next);
+    LinkedHashNode();
+
 };
 
 /* SimpleList *********************************************************/
 
-struct SimpleList * allocateSimpleList();
-void SimpleListadd(struct SimpleList *, int data);
-int SimpleListcontains(struct SimpleList *,int data);
-void SimpleListreset(struct SimpleList *);
-int SimpleListhasMoreElements(struct SimpleList *);
-int SimpleListnextElement(struct SimpleList *);
-
-struct SimpleList {
-    struct LinkedHashNode head;
-    struct LinkedHashNode *ptr;
+class SimpleList {
+private:
+    LinkedHashNode head;
+    LinkedHashNode *ptr;
+public:
+    SimpleList();
+    void add(int data);
+    int contains(int data);
+    void reset();
+    int hasMoreElements();
+    int nextElement();
 };
 
 
 /* WorkList *********************************************************/
 #define WLISTSIZE 4*100
 
-struct WorkList * allocateWorkList();
-void freeWorkList(struct WorkList *);
-void WorkListreset(struct WorkList *);
-void WorkListadd(struct WorkList *,int id, int type, int lvalue, int rvalue);
-int WorkListhasMoreElements(struct WorkList *);
-int WorkListgetid(struct WorkList *);
-int WorkListgettype(struct WorkList *);
-int WorkListgetlvalue(struct WorkList *);
-int WorkListgetrvalue(struct WorkList *);
-void WorkListpop(struct WorkList *);
-
-
-struct WorkList {
+class WorkList {
+private:
   struct ListNode *head;
   struct ListNode *tail;
   int headoffset;
   int tailoffset;
+
+public:
+    WorkList();
+    ~WorkList();
+    void reset();
+    void add(int id, int type, int lvalue, int rvalue);
+    int hasMoreElements();
+    int getid();
+    int gettype();
+    int getlvalue();
+    int getrvalue();
+    void pop();
 };
 
 struct ListNode {
   int data[WLISTSIZE];
-  struct ListNode *next;
+  ListNode *next;
 };
-
 /* SimpleHash *********************************************************/
+class SimpleIterator;
 
-struct SimpleHash * noargallocateSimpleHash();
-struct SimpleHash * allocateSimpleHash(int size);
-void SimpleHashaddChild(struct SimpleHash *thisvar, struct SimpleHash * child);
-void freeSimpleHash(struct SimpleHash *);
-
-
-int SimpleHashadd(struct SimpleHash *, int key, int data);
-int SimpleHashremove(struct SimpleHash *,int key, int data);
-bool SimpleHashcontainskey(struct SimpleHash *,int key);
-bool SimpleHashcontainskeydata(struct SimpleHash *,int key, int data);
-int SimpleHashget(struct SimpleHash *,int key, int* data);
-int SimpleHashcountdata(struct SimpleHash *,int data);
-void SimpleHashaddParent(struct SimpleHash *,struct SimpleHash* parent);
-int SimpleHashfirstkey(struct SimpleHash *);
-struct SimpleIterator* SimpleHashcreateiterator(struct SimpleHash *, struct SimpleHash *);
-void SimpleHashiterator(struct SimpleHash *, struct SimpleIterator * it);
-int SimpleHashcount(struct SimpleHash *, int key);
-void SimpleHashaddAll(struct SimpleHash *, struct SimpleHash * set);
-struct SimpleHash * SimpleHashimageSet(struct SimpleHash *, int key);
-
-struct SimpleHash {
+class SimpleHash {
+private:
     int numelements;
     int size;
     struct SimpleNode **bucket;
     struct ArraySimple *listhead;
     struct ArraySimple *listtail;
+
+
     int numparents;
     int numchildren;
-    struct SimpleHash* parents[10];
-    struct SimpleHash* children[10];
+    SimpleHash* parents[10];
+    SimpleHash* children[10];
+    void addChild(SimpleHash* child);
+public:
     int tailindex;
+    SimpleHash(int size=100);
+    ~SimpleHash();
+    int add(int key, int data);
+    int remove(int key, int data);
+    bool contains(int key);
+    bool contains(int key, int data);
+    int get(int key, int& data);
+    int countdata(int data);
+    void addParent(SimpleHash* parent);
+    int firstkey();
+    SimpleIterator* iterator();
+    void iterator(SimpleIterator & it);
+    inline int count() {
+        return numelements;
+    }
+    int count(int key);
+    void addAll(SimpleHash * set);
+    SimpleHash * imageSet(int key);
 };
-
-inline int count(struct SimpleHash * thisvar) {
-    return thisvar->numelements;
-}
-
 
 /* SimpleHashExcepion  *************************************************/
 
@@ -120,7 +108,7 @@ inline int count(struct SimpleHash * thisvar) {
 struct SimpleNode {
   struct SimpleNode *next;
   int data;
-  int key;
+  int key;  
   int inuse;
 };
 
@@ -130,83 +118,91 @@ struct ArraySimple {
 };
 
 
-struct SimpleIterator {
+class SimpleIterator {
+ public:
+
   struct ArraySimple *cur, *tail;
   int index,tailindex;
+  //  SimpleHash * table;
+  inline SimpleIterator() {}
+
+  inline SimpleIterator(struct ArraySimple *start, struct ArraySimple *tl, int tlindex/*, SimpleHash *t*/) {
+    cur = start;
+    //    table=t;
+    index=0;
+    tailindex=tlindex;
+    tail=tl;
+  }
+
+  inline int hasNext() {
+    if (cur==tail &&
+	index==tailindex)
+      return 0;
+    while((index==ARRAYSIZE)||!cur->nodes[index].inuse) {
+      if (index==ARRAYSIZE) {
+	index=0;
+	cur=cur->nextarray;
+      } else
+	index++;
+    }
+    if (cur->nodes[index].inuse)
+      return 1;
+    else
+      return 0;
+  }
+
+  inline int next() {
+    return cur->nodes[index++].data;
+  }
+  
+  inline int key() {
+    return cur->nodes[index].key;
+  }
 };
 
-inline struct SimpleIterator * noargallocateSimpleIterator() {
-    return (struct SimpleIterator*)malloc(sizeof(struct SimpleIterator));
-}
+/* SimpleHashExcepion  *************************************************/
 
-inline struct SimpleIterator * allocateSimpleIterator(struct ArraySimple *start, struct ArraySimple *tl, int tlindex) {
-    struct SimpleIterator *thisvar=(struct SimpleIterator*)malloc(sizeof(struct SimpleIterator));
-    thisvar->cur = start;
-    thisvar->index=0;
-    thisvar->tailindex=tlindex;
-    thisvar->tail=tl;
-    return thisvar;
-}
+class SimpleHashException {
+public:
+    SimpleHashException();
+};
 
-inline int hasNext(struct SimpleIterator *thisvar) {
-    if (thisvar->cur==thisvar->tail &&
-	thisvar->index==thisvar->tailindex)
-        return 0;
-    while((thisvar->index==ARRAYSIZE)||!thisvar->cur->nodes[thisvar->index].inuse) {
-        if (thisvar->index==ARRAYSIZE) {
-            thisvar->index=0;
-            thisvar->cur=thisvar->cur->nextarray;
-        } else
-            thisvar->index++;
-    }
-    if (thisvar->cur->nodes[thisvar->index].inuse)
-        return 1;
-    else
-        return 0;
-}
-
-inline int next(struct SimpleIterator *thisvar) {
-    return thisvar->cur->nodes[thisvar->index++].data;
-}
-
-inline int key(struct SimpleIterator *thisvar) {
-    return thisvar->cur->nodes[thisvar->index].key;
-}
-
-
-struct RepairHashNode * allocateRepairHashNode(int setrelation, int rule, int lvalue, int rvalue, int data, int data2,int ismodify);
-
-struct RepairHashNode {
-    struct RepairHashNode *next;
-    struct RepairHashNode *lnext;
+class RepairHashNode {
+ public:
+    RepairHashNode *next;
+    RepairHashNode *lnext;
     int data;
     int data2;
-    int setrelation;
-    int lvalue;
-    int rvalue;
+    int setrelation;  
+    int lvalue;  
+    int rvalue;  
     int rule;
     int ismodify;
+    RepairHashNode(int setrelation, int rule, int lvalue, int rvalue, int data, int data2,int ismodify);
 };
 
-struct RepairHash * noargallocateRepairHash();
-struct RepairHash * allocateRepairHash(int size);
-void freeRepairHash(struct RepairHash *);
-int addset(struct RepairHash *, int setv, int rule, int value, int data);
-int addrelation(struct RepairHash *, int relation, int rule, int lvalue, int rvalue, int data);
-int addrelation2(struct RepairHash *, int relation, int rule, int lvalue, int rvalue, int data, int data2);
-bool containsset(struct RepairHash *, int setv, int rule, int value);
-bool containsrelation(struct RepairHash *, int relation, int rule, int lvalue, int rvalue);
-int getset(struct RepairHash *, int setv, int rule, int value);
-int getrelation(struct RepairHash *, int relation, int rule, int lvalue, int rvalue);
-int getrelation2(struct RepairHash *, int relation, int rule, int lvalue, int rvalue);
-int ismodify(struct RepairHash *, int relation, int rule, int lvalue, int rvalue);
+class RepairHash {
 
-struct RepairHash {
+private:
     int numelements;
     int size;
-    struct RepairHashNode **bucket;
-    struct RepairHashNode *nodelist;
+    RepairHashNode **bucket;
+    RepairHashNode *nodelist;
 
+public:
+    RepairHash();
+    RepairHash(int size);
+    ~RepairHash();
+    int addset(int setv, int rule, int value, int data);
+    int addrelation(int relation, int rule, int lvalue, int rvalue, int data);
+    int addrelation(int relation, int rule, int lvalue, int rvalue, int data, int data2);
+    bool containsset(int setv, int rule, int value);
+    bool containsrelation(int relation, int rule, int lvalue, int rvalue);
+    int getset(int setv, int rule, int value);
+    int getrelation(int relation, int rule, int lvalue, int rvalue);
+    int getrelation2(int relation, int rule, int lvalue, int rvalue);
+    int ismodify(int relation, int rule, int lvalue, int rvalue);
 };
 
 #endif
+

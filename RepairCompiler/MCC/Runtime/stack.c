@@ -11,7 +11,7 @@ Permission is hereby granted to use or copy this program
 for any purpose,  provided the above notices are retained on all copies.
 Permission to modify the code and to distribute modified code is granted,
 provided the above notices are retained, and a notice that the code was
-modified is included with the above copyright notice.
+modified is included with the above copyright notice.   
  */
 
 
@@ -19,9 +19,6 @@ modified is included with the above copyright notice.
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <ctype.h>
-#include <stdio.h>
-#include <unistd.h>
-
 #define ptr_t void *
 #pragma weak __libc_stack_end
 extern ptr_t __libc_stack_end;
@@ -34,7 +31,7 @@ extern ptr_t __libc_stack_end;
   {
     /* We read the stack base value from /proc/self/stat.  We do this	*/
     /* using direct I/O system calls in order to avoid calling malloc   */
-    /* in case REDIRECT_MALLOC is defined.				*/
+    /* in case REDIRECT_MALLOC is defined.				*/ 
 #   define STAT_BUF_SIZE 4096
 #   define STAT_READ read
 	  /* Should probably call the real read, if read is wrapped.	*/
@@ -53,7 +50,7 @@ extern ptr_t __libc_stack_end;
 	    return __libc_stack_end + 0x10;
 	  } /* Otherwise it's not safe to add 16 bytes and we fall	*/
 	    /* back to using /proc.					*/
-#	else
+#	else 
 	  return __libc_stack_end;
 #	endif
       }
