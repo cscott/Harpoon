@@ -132,7 +132,7 @@ function build_spec_app2() {
 
     echo
     echo Building version with preallocation for $name
-    execute_build_command "bin/build-precisec -Dharpoon.runtime=2 $buildOptions -Z tmp/$name.an.txt,tmp/$name.profile --prealloc-opt $mainClass $name.prealloc" | tee $resultDir/$name.ia.stat
+    execute_build_command "bin/build-precisec -Dharpoon.runtime=2 $buildOptions -Z tmp/$name.an.txt tmp/$name.profile --prealloc-opt $mainClass $name.prealloc" | tee $resultDir/$name.ia.stat
     #rm -rf ${FLEX_DIR}/as$name.prealloc
 
     $specialCmd
@@ -300,7 +300,7 @@ function build_jolden_app2() {
     
     echo
     echo Building version with preallocation for $name
-    execute_build_command "bin/build-precisec --prealloc-opt -Z tmp/${name}.an.txt,tmp/${name}.profile $mainClass ${name}.prealloc" | tee ${resultDir}/${name}.ia.stat
+    execute_build_command "bin/build-precisec --prealloc-opt -Z tmp/${name}.an.txt tmp/${name}.profile $mainClass ${name}.prealloc" | tee ${resultDir}/${name}.ia.stat
     #rm -rf ${FLEX_DIR}/as$name.prealloc
 
     cd ${RUNTIME_DIR}
