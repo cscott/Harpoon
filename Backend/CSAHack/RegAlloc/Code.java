@@ -23,7 +23,7 @@ import java.util.Set;
  * <code>Code</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.7 2000-02-29 06:30:48 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.8 2000-03-31 10:13:23 cananian Exp $
  */
 public class Code extends harpoon.IR.Assem.Code {
     DerivationGenerator dg;
@@ -77,20 +77,20 @@ public class Code extends harpoon.IR.Assem.Code {
     }
 
     Access allocLocal() {
-	final Temp SP = frame.getRegFileInfo().getRegister(13);
+	final Temp FP = frame.getRegFileInfo().getRegister(11);
 	final int n = locals++;
 	return new Access() {
 	    public Instr makeLoad(InstrFactory inf, HCodeElement source,
 				  Temp dst) {
 		return new InstrMEM(inf, source,
-				    "ldr `d0, [`s0, #"+(n*4)+"] @ spill",
-				    new Temp[] { dst }, new Temp[]{ SP });
+				    "ldr `d0, [`s0, #.fpoffset-"+(n*4)+"] @ spill",
+				    new Temp[] { dst }, new Temp[]{ FP });
 	    }
 	    public Instr makeStore(InstrFactory inf, HCodeElement source,
 				   Temp src) {
 		return new InstrMEM(inf, source,
-				    "str `s0, [`s1, #"+(n*4)+"] @ spill",
-				    null, new Temp[]{ src, SP });
+				    "str `s0, [`s1, #.fpoffset-"+(n*4)+"] @ spill",
+				    null, new Temp[]{ src, FP });
 	    }
 	};
     }

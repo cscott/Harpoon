@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.153 2000-03-26 06:29:05 jwhaley Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.154 2000-03-31 10:13:35 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -556,6 +556,8 @@ import java.util.Iterator;
 					       methodlabel.name);
 		Instr in2a= new InstrDIRECTIVE(inf, il, ".type " +
 					       methodlabel.name+",#function");
+		Instr in2b= new InstrDIRECTIVE(inf, il, ".set .fpoffset, "+
+					       (-4*(4+nregs)));
 		Instr in3 = new InstrLABEL(inf, il, methodlabel.name+":",
 					   methodlabel);
 		Instr in4 = new Instr(inf, il, "mov ip, sp", null, null);
@@ -585,7 +587,8 @@ import java.util.Iterator;
 		in5.layout(il, in6);
 		in4.layout(il, in5);
 		in3.layout(il, in4);
-		in2a.layout(il,in3);
+		in2b.layout(il,in3);
+		in2a.layout(il,in2b);
 		in2.layout(il, in2a);
 		in1.layout(il, in2);
 		if (il==instr) instr=in1; // fixup root if necessary.
