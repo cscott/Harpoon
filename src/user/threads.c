@@ -134,6 +134,7 @@ void exitthread() {
   struct thread_list *tl;
   /*LOCK ON GTL*/
   if (gtl!=gtl->next) {
+    FNI_DestroyThreadState(gtl->jnienv);
     tl=gtl;
     gtl = gtl->next;
     gtl->prev=tl->prev;
@@ -147,6 +148,9 @@ void exitthread() {
     machdep_restore_state();
     return;
   } else {
+    FNI_DestroyThreadState(gtl->jnienv);
+    __machdep_stack_free(gtl->mthread.machdep_stack);
+    free(gtl);
     gtl=NULL;
     startnext();
   }
@@ -311,5 +315,8 @@ int user_cond_destroy(user_cond_t *cond) {
   return 0;
 }
 #endif
+
+
+
 
 

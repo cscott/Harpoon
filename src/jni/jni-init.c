@@ -47,7 +47,7 @@ static JNIEnv * FNI_CreateThreadState(void) {
 #endif
   return (JNIEnv *) env;
 }
-static void FNI_DestroyThreadState(void *cl) {
+void FNI_DestroyThreadState(void *cl) {
   struct FNI_Thread_State * env = (struct FNI_Thread_State *) cl;
   if (cl==NULL) return; // death of uninitialized thread.
   // ignore wrapped exception; free localrefs.
