@@ -7,12 +7,21 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.1 1998-11-30 21:21:03 cananian Exp $
+ * @version $Id: Util.java,v 1.12.2.2 1998-11-30 22:18:06 cananian Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
+
+  /** If <code>debug</code> is false, we make some efficiency optimizations
+   *  which are only safe for correct code. */
   private static final boolean debug = true;
 
+  /** Returns an ArrayFactory which makes an array of the same type as the
+   *  <code>src</code> parameter (which should be an array of some
+   *  object type).  This method uses run-time type information and
+   *  thus <b>should not be used</b>.
+   *  @deprecated
+   */
   public static final ArrayFactory genericFactory(final Object[] src) {
     final Class type = src.getClass().getComponentType();
     return new ArrayFactory() {
@@ -80,11 +89,15 @@ public abstract class Util {
     }
     return sb.toString();
   }
-  /** Hacked assertion facility */
+  /** Assertion facility.  Throws a <code>RuntimeException</code> if
+   *  the boolean parameter is <code>false</code>. */
   public static final void assert(boolean val) {
     if (!val)
       throw new RuntimeException("Assertion Failure.") { };
   }
+  /** Assertion facility, which explanatory string.
+   *  Throws a <code>RuntimeException</code> including the specified
+   *  message string if the boolean parameter is <code>false</code>. */
   public static final void assert(boolean val, String msg) {
     if (!val)
       throw new RuntimeException("Assertion Failure: "+msg) { };
