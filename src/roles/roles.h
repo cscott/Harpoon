@@ -37,6 +37,9 @@ JNIEXPORT void JNICALL Java_java_lang_RoleInference_fieldassign
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_marklocal
   (JNIEnv *, jclass, jstring, jobject);
 
+JNIEXPORT void JNICALL Java_java_lang_RoleInference_fieldload
+  (JNIEnv *, jclass, jstring, jobject, jobject, jobject);
+
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_killlocal
   (JNIEnv *, jclass, jstring);
 

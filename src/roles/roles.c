@@ -4,13 +4,14 @@
 #include <assert.h>
 #include "config.h"
 #include "flexthread.h"
-
+#include <stdio.h>
 
 
 FLEX_MUTEX_DECLARE_STATIC(uid_mutex);
 FLEX_MUTEX_DECLARE_STATIC(init_mutex);
 
 static int instr=1;
+static FILE * rolefile;
 
 static int inited=0;
 static jlong lastuid=1000000;
@@ -26,6 +27,7 @@ static void initialize(JNIEnv *env) {
   jclass objcls,strcls;
   FLEX_MUTEX_LOCK(&init_mutex);
   if (!inited) {
+    rolefile=fopen("roletrace.mem","w+");
     objcls=(*env)->FindClass(env, "java/lang/Object");
     strcls=(*env)->FindClass(env, "java/lang/String");
     UIDfd=(*env)->GetFieldID(env, objcls, "UID","J");
@@ -45,7 +47,7 @@ JNIEXPORT void JNICALL Java_java_lang_Object_assignUID(JNIEnv *env, jobject obj,
   lastuid++;
   FLEX_MUTEX_UNLOCK(&uid_mutex);
   classstr=FNI_GetClassInfo(cls)->name;
-  printf("UI: %s %lld\n",classstr,id);
+  fprintf(rolefile,"UI: %s %lld\n",classstr,id);
 
   (*env)->SetLongField(env, obj, UIDfd, id);
 }
@@ -60,7 +62,7 @@ void NativeassignUID(JNIEnv *env, jobject obj,jclass cls) {
   lastuid++;
   FLEX_MUTEX_UNLOCK(&uid_mutex);
   classstr=FNI_GetClassInfo(cls)->name;
-  printf("NI: %s %lld\n",classstr,id);
+  fprintf(rolefile,"NI: %s %lld\n",classstr,id);
 
   (*env)->SetLongField(env, obj, UIDfd, id);
 }
@@ -72,7 +74,7 @@ JNIEXPORT void JNICALL Java_java_lang_RoleInference_arrayassign(JNIEnv *env, jcl
     componentuid=(*env)->GetLongField(env, component, UIDfd);
   else
     componentuid=-1;
-  printf("AA: %lld %ld %lld\n",arrayuid,index,componentuid);
+  fprintf(rolefile,"AA: %lld %ld %lld\n",arrayuid,index,componentuid);
 }
 
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_fieldassign(JNIEnv *env, jclass cls, jobject source, jobject field, jobject component) {
@@ -93,8 +95,43 @@ JNIEXPORT void JNICALL Java_java_lang_RoleInference_fieldassign(JNIEnv *env, jcl
   methodclass=FNI_WRAP(FNI_GetFieldInfo(field)->declaring_class_object);
   classstr=FNI_GetClassInfo(methodclass)->name;
   fieldstr=FNI_GetFieldInfo(field)->fieldID->name;
-  printf("FA: %lld %s %s %lld\n",sourceuid,classstr,fieldstr,componentuid);
+  fprintf(rolefile,"FA: %lld %s %s %lld\n",sourceuid,classstr,fieldstr,componentuid);
 }
+
+JNIEXPORT void JNICALL Java_java_lang_RoleInference_fieldload(JNIEnv *env, jclass cls, jstring localvar, jobject source, jobject field, jobject component) {
+  jlong componentuid, sourceuid;
+  jclass methodclass;
+  char * fieldstr, *classstr, *descstr;
+  jobject carray=(*env)->GetObjectField(env, localvar, strvalue);
+  jchar *strchr=(*env)->GetCharArrayElements(env, carray, NULL);
+  jsize length=(*env)->GetArrayLength(env, carray);
+  jsize  newlen = utf8length(strchr, length);
+  char * result = malloc(sizeof(char)*(newlen+1)); 
+  toUTF8(strchr, length, result);
+  result[newlen]='\0';
+
+  if (source!=NULL)
+    sourceuid=(*env)->GetLongField(env, source, UIDfd);
+  else
+    sourceuid=-1;
+  //FIXME--THIS IS GLOBAL VARIABLE CASE!!!!!
+  if (component!=NULL)
+    componentuid=(*env)->GetLongField(env, component, UIDfd);
+  else
+    componentuid=-1;
+  if (field!=NULL) {
+    methodclass=FNI_WRAP(FNI_GetFieldInfo(field)->declaring_class_object);
+    classstr=FNI_GetClassInfo(methodclass)->name;
+    fieldstr=FNI_GetFieldInfo(field)->fieldID->name;
+    descstr=FNI_GetFieldInfo(field)->fieldID->desc;
+    fprintf(rolefile,"LF: %s %lld %s %s %s %lld\n",result, sourceuid,classstr, fieldstr, descstr, componentuid);
+  } else {
+    fprintf(rolefile,"GA: %s %lld %lld\n",result, sourceuid, componentuid);
+  }
+  free(result);
+  (*env)->ReleaseCharArrayElements(env, carray, strchr, JNI_ABORT);
+}
+
 
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_marklocal(JNIEnv *env, jclass cls, jstring localvar, jobject obj) {
   jlong objuid;
@@ -109,7 +146,7 @@ JNIEXPORT void JNICALL Java_java_lang_RoleInference_marklocal(JNIEnv *env, jclas
     objuid=-1;
   toUTF8(strchr, length, result);
   result[newlen]='\0';
-  printf("ML: %s %lld\n",result, objuid);
+  fprintf(rolefile,"ML: %s %lld\n",result, objuid);
   free(result);
   (*env)->ReleaseCharArrayElements(env, carray, strchr, JNI_ABORT);
 }
@@ -122,7 +159,7 @@ JNIEXPORT void JNICALL Java_java_lang_RoleInference_killlocal(JNIEnv *env, jclas
   char * result = malloc(sizeof(char)*(newlen+1)); 
   toUTF8(strchr, length, result);
   result[newlen]='\0';
-  printf("KL: %s\n",result);
+  fprintf(rolefile,"KL: %s\n",result);
   free(result);
   (*env)->ReleaseCharArrayElements(env, carray, strchr, JNI_ABORT);
 }
@@ -133,7 +170,7 @@ JNIEXPORT void JNICALL Java_java_lang_RoleInference_returnmethod(JNIEnv *env, jc
     objuid=(*env)->GetLongField(env, obj, UIDfd);
   else
     objuid=-1;
-  printf("RM: %lld\n", objuid);
+  fprintf(rolefile,"RM: %lld\n", objuid);
 }
 
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_invokemethod(JNIEnv *env, jclass cls, jobject method, jint isstatic) {
@@ -144,7 +181,7 @@ JNIEXPORT void JNICALL Java_java_lang_RoleInference_invokemethod(JNIEnv *env, jc
   classstr=FNI_GetClassInfo(FNI_WRAP(FNI_GetMethodInfo(method)->declaring_class_object))->name;
 
 
-  printf("IM: %s %s %s %ld\n",classstr, methodstr,methoddesc,isstatic);
+  fprintf(rolefile,"IM: %s %s %s %ld\n",classstr, methodstr,methoddesc,isstatic);
 }
 
 static jsize utf8length(const jchar *buf, jsize len) {
