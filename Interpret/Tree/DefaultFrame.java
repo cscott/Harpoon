@@ -46,7 +46,7 @@ import java.util.Set;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.4.12 2000-01-28 03:02:31 kkz Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.4.13 2000-01-28 20:57:29 kkz Exp $
  */
 public class DefaultFrame extends harpoon.Backend.Generic.Frame
     implements AllocationInfo {
@@ -61,7 +61,6 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
     private static Temp[]       registers;
     private static TempFactory  regTempFactory;
     private final Linker	linker;
-    private GCInfo              gcInfo; // should really be final
 
     static {
         regTempFactory = new TempFactory() {
@@ -98,12 +97,6 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
 	m_runtime = new harpoon.Backend.Runtime1.Runtime(this, null, main, ch, null);
     }
 
-    public DefaultFrame(HMethod main, ClassHierarchy ch, OffsetMap map,
-			AllocationStrategy st, GCInfo gcInfo) {
-	this(main, ch, map, st);
-	this.gcInfo = gcInfo;
-    }
-	
     public Linker getLinker() { return linker; }
 
     /** Returns a <code>Tree.Exp</code> object which represents a pointer
@@ -225,8 +218,12 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
 	    return getRegister(2);
 	}
     };
+    /** There are no plans to ever have the <code>Tree</code>
+	interpreter support <code>GCInfo</code>, so 
+	<code>getGCInfo</code> will always return null.
+    */
     public GCInfo getGCInfo() {
-	return gcInfo;
+	return null;
     }
 }
 
