@@ -112,7 +112,7 @@ public class VarExpr extends Expr {
         vd = (VarDescriptor) sa.getSymbolTable().get(varname);
 
         if (vd == null) {
-            System.out.println(varname);
+            //System.out.println(varname);
             sa.getErrorReporter().report(null, "Undefined variable '" + varname + "'");
             return null;
         }

@@ -25,7 +25,7 @@ public class SimpleIRErrorReporter implements IRErrorReporter {
 	LinedMessage sem = new LinedMessage();
 	sem.error = true;
 	sem.pn = v;
-	sem.message = s;
+	sem.message = s;	
 
 	add(sem);
 	
@@ -42,7 +42,23 @@ public class SimpleIRErrorReporter implements IRErrorReporter {
 	add(sem);
     }
 
+
+    private boolean messageExists(LinedMessage sem) {
+	for (int i = 0; i < messages.size(); i++) {
+	    
+	    LinedMessage cur = (LinedMessage) messages.elementAt(i);
+	    
+	    if (cur.message.equals(sem.message))
+		return true;
+	}
+	return false;
+    }
+    
+
     private void add(LinedMessage sem) {
+
+	if (messageExists(sem)) 
+	    return;
 
 	if (sem.pn == null) {
 	    messages.addElement(sem);
@@ -68,15 +84,15 @@ public class SimpleIRErrorReporter implements IRErrorReporter {
 	for (int i = 0; i < messages.size(); i++) {
 	    LinedMessage sem = (LinedMessage)messages.elementAt(i);
 	    if (sem.error) {
-		output += "error";
+		output += "Semantic Error";
 	    } else {
-		output += "warning";
+		output += "Semantic Warning";
 	    }
 
 	    if (sem.pn != null) {
-		output += " (" + filename + sem.pn.getLine() + "): ";
+		output += ": " + filename + ": "+sem.pn.getLine() + ": ";
 	    } else {
-                output += " : ";
+                output += ": ";
             }
 
 	    output += sem.message;

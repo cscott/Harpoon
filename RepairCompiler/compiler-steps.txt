@@ -12,7 +12,7 @@ For the specifs in ex.constraints, ex.struct, ex.space, ex.abstract, ex.model
 in directory Repair/Ex:
 
 A) cd Ex
-B) java -classpath <path to RepairCompiler> MCC.Compiler ex
+B) java -classpath <path to RepairCompiler> MCC.Compiler -checkonly ex
 
 which builds:
   ex.cc
@@ -25,9 +25,14 @@ which builds:
 Step 3: Compile checker
 -----------------------
 
-A) copy generated files into Runtime directory
-B) remove old object files rm *.o
-C) run ./buildruntime
-D) build checking object: g++ -g -c ex_aux.cc
-E) g++ -g ex_test.cc *.o
-F) run ./a.out
+A) copy the Runtime directory in Repair/Ex:   
+   cp -r <path to RepairCompiler>/MCC/Runtime .
+B) copy generated files into the Runtime directory 
+   cp ex.cc ex_aux.* size.* Runtime
+B) remove old object files 
+   cd Runtime; rm *.o
+C) ./buildruntime
+D) build checking object: 
+   g++ -g -c ex_aux.cc
+E) g++ -g ex_test.cc *.o -o ex
+F) ./ex
