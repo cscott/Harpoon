@@ -18,6 +18,8 @@ import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
 import harpoon.Analysis.MetaMethods.SmartCallGraph;
 import harpoon.Analysis.Quads.CallGraph;
 
+import harpoon.Util.Timer;
+
 import java.util.*;
 
 /**
@@ -30,6 +32,7 @@ import java.util.*;
 
 
 public class IADriver {
+    public static final boolean PREBUILD_SSI = true;
 
     public static void main(String args[]) {
         String defaultClassName = "MemTest";
@@ -116,11 +119,25 @@ public class IADriver {
         // IA needs SSI
         HCodeFactory hcf_ssi =
             new CachingCodeFactory(harpoon.IR.Quads.QuadSSI.codeFactory(hcf));
+        
         // this is IMPORTANT
         QuadSSI.KEEP_QUAD_MAP_HACK = true;
 
-        IncompatibilityAnalysis analysis =
-            new IncompatibilityAnalysis(entry, hcf_ssi, cg);
+        Timer timer;
+
+         if (PREBUILD_SSI) {
+            System.out.println("Prebuilding SSI...");
+            timer = new Timer();
+            timer.start();
+
+            IncompatibilityAnalysis.sizeStatistics(cg.callableMethods(), hcf_ssi);
+            
+            timer.stop();
+            System.out.println("SSI prebuild: " + timer);
+        }
+
+         IncompatibilityAnalysis analysis =
+             new IncompatibilityAnalysis(entry, hcf_ssi, cg);
         
     }
     

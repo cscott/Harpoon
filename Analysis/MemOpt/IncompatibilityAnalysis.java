@@ -147,7 +147,7 @@ public class IncompatibilityAnalysis {
         
         if (SHOW_TIMINGS) {
             timer.stop();
-            System.out.println("IA interproc: " + timer);
+            System.out.println("IA intraproc: " + timer);
         }
         
         // stage 1: compute An, Ae, Rn, Re, Esc
@@ -1048,13 +1048,17 @@ public class IncompatibilityAnalysis {
         Collection params = Arrays.asList(md.header.params());
 
 
+        // System.out.println("> i enter: " + method);
         // init Ip
         md.Ip = new GenericMultiMap(new AggregateSetFactory());
 
         // compute pointsTo information
         MultiMap pointsTo = new GenericMultiMap();
         computePointsTo(md, pointsTo, null);
+        // System.out.println("pointsto...");
         propagateExternalDeltas(md, pointsTo);
+        // System.out.println("extdeltas...");
+        
 
         // compute "meta allocation nodes", i.e. nodes that directly or
         // indirectly cause allocations
@@ -1062,10 +1066,12 @@ public class IncompatibilityAnalysis {
             new ArrayList(md.allocationSites.size() + md.calls.keySet().size());
         interestingNodes.addAll(md.allocationSites);
         interestingNodes.addAll(md.calls.keySet());
+        // System.out.println("Interestingnodes: " + interestingNodes.size());
         
         // compute mappings from escape sites to things that escape there
 
         // first, simple escapes
+        // System.out.println("Simple escapes...");
         MultiMap escapes = new GenericMultiMap();
         for (Iterator it = md.escapeSites.iterator(); it.hasNext(); ) {
             Quad q = (Quad) it.next();
@@ -1078,6 +1084,7 @@ public class IncompatibilityAnalysis {
             }
         }
 
+        // System.out.println("Escapes from calls...");
         // escapes from calls
         for (Iterator it = md.calls.keySet().iterator(); it.hasNext(); ) {
             CALL qCall = (CALL) it.next();
@@ -1105,18 +1112,22 @@ public class IncompatibilityAnalysis {
 
             }
         }
-                    
 
+        // System.out.println("Total escapes: " + escapes.size());
+
+        Set escKeySet = new HashSet(escapes.keySet());
+
+        // System.out.println("Per meta alloc node...");
         // for each meta alloc node
         for (Iterator it = interestingNodes.iterator(); it.hasNext(); ) {
             Quad q = (Quad) it.next();
 
-            // compute allocs here
             Set allocs;
 
             // allocs for outgoing edges
             Set[] edgeAllocs = new Set[q.nextLength()];
-            
+
+            // System.out.println("  Per node: " + Debug.code2str(q));            
             if (q.kind() == QuadKind.NEW) {
                 allocs = edgeAllocs[0] = Collections.singleton( ((NEW) q).dst());
             } else {
@@ -1145,32 +1156,33 @@ public class IncompatibilityAnalysis {
             // compute reachability of this node (there are more efficient
             //   ways though...)
 
+            // System.out.println("   # allocs: " + allocs.size());
             Set canReachQ = canReach(Collections.singleton(q), false);
 
+            // System.out.println("  escapes x allocs... ");
+
+            Set escCanReachQ = MultiMapUtils.multiMapUnion(escapes,
+                                                           canReachQ);
+            /// System.out.println("   # escCanReachQ: " + escCanReachQ.size());
             
-            for (Iterator it2 = escapes.keySet().iterator(); it2.hasNext(); ) {
-                Quad qEscape = (Quad) it2.next();
-
-                if (canReachQ.contains(qEscape)) {
-                    // add incompatibilities between escaped vars and allocs
-                    // the cartesian product scares me
-                    for (Iterator it3 = escapes.getValues(qEscape).iterator(); it3.hasNext(); ) {
-                        Temp escaped = (Temp) it3.next();
-
-
-                        if (params.contains(escaped)) {
-                            md.Ip.addAll(escaped, allocs);
-                        } else {
-                            assert globalAllocMap.containsKey(escaped);
-                            I.addAll(escaped, allocs);
-                        }
-                    }
+            for (Iterator it2 = escCanReachQ.iterator(); it2.hasNext(); ) {
+                Temp escaped = (Temp) it2.next();
+                if (params.contains(escaped)) {
+                    md.Ip.addAll(escaped, allocs);
+                } else {
+                    assert globalAllocMap.containsKey(escaped);
+                    I.addAll(escaped, allocs);
                 }
             }
+            
+            // System.out.println("   # escCanReachQ: " + escCanReachQ);
 
+            // System.out.println("  pointsTo union...");
             Collection liveInInternal = md.liveness.getValues(q.prevEdge(0));
             Set liveInObjects = MultiMapUtils.multiMapUnion(pointsTo,
                                                             liveInInternal);
+
+            // System.out.println("   # live-in objects: "  + liveInObjects.size());
                                                             
             // add incompatibilities from liveness
             // for each outgoing edge
@@ -1202,8 +1214,10 @@ public class IncompatibilityAnalysis {
                     }
                 }
             }
-            
+
         }
+
+        // System.out.println("< i exit");
         
     }
 
@@ -1508,7 +1522,7 @@ public class IncompatibilityAnalysis {
 
     }
 
-    private static long sizeStatistics(Collection methods, HCodeFactory factory) {
+    public static long sizeStatistics(Collection methods, HCodeFactory factory) {
         long nElements = 0;
         for (Iterator it = methods.iterator(); it.hasNext(); ) {
             HMethod method = (HMethod) it.next();
