@@ -6,19 +6,38 @@ package harpoon.Analysis.SizeOpt;
 import harpoon.Analysis.Counters.CounterFactory;
 import harpoon.Analysis.Transactions.BitFieldNumbering;
 import harpoon.Analysis.Transactions.BitFieldNumbering.BitFieldTuple;
-import harpoon.Analysis.Transformation.*;
+import harpoon.Analysis.Transformation.MethodMutator;
 import harpoon.Backend.Generic.Frame;
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
-import harpoon.Temp.*;
-import harpoon.Util.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HMethod;
+import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Qop;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadFactory;
+import harpoon.IR.Quads.QuadNoSSA;
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.SET;
+import harpoon.Temp.Temp;
+import harpoon.Util.ArrayIterator;
+import harpoon.Util.Util;
 
-import java.util.*;
+import java.util.Iterator;
 /**
  * <code>MostlyZeroFinder</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MostlyZeroFinder.java,v 1.1.2.1 2001-10-29 17:00:12 cananian Exp $
+ * @version $Id: MostlyZeroFinder.java,v 1.1.2.2 2001-10-31 03:35:19 cananian Exp $
  */
 public class MostlyZeroFinder extends MethodMutator {
     final BitFieldNumbering bfn;

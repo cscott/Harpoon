@@ -4,19 +4,25 @@
 package harpoon.Backend.Runtime1;
 
 import harpoon.Backend.Generic.Frame;
-import harpoon.ClassFile.*;
-import harpoon.IR.Tree.*;
-import harpoon.Temp.*;
-import harpoon.Util.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HDataElement;
+import harpoon.ClassFile.Linker;
+import harpoon.IR.Tree.ALIGN;
+import harpoon.IR.Tree.SEGMENT;
+import harpoon.IR.Tree.Stm;
+import harpoon.Temp.Label;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 /**
  * <code>DataConfigChecker</code> outputs some (never used) references
  * which will be unresolved (resulting in linker errors at build-time)
  * unless the runtime configuration matches the flex configuration.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataConfigChecker.java,v 1.1.2.1 2001-10-29 16:42:37 cananian Exp $
+ * @version $Id: DataConfigChecker.java,v 1.1.2.2 2001-10-31 03:34:54 cananian Exp $
  */
 public class DataConfigChecker extends Data {
     
