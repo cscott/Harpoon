@@ -9,7 +9,7 @@ import harpoon.Temp.TempMap;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.17 1998-09-13 23:57:29 cananian Exp $
+ * @version $Id: Quad.java,v 1.18 1998-09-15 01:25:50 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -103,6 +103,8 @@ public abstract class Quad
 	System.arraycopy(prev,0,e,next.length,prev.length);
 	return (HCodeEdge[]) e;
     }
+    public HCodeEdge[] pred() { return prevEdge(); }
+    public HCodeEdge[] succ() { return nextEdge(); }
 
     /** Adds an edge between two Quads.  The <code>from_index</code>ed
      *  outgoing edge of <code>from</code> is connected to the 

@@ -7,11 +7,13 @@ import harpoon.ClassFile.HCodeEdge;
  * that are interconnected as directed graphs.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edges.java,v 1.1 1998-09-13 23:57:17 cananian Exp $
+ * @version $Id: Edges.java,v 1.2 1998-09-15 01:25:41 cananian Exp $
  */
 
 public interface Edges  {
     /** Returns an array of all the edges to and from this 
      *  <code>HCodeElement</code>. */
     public HCodeEdge[] edges();
+    public HCodeEdge[] pred();
+    public HCodeEdge[] succ();
 }
