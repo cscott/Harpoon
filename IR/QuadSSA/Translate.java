@@ -32,7 +32,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.91 1998-11-25 09:27:56 cananian Exp $
+ * @version $Id: Translate.java,v 1.92 1998-11-25 20:19:58 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -112,7 +112,10 @@ class Translate  { // not public.
 	}
 	/** Return the name of an 'extra' temp n above the stack top. */
 	Temp extra(int n) {
-	    return stackNames[stackSize+n];
+	    Temp t = stackNames[stackSize+n];
+	    for (StackElement s=stack; s!=null; s=s.next)
+		if (s.t == t) return new Temp(); // can't reuse.
+	    return t; // reduce, reuse, recycle.
 	}
 	/** Returns the 'n'th entry in the stack. */
 	Temp stack(int n) {
@@ -1101,7 +1104,7 @@ class Translate  { // not public.
 		Quad.addEdge(q3, 0, q4, 0);
 		Quad.addEdge(q4, 0, q,  0);
 		Quad.addEdge(q5, 0, q6, 0);
-		Quad.addEdge(q6, 0, q2.next(0), 0);
+		Quad.addEdge(q6, 0, q2.next(0), q2.nextEdge(0).which_pred());
 		Quad.addEdge(q2, 0, q6, 1);
 		q = q3;
 	    }

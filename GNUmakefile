@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.62 1998-11-25 09:27:48 cananian Exp $
+# $Id: GNUmakefile,v 1.63 1998-11-25 20:19:49 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -15,11 +15,11 @@ FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 
-CVS_TAG:=$(firstword $(shell cvs status GNUmakefile | \
+CVS_TAG=$(firstword $(shell cvs status GNUmakefile | \
 			awk '/Sticky Tag/{print $$3}'))
-CVS_BRANCH:=$(firstword $(shell cvs status GNUmakefile | \
+CVS_BRANCH=$(firstword $(shell cvs status GNUmakefile | \
 			awk '/Sticky Tag/{print $$5}' | sed -e 's/[^0-9.]//g'))
-CVS_REVISION:=$(patsubst %,-r %,$(CVS_TAG))
+CVS_REVISION=$(patsubst %,-r %,$(CVS_TAG))
 
 BUILD_IGNORE := $(strip $(shell if [ -f .ignore ]; then cat .ignore; fi))
 
@@ -27,7 +27,7 @@ ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
 		$(patsubst %,egrep -v % |,$(BUILD_IGNORE)) \
 		egrep -v "^[.]/(harpoon|silicon|gnu|doc|NOTES|bin|jdb)" | \
 		sed -e "s|^[.]/*||")
-ALLSOURCE := $(filter-out .%.java, \
+ALLSOURCE := $(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java)))
 TARSOURCE := $(filter-out JavaChip%, \
 	        $(filter-out Test%,$(ALLSOURCE))) GNUmakefile
