@@ -17,7 +17,7 @@ import java.util.Properties;
 /**
  * <code>Monitor</code> is a static class that logs profiling info.
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
- * @version $
+ * @version $Id: Monitor.java,v 1.1.2.5 1999-06-23 23:21:35 cananian Exp $
  */
 
 public class Monitor {
