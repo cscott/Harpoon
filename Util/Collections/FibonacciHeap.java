@@ -3,9 +3,17 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
-import harpoon.Util.*;
+import harpoon.Util.Default;
+import harpoon.Util.PairMapEntry;
+import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Util;
 
-import java.util.*;
+import java.util.AbstractCollection;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.Map;
 /**
  * A <code>FibonacciHeap</code> allows amortized O(1) time bounds for
  * create, insert, minimum, union, and decrease-key operations, and
@@ -15,7 +23,7 @@ import java.util.*;
  * Algorithms</i> by Cormen, Leiserson, and Riverst, in Chapter 21.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FibonacciHeap.java,v 1.1.2.2 2000-02-13 01:02:45 cananian Exp $
+ * @version $Id: FibonacciHeap.java,v 1.1.2.3 2000-02-13 02:34:00 cananian Exp $
  */
 public class FibonacciHeap extends AbstractHeap {
     private static final boolean debug = false;
