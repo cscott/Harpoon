@@ -20,6 +20,8 @@ import harpoon.Analysis.ReachingDefs;
 import harpoon.Analysis.ReachingDefsImpl;
 import harpoon.Analysis.BasicBlock;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HClass;
@@ -43,7 +45,6 @@ import harpoon.Temp.Temp;
 
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
-import harpoon.Util.BasicBlocks.CachingBBConverter;
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
 import harpoon.Analysis.PointerAnalysis.Debug;
 
@@ -67,7 +68,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.27 2001-06-17 22:30:33 cananian Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.28 2001-12-16 04:28:30 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -85,7 +86,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     // against errors in other components (ex: ReachingDefs)
     private static final boolean CAUTION = true;
     
-    private CachingBBConverter bbconv;
+    private CachingCodeFactory hcf;
     private ClassHierarchy ch;
 
     // the set of the classes T such that a new T instruction might be executed
@@ -94,10 +95,10 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
     /** Creates a <code>MetaCallGraphImpl</code>. It must receive, in its
 	last parameter, the <code>main</code> method of the program. */
-    public MetaCallGraphImpl(CachingBBConverter bbconv, ClassHierarchy ch,
+    public MetaCallGraphImpl(CachingCodeFactory hcf, ClassHierarchy ch,
 			     Set hmroots) {
-        this.bbconv = bbconv;
-	this.ch     = ch;
+        this.hcf = hcf;
+	this.ch  = ch;
 
 	// HACK: Normally, the call graph and the set instantiated_classes
 	// should be computed simultaneously; we use the ClassHierarchy
@@ -150,7 +151,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	callees1    = null;
 	callees2    = null;
 	this.ch     = null;
-	this.bbconv = null;
+	this.hcf = null;
 	analyzed_mm = null;
 	WMM         = null;
 	mm_work     = null;
@@ -283,8 +284,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    System.out.println("===================================");
 	}
 
-	BasicBlock.Factory bbf = bbconv.convert2bb(hm);
-	HCode hcode = bbf.getHCode();
+	HCode hcode = hcf.convert(hm);
 	set_parameter_types(mm_work, hcode);
 
 	compute_types(scc);
@@ -569,8 +569,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    }
 
 	System.out.println("CODE:");
-	BasicBlock.Factory bbf = bbconv.convert2bb(hm);
-	HCode hcode = bbf.getHCode();
+	HCode hcode = hcf.convert(hm);
 	hcode.print(new java.io.PrintWriter(System.out, true));
 	System.out.println("--------------------------------------");
     }
@@ -781,8 +780,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     private MethodData get_method_data(HMethod hm){
 	MethodData md = (MethodData) mh2md.get(hm);
 	if(md == null) {
-	    BasicBlock.Factory bbf = bbconv.convert2bb(hm);
-	    HCode hcode = bbf.getHCode();
+	    HCode hcode = hcf.convert(hm);
 	    Set calls = extract_the_calls(hcode);
 	    // initialize the ets2et map (see the comments near its definition)
 	    ets2et = new HashMap();
