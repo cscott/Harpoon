@@ -31,7 +31,7 @@ import java.io.PrintWriter;
  * <code>AllocationStatistics</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationStatistics.java,v 1.2 2002-12-02 17:08:47 salcianu Exp $
+ * @version $Id: AllocationStatistics.java,v 1.3 2002-12-02 18:07:57 salcianu Exp $
  */
 public class AllocationStatistics {
     
@@ -70,7 +70,7 @@ public class AllocationStatistics {
     }
 
 
-    private static class AllocationNumberingStub {
+    public static class AllocationNumberingStub {
 	
 	/** Creates a <code>AllocationNumberingStub</code>. */
 	public AllocationNumberingStub(Linker linker, String filename)

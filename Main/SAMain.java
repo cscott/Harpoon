@@ -47,7 +47,7 @@ import harpoon.Util.Util;
 
 import harpoon.IR.Quads.Quad;
 import harpoon.Analysis.PointerAnalysis.AllocationNumbering;
-import harpoon.Analysis.PointerAnalysis.AllocationNumberingStub;
+import harpoon.Analysis.PointerAnalysis.AllocationStatistics.AllocationNumberingStub;
 import harpoon.Analysis.PointerAnalysis.InstrumentAllocs;
 import harpoon.Analysis.PointerAnalysis.AllocationStatistics;
 import harpoon.Analysis.PointerAnalysis.Debug;
@@ -101,7 +101,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.24 2002-12-02 17:09:56 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.25 2002-12-02 18:08:04 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
