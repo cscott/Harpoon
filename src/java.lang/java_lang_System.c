@@ -1,7 +1,8 @@
 #include <jni.h>
 #include <jni-private.h>
 #include "java_lang_System.h"
-#include <sys/time.h>
+#include <time.h> /* time,localtime for time zone information */
+#include <sys/time.h> /* gettimeofday */
 #ifdef HAVE_UNAME
 # include <sys/utsname.h>
 #endif
@@ -17,7 +18,7 @@
 
 /* utility method */
 static void _putProperty(JNIEnv *env, jobject propobj, jmethodID methodID,
-			 char *ckey, char *cvalue);
+			 const char *ckey, const char *cvalue);
 /*
  * Class:     java_lang_System
  * Method:    setIn0
@@ -253,12 +254,27 @@ JNIEXPORT jobject JNICALL Java_java_lang_System_initProperties
       free(buf);
     }
 #endif /* HAVE_GETCWD */
+#ifdef HAVE_LOCALTIME
+    { /* borrowed from Japahar */
+      time_t t = time(NULL);
+      struct tm *tminfo = localtime(&t);
+      ckey = "user.timezone";
+      /* XXX: on some unix systems (ie, mine) *both* time zone methods
+       * below return 'EDT' during daylight savings time, which the java
+       * libraries apparently don't recognize as a time zone. */
+# ifdef HAVE_TM_ZONE
+      _putProperty(env, propobj, methodID, ckey, tminfo->tm_zone);
+# elif defined(HAVE_TZNAME)
+      _putProperty(env, propobj, methodID, ckey,tzname[tminfo->tm_isdst]);
+# endif
+    }
+#endif /* HAVE_LOCALTIME */
     /* done */
     return propobj;
 }
 
 static void _putProperty(JNIEnv *env, jobject propobj, jmethodID methodID,
-			 char *ckey, char *cvalue) {
+			 const char *ckey, const char *cvalue) {
   jstring key, value;
   if (cvalue==NULL) cvalue="";
   key = (*env)->NewStringUTF(env, ckey);
