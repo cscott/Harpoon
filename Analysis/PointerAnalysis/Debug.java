@@ -10,6 +10,7 @@ import java.util.Iterator;
 import harpoon.Util.UComp;
 
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Analysis.MetaMethods.MetaMethod;
 
 import harpoon.Util.LightBasicBlocks.LightBasicBlock;
@@ -20,7 +21,7 @@ import harpoon.ClassFile.HCodeElement;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.1.2.7 2000-04-02 03:27:55 salcianu Exp $
+ * @version $Id: Debug.java,v 1.1.2.8 2000-06-08 17:25:35 salcianu Exp $
  */
 public abstract class Debug {
 
@@ -152,4 +153,11 @@ public abstract class Debug {
 	return buffer2.toString() + buffer.toString();
     }
 
+
+    /** Returns the line of the instruction q in the format
+	<code>source_file:line_number</code>. */
+    public static String getLine(HCodeElement q) {
+	return
+	    q.getSourceFile() + ":" + q.getLineNumber();
+    }
 }

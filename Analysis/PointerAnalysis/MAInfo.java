@@ -50,11 +50,29 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.24 2000-06-07 20:19:39 kkz Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.25 2000-06-08 17:25:35 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
     private static boolean DEBUG = false;
+
+    /** Enabless the application of some method inlining to increase the
+	effectiveness of the stack allocation. Only inlinings that
+	increase the effectiveness of the stack allocation are done.
+	For the time being, only 1-level inlining is done. */
+    public boolean DO_METHOD_INLINING = false;
+
+    /** Only methods that have less than <code>MAX_INLINING_SIZE</code>
+	instructions can be inlined. Just a simple way of preventing
+	the code bloat. */
+    public int MAX_INLINING_SIZE = 50; 
+
+    /** Enables the use of preallocation: if an object will be accessed only
+	by a thread (<i>ie</i> it is created just to pass some parameters
+	to a thread), it can be preallocated into the heap of that thread.
+	For the moment, it is potentially dangerous so it is deactivated by
+	default. */
+    public boolean DO_PREALLOCATION = false;
 
     private static Set good_holes = null;
     static {
@@ -98,9 +116,13 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	this.USE_INTER_THREAD = USE_INTER_THREAD;
 
 	analyze();
+
+	// the nullify part was moved to prepareForSerialization
     }
-    
-    // nullifying some stuff to ease the serialization
+
+    /** Nullifies some stuff to make the serialization possible. 
+	This method <b>MUST</b> be called before serializing <code>this</code>
+	object. */
     public void prepareForSerialization(){
 	this.pa  = null;
 	this.hcf = null;
@@ -129,14 +151,27 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	return new MyAP(getAllocatedType(allocationSite));
     }
 
+    // map to store the inline hints:
+    //  CALL to be inlined -> array of (A)NEWs that can be stack allocated
+    private Map ih = null;
+
     // analyze all the methods
-    public final void analyze(){
+    public void analyze(){
+	if(DO_METHOD_INLINING)
+	    ih = new HashMap();
+
 	for(Iterator it = mms.iterator(); it.hasNext(); ){
 	    MetaMethod mm = (MetaMethod) it.next();
 	    if(pa.analyzable(mm.getHMethod()))
 		analyze_mm(mm);
 	}
+
+	if(DO_METHOD_INLINING) {
+	    do_the_inlining();
+	    ih = null; // allow some GC
+	}
     }
+
 
     // get the type of the object allocated by the object creation site hce;
     // hce should be NEW or ANEW.
@@ -149,12 +184,13 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	return null; // should never happen
     }
 
-    // analyze a single method: take the object creation sites from it
-    // and generate an allocation policy for each one.
-    public final void analyze_mm(MetaMethod mm){
+    /* Analyze a single method: take the object creation sites from it
+       and generate an allocation policy for each one. */
+    private final void analyze_mm(MetaMethod mm){
 	HMethod hm  = mm.getHMethod();
 
-	/* //B/ */System.out.println("\n\nMAInfo: Analyzed Meta-Method: " + mm);
+	if(DEBUG)
+	    System.out.println("\n\nMAInfo: Analyzed Meta-Method: " + mm);
 
 	HCode hcode = hcf.convert(hm);
 
@@ -163,17 +199,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	////                       pa.getIntParIntGraph(mm);
 	
 	ParIntGraph pig = (ParIntGraph) initial_pig.clone();
-
-	pig.G.flushCaches();
-
-	//System.out.println("BEFORE REMOVE METHOD HOLES: " + pig);
-
-	//System.out.println("GOOD HOLES: " + good_holes); 
-	pig.G.e.removeMethodHoles(good_holes);
-
-	/* //B/ */System.out.println("AFTER  REMOVE METHOD HOLES: " + pig);
-
 	if(pig == null) return;
+	pig.G.flushCaches();
+	pig.G.e.removeMethodHoles(good_holes);
 
 	((harpoon.IR.Quads.Code) hcode).setAllocationInformation(this);
 
@@ -191,7 +219,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	}
 
 	Set nodes = pig.allNodes();
-	
+
 	for(Iterator it = nodes.iterator(); it.hasNext(); ){
 	    PANode node = (PANode) it.next();
 	    if(node.type != PANode.INSIDE) continue;
@@ -212,10 +240,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		    if(stack_alloc_extra_cond(node, q)) {
 			MyAP ap = getAPObj(q);
 			ap.sa = true;
-			/* //B/ */System.out.println("STACK: " + node + 
-			/* //B/ */	             " was stack allocated " +
-			/* //B/ */	             q.getSourceFile() + ":" +
-			/* //B/ */	             q.getLineNumber());
+			if(DEBUG)
+			    System.out.println("STACK: " + node + 
+					       " was stack allocated " +
+					       Debug.getLine(q));
 		    }
 		}
 	    }
@@ -226,18 +254,13 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 			Quad q = (Quad) node_rep.node2Code(node);
 			Util.assert(q != null, "No quad for " + node);
 
-			//if(escapes_only_in_methods(node, pig)){
-			// objects that escape only in a method hole are
-			// considered to remain in this thread and so, they
-			// can be thread allocated
-			
 			MyAP ap = getAPObj(q);
 			ap.ta = true; // thread allocation
 			ap.ah = null; // on the current heap
-			/* //B/ */System.out.println("THREAD: " + node +
-			/* //B/ */	          " was thread allocated " +
-			/* //B/ */		  q.getSourceFile() + ":" +
-			/* //B/ */		  q.getLineNumber());
+			if(DEBUG)
+			    System.out.println("THREAD: " + node +
+					       " was thread allocated " +
+					       Debug.getLine(q));
 		    }
 		}
 	    }
@@ -245,12 +268,28 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	
 	PAThreadMap tau = (PAThreadMap) (pa.getIntParIntGraph(mm).tau.clone());
 
-	if(tau.activeThreadSet().size() == 1)
+	if(DO_PREALLOCATION && (tau.activeThreadSet().size() == 1))
 	    analyze_prealloc(mm, hcode, pig, tau);
 
 	set_make_heap(tau.activeThreadSet());
+
+	if(DO_METHOD_INLINING)
+	    generate_inlining_hints(mm, pig);
     }
 
+    // Returns the INSIDE nodes of level 0 from pig.
+    private Set getLevel0InsideNodes(ParIntGraph pig) {
+	final Set retval = new HashSet();
+	pig.forAllNodes(new PANodeVisitor() {
+		public void visit(PANode node) {
+		    if((node.type == PANode.INSIDE) &&
+		       !(node.isTSpec()) &&
+		       (node.getCallChainDepth() == 0))
+			retval.add(node);
+		}
+	    });
+	return retval;
+    }
 
     /** Set the allocation policy info such that each of the threads allocated
 	and started into the currently analyzed method has a thread specific
@@ -352,10 +391,6 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    return;
 	}
 	
-	// TODO: move the NEW q at the beginning of the method,
-	// and modify the object creation sites from the set "news" so
-	// that they allocate on the heap specific thread.	
-
 	// this NEW no longer exists
 	aps.remove(qnt);
 
@@ -475,25 +510,29 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	if(node == null)
 	    return false;
 
-	/* //B/ */System.out.println(ident + "remainInThreadBottom called for " + 
-	/* //B/ */		   node + " mm = " + mm);
+	if(DEBUG)
+	    System.out.println(ident + "remainInThreadBottom called for " + 
+			       node + " mm = " + mm);
 
 	ParIntGraph pig = pa.getIntParIntGraph(mm);
 	
 	if(pig.G.captured(node)){
-	    /* //B/ */System.out.println(ident + node+ " is captured -> true");
+	    if(DEBUG)
+		System.out.println(ident + node+ " is captured -> true");
 	    return true;
 	}
 	
 	if(!lostOnlyInCaller(node, pig)){
-	    /* //B/ */System.out.println(ident + node +
-	    /* //B/ */		       " escapes somewhere else -> false");
+	    if(DEBUG)
+		System.out.println(ident + node +
+				   " escapes somewhere else -> false");
 	    return false;
 	}
 
 	if(level == MAX_LEVEL_BOTTOM_MODE){
-	    /* //B/ */System.out.println(ident + node + 
-	    /* //B/ */	                 "max level reached -> false");
+	    if(DEBUG)
+		System.out.println(ident + node + 
+				   "max level reached -> false");
 	    return false;
 	}
 
@@ -504,20 +543,23 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	// some thread; the node might accessible from outside the current
 	// thread => we conservatively return "false".
 	if(callers.length == 0){
-	    /* //B/ */System.out.println(ident + node + "pours out of main/run");
+	    if(DEBUG)
+		System.out.println(ident + node + "pours out of main/run");
 	    return false;
 	}
 
 	for(int i = 0; i < callers.length; i++){
 	    if(!remainInThreadBottom(node.getBottom(), callers[i], level+1,
 				     ident + " ")){
-		/* //B/ */System.out.println(ident + node + " -> false");
+		if(DEBUG)
+		    System.out.println(ident + node + " -> false");
 		return false;
 	    }
 	}
 	
-	/* //B/ */System.out.println(ident + node +
-	/* //B/ */		     " remains in the current thread");
+	if(DEBUG)
+	    System.out.println(ident + node +
+			       " remains in the current thread");
 	return true;
     }
 
@@ -527,8 +569,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     private boolean remainInThread(PANode node, HMethod hm, String ident){
 
 	
-	/* //B/ */System.out.println(ident + "remainInThread called for " +
-	/* //B/ */		     node + "  hm = " + hm);
+	if(DEBUG)
+	    System.out.println(ident + "remainInThread called for " +
+			       node + "  hm = " + hm);
 
 	if(node.getCallChainDepth() == PointerAnalysis.MAX_SPEC_DEPTH){
 	    System.out.println(ident + node + " is too old -> might escape");
@@ -541,26 +584,27 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	Util.assert(pig != null, "pig is null for hm = " + hm + " " + mm);
 	
 	if(pig.G.captured(node)){
-	    /* //B/ */System.out.println(ident + node+ " is captured -> true");
+	    if(DEBUG)
+		System.out.println(ident + node+ " is captured -> true");
 	    return true;
 	}
 	
 	if(!lostOnlyInCaller(node, pig)){
-	    /* //B/ */System.out.println(ident + node +
-	    /* //B/ */		       " escapes somewhere else -> false");
+	    if(DEBUG)
+		System.out.println(ident + node +
+					 " escapes somewhere else -> false");
 	    return false;
 	}
 
 	if(node.getCallChainDepth() == PointerAnalysis.MAX_SPEC_DEPTH - 1){
-	    /* //B/ */System.out.println(ident + node + 
-	    /* //B/ */	           " is almost too old and uncaptured -> " + 
-	    /* //B/ */	           "bottom mode");
+	    if(DEBUG)
+		System.out.println(ident + node + 
+				   " is almost too old and uncaptured -> " + 
+				   "bottom mode");
 	    boolean retval = remainInThreadBottom(node, mm, 0, ident);
-	    /* //B/ */System.out.println(ident + node + " " + retval);
+	    if(DEBUG)
+		System.out.println(ident + node + " " + retval);
 	    return retval;
-
-	    // NOTE: replace this brach with "return false;" if
-	    // remainInThreadBottom is not correct.
 	}
 	
 	for(Iterator it = node.getAllCSSpecs().iterator(); it.hasNext(); ){
@@ -572,14 +616,16 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    HMethod hm_caller = qf.getMethod();
 
 	    if(!remainInThread(spec, hm_caller, ident + " ")){
-		/* //B/ */System.out.println(ident + node +
-		/* //B/ */                   " might escape -> false");
+		if(DEBUG)
+		    System.out.println(ident + node +
+				       " might escape -> false");
 		return false;
 	    }
 	}
 
-	/* //B/ */System.out.println(ident + node + 
-	/* //B/ */	             " remains in thread -> true");
+	if(DEBUG)
+	    System.out.println(ident + node + 
+			       " remains in thread -> true");
 
 	return true;
     }
@@ -636,6 +682,85 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 			       hm + ") \t -> " + ap); 
 	}
 	System.out.println("====================");
+    }
+
+
+    private void generate_inlining_hints(MetaMethod mm, ParIntGraph pig){
+	HMethod hm  = mm.getHMethod();
+	HCode hcode = hcf.convert(hm);
+	if(hcode.getElementsL().size() > MAX_INLINING_SIZE) return;
+
+	// obtain in A the set of nodes that might be captured after inlining 
+	Set level0 = getLevel0InsideNodes(pig);
+	Set A = new HashSet();
+	for(Iterator it = level0.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(!pig.G.captured(node) && lostOnlyInCaller(node, pig))
+		A.add(node);
+	}
+
+	if(A.isEmpty()) return;
+
+	// very dummy 1-level inlining
+	MetaMethod[] callers = mac.getCallers(mm);
+	for(int i = 0; i < callers.length; i++) {
+	    MetaMethod mcaller = callers[i];
+	    HMethod hcaller = mcaller.getHMethod();
+	    for(Iterator it = mcg.getCallSites(mcaller).iterator();
+		it.hasNext(); ) {
+		CALL cs = (CALL) it.next();
+		MetaMethod[] callees = mcg.getCallees(mcaller, cs);
+		if((callees.length == 1) && (callees[0] == mm) && good_cs(cs))
+		    try_inlining(mcaller, cs, A);
+	    }
+	}
+    }
+
+    /* Normally, we should refuse to inline calls that are inside loops
+       because that + stack allocation might lead to stack overflow errors.
+       However, at this moment we don't test this condition. */
+    private boolean good_cs(CALL cs){
+	return true;
+    }
+
+    private void try_inlining(MetaMethod mcaller, CALL cs, Set A) {
+	ParIntGraph caller_pig = pa.getIntParIntGraph(mcaller);
+
+	Set B = new HashSet();
+	for(Iterator it = A.iterator(); it.hasNext(); ){
+	    PANode node = (PANode) it.next();
+	    PANode spec = node.csSpecialize(cs);
+	    if(spec == null) continue;
+	    if(caller_pig.G.captured(spec))
+		B.add(spec);
+	}
+
+	// no stack allocation benefits from this inlining
+	if(B.isEmpty()) return;
+
+	Set news = new HashSet();
+	for(Iterator it = B.iterator(); it.hasNext(); ) {
+	    PANode node = ((PANode) it.next()).getRoot();
+	    Quad q = (Quad) node_rep.node2Code(node);
+	    Util.assert((q != null) && 
+			((q instanceof NEW) || (q instanceof ANEW)),
+			" Bad quad attached to " + node + " " + q);
+	    news.add(q);
+	}
+
+	Quad[] news_array = (Quad[]) news.toArray(new Quad[news.size()]);
+	ih.put(cs, news_array);
+
+	if(DEBUG) {
+	    System.out.println("\nINLINING HINT: " + cs);
+	    System.out.println("NEW STACK ALLOCATION SITES:");
+	    for(int i = 0; i < news_array.length; i++)
+		System.out.println(" " + news_array[i]);
+	}
+    }
+
+    private void do_the_inlining(){
+	// do nothing for the moment
     }
 
 }
