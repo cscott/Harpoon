@@ -1,26 +1,54 @@
 package ClassFile;
 
+/** 
+ * Represents a set of method or field access flags, containing
+ * permissions and properties of a field or method.
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: AccessFlags.java,v 1.4 1998-07-30 11:59:00 cananian Exp $
+ * @see "The Java Virtual Machine Specification"
+ * @see ClassFile
+ * @see FieldInfo
+ * @see MethodInfo
+ */
 public class AccessFlags {
-  static final int ACC_PUBLIC  = 0x001; // May be accessed from outside package
-  static final int ACC_PRIVATE = 0x002; // Usable only within defining class
-  static final int ACC_PROTECTED=0x004; // May be accessed within subclasses
-  static final int ACC_STATIC  = 0x008; // Is static.
-  static final int ACC_FINAL   = 0x010; // No further assignment after init.
-  static final int ACC_SYNCHRON= 0x020; // Wrap use in monitor lock.
-  static final int ACC_SUPER   = 0x020; // Use new superclass semantics.
-  static final int ACC_VOLATILE= 0x040; // Is volatile; cannot be cached.
-  static final int ACC_TRANSIENT=0x080; // Not touched by persistent obj manag.
-  static final int ACC_NATIVE   =0x100; // Not implemented in Java
-  static final int ACC_INTERFACE=0x200; // Is an interface.
-  static final int ACC_ABSTRACT =0x400; // No implementation is provided.
+  /** May be accessed from outside package. */
+  static final int ACC_PUBLIC  = 0x001;
+  /** Usable only within defining class. */
+  static final int ACC_PRIVATE = 0x002;
+  /** May be accessed withing subclasses. */
+  static final int ACC_PROTECTED=0x004;
+  /** Is static. */
+  static final int ACC_STATIC  = 0x008;
+  /** No further assignment after init. */
+  static final int ACC_FINAL   = 0x010;
+  /** Wrap use in monitor lock. */
+  static final int ACC_SYNCHRON= 0x020;
+  /** Use new superclass semantics. */
+  static final int ACC_SUPER   = 0x020;
+  /** Is volatile; cannot be cached. */
+  static final int ACC_VOLATILE= 0x040;
+  /** Not touched by persistent object manager. */
+  static final int ACC_TRANSIENT=0x080;
+  /** Not implemented in Java. */
+  static final int ACC_NATIVE   =0x100;
+  /** Is an interface. */
+  static final int ACC_INTERFACE=0x200;
+  /** No implementation is provided. */
+  static final int ACC_ABSTRACT =0x400;
 
   int access_flags;
 
+  /** Constructor. */
   public AccessFlags(int flags) {
     access_flags = flags;
   }
+  /** Constructor. */
   public AccessFlags(ClassDataInputStream in) throws java.io.IOException {
     this(in.read_u2());
+  }
+  /** Write to bytecode file. */
+  void write(ClassDataOutputStream out) throws java.io.IOException {
+    out.write_u2(access_flags);
   }
 
   boolean isPublic()   { return (access_flags & ACC_PUBLIC) != 0; }
