@@ -1,4 +1,7 @@
 ---- Nov-11-98
+Write QuadSSA checker: verify edge links, no unreachable code, correct
+ format, correct args to each Quad, in SSA form, header and footer correct,
+ etc.
 Audit code to ensure deterministic generation of quad-ssa form.
  In particular, quads and temp numbering should not depend on how many and
  which methods have been loading previously.  Need to make a TempFactory and
