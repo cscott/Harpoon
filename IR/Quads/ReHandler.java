@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.22 1999-09-08 16:35:33 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.23 1999-09-09 04:45:40 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -1457,45 +1457,44 @@ class CleanVisitor extends QuadVisitor {
     }
 
     public void maybeuseful(Quad q) {
+	if (usefulquads.contains(q))
+	    useful(q,false);
+	else
 	if (visited.contains(q)) {
-	    if (usefulquads.contains(q))
-		useful(q, false);
-	    else {
-		Set ourset=(Set)map.get(q);
-		boolean change=false;
-		for(int i=0;i<q.prev().length;i++) {
-		    //go through our predecessors
-		    Set prevset=(Set)map.get(q.prev(i));
-		    if (prevset!=null) {
-			Iterator iterate=prevset.iterator();
-			while (iterate.hasNext()) {
-			    Tuple item=(Tuple) iterate.next();
-			    if (!ourset.contains(item)) {
+	    Set ourset=(Set)map.get(q);
+	    boolean change=false;
+	    for(int i=0;i<q.prev().length;i++) {
+		//go through our predecessors
+		Set prevset=(Set)map.get(q.prev(i));
+		if (prevset!=null) {
+		    Iterator iterate=prevset.iterator();
+		    while (iterate.hasNext()) {
+			Tuple item=(Tuple) iterate.next();
+			if (!ourset.contains(item)) {
 				//maybe new info
-				Temp t=(Temp)item.asList().get(0);
-				Temp []defs=q.def();
-				boolean addtoset=true;
-				for (int j=0;j<defs.length;j++)
-				    if (defs[j]==t) {
-					addtoset=false;
-					break;
-				    }
-				if (addtoset) {
-				    ourset.add(item);
-				    change=true;
+			    Temp t=(Temp)item.asList().get(0);
+			    Temp []defs=q.def();
+			    boolean addtoset=true;
+			    for (int j=0;j<defs.length;j++)
+				if (defs[j]==t) {
+				    addtoset=false;
+				    break;
 				}
+			    if (addtoset) {
+				ourset.add(item);
+				change=true;
 			    }
 			}
 		    }
 		}
-		//pass on changed info
-		if (change) {
-		    for (int i=0;i<q.next().length;i++)
-			todo.push(q.next(i));
-		    Iterator iterate=HandlerSet.iterator(q.handlers());
-		    while (iterate.hasNext()) {
-			todo.push(iterate.next());
-		    }
+	    }
+	    //pass on changed info
+	    if (change) {
+		for (int i=0;i<q.next().length;i++)
+		    todo.push(q.next(i));
+		Iterator iterate=HandlerSet.iterator(q.handlers());
+		while (iterate.hasNext()) {
+		    todo.push(iterate.next());
 		}
 	    }
 	} else {
