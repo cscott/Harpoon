@@ -18,7 +18,7 @@ package harpoon.Util;
  * <code>null</code>s in their internal structures.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: PairMapEntry.java,v 1.1.2.1 1999-08-04 17:57:15 pnkfelix Exp $
+ * @version $Id: PairMapEntry.java,v 1.1.2.2 2000-02-12 20:56:04 cananian Exp $
  */
 public class PairMapEntry extends AbstractMapEntry {
     private Object key, value;
@@ -35,6 +35,13 @@ public class PairMapEntry extends AbstractMapEntry {
     
     public Object getValue() {
 	return value;
+    }
+
+    /** For use in subclass implementations *only*. */
+    protected Object setKey(Object newKey) {
+	Object old = key;
+	key = newKey;
+	return old;
     }
 
     public Object setValue(Object newValue) {
