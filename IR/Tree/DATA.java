@@ -22,21 +22,15 @@ import harpoon.Util.Util;
  * </PRE>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: DATA.java,v 1.1.2.9 1999-09-09 15:02:28 cananian Exp $
+ * @version $Id: DATA.java,v 1.1.2.10 1999-09-09 15:42:41 cananian Exp $
  */
 public class DATA extends Stm implements harpoon.ClassFile.HDataElement { 
-    /** The expression to write to memory.  If null, this location in 
-     *  memory is reserved, with an unspecified value. */
+    /** The expression to write to memory.  Never null. */
     public final Exp data;
+    /** If false, the memory is not initialized; instead it is reserved
+     *  with an unspecified value. */
+    public final boolean initialized;
     
-    /** Class constructor. 
-     *  Reserves a word of memory at the location of this <code>DATA</code>
-     *  without assigning it a value. 
-     */
-    public DATA(TreeFactory tf, HCodeElement source) { 
-	this(tf, source, null);
-    }
-
     /** Class constructor. 
      *  The parameter <br><code>data</code> must be an instance of either
      *  <code>harpoon.IR.Tree.CONST</code> or 
@@ -46,14 +40,57 @@ public class DATA extends Stm implements harpoon.ClassFile.HDataElement {
      */
     public DATA(TreeFactory tf, HCodeElement source, Exp data) {
 	super(tf, source);
-	this.data = data; 
-	if (data!=null) { 
-	    Util.assert(data.kind()==TreeKind.CONST || 
-			data.kind()==TreeKind.NAME);
-	    Util.assert(tf==data.tf,
-			"Dest and Src must have same tree factory");
-	}
+	this.data = data;
+	this.initialized = true;
+	Util.assert(data.kind()==TreeKind.CONST || 
+		    data.kind()==TreeKind.NAME);
+	Util.assert(tf==data.tf,
+		    "Dest and Src must have same tree factory");
     }
+
+    /** Class constructor. 
+     *  Reserves memory at the location of this <code>DATA</code>
+     *  of the size of the specified type without assigning it a value. 
+     */
+    public DATA(TreeFactory tf, HCodeElement source, int type) { 
+	super(tf, source);
+	Util.assert(Type.isValid(type));
+	if (type==Type.INT)
+	    this.data = new CONST(tf, source, (int)0);
+	else if (type==Type.LONG)
+	    this.data = new CONST(tf, source, (long)0);
+	else if (type==Type.FLOAT)
+	    this.data = new CONST(tf, source, (float)0);
+	else if (type==Type.DOUBLE)
+	    this.data = new CONST(tf, source, (double)0);
+	else if (type==Type.POINTER)
+	    this.data = new CONST(tf, source); // null
+	else throw new Error("Impossible!");
+	this.initialized = false;
+    }
+
+    /** Class constructor. 
+     *  Reserves memory at the location of this <code>DATA</code>
+     *  of the specified small without assigning it a value. 
+     */
+    public DATA(TreeFactory tf, HCodeElement source,
+		int bitwidth, boolean signed) { 
+	super(tf, source);
+	this.data = new CONST(tf, source, bitwidth, signed, 0);
+	this.initialized = false;
+    }
+
+    private DATA(TreeFactory tf, HCodeElement source,
+		 Exp data, boolean initialized) {
+	super(tf, source);
+	this.data = data;
+	this.initialized = initialized;
+	Util.assert(data.kind()==TreeKind.CONST || 
+		    data.kind()==TreeKind.NAME);
+	Util.assert(tf==data.tf,
+		    "Dest and Src must have same tree factory");
+    }
+
 
     public ExpList kids() { return new ExpList(data, null); } 
     
@@ -63,20 +100,19 @@ public class DATA extends Stm implements harpoon.ClassFile.HDataElement {
 
     public Stm build(TreeFactory tf, ExpList kids) { 
 	Util.assert(kids.head == null || tf == kids.head.tf);
-	return new DATA(tf, this, kids.head);
+	return new DATA(tf, this, kids.head, initialized);
     }
 
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); } 
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) { 
-	return new DATA(tf, this, (Exp)data.rename(tf, ctm));
+	return new DATA(tf, this, (Exp)data.rename(tf, ctm), initialized);
     }    
 
     public String toString() { 
 	StringBuffer sb = new StringBuffer("DATA<");
-	sb.append(data==null?"Unspecified type":
-		  data instanceof PreciselyTyped ?
+	sb.append(data instanceof PreciselyTyped ?
 		  Type.toString((PreciselyTyped)data) :
 		  Type.toString(data.type()));
 	sb.append(">(#"); sb.append(getID()); sb.append(")");

@@ -14,7 +14,7 @@ import java.io.StringWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.25 1999-09-09 15:02:28 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.26 1999-09-09 15:42:41 cananian Exp $
  */
 public class Print {
     public final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -140,8 +140,12 @@ public class Print {
 
 	public void visit(DATA s) { 
 	    indent(indlevel++);
-	    pw.print("DATA(");
-	    if (s.data==null) pw.print("unspecified value");
+	    pw.print("DATA<");
+	    if (s.data instanceof PreciselyTyped)
+		pw.print(Type.toString((PreciselyTyped)s.data));
+	    else pw.print(Type.toString(s.data.type()));
+	    pw.print(">(");
+	    if (!s.initialized) pw.print("unspecified value");
 	    else s.data.visit(this); 
 	    indent(indlevel--);
 	    pw.print(")");

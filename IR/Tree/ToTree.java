@@ -63,7 +63,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.39 1999-09-09 06:31:53 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.40 1999-09-09 15:42:41 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -420,10 +420,18 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	addStmt(s0);
     
 	for (int i=0; i<q.value().length; i++) {
-	    s0 = new MOVE
-		(m_tf, q, 
-		 new MEM(m_tf, q, maptype(q.type()), nextPtr), 
-		 mapconst(q, q.value()[i], q.type()));
+	    Exp c = mapconst(q, q.value()[i], q.type());
+	    MEM m;
+	    if (q.type().equals(HClass.Boolean) ||
+		q.type().equals(HClass.Byte))
+		m = new MEM(m_tf, q, 8, true, nextPtr);
+	    else if (q.type().equals(HClass.Char))
+		m = new MEM(m_tf, q, 16, false, nextPtr);
+	    else if (q.type().equals(HClass.Short))
+		m = new MEM(m_tf, q, 16, true, nextPtr);
+	    else 
+		m = new MEM(m_tf, q, maptype(q.type()), nextPtr);
+	    s0 = new MOVE(m_tf, q, m, c);
 	    s1 = new MOVE
 		(m_tf, q, 
 		 nextPtr, 
@@ -1005,6 +1013,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 
 	if (type==HClass.Void) // HClass.Void reserved for null constants
 	    constant = new CONST(m_tf, src);
+	/* CSA: Sub-int types only seen in ARRAYINIT */
 	else if (type==HClass.Boolean)
 	    constant = new CONST
 		(m_tf, src, ((Boolean)value).booleanValue()?1:0);
@@ -1031,7 +1040,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    if (!m_strings.contains(value)) { allocString((String)value); } 
 	}
 	else 
-	    throw new Error("Bad type for CONST " + type); 
+	    throw new Error("Bad type for CONST: " + type); 
 	return constant;
     }
 
@@ -1114,7 +1123,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    if (requiredSize > up.size()) { 
 		up.ensureCapacity(requiredSize);
 		for (int i=up.size(); i<requiredSize; i++) 
-		    up.add(new DATA(elem.getFactory(), elem));
+		    up.add(new DATA(elem.getFactory(), elem, Type.POINTER));
 	    }	    
 	    up.set(-index-1, elem);
 	}
@@ -1123,7 +1132,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    if (requiredSize > down.size()) { 
 		down.ensureCapacity(requiredSize);
 		for (int i=down.size(); i<requiredSize; i++) 
-		    down.add(new DATA(elem.getFactory(), elem));
+		    down.add(new DATA(elem.getFactory(), elem, Type.POINTER));
 	    }	    
 	    down.set(index, elem);
 	}

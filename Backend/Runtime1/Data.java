@@ -10,6 +10,7 @@ import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.DATA;
 import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.Tree;
+import harpoon.IR.Tree.Type;
 import harpoon.Temp.Label;
 
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ import java.util.ArrayList;
  * <code>Data</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Data.java,v 1.1.2.2 1999-09-09 05:49:18 cananian Exp $
+ * @version $Id: Data.java,v 1.1.2.3 1999-09-09 15:42:39 cananian Exp $
  */
 public class Data extends harpoon.IR.Tree.Data {
     final HClass hc;
@@ -46,7 +47,7 @@ public class Data extends harpoon.IR.Tree.Data {
 	    if (requiredSize > up.size()) { 
 		up.ensureCapacity(requiredSize);
 		for (int i=up.size(); i<requiredSize; i++) 
-		    up.add(new DATA(elem.getFactory(), elem));
+		    up.add(new DATA(elem.getFactory(), elem, Type.POINTER));
 	    }	    
 	    up.set(-index-1, elem);
 	}
@@ -55,7 +56,7 @@ public class Data extends harpoon.IR.Tree.Data {
 	    if (requiredSize > down.size()) { 
 		down.ensureCapacity(requiredSize);
 		for (int i=down.size(); i<requiredSize; i++) 
-		    down.add(new DATA(elem.getFactory(), elem));
+		    down.add(new DATA(elem.getFactory(), elem, Type.POINTER));
 	    }	    
 	    down.set(index, elem);
 	}
