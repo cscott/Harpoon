@@ -6,12 +6,12 @@ import harpoon.ClassFile.*;
  * <code>ColorableNode</code>
  *  
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableNode.java,v 1.1.2.1 1999-01-14 20:12:11 pnkfelix Exp $
+ * @version $Id: ColorableNode.java,v 1.1.2.2 1999-01-14 23:16:29 pnkfelix Exp $
  */
 
 public class ColorableNode extends Node {
     
-    private Color color;
+    protected Color color;
     
     // hidden tracks whether the node is visible in a graph or has
     // been temporarily removed for coloring purposes...
@@ -38,7 +38,7 @@ public class ColorableNode extends Node {
      */
     public Color getColor() throws NodeNotColoredException {
 	if (color == null) {
-	    throw new NodeNotColoredException();
+	    throw new NodeNotColoredException(this + " is not colored.");
 	} else {
 	    return color;
 	}
@@ -50,8 +50,15 @@ public class ColorableNode extends Node {
 		      <code>null</code> then <code>this</code> is
 		      given an 'uncolored' state.
      */
-    void setColor(Color color) {
-	this.color = color;
+    void setColor(Color color) throws NodeAlreadyColoredException {
+	if (this.color != null && 
+	    color != null) {
+	    throw new NodeAlreadyColoredException
+		(this + " already has color " + this.color +
+		 " and cannot be given color " + color);
+	} else {
+	    this.color = color;
+	}
     }
 
     /** Sets the hidden field of <code>this</code>

@@ -11,7 +11,7 @@ import java.util.Enumeration;
  * for implementing a graph object.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Graph.java,v 1.1.2.1 1999-01-14 20:12:11 pnkfelix Exp $
+ * @version $Id: Graph.java,v 1.1.2.2 1999-01-14 23:16:29 pnkfelix Exp $
  */
 
 public abstract class Graph  {
@@ -33,9 +33,16 @@ public abstract class Graph  {
 		      <code>this.nodes</code>. 
 		      Else does nothing.
     */
-    public void addNode( Node node ) throws WrongNodeTypeException {
-	checkNode( node );
-	nodes.addElement( node );
+    public void addNode( Node node ) 
+	throws WrongNodeTypeException, ObjectNotModifiableException { 
+	if (this.isModifiable()) {
+	    checkNode( node );
+	    nodes.addElement( node );
+	} else {
+	    throw new ObjectNotModifiableException
+		(node + " can not be added to " + 
+		 this + "; it is not modifiable.");
+	}
     }
 
     /** Node type-checking method for subclasses to implement.
@@ -47,11 +54,28 @@ public abstract class Graph  {
     protected abstract void checkNode( Node node ) 
 	throws WrongNodeTypeException;
 
-    /** Adds an edge from <code>from</code> to <code>to</code>.
+    /** Generates an edge from <code>from</code> to <code>to</code>.
+	Subclasses should implement this method to match their
+	internal representation of a graph. 
+    */
+    protected abstract void makeEdge( Node from, Node to ) 
+	throws NodeNotPresentInGraphException, IllegalEdgeException;
+    
+    /** Adds an edges from <code>from</code> to <code>to</code>.
      */
-    public abstract void addEdge( Node from, Node to ) 
-	throws NodeNotPresentInGraphException;
+    public void addEdge( Node from, Node to ) throws
+	NodeNotPresentInGraphException, IllegalEdgeException,
+	ObjectNotModifiableException {
+	if (this.isModifiable()) {
+	    makeEdge( from, to );
+	} else {
+	    throw new ObjectNotModifiableException
+		("Edge can not be added to " + 
+		 this + "; it is not modifiable.");
+	}
 
+    }
+    
     /** Returns the degree of <code>node</code>.
 	<BR> effects: If <code>node</code> is present in
 	              <code>this</code>, then returns the number of
@@ -100,6 +124,16 @@ public abstract class Graph  {
     */
     protected UniqueVector getNodeVector() {
 	return nodes;
+    }
+
+    /** Modifiability check.
+	Subclasses should override this method to incorporate
+	consistency checks
+	effects: if <code>this</code> is allowed to be modified,
+	returns true.  Else returns false. 
+    */
+    public boolean isModifiable() {
+	return true;
     }
 
 }

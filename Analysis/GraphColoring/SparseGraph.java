@@ -12,7 +12,7 @@ import java.util.Enumeration;
  * references <code>SparseNode</code>s store internally.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseGraph.java,v 1.1.2.1 1999-01-14 20:12:11 pnkfelix Exp $ 
+ * @version $Id: SparseGraph.java,v 1.1.2.2 1999-01-14 23:16:29 pnkfelix Exp $ 
  */
 
 public class SparseGraph extends ColorableGraph {
@@ -58,8 +58,12 @@ public class SparseGraph extends ColorableGraph {
 		      Else adds an edge from <code>from</code> to
 		      <code>to</code>.
     */
-    public void addEdge( Node from, Node to ) 
-	throws NodeNotPresentInGraphException {
+    public void makeEdge( Node from, Node to ) 
+	throws NodeNotPresentInGraphException, IllegalEdgeException {
+	if (from == to) {
+	    throw new IllegalEdgeException("SparseGraph does not allow circular edges");
+	}
+	
 	isNodePresent( from );
 	isNodePresent( to );
 	// if nodes are in this object, they must be SparseNodes
@@ -69,7 +73,7 @@ public class SparseGraph extends ColorableGraph {
 	sTo.addEdgeFrom( sFrom );
 	sFrom.addEdgeTo( sTo );
     }
-        
+    
     /** Returns the degree of <code>node</code>.
 	<BR> effects: If <code>node</code> is present in
 	              <code>this</code>, then returns the number of
@@ -87,7 +91,8 @@ public class SparseGraph extends ColorableGraph {
 
     /** Constructs an enumeration for the children of a specific node.
 	<BR> effects: Returns an <code>Enumeration</code> of the nodes
-	              that have an edge from <code>node</code> to them.
+	              that have an edge from <code>node</code> to them
+		      that are not hidden.
      */
     public Enumeration getChildrenOf( Node node ) 
 	throws NodeNotPresentInGraphException {
@@ -96,7 +101,10 @@ public class SparseGraph extends ColorableGraph {
 	// (guaranteed by representation given above)  
 	SparseNode snode = (SparseNode) node;
 	
-	return snode.getToNodes();
+	ColorableGraph.HiddenFilteringEnum filter = 
+	    new ColorableGraph.HiddenFilteringEnum();
+	filter.setEnumeration( snode.getToNodes() );
+	return filter;
     }
 
     /** Constructs an enumeration for the parents of a specific node.
@@ -110,7 +118,10 @@ public class SparseGraph extends ColorableGraph {
 	// (guaranteed by representation given above)  
 	SparseNode snode = (SparseNode) node;
 
-	return snode.getFromNodes();
+	ColorableGraph.HiddenFilteringEnum filter = 
+	    new ColorableGraph.HiddenFilteringEnum();
+	filter.setEnumeration( snode.getFromNodes() );
+	return filter;
     }
 
     /** Constructs an enumeration for the parents of a specific node.
@@ -125,18 +136,22 @@ public class SparseGraph extends ColorableGraph {
 	// (guaranteed by representation given above)  
 	SparseNode snode = (SparseNode) node;
 
-	return snode.getNeighboringNodes();
+	ColorableGraph.HiddenFilteringEnum filter = 
+	    new ColorableGraph.HiddenFilteringEnum();
+	filter.setEnumeration( snode.getNeighboringNodes() );
+	return filter;
     }
 
     
     /** Temporarily removes <code>node</code> from graph.
-	effects: If <code>node</code> is present in <code>this</code>,
-	         then removes <code>node</code> from
-		 <code>this</code>, placing it in storage for later
-		 replacement in the graph.  It also updates all edges
-		 and nodes of <code>this</code> to reflect that
-		 <code>node</code> has been removed.
-		 Else throws NodeNotPresentInGraphException
+	<BR> effects: If <code>node</code> is present in
+	              <code>this</code>, then removes
+		      <code>node</code> from <code>this</code>,
+		      placing it in storage for later replacement in
+		      the graph.  It also updates all edges and nodes
+		      of <code>this</code> to reflect that
+		      <code>node</code> has been removed. 
+		      Else throws NodeNotPresentInGraphException
     */
     void hideNode( ColorableNode node ) 
 	throws NodeNotPresentInGraphException {
@@ -171,13 +186,14 @@ public class SparseGraph extends ColorableGraph {
     }
     
     /** Replaces a hidden <code>node</code> in graph.
-	effects: If <code>node</code> was previously removed from 
-	         <code>this</code>, and has not been replaced since
-		 its last removal), then moves <code>node</code>
-		 from temporary storage back into the graph.  It also
-		 updates all edges and nodes of <code>this</code> to
-		 reflect that <code>node</code> has been replaced. 
-		 Else throws NodeNotRemovedException.
+	<BR> effects: If <code>node</code> was previously removed from
+	              <code>this</code>, and has not been replaced
+		      since its last removal), then moves
+		      <code>node</code> from temporary storage back
+		      into the graph.  It also updates all edges and
+		      nodes of <code>this</code> to reflect that
+		      <code>node</code> has been replaced.  
+		      Else throws NodeNotRemovedException.
     */
     void unhideNode( ColorableNode node ) 
 	throws NodeNotRemovedException {
@@ -193,18 +209,34 @@ public class SparseGraph extends ColorableGraph {
 	sNode.setHidden( false );
 
 	Enumeration fromNodes = sNode.getFromNodes(); 
-	while (fromNodes.hasMoreElements()) {
-	    SparseNode from = (SparseNode) fromNodes.nextElement();
-	    from.addEdgeTo( sNode );
-	}
-	Enumeration toNodes = sNode.getToNodes(); 
-	while (toNodes.hasMoreElements()) {
-	    SparseNode to = (SparseNode) toNodes.nextElement();
-	    to.addEdgeFrom( sNode );
+	
+	try {
+	    while (fromNodes.hasMoreElements()) {
+		SparseNode from = (SparseNode) fromNodes.nextElement();
+		from.addEdgeTo( sNode );
+	    }
+	    Enumeration toNodes = sNode.getToNodes(); 
+	    while (toNodes.hasMoreElements()) {
+		SparseNode to = (SparseNode) toNodes.nextElement();
+		to.addEdgeFrom( sNode );
+	    }
+	} catch (IllegalEdgeException e) {
+	    // should not happen...
+	    e.printStackTrace();
+	    throw new RuntimeException(e.getMessage());
 	}
 	
     }
 
+    /** Replaces all hidden nodes in graph.
+	<BR> effects: If a node was previously removed from 
+	              <code>this</code>, and has not been replaced
+		      since its last removal, then moves node (and all
+		      other hidden ones) back into the graph.  It also
+		      updates all edges and nodes of <code>this</code>
+		      to reflect that the nodes have been replaced.   
+		      Else throws NodeNotRemovedException.
+    */
     void unhideAllNodes() {
 	try {
 	    for (int i=0; i<hiddenNodes.size(); i++) {
@@ -216,6 +248,17 @@ public class SparseGraph extends ColorableGraph {
 	    // fact hidden.
 	    throw new RuntimeException(e.getMessage());
 	}
+    }
+
+    /** Modifiability check.
+	Subclasses should override this method to incorporate
+	consistency checks, and should ensure that they call
+	super.isModifiable in their check.
+	effects: if <code>this</code> is allowed to be modified,
+	returns true.  Else returns false. 
+    */
+    public boolean isModifiable() {
+	return hiddenNodes.size() == 0 && super.isModifiable();
     }
     
 }

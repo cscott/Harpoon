@@ -7,13 +7,15 @@ import java.util.*;
  * <code>SimpleGraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.1 1999-01-14 20:15:30 pnkfelix Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.2 1999-01-14 23:16:29 pnkfelix Exp $
  */
 
 public class SimpleGraphColorer  {
+
+    private static final boolean DEBUG = true;
     
-    public static final void findAColoring( ColorableGraph graph,
-					    ColorFactory factory ) {
+    public static final void findColoring( ColorableGraph graph,
+					   ColorFactory factory ) {
 	boolean notColored = true;
 	while(notColored) {
 	    try {
@@ -44,6 +46,10 @@ public class SimpleGraphColorer  {
 		    ColorableNode node = (ColorableNode) nodes.nextElement();
 		    if (graph.getDegree( node ) < colors.size() ) {
 			hidden.push(node);
+			if (DEBUG) 
+			    System.out.println
+				("Pushing " + node + " of degree " +
+				 graph.getDegree( node ) + " onto stack");
 			graph.hideNode( node );
 			
 			// removing 'node' may have made previous nodes in
@@ -59,9 +65,13 @@ public class SimpleGraphColorer  {
 	    nodes = graph.getNodes();
 	    if ( nodes.hasMoreElements() ) {
 		// ERROR condition:
-		// put all the hidden nodes back
-		graph.unhideAllNodes();
-		graph.resetColors();
+		// reset and try again
+		graph.resetGraph();
+		hidden = new Stack();
+		if (DEBUG) 
+		    System.out.println
+			("Resetting Graph and attempting coloring with " + 
+			 (colors.size()+1) + " colors.");
 		throw new UncolorableGraphException
 		    (graph + " could not be colored " + 
 		     "in this manner with " +
@@ -73,7 +83,9 @@ public class SimpleGraphColorer  {
 	    // stack and color them.
 	    while (! hidden.empty() ) {
 		ColorableNode node = (ColorableNode) hidden.pop();
-		
+		if (DEBUG) 
+		    System.out.println
+			("Poping " + node + " off stack");
 		// find color that none of node's neighbors is set to.
 		Enumeration neighbors = graph.getNeighborsOf( node );
 		Vector neighborColors = new Vector();
@@ -87,6 +99,7 @@ public class SimpleGraphColorer  {
 			// ensured that nodes are only replaced in the
 			// graph *after* they have been assigned a
 			// color.  
+			e.printStackTrace();
 			throw new RuntimeException(e.getMessage());
 		    }
 		}
@@ -121,8 +134,26 @@ public class SimpleGraphColorer  {
 			 "All nodes should have been assigned a color.");
 		}
 		
-		node.setColor( color );
-		
+		try {
+		    node.setColor( color );
+		} catch (NodeAlreadyColoredException e) {
+		    // I honestly don't know if I guarded against this
+		    // eventuality.  I think I have, so I'm throwing a
+		    // RuntimeException, but the easy workaround is
+		    // written afterwards
+		    e.printStackTrace();
+		    throw new RuntimeException(e.getMessage());
+		    
+		    /* WORKAROUND CODE IF RUNTIME EXCEPTION IS INDEED THROWN
+		    try {
+			node.setColor(null);
+			node.setColor(color); 
+		    } catch (NodeAlreadyColoredException e) { 
+			// ensured that it can't be thrown here.
+			throw new RuntimeException(e.getMessage()); 
+		    }
+		    */
+		}
 		// now that it is colored, we can unhide it. 
 		graph.unhideNode( node );
 		
@@ -130,10 +161,12 @@ public class SimpleGraphColorer  {
 	} catch( NodeNotPresentInGraphException e ) {
 	    // this should never be thrown (every node we ask
 	    // 'graph' about is one that we pulled from it) 
+	    e.printStackTrace();
 	    throw new RuntimeException(e.getMessage());
 	} catch( NodeNotRemovedException e ) {
 	    // this should never be thrown (every node we unhide 
 	    // in 'graph' is one we've previously hid.
+	    e.printStackTrace();
 	    throw new RuntimeException(e.getMessage());
 	} 
     }

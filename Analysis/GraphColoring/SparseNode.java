@@ -10,7 +10,7 @@ import java.util.Enumeration;
  * use with the SparseGraph object.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseNode.java,v 1.1.2.1 1999-01-14 20:12:11 pnkfelix Exp $ 
+ * @version $Id: SparseNode.java,v 1.1.2.2 1999-01-14 23:16:29 pnkfelix Exp $ 
  */
 
 public class SparseNode extends ColorableNode {
@@ -38,7 +38,12 @@ public class SparseNode extends ColorableNode {
 		      and the <code>unifiedNodes</code> list. 
 		      Else does nothing.
      */
-    void addEdgeTo( SparseNode to ) { 
+    void addEdgeTo( SparseNode to ) throws IllegalEdgeException { 
+	if (toNodes.contains( to )) {
+	    throw new IllegalEdgeException
+		("SparseNode does not allow duplicate edges");
+	}
+
 	if (this.isModifiable()) {
 	    toNodes.addElement( to );
 	    unifiedNodes.addElement( to );
@@ -52,7 +57,12 @@ public class SparseNode extends ColorableNode {
 	              <code>from</code> to the <code>fromNodes</code>
 		      list and the <code>unifiedNodes</code> list.  		    
      */ 
-    void addEdgeFrom( SparseNode from ) {
+    void addEdgeFrom( SparseNode from ) throws IllegalEdgeException {
+	if (fromNodes.contains( from )) {
+	    throw new IllegalEdgeException
+		("SparseNode does not allow duplicate edges");
+	}
+
 	if (this.isModifiable()) {
 	    fromNodes.addElement( from );
 	    unifiedNodes.addElement( from );
@@ -145,8 +155,6 @@ public class SparseNode extends ColorableNode {
     Enumeration getNeighboringNodes() {
 	return unifiedNodes.elements();
     }
-
-    
 
 }
 
