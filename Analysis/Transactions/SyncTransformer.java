@@ -5,6 +5,7 @@ package harpoon.Analysis.Transactions;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.DomTree;
+import harpoon.Analysis.Counters.CounterFactory;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
@@ -73,7 +74,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.14 2001-02-23 03:10:40 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.15 2001-02-23 06:29:40 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -108,6 +109,11 @@ public class SyncTransformer
 	!Boolean.getBoolean("harpoon.synctrans.nofieldoracle");
     private final boolean useSmartCheckOracle = // dumb down check oracle
 	!Boolean.getBoolean("harpoon.synctrans.nocheckoracle");
+    // en/disable counters by default.
+    static {
+	if (System.getProperty("harpoon.counters.enabled.synctrans")==null)
+	    System.setProperty("harpoon.counters.enabled.synctrans","true");
+    }
 
     // FieldOracle to use.
     final FieldOracle fieldOracle;
@@ -351,6 +357,8 @@ public class SyncTransformer
 	    Quad q0 = new THROW(qf, src, tex);
 	    Quad.addEdge((Quad)e.from(), 1, q0, 0);
 	    handlers.head.add(q0);
+	    CounterFactory.spliceIncrement(qf, q0.prevEdge(0),
+					   "synctrans.aborts");
 	    return e;
 	}
 	/** Fix up PHIs leading to abort handler after we're all done. */
@@ -431,6 +439,12 @@ public class SyncTransformer
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
 	    if (handlers==null)
 		in = addAt(in, new CONST(qf, q, currtrans, null, HClass.Void));
+	    // counters!
+	    in = CounterFactory.spliceIncrement
+		(qf, in, "synctrans.transactions");
+	    if (handlers!=null)
+		in = CounterFactory.spliceIncrement
+		    (qf, in, "synctrans.nested_transactions");
 	    // loop looks like:
 	    // c=newTransaction(c);
 	    // L1: try {
@@ -496,6 +510,8 @@ public class SyncTransformer
 	}
 	Edge readNonTrans(Edge out, HCodeElement src,
 			  Temp dst, Temp objectref, HClass type) {
+	    out = CounterFactory.spliceIncrement(qf, out,
+						 "synctrans.read_nt");
 	    Temp t0 = new Temp(tf, "readnt");
 	    out = addAt(out, makeFlagConst(qf, src, t0, type));
 	    out = addAt(out, new OPER(qf, src, cmpop(type), t0,
@@ -529,6 +545,8 @@ public class SyncTransformer
 		// workaround for multi-dim arrays. yucky.
 		addTypeCheck(q.prevEdge(0), q, q.objectref(), q.type());
 	    } else { // transactional read
+		CounterFactory.spliceIncrement
+		    (qf, q.prevEdge(0), "synctrans.read_t");
 		AGET q0 = new AGET(qf, q, q.dst(),
 				   ts.versioned(q.objectref()),
 				   q.index(), q.type());
@@ -540,8 +558,12 @@ public class SyncTransformer
 	    addChecks(q);
 	    if (noFieldModification) return;
 	    if (handlers==null &&
-		!fo.isSyncRead(q.field()) && !fo.isSyncWrite(q.field()))
-		return; // we can simply read/write fields with no sync access
+		!fo.isSyncRead(q.field()) && !fo.isSyncWrite(q.field())) {
+		// we can simply read/write fields with no sync access
+		CounterFactory.spliceIncrement
+		    (qf, q.prevEdge(0), "synctrans.read_nt_skipped");
+		return;
+	    }
 	    if (q.isStatic()) {
 		if (handlers==null) return;
 		System.err.println("WARNING: read of "+q.field()+" in "+
@@ -555,12 +577,16 @@ public class SyncTransformer
 		addAt(e, new GET(qf, q, q.dst(), q.field(),
 				 ts.versioned(q.objectref())));
 	    } else { // transactional read
+		CounterFactory.spliceIncrement
+		    (qf, q.prevEdge(0), "synctrans.read_t");
 		Quad.replace(q, new GET(qf, q, q.dst(), q.field(),
 					ts.versioned(q.objectref())));
 	    }
 	}
 	void writeNonTrans(Edge out, HCodeElement src, Temp objectref,
 			   Temp oldval, Temp newval, HClass type) {
+	    out = CounterFactory.spliceIncrement(qf, out,
+						 "synctrans.write_nt");
 	    Temp t0 = new Temp(tf, "writent");
 	    out = addAt(out, makeFlagConst(qf, src, t0, type));
 	    out = addAt(out, new OPER(qf, src, cmpop(type), oldval,
@@ -606,6 +632,9 @@ public class SyncTransformer
 		in = addAt(in, new AGET(qf, q, t0, q.objectref(),
 					q.index(), q.type()));
 		writeNonTrans(in, q, q.objectref(), t0, q.src(), q.type());
+	    } else {
+		CounterFactory.spliceIncrement
+		    (qf, q.prevEdge(0), "synctrans.write_t");
 	    }
 	    // both transactional and non-transactional write.
 	    ASET q0 = new ASET(qf, q, ts.versioned(q.objectref()),
@@ -617,8 +646,12 @@ public class SyncTransformer
 	    addChecks(q);
 	    if (noFieldModification) return;
 	    if (handlers==null &&
-		!fo.isSyncRead(q.field()) && !fo.isSyncWrite(q.field()))
-		return; // we can simply read/write fields with no sync access
+		!fo.isSyncRead(q.field()) && !fo.isSyncWrite(q.field())) {
+		// we can simply read/write fields with no sync access
+		CounterFactory.spliceIncrement
+		    (qf, q.prevEdge(0), "synctrans.write_nt_skipped");
+		return;
+	    }
 	    if (q.isStatic()) {
 		if (handlers==null) return;
 		System.err.println("WARNING: write of "+q.field()+" in "+
@@ -631,6 +664,9 @@ public class SyncTransformer
 		in = addAt(in, new GET(qf, q, t0, q.field(), q.objectref()));
 		writeNonTrans(in, q, q.objectref(), t0, q.src(),
 			      q.field().getType());
+	    } else {
+		CounterFactory.spliceIncrement
+		    (qf, q.prevEdge(0), "synctrans.write_t");
 	    }
 	    // both transactional and non-transactional write.
 	    Quad.replace(q, new SET(qf, q, q.field(),
@@ -691,11 +727,15 @@ public class SyncTransformer
 		}
 	    }
 	    // do field checks where necessary.
+	    int skipped=0, done=0;
 	    for (Iterator it=co.checkField(q).iterator(); it.hasNext(); ) {
 		CheckOracle.RefAndField raf=(CheckOracle.RefAndField)it.next();
 		// skip check for fields unaccessed outside a sync context.
 		if (!fo.isUnsyncRead(raf.field) &&
-		    !fo.isUnsyncWrite(raf.field)) continue;
+		    !fo.isUnsyncWrite(raf.field)) {
+		    skipped++;
+		    continue;
+		} else done++;
 		// create check code.
 		HClass ty = raf.field.getType();
 		Temp t0 = new Temp(tf, "fieldcheck");
@@ -722,6 +762,12 @@ public class SyncTransformer
 		footer = footer.attach(q8, 0);
 		checkForAbort(q7.nextEdge(1), q, retex);
 	    }
+	    if (skipped > 0)
+		in = CounterFactory.spliceIncrement
+		    (qf, in, "synctrans.fieldschecks_skipped", skipped);
+	    if (done > 0)
+		in = CounterFactory.spliceIncrement
+		    (qf, in, "synctrans.fieldchecks", done);
 	    // do array index checks where necessary.
 	    for (Iterator it=co.checkArrayElement(q).iterator();it.hasNext();){
 		CheckOracle.RefAndIndexAndType rit =
