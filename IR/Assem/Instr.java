@@ -42,8 +42,13 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.73 2000-02-28 22:14:45 cananian Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.74 2000-05-23 17:25:49 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
+    private static boolean PRINT_UPDATES_TO_IR = false;
+    private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
+    private static boolean PRINT_INSERTS = false || PRINT_UPDATES_TO_IR;
+    private static boolean PRINT_REMOVES = false || PRINT_UPDATES_TO_IR;
+
     private final String assem; 
     private InstrFactory inf;
 
@@ -203,8 +208,8 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	this.canFallThrough = canFallThrough;
 	this.targets = targets;
 
-	checkForNull(src);
-	checkForNull(dst);
+	checkForNull(this.src);
+	checkForNull(this.dst);
     }
 
     private void checkForNull(Temp[] ts) {
@@ -470,6 +475,8 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 		     inf.getParent()).getRootElement() != this,
 		    "Do not remove root element.");
 
+	if (PRINT_REMOVES) System.out.println("removing Instr:"+this);
+
 	if (this.next != null) {
 	    // remove ref to this in this.next
 	    this.next.prev = this.prev; 
@@ -518,6 +525,9 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	Util.assert(this.next == null &&
 		    this.prev == null, 
 		    "next and prev fields should be null");
+	
+	if (PRINT_INSERTS) System.out.println("inserting Instr:"+this);
+
 	if (to != null &&
 	    from != null) {
 	    Util.assert(to.prev == from &&
@@ -547,6 +557,8 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
     public static void replace(Instr inOld, Instr inNew) {
 	Util.assert(inNew.next==null && inNew.prev==null);
 	Util.assert(inOld.next!=null || inOld.prev!=null);
+
+	if (PRINT_REPLACES) System.out.println("replacing Instr:"+inOld+" with Instr:"+inNew);
 	inNew.layout(inOld, inOld.getNext());
 	inOld.remove();
     }

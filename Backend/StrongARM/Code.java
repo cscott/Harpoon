@@ -15,6 +15,7 @@ import harpoon.Temp.Temp;
 
 import java.util.List;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,15 +27,15 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.20 2000-01-29 00:13:35 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.21 2000-05-23 17:25:48 pnkfelix Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
 
     private static final boolean DEBUG = false;
 
-    Map tempInstrToRegisterMap;
-    RegFileInfo regFileInfo;
+    private Map tempInstrToRegisterMap;
+    private RegFileInfo regFileInfo;
 
     /** Creates a <code>Code</code>. */
     public Code(harpoon.IR.Tree.Code treeCode) {
@@ -248,6 +249,12 @@ public class Code extends harpoon.Backend.Generic.Code {
     public void assignRegister(final Instr instr, 
 			       final Temp pseudoReg,
 			       final List regs) {
+	Iterator iter = regs.iterator();
+	while(iter.hasNext()) {
+	    Util.assert( regFileInfo.isRegister((Temp)iter.next()),
+			 "every element of "+regs+" should be register");
+	}
+
 	if (pseudoReg instanceof TwoWordTemp) {
 	    TwoWordTemp t = (TwoWordTemp) pseudoReg;
 	    tempInstrToRegisterMap.put

@@ -102,7 +102,7 @@ import java.util.HashSet;
 	 </OL> 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.12 2000-02-28 06:41:57 cananian Exp $
+    @version $Id: MultiMap.java,v 1.1.2.13 2000-05-23 17:25:55 pnkfelix Exp $
  */
 public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 
@@ -180,7 +180,6 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
     */
     boolean addAll(Object key, Collection values);
 
-
     /** Removes from the current mappings: associations for
 	<code>key</code> to any value not in <code>values</code>. 
 
@@ -210,6 +209,13 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 	(<code>MultiMap</code> specific operation). 
     */
     Collection getValues(Object key);
+
+    /** Returns true if <code>a</code> has a mapping to <code>b</code>
+	in <code>this</code>.
+	(<code>MultiMap</code> specific operation).
+    */
+    public boolean contains(Object a, Object b);
+
 
 } 
 

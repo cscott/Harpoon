@@ -74,7 +74,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.84 2000-02-25 03:53:32 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.85 2000-05-23 17:25:44 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -174,9 +174,16 @@ public abstract class RegAlloc  {
     protected RegAlloc(Code code) {
         this.frame = code.getFrame();
 	this.code = code;
-	bbFact = new BasicBlock.Factory(code, CFGrapher.DEFAULT);
+	computeBasicBlocks();
     }
 
+    protected void computeBasicBlocks() {
+	// requires: <this.code> has been set
+	// modifies: <this.bbFact>
+	// effects:  computes <this.bbFact> and a associated set of
+	//           basic blocks for the current state of <this.code>
+	bbFact = new BasicBlock.Factory(code, CFGrapher.DEFAULT);
+    }
     
     /** Assigns registers in the code for <code>this</code>.
 	
@@ -188,11 +195,11 @@ public abstract class RegAlloc  {
 	     <BR> Loads and Stores in general
 	     are added in the form of <code>SpillLoad</code>s and
 	     <code>SpillStore</code>s; the main <code>RegAlloc</code>
-	     class will use <code>resolveOutstandingTemps(HCode</code> 
+	     class will use <code>resolveOutstandingTemps()</code> 
 	     to replace these "fake" loads and stores with frame
 	     specified Memory instructions.
 
-	@see RegAlloc#resolveOutstandingTemps(HCode)
+	@see RegAlloc#resolveOutstandingTemps()
     */
     protected abstract void generateRegAssignment();
 
@@ -425,53 +432,52 @@ public abstract class RegAlloc  {
 	    private void visitLoad(SpillLoad m) {
 		// look for non-Register Temps in use, adding
 		// them to internal map
-		Iterator uses = m.useC().iterator();
-		while(uses.hasNext()) {
-		    Temp use = (Temp) uses.next();
-		    if(!isTempRegister(use)) {
-			if (tempsToOffsets.get(use)==null){
-			    tempsToOffsets.put(use, new Integer(nextOffset));
-			    nextOffset += frame.getInstrBuilder().getSize(use);
-			} 
-
-			int off = ((Integer)tempsToOffsets.get(use)).intValue();
-			// replace 'use' with StackOffsetTemp
-			Temp stkOff = new StackOffsetTemp(use, off);
-
-			SpillLoad newi = 
-			    new SpillLoad(m, m.getAssem(), 
-					  m.defC(), stkOff);
-			Instr.replace(m, newi);
-			List dxi = Default.pair(use, newi);
-			tempXinstrToCommonLoc.add(dxi, stkOff);
-
-		    }
+		Temp use = m.use()[0];
+		if(!isTempRegister(use)) {
+		    if (tempsToOffsets.get(use)==null){
+			tempsToOffsets.put(use, new Integer(nextOffset));
+			nextOffset += frame.getInstrBuilder().getSize(use);
+		    } 
+		    
+		    int off = ((Integer)tempsToOffsets.get(use)).intValue();
+		    // replace 'use' with StackOffsetTemp
+		    Temp stkOff = new StackOffsetTemp(use, off);
+		    
+		    SpillLoad newi = 
+			new SpillLoad(m, m.getAssem(), 
+				      m.defC(), stkOff);
+		    Instr.replace(m, newi);
+		    List dxi = Default.pair(use, newi);
+		    tempXinstrToCommonLoc.add(dxi, stkOff);
+		    
 		}
-	    } 
+	    }
+
 	    private void visitStore(SpillStore m) {
 		// look for non-Register Temps in def, adding
 		// them to internal map
-		Iterator defs = m.defC().iterator();
-		while(defs.hasNext()) {
-		    Temp def = (Temp) defs.next();
-		    if(!isTempRegister(def)) {
-			if (tempsToOffsets.get(def)==null){
-			    tempsToOffsets.put(def, new Integer(nextOffset)); 
-			    nextOffset += frame.getInstrBuilder().getSize(def);
-			} 
-
-			int off = ((Integer)tempsToOffsets.get(def)).intValue();
-			// replace 'def' with StackOffsetTemp
-			StackOffsetTemp stkOff = 
-			    new StackOffsetTemp(def, off); 
-
-			SpillStore newi = 
-			    new SpillStore(m, m.getAssem(), 
-					   stkOff, m.useC());
-			Instr.replace(m, newi);
-			List dxi = Default.pair(def, newi);
-			tempXinstrToCommonLoc.add(dxi, stkOff);
-		    }
+		Temp def = m.def()[0];
+		if(!isTempRegister(def)) {
+		    if (tempsToOffsets.get(def)==null){
+			tempsToOffsets.put(def, new Integer(nextOffset)); 
+			nextOffset += frame.getInstrBuilder().getSize(def);
+		    } 
+		    
+		    int off = 
+			((Integer)tempsToOffsets.get(def)).intValue();
+		    
+		    // replace 'def' with StackOffsetTemp
+		    StackOffsetTemp stkOff = 
+			new StackOffsetTemp(def, off); 
+		    
+		    SpillStore newi = 
+			new SpillStore(m, m.getAssem(), 
+				       stkOff, m.useC());
+		    Instr.replace(m, newi);
+		    List dxi = Default.pair(def, newi);
+		    tempXinstrToCommonLoc.add(dxi, stkOff);
+		} else {
+		    System.out.println("what kind of spill is this??? : "+m);
 		}
 	    } 
 

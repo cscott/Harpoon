@@ -23,7 +23,7 @@ import java.util.HashSet;
  * <code>MultiMap</code>.  
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.1.2.3 2000-02-28 06:41:56 cananian Exp $ */
+ * @version $Id: GenericMultiMap.java,v 1.1.2.4 2000-05-23 17:25:55 pnkfelix Exp $ */
 public class GenericMultiMap implements MultiMap {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
@@ -234,9 +234,9 @@ public class GenericMultiMap implements MultiMap {
 
     /** Returns a set view of the mappings contained in this map.
 
-	NOTE: Does not properly implement Map.keySet(), since changes
+	NOTE: Does not properly implement Map.entrySet(), since changes
 	in Map structure are not reflected in previously returned
-	keySets.  Fix this at some point for safety.
+	entrySets.  Fix this at some point for safety.
     */
     public Set entrySet() {
 	int size = 0;
@@ -354,7 +354,7 @@ public class GenericMultiMap implements MultiMap {
 	if (getValues(key).isEmpty()) internMap.remove(key);
 	return changed;
     }
-    
+
     /** Returns the collection of Values associated with
 	<code>key</code>.  Modifications to the returned
 	<code>Collection</code> affect <code>this</code> as well.  If 
@@ -372,8 +372,28 @@ public class GenericMultiMap implements MultiMap {
 	return c;
     }
 
+    /** Returns true if <code>a</code> has a mapping to <code>b</code>
+	in <code>this</code>.
+	(<code>MultiMap</code> specific operation). 
+    */
     public boolean contains(Object a, Object b) {
-	return ((Collection)internMap.get(a)).contains(b);
+	Collection c = (Collection)internMap.get(a);
+	if (c != null)
+	    return c.contains(b);
+	else
+	    return false;
     }
-    
+
+    public String toString() {
+	StringBuffer sb = new StringBuffer();
+	sb.append("[");
+	Iterator keys = keySet().iterator();
+	while(keys.hasNext()) {
+	    Object k = keys.next();
+	    Collection values = getValues(k);
+	    sb.append("< "+k+" -> "+values+" > ");
+	}
+	sb.append("]");
+	return sb.toString();
+    }
 }

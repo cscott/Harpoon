@@ -33,7 +33,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.6 2000-02-10 23:54:03 kkz Exp $
+ * @version $Id: Code.java,v 1.1.2.7 2000-05-23 17:25:49 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -154,11 +154,11 @@ public abstract class Code extends HCode {
 
 	Instr instr = instrs;
         while(instr.getNext() != null) {
-	    String str = "";
+	    StringBuffer str = new StringBuffer("");
 	    instr = instr.getNext();
             if (instr instanceof InstrLABEL ||
 		instr instanceof InstrDIRECTIVE) {
-                str = instr.toString();
+                str.append(instr.toString());
 
 		if (DEBUG && (instr instanceof InstrLABEL)) {
 		    InstrLABEL il = (InstrLABEL) instr;
@@ -172,9 +172,9 @@ public abstract class Code extends HCode {
 			new BufferedReader(new StringReader(toAssem(instr)));
 		    String s = reader.readLine();
 		    while (s != null) {
-			str += "\t"+ s;
+			str.append("\t"+ s);
 			s = reader.readLine();
-			if (s!=null) str+="\n";
+			if (s!=null) str.append("\n");
 		    }
 		} catch (IOException e ) {
 		    Util.assert(false, "IOException " + e.toString() + 
@@ -183,9 +183,9 @@ public abstract class Code extends HCode {
 		}
             }
 
-	    pw.println(str);
+	    pw.println(str.toString());
 
-	    if (str.indexOf("RETURN") != -1) {
+ 	    if (str.toString().indexOf("RETURN") != -1) {
 		// System.out.println("Contained RETURN; hasNext():" + iter.hasNext());
 	    } 
 

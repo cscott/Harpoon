@@ -31,7 +31,7 @@ import java.util.HashMap;
     cause an assertion failure.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.9 2000-02-10 22:21:49 cananian Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.10 2000-05-23 17:25:55 pnkfelix Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -111,7 +111,7 @@ public class BitSetFactory extends SetFactory {
 	return bss;
     }
 
-    private class BitStringSet extends AbstractSet {
+    private static class BitStringSet extends AbstractSet {
 	// internal rep for set
 	BitString bs;
 
@@ -125,11 +125,11 @@ public class BitSetFactory extends SetFactory {
 	}
 
 	public boolean add(Object o) {
-	    Util.assert(universe.contains(o),
+	    Util.assert(fact.universe.contains(o),
 			"Attempted to add an object "+
 			"that was not part of the "+
 			"original universe of values.");
-	    int ind = indexer.getID(o);
+	    int ind = fact.indexer.getID(o);
 	    Util.assert(ind < bs.size());
 	    boolean alreadySet = this.bs.get(ind);
 	    if (alreadySet) {
@@ -153,8 +153,8 @@ public class BitSetFactory extends SetFactory {
 	}
 	
 	public boolean contains(Object o) {
-	    if (universe.contains(o)) {
-		int i = indexer.getID(o);
+	    if (fact.universe.contains(o)) {
+		int i = fact.indexer.getID(o);
 		return this.bs.get(i);
 	    } else {
 		// not part of original universe, therefore cannot be
@@ -196,7 +196,7 @@ public class BitSetFactory extends SetFactory {
 	}
 	
 	public Iterator iterator() {
-	    return indexer.implementsReverseMapping() ?
+	    return fact.indexer.implementsReverseMapping() ?
 	      (Iterator) new Iterator() { // fast bit-set iterator
 		int lastindex=-1;
 		public boolean hasNext() {
@@ -205,7 +205,7 @@ public class BitSetFactory extends SetFactory {
 		public Object next() {
 		    lastindex = BitStringSet.this.bs.firstSet(lastindex);
 		    if (lastindex<0) throw new NoSuchElementException();
-		    return indexer.getByID(lastindex);
+		    return fact.indexer.getByID(lastindex);
 		}
 		public void remove() {
 		    if (lastindex<0 || !BitStringSet.this.bs.get(lastindex))
@@ -213,19 +213,19 @@ public class BitSetFactory extends SetFactory {
 		    BitStringSet.this.bs.clear(lastindex);
 		}
 	    } : (Iterator) new FilterIterator // slower fall-back
-		(universe.iterator(), 
+		(fact.universe.iterator(), 
 		 new FilterIterator.Filter() {
 		    public boolean isElement(Object o) {
-			return BitStringSet.this.bs.get(indexer.getID(o));
+			return BitStringSet.this.bs.get(fact.indexer.getID(o));
 		    }});
 	}
 	
 	public boolean remove(Object o) {
-	    if (universe.contains(o)) {
+	    if (fact.universe.contains(o)) {
 		// o is not member of universe, therefore cannot be in set.
 		return false;
 	    } else {
-		int i = indexer.getID(o);
+		int i = fact.indexer.getID(o);
 		boolean alreadySet = bs.get(i);
 		if (alreadySet) {
 		    this.bs.clear(i);

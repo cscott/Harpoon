@@ -6,6 +6,8 @@ package harpoon.Analysis.Instr;
 import harpoon.Temp.Temp;
 import harpoon.Util.LinearMap;
 import harpoon.Util.Util;
+import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.Collections.GenericMultiMap;
 
 import java.util.List;
 import java.util.Map;
@@ -20,18 +22,20 @@ import java.util.Iterator;
  * most processor architectures for storing working sets of data.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFile.java,v 1.1.2.5 2000-01-24 00:51:23 pnkfelix Exp $
+ * @version $Id: RegFile.java,v 1.1.2.6 2000-05-23 17:25:44 pnkfelix Exp $
  */
 class RegFile {
-    
-    private Map regToTmp; // Map[ Reg -> Temp ]
+
+    public static final boolean PRINT_USAGE = false;
+
+    private GenericMultiMap regToTmp; // MultiMap[ Reg -> Temp ]
     private Map tmpToRegLst; // Map[ Temp -> List<Reg> ]
 
     private Set dirtyTemps; // Set of all Temps that have been written
 
     /** Creates a <code>RegFile</code>. */
     public RegFile() {
-        regToTmp = new HashMap();
+        regToTmp = new GenericMultiMap();
 	tmpToRegLst = new HashMap();
 	dirtyTemps = new HashSet();
     } 
@@ -47,6 +51,8 @@ class RegFile {
     public void writeTo(Temp preg) {
 	Util.assert(hasAssignment(preg),
 		    "temp: "+preg+" should have an assignment in "+this);
+
+	if (PRINT_USAGE) System.out.println(this+".writeTo: "+preg);
 
 	// FSK: this assertion is too strict, but it might only be
 	// because of a hack in the spec-file.  Find out whether we
@@ -81,7 +87,9 @@ class RegFile {
     }
 
     public String toString() {
-	return regToTmp.toString();
+	return tmpToRegLst.toString();
+	// return regToTmp.toString();
+	// return "RegFile"+hashCode();
     }
     
     /** Returns a snapshot of the current mapping from registers to
@@ -99,7 +107,7 @@ class RegFile {
 	return Collections.unmodifiableMap(new HashMap(regToTmp));
     }
 
-    /** Returns the pseudo-register associated with <code>reg</code>.
+    /** Returns some pseudo-register associated with <code>reg</code>.
 	If there is no pseudo-register associated with
 	<code>reg</code>, returns <code>null</code>.
      */
@@ -109,37 +117,46 @@ class RegFile {
     
     /** Assigns <code>pseudoReg</code> to <code>regs</code>.
 	<BR> <B>requires:</B> <OL>
-  	     <LI> All elements of <code>regs</code> are not currently 
-	          associated with any pseudo register in
-		  <code>this</code>. 
+
 	     <LI> <code>pseudoReg</code> does not currently have an
 	          assignment in <code>this</code>.
+
 	     </OL>
 	<BR> <B>modifies:</B> <code>this</code>
 	<BR> <B>effects:</B> Creates an association between
    	     <code>pseudoReg</code> and all of the elements of
 	     <code>regs</code>.
-	<BR> Note: Requirement 2 may seem strange, as its not
- 	     strictly illegal in a compiler to assign pseudo registers
-	     multiple times.  But the alternative would require making 
-	     tmpToRegLst a MultiMap, the semantics of remove(pseudoReg)
+	<BR> Note: Requirement 1 may seem strange, as its not
+ 	     strictly illegal in a compiler to assign a pseudo register
+	     multiple times to different machine registers.  
+	     But the alternative would require making tmpToRegLst a
+	     MultiMap, the semantics of remove(pseudoReg) 
 	     would have been ugly, and theres no place i know of where
 	     it would make sense to assign preg multiple times.
-	     AHA!  There is ONE: The pseudoReg PREASSIGN.  Hmmm.  Have
-	     to think about this one...
      */
     public void assign(final Temp pseudoReg, final List regs) { 
 	final Iterator regIter = regs.iterator();
 	while (regIter.hasNext()) {
 	    Temp reg = (Temp) regIter.next();
-	    Util.assert(!regToTmp.containsKey(reg), 
-			"non-empty reg: "+reg); 
-	    regToTmp.put(reg, pseudoReg);
+
+	    //FSK: multiple associations now 
+	    // Util.assert(!regToTmp.containsKey(reg), 
+	    //             "non-empty reg: "+reg);  
+	    // regToTmp.put(reg, pseudoReg);
+
+	    regToTmp.add(reg, pseudoReg); // multiple associations
 	}
 
-	Util.assert(!tmpToRegLst.containsKey(pseudoReg), 
-		    "dont assign pregs more than once");
+	if (tmpToRegLst.containsKey(pseudoReg)) {
+	    Util.assert(tmpToRegLst.get(pseudoReg).equals(regs),
+			"dont assign preg:"+pseudoReg+" more than once \n"+
+			"curr: "+tmpToRegLst.get(pseudoReg)+"\n"+
+			"next: "+regs);
+	}
+	Util.assert(!regs.isEmpty(), "regs should not be empty");
 	tmpToRegLst.put(pseudoReg, regs);
+
+	if (PRINT_USAGE) System.out.println(this+".assign: "+regs+" <- "+pseudoReg);
     } 
 
     /** Checks if <code>pseudoReg</code> has an register assignment in
@@ -177,11 +194,13 @@ class RegFile {
 	final Iterator regIter = regs.iterator();
 	while(regIter.hasNext()) {
 	    Temp reg = (Temp) regIter.next();
-	    Object prev = regToTmp.remove(reg);
-	    Util.assert(prev.equals(pseudoReg), 
-			"reg: "+reg+" should have mapped to "+
-			pseudoReg+" instead of "+prev);
+	    boolean mapped = regToTmp.removeAll
+		(reg, Collections.singleton(pseudoReg));
+	    Util.assert(mapped, "reg: "+reg+
+			" should have mapped to "+pseudoReg);
 	}
 	dirtyTemps.remove(pseudoReg);
+
+	if (PRINT_USAGE) System.out.println(this+".remove: "+pseudoReg);
     }
 } 

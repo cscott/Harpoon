@@ -16,7 +16,7 @@ import java.util.List;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.44 2000-02-18 00:50:17 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.45 2000-05-23 17:25:45 pnkfelix Exp $
  */
 public abstract class Code extends harpoon.IR.Assem.Code {
 
@@ -92,7 +92,7 @@ public abstract class Code extends harpoon.IR.Assem.Code {
 	flexibility of having different registers for a's def and use
 	will buy us anything...
      */
-    public abstract void assignRegister(Instr i, 
+    public abstract void assignRegister(Instr i,
 					Temp pseudoReg, 
 					List regs);
 

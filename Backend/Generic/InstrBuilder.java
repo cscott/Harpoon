@@ -7,7 +7,7 @@ import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrLABEL;
 import harpoon.Temp.Temp;
 import harpoon.Temp.Label;
-import harpoon.Util.ListFactory;
+import harpoon.Util.Collections.ListFactory;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ import java.util.ArrayList;
     
     @see harpoon.Analysis.Instr
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.5 2000-01-27 20:23:40 pnkfelix Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.6 2000-05-23 17:25:45 pnkfelix Exp $
  */
 public abstract class InstrBuilder {
     

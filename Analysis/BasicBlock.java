@@ -6,7 +6,7 @@ package harpoon.Analysis;
 import harpoon.Util.Util;
 import harpoon.Util.IteratorEnumerator;
 import harpoon.Util.WorkSet;
-import harpoon.Util.LinearSet;
+import harpoon.Util.Collections.LinearSet;
 import harpoon.Util.Worklist;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeEdge;
@@ -30,12 +30,17 @@ import java.util.Collections;
 import java.util.Collection;
 
 /**
-   BasicBlock collects a serial list of operations.  It is designed to
+   BasicBlock collects a sequence of operations.  It is designed to
    abstract away specific operation and allow the compiler to focus on
    control flow at a higher level.  (It also allows for some analysis
    within the block to operate more efficiently by taking advantage of
    the fact that the elements of a BasicBlock have a total ordering of
    execution). 
+
+   <P> Most BasicBlocks are a part of a larger piece of code, and thus
+   a collection of BasicBlocks form a Control Flow Graph (where the
+   nodes of the graph are the blocks and the directed edges of the
+   graph indicate when one block is succeeded by another block).
    
    <P> Make sure to look at <code>BasicBlock.Factory</code>, since it
    acts as the central core for creating and keeping track of the
@@ -50,11 +55,11 @@ import java.util.Collection;
    add LOADs to the beginning and STOREs to the end).  Perhaps we can
    allow for some modification of the Control-Flow-Graph; check with
    group. 
+
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.26 2000-04-06 21:37:23 pnkfelix Exp $
-*/
+ * @version $Id: BasicBlock.java,v 1.1.2.27 2000-05-23 17:25:42 pnkfelix Exp $ */
 public class BasicBlock {
     
     static final boolean DEBUG = false;
@@ -62,11 +67,14 @@ public class BasicBlock {
     private HCodeElement first;
     private HCodeElement last;
 
-    // BasicBlocks preceding and succeeding this block
+    // BasicBlocks preceding and succeeding this block (we store the
+    // CFG implicityly in the basic block objects; if necessary this
+    // information can be migrated to BasicBlock.Factory and
+    // maintained there)
     private Set pred_bb;
     private Set succ_bb;
 
-    // unique id number for this basic block
+    // unique id number for this basic block; used only for BasicBlock.toString()
     private int num;
 
     // number of statements in this block
@@ -75,23 +83,73 @@ public class BasicBlock {
     // factory that generated this block
     private Factory factory; 
 
+    /** Returns the first <code>HCodeElement</code> in the sequence. 
+	@deprecated Use the standard List view provided by statements() instead
+	@see BasicBlock#statements
+     */
     public HCodeElement getFirst() { return first; }
+
+    /** Returns the last <code>HCodeElement</code> in the sequence. 
+	@deprecated Use the standard List view provided by statements() instead
+	@see BasicBlock#statements
+     */
     public HCodeElement getLast() { return last; }
     
+    /** Adds <code>bb</code> to the set of predecessor basic blocks
+	for <code>this</code>.  Meant to be used during construction.
+	FSK: probably should take this out; it adds little to the
+	class 
+    */
     private void addPredecessor(BasicBlock bb) { pred_bb.add(bb); }
+
+    /** Adds <code>bb</code> to the set of successor basic blocks for
+	<code>this</code>.  Meant to be used during construction.
+	FSK: probably should take this out; it adds little to the
+	class 
+    */
     private void addSuccessor(BasicBlock bb) { succ_bb.add(bb); }
     
+    /** Returns the number of basic blocks in the predecessor set for
+	<code>this</code>. 
+	@deprecated Use prevSet() instead
+	@see BasicBlock#prevSet
+    */
     public int prevLength() { return pred_bb.size(); }
+
+    /** Returns the number of basic blocks in the successor set for
+	<code>this</code>. 
+	@deprecated Use nextSet() instead
+	@see BasicBlock#nextSet
+    */
     public int nextLength() { return succ_bb.size(); }
+
+    /** Returns an Enumeration that iterates over the predecessors for
+	<code>this</code>. 
+	@deprecated Use prevSet() instead
+	@see BasicBlock#prevSet
+    */
     public Enumeration prev() { return new IteratorEnumerator(pred_bb.iterator()); }
+
+    /** Returns an Enumeration that iterates over the successors for
+	<code>this</code>. 
+	@deprecated Use nextSet() instead
+	@see BasicBlock#prevSet
+    */
     public Enumeration next() { return new IteratorEnumerator(succ_bb.iterator()); }
 
-    /** Returns all the predecessors of <code>this</code> basic block. */
+    /** Returns all the predecessors of <code>this</code> basic
+	block. 
+	@deprecated Use prevSet() instead
+	@see BasicBlock#prevSet
+    */
     public BasicBlock[] getPrev() {
 	return (BasicBlock[]) pred_bb.toArray(new BasicBlock[pred_bb.size()]);
     }
 
-    /** Returns all the successors of <code>this</code> basic block. */
+    /** Returns all the successors of <code>this</code> basic block. 
+	@deprecated Use nextSet() instead
+	@see BasicBlock#nextSet
+    */
     public BasicBlock[] getNext() {
 	return (BasicBlock[]) succ_bb.toArray(new BasicBlock[succ_bb.size()]);
     }
@@ -116,6 +174,7 @@ public class BasicBlock {
 
     /** Returns an unmodifiable <code>List</code> for the
 	<code>HCodeElement</code>s within <code>this</code>.  
+
 	<BR> <B>effects:</B> Generates a new <code>List</code> of
 	<code>HCodeElement</code>s ordered according to the order
 	mandated by the <code>CFGrapher</code> used in the call to
@@ -123,7 +182,12 @@ public class BasicBlock {
 	<code>this</code>. 
     */
     public List statements() {
-	Util.assert(size > 0, "BasicBlock class breaks on empty bbs");
+
+	// FSK: this is dumb; why not just return an empty list in
+	// this case?  I suspect this is an attempt to fail-fast, but
+	// still... 
+	Util.assert(size > 0, "BasicBlock class breaks on empty BBs");
+
 	return new java.util.AbstractSequentialList() {
 	    public int size() { return size; }
 	    public ListIterator listIterator(int index) {
@@ -132,24 +196,25 @@ public class BasicBlock {
 		// element of the list. 
 
 		// check argument
-		if (index < 0 || index > size) {
-		    throw new IndexOutOfBoundsException
-			(index +"< 0 || "+index+" > "+size);
+		if (index < 0) {
+		    throw new IndexOutOfBoundsException(index +"< 0"); 
+		} else if (index > size) {
+		    throw new IndexOutOfBoundsException(index+" > "+size); 
 		}
 		
 		// iterate to correct starting point
-		HCodeElement curr = first;
-		int i;
+		HCodeElement curr;
 
-		// slight rep inconsistency in upper bound; we'll keep
-		// next pointing at curr, even though that's the
-		// prev-elem, not the next one.  See implementation
-		// below for details 
-		int bound = Math.min(index, size-1);
-		for(i=0; i < bound; i++) {
-		    curr = factory.grapher.succ(curr)[0].to();
+		if (index < size) {
+		    curr = first;
+		    int bound = Math.min(index, size-1);
+		    for(int i=0; i < bound; i++) {
+			curr = factory.grapher.succ(curr)[0].to();
+		    }
+		} else {
+		    curr = last;
 		}
-		
+
 		// new final vars to be passed to ListIterator
 		final HCodeElement fcurr = curr;
 		final int fi = index;
@@ -160,53 +225,82 @@ public class BasicBlock {
 				" ind: "+fi);
 
 		return new harpoon.Util.UnmodifiableListIterator() {
-		    HCodeElement next = fcurr; //elem for next() to return
-		    int ind = fi; //where currently pointing?
+		    //elem for next() to return
+		    HCodeElement next = fcurr; 
+		    
+		    // where currently pointing?  
+		    // Invariant: 0 <= ind /\ ind <= size 
+		    int ind = fi; 
+
+		    private void repOK() {
+			repOK("");
+		    }
+
+		    private void repOK(String s) {
+			Util.assert(0 <= ind, s+" (0 <= ind), ind:"+ind);
+			Util.assert(ind <= size, s+" (ind <= size), ind:"+ind+", size:"+size);
+			Util.assert( (ind==0)?next==first:true,
+				     s+" (ind==0 => next==first), next:"+next+", first:"+first);
+
+			Util.assert( (ind==(size-1))?next==last:true,
+				     s+" (ind==(size-1) => next==last), next:"+next+", last:"+last);
+
+			Util.assert( (ind==size)?next==last:true,
+				     s+" (ind==size => next==last), next:"+next+", last:"+last);
+		    }
 
 		    public boolean hasNext() {
-			return ind!=size;
+			repOK();
+			return ind != size;
 		    }
 		    public Object next() {
-			if (!hasNext()) {
+			repOK("beginning");			
+			if (ind == size) {
 			    throw new NoSuchElementException();
 			}
 			ind++;
 			Object ret = next;
-			Util.assert(ind <= size, 
-				    "ind > size:"+ind+", "+size);
 			if (ind != size) {
 			    Collection succs = factory.grapher.succC(next);
 			    Util.assert(succs.size() == 1,
 					next+" has wrong succs:" + 
-					succs+" (ind: "+ind+")");
+					succs+" (ind:"+ind+", size:"+size+")");
 			    next = ((HCodeEdge)succs.iterator().next()).to(); 
 
 			} else { 
 			    // keep 'next' the same, since previous()
 			    // needs to be able to return it
 			}
+
+			repOK("end");
 			return ret;
 		    }
 		    
 		    
 		    public boolean hasPrevious() {
-			if (ind == size) {
-			    return true;
-			} else {
-			    return factory.grapher.predC(next).size() == 1;
-			}
+			repOK();
+			return ind > 0;
+
 		    }
 		    public Object previous() {
-			if (!hasPrevious()) {
+			repOK();
+
+			if (ind <= 0) {
 			    throw new NoSuchElementException();
 			}
+
+			// special case: if ind == size, then we just
+			// return <next>
 			if (ind != size) {
 			    next = factory.grapher.pred(next)[0].from();
 			}
 			ind--;
+
+			repOK();
 			return next;
 		    } 
 		    public int nextIndex() {
+			repOK();
 			return ind;
 		    }
 		};
@@ -214,9 +308,16 @@ public class BasicBlock {
 	};
     }
 
-    /** Accept a visitor. */
+    /** Accept a visitor. 
+	FSK: is this really useful?  John put this in with the thought
+	that we'd have many different types of BasicBlocks, but I'm
+	not sure about that actually being a useful set of subtypes
+     */
     public void accept(BasicBlockVisitor v) { v.visit(this); }
     
+    /** Constructs a new BasicBlock with <code>h</code> as its first
+	element.  Meant to be used only during construction.
+    */
     protected BasicBlock(HCodeElement h, Factory f) {
 	Util.assert(h!=null);
 	first = h; 
@@ -227,6 +328,9 @@ public class BasicBlock {
 	num = factory.BBnum++;
     }
 
+    /** Constructs an edge from <code>from</code> to
+	</code>to</code>. 
+    */
     private static void addEdge(BasicBlock from, BasicBlock to) {
 	from.addSuccessor(to);
 	to.addPredecessor(from);
@@ -236,6 +340,9 @@ public class BasicBlock {
 	return "BB"+num;
     }
 
+    /** Returns a String composed of the statements comprising
+	<code>this</code>. 
+    */
     public String dumpElems() {
 	StringBuffer s = new StringBuffer();
 	Iterator iter = statements().listIterator();
@@ -246,7 +353,7 @@ public class BasicBlock {
     }
     
     /** Factory structure for generating BasicBlock views of
-	<code>HCode</code>s.  	
+	an <code>HCode</code>.  	
     */
     public static class Factory { 
 	// the underlying HCode
@@ -263,6 +370,72 @@ public class BasicBlock {
 	// tracks the current id number to assign to the next
 	// generated basic block
 	private int BBnum = 0;
+
+	/** Modifies the set of basic blocks for <code>this</code> to
+	    account for modifications that have been made to the
+	    underlying IR.  Most <code>HCode</code>s will not require
+	    any calls to this method (which can be quite costly) since
+	    their IRs are immutable.  However, for <code>HCode</code>s
+	    which do allow modifications (such as
+	    <code>Generic.Code</code>), this method should be used.  
+	    
+	    <BR> Note that BasicBlocks still will not handle all
+	    modifications to an underlying IR gracefully.  In general,
+	    changes which do not affect overall control-flow (such as
+	    insertion or removal of linear code) are legal, but
+	    insertion of code that introduces the need to actually
+	    split <code>BasicBlock</code>s or otherwise generate new
+	    <code>BasicBlock</code>s will in general fail.
+
+	    <BR> The updating takes the following form:
+	    <PRE>
+	    foreach block b in the set of blocks maintained by this:
+	        1. Adjust b's first element backward until it is the
+		   appropriate starting point for a block
+		2. Count through the elements of b, adjusting the size
+		   and last element accordingly
+	    </PRE> 
+	*/
+	public void updateBasicBlocks() {
+	    Iterator biter = blocks.iterator();
+	    while(biter.hasNext()) {
+		BasicBlock b = (BasicBlock) biter.next();
+		HCodeElement curr = b.first;
+		
+		while(grapher.predC(b.first).size() == 1) { 
+		    curr = grapher.pred(curr)[0].from();
+		    if (grapher.succC(curr).size() == 1) { 
+			b.first = curr;
+		    } else {   
+			break; // split
+		    }
+		}
+		
+		int size = 1;
+		
+		curr = b.first;
+		boolean sawLast = false;
+		while(grapher.succC(curr).size() == 1) {
+		    HCodeElement h = grapher.succ(curr)[0].to();
+		    if (grapher.predC(h).size() == 1) {
+			size++;
+			curr = h;
+			if (h == b.last) sawLast = true;
+		    } else {
+			break;
+		    }
+		}
+		Util.assert(sawLast, "branches should not be inserted");
+
+		// size can increase or decrease, since elems may be
+		// added to or removed from the sequence
+
+		b.last = curr;
+		b.size = size;
+		
+	    }
+	    return;
+	}
 
 	/** Returns the root <code>BasicBlock</code>.
 	    <BR> <B>effects:</B> returns the <code>BasicBlock</code>
@@ -427,15 +600,47 @@ public class BasicBlock {
 
 	    }
 
-	    // efficiency hack; make various immutable Collections
-	    // unmodifable at construction time rather than at
-	    // accessor time.
+	    // efficiency hacks: make various immutable Collections
+	    // array-backed sets, and make them unmodifiable at
+	    // construction time rather than at accessor time.
 	    leaves = Collections.unmodifiableSet(new LinearSet(myLeaves));
 	    hceToBB = Collections.unmodifiableMap(myHceToBB);
 	    blocks = Collections.unmodifiableSet(new LinearSet
 						 (new HashSet(hceToBB.values())));
-	
+	    Iterator bbIter = blocks.iterator();
+	    while (bbIter.hasNext()) {
+		BasicBlock bb = (BasicBlock) bbIter.next();
+		bb.pred_bb = new LinearSet(bb.pred_bb);
+		bb.succ_bb = new LinearSet(bb.succ_bb);
+
+		checkBlock(bb);
+	    }
 	    
+	}
+
+	private void checkBlock(BasicBlock block) {
+	    List blockL = block.statements();
+	    int sz = blockL.size();
+	    Iterator iter = blockL.iterator();
+	    HCodeElement curr = null;
+	    while(iter.hasNext()) {
+		HCodeElement h = (HCodeElement) iter.next();
+		if (curr == null) {
+		    Util.assert(h == block.first);
+
+		    curr = h;
+		} else {
+		    Util.assert(grapher.succC(curr).size() == 1);
+		    Util.assert(grapher.succ(curr)[0].to() == h,
+				"curr:"+curr+" succ:"+grapher.succ(curr)[0].to()+
+				" h:"+h);
+
+		    curr = h;
+		}
+		sz--;
+	    }
+	    Util.assert(curr == block.last);
+	    Util.assert(sz == 0);
 	}
 
 	public static void dumpCFG(BasicBlock start) {
