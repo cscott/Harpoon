@@ -34,7 +34,7 @@ import java.util.Iterator;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SizeCounters.java,v 1.1.2.10 2001-11-07 18:34:48 cananian Exp $
+ * @version $Id: SizeCounters.java,v 1.1.2.11 2001-11-09 16:55:15 cananian Exp $
  */
 public class SizeCounters extends MethodMutator {
     final Frame frame;
@@ -188,11 +188,11 @@ public class SizeCounters extends MethodMutator {
 		     rounded_bits);
 		e = CounterFactory.spliceIncrement
 		    (qf, e,
-		     "sizecnt.rounded_bits_by_type."+q.hclass().getName(),
+		     "sizecnt.const_rounded_bits_by_type."+q.hclass().getName(),
 		     const_rounded_bits);
 		e = CounterFactory.spliceIncrement
 		    (qf, e,
-		     "sizecnt.rounded_bits_by_type."+q.hclass().getName(),
+		     "sizecnt.unread_rounded_bits_by_type."+q.hclass().getName(),
 		     unread_rounded_bits);
 	    }
 	}
