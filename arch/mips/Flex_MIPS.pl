@@ -115,29 +115,33 @@ sub Call_SoftFp {
   # $proto is a prototype for the called function v = void, f = float,
   #    d = double, of = output float, od = output double
   # $negate is a Boolean
-  my($name, $proto, $negate) = @_;
+  my($name, $proto, $negate, $prefix_code) = @_;
   print '.set noreorder', "\n";
   print '.cpload $25', "\n";
   print '.set reorder', "\n";
-  print '.frame sp, 32, $31', "\n";
-  print 'subu   sp, 32', "\n";
-  print 'sw     $31, 24(sp)', "\n";
+  print '.frame sp, 48, $31', "\n";
+  print 'subu   sp, 48', "\n";
+  print 'sw     $31, 44(sp)', "\n";
+
+  if($prefix_code) {
+    print "$prefix_code";
+  }
 
   my $reg    = 4;
-  my $preg   = 4;
-  my $offset = 8;
+  my $preg   = 4;  # parameter register
+  my $offset = 24;
   my $ret_lo = 0;
   my $ret_hi = 0;
   foreach $pro (@$proto) {
     if($pro eq "f") {
-      print 'sw     $', $reg, ', ', $offset, "(sp)\n";
-      print 'la     $', $reg, ', ', $offset, "(sp)\n";
+      print 'sw     $', $reg,  ', ', $offset, "(sp)\n";
+      print 'la     $', $preg, ', ', $offset, "(sp)\n";
       $reg++;
       $preg++;
       $offset += 4;
     } elsif($pro eq "d") {
-      print 'sw     $', $reg, ', ', $offset, "(sp)\n";
-      print 'la     $', $reg, ', ', $offset, "(sp)\n";
+      print 'sw     $', $reg,  ', ', $offset, "(sp)\n";
+      print 'la     $', $preg, ', ', $offset, "(sp)\n";
       $reg++;
       $offset += 4;
       $preg++;
@@ -145,28 +149,29 @@ sub Call_SoftFp {
       $reg++;
       $offset += 4;
     } elsif($pro eq "of" ) {
-      print 'la     $', $preg, ", 0(sp)\n";
+      print 'la     $', $preg, ", 16(sp)\n";
       $ret_lo = 1;
     } elsif($pro eq "od" ) {
-      print 'la     $', $preg, ", 0(sp)\n";
+      print 'la     $', $preg, ", 16(sp)\n";
       $ret_lo = 1;
       $ret_hi = 1;
     }
   }
+  if($offset > 44) { die "SoftFp stack space is insufficient\n"; }
   # '  lousy quote analysis in emacs perl mode
   print "jal    $name\n";
   if($ret_lo) {
-    print "lw     v0, 0(sp) \n";
+    print "lw     v0, 16(sp) \n";
     if($ret_hi) {
-      print "lw     v1, 4(sp) \n";
+      print "lw     v1, 20(sp) \n";
     }
   }
   if($negate) {
-    print "not    v0, v0 \n";
+    print "seq    v0, v0, zero\n";
   }
 print<<'ENDEPILOG'
-lw     $31, 24(sp)
-addu   sp, 32
+lw     $31, 44(sp)
+addu   sp, 48
 j      $31
 ENDEPILOG
 }
@@ -179,10 +184,7 @@ print "
 .ent $label
 $label:
 ";
-  if($prefix_code) {
-    print "$prefix_code";
-  }
-  Call_SoftFp($emulation_function, $load_return, $negate);
+  Call_SoftFp($emulation_function, $load_return, $negate, $prefix_code);
   print ".end $label\n\n";
 }
 
@@ -221,19 +223,25 @@ Print_Asm_Jacket("__d_slt", "ltDouble", [d,d], 0);
 
 ################################################################
 ## Negation
-$float_prefix =
-"   move  a1, a0
-    li    a0, 0
+$float_prefix = "
+move  a1, a0
+.data
+1: .float 0.0
+.text
+lw  a0, 1b
 ";
 Print_Asm_Jacket("__f_neg", "subSingle", [f,f,of], 0, $float_prefix);
 
-$double_prefix =
-"   move  a2, a0
-    move  a3, a1
-    li    a0, 0
-    li    a1, 0
+$double_prefix ="
+move  a2, a0
+move  a3, a1
+.data
+1: .double 0.0
+.text
+lw  a0, 1b
+lw  a1, 1b + 4
 ";
-Print_Asm_Jacket("__d_neg", "subDouble", [d,d,od], 0, $float_prefix);
+Print_Asm_Jacket("__d_neg", "subDouble", [d,d,od], 0, $double_prefix);
 
 ################################################################
 ## Casts
