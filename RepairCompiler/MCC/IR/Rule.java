@@ -13,7 +13,7 @@ public class Rule implements Quantifiers {
     Inclusion inclusion = null;    
     SymbolTable st = new SymbolTable();
     DNFRule dnfguard=null,dnfnegguard=null;
-
+    boolean nogenerate=false;
     String label;
     
     int num;
@@ -21,6 +21,14 @@ public class Rule implements Quantifiers {
     public Rule () {
         num = count;
         label = new String("rule" + count++);
+    }
+    
+    public void setnogenerate() {
+	nogenerate=true;
+    }
+
+    public boolean getnogenerate() {
+	return nogenerate;
     }
     
     public String toString() {
@@ -125,5 +133,4 @@ public class Rule implements Quantifiers {
         
         return SetDescriptor.expand(topdescriptors);
     }
-
 }

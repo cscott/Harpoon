@@ -85,14 +85,16 @@ public class Compiler {
             
             try {
                 FileOutputStream gcode = new FileOutputStream(cli.infile + ".cc");
+                FileOutputStream gcode2 = new FileOutputStream(cli.infile + "_aux.cc");
+                FileOutputStream gcode3 = new FileOutputStream(cli.infile + "_aux.h");
 
                 // do model optimizations
                 //(new Optimizer(state)).optimize();
 
-                NaiveGenerator ng = new NaiveGenerator(state);
-                ng.generate(gcode);
-                //WorklistGenerator wg = new WorklistGenerator(state);
-                //wg.generate(gcode);
+                //NaiveGenerator ng = new NaiveGenerator(state);
+                //ng.generate(gcode);
+                RepairGenerator wg = new RepairGenerator(state);
+                wg.generate(gcode,gcode2,gcode3, cli.infile + "_aux.h");
                 gcode.close();
             } catch (Exception e) {
                 e.printStackTrace();

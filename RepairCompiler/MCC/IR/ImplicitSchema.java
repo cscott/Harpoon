@@ -299,7 +299,9 @@ public class ImplicitSchema {
 			nr.isdelay=r.isdelay;
 			nr.inclusion=new SetInclusion(((SetInclusion)r.inclusion).elementexpr,sd1);
 			nr.st=r.st;
+			nr.setnogenerate();
 			newrules.add(nr);
+			state.implicitrule.put(nr,r);
 		    }
 	    }
 	}

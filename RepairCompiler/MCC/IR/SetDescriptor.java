@@ -33,7 +33,7 @@ public class SetDescriptor extends Descriptor {
         }
 
         expanded.addAll(descriptors);
-        return expanded;        
+        return expanded;
     }
 
     public boolean isPartition() {

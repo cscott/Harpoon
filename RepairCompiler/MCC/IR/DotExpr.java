@@ -115,7 +115,7 @@ public class DotExpr extends Expr {
         // descriptor not the underlying field descriptor
 
         /* we calculate the offset in bits */
-        offsetbits = struct.getOffsetExpr(fd);                    
+        offsetbits = struct.getOffsetExpr(fd);
 
         if (fd instanceof ArrayDescriptor) {
             fd = ((ArrayDescriptor) fd).getField();

@@ -1,5 +1,5 @@
 package MCC.IR;
-
+import MCC.Compiler;
 import java.util.*;
 
 public class RelationInclusion extends Inclusion {
@@ -106,6 +106,14 @@ public class RelationInclusion extends Inclusion {
             writer.endblock();
         }
 
+        if (Compiler.REPAIR) {
+            writer.outputline("if (" + addeditem + ")");
+            writer.startblock(); {                
+                Repair.generate_dispatch(writer, relation, rd.getSafeSymbol(), ld.getSafeSymbol());
+            }
+            writer.endblock();
+        }
+
         if (!typesafe) {
             writer.endblock();
         }            
@@ -138,7 +146,6 @@ public class RelationInclusion extends Inclusion {
             sa.getErrorReporter().report(null, "Type of right element '" + rd.getSymbol() + "' must match range type '" + relation.getRange().getType().getSymbol() + "'");
             ok = false;
         }
-
         return ok;
     }
 

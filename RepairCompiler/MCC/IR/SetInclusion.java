@@ -1,5 +1,5 @@
 package MCC.IR;
-
+import MCC.Compiler;
 import java.util.*;
 
 public class SetInclusion extends Inclusion {
@@ -64,10 +64,9 @@ public class SetInclusion extends Inclusion {
         writer.outputline("int " + addeditem + " = 1;");
 
         if (dostore) {
-        
-            writer.outputline(addeditem + " = " + set.getSafeSymbol() + "_hash->add((int)" + vd.getSafeSymbol() 
+	    writer.outputline(addeditem + " = " + set.getSafeSymbol() + "_hash->add((int)" + vd.getSafeSymbol() 
                               +  ", (int)" + vd.getSafeSymbol() + ");");
-
+	    
             if (SetInclusion.worklist) {
                 writer.outputline("if (" + addeditem + ")");
                 writer.startblock(); {                
@@ -75,7 +74,14 @@ public class SetInclusion extends Inclusion {
                 }
                 writer.endblock();
             }
-
+            if (Compiler.REPAIR) {
+                writer.outputline("if (" + addeditem + ")");
+                writer.startblock(); {                
+                    Repair.generate_dispatch(writer, set, vd.getSafeSymbol());
+                }
+                writer.endblock();
+            }
+	    
         }
         
     }

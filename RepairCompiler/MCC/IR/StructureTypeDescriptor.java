@@ -88,7 +88,7 @@ public class StructureTypeDescriptor extends TypeDescriptor {
             size = new OpExpr(Opcode.ADD, fieldsize, size);
         }
         
-        return size;        
+        return size;
     }
 
     public Iterator getFields() {

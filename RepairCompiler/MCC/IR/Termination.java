@@ -66,6 +66,12 @@ public class Termination {
 	    System.out.println(mun.toString());
 	}
 	GraphAnalysis ga=new GraphAnalysis(this);
+	Set toremove=ga.doAnalysis();
+	System.out.println("Removing:");
+	for(Iterator it=toremove.iterator();it.hasNext();) {
+	    GraphNode gn=(GraphNode)it.next();
+	    System.out.println(gn.getTextLabel());
+	}
     }
     
     void generateconjunctionnodes() {

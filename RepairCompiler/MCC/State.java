@@ -33,7 +33,7 @@ public class State {
 
     public Hashtable rulenodes;
     public Hashtable constraintnodes;    
-
+    public Hashtable implicitrule;
     State() {
         vConstraints = null;
         vRules = null;
@@ -47,6 +47,7 @@ public class State {
         ptModel = null;
         ptConstraints = null;
         ptSpace = null;
+	implicitrule=new Hashtable();
     }
 
     void printall() {

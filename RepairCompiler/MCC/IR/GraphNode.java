@@ -83,7 +83,7 @@ public class GraphNode {
         return owner;
     }
 
-    public static void computeclosure(Set nodes, Set removed) {
+    public static void computeclosure(Collection nodes, Collection removed) {
 	Stack tovisit=new Stack();
 	tovisit.addAll(nodes);
 	while(!tovisit.isEmpty()) {
@@ -92,7 +92,7 @@ public class GraphNode {
 		Edge edge=(Edge)it.next();
 		GraphNode target=edge.getTarget();
 		if (!nodes.contains(target)) {
-		    if ((removed!=null)&&
+		    if ((removed==null)||
 			(!removed.contains(target))) {
 			nodes.add(target);
 			tovisit.push(target);
