@@ -43,7 +43,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.12 1999-06-30 04:52:42 pnkfelix Exp $
+ * @version $Id: Parser.cup,v 1.1.2.13 1999-07-28 23:59:01 cananian Exp $
  */
 
 action code {:
@@ -81,10 +81,13 @@ terminal Float FLOAT;
 terminal Double DOUBLE;
 // %keys
 terminal KEY_EXTRA, KEY_WEIGHT, KEY_PRED;
+// start with, end with
+terminal START_WITH, END_WITH;
 // tree nodes
 terminal BINOP, CALL, CJUMP, CONST, EXP, JUMP, LABEL;
 terminal MEM, MOVE, NAME, NATIVECALL, RETURN, SEQ, TEMP, THROW;
 terminal UNOP;
+terminal SEGMENT, DATA;
 // punctuation & brackets
 terminal LPAREN, RPAREN, LBRACK, RBRACK, LBRACE, RBRACE, LANGLE, RANGLE;
 terminal COMMA, EQUALS;
@@ -106,14 +109,23 @@ non terminal TypeSet	types, opt_types;
 non terminal Integer	binops, unops;
 non terminal Leaf	sym_binops, sym_unops, sym_number;
 non terminal Number	number;
+non terminal String     opt_start_with, opt_end_with;
 
 start with program;
 
-program	::=	GLOBAL_STATEMENTS:g CLASS_STATEMENTS:c ruleSeq:rl
+program	::=	GLOBAL_STATEMENTS:g CLASS_STATEMENTS:c 
+		opt_start_with opt_end_with ruleSeq:rl
 		{: RESULT=new Spec(g, c, rl); :}
 	|	/* error recovery.  Sync on valid ruleSeq. */
 		error ruleSeq:rl
 		{: RESULT=new Spec("","", rl); :}
+	;
+
+opt_start_with ::=
+	|	START_WITH BRACED
+	;
+opt_end_with ::=
+	|	END_WITH BRACED
 	;
 
 ruleSeq	::=	/* empty */

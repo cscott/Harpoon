@@ -6,7 +6,7 @@ package harpoon.Tools.PatMat;
 /** Input file lexer for instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Lexer.jlex,v 1.1.2.8 1999-06-30 04:52:42 pnkfelix Exp $
+ * @version $Id: Lexer.jlex,v 1.1.2.9 1999-07-28 23:59:01 cananian Exp $
  */
 %%
 
@@ -195,10 +195,14 @@ NL=([\r]|[\r]?[\n])
 <RULES>		"%weight"	{ return tok(Sym.KEY_WEIGHT); }
 <RULES>		"%pred" 	{ return tok(Sym.KEY_PRED); }
 
+<RULES>		"%start with"	{ return tok(Sym.START_WITH); }
+<RULES>		"%end with"	{ return tok(Sym.END_WITH); }
+
 <RULES>		BINOP		{ return tok(Sym.BINOP); }
 <RULES>		CALL		{ return tok(Sym.CALL); }
 <RULES>		CJUMP		{ return tok(Sym.CJUMP); }
 <RULES>		CONST		{ return tok(Sym.CONST); }
+<RULES>		DATA		{ return tok(Sym.DATA); }
 <RULES>		EXP		{ return tok(Sym.EXP); }
 <RULES>		JUMP		{ return tok(Sym.JUMP); }
 <RULES>		LABEL		{ return tok(Sym.LABEL); }
@@ -207,6 +211,7 @@ NL=([\r]|[\r]?[\n])
 <RULES>		NAME		{ return tok(Sym.NAME); }
 <RULES>		NATIVECALL	{ return tok(Sym.NATIVECALL); }
 <RULES>		RETURN		{ return tok(Sym.RETURN); }
+<RULES>		SEGMENT		{ return tok(Sym.SEGMENT); }
 <RULES>		SEQ		{ return tok(Sym.SEQ); }
 <RULES>		TEMP		{ return tok(Sym.TEMP); }
 <RULES>		THROW		{ return tok(Sym.THROW); }
