@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.19 2000-03-09 03:45:42 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.20 2000-03-22 05:14:03 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -28,6 +28,12 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     private final Linker linker;
     private GCInfo gcInfo; // should really be final
 
+    // HACK: this should really be a command-line parameter.
+    private final static String alloc_func =
+	System.getProperty("harpoon.alloc.func", "malloc");
+    private final static String is_elf =
+	System.getProperty("harpoon.target.elf", "yes");
+
     public Frame(HMethod main, ClassHierarchy ch, CallGraph cg) { 
 	super();
 	linker = main.getDeclaringClass().getLinker();
@@ -35,9 +41,10 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy(this,
-								  "malloc");
+								  alloc_func);
 	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg,
-						       false);
+						       !is_elf.equalsIgnoreCase
+						       ("yes"));
 	// FSK: CodeGen ctor needs regFileInfo set in 'this' Frame
 	// [and it also needs nameMap out of Runtime --CSA], so
 	// be careful about ordering of constructions.
