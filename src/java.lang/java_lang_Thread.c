@@ -289,6 +289,8 @@ static void * thread_startup_routine(void *closure) {
   jobject thread, threadgroup; jthrowable threadexc;
   /* set up the top of the stack for this thread for exception stack trace */
   ((struct FNI_Thread_State *)(env))->stack_top = FNI_STACK_TOP();
+  /* This thread is alive! */
+  ((struct FNI_Thread_State *)(env))->is_alive = JNI_TRUE;
   /* make sure creating thread is in cond_wait before proceeding. */
   pthread_mutex_lock(&(cls->parampass_mutex));
   /* copy thread wrapper to local stack */
@@ -318,6 +320,10 @@ static void * thread_startup_routine(void *closure) {
   /* (this also removes the thread from the ThreadGroup) */
   /* (see also Thread.EDexit() -- keep these in sync) */
   (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
+  /* This thread is dead now. */
+  ((struct FNI_Thread_State *)(env))->is_alive = JNI_FALSE;
+  /* Notify others that it's dead (before we deallocate the thread object!). */
+  FNI_MonitorNotify(env, thread, JNI_TRUE);
 #ifdef WITH_CLUSTERED_HEAPS
   /* give us a chance to deallocate the thread-clustered heap */
   NTHR_free(thread);
@@ -363,16 +369,16 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   pthread_attr_destroy(&nattr);
   /* done! */
 }
-#endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS */
 
-#if 0
 /*
  * Class:     java_lang_Thread
  * Method:    isInterrupted
  * Signature: (Z)Z
  */
 JNIEXPORT jboolean JNICALL Java_java_lang_Thread_isInterrupted
-  (JNIEnv *, jobject, jboolean);
+  (JNIEnv *env, jobject _this, jboolean clearInterrupted) {
+  return JNI_FALSE; /* XXX: no thread is ever interrupted. */
+}
 
 /*
  * Class:     java_lang_Thread
@@ -380,8 +386,12 @@ JNIEXPORT jboolean JNICALL Java_java_lang_Thread_isInterrupted
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_java_lang_Thread_isAlive
-  (JNIEnv *, jobject);
+  (JNIEnv *env, jobject _this) {
+  return EXTRACT_OTHER_ENV(env, _this)->is_alive;
+}
+#endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS */
 
+#if 0
 /*
  * Class:     java_lang_Thread
  * Method:    countStackFrames

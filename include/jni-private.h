@@ -149,6 +149,7 @@ struct FNI_Thread_State {
   struct _jobject localrefs; /* header node in a local refs list. */
   jobject thread; /* thread object corresponding to this thread state. */
   void *stack_top; /* top of stack */
+  jboolean is_alive; /* true while the thread is running */
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   pthread_t pthread; /* the pthread corresponding to this thread state. */
   pthread_cond_t sleep_cond; /* condition variable for sleep/suspend. */
