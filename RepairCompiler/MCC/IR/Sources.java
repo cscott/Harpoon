@@ -1,6 +1,7 @@
 package MCC.IR;
 
 import MCC.State;
+import MCC.Compiler;
 
 public class Sources {
     State state;
@@ -43,6 +44,13 @@ public class Sources {
 	e.generate(cr, size);
 	cr.popSymbolTable();
 	cr.outputline(td.getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"=("+td.getGenerateType().getSafeSymbol()+") malloc("+size.getSafeSymbol()+");");
+	
+	if (Compiler.ALLOCATECPLUSPLUS) {
+	    String vtable="_ZTV";
+	    vtable+=sd.getType().getSafeSymbol().length();
+	    vtable+=sd.getType().getSafeSymbol();
+	    cr.outputline("((int**)"+vd.getSafeSymbol()+")[0] = (int *)"+vtable+"+2;");
+	}
     }
 
     public boolean relsetSource(RelationDescriptor rd, boolean domain) {
@@ -75,5 +83,4 @@ public class Sources {
 	cr.popSymbolTable();
 	cr.outputline(td.getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"=("+td.getGenerateType().getSafeSymbol()+") malloc("+size.getSafeSymbol()+");");
     }
-
 }

@@ -11,7 +11,7 @@ import MCC.IR.DebugItem;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.10 2004-07-27 05:42:30 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.11 2004-08-13 19:22:23 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -105,6 +105,7 @@ public class CLI {
 	    System.out.println("-instrument -- generate instrumentation code");
 	    System.out.println("-aggressivesearch");
 	    System.out.println("-prunequantifiernodes");
+	    System.out.println("-cplusplus");
 	    System.exit(-1);
 	}
 
@@ -128,6 +129,8 @@ public class CLI {
                 Compiler.AGGRESSIVESEARCH=true;
 	    } else if (args[i].equals("-prunequantifiernodes")) {
                 Compiler.PRUNEQUANTIFIERS=true;
+	    } else if (args[i].equals("-cplusplus")) {
+                Compiler.ALLOCATECPLUSPLUS=true;
             } else if (args[i].equals("-verbose") || args[i].equals("-v")) {
                 context = 0;
                 verbose++;
