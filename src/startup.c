@@ -21,6 +21,9 @@ int main(int argc, char *argv[]) {
   jclass cls;
   jmethodID mid;
   jobject args;
+  jclass thrCls;
+  jobject mainthread;
+  jthrowable threadexc;
   char **namep;
   int i;
   
@@ -38,6 +41,10 @@ int main(int argc, char *argv[]) {
   ((struct FNI_Thread_State *)(env))->stack_top = FNI_STACK_TOP();
   /* setup main thread info. */
   FNI_java_lang_Thread_setupMain(env);
+  thrCls  = (*env)->FindClass(env, "java/lang/Thread");
+  CHECK_EXCEPTIONS(env);
+  mainthread = Java_java_lang_Thread_currentThread(env, thrCls);
+  CHECK_EXCEPTIONS(env);
 
   /* initialize pre-System.initializeSystemClass() initializers. */
   for (i=0; firstclasses[i]!=NULL; i++) {
@@ -99,12 +106,41 @@ int main(int argc, char *argv[]) {
   mid = (*env)->GetStaticMethodID(env, cls, "main", "([Ljava/lang/String;)V");
   CHECK_EXCEPTIONS(env);
   (*env)->CallStaticVoidMethod(env, cls, mid, args);
-  // XXX on exception should call
-  //   Thread.currentThread().getThreadGroup().uncaughtException(thread, ex)
-  CHECK_EXCEPTIONS(env);
+  // handle uncaught exception in main thread. (see also thread_startup)
+  if ( (threadexc = (*env)->ExceptionOccurred(env)) != NULL) {
+    // call thread.getThreadGroup().uncaughtException(thread, exception)
+    jclass thrGrpCls;
+    jobject threadgroup;
+    jmethodID gettgID, uncaughtID;
+    (*env)->ExceptionClear(env); /* clear the thread's exception */
+    // Thread.currentThread().getThreadGroup()...
+    gettgID = (*env)->GetMethodID(env, thrCls, "getThreadGroup",
+				  "()Ljava/lang/ThreadGroup;");
+    CHECK_EXCEPTIONS(env);
+    threadgroup = (*env)->CallObjectMethod(env, mainthread, gettgID);
+    CHECK_EXCEPTIONS(env);
+    // ...uncaughtException(Thread.currentThread(), exception)
+    thrGrpCls  = (*env)->FindClass(env, "java/lang/ThreadGroup");
+    CHECK_EXCEPTIONS(env);
+    uncaughtID = (*env)->GetMethodID(env, thrGrpCls, "uncaughtException",
+				 "(Ljava/lang/Thread;Ljava/lang/Throwable;)V");
+    CHECK_EXCEPTIONS(env);
+    (*env)->CallVoidMethod(env, threadgroup, uncaughtID, mainthread, threadexc);
+    CHECK_EXCEPTIONS(env); // catch exception thrown by uncaughtException() ?
+    (*env)->DeleteLocalRef(env, threadgroup);
+    (*env)->DeleteLocalRef(env, threadexc);
+  }
   (*env)->DeleteLocalRef(env, args);
   (*env)->DeleteLocalRef(env, cls);
-  // XXX: should call Thread.currentThread().exit() at this point.
+  // call Thread.currentThread().exit() at this point.
+  {
+    jmethodID exitID = (*env)->GetMethodID(env, thrCls, "exit", "()V");
+    CHECK_EXCEPTIONS(env);
+    (*env)->CallNonvirtualVoidMethod(env, mainthread, thrCls, exitID);
+    CHECK_EXCEPTIONS(env);
+  }
+  (*env)->DeleteLocalRef(env, thrCls);
+  // wait for all threads to finish up.
   FNI_java_lang_Thread_finishMain(env);
 
 #ifdef WITH_CLUSTERED_HEAPS
