@@ -12,7 +12,7 @@ import harpoon.Temp.Temp;
  * to information about the allocation done at that site.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformation.java,v 1.5 2002-11-29 20:36:46 salcianu Exp $
+ * @version $Id: AllocationInformation.java,v 1.6 2003-02-08 23:26:44 salcianu Exp $
  */
 public interface AllocationInformation<HCE extends HCodeElement>  {
     
@@ -67,7 +67,6 @@ public interface AllocationInformation<HCE extends HCodeElement>  {
 
 	/* Each sync on this object consists of NOTHING. */
 	public boolean noSync();
-
 	/** @return <code>true</code> if the dynamic write barrier 
 	 *  flag needs to be set when the object is allocated--this 
 	 *  typically means that one or more write barriers associated 
@@ -80,6 +79,10 @@ public interface AllocationInformation<HCE extends HCodeElement>  {
 	    chunk to be used for this allocation site.  Returns null
 	    if we cannot preallocate this allocation site. */
 	public HField getMemoryChunkField();
+
+	/** @return an unique integer ID for the allocation site. 
+	    Useful for instrumentation purposes. */
+	public int getUniqueID();
     }
 
     /** Query the properties of the allocation at the specified site. */

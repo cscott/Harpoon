@@ -1,3 +1,4 @@
+
 // PreallocOpt.java, created Tue Nov 26 16:19:50 2002 by salcianu
 // Copyright (C) 2000 Alexandru Salcianu <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
@@ -35,18 +36,21 @@ import harpoon.Analysis.MetaMethods.SmartCallGraph;
 import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
 import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
+import harpoon.Analysis.ChainedAllocationProperties;
 import harpoon.Analysis.AllocationInformationMap;
+import harpoon.Analysis.DefaultAllocationInformationMap;
 import harpoon.Analysis.DefaultAllocationInformation;
 import harpoon.Instrumentation.AllocationStatistics.AllocationStatistics;
 import harpoon.Analysis.Tree.Canonicalize;
 import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Generic.Runtime;
 import harpoon.Temp.Temp;
 
 /**
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.11 2003-02-03 16:19:47 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.12 2003-02-08 23:26:56 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -56,10 +60,10 @@ public abstract class PreallocOpt {
 	<code>false</code>. */
     public static boolean PREALLOC_OPT = false;
 
-    /** Map used by the optimization: assigns to each field the
-        allocation sites that can reuse the pre-allocated memory chunk
-        that will be pointed to (at runtime) by the static field. */
-    private static Map prealloc_field2classes;
+    /** Map used by the optimization: assigns to each static field the
+	size of the pre-allocated memory chunk that that field points
+	to (at runtime). */
+    private static Map/*<HField,Integer>*/ prealloc_field2size;
 
     /** Name of the wrapper class for the static fields pointing to
 	pre-allocated memory chunks. */
@@ -117,16 +121,27 @@ public abstract class PreallocOpt {
 	<code>Incompatibility Analysis</code>, prints some static and
 	dynamic statistics.
 
+	@param frame Backend specific information for compilation
+	(data size and data layout details).  Used only for
+	statistics; in particular, unused if <code>as</code> is
+	<code>null</code>.
+
 	@return QuadSSI code factory; it produces <code>Code</code>s
 	where allocation sites that can be pre-allocated have the
 	attached <code>PreallocAllocationStrategy</code>. */
     public static HCodeFactory preallocAnalysis
-	(Linker linker, HCodeFactory hcf,
-	 ClassHierarchy ch, HMethod mainM, Set roots,
-	 AllocationStatistics as, Frame frame) {
+	(Linker linker, HCodeFactory hcf, ClassHierarchy ch, HMethod mainM,
+	 Set roots, AllocationStatistics as, Frame frame) {
 
 	System.out.println("preallocAnalysis: " + hcf.getCodeName());
 
+	// The whole mumbo-jumbo with the QuadNoSSA/QuandSSI is due to
+	// the fact that some analyses (e.g., smart call graph
+	// constructor) work only with QuadNoSSA, while other works
+	// with SSI (e.g., incompatibility analysis).  In addition, we
+	// really need the intermediate representation (IR) to stay
+	// still during the analysis, so no IR cache clearing is
+	// allowed.
 	CachingCodeFactory hcf_nossa = getCachingQuadNoSSA(hcf);
 
 	boolean OLD_FLAG = QuadSSI.KEEP_QUAD_MAP_HACK;
@@ -141,21 +156,15 @@ public abstract class PreallocOpt {
 	IncompatibilityAnalysis ia = 
 	    new IncompatibilityAnalysis(mainM, hcf_ssi, cg, linker);
 
-	if(as != null) {
-	    IAStatistics.printStatistics
-		(ia, as, hcf_nossa,
-		 /*
-		 AllocationStatistics.getAllocs(cg.callableMethods(),
-						hcf_nossa),
-		 */
-		 linker, frame);
-	}
+	if(as != null)
+	    IAStatistics.printStatistics(ia, as, hcf_nossa, linker, frame);
 
 	// restore flag (the backend crashes without this ...)
 	QuadSSI.KEEP_QUAD_MAP_HACK = OLD_FLAG;
 
-	prealloc_field2classes = new HashMap();
-	addFields(linker, ia, hcf_nossa, PreallocOpt.prealloc_field2classes);
+	PreallocOpt.prealloc_field2size = new HashMap();
+	addFields(linker, ia, frame, hcf_nossa,
+		  PreallocOpt.prealloc_field2size);
 
 	return hcf_ssi;
     }
@@ -173,7 +182,8 @@ public abstract class PreallocOpt {
     }
 
 
-    // essentially a CachingCodeFactory that ignores all calls to clear()
+    /** A <code>CachingCodeFactory</code> that ignores all calls to
+        <code>clear</code> (hence the name). */
     public static class SafeCachingCodeFactory extends CachingCodeFactory {
 	public SafeCachingCodeFactory(HCodeFactory hcf, boolean saveCode) {
 	    super(hcf, saveCode);
@@ -207,21 +217,23 @@ public abstract class PreallocOpt {
 
 
     private static void addFields
-	(Linker linker, IncompatibilityAnalysis ia,
-	 HCodeFactory hcf_nossa, Map field2classes) {
+	(Linker linker, IncompatibilityAnalysis ia, Frame frame,
+	 HCodeFactory hcf_nossa, Map field2size) {
 
 	HClass pam = linker.forName(PREALLOC_MEM_CLASS_NAME);
 	HClassMutator mutator = pam.getMutator();
-	// this can be improved by directly creating an HField
+	// This can be improved by directly creating an HField.
+	// Instead, we use the easiest trick: we create fields by using
+	// a predefined field as a pattern.
 	HField pattern = pam.getDeclaredField("field_pattern");
 	int k = 0;
 
 	for(Iterator it = ia.getCompatibleClasses().iterator();
 	    it.hasNext(); k++) {
-	    Collection coll = (Collection) it.next();
+	    Collection cc = (Collection) it.next();
 	    HField f = mutator.addDeclaredField(FIELD_ROOT_NAME + k, pattern);
-	    field2classes.put(f, allocatedClasses(coll));
-	    for(Iterator it_new = coll.iterator(); it_new.hasNext(); )
+	    field2size.put(f, new Integer(sizeForCompatClass(frame, cc)));
+	    for(Iterator it_new = cc.iterator(); it_new.hasNext(); )
 		setAllocationProperties((NEW) it_new.next(), f);
 	}
 
@@ -229,22 +241,42 @@ public abstract class PreallocOpt {
     }
 
 
-    // Compute the collection of classes that are allocated by the NEW
-    // instructions from coll.
-    private static Collection allocatedClasses(Collection coll) {
-	List classes = new LinkedList();
-	for(Iterator it_new = coll.iterator(); it_new.hasNext(); )
-	    classes.add(((NEW) it_new.next()).hclass());
-	return classes;
+    // compute the size of the preallocated chunk of memory that will
+    // be used by the allocation sites from the compatibility class cc
+    private static int sizeForCompatClass(Frame frame, Collection cc) {
+	Runtime runtime = frame.getRuntime();
+	int max = -1;
+	for(Iterator it_new = cc.iterator(); it_new.hasNext(); ) {
+	    HClass hc = ((NEW) it_new.next()).hclass();
+	    int size = sizeForClass(runtime, hc);
+	    if(size > max) max = size;
+	}
+	return max;
     }
 
+    // compute the total size occupied by an object of class hclass
+    static int sizeForClass(Runtime runtime, HClass hclass) {
+	Runtime.TreeBuilder tree_builder = runtime.getTreeBuilder();
+	int size =
+	    tree_builder.objectSize(hclass) +
+	    tree_builder.headerSize(hclass);
+	// we allocate only multiples of 4 bytes
+	while((size % 4) != 0)
+	    size++;
+	return size;
+    }
+
+    static int sizeForClass(Frame frame, HClass hclass) {
+	return sizeForClass(frame.getRuntime(), hclass);
+    }
 
     private static void setAllocationProperties(NEW qn, HField f) {
 	Code code = qn.getFactory().getParent();
 	AllocationInformationMap aim = 
 	    (AllocationInformationMap) code.getAllocationInformation();
+	// Make sure there is an AllocationInfomationMap for "code"
 	if(aim == null) {
-	    aim = new MyAllocationInformationMap();
+	    aim = new DefaultAllocationInformationMap();
 	    code.setAllocationInformation(aim);
 	}
 
@@ -253,67 +285,42 @@ public abstract class PreallocOpt {
 	    formerAP = DefaultAllocationInformation.SINGLETON.query(qn);
 
 	aim.associate((HCodeElement) qn, new PreallocAP(f, formerAP));
-
-	/*
-	System.out.println
-	    ("setAllocationProperty for " + 
-	     harpoon.Analysis.PointerAnalysis.Debug.code2str(qn));
-	*/
     }
 
 
-    private static class MyAllocationInformationMap
-	extends AllocationInformationMap {
-	
-	public AllocationProperties query(HCodeElement allocationSite) {
-	    AllocationProperties ap = super.query(allocationSite);
-	    if(ap == null)
-		ap = DefaultAllocationInformation.SINGLETON.query
-		    (allocationSite);
-	    return ap;
+    private static class PreallocAP extends ChainedAllocationProperties {
+	public PreallocAP(HField hfield, AllocationProperties formerAP) {
+	    super(formerAP);
+	    this.hfield = hfield;
 	}
-    }
-
-
-    private static class PreallocAP 
-	implements AllocationInformation.AllocationProperties {
-	
-	public PreallocAP
-	    (HField hfield,
-	     AllocationInformation.AllocationProperties formerAP) {
-	    this.hfield           = hfield;
-	    this.actualClass      = formerAP.actualClass();
-	    this.hasInteriorPointers = formerAP.hasInteriorPointers();
-	    this.noSync           = formerAP.noSync();
-	    this.setDynamicWBFlag = formerAP.setDynamicWBFlag();
-	}
-
-	private HClass  actualClass;
-	private boolean hasInteriorPointers;
-	private boolean noSync;
-	private boolean setDynamicWBFlag;
-
-	public  HClass  actualClass() { return actualClass; }
+	private HField  hfield;
 	public  Temp    allocationHeap() { return null; }
 	public  boolean canBeStackAllocated() { return false; }
 	public  boolean canBeThreadAllocated() { return false; }
-	public  boolean hasInteriorPointers() { return hasInteriorPointers; }
 	public  boolean makeHeap() { return false; }
-	public  boolean noSync() { return noSync; }
-	public  boolean setDynamicWBFlag() { return setDynamicWBFlag; }
-
 	public  HField  getMemoryChunkField() { return hfield; }
-	private HField  hfield;
     }
 
 
-    // adds the code that preallocates memory and initializes the fields
+    /** Add the code that preallocates memory and initializes the
+	static fields that point to the preallocated memory chunks.
+	
+	@param linker Linker for loading classes
+
+	@param hcf    Code factory for the current vesrion of the program
+	(without the memory preallocation code).
+
+	@param frame  Backend specific information for compilation
+	(data size and data layout details).
+
+	@return A code factory that produces code that already contains the
+	memory preallocation code.  */
     public static HCodeFactory addMemoryPreallocation
 	(Linker linker, HCodeFactory hcf, Frame frame) {
 	return
 	    Canonicalize.codeFactory
 	    (new AddMemoryPreallocation
 	     (hcf, getInitMethod(linker),
-	      PreallocOpt.prealloc_field2classes, frame));
+	      PreallocOpt.prealloc_field2size, frame));
     }
 }
