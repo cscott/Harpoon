@@ -14,10 +14,9 @@ import harpoon.Util.ArrayFactory;
 import java.util.Hashtable;
 /**
  * <code>Quad</code> is the base class for the quadruple representation.<p>
- * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.14 1999-02-04 23:10:05 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.15 1999-02-05 11:42:31 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
