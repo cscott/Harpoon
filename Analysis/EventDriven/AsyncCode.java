@@ -10,11 +10,11 @@ import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.Unreachable;
 import harpoon.Analysis.Maps.TypeMap;
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HClassMutator;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HMethodMutator;
-//import harpoon.ClassFile.HClassSyn;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HField;
@@ -23,9 +23,6 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Relinker;
 import harpoon.ClassFile.UniqueName;
 
-
-//import harpoon.ClassFile.HMethodSyn;
-import harpoon.ClassFile.UpdateCodeFactory;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.CJMP;
 import harpoon.IR.Quads.CONST;
@@ -63,7 +60,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.37 2000-01-14 22:49:09 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.38 2000-01-15 01:12:31 cananian Exp $
  */
 public class AsyncCode {
 
@@ -83,7 +80,7 @@ public class AsyncCode {
      *  @param blockingcalls
      *         set of methods that block
      *  @param ucf
-     *         <code>UpdateCodeFactory</code> with which to register new
+     *         <code>CachingCodeFactory</code> with which to register new
      *         <code>HCode</code>
      *  @param bm
      *         <code>ToAsync.BlockingMethods</code> object which tells
@@ -93,7 +90,7 @@ public class AsyncCode {
     public static void buildCode(HCode hc, Map old2new, Set async_todo, 
 			   QuadLiveness liveness,
 			   Set blockingcalls, 
-			   UpdateCodeFactory ucf, ToAsync.BlockingMethods bm, HMethod mroot, Linker linker, ClassHierarchy ch) 
+			   CachingCodeFactory ucf, ToAsync.BlockingMethods bm, HMethod mroot, Linker linker, ClassHierarchy ch) 
 	throws NoClassDefFoundError
     {
 	System.out.println("Entering AsyncCode.buildCode()");
@@ -131,7 +128,7 @@ public class AsyncCode {
 	boolean header;
 	CloningVisitor clonevisit;
 	QuadLiveness liveness;
-	UpdateCodeFactory ucf;
+	CachingCodeFactory ucf;
 	Linker linker;
 
 
@@ -139,7 +136,7 @@ public class AsyncCode {
 			   Map old2new, Map cont_map, 
 			   Map env_map, QuadLiveness liveness,
 			   Set blockingcalls, HMethod hmethod, 
-			   HCode hc, UpdateCodeFactory ucf,
+			   HCode hc, CachingCodeFactory ucf,
 			   ToAsync.BlockingMethods bm, HMethod mroot, 
 			   Linker linker, ClassHierarchy ch) {
 	    this.liveness=liveness;
@@ -176,7 +173,7 @@ public class AsyncCode {
 	    System.out.println("Reset clone visitor");
 	    copy(q,-1);
 	    System.out.println("Finished copying");
-	    ucf.update(nhm, clonevisit.getCode());
+	    ucf.put(nhm, clonevisit.getCode());
 	}
 
 	public void visit(CALL q) {
@@ -199,13 +196,13 @@ public class AsyncCode {
 	    copy(q,0);
 	    System.out.println("Finished resume copying");
 	    //addEdges should add appropriate headers
-	    ucf.update(resume, clonevisit.getCode());
+	    ucf.put(resume, clonevisit.getCode());
 	    //Exception method
 	    clonevisit.reset(exception, q.getFactory().tempFactory(), true);
 	    copy(q,1);
 	    System.out.println("Finished exception copying");
 	    //addEdges should add appropriate headers
-	    ucf.update(exception, clonevisit.getCode());
+	    ucf.put(exception, clonevisit.getCode());
 	}
 
 	//copies the necessary quads from the original HCode
@@ -259,7 +256,7 @@ public class AsyncCode {
 	boolean isCont;
 	Map env_map;
 	QuadLiveness liveness;
-	UpdateCodeFactory ucf;
+	CachingCodeFactory ucf;
 	HCode hc;
 	WorkSet linkFooters;
 	Temp tthis;
@@ -273,7 +270,7 @@ public class AsyncCode {
 			      Map cont_map, Map env_map, 
 			      QuadLiveness liveness, Set async_todo,
 			      Map old2new, 
-			      HCode hc, UpdateCodeFactory ucf,
+			      HCode hc, CachingCodeFactory ucf,
 			      ToAsync.BlockingMethods bm, HMethod mroot, 
 			      Linker linker, ClassHierarchy ch) {
 	    this.liveness=liveness;
@@ -927,7 +924,7 @@ public class AsyncCode {
     // create asynchronous version of HMethod to replace blocking version
     // does not create HCode that goes w/ it...
     public static HMethod makeAsync(Map old2new, HMethod original,
-			      UpdateCodeFactory ucf, Linker linker)
+			      CachingCodeFactory ucf, Linker linker)
     {
 	//	final HMethod original = blocking.method();
 	HClass originalClass = original.getDeclaringClass();
@@ -1006,7 +1003,7 @@ public class AsyncCode {
 
     // creates the HClass and constructor for the continuation
     private static HClass createContinuation(HMethod blocking, CALL callsite,
-				      UpdateCodeFactory ucf, Linker linker) 
+				      CachingCodeFactory ucf, Linker linker) 
 	throws NoClassDefFoundError
     {
 	final HClass template = 
@@ -1069,7 +1066,7 @@ public class AsyncCode {
 		HCode hchc = ((Code)ucf.convert(hmethods[i])).clone(nhm);
 		(new ChangingVisitor(template,continuationClass))
 		    .reName((Quad)hchc.getRootElement());
-		ucf.update(nhm, hchc);
+		ucf.put(nhm, hchc);
 	    } catch (NoSuchMethodError e) {
 		System.err.println(e);
 	    }

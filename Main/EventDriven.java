@@ -13,7 +13,6 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.Relinker;
-import harpoon.ClassFile.UpdateCodeFactory;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.WorkSet;
 
@@ -34,7 +33,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.5 2000-01-13 23:50:18 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.6 2000-01-15 01:12:32 cananian Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
@@ -68,7 +67,7 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	ccf = 
 	    harpoon.IR.Quads.QuadNoSSA.codeFactoryWithTypes(ccf);
 	System.out.println("Doing UpdatingCodeFactory");
-	UpdateCodeFactory hcf = new UpdateCodeFactory(ccf);
+	CachingCodeFactory hcf = new CachingCodeFactory(ccf);
 
 	Collection c = new WorkSet();
 	c.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
@@ -155,7 +154,7 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 		    hcf2a.convert(hm[j]).print(out);
 		}
 		//remove to help with Memory usage
-		hcf.remove(hm[j]);
+		hcf.clear(hm[j]);
 		if (hca[j]!=null) hca[j].print(out);
 	    }
 	    int andmask=

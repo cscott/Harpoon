@@ -5,14 +5,11 @@ package harpoon.Analysis.ContBuilder;
 
 import harpoon.Analysis.EnvBuilder.EnvBuilder;
 import harpoon.Analysis.Quads.DeadCode;
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
-//import harpoon.ClassFile.HClassSyn;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HConstructor;
-//import harpoon.ClassFile.HConstructorSyn;
 import harpoon.ClassFile.HMethod;
-//import harpoon.ClassFile.HMethodSyn;
-import harpoon.ClassFile.UpdateCodeFactory;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.CALL;
 import harpoon.Temp.Temp;
@@ -22,14 +19,14 @@ import harpoon.Util.Util;
  * <code>ContBuilder</code> builds continuations for a given <code>CALL</code>
  * using the <code>CALL</code>'s <code>HCode</code>, storing the
  * <code>Code</code> for the continuation in the 
- * <code>UpdateCodeFactory</code>. The generated <code>Code</code> is in
+ * <code>CachingCodeFactory</code>. The generated <code>Code</code> is in
  * <code>quad-no-ssa</code> form.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContBuilder.java,v 1.1.2.6 2000-01-13 23:52:27 bdemsky Exp $
+ * @version $Id: ContBuilder.java,v 1.1.2.7 2000-01-15 01:12:19 cananian Exp $
  */
 public class ContBuilder {
-    protected final UpdateCodeFactory ucf;
+    protected final CachingCodeFactory ucf;
     protected final HCode hc;
     protected final CALL c;
     protected final HClass env;
@@ -39,7 +36,7 @@ public class ContBuilder {
      *  <code>CALL</code>, given the <code>HCode</code> from which it came.
      *  Requires that the <code>HCode</code> be <code>quad-no-ssa</code>.
      */
-    public ContBuilder(UpdateCodeFactory ucf, HCode hc, CALL c, HClass env,
+    public ContBuilder(CachingCodeFactory ucf, HCode hc, CALL c, HClass env,
 		       Temp[] live) {
         this.ucf = ucf;
 	this.hc = hc;

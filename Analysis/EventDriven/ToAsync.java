@@ -8,14 +8,12 @@ import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.ContBuilder.ContBuilder;
 import harpoon.Analysis.EnvBuilder.EnvBuilder;
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
-//import harpoon.ClassFile.HClassSyn;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.Linker;
-//import harpoon.ClassFile.HMethodSyn;
-import harpoon.ClassFile.UpdateCodeFactory;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Quad;
@@ -35,16 +33,16 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.8 2000-01-14 22:27:11 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.9 2000-01-15 01:12:31 cananian Exp $
  */
 public class ToAsync {
-    protected final UpdateCodeFactory ucf;
+    protected final CachingCodeFactory ucf;
     protected final HCode hc;
     protected final ClassHierarchy ch;
     protected final Linker linker;
 
     /** Creates a <code>ToAsync</code>. */
-    public ToAsync(UpdateCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker) {
+    public ToAsync(CachingCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker) {
 	this.linker=linker;
         this.ucf = ucf;
 	this.hc = hc;

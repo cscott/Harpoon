@@ -4,11 +4,11 @@
 package harpoon.Analysis.EventDriven;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
-import harpoon.ClassFile.UpdateCodeFactory;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.Quad;
@@ -23,22 +23,22 @@ import java.util.Map;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.5 2000-01-13 23:51:10 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.6 2000-01-15 01:12:31 cananian Exp $
  */
 public class EventDriven {
-    protected final UpdateCodeFactory ucf;
+    protected final CachingCodeFactory ucf;
     protected final HCode hc;
     protected final ClassHierarchy ch;
     protected Map classmap;
     protected final Linker linker;
 
-    /** Creates a <code>EventDriven</code>. The <code>UpdateCodeFactory</code>
+    /** Creates a <code>EventDriven</code>. The <code>CachingCodeFactory</code>
      *  needs to have been created from a <code>QuadNoSSA</code> that contains
      *  type information.
      *
      *  <code>HCode</code> needs to be the <code>HCode</code> for main.
      */
-    public EventDriven(UpdateCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker) {
+    public EventDriven(CachingCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker) {
         this.ucf = ucf;
 	this.hc = hc;
 	this.ch = ch;
@@ -65,7 +65,7 @@ public class EventDriven {
 	METHOD method=(METHOD) (header.next(1));
 	params=method.params();
 
-	this.ucf.update(oldmain, new EventDrivenCode(oldmain, newmain, params, linker));
+	this.ucf.put(oldmain, new EventDrivenCode(oldmain, newmain, params, linker));
 	return oldmain;
     }
 }

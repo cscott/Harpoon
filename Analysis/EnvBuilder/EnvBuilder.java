@@ -6,16 +6,13 @@ package harpoon.Analysis.EnvBuilder;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.Quads.SCC.SCCAnalysis;
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
-//import harpoon.ClassFile.HClassSyn;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HConstructor;
-//import harpoon.ClassFile.HConstructorSyn;
 import harpoon.ClassFile.HField;
-//import harpoon.ClassFile.HFieldSyn;
-import harpoon.ClassFile.UpdateCodeFactory;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.HClassMutator;
@@ -36,10 +33,10 @@ import java.util.Set;
  * <code>EnvBuilder</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvBuilder.java,v 1.1.2.6 2000-01-14 10:07:44 bdemsky Exp $
+ * @version $Id: EnvBuilder.java,v 1.1.2.7 2000-01-15 01:12:28 cananian Exp $
  */
 public class EnvBuilder {
-    protected final UpdateCodeFactory ucf;
+    protected final CachingCodeFactory ucf;
     protected final HCode hc;
     protected final HCodeElement hce;
     protected static int counter = 0;
@@ -50,9 +47,9 @@ public class EnvBuilder {
      *  <code>HCode</code> and <code>HCodeElement</code> objects
      *  be in quad-no-ssa form because <code>QuadLiveness</code>
      *  works with quad-no-ssa. <code>HCodeFactory</code> must
-     *  be an <code>UpdateCodeFactory</code>.
+     *  be an <code>CachingCodeFactory</code>.
      */
-    public EnvBuilder(UpdateCodeFactory ucf, HCode hc, HCodeElement hce, Temp[] lives, Linker linker) {
+    public EnvBuilder(CachingCodeFactory ucf, HCode hc, HCodeElement hce, Temp[] lives, Linker linker) {
 	this.ucf = ucf;
         this.hc = hc;
 	this.hce = hce;
@@ -122,7 +119,7 @@ public class EnvBuilder {
 	ncmutator.setParameterNames(parameterNames);
 	ncmutator.setParameterTypes(parameterTypes);
 	
-	ucf.update(nc, new EnvCode(nc, fields));
+	ucf.put(nc, new EnvCode(nc, fields));
 	
 	System.out.println("Leaving EnvBuilder.makeEnv()");
 	return env;

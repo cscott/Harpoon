@@ -8,10 +8,11 @@ import java.util.Map;
 
 /**
  * A <code>CachingCodeFactory</code> caches the conversions performed by
- * a parent <code>HCodeFactory</code>.
+ * a parent <code>HCodeFactory</code>; the cache can also be directly
+ * modified in order to add or replace method implementations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CachingCodeFactory.java,v 1.1.2.3 1999-08-07 11:17:21 cananian Exp $
+ * @version $Id: CachingCodeFactory.java,v 1.1.2.4 2000-01-15 01:12:32 cananian Exp $
  */
 public class CachingCodeFactory implements SerializableCodeFactory {
     /** Parent code factory. Creates the representations this
