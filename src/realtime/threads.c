@@ -440,15 +440,29 @@ void DisableThread(struct thread_queue_struct* queue)
   queue->queue_state = IN_MUTEX_QUEUE;
   switching_state = StopSwitching();
 
-  getSchedMethod = 
-    (*env)->GetMethodID(env, (*env)->GetObjectClass(env, thread),
-			"getScheduler",
-			"()Ljavax/realtime/Scheduler;");
-  assert(!((*env)->ExceptionOccurred(env)));
-  
-  scheduler = (*env)->CallObjectMethod(env, thread, getSchedMethod);
-  assert(!((*env)->ExceptionOccurred(env)));
-  
+  if (thread != NULL) {
+    getSchedMethod = 
+      (*env)->GetMethodID(env, (*env)->GetObjectClass(env, thread),
+			  "getScheduler",
+			  "()Ljavax/realtime/Scheduler;");
+    assert(!((*env)->ExceptionOccurred(env)));
+    
+    scheduler = (*env)->CallObjectMethod(env, thread, getSchedMethod, NULL);
+    assert(!((*env)->ExceptionOccurred(env)));
+  } else {
+    jclass schedClaz = (*env)->FindClass(env, "javax/realtime/Scheduler");
+    assert(!((*env)->ExceptionOccurred(env)));
+    getSchedMethod = 
+      (*env)->GetStaticMethodID(env, schedClaz,
+				"getDefaultScheduler",
+				"()Ljavax/realtime/Scheduler;");
+    assert(!((*env)->ExceptionOccurred(env)));
+
+    scheduler = (*env)->CallStaticObjectMethod(env, schedClaz,
+					       getSchedMethod, NULL);
+    assert(!((*env)->ExceptionOccurred(env)));
+  }  
+
   if(scheduler == NULL) {
     FNI_DeleteLocalRefsUpTo(env, ref_marker);
     RestoreSwitching(switching_state);
