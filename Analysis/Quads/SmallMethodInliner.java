@@ -27,10 +27,10 @@ import java.util.Set;
  * the code is bloated by the specified amount.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SmallMethodInliner.java,v 1.4 2002-09-13 19:14:50 wbeebee Exp $
+ * @version $Id: SmallMethodInliner.java,v 1.5 2003-05-01 20:05:16 salcianu Exp $
  */
 public class SmallMethodInliner extends MethodInliningCodeFactory {
-    static final int NPERCENT= // default to 10 percent bloat.
+    static final int NPERCENT= // default to 25 percent bloat.
 	Integer.parseInt(System.getProperty("harpoon.inliner.percent", "25"));
 
     /** Creates a <code>SmallMethodInliner</code>. */
