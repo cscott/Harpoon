@@ -39,7 +39,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.6 2000-10-11 18:20:40 witchel Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.7 2000-10-20 02:22:25 witchel Exp $
  */
 public class RegFileInfo
 extends harpoon.Backend.Generic.RegFileInfo 
@@ -96,10 +96,10 @@ implements harpoon.Backend.Generic.LocationFactory
      */
    public RegFileInfo() {
       // On MIPS, $0 = zero $1 = assembler reg, 26 & 27 are for the kernel
-      // I'm not sure what to do about the GP, for now discount it.
+      // We exclude 28 (gp) since C code asssumes it has a useful value
       reg = new Temp[32];
       regGeneral = new Temp[32];
-      callerSaveRegs = new LinearSet(17);
+      callerSaveRegs = new LinearSet(18);
       calleeSaveRegs = new LinearSet(10);
       liveOnExitRegs = new LinearSet(4);
       regtf = new TempFactory() {
@@ -198,6 +198,7 @@ implements harpoon.Backend.Generic.LocationFactory
       callerSaveRegs.add(T7);
       callerSaveRegs.add(T8);
       callerSaveRegs.add(T9);
+      callerSaveRegs.add(GP);
       callerSaveRegs.add(LR);  // lr
 	
       // callee saves s0-s8, sp
@@ -215,16 +216,20 @@ implements harpoon.Backend.Generic.LocationFactory
       oneWordAssigns = new HashSet();
       // Start at 2 because R0 == 0 and R1 is the assembler register.
       for (int i=2; i<regGeneral.length; i++) {
-         Temp[] assign = new Temp[] { regGeneral[i] };
-         oneWordAssigns.add(Arrays.asList(assign));
+         if(excludeReg(i) == false) {
+            Temp[] assign = new Temp[] { regGeneral[i] };
+            oneWordAssigns.add(Arrays.asList(assign));
+         }
       }
       oneWordAssigns = Collections.unmodifiableSet(oneWordAssigns);
       twoWordAssigns = new HashSet();
       // Start at 2 because R0 == 0 and R1 is the assembler register.
       for (int i=2; i<regGeneral.length-1; i++) {
-         Temp[] assign = new Temp[] { regGeneral[i] ,
-                                      regGeneral[i+1] };
-         twoWordAssigns.add(Arrays.asList(assign));
+         if(excludeReg(i) == false && excludeReg(i+1) == false) {
+            Temp[] assign = new Temp[] { regGeneral[i] ,
+                                         regGeneral[i+1] };
+            twoWordAssigns.add(Arrays.asList(assign));
+         }
       }
       twoWordAssigns = Collections.unmodifiableSet(twoWordAssigns);
 
@@ -362,10 +367,22 @@ implements harpoon.Backend.Generic.LocationFactory
     * allocation */ 
    private boolean excludeReg(int reg) {
       // These registers are used by the yellow pekoe assembler
-      if(reg == 13) return true;
       if(reg == 14) return true;
       if(reg == 15) return true;
       if(reg == 24) return true;
+      if(reg == 25) return true;
+
+      // These are the kernel registers
+      if(reg == 26) return true;
+      if(reg == 27) return true;
+
+      // We exlude the GP since the C code we call into assumes GP has
+      // a proper value
+      // GP, SP, FP, LR
+      if(reg == 28) return true;
+      if(reg == 29) return true;
+      if(reg == 30) return true;
+      if(reg == 31) return true;
       return false;
    }
 
