@@ -24,7 +24,7 @@ import java.util.Set;
  * <code>DataStrings</code> lays out string constant objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataStrings.java,v 1.3 2002-04-10 03:03:20 cananian Exp $
+ * @version $Id: DataStrings.java,v 1.4 2002-08-06 20:01:32 cananian Exp $
  */
 public class DataStrings extends Data {
     final NameMap m_nm;
@@ -64,6 +64,10 @@ public class DataStrings extends Data {
 		if (hf.getName().equals("offset") &&
 		    hf.getDeclaringClass().equals(HCstr))
 			return new Integer(0);
+		// special test for GNU classpath libraries.
+		if (hf.getName().equals("cachedHashCode") &&
+		    hf.getDeclaringClass().equals(HCstr))
+		    return new Integer(str.hashCode());
 		throw new Error("Unknown field "+hf+" of string object.");
 	    }
 	    final HClass HCstr = linker.forName("java.lang.String");
