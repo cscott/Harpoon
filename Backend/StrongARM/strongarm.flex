@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.StrongARM;
 
-%% --> public class
+%% 
 // inside the class
 private void emitMoveConst(Temp t, Number n) {
     // constant immediates are rather restricted in possible values in the
