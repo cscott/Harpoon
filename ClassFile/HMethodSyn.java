@@ -4,6 +4,7 @@
 package harpoon.ClassFile;
 
 import java.lang.reflect.Modifier;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -14,38 +15,43 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.5 1998-10-21 17:24:22 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.6 1998-10-21 21:50:24 cananian Exp $
  * @see HMember
  * @see HClass
  */
 public class HMethodSyn extends HMethod {
 
-  //the common constructor 
-  private void init (HMethod template){
+  /** Create a new method based on a template. 
+   *  The new method will be added to the class containing the 
+   *  template method. The parent class of the template method must be
+   *  an <code>HClassSyn</code>. */
+  public HMethodSyn(HMethod template) {
+    this((HClassSyn)(template.getDeclaringClass()), template);
+  }
+  
+  /** Create a new method like the <code>template</code>, 
+   *  but in class <code>parent</code>. 
+   *  The new method will be added to class <code>parent</code>. */
+  public HMethodSyn(HClassSyn parent, HMethod template) {
+    this.parent = parent;
+    this.name = uniqueName(parent, template.getName(), 
+			   template.getDescriptor());
     this.modifiers = template.getModifiers();
     this.returnType = template.getReturnType();
     this.parameterTypes = template.getParameterTypes();
     this.parameterNames = template.getParameterNames();
     this.exceptionTypes = template.getExceptionTypes();
     this.isSynthetic = template.isSynthetic();
-    ((HClassSyn)this.parent).addDeclaredMethod(this);
-  }
+    parent.addDeclaredMethod(this);
 
-  /** Create a new method based on a template. */
-  public HMethodSyn(HMethod template) {
-    this.parent = template.getDeclaringClass();
-    this.name = uniqueName(parent, template.getName(),
-			   template.getDescriptor());
-    init (template);
-  }
-
-  //should be called only by HClassSyn constructor
-  HMethodSyn(HMethod template, HClassSyn parent) {
-    this.parent = parent;
-    this.name = template.getName();
-    HCode newCode = template.getCode ("quad-ssa");
-    if (newCode != null){
-      this.putCode (newCode);
+    // clone all code representations.
+    for (Enumeration e = template.codetable.keys(); e.hasMoreElements(); ) {
+      HCode oldCode = (HCode) template.getCode((String)e.nextElement());
+      try {
+	this.putCode(oldCode.clone(this));
+      } catch (CloneNotSupportedException cnse) {
+	/* ignore this HCode; it can't be cloned. */
+      }
     }
   }
 
@@ -54,28 +60,17 @@ public class HMethodSyn extends HMethod {
    *  that throws no checked exceptions.
    *  Adding code to the method will make it non-abstract.
    */
-
-  public HMethodSyn(HClass parent, String name, HClass[] paramTypes, HClass returnType) {
+  public HMethodSyn(HClassSyn parent, String name, 
+		    HClass[] paramTypes, HClass returnType) {
     this(parent, name, makeDescriptor (paramTypes, returnType));
   }
   
-  private static String makeDescriptor(HClass[] paramTypes, HClass returnType){
-    StringBuffer sb = new StringBuffer();
-    sb.append ('(');
-    for (int i = 0; i < paramTypes.length; i++){
-      sb.append (paramTypes[i].getDescriptor());
-    }
-    sb.append (')');
-    sb.append (returnType.getDescriptor());
-    return  sb.toString();
-  }
-
   /** Create a new empty abstract method in the specified class
    *  with the specified descriptor
    *  that throws no checked exceptions.
    *  Adding code to the method will make it non-abstract.
    */
-  public HMethodSyn(HClass parent, String name, String descriptor) {
+  public HMethodSyn(HClassSyn parent, String name, String descriptor) {
     this.parent = parent;
     this.name = uniqueName(parent, name, descriptor);
     this.modifiers = Modifier.ABSTRACT;
@@ -97,7 +92,7 @@ public class HMethodSyn extends HMethod {
     this.parameterNames = new String[this.parameterTypes.length];
     this.exceptionTypes = new HClass[0];
     this.isSynthetic = false;
-    ((HClassSyn)parent).addDeclaredMethod(this);
+    parent.addDeclaredMethod(this);
   }
 
   public void setModifiers(int m) { this.modifiers = m; }
@@ -141,6 +136,34 @@ public class HMethodSyn extends HMethod {
     super.putCode(codeobj);
     // if it's got code, it's not abstract.
     this.modifiers &= ~Modifier.ABSTRACT;
+  }
+  /** Remove a specified code representation for this method. 
+   *  If there are no code representations left, sets the 
+   *  <code>abstract</code> modifier. */
+  public void removeCode(String codetype) {
+    codetable.remove(codetype);
+    if (codetable.size()==0) this.modifiers |= Modifier.ABSTRACT;
+  }
+  /** Remove all code representations for this method.
+   *  Sets the <code>abstract</code> modifier. */
+  public void removeAllCode() {
+    codetable.clear();
+    this.modifiers |= Modifier.ABSTRACT;
+  }
+
+  //----------------------------------------------------------
+
+  /** Make a mathod descriptor string given parameter and return value types.
+   *  A helper function. */
+  private static String makeDescriptor(HClass[] paramTypes, HClass returnType){
+    StringBuffer sb = new StringBuffer();
+    sb.append ('(');
+    for (int i = 0; i < paramTypes.length; i++){
+      sb.append (paramTypes[i].getDescriptor());
+    }
+    sb.append (')');
+    sb.append (returnType.getDescriptor());
+    return  sb.toString();
   }
 }
 

@@ -7,17 +7,19 @@ import harpoon.ClassFile.*;
 import harpoon.Util.Util;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+
+import java.util.Hashtable;
 /**
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.24 1998-10-12 01:14:11 cananian Exp $
+ * @version $Id: Quad.java,v 1.25 1998-10-21 21:50:40 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
                harpoon.IR.Properties.UseDef, harpoon.IR.Properties.Edges,
-               harpoon.IR.Properties.Renameable
+               harpoon.IR.Properties.Renameable, Cloneable
 {
     HCodeElement source;
     int id;
@@ -133,5 +135,40 @@ public abstract class Quad
     public static void addEdges(Quad[] quadlist) {
 	for (int i=0; i<quadlist.length-1; i++)
 	    addEdge(quadlist[i], 0, quadlist[i+1], 0);
+    }
+
+    //-----------------------------------------------------
+    /** Create a new copy of a string of <code>Quad</code>s starting at
+     *  the given header. */
+    public static Quad clone(Quad header) throws CloneNotSupportedException
+    {
+	Util.assert(header instanceof HEADER);
+	return copyone(header, new Hashtable());
+    }
+    private static Quad copyone(Quad q, Hashtable old2new)
+	throws CloneNotSupportedException
+    {
+	Quad r = (Quad) old2new.get(q);
+	// if we've already done this one, return previous clone.
+	if (r!=null) return r;
+	// clone the fields, add to hashtable.
+	r = (Quad) q.clone();
+	old2new.put(q, r);
+	// fixup the footer for HEADER quads.
+	if (q instanceof HEADER) {
+	    ((HEADER)q).footer = (FOOTER) copyone(((HEADER)q).footer, old2new);
+	}
+	// fixup the edges.
+	for (int i=0; i<q.next.length; i++) {
+	    Util.assert(q.next[i].from == q);
+	    Quad to = copyone(q.next[i].to, old2new);
+	    Quad.addEdge(r, q.next[i].from_index, to, q.next[i].to_index);
+	}
+	for (int i=0; i<q.prev.length; i++) {
+	    Util.assert(q.prev[i].to == q);
+	    Quad from = copyone(q.prev[i].from, old2new);
+	    Quad.addEdge(from, q.next[i].from_index, r, q.next[i].to_index);
+	}
+	return r;
     }
 }

@@ -20,7 +20,7 @@ import java.util.Stack;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.28 1998-10-21 15:58:47 cananian Exp $
+ * @version $Id: Code.java,v 1.29 1998-10-21 21:50:40 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -43,12 +43,12 @@ public class Code extends HCode {
 	DeadCode.optimize(this); // get rid of unused phi/sigmas.
     }
     /** 
-     * Create a new (synthetic) code object given a quadruple representation
+     * Create a new code object given a quadruple representation
      * of the method instructions.  If <code>addPhi</code> is true,
      * adds phi and sigma functions to the <code>PHI</code> and
      * <code>SIGMA</code> quads in the representations.
      */
-    public Code(HMethodSyn parent, Quad quads, boolean addPhi) {
+    public Code(HMethod parent, Quad quads, boolean addPhi) {
 	this.parent = parent;
 	this.quads = quads;
 	Util.assert(quads instanceof HEADER);
@@ -59,9 +59,16 @@ public class Code extends HCode {
 	DeadCode.optimize(this);
     }
     /** Same as above; with <code>addPhi==false</code>. */
-    public Code(HMethodSyn parent, Quad quads) {
+    public Code(HMethod parent, Quad quads) {
 	this(parent, quads, false);
     }
+
+    /** Clone this code representation. The clone has its own
+     *  copy of the quad graph. */
+    public HCode clone(HMethod newMethod) throws CloneNotSupportedException {
+	return new Code(newMethod, Quad.clone(quads));
+    }
+
     /**
      * Return the <code>HMethod</code> this codeview
      * belongs to.

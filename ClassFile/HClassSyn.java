@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.5 1998-10-21 17:05:45 nkushman Exp $
+ * @version $Id: HClassSyn.java,v 1.6 1998-10-21 21:50:24 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class HClassSyn extends HClassCls {
@@ -27,14 +27,21 @@ public class HClassSyn extends HClassCls {
     this.superclass = template.getSuperclass();
     this.interfaces = template.getInterfaces();
     this.modifiers  = template.getModifiers();
-    //XXX fix this field crap!!
-    this.declaredFields = template.getDeclaredFields();
+    this.sourcefile = template.getSourceFile();
+
+    this.declaredFields = new HFieldSyn[0];
+    HField fields[] = template.getDeclaredFields();
+    for (int i=0; i < fields.length; i++) {
+      new HFieldSyn(this, fields[i]);
+    }
+    Util.assert(fields.length == declaredFields.length);
+
     this.declaredMethods= new HMethodSyn[0];
     HMethod methods[] = template.getDeclaredMethods();
     for (int i = 0; i < methods.length; i++){
-      new HMethodSyn (methods[i], this);
+      new HMethodSyn(this, methods[i]);
     }
-    this.sourcefile = template.getSourceFile();
+    Util.assert(methods.length == declaredMethods.length);
   }
   /** Create a new, empty <code>HClassSyn</code>. 
    *  Default is to create an Interface.
@@ -88,13 +95,51 @@ public class HClassSyn extends HClassCls {
   }
 
   public void setModifiers(int m) { 
-    /*if (Modifier.isInterface(m) != Modifier.isInterface(modifiers))
-      throw new Error("Can't turn a class into an interface or vice versa.");*/
+    // are we changing an interface to a class?
+    if ( Modifier.isInterface(modifiers) && !Modifier.isInterface(m)) {
+      // make sure there are no superclasses or superinterfaces.
+      Util.assert(superclass==null); // should be true for interfaces.
+      if (interfaces.length!=0)
+	throw new Error("Can't change a subinterface to a class. "+
+			"Remove the inheritance first. ("+this+")");
+      // inherit from java.lang.Object.
+      superclass = HClass.forName("java.lang.Object");
+      // tag all the methods as abstract.
+      for (int i=0; i<declaredMethods.length; i++)
+	((HMethodSyn)declaredMethods[i]).setModifiers
+	  (declaredMethods[i].getModifiers() | Modifier.ABSTRACT);
+    }
+    // are we changing a class to an interface?
+    if (!Modifier.isInterface(modifiers) &&  Modifier.isInterface(m)) {
+      // make sure there are no superclasses or superinterfaces.
+      if (superclass != null && 
+	  superclass != HClass.forName("java.lang.Object"))
+	throw new Error("Can't change a subclass to an interface. "+
+			"Remove the inheritance first. ("+this+")");
+      if (interfaces.length!=0)
+	throw new Error("Can't change a class implementing interfaces "+
+			"to an interface itself. Remove the inheritance "+
+			"first. ("+this+")");
+      // interfaces have no superclass.
+      superclass = null;
+      // tag all the methods as abstract & strip the code.
+      for (int i=0; i<declaredMethods.length; i++) {
+	HMethodSyn hm = (HMethodSyn) declaredMethods[i];
+	hm.setModifiers(hm.getModifiers() | Modifier.ABSTRACT);
+	hm.removeAllCode();
+      }
+    }
     modifiers = m;
   }
 
   public void setSuperclass(HClass sc) {
-    // XX FIXME: sanity check?
+    if (sc==null)
+      throw new Error("This is very odd.  " +
+		      "Do you realize you're trying to create a new "+
+		      "top-level object?  I'm not sure I should allow this."+
+		      "  Please mail me at cananian@alumni.princeton.edu and "+
+		      "tell me why you think it's a good idea.");
+    // XXX more sanity checks?
     superclass = sc;
   }
 
@@ -110,6 +155,10 @@ public class HClassSyn extends HClassCls {
       }
     }
     throw new NoClassDefFoundError(in.toString());
+  }
+  public void removeAllInterfaces() {
+    // wheee.
+    interfaces = new HClass[0];
   }
 
   /**

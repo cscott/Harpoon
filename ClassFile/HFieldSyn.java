@@ -12,29 +12,42 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldSyn.java,v 1.2 1998-10-16 11:15:38 cananian Exp $
+ * @version $Id: HFieldSyn.java,v 1.3 1998-10-21 21:50:24 cananian Exp $
  * @see HMember
  * @see HClass
  */
 public class HFieldSyn extends HField {
+  /** Create a new field based on a template.  The new method will be added
+   *  to the class containing the template method. The parent class of
+   *  the template method must be an <code>HClassSyn</code>. */
   public HFieldSyn(HField template) {
-    this.parent = template.getDeclaringClass();
+    this((HClassSyn)(template.getDeclaringClass()), template);
+  }
+  /** Create a new field like the <code>template</code>, 
+   *  but in class <code>parent</code>. 
+   *  The new field will be added to class <code>parent</code>. */
+  public HFieldSyn(HClassSyn parent, HField template) {
+    this.parent = parent;
     this.type = template.getType();
     this.name = uniqueName(parent, template.getName());
     this.modifiers = template.getModifiers();
     this.constValue = template.getConstant();
     this.isSynthetic = template.isSynthetic();
-    ((HClassSyn)parent).addDeclaredField(this);
+    parent.addDeclaredField(this);
+  }
+  /** Create a new field with the specified name, class and descriptor. */
+  public HFieldSyn(HClassSyn parent, String name, String descriptor) {
+    this(parent, name, HClass.forDescriptor(descriptor));
   }
   /** Create a new field of the specified name, class, and type. */
-  public HFieldSyn(HClass parent, HClass type, String name) {
+  public HFieldSyn(HClassSyn parent, String name, HClass type) {
     this.parent = parent;
     this.type = type;
     this.name = uniqueName(parent, name);
     this.modifiers = 0;
     this.constValue = null;
     this.isSynthetic = false;
-    ((HClassSyn)parent).addDeclaredField(this);
+    parent.addDeclaredField(this);
   }
 
   public void setModifiers(int m) { this.modifiers = m; }

@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.28 1998-10-16 11:42:57 cananian Exp $
+ * @version $Id: HMethod.java,v 1.29 1998-10-21 21:50:24 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -104,7 +104,7 @@ public abstract class HMethod implements HMember {
   public void putCode(HCode codeobj) {
     codetable.put(codeobj.getName(), codeobj);
   }
-  private Hashtable codetable = new Hashtable();
+  Hashtable codetable = new Hashtable();
 
   /**
    * Returns the <code>HClass</code> object representing the class or 
