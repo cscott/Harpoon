@@ -3,6 +3,7 @@
 
 #include "jni.h"
 #include "config.h"
+#include "fni-threadstate.h" /* for struct FNI_Thread_State */
 
 typedef void * jptr;
 #define SHR(x,y) (((int32_t)(x))>>((y)&0x1f))
@@ -102,7 +103,6 @@ typedef struct {
 #endif /* USE_PAIR_RETURN ----------------------------------------- */
 
 #ifdef USE_GLOBAL_SETJMP /* ----------------------------------------------- */
-#include "fni-threadstate.h" /* for struct FNI_Thread_State */
 #include <setjmp.h>
 extern void *memcpy(void *dst, const void *src, size_t n);
 
