@@ -3,8 +3,12 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
+import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGraphable;
+import harpoon.IR.Properties.CFGrapher;
 import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.WorkSet;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -15,19 +19,25 @@ import java.util.HashSet;
  * <code>CFGraphable</code> objects. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: EdgesIterator.java,v 1.1.2.4 1999-11-30 05:24:41 cananian Exp $
+ * @version $Id: EdgesIterator.java,v 1.1.2.5 2000-01-14 02:43:35 cananian Exp $
  */
 public class EdgesIterator extends UnmodifiableIterator implements Iterator {
+    private CFGrapher grapher;
     
-    private Set worklist;
+    private WorkSet worklist;
     private Set done;
 
+    /** Convenience constructor. */
+    public EdgesIterator(CFGraphable e) {
+	this(e, CFGrapher.DEFAULT);
+    }
     /** Creates a <code>EdgesIterator</code> for all the edges
 	reachable by recursively traversing the successors of
 	<code>e</code>.  Predecessors are not included in the set.  
     */
-    public EdgesIterator(CFGraphable e) {
-        worklist = new HashSet();
+    public EdgesIterator(HCodeElement e, CFGrapher grapher) {
+	this.grapher = grapher;
+        worklist = new WorkSet();
 	done = new HashSet();
 	worklist.add(e);
 	done.add(e);
@@ -46,9 +56,10 @@ public class EdgesIterator extends UnmodifiableIterator implements Iterator {
 	set.
     */ 
     public Object next() {
-	CFGraphable e = (CFGraphable) worklist.iterator().next(); worklist.remove(e);
-	for (int i=0, n=e.succ().length; i<n; ++i) {
-	    CFGraphable ne = (CFGraphable) e.succ()[i].to();
+	HCodeElement e = (HCodeElement) worklist.pop();
+	HCodeEdge[] edges = grapher.succ(e);
+	for (int i=0, n=edges.length; i<n; ++i) {
+	    HCodeElement ne = edges[i].to();
 	    if (!done.contains(ne)) {
 		done.add(ne);
 		worklist.add(ne);
