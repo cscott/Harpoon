@@ -47,7 +47,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.3.2.3 2002-03-10 08:03:18 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.3.2.4 2002-03-11 03:00:30 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -201,7 +201,8 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    // look at the hcode for the method.
 	    harpoon.IR.Quads.Code hc = (harpoon.IR.Quads.Code) hcf.convert(m);
 	    if (hc==null) { // native or unanalyzable method.
-		if(!m.getReturnType().isPrimitive())
+		if(!m.getReturnType().isPrimitive() &&
+		   !m.getReturnType().isInterface())
 		    // be safe; assume the native method can make an object
 		    // of its return type.
 		    discoverInstantiatedClass(S, m.getReturnType());
