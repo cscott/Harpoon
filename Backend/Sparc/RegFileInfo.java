@@ -35,7 +35,7 @@ import java.util.Set;
  * which are used for tracking global data.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.9 2000-02-14 21:02:59 andyb Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.10 2000-02-16 06:23:18 andyb Exp $
  */
 public class RegFileInfo 
   extends harpoon.Backend.Generic.RegFileInfo 
@@ -114,14 +114,14 @@ public class RegFileInfo
 	SP = allRegs[14];
 	FP = allRegs[30];
  
-	// live on exit: %fp, %sp, %i0: return value, %i7: return address
+	// live on exit: %fp, %sp, %o0: return value, %o7: return address
 	//		 %g0: zero, always live
 	liveOnExitRegs = new LinearSet(5);  
 	liveOnExitRegs.add(FP);
 	liveOnExitRegs.add(SP);
 	liveOnExitRegs.add(allRegs[0]);
-	liveOnExitRegs.add(allRegs[24]);
-	liveOnExitRegs.add(allRegs[31]);
+	liveOnExitRegs.add(allRegs[8]);
+	liveOnExitRegs.add(allRegs[15]);
  
 	// caller saved: clobbered by callee
 	// %g0-%g7, %o0-%o5, %o7 

@@ -44,6 +44,7 @@ import harpoon.Temp.LabelList;
 import harpoon.Util.Util;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,7 +55,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.26 2000-02-16 05:04:43 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.27 2000-02-16 06:23:18 andyb Exp $
  */
 %%
     private InstrFactory instrFactory;
@@ -62,7 +63,11 @@ import java.util.Set;
     private final TempBuilder tb;
 
     // short variable names for commonly used register temps
-    private Temp r0, r1, r8, r9, r10, r11, SP, FP;
+    private Temp[] regg = new Temp[8];
+    private Temp[] rego = new Temp[8];
+    private Temp[] regl = new Temp[8];
+    private Temp[] regi = new Temp[8];
+    private Temp SP, FP;
 
     private Map codeGenTempMap;
 
@@ -70,12 +75,12 @@ import java.util.Set;
         super(frame);
         this.regfile = (RegFileInfo) frame.getRegFileInfo();
         this.tb = (TempBuilder) frame.getTempBuilder();
-        r0 = regfile.getRegister(0);
-        r1 = regfile.getRegister(1);
-        r8 = regfile.getRegister(8);
-        r9 = regfile.getRegister(9);
-        r10 = regfile.getRegister(10);
-        r11 = regfile.getRegister(11);
+	for (int i = 0; i < 8; i++) {
+	    regg[i] = regfile.getRegister(i);
+	    rego[i] = regfile.getRegister(i+8);
+	    regl[i] = regfile.getRegister(i+16);
+	    regi[i] = regfile.getRegister(i+24);
+        }
         SP = regfile.SP();
         FP = regfile.FP();
     }
@@ -182,9 +187,15 @@ import java.util.Set;
 		Instr in4 = new InstrLABEL(inf, i, methodlabel.name+":",
 					   methodlabel);
 		int save_offset = 92 + 4 * stackspace;
+
+		// save clobbers just about everything
+		List save_clobbers = new ArrayList();
+		save_clobbers.addAll(Arrays.asList(regi));
+		save_clobbers.addAll(Arrays.asList(regl));
+		save_clobbers.addAll(Arrays.asList(rego));
 		Instr in5 = new Instr(inf, i, 
 				      "save %sp, -" + save_offset + ", %sp",
-			              new Temp[] { }, new Temp[] { });
+			              (Temp[])save_clobbers.toArray(new Temp[24]), rego); 
 		in5.layout(i, i.getNext());
 		in4.layout(i, in5);
 		in3.layout(i, in4);
@@ -194,8 +205,16 @@ import java.util.Set;
 		i.remove(); i = in1;
 	    } 
 	    if (i instanceof InstrEXIT) { // exit stub
-		Instr in1 = new Instr(inf, i, "ret", null, null);
-		Instr in2 = new Instr(inf, i, "restore", null, null);
+		Instr in1 = new Instr(inf, i, "ret", 
+				      null, new Temp[] { regi[7] });
+
+		List restore_clobbers = new ArrayList();
+		restore_clobbers.addAll(Arrays.asList(regi));
+		restore_clobbers.addAll(Arrays.asList(regl));
+		restore_clobbers.addAll(Arrays.asList(rego));
+		Instr in2 = new Instr(inf, i, "restore", 
+				      (Temp[])restore_clobbers.toArray(new Temp[24]), 
+				      regi);
 		in1.layout(i.getPrev(), i);
 		in2.layout(in1, i);
 		i.remove();
@@ -367,38 +386,38 @@ BINOP<i,p>(op, e, CONST(c))=r %pred %( (isShift(op) || isCommutative(op)) && is1
 }%
 
 BINOP<l>(SHL, e1, e2)=r %{
-    emit (ROOT, "mov `s0h, `d0", new Temp[] { r8 }, new Temp[] { e1 });
-    emit (ROOT, "mov `s0l, `d0", new Temp[] { r9 }, new Temp[] { e1 });
-    emit (ROOT, "mov `s0, `d0", new Temp[] { r10 }, new Temp[] { e2 });
+    emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[1] }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0, `d0", new Temp[] { rego[2] }, new Temp[] { e2 });
     emit (ROOT, "call __ashldi3",
-          new Temp[] { r1, r8, r9 }, new Temp[] { r8, r9, r10 });
+          new Temp[] { regg[1], rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2] });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { r8 });
-    emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { r9 });
+    emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { rego[0] });
+    emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { rego[1] });
 
 }%
 
 BINOP<l>(SHR, e1, e2)=r %{
-    emit (ROOT, "mov `s0h, `d0", new Temp[] { r8 }, new Temp[] { e1 });
-    emit (ROOT, "mov `s0l, `d0", new Temp[] { r9 }, new Temp[] { e1 });
-    emit (ROOT, "mov `s0, `d0", new Temp[] { r10 }, new Temp[] { e2 });
+    emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[1] }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0, `d0", new Temp[] { rego[2] }, new Temp[] { e2 });
     emit (ROOT, "call __ashrdi3",
-          new Temp[] { r1, r8, r9 }, new Temp[] { r8, r9, r10 });
+          new Temp[] { regg[1], rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2] });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { r8 });
-    emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { r9 });
+    emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { rego[0] });
+    emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { rego[1] });
 
 }%
 
 BINOP<l>(USHR, e1, e2)=r %{
-    emit (ROOT, "mov `s0h, `d0", new Temp[] { r8 }, new Temp[] { e1 });
-    emit (ROOT, "mov `s0l, `d0", new Temp[] { r9 }, new Temp[] { e1 });
-    emit (ROOT, "mov `s0, `d0", new Temp[] { r10 }, new Temp[] { e2 });
+    emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[1] }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0, `d0", new Temp[] { rego[2] }, new Temp[] { e2 });
     emit (ROOT, "call __lshrdi3",
-          new Temp[] { r1, r8, r9 }, new Temp[] { r8, r9, r10 });
+          new Temp[] { regg[1], rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2] });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { r8 });
-    emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { r9 });
+    emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { rego[0] });
+    emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { rego[1] });
 
 }%
 
@@ -460,23 +479,23 @@ BINOP<f,d>(ADD, e1, UNOP(NEG, e2))=r %{
 }%
 
 BINOP<l>(MUL, e1, e2) = r %{
-    emit (ROOT, "mov `s0h, `d0", new Temp[] { r8 }, new Temp[] { e1 });
-    emit (ROOT, "mov `s0l, `d0", new Temp[] { r9 }, new Temp[] { e1 });
-    emit (ROOT, "mov `s0h, `d0", new Temp[] { r10 }, new Temp[] { e2 });
-    emit (ROOT, "mov `s0l, `d0", new Temp[] { r11 }, new Temp[] { e2 });
+    emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[1] }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[2] }, new Temp[] { e2 });
+    emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[3] }, new Temp[] { e2 });
     emit (ROOT, "call __muldi3",
-          new Temp[] { r1, r8, r9 }, new Temp[] { r8, r9, r10, r11 });
+          new Temp[] { regg[1], rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2], rego[3] });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { r8 });
-    emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { r9 });
+    emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { rego[0] });
+    emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { rego[1] });
 }%
 
 BINOP<i,p>(MUL, e1, e2) = r %{
-    emit (ROOT, "mov `s0, `d0", new Temp[] { r8 }, new Temp[] { e1 });
-    emit (ROOT, "mov `s0, `d0", new Temp[] { r9 }, new Temp[] { e2 });
-    emit (ROOT, "call .mul", new Temp[] { r1, r8 }, new Temp[] { r8, r9 });
+    emit (ROOT, "mov `s0, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0, `d0", new Temp[] { rego[1] }, new Temp[] { e2 });
+    emit (ROOT, "call .mul", new Temp[] { regg[1], rego[0] }, new Temp[] { rego[0], rego[1] });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "mov `s0, `d0", new Temp[] { r }, new Temp[] { r8 });
+    emit (ROOT, "mov `s0, `d0", new Temp[] { r }, new Temp[] { rego[0] });
 }%
 
 BINOP<f,d>(MUL, e1, e2)=r %{
@@ -486,23 +505,23 @@ BINOP<f,d>(MUL, e1, e2)=r %{
 }%
 
 BINOP<l>(DIV, e1, e2) = r %{
-    emit (ROOT, "mov `s0h, `d0", new Temp[] { r8 }, new Temp[] { e1 });
-    emit (ROOT, "mov `s0l, `d0", new Temp[] { r9 }, new Temp[] { e1 });
-    emit (ROOT, "mov `s0h, `d0", new Temp[] { r10 }, new Temp[] { e2 });
-    emit (ROOT, "mov `s0l, `d0", new Temp[] { r11 }, new Temp[] { e2 });
+    emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[1] }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[2] }, new Temp[] { e2 });
+    emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[3] }, new Temp[] { e2 });
     emit (ROOT, "call __divdi3", 
-          new Temp[] { r1, r8, r9 }, new Temp[] { r8, r9, r10, r11 });
+          new Temp[] { regg[1], rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2], rego[3] });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { r8 });
-    emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { r9 });
+    emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { rego[0] });
+    emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { rego[1] });
 }%
 
 BINOP<i,p>(DIV, e1, e2) = r %{
-    emit (ROOT, "mov `s0, `d0", new Temp[] { r8 }, new Temp[] { e1 });
-    emit (ROOT, "mov `s0, `d0", new Temp[] { r9 }, new Temp[] { e2 });
-    emit (ROOT, "call .div", new Temp[] { r1, r8}, new Temp[] { r8, r9 });
+    emit (ROOT, "mov `s0, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0, `d0", new Temp[] { rego[1] }, new Temp[] { e2 });
+    emit (ROOT, "call .div", new Temp[] { regg[1], rego[0]}, new Temp[] { rego[0], rego[1] });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "mov `s0, `d0", new Temp[] { r }, new Temp[] { r8 });
+    emit (ROOT, "mov `s0, `d0", new Temp[] { r }, new Temp[] { rego[0] });
 }%
 
 BINOP<f,d>(DIV, e1, e2)=r %{
@@ -512,23 +531,23 @@ BINOP<f,d>(DIV, e1, e2)=r %{
 }%
 
 BINOP<l>(REM, e1, e2) = r %{
-    emit (ROOT, "mov `s0h, `d0", new Temp[] { r8 }, new Temp[] { e1 });
-    emit (ROOT, "mov `s0l, `d0", new Temp[] { r9 }, new Temp[] { e1 });
-    emit (ROOT, "mov `s0h, `d0", new Temp[] { r10 }, new Temp[] { e2 });
-    emit (ROOT, "mov `s0l, `d0", new Temp[] { r11 }, new Temp[] { e2 });
+    emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[1] }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[2] }, new Temp[] { e2 });
+    emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[3] }, new Temp[] { e2 });
     emit (ROOT, "call __moddi3",
-          new Temp[] { r1, r8, r9 }, new Temp[] { r8, r9, r10, r11 });
+          new Temp[] { regg[1], rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2], rego[3] });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { r8 });
-    emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { r9 });
+    emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { rego[0] });
+    emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { rego[1] });
 }%
 
 BINOP<i,p>(REM, e1, e2) = r %{
-    emit (ROOT, "mov `s0, `d0", new Temp[] { r8 }, new Temp[] { e1 });
-    emit (ROOT, "mov `s0, `d0", new Temp[] { r9 }, new Temp[] { e2 });
-    emit (ROOT, "call .rem", new Temp[] { r1, r8 }, new Temp[] { r8, r9 });
+    emit (ROOT, "mov `s0, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0, `d0", new Temp[] { rego[1] }, new Temp[] { e2 });
+    emit (ROOT, "call .rem", new Temp[] { regg[1], rego[0] }, new Temp[] { rego[0], rego[1] });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "mov `s0, `d0", new Temp[] { r }, new Temp[] { r8 });
+    emit (ROOT, "mov `s0, `d0", new Temp[] { r }, new Temp[] { rego[0] });
 }%
 
 BINOP(CMPLT, e1, e2) = r
@@ -787,16 +806,16 @@ CONST<i,f>(c)=r %{
 }%
 
 CONST<p>(c) = r %{
-   emit (ROOT, "mov `s0, `d0 ! null", new Temp[]{ r }, new Temp[] { r0 });
+   emit (ROOT, "mov `s0, `d0 ! null", new Temp[]{ r }, new Temp[] { regg[0] });
 }%
 
 CONST<i>(0)=r %{
-    emit (ROOT, "mov `s0, `d0", new Temp[] { r }, new Temp[] { r0 });
+    emit (ROOT, "mov `s0, `d0", new Temp[] { r }, new Temp[] { regg[0] });
 }%
 
 CONST<l>(0)=r %{
-    emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { r0 });
-    emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { r0 });
+    emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { regg[0] });
+    emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { regg[0] });
 }%
 
 DATUM(CONST<i>(exp)) %{
@@ -933,7 +952,7 @@ METHOD(params) %{
             if (loc < 6) { // first half in register
                 emit (ROOT, "mov `s0, `d0h",
                             new Temp[] { params[i] },
-                            new Temp[] { regfile.getRegister(24+loc) });
+                            new Temp[] { regi[loc] });
             } else { // on stack
                 emit (ROOT, "ld [`s0 + "+4*(loc-6)+92+"], `d0h",
                             new Temp[] { params[i] },
@@ -943,7 +962,7 @@ METHOD(params) %{
             if (loc < 6) { // second half in register
                 emit (ROOT, "mov `s0, `d0l",
                             new Temp[] { params[i] },
-                            new Temp[] { regfile.getRegister(24+loc) });
+                            new Temp[] { regi[loc] });
             } else { // on stack
                 emit (ROOT, "ld [`s0 + "+4*(loc-6)+92+"], `d0l",
                             new Temp[] { params[i] },
@@ -955,7 +974,7 @@ METHOD(params) %{
 		Util.assert(params[i] != null);
                 emit (ROOT, "mov `s0, `d0", 
                             new Temp[] { params[i] }, 
-                            new Temp[] { regfile.getRegister(24+loc) });
+                            new Temp[] { regi[loc] });
             } else { // on stack
                 emitMEM (ROOT, "ld [`s0 + "+4*(loc-6)+92+"], `d0",
                                new Temp[] { params[i] }, 
@@ -1049,14 +1068,14 @@ RETURN(val) %{
     // procFixup will need to change these to %o0 and %o1 if it is leaf...
     if (tb.isTwoWord(val)) {
         emit (ROOT, "mov `s0h, `d0", 
-                    new Temp[] { regfile.getRegister(24) }, /* %i0 */
+                    new Temp[] { regi[0] }, /* %i0 */
                     new Temp[] { val });
         emit (ROOT, "mov `s0l, `d0",
-                    new Temp[] { regfile.getRegister(25) }, /* %i1 */
+                    new Temp[] { regi[1] }, /* %i1 */
                     new Temp[] { val });
     } else { 
         emit (ROOT, "mov `s0, `d0",
-                    new Temp[] { regfile.getRegister(24) }, /* %i0 */
+                    new Temp[] { regi[0] }, /* %i0 */
                     new Temp[] { val });
     }
     emitEXIT(ROOT);
@@ -1119,13 +1138,13 @@ TEMP<p,i,f,l,d>(id) = i %{
 THROW(val, handler) %{
     // again, assume non-leaf for now - might have to change registers
     // in procFixup
-    emit (ROOT, "mov `s0, `d0", 
-                new Temp[] { regfile.getRegister(24) }, /* %i0 */
-                new Temp[] { val });
-    emit (ROOT, "call _lookup",
-                new Temp[] { }, /* AAA - need clobbers list */
-                new Temp[] { }, /* AAA - need uses list */
-                true, null);
+//    emit (ROOT, "mov `s0, `d0", 
+//                new Temp[] { regi[0] }, /* %i0 */
+//                new Temp[] { val });
+//    emit (ROOT, "call _lookup",
+//                new Temp[] { }, /* AAA - need clobbers list */
+//                new Temp[] { }, /* AAA - need uses list */
+//                true, null);
     emitEXIT (ROOT);
 }%
 
@@ -1142,14 +1161,14 @@ THROW(val, handler) %{
 // _2D				i,p,l,f,d
 
 UNOP<i,p>(NEG, e)=r %{
-    emit (ROOT, "sub `s0, `s1, `d0", new Temp[] { r }, new Temp[] { r0, e });
+    emit (ROOT, "sub `s0, `s1, `d0", new Temp[] { r }, new Temp[] { regg[0], e });
 }%
 
 UNOP<l>(NEG, e)=r %{
     emitCC (ROOT, "subcc `s0, `s1l, `d0l", 
-                  new Temp[] { r }, new Temp[] { r0, e });
+                  new Temp[] { r }, new Temp[] { regg[0], e });
     emitCC (ROOT, "subx `s0, `s1h, `d0h", 
-                  new Temp[] { r }, new Temp[] { r0, e });
+                  new Temp[] { r }, new Temp[] { regg[0], e });
 }%
 
 UNOP<f>(NEG, e)=r %{
