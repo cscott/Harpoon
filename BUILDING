@@ -50,6 +50,7 @@ OK, now to compile the automated testing driver:
 
 % cd ~/Harpoon/Code
 % cp ~/Harpoon/Tests/Java/RTJ/Tester.java .
+% javac Tester.java
 % bin/build-precisec -t Tester Test
 
 The -t option turns on realTime java extensions.  This will create code
