@@ -26,7 +26,7 @@ import java.util.*;
  * <code>NewMover</code> works best on <code>QuadWithTry</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NewMover.java,v 1.1.2.2 2001-11-08 19:04:09 cananian Exp $
+ * @version $Id: NewMover.java,v 1.1.2.3 2001-11-08 19:16:12 cananian Exp $
  */
 public class NewMover extends MethodMutator {
     /** Creates a <code>NewMover</code> that uses the given
@@ -37,7 +37,14 @@ public class NewMover extends MethodMutator {
     protected HCode mutateHCode(HCodeAndMaps input) {
 	HCode hc = input.hcode();
 	HEADER header = (HEADER) hc.getRootElement();
-	traverseBlock(new MoveVisitor(), header.nextEdge(1));
+	METHOD method = (METHOD) header.next(1);
+	// traverse all edges from method (handler blocks and regular code)
+	MoveVisitor mv = new MoveVisitor();
+	for (int i=0; i<method.nextLength(); i++) {
+	    mv.state = new State();
+	    traverseBlock(mv, method.nextEdge(i));
+	}
+	// done!
 	return hc;
     }
     // recursive traversal of all paths.
