@@ -72,10 +72,10 @@ JNIEXPORT jboolean JNICALL Java_javax_realtime_Scheduler_reserveCPU
 /*
  * Class:     javax_realtime_Scheduler
  * Method:    reserveNET
- * Signature: ()Z
+ * Signature: (JJJJ)Z
  */
 JNIEXPORT jboolean JNICALL Java_javax_realtime_Scheduler_reserveNET
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jlong, jlong, jlong, jlong);
 
 /*
  * Class:     javax_realtime_Scheduler

@@ -141,10 +141,10 @@ JNIEXPORT jboolean JNICALL Java_javax_realtime_Scheduler_reserveCPU
  * Method:    reserveNET
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_reserveNET
-(JNIEnv *env, jobject scheduler, jlong bytes, jlong transfer, j) {
+JNIEXPORT jboolean JNICALL Java_javax_realtime_Scheduler_reserveNET
+(JNIEnv *env, jobject scheduler, jlong bytes, jlong transfer, jlong period, jlong begin) {
 #ifdef WITH_REALTIME_THREADS_TIMESYS
-  return createNET()?JNI_TRUE:JNI_FALSE;
+  return createNET(bytes, transfer, period, begin)?JNI_TRUE:JNI_FALSE;
 #else
   return errorNotImpl();
 #endif
