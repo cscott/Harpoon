@@ -1,6 +1,9 @@
 #include <jni.h>
 #include <jni-private.h>
 #include "java_lang_Class.h"
+#ifdef WITH_TRANSACTIONS
+# include "../transact/transact.h"
+#endif
 
 #include <assert.h>
 
@@ -52,6 +55,13 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_forName_00024_00024initcheck
   return result;
 }
 #endif /* WITH_INIT_CHECK */
+#ifdef WITH_TRANSACTIONS
+JNIEXPORT jclass JNICALL Java_java_lang_Class_forName_00024_00024withtrans
+  (JNIEnv *env, jclass cls, jobject commitrec, jstring str) {
+  return Java_java_lang_Class_forName(env, cls,
+				      FNI_StrTrans2Str(env, commitrec, str));
+}
+#endif /* WITH_TRANSACTIONS */
 
 // try to wrap currently active exception as the exception specified by
 // the exclsname parameter.  if this fails, just throw the original exception.
@@ -136,6 +146,26 @@ JNIEXPORT jobject JNICALL Java_java_lang_Class_newInstance_00024_00024initcheck
   return Java_java_lang_Class_newInstance(env, cls);
 }
 #endif /* WITH_INIT_CHECK */
+
+#ifdef WITH_TRANSACTIONS
+JNIEXPORT jobject JNICALL Java_java_lang_Class_newInstance_00024_00024withtrans
+  (JNIEnv *env, jobject cls, jobject commitrec) {
+    jobject result;
+    jmethodID methodID;
+    /* okay, get constructor for this object and create it. */
+    methodID=(*env)->GetMethodID(env, (jclass) cls, "<init>$$withtrans",
+				 "(L" TRANSPKG "CommitRecord;)V");
+    /* if methodID=NULL, throw InstantiationException */
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    result = (*env)->NewObject(env, (jclass) cls, methodID, commitrec);
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    return result;
+    
+  error:
+    wrapNthrow(env, "java/lang/InstantiationException");
+    return NULL;
+}
+#endif /* WITH_TRANSACTIONS */
 
 /*
  * Class:     java_lang_Class
