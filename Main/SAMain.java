@@ -62,7 +62,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.26 1999-09-09 05:12:19 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.27 1999-09-09 05:49:26 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -278,6 +278,7 @@ public class SAMain extends harpoon.IR.Registration {
 		public Frame getFrame() { return frame; }
 		public synchronized int getUniqueID() { return id++; }
 		public HMethod getMethod() { return null; }
+		public int hashCode() { return data.hashCode(); }
 	    });
 	
 	Util.assert(instr != null, "what the hell...");

@@ -27,7 +27,7 @@ import java.util.Map;
  * <code>ClassData</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassData.java,v 1.1.2.1 1999-09-09 05:12:17 cananian Exp $
+ * @version $Id: ClassData.java,v 1.1.2.2 1999-09-09 05:49:18 cananian Exp $
  */
 public class ClassData extends Data {
     /** Creates a <code>ClassData</code>. */
@@ -36,27 +36,6 @@ public class ClassData extends Data {
 	this.root = build(ch);
     }
 
-    private static HDataElement build2(Frame f, HClass hc,
-				      ClassHierarchy ch, NameMap nm) {
-	// First item in claz structure is interface method list.
-	// first, collect all interface methods.
-	Map inM = new HashMap();
-	for (HClass c = hc; c!=null; c=c.getSuperclass()) {
-	    HClass[] in = c.getInterfaces();
-	    for (int i=0; i<in.length; i++) {
-		HMethod[] me = in[i].getMethods();
-		for (int j=0; j<me.length; j++) {
-		    HMethod hm = c.getMethod(me[j].getName(),
-					     me[j].getParameterTypes());
-		    if (!Modifier.isAbstract(hm.getModifiers()) &&
-			ch.callableMethods().contains(hm))
-			inM.put(me[j], hm);
-		}
-	    }
-	}
-	System.err.print(inM);
-	return null;
-    }
     private HDataElement build(ClassHierarchy ch) {
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -96,26 +75,28 @@ public class ClassData extends Data {
 
 	// Construct null-terminated list of interfaces and
 	// add all interface methods
-	HClass[] interfaces = this.hc.getInterfaces();
-	
 	DEBUGln("reached interface loop");
 
-	for (int i=0; i<interfaces.length; i++) { 
-	    HClass    iFace    = interfaces[i];
-	    HMethod[] iMethods = iFace.getMethods();
-	    iList.add(_DATA(offm.label(iFace)));  // Add to interface list
-	    for (int j=0; j<iMethods.length; j++) { 
-		HMethod hm = iMethods[j];
-		DATA data = null;
-		if (ch.callableMethods().contains(hm)) {
-		    // Point to class method
-		    data = _DATA(offm.label(this.hc.getMethod
-					    (hm.getName(),
-					     hm.getParameterTypes())));
-		} else {
-		    data = _DATA(new CONST(tf, null, 0));
+	for (HClass c=this.hc; c!=null; c=c.getSuperclass()) {
+	    HClass[] interfaces = c.getInterfaces();
+	    for (int i=0; i<interfaces.length; i++) { 
+		HClass    iFace    = interfaces[i];
+		HMethod[] iMethods = iFace.getMethods();
+		iList.add(_DATA(offm.label(iFace)));  // Add to interface list
+		for (int j=0; j<iMethods.length; j++) { 
+		    DATA data;
+		    HMethod ihm = iMethods[j];
+		    HMethod chm = c.getMethod(ihm.getName(),
+					      ihm.getParameterTypes());
+		    if (ch.callableMethods().contains(chm) &&
+			!Modifier.isAbstract(chm.getModifiers())) {
+			// Point to class method
+			data = _DATA(offm.label(chm));
+		    } else {
+			data = _DATA(new CONST(tf, null, 0));
+		    }
+		    add(offm.offset(ihm)/ws, data, up, down);
 		}
-		add(offm.offset(hm)/ws, data, up, down);
 	    }
 	}
 	iList.add(_DATA(new CONST(tf, null, 0)));
@@ -124,18 +105,25 @@ public class ClassData extends Data {
 	DEBUGln("reached display loop");
 
 	// Add display to list
-	for (HClass sCls=this.hc; sCls!=null; sCls=sCls.getSuperclass()) 
+	// CSA: interfaces don't have a display list
+	if (this.hc.isInterface())
+	    add(offm.offset(HClass.forName("java.lang.Object"))/ws,
+		_DATA(offm.label(HClass.forName("java.lang.Object"))),
+		up, down);
+	else for (HClass sCls=this.hc; sCls!=null; sCls=sCls.getSuperclass()) 
 	    add(offm.offset(sCls)/ws,_DATA(offm.label(sCls)),up,down);
 	
 	DEBUGln("reached static method loop");
 
 	// Add non-static class methods to list 
+	// CSA FIXME: omit constructors?
 	HMethod[] methods = this.hc.getMethods();
 	for (int i=0; i<methods.length; i++) { 
 	    HMethod hm = methods[i];
 	    if (!methods[i].isStatic()) { 
 		DATA data = null;
-		if (ch.callableMethods().contains(hm)) {
+		if (ch.callableMethods().contains(hm) &&
+		    !Modifier.isAbstract(hm.getModifiers())) {
 		    // Point to class method
 		    data = _DATA(offm.label(hm));
 		} else {

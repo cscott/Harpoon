@@ -17,7 +17,7 @@ import java.util.ArrayList;
  * <code>Data</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Data.java,v 1.1.2.1 1999-09-09 05:12:17 cananian Exp $
+ * @version $Id: Data.java,v 1.1.2.2 1999-09-09 05:49:18 cananian Exp $
  */
 public class Data extends harpoon.IR.Tree.Data {
     final HClass hc;
@@ -30,6 +30,8 @@ public class Data extends harpoon.IR.Tree.Data {
     }
     public HClass getHClass() { return hc; }
     public HDataElement getRootElement() { return root; }
+
+    public int hashCode() { return hc.hashCode() ^ desc.hashCode(); }
 
     /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*
      *                                                          *

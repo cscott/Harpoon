@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.47 1999-09-08 23:56:52 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.48 1999-09-09 05:49:25 cananian Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -179,7 +179,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
         this.inf = inf;
         this.assem = assem; this.dst = dst; this.src = src;
 
-	this.hashCode = (id<<5) + inf.getParent().getName().hashCode();
+	this.hashCode = (id<<5) + inf.hashCode();
 	if (inf.getMethod() != null) {
 	    this.hashCode ^= inf.getMethod().hashCode(); 
 	}
