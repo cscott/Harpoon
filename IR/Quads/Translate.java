@@ -40,7 +40,7 @@ import java.util.Vector;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.9 1999-02-05 08:26:34 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.10 1999-02-09 06:15:52 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -1513,19 +1513,23 @@ final class Translate { // not public.
 	State s = ts.initialState;
 	State ns = s.pop();
 	Instr nxt[] = in.next();
+	// determine length of keys array
+	int klen=0, map[] = new int[nxt.length-1];
+	for (int i=1; i<nxt.length; i++)
+	    if (nxt[i] != nxt[0])
+		map[klen++] = i; // only key entries for non-default targets.
 	// make keys array.
-	int keys[] = new int[nxt.length-1];
-	for (int i=0; i<keys.length; i++)
-	    keys[i] = in.key(i+1);
+	int keys[] = new int[klen];
+	for (int i=0; i<klen; i++)
+	    keys[i] = in.key(map[i]);
 	// make & link SWITCH quad.
 	Quad q = new SWITCH(qf, in, s.stack(0), keys, new Temp[0]);
 	Quad.addEdge(ts.header, ts.which_succ, q, 0);
 	// Make next states.
-	TransState[] r = new TransState[nxt.length];
-	for (int i=0; i<nxt.length-1; i++)
-	    r[i] = new TransState(ns, nxt[i+1], q, i);
-	Util.assert(keys.length == nxt.length-1);
-	r[keys.length] = new TransState(ns, nxt[0], q, keys.length);
+	TransState[] r = new TransState[klen+1];
+	for (int i=0; i<klen; i++)
+	    r[i] = new TransState(ns, nxt[map[i]], q, i);
+	r[klen] = new TransState(ns, nxt[0], q, klen);
 	// record try info
 	ns.recordHandler(in, q, q);
 	return r;
