@@ -131,7 +131,7 @@ public class RangeFind extends Node {
 	/* the size of the target and image, the angle of the camera, etc. */
 
 	//System.out.println("");
-
+/*
 	//This code assumes that thinning has been run on a labeled image.
 	//This should ensure line thickness of 1.
 	int width = id.width;
@@ -203,6 +203,8 @@ public class RangeFind extends Node {
 	    double angle = angleData[idx].angle;
 	    //System.out.println(""+index+": ("+count+") "+angle);
 	}
+
+*/
 
 	/* Now, just the center of the image and 0. */
 
