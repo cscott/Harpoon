@@ -80,6 +80,8 @@ public class Cache extends Node {
      */
     //public synchronized void process(ImageData id) {
     public void process(ImageData id) {
+	//System.out.println("Cache.process()");
+	//System.out.println("  id.command="+id.command);
 	switch (Command.read(id)) {
 	case Command.GET_CROPPED_IMAGE:
 	    //System.out.println("Getting cropped image:");
@@ -113,7 +115,8 @@ public class Cache extends Node {
 	    }
 	    break;
 	}
-	case Command.NONE: {
+	//case Command.NONE: {
+	default: {
 	    if (id!=null) {
 		if (saveCopies) {
 		    ids[lastID=(lastID+1)%ids.length] = ImageDataManip.clone(id);
@@ -122,13 +125,17 @@ public class Cache extends Node {
 		    ids[lastID=(lastID+1)%ids.length] = id;
 		}
 	    }
-	}
-	default: {
 	    Node left = getLeft();
 	    if (left != null) {
 		left.process(id);
 	    }
 	}
+	//default: {
+	//    Node left = getLeft();
+	//    if (left != null) {
+	//	left.process(id);
+	//    }
+	//}
 	}
     }
 }
