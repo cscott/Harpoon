@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.26 1999-09-13 15:58:40 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.27 1999-09-15 20:41:58 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -73,8 +73,11 @@ final class ReHandler {
 	WorkSet phiset=new WorkSet();
 	WorkSet cjmpset=new WorkSet();
 
+	//build a typemap
+	HashMap typemap=new HashMap();
 	//this visitor just clones and classifies the quads
-	visitAll(new Visitor(ss, handlermap, phiset, instanceset, cjmpset, ncode), old_header);
+	//also builds the first typemap
+	visitAll(new Visitor(ss, handlermap, phiset, instanceset, cjmpset, ncode,typemap, ti), old_header);
 
 	// now qm contains mappings from old to new, we just have to link them.
 	for (Iterator e = ncode.getElementsI(); e.hasNext(); ) {
@@ -168,9 +171,16 @@ final class ReHandler {
 	    }
 	}
 
-	Temp[] qMp = ((METHOD)qm.getHead(old_method)).params();
+	METHOD oldM=(METHOD)qm.getHead(old_method);
+	Temp[] qMp = oldM.params();
 	final METHOD qM = new METHOD(qf, old_method, qMp,
 				     1 + handlerset.size());
+
+	for(int i=0;i<qMp.length; i++) {
+	    typemap.put(new Tuple(new Object[]{qM, qMp[i]}),
+			typemap.get(new Tuple(new Object[]{oldM,qMp[i]})));
+	}
+
 	final HEADER qH = (HEADER)qm.getHead(old_header);
 	reachable.add(qM);
 	Quad.addEdge(qH, 1, qM, 0);
@@ -539,8 +549,10 @@ final class ReHandler {
 	final Set cjmpset;
 	final HCode hc;
 	UseDef ud;
+	Map ntypemap;
+	TypeMap otypemap;
 
-	Visitor(StaticState ss, HashMapList handlermap, Set phiset, Set instanceset, Set cjmpset, HCode hc) { 
+	Visitor(StaticState ss, HashMapList handlermap, Set phiset, Set instanceset, Set cjmpset, HCode hc, Map ntypemap, TypeMap otypemap) { 
 	    this.qf = ss.qf;
 	    this.ss = ss;
 	    this.handlermap=handlermap;
@@ -549,16 +561,32 @@ final class ReHandler {
 	    this.cjmpset=cjmpset;
 	    this.ud=new UseDef();
 	    this.hc=hc;
+	    this.ntypemap=ntypemap;
+	    this.otypemap=otypemap;
+	}
+
+	private void updatemap(Quad old, Quad nq) {
+	    Temp[] uses=old.use(), defs=old.def();
+	    for (int i=0;i<uses.length;i++) {
+		Temp ntemp=Quad.map(ss.ctm, uses[i]);
+		ntypemap.put(new Tuple(new Object[]{nq, ntemp}),otypemap.typeMap(old, uses[i]));
+	    }
+	    for (int i=0;i<defs.length;i++) {
+		Temp ntemp=Quad.map(ss.ctm, defs[i]);
+		ntypemap.put(new Tuple(new Object[]{nq, ntemp}),otypemap.typeMap(old, defs[i]));
+	    }
 	}
 
 	/** By default, just clone and set all destinations to top. */
 	public void visit(Quad q) {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm);
+	    updatemap(q,nq);
 	    ss.qm.put(q, nq, nq);
 	}
 
 	public void visit(CJMP q) {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm);
+	    updatemap(q,nq);
 	    ss.qm.put(q, nq, nq);
 	    HCodeElement[] hce=ud.defMap(hc, q.test());
 	    Util.assert(hce.length==1);
@@ -568,6 +596,7 @@ final class ReHandler {
 
 	public void visit(PHI q) {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm);
+	    updatemap(q,nq);
 	    ss.qm.put(q, nq, nq);
 	    phiset.add(nq);
 	}
@@ -582,6 +611,8 @@ final class ReHandler {
 				null, q.isVirtual());
        		Quad q0 = new CONST(qf, q, Quad.map(ss.ctm, q.retex()),
 				    null, HClass.Void);
+		updatemap(q,head);
+		updatemap(q,q0);
 		Quad.addEdge(head, 0, q0, 0);
 		nq = q0;
 	    }
