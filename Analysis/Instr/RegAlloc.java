@@ -56,7 +56,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.61 2000-01-18 15:35:21 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.62 2000-01-26 02:12:37 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = false;
@@ -85,14 +85,14 @@ public abstract class RegAlloc  {
 	
 	Note that the constructors automagically put in the
 	"appropriate" `d# and `s# operands.
+	
 
+	REP INVARIANT: FskLoads have only one src Temp.	
      */
     /* protected (jdk1.1-is-stupid)*/ public class FskLoad extends InstrMEM {
-
 	FskLoad(InstrFactory inf, Instr i, String assem, Temp dst, Temp src) {
 	    super(inf, i, assem + " `d0, `s0", 
 		  new Temp[]{dst}, new Temp[]{src});
-
 	}
 	FskLoad(Instr i, String assem, Temp dst, Temp src) {
 	    this(i.getFactory(), i, assem, dst, src);
@@ -116,6 +116,8 @@ public abstract class RegAlloc  {
 	
 	Note that the constructors automagically put in the
 	"appropriate" `d# and `s# operands.
+
+	REP INVARIANT: FskStores have only one dst Temp.	
 
     */
     /* protected (jdk1.1-is-stupid)*/ public class FskStore extends InstrMEM {
@@ -262,6 +264,24 @@ public abstract class RegAlloc  {
 	    }
 	};
     }
+
+    static interface IntermediateCodeFactory extends HCodeFactory {
+	harpoon.IR.Properties.Derivation getDerivation();
+    }
+    
+    public static 
+	IntermediateCodeFactory firstFactory(HCodeFactory parent,
+					     Frame frame) {
+	return (IntermediateCodeFactory) parent;
+    }
+    
+    public static HCodeFactory secondFactory(IntermediateCodeFactory parent, 
+					     Frame frame) { 
+	return parent;
+    }
+    
+    
+
 
     /** Transforms Temp references in 'in' into appropriate offsets
 	from the Stack Pointer in the Memory. 
