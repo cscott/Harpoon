@@ -20,8 +20,10 @@
 #define MINOR                 0
 #define MAJOR                 1
 
-FLEX_MUTEX_DECLARE_STATIC(generational_gc_mutex);
+#ifndef JOLDEN_WRITE_BARRIER
 FLEX_MUTEX_DECLARE_STATIC(intergenerational_roots_mutex);
+FLEX_MUTEX_DECLARE_STATIC(generational_gc_mutex);
+#endif
 
 #ifndef WITH_THREADED_GC
 # define ENTER_GENERATIONAL_GC()
@@ -35,17 +37,33 @@ if (halt_for_GC_flag) halt_for_GC(); })
 
 #define EXIT_GENERATIONAL_GC() FLEX_MUTEX_UNLOCK(&generational_gc_mutex)
 
+#ifdef JOLDEN_WRITE_BARRIER
+
+// array of intergenerational references
+#define INTERGEN_LENGTH 2300000
+jobject_unwrapped **intergen;
+int intergen_next;
+#else
+
+// linked list of intergenerational references
 struct ref_list {
   jobject_unwrapped *ref;
   struct ref_list *next;
 };
-
 static struct ref_list *roots = NULL;
+#endif
+
+// intergenerational pointers by promotion
 static struct obj_list *objs_curr = NULL;
 static struct obj_list *objs_next = NULL;
 
+#ifdef JOLDEN_WRITE_BARRIER
+struct marksweep_heap old_gen;
 static struct copying_heap young_gen;
+#else
 static struct marksweep_heap old_gen;
+static struct copying_heap young_gen;
+#endif
 
 static int fd = 0;
 
@@ -62,6 +80,39 @@ void generational_print_heap();
 /* effects: adds inter-generational pointers to the root set
    for minor collections.
 */
+#ifdef JOLDEN_WRITE_BARRIER
+void find_generational_refs()
+{
+  if (collection_type == MINOR)
+    {
+      int intergen_saved = 0;
+      int intergen_curr;
+      struct obj_list *obj = objs_curr;
+
+      //FLEX_MUTEX_LOCK(&intergenerational_roots_mutex);
+
+      for(intergen_curr = 0; intergen_curr < intergen_next; intergen_curr++)
+	{
+	  jobject_unwrapped *ref = intergen[intergen_curr];
+	  
+	  if (IN_FROM_SPACE(*ref, young_gen) || IN_TO_SPACE(*ref, young_gen))
+	    {
+	      add_to_root_set(ref);
+	      intergen[intergen_saved++] = intergen[intergen_curr];
+	    }
+	}
+      // array of references compacted
+      intergen_next = intergen_saved;
+      //FLEX_MUTEX_UNLOCK(&intergenerational_roots_mutex);
+      
+      while (obj != NULL)
+	{
+	  trace(obj->obj);
+	  obj = obj->next;
+	}
+    }
+}
+#else
 void find_generational_refs()
 {
   if (collection_type == MINOR)
@@ -108,6 +159,7 @@ void find_generational_refs()
 	}
     }
 }
+#endif
 
 
 /* effects: garbage collects either just the young generation
@@ -232,6 +284,13 @@ void generational_gc_init()
   // allocate marksweep generation in the last 1/3 of the mapped space
   mapped += 2*bytes_to_map/3;
   init_marksweep_heap(mapped, heap_size, mapped_per_space, &old_gen);
+
+#ifdef JOLDEN_WRITE_BARRIER
+  // allocate space for intergenerational pointers
+  intergen = (jobject_unwrapped **) 
+    malloc(INTERGEN_LENGTH*sizeof(jobject_unwrapped *));
+  intergen_next = 0;
+#endif
 }
 
 
@@ -530,7 +589,14 @@ void generational_register_inflated_obj(jobject_unwrapped obj)
   register_inflated_obj(obj, &young_gen);
 }
 
-
+#ifdef JOLDEN_WRITE_BARRIER
+inline void generational_write_barrier(jobject_unwrapped *ref)
+{
+  if (IN_MARKSWEEP_HEAP(ref, old_gen))
+    intergen[intergen_next++] = ref;
+  //assert(intergen_next < INTERGEN_LENGTH);
+}
+#else
 void generational_write_barrier(jobject_unwrapped *ref)
 {
   struct ref_list *root;
@@ -545,7 +611,7 @@ void generational_write_barrier(jobject_unwrapped *ref)
   roots = root;
   FLEX_MUTEX_UNLOCK(&intergenerational_roots_mutex);
 }
-
+#endif
 
 /* returns: 1 if we can afford a major collection, 0 otherwise */
 int major_collection_makes_sense(size_t bytes_since_last_GC)
