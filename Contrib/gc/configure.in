@@ -86,6 +86,20 @@ AC_ARG_ENABLE(parallel-mark,
     esac]
 )
 
+dnl set up Ovy's memory preallocation optimization. FROM FLEX RUNTIME
+AC_MSG_CHECKING([enable memory preallocation optimization])
+AC_ARG_WITH(prealloc-opt,
+[  --with-prealloc-opt	  enable memory preallocation optimization],
+with_prealloc_opt="$withval", with_prealloc_opt="no")
+case "$with_prealloc_opt" in
+yes)	AC_MSG_RESULT([yes])
+	AC_DEFINE(WITH_PREALLOC_OPT, 1, [enable memory preallocation optimization])
+	;;
+*)	AC_MSG_RESULT([no])
+	;;
+esac
+AM_CONDITIONAL(PREALLOC_OPT, test $with_prealloc_opt = yes) 
+
 dnl process option to select threading model. FROM FLEX RUNTIME.
 AC_MSG_CHECKING([threading model])
 AC_ARG_WITH(thread-model,

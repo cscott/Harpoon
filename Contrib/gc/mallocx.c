@@ -32,6 +32,9 @@ GC_bool GC_alloc_reclaim_list();	/* in malloc.c */
 /* free lists from inlined allocators without including gc_priv.h	 */
 /* or introducing dependencies on internal data structure layouts.	 */
 ptr_t * GC_CONST GC_objfreelist_ptr = GC_objfreelist;
+#ifdef WITH_PREALLOC_OPT
+  ptr_t * GC_CONST GC_pobjfreelist_ptr = GC_pobjfreelist;
+#endif
 ptr_t * GC_CONST GC_aobjfreelist_ptr = GC_aobjfreelist;
 ptr_t * GC_CONST GC_uobjfreelist_ptr = GC_uobjfreelist;
 # ifdef ATOMIC_UNCOLLECTABLE
@@ -52,6 +55,10 @@ int knd;
 	    return(GC_malloc_atomic((size_t)lb));
 	case NORMAL:
 	    return(GC_malloc((size_t)lb));
+#ifdef WITH_PREALLOC_OPT
+        case PREALLOC:
+	    return(GC_malloc_prealloc((size_t)lb));
+#endif
 	case UNCOLLECTABLE:
 	    return(GC_malloc_uncollectable((size_t)lb));
 #       ifdef ATOMIC_UNCOLLECTABLE

@@ -578,11 +578,21 @@ void GC_init_inner()
     if (ALIGNMENT > GC_DS_TAGS && EXTRA_BYTES != 0) {
       GC_obj_kinds[NORMAL].ok_descriptor = ((word)(-ALIGNMENT) | GC_DS_LENGTH);
     }
+#   ifdef WITH_PREALLOC_OPT
+      /* Adjust "prealloc" object descriptor for extra allocation. */
+      if (ALIGNMENT > GC_DS_TAGS && EXTRA_BYTES != 0) {
+        GC_obj_kinds[PREALLOC].ok_descriptor = 
+	    ((word)(-ALIGNMENT) | GC_DS_LENGTH);
+      }
+#   endif
     GC_setpagesize();
     GC_exclude_static_roots(beginGC_arrays, endGC_arrays);
     GC_exclude_static_roots(beginGC_obj_kinds, endGC_obj_kinds);
 #   ifdef SEPARATE_GLOBALS
       GC_exclude_static_roots(beginGC_objfreelist, endGC_objfreelist);
+#     ifdef WITH_PREALLOC_OPT
+        GC_exclude_static_roots(beginGC_pobjfreelist, endGC_pobjfreelist);
+#     endif
       GC_exclude_static_roots(beginGC_aobjfreelist, endGC_aobjfreelist);
 #   endif
 #   ifdef MSWIN32

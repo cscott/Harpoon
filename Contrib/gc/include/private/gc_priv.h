@@ -418,6 +418,7 @@ void GC_print_callers GC_PROTO((struct callinfo info[NFRAMES]));
  	PCR_ThCtl_SetExclusiveMode(PCR_ThCtl_ExclusiveMode_stopNormal, \
  				   PCR_allSigsBlocked, \
  				   PCR_waitForever)
+
 #     define START_WORLD() \
 	PCR_ThCtl_SetExclusiveMode(PCR_ThCtl_ExclusiveMode_null, \
  				   PCR_allSigsBlocked, \
@@ -870,6 +871,12 @@ struct _GC_arrays {
 # ifndef SEPARATE_GLOBALS
     ptr_t _objfreelist[MAXOBJSZ+1];
 			  /* free list for objects */
+
+#  ifdef WITH_PREALLOC_OPT
+    ptr_t _pobjfreelist[MAXOBJSZ+1];
+    /* Free list for PREALLOC objects. */
+#  endif
+
     ptr_t _aobjfreelist[MAXOBJSZ+1];
 			  /* free list for atomic objs 	*/
 # endif
@@ -1004,6 +1011,9 @@ GC_API GC_FAR struct _GC_arrays GC_arrays;
 
 # ifndef SEPARATE_GLOBALS
 #   define GC_objfreelist GC_arrays._objfreelist
+#ifdef WITH_PREALLOC_OPT
+#   define GC_pobjfreelist GC_arrays._pobjfreelist
+#endif
 #   define GC_aobjfreelist GC_arrays._aobjfreelist
 #   define GC_words_allocd GC_arrays._words_allocd
 # endif
@@ -1109,6 +1119,13 @@ extern struct obj_kind {
 # define beginGC_objfreelist ((ptr_t)(&GC_objfreelist))
 # define endGC_objfreelist (beginGC_objfreelist + sizeof(GC_objfreelist))
 
+  ptr_t GC_pobjfreelist[MAXOBJSZ+1];
+#ifdef PREALLOC_OPT
+# define beginGC_pobjfreelist ((ptr_t)(&GC_pobjfreelist))
+# define endGC_pobjfreelist (beginGC_pobjfreelist + sizeof(GC_pobjfreelist))
+#endif
+
+
   ptr_t GC_aobjfreelist[MAXOBJSZ+1];
 			  /* free list for atomic (PTRFREE) objs 	*/
 # define beginGC_aobjfreelist ((ptr_t)(&GC_aobjfreelist))
@@ -1118,6 +1135,28 @@ extern struct obj_kind {
 /* Predefined kinds: */
 # define PTRFREE 0
 # define NORMAL  1
+#ifdef WITH_PREALLOC_OPT
+/* PREALLOC kind introduced for the preallocation optimization
+   (harpoon.Analysis.MemOpt) by Alexandru Salcianu.
+
+   An object of kind "PREALLOC" is treated by the mark phase as an
+   object of kind NORMAL.  However, it is ignored by the "sweep"
+   phase, i.e., it is never collected.  Unlike UNCOLLECTABLE objects,
+   PREALLOC objects are not considered part of the root set.
+   Therefore, objects pointed to by PREALLOC objects are considered
+   reachable only if they are really reachable from the program roots;
+   otherwise, they may be collected. */
+# define PREALLOC 2
+# define UNCOLLECTABLE 3
+# ifdef ATOMIC_UNCOLLECTABLE
+#   define AUNCOLLECTABLE 4
+#   define STUBBORN 5
+#   define IS_UNCOLLECTABLE(k) (((k) & ~1) == UNCOLLECTABLE)
+# else
+#   define STUBBORN 4
+#   define IS_UNCOLLECTABLE(k) ((k) == UNCOLLECTABLE)
+# endif
+#else  /* WITH_PREALLOC_OPT */
 # define UNCOLLECTABLE 2
 # ifdef ATOMIC_UNCOLLECTABLE
 #   define AUNCOLLECTABLE 3
@@ -1126,7 +1165,9 @@ extern struct obj_kind {
 # else
 #   define STUBBORN 3
 #   define IS_UNCOLLECTABLE(k) ((k) == UNCOLLECTABLE)
-# endif
+# endif 
+#endif /* WITH_PREALLOC_OPT */
+
 
 extern int GC_n_kinds;
 

@@ -359,6 +359,16 @@ GC_API GC_PTR GC_malloc_stubborn GC_PROTO((size_t size_in_bytes));
 /* compiled:								*/
 GC_API GC_PTR GC_malloc_atomic_uncollectable GC_PROTO((size_t size_in_bytes));
 
+#ifdef WITH_PREALLOC_OPT
+  /* Added for the preallocation optimization (by Alexandru Salcianu):
+     allocates a heap region of "size_in_bytes" bytes that is treated as
+     a normal area by the "mark" phase of the garbage collector, but
+     it's ignored by the "sweep" phase (i.e., it's never collected).
+     Objects reachable only from an unreachable "prealloc" object can be
+     collected.  */
+  GC_API GC_PTR GC_malloc_prealloc GC_PROTO((size_t size_in_bytes));
+#endif
+
 /* Explicitly deallocate an object.  Dangerous if used incorrectly.     */
 /* Requires a pointer to the base of an object.				*/
 /* If the argument is stubborn, it should not be changeable when freed. */
