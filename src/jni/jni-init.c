@@ -11,6 +11,10 @@ extern struct JNINativeInterface FLEX_JNI_vtable;
 #endif
 #include "flexthread.h"
 
+#ifdef WITH_REALTIME_JAVA
+#include "../realtime/RTJconfig.h"
+#endif
+
 #ifndef LOCALREF_STACK_SIZE
 #define LOCALREF_STACK_SIZE (64*1024) /* 64k word stack */
 #endif
@@ -22,12 +26,20 @@ struct _jobject_globalref FNI_globalrefs = { {NULL}, NULL, NULL };
 
 static JNIEnv * FNI_CreateThreadState(void) {
   /* safe to use malloc -- no pointers to garbage collected memory in here */
-  struct FNI_Thread_State * env = malloc(sizeof(*env));
+  struct FNI_Thread_State * env = 
+#ifdef WITH_REALTIME_JAVA
+    (struct FNI_Thread_State*)RTJ_CALLOC_UNCOLLECTABLE(1,sizeof(*env));
+#else
+    malloc(sizeof(*env));
+#endif
   env->vtable = &FLEX_JNI_vtable;
   env->exception = NULL;
   env->localrefs_stack =
   env->localrefs_next =
   env->localrefs_end =
+#ifdef WITH_REALTIME_JAVA
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(*(env->localrefs_stack))*LOCALREF_STACK_SIZE);
+#else
 #ifdef WITH_PRECISE_GC
     malloc
 #elif defined(BDW_CONSERVATIVE_GC)
@@ -40,6 +52,7 @@ static JNIEnv * FNI_CreateThreadState(void) {
     malloc
 #endif
     (sizeof(*(env->localrefs_stack))*LOCALREF_STACK_SIZE);
+#endif
   env->localrefs_end += LOCALREF_STACK_SIZE;
   env->thread = NULL;
   env->stack_top = NULL;
@@ -58,7 +71,9 @@ void FNI_DestroyThreadState(void *cl) {
   struct FNI_Thread_State * env = (struct FNI_Thread_State *) cl;
   if (cl==NULL) return; // death of uninitialized thread.
   // ignore wrapped exception; free localrefs.
-#ifdef WITH_PRECISE_GC
+#ifdef WITH_REALTIME_JAVA
+  RTJ_FREE(env->localrefs_stack);
+#elif defined(WITH_PRECISE_GC)
   free(env->localrefs_stack);
 #elif defined(BDW_CONSERVATIVE_GC)
   GC_free(env->localrefs_stack);
@@ -74,7 +89,11 @@ void FNI_DestroyThreadState(void *cl) {
   pthread_cond_destroy(&(env->sleep_cond));
 #endif
   // now free thread state structure.
+#ifdef WITH_REALTIME_JAVA
+  RTJ_FREE(env);
+#else
   free(env);
+#endif
 }
 
 /** implementations of JNIEnv management functions.  */
