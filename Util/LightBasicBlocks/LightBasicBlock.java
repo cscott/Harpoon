@@ -34,7 +34,7 @@ import harpoon.Util.UComp;
  (one method call per iteration!).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightBasicBlock.java,v 1.1.2.3 2000-03-28 23:51:54 salcianu Exp $
+ * @version $Id: LightBasicBlock.java,v 1.1.2.4 2000-06-07 23:06:21 salcianu Exp $
  */
 public class LightBasicBlock {
 
@@ -163,7 +163,7 @@ public class LightBasicBlock {
 
 	// convert from the set based BasicBlocks produced by bbfact
 	// to the array based LightBasicBlocks.
-	public final void convert(BasicBlock.Factory bbfact){
+	final void convert(BasicBlock.Factory bbfact){
 	    hcode = bbfact.getHCode();
 	    Set bbs = bbfact.blockSet();
 	    int nb_bbs = bbs.size();

@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
+import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
@@ -50,6 +51,7 @@ import harpoon.Analysis.MetaMethods.MetaAllCallers;
 
 import harpoon.Util.BasicBlocks.BBConverter;
 import harpoon.Util.BasicBlocks.CachingBBConverter;
+import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 import harpoon.Util.LightBasicBlocks.LBBConverter;
 import harpoon.Util.LightBasicBlocks.CachingLBBConverter;
 import harpoon.Util.Graphs.SCComponent;
@@ -66,7 +68,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.54 2000-06-07 23:00:06 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.55 2000-06-07 23:06:19 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -346,7 +348,11 @@ public abstract class PAMain {
 	    tstop  = System.currentTimeMillis();
 	    System.out.println((tstop - tstart) + "ms");
 	}
-	
+
+	/* JOIN STATS
+	   join_stats(lbbconv, mcg);
+	   System.exit(1);
+	*/
 
 	System.out.print("SplitRelation ... ");
 	tstart = System.currentTimeMillis();
@@ -843,6 +849,55 @@ public abstract class PAMain {
 		mroots.add(obj);
 	}
 	return mroots;
+    }
+
+
+    // One of my new ideas: while doing the intra-procedural analysis of
+    // method M, instead of keeping a graph in each basic block, let's
+    // keep one just for "join" points or for BB that contain a CALL.
+    // The goal of this statistic is to see how many BBs fall in this category
+    private static void join_stats(LBBConverter lbbconv, MetaCallGraph mcg) {
+
+	System.out.println("\nPOTENTIAL MEMORY REDUCTION STATISTICS:\n");
+
+	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext();){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    HMethod hm = mm.getHMethod();
+	    if(Modifier.isNative(hm.getModifiers()))
+		continue;
+	    
+	    LightBasicBlock.Factory lbbf = lbbconv.convert2lbb(hm);
+	    LightBasicBlock lbbs[] = lbbf.getAllBBs();
+
+	    int nb_lbbs = lbbs.length;
+	    int nb_calls = 0; // nb. of blocks finished in CALLs
+	    int nb_joins = 0; // nb. of blocks that are join points
+	    int nb_total = 0; // nb. of blocks that are either CALLs or joins
+
+	    for(int i = 0; i < nb_lbbs; i++){
+		LightBasicBlock lbb = lbbs[i];
+		boolean is_join = (lbb.getPrevLBBs().length > 1);
+
+		HCodeElement elems[] = lbb.getElements();
+		boolean is_call = (elems[elems.length - 1] instanceof CALL);
+
+		if(is_call) nb_calls++;
+		if(is_join) nb_joins++;
+		if(is_call || is_join) nb_total++;
+	    }
+
+	    double pct = (float)(100 * nb_total)/(double)nb_lbbs;
+	    HClass hc = hm.getDeclaringClass();
+	    String method_name = hc.getName() + "." + hm.getName();
+
+	    System.out.println(method_name + " \t" +
+			       nb_lbbs  + " LBBs  " +
+			       nb_total + " Full (" +
+			       Debug.doubleRep(pct, 5, 2) + "%)  " +
+			       nb_joins + " Joins " +
+			       nb_calls + " Calls ");
+	}
+
     }
 
 }
