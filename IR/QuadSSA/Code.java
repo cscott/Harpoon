@@ -13,7 +13,7 @@ import harpoon.Util.UniqueVector;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.2 1998-08-08 14:59:21 cananian Exp $
+ * @version $Id: Code.java,v 1.3 1998-08-20 22:43:20 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -31,7 +31,7 @@ public class Code extends HCode {
     Code(HMethod parent, harpoon.ClassFile.Bytecode.Code bytecode) {
 	this.parent = parent;
         this.bytecode = bytecode;
-	this.quads = Convert.convert(bytecode);
+	this.quads = Translate.trans(bytecode);
     }
     /**
      * Return the <code>HMethod</code> this codeview

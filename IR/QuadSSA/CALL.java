@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * <code>CALL</code> objects represent method invocations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.3 1998-08-08 00:43:22 cananian Exp $
+ * @version $Id: CALL.java,v 1.4 1998-08-20 22:43:19 cananian Exp $
  */
 
 public class CALL extends Quad {
@@ -38,10 +38,25 @@ public class CALL extends Quad {
 	    throw new Error("Parameters do not match method descriptor.");
 	// I guess it's legal, then.
     }
-    /** Create a <Code>CALL</code> to a method with a <code>void</code>
+    /** Creates a <Code>CALL</code> to a method with a <code>void</code>
      *  return-value descriptor. */
     public CALL(String sourcefile, int linenumber,
 		HMethod method, Temp[] params) {
 	this(sourcefile, linenumber, method, params, null);
+    }
+    /** Returns human-readable representation. */
+    public String toString() {
+	StringBuffer sb = new StringBuffer("CALL ");
+	sb.append(method.getDeclaringClass().getName());
+	sb.append('.');
+	sb.append(method.getName());
+	sb.append('(');
+	for (int i=0; i<params.length; i++) {
+	    sb.append(params[i].toString());
+	    if (i<params.length-1)
+		sb.append(", ");
+	}
+	sb.append(')');
+	return sb.toString();
     }
 }

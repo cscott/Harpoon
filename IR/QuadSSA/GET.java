@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * <code>GET</code> represent field access (get) operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.2 1998-08-07 13:38:12 cananian Exp $
+ * @version $Id: GET.java,v 1.3 1998-08-20 22:43:20 cananian Exp $
  */
 
 public class GET extends Quad {
@@ -19,5 +19,11 @@ public class GET extends Quad {
 	super(sourcefile, linenumber);
 	this.dst = dst;
 	this.src = src;
+    }
+    /** Returns human-readable representation. */
+    public String toString() {
+	return "GET " + 
+	    src.getDeclaringClass().getName() + "." +
+	    src.getName() + " into " + dst;
     }
 }

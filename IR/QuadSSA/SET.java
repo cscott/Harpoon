@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * <code>SET</code> represents field assignment-to operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SET.java,v 1.2 1998-08-07 13:38:13 cananian Exp $
+ * @version $Id: SET.java,v 1.3 1998-08-20 22:43:24 cananian Exp $
  */
 
 public class SET extends Quad {
@@ -20,5 +20,10 @@ public class SET extends Quad {
 	super(sourcefile, linenumber);
 	this.dst = dst;
 	this.src = src;
+    }
+    /** Returns a human-readable representation of this Quad. */
+    public String toString() {
+	return "SET "+dst.getDeclaringClass().getName()+"."+dst.getName()+
+	    " to " + src.toString();
     }
 }

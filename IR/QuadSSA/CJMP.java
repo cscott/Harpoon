@@ -2,13 +2,14 @@
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
+import harpoon.Temp.Temp;
 /**
  * <code>CJMP</code> represents conditional branches.
  * succ[0] is if-false, succ[1] is if-true branch.
  * op is canonical.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.3 1998-08-08 00:43:22 cananian Exp $
+ * @version $Id: CJMP.java,v 1.4 1998-08-20 22:43:19 cananian Exp $
  */
 
 public abstract class CJMP extends Quad {
@@ -19,15 +20,33 @@ public abstract class CJMP extends Quad {
     /** Greater-than. */
     public static final int GT = 2;
     public int op;
+    public Temp left, right;
+
     /** Creates a <code>CJMP</code>. */
-    public CJMP(String sourcefile, int linenumber, int op) {
+    public CJMP(String sourcefile, int linenumber, 
+		int op, Temp left, Temp right) {
         super(sourcefile, linenumber, 1, 2 /* two branch targets */);
 	this.op = op;
+	this.left = left;
+	this.right= right;
     }
-    /** Swap if-true and if-false targets. */
+    /** Swaps if-true and if-false targets. */
     public void invert() {
 	Quad q = next[0];
 	next[0] = next[1];
 	next[1] = q;
+    }
+    String opString() {
+	switch (op) {
+	case EQ: return "=";
+	case GE: return ">=";
+	case GT: return ">";
+	default: throw new Error("Illegal op.");
+	}
+    }
+    /** Returns human-readable representation. */
+    public String toString() {
+	return "CJMP " + left + " " + opString() + " " + right +
+	    " then " + next[1].getID() + " else " + next[0].getID();
     }
 }
