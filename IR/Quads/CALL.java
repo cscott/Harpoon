@@ -38,20 +38,19 @@ import harpoon.Util.Util;
  * this case (and only in this case).
  * <p>
  * Note that <b>exactly one</b> of { <code>retval</code>, <code>retex</code> }
- * will be defined after the execution of <code>CALL</code>; thus it is 
- * <b>perfectly
+ * is defined by any execution of <code>CALL</code>; thus it is <b>perfectly
  * valid for <code>retval</code> and <code>retex</code> to be identical</b>.
  * Of course, for type-safety the return type cannot be primitive if this
  * is so.
  * <p>
  * The <code>Temp</code> not defined by the <code>CALL</code> 
  * (if the <code>retex</code> and <code>retval</code> <code>Temp</code>s
- *  are different) is <i>undefined</i> --- this is different from the 
+ *  are different) is <i>untouched</i> --- this is the same as the
  * semantics of <code>IR.LowQuad.PCALL</code> and <code>IR.Tree.CALL</code>,
- * both of which leave the "other" <code>Temp</code> <i>untouched</i>.
+ * both of which also leave the "other" <code>Temp</code> <i>untouched</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.18 2000-07-07 22:15:35 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.19 2000-12-13 18:46:29 cananian Exp $ 
  */
 public class CALL extends SIGMA {
     /** The method to invoke. */
