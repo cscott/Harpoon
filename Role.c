@@ -5,6 +5,7 @@
 #include <string.h>
 #include "Role.h"
 #include "Fields.h"
+#include "Classes.h"
 #ifdef MDEBUG
 #include <dmalloc.h>
 #endif
@@ -508,6 +509,16 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
 
   objrole->class=ho->class;
 
+  if ((heap->options&OPTION_ECLASS)&&classcontained(heap, ho->class)) {
+    assignhashcode(objrole);
+    return objrole;
+  }
+
+  if (heap->options&OPTION_UCONTAINERS) {
+    if (contains(heap->containedobjects, ho->uid))
+      objrole->contained=1;
+  }
+
   if(ho->methodscalled!=NULL) {
     int i=0;
     int * methodscalled=(int *)calloc(heap->statechangesize, sizeof(int));
@@ -515,11 +526,6 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
     for(i=0;i<heap->statechangesize;i++) {
       methodscalled[i]=ho->methodscalled[i];
     }
-  }
-
-  if (heap->options&OPTION_UCONTAINERS) {
-    if (contains(heap->containedobjects, ho->uid))
-      objrole->contained=1;
   }
 
   while(dominators!=NULL) {
@@ -596,6 +602,7 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
       al=al->next;
     }
   }
+
   assignhashcode(objrole);
   return objrole;
 }

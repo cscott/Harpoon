@@ -11,6 +11,7 @@
 #include "Method.h"
 #include "Effects.h"
 #include "Fields.h"
+#include "Classes.h"
 #include "dot.h"
 #include "Container.h"
 #include "RoleRelation.h"
@@ -54,7 +55,12 @@ void parseoptions(int argc, char **argv, struct heap_state *heap) {
 	printf("-r no rolechange regular expressions calculated\n");
 	printf("-a don't consider elements of array to change role\n");
 	printf("-pfileprefix\n");
+	printf("-x one role for each class in classes file\n");
 	exitstate=1;
+	break;
+      case 'x':
+	heap->options|=OPTION_ECLASS;
+	loadclass(heap);
 	break;
       case 'w':
         heap->options|=OPTION_WEB;

@@ -132,6 +132,7 @@ struct heap_state {
   
   struct genhashtable *statechangemethodtable;
   struct genhashtable *includedfieldtable;
+  struct genhashtable *excludedclasstable;
   struct hashtable *statechangereversetable;
   int statechangesize;
   unsigned int options;
@@ -153,6 +154,7 @@ struct heap_state {
 #define OPTION_LIMITFIELDS 0x10
 #define OPTION_LIMITARRAYS 0x20
 #define OPTION_WEB 0x40
+#define OPTION_ECLASS 0x80
 
 
 struct identity_relation {

@@ -13,7 +13,7 @@ class RoleI {
     HashMap containedmapping;
     Fields fields;
     Methods methods;
-    
+    Set excludedclasses;
 
     static final Integer P_NEVER=new Integer(0);
     static final Integer P_ONCEEVER=new Integer(1);
@@ -36,6 +36,7 @@ class RoleI {
 	readtransitions();
 	readroles();
 	readatomic();
+	readclasses();
 	readpolicy();
 	rebuildindex();
 	rebuildgraphs(true);
@@ -46,6 +47,40 @@ class RoleI {
 	fields.buildfieldspage();
 	methods=new Methods(this);
 	methods.readentries();
+    }
+
+    void readclasses() {
+	excludedclasses=new HashSet();
+	FileReader fr=null;
+	try {
+	    fr=new FileReader("classes");
+	    while(true) {
+		String exclass=nexttoken(fr);
+		if (exclass==null)
+		    break;
+		excludedclasses.add(exclass);
+	    }
+	    fr.close();
+	} catch (FileNotFoundException e) {
+	    System.out.println("Classes file not found");
+	} catch (Exception e) {
+	    System.out.println(e);
+	    System.exit(-1);
+	}
+
+    }
+
+    void writeclasses() {
+	try {
+	    FileOutputStream fos=new FileOutputStream("classes");
+	    PrintStream ps=new PrintStream(fos);
+	    Iterator it=excludedclasses.iterator();
+	    while (it.hasNext())
+		ps.println(it.next());
+	    ps.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
     }
 
     void rebuildindex() {
@@ -262,6 +297,7 @@ class RoleI {
 		writepolicy();
 		fields.writefieldfile();
 		methods.writeentries();
+		writeclasses();
 		rerunanalysis();
 		return "/index.html";
 	    }
@@ -300,7 +336,23 @@ class RoleI {
 	    return "/fields.html";
 	    
 	}
-
+	case 'X': {
+	    /* Change policy */
+	    int comma=file.indexOf(',');
+	    Integer classnumber=Integer.valueOf(file.substring(0,comma));
+	    String classname=(String)classinfo.revclasses.get(classnumber);
+	    String policy=file.substring(comma+1);
+	    if(policy.equals("0"))
+		excludedclasses.remove(classname);
+	    else if(policy.equals("1"))
+		excludedclasses.add(classname);
+	    else {
+		System.out.println("Error in X");
+		System.exit(-1);
+	    }
+	    genpictures(classname, classnumber.toString(),false);
+	    return "/"+classnumber+".html";
+	}
 	case 'Z': {
 	    /* Change policy */
 	    int comma=file.indexOf(',');
@@ -529,7 +581,7 @@ class RoleI {
     synchronized void runanalysis() {
 	try {
 	    Runtime runtime=Runtime.getRuntime();
-	    Process p1=containers?runtime.exec("./RoleInference -u -f -w -n -r -ptemp"):runtime.exec("./RoleInference -cpolicy -f -w -n -r -ptemp");
+	    Process p1=containers?runtime.exec("./RoleInference -x -u -f -w -n -r -ptemp"):runtime.exec("./RoleInference -x -cpolicy -f -w -n -r -ptemp");
 	    p1.waitFor();
 	} catch (Exception e) {
 	    e.printStackTrace();
@@ -560,6 +612,15 @@ class RoleI {
 	    if (policymap.containsKey(classname)) {
 		info=policyname((Integer)policymap.get(classname));
 	    }
+	    if (excludedclasses.contains(classname)) {
+		Integer classnum=(Integer)classinfo.classes.get(classname);
+		ps.println("Forced Single Role for Class ");
+		ps.println("<a href=\"rm-X"+classnum+",0\">Allow multiple roles</a><p>");
+	    } else {
+		Integer classnum=(Integer)classinfo.classes.get(classname);
+		ps.println("<a href=\"rm-X"+classnum+",1\">Force single role for this class</a><p>");
+	    }
+
 	    ps.println("Container policy: "+info+"<p>");
 	    if (!containers) {
 		Integer classnum=(Integer)classinfo.classes.get(classname);
