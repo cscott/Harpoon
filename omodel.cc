@@ -302,7 +302,7 @@ void Setexpr::print_size(Hashtable *stateenv, model *m)
 
     if (ws != NULL)
       printf("%d", ws->size());
-    else printf("NULL");
+    else printf("0");
     break;
   }
 
@@ -324,7 +324,7 @@ void Setexpr::print_size(Hashtable *stateenv, model *m)
 
     if (ws != NULL)
       printf("%d", ws->size());
-    else printf("NULL");
+    else printf("0");
     break;
   }
 
@@ -347,7 +347,7 @@ void Setexpr::print_size(Hashtable *stateenv, model *m)
 
     if (ws != NULL)
       printf("%d", ws->size());
-    else printf("NULL");
+    else printf("0");
     break;
   }
   }
