@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Thu Oct 22 23:11:21 1998> 
-// Time-stamp: <1998-11-16 23:50:08 mfoltz> 
+// Time-stamp: <1998-11-21 18:59:53 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.Partition;
@@ -21,19 +21,13 @@ import java.util.Hashtable;
 public class WeightedGraph {
 
   Hashtable _nodes = new Hashtable();
-  public long _infinity;
+  //  public static final long _pinfinity = Long.MAX_VALUE;
+  //  public static final long _ninfinity = -Long.MAX_VALUE;
   int _dummyindex = 0;
   
-  public WeightedGraph() {
-    _infinity = Integer.MAX_VALUE;
-  }
+  public WeightedGraph() { }
 
-  public WeightedGraph(long infinity) {
-    _infinity = infinity;
-  }
-  
   public WeightedGraph(WeightedGraph g) {
-    _infinity = g._infinity;
     Enumeration nodes = g.getNodes();
     WGNode node, oldto, to;
     int i;
@@ -94,7 +88,6 @@ public class WeightedGraph {
   public String toString() {
     WGNode n;
     StringBuffer sb = new StringBuffer();
-    sb.append("infinity = "+_infinity+"\n");
     for (Enumeration e = getNodes(); e.hasMoreElements();) {
       n = (WGNode) e.nextElement();
       sb.append(n.toString());
@@ -159,6 +152,29 @@ public class WeightedGraph {
     return g;
 
   }
+  
+  // a Long.MAX_VALUE weight is +infinity. a -Long.MAX_VALUE weight is -infinity.
+  // must maintain this distinction through ops.
+
+  static long weightPlus(long w1, long w2) {
+    if ((w1 == Long.MAX_VALUE && w2 == -Long.MAX_VALUE)
+      || (w1 == -Long.MAX_VALUE && w2 == Long.MAX_VALUE)) return 0;
+    if (w1 == Long.MAX_VALUE || w2 == Long.MAX_VALUE) return Long.MAX_VALUE;
+    else if (w1 == -Long.MAX_VALUE || w2 == -Long.MAX_VALUE) return -Long.MAX_VALUE;
+    else return w1+w2;
+  }
+
+//   static boolean weightLEQ(long w1, long w2) {
+//     if (w2 == -1) return true;
+//     else if (w1 == -1 && w2 != -1) return false;
+//     else return (w1 <= w2);
+//   }
+
+//   static long weightNeg(long w) {
+//     if (w == -1) return -2;
+//     else if (w == -2) return -1;
+//     else return -w;
+//   }
 			    
 }
 
