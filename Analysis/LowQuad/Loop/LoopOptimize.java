@@ -8,6 +8,7 @@ import harpoon.ClassFile.*;
 import harpoon.IR.LowQuad.*;
 import harpoon.IR.Quads.*;
 import harpoon.IR.Properties.HasEdges;
+import harpoon.Analysis.UseDef;
 import harpoon.Analysis.Loops.Loops;
 import harpoon.Analysis.LowQuad.Loop.LoopAnalysis;
 import harpoon.Analysis.SSITOSSAMap;
@@ -24,7 +25,7 @@ import java.util.Iterator;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.4 1999-06-30 18:22:02 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.5 1999-06-30 20:02:49 bdemsky Exp $
  */
 public final class LoopOptimize {
     
@@ -105,14 +106,15 @@ public final class LoopOptimize {
 
     void doLoop(HCode hc, Loops lp,Quad header, WorkSet usedinvariants) {
 	WorkSet invariants=new WorkSet(invmap.invariantsMap(hc, lp));
+	UseDef ud=new UseDef();
 	int linkin;
 	Util.assert(((HasEdges)header).pred().length==2);
 
 	//Only worry about headers with two edges
 	if (lp.loopIncelements().contains(header.prev(0)))
-	    linkin=0;
-	else
 	    linkin=1;
+	else
+	    linkin=0;
 
 	Quad loopcaller=header.prev(linkin);
 	int which_succ=header.prevEdge(linkin).which_succ();
@@ -131,7 +133,9 @@ public final class LoopOptimize {
 		Temp[] uses=q.use();
 		boolean okay=true;
 		for (int i=0;i<uses.length;i++) {
-		    if (invariants.contains(uses[i])) {
+		    HCodeElement []sources=ud.defMap(hc,ssitossamap.tempMap(uses[i]));
+		    Util.assert(sources.length==1);
+		    if (invariants.contains(sources[0])) {
 			okay=false;
 			break;
 		    }
@@ -147,11 +151,11 @@ public final class LoopOptimize {
 		    usedinvariants.push(q);
       		    //Set up the next link
 		    loopcaller=newquad;
-		    which_succ=0;
+		    which_succ=0;	
+		    //Need to link to the loop
+		    Quad.addEdge(loopcaller, which_succ, successor, which_pred);
 		}
 	    }
 	}
-	//Need to link to the loop
-	Quad.addEdge(loopcaller, which_succ, successor, which_pred);
     } 
 }
