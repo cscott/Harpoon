@@ -27,7 +27,6 @@ public class StandardCodeWriter implements CodeWriter {
     
     public void unindent() { 
         indent--; 
-        assert indent >= 0; 
     }
     
     private void doindent() {
