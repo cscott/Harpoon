@@ -28,7 +28,7 @@ public class IPaqServoController {
     private Socket clientSocket;
     private OutputStream out;
     private String host;
-
+    
     public IPaqServoController(String host) {
 	connect(this.host = host);
     }
@@ -47,28 +47,17 @@ public class IPaqServoController {
     }
 
     private final void send(String s) {
-// 	if (clientSocket.isConnected()) {
-	    try {
-		char c[] = s.toCharArray();
-		for (int i = 0; i<c.length; i++) {
-		    out.write((int)c[i]);
-		}
-		out.write(13);
-		out.write(10);
-	    } catch (IOException e) {
-		System.out.println("Can't write output! "+e);
-		System.exit(-1);
+	try {
+	    char c[] = s.toCharArray();
+	    for (int i = 0; i<c.length; i++) {
+		out.write((int)c[i]);
 	    }
-// 	} else {
-// 	    try {
-// 		clientSocket.close();
-// 	    } catch (IOException e) {
-// 		System.out.println("Can't close socket! "+e);
-// 		System.exit(-1);
-// 	    }
-// 	    connect(host);
-// 	    send(s);
-// 	}
+	    out.write(13);
+	    out.write(10);
+        } catch (IOException e) {
+	    System.out.println("Can't write output! "+e);
+	    System.exit(-1);
+	}
     }
     
     public void move(int servo, int position) {
@@ -97,7 +86,7 @@ public class IPaqServoController {
 	}
 	send("BD0D"+millis);
     }
-    
+
     private static native final void setup();
     
     private static native final void sendSerial(byte b);
@@ -113,19 +102,15 @@ public class IPaqServoController {
 	    System.exit(-1);
 	}
 	try {
+	    Socket serverSocket = listenSocket.accept();
+	    InputStream serverIS = serverSocket.getInputStream();
 	    while (true) {
-		Socket serverSocket = listenSocket.accept();
-		InputStream serverIS = serverSocket.getInputStream();
-// 		while (serverSocket.isConnected()) {
-		while (true) {
-		    while (serverIS.available()==0) { }
-		    while (serverIS.available()!=0) {
-			sendSerial((byte)serverIS.read());
-			// System.out.print((char)serverIS.read());
-			// System.out.flush();
-		    }
+		char c = (char)serverIS.read();
+		if (((c>='A')&&(c<='Z'))||((c>='0')&&(c<='9'))||(c==10)||(c==13)||(c=='-')) {
+   	            sendSerial((byte)c);
+// 		    System.out.print(c);
+// 		    System.out.flush();
 		}
-//		serverSocket.close();
 	    }
 	} catch (IOException exc) {
 	    System.err.println("Failed I/O: "+exc);
