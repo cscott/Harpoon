@@ -29,7 +29,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.36 2000-11-15 21:48:38 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.37 2000-11-16 03:01:12 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -254,8 +254,7 @@ public class ParIntGraph {
 
 	System.out.println("as: " + nodes.size() + " -> " +
 			   useful_nodes.size() + " delta=" +
-			   (nodes.size() - useful_nodes.size()) +
-			   nodes);
+			   (nodes.size() - useful_nodes.size()));
 
 	// unuseful_nodes = nodes - useful_nodes
 	nodes.removeAll(useful_nodes);
