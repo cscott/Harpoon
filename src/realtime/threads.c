@@ -721,10 +721,13 @@ void* startMain(void* mclosure) {
   printf("\nWait for all of the other threads to finish!\n");
   fflush(NULL);
 #endif
-  while (realtime_num_threads(env)>1) {
-    settimer();
-    context_switch();
-  }
+/* The following only works with a round-robin scheduler...
+ * just make sure that the scheduler knows to do the right thing...
+ */
+/*   while (realtime_num_threads(env)>1) { */
+/*     settimer(); */
+/*     context_switch(); */
+/*   } */
   switching_state = StopSwitching();
   /* call it's exit function to clean up */
   // by cata: I commented this out
