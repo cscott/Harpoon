@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.93 2001-07-05 19:21:15 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.94 2001-07-09 23:40:30 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -911,6 +911,13 @@ static class TranslationVisitor extends LowQuadVisitor {
 	// Convert optype to a Bop or a Uop
 	switch(q.opcode()) {
 	case Qop.ACMPEQ:
+	    // reference equality (unlike pointer equality) is runtime
+	    // specific (there may be pointer twiddling involved)
+	    addMove(q, q.dst(),
+		    m_rtb.referenceEqual(m_tf, q, treeDeriv,
+					 _TEMPte(operands[0], q),
+					 _TEMPte(operands[1], q)));
+	    return;
 	case Qop.DCMPEQ:
 	case Qop.FCMPEQ:
 	case Qop.ICMPEQ:

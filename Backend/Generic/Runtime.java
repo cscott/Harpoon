@@ -30,7 +30,7 @@ import java.util.List;
  * runtime system.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.12 2001-06-12 22:35:55 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.13 2001-07-09 23:35:02 cananian Exp $
  */
 public abstract class Runtime {
     /** A <code>NameMap</code> valid for this
@@ -246,6 +246,20 @@ public abstract class Runtime {
 	public abstract Exp methodOffset(TreeFactory tf, HCodeElement source,
 					 DerivationGenerator dg,
 					 HMethod method);
+	/** Return a <code>Translation.Exp</code> representing an
+	 *  comparison between expressions evaluating to two references,
+	 *  <code>refLeft</code> and <code>refRight</code>.
+	 *  Note that this is *reference* equality, not *POINTER* equality.
+	 *  The <code>fieldBase</code> method, for example, is required
+	 *  to return a POINTER expression (which is typically a bit-masked
+	 *  and offset version of the reference value);  one valid 
+	 *  implementation of <code>referenceEqual</code> would be to
+	 *  compare the values returned by a call to <code>fieldBase()</code>
+	 *  on the operands, but there is typically a more efficient means.
+	 */
+	public abstract Exp referenceEqual(TreeFactory tf, HCodeElement source,
+					   DerivationGenerator dg,
+					   Exp refLeft, Exp refRight);
     }
     /** The <code>ObjectBuilder</code> constructs data tables in the
      *  <code>IR.Tree</code> form to represent static objects which may

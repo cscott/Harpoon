@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.45 2001-07-09 21:23:36 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.46 2001-07-09 23:39:20 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -806,5 +806,15 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		(new CONST(tf, source,
 			   cmm.methodOrder(method) * POINTER_SIZE));
 	}
+    }
+    public Translation.Exp referenceEqual(TreeFactory tf, HCodeElement source,
+					  DerivationGenerator dg,
+					  Translation.Exp refLeft,
+					  Translation.Exp refRight) {
+	// have to do pointer masking before we can compare these references.
+	return new Translation.Ex
+	    (new BINOP(tf, source, Type.POINTER, Bop.CMPEQ,
+		       PTRMASK(tf, source, dg, refLeft.unEx(tf)),
+		       PTRMASK(tf, source, dg, refRight.unEx(tf))));
     }
 }
