@@ -30,7 +30,7 @@ import harpoon.Analysis.Maps.BasicInductionsMap;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Maps.InvariantsMap;
 import harpoon.Util.Util;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
 import harpoon.Analysis.Quads.DeadCode;
@@ -45,7 +45,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.4 2002-04-10 02:59:57 cananian Exp $
+ * @version $Id: LoopOptimize.java,v 1.5 2004-02-08 01:52:54 cananian Exp $
  */
 public final class LoopOptimize {
 

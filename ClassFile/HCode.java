@@ -4,7 +4,7 @@
 package harpoon.ClassFile;
 
 import harpoon.Util.ArrayFactory;
-import harpoon.Util.Indexer;
+import net.cscott.jutil.Indexer;
 
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -15,7 +15,7 @@ import java.util.Iterator;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.17 2002-09-03 16:11:32 cananian Exp $
+ * @version $Id: HCode.java,v 1.18 2004-02-08 01:58:03 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code
@@ -130,7 +130,7 @@ public abstract class HCode<HCE extends HCodeElement> {
    * <code>HCodeElement</code>s.
    * Calls <code>clone(getMethod())</code>.
    */
-  public Object clone() throws CloneNotSupportedException {
+  public HCode<HCE> clone() throws CloneNotSupportedException {
     return clone(getMethod()).hcode();
   }
 

@@ -16,8 +16,8 @@ import harpoon.IR.Tree.THROW;
 import harpoon.IR.Tree.Tree;
 import harpoon.IR.Tree.TreeVisitor;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.MultiMap;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.MultiMap;
 import harpoon.Util.Util;
 import java.util.Collection;
 import java.util.HashSet;
@@ -27,7 +27,7 @@ import java.util.Set;
  * <code>IdentifyNoHandler</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IdentifyNoHandler.java,v 1.4 2002-04-10 03:03:11 cananian Exp $
+ * @version $Id: IdentifyNoHandler.java,v 1.5 2004-02-08 01:57:40 cananian Exp $
  */
 public class IdentifyNoHandler {
     private Set nohandlercalls = new HashSet();

@@ -10,7 +10,7 @@ import harpoon.IR.Properties.CFGraphable;
 import harpoon.IR.Properties.UseDefable; 
 import harpoon.Temp.Temp; 
 import harpoon.Util.Util; 
-import harpoon.Util.Collections.SetFactory; 
+import net.cscott.jutil.SetFactory; 
 
 import java.util.HashMap; 
 import java.util.HashSet; 
@@ -25,7 +25,7 @@ import java.util.Set;
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ReachingHCodeElements.java,v 1.3 2002-04-02 23:39:11 salcianu Exp $ 
+ * @version $Id: ReachingHCodeElements.java,v 1.4 2004-02-08 01:51:05 cananian Exp $ 
  */
 public class ReachingHCodeElements extends ReachingDefs.BBVisitor { 
     private BasicBlock.Factory bbfactory;

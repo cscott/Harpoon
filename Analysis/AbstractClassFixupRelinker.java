@@ -10,8 +10,8 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Relinker;
 import harpoon.Util.ArrayIterator;
-import harpoon.Util.Collections.UniqueVector;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.UniqueVector;
+import net.cscott.jutil.WorkSet;
 
 import java.lang.reflect.Modifier;
 import java.util.HashSet;
@@ -27,7 +27,7 @@ import java.util.Set;
  * The <code>AbstractClassFixupRelinker</code> remedies the situation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractClassFixupRelinker.java,v 1.9 2004-01-30 10:43:53 cananian Exp $
+ * @version $Id: AbstractClassFixupRelinker.java,v 1.10 2004-02-08 01:49:03 cananian Exp $
  */
 public class AbstractClassFixupRelinker extends Relinker {
     

@@ -10,13 +10,13 @@ import java.util.Map;
 
 import java.io.Serializable;
 
-import harpoon.Util.Collections.LinearSet;
+import net.cscott.jutil.LinearSet;
 
 /**
  * <code>LightRelation</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: LightRelation.java,v 1.2 2002-02-25 21:09:19 cananian Exp $
+ * @version $Id: LightRelation.java,v 1.3 2004-02-08 01:56:57 cananian Exp $
  */
 public class LightRelation extends AbstrRelationMapBased
     implements Serializable {

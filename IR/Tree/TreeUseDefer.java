@@ -5,7 +5,7 @@ package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
-import harpoon.Util.Default;
+import net.cscott.jutil.Default;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ import java.util.Set;
  * interface for non-<code>SEQ</code> <code>Stm</code>s of a tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeUseDefer.java,v 1.4 2002-04-10 03:05:46 cananian Exp $
+ * @version $Id: TreeUseDefer.java,v 1.5 2004-02-08 01:55:51 cananian Exp $
  */
 public class TreeUseDefer extends harpoon.IR.Properties.UseDefer<Tree> {
     private final Code code;

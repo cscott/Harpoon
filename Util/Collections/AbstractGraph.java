@@ -3,8 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
-import harpoon.Util.Collections.AggregateSetFactory;
-import harpoon.Util.Collections.SetFactory;
+import net.cscott.jutil.AggregateSetFactory;
+import net.cscott.jutil.SetFactory;
 
 import java.util.AbstractSet;
 import java.util.Collection;
@@ -19,9 +19,9 @@ import java.util.Set;
  * of the <code>Graph</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractGraph.java,v 1.1 2003-05-09 20:35:20 cananian Exp $
+ * @version $Id: AbstractGraph.java,v 1.2 2004-02-08 01:56:37 cananian Exp $
  */
-public abstract class AbstractGraph<N extends Node<N,E>,E extends Graph.Edge<N,E>> implements MutableGraph<N,E> {
+public abstract class AbstractGraph<N extends AbstractGraph.Node<N,E>,E extends Graph.Edge<N,E>> implements MutableGraph<N,E> {
     final SetFactory<E> edgeSetFactory = new AggregateSetFactory<E>();
     final Set<N> nodes = new LinkedHashSet<N>();
     final Set<N> nodesRO = Collections.unmodifiableSet(nodes);
@@ -86,7 +86,7 @@ public abstract class AbstractGraph<N extends Node<N,E>,E extends Graph.Edge<N,E
      * the <code>Graph.Node</code> interface.
      *
      * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
-     * @version $Id: AbstractGraph.java,v 1.1 2003-05-09 20:35:20 cananian Exp $
+     * @version $Id: AbstractGraph.java,v 1.2 2004-02-08 01:56:37 cananian Exp $
      */
     public static class Node<N extends Node<N,E>,E extends Graph.Edge<N,E>> implements Graph.Node<N,E> {
 	final Set<E> pred, succ, predRO, succRO;
@@ -117,7 +117,7 @@ public abstract class AbstractGraph<N extends Node<N,E>,E extends Graph.Edge<N,E
      * prefer to use your own <code>Graph.Edge</code> implementation.
      *
      * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
-     * @version $Id: AbstractGraph.java,v 1.1 2003-05-09 20:35:20 cananian Exp $
+     * @version $Id: AbstractGraph.java,v 1.2 2004-02-08 01:56:37 cananian Exp $
      */
     public static class Edge<N extends Node<N,E>,E extends Edge<N,E>> implements Graph.Edge<N,E> {
 	final N from;

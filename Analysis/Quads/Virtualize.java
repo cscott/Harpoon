@@ -10,7 +10,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Quad;
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.SnapshotIterator;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -20,7 +20,7 @@ import java.util.Set;
  * link errors later. It works on any sort of quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Virtualize.java,v 1.1 2002-09-10 15:06:43 cananian Exp $
+ * @version $Id: Virtualize.java,v 1.2 2004-02-08 01:53:14 cananian Exp $
  * @see harpoon.Analysis.Quads.Nonvirtualize
  * @see harpoon.Analysis.Quads.QuadClassHierarchy
  */

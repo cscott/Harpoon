@@ -28,7 +28,7 @@ import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.SWITCH;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.SnapshotIterator;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ import java.util.Set;
  *  <code>CALL</code> non-executable.)
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.5 2002-09-03 15:17:45 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.6 2004-02-08 01:53:44 cananian Exp $
  */
 public final class SCCOptimize implements ExecMap {
     TypeMap  ti;

@@ -25,6 +25,7 @@ sub jdk11classes {
     return %cls2url;
 }
 
+# xxx may not work with sinjdoc-generated doc.
 sub jdk12classes {
     my $loc = shift(@_);
     my @raw; my $baseurl;

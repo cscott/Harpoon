@@ -58,7 +58,7 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 
 import harpoon.Util.Util;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 
 import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 import harpoon.Util.LightBasicBlocks.LightBasicBlock;
@@ -76,7 +76,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.17 2003-10-28 16:05:54 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.18 2004-02-08 01:53:07 cananian Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 

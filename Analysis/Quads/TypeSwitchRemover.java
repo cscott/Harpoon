@@ -20,7 +20,7 @@ import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.IR.LowQuad.DerivationMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
-import harpoon.Util.CombineIterator;
+import net.cscott.jutil.CombineIterator;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
@@ -32,7 +32,7 @@ import java.util.List;
  * into chains of <code>INSTANCEOF</code> and <code>CJMP</code> quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeSwitchRemover.java,v 1.5 2003-03-11 00:58:47 cananian Exp $
+ * @version $Id: TypeSwitchRemover.java,v 1.6 2004-02-08 01:53:14 cananian Exp $
  */
 public final class TypeSwitchRemover
     extends harpoon.Analysis.Transformation.MethodMutator<Quad> {

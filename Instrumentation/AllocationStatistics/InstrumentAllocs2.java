@@ -28,7 +28,7 @@ import harpoon.IR.Quads.CONST;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.THROW;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 
 import harpoon.Analysis.AllocationInformationMap;
 import harpoon.Analysis.DefaultAllocationInformationMap;
@@ -55,7 +55,7 @@ import java.util.Map;
     identifier and the length of the memory allocated there.
 
     @author Alexandru Salcianu <salcianu@MIT.EDU>
-    @version $Id: InstrumentAllocs2.java,v 1.4 2003-02-11 20:16:01 salcianu Exp $ */
+    @version $Id: InstrumentAllocs2.java,v 1.5 2004-02-08 01:58:06 cananian Exp $ */
 public class InstrumentAllocs2 extends MethodMutator
     implements java.io.Serializable {
     

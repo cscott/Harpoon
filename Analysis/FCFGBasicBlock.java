@@ -22,7 +22,7 @@ import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.HANDLER;
 import harpoon.IR.Quads.HEADER;
 
-import harpoon.Util.Collections.UnmodifiableListIterator;
+import net.cscott.jutil.UnmodifiableListIterator;
 import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Worklist;
 
@@ -60,7 +60,7 @@ import harpoon.Util.Util;
 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: FCFGBasicBlock.java,v 1.6 2002-08-30 22:37:12 cananian Exp $
+ * @version $Id: FCFGBasicBlock.java,v 1.7 2004-02-08 01:49:03 cananian Exp $
  */
 public class FCFGBasicBlock implements BasicBlockInterf {
     

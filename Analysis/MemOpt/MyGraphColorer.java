@@ -20,7 +20,7 @@ package harpoon.Analysis.MemOpt;
 
 import harpoon.Util.MaxPriorityQueue;
 import harpoon.Util.BinHeapPriorityQueue;
-import harpoon.Util.Collections.MultiMap;
+import net.cscott.jutil.MultiMap;
 
 import java.util.Collection;
 import java.util.Iterator;

@@ -11,10 +11,10 @@ import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.ArrayFactory;
-import harpoon.Util.CombineIterator;
-import harpoon.Util.Default;
+import net.cscott.jutil.CombineIterator;
+import net.cscott.jutil.Default;
 import harpoon.Util.Util;
-import harpoon.Util.Collections.UnmodifiableIterator;
+import net.cscott.jutil.UnmodifiableIterator;
 
 import java.util.AbstractCollection;
 import java.util.AbstractList;
@@ -44,7 +44,7 @@ import java.util.Vector;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.9 2004-02-07 21:28:47 cananian Exp $ */
+ * @version $Id: Instr.java,v 1.10 2004-02-08 01:55:08 cananian Exp $ */
 public class Instr implements HCodeElement, UseDefable,
 			      CFGraphable<Instr,InstrEdge> {
     private static boolean PRINT_UPDATES_TO_IR = false;

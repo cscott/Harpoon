@@ -38,7 +38,7 @@ import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.THROW;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.SnapshotIterator;
 import harpoon.Util.Util;
 
 import java.util.Arrays;
@@ -53,7 +53,7 @@ import java.util.Set;
  * unused and constant fields from objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldReducer.java,v 1.6 2002-09-03 15:17:52 cananian Exp $
+ * @version $Id: FieldReducer.java,v 1.7 2004-02-08 01:53:55 cananian Exp $
  */
 public class FieldReducer extends MethodMutator<Quad> {
     private static final boolean no_mutate =

@@ -12,7 +12,7 @@ package harpoon.Analysis.Partition;
 import harpoon.ClassFile.*;
 import harpoon.IR.Quads.*;
 import harpoon.Temp.*;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 import harpoon.Util.Util;
 import harpoon.RunTime.Monitor;
 

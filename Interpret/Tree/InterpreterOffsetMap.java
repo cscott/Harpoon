@@ -25,7 +25,7 @@ import java.util.StringTokenizer;
  * A simple OffsetMap, used by the Tree Interpreter
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterpreterOffsetMap.java,v 1.4 2002-04-10 03:05:57 cananian Exp $
+ * @version $Id: InterpreterOffsetMap.java,v 1.5 2004-02-08 01:58:09 cananian Exp $
  */
 public class InterpreterOffsetMap extends OffsetMap {
 
@@ -67,7 +67,7 @@ public class InterpreterOffsetMap extends OffsetMap {
 		return m_hci.getFieldOffset(hf); }
 	};
 	m_imm = new InterfaceMethodMap
-	    (new harpoon.Util.IteratorEnumerator(ch.classes().iterator()));
+	    (new net.cscott.jutil.IteratorEnumerator(ch.classes().iterator()));
 	m_nm  = nm;
     }
 

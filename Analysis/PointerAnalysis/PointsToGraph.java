@@ -15,7 +15,7 @@ import java.util.LinkedList;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
-import harpoon.Util.Collections.LinearSet;
+import net.cscott.jutil.LinearSet;
 import harpoon.Util.DataStructs.Relation;
 
 /**
@@ -27,7 +27,7 @@ import harpoon.Util.DataStructs.Relation;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.7 2003-06-04 18:44:32 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.8 2004-02-08 01:53:07 cananian Exp $
  */
 public class PointsToGraph implements Cloneable, java.io.Serializable{
 

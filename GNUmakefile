@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.99 2004-01-30 11:12:45 cananian Exp $
+# $Id: GNUmakefile,v 1.100 2004-02-08 01:48:38 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -9,6 +9,7 @@ JAVA:=java
 JFLAGS=-d . -g
 JFLAGSVERB=#-verbose -J-Djavac.pipe.output=true
 JIKES:=jikes $(JIKES_OPT)
+# XXX FIX JAVA COMPILER SEARCH; SHOULD FIND JAVA 1.5 COMPILER.
 JCC:=javac -J-mx64m -source 1.4
 # find a gj compiler.  tries $JIKES first, then $JCC, then $JAVAC, then
 # $(JSR14DISTR)/scripts/javac, then some other paths.  Set JSR14_v1
@@ -41,6 +42,7 @@ INSTALLDIR=public_html/Harpoon/
 JDKDOCLINK = http://java.sun.com/j2se/1.4/docs/api
 #JDKDOCLINK = http://java.sun.com/products/jdk/1.2/docs/api
 #JDKDOCLINK = http://palmpilot.lcs.mit.edu/~pnkfelix/jdk-javadoc/java.sun.com/products/jdk/1.2/docs/api
+JUTILDOCLINK = http://cscott.net/Projects/JUtil/jutil-latest/doc/
 CVSWEBLINK = http://flex-cvs.csail.mit.edu/cgi-bin/viewcvs.cgi
 
 # make this file work with make version less than 3.77
@@ -50,7 +52,7 @@ endif
 # Add "-link" to jdk's javadoc if we are using a javadoc that supports it
 JDOCFLAGS += \
 	$(shell if $(JDOC) -help 2>&1 | grep -- "-link " > /dev/null ; \
-	then echo -link $(JDKDOCLINK) ; fi)
+	then echo -link $(JDKDOCLINK) -link $(JUTILDOCLINK) ; fi)
 # Add "-group" options to JDOCFLAGS if we're using a javadoc that supports it
 JDOCFLAGS += \
 	$(shell if $(JDOC) -help 2>&1 | grep -- "-group " > /dev/null ; \
@@ -157,15 +159,6 @@ list:
 	@echo $(filter-out GNUmakefile,$(TARSOURCE))
 list-source:
 	@for f in $(ALLSOURCE) ; do echo $$f ; done
-list-source-gj0:
-	@for f in $(filter-out $(shell grep -v "^#" gj-files) $(shell grep -v "^#" gj-files-2), $(ALLSOURCE)) ; do \
-	echo $$f ; done
-list-source-gj1:
-	@for f in $(filter $(shell grep -v "^#" gj-files), $(ALLSOURCE)) ; \
-	do echo $$f ; done
-list-source-gj2:
-	@for f in $(filter $(shell grep -v "^#" gj-files-2), $(ALLSOURCE)) ; \
-	do echo $$f ; done
 
 list-packages:
 	@echo $(filter-out Test,$(ALLPKGS))
@@ -173,21 +166,6 @@ list-nonempty-packages:
 	@echo $(filter-out Test,$(NONEMPTYPKGS))
 list-packages-with-java-src:
 	@echo $(filter-out Test,$(PKGSWITHJAVASRC))
-
-# hack to let people build stuff w/o gj compiler until it stabilizes.
-Support/gjlib.jar: $(shell grep -v ^\# gj-files ) gj-files
-	$(RM) -rf gjlib
-	mkdir gjlib
-	@${JSR14_v1} -d gjlib -g $(shell grep -v "^#" gj-files)
-	${JAR} cf $@ -C gjlib .
-	$(RM) -rf gjlib
-# *another* hack to let people build stuff w/o gj compiler until it stabilizes.
-Support/gjlib2.jar: $(shell grep -v ^\# gj-files-2 ) gj-files-2
-	$(RM) -rf gjlib2
-	mkdir gjlib2
-	@${JSR14_v2} -d gjlib2 -g $(shell grep -v "^#" gj-files-2)
-	${JAR} cf $@ -C gjlib2 .
-	$(RM) -rf gjlib2
 
 # collect the names of all source files modified since last compile
 out-of-date:	$(ALLSOURCE) FORCE
@@ -212,118 +190,27 @@ FORCE: # force target eval, even if no source files are outdated
 # this allows us to implement the "rebuild everything if nothing's old" rule
 
 java:	PASS = 1
-java:	$(PROPERTIES) out-of-date gj-files gj-files-2
+java:	$(PROPERTIES) out-of-date
 	@rm -f "##out-of-date##"
 	@touch "##out-of-date##"
-# yuckity-yuk: v2.0 of JSR-14 compiler is incompatible with previous in
-# various ways, especially regarding the silent coercion of Comparable to
-# Comparable<K> in various situations.  Also v2.0 fixes some bugs in
-# type inference which are inavoidably triggered by some new code.  So
-# we can't compile the whole thing using one version or another. =(
-# NOTE THAT variance annotations are incompatible with files compiled
-# with the v1.x compiler... so don't use them yet.
+
 	@if [ ! -d harpoon ] ; then \
 	  touch harpoon.first ; \
-	fi
-	@if ${JSR14_v2} -test && [ ! -f harpoon.first ] ; then \
-	  if [ -n "$(firstword $(filter $(shell grep -v '^#' gj-files-2), $(shell cat out-of-date)))" ] ; then \
-	    echo Building with $(firstword ${JSR14_v2}). ;\
-	    ${JSR14_v2} ${JFLAGS} $(filter $(shell grep -v "^#" gj-files-2), $(shell cat out-of-date)) ; \
-	  fi \
-	else \
-	  echo "**** Using pre-built JSR14 v2 classes (in Support/gjlib2.jar) ****" ;\
-	  echo "See http://www.flex-compiler.csail.mit.edu/Harpoon/jsr14.txt";\
-	  echo " for information on how to install/use the GJ compiler." ; \
-	  ${JAR} xf Support/gjlib2.jar harpoon ; \
-	fi
-# some folk might not have the GJ compiler; use the pre-built gjlib for them.
-# also use gjlib when building the first time from scratch, to work around
-# two-compiler dependency problems.
-# [also don't build w/ GJ if there are no out-of-date GJ files, although
-#  the GJ compiler doesn't really seem to mind.]
-	@if [ -x $(firstword ${JSR14_v1}) -a ! -f harpoon.first ]; then \
-	  if [ -n "$(firstword $(filter $(shell grep -v '^#' gj-files), $(shell cat out-of-date)))" ] ; then \
-	    echo Building with $(firstword ${JSR14_v1}). ;\
-	    ${JSR14_v1} ${JFLAGS} $(shell grep -v "^#" gj-files) ; \
-	  fi \
-	else \
-	  echo "**** Using pre-built GJ classes (in Support/gjlib.jar) ****" ;\
-	  echo "See http://www.flex-compiler.csail.mit.edu/Harpoon/jsr14.txt";\
-	  echo " for information on how to install/use the GJ compiler." ; \
-	  ${JAR} xf Support/gjlib.jar harpoon ; \
 	fi
 	@if [ ! -d harpoon ]; then \
 	  $(MAKE) first; \
 	fi
-	@if [ -n "$(firstword $(filter-out $(shell grep -v '^#' gj-files) $(shell grep -v '^#' gj-files-2), $(shell cat out-of-date)))" ] ; then \
+	@if [ -n "$(firstword $(shell cat out-of-date))" ] ; then \
 	  echo Compiling... ; \
-	  ${JCC} ${JFLAGS} $(filter-out $(shell grep -v "^#" gj-files) $(shell grep -v '^#' gj-files-2), $(shell cat out-of-date)) ; \
+	  ${JSR14DISTR}/scripts/javac ${JFLAGS} $(shell cat out-of-date) ; \
 	fi
 	@if [ -f stubbed-out ]; then \
 	  $(RM) `sort -u stubbed-out`; \
 	  $(MAKE) --no-print-directory PASS=2 `sort -u stubbed-out` || exit 1; \
 	  echo Rebuilding `sort -u stubbed-out`; \
 	  if [ -x $(firstword ${JSR14_v1}) ]; then \
-	     ${JSR14_v1} ${JFLAGS} `sort -u stubbed-out` || exit 1; \
+	     ${JSR14DISTR}/scripts/javac ${JFLAGS} `sort -u stubbed-out` || exit 1; \
 	  fi ; \
-	  $(RM) stubbed-out; \
-	fi 
-	@$(MAKE) --no-print-directory properties
-	@mv -f "##out-of-date##" out-of-date
-	@$(RM) harpoon.first
-
-jikes:	PASS = 1
-jikes: 	$(PROPERTIES) out-of-date gj-files gj-files-2
-	@echo JIKES DOESNT YET SUPPORT JAVA 1.5
-	@echo YOU MUST USE "'make java'"
-	@exit 1
-	@rm -f "##out-of-date##"
-	@touch "##out-of-date##"
-# yuckity-yuk: v2.0 of JSR-14 compiler is incompatible with previous in
-# various ways, especially regarding the silent coercion of Comparable to
-# Comparable<K> in various situations.  Also v2.0 fixes some bugs in
-# type inference which are inavoidably triggered by some new code.  So
-# we can't compile the whole thing using one version or another. =(
-# NOTE THAT variance annotations are incompatible with files compiled
-# with the v1.x compiler... so don't use them yet.
-	@if [ ! -d harpoon ] ; then \
-	  touch harpoon.first ; \
-	fi
-	@if ${JSR14_v2} -test && [ ! -f harpoon.first ] ; then \
-	  if [ -n "$(firstword $(filter $(shell grep -v '^#' gj-files-2), $(shell cat out-of-date)))" ] ; then \
-	    echo Building with $(firstword ${JSR14_v2}). ;\
-	    ${JSR14_v2} ${JFLAGS} $(filter $(shell grep -v "^#" gj-files-2), $(shell cat out-of-date)) ; \
-	  fi \
-	else \
-	  echo "**** Using pre-built JSR14 v2 classes (in Support/gjlib2.jar) ****" ;\
-	  echo "See http://www.flex-compiler.csail.mit.edu/Harpoon/jsr14.txt";\
-	  echo " for information on how to install/use the GJ compiler." ; \
-	  ${JAR} xf Support/gjlib2.jar harpoon ; \
-	fi
-	@if [ -x $(firstword ${JSR14_v1}) -a ! -f harpoon.first ]; then \
-	  if [ -n "$(firstword $(filter $(shell grep -v '^#' gj-files), $(shell cat out-of-date)))" ] ; then \
-	    echo Building with $(firstword ${JSR14_v1}). ;\
-	    ${JSR14_v1} ${JFLAGS} $(filter $(shell grep -v "^#" gj-files), $(shell cat out-of-date)) ; \
-	  fi \
-	else \
-	  echo "**** Using pre-built GJ classes (in Support/gjlib.jar) ****" ;\
-	  echo "See http://www.flex-compiler.csail.mit.edu/Harpoon/jsr14.txt";\
-	  echo " for information on how to install/use the GJ compiler." ; \
-	  ${JAR} xf Support/gjlib.jar harpoon ; \
-	fi
-	@if [ ! -d harpoon ]; then \
-	  $(MAKE) first; \
-	fi
-	@if [ -n "$(firstword $(filter-out $(shell grep -v '^#' gj-files) $(shell grep -v '^#' gj-files-2), $(shell cat out-of-date)))" ] ; then \
-	  echo -n Compiling... "" && \
-	  ${JIKES} ${JFLAGS} $(filter-out $(shell grep -v "^#" gj-files) $(shell grep -v '^#' gj-files-2), $(shell cat out-of-date)) && \
-	  echo done. ; \
-	fi
-	@if [ -f stubbed-out ]; then \
-	  $(RM) `sort -u stubbed-out`; \
-	  $(MAKE) --no-print-directory PASS=2 `sort -u stubbed-out` || exit 1; \
-	  echo Rebuilding `sort -u stubbed-out`; \
-	  ${JIKES} ${JFLAGS} `sort -u stubbed-out` || exit 1; \
 	  $(RM) stubbed-out; \
 	fi 
 	@$(MAKE) --no-print-directory properties
@@ -464,7 +351,7 @@ Tools/PatMat/Sym.java : Tools/PatMat/Parser.java
 	xvcg -psoutput $@ -paper 8x11 -color $(VCG_OPT) $<
 	@echo "" # xvcg has a nasty habit of forgetting the last newline.
 
-harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORTP) $(PROPERTIES) $(PKGDESC) Support/gjlib.jar Support/gjlib2.jar Support/NullCodeGen.template $(wildcard Support/*-root-set) $(SCRIPTS) gj-files gj-files-2 mark-executable
+harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORTP) $(PROPERTIES) $(PKGDESC) Support/NullCodeGen.template $(wildcard Support/*-root-set) $(SCRIPTS) mark-executable
 	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORTP) $(PROPERTIES) $(PKGDESC) Support/NullCodeGen.template $(wildcard Support/*-root-set) $(SCRIPTS)
 	date '+%-d-%b-%Y at %r %Z.' > harpoon.tgz.TIMESTAMP
 
@@ -531,7 +418,8 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	$(MUNGE) doc | \
 	  sed -e 's/<\([a-z]\+\)@\([-A-Za-z.]\+\).\(edu\|EDU\)>/\&lt;\1@\2.edu\&gt;/g' \
 	      -e 's/<dd> "The,/<dd> /g' -e 's/<body>/<body bgcolor=white>/' | \
-		bin/annotate.perl -link $(JDKDOCLINK) -u $(CVSWEBLINK) | \
+		bin/annotate.perl -link $(JDKDOCLINK) -link $(JUTILDOCLINK) \
+		                  -u $(CVSWEBLINK) | \
 		$(UNMUNGE)
 	cd doc; if [ -e $(JDOCIMAGES) ]; then ln -s $(JDOCIMAGES) images; fi
 	cd doc; if [ ! -f index.html ]; then ln -s packages.html index.html; fi

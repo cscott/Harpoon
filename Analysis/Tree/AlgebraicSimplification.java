@@ -28,7 +28,6 @@ import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.UNOP; 
 import harpoon.IR.Tree.Uop; 
 import harpoon.Temp.Temp;
-import harpoon.Util.Util; 
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,6 +35,7 @@ import java.util.Iterator;
 import java.util.List; 
 import java.util.Stack; 
 
+import net.cscott.jutil.Util; 
 /**
  * <code>AlgebraicSimplification</code> performs algebraic simplification
  * on canonical trees. 
@@ -43,7 +43,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.6 2003-10-20 04:26:35 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.7 2004-02-08 01:54:28 cananian Exp $
  */
 public abstract class AlgebraicSimplification extends Simplification { 
     // hide constructor

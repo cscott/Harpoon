@@ -31,7 +31,7 @@ import harpoon.IR.Quads.QuadValueVisitor;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -54,7 +54,7 @@ import java.util.Set;
  * transformation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncRemover.java,v 1.4 2003-07-10 04:11:16 cananian Exp $
+ * @version $Id: SyncRemover.java,v 1.5 2004-02-08 01:51:52 cananian Exp $
  */
 public class SyncRemover
     extends harpoon.Analysis.Transformation.MethodMutator<Quad> {

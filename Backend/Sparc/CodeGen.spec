@@ -58,7 +58,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.4 2002-04-10 03:03:51 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.5 2004-02-08 01:57:49 cananian Exp $
  */
 %%
     private InstrFactory instrFactory;
@@ -96,7 +96,7 @@ import java.util.Set;
     // through this one.
     private Instr emit(HCodeElement root, String assem,
                        Temp[] dst, Temp[] src, boolean canFallThrough,
-                       List targets) {
+                       List<Label> targets) {
         return emit(new Instr(instrFactory, root, assem, dst, src,
                               canFallThrough, targets));
     }
@@ -368,7 +368,7 @@ import java.util.Set;
     
         public InstrCC(InstrFactory inf, HCodeElement source, String assem,
                        Temp[] dst, Temp[] src, boolean canFallThrough, 
-                       List targets) {
+                       List<Label> targets) {
             super(inf, source, assem, dst, src, canFallThrough, targets);
         }
     }
@@ -1095,7 +1095,7 @@ JUMP(NAME(l)) %{
 JUMP(BINOP(ADD, CONST<i>(c), e))
 %pred %( is13bit(c) )%
 %{
-    List labelList = LabelList.toList (ROOT.targets);
+    List<Label> labelList = LabelList.toList (ROOT.targets);
     emitNoFall (ROOT, "jmpl `s0 + "+c+", %g0", 
                       null, new Temp[] { e }, labelList);
     emitDELAYSLOT (ROOT);
@@ -1104,21 +1104,21 @@ JUMP(BINOP(ADD, CONST<i>(c), e))
 JUMP(BINOP(ADD, e, CONST<i>(c)))
 %pred %( is13bit(c) )%
 %{
-    List labelList = LabelList.toList (ROOT.targets);
+    List<Label> labelList = LabelList.toList (ROOT.targets);
     emitNoFall (ROOT, "jmpl `s0 + "+c+", %g0", 
                       null, new Temp[] { e }, labelList);
     emitDELAYSLOT (ROOT);
 }%
 
 JUMP(BINOP(ADD, e1, e2)) %{
-    List labelList = LabelList.toList (ROOT.targets);
+    List<Label> labelList = LabelList.toList (ROOT.targets);
     emitNoFall (ROOT, "jmpl `s0 + `s1, %g0", 
                       null, new Temp[] { e1, e2 }, labelList);
     emitDELAYSLOT (ROOT);
 }%
 
 JUMP(e) %{
-    List labelList = LabelList.toList (ROOT.targets);
+    List<Label> labelList = LabelList.toList (ROOT.targets);
     emitNoFall (ROOT, "jmpl `s0, %g0", null, new Temp[] { e }, labelList);
     emitDELAYSLOT (ROOT);
 }%

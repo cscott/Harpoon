@@ -14,7 +14,7 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.THROW;
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.SnapshotIterator;
 
 import java.util.Iterator;
 
@@ -26,7 +26,7 @@ import java.util.Iterator;
  * isn't behaving as expected.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodTraceFactory.java,v 1.3 2002-09-03 15:08:04 cananian Exp $
+ * @version $Id: MethodTraceFactory.java,v 1.4 2004-02-08 01:53:14 cananian Exp $
  */
 public class MethodTraceFactory extends MethodMutator<Quad> {
     

@@ -7,12 +7,12 @@ import harpoon.IR.Assem.Instr;
 
 import harpoon.Temp.Temp;
 
-import harpoon.Util.BitString;
-import harpoon.Util.Default;
+import net.cscott.jutil.BitString;
+import net.cscott.jutil.Default;
 import harpoon.Util.Util;
 
-import harpoon.Util.Collections.LinearSet;
-import harpoon.Util.Collections.UnmodifiableIterator;
+import net.cscott.jutil.LinearSet;
+import net.cscott.jutil.UnmodifiableIterator;
 
 import java.util.Iterator;
 import java.util.Collection;
@@ -25,7 +25,7 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.6 2002-08-30 22:38:07 cananian Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.7 2004-02-08 01:52:07 cananian Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public static final boolean CHECK_INV = false;

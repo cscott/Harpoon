@@ -24,8 +24,8 @@ import harpoon.Analysis.Instr.RegAllocOpts;
 
 import harpoon.Temp.TempFactory;
 
-import harpoon.Util.Default;
-import harpoon.Util.CombineIterator;
+import net.cscott.jutil.Default;
+import net.cscott.jutil.CombineIterator;
 import harpoon.Util.Options.Option;
 
 import harpoon.Analysis.MemOpt.PreallocOpt;
@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * <code>CodeGenerator</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CodeGenerator.java,v 1.10 2003-07-21 21:21:55 cananian Exp $
+ * @version $Id: CodeGenerator.java,v 1.11 2004-02-08 01:58:13 cananian Exp $
  */
 public class CodeGenerator extends CompilerStage {
     

@@ -5,8 +5,8 @@ package harpoon.Analysis.Transactions;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.AggregateSetFactory;
-import harpoon.Util.Collections.SetFactory;
+import net.cscott.jutil.AggregateSetFactory;
+import net.cscott.jutil.SetFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -19,7 +19,7 @@ import java.util.Set;
  * do some analysis and store the results of the check oracle.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AnalysisCheckOracle.java,v 1.3 2002-04-10 03:01:43 cananian Exp $
+ * @version $Id: AnalysisCheckOracle.java,v 1.4 2004-02-08 01:54:21 cananian Exp $
  */
 abstract class AnalysisCheckOracle extends CheckOracle {
     final Map<HCodeElement,CheckSet> results =

@@ -6,7 +6,7 @@ package harpoon.Analysis;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGrapher;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,13 +17,13 @@ import java.util.Set;
  * <code>Reachable</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Reachable.java,v 1.2 2003-11-14 08:16:37 cananian Exp $
+ * @version $Id: Reachable.java,v 1.3 2004-02-08 01:49:03 cananian Exp $
  */
 public final class Reachable<HCE extends HCodeElement> {
     public final Set<HCE> reachable;
 
     public Reachable(HCode<HCE> hcode) {
-	this(hcode, CFGrapher.DEFAULT);
+	this(hcode, (CFGrapher<HCE>) CFGrapher.DEFAULT);
     }
     public Reachable(HCode<HCE> hcode, CFGrapher<HCE> grapher) {
 	Set<HCE> reachable = new HashSet<HCE>();

@@ -15,7 +15,7 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.Relinker;
 import harpoon.Util.HClassUtil;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 
 import harpoon.Backend.Backend;
 
@@ -43,7 +43,7 @@ import harpoon.Util.BasicBlocks.CachingBBConverter;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.5 2003-03-28 20:20:19 salcianu Exp $
+ * @version $Id: EventDriven.java,v 1.6 2004-02-08 01:58:13 cananian Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {

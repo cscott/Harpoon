@@ -9,22 +9,26 @@ import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.PHI;
-import harpoon.Util.Util;
-import harpoon.Util.Collections.WorkSet;
 import harpoon.Temp.Temp;
+import harpoon.Util.Util;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import net.cscott.jutil.Default;
+import net.cscott.jutil.WorkSet;
 /**
  * <code>QuadLiveness</code> performs live variable analysis for a given
  * <code>HCode</code>. Since it caches results, you should create a new
  * <code>QuadLiveness</code> if you have changed the <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: QuadLiveness.java,v 1.3 2002-04-10 03:00:59 cananian Exp $
+ * @version $Id: QuadLiveness.java,v 1.4 2004-02-08 01:53:14 cananian Exp $
  */
 public class QuadLiveness extends Liveness<Quad> {
     final Map<Quad,Set<Temp>> livein, liveout;
@@ -35,9 +39,9 @@ public class QuadLiveness extends Liveness<Quad> {
      */
     public QuadLiveness(HCode<Quad> hc) {
 	super(hc);
-       	Map<Quad,Set<Temp>>[] live = this.analyze();
-	this.livein = live[0];
-	this.liveout = live[1];
+       	List<Map<Quad,Set<Temp>>> live = this.analyze();
+	this.livein = live.get(0);
+	this.liveout = live.get(1);
 	this.tempin = new HashMap<Quad,Temp[]>();
 	this.tempout = new HashMap<Quad,Temp[]>();
 	this.tempinout = new HashMap<Quad,Temp[]>();
@@ -113,17 +117,14 @@ public class QuadLiveness extends Liveness<Quad> {
 	}
     }
 
-    private Map<Quad,Set<Temp>>[] analyze() {
+    private List<Map<Quad,Set<Temp>>> analyze() {
 	//System.err.println("Entering QuadLiveness.analyze()");
 	WorkSet<Quad> ws = new WorkSet<Quad>(this.hc.getElementsL());
 
 	if (ws.isEmpty()) {
-	    Map<Quad,Set<Temp>>[] retval = {
-		new HashMap<Quad,Set<Temp>>(),
-		new HashMap<Quad,Set<Temp>>(),
-	    };
 	    //System.err.println("Leaving QuadLiveness.analyze()");
-	    return retval;
+	    return Collections.<Map<Quad,Set<Temp>>>nCopies
+		(2, Default.<Quad,Set<Temp>>EMPTY_MAP());
 	}
 
 	Quad[] leaves = this.hc.getLeafElements();
@@ -136,7 +137,7 @@ public class QuadLiveness extends Liveness<Quad> {
 	    hce = leaves[0];
 	    ws.remove(hce);
 	} else {
-	    hce = ws.pull();
+	    hce = ws.removeLast();
 	}
 
 	Map<Quad,Set<Temp>> in = new HashMap<Quad,Set<Temp>>();
@@ -186,9 +187,11 @@ public class QuadLiveness extends Liveness<Quad> {
 	    }
 
 	    if (ws.isEmpty()) break;
-	    hce = ws.pull();
+	    hce = ws.removeLast();
 	}
-	return new Map<Quad,Set<Temp>>[] {in, out};
+	List<Map<Quad,Set<Temp>>> retval=new ArrayList<Map<Quad,Set<Temp>>>(2);
+	retval.add(in); retval.add(out);
+	return retval;
     }
 }
 

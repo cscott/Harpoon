@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
-import harpoon.Util.Collections.CollectionWrapper;
+import net.cscott.jutil.CollectionWrapper;
 
 import java.util.Set;
 import java.util.AbstractSet;
@@ -11,7 +11,7 @@ import java.util.Iterator;
 
 /** wrapper around set with an associated weight.
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: WeightedSet.java,v 1.2 2002-02-25 20:57:31 cananian Exp $
+    @version $Id: WeightedSet.java,v 1.3 2004-02-08 01:52:07 cananian Exp $
 */
 class WeightedSet extends CollectionWrapper implements Set, Comparable {
     Set temps;

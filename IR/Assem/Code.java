@@ -14,10 +14,10 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.Util;
-import harpoon.Util.Collections.GenericMultiMap;
+import net.cscott.jutil.GenericMultiMap;
 import harpoon.Util.Collections.Graph;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.UnmodifiableIterator;
+import net.cscott.jutil.MultiMap;
+import net.cscott.jutil.UnmodifiableIterator;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,7 +36,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.7 2003-05-09 21:06:17 cananian Exp $
+ * @version $Id: Code.java,v 1.8 2004-02-08 01:55:08 cananian Exp $
  */
 public abstract class Code extends HCode<Instr>
     implements Graph<Instr,InstrEdge> {

@@ -13,7 +13,7 @@ import java.util.Stack;
 import java.util.Enumeration;
 
 import harpoon.Util.Util;
-import harpoon.Util.Collections.LinearSet;
+import net.cscott.jutil.LinearSet;
 
 /**
  * <code>SimpleGraphColorer</code> uses the simple but effective graph
@@ -27,7 +27,7 @@ import harpoon.Util.Collections.LinearSet;
  * <A href="http://ceylon.lcs.mit.edu/6035/lecture18/sld064.htm">lecture</A>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.2 2002-02-25 20:57:17 cananian Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.3 2004-02-08 01:52:03 cananian Exp $
  */
 
 public class SimpleGraphColorer extends GraphColorer {

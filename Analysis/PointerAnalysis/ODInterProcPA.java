@@ -33,7 +33,7 @@ import harpoon.Util.TypeInference.TypeInference;
 import harpoon.IR.Quads.QuadFactory;
 
 
-import harpoon.Util.Collections.LinearSet;
+import net.cscott.jutil.LinearSet;
 import harpoon.Util.DataStructs.Relation;
 import harpoon.Util.DataStructs.LightRelation;
 import harpoon.Util.DataStructs.LightMap;
@@ -53,7 +53,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>ODPointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODInterProcPA.java,v 1.5 2003-02-12 19:03:34 salcianu Exp $
+ * @version $Id: ODInterProcPA.java,v 1.6 2004-02-08 01:53:07 cananian Exp $
  */
 abstract class ODInterProcPA {
 

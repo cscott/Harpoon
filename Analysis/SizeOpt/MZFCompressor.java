@@ -23,9 +23,9 @@ import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.SET;
-import harpoon.Util.Collections.SnapshotIterator;
-import harpoon.Util.Default;
-import harpoon.Util.Default.PairList;
+import net.cscott.jutil.SnapshotIterator;
+import net.cscott.jutil.Default;
+import net.cscott.jutil.Default.PairList;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.ParseUtil.BadLineException;
 import harpoon.Util.ParseUtil.StringParser;
@@ -51,7 +51,7 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.7 2002-09-03 16:40:23 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.8 2004-02-08 01:53:55 cananian Exp $
  */
 public class MZFCompressor {
     final HCodeFactory parent;

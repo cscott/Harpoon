@@ -8,15 +8,18 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
+
+import net.cscott.jutil.Default;
 /**
  * A <code>SortedMapComparator</code> compares two sorted maps
  * entry-by-entry (treating the map as a sorted pair list).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SortedMapComparator.java,v 1.2 2002-02-25 21:08:55 cananian Exp $
+ * @version $Id: SortedMapComparator.java,v 1.3 2004-02-08 01:56:15 cananian Exp $
  */
-public class SortedMapComparator implements Comparator {
-    final Comparator keyComparator, valueComparator;
+public class SortedMapComparator<K,V> implements Comparator<SortedMap<K,V>> {
+    final Comparator<? super K> keyComparator;
+    final Comparator<? super V> valueComparator;
 
     /** Creates a <code>SortedMapComparator</code> which compares
      *  entries in the order defined by the <code>SortedMap</code> and
@@ -33,22 +36,21 @@ public class SortedMapComparator implements Comparator {
      *  If <code>valueComparator</code> is <code>null</code>, then all
      *  values must implement <code>java.lang.Comparable</code>.
      */
-    public SortedMapComparator(Comparator keyComparator,
-			       Comparator valueComparator) {
+    public SortedMapComparator(Comparator<? super K> keyComparator,
+			       Comparator<? super V> valueComparator) {
 	this.keyComparator = (keyComparator==null) ?
-	    Default.comparator : keyComparator;
+	    Default.<K>comparator() : keyComparator;
 	this.valueComparator = (valueComparator==null) ?
-	    Default.comparator : valueComparator;
+	    Default.<V>comparator() : valueComparator;
     }
 
-    public int compare(Object o1, Object o2) {
+    public int compare(SortedMap<K,V> sm1, SortedMap<K,V> sm2) {
 	// throws ClassCastException if objects are not the proper types.
-	SortedMap sm1 = (SortedMap) o1, sm2 = (SortedMap) o2;
-	Iterator it1 = sm1.entrySet().iterator();
-	Iterator it2 = sm2.entrySet().iterator();
+	Iterator<Map.Entry<K,V>> it1 = sm1.entrySet().iterator();
+	Iterator<Map.Entry<K,V>> it2 = sm2.entrySet().iterator();
 	while (it1.hasNext() && it2.hasNext()) {
-	    Map.Entry me1 = (Map.Entry) it1.next();
-	    Map.Entry me2 = (Map.Entry) it2.next();
+	    Map.Entry<K,V> me1 = it1.next();
+	    Map.Entry<K,V> me2 = it2.next();
 	    int kcmp = keyComparator.compare(me1.getKey(), me2.getKey());
 	    if (kcmp!=0) return kcmp;
 	    int vcmp = valueComparator.compare(me1.getValue(), me2.getValue());

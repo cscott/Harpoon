@@ -12,7 +12,7 @@ import harpoon.IR.Quads.Quad;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.UniqueVector;
+import net.cscott.jutil.UniqueVector;
 import java.util.Vector;
 import java.util.Hashtable;
 
@@ -21,7 +21,7 @@ import java.util.Hashtable;
  * common subexpression elemination, but only within basic blocks.
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: BasicCSE.java,v 1.2 2002-02-25 20:59:22 cananian Exp $
+ * @version $Id: BasicCSE.java,v 1.3 2004-02-08 01:53:14 cananian Exp $
  */
 
 public class BasicCSE  {

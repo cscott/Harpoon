@@ -10,10 +10,10 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Quad;
-import harpoon.Util.Collections.BinaryHeap;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.Heap;
-import harpoon.Util.Collections.MultiMap;
+import net.cscott.jutil.BinaryHeap;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.Heap;
+import net.cscott.jutil.MultiMap;
 
 import java.lang.reflect.Modifier;
 import java.util.Collection;
@@ -27,7 +27,7 @@ import java.util.Set;
  * the code is bloated by the specified amount.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SmallMethodInliner.java,v 1.5 2003-05-01 20:05:16 salcianu Exp $
+ * @version $Id: SmallMethodInliner.java,v 1.6 2004-02-08 01:53:14 cananian Exp $
  */
 public class SmallMethodInliner extends MethodInliningCodeFactory {
     static final int NPERCENT= // default to 25 percent bloat.

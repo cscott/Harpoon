@@ -31,11 +31,11 @@ import harpoon.Analysis.Quads.CallGraph;
 
 import harpoon.Temp.Temp;
 
-import harpoon.Util.Collections.AggregateSetFactory;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.LinearSet;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.AggregateSetFactory;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.LinearSet;
+import net.cscott.jutil.MultiMap;
+import net.cscott.jutil.WorkSet;
 import harpoon.Util.Timer;
 import harpoon.Util.Util;
 

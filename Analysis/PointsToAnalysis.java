@@ -16,10 +16,10 @@ import java.util.Set;
  * knowing the details of its implementation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PointsToAnalysis.java,v 1.3 2003-06-17 16:44:56 cananian Exp $
+ * @version $Id: PointsToAnalysis.java,v 1.4 2004-02-08 01:49:03 cananian Exp $
  */
 public abstract class PointsToAnalysis<HCE extends HCodeElement,
-				       NODE extends Node<HCE>,
+				       NODE extends PointsToAnalysis.Node<HCE>,
 				       CONTEXT extends Context> {
 
     /** Provides points-to information valid for all contexts in which

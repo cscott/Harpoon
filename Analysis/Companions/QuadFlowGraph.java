@@ -12,7 +12,7 @@ import harpoon.IR.Quads.SWITCH;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Util.Collections.AbstractGraph;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -29,7 +29,7 @@ import java.util.Map;
  * conceptually before (after) the node, on the incoming (outgoing) edge.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadFlowGraph.java,v 1.2 2003-05-16 00:35:36 cananian Exp $
+ * @version $Id: QuadFlowGraph.java,v 1.3 2004-02-08 01:50:55 cananian Exp $
  */
 public class QuadFlowGraph extends AbstractGraph<QNode,QEdge> {
     
@@ -86,7 +86,7 @@ public class QuadFlowGraph extends AbstractGraph<QNode,QEdge> {
  *  may have different edges than the underlying <code>Quad</code>
  *  returned by the <code>baseQuad()</code> method.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadFlowGraph.java,v 1.2 2003-05-16 00:35:36 cananian Exp $
+ * @version $Id: QuadFlowGraph.java,v 1.3 2004-02-08 01:50:55 cananian Exp $
  */
 abstract class QNode extends AbstractGraph.Node<QNode,QEdge> {
     QNode(QuadFlowGraph parent) { super(parent); }
@@ -102,7 +102,7 @@ abstract class QNode extends AbstractGraph.Node<QNode,QEdge> {
  *  although the edges may differ if the underlying quad is a
  *  <code>PHI</code> or <code>SIGMA</code>.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadFlowGraph.java,v 1.2 2003-05-16 00:35:36 cananian Exp $
+ * @version $Id: QuadFlowGraph.java,v 1.3 2004-02-08 01:50:55 cananian Exp $
  */
 final class NormalNode extends QNode {
     final Quad baseQuad;
@@ -146,7 +146,7 @@ final class NormalNode extends QNode {
  * edge of a <code>PHI</code>.  It reports its <code>baseQuad()</code>
  * as the affiliated <code>PHI</code>.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadFlowGraph.java,v 1.2 2003-05-16 00:35:36 cananian Exp $
+ * @version $Id: QuadFlowGraph.java,v 1.3 2004-02-08 01:50:55 cananian Exp $
  */
 final class PhiEntranceNode extends QNode {
     final PHI baseQuad;  final int whichEdge;
@@ -176,7 +176,7 @@ final class PhiEntranceNode extends QNode {
  * edge of a <code>SIGMA</code>.  It reports its <code>baseQuad()</code>
  * as the affiliated <code>SIGMA</code>.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadFlowGraph.java,v 1.2 2003-05-16 00:35:36 cananian Exp $
+ * @version $Id: QuadFlowGraph.java,v 1.3 2004-02-08 01:50:55 cananian Exp $
  */
 final class SigmaExitNode extends QNode {
     final SIGMA baseQuad;  final int whichEdge;
@@ -207,7 +207,7 @@ final class SigmaExitNode extends QNode {
  * but not in the case of inserted <code>PhiEntranceNode</code>s and
  * <code>SigmaExitNode</code>s.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadFlowGraph.java,v 1.2 2003-05-16 00:35:36 cananian Exp $
+ * @version $Id: QuadFlowGraph.java,v 1.3 2004-02-08 01:50:55 cananian Exp $
  */
 final class QEdge extends AbstractGraph.Edge<QNode,QEdge> {
     QEdge(QNode from, QNode to) { super(from, to); }

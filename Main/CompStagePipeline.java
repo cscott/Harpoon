@@ -5,7 +5,7 @@ package harpoon.Main;
 
 import harpoon.Util.Options.Option;
 
-import harpoon.Util.CombineIterator;
+import net.cscott.jutil.CombineIterator;
 
 import java.util.List;
 import java.util.LinkedList;
@@ -18,7 +18,7 @@ import java.util.Arrays;
  * list of <code>CompilerStage</code>s.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompStagePipeline.java,v 1.4 2003-07-09 21:11:16 cananian Exp $ */
+ * @version $Id: CompStagePipeline.java,v 1.5 2004-02-08 01:58:13 cananian Exp $ */
 public class CompStagePipeline extends CompilerStage {
     
     /** Creates a <code>CompStagePipeline</code>. */

@@ -13,7 +13,7 @@ import harpoon.IR.Quads.QuadKind;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Code;
 import harpoon.Util.Util;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,7 +27,7 @@ import java.util.Set;
  This is the most conservative implementation of <code>CallGraph</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl.java,v 1.10 2002-11-29 20:30:20 salcianu Exp $
+ * @version $Id: CallGraphImpl.java,v 1.11 2004-02-08 01:53:14 cananian Exp $
  */
 public class CallGraphImpl extends AbstrCallGraph  {
     final ClassHierarchy ch;

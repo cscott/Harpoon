@@ -27,7 +27,7 @@ import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.IR.LowQuad.LowQuadFactory;
 import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.IR.LowQuad.PCALL;
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.SnapshotIterator;
 
 import java.util.Iterator;
 /**
@@ -36,7 +36,7 @@ import java.util.Iterator;
  * <b>NOT FOR USE OUTSIDE REHANDLER</b>.  Use SSIToSSA instead.
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandlerToSSA.java,v 1.3 2002-09-03 15:18:22 cananian Exp $
+ * @version $Id: ReHandlerToSSA.java,v 1.4 2004-02-08 01:55:25 cananian Exp $
  */
 
 final class ReHandlerToSSA {

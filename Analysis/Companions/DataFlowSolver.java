@@ -7,7 +7,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.IR.Properties.CFGEdge;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.Util.Collections.Graph;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -20,7 +20,7 @@ import java.util.Map;
  * subclasses contain code for forward and backward analyses, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataFlowSolver.java,v 1.3 2003-05-12 19:14:52 cananian Exp $
+ * @version $Id: DataFlowSolver.java,v 1.4 2004-02-08 01:50:55 cananian Exp $
  */
 public abstract class DataFlowSolver<N extends Graph.Node<N,E>,
 				     E extends Graph.Edge<N,E>,

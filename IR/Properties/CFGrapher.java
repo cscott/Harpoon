@@ -7,9 +7,9 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.ArrayIterator;
-import harpoon.Util.CombineIterator;
-import harpoon.Util.FilterIterator;
-import harpoon.Util.Collections.UnmodifiableIterator;
+import net.cscott.jutil.CombineIterator;
+import net.cscott.jutil.FilterIterator;
+import net.cscott.jutil.UnmodifiableIterator;
 
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
@@ -29,7 +29,7 @@ import java.util.Stack;
  * representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGrapher.java,v 1.5 2004-02-07 21:28:54 cananian Exp $
+ * @version $Id: CFGrapher.java,v 1.6 2004-02-08 01:55:20 cananian Exp $
  * @see harpoon.IR.Properties.CFGraphable
  */
 public abstract class CFGrapher<HCE extends HCodeElement> {
@@ -214,7 +214,7 @@ public abstract class CFGrapher<HCE extends HCodeElement> {
      *  returns.
      * @see java.util.Comparator
      * @see java.lang.Comparable
-     * @see harpoon.Util.Default.comparator
+     * @see net.cscott.jutil.Default.comparator
      */
     // XXX in theory, we could use a type system to enforce the
     //  constraint that DEFAULT is a CFGrapher that only works

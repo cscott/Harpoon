@@ -5,13 +5,13 @@ package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlockInterf;
 import java.util.Iterator;
-import harpoon.Util.Worklist;
+import net.cscott.jutil.WorkSet;
 
 /**
  * <code>BackwardDataFlowBasicBlockVisitor</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BackwardDataFlowBasicBlockVisitor.java,v 1.4 2002-04-02 23:39:11 salcianu Exp $
+ * @version $Id: BackwardDataFlowBasicBlockVisitor.java,v 1.5 2004-02-08 01:51:05 cananian Exp $
  */
 public abstract class BackwardDataFlowBasicBlockVisitor 
     extends DataFlowBasicBlockVisitor {
@@ -29,7 +29,7 @@ public abstract class BackwardDataFlowBasicBlockVisitor
 	     <code>p</code> must be revisited by <code>this</code>.
        @see #merge(BasicBlock, BasicBlock)
     */
-    public void addSuccessors(Worklist W, BasicBlockInterf q) {
+    public void addSuccessors(WorkSet W, BasicBlockInterf q) {
 	for (Iterator it = q.prevSet().iterator(); it.hasNext(); ) {
 	    BasicBlockInterf parent = (BasicBlockInterf) it.next();
 	    if (DEBUG) 
@@ -37,7 +37,7 @@ public abstract class BackwardDataFlowBasicBlockVisitor
 		    ("addSucc: merging from: " + q + 
 		     " to: " + parent);
 	    if (merge(q, parent)) {
-		W.push(parent);
+		W.add(parent);
 	    }
 	    if (DEBUG) 
 		System.out.println

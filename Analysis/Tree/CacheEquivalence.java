@@ -40,13 +40,13 @@ import harpoon.IR.Tree.UNOP;
 import harpoon.IR.Tree.Uop;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Default;
-import harpoon.Util.Collections.Environment;
-import harpoon.Util.Collections.HashEnvironment;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.MultiMap;
+import net.cscott.jutil.Default;
+import net.cscott.jutil.Environment;
+import net.cscott.jutil.HashEnvironment;
 import harpoon.Util.Util;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -62,7 +62,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.4 2002-04-10 03:02:06 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.5 2004-02-08 01:54:28 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;

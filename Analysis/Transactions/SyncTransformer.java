@@ -67,9 +67,11 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
 import harpoon.Util.HClassUtil;
-import harpoon.Util.FilterIterator;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
+
+import net.cscott.jutil.Default;
+import net.cscott.jutil.FilterIterator;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -88,7 +90,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.11 2003-11-05 21:29:05 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.12 2004-02-08 01:54:21 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -194,7 +196,7 @@ public class SyncTransformer
      *  methods. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
 			   HMethod mainM, Set roots) {
-	this(hcf, ch, l, mainM, roots, Collections.EMPTY_SET);
+	this(hcf, ch, l, mainM, roots, Default.<HMethod>EMPTY_SET());
     }
     /** Creates a <code>SyncTransformer</code> with a transaction root method
      *  set loaded from the specified resource name. */

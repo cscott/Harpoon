@@ -9,7 +9,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.Util.Options.Option;
-import harpoon.Util.Collections.PersistentMap;
+import net.cscott.jutil.PersistentMap;
 
 import java.util.Set;
 import java.util.Collections;
@@ -19,7 +19,7 @@ import java.util.List;
  * <code>CompilerStageEZ</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompilerStageEZ.java,v 1.5 2003-07-09 21:11:16 cananian Exp $
+ * @version $Id: CompilerStageEZ.java,v 1.6 2004-02-08 01:58:13 cananian Exp $
  */
 public abstract class CompilerStageEZ extends CompilerStage {
 

@@ -9,11 +9,11 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.ArrayIterator;
-import harpoon.Util.Collections.AggregateSetFactory;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.MultiMap;
+import net.cscott.jutil.AggregateSetFactory;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.MultiMap;
 import harpoon.Util.Util;
-import harpoon.Util.Default;
+import net.cscott.jutil.Default;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,7 +30,7 @@ import java.util.Stack;
  * <code>CFGrapher</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.11 2002-04-10 02:58:48 cananian Exp $
+ * @version $Id: DomTree.java,v 1.12 2004-02-08 01:49:03 cananian Exp $
  */
 
 public class DomTree<HCE extends HCodeElement> /*implements Graph*/ {
@@ -50,7 +50,7 @@ public class DomTree<HCE extends HCodeElement> /*implements Graph*/ {
      *  <code>CFGrapher</code>, which means the elements of the
      *  <code>HCode</code> must implement <code>CFGraphable</code>. */
     public DomTree(HCode<HCE> hcode, boolean isPost) {
-	this(hcode, CFGrapher.DEFAULT, isPost);
+	this(hcode, (CFGrapher<HCE>) CFGrapher.DEFAULT, isPost);
     }
     /** Creates a new <code>DomTree</code> with the dominator
      *  tree for the given <code>HCode</code>; if <code>isPost</code> is

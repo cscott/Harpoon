@@ -34,7 +34,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.5 2003-07-28 23:24:02 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.6 2004-02-08 01:55:25 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -204,11 +204,11 @@ final class ReHandler {
 
     static TypeMap buildSSAMap(QuadSSI ncode) {
 	final HashMap newType=new HashMap();
-	UseDef ud=new UseDef();
+	UseDef<Quad> ud=new UseDef<Quad>();
 	//Make TypeInfo really dumb
 	TypeInfo titemp=new TypeInfo(ncode,ud,true);
-	Iterator iterateQuad=ncode.getElementsI();
 	SSIToSSAMap ssitossamap=new SSIToSSAMap(ncode);
+	Iterator iterateQuad=ncode.getElementsI();
 	while (iterateQuad.hasNext()) {
 	    Quad q=(Quad)iterateQuad.next();
 	    Temp[] defs=q.def();

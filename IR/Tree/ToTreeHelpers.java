@@ -18,12 +18,12 @@ import harpoon.IR.LowQuad.PCALL;
 import harpoon.IR.LowQuad.PGET;
 import harpoon.IR.LowQuad.PSET;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.BinaryHeap;
-import harpoon.Util.Collections.BinomialHeap;
-import harpoon.Util.Collections.FibonacciHeap;
-import harpoon.Util.Collections.Heap;
-import harpoon.Util.Collections.Environment;
-import harpoon.Util.Collections.HashEnvironment;
+import net.cscott.jutil.BinaryHeap;
+import net.cscott.jutil.BinomialHeap;
+import net.cscott.jutil.FibonacciHeap;
+import net.cscott.jutil.Heap;
+import net.cscott.jutil.Environment;
+import net.cscott.jutil.HashEnvironment;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
@@ -38,7 +38,7 @@ import java.util.Set;
  * <code>ToTreeHelpers</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTreeHelpers.java,v 1.5 2004-02-07 21:29:06 cananian Exp $
+ * @version $Id: ToTreeHelpers.java,v 1.6 2004-02-08 01:55:51 cananian Exp $
  */
 abstract class ToTreeHelpers {
     //------------ EdgeOracle IMPLEMENTATIONS ------------------

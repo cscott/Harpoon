@@ -7,14 +7,14 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.SetFactory;
-import harpoon.Util.Collections.BitSetFactory;
-import harpoon.Util.Collections.Factories;
+import net.cscott.jutil.SetFactory;
+import net.cscott.jutil.BitSetFactory;
+import net.cscott.jutil.Factories;
 import harpoon.Util.Util;
-import harpoon.Util.Default;
+import net.cscott.jutil.Default;
 import harpoon.Util.Worklist;
 import harpoon.Util.Collections.WorkSet;
-import harpoon.Util.Indexer;
+import net.cscott.jutil.Indexer;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.TYPECAST;
 
@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.4 2002-04-10 02:58:48 cananian Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.5 2004-02-08 01:49:03 cananian Exp $
  */
 public class ReachingDefsAltImpl<HCE extends HCodeElement>
     extends ReachingDefs<HCE> {
@@ -60,7 +60,7 @@ public class ReachingDefsAltImpl<HCE extends HCodeElement>
 	This may take a while since the analysis is done at this time.
     */
     public ReachingDefsAltImpl(HCode<HCE> hc) {
-	this(hc, CFGrapher.DEFAULT);
+	this(hc, (CFGrapher<HCE>) CFGrapher.DEFAULT);
     }
 
     /** Creates a <code>ReachingDefsImpl</code> object for the
@@ -69,7 +69,7 @@ public class ReachingDefsAltImpl<HCE extends HCodeElement>
 	This may take a while since the analysis is done at this time. 
     */
     public ReachingDefsAltImpl(HCode<HCE> hc, CFGrapher<HCE> cfger) {
-	this(hc, cfger, UseDefer.DEFAULT);
+	this(hc, cfger, (UseDefer<HCE>) UseDefer.DEFAULT);
     }
     /** Creates a <code>ReachingDefsImpl</code> object for the
 	provided <code>HCode</code> using the provided 
@@ -412,7 +412,7 @@ public class ReachingDefsAltImpl<HCE extends HCodeElement>
     class AugSetFactory extends SetFactory {
 	AugSetFactory(Set universe) { 
 
-	    // universe = new harpoon.Util.Collections.LinearSet(universe);
+	    // universe = new net.cscott.jutil.LinearSet(universe);
 	    // FSK: oog; don't do the above (BSF methods need fast
 	    // universe.contains(..) method implementation
 
@@ -425,7 +425,7 @@ public class ReachingDefsAltImpl<HCE extends HCodeElement>
 	final BitSetFactory bitSetFact;
 	//final SetFactory    linSetFact = Factories.linearSetFactory;
 	final SetFactory    linSetFact = 
-	    new harpoon.Util.Collections.AggregateSetFactory();
+	    new net.cscott.jutil.AggregateSetFactory();
 	final int linToBitThreshold, bitToLinThreshold;
 
 	int linToBitSwitches = 0;

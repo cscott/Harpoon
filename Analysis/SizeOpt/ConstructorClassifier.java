@@ -19,8 +19,8 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.SET;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.AggregateMapFactory;
-import harpoon.Util.Collections.MapFactory;
+import net.cscott.jutil.AggregateMapFactory;
+import net.cscott.jutil.MapFactory;
 import harpoon.Util.Util;
 
 import java.util.Arrays;
@@ -37,7 +37,7 @@ import java.util.Set;
  * of several 'mostly-zero field' transformations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstructorClassifier.java,v 1.4 2002-04-10 03:01:36 cananian Exp $
+ * @version $Id: ConstructorClassifier.java,v 1.5 2004-02-08 01:53:55 cananian Exp $
  */
 public class ConstructorClassifier {
     private static final boolean STATISTICS=true;

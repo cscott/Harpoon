@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
-import harpoon.Util.Collections.UniqueVector;
+import net.cscott.jutil.UniqueVector;
 
 import java.util.Set;
 import java.util.Collection;
@@ -24,7 +24,7 @@ import java.util.Collection;
  * (a performance drain).
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Graph.java,v 1.2 2002-02-25 20:57:17 cananian Exp $
+ * @version $Id: Graph.java,v 1.3 2004-02-08 01:52:03 cananian Exp $
  */
 
 public interface Graph  {

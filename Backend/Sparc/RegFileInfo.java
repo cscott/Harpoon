@@ -18,8 +18,8 @@ import harpoon.IR.Tree.Data;
 import harpoon.IR.Tree.Exp;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
-import harpoon.Util.Collections.LinearSet;
-import harpoon.Util.Collections.ListFactory;
+import net.cscott.jutil.LinearSet;
+import net.cscott.jutil.ListFactory;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ import java.util.Set;
  * which are used for tracking global data.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.4 2002-04-10 03:03:51 cananian Exp $
+ * @version $Id: RegFileInfo.java,v 1.5 2004-02-08 01:57:50 cananian Exp $
  */
 public class RegFileInfo 
   extends harpoon.Backend.Generic.RegFileInfo 

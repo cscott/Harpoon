@@ -22,7 +22,7 @@ import java.util.Collections;
  * <code>InterProc</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: InterProc.java,v 1.2 2002-02-25 21:00:36 cananian Exp $
+ * @version $Id: InterProc.java,v 1.3 2004-02-08 01:54:33 cananian Exp $
  */
 
 public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
@@ -147,7 +147,7 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
     Enumeration classInitializers(final ClassHierarchy ch) {
 	return new Enumeration() {
 	    Enumeration e =
-		new harpoon.Util.IteratorEnumerator(ch.classes().iterator());
+		new net.cscott.jutil.IteratorEnumerator(ch.classes().iterator());
 	    HMethod m = null;
 	    private void advance() {
 		while (e.hasMoreElements()&&(m==null)) {

@@ -3,9 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
-import harpoon.Util.Collections.UniqueStack;
-import harpoon.Util.Collections.UnmodifiableIterator;
-import harpoon.Util.Default;
+import net.cscott.jutil.UniqueStack;
+import net.cscott.jutil.UnmodifiableIterator;
+import net.cscott.jutil.Default;
 import harpoon.Util.EnumerationIterator;
 
 import java.util.Enumeration;
@@ -24,7 +24,7 @@ import java.util.Iterator;
  * references <code>SparseNode</code>s store internally.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SparseGraph.java,v 1.5 2002-08-30 22:37:54 cananian Exp $ 
+ * @version $Id: SparseGraph.java,v 1.6 2004-02-08 01:52:03 cananian Exp $ 
  */
 
 public class SparseGraph extends ColorableGraphImpl implements ColorableGraph {

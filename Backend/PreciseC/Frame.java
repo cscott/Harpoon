@@ -31,7 +31,7 @@ import harpoon.IR.Tree.TreeFactory;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
-import harpoon.Util.Default;
+import net.cscott.jutil.Default;
 import harpoon.Util.Util;
 
 import harpoon.Backend.Runtime1.AllocationStrategy;
@@ -47,7 +47,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.9 2003-03-03 23:36:30 salcianu Exp $
+ * @version $Id: Frame.java,v 1.10 2004-02-08 01:57:40 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;

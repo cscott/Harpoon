@@ -11,7 +11,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Quad;
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.SnapshotIterator;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -22,7 +22,7 @@ import java.util.Set;
  * than non-virtual invocation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Nonvirtualize.java,v 1.3 2002-09-03 15:08:04 cananian Exp $
+ * @version $Id: Nonvirtualize.java,v 1.4 2004-02-08 01:53:14 cananian Exp $
  * @see harpoon.Backend.Maps.DefaultFinalMap
  * @see harpoon.Backend.Maps.CHFinalMap
  */

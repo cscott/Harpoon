@@ -51,7 +51,6 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.ArrayIterator;
 import harpoon.Util.HClassUtil;
-import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 import harpoon.Util.Collections.WorkSet;
 
@@ -62,13 +61,15 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
+import net.cscott.jutil.Util;
 /**
  * <code>SCCAnalysis</code> implements Sparse Conditional Constant Propagation,
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.6 2002-08-02 17:13:40 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.7 2004-02-08 01:53:44 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -1809,7 +1810,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public Object constValue() { return value; }
 	public String toString() {
 	    return "xStringConstant: " + 
-		"\"" + Util.escape(value.toString()) + "\"";
+		"\"" + harpoon.Util.Util.escape(value.toString()) + "\"";
 	}
 	public boolean equals(Object o) { return _equals(o); }
 	private boolean _equals(Object o) {

@@ -8,7 +8,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.Linker;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
-import harpoon.Util.Default;
+import net.cscott.jutil.Default;
 import harpoon.Util.Util;
 
 import java.util.Arrays;
@@ -23,7 +23,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.5 2003-07-10 23:46:09 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.6 2004-02-08 01:55:25 cananian Exp $
  */
 final class UnHandler {
     private static final boolean ARRAY_BOUNDS_CHECKS

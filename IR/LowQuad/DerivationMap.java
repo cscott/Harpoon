@@ -10,8 +10,8 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Default;
-import harpoon.Util.Default.PairList;
+import net.cscott.jutil.Default;
+import net.cscott.jutil.Default.PairList;
 import harpoon.Util.Util;
 
 import java.util.HashMap;
@@ -22,7 +22,7 @@ import java.util.Map;
  * common <code>Derivation</code> functionality.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationMap.java,v 1.5 2003-03-10 22:19:14 cananian Exp $
+ * @version $Id: DerivationMap.java,v 1.6 2004-02-08 01:55:17 cananian Exp $
  * @see harpoon.IR.Tree.DerivationGenerator
  */
 public class DerivationMap<HCE extends HCodeElement>

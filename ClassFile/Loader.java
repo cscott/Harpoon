@@ -20,13 +20,13 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 
 import harpoon.Util.ArrayIterator;
-import harpoon.Util.CombineIterator;
-import harpoon.Util.Default;
+import net.cscott.jutil.CombineIterator;
+import net.cscott.jutil.Default;
 import harpoon.Util.EnumerationIterator;
-import harpoon.Util.FilterIterator;
+import net.cscott.jutil.FilterIterator;
 import harpoon.Util.Util;
 
-import harpoon.Util.Collections.UnmodifiableIterator;
+import net.cscott.jutil.UnmodifiableIterator;
 
 /** 
  * Class file loader.
@@ -34,7 +34,7 @@ import harpoon.Util.Collections.UnmodifiableIterator;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.15 2002-08-30 22:37:26 cananian Exp $
+ * @version $Id: Loader.java,v 1.16 2004-02-08 01:58:03 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {

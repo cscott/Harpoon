@@ -24,7 +24,7 @@ import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.Tree;
 import harpoon.IR.Tree.TreeKind;
 import harpoon.Temp.Temp;
-import harpoon.Util.BitString;
+import net.cscott.jutil.BitString;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 
@@ -73,7 +73,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.5 2002-04-10 03:02:06 cananian Exp $ 
+ * @version $Id: TreeFolding.java,v 1.6 2004-02-08 01:54:29 cananian Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {

@@ -3,20 +3,20 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
-import harpoon.Util.Util;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import net.cscott.jutil.Util;
 /**
  * A <code>Relinker</code> object is a <code>Linker</code> where one
  * can globally replace references to a certain class with references
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.4 2002-04-10 03:04:15 cananian Exp $
+ * @version $Id: Relinker.java,v 1.5 2004-02-08 01:58:03 cananian Exp $
  */
 public class Relinker extends Linker implements java.io.Serializable {
     protected final Linker linker;

@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
-import harpoon.Util.ReferenceUnique;
+import net.cscott.jutil.ReferenceUnique;
 import harpoon.Util.Util;
 
 import java.util.HashMap;
@@ -13,7 +13,7 @@ import java.util.Map;
  * to code/data/object descriptions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Linker.java,v 1.6 2002-09-06 22:24:21 cananian Exp $
+ * @version $Id: Linker.java,v 1.7 2004-02-08 01:58:03 cananian Exp $
  */
 public abstract class Linker implements ReferenceUnique {
   protected Linker() { }

@@ -6,7 +6,7 @@ package harpoon.Backend.Analysis;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HField;
 import harpoon.Util.HClassUtil;
-import harpoon.Util.Collections.UnmodifiableListIterator;
+import net.cscott.jutil.UnmodifiableListIterator;
 import harpoon.Util.Util;
 
 import java.util.AbstractSequentialList;
@@ -23,7 +23,7 @@ import java.util.NoSuchElementException;
  * Results are cached for efficiency.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFieldMap.java,v 1.5 2002-08-30 22:38:40 cananian Exp $
+ * @version $Id: ClassFieldMap.java,v 1.6 2004-02-08 01:57:24 cananian Exp $
  */
 public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
     /** Creates a <code>ClassFieldMap</code>. */

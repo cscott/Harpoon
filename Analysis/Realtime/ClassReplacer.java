@@ -28,7 +28,7 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.QuadWithTry;
 import harpoon.IR.Quads.QuadNoSSA;
 
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.SnapshotIterator;
 
 import harpoon.Util.Util;
 

@@ -9,9 +9,9 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGrapher; 
 import harpoon.Temp.Label;
 import harpoon.Temp.LabelList; 
-import harpoon.Util.Collections.Factories;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.MultiMap;
+import net.cscott.jutil.Factories;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.MultiMap;
 import harpoon.Util.Util; 
 
 import java.util.ArrayList;
@@ -26,15 +26,15 @@ import java.util.Map;
  * control-flow graph information with elements of a canonical tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeGrapher.java,v 1.5 2004-02-07 21:29:06 cananian Exp $
+ * @version $Id: TreeGrapher.java,v 1.6 2004-02-08 01:55:51 cananian Exp $
  */
 class TreeGrapher extends CFGrapher<Tree> {
     Tree firstElement = null;
     List<Tree> lastElements = new ArrayList<Tree>();
     final MultiMap<Tree,HCodeEdge<Tree>> predMap =
-	new GenericMultiMap<Tree,HCodeEdge<Tree>>(Factories.arrayListFactory());
+	new GenericMultiMap<Tree,HCodeEdge<Tree>>(Factories.<HCodeEdge<Tree>>arrayListFactory());
     final MultiMap<Tree,HCodeEdge<Tree>> succMap =
-	new GenericMultiMap<Tree,HCodeEdge<Tree>>(Factories.arrayListFactory());
+	new GenericMultiMap<Tree,HCodeEdge<Tree>>(Factories.<HCodeEdge<Tree>>arrayListFactory());
    /** Class constructor.  Don't call this directly -- use
     *  the getGrapher() method in <code>harpoon.IR.Tree.Code</code> instead.
     */ 

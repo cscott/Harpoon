@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see "Kane, <U>MIPS Risc Architecture</U>"
  * @author  Emmett Witchel <witchel@mit.edu>
- * @version $Id: CodeGen.spec,v 1.5 2003-04-23 01:33:13 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.6 2004-02-08 01:57:34 cananian Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -261,7 +261,7 @@ import java.util.Iterator;
     */
     private Instr emit(HCodeElement root, String assem,
                        Temp[] dst, Temp[] src,
-                       boolean canFallThrough, List targets) {
+                       boolean canFallThrough, List<Label> targets) {
        return emit(new Instr( instrFactory, root, assem,
                               dst, src, canFallThrough, targets));
     }		      
@@ -346,7 +346,7 @@ import java.util.Iterator;
     */
     private Instr emitCallNoFall( HCodeElement root, String assem,
 		       Temp[] dst, Temp[] src, Label[] targets ) {
-	List tlist = (targets==null?null:Arrays.asList(targets));
+	List<Label> tlist = (targets==null?null:Arrays.asList(targets));
         return emit(new InstrCALL( instrFactory, root, assem,
 				   dst, src, false, tlist));
     }
@@ -354,7 +354,7 @@ import java.util.Iterator;
     private Instr emitNativeCall( HCodeElement root, String assem,
                                   Temp[] dst, Temp[] src, 
                                   boolean canFall, Label[] targets) {
-       List tlist = (targets==null?null:Arrays.asList(targets));
+       List<Label> tlist = (targets==null?null:Arrays.asList(targets));
        return emit(new InstrCALL( instrFactory, root, assem,
                                   dst, src, canFall, tlist));
     }
@@ -1989,7 +1989,7 @@ JUMP(NAME(l)) %{ // direct jump
 
 JUMP(e) %{
    emitLineDebugInfo(ROOT);
-    List labelList = LabelList.toList( ROOT.targets );
+    List<Label> labelList = LabelList.toList( ROOT.targets );
     emit(new Instr( instrFactory, ROOT, 
                     "j `s0",
                     new Temp[]{ },

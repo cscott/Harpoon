@@ -5,14 +5,14 @@ package harpoon.Analysis.Companions;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
-import harpoon.Util.Default;
+import net.cscott.jutil.Default;
 /**
  * A <code>StaticValue</code> is a pair of variable and statement,
  * which represents all the variables possible values at the
  * given program point.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticValue.java,v 1.1 2003-05-07 22:51:36 cananian Exp $
+ * @version $Id: StaticValue.java,v 1.2 2004-02-08 01:50:55 cananian Exp $
  */
 public class StaticValue<HCE extends HCodeElement>
     extends Default.PairList<Temp,HCE>  {

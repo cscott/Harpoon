@@ -16,14 +16,14 @@ import harpoon.IR.Quads.MONITORENTER;
 import harpoon.IR.Quads.MONITOREXIT;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.SET;
-import harpoon.Util.Collections.WorkSet;
-import harpoon.Util.Collections.AggregateSetFactory;
-import harpoon.Util.Collections.BitSetFactory;
-import harpoon.Util.Collections.GenericInvertibleMultiMap;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.InvertibleMultiMap;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.SetFactory;
+import net.cscott.jutil.WorkSet;
+import net.cscott.jutil.AggregateSetFactory;
+import net.cscott.jutil.BitSetFactory;
+import net.cscott.jutil.GenericInvertibleMultiMap;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.InvertibleMultiMap;
+import net.cscott.jutil.MultiMap;
+import net.cscott.jutil.SetFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,7 +40,7 @@ import java.util.Set;
  * other things).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldSyncOracle.java,v 1.2 2002-02-25 20:59:23 cananian Exp $
+ * @version $Id: FieldSyncOracle.java,v 1.3 2004-02-08 01:53:14 cananian Exp $
  */
 public class FieldSyncOracle {
     final MultiMap fieldsRead, fieldsWritten;

@@ -22,7 +22,7 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.THROW;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.SnapshotIterator;
 import harpoon.Util.Util;
 
 import java.util.Iterator;
@@ -35,7 +35,7 @@ import java.util.Iterator;
  * <code>CounterFactory</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: EpilogMutator.java,v 1.5 2002-09-03 15:07:57 cananian Exp $
+ * @version $Id: EpilogMutator.java,v 1.6 2004-02-08 01:51:01 cananian Exp $
  */
 class EpilogMutator
     extends harpoon.Analysis.Transformation.MethodMutator<Quad> {

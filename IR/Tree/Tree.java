@@ -12,7 +12,7 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.ArrayIterator;
-import harpoon.Util.CombineIterator;
+import net.cscott.jutil.CombineIterator;
 import harpoon.Util.Util;
 
 import java.util.AbstractCollection;
@@ -29,7 +29,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.6 2002-11-29 20:50:45 salcianu Exp $
+ * @version $Id: Tree.java,v 1.7 2004-02-08 01:55:51 cananian Exp $
  */
 public abstract class Tree 
     implements HCodeElement

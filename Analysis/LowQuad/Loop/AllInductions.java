@@ -4,7 +4,7 @@
 package harpoon.Analysis.LowQuad.Loop;
 
 import harpoon.Analysis.Loops.Loops;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 import harpoon.Analysis.UseDef;
 import harpoon.ClassFile.HCode;
 import harpoon.IR.LowQuad.LQop;
@@ -32,7 +32,7 @@ import java.util.Iterator;
  * <code>AllInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: AllInductions.java,v 1.4 2002-04-10 02:59:57 cananian Exp $
+ * @version $Id: AllInductions.java,v 1.5 2004-02-08 01:52:53 cananian Exp $
  */
 public class AllInductions {
     TempMap tm;

@@ -57,7 +57,7 @@ import java.io.InputStreamReader;
  * <code>PointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysisCompStage.java,v 1.7 2003-11-04 16:01:13 salcianu Exp $
+ * @version $Id: PointerAnalysisCompStage.java,v 1.8 2004-02-08 01:53:07 cananian Exp $
  */
 public class PointerAnalysisCompStage extends CompilerStageEZ {
 
@@ -73,7 +73,7 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
 	@see AllocSyncOptCompStage
 	@see PARTJSupportCompStage. */
     public static CompilerStage getPAAndAppsStage() {
-	List/*<CompilerStage>*/ paStages = new LinkedList/*<CompilerStage>*/();
+	List<CompilerStage> paStages = new LinkedList<CompilerStage>();
 
 	paStages.add(new PointerAnalysisCompStage(true));
 
@@ -107,8 +107,8 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
     public PointerAnalysisCompStage() { this(false); }
     
     
-    public List/*<Option>*/ getOptions() {
-	List/*<Option>*/ opts = new LinkedList/*<Option>*/();
+    public List<Option> getOptions() {
+	List<Option> opts = new LinkedList<Option>();
 	
 	opts.add(new Option("pa:s", "Use SmartCallGraph (more precise than the default callgraph, but really slow)") {
 	    public void action() { SMART_CALL_GRAPH = true; }
@@ -364,9 +364,11 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
     }
     
     
-    private void do_analysis(PointerAnalysis pa, Set/*<String>*/ methods) {
-	for(Iterator/**/ it = methods.iterator(); it.hasNext(); )
-	    display_pa4method(pa, (String) it.next());
+    private void do_analysis(PointerAnalysis pa, Set<String> methods) {
+	for(Iterator<String> it = methods.iterator(); it.hasNext(); ) {
+	    String m = it.next();
+	    display_pa4method(pa, m);
+	}
     }
     
     private void interactive_analysis(PointerAnalysis pa) {

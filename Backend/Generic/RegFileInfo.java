@@ -50,7 +50,7 @@ import java.util.Iterator;
     together before mapping them to Physical Register Temps.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.5 2003-04-19 01:03:44 salcianu Exp $ */
+    @version $Id: RegFileInfo.java,v 1.6 2004-02-08 01:57:30 cananian Exp $ */
 public abstract class RegFileInfo implements java.io.Serializable {
 
     /** Defines function from 
@@ -375,7 +375,7 @@ public abstract class RegFileInfo implements java.io.Serializable {
 	method. 
     */
     public List expand(Temp t) {
-	return harpoon.Util.Collections.ListFactory.singleton(t);
+	return net.cscott.jutil.ListFactory.singleton(t);
     }
 
     /** Returns a specific register on the machine.<BR>

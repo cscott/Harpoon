@@ -7,7 +7,7 @@ import harpoon.ClassFile.Linker;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 import harpoon.Util.Tuple;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 import harpoon.Analysis.UseDef;
 
 import java.util.ArrayList;
@@ -22,7 +22,7 @@ import java.util.Set;
  * <code>Pattern</code> <blink>please document me if I'm public!</blink>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.5 2003-07-28 23:24:02 cananian Exp $
+ * @version $Id: Pattern.java,v 1.6 2004-02-08 01:55:25 cananian Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {

@@ -7,7 +7,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGraphable;
-import harpoon.Util.Collections.UnmodifiableIterator;
+import net.cscott.jutil.UnmodifiableIterator;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ import java.util.Stack;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.8 2002-08-30 22:37:12 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.9 2004-02-08 01:49:03 cananian Exp $
  */
 
 public class CycleEq  {

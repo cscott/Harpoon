@@ -23,9 +23,9 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.SIGMA;
-import harpoon.Util.Collections.AggregateSetFactory;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.MultiMap;
+import net.cscott.jutil.AggregateSetFactory;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.MultiMap;
 import harpoon.Util.Util;
 
 import java.util.Arrays;
@@ -45,7 +45,7 @@ import java.util.Set;
  * before its definite initialization point.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefiniteInitOracle.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
+ * @version $Id: DefiniteInitOracle.java,v 1.5 2004-02-08 01:53:14 cananian Exp $
  */
 public class DefiniteInitOracle {
     private static final boolean DEBUG=true;

@@ -12,9 +12,9 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Util.CloneableIterator; 
 import harpoon.Util.Util; 
-import harpoon.Util.Collections.BitSetFactory;
-import harpoon.Util.Collections.ReverseIterator;
-import harpoon.Util.Collections.SetFactory;
+import net.cscott.jutil.BitSetFactory;
+import net.cscott.jutil.ReverseIterator;
+import net.cscott.jutil.SetFactory;
 
 import java.util.Set;
 import java.util.List;
@@ -37,7 +37,7 @@ import java.util.Iterator;
  * can be treated as if the scaling factor were equal to 1.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SpaceHeavyLiveTemps.java,v 1.6 2003-05-09 16:35:19 cananian Exp $
+ * @version $Id: SpaceHeavyLiveTemps.java,v 1.7 2004-02-08 01:51:05 cananian Exp $
  */
 public class SpaceHeavyLiveTemps extends LiveTemps {
     CFGrapher grapher;

@@ -26,7 +26,7 @@ import harpoon.IR.Quads.QuadRSSx;
 import harpoon.IR.Quads.QuadSSA;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Temp.Temp;
-import harpoon.Util.Default.PairList;
+import net.cscott.jutil.Default.PairList;
 import harpoon.Util.Util;
 
 import java.util.HashMap;
@@ -40,7 +40,7 @@ import java.util.Set;
  * MZF-compressed version of a class at run-time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFChooser.java,v 1.6 2002-09-03 16:40:23 cananian Exp $
+ * @version $Id: MZFChooser.java,v 1.7 2004-02-08 01:53:55 cananian Exp $
  */
 class MZFChooser extends MethodMutator<Quad> {
     /** an oracle to determine the properties of constructors. */

@@ -18,8 +18,8 @@ import harpoon.IR.Tree.TreeFactory;
 import harpoon.IR.Tree.Type;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
-import harpoon.Util.Collections.LinearSet;
-import harpoon.Util.Collections.ListFactory;
+import net.cscott.jutil.LinearSet;
+import net.cscott.jutil.ListFactory;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
@@ -40,7 +40,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.4 2002-04-10 03:04:01 cananian Exp $
+ * @version $Id: RegFileInfo.java,v 1.5 2004-02-08 01:57:59 cananian Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 

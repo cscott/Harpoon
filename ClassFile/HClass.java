@@ -4,8 +4,8 @@
 package harpoon.ClassFile;
 
 import harpoon.Util.ArrayFactory;
-import harpoon.Util.ReferenceUnique;
-import harpoon.Util.Collections.UniqueVector;
+import net.cscott.jutil.ReferenceUnique;
+import net.cscott.jutil.UniqueVector;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
@@ -31,7 +31,7 @@ import java.util.Map;
  * <code>Linker</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.46 2003-03-18 02:27:02 cananian Exp $
+ * @version $Id: HClass.java,v 1.47 2004-02-08 01:58:03 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */

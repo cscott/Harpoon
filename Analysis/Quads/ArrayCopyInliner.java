@@ -6,7 +6,7 @@ package harpoon.Analysis.Quads;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
-import harpoon.Util.Collections.MultiMap;
+import net.cscott.jutil.MultiMap;
 
 /**
  * <code>ArrayCopyInliner</code> will inline array copy.

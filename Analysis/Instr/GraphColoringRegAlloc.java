@@ -25,17 +25,17 @@ import harpoon.IR.Assem.InstrFactory;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
-import harpoon.Util.CombineIterator;
-import harpoon.Util.FilterIterator;
-import harpoon.Util.Default;
+import net.cscott.jutil.CombineIterator;
+import net.cscott.jutil.FilterIterator;
+import net.cscott.jutil.Default;
 import harpoon.Util.ArraySet;
-import harpoon.Util.Collections.ListFactory;
-import harpoon.Util.Collections.Factories;
-import harpoon.Util.Collections.LinearSet;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.InvertibleMap;
-import harpoon.Util.Collections.GenericInvertibleMap;
+import net.cscott.jutil.ListFactory;
+import net.cscott.jutil.Factories;
+import net.cscott.jutil.LinearSet;
+import net.cscott.jutil.MultiMap;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.InvertibleMap;
+import net.cscott.jutil.GenericInvertibleMap;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -58,7 +58,7 @@ import java.util.Date;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.4 2002-04-10 02:59:46 cananian Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.5 2004-02-08 01:52:07 cananian Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
 
@@ -1888,11 +1888,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	// for Lower Triangular Matrix, order of coordinate args is
 	// insignificant (from p.o.v. of user). 
 
-	final harpoon.Util.BitString bits;
+	final net.cscott.jutil.BitString bits;
 	final int side;
 	AdjMtxOld(List symReg) {
 	    side = symReg.size();
-	    bits = new harpoon.Util.BitString(side * side / 2);
+	    bits = new net.cscott.jutil.BitString(side * side / 2);
 	}
 	boolean get(int x, int y) {
 	    assert x != y;
@@ -1916,7 +1916,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
     }
 
     // only defined for unions of WebRecords
-    class EqWebRecords extends harpoon.Util.Collections.DisjointSet {
+    class EqWebRecords extends net.cscott.jutil.DisjointSet {
 	private HashSet temps = new HashSet();
 	MultiMap wrToEqwrs = new GenericMultiMap();
 

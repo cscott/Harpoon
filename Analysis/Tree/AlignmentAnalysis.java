@@ -40,13 +40,6 @@ import harpoon.IR.Tree.UNOP;
 import harpoon.IR.Tree.Uop;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Default;
-import harpoon.Util.Collections.Environment;
-import harpoon.Util.Collections.HashEnvironment;
-import harpoon.Util.Util;
-import harpoon.Util.Collections.WorkSet;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -57,13 +50,21 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.MultiMap;
+import net.cscott.jutil.Default;
+import net.cscott.jutil.Environment;
+import net.cscott.jutil.HashEnvironment;
+import net.cscott.jutil.Util; 
+import net.cscott.jutil.WorkSet;
 /**
  * <code>AlignmentAnalysis</code> computes the alignment
  * (some offset modulo some number from some base) of every
  * typed pointer in a Tree.  It is a dataflow analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AlignmentAnalysis.java,v 1.2 2002-04-10 03:02:03 cananian Exp $
+ * @version $Id: AlignmentAnalysis.java,v 1.3 2004-02-08 01:54:28 cananian Exp $
  */
 public class AlignmentAnalysis {
     

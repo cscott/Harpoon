@@ -24,7 +24,7 @@ import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Temp.Temp;
 import harpoon.Util.ArrayIterator;
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.SnapshotIterator;
 
 import java.util.Iterator;
 
@@ -35,7 +35,7 @@ import java.util.Iterator;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SizeCounters.java,v 1.4 2002-09-03 15:17:52 cananian Exp $
+ * @version $Id: SizeCounters.java,v 1.5 2004-02-08 01:53:55 cananian Exp $
  */
 public class SizeCounters extends MethodMutator<Quad> {
     final Frame frame;

@@ -7,10 +7,9 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Util.Worklist;
 import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Util;
-import harpoon.Util.IteratorEnumerator;
+import net.cscott.jutil.IteratorEnumerator;
 import harpoon.Analysis.EdgesIterator;
 import harpoon.Analysis.BasicBlock;
 
@@ -22,7 +21,7 @@ import harpoon.Analysis.BasicBlock;
  * <code>BasicBlockSolver</code> class. 
  * 
  * @author Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeSolver.java,v 1.4 2002-04-10 02:59:11 cananian Exp $
+ * @version $Id: TreeSolver.java,v 1.5 2004-02-08 01:51:05 cananian Exp $
  */
 public abstract class TreeSolver {
 
@@ -57,7 +56,7 @@ public abstract class TreeSolver {
     public static void worklist_solver(BasicBlock root, 
 				       DataFlowBasicBlockVisitor v) {
 
-	Worklist W = new WorkSet();
+	WorkSet W = new WorkSet();
 	W.push(root);
 	while (!W.isEmpty()) {
 	    //v.changed = false;
@@ -72,7 +71,7 @@ public abstract class TreeSolver {
     public static void worklist_solver(Iterator iter, 
 				       DataFlowBasicBlockVisitor v) {
 
-	Worklist W = new WorkSet();
+	WorkSet W = new WorkSet();
 	while (iter.hasNext()) W.push(iter.next());
 	while (!W.isEmpty()) {
 	    //v.changed = false;

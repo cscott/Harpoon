@@ -23,8 +23,8 @@ import harpoon.Analysis.Quads.CallGraphImpl;
 import harpoon.Analysis.Quads.CallGraphImpl2;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 
-import harpoon.Util.CombineIterator;
-import harpoon.Util.Default;
+import net.cscott.jutil.CombineIterator;
+import net.cscott.jutil.Default;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
 
@@ -67,7 +67,7 @@ import java.io.PrintStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.60 2003-11-04 16:02:53 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.61 2004-02-08 01:58:13 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  

@@ -9,7 +9,7 @@ import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrVisitor;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
-import harpoon.Util.Collections.ListFactory;
+import net.cscott.jutil.ListFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,7 +23,7 @@ import java.util.Set;
     instructions are coherent.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: Verify.java,v 1.4 2002-04-10 02:59:47 cananian Exp $
+    @version $Id: Verify.java,v 1.5 2004-02-08 01:52:07 cananian Exp $
 */
 class Verify extends harpoon.IR.Assem.InstrVisitor {
     LocalCffRegAlloc lra;

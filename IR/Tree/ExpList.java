@@ -6,7 +6,7 @@ package harpoon.IR.Tree;
 
 import harpoon.Temp.TempMap;
 
-import harpoon.Util.Collections.UnmodifiableIterator;
+import net.cscott.jutil.UnmodifiableIterator;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -19,7 +19,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ExpList.java,v 1.3 2002-08-30 22:39:44 cananian Exp $
+ * @version $Id: ExpList.java,v 1.4 2004-02-08 01:55:51 cananian Exp $
  */
 public final class ExpList {
     /** The expression at this list entry. */

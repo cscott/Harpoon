@@ -16,7 +16,7 @@ import java.util.Collections;
 import harpoon.IR.Quads.CALL;
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Util.FilterIterator;
+import net.cscott.jutil.FilterIterator;
 
 import harpoon.Util.PredicateWrapper;
 import harpoon.Util.DataStructs.Relation;
@@ -44,7 +44,7 @@ import harpoon.Util.Util;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ActionRepository.java,v 1.4 2002-04-10 03:00:41 cananian Exp $
+ * @version $Id: ActionRepository.java,v 1.5 2004-02-08 01:53:07 cananian Exp $
  */
 public class ActionRepository implements java.io.Serializable {
     

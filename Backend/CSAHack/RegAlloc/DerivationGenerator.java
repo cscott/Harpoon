@@ -11,7 +11,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Default;
+import net.cscott.jutil.Default;
 import harpoon.Util.Util;
 
 import java.util.HashMap;
@@ -23,7 +23,7 @@ import java.util.Map;
  * spills.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationGenerator.java,v 1.4 2002-04-10 03:02:36 cananian Exp $
+ * @version $Id: DerivationGenerator.java,v 1.5 2004-02-08 01:57:28 cananian Exp $
  */
 public class DerivationGenerator implements Derivation {
     private Map dtM = new HashMap();

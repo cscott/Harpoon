@@ -76,4 +76,4 @@ if type -t cygpath > /dev/null ; then
     harpoonpath=`cygpath -wp "$harpoonpath"`
 fi
 
-${JAVA:=java -ea} -${optprefix}ss${FLEXSTACK:=16m} -${optprefix}mx${FLEXMEM:=768m} $javaopts -Dharpoon.class.path=$harpoonpath "$@"
+${JAVA:=$JSR14DISTR/scripts/java -ea} -${optprefix}ss${FLEXSTACK:=16m} -${optprefix}mx${FLEXMEM:=768m} -classpath $FLEX_DIR:$FLEX_DIR/Support/jutil.jar $javaopts -Dharpoon.class.path=$harpoonpath "$@"

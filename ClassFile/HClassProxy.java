@@ -4,8 +4,8 @@
 package harpoon.ClassFile;
 
 import harpoon.Util.ArrayFactory;
-import harpoon.Util.ReferenceUnique;
-import harpoon.Util.Collections.UniqueVector;
+import net.cscott.jutil.ReferenceUnique;
+import net.cscott.jutil.UniqueVector;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
@@ -16,7 +16,7 @@ import java.io.Serializable;
  * "redefined" after creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassProxy.java,v 1.4 2002-04-10 03:04:12 cananian Exp $
+ * @version $Id: HClassProxy.java,v 1.5 2004-02-08 01:58:03 cananian Exp $
  */
 class HClassProxy extends HClass implements HClassMutator, Serializable {
   Relinker relinker;

@@ -12,7 +12,7 @@ import java.util.Collection;
  * def information with elements of an intermediate representation.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: UseDefer.java,v 1.3 2002-04-10 03:05:09 cananian Exp $
+ * @version $Id: UseDefer.java,v 1.4 2004-02-08 01:55:20 cananian Exp $
  */
 public abstract class UseDefer<HCE extends HCodeElement> {
     
@@ -47,7 +47,7 @@ public abstract class UseDefer<HCE extends HCodeElement> {
 	method in the <code>UseDefable</code> interface.
 	@see java.util.Comparator
 	@see java.lang.Comparable
-	@see harpoon.Util.Default.comparator
+	@see net.cscott.jutil.Default.comparator
     */
     // see commentary on CFGrapher.DEFAULT.
     public static final UseDefer DEFAULT = new UseDefer() {

@@ -12,7 +12,7 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.ArrayIterator;
 import harpoon.Util.Collections.WorkSet;
-import harpoon.Util.CombineIterator;
+import net.cscott.jutil.CombineIterator;
 import harpoon.Util.EnumerationIterator;
 import harpoon.Util.Util;
 
@@ -30,7 +30,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.11 2004-02-07 21:28:58 cananian Exp $
+ * @version $Id: Quad.java,v 1.12 2004-02-08 01:55:25 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 

@@ -18,7 +18,6 @@ import harpoon.IR.Tree.DATUM;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TreeFactory;
-import harpoon.Util.Util;
 
 import harpoon.Backend.Runtime1.AllocationStrategy;
 import harpoon.Backend.Runtime1.ObjectBuilder.RootOracle;
@@ -32,6 +31,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
+import net.cscott.jutil.Util;
 /**
  * <code>RuntimeTiny.Runtime</code> is a size-optimized version of the
  * FLEX backend.  It inherits most of the implementation of Runtime1,
@@ -40,7 +41,7 @@ import java.util.Set;
  * fields in object layouts.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.3 2003-10-21 00:41:11 cananian Exp $
+ * @version $Id: Runtime.java,v 1.4 2004-02-08 01:57:47 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Runtime1.Runtime {
     // options.

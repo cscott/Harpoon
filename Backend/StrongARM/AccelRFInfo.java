@@ -6,10 +6,10 @@ package harpoon.Backend.StrongARM;
 import harpoon.Temp.Temp;
 
 import harpoon.Util.Util;
-import harpoon.Util.Indexer;
-import harpoon.Util.Collections.BitSetFactory;
-import harpoon.Util.Collections.UnmodifiableIterator;
-import harpoon.Util.CombineIterator;
+import net.cscott.jutil.Indexer;
+import net.cscott.jutil.BitSetFactory;
+import net.cscott.jutil.UnmodifiableIterator;
+import net.cscott.jutil.CombineIterator;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -26,7 +26,7 @@ import java.util.ArrayList;
  * suggestRegAssignment(..) methods.
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AccelRFInfo.java,v 1.3 2002-08-30 22:38:59 cananian Exp $
+ * @version $Id: AccelRFInfo.java,v 1.4 2004-02-08 01:57:59 cananian Exp $
  */
 class AccelRFInfo extends RegFileInfo {
     // rls stands for RegListSet

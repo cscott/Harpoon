@@ -8,18 +8,17 @@ import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrLABEL;
 import harpoon.Temp.Temp;
 import harpoon.Temp.Label;
-import harpoon.Util.Util;
-import harpoon.Util.ArrayIterator;
 
 import java.util.List;
 import java.util.Iterator;
 import java.util.Arrays;
 
+import net.cscott.jutil.Util;
 /** <code>StrongARM.InstrBuilder</code> is an <code>Generic.InstrBuilder</code> for the
     StrongARM architecture.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.4 2002-04-10 03:04:01 cananian Exp $
+    @version $Id: InstrBuilder.java,v 1.5 2004-02-08 01:57:59 cananian Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
@@ -205,7 +204,7 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 	    offset -= OFFSET_LIMIT;
 	}
 	
-	Iterator strIter = new ArrayIterator(strs);
+	Iterator strIter = Arrays.asList(strs).iterator();
 	while(strIter.hasNext()) { 
 	    assem += (String)strIter.next() +"\n"; 
 	}

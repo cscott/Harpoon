@@ -35,7 +35,7 @@ import harpoon.IR.Quads.QuadWithTry;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.SnapshotIterator;
 
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
@@ -47,7 +47,7 @@ import harpoon.Util.Util;
  * <code>CheckRemoval</code> indicates that the check cannot be removed.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: CheckAdder.java,v 1.6 2002-08-31 00:31:12 cananian Exp $
+ * @version $Id: CheckAdder.java,v 1.7 2004-02-08 01:53:47 cananian Exp $
  */
 
 // Fix to be non-static...

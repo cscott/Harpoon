@@ -26,7 +26,7 @@ import harpoon.IR.Quads.CONST;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.THROW;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -40,7 +40,7 @@ import java.util.Map;
  * the program.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: InstrumentAllocs.java,v 1.3 2003-02-11 20:16:01 salcianu Exp $ */
+ * @version $Id: InstrumentAllocs.java,v 1.4 2004-02-08 01:58:06 cananian Exp $ */
 public class InstrumentAllocs extends MethodMutator
     implements java.io.Serializable {
 

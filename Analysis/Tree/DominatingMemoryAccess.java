@@ -33,7 +33,7 @@ import harpoon.IR.Tree.MEM;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Exp;
 import harpoon.Util.Util;
-import harpoon.Util.Collections.BitSetFactory;
+import net.cscott.jutil.BitSetFactory;
 
 import java.util.Iterator;
 import java.util.HashMap;
@@ -74,7 +74,7 @@ import java.util.ArrayList;
  used since it needs to invalidate them on a function return.
  * 
  * @author  Emmett Witchel <witchel@mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.4 2002-04-10 03:02:06 cananian Exp $
+ * @version $Id: DominatingMemoryAccess.java,v 1.5 2004-02-08 01:54:28 cananian Exp $
  */
 public class DominatingMemoryAccess {
 
@@ -241,7 +241,7 @@ public class DominatingMemoryAccess {
       // Map from Stm to enclosing MEM and back
       private Map stmToMem;
       private Map memToStm;
-      private harpoon.Util.Collections.BitSetFactory bsf;
+      private net.cscott.jutil.BitSetFactory bsf;
       private static final boolean trace = false;
    }
 

@@ -4,10 +4,10 @@
 package harpoon.Analysis;
 
 import harpoon.Util.Util;
-import harpoon.Util.IteratorEnumerator;
+import net.cscott.jutil.IteratorEnumerator;
 import harpoon.Util.Collections.WorkSet;
-import harpoon.Util.Collections.LinearSet;
-import harpoon.Util.Collections.UnmodifiableListIterator;
+import net.cscott.jutil.LinearSet;
+import net.cscott.jutil.UnmodifiableListIterator;
 import harpoon.Util.Worklist;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeEdge;
@@ -64,7 +64,7 @@ import java.util.Collection;
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BasicBlock.java,v 1.7 2004-02-07 21:28:08 cananian Exp $ */
+ * @version $Id: BasicBlock.java,v 1.8 2004-02-08 01:49:03 cananian Exp $ */
 public class BasicBlock<HCE extends HCodeElement>
     implements BasicBlockInterf<HCE,BasicBlock<HCE>>, java.io.Serializable {
     
@@ -515,7 +515,7 @@ public class BasicBlock<HCE extends HCodeElement>
 		 <code>this(code, CFGrapher.DEFAULT);</code> 
 	*/
 	public Factory(HCode<HCE> code) {
-	    this(code, CFGrapher.DEFAULT);
+	    this(code, (CFGrapher<HCE>) CFGrapher.DEFAULT);
 	}
 
 	/** Constructs a <code>BasicBlock.Factory</code> and generates

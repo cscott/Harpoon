@@ -47,7 +47,7 @@ import harpoon.IR.Tree.Uop;
 import harpoon.Temp.Label;
 import harpoon.Temp.LabelList;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.ReverseIterator;
+import net.cscott.jutil.ReverseIterator;
 import harpoon.Util.Util;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -67,7 +67,7 @@ import java.util.TreeSet;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.20 2003-11-14 08:24:52 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.21 2004-02-08 01:57:40 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     // Support losing platforms (like, say, AIX) where multiple segments

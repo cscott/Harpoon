@@ -33,12 +33,12 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
-import harpoon.Util.Default;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.MultiMapFactory;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.UnmodifiableIterator;
-import harpoon.Util.CombineIterator;
+import net.cscott.jutil.Default;
+import net.cscott.jutil.MultiMap;
+import net.cscott.jutil.MultiMapFactory;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.UnmodifiableIterator;
+import net.cscott.jutil.CombineIterator;
 
 import harpoon.Analysis.DataFlow.ReachingDefs;
 import harpoon.Analysis.DataFlow.ForwardDataFlowBasicBlockVisitor;
@@ -83,7 +83,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.7 2003-06-10 15:20:28 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.8 2004-02-08 01:52:07 cananian Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -974,7 +974,7 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	MultiMap use = new GenericMultiMap(new MySetFactory()); // Map[Temp, [Instr] ]
 	MultiMap def = new GenericMultiMap(new MySetFactory()); // Map[Temp, [Instr] ]
 	
-	class MySetFactory extends harpoon.Util.Collections.SetFactory {
+	class MySetFactory extends net.cscott.jutil.SetFactory {
 	    public Set makeSet(java.util.Collection c) {
 		return new java.util.HashSet(c) {
 		    /** temporarily overriding this.toString() to

@@ -12,7 +12,7 @@ import harpoon.IR.Properties.CFGraphable;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Properties.UseDefable;
 import harpoon.Temp.Temp;
-import harpoon.Util.Default;
+import net.cscott.jutil.Default;
 import harpoon.Util.Util;
 
 import java.util.AbstractList;
@@ -32,7 +32,7 @@ import java.util.Map;
  * single-entry single-exit region.
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrGroup.java,v 1.5 2004-02-07 21:28:47 cananian Exp $ */
+ * @version $Id: InstrGroup.java,v 1.6 2004-02-08 01:55:08 cananian Exp $ */
 public class InstrGroup {
     Type type;
     Instr entry, exit;
@@ -131,39 +131,36 @@ public class InstrGroup {
 
 	public List<HCodeEdge<Instr>> predC(Instr i) {
 	    if (!i2g.containsKey(i)) {
-		return /*Collections.*/unmodifiableList(i.predC());
+		return Collections.<HCodeEdge<Instr>>unmodifiableList
+		    (i.predC());
 	    } else {
 		InstrGroup ig = i2g.get(i);
 		if (i == ig.exit) {
-		    return Collections.singletonList /* XXX: CAST DUE TO BUG */
-			((HCodeEdge<Instr>)new InstrEdge(ig.entry, ig.exit));
+		    return Collections.<HCodeEdge<Instr>>singletonList
+			(new InstrEdge(ig.entry, ig.exit));
 		} else {
 		    assert i == ig.entry;
-		    return /*Collections.*/unmodifiableList(i.predC());
+		    return Collections.<HCodeEdge<Instr>>unmodifiableList
+			(i.predC());
 		}
 	    }
 	}
 
 	public List<HCodeEdge<Instr>> succC(Instr i) { 
 	    if (!i2g.containsKey(i)) {
-		return /*Collections.*/unmodifiableList(i.succC());
+		return Collections.<HCodeEdge<Instr>>unmodifiableList
+		    (i.succC());
 	    } else {
 		InstrGroup ig = i2g.get(i);
 		if (i == ig.entry) {
-		    return Collections.singletonList /* XXX:CAST DUE TO BUG */
-			((HCodeEdge<Instr>)new InstrEdge(ig.entry, ig.exit));
+		    return Collections.<HCodeEdge<Instr>>singletonList
+			(new InstrEdge(ig.entry, ig.exit));
 		} else {
 		    assert i == ig.exit;
-		    return /*Collections.*/unmodifiableList(i.succC());
+		    return Collections.<HCodeEdge<Instr>>unmodifiableList
+			(i.succC());
 		}
 	    }
-	}
-	/**XXX:BUG IN JAVAC, fixed in 1.5.0*/
-	private List<HCodeEdge<Instr>> unmodifiableList(final List<InstrEdge> l) {
-	    return new AbstractList<HCodeEdge<Instr>>() {
-		public int size() { return l.size(); }
-		public HCodeEdge<Instr> get(int i) { return l.get(i); }
-	    };
 	}
     }
     /** <code>InstrGroup.GroupUseDefer</code> turns an Instr -> Group

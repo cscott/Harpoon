@@ -28,7 +28,7 @@ import harpoon.IR.Quads.SWITCH;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Collections.DisjointSet;
+import net.cscott.jutil.DisjointSet;
 import harpoon.Util.Util;
 
 import java.util.Iterator;
@@ -38,7 +38,7 @@ import java.util.Iterator;
  * statements where possible instead of inserting moves.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CoalescingToNoSSA.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
+ * @version $Id: CoalescingToNoSSA.java,v 1.5 2004-02-08 01:53:14 cananian Exp $
  */
 public class CoalescingToNoSSA extends MethodMutator {
     

@@ -6,7 +6,7 @@ package harpoon.IR.Quads;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Tuple;
-import harpoon.Util.Collections.UniqueStack;
+import net.cscott.jutil.UniqueStack;
 import harpoon.Util.Util;
 
 import java.util.HashSet;
@@ -18,7 +18,7 @@ import java.util.Set;
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.4 2002-04-10 03:05:15 cananian Exp $
+ * @version $Id: Peephole.java,v 1.5 2004-02-08 01:55:25 cananian Exp $
  */
 
 final class Peephole  {

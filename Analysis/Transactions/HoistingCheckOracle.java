@@ -12,10 +12,10 @@ import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.MONITORENTER;
 import harpoon.Temp.Temp;
 import harpoon.Util.ArrayIterator;
-import harpoon.Util.Collections.AggregateSetFactory;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.SetFactory;
+import net.cscott.jutil.AggregateSetFactory;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.MultiMap;
+import net.cscott.jutil.SetFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -33,7 +33,7 @@ import java.util.Set;
  * process is repeated until no checks can be moved higher.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HoistingCheckOracle.java,v 1.4 2004-02-07 21:28:37 cananian Exp $
+ * @version $Id: HoistingCheckOracle.java,v 1.5 2004-02-08 01:54:21 cananian Exp $
  */
 // note: doesn't allow hoisting past sigmas.  since input is SSA, this is
 // fine.  If you ever want to give it SSI instead, you should fix this.

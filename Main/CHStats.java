@@ -9,7 +9,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
-import harpoon.Util.Collections.UniqueVector;
+import net.cscott.jutil.UniqueVector;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -18,7 +18,7 @@ import java.util.Iterator;
  * compiler class hierarchy for inclusion in papers and theses.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CHStats.java,v 1.2 2002-02-25 21:06:05 cananian Exp $
+ * @version $Id: CHStats.java,v 1.3 2004-02-08 01:58:13 cananian Exp $
  */
 
 public abstract class CHStats extends harpoon.IR.Registration {

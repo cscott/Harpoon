@@ -60,7 +60,7 @@
 # in harpoon.Util
 @inutil = (
 	   BitString,
-#	   CombineIterator, # array issues
+	   CombineIterator, # array issues
 	   Default,
 	   FilterIterator,
 	   Indexer,

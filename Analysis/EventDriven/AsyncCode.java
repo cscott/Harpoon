@@ -40,7 +40,7 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -52,7 +52,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.5 2002-06-10 20:20:50 cananian Exp $
+ * @version $Id: AsyncCode.java,v 1.6 2004-02-08 01:51:58 cananian Exp $
  */
 public class AsyncCode {
 

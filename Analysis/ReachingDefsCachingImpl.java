@@ -11,7 +11,7 @@ import harpoon.IR.Quads.TYPECAST;
 import harpoon.Temp.Temp;
 
 import harpoon.Util.Util;
-import harpoon.Util.Collections.BitSetFactory;
+import net.cscott.jutil.BitSetFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -32,7 +32,7 @@ import java.util.HashMap;
  * over all the statements in the BasicBlock again.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsCachingImpl.java,v 1.3 2002-04-10 02:58:48 cananian Exp $
+ * @version $Id: ReachingDefsCachingImpl.java,v 1.4 2004-02-08 01:49:03 cananian Exp $
  */
 public class ReachingDefsCachingImpl<HCE extends HCodeElement>
     extends ReachingDefsAltImpl<HCE> {

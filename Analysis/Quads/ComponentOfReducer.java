@@ -24,7 +24,7 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.SnapshotIterator;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
@@ -43,7 +43,7 @@ import java.util.Map;
  * final type information (a <code>Backend.Maps.FinalMap</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ComponentOfReducer.java,v 1.3 2002-09-03 15:08:03 cananian Exp $
+ * @version $Id: ComponentOfReducer.java,v 1.4 2004-02-08 01:53:14 cananian Exp $
  */
 public class ComponentOfReducer extends MethodMutator<Quad> {
     final ExactTypeMap<Quad> etm;

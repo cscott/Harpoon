@@ -6,12 +6,13 @@ package harpoon.Util;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.Linker;
 
+import net.cscott.jutil.Util;
 /**
  * <code>HClassUtil</code> contains various useful methods for dealing with
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.10 2002-07-26 19:53:39 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.11 2004-02-08 01:56:15 cananian Exp $
  */
 public abstract class HClassUtil  {
     // Only static methods.

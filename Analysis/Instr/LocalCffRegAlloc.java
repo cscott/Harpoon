@@ -29,18 +29,18 @@ import harpoon.Temp.Label;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 
-import harpoon.Util.CombineIterator;
+import net.cscott.jutil.CombineIterator;
 import harpoon.Util.Util;
-import harpoon.Util.FilterIterator;
+import net.cscott.jutil.FilterIterator;
 
-import harpoon.Util.Collections.LinearSet;
-import harpoon.Util.Collections.Factories;
+import net.cscott.jutil.LinearSet;
+import net.cscott.jutil.Factories;
 
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.SetFactory;
-import harpoon.Util.Collections.BitSetFactory;
-import harpoon.Util.Collections.ReverseIterator;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.MultiMap;
+import net.cscott.jutil.SetFactory;
+import net.cscott.jutil.BitSetFactory;
+import net.cscott.jutil.ReverseIterator;
 
 import java.util.Arrays;
 import java.util.List;
@@ -71,7 +71,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.5 2002-08-30 22:38:10 cananian Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.6 2004-02-08 01:52:07 cananian Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -652,7 +652,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    Set liveRegs = regSetFact.makeSet(liveRegsOnExit);
 
 	    updateMapping(tempToRegs, liveTempSet, liveRegs, 
-			  harpoon.Util.Default.EMPTY_MAP);
+			  net.cscott.jutil.Default.EMPTY_MAP);
 
 	    // doing a reverse iteration
 	    ListIterator liter = bl.listIterator(bl.size());

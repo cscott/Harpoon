@@ -23,7 +23,7 @@ import harpoon.IR.Tree.SEGMENT;
 import harpoon.IR.Tree.SEQ;
 import harpoon.IR.Tree.TreeKind;
 import harpoon.Temp.Label;
-import harpoon.Util.FilterIterator;
+import net.cscott.jutil.FilterIterator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,7 +38,7 @@ import java.util.Stack;
  * information about the bitfield-numbering of fields.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeDataFilter.java,v 1.2 2003-07-21 21:21:49 cananian Exp $
+ * @version $Id: TreeDataFilter.java,v 1.3 2004-02-08 01:54:21 cananian Exp $
  */
 public class TreeDataFilter extends FilterIterator.Filter<HData,HData> {
     final Frame f;

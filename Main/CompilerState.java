@@ -9,7 +9,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Analysis.ClassHierarchy;
 
-import harpoon.Util.Collections.PersistentMap;
+import net.cscott.jutil.PersistentMap;
 
 import java.util.Set;
 import java.io.Serializable;
@@ -32,7 +32,7 @@ import java.io.Serializable;
  * compiler&quot;)
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompilerState.java,v 1.6 2003-07-09 21:11:16 cananian Exp $ */
+ * @version $Id: CompilerState.java,v 1.7 2004-02-08 01:58:13 cananian Exp $ */
 public class CompilerState implements Cloneable, Serializable {
    
     private CompilerState() { 

@@ -13,12 +13,12 @@ import harpoon.Util.PredicateWrapper;
  * <code>Relation</code> is a mathematical relation, accepting one to many
  * and many to one mappings.
  *
- * <p>It is similar to harpoon.Util.Collections.MultiMap but it is intended
+ * <p>It is similar to <code>net.cscott.jutil.MultiMap</code> but it is intended
  * to be simpler and better tailored for the implementation of the Pointer
  * Analysis algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Relation.java,v 1.5 2003-10-26 16:34:52 salcianu Exp $
+ * @version $Id: Relation.java,v 1.6 2004-02-08 01:56:57 cananian Exp $
  */
 public interface Relation {
     

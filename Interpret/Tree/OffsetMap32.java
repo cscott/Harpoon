@@ -73,7 +73,7 @@ import java.util.StringTokenizer;
  * 
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.4 2002-04-10 03:06:01 cananian Exp $
+ * @version  $Id: OffsetMap32.java,v 1.5 2004-02-08 01:58:09 cananian Exp $
  */
 class OffsetMap32 extends OffsetMap
 {
@@ -109,7 +109,7 @@ class OffsetMap32 extends OffsetMap
 	    public int fieldOrder(HField hf) {return hci.getFieldOffset(hf);}
 	};
 	this.imm = new InterfaceMethodMap
-	    (new harpoon.Util.IteratorEnumerator(ch.classes().iterator()));
+	    (new net.cscott.jutil.IteratorEnumerator(ch.classes().iterator()));
 	this.cmm = new MethodMap() {
 	    public int methodOrder(HMethod hm){return hci.getMethodOffset(hm);}
 	};

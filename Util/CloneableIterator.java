@@ -20,7 +20,7 @@ import java.util.NoSuchElementException;
    from the shared <code>Iterator</code>.
   
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CloneableIterator.java,v 1.4 2002-04-10 03:07:04 cananian Exp $ */
+ * @version $Id: CloneableIterator.java,v 1.5 2004-02-08 01:56:15 cananian Exp $ */
 public class CloneableIterator implements ListIterator, Cloneable {
     int index;
     Object next;
@@ -93,9 +93,9 @@ public class CloneableIterator implements ListIterator, Cloneable {
 	return index - 1;
     }
     
-    public Object clone() { 
+    public CloneableIterator clone() { 
 	try { 
-	    return super.clone(); 
+	    return (CloneableIterator) super.clone(); 
 	} catch (CloneNotSupportedException e) {
 	    assert false : "Object should always be cloneable";
 	    return null;

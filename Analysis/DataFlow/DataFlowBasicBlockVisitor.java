@@ -6,7 +6,7 @@ package harpoon.Analysis.DataFlow;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.BasicBlockInterf;
 import java.util.Enumeration;
-import harpoon.Util.Worklist;
+import net.cscott.jutil.WorkSet;
 
 import harpoon.Util.Util;
 
@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * a set of <code>BasicBlock</code>.
  *
  * @author John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: DataFlowBasicBlockVisitor.java,v 1.5 2002-04-10 02:59:09 cananian Exp $
+ * @version $Id: DataFlowBasicBlockVisitor.java,v 1.6 2004-02-08 01:51:05 cananian Exp $
  */
 
 public abstract class DataFlowBasicBlockVisitor extends harpoon.Analysis.BasicBlockInterfVisitor {
@@ -28,7 +28,7 @@ public abstract class DataFlowBasicBlockVisitor extends harpoon.Analysis.BasicBl
      * Adds the successors of the basic block q to the worklist W,
      * performing merge operations if necessary.
      */
-    public abstract void addSuccessors(Worklist W, BasicBlockInterf q);
+    public abstract void addSuccessors(WorkSet W, BasicBlockInterf q);
     
     /**
        Merges operation on the from and to basic block.  Returns true if

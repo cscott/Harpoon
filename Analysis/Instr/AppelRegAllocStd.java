@@ -11,8 +11,8 @@ import harpoon.Analysis.BasicBlock;
 
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
-import harpoon.Util.FilterIterator;
-import harpoon.Util.CombineIterator;
+import net.cscott.jutil.FilterIterator;
+import net.cscott.jutil.CombineIterator;
 
 import java.util.Collection;
 import java.util.AbstractCollection;

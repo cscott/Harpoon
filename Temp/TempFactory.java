@@ -8,9 +8,9 @@ package harpoon.Temp;
  * <code>Temp</code>s within a given scope.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TempFactory.java,v 1.2 2002-02-25 21:07:05 cananian Exp $
+ * @version $Id: TempFactory.java,v 1.3 2004-02-08 01:59:47 cananian Exp $
  */
-public abstract class TempFactory implements harpoon.Util.ReferenceUnique {
+public abstract class TempFactory implements net.cscott.jutil.ReferenceUnique {
     int nextID = 0;
     int newID() {
 	return nextID++;

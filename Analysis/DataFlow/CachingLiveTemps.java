@@ -10,9 +10,9 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Util.CloneableIterator; 
 import harpoon.Util.Util; 
-import harpoon.Util.Collections.BitSetFactory;
-import harpoon.Util.Collections.ReverseIterator;
-import harpoon.Util.Collections.SetFactory;
+import net.cscott.jutil.BitSetFactory;
+import net.cscott.jutil.ReverseIterator;
+import net.cscott.jutil.SetFactory;
 
 import java.util.Set;
 import java.util.Map;
@@ -28,7 +28,7 @@ import java.util.Iterator;
  * statements in the basic blocks.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CachingLiveTemps.java,v 1.3 2002-08-30 22:37:43 cananian Exp $
+ * @version $Id: CachingLiveTemps.java,v 1.4 2004-02-08 01:51:05 cananian Exp $
  */
 public class CachingLiveTemps extends LiveTemps {
 

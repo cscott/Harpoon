@@ -7,8 +7,8 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Util.ArrayIterator;
-import harpoon.Util.Default;
-import harpoon.Util.IteratorEnumerator;
+import net.cscott.jutil.Default;
+import net.cscott.jutil.IteratorEnumerator;
 import harpoon.Util.Util;
 
 import java.util.Enumeration;
@@ -25,7 +25,7 @@ import java.util.Set;
  * another one if you make modifications to the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.13 2003-07-11 09:38:37 cananian Exp $
+ * @version $Id: UseDef.java,v 1.14 2004-02-08 01:49:03 cananian Exp $
  */
 
 public class UseDef<HCE extends HCodeElement>

@@ -10,9 +10,9 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.NoSuchClassException;
 import harpoon.Tools.Annotation.Lex.LinePos;
-import harpoon.Util.Collections.HashEnvironment;
+import net.cscott.jutil.HashEnvironment;
 import harpoon.Util.HClassUtil;
-import harpoon.Util.Collections.Environment;
+import net.cscott.jutil.Environment;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 

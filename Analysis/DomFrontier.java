@@ -10,12 +10,12 @@ import harpoon.IR.Properties.CFGrapher;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.ArrayIterator;
 import harpoon.Util.ArraySet;
-import harpoon.Util.Collections.AggregateSetFactory;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Default;
+import net.cscott.jutil.AggregateSetFactory;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.MultiMap;
+import net.cscott.jutil.Default;
 import harpoon.Util.Util;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -29,7 +29,7 @@ import java.util.HashSet;
  * the <code>harpoon.IR.Properties.CFGraphable</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.7 2002-02-25 20:56:10 cananian Exp $
+ * @version $Id: DomFrontier.java,v 1.8 2004-02-08 01:49:03 cananian Exp $
  */
 
 public class DomFrontier  {

@@ -29,8 +29,8 @@ import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.Quads.CallGraphImpl;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Backend.Maps.NameMap;
-import harpoon.Util.CombineIterator;
-import harpoon.Util.Default;
+import net.cscott.jutil.CombineIterator;
+import net.cscott.jutil.Default;
 import harpoon.Util.Util;
 
 import gnu.getopt.Getopt;
@@ -79,7 +79,7 @@ import harpoon.Util.Collections.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDMain.java,v 1.7 2003-03-28 20:20:19 salcianu Exp $
+ * @version $Id: EDMain.java,v 1.8 2004-02-08 01:58:13 cananian Exp $
  */
 public class EDMain extends harpoon.IR.Registration {
  
@@ -562,8 +562,7 @@ public class EDMain extends harpoon.IR.Registration {
       // output global data with the java.lang.Object class.
       if (hclass==linker.forName("java.lang.Object")) {
 	  HData data=frame.getLocationFactory().makeLocationData(frame);
-	  it=new CombineIterator(new Iterator[]
-				 { it, Default.singletonIterator(data) });
+	  it=new CombineIterator(it, Default.singletonIterator(data));
       }
       while (it.hasNext() ) {
 	final Data data = (Data) it.next();

@@ -21,7 +21,7 @@ import java.util.Set;
  * standard <code>ReachingDefsImpl</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSxReachingDefsImpl.java,v 1.4 2002-04-10 02:58:48 cananian Exp $
+ * @version $Id: SSxReachingDefsImpl.java,v 1.5 2004-02-08 01:49:03 cananian Exp $
  */
 public class SSxReachingDefsImpl<HCE extends HCodeElement>
     extends ReachingDefs<HCE> {
@@ -29,7 +29,7 @@ public class SSxReachingDefsImpl<HCE extends HCodeElement>
     /** Create an <code>SSxReachingDefs</code> using the default
      *  <code>UseDefer</code>. */
     public SSxReachingDefsImpl(HCode<HCE> hc) {
-	this(hc, UseDefer.DEFAULT);
+	this(hc, (UseDefer<HCE>) UseDefer.DEFAULT);
     }
     /** Create an <code>SSxReachingDefs</code> for <code>hc</code>
      *  using the specified <code>UseDefer</code>. */

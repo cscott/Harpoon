@@ -11,7 +11,6 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
-import harpoon.Util.Util;
 import harpoon.Temp.Temp;
 
 import java.util.List;
@@ -23,11 +22,12 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
 
+import net.cscott.jutil.Util;
 /**
  * <code>Code</code> is a code-view for MIPS assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.4 2002-04-10 03:02:50 cananian Exp $
+ * @version $Id: Code.java,v 1.5 2004-02-08 01:57:34 cananian Exp $
  */
 class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "mips";

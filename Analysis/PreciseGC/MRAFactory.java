@@ -48,7 +48,7 @@ import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Util.Collections.WorkSet;
-import harpoon.Util.Default;
+import net.cscott.jutil.Default;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
@@ -66,7 +66,7 @@ import java.util.Set;
  * <code>MRAFactory</code> generates <code>MRA</code>s.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: MRAFactory.java,v 1.7 2002-06-25 18:16:22 kkz Exp $
+ * @version $Id: MRAFactory.java,v 1.8 2004-02-08 01:53:11 cananian Exp $
  */
 public class MRAFactory {
     

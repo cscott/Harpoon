@@ -1,8 +1,0 @@
-# arg, yet more workarounds for a broken JSR-14 compiler.
-Analysis/Instr/RegAlloc.java
-Util/Collections/PersistentEnvironment.java
-Util/Collections/PersistentMap.java
-Util/Collections/PersistentMapFactory.java
-Util/Collections/PersistentSet.java
-Util/Collections/PersistentSetFactory.java
-Util/Collections/PersistentTreeNode.java

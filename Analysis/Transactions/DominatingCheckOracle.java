@@ -9,7 +9,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.MONITORENTER;
 import harpoon.IR.Quads.MONITOREXIT;
 import harpoon.Util.ArrayIterator;
-import harpoon.Util.Collections.MultiMap;
+import net.cscott.jutil.MultiMap;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -19,7 +19,7 @@ import java.util.Set;
  * on the results of a client <code>CheckOracle</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DominatingCheckOracle.java,v 1.3 2002-04-10 03:01:43 cananian Exp $
+ * @version $Id: DominatingCheckOracle.java,v 1.4 2004-02-08 01:54:21 cananian Exp $
  */
 class DominatingCheckOracle extends AnalysisCheckOracle {
     /** Creates a <code>DominatingCheckOracle</code>. */

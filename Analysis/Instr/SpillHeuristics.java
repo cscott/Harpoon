@@ -9,8 +9,8 @@ import harpoon.Analysis.Loops.LoopFinder;
 
 import harpoon.IR.Assem.Instr;
 
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.CombineIterator;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.CombineIterator;
 import harpoon.Util.Util;
 
 import harpoon.Temp.Temp;

@@ -5,7 +5,6 @@ package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlock;
 import harpoon.Util.Collections.WorkSet;
-import harpoon.Util.Worklist;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Analysis.BasicBlockInterf;
 
@@ -16,7 +15,7 @@ import java.util.Collections;
  * <code>InstrSolver</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrSolver.java,v 1.3 2002-04-02 23:39:11 salcianu Exp $
+ * @version $Id: InstrSolver.java,v 1.4 2004-02-08 01:51:05 cananian Exp $
  */
 public final class InstrSolver  {
     
@@ -113,7 +112,7 @@ public final class InstrSolver  {
 
     public static void sccSolver(Iterator it_scc,
 				 DataFlowBasicBlockVisitor v) {
-	Worklist w = new WorkSet();
+	WorkSet w = new WorkSet();
 
 	while(it_scc.hasNext()) {
 	    SCComponent scc = (SCComponent) it_scc.next();

@@ -27,7 +27,7 @@ import harpoon.IR.Quads.QuadRSSx;
 import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.THROW;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.SnapshotIterator;
 import harpoon.Util.Util;
 
 import java.util.HashMap;
@@ -45,7 +45,7 @@ import java.util.Set;
  * really *are* mostly-zero, then the net will be a space savings.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFExternalize.java,v 1.6 2002-09-03 16:58:15 cananian Exp $
+ * @version $Id: MZFExternalize.java,v 1.7 2004-02-08 01:53:55 cananian Exp $
  */
 class MZFExternalize {
     public static final double THRESHOLD =

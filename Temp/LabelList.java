@@ -13,7 +13,7 @@ import java.util.List;
 
    @deprecated Scott says so.  Use a real <code>java.util.List</code> instead.
    @author C. Scott Ananian <cananian@alumni.princeton.edu>
-   @version $Id: LabelList.java,v 1.4 2002-02-25 21:07:05 cananian Exp $
+   @version $Id: LabelList.java,v 1.5 2004-02-08 01:59:46 cananian Exp $
  */
 public final class LabelList {
     /* The head of the list. */
@@ -29,11 +29,12 @@ public final class LabelList {
 	Accepts <code>null</code> as an argument (which will
 	return an empty list). 
     */
-    public static List toList(final LabelList l) {
-	if (l==null) return Collections.EMPTY_LIST; // optimization.
-	List al = new ArrayList();
+    public static List<Label> toList(final LabelList l) {
+	if (l==null) return (List<Label>) Collections.EMPTY_LIST; // optimization.
+	ArrayList<Label> al = new ArrayList<Label>();
 	for (LabelList ll=l; ll!=null; ll=ll.tail)
 	    al.add(ll.head);
+	al.trimToSize();
 	return Collections.unmodifiableList(al);
     }
 }

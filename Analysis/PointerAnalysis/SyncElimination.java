@@ -67,7 +67,7 @@ import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 import harpoon.Util.UComp;
-import harpoon.Util.FilterIterator;
+import net.cscott.jutil.FilterIterator;
 
 import harpoon.Util.Util;
 
@@ -76,7 +76,7 @@ import harpoon.Util.Util;
  * based on the results of pointer analysis.
  * 
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: SyncElimination.java,v 1.2 2002-02-25 20:58:41 cananian Exp $
+ * @version $Id: SyncElimination.java,v 1.3 2004-02-08 01:53:07 cananian Exp $
  */
 public class SyncElimination implements java.io.Serializable {
 

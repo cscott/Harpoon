@@ -4,7 +4,7 @@
 package harpoon.Analysis.LowQuad.Loop;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 import harpoon.IR.Quads.Quad;
 import harpoon.Analysis.Loops.Loops;
 import harpoon.Analysis.UseDef;
@@ -16,7 +16,7 @@ import java.util.Set;
  * <code>LoopMap</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopMap.java,v 1.2 2002-02-25 20:57:58 cananian Exp $
+ * @version $Id: LoopMap.java,v 1.3 2004-02-08 01:52:54 cananian Exp $
  */
 public class LoopMap implements TempMap {
     

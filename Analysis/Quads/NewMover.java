@@ -20,9 +20,9 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.SIGMA;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.GenericInvertibleMultiMap;
-import harpoon.Util.Collections.InvertibleMultiMap;
-import harpoon.Util.CombineIterator;
+import net.cscott.jutil.GenericInvertibleMultiMap;
+import net.cscott.jutil.InvertibleMultiMap;
+import net.cscott.jutil.CombineIterator;
 import harpoon.Util.Util;
 
 import java.util.Collection;
@@ -46,7 +46,7 @@ import java.util.Set;
  * <code>NewMover</code> works best on <code>QuadWithTry</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NewMover.java,v 1.5 2003-06-20 05:39:28 cananian Exp $
+ * @version $Id: NewMover.java,v 1.6 2004-02-08 01:53:14 cananian Exp $
  */
 public class NewMover extends MethodMutator {
     /** If true, then the NewMover will attempt to move NEWs across SIGMAs.
@@ -109,7 +109,7 @@ public class NewMover extends MethodMutator {
 		this.moving.put(newQ.dst(), newQ);
 	    }
 	}
-	public Object clone() { return new State(this); }
+	public State clone() { return new State(this); }
 	public String toString() { return moving+" / "+aliases; }
     }
     class MoveVisitor extends QuadVisitor {

@@ -8,13 +8,13 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.NoSuchClassException;
-import harpoon.Util.Collections.AggregateMapFactory;
-import harpoon.Util.Collections.Factories;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.MapSet;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.SetFactory;
-import harpoon.Util.Default;
+import net.cscott.jutil.AggregateMapFactory;
+import net.cscott.jutil.Factories;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.MapSet;
+import net.cscott.jutil.MultiMap;
+import net.cscott.jutil.SetFactory;
+import net.cscott.jutil.Default;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.ParseUtil.BadLineException;
 
@@ -31,7 +31,7 @@ import java.util.Set;
  * by <code>SizeCounters</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ProfileParser.java,v 1.2 2002-02-25 21:00:05 cananian Exp $
+ * @version $Id: ProfileParser.java,v 1.3 2004-02-08 01:53:55 cananian Exp $
  */
 class ProfileParser {
     // lines are in the format: 'mzf_savedbytes_<classname>: <number>',

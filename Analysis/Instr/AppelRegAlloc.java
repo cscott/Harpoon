@@ -24,15 +24,15 @@ import harpoon.Analysis.DataFlow.SpaceHeavyLiveTemps;
 import harpoon.Analysis.DataFlow.Solver;
 
 import harpoon.Util.Util;
-import harpoon.Util.Default;
-import harpoon.Util.CombineIterator;
-import harpoon.Util.FilterIterator;
-import harpoon.Util.Collections.Factories;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.LinearSet;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.ReverseIterator;
-import harpoon.Util.Collections.UnmodifiableIterator;
+import net.cscott.jutil.Default;
+import net.cscott.jutil.CombineIterator;
+import net.cscott.jutil.FilterIterator;
+import net.cscott.jutil.Factories;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.LinearSet;
+import net.cscott.jutil.MultiMap;
+import net.cscott.jutil.ReverseIterator;
+import net.cscott.jutil.UnmodifiableIterator;
 
 import java.util.Map;
 import java.util.Collection;
@@ -52,7 +52,7 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.5 2002-08-30 22:38:06 cananian Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.6 2004-02-08 01:52:07 cananian Exp $
  */
 public abstract class AppelRegAlloc extends AppelRegAllocClasses {
     public static final boolean PRINT_DEPTH_TO_SPILL_INFO = true;

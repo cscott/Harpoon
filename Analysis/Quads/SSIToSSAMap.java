@@ -4,7 +4,7 @@
 package harpoon.Analysis.Quads;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.IR.Quads.AGET;
 import harpoon.IR.Quads.ASET;
@@ -28,7 +28,7 @@ import java.util.Set;
  * to SSA is undesirable.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: SSIToSSAMap.java,v 1.2 2002-02-25 20:59:23 cananian Exp $
+ * @version $Id: SSIToSSAMap.java,v 1.3 2004-02-08 01:53:14 cananian Exp $
  */
 public class SSIToSSAMap implements TempMap {
     

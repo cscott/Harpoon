@@ -33,7 +33,7 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.SET;
 import harpoon.Temp.Temp;
 import harpoon.Util.ArrayIterator;
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.SnapshotIterator;
 import harpoon.Util.Util;
 
 import java.util.Iterator;
@@ -42,7 +42,7 @@ import java.util.Iterator;
  * which are mostly zero (or mostly 1, 2, etc).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MostlyZeroFinder.java,v 1.7 2003-07-09 21:12:38 cananian Exp $
+ * @version $Id: MostlyZeroFinder.java,v 1.8 2004-02-08 01:53:55 cananian Exp $
  */
 public class MostlyZeroFinder extends MethodMutator<Quad> {
     /** the mostly-zero analysis can actually find mostly-N fields.  this

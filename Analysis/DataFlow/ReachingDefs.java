@@ -11,8 +11,8 @@ import harpoon.IR.Properties.UseDefable;
 import harpoon.Temp.Temp;
 import harpoon.Util.CloneableIterator; 
 import harpoon.Util.Util;
-import harpoon.Util.Collections.BitSetFactory;
-import harpoon.Util.Collections.SetFactory; 
+import net.cscott.jutil.BitSetFactory;
+import net.cscott.jutil.SetFactory; 
 
 import java.util.HashMap;
 import java.util.HashSet; 
@@ -29,7 +29,7 @@ import java.util.Set;
  * @author  John Whaley <jwhaley@alum.mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ReachingDefs.java,v 1.4 2004-02-07 21:28:31 cananian Exp $
+ * @version $Id: ReachingDefs.java,v 1.5 2004-02-08 01:51:05 cananian Exp $
  */
 public abstract class ReachingDefs { 
     

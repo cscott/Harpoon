@@ -3,15 +3,15 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
-import harpoon.Util.Util;
-
 import java.lang.reflect.Modifier;
+
+import net.cscott.jutil.Util;
 /**
  * <code>HClassArray</code> is a simple <code>HClass</code> implementation
  * representing array types.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassArray.java,v 1.2 2002-02-25 21:03:03 cananian Exp $
+ * @version $Id: HClassArray.java,v 1.3 2004-02-08 01:58:03 cananian Exp $
  */
 class HClassArray extends HClassImpl {
   HClass baseType;

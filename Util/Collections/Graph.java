@@ -11,9 +11,9 @@ import java.util.Set;
  * This is a generic <code>Graph</code> implementation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.2 2003-05-09 21:04:42 cananian Exp $
+ * @version $Id: Graph.java,v 1.3 2004-02-08 01:56:38 cananian Exp $
  */
-public interface Graph<N extends Node<N,E>, E extends Edge<N,E>> {
+public interface Graph<N extends Graph.Node<N,E>, E extends Graph.Edge<N,E>> {
     /** Return the set of nodes comprising this Graph. */
     Set<N> nodes();
 
@@ -25,7 +25,7 @@ public interface Graph<N extends Node<N,E>, E extends Edge<N,E>> {
      * This class represents nodes in a <code>Graph</code>.
      *
      * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
-     * @version $Id: Graph.java,v 1.2 2003-05-09 21:04:42 cananian Exp $
+     * @version $Id: Graph.java,v 1.3 2004-02-08 01:56:38 cananian Exp $
      */
     public static interface Node<N extends Node<N,E>,E extends Edge<N,E>>
     {
@@ -45,7 +45,7 @@ public interface Graph<N extends Node<N,E>, E extends Edge<N,E>> {
      * <code>Graph</code>.
      *
      * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
-     * @version $Id: Graph.java,v 1.2 2003-05-09 21:04:42 cananian Exp $
+     * @version $Id: Graph.java,v 1.3 2004-02-08 01:56:38 cananian Exp $
      */
     public static interface Edge<N extends Node<N,E>,E extends Edge<N,E>>
     {

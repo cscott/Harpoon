@@ -6,17 +6,21 @@ package harpoon.Util;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
+
+import net.cscott.jutil.Default;
 /**
  * A <code>MapComparator</code> compares two unsorted maps by first
  * sorting their keys and then comparing them entry-by-entry (treating
  * the map as a sorted pair list).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MapComparator.java,v 1.2 2002-02-25 21:08:45 cananian Exp $
+ * @version $Id: MapComparator.java,v 1.3 2004-02-08 01:56:15 cananian Exp $
  */
-public class MapComparator implements Comparator {
-    final Comparator entryComparator, listComparator;
+public class MapComparator<K,V> implements Comparator<Map<K,V>> {
+    final Comparator<Map.Entry<K,V>> entryComparator;
+    final Comparator<List<Map.Entry<K,V>>> listComparator;
 
     /** Creates a <code>MapComparator</code> which compares
      *  entries in the order defined by the <code>keyComparator</code>
@@ -27,31 +31,34 @@ public class MapComparator implements Comparator {
      *  If <code>valueComparator</code> is <code>null</code>, then all
      *  values must implement <code>java.lang.Comparable</code>.
      */
-    public MapComparator(Comparator keyComparator,
-			 Comparator valueComparator) {
-	if (keyComparator==null) keyComparator = Default.comparator;
-	if (valueComparator==null) valueComparator = Default.comparator;
+    public MapComparator(Comparator<? super K> keyComparator,
+			 Comparator<? super V> valueComparator) {
+	if (keyComparator==null) keyComparator = Default.<K>comparator();
+	if (valueComparator==null) valueComparator = Default.<V>comparator();
 	this.entryComparator =
-	    new EntryComparator(keyComparator, valueComparator);
-	this.listComparator = new ListComparator(true, entryComparator);
+	    new EntryComparator<K,V>(keyComparator, valueComparator);
+	this.listComparator =
+	    new ListComparator<Map.Entry<K,V>>(true, entryComparator);
     }
 
-    public int compare(Object o1, Object o2) {
-	Map m1 = (Map) o1, m2 = (Map) o2;
-	ArrayList al1 = new ArrayList(m1.entrySet());
-	ArrayList al2 = new ArrayList(m2.entrySet());
+    public int compare(Map<K,V> m1, Map<K,V> m2) {
+	ArrayList<Map.Entry<K,V>>
+	    al1 = new ArrayList<Map.Entry<K,V>>(m1.entrySet()),
+	    al2 = new ArrayList<Map.Entry<K,V>>(m2.entrySet());
 	Collections.sort(al1, entryComparator);
 	Collections.sort(al2, entryComparator);
 	return listComparator.compare(al1, al2);
     }
-    private static class EntryComparator implements Comparator {
-	final Comparator keyComparator, valueComparator;
-	EntryComparator(Comparator keyComparator, Comparator valueComparator) {
+    private static class EntryComparator<K,V> 
+	implements Comparator<Map.Entry<K,V>> {
+	final Comparator<? super K> keyComparator;
+	final Comparator<? super V> valueComparator;
+	EntryComparator(Comparator<? super K> keyComparator,
+			Comparator<? super V> valueComparator) {
 	    this.keyComparator = keyComparator;
 	    this.valueComparator = valueComparator;
 	}
-	public int compare(Object o1, Object o2) {
-	    Map.Entry me1 = (Map.Entry) o1, me2 = (Map.Entry) o2;
+	public int compare(Map.Entry<K,V> me1, Map.Entry<K,V> me2) {
 	    int c = keyComparator.compare(me1.getKey(), me2.getKey());
 	    if (c!=0) return c;
 	    return valueComparator.compare(me1.getValue(), me2.getValue());

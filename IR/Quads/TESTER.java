@@ -2,7 +2,7 @@
 // Copyright (C) 2000 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -12,7 +12,7 @@ import java.util.Set;
  * aren't reachable in the code.  For debugging purposes.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: TESTER.java,v 1.2 2002-02-25 21:05:13 cananian Exp $
+ * @version $Id: TESTER.java,v 1.3 2004-02-08 01:55:25 cananian Exp $
  */
 class TESTER {
     

@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Tools.PatMat;
 
-import harpoon.Util.BitString;
+import net.cscott.jutil.BitString;
 import harpoon.Util.Util;
 import harpoon.IR.Tree.Type;
 
@@ -22,7 +22,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.6 2002-04-10 03:06:53 cananian Exp $
+ * @version $Id: Spec.java,v 1.7 2004-02-08 01:59:54 cananian Exp $
  */
 public class Spec  {
 

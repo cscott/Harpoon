@@ -18,9 +18,9 @@ import harpoon.IR.Quads.INSTANCEOF;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.TYPESWITCH;
-import harpoon.Util.Default.PairList;
+import net.cscott.jutil.Default.PairList;
 import harpoon.Util.HClassUtil;
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.SnapshotIterator;
 import harpoon.Util.Util;
 
 import java.util.Arrays;
@@ -37,7 +37,7 @@ import java.util.Set;
  * field and method signatures.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFWidenType.java,v 1.7 2002-09-03 16:40:23 cananian Exp $
+ * @version $Id: MZFWidenType.java,v 1.8 2004-02-08 01:53:55 cananian Exp $
  */
 class MZFWidenType extends MethodMutator<Quad> {
     /** the linker to use */

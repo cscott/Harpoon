@@ -25,12 +25,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 /**
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.2 2002-02-25 20:57:01 cananian Exp $
+ * @version $Id: EventDriven.java,v 1.3 2004-02-08 01:51:58 cananian Exp $
  */
 public class EventDriven {
     protected final CachingCodeFactory ucf;

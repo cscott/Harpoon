@@ -15,13 +15,13 @@ import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.Quad;
 import harpoon.Temp.Temp;
-import harpoon.Util.Default;
-import harpoon.Util.Collections.AggregateMapFactory;
-import harpoon.Util.Collections.AggregateSetFactory;
+import net.cscott.jutil.Default;
+import net.cscott.jutil.AggregateMapFactory;
+import net.cscott.jutil.AggregateSetFactory;
 import harpoon.Util.Collections.Graph;
-import harpoon.Util.Collections.MapFactory;
-import harpoon.Util.Collections.SetFactory;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.MapFactory;
+import net.cscott.jutil.SetFactory;
+import net.cscott.jutil.WorkSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,7 +39,7 @@ import java.util.TreeSet;
  * <code>SingularOracle</code> for quad IRs.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SingularFinder.java,v 1.4 2003-05-16 00:53:21 cananian Exp $
+ * @version $Id: SingularFinder.java,v 1.5 2004-02-08 01:50:55 cananian Exp $
  */
 public class SingularFinder implements SingularOracle<Quad> {
     private final HCodeFactory hcf;

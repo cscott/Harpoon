@@ -29,29 +29,33 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.SET;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Collections.DisjointSet;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.SnapshotIterator;
-import harpoon.Util.Collections.WorkSet;
-import harpoon.Util.Default;
-import harpoon.Util.Default.PairList;
-import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import net.cscott.jutil.DisjointSet;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.MultiMap;
+import net.cscott.jutil.SnapshotIterator;
+import net.cscott.jutil.WorkSet;
+import net.cscott.jutil.Default;
+import net.cscott.jutil.Default.PairList;
+
 /**
  * <code>MemoryOptimization</code> reduces the number of memory operations
  * by combining multiple loads/stores to the same field/array element.
  * It should be safe with respect to the revised Java memory model.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MemoryOptimization.java,v 1.5 2002-09-03 15:08:04 cananian Exp $
+ * @version $Id: MemoryOptimization.java,v 1.6 2004-02-08 01:53:14 cananian Exp $
  */
 public final class MemoryOptimization
     extends harpoon.Analysis.Transformation.MethodMutator<Quad> {
@@ -182,17 +186,17 @@ public final class MemoryOptimization
 	    */
 	    // done.
 	}
-	Map<Value,Temp[]> valuemaptempmap(Map<Value,Temp> m,
+	Map<Value,List<Temp>> valuemaptempmap(Map<Value,Temp> m,
 					  Quad q, int which_pred) {
 	    if (m==null) return null;
-	    HashMap<Value,Temp[]> result = new HashMap<Value,Temp[]>();
+	    HashMap<Value,List<Temp>> result = new HashMap<Value,List<Temp>>();
 	    for (Iterator<Map.Entry<Value,Temp>> it = m.entrySet().iterator();
 		 it.hasNext(); ) {
 		Map.Entry<Value,Temp> me = it.next();
 		Value v = me.getKey().map(ds, q, which_pred);
 		Temp t = ds.find(me.getValue());// not phi-mapped
 		Temp tt = Value.map(t, ds, q, which_pred);// phi-mapped.
-		result.put(v, new Temp[] { tt, t });
+		result.put(v, Arrays.asList(new Temp[] { tt, t }));
 	    }
 	    return result;
 	}
@@ -206,17 +210,17 @@ public final class MemoryOptimization
 	    Quad first = quads.get(0);
 	    Quad[] pred = first.prev();
 	    // collect maps from each pred.
-	    Map<Value,Temp[]>[] prin = new Map<Value,Temp[]>[pred.length];
+	    List<Map<Value,List<Temp>>> prin = new ArrayList<Map<Value,List<Temp>>>(pred.length);
 	    for (int i=0; i<pred.length; i++) {
 		BasicBlock<Quad> prbb = bbF.getBlock(pred[i]);
- 		prin[i] = valuemaptempmap(out.get(prbb), first, i);
+ 		prin.add(valuemaptempmap(out.get(prbb), first, i));
 	    }
 	    // merge key sets
 	    Set<Value> merged=null; boolean allknown=true;
 	    for (int i=0; i<pred.length; i++) {
-		if (prin[i]==null) { allknown=false; continue; }// no info yet.
-		if (merged==null) merged = prin[i].keySet();
-		else merged.retainAll(prin[i].keySet());
+		if (prin.get(i)==null) { allknown=false; continue; }// no info yet.
+		if (merged==null) merged = prin.get(i).keySet();
+		else merged.retainAll(prin.get(i).keySet());
 		moves.remove(first.prevEdge(i));
 	    }
 	    // handle merged inputs.
@@ -225,9 +229,9 @@ public final class MemoryOptimization
 		    Value v = it.next();
 		    Temp t=null; boolean same=true;
  		    for (int i=0; i<pred.length; i++) {
- 			if (prin[i]==null) continue; // no info.
+ 			if (prin.get(i)==null) continue; // no info.
 			// tt is the phi-mapped version of the temp.
-			Temp tt = prin[i].get(v)[0];
+			Temp tt = prin.get(i).get(v).get(0);
 			if (t==null) t=tt;
 			else if (!t.equals(tt)) same=false;
 		    }
@@ -237,9 +241,9 @@ public final class MemoryOptimization
 		    else {
 			Temp nt = ds.find(tempgen(bb, v, t));
 			for (int i=0; i<pred.length; i++) {
-			    if (prin[i]==null) continue;
+			    if (prin.get(i)==null) continue;
 			    // note that we use the un-phi-mapped temp here.
-			    Temp tt = prin[i].get(v)[1];
+			    Temp tt = prin.get(i).get(v).get(1);
 			    moves.add(first.prevEdge(i), new Temp[] {nt,tt});
 			}
 			in.put(v, nt);

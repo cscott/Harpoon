@@ -17,11 +17,13 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.UnmodifiableIterator;
+import net.cscott.jutil.UnmodifiableIterator;
 import harpoon.Util.Util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -31,7 +33,7 @@ import java.util.Stack;
  * <code>CacheEquivalence</code> can make larger equivalence sets.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayUnroller.java,v 1.6 2003-03-11 00:58:47 cananian Exp $
+ * @version $Id: ArrayUnroller.java,v 1.7 2004-02-08 01:53:14 cananian Exp $
  */
 public final class ArrayUnroller
     extends harpoon.Analysis.Transformation.MethodMutator<Quad> {
@@ -98,39 +100,39 @@ public final class ArrayUnroller
     private void unrollOne(HCodeAndMaps<Quad> input, Loops loop, int ntimes) {
 	// step 1: copy the nodes to make a loop L' with header h'
 	//         and back edges si'->h'
-	Map<Quad,Quad> copies[] = new Map<Quad,Quad>[ntimes];
-	copies[0] = input.elementMap();
+	List<Map<Quad,Quad>> copies = new ArrayList<Map<Quad,Quad>>(ntimes);
+	copies.add(input.elementMap());
 	for (int i=1; i<ntimes; i++)
-	    copies[i] = copy(input, loop);
+	    copies.add(copy(input, loop));
 	// step 2: change all the back edges in L from si->h to si->h'
 	// step 3: change all the back edges in L' from si'->h' to si'->h
 	for (int i=0; i<ntimes; i++) {
 	    for (Iterator it=loop.loopBackEdges().iterator(); it.hasNext(); ) {
 		Edge e = (Edge) it.next();
-		Quad.addEdge(copies[i].get(e.from()),
+		Quad.addEdge(copies.get(i).get(e.from()),
 			     e.which_succ(),
-			     copies[(i+1)%ntimes].get(e.to()),
+			     copies.get((i+1)%ntimes).get(e.to()),
 			     e.which_pred());
 	    }
 	}
 	// make PHIs for the exit edges.
 	for (Iterator it=loop.loopExitEdges().iterator(); it.hasNext(); ) {
 	    Edge e = (Edge) it.next();
-	    QuadFactory qf = copies[0].get(e.from()).getFactory();
+	    QuadFactory qf = copies.get(0).get(e.from()).getFactory();
 	    PHI phi = new PHI(qf, e.from(), new Temp[0], ntimes);
-	    Quad.addEdge(phi, 0, copies[0].get(e.to()), e.which_pred());
+	    Quad.addEdge(phi, 0, copies.get(0).get(e.to()), e.which_pred());
 	    for (int i=0; i<ntimes; i++)
-		Quad.addEdge(copies[i].get(e.from()), e.which_succ(),
+		Quad.addEdge(copies.get(i).get(e.from()), e.which_succ(),
 			     phi, i);
 	}
 	// make stub PHIs for unused entrance edges
 	for (Iterator it=loop.loopEntranceEdges().iterator(); it.hasNext(); ) {
 	    Edge e = (Edge) it.next();
-	    QuadFactory qf = copies[0].get(e.to()).getFactory();
+	    QuadFactory qf = copies.get(0).get(e.to()).getFactory();
 	    for (int i=1; i<ntimes; i++) {
 		PHI phi = new PHI(qf, e.to(), new Temp[0], 0);
 		Quad.addEdge(phi, 0,
-			     copies[i].get(e.to()),
+			     copies.get(i).get(e.to()),
 			     e.which_pred());
 	    }
 	}

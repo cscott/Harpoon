@@ -9,7 +9,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.Linker;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
-import harpoon.Util.Default;
+import net.cscott.jutil.Default;
 import harpoon.Util.Util;
 
 import java.util.Arrays;
@@ -26,7 +26,7 @@ import java.util.Set;
  * <code>HANDLER</code> quads from the graph.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: ResilientUnHandler.java,v 1.2 2003-03-15 23:24:58 kkz Exp $ */
+ * @version $Id: ResilientUnHandler.java,v 1.3 2004-02-08 01:55:25 cananian Exp $ */
 final class ResilientUnHandler {
     private static final boolean ARRAY_BOUNDS_CHECKS
 	= !Boolean.getBoolean("harpoon.unhandler.noarraychecks");

@@ -33,7 +33,7 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Temp.Temp;
 import harpoon.Util.TypeInference.TypeInference;
 import harpoon.Util.TypeInference.ExactTemp;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -43,7 +43,7 @@ import java.util.Set;
  * <code>RoleInference</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: RoleInference.java,v 1.2 2002-02-25 20:59:51 cananian Exp $
+ * @version $Id: RoleInference.java,v 1.3 2004-02-08 01:53:50 cananian Exp $
  */
 public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator {
     final Linker linker;
@@ -58,7 +58,7 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 
 	if ((hcode.getMethod().getModifiers()&java.lang.reflect.Modifier.NATIVE)!=0) 
 	    return hcode;
-	RoleVisitor rv=new RoleVisitor(linker, hcode);
+	RoleVisitor rv=new RoleVisitor(linker, (HCode<Quad>) hcode);
 	
 	if (transform(hcode.getMethod())) {
 	    List list=hcode.getElementsL();
@@ -104,7 +104,7 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	HCode hc;
 	LocalVariableNamer lvn;
 
-	public RoleVisitor(Linker linker, HCode hc) {
+	public RoleVisitor(Linker linker, HCode<Quad> hc) {
 	    liveness=new QuadLiveness(hc);
 	    reachingdef=new ReachingDefsImpl(hc);
 	    exacttemps=new WorkSet();

@@ -33,7 +33,7 @@ import java.util.List;
  * flagged as possibly incorrect.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Lint.java,v 1.2 2002-02-25 21:06:05 cananian Exp $
+ * @version $Id: Lint.java,v 1.3 2004-02-08 01:58:13 cananian Exp $
  */
 public abstract class Lint extends harpoon.IR.Registration {
     public final static Linker linker = Loader.systemLinker;
@@ -219,6 +219,6 @@ public abstract class Lint extends harpoon.IR.Registration {
 	    return c;
 	}
 	private static final HClass refunique =
-	    linker.forName("harpoon.Util.ReferenceUnique");
+	    linker.forName("net.cscott.jutil.ReferenceUnique");
     }
 }

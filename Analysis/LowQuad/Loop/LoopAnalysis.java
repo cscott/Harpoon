@@ -5,7 +5,7 @@ package harpoon.Analysis.LowQuad.Loop;
 
 import harpoon.Analysis.UseDef;
 import harpoon.Analysis.Loops.LoopFinder;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCode;
 import harpoon.IR.Quads.AGET;
@@ -72,7 +72,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopAnalysis.java,v 1.4 2002-04-10 02:59:57 cananian Exp $
+ * @version $Id: LoopAnalysis.java,v 1.5 2004-02-08 01:52:54 cananian Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {

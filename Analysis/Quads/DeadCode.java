@@ -46,10 +46,10 @@ import harpoon.IR.LowQuad.PCALL;
 import harpoon.IR.LowQuad.PSET;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Collections.GenericInvertibleMultiMap;
-import harpoon.Util.Collections.InvertibleMultiMap;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Default;
+import net.cscott.jutil.GenericInvertibleMultiMap;
+import net.cscott.jutil.InvertibleMultiMap;
+import net.cscott.jutil.MultiMap;
+import net.cscott.jutil.Default;
 import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Worklist;
 import harpoon.Util.Util;
@@ -70,7 +70,7 @@ import java.util.TreeMap;
  * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.7 2002-11-30 18:10:18 salcianu Exp $
+ * @version $Id: DeadCode.java,v 1.8 2004-02-08 01:53:14 cananian Exp $
  */
 
 public abstract class DeadCode  {

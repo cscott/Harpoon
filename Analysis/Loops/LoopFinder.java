@@ -5,7 +5,7 @@
 package harpoon.Analysis.Loops;
 
 import harpoon.Analysis.Loops.Loops;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 import harpoon.Analysis.DomTree;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
@@ -21,7 +21,7 @@ import java.util.Iterator;
  * <code>LoopFinder</code> implements Dominator Tree Loop detection.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopFinder.java,v 1.3 2004-02-07 21:28:34 cananian Exp $
+ * @version $Id: LoopFinder.java,v 1.4 2004-02-08 01:52:50 cananian Exp $
  */
 
 public class LoopFinder implements Loops {
@@ -250,7 +250,7 @@ public class LoopFinder implements Loops {
 	while(!setofloops.isEmpty()) {
 	    
 	    //Pull out one
-	    Loop A=(Loop) setofloops.pull();
+	    Loop A=(Loop) setofloops.removeLast();
 	    
 	    //Add it to the tree, complain if oddness
 	    if (addnode(A, root)!=1) 
@@ -326,7 +326,7 @@ public class LoopFinder implements Loops {
 	    } else {
 		//need to combine loops
 		while (!A.entries.isEmpty()) {
-		    treenode.entries.push(A.entries.pull());
+		    treenode.entries.push(A.entries.removeLast());
 		}
 		//let the previous caller know that they have stuff todo
 		return 2;
@@ -385,7 +385,7 @@ public class LoopFinder implements Loops {
 		//Then we have the entire natural loop
 
 		while(!B.isEmpty()) {
-		    HCodeElement newnode=(HCodeElement)B.pull();
+		    HCodeElement newnode=(HCodeElement)B.removeLast();
 		    
 		    //Add all of the new incoming edges that we haven't already
 		    //visited

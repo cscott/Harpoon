@@ -14,7 +14,7 @@ import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Maps.TypeMap.TypeNotKnownException;
 
 import harpoon.Util.Util;
-import harpoon.Util.Default;
+import net.cscott.jutil.Default;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -28,7 +28,7 @@ import java.util.HashMap;
  * their own extensions of <code>CodeGen</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaxMunchCG.java,v 1.4 2002-04-10 03:02:44 cananian Exp $ */
+ * @version $Id: MaxMunchCG.java,v 1.5 2004-02-08 01:57:30 cananian Exp $ */
 public abstract class MaxMunchCG extends CodeGen {
     
     /** Creates a <code>MaxMunchCG</code>. */

@@ -5,13 +5,13 @@ package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlockInterf;
 import java.util.Iterator;
-import harpoon.Util.Worklist;
+import net.cscott.jutil.WorkSet;
 
 /**
  * ForwardDataFlowBasicBlockVisitor
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: ForwardDataFlowBasicBlockVisitor.java,v 1.4 2002-04-02 23:39:11 salcianu Exp $
+ * @version $Id: ForwardDataFlowBasicBlockVisitor.java,v 1.5 2004-02-08 01:51:05 cananian Exp $
  */
 
 public abstract class ForwardDataFlowBasicBlockVisitor extends DataFlowBasicBlockVisitor {
@@ -29,7 +29,7 @@ public abstract class ForwardDataFlowBasicBlockVisitor extends DataFlowBasicBloc
 	   <code>s</code> must be revisited by <code>this</code>.
        @see #merge(BasicBlock, BasicBlock)
    */
-  public void addSuccessors(Worklist W, BasicBlockInterf q) {
+  public void addSuccessors(WorkSet W, BasicBlockInterf q) {
     if (DEBUG) db("adding successors of " + q + " to worklist");
 
     for (Iterator it = q.nextSet().iterator(); it.hasNext(); ) {
@@ -41,7 +41,7 @@ public abstract class ForwardDataFlowBasicBlockVisitor extends DataFlowBasicBloc
 	    
 	    if (DEBUG) db("added " + qn + " to the work queue");
 	    
-	    W.push(qn); // in set changed -- need to revisit target node
+	    W.add(qn); // in set changed -- need to revisit target node
 	}
     }
   }

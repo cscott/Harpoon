@@ -18,7 +18,7 @@ import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Collections.DisjointSet;
+import net.cscott.jutil.DisjointSet;
 import harpoon.Util.Util;
 
 import java.util.Collections;
@@ -30,7 +30,7 @@ import java.util.Map;
  * in an SSI-form codeview, yielding an SSA codeview.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIToSSA.java,v 1.6 2003-07-11 09:42:50 cananian Exp $
+ * @version $Id: SSIToSSA.java,v 1.7 2004-02-08 01:55:25 cananian Exp $
  */
 public class SSIToSSA {
     // Return values for the algorithm:

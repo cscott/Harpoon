@@ -16,7 +16,7 @@ import java.util.Stack;
 import java.util.Enumeration;
 
 import harpoon.Util.Util;
-import harpoon.Util.Collections.LinearSet;
+import net.cscott.jutil.LinearSet;
 
 /**
  * <code>OptimisticGraphColorer</code> uses a strategy similar to that
@@ -28,7 +28,7 @@ import harpoon.Util.Collections.LinearSet;
  * second stage, but this is parameterizable.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: OptimisticGraphColorer.java,v 1.4 2002-04-10 02:59:40 cananian Exp $
+ * @version $Id: OptimisticGraphColorer.java,v 1.5 2004-02-08 01:52:03 cananian Exp $
  */
 public class OptimisticGraphColorer extends GraphColorer {
 

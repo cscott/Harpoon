@@ -5,9 +5,9 @@ package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HCode;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.BitSetFactory;
-import harpoon.Util.Collections.SetFactory;
-import harpoon.Util.Collections.UniqueVector;
+import net.cscott.jutil.BitSetFactory;
+import net.cscott.jutil.SetFactory;
+import net.cscott.jutil.UniqueVector;
 import harpoon.Util.Util;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,7 +21,7 @@ import java.util.Set;
  * and gets most of the egregious dead vars.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Prune.java,v 1.6 2002-08-05 18:35:43 cananian Exp $
+ * @version $Id: Prune.java,v 1.7 2004-02-08 01:55:25 cananian Exp $
  */
 class Prune {
     private final static boolean DEBUG=false;

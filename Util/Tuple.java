@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+
+import net.cscott.jutil.Default;
 /**
  * A <code>Tuple</code> is an ordered list of objects that works
  * properly in Hashtables & etc.  Tuples may have <code>null</code> elements.
@@ -14,7 +16,7 @@ import java.util.List;
  * the elements array are <code>Comparable</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tuple.java,v 1.3 2002-02-25 21:08:55 cananian Exp $
+ * @version $Id: Tuple.java,v 1.4 2004-02-08 01:56:15 cananian Exp $
  */
 public class Tuple implements Comparable, java.io.Serializable {
     final Comparator objcmp;

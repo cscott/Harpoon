@@ -53,7 +53,7 @@ import harpoon.Temp.LabelList;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Default;
+import net.cscott.jutil.Default;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.7 2003-10-21 21:02:01 cananian Exp $
+ * @version $Id: ToTree.java,v 1.8 2004-02-08 01:55:51 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;

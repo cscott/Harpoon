@@ -8,7 +8,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -20,7 +20,7 @@ import java.util.Map;
  * a reachable method which overrides it.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CHFinalMap.java,v 1.2 2002-02-25 21:01:55 cananian Exp $
+ * @version $Id: CHFinalMap.java,v 1.3 2004-02-08 01:57:37 cananian Exp $
  */
 public class CHFinalMap extends DefaultFinalMap
     implements java.io.Serializable {

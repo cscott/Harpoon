@@ -26,9 +26,9 @@ import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.THROW;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.GenericInvertibleMultiMap;
-import harpoon.Util.Collections.InvertibleMultiMap;
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.GenericInvertibleMultiMap;
+import net.cscott.jutil.InvertibleMultiMap;
+import net.cscott.jutil.SnapshotIterator;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
@@ -45,7 +45,7 @@ import java.util.Set;
  * to accessor getter/setter methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Field2Method.java,v 1.5 2002-09-03 14:43:03 cananian Exp $
+ * @version $Id: Field2Method.java,v 1.6 2004-02-08 01:53:55 cananian Exp $
  */
 public class Field2Method {
     // xxx declarations below *should* be 'invertibleMap' but the

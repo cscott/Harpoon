@@ -54,19 +54,18 @@ import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Default;
+import net.cscott.jutil.Default;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.ParseUtil;
-import harpoon.Util.Util;
 import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Worklist;
-import harpoon.Util.Collections.AggregateMapFactory;
-import harpoon.Util.Collections.AggregateSetFactory;
-import harpoon.Util.Collections.Factories;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.MapSet;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.MultiMapSet;
+import net.cscott.jutil.AggregateMapFactory;
+import net.cscott.jutil.AggregateSetFactory;
+import net.cscott.jutil.Factories;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.MapSet;
+import net.cscott.jutil.MultiMap;
+import net.cscott.jutil.MultiMapSet;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -78,6 +77,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import net.cscott.jutil.Util;
 /**
  * <code>BitWidthAnalysis</code> implements Sparse Conditional Constant
  * Propagation, with extensions to allow type and bitwidth analysis.
@@ -86,7 +87,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.8 2002-09-27 18:54:38 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.9 2004-02-08 01:53:55 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -2296,7 +2297,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public Object constValue() { return value; }
 	public String toString() {
 	    return "xStringConstant: " + 
-		"\"" + Util.escape(value.toString()) + "\"";
+		"\"" + harpoon.Util.Util.escape(value.toString()) + "\"";
 	}
 	public boolean equals(Object o) { return _equals(o); }
 	private boolean _equals(Object o) {

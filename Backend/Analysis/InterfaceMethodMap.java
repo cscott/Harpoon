@@ -15,7 +15,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.Backend.Maps.MethodMap;
 
 import harpoon.Util.Util;
-import harpoon.Util.Collections.UniqueVector;
+import net.cscott.jutil.UniqueVector;
 
 import harpoon.Analysis.ClassHierarchy;
 
@@ -33,7 +33,7 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * object layout.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.4 2002-04-10 03:02:22 cananian Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.5 2004-02-08 01:57:24 cananian Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {

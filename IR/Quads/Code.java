@@ -15,7 +15,7 @@ import harpoon.Temp.TempMap;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.Collections.Graph;
-import harpoon.Util.Collections.UnmodifiableIterator;
+import net.cscott.jutil.UnmodifiableIterator;
 import harpoon.Util.Util;
 
 import java.util.AbstractSet;
@@ -35,7 +35,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.13 2003-05-09 21:06:19 cananian Exp $
+ * @version $Id: Code.java,v 1.14 2004-02-08 01:55:25 cananian Exp $
  */
 public abstract class Code extends HCode<Quad>
     implements java.io.Serializable, Graph<Quad,Edge> {
@@ -46,7 +46,7 @@ public abstract class Code extends HCode<Quad>
     /** Quad factory. */
     protected final QuadFactory qf;
     /** <code>AllocationInformation</code> for this <code>HCode</code>. */
-    protected AllocationInformation ai = null;
+    protected AllocationInformation<Quad> ai = null;
     /** Keep track of modifications to this <code>Code</code> so that the
      *  <code>getElementsI()</code> <code>Iterator</code> can fail-fast. */
     int modCount=0;
@@ -95,14 +95,14 @@ public abstract class Code extends HCode<Quad>
 	// derivation is cloned in LowQuad.cloneHelper()
 	return hcam;
     }
-    private static AllocationInformation cloneAllocationInformation
-	(HCodeAndMaps hcam) {
+    private static AllocationInformation<Quad> cloneAllocationInformation
+	(HCodeAndMaps<Quad> hcam) {
 	Code ocode = (Code) hcam.ancestorHCode();
-	AllocationInformation oaim = ocode.getAllocationInformation();
+	AllocationInformation<Quad> oaim = ocode.getAllocationInformation();
 	AllocationInformationMap naim = new AllocationInformationMap();
-	for (Iterator it=ocode.getElementsI(); it.hasNext(); ) {
-	    HCodeElement ohce = (HCodeElement) it.next();
-	    HCodeElement nhce = (HCodeElement) hcam.elementMap().get(ohce);
+	for (Iterator<Quad> it=ocode.getElementsI(); it.hasNext(); ) {
+	    Quad ohce = it.next();
+	    Quad nhce = hcam.elementMap().get(ohce);
 	    if (ohce instanceof ANEW || ohce instanceof NEW)
 		naim.transfer(nhce, ohce, hcam.tempMap(), oaim);
 	}
@@ -123,11 +123,11 @@ public abstract class Code extends HCode<Quad>
     /**
      * Return the <code>AllocationInformation</code> for this codeview.
      */
-    public AllocationInformation getAllocationInformation() { return ai; }
+    public AllocationInformation<Quad> getAllocationInformation() { return ai; }
     /**
      * Set an <code>AllocationInformation</code> for this codeview.
      */
-    public void setAllocationInformation(AllocationInformation ai) {
+    public void setAllocationInformation(AllocationInformation<Quad> ai) {
 	this.ai = ai;
     }
     /**

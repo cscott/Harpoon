@@ -9,9 +9,9 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Quad;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.AggregateSetFactory;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.MultiMap;
+import net.cscott.jutil.AggregateSetFactory;
+import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.MultiMap;
 import harpoon.Util.Grapher;
 
 import java.util.Collection;
@@ -30,7 +30,7 @@ import java.util.Set;
  * for <code>Temp</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadInterferenceGraph.java,v 1.3 2002-04-10 03:00:59 cananian Exp $
+ * @version $Id: QuadInterferenceGraph.java,v 1.4 2004-02-08 01:53:14 cananian Exp $
  */
 public class QuadInterferenceGraph implements InterferenceGraph {
     private final MultiMap<Temp,Temp> mm;

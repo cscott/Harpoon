@@ -7,10 +7,10 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HMethod;
 import harpoon.Util.ArraySet;
-import harpoon.Util.Default;
+import net.cscott.jutil.Default;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 
 import java.lang.reflect.Modifier;
 import java.util.Collections;
@@ -21,7 +21,7 @@ import java.util.Set;
  * and methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.4 2002-04-10 02:58:48 cananian Exp $
+ * @version $Id: ClassHierarchy.java,v 1.5 2004-02-08 01:49:03 cananian Exp $
  */
 public abstract class ClassHierarchy {
     // tree of callable classes

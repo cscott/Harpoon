@@ -40,7 +40,7 @@ import harpoon.IR.Tree.Type;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.SnapshotIterator;
 
 import harpoon.Util.Util;
 
@@ -51,7 +51,7 @@ import java.io.PrintWriter;
 
 /**
  * @author  Bryan Fink <wingman@mit.edu>
- * @version $Id: QuantaChecker.java,v 1.9 2002-11-25 18:49:41 wbeebee Exp $
+ * @version $Id: QuantaChecker.java,v 1.10 2004-02-08 01:53:47 cananian Exp $
  */
 public class QuantaChecker extends MethodMutator
 {

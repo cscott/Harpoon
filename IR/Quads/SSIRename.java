@@ -4,6 +4,7 @@
 package harpoon.IR.Quads;
 
 import harpoon.Analysis.AllocationInformationMap;
+import harpoon.Analysis.Liveness;
 import harpoon.Analysis.Place;
 import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.Derivation;
@@ -19,11 +20,11 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.WritableTempMap;
-import harpoon.Util.Collections.Environment;
-import harpoon.Util.Collections.HashEnvironment;
+import net.cscott.jutil.Environment;
+import net.cscott.jutil.HashEnvironment;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 import harpoon.Util.DataStructs.RelationImpl;
 
 import java.util.Arrays;
@@ -45,7 +46,7 @@ import java.util.Stack;
  * XXX: DERIVATION INFORMATION FOR PHI/SIGMAS IS CURRENTLY LOST. [CSA]
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.4 2002-04-10 03:05:15 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.5 2004-02-08 01:55:25 cananian Exp $
  */
 public class SSIRename {
     private static final boolean DEBUG = false;
@@ -56,14 +57,14 @@ public class SSIRename {
     /** Map from old no-ssa temps to new ssi temps (incomplete). */
     public final TempMap tempMap;
     /** Map from old no-ssa quads to new ssi quads. */
-    public final Map quadMap;
+    public final Map<Quad,Quad> quadMap;
     /** <code>AllocationInformation</code> for the new quads, or
      *  <code>null</code> if no allocation information for the old
      *  quads was supplied. */
-    public final AllocationInformation allocInfo;
+    public final AllocationInformation<Quad> allocInfo;
     /** <code>Derivation</code> for the new quads, or <code>null</code>
      *  if no <code>Derivation</code> for the old quads was supplied. */
-    public final Derivation derivation;
+    public final Derivation<Quad> derivation;
 
     /** Return a copy of the given quad graph properly converted to
      *  SSI form. */
@@ -71,7 +72,7 @@ public class SSIRename {
 	final SearchState S = new SearchState(c, nqf,
 					      c.getDerivation(),
 					      c.getAllocationInformation());
-	this.rootQuad = (Quad) S.old2new.get(c.getRootElement());
+	this.rootQuad = S.old2new.get(c.getRootElement());
 	this.tempMap = S.varmap;
 	this.quadMap = S.old2new;
 	this.allocInfo = S.naim;
@@ -80,10 +81,10 @@ public class SSIRename {
     
     static class VarMap implements TempMap {
 	final TempFactory tf;
-	final Environment vm = new HashEnvironment();
+	final Environment<Temp,Temp> vm = new HashEnvironment<Temp,Temp>();
 	Temp get(Temp t) {
 	    if (!vm.containsKey(t)) { vm.put(t, t.clone(tf)); }
-	    return (Temp) vm.get(t);
+	    return vm.get(t);
 	}
 	Temp inc(Temp t) {
 	    if (!vm.containsKey(t)) { vm.put(t, t.clone(tf)); }
@@ -91,9 +92,9 @@ public class SSIRename {
 	    return get(t);
 	}
 	// environment interface.
-	Stack s = new Stack();
+	Stack<Environment.Mark> s = new Stack<Environment.Mark>();
 	void beginScope() { s.push(vm.getMark()); }
-	void endScope() { vm.undoToMark((Environment.Mark)s.pop()); }
+	void endScope() { vm.undoToMark(s.pop()); }
 
 	public Temp tempMap(Temp t) { return get(t); }
 	VarMap(TempFactory tf) { this.tf = tf; }
@@ -101,48 +102,49 @@ public class SSIRename {
 
     static class SearchState {
 	/** maps no-ssi quads to ssi quads */
-	final Map old2new = new HashMap();
+	final Map<Quad,Quad> old2new = new HashMap<Quad,Quad>();
 	/** shows where to place phi/sigs */
 	final Place place;
 	/** QuadFactory to use for new Quads. */
 	final QuadFactory nqf;
 	/** AllocationInformation for old Quads */
-	final AllocationInformation oaim;
+	final AllocationInformation<Quad> oaim;
 	/** AllocationInformationMap for new Quads */
-	final AllocationInformationMap naim;
+	final AllocationInformationMap<Quad> naim;
 	/** Derivation for old Quads */
-	final Derivation oderiv;
+	final Derivation<Quad> oderiv;
 	/** Derivation map for new Quads */
-	final DerivationMap nderiv;
+	final DerivationMap<Quad> nderiv;
 	/** Derivation map for Sigma/Phis */
-	final Map derivmap;
+	final Map<Temp,DerivType> derivmap;
 	// algorithm state
 	/** maps old variables to new variables */
 	final VarMap varmap;
 	/** edge stack to unroll dfs recursion. */
-	final Stack We = new Stack();
+	final Stack<Edge> We = new Stack<Edge>();
 	/** mark edges as we visit them */
-	final Set marked = new HashSet();
+	final Set<Edge> marked = new HashSet<Edge>();
 
-	SearchState(HCode c, QuadFactory nqf,
-		    Derivation oderiv, AllocationInformation oaim) { 
-	    this.place = new Place(c, new QuadLiveness(c));
+	SearchState(HCode<Quad> c, QuadFactory nqf,
+		    Derivation<Quad> oderiv, AllocationInformation<Quad> oaim){
+	    this.place = new Place(c, (Liveness) new QuadLiveness(c));
 	    this.varmap= new VarMap(nqf.tempFactory());
 	    this.nqf   = nqf;
 	    this.oaim  = oaim;
-	    this.naim  = (oaim==null) ? null : new AllocationInformationMap();
+	    this.naim  = (oaim==null) ? null : new AllocationInformationMap<Quad>();
 	    this.oderiv= oderiv;
-	    this.nderiv= (oderiv==null) ? null : new DerivationMap();
-	    this.derivmap= (oderiv==null) ? null : new HashMap();
+	    this.nderiv= (oderiv==null) ? null : new DerivationMap<Quad>();
+	    this.derivmap= (oderiv==null) ? null : new HashMap<Temp,DerivType>();
 	    setup(c);
 
-	    HCodeElement ROOT = c.getRootElement();
-	    for (Iterator it=((CFGraphable)ROOT).edgeC().iterator();
-		 it.hasNext(); )
-		We.push(it.next());
+	    for (Iterator<Edge> it=c.getRootElement().edgeC().iterator();
+		 it.hasNext(); ) {
+		Edge e = it.next();
+		We.push(e);
+	    }
 	    
 	    while (!We.isEmpty()) {
-		Edge e = (Edge) We.pop();
+		Edge e = We.pop();
 		if (e==null) { varmap.endScope(); continue; }
 		We.push(null); varmap.beginScope();
 		search(e);
@@ -153,12 +155,12 @@ public class SSIRename {
 		fixPhiSigDeriv(c);
 
 	    // now link edges
-	    for (Iterator it=c.getElementsI(); it.hasNext(); ) {
-		Quad q = (Quad) it.next();
-		Quad fr = (Quad) old2new.get(q);
+	    for (Iterator<Quad> it=c.getElementsI(); it.hasNext(); ) {
+		Quad q = it.next();
+		Quad fr = old2new.get(q);
 		for (int i = 0; i < q.nextLength(); i++) {
 		    Edge e = q.nextEdge(i);
-		    Quad to = (Quad) old2new.get(e.to());
+		    Quad to = old2new.get(e.to());
 		    Quad.addEdge(fr, e.which_succ(), to, e.which_pred());
 		}
 		// check for unreachable code.
@@ -198,8 +200,8 @@ public class SSIRename {
 	}
 
 	final WritableTempMap wtm = new WritableTempMap() {
-	    final Map backing = new HashMap();
-	    public Temp tempMap(Temp t) { return (Temp) backing.get(t); }
+	    final Map<Temp,Temp> backing = new HashMap();
+	    public Temp tempMap(Temp t) { return backing.get(t); }
 	    public void associate(Temp o, Temp n) { backing.put(o,n); }
 	};
 	void search(Edge e) {
@@ -210,7 +212,7 @@ public class SSIRename {
 	    assert !marked.contains(e);
 	    marked.add(e);
 	    // setup 'from' state.
-	    Quad from = (Quad) e.from();
+	    Quad from = e.from();
 	    if (from instanceof HEADER) {
 		old2new.put(from, from.rename(nqf, null, null));
 	    } else if (from instanceof PHI) {
@@ -244,7 +246,7 @@ public class SSIRename {
 	    // now go on renaming inside basic block until we get to a phi
 	    // or sigma.
 	    for (Quad q; ; e=q.nextEdge(0)) {
-		q = (Quad) e.to();
+		q = e.to();
 		if (q instanceof PHI) { /* update src */
 		    Temp[][] r = (Temp[][]) rhs.get(q);
 		    int j = e.which_pred();
@@ -293,8 +295,8 @@ public class SSIRename {
 		    if (naim!=null) naim.transfer(nq, q, varmap, oaim);
 		if (q instanceof FOOTER) break;
 	    }
-	    for (Iterator it=((Quad)e.to()).succC().iterator();it.hasNext();) {
-		e = (Edge) it.next();
+	    for (Iterator<Edge> it=e.to().succC().iterator();it.hasNext();) {
+		e = it.next();
 		if (!marked.contains(e))
 		    We.push(e);
 	    }
@@ -361,14 +363,14 @@ public class SSIRename {
 	    }
 	}
 
-	void fixPhiSigDeriv(HCode c) {
+	void fixPhiSigDeriv(HCode<Quad> c) {
 	    WorkSet functionSet=new WorkSet();
 	    RelationImpl rel=new RelationImpl();
 	    HashSet phisig=new HashSet();
 	    //Add Phi's and Sigmas to function set
 
-	    for (Iterator it=c.getElementsI();it.hasNext(); ) {
-		Quad q = (Quad) old2new.get(it.next());
+	    for (Iterator<Quad> it=c.getElementsI(); it.hasNext(); ) {
+		Quad q = old2new.get(it.next());
 		if (q instanceof PHI) {
 		    for(int i=0;i<((PHI)q).numPhis();i++) {
 			PhiSigFunction psf=new PhiSigFunction(new Temp[]{((PHI)q).dst(i)},((PHI)q).src(i));
@@ -411,8 +413,8 @@ public class SSIRename {
 		}
 	    }
 	    
-	    for (Iterator it=c.getElementsI();it.hasNext(); ) {
-		Quad q = (Quad) old2new.get(it.next());
+	    for (Iterator<Quad> it=c.getElementsI(); it.hasNext(); ) {
+		Quad q = old2new.get(it.next());
 		if (q instanceof PHI) {
 		    for(int i=0;i<((PHI)q).numPhis();i++) {
 			Temp t=((PHI)q).dst(i);
@@ -437,9 +439,9 @@ public class SSIRename {
 	    }
 	}
 
-	void makePhiSig(HCode c) {
-	    for (Iterator it=c.getElementsI(); it.hasNext(); ) {
-		Quad q = (Quad) it.next();
+	void makePhiSig(HCode<Quad> c) {
+	    for (Iterator<Quad> it=c.getElementsI(); it.hasNext(); ) {
+		Quad q = it.next();
 		if (q instanceof PHI) {
 		    Temp[] l = (Temp[]) lhs.get(q);
 		    Temp[][] r = (Temp[][]) rhs.get(q);

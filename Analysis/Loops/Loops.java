@@ -4,7 +4,7 @@
 
 package harpoon.Analysis.Loops;
 
-import harpoon.Util.Collections.WorkSet;
+import net.cscott.jutil.WorkSet;
 import harpoon.ClassFile.HCode;
 import java.util.Set;
 /**
@@ -13,7 +13,7 @@ import java.util.Set;
  *
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Loops.java,v 1.2 2002-02-25 20:57:41 cananian Exp $
+ * @version $Id: Loops.java,v 1.3 2004-02-08 01:52:50 cananian Exp $
  */
 
 public interface Loops {

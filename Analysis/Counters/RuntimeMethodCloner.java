@@ -26,9 +26,9 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.Temp.Temp;
-import harpoon.Util.Collections.GenericInvertibleMultiMap;
-import harpoon.Util.Collections.InvertibleMultiMap;
-import harpoon.Util.Collections.SnapshotIterator;
+import net.cscott.jutil.GenericInvertibleMultiMap;
+import net.cscott.jutil.InvertibleMultiMap;
+import net.cscott.jutil.SnapshotIterator;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
@@ -46,7 +46,7 @@ import java.util.Set;
  * statistics as we're attempting to report them.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RuntimeMethodCloner.java,v 1.5 2002-09-03 15:07:57 cananian Exp $
+ * @version $Id: RuntimeMethodCloner.java,v 1.6 2004-02-08 01:51:01 cananian Exp $
  */
 public class RuntimeMethodCloner extends MethodMutator<Quad> {
     private static final String classname = "harpoon.Runtime.Counters";
