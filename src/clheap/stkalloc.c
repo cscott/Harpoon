@@ -1,13 +1,18 @@
 /* Stack allocation function. */
 
 #include "config.h"
-/* we use alloca directly when compiling w/ precisec */
-#if !defined(WITH_PRECISE_C_BACKEND)
 
 #include "alloc.h"	/* for declaration of NSTK_malloc */
-#include "asm/stack.h"	/* for get_stackptr/set_stackptr */
 #include "misc.h"	/* for ALIGN, REALLY_DO_ALLOC, NGBL_malloc_noupdate. */
 #include "stats.h"	/* for UPDATE_STATS */
+#if !defined(WITH_PRECISE_C_BACKEND)
+# include "asm/stack.h"	/* for get_stackptr/set_stackptr */
+#else
+/* we use alloca directly when compiling w/ precisec; if NSTK_malloc is
+ * ever called, we're only trying to get accurate statistics and don't
+ * care that we can't actually do the stack allocation. */
+# undef REALLY_DO_STK_ALLOC
+#endif
 
 /** XXX THIS BREAKS IF THE STACK DOESN'T GROW DOWN */
 void *NSTK_malloc(size_t size) {
@@ -24,18 +29,6 @@ void *NSTK_malloc(size_t size) {
 #else
   return NGBL_malloc_noupdate(size);
 #endif
-}
-#else
-
-/** XXX THIS BREAKS IF THE STACK DOESN'T GROW DOWN */
-
-#include "alloc.h"	/* for declaration of NSTK_malloc */
-#include "misc.h"	/* for ALIGN, REALLY_DO_ALLOC, NGBL_malloc_noupdate. */
-#include "stats.h"	/* for UPDATE_STATS */
-
-void NSTK2_malloc(size_t size) {
-  register char *result;
-  UPDATE_NIFTY_STATS(stk, size);
 }
 
 #endif /* !WITH_PRECISE_C_BACKEND */
