@@ -13,15 +13,20 @@ import java.util.Map;
  * to implement this interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractHeap.java,v 1.1.2.3 2000-07-13 14:42:19 cananian Exp $
+ * @version $Id: AbstractHeap.java,v 1.1.2.4 2001-07-03 00:01:44 cananian Exp $
  */
 public abstract class AbstractHeap implements Heap {
+    /** A comparator for the keys in <code>Map.Entry</code>s, based
+     *  on the key comparator given to the constructor.  But
+     *  <code>keyComparator</code> is never null! */
+    private final Comparator keyComparator;
     /** A comparator for <code>Map.Entry</code>s, based on the
      *  key comparator given to the constructor. */
     private final EntryComparator entryComparator;
     /** Sole constructor, for invocation by subclass constructors. */
     protected AbstractHeap(Comparator c) {
 	if (c==null) c = harpoon.Util.Default.comparator; // JDK1.1 hack.
+	this.keyComparator = c; // should never be null, JDK1.1 hack or no.
 	this.entryComparator = new EntryComparator(c);
     }
 
@@ -35,6 +40,28 @@ public abstract class AbstractHeap implements Heap {
     public abstract void clear();
 
     // methods which we helpfully provide for you:
+    public void updateKey(Map.Entry me, Object newkey) {
+	int r = keyComparator.compare(me.getKey(), newkey);
+	if (r>0) decreaseKey(me, newkey); // usually faster.
+	if (r>=0) return; // done.
+	delete(me);
+	setKey(me, newkey);
+	insert(me);
+    }
+    /** This method should insert the specified <code>Map.Entry</code>,
+     *  which is not currently in the <code>Heap</code>, into the
+     *  <code>Heap</code>.  Implementation is optional, but it is required
+     *  if you use the default implementation of <code>updateKey()</code>. */
+    protected void insert(Map.Entry me) {
+	throw new UnsupportedOperationException();
+    }
+    /** This method should set the key for the specified
+     *  <code>Map.Entry</code> to the given <code>newkey</code>.
+     *  Implementation is optional, but it is required if you use the
+     *  default implementation of <code>updateKey()</code>. */
+    protected void setKey(Map.Entry me, Object newkey) {
+	throw new UnsupportedOperationException();
+    }
     public Map.Entry extractMinimum() {
 	Map.Entry e = minimum();
 	delete(e);
@@ -57,6 +84,9 @@ public abstract class AbstractHeap implements Heap {
     /** Returns the comparator used to compare keys in this <code>Heap</code>,
      *  or <code>null</code> if the keys' natural ordering is used. */
     public Comparator comparator() { return entryComparator.cc; }
+    /** Returns the comparator used to compare keys in this <code>Heap</code>.
+     *  <strong>Will never return <code>null</code>.</strong> */
+    protected Comparator keyComparator() { return keyComparator; }
     /** Returns a comparator which can be used to compare
      *  <code>Map.Entry</code>s. Will never return <code>null</code>. */
     protected Comparator entryComparator() { return entryComparator; }

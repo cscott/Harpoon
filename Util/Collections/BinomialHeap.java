@@ -22,7 +22,7 @@ import java.util.Map;
  * Leiserson, and Rivest, on page 400 and following.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinomialHeap.java,v 1.1.2.3 2000-02-12 21:52:09 cananian Exp $
+ * @version $Id: BinomialHeap.java,v 1.1.2.4 2001-07-03 00:01:44 cananian Exp $
  */
 public class BinomialHeap extends AbstractHeap implements Cloneable {
     private static final boolean debug=false;
@@ -164,10 +164,15 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
      */
     public Map.Entry insert(Object key, Object value) { // binomial-heap-insert
 	if (debug) checkHeap();
-	Node x = new Node(key, value);
+	Entry e = new Entry(key, value);
+	insert(e);
+	return e;
+    }
+    protected void insert(Map.Entry me) {
+	Entry e = (Entry) me;
+	Node x = new Node(e);
 	union(x);
 	if (debug) checkHeap();
-	return x.entry;
     }
     /** Remove and return the map entry with minimal key. O(lg n) time. */
     public Map.Entry extractMinimum() {
@@ -208,10 +213,10 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
     public void decreaseKey(Map.Entry me, Object newkey) {
 	if (debug) checkHeap();
 	Node x = ((Entry) me).node;
-	if (_keyCompare(newkey, x.entry.getKey()) > 0)
+	if (keyComparator().compare(newkey, x.entry.getKey()) > 0)
 	    throw new UnsupportedOperationException("New key is greater than "+
 						    "current key.");
-	x.entry._setKey(newkey);
+	setKey(x.entry, newkey);
 	_bubbleUp(x, false);
 	// done.
 	if (debug) checkHeap();
@@ -295,7 +300,7 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
     /** Recursively clone a node. */
     private Node _clone(Node parent, Node n) {
 	if (n==null) return null;
-	Node nn = new Node(n.entry.getKey(), n.entry.getValue());
+	Node nn = new Node(new Entry(n.entry.getKey(), n.entry.getValue()));
 	nn.degree = n.degree;
 	nn.parent = parent;
 	nn.child = _clone(nn, n.child);
@@ -318,28 +323,24 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
      *  run. */
     private Node find(Node n, Object key) {
 	if (n==null) return null;
-	int cmp=_keyCompare(n.entry.getKey(), key);
+	int cmp=keyComparator().compare(n.entry.getKey(), key);
 	if (cmp==0) return n;
 	Node s=find(n.sibling, key);
 	if (s!=null) return s;
 	if (cmp > 0) return null; // all children will have larger keys.
 	return find(n.child, key);
     }
-    // convenience method for key comparisons (which are pretty rare)
-    private int _keyCompare(Object key1, Object key2) {
-	Comparator kc = comparator();
-	if (kc==null) kc = Default.comparator;
-	return kc.compare(key1, key2);
-    }
 
     /** The underlying <code>Map.Entry</code> representation. */
     static final class Entry extends PairMapEntry {
 	Node node;
-	Entry(Object key, Object value, Node node) {
-	    super(key, value);
-	    this.node = node;
-	}
+	Entry(Object key, Object value) { super(key, value); }
 	Object _setKey(Object key) { return super.setKey(key); }
+    }
+    // to implement updateKey, etc...
+    protected final void setKey(Map.Entry me, Object newkey) {
+	Entry e = (Entry) me;
+	e._setKey(newkey);
     }
     /** The underlying node representation for the binomial heap */
     static final class Node {
@@ -348,9 +349,10 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 	int degree;
 	Node child, sibling; // left child, right sibling.
 	/*-----------------------------*/
-	Node(Object key, Object value) {
-	    this.entry = new Entry(key, value, this);
-	    this.degree=0;
+	Node(Entry e) {
+	    this.entry = e;
+	    this.entry.node = this;
+	    this.degree = 0;
 	}
 	public String toString() {
 	    return "<"+entry.toString()+", "+
@@ -496,6 +498,28 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-2)));
 	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-1)));
 	Util.assert(bm1.isEmpty() && bm1.size()==0);
+
+	// now test delete, decreaseKey, and updateKey
+	// (tests borrowed from BinaryHeap.java)
+	Heap h = new BinomialHeap(); Util.assert(h.isEmpty() && h.size()==0);
+	Map.Entry me[] = {
+	    h.insert("C", "c1"), h.insert("S", "s1"), h.insert("A", "a"),
+	    h.insert("S", "s2"), h.insert("C", "c2"), h.insert("O", "o"),
+	    h.insert("T", "t1"), h.insert("T", "t2"), h.insert("Z", "z"),
+	    h.insert("M", "m"),
+	};
+	Util.assert(h.extractMinimum().getValue().equals("a"));
+	System.out.println(h);
+	h.decreaseKey(me[3], "B"); // s2
+	Util.assert(h.extractMinimum().getValue().equals("s2"));
+	h.delete(me[4]); // c2
+	Util.assert(h.extractMinimum().getValue().equals("c1"));
+	System.out.println(h);
+	// finally, test updateKey
+	h.updateKey(me[9], "P"); // m
+	Util.assert(h.extractMinimum().getValue().equals("o"));
+	Util.assert(h.extractMinimum().getValue().equals("m"));
+	System.out.println(h);
 
 	// done!
 	System.out.println("PASSED.");

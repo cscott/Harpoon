@@ -62,6 +62,14 @@ import java.util.Map;
  * </TR>
  * 
  * <TR>
+ *  <TD BGCOLOR="wheat">U<font size=-1>PDATE</font>-K<font size=-1>EY</font>
+ *  </TD>
+ *     <TD ALIGN=CENTER>Theta(lg <i>n</i>)</TD>
+ *     <TD ALIGN=CENTER>Theta(lg <i>n</i>)</TD>
+ *     <TD ALIGN=CENTER>Theta(lg <i>n</i>)</TD>
+ * </TR>
+ * 
+ * <TR>
  *  <TD BGCOLOR="wheat">D<font size=-1>ELETE</font></TD>
  *     <TD ALIGN=CENTER>Theta(lg <i>n</i>)</TD>
  *     <TD ALIGN=CENTER>Theta(lg <i>n</i>)</TD>
@@ -87,9 +95,17 @@ import java.util.Map;
  * <code>Heap</code> and construct a heap in less time than it would
  * take to call <code>insert()</code> on each item on an initially-empty
  * <code>Heap</code>.
+ *
+ * Note that the 
+ * U<font size=-1>PDATE</font>-K<font size=-1>EY</font> operation is
+ * typically implemented as a delete followed by an insert, which
+ * often has worse performance than a
+ * D<font size=-1>ECREASE</font>-K<font size=-1>EY</font> operation.
+ * However, some algorithms need to increase keys as well as decrease
+ * them; there's nothing you can do about that.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Heap.java,v 1.1.2.4 2001-07-01 03:24:45 cananian Exp $
+ * @version $Id: Heap.java,v 1.1.2.5 2001-07-03 00:01:44 cananian Exp $
  * @see BinaryHeap
  * @see BinomialHeap
  * @see FibonacciHeap
@@ -124,6 +140,9 @@ public interface Heap {
     /** Replace the key in the specified map entry with the specified
      *  <b>smaller</b> key.  */
     public void decreaseKey(Map.Entry me, Object newkey);
+    /** Replace the key in the specified map entry with the specified key,
+     *  which may be either larger or smaller than its current key. */
+    public void updateKey(Map.Entry me, Object newkey);
     /** Remove the specified map entry from the mapping. */
     public void delete(Map.Entry me);
     /** Returns <code>true</code> if this <code>Heap</code> has no more

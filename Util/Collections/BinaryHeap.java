@@ -24,7 +24,7 @@ import java.util.Map;
  * Sedgewick's book.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinaryHeap.java,v 1.1.2.2 2000-02-12 20:57:05 cananian Exp $
+ * @version $Id: BinaryHeap.java,v 1.1.2.3 2001-07-03 00:01:44 cananian Exp $
  * @see Heap
  */
 public final class BinaryHeap extends AbstractHeap {
@@ -57,12 +57,17 @@ public final class BinaryHeap extends AbstractHeap {
 	if (debug) checkHeap();
     }
     public Map.Entry insert(Object key, Object value) {
+	Entry e=new Entry(key, value, A.size());
+	insert(e);
+	return e;
+    }
+    protected void insert(Map.Entry me) {
 	int index=A.size();
-	Entry e=new Entry(key, value, index);
+	Entry e = (Entry) me;
+	e.index = index;
 	A.add(e);
 	upheap(index);
 	if (debug) checkHeap();
-	return e;
     }
     public Map.Entry minimum() {
 	if (size() < 1) throw new java.util.NoSuchElementException();
@@ -93,7 +98,7 @@ public final class BinaryHeap extends AbstractHeap {
     }
     public void decreaseKey(Map.Entry me, Object newkey) {
 	Entry e = (Entry) me;
-	e._setKey(newkey);
+	setKey(e, newkey);
 	upheap(e.index);
 	if (debug) checkHeap();
     }
@@ -176,6 +181,11 @@ public final class BinaryHeap extends AbstractHeap {
 	}
 	Object _setKey(Object newKey) { return setKey(newKey); }
     }
+    // to implement updateKey, etc...
+    protected final void setKey(Map.Entry me, Object newkey) {
+	Entry e = (Entry) me;
+	e._setKey(newkey);
+    }
 
     //--------------------------------------------------
     /** Self-test function. */
@@ -231,6 +241,11 @@ public final class BinaryHeap extends AbstractHeap {
 	Util.assert(h.extractMinimum().getValue().equals("s2"));
 	h.delete(me[4]); // c2
 	Util.assert(h.extractMinimum().getValue().equals("c1"));
+	System.out.println(h);
+	// finally, test updateKey
+	h.updateKey(me[9], "P"); // m
+	Util.assert(h.extractMinimum().getValue().equals("o"));
+	Util.assert(h.extractMinimum().getValue().equals("m"));
 	System.out.println(h);
 	// DONE.
 	System.out.println("PASSED.");

@@ -23,7 +23,7 @@ import java.util.Map;
  * Algorithms</i> by Cormen, Leiserson, and Riverst, in Chapter 21.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FibonacciHeap.java,v 1.1.2.3 2000-02-13 02:34:00 cananian Exp $
+ * @version $Id: FibonacciHeap.java,v 1.1.2.4 2001-07-03 00:01:44 cananian Exp $
  */
 public class FibonacciHeap extends AbstractHeap {
     private static final boolean debug = false;
@@ -59,7 +59,12 @@ public class FibonacciHeap extends AbstractHeap {
 
     /** Insert an entry into the heap. */
     public Map.Entry insert(Object key, Object value) {
-	Node x = new Node(key, value);
+	Entry e = new Entry(key, value);
+	insert(e);
+	return e;
+    }
+    protected void insert(Map.Entry me) {
+	Node x = new Node((Entry)me);
 	// THESE ARE DONE IN THE CONSTRUCTOR.
 	// x.degree=0; x.parent=x.child=null;
 	// x.left = x.right = x;  x.mark = false;
@@ -67,7 +72,7 @@ public class FibonacciHeap extends AbstractHeap {
 	if (min==null || c.compare(x.entry, min.entry) < 0)
 	    min = x;
 	n++; // increase size;
-	return x.entry;
+	// done.
     }
     public Map.Entry minimum() {
 	if (this.min==null) throw new java.util.NoSuchElementException();
@@ -165,10 +170,10 @@ public class FibonacciHeap extends AbstractHeap {
     }
     // if 'delete' is true, newkey is effectively -infinity.
     private void decreaseKey(Entry entry, Object newkey, boolean delete) {
-	if (!delete && _keyCompare(newkey, entry.getKey()) > 0)
+	if (!delete && keyComparator().compare(newkey, entry.getKey()) > 0)
 	    throw new UnsupportedOperationException("New key is greater than "+
 						    "current key.");
-	entry._setKey(newkey);
+	setKey(entry, newkey);
 	Node x = entry.node;
 	Node y = x.parent;
 	if (y!=null && (delete || c.compare(x.entry, y.entry) < 0)) {
@@ -237,11 +242,13 @@ public class FibonacciHeap extends AbstractHeap {
     /** The underlying <code>Map.Entry</code> representation. */
     static final class Entry extends PairMapEntry {
 	Node node;
-	Entry(Object key, Object value, Node node) {
-	    super(key, value);
-	    this.node = node;
-	}
+	Entry(Object key, Object value) { super(key, value); }
 	Object _setKey(Object key) { return super.setKey(key); }
+    }
+    // to implement updateKey, etc...
+    protected final void setKey(Map.Entry me, Object newkey) {
+	Entry e = (Entry) me;
+	e._setKey(newkey);
     }
     /** The underlying node representation for the fibonacci heap. */
     static final class Node {
@@ -251,8 +258,9 @@ public class FibonacciHeap extends AbstractHeap {
 	int degree;
 	boolean mark;
 	/*-----------------------------*/
-	Node(Object key, Object value) {
-	    this.entry = new Entry(key, value, this);
+	Node(Entry e) {
+	    this.entry = e;
+	    this.entry.node = this;
 	    this.parent = this.child = null;
 	    this.degree=0;
 	    this.left = this.right = this;
@@ -303,13 +311,6 @@ public class FibonacciHeap extends AbstractHeap {
     }
     private final static double phi = (1 + Math.sqrt(5)) / 2.0;
     private final static double log_phi = Math.log(phi);
-
-    // convenience method for key comparisons (which are pretty rare)
-    private int _keyCompare(Object key1, Object key2) {
-	Comparator kc = comparator();
-	if (kc==null) kc = Default.comparator;
-	return kc.compare(key1, key2);
-    }
 
     /** Self-test method. */
     public static void main(String[] args) {
@@ -370,6 +371,11 @@ public class FibonacciHeap extends AbstractHeap {
 	System.out.println("3: "+h);
 	Util.assert(h.extractMinimum().getValue().equals("c1"));
 	System.out.println("4: "+h);
+	// finally, test updateKey
+	h.updateKey(me[9], "P"); // m
+	Util.assert(h.extractMinimum().getValue().equals("o"));
+	Util.assert(h.extractMinimum().getValue().equals("m"));
+	System.out.println("5: "+h);
 	// DONE.
 	System.out.println("PASSED.");
     }
