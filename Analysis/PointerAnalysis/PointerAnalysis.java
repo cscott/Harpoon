@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.58 2000-05-25 15:41:52 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.59 2000-05-25 20:16:07 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -290,7 +290,7 @@ public class PointerAnalysis {
 	Martin and John Whaley for more details. */
     public ParIntGraph threadInteraction(MetaMethod mm){
 	ParIntGraph pig = (ParIntGraph) getIntParIntGraph(mm);
-	return InterThreadPA.resolve_threads(pig,this);
+	return InterThreadPA.resolve_threads(this, pig);
     }
 
 

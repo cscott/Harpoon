@@ -41,44 +41,44 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.40 2000-05-25 15:41:52 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.41 2000-05-25 20:16:07 salcianu Exp $
  */
 abstract class InterProcPA {
 
-    /** Call sites with more than MAX_CALLEES callees are simply
-	considered to be holes. */ 
+    /** Call sites with more than <code>MAX_CALLEES</code> callees are simply
+     *  considered to be holes. */ 
     public static final int MAX_CALLEES = 5;
 
+    /** Activates a lot of debug messages. */
     public static final boolean DEBUG = false;
 
-    /** Displays some warnings for the call sites with 0 callees etc. 
-	This is not necessarily an error! For example, if an application
-	never instantiates a <code>SecurityManager</code>,
-	each call to a method from this class has ZERO callees! */
-    public static boolean WARNINGS = false;
+    /** Displays some warnings, <i>eg</i> for the call sites with 0 callees.
+     *  This is not necessarily an error! For example, if an application
+     *  never instantiates a <code>SecurityManager</code>,
+     *	each call to a method of that class has ZERO callees! */
+    public static final boolean WARNINGS = false;
 
     /** Analyzes the call site <code>q</code> inside 
-	<code>current_method</code>. If analyzing the call is not possible
-	(e.g. one of the callees is native, hence unanalyzable), the call
-	site is skipped and all the parameters are marked as escaping down
-	through that call site.<br>
-	Parameters:<br>
-	<ul>
-	<li><code>pa</code> - the <code>PointerAnalysis</code> object that
-	calls this method. This parameter stands for the <code>this</code>
-	pointer that would exist if this method were in the
-	<code>PointerAnalysis</code> class.
-	<li><code>current_method</code> - the method that contains in its
-	code the call site <code>q</code>.
-	<li><code>q</code> - the analyzed call site.
-	<li><code>pig_before</code> is the parallel interaction graph at
-	the program point just before the call site; this graph will be 
-	mutated, it is the responsability of the caller to clone it if it
-	is necessary somewhere else.
-	</ul>
-	Return result:<b>
-	Two graphs are returned: one for the normal return from the procedure,
-	the other one for a return due to an exception. */
+     *	<code>current_method</code>. If analyzing the call is not possible
+     *	(e.g. one of the callees is native, hence unanalyzable), the call
+     *	site is skipped and all the parameters are marked as escaping
+     *	through that call site.
+     *
+     *	@param pa  The <code>PointerAnalysis</code> object that
+     *	calls this method. This parameter stands for the <code>this</code>
+     *	pointer that would exist if this method were in the
+     *	<code>PointerAnalysis</code> class.
+     *	@param current_method  The method that contains in its
+     *	code the call site <code>q</code>.
+     *	@param q  The analyzed call site.
+     *	@param pig_before  The parallel interaction graph at
+     *	the program point just before the call site; this graph will be 
+     *	mutated, it is the responsability of the caller to clone it if it
+     *	is necessary somewhere else.
+     *
+     *	@return  Two graphs are returned: one for the normal return from
+     *  the procedure, the other one for a return due to an exception.
+     */
     public static ParIntGraphPair analyze_call(PointerAnalysis pa,
 					       MetaMethod current_mmethod,
 					       CALL q,
